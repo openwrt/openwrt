@@ -1,0 +1,27 @@
+From 78c9994987c4dce652936dbc28f431d4d56407c7 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Fri, 16 Oct 2026 09:55:17 +0100
+Subject: [PATCH] media: rockchip: rkisp2: Select V4L2_ISP
+
+The params and stats nodes call the v4l2-isp helpers, but V4L2_ISP is a
+hidden symbol that nothing selects for this driver, so a configuration
+that enables VIDEO_ROCKCHIP_ISP2 without another V4L2_ISP user builds a
+module with unresolved symbols. Select it from the driver's Kconfig
+entry, as rkisp1 does.
+
+Assisted-by: LLM
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ drivers/media/platform/rockchip/rkisp2/Kconfig | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/drivers/media/platform/rockchip/rkisp2/Kconfig
++++ b/drivers/media/platform/rockchip/rkisp2/Kconfig
+@@ -9,6 +9,7 @@ config VIDEO_ROCKCHIP_ISP2
+ 	select VIDEOBUF2_DMA_CONTIG
+ 	select VIDEOBUF2_VMALLOC
+ 	select V4L2_FWNODE
++	select V4L2_ISP
+ 	select GENERIC_PHY_MIPI_DPHY
+ 	default n
+ 	help

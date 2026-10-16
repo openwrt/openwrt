@@ -1,0 +1,85 @@
+From bc419abd5c6623d5a20b3b24844082439577a24d Mon Sep 17 00:00:00 2001
+From: Xu Hongfei <xuhf@rock-chips.com>
+Date: Wed, 24 Sep 2025 15:51:32 +0800
+Subject: [PATCH] arm64: dts: rockchip: add ISP nodes to rk3588
+
+Add device tree nodes for the ISP and their iommus on the RK3588.
+
+Signed-off-by: Xu Hongfei <xuhf@rock-chips.com>
+Signed-off-by: Paul Elder <paul.elder@ideasonboard.com>
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+Changes in v3:
+- reorder patches
+
+No change in v2
+---
+ arch/arm64/boot/dts/rockchip/rk3588-base.dtsi | 57 +++++++++++++++++++
+ 1 file changed, 57 insertions(+)
+
+--- a/arch/arm64/boot/dts/rockchip/rk3588-base.dtsi
++++ b/arch/arm64/boot/dts/rockchip/rk3588-base.dtsi
+@@ -3535,6 +3535,63 @@
+ 			#interrupt-cells = <2>;
+ 		};
+ 	};
++
++	isp0: isp@fdcb0000 {
++		compatible = "rockchip,rk3588-isp";
++		reg = <0x0 0xfdcb0000 0x0 0x7f00>;
++		interrupts = <GIC_SPI 131 IRQ_TYPE_LEVEL_HIGH 0>,
++			     <GIC_SPI 133 IRQ_TYPE_LEVEL_HIGH 0>,
++			     <GIC_SPI 134 IRQ_TYPE_LEVEL_HIGH 0>;
++		interrupt-names = "isp_irq", "mi_irq";
++		clocks = <&cru ACLK_ISP0>, <&cru HCLK_ISP0>,
++			 <&cru CLK_ISP0_CORE>, <&cru CLK_ISP0_CORE_MARVIN>,
++			 <&cru CLK_ISP0_CORE_VICAP>;
++		clock-names = "aclk", "hclk", "clk_core",
++			      "clk_core_marvin", "clk_core_vicap";
++		power-domains = <&power RK3588_PD_VI>;
++		iommus = <&isp0_mmu>;
++		status = "disabled";
++	};
++
++	isp0_mmu: iommu@fdcb7f00 {
++		compatible = "rockchip,rk3588-iommu", "rockchip,rk3568-iommu";
++		reg = <0x0 0xfdcb7f00 0x0 0x100>;
++		interrupts = <GIC_SPI 132 IRQ_TYPE_LEVEL_HIGH 0>;
++		clocks = <&cru ACLK_ISP0>, <&cru HCLK_ISP0>;
++		clock-names = "aclk", "iface";
++		power-domains = <&power RK3588_PD_VI>;
++		#iommu-cells = <0>;
++		rockchip,disable-mmu-reset;
++		status = "disabled";
++	};
++
++	isp1: isp@fdcc0000 {
++		compatible = "rockchip,rk3588-isp";
++		reg = <0x0 0xfdcc0000 0x0 0x7f00>;
++		interrupts = <GIC_SPI 135 IRQ_TYPE_LEVEL_HIGH 0>,
++			     <GIC_SPI 137 IRQ_TYPE_LEVEL_HIGH 0>;
++		interrupt-names = "isp_irq", "mi_irq";
++		clocks = <&cru ACLK_ISP1>, <&cru HCLK_ISP1>,
++			 <&cru CLK_ISP1_CORE>, <&cru CLK_ISP1_CORE_MARVIN>,
++			 <&cru CLK_ISP1_CORE_VICAP>;
++		clock-names = "aclk", "hclk", "clk_core",
++			      "clk_core_marvin", "clk_core_vicap";
++		power-domains = <&power RK3588_PD_ISP1>;
++		iommus = <&isp1_mmu>;
++		status = "disabled";
++	};
++
++	isp1_mmu: iommu@fdcc7f00 {
++		compatible = "rockchip,rk3588-iommu", "rockchip,rk3568-iommu";
++		reg = <0x0 0xfdcc7f00 0x0 0x100>;
++		interrupts = <GIC_SPI 136 IRQ_TYPE_LEVEL_HIGH 0>;
++		clocks = <&cru ACLK_ISP1>, <&cru HCLK_ISP1>;
++		clock-names = "aclk", "iface";
++		power-domains = <&power RK3588_PD_ISP1>;
++		#iommu-cells = <0>;
++		rockchip,disable-mmu-reset;
++		status = "disabled";
++	};
+ };
+ 
+ #include "rk3588-base-pinctrl.dtsi"

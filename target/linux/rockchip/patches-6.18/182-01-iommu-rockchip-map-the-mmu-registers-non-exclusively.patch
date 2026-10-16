@@ -1,0 +1,37 @@
+From 6ea013c28fa414486798b4648059a29c586990f4 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Sat, 17 Oct 2026 00:02:37 +0100
+Subject: [PATCH] iommu/rockchip: Map the MMU registers non-exclusively
+
+On Rockchip SoCs the register window of an IOMMU can lie inside the
+register space of the master block it belongs to. On the RV1126 the ISP
+MMU at 0xffb51a00 sits inside the ISP range 0xffb50000-0xffb5ffff and
+the ISPP MMU at 0xffb60e00 inside the ISPP range 0xffb60000-0xffb7ffff.
+
+devm_ioremap_resource() requests the window exclusively, so it collides
+with the master device, which requests its full range exclusively, and
+the master probes with -EBUSY.
+
+Map the registers with devm_ioremap(), so that the master block can own
+its address space while the IOMMU still maps its own registers.
+
+Assisted-by: LLM
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ drivers/iommu/rockchip-iommu.c | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+--- a/drivers/iommu/rockchip-iommu.c
++++ b/drivers/iommu/rockchip-iommu.c
+@@ -1236,8 +1236,9 @@ static int rk_iommu_probe(struct platfor
+ 		res = platform_get_resource(pdev, IORESOURCE_MEM, i);
+ 		if (!res)
+ 			continue;
+-		iommu->bases[i] = devm_ioremap_resource(&pdev->dev, res);
+-		if (IS_ERR(iommu->bases[i]))
++		iommu->bases[i] = devm_ioremap(&pdev->dev, res->start,
++					       resource_size(res));
++		if (IS_ERR_OR_NULL(iommu->bases[i]))
+ 			continue;
+ 		iommu->num_mmu++;
+ 	}

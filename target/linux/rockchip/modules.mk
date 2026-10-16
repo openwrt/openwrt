@@ -264,3 +264,21 @@ define KernelPackage/rockchip-dfi
 endef
 
 $(eval $(call KernelPackage,rockchip-dfi))
+
+define KernelPackage/video-rockchip-isp2
+  TITLE:=Rockchip rkisp2 Image Signal Processor
+  DEPENDS:=@TARGET_rockchip +kmod-video-v4l2-isp \
+	+kmod-video-dma-contig +kmod-video-fwnode +kmod-video-vmalloc
+  KCONFIG:=CONFIG_VIDEO_ROCKCHIP_ISP2
+  FILES:=$(LINUX_DIR)/drivers/media/platform/rockchip/rkisp2/rockchip-isp2.ko
+  AUTOLOAD:=$(call AutoProbe,rockchip-isp2)
+  $(call AddDepends/video)
+endef
+
+define KernelPackage/video-rockchip-isp2/description
+  Driver for the Image Signal Processor found in the Rockchip RK3588
+  and RV1126 SoCs. Provides demosaicing, 3A statistics and the
+  parameters queue used by libcamera.
+endef
+
+$(eval $(call KernelPackage,video-rockchip-isp2))

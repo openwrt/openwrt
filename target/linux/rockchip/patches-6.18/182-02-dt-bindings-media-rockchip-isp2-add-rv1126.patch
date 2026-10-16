@@ -1,0 +1,99 @@
+From 3dc6659228967e9cb4b7341eb3b207e7644e15ab Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Fri, 16 Oct 2026 23:53:50 +0100
+Subject: [PATCH] dt-bindings: media: rockchip-isp2: Add RV1126
+
+The RV1126 ISP is ISP version 2.0 of the same hardware family. It has
+a third interrupt line for the receiver and memory read status, two
+reset lines that the driver pulses to reset the whole block, and an
+optional reserved memory region, and it needs three clocks.
+
+Add the rockchip,rv1126-isp compatible and make the reset and the third
+interrupt properties required for it, and not allowed for the other
+compatible.
+
+Assisted-by: LLM
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ .../bindings/media/rockchip-isp2.yaml         | 42 ++++++++++++++++++-
+ 1 file changed, 41 insertions(+), 1 deletion(-)
+
+--- a/Documentation/devicetree/bindings/media/rockchip-isp2.yaml
++++ b/Documentation/devicetree/bindings/media/rockchip-isp2.yaml
+@@ -17,18 +17,21 @@ properties:
+   compatible:
+     enum:
+       - rockchip,rk3588-isp
++      - rockchip,rv1126-isp
+ 
+   reg:
+     maxItems: 1
+ 
+   interrupts:
+     minItems: 2
+-    maxItems: 2
++    maxItems: 3
+ 
+   interrupt-names:
++    minItems: 2
+     items:
+       - const: isp_irq
+       - const: mi_irq
++      - const: mipi_irq
+ 
+   clocks:
+     minItems: 3
+@@ -50,9 +53,23 @@ properties:
+       - const: clk_core_marvin
+       - const: clk_core_vicap
+ 
++  resets:
++    items:
++      - description: ISP reset
++      - description: ISP receiver (CSI-2 host side) reset
++
++  reset-names:
++    items:
++      - const: isp
++      - const: isp-rx-p
++
+   iommus:
+     maxItems: 1
+ 
++  memory-region:
++    maxItems: 1
++    description: reserved memory region for the ISP buffers
++
+   power-domains:
+     items:
+       - description: ISP power domain
+@@ -86,6 +103,29 @@ allOf:
+   - if:
+       properties:
+         compatible:
++          contains:
++            const: rockchip,rv1126-isp
++    then:
++      properties:
++        interrupts:
++          minItems: 3
++        interrupt-names:
++          minItems: 3
++      required:
++        - resets
++        - reset-names
++    else:
++      properties:
++        interrupts:
++          maxItems: 2
++        interrupt-names:
++          maxItems: 2
++        resets: false
++        reset-names: false
++
++  - if:
++      properties:
++        compatible:
+           contains:
+             const: rockchip,rk3588-isp
+     then:

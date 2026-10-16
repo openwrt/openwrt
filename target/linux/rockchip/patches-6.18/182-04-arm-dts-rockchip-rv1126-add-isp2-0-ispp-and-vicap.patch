@@ -1,0 +1,145 @@
+From 051ca1a62150b0651f2f6d8949c49832b6aca593 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Fri, 16 Oct 2026 23:53:51 +0100
+Subject: [PATCH] ARM: dts: rockchip: rv1126: add ISP 2.0 and ISPP device nodes
+
+Describe the RV1126 image pipeline in the SoC dtsi: the ISP 2.0
+(rockchip,rv1126-isp) and the ISPP (rockchip,rv1126-ispp) with their
+IOMMUs, the PD_ISPP power domain with its QoS nodes and a CMA region for
+the ISP.
+
+The ISP node uses the clock names of the rkisp2 binding, aclk, hclk and
+clk_core, and the clock framework sets the ISP core clock to 396 MHz. A
+higher core clock makes the memory read-back of a frame overrun the
+VICAP write FIFO. The VICAP, the PD_VI power domain and their QoS nodes
+come from an earlier patch of the series.
+
+Assisted-by: LLM
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+
+--- a/arch/arm/boot/dts/rockchip/rv1126.dtsi
++++ b/arch/arm/boot/dts/rockchip/rv1126.dtsi
+@@ -37,6 +37,18 @@
+ 		spi1 = &spi1;
+ 	};
+ 
++	reserved-memory {
++		#address-cells = <1>;
++		#size-cells = <1>;
++		ranges;
++
++		isp_reserved: isp {
++			compatible = "shared-dma-pool";
++			reusable;
++			size = <0x10000000>;
++		};
++	};
++
+ 	cpus {
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+@@ -319,6 +331,16 @@
+ 		reg = <0xfe8d0000 0x20>;
+ 	};
+ 
++	qos_ispp_m0: qos@fe880000 {
++		compatible = "rockchip,rv1126-qos", "syscon";
++		reg = <0xfe880000 0x20>;
++	};
++
++	qos_ispp_m1: qos@fe880080 {
++		compatible = "rockchip,rv1126-qos", "syscon";
++		reg = <0xfe880080 0x20>;
++	};
++
+ 	gic: interrupt-controller@feff0000 {
+ 		compatible = "arm,gic-400";
+ 		interrupt-controller;
+@@ -421,6 +443,17 @@
+ 				#power-domain-cells = <0>;
+ 			};
+ 
++			/* Power domain for the Image Signal Post-Processor. */
++			power-domain@RV1126_PD_ISPP {
++				reg = <RV1126_PD_ISPP>;
++				clocks = <&cru ACLK_ISPP>,
++					 <&cru HCLK_ISPP>,
++					 <&cru CLK_ISPP>;
++				pm_qos = <&qos_ispp_m0>,
++					 <&qos_ispp_m1>;
++				#power-domain-cells = <0>;
++			};
++
+ 			power-domain@RV1126_PD_VO {
+ 				reg = <RV1126_PD_VO>;
+ 				clocks = <&cru ACLK_RGA>,
+@@ -1196,6 +1229,68 @@
+ 		};
+ 	};
+ 
++	isp: isp@ffb50000 {
++		compatible = "rockchip,rv1126-isp";
++		reg = <0xffb50000 0x10000>;
++		interrupts = <GIC_SPI 52 IRQ_TYPE_LEVEL_HIGH>,
++			     <GIC_SPI 54 IRQ_TYPE_LEVEL_HIGH>,
++			     <GIC_SPI 55 IRQ_TYPE_LEVEL_HIGH>;
++		interrupt-names = "isp_irq", "mi_irq", "mipi_irq";
++		clocks = <&cru ACLK_ISP>, <&cru HCLK_ISP>,
++			 <&cru CLK_ISP>;
++		clock-names = "aclk", "hclk", "clk_core";
++		assigned-clocks = <&cru ACLK_ISP>, <&cru HCLK_ISP>,
++				  <&cru CLK_ISP>;
++		assigned-clock-rates = <500000000>, <250000000>, <396000000>;
++		resets = <&cru SRST_ISP>, <&cru SRST_ISP_RX_P>;
++		reset-names = "isp", "isp-rx-p";
++		power-domains = <&power RV1126_PD_VI>;
++		memory-region = <&isp_reserved>;
++		iommus = <&isp_mmu>;
++	};
++
++	isp_mmu: iommu@ffb51a00 {
++		compatible = "rockchip,iommu";
++		reg = <0xffb51a00 0x100>;
++		interrupts = <GIC_SPI 51 IRQ_TYPE_LEVEL_HIGH>;
++		interrupt-names = "isp_mmu";
++		clocks = <&cru ACLK_ISP>, <&cru HCLK_ISP>;
++		clock-names = "aclk", "iface";
++		power-domains = <&power RV1126_PD_VI>;
++		#iommu-cells = <0>;
++	};
++
++	ispp: ispp@ffb60000 {
++		compatible = "rockchip,rv1126-ispp";
++		reg = <0xffb60000 0x20000>;
++		interrupts = <GIC_SPI 63 IRQ_TYPE_LEVEL_HIGH>,
++			     <GIC_SPI 64 IRQ_TYPE_LEVEL_HIGH>;
++		interrupt-names = "ispp_irq", "fec_irq";
++		clocks = <&cru ACLK_ISPP>, <&cru HCLK_ISPP>,
++			 <&cru CLK_ISPP>;
++		clock-names = "aclk_ispp", "hclk_ispp", "clk_ispp";
++		assigned-clocks = <&cru ACLK_ISPP>, <&cru HCLK_ISPP>,
++			          <&cru CLK_ISPP>;
++		assigned-clock-rates = <500000000>, <250000000>,
++			       <400000000>;
++		power-domains = <&power RV1126_PD_ISPP>;
++		memory-region = <&isp_reserved>;
++		iommus = <&ispp_mmu>;
++	};
++
++	ispp_mmu: iommu@ffb60e00 {
++		compatible = "rockchip,iommu";
++		reg = <0xffb60e00 0x40>, <0xffb60e40 0x40>, <0xffb60f00 0x40>;
++		interrupts = <GIC_SPI 65 IRQ_TYPE_LEVEL_HIGH>,
++			     <GIC_SPI 66 IRQ_TYPE_LEVEL_HIGH>,
++			     <GIC_SPI 67 IRQ_TYPE_LEVEL_HIGH>;
++		interrupt-names = "ispp_mmu0_r", "ispp_mmu0_w", "ispp_mmu1";
++		clocks = <&cru ACLK_ISPP>, <&cru HCLK_ISPP>;
++		clock-names = "aclk", "iface";
++		power-domains = <&power RV1126_PD_ISPP>;
++		#iommu-cells = <0>;
++	};
++
+ 	vpu: video-codec@ffb90000 {
+ 		compatible = "rockchip,rv1126-vpu", "rockchip,rk3399-vpu";
+ 		reg = <0xffb90000 0x800>;

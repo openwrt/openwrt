@@ -1,0 +1,36 @@
+From a502fe264f5f482ba60e13a0679deee6a9c3047b Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Fri, 16 Oct 2026 12:36:54 +0100
+Subject: [PATCH] media: rockchip: rkisp2: Set the CSM range from the pad
+
+The colour space matrix converts RGB to YCbCr with the coefficients the
+CSM parameters block carries, but the ISP also has the CSM_Y_FULL_ENA
+and CSM_C_FULL_ENA control bits that switch the block from the limited
+to the full output range, and the parameters block has no field for the
+range. With the bits clear the full range coefficients produce a limited
+range picture.
+
+Set the bits when the main path source pad is configured for the full
+quantization range, as the vendor driver does, so that the range follows
+the colour space negotiated on the pad.
+
+Assisted-by: LLM
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ drivers/media/platform/rockchip/rkisp2/rkisp2-isp.c | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+--- a/drivers/media/platform/rockchip/rkisp2/rkisp2-isp.c
++++ b/drivers/media/platform/rockchip/rkisp2/rkisp2-isp.c
+@@ -120,6 +120,11 @@ static int rkisp2_config_isp(struct rkis
+ 				     SW_DEBAYER_FILTER_C_EN);
+ 
+ 			isp_ctrl = RKISP2_CIF_ISP_CTRL_ISP_MODE_BAYER_ITU601;
++			if (mp_src_frm->quantization ==
++			    V4L2_QUANTIZATION_FULL_RANGE)
++				isp_ctrl |=
++					RKISP2_CIF_ISP_CTRL_ISP_CSM_Y_FULL_ENA |
++					RKISP2_CIF_ISP_CTRL_ISP_CSM_C_FULL_ENA;
+ 		}
+ 	} else if (sink_fmt->pixel_enc == V4L2_PIXEL_ENC_YUV) {
+ 		acq_mult = 2;
