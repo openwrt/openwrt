@@ -136,14 +136,14 @@ Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
  		tagger_data = ds->tagger_data;
  
  		tagger_data->rw_reg_ack_handler = qca8k_rw_reg_ack_handler;
-@@ -2122,6 +2164,7 @@ static const struct phylink_mac_ops qca8
+@@ -2137,6 +2179,7 @@ static void qca8k_teardown(struct dsa_sw
  
  static const struct dsa_switch_ops qca8k_switch_ops = {
  	.get_tag_protocol	= qca8k_get_tag_protocol,
 +	.change_tag_protocol	= qca8k_change_tag_protocol,
  	.setup			= qca8k_setup,
+ 	.teardown		= qca8k_teardown,
  	.get_strings		= qca8k_get_strings,
- 	.get_ethtool_stats	= qca8k_get_ethtool_stats,
 --- a/drivers/net/dsa/qca/qca8k.h
 +++ b/drivers/net/dsa/qca/qca8k.h
 @@ -149,6 +149,9 @@
@@ -156,7 +156,7 @@ Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
  #define QCA8K_REG_PORT_HDR_CTRL(_i)			(0x9c + (_i * 4))
  #define   QCA8K_PORT_HDR_CTRL_RX_MASK			GENMASK(3, 2)
  #define   QCA8K_PORT_HDR_CTRL_TX_MASK			GENMASK(1, 0)
-@@ -462,6 +465,7 @@ struct qca8k_priv {
+@@ -471,6 +474,7 @@ struct qca8k_priv {
  	struct device *dev;
  	struct gpio_desc *reset_gpio;
  	struct net_device *mgmt_conduit; /* Track if mdio/mib Ethernet is available */
