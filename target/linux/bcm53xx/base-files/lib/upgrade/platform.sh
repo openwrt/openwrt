@@ -54,6 +54,13 @@ platform_expected_image() {
 		"netgear,r6250-v1")	echo "chk U12H245T00_NETGEAR"; return;;
 		"netgear,r6300-v2")	echo "chk U12H240T00_NETGEAR"; return;;
 		"netgear,r6400-v1")	echo "chk U12H332T00_NETGEAR"; return;;
+		"netgear,r6400-v2")
+			# T20 and the OTP variant T30 are the same board
+			case "$BCM53XX_FW_BOARD_ID" in
+			U12H332T20_NETGEAR|U12H332T30_NETGEAR) echo "chk $BCM53XX_FW_BOARD_ID";;
+			*) echo "chk U12H332T20_NETGEAR";;
+			esac
+			return;;
 		"netgear,r7000")	echo "chk U12H270T00_NETGEAR"; return;;
 		"netgear,r7900")	echo "chk U12H315T30_NETGEAR"; return;;
 		"netgear,r8000")	echo "chk U12H315T00_NETGEAR"; return;;

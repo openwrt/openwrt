@@ -1,0 +1,54 @@
+From 767e781acef8ee354be1dd5cb57a4fdad1ccd84d Mon Sep 17 00:00:00 2001
+From: Erik Conijn <egc112@msn.com>
+Date: Tue, 13 Oct 2026 09:34:46 +0200
+Subject: [PATCH] ARM: dts: BCM5301X: add Netgear R6400 v2
+
+The R6400 v2 is the R6400 v1 board on the newer Northstar die: bcma
+chip 53030 (BCM47094), package 0x02, with the same BCM53011 switch.
+Reuse the v1 DTS and take the Bx USB 3.0 PHY and the UART clock from
+bcm47094.dtsi: with the Ax PHY init a USB 3.0 device on the front port
+is never detected. bcm47094.dtsi itself is not included because it
+switches the SRAB to bcm53012, while this board has a BCM53011.
+
+Assisted-by: Claude:claude-opus-5-5
+Signed-off-by: Erik Conijn <egc112@msn.com>
+---
+--- /dev/null
++++ b/arch/arm/boot/dts/broadcom/bcm47094-netgear-r6400-v2.dts
+@@ -0,0 +1,26 @@
++// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
++/*
++ * DTS for Netgear R6400 V2
++ *
++ * Same board as the R6400 V1 (same boardtype/boardrev in CFE nvram),
++ * but on the newer Northstar die: bcma reports chip 53030 (BCM47094),
++ * package 0x02, with a BCM53011 switch. The CPU is clocked at 1 GHz by
++ * the bootloader. Board ID in the factory image: U12H332T20_NETGEAR,
++ * or U12H332T30_NETGEAR on the OTP variant.
++ */
++
++#include "bcm4708-netgear-r6400-v1.dts"
++
++/ {
++	compatible = "netgear,r6400-v2", "brcm,bcm47094", "brcm,bcm4708";
++	model = "Netgear R6400 V2";
++};
++
++/* As in bcm47094.dtsi; its bcm53012 SRAB does not apply (BCM53011) */
++&usb3_phy {
++	compatible = "brcm,ns-bx-usb3-phy";
++};
++
++&uart0 {
++	clock-frequency = <125000000>;
++};
+--- a/arch/arm/boot/dts/broadcom/Makefile
++++ b/arch/arm/boot/dts/broadcom/Makefile
+@@ -89,6 +89,7 @@ dtb-$(CONFIG_ARCH_BCM_5301X) += \
+ 	bcm47094-luxul-xwc-2000.dtb \
+ 	bcm47094-luxul-xwr-3100.dtb \
+ 	bcm47094-luxul-xwr-3150-v1.dtb \
++	bcm47094-netgear-r6400-v2.dtb \
+ 	bcm47094-netgear-r8500.dtb \
+ 	bcm47094-phicomm-k3.dtb \
+ 	bcm53015-meraki-mr26.dtb \
