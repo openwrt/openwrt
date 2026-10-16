@@ -1,0 +1,162 @@
+From 1c9ce3b67aa75977900a415692b59044f65280d0 Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Tue, 6 Oct 2026 00:31:54 -0300
+Subject: [PATCH] en7580: fix xfi start
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/ethernet/airoha/airoha_eth.c | 34 +++++++++++++++++++-----
+ drivers/net/pcs/airoha/pcs-en7580.c      |  6 +++++
+ drivers/net/phy/aquantia/aquantia_main.c |  8 ++++++
+ 3 files changed, 42 insertions(+), 6 deletions(-)
+
+diff --git a/drivers/net/ethernet/airoha/airoha_eth.c b/drivers/net/ethernet/airoha/airoha_eth.c
+index 713b06929..bf449f592 100644
+--- a/drivers/net/ethernet/airoha/airoha_eth.c
++++ b/drivers/net/ethernet/airoha/airoha_eth.c
+@@ -8969,6 +8969,26 @@ static int airoha_setup_phylink(struct net_device *netdev)
+ 
+ 		config->fill_available_pcs = airoha_fill_available_pcs;
+ 
++		if (airoha_is(dev->eth, econet_en7580)) {
++			/* XSI uses XFI/HSGMII with negotiation in the external PHY. */
++			config->mac_capabilities = MAC_ASYM_PAUSE | MAC_SYM_PAUSE |
++						   MAC_1000FD | MAC_2500FD |
++						   MAC_5000FD | MAC_10000FD;
++			__set_bit(PHY_INTERFACE_MODE_SGMII,
++				  config->supported_interfaces);
++			__set_bit(PHY_INTERFACE_MODE_1000BASEX,
++				  config->supported_interfaces);
++			__set_bit(PHY_INTERFACE_MODE_2500BASEX,
++				  config->supported_interfaces);
++			__set_bit(PHY_INTERFACE_MODE_5GBASER,
++				  config->supported_interfaces);
++			__set_bit(PHY_INTERFACE_MODE_10GBASER,
++				  config->supported_interfaces);
++			phy_interface_copy(config->pcs_interfaces,
++					   config->supported_interfaces);
++			return airoha_gdm_phylink_create(&dev->common, np, phy_mode);
++		}
++
+ 		__set_bit(PHY_INTERFACE_MODE_SGMII,
+ 			  config->supported_interfaces);
+ 		__set_bit(PHY_INTERFACE_MODE_1000BASEX,
+@@ -8989,10 +9009,6 @@ static int airoha_setup_phylink(struct net_device *netdev)
+ 				  dev->common.phylink_config.supported_interfaces);
+ 		}
+ 
+-		if (airoha_is(dev->eth, econet_en7580))
+-			__set_bit(PHY_INTERFACE_MODE_5GBASER,
+-				  config->supported_interfaces);
+-
+ 		phy_interface_copy(config->pcs_interfaces,
+ 				   config->supported_interfaces);
+ 	}
+@@ -9098,7 +9114,9 @@ static int airoha_alloc_gdm_device(struct airoha_eth *eth,
+ 		dev->g2_stats = port->id == AIROHA_GDM2_IDX;
+ 		dev->fport = port->id == AIROHA_GDM2_IDX ?
+ 			     ETX_FPORT_GDM2 : ETX_FPORT_GDM1;
+-		rcu_assign_pointer(dev->qdma, &eth->qdma[port->id - 1]);
++		/* GDM1 and GDM3/XSI share LAN QDMA0; GDM2 uses WAN QDMA1. */
++		rcu_assign_pointer(dev->qdma,
++				   &eth->qdma[port->id == AIROHA_GDM2_IDX]);
+ 		if (port->id == AIROHA_GDM2_IDX)
+ 			dev->flags |= AIROHA_PRIV_F_WAN;
+ 	}
+@@ -9461,17 +9479,21 @@ static int airoha_en7580_get_dev_from_sport(struct airoha_eth *eth, u32 sport,
+ 	case ETX_FPORT_GDM2:
+ 	case ETX_FPORT_QDMA1_CPU:
+ 		*port = AIROHA_GDM2_IDX - 1;
++		dev_info_ratelimited(eth->dev, "RX sport %#x, Port %#x\n", sport, *port);
+ 		return 0;
+ 	case ETX_FPORT_GDM1:
+ 	case ETX_FPORT_QDMA0_CPU:
+ 	case 8 ... 13:
+ 	case 16 ... 21:
+ 		*port = AIROHA_GDM1_IDX - 1;
++		dev_info_ratelimited(eth->dev, "RX sport %#x, Port %#x\n", sport, *port);
+ 		return 0;
+ 	default:
+-		dev_info_ratelimited(eth->dev, "RX sport %#x\n", sport);
++		dev_info_ratelimited(eth->dev, "RX sport %#x invalid\n", sport);
+ 		return -EINVAL;
+ 	}
++
++	return 0;
+ }
+ 
+ static int airoha_en7523_get_sport(struct airoha_gdm_port *port, int nbq)
+diff --git a/drivers/net/pcs/airoha/pcs-en7580.c b/drivers/net/pcs/airoha/pcs-en7580.c
+index c994f1468..d9bf72422 100644
+--- a/drivers/net/pcs/airoha/pcs-en7580.c
++++ b/drivers/net/pcs/airoha/pcs-en7580.c
+@@ -48,6 +48,7 @@ struct en7580_pcs_step {
+ struct en7580_pcs {
+ 	struct fwnode_pcs_provider *provider;
+ 	struct phylink_pcs pcs;
++	struct device *dev;
+ 	struct regmap *mac;
+ 	struct regmap *pma;
+ 	struct regmap *digital;
+@@ -71,6 +72,7 @@ static int en7580_pcs_mode(phy_interface_t interface)
+ 		return 1;
+ 	case PHY_INTERFACE_MODE_2500BASEX:
+ 		return 2;
++	case PHY_INTERFACE_MODE_SGMII:
+ 	case PHY_INTERFACE_MODE_1000BASEX:
+ 		return 3;
+ 	default:
+@@ -199,6 +201,7 @@ static int en7580_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
+ 
+ 	priv->interface = interface;
+ 	priv->configured = true;
++	dev_info(priv->dev, "XSI PCS configured for %s\n", phy_modes(interface));
+ 	return 0;
+ }
+ 
+@@ -295,6 +298,7 @@ static int en7580_pcs_probe(struct platform_device *pdev)
+ 	priv = devm_kzalloc(dev, sizeof(*priv), GFP_KERNEL);
+ 	if (!priv)
+ 		return -ENOMEM;
++	priv->dev = dev;
+ 
+ 	priv->mac = en7580_pcs_map(pdev, "mac");
+ 	if (IS_ERR(priv->mac))
+@@ -332,6 +336,7 @@ static int en7580_pcs_probe(struct platform_device *pdev)
+ 	__set_bit(PHY_INTERFACE_MODE_10GBASER, priv->pcs.supported_interfaces);
+ 	__set_bit(PHY_INTERFACE_MODE_5GBASER, priv->pcs.supported_interfaces);
+ 	__set_bit(PHY_INTERFACE_MODE_2500BASEX, priv->pcs.supported_interfaces);
++	__set_bit(PHY_INTERFACE_MODE_SGMII, priv->pcs.supported_interfaces);
+ 	__set_bit(PHY_INTERFACE_MODE_1000BASEX, priv->pcs.supported_interfaces);
+ 	platform_set_drvdata(pdev, priv);
+ 
+@@ -340,6 +345,7 @@ static int en7580_pcs_probe(struct platform_device *pdev)
+ 		return dev_err_probe(dev, PTR_ERR(priv->provider),
+ 				     "failed to register PCS provider\n");
+ 
++	dev_info(dev, "EN7580 XSI PCS registered\n");
+ 	return 0;
+ }
+ 
+diff --git a/drivers/net/phy/aquantia/aquantia_main.c b/drivers/net/phy/aquantia/aquantia_main.c
+index d286e76fb..b9a12db5b 100644
+--- a/drivers/net/phy/aquantia/aquantia_main.c
++++ b/drivers/net/phy/aquantia/aquantia_main.c
+@@ -703,6 +703,14 @@ static int aqr_gen2_read_status(struct phy_device *phydev)
+ 		if (syscfg->speed != phydev->speed)
+ 			continue;
+ 
++		/* IF_STATUS reports both XFI rates as XFI. Use the firmware's
++		 * per-speed configuration to distinguish 5GBASE-R from 10GBASE-R.
++		 */
++		if (phydev->link && phydev->autoneg == AUTONEG_ENABLE &&
++		    phydev->interface == PHY_INTERFACE_MODE_10GBASER &&
++		    syscfg->interface == PHY_INTERFACE_MODE_5GBASER)
++			phydev->interface = PHY_INTERFACE_MODE_5GBASER;
++
+ 		if (syscfg->rate_adapt == AQR_RATE_ADAPT_PAUSE)
+ 			phydev->rate_matching = RATE_MATCH_PAUSE;
+ 		else
+-- 
+2.55.0
+

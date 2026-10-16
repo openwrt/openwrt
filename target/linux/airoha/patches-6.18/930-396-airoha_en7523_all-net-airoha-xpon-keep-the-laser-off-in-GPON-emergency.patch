@@ -1,0 +1,150 @@
+From d890d60ae5c576626ddf2f0a77df62961004cb5e Mon Sep 17 00:00:00 2001
+From: Cristian Papa <pcristian292@gmail.com>
+Date: Wed, 7 Oct 2026 16:22:31 -0300
+Subject: [PATCH] net: airoha: xpon: keep the laser off in GPON emergency stop
+
+An ONU that receives Disable_Serial_Number with the disable option must
+enter emergency stop (O7) and stop transmitting until the OLT enables it
+again (ITU-T G.984.3). This is how an OLT silences an ONU that disturbs
+the PON, for example one that transmits outside its grants.
+
+The driver moved the PLOAM state to O7 but left the transmitter as it
+was, released at Upstream_Overhead or at PHY power-on, and it still sent
+the dying-gasp PLOAM from O7. Gate the transmitter on entering O7,
+release it on leaving O7 on SoCs whose Upstream_Overhead path does not,
+and do not send dying gasp from O7.
+
+A session restart while in O7 (OMCI stop/start, a configuration change
+or an SFP stop/start) reset the FSM to O1, and ploam_start() then stayed
+in O1 because the emergency flag is sticky. Disable_Serial_Number is
+ignored in O1, so the OLT could no longer enable the ONU until the driver
+was reloaded. Return to O7 instead.
+
+Leaving O7 now starts activation over from a clean session, without the
+old ONU-ID, as the TO1 return to O2 does.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Signed-off-by: Cristian Papa <pcristian292@gmail.com>
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/ethernet/airoha/airoha_ploam.c | 24 +++++++++++++---
+ drivers/net/ethernet/airoha/airoha_xpon.c  | 32 ++++++++++++++++++++++
+ drivers/net/ethernet/airoha/airoha_xpon.h  |  2 ++
+ 3 files changed, 54 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/net/ethernet/airoha/airoha_ploam.c b/drivers/net/ethernet/airoha/airoha_ploam.c
+index f494c0688..bc0478a6d 100644
+--- a/drivers/net/ethernet/airoha/airoha_ploam.c
++++ b/drivers/net/ethernet/airoha/airoha_ploam.c
+@@ -358,7 +358,13 @@ static void handle_disable_sn(struct ploam_priv *pp,
+ 		    (mode == PLOAM_DISABLE_PARTICIPATE &&
+ 		     memcmp(&c[1], pp->sn, 8) == 0)) {
+ 			pp->emergency_state = false;
+-			ploam_set_state(pp, GPON_O2_STANDBY);
++			/*
++			 * Activation starts over from O2, without the ONU-ID,
++			 * the equalization delay or the PLOAM history of the
++			 * session the OLT stopped.
++			 */
++			ploam_reset(pp);
++			ploam_start(pp);
+ 		}
+ 	} else if (pp->state != GPON_O1_INITIAL) {
+ 		if (mode == PLOAM_DISABLE_DENIED_ALL ||
+@@ -638,8 +644,16 @@ void ploam_reset(struct ploam_priv *pp)
+ 
+ void ploam_start(struct ploam_priv *pp)
+ {
+-	if (pp->state == GPON_O1_INITIAL && !pp->emergency_state)
+-		ploam_set_state(pp, GPON_O2_STANDBY);
++	if (pp->state != GPON_O1_INITIAL)
++		return;
++
++	/*
++	 * A session restart must not release an ONU that the OLT disabled:
++	 * go back to O7, where Disable_Serial_Number can enable it again.
++	 * Staying in O1 would ignore that message until the driver reloads.
++	 */
++	ploam_set_state(pp, pp->emergency_state ? GPON_O7_EMERGENCY_STOP :
++						  GPON_O2_STANDBY);
+ }
+ 
+ void ploam_handle_downstream(struct ploam_priv *pp,
+@@ -721,7 +735,9 @@ void ploam_handle_downstream(struct ploam_priv *pp,
+ 
+ void ploam_notify_dying_gasp(struct ploam_priv *pp)
+ {
+-	if (pp->state >= GPON_O2_STANDBY)
++	/* An ONU in emergency stop must not transmit at all. */
++	if (pp->state >= GPON_O2_STANDBY &&
++	    pp->state != GPON_O7_EMERGENCY_STOP)
+ 		ploam_send_dying_gasp(pp);
+ }
+ 
+diff --git a/drivers/net/ethernet/airoha/airoha_xpon.c b/drivers/net/ethernet/airoha/airoha_xpon.c
+index 2eb42c4ff..74f1f4a19 100644
+--- a/drivers/net/ethernet/airoha/airoha_xpon.c
++++ b/drivers/net/ethernet/airoha/airoha_xpon.c
+@@ -2250,7 +2250,22 @@ static void gpon_cb_state_changed(void *hw_priv, enum gpon_state state)
+ 				dev_warn(priv->dev,
+ 					 "failed to disable optical transmitter in GPON O2: %d\n",
+ 					 ret);
++		} else if (priv->gpon_o7_tx_off) {
++			/*
++			 * This generation transmits from PHY power-on, and
++			 * Upstream_Overhead will not release the transmitter
++			 * that O7 gated: do it on leaving O7.
++			 */
++			ret = airoha_xpon_tx_enable(priv, true);
++			if (!ret)
++				ret = airoha_xpon_tx_rearm(priv->dev,
++							   priv->frontend);
++			if (ret)
++				dev_warn(priv->dev,
++					 "failed to enable optical transmitter after GPON O7: %d\n",
++					 ret);
+ 		}
++		priv->gpon_o7_tx_off = false;
+ 		/*
+ 		 * Match the stock SDK for this generation: 0x058b is the
+ 		 * reset/O1 value, and activation starts from O2 with the
+@@ -2295,6 +2310,23 @@ static void gpon_cb_state_changed(void *hw_priv, enum gpon_state state)
+ 	case GPON_O7_EMERGENCY_STOP:
+ 		cancel_delayed_work(&priv->to1_work);
+ 		cancel_delayed_work(&priv->to2_work);
++		/*
++		 * G.984.3: an ONU in emergency stop must not transmit. The
++		 * transmitter was released at Upstream_Overhead (or at PHY
++		 * power-on), so gate it here until Disable_Serial_Number
++		 * enables the ONU again.
++		 */
++		ret = airoha_xpon_tx_enable(priv, false);
++		if (ret)
++			dev_warn(priv->dev,
++				 "failed to disable optical transmitter in GPON O7: %d\n",
++				 ret);
++		priv->gpon_o7_tx_off = true;
++		/*
++		 * Drop the ONU-ID, as the TO1 return to O2 does: the next
++		 * activation gets a new one from the OLT.
++		 */
++		gpon_write(priv, GPON_ONU_ID, PLOAM_ONU_UNASSIGNED);
+ 		break;
+ 	case GPON_O1_INITIAL:
+ 		cancel_delayed_work(&priv->to1_work);
+diff --git a/drivers/net/ethernet/airoha/airoha_xpon.h b/drivers/net/ethernet/airoha/airoha_xpon.h
+index b9115fb4f..80485d4f6 100644
+--- a/drivers/net/ethernet/airoha/airoha_xpon.h
++++ b/drivers/net/ethernet/airoha/airoha_xpon.h
+@@ -386,6 +386,8 @@ struct xpon_priv {
+ 	bool			started;
+ 	bool			optical_active;
+ 	bool			mac_enabled;
++	/* O7 gated a transmitter that O2 does not gate again */
++	bool			gpon_o7_tx_off;
+ 	bool			phy_link_known;
+ 	bool			phy_link_up;
+ 	struct xpon_device	*xpon;
+-- 
+2.55.0
+

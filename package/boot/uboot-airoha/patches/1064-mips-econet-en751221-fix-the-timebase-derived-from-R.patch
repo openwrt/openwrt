@@ -1,0 +1,51 @@
+From 6030d4ac02680178ac99fa724b7c0b826bbca7f1 Mon Sep 17 00:00:00 2001
+From: Cristian Papa <76759272+Cris7015@users.noreply.github.com>
+Date: Sun, 20 Sep 2026 13:41:18 -0300
+Subject: [PATCH] mips: econet: en751221: fix the timebase derived from
+ REG_SAVE_INFO
+
+TCBoot stores the CPU clock in REG_SAVE_INFO[23:12] in units of 4 MHz
+(0xe1 = 225 for the 900 MHz EN7526G of the TP-Link Archer XR500v; Linux
+reports 598 BogoMIPS on the same board), and CP0 Count advances at half
+the CPU clock on the MIPS 34K, so the timebase is clk * 2 MHz, not
+clk * 500 kHz. Measured against the host clock, "sleep 5" lasted 1.4 s
+with the old scaling: every udelay()/mdelay() in U-Boot was four times
+too short.
+
+The BootROM leaves the clock field at zero on the XMODEM recovery path,
+so U-Boot falls back to CONFIG_SYS_MIPS_TIMER_FREQ there, which the
+XR500v defconfig sets to the 450 MHz of this board rather than the
+150 MHz of the reference defconfig.
+
+Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ arch/mips/mach-econet/en751221/init.c | 11 +++++++++--
+ 1 file changed, 9 insertions(+), 2 deletions(-)
+
+diff --git a/arch/mips/mach-econet/en751221/init.c b/arch/mips/mach-econet/en751221/init.c
+index 153947c07f2..50d5aa4d571 100644
+--- a/arch/mips/mach-econet/en751221/init.c
++++ b/arch/mips/mach-econet/en751221/init.c
+@@ -58,9 +58,16 @@ ulong notrace get_tbclk(void)
+ 	u32 val = __raw_readl((void __iomem *)EN7512_REG_SAVE_INFO);
+ 	u32 clk = (val & EN7512_SAVE_CLK_MASK) >> EN7512_SAVE_CLK_SHIFT;
+ 
+-	/* CP0 Count advances at half the system clock on the MIPS34K. */
++	/*
++	 * TCBoot stores the CPU clock in units of 4 MHz (0xe1 = 225 for the
++	 * 900 MHz EN7526G) and CP0 Count advances at half the CPU clock on the
++	 * MIPS 34K, so the timebase is clk * 2 MHz.  With the old * 500000 a
++	 * "sleep 5" lasted 1.4 s and every udelay/mdelay was four times too
++	 * short.  The BootROM leaves the field at zero on the XMODEM recovery
++	 * path, hence the fallback.
++	 */
+ 	if (clk)
+-		return (ulong)clk * 500000;
++		return (ulong)clk * 2000000;
+ 
+ 	return CONFIG_SYS_MIPS_TIMER_FREQ;
+ }
+-- 
+2.55.0
+

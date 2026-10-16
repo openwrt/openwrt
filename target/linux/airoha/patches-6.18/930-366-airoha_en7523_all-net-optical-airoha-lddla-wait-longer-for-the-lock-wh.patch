@@ -1,0 +1,36 @@
+From d8d51bf03503d14a10c1d6bf671786463089667e Mon Sep 17 00:00:00 2001
+From: Ifran Ali <khanu.i.i.k.2000@gmail.com>
+Date: Thu, 1 Oct 2026 09:25:48 +0530
+Subject: [PATCH] net: optical: airoha: lddla: wait longer for the lock when
+ selecting the PON mode
+
+airoha_xpon_probe() selects the frontend PON mode once through
+airoha_lddla_frontend_set_mode(). With the 100 ms lddla_lock() bound it
+fails with -ETIMEDOUT when the 1 Hz control loop holds the lock at that
+moment (130-180 ms per round), and the whole xPON probe fails with it.
+
+Give it the same bring-up wait as TX re-arm and TX timing calibration.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Signed-off-by: Ifran Ali <khanu.i.i.k.2000@gmail.com>
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/optical/airoha/airoha_lddla_core.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/net/optical/airoha/airoha_lddla_core.c b/drivers/net/optical/airoha/airoha_lddla_core.c
+index b02a367c4..ade3d830d 100644
+--- a/drivers/net/optical/airoha/airoha_lddla_core.c
++++ b/drivers/net/optical/airoha/airoha_lddla_core.c
+@@ -500,7 +500,7 @@ airoha_lddla_frontend_set_mode(struct optical_frontend *frontend,
+ 		return -EOPNOTSUPP;
+ 	}
+ 
+-	ret = lddla_lock(lddla);
++	ret = lddla_lock_ms(lddla, LDDLA_BRINGUP_LOCK_MS);
+ 	if (ret)
+ 		return ret;
+ 
+-- 
+2.55.0
+

@@ -1,0 +1,97 @@
+From b87f04b783c0a01603d3d549c1568aa6a05f947c Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Wed, 7 Oct 2026 00:05:28 -0300
+Subject: [PATCH] optical: en7572: add bob validation
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ .../bindings/net/airoha,en7572.yaml           |  2 ++
+ drivers/net/optical/airoha/en7572_main.c      | 33 ++++++++++++++++---
+ 2 files changed, 30 insertions(+), 5 deletions(-)
+
+diff --git a/Documentation/devicetree/bindings/net/airoha,en7572.yaml b/Documentation/devicetree/bindings/net/airoha,en7572.yaml
+index c312041a6..570fa534c 100644
+--- a/Documentation/devicetree/bindings/net/airoha,en7572.yaml
++++ b/Documentation/devicetree/bindings/net/airoha,en7572.yaml
+@@ -25,6 +25,8 @@ description: |
+   The BOB calibration image contains the A0 and A2 pages as 512 bytes in
+   device order. It is not an EN7570/EN7571 table of 32-bit factory words:
+   do not byte-swap it or insert a word-table signature at offset 0x94.
++  The upper A2 page (image offsets 0x180 through 0x1ff) contains the
++  default Tx and Rx calibration and must not be entirely erased or zero.
+ 
+ allOf:
+   - $ref: optical-frontend.yaml#
+diff --git a/drivers/net/optical/airoha/en7572_main.c b/drivers/net/optical/airoha/en7572_main.c
+index 1e07e3257..93013ff1e 100644
+--- a/drivers/net/optical/airoha/en7572_main.c
++++ b/drivers/net/optical/airoha/en7572_main.c
+@@ -21,6 +21,7 @@
+ #include <linux/property.h>
+ #include <linux/seq_file.h>
+ #include <linux/slab.h>
++#include <linux/string.h>
+ 
+ #include "en7572.h"
+ 
+@@ -252,13 +253,32 @@ static int en7572_request_image(struct en7572_priv *priv, const char *name,
+ 	return 0;
+ }
+ 
++static int en7572_validate_bob(struct en7572_priv *priv)
++{
++	struct airoha_lddla *lddla = &priv->lddla;
++	const u8 *cal = lddla->bob + EN7572_BOB_A2(0x80);
++
++	if (!lddla->bob_valid)
++		return 0;
++
++	/* The upper A2 page contains the default Tx and Rx calibration. */
++	if (!memchr_inv(cal, 0xff, 0x80) || !memchr_inv(cal, 0, 0x80)) {
++		lddla->bob_valid = false;
++		dev_err(lddla->dev,
++			"BOB A2 calibration (0x180-0x1ff) is blank; check the source offset and format\n");
++		return -EINVAL;
++	}
++
++	return 0;
++}
++
+ /**
+  * en7572_load_firmware() - load MD32 program/data memory and the BOB table.
+  * @priv: device
+  *
+  * The PM and DM images are mandatory; the BOB calibration table is optional
+- * (an uncalibrated module still runs).  Return: 0 on success, negative errno
+- * if a mandatory image is missing.
++ * (an uncalibrated module still runs). Return: 0 on success, negative errno
++ * if an image is missing or a supplied BOB has blank A2 calibration.
+  */
+ static int en7572_load_firmware(struct en7572_priv *priv)
+ {
+@@ -276,6 +296,12 @@ static int en7572_load_firmware(struct en7572_priv *priv)
+ 	if (ret)
+ 		goto out;
+ 	ret = en7572_request_image(priv, priv->fw_dm, dm, EN7572_DM_SIZE);
++	if (ret)
++		goto out;
++	ret = lddla_bob_load(&priv->lddla);
++	if (ret)
++		goto out;
++	ret = en7572_validate_bob(priv);
+ 	if (ret)
+ 		goto out;
+ 
+@@ -289,9 +315,6 @@ static int en7572_load_firmware(struct en7572_priv *priv)
+ 		goto out;
+ 	dev_dbg(priv->lddla.dev, "MD32 PM/DM loaded\n");
+ 
+-	ret = lddla_bob_load(&priv->lddla);
+-	if (ret)
+-		goto out;
+ 	if (priv->lddla.bob_valid) {
+ 		ret = en7572_load_block(priv, EN7572_MD32_DM_CFG, EN7572_MD32_DM_ADDR,
+ 					EN7572_MD32_DM_DATA, priv->lddla.bob,
+-- 
+2.55.0
+

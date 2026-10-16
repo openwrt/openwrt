@@ -1,0 +1,55 @@
+From db119a003edbbef4df3f22c64ff201358b9c08de Mon Sep 17 00:00:00 2001
+From: Yuzhii0718 <yuzhii0718@outlook.com>
+Date: Fri, 28 Aug 2026 22:33:04 +0800
+Subject: [PATCH] airoha: fix pkgid retrieval functions to use SCU regmap
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ include/soc/airoha/pkgids.h | 9 +++++----
+ 1 file changed, 5 insertions(+), 4 deletions(-)
+
+diff --git a/include/soc/airoha/pkgids.h b/include/soc/airoha/pkgids.h
+index 1092503e15a..c20e46973ba 100644
+--- a/include/soc/airoha/pkgids.h
++++ b/include/soc/airoha/pkgids.h
+@@ -8,7 +8,7 @@
+ #include <linux/kernel.h>
+ #include <linux/regmap.h>
+ #include <linux/types.h>
+-#include <soc/airoha/pkgids.h>
++#include <soc/airoha/scu-regmap.h>
+ 
+ #define AIROHA_PKG_ID_NAME(_id) [(_id)] = #_id
+ 
+@@ -487,8 +487,9 @@ static inline u32 airoha_pkgid_from_screg(u32 value)
+  * Package IDs are family-relative values stored by the bootloader in the
+  * NP-SCU watchdog-reset scratch register 1. A value of zero is valid.
+  */
+-static inline u32 get_pkgid(struct regmap *np_scu)
++static inline u32 get_pkgid(void)
+ {
++	struct regmap *np_scu = airoha_get_scu_regmap();
+ 	u32 value;
+ 	int err;
+ 
+@@ -500,7 +501,7 @@ static inline u32 get_pkgid(struct regmap *np_scu)
+ }
+ 
+ /* HIR identifies the SoC family, for example EN7523_PKG (0x0c). */
+-static inline enum airoha_pkg get_pkg()
++static inline enum airoha_pkg get_pkg(void)
+ {
+ 	struct regmap *np_scu = airoha_get_scu_regmap();
+ 	u32 value;
+@@ -513,7 +514,7 @@ static inline enum airoha_pkg get_pkg()
+ 	return FIELD_GET(AIROHA_NP_SCU_HIR_MASK, value);
+ }
+ 
+-static inline u32 get_pdidr()
++static inline u32 get_pdidr(void)
+ {
+ 	struct regmap *np_scu = airoha_get_scu_regmap();
+ 	u32 value;
+-- 
+2.55.0
+

@@ -1,0 +1,215 @@
+From d79f0c4e799c58bbd287d1f6671064aa0b216270 Mon Sep 17 00:00:00 2001
+From: Cristian Papa <pcristian292@gmail.com>
+Date: Sat, 3 Oct 2026 18:23:07 -0300
+Subject: [PATCH] net: optical: airoha: en7570: keep the APD bias when a
+ temperature read fails
+
+en7570_adc_temp() ignored the result of en7570_adc_sample() and returned
+its zero-initialised code when any of the I2C transfers of the read
+failed. Code 0 decodes as an on-die temperature of about 480 degC, and
+the GPON APD tracking then drove the APD DAC to the top of its range,
+56.3 V instead of 48.5 V with the Archer XR500v calibration, for a whole
+T_APD period (20 s). A failed channel select was not noticed either, so
+the samples came from the supply-voltage divider instead, read as -51
+degC and under-biased the APD to 36.7 V. On this unit, 3.5 V of APD
+over-bias was already enough to cost GEM delineation and get the ONU
+deactivated by the OLT.
+
+Make the channel select and the temperature read report errors, restore
+the ADC mux on every exit of en7570_adc_sample(), and have
+en7570_temp_update() keep the previous temperatures when the read fails
+or decodes outside -50..+150 degC. The tick only retunes the APD from a
+fresh temperature, and the probe starts from the APD knee temperature,
+so a failed first read programs the calibrated knee voltage.
+
+Co-Authored-By: Claude Opus 5.5 (1M context) <noreply@anthropic.com>
+Signed-off-by: Cristian Papa <pcristian292@gmail.com>
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/optical/airoha/en7570.h         |  4 +-
+ drivers/net/optical/airoha/en7570_adcloop.c | 64 +++++++++++++++------
+ drivers/net/optical/airoha/en7570_main.c    | 12 +++-
+ drivers/net/optical/airoha/en7570_regs.h    |  3 +
+ 4 files changed, 61 insertions(+), 22 deletions(-)
+
+diff --git a/drivers/net/optical/airoha/en7570.h b/drivers/net/optical/airoha/en7570.h
+index 6f1ada2f6..ba7d42b13 100644
+--- a/drivers/net/optical/airoha/en7570.h
++++ b/drivers/net/optical/airoha/en7570.h
+@@ -128,10 +128,10 @@ void en7570_fiber_plug(struct en7570_priv *priv);
+ /* --- ADC (en7570_adcloop.c) --- */
+ int en7570_adc_calibrate(struct en7570_priv *priv);
+ int en7570_adc_sample(struct en7570_priv *priv, u8 channel, int samples, u32 *out);
+-u16 en7570_adc_temp(struct en7570_priv *priv);
++int en7570_adc_temp(struct en7570_priv *priv, u32 *code);
+ u16 en7570_adc_vcc(struct en7570_priv *priv);
+ s64 en7570_adc_code_to_uv(struct en7570_priv *priv, u32 code);
+-void en7570_temp_update(struct en7570_priv *priv);
++int en7570_temp_update(struct en7570_priv *priv);
+ 
+ /* --- Tx path (en7570_txrx.c) --- */
+ void en7570_tx_load_init_current(struct en7570_priv *priv);
+diff --git a/drivers/net/optical/airoha/en7570_adcloop.c b/drivers/net/optical/airoha/en7570_adcloop.c
+index f213b9f48..84f4b3b4b 100644
+--- a/drivers/net/optical/airoha/en7570_adcloop.c
++++ b/drivers/net/optical/airoha/en7570_adcloop.c
+@@ -30,14 +30,14 @@
+ /* ------------------------------------------------------------------ */
+ 
+ /* Select an ADC channel in SVADC_PD (byte 0, or byte 1 for the 0.875 V ref). */
+-static void en7570_adc_select(struct en7570_priv *priv, u8 channel)
++static int en7570_adc_select(struct en7570_priv *priv, u8 channel)
+ {
+ 	if (channel == EN7570_ADC_CH_BG0V875)
+-		lddla_update8(&priv->lddla, EN7570_SVADC_PD + 1, EN7570_ADC_BG0V875_MASK,
+-			       channel & ~EN7570_ADC_BG0V875_MASK);
+-	else
+-		lddla_update8(&priv->lddla, EN7570_SVADC_PD, EN7570_ADC_SELECT_MASK,
+-			       channel & ~EN7570_ADC_SELECT_MASK);
++		return lddla_update8(&priv->lddla, EN7570_SVADC_PD + 1,
++				     EN7570_ADC_BG0V875_MASK,
++				     channel & ~EN7570_ADC_BG0V875_MASK);
++	return lddla_update8(&priv->lddla, EN7570_SVADC_PD, EN7570_ADC_SELECT_MASK,
++			     channel & ~EN7570_ADC_SELECT_MASK);
+ }
+ 
+ /* Restore the SVADC_PD channel field to its default (cleared). */
+@@ -66,22 +66,28 @@ int en7570_adc_sample(struct en7570_priv *priv, u8 channel, int samples,
+ 	if (samples < 1)
+ 		samples = 1;
+ 
+-	en7570_adc_select(priv, channel);
++	/* Sampling a channel that was not selected gives a plausible wrong code. */
++	ret = en7570_adc_select(priv, channel);
++	if (ret)
++		goto restore;
+ 
+ 	for (i = 0; i < samples; i++) {
+ 		/* Latch a fresh conversion (PROBE_CONTROL byte 1 bit 4). */
+ 		ret = lddla_update8(&priv->lddla, EN7570_PROBE_CONTROL + 1,
+ 				     EN7570_ADC_LATCH_MASK, EN7570_ADC_LATCH);
+ 		if (ret)
+-			return ret;
++			goto restore;
+ 
+ 		ret = lddla_rd16(&priv->lddla, EN7570_ADC_PROBE_STATUS, &v);
+ 		if (ret)
+-			return ret;
++			goto restore;
+ 		sum += v;
+ 	}
+ 
++restore:
+ 	en7570_adc_restore(priv, channel);
++	if (ret)
++		return ret;
+ 
+ 	*out = (sum + samples / 2) / samples;	/* round to nearest */
+ 	return 0;
+@@ -130,12 +136,9 @@ int en7570_adc_calibrate(struct en7570_priv *priv)
+ }
+ 
+ /* Averaged on-die temperature ADC code. */
+-u16 en7570_adc_temp(struct en7570_priv *priv)
++int en7570_adc_temp(struct en7570_priv *priv, u32 *code)
+ {
+-	u32 code = 0;
+-
+-	en7570_adc_sample(priv, EN7570_ADC_CH_TEMPERATURE, 8, &code);
+-	return code;
++	return en7570_adc_sample(priv, EN7570_ADC_CH_TEMPERATURE, 8, code);
+ }
+ 
+ /* Averaged supply-voltage ADC code (toggles the Rx high-Z control). */
+@@ -160,15 +163,40 @@ u16 en7570_adc_vcc(struct en7570_priv *priv)
+  *   IC_temp        = T_V_offset - T_V_slope * sensor_voltage
+  * with T_V_offset / T_V_slope held x10 (default 4958 / 3275 = 495.8 / 327.5).
+  */
+-void en7570_temp_update(struct en7570_priv *priv)
++int en7570_temp_update(struct en7570_priv *priv)
+ {
+-	u32 raw = en7570_adc_temp(priv);
+-	s64 sensor_uv = en7570_adc_code_to_uv(priv, raw);
++	s64 sensor_uv, ic_temp_mc;
++	u32 raw;
++	int ret;
+ 
+-	priv->ic_temp_mc = 100 * priv->temp_offset_x10 -
++	/*
++	 * Keep the previous temperatures when a read fails or decodes to
++	 * something no working part reports: a failed read used to decode as
++	 * code 0 (about 480 degC), and the APD tracking then drove the bias to
++	 * the top of the DAC range for a whole T_APD period.
++	 */
++	ret = en7570_adc_temp(priv, &raw);
++	if (ret)
++		goto fail;
++
++	sensor_uv = en7570_adc_code_to_uv(priv, raw);
++	ic_temp_mc = 100LL * priv->temp_offset_x10 -
+ 		div_s64((s64)priv->temp_slope_x10 * sensor_uv, 10000);
++	if (ic_temp_mc < EN7570_TEMP_MIN_MC || ic_temp_mc > EN7570_TEMP_MAX_MC) {
++		ret = -ERANGE;
++		goto fail;
++	}
++
++	priv->ic_temp_mc = ic_temp_mc;
+ 	priv->bosa_temp_mc = priv->ic_temp_mc - priv->bosa_temp_offset_mc;
+ 	priv->env_temp_mc = priv->ic_temp_mc - priv->env_temp_offset_mc;
++	return 0;
++
++fail:
++	dev_warn_ratelimited(priv->lddla.dev,
++			     "EN7570 temperature read failed (%d), keeping %d mC\n",
++			     ret, priv->ic_temp_mc);
++	return ret;
+ }
+ 
+ /* ------------------------------------------------------------------ */
+diff --git a/drivers/net/optical/airoha/en7570_main.c b/drivers/net/optical/airoha/en7570_main.c
+index 28dfb627f..30560fcd8 100644
+--- a/drivers/net/optical/airoha/en7570_main.c
++++ b/drivers/net/optical/airoha/en7570_main.c
+@@ -143,6 +143,13 @@ int en7570_init(struct en7570_priv *priv)
+ 	ret = en7570_adc_calibrate(priv);
+ 	if (ret)
+ 		return -EIO;
++	/*
++	 * Until a temperature is read, assume the APD knee temperature, so that
++	 * a failed first read programs the calibrated knee voltage.
++	 */
++	priv->bosa_temp_mc = EN7570_APD_KNEE_TEMP_MC;
++	priv->ic_temp_mc = priv->bosa_temp_mc + priv->bosa_temp_offset_mc;
++	priv->env_temp_mc = priv->ic_temp_mc - priv->env_temp_offset_mc;
+ 	en7570_temp_update(priv);
+ 	en7570_rssi_cal(priv);
+ 
+@@ -235,8 +242,9 @@ void en7570_tick(struct en7570_priv *priv)
+ 	/* APD voltage tracking (GPON only) every T_APD seconds. */
+ 	if (priv->lddla.pon_mode == EN7570_PON_GPON &&
+ 	    (c % priv->t_apd) == priv->t_apd - 1) {
+-		en7570_temp_update(priv);
+-		en7570_apd_update(priv);
++		/* Only retune the APD from a fresh, plausible temperature. */
++		if (!en7570_temp_update(priv))
++			en7570_apd_update(priv);
+ 	}
+ 
+ 	/* Staggered DDMI refresh (only when internal DDMI is enabled). */
+diff --git a/drivers/net/optical/airoha/en7570_regs.h b/drivers/net/optical/airoha/en7570_regs.h
+index 9dc862ae6..9962cfe98 100644
+--- a/drivers/net/optical/airoha/en7570_regs.h
++++ b/drivers/net/optical/airoha/en7570_regs.h
+@@ -263,6 +263,9 @@
+ #define EN7570_APD_SLOPE_UP_UV_DEF	100000	/* 0.10 V/degC above knee, in uV/degC */
+ #define EN7570_APD_SLOPE_DN_UV_DEF	70000	/* 0.07 V/degC below knee, in uV/degC */
+ #define EN7570_APD_KNEE_TEMP_MC		25000	/* knee temperature 25 degC */
++/* On-die temperatures outside this range are a failed or bogus ADC read. */
++#define EN7570_TEMP_MIN_MC		(-50000)
++#define EN7570_TEMP_MAX_MC		150000
+ #define EN7570_APD_ZERO_CODE_MV_DEF	30000	/* legacy: 30.0 V at DAC code 0 */
+ #define EN7570_APD_STEP_UV_DEF		93750	/* legacy: 0.09375 V/code, in uV */
+ #define EN7570_T_APD_DEFAULT		600	/* APD update interval (s) */
+-- 
+2.55.0
+

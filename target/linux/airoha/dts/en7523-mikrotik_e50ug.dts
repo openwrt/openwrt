@@ -1,0 +1,39 @@
+/* SPDX-License-Identifier: GPL-2.0-or-later OR MIT */
+#include "en7523-mikrotik.dtsi"
+
+/ {
+	model = "MikroTik E50UG (hEX refresh)";
+	compatible = "mikrotik,e50ug", "airoha,en7523";
+};
+
+&leds {
+	led@12 {
+		color = <LED_COLOR_ID_GREEN>;
+		function = LED_FUNCTION_STATUS;
+		function-enumerator = <12>;
+		gpios = <&pinctrl 12 GPIO_ACTIVE_LOW>;
+	};
+};
+
+&pon_pcs {
+	status = "okay";
+};
+
+&gdm2 {
+	status = "okay";
+
+	nvmem-cells = <&macaddr_hard 0>;
+	nvmem-cell-names = "mac-address";
+
+	openwrt,netdev-name = "wan";
+
+	phy-mode = "sgmii";
+	managed = "in-band-status";
+	phy-handle = <&en8801s>;
+};
+
+&en8801s {
+	compatible = "ethernet-phy-id03a2.9461";
+	/* ether1 has its serdes receive pair swapped on this board. */
+	airoha,rx-polarity-reverse;
+};

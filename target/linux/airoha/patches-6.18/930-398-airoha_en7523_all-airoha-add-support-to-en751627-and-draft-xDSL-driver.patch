@@ -1,0 +1,2501 @@
+From c785141eb61629f3a6d69b36c6d0daa9f30d623f Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Wed, 7 Oct 2026 18:44:16 -0300
+Subject: [PATCH] airoha: add support to en751627 and draft xDSL driver
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ .../bindings/clock/airoha,en7523-scu.yaml     |   2 +
+ .../bindings/dma/econet,ecnt-gdma.yaml        |  36 +
+ .../bindings/dma/econet,ecnt-hsdma.yaml       |  61 ++
+ .../devicetree/bindings/mfd/syscon.yaml       |   2 +
+ .../devicetree/bindings/mips/econet.yaml      |   2 +
+ .../bindings/net/airoha,en7523-wed.yaml       |   5 +-
+ .../bindings/net/airoha,en7523-xpon.yaml      |   3 +
+ .../bindings/net/dsa/mediatek,mt7530.yaml     |   4 +
+ .../bindings/net/econet,en751221-eth.yaml     |   1 +
+ .../bindings/net/econet,en751221-xdsl.yaml    |  89 +++
+ .../bindings/phy/airoha,en7523-xpon-phy.yaml  |   1 +
+ .../bindings/phy/econet,en7528-usb-phy.yaml   |   3 +-
+ .../bindings/timer/econet,en751221-timer.yaml |   6 +-
+ .../bindings/usb/econet,en7528-xhci.yaml      |   3 +-
+ MAINTAINERS                                   |   3 +
+ arch/mips/boot/dts/econet/en751221.dtsi       |  27 +
+ arch/mips/boot/dts/econet/en751627.dtsi       | 746 ++++++++++++++++++
+ arch/mips/boot/dts/econet/en7580.dtsi         |  18 +
+ drivers/clk/clk-en7523.c                      |   1 +
+ drivers/clocksource/timer-econet-en751221.c   |   1 +
+ drivers/net/dsa/mt7530-mmio.c                 |   2 +
+ drivers/net/ethernet/airoha/Kconfig           |  16 +
+ drivers/net/ethernet/airoha/Makefile          |   3 +
+ drivers/net/ethernet/airoha/airoha_eth.c      | 246 +++++-
+ drivers/net/ethernet/airoha/airoha_eth.h      |  53 ++
+ drivers/net/ethernet/airoha/airoha_wed.c      |   1 +
+ drivers/net/ethernet/airoha/airoha_xdsl.c     | 442 +++++++++++
+ drivers/net/ethernet/airoha/airoha_xpon.c     |   1 +
+ drivers/net/phy/mediatek/airoha-ge-soc.c      |  10 +-
+ drivers/pci/controller/pcie-mediatek.c        |   1 +
+ drivers/phy/airoha/phy-airoha-xpon.c          |   4 +
+ drivers/phy/phy-en7528-pcie.c                 |   2 +
+ drivers/phy/phy-en7528-usb.c                  |   1 +
+ drivers/pinctrl/airoha/pinctrl-en7528.c       |   1 +
+ drivers/usb/host/xhci-mtk.c                   |   4 +-
+ .../dt-bindings/clock/econet,en751627-scu.h   |  12 +
+ .../dt-bindings/reset/econet,en751627-scu.h   |  49 ++
+ 37 files changed, 1829 insertions(+), 33 deletions(-)
+ create mode 100644 Documentation/devicetree/bindings/dma/econet,ecnt-gdma.yaml
+ create mode 100644 Documentation/devicetree/bindings/dma/econet,ecnt-hsdma.yaml
+ create mode 100644 Documentation/devicetree/bindings/net/econet,en751221-xdsl.yaml
+ create mode 100644 arch/mips/boot/dts/econet/en751627.dtsi
+ create mode 100644 drivers/net/ethernet/airoha/airoha_xdsl.c
+ create mode 100644 include/dt-bindings/clock/econet,en751627-scu.h
+ create mode 100644 include/dt-bindings/reset/econet,en751627-scu.h
+
+diff --git a/Documentation/devicetree/bindings/clock/airoha,en7523-scu.yaml b/Documentation/devicetree/bindings/clock/airoha,en7523-scu.yaml
+index 16e5da7da..ceaedbe38 100644
+--- a/Documentation/devicetree/bindings/clock/airoha,en7523-scu.yaml
++++ b/Documentation/devicetree/bindings/clock/airoha,en7523-scu.yaml
+@@ -28,6 +28,7 @@ properties:
+       - items:
+           - enum:
+               - econet,en751221-scu
++              - econet,en751627-scu
+               - econet,en7528-scu
+               - econet,en7580-scu
+           - const: syscon
+@@ -103,6 +104,7 @@ allOf:
+           contains:
+             enum:
+               - econet,en751221-scu
++              - econet,en751627-scu
+               - econet,en7528-scu
+               - econet,en7580-scu
+     then:
+diff --git a/Documentation/devicetree/bindings/dma/econet,ecnt-gdma.yaml b/Documentation/devicetree/bindings/dma/econet,ecnt-gdma.yaml
+new file mode 100644
+index 000000000..afbe89210
+--- /dev/null
++++ b/Documentation/devicetree/bindings/dma/econet,ecnt-gdma.yaml
+@@ -0,0 +1,36 @@
++# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
++%YAML 1.2
++---
++$id: http://devicetree.org/schemas/dma/econet,ecnt-gdma.yaml#
++$schema: http://devicetree.org/meta-schemas/core.yaml#
++
++title: EcoNet general-purpose DMA block
++
++maintainers:
++  - Matheus Sampaio Queiroga <srherobrine20@gmail.com>
++
++description: |
++  The EcoNet GDMA block provides fixed-request and memory-copy channels used
++  by several peripherals. In particular, the EN7512 and EN7516 DMT engines use
++  GDMA channel zero for QAM data transfers, but the block is not part of the
++  DMT register window and must be described as an independent SoC device.
++
++properties:
++  compatible:
++    const: econet,ecnt-gdma
++
++  reg:
++    maxItems: 1
++
++required:
++  - compatible
++  - reg
++
++additionalProperties: false
++
++examples:
++  - |
++    gdma@1fb30000 {
++        compatible = "econet,ecnt-gdma";
++        reg = <0x1fb30000 0x2b0>;
++    };
+diff --git a/Documentation/devicetree/bindings/dma/econet,ecnt-hsdma.yaml b/Documentation/devicetree/bindings/dma/econet,ecnt-hsdma.yaml
+new file mode 100644
+index 000000000..22db4b261
+--- /dev/null
++++ b/Documentation/devicetree/bindings/dma/econet,ecnt-hsdma.yaml
+@@ -0,0 +1,61 @@
++# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
++%YAML 1.2
++---
++$id: http://devicetree.org/schemas/dma/econet,ecnt-hsdma.yaml#
++$schema: http://devicetree.org/meta-schemas/core.yaml#
++
++title: EcoNet high-speed DMA controller
++
++maintainers:
++  - Matheus Sampaio Queiroga <srherobrine20@gmail.com>
++
++description: |
++  The HSDMA controller found in EN7580 and later EcoNet/Airoha SoCs is a
++  ring-based memory-to-memory DMA engine with two physical channels.
++
++allOf:
++  - $ref: dma-controller.yaml#
++
++properties:
++  compatible:
++    const: econet,ecnt-hsdma
++
++  reg:
++    maxItems: 1
++
++  interrupts:
++    maxItems: 1
++
++  "#dma-cells":
++    description: DMA channel number.
++    const: 1
++
++  dma-channels:
++    const: 2
++
++  dma-requests:
++    const: 2
++
++required:
++  - compatible
++  - reg
++  - interrupts
++  - "#dma-cells"
++  - dma-channels
++  - dma-requests
++
++unevaluatedProperties: false
++
++examples:
++  - |
++    #include <dt-bindings/interrupt-controller/irq.h>
++    #include <dt-bindings/interrupt-controller/mips-gic.h>
++
++    dma-controller@1fa01800 {
++        compatible = "econet,ecnt-hsdma";
++        reg = <0x1fa01800 0x300>;
++        interrupts = <GIC_SHARED 47 IRQ_TYPE_LEVEL_HIGH>;
++        #dma-cells = <1>;
++        dma-channels = <2>;
++        dma-requests = <2>;
++    };
+diff --git a/Documentation/devicetree/bindings/mfd/syscon.yaml b/Documentation/devicetree/bindings/mfd/syscon.yaml
+index 345504032..4db1996b7 100644
+--- a/Documentation/devicetree/bindings/mfd/syscon.yaml
++++ b/Documentation/devicetree/bindings/mfd/syscon.yaml
+@@ -62,6 +62,7 @@ select:
+           - cirrus,ep7209-syscon3
+           - cnxt,cx92755-uc
+           - econet,en751221-chip-scu
++          - econet,en751627-chip-scu
+           - econet,en7528-chip-scu
+           - freecom,fsg-cs2-system-controller
+           - fsl,imx93-aonmix-ns-syscfg
+@@ -172,6 +173,7 @@ properties:
+           - cirrus,ep7209-syscon3
+           - cnxt,cx92755-uc
+           - econet,en751221-chip-scu
++          - econet,en751627-chip-scu
+           - econet,en7528-chip-scu
+           - freecom,fsg-cs2-system-controller
+           - fsl,imx93-aonmix-ns-syscfg
+diff --git a/Documentation/devicetree/bindings/mips/econet.yaml b/Documentation/devicetree/bindings/mips/econet.yaml
+index d8181b58c..cd4a9c37d 100644
+--- a/Documentation/devicetree/bindings/mips/econet.yaml
++++ b/Documentation/devicetree/bindings/mips/econet.yaml
+@@ -20,6 +20,8 @@ properties:
+           - enum:
+               - smartfiber,xp8421-b
+           - const: econet,en751221
++      - description: EcoNet EN7516/EN7527 family SoC
++        const: econet,en751627
+ 
+ additionalProperties: true
+ 
+diff --git a/Documentation/devicetree/bindings/net/airoha,en7523-wed.yaml b/Documentation/devicetree/bindings/net/airoha,en7523-wed.yaml
+index 157655bf0..fc8581b40 100644
+--- a/Documentation/devicetree/bindings/net/airoha,en7523-wed.yaml
++++ b/Documentation/devicetree/bindings/net/airoha,en7523-wed.yaml
+@@ -20,6 +20,7 @@ properties:
+     items:
+       - enum:
+           - econet,en751221-wed
++          - econet,en751627-wed
+           - econet,en7528-wed
+           - airoha,en7523-wed
+       - const: syscon
+@@ -53,7 +54,9 @@ allOf:
+       properties:
+         compatible:
+           contains:
+-            const: econet,en7528-wed
++            enum:
++              - econet,en751627-wed
++              - econet,en7528-wed
+     then:
+       required:
+         - airoha,scu
+diff --git a/Documentation/devicetree/bindings/net/airoha,en7523-xpon.yaml b/Documentation/devicetree/bindings/net/airoha,en7523-xpon.yaml
+index f63174d35..88e26f5d4 100644
+--- a/Documentation/devicetree/bindings/net/airoha,en7523-xpon.yaml
++++ b/Documentation/devicetree/bindings/net/airoha,en7523-xpon.yaml
+@@ -24,6 +24,7 @@ properties:
+     oneOf:
+       - enum:
+           - airoha,en7523-xpon
++          - airoha,en751627-xpon
+           - airoha,en7528-xpon
+           - econet,en751221-xpon
+           - econet,en7521-xpon
+@@ -164,6 +165,7 @@ allOf:
+         compatible:
+           enum:
+             - airoha,en7523-xpon
++            - airoha,en751627-xpon
+             - airoha,en7528-xpon
+             - econet,en751221-xpon
+             - econet,en7521-xpon
+@@ -187,6 +189,7 @@ allOf:
+         compatible:
+           enum:
+             - airoha,en7523-xpon
++            - airoha,en751627-xpon
+             - airoha,en7528-xpon
+             - airoha,en7523-gpon
+             - airoha,en7523-epon
+diff --git a/Documentation/devicetree/bindings/net/dsa/mediatek,mt7530.yaml b/Documentation/devicetree/bindings/net/dsa/mediatek,mt7530.yaml
+index 97290f995..89b0a367a 100644
+--- a/Documentation/devicetree/bindings/net/dsa/mediatek,mt7530.yaml
++++ b/Documentation/devicetree/bindings/net/dsa/mediatek,mt7530.yaml
+@@ -92,6 +92,10 @@ properties:
+           Built-in switch and companion MT7530 MCM of EcoNet EN7512/EN7521
+         const: econet,en751221-switch
+ 
++      - description:
++          Built-in switch of the EcoNet EN7516/EN7527 family
++        const: econet,en751627-switch
++
+       - description:
+           Built-in switch of the MT7988 SoC
+         const: mediatek,mt7988-switch
+diff --git a/Documentation/devicetree/bindings/net/econet,en751221-eth.yaml b/Documentation/devicetree/bindings/net/econet,en751221-eth.yaml
+index ff1bd5b47..0c3afc831 100644
+--- a/Documentation/devicetree/bindings/net/econet,en751221-eth.yaml
++++ b/Documentation/devicetree/bindings/net/econet,en751221-eth.yaml
+@@ -20,6 +20,7 @@ properties:
+   compatible:
+     enum:
+       - econet,en751221-eth
++      - econet,en751627-eth
+       - econet,en7528-eth
+ 
+   reg:
+diff --git a/Documentation/devicetree/bindings/net/econet,en751221-xdsl.yaml b/Documentation/devicetree/bindings/net/econet,en751221-xdsl.yaml
+new file mode 100644
+index 000000000..d8f368401
+--- /dev/null
++++ b/Documentation/devicetree/bindings/net/econet,en751221-xdsl.yaml
+@@ -0,0 +1,89 @@
++# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
++%YAML 1.2
++---
++$id: http://devicetree.org/schemas/net/econet,en751221-xdsl.yaml#
++$schema: http://devicetree.org/meta-schemas/core.yaml#
++
++title: EcoNet EN7512 and EN7516 xDSL frontend
++
++maintainers:
++  - Matheus Sampaio Queiroga <srherobrine20@gmail.com>
++
++description: |
++  The EN751221 and EN751627 SoC families contain a host-controlled DMT engine
++  for ADSL and VDSL. EN751221 uses the A60928 analog frontend and EN751627 uses
++  A10627. Packet-mode traffic is connected to the frame engine through GDM2.
++
++  This binding describes the DMT control window (including its TPSTC area),
++  the PTM-TC MAC and their integration with the Ethernet datapath. The GDMA
++  engine is a separate SoC device, even though the line engine uses one of its
++  channels. The eFuse calibration bank is also a separate block and must not
++  be included in the DMT register resource.
++
++properties:
++  compatible:
++    enum:
++      - econet,en751221-xdsl
++      - econet,en751627-xdsl
++
++  reg:
++    items:
++      - description: DMT control and DSP register window
++      - description: PTM-TC MAC registers
++
++  reg-names:
++    items:
++      - const: dmt
++      - const: ptm
++
++  interrupts:
++    maxItems: 1
++
++  interrupt-names:
++    items:
++      - const: dmt
++
++  resets:
++    maxItems: 2
++
++  reset-names:
++    items:
++      - const: dmt
++      - const: ptm
++
++  ethernet:
++    $ref: /schemas/types.yaml#/definitions/phandle
++    description: Phandle to the frame-engine GDM2 netdev used by PTM.
++
++  airoha,scu:
++    $ref: /schemas/types.yaml#/definitions/phandle
++    description: Phandle to the system-control register block and WAN mux.
++
++required:
++  - compatible
++  - reg
++  - reg-names
++  - interrupts
++  - interrupt-names
++  - resets
++  - reset-names
++  - ethernet
++  - airoha,scu
++
++additionalProperties: false
++
++examples:
++  - |
++    dsl@1f900000 {
++        compatible = "econet,en751221-xdsl";
++        reg = <0x1f900000 0x10000>,
++              <0x1fb62000 0x200>;
++        reg-names = "dmt", "ptm";
++        interrupt-parent = <&intc>;
++        interrupts = <19>;
++        interrupt-names = "dmt";
++        resets = <&scuclk 39>, <&scuclk 6>;
++        reset-names = "dmt", "ptm";
++        ethernet = <&gdm2>;
++        airoha,scu = <&scuclk>;
++    };
+diff --git a/Documentation/devicetree/bindings/phy/airoha,en7523-xpon-phy.yaml b/Documentation/devicetree/bindings/phy/airoha,en7523-xpon-phy.yaml
+index 777dbcc48..2c034e9a6 100644
+--- a/Documentation/devicetree/bindings/phy/airoha,en7523-xpon-phy.yaml
++++ b/Documentation/devicetree/bindings/phy/airoha,en7523-xpon-phy.yaml
+@@ -18,6 +18,7 @@ properties:
+   compatible:
+     enum:
+       - airoha,en7523-xpon-phy
++      - airoha,en751627-xpon-phy
+       - airoha,en7528-xpon-phy
+       - econet,en751221-xpon-phy
+ 
+diff --git a/Documentation/devicetree/bindings/phy/econet,en7528-usb-phy.yaml b/Documentation/devicetree/bindings/phy/econet,en7528-usb-phy.yaml
+index c30686e80..9339060be 100644
+--- a/Documentation/devicetree/bindings/phy/econet,en7528-usb-phy.yaml
++++ b/Documentation/devicetree/bindings/phy/econet,en7528-usb-phy.yaml
+@@ -4,7 +4,7 @@
+ $id: http://devicetree.org/schemas/phy/econet,en7528-usb-phy.yaml#
+ $schema: http://devicetree.org/meta-schemas/core.yaml#
+ 
+-title: EcoNet EN7528 and EN7580 USB PHYs
++title: EcoNet EN7516, EN7528 and EN7580 USB PHYs
+ 
+ maintainers:
+   - Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+@@ -18,6 +18,7 @@ description:
+ properties:
+   compatible:
+     enum:
++      - econet,en751627-usb-phy
+       - econet,en7528-usb-phy
+       - econet,en7580-usb-phy
+ 
+diff --git a/Documentation/devicetree/bindings/timer/econet,en751221-timer.yaml b/Documentation/devicetree/bindings/timer/econet,en751221-timer.yaml
+index c1e7c2b6a..c2836f5b6 100644
+--- a/Documentation/devicetree/bindings/timer/econet,en751221-timer.yaml
++++ b/Documentation/devicetree/bindings/timer/econet,en751221-timer.yaml
+@@ -19,9 +19,7 @@ properties:
+   compatible:
+     oneOf:
+       - const: econet,en751221-timer
+-      - items:
+-          - const: econet,en751627-timer
+-          - const: econet,en751221-timer
++      - const: econet,en751627-timer
+ 
+   reg:
+     minItems: 1
+@@ -63,7 +61,7 @@ additionalProperties: false
+ examples:
+   - |
+     timer@1fbf0400 {
+-        compatible = "econet,en751627-timer", "econet,en751221-timer";
++        compatible = "econet,en751627-timer";
+         reg = <0x1fbf0400 0x100>, <0x1fbe0000 0x100>;
+         interrupt-parent = <&intc>;
+         interrupts = <30>;
+diff --git a/Documentation/devicetree/bindings/usb/econet,en7528-xhci.yaml b/Documentation/devicetree/bindings/usb/econet,en7528-xhci.yaml
+index c03e6f829..6260a2cbe 100644
+--- a/Documentation/devicetree/bindings/usb/econet,en7528-xhci.yaml
++++ b/Documentation/devicetree/bindings/usb/econet,en7528-xhci.yaml
+@@ -4,7 +4,7 @@
+ $id: http://devicetree.org/schemas/usb/econet,en7528-xhci.yaml#
+ $schema: http://devicetree.org/meta-schemas/core.yaml#
+ 
+-title: EcoNet EN7528 and EN7580 USB3 xHCI host controllers
++title: EcoNet EN7516, EN7528 and EN7580 USB3 xHCI host controllers
+ 
+ maintainers:
+   - Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+@@ -20,6 +20,7 @@ description:
+ properties:
+   compatible:
+     enum:
++      - econet,en751627-xhci
+       - econet,en7528-xhci
+       - econet,en7580-xhci
+ 
+diff --git a/MAINTAINERS b/MAINTAINERS
+index 35c8f5b11..90936701d 100644
+--- a/MAINTAINERS
++++ b/MAINTAINERS
+@@ -746,6 +746,7 @@ S:	Maintained
+ F:	Documentation/devicetree/bindings/net/airoha,en7523-wed.yaml
+ F:	Documentation/devicetree/bindings/net/airoha,en7581-eth.yaml
+ F:	Documentation/devicetree/bindings/net/econet,en751221-eth.yaml
++F:	Documentation/devicetree/bindings/net/econet,en751221-xdsl.yaml
+ F:	drivers/net/ethernet/airoha/
+ F:	include/linux/soc/airoha/airoha_offload.h
+ 
+@@ -8875,6 +8876,8 @@ M:	Caleb James DeLisle <cjd@cjdns.fr>
+ L:	linux-mips@vger.kernel.org
+ S:	Maintained
+ F:	Documentation/devicetree/bindings/interrupt-controller/econet,en751221-intc.yaml
++F:	Documentation/devicetree/bindings/dma/econet,ecnt-gdma.yaml
++F:	Documentation/devicetree/bindings/dma/econet,ecnt-hsdma.yaml
+ F:	Documentation/devicetree/bindings/mips/econet.yaml
+ F:	Documentation/devicetree/bindings/nvmem/econet,en7580-efuse.yaml
+ F:	Documentation/devicetree/bindings/phy/econet,en7528-usb-phy.yaml
+diff --git a/arch/mips/boot/dts/econet/en751221.dtsi b/arch/mips/boot/dts/econet/en751221.dtsi
+index d8ab33ea0..c2677ed30 100644
+--- a/arch/mips/boot/dts/econet/en751221.dtsi
++++ b/arch/mips/boot/dts/econet/en751221.dtsi
+@@ -320,6 +320,13 @@ mux {
+ 		};
+ 	};
+ 
++	gdma: gdma@1fb30000 {
++		compatible = "econet,en751627-gdma";
++		reg = <0x1fb30000 0x1000>;
++
++		interrupts = <GIC_SHARED 14 IRQ_TYPE_LEVEL_HIGH>;
++	};
++
+ 	xpon_phy: phy@1faf0000 {
+ 		compatible = "econet,en751221-xpon-phy";
+ 		// reg = <0x1faf0000 0x5000>;
+@@ -362,6 +369,26 @@ xpon: xmac@1fb60000 {
+ 		status = "disabled";
+ 	};
+ 
++	xdsl: dsl@1f900000 {
++		compatible = "econet,en751221-xdsl";
++		reg = <0x1f900000 0x10000>,
++		      <0x1fb62000 0x200>;
++		reg-names = "dmt", "ptm";
++
++		interrupt-parent = <&intc>;
++		interrupts = <19>;
++		interrupt-names = "dmt";
++
++		resets = <&scuclk EN751221_DMT_RST>,
++			 <&scuclk EN751221_PTM_MAC_RST>;
++		reset-names = "dmt", "ptm";
++
++		ethernet = <&gdm2>;
++		airoha,scu = <&scuclk>;
++
++		status = "disabled";
++	};
++
+ 	eth: ethernet@1fb50000 {
+ 		compatible = "econet,en751221-eth";
+ 		status = "disabled";
+diff --git a/arch/mips/boot/dts/econet/en751627.dtsi b/arch/mips/boot/dts/econet/en751627.dtsi
+new file mode 100644
+index 000000000..29656a0dd
+--- /dev/null
++++ b/arch/mips/boot/dts/econet/en751627.dtsi
+@@ -0,0 +1,746 @@
++// SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
++/dts-v1/;
++
++#include <dt-bindings/interrupt-controller/irq.h>
++#include <dt-bindings/interrupt-controller/mips-gic.h>
++#include <dt-bindings/clock/econet,en751627-scu.h>
++#include <dt-bindings/phy/phy.h>
++#include <dt-bindings/reset/econet,en751627-scu.h>
++#include <dt-bindings/leds/common.h>
++#include <dt-bindings/soc/airoha,scu-ssr.h>
++#include <dt-bindings/soc/airoha,soc-variant.h>
++#include <dt-bindings/gpio/gpio.h>
++#include <dt-bindings/input/input.h>
++
++/ {
++	compatible = "econet,en751627";
++	#address-cells = <1>;
++	#size-cells = <1>;
++
++	chosen {
++		stdout-path = "serial0:115200n8";
++		linux,usable-memory-range = <0x00020000 0x1fe00000>;
++	};
++
++	aliases {
++		serial0 = &uart1;
++	};
++
++	hpt_clock: clock {
++		compatible = "fixed-clock";
++		#clock-cells = <0>;
++		clock-frequency = <200000000>;  /* 200 MHz */
++	};
++
++	i2cclock: i2c-clock {
++		#clock-cells = <0>;
++		compatible = "fixed-clock";
++
++		/* 20 MHz */
++		clock-frequency = <20000000>;
++	};
++
++	cpus {
++		#address-cells = <1>;
++		#size-cells = <0>;
++
++		cpu@0 {
++			device_type = "cpu";
++			compatible = "mips,mips1004Kc";
++			reg = <0>;
++		};
++
++		cpu@1 {
++			device_type = "cpu";
++			compatible = "mips,mips1004Kc";
++			reg = <1>;
++		};
++	};
++
++	cpuintc: interrupt-controller {
++		compatible = "mti,cpu-interrupt-controller";
++		interrupt-controller;
++		#address-cells = <0>;
++		#interrupt-cells = <1>;
++	};
++
++	gic: interrupt-controller@1f8c0000 {
++		compatible = "mti,gic";
++		reg = <0x1f8c0000 0x20000>;
++
++		interrupt-controller;
++		#interrupt-cells = <3>;
++
++		interrupt-parent = <&cpuintc>;
++		interrupts = <2>;
++	};
++
++	soc {
++		compatible = "simple-bus";
++		#address-cells = <1>;
++		#size-cells = <1>;
++		interrupt-parent = <&gic>;
++		ranges;
++
++		pcie_phy0: pcie-phy@1faf2000 {
++			compatible = "econet,en751627-pcie-phy0";
++			reg = <0x1faf2000 0x1000>;
++			#phy-cells = <0>;
++		};
++
++		pcie_phy1: pcie-phy@1fac0000 {
++			compatible = "econet,en751627-pcie-phy1";
++			reg = <0x1fac0000 0x1000>;
++			#phy-cells = <0>;
++		};
++
++		chip_scu: syscon@1fa20000 {
++			compatible = "airoha,scuclk", "econet,en751627-chip-scu", "syscon";
++			reg = <0x1fa20000 0x400>;
++		};
++
++		scuclk: system-controller@1fb00000 {
++			compatible = "econet,en751627-scu", "syscon";
++			reg = <0x1fb00000 0x1000>;
++
++			airoha,chip-scu = <&chip_scu>;
++			#clock-cells = <1>;
++			#reset-cells = <1>;
++		};
++
++		system-controller@1fbf0200 {
++			compatible = "syscon", "simple-mfd";
++			reg = <0x1fbf0200 0xc0>;
++
++			pinctrl: pinctrl {
++				compatible = "econet,en751627-pinctrl";
++				airoha,chip-scu = <&chip_scu>;
++
++				interrupt-parent = <&gic>;
++				interrupts = <GIC_SHARED 10 IRQ_TYPE_LEVEL_HIGH>;
++
++				gpio-controller;
++				#gpio-cells = <2>;
++
++				interrupt-controller;
++				#interrupt-cells = <2>;
++
++				gpio-ranges = <&pinctrl 0 0 42>;
++
++				pcie0_rst_pins: pcie0-rst-pins {
++					conf {
++						pins = "pcie_reset0";
++						drive-open-drain = <1>;
++					};
++				};
++
++				pcie1_rst_pins: pcie1-rst-pins {
++					conf {
++						pins = "pcie_reset1";
++						drive-open-drain = <1>;
++					};
++				};
++
++				uart2_pins: uart2 {
++					mux {
++						function = "uart";
++						groups = "uart2";
++					};
++				};
++
++				uart3_pins: uart3 {
++					mux {
++						function = "uart";
++						groups = "uart3";
++					};
++				};
++
++				pon_pinctrl: pon {
++					mux {
++						function = "pon";
++						groups = "pon";
++					};
++				};
++
++				swp1_led0: switch_port-1-led0 {
++					mux {
++						function = "phy1_led0";
++						groups = "gpio30";
++					};
++				};
++
++				swp1_led1: switch_port-1-led1 {
++					mux {
++						function = "phy1_led1";
++						groups = "gpio31";
++					};
++				};
++
++				swp2_led0: switch_port-2-led0 {
++					mux {
++						function = "phy2_led0";
++						groups = "gpio32";
++					};
++				};
++
++				swp2_led1: switch_port-2-led1 {
++					mux {
++						function = "phy2_led1";
++						groups = "gpio33";
++					};
++				};
++
++				swp3_led0: switch_port-3-led0 {
++					mux {
++						function = "phy3_led0";
++						groups = "gpio34";
++					};
++				};
++
++				swp3_led1: switch_port-3-led1 {
++					mux {
++						function = "phy3_led1";
++						groups = "gpio35";
++					};
++				};
++
++				swp4_led0: switch_port-4-led0 {
++					mux {
++						function = "phy4_led0";
++						groups = "gpio36";
++					};
++				};
++
++				swp4_led1: switch_port-4-led1 {
++					mux {
++						function = "phy4_led1";
++						groups = "gpio37";
++					};
++				};
++			};
++		};
++
++		timer_hpt: timer@1fbf0400 {
++			compatible = "econet,en751627-timer";
++			reg = <0x1fbf0400 0x14>,
++			      <0x1fbe0000 0x14>;
++
++			interrupts = <GIC_SHARED 30 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SHARED 29 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SHARED 37 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SHARED 36 IRQ_TYPE_LEVEL_HIGH>;
++
++			clocks = <&hpt_clock>;
++		};
++
++		spi: spi@1fa10000 {
++			compatible = "airoha,en7523-spi";
++			reg = <0x1fa10000 0x140>,
++			      <0x1fa11000 0x160>;
++
++			clocks = <&scuclk EN751627_CLK_SPI>;
++			clock-names = "spi";
++
++			airoha,scu = <&scuclk>, <&chip_scu>;
++			airoha,scu-names = "scuclk", "chip-scu";
++
++			#address-cells = <1>;
++			#size-cells = <0>;
++		};
++
++		watchdog: watchdog@1fbf0100 {
++			compatible = "econet,en751221-wdt";
++			reg = <0x1fbf0100 0x3c>;
++
++			clocks = <&scuclk EN751627_CLK_BUS>;
++			clock-names = "bus";
++
++			interrupts = <GIC_SHARED 9 IRQ_TYPE_LEVEL_HIGH>;
++		};
++
++		crypto@1fb70000 {
++			compatible = "inside-secure,safexcel-eip93ies";
++			reg = <0x1fb70000 0x1000>;
++			interrupts = <GIC_SHARED 28 IRQ_TYPE_LEVEL_HIGH>;
++		};
++
++		i2c0: i2c0@1fbf8000 {
++			compatible = "airoha,en7523-i2c";
++			reg = <0x1fbf8000 0x100>;
++
++			clocks = <&i2cclock>;
++
++			/* 100 kHz */
++			clock-frequency = <100000>;
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			status = "disabled";
++		};
++
++		usb_phy: usb-phy@1fa80000 {
++			compatible = "econet,en751627-usb-phy";
++			reg = <0x1fa80000 0x1400>;
++			#phy-cells = <1>;
++		};
++
++		usb: usb@1fb90000 {
++			compatible = "econet,en751627-xhci";
++			reg = <0x1fb90000 0x3e00>,
++			      <0x1fb93e00 0x100>;
++			reg-names = "mac", "ippc";
++			interrupts = <GIC_SHARED 17 IRQ_TYPE_LEVEL_HIGH>;
++			phys = <&usb_phy PHY_TYPE_USB2>, <&usb_phy PHY_TYPE_USB3>;
++			usb3-lpm-capable;
++			status = "disabled";
++		};
++
++		uart1: serial@1fbf0000 {
++			compatible = "airoha,en7523-uart";
++			reg = <0x1fbf0000 0x30>;
++			reg-io-width = <4>;
++			reg-shift = <2>;
++
++			interrupts = <GIC_SHARED 2 IRQ_TYPE_LEVEL_HIGH>;
++
++			/*
++			 * The EcoNet/Airoha UART uses the vendor XYD fractional divider.
++			 * The generic 8250 driver does not program XYD, so keep the bootloader
++			 * XYD setup and expose a fixed 115200 baud base clock.
++			 */
++			clock-frequency = <1843200>;
++		};
++
++		uart2: serial@1fbf0300 {
++			compatible = "airoha,en7523-uart";
++			reg = <0x1fbf0300 0x30>;
++			interrupts = <GIC_SHARED 16 IRQ_TYPE_LEVEL_HIGH>;
++
++			pinctrl-names = "default";
++			pinctrl-0 = <&uart2_pins>;
++
++			status = "disabled";
++		};
++
++		uart3: serial@1fbe1000 {
++			compatible = "airoha,en7523-uart";
++			reg = <0x1fbe1000 0x30>;
++			interrupts = <GIC_SHARED 38 IRQ_TYPE_LEVEL_HIGH>;
++
++			pinctrl-names = "default";
++			pinctrl-0 = <&uart3_pins>;
++
++			status = "disabled";
++		};
++
++		pciecfg: pciecfg@1fb80000 {
++			compatible = "mediatek,generic-pciecfg", "syscon";
++			reg = <0x1fb80000 0x1000>;
++		};
++
++		pcie0: pcie@1fb81000 {
++			compatible = "econet,en751627-pcie";
++			device_type = "pci";
++			reg = <0x1fb81000 0x1000>;
++			reg-names = "port0";
++			linux,pci-domain = <0>;
++			#address-cells = <3>;
++			#size-cells = <2>;
++			interrupts = <GIC_SHARED 23 IRQ_TYPE_LEVEL_HIGH>;
++			interrupt-names = "pcie_irq";
++			clocks = <&scuclk EN751627_CLK_PCIE>;
++			clock-names = "sys_ck0";
++			phys = <&pcie_phy0>;
++			phy-names = "pcie-phy0";
++			bus-range = <0x00 0xff>;
++			ranges = <0x01000000 0 0x00000000 0x1f600000 0 0x00010000>,
++				 <0x82000000 0 0x20000000 0x20000000 0 0x08000000>;
++			status = "disabled";
++
++			#interrupt-cells = <1>;
++			interrupt-map-mask = <0 0 0 7>;
++			interrupt-map = <0 0 0 1 &pcie_intc0 0>,
++					<0 0 0 2 &pcie_intc0 1>,
++					<0 0 0 3 &pcie_intc0 2>,
++					<0 0 0 4 &pcie_intc0 3>;
++
++			pcie_intc0: interrupt-controller {
++				interrupt-controller;
++				#address-cells = <0>;
++				#interrupt-cells = <1>;
++			};
++
++			slot0: pcie@0,0 {
++				reg = <0x0000 0 0 0 0>;
++				#address-cells = <3>;
++				#size-cells = <2>;
++				ranges;
++			};
++		};
++
++		pcie1: pcie@1fb83000 {
++			compatible = "econet,en751627-pcie";
++			device_type = "pci";
++			reg = <0x1fb83000 0x1000>;
++			reg-names = "port1";
++			linux,pci-domain = <1>;
++			#address-cells = <3>;
++			#size-cells = <2>;
++			interrupts = <GIC_SHARED 24 IRQ_TYPE_LEVEL_HIGH>;
++			interrupt-names = "pcie_irq";
++			clocks = <&scuclk EN751627_CLK_PCIE>;
++			clock-names = "sys_ck1";
++			phys = <&pcie_phy1>;
++			phy-names = "pcie-phy1";
++			bus-range = <0x00 0xff>;
++			ranges = <0x01000000 0 0x00000000 0x1f610000 0 0x00010000>,
++				 <0x82000000 0 0x28000000 0x28000000 0 0x08000000>;
++			status = "disabled";
++
++			#interrupt-cells = <1>;
++			interrupt-map-mask = <0 0 0 7>;
++			interrupt-map = <0 0 0 1 &pcie_intc1 0>,
++					<0 0 0 2 &pcie_intc1 1>,
++					<0 0 0 3 &pcie_intc1 2>,
++					<0 0 0 4 &pcie_intc1 3>;
++
++			pcie_intc1: interrupt-controller {
++				interrupt-controller;
++				#address-cells = <0>;
++				#interrupt-cells = <1>;
++			};
++
++			slot1: pcie@1,0 {
++				reg = <0x0800 0 0 0 0>;
++				#address-cells = <3>;
++				#size-cells = <2>;
++				ranges;
++			};
++		};
++
++		gdma: gdma@1fb30000 {
++			compatible = "econet,en751627-gdma";
++			reg = <0x1fb30000 0x1000>;
++
++			interrupts = <GIC_SHARED 14 IRQ_TYPE_LEVEL_HIGH>;
++		};
++
++		xpon_phy: phy@1faf0000 {
++			compatible = "airoha,en751627-xpon-phy";
++			reg = <0x1faf0000 0x600>;
++
++			pinctrl-names = "default";
++			pinctrl-0 = <&pon_pinctrl>;
++
++			resets = <&scuclk EN751627_XPON_PHY_RST>;
++			reset-names = "phy";
++
++			interrupts = <GIC_SHARED 27 IRQ_TYPE_LEVEL_HIGH>;
++			interrupt-names = "phy";
++			airoha,scu = <&scuclk>;
++			#phy-cells = <0>;
++
++			status = "disabled";
++		};
++
++		xpon: xmac@1fb60000 {
++			compatible = "airoha,en751627-xpon";
++
++			reg = <0x1fb60000 0x10000>,
++			      <0x1fa2ff24 0x4>;
++			reg-names = "mac", "tx-off";
++
++			interrupts = <GIC_SHARED 26 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SHARED 18 IRQ_TYPE_LEVEL_HIGH>;
++			interrupt-names = "mac", "dying-gasp";
++
++			resets = <&scuclk EN751627_XPON_MAC_RST>;
++			reset-names = "mac";
++			phys = <&xpon_phy>;
++			phy-names = "xpon";
++			ethernet = <&gdm2>;
++			airoha,scu = <&scuclk>;
++
++			status = "disabled";
++		};
++
++		xdsl: dsl@1f900000 {
++			compatible = "econet,en751627-xdsl";
++			reg = <0x1f900000 0x10000>,
++			      <0x1fb62000 0x200>;
++			reg-names = "dmt", "ptm";
++
++			interrupts = <GIC_SHARED 19 IRQ_TYPE_LEVEL_HIGH>;
++			interrupt-names = "dmt";
++
++			resets = <&scuclk EN751627_DMT_RST>,
++				 <&scuclk EN751627_PTM_MAC_RST>;
++			reset-names = "dmt", "ptm";
++
++			ethernet = <&gdm2>;
++			airoha,scu = <&scuclk>;
++
++			status = "disabled";
++		};
++
++		/* <GIC_SHARED 53 IRQ_TYPE_LEVEL_HIGH> => WIFI DMA 0 port 0 */
++		/* <GIC_SHARED 54 IRQ_TYPE_LEVEL_HIGH> => WIFI DMA 0 port 1 */
++		/* <GIC_SHARED 55 IRQ_TYPE_LEVEL_HIGH> => WIFI DMA 0 for WOE */
++		/* <GIC_SHARED 56 IRQ_TYPE_LEVEL_HIGH> => WIFI DMA 1 port 0 */
++		/* <GIC_SHARED 56 IRQ_TYPE_LEVEL_HIGH> => WIFI DMA 1 port 1 */
++		/* <GIC_SHARED 58 IRQ_TYPE_LEVEL_HIGH> => WIFI DMA 1 for WOE */
++		wed0: wed@1fa02000 {
++			compatible = "econet,en751627-wed", "syscon";
++			reg = <0x1fa02000 0xb00>,
++			      <0x1fa06000 0x400>;
++			reg-names = "wed", "wdma";
++			interrupts = <GIC_SHARED 51 IRQ_TYPE_LEVEL_HIGH>;
++			airoha,scu = <&scuclk>;
++		};
++
++		wed1: wed@1fa03000 {
++			compatible = "econet,en751627-wed", "syscon";
++			reg = <0x1fa03000 0xb00>,
++			      <0x1fa06400 0x400>;
++			reg-names = "wed", "wdma";
++			interrupts = <GIC_SHARED 52 IRQ_TYPE_LEVEL_HIGH>;
++			airoha,scu = <&scuclk>;
++		};
++
++		eth: ethernet@1fb50000 {
++			compatible = "econet,en751627-eth";
++			status = "disabled";
++			reg = <0x1fb50000 0x2600>,
++			      <0x1fb54000 0x1000>,
++			      <0x1fb55000 0x1000>,
++			      <0x1fa40000 0x8000>;
++			reg-names = "fe", "qdma0", "qdma1", "gdmp";
++
++			resets = <&scuclk EN751627_FE_RST>,
++				 <&scuclk EN751627_FE_QDMA1_RST>,
++				 <&scuclk EN751627_FE_QDMA2_RST>,
++				 <&scuclk EN751627_GDMP_RST>;
++			reset-names = "fe", "pdma", "qdma", "gdmp";
++
++			airoha,wed = <&wed0>, <&wed1>;
++			interrupts = <GIC_SHARED 21 IRQ_TYPE_LEVEL_HIGH>,  /* QDMA LAN0 */
++				     <GIC_SHARED 22 IRQ_TYPE_LEVEL_HIGH>,  /* QDMA WAN0 */
++				     <GIC_SHARED 39 IRQ_TYPE_LEVEL_HIGH>,  /* QDMA LAN1 */
++				     <GIC_SHARED 40 IRQ_TYPE_LEVEL_HIGH>,  /* QDMA LAN2 */
++				     <GIC_SHARED 41 IRQ_TYPE_LEVEL_HIGH>,  /* QDMA LAN3 */
++				     <GIC_SHARED 42 IRQ_TYPE_LEVEL_HIGH>,  /* QDMA WAN1 */
++				     <GIC_SHARED 43 IRQ_TYPE_LEVEL_HIGH>,  /* QDMA WAN2 */
++				     <GIC_SHARED 44 IRQ_TYPE_LEVEL_HIGH>,  /* QDMA WAN3 */
++				     <GIC_SHARED 33 IRQ_TYPE_LEVEL_HIGH>;  /* Frame Error */
++
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			gdm1: ethernet@1 {
++				compatible = "econet,eth-mac";
++				reg = <1>;
++				phy-mode = "internal";
++				status = "disabled";
++
++				fixed-link {
++					speed = <1000>;
++					full-duplex;
++					pause;
++				};
++			};
++
++			gdm2: ethernet@2 {
++				compatible = "econet,eth-mac";
++				reg = <2>;
++				phy-mode = "internal";
++
++				status = "disabled";
++			};
++		};
++
++		switch: switch@1fb58000 {
++			compatible = "econet,en751627-switch";
++			reg = <0x1fb58000 0x8000>;
++			resets = <&scuclk EN751627_GSW_RST>;
++
++			interrupt-controller;
++			#interrupt-cells = <1>;
++			interrupts = <GIC_SHARED 15 IRQ_TYPE_LEVEL_HIGH>;
++
++			status = "disabled";
++
++			#address-cells = <1>;
++			#size-cells = <1>;
++
++			ports {
++				#address-cells = <1>;
++				#size-cells = <0>;
++
++				gsw_port1: port@1 {
++					reg = <1>;
++					phy-mode = "internal";
++					phy-handle = <&gsw_phy1>;
++					status = "disabled";
++				};
++
++				gsw_port2: port@2 {
++					reg = <2>;
++					phy-mode = "internal";
++					phy-handle = <&gsw_phy2>;
++					status = "disabled";
++				};
++
++				gsw_port3: port@3 {
++					reg = <3>;
++					phy-mode = "internal";
++					phy-handle = <&gsw_phy3>;
++					status = "disabled";
++				};
++
++				gsw_port4: port@4 {
++					reg = <4>;
++					phy-mode = "internal";
++					phy-handle = <&gsw_phy4>;
++					status = "disabled";
++				};
++
++				gsw_port6: port@6 {
++					reg = <6>;
++					ethernet = <&gdm1>;
++					phy-mode = "internal";
++
++					fixed-link {
++						speed = <1000>;
++						full-duplex;
++						pause;
++					};
++				};
++			};
++
++			mdio: mdio {
++				#address-cells = <1>;
++				#size-cells = <0>;
++
++				gsw_phy1: ethernet-phy@9 {
++					compatible = "ethernet-phy-ieee802.3-c22";
++					reg = <9>;
++					phy-mode = "internal";
++					status = "disabled";
++
++					pinctrl-names = "gbe-led";
++					pinctrl-0 = <&swp1_led0 &swp1_led1>;
++					airoha,scu = <&scuclk>;
++
++					leds {
++						#address-cells = <1>;
++						#size-cells = <0>;
++
++						gsw_phy1_led0: led0@0 {
++							reg = <0>;
++							function = LED_FUNCTION_LAN;
++							status = "disabled";
++							active-low;
++						};
++
++						gsw_phy1_led1: led1@1 {
++							reg = <1>;
++							status = "disabled";
++							function = LED_FUNCTION_ACTIVITY;
++							active-low;
++						};
++					};
++				};
++
++				gsw_phy2: ethernet-phy@10 {
++					compatible = "ethernet-phy-ieee802.3-c22";
++					reg = <10>;
++					phy-mode = "internal";
++					status = "disabled";
++
++					pinctrl-names = "gbe-led";
++					pinctrl-0 = <&swp2_led0 &swp2_led1>;
++					airoha,scu = <&scuclk>;
++
++					leds {
++						#address-cells = <1>;
++						#size-cells = <0>;
++
++						gsw_phy2_led0: led0@0 {
++							reg = <0>;
++							function = LED_FUNCTION_LAN;
++							status = "disabled";
++							active-low;
++						};
++
++						gsw_phy2_led1: led1@1 {
++							reg = <1>;
++							status = "disabled";
++							function = LED_FUNCTION_ACTIVITY;
++							active-low;
++						};
++					};
++				};
++
++				gsw_phy3: ethernet-phy@11 {
++					compatible = "ethernet-phy-ieee802.3-c22";
++					reg = <11>;
++					phy-mode = "internal";
++					status = "disabled";
++
++					pinctrl-names = "gbe-led";
++					pinctrl-0 = <&swp3_led0 &swp3_led1>;
++					airoha,scu = <&scuclk>;
++
++					leds {
++						#address-cells = <1>;
++						#size-cells = <0>;
++
++						gsw_phy3_led0: led0@0 {
++							reg = <0>;
++							function = LED_FUNCTION_LAN;
++							status = "disabled";
++							active-low;
++						};
++
++						gsw_phy3_led1: led1@1 {
++							reg = <1>;
++							status = "disabled";
++							function = LED_FUNCTION_ACTIVITY;
++							active-low;
++						};
++					};
++				};
++
++				gsw_phy4: ethernet-phy@12 {
++					compatible = "ethernet-phy-ieee802.3-c22";
++					reg = <12>;
++					phy-mode = "internal";
++					status = "disabled";
++
++					pinctrl-names = "gbe-led";
++					pinctrl-0 = <&swp4_led0 &swp4_led1>;
++					airoha,scu = <&scuclk>;
++
++					leds {
++						#address-cells = <1>;
++						#size-cells = <0>;
++
++						gsw_phy4_led0: led0@0 {
++							reg = <0>;
++							function = LED_FUNCTION_LAN;
++							status = "disabled";
++							active-low;
++						};
++
++						gsw_phy4_led1: led1@1 {
++							reg = <1>;
++							status = "disabled";
++							function = LED_FUNCTION_ACTIVITY;
++							active-low;
++						};
++					};
++				};
++			};
++		};
++	};
++};
+diff --git a/arch/mips/boot/dts/econet/en7580.dtsi b/arch/mips/boot/dts/econet/en7580.dtsi
+index c628db157..d9ba0d71b 100644
+--- a/arch/mips/boot/dts/econet/en7580.dtsi
++++ b/arch/mips/boot/dts/econet/en7580.dtsi
+@@ -600,6 +600,24 @@ slot1: pcie@1,0 {
+ 			};
+ 		};
+ 
++		gdma: gdma@1fb30000 {
++			compatible = "econet,en7580-gdma";
++			reg = <0x1fb30000 0x1000>;
++
++			interrupts = <GIC_SHARED 14 IRQ_TYPE_LEVEL_HIGH>;
++		};
++
++		hsdma: dma-controller@1fa01800 {
++			compatible = "econet,en7580-hsdma";
++			reg = <0x1fa01800 0x300>;
++
++			interrupts = <GIC_SHARED 47 IRQ_TYPE_LEVEL_HIGH>;
++
++			#dma-cells = <1>;
++			dma-channels = <2>;
++			dma-requests = <2>;
++		};
++
+ 		xsi_pcs: pcs@1fa04000 {
+ 			compatible = "airoha,en7580-pcs";
+ 			reg = <0x1fa04000 0x200>,
+diff --git a/drivers/clk/clk-en7523.c b/drivers/clk/clk-en7523.c
+index 865434dce..8ab13960c 100644
+--- a/drivers/clk/clk-en7523.c
++++ b/drivers/clk/clk-en7523.c
+@@ -2084,6 +2084,7 @@ static const struct of_device_id of_match_clk_en7523[] = {
+ 	{ .compatible = "airoha,en7581-scu", .data = &en7581_data },
+ 	{ .compatible = "airoha,an7583-scu", .data = &an7583_data },
+ 	{ .compatible = "econet,en751221-scu", .data = &en751221_data },
++	{ .compatible = "econet,en751627-scu", .data = &en7528_data },
+ 	{ .compatible = "econet,en7528-scu", .data = &en7528_data },
+ 	{ .compatible = "econet,en7580-scu", .data = &en7580_data },
+ 	{ /* sentinel */ }
+diff --git a/drivers/clocksource/timer-econet-en751221.c b/drivers/clocksource/timer-econet-en751221.c
+index 5c5980962..511aa2478 100644
+--- a/drivers/clocksource/timer-econet-en751221.c
++++ b/drivers/clocksource/timer-econet-en751221.c
+@@ -305,4 +305,5 @@ static int __init timer_init(struct device_node *np)
+ }
+ 
+ TIMER_OF_DECLARE(econet_en751221_timer, "econet,en751221-timer", timer_init);
++TIMER_OF_DECLARE(econet_en751627_timer, "econet,en751627-timer", timer_init);
+ TIMER_OF_DECLARE(econet_en7528_timer, "econet,en7528-timer", timer_init);
+diff --git a/drivers/net/dsa/mt7530-mmio.c b/drivers/net/dsa/mt7530-mmio.c
+index 870e9c111..f3b9fb001 100644
+--- a/drivers/net/dsa/mt7530-mmio.c
++++ b/drivers/net/dsa/mt7530-mmio.c
+@@ -34,6 +34,8 @@ static const struct of_device_id mt7988_of_match[] = {
+ 	{ .compatible = "airoha,an7583-switch", .data = &mt753x_table[ID_AN7583], },
+ 	{ .compatible = "airoha,en7581-switch", .data = &mt753x_table[ID_EN7581], },
+ 	{ .compatible = "econet,en751221-switch", .data = &mt753x_table[ID_EN751221], },
++	{ .compatible = "airoha,en751627-switch", .data = &mt753x_table[ID_EN7528], },
++	{ .compatible = "econet,en751627-switch", .data = &mt753x_table[ID_EN7528], },
+ 	{ .compatible = "econet,en7528-switch", .data = &mt753x_table[ID_EN7528], },
+ 	{ .compatible = "econet,en7580-switch", .data = &mt753x_table[ID_EN7528], },
+ 	{ .compatible = "mediatek,mt7988-switch", .data = &mt753x_table[ID_MT7988], },
+diff --git a/drivers/net/ethernet/airoha/Kconfig b/drivers/net/ethernet/airoha/Kconfig
+index 7c8f998e9..2fba4acd8 100644
+--- a/drivers/net/ethernet/airoha/Kconfig
++++ b/drivers/net/ethernet/airoha/Kconfig
+@@ -94,4 +94,20 @@ config AIROHA_XPON_V1
+ 	  activation/PLOAM and uses the in-kernel OMCI agent; EPON includes
+ 	  IEEE 802.3 MPCP LLID registration and security support.
+ 
++config AIROHA_XDSL
++	tristate "EcoNet EN7512/EN7516 xDSL/PTM frontend"
++	depends on ECONET || COMPILE_TEST
++	depends on NET_AIROHA
++	depends on OF
++	help
++	  Build the initial xDSL frontend for the EcoNet EN751221 (EN7512)
++	  and EN751627 (EN7516) SoC families. The driver owns the DMT and PTM-TC
++	  resources and connects their reset, interrupt and netdev
++	  lifecycle to the GDM2 Ethernet datapath.
++
++	  The proprietary legacy module embeds the complete G.hs/ADSL/VDSL
++	  training and DSP implementation. Until a clean-room line engine is
++	  implemented, this driver keeps the DMT interrupts masked and carrier
++	  down after preparing the PTM datapath.
++
+ endif # NET_VENDOR_AIROHA
+diff --git a/drivers/net/ethernet/airoha/Makefile b/drivers/net/ethernet/airoha/Makefile
+index d3d6eadd9..b380e5fb3 100644
+--- a/drivers/net/ethernet/airoha/Makefile
++++ b/drivers/net/ethernet/airoha/Makefile
+@@ -14,3 +14,6 @@ obj-$(CONFIG_NET_AIROHA_NPU) += airoha_npu.o
+ # Airoha/EcoNet shared GPON + EPON MAC complex.
+ obj-$(CONFIG_AIROHA_XPON_V1) += airoha-xpon.o
+ airoha-xpon-y := airoha_xpon.o airoha_ploam.o airoha_gpon_omci.o
++
++# EcoNet EN7512/EN7516 DMT/PTM frontend. The line engine is added separately.
++obj-$(CONFIG_AIROHA_XDSL) += airoha_xdsl.o
+diff --git a/drivers/net/ethernet/airoha/airoha_eth.c b/drivers/net/ethernet/airoha/airoha_eth.c
+index 58c671ff0..3d3ae4acd 100644
+--- a/drivers/net/ethernet/airoha/airoha_eth.c
++++ b/drivers/net/ethernet/airoha/airoha_eth.c
+@@ -4238,6 +4238,31 @@ static void airoha_gdm_xpon_stop(struct airoha_gdm_dev *dev)
+ 	mutex_unlock(&dev->xpon_lock);
+ }
+ 
++static int airoha_gdm_xdsl_start(struct airoha_gdm_dev *dev)
++{
++	int ret = 0;
++
++	mutex_lock(&dev->xdsl_lock);
++	if (dev->xdsl_ops && !dev->xdsl_started) {
++		ret = dev->xdsl_ops->start(dev->xdsl_priv);
++		if (!ret)
++			dev->xdsl_started = true;
++	}
++	mutex_unlock(&dev->xdsl_lock);
++
++	return ret;
++}
++
++static void airoha_gdm_xdsl_stop(struct airoha_gdm_dev *dev)
++{
++	mutex_lock(&dev->xdsl_lock);
++	if (dev->xdsl_ops && dev->xdsl_started) {
++		dev->xdsl_started = false;
++		dev->xdsl_ops->stop(dev->xdsl_priv);
++	}
++	mutex_unlock(&dev->xdsl_lock);
++}
++
+ static int econet_set_xpon_mode(struct net_device *netdev,
+ 				enum airoha_xpon_mode mode)
+ {
+@@ -4342,7 +4367,7 @@ static int econet_register_xpon(struct net_device *netdev,
+ 		return ret;
+ 
+ 	mutex_lock(&port->xpon_lock);
+-	if (port->xpon_ops) {
++	if (port->xpon_ops || port->xdsl_ops) {
+ 		ret = -EBUSY;
+ 		goto out_unlock;
+ 	}
+@@ -4438,6 +4463,111 @@ static void econet_xpon_update_link(struct net_device *netdev,
+ 		netif_carrier_off(netdev);
+ }
+ 
++static void econet_unregister_xdsl(struct net_device *netdev,
++				   const struct airoha_xdsl_link_ops *ops,
++				   void *priv);
++
++static int econet_register_xdsl(struct net_device *netdev,
++				const struct airoha_xdsl_link_ops *ops,
++				void *priv)
++{
++	struct airoha_gdm_dev *port;
++	unsigned long flags;
++	int ret;
++
++	if (!ops || !ops->start || !ops->stop)
++		return -EINVAL;
++
++	ret = econet_validate_xpon_gdm2(netdev, &port);
++	if (ret)
++		return ret;
++
++	/* A GDM2 can be owned by one optical or copper WAN frontend. */
++	mutex_lock(&port->xpon_lock);
++	mutex_lock(&port->xdsl_lock);
++	if (port->xdsl_ops || port->xpon_ops) {
++		ret = -EBUSY;
++		goto out_unlock;
++	}
++
++	port->xdsl_ops = ops;
++	port->xdsl_priv = priv;
++	port->flags |= AIROHA_PRIV_F_XDSL_MANAGED;
++	spin_lock_irqsave(&port->xdsl_state_lock, flags);
++	memset(&port->xdsl_link, 0, sizeof(port->xdsl_link));
++	spin_unlock_irqrestore(&port->xdsl_state_lock, flags);
++	netif_carrier_off(netdev);
++
++out_unlock:
++	mutex_unlock(&port->xdsl_lock);
++	mutex_unlock(&port->xpon_lock);
++	if (ret)
++		return ret;
++
++	if (netif_running(netdev)) {
++		ret = airoha_gdm_xdsl_start(port);
++		if (ret)
++			econet_unregister_xdsl(netdev, ops, priv);
++
++		return ret;
++	}
++
++	return 0;
++}
++
++static void econet_unregister_xdsl(struct net_device *netdev,
++				   const struct airoha_xdsl_link_ops *ops,
++				   void *priv)
++{
++	struct airoha_gdm_dev *port;
++	unsigned long flags;
++
++	if (econet_validate_xpon_gdm2(netdev, &port))
++		return;
++	if (READ_ONCE(port->xdsl_ops) != ops ||
++	    READ_ONCE(port->xdsl_priv) != priv)
++		return;
++
++	airoha_gdm_xdsl_stop(port);
++
++	mutex_lock(&port->xdsl_lock);
++	if (port->xdsl_ops == ops && port->xdsl_priv == priv) {
++		port->xdsl_ops = NULL;
++		port->xdsl_priv = NULL;
++		port->flags &= ~AIROHA_PRIV_F_XDSL_MANAGED;
++	}
++	mutex_unlock(&port->xdsl_lock);
++
++	spin_lock_irqsave(&port->xdsl_state_lock, flags);
++	memset(&port->xdsl_link, 0, sizeof(port->xdsl_link));
++	spin_unlock_irqrestore(&port->xdsl_state_lock, flags);
++	netif_carrier_off(netdev);
++}
++
++static void econet_xdsl_update_link(struct net_device *netdev,
++				    const struct airoha_xdsl_link_state *state)
++{
++	struct airoha_xdsl_link_state new_state;
++	struct airoha_gdm_dev *port;
++	unsigned long flags;
++
++	if (!state || econet_validate_xpon_gdm2(netdev, &port))
++		return;
++	if (!(READ_ONCE(port->flags) & AIROHA_PRIV_F_XDSL_MANAGED))
++		return;
++
++	new_state = *state;
++	new_state.valid = true;
++	spin_lock_irqsave(&port->xdsl_state_lock, flags);
++	port->xdsl_link = new_state;
++	spin_unlock_irqrestore(&port->xdsl_state_lock, flags);
++
++	if (new_state.link && netif_running(netdev))
++		netif_carrier_on(netdev);
++	else
++		netif_carrier_off(netdev);
++}
++
+ static int econet_xpon_control_start(struct net_device *netdev)
+ {
+ 	struct airoha_gdm_dev *port;
+@@ -5535,7 +5665,7 @@ static int airoha_xpon_register_link(struct net_device *netdev,
+ 		return ret;
+ 
+ 	mutex_lock(&dev->xpon_lock);
+-	if (dev->xpon_ops) {
++	if (dev->xpon_ops || dev->xdsl_ops) {
+ 		ret = -EBUSY;
+ 		goto out;
+ 	}
+@@ -6955,19 +7085,19 @@ static int airoha_dev_open(struct net_device *netdev)
+ 	}
+ 
+ 	/* Keep fixed-link and real PHY configurations working, but allow an
+-	 * xPON-managed GDM2 to run without either. In the latter case the xPON
+-	 * provider owns carrier, speed and duplex.
++	 * provider-managed GDM2 to run without either. In that case the xPON or
++	 * xDSL provider owns carrier, speed and duplex.
+ 	 */
+ 	err = airoha_gdm_phylink_connect(&dev->common,
+-					 dev->flags & AIROHA_PRIV_F_XPON_MANAGED);
++					 dev->flags & AIROHA_PRIV_F_WAN_MANAGED);
+ 	if (err) {
+ 		netdev_err(netdev, "could not attach PHY: %d\n", err);
+ 		return err;
+ 	}
+ 	if (!dev->common.phylink_started &&
+-	    (dev->flags & AIROHA_PRIV_F_XPON_MANAGED))
++	    (dev->flags & AIROHA_PRIV_F_WAN_MANAGED))
+ 		netdev_dbg(netdev,
+-			   "no PHY or fixed-link, using xPON link state\n");
++			   "no PHY or fixed-link, using WAN frontend link state\n");
+ 
+ 	if (dev->flags & AIROHA_PRIV_F_XPON_MANAGED) {
+ 		unsigned long flags;
+@@ -6983,6 +7113,19 @@ static int airoha_dev_open(struct net_device *netdev)
+ 		else
+ 			netif_carrier_off(netdev);
+ 	}
++	if (dev->flags & AIROHA_PRIV_F_XDSL_MANAGED) {
++		unsigned long flags;
++		bool link;
++
++		spin_lock_irqsave(&dev->xdsl_state_lock, flags);
++		link = dev->xdsl_link.valid && dev->xdsl_link.link;
++		spin_unlock_irqrestore(&dev->xdsl_state_lock, flags);
++
++		if (link)
++			netif_carrier_on(netdev);
++		else
++			netif_carrier_off(netdev);
++	}
+ 
+ 	if (econet) {
+ 		bool dsa = netdev_uses_dsa(netdev);
+@@ -7071,6 +7214,12 @@ static int airoha_dev_open(struct net_device *netdev)
+ 		airoha_dev_stop(netdev);
+ 		return err;
+ 	}
++	err = airoha_gdm_xdsl_start(dev);
++	if (err) {
++		netdev_err(netdev, "failed to start xDSL provider: %d\n", err);
++		airoha_dev_stop(netdev);
++		return err;
++	}
+ 
+ 	return 0;
+ }
+@@ -7085,6 +7234,7 @@ static int airoha_dev_stop(struct net_device *netdev)
+ 	if (!--port->stats_users)
+ 		cancel_delayed_work_sync(&port->stats_work);
+ 
++	airoha_gdm_xdsl_stop(dev);
+ 	airoha_gdm_xpon_stop(dev);
+ 	netif_tx_disable(netdev);
+ 	qdma = airoha_qdma_deref(dev);
+@@ -8100,36 +8250,61 @@ airoha_ethtool_get_link_ksettings(struct net_device *netdev,
+ 				  struct ethtool_link_ksettings *cmd)
+ {
+ 	struct airoha_gdm_dev *dev = netdev_priv(netdev);
+-	struct airoha_xpon_link_state state;
++	u32 managed = READ_ONCE(dev->flags) & AIROHA_PRIV_F_WAN_MANAGED;
++	u32 speed = SPEED_UNKNOWN;
++	u8 duplex = DUPLEX_UNKNOWN;
++	u8 port = PORT_OTHER;
++	bool valid = false;
+ 	unsigned long flags;
+ 
+-	if (!(READ_ONCE(dev->flags) & AIROHA_PRIV_F_XPON_MANAGED))
++	if (!managed)
+ 		return phylink_ethtool_ksettings_get(dev->common.phylink, cmd);
+ 
+-	spin_lock_irqsave(&dev->xpon_state_lock, flags);
+-	state = dev->xpon_link;
+-	spin_unlock_irqrestore(&dev->xpon_state_lock, flags);
++	if (managed & AIROHA_PRIV_F_XDSL_MANAGED) {
++		struct airoha_xdsl_link_state state;
++
++		spin_lock_irqsave(&dev->xdsl_state_lock, flags);
++		state = dev->xdsl_link;
++		spin_unlock_irqrestore(&dev->xdsl_state_lock, flags);
++		valid = state.valid;
++		speed = state.speed;
++		duplex = state.duplex;
++		port = state.port;
++	} else {
++		struct airoha_xpon_link_state state;
++
++		spin_lock_irqsave(&dev->xpon_state_lock, flags);
++		state = dev->xpon_link;
++		spin_unlock_irqrestore(&dev->xpon_state_lock, flags);
++		valid = state.valid;
++		speed = state.speed;
++		duplex = state.duplex;
++		port = state.port;
++	}
+ 
+ 	/*
+ 	 * A legacy fixed-link can still provide settings before the xPON
+ 	 * provider publishes its first state. PHY-less ports are reported
+ 	 * directly from the provider and do not depend on phylink.
+ 	 */
+-	if (!state.valid && dev->common.phylink_started)
++	if (!valid && dev->common.phylink_started)
+ 		return phylink_ethtool_ksettings_get(dev->common.phylink, cmd);
+ 
+ 	ethtool_link_ksettings_zero_link_mode(cmd, supported);
+ 	ethtool_link_ksettings_zero_link_mode(cmd, advertising);
+ 	ethtool_link_ksettings_zero_link_mode(cmd, lp_advertising);
+-	linkmode_set_bit(ETHTOOL_LINK_MODE_FIBRE_BIT,
+-			 cmd->link_modes.supported);
+-	linkmode_set_bit(ETHTOOL_LINK_MODE_FIBRE_BIT,
+-			 cmd->link_modes.advertising);
++	if (managed & AIROHA_PRIV_F_XPON_MANAGED) {
++		linkmode_set_bit(ETHTOOL_LINK_MODE_FIBRE_BIT,
++				 cmd->link_modes.supported);
++		linkmode_set_bit(ETHTOOL_LINK_MODE_FIBRE_BIT,
++				 cmd->link_modes.advertising);
++	}
+ 
+-	cmd->base.speed = state.valid ? state.speed : SPEED_UNKNOWN;
+-	cmd->base.duplex = state.valid ? state.duplex : DUPLEX_UNKNOWN;
++	cmd->base.speed = valid ? speed : SPEED_UNKNOWN;
++	cmd->base.duplex = valid ? duplex : DUPLEX_UNKNOWN;
+ 	cmd->base.autoneg = AUTONEG_DISABLE;
+-	cmd->base.port = state.valid ? state.port : PORT_FIBRE;
++	cmd->base.port = valid ? port :
++		(managed & AIROHA_PRIV_F_XPON_MANAGED ? PORT_FIBRE : PORT_OTHER);
+ 	cmd->base.phy_address = 0xff;
+ 
+ 	return 0;
+@@ -8141,7 +8316,7 @@ airoha_ethtool_set_link_ksettings(struct net_device *netdev,
+ {
+ 	struct airoha_gdm_dev *dev = netdev_priv(netdev);
+ 
+-	if (READ_ONCE(dev->flags) & AIROHA_PRIV_F_XPON_MANAGED)
++	if (READ_ONCE(dev->flags) & AIROHA_PRIV_F_WAN_MANAGED)
+ 		return -EOPNOTSUPP;
+ 
+ 	return phylink_ethtool_ksettings_set(dev->common.phylink, cmd);
+@@ -8151,7 +8326,7 @@ static int airoha_ethtool_nway_reset(struct net_device *netdev)
+ {
+ 	struct airoha_gdm_dev *dev = netdev_priv(netdev);
+ 
+-	if (READ_ONCE(dev->flags) & AIROHA_PRIV_F_XPON_MANAGED)
++	if (READ_ONCE(dev->flags) & AIROHA_PRIV_F_WAN_MANAGED)
+ 		return -EOPNOTSUPP;
+ 
+ 	return phylink_ethtool_nway_reset(dev->common.phylink);
+@@ -9387,6 +9562,8 @@ static int airoha_alloc_gdm_device(struct airoha_eth *eth,
+ 	mutex_init(&dev->xpon_lock);
+ 	spin_lock_init(&dev->xpon_state_lock);
+ 	spin_lock_init(&dev->xpon_service_lock);
++	mutex_init(&dev->xdsl_lock);
++	spin_lock_init(&dev->xdsl_state_lock);
+ 
+ 	if (econet) {
+ 		/* The legacy view places fwd_cfg 0x100 bytes after its base.
+@@ -9407,7 +9584,6 @@ static int airoha_alloc_gdm_device(struct airoha_eth *eth,
+ 	/* Disable same features cause Offload and another issues for xDSL and xPON MACs */
+ 	if (index == 2 && of_property_present(np, "phy-mode") &&
+ 	    of_property_match_string(np, "phy-mode", "internal")) {
+-		dev->flags |= AIROHA_PRIV_F_XPON_MANAGED;
+ 		netdev->features |= NETIF_F_GRO_HW;
+ 
+ 		/* Keep the validated xPON RX GRO path but do TX segmentation in SW. */
+@@ -10640,8 +10816,32 @@ int airoha_eth_xpon_retire_channel(struct net_device *netdev,
+ }
+ EXPORT_SYMBOL_GPL(airoha_eth_xpon_retire_channel);
+ 
++int airoha_eth_register_xdsl(struct net_device *netdev,
++			     const struct airoha_xdsl_link_ops *ops,
++			     void *priv)
++{
++	return econet_register_xdsl(netdev, ops, priv);
++}
++EXPORT_SYMBOL_GPL(airoha_eth_register_xdsl);
++
++void airoha_eth_unregister_xdsl(struct net_device *netdev,
++				const struct airoha_xdsl_link_ops *ops,
++				void *priv)
++{
++	econet_unregister_xdsl(netdev, ops, priv);
++}
++EXPORT_SYMBOL_GPL(airoha_eth_unregister_xdsl);
++
++void airoha_eth_xdsl_update_link(struct net_device *netdev,
++				 const struct airoha_xdsl_link_state *state)
++{
++	econet_xdsl_update_link(netdev, state);
++}
++EXPORT_SYMBOL_GPL(airoha_eth_xdsl_update_link);
++
+ static const struct of_device_id airoha_eth_of_match[] = {
+ 	{ .compatible = "econet,en751221-eth", .data = &econet_en751221_soc_data },
++	{ .compatible = "econet,en751627-eth", .data = &econet_en7528_soc_data },
+ 	{ .compatible = "econet,en7528-eth", .data = &econet_en7528_soc_data },
+ 	{ .compatible = "econet,en7580-eth", .data = &econet_en7580_soc_data },
+ 	{ .compatible = "airoha,en7523-eth", .data = &airoha_en7523_soc_data },
+diff --git a/drivers/net/ethernet/airoha/airoha_eth.h b/drivers/net/ethernet/airoha/airoha_eth.h
+index 529eebf66..897107463 100644
+--- a/drivers/net/ethernet/airoha/airoha_eth.h
++++ b/drivers/net/ethernet/airoha/airoha_eth.h
+@@ -937,8 +937,12 @@ enum airoha_priv_flags {
+ 	AIROHA_PRIV_F_WAN = BIT(0),
+ 	AIROHA_PRIV_F_QOS = BIT(1),
+ 	AIROHA_PRIV_F_XPON_MANAGED = BIT(2),
++	AIROHA_PRIV_F_XDSL_MANAGED = BIT(3),
+ };
+ 
++#define AIROHA_PRIV_F_WAN_MANAGED	(AIROHA_PRIV_F_XPON_MANAGED | \
++					 AIROHA_PRIV_F_XDSL_MANAGED)
++
+ #define AIROHA_XPON_OAM_RX_F_MIC_PRESENT	BIT(0)
+ #define AIROHA_XPON_OAM_RX_F_MIC_VALID	BIT(1)
+ #define AIROHA_XPON_OAM_RX_F_CRC_ERROR	BIT(2)
+@@ -995,6 +999,38 @@ struct airoha_xpon_link_state {
+ 	u64 tx_line_rate_bps;
+ };
+ 
++/**
++ * struct airoha_xdsl_link_ops - xDSL netdev lifecycle notifications
++ * @start: start the PTM frontend when the data netdev is opened
++ * @stop: stop the PTM frontend when the data netdev is closed
++ */
++struct airoha_xdsl_link_ops {
++	int (*start)(void *priv);
++	void (*stop)(void *priv);
++};
++
++/**
++ * struct airoha_xdsl_link_state - xDSL link state exposed by GDM2
++ * @valid: true after the frontend has published its first state
++ * @link: true while the line is in showtime and PTM is enabled
++ * @speed: ethtool-compatible nominal downstream speed
++ * @duplex: ethtool duplex mode
++ * @autoneg: ethtool autonegotiation mode
++ * @port: ethtool port type
++ * @rx_line_rate_bps: exact downstream line rate in bits per second
++ * @tx_line_rate_bps: exact upstream line rate in bits per second
++ */
++struct airoha_xdsl_link_state {
++	bool valid;
++	bool link;
++	u32 speed;
++	u8 duplex;
++	u8 autoneg;
++	u8 port;
++	u64 rx_line_rate_bps;
++	u64 tx_line_rate_bps;
++};
++
+ struct airoha_xpon_service_cfg {
+ 	u32 cookie;
+ 	u16 gem_port_id;
+@@ -1062,6 +1098,15 @@ struct airoha_gdm_dev {
+ 	spinlock_t xpon_state_lock;
+ 	struct airoha_xpon_link_state xpon_link;
+ 
++	/* Serializes xDSL registration and netdev lifecycle notifications. */
++	struct mutex xdsl_lock;
++	const struct airoha_xdsl_link_ops *xdsl_ops;
++	void *xdsl_priv;
++	bool xdsl_started;
++	/* Protects the xDSL state consumed by netdev and ethtool callbacks. */
++	spinlock_t xdsl_state_lock;
++	struct airoha_xdsl_link_state xdsl_link;
++
+ 	/* Protects GPON GEM/T-CONT service classification. */
+ 	spinlock_t xpon_service_lock;
+ 	struct airoha_xpon_service_cfg
+@@ -1412,6 +1457,14 @@ void airoha_eth_xpon_flush_services(struct net_device *netdev);
+ void airoha_eth_xpon_retire_all(struct net_device *netdev);
+ int airoha_eth_xpon_retire_channel(struct net_device *netdev,
+ 				   unsigned int channel);
++int airoha_eth_register_xdsl(struct net_device *netdev,
++			     const struct airoha_xdsl_link_ops *ops,
++			     void *priv);
++void airoha_eth_unregister_xdsl(struct net_device *netdev,
++				const struct airoha_xdsl_link_ops *ops,
++				void *priv);
++void airoha_eth_xdsl_update_link(struct net_device *netdev,
++				 const struct airoha_xdsl_link_state *state);
+ int airoha_eth_set_xpon_mode(struct net_device *netdev,
+ 			      enum airoha_xpon_mode mode);
+ int airoha_eth_set_xpon_datapath(struct net_device *netdev,
+diff --git a/drivers/net/ethernet/airoha/airoha_wed.c b/drivers/net/ethernet/airoha/airoha_wed.c
+index 009c80f1f..b01c927e9 100644
+--- a/drivers/net/ethernet/airoha/airoha_wed.c
++++ b/drivers/net/ethernet/airoha/airoha_wed.c
+@@ -101,6 +101,7 @@ static const struct airoha_wed_soc_data en7523_wed_data = {
+ 
+ static const struct of_device_id airoha_wed_of_match[] = {
+ 	{ .compatible = "econet,en751221-wed", .data = &en751221_wed_data },
++	{ .compatible = "econet,en751627-wed", .data = &en7528_wed_data },
+ 	{ .compatible = "econet,en7528-wed", .data = &en7528_wed_data },
+ 	{ .compatible = "airoha,en7523-wed", .data = &en7523_wed_data },
+ 	{ /* sentinel */ }
+diff --git a/drivers/net/ethernet/airoha/airoha_xdsl.c b/drivers/net/ethernet/airoha/airoha_xdsl.c
+new file mode 100644
+index 000000000..43d04fa65
+--- /dev/null
++++ b/drivers/net/ethernet/airoha/airoha_xdsl.c
+@@ -0,0 +1,442 @@
++// SPDX-License-Identifier: GPL-2.0-only
++/*
++ * EcoNet EN7512/EN7516 xDSL/PTM frontend
++ *
++ * This driver owns the Linux-visible DMT and PTM resources and connects
++ * their lifecycle to the Airoha GDM2 netdev. The legacy tc3162_dmt module also
++ * embeds the complete G.hs/ADSL/VDSL training and DSP implementation. That
++ * line engine is deliberately not copied here; until a clean-room line engine
++ * is available the driver keeps the DMT interrupts masked and reports carrier
++ * down, while still providing a complete and safe PTM integration boundary.
++ */
++
++#include <linux/atomic.h>
++#include <linux/bitfield.h>
++#include <linux/delay.h>
++#include <linux/ethtool.h>
++#include <linux/interrupt.h>
++#include <linux/io.h>
++#include <linux/math64.h>
++#include <linux/mfd/syscon.h>
++#include <linux/module.h>
++#include <linux/netdevice.h>
++#include <linux/of_net.h>
++#include <linux/platform_device.h>
++#include <linux/property.h>
++#include <linux/regmap.h>
++#include <linux/reset.h>
++
++#include "airoha_eth.h"
++
++/* Legacy 0xbf900000 is the KSEG1 alias; 0x1faa0000 is an eFuse bank. */
++#define AIROHA_XDSL_DMT_PHYS_BASE	0x1f900000
++#define AIROHA_XDSL_PTM_PHYS_BASE	0x1fb62000
++
++#define AIROHA_XDSL_DMT_MIN_SIZE		0x2000
++#define AIROHA_XDSL_PTM_MIN_SIZE		0x200
++
++/* Shared WAN mux in the system-control block. */
++#define SCU_WAN_CONF			0x0070
++#define SCU_WAN_MODE_MASK		GENMASK(1, 0)
++#define SCU_WAN_MODE_PTM		2
++
++/* DMT system block, relative to the common DMT window. */
++#define DMT_VERSION			0x0000
++#define DMT_INT_STATUS0			0x0004 /* read-to-clear */
++#define DMT_INT_MASK3			0x000c
++#define DMT_INT_MASK2			0x000d
++#define DMT_INT_MASK1			0x000e
++#define DMT_INT_MASK0			0x000f
++#define DMT_INT_MASK4			0x0013
++#define DMT_INT_MASKED			1
++
++/* TPSTC lives inside the DMT window. */
++#define DMT_TPSTC_TX_CFG		0x0f00
++#define DMT_TPSTC_RX_CFG		0x1080
++#define DMT_TPSTC_MODE_MASK		GENMASK(3, 0)
++#define DMT_TPSTC_PTM_MODE		2
++
++/* PTM-TC MAC block. */
++#define PTM_CTRL			0x0004
++#define PTM_CTRL_TX_EN			BIT(0)
++#define PTM_CTRL_RX_EN			BIT(8)
++#define PTM_CTRL_U_CELL_BASE_MODE	BIT(17)
++
++#define AIROHA_XDSL_NUM_DMT_IRQS	6
++
++enum airoha_xdsl_afe {
++	AIROHA_XDSL_AFE_A60928,
++	AIROHA_XDSL_AFE_A10627,
++};
++
++struct airoha_xdsl_soc_data {
++	const char *name;
++	enum airoha_xdsl_afe afe;
++};
++
++struct airoha_xdsl {
++	struct device *dev;
++	const struct airoha_xdsl_soc_data *soc;
++	void __iomem *dmt_base;
++	void __iomem *ptm_base;
++	struct regmap *scu;
++	struct reset_control *dmt_reset;
++	struct reset_control *ptm_reset;
++	struct net_device *gdm_dev;
++	/* Serializes hardware state changes from netdev open/close and remove. */
++	struct mutex state_lock;
++	atomic64_t irq_count[AIROHA_XDSL_NUM_DMT_IRQS];
++	u32 dmt_version;
++	int dmt_irq;
++	bool irq_enabled;
++	bool running;
++	bool registered;
++};
++
++static void airoha_xdsl_dmt_mask_all(struct airoha_xdsl *priv)
++{
++	writeb(DMT_INT_MASKED, priv->dmt_base + DMT_INT_MASK0);
++	writeb(DMT_INT_MASKED, priv->dmt_base + DMT_INT_MASK1);
++	writeb(DMT_INT_MASKED, priv->dmt_base + DMT_INT_MASK2);
++	writeb(DMT_INT_MASKED, priv->dmt_base + DMT_INT_MASK3);
++	writeb(DMT_INT_MASKED, priv->dmt_base + DMT_INT_MASK4);
++}
++
++static void airoha_xdsl_publish_link(struct airoha_xdsl *priv, bool link,
++				     u64 downstream, u64 upstream)
++{
++	struct airoha_xdsl_link_state state = {
++		.valid = true,
++		.link = link,
++		.speed = link ? div_u64(downstream, 1000000) : SPEED_UNKNOWN,
++		.duplex = link ? DUPLEX_FULL : DUPLEX_UNKNOWN,
++		.autoneg = AUTONEG_DISABLE,
++		.port = PORT_OTHER,
++		.rx_line_rate_bps = downstream,
++		.tx_line_rate_bps = upstream,
++	};
++
++	airoha_eth_xdsl_update_link(priv->gdm_dev, &state);
++}
++
++static void airoha_xdsl_ptm_enable(struct airoha_xdsl *priv, bool enable)
++{
++	u32 val;
++
++	val = readl(priv->ptm_base + PTM_CTRL);
++	val &= ~(PTM_CTRL_TX_EN | PTM_CTRL_RX_EN);
++	if (enable)
++		val |= PTM_CTRL_TX_EN | PTM_CTRL_RX_EN;
++	writel(val, priv->ptm_base + PTM_CTRL);
++}
++
++static void airoha_xdsl_tpstc_set_ptm(struct airoha_xdsl *priv)
++{
++	u32 val;
++
++	val = readl(priv->dmt_base + DMT_TPSTC_TX_CFG);
++	val &= ~DMT_TPSTC_MODE_MASK;
++	val |= FIELD_PREP(DMT_TPSTC_MODE_MASK, DMT_TPSTC_PTM_MODE);
++	writel(val, priv->dmt_base + DMT_TPSTC_TX_CFG);
++
++	val = readl(priv->dmt_base + DMT_TPSTC_RX_CFG);
++	val &= ~DMT_TPSTC_MODE_MASK;
++	val |= FIELD_PREP(DMT_TPSTC_MODE_MASK, DMT_TPSTC_PTM_MODE);
++	writel(val, priv->dmt_base + DMT_TPSTC_RX_CFG);
++}
++
++static int airoha_xdsl_reset_deassert(struct reset_control *reset)
++{
++	int ret;
++
++	ret = reset_control_assert(reset);
++	if (ret)
++		return ret;
++
++	msleep(20);
++	ret = reset_control_deassert(reset);
++	if (ret)
++		return ret;
++
++	msleep(20);
++	return 0;
++}
++
++static int airoha_xdsl_hw_start(struct airoha_xdsl *priv)
++{
++	u32 val;
++	int ret;
++
++	mutex_lock(&priv->state_lock);
++	if (priv->running) {
++		ret = 0;
++		goto out_unlock;
++	}
++
++	ret = regmap_update_bits(priv->scu, SCU_WAN_CONF,
++				 SCU_WAN_MODE_MASK, SCU_WAN_MODE_PTM);
++	if (ret)
++		goto out_unlock;
++
++	ret = airoha_xdsl_reset_deassert(priv->dmt_reset);
++	if (ret)
++		goto out_unlock;
++
++	airoha_xdsl_dmt_mask_all(priv);
++	/* DMT_INT_STATUS0 is read-to-clear. */
++	readl(priv->dmt_base + DMT_INT_STATUS0);
++	priv->dmt_version = readl(priv->dmt_base + DMT_VERSION);
++
++	ret = airoha_xdsl_reset_deassert(priv->ptm_reset);
++	if (ret)
++		goto err_assert_dmt;
++
++	/* Match the vendor PTM fast path: disable dummy U-cell accesses. */
++	val = readl(priv->ptm_base + PTM_CTRL);
++	val &= ~(PTM_CTRL_U_CELL_BASE_MODE | PTM_CTRL_TX_EN |
++		 PTM_CTRL_RX_EN);
++	writel(val, priv->ptm_base + PTM_CTRL);
++	airoha_xdsl_tpstc_set_ptm(priv);
++
++	/* The line engine owns unmasking; keep the periodic DMT IRQ quiescent. */
++	enable_irq(priv->dmt_irq);
++	priv->irq_enabled = true;
++	priv->running = true;
++	airoha_xdsl_publish_link(priv, false, 0, 0);
++
++	dev_info(priv->dev,
++		 "%s DMT %#08x and PTM frontend started; waiting for a line engine\n",
++		 priv->soc->name, priv->dmt_version);
++	mutex_unlock(&priv->state_lock);
++	return 0;
++
++err_assert_dmt:
++	reset_control_assert(priv->dmt_reset);
++out_unlock:
++	mutex_unlock(&priv->state_lock);
++	return ret;
++}
++
++static void airoha_xdsl_hw_stop(struct airoha_xdsl *priv)
++{
++	mutex_lock(&priv->state_lock);
++	if (!priv->running)
++		goto out_unlock;
++
++	airoha_xdsl_publish_link(priv, false, 0, 0);
++	airoha_xdsl_ptm_enable(priv, false);
++	airoha_xdsl_dmt_mask_all(priv);
++	if (priv->irq_enabled) {
++		disable_irq(priv->dmt_irq);
++		priv->irq_enabled = false;
++	}
++	reset_control_assert(priv->ptm_reset);
++	reset_control_assert(priv->dmt_reset);
++	priv->running = false;
++
++out_unlock:
++	mutex_unlock(&priv->state_lock);
++}
++
++static int airoha_xdsl_netdev_start(void *data)
++{
++	return airoha_xdsl_hw_start(data);
++}
++
++static void airoha_xdsl_netdev_stop(void *data)
++{
++	airoha_xdsl_hw_stop(data);
++}
++
++static const struct airoha_xdsl_link_ops airoha_xdsl_link_ops = {
++	.start = airoha_xdsl_netdev_start,
++	.stop = airoha_xdsl_netdev_stop,
++};
++
++static irqreturn_t airoha_xdsl_irq(int irq, void *data)
++{
++	struct airoha_xdsl *priv = data;
++	u32 status;
++	int i;
++
++	status = readl(priv->dmt_base + DMT_INT_STATUS0);
++	if (!status)
++		return IRQ_NONE;
++
++	for (i = 0; i < AIROHA_XDSL_NUM_DMT_IRQS; i++)
++		if (status & BIT(i))
++			atomic64_inc(&priv->irq_count[i]);
++
++	/* A future line engine consumes the decoded events before unmasking. */
++	airoha_xdsl_dmt_mask_all(priv);
++	dev_dbg_ratelimited(priv->dev, "masked unsupported DMT IRQ status %#x\n",
++			    status);
++
++	return IRQ_HANDLED;
++}
++
++static int airoha_xdsl_resolve_datapath(struct airoha_xdsl *priv)
++{
++	struct device_node *eth_node;
++
++	eth_node = of_parse_phandle(priv->dev->of_node, "ethernet", 0);
++	if (!eth_node)
++		return dev_err_probe(priv->dev, -EINVAL,
++				     "missing GDM2 ethernet phandle\n");
++
++	priv->gdm_dev = of_find_net_device_by_node(eth_node);
++	of_node_put(eth_node);
++	if (!priv->gdm_dev)
++		return dev_err_probe(priv->dev, -EPROBE_DEFER,
++				     "GDM2 netdev is not registered yet\n");
++
++	return 0;
++}
++
++static int airoha_xdsl_map_resource(struct platform_device *pdev,
++				    const char *name, resource_size_t start,
++				    resource_size_t min_size, void __iomem **base)
++{
++	struct device *dev = &pdev->dev;
++	struct resource *res;
++
++	res = platform_get_resource_byname(pdev, IORESOURCE_MEM, name);
++	if (!res)
++		return dev_err_probe(dev, -EINVAL, "missing %s resource\n", name);
++	if (res->start != start)
++		return dev_err_probe(dev, -EINVAL,
++				     "unexpected %s base %pa\n", name, &res->start);
++	if (resource_size(res) < min_size)
++		return dev_err_probe(dev, -EINVAL,
++				     "%s resource is too small\n", name);
++
++	*base = devm_ioremap_resource(dev, res);
++	return PTR_ERR_OR_ZERO(*base);
++}
++
++static int airoha_xdsl_probe(struct platform_device *pdev)
++{
++	struct device *dev = &pdev->dev;
++	struct airoha_xdsl *priv;
++	int ret;
++
++	priv = devm_kzalloc(dev, sizeof(*priv), GFP_KERNEL);
++	if (!priv)
++		return -ENOMEM;
++
++	priv->dev = dev;
++	priv->soc = device_get_match_data(dev);
++	if (!priv->soc)
++		return -EINVAL;
++
++	mutex_init(&priv->state_lock);
++
++	ret = airoha_xdsl_map_resource(pdev, "dmt",
++				       AIROHA_XDSL_DMT_PHYS_BASE,
++				       AIROHA_XDSL_DMT_MIN_SIZE,
++				       &priv->dmt_base);
++	if (ret)
++		return ret;
++
++	ret = airoha_xdsl_map_resource(pdev, "ptm",
++				       AIROHA_XDSL_PTM_PHYS_BASE,
++				       AIROHA_XDSL_PTM_MIN_SIZE,
++				       &priv->ptm_base);
++	if (ret)
++		return ret;
++
++	priv->scu = syscon_regmap_lookup_by_phandle(dev->of_node,
++						    "airoha,scu");
++	if (IS_ERR(priv->scu))
++		return dev_err_probe(dev, PTR_ERR(priv->scu),
++				     "failed to get SCU regmap\n");
++
++	priv->dmt_irq = platform_get_irq_byname(pdev, "dmt");
++	if (priv->dmt_irq < 0)
++		return dev_err_probe(dev, priv->dmt_irq,
++				     "failed to get DMT interrupt\n");
++
++	priv->dmt_reset = devm_reset_control_get_exclusive(dev, "dmt");
++	if (IS_ERR(priv->dmt_reset))
++		return dev_err_probe(dev, PTR_ERR(priv->dmt_reset),
++				     "failed to get DMT reset\n");
++
++	priv->ptm_reset = devm_reset_control_get_exclusive(dev, "ptm");
++	if (IS_ERR(priv->ptm_reset))
++		return dev_err_probe(dev, PTR_ERR(priv->ptm_reset),
++				     "failed to get PTM reset\n");
++
++	ret = devm_request_irq(dev, priv->dmt_irq, airoha_xdsl_irq,
++			       IRQF_NO_AUTOEN, dev_name(dev), priv);
++	if (ret)
++		return dev_err_probe(dev, ret, "failed to request DMT interrupt\n");
++
++	ret = airoha_xdsl_resolve_datapath(priv);
++	if (ret)
++		return ret;
++
++	ret = airoha_eth_register_xdsl(priv->gdm_dev, &airoha_xdsl_link_ops,
++				       priv);
++	if (ret) {
++		put_device(&priv->gdm_dev->dev);
++		priv->gdm_dev = NULL;
++		return dev_err_probe(dev, ret,
++				     "failed to register GDM2 xDSL frontend\n");
++	}
++	priv->registered = true;
++
++	platform_set_drvdata(pdev, priv);
++	airoha_xdsl_publish_link(priv, false, 0, 0);
++
++	dev_info(dev, "%s xDSL/PTM frontend, AFE %s, IRQ %d\n",
++		 priv->soc->name,
++		 priv->soc->afe == AIROHA_XDSL_AFE_A60928 ? "A60928" : "A10627",
++		 priv->dmt_irq);
++
++	return 0;
++}
++
++static void airoha_xdsl_remove(struct platform_device *pdev)
++{
++	struct airoha_xdsl *priv = platform_get_drvdata(pdev);
++
++	if (!priv)
++		return;
++
++	if (priv->registered)
++		airoha_eth_unregister_xdsl(priv->gdm_dev,
++					   &airoha_xdsl_link_ops, priv);
++	airoha_xdsl_hw_stop(priv);
++	if (priv->gdm_dev)
++		put_device(&priv->gdm_dev->dev);
++}
++
++static const struct airoha_xdsl_soc_data en751221_xdsl_data = {
++	.name = "EN7512",
++	.afe = AIROHA_XDSL_AFE_A60928,
++};
++
++static const struct airoha_xdsl_soc_data en751627_xdsl_data = {
++	.name = "EN7516",
++	.afe = AIROHA_XDSL_AFE_A10627,
++};
++
++static const struct of_device_id airoha_xdsl_of_match[] = {
++	{ .compatible = "econet,en751221-xdsl", .data = &en751221_xdsl_data },
++	{ .compatible = "econet,en751627-xdsl", .data = &en751627_xdsl_data },
++	{ }
++};
++MODULE_DEVICE_TABLE(of, airoha_xdsl_of_match);
++
++static struct platform_driver airoha_xdsl_driver = {
++	.probe = airoha_xdsl_probe,
++	.remove = airoha_xdsl_remove,
++	.driver = {
++		.name = "airoha-xdsl",
++		.of_match_table = airoha_xdsl_of_match,
++	},
++};
++module_platform_driver(airoha_xdsl_driver);
++
++MODULE_DESCRIPTION("EcoNet EN7512/EN7516 xDSL/PTM frontend");
++MODULE_LICENSE("GPL");
+diff --git a/drivers/net/ethernet/airoha/airoha_xpon.c b/drivers/net/ethernet/airoha/airoha_xpon.c
+index 74f1f4a19..800bc09a8 100644
+--- a/drivers/net/ethernet/airoha/airoha_xpon.c
++++ b/drivers/net/ethernet/airoha/airoha_xpon.c
+@@ -4678,6 +4678,7 @@ static const struct airoha_xpon_match_data en7528_xpon_data = {
+ 
+ static const struct of_device_id airoha_xpon_of_match[] = {
+ 	{ .compatible = "airoha,en7523-xpon", .data = &en7523_xpon_data },
++	{ .compatible = "airoha,en751627-xpon", .data = &en7528_xpon_data },
+ 	{ .compatible = "airoha,en7528-xpon", .data = &en7528_xpon_data },
+ 	{ .compatible = "econet,en751221-xpon", .data = &en751221_xpon_data },
+ 	{}
+diff --git a/drivers/net/phy/mediatek/airoha-ge-soc.c b/drivers/net/phy/mediatek/airoha-ge-soc.c
+index c9a333a9a..7fa1b3007 100644
+--- a/drivers/net/phy/mediatek/airoha-ge-soc.c
++++ b/drivers/net/phy/mediatek/airoha-ge-soc.c
+@@ -726,8 +726,14 @@ static int airoha_rext_cal_sw(struct phy_device *phydev)
+ 			     FIELD_PREP(MTK_PHY_RG_BG_RASEL_MASK, zcal_ctrl >> 3));
+ 
+ 	if (airoha_is_9491(phydev)) {
+-		const char *compat = airoha_is_en7580(phydev) ?
+-			"econet,en7580-chip-scu" : "econet,en7528-chip-scu";
++		const char *compat;
++
++		if (airoha_is_en7580(phydev))
++			compat = "econet,en7580-chip-scu";
++		else if (of_machine_is_compatible("econet,en751627"))
++			compat = "econet,en751627-chip-scu";
++		else
++			compat = "econet,en7528-chip-scu";
+ 
+ 		chip_scu = syscon_regmap_lookup_by_compatible(compat);
+ 		if (!IS_ERR(chip_scu))
+diff --git a/drivers/pci/controller/pcie-mediatek.c b/drivers/pci/controller/pcie-mediatek.c
+index d563d7228..a85d409f6 100644
+--- a/drivers/pci/controller/pcie-mediatek.c
++++ b/drivers/pci/controller/pcie-mediatek.c
+@@ -1506,6 +1506,7 @@ static const struct of_device_id mtk_pcie_ids[] = {
+ 	{ .compatible = "mediatek,mt2712-pcie", .data = &mtk_pcie_soc_mt2712 },
+ 	{ .compatible = "mediatek,mt7622-pcie", .data = &mtk_pcie_soc_mt7622 },
+ 	{ .compatible = "mediatek,mt7629-pcie", .data = &mtk_pcie_soc_mt7629 },
++	{ .compatible = "econet,en751627-pcie", .data = &mtk_pcie_soc_en7528 },
+ 	{},
+ };
+ MODULE_DEVICE_TABLE(of, mtk_pcie_ids);
+diff --git a/drivers/phy/airoha/phy-airoha-xpon.c b/drivers/phy/airoha/phy-airoha-xpon.c
+index 8dea4d3ae..12a863348 100644
+--- a/drivers/phy/airoha/phy-airoha-xpon.c
++++ b/drivers/phy/airoha/phy-airoha-xpon.c
+@@ -1346,6 +1346,10 @@ static const struct of_device_id airoha_xpon_phy_of_match[] = {
+ 		.compatible = "airoha,en7523-xpon-phy",
+ 		.data = &airoha_en7523_xpon_phy_data,
+ 	},
++	{
++		.compatible = "airoha,en751627-xpon-phy",
++		.data = &airoha_en7528_xpon_phy_data,
++	},
+ 	{
+ 		.compatible = "airoha,en7528-xpon-phy",
+ 		.data = &airoha_en7528_xpon_phy_data,
+diff --git a/drivers/phy/phy-en7528-pcie.c b/drivers/phy/phy-en7528-pcie.c
+index 01207bcbe..3dc0d7253 100644
+--- a/drivers/phy/phy-en7528-pcie.c
++++ b/drivers/phy/phy-en7528-pcie.c
+@@ -133,6 +133,8 @@ static int en7528_pcie_phy_probe(struct platform_device *pdev)
+ }
+ 
+ static const struct of_device_id en7528_pcie_phy_ids[] = {
++	{ .compatible = "econet,en751627-pcie-phy0", .data = en7528_phy_port0 },
++	{ .compatible = "econet,en751627-pcie-phy1", .data = en7528_phy_port1 },
+ 	{ .compatible = "econet,en7528-pcie-phy0", .data = en7528_phy_port0 },
+ 	{ .compatible = "econet,en7528-pcie-phy1", .data = en7528_phy_port1 },
+ 	{ .compatible = "econet,en751221-pcie-phy0", .data = en7528_phy_port0 },
+diff --git a/drivers/phy/phy-en7528-usb.c b/drivers/phy/phy-en7528-usb.c
+index ee23a7f52..f08f1ed33 100644
+--- a/drivers/phy/phy-en7528-usb.c
++++ b/drivers/phy/phy-en7528-usb.c
+@@ -477,6 +477,7 @@ static const struct en7528_usb_phy_soc_data en7580_usb_phy_data = {
+ };
+ 
+ static const struct of_device_id en7528_usb_phy_match[] = {
++	{ .compatible = "econet,en751627-usb-phy", .data = &en7528_usb_phy_data },
+ 	{ .compatible = "econet,en7528-usb-phy", .data = &en7528_usb_phy_data },
+ 	{ .compatible = "econet,en7580-usb-phy", .data = &en7580_usb_phy_data },
+ 	{ },
+diff --git a/drivers/pinctrl/airoha/pinctrl-en7528.c b/drivers/pinctrl/airoha/pinctrl-en7528.c
+index f14f8076a..7018b23c0 100644
+--- a/drivers/pinctrl/airoha/pinctrl-en7528.c
++++ b/drivers/pinctrl/airoha/pinctrl-en7528.c
+@@ -1186,6 +1186,7 @@ static const struct airoha_pinctrl_match_data pinctrl_match_data = {
+ };
+ 
+ static const struct of_device_id airoha_pinctrl_of_match[] = {
++	{ .compatible = "econet,en751627-pinctrl", .data = &pinctrl_match_data },
+ 	{ .compatible = "econet,en7528-pinctrl", .data = &pinctrl_match_data },
+ 	{ /* sentinel */ }
+ };
+diff --git a/drivers/usb/host/xhci-mtk.c b/drivers/usb/host/xhci-mtk.c
+index ae5fbf628..0449e1f6d 100644
+--- a/drivers/usb/host/xhci-mtk.c
++++ b/drivers/usb/host/xhci-mtk.c
+@@ -200,7 +200,8 @@ static void xhci_mtk_ltssm_quirk(struct xhci_hcd_mtk *mtk)
+ 	struct device *dev = mtk->dev;
+ 	struct usb_hcd *hcd = mtk->hcd;
+ 
+-	if (of_device_is_compatible(dev->of_node, "econet,en7528-xhci"))
++	if (of_device_is_compatible(dev->of_node, "econet,en751627-xhci") ||
++	    of_device_is_compatible(dev->of_node, "econet,en7528-xhci"))
+ 		/* Fix the EN7528 TD 6.5 compliance test failure. */
+ 		writel(0x203e8, hcd->regs + XHCI_MTK_LTSSM_TIMING_PARAMETER5);
+ 	else if (of_device_is_compatible(dev->of_node, "econet,en7580-xhci"))
+@@ -866,6 +867,7 @@ static const struct dev_pm_ops xhci_mtk_pm_ops = {
+ static const struct of_device_id mtk_xhci_of_match[] = {
+ 	{ .compatible = "mediatek,mt8173-xhci"},
+ 	{ .compatible = "mediatek,mt8195-xhci"},
++	{ .compatible = "econet,en751627-xhci" },
+ 	{ .compatible = "econet,en7528-xhci" },
+ 	{ .compatible = "econet,en7580-xhci" },
+ 	{ .compatible = "mediatek,mtk-xhci"},
+diff --git a/include/dt-bindings/clock/econet,en751627-scu.h b/include/dt-bindings/clock/econet,en751627-scu.h
+new file mode 100644
+index 000000000..2854b8a52
+--- /dev/null
++++ b/include/dt-bindings/clock/econet,en751627-scu.h
+@@ -0,0 +1,12 @@
++/* SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause) */
++
++#ifndef _DT_BINDINGS_CLOCK_ECONET_EN751627_SCU_H_
++#define _DT_BINDINGS_CLOCK_ECONET_EN751627_SCU_H_
++
++#define EN751627_CLK_PCIE		0
++#define EN751627_CLK_SPI		1
++#define EN751627_CLK_BUS		2
++#define EN751627_CLK_CPU		3
++#define EN751627_CLK_GSW		4
++
++#endif /* _DT_BINDINGS_CLOCK_ECONET_EN751627_SCU_H_ */
+diff --git a/include/dt-bindings/reset/econet,en751627-scu.h b/include/dt-bindings/reset/econet,en751627-scu.h
+new file mode 100644
+index 000000000..e4992ba91
+--- /dev/null
++++ b/include/dt-bindings/reset/econet,en751627-scu.h
+@@ -0,0 +1,49 @@
++/* SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause) */
++
++#ifndef __DT_BINDINGS_RESET_CONTROLLER_ECONET_EN751627_H_
++#define __DT_BINDINGS_RESET_CONTROLLER_ECONET_EN751627_H_
++
++#define EN751627_XPON_PHY_RST		 0
++#define EN751627_PCM1_ZSI_ISI_RST	 1
++#define EN751627_FE_QDMA1_RST		 2
++#define EN751627_FE_QDMA2_RST		 3
++#define EN751627_FE_UNZIP_RST		 4
++#define EN751627_PCM2_RST		 5
++#define EN751627_PTM_MAC_RST		 6
++#define EN751627_CRYPTO_RST		 7
++#define EN751627_SAR_RST		 8
++#define EN751627_TIMER_RST		 9
++#define EN751627_INTC_RST		10
++#define EN751627_BONDING_RST		11
++#define EN751627_PCM1_RST		12
++#define EN751627_UART_RST		13
++#define EN751627_GPIO_RST		14
++#define EN751627_GDMA_RST		15
++#define EN751627_I2C_MASTER_RST		16
++#define EN751627_PCM2_ZSI_ISI_RST	17
++#define EN751627_SFC_RST		18
++#define EN751627_UART2_RST		19
++#define EN751627_GDMP_RST		20
++#define EN751627_FE_RST			21
++#define EN751627_USB_HOST_P0_RST	22
++#define EN751627_GSW_RST		23
++#define EN751627_SFC2_PCM_RST		24
++#define EN751627_PCIE0_RST		25
++#define EN751627_PCIE1_RST		26
++#define EN751627_CPU_TIMER_RST		27
++#define EN751627_PCIE_HB_RST		28
++#define EN751627_SIMIF_RST		29
++#define EN751627_XPON_MAC_RST		30
++#define EN751627_GFAST_RST		31
++#define EN751627_CPU_TIMER2_RST		32
++#define EN751627_UART3_RST		33
++#define EN751627_UART4_RST		34
++#define EN751627_UART5_RST		35
++#define EN751627_I2C2_RST		36
++#define EN751627_XSI_MAC_RST		37
++#define EN751627_XSI_PHY_RST		38
++#define EN751627_DMT_RST		39
++#define EN751627_USB_PHY_P0_RST		40
++#define EN751627_USB_PHY_P1_RST		41
++
++#endif /* __DT_BINDINGS_RESET_CONTROLLER_ECONET_EN751627_H_ */
+-- 
+2.55.0
+

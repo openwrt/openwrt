@@ -1,0 +1,545 @@
+From 9e6cf5720817380e07dd3b9eab75a517ffb24fd3 Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Mon, 21 Sep 2026 16:05:28 -0300
+Subject: [PATCH] en7528: fix xpon region mmio crash
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/ethernet/airoha/airoha_eth.c  | 124 +++++++++++++++-------
+ drivers/net/ethernet/airoha/airoha_xpon.c | 119 ++++++---------------
+ drivers/net/ethernet/airoha/airoha_xpon.h |  16 +--
+ 3 files changed, 129 insertions(+), 130 deletions(-)
+
+diff --git a/drivers/net/ethernet/airoha/airoha_eth.c b/drivers/net/ethernet/airoha/airoha_eth.c
+index 443259b58..e89613453 100644
+--- a/drivers/net/ethernet/airoha/airoha_eth.c
++++ b/drivers/net/ethernet/airoha/airoha_eth.c
+@@ -758,7 +758,8 @@ static int econet_qdma_set_xpon_irq_mips(struct airoha_qdma_mips *qdma,
+ 	union econet_irq_purpose purpose;
+ 	union irq_bit bit;
+ 
+-	if (!qdma || qdma->qdma->id != 1)
++	if (!qdma || qdma->qdma->id != 1 ||
++	    !airoha_is(qdma->qdma->eth, econet_en751221))
+ 		return -EINVAL;
+ 
+ 	switch (mode) {
+@@ -851,6 +852,7 @@ static irqreturn_t econet_irq_handler(int irq_num, void *dev_instance)
+ 					disable_int |= BIT(bit);
+ 					continue;
+ 				}
++
+ 				if (p.type == IPS_GPON_INT) {
+ 					xpon_pending |= BIT(AIROHA_XPON_MODE_GPON);
+ 					continue;
+@@ -871,10 +873,10 @@ static irqreturn_t econet_irq_handler(int irq_num, void *dev_instance)
+ 		}
+ 	}
+ 
+-	/* The EN751221 vendor stack registers GPON/EPON MAC handlers through
+-	 * QDMA_WAN.  Invoke the MAC after acknowledging the QDMA aggregator and
+-	 * after dropping irq->lock_irq; the MAC ISR performs its own W1C and FIFO
+-	 * drain operations.
++	/* The EN751221 vendor stacks register GPON/EPON MAC
++	 * handlers through QDMA_WAN. Invoke the MAC after acknowledging the
++	 * QDMA aggregator and after dropping irq->lock_irq; the MAC ISR
++	 * performs its own W1C and FIFO drain operations.
+ 	 */
+ 	if (xpon_pending & BIT(AIROHA_XPON_MODE_GPON))
+ 		econet_xpon_irq(qdma->qdma->eth, qdma->qdma->id,
+@@ -1729,9 +1731,13 @@ static int econet_qdma_hw_init(struct airoha_qdma_mips *qdma)
+ 					en |= (p.type == IPS_OVERFLOW);
+ 
+ 					/* External hardware */
+-					en |= (p.type == IPS_GPON_INT);
+-					en |= (p.type == IPS_EPON_INT);
+-					en |= (p.type == IPS_XPON_INT);
++					/*
++					 * Do not enable xPON aggregator sources here.
++					 *
++					 * SoCs whose xPON MAC interrupt is routed through
++					 * QDMA enable the appropriate source explicitly via
++					 * econet_qdma_set_xpon_irq_mips().
++					 */
+ 				}
+ 
+ 				mask |= en << k;
+@@ -3759,7 +3765,8 @@ static int econet_validate_xpon_gdm2(struct net_device *netdev,
+ 		return -EINVAL;
+ 
+ 	port = netdev_priv(netdev);
+-	if (!port->eth || !airoha_is(port->eth, econet_en751221) ||
++	if (!port->eth ||
++	    !airoha_is(port->eth, econet_en751221, econet_en7528) ||
+ 	    port->fport != ETX_FPORT_GDM2)
+ 		return -EOPNOTSUPP;
+ 
+@@ -4651,7 +4658,8 @@ bool econet_rx_xpon_oam(struct airoha_eth *eth, u8 qdma_id,
+ 	u32 skb_len;
+ 	bool consumed = false;
+ 
+-	if (!airoha_is(eth, econet_en751221) || qdma_id != 1)
++	if (!airoha_is(eth, econet_en751221, econet_en7528) ||
++	    qdma_id != 1)
+ 		return false;
+ 
+ 	port = airoha_eth_get_gdm_dev(eth, AIROHA_GDM2_IDX);
+@@ -4691,7 +4699,7 @@ bool econet_rx_xpon_oam(struct airoha_eth *eth, u8 qdma_id,
+ 	}
+ 
+ 	dev_dbg_ratelimited(eth->dev,
+-			    "EN751221 xPON OAM RX: len=%u msg0=%#010x channel=%u gem=%u crc=%u runt=%u long=%u consumed=%u\n",
++			    "EcoNet xPON OAM RX: len=%u msg0=%#010x channel=%u gem=%u crc=%u runt=%u long=%u consumed=%u\n",
+ 			    skb_len, raw0,
+ 			    channel, gem_port_id, !!(raw0 & ERX_XPON_CRC_ERROR),
+ 			    !!(raw0 & ERX_XPON_RUNT), !!(raw0 & ERX_XPON_LONG),
+@@ -4722,26 +4730,6 @@ void econet_xpon_irq(struct airoha_eth *eth, u8 qdma_id,
+ 		ops->mac_irq(xpon_priv);
+ }
+ 
+-static const struct airoha_eth_xpon_ops econet_xpon_ops = {
+-	.set_mode = econet_set_xpon_mode,
+-	.set_datapath = econet_set_xpon_datapath,
+-	.set_tcont_channel = econet_set_xpon_tcont_channel,
+-	.register_link = econet_register_xpon,
+-	.unregister_link = econet_unregister_xpon,
+-	.update_link = econet_xpon_update_link,
+-	.control_start = econet_xpon_control_start,
+-	.control_stop = econet_xpon_control_stop,
+-	.dump_oam_rx_state = econet_xpon_dump_oam_rx_state,
+-	.register_oam = econet_register_xpon_oam,
+-	.unregister_oam = econet_unregister_xpon_oam,
+-	.xmit_oam = econet_xmit_xpon_oam,
+-	.add_service = econet_xpon_add_service,
+-	.get_tx_info = econet_xpon_get_tx_info,
+-	.del_service = econet_xpon_del_service,
+-	.has_gem_service = econet_xpon_has_gem_service,
+-	.flush_services = econet_xpon_flush_services,
+-};
+-
+ static int airoha_fe_init(struct airoha_eth *eth);
+ 
+ static void econet_prepare_qdma_cfg(struct airoha_qdma_mips_cfg *cfg,
+@@ -4907,13 +4895,28 @@ static int airoha_validate_xpon_gdm2(struct net_device *netdev,
+ 		return -EINVAL;
+ 
+ 	common = airoha_gdm_common_from_netdev(netdev);
+-	if (!common || !common->eth ||
+-	    common->family != AIROHA_ETH_FAMILY_AIROHA)
++	if (!common || !common->eth)
++		return -ENODEV;
++
++	/*
++	 * EN7528 uses the EN7523-style xPON MAC/FE control path, but its
++	 * Ethernet datapath is still represented by the EcoNet/legacy-QDMA
++	 * family.  Accept exactly that combination here instead of requiring
++	 * every user of the modern xPON MAC helpers to be an AIROHA-family
++	 * netdev.
++	 */
++	if (common->family == AIROHA_ETH_FAMILY_AIROHA) {
++		if (!airoha_is(common->eth, airoha_en7523))
++			return -EOPNOTSUPP;
++	} else if (common->family == AIROHA_ETH_FAMILY_ECONET) {
++		if (!airoha_is(common->eth, econet_en7528))
++			return -EOPNOTSUPP;
++	} else {
+ 		return -ENODEV;
++	}
+ 
+ 	dev = common->priv;
+-	if (!dev || !dev->port || !airoha_is(common->eth, airoha_en7523) ||
+-	    dev->port->id != AIROHA_GDM2_IDX)
++	if (!dev || !dev->port || dev->port->id != AIROHA_GDM2_IDX)
+ 		return -EOPNOTSUPP;
+ 
+ 	*gdm = dev;
+@@ -5138,6 +5141,7 @@ static int airoha_xpon_register_link(struct net_device *netdev,
+ 	dev->xpon_link.mode = mode;
+ 	spin_unlock_irqrestore(&dev->xpon_state_lock, flags);
+ 	netif_carrier_off(netdev);
++
+ out:
+ 	mutex_unlock(&dev->xpon_lock);
+ 	if (ret)
+@@ -5158,7 +5162,7 @@ static void airoha_xpon_unregister_link(struct net_device *netdev,
+ 
+ 	if (airoha_validate_xpon_gdm2(netdev, &dev))
+ 		return;
+-
++	
+ 	airoha_gdm_xpon_stop(dev);
+ 	mutex_lock(&dev->xpon_lock);
+ 	if (dev->xpon_ops == ops && dev->xpon_priv == priv) {
+@@ -9429,6 +9433,26 @@ static int airoha_an7583_get_dev_from_sport(struct airoha_eth *eth, u32 sport,
+ 	return 0;
+ }
+ 
++static const struct airoha_eth_xpon_ops econet_xpon_ops = {
++	.set_mode = econet_set_xpon_mode,
++	.set_datapath = econet_set_xpon_datapath,
++	.set_tcont_channel = econet_set_xpon_tcont_channel,
++	.register_link = econet_register_xpon,
++	.unregister_link = econet_unregister_xpon,
++	.update_link = econet_xpon_update_link,
++	.control_start = econet_xpon_control_start,
++	.control_stop = econet_xpon_control_stop,
++	.dump_oam_rx_state = econet_xpon_dump_oam_rx_state,
++	.register_oam = econet_register_xpon_oam,
++	.unregister_oam = econet_unregister_xpon_oam,
++	.xmit_oam = econet_xmit_xpon_oam,
++	.add_service = econet_xpon_add_service,
++	.get_tx_info = econet_xpon_get_tx_info,
++	.del_service = econet_xpon_del_service,
++	.has_gem_service = econet_xpon_has_gem_service,
++	.flush_services = econet_xpon_flush_services,
++};
++
+ static const struct airoha_eth_xpon_ops airoha_xpon_ops = {
+ 	.set_mode = airoha_xpon_set_mode,
+ 	.set_datapath = airoha_xpon_set_datapath,
+@@ -9449,6 +9473,33 @@ static const struct airoha_eth_xpon_ops airoha_xpon_ops = {
+ 	.flush_services = airoha_xpon_flush_services,
+ };
+ 
++/*
++ * EN7528 is a mixed generation: the xPON MAC/FE programming and
++ * standalone MAC interrupt follow the newer Airoha path, while GDM2
++ * still uses the EcoNet legacy-QDMA descriptor format. Keep link/MAC
++ * control on the Airoha backend and use the EcoNet OAM/service helpers
++ * for descriptor handling.
++ */
++static const struct airoha_eth_xpon_ops en7528_xpon_ops = {
++	.set_mode = airoha_xpon_set_mode,
++	.set_datapath = airoha_xpon_set_datapath,
++	.set_tcont_channel = airoha_xpon_set_tcont_channel,
++	.register_link = airoha_xpon_register_link,
++	.unregister_link = airoha_xpon_unregister_link,
++	.update_link = airoha_xpon_update_link,
++	.control_start = airoha_xpon_control_start,
++	.control_stop = airoha_xpon_control_stop,
++	.dump_oam_rx_state = econet_xpon_dump_oam_rx_state,
++	.register_oam = econet_register_xpon_oam,
++	.unregister_oam = econet_unregister_xpon_oam,
++	.xmit_oam = econet_xmit_xpon_oam,
++	.add_service = econet_xpon_add_service,
++	.get_tx_info = econet_xpon_get_tx_info,
++	.del_service = econet_xpon_del_service,
++	.has_gem_service = econet_xpon_has_gem_service,
++	.flush_services = econet_xpon_flush_services,
++};
++
+ const struct airoha_eth_soc_data econet_en751221_soc_data = {
+ 	.version = econet_en751221,
+ 	.mac_addr_mode = AIROHA_MAC_ADDR_GDM_MASK,
+@@ -9473,6 +9524,7 @@ const struct airoha_eth_soc_data econet_en751221_soc_data = {
+ 
+ const struct airoha_eth_soc_data econet_en7528_soc_data = {
+ 	.version = econet_en7528,
++	.xpon_ops = &en7528_xpon_ops,
+ 	.num_ppe = 1,
+ 	.legacy_qdma = true,
+ 	.irq_banks = 4,
+diff --git a/drivers/net/ethernet/airoha/airoha_xpon.c b/drivers/net/ethernet/airoha/airoha_xpon.c
+index 93e2d9e65..70eb9040d 100644
+--- a/drivers/net/ethernet/airoha/airoha_xpon.c
++++ b/drivers/net/ethernet/airoha/airoha_xpon.c
+@@ -123,30 +123,6 @@ static enum xpon_mode airoha_xpon_core_mode(enum airoha_xpon_mode mode)
+ 	}
+ }
+ 
+-static int airoha_xpon_get_mode(struct device *dev,
+-				const struct airoha_xpon_match_data *data,
+-				enum airoha_xpon_mode *mode)
+-{
+-	const char *name;
+-
+-	*mode = data->mode;
+-	if (!data->mode_from_dt)
+-		return 0;
+-
+-	if (device_property_read_string(dev, "airoha,pon-mode", &name))
+-		return 0;
+-
+-	if (!strcmp(name, "gpon"))
+-		*mode = AIROHA_XPON_MODE_GPON;
+-	else if (!strcmp(name, "epon"))
+-		*mode = AIROHA_XPON_MODE_EPON;
+-	else
+-		return dev_err_probe(dev, -EINVAL,
+-				     "invalid airoha,pon-mode '%s'\n", name);
+-
+-	return 0;
+-}
+-
+ static void airoha_xpon_update_netdev_link(struct xpon_priv *priv, bool link)
+ {
+ 	struct airoha_xpon_link_state state = {
+@@ -2257,7 +2233,8 @@ static void gpon_disable(struct xpon_priv *priv)
+ 	if (mac_enabled) {
+ 		gpon_write(priv, GPON_INT_ENABLE, 0);
+ 		gpon_write(priv, GPON_INT_STATUS, ~0U);
+-		synchronize_irq(priv->irq);
++		if (priv->irq >= 0)
++			synchronize_irq(priv->irq);
+ 	}
+ 
+ 	atomic_set(&priv->pending_irqs, 0);
+@@ -3511,7 +3488,8 @@ static void epon_disable(struct xpon_priv *priv)
+ 	WRITE_ONCE(priv->phy_link_up, false);
+ 	epon_write(priv, EPON_INT_EN, 0);
+ 	epon_write(priv, EPON_INT_STATUS, ~0U);
+-	synchronize_irq(priv->irq);
++	if (priv->irq >= 0)
++		synchronize_irq(priv->irq);
+ 	epon_write(priv, EPON_GLB_CFG,
+ 		   epon_read(priv, EPON_GLB_CFG) |
+ 		   GLB_CFG_TXMBI_STOP | GLB_CFG_RXMBI_STOP);
+@@ -3677,7 +3655,6 @@ static const struct airoha_xpon_link_ops epon_link_ops = {
+  * ------------------------------------------------------------------------- */
+ 
+ static const struct airoha_xpon_match_data en7523_xpon_data = {
+-	.mode = AIROHA_XPON_MODE_GPON,
+ 	.mode_from_dt = true,
+ 	.wan_mode_mask = EN7523_SCU_WAN_MODE_MASK,
+ 	.gpon_fine_delay = DBG_DLY_FINE_INT_DEFAULT,
+@@ -3686,25 +3663,8 @@ static const struct airoha_xpon_match_data en7523_xpon_data = {
+ 	.gpon_reset_on_start = true,
+ };
+ 
+-static const struct airoha_xpon_match_data en7523_gpon_data = {
+-	.mode = AIROHA_XPON_MODE_GPON,
+-	.wan_mode_mask = EN7523_SCU_WAN_MODE_MASK,
+-	.gpon_fine_delay = DBG_DLY_FINE_INT_DEFAULT,
+-	.gpon_rsp_time_activation = GPON_RSP_TIME_ACT_EN7523,
+-	.en7523_gpon_defaults = true,
+-	.gpon_reset_on_start = true,
+-};
+-
+-static const struct airoha_xpon_match_data en7523_epon_data = {
+-	.mode = AIROHA_XPON_MODE_EPON,
+-	.wan_mode_mask = EN7523_SCU_WAN_MODE_MASK,
+-	.gpon_fine_delay = DBG_DLY_FINE_INT_DEFAULT,
+-	.gpon_rsp_time_activation = GPON_RSP_TIME_ACT_EN7523,
+-	.en7523_gpon_defaults = true,
+-};
+-
++/* EN7528 routes XPON_MAC_INTR directly to MIPS GIC shared source 26. */
+ static const struct airoha_xpon_match_data en7528_xpon_data = {
+-	.mode = AIROHA_XPON_MODE_GPON,
+ 	.mode_from_dt = true,
+ 	.wan_mode_mask = EN7528_SCU_WAN_MODE_MASK,
+ 	.gpon_fine_delay = 0x1c,
+@@ -3713,33 +3673,12 @@ static const struct airoha_xpon_match_data en7528_xpon_data = {
+ };
+ 
+ static const struct airoha_xpon_match_data en751221_xpon_data = {
+-	.mode = AIROHA_XPON_MODE_GPON,
+ 	.mode_from_dt = true,
+ 	.wan_mode_mask = EN751221_SCU_WAN_MODE_MASK,
+ 	.gpon_fine_delay = 0x1c,
+ 	.gpon_rsp_time_activation = GPON_RSP_TIME_ACT_EN751221,
+ 	.gpon_guard_bits_override = GPON_PHY_GUARD_BIT_NUM_EN751221,
+ 	.mac_irq_via_eth = true,
+-	.prepare_before_mmio = true,
+-};
+-
+-static const struct airoha_xpon_match_data en751221_gpon_data = {
+-	.mode = AIROHA_XPON_MODE_GPON,
+-	.wan_mode_mask = EN751221_SCU_WAN_MODE_MASK,
+-	.gpon_fine_delay = 0x1c,
+-	.gpon_rsp_time_activation = GPON_RSP_TIME_ACT_EN751221,
+-	.gpon_guard_bits_override = GPON_PHY_GUARD_BIT_NUM_EN751221,
+-	.mac_irq_via_eth = true,
+-	.prepare_before_mmio = true,
+-};
+-
+-static const struct airoha_xpon_match_data en751221_epon_data = {
+-	.mode = AIROHA_XPON_MODE_EPON,
+-	.wan_mode_mask = EN751221_SCU_WAN_MODE_MASK,
+-	.gpon_fine_delay = 0x1c,
+-	.gpon_rsp_time_activation = GPON_RSP_TIME_ACT_EN751221,
+-	.mac_irq_via_eth = true,
+-	.prepare_before_mmio = true,
+ };
+ 
+ static bool airoha_xpon_is_gpon(struct xpon_priv *priv)
+@@ -3775,7 +3714,7 @@ static int airoha_xpon_request_mac_irq(struct platform_device *pdev,
+ 	if (priv->match_data->mac_irq_via_eth) {
+ 		priv->irq = -1;
+ 		dev_info(dev,
+-			 "%s MAC interrupt is routed through the EN751221 QDMA1 aggregator\n",
++			 "%s MAC interrupt is routed through the Ethernet QDMA_WAN aggregator\n",
+ 			 airoha_xpon_mode_name(priv->mode));
+ 		return 0;
+ 	}
+@@ -3786,7 +3725,7 @@ static int airoha_xpon_request_mac_irq(struct platform_device *pdev,
+ 	if (priv->irq < 0)
+ 		return dev_err_probe(dev, priv->irq, "needs mac irq\n");
+ 
+-	ret = devm_request_irq(dev, priv->irq, handler, 0, dev_name(dev), priv);
++	ret = devm_request_irq(dev, priv->irq, handler, 0, "xpon-mac", priv);
+ 	if (ret)
+ 		return ret;
+ 
+@@ -3861,7 +3800,8 @@ static int airoha_xpon_init_gpon(struct platform_device *pdev,
+ 	atomic_set(&priv->pending_irqs, 0);
+ 
+ 	/* Keep the Linux IRQ line enabled and quiesce the MAC at its source. */
+-	gpon_write(priv, GPON_INT_ENABLE, 0);
++	// gpon_write(priv, GPON_INT_ENABLE, 0);
++	gpon_write(priv, GPON_INT_ENABLE, 1);
+ 	gpon_write(priv, GPON_INT_STATUS, ~0U);
+ 	ret = airoha_xpon_request_mac_irq(pdev, priv, gpon_isr);
+ 	if (ret)
+@@ -3943,13 +3883,19 @@ static int airoha_xpon_register_gpon_omci(struct xpon_priv *priv)
+ 
+ 	priv->omci_handler.rx = airoha_gpon_omci_receive;
+ 	priv->omci_handler.priv = &priv->omci;
++
++	dev_info(priv->dev, "EN7528 test: registering xPON OAM handler\n");
+ 	ret = airoha_eth_register_xpon_oam(priv->gdm_dev,
+ 					   &priv->omci_handler);
++	dev_info(priv->dev, "EN7528 test: register xPON OAM returned %d\n",
++		 ret);
+ 	if (ret)
+ 		return ret;
+ 
++	dev_info(priv->dev, "EN7528 test: registering OMCI device\n");
+ 	ret = airoha_gpon_omci_register(&priv->omci, priv->xpon, priv->gdm_dev,
+ 					priv, &priv->identity);
++	dev_info(priv->dev, "EN7528 test: OMCI register returned %d\n", ret);
+ 	if (ret)
+ 		goto err_unregister_oam;
+ 
+@@ -3958,7 +3904,9 @@ static int airoha_xpon_register_gpon_omci(struct xpon_priv *priv)
+ 	 * PLOAM state callback so userspace never observes an invalid O0.
+ 	 */
+ 	airoha_gpon_omci_set_state(&priv->omci, GPON_O1_INITIAL);
++	dev_info(priv->dev, "EN7528 test: starting OMCI transport\n");
+ 	ret = airoha_gpon_omci_start(&priv->omci);
++	dev_info(priv->dev, "EN7528 test: OMCI start returned %d\n", ret);
+ 	if (ret)
+ 		goto err_unregister_omci;
+ 
+@@ -4001,9 +3949,7 @@ static int airoha_xpon_probe(struct platform_device *pdev)
+ 		return -ENOMEM;
+ 	priv->dev = dev;
+ 	priv->match_data = data;
+-	ret = airoha_xpon_get_mode(dev, data, &priv->mode);
+-	if (ret)
+-		return ret;
++	priv->mode = AIROHA_XPON_MODE_GPON;
+ 	INIT_DELAYED_WORK(&priv->phy_link_work,
+ 			  airoha_xpon_phy_link_work_fn);
+ 
+@@ -4087,21 +4033,15 @@ static int airoha_xpon_probe(struct platform_device *pdev)
+ 	 * RST_CTRL1[31] is a runtime MAC reset, not a prerequisite for mapping
+ 	 * or quiescing the interrupt registers during probe.
+ 	 */
+-	if (data->prepare_before_mmio) {
+-		dev_info(dev, "selecting %s WAN mode before first MAC access\n",
+-			 airoha_xpon_mode_name(priv->mode));
+-		ret = airoha_xpon_select_wan(priv->scu, data, priv->mode);
+-		if (ret) {
+-			ret = dev_err_probe(dev, ret,
+-					    "failed to prepare EN751221 xPON WAN mux\n");
+-			goto err_put_gdm;
+-		}
+-
+-		dev_info(dev, "%s WAN mode selected before first MAC access\n",
+-			 airoha_xpon_mode_name(priv->mode));
++	ret = airoha_xpon_select_wan(priv->scu, data, priv->mode);
++	if (ret) {
++		ret = dev_err_probe(dev, ret,
++				    "failed to prepare xPON WAN mux\n");
++		goto err_put_gdm;
+ 	}
+ 
+ 	priv->gpon_reg = priv->base + GPON_REG_OFFSET;
++	priv->xgspon_reg = priv->base + XGSGPON_REG_OFFSET;
+ 	priv->epon_reg = priv->base + EPON_REG_OFFSET;
+ 
+ 	res = platform_get_resource_byname(pdev, IORESOURCE_MEM,
+@@ -4173,8 +4113,12 @@ static int airoha_xpon_probe(struct platform_device *pdev)
+ 	}
+ 
+ 	link_ops = airoha_xpon_get_link_ops(priv);
++	dev_info(dev, "EN7528 test: registering Ethernet xPON provider on %s\n",
++		 priv->gdm_dev->name);
+ 	ret = airoha_eth_register_xpon(priv->gdm_dev, priv->mode, link_ops,
+ 				       priv);
++	dev_info(dev, "EN7528 test: Ethernet xPON registration returned %d\n",
++		 ret);
+ 	if (ret)
+ 		goto err_del_upstream;
+ 
+@@ -4182,8 +4126,10 @@ static int airoha_xpon_probe(struct platform_device *pdev)
+ 
+ 	if (airoha_xpon_is_gpon(priv)) {
+ 		ret = airoha_xpon_register_gpon_omci(priv);
+-		if (ret)
++		if (ret) {
++			ret = dev_err_probe(dev, ret, "error on register OMCI");
+ 			goto err_unregister_xpon;
++		}
+ 	}
+ 
+ 	platform_set_drvdata(pdev, priv);
+@@ -4219,7 +4165,8 @@ static int airoha_xpon_probe(struct platform_device *pdev)
+ 		dev_put(priv->gdm_dev);
+ 		priv->gdm_dev = NULL;
+ 	}
+-	return ret;
++	return dev_err_probe(dev, ret,
++			     "error on register xPON MAC");
+ }
+ 
+ static void airoha_xpon_remove(struct platform_device *pdev)
+diff --git a/drivers/net/ethernet/airoha/airoha_xpon.h b/drivers/net/ethernet/airoha/airoha_xpon.h
+index 624636036..ad7b50dcf 100644
+--- a/drivers/net/ethernet/airoha/airoha_xpon.h
++++ b/drivers/net/ethernet/airoha/airoha_xpon.h
+@@ -20,17 +20,17 @@
+ 
+ #define V1_XPON_REGION_SIZE		0x00010000
+ #define GPON_REG_OFFSET			0x00004000
++#define XGSGPON_REG_OFFSET		0x00005000
+ #define EPON_REG_OFFSET			0x00006000
+ 
+-#define XPON_SCU_WAN_CONF              0x070
+-#define EN7523_SCU_WAN_MODE_MASK       GENMASK(7, 0)
+-#define EN7528_SCU_WAN_MODE_MASK       GENMASK(2, 0)
+-#define EN751221_SCU_WAN_MODE_MASK     GENMASK(2, 0)
+-#define XPON_SCU_WAN_MODE_GPON         0x00
+-#define XPON_SCU_WAN_MODE_EPON         0x01
++#define XPON_SCU_WAN_CONF		0x070
++#define EN7523_SCU_WAN_MODE_MASK	GENMASK(7, 0)
++#define EN7528_SCU_WAN_MODE_MASK	GENMASK(2, 0)
++#define EN751221_SCU_WAN_MODE_MASK	GENMASK(2, 0)
++#define XPON_SCU_WAN_MODE_GPON		0x00
++#define XPON_SCU_WAN_MODE_EPON		0x01
+ 
+ struct airoha_xpon_match_data {
+-	enum airoha_xpon_mode mode;
+ 	bool mode_from_dt;
+ 	u32 wan_mode_mask;
+ 	u8 gpon_fine_delay;
+@@ -38,7 +38,6 @@ struct airoha_xpon_match_data {
+ 	u8 gpon_guard_bits_override;
+ 	bool en7523_gpon_defaults;
+ 	bool mac_irq_via_eth;
+-	bool prepare_before_mmio;
+ 	bool gpon_reset_on_start;
+ };
+ 
+@@ -346,6 +345,7 @@ struct xpon_priv {
+ 	void __iomem		*base;
+ 	void __iomem		*gpon_reg;
+ 	void __iomem		*epon_reg;
++	void __iomem		*xgspon_reg;
+ 	void __iomem		*epon_reset_reg;
+ 	struct device		*dev;
+ 	struct regmap		*scu;
+-- 
+2.55.0
+

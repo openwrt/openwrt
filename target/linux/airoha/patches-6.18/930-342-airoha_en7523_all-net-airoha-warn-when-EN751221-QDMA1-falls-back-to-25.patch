@@ -1,0 +1,45 @@
+From ba74a55c4a7c7b5c3c146838340e1021f04c418c Mon Sep 17 00:00:00 2001
+From: Cristian Papa <pcristian292@gmail.com>
+Date: Sat, 26 Sep 2026 07:16:55 -0300
+Subject: [PATCH] net: airoha: warn when EN751221 QDMA1 falls back to 256
+ forwarding buffers
+
+When the QDMA1 hardware forwarding buffers cannot use the SLM and the
+DT has no qdma1-buf memory-region, the EN751221 path quietly drops from
+the configured number of descriptors to 256. Nothing in the log says
+so, and the result is easy to mistake for a Wi-Fi or GPON problem: on
+the Archer XR500v, Wi-Fi upload through the GPON WAN reached 27 Mbit/s
+with the fallback and 290 Mbit/s with an 8 MiB qdma1-buf region, since
+the small pool tail-drops the bursts that Wi-Fi clients send.
+
+Say it when it happens, with the number of descriptors used and the
+number the profile asked for.
+
+Assisted-by: Claude:claude-opus-5-5
+Signed-off-by: Cristian Papa <pcristian292@gmail.com>
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/ethernet/airoha/airoha_eth.c | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/net/ethernet/airoha/airoha_eth.c b/drivers/net/ethernet/airoha/airoha_eth.c
+index 18b859d9a..80336b24f 100644
+--- a/drivers/net/ethernet/airoha/airoha_eth.c
++++ b/drivers/net/ethernet/airoha/airoha_eth.c
+@@ -1502,8 +1502,12 @@ static int econet_qdma_init_hfwd(struct airoha_qdma_mips *qdma)
+ 		 * qdma1-buf region exists, otherwise use a conservative fallback.
+ 		 */
+ 		if (airoha_is(qdma->qdma->eth, econet_en751221) && qdma->qdma->id == 1 &&
+-		    num_desc > 256)
++		    num_desc > 256) {
++			dev_warn(qdma->qdma->eth->dev,
++				 "no %s memory-region, using %d instead of %d hw forwarding descriptors; bursty upstream traffic may be dropped\n",
++				 name, 256, num_desc);
+ 			num_desc = 256;
++		}
+ 
+ 		size = buf_size * num_desc;
+ 		if (!dmam_alloc_coherent(qdma->qdma->eth->dev, size, &dma_addr,
+-- 
+2.55.0
+

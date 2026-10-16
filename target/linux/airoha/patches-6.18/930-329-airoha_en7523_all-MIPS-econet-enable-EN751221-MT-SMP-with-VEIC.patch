@@ -1,0 +1,923 @@
+From cd1f951bf189244f394474fd1e14c8d7c7470ad9 Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Thu, 17 Sep 2026 19:14:44 -0300
+Subject: [PATCH] MIPS: econet: enable EN751221 MT SMP with VEIC
+
+The EN751221 MIPS 34Kc exposes two VPEs, but MT SMP cannot use the legacy cascaded IP2 interrupt path. Enable the CPU VI/EI support required by MIPS_MT_SMP, add VEIC dispatch to the EcoNet interrupt controller, route the two software interrupts through the parent IPI domain, and describe both VPEs in DT.
+
+Keep the generic VSMP secondary setup unchanged and override init_secondary only for EN751221 so that only IP0/IP1 are unmasked. This replaces the earlier EN751221-specific changes made in generic smp-mt code.
+
+Adapted from upstream commits 2ee2a685ee83 (irqchip/econet-en751221: Support MIPS 34Kc VEIC mode) and 8ae6e79ee0ce (mips: econet: add multi-vpe capability to EN751221).
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ .../econet,en751221-intc.yaml                 |  20 ++
+ arch/mips/Kconfig                             |   2 +
+ arch/mips/boot/dts/econet/en751221.dtsi       | 203 ++++++++++++--
+ arch/mips/econet/Kconfig                      |   3 -
+ arch/mips/econet/init.c                       |  46 ++-
+ arch/mips/kernel/smp-mt.c                     |   2 +-
+ drivers/irqchip/irq-econet-en751221.c         | 265 +++++++++++++-----
+ include/linux/soc/airoha/pkgids.h             |  79 +++++-
+ 8 files changed, 513 insertions(+), 107 deletions(-)
+
+diff --git a/Documentation/devicetree/bindings/interrupt-controller/econet,en751221-intc.yaml b/Documentation/devicetree/bindings/interrupt-controller/econet,en751221-intc.yaml
+index 5536319c4..44c09785e 100644
+--- a/Documentation/devicetree/bindings/interrupt-controller/econet,en751221-intc.yaml
++++ b/Documentation/devicetree/bindings/interrupt-controller/econet,en751221-intc.yaml
+@@ -52,6 +52,25 @@ properties:
+         - description: primary per-CPU IRQ
+         - description: shadow IRQ number
+ 
++  econet,cpu-interrupt-map:
++    $ref: /schemas/types.yaml#/definitions/uint32-matrix
++    description:
++      When running in VEIC mode, the hardware re-routes interrupts from the
++      CPU interrupt controller core to the "external" interrupt controller
++      (this device). It then prioritizes them and sends them back to the CPU
++      along with its own interrupts. The CPU hardware handles interrupts using
++      a special dispatch table (the normal interrupt handler is not invoked).
++      In this interrupt controller, the CPU interrupts are renumbered as they
++      are merged with this controller's own hardware interrupts.
++
++      This is the inverse of an interrupt-map, mapping which interrupts from
++      this controller must be routed back to the CPU interrupt domain for
++      correct handling there.
++    items:
++      items:
++        - description: The interrupt number as received in this controller
++        - description: The interrupt number to be dispatched on the CPU intc
++
+ required:
+   - compatible
+   - reg
+@@ -74,5 +93,6 @@ examples:
+         interrupts = <2>;
+ 
+         econet,shadow-interrupts = <7 2>, <8 3>, <13 12>, <30 29>;
++        econet,cpu-interrupt-map = <7 0>, <8 1>;
+     };
+ ...
+diff --git a/arch/mips/Kconfig b/arch/mips/Kconfig
+index a651e9e9c..be98c9985 100644
+--- a/arch/mips/Kconfig
++++ b/arch/mips/Kconfig
+@@ -2212,6 +2212,8 @@ config MIPS_MT_SMP
+ 	default y
+ 	depends on TARGET_ISA_REV > 0 && TARGET_ISA_REV < 6
+ 	depends on SYS_SUPPORTS_MULTITHREADING && !CPU_MICROMIPS
++	select CPU_MIPSR2_IRQ_VI
++	select CPU_MIPSR2_IRQ_EI
+ 	select SYNC_R4K
+ 	select MIPS_MT
+ 	select SMP
+diff --git a/arch/mips/boot/dts/econet/en751221.dtsi b/arch/mips/boot/dts/econet/en751221.dtsi
+index 1c9bdc8e4..782699621 100644
+--- a/arch/mips/boot/dts/econet/en751221.dtsi
++++ b/arch/mips/boot/dts/econet/en751221.dtsi
+@@ -34,27 +34,11 @@ cpu0: cpu@0 {
+ 			reg = <0>;
+ 		};
+ 
+-		/* Needs mapping and fix shadow cores
+ 		cpu1: cpu@1 {
+ 			device_type = "cpu";
+ 			compatible = "mips,mips34Kc";
+ 			reg = <1>;
+ 		};
+-
+-		cpu-map {
+-			cluster0 {
+-				core0 {
+-					thread0 {
+-						cpu = <&cpu0>;
+-					};
+-
+-					thread1 {
+-						cpu = <&cpu1>;
+-					};
+-				};
+-			};
+-		};
+-		*/
+ 	};
+ 
+ 	cpuintc: interrupt-controller {
+@@ -64,7 +48,7 @@ cpuintc: interrupt-controller {
+ 		#interrupt-cells = <1>;
+ 	};
+ 
+-	spi_ctrl: spi@1fa10000 {
++	spi0: spi@1fa10000 {
+ 		compatible = "econet,en751221-spi";
+ 		reg = <0x1fa10000 0x140>;
+ 
+@@ -72,15 +56,6 @@ spi_ctrl: spi@1fa10000 {
+ 		clock-names = "spi";
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+-
+-		nand: nand@0 {
+-			compatible = "spi-nand";
+-			reg = <0>;
+-			spi-max-frequency = <25000000>;
+-			spi-rx-bus-width = <2>;
+-			spi-tx-bus-width = <1>;
+-			nand-ecc-engine = <&nand>;
+-		};
+ 	};
+ 
+ 	pcie_phy1: pcie-phy@1fac0000 {
+@@ -104,6 +79,7 @@ intc: interrupt-controller@1fb40000 {
+ 		interrupt-controller;
+ 		#interrupt-cells = <1>;
+ 		econet,shadow-interrupts = <7 2>, <8 3>, <13 12>, <30 29>;
++		econet,cpu-interrupt-map = <7 0>, <8 1>;
+ 	};
+ 
+ 	timer_hpt: timer@1fbf0400 {
+@@ -521,6 +497,23 @@ fsw_phy0: ethernet-phy@8 {
+ 				reg = <8>;
+ 				phy-mode = "internal";
+ 				status = "disabled";
++
++				airoha,scu = <&scuclk>;
++
++				leds {
++					led@0 {
++						reg = <0>;
++						function = LED_FUNCTION_LAN;
++						active-low;
++					};
++
++					led@1 {
++						reg = <1>;
++						function = LED_FUNCTION_ACTIVITY;
++						status = "disabled";
++						active-low;
++					};
++				};
+ 			};
+ 
+ 			fsw_phy1: ethernet-phy@9 {
+@@ -528,6 +521,23 @@ fsw_phy1: ethernet-phy@9 {
+ 				reg = <9>;
+ 				phy-mode = "internal";
+ 				status = "disabled";
++
++				airoha,scu = <&scuclk>;
++
++				leds {
++					led@0 {
++						reg = <0>;
++						function = LED_FUNCTION_LAN;
++						active-low;
++					};
++
++					led@1 {
++						reg = <1>;
++						function = LED_FUNCTION_ACTIVITY;
++						status = "disabled";
++						active-low;
++					};
++				};
+ 			};
+ 
+ 			fsw_phy2: ethernet-phy@10 {
+@@ -535,6 +545,23 @@ fsw_phy2: ethernet-phy@10 {
+ 				reg = <10>;
+ 				phy-mode = "internal";
+ 				status = "disabled";
++
++				airoha,scu = <&scuclk>;
++
++				leds {
++					led@0 {
++						reg = <0>;
++						function = LED_FUNCTION_LAN;
++						active-low;
++					};
++
++					led@1 {
++						reg = <1>;
++						function = LED_FUNCTION_ACTIVITY;
++						status = "disabled";
++						active-low;
++					};
++				};
+ 			};
+ 
+ 			fsw_phy3: ethernet-phy@11 {
+@@ -542,6 +569,23 @@ fsw_phy3: ethernet-phy@11 {
+ 				reg = <11>;
+ 				phy-mode = "internal";
+ 				status = "disabled";
++
++				airoha,scu = <&scuclk>;
++
++				leds {
++					led@0 {
++						reg = <0>;
++						function = LED_FUNCTION_LAN;
++						active-low;
++					};
++
++					led@1 {
++						reg = <1>;
++						function = LED_FUNCTION_ACTIVITY;
++						status = "disabled";
++						active-low;
++					};
++				};
+ 			};
+ 
+ 			fsw_phy4: ethernet-phy@12 {
+@@ -549,6 +593,23 @@ fsw_phy4: ethernet-phy@12 {
+ 				reg = <12>;
+ 				phy-mode = "internal";
+ 				status = "disabled";
++
++				airoha,scu = <&scuclk>;
++
++				leds {
++					led@0 {
++						reg = <0>;
++						function = LED_FUNCTION_LAN;
++						active-low;
++					};
++
++					led@1 {
++						reg = <1>;
++						function = LED_FUNCTION_ACTIVITY;
++						status = "disabled";
++						active-low;
++					};
++				};
+ 			};
+ 
+ 			switch1: switch@1f {
+@@ -624,26 +685,116 @@ mdio {
+ 					gsw_phy0: ethernet-phy@0 {
+ 						compatible = "ethernet-phy-ieee802.3-c22";
+ 						reg = <0>;
++
++						airoha,scu = <&scuclk>;
++
++						leds {
++							led@0 {
++								reg = <0>;
++								function = LED_FUNCTION_LAN;
++								status = "disabled";
++								active-low;
++							};
++
++							led@1 {
++								reg = <1>;
++								function = LED_FUNCTION_ACTIVITY;
++								status = "disabled";
++								active-low;
++							};
++						};
+ 					};
+ 
+ 					gsw_phy1: ethernet-phy@1 {
+ 						compatible = "ethernet-phy-ieee802.3-c22";
+ 						reg = <1>;
++
++						airoha,scu = <&scuclk>;
++
++						leds {
++							led@0 {
++								reg = <0>;
++								function = LED_FUNCTION_LAN;
++								status = "disabled";
++								active-low;
++							};
++
++							led@1 {
++								reg = <1>;
++								function = LED_FUNCTION_ACTIVITY;
++								status = "disabled";
++								active-low;
++							};
++						};
+ 					};
+ 
+ 					gsw_phy2: ethernet-phy@2 {
+ 						compatible = "ethernet-phy-ieee802.3-c22";
+ 						reg = <2>;
++
++						airoha,scu = <&scuclk>;
++
++						leds {
++							led@0 {
++								reg = <0>;
++								function = LED_FUNCTION_LAN;
++								status = "disabled";
++								active-low;
++							};
++
++							led@1 {
++								reg = <1>;
++								function = LED_FUNCTION_ACTIVITY;
++								status = "disabled";
++								active-low;
++							};
++						};
+ 					};
+ 
+ 					gsw_phy3: ethernet-phy@3 {
+ 						compatible = "ethernet-phy-ieee802.3-c22";
+ 						reg = <3>;
++
++						airoha,scu = <&scuclk>;
++
++						leds {
++							led@0 {
++								reg = <0>;
++								function = LED_FUNCTION_LAN;
++								status = "disabled";
++								active-low;
++							};
++
++							led@1 {
++								reg = <1>;
++								function = LED_FUNCTION_ACTIVITY;
++								status = "disabled";
++								active-low;
++							};
++						};
+ 					};
+ 
+ 					gsw_phy4: ethernet-phy@4 {
+ 						compatible = "ethernet-phy-ieee802.3-c22";
+ 						reg = <4>;
++
++						airoha,scu = <&scuclk>;
++
++						leds {
++							led@0 {
++								reg = <0>;
++								function = LED_FUNCTION_LAN;
++								status = "disabled";
++								active-low;
++							};
++
++							led@1 {
++								reg = <1>;
++								function = LED_FUNCTION_ACTIVITY;
++								status = "disabled";
++								active-low;
++							};
++						};
+ 					};
+ 				};
+ 			};
+diff --git a/arch/mips/econet/Kconfig b/arch/mips/econet/Kconfig
+index f29485e5e..c40cc851f 100644
+--- a/arch/mips/econet/Kconfig
++++ b/arch/mips/econet/Kconfig
+@@ -17,9 +17,6 @@ choice
+ 		select HAVE_PCI
+ 		select IRQ_MIPS_CPU
+ 		select PCI_DRIVERS_GENERIC
+-		select SMP
+-		select SMP_UP
+-		select SYS_SUPPORTS_SMP
+ 		select SYS_SUPPORTS_MULTITHREADING
+ 		help
+ 		  The EN751221 family includes EN7512, RN7513, EN7521, EN7526.
+diff --git a/arch/mips/econet/init.c b/arch/mips/econet/init.c
+index ef89d1f4c..379e4918d 100644
+--- a/arch/mips/econet/init.c
++++ b/arch/mips/econet/init.c
+@@ -23,6 +23,8 @@
+ #define CR_AHB_RSTCR		((void __iomem *)CKSEG1ADDR(0x1fb00040))
+ #define RESET			BIT(31)
+ #define NP_SCU_BASE		((void __iomem *)CKSEG1ADDR(0x1fb00000))
++#define CHIP_SCU_BASE		((void __iomem *)CKSEG1ADDR(AIROHA_CHIP_SCU_BASE_PHYS))
++#define EFUSE_BASE		((void __iomem *)CKSEG1ADDR(AIROHA_EFUSE_BASE_PHYS))
+ 
+ #ifdef CONFIG_CPU_LITTLE_ENDIAN
+ #define UART_BASE		CKSEG1ADDR(0x1fbf0000)	/* LE: byte at offset 0 */
+@@ -36,6 +38,41 @@ static void hw_reset(char *command)
+ 	iowrite32(RESET, CR_AHB_RSTCR);
+ }
+ 
++/*
++ * vsmp_init_secondary expects either GIC or cascading interrupt configuration.
++ * The EN751221 is a 34Kc with VEIC, but not GIC compatible. The cascading
++ * configuration enables lines 6 and 7 for performance counters, but when this
++ * is done on the EN751221 intc with VEIC enabled, it causes the whole intc to
++ * stop sending interrupts.
++ * Only unmask lines 0 and 1 (software interrupts) in init_secondary.
++ */
++#ifdef CONFIG_MIPS_MT_SMP
++extern const struct plat_smp_ops vsmp_smp_ops;
++static struct plat_smp_ops en75_smp_ops __ro_after_init;
++
++static void en751221_init_secondary(void)
++{
++	write_c0_status((read_c0_status() & ~ST0_IM) |
++			(STATUSF_IP0 | STATUSF_IP1));
++}
++
++static int __init en751221_register_vsmp_smp_ops(void)
++{
++	if (!cpu_has_mipsmt)
++		return -ENODEV;
++
++	en75_smp_ops = vsmp_smp_ops;
++	en75_smp_ops.init_secondary = en751221_init_secondary;
++	register_smp_ops(&en75_smp_ops);
++	return 0;
++}
++#else
++static int __init en751221_register_vsmp_smp_ops(void)
++{
++	return -ENODEV;
++}
++#endif /* CONFIG_MIPS_MT_SMP */
++
+ /* 1. Bring up early printk. */
+ void __init prom_init(void)
+ {
+@@ -72,7 +109,7 @@ void __init device_tree_init(void)
+ 		return;
+ 
+ 	/* EN751221: single-core 34Kc with MT ASE -> 2 VPEs via VSMP (SMVP) */
+-	if (!register_vsmp_smp_ops())
++	if (!en751221_register_vsmp_smp_ops())
+ 		return;
+ 
+ 	register_up_smp_ops();
+@@ -81,13 +118,10 @@ void __init device_tree_init(void)
+ const char *get_system_type(void)
+ {
+ 	static char system_type[64];
+-	u32 hir, pkgid, pdidr;
+ 	const char *soc;
+ 
+-	hir = get_pkg_mem(NP_SCU_BASE);
+-	pkgid = get_pkgid_mem(NP_SCU_BASE);
+-	pdidr = get_pdidr_mem(NP_SCU_BASE);
+-	soc = airoha_soc_name_from_regs(hir, pkgid, pdidr);
++	soc = airoha_soc_name_from_mips_mem(NP_SCU_BASE, CHIP_SCU_BASE,
++				     EFUSE_BASE);
+ 
+ 	snprintf(system_type, sizeof(system_type), "EcoNet %s", soc);
+ 	return system_type;
+diff --git a/arch/mips/kernel/smp-mt.c b/arch/mips/kernel/smp-mt.c
+index 274f21a6b..7729cc733 100644
+--- a/arch/mips/kernel/smp-mt.c
++++ b/arch/mips/kernel/smp-mt.c
+@@ -115,7 +115,7 @@ static void vsmp_init_secondary(void)
+ 					 STATUSF_IP6 | STATUSF_IP7);
+ 	else
+ 		change_c0_status(ST0_IM, STATUSF_IP0 | STATUSF_IP1 |
+-					 STATUSF_IP2); /* econet EN751221: IPI(IP0/1)+intc cascade(IP2); NOT Malta IP6(perf-storm)/IP7 */
++					 STATUSF_IP6 | STATUSF_IP7);
+ }
+ 
+ static void vsmp_smp_finish(void)
+diff --git a/drivers/irqchip/irq-econet-en751221.c b/drivers/irqchip/irq-econet-en751221.c
+index 12a64c178..2c85ea087 100644
+--- a/drivers/irqchip/irq-econet-en751221.c
++++ b/drivers/irqchip/irq-econet-en751221.c
+@@ -29,6 +29,11 @@
+ #include <linux/irqdomain.h>
+ #include <linux/irqchip.h>
+ #include <linux/irqchip/chained_irq.h>
++#include <linux/printk.h>
++#include <linux/smp.h>
++
++#include <asm/setup.h>
++#include <asm/mipsregs.h>
+ 
+ #define IRQ_COUNT		40
+ 
+@@ -39,21 +44,23 @@
+ #define REG_MASK1		0x50
+ #define REG_PENDING0		0x08
+ #define REG_PENDING1		0x54
+-
+-#define REG_IVSR0		0x30
+-#define REG_IVSR8		0x60
+-#define IVSR_VPE_BIT		4
++#define REG_PRIORITY0		0x10
++#define REG_PRIORITY_COUNT	8
+ 
+ /**
+- * @membase: Base address of the interrupt controller registers
++ * @membase:            Base address of the interrupt controller registers
++ * @domain:             The irq_domain for direct dispatch
++ * @ipi_domain:         The irq_domain for inter-process dispatch
+  * @interrupt_shadows: Array of all interrupts, for each value,
+- *	- NOT_PERCPU: This interrupt is not per-cpu, so it has no shadow
+- *	- IS_SHADOW: This interrupt is a shadow of another per-cpu interrupt
+- *	- else: This is a per-cpu interrupt whose shadow is the value
++ *	- NOT_PERCPU:   This interrupt is not per-cpu, so it has no shadow
++ *	- IS_SHADOW:   This interrupt is a shadow of another per-cpu interrupt
++ *	- else:        This is a per-cpu interrupt whose shadow is the value
+  */
+ static struct {
+-	void __iomem	*membase;
+-	u8		interrupt_shadows[IRQ_COUNT];
++	void __iomem		*membase;
++	struct irq_domain	*domain;
++	struct irq_domain	*ipi_domain;
++	u8			interrupt_shadows[IRQ_COUNT];
+ } econet_intc __ro_after_init;
+ 
+ static DEFINE_RAW_SPINLOCK(irq_lock);
+@@ -121,6 +128,40 @@ static void econet_mask_all(void)
+ 	econet_wreg(REG_MASK1, 0, ~0);
+ }
+ 
++/*
++ * The vendor boot loader programs the EN751221 interrupt-priority resolver
++ * before entering Linux.  VEIC depends on this table to arbitrate external
++ * interrupt sources.  A replacement boot loader may leave these registers
++ * at reset values, in which case an interrupt can be pending and unmasked
++ * without ever reaching the MIPS VI table.
++ *
++ * Keep the exact source -> priority mapping used by the vendor tcboot for
++ * sources 0..31.  Sources 32..39 are outside that legacy table.
++ */
++static const u8 en751221_irq_priority[32] __initconst = {
++	9,  7, 22, 21, 30, 29, 17, 19,
++	10, 1, 11, 12, 13, 14, 18, 15,
++	16, 8, 20, 4, 31, 6,  5, 23,
++	24, 25, 26, 27, 28, 3, 2,  0,
++};
++
++static void __init econet_intc_init_priorities(void)
++{
++	u32 priorities[REG_PRIORITY_COUNT] = { };
++	int source, level, reg, shift;
++
++	for (source = 0; source < ARRAY_SIZE(en751221_irq_priority); source++) {
++		level = en751221_irq_priority[source];
++		reg = level / 4;
++		shift = (3 - (level % 4)) * 8;
++		priorities[reg] |= source << shift;
++	}
++
++	for (reg = 0; reg < REG_PRIORITY_COUNT; reg++)
++		iowrite32(priorities[reg],
++			  econet_intc.membase + REG_PRIORITY0 + reg * 4);
++}
++
+ static void econet_intc_handle_pending(struct irq_domain *d, u32 pending, u32 offset)
+ {
+ 	int hwirq;
+@@ -154,73 +195,56 @@ static void econet_intc_from_parent(struct irq_desc *desc)
+ 	chained_irq_exit(chip, desc);
+ }
+ 
+-static const struct irq_chip econet_irq_chip;
+-
+-static int econet_intc_ivsr_reg_bit(u32 hwirq, u32 *reg, u32 *bit)
++/*
++ * When in VEIC mode, the CPU jumps to a handler in the vector table.
++ * The only way to know which interrupt is being triggered is from the vector
++ * table offset that has been jumped to. REG_PENDING0/1 cannot identify the
++ * exact interrupt selected by the controller nor the VPE it was routed to.
++ * Therefore install one vector handler for every hardware interrupt.
++ */
++static void econet_irq_dispatch_debug(unsigned int hwirq)
+ {
+-	u32 offset;
++	do_domain_IRQ(econet_intc.domain, hwirq);
++}
+ 
+-	if (hwirq > 32 && hwirq <= IRQ_COUNT) {
+-		offset = 40 - hwirq;
+-		*reg = REG_IVSR8 + ((offset >> 2) << 2);
+-		*bit = ((hwirq - 33) % 4) * 8 + IVSR_VPE_BIT;
+-		return 0;
++#define X(irq) \
++	static void econet_irq_dispatch ## irq (void) \
++	{ \
++		econet_irq_dispatch_debug(irq); \
+ 	}
+ 
+-	if (hwirq > 0 && hwirq <= 32) {
+-		offset = 32 - hwirq;
+-		*reg = REG_IVSR0 + ((offset >> 2) << 2);
+-		*bit = ((hwirq - 1) % 4) * 8 + IVSR_VPE_BIT;
+-		return 0;
+-	}
++ X(0)  X(1)  X(2)  X(3)  X(4)  X(5)  X(6)  X(7)  X(8)  X(9)
++X(10) X(11) X(12) X(13) X(14) X(15) X(16) X(17) X(18) X(19)
++X(20) X(21) X(22) X(23) X(24) X(25) X(26) X(27) X(28) X(29)
++X(30) X(31) X(32) X(33) X(34) X(35) X(36) X(37) X(38) X(39)
+ 
+-	return -EINVAL;
+-}
++#undef X
++#define X(irq) econet_irq_dispatch ## irq,
+ 
+-static void econet_intc_route_vpe(u32 hwirq, unsigned int vpe)
+-{
+-	u32 reg, bit, mask;
+-
+-	if (econet_intc_ivsr_reg_bit(hwirq, &reg, &bit))
+-		return;
++static void (* const econet_irq_dispatchers[])(void) = {
++	X(0)  X(1)  X(2)  X(3)  X(4)  X(5)  X(6)  X(7)  X(8)  X(9)
++	X(10) X(11) X(12) X(13) X(14) X(15) X(16) X(17) X(18) X(19)
++	X(20) X(21) X(22) X(23) X(24) X(25) X(26) X(27) X(28) X(29)
++	X(30) X(31) X(32) X(33) X(34) X(35) X(36) X(37) X(38) X(39)
++};
+ 
+-	mask = BIT(bit);
+-	econet_wreg(reg, vpe ? mask : 0, mask);
++/* Likewise, route the two IPI IRQs back to the CPU interrupt domain. */
++static void econet_cpu_dispatch0(void)
++{
++	do_domain_IRQ(econet_intc.ipi_domain, 0);
+ }
+ 
+-#ifdef CONFIG_SMP
+-static int econet_intc_set_affinity(struct irq_data *d,
+-				    const struct cpumask *dest, bool force)
++static void econet_cpu_dispatch1(void)
+ {
+-	unsigned int cpu, vpe;
+-	u32 hwirq = irqd_to_hwirq(d);
+-
+-	if (hwirq >= IRQ_COUNT)
+-		return -EINVAL;
+-
+-	/*
+-	 * The EN751221 IVSR layout matches the OEM 2.6.36 code: bit 4 in
+-	 * each 8-bit IRQ slot selects VPE1 when set and VPE0 when clear.
+-	 */
+-	cpu = cpumask_any_and(dest, cpu_online_mask);
+-	if (cpu >= nr_cpu_ids) {
+-		if (!force)
+-			return -EINVAL;
+-
+-		cpu = cpumask_first(cpu_online_mask);
+-		if (cpu >= nr_cpu_ids)
+-			return -EINVAL;
+-	}
++	do_domain_IRQ(econet_intc.ipi_domain, 1);
++}
+ 
+-	vpe = cpu ? 1 : 0;
+-	econet_intc_route_vpe(hwirq, vpe);
+-	irq_data_update_effective_affinity(d, cpumask_of(cpu));
++static void (* const econet_cpu_dispatchers[])(void) = {
++	econet_cpu_dispatch0,
++	econet_cpu_dispatch1,
++};
+ 
+-	return IRQ_SET_MASK_OK;
+-}
+-#else
+-#define econet_intc_set_affinity NULL
+-#endif
++static const struct irq_chip econet_irq_chip;
+ 
+ static int econet_intc_map(struct irq_domain *d, u32 irq, irq_hw_number_t hwirq)
+ {
+@@ -244,6 +268,10 @@ static int econet_intc_map(struct irq_domain *d, u32 irq, irq_hw_number_t hwirq)
+ 	}
+ 
+ 	irq_set_chip_data(irq, NULL);
++
++	if (cpu_has_veic)
++		set_vi_handler(hwirq + 1, econet_irq_dispatchers[hwirq]);
++
+ 	return 0;
+ }
+ 
+@@ -252,7 +280,6 @@ static const struct irq_chip econet_irq_chip = {
+ 	.irq_unmask	= econet_intc_unmask,
+ 	.irq_mask	= econet_intc_mask,
+ 	.irq_mask_ack	= econet_intc_mask,
+-	.irq_set_affinity = econet_intc_set_affinity,
+ };
+ 
+ static const struct irq_domain_ops econet_domain_ops = {
+@@ -320,6 +347,96 @@ static int __init get_shadow_interrupts(struct device_node *node)
+ 	return 0;
+ }
+ 
++/**
++ * econet_cpu_init() - configure routing of CPU interrupts to the correct domain
++ * @node: The devicetree node of this interrupt controller.
++ *
++ * CPU-originated interrupts are unconditionally unmasked in the external
++ * controller and routed back to the CPU IPI domain. Their actual masking is
++ * still controlled by the CPU interrupt controller through c0_status.
++ *
++ * In VEIC mode IP2..IP7 are repurposed as interrupt priority level, so only
++ * the two software interrupt/IPI lines are supported here.
++ */
++static int __init econet_cpu_init(struct device_node *node)
++{
++	const char *field = "econet,cpu-interrupt-map";
++	struct device_node *parent_intc;
++	int map_size;
++	u32 mask;
++
++	map_size = of_property_count_u32_elems(node, field);
++	if (map_size <= 0) {
++		return 0;
++	} else if (map_size % 2) {
++		pr_err("%pOF: %s count is odd, ignoring\n", node, field);
++		return 0;
++	}
++
++	u32 *maps __free(kfree) = kmalloc_array(map_size, sizeof(u32), GFP_KERNEL);
++	if (!maps)
++		return -ENOMEM;
++
++	if (of_property_read_u32_array(node, field, maps, map_size)) {
++		pr_err("%pOF: Failed to read %s\n", node, field);
++		return -EINVAL;
++	}
++
++	for (int i = 0; i < map_size; i += 2) {
++		u32 receive = maps[i];
++		u32 dispatch = maps[i + 1];
++		u8 shadow;
++
++		if (receive >= IRQ_COUNT) {
++			pr_err("%pOF: Entry %d:%d in %s (%u) is out of bounds\n",
++			       node, i, 0, field, receive);
++			return -EINVAL;
++		}
++
++		shadow = econet_intc.interrupt_shadows[receive];
++		if (shadow != NOT_PERCPU && shadow >= IRQ_COUNT) {
++			pr_err("%pOF: Entry %d:%d in %s (%u) has invalid shadow (%d)\n",
++			       node, i, 0, field, receive, shadow);
++			return -EINVAL;
++		}
++
++		if (dispatch >= ARRAY_SIZE(econet_cpu_dispatchers)) {
++			pr_err("%pOF: Entry %d:%d in %s (%u) is out of bounds; only IPI interrupts are supported\n",
++			       node, i, 1, field, dispatch);
++			return -EINVAL;
++		}
++	}
++
++	parent_intc = of_irq_find_parent(node);
++	if (!parent_intc) {
++		pr_err("%pOF: Failed to find parent IRQ device\n", node);
++		return -ENODEV;
++	}
++
++	econet_intc.ipi_domain = irq_find_matching_host(parent_intc, DOMAIN_BUS_IPI);
++	if (!econet_intc.ipi_domain) {
++		pr_err("%pOF: Failed to find parent IPI domain\n", node);
++		return -ENODEV;
++	}
++
++	mask = 0;
++	for (int i = 0; i < map_size; i += 2) {
++		u32 receive = maps[i];
++		u32 dispatch = maps[i + 1];
++		u8 shadow;
++
++		set_vi_handler(receive + 1, econet_cpu_dispatchers[dispatch]);
++		mask |= BIT(receive);
++
++		shadow = econet_intc.interrupt_shadows[receive];
++		if (shadow != NOT_PERCPU)
++			mask |= BIT(shadow);
++	}
++
++	econet_wreg(REG_MASK0, mask, mask);
++	return 0;
++}
++
+ static int __init econet_intc_of_init(struct device_node *node, struct device_node *parent)
+ {
+ 	struct irq_domain *domain;
+@@ -365,8 +482,22 @@ static int __init econet_intc_of_init(struct device_node *node, struct device_no
+ 		goto err_unmap;
+ 	}
+ 
+-	irq_set_chained_handler_and_data(irq, econet_intc_from_parent, domain);
++	/*
++	 * 34K Manual (MD00534) section 6.3.1.3: in VEIC mode IP2..IP7
++	 * become the interrupt priority level. Do not chain this controller
++	 * through IP2 in that mode; dispatch directly from the VI table.
++	 */
++	if (cpu_has_veic) {
++		econet_intc_init_priorities();
++
++		ret = econet_cpu_init(node);
++		if (ret)
++			return ret;
++	} else {
++		irq_set_chained_handler_and_data(irq, econet_intc_from_parent, domain);
++	}
+ 
++	econet_intc.domain = domain;
+ 	return 0;
+ 
+ err_unmap:
+diff --git a/include/linux/soc/airoha/pkgids.h b/include/linux/soc/airoha/pkgids.h
+index 3d86fcb98..78705f9bc 100644
+--- a/include/linux/soc/airoha/pkgids.h
++++ b/include/linux/soc/airoha/pkgids.h
+@@ -25,10 +25,22 @@
+ /* Before i2c reg: 0x1FBF8100 */
+ 
+ /* Physical addresses used by the legacy MIPS EcoNet identification logic. */
+-#define AIROHA_EFUSE_VERIFY_DATA0_PHYS	0x1fbf8214
+-#define AIROHA_EFUSE_VERIFY_DATA1_PHYS	0x1fbf8218
+-#define AIROHA_CHIP_SCU_PACKAGE_PHYS	0x1fa20174
+-#define AIROHA_CHIP_SCU_CONFIG_PHYS	0x1fa201ec
++#define AIROHA_CHIP_SCU_BASE_PHYS	0x1fa20000
++#define AIROHA_EFUSE_BASE_PHYS		0x1fbf8000
++
++#define AIROHA_CHIP_SCU_PACKAGE		0x174
++#define AIROHA_CHIP_SCU_CONFIG		0x1ec
++#define AIROHA_EFUSE_VERIFY_DATA0	0x214
++#define AIROHA_EFUSE_VERIFY_DATA1	0x218
++
++#define AIROHA_EFUSE_VERIFY_DATA0_PHYS	(AIROHA_EFUSE_BASE_PHYS + \
++					 AIROHA_EFUSE_VERIFY_DATA0)
++#define AIROHA_EFUSE_VERIFY_DATA1_PHYS	(AIROHA_EFUSE_BASE_PHYS + \
++					 AIROHA_EFUSE_VERIFY_DATA1)
++#define AIROHA_CHIP_SCU_PACKAGE_PHYS	(AIROHA_CHIP_SCU_BASE_PHYS + \
++					 AIROHA_CHIP_SCU_PACKAGE)
++#define AIROHA_CHIP_SCU_CONFIG_PHYS	(AIROHA_CHIP_SCU_BASE_PHYS + \
++					 AIROHA_CHIP_SCU_CONFIG)
+ 
+ /* EN7512/EN7521 and EN7526C/EN7522 eFuse encoding. */
+ #define AIROHA_EFUSE_PKG_MASK		GENMASK(5, 0)
+@@ -856,4 +868,63 @@ static inline u32 get_submodel_mem(void __iomem *np_scu)
+ 	return readl(np_scu + AIROHA_NP_SCU_SUBMODEL);
+ }
+ 
++/*
++ * Decode the exact legacy MIPS EcoNet SoC variant from the same register set
++ * used by the vendor code/U-Boot.  HIR/PDIDR identify the family, while the
++ * EN7512/EN7521 family (and the other legacy MIPS families) needs eFuse/strap
++ * data to resolve the concrete part number.
++ *
++ * The caller is responsible for supplying uncached/mapped base addresses.
++ */
++static inline const char *
++airoha_soc_name_from_mips_mem(void __iomem *np_scu, void __iomem *chip_scu,
++			      void __iomem *efuse)
++{
++	struct airoha_soc_id_regs regs = { 0 };
++	enum airoha_pkg pkg;
++
++	regs.hir = get_pkg_mem(np_scu);
++	regs.pkgid = get_pkgid_mem(np_scu);
++	regs.pdidr = get_pdidr_mem(np_scu);
++
++	pkg = airoha_pkg_from_id(regs.hir);
++	if (!pkg)
++		pkg = airoha_pkg_from_id(regs.pdidr);
++
++	switch (pkg) {
++	case EN751221_PKG:
++		if (!efuse)
++			return airoha_soc_name(pkg, regs.pkgid);
++
++		regs.efuse_data0 = readl(efuse + AIROHA_EFUSE_VERIFY_DATA0);
++		break;
++	case EN7526C_PKG:
++		if (!chip_scu || !efuse)
++			return airoha_soc_name(pkg, regs.pkgid);
++
++		regs.efuse_data0 = readl(efuse + AIROHA_EFUSE_VERIFY_DATA0);
++		regs.efuse_data1 = readl(efuse + AIROHA_EFUSE_VERIFY_DATA1);
++		regs.chip_scu_config = readl(chip_scu + AIROHA_CHIP_SCU_CONFIG);
++		break;
++	case EN751627_PKG:
++		if (!chip_scu || !efuse)
++			return airoha_soc_name(pkg, regs.pkgid);
++
++		regs.efuse_data0 = readl(efuse + AIROHA_EFUSE_VERIFY_DATA0);
++		regs.chip_scu_package = readl(chip_scu + AIROHA_CHIP_SCU_PACKAGE);
++		break;
++	case MT751020_PKG:
++		if (!efuse)
++			return airoha_soc_name(pkg, regs.pkgid);
++
++		regs.np_scu_submodel = get_submodel_mem(np_scu);
++		regs.efuse_data0 = readl(efuse + AIROHA_EFUSE_VERIFY_DATA0);
++		break;
++	default:
++		break;
++	}
++
++	return airoha_soc_name_from_id_regs(&regs);
++}
++
+ #endif
+-- 
+2.55.0
+

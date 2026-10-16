@@ -1,0 +1,102 @@
+From defe678c23151f9a343a71b06ce6496e308fdd7b Mon Sep 17 00:00:00 2001
+From: Cristian Papa <pcristian292@gmail.com>
+Date: Sat, 26 Sep 2026 05:37:19 -0300
+Subject: [PATCH] net: dsa: mt7530: quiesce EN751221 hardware PHY polling
+ before MDIO probe
+
+The EN751221 switch can poll its PHYs in hardware: the PHY_AP_EN bits
+of register 0x7018 start an MDIO master of its own that reads PHY
+addresses 8 to 12 on its own schedule. U-Boot's airoha_eth driver
+enables it (0x7f7f8c08) when it probes the Ethernet device, which it
+does on every boot, so Linux starts with that master running. The MDIO
+bus lock in Linux cannot serialize it.
+
+The companion MT7530 is reached through paged accesses on the same
+bus. When a poll lands inside one of them, the access goes to the
+wrong register: tap writes meant for the RD registers of lanes 0, 1
+and 3 (0x7a10, 0x7a18, 0x7a28) were seen landing in RCK/DQS (0x7a04)
+instead. That leaves the companion without a usable receive clock, and
+on the Archer XR500v it is the rare boot where no SoC -> companion
+TRGMII lane trains and LAN stays dead until the next reboot.
+
+On EN751221, clear PHY_AP_EN before the MDIO bus is registered, since
+registration can probe the companion at once. Wait for a transaction
+that may already be in flight, check that the bits read back clear,
+and keep the other PPSC fields. phylib and phylink still read the PHYs
+in software, so link detection does not change.
+
+Tested on the XR500v with a boot-time check that repeats the setup's
+tap writes (64 rounds of 5) and watches RCK/DQS. With the inherited
+polling kept, 4 of 4 boots corrupted it; with this patch, 0 of 4 did,
+over 1280 writes. Without the check, 120 RAM boots over TFTP all
+trained directly, where the failure used to hit about 3 % of them.
+
+Assisted-by: Codex:gpt-6-astra
+Signed-off-by: Cristian Papa <pcristian292@gmail.com>
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/dsa/mt7530-mmio.c | 25 +++++++++++++++++++++++++
+ drivers/net/dsa/mt7530.h      |  4 ++++
+ 2 files changed, 29 insertions(+)
+
+diff --git a/drivers/net/dsa/mt7530-mmio.c b/drivers/net/dsa/mt7530-mmio.c
+index 6737b464a..870e9c111 100644
+--- a/drivers/net/dsa/mt7530-mmio.c
++++ b/drivers/net/dsa/mt7530-mmio.c
+@@ -11,6 +11,24 @@
+ 
+ #include "mt7530.h"
+ 
++static int en751221_quiesce_hw_poll(struct mt7530_priv *priv)
++{
++	unsigned int value;
++	int ret;
++
++	ret = regmap_clear_bits(priv->regmap, EN751221_PHY_POLL_CTRL,
++				EN751221_PHY_AP_EN);
++	if (ret)
++		return ret;
++	/* Let an already-issued polling transaction finish before MDIO scan. */
++	usleep_range(1000, 2000);
++	ret = regmap_read(priv->regmap, EN751221_PHY_POLL_CTRL, &value);
++	if (ret)
++		return ret;
++
++	return value & EN751221_PHY_AP_EN ? -EIO : 0;
++}
++
+ static const struct of_device_id mt7988_of_match[] = {
+ 	{ .compatible = "airoha,en7523-switch", .data = &mt753x_table[ID_EN7523], },
+ 	{ .compatible = "airoha,an7583-switch", .data = &mt753x_table[ID_AN7583], },
+@@ -80,6 +98,13 @@ mt7988_probe(struct platform_device *pdev)
+ 
+ 		usleep_range(20, 50);
+ 
++		/* Stop the independent MDIO master before the companion can probe.
++		 * A software bus mutex cannot serialize hardware PHY polling.
++		 */
++		ret = en751221_quiesce_hw_poll(priv);
++		if (ret)
++			return dev_err_probe(priv->dev, ret, "cannot stop hardware MDIO polling\n");
++
+ 		ret = mt7530_setup_mdio(priv);
+ 		if (ret)
+ 			return ret;
+diff --git a/drivers/net/dsa/mt7530.h b/drivers/net/dsa/mt7530.h
+index 306c91e11..f7e0c3853 100644
+--- a/drivers/net/dsa/mt7530.h
++++ b/drivers/net/dsa/mt7530.h
+@@ -37,6 +37,10 @@ enum mt753x_id {
+ #define SYSC_REG_RSTCTRL		0x34
+ #define  RESET_MCM			BIT(2)
+ 
++/* Register for EN751221 hardware PHY polling */
++#define EN751221_PHY_POLL_CTRL		0x7018
++#define  EN751221_PHY_AP_EN		GENMASK(30, 24)
++
+ /* Register for ARL global control */
+ #define MT753X_AGC			0xc
+ #define  LOCAL_EN			BIT(7)
+-- 
+2.55.0
+

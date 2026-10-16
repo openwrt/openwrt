@@ -1,0 +1,53 @@
+From 742083bd9ca6bd2a10367569d3d3cb7f27476cd3 Mon Sep 17 00:00:00 2001
+From: Ifran Ali <khanu.i.i.k.2000@gmail.com>
+Date: Thu, 1 Oct 2026 09:29:53 +0530
+Subject: [PATCH] net: airoha: handle EN751627 in the SoC switches
+
+"net: airoha: poll GDM counters in background" added econet_en751627 to
+enum airoha_soc_version, but three switches on the SoC version do not
+handle it, which breaks builds with -Werror=switch:
+
+  airoha_eth.c: error: enumeration value 'econet_en751627' not handled in switch
+
+EN751627 is an EcoNet SoC like EN751221: no RX checksum info in the QDMA
+RX message and no LRO, so handle it with the other EcoNet SoCs.
+
+Fixes: 324720b3c ("net: airoha: poll GDM counters in background")
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Signed-off-by: Ifran Ali <khanu.i.i.k.2000@gmail.com>
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/ethernet/airoha/airoha_eth.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/drivers/net/ethernet/airoha/airoha_eth.c b/drivers/net/ethernet/airoha/airoha_eth.c
+index 1b144a6c2..c3586fa01 100644
+--- a/drivers/net/ethernet/airoha/airoha_eth.c
++++ b/drivers/net/ethernet/airoha/airoha_eth.c
+@@ -2253,6 +2253,7 @@ static struct sk_buff *airoha_qdma_lro_rx_skb(struct airoha_queue *q,
+ 
+ 	switch (q->qdma->eth->soc->version) {
+ 	case econet_en751221:
++	case econet_en751627:
+ 	case econet_en7528:
+ 	case econet_en7580:
+ 		return NULL;
+@@ -5885,6 +5886,7 @@ static void airoha_fe_lro_rxq_enable(struct airoha_eth *eth, int qdma_id,
+ 
+ 	switch (eth->soc->version) {
+ 	case econet_en751221:
++	case econet_en751627:
+ 	case econet_en7528:
+ 	case econet_en7580:
+ 		break;
+@@ -5912,6 +5914,7 @@ static void airoha_fe_lro_disable(struct airoha_eth *eth, int qdma_id)
+ 
+ 	switch (eth->soc->version) {
+ 	case econet_en751221:
++	case econet_en751627:
+ 	case econet_en7528:
+ 	case econet_en7580:
+ 		break;
+-- 
+2.55.0
+

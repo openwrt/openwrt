@@ -1,0 +1,54 @@
+From 594ab08d176f2662a25959177ef8abf2d3606747 Mon Sep 17 00:00:00 2001
+From: Cristian Papa <pcristian292@gmail.com>
+Date: Sun, 27 Sep 2026 22:59:38 -0300
+Subject: [PATCH] net: airoha: xpon: never map a T-CONT onto a channel another
+ one owns
+
+gpon_tcont_entity_to_index() falls back to channel (entity - 0x8000) + 1
+when the entity is not in the map, as long as that channel has an
+Alloc-ID. That matches a first provisioning, where the T-CONTs take the
+channels in entity order. After a GPON restart they are rebuilt in the
+order the services come back, and each takes the first free channel.
+
+On the Archer XR500v, after pulling the fibre, 0x8001 (Alloc-ID 513)
+and 0x8002 (769) came back first and took channels 1 and 2. For 0x8000
+(257) the fallback then returned channel 1 because it had an Alloc-ID,
+so 0x8000 was never rebuilt: Alloc-ID 257 was not programmed, and the
+internet GEM port went up on Alloc-ID 513's grants. Downstream was fine
+but a speed test gave 27 Mbit/s instead of 700.
+
+Only fall back to a channel no other entity owns, so 0x8000 goes
+through the rebuild path and gets a channel of its own.
+
+Co-Authored-By: Claude Opus 5.5 (1M context) <noreply@anthropic.com>
+Signed-off-by: Cristian Papa <pcristian292@gmail.com>
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/ethernet/airoha/airoha_xpon.c | 10 +++++++++-
+ 1 file changed, 9 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/net/ethernet/airoha/airoha_xpon.c b/drivers/net/ethernet/airoha/airoha_xpon.c
+index 5607a2854..eb691391c 100644
+--- a/drivers/net/ethernet/airoha/airoha_xpon.c
++++ b/drivers/net/ethernet/airoha/airoha_xpon.c
+@@ -950,8 +950,16 @@ static int gpon_tcont_entity_to_index(struct xpon_priv *priv, u16 entity_id,
+ 	    entity_id < 0x8000 + GPON_MAX_TCONT - 1) {
+ 		unsigned int fallback = (entity_id - 0x8000) + 1;
+ 
++		/*
++		 * The fallback only holds while channels follow the entity
++		 * order, as on a first provisioning.  After a restart the
++		 * T-CONTs are rebuilt in whatever order the services come
++		 * back, so never hand out a channel another entity owns.
++		 */
+ 		if (fallback < GPON_MAX_TCONT &&
+-		    priv->tcont_alloc_id[fallback] != GPON_TCONT_UNASSIGNED)
++		    priv->tcont_alloc_id[fallback] != GPON_TCONT_UNASSIGNED &&
++		    priv->tcont_entity_id[fallback] ==
++		    GPON_TCONT_ENTITY_UNASSIGNED)
+ 			found = fallback;
+ 	}
+ 	if (found >= 0)
+-- 
+2.55.0
+

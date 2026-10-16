@@ -1,0 +1,42 @@
+From a56c0c820a239a8fcac12460f3f24a413a242fee Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Wed, 9 Sep 2026 14:39:43 -0300
+Subject: [PATCH] en7528: fix cold-boot
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ arch/mips/mach-econet/en7528/ddr/glue.c | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
+
+diff --git a/arch/mips/mach-econet/en7528/ddr/glue.c b/arch/mips/mach-econet/en7528/ddr/glue.c
+index 5d601965afa..d6bf45668e6 100644
+--- a/arch/mips/mach-econet/en7528/ddr/glue.c
++++ b/arch/mips/mach-econet/en7528/ddr/glue.c
+@@ -84,6 +84,8 @@ void pause_polling(int usec)
+ 	}
+ }
+ 
++extern void init_system(int is_bootext);
++
+ int spram_preprocess(void)
+ {
+ 	/* Cold boot cannot inherit the chainloader's UART configuration. */
+@@ -95,7 +97,15 @@ int spram_preprocess(void)
+ 	REG32(ECONET_UART_BASE + 0x08) = 0x0f;
+ 	REG32(ECONET_UART_BASE + 0x10) = 0;
+ 	REG32(ECONET_UART_BASE + 0x24) = 0;
++
++	/*
++	 * Match the normal-flash vendor path.  init_system(0) sets up the
++	 * EN7528 system clock and loads both eFuse macros before DRAM
++	 * detection reads the package and DDR type shadows.
++	 */
++	init_system(0);
+ 	time_polling_init();
++
+ 	return 0;
+ }
+ 
+-- 
+2.55.0
+

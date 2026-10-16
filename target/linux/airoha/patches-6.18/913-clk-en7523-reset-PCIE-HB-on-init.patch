@@ -7,12 +7,14 @@ Reset PCIE on clk HW init to handle warm boot problem with PCIe.
 
 Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 ---
- drivers/clk/clk-en7523.c | 7 +++++++
- 1 file changed, 7 insertions(+)
+ drivers/clk/clk-en7523.c | 4 ++++
+ 1 file changed, 4 insertions(+)
 
+diff --git a/drivers/clk/clk-en7523.c b/drivers/clk/clk-en7523.c
+index ce1c2c9a6a3f8ecb6adfa3323aed8a6e0c0a1e69..84c415e11ed14e4d98dd2f5f5caed8569418c955 100644
 --- a/drivers/clk/clk-en7523.c
 +++ b/drivers/clk/clk-en7523.c
-@@ -1147,6 +1147,10 @@ static int en7581_clk_hw_init(struct pla
+@@ -1250,6 +1250,10 @@ static int en7581_clk_hw_init(struct platform_device *pdev,
  	regmap_update_bits(clk_map, REG_NP_SCU_PCIC, REG_PCIE_CTRL,
  			   FIELD_PREP(REG_PCIE_CTRL, 3));
  
@@ -21,5 +23,5 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 +	regmap_clear_bits(clk_map, REG_RST_CTRL1, BIT(29));
 +
  	return en7581_reset_register(&pdev->dev, clk_map, en7581_rst_map,
- 				     ARRAY_SIZE(en7581_rst_map));
- }
+ 				     ARRAY_SIZE(en7581_rst_map),
+ 				     en7581_rst_ofs);

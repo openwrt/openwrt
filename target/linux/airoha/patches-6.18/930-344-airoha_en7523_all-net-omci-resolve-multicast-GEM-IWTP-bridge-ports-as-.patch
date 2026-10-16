@@ -1,0 +1,71 @@
+From edd43a79d33b20fef7cf1f8f7e4b0a4e9d565b72 Mon Sep 17 00:00:00 2001
+From: Cristian Papa <pcristian292@gmail.com>
+Date: Thu, 24 Sep 2026 22:21:07 -0300
+Subject: [PATCH] net: omci: resolve multicast GEM IWTP bridge ports as class
+ 281
+
+A MAC bridge port of TP type 6 points at a multicast GEM interworking
+termination point (class 281), but the service resolver looks the
+pointer up as a unicast GEM IWTP (class 266). The two classes number
+their instances independently, so the lookup returns whichever unicast
+IWTP shares the entity ID.
+
+A Movistar (AR) OLT creates multicast GEM IWTP 1 and bridge port 0xffff
+for it first, then unicast GEM IWTP 1 for the internet GEM (port 257),
+and only then the 802.1p mapper bridge port that carries it. As soon as
+IWTP 266/1 exists, bridge port 0xffff resolves to GEM 257 with the
+multicast flag set, the backend refuses that rule, the whole service
+set is rolled back, and the Create of IWTP 266/1 fails. The OLT never
+gets to the mapper port: the ONU sits in O5 with OMCI up and no data
+path.
+
+Look the pointer up in the class the TP type names. Both classes start
+with the GEM port network CTP pointer, so the rest of the resolver is
+unchanged.
+
+Co-Authored-By: Claude Opus 5.5 (1M context) <noreply@anthropic.com>
+Signed-off-by: Cristian Papa <pcristian292@gmail.com>
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ net/xpon/omci/agent.c | 12 +++++++++++-
+ net/xpon/omci/me.h    |  1 +
+ 2 files changed, 12 insertions(+), 1 deletion(-)
+
+diff --git a/net/xpon/omci/agent.c b/net/xpon/omci/agent.c
+index 01e2691ba..775a5a2e5 100644
+--- a/net/xpon/omci/agent.c
++++ b/net/xpon/omci/agent.c
+@@ -2888,7 +2888,17 @@ omci_agent_stage_service_rule_locked(struct omci_device *odev,
+ 	struct omci_service_config service = {};
+ 	u16 gem_ctp_entity;
+ 
+-	iwtp = omci_mib_lookup(agent, OMCI_CLASS_GEM_IWTP, gem_iwtp_entity);
++	/*
++	 * A multicast GEM IWTP bridge port points at class 281, whose entity
++	 * IDs are independent of the unicast GEM IWTPs of class 266.  Looking
++	 * it up as class 266 picks whatever unicast IWTP shares the ID -- on a
++	 * Movistar (AR) OLT the internet GEM, flagged multicast -- and the
++	 * backend refusal of that bogus rule rolls back the whole service set.
++	 * Both classes start with the GEM port network CTP pointer.
++	 */
++	iwtp = omci_mib_lookup(agent, multicast ? OMCI_CLASS_MULTICAST_GEM_IWTP :
++					       OMCI_CLASS_GEM_IWTP,
++			       gem_iwtp_entity);
+ 	if (!iwtp)
+ 		return -ENOENT;
+ 	gem_ctp_entity = get_unaligned_be16(iwtp->data);
+diff --git a/net/xpon/omci/me.h b/net/xpon/omci/me.h
+index 7953efcb9..90d7d33e4 100644
+--- a/net/xpon/omci/me.h
++++ b/net/xpon/omci/me.h
+@@ -58,6 +58,7 @@ struct omci_mib_object;
+ #define OMCI_CLASS_GAL_ETHERNET_PROFILE	272
+ #define OMCI_CLASS_PRIORITY_QUEUE	277
+ #define OMCI_CLASS_TRAFFIC_SCHEDULER	278
++#define OMCI_CLASS_MULTICAST_GEM_IWTP	281
+ #define OMCI_CLASS_OMCI		287
+ #define OMCI_CLASS_MANAGED_ENTITY	288
+ #define OMCI_CLASS_ATTRIBUTE		289
+-- 
+2.55.0
+

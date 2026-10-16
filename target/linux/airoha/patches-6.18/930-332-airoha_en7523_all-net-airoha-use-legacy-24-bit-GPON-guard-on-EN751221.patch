@@ -1,0 +1,113 @@
+From 229477a3cd810cb1c0126aa0a1faa1ab305806b5 Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Thu, 17 Sep 2026 23:58:50 -0300
+Subject: [PATCH] net: airoha: use legacy 24-bit GPON guard on EN751221
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/ethernet/airoha/airoha_xpon.c | 42 +++++++++++++++--------
+ drivers/net/ethernet/airoha/airoha_xpon.h |  2 ++
+ 2 files changed, 29 insertions(+), 15 deletions(-)
+
+diff --git a/drivers/net/ethernet/airoha/airoha_xpon.c b/drivers/net/ethernet/airoha/airoha_xpon.c
+index b45e5ae04..93e2d9e65 100644
+--- a/drivers/net/ethernet/airoha/airoha_xpon.c
++++ b/drivers/net/ethernet/airoha/airoha_xpon.c
+@@ -1337,33 +1337,43 @@ static void gpon_cb_set_overhead(void *hw_priv,
+ {
+ 	struct xpon_priv *priv = hw_priv;
+ 	u32 prmbl, pre_dly;
++	u8 effective_guard_bits = guard_bits;
+ 	int ret;
+ 
+-	dev_info(priv->dev,
+-		 "GPON overhead: OLT guard=%u fallback guard=%u t1=%u t2=%u t3=%u delay_mode=%u delay=%u delim=%02x:%02x:%02x\n",
+-		 guard_bits, GPON_PHY_GUARD_BIT_NUM, t1_pbits, t2_pbits,
+-		 t3_pbits, delay_mode, delay_time,
+-		 delim[0], delim[1], delim[2]);
+-
+ 	/*
+-	 * Program the guard the OLT asked for.  Overriding it with a value
+-	 * taken from another board's firmware leaves every ranged burst
+-	 * misaligned with the window the OLT reserved for this ONU, so the
+-	 * burst is transmitted and never received.  Map PLOAM T2 to PHY T1 and
+-	 * PLOAM T1 to PHY T2, and preserve explicit zero values.
++	 * The EN751221/EN7521 vendor GPON stack does not program the gbits
++	 * value from Upstream_Overhead into the legacy digital PHY.  It uses
++	 * PHY_TX_EN_BIT_LEN_CONST (24) for both the PHY preamble guard and
++	 * G_PLOu_GUARD_BIT.  This compensates the burst-enable timing of that
++	 * PHY generation; using the OLT value directly can leave the MAC/PHY
++	 * counting a Serial_Number_ONU burst which never lands in the OLT's
++	 * receive window.
++	 *
++	 * Newer EN7523 hardware is already known to work with the announced
++	 * guard, so keep that behavior unless match data asks for the legacy
++	 * override.
+ 	 */
+-	if (!guard_bits)
+-		guard_bits = GPON_PHY_GUARD_BIT_NUM;
++	if (priv->match_data->gpon_guard_bits_override)
++		effective_guard_bits =
++			priv->match_data->gpon_guard_bits_override;
++	else if (!effective_guard_bits)
++		effective_guard_bits = GPON_PHY_GUARD_BIT_NUM;
++
++	dev_info(priv->dev,
++		 "GPON overhead: OLT guard=%u effective guard=%u fallback guard=%u t1=%u t2=%u t3=%u delay_mode=%u delay=%u delim=%02x:%02x:%02x\n",
++		 guard_bits, effective_guard_bits, GPON_PHY_GUARD_BIT_NUM,
++		 t1_pbits, t2_pbits, t3_pbits, delay_mode, delay_time,
++		 delim[0], delim[1], delim[2]);
+ 
+ 	ret = airoha_xpon_phy_set_gpon_overhead(priv->phy,
+-					       guard_bits,
++					       effective_guard_bits,
+ 					       t1_pbits, t2_pbits,
+ 					       t3_pbits, delim);
+ 	if (ret)
+ 		dev_warn(priv->dev,
+ 			 "failed to program GPON PHY overhead: %d\n", ret);
+ 
+-	gpon_write(priv, GPON_PLOu_GUARD_BIT, guard_bits);
++	gpon_write(priv, GPON_PLOu_GUARD_BIT, effective_guard_bits);
+ 
+ 	/* G_PLOu_PRMBL_TYPE1_2: t1 in upper 16 bits, t2 in lower 16 bits */
+ 	prmbl = ((u32)t1_pbits << 16) | t2_pbits;
+@@ -3708,6 +3718,7 @@ static const struct airoha_xpon_match_data en751221_xpon_data = {
+ 	.wan_mode_mask = EN751221_SCU_WAN_MODE_MASK,
+ 	.gpon_fine_delay = 0x1c,
+ 	.gpon_rsp_time_activation = GPON_RSP_TIME_ACT_EN751221,
++	.gpon_guard_bits_override = GPON_PHY_GUARD_BIT_NUM_EN751221,
+ 	.mac_irq_via_eth = true,
+ 	.prepare_before_mmio = true,
+ };
+@@ -3717,6 +3728,7 @@ static const struct airoha_xpon_match_data en751221_gpon_data = {
+ 	.wan_mode_mask = EN751221_SCU_WAN_MODE_MASK,
+ 	.gpon_fine_delay = 0x1c,
+ 	.gpon_rsp_time_activation = GPON_RSP_TIME_ACT_EN751221,
++	.gpon_guard_bits_override = GPON_PHY_GUARD_BIT_NUM_EN751221,
+ 	.mac_irq_via_eth = true,
+ 	.prepare_before_mmio = true,
+ };
+diff --git a/drivers/net/ethernet/airoha/airoha_xpon.h b/drivers/net/ethernet/airoha/airoha_xpon.h
+index 74b3889ef..624636036 100644
+--- a/drivers/net/ethernet/airoha/airoha_xpon.h
++++ b/drivers/net/ethernet/airoha/airoha_xpon.h
+@@ -35,6 +35,7 @@ struct airoha_xpon_match_data {
+ 	u32 wan_mode_mask;
+ 	u8 gpon_fine_delay;
+ 	u16 gpon_rsp_time_activation;
++	u8 gpon_guard_bits_override;
+ 	bool en7523_gpon_defaults;
+ 	bool mac_irq_via_eth;
+ 	bool prepare_before_mmio;
+@@ -320,6 +321,7 @@ struct airoha_xpon_match_data {
+  * Upstream_Overhead.
+  */
+ #define GPON_PHY_GUARD_BIT_NUM	20
++#define GPON_PHY_GUARD_BIT_NUM_EN751221	24
+ 
+ 
+ #define EPON_MAX_LLID		8
+-- 
+2.55.0
+

@@ -1,0 +1,552 @@
+From 40066ce5c5957fa17fee5bec6468ef4845e635bc Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Wed, 16 Sep 2026 19:38:52 -0300
+Subject: [PATCH] airoha: update config and add script migration
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ .../dts/econet,en751221-nokia_g240g-e.dts     |   4 +-
+ arch/mips/dts/econet,en751221-reference.dts   |  32 ++++-
+ arch/mips/dts/econet,en751221.dtsi            |   2 +-
+ .../dts/econet,en7528-tplink-xc220-g3v.dts    | 110 ++++++++++++++----
+ configs/en751221_nokia_g240g-e_defconfig      |  15 +--
+ ...defconfig => en751221_reference_defconfig} |   2 -
+ configs/en7528_tplink_xc220_g3v_defconfig     |  51 ++++----
+ defenvs/en751221_nokia_g240g-e                |  40 +++++++
+ defenvs/en7528_xc220_g3v_env                  |  42 +++++--
+ .../include/dt-bindings/leds/common.h         |   3 +
+ 10 files changed, 223 insertions(+), 78 deletions(-)
+ rename configs/{en7512_reference_defconfig => en751221_reference_defconfig} (98%)
+ create mode 100644 defenvs/en751221_nokia_g240g-e
+
+diff --git a/arch/mips/dts/econet,en751221-nokia_g240g-e.dts b/arch/mips/dts/econet,en751221-nokia_g240g-e.dts
+index 8bb9906c41a..1016dd528b4 100644
+--- a/arch/mips/dts/econet,en751221-nokia_g240g-e.dts
++++ b/arch/mips/dts/econet,en751221-nokia_g240g-e.dts
+@@ -122,13 +122,15 @@
+ 	status = "okay";
+ };
+ 
+-
+ &spi0 {
+ 	status = "okay";
+ 
+ 	nand: nand@0 {
+ 		compatible = "spi-nand";
+ 		reg = <0>;
++		spi-max-frequency = <50000000>;
++		spi-tx-bus-width = <1>;
++		spi-rx-bus-width = <2>;
+ 
+ 		partitions {
+ 			compatible = "fixed-partitions";
+diff --git a/arch/mips/dts/econet,en751221-reference.dts b/arch/mips/dts/econet,en751221-reference.dts
+index 293796179d1..9131333cc1d 100644
+--- a/arch/mips/dts/econet,en751221-reference.dts
++++ b/arch/mips/dts/econet,en751221-reference.dts
+@@ -16,10 +16,6 @@
+ 	status = "okay";
+ };
+ 
+-&spi0 {
+-	status = "okay";
+-};
+-
+ &eth {
+ 	status = "okay";
+ };
+@@ -31,3 +27,31 @@
+ &switch0 {
+ 	status = "okay";
+ };
++
++&spi0 {
++	status = "okay";
++
++	nand: nand@0 {
++		compatible = "spi-nand";
++		reg = <0>;
++		spi-max-frequency = <50000000>;
++		spi-tx-bus-width = <1>;
++		spi-rx-bus-width = <2>;
++
++		partitions {
++			compatible = "fixed-partitions";
++			#address-cells = <1>;
++			#size-cells = <1>;
++	
++			partition@0 {
++				label = "u-boot";
++				reg = <0x000000 0x100000>;
++			};
++	
++			partition@100000 {
++				label = "ubi";
++				reg = <0x100000 0x000000>;
++			};
++		};
++	};
++};
+diff --git a/arch/mips/dts/econet,en751221.dtsi b/arch/mips/dts/econet,en751221.dtsi
+index 5a655608a10..07bf25a64e7 100644
+--- a/arch/mips/dts/econet,en751221.dtsi
++++ b/arch/mips/dts/econet,en751221.dtsi
+@@ -81,7 +81,7 @@
+ 		};
+ 
+ 		spi0: spi@1fa10000 {
+-			compatible = "airoha,en751221-spi", "airoha,en7523-spi";
++			compatible = "airoha,en751221-spi";
+ 			reg = <0x1fa10000 0x140>;
+ 
+ 			clocks = <&scuclk EN751221_CLK_SPI>;
+diff --git a/arch/mips/dts/econet,en7528-tplink-xc220-g3v.dts b/arch/mips/dts/econet,en7528-tplink-xc220-g3v.dts
+index b2f728dbea0..fd9ab27a49e 100644
+--- a/arch/mips/dts/econet,en7528-tplink-xc220-g3v.dts
++++ b/arch/mips/dts/econet,en7528-tplink-xc220-g3v.dts
+@@ -15,12 +15,95 @@
+ 	chosen {
+ 		stdout-path = "serial0:115200n8";
+ 	};
++
++	keys {
++		compatible = "gpio-keys-polled";
++		poll-interval = <100>;
++
++		reset {
++			label = "reset";
++			linux,code = <KEY_RESTART>;
++			gpios = <&pinctrl 0 GPIO_ACTIVE_LOW>;
++			debounce-interval = <60>;
++		};
++
++		wps {
++			label = "wps";
++			linux,code = <KEY_WPS_BUTTON>;
++			gpios = <&pinctrl 30 GPIO_ACTIVE_LOW>;
++			debounce-interval = <60>;
++		};
++	};
++
++	leds {
++		compatible = "gpio-leds";
++
++		// Wireless
++		led@5 {
++			color = <LED_COLOR_ID_GREEN>;
++			function = LED_FUNCTION_WLAN;
++			function-enumerator = <5>;
++			gpios = <&pinctrl 5 GPIO_ACTIVE_LOW>;
++		};
++
++		// Internet
++		led@25 {
++			color = <LED_COLOR_ID_GREEN>;
++			function = LED_FUNCTION_WAN_ONLINE;
++			function-enumerator = <25>;
++			gpios = <&pinctrl 25 GPIO_ACTIVE_LOW>;
++		};
++
++		// FXS1
++		led@27 {
++			color = <LED_COLOR_ID_GREEN>;
++			function = LED_FUNCTION_VOIP;
++			function-enumerator = <27>;
++			gpios = <&pinctrl 27 GPIO_ACTIVE_LOW>;
++		};
++
++		// LOS
++		led@32 {
++			color = <LED_COLOR_ID_RED>;
++			function = LED_FUNCTION_XPON_LOS;
++			function-enumerator = <32>;
++			gpios = <&pinctrl 32 GPIO_ACTIVE_LOW>;
++		};
++
++		// xPON
++		led@34 {
++			color = <LED_COLOR_ID_GREEN>;
++			function = LED_FUNCTION_XPON;
++			function-enumerator = <34>;
++			gpios = <&pinctrl 34 GPIO_ACTIVE_LOW>;
++		};
++
++		// Power
++		led_power: led@36 {
++			color = <LED_COLOR_ID_GREEN>;
++			function = LED_FUNCTION_POWER;
++			function-enumerator = <36>;
++			gpios = <&pinctrl 36 GPIO_ACTIVE_HIGH>;
++		};
++	};
+ };
+ 
+ &uart0 {
+ 	status = "okay";
+ };
+ 
++&eth {
++	status = "okay";
++};
++
++&gdm1 {
++	status = "okay";
++};
++
++&switch {
++	status = "okay";
++};
++
+ &spi0 {
+ 	status = "okay";
+ 
+@@ -37,34 +120,19 @@
+ 			#size-cells = <1>;
+ 
+ 			partition@0 {
+-				label = "boot";
+-				reg = <0x00000000 0x00040000>;
+-				read-only;
+-			};
+-
+-			partition@40000 {
+-				label = "romfile";
+-				reg = <0x00040000 0x00010000>;
+-			};
+-
+-			partition@50000 {
+-				label = "kernel";
+-				reg = <0x00050000 0x00220000>;
++				label = "u-boot";
++				reg = <0x000000 0x100000>;
+ 			};
+ 
+-			partition@270000 {
+-				label = "rootfs";
+-				reg = <0x00270000 0x00cd0000>;
++			partition@100000 {
++				label = "firmware";
++				reg = <0x100000 0xe40000>;
+ 			};
+ 
+ 			partition@f40000 {
+ 				label = "misc";
+-				reg = <0x00f40000 0x000c0000>;
++				reg = <0xf40000 0x0c0000>;
+ 			};
+ 		};
+ 	};
+ };
+-
+-&eth { status = "okay"; };
+-&gdm1 { status = "okay"; };
+-&switch { status = "okay"; };
+diff --git a/configs/en751221_nokia_g240g-e_defconfig b/configs/en751221_nokia_g240g-e_defconfig
+index f01f9a29c43..c0ec234abf4 100644
+--- a/configs/en751221_nokia_g240g-e_defconfig
++++ b/configs/en751221_nokia_g240g-e_defconfig
+@@ -1,17 +1,16 @@
+ CONFIG_MIPS=y
+ CONFIG_SKIP_LOWLEVEL_INIT=y
+-CONFIG_SYS_MALLOC_LEN=0x100000
+ CONFIG_NR_DRAM_BANKS=1
+ CONFIG_ENV_SIZE=0x1000
+ CONFIG_DM_GPIO=y
+ CONFIG_DEFAULT_DEVICE_TREE="econet,en751221-nokia_g240g-e"
+ CONFIG_SYS_LOAD_ADDR=0x82000000
+ CONFIG_ARCH_ECONET=y
+-CONFIG_TARGET_EN751221=y
++# CONFIG_ECONET_BOOTROM_CHAINLOADER is not set
+ CONFIG_SYS_MIPS_TIMER_FREQ=150000000
+-CONFIG_MIPS_RELOCATION_TABLE_SIZE=0xc000
+ CONFIG_MIPS_CACHE_SETUP=y
+ CONFIG_MIPS_CACHE_DISABLE=y
++CONFIG_MIPS_RELOCATION_TABLE_SIZE=0xc000
+ CONFIG_RESTORE_EXCEPTION_VECTOR_BASE=y
+ CONFIG_MIPS_BOOT_FDT=y
+ CONFIG_FIT=y
+@@ -47,7 +46,6 @@ CONFIG_CMD_MTDPARTS=y
+ CONFIG_CMD_LOG=y
+ CONFIG_CMD_UBI=y
+ CONFIG_ENV_OVERWRITE=y
+-CONFIG_ENV_IS_NOWHERE=y
+ CONFIG_ENV_IS_IN_UBI=y
+ CONFIG_ENV_REDUNDANT=y
+ CONFIG_ENV_UBI_PART="ubi"
+@@ -55,14 +53,12 @@ CONFIG_ENV_UBI_VOLUME="ubootenv"
+ CONFIG_ENV_UBI_VOLUME_REDUND="ubootenv2"
+ CONFIG_ENV_RELOC_GD_ENV_ADDR=y
+ CONFIG_ENV_USE_DEFAULT_ENV_TEXT_FILE=y
+-CONFIG_ENV_DEFAULT_ENV_TEXT_FILE="defenvs/en751221_ref_env"
++CONFIG_ENV_DEFAULT_ENV_TEXT_FILE="defenvs/en751221_nokia_g240g-e"
+ CONFIG_ENV_VARS_UBOOT_RUNTIME_CONFIG=y
+ CONFIG_NET_RANDOM_ETHADDR=y
+ CONFIG_SYS_RX_ETH_BUFFER=16
+ CONFIG_BUTTON=y
+ CONFIG_BUTTON_GPIO=y
+-CONFIG_CLK=y
+-CONFIG_DM_RESET=y
+ CONFIG_DMA=y
+ CONFIG_LED=y
+ CONFIG_LED_BOOT=y
+@@ -73,15 +69,10 @@ CONFIG_MTD=y
+ CONFIG_DM_MTD=y
+ CONFIG_MTD_SPI_NAND=y
+ CONFIG_UBI_BLOCK=y
+-CONFIG_DM_MDIO=y
+-CONFIG_AIROHA_ETH=y
+ CONFIG_PHY=y
+-CONFIG_PINCTRL=y
+-CONFIG_PINCTRL_AIROHA_EN751221=y
+ CONFIG_RAM=y
+ CONFIG_SPI=y
+ CONFIG_DM_SPI=y
+ CONFIG_AIROHA_SNFI_SPI=y
+ # CONFIG_UBIFS_SILENCE_MSG is not set
+ CONFIG_SHA512=y
+-CONFIG_ECONET_FLASH_BOOT=y
+diff --git a/configs/en7512_reference_defconfig b/configs/en751221_reference_defconfig
+similarity index 98%
+rename from configs/en7512_reference_defconfig
+rename to configs/en751221_reference_defconfig
+index e9fa4c873b1..3c650a17158 100644
+--- a/configs/en7512_reference_defconfig
++++ b/configs/en751221_reference_defconfig
+@@ -1,13 +1,11 @@
+ CONFIG_MIPS=y
+ CONFIG_SKIP_LOWLEVEL_INIT=y
+-CONFIG_SYS_MALLOC_LEN=0x100000
+ CONFIG_NR_DRAM_BANKS=1
+ CONFIG_ENV_SIZE=0x1000
+ CONFIG_DM_GPIO=y
+ CONFIG_DEFAULT_DEVICE_TREE="econet,en751221-reference"
+ CONFIG_SYS_LOAD_ADDR=0x82000000
+ CONFIG_ARCH_ECONET=y
+-
+ CONFIG_TARGET_EN751221=y
+ CONFIG_SYS_MIPS_TIMER_FREQ=150000000
+ CONFIG_MIPS_RELOCATION_TABLE_SIZE=0xc000
+diff --git a/configs/en7528_tplink_xc220_g3v_defconfig b/configs/en7528_tplink_xc220_g3v_defconfig
+index 77b43200a8c..d27ec8f36ed 100644
+--- a/configs/en7528_tplink_xc220_g3v_defconfig
++++ b/configs/en7528_tplink_xc220_g3v_defconfig
+@@ -1,21 +1,22 @@
+ CONFIG_MIPS=y
+-CONFIG_SYS_LITTLE_ENDIAN=y
+ CONFIG_SKIP_LOWLEVEL_INIT=y
+-CONFIG_SYS_MALLOC_LEN=0x400000
+ CONFIG_NR_DRAM_BANKS=1
+ CONFIG_ENV_SIZE=0x1000
++CONFIG_DM_GPIO=y
+ CONFIG_DEFAULT_DEVICE_TREE="econet,en7528-tplink-xc220-g3v"
+-CONFIG_SYS_LOAD_ADDR=0x82000000
+ CONFIG_SYS_BOOTM_LEN=0x08000000
++CONFIG_SYS_LOAD_ADDR=0x82000000
+ CONFIG_ARCH_ECONET=y
+-CONFIG_BUILD_TARGET="u-boot.bin"
+ CONFIG_TARGET_EN7528=y
++CONFIG_BUILD_TARGET="u-boot.bin"
+ CONFIG_SYS_MIPS_TIMER_FREQ=200000000
+-# CONFIG_MIPS_CACHE_SETUP is not set
++CONFIG_MIPS_RELOCATION_TABLE_SIZE=0xc000
+ CONFIG_RESTORE_EXCEPTION_VECTOR_BASE=y
+ CONFIG_MIPS_BOOT_FDT=y
+ CONFIG_FIT=y
+ CONFIG_FIT_VERBOSE=y
++CONFIG_BOOTSTD=y
++# CONFIG_BOOTMETH_VBE is not set
+ CONFIG_BOOTDELAY=3
+ CONFIG_OF_STDOUT_VIA_ALIAS=y
+ CONFIG_DEFAULT_FDT_FILE="econet,en7528-tplink-xc220-g3v.dtb"
+@@ -25,54 +26,46 @@ CONFIG_DISPLAY_CPUINFO=y
+ # CONFIG_DISPLAY_BOARDINFO is not set
+ CONFIG_BOARD_LATE_INIT=y
+ CONFIG_HUSH_PARSER=y
+-CONFIG_SYS_PROMPT="EN7528 U-Boot> "
++CONFIG_SYS_PROMPT="U-Boot> "
+ CONFIG_SYS_MAXARGS=16
+ CONFIG_CMD_BOOTZ=y
+ CONFIG_CMD_BOOTMENU=y
+ CONFIG_CMD_MEMINFO=y
+ CONFIG_CMD_BIND=y
++CONFIG_CMD_GPIO=y
+ CONFIG_CMD_MTD=y
+-CONFIG_CMD_SF=y
+ CONFIG_CMD_DHCP=y
+ CONFIG_CMD_MII=y
+ CONFIG_CMD_PING=y
+-CONFIG_CMD_TFTPBOOT=y
+ CONFIG_CMD_MTDPARTS=y
+ CONFIG_CMD_LOG=y
+ CONFIG_ENV_OVERWRITE=y
+-CONFIG_ENV_IS_NOWHERE=y
+ CONFIG_ENV_RELOC_GD_ENV_ADDR=y
+ CONFIG_ENV_USE_DEFAULT_ENV_TEXT_FILE=y
+ CONFIG_ENV_DEFAULT_ENV_TEXT_FILE="defenvs/en7528_xc220_g3v_env"
+ CONFIG_ENV_VARS_UBOOT_RUNTIME_CONFIG=y
+ CONFIG_NET_RANDOM_ETHADDR=y
+ CONFIG_SYS_RX_ETH_BUFFER=16
+-CONFIG_REGMAP=y
+-CONFIG_CLK=y
+-CONFIG_DM_RESET=y
++CONFIG_BUTTON=y
++CONFIG_BUTTON_GPIO=y
++CONFIG_DMA=y
++CONFIG_LED=y
++CONFIG_LED_BOOT=y
++CONFIG_LED_BLINK=y
++CONFIG_LED_SW_BLINK=y
++CONFIG_LED_GPIO=y
+ CONFIG_MTD=y
+ CONFIG_DM_MTD=y
+-CONFIG_DM_MDIO=y
+-CONFIG_AIROHA_ETH=y
+-CONFIG_HEXDUMP=y
++CONFIG_DM_SPI_FLASH=y
++CONFIG_SPI_FLASH_WINBOND=y
++CONFIG_SPI_FLASH_XMC=y
++CONFIG_SPI_FLASH_MTD=y
+ CONFIG_PHY=y
+-CONFIG_PINCTRL=y
+-CONFIG_PINCTRL_AIROHA_EN7528=y
+ CONFIG_SYS_NS16550=y
+ CONFIG_SYS_NS16550_MEM32=y
+-CONFIG_DEBUG_UART=y
+-CONFIG_DEBUG_UART_NS16550=y
+-CONFIG_DEBUG_UART_BASE=0xbfbf0000
+-CONFIG_DEBUG_UART_CLOCK=1843200
+-CONFIG_DEBUG_UART_SHIFT=2
+-CONFIG_DEBUG_UART_SKIP_INIT=y
+ CONFIG_SPI=y
+ CONFIG_DM_SPI=y
+ CONFIG_AIROHA_SNFI_SPI=y
+-CONFIG_DM_SPI_FLASH=y
+-CONFIG_SPI_FLASH=y
+-CONFIG_SPI_FLASH_WINBOND=y
+-CONFIG_SPI_FLASH_XMC=y
+-CONFIG_SPI_FLASH_MTD=y
+ CONFIG_LZMA=y
+-CONFIG_ECONET_FLASH_BOOT=y
++CONFIG_LZO=y
++CONFIG_HEXDUMP=y
+diff --git a/defenvs/en751221_nokia_g240g-e b/defenvs/en751221_nokia_g240g-e
+new file mode 100644
+index 00000000000..3d40864409d
+--- /dev/null
++++ b/defenvs/en751221_nokia_g240g-e
+@@ -0,0 +1,40 @@
++loadaddr=0x89400000
++ipaddr=192.168.1.1
++serverip=192.168.1.10
++bootled_pwr=green:status-6
++
++bootconf=config-1
++bootfile=openwrt-airoha-en751221-nokia_g240g-e-initramfs-kernel.bin
++bootloaderfile=openwrt-airoha-en751221-nokia_g240g-e-uboot-bootloader.bin
++
++boot_tftp=tftpboot $loadaddr $bootfile && bootm $loadaddr#$bootconf
++ubi_read_openwrt=ubi read $loadaddr fit && iminfo $loadaddr
++
++boot_openwrt=led $bootled_pwr blink 255; ( run ubi_read_openwrt || echo Install openwrt ; run boot_tftp ) && bootm $loadaddr#$bootconf ; led $bootled_pwr on
++boot_ubi=ubi part ubi && run boot_openwrt
++
++upgrade_uboot=\
++  mw.b 0x89400000 0xff 0x100000 && tftpboot 0x89400000 ${bootloaderfile} && \
++  mtd erase u-boot && mtd write u-boot 0x89400000
++
++format_ubi_part=\
++  mtd read spi-nand0 0x89500000 0x6e40000 0x40000 && \
++  mtd read spi-nand0 0x89540000 0x6d80000 0x40000 && \
++  mtd erase ubi && ubi part ubi && \
++  ubi create ubootenv 0x1f000 static && \
++  ubi create ubootenv2 0x1f000 static && \
++  ubi create ri 0x40000 static && ubi write 0x89500000 ri 0x40000 && \
++  ubi create bosa 0x40000 static && ubi write 0x89540000 bosa 0x40000 && \
++  run upgrade_uboot
++
++bootcmd=run boot_ubi
++bootdelay=3
++bootmenu_confirm_return=askenv - Press ENTER to return to menu ; bootmenu 20
++bootmenu_default=0
++bootmenu_delay=3
++bootmenu_title=      34m( ( ( mOpenWrt34m ) ) )
++bootmenu_0=Run default boot command.=run boot_openwrt
++bootmenu_1=Boot system via TFTP.=run boot_tftp ; run bootmenu_confirm_return
++bootmenu_2=Format UBI partition.=run format_ubi_part
++bootmenu_4=Upgrade u-boot.=run upgrade_uboot
++bootmenu_5=Reboot.=reset
+diff --git a/defenvs/en7528_xc220_g3v_env b/defenvs/en7528_xc220_g3v_env
+index ee0efde8af1..451298b8da9 100644
+--- a/defenvs/en7528_xc220_g3v_env
++++ b/defenvs/en7528_xc220_g3v_env
+@@ -1,12 +1,38 @@
+ loadaddr=0x89400000
+ ipaddr=192.168.1.1
+ serverip=192.168.1.10
+-bootfile=openwrt-airoha-en7528-tplink_xc220-g3v-initramfs-kernel.bin
++bootled_pwr=green:power-36
++
+ bootconf=config-1
+-load_initramfs=tftpboot ${loadaddr} ${bootfile}
+-netboot=run load_initramfs; bootm ${loadaddr}
+-sfprobe=sf probe 0:0 25000000
+-stockboot=run sfprobe; sf read ${loadaddr} 0x50000 0x220000; bootm ${loadaddr}
+-mtdids=nor0=spi0.0
+-mtdparts=mtdparts=spi0.0:0x40000(boot)ro,0x10000(romfile),0x220000(kernel),0xcd0000(rootfs),0xc0000(misc)
+-bootcmd=run netboot
+\ No newline at end of file
++bootfile=openwrt-airoha-en7528-tplink_xc220-g3v-initramfs-kernel.bin
++bootloaderfile=openwrt-airoha-en7528-tplink_xc220-g3v-uboot-bootloader.bin
++
++boot_tftp=tftpboot $loadaddr $bootfile && bootm $loadaddr#$bootconf
++ubi_read_openwrt=ubi read $loadaddr fit && iminfo $loadaddr
++
++boot_openwrt=led $bootled_pwr blink 255; ( run ubi_read_openwrt || echo Install openwrt ; run boot_tftp ) && bootm $loadaddr#$bootconf ; led $bootled_pwr on
++boot_ubi=ubi part ubi && run boot_openwrt
++
++upgrade_uboot=\
++  mw.b 0x89400000 0xff 0x100000 && tftpboot 0x89400000 ${bootloaderfile} && \
++  mtd erase u-boot && mtd write u-boot 0x89400000
++
++format_ubi_part=\
++  mtd read nor0 0x89500000 0xf40000 0xc0000 && \
++  mtd erase ubi && ubi part ubi && \
++  ubi create ubootenv 0x1f000 static && \
++  ubi create ubootenv2 0x1f000 static && \
++  ubi create art 0xc0000 static && ubi write 0x89500000 art 0xc0000 && \
++  run upgrade_uboot
++
++bootcmd=run boot_ubi
++bootdelay=3
++bootmenu_confirm_return=askenv - Press ENTER to return to menu ; bootmenu 20
++bootmenu_default=0
++bootmenu_delay=3
++bootmenu_title=      34m( ( ( mOpenWrt34m ) ) )
++bootmenu_0=Run default boot command.=run boot_openwrt
++bootmenu_1=Boot system via TFTP.=run boot_tftp ; run bootmenu_confirm_return
++bootmenu_2=Format UBI partition.=run format_ubi_part
++bootmenu_4=Upgrade u-boot.=run upgrade_uboot
++bootmenu_5=Reboot.=reset
+diff --git a/dts/upstream/include/dt-bindings/leds/common.h b/dts/upstream/include/dt-bindings/leds/common.h
+index 4f017bea012..da6143c706c 100644
+--- a/dts/upstream/include/dt-bindings/leds/common.h
++++ b/dts/upstream/include/dt-bindings/leds/common.h
+@@ -103,6 +103,7 @@
+ #define LED_FUNCTION_TORCH "torch"
+ #define LED_FUNCTION_TX "tx"
+ #define LED_FUNCTION_USB "usb"
++#define LED_FUNCTION_VOIP "voip"
+ #define LED_FUNCTION_WAN "wan"
+ #define LED_FUNCTION_WAN_ONLINE "wan-online"
+ #define LED_FUNCTION_WLAN "wlan"
+@@ -110,5 +111,7 @@
+ #define LED_FUNCTION_WLAN_5GHZ "wlan-5ghz"
+ #define LED_FUNCTION_WLAN_6GHZ "wlan-6ghz"
+ #define LED_FUNCTION_WPS "wps"
++#define LED_FUNCTION_XPON "xpon"
++#define LED_FUNCTION_XPON_LOS "xpon-los"
+ 
+ #endif /* __DT_BINDINGS_LEDS_H */
+-- 
+2.55.0
+

@@ -1,0 +1,151 @@
+From e5f6c5aca8f77578f9e6c00b7f325a7679e24f47 Mon Sep 17 00:00:00 2001
+From: Cristian Papa <pcristian292@gmail.com>
+Date: Fri, 25 Sep 2026 01:15:48 -0300
+Subject: [PATCH] net: xpon: stop the PON LED blink before a steady state
+
+xpon_leds_update() blinks the PON LED while registering and sets it to
+LED_FULL at O5. With a software blink running (gpio-leds always blink
+in software), led_set_brightness() only changes the brightness of the
+blink's on phase, so the LED keeps blinking in O5. led_blink_set() is
+also called again on every state event, which restarts the phase.
+
+Remember the PON LED mode, and when leaving a blink turn the LED off and
+wait for the blink to stop before setting the new state.
+
+Also show LOS when there is no usable optical signal. On the Archer
+XR500v the receiver keeps LOS deasserted with no fibre and only drops
+signal detect, so the PON and LOS LEDs alternated with the raw LOS bit.
+
+Co-Authored-By: Claude Opus 5.5 (1M context) <noreply@anthropic.com>
+Signed-off-by: Cristian Papa <pcristian292@gmail.com>
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ net/xpon/internal.h |  2 ++
+ net/xpon/leds.c     | 70 ++++++++++++++++++++++++++++++++++++++-------
+ 2 files changed, 61 insertions(+), 11 deletions(-)
+
+diff --git a/net/xpon/internal.h b/net/xpon/internal.h
+index bb9002a07..2b49fe0a1 100644
+--- a/net/xpon/internal.h
++++ b/net/xpon/internal.h
+@@ -33,6 +33,8 @@ struct xpon_device {
+ 	struct led_classdev *pon_led;
+ 	struct led_classdev *los_led;
+ 	struct led_classdev *fiber_led;
++	u8 pon_led_mode;
++	u8 los_led_mode;
+ 
+ 	void *omci;
+ 	void *oam;
+diff --git a/net/xpon/leds.c b/net/xpon/leds.c
+index 304edcfeb..00870f876 100644
+--- a/net/xpon/leds.c
++++ b/net/xpon/leds.c
+@@ -5,12 +5,52 @@
+ 
+ #include "internal.h"
+ 
++enum {
++	XPON_LED_OFF,
++	XPON_LED_ON,
++	XPON_LED_BLINK,
++};
++
+ static void xpon_led_set(struct led_classdev *led, enum led_brightness value)
+ {
+ 	if (led)
+ 		led_set_brightness(led, value);
+ }
+ 
++/*
++ * While a software blink runs, led_set_brightness() only changes the
++ * brightness of the "on" phase, so a steady state requested afterwards
++ * never shows.  Stop the blink first and wait for that to take effect.
++ * Re-requesting the same blink would also restart its phase on every event.
++ */
++static void xpon_led_set_mode(struct led_classdev *led, u8 *cur, u8 mode,
++			      unsigned long period_ms)
++{
++	unsigned long delay_on = period_ms / 2;
++	unsigned long delay_off = period_ms / 2;
++
++	if (!led || *cur == mode)
++		return;
++
++	if (*cur == XPON_LED_BLINK) {
++		led_set_brightness(led, LED_OFF);
++		flush_work(&led->set_brightness_work);
++	}
++
++	switch (mode) {
++	case XPON_LED_ON:
++		led_set_brightness(led, LED_FULL);
++		break;
++	case XPON_LED_BLINK:
++		led_blink_set(led, &delay_on, &delay_off);
++		break;
++	default:
++		led_set_brightness(led, LED_OFF);
++		break;
++	}
++	*cur = mode;
++}
++
+ static struct led_classdev *
+ xpon_led_get_optional(struct xpon_device *xpon, char *name)
+ {
+@@ -49,32 +89,40 @@ int xpon_leds_register(struct xpon_device *xpon)
+ void xpon_leds_update(struct xpon_device *xpon,
+ 		      const struct xpon_state *state)
+ {
+-	unsigned long delay_on = 250;
+-	unsigned long delay_off = 250;
+-
+-	if ((state->valid & XPON_STATE_F_LOS) && state->los) {
++	/*
++	 * Some receivers leave LOS deasserted with no fibre at all and only
++	 * drop signal detect.  Without a usable optical signal show LOS, or
++	 * the PON and LOS LEDs alternate with the raw LOS bit.
++	 */
++	if (((state->valid & XPON_STATE_F_LOS) && state->los) ||
++	    ((state->valid & XPON_STATE_F_SIGNAL) && !state->signal_detect)) {
+ 		xpon_led_set(xpon->fiber_led, LED_OFF);
+-		xpon_led_set(xpon->los_led, LED_FULL);
+-		xpon_led_set(xpon->pon_led, LED_OFF);
++		/* Slow blink, like the vendor firmware of these ONUs. */
++		xpon_led_set_mode(xpon->los_led, &xpon->los_led_mode,
++				  XPON_LED_BLINK, 1000);
++		xpon_led_set_mode(xpon->pon_led, &xpon->pon_led_mode,
++				  XPON_LED_OFF, 0);
+ 		return;
+ 	}
+ 
+ 	if (state->valid & XPON_STATE_F_SIGNAL)
+ 		xpon_led_set(xpon->fiber_led,
+ 			     state->signal_detect ? LED_FULL : LED_OFF);
+-	xpon_led_set(xpon->los_led, LED_OFF);
++	xpon_led_set_mode(xpon->los_led, &xpon->los_led_mode, XPON_LED_OFF, 0);
+ 
+ 	switch (state->registration) {
+ 	case XPON_REGISTRATION_OPERATIONAL:
+-		xpon_led_set(xpon->pon_led, LED_FULL);
++		xpon_led_set_mode(xpon->pon_led, &xpon->pon_led_mode,
++				  XPON_LED_ON, 0);
+ 		break;
+ 	case XPON_REGISTRATION_DISCOVERY:
+ 	case XPON_REGISTRATION_REGISTERING:
+-		if (xpon->pon_led)
+-			led_blink_set(xpon->pon_led, &delay_on, &delay_off);
++		xpon_led_set_mode(xpon->pon_led, &xpon->pon_led_mode,
++				  XPON_LED_BLINK, 500);
+ 		break;
+ 	default:
+-		xpon_led_set(xpon->pon_led, LED_OFF);
++		xpon_led_set_mode(xpon->pon_led, &xpon->pon_led_mode,
++				  XPON_LED_OFF, 0);
+ 		break;
+ 	}
+ }
+-- 
+2.55.0
+

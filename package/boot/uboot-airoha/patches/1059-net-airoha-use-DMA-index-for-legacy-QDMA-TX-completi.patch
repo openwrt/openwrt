@@ -1,0 +1,62 @@
+From 859c1e06c15174bbc898b7c27e9d19e2bb1ac3d0 Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Fri, 18 Sep 2026 21:30:30 -0300
+Subject: [PATCH] net: airoha: use DMA index for legacy QDMA TX completion
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/airoha_eth.c | 23 ++++++++++++++++++-----
+ 1 file changed, 18 insertions(+), 5 deletions(-)
+
+diff --git a/drivers/net/airoha_eth.c b/drivers/net/airoha_eth.c
+index 6bb42ebefc2..8b12ef03093 100644
+--- a/drivers/net/airoha_eth.c
++++ b/drivers/net/airoha_eth.c
+@@ -3152,8 +3152,16 @@ static int en751221_eth_send(struct udevice *dev, void *packet, int length)
+ 		ctrl = READ_ONCE(desc->ctrl);
+ 		hw = airoha_qdma_rr(qdma, EN751221_REG_TX_DMA_IDX) &
+ 		     EN751221_RING_IDX_MASK;
+-		if (qdma->eth->soc->version == 0x7528 ? hw == next :
+-		    ctrl & QDMA_DESC_DONE_MASK)
++		/*
++		 * TX_DMA_IDX is the hardware ownership boundary and does not rely
++		 * on a descriptor writeback reaching CPU-visible memory.  This is
++		 * already required by EN7528, but it also matters on EN751221 when
++		 * U-Boot is entered through the vendor recovery path: the QDMA can
++		 * consume and transmit the descriptor while ctrl.DONE never becomes
++		 * visible.  EN751221 still waits for and consumes the TX completion
++		 * queue below before recycling the LMGR context.
++		 */
++		if (hw == next || (ctrl & QDMA_DESC_DONE_MASK))
+ 			break;
+ 
+ 		/*
+@@ -3192,8 +3200,7 @@ static int en751221_eth_send(struct udevice *dev, void *packet, int length)
+ 
+ 	if (!use_bounce)
+ 		dma_unmap_single(dma_addr, length, DMA_TO_DEVICE);
+-	if (qdma->eth->soc->version == 0x7528 ? hw != next :
+-	    !(ctrl & QDMA_DESC_DONE_MASK)) {
++	if (hw != next && !(ctrl & QDMA_DESC_DONE_MASK)) {
+ 		printf("QDMA TX timeout: cfg=%08x cpu=%08x hw=%08x int=%08x hwcfg=%08x lmgr=%08x free=%08x used=%08x\n",
+ 		       airoha_qdma_rr(qdma, REG_QDMA_GLOBAL_CFG),
+ 		       airoha_qdma_rr(qdma, EN751221_REG_TX_CPU_IDX),
+@@ -3261,8 +3268,14 @@ static int en751221_eth_send(struct udevice *dev, void *packet, int length)
+ 			break;
+ 		udelay(1);
+ 	}
+-	if (!FIELD_GET(EN751221_IRQ_ENTRY_LEN_MASK, irq_status))
++	if (!FIELD_GET(EN751221_IRQ_ENTRY_LEN_MASK, irq_status)) {
++		printf("QDMA TX completion timeout: cpu=%08x hw=%08x int=%08x irq=%08x ctrl=%08x\n",
++		       airoha_qdma_rr(qdma, EN751221_REG_TX_CPU_IDX),
++		       airoha_qdma_rr(qdma, EN751221_REG_TX_DMA_IDX),
++		       airoha_qdma_rr(qdma, EN751221_REG_INT_STATUS),
++		       irq_status, ctrl);
+ 		return -ETIMEDOUT;
++	}
+ 
+ 	/*
+ 	 * QDMA consumes one hardware-forward descriptor for each CPU TX
+-- 
+2.55.0
+

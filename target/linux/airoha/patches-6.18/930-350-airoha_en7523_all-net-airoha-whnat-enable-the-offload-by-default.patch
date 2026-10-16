@@ -1,0 +1,46 @@
+From 3990e431f66fe4d65bc9db72cfe3bbca2a5a56b7 Mon Sep 17 00:00:00 2001
+From: Cristian Papa <pcristian292@gmail.com>
+Date: Sun, 27 Sep 2026 22:08:51 -0300
+Subject: [PATCH] net: airoha: whnat: enable the offload by default
+
+The WHNAT offload only handed frames to the PPE once userspace set the
+whnat_enable module parameter, so every image needed a config file and
+an init script to use it. It is only built with NET_AIROHA_WHNAT, only
+acts while a PPE is active and only sees the netdevs mt76 registers, so
+enable it by default. Clearing whnat_enable still stops it at run time.
+
+Co-Authored-By: Claude Opus 5.5 (1M context) <noreply@anthropic.com>
+Signed-off-by: Cristian Papa <pcristian292@gmail.com>
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/ethernet/airoha/airoha_whnat.c | 7 ++++---
+ 1 file changed, 4 insertions(+), 3 deletions(-)
+
+diff --git a/drivers/net/ethernet/airoha/airoha_whnat.c b/drivers/net/ethernet/airoha/airoha_whnat.c
+index 3a5510da7..13528a783 100644
+--- a/drivers/net/ethernet/airoha/airoha_whnat.c
++++ b/drivers/net/ethernet/airoha/airoha_whnat.c
+@@ -16,8 +16,9 @@
+  *   CRSN_22, and they are queued straight to the vif.
+  *
+  * mt76 registers the vif netdevs with en75_whnat_register_vif(), which gives
+- * each one of the AIROHA_WHNAT_VIFS slots. Nothing is handed to the PPE until
+- * the whnat_enable module parameter is set.
++ * each one of the AIROHA_WHNAT_VIFS slots. The offload is on whenever it is
++ * built and a PPE is active; clearing the whnat_enable module parameter hands
++ * nothing more to the PPE.
+  */
+ 
+ #include <linux/etherdevice.h>
+@@ -35,7 +36,7 @@ static struct airoha_ppe __rcu *active_ppe;
+ static struct airoha_qdma __rcu *active_qdma;
+ static DEFINE_MUTEX(vif_lock);
+ 
+-static bool whnat_enable;
++static bool whnat_enable = true;
+ module_param(whnat_enable, bool, 0644);
+ MODULE_PARM_DESC(whnat_enable, "Hand WiFi frames to the EN751221 PPE");
+ 
+-- 
+2.55.0
+

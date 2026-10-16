@@ -1,0 +1,248 @@
+From b45afe06422e6ed30fa162f765f585866d92c8dd Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Wed, 9 Sep 2026 18:36:00 -0300
+Subject: [PATCH] mips: airoha: clean kconfigs
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ arch/mips/Kconfig                         |  7 ++-
+ arch/mips/dts/Makefile                    | 11 +++--
+ arch/mips/mach-econet/Kconfig             | 56 +++++------------------
+ board/econet/en7528/board.c               |  2 +-
+ configs/en7512_reference_defconfig        |  2 +-
+ configs/en751627_reference_defconfig      |  2 +-
+ configs/en7528_reference_defconfig        |  2 +-
+ configs/en7528_tplink_xc220_g3v_defconfig |  2 +-
+ configs/en7580_xgz030_defconfig           |  2 +-
+ 9 files changed, 28 insertions(+), 58 deletions(-)
+
+diff --git a/arch/mips/Kconfig b/arch/mips/Kconfig
+index 33926140d08..855c5eb6de3 100644
+--- a/arch/mips/Kconfig
++++ b/arch/mips/Kconfig
+@@ -66,14 +66,17 @@ config ARCH_BMIPS
+ config ARCH_ECONET
+ 	bool "Support Airoha MIPS platforms"
+ 	select HAS_FIXED_TIMER_FREQUENCY
++	select CLK
+ 	select DM
++	select DM_RESET
+ 	select DM_SERIAL
++	select PINCTRL
++	select PINMUX
++	select RESET_AIROHA
+ 	select AIROHA_SERIAL
+ 	select AIROHA_ETH
+ 	select OF_CONTROL
+ 	select ROM_EXCEPTION_VECTORS
+-	select SUPPORT_BIG_ENDIAN
+-	select SUPPORT_LITTLE_ENDIAN
+ 	select SUPPORTS_CPU_MIPS32_R2
+ 	select SUPPORT_SPL
+ 	select SPL_SKIP_LOWLEVEL_INIT if SPL
+diff --git a/arch/mips/dts/Makefile b/arch/mips/dts/Makefile
+index 3e0d1b6e7c3..3bb66dbd666 100644
+--- a/arch/mips/dts/Makefile
++++ b/arch/mips/dts/Makefile
+@@ -6,11 +6,12 @@ dtb-$(CONFIG_TARGET_AP152) += ap152.dtb
+ dtb-$(CONFIG_TARGET_MALTA) += mti,malta.dtb
+ dtb-$(CONFIG_TARGET_PIC32MZDASK) += pic32mzda_sk.dtb
+ dtb-$(CONFIG_TARGET_XILFPGA) += nexys4ddr.dtb
+-dtb-$(CONFIG_BOARD_EN7512_REFERENCE) += econet,en751221-reference.dtb
+-dtb-$(CONFIG_BOARD_EN7528_TPLINK_XC220_G3V) += econet,en7528-tplink-xc220-g3v.dtb
+-dtb-$(CONFIG_BOARD_EN751627_REFERENCE) += econet,en751627-reference.dtb
+-dtb-$(CONFIG_BOARD_EN7528_REFERENCE) += econet,en7528-reference.dtb
+-dtb-$(CONFIG_BOARD_EN7580_XGZ030) += econet,en7580-xgz030.dtb
++dtb-$(CONFIG_TARGET_EN751221) += econet,en751221-reference.dtb
++dtb-$(CONFIG_TARGET_EN751627) += econet,en751627-reference.dtb
++dtb-$(CONFIG_TARGET_EN7528) += \
++	econet,en7528-reference.dtb \
++	econet,en7528-tplink-xc220-g3v.dtb
++dtb-$(CONFIG_TARGET_EN7580) += econet,en7580-xgz030.dtb
+ dtb-$(CONFIG_BOARD_BROADCOM_BCM968380GERG) += brcm,bcm968380gerg.dtb
+ dtb-$(CONFIG_BOARD_COMTREND_AR5315U) += comtrend,ar-5315u.dtb
+ dtb-$(CONFIG_BOARD_COMTREND_AR5387UN) += comtrend,ar-5387un.dtb
+diff --git a/arch/mips/mach-econet/Kconfig b/arch/mips/mach-econet/Kconfig
+index 2d9c8fffc1d..82494e6284e 100644
+--- a/arch/mips/mach-econet/Kconfig
++++ b/arch/mips/mach-econet/Kconfig
+@@ -1,15 +1,20 @@
+ menu "Airoha MIPS platforms"
+ 	depends on ARCH_ECONET
+ 
++choice
++	prompt "Airoha MIPS SoC"
++
+ config TARGET_EN751221
+ 	bool "Airoha EN751221 SoC"
++	select SUPPORT_BIG_ENDIAN
+ 	select SYSCON
+ 	select MIPS_TUNE_34KC
+ 	select BINMAN
+ 	select SPL_LOADER_SUPPORT if SPL
+ 
+ config TARGET_EN751627
+-	bool "Airoha EN7516/EN7527 SoC (big-endian)"
++	bool "Airoha EN751627 SoC"
++	select SUPPORT_BIG_ENDIAN
+ 	select SYSCON
+ 	select MIPS_TUNE_1004KC
+ 	select MIPS_SKIP_CP0_COUNT_CLEAR
+@@ -20,6 +25,7 @@ config TARGET_EN751627
+ 
+ config TARGET_EN7528
+ 	bool "Airoha EN7528 SoC"
++	select SUPPORT_LITTLE_ENDIAN
+ 	select SYSCON
+ 	select MIPS_TUNE_1004KC
+ 	select MIPS_SKIP_CP0_COUNT_CLEAR
+@@ -27,6 +33,7 @@ config TARGET_EN7528
+ 
+ config TARGET_EN7580
+ 	bool "Airoha EN7580 SoC"
++	select SUPPORT_LITTLE_ENDIAN
+ 	select SYSCON
+ 	select MIPS_TUNE_1004KC
+ 	select MIPS_SKIP_CP0_COUNT_CLEAR
+@@ -36,9 +43,11 @@ config TARGET_EN7580
+ 	  Select support for the little-endian MIPS32r2 EN7580 family.
+ 	  Initial support targets direct TPL/SPL bring-up on the XGZ030.
+ 
++endchoice
++
+ config ECONET_FLASH_BOOT
+ 	bool "Build the unsigned 128 KiB flash entry and raw U-Boot loader"
+-	depends on TARGET_EN751627 || TARGET_EN7528
++	depends on TARGET_EN751627 || TARGET_EN7528 || TARGET_EN7580
+ 	depends on !SPL && !TPL
+ 	default y
+ 	help
+@@ -98,47 +107,4 @@ config TPL_MAX_SIZE
+ config BUILD_TARGET
+ 	default "u-boot.img"
+ 
+-config BOARD_EN7512_REFERENCE
+-	bool "EN7512/EN7521 reference board"
+-	select TARGET_EN751221
+-	help
+-	  Build a boot image compatible with the EN7512/EN7521 TCBoot flow.
+-	  TPL initializes the serial flash controller, executes the legacy DDR
+-	  calibration stage from FE SRAM and loads SPL into DDR.
+-
+-config BOARD_EN7580_XGZ030
+-	bool "XGZ030 (EN7580, experimental TPL/SPL)"
+-	select TARGET_EN7580
+-	help
+-	  Experimental direct-boot target for the XGZ030 EN7580 platform.
+-	  TPL runs from the reset mapping, loads the GPL RAM-training payload
+-	  into FE SRAM and then loads SPL into DRAM. The DDR and CPS bring-up
+-	  paths are not yet validated on hardware.
+-
+-config BOARD_EN7528_TPLINK_XC220_G3V
+-	bool "TP-Link XC220-G3V (EN7528)"
+-	select TARGET_EN7528
+-	help
+-	  Build U-Boot proper for the TP-Link XC220-G3V. This target assumes a
+-	  previous boot stage has initialized DDR and the integrated switch PHYs.
+-	  u-boot.bin remains usable for serial chainloading. The optional
+-	  ECONET_FLASH_BOOT image initializes DDR and loads it from SPI-NOR.
+-
+-config BOARD_EN7528_REFERENCE
+-	bool "EcoNet EN7528 reference board (DASAN H660GM-A)"
+-	select TARGET_EN7528
+-	help
+-	  Build U-Boot for the EcoNet EN7528 reference board. ECONET_FLASH_BOOT
+-	  uses the SDK reset/move_data/boot2 stages, initializes DDR in FE SRAM
+-	  and runs a raw loader in DRAM to read U-Boot from offset 0x20000.
+-
+-config BOARD_EN751627_REFERENCE
+-	bool "Airoha EN7516/EN7527 reference board"
+-	depends on SYS_BIG_ENDIAN
+-	select TARGET_EN751627
+-	help
+-	  Build U-Boot for EN7516/EN7527. ECONET_FLASH_BOOT uses the SDK
+-	  reset/move_data/boot2 stages and DDR calibration, then loads U-Boot
+-	  from offset 0x20000 with an uncompressed loader in DRAM.
+-
+ endmenu
+diff --git a/board/econet/en7528/board.c b/board/econet/en7528/board.c
+index 9710e616712..7c411e42a36 100644
+--- a/board/econet/en7528/board.c
++++ b/board/econet/en7528/board.c
+@@ -23,7 +23,7 @@ int board_late_init(void)
+ 	/* Probe only after the serial console is available for diagnostics. */
+ 	ret = uclass_get_device_by_driver(UCLASS_MISC,
+ 					  DM_DRIVER_GET(airoha_eth), &dev);
+-	if (ret && ret != -ENODEV)
++	if (ret)
+ 		printf("EN751627/EN7528 Ethernet probe failed: %d\n", ret);
+ 
+ 	return 0;
+diff --git a/configs/en7512_reference_defconfig b/configs/en7512_reference_defconfig
+index 2ed94ae5c9e..55ce424d753 100644
+--- a/configs/en7512_reference_defconfig
++++ b/configs/en7512_reference_defconfig
+@@ -15,7 +15,7 @@ CONFIG_SPL_BSS_MAX_SIZE=0x10000
+ CONFIG_SYS_LOAD_ADDR=0x82000000
+ CONFIG_SPL=y
+ CONFIG_ARCH_ECONET=y
+-CONFIG_BOARD_EN7512_REFERENCE=y
++CONFIG_TARGET_EN751221=y
+ CONFIG_SYS_MIPS_TIMER_FREQ=150000000
+ CONFIG_MIPS_RELOCATION_TABLE_SIZE=0xc000
+ CONFIG_MIPS_CACHE_SETUP=y
+diff --git a/configs/en751627_reference_defconfig b/configs/en751627_reference_defconfig
+index 36d0eb5c644..cd48cb69095 100644
+--- a/configs/en751627_reference_defconfig
++++ b/configs/en751627_reference_defconfig
+@@ -8,7 +8,7 @@ CONFIG_DEFAULT_DEVICE_TREE="econet,en751627-reference"
+ CONFIG_SYS_LOAD_ADDR=0x82000000
+ CONFIG_SYS_BOOTM_LEN=0x08000000
+ CONFIG_ARCH_ECONET=y
+-CONFIG_BOARD_EN751627_REFERENCE=y
++CONFIG_TARGET_EN751627=y
+ CONFIG_SYS_MIPS_TIMER_FREQ=200000000
+ # CONFIG_MIPS_CACHE_SETUP is not set
+ CONFIG_RESTORE_EXCEPTION_VECTOR_BASE=y
+diff --git a/configs/en7528_reference_defconfig b/configs/en7528_reference_defconfig
+index 4bbde29d7ce..704ea118997 100644
+--- a/configs/en7528_reference_defconfig
++++ b/configs/en7528_reference_defconfig
+@@ -8,7 +8,7 @@ CONFIG_DEFAULT_DEVICE_TREE="econet,en7528-reference"
+ CONFIG_SYS_LOAD_ADDR=0x82000000
+ CONFIG_SYS_BOOTM_LEN=0x08000000
+ CONFIG_ARCH_ECONET=y
+-CONFIG_BOARD_EN7528_REFERENCE=y
++CONFIG_TARGET_EN7528=y
+ CONFIG_SYS_MIPS_TIMER_FREQ=200000000
+ # CONFIG_MIPS_CACHE_SETUP is not set
+ CONFIG_RESTORE_EXCEPTION_VECTOR_BASE=y
+diff --git a/configs/en7528_tplink_xc220_g3v_defconfig b/configs/en7528_tplink_xc220_g3v_defconfig
+index ab23e662e53..bf1a1c1efc7 100644
+--- a/configs/en7528_tplink_xc220_g3v_defconfig
++++ b/configs/en7528_tplink_xc220_g3v_defconfig
+@@ -9,7 +9,7 @@ CONFIG_SYS_LOAD_ADDR=0x82000000
+ CONFIG_SYS_BOOTM_LEN=0x08000000
+ CONFIG_ARCH_ECONET=y
+ CONFIG_BUILD_TARGET="u-boot.bin"
+-CONFIG_BOARD_EN7528_TPLINK_XC220_G3V=y
++CONFIG_TARGET_EN7528=y
+ CONFIG_SYS_MIPS_TIMER_FREQ=200000000
+ # CONFIG_MIPS_CACHE_SETUP is not set
+ CONFIG_RESTORE_EXCEPTION_VECTOR_BASE=y
+diff --git a/configs/en7580_xgz030_defconfig b/configs/en7580_xgz030_defconfig
+index 74d6606026c..1383442d285 100644
+--- a/configs/en7580_xgz030_defconfig
++++ b/configs/en7580_xgz030_defconfig
+@@ -16,7 +16,7 @@ CONFIG_SYS_LOAD_ADDR=0x82000000
+ CONFIG_SYS_BOOTM_LEN=0x10000000
+ CONFIG_SPL=y
+ CONFIG_ARCH_ECONET=y
+-CONFIG_BOARD_EN7580_XGZ030=y
++CONFIG_TARGET_EN7580=y
+ CONFIG_SYS_MIPS_TIMER_FREQ=650000000
+ # CONFIG_MIPS_CACHE_SETUP is not set
+ CONFIG_RESTORE_EXCEPTION_VECTOR_BASE=y
+-- 
+2.55.0
+

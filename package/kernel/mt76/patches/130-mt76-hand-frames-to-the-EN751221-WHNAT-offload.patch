@@ -1,0 +1,144 @@
+From: Cristian Papa <pcristian292@gmail.com>
+Subject: [PATCH] mt76: hand frames to the EN751221 WHNAT offload
+
+MT7603 and MT76x2 have no WED. On the EcoNet EN751221 the airoha Ethernet
+driver can still let the PPE offload their NAT flows (WHNAT, enabled with
+CONFIG_NET_AIROHA_WHNAT):
+
+- register every interface when it is added, and unregister it when it
+  is removed, so the PPE can tag and return the frames of each one;
+- offer each received Ethernet frame to the offload before GRO. Frames
+  it does not take go up as before.
+
+The hooks are looked up with symbol_get(), so mt76 keeps loading without
+them, and everything compiles out on other targets.
+
+Co-Authored-By: Claude Opus 5.5 (1M context) <noreply@anthropic.com>
+---
+--- a/mac80211.c
++++ b/mac80211.c
+@@ -1530,6 +1530,7 @@ mt76_check_sta(struct mt76_dev *dev, struct sk_buff *skb)
+ void mt76_rx_complete(struct mt76_dev *dev, struct sk_buff_head *frames,
+ 		      struct napi_struct *napi)
+ {
++	bool (*whnat_early)(struct sk_buff *skb) = NULL;
+ 	struct ieee80211_sta *sta;
+ 	struct ieee80211_hw *hw;
+ 	struct sk_buff *skb, *tmp;
+@@ -1561,10 +1562,20 @@ void mt76_rx_complete(struct mt76_dev *dev, struct sk_buff_head *frames,
+ 		return;
+ 	}
+ 
++#if IS_ENABLED(CONFIG_NET_AIROHA_WHNAT)
++	/* Looked up once per poll; the hook keeps the frames it takes. */
++	whnat_early = symbol_get(en75_whnat_upstream_early);
++#endif
+ 	list_for_each_entry_safe(skb, tmp, &list, list) {
+ 		skb_list_del_init(skb);
++		if (whnat_early && whnat_early(skb))
++			continue;
+ 		napi_gro_receive(napi, skb);
+ 	}
++#if IS_ENABLED(CONFIG_NET_AIROHA_WHNAT)
++	if (whnat_early)
++		symbol_put(en75_whnat_upstream_early);
++#endif
+ }
+ 
+ void mt76_rx_poll_complete(struct mt76_dev *dev, enum mt76_rxq_id q,
+--- a/mt76.h
++++ b/mt76.h
+@@ -2179,4 +2179,55 @@ mt76_vif_link_phy(struct mt76_vif_link *mlink)
+ 	return ctx->phy;
+ }
+ 
++/*
++ * EcoNet EN751221 WHNAT: the SoC PPE can offload NAT flows of radios without
++ * WED. The airoha Ethernet driver provides the hooks; they are looked up at
++ * run time so that mt76 does not depend on it.
++ */
++#if IS_ENABLED(CONFIG_NET_AIROHA_WHNAT)
++int en75_whnat_register_vif(struct net_device *dev);
++void en75_whnat_unregister_vif(struct net_device *dev);
++bool en75_whnat_upstream_early(struct sk_buff *skb);
++
++static inline void mt76_whnat_add_vif(struct ieee80211_vif *vif)
++{
++	struct wireless_dev *wdev = ieee80211_vif_to_wdev(vif);
++	int (*reg)(struct net_device *dev);
++
++	if (!wdev || !wdev->netdev)
++		return;
++
++	reg = symbol_get(en75_whnat_register_vif);
++	if (!reg)
++		return;
++
++	reg(wdev->netdev);
++	symbol_put(en75_whnat_register_vif);
++}
++
++static inline void mt76_whnat_remove_vif(struct ieee80211_vif *vif)
++{
++	struct wireless_dev *wdev = ieee80211_vif_to_wdev(vif);
++	void (*unreg)(struct net_device *dev);
++
++	if (!wdev || !wdev->netdev)
++		return;
++
++	unreg = symbol_get(en75_whnat_unregister_vif);
++	if (!unreg)
++		return;
++
++	unreg(wdev->netdev);
++	symbol_put(en75_whnat_unregister_vif);
++}
++#else
++static inline void mt76_whnat_add_vif(struct ieee80211_vif *vif)
++{
++}
++
++static inline void mt76_whnat_remove_vif(struct ieee80211_vif *vif)
++{
++}
++#endif
++
+ #endif
+--- a/mt7603/main.c
++++ b/mt7603/main.c
+@@ -77,6 +77,8 @@ mt7603_add_interface(struct ieee80211_hw *hw, struct ieee80211_vif *vif)
+ 	mtxq->wcid = idx;
+ 	rcu_assign_pointer(dev->mt76.wcid[idx], &mvif->sta.wcid);
+ 
++	mt76_whnat_add_vif(vif);
++
+ out:
+ 	mutex_unlock(&dev->mt76.mutex);
+ 
+@@ -91,6 +93,8 @@ mt7603_remove_interface(struct ieee80211_hw *hw, struct ieee80211_vif *vif)
+ 	struct mt7603_dev *dev = hw->priv;
+ 	int idx = msta->wcid.idx;
+ 
++	mt76_whnat_remove_vif(vif);
++
+ 	mt76_wr(dev, MT_MAC_ADDR0(mvif->idx), 0);
+ 	mt76_wr(dev, MT_MAC_ADDR1(mvif->idx), 0);
+ 	mt76_wr(dev, MT_BSSID0(mvif->idx), 0);
+--- a/mt76x02_util.c
++++ b/mt76x02_util.c
+@@ -333,6 +333,7 @@ mt76x02_add_interface(struct ieee80211_hw *hw, struct ieee80211_vif *vif)
+ 	dev->mt76.vif_mask |= BIT_ULL(idx);
+ 
+ 	mt76x02_vif_init(dev, vif, idx);
++	mt76_whnat_add_vif(vif);
+ 	return 0;
+ }
+ EXPORT_SYMBOL_GPL(mt76x02_add_interface);
+@@ -343,6 +344,7 @@ void mt76x02_remove_interface(struct ieee80211_hw *hw,
+ 	struct mt76x02_dev *dev = hw->priv;
+ 	struct mt76x02_vif *mvif = (struct mt76x02_vif *)vif->drv_priv;
+ 
++	mt76_whnat_remove_vif(vif);
+ 	dev->mt76.vif_mask &= ~BIT_ULL(mvif->idx);
+ 	rcu_assign_pointer(dev->mt76.wcid[mvif->group_wcid.idx], NULL);
+ 	mt76_wcid_cleanup(&dev->mt76, &mvif->group_wcid);

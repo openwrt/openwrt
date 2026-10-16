@@ -1,0 +1,250 @@
+From b7446ca3ffe941ad75b457cea67ff4dce9f31d17 Mon Sep 17 00:00:00 2001
+From: Cristian Papa <pcristian292@gmail.com>
+Date: Sat, 26 Sep 2026 05:37:19 -0300
+Subject: [PATCH] net: dsa: mt7530: retry the EN751221 TRGMII setup when no
+ lane trains
+
+On a few boots of the Archer XR500v, all RAM boots through TFTP, the
+SoC -> companion training found no window on any of the five lanes.
+No RX tap could bring that direction up: the companion received
+nothing, not even CRC errors, and the LAN ports stayed dead until the
+next reboot. The previous patch removes the cause on this board.
+
+Move the link bring-up (straps, PLL, port 5/6 resets, drive strength)
+into en751221_trgmii_link_setup(), unchanged. When the SoC -> companion
+direction trains no lane at all, dump the PLL, TRGMII and port 5/6
+state of both switches, redo the link setup once and train again, and
+dump again if that fails too. Add core_read() for the PLL registers.
+
+The retry alone does not recover this case, but the dump showed the
+companion receiving nothing, and it costs nothing when the training
+succeeds.
+
+Assisted-by: Claude:claude-opus-5-5
+Signed-off-by: Cristian Papa <pcristian292@gmail.com>
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/dsa/mt7530.c | 144 +++++++++++++++++++++++++++++++++++----
+ 1 file changed, 129 insertions(+), 15 deletions(-)
+
+diff --git a/drivers/net/dsa/mt7530.c b/drivers/net/dsa/mt7530.c
+index ea4dd1678..67c30d23c 100644
+--- a/drivers/net/dsa/mt7530.c
++++ b/drivers/net/dsa/mt7530.c
+@@ -125,6 +125,45 @@ core_write(struct mt7530_priv *priv, u32 reg, u32 val)
+ 	mt7530_mutex_unlock(priv);
+ }
+ 
++static int
++core_read(struct mt7530_priv *priv, u32 reg)
++{
++	struct mii_bus *bus = priv->bus;
++	int ret;
++
++	/* Same access paths as core_write(). */
++	if (priv->id == ID_EN751221) {
++		ret = priv->info->phy_write_c22(priv, 12, MII_MMD_CTRL,
++					       MDIO_MMD_VEND2);
++		if (!ret)
++			ret = priv->info->phy_write_c22(priv, 12, MII_MMD_DATA,
++						       reg);
++		if (!ret)
++			ret = priv->info->phy_write_c22(priv, 12, MII_MMD_CTRL,
++						       MDIO_MMD_VEND2 |
++						       MII_MMD_CTRL_NOINCR);
++		return ret ? ret : priv->info->phy_read_c22(priv, 12,
++							     MII_MMD_DATA);
++	}
++
++	mt7530_mutex_lock(priv);
++	ret = bus->write(bus, MT753X_CTRL_PHY_ADDR(priv->mdiodev->addr),
++			 MII_MMD_CTRL, MDIO_MMD_VEND2);
++	if (!ret)
++		ret = bus->write(bus, MT753X_CTRL_PHY_ADDR(priv->mdiodev->addr),
++				 MII_MMD_DATA, reg);
++	if (!ret)
++		ret = bus->write(bus, MT753X_CTRL_PHY_ADDR(priv->mdiodev->addr),
++				 MII_MMD_CTRL,
++				 MDIO_MMD_VEND2 | MII_MMD_CTRL_NOINCR);
++	if (!ret)
++		ret = bus->read(bus, MT753X_CTRL_PHY_ADDR(priv->mdiodev->addr),
++				MII_MMD_DATA);
++	mt7530_mutex_unlock(priv);
++
++	return ret;
++}
++
+ static void
+ core_rmw(struct mt7530_priv *priv, u32 reg, u32 mask, u32 set)
+ {
+@@ -575,12 +614,12 @@ static int en751221_trgmii_pick_tap(int first, int last, int fixed)
+ 	return first + (last - first) / 4;	/* low quarter: away from the far (real) edge */
+ }
+ 
+-static void
++static int
+ en751221_trgmii_calibrate_direction(struct mt7530_priv *tx,
+ 				    struct mt7530_priv *rx,
+ 				    const char *name)
+ {
+-	int channel;
++	int channel, trained = 0;
+ 
+ 	mt7530_set(tx, MT7530_TRGMII_TXCTRL, TRAIN_TXEN);
+ 
+@@ -615,19 +654,23 @@ en751221_trgmii_calibrate_direction(struct mt7530_priv *tx,
+ 
+ 		mt7530_rmw(rx, rx_reg, RD_TAP_MASK, RD_TAP(tap));
+ 
+-		if (!(first >= 0 && last > first))
++		if (first >= 0 && last > first)
++			trained++;
++		else
+ 			dev_warn(rx->dev,
+ 				 "EN751221 TRGMII %s lane %d: no training window (was tap %u), using fixed tap %d\n",
+ 				 name, channel, old_tap, tap);
+ 	}
+ 
+ 	mt7530_clear(tx, MT7530_TRGMII_TXCTRL, TRAIN_TXEN);
++
++	return trained;
+ }
+ 
+-static void en751221_trgmii_calibrate(struct mt7530_priv *ext,
+-				      struct mt7530_priv *ondie)
++static int en751221_trgmii_calibrate(struct mt7530_priv *ext,
++				     struct mt7530_priv *ondie)
+ {
+-	int channel;
++	int channel, trained;
+ 
+ 	/*
+ 	 * Preserve the existing asymmetric policy: sweep the companion RX
+@@ -635,11 +678,13 @@ static void en751221_trgmii_calibrate(struct mt7530_priv *ext,
+ 	 * Midpoint training previously caused CRC errors on internal P5
+ 	 * under sustained MCM -> SoC traffic.
+ 	 */
+-	en751221_trgmii_calibrate_direction(ondie, ext, "SoC->MCM");
++	trained = en751221_trgmii_calibrate_direction(ondie, ext, "SoC->MCM");
+ 
+ 	for (channel = 0; channel < NUM_TRGMII_CTRL; channel++)
+ 		mt7530_rmw(ondie, MT7530_TRGMII_RD(channel), RD_TAP_MASK,
+ 			   RD_TAP(EN751221_TRGMII_MCM_TO_SOC_RX_TAP));
++
++	return trained;
+ }
+ 
+ static void en751221_trgmii_set_drive_strength(struct mt7530_priv *priv)
+@@ -661,17 +706,11 @@ static void en751221_trgmii_set_drive_strength(struct mt7530_priv *priv)
+ 	mt7530_write(priv, EN751221_TRGMII_TCK_ODT, clk_odt);
+ }
+ 
+-static void en751221_trgmii_pair_setup(struct mt7530_priv *ext,
++static void en751221_trgmii_link_setup(struct mt7530_priv *ext,
+ 				       struct mt7530_priv *ondie)
+ {
+ 	u32 mcr_down, mcr_up;
+ 
+-	if (ondie->en751221_trgmii_ready)
+-		return;
+-
+-	/* Avoid the MT7530 seven-second automatic power-down workaround. */
+-	mt7530_write(ext, EN751221_TRGMII_CKGCR, EN751221_TRGMII_CKGCR_VAL);
+-
+ 	/* Enable TRGMII and apply the vendor strap override on both sides. */
+ 	mt7530_write(ext, MT7530_TOP_SIG_CTRL, 0);
+ 	mt7530_write(ext, MT753X_MTRAP, EN751221_TRGMII_MTRAP_VAL);
+@@ -714,6 +753,71 @@ static void en751221_trgmii_pair_setup(struct mt7530_priv *ext,
+ 	mcr_up = mcr_down | PMCR_MAC_TX_EN | PMCR_FORCE_LNK;
+ 	mt7530_write(ondie, MT753X_PMCR_P(5), mcr_up);
+ 	mt7530_write(ext, MT753X_PMCR_P(6), mcr_up);
++}
++
++/*
++ * Rare boots come up with no training window on any SoC -> companion lane,
++ * and no RX tap brings that direction back.  Leave the state of both ends in
++ * the log so the failure can be told apart from a tap problem.
++ */
++static void en751221_trgmii_dump(struct mt7530_priv *ext,
++				 struct mt7530_priv *ondie, const char *why)
++{
++	static const u16 pll[] = {
++		CORE_PLL_GROUP2, CORE_PLL_GROUP4, CORE_PLL_GROUP5,
++		CORE_PLL_GROUP7, CORE_PLL_GROUP10, CORE_PLL_GROUP11,
++		CORE_TRGMII_GSW_CLK_CG,
++	};
++	struct mt7530_priv *sw[] = { ondie, ext };
++	static const char * const side[] = { "SoC", "MCM" };
++	int v[ARRAY_SIZE(pll)];
++	u32 td[NUM_TRGMII_CTRL], rd[NUM_TRGMII_CTRL];
++	int i, k;
++
++	dev_dbg(ondie->dev, "EN751221 TRGMII state dump: %s\n", why);
++	for (i = 0; i < ARRAY_SIZE(sw); i++) {
++		for (k = 0; k < ARRAY_SIZE(pll); k++)
++			v[k] = core_read(sw[i], pll[k]);
++		for (k = 0; k < NUM_TRGMII_CTRL; k++) {
++			td[k] = mt7530_read(sw[i], EN751221_TRGMII_TD(k));
++			rd[k] = mt7530_read(sw[i], MT7530_TRGMII_RD(k));
++		}
++		dev_dbg(ondie->dev,
++			"  %s pll 401=%x 403=%x 404=%x 406=%x 409=%x 40a=%x 410=%x\n",
++			side[i], v[0], v[1], v[2], v[3], v[4], v[5], v[6]);
++		dev_dbg(ondie->dev,
++			"  %s top_sig=%08x mtrap=%08x p6ecr=%08x rck=%08x txctrl=%08x tck=%08x\n",
++			side[i], mt7530_read(sw[i], MT7530_TOP_SIG_CTRL),
++			mt7530_read(sw[i], MT753X_MTRAP),
++			mt7530_read(sw[i], MT7530_P6ECR),
++			mt7530_read(sw[i], MT7530_TRGMII_RCK_CTRL),
++			mt7530_read(sw[i], MT7530_TRGMII_TXCTRL),
++			mt7530_read(sw[i], MT7530_TRGMII_TCK_CTRL));
++		dev_dbg(ondie->dev,
++			"  %s pmcr5=%08x pmcr6=%08x pmsr5=%08x pmsr6=%08x\n",
++			side[i], mt7530_read(sw[i], MT753X_PMCR_P(5)),
++			mt7530_read(sw[i], MT753X_PMCR_P(6)),
++			mt7530_read(sw[i], MT7530_PMSR_P(5)),
++			mt7530_read(sw[i], MT7530_PMSR_P(6)));
++		dev_dbg(ondie->dev,
++			"  %s td %08x %08x %08x %08x %08x rd %08x %08x %08x %08x %08x\n",
++			side[i], td[0], td[1], td[2], td[3], td[4],
++			rd[0], rd[1], rd[2], rd[3], rd[4]);
++	}
++}
++
++static void en751221_trgmii_pair_setup(struct mt7530_priv *ext,
++				       struct mt7530_priv *ondie)
++{
++	int trained;
++
++	if (ondie->en751221_trgmii_ready)
++		return;
++
++	/* Avoid the MT7530 seven-second automatic power-down workaround. */
++	mt7530_write(ext, EN751221_TRGMII_CKGCR, EN751221_TRGMII_CKGCR_VAL);
++
++	en751221_trgmii_link_setup(ext, ondie);
+ 
+ 	/* The FE PHY bank at addresses 8..11 is not used by these GbE boards. */
+ 	mt7530_set(ondie, EN751221_TRGMII_FE_PHY_CTRL,
+@@ -765,7 +869,17 @@ static void en751221_trgmii_pair_setup(struct mt7530_priv *ext,
+ 		   BC_FFP(BIT(6)) | UNM_FFP(BIT(6)) | UNU_FFP(BIT(6)));
+ 	mt7530_write(ext, MT7530_PSC_P(6), 0x000fff10);
+ 
+-	en751221_trgmii_calibrate(ext, ondie);
++	trained = en751221_trgmii_calibrate(ext, ondie);
++	if (!trained) {
++		en751221_trgmii_dump(ext, ondie, "no SoC->MCM training window");
++		dev_warn(ondie->dev,
++			 "EN751221 TRGMII: redoing the link setup and training once\n");
++		en751221_trgmii_link_setup(ext, ondie);
++		trained = en751221_trgmii_calibrate(ext, ondie);
++		if (!trained)
++			en751221_trgmii_dump(ext, ondie,
++					     "still no SoC->MCM window after the retry");
++	}
+ 
+ 	ondie->en751221_trgmii_ready = true;
+ }
+-- 
+2.55.0
+

@@ -1,0 +1,124 @@
+From bcf85a827909381f648c91470a84763b1b595f62 Mon Sep 17 00:00:00 2001
+From: Ifran Ali <khanu.i.i.k.2000@gmail.com>
+Date: Wed, 30 Sep 2026 11:50:12 +0530
+Subject: [PATCH] net: airoha: xpon: retire the GDM2 channels when EPON stops
+ or an LLID leaves
+
+The vendor EPON stack retires the GDM2 upstream channels in two places
+that epon_disable() and the LLID deregistration here do not:
+
+- On EPON stop, once the GDM2 receive channels and the CDM2 hardware
+  forwards are off, it retires every channel
+  (FE_API_SET_CHANNEL_RETIRE_ALL()). Do the same with retire_all right
+  after the EPON datapath is disabled.
+- When an LLID deregisters, is refused or re-registers, it retires that
+  LLID's channel (FE_API_SET_CHANNEL_RETIRE_ONE(), the channel number
+  being the LLID index). epon_isr() runs in hard interrupt context and
+  the release sleeps, so queue the LLID and retire it from a work item.
+  epon_disable() and the EPON cleanup cancel that work; the full retire
+  on stop covers anything still queued.
+
+Without either, frames queued for an LLID stay held against its channel
+until the next registration reuses it, the EPON counterpart of the GPON
+outage wedge.
+
+Untested on EPON hardware.
+
+Vendor sources (airoha/airoha_sdk 04eeabf3e906):
+- private_econet/xpon/src/epon/epon_main.c L1436-1438 (LLID retire),
+  L2040-2050 and L2155 (retire all on stop)
+- private/xpon_bsp/modules/xpon_1g/src/epon/epon_main.c L1063 and L1634
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Signed-off-by: Ifran Ali <khanu.i.i.k.2000@gmail.com>
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/ethernet/airoha/airoha_xpon.c | 30 +++++++++++++++++++++++
+ drivers/net/ethernet/airoha/airoha_xpon.h |  3 +++
+ 2 files changed, 33 insertions(+)
+
+diff --git a/drivers/net/ethernet/airoha/airoha_xpon.c b/drivers/net/ethernet/airoha/airoha_xpon.c
+index 5c7f8c0a2..2eb42c4ff 100644
+--- a/drivers/net/ethernet/airoha/airoha_xpon.c
++++ b/drivers/net/ethernet/airoha/airoha_xpon.c
+@@ -3398,12 +3398,31 @@ static void epon_report_registration(struct xpon_priv *priv)
+ 		XPON_REGISTRATION_REGISTERING);
+ }
+ 
++/*
++ * FE_API_SET_CHANNEL_RETIRE_ONE(GDMA2, llid) from the vendor LLID
++ * deregistration: retire the GDM2 channel of every LLID that lost its
++ * registration. The GDM2 channel number is the LLID index.
++ */
++static void epon_retire_work_fn(struct work_struct *work)
++{
++	struct xpon_priv *priv = container_of(work, struct xpon_priv,
++					      epon_retire_work);
++	int idx;
++
++	for (idx = 0; idx < EPON_MAX_LLID; idx++)
++		if (test_and_clear_bit(idx, &priv->epon_retire_llids))
++			airoha_eth_xpon_retire_channel(priv->gdm_dev, idx);
++}
++
+ static void epon_llid_drop(struct xpon_priv *priv, int idx)
+ {
+ 	if (priv->llid[idx].valid) {
+ 		priv->llid[idx].valid = false;
+ 		if (priv->registered_llids > 0)
+ 			priv->registered_llids--;
++		/* epon_isr() cannot sleep for the channel release */
++		set_bit(idx, &priv->epon_retire_llids);
++		schedule_work(&priv->epon_retire_work);
+ 	}
+ 	if (priv->oam)
+ 		xpon_oam_llid_unregistered(priv->oam, idx);
+@@ -3864,6 +3883,15 @@ static void epon_disable(struct xpon_priv *priv)
+ 	if (ret)
+ 		dev_warn(priv->dev, "failed to disable EPON datapath: %d\n", ret);
+ 
++	/*
++	 * The vendor EPON stop retires every GDM2 channel once the receive
++	 * channels and hardware forwards are off. That covers any LLID still
++	 * waiting for its own retire.
++	 */
++	cancel_work_sync(&priv->epon_retire_work);
++	priv->epon_retire_llids = 0;
++	airoha_eth_xpon_retire_all(priv->gdm_dev);
++
+ 	airoha_xpon_phy_stop(priv->dev, priv->phy,
+ 			      AIROHA_XPON_MODE_EPON,
+ 			      &priv->phy_initialized,
+@@ -4196,6 +4224,7 @@ static int airoha_xpon_init_epon(struct platform_device *pdev,
+ 	/* Keep the Linux IRQ line enabled and quiesce the MAC at its source. */
+ 	epon_write(priv, EPON_INT_EN, 0);
+ 	epon_write(priv, EPON_INT_STATUS, ~0U);
++	INIT_WORK(&priv->epon_retire_work, epon_retire_work_fn);
+ 	ret = airoha_xpon_request_mac_irq(pdev, priv, epon_isr);
+ 	if (ret) {
+ 		destroy_workqueue(priv->fsm_wq);
+@@ -4209,6 +4238,7 @@ static void airoha_xpon_cleanup_epon(struct xpon_priv *priv)
+ {
+ 	if (!priv->fsm_wq)
+ 		return;
++	cancel_work_sync(&priv->epon_retire_work);
+ 	destroy_workqueue(priv->fsm_wq);
+ 	priv->fsm_wq = NULL;
+ }
+diff --git a/drivers/net/ethernet/airoha/airoha_xpon.h b/drivers/net/ethernet/airoha/airoha_xpon.h
+index b4542bef7..b9115fb4f 100644
+--- a/drivers/net/ethernet/airoha/airoha_xpon.h
++++ b/drivers/net/ethernet/airoha/airoha_xpon.h
+@@ -401,6 +401,9 @@ struct xpon_priv {
+ 
+ 	struct ploam_priv	*ploam;
+ 	int			registered_llids;
++	/* LLIDs whose GDM2 channel epon_isr() left to be retired */
++	unsigned long		epon_retire_llids;
++	struct work_struct	epon_retire_work;
+ 
+ 	u8			hw_sn[8];
+ 	u8			hw_passwd[10];
+-- 
+2.55.0
+

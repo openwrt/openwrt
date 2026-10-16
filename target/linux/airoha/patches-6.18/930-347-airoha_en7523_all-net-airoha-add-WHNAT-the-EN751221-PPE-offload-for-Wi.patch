@@ -1,0 +1,920 @@
+From 3dbdc510fc7c981b64f0feeadc52ff7a4e56d716 Mon Sep 17 00:00:00 2001
+From: Cristian Papa <pcristian292@gmail.com>
+Date: Thu, 24 Sep 2026 09:47:34 -0300
+Subject: [PATCH] net: airoha: add WHNAT, the EN751221 PPE offload for WiFi
+ without WED
+
+The MT7603 and MT76x2 radios found next to the EN751221 have no WED, so
+flows between WiFi and Ethernet are forwarded by the CPU. The vendor
+driver still lets the PPE handle them (its "WHNAT"), with the CPU only
+moving frames between mt76 and the frame engine:
+
+- Frames received on a WiFi interface are tagged with the index of that
+  interface and handed to the PPE through the LAN QDMA, channel 7. A
+  bound flow leaves through its GDM port. An unbound one comes back to
+  the CPU, where the PPE binds it, and is passed up on its interface.
+- A flow towards a WiFi interface is bound with the CPU as destination
+  and the interface index in its L2 tag. The PPE returns the rewritten
+  frames with reason CRSN_22, and they are queued straight to the
+  interface, batched per NAPI poll.
+
+Do the same, behind CONFIG_NET_AIROHA_WHNAT (EN751221 only) and the
+whnat_enable module parameter, which is off by default. mt76 registers
+its interfaces with en75_whnat_register_vif() and offers each received
+frame to en75_whnat_upstream_early() before GRO. It looks both up with
+symbol_get(), so it does not depend on this driver.
+
+Frames handed to the PPE have no netdev: they are not accounted by BQL
+and their completion wakes no queue, so they may not take the last 32
+LAN QDMA TX descriptors, which stay for the frames of the LAN netdevs.
+The LAN QDMA RX buffers get 64 bytes of headroom, so that mt76 can push
+its TX descriptor without reallocating. When an interface goes away its
+flows are unbound and left out of binding until the flow table destroys
+them. Only IPv4 flows are offloaded to WiFi.
+
+Tested on a TP-Link Archer XR500v (EN7526G, MT7662 5 GHz, MT7603 2.4 GHz),
+RAM-booted from airoha/openwrt with this change, both VPEs online. A phone
+on 5 GHz VHT80 runs iperf3 (4 TCP streams) against a PC on the LAN, routed
+and masqueraded by the router, with hardware flow offload on:
+
+                         whnat_enable=0    whnat_enable=1
+  download, 60 s         146.4 Mbit/s      411.3 Mbit/s
+  bidirectional, 180 s   112.8 / 26.0      283.5 / 61.4 Mbit/s
+  TCP retransmits/s      107.5             37.8
+  CPU0 irq+softirq       88 %              46 %
+
+1,912,332 frames were handed to the PPE and as many completed; no
+warning in the log.
+
+Co-Authored-By: Claude Opus 5.5 (1M context) <noreply@anthropic.com>
+Signed-off-by: Cristian Papa <pcristian292@gmail.com>
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/ethernet/airoha/Kconfig        |  15 +
+ drivers/net/ethernet/airoha/Makefile       |   1 +
+ drivers/net/ethernet/airoha/airoha_eth.c   |  92 +++++-
+ drivers/net/ethernet/airoha/airoha_ppe.c   |  50 +++
+ drivers/net/ethernet/airoha/airoha_whnat.c | 361 +++++++++++++++++++++
+ drivers/net/ethernet/airoha/airoha_whnat.h |  98 ++++++
+ 6 files changed, 609 insertions(+), 8 deletions(-)
+ create mode 100644 drivers/net/ethernet/airoha/airoha_whnat.c
+ create mode 100644 drivers/net/ethernet/airoha/airoha_whnat.h
+
+diff --git a/drivers/net/ethernet/airoha/Kconfig b/drivers/net/ethernet/airoha/Kconfig
+index 66a7ddfed..7c8f998e9 100644
+--- a/drivers/net/ethernet/airoha/Kconfig
++++ b/drivers/net/ethernet/airoha/Kconfig
+@@ -60,6 +60,21 @@ config NET_AIROHA_SOC_WED
+ 
+ 	  If unsure, say N.
+ 
++config NET_AIROHA_WHNAT
++	bool "EcoNet EN751221 WHNAT (PPE offload for WiFi without WED)"
++	depends on NET_AIROHA && (ECONET || COMPILE_TEST)
++	help
++	  Let the EN751221 PPE forward NAT flows from and to WiFi netdevs
++	  whose radios have no WED support (MT7603, MT76x2), like the vendor
++	  WHNAT driver: mt76 hands received frames to the PPE through the LAN
++	  QDMA, and the PPE returns frames of flows bound towards a WiFi
++	  interface to the CPU, which queues them straight to that interface.
++	  The mt76 side registers its interfaces through
++	  en75_whnat_register_vif(). Nothing changes until the whnat_enable
++	  module parameter is set.
++
++	  If unsure, say N.
++
+ config AIROHA_XPON_V1
+ 	tristate "Airoha/EcoNet xPON MAC driver"
+ 	depends on ARCH_AIROHA || ECONET || COMPILE_TEST
+diff --git a/drivers/net/ethernet/airoha/Makefile b/drivers/net/ethernet/airoha/Makefile
+index 0d4ad98d9..d3d6eadd9 100644
+--- a/drivers/net/ethernet/airoha/Makefile
++++ b/drivers/net/ethernet/airoha/Makefile
+@@ -7,6 +7,7 @@ obj-$(CONFIG_NET_AIROHA) += airoha-eth.o
+ airoha-eth-y := airoha_eth.o airoha_ppe.o
+ airoha-eth-$(CONFIG_NET_AIROHA_PPE_DEBUGFS) += airoha_ppe_debugfs.o
+ airoha-eth-$(CONFIG_NET_AIROHA_SOC_WED) += airoha_wed.o airoha_wed_debugfs.o
++airoha-eth-$(CONFIG_NET_AIROHA_WHNAT) += airoha_whnat.o
+ 
+ obj-$(CONFIG_NET_AIROHA_NPU) += airoha_npu.o
+ 
+diff --git a/drivers/net/ethernet/airoha/airoha_eth.c b/drivers/net/ethernet/airoha/airoha_eth.c
+index 80336b24f..520f97cdd 100644
+--- a/drivers/net/ethernet/airoha/airoha_eth.c
++++ b/drivers/net/ethernet/airoha/airoha_eth.c
+@@ -59,6 +59,7 @@
+ #include "airoha_eth.h"
+ #include "airoha_regs.h"
+ #include "airoha_wed.h"
++#include "airoha_whnat.h"
+ 
+ static void econet_prepare_qdma_cfg(struct airoha_qdma_mips_cfg *cfg,
+ 				    const struct airoha_eth_soc_data *soc,
+@@ -407,6 +408,7 @@ struct econet_q_tx {
+ 	/* FIFO of free entries because they complete out of order. */
+ 	u16				freelist_head;
+ 	u16				freelist_tail;
++	u16				free_count;
+ 
+ 	/* Not modified after init */
+ 	struct airoha_qdma_mips		*qdma;
+@@ -457,11 +459,22 @@ struct airoha_qdma_mips {
+ 	struct airoha_qdma_mips_cfg cfg;
+ };
+ 
++/* WHNAT hands LAN frames to mt76, which pushes its TX descriptor in front. */
++static int econet_rx_headroom(struct airoha_qdma_mips *qdma)
++{
++	if (!IS_ENABLED(CONFIG_NET_AIROHA_WHNAT) || qdma->qdma->id ||
++	    !airoha_is(qdma->qdma->eth, econet_en751221))
++		return 0;
++
++	return AIROHA_WHNAT_RX_HEADROOM;
++}
++
+ static void econet_fill_rx_queue(struct econet_q_rx *q, u32 end_i)
+ {
+ 	u32 ndesc = q->ndesc;
+ 	u32 cpu_i = (q->cpu_i + 1) % ndesc;
+ 	int rx_offset = q->qdma->cfg.rx_2b_offset ? NET_IP_ALIGN : 0;
++	int headroom = econet_rx_headroom(q->qdma);
+ 
+ 	for (; cpu_i != end_i; cpu_i = (cpu_i + 1) % ndesc) {
+ 		struct econet_q_rx_ent *e = &q->entry[cpu_i];
+@@ -479,8 +492,8 @@ static void econet_fill_rx_queue(struct econet_q_rx *q, u32 end_i)
+ 
+ 		WARN_ON_ONCE(e->dma_addr);
+ 		e->buf = page_address(page) + offset;
+-		e->dma_addr = page_pool_get_dma_addr(page) + offset;
+-		pkt_len = SKB_WITH_OVERHEAD(q->buf_size) - rx_offset;
++		e->dma_addr = page_pool_get_dma_addr(page) + offset + headroom;
++		pkt_len = SKB_WITH_OVERHEAD(q->buf_size) - rx_offset - headroom;
+ 		e->dma_len = pkt_len + rx_offset;
+ 
+ 		WRITE_ONCE(pdesc->info, ((struct desc_info) {
+@@ -500,9 +513,11 @@ static void econet_fill_rx_queue(struct econet_q_rx *q, u32 end_i)
+ }
+ 
+ static void econet_qdma_rx_process_one(struct econet_q_rx *q, u32 cpu_i,
+-				     enum dma_data_direction dir)
++				     enum dma_data_direction dir,
++				     struct airoha_whnat_batch *batch)
+ {
+ 	struct econet_q_rx_ent *e = &q->entry[cpu_i];
++	int headroom = econet_rx_headroom(q->qdma);
+ 	struct sk_buff *skb;
+ 	struct page *page;
+ 	struct desc desc;
+@@ -521,7 +536,7 @@ static void econet_qdma_rx_process_one(struct econet_q_rx *q, u32 cpu_i,
+ 	WRITE_ONCE(q->desc[cpu_i].pkt_addr, 0);
+ 
+ 	len = get_desc_info_pkt_len(&desc.info);
+-	if (!len || len > SKB_WITH_OVERHEAD(q->buf_size) -
++	if (!len || len > SKB_WITH_OVERHEAD(q->buf_size) - headroom -
+ 				(q->qdma->cfg.rx_2b_offset ? NET_IP_ALIGN : 0))
+ 		goto return_page;
+ 
+@@ -532,6 +547,7 @@ static void econet_qdma_rx_process_one(struct econet_q_rx *q, u32 cpu_i,
+ 	if (!skb)
+ 		goto return_page;
+ 
++	skb_reserve(skb, headroom);
+ 	if (q->qdma->cfg.rx_2b_offset)
+ 		skb_reserve(skb, NET_IP_ALIGN);
+ 	__skb_put(skb, len);
+@@ -559,6 +575,10 @@ static void econet_qdma_rx_process_one(struct econet_q_rx *q, u32 cpu_i,
+ 	else
+ 		sport = get_erx_sport(&desc.msg.erx);
+ 
++	if (airoha_whnat_rx(skb, &q->napi, q->qdma->qdma->id, sport,
++			    get_erx_crsn(&desc.msg.erx), batch))
++		return;
++
+ 	if (econet_rx_before_recv(q->qdma->qdma->eth, skb, sport)) {
+ 		dev_kfree_skb(skb);
+ 	} else {
+@@ -581,7 +601,8 @@ static void econet_qdma_rx_process_one(struct econet_q_rx *q, u32 cpu_i,
+ 	page_pool_put_full_page(q->page_pool, page, false);
+ }
+ 
+-static int econet_qdma_rx_process(struct econet_q_rx *q, int budget)
++static int econet_qdma_rx_process(struct econet_q_rx *q, int budget,
++				  struct airoha_whnat_batch *batch)
+ {
+ 	enum dma_data_direction dir = page_pool_get_dma_dir(q->page_pool);
+ 	u32 hardware_i = econet_rreg(&q->qchain_regs->rx_hwi);
+@@ -601,7 +622,7 @@ static int econet_qdma_rx_process(struct econet_q_rx *q, int budget)
+ 	cpu_i = (q->cpu_i + 1) % ndesc;
+ 
+ 	for (done = 0; done < budget && cpu_i != hardware_i; done++) {
+-		econet_qdma_rx_process_one(q, cpu_i, dir);
++		econet_qdma_rx_process_one(q, cpu_i, dir, batch);
+ 		cpu_i = (cpu_i + 1) % ndesc;
+ 	}
+ 
+@@ -787,14 +808,23 @@ static int econet_qdma_set_xpon_irq_mips(struct airoha_qdma_mips *qdma,
+ static int econet_qdma_rx_napi_poll(struct napi_struct *napi, int budget)
+ {
+ 	struct econet_q_rx *q = container_of(napi, struct econet_q_rx, napi);
++	struct airoha_whnat_batch batch, *pending = NULL;
+ 	struct airoha_qdma_mips *qdma = q->qdma;
+ 	int cur, done = 0;
+ 
++	if (!qdma->qdma->id && airoha_whnat_active()) {
++		pending = &batch;
++		airoha_whnat_batch_init(pending);
++	}
++
+ 	do {
+-		cur = econet_qdma_rx_process(q, budget - done);
++		cur = econet_qdma_rx_process(q, budget - done, pending);
+ 		done += cur;
+ 	} while (cur && done < budget);
+ 
++	if (pending)
++		airoha_whnat_batch_flush(pending);
++
+ 	if (done < budget && napi_complete(napi)) {
+ 		union econet_irq_purpose purpose;
+ 		union irq_bit b;
+@@ -958,6 +988,14 @@ static int econet_poll_tx_complete(struct napi_struct *napi, int budget)
+ 		e->freelist_next = 0xffff;
+ 		q->entry[q->freelist_tail].freelist_next = index;
+ 		q->freelist_tail = index;
++		q->free_count++;
++
++		/* Frames handed to the PPE by WHNAT have no netdev. */
++		if (!skb->dev) {
++			airoha_whnat_complete();
++			dev_kfree_skb_any(skb);
++			continue;
++		}
+ 
+ 		txq = netdev_get_tx_queue(skb->dev,
+ 					  skb_get_queue_mapping(skb));
+@@ -1032,6 +1070,13 @@ static int econet_qdma_xmit_mips(struct airoha_qdma_mips *qdma, struct sk_buff *
+ 
+ 	guard(spinlock_bh)(&q->lock_bh);
+ 
++	/*
++	 * Only a completion of a netdev's own frame wakes its stopped queue,
++	 * so frames without a netdev (WHNAT) must leave it some descriptors.
++	 */
++	if (!skb->dev && q->free_count <= AIROHA_WHNAT_TX_RESERVE)
++		return -EAGAIN;
++
+ 	index = q->freelist_head;
+ 	if (index == 0xffff)
+ 		return -EBUSY;
+@@ -1059,8 +1104,10 @@ static int econet_qdma_xmit_mips(struct airoha_qdma_mips *qdma, struct sk_buff *
+ 	e->dma_addr = addr;
+ 	e->dma_len = len;
+ 	q->freelist_head = next_index;
++	q->free_count--;
+ 
+-	skb_tx_timestamp(skb);
++	if (skb->dev)
++		skb_tx_timestamp(skb);
+ 
+ 	/*
+ 	 * Match the vendor QDMA handoff: the descriptor must be globally visible
+@@ -1260,6 +1307,7 @@ static int econet_init_tx_queue(struct econet_q_tx *q,
+ 	q->entry[q->ndesc - 1].freelist_next = 0xffff;
+ 	q->freelist_tail = q->ndesc - 1;
+ 	q->freelist_head = 0;
++	q->free_count = q->ndesc;
+ 
+ 	econet_wreg(lower_32_bits(dma_addr), &q->qchain_regs->txbase);
+ 
+@@ -1895,6 +1943,7 @@ static int econet_qdma_destroy_locked(struct airoha_qdma_mips *qdma)
+ static int econet_qdma_destroy(struct airoha_qdma_mips *qdma)
+ {
+ 	guard(mutex)(&qdma->lock);
++	airoha_whnat_clear_qdma(qdma->qdma);
+ 
+ 	return econet_qdma_destroy_locked(qdma);
+ }
+@@ -1921,6 +1970,7 @@ static void econet_qdma_cleanup_tx(struct airoha_qdma_mips *qdma)
+ 			e->freelist_next = 0xffff;
+ 			q->entry[q->freelist_tail].freelist_next = j;
+ 			q->freelist_tail = j;
++			q->free_count++;
+ 		}
+ 	}
+ }
+@@ -1932,6 +1982,26 @@ static int airoha_qdma_mips_xmit(struct airoha_qdma *qdma,
+ 			     -ENODEV;
+ }
+ 
++#if IS_ENABLED(CONFIG_NET_AIROHA_WHNAT)
++/*
++ * Hand a WHNAT frame to the PPE the way the vendor driver does: LAN QDMA,
++ * channel 7, queue 0. A return value >= 0 means the frame was queued.
++ */
++int airoha_whnat_qdma_xmit(struct airoha_qdma *qdma, struct sk_buff *skb)
++{
++	union desc_msg msg = {};
++
++	if (qdma->id || !qdma->econet || !READ_ONCE(qdma->users))
++		return -EOPNOTSUPP;
++
++	set_etx_channel(&msg.etx, 7);
++	set_etx_queue(&msg.etx, 0);
++	set_etx_fport(&msg.etx, ETX_FPORT_PPE);
++
++	return econet_qdma_xmit_mips(qdma->econet, skb, &msg, 0);
++}
++#endif
++
+ static int airoha_qdma_mips_set_xpon_irq(struct airoha_qdma *qdma,
+ 					 enum airoha_xpon_mode mode, bool enable)
+ {
+@@ -3663,6 +3733,11 @@ void airoha_qdma_start(struct airoha_qdma *qdma)
+ 		set_qregs_qcfg_rx_dma_en(&qcfg, true);
+ 		set_qregs_qcfg_tx_dma_en(&qcfg, true);
+ 		econet_wreg(qcfg, &qdma->econet->regs->qdma_cfg);
++
++		/* WHNAT was validated with the vendor's LAN QDMA TX done mode. */
++		if (!qdma->id && airoha_is(qdma->eth, econet_en751221) &&
++		    is_qregs_qcfg_tx_immediate_done(&qcfg))
++			airoha_whnat_set_qdma(qdma);
+ 		return;
+ 	}
+ 
+@@ -3687,6 +3762,7 @@ void airoha_qdma_stop(struct airoha_qdma *qdma)
+ 		if (--qdma->users > 0)
+ 			return;
+ 
++		airoha_whnat_clear_qdma(qdma);
+ 		qcfg = econet_rreg(&qdma->econet->regs->qdma_cfg);
+ 		set_qregs_qcfg_rx_dma_en(&qcfg, false);
+ 		set_qregs_qcfg_tx_dma_en(&qcfg, false);
+diff --git a/drivers/net/ethernet/airoha/airoha_ppe.c b/drivers/net/ethernet/airoha/airoha_ppe.c
+index 68ac4d6f6..6504ecc36 100644
+--- a/drivers/net/ethernet/airoha/airoha_ppe.c
++++ b/drivers/net/ethernet/airoha/airoha_ppe.c
+@@ -19,6 +19,7 @@
+ 
+ #include "airoha_regs.h"
+ #include "airoha_eth.h"
++#include "airoha_whnat.h"
+ 
+ /* Serialize airoha_gdm_dev flags, QDMA pointer and PPE CPU port
+  * configuration.
+@@ -2879,6 +2880,31 @@ static void airoha_ppe_v1_release_flow_slot(struct airoha_ppe *ppe,
+ 	flow->hash = AIROHA_FOE_V1_INVALID_HASH;
+ }
+ 
++#if IS_ENABLED(CONFIG_NET_AIROHA_WHNAT)
++/*
++ * A WiFi vif went away: stop its bound flows and keep them from being bound
++ * again. They stay in the cookie table until the flow table destroys them.
++ */
++void airoha_whnat_invalidate_vif(struct airoha_ppe *ppe, int idx)
++{
++	struct airoha_flow_table_entry *flow, *tmp;
++
++	spin_lock_bh(&ppe->v1.lock);
++	list_for_each_entry_safe(flow, tmp, &ppe->v1.flows, v1_list) {
++		u32 l2 = airoha_foe_v1_l2(&flow->data)[0];
++
++		if (FIELD_GET(AIROHA_FOE_L2_ETYPE, l2) != AIROHA_WHNAT_ETYPE ||
++		    FIELD_GET(AIROHA_FOE_L2_VLAN1, l2) != idx)
++			continue;
++
++		airoha_ppe_v1_release_flow_slot(ppe, flow, true);
++		list_del_init(&flow->v1_list);
++	}
++	airoha_ppe_v1_cache_clean(ppe);
++	spin_unlock_bh(&ppe->v1.lock);
++}
++#endif
++
+ static u16 airoha_ppe_v1_find_bind_way(struct airoha_ppe *ppe,
+ 				    struct airoha_flow_table_entry *flow, u16 hash,
+ 				    struct airoha_foe_entry *lookup_raw,
+@@ -3399,12 +3425,33 @@ static int airoha_ppe_v1_flow_set_output(struct airoha_foe_entry *entry,
+ 	struct airoha_gdm_common *gdm;
+ 	struct dsa_port *dp;
+ 	int dsa_port = -1;
++	int wifi_idx;
+ 	int err;
+ 
+ 	*xpon = false;
+ 	if (!odev)
+ 		return -EOPNOTSUPP;
+ 
++	wifi_idx = airoha_whnat_active() ? airoha_whnat_vif_index(odev) : -1;
++	if (wifi_idx >= 0) {
++		/*
++		 * Vendor WHNAT recipe: the CPU as PSE port, without QoS, and
++		 * the vif index in an 802.1Q tag. Only IPv4 has been tested.
++		 */
++		if (vlan_valid ||
++		    airoha_foe_v1_packet_type(entry) == PPE_PKT_TYPE_IPV6_ROUTE_5T)
++			return -EOPNOTSUPP;
++
++		airoha_foe_v1_entry_set_pse_port(entry, FE_PSE_PORT_CDM1);
++		airoha_foe_v1_l2(entry)[0] =
++			FIELD_PREP(AIROHA_FOE_L2_ETYPE, AIROHA_WHNAT_ETYPE) |
++			FIELD_PREP(AIROHA_FOE_L2_VLAN1, wifi_idx);
++		entry->ib1 &= ~AIROHA_FOE_V1_IB1_BIND_VLAN_LAYER;
++		entry->ib1 |= AIROHA_FOE_V1_IB1_BIND_VLAN_TAG |
++			      FIELD_PREP(AIROHA_FOE_V1_IB1_BIND_VLAN_LAYER, 1);
++		return 0;
++	}
++
+ 	if (dsa_user_dev_check(odev)) {
+ 		dp = dsa_port_from_netdev(odev);
+ 		if (IS_ERR(dp))
+@@ -3843,6 +3890,8 @@ static int airoha_ppe_v1_init(struct airoha_eth *eth)
+ 
+ 	dev_info(dev, "PPE FoE table at %pad, %u entries\n",
+ 		 &ppe->common.foe_dma, dram_entries);
++	if (airoha_is(eth, econet_en751221))
++		airoha_whnat_set_ppe(ppe);
+ 	return 0;
+ 
+ error_disable:
+@@ -3860,6 +3909,7 @@ static void airoha_ppe_v1_deinit(struct airoha_eth *eth)
+ 	if (!ppe)
+ 		return;
+ 
++	airoha_whnat_clear_ppe(ppe);
+ 	if (READ_ONCE(ppe->v1.armed))
+ 		airoha_ppe_v1_engine_disarm(ppe);
+ 	else
+diff --git a/drivers/net/ethernet/airoha/airoha_whnat.c b/drivers/net/ethernet/airoha/airoha_whnat.c
+new file mode 100644
+index 000000000..3a5510da7
+--- /dev/null
++++ b/drivers/net/ethernet/airoha/airoha_whnat.c
+@@ -0,0 +1,361 @@
++// SPDX-License-Identifier: GPL-2.0-only
++/*
++ * EN751221 WHNAT: PPE flow offload for WiFi netdevs without WED support.
++ *
++ * MT7603 and MT76x2 radios have no WED, so the vendor driver lets the PPE
++ * handle their NAT flows through the CPU instead:
++ *
++ * - Upstream, mt76 offers each received Ethernet frame to
++ *   en75_whnat_upstream_early() before GRO. The frame gets an 802.1Q tag
++ *   carrying the index of its vif and goes to the PPE through the LAN QDMA.
++ *   A bound flow leaves through its GDM port. An unbound one comes back to
++ *   the CPU still tagged, which lets the PPE bind it, and is handed to GRO
++ *   on its vif as if mt76 had never offered it.
++ * - Downstream, a flow towards a vif is bound with the CPU as destination and
++ *   the vif index in its L2 tag. The PPE returns the rewritten frames with
++ *   CRSN_22, and they are queued straight to the vif.
++ *
++ * mt76 registers the vif netdevs with en75_whnat_register_vif(), which gives
++ * each one of the AIROHA_WHNAT_VIFS slots. Nothing is handed to the PPE until
++ * the whnat_enable module parameter is set.
++ */
++
++#include <linux/etherdevice.h>
++#include <linux/if_vlan.h>
++#include <linux/module.h>
++#include <linux/mutex.h>
++#include <linux/rcupdate.h>
++#include <linux/unaligned.h>
++
++#include "airoha_eth.h"
++#include "airoha_whnat.h"
++
++static struct net_device __rcu *vifs[AIROHA_WHNAT_VIFS];
++static struct airoha_ppe __rcu *active_ppe;
++static struct airoha_qdma __rcu *active_qdma;
++static DEFINE_MUTEX(vif_lock);
++
++static bool whnat_enable;
++module_param(whnat_enable, bool, 0644);
++MODULE_PARM_DESC(whnat_enable, "Hand WiFi frames to the EN751221 PPE");
++
++static atomic_t handed = ATOMIC_INIT(0);
++static atomic_t completed = ATOMIC_INIT(0);
++static atomic_t returned = ATOMIC_INIT(0);
++static atomic_t downstream = ATOMIC_INIT(0);
++static atomic_t fallback = ATOMIC_INIT(0);
++
++static int counter_get(char *buf, const struct kernel_param *kp)
++{
++	return sysfs_emit(buf, "%u\n", (unsigned int)atomic_read(kp->arg));
++}
++
++static const struct kernel_param_ops counter_ops = {
++	.get = counter_get,
++};
++
++module_param_cb(whnat_handed, &counter_ops, &handed, 0444);
++module_param_cb(whnat_completed, &counter_ops, &completed, 0444);
++module_param_cb(whnat_returned, &counter_ops, &returned, 0444);
++module_param_cb(whnat_downstream, &counter_ops, &downstream, 0444);
++module_param_cb(whnat_fallback, &counter_ops, &fallback, 0444);
++
++bool airoha_whnat_active(void)
++{
++	return READ_ONCE(whnat_enable) && rcu_access_pointer(active_ppe);
++}
++
++void airoha_whnat_complete(void)
++{
++	atomic_inc(&completed);
++}
++
++void airoha_whnat_set_ppe(struct airoha_ppe *ppe)
++{
++	rcu_assign_pointer(active_ppe, ppe);
++}
++
++/* Free a slot. The caller holds vif_lock. */
++static void airoha_whnat_release_slot(int idx, bool invalidate)
++{
++	struct net_device *dev;
++	struct airoha_ppe *ppe;
++
++	dev = rcu_dereference_protected(vifs[idx], lockdep_is_held(&vif_lock));
++	if (!dev)
++		return;
++
++	RCU_INIT_POINTER(vifs[idx], NULL);
++	synchronize_net();
++
++	if (invalidate) {
++		rcu_read_lock_bh();
++		ppe = rcu_dereference_bh(active_ppe);
++		if (ppe)
++			airoha_whnat_invalidate_vif(ppe, idx);
++		rcu_read_unlock_bh();
++	}
++
++	dev_put(dev);
++}
++
++void airoha_whnat_clear_ppe(struct airoha_ppe *ppe)
++{
++	int i;
++
++	if (rcu_access_pointer(active_ppe) != ppe)
++		return;
++
++	RCU_INIT_POINTER(active_ppe, NULL);
++	synchronize_net();
++
++	/* The PPE flushes its flows itself; only drop the netdev references. */
++	mutex_lock(&vif_lock);
++	for (i = 0; i < AIROHA_WHNAT_VIFS; i++)
++		airoha_whnat_release_slot(i, false);
++	mutex_unlock(&vif_lock);
++}
++
++void airoha_whnat_set_qdma(struct airoha_qdma *qdma)
++{
++	rcu_assign_pointer(active_qdma, qdma);
++}
++
++void airoha_whnat_clear_qdma(struct airoha_qdma *qdma)
++{
++	if (rcu_access_pointer(active_qdma) != qdma)
++		return;
++
++	RCU_INIT_POINTER(active_qdma, NULL);
++	synchronize_net();
++}
++
++/* Give a WiFi netdev a slot; the slot index tags its frames in the PPE. */
++int en75_whnat_register_vif(struct net_device *dev)
++{
++	int i, idx = -ENOSPC;
++
++	if (!dev || !rcu_access_pointer(active_ppe))
++		return -ENODEV;
++
++	mutex_lock(&vif_lock);
++	for (i = 0; i < AIROHA_WHNAT_VIFS; i++) {
++		struct net_device *cur;
++
++		cur = rcu_dereference_protected(vifs[i],
++						lockdep_is_held(&vif_lock));
++		if (cur == dev) {
++			idx = i;
++			goto out;
++		}
++		if (!cur && idx < 0)
++			idx = i;
++	}
++
++	if (idx >= 0) {
++		dev_hold(dev);
++		rcu_assign_pointer(vifs[idx], dev);
++	}
++out:
++	mutex_unlock(&vif_lock);
++
++	return idx;
++}
++EXPORT_SYMBOL_GPL(en75_whnat_register_vif);
++
++void en75_whnat_unregister_vif(struct net_device *dev)
++{
++	int i;
++
++	if (!dev)
++		return;
++
++	mutex_lock(&vif_lock);
++	for (i = 0; i < AIROHA_WHNAT_VIFS; i++) {
++		if (rcu_access_pointer(vifs[i]) == dev)
++			airoha_whnat_release_slot(i, true);
++	}
++	mutex_unlock(&vif_lock);
++}
++EXPORT_SYMBOL_GPL(en75_whnat_unregister_vif);
++
++int airoha_whnat_vif_index(struct net_device *dev)
++{
++	int i, idx = -1;
++
++	if (!dev)
++		return -1;
++
++	rcu_read_lock();
++	for (i = 0; i < AIROHA_WHNAT_VIFS; i++) {
++		if (rcu_dereference(vifs[i]) == dev) {
++			idx = i;
++			break;
++		}
++	}
++	rcu_read_unlock();
++
++	return idx;
++}
++
++bool en75_whnat_upstream_early(struct sk_buff *skb)
++{
++	struct net_device *vif_dev;
++	struct airoha_qdma *qdma;
++	struct airoha_ppe *ppe;
++	bool taken = false;
++	int idx;
++
++	if (!READ_ONCE(whnat_enable) || !skb || !skb->dev ||
++	    skb->protocol != htons(ETH_P_IP) || skb_is_gso(skb) ||
++	    skb_vlan_tag_present(skb))
++		return false;
++
++	idx = airoha_whnat_vif_index(skb->dev);
++	if (idx < 0 || !skb_mac_header_was_set(skb) ||
++	    skb->data - skb_mac_header(skb) != ETH_HLEN)
++		return false;
++
++	rcu_read_lock_bh();
++	ppe = rcu_dereference_bh(active_ppe);
++	qdma = rcu_dereference_bh(active_qdma);
++	if (!ppe || !qdma || !READ_ONCE(ppe->v1.armed))
++		goto out;
++
++	if ((skb_is_nonlinear(skb) && skb_linearize(skb)) ||
++	    skb_cow_head(skb, ETH_HLEN + VLAN_HLEN))
++		goto out;
++
++	/* Put the Ethernet header back and tag the frame with its vif. */
++	vif_dev = skb->dev;
++	skb_push(skb, ETH_HLEN + VLAN_HLEN);
++	memmove(skb->data, skb->data + VLAN_HLEN, 2 * ETH_ALEN);
++	put_unaligned_be16(ETH_P_8021Q, skb->data + 12);
++	put_unaligned_be16(idx, skb->data + 14);
++
++	/* The frame no longer belongs to a netdev queue (no BQL accounting). */
++	skb->dev = NULL;
++	if (airoha_whnat_qdma_xmit(qdma, skb) >= 0) {
++		atomic_inc(&handed);
++		taken = true;
++	} else {
++		memmove(skb->data + VLAN_HLEN, skb->data, 2 * ETH_ALEN);
++		skb_pull(skb, VLAN_HLEN + ETH_HLEN);
++		skb->dev = vif_dev;
++	}
++out:
++	if (!taken)
++		atomic_inc(&fallback);
++	rcu_read_unlock_bh();
++
++	return taken;
++}
++EXPORT_SYMBOL_GPL(en75_whnat_upstream_early);
++
++void airoha_whnat_batch_init(struct airoha_whnat_batch *batch)
++{
++	int i;
++
++	for (i = 0; i < AIROHA_WHNAT_VIFS; i++) {
++		__skb_queue_head_init(&batch->queue[i]);
++		batch->dev[i] = NULL;
++	}
++}
++
++void airoha_whnat_batch_flush(struct airoha_whnat_batch *batch)
++{
++	int i;
++
++	for (i = 0; i < AIROHA_WHNAT_VIFS; i++) {
++		struct sk_buff *skb, *head = NULL, *tail = NULL;
++		struct net_device *dev = batch->dev[i];
++		struct sk_buff_head *q = &batch->queue[i];
++
++		if (!dev)
++			continue;
++
++		/* A queueless vif with no taps takes the whole batch as one
++		 * list; anything else goes through the qdisc frame by frame.
++		 */
++		if (q->qlen > 1 && (dev->priv_flags & IFF_NO_QUEUE) &&
++		    !dev_nit_active(dev)) {
++			while ((skb = __skb_dequeue(q))) {
++				if (!head)
++					head = skb;
++				else
++					tail->next = skb;
++				tail = skb;
++			}
++			tail->next = NULL;
++			dev_queue_xmit(head);
++		} else {
++			while ((skb = __skb_dequeue(q)))
++				dev_queue_xmit(skb);
++		}
++
++		dev_put(dev);
++		batch->dev[i] = NULL;
++	}
++}
++
++bool airoha_whnat_rx(struct sk_buff *skb, struct napi_struct *napi,
++		     u8 qdma_id, u8 sport, u8 reason,
++		     struct airoha_whnat_batch *batch)
++{
++	bool bound = reason == CRSN_22;
++	struct net_device *dev;
++	u16 proto, idx;
++
++	if (!rcu_access_pointer(active_ppe) ||
++	    skb_headlen(skb) < ETH_HLEN + VLAN_HLEN)
++		return false;
++
++	proto = get_unaligned_be16(skb->data + 12);
++	if (bound) {
++		if (proto != ETH_P_8021Q && proto != AIROHA_WHNAT_ETYPE)
++			return false;
++	} else if (qdma_id != 0 || sport != 0 || proto != ETH_P_8021Q) {
++		return false;
++	}
++
++	idx = get_unaligned_be16(skb->data + 14) & VLAN_VID_MASK;
++	if (idx >= AIROHA_WHNAT_VIFS)
++		return false;
++
++	rcu_read_lock_bh();
++	dev = batch && batch->dev[idx] ? batch->dev[idx] :
++					 rcu_dereference_bh(vifs[idx]);
++	if (!dev || !netif_running(dev)) {
++		rcu_read_unlock_bh();
++		return false;
++	}
++
++	/* Drop the tag. */
++	memmove(skb->data + VLAN_HLEN, skb->data, 2 * ETH_ALEN);
++	skb_pull(skb, VLAN_HLEN);
++	skb->dev = dev;
++
++	if (bound) {
++		skb_reset_mac_header(skb);
++		skb_set_network_header(skb, ETH_HLEN);
++		skb->protocol = eth_hdr(skb)->h_proto;
++		atomic_inc(&downstream);
++		if (batch) {
++			if (!batch->dev[idx]) {
++				dev_hold(dev);
++				batch->dev[idx] = dev;
++			}
++			__skb_queue_tail(&batch->queue[idx], skb);
++		} else {
++			dev_queue_xmit(skb);
++		}
++	} else {
++		skb->protocol = eth_type_trans(skb, dev);
++		atomic_inc(&returned);
++		/* Below the mt76 hook: this frame is never offered again. */
++		napi_gro_receive(napi, skb);
++	}
++	rcu_read_unlock_bh();
++
++	return true;
++}
+diff --git a/drivers/net/ethernet/airoha/airoha_whnat.h b/drivers/net/ethernet/airoha/airoha_whnat.h
+new file mode 100644
+index 000000000..0cee0deb8
+--- /dev/null
++++ b/drivers/net/ethernet/airoha/airoha_whnat.h
+@@ -0,0 +1,98 @@
++/* SPDX-License-Identifier: GPL-2.0-only */
++/*
++ * EN751221 WHNAT: PPE flow offload for WiFi netdevs without WED support.
++ */
++#ifndef AIROHA_WHNAT_H
++#define AIROHA_WHNAT_H
++
++#include <linux/netdevice.h>
++#include <linux/skbuff.h>
++
++struct airoha_ppe;
++struct airoha_qdma;
++
++#define AIROHA_WHNAT_VIFS		16
++/* Marker the PPE writes in the L2 tag of flows bound to a WiFi vif. */
++#define AIROHA_WHNAT_ETYPE		0x5678
++/* LAN QDMA RX headroom, so mt76 can push its TX descriptor in place. */
++#define AIROHA_WHNAT_RX_HEADROOM	64
++/* TX descriptors a handed-off frame may never take from the LAN netdevs. */
++#define AIROHA_WHNAT_TX_RESERVE		32
++
++/* Bound frames collected in one NAPI poll, flushed per vif at its end. */
++struct airoha_whnat_batch {
++	struct sk_buff_head queue[AIROHA_WHNAT_VIFS];
++	struct net_device *dev[AIROHA_WHNAT_VIFS];
++};
++
++#if IS_ENABLED(CONFIG_NET_AIROHA_WHNAT)
++bool airoha_whnat_active(void);
++int airoha_whnat_vif_index(struct net_device *dev);
++void airoha_whnat_set_ppe(struct airoha_ppe *ppe);
++void airoha_whnat_clear_ppe(struct airoha_ppe *ppe);
++void airoha_whnat_set_qdma(struct airoha_qdma *qdma);
++void airoha_whnat_clear_qdma(struct airoha_qdma *qdma);
++void airoha_whnat_batch_init(struct airoha_whnat_batch *batch);
++void airoha_whnat_batch_flush(struct airoha_whnat_batch *batch);
++bool airoha_whnat_rx(struct sk_buff *skb, struct napi_struct *napi,
++		     u8 qdma_id, u8 sport, u8 reason,
++		     struct airoha_whnat_batch *batch);
++void airoha_whnat_complete(void);
++
++/* Provided by the QDMA and PPE code. */
++int airoha_whnat_qdma_xmit(struct airoha_qdma *qdma, struct sk_buff *skb);
++void airoha_whnat_invalidate_vif(struct airoha_ppe *ppe, int idx);
++
++/* Called by mt76 through symbol_get(). */
++int en75_whnat_register_vif(struct net_device *dev);
++void en75_whnat_unregister_vif(struct net_device *dev);
++bool en75_whnat_upstream_early(struct sk_buff *skb);
++#else
++static inline bool airoha_whnat_active(void)
++{
++	return false;
++}
++
++static inline int airoha_whnat_vif_index(struct net_device *dev)
++{
++	return -1;
++}
++
++static inline void airoha_whnat_set_ppe(struct airoha_ppe *ppe)
++{
++}
++
++static inline void airoha_whnat_clear_ppe(struct airoha_ppe *ppe)
++{
++}
++
++static inline void airoha_whnat_set_qdma(struct airoha_qdma *qdma)
++{
++}
++
++static inline void airoha_whnat_clear_qdma(struct airoha_qdma *qdma)
++{
++}
++
++static inline void airoha_whnat_batch_init(struct airoha_whnat_batch *batch)
++{
++}
++
++static inline void airoha_whnat_batch_flush(struct airoha_whnat_batch *batch)
++{
++}
++
++static inline bool airoha_whnat_rx(struct sk_buff *skb,
++				   struct napi_struct *napi, u8 qdma_id,
++				   u8 sport, u8 reason,
++				   struct airoha_whnat_batch *batch)
++{
++	return false;
++}
++
++static inline void airoha_whnat_complete(void)
++{
++}
++#endif
++
++#endif /* AIROHA_WHNAT_H */
+-- 
+2.55.0
+

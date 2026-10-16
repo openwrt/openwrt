@@ -1,0 +1,136 @@
+From 5b2adce5da7d8ccf1d7f48742764c07c42b8c8c6 Mon Sep 17 00:00:00 2001
+From: Sirherobrine23 <sirherobrine23@users.noreply.github.com>
+Date: Tue, 4 Aug 2026 20:20:20 +0000
+Subject: [PATCH] pinctrl: airoha: preserve OpenWrt fixes after driver split
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ .../pinctrl/airoha,an7583-pinctrl.yaml        |  8 +++
+ drivers/pinctrl/airoha/pinctrl-an7583.c       | 71 +++----------------
+ 2 files changed, 16 insertions(+), 63 deletions(-)
+
+diff --git a/Documentation/devicetree/bindings/pinctrl/airoha,an7583-pinctrl.yaml b/Documentation/devicetree/bindings/pinctrl/airoha,an7583-pinctrl.yaml
+index 8d8ec6adb..36e16fcd6 100644
+--- a/Documentation/devicetree/bindings/pinctrl/airoha,an7583-pinctrl.yaml
++++ b/Documentation/devicetree/bindings/pinctrl/airoha,an7583-pinctrl.yaml
+@@ -117,6 +117,14 @@ patternProperties:
+                     enum: [uart2, uart2_cts_rts, hsuart, hsuart_cts_rts,
+                            uart4, uart5]
+                   maxItems: 2
++          - if:
++              properties:
++                function:
++                  const: i2c
++            then:
++              properties:
++                groups:
++                  enum: [i2c0, i2c1]
+           - if:
+               properties:
+                 function:
+diff --git a/drivers/pinctrl/airoha/pinctrl-an7583.c b/drivers/pinctrl/airoha/pinctrl-an7583.c
+index 1c78b8a5d..2b4c0e746 100644
+--- a/drivers/pinctrl/airoha/pinctrl-an7583.c
++++ b/drivers/pinctrl/airoha/pinctrl-an7583.c
+@@ -892,33 +892,9 @@ static const struct airoha_pinctrl_func_group spi_func_group[] = {
+ 			GPIO_SPI_CS1_MODE_MASK
+ 		},
+ 		.regmap_size = 1,
+-	}, {
+-		.name = "spi_cs2",
+-		.regmap[0] = {
+-			AIROHA_FUNC_MUX,
+-			REG_GPIO_SPI_CS1_MODE,
+-			GPIO_SPI_CS2_MODE_MASK,
+-			GPIO_SPI_CS2_MODE_MASK
+-		},
+-		.regmap_size = 1,
+-	}, {
+-		.name = "spi_cs3",
+-		.regmap[0] = {
+-			AIROHA_FUNC_MUX,
+-			REG_GPIO_SPI_CS1_MODE,
+-			GPIO_SPI_CS3_MODE_MASK,
+-			GPIO_SPI_CS3_MODE_MASK
+-		},
+-		.regmap_size = 1,
+-	}, {
+-		.name = "spi_cs4",
+-		.regmap[0] = {
+-			AIROHA_FUNC_MUX,
+-			REG_GPIO_SPI_CS1_MODE,
+-			GPIO_SPI_CS4_MODE_MASK,
+-			GPIO_SPI_CS4_MODE_MASK
+-		},
+-		.regmap_size = 1,
++
++
++
+ 	},
+ };
+ 
+@@ -932,15 +908,7 @@ static const struct airoha_pinctrl_func_group pcm_spi_func_group[] = {
+ 			GPIO_PCM_SPI_MODE_MASK
+ 		},
+ 		.regmap_size = 1,
+-	}, {
+-		.name = "pcm_spi_int",
+-		.regmap[0] = {
+-			AIROHA_FUNC_MUX,
+-			REG_GPIO_SPI_CS1_MODE,
+-			GPIO_PCM_INT_MODE_MASK,
+-			GPIO_PCM_INT_MODE_MASK
+-		},
+-		.regmap_size = 1,
++
+ 	}, {
+ 		.name = "pcm_spi_rst",
+ 		.regmap[0] = {
+@@ -959,33 +927,9 @@ static const struct airoha_pinctrl_func_group pcm_spi_func_group[] = {
+ 			GPIO_PCM_SPI_CS1_MODE_MASK
+ 		},
+ 		.regmap_size = 1,
+-	}, {
+-		.name = "pcm_spi_cs2",
+-		.regmap[0] = {
+-			AIROHA_FUNC_MUX,
+-			REG_GPIO_SPI_CS1_MODE,
+-			GPIO_PCM_SPI_CS2_MODE_MASK,
+-			GPIO_PCM_SPI_CS2_MODE_MASK
+-		},
+-		.regmap_size = 1,
+-	}, {
+-		.name = "pcm_spi_cs3",
+-		.regmap[0] = {
+-			AIROHA_FUNC_MUX,
+-			REG_GPIO_SPI_CS1_MODE,
+-			GPIO_PCM_SPI_CS3_MODE_MASK,
+-			GPIO_PCM_SPI_CS3_MODE_MASK
+-		},
+-		.regmap_size = 1,
+-	}, {
+-		.name = "pcm_spi_cs4",
+-		.regmap[0] = {
+-			AIROHA_FUNC_MUX,
+-			REG_GPIO_SPI_CS1_MODE,
+-			GPIO_PCM_SPI_CS4_MODE_MASK,
+-			GPIO_PCM_SPI_CS4_MODE_MASK
+-		},
+-		.regmap_size = 1,
++
++
++
+ 	},
+ };
+ 
+@@ -1226,6 +1170,7 @@ static const struct airoha_pinctrl_func pinctrl_funcs[] = {
+ 	PINCTRL_FUNC_DESC("sipo", sipo),
+ 	PINCTRL_FUNC_DESC("mdio", mdio),
+ 	PINCTRL_FUNC_DESC("uart", uart),
++	PINCTRL_FUNC_DESC("i2c", i2c),
+ 	PINCTRL_FUNC_DESC("jtag", jtag),
+ 	PINCTRL_FUNC_DESC("pcm", pcm),
+ 	PINCTRL_FUNC_DESC("spi", spi),
+-- 
+2.55.0
+

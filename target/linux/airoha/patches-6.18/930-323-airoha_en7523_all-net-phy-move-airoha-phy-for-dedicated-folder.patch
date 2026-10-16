@@ -1,0 +1,179 @@
+From 96603dcbba694f9956fe5d02e7aec91fde8ef0c6 Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Sat, 5 Sep 2026 18:35:17 -0300
+Subject: [PATCH] net: phy: move airoha phy for dedicated folder
+
+move en8801s and en8811h for airoha dedicated folder
+and add polarity fix for en8801s
+
+Signed-off-by: Matheus Sampaio Queiroga <me@sirherobrine23.com.br>
+Signed-off-by: Matt Eaton <git@divinehawk.com>
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/phy/Kconfig                       | 11 +-----
+ drivers/net/phy/Makefile                      |  3 +-
+ drivers/net/phy/airoha/Kconfig                | 10 ++++++
+ drivers/net/phy/airoha/Makefile               |  2 ++
+ .../phy/{air_en8801s.c => airoha/en8801s.c}   | 35 +++++++++++--------
+ .../phy/{air_en8811h.c => airoha/en8811h.c}   |  0
+ 6 files changed, 34 insertions(+), 27 deletions(-)
+ create mode 100644 drivers/net/phy/airoha/Kconfig
+ create mode 100644 drivers/net/phy/airoha/Makefile
+ rename drivers/net/phy/{air_en8801s.c => airoha/en8801s.c} (98%)
+ rename drivers/net/phy/{air_en8811h.c => airoha/en8811h.c} (100%)
+
+diff --git a/drivers/net/phy/Kconfig b/drivers/net/phy/Kconfig
+index 44be15e96..7ec901de9 100644
+--- a/drivers/net/phy/Kconfig
++++ b/drivers/net/phy/Kconfig
+@@ -170,16 +170,7 @@ config AS21XXX_PHY
+ 	  AS21210PB1 that all register with the PHY ID 0x7500 0x7500
+ 	  before the firmware is loaded.
+ 
+-config AIROHA_EN8801S_PHY
+-	tristate "Drivers for Airoha EN8801S Gigabit PHYs"
+-	help
+-	  Currently supports the Airoha EN8801S PHY.
+-
+-config AIR_EN8811H_PHY
+-	tristate "Airoha EN8811H 2.5 Gigabit PHY"
+-	select PHY_COMMON_PROPS
+-	help
+-	  Currently supports the Airoha EN8811H PHY.
++source "drivers/net/phy/airoha/Kconfig"
+ 
+ config AMD_PHY
+ 	tristate "AMD and Altima PHYs"
+diff --git a/drivers/net/phy/Makefile b/drivers/net/phy/Makefile
+index 7ce6ac5b3..b867d5b76 100644
+--- a/drivers/net/phy/Makefile
++++ b/drivers/net/phy/Makefile
+@@ -44,8 +44,7 @@ obj-y				+= $(sfp-obj-y) $(sfp-obj-m)
+ 
+ obj-$(CONFIG_ADIN_PHY)		+= adin.o
+ obj-$(CONFIG_ADIN1100_PHY)	+= adin1100.o
+-obj-$(CONFIG_AIROHA_EN8801S_PHY)	+= air_en8801s.o
+-obj-$(CONFIG_AIR_EN8811H_PHY)   += air_en8811h.o
++obj-y				+= airoha/
+ obj-$(CONFIG_AMD_PHY)		+= amd.o
+ obj-$(CONFIG_AMCC_QT2025_PHY)	+= qt2025.o
+ obj-$(CONFIG_AQUANTIA_PHY)	+= aquantia/
+diff --git a/drivers/net/phy/airoha/Kconfig b/drivers/net/phy/airoha/Kconfig
+new file mode 100644
+index 000000000..c2e0c2cf6
+--- /dev/null
++++ b/drivers/net/phy/airoha/Kconfig
+@@ -0,0 +1,10 @@
++config AIROHA_EN8801S_PHY
++	tristate "Drivers for Airoha EN8801S Gigabit PHYs"
++	help
++	  Currently supports the Airoha EN8801S PHY.
++
++config AIROHA_EN8811H_PHY
++	tristate "Airoha EN8811H 2.5 Gigabit PHY"
++	select PHY_COMMON_PROPS
++	help
++	  Currently supports the Airoha EN8811H PHY.
+diff --git a/drivers/net/phy/airoha/Makefile b/drivers/net/phy/airoha/Makefile
+new file mode 100644
+index 000000000..ad64ac539
+--- /dev/null
++++ b/drivers/net/phy/airoha/Makefile
+@@ -0,0 +1,2 @@
++obj-$(CONFIG_AIROHA_EN8801S_PHY)	+= en8801s.o
++obj-$(CONFIG_AIROHA_EN8811H_PHY)	+= en8811h.o
+diff --git a/drivers/net/phy/air_en8801s.c b/drivers/net/phy/airoha/en8801s.c
+similarity index 98%
+rename from drivers/net/phy/air_en8801s.c
+rename to drivers/net/phy/airoha/en8801s.c
+index 2ebc7e325..c79914bc0 100644
+--- a/drivers/net/phy/air_en8801s.c
++++ b/drivers/net/phy/airoha/en8801s.c
+@@ -1,4 +1,9 @@
+ // SPDX-License-Identifier: GPL-2.0
++/*
++ * Driver for Airoha EN8801S Gigabit Ethernet PHYs.
++ *
++ * Copyright (C) 2023 Airoha Technology Corp.
++ */
+ 
+ #include <linux/kernel.h>
+ #include <linux/bitfield.h>
+@@ -67,17 +72,8 @@
+ 
+ #define LINK_UP				1
+ #define LINK_DOWN			0
+-
+-/*
+-SFP Sample for verification
+-Tx Reverse, Rx Reverse
+-*/
+-#define EN8801S_TX_POLARITY_NORMAL	0x0
+-#define EN8801S_TX_POLARITY_REVERSE	0x1
+-
+-#define EN8801S_RX_POLARITY_NORMAL	BIT(1)
+-#define EN8801S_RX_POLARITY_REVERSE	(0x0 << 1)
+-
++#define EN8801S_POLARITY(is_rx, reverse) \
++	((!!(reverse) ^ !!(is_rx)) << !!(is_rx))
+ 
+ /*
+  * EN8801S hardware defaults. These remain active until the PHY LED
+@@ -251,6 +247,8 @@ struct en8801s_priv {
+ 	struct airoha_leds_config led_cfg[EN8801S_LEDS];
+ 	struct device *dev;
+ 	bool first_init;
++	bool rx_reverse;
++	bool tx_reverse;
+ 	u16 count;
+ 	u16 pro_version;
+ 	u8 pbus_addr;
+@@ -1087,8 +1085,11 @@ static int en8801s_phase1_init(struct phy_device *phydev)
+ 	if (err)
+ 		return err;
+ 
++	/* Write phy polarity */
+ 	mdelay(500);
+-	pbus_data = (pbus_data & ~BIT(2)) | EN8801S_RX_POLARITY_NORMAL | EN8801S_TX_POLARITY_NORMAL;
++	pbus_data &= ~(BIT(2) | GENMASK(1, 0));
++	pbus_data |= EN8801S_POLARITY(true, priv->rx_reverse) |
++		     EN8801S_POLARITY(false, priv->tx_reverse);
+ 	err = airoha_pbus_write(mbus, pbus_addr, EN8801S_RG_LTR_CTL, pbus_data);
+ 	if (err)
+ 		return err;
+@@ -1705,6 +1706,8 @@ static int en8801s_probe(struct phy_device *phydev)
+ 	priv->dev = dev;
+ 	priv->pbus_addr = pbus_addr;
+ 	priv->pbus_addr_from_firmware = pbus_addr_from_firmware;
++	priv->rx_reverse = device_property_present(dev, "airoha,rx-reverse");
++	priv->tx_reverse = device_property_present(dev, "airoha,tx-reverse");
+ 
+ 	if (mdiodev->reset_gpio) {
+ 		dev_dbg(dev, "Assert PHY %lx HWRST until phy_init_hw", phy_addr);
+@@ -1820,13 +1823,15 @@ static struct phy_driver Airoha_driver[] = {
+ 
+ module_phy_driver(Airoha_driver);
+ 
+-static const struct mdio_device_id __maybe_unused Airoha_tbl[] = {
++static const struct mdio_device_id __maybe_unused en8801s_tbl[] = {
+ 	{ PHY_ID_MATCH_EXACT(EN8801SC_PHY_ID) },
+ 	{ PHY_ID_MATCH_EXACT(EN8801SN_PHY_ID) },
+ 	{ }
+ };
+ 
+-MODULE_DEVICE_TABLE(mdio, Airoha_tbl);
++MODULE_DEVICE_TABLE(mdio, en8801s_tbl);
++
+ MODULE_DESCRIPTION("Airoha EN8801S PHY");
+ MODULE_AUTHOR("Airoha");
+-MODULE_LICENSE("GPL");
+\ No newline at end of file
++MODULE_AUTHOR("Matheus Sampaio Queiroga <srherobrine20@gmail.com>");
++MODULE_LICENSE("GPL");
+diff --git a/drivers/net/phy/air_en8811h.c b/drivers/net/phy/airoha/en8811h.c
+similarity index 100%
+rename from drivers/net/phy/air_en8811h.c
+rename to drivers/net/phy/airoha/en8811h.c
+-- 
+2.55.0
+

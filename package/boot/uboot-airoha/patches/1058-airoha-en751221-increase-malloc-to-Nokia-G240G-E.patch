@@ -1,0 +1,24 @@
+From d26b0a8dca7f27d8049345431996f78ed1131fad Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Fri, 18 Sep 2026 20:37:12 -0300
+Subject: [PATCH] airoha: en751221: increase malloc to Nokia G240G-E
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ configs/en751221_nokia_g240g-e_defconfig | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/configs/en751221_nokia_g240g-e_defconfig b/configs/en751221_nokia_g240g-e_defconfig
+index fe6e47c9110..4a87eea50bf 100644
+--- a/configs/en751221_nokia_g240g-e_defconfig
++++ b/configs/en751221_nokia_g240g-e_defconfig
+@@ -1,5 +1,6 @@
+ CONFIG_MIPS=y
+ CONFIG_SKIP_LOWLEVEL_INIT=y
++CONFIG_SYS_MALLOC_LEN=0x400000
+ CONFIG_NR_DRAM_BANKS=1
+ CONFIG_ENV_SIZE=0x1000
+ CONFIG_DM_GPIO=y
+-- 
+2.55.0
+

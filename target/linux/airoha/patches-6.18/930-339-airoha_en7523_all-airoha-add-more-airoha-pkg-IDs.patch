@@ -1,0 +1,72 @@
+From c9881b8ca8b8c4fb8ef4c967bdca71050b5708b9 Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Sun, 27 Sep 2026 20:59:03 -0300
+Subject: [PATCH] airoha: add more airoha pkg IDs
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ include/linux/soc/airoha/pkgids.h | 48 +++++++++++--------------------
+ 1 file changed, 16 insertions(+), 32 deletions(-)
+
+diff --git a/include/linux/soc/airoha/pkgids.h b/include/linux/soc/airoha/pkgids.h
+index 78705f9bc..04ff47e70 100644
+--- a/include/linux/soc/airoha/pkgids.h
++++ b/include/linux/soc/airoha/pkgids.h
+@@ -87,38 +87,22 @@
+ #define AIROHA_MT751020_ENS_HIGH	BIT(6)
+ 
+ enum airoha_pkg {
+-	/* AN7583 */
+-	AN7583_PKG = 0x10,
+-
+-	/* AN7552 */
+-	AN7552_PKG = 0xf,
+-
+-	/* EN7581 */
+-	EN7581_PKG = 0xe,
+-
+-	/* EN7523 */
+-	EN7523_PKG = 0xc,
+-
+-	/* EN7528 */
+-	EN7528_PKG = 0xb,
+-
+-	/* EN7580 */
+-	EN7580_PKG = 0xa,
+-
+-	/* EN7516, EN7527 */
+-	EN751627_PKG = 0x9,
+-
+-	/* EN7526C, EN7522 */
+-	EN7526C_PKG = 0x8,
+-
+-	/* EN7512, EN7521 */
+-	EN751221_PKG = 0x7,
+-
+-	/* MT7505 */
+-	MT7505_PKG = 0x6,
+-
+-	/* MT7510, MT7520 */
+-	MT751020_PKG = 0x5,
++	TC3169_PKG = 0,  /**/
++	TC3182_PKG,      /**/
++	RT65168_PKG,     /**/
++	RT63165_PKG,     /**/
++	RT63365_PKG,     /**/
++	MT751020_PKG,    /* MT7510, MT7520 */
++	MT7505_PKG,      /* MT7505 */
++	EN751221_PKG,    /* EN7512, EN7521 */
++	EN7526C_PKG,     /* EN7526C, EN7522 */
++	EN751627_PKG,    /* EN7516, EN7527 */
++	EN7580_PKG,      /* EN7580 */
++	EN7528_PKG,      /* EN7528 */
++	EN7523_PKG,      /* EN7523 */
++	EN7581_PKG,      /* EN7581 */
++	AN7552_PKG,      /* AN7552 */
++	AN7583_PKG,      /* AN7583 */
+ };
+ 
+ enum airoha_pkg_ids {
+-- 
+2.55.0
+

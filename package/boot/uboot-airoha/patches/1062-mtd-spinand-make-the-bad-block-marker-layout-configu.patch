@@ -1,0 +1,152 @@
+From 2408f14adbf63ecb140b403ab0be31c3e48e0f2f Mon Sep 17 00:00:00 2001
+From: Cristian Papa <76759272+Cris7015@users.noreply.github.com>
+Date: Fri, 18 Sep 2026 23:17:17 -0300
+Subject: [PATCH] mtd: spinand: make the bad-block marker layout configurable
+
+The SPI-NAND core assumes a two-byte bad-block marker in the first page
+of an eraseblock. Some devices use a one-byte marker instead and may
+carry the factory marker in either of the first two pages; for them,
+the second byte of the spare area is ordinary on-die ECC and the check
+reports every programmed block as bad.
+
+Add SPINAND_BBM_1_BYTE and SPINAND_BBM_SECOND_PAGE flags, keeping the
+two-byte, first-page behaviour as the default. A read error while
+checking now counts as a bad block rather than being ignored. When
+marking a block with the two-page policy, both pages are written and
+the first error is kept. Bit 5 stays free, as Linux assigns it to
+SPINAND_ODTR_PACKED_PAGE_READ.
+
+This mirrors the change carried for the same part in the OpenWrt
+kernel of the TP-Link Archer XR500v.
+
+Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/mtd/nand/spi/core.c | 68 +++++++++++++++++++++++++++----------
+ include/linux/mtd/spinand.h |  2 ++
+ 2 files changed, 52 insertions(+), 18 deletions(-)
+
+diff --git a/drivers/mtd/nand/spi/core.c b/drivers/mtd/nand/spi/core.c
+index 14af4264612..83da1a9b971 100644
+--- a/drivers/mtd/nand/spi/core.c
++++ b/drivers/mtd/nand/spi/core.c
+@@ -967,31 +967,54 @@ static int spinand_mtd_write(struct mtd_info *mtd, loff_t to,
+ 	return ret;
+ }
+ 
++static unsigned int spinand_bbm_len(const struct spinand_device *spinand)
++{
++	return spinand->flags & SPINAND_BBM_1_BYTE ? 1 : 2;
++}
++
++static unsigned int spinand_bbm_npages(const struct spinand_device *spinand)
++{
++	return spinand->flags & SPINAND_BBM_SECOND_PAGE ? 2 : 1;
++}
++
+ static bool spinand_isbad(struct nand_device *nand, const struct nand_pos *pos)
+ {
+ 	struct spinand_device *spinand = nand_to_spinand(nand);
+ 	u8 marker[2] = { };
+ 	struct nand_page_io_req req = {
+ 		.pos = *pos,
+-		.ooblen = sizeof(marker),
+ 		.ooboffs = 0,
+ 		.oobbuf.in = marker,
+ 		.mode = MTD_OPS_RAW,
+ 	};
+-	int ret;
++	unsigned int marker_len = spinand_bbm_len(spinand);
++	unsigned int npages = spinand_bbm_npages(spinand);
++	int ret, i, j;
++
++	ret = spinand_select_target(spinand, pos->target);
++	if (ret)
++		return true;
+ 
+-	spinand_select_target(spinand, pos->target);
++	for (i = 0; i < npages; i++) {
++		req.pos.page = i;
++		req.ooblen = marker_len;
++		req.mode = MTD_OPS_RAW;
++		memset(marker, 0, sizeof(marker));
++
++		ret = spinand_read_page(spinand, &req);
++		if (ret == -EOPNOTSUPP) {
++			/* Retry with ECC in case raw access is not supported */
++			req.mode = MTD_OPS_PLACE_OOB;
++			ret = spinand_read_page(spinand, &req);
++		}
++		if (ret < 0)
++			return true;
+ 
+-	ret = spinand_read_page(spinand, &req);
+-	if (ret == -EOPNOTSUPP) {
+-		/* Retry with ECC in case raw access is not supported */
+-		req.mode = MTD_OPS_PLACE_OOB;
+-		spinand_read_page(spinand, &req);
++		for (j = 0; j < marker_len; j++)
++			if (marker[j] != 0xff)
++				return true;
+ 	}
+ 
+-	if (marker[0] != 0xff || marker[1] != 0xff)
+-		return true;
+-
+ 	return false;
+ }
+ 
+@@ -1022,21 +1045,30 @@ static int spinand_markbad(struct nand_device *nand, const struct nand_pos *pos)
+ 	struct nand_page_io_req req = {
+ 		.pos = *pos,
+ 		.ooboffs = 0,
+-		.ooblen = sizeof(marker),
+ 		.oobbuf.out = marker,
+ 		.mode = MTD_OPS_RAW,
+ 	};
+-	int ret;
++	unsigned int marker_len = spinand_bbm_len(spinand);
++	unsigned int npages = spinand_bbm_npages(spinand);
++	int ret, res, i;
+ 
+ 	ret = spinand_select_target(spinand, pos->target);
+ 	if (ret)
+ 		return ret;
+ 
+-	ret = spinand_write_page(spinand, &req);
+-	if (ret == -EOPNOTSUPP) {
+-		/* Retry with ECC in case raw access is not supported */
+-		req.mode = MTD_OPS_PLACE_OOB;
+-		ret = spinand_write_page(spinand, &req);
++	for (i = 0; i < npages; i++) {
++		req.pos.page = i;
++		req.ooblen = marker_len;
++		req.mode = MTD_OPS_RAW;
++
++		res = spinand_write_page(spinand, &req);
++		if (res == -EOPNOTSUPP) {
++			/* Retry with ECC in case raw access is not supported */
++			req.mode = MTD_OPS_PLACE_OOB;
++			res = spinand_write_page(spinand, &req);
++		}
++		if (!ret)
++			ret = res;
+ 	}
+ 
+ 	return ret;
+diff --git a/include/linux/mtd/spinand.h b/include/linux/mtd/spinand.h
+index e9561c0a395..3aeefaa5e86 100644
+--- a/include/linux/mtd/spinand.h
++++ b/include/linux/mtd/spinand.h
+@@ -415,6 +415,8 @@ struct spinand_ecc_info {
+ #define SPINAND_HAS_PROG_PLANE_SELECT_BIT	BIT(2)
+ #define SPINAND_HAS_READ_PLANE_SELECT_BIT	BIT(3)
+ #define SPINAND_NO_RAW_ACCESS			BIT(4)
++#define SPINAND_BBM_1_BYTE			BIT(6)
++#define SPINAND_BBM_SECOND_PAGE			BIT(7)
+ 
+ /**
+  * struct spinand_otp_layout - structure to describe the SPI NAND OTP area
+-- 
+2.55.0
+

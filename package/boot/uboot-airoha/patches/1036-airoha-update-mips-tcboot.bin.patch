@@ -1,0 +1,1542 @@
+From 3251e88c9a85f853cb92d2278e72041252251d16 Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Wed, 9 Sep 2026 11:16:37 -0300
+Subject: [PATCH] airoha: update mips tcboot.bin
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ Makefile                                      |  17 +-
+ .../dts/econet,en751221-reference-u-boot.dtsi |   5 +-
+ .../dts/econet,en751627-reference-u-boot.dtsi |  73 +++++++
+ arch/mips/dts/econet,en751627-reference.dts   |   4 +-
+ arch/mips/dts/econet,en751627.dtsi            |   2 +-
+ .../dts/econet,en7528-reference-u-boot.dtsi   |  30 ++-
+ arch/mips/dts/econet,en7528-reference.dts     |  13 +-
+ .../mips/dts/econet,en7580-xgz030-u-boot.dtsi |  45 ++--
+ arch/mips/mach-econet/Kconfig                 |  20 +-
+ arch/mips/mach-econet/en751627/ddr/README.rst |  19 ++
+ arch/mips/mach-econet/include/mach/boot.h     |  90 +++++++-
+ arch/mips/mach-econet/include/mach/en751221.h |   2 +
+ arch/mips/mach-econet/include/mach/en751627.h |  23 ++
+ arch/mips/mach-econet/include/mach/en7528.h   |  10 +-
+ arch/mips/mach-econet/include/mach/en7580.h   |  10 +-
+ arch/mips/mach-econet/spl/spl.c               |   4 +
+ arch/mips/mach-econet/tpl/start.S             |  70 ++++--
+ arch/mips/mach-econet/tpl/tpl.c               |  72 ++++++-
+ configs/en7512_reference_defconfig            |   2 +-
+ configs/en751627_reference_defconfig          |  16 +-
+ configs/en7528_reference_defconfig            |   3 +-
+ configs/en7580_xgz030_defconfig               |   2 +-
+ doc/board/econet/tcboot-build.rst             | 199 ++++++++++++------
+ tools/build-econet-ddr.sh                     |  16 +-
+ tools/econet_tcboot_image.py                  | 196 +++++++++++++++++
+ tools/en7512_image.py                         |  19 +-
+ 26 files changed, 806 insertions(+), 156 deletions(-)
+ create mode 100644 arch/mips/dts/econet,en751627-reference-u-boot.dtsi
+ create mode 100644 arch/mips/mach-econet/en751627/ddr/README.rst
+ create mode 100644 arch/mips/mach-econet/include/mach/en751627.h
+ create mode 100755 tools/econet_tcboot_image.py
+
+diff --git a/Makefile b/Makefile
+index 0bb8828a0ed..555748b65d9 100644
+--- a/Makefile
++++ b/Makefile
+@@ -1400,27 +1400,40 @@ econet-ddr-soc := $(econet-ddr-soc-y)
+ econet-ddr-dir := $(srctree)/arch/mips/mach-econet/$(econet-ddr-soc)/ddr
+ econet-ddr-image := $(econet-ddr-soc)_ddr.bin
+ econet-ddr-script := $(abspath $(srctree)/tools/build-econet-ddr.sh)
++econet-tcboot-script := $(abspath $(srctree)/tools/econet_tcboot_image.py)
++econet-boot-image-$(CONFIG_TARGET_EN751221) := u-boot-en7512.bin
++econet-boot-image-$(CONFIG_TARGET_EN751627) := u-boot-en751627.bin
++econet-boot-image-$(CONFIG_TARGET_EN7528) := u-boot-en7528.bin
++econet-boot-image-$(CONFIG_TARGET_EN7580) := u-boot-en7580.bin
++econet-boot-image := $(econet-boot-image-y)
+ 
+ quiet_cmd_econet_ddr = DDR     $@
+ cmd_econet_ddr = srctree="$(abspath $(srctree))" \
+ 	objtree="$(CURDIR)" CROSS_COMPILE="$(CROSS_COMPILE)" \
+ 	$(CONFIG_SHELL) $(econet-ddr-script) $(econet-ddr-soc)
++quiet_cmd_econet_tcboot = TCBOOT  $(econet-boot-image)
++cmd_econet_tcboot = $(PYTHON3) $(econet-tcboot-script) \
++	--soc $(econet-ddr-soc) --image $(econet-boot-image)
+ 
+ $(econet-ddr-image): $(wildcard $(econet-ddr-dir)/reconstructed/*.S) \
+ 		     $(wildcard $(econet-ddr-dir)/*.c) \
+ 		     $(wildcard $(econet-ddr-dir)/*.S) \
+-		     $(econet-ddr-dir)/ddr.lds \
++		     $(wildcard $(econet-ddr-dir)/*.bin) \
++		     $(wildcard $(econet-ddr-dir)/ddr.lds) \
+ 		     $(econet-ddr-script) FORCE
+ 	$(call if_changed,econet_ddr)
+ 
+ targets += $(econet-ddr-image)
+-.binman_stamp: $(econet-ddr-image)
++.binman_stamp: $(econet-ddr-image) $(econet-tcboot-script)
+ endif
+ 
+ # Timestamp file to make sure that binman always runs
+ .binman_stamp: $(INPUTS-y) FORCE
+ ifeq ($(CONFIG_BINMAN),y)
+ 	$(call if_changed,binman)
++ifeq ($(CONFIG_ARCH_ECONET)$(CONFIG_TPL),yy)
++	$(call cmd,econet_tcboot)
++endif
+ endif
+ 	@touch $@
+ 
+diff --git a/arch/mips/dts/econet,en751221-reference-u-boot.dtsi b/arch/mips/dts/econet,en751221-reference-u-boot.dtsi
+index e74f40223e9..3aef9c82e84 100644
+--- a/arch/mips/dts/econet,en751221-reference-u-boot.dtsi
++++ b/arch/mips/dts/econet,en751221-reference-u-boot.dtsi
+@@ -29,6 +29,7 @@
+ 	en7512-uboot {
+ 		filename = "u-boot-en7512.bin";
+ 		pad-byte = <0xff>;
++		size = <0x00100000>;
+ 
+ 		u-boot-tpl {
+ 			offset = <0x00000000>;
+@@ -42,13 +43,15 @@
+ 			size = <0x00004f70>;
+ 		};
+ 
++		/* 0xff00..0xffff is the 128 KiB TCBoot manufacturing block. */
+ 		spl {
+ 			type = "blob";
+ 			filename = "u-boot-spl.img";
+ 			offset = <0x00010000>;
+-			size = <0x00040000>;
++			size = <0x0000fffc>;
+ 		};
+ 
++		/* CRC32 at 0x1fffc is filled by econet_tcboot_image.py. */
+ 		u-boot {
+ 			type = "blob";
+ 			filename = "u-boot.img";
+diff --git a/arch/mips/dts/econet,en751627-reference-u-boot.dtsi b/arch/mips/dts/econet,en751627-reference-u-boot.dtsi
+new file mode 100644
+index 00000000000..2c5ca6eb3c6
+--- /dev/null
++++ b/arch/mips/dts/econet,en751627-reference-u-boot.dtsi
+@@ -0,0 +1,73 @@
++// SPDX-License-Identifier: GPL-2.0+
++#include <linux/stringify.h>
++
++/ {
++	binman: binman {
++		multiple-images;
++	};
++};
++
++&uart0 {
++	bootph-all;
++};
++
++&binman {
++	spl-img {
++		filename = "u-boot-spl.img";
++
++		mkimage {
++			args = "-A", "mips", "-T", "standalone", "-O", "u-boot",
++			       "-C", "none", "-n", "EN751627 U-Boot SPL",
++			       "-a", __stringify(CONFIG_SPL_TEXT_BASE),
++			       "-e", __stringify(CONFIG_SPL_TEXT_BASE);
++
++			u-boot-spl {
++			};
++		};
++	};
++
++	en751627-uboot {
++		filename = "u-boot-en751627.bin";
++		pad-byte = <0xff>;
++		size = <0x00100000>;
++
++		u-boot-tpl {
++			offset = <0x00000000>;
++			size = <0x00002000>;
++		};
++
++		ddr-blob {
++			type = "blob";
++			filename = "en751627_ddr.bin";
++			offset = <0x00002000>;
++			size = <0x0000d050>;
++		};
++
++		/* 256 KiB BE constant-data flash magic. */
++		flash-magic-constant {
++			type = "text";
++			text = "EGAP";
++			offset = <0x0000ffb0>;
++		};
++
++		spl {
++			type = "blob";
++			filename = "u-boot-spl.img";
++			offset = <0x00010000>;
++			size = <0x0000fffc>;
++		};
++
++		/* mic.c also carries the page magic in the 512-byte MI/RFU area. */
++		flash-magic-minfo {
++			type = "text";
++			text = "EGAP";
++			offset = <0x0003feb0>;
++		};
++
++		u-boot {
++			type = "blob";
++			filename = "u-boot.img";
++			offset = <0x00060000>;
++		};
++	};
++};
+diff --git a/arch/mips/dts/econet,en751627-reference.dts b/arch/mips/dts/econet,en751627-reference.dts
+index 5b5570e3751..5b2efdaf587 100644
+--- a/arch/mips/dts/econet,en751627-reference.dts
++++ b/arch/mips/dts/econet,en751627-reference.dts
+@@ -1,5 +1,5 @@
+ // SPDX-License-Identifier: GPL-2.0+
+-/* Generic chainload target; adapt flash type and wiring to the board. */
++/* Generic cold-boot reference target; adapt flash type and wiring to the board. */
+ /dts-v1/;
+ #include "econet,en751627.dtsi"
+ 
+@@ -18,7 +18,7 @@
+ 	};
+ };
+ 
+-&uart1 {
++&uart0 {
+ 	status = "okay";
+ };
+ 
+diff --git a/arch/mips/dts/econet,en751627.dtsi b/arch/mips/dts/econet,en751627.dtsi
+index 2c46651e04d..d96314528e2 100644
+--- a/arch/mips/dts/econet,en751627.dtsi
++++ b/arch/mips/dts/econet,en751627.dtsi
+@@ -17,7 +17,7 @@
+ 	native-endian;
+ };
+ 
+-&uart1 {
++&uart0 {
+ 	big-endian;
+ };
+ 
+diff --git a/arch/mips/dts/econet,en7528-reference-u-boot.dtsi b/arch/mips/dts/econet,en7528-reference-u-boot.dtsi
+index 658767cb04d..d5c53dadd58 100644
+--- a/arch/mips/dts/econet,en7528-reference-u-boot.dtsi
++++ b/arch/mips/dts/econet,en7528-reference-u-boot.dtsi
+@@ -29,30 +29,50 @@
+ 	en7528-uboot {
+ 		filename = "u-boot-en7528.bin";
+ 		pad-byte = <0xff>;
++		size = <0x00100000>;
+ 
+ 		u-boot-tpl {
+ 			offset = <0x00000000>;
+-			size = <0x00008000>;
++			size = <0x00004000>;
+ 		};
+ 
+ 		ddr-blob {
+ 			type = "blob";
+ 			filename = "en7528_ddr.bin";
+-			offset = <0x00008000>;
+-			size = <0x00004f70>;
++			offset = <0x00004000>;
++			size = <0x0000b000>;
++		};
++
++		flash-magic-constant {
++			type = "text";
++			text = "EGAP";
++			offset = <0x0000ffb0>;
+ 		};
+ 
+ 		spl {
+ 			type = "blob";
+ 			filename = "u-boot-spl.img";
+ 			offset = <0x00010000>;
+-			size = <0x00040000>;
++			size = <0x0000fff8>;
++		};
++
++		/* EN7528 LE internal-ROM NAND ECC boot requires this exact marker. */
++		flash-magic-le {
++			type = "text";
++			text = "EGAP";
++			offset = <0x0001fff8>;
++		};
++
++		flash-magic-minfo {
++			type = "text";
++			text = "EGAP";
++			offset = <0x0003feb0>;
+ 		};
+ 
+ 		u-boot {
+ 			type = "blob";
+ 			filename = "u-boot.img";
+-			offset = <0x00050000>;
++			offset = <0x00060000>;
+ 		};
+ 	};
+ };
+diff --git a/arch/mips/dts/econet,en7528-reference.dts b/arch/mips/dts/econet,en7528-reference.dts
+index bbebfb14487..834bc93dfbd 100644
+--- a/arch/mips/dts/econet,en7528-reference.dts
++++ b/arch/mips/dts/econet,en7528-reference.dts
+@@ -5,8 +5,8 @@
+  * This board reuses the EN7528 SoC support - econet,en7528.dtsi and the
+  * mach-en75xx port - originally written by
+  * Matheus Sampaio Queiroga <srherobrine20@gmail.com> in the en7523_u-boot
+- * tree.  Like the TP-Link XC220-G3V target it is chainloaded after a prior
+- * stage has trained DDR; it differs only in the flash (SPI-NAND) wiring.
++ * tree. The replacement image uses TPL/SPL and the reconstructed EN7528
++ * DDR-training payload before entering U-Boot proper.
+  */
+ /dts-v1/;
+ 
+@@ -46,13 +46,14 @@
+ 			#size-cells = <1>;
+ 
+ 			/*
+-			 * Only the boot region is described here.  The vendor
+-			 * tclinux dual-image layout (kernel/rootfs slots and the
+-			 * user UBI) starts at 0x40000 and can be added as needed.
++			 * The replacement bootloader reserves 1 MiB. This does
++			 * not match the vendor 256 KiB TCBoot layout; a board must
++			 * reserve this larger region before flashing the combined
++			 * image.
+ 			 */
+ 			partition@0 {
+ 				label = "bootloader";
+-				reg = <0x00000000 0x00040000>;
++				reg = <0x00000000 0x00100000>;
+ 				read-only;
+ 			};
+ 		};
+diff --git a/arch/mips/dts/econet,en7580-xgz030-u-boot.dtsi b/arch/mips/dts/econet,en7580-xgz030-u-boot.dtsi
+index 7437f497781..6c0be483b90 100644
+--- a/arch/mips/dts/econet,en7580-xgz030-u-boot.dtsi
++++ b/arch/mips/dts/econet,en7580-xgz030-u-boot.dtsi
+@@ -26,47 +26,46 @@
+ 		};
+ 	};
+ 
+-	en7580-boot0 {
+-		filename = "u-boot-boot0.bin";
++	en7580-uboot {
++		filename = "u-boot-en7580.bin";
+ 		pad-byte = <0xff>;
+-		size = <0x00020000>;
++		size = <0x00100000>;
+ 
+ 		u-boot-tpl {
+ 			offset = <0x00000000>;
+-			size = <0x00008000>;
++			size = <0x00004000>;
+ 		};
+ 
+-
+ 		ddr-blob {
+ 			type = "blob";
+ 			filename = "en7580_ddr.bin";
+-			offset = <0x00010000>;
++			offset = <0x00004000>;
+ 			size = <0x0000b000>;
+ 		};
+-	};
+ 
+-	en7580-uboot {
+-		filename = "u-boot-en7580.bin";
+-		pad-byte = <0xff>;
+-
+-		u-boot-tpl {
+-			offset = <0x00000000>;
+-			size = <0x00008000>;
++		flash-magic-constant {
++			type = "text";
++			text = "EGAP";
++			offset = <0x0000ffb0>;
+ 		};
+ 
+-
+-		ddr-blob {
++		spl {
+ 			type = "blob";
+-			filename = "en7580_ddr.bin";
++			filename = "u-boot-spl.img";
+ 			offset = <0x00010000>;
+-			size = <0x0000b000>;
++			size = <0x0000fff8>;
+ 		};
+ 
+-		spl {
+-			type = "blob";
+-			filename = "u-boot-spl.img";
+-			offset = <0x00020000>;
+-			size = <0x00040000>;
++		flash-magic-le {
++			type = "text";
++			text = "EGAP";
++			offset = <0x0001fff8>;
++		};
++
++		flash-magic-minfo {
++			type = "text";
++			text = "EGAP";
++			offset = <0x0003feb0>;
+ 		};
+ 
+ 		u-boot {
+diff --git a/arch/mips/mach-econet/Kconfig b/arch/mips/mach-econet/Kconfig
+index ea0db99918d..aa810d8f74a 100644
+--- a/arch/mips/mach-econet/Kconfig
++++ b/arch/mips/mach-econet/Kconfig
+@@ -13,9 +13,11 @@ config TARGET_EN751627
+ 	select SYSCON
+ 	select MIPS_TUNE_1004KC
+ 	select MIPS_SKIP_CP0_COUNT_CLEAR
++	select BINMAN
++	select SPL_LOADER_SUPPORT if SPL
+ 	help
+-	  EN7516/EN7527 shares the EN7528 peripheral and CPU support.
+-	  This target uses the big-endian vendor first-stage handoff.
++	  EN7516/EN7527 shares most peripheral support with EN7528 but boots
++	  big-endian and uses its own DDR-training payload and TCBoot metadata.
+ 
+ config TARGET_EN7528
+ 	bool "Airoha EN7528 SoC"
+@@ -118,16 +120,18 @@ config BOARD_EN7528_REFERENCE
+ 	bool "EcoNet EN7528 reference board (DASAN H660GM-A)"
+ 	select TARGET_EN7528
+ 	help
+-	  Build U-Boot proper for the EcoNet EN7528 reference board, as found
+-	  on the DASAN H660GM-A.  Like the XC220-G3V it is chainloaded after a
+-	  previous stage has trained DDR, but boots from SPI-NAND.
++	  Build the experimental TPL/SPL replacement image for the EcoNet
++	  EN7528 reference board, as found on the DASAN H660GM-A. TPL runs
++	  from the reset mapping, executes the reconstructed DDR-training
++	  payload from FE SRAM and then loads SPL and U-Boot from SPI-NAND.
+ 
+ config BOARD_EN751627_REFERENCE
+-	bool "Airoha EN7516/EN7527 reference board (chainloaded)"
++	bool "Airoha EN7516/EN7527 reference board"
+ 	depends on SYS_BIG_ENDIAN
+ 	select TARGET_EN751627
+ 	help
+-	  Build U-Boot proper with integrated Ethernet and SPI-NAND support.
+-	  A preceding stage must initialize DDR, CPU clocks and switch PHYs.
++	  Build the experimental TPL/SPL cold-boot replacement image for
++	  EN7516/EN7527. TPL executes the GPL DDR-training payload from FE SRAM,
++	  then loads SPL and U-Boot proper from SPI-NAND.
+ 
+ endmenu
+diff --git a/arch/mips/mach-econet/en751627/ddr/README.rst b/arch/mips/mach-econet/en751627/ddr/README.rst
+new file mode 100644
+index 00000000000..cb635da2ddc
+--- /dev/null
++++ b/arch/mips/mach-econet/en751627/ddr/README.rst
+@@ -0,0 +1,19 @@
++EN751627 DDR training payload
++=============================
++
++``en751627_ddr.bin`` is the LOAD image from the GPL-released EN7516/EN7527
++DDR calibration ELF used by the VX830v SDK::
++
++  unopen_img/UNION_EN7516_7915D_demo/ddr_cal_en7512/output/boot.out
++
++The source ELF is MIPS32r2 big-endian, loads at ``0x9fa30000`` and enters at
++``0x9fa30280``.  Its LOAD segment has a file size of ``0xd050`` bytes.  The
++stage returns through the address saved in NP-SCU ``SCREG_WR0`` (0xbfb00280),
++which is the handoff used by the EcoNet TPL wrapper.
++
++SHA256 of the extracted LOAD bytes::
++
++  a8ca71b613f1857741dde066ebbc5de16baa90ec5203e27d07a5d1705fcf123e
++
++This is kept as a GPL build artefact until the corresponding EN751627 DDR
++objects are reconstructed into source, like the EN7528 and EN7580 paths.
+diff --git a/arch/mips/mach-econet/include/mach/boot.h b/arch/mips/mach-econet/include/mach/boot.h
+index 0c289871cde..b08039f5260 100644
+--- a/arch/mips/mach-econet/include/mach/boot.h
++++ b/arch/mips/mach-econet/include/mach/boot.h
+@@ -13,40 +13,124 @@
+ #define ECONET_UART0_BASE		0xbfbf0000
+ #define ECONET_TIMER_BASE		0xbfbf0100
+ 
++/* Vendor TCBoot geometries used by the MIPS internal-ROM boot path. */
++#define ECONET_TCBOOT_128K_SIZE	0x00020000
++#define ECONET_TCBOOT_256K_SIZE	0x00040000
++#define ECONET_BOOT_IMAGE_SIZE		0x00100000
++#define ECONET_TCBOOT_CRC1_OFFSET	0x0001fffc
++#define ECONET_TCBOOT_CRC2_OFFSET	0x0003fdfc
++#define ECONET_TCBOOT_MINFO_128_OFFSET	0x0000ff00
++#define ECONET_TCBOOT_MINFO_128_SIZE	0x00000100
++#define ECONET_TCBOOT_MINFO_256_OFFSET	0x0003fe00
++#define ECONET_TCBOOT_MINFO_256_SIZE	0x00000200
++#define ECONET_TCBOOT_MAGIC_BE_256	0x0000ffb0
++#define ECONET_TCBOOT_MAGIC_LE		0x0001fff8
++#define ECONET_TCBOOT_MAGIC_MINFO_256	0x0003feb0
++#define ECONET_TCBOOT_ECC_INFO		0x00040010
++
+ #define ECONET_RESET_CONTROL		(ECONET_SYSCTL_BASE + 0x040)
+ #define ECONET_FE_SRAM_SEL		(ECONET_SYSCTL_BASE + 0x958)
+ #define ECONET_SCREG_WR0		(ECONET_SYSCTL_BASE + 0x280)
+ #define ECONET_REG_SAVE_INFO		(ECONET_SYSCTL_BASE + 0x284)
+ 
+-#define ECONET_TPL_STACK_ADDR		(ECONET_FE_SRAM_BASE + 0xbff0)
+-#define ECONET_TPL_SAVED_SP		(ECONET_FE_SRAM_BASE + 0xbffc)
+ #define ECONET_SPL_HEADER_ADDR		(ECONET_FE_SRAM_BASE + 0x40)
+ 
+ #if defined(CONFIG_TARGET_EN751221)
+ #include <mach/en751221.h>
+ #define ECONET_DDR_BLOB_ADDR		EN7512_DDR_BLOB_ADDR
++#define ECONET_DDR_BLOB_ENTRY		EN7512_DDR_BLOB_ENTRY
+ #define ECONET_DDR_BLOB_OFFSET		EN7512_DDR_BLOB_OFFSET
+ #define ECONET_DDR_BLOB_SIZE		EN7512_DDR_BLOB_SIZE
+ #define ECONET_SPL_IMAGE_OFFSET		EN7512_SPL_IMAGE_OFFSET
+ #define ECONET_UBOOT_IMAGE_OFFSET	EN7512_UBOOT_IMAGE_OFFSET
+-#elif defined(CONFIG_TARGET_EN751627) || defined(CONFIG_TARGET_EN7528)
++#define ECONET_TPL_STACK_ADDR		EN7512_TPL_STACK_ADDR
++#define ECONET_TPL_SAVED_SP		EN7512_TPL_SAVED_SP
++/* Match the older EN751221 image observed on the Nokia G-240G-E. */
++#define ECONET_TCBOOT_SIZE		ECONET_TCBOOT_128K_SIZE
++#define ECONET_TCBOOT_HEADER_LEN	0x00000000
++#define ECONET_SPL_IMAGE_LIMIT		ECONET_TCBOOT_CRC1_OFFSET
++#define ECONET_TCBOOT_CHIP_FLASH_INFO	0x00000000
++#define ECONET_TCBOOT_WORD28		0x00000000
++#define ECONET_TCBOOT_WORD2C		0x00000000
++#elif defined(CONFIG_TARGET_EN751627)
++#include <mach/en751627.h>
++#define ECONET_DDR_BLOB_ADDR		EN751627_DDR_BLOB_ADDR
++#define ECONET_DDR_BLOB_ENTRY		EN751627_DDR_BLOB_ENTRY
++#define ECONET_DDR_BLOB_OFFSET		EN751627_DDR_BLOB_OFFSET
++#define ECONET_DDR_BLOB_SIZE		EN751627_DDR_BLOB_SIZE
++#define ECONET_SPL_IMAGE_OFFSET		EN751627_SPL_IMAGE_OFFSET
++#define ECONET_UBOOT_IMAGE_OFFSET	EN751627_UBOOT_IMAGE_OFFSET
++#define ECONET_TPL_STACK_ADDR		EN751627_TPL_STACK_ADDR
++#define ECONET_TPL_SAVED_SP		EN751627_TPL_SAVED_SP
++#define ECONET_TCBOOT_SIZE		ECONET_TCBOOT_256K_SIZE
++#define ECONET_TCBOOT_HEADER_LEN	ECONET_TCBOOT_256K_SIZE
++#define ECONET_SPL_IMAGE_LIMIT		ECONET_TCBOOT_CRC1_OFFSET
++#define ECONET_TCBOOT_CHIP_FLASH_INFO	0x00030009
++#define ECONET_TCBOOT_WORD28		ECONET_TCBOOT_ECC_INFO
++#define ECONET_TCBOOT_WORD2C		0x00000000
++#elif defined(CONFIG_TARGET_EN7528)
+ #include <mach/en7528.h>
+ #define ECONET_DDR_BLOB_ADDR		EN7528_DDR_BLOB_ADDR
++#define ECONET_DDR_BLOB_ENTRY		EN7528_DDR_BLOB_ENTRY
+ #define ECONET_DDR_BLOB_OFFSET		EN7528_DDR_BLOB_OFFSET
+ #define ECONET_DDR_BLOB_SIZE		EN7528_DDR_BLOB_SIZE
+ #define ECONET_SPL_IMAGE_OFFSET		EN7528_SPL_IMAGE_OFFSET
+ #define ECONET_UBOOT_IMAGE_OFFSET	EN7528_UBOOT_IMAGE_OFFSET
++#define ECONET_TPL_STACK_ADDR		EN7528_TPL_STACK_ADDR
++#define ECONET_TPL_SAVED_SP		EN7528_TPL_SAVED_SP
++#define ECONET_TCBOOT_SIZE		ECONET_TCBOOT_256K_SIZE
++#define ECONET_TCBOOT_HEADER_LEN	ECONET_TCBOOT_256K_SIZE
++/* LE internal-ROM boot reserves 0x1fff8..0x1fffb for EGAP. */
++#define ECONET_SPL_IMAGE_LIMIT		ECONET_TCBOOT_MAGIC_LE
++#define ECONET_TCBOOT_CHIP_FLASH_INFO	0x0003000b
++#define ECONET_TCBOOT_WORD28		0x00000000
++#define ECONET_TCBOOT_WORD2C		ECONET_TCBOOT_ECC_INFO
+ #elif defined(CONFIG_TARGET_EN7580)
+ #include <mach/en7580.h>
+ #define ECONET_DDR_BLOB_ADDR		EN7580_DDR_BLOB_ADDR
++#define ECONET_DDR_BLOB_ENTRY		EN7580_DDR_BLOB_ENTRY
+ #define ECONET_DDR_BLOB_OFFSET		EN7580_DDR_BLOB_OFFSET
+ #define ECONET_DDR_BLOB_SIZE		EN7580_DDR_BLOB_SIZE
+ #define ECONET_SPL_IMAGE_OFFSET		EN7580_SPL_IMAGE_OFFSET
+ #define ECONET_UBOOT_IMAGE_OFFSET	EN7580_UBOOT_IMAGE_OFFSET
++#define ECONET_TPL_STACK_ADDR		EN7580_TPL_STACK_ADDR
++#define ECONET_TPL_SAVED_SP		EN7580_TPL_SAVED_SP
++#define ECONET_TCBOOT_SIZE		ECONET_TCBOOT_256K_SIZE
++#define ECONET_TCBOOT_HEADER_LEN	ECONET_TCBOOT_256K_SIZE
++#define ECONET_SPL_IMAGE_LIMIT		ECONET_TCBOOT_MAGIC_LE
++#define ECONET_TCBOOT_CHIP_FLASH_INFO	0x0003000a
++#define ECONET_TCBOOT_WORD28		ECONET_TCBOOT_ECC_INFO
++#define ECONET_TCBOOT_WORD2C		0x00000000
+ #else
+ #error "No TPL-capable EcoNet SoC selected"
+ #endif
+ 
++/* The DDR calibration payload belongs to the first 0xff00-byte boot region. */
++#if ECONET_DDR_BLOB_OFFSET + ECONET_DDR_BLOB_SIZE > 0x0000ff00
++#error "EcoNet DDR payload exceeds the vendor SPRAM flash window"
++#endif
++
++#if ECONET_DDR_BLOB_ENTRY < ECONET_DDR_BLOB_ADDR || \
++    ECONET_DDR_BLOB_ENTRY >= ECONET_DDR_BLOB_ADDR + ECONET_DDR_BLOB_SIZE
++#error "EcoNet DDR payload entry lies outside the loaded payload"
++#endif
++
++#if ECONET_SPL_IMAGE_OFFSET != 0x00010000
++#error "EcoNet SPL must start at the vendor second-stage offset 0x10000"
++#endif
++
++#if ECONET_SPL_IMAGE_LIMIT > ECONET_TCBOOT_CRC1_OFFSET
++#error "EcoNet SPL limit cannot cross the first TCBoot CRC"
++#endif
++
++#if ECONET_UBOOT_IMAGE_OFFSET < ECONET_TCBOOT_SIZE
++#error "EcoNet U-Boot proper must not overlap the TCBoot region"
++#endif
++
++#if ECONET_UBOOT_IMAGE_OFFSET >= ECONET_BOOT_IMAGE_SIZE
++#error "EcoNet U-Boot image starts outside the replacement bootloader region"
++#endif
++
+ #ifndef __ASSEMBLY__
+ #include <stddef.h>
+ #include <linux/types.h>
+diff --git a/arch/mips/mach-econet/include/mach/en751221.h b/arch/mips/mach-econet/include/mach/en751221.h
+index 67281c63a0d..967fdf0a1d7 100644
+--- a/arch/mips/mach-econet/include/mach/en751221.h
++++ b/arch/mips/mach-econet/include/mach/en751221.h
+@@ -21,6 +21,7 @@
+ #define EN7512_REG_SAVE_INFO		(EN7512_SYSCTL_BASE + 0x284)
+ 
+ #define EN7512_DDR_BLOB_ADDR		(EN7512_FE_SRAM_CACHED + 0x2800)
++#define EN7512_DDR_BLOB_ENTRY		EN7512_DDR_BLOB_ADDR
+ #define EN7512_DDR_BLOB_OFFSET		0x00008000
+ #define EN7512_DDR_BLOB_SIZE		0x00004f70
+ #define EN7512_SPL_IMAGE_OFFSET		0x00010000
+@@ -28,6 +29,7 @@
+ 
+ #define EN7512_SPL_HEADER_ADDR		(EN7512_FE_SRAM_BASE + 0x40)
+ #define EN7512_TPL_STACK_ADDR		(EN7512_FE_SRAM_BASE + 0xbff0)
++#define EN7512_TPL_SAVED_SP		(EN7512_FE_SRAM_BASE + 0xbffc)
+ #define EN7512_TPL_SAVED_RA		(EN7512_FE_SRAM_BASE + 0x00)
+ 
+ #define EN7512_SAVE_DRAM_MASK		0x00000fff
+diff --git a/arch/mips/mach-econet/include/mach/en751627.h b/arch/mips/mach-econet/include/mach/en751627.h
+new file mode 100644
+index 00000000000..df72ac292a5
+--- /dev/null
++++ b/arch/mips/mach-econet/include/mach/en751627.h
+@@ -0,0 +1,23 @@
++/* SPDX-License-Identifier: GPL-2.0+ */
++#ifndef __MACH_EN751627_H__
++#define __MACH_EN751627_H__
++
++#define EN751627_DDR_BLOB_ADDR		0x9fa30000
++#define EN751627_DDR_BLOB_ENTRY	0x9fa30280
++#define EN751627_DDR_BLOB_OFFSET	0x00002000
++#define EN751627_DDR_BLOB_SIZE		0x0000d050
++
++#define EN751627_SPL_IMAGE_OFFSET	0x00010000
++#define EN751627_UBOOT_IMAGE_OFFSET	0x00060000
++
++/* EN751627 exposes 64 KiB of FE SRAM to the early boot stages. */
++#define EN751627_TPL_STACK_ADDR	0xbfa3fff0
++#define EN751627_TPL_SAVED_SP		0xbfa3fffc
++
++#define EN751627_SYS_GLOBAL_PARM	0xbfb00284
++#define EN751627_DRAM_SIZE_MASK	0x00000fff
++#define EN751627_DRAM_SIZE_SHIFT	0
++#define EN751627_SYS_CLK_MASK		0xfff00000
++#define EN751627_SYS_CLK_SHIFT		20
++
++#endif
+diff --git a/arch/mips/mach-econet/include/mach/en7528.h b/arch/mips/mach-econet/include/mach/en7528.h
+index 10c3d71695b..6d9bc8f8322 100644
+--- a/arch/mips/mach-econet/include/mach/en7528.h
++++ b/arch/mips/mach-econet/include/mach/en7528.h
+@@ -7,13 +7,17 @@
+  * training stage is linked at the beginning of the cached alias.
+  */
+ #define EN7528_DDR_BLOB_ADDR		0x9fa30000
+-#define EN7528_DDR_BLOB_OFFSET		0x00010000
++#define EN7528_DDR_BLOB_ENTRY	EN7528_DDR_BLOB_ADDR
++#define EN7528_DDR_BLOB_OFFSET		0x00004000
+ #define EN7528_DDR_BLOB_SIZE		0x0000b000
+ 
+-/* Keep the first 128 KiB reserved for TPL and the RAM-training payload. */
+-#define EN7528_SPL_IMAGE_OFFSET		0x00020000
++/* Keep TPL and the RAM-training payload below the 0xff00 constant-data area. */
++#define EN7528_SPL_IMAGE_OFFSET		0x00010000
+ #define EN7528_UBOOT_IMAGE_OFFSET	0x00060000
+ 
++#define EN7528_TPL_STACK_ADDR	0xbfa3bff0
++#define EN7528_TPL_SAVED_SP		0xbfa3bffc
++
+ #define EN7528_SYS_GLOBAL_PARM		0xbfb00284
+ #define EN7528_DRAM_SIZE_MASK		0xfff00000
+ #define EN7528_DRAM_SIZE_SHIFT		20
+diff --git a/arch/mips/mach-econet/include/mach/en7580.h b/arch/mips/mach-econet/include/mach/en7580.h
+index 8a892fdddc2..e5f6680f5d2 100644
+--- a/arch/mips/mach-econet/include/mach/en7580.h
++++ b/arch/mips/mach-econet/include/mach/en7580.h
+@@ -7,13 +7,17 @@
+  * training stage is linked at the beginning of the cached alias.
+  */
+ #define EN7580_DDR_BLOB_ADDR		0x9fa30000
+-#define EN7580_DDR_BLOB_OFFSET		0x00010000
++#define EN7580_DDR_BLOB_ENTRY	EN7580_DDR_BLOB_ADDR
++#define EN7580_DDR_BLOB_OFFSET		0x00004000
+ #define EN7580_DDR_BLOB_SIZE		0x0000b000
+ 
+-/* Keep the first 128 KiB reserved for TPL and the RAM-training payload. */
+-#define EN7580_SPL_IMAGE_OFFSET		0x00020000
++/* Keep TPL and the RAM-training payload below the 0xff00 constant-data area. */
++#define EN7580_SPL_IMAGE_OFFSET		0x00010000
+ #define EN7580_UBOOT_IMAGE_OFFSET	0x00060000
+ 
++#define EN7580_TPL_STACK_ADDR	0xbfa3bff0
++#define EN7580_TPL_SAVED_SP		0xbfa3bffc
++
+ #define EN7580_SYS_GLOBAL_PARM		0xbfb00284
+ #define EN7580_DRAM_SIZE_MASK		0xfff00000
+ #define EN7580_DRAM_SIZE_SHIFT		20
+diff --git a/arch/mips/mach-econet/spl/spl.c b/arch/mips/mach-econet/spl/spl.c
+index 86745f4266b..ae7d16a692d 100644
+--- a/arch/mips/mach-econet/spl/spl.c
++++ b/arch/mips/mach-econet/spl/spl.c
+@@ -19,6 +19,10 @@ void __noreturn board_init_f(ulong dummy)
+ static ulong econet_spl_read(struct spl_load_info *load, ulong offset,
+ 			     ulong count, void *buf)
+ {
++	if (offset >= ECONET_BOOT_IMAGE_SIZE ||
++	    count > ECONET_BOOT_IMAGE_SIZE - offset)
++		return 0;
++
+ 	if (econet_sfc_read(offset, buf, count))
+ 		return 0;
+ 
+diff --git a/arch/mips/mach-econet/tpl/start.S b/arch/mips/mach-econet/tpl/start.S
+index 23cf367015b..d11c8778f0b 100644
+--- a/arch/mips/mach-econet/tpl/start.S
++++ b/arch/mips/mach-econet/tpl/start.S
+@@ -7,25 +7,59 @@
+ 	.set noreorder
+ 
+ ENTRY(_start)
+-	b	reset
+-	 mtc0	zero, CP0_COUNT
++	/* Match the vendor TCBoot reset vector. */
++	j	reset
++	 nop
+ 
+-#ifdef CONFIG_TARGET_EN751221
+ 	/*
+-	 * Retain the existing port-local descriptor. Its fields do not implement
+-	 * the vendor internal-ROM ABI; see doc/board/econet/tcboot-build.rst.
++	 * Common EcoNet/Airoha TCBoot descriptor. Raw bytes at +0x0c must be
++	 * "6578" for both endian modes.  The vendor 128 KiB EN751221 layout
++	 * treats the image at 0x10000 as bootram, while the newer 256 KiB layout
++	 * treats the executable loader at 0x10000 as lzma.img.  Binman creates
++	 * the fixed placement and tools/econet_tcboot_image.py patches the actual
++	 * end address and CRC words after the image is assembled.
+ 	 */
+-	.org	0x0c
+-	.byte	0x36, 0x35, 0x37, 0x38
+-	.word	ECONET_DDR_BLOB_OFFSET
+-	.word	ECONET_DDR_BLOB_OFFSET + ECONET_DDR_BLOB_SIZE
+-	.word	ECONET_SPL_IMAGE_OFFSET
+-	.word	ECONET_UBOOT_IMAGE_OFFSET
++	.org	0x08
++	.word	ECONET_TCBOOT_HEADER_LEN
++	.ascii	"6578"
++#ifdef CONFIG_TARGET_EN751221
++	.word	0	/* lzma_flash_start_addr */
++	.word	0	/* lzma_flash_end_addr */
++	.word	ECONET_SPL_IMAGE_OFFSET	/* bootram_flash_start_addr */
++	.word	0	/* bootram_flash_end_addr, finalized after Binman */
++#else
++	.word	ECONET_SPL_IMAGE_OFFSET	/* lzma_flash_start_addr */
++	.word	0	/* lzma_flash_end_addr, finalized after Binman */
++	.word	0	/* bootram_flash_start_addr */
++	.word	0	/* bootram_flash_end_addr */
+ #endif
++	.word	0
++	.word	ECONET_TCBOOT_CHIP_FLASH_INFO
++	.word	ECONET_TCBOOT_WORD28
++	.word	ECONET_TCBOOT_WORD2C
++	.word	ECONET_DDR_BLOB_ADDR
++	.word	CONFIG_SPL_TEXT_BASE
++	.word	0	/* verify_start_addr: unsigned boot */
++	.word	0	/* verify_end_addr: unsigned boot */
++	.word	0	/* efuse_clk_width */
++	.word	0
+ 
+-	/* Vendor reset code leaves this area free and enters at offset 0x48. */
++#ifdef CONFIG_TARGET_EN751221
++	/* The older EN751221 reset image enters at +0x48. */
+ 	.org	0x48
++#else
++	.word	0	/* move_data_int start */
++	.word	0	/* move_data_int end */
++	.word	0	/* boot2 start */
++	.word	0	/* boot2 end */
++	.word	ECONET_DDR_BLOB_OFFSET	/* spram_flash_start_addr */
++	.word	ECONET_DDR_BLOB_OFFSET + ECONET_DDR_BLOB_SIZE
++	.org	0x60
++#endif
+ reset:
++#ifndef CONFIG_MIPS_SKIP_CP0_COUNT_CLEAR
++	mtc0	zero, CP0_COUNT
++#endif
+ 	/* Disable interrupts and force KSEG0 uncached before DRAM exists. */
+ 	mfc0	t0, CP0_STATUS
+ 	li	t1, ~(ST0_IE | ST0_KSU)
+@@ -63,8 +97,16 @@ reset:
+ 	sw	zero, 0x00(t0)
+ 	sw	zero, 0x04(t0)
+ 
+-	/* Enable PBUS access to the 48 KiB FE SRAM. */
++	/* Enable PBUS access to the FE SRAM window. */
+ 	li	t0, ECONET_FE_SRAM_SEL
++#ifdef CONFIG_TARGET_EN7528
++	/*
++	 * Vendor start.o clears 0xbfb00954 before enabling the FE SRAM
++	 * selector at 0xbfb00958.  Do this before touching 0x9fa3xxxx.
++	 */
++	sw	zero, -4(t0)
++	sync
++#endif
+ 	lw	t1, 0(t0)
+ 	ori	t1, t1, 1
+ 	sw	t1, 0(t0)
+@@ -102,7 +144,7 @@ LEAF(econet_run_ddr_blob)
+ 	sw	t1, 0(t0)
+ 	sync
+ 
+-	li	t9, ECONET_DDR_BLOB_ADDR
++	li	t9, ECONET_DDR_BLOB_ENTRY
+ 	jr	t9
+ 	 nop
+ 1:
+diff --git a/arch/mips/mach-econet/tpl/tpl.c b/arch/mips/mach-econet/tpl/tpl.c
+index 11ac3366c1c..af8f07fc3cf 100644
+--- a/arch/mips/mach-econet/tpl/tpl.c
++++ b/arch/mips/mach-econet/tpl/tpl.c
+@@ -31,12 +31,25 @@ static u32 get_be32(u32 val)
+ 
+ static void tpl_putc(u8 ch)
+ {
++#ifdef CONFIG_TARGET_EN7528
++	/*
++	 * EN7528 LE UART registers use the byte lane at +3.
++	 * The vendor boot code uses THR +0x03 and LSR +0x17.
++	 */
++	void __iomem *thr = (void __iomem *)(ECONET_UART0_BASE + 0x03);
++	void __iomem *lsr = (void __iomem *)(ECONET_UART0_BASE + 0x17);
++
++	while (!(__raw_readb(lsr) & 0x20))
++		;
++	__raw_writeb(ch, thr);
++#else
+ 	void __iomem *thr = (void __iomem *)(ECONET_UART0_BASE + 0x00);
+ 	void __iomem *lsr = (void __iomem *)(ECONET_UART0_BASE + 0x14);
+ 
+ 	while (!(__raw_readl(lsr) & 0x20))
+ 		;
+ 	__raw_writel(ch, thr);
++#endif
+ }
+ 
+ static void tpl_hang(u8 code)
+@@ -64,6 +77,33 @@ static void tpl_uart_init(void)
+ 	__raw_writel(0x00, base + 0x04);
+ }
+ 
++#ifdef CONFIG_TARGET_EN7528
++/*
++ * DRAM bring-up test for EN7528 SPI NOR.
++ *
++ * The BootROM exposes the beginning of the NOR through the reset/XIP alias
++ * at CONFIG_TPL_TEXT_BASE (0xbfc00000).  Do not switch the SFC to manual
++ * mode while executing from that mapping.  Copy the DDR payload directly
++ * from XIP to FE SRAM instead.
++ *
++ * This is intentionally a bring-up path only.  It stops after DDR training
++ * and does not load SPL.
++ */
++static void tpl_en7528_copy_ddr_xip(void)
++{
++	const volatile u8 *src =
++		(const volatile u8 *)(CONFIG_TPL_TEXT_BASE +
++				      ECONET_DDR_BLOB_OFFSET);
++	volatile u8 *dst = (volatile u8 *)ECONET_DDR_BLOB_ADDR;
++	u32 i;
++
++	for (i = 0; i < ECONET_DDR_BLOB_SIZE; i++)
++		dst[i] = src[i];
++
++	__asm__ volatile("sync" : : : "memory");
++}
++#endif
++
+ void __noreturn tpl_main(void)
+ {
+ 	struct econet_legacy_header *hdr =
+@@ -72,6 +112,36 @@ void __noreturn tpl_main(void)
+ 	u32 load, size, ep;
+ 	int ret;
+ 
++#ifdef CONFIG_TARGET_EN7528
++	/*
++	 * Do not call econet_sfc_init() here.
++	 *
++	 * We are still executing from the SPI NOR XIP mapping.  Entering
++	 * SF_MANUAL_EN at this point would remove the backing store for the
++	 * following instruction fetches.
++	 */
++	tpl_en7528_copy_ddr_xip();
++
++	/*
++	 * The DDR payload initializes its own UART and should produce the
++	 * familiar:
++	 *
++	 *   QFP IC
++	 *   DDR3 init.
++	 *   ...
++	 *   7528DRAMC ...
++	 */
++	econet_run_ddr_blob();
++
++	/* DDR returned successfully. UART has now been initialized by it. */
++	tpl_putc('D');
++	tpl_putc('\r');
++	tpl_putc('\n');
++
++	for (;;)
++		;
++#endif
++
+ 	tpl_uart_init();
+ 	if (econet_sfc_init())
+ 		tpl_hang('I');
+@@ -92,7 +162,7 @@ void __noreturn tpl_main(void)
+ 	load = get_be32(hdr->load);
+ 	ep = get_be32(hdr->ep);
+ 
+-	if (!size || size > ECONET_UBOOT_IMAGE_OFFSET -
++	if (!size || size > ECONET_SPL_IMAGE_LIMIT -
+ 			   ECONET_SPL_IMAGE_OFFSET - IH_HDR_SIZE ||
+ 	    load != CONFIG_SPL_TEXT_BASE || ep != load ||
+ 	    load + size < load)
+diff --git a/configs/en7512_reference_defconfig b/configs/en7512_reference_defconfig
+index a8218a9856b..2ed94ae5c9e 100644
+--- a/configs/en7512_reference_defconfig
++++ b/configs/en7512_reference_defconfig
+@@ -32,7 +32,7 @@ CONFIG_SYS_CONSOLE_IS_IN_ENV=y
+ CONFIG_DISPLAY_CPUINFO=y
+ # CONFIG_DISPLAY_BOARDINFO is not set
+ CONFIG_BOARD_LATE_INIT=y
+-CONFIG_SPL_MAX_SIZE=0x30000
++CONFIG_SPL_MAX_SIZE=0xf000
+ CONFIG_SPL_SYS_MALLOC_SIMPLE=y
+ CONFIG_TPL=y
+ # CONFIG_TPL_FRAMEWORK is not set
+diff --git a/configs/en751627_reference_defconfig b/configs/en751627_reference_defconfig
+index 56c8f50811b..4662acbc4e6 100644
+--- a/configs/en751627_reference_defconfig
++++ b/configs/en751627_reference_defconfig
+@@ -1,14 +1,21 @@
+ CONFIG_MIPS=y
+ CONFIG_SYS_BIG_ENDIAN=y
++CONFIG_SPL_LIBCOMMON_SUPPORT=y
++CONFIG_SPL_LIBGENERIC_SUPPORT=y
+ CONFIG_SKIP_LOWLEVEL_INIT=y
+ CONFIG_SYS_MALLOC_LEN=0x400000
+ CONFIG_NR_DRAM_BANKS=1
+ CONFIG_ENV_SIZE=0x1000
+ CONFIG_DEFAULT_DEVICE_TREE="econet,en751627-reference"
++CONFIG_SPL_SYS_MALLOC_F_LEN=0x10000
++CONFIG_SPL_SERIAL=y
++CONFIG_TPL_SYS_MALLOC_F_LEN=0x1000
++CONFIG_SPL_BSS_START_ADDR=0x80080000
++CONFIG_SPL_BSS_MAX_SIZE=0x10000
+ CONFIG_SYS_LOAD_ADDR=0x82000000
+ CONFIG_SYS_BOOTM_LEN=0x08000000
++CONFIG_SPL=y
+ CONFIG_ARCH_ECONET=y
+-CONFIG_BUILD_TARGET="u-boot.bin"
+ CONFIG_BOARD_EN751627_REFERENCE=y
+ CONFIG_SYS_MIPS_TIMER_FREQ=200000000
+ # CONFIG_MIPS_CACHE_SETUP is not set
+@@ -25,6 +32,10 @@ CONFIG_SYS_PBSIZE=1049
+ CONFIG_SYS_CONSOLE_IS_IN_ENV=y
+ CONFIG_DISPLAY_CPUINFO=y
+ # CONFIG_DISPLAY_BOARDINFO is not set
++CONFIG_SPL_MAX_SIZE=0xf000
++CONFIG_SPL_SYS_MALLOC_SIMPLE=y
++CONFIG_TPL=y
++# CONFIG_TPL_FRAMEWORK is not set
+ CONFIG_BOARD_LATE_INIT=y
+ CONFIG_HUSH_PARSER=y
+ CONFIG_SYS_PROMPT="EN751627 U-Boot> "
+@@ -41,11 +52,13 @@ CONFIG_CMD_PING=y
+ CONFIG_CMD_TFTPBOOT=y
+ CONFIG_CMD_MTDPARTS=y
+ CONFIG_CMD_LOG=y
++CONFIG_SPL_OF_CONTROL=y
+ CONFIG_ENV_OVERWRITE=y
+ CONFIG_ENV_IS_NOWHERE=y
+ CONFIG_ENV_RELOC_GD_ENV_ADDR=y
+ CONFIG_ENV_VARS_UBOOT_RUNTIME_CONFIG=y
+ CONFIG_NET_RANDOM_ETHADDR=y
++CONFIG_SPL_DM=y
+ CONFIG_SYS_RX_ETH_BUFFER=16
+ CONFIG_REGMAP=y
+ CONFIG_MTD=y
+@@ -72,3 +85,4 @@ CONFIG_SPI_FLASH_WINBOND=y
+ CONFIG_SPI_FLASH_XMC=y
+ CONFIG_SPI_FLASH_MTD=y
+ CONFIG_LZMA=y
++# CONFIG_BINMAN_FDT is not set
+diff --git a/configs/en7528_reference_defconfig b/configs/en7528_reference_defconfig
+index 1c9e18ca8b7..e070351b002 100644
+--- a/configs/en7528_reference_defconfig
++++ b/configs/en7528_reference_defconfig
+@@ -8,7 +8,6 @@ CONFIG_DEFAULT_DEVICE_TREE="econet,en7528-reference"
+ CONFIG_SYS_LOAD_ADDR=0x82000000
+ CONFIG_SYS_BOOTM_LEN=0x08000000
+ CONFIG_ARCH_ECONET=y
+-CONFIG_BUILD_TARGET="u-boot.bin"
+ CONFIG_BOARD_EN7528_REFERENCE=y
+ CONFIG_SYS_MIPS_TIMER_FREQ=200000000
+ # CONFIG_MIPS_CACHE_SETUP is not set
+@@ -77,7 +76,7 @@ CONFIG_SPL_SERIAL=y
+ CONFIG_SPL_BSS_START_ADDR=0x80080000
+ CONFIG_SPL_BSS_MAX_SIZE=0x10000
+ CONFIG_SPL=y
+-CONFIG_SPL_MAX_SIZE=0x30000
++CONFIG_SPL_MAX_SIZE=0xf000
+ CONFIG_SPL_SYS_MALLOC_SIMPLE=y
+ CONFIG_SPL_OF_CONTROL=y
+ CONFIG_SPL_DM=y
+diff --git a/configs/en7580_xgz030_defconfig b/configs/en7580_xgz030_defconfig
+index b9877d6065a..74d6606026c 100644
+--- a/configs/en7580_xgz030_defconfig
++++ b/configs/en7580_xgz030_defconfig
+@@ -30,7 +30,7 @@ CONFIG_SYS_PBSIZE=1049
+ CONFIG_SYS_CONSOLE_IS_IN_ENV=y
+ CONFIG_DISPLAY_CPUINFO=y
+ # CONFIG_DISPLAY_BOARDINFO is not set
+-CONFIG_SPL_MAX_SIZE=0x30000
++CONFIG_SPL_MAX_SIZE=0xf000
+ CONFIG_SPL_SYS_MALLOC_SIMPLE=y
+ CONFIG_TPL=y
+ # CONFIG_TPL_FRAMEWORK is not set
+diff --git a/doc/board/econet/tcboot-build.rst b/doc/board/econet/tcboot-build.rst
+index 8ec5f39796f..b49bd24a105 100644
+--- a/doc/board/econet/tcboot-build.rst
++++ b/doc/board/econet/tcboot-build.rst
+@@ -1,91 +1,156 @@
+ .. SPDX-License-Identifier: GPL-2.0+
+ 
+-EcoNet MIPS DDR and TCBoot image build
+-====================================
+-
+-The EN751221 and EN7580 combined images are experimental reset-path images.
+-A successful build does not validate internal-ROM NAND boot compatibility.
+-The EN7528 reference and XC220 configurations still build chainloaded U-Boot
+-proper; building their DDR payload does not add a TPL/SPL boot path.
++EcoNet MIPS cold-boot image
++===========================
++
++The EN751221, EN751627, EN7528-reference and EN7580 targets build an unsigned
++TPL/SPL cold-boot replacement image.  The replacement region is capped at
++1 MiB.  Its beginning follows the normal (non-secure) TCBoot flash layout used
++by the EcoNet/Airoha MIPS internal ROM, while U-Boot proper is kept outside the
++legacy TCBoot span and is loaded directly by SPL.
++
++This does not implement the ``ECNT`` secure header. A part with secure boot
++fused still requires a signature accepted by its provisioned key.
++
++TCBoot layout
++-------------
++
++The vendor ``tHeader.h`` header is emitted at offset zero. Bytes at +0x0c are
++the literal ASCII string ``6578`` in both endian modes.  The final image helper
++patches the stage-end fields and complemented CRC32 words after Binman has
++assembled the image.
++
++EN751221 follows the older 128 KiB layout observed on the Nokia G-240G-E::
++
++    0x000000  TPL / TCBoot descriptor
++    0x008000  DDR-training payload
++    0x00ff00  256-byte manufacturing block (preserve from stock if required)
++    0x010000  SPL legacy image (bootram-equivalent stage)
++    0x01fffc  complemented CRC32 over 0x00000..0x1fffb
++    0x020000  end of legacy TCBoot span
++    0x050000  U-Boot proper
++    0x100000  end of replacement image
++
++EN751627 follows the normal 256 KiB big-endian layout::
++
++    0x000000  TPL / TCBoot descriptor
++    0x002000  DDR-training payload (spram-equivalent stage)
++    0x00ffb0  EGAP constant-data flash magic
++    0x010000  SPL legacy image (lzma-loader-equivalent stage)
++    0x01fffc  complemented CRC32 #1
++    0x03fdfc  complemented CRC32 #2
++    0x03fe00  512-byte manufacturing/RFU area
++    0x03feb0  EGAP copy in manufacturing information
++    0x040000  end of legacy TCBoot span
++    0x060000  U-Boot proper
++    0x100000  end of replacement image
++
++EN7528 and EN7580 use the same 256 KiB layout, with the little-endian internal
++ROM NAND ECC marker at 0x1fff8::
++
++    0x000000  TPL / TCBoot descriptor
++    0x004000  DDR-training payload
++    0x00ffb0  EGAP constant-data flash magic
++    0x010000  SPL legacy image
++    0x01fff8  EGAP little-endian NAND ECC flash magic
++    0x01fffc  complemented CRC32 #1
++    0x03fdfc  complemented CRC32 #2
++    0x03fe00  512-byte manufacturing/RFU area
++    0x03feb0  EGAP copy in manufacturing information
++    0x040000  end of legacy TCBoot span
++    0x060000  U-Boot proper
++    0x100000  end of replacement image
++
++The comments in the vendor ``header.c`` describe the 256 KiB manufacturing
++block as starting at 0x3fdfc and place another CRC at 0x3fffc.  The actual
++``mic.c`` mapping and stock EN7528/EN7580 dumps instead show the second CRC at
++0x3fdfc and manufacturing information from 0x3fe00.  The finalizer follows the
++actual generated images.
++
++Header semantics
++----------------
++
++For EN751221 the SPL at 0x10000 is described using
++``bootram_flash_start_addr``/``bootram_flash_end_addr``, matching the old
++128 KiB arrangement.  The known Nokia image leaves ``tcboot_len`` zero, so the
++replacement retains that value.
++
++For EN751627, EN7528 and EN7580 the SPL at 0x10000 is described using
++``lzma_flash_start_addr``/``lzma_flash_end_addr``.  The DDR payload is described
++by ``spram_flash_start_addr``/``spram_flash_end_addr`` and
++``spram_exe_addr``.  The bootram interval is zero because U-Boot proper is not
++stored inside the 256 KiB TCBoot image; SPL loads it directly from the larger
++replacement region.
++
++The verify interval is zero for unsigned boot.  EN751221 retains the older
+++0x48 reset entry, while EN751627, EN7528 and EN7580 enter at +0x60.
++
++CRC generation
++--------------
++
++``tools/econet_tcboot_image.py`` runs automatically after Binman.  It reads the
++actual SPL legacy-image payload size, fills the TCBoot end field, and writes the
++vendor-style complemented CRC32 in native endian::
++
++    crc1 = ~crc32(image[0x000000:0x01fffc])
++
++For the 256 KiB layout the second CRC includes the finalized first CRC::
++
++    crc2 = ~crc32(image[0x000000:0x03fdfc])
++
++This matches the CRC words observed in stock EN751221 and EN7528 bootloaders.
+ 
+ Build inputs
+ ------------
+ 
+-TPL configurations build their DDR payload before Binman. The payload is a
+-mandatory local blob, not an optional external firmware file. Out-of-tree
+-builds use the same CROSS_COMPILE prefix and put the payload in the output
+-directory. The standalone DDR helper also explicitly selects the target
+-endianness, O32 ABI and soft-float code generation::
++TPL configurations build their DDR payload before Binman. Out-of-tree builds
++use the same ``CROSS_COMPILE`` prefix and put the payload in the output
++directory::
+ 
+     make O=out/en751221 en7512_reference_defconfig
+     make O=out/en751221 CROSS_COMPILE=mips-linux-gnu- -j4
+ 
+-    make O=out/en7580 en7580_xgz030_defconfig
+-    make O=out/en7580 CROSS_COMPILE=mipsel-linux-gnu- -j4
++    make O=out/en751627 en751627_reference_defconfig
++    make O=out/en751627 CROSS_COMPILE=mips-linux-gnu- -j4
+ 
+     make O=out/en7528 en7528_reference_defconfig
+     make O=out/en7528 CROSS_COMPILE=mipsel-linux-gnu- -j4
+ 
+-EN7528 DDR can separately be built with::
+-
+-    objtree="$PWD/out/en7528" CROSS_COMPILE=mipsel-linux-gnu- \
+-        tools/build-econet-ddr.sh en7528
+-
+-The helper rejects unresolved section relocations. EN7528 and EN7580 have a
+-MIPS32 entry shim at the start of the payload. It clears BSS and passes the
+-SDK's NEED_DDR_CALIBRATION argument. GNU assembler .insn annotations preserve
+-MIPS16 function metadata, allowing the linker to encode interworking calls
+-and function pointers correctly. Linker assertions reserve the upper 4 KiB
+-of FE SRAM for the TPL stack.
+-
+-The EN751221 vendor head.o has a vector prefix before its start symbol. It
+-must be first in .text; ENTRY(start) alone does not order input sections.
++    make O=out/en7580 en7580_xgz030_defconfig
++    make O=out/en7580 CROSS_COMPILE=mipsel-linux-gnu- -j4
+ 
+-Provenance
+-----------
++The EN751627 payload is the 0xd050-byte LOAD image extracted from the
++GPL-released big-endian ``boot.out``. It loads at 0x9fa30000 and enters at
++0x9fa30280. EN751221, EN7528 and EN7580 use the reconstructed DDR sources in
++their respective ``ddr`` directories.
+ 
+-* EN751221: cjdelisle/EN751221-Linux26,
+-  tclinux_phoenix/bootrom/ddr_cal_en7512/output/*.o.
+-* EN7528: TP-Link XC220-G3_BR_v1_GPL, SDK en7528_7.3.275.1,
+-  release_bsp/*/bootrom/ddr_cal_en7512/output/*.o, and bootrom/spram_ext/system.o.
+-* EN7580: TP-Link XGZ030_v1_GPL, SDK en7580,
+-  release_bsp/UNION_EN7580_SFU_KERNEL_4_4_demo/bootrom/unopen_img/
+-  ram_init/output/*.o and unopen_img/pkgId.o.
++Manufacturing information
++-------------------------
+ 
+-The assembly retains vendor instructions. It is a reconstruction of
+-relocatable objects, not a native DRAM driver. Section-symbol relocations
+-must use their actual section base; an empty .reloc expression is not an
+-acceptable substitute.
++The reference images leave board-specific manufacturing bytes erased except
++for the flash magic required by the newer boot ROMs.  Preserve stock data when
++the board depends on it.
+ 
+-TCBoot versus the new images
+----------------------------
++For EN751221 the existing helper copies the 0xff00..0xffff manufacturing block
++and recomputes the first CRC::
+ 
+-The Archer VR600 v3 and VX830v SDK bootrom/Makefile builds calibration,
+-bootram, the LZMA loader and move_data/boot2 stages. Its linker script embeds
+-these sections, mic inserts manufacturing data, and header fills stage
+-boundaries and flash-related fields. Its byteswap utility also generates a
+-separate swapped artifact. These are build/format operations, not an
+-instruction to byte-swap the new raw U-Boot image.
++    tools/en7512_image.py \
++        --image u-boot-en7512.bin \
++        --stock stock-tcboot.bin \
++        --output u-boot-en7512-board.bin
+ 
+-The existing EN751221 TPL descriptor is not the vendor descriptor ABI:
+-header.c uses 0x10/0x14 for the LZMA interval and 0x18/0x1c for the bootram
+-interval, whereas the port places DDR and SPL/U-Boot offsets there. Retaining
+-the magic at 0x0c does not make this compatible with the internal ROM.
++The generic finalizer can also copy the appropriate manufacturing region for
++any supported SoC with ``--stock`` and ``--output``.
+ 
+ Board validation still required
+ -------------------------------
+ 
+-* Establish the actual reset path: flash execution versus internal-ROM stage
+-  loading, including secondary CPU/CPS state.
+-* Validate NAND geometry, boot ECC/OOB layout and bad-block handling. The
+-  early reader still assumes 2 KiB pages and does not implement BMT/BBT or
+-  controller-ECC decoding.
+-* Preserve manufacturing information and establish partition sizes. The
+-  combined images are larger than some stock bootloader partitions. The
+-  EN751221 merge helper only covers its existing 0xff00..0xffff interval.
+-* Validate DDR configuration for the actual package, board and memory chips,
+-  and cold-boot initialization of switch/PHY and other peripherals.
+-* For EN7528, implement a board-specific reset/TPL/SPL path before replacing
+-  TCBoot; neither existing defconfig currently provides that path.
+-
+-Do not treat a chainloading result as validation of a cold flash boot.
++* The early SFC reader assumes 2 KiB SPI-NAND pages and does not implement
++  BMT/BBT bad-block relocation. Verify the actual NAND geometry before flash.
++* Existing vendor bootloader partitions can be 256 KiB. The full replacement
++  image is 1 MiB, so reserve a 1 MiB region before writing it.
++* Validate the DDR payload against the exact package, board and DRAM devices.
++* Secure-boot parts are not supported by these unsigned images.
++
++Cold-boot testing should be recoverable (external programmer or another known
++recovery path); successful chainloading does not prove the internal-ROM path.
+diff --git a/tools/build-econet-ddr.sh b/tools/build-econet-ddr.sh
+index 1e5bd65519b..3540302395a 100755
+--- a/tools/build-econet-ddr.sh
++++ b/tools/build-econet-ddr.sh
+@@ -17,9 +17,10 @@ case "$soc" in
+  en751627)
+   dir="$srctree/arch/mips/mach-econet/en751627/ddr"
+   endian=-EB
+-  emulation=elf32ltsmip
++  emulation=elf32btsmip
+   cc_default=mips-linux-gnu-
+   out="$objtree/en751627_ddr.bin"
++  prebuilt="$dir/en751627_ddr.bin"
+   ;;
+  en7528)
+   dir="$srctree/arch/mips/mach-econet/en7528/ddr"
+@@ -41,6 +42,19 @@ case "$soc" in
+   ;;
+ esac
+ 
++if [ -n "${prebuilt:-}" ]; then
++ expected_size=$((0xd050))
++ actual_size=$(wc -c < "$prebuilt")
++ if [ "$actual_size" -ne "$expected_size" ]; then
++  echo "error: EN751627 DDR payload has size $actual_size, expected $expected_size" >&2
++  exit 1
++ fi
++ cp "$prebuilt" "$out.tmp"
++ mv -f "$out.tmp" "$out"
++ printf '%s\n' "$out"
++ exit 0
++fi
++
+ cross="${CROSS_COMPILE:-$cc_default}"
+ cc="${cross}gcc"
+ ld="${cross}ld"
+diff --git a/tools/econet_tcboot_image.py b/tools/econet_tcboot_image.py
+new file mode 100755
+index 00000000000..d303292ce64
+--- /dev/null
++++ b/tools/econet_tcboot_image.py
+@@ -0,0 +1,196 @@
++#!/usr/bin/env python3
++# SPDX-License-Identifier: GPL-2.0+
++"""Finalize EcoNet/Airoha MIPS unsigned cold-boot images.
++
++Binman fixes the placement of TPL, DDR calibration, SPL and U-Boot proper.
++This helper fills the TCBoot fields which depend on the final SPL image size
++and writes the vendor-style complemented CRC32 words.
++"""
++
++import argparse
++import struct
++import zlib
++from pathlib import Path
++from typing import Optional
++
++IH_MAGIC = 0x27051956
++IH_HEADER_SIZE = 0x40
++BOOT_IMAGE_SIZE = 0x100000
++TCBOOT_MAGIC_OFFSET = 0x0C
++TCBOOT_MAGIC = b"6578"
++CRC1_OFFSET = 0x1FFFC
++CRC2_OFFSET = 0x3FDFC
++
++SOCS = {
++    "en751221": {
++        "endian": "big",
++        "spl_offset": 0x10000,
++        "spl_limit": CRC1_OFFSET,
++        "ddr_offset": 0x8000,
++        "ddr_size": 0x4F70,
++        "tcboot_len": 0,
++        "spl_role": "bootram",
++        "crc_offsets": (CRC1_OFFSET,),
++        "minfo_offset": 0xFF00,
++        "minfo_size": 0x100,
++        "extended_header": False,
++    },
++    "en751627": {
++        "endian": "big",
++        "spl_offset": 0x10000,
++        "spl_limit": CRC1_OFFSET,
++        "ddr_offset": 0x2000,
++        "ddr_size": 0xD050,
++        "tcboot_len": 0x40000,
++        "spl_role": "lzma",
++        "crc_offsets": (CRC1_OFFSET, CRC2_OFFSET),
++        "minfo_offset": 0x3FE00,
++        "minfo_size": 0x200,
++        "extended_header": True,
++    },
++    "en7528": {
++        "endian": "little",
++        "spl_offset": 0x10000,
++        "spl_limit": 0x1FFF8,
++        "ddr_offset": 0x4000,
++        "ddr_size": 0xB000,
++        "tcboot_len": 0x40000,
++        "spl_role": "lzma",
++        "crc_offsets": (CRC1_OFFSET, CRC2_OFFSET),
++        "minfo_offset": 0x3FE00,
++        "minfo_size": 0x200,
++        "extended_header": True,
++    },
++    "en7580": {
++        "endian": "little",
++        "spl_offset": 0x10000,
++        "spl_limit": 0x1FFF8,
++        "ddr_offset": 0x4000,
++        "ddr_size": 0xB000,
++        "tcboot_len": 0x40000,
++        "spl_role": "lzma",
++        "crc_offsets": (CRC1_OFFSET, CRC2_OFFSET),
++        "minfo_offset": 0x3FE00,
++        "minfo_size": 0x200,
++        "extended_header": True,
++    },
++}
++
++
++def _put_u32(image: bytearray, offset: int, value: int, endian: str) -> None:
++    image[offset:offset + 4] = value.to_bytes(4, endian)
++
++
++def _get_spl_end(image: bytearray, cfg: dict) -> int:
++    offset = cfg["spl_offset"]
++    header = image[offset:offset + IH_HEADER_SIZE]
++    if len(header) != IH_HEADER_SIZE:
++        raise ValueError("SPL header lies outside the image")
++
++    magic, = struct.unpack_from(">I", header, 0)
++    if magic != IH_MAGIC:
++        raise ValueError(
++            f"SPL legacy image magic at {offset:#x} is {magic:#x}, "
++            f"expected {IH_MAGIC:#x}"
++        )
++
++    payload_size, = struct.unpack_from(">I", header, 12)
++    if not payload_size:
++        raise ValueError("SPL legacy image has an empty payload")
++
++    end = offset + IH_HEADER_SIZE + payload_size
++    if end > cfg["spl_limit"]:
++        raise ValueError(
++            f"SPL ends at {end:#x}, beyond TCBoot limit "
++            f"{cfg['spl_limit']:#x}"
++        )
++    return end
++
++
++def _tcboot_crc(image: bytearray, end: int) -> int:
++    return (~zlib.crc32(image[:end])) & 0xFFFFFFFF
++
++
++def copy_manufacturing(image: bytearray, stock: bytes, cfg: dict) -> None:
++    start = cfg["minfo_offset"]
++    end = start + cfg["minfo_size"]
++    if len(stock) < end:
++        raise ValueError(
++            f"stock bootloader is too small for manufacturing data: "
++            f"{len(stock):#x} < {end:#x}"
++        )
++    image[start:end] = stock[start:end]
++
++
++def finalize_image(image: bytearray, soc: str, stock: Optional[bytes] = None) -> None:
++    try:
++        cfg = SOCS[soc]
++    except KeyError as exc:
++        raise ValueError(f"unsupported SoC {soc!r}") from exc
++
++    if len(image) != BOOT_IMAGE_SIZE:
++        raise ValueError(
++            f"combined image must be exactly {BOOT_IMAGE_SIZE:#x} bytes, "
++            f"got {len(image):#x}"
++        )
++    if image[TCBOOT_MAGIC_OFFSET:TCBOOT_MAGIC_OFFSET + 4] != TCBOOT_MAGIC:
++        raise ValueError("TCBoot magic '6578' is missing at offset 0x0c")
++
++    if stock is not None:
++        copy_manufacturing(image, stock, cfg)
++
++    spl_end = _get_spl_end(image, cfg)
++    endian = cfg["endian"]
++
++    # tcboot_len and the stage interval fields are native-endian words.
++    _put_u32(image, 0x08, cfg["tcboot_len"], endian)
++    if cfg["spl_role"] == "bootram":
++        _put_u32(image, 0x10, 0, endian)
++        _put_u32(image, 0x14, 0, endian)
++        _put_u32(image, 0x18, cfg["spl_offset"], endian)
++        _put_u32(image, 0x1C, spl_end, endian)
++    else:
++        _put_u32(image, 0x10, cfg["spl_offset"], endian)
++        _put_u32(image, 0x14, spl_end, endian)
++        _put_u32(image, 0x18, 0, endian)
++        _put_u32(image, 0x1C, 0, endian)
++
++    if cfg["extended_header"]:
++        _put_u32(image, 0x58, cfg["ddr_offset"], endian)
++        _put_u32(image, 0x5C,
++                 cfg["ddr_offset"] + cfg["ddr_size"], endian)
++
++    # The vendor trx stage stores a complemented CRC32 in native endian.
++    # CRC2 includes the already-finalized CRC1, matching stock 256 KiB images.
++    for offset in cfg["crc_offsets"]:
++        _put_u32(image, offset, _tcboot_crc(image, offset), endian)
++
++
++def parse_args() -> argparse.Namespace:
++    parser = argparse.ArgumentParser(description=__doc__)
++    parser.add_argument("--soc", required=True, choices=sorted(SOCS))
++    parser.add_argument("--image", required=True, type=Path,
++                        help="1 MiB combined Binman image")
++    parser.add_argument("--output", type=Path,
++                        help="output path; default overwrites --image")
++    parser.add_argument("--stock", type=Path,
++                        help="optional stock bootloader to copy MI/RFU data from")
++    return parser.parse_args()
++
++
++def main() -> None:
++    args = parse_args()
++    image = bytearray(args.image.read_bytes())
++    stock = args.stock.read_bytes() if args.stock else None
++
++    try:
++        finalize_image(image, args.soc, stock)
++    except ValueError as exc:
++        raise SystemExit(f"econet tcboot: {exc}") from exc
++
++    output = args.output or args.image
++    output.write_bytes(image)
++
++
++if __name__ == "__main__":
++    main()
+diff --git a/tools/en7512_image.py b/tools/en7512_image.py
+index e0a0b96f453..a3b4655abcf 100755
+--- a/tools/en7512_image.py
++++ b/tools/en7512_image.py
+@@ -1,19 +1,18 @@
+ #!/usr/bin/env python3
+ # SPDX-License-Identifier: GPL-2.0+
+-"""Merge EN7512 manufacturing information into a U-Boot image."""
++"""Merge EN751221 manufacturing information into a finalized U-Boot image."""
+ 
+ import argparse
+ from pathlib import Path
+ 
+-MINFO_OFFSET = 0xFF00
+-MINFO_SIZE = 0x100
++from econet_tcboot_image import finalize_image
+ 
+ 
+ def parse_args() -> argparse.Namespace:
+     parser = argparse.ArgumentParser(
+         description=(
+-            "copy the 256-byte TCBoot manufacturing block at 0xff00 "
+-            "from a stock bootloader into u-boot-en7512.bin"
++            "copy the 256-byte 128 KiB TCBoot manufacturing block at 0xff00 "
++            "from a stock EN751221 bootloader and refresh the TCBoot CRC"
+         )
+     )
+     parser.add_argument("--image", required=True, type=Path,
+@@ -29,14 +28,12 @@ def main() -> None:
+     args = parse_args()
+     image = bytearray(args.image.read_bytes())
+     stock = args.stock.read_bytes()
+-    end = MINFO_OFFSET + MINFO_SIZE
+ 
+-    if len(image) < end:
+-        raise SystemExit(f"input image is too small: {len(image):#x} < {end:#x}")
+-    if len(stock) < end:
+-        raise SystemExit(f"stock image is too small: {len(stock):#x} < {end:#x}")
++    try:
++        finalize_image(image, "en751221", stock)
++    except ValueError as exc:
++        raise SystemExit(f"en7512 image: {exc}") from exc
+ 
+-    image[MINFO_OFFSET:end] = stock[MINFO_OFFSET:end]
+     args.output.write_bytes(image)
+ 
+ 
+-- 
+2.55.0
+

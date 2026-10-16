@@ -1,0 +1,86 @@
+From dd6fda07346f80b0a3a2c8db4b0c4b62ea9384c6 Mon Sep 17 00:00:00 2001
+From: Cristian Papa <pcristian292@gmail.com>
+Date: Sat, 3 Oct 2026 19:11:29 -0300
+Subject: [PATCH] net: airoha: xpon: acknowledge the dying-gasp event in the
+ SCU
+
+On EN751221 and EN7528 the SCU latches the dying-gasp event in bit 16 of
+its register 0x84, and the vendor driver writes it back from its
+dying-gasp interrupt handler. gpon_dying_gasp_isr() never does, so a
+supply dip the board rides out leaves the event latched. If that latch
+holds the interrupt line, the handler runs again and again and queues a
+dying-gasp PLOAM and OMCI message to the OLT each time.
+
+Acknowledge the event in the handler, before checking whether the MAC is
+enabled, so it is acknowledged even when it is ignored. Only on the SoCs
+whose vendor driver does it.
+
+Co-Authored-By: Claude Opus 5.5 (1M context) <noreply@anthropic.com>
+Signed-off-by: Cristian Papa <pcristian292@gmail.com>
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/ethernet/airoha/airoha_xpon.c | 11 +++++++++++
+ drivers/net/ethernet/airoha/airoha_xpon.h |  4 ++++
+ 2 files changed, 15 insertions(+)
+
+diff --git a/drivers/net/ethernet/airoha/airoha_xpon.c b/drivers/net/ethernet/airoha/airoha_xpon.c
+index be6023ca4..63d881bcd 100644
+--- a/drivers/net/ethernet/airoha/airoha_xpon.c
++++ b/drivers/net/ethernet/airoha/airoha_xpon.c
+@@ -3097,6 +3097,15 @@ static irqreturn_t gpon_dying_gasp_isr(int irq, void *data)
+ {
+ 	struct xpon_priv *priv = data;
+ 
++	/*
++	 * Acknowledge the event in the SCU, as the vendor driver does, also
++	 * when it is ignored: a supply dip the board rides out would leave it
++	 * latched otherwise.
++	 */
++	if (priv->match_data->scu_dying_gasp_status)
++		regmap_set_bits(priv->scu, XPON_SCU_DYING_GASP,
++				XPON_SCU_DYING_GASP_STATUS);
++
+ 	if (!READ_ONCE(priv->mac_enabled))
+ 		return IRQ_HANDLED;
+ 
+@@ -4572,6 +4581,7 @@ static const struct airoha_xpon_match_data en751221_xpon_data = {
+ 	.mac_irq_via_eth = true,
+ 	.gpon_rearm_tx_on_overhead = true,
+ 	.gpon_runtime_tgen = true,
++	.scu_dying_gasp_status = true,
+ };
+ 
+ /*
+@@ -4592,6 +4602,7 @@ static const struct airoha_xpon_match_data en7528_xpon_data = {
+ 	.gpon_rearm_tx_on_overhead = true,
+ 	.gpon_runtime_tgen = true,
+ 	.gpon_has_mpi = true,
++	.scu_dying_gasp_status = true,
+ };
+ 
+ static const struct of_device_id airoha_xpon_of_match[] = {
+diff --git a/drivers/net/ethernet/airoha/airoha_xpon.h b/drivers/net/ethernet/airoha/airoha_xpon.h
+index a62e40c49..b4542bef7 100644
+--- a/drivers/net/ethernet/airoha/airoha_xpon.h
++++ b/drivers/net/ethernet/airoha/airoha_xpon.h
+@@ -29,6 +29,8 @@
+ #define EN751221_SCU_WAN_MODE_MASK	GENMASK(2, 0)
+ #define XPON_SCU_WAN_MODE_GPON		0x00
+ #define XPON_SCU_WAN_MODE_EPON		0x01
++#define XPON_SCU_DYING_GASP		0x084
++#define XPON_SCU_DYING_GASP_STATUS	BIT(16)
+ 
+ struct airoha_xpon_match_data {
+ 	enum airoha_ids version;
+@@ -47,6 +49,8 @@ struct airoha_xpon_match_data {
+ 	bool gpon_rearm_tx_on_overhead;
+ 	bool gpon_runtime_tgen;
+ 	bool gpon_has_mpi;
++	/* The SCU latches the dying-gasp IRQ until its status is written. */
++	bool scu_dying_gasp_status;
+ };
+ 
+ 
+-- 
+2.55.0
+

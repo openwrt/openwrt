@@ -1,0 +1,797 @@
+From c8579655688861f33342272d0136c909b23216de Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Thu, 1 Oct 2026 01:17:13 +0000
+Subject: [PATCH] EN751221 MCM LEDs (#70)
+
+Allow for EN751221 Control MCM Switch LEDs
+
+Reviewed-on: https://sirherobrine23.com.br/airoha/kernel/pulls/70
+Co-authored-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ arch/mips/boot/dts/econet/en751221.dtsi  |  20 +
+ drivers/net/dsa/mt7530.c                 |  55 +--
+ drivers/net/phy/mediatek/airoha-ge-soc.c |  25 +-
+ drivers/net/phy/mediatek/mtk-ge.c        | 441 ++++++++++++++++++++++-
+ drivers/net/phy/mediatek/mtk.h           |   3 +
+ 5 files changed, 485 insertions(+), 59 deletions(-)
+
+diff --git a/arch/mips/boot/dts/econet/en751221.dtsi b/arch/mips/boot/dts/econet/en751221.dtsi
+index 782699621..d8ab33ea0 100644
+--- a/arch/mips/boot/dts/econet/en751221.dtsi
++++ b/arch/mips/boot/dts/econet/en751221.dtsi
+@@ -501,6 +501,8 @@ fsw_phy0: ethernet-phy@8 {
+ 				airoha,scu = <&scuclk>;
+ 
+ 				leds {
++					#address-cells = <1>;
++					#size-cells = <0>;
+ 					led@0 {
+ 						reg = <0>;
+ 						function = LED_FUNCTION_LAN;
+@@ -525,6 +527,8 @@ fsw_phy1: ethernet-phy@9 {
+ 				airoha,scu = <&scuclk>;
+ 
+ 				leds {
++					#address-cells = <1>;
++					#size-cells = <0>;
+ 					led@0 {
+ 						reg = <0>;
+ 						function = LED_FUNCTION_LAN;
+@@ -549,6 +553,8 @@ fsw_phy2: ethernet-phy@10 {
+ 				airoha,scu = <&scuclk>;
+ 
+ 				leds {
++					#address-cells = <1>;
++					#size-cells = <0>;
+ 					led@0 {
+ 						reg = <0>;
+ 						function = LED_FUNCTION_LAN;
+@@ -573,6 +579,8 @@ fsw_phy3: ethernet-phy@11 {
+ 				airoha,scu = <&scuclk>;
+ 
+ 				leds {
++					#address-cells = <1>;
++					#size-cells = <0>;
+ 					led@0 {
+ 						reg = <0>;
+ 						function = LED_FUNCTION_LAN;
+@@ -597,6 +605,8 @@ fsw_phy4: ethernet-phy@12 {
+ 				airoha,scu = <&scuclk>;
+ 
+ 				leds {
++					#address-cells = <1>;
++					#size-cells = <0>;
+ 					led@0 {
+ 						reg = <0>;
+ 						function = LED_FUNCTION_LAN;
+@@ -689,6 +699,8 @@ gsw_phy0: ethernet-phy@0 {
+ 						airoha,scu = <&scuclk>;
+ 
+ 						leds {
++							#address-cells = <1>;
++							#size-cells = <0>;
+ 							led@0 {
+ 								reg = <0>;
+ 								function = LED_FUNCTION_LAN;
+@@ -712,6 +724,8 @@ gsw_phy1: ethernet-phy@1 {
+ 						airoha,scu = <&scuclk>;
+ 
+ 						leds {
++							#address-cells = <1>;
++							#size-cells = <0>;
+ 							led@0 {
+ 								reg = <0>;
+ 								function = LED_FUNCTION_LAN;
+@@ -735,6 +749,8 @@ gsw_phy2: ethernet-phy@2 {
+ 						airoha,scu = <&scuclk>;
+ 
+ 						leds {
++							#address-cells = <1>;
++							#size-cells = <0>;
+ 							led@0 {
+ 								reg = <0>;
+ 								function = LED_FUNCTION_LAN;
+@@ -758,6 +774,8 @@ gsw_phy3: ethernet-phy@3 {
+ 						airoha,scu = <&scuclk>;
+ 
+ 						leds {
++							#address-cells = <1>;
++							#size-cells = <0>;
+ 							led@0 {
+ 								reg = <0>;
+ 								function = LED_FUNCTION_LAN;
+@@ -781,6 +799,8 @@ gsw_phy4: ethernet-phy@4 {
+ 						airoha,scu = <&scuclk>;
+ 
+ 						leds {
++							#address-cells = <1>;
++							#size-cells = <0>;
+ 							led@0 {
+ 								reg = <0>;
+ 								function = LED_FUNCTION_LAN;
+diff --git a/drivers/net/dsa/mt7530.c b/drivers/net/dsa/mt7530.c
+index 8023a8ee4..ea4dd1678 100644
+--- a/drivers/net/dsa/mt7530.c
++++ b/drivers/net/dsa/mt7530.c
+@@ -459,6 +459,7 @@ mt7530_setup_port6(struct dsa_switch *ds, phy_interface_t interface)
+ #define EN751221_TRGMII_ONDIE_TCK_ODT	0x77
+ #define EN751221_TRGMII_MCM_TD_ODT	0xbb
+ #define EN751221_TRGMII_MCM_TCK_ODT	0xff
++#define EN751221_TRGMII_SOC_TO_MCM_RX_TAP	4
+ #define EN751221_TRGMII_MCM_TO_SOC_RX_TAP	4
+ #define EN751221_TRGMII_RX_VALUE_MASK	GENMASK(23, 16)
+ #define EN751221_TRGMII_RX_ERR_MASK	GENMASK(11, 8)
+@@ -555,34 +556,20 @@ static bool en751221_trgmii_sample_good(struct mt7530_priv *rx, u32 reg)
+ }
+ 
+ /*
+- * RX tap policy (EN751221 <-> companion MT7530 TRGMII).
++ * Keep the low RX taps used by this driver: the 0x55 training window can
++ * overestimate the usable eye under packet traffic. The EN7512 SDK provides
++ * two-direction midpoint calibration, but its initialization call is
++ * commented out. Its on-die RX tap 4 sequence is also inside a disabled
++ * block, so it does not establish an active SDK default.
+  *
+- * The 0x55 training window overestimates the real eye. Measured on a TP-Link
+- * Archer XR500v (2026-09-18, iperf3 through the cascade, MIB CRC on the
+- * receiving port): the SoC->MCM window was [1..45] on every lane but frames
+- * survive only up to tap 24 (126 CRC at 28, dead from 32); the MCM->SoC window
+- * was [1..18] but frames survive only up to tap 10 (246 CRC at 12). The window
+- * midpoints (23 and 9) therefore sit 2-4 taps from the real edge, and PVT
+- * drift between boots pushes them out: that is the "LAN dead after boot"
+- * lottery (the companion never received a frame). Both eyes extend below tap
+- * 1, so their low end is the safe side. The vendor firmware never trains at
+- * boot: it programs fixed low taps (1 in the EN7512 SDK, 4 at runtime on the
+- * on-die side of production units). Do the same, keep the sweep as a
+- * diagnostic, and only when the fixed tap is outside the window fall back to
+- * its low quarter. Overridable per direction for boards that differ.
++ * Preserve tap 4 in both directions. For SoC -> MCM, retain the sweep and
++ * use the low quarter of the window if the preferred tap is outside it.
+  */
+-static int trgmii_tap_soc2mcm = 4;
+-module_param(trgmii_tap_soc2mcm, int, 0444);
+-MODULE_PARM_DESC(trgmii_tap_soc2mcm, "EN751221 TRGMII SoC->MCM RX tap (companion side, 0-127)");
+-static int trgmii_tap_mcm2soc = EN751221_TRGMII_MCM_TO_SOC_RX_TAP;
+-module_param(trgmii_tap_mcm2soc, int, 0444);
+-MODULE_PARM_DESC(trgmii_tap_mcm2soc, "EN751221 TRGMII MCM->SoC RX tap (on-die side, 0-127)");
+-
+ static int en751221_trgmii_pick_tap(int first, int last, int fixed)
+ {
+ 	fixed = clamp(fixed, 0, 127);
+ 	if (first < 0 || last < first)
+-		return fixed;			/* no window: the vendor value is the best prior */
++		return fixed;			/* No window: retain the preferred tap. */
+ 	if (fixed >= first && fixed <= last)
+ 		return fixed;
+ 	return first + (last - first) / 4;	/* low quarter: away from the far (real) edge */
+@@ -593,7 +580,6 @@ en751221_trgmii_calibrate_direction(struct mt7530_priv *tx,
+ 				    struct mt7530_priv *rx,
+ 				    const char *name)
+ {
+-	int dir = rx->id == ID_EN751221 ? 1 : 0;
+ 	int channel;
+ 
+ 	mt7530_set(tx, MT7530_TRGMII_TXCTRL, TRAIN_TXEN);
+@@ -621,7 +607,7 @@ en751221_trgmii_calibrate_direction(struct mt7530_priv *tx,
+ 		}
+ 
+ 		tap = en751221_trgmii_pick_tap(first, last,
+-					       dir ? trgmii_tap_mcm2soc : trgmii_tap_soc2mcm);
++					       EN751221_TRGMII_SOC_TO_MCM_RX_TAP);
+ 		if (first >= 0 && last > first && (tap < first || tap > last))
+ 			dev_warn(rx->dev,
+ 				 "EN751221 TRGMII %s lane %d: fixed tap outside window %d..%d, using %d\n",
+@@ -629,11 +615,7 @@ en751221_trgmii_calibrate_direction(struct mt7530_priv *tx,
+ 
+ 		mt7530_rmw(rx, rx_reg, RD_TAP_MASK, RD_TAP(tap));
+ 
+-		if (first >= 0 && last > first)
+-			dev_info(rx->dev,
+-				 "EN751221 TRGMII %s lane %d window %d..%d, tap %d\n",
+-				 name, channel, first, last, tap);
+-		else
++		if (!(first >= 0 && last > first))
+ 			dev_warn(rx->dev,
+ 				 "EN751221 TRGMII %s lane %d: no training window (was tap %u), using fixed tap %d\n",
+ 				 name, channel, old_tap, tap);
+@@ -648,22 +630,16 @@ static void en751221_trgmii_calibrate(struct mt7530_priv *ext,
+ 	int channel;
+ 
+ 	/*
+-	 * Keep automatic training for the SoC -> companion direction.  The
+-	 * production EN7512 firmware does not leave the reverse direction at
+-	 * the midpoint found by P6 training: its final runtime state programs
+-	 * RX tap 4 on all five on-die lanes.  Match that profile exactly; the
+-	 * midpoint chosen here previously produced CRC errors on internal P5
++	 * Preserve the existing asymmetric policy: sweep the companion RX
++	 * lanes and program tap 4 directly on all five on-die RX lanes.
++	 * Midpoint training previously caused CRC errors on internal P5
+ 	 * under sustained MCM -> SoC traffic.
+ 	 */
+ 	en751221_trgmii_calibrate_direction(ondie, ext, "SoC->MCM");
+ 
+ 	for (channel = 0; channel < NUM_TRGMII_CTRL; channel++)
+ 		mt7530_rmw(ondie, MT7530_TRGMII_RD(channel), RD_TAP_MASK,
+-			   RD_TAP(clamp(trgmii_tap_mcm2soc, 0, 127)));
+-
+-	dev_info(ondie->dev,
+-		 "EN751221 TRGMII MCM->SoC using fixed RX tap %d on all lanes\n",
+-		 clamp(trgmii_tap_mcm2soc, 0, 127));
++			   RD_TAP(EN751221_TRGMII_MCM_TO_SOC_RX_TAP));
+ }
+ 
+ static void en751221_trgmii_set_drive_strength(struct mt7530_priv *priv)
+@@ -792,7 +768,6 @@ static void en751221_trgmii_pair_setup(struct mt7530_priv *ext,
+ 	en751221_trgmii_calibrate(ext, ondie);
+ 
+ 	ondie->en751221_trgmii_ready = true;
+-	dev_info(ondie->dev, "EN751221 TRGMII companion link initialized\n");
+ }
+ 
+ static void
+diff --git a/drivers/net/phy/mediatek/airoha-ge-soc.c b/drivers/net/phy/mediatek/airoha-ge-soc.c
+index e52f7f034..37cb64f08 100644
+--- a/drivers/net/phy/mediatek/airoha-ge-soc.c
++++ b/drivers/net/phy/mediatek/airoha-ge-soc.c
+@@ -2523,8 +2523,23 @@ static int en7512_phy_calib(struct phy_device *phydev)
+ 
+ static int en7512_phy_probe(struct phy_device *phydev)
+ {
++	struct mtk_socphy_priv *priv;
++	int ret;
++
++	priv = devm_kzalloc(&phydev->mdio.dev, sizeof(*priv), GFP_KERNEL);
++	if (!priv)
++		return -ENOMEM;
++
++	phydev->priv = priv;
++
+ 	/* EN7512 has one standalone GPHY at MDIO address 12. */
+-	return en7512_phy_calib(phydev);
++	ret = en7512_phy_calib(phydev);
++	if (ret)
++		return ret;
++
++	mtk_phy_leds_state_init(phydev);
++
++	return 0;
+ }
+ 
+ static int en7512_phy_config_init(struct phy_device *phydev)
+@@ -2546,7 +2561,13 @@ static int en7512_phy_config_init(struct phy_device *phydev)
+ 		return ret;
+ 	__phy_write(phydev, 0x14, 0x3a14);
+ 
+-	return phy_restore_page(phydev, ret, 0);
++	ret = phy_restore_page(phydev, ret, 0);
++	if (ret)
++		return ret;
++
++	mtk_phy_leds_state_init(phydev);
++
++	return 0;
+ }
+ 
+ static void en7523_phy_apply_rx_setting(struct phy_device *phydev)
+diff --git a/drivers/net/phy/mediatek/mtk-ge.c b/drivers/net/phy/mediatek/mtk-ge.c
+index 6fa71040d..e02d867c2 100644
+--- a/drivers/net/phy/mediatek/mtk-ge.c
++++ b/drivers/net/phy/mediatek/mtk-ge.c
+@@ -1,14 +1,30 @@
+ // SPDX-License-Identifier: GPL-2.0+
+ #include <linux/of.h>
+ #include <linux/bitfield.h>
++#include <linux/mdio.h>
+ #include <linux/module.h>
+ #include <linux/phy.h>
++#include <linux/slab.h>
+ 
+ #include "mtk.h"
+ 
+ #define MTK_GPHY_ID_MT7530		0x03a29412
+ #define MTK_GPHY_ID_MT7531		0x03a29441
+ 
++/* MT7530 switch-global LED GPIO registers. */
++#define MT7530_SW_LED_EN		0x7d00
++#define MT7530_SW_LED_IO_MODE		0x7d04
++#define MT7530_SW_LED_GPIO_DIR		0x7d10
++#define MT7530_SW_LED_GPIO_OE		0x7d14
++#define MT7530_SW_LED_GPIO_DATA		0x7d18
++
++#define MT7530_PHY_NUM_PORTS		5
++#define MT7530_PHY_NUM_LEDS		2
++
++/* mtk_socphy_priv::led_state uses LED0 bits 0..2 and LED1 bits 16..18. */
++#define MT7530_LED_STATE_ACTIVE_LOW	3
++#define MT7530_LED_STATE_GPIO_MODE	4
++
+ #define MTK_PHY_PAGE_EXTENDED_2			0x0002
+ #define MTK_PHY_PAGE_EXTENDED_3			0x0003
+ #define MTK_PHY_RG_LPI_PCS_DSP_CTRL_REG11	0x11
+@@ -63,6 +79,280 @@ static void mtk_gephy_config_init(struct phy_device *phydev)
+ 		       FIELD_PREP(MTK_MCC_NEARECHO_OFFSET_MASK, 0x3));
+ }
+ 
++static unsigned int mt7530_phy_led_state_bit(u8 index, unsigned int state)
++{
++	return state + (index ? 16 : 0);
++}
++
++static u32 mt7530_phy_led_switch_bit(struct phy_device *phydev, u8 index)
++{
++	if (phydev->mdio.addr >= MT7530_PHY_NUM_PORTS ||
++	    index >= MT7530_PHY_NUM_LEDS)
++		return 0;
++
++	return BIT(phydev->mdio.addr * 4 + index);
++}
++
++/* The PHY's MDIO bus is parented by the MDIO device for the MT7530 switch. */
++static struct mdio_device *
++mt7530_phy_switch_mdiodev(struct phy_device *phydev)
++{
++	struct device *parent = phydev->mdio.bus->parent;
++
++	if (!parent)
++		return NULL;
++
++	return to_mdio_device(parent);
++}
++
++static int mt7530_phy_switch_read(struct phy_device *phydev, u32 reg,
++				  u32 *val)
++{
++	struct mdio_device *sw = mt7530_phy_switch_mdiodev(phydev);
++	struct mii_bus *bus;
++	u16 page, r;
++	int lo, hi, ret;
++
++	if (!sw || !sw->bus)
++		return -ENODEV;
++
++	bus = sw->bus;
++	if (!bus->read || !bus->write)
++		return -EOPNOTSUPP;
++
++	page = (reg >> 6) & 0x3ff;
++	r = (reg >> 2) & 0xf;
++	mutex_lock_nested(&bus->mdio_lock, MDIO_MUTEX_NESTED);
++
++	ret = bus->write(bus, sw->addr, 0x1f, page);
++	if (ret < 0)
++		goto out;
++	lo = bus->read(bus, sw->addr, r);
++	if (lo < 0) {
++		ret = lo;
++		goto out;
++	}
++	hi = bus->read(bus, sw->addr, 0x10);
++	if (hi < 0) {
++		ret = hi;
++		goto out;
++	}
++
++	*val = ((u32)(u16)hi << 16) | (u16)lo;
++	ret = 0;
++out:
++	mutex_unlock(&bus->mdio_lock);
++	return ret;
++}
++
++static int mt7530_phy_switch_rmw(struct phy_device *phydev, u32 reg,
++				 u32 mask, u32 set)
++{
++	struct mdio_device *sw = mt7530_phy_switch_mdiodev(phydev);
++	struct mii_bus *bus;
++	u16 page, r;
++	u32 val;
++	int lo, hi, ret;
++
++	if (!sw || !sw->bus)
++		return -ENODEV;
++
++	bus = sw->bus;
++	if (!bus->read || !bus->write)
++		return -EOPNOTSUPP;
++
++	page = (reg >> 6) & 0x3ff;
++	r = (reg >> 2) & 0xf;
++	mutex_lock_nested(&bus->mdio_lock, MDIO_MUTEX_NESTED);
++
++	ret = bus->write(bus, sw->addr, 0x1f, page);
++	if (ret < 0)
++		goto out;
++	lo = bus->read(bus, sw->addr, r);
++	if (lo < 0) {
++		ret = lo;
++		goto out;
++	}
++	hi = bus->read(bus, sw->addr, 0x10);
++	if (hi < 0) {
++		ret = hi;
++		goto out;
++	}
++
++	val = ((u32)(u16)hi << 16) | (u16)lo;
++	val = (val & ~mask) | set;
++	ret = bus->write(bus, sw->addr, r, val & 0xffff);
++	if (ret < 0)
++		goto out;
++	ret = bus->write(bus, sw->addr, 0x10, val >> 16);
++out:
++	mutex_unlock(&bus->mdio_lock);
++	return ret;
++}
++
++static int mt7530_phy_led_set_gpio(struct phy_device *phydev, u8 index,
++				   bool on)
++{
++	struct mtk_socphy_priv *priv = phydev->priv;
++	unsigned int gpio_state, polarity_state;
++	u32 bit;
++	bool level;
++	int ret;
++
++	bit = mt7530_phy_led_switch_bit(phydev, index);
++	if (!bit)
++		return -EINVAL;
++	gpio_state = mt7530_phy_led_state_bit(index, MT7530_LED_STATE_GPIO_MODE);
++	polarity_state = mt7530_phy_led_state_bit(index,
++					       MT7530_LED_STATE_ACTIVE_LOW);
++	level = on;
++	if (test_bit(polarity_state, &priv->led_state))
++		level = !level;
++
++	if (test_bit(gpio_state, &priv->led_state))
++		return mt7530_phy_switch_rmw(phydev, MT7530_SW_LED_GPIO_DATA,
++					     bit, level ? bit : 0);
++
++	ret = mt7530_phy_switch_rmw(phydev, MT7530_SW_LED_GPIO_DATA,
++				    bit, level ? bit : 0);
++	if (ret)
++		return ret;
++	ret = mt7530_phy_switch_rmw(phydev, MT7530_SW_LED_GPIO_DIR, bit, bit);
++	if (ret)
++		return ret;
++	ret = mt7530_phy_switch_rmw(phydev, MT7530_SW_LED_GPIO_OE, bit, bit);
++	if (ret)
++		return ret;
++	ret = mt7530_phy_switch_rmw(phydev, MT7530_SW_LED_EN, bit, bit);
++	if (ret)
++		return ret;
++	ret = mt7530_phy_switch_rmw(phydev, MT7530_SW_LED_IO_MODE, bit, 0);
++	if (ret)
++		return ret;
++	set_bit(gpio_state, &priv->led_state);
++	return 0;
++}
++
++static int mt7530_phy_led_set_phy_mode(struct phy_device *phydev, u8 index)
++{
++	struct mtk_socphy_priv *priv = phydev->priv;
++	unsigned int gpio_state;
++	u32 bit;
++	int ret;
++
++	bit = mt7530_phy_led_switch_bit(phydev, index);
++	if (!bit)
++		return -EINVAL;
++	gpio_state = mt7530_phy_led_state_bit(index, MT7530_LED_STATE_GPIO_MODE);
++	ret = mt7530_phy_switch_rmw(phydev, MT7530_SW_LED_EN, bit, bit);
++	if (ret)
++		return ret;
++	ret = mt7530_phy_switch_rmw(phydev, MT7530_SW_LED_IO_MODE, bit, bit);
++	if (ret)
++		return ret;
++	ret = mt7530_phy_switch_rmw(phydev, MT7530_SW_LED_GPIO_OE, bit, 0);
++	if (ret)
++		return ret;
++	ret = mt7530_phy_switch_rmw(phydev, MT7530_SW_LED_GPIO_DIR, bit, 0);
++	if (ret)
++		return ret;
++	clear_bit(gpio_state, &priv->led_state);
++	return 0;
++}
++
++static int mt7530_phy_led_brightness_set(struct phy_device *phydev, u8 index,
++					 enum led_brightness value)
++{
++	return mt7530_phy_led_set_gpio(phydev, index, value != LED_OFF);
++}
++
++static const unsigned long mt7530_supported_led_triggers =
++	BIT(TRIGGER_NETDEV_FULL_DUPLEX) |
++	BIT(TRIGGER_NETDEV_HALF_DUPLEX) |
++	BIT(TRIGGER_NETDEV_LINK) |
++	BIT(TRIGGER_NETDEV_LINK_10) |
++	BIT(TRIGGER_NETDEV_LINK_100) |
++	BIT(TRIGGER_NETDEV_LINK_1000) |
++	BIT(TRIGGER_NETDEV_RX) |
++	BIT(TRIGGER_NETDEV_TX);
++
++static int mt7530_phy_led_hw_is_supported(struct phy_device *phydev, u8 index,
++					  unsigned long rules)
++{
++	return mtk_phy_led_hw_is_supported(phydev, index, rules,
++					   mt7530_supported_led_triggers);
++}
++
++static int mt7530_phy_led_hw_control_get(struct phy_device *phydev, u8 index,
++					 unsigned long *rules)
++{
++	struct mtk_socphy_priv *priv = phydev->priv;
++	unsigned int gpio_state;
++	u32 bit, mode;
++	int ret;
++
++	bit = mt7530_phy_led_switch_bit(phydev, index);
++	if (!bit)
++		return -EINVAL;
++	ret = mt7530_phy_switch_read(phydev, MT7530_SW_LED_IO_MODE, &mode);
++	if (ret)
++		return ret;
++	gpio_state = mt7530_phy_led_state_bit(index, MT7530_LED_STATE_GPIO_MODE);
++	if (!(mode & bit)) {
++		set_bit(gpio_state, &priv->led_state);
++		if (rules)
++			*rules = 0;
++		return 0;
++	}
++	clear_bit(gpio_state, &priv->led_state);
++	return mtk_phy_led_hw_ctrl_get(phydev, index, rules,
++				       MTK_GPHY_LED_ON_SET,
++				       MTK_GPHY_LED_RX_BLINK_SET,
++				       MTK_GPHY_LED_TX_BLINK_SET);
++}
++
++static int mt7530_phy_led_hw_control_set(struct phy_device *phydev, u8 index,
++					 unsigned long rules)
++{
++	u32 reg;
++	int ret;
++
++	if (index >= MT7530_PHY_NUM_LEDS)
++		return -EINVAL;
++	reg = index ? MTK_PHY_LED1_ON_CTRL : MTK_PHY_LED0_ON_CTRL;
++	ret = phy_clear_bits_mmd(phydev, MDIO_MMD_VEND2, reg,
++				 MTK_PHY_LED_ON_FORCE_ON);
++	if (ret)
++		return ret;
++	ret = mtk_phy_led_hw_ctrl_set(phydev, index, rules,
++				      MTK_GPHY_LED_ON_SET,
++				      MTK_GPHY_LED_RX_BLINK_SET,
++				      MTK_GPHY_LED_TX_BLINK_SET);
++	if (ret)
++		return ret;
++	return mt7530_phy_led_set_phy_mode(phydev, index);
++}
++
++static int mt7530_match_phy_device(struct phy_device *phydev,
++				   const struct phy_driver *phydrv)
++{
++	int estatus;
++
++	if ((phydev->phy_id & phydrv->phy_id_mask) !=
++	    (phydrv->phy_id & phydrv->phy_id_mask))
++		return 0;
++
++	/*
++	 * EN7512 FE shares the 0x03a29412 PHY ID with MT7530.  The vendor
++	 * SDK distinguishes MT7530 by MII reg 15 bit 13 (1000BASE-T full).
++	 */
++	estatus = phy_read(phydev, MII_ESTATUS);
++	if (estatus < 0)
++		return 0;
++
++	return !!(estatus & ESTATUS_1000_TFULL);
++}
++
+ static bool mt7530_phy_is_en751221_companion(struct phy_device *phydev)
+ {
+ 	struct device *parent = phydev->mdio.bus->parent;
+@@ -72,6 +362,129 @@ static bool mt7530_phy_is_en751221_companion(struct phy_device *phydev)
+ 				       "econet,en751221-switch");
+ }
+ 
++static int mt7530_phy_leds_init(struct phy_device *phydev)
++{
++	struct mtk_socphy_priv *priv = phydev->priv;
++	unsigned int polarity_state;
++	u16 val;
++	int i;
++	int ret;
++
++	/*
++	 * Select the PHY LED engine used by the vendor profile.  Keep the
++	 * per-LED event and polarity bits under control of the LED core.
++	 */
++	ret = phy_write_mmd(phydev, MDIO_MMD_VEND2, MTK_PHY_LED_BCR,
++			    MTK_PHY_LED_BCR_DEFAULT);
++	if (ret < 0)
++		return ret;
++
++	for (i = 0; i < MT7530_PHY_NUM_LEDS; i++) {
++		polarity_state = mt7530_phy_led_state_bit(i,
++						       MT7530_LED_STATE_ACTIVE_LOW);
++		val = MTK_PHY_LED_ON_ENABLE;
++		if (test_bit(polarity_state, &priv->led_state))
++			val |= MTK_PHY_LED_ON_POLARITY;
++
++		ret = phy_modify_mmd(phydev, MDIO_MMD_VEND2,
++					     i ? MTK_PHY_LED1_ON_CTRL :
++						 MTK_PHY_LED0_ON_CTRL,
++					     MTK_PHY_LED_ON_ENABLE |
++						 MTK_PHY_LED_ON_POLARITY,
++					     val);
++		if (ret < 0)
++			return ret;
++	}
++
++	return 0;
++}
++
++static int mt7530_phy_probe(struct phy_device *phydev)
++{
++	struct mtk_socphy_priv *priv;
++	int ret;
++
++	/*
++	 * The EN751221 companion profile expects a clean MT7530 PHY before
++	 * configuration.  Do the reset before OF registers the PHY LEDs so
++	 * that active-low/high settings applied by the LED core survive.
++	 */
++	if (mt7530_phy_is_en751221_companion(phydev)) {
++		ret = genphy_soft_reset(phydev);
++		if (ret)
++			return ret;
++	}
++
++	/* The MT7530 internal GE PHY has broken EEE: with EEE advertised,
++	 * some link partners fail to establish a stable link (on a 2-pair
++	 * cable, 1000BASE-T training fails and the port loops instead of
++	 * falling back). MediaTek recommends disabling EEE on this PHY.
++	 * Clear the advertisement as early as possible, before anything
++	 * can negotiate EEE with the link partner.
++	 */
++	ret = phy_write_mmd(phydev, MDIO_MMD_AN, MDIO_AN_EEE_ADV, 0);
++	if (ret)
++		return ret;
++
++	priv = devm_kzalloc(&phydev->mdio.dev, sizeof(*priv), GFP_KERNEL);
++	if (!priv)
++		return -ENOMEM;
++
++	phydev->priv = priv;
++
++	ret = mt7530_phy_leds_init(phydev);
++	if (ret)
++		return ret;
++
++	mtk_phy_leds_state_init(phydev);
++
++	return 0;
++}
++
++static int mt7530_phy_led_polarity_set(struct phy_device *phydev, int index,
++				       unsigned long modes)
++{
++	struct mtk_socphy_priv *priv = phydev->priv;
++	unsigned int polarity_state;
++	bool active_low = false;
++	u16 val = 0;
++	u32 mode;
++	int ret;
++
++	if (index > 1)
++		return -EINVAL;
++
++	for_each_set_bit(mode, &modes, __PHY_LED_MODES_NUM) {
++		switch (mode) {
++		case PHY_LED_ACTIVE_LOW:
++			active_low = true;
++			val = MTK_PHY_LED_ON_POLARITY;
++			break;
++		case PHY_LED_ACTIVE_HIGH:
++			active_low = false;
++			break;
++		default:
++			return -EINVAL;
++		}
++	}
++
++	ret = phy_modify_mmd(phydev, MDIO_MMD_VEND2,
++			     index ? MTK_PHY_LED1_ON_CTRL :
++				     MTK_PHY_LED0_ON_CTRL,
++			     MTK_PHY_LED_ON_POLARITY, val);
++	if (ret)
++		return ret;
++
++	polarity_state = mt7530_phy_led_state_bit(index,
++					       MT7530_LED_STATE_ACTIVE_LOW);
++	if (active_low)
++		set_bit(polarity_state, &priv->led_state);
++	else
++		clear_bit(polarity_state, &priv->led_state);
++
++	return 0;
++}
++
+ static int mt7530_phy_en751221_config_init(struct phy_device *phydev)
+ {
+ 	int ret;
+@@ -82,10 +495,6 @@ static int mt7530_phy_en751221_config_init(struct phy_device *phydev)
+ 	 * readable over MDIO, but link detection on EN751221 companion MCM
+ 	 * boards is unreliable or never completes.
+ 	 */
+-	ret = genphy_soft_reset(phydev);
+-	if (ret)
+-		return ret;
+-
+ 	/* Clause 22 local data. */
+ 	ret = phy_write(phydev, MII_CTRL1000, 0x1e00);
+ 	if (ret < 0)
+@@ -113,21 +522,13 @@ static int mt7530_phy_en751221_config_init(struct phy_device *phydev)
+ 	if (ret < 0)
+ 		return ret;
+ 
+-	phydev_info(phydev, "EN751221 companion MT7530 E3.0 PHY profile loaded\n");
++	ret = mt7530_phy_leds_init(phydev);
++	if (ret)
++		return ret;
+ 
+-	return 0;
+-}
++	mtk_phy_leds_state_init(phydev);
+ 
+-static int mt7530_phy_probe(struct phy_device *phydev)
+-{
+-	/* The MT7530 internal GE PHY has broken EEE: with EEE advertised,
+-	 * some link partners fail to establish a stable link (on a 2-pair
+-	 * cable, 1000BASE-T training fails and the port loops instead of
+-	 * falling back). MediaTek recommends disabling EEE on this PHY.
+-	 * Clear the advertisement as early as possible, before anything
+-	 * can negotiate EEE with the link partner.
+-	 */
+-	return phy_write_mmd(phydev, MDIO_MMD_AN, MDIO_AN_EEE_ADV, 0);
++	return 0;
+ }
+ 
+ static int mt7530_phy_config_init(struct phy_device *phydev)
+@@ -225,6 +626,7 @@ static struct phy_driver mtk_gephy_driver[] = {
+ 	{
+ 		PHY_ID_MATCH_EXACT(MTK_GPHY_ID_MT7530),
+ 		.name		= "MediaTek MT7530 PHY",
++		.match_phy_device = mt7530_match_phy_device,
+ 		.probe		= mt7530_phy_probe,
+ 		.config_init	= mt7530_phy_config_init,
+ 		/* Interrupts are handled by the switch, not the PHY
+@@ -236,6 +638,11 @@ static struct phy_driver mtk_gephy_driver[] = {
+ 		.resume		= genphy_resume,
+ 		.read_page	= mtk_phy_read_page,
+ 		.write_page	= mtk_phy_write_page,
++		.led_brightness_set = mt7530_phy_led_brightness_set,
++		.led_hw_is_supported = mt7530_phy_led_hw_is_supported,
++		.led_hw_control_set = mt7530_phy_led_hw_control_set,
++		.led_hw_control_get = mt7530_phy_led_hw_control_get,
++		.led_polarity_set = mt7530_phy_led_polarity_set,
+ 	},
+ 	{
+ 		PHY_ID_MATCH_EXACT(MTK_GPHY_ID_MT7531),
+diff --git a/drivers/net/phy/mediatek/mtk.h b/drivers/net/phy/mediatek/mtk.h
+index 707eebe64..882cdfac4 100644
+--- a/drivers/net/phy/mediatek/mtk.h
++++ b/drivers/net/phy/mediatek/mtk.h
+@@ -18,6 +18,9 @@
+ #define MTK_PHY_PAGE_EXTENDED_52B5		0x52b5
+ 
+ /* Registers on MDIO_MMD_VEND2 */
++#define MTK_PHY_LED_BCR				0x21
++#define   MTK_PHY_LED_BCR_DEFAULT		0x800a
++
+ #define MTK_PHY_LED0_ON_CTRL			0x24
+ #define MTK_PHY_LED1_ON_CTRL			0x26
+ #define   MTK_GPHY_LED_ON_MASK			GENMASK(6, 0)
+-- 
+2.55.0
+

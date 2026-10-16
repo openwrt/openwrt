@@ -10,34 +10,16 @@ This is also in preparation for support of the Airoha USB PHY driver.
 
 Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 ---
- MAINTAINERS                               |    4 +-
  drivers/phy/Kconfig                       |   11 +-
- drivers/phy/Makefile                      |    5 +-
+ drivers/phy/Makefile                      |    4 +-
  drivers/phy/airoha/Kconfig                |   13 +
  drivers/phy/airoha/Makefile               |    3 +
- drivers/phy/airoha/phy-airoha-pcie-regs.h |  494 ++++++++
- drivers/phy/airoha/phy-airoha-pcie.c      | 1290 +++++++++++++++++++++
- 7 files changed, 1806 insertions(+), 14 deletions(-)
- create mode 100644 drivers/phy/airoha/Kconfig
- create mode 100644 drivers/phy/airoha/Makefile
- create mode 100644 drivers/phy/airoha/phy-airoha-pcie-regs.h
- create mode 100644 drivers/phy/airoha/phy-airoha-pcie.c
+ drivers/phy/airoha/phy-airoha-pcie-regs.h |  494 +++++++++++
+ drivers/phy/airoha/phy-airoha-pcie.c      | 1290 +++++++++++++++++++++++++++++
+ 6 files changed, 1803 insertions(+), 12 deletions(-)
 
-# diff --git a/MAINTAINERS b/MAINTAINERS
-# index 2468f4fea5b7..3f930a613658 100644
-# --- a/MAINTAINERS
-# +++ b/MAINTAINERS
-# @@ -733,8 +733,8 @@ M:	Lorenzo Bianconi <lorenzo@kernel.org>
-#  L:	linux-arm-kernel@lists.infradead.org (moderated for non-subscribers)
-#  S:	Maintained
-#  F:	Documentation/devicetree/bindings/phy/airoha,en7581-pcie-phy.yaml
-# -F:	drivers/phy/phy-airoha-pcie-regs.h
-# -F:	drivers/phy/phy-airoha-pcie.c
-# +F:	drivers/phy/airoha/phy-airoha-pcie-regs.h
-# +F:	drivers/phy/airoha/phy-airoha-pcie.c
- 
-#  AIROHA SPI SNFI DRIVER
-#  M:	Lorenzo Bianconi <lorenzo@kernel.org>
+diff --git a/drivers/phy/Kconfig b/drivers/phy/Kconfig
+index 5d661864b6ff9297072d7528fabf5805dc1bb719..63339eec9887bcc2424426f260cdf97300d10223 100644
 --- a/drivers/phy/Kconfig
 +++ b/drivers/phy/Kconfig
 @@ -102,16 +102,6 @@ config PHY_CAN_TRANSCEIVER
@@ -57,17 +39,19 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  config PHY_NXP_PTN3222
  	tristate "NXP PTN3222 1-port eUSB2 to USB2 redriver"
  	depends on I2C
-@@ -123,6 +113,7 @@ config PHY_NXP_PTN3222
- 	  schemes. It supports all three USB 2.0 data rates: Low Speed, Full
- 	  Speed and High Speed.
+@@ -136,6 +126,7 @@ config PHY_ECONET_PCIE
+ 	  EcoNet SoCs including EN751221 and EN7528.
+ 
  
 +source "drivers/phy/airoha/Kconfig"
  source "drivers/phy/allwinner/Kconfig"
  source "drivers/phy/amlogic/Kconfig"
  source "drivers/phy/broadcom/Kconfig"
+diff --git a/drivers/phy/Makefile b/drivers/phy/Makefile
+index 423a4d40bb1a7bc998df9d6c2c7204540c810237..54a30f1f4d8e98e02e5dcd0ebece54f3422f06bf 100644
 --- a/drivers/phy/Makefile
 +++ b/drivers/phy/Makefile
-@@ -13,9 +13,9 @@ obj-$(CONFIG_PHY_XGENE)			+= phy-xgene.o
+@@ -14,9 +14,9 @@ obj-$(CONFIG_PHY_XGENE)			+= phy-xgene.o
  obj-$(CONFIG_PHY_PISTACHIO_USB)		+= phy-pistachio-usb.o
  obj-$(CONFIG_PHY_SNPS_EUSB2)		+= phy-snps-eusb2.o
  obj-$(CONFIG_USB_LGM_PHY)		+= phy-lgm-usb.o
@@ -79,6 +63,9 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  					   amlogic/	\
  					   broadcom/	\
  					   cadence/	\
+diff --git a/drivers/phy/airoha/Kconfig b/drivers/phy/airoha/Kconfig
+new file mode 100644
+index 0000000000000000000000000000000000000000..70b7eac4a2bf10c2a063fda68e20dd4915747a11
 --- /dev/null
 +++ b/drivers/phy/airoha/Kconfig
 @@ -0,0 +1,13 @@
@@ -95,12 +82,18 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 +	  Say Y here to add support for Airoha PCIe PHY driver.
 +	  This driver create the basic PHY instance and provides initialize
 +	  callback for PCIe GEN3 port.
+diff --git a/drivers/phy/airoha/Makefile b/drivers/phy/airoha/Makefile
+new file mode 100644
+index 0000000000000000000000000000000000000000..3222f749546b1f251ad4ecbffb16682c9dd6339f
 --- /dev/null
 +++ b/drivers/phy/airoha/Makefile
 @@ -0,0 +1,3 @@
 +# SPDX-License-Identifier: GPL-2.0
 +
 +obj-$(CONFIG_PHY_AIROHA_PCIE)		+= phy-airoha-pcie.o
+diff --git a/drivers/phy/airoha/phy-airoha-pcie-regs.h b/drivers/phy/airoha/phy-airoha-pcie-regs.h
+new file mode 100644
+index 0000000000000000000000000000000000000000..b938a7b468fee3f65e4928ebcc1a5f7d2f85b762
 --- /dev/null
 +++ b/drivers/phy/airoha/phy-airoha-pcie-regs.h
 @@ -0,0 +1,494 @@
@@ -598,6 +591,9 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 +#define REG_PCIE_PEXTP_DIG_LN_RX30_P1		0x0100
 +
 +#endif /* _PHY_AIROHA_PCIE_H */
+diff --git a/drivers/phy/airoha/phy-airoha-pcie.c b/drivers/phy/airoha/phy-airoha-pcie.c
+new file mode 100644
+index 0000000000000000000000000000000000000000..56e9ade8a9fd3d47ca73271c33ff14967f4ddb08
 --- /dev/null
 +++ b/drivers/phy/airoha/phy-airoha-pcie.c
 @@ -0,0 +1,1290 @@

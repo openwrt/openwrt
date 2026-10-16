@@ -1,0 +1,71 @@
+From af3cc76d664c9fea78ca207eeff9965e76a38317 Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Fri, 18 Sep 2026 21:30:30 -0300
+Subject: [PATCH] airoha: net: remove qdma timeout tx verbose
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/airoha_eth.c | 46 +---------------------------------------
+ 1 file changed, 1 insertion(+), 45 deletions(-)
+
+diff --git a/drivers/net/airoha_eth.c b/drivers/net/airoha_eth.c
+index 8b12ef03093..2a15689d2c1 100644
+--- a/drivers/net/airoha_eth.c
++++ b/drivers/net/airoha_eth.c
+@@ -3200,52 +3200,8 @@ static int en751221_eth_send(struct udevice *dev, void *packet, int length)
+ 
+ 	if (!use_bounce)
+ 		dma_unmap_single(dma_addr, length, DMA_TO_DEVICE);
+-	if (hw != next && !(ctrl & QDMA_DESC_DONE_MASK)) {
+-		printf("QDMA TX timeout: cfg=%08x cpu=%08x hw=%08x int=%08x hwcfg=%08x lmgr=%08x free=%08x used=%08x\n",
+-		       airoha_qdma_rr(qdma, REG_QDMA_GLOBAL_CFG),
+-		       airoha_qdma_rr(qdma, EN751221_REG_TX_CPU_IDX),
+-		       airoha_qdma_rr(qdma, EN751221_REG_TX_DMA_IDX),
+-		       airoha_qdma_rr(qdma, EN751221_REG_INT_STATUS),
+-		       airoha_qdma_rr(qdma, EN751221_REG_FWD_DSCP_CFG),
+-		       airoha_qdma_rr(qdma, EN751221_REG_LMGR_INIT_CFG),
+-		       airoha_qdma_rr(qdma, EN751221_REG_DBG_LMGR_STATUS),
+-		       airoha_qdma_rr(qdma, EN751221_REG_DBG_HWF_BUF_USAGE));
+-		printf("  txbase=%08x desc=%08lx [%08x %08x %08x %08x %08x %08x %08x %08x]\n",
+-		       airoha_qdma_rr(qdma, EN751221_REG_TX_RING_BASE),
+-		       (ulong)virt_to_phys(desc),
+-		       READ_ONCE(desc->rsv), READ_ONCE(desc->ctrl),
+-		       READ_ONCE(desc->addr), READ_ONCE(desc->data),
+-		       READ_ONCE(desc->msg0), READ_ONCE(desc->msg1),
+-		       READ_ONCE(desc->msg2), READ_ONCE(desc->msg3));
+-		printf("  gdm=%08x cport=%08x mfc=%08x pmcr6=%08x pcr6=%08x\n",
+-		       airoha_fe_rr(qdma->eth, REG_GDM_FWD_CFG(port->id)),
+-		       airoha_fe_rr(qdma->eth, REG_FE_CPORT_CFG),
+-		       airoha_switch_rr(qdma->eth, SWITCH_MFC),
+-		       airoha_switch_rr(qdma->eth, SWITCH_PMCR(6)),
+-		       airoha_switch_rr(qdma->eth, SWITCH_PCR(6)));
+-		printf("  txqdis: %08x %08x %08x %08x %08x %08x %08x %08x\n",
+-		       airoha_qdma_rr(qdma, EN751221_REG_TXQ_DIS_CFG(0)),
+-		       airoha_qdma_rr(qdma, EN751221_REG_TXQ_DIS_CFG(1)),
+-		       airoha_qdma_rr(qdma, EN751221_REG_TXQ_DIS_CFG(2)),
+-		       airoha_qdma_rr(qdma, EN751221_REG_TXQ_DIS_CFG(3)),
+-		       airoha_qdma_rr(qdma, EN751221_REG_TXQ_DIS_CFG(4)),
+-		       airoha_qdma_rr(qdma, EN751221_REG_TXQ_DIS_CFG(5)),
+-		       airoha_qdma_rr(qdma, EN751221_REG_TXQ_DIS_CFG(6)),
+-		       airoha_qdma_rr(qdma, EN751221_REG_TXQ_DIS_CFG(7)));
+-		printf("  txq: cngst=%08x total=%08x chnl=%08x queue=%08x rxprot=%08x\n",
+-		       airoha_qdma_rr(qdma, EN751221_REG_TXQ_CNGST_CFG),
+-		       airoha_qdma_rr(qdma, EN751221_REG_TXQ_DYN_TOTALTHR),
+-		       airoha_qdma_rr(qdma, EN751221_REG_TXQ_DYN_CHNLTHR),
+-		       airoha_qdma_rr(qdma, EN751221_REG_TXQ_DYN_QUEUETHR),
+-		       airoha_qdma_rr(qdma, EN751221_REG_RX_PROTECT_CFG));
+-		printf("  chn: hwf=%08x txen=%08x rxen=%08x txvld=%08x rxvld=%08x\n",
+-		       airoha_fe_rr(qdma->eth, REG_CDM1_HWF_CHN_EN),
+-		       airoha_fe_rr(qdma->eth, REG_GDM_TXCHN_EN(port->id)),
+-		       airoha_fe_rr(qdma->eth, REG_GDM_RXCHN_EN(port->id)),
+-		       airoha_fe_rr(qdma->eth, REG_GDM_TX_CHN_VLD(port->id)),
+-		       airoha_fe_rr(qdma->eth, REG_GDM_RX_CHN_VLD(port->id)));
++	if (hw != next && !(ctrl & QDMA_DESC_DONE_MASK))
+ 		return -ETIMEDOUT;
+-	}
+ 
+ 	en7528_tx_path_trace(qdma->eth, "txpath: after");
+ 
+-- 
+2.55.0
+

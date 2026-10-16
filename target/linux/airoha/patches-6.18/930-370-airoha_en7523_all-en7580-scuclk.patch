@@ -1,0 +1,472 @@
+From fb62540b6dc584d252812ca1dc8f2cb5df64fb47 Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Sun, 4 Oct 2026 22:42:39 -0300
+Subject: [PATCH] en7580: scuclk
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ .../bindings/clock/airoha,en7523-scu.yaml     |  8 +--
+ .../bindings/spi/airoha,en7581-snand.yaml     | 15 +++++-
+ MAINTAINERS                                   |  2 +
+ arch/mips/boot/dts/econet/en7580.dtsi         | 38 +++++++-------
+ arch/mips/econet/Kconfig                      |  5 +-
+ drivers/clk/clk-en7523.c                      | 40 +++++++++++++++
+ drivers/spi/spi-airoha-snfi.c                 | 16 ++++--
+ include/dt-bindings/clock/econet,en7580-scu.h | 12 +++++
+ include/dt-bindings/reset/econet,en7580-scu.h | 49 +++++++++++++++++++
+ 9 files changed, 154 insertions(+), 31 deletions(-)
+ create mode 100644 include/dt-bindings/clock/econet,en7580-scu.h
+ create mode 100644 include/dt-bindings/reset/econet,en7580-scu.h
+
+diff --git a/Documentation/devicetree/bindings/clock/airoha,en7523-scu.yaml b/Documentation/devicetree/bindings/clock/airoha,en7523-scu.yaml
+index e9f5695ff..16e5da7da 100644
+--- a/Documentation/devicetree/bindings/clock/airoha,en7523-scu.yaml
++++ b/Documentation/devicetree/bindings/clock/airoha,en7523-scu.yaml
+@@ -29,6 +29,7 @@ properties:
+           - enum:
+               - econet,en751221-scu
+               - econet,en7528-scu
++              - econet,en7580-scu
+           - const: syscon
+ 
+   reg:
+@@ -39,8 +40,6 @@ properties:
+     items:
+       - const: np-scu
+       - const: mcucfg
+-    minItems: 2
+-    maxItems: 2
+ 
+   airoha,chip-scu:
+     $ref: /schemas/types.yaml#/definitions/phandle
+@@ -71,8 +70,6 @@ allOf:
+           items:
+             - description: NP-SCU registers
+             - description: MCUCFG registers used while switching the CPU PLL
+-          minItems: 2
+-          maxItems: 2
+       required:
+         - reg-names
+         - airoha,chip-scu
+@@ -87,8 +84,6 @@ allOf:
+           items:
+             - description: CHIP-SCU registers
+             - description: NP-SCU registers
+-          minItems: 2
+-          maxItems: 2
+ 
+   - if:
+       properties:
+@@ -109,6 +104,7 @@ allOf:
+             enum:
+               - econet,en751221-scu
+               - econet,en7528-scu
++              - econet,en7580-scu
+     then:
+       properties:
+         reg:
+diff --git a/Documentation/devicetree/bindings/spi/airoha,en7581-snand.yaml b/Documentation/devicetree/bindings/spi/airoha,en7581-snand.yaml
+index b820c5613..ffb773ac2 100644
+--- a/Documentation/devicetree/bindings/spi/airoha,en7581-snand.yaml
++++ b/Documentation/devicetree/bindings/spi/airoha,en7581-snand.yaml
+@@ -4,7 +4,7 @@
+ $id: http://devicetree.org/schemas/spi/airoha,en7581-snand.yaml#
+ $schema: http://devicetree.org/meta-schemas/core.yaml#
+ 
+-title: SPI-NAND flash controller for Airoha ARM SoCs
++title: SPI-NAND flash controller for Airoha and EcoNet SoCs
+ 
+ maintainers:
+   - Lorenzo Bianconi <lorenzo@kernel.org>
+@@ -14,13 +14,24 @@ allOf:
+ 
+ properties:
+   compatible:
+-    const: airoha,en7581-snand
++    enum:
++      - airoha,en7581-snand
++      - econet,en7580-spi
+ 
+   reg:
+     items:
+       - description: spi base address
+       - description: nfi2spi base address
+ 
++  reg-names:
++    items:
++      - const: ctrl
++      - const: nfi
++
++  airoha,scu:
++    $ref: /schemas/types.yaml#/definitions/phandle
++    description: NP-SCU syscon containing the SoC boot configuration.
++
+   clocks:
+     maxItems: 1
+ 
+diff --git a/MAINTAINERS b/MAINTAINERS
+index d39dd920a..f27247a06 100644
+--- a/MAINTAINERS
++++ b/MAINTAINERS
+@@ -8883,8 +8883,10 @@ F:	drivers/clocksource/timer-econet-en751221.c
+ F:	drivers/irqchip/irq-econet-en751221.c
+ F:	include/dt-bindings/clock/econet,en751221-scu.h
+ F:	include/dt-bindings/clock/econet,en7528-scu.h
++F:	include/dt-bindings/clock/econet,en7580-scu.h
+ F:	include/dt-bindings/reset/econet,en751221-scu.h
+ F:	include/dt-bindings/reset/econet,en7528-scu.h
++F:	include/dt-bindings/reset/econet,en7580-scu.h
+ 
+ ECONET PCIE PHY DRIVER
+ M:	Caleb James DeLisle <cjd@cjdns.fr>
+diff --git a/arch/mips/boot/dts/econet/en7580.dtsi b/arch/mips/boot/dts/econet/en7580.dtsi
+index 5c96cf4d3..07b6cb1c0 100644
+--- a/arch/mips/boot/dts/econet/en7580.dtsi
++++ b/arch/mips/boot/dts/econet/en7580.dtsi
+@@ -3,9 +3,9 @@
+ 
+ #include <dt-bindings/interrupt-controller/irq.h>
+ #include <dt-bindings/interrupt-controller/mips-gic.h>
+-#include <dt-bindings/clock/econet,en7528-scu.h>
++#include <dt-bindings/clock/econet,en7580-scu.h>
+ #include <dt-bindings/phy/phy.h>
+-#include <dt-bindings/reset/econet,en7528-scu.h>
++#include <dt-bindings/reset/econet,en7580-scu.h>
+ #include <dt-bindings/leds/common.h>
+ #include <dt-bindings/soc/airoha,scu-ssr.h>
+ #include <dt-bindings/soc/airoha,soc-variant.h>
+@@ -131,7 +131,7 @@ pcie_phy1: pcie-phy@1fac0000 {
+ 		};
+ 
+ 		chip_scu: syscon@1fa20000 {
+-			compatible = "airoha,scuclk", "econet,en7580-chip-scu", "syscon";
++			compatible = "econet,en7580-chip-scu", "syscon";
+ 			reg = <0x1fa20000 0x400>;
+ 		};
+ 
+@@ -161,7 +161,7 @@ pinctrl: pinctrl {
+ 				interrupt-controller;
+ 				#interrupt-cells = <2>;
+ 
+-				gpio-ranges = <&pinctrl 0 0 42>;
++				gpio-ranges = <&pinctrl 0 0 46>;
+ 
+ 				pcie0_rst_pins: pcie0-rst-pins {
+ 					conf {
+@@ -290,15 +290,15 @@ timer_hpt: timer@1fbf0400 {
+ 		};
+ 
+ 		spi0: spi@1fa10000 {
+-			compatible = "airoha,en7523-spi";
++			compatible = "econet,en7580-spi";
+ 			reg = <0x1fa10000 0x140>,
+ 			      <0x1fa11000 0x160>;
++			reg-names = "ctrl", "nfi";
+ 
+-			clocks = <&scuclk EN7528_CLK_SPI>;
++			clocks = <&scuclk EN7580_CLK_SPI>;
+ 			clock-names = "spi";
+ 
+-			airoha,scu = <&scuclk>, <&chip_scu>;
+-			airoha,scu-names = "scuclk", "chip-scu";
++			airoha,scu = <&scuclk>;
+ 
+ 			#address-cells = <1>;
+ 			#size-cells = <0>;
+@@ -308,7 +308,7 @@ watchdog: watchdog@1fbf0100 {
+ 			compatible = "econet,en751221-wdt";
+ 			reg = <0x1fbf0100 0x3c>;
+ 
+-			clocks = <&scuclk EN7528_CLK_BUS>;
++			clocks = <&scuclk EN7580_CLK_BUS>;
+ 			clock-names = "bus";
+ 
+ 			interrupts = <GIC_SHARED 9 IRQ_TYPE_LEVEL_HIGH>;
+@@ -467,7 +467,7 @@ pcie0: pcie@1fb81000 {
+ 			#size-cells = <2>;
+ 			interrupts = <GIC_SHARED 23 IRQ_TYPE_LEVEL_HIGH>;
+ 			interrupt-names = "pcie_irq";
+-			clocks = <&scuclk EN7528_CLK_PCIE>;
++			clocks = <&scuclk EN7580_CLK_PCIE>;
+ 			clock-names = "sys_ck0";
+ 			phys = <&pcie_phy0>;
+ 			phy-names = "pcie-phy0";
+@@ -507,7 +507,7 @@ pcie1: pcie@1fb83000 {
+ 			#size-cells = <2>;
+ 			interrupts = <GIC_SHARED 24 IRQ_TYPE_LEVEL_HIGH>;
+ 			interrupt-names = "pcie_irq";
+-			clocks = <&scuclk EN7528_CLK_PCIE>;
++			clocks = <&scuclk EN7580_CLK_PCIE>;
+ 			clock-names = "sys_ck1";
+ 			phys = <&pcie_phy1>;
+ 			phy-names = "pcie-phy1";
+@@ -556,7 +556,9 @@ xpon_phy: phy@1faf0000 {
+ 			pinctrl-names = "default";
+ 			pinctrl-0 = <&pon_pinctrl>;
+ 
+-			resets = <&scuclk EN7528_XPON_PHY_RST>;
++			tx-disable-gpios = <&pinctrl 38 GPIO_ACTIVE_HIGH>;
++
++			resets = <&scuclk EN7580_XPON_PHY_RST>;
+ 			reset-names = "phy";
+ 
+ 			interrupts = <GIC_SHARED 27 IRQ_TYPE_LEVEL_HIGH>;
+@@ -578,7 +580,7 @@ xpon: xmac@1fb60000 {
+ 			             <GIC_SHARED 18 IRQ_TYPE_LEVEL_HIGH>;
+ 			interrupt-names = "mac", "dying-gasp";
+ 
+-			resets = <&scuclk EN7528_XPON_MAC_RST>;
++			resets = <&scuclk EN7580_XPON_MAC_RST>;
+ 			reset-names = "mac";
+ 			phys = <&xpon_phy>;
+ 			phy-names = "xpon";
+@@ -623,10 +625,10 @@ eth: ethernet@1fb50000 {
+ 			      <0x1fbf9000 0x1000>;
+ 			reg-names = "fe", "qdma0", "qdma1", "gdmp";
+ 
+-			resets = <&scuclk EN7528_FE_RST>,
+-			         <&scuclk EN7528_FE_QDMA1_RST>,
+-			         <&scuclk EN7528_FE_QDMA2_RST>,
+-			         <&scuclk EN7528_GDMP_RST>;
++			resets = <&scuclk EN7580_FE_RST>,
++				 <&scuclk EN7580_FE_QDMA1_RST>,
++				 <&scuclk EN7580_FE_QDMA2_RST>,
++				 <&scuclk EN7580_GDMP_RST>;
+ 			reset-names = "fe", "pdma", "qdma", "gdmp";
+ 
+ 			airoha,wed = <&wed0>, <&wed1>;
+@@ -678,7 +680,7 @@ gdm3: ethernet@3 {
+ 		switch: switch@1fb58000 {
+ 			compatible = "airoha,en7580-switch", "econet,en7580-switch";
+ 			reg = <0x1fb58000 0x8000>;
+-			resets = <&scuclk EN7528_GSW_RST>;
++			resets = <&scuclk EN7580_GSW_RST>;
+ 
+ 			interrupt-controller;
+ 			#interrupt-cells = <1>;
+diff --git a/arch/mips/econet/Kconfig b/arch/mips/econet/Kconfig
+index c40cc851f..6969c8a4d 100644
+--- a/arch/mips/econet/Kconfig
++++ b/arch/mips/econet/Kconfig
+@@ -54,6 +54,9 @@ choice
+ 		select MIPS_CPU_SCACHE
+ 		select MIPS_GIC
+ 		select PCI_DRIVERS_GENERIC
++		select PINCTRL
++		select PINCTRL_AIROHA
++		select PINCTRL_AIROHA_EN7580
+ 		select SMP
+ 		select SMP_UP
+ 		select SYS_SUPPORTS_HIGHMEM
+@@ -61,7 +64,7 @@ choice
+ 		select SYS_SUPPORTS_MULTITHREADING
+ 		select SYS_SUPPORTS_SMP
+ 		help
+-		  The EN7580 family with dual-core MIPS 1004Kc.
++		  The EN7580 family with dual-core MIPS interAptiv.
+ 		  Requires MIPS_RAW_APPENDED_DTB=y for boot.
+ endchoice
+ 
+diff --git a/drivers/clk/clk-en7523.c b/drivers/clk/clk-en7523.c
+index f58cec636..865434dce 100644
+--- a/drivers/clk/clk-en7523.c
++++ b/drivers/clk/clk-en7523.c
+@@ -19,6 +19,7 @@
+ #include <dt-bindings/clock/en7523-clk.h>
+ #include <dt-bindings/clock/econet,en751221-scu.h>
+ #include <dt-bindings/clock/econet,en7528-scu.h>
++#include <dt-bindings/clock/econet,en7580-scu.h>
+ #include <dt-bindings/reset/airoha,en7523-reset.h>
+ #include <dt-bindings/reset/airoha,en7581-reset.h>
+ #include <dt-bindings/reset/airoha,an7583-reset.h>
+@@ -126,6 +127,14 @@
+ #define EN7528_SHARED_UNZIPMENT_FE	0x3
+ #define EN7528_MAX_CLKS		5
+ 
++/* EN7580 MIPS CHIP-SCU layout (ecnt_scu.h and spi_controller.c). */
++#define EN7580_REG_SPI_DIV		0x1b8
++#define EN7580_SPI_BASE			400000000
++#define EN7580_SPI_DIV_DEFAULT		40
++#define EN7580_REG_NP_PER_DOM_CLK_GAT_1	0x1dc
++#define EN7580_REG_TOD_DIVIDER_ENABLE	0x1e4
++#define EN7580_MAX_CLKS			5
++
+ enum en_hir {
+ 	HIR_UNKNOWN	= -1,
+ 	HIR_TC3169	= 0,
+@@ -1813,6 +1822,9 @@ static int econet_register_clocks(struct device *dev,
+ 				     "Failed reading fixed clk rate bus\n");
+ 
+ 	rate = FIELD_GET(EN751221_REG_BUS_MASK, val) * 1000000;
++	if (!rate)
++		return dev_err_probe(dev, -EINVAL,
++				     "Bootloader did not save the bus clock rate\n");
+ 	err = econet_register_fixed_rate(dev, ECONET_CLK_BUS, clk_data,
+ 					 "bus", rate);
+ 	if (err)
+@@ -2011,6 +2023,18 @@ static const struct econet_clk_soc_data en7528_econet_data = {
+ 	.shared_unzip_val = EN7528_SHARED_UNZIPMENT_FE,
+ };
+ 
++static const struct econet_clk_soc_data en7580_econet_data = {
++	.chip_scu_compatible = "econet,en7580-chip-scu",
++	.spi_base = EN7580_SPI_BASE,
++	.spi_div_reg = EN7580_REG_SPI_DIV,
++	.spi_div_mask = EN751221_REG_SPI_DIV_MASK,
++	.spi_div_default = EN7580_SPI_DIV_DEFAULT,
++	.xpon_tod_clk_reg = EN7580_REG_NP_PER_DOM_CLK_GAT_1,
++	.xpon_tod_clk_mask = EN751221_XPON_TOD_CLK_EN,
++	.xpon_tod_div_reg = EN7580_REG_TOD_DIVIDER_ENABLE,
++	.xpon_tod_div_mask = EN751221_XPON_TOD_DIV_EN,
++};
++
+ static const struct en_clk_soc_data en751221_data = {
+ 	.num_clocks = EN751221_MAX_CLKS,
+ 	.rst_map = en751221_rst_map,
+@@ -2040,12 +2064,28 @@ static const struct en_clk_soc_data en7528_data = {
+ 	.hw_init = econet_clk_hw_init,
+ };
+ 
++static const struct en_clk_soc_data en7580_data = {
++	.num_clocks = EN7580_MAX_CLKS,
++	/* The MIPS EN7580 retains the legacy NP-SCU reset banks. */
++	.rst_map = en751221_rst_map,
++	.rst_ofs = en751221_rst_ofs,
++	.nr_resets = ARRAY_SIZE(en751221_rst_map),
++	.econet = &en7580_econet_data,
++	.pcie_ops = {
++		.is_enabled = en7523_pci_is_enabled,
++		.prepare = en7523_pci_prepare,
++		.unprepare = en7523_pci_unprepare,
++	},
++	.hw_init = econet_clk_hw_init,
++};
++
+ static const struct of_device_id of_match_clk_en7523[] = {
+ 	{ .compatible = "airoha,en7523-scu", .data = &en7523_data },
+ 	{ .compatible = "airoha,en7581-scu", .data = &en7581_data },
+ 	{ .compatible = "airoha,an7583-scu", .data = &an7583_data },
+ 	{ .compatible = "econet,en751221-scu", .data = &en751221_data },
+ 	{ .compatible = "econet,en7528-scu", .data = &en7528_data },
++	{ .compatible = "econet,en7580-scu", .data = &en7580_data },
+ 	{ /* sentinel */ }
+ };
+ 
+diff --git a/drivers/spi/spi-airoha-snfi.c b/drivers/spi/spi-airoha-snfi.c
+index 1d737ae52..39f10265b 100644
+--- a/drivers/spi/spi-airoha-snfi.c
++++ b/drivers/spi/spi-airoha-snfi.c
+@@ -918,16 +918,18 @@ static int airoha_spi_probe(struct platform_device *pdev)
+ 	if (!as_ctrl->soc)
+ 		return -EINVAL;
+ 
+-	base = devm_platform_ioremap_resource_byname(pdev, "ctrl");
+-	if (IS_ERR(base))
++	if (of_property_present(dev->of_node, "reg-names"))
++		base = devm_platform_ioremap_resource_byname(pdev, "ctrl");
++	else
+ 		base = devm_platform_ioremap_resource(pdev, 0);
+ 	if (IS_ERR(base))
+ 		return PTR_ERR(base);
+ 
+ 	as_ctrl->ctrl_base = base;
+ 	if (as_ctrl->soc->has_nfi) {
+-		base = devm_platform_ioremap_resource_byname(pdev, "nfi");
+-		if (IS_ERR(base))
++		if (of_property_present(dev->of_node, "reg-names"))
++			base = devm_platform_ioremap_resource_byname(pdev, "nfi");
++		else
+ 			base = devm_platform_ioremap_resource(pdev, 1);
+ 		if (IS_ERR(base))
+ 			return PTR_ERR(base);
+@@ -1036,8 +1038,14 @@ static const struct airoha_spi_soc_data en7523_spi_data = {
+ 	.has_boot_trp = true,
+ };
+ 
++static const struct airoha_spi_soc_data en7580_spi_data = {
++	.has_nfi = true,
++	.has_nfi2spi = true,
++};
++
+ static const struct of_device_id airoha_spi_ids[] = {
+ 	{ .compatible = "econet,en751221-spi", .data = &en751221_spi_data },
++	{ .compatible = "econet,en7580-spi", .data = &en7580_spi_data },
+ 	{ .compatible = "airoha,en7523-spi", .data = &en7523_spi_data },
+ 	{ /* sentinel */ }
+ };
+diff --git a/include/dt-bindings/clock/econet,en7580-scu.h b/include/dt-bindings/clock/econet,en7580-scu.h
+new file mode 100644
+index 000000000..723e4383c
+--- /dev/null
++++ b/include/dt-bindings/clock/econet,en7580-scu.h
+@@ -0,0 +1,12 @@
++/* SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause) */
++
++#ifndef _DT_BINDINGS_CLOCK_ECONET_EN7580_SCU_H_
++#define _DT_BINDINGS_CLOCK_ECONET_EN7580_SCU_H_
++
++#define EN7580_CLK_PCIE		0
++#define EN7580_CLK_SPI		1
++#define EN7580_CLK_BUS		2
++#define EN7580_CLK_CPU		3
++#define EN7580_CLK_GSW		4
++
++#endif /* _DT_BINDINGS_CLOCK_ECONET_EN7580_SCU_H_ */
+diff --git a/include/dt-bindings/reset/econet,en7580-scu.h b/include/dt-bindings/reset/econet,en7580-scu.h
+new file mode 100644
+index 000000000..c9c3ce9a4
+--- /dev/null
++++ b/include/dt-bindings/reset/econet,en7580-scu.h
+@@ -0,0 +1,49 @@
++/* SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause) */
++
++#ifndef __DT_BINDINGS_RESET_CONTROLLER_ECONET_EN7580_H_
++#define __DT_BINDINGS_RESET_CONTROLLER_ECONET_EN7580_H_
++
++#define EN7580_XPON_PHY_RST		 0
++#define EN7580_PCM1_ZSI_ISI_RST	 1
++#define EN7580_FE_QDMA1_RST		 2
++#define EN7580_FE_QDMA2_RST		 3
++#define EN7580_FE_UNZIP_RST		 4
++#define EN7580_PCM2_RST		 5
++#define EN7580_PTM_MAC_RST		 6
++#define EN7580_CRYPTO_RST		 7
++#define EN7580_SAR_RST		 8
++#define EN7580_TIMER_RST		 9
++#define EN7580_INTC_RST		10
++#define EN7580_BONDING_RST		11
++#define EN7580_PCM1_RST		12
++#define EN7580_UART_RST		13
++#define EN7580_GPIO_RST		14
++#define EN7580_GDMA_RST		15
++#define EN7580_I2C_MASTER_RST		16
++#define EN7580_PCM2_ZSI_ISI_RST	17
++#define EN7580_SFC_RST		18
++#define EN7580_UART2_RST		19
++#define EN7580_GDMP_RST		20
++#define EN7580_FE_RST			21
++#define EN7580_USB_HOST_P0_RST	22
++#define EN7580_GSW_RST		23
++#define EN7580_SFC2_PCM_RST		24
++#define EN7580_PCIE0_RST		25
++#define EN7580_PCIE1_RST		26
++#define EN7580_CPU_TIMER_RST		27
++#define EN7580_PCIE_HB_RST		28
++#define EN7580_SIMIF_RST		29
++#define EN7580_XPON_MAC_RST		30
++#define EN7580_GFAST_RST		31
++#define EN7580_CPU_TIMER2_RST		32
++#define EN7580_UART3_RST		33
++#define EN7580_UART4_RST		34
++#define EN7580_UART5_RST		35
++#define EN7580_I2C2_RST		36
++#define EN7580_XSI_MAC_RST		37
++#define EN7580_XSI_PHY_RST		38
++#define EN7580_DMT_RST		39
++#define EN7580_USB_PHY_P0_RST		40
++#define EN7580_USB_PHY_P1_RST		41
++
++#endif /* __DT_BINDINGS_RESET_CONTROLLER_ECONET_EN7580_H_ */
+-- 
+2.55.0
+

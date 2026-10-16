@@ -1,0 +1,95 @@
+From 9539ccd3065c14131535ac05068662a71d503379 Mon Sep 17 00:00:00 2001
+From: Matt Eaton <git@divinehawk.com>
+Date: Tue, 8 Sep 2026 18:47:12 -0400
+Subject: [PATCH] net: airoha: enable the PSE buffer estimator only in GPON
+ mode
+
+PSE_BUF_ESTIMATE_EN is switched on for every EN7523 QDMA1 during QDMA init,
+but the thresholds it works against, PSE_BUF_CHAN_THR and PSE_BUF_TOTAL_THR
+in REG_PSE_BUF_USAGE_CFG1, are only programmed by
+airoha_eth_update_gpon_pse_buf(), which airoha_xpon_set_mode() calls for
+GPON alone. Every other uplink runs the estimator against thresholds that
+were never written.
+
+In that state QDMA1 eventually stops releasing frames towards GDM2 and the
+transmit path stalls for good. Descriptors are fetched and the DMA index
+advances to meet the CPU index, but the frames are neither transmitted nor
+dropped, and nothing in the driver notices: no completion is posted, so
+q->queued never falls and BQL parks every netdev queue in
+__QUEUE_STATE_STACK_XOFF, which the netdev TX watchdog does not observe. No
+interrupt error bit is raised and the MAC counts no drops. Only a reboot
+restores the port; a link bounce does not.
+
+Measured on a MikroTik E50UG (hEX refresh), which drives GDM2 as an
+ordinary Ethernet WAN, with the same image either side of the setting:
+
+  estimator enabled       4 requests,     102 frames,  15 descriptors stuck
+  estimator disabled   6169 requests,  292442 frames,   none stuck
+
+In the failing case the MAC frame count matched the completion count
+exactly, 102 and 102, confirming the missing frames never reached the wire
+rather than being lost during completion writeback.
+
+Move the enable next to the thresholds it depends on. GPON keeps the SDK
+behaviour, while an Ethernet WAN and an EPON uplink, which does not program
+those thresholds either, leave the estimator off. Later SoCs keep it
+disabled as before.
+
+Signed-off-by: Matt Eaton <git@divinehawk.com>
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/ethernet/airoha/airoha_eth.c | 30 +++++++++++++++++-------
+ 1 file changed, 21 insertions(+), 9 deletions(-)
+
+diff --git a/drivers/net/ethernet/airoha/airoha_eth.c b/drivers/net/ethernet/airoha/airoha_eth.c
+index c84f87a88..7d6f8d24d 100644
+--- a/drivers/net/ethernet/airoha/airoha_eth.c
++++ b/drivers/net/ethernet/airoha/airoha_eth.c
+@@ -3259,16 +3259,14 @@ static void airoha_qdma_init_qos(struct airoha_qdma *qdma)
+ 	airoha_qdma_clear(qdma, REG_TXWRR_MODE_CFG, TWRR_WEIGHT_SCALE_MASK);
+ 	airoha_qdma_set(qdma, REG_TXWRR_MODE_CFG, TWRR_WEIGHT_BASE_MASK);
+ 
+-	/* The EN7523 SDK enables PSE buffer estimation only on QDMA WAN.
+-	 * QDMA1 is the WAN instance in this driver. Later SoCs explicitly
+-	 * keep this estimator disabled, as does EN7523 QDMA LAN.
++	/* The PSE buffer estimator is only meaningful once the GPON buffer
++	 * thresholds in REG_PSE_BUF_USAGE_CFG1 have been programmed, which
++	 * airoha_xpon_set_mode() does for GPON alone. Enabling it here would
++	 * leave it running against unprogrammed thresholds on every other
++	 * uplink, so it is turned on from that path instead.
+ 	 */
+-	if (airoha_is(eth, airoha_en7523) && id == 1)
+-		airoha_qdma_set(qdma, REG_PSE_BUF_USAGE_CFG,
+-				PSE_BUF_ESTIMATE_EN_MASK);
+-	else
+-		airoha_qdma_clear(qdma, REG_PSE_BUF_USAGE_CFG,
+-				  PSE_BUF_ESTIMATE_EN_MASK);
++	airoha_qdma_clear(qdma, REG_PSE_BUF_USAGE_CFG,
++			  PSE_BUF_ESTIMATE_EN_MASK);
+ 
+ 	meter_cfg = EGRESS_RATE_METER_EN_MASK |
+ 		    EGRESS_RATE_METER_EQ_RATE_EN_MASK;
+@@ -5085,6 +5083,20 @@ static int airoha_xpon_set_mode(struct net_device *netdev,
+ 		airoha_eth_update_gpon_pse_buf(dev, 1);
+ 	}
+ 
++	/* The SDK enables PSE buffer estimation as part of the GPON path, and
++	 * it depends on the thresholds programmed just above. Keep the two
++	 * together: with the estimator on and the thresholds unset, QDMA1
++	 * eventually stops releasing frames towards GDM2 and transmit stalls
++	 * permanently, with no completion, no drop and no error reported.
++	 */
++	if (airoha_is(dev->eth, airoha_en7523) &&
++	    mode == AIROHA_XPON_MODE_GPON)
++		airoha_qdma_set(&dev->eth->qdma[1], REG_PSE_BUF_USAGE_CFG,
++				PSE_BUF_ESTIMATE_EN_MASK);
++	else
++		airoha_qdma_clear(&dev->eth->qdma[1], REG_PSE_BUF_USAGE_CFG,
++				  PSE_BUF_ESTIMATE_EN_MASK);
++
+ 	/* A mode switch starts from a quiescent GDM2/CDM2 datapath. */
+ 	airoha_fe_clear(dev->eth, REG_GDM_TXCHN_EN(AIROHA_GDM2_IDX), ~0U);
+ 	airoha_fe_clear(dev->eth, REG_GDM_RXCHN_EN(AIROHA_GDM2_IDX), ~0U);
+-- 
+2.55.0
+

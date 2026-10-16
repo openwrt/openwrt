@@ -1,0 +1,2179 @@
+From 9eb0f26b860ed3da62616a00c0812e83eaf79608 Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Wed, 26 Aug 2026 21:27:18 -0300
+Subject: [PATCH] airoha: refactor scu map and rename en75xx to econet
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+
+diff --git a/arch/arm/mach-airoha/an7581/scu-regmap.c b/arch/arm/mach-airoha/an7581/scu-regmap.c
+index 7beeaecccc1..664c07d66a3 100644
+--- a/arch/arm/mach-airoha/an7581/scu-regmap.c
++++ b/arch/arm/mach-airoha/an7581/scu-regmap.c
+@@ -5,7 +5,7 @@
+ 
+ #include <syscon.h>
+ #include <linux/err.h>
+-#include <asm/arch/scu-regmap.h>
++#include <soc/airoha/scu-regmap.h>
+ 
+ struct regmap *airoha_get_scu_regmap(void)
+ {
+diff --git a/arch/arm/mach-airoha/an7583/scu-regmap.c b/arch/arm/mach-airoha/an7583/scu-regmap.c
+index 96f3564eec0..28269931beb 100644
+--- a/arch/arm/mach-airoha/an7583/scu-regmap.c
++++ b/arch/arm/mach-airoha/an7583/scu-regmap.c
+@@ -5,7 +5,7 @@
+ 
+ #include <syscon.h>
+ #include <linux/err.h>
+-#include <asm/arch/scu-regmap.h>
++#include <soc/airoha/scu-regmap.h>
+ 
+ struct regmap *airoha_get_scu_regmap(void)
+ {
+diff --git a/arch/arm/mach-airoha/en7523/scu-regmap.c b/arch/arm/mach-airoha/en7523/scu-regmap.c
+index 1e201cb060c..b95cde279f7 100644
+--- a/arch/arm/mach-airoha/en7523/scu-regmap.c
++++ b/arch/arm/mach-airoha/en7523/scu-regmap.c
+@@ -5,7 +5,7 @@
+ 
+ #include <dm/ofnode.h>
+ #include <linux/err.h>
+-#include <asm/arch/scu-regmap.h>
++#include <soc/airoha/scu-regmap.h>
+ 
+ static struct regmap *airoha_scu_node_regmap_by_index(unsigned int index)
+ {
+diff --git a/arch/mips/Kconfig b/arch/mips/Kconfig
+index 5cccf897591..452d9db4d16 100644
+--- a/arch/mips/Kconfig
++++ b/arch/mips/Kconfig
+@@ -63,12 +63,12 @@ config ARCH_BMIPS
+ 	select SYSRESET
+ 	imply CMD_DM
+ 
+-config ARCH_EN75XX
+-	bool "Support EcoNet/Airoha EN75xx MIPS platforms"
++config ARCH_ECONET
++	bool "Support Airoha MIPS platforms"
+ 	select HAS_FIXED_TIMER_FREQUENCY
+ 	select DM
+ 	select DM_SERIAL
+-	select EN75XX_SERIAL
++	select ECONET_SERIAL
+ 	select OF_CONTROL
+ 	select ROM_EXCEPTION_VECTORS
+ 	select SUPPORT_BIG_ENDIAN
+@@ -84,7 +84,7 @@ config ARCH_EN75XX
+ 	select MIPS_SKIP_CP0_COUNT_CLEAR if BOARD_EN7528_TPLINK_XC220_G3V
+ 	select MIPS_SKIP_CP0_COUNT_CLEAR if BOARD_EN7528_REFERENCE
+ 	help
+-	  Support EcoNet/Airoha EN75xx MIPS platforms. EN7512/EN7521 are
++	  Support Airoha MIPS platforms. EN7512/EN7521 are
+ 	  big-endian MIPS34K devices, while EN7528 is a little-endian MIPS1004Kc
+ 	  device. The initial EN7528 target is intended to be chainloaded after
+ 	  the vendor firmware has trained DDR.
+@@ -227,7 +227,7 @@ source "arch/mips/mach-mscc/Kconfig"
+ source "arch/mips/mach-bmips/Kconfig"
+ source "arch/mips/mach-jz47xx/Kconfig"
+ source "arch/mips/mach-pic32/Kconfig"
+-source "arch/mips/mach-en75xx/Kconfig"
++source "arch/mips/mach-econet/Kconfig"
+ source "arch/mips/mach-mtmips/Kconfig"
+ source "arch/mips/mach-octeon/Kconfig"
+ 
+diff --git a/arch/mips/Makefile b/arch/mips/Makefile
+index 2986263bfae..7fc68a3280b 100644
+--- a/arch/mips/Makefile
++++ b/arch/mips/Makefile
+@@ -9,7 +9,7 @@ endif
+ 
+ ifeq ($(CONFIG_TPL_BUILD),y)
+ head-$(CONFIG_SOC_MT7621) := arch/mips/mach-mtmips/mt7621/tpl/start.o
+-head-$(CONFIG_ARCH_EN75XX) := arch/mips/mach-en75xx/tpl/start.o
++head-$(CONFIG_ARCH_ECONET) := arch/mips/mach-econet/tpl/start.o
+ endif
+ 
+ libs-y += arch/mips/cpu/
+@@ -17,7 +17,7 @@ libs-y += arch/mips/lib/
+ 
+ machine-$(CONFIG_ARCH_ATH79) += ath79
+ machine-$(CONFIG_ARCH_BMIPS) += bmips
+-machine-$(CONFIG_ARCH_EN75XX) += en75xx
++machine-$(CONFIG_ARCH_ECONET) += econet
+ machine-$(CONFIG_ARCH_JZ47XX) += jz47xx
+ machine-$(CONFIG_MACH_PIC32) += pic32
+ machine-$(CONFIG_ARCH_MTMIPS) += mtmips
+diff --git a/arch/mips/dts/Makefile b/arch/mips/dts/Makefile
+index 65737c03cb9..61840c2dc17 100644
+--- a/arch/mips/dts/Makefile
++++ b/arch/mips/dts/Makefile
+@@ -6,7 +6,7 @@ dtb-$(CONFIG_TARGET_AP152) += ap152.dtb
+ dtb-$(CONFIG_TARGET_MALTA) += mti,malta.dtb
+ dtb-$(CONFIG_TARGET_PIC32MZDASK) += pic32mzda_sk.dtb
+ dtb-$(CONFIG_TARGET_XILFPGA) += nexys4ddr.dtb
+-dtb-$(CONFIG_BOARD_EN7512_REFERENCE) += econet,en7512-reference.dtb
++dtb-$(CONFIG_BOARD_EN7512_REFERENCE) += econet,en751221-reference.dtb
+ dtb-$(CONFIG_BOARD_EN7528_TPLINK_XC220_G3V) += econet,en7528-tplink-xc220-g3v.dtb
+ dtb-$(CONFIG_BOARD_EN7528_REFERENCE) += econet,en7528-reference.dtb
+ dtb-$(CONFIG_BOARD_BROADCOM_BCM968380GERG) += brcm,bcm968380gerg.dtb
+diff --git a/arch/mips/dts/econet,en7512-reference.dts b/arch/mips/dts/econet,en7512-reference.dts
+deleted file mode 100644
+index b8a3aba58f6..00000000000
+--- a/arch/mips/dts/econet,en7512-reference.dts
++++ /dev/null
+@@ -1,27 +0,0 @@
+-// SPDX-License-Identifier: GPL-2.0+
+-/dts-v1/;
+-
+-#include "econet,en7512.dtsi"
+-
+-/ {
+-	model = "EcoNet EN7512/EN7521 reference board";
+-	compatible = "econet,en7512-reference", "econet,en751221",
+-		     "econet,en7512";
+-
+-	aliases {
+-		serial0 = &uart0;
+-		ethernet0 = &gmac0;
+-	};
+-
+-	chosen {
+-		stdout-path = "serial0:115200n8";
+-	};
+-};
+-
+-&uart0 {
+-	status = "okay";
+-};
+-
+-&sfc {
+-	status = "okay";
+-};
+diff --git a/arch/mips/dts/econet,en7512.dtsi b/arch/mips/dts/econet,en7512.dtsi
+deleted file mode 100644
+index 0f13159df69..00000000000
+--- a/arch/mips/dts/econet,en7512.dtsi
++++ /dev/null
+@@ -1,88 +0,0 @@
+-// SPDX-License-Identifier: GPL-2.0+
+-
+-/ {
+-	#address-cells = <1>;
+-	#size-cells = <1>;
+-
+-	cpus {
+-		#address-cells = <1>;
+-		#size-cells = <0>;
+-
+-		cpu@0 {
+-			compatible = "mips,mips34Kc";
+-			device_type = "cpu";
+-			reg = <0>;
+-		};
+-	};
+-
+-	memory@0 {
+-		device_type = "memory";
+-		reg = <0x00000000 0x08000000>;
+-	};
+-
+-	soc {
+-		compatible = "simple-bus";
+-		#address-cells = <1>;
+-		#size-cells = <1>;
+-		ranges;
+-
+-		syscon: syscon@1fb00000 {
+-			compatible = "econet,en7512-syscon", "syscon";
+-			reg = <0x1fb00000 0x1000>;
+-		};
+-
+-		sfc: spi@1fa10000 {
+-			compatible = "airoha,en7523-spi";
+-			reg = <0x1fa10000 0x140>;
+-			#address-cells = <1>;
+-			#size-cells = <0>;
+-			status = "disabled";
+-
+-			spi_nand: nand@0 {
+-				compatible = "spi-nand";
+-				reg = <0>;
+-				spi-max-frequency = <20000000>;
+-				spi-tx-bus-width = <1>;
+-				spi-rx-bus-width = <2>;
+-			};
+-		};
+-
+-		sram@1fa30000 {
+-			compatible = "mmio-sram";
+-			reg = <0x1fa30000 0xc000>;
+-		};
+-
+-		dramc: memory-controller@1fb20000 {
+-			compatible = "econet,en7512-dramc";
+-			reg = <0x1fb20000 0x1000>;
+-		};
+-
+-		ethernet: ethernet@1fb50000 {
+-			compatible = "econet,en751221-eth";
+-			reg = <0x1fb50000 0x4000>,
+-			      <0x1fb54000 0x1000>;
+-			reg-names = "fe", "qdma0";
+-			#address-cells = <1>;
+-			#size-cells = <0>;
+-
+-			gmac0: mac@0 {
+-				compatible = "econet,eth-mac";
+-				reg = <0>;
+-				phy-mode = "trgmii";
+-			};
+-		};
+-
+-		switch0: switch@1fb58000 {
+-			compatible = "mediatek,mt7530";
+-			reg = <0x1fb58000 0x8000>;
+-		};
+-
+-		uart0: serial@1fbf0000 {
+-			compatible = "econet,en7512-uart";
+-			reg = <0x1fbf0000 0x30>;
+-			clock-frequency = <20000000>;
+-			current-speed = <115200>;
+-			status = "disabled";
+-		};
+-	};
+-};
+diff --git a/arch/mips/dts/econet,en7512-reference-u-boot.dtsi b/arch/mips/dts/econet,en751221-reference-u-boot.dtsi
+similarity index 94%
+rename from arch/mips/dts/econet,en7512-reference-u-boot.dtsi
+rename to arch/mips/dts/econet,en751221-reference-u-boot.dtsi
+index 36d97c26cdb..af019d5c0a1 100644
+--- a/arch/mips/dts/econet,en7512-reference-u-boot.dtsi
++++ b/arch/mips/dts/econet,en751221-reference-u-boot.dtsi
+@@ -37,7 +37,7 @@
+ 
+ 		ddr-blob {
+ 			type = "blob-ext";
+-			filename = "arch/mips/mach-en75xx/en7512_ddr.bin";
++			filename = "arch/mips/mach-econet/en7512_ddr.bin";
+ 			offset = <0x00008000>;
+ 			size = <0x00004f70>;
+ 		};
+diff --git a/arch/mips/dts/econet,en751221-reference.dts b/arch/mips/dts/econet,en751221-reference.dts
+new file mode 100644
+index 00000000000..49b0f492237
+--- /dev/null
++++ b/arch/mips/dts/econet,en751221-reference.dts
+@@ -0,0 +1,21 @@
++// SPDX-License-Identifier: GPL-2.0+
++/dts-v1/;
++
++#include "econet,en751221.dtsi"
++
++/ {
++	model = "Airoha EN751221 reference board";
++	compatible = "econet,en751221-reference", "econet,en751221";
++
++	chosen {
++		stdout-path = "serial0:115200n8";
++	};
++};
++
++&uart0 {
++	status = "okay";
++};
++
++&spi0 {
++	status = "okay";
++};
+diff --git a/arch/mips/dts/econet,en751221.dtsi b/arch/mips/dts/econet,en751221.dtsi
+new file mode 100644
+index 00000000000..bbcb4e41384
+--- /dev/null
++++ b/arch/mips/dts/econet,en751221.dtsi
+@@ -0,0 +1,150 @@
++// SPDX-License-Identifier: GPL-2.0+
++
++#include <dt-bindings/reset/econet,en751221-scu.h>
++
++/ {
++	compatible = "econet,en751221", "airoha,en751221";
++	#address-cells = <1>;
++	#size-cells = <1>;
++
++	cpus {
++		#address-cells = <1>;
++		#size-cells = <0>;
++
++		cpu@0 {
++			compatible = "mips,mips34Kc";
++			device_type = "cpu";
++			reg = <0>;
++		};
++	};
++
++	aliases {
++		serial0 = &uart0;
++		ethernet0 = &gdm1;
++	};
++
++	memory@0 {
++		device_type = "memory";
++		reg = <0x00000000 0x08000000>;
++	};
++
++	soc {
++		compatible = "simple-bus";
++		#address-cells = <1>;
++		#size-cells = <1>;
++		ranges;
++
++		chip_scu: syscon@1fa20000 {
++			compatible = "airoha,chip-scu", "airoha,en751221-chip-scu", "syscon";
++			reg = <0x1fa20000 0x400>;
++		};
++
++		scuclk: system-controller@1fb00000 {
++			compatible = "airoha,en751221-scu", "syscon";
++			reg = <0x1fb00000 0x1000>;
++			airoha,chip-scu = <&chip_scu>;
++
++			#clock-cells = <1>;
++			#reset-cells = <1>;
++		};
++
++		system-controller@1fbf0200 {
++			compatible = "syscon", "simple-mfd";
++			reg = <0x1fbf0200 0xc0>;
++
++			pinctrl: pinctrl {
++				compatible = "airoha,en751221-pinctrl", "econet,en751221-pinctrl";
++				airoha,chip-scu = <&chip_scu>;
++
++			gpio-controller;
++				#gpio-cells = <2>;
++				gpio-ranges = <&pinctrl 0 13 29>;
++
++				interrupt-controller;
++				#interrupt-cells = <2>;
++
++				i2c_pins: i2c-pins {
++					mux {
++						function = "pon_i2c";
++						groups = "pon_i2c";
++					};
++				};
++
++				pon_pinctrl: pon {
++					mux {
++						function = "pon";
++						groups = "pon";
++					};
++				};
++			};
++		};
++
++		uart0: serial@1fbf0000 {
++			compatible = "econet,en7512-uart";
++			reg = <0x1fbf0000 0x30>;
++			clock-frequency = <20000000>;
++			current-speed = <115200>;
++			status = "disabled";
++		};
++
++		spi0: spi@1fa10000 {
++			compatible = "airoha,en7523-spi";
++			reg = <0x1fa10000 0x140>;
++			#address-cells = <1>;
++			#size-cells = <0>;
++			status = "disabled";
++		};
++
++		eth: ethernet@1fb50000 {
++			compatible = "econet,en751221-eth";
++			status = "disabled";
++			reg = <0x1fb50000 0x2600>,
++			      <0x1fb54000 0x1000>,
++			      <0x1fb55000 0x1000>,
++			      <0x1fbf9000 0x1000>;
++			reg-names = "fe", "qdma0", "qdma1", "gdmp";
++
++			resets = <&scuclk EN751221_FE_RST>,
++			         <&scuclk EN751221_FE_QDMA1_RST>,
++			         <&scuclk EN751221_FE_QDMA2_RST>,
++			         <&scuclk EN751221_GDMA_RST>,
++			         <&scuclk EN751221_FE_UNZIP_RST>,
++			         <&scuclk EN751221_GDMP_RST>;
++			reset-names = "fe", "pdma", "qdma",
++			              "gdma", "fe-unzip", "gdmp";
++
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			gdm1: ethernet@1 {
++				compatible = "econet,eth-mac";
++				reg = <1>;
++				phy-mode = "internal";
++				status = "disabled";
++
++				fixed-link {
++					speed = <1000>;
++					full-duplex;
++					pause;
++				};
++			};
++		};
++
++		switch0: switch@1fb58000 {
++			compatible = "econet,en751221-switch";
++			reg = <0x1fb58000 0x8000>;
++			resets = <&scuclk EN751221_GSW_RST>;
++
++			status = "disabled";
++
++			#address-cells = <1>;
++			#size-cells = <0>;
++			dsa,member = <0 0>;
++
++			mdio: mdio {
++				#address-cells = <1>;
++				#size-cells = <0>;
++				};
++			};
++		};
++	};
+diff --git a/arch/mips/dts/econet,en7528-reference.dts b/arch/mips/dts/econet,en7528-reference.dts
+index 9843626eabe..938710d85ee 100644
+--- a/arch/mips/dts/econet,en7528-reference.dts
++++ b/arch/mips/dts/econet,en7528-reference.dts
+@@ -21,12 +21,6 @@
+ 		reg = <0x00000000 0x10000000>;
+ 	};
+ 
+-	aliases {
+-		serial0 = &uart1;
+-		ethernet0 = &gdm1;
+-		spi0 = &spi;
+-	};
+-
+ 	chosen {
+ 		stdout-path = "serial0:115200n8";
+ 	};
+@@ -36,7 +30,7 @@
+ 	status = "okay";
+ };
+ 
+-&spi {
++&spi0 {
+ 	status = "okay";
+ 
+ 	flash@0 {
+diff --git a/arch/mips/dts/econet,en7528-tplink-xc220-g3v.dts b/arch/mips/dts/econet,en7528-tplink-xc220-g3v.dts
+index 709dfe5b239..5fd7d82f7c7 100644
+--- a/arch/mips/dts/econet,en7528-tplink-xc220-g3v.dts
++++ b/arch/mips/dts/econet,en7528-tplink-xc220-g3v.dts
+@@ -5,19 +5,13 @@
+ 
+ / {
+ 	model = "TP-Link XC220-G3V";
+-	compatible = "tplink,xc220-g3v", "econet,en7528";
++	compatible = "tplink,xc220-g3v", "econet,en7528", "airoha,en7528";
+ 
+ 	memory@0 {
+ 		device_type = "memory";
+ 		reg = <0x00000000 0x10000000>;
+ 	};
+ 
+-	aliases {
+-		serial0 = &uart1;
+-		ethernet0 = &gdm1;
+-		spi0 = &spi;
+-	};
+-
+ 	chosen {
+ 		stdout-path = "serial0:115200n8";
+ 	};
+@@ -27,7 +21,7 @@
+ 	status = "okay";
+ };
+ 
+-&spi {
++&spi0 {
+ 	status = "okay";
+ 
+ 	flash@0 {
+diff --git a/arch/mips/dts/econet,en7528.dtsi b/arch/mips/dts/econet,en7528.dtsi
+index b0098552595..fc1bec23578 100644
+--- a/arch/mips/dts/econet,en7528.dtsi
++++ b/arch/mips/dts/econet,en7528.dtsi
+@@ -3,7 +3,7 @@
+ #include <dt-bindings/reset/airoha,en7523-reset.h>
+ 
+ / {
+-	compatible = "econet,en7528";
++	compatible = "econet,en7528", "airoha,en7528";
+ 	#address-cells = <1>;
+ 	#size-cells = <1>;
+ 
+@@ -18,21 +18,42 @@
+ 		};
+ 	};
+ 
++	aliases {
++		serial0 = &uart1;
++		ethernet0 = &gdm1;
++	};
++
+ 	soc {
+ 		compatible = "simple-bus";
+ 		#address-cells = <1>;
+ 		#size-cells = <1>;
+ 		ranges;
+ 
+-		scuclk: system-controller@1fa20000 {
+-			compatible = "airoha,en7528-scu";
+-			reg = <0x1fa20000 0x400>,
+-			      <0x1fb00000 0x1000>;
++		chip_scu: syscon@1fa20000 {
++			compatible = "airoha,scuclk", "airoha,en7528-chip-scu", "syscon";
++			reg = <0x1fa20000 0x400>;
++		};
++
++		scuclk: system-controller@1fb00000 {
++			compatible = "airoha,en7528-scu", "syscon";
++			reg = <0x1fb00000 0x1000>;
++
++			airoha,chip-scu = <&chip_scu>;
+ 			#clock-cells = <1>;
+ 			#reset-cells = <1>;
+ 		};
+ 
+-		spi: spi@1fa10000 {
++		uart1: serial@1fbf0000 {
++			compatible = "ns16550";
++			reg = <0x1fbf0000 0x30>;
++			reg-io-width = <4>;
++			reg-shift = <2>;
++			clock-frequency = <1843200>;
++			current-speed = <115200>;
++			status = "disabled";
++		};
++
++		spi0: spi@1fa10000 {
+ 			compatible = "airoha,en7523-spi";
+ 			reg = <0x1fa10000 0x140>,
+ 			      <0x1fa11000 0x600>;
+@@ -60,7 +81,7 @@
+ 				compatible = "econet,eth-mac";
+ 				reg = <1>;
+ 				phy-mode = "internal";
+-	
++
+ 				fixed-link {
+ 					speed = <1000>;
+ 					full-duplex;
+@@ -70,19 +91,9 @@
+ 		};
+ 
+ 		switch: switch@1fb58000 {
+-			compatible = "airoha,en7528-switch", "airoha,en7523-switch";
++			compatible = "airoha,en7528-switch";
+ 			reg = <0x1fb58000 0x8000>;
+ 			status = "disabled";
+ 		};
+-
+-		uart1: serial@1fbf0000 {
+-			compatible = "ns16550";
+-			reg = <0x1fbf0000 0x30>;
+-			reg-io-width = <4>;
+-			reg-shift = <2>;
+-			clock-frequency = <1843200>;
+-			current-speed = <115200>;
+-			status = "disabled";
+-		};
+ 	};
+ };
+diff --git a/arch/mips/mach-en75xx/Kconfig b/arch/mips/mach-econet/Kconfig
+similarity index 66%
+rename from arch/mips/mach-en75xx/Kconfig
+rename to arch/mips/mach-econet/Kconfig
+index 1c122d0b82b..06b305f0611 100644
+--- a/arch/mips/mach-en75xx/Kconfig
++++ b/arch/mips/mach-econet/Kconfig
+@@ -1,36 +1,32 @@
+-menu "EcoNet/Airoha EN75xx platforms"
+-	depends on ARCH_EN75XX
++menu "Airoha MIPS platforms"
++	depends on ARCH_ECONET
++
++config TARGET_EN751221
++	bool "Airoha EN751221 SoC"
++	select SYSCON
++
++config TARGET_EN7528
++	bool "Airoha EN7528 SoC"
++	select SYSCON
+ 
+ config SYS_VENDOR
+ 	default "econet"
+ 
+ config SYS_SOC
+-	default "en7528" if BOARD_EN7528_TPLINK_XC220_G3V || BOARD_EN7528_REFERENCE
+-	default "en7512"
++	default "en751221" if TARGET_EN751221
++	default "en7528" if TARGET_EN7528
+ 
+ config SYS_BOARD
+-	default "en7528" if BOARD_EN7528_TPLINK_XC220_G3V || BOARD_EN7528_REFERENCE
+-	default "en7512"
++	default "en7512" if TARGET_EN751221
++	default "en7528" if TARGET_EN7528
+ 
+ config SYS_CONFIG_NAME
+-	default "en7528" if BOARD_EN7528_TPLINK_XC220_G3V || BOARD_EN7528_REFERENCE
+-	default "en7512"
++	default "en7512" if TARGET_EN751221
++	default "en7528" if TARGET_EN7528
+ 
+ config SYS_MALLOC_F_LEN
+ 	default 0x2000
+ 
+-config EN75XX_SCU
+-	bool "EcoNet/Airoha EN75xx SCU clock/reset controller"
+-	default y if BOARD_EN7528_TPLINK_XC220_G3V || BOARD_EN7528_REFERENCE
+-	select CLK
+-	select DM_RESET
+-	select REGMAP
+-	select RESET_AIROHA
+-	help
+-	  Enable the EN75xx System Control Unit regmap helpers together with
+-	  the Airoha clock and reset-controller drivers.  EN7528 shares the
+-	  EN7523 SCU reset layout.
+-
+ config SYS_DCACHE_SIZE
+ 	default 32768
+ 
+@@ -60,10 +56,11 @@ config TPL_MAX_SIZE
+ 
+ 
+ config BUILD_TARGET
+-	default "u-boot.img" if BOARD_EN7512_REFERENCE
++	default "u-boot.img" if TARGET_EN751221
+ 
+ config BOARD_EN7512_REFERENCE
+ 	bool "EN7512/EN7521 reference board"
++	select TARGET_EN751221
+ 	select BINMAN
+ 	select SPL_LOADER_SUPPORT if SPL
+ 	help
+@@ -73,6 +70,7 @@ config BOARD_EN7512_REFERENCE
+ 
+ config BOARD_EN7528_TPLINK_XC220_G3V
+ 	bool "TP-Link XC220-G3V (EN7528, chainloaded)"
++	select TARGET_EN7528
+ 	help
+ 	  Build U-Boot proper for the TP-Link XC220-G3V. This target assumes a
+ 	  previous boot stage has initialized DDR and the integrated switch PHYs.
+@@ -81,6 +79,7 @@ config BOARD_EN7528_TPLINK_XC220_G3V
+ 
+ config BOARD_EN7528_REFERENCE
+ 	bool "EcoNet EN7528 reference board (DASAN H660GM-A)"
++	select TARGET_EN7528
+ 	help
+ 	  Build U-Boot proper for the EcoNet EN7528 reference board, as found
+ 	  on the DASAN H660GM-A.  Like the XC220-G3V it is chainloaded after a
+diff --git a/arch/mips/mach-en75xx/Makefile b/arch/mips/mach-econet/Makefile
+similarity index 70%
+rename from arch/mips/mach-en75xx/Makefile
+rename to arch/mips/mach-econet/Makefile
+index 3622f43d772..e4fc8b7fb6f 100644
+--- a/arch/mips/mach-en75xx/Makefile
++++ b/arch/mips/mach-econet/Makefile
+@@ -5,7 +5,8 @@ obj-y += early_sfc.o
+ obj-y += tpl/
+ else
+ obj-y += cpu.o
+-obj-$(CONFIG_EN75XX_SCU) += scu-regmap.o
++obj-$(CONFIG_TARGET_EN751221) += en751221/
++obj-$(CONFIG_TARGET_EN7528)   += en7528/
+ ifeq ($(CONFIG_SPL_BUILD),y)
+ obj-y += early_sfc.o
+ obj-y += spl/
+diff --git a/arch/mips/mach-en75xx/README.ddr-blob b/arch/mips/mach-econet/README.ddr-blob
+similarity index 100%
+rename from arch/mips/mach-en75xx/README.ddr-blob
+rename to arch/mips/mach-econet/README.ddr-blob
+diff --git a/arch/mips/mach-econet/cpu.c b/arch/mips/mach-econet/cpu.c
+new file mode 100644
+index 00000000000..cec59403251
+--- /dev/null
++++ b/arch/mips/mach-econet/cpu.c
+@@ -0,0 +1 @@
++// SPDX-License-Identifier: GPL-2.0
+diff --git a/arch/mips/mach-en75xx/early_sfc.c b/arch/mips/mach-econet/early_sfc.c
+similarity index 99%
+rename from arch/mips/mach-en75xx/early_sfc.c
+rename to arch/mips/mach-econet/early_sfc.c
+index c267e971544..a1b0f89e960 100644
+--- a/arch/mips/mach-en75xx/early_sfc.c
++++ b/arch/mips/mach-econet/early_sfc.c
+@@ -9,7 +9,7 @@
+ #include <linux/kernel.h>
+ #include <linux/types.h>
+ #include <asm/io.h>
+-#include <mach/en7512.h>
++#include <mach/en751221.h>
+ 
+ #define SF_READ_IDLE_EN		0x004
+ #define SF_MTX_MODE_TOG		0x014
+diff --git a/arch/mips/mach-econet/en751221/Makefile b/arch/mips/mach-econet/en751221/Makefile
+new file mode 100644
+index 00000000000..60df8222c6b
+--- /dev/null
++++ b/arch/mips/mach-econet/en751221/Makefile
+@@ -0,0 +1,4 @@
++# SPDX-License-Identifier:	GPL-2.0
++
++obj-y += init.o
++obj-$(CONFIG_$(PHASE_)SYSCON) += scu-regmap.o
+diff --git a/arch/mips/mach-en75xx/cpu.c b/arch/mips/mach-econet/en751221/init.c
+similarity index 70%
+rename from arch/mips/mach-en75xx/cpu.c
+rename to arch/mips/mach-econet/en751221/init.c
+index 7c061a9ccde..53d19b3ad8e 100644
+--- a/arch/mips/mach-en75xx/cpu.c
++++ b/arch/mips/mach-econet/en751221/init.c
+@@ -4,16 +4,12 @@
+ #include <asm/global_data.h>
+ #include <asm/io.h>
+ #include <linux/sizes.h>
+-#include <mach/en7512.h>
++#include <mach/en751221.h>
+ 
+ DECLARE_GLOBAL_DATA_PTR;
+ 
+ int dram_init(void)
+ {
+-#ifdef CONFIG_BOARD_EN7528_TPLINK_XC220_G3V
+-	/* DDR is trained by the vendor first stage before this image is entered. */
+-	gd->ram_size = SZ_256M;
+-#else
+ 	u32 val = __raw_readl((void __iomem *)EN7512_REG_SAVE_INFO);
+ 	u32 size_mb = val & EN7512_SAVE_DRAM_MASK;
+ 
+@@ -21,33 +17,25 @@ int dram_init(void)
+ 		size_mb = 128;
+ 
+ 	gd->ram_size = (phys_size_t)size_mb << 20;
+-#endif
+ 	return 0;
+ }
+ 
+ int print_cpuinfo(void)
+ {
+-#ifdef CONFIG_BOARD_EN7528_TPLINK_XC220_G3V
+-	printf("CPU:   EcoNet/Airoha EN7528 MIPS1004Kc\n");
+-#else
+ 	u32 val = __raw_readl((void __iomem *)EN7512_REG_SAVE_INFO);
+ 	u32 clk = (val & EN7512_SAVE_CLK_MASK) >> EN7512_SAVE_CLK_SHIFT;
+ 
+-	printf("CPU:   EcoNet/Airoha EN7512/EN7521 MIPS34K\n");
++	printf("CPU:   Airoha EN7512/EN7521 MIPS34K\n");
+ 	if (clk)
+ 		printf("Clock: %u MHz\n", clk);
+ 	else
+ 		printf("Clock: unknown\n");
+-#endif
+ 
+ 	return 0;
+ }
+ 
+ ulong notrace get_tbclk(void)
+ {
+-#ifdef CONFIG_BOARD_EN7528_TPLINK_XC220_G3V
+-	return CONFIG_SYS_MIPS_TIMER_FREQ;
+-#else
+ 	u32 val = __raw_readl((void __iomem *)EN7512_REG_SAVE_INFO);
+ 	u32 clk = (val & EN7512_SAVE_CLK_MASK) >> EN7512_SAVE_CLK_SHIFT;
+ 
+@@ -56,7 +44,6 @@ ulong notrace get_tbclk(void)
+ 		return (ulong)clk * 500000;
+ 
+ 	return CONFIG_SYS_MIPS_TIMER_FREQ;
+-#endif
+ }
+ 
+ void _machine_restart(void)
+diff --git a/arch/mips/mach-econet/en751221/scu-regmap.c b/arch/mips/mach-econet/en751221/scu-regmap.c
+new file mode 100644
+index 00000000000..7806ce3cf20
+--- /dev/null
++++ b/arch/mips/mach-econet/en751221/scu-regmap.c
+@@ -0,0 +1,30 @@
++// SPDX-License-Identifier: GPL-2.0+
++/*
++ * Author: Mikhail Kshevetskiy <mikhail.kshevetskiy@iopsys.eu>
++ */
++
++#include <syscon.h>
++#include <linux/err.h>
++#include <soc/airoha/scu-regmap.h>
++
++struct regmap *airoha_get_scu_regmap(void)
++{
++	ofnode node;
++
++	node = ofnode_by_compatible(ofnode_null(), "airoha,en751221-scu");
++	if (!ofnode_valid(node))
++		return ERR_PTR(-EINVAL);
++
++	return syscon_node_to_regmap(node);
++}
++
++struct regmap *airoha_get_chip_scu_regmap(void)
++{
++	ofnode node;
++
++	node = ofnode_by_compatible(ofnode_null(), "airoha,en751221-chip-scu");
++	if (!ofnode_valid(node))
++		return ERR_PTR(-EINVAL);
++
++	return syscon_node_to_regmap(node);
++}
+diff --git a/arch/mips/mach-econet/en7528/Makefile b/arch/mips/mach-econet/en7528/Makefile
+new file mode 100644
+index 00000000000..60df8222c6b
+--- /dev/null
++++ b/arch/mips/mach-econet/en7528/Makefile
+@@ -0,0 +1,4 @@
++# SPDX-License-Identifier:	GPL-2.0
++
++obj-y += init.o
++obj-$(CONFIG_$(PHASE_)SYSCON) += scu-regmap.o
+diff --git a/arch/mips/mach-econet/en7528/init.c b/arch/mips/mach-econet/en7528/init.c
+new file mode 100644
+index 00000000000..ef64ba4162a
+--- /dev/null
++++ b/arch/mips/mach-econet/en7528/init.c
+@@ -0,0 +1,88 @@
++// SPDX-License-Identifier: GPL-2.0
++/*
++ * Author: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
++ * Author: Mikhail Kshevetskiy <mikhail.kshevetskiy@iopsys.eu>
++ */
++#include <fdt_support.h>
++#include <init.h>
++#include <sysreset.h>
++#include <asm/global_data.h>
++#include <asm/system.h>
++#include <linux/bitops.h>
++#include <linux/errno.h>
++#include <linux/io.h>
++#include <linux/sizes.h>
++
++DECLARE_GLOBAL_DATA_PTR;
++
++#define EN7528_RESET_CONTROL				0xbfb00040UL
++#define EN7528_SYS_GLOBAL_PARM				0xbfb00284UL
++#define EN7528_SYS_GLOBAL_DRAM_SIZE_MASK	GENMASK(31, 20)
++#define EN7528_SYS_GLOBAL_DRAM_SIZE_SHIFT	20
++
++int print_cpuinfo(void)
++{
++	printf("CPU:   Airoha EN7528\n");
++	return 0;
++}
++
++int dram_init(void)
++{
++	u32 value, size_mb;
++
++	/*
++	 * The vendor first stage stores the calibrated DRAM size in MiB in the
++	 * upper 12 bits of SYS_GLOBAL_PARM.  EN751221 uses the lower 12 bits of
++	 * the same register because its boot code is built big-endian, whereas
++	 * EN7528 is little-endian.
++	 */
++	value = readl((void __iomem *)EN7528_SYS_GLOBAL_PARM);
++	size_mb = (value & EN7528_SYS_GLOBAL_DRAM_SIZE_MASK) >>
++		  EN7528_SYS_GLOBAL_DRAM_SIZE_SHIFT;
++
++	debug("EN7528 DRAM: global-param=%08x size=%u MiB\n",
++	      value, size_mb);
++
++	if (size_mb < 32 || size_mb > 512) {
++		printf("Invalid EN7528 calibrated DRAM size: %u MiB\n",
++		       size_mb);
++		return -EINVAL;
++	}
++
++	gd->ram_size = (phys_size_t)size_mb * SZ_1M;
++
++	return 0;
++}
++
++int dram_init_banksize(void)
++{
++	int bank;
++
++	gd->bd->bi_dram[0].start = gd->ram_base;
++	gd->bd->bi_dram[0].size = gd->ram_size;
++
++	for (bank = 1; bank < CONFIG_NR_DRAM_BANKS; bank++) {
++		gd->bd->bi_dram[bank].start = 0;
++		gd->bd->bi_dram[bank].size = 0;
++	}
++
++	return 0;
++}
++
++#ifdef CONFIG_OF_SYSTEM_SETUP
++int ft_system_setup(void *blob, struct bd_info *bd)
++{
++	u64 start[1] = { bd->bi_dram[0].start };
++	u64 size[1] = { bd->bi_dram[0].size };
++
++	return fdt_fixup_memory_banks(blob, start, size, 1);
++}
++#endif
++
++void _machine_restart(void)
++{
++	writel(0x80000000, (void __iomem *)EN7528_RESET_CONTROL);
++	while (1) {
++		/* loop forever */
++	}
++}
+diff --git a/arch/mips/mach-econet/en7528/scu-regmap.c b/arch/mips/mach-econet/en7528/scu-regmap.c
+new file mode 100644
+index 00000000000..bd3c599411f
+--- /dev/null
++++ b/arch/mips/mach-econet/en7528/scu-regmap.c
+@@ -0,0 +1,30 @@
++// SPDX-License-Identifier: GPL-2.0+
++/*
++ * Author: Mikhail Kshevetskiy <mikhail.kshevetskiy@iopsys.eu>
++ */
++
++#include <syscon.h>
++#include <linux/err.h>
++#include <soc/airoha/scu-regmap.h>
++
++struct regmap *airoha_get_scu_regmap(void)
++{
++	ofnode node;
++
++	node = ofnode_by_compatible(ofnode_null(), "airoha,en7528-scu");
++	if (!ofnode_valid(node))
++		return ERR_PTR(-EINVAL);
++
++	return syscon_node_to_regmap(node);
++}
++
++struct regmap *airoha_get_chip_scu_regmap(void)
++{
++	ofnode node;
++
++	node = ofnode_by_compatible(ofnode_null(), "airoha,en7528-chip-scu");
++	if (!ofnode_valid(node))
++		return ERR_PTR(-EINVAL);
++
++	return syscon_node_to_regmap(node);
++}
+diff --git a/arch/mips/mach-en75xx/include/mach/en7512.h b/arch/mips/mach-econet/include/mach/en751221.h
+similarity index 100%
+rename from arch/mips/mach-en75xx/include/mach/en7512.h
+rename to arch/mips/mach-econet/include/mach/en751221.h
+diff --git a/arch/mips/mach-en75xx/spl/Makefile b/arch/mips/mach-econet/spl/Makefile
+similarity index 100%
+rename from arch/mips/mach-en75xx/spl/Makefile
+rename to arch/mips/mach-econet/spl/Makefile
+diff --git a/arch/mips/mach-en75xx/spl/spl.c b/arch/mips/mach-econet/spl/spl.c
+similarity index 97%
+rename from arch/mips/mach-en75xx/spl/spl.c
+rename to arch/mips/mach-econet/spl/spl.c
+index 6f3ca6967ed..09a6f6fafea 100644
+--- a/arch/mips/mach-en75xx/spl/spl.c
++++ b/arch/mips/mach-econet/spl/spl.c
+@@ -4,7 +4,7 @@
+ #include <init.h>
+ #include <spl.h>
+ #include <spl_load.h>
+-#include <mach/en7512.h>
++#include <mach/en751221.h>
+ 
+ void __noreturn board_init_f(ulong dummy)
+ {
+diff --git a/arch/mips/mach-en75xx/tpl/Makefile b/arch/mips/mach-econet/tpl/Makefile
+similarity index 100%
+rename from arch/mips/mach-en75xx/tpl/Makefile
+rename to arch/mips/mach-econet/tpl/Makefile
+diff --git a/arch/mips/mach-en75xx/tpl/start.S b/arch/mips/mach-econet/tpl/start.S
+similarity index 98%
+rename from arch/mips/mach-en75xx/tpl/start.S
+rename to arch/mips/mach-econet/tpl/start.S
+index 2c6dd0c57f8..ae7f4ed6cfa 100644
+--- a/arch/mips/mach-en75xx/tpl/start.S
++++ b/arch/mips/mach-econet/tpl/start.S
+@@ -2,7 +2,7 @@
+ #include <asm/asm.h>
+ #include <asm/regdef.h>
+ #include <asm/mipsregs.h>
+-#include <mach/en7512.h>
++#include <mach/en751221.h>
+ 
+ 	.set noreorder
+ 
+diff --git a/arch/mips/mach-en75xx/tpl/tpl.c b/arch/mips/mach-econet/tpl/tpl.c
+similarity index 98%
+rename from arch/mips/mach-en75xx/tpl/tpl.c
+rename to arch/mips/mach-econet/tpl/tpl.c
+index bf297b23831..451f3eae7f9 100644
+--- a/arch/mips/mach-en75xx/tpl/tpl.c
++++ b/arch/mips/mach-econet/tpl/tpl.c
+@@ -4,7 +4,7 @@
+ #include <linux/byteorder/generic.h>
+ #include <linux/types.h>
+ #include <asm/io.h>
+-#include <mach/en7512.h>
++#include <mach/en751221.h>
+ 
+ #define IH_MAGIC	0x27051956
+ #define IH_HDR_SIZE	64
+diff --git a/arch/mips/mach-en75xx/en7512_ddr.bin b/arch/mips/mach-en75xx/en7512_ddr.bin
+deleted file mode 100644
+index fc73ea7f065..00000000000
+Binary files a/arch/mips/mach-en75xx/en7512_ddr.bin and /dev/null differ
+diff --git a/arch/mips/mach-en75xx/include/mach/scu-regmap.h b/arch/mips/mach-en75xx/include/mach/scu-regmap.h
+deleted file mode 100644
+index 82d80d7995a..00000000000
+--- a/arch/mips/mach-en75xx/include/mach/scu-regmap.h
++++ /dev/null
+@@ -1,10 +0,0 @@
+-/* SPDX-License-Identifier: GPL-2.0+ */
+-#ifndef __EN75XX_AIROHA_SCU_REGMAP_H__
+-#define __EN75XX_AIROHA_SCU_REGMAP_H__
+-
+-#include <regmap.h>
+-
+-struct regmap *airoha_get_scu_regmap(void);
+-struct regmap *airoha_get_chip_scu_regmap(void);
+-
+-#endif
+diff --git a/arch/mips/mach-en75xx/scu-regmap.c b/arch/mips/mach-en75xx/scu-regmap.c
+deleted file mode 100644
+index 49c820ed075..00000000000
+--- a/arch/mips/mach-en75xx/scu-regmap.c
++++ /dev/null
+@@ -1,49 +0,0 @@
+-// SPDX-License-Identifier: GPL-2.0+
+-/*
+- * EcoNet/Airoha EN75xx SCU regmap helpers.
+- *
+- * EN7528 keeps the same split CHIP_SCU/SCU register layout used by EN7523:
+- *   reg[0] - CHIP_SCU at 0x1fa20000
+- *   reg[1] - SCU      at 0x1fb00000
+- */
+-
+-#include <dm/ofnode.h>
+-#include <linux/err.h>
+-#include <linux/kernel.h>
+-#include <mach/scu-regmap.h>
+-
+-static struct regmap *airoha_scu_node_regmap_by_index(unsigned int index)
+-{
+-	static const char * const compatibles[] = {
+-		"airoha,en7528-scu",
+-		"airoha,en7523-scu",
+-	};
+-	struct regmap *map;
+-	ofnode node = ofnode_null();
+-	int err, i;
+-
+-	for (i = 0; i < ARRAY_SIZE(compatibles); i++) {
+-		node = ofnode_by_compatible(ofnode_null(), compatibles[i]);
+-		if (ofnode_valid(node))
+-			break;
+-	}
+-
+-	if (!ofnode_valid(node))
+-		return ERR_PTR(-EINVAL);
+-
+-	err = regmap_init_mem_index(node, &map, index);
+-	if (err)
+-		return ERR_PTR(err);
+-
+-	return map;
+-}
+-
+-struct regmap *airoha_get_scu_regmap(void)
+-{
+-	return airoha_scu_node_regmap_by_index(1);
+-}
+-
+-struct regmap *airoha_get_chip_scu_regmap(void)
+-{
+-	return airoha_scu_node_regmap_by_index(0);
+-}
+diff --git a/board/econet/en7512/MAINTAINERS b/board/econet/en7512/MAINTAINERS
+index 6bed222a392..8e06d84ab43 100644
+--- a/board/econet/en7512/MAINTAINERS
++++ b/board/econet/en7512/MAINTAINERS
+@@ -1,8 +1,8 @@
+ EN7512 REFERENCE BOARD
+ S: Orphan
+-F: arch/mips/mach-en75xx/
++F: arch/mips/mach-econet/
+ F: board/econet/en7512/
+ F: configs/en7512_reference_defconfig
+-F: arch/mips/dts/econet,en7512-reference.dts
++F: arch/mips/dts/econet,en751221-reference.dts
+ F: doc/board/econet/
+ F: tools/en7512_image.py
+diff --git a/board/econet/en7528/MAINTAINERS b/board/econet/en7528/MAINTAINERS
+index e8e869f67e8..9f489e9d420 100644
+--- a/board/econet/en7528/MAINTAINERS
++++ b/board/econet/en7528/MAINTAINERS
+@@ -8,5 +8,3 @@ F: arch/mips/dts/econet,en7528-tplink-xc220-g3v.dts
+ F: include/configs/en7528.h
+ F: doc/board/econet/en7528.rst
+ F: tools/build-en7528-xc220-g3v.sh
+-F: arch/mips/mach-en75xx/scu-regmap.c
+-F: arch/mips/mach-en75xx/include/mach/scu-regmap.h
+diff --git a/configs/en7512_reference_defconfig b/configs/en7512_reference_defconfig
+index ef1465c4d99..d57a1ff281b 100644
+--- a/configs/en7512_reference_defconfig
++++ b/configs/en7512_reference_defconfig
+@@ -6,7 +6,7 @@ CONFIG_SPL_LIBGENERIC_SUPPORT=y
+ CONFIG_NR_DRAM_BANKS=1
+ CONFIG_ENV_SIZE=0x1000
+ CONFIG_DM_GPIO=y
+-CONFIG_DEFAULT_DEVICE_TREE="econet,en7512-reference"
++CONFIG_DEFAULT_DEVICE_TREE="econet,en751221-reference"
+ CONFIG_SPL_SYS_MALLOC_F_LEN=0x10000
+ CONFIG_SPL_SERIAL=y
+ CONFIG_TPL_SYS_MALLOC_F_LEN=0x1000
+@@ -14,7 +14,7 @@ CONFIG_SPL_BSS_START_ADDR=0x80080000
+ CONFIG_SPL_BSS_MAX_SIZE=0x10000
+ CONFIG_SYS_LOAD_ADDR=0x81800000
+ CONFIG_SPL=y
+-CONFIG_ARCH_EN75XX=y
++CONFIG_ARCH_ECONET=y
+ CONFIG_BUILD_TARGET="u-boot.bin"
+ CONFIG_BOARD_EN7512_REFERENCE=y
+ CONFIG_SYS_MIPS_TIMER_FREQ=150000000
+@@ -26,7 +26,7 @@ CONFIG_FIT=y
+ CONFIG_FIT_VERBOSE=y
+ CONFIG_BOOTDELAY=3
+ CONFIG_OF_STDOUT_VIA_ALIAS=y
+-CONFIG_DEFAULT_FDT_FILE="en751221_ref"
++CONFIG_DEFAULT_FDT_FILE="econet,en751221-reference.dtb"
+ CONFIG_SYS_PBSIZE=1049
+ CONFIG_SYS_CONSOLE_IS_IN_ENV=y
+ CONFIG_DISPLAY_CPUINFO=y
+diff --git a/configs/en7523-askey_rtf8225vw_defconfig b/configs/en7523-askey_rtf8225vw_defconfig
+index 3879e38baa8..e96700716e1 100644
+--- a/configs/en7523-askey_rtf8225vw_defconfig
++++ b/configs/en7523-askey_rtf8225vw_defconfig
+@@ -9,7 +9,7 @@ CONFIG_NR_DRAM_BANKS=1
+ CONFIG_ENV_SIZE=0x40000
+ CONFIG_DM_GPIO=y
+ CONFIG_DEFAULT_DEVICE_TREE="airoha/en7523-askey_rtf8225vw"
+-CONFIG_SYS_BOOTM_LEN=0x460000000
++CONFIG_SYS_BOOTM_LEN=0x04600000
+ CONFIG_SYS_LOAD_ADDR=0x81800000
+ CONFIG_BUILD_TARGET="u-boot.bin"
+ CONFIG_FIT=y
+diff --git a/configs/en7523-genexis_pixly_r1_defconfig b/configs/en7523-genexis_pixly_r1_defconfig
+index ea614e57585..1a492f48ca3 100644
+--- a/configs/en7523-genexis_pixly_r1_defconfig
++++ b/configs/en7523-genexis_pixly_r1_defconfig
+@@ -9,7 +9,7 @@ CONFIG_NR_DRAM_BANKS=1
+ CONFIG_ENV_SIZE=0x4000
+ CONFIG_DM_GPIO=y
+ CONFIG_DEFAULT_DEVICE_TREE="airoha/en7523-genexis_pixly_r1"
+-CONFIG_SYS_BOOTM_LEN=0x460000000
++CONFIG_SYS_BOOTM_LEN=0x04600000
+ CONFIG_SYS_LOAD_ADDR=0x81800000
+ CONFIG_BUILD_TARGET="u-boot.bin"
+ CONFIG_FIT=y
+diff --git a/configs/en7523-mitrastar_gpt-2742gx4x5v6_defconfig b/configs/en7523-mitrastar_gpt-2742gx4x5v6_defconfig
+index 34829720d05..40f0e4d694a 100644
+--- a/configs/en7523-mitrastar_gpt-2742gx4x5v6_defconfig
++++ b/configs/en7523-mitrastar_gpt-2742gx4x5v6_defconfig
+@@ -9,7 +9,7 @@ CONFIG_NR_DRAM_BANKS=1
+ CONFIG_ENV_SIZE=0x40000
+ CONFIG_DM_GPIO=y
+ CONFIG_DEFAULT_DEVICE_TREE="airoha/en7523-mitrastar_gpt-2742gx4x5v6"
+-CONFIG_SYS_BOOTM_LEN=0x460000000
++CONFIG_SYS_BOOTM_LEN=0x04600000
+ CONFIG_SYS_LOAD_ADDR=0x81800000
+ CONFIG_BUILD_TARGET="u-boot.bin"
+ CONFIG_FIT=y
+diff --git a/configs/en7523-tplink_ex530v_v1_defconfig b/configs/en7523-tplink_ex530v_v1_defconfig
+index 3b78def1166..a906223e21f 100644
+--- a/configs/en7523-tplink_ex530v_v1_defconfig
++++ b/configs/en7523-tplink_ex530v_v1_defconfig
+@@ -9,7 +9,7 @@ CONFIG_NR_DRAM_BANKS=1
+ CONFIG_ENV_SIZE=0x4000
+ CONFIG_DM_GPIO=y
+ CONFIG_DEFAULT_DEVICE_TREE="airoha/en7523-tplink-ex530v_v1"
+-CONFIG_SYS_BOOTM_LEN=0x460000000
++CONFIG_SYS_BOOTM_LEN=0x04600000
+ CONFIG_SYS_LOAD_ADDR=0x81800000
+ CONFIG_BUILD_TARGET="u-boot.bin"
+ CONFIG_FIT=y
+diff --git a/configs/en7523-tplink_xx230v_v1_defconfig b/configs/en7523-tplink_xx230v_v1_defconfig
+index 83ec440d177..35bd7f78f04 100644
+--- a/configs/en7523-tplink_xx230v_v1_defconfig
++++ b/configs/en7523-tplink_xx230v_v1_defconfig
+@@ -9,7 +9,7 @@ CONFIG_NR_DRAM_BANKS=1
+ CONFIG_ENV_SIZE=0x4000
+ CONFIG_DM_GPIO=y
+ CONFIG_DEFAULT_DEVICE_TREE="airoha/en7523-tplink-xx230v_v1"
+-CONFIG_SYS_BOOTM_LEN=0x460000000
++CONFIG_SYS_BOOTM_LEN=0x04600000
+ CONFIG_SYS_LOAD_ADDR=0x81800000
+ CONFIG_BUILD_TARGET="u-boot.bin"
+ CONFIG_FIT=y
+diff --git a/configs/en7528_reference_defconfig b/configs/en7528_reference_defconfig
+index 3e7766eed63..6559addc712 100644
+--- a/configs/en7528_reference_defconfig
++++ b/configs/en7528_reference_defconfig
+@@ -7,7 +7,7 @@ CONFIG_ENV_SIZE=0x1000
+ CONFIG_DEFAULT_DEVICE_TREE="econet,en7528-reference"
+ CONFIG_SYS_LOAD_ADDR=0x82000000
+ CONFIG_SYS_BOOTM_LEN=0x08000000
+-CONFIG_ARCH_EN75XX=y
++CONFIG_ARCH_ECONET=y
+ CONFIG_BUILD_TARGET="u-boot.bin"
+ CONFIG_BOARD_EN7528_REFERENCE=y
+ CONFIG_SYS_MIPS_TIMER_FREQ=200000000
+diff --git a/configs/en7528_tplink_xc220_g3v_defconfig b/configs/en7528_tplink_xc220_g3v_defconfig
+index b79e40ea812..59240cd3501 100644
+--- a/configs/en7528_tplink_xc220_g3v_defconfig
++++ b/configs/en7528_tplink_xc220_g3v_defconfig
+@@ -7,7 +7,7 @@ CONFIG_ENV_SIZE=0x1000
+ CONFIG_DEFAULT_DEVICE_TREE="econet,en7528-tplink-xc220-g3v"
+ CONFIG_SYS_LOAD_ADDR=0x82000000
+ CONFIG_SYS_BOOTM_LEN=0x08000000
+-CONFIG_ARCH_EN75XX=y
++CONFIG_ARCH_ECONET=y
+ CONFIG_BUILD_TARGET="u-boot.bin"
+ CONFIG_BOARD_EN7528_TPLINK_XC220_G3V=y
+ CONFIG_SYS_MIPS_TIMER_FREQ=200000000
+diff --git a/drivers/clk/airoha/Makefile b/drivers/clk/airoha/Makefile
+index e812c891954..d3b2915fc59 100644
+--- a/drivers/clk/airoha/Makefile
++++ b/drivers/clk/airoha/Makefile
+@@ -1,4 +1,4 @@
+ # SPDX-License-Identifier: GPL-2.0
+ # Core
+ obj-$(CONFIG_ARCH_AIROHA) += clk-airoha.o
+-obj-$(CONFIG_EN75XX_SCU) += clk-airoha.o
++obj-$(CONFIG_ARCH_ECONET) += clk-airoha.o
+diff --git a/drivers/clk/airoha/clk-airoha.c b/drivers/clk/airoha/clk-airoha.c
+index f2464a10bb1..ea1c02a16b6 100644
+--- a/drivers/clk/airoha/clk-airoha.c
++++ b/drivers/clk/airoha/clk-airoha.c
+@@ -16,11 +16,7 @@
+ #include <dm/device_compat.h>
+ #include <dm/lists.h>
+ #include <regmap.h>
+-#if IS_ENABLED(CONFIG_ARCH_AIROHA)
+-#include <asm/arch/scu-regmap.h>
+-#elif IS_ENABLED(CONFIG_ARCH_EN75XX)
+-#include <mach/scu-regmap.h>
+-#endif
++#include <soc/airoha/scu-regmap.h>
+ 
+ #include <dt-bindings/clock/en7523-clk.h>
+ 
+diff --git a/drivers/net/Kconfig b/drivers/net/Kconfig
+index 16f917ac92e..f027e47b040 100644
+--- a/drivers/net/Kconfig
++++ b/drivers/net/Kconfig
+@@ -129,7 +129,7 @@ source "drivers/net/airoha/Kconfig"
+ 
+ config AIROHA_ETH
+ 	bool "Airoha Ethernet QDMA Driver"
+-	depends on ARCH_AIROHA || ARCH_EN75XX
++	depends on ARCH_AIROHA || ARCH_ECONET
+ 	select MISC
+ 	select PHYLIB
+ 	select DEVRES
+diff --git a/drivers/net/airoha/pcs-airoha-common.c b/drivers/net/airoha/pcs-airoha-common.c
+index bc64263fad9..f2e50cf9cc5 100644
+--- a/drivers/net/airoha/pcs-airoha-common.c
++++ b/drivers/net/airoha/pcs-airoha-common.c
+@@ -10,7 +10,7 @@
+ #include <net.h>
+ #include <regmap.h>
+ #include <reset.h>
+-#include <asm/arch/scu-regmap.h>
++#include <soc/airoha/scu-regmap.h>
+ 
+ #include "pcs-airoha.h"
+ 
+diff --git a/drivers/net/airoha_eth.c b/drivers/net/airoha_eth.c
+index 6d2b665e9f0..dbb375d138a 100644
+--- a/drivers/net/airoha_eth.c
++++ b/drivers/net/airoha_eth.c
+@@ -31,18 +31,14 @@
+ #include <linux/mii.h>
+ #include <linux/time.h>
+ #include <asm/system.h>
+-#if IS_ENABLED(CONFIG_ARCH_EN75XX)
++#if IS_ENABLED(CONFIG_ARCH_ECONET)
+ #include <asm/addrspace.h>
+ #define EN7528_RX_UNCACHED(_p) \
+ 	((uchar *)KSEG1ADDR((uintptr_t)(_p)))
+ #else
+ #define EN7528_RX_UNCACHED(_p)	(_p)
+ #endif
+-#if IS_ENABLED(CONFIG_ARCH_AIROHA)
+-#include <asm/arch/scu-regmap.h>
+-#elif IS_ENABLED(CONFIG_ARCH_EN75XX)
+-#include <mach/scu-regmap.h>
+-#endif
++#include <soc/airoha/scu-regmap.h>
+ 
+ #include "airoha/pcs-airoha.h"
+ 
+@@ -685,7 +681,7 @@ static u32 airoha_rmw(void __iomem *base, u32 offset, u32 mask, u32 val)
+ 
+ static bool airoha_dma_is_uncached(const void *vaddr)
+ {
+-#if IS_ENABLED(CONFIG_ARCH_EN75XX)
++#if IS_ENABLED(CONFIG_ARCH_ECONET)
+ 	return KSEGX((uintptr_t)vaddr) == KSEG1;
+ #else
+ 	return false;
+@@ -715,7 +711,7 @@ static inline void dma_unmap_unaligned(dma_addr_t addr, size_t len,
+ {
+ 	uintptr_t start, end;
+ 
+-#if IS_ENABLED(CONFIG_ARCH_EN75XX)
++#if IS_ENABLED(CONFIG_ARCH_ECONET)
+ 	if (KSEGX((uintptr_t)addr) == KSEG1) {
+ 		/* Order DMA writes before the CPU consumes an uncached descriptor. */
+ 		rmb();
+@@ -731,7 +727,7 @@ static inline void dma_unmap_unaligned(dma_addr_t addr, size_t len,
+ static void *airoha_dma_alloc_aligned(size_t size, size_t align,
+ 				      unsigned long *dma_addr)
+ {
+-#if IS_ENABLED(CONFIG_ARCH_EN75XX)
++#if IS_ENABLED(CONFIG_ARCH_ECONET)
+ 	void *buf;
+ 
+ 	align = max_t(size_t, align, ARCH_DMA_MINALIGN);
+@@ -754,7 +750,7 @@ static void *airoha_dma_alloc_coherent(size_t size, unsigned long *dma_addr)
+ 
+ static void *airoha_dma_alloc_uncached(size_t size, unsigned long *dma_addr)
+ {
+-#if IS_ENABLED(CONFIG_ARCH_EN75XX)
++#if IS_ENABLED(CONFIG_ARCH_ECONET)
+ 	void *buf;
+ 	uintptr_t start, end;
+ 
+@@ -829,17 +825,6 @@ static void en7528_qdma_trace(struct airoha_qdma *qdma, const char *tag)
+ {
+ 	if (!eth_traced || qdma->eth->soc->version != 0x7528)
+ 		return;
+-
+-	printf("[airoha] %-16s cfg=%08x txbase=%08x txcpu=%03x txdma=%03x rxbase=%08x rxcpu=%03x rxdma=%03x lmgr=%08x\n",
+-	       tag,
+-	       airoha_qdma_rr(qdma, REG_QDMA_GLOBAL_CFG),
+-	       airoha_qdma_rr(qdma, REG_TX_RING_BASE(0)),
+-	       airoha_qdma_rr(qdma, REG_TX_CPU_IDX(0)) & TX_RING_CPU_IDX_MASK,
+-	       airoha_qdma_rr(qdma, REG_TX_DMA_IDX(0)) & TX_RING_DMA_IDX_MASK,
+-	       airoha_qdma_rr(qdma, REG_RX_RING_BASE(0)),
+-	       airoha_qdma_rr(qdma, REG_RX_CPU_IDX(0)) & RX_RING_CPU_IDX_MASK,
+-	       airoha_qdma_rr(qdma, REG_RX_DMA_IDX(0)) & RX_RING_DMA_IDX_MASK,
+-	       airoha_qdma_rr(qdma, REG_LMGR_INIT_CFG));
+ }
+ 
+ static void en751221_fe_trace(struct airoha_eth *eth, int gdm,
+@@ -889,7 +874,7 @@ static void en751221_packet_trace(const char *dir, const void *packet,
+ 		return;
+ 
+ 	printf("[airoha] %s packet: addr=%08lx len=%zu\n", dir,
+-	       (ulong)virt_to_phys(packet), length);
++	       (ulong)virt_to_phys((void *)packet), length);
+ 	print_hex_dump_bytes("[airoha]   ", DUMP_PREFIX_OFFSET, packet, length);
+ }
+ 
+@@ -1305,7 +1290,7 @@ static int en751221_qdma_init_rx(struct airoha_qdma *qdma)
+ 	}
+ 
+ 	if (q->ndesc > PKTBUFSRX) {
+-		printf("EN75xx QDMA: RX ring needs %d packet buffers, only %d available\n",
++		printf("QDMA: RX ring needs %d packet buffers, only %d available\n",
+ 		       q->ndesc, PKTBUFSRX);
+ 		return -EINVAL;
+ 	}
+@@ -1520,7 +1505,7 @@ static int en751221_qdma_init_hfwd(struct airoha_qdma *qdma)
+ 	 */
+ 	airoha_qdma_wr(qdma, EN751221_REG_INT_STATUS, 0xffffffff);
+ 
+-	printf("EN75xx QDMA LMGR: desc=%08x(cpu=%08lx) buf=%08x cfg=%08x lmgr=%08x free=%08x used=%08x\n",
++	printf("QDMA LMGR: desc=%08x(cpu=%08lx) buf=%08x cfg=%08x lmgr=%08x free=%08x used=%08x\n",
+ 	       airoha_qdma_rr(qdma, EN751221_REG_FWD_DSCP_BASE),
+ 	       (ulong)qdma->hfwd.desc,
+ 	       airoha_qdma_rr(qdma, EN751221_REG_FWD_BUF_BASE),
+@@ -2349,7 +2334,7 @@ static int airoha_eth_probe(struct udevice *dev)
+ 
+ 	eth->soc = data;
+ 	if (!data->direct_reset) {
+-#if IS_ENABLED(CONFIG_ARCH_AIROHA) || IS_ENABLED(CONFIG_ARCH_EN75XX)
++#if IS_ENABLED(CONFIG_ARCH_AIROHA) || IS_ENABLED(CONFIG_ARCH_ECONET)
+ 		struct regmap *scu_regmap;
+ 
+ 		scu_regmap = airoha_get_scu_regmap();
+@@ -2746,7 +2731,7 @@ static int en751221_eth_send(struct udevice *dev, void *packet, int length)
+ 		dma_unmap_single(dma_addr, length, DMA_TO_DEVICE);
+ 	if (qdma->eth->soc->version == 0x7528 ? hw != next :
+ 	    !(ctrl & QDMA_DESC_DONE_MASK)) {
+-		printf("EN75xx QDMA TX timeout: cfg=%08x cpu=%08x hw=%08x int=%08x hwcfg=%08x lmgr=%08x free=%08x used=%08x\n",
++		printf("QDMA TX timeout: cfg=%08x cpu=%08x hw=%08x int=%08x hwcfg=%08x lmgr=%08x free=%08x used=%08x\n",
+ 		       airoha_qdma_rr(qdma, REG_QDMA_GLOBAL_CFG),
+ 		       airoha_qdma_rr(qdma, EN751221_REG_TX_CPU_IDX),
+ 		       airoha_qdma_rr(qdma, EN751221_REG_TX_DMA_IDX),
+diff --git a/drivers/pinctrl/airoha/pinctrl-airoha.c b/drivers/pinctrl/airoha/pinctrl-airoha.c
+index 60c48c0960c..cb64d683e8b 100644
+--- a/drivers/pinctrl/airoha/pinctrl-airoha.c
++++ b/drivers/pinctrl/airoha/pinctrl-airoha.c
+@@ -11,7 +11,7 @@
+ #include <dm/lists.h>
+ #include <dm/ofnode.h>
+ #include <asm-generic/gpio.h>
+-#include <asm/arch/scu-regmap.h>
++#include <soc/airoha/scu-regmap.h>
+ #include <dt-bindings/pinctrl/mt65xx.h>
+ #include <regmap.h>
+ #include <syscon.h>
+diff --git a/drivers/reset/Kconfig b/drivers/reset/Kconfig
+index 2c8b987acd8..7cede211388 100644
+--- a/drivers/reset/Kconfig
++++ b/drivers/reset/Kconfig
+@@ -45,7 +45,7 @@ config TEGRA186_RESET
+ 
+ config RESET_AIROHA
+ 	bool "Reset controller driver for Airoha SoCs"
+-	depends on DM_RESET && (ARCH_AIROHA || ARCH_EN75XX)
++	depends on DM_RESET && (ARCH_AIROHA || ARCH_ECONET)
+ 	default y
+ 	help
+ 	  Support for reset controller on Airoha SoCs.
+diff --git a/drivers/reset/reset-airoha.c b/drivers/reset/reset-airoha.c
+index 818f56656aa..56856570c14 100644
+--- a/drivers/reset/reset-airoha.c
++++ b/drivers/reset/reset-airoha.c
+@@ -11,11 +11,7 @@
+ #include <linux/io.h>
+ #include <reset-uclass.h>
+ #include <regmap.h>
+-#if IS_ENABLED(CONFIG_ARCH_AIROHA)
+-#include <asm/arch/scu-regmap.h>
+-#elif IS_ENABLED(CONFIG_ARCH_EN75XX)
+-#include <mach/scu-regmap.h>
+-#endif
++#include <soc/airoha/scu-regmap.h>
+ 
+ #include <dt-bindings/reset/airoha,en7523-reset.h>
+ #include <dt-bindings/reset/airoha,en7581-reset.h>
+diff --git a/drivers/serial/Kconfig b/drivers/serial/Kconfig
+index 14bbbd3d600..905c2f41e07 100644
+--- a/drivers/serial/Kconfig
++++ b/drivers/serial/Kconfig
+@@ -1108,9 +1108,9 @@ config MTK_SERIAL
+ 	  The High-speed UART is compatible with the ns16550a UART and have
+ 	  its own high-speed registers.
+ 
+-config EN75XX_SERIAL
+-	bool "EcoNet/Airoha EN75xx serial port support"
+-	depends on ARCH_EN75XX
++config AIROHA_SERIAL
++	bool "Airoha serial port support"
++	depends on ARCH_ECONET
+ 	help
+ 	  Support the byte-lane 16550-like UART used by EN7512/EN7521.
+ 	  The controller also uses a vendor-specific fractional divider.
+diff --git a/drivers/serial/Makefile b/drivers/serial/Makefile
+index 75ec49b7c1f..691c1719e34 100644
+--- a/drivers/serial/Makefile
++++ b/drivers/serial/Makefile
+@@ -21,6 +21,7 @@ obj-$(CONFIG_BCM6345_SERIAL) += serial_bcm6345.o
+ obj-$(CONFIG_COREBOOT_SERIAL) += serial_coreboot.o
+ obj-$(CONFIG_CORTINA_UART) += serial_cortina.o
+ obj-$(CONFIG_DEBUG_SBI_CONSOLE) += serial_sbi.o
++obj-$(CONFIG_ECONET_SERIAL) += serial_econet.o
+ obj-$(CONFIG_EFI_APP) += serial_efi.o
+ obj-$(CONFIG_MCFUART) += serial_mcf.o
+ obj-$(CONFIG_SYS_NS16550) += ns16550.o
+@@ -55,7 +56,6 @@ obj-$(CONFIG_OWL_SERIAL) += serial_owl.o
+ obj-$(CONFIG_OMAP_SERIAL) += serial_omap.o
+ obj-$(CONFIG_MTK_SERIAL) += serial_mtk.o
+ obj-$(CONFIG_MT7620_SERIAL) += serial_mt7620.o
+-obj-$(CONFIG_EN75XX_SERIAL) += serial_en75xx.o
+ obj-$(CONFIG_HTIF_CONSOLE) += serial_htif.o
+ obj-$(CONFIG_SIFIVE_SERIAL) += serial_sifive.o
+ obj-$(CONFIG_XEN_SERIAL) += serial_xen.o
+diff --git a/drivers/serial/serial_en75xx.c b/drivers/serial/serial_econet.c
+similarity index 98%
+rename from drivers/serial/serial_en75xx.c
+rename to drivers/serial/serial_econet.c
+index 35b0bb0b91e..815a2a87b96 100644
+--- a/drivers/serial/serial_en75xx.c
++++ b/drivers/serial/serial_econet.c
+@@ -1,5 +1,5 @@
+ // SPDX-License-Identifier: GPL-2.0+
+-/* EcoNet/Airoha EN75xx UART */
++/* Airoha UART */
+ 
+ #include <dm.h>
+ #include <errno.h>
+diff --git a/drivers/spi/Kconfig b/drivers/spi/Kconfig
+index 83a79beeba5..10996e0f4b9 100644
+--- a/drivers/spi/Kconfig
++++ b/drivers/spi/Kconfig
+@@ -62,7 +62,7 @@ config ADI_SPI3
+ 
+ config AIROHA_SNFI_SPI
+ 	bool "Airoha SPI memory controller driver"
+-	depends on ARCH_AIROHA || ARCH_EN75XX
++	depends on ARCH_AIROHA || ARCH_ECONET
+ 	select REGMAP
+ 	select SPI_MEM
+ 	help
+diff --git a/drivers/spi/airoha_snfi_spi.c b/drivers/spi/airoha_snfi_spi.c
+index ba39e5a3d30..fa81668a05b 100644
+--- a/drivers/spi/airoha_snfi_spi.c
++++ b/drivers/spi/airoha_snfi_spi.c
+@@ -9,9 +9,7 @@
+  */
+ 
+ #include <asm/unaligned.h>
+-#if IS_ENABLED(CONFIG_ARCH_AIROHA)
+-#include <asm/arch/scu-regmap.h>
+-#endif
++#include <soc/airoha/scu-regmap.h>
+ #include <clk.h>
+ #include <dm.h>
+ #include <dm/device_compat.h>
+diff --git a/include/dt-bindings/reset/econet,en751221-scu.h b/include/dt-bindings/reset/econet,en751221-scu.h
+new file mode 100644
+index 00000000000..bad499d4d50
+--- /dev/null
++++ b/include/dt-bindings/reset/econet,en751221-scu.h
+@@ -0,0 +1,49 @@
++/* SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause) */
++
++#ifndef __DT_BINDINGS_RESET_CONTROLLER_ECONET_EN751221_H_
++#define __DT_BINDINGS_RESET_CONTROLLER_ECONET_EN751221_H_
++
++#define EN751221_XPON_PHY_RST		 0
++#define EN751221_PCM1_ZSI_ISI_RST	 1
++#define EN751221_FE_QDMA1_RST		 2
++#define EN751221_FE_QDMA2_RST		 3
++#define EN751221_FE_UNZIP_RST		 4
++#define EN751221_PCM2_RST		 5
++#define EN751221_PTM_MAC_RST		 6
++#define EN751221_CRYPTO_RST		 7
++#define EN751221_SAR_RST		 8
++#define EN751221_TIMER_RST		 9
++#define EN751221_INTC_RST		10
++#define EN751221_BONDING_RST		11
++#define EN751221_PCM1_RST		12
++#define EN751221_UART_RST		13
++#define EN751221_GPIO_RST		14
++#define EN751221_GDMA_RST		15
++#define EN751221_I2C_MASTER_RST		16
++#define EN751221_PCM2_ZSI_ISI_RST	17
++#define EN751221_SFC_RST		18
++#define EN751221_UART2_RST		19
++#define EN751221_GDMP_RST		20
++#define EN751221_FE_RST			21
++#define EN751221_USB_HOST_P0_RST	22
++#define EN751221_GSW_RST		23
++#define EN751221_SFC2_PCM_RST		24
++#define EN751221_PCIE0_RST		25
++#define EN751221_PCIE1_RST		26
++#define EN751221_CPU_TIMER_RST		27
++#define EN751221_PCIE_HB_RST		28
++#define EN751221_SIMIF_RST		29
++#define EN751221_XPON_MAC_RST		30
++#define EN751221_GFAST_RST		31
++#define EN751221_CPU_TIMER2_RST		32
++#define EN751221_UART3_RST		33
++#define EN751221_UART4_RST		34
++#define EN751221_UART5_RST		35
++#define EN751221_I2C2_RST		36
++#define EN751221_XSI_MAC_RST		37
++#define EN751221_XSI_PHY_RST		38
++#define EN751221_DMT_RST		39
++#define EN751221_USB_PHY_P0_RST		40
++#define EN751221_USB_PHY_P1_RST		41
++
++#endif /* __DT_BINDINGS_RESET_CONTROLLER_ECONET_EN751221_H_ */
+diff --git a/include/soc/airoha/pkgids.h b/include/soc/airoha/pkgids.h
+new file mode 100644
+index 00000000000..1092503e15a
+--- /dev/null
++++ b/include/soc/airoha/pkgids.h
+@@ -0,0 +1,535 @@
++// SPDX-License-Identifier: GPL-2.0
++
++#ifndef __AIROHA_CHIP_ID_H_
++#define __AIROHA_CHIP_ID_H_
++
++#include <linux/bitfield.h>
++#include <linux/io.h>
++#include <linux/kernel.h>
++#include <linux/regmap.h>
++#include <linux/types.h>
++#include <soc/airoha/pkgids.h>
++
++#define AIROHA_PKG_ID_NAME(_id) [(_id)] = #_id
++
++#define AIROHA_NP_SCU_PDIDR		0x05c
++#define AIROHA_NP_SCU_HIR		0x064
++#define AIROHA_NP_SCU_SCREG_WR1	0x284
++
++#define AIROHA_NP_SCU_HIR_MASK		GENMASK(31, 16)
++#define AIROHA_NP_SCU_PDIDR_MASK	GENMASK(15, 0)
++#define AIROHA_NP_SCU_PACKAGE_ID_MASK	GENMASK(3, 0)
++#define AIROHA_NP_SCU_PACKAGE_ID_EXT	BIT(7)
++
++enum airoha_pkg {
++	/* AN7583 */
++	AN7583_PKG = 0x10,
++
++	/* AM7552 */
++	AN7552_PKG = 0xf,
++
++	/* EN7581 */
++	EN7581_PKG = 0xe,
++
++	/* EN7523 */
++	EN7523_PKG = 0xc,
++
++	/* EN7528 */
++	EN7528_PKG = 0xb,
++
++	/* EN7580 */
++	EN7580_PKG = 0xa,
++
++	/* EN7516, EN7527 */
++	EN751627_PKG = 0x9,
++
++	/* EN7526c, EN7522 */
++	EN7526C_PKG = 0x8,
++
++	/* EN7512, EN7521 */
++	EN751221_PKG = 0x7,
++
++	/* MT7505 */
++	MT7505_PKG = 0x6,
++
++	/* MT7510, MT7520 */
++	MT751020_PKG = 0x5,
++};
++
++enum airoha_pkg_ids {
++	/*EN7523*/
++	EN7529DU,
++	EN7529DT,
++	EN7529CU,
++	EN7562DU,
++	EN7562DT,
++	EN7562CU,
++	EN7523GU,
++	EN7523DU,
++	EN7529GTH,
++	EN7562GTH,
++	EN7523SU,
++	EN7529GTS,
++	EN7562GTS,
++	EN7529IT,
++	EN7529CT,
++	EN7562CT,
++	EN7523DT,
++	EN7529DTM,
++	EN7562DTM,
++	EN7529ITM,
++	EN7529CTM,
++	EN7562CTM,
++	EN7523DTM,
++
++	/*EN7528*/
++	EN7528HU,
++	EN7528DU,
++	EN7561DU,
++	EN7526FHEN7528DU,
++	EN7521GEN7528DU,
++
++	/* EN7580 */
++	EN7580GT,
++	EN7580ST,
++	EN7580GAT,
++	EN7565,
++	EN7580,
++
++	/* EN7516 */
++	EN7516G,
++
++	/* EN7527 */
++	EN7527G,
++	EN7561G,
++	EN751627,
++
++	/* EN7512 */
++	EN7512,
++	EN7513,
++	EN7513G,
++
++	/* EN7521, EN7521FC */
++	EN7521FCUD,
++	EN7521F,
++	EN7521S,
++	EN7526D,
++	EN7526F,
++	EN7526G,
++	EN7526FT,
++	EN7526FP,
++	EN7526FT_C,
++	EN751221,
++
++	/* MT7520 */
++	MT7520S,
++	MT7520,
++	MT7520G,
++	MT7525,
++	MT7525G,
++
++	/* AN7581 */
++	AN7581GT,
++	AN7566GT,
++	AN7581PT,
++	AN7581ST,
++	AN7551PT,
++	AN7581CT,
++	AN7581DT,
++	AN7581FG,
++	AN7581FP,
++	AN7581FD,
++	AN7551GT,
++	AN7566PT,
++	AN7581IT,
++	AN7581SIT,
++
++	/* AN7552 */
++	AN7552CT,
++	AN7552ST,
++	AN7552FT,
++	AN7563CT,
++	AN7563PT,
++
++	/* AN7583 */
++	AN7583GT,
++	AN7583GIT,
++	AN7583CT,
++	AN7583DT,
++	RESERVED_PKGID_4,
++	AN7583ST,
++	AN9510GT,
++	RESERVED_PKGID_7,
++	AN7553GT,
++	AN7553CT,
++	AN7567GT,
++	AN7567CT,
++	AN7583ET,
++	AN7583EIT,
++	RESERVED_PKGID_14,
++	RESERVED_PKGID_15,
++	AN7583FG,
++	RESERVED_PKGID_17,
++	AN7583FP,
++	AN7583FD,
++	RESERVED_PKGID_20,
++	AN7583FS,
++	AN7583FF,
++
++	END_PACKAGE_ID = 0xFFFFFFFF,
++};
++
++static const char *const airoha_pkg_id_names[] = {
++	/* EN7523 */
++	AIROHA_PKG_ID_NAME(EN7529DU),
++	AIROHA_PKG_ID_NAME(EN7529DT),
++	AIROHA_PKG_ID_NAME(EN7529CU),
++	AIROHA_PKG_ID_NAME(EN7562DU),
++	AIROHA_PKG_ID_NAME(EN7562DT),
++	AIROHA_PKG_ID_NAME(EN7562CU),
++	AIROHA_PKG_ID_NAME(EN7523GU),
++	AIROHA_PKG_ID_NAME(EN7523DU),
++	AIROHA_PKG_ID_NAME(EN7529GTH),
++	AIROHA_PKG_ID_NAME(EN7562GTH),
++	AIROHA_PKG_ID_NAME(EN7523SU),
++	AIROHA_PKG_ID_NAME(EN7529GTS),
++	AIROHA_PKG_ID_NAME(EN7562GTS),
++	AIROHA_PKG_ID_NAME(EN7529IT),
++	AIROHA_PKG_ID_NAME(EN7529CT),
++	AIROHA_PKG_ID_NAME(EN7562CT),
++	AIROHA_PKG_ID_NAME(EN7523DT),
++	AIROHA_PKG_ID_NAME(EN7529DTM),
++	AIROHA_PKG_ID_NAME(EN7562DTM),
++	AIROHA_PKG_ID_NAME(EN7529ITM),
++	AIROHA_PKG_ID_NAME(EN7529CTM),
++	AIROHA_PKG_ID_NAME(EN7562CTM),
++	AIROHA_PKG_ID_NAME(EN7523DTM),
++
++	/* EN7528 */
++	AIROHA_PKG_ID_NAME(EN7528HU),
++	AIROHA_PKG_ID_NAME(EN7528DU),
++	AIROHA_PKG_ID_NAME(EN7561DU),
++	AIROHA_PKG_ID_NAME(EN7526FHEN7528DU),
++	AIROHA_PKG_ID_NAME(EN7521GEN7528DU),
++
++	/* EN7580 */
++	AIROHA_PKG_ID_NAME(EN7580GT),
++	AIROHA_PKG_ID_NAME(EN7580ST),
++	AIROHA_PKG_ID_NAME(EN7580GAT),
++	AIROHA_PKG_ID_NAME(EN7565),
++	AIROHA_PKG_ID_NAME(EN7580),
++
++	/* EN7516 */
++	AIROHA_PKG_ID_NAME(EN7516G),
++
++	/* EN7527 */
++	AIROHA_PKG_ID_NAME(EN7527G),
++	AIROHA_PKG_ID_NAME(EN7561G),
++	AIROHA_PKG_ID_NAME(EN751627),
++
++	/* EN7512 */
++	AIROHA_PKG_ID_NAME(EN7512),
++	AIROHA_PKG_ID_NAME(EN7513),
++	AIROHA_PKG_ID_NAME(EN7513G),
++
++	/* EN7521 / EN7526 */
++	AIROHA_PKG_ID_NAME(EN7521FCUD),
++	AIROHA_PKG_ID_NAME(EN7521F),
++	AIROHA_PKG_ID_NAME(EN7521S),
++	AIROHA_PKG_ID_NAME(EN7526D),
++	AIROHA_PKG_ID_NAME(EN7526F),
++	AIROHA_PKG_ID_NAME(EN7526G),
++	AIROHA_PKG_ID_NAME(EN7526FT),
++	AIROHA_PKG_ID_NAME(EN7526FP),
++	AIROHA_PKG_ID_NAME(EN7526FT_C),
++	AIROHA_PKG_ID_NAME(EN751221),
++
++	/* MT7520 */
++	AIROHA_PKG_ID_NAME(MT7520S),
++	AIROHA_PKG_ID_NAME(MT7520),
++	AIROHA_PKG_ID_NAME(MT7520G),
++	AIROHA_PKG_ID_NAME(MT7525),
++	AIROHA_PKG_ID_NAME(MT7525G),
++
++	/* AN7581 */
++	AIROHA_PKG_ID_NAME(AN7581GT),
++	AIROHA_PKG_ID_NAME(AN7566GT),
++	AIROHA_PKG_ID_NAME(AN7581PT),
++	AIROHA_PKG_ID_NAME(AN7581ST),
++	AIROHA_PKG_ID_NAME(AN7551PT),
++	AIROHA_PKG_ID_NAME(AN7581CT),
++	AIROHA_PKG_ID_NAME(AN7581DT),
++	AIROHA_PKG_ID_NAME(AN7581FG),
++	AIROHA_PKG_ID_NAME(AN7581FP),
++	AIROHA_PKG_ID_NAME(AN7581FD),
++	AIROHA_PKG_ID_NAME(AN7551GT),
++	AIROHA_PKG_ID_NAME(AN7566PT),
++	AIROHA_PKG_ID_NAME(AN7581IT),
++	AIROHA_PKG_ID_NAME(AN7581SIT),
++
++	/* AN7552 */
++	AIROHA_PKG_ID_NAME(AN7552CT),
++	AIROHA_PKG_ID_NAME(AN7552ST),
++	AIROHA_PKG_ID_NAME(AN7552FT),
++	AIROHA_PKG_ID_NAME(AN7563CT),
++	AIROHA_PKG_ID_NAME(AN7563PT),
++
++	/* AN7583 */
++	AIROHA_PKG_ID_NAME(AN7583GT),
++	AIROHA_PKG_ID_NAME(AN7583GIT),
++	AIROHA_PKG_ID_NAME(AN7583CT),
++	AIROHA_PKG_ID_NAME(AN7583DT),
++	AIROHA_PKG_ID_NAME(AN7583ST),
++	AIROHA_PKG_ID_NAME(AN9510GT),
++	AIROHA_PKG_ID_NAME(AN7553GT),
++	AIROHA_PKG_ID_NAME(AN7553CT),
++	AIROHA_PKG_ID_NAME(AN7567GT),
++	AIROHA_PKG_ID_NAME(AN7567CT),
++	AIROHA_PKG_ID_NAME(AN7583ET),
++	AIROHA_PKG_ID_NAME(AN7583EIT),
++	AIROHA_PKG_ID_NAME(AN7583FG),
++	AIROHA_PKG_ID_NAME(AN7583FP),
++	AIROHA_PKG_ID_NAME(AN7583FD),
++	AIROHA_PKG_ID_NAME(AN7583FS),
++	AIROHA_PKG_ID_NAME(AN7583FF),
++};
++
++static inline const char *airoha_pkg_id_name(enum airoha_pkg_ids id)
++{
++	if (id >= END_PACKAGE_ID ||
++	    (unsigned int)id >= ARRAY_SIZE(airoha_pkg_id_names) ||
++	    !airoha_pkg_id_names[id])
++		return "unknown";
++	return airoha_pkg_id_names[id];
++}
++
++static inline const char *
++airoha_pkg_id_range_name(u32 pkgid, enum airoha_pkg_ids first,
++			 enum airoha_pkg_ids last)
++{
++	u32 id;
++
++	if (pkgid > (u32)(last - first))
++		return NULL;
++
++	id = first + pkgid;
++	if (id >= ARRAY_SIZE(airoha_pkg_id_names) ||
++	    !airoha_pkg_id_names[id])
++		return NULL;
++
++	return airoha_pkg_id_names[id];
++}
++
++static inline enum airoha_pkg airoha_pkg_from_id(u32 id)
++{
++	switch (id) {
++	case AN7583_PKG:
++	case 0x7583:
++	case 0x9510:
++	case 0x7553:
++	case 0x7567:
++		return AN7583_PKG;
++	case AN7552_PKG:
++	case 0x7552:
++	case 0x7563:
++		return AN7552_PKG;
++	case EN7581_PKG:
++	case 0x7581:
++	case 0x7566:
++	case 0x7551:
++		return EN7581_PKG;
++	case EN7523_PKG:
++	case 0x7523:
++	case 0x7529:
++	case 0x7562:
++		return EN7523_PKG;
++	case EN7528_PKG:
++	case 0x7528:
++	case 0x7561:
++		return EN7528_PKG;
++	case EN7580_PKG:
++	case 0x7580:
++	case 0x7565:
++		return EN7580_PKG;
++	case EN751627_PKG:
++	case 0x7516:
++	case 0x7527:
++		return EN751627_PKG;
++	case EN7526C_PKG:
++	case 0x7522:
++		return EN7526C_PKG;
++	case EN751221_PKG:
++	case 0x7512:
++	case 0x7513:
++	case 0x7521:
++	case 0x7526:
++		return EN751221_PKG;
++	case MT751020_PKG:
++	case 0x7510:
++	case 0x7520:
++	case 0x7525:
++		return MT751020_PKG;
++	default:
++		return 0;
++	}
++}
++
++static inline const char *airoha_pkg_family_name(enum airoha_pkg pkg)
++{
++	switch (airoha_pkg_from_id(pkg)) {
++	case AN7583_PKG:
++		return "AN7583";
++	case AN7552_PKG:
++		return "AN7552";
++	case EN7581_PKG:
++		return "EN7581";
++	case EN7523_PKG:
++		return "EN7523";
++	case EN7528_PKG:
++		return "EN7528";
++	case EN7580_PKG:
++		return "EN7580";
++	case EN751627_PKG:
++		return "EN7516/EN7527";
++	case EN7526C_PKG:
++		return "EN7526C/EN7522";
++	case EN751221_PKG:
++		return "EN7512/EN7521";
++	case MT751020_PKG:
++		return "MT7510/MT7520";
++	default:
++		return NULL;
++	}
++}
++
++static inline const char *
++airoha_soc_variant_name(enum airoha_pkg pkg, u32 pkgid)
++{
++	switch (airoha_pkg_from_id(pkg)) {
++	case AN7583_PKG:
++		return airoha_pkg_id_range_name(pkgid, AN7583GT, AN7583FF);
++	case AN7552_PKG:
++		return airoha_pkg_id_range_name(pkgid, AN7552CT, AN7563PT);
++	case EN7581_PKG:
++		return airoha_pkg_id_range_name(pkgid, AN7581GT, AN7581SIT);
++	case EN7523_PKG:
++		return airoha_pkg_id_range_name(pkgid, EN7529DU, EN7523DTM);
++	case EN7528_PKG:
++		return airoha_pkg_id_range_name(pkgid, EN7528HU,
++						EN7521GEN7528DU);
++	case EN7580_PKG:
++		return airoha_pkg_id_range_name(pkgid, EN7580GT, EN7580);
++	case EN751627_PKG:
++		return airoha_pkg_id_range_name(pkgid, EN7516G, EN751627);
++	case EN7526C_PKG:
++		return airoha_pkg_id_range_name(pkgid, EN7521FCUD, EN751221);
++	case EN751221_PKG:
++		return airoha_pkg_id_range_name(pkgid, EN7512, EN751221);
++	case MT751020_PKG:
++		return airoha_pkg_id_range_name(pkgid, MT7520S, MT7525G);
++	default:
++		return NULL;
++	}
++}
++
++static inline const char *airoha_soc_name(enum airoha_pkg pkg, u32 pkgid)
++{
++	const char *name;
++
++	name = airoha_soc_variant_name(pkg, pkgid);
++	if (name)
++		return name;
++
++	name = airoha_pkg_family_name(pkg);
++	if (name)
++		return name;
++
++	return "unknown";
++}
++
++static inline const char *
++airoha_soc_name_from_regs(u32 hir, u32 pkgid, u32 pdidr)
++{
++	enum airoha_pkg hir_pkg = airoha_pkg_from_id(hir);
++	enum airoha_pkg pdidr_pkg = airoha_pkg_from_id(pdidr);
++	const char *name;
++
++	name = airoha_soc_variant_name(hir_pkg, pkgid);
++	if (name)
++		return name;
++
++	name = airoha_soc_variant_name(pdidr_pkg, pkgid);
++	if (name)
++		return name;
++
++	name = airoha_pkg_family_name(hir_pkg);
++	if (name)
++		return name;
++
++	name = airoha_pkg_family_name(pdidr_pkg);
++	if (name)
++		return name;
++
++	return "unknown";
++}
++
++static inline u32 airoha_pkgid_from_screg(u32 value)
++{
++	u32 pkgid = FIELD_GET(AIROHA_NP_SCU_PACKAGE_ID_MASK, value);
++
++	if (value & AIROHA_NP_SCU_PACKAGE_ID_EXT)
++		pkgid |= BIT(4);
++
++	return pkgid;
++}
++
++/*
++ * Package IDs are family-relative values stored by the bootloader in the
++ * NP-SCU watchdog-reset scratch register 1. A value of zero is valid.
++ */
++static inline u32 get_pkgid(struct regmap *np_scu)
++{
++	u32 value;
++	int err;
++
++	err = regmap_read(np_scu, AIROHA_NP_SCU_SCREG_WR1, &value);
++	if (err)
++		return END_PACKAGE_ID;
++
++	return airoha_pkgid_from_screg(value);
++}
++
++/* HIR identifies the SoC family, for example EN7523_PKG (0x0c). */
++static inline enum airoha_pkg get_pkg()
++{
++	struct regmap *np_scu = airoha_get_scu_regmap();
++	u32 value;
++	int err;
++
++	err = regmap_read(np_scu, AIROHA_NP_SCU_HIR, &value);
++	if (err)
++		return 0;
++
++	return FIELD_GET(AIROHA_NP_SCU_HIR_MASK, value);
++}
++
++static inline u32 get_pdidr()
++{
++	struct regmap *np_scu = airoha_get_scu_regmap();
++	u32 value;
++	int err;
++
++	err = regmap_read(np_scu, AIROHA_NP_SCU_PDIDR, &value);
++	if (err)
++		return 0;
++
++	return FIELD_GET(AIROHA_NP_SCU_PDIDR_MASK, value);
++}
++
++static inline u32 get_pdidr_mem(void __iomem *np_scu)
++{
++	return FIELD_GET(AIROHA_NP_SCU_PDIDR_MASK,
++			 readl(np_scu + AIROHA_NP_SCU_PDIDR));
++}
++
++#endif
+diff --git a/arch/arm/include/asm/arch-airoha/scu-regmap.h b/include/soc/airoha/scu-regmap.h
+similarity index 86%
+rename from arch/arm/include/asm/arch-airoha/scu-regmap.h
+rename to include/soc/airoha/scu-regmap.h
+index 31fc23d8c4d..433d1df0987 100644
+--- a/arch/arm/include/asm/arch-airoha/scu-regmap.h
++++ b/include/soc/airoha/scu-regmap.h
+@@ -5,6 +5,8 @@
+ #ifndef __AIROHA_SCU_REGMAP__
+ #define __AIROHA_SCU_REGMAP__
+ 
++#include <dm/device.h>
++#include <dm/ofnode.h>
+ #include <regmap.h>
+ 
+ struct regmap *airoha_get_scu_regmap(void);
+-- 
+2.55.0
+

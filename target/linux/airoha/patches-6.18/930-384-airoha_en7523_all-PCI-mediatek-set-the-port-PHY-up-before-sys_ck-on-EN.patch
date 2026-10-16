@@ -1,0 +1,182 @@
+From f8e4e7c6835bdd52942d1713534ff0223d0408d0 Mon Sep 17 00:00:00 2001
+From: Cristian Papa <pcristian292@gmail.com>
+Date: Sun, 20 Sep 2026 19:27:10 -0300
+Subject: [PATCH] PCI: mediatek: set the port PHY up before sys_ck on EN7528
+
+The "pcie" clock prepare callback of the EN7528/EN751221 SCU driver ends by
+deasserting PERST#. mtk_pcie_enable_port() prepares that clock before the
+port PHY is initialised, releasing the endpoint before its reference clock
+is configured, contrary to the ordering required by PCIe CEM 2.2.
+
+On the TP-Link Archer XR500v, the MT7603 on port 0 is missing without the
+reorder: the root port and bus appear, a link-retrained message is logged,
+and no link timeout is reported, but the endpoint never enumerates. The
+logs do not establish the completion status of individual configuration
+transactions. The MT7662 on port 1 enumerates in both cases.
+
+Bring up the PHY before the clock on the affected SoC data entry, selected
+by a flag so other users retain the existing order. Call the helper exactly
+once on either path. Release an early PHY if sys_ck preparation fails and
+avoid duplicate teardown after startup failure.
+
+Tested on an XR500v (EN7526G package, MT7603 port 0, MT7662 port 1) with a
+Linux 6.18.41 TFTP initramfs. The earlier ordering prototype passed two warm
+reboots and one cold power cycle. Two boots tested the corrected refcount
+implementation, with both endpoints and radios present. This message-only
+revision leaves that tested source tree unchanged. Prolonged load/idle
+testing of this implementation and testing on other boards remain pending.
+
+Without the fix:
+
+  pci 0000:00:00.0: [14c3:0810] type 01 class 0x060400 PCIe Root Port
+  pci 0000:00:00.0: PCI bridge to [bus 01]
+  mtk-pcie 1fb81000.pcie: port0 link retrained
+  (no 0000:01:00.0, and no port0 link timeout)
+
+With the fix:
+
+  pci 0000:01:00.0: [14c3:7603] type 00 class 0x028000 PCIe Endpoint
+  mt7603e 0000:01:00.0: firmware init done
+  mt76x2e 0001:01:00.0: Firmware running!
+
+Replacing the second reset pass moves the port-0 link-retrained message
+from about 1.04 s to 0.66 s after kernel start. These are log timestamps,
+not measured training durations; the removed pass included msleep(100)
+and msleep(250).
+
+Signed-off-by: Cristian Papa <pcristian292@gmail.com>
+Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/pci/controller/pcie-mediatek.c | 63 ++++++++++++++++++++------
+ 1 file changed, 50 insertions(+), 13 deletions(-)
+
+diff --git a/drivers/pci/controller/pcie-mediatek.c b/drivers/pci/controller/pcie-mediatek.c
+index 475ccdeef..d563d7228 100644
+--- a/drivers/pci/controller/pcie-mediatek.c
++++ b/drivers/pci/controller/pcie-mediatek.c
+@@ -157,6 +157,7 @@ struct mtk_pcie_port;
+  * @MTK_PCIE_FIX_DEVICE_ID: host's device ID needed to be fixed
+  * @MTK_PCIE_NO_MSI: Bridge has no MSI support, and relies on an external block
+  * @MTK_PCIE_SKIP_RSTB: Skip calling RSTB bits on PCIe probe
++ * @MTK_PCIE_PHY_BEFORE_SYS_CK: Initialize the port PHY before sys_ck
+  * @MTK_PCIE_RETRAIN: Retrain link to bridge after startup because some
+  *                    Gen2-capable devices start as Gen1.
+  */
+@@ -166,6 +167,7 @@ enum mtk_pcie_quirks {
+ 	MTK_PCIE_NO_MSI = BIT(2),
+ 	MTK_PCIE_SKIP_RSTB = BIT(3),
+ 	MTK_PCIE_RETRAIN = BIT(4),
++	MTK_PCIE_PHY_BEFORE_SYS_CK = BIT(5),
+ };
+ 
+ /**
+@@ -1011,16 +1013,52 @@ static int mtk_pcie_startup_port_an7583(struct mtk_pcie_port *port)
+ 	return mtk_pcie_startup_port_v2(port);
+ }
+ 
++static int mtk_pcie_port_phy_up(struct mtk_pcie_port *port)
++{
++	struct device *dev = port->pcie->dev;
++	int err;
++
++	err = phy_init(port->phy);
++	if (err) {
++		dev_err(dev, "failed to initialize port%d phy\n", port->slot);
++		return err;
++	}
++
++	err = phy_power_on(port->phy);
++	if (err) {
++		dev_err(dev, "failed to power on port%d phy\n", port->slot);
++		phy_exit(port->phy);
++		return err;
++	}
++
++	return 0;
++}
++
+ static int mtk_pcie_enable_port(struct mtk_pcie_port *port)
+ {
+ 	struct mtk_pcie *pcie = port->pcie;
+ 	struct device *dev = pcie->dev;
++	bool phy_up_early = !!(pcie->soc->quirks & MTK_PCIE_PHY_BEFORE_SYS_CK);
+ 	int err;
+ 
++	/*
++	 * The "pcie" clock prepare callback of this SoC deasserts PERST# as
++	 * its last step. Preparing it before the port PHY is set up lets the
++	 * endpoint out of reset while its reference clock is still
++	 * unconfigured, which PCIe CEM section 2.2 (PERST# Signal) forbids:
++	 * the reference clock has to be stable for T_PERST-CLK beforehand.
++	 * Bring the PHY up first on the SoCs that need it.
++	 */
++	if (phy_up_early) {
++		err = mtk_pcie_port_phy_up(port);
++		if (err)
++			return err;
++	}
++
+ 	err = clk_prepare_enable(port->sys_ck);
+ 	if (err) {
+ 		dev_err(dev, "failed to enable sys_ck%d clock\n", port->slot);
+-		return err;
++		goto err_sys_clk;
+ 	}
+ 
+ 	err = clk_prepare_enable(port->ahb_ck);
+@@ -1056,16 +1094,10 @@ static int mtk_pcie_enable_port(struct mtk_pcie_port *port)
+ 	reset_control_assert(port->reset);
+ 	reset_control_deassert(port->reset);
+ 
+-	err = phy_init(port->phy);
+-	if (err) {
+-		dev_err(dev, "failed to initialize port%d phy\n", port->slot);
+-		goto err_phy_init;
+-	}
+-
+-	err = phy_power_on(port->phy);
+-	if (err) {
+-		dev_err(dev, "failed to power on port%d phy\n", port->slot);
+-		goto err_phy_on;
++	if (!phy_up_early) {
++		err = mtk_pcie_port_phy_up(port);
++		if (err)
++			goto err_phy_init;
+ 	}
+ 
+ 	err = pcie->soc->startup(port);
+@@ -1078,8 +1110,8 @@ static int mtk_pcie_enable_port(struct mtk_pcie_port *port)
+ 
+ err_soc_startup:
+ 	phy_power_off(port->phy);
+-err_phy_on:
+ 	phy_exit(port->phy);
++	phy_up_early = false;
+ err_phy_init:
+ 	clk_disable_unprepare(port->pipe_ck);
+ err_pipe_clk:
+@@ -1092,6 +1124,11 @@ static int mtk_pcie_enable_port(struct mtk_pcie_port *port)
+ 	clk_disable_unprepare(port->ahb_ck);
+ err_ahb_clk:
+ 	clk_disable_unprepare(port->sys_ck);
++err_sys_clk:
++	if (phy_up_early) {
++		phy_power_off(port->phy);
++		phy_exit(port->phy);
++	}
+ 
+ 	return err;
+ }
+@@ -1444,7 +1481,7 @@ static const struct mtk_pcie_soc mtk_pcie_soc_en7528 = {
+ 	.ops = &mtk_pcie_ops_v2,
+ 	.startup = mtk_pcie_startup_port_en7528,
+ 	.setup_irq = mtk_pcie_setup_irq,
+-	.quirks = MTK_PCIE_RETRAIN,
++	.quirks = MTK_PCIE_RETRAIN | MTK_PCIE_PHY_BEFORE_SYS_CK,
+ };
+ 
+ #define PCI_DEVICE_ID_MEDIATEK_EN7523_PCIE0	0x0810
+-- 
+2.55.0
+

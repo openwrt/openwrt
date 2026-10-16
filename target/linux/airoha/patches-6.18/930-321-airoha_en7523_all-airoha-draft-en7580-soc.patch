@@ -1,0 +1,2320 @@
+From 3f4f9d1a1487a9a9d73d5f3cc7b9f232f36da855 Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Wed, 2 Sep 2026 22:00:58 -0300
+Subject: [PATCH] airoha: draft en7580 soc
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ arch/mips/econet/Kconfig                |   20 +
+ drivers/pinctrl/airoha/Kconfig          |   10 +
+ drivers/pinctrl/airoha/Makefile         |    1 +
+ drivers/pinctrl/airoha/pinctrl-en7580.c | 1574 +++++++++++++++++++++++
+ include/linux/soc/airoha/pkgids.h       |  447 ++++++-
+ 5 files changed, 1986 insertions(+), 66 deletions(-)
+ create mode 100644 drivers/pinctrl/airoha/pinctrl-en7580.c
+
+diff --git a/arch/mips/econet/Kconfig b/arch/mips/econet/Kconfig
+index 964285d84..f29485e5e 100644
+--- a/arch/mips/econet/Kconfig
++++ b/arch/mips/econet/Kconfig
+@@ -46,6 +46,26 @@ choice
+ 		help
+ 		  The EN7528 family with dual-core MIPS 1004Kc.
+ 		  Requires MIPS_RAW_APPENDED_DTB=y for boot.
++
++	config SOC_ECONET_EN7580
++		bool "EN7580 family"
++		select COMMON_CLK
++		select COMMON_CLK_EN7523
++		select CPU_LITTLE_ENDIAN
++		select HAVE_PCI
++		select IRQ_MIPS_CPU
++		select MIPS_CPU_SCACHE
++		select MIPS_GIC
++		select PCI_DRIVERS_GENERIC
++		select SMP
++		select SMP_UP
++		select SYS_SUPPORTS_HIGHMEM
++		select SYS_SUPPORTS_MIPS_CPS
++		select SYS_SUPPORTS_MULTITHREADING
++		select SYS_SUPPORTS_SMP
++		help
++		  The EN7580 family with dual-core MIPS 1004Kc.
++		  Requires MIPS_RAW_APPENDED_DTB=y for boot.
+ endchoice
+ 
+ choice
+diff --git a/drivers/pinctrl/airoha/Kconfig b/drivers/pinctrl/airoha/Kconfig
+index 52dafc4a7..45d42704a 100644
+--- a/drivers/pinctrl/airoha/Kconfig
++++ b/drivers/pinctrl/airoha/Kconfig
+@@ -20,6 +20,7 @@ config PINCTRL_AIROHA
+ 	imply PINCTRL_AIROHA_EN7523
+ 	imply PINCTRL_AIROHA_EN7528
+ 	imply PINCTRL_AIROHA_EN751221
++	imply PINCTRL_AIROHA_EN7580
+ 	help
+ 	  Shared pin controller and gpio driver code for different
+ 	  Airoha SoCs.
+@@ -76,4 +77,13 @@ config PINCTRL_AIROHA_EN751221
+ 	  provides GPIO, GPIO interrupt and pin multiplexing support through
+ 	  the common Airoha pin controller implementation.
+ 
++config PINCTRL_AIROHA_EN7580
++	tristate "EN7580 pinctrl"
++	depends on SOC_ECONET_EN7580 || COMPILE_TEST
++	depends on PINCTRL_AIROHA
++	help
++	  Say yes here to support the GPIO and pin controller found in the
++	  EcoNet EN7580 SoC through the common Airoha pin controller
++	  implementation.
++
+ endmenu
+diff --git a/drivers/pinctrl/airoha/Makefile b/drivers/pinctrl/airoha/Makefile
+index 96c0888a9..5424511da 100644
+--- a/drivers/pinctrl/airoha/Makefile
++++ b/drivers/pinctrl/airoha/Makefile
+@@ -10,3 +10,4 @@ obj-$(CONFIG_PINCTRL_AIROHA_AN7583)	+= pinctrl-an7583.o
+ obj-$(CONFIG_PINCTRL_AIROHA_EN7523)	+= pinctrl-en7523.o
+ obj-$(CONFIG_PINCTRL_AIROHA_EN7528)	+= pinctrl-en7528.o
+ obj-$(CONFIG_PINCTRL_AIROHA_EN751221)	+= pinctrl-en751221.o
++obj-$(CONFIG_PINCTRL_AIROHA_EN7580)	+= pinctrl-en7580.o
+diff --git a/drivers/pinctrl/airoha/pinctrl-en7580.c b/drivers/pinctrl/airoha/pinctrl-en7580.c
+new file mode 100644
+index 000000000..16e93fe08
+--- /dev/null
++++ b/drivers/pinctrl/airoha/pinctrl-en7580.c
+@@ -0,0 +1,1574 @@
++// SPDX-License-Identifier: GPL-2.0-only
++/*
++ * Author: Benjamin Larsson <benjamin.larsson@genexis.eu>
++ * Author: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
++ *
++ * EcoNet EN7580 SoC pinctrl data for the Airoha pinctrl driver.
++ *
++ * Sources:
++ * - EN7580 Programming Guide V1.0, CHIP SCU and GPIO chapters
++ * - EN7580GT datasheet, pin sharing schemes
++ * - Airoha/EcoNet vendor SDK
++ *
++ * Pin numbering follows the GPIO line numbering of the SoC:
++ *
++ *   pins  0-24 -> GPIO0-GPIO24
++ *   pins 25-28 -> ZSYNC/ZCLK/ZMOSI/ZMISO (GPIO25-GPIO28)
++ *   pins 29-35 -> GPIO29-GPIO35
++ *   pins 36-41 -> PON I/O (GPIO36-GPIO41)
++ *   pins 42-43 -> GPIO42-GPIO43 / second I2C
++ *   pins 44-45 -> PCIE_RESET0/1 / GPIO44-GPIO45
++ *
++ * Pins 46-57 are standalone pads. They have pinconf support, but are
++ * not GPIO lines.
++ */
++
++#include "airoha-common.h"
++
++/* -------------------------------------------------------------------------- */
++/* CHIP SCU IOMUX                                                             */
++/* -------------------------------------------------------------------------- */
++
++#define EN7580_REG_GPIO_2ND_I2C_MODE		0x0210
++
++#define EN7580_GPIO_LAN3_LED1_MODE_MASK		BIT(11)
++#define EN7580_GPIO_LAN3_LED0_MODE_MASK		BIT(10)
++#define EN7580_GPIO_LAN2_LED1_MODE_MASK		BIT(9)
++#define EN7580_GPIO_LAN2_LED0_MODE_MASK		BIT(8)
++#define EN7580_GPIO_LAN1_LED1_MODE_MASK		BIT(7)
++#define EN7580_GPIO_LAN1_LED0_MODE_MASK		BIT(6)
++#define EN7580_GPIO_LAN0_LED1_MODE_MASK		BIT(5)
++#define EN7580_GPIO_LAN0_LED0_MODE_MASK		BIT(4)
++
++#define EN7580_GPIO_2ND_I2C_MODE_MASK		BIT(0)
++
++#define EN7580_REG_GPIO_SPI_CS1_MODE		0x0214
++
++#define EN7580_GPIO_PCM2_16P_MODE_MASK		BIT(24)
++
++#define EN7580_GPIO_PCM_SPI_CS7_MODE_MASK	BIT(23)
++#define EN7580_GPIO_PCM_SPI_CS6_MODE_MASK	BIT(22)
++#define EN7580_GPIO_PCM_SPI_CS5_MODE_MASK	BIT(21)
++#define EN7580_GPIO_PCM_SPI_CS4_MODE_MASK	BIT(20)
++#define EN7580_GPIO_PCM_SPI_CS3_MODE_MASK	BIT(19)
++#define EN7580_GPIO_PCM_SPI_CS2_MODE_MASK	BIT(18)
++#define EN7580_GPIO_PCM_SPI_CS1_MODE_MASK	BIT(17)
++
++#define GPIO_PCM_SPI_MODE_MASK			BIT(16)
++#define GPIO_PCM2_MODE_MASK			BIT(13)
++#define GPIO_PCM1_MODE_MASK			BIT(12)
++#define GPIO_PCM_INT_MODE_MASK			BIT(9)
++#define GPIO_PCM_RESET_MODE_MASK		BIT(8)
++
++/*
++ * EN7580 differs from EN7581 here.
++ *
++ * Vendor SPI code explicitly sets IOMUX_CTRL_2 bit 27 when isEN7580
++ * is true.
++ */
++#define GPIO_SPI_QUAD_MODE_MASK			BIT(27)
++
++#define GPIO_SPI_CS4_MODE_MASK			BIT(3)
++#define GPIO_SPI_CS3_MODE_MASK			BIT(2)
++#define GPIO_SPI_CS2_MODE_MASK			BIT(1)
++#define GPIO_SPI_CS1_MODE_MASK			BIT(0)
++
++#define EN7580_REG_GPIO_PON_MODE		0x0218
++
++#define GPIO_SGMII_MDIO_MODE_MASK		BIT(13)
++#define SIPO_RCLK_MODE_MASK			BIT(11)
++
++/*
++ * A set bit selects the GPIO function on the PCIe reset pads.
++ * A cleared bit selects the native PCIe reset function.
++ */
++#define GPIO_PCIE_RESET1_MASK			BIT(10)
++#define GPIO_PCIE_RESET0_MASK			BIT(9)
++
++#define GPIO_UART5_MODE_MASK			BIT(8)
++#define GPIO_UART4_MODE_MASK			BIT(7)
++#define GPIO_UART3_CTS_RTS_MODE_MASK		BIT(6)
++#define GPIO_UART3_MODE_MASK			BIT(5)
++#define GPIO_UART2_CTS_RTS_MODE_MASK		BIT(4)
++#define GPIO_UART2_MODE_MASK			BIT(3)
++#define GPIO_SIPO_MODE_MASK			BIT(2)
++#define GPIO_PON_MODE_MASK			BIT(0)
++
++/* -------------------------------------------------------------------------- */
++/* PHY LED mapping                                                            */
++/* -------------------------------------------------------------------------- */
++
++#define EN7580_REG_LAN_LED0_MAPPING		0x0278
++#define EN7580_REG_LAN_LED1_MAPPING		0x027c
++
++#define LAN3_LED_MAPPING_MASK			GENMASK(14, 12)
++#define LAN3_PHY_LED_MAP(_n)			\
++	FIELD_PREP_CONST(LAN3_LED_MAPPING_MASK, (_n))
++
++#define LAN2_LED_MAPPING_MASK			GENMASK(10, 8)
++#define LAN2_PHY_LED_MAP(_n)			\
++	FIELD_PREP_CONST(LAN2_LED_MAPPING_MASK, (_n))
++
++#define LAN1_LED_MAPPING_MASK			GENMASK(6, 4)
++#define LAN1_PHY_LED_MAP(_n)			\
++	FIELD_PREP_CONST(LAN1_LED_MAPPING_MASK, (_n))
++
++#define LAN0_LED_MAPPING_MASK			GENMASK(2, 0)
++#define LAN0_PHY_LED_MAP(_n)			\
++	FIELD_PREP_CONST(LAN0_LED_MAPPING_MASK, (_n))
++
++/* -------------------------------------------------------------------------- */
++/* Pin configuration                                                          */
++/* -------------------------------------------------------------------------- */
++
++/*
++ * EN7580 calls these two drive-strength stages E4/E8.
++ *
++ * They are connected to DRIVE_E2 / DRIVE_E4 in the common driver,
++ * with drive_strength_step_ma = 4.
++ */
++#define REG_I2C_SDA_E2				0x001c
++#define REG_I2C_SDA_E4				0x0020
++
++#define REG_GPIO_L_E2				0x0024
++#define REG_GPIO_L_E4				0x0028
++#define REG_GPIO_H_E2				0x002c
++#define REG_GPIO_H_E4				0x0030
++
++#define REG_I2C_SDA_PU				0x0044
++#define REG_I2C_SDA_PD				0x0048
++#define REG_GPIO_L_PU				0x004c
++#define REG_GPIO_L_PD				0x0050
++#define REG_GPIO_H_PU				0x0054
++#define REG_GPIO_H_PD				0x0058
++
++/*
++ * Standalone IO pinconf layout.
++ *
++ * The same bit positions are used by E4, E8, PU and PD registers.
++ */
++#define EN7580_SPI_MISO_CONF_MASK		BIT(13)
++#define EN7580_SPI_MOSI_CONF_MASK		BIT(12)
++#define EN7580_SPI_CLK_CONF_MASK		BIT(11)
++#define EN7580_SPI_CS0_CONF_MASK		BIT(10)
++
++#define EN7580_PCIE1_RESET_CONF_MASK		BIT(9)
++#define EN7580_PCIE0_RESET_CONF_MASK		BIT(8)
++
++#define EN7580_MDIO_1_CONF_MASK			BIT(7)
++#define EN7580_MDC_1_CONF_MASK			BIT(6)
++#define EN7580_MDIO_0_CONF_MASK			BIT(5)
++#define EN7580_MDC_0_CONF_MASK			BIT(4)
++
++#define EN7580_UART1_RXD_CONF_MASK		BIT(3)
++#define EN7580_UART1_TXD_CONF_MASK		BIT(2)
++#define EN7580_I2C_SCL_CONF_MASK		BIT(1)
++#define EN7580_I2C_SDA_CONF_MASK		BIT(0)
++
++/* -------------------------------------------------------------------------- */
++/* PWM / flash mode                                                           */
++/* -------------------------------------------------------------------------- */
++
++#define REG_GPIO_FLASH_MODE_CFG			0x0034
++
++#define GPIO0_FLASH_MODE_CFG			BIT(0)
++#define GPIO1_FLASH_MODE_CFG			BIT(1)
++#define GPIO2_FLASH_MODE_CFG			BIT(2)
++#define GPIO3_FLASH_MODE_CFG			BIT(3)
++#define GPIO4_FLASH_MODE_CFG			BIT(4)
++#define GPIO5_FLASH_MODE_CFG			BIT(5)
++#define GPIO6_FLASH_MODE_CFG			BIT(6)
++#define GPIO7_FLASH_MODE_CFG			BIT(7)
++#define GPIO8_FLASH_MODE_CFG			BIT(8)
++#define GPIO9_FLASH_MODE_CFG			BIT(9)
++#define GPIO10_FLASH_MODE_CFG			BIT(10)
++#define GPIO11_FLASH_MODE_CFG			BIT(11)
++#define GPIO12_FLASH_MODE_CFG			BIT(12)
++#define GPIO13_FLASH_MODE_CFG			BIT(13)
++#define GPIO14_FLASH_MODE_CFG			BIT(14)
++#define GPIO15_FLASH_MODE_CFG			BIT(15)
++
++#define REG_GPIO_FLASH_MODE_CFG_EXT		0x0068
++
++#define GPIO16_FLASH_MODE_CFG			BIT(0)
++#define GPIO17_FLASH_MODE_CFG			BIT(1)
++#define GPIO18_FLASH_MODE_CFG			BIT(2)
++#define GPIO19_FLASH_MODE_CFG			BIT(3)
++#define GPIO20_FLASH_MODE_CFG			BIT(4)
++#define GPIO21_FLASH_MODE_CFG			BIT(5)
++#define GPIO22_FLASH_MODE_CFG			BIT(6)
++#define GPIO23_FLASH_MODE_CFG			BIT(7)
++#define GPIO24_FLASH_MODE_CFG			BIT(8)
++#define GPIO25_FLASH_MODE_CFG			BIT(9)
++#define GPIO26_FLASH_MODE_CFG			BIT(10)
++#define GPIO27_FLASH_MODE_CFG			BIT(11)
++#define GPIO28_FLASH_MODE_CFG			BIT(12)
++#define GPIO29_FLASH_MODE_CFG			BIT(13)
++#define GPIO30_FLASH_MODE_CFG			BIT(14)
++#define GPIO31_FLASH_MODE_CFG			BIT(15)
++
++/*
++ * EN7580 maps EXT bit 16 to GPIO32.
++ * GPIO33-GPIO36 have no flash-mode bit.
++ */
++#define GPIO32_FLASH_MODE_CFG			BIT(16)
++
++#define GPIO37_FLASH_MODE_CFG			BIT(17)
++#define GPIO38_FLASH_MODE_CFG			BIT(18)
++#define GPIO39_FLASH_MODE_CFG			BIT(19)
++#define GPIO40_FLASH_MODE_CFG			BIT(20)
++#define GPIO41_FLASH_MODE_CFG			BIT(21)
++#define GPIO42_FLASH_MODE_CFG			BIT(22)
++#define GPIO43_FLASH_MODE_CFG			BIT(23)
++#define GPIO44_FLASH_MODE_CFG			BIT(24)
++#define GPIO45_FLASH_MODE_CFG			BIT(25)
++
++/* -------------------------------------------------------------------------- */
++/* Pins                                                                       */
++/* -------------------------------------------------------------------------- */
++
++static const struct pinctrl_pin_desc en7580_pinctrl_pins[] = {
++	PINCTRL_PIN(0, "gpio0"),
++	PINCTRL_PIN(1, "gpio1"),
++	PINCTRL_PIN(2, "gpio2"),
++	PINCTRL_PIN(3, "gpio3"),
++	PINCTRL_PIN(4, "gpio4"),
++	PINCTRL_PIN(5, "gpio5"),
++	PINCTRL_PIN(6, "gpio6"),
++	PINCTRL_PIN(7, "gpio7"),
++	PINCTRL_PIN(8, "gpio8"),
++	PINCTRL_PIN(9, "gpio9"),
++	PINCTRL_PIN(10, "gpio10"),
++	PINCTRL_PIN(11, "gpio11"),
++	PINCTRL_PIN(12, "gpio12"),
++	PINCTRL_PIN(13, "gpio13"),
++	PINCTRL_PIN(14, "gpio14"),
++	PINCTRL_PIN(15, "gpio15"),
++	PINCTRL_PIN(16, "gpio16"),
++	PINCTRL_PIN(17, "gpio17"),
++	PINCTRL_PIN(18, "gpio18"),
++	PINCTRL_PIN(19, "gpio19"),
++	PINCTRL_PIN(20, "gpio20"),
++	PINCTRL_PIN(21, "gpio21"),
++	PINCTRL_PIN(22, "gpio22"),
++	PINCTRL_PIN(23, "gpio23"),
++	PINCTRL_PIN(24, "gpio24"),
++
++	PINCTRL_PIN(25, "gpio25"),	/* ZSYNC */
++	PINCTRL_PIN(26, "gpio26"),	/* ZCLK */
++	PINCTRL_PIN(27, "gpio27"),	/* ZMOSI */
++	PINCTRL_PIN(28, "gpio28"),	/* ZMISO */
++
++	PINCTRL_PIN(29, "gpio29"),
++	PINCTRL_PIN(30, "gpio30"),
++	PINCTRL_PIN(31, "gpio31"),
++	PINCTRL_PIN(32, "gpio32"),
++	PINCTRL_PIN(33, "gpio33"),
++	PINCTRL_PIN(34, "gpio34"),
++	PINCTRL_PIN(35, "gpio35"),
++
++	PINCTRL_PIN(36, "gpio36"),	/* PON IO */
++	PINCTRL_PIN(37, "gpio37"),
++	PINCTRL_PIN(38, "gpio38"),
++	PINCTRL_PIN(39, "gpio39"),
++	PINCTRL_PIN(40, "gpio40"),
++	PINCTRL_PIN(41, "gpio41"),
++
++	PINCTRL_PIN(42, "gpio42"),
++	PINCTRL_PIN(43, "gpio43"),
++
++	PINCTRL_PIN(44, "pcie_reset0"),	/* GPIO44 */
++	PINCTRL_PIN(45, "pcie_reset1"),	/* GPIO45 */
++
++	/* standalone pads */
++	PINCTRL_PIN(46, "i2c_sda"),
++	PINCTRL_PIN(47, "i2c_scl"),
++	PINCTRL_PIN(48, "uart1_txd"),
++	PINCTRL_PIN(49, "uart1_rxd"),
++	PINCTRL_PIN(50, "mdc_0"),
++	PINCTRL_PIN(51, "mdio_0"),
++	PINCTRL_PIN(52, "mdc_1"),
++	PINCTRL_PIN(53, "mdio_1"),
++	PINCTRL_PIN(54, "spi_cs0"),
++	PINCTRL_PIN(55, "spi_clk"),
++	PINCTRL_PIN(56, "spi_mosi"),
++	PINCTRL_PIN(57, "spi_miso"),
++};
++
++/* -------------------------------------------------------------------------- */
++/* Groups                                                                     */
++/* -------------------------------------------------------------------------- */
++
++static const int en7580_pon_pins[] = {
++	36, 37, 38, 39, 40, 41
++};
++
++static const int en7580_sipo_pins[] = {
++	22, 23
++};
++
++static const int en7580_sipo_rclk_pins[] = {
++	21, 22, 23
++};
++
++static const int en7580_uart2_pins[] = {
++	20, 21
++};
++
++static const int en7580_uart2_cts_rts_pins[] = {
++	18, 19
++};
++
++static const int en7580_uart3_pins[] = {
++	30, 31
++};
++
++static const int en7580_uart3_cts_rts_pins[] = {
++	24, 29
++};
++
++static const int en7580_uart4_pins[] = {
++	22, 23
++};
++
++static const int en7580_uart5_pins[] = {
++	34, 35
++};
++
++static const int en7580_i2c1_pins[] = {
++	42, 43
++};
++
++static const int en7580_pcm1_pins[] = {
++	25, 26, 27, 28
++};
++
++static const int en7580_pcm2_pins[] = {
++	18, 19, 20, 21
++};
++
++static const int en7580_spi_quad_pins[] = {
++	16, 17
++};
++
++static const int en7580_spi_cs1_pins[] = {
++	30
++};
++
++static const int en7580_pcm_spi_pins[] = {
++	29, 30, 34, 35
++};
++
++/*
++ * PCM_INT is routed to the standalone MDC0 pad in the EN7580 pin-sharing
++ * table. Pin 50 therefore intentionally refers to a standalone pinctrl pin
++ * rather than GPIO50.
++ */
++static const int en7580_pcm_spi_int_pins[] = {
++	50
++};
++
++static const int en7580_pcm_spi_rst_pins[] = {
++	24
++};
++
++static const int en7580_pcm_spi_cs1_pins[] = {
++	31
++};
++
++static const int en7580_pcm_spi_cs2_pins[] = {
++	32
++};
++
++static const int en7580_pcm_spi_cs3_pins[] = {
++	33
++};
++
++static const int en7580_pcm_spi_cs4_pins[] = {
++	8
++};
++
++static const int en7580_pcm_spi_cs5_pins[] = {
++	9
++};
++
++static const int en7580_pcm_spi_cs6_pins[] = {
++	10
++};
++
++static const int en7580_pcm_spi_cs7_pins[] = {
++	11
++};
++
++#define EN7580_GPIO_PIN_GROUP(_n)		\
++	static const int en7580_gpio##_n##_pins[] = { _n }
++
++EN7580_GPIO_PIN_GROUP(0);
++EN7580_GPIO_PIN_GROUP(1);
++EN7580_GPIO_PIN_GROUP(2);
++EN7580_GPIO_PIN_GROUP(3);
++EN7580_GPIO_PIN_GROUP(4);
++EN7580_GPIO_PIN_GROUP(5);
++EN7580_GPIO_PIN_GROUP(6);
++EN7580_GPIO_PIN_GROUP(7);
++EN7580_GPIO_PIN_GROUP(8);
++EN7580_GPIO_PIN_GROUP(9);
++EN7580_GPIO_PIN_GROUP(10);
++EN7580_GPIO_PIN_GROUP(11);
++EN7580_GPIO_PIN_GROUP(12);
++EN7580_GPIO_PIN_GROUP(13);
++EN7580_GPIO_PIN_GROUP(14);
++EN7580_GPIO_PIN_GROUP(15);
++EN7580_GPIO_PIN_GROUP(16);
++EN7580_GPIO_PIN_GROUP(17);
++EN7580_GPIO_PIN_GROUP(18);
++EN7580_GPIO_PIN_GROUP(19);
++EN7580_GPIO_PIN_GROUP(20);
++EN7580_GPIO_PIN_GROUP(21);
++EN7580_GPIO_PIN_GROUP(22);
++EN7580_GPIO_PIN_GROUP(23);
++EN7580_GPIO_PIN_GROUP(24);
++EN7580_GPIO_PIN_GROUP(25);
++EN7580_GPIO_PIN_GROUP(26);
++EN7580_GPIO_PIN_GROUP(27);
++EN7580_GPIO_PIN_GROUP(28);
++EN7580_GPIO_PIN_GROUP(29);
++EN7580_GPIO_PIN_GROUP(30);
++EN7580_GPIO_PIN_GROUP(31);
++EN7580_GPIO_PIN_GROUP(32);
++EN7580_GPIO_PIN_GROUP(33);
++EN7580_GPIO_PIN_GROUP(34);
++EN7580_GPIO_PIN_GROUP(35);
++EN7580_GPIO_PIN_GROUP(36);
++EN7580_GPIO_PIN_GROUP(37);
++EN7580_GPIO_PIN_GROUP(38);
++EN7580_GPIO_PIN_GROUP(39);
++EN7580_GPIO_PIN_GROUP(40);
++EN7580_GPIO_PIN_GROUP(41);
++EN7580_GPIO_PIN_GROUP(42);
++EN7580_GPIO_PIN_GROUP(43);
++EN7580_GPIO_PIN_GROUP(44);
++EN7580_GPIO_PIN_GROUP(45);
++
++#undef EN7580_GPIO_PIN_GROUP
++
++static const int en7580_pcie_reset0_pins[] = { 44 };
++static const int en7580_pcie_reset1_pins[] = { 45 };
++
++#define EN7580_GPIO_GROUP(_n)				\
++	PINCTRL_PIN_GROUP("gpio" #_n, en7580_gpio##_n)
++
++static const struct pingroup en7580_pinctrl_groups[] = {
++	PINCTRL_PIN_GROUP("pon", en7580_pon),
++
++	PINCTRL_PIN_GROUP("sipo", en7580_sipo),
++	PINCTRL_PIN_GROUP("sipo_rclk", en7580_sipo_rclk),
++
++	PINCTRL_PIN_GROUP("uart2", en7580_uart2),
++	PINCTRL_PIN_GROUP("uart2_cts_rts", en7580_uart2_cts_rts),
++	PINCTRL_PIN_GROUP("uart3", en7580_uart3),
++	PINCTRL_PIN_GROUP("uart3_cts_rts", en7580_uart3_cts_rts),
++	PINCTRL_PIN_GROUP("uart4", en7580_uart4),
++	PINCTRL_PIN_GROUP("uart5", en7580_uart5),
++
++	PINCTRL_PIN_GROUP("i2c1", en7580_i2c1),
++
++	PINCTRL_PIN_GROUP("pcm1", en7580_pcm1),
++	PINCTRL_PIN_GROUP("pcm2", en7580_pcm2),
++
++	PINCTRL_PIN_GROUP("spi_quad", en7580_spi_quad),
++	PINCTRL_PIN_GROUP("spi_cs1", en7580_spi_cs1),
++
++	PINCTRL_PIN_GROUP("pcm_spi", en7580_pcm_spi),
++	PINCTRL_PIN_GROUP("pcm_spi_int", en7580_pcm_spi_int),
++	PINCTRL_PIN_GROUP("pcm_spi_rst", en7580_pcm_spi_rst),
++	PINCTRL_PIN_GROUP("pcm_spi_cs1", en7580_pcm_spi_cs1),
++	PINCTRL_PIN_GROUP("pcm_spi_cs2", en7580_pcm_spi_cs2),
++	PINCTRL_PIN_GROUP("pcm_spi_cs3", en7580_pcm_spi_cs3),
++	PINCTRL_PIN_GROUP("pcm_spi_cs4", en7580_pcm_spi_cs4),
++	PINCTRL_PIN_GROUP("pcm_spi_cs5", en7580_pcm_spi_cs5),
++	PINCTRL_PIN_GROUP("pcm_spi_cs6", en7580_pcm_spi_cs6),
++	PINCTRL_PIN_GROUP("pcm_spi_cs7", en7580_pcm_spi_cs7),
++
++	EN7580_GPIO_GROUP(0),
++	EN7580_GPIO_GROUP(1),
++	EN7580_GPIO_GROUP(2),
++	EN7580_GPIO_GROUP(3),
++	EN7580_GPIO_GROUP(4),
++	EN7580_GPIO_GROUP(5),
++	EN7580_GPIO_GROUP(6),
++	EN7580_GPIO_GROUP(7),
++	EN7580_GPIO_GROUP(8),
++	EN7580_GPIO_GROUP(9),
++	EN7580_GPIO_GROUP(10),
++	EN7580_GPIO_GROUP(11),
++	EN7580_GPIO_GROUP(12),
++	EN7580_GPIO_GROUP(13),
++	EN7580_GPIO_GROUP(14),
++	EN7580_GPIO_GROUP(15),
++	EN7580_GPIO_GROUP(16),
++	EN7580_GPIO_GROUP(17),
++	EN7580_GPIO_GROUP(18),
++	EN7580_GPIO_GROUP(19),
++	EN7580_GPIO_GROUP(20),
++	EN7580_GPIO_GROUP(21),
++	EN7580_GPIO_GROUP(22),
++	EN7580_GPIO_GROUP(23),
++	EN7580_GPIO_GROUP(24),
++	EN7580_GPIO_GROUP(25),
++	EN7580_GPIO_GROUP(26),
++	EN7580_GPIO_GROUP(27),
++	EN7580_GPIO_GROUP(28),
++	EN7580_GPIO_GROUP(29),
++	EN7580_GPIO_GROUP(30),
++	EN7580_GPIO_GROUP(31),
++	EN7580_GPIO_GROUP(32),
++	EN7580_GPIO_GROUP(33),
++	EN7580_GPIO_GROUP(34),
++	EN7580_GPIO_GROUP(35),
++	EN7580_GPIO_GROUP(36),
++	EN7580_GPIO_GROUP(37),
++	EN7580_GPIO_GROUP(38),
++	EN7580_GPIO_GROUP(39),
++	EN7580_GPIO_GROUP(40),
++	EN7580_GPIO_GROUP(41),
++	EN7580_GPIO_GROUP(42),
++	EN7580_GPIO_GROUP(43),
++	EN7580_GPIO_GROUP(44),
++	EN7580_GPIO_GROUP(45),
++
++	PINCTRL_PIN_GROUP("pcie_reset0", en7580_pcie_reset0),
++	PINCTRL_PIN_GROUP("pcie_reset1", en7580_pcie_reset1),
++};
++
++#undef EN7580_GPIO_GROUP
++
++/* -------------------------------------------------------------------------- */
++/* Function group names                                                       */
++/* -------------------------------------------------------------------------- */
++
++static const char *const en7580_pon_groups[] = {
++	"pon"
++};
++
++static const char *const en7580_sipo_groups[] = {
++	"sipo",
++	"sipo_rclk"
++};
++
++static const char *const en7580_uart_groups[] = {
++	"uart2",
++	"uart2_cts_rts",
++	"uart3",
++	"uart3_cts_rts",
++	"uart4",
++	"uart5"
++};
++
++static const char *const en7580_i2c_groups[] = {
++	"i2c1"
++};
++
++static const char *const en7580_pcm_groups[] = {
++	"pcm1",
++	"pcm2"
++};
++
++static const char *const en7580_spi_groups[] = {
++	"spi_quad",
++	"spi_cs1"
++};
++
++static const char *const en7580_pcm_spi_groups[] = {
++	"pcm_spi",
++	"pcm_spi_int",
++	"pcm_spi_rst",
++	"pcm_spi_cs1",
++	"pcm_spi_cs2",
++	"pcm_spi_cs3",
++	"pcm_spi_cs4",
++	"pcm_spi_cs5",
++	"pcm_spi_cs6",
++	"pcm_spi_cs7"
++};
++
++static const char *const en7580_pcie_reset_groups[] = {
++	"pcie_reset0",
++	"pcie_reset1"
++};
++
++static const char *const en7580_gpio_groups[] = {
++	"gpio44",
++	"gpio45"
++};
++
++static const char *const en7580_pwm_groups[] = {
++	"gpio0", "gpio1", "gpio2", "gpio3",
++	"gpio4", "gpio5", "gpio6", "gpio7",
++	"gpio8", "gpio9", "gpio10", "gpio11",
++	"gpio12", "gpio13", "gpio14", "gpio15",
++	"gpio16", "gpio17", "gpio18", "gpio19",
++	"gpio20", "gpio21", "gpio22", "gpio23",
++	"gpio24", "gpio25", "gpio26", "gpio27",
++	"gpio28", "gpio29", "gpio30", "gpio31",
++	"gpio32",
++	"gpio37", "gpio38", "gpio39", "gpio40",
++	"gpio41", "gpio42", "gpio43", "gpio44",
++	"gpio45"
++};
++
++#define EN7580_LED0_GROUPS				\
++	"gpio8", "gpio9", "gpio10", "gpio11"
++
++#define EN7580_LED1_GROUPS				\
++	"gpio12", "gpio13", "gpio14", "gpio15"
++
++static const char *const en7580_phy1_led0_groups[] = {
++	EN7580_LED0_GROUPS
++};
++
++static const char *const en7580_phy2_led0_groups[] = {
++	EN7580_LED0_GROUPS
++};
++
++static const char *const en7580_phy3_led0_groups[] = {
++	EN7580_LED0_GROUPS
++};
++
++static const char *const en7580_phy4_led0_groups[] = {
++	EN7580_LED0_GROUPS
++};
++
++static const char *const en7580_phy1_led1_groups[] = {
++	EN7580_LED1_GROUPS
++};
++
++static const char *const en7580_phy2_led1_groups[] = {
++	EN7580_LED1_GROUPS
++};
++
++static const char *const en7580_phy3_led1_groups[] = {
++	EN7580_LED1_GROUPS
++};
++
++static const char *const en7580_phy4_led1_groups[] = {
++	EN7580_LED1_GROUPS
++};
++
++/* -------------------------------------------------------------------------- */
++/* Mux functions                                                              */
++/* -------------------------------------------------------------------------- */
++
++#define EN7580_FUNC_GROUP(_name, _reg, _mask, _val)	\
++	{						\
++		.name = (_name),				\
++		.regmap[0] = {				\
++			AIROHA_FUNC_MUX,		\
++			(_reg),				\
++			(_mask),			\
++			(_val),				\
++		},					\
++		.regmap_size = 1,			\
++	}
++
++static const struct airoha_pinctrl_func_group en7580_pon_func_group[] = {
++	EN7580_FUNC_GROUP("pon",
++			  EN7580_REG_GPIO_PON_MODE,
++			  GPIO_PON_MODE_MASK,
++			  GPIO_PON_MODE_MASK),
++};
++
++static const struct airoha_pinctrl_func_group en7580_sipo_func_group[] = {
++	EN7580_FUNC_GROUP("sipo",
++			  EN7580_REG_GPIO_PON_MODE,
++			  GPIO_SIPO_MODE_MASK | SIPO_RCLK_MODE_MASK,
++			  GPIO_SIPO_MODE_MASK),
++
++	EN7580_FUNC_GROUP("sipo_rclk",
++			  EN7580_REG_GPIO_PON_MODE,
++			  GPIO_SIPO_MODE_MASK | SIPO_RCLK_MODE_MASK,
++			  GPIO_SIPO_MODE_MASK | SIPO_RCLK_MODE_MASK),
++};
++
++static const struct airoha_pinctrl_func_group en7580_uart_func_group[] = {
++	EN7580_FUNC_GROUP("uart2",
++			  EN7580_REG_GPIO_PON_MODE,
++			  GPIO_UART2_MODE_MASK,
++			  GPIO_UART2_MODE_MASK),
++
++	EN7580_FUNC_GROUP("uart2_cts_rts",
++			  EN7580_REG_GPIO_PON_MODE,
++			  GPIO_UART2_MODE_MASK |
++			  GPIO_UART2_CTS_RTS_MODE_MASK,
++			  GPIO_UART2_MODE_MASK |
++			  GPIO_UART2_CTS_RTS_MODE_MASK),
++
++	EN7580_FUNC_GROUP("uart3",
++			  EN7580_REG_GPIO_PON_MODE,
++			  GPIO_UART3_MODE_MASK |
++			  GPIO_UART3_CTS_RTS_MODE_MASK,
++			  GPIO_UART3_MODE_MASK),
++
++	EN7580_FUNC_GROUP("uart3_cts_rts",
++			  EN7580_REG_GPIO_PON_MODE,
++			  GPIO_UART3_MODE_MASK |
++			  GPIO_UART3_CTS_RTS_MODE_MASK,
++			  GPIO_UART3_MODE_MASK |
++			  GPIO_UART3_CTS_RTS_MODE_MASK),
++
++	EN7580_FUNC_GROUP("uart4",
++			  EN7580_REG_GPIO_PON_MODE,
++			  GPIO_UART4_MODE_MASK,
++			  GPIO_UART4_MODE_MASK),
++
++	EN7580_FUNC_GROUP("uart5",
++			  EN7580_REG_GPIO_PON_MODE,
++			  GPIO_UART5_MODE_MASK,
++			  GPIO_UART5_MODE_MASK),
++};
++
++static const struct airoha_pinctrl_func_group en7580_i2c_func_group[] = {
++	EN7580_FUNC_GROUP("i2c1",
++			  EN7580_REG_GPIO_2ND_I2C_MODE,
++			  EN7580_GPIO_2ND_I2C_MODE_MASK,
++			  EN7580_GPIO_2ND_I2C_MODE_MASK),
++};
++
++static const struct airoha_pinctrl_func_group en7580_pcm_func_group[] = {
++	EN7580_FUNC_GROUP("pcm1",
++			  EN7580_REG_GPIO_SPI_CS1_MODE,
++			  GPIO_PCM1_MODE_MASK,
++			  GPIO_PCM1_MODE_MASK),
++
++	EN7580_FUNC_GROUP("pcm2",
++			  EN7580_REG_GPIO_SPI_CS1_MODE,
++			  GPIO_PCM2_MODE_MASK,
++			  GPIO_PCM2_MODE_MASK),
++};
++
++static const struct airoha_pinctrl_func_group en7580_spi_func_group[] = {
++	EN7580_FUNC_GROUP("spi_quad",
++			  EN7580_REG_GPIO_SPI_CS1_MODE,
++			  GPIO_SPI_QUAD_MODE_MASK,
++			  GPIO_SPI_QUAD_MODE_MASK),
++
++	EN7580_FUNC_GROUP("spi_cs1",
++			  EN7580_REG_GPIO_SPI_CS1_MODE,
++			  GPIO_SPI_CS1_MODE_MASK,
++			  GPIO_SPI_CS1_MODE_MASK),
++};
++
++static const struct airoha_pinctrl_func_group en7580_pcm_spi_func_group[] = {
++	EN7580_FUNC_GROUP("pcm_spi",
++			  EN7580_REG_GPIO_SPI_CS1_MODE,
++			  GPIO_PCM_SPI_MODE_MASK,
++			  GPIO_PCM_SPI_MODE_MASK),
++
++	EN7580_FUNC_GROUP("pcm_spi_int",
++			  EN7580_REG_GPIO_SPI_CS1_MODE,
++			  GPIO_PCM_INT_MODE_MASK,
++			  GPIO_PCM_INT_MODE_MASK),
++
++	EN7580_FUNC_GROUP("pcm_spi_rst",
++			  EN7580_REG_GPIO_SPI_CS1_MODE,
++			  GPIO_PCM_RESET_MODE_MASK,
++			  GPIO_PCM_RESET_MODE_MASK),
++
++	EN7580_FUNC_GROUP("pcm_spi_cs1",
++			  EN7580_REG_GPIO_SPI_CS1_MODE,
++			  EN7580_GPIO_PCM_SPI_CS1_MODE_MASK,
++			  EN7580_GPIO_PCM_SPI_CS1_MODE_MASK),
++
++	EN7580_FUNC_GROUP("pcm_spi_cs2",
++			  EN7580_REG_GPIO_SPI_CS1_MODE,
++			  EN7580_GPIO_PCM_SPI_CS2_MODE_MASK,
++			  EN7580_GPIO_PCM_SPI_CS2_MODE_MASK),
++
++	EN7580_FUNC_GROUP("pcm_spi_cs3",
++			  EN7580_REG_GPIO_SPI_CS1_MODE,
++			  EN7580_GPIO_PCM_SPI_CS3_MODE_MASK,
++			  EN7580_GPIO_PCM_SPI_CS3_MODE_MASK),
++
++	EN7580_FUNC_GROUP("pcm_spi_cs4",
++			  EN7580_REG_GPIO_SPI_CS1_MODE,
++			  EN7580_GPIO_PCM_SPI_CS4_MODE_MASK,
++			  EN7580_GPIO_PCM_SPI_CS4_MODE_MASK),
++
++	EN7580_FUNC_GROUP("pcm_spi_cs5",
++			  EN7580_REG_GPIO_SPI_CS1_MODE,
++			  EN7580_GPIO_PCM_SPI_CS5_MODE_MASK,
++			  EN7580_GPIO_PCM_SPI_CS5_MODE_MASK),
++
++	EN7580_FUNC_GROUP("pcm_spi_cs6",
++			  EN7580_REG_GPIO_SPI_CS1_MODE,
++			  EN7580_GPIO_PCM_SPI_CS6_MODE_MASK,
++			  EN7580_GPIO_PCM_SPI_CS6_MODE_MASK),
++
++	EN7580_FUNC_GROUP("pcm_spi_cs7",
++			  EN7580_REG_GPIO_SPI_CS1_MODE,
++			  EN7580_GPIO_PCM_SPI_CS7_MODE_MASK,
++			  EN7580_GPIO_PCM_SPI_CS7_MODE_MASK),
++};
++
++static const struct airoha_pinctrl_func_group
++en7580_pcie_reset_func_group[] = {
++	EN7580_FUNC_GROUP("pcie_reset0",
++			  EN7580_REG_GPIO_PON_MODE,
++			  GPIO_PCIE_RESET0_MASK,
++			  0),
++
++	EN7580_FUNC_GROUP("pcie_reset1",
++			  EN7580_REG_GPIO_PON_MODE,
++			  GPIO_PCIE_RESET1_MASK,
++			  0),
++};
++
++static const struct airoha_pinctrl_func_group en7580_gpio_func_group[] = {
++	EN7580_FUNC_GROUP("gpio44",
++			  EN7580_REG_GPIO_PON_MODE,
++			  GPIO_PCIE_RESET0_MASK,
++			  GPIO_PCIE_RESET0_MASK),
++
++	EN7580_FUNC_GROUP("gpio45",
++			  EN7580_REG_GPIO_PON_MODE,
++			  GPIO_PCIE_RESET1_MASK,
++			  GPIO_PCIE_RESET1_MASK),
++};
++
++#undef EN7580_FUNC_GROUP
++
++/* -------------------------------------------------------------------------- */
++/* PWM                                                                        */
++/* -------------------------------------------------------------------------- */
++
++#define EN7580_PINCTRL_PWM(_gpio, _mask)			\
++	{							\
++		.name = (_gpio),					\
++		.regmap[0] = {					\
++			AIROHA_FUNC_PWM_MUX,			\
++			REG_GPIO_FLASH_MODE_CFG,			\
++			(_mask),				\
++			(_mask),				\
++		},						\
++		.regmap_size = 1,				\
++	}
++
++#define EN7580_PINCTRL_PWM_EXT(_gpio, _mask)		\
++	{							\
++		.name = (_gpio),					\
++		.regmap[0] = {					\
++			AIROHA_FUNC_PWM_EXT_MUX,		\
++			REG_GPIO_FLASH_MODE_CFG_EXT,		\
++			(_mask),				\
++			(_mask),				\
++		},						\
++		.regmap_size = 1,				\
++	}
++
++#define EN7580_PINCTRL_PWM_EXT_SEC(_gpio, _mask, _smask)	\
++	{							\
++		.name = (_gpio),					\
++		.regmap[0] = {					\
++			AIROHA_FUNC_PWM_EXT_MUX,		\
++			REG_GPIO_FLASH_MODE_CFG_EXT,		\
++			(_mask),				\
++			(_mask),				\
++		},						\
++		.regmap[1] = {					\
++			AIROHA_FUNC_MUX,			\
++			EN7580_REG_GPIO_PON_MODE,		\
++			(_smask),				\
++			(_smask),				\
++		},						\
++		.regmap_size = 2,				\
++	}
++
++static const struct airoha_pinctrl_func_group en7580_pwm_func_group[] = {
++	EN7580_PINCTRL_PWM("gpio0", GPIO0_FLASH_MODE_CFG),
++	EN7580_PINCTRL_PWM("gpio1", GPIO1_FLASH_MODE_CFG),
++	EN7580_PINCTRL_PWM("gpio2", GPIO2_FLASH_MODE_CFG),
++	EN7580_PINCTRL_PWM("gpio3", GPIO3_FLASH_MODE_CFG),
++	EN7580_PINCTRL_PWM("gpio4", GPIO4_FLASH_MODE_CFG),
++	EN7580_PINCTRL_PWM("gpio5", GPIO5_FLASH_MODE_CFG),
++	EN7580_PINCTRL_PWM("gpio6", GPIO6_FLASH_MODE_CFG),
++	EN7580_PINCTRL_PWM("gpio7", GPIO7_FLASH_MODE_CFG),
++	EN7580_PINCTRL_PWM("gpio8", GPIO8_FLASH_MODE_CFG),
++	EN7580_PINCTRL_PWM("gpio9", GPIO9_FLASH_MODE_CFG),
++	EN7580_PINCTRL_PWM("gpio10", GPIO10_FLASH_MODE_CFG),
++	EN7580_PINCTRL_PWM("gpio11", GPIO11_FLASH_MODE_CFG),
++	EN7580_PINCTRL_PWM("gpio12", GPIO12_FLASH_MODE_CFG),
++	EN7580_PINCTRL_PWM("gpio13", GPIO13_FLASH_MODE_CFG),
++	EN7580_PINCTRL_PWM("gpio14", GPIO14_FLASH_MODE_CFG),
++	EN7580_PINCTRL_PWM("gpio15", GPIO15_FLASH_MODE_CFG),
++
++	EN7580_PINCTRL_PWM_EXT("gpio16", GPIO16_FLASH_MODE_CFG),
++	EN7580_PINCTRL_PWM_EXT("gpio17", GPIO17_FLASH_MODE_CFG),
++	EN7580_PINCTRL_PWM_EXT("gpio18", GPIO18_FLASH_MODE_CFG),
++	EN7580_PINCTRL_PWM_EXT("gpio19", GPIO19_FLASH_MODE_CFG),
++	EN7580_PINCTRL_PWM_EXT("gpio20", GPIO20_FLASH_MODE_CFG),
++	EN7580_PINCTRL_PWM_EXT("gpio21", GPIO21_FLASH_MODE_CFG),
++	EN7580_PINCTRL_PWM_EXT("gpio22", GPIO22_FLASH_MODE_CFG),
++	EN7580_PINCTRL_PWM_EXT("gpio23", GPIO23_FLASH_MODE_CFG),
++	EN7580_PINCTRL_PWM_EXT("gpio24", GPIO24_FLASH_MODE_CFG),
++	EN7580_PINCTRL_PWM_EXT("gpio25", GPIO25_FLASH_MODE_CFG),
++	EN7580_PINCTRL_PWM_EXT("gpio26", GPIO26_FLASH_MODE_CFG),
++	EN7580_PINCTRL_PWM_EXT("gpio27", GPIO27_FLASH_MODE_CFG),
++	EN7580_PINCTRL_PWM_EXT("gpio28", GPIO28_FLASH_MODE_CFG),
++	EN7580_PINCTRL_PWM_EXT("gpio29", GPIO29_FLASH_MODE_CFG),
++	EN7580_PINCTRL_PWM_EXT("gpio30", GPIO30_FLASH_MODE_CFG),
++	EN7580_PINCTRL_PWM_EXT("gpio31", GPIO31_FLASH_MODE_CFG),
++
++	EN7580_PINCTRL_PWM_EXT("gpio32", GPIO32_FLASH_MODE_CFG),
++
++	EN7580_PINCTRL_PWM_EXT("gpio37", GPIO37_FLASH_MODE_CFG),
++	EN7580_PINCTRL_PWM_EXT("gpio38", GPIO38_FLASH_MODE_CFG),
++	EN7580_PINCTRL_PWM_EXT("gpio39", GPIO39_FLASH_MODE_CFG),
++	EN7580_PINCTRL_PWM_EXT("gpio40", GPIO40_FLASH_MODE_CFG),
++	EN7580_PINCTRL_PWM_EXT("gpio41", GPIO41_FLASH_MODE_CFG),
++	EN7580_PINCTRL_PWM_EXT("gpio42", GPIO42_FLASH_MODE_CFG),
++	EN7580_PINCTRL_PWM_EXT("gpio43", GPIO43_FLASH_MODE_CFG),
++
++	EN7580_PINCTRL_PWM_EXT_SEC("gpio44",
++				   GPIO44_FLASH_MODE_CFG,
++				   GPIO_PCIE_RESET0_MASK),
++
++	EN7580_PINCTRL_PWM_EXT_SEC("gpio45",
++				   GPIO45_FLASH_MODE_CFG,
++				   GPIO_PCIE_RESET1_MASK),
++};
++
++/* -------------------------------------------------------------------------- */
++/* PHY LEDs                                                                   */
++/* -------------------------------------------------------------------------- */
++
++#define EN7580_PINCTRL_PHY_LED(_gpio, _mode, _reg, _map_mask, _map_val) \
++	{								\
++		.name = (_gpio),						\
++		.regmap[0] = {						\
++			AIROHA_FUNC_MUX,				\
++			EN7580_REG_GPIO_2ND_I2C_MODE,			\
++			(_mode),					\
++			(_mode),					\
++		},							\
++		.regmap[1] = {						\
++			AIROHA_FUNC_MUX,				\
++			(_reg),						\
++			(_map_mask),					\
++			(_map_val),					\
++		},							\
++		.regmap_size = 2,					\
++	}
++
++#define EN7580_LED0_FUNC_GROUP(_phy)					\
++	EN7580_PINCTRL_PHY_LED("gpio8",				\
++		EN7580_GPIO_LAN0_LED0_MODE_MASK,				\
++		EN7580_REG_LAN_LED0_MAPPING,				\
++		LAN0_LED_MAPPING_MASK, LAN0_PHY_LED_MAP(_phy)),		\
++	EN7580_PINCTRL_PHY_LED("gpio9",				\
++		EN7580_GPIO_LAN1_LED0_MODE_MASK,				\
++		EN7580_REG_LAN_LED0_MAPPING,				\
++		LAN1_LED_MAPPING_MASK, LAN1_PHY_LED_MAP(_phy)),		\
++	EN7580_PINCTRL_PHY_LED("gpio10",				\
++		EN7580_GPIO_LAN2_LED0_MODE_MASK,				\
++		EN7580_REG_LAN_LED0_MAPPING,				\
++		LAN2_LED_MAPPING_MASK, LAN2_PHY_LED_MAP(_phy)),		\
++	EN7580_PINCTRL_PHY_LED("gpio11",				\
++		EN7580_GPIO_LAN3_LED0_MODE_MASK,				\
++		EN7580_REG_LAN_LED0_MAPPING,				\
++		LAN3_LED_MAPPING_MASK, LAN3_PHY_LED_MAP(_phy))
++
++#define EN7580_LED1_FUNC_GROUP(_phy)					\
++	EN7580_PINCTRL_PHY_LED("gpio12",				\
++		EN7580_GPIO_LAN0_LED1_MODE_MASK,				\
++		EN7580_REG_LAN_LED1_MAPPING,				\
++		LAN0_LED_MAPPING_MASK, LAN0_PHY_LED_MAP(_phy)),		\
++	EN7580_PINCTRL_PHY_LED("gpio13",				\
++		EN7580_GPIO_LAN1_LED1_MODE_MASK,				\
++		EN7580_REG_LAN_LED1_MAPPING,				\
++		LAN1_LED_MAPPING_MASK, LAN1_PHY_LED_MAP(_phy)),		\
++	EN7580_PINCTRL_PHY_LED("gpio14",				\
++		EN7580_GPIO_LAN2_LED1_MODE_MASK,				\
++		EN7580_REG_LAN_LED1_MAPPING,				\
++		LAN2_LED_MAPPING_MASK, LAN2_PHY_LED_MAP(_phy)),		\
++	EN7580_PINCTRL_PHY_LED("gpio15",				\
++		EN7580_GPIO_LAN3_LED1_MODE_MASK,				\
++		EN7580_REG_LAN_LED1_MAPPING,				\
++		LAN3_LED_MAPPING_MASK, LAN3_PHY_LED_MAP(_phy))
++
++static const struct airoha_pinctrl_func_group
++en7580_phy1_led0_func_group[] = {
++	EN7580_LED0_FUNC_GROUP(0),
++};
++
++static const struct airoha_pinctrl_func_group
++en7580_phy2_led0_func_group[] = {
++	EN7580_LED0_FUNC_GROUP(1),
++};
++
++static const struct airoha_pinctrl_func_group
++en7580_phy3_led0_func_group[] = {
++	EN7580_LED0_FUNC_GROUP(2),
++};
++
++static const struct airoha_pinctrl_func_group
++en7580_phy4_led0_func_group[] = {
++	EN7580_LED0_FUNC_GROUP(3),
++};
++
++static const struct airoha_pinctrl_func_group
++en7580_phy1_led1_func_group[] = {
++	EN7580_LED1_FUNC_GROUP(0),
++};
++
++static const struct airoha_pinctrl_func_group
++en7580_phy2_led1_func_group[] = {
++	EN7580_LED1_FUNC_GROUP(1),
++};
++
++static const struct airoha_pinctrl_func_group
++en7580_phy3_led1_func_group[] = {
++	EN7580_LED1_FUNC_GROUP(2),
++};
++
++static const struct airoha_pinctrl_func_group
++en7580_phy4_led1_func_group[] = {
++	EN7580_LED1_FUNC_GROUP(3),
++};
++
++#undef EN7580_LED0_FUNC_GROUP
++#undef EN7580_LED1_FUNC_GROUP
++#undef EN7580_PINCTRL_PHY_LED
++
++/* -------------------------------------------------------------------------- */
++/* Functions                                                                  */
++/* -------------------------------------------------------------------------- */
++
++static const struct airoha_pinctrl_func en7580_pinctrl_funcs[] = {
++	PINCTRL_FUNC_DESC("pon", en7580_pon),
++	PINCTRL_FUNC_DESC("sipo", en7580_sipo),
++	PINCTRL_FUNC_DESC("uart", en7580_uart),
++	PINCTRL_FUNC_DESC("i2c", en7580_i2c),
++	PINCTRL_FUNC_DESC("pcm", en7580_pcm),
++	PINCTRL_FUNC_DESC("spi", en7580_spi),
++	PINCTRL_FUNC_DESC("pcm_spi", en7580_pcm_spi),
++	PINCTRL_FUNC_DESC("pcie_reset", en7580_pcie_reset),
++	PINCTRL_FUNC_DESC("gpio", en7580_gpio),
++	PINCTRL_FUNC_DESC("pwm", en7580_pwm),
++
++	PINCTRL_FUNC_DESC("phy1_led0", en7580_phy1_led0),
++	PINCTRL_FUNC_DESC("phy2_led0", en7580_phy2_led0),
++	PINCTRL_FUNC_DESC("phy3_led0", en7580_phy3_led0),
++	PINCTRL_FUNC_DESC("phy4_led0", en7580_phy4_led0),
++
++	PINCTRL_FUNC_DESC("phy1_led1", en7580_phy1_led1),
++	PINCTRL_FUNC_DESC("phy2_led1", en7580_phy2_led1),
++	PINCTRL_FUNC_DESC("phy3_led1", en7580_phy3_led1),
++	PINCTRL_FUNC_DESC("phy4_led1", en7580_phy4_led1),
++};
++
++/* -------------------------------------------------------------------------- */
++/* GPIO request mux cleanup                                                   */
++/* -------------------------------------------------------------------------- */
++
++#define EN7580_GPIO_MUX(_pin, _type, _reg, _mask)	\
++	{						\
++		.pin = (_pin),				\
++		.mux = (_type),				\
++		.reg = {				\
++			.offset = (_reg),		\
++			.mask = (_mask),			\
++		},					\
++	}
++
++#define EN7580_PWM_GPIO_MUX(_pin, _reg, _mask, _type)	\
++	EN7580_GPIO_MUX(_pin, _type, _reg, _mask)
++
++/*
++ * gpio_request_enable() clears every mux bit associated with the requested
++ * GPIO. This restores the normal GPIO function for muxes whose GPIO state is
++ * represented by zero.
++ *
++ * GPIO44/GPIO45 are special: their GPIO selection is represented by a set
++ * PCIe-reset mux bit, so they are handled by the explicit "gpio" function.
++ */
++static const struct airoha_pinctrl_gpio_mux en7580_gpio_muxes[] = {
++	/* PHY LEDs */
++	EN7580_GPIO_MUX(8, AIROHA_FUNC_MUX,
++			EN7580_REG_GPIO_2ND_I2C_MODE,
++			EN7580_GPIO_LAN0_LED0_MODE_MASK),
++	EN7580_GPIO_MUX(9, AIROHA_FUNC_MUX,
++			EN7580_REG_GPIO_2ND_I2C_MODE,
++			EN7580_GPIO_LAN1_LED0_MODE_MASK),
++	EN7580_GPIO_MUX(10, AIROHA_FUNC_MUX,
++			EN7580_REG_GPIO_2ND_I2C_MODE,
++			EN7580_GPIO_LAN2_LED0_MODE_MASK),
++	EN7580_GPIO_MUX(11, AIROHA_FUNC_MUX,
++			EN7580_REG_GPIO_2ND_I2C_MODE,
++			EN7580_GPIO_LAN3_LED0_MODE_MASK),
++
++	EN7580_GPIO_MUX(12, AIROHA_FUNC_MUX,
++			EN7580_REG_GPIO_2ND_I2C_MODE,
++			EN7580_GPIO_LAN0_LED1_MODE_MASK),
++	EN7580_GPIO_MUX(13, AIROHA_FUNC_MUX,
++			EN7580_REG_GPIO_2ND_I2C_MODE,
++			EN7580_GPIO_LAN1_LED1_MODE_MASK),
++	EN7580_GPIO_MUX(14, AIROHA_FUNC_MUX,
++			EN7580_REG_GPIO_2ND_I2C_MODE,
++			EN7580_GPIO_LAN2_LED1_MODE_MASK),
++	EN7580_GPIO_MUX(15, AIROHA_FUNC_MUX,
++			EN7580_REG_GPIO_2ND_I2C_MODE,
++			EN7580_GPIO_LAN3_LED1_MODE_MASK),
++
++	/* SPI quad */
++	EN7580_GPIO_MUX(16, AIROHA_FUNC_MUX,
++			EN7580_REG_GPIO_SPI_CS1_MODE,
++			GPIO_SPI_QUAD_MODE_MASK),
++	EN7580_GPIO_MUX(17, AIROHA_FUNC_MUX,
++			EN7580_REG_GPIO_SPI_CS1_MODE,
++			GPIO_SPI_QUAD_MODE_MASK),
++
++	/* PCM2 / UART2 flow control */
++	EN7580_GPIO_MUX(18, AIROHA_FUNC_MUX,
++			EN7580_REG_GPIO_SPI_CS1_MODE,
++			GPIO_PCM2_MODE_MASK),
++	EN7580_GPIO_MUX(18, AIROHA_FUNC_MUX,
++			EN7580_REG_GPIO_PON_MODE,
++			GPIO_UART2_CTS_RTS_MODE_MASK),
++
++	EN7580_GPIO_MUX(19, AIROHA_FUNC_MUX,
++			EN7580_REG_GPIO_SPI_CS1_MODE,
++			GPIO_PCM2_MODE_MASK),
++	EN7580_GPIO_MUX(19, AIROHA_FUNC_MUX,
++			EN7580_REG_GPIO_PON_MODE,
++			GPIO_UART2_CTS_RTS_MODE_MASK),
++
++	/* UART2 / PCM2 */
++	EN7580_GPIO_MUX(20, AIROHA_FUNC_MUX,
++			EN7580_REG_GPIO_PON_MODE,
++			GPIO_UART2_MODE_MASK),
++	EN7580_GPIO_MUX(20, AIROHA_FUNC_MUX,
++			EN7580_REG_GPIO_SPI_CS1_MODE,
++			GPIO_PCM2_MODE_MASK),
++
++	EN7580_GPIO_MUX(21, AIROHA_FUNC_MUX,
++			EN7580_REG_GPIO_PON_MODE,
++			GPIO_UART2_MODE_MASK | SIPO_RCLK_MODE_MASK),
++	EN7580_GPIO_MUX(21, AIROHA_FUNC_MUX,
++			EN7580_REG_GPIO_SPI_CS1_MODE,
++			GPIO_PCM2_MODE_MASK),
++
++	/* SIPO / UART4 */
++	EN7580_GPIO_MUX(22, AIROHA_FUNC_MUX,
++			EN7580_REG_GPIO_PON_MODE,
++			GPIO_SIPO_MODE_MASK | SIPO_RCLK_MODE_MASK |
++			GPIO_UART4_MODE_MASK),
++
++	EN7580_GPIO_MUX(23, AIROHA_FUNC_MUX,
++			EN7580_REG_GPIO_PON_MODE,
++			GPIO_SIPO_MODE_MASK | SIPO_RCLK_MODE_MASK |
++			GPIO_UART4_MODE_MASK),
++
++	/* UART3 CTS/RTS / PCM reset */
++	EN7580_GPIO_MUX(24, AIROHA_FUNC_MUX,
++			EN7580_REG_GPIO_PON_MODE,
++			GPIO_UART3_CTS_RTS_MODE_MASK),
++	EN7580_GPIO_MUX(24, AIROHA_FUNC_MUX,
++			EN7580_REG_GPIO_SPI_CS1_MODE,
++			GPIO_PCM_RESET_MODE_MASK),
++
++	/* PCM1 */
++	EN7580_GPIO_MUX(25, AIROHA_FUNC_MUX,
++			EN7580_REG_GPIO_SPI_CS1_MODE,
++			GPIO_PCM1_MODE_MASK),
++	EN7580_GPIO_MUX(26, AIROHA_FUNC_MUX,
++			EN7580_REG_GPIO_SPI_CS1_MODE,
++			GPIO_PCM1_MODE_MASK),
++	EN7580_GPIO_MUX(27, AIROHA_FUNC_MUX,
++			EN7580_REG_GPIO_SPI_CS1_MODE,
++			GPIO_PCM1_MODE_MASK),
++	EN7580_GPIO_MUX(28, AIROHA_FUNC_MUX,
++			EN7580_REG_GPIO_SPI_CS1_MODE,
++			GPIO_PCM1_MODE_MASK),
++
++	/* UART3 CTS/RTS / PCM SPI */
++	EN7580_GPIO_MUX(29, AIROHA_FUNC_MUX,
++			EN7580_REG_GPIO_PON_MODE,
++			GPIO_UART3_CTS_RTS_MODE_MASK),
++	EN7580_GPIO_MUX(29, AIROHA_FUNC_MUX,
++			EN7580_REG_GPIO_SPI_CS1_MODE,
++			GPIO_PCM_SPI_MODE_MASK),
++
++	/* UART3 / SPI CS1 / PCM SPI */
++	EN7580_GPIO_MUX(30, AIROHA_FUNC_MUX,
++			EN7580_REG_GPIO_PON_MODE,
++			GPIO_UART3_MODE_MASK),
++	EN7580_GPIO_MUX(30, AIROHA_FUNC_MUX,
++			EN7580_REG_GPIO_SPI_CS1_MODE,
++			GPIO_SPI_CS1_MODE_MASK | GPIO_PCM_SPI_MODE_MASK),
++
++	/* PCM SPI CS1 */
++	EN7580_GPIO_MUX(31, AIROHA_FUNC_MUX,
++			EN7580_REG_GPIO_SPI_CS1_MODE,
++			EN7580_GPIO_PCM_SPI_CS1_MODE_MASK),
++
++	/* PCM SPI CS2 */
++	EN7580_GPIO_MUX(32, AIROHA_FUNC_MUX,
++			EN7580_REG_GPIO_SPI_CS1_MODE,
++			EN7580_GPIO_PCM_SPI_CS2_MODE_MASK),
++
++	/* PCM SPI CS3 */
++	EN7580_GPIO_MUX(33, AIROHA_FUNC_MUX,
++			EN7580_REG_GPIO_SPI_CS1_MODE,
++			EN7580_GPIO_PCM_SPI_CS3_MODE_MASK),
++
++	/* UART5 / PCM SPI */
++	EN7580_GPIO_MUX(34, AIROHA_FUNC_MUX,
++			EN7580_REG_GPIO_PON_MODE,
++			GPIO_UART5_MODE_MASK),
++	EN7580_GPIO_MUX(34, AIROHA_FUNC_MUX,
++			EN7580_REG_GPIO_SPI_CS1_MODE,
++			GPIO_PCM_SPI_MODE_MASK),
++
++	EN7580_GPIO_MUX(35, AIROHA_FUNC_MUX,
++			EN7580_REG_GPIO_PON_MODE,
++			GPIO_UART5_MODE_MASK),
++	EN7580_GPIO_MUX(35, AIROHA_FUNC_MUX,
++			EN7580_REG_GPIO_SPI_CS1_MODE,
++			GPIO_PCM_SPI_MODE_MASK),
++
++	/* PON */
++	EN7580_GPIO_MUX(36, AIROHA_FUNC_MUX,
++			EN7580_REG_GPIO_PON_MODE,
++			GPIO_PON_MODE_MASK),
++	EN7580_GPIO_MUX(37, AIROHA_FUNC_MUX,
++			EN7580_REG_GPIO_PON_MODE,
++			GPIO_PON_MODE_MASK),
++	EN7580_GPIO_MUX(38, AIROHA_FUNC_MUX,
++			EN7580_REG_GPIO_PON_MODE,
++			GPIO_PON_MODE_MASK),
++	EN7580_GPIO_MUX(39, AIROHA_FUNC_MUX,
++			EN7580_REG_GPIO_PON_MODE,
++			GPIO_PON_MODE_MASK),
++	EN7580_GPIO_MUX(40, AIROHA_FUNC_MUX,
++			EN7580_REG_GPIO_PON_MODE,
++			GPIO_PON_MODE_MASK),
++	EN7580_GPIO_MUX(41, AIROHA_FUNC_MUX,
++			EN7580_REG_GPIO_PON_MODE,
++			GPIO_PON_MODE_MASK),
++
++	/* second I2C */
++	EN7580_GPIO_MUX(42, AIROHA_FUNC_MUX,
++			EN7580_REG_GPIO_2ND_I2C_MODE,
++			EN7580_GPIO_2ND_I2C_MODE_MASK),
++	EN7580_GPIO_MUX(43, AIROHA_FUNC_MUX,
++			EN7580_REG_GPIO_2ND_I2C_MODE,
++			EN7580_GPIO_2ND_I2C_MODE_MASK),
++
++	/* PCM SPI chip selects on GPIO8-GPIO11 */
++	EN7580_GPIO_MUX(8, AIROHA_FUNC_MUX,
++			EN7580_REG_GPIO_SPI_CS1_MODE,
++			EN7580_GPIO_PCM_SPI_CS4_MODE_MASK),
++	EN7580_GPIO_MUX(9, AIROHA_FUNC_MUX,
++			EN7580_REG_GPIO_SPI_CS1_MODE,
++			EN7580_GPIO_PCM_SPI_CS5_MODE_MASK),
++	EN7580_GPIO_MUX(10, AIROHA_FUNC_MUX,
++			EN7580_REG_GPIO_SPI_CS1_MODE,
++			EN7580_GPIO_PCM_SPI_CS6_MODE_MASK),
++	EN7580_GPIO_MUX(11, AIROHA_FUNC_MUX,
++			EN7580_REG_GPIO_SPI_CS1_MODE,
++			EN7580_GPIO_PCM_SPI_CS7_MODE_MASK),
++
++	/* PWM bank 0 */
++	EN7580_PWM_GPIO_MUX(0, REG_GPIO_FLASH_MODE_CFG,
++			    GPIO0_FLASH_MODE_CFG, AIROHA_FUNC_PWM_MUX),
++	EN7580_PWM_GPIO_MUX(1, REG_GPIO_FLASH_MODE_CFG,
++			    GPIO1_FLASH_MODE_CFG, AIROHA_FUNC_PWM_MUX),
++	EN7580_PWM_GPIO_MUX(2, REG_GPIO_FLASH_MODE_CFG,
++			    GPIO2_FLASH_MODE_CFG, AIROHA_FUNC_PWM_MUX),
++	EN7580_PWM_GPIO_MUX(3, REG_GPIO_FLASH_MODE_CFG,
++			    GPIO3_FLASH_MODE_CFG, AIROHA_FUNC_PWM_MUX),
++	EN7580_PWM_GPIO_MUX(4, REG_GPIO_FLASH_MODE_CFG,
++			    GPIO4_FLASH_MODE_CFG, AIROHA_FUNC_PWM_MUX),
++	EN7580_PWM_GPIO_MUX(5, REG_GPIO_FLASH_MODE_CFG,
++			    GPIO5_FLASH_MODE_CFG, AIROHA_FUNC_PWM_MUX),
++	EN7580_PWM_GPIO_MUX(6, REG_GPIO_FLASH_MODE_CFG,
++			    GPIO6_FLASH_MODE_CFG, AIROHA_FUNC_PWM_MUX),
++	EN7580_PWM_GPIO_MUX(7, REG_GPIO_FLASH_MODE_CFG,
++			    GPIO7_FLASH_MODE_CFG, AIROHA_FUNC_PWM_MUX),
++	EN7580_PWM_GPIO_MUX(8, REG_GPIO_FLASH_MODE_CFG,
++			    GPIO8_FLASH_MODE_CFG, AIROHA_FUNC_PWM_MUX),
++	EN7580_PWM_GPIO_MUX(9, REG_GPIO_FLASH_MODE_CFG,
++			    GPIO9_FLASH_MODE_CFG, AIROHA_FUNC_PWM_MUX),
++	EN7580_PWM_GPIO_MUX(10, REG_GPIO_FLASH_MODE_CFG,
++			    GPIO10_FLASH_MODE_CFG, AIROHA_FUNC_PWM_MUX),
++	EN7580_PWM_GPIO_MUX(11, REG_GPIO_FLASH_MODE_CFG,
++			    GPIO11_FLASH_MODE_CFG, AIROHA_FUNC_PWM_MUX),
++	EN7580_PWM_GPIO_MUX(12, REG_GPIO_FLASH_MODE_CFG,
++			    GPIO12_FLASH_MODE_CFG, AIROHA_FUNC_PWM_MUX),
++	EN7580_PWM_GPIO_MUX(13, REG_GPIO_FLASH_MODE_CFG,
++			    GPIO13_FLASH_MODE_CFG, AIROHA_FUNC_PWM_MUX),
++	EN7580_PWM_GPIO_MUX(14, REG_GPIO_FLASH_MODE_CFG,
++			    GPIO14_FLASH_MODE_CFG, AIROHA_FUNC_PWM_MUX),
++	EN7580_PWM_GPIO_MUX(15, REG_GPIO_FLASH_MODE_CFG,
++			    GPIO15_FLASH_MODE_CFG, AIROHA_FUNC_PWM_MUX),
++
++	/* PWM bank 1 */
++	EN7580_PWM_GPIO_MUX(16, REG_GPIO_FLASH_MODE_CFG_EXT,
++			    GPIO16_FLASH_MODE_CFG, AIROHA_FUNC_PWM_EXT_MUX),
++	EN7580_PWM_GPIO_MUX(17, REG_GPIO_FLASH_MODE_CFG_EXT,
++			    GPIO17_FLASH_MODE_CFG, AIROHA_FUNC_PWM_EXT_MUX),
++	EN7580_PWM_GPIO_MUX(18, REG_GPIO_FLASH_MODE_CFG_EXT,
++			    GPIO18_FLASH_MODE_CFG, AIROHA_FUNC_PWM_EXT_MUX),
++	EN7580_PWM_GPIO_MUX(19, REG_GPIO_FLASH_MODE_CFG_EXT,
++			    GPIO19_FLASH_MODE_CFG, AIROHA_FUNC_PWM_EXT_MUX),
++	EN7580_PWM_GPIO_MUX(20, REG_GPIO_FLASH_MODE_CFG_EXT,
++			    GPIO20_FLASH_MODE_CFG, AIROHA_FUNC_PWM_EXT_MUX),
++	EN7580_PWM_GPIO_MUX(21, REG_GPIO_FLASH_MODE_CFG_EXT,
++			    GPIO21_FLASH_MODE_CFG, AIROHA_FUNC_PWM_EXT_MUX),
++	EN7580_PWM_GPIO_MUX(22, REG_GPIO_FLASH_MODE_CFG_EXT,
++			    GPIO22_FLASH_MODE_CFG, AIROHA_FUNC_PWM_EXT_MUX),
++	EN7580_PWM_GPIO_MUX(23, REG_GPIO_FLASH_MODE_CFG_EXT,
++			    GPIO23_FLASH_MODE_CFG, AIROHA_FUNC_PWM_EXT_MUX),
++	EN7580_PWM_GPIO_MUX(24, REG_GPIO_FLASH_MODE_CFG_EXT,
++			    GPIO24_FLASH_MODE_CFG, AIROHA_FUNC_PWM_EXT_MUX),
++	EN7580_PWM_GPIO_MUX(25, REG_GPIO_FLASH_MODE_CFG_EXT,
++			    GPIO25_FLASH_MODE_CFG, AIROHA_FUNC_PWM_EXT_MUX),
++	EN7580_PWM_GPIO_MUX(26, REG_GPIO_FLASH_MODE_CFG_EXT,
++			    GPIO26_FLASH_MODE_CFG, AIROHA_FUNC_PWM_EXT_MUX),
++	EN7580_PWM_GPIO_MUX(27, REG_GPIO_FLASH_MODE_CFG_EXT,
++			    GPIO27_FLASH_MODE_CFG, AIROHA_FUNC_PWM_EXT_MUX),
++	EN7580_PWM_GPIO_MUX(28, REG_GPIO_FLASH_MODE_CFG_EXT,
++			    GPIO28_FLASH_MODE_CFG, AIROHA_FUNC_PWM_EXT_MUX),
++	EN7580_PWM_GPIO_MUX(29, REG_GPIO_FLASH_MODE_CFG_EXT,
++			    GPIO29_FLASH_MODE_CFG, AIROHA_FUNC_PWM_EXT_MUX),
++	EN7580_PWM_GPIO_MUX(30, REG_GPIO_FLASH_MODE_CFG_EXT,
++			    GPIO30_FLASH_MODE_CFG, AIROHA_FUNC_PWM_EXT_MUX),
++	EN7580_PWM_GPIO_MUX(31, REG_GPIO_FLASH_MODE_CFG_EXT,
++			    GPIO31_FLASH_MODE_CFG, AIROHA_FUNC_PWM_EXT_MUX),
++
++	EN7580_PWM_GPIO_MUX(32, REG_GPIO_FLASH_MODE_CFG_EXT,
++			    GPIO32_FLASH_MODE_CFG, AIROHA_FUNC_PWM_EXT_MUX),
++
++	EN7580_PWM_GPIO_MUX(37, REG_GPIO_FLASH_MODE_CFG_EXT,
++			    GPIO37_FLASH_MODE_CFG, AIROHA_FUNC_PWM_EXT_MUX),
++	EN7580_PWM_GPIO_MUX(38, REG_GPIO_FLASH_MODE_CFG_EXT,
++			    GPIO38_FLASH_MODE_CFG, AIROHA_FUNC_PWM_EXT_MUX),
++	EN7580_PWM_GPIO_MUX(39, REG_GPIO_FLASH_MODE_CFG_EXT,
++			    GPIO39_FLASH_MODE_CFG, AIROHA_FUNC_PWM_EXT_MUX),
++	EN7580_PWM_GPIO_MUX(40, REG_GPIO_FLASH_MODE_CFG_EXT,
++			    GPIO40_FLASH_MODE_CFG, AIROHA_FUNC_PWM_EXT_MUX),
++	EN7580_PWM_GPIO_MUX(41, REG_GPIO_FLASH_MODE_CFG_EXT,
++			    GPIO41_FLASH_MODE_CFG, AIROHA_FUNC_PWM_EXT_MUX),
++	EN7580_PWM_GPIO_MUX(42, REG_GPIO_FLASH_MODE_CFG_EXT,
++			    GPIO42_FLASH_MODE_CFG, AIROHA_FUNC_PWM_EXT_MUX),
++	EN7580_PWM_GPIO_MUX(43, REG_GPIO_FLASH_MODE_CFG_EXT,
++			    GPIO43_FLASH_MODE_CFG, AIROHA_FUNC_PWM_EXT_MUX),
++	EN7580_PWM_GPIO_MUX(44, REG_GPIO_FLASH_MODE_CFG_EXT,
++			    GPIO44_FLASH_MODE_CFG, AIROHA_FUNC_PWM_EXT_MUX),
++	EN7580_PWM_GPIO_MUX(45, REG_GPIO_FLASH_MODE_CFG_EXT,
++			    GPIO45_FLASH_MODE_CFG, AIROHA_FUNC_PWM_EXT_MUX),
++};
++
++#undef EN7580_PWM_GPIO_MUX
++#undef EN7580_GPIO_MUX
++
++/* -------------------------------------------------------------------------- */
++/* Pinconf                                                                    */
++/* -------------------------------------------------------------------------- */
++
++#define EN7580_PINCTRL_GPIO_CONFS(_reg_l, _reg_h, _reg_sa)		\
++	PINCTRL_CONF_DESC(0, _reg_l, BIT(0)),				\
++	PINCTRL_CONF_DESC(1, _reg_l, BIT(1)),				\
++	PINCTRL_CONF_DESC(2, _reg_l, BIT(2)),				\
++	PINCTRL_CONF_DESC(3, _reg_l, BIT(3)),				\
++	PINCTRL_CONF_DESC(4, _reg_l, BIT(4)),				\
++	PINCTRL_CONF_DESC(5, _reg_l, BIT(5)),				\
++	PINCTRL_CONF_DESC(6, _reg_l, BIT(6)),				\
++	PINCTRL_CONF_DESC(7, _reg_l, BIT(7)),				\
++	PINCTRL_CONF_DESC(8, _reg_l, BIT(8)),				\
++	PINCTRL_CONF_DESC(9, _reg_l, BIT(9)),				\
++	PINCTRL_CONF_DESC(10, _reg_l, BIT(10)),				\
++	PINCTRL_CONF_DESC(11, _reg_l, BIT(11)),				\
++	PINCTRL_CONF_DESC(12, _reg_l, BIT(12)),				\
++	PINCTRL_CONF_DESC(13, _reg_l, BIT(13)),				\
++	PINCTRL_CONF_DESC(14, _reg_l, BIT(14)),				\
++	PINCTRL_CONF_DESC(15, _reg_l, BIT(15)),				\
++	PINCTRL_CONF_DESC(16, _reg_l, BIT(16)),				\
++	PINCTRL_CONF_DESC(17, _reg_l, BIT(17)),				\
++	PINCTRL_CONF_DESC(18, _reg_l, BIT(18)),				\
++	PINCTRL_CONF_DESC(19, _reg_l, BIT(19)),				\
++	PINCTRL_CONF_DESC(20, _reg_l, BIT(20)),				\
++	PINCTRL_CONF_DESC(21, _reg_l, BIT(21)),				\
++	PINCTRL_CONF_DESC(22, _reg_l, BIT(22)),				\
++	PINCTRL_CONF_DESC(23, _reg_l, BIT(23)),				\
++	PINCTRL_CONF_DESC(24, _reg_l, BIT(24)),				\
++	PINCTRL_CONF_DESC(25, _reg_l, BIT(25)),				\
++	PINCTRL_CONF_DESC(26, _reg_l, BIT(26)),				\
++	PINCTRL_CONF_DESC(27, _reg_l, BIT(27)),				\
++	PINCTRL_CONF_DESC(28, _reg_l, BIT(28)),				\
++	PINCTRL_CONF_DESC(29, _reg_l, BIT(29)),				\
++	PINCTRL_CONF_DESC(30, _reg_l, BIT(30)),				\
++	PINCTRL_CONF_DESC(31, _reg_l, BIT(31)),				\
++	PINCTRL_CONF_DESC(32, _reg_h, BIT(0)),				\
++	PINCTRL_CONF_DESC(33, _reg_h, BIT(1)),				\
++	PINCTRL_CONF_DESC(34, _reg_h, BIT(2)),				\
++	PINCTRL_CONF_DESC(35, _reg_h, BIT(3)),				\
++	PINCTRL_CONF_DESC(36, _reg_h, BIT(4)),				\
++	PINCTRL_CONF_DESC(37, _reg_h, BIT(5)),				\
++	PINCTRL_CONF_DESC(38, _reg_h, BIT(6)),				\
++	PINCTRL_CONF_DESC(39, _reg_h, BIT(7)),				\
++	PINCTRL_CONF_DESC(40, _reg_h, BIT(8)),				\
++	PINCTRL_CONF_DESC(41, _reg_h, BIT(9)),				\
++	PINCTRL_CONF_DESC(42, _reg_h, BIT(10)),				\
++	PINCTRL_CONF_DESC(43, _reg_h, BIT(11)),				\
++	PINCTRL_CONF_DESC(44, _reg_sa, EN7580_PCIE0_RESET_CONF_MASK),	\
++	PINCTRL_CONF_DESC(45, _reg_sa, EN7580_PCIE1_RESET_CONF_MASK),	\
++	PINCTRL_CONF_DESC(46, _reg_sa, EN7580_I2C_SDA_CONF_MASK),		\
++	PINCTRL_CONF_DESC(47, _reg_sa, EN7580_I2C_SCL_CONF_MASK),		\
++	PINCTRL_CONF_DESC(48, _reg_sa, EN7580_UART1_TXD_CONF_MASK),	\
++	PINCTRL_CONF_DESC(49, _reg_sa, EN7580_UART1_RXD_CONF_MASK),	\
++	PINCTRL_CONF_DESC(50, _reg_sa, EN7580_MDC_0_CONF_MASK),		\
++	PINCTRL_CONF_DESC(51, _reg_sa, EN7580_MDIO_0_CONF_MASK),		\
++	PINCTRL_CONF_DESC(52, _reg_sa, EN7580_MDC_1_CONF_MASK),		\
++	PINCTRL_CONF_DESC(53, _reg_sa, EN7580_MDIO_1_CONF_MASK),		\
++	PINCTRL_CONF_DESC(54, _reg_sa, EN7580_SPI_CS0_CONF_MASK),		\
++	PINCTRL_CONF_DESC(55, _reg_sa, EN7580_SPI_CLK_CONF_MASK),		\
++	PINCTRL_CONF_DESC(56, _reg_sa, EN7580_SPI_MOSI_CONF_MASK),		\
++	PINCTRL_CONF_DESC(57, _reg_sa, EN7580_SPI_MISO_CONF_MASK)
++
++static const struct airoha_pinctrl_conf en7580_pinctrl_pullup_conf[] = {
++	EN7580_PINCTRL_GPIO_CONFS(REG_GPIO_L_PU,
++				  REG_GPIO_H_PU,
++				  REG_I2C_SDA_PU),
++};
++
++static const struct airoha_pinctrl_conf en7580_pinctrl_pulldown_conf[] = {
++	EN7580_PINCTRL_GPIO_CONFS(REG_GPIO_L_PD,
++				  REG_GPIO_H_PD,
++				  REG_I2C_SDA_PD),
++};
++
++static const struct airoha_pinctrl_conf en7580_pinctrl_drive_e2_conf[] = {
++	EN7580_PINCTRL_GPIO_CONFS(REG_GPIO_L_E2,
++				  REG_GPIO_H_E2,
++				  REG_I2C_SDA_E2),
++};
++
++static const struct airoha_pinctrl_conf en7580_pinctrl_drive_e4_conf[] = {
++	EN7580_PINCTRL_GPIO_CONFS(REG_GPIO_L_E4,
++				  REG_GPIO_H_E4,
++				  REG_I2C_SDA_E4),
++};
++
++#undef EN7580_PINCTRL_GPIO_CONFS
++
++/* -------------------------------------------------------------------------- */
++/* SoC data                                                                   */
++/* -------------------------------------------------------------------------- */
++
++static const struct airoha_pinctrl_match_data en7580_pinctrl_match_data = {
++	.chip_scu_compatible = "econet,en7580-chip-scu",
++
++	.pinctrl_name = KBUILD_MODNAME,
++	.pinctrl_owner = THIS_MODULE,
++
++	.pins = en7580_pinctrl_pins,
++	.num_pins = ARRAY_SIZE(en7580_pinctrl_pins),
++
++	.grps = en7580_pinctrl_groups,
++	.num_grps = ARRAY_SIZE(en7580_pinctrl_groups),
++
++	.funcs = en7580_pinctrl_funcs,
++	.num_funcs = ARRAY_SIZE(en7580_pinctrl_funcs),
++
++	/*
++	 * GPIO0-GPIO45 are exposed through the GPIO controller.
++	 * Pins 46-57 are standalone pads only.
++	 */
++	.num_gpio = 46,
++
++	/*
++	 * Keep the second interrupt bank disabled until EN7580 GPIO32+
++	 * interrupt capability has been confirmed independently.
++	 */
++	.num_irq = 32,
++
++	.gpio_muxes = en7580_gpio_muxes,
++	.num_gpio_muxes = ARRAY_SIZE(en7580_gpio_muxes),
++
++	/*
++	 * EN7580 E4/E8 stages encode:
++	 *
++	 *   00 -> 4 mA
++	 *   01 -> 8 mA
++	 *   10 -> 12 mA
++	 *   11 -> 16 mA
++	 */
++	.drive_strength_step_ma = 4,
++
++	/*
++	 * Do not use RG_FORCE_GPIO2_EN yet.
++	 *
++	 * The generic core assumes a single register whose BIT(gpio)
++	 * directly forces GPIO mode. That semantic is not sufficiently
++	 * established for EN7580, especially for GPIO32+.
++	 */
++	.force_gpio_reg = 0,
++
++	.confs_info = {
++		[AIROHA_PINCTRL_CONFS_PULLUP] = {
++			.confs = en7580_pinctrl_pullup_conf,
++			.num_confs =
++				ARRAY_SIZE(en7580_pinctrl_pullup_conf),
++		},
++		[AIROHA_PINCTRL_CONFS_PULLDOWN] = {
++			.confs = en7580_pinctrl_pulldown_conf,
++			.num_confs =
++				ARRAY_SIZE(en7580_pinctrl_pulldown_conf),
++		},
++		[AIROHA_PINCTRL_CONFS_DRIVE_E2] = {
++			.confs = en7580_pinctrl_drive_e2_conf,
++			.num_confs =
++				ARRAY_SIZE(en7580_pinctrl_drive_e2_conf),
++		},
++		[AIROHA_PINCTRL_CONFS_DRIVE_E4] = {
++			.confs = en7580_pinctrl_drive_e4_conf,
++			.num_confs =
++				ARRAY_SIZE(en7580_pinctrl_drive_e4_conf),
++		},
++	},
++
++	/*
++	 * Deliberately no hwinit_regs.
++	 *
++	 * Resetting 0x210/0x214/0x218 during probe can destroy a PON,
++	 * UART or boot-time optical configuration established before Linux.
++	 */
++};
++
++/* -------------------------------------------------------------------------- */
++/* Platform driver                                                            */
++/* -------------------------------------------------------------------------- */
++
++static const struct of_device_id en7580_pinctrl_of_match[] = {
++	{
++		.compatible = "econet,en7580-pinctrl",
++		.data = &en7580_pinctrl_match_data,
++	},
++	{ /* sentinel */ }
++};
++MODULE_DEVICE_TABLE(of, en7580_pinctrl_of_match);
++
++static struct platform_driver en7580_pinctrl_driver = {
++	.probe = airoha_pinctrl_probe,
++	.driver = {
++		.name = "pinctrl-econet-en7580",
++		.of_match_table = en7580_pinctrl_of_match,
++	},
++};
++module_platform_driver(en7580_pinctrl_driver);
++
++MODULE_LICENSE("GPL");
++MODULE_AUTHOR("Benjamin Larsson <benjamin.larsson@genexis.eu>");
++MODULE_AUTHOR("Matheus Sampaio Queiroga <srherobrine20@gmail.com>");
++MODULE_DESCRIPTION("Pinctrl driver for EcoNet EN7580 SoCs");
+diff --git a/include/linux/soc/airoha/pkgids.h b/include/linux/soc/airoha/pkgids.h
+index 0ea20abb8..3d86fcb98 100644
+--- a/include/linux/soc/airoha/pkgids.h
++++ b/include/linux/soc/airoha/pkgids.h
+@@ -13,18 +13,72 @@
+ 
+ #define AIROHA_NP_SCU_PDIDR		0x05c
+ #define AIROHA_NP_SCU_HIR		0x064
++#define AIROHA_NP_SCU_SUBMODEL		0x0f8
+ #define AIROHA_NP_SCU_SCREG_WR1	0x284
+ 
+ #define AIROHA_NP_SCU_HIR_MASK		GENMASK(31, 16)
+ #define AIROHA_NP_SCU_PDIDR_MASK	GENMASK(15, 0)
+ #define AIROHA_NP_SCU_PACKAGE_ID_MASK	GENMASK(3, 0)
+ #define AIROHA_NP_SCU_PACKAGE_ID_EXT	BIT(7)
++#define AIROHA_NP_SCU_SUBMODEL_MASK	GENMASK(1, 0)
++
++/* Before i2c reg: 0x1FBF8100 */
++
++/* Physical addresses used by the legacy MIPS EcoNet identification logic. */
++#define AIROHA_EFUSE_VERIFY_DATA0_PHYS	0x1fbf8214
++#define AIROHA_EFUSE_VERIFY_DATA1_PHYS	0x1fbf8218
++#define AIROHA_CHIP_SCU_PACKAGE_PHYS	0x1fa20174
++#define AIROHA_CHIP_SCU_CONFIG_PHYS	0x1fa201ec
++
++/* EN7512/EN7521 and EN7526C/EN7522 eFuse encoding. */
++#define AIROHA_EFUSE_PKG_MASK		GENMASK(5, 0)
++#define AIROHA_EFUSE_PKG_IGNORE_BIT01	GENMASK(5, 2)
++#define AIROHA_EFUSE_REMARK_BIT	BIT(6)
++#define AIROHA_EFUSE_PKG_REMARK_SHIFT	7
++
++#define AIROHA_EFUSE_EN7526F		0x00
++#define AIROHA_EFUSE_EN7526D		0x01
++#define AIROHA_EFUSE_EN7526G		0x02
++#define AIROHA_EFUSE_EN7512		0x04
++#define AIROHA_EFUSE_EN7513		0x05
++#define AIROHA_EFUSE_EN7513G		0x06
++#define AIROHA_EFUSE_EN7586		0x0a
++#define AIROHA_EFUSE_EN7521F		0x10
++#define AIROHA_EFUSE_EN7526FT		0x11
++#define AIROHA_EFUSE_EN7521G		0x12
++#define AIROHA_EFUSE_EN7521S		0x20
++
++#define AIROHA_EFUSE_DDR3_BIT		BIT(23)
++#define AIROHA_EFUSE_DDR3_REMARK_BIT	BIT(24)
++
++/* EN7516/EN7527 eFuse encoding. */
++#define AIROHA_EFUSE_7516_PKG_MASK	GENMASK(19, 18)
++#define AIROHA_EFUSE_7516_REMARK_BIT	BIT(0)
++#define AIROHA_EFUSE_7516_REMARK_SHIFT	2
++
++#define AIROHA_EFUSE_EN7527H		0x00000
++#define AIROHA_EFUSE_EN7527G		0x00000
++#define AIROHA_EFUSE_EN7516G		0x80000
++#define AIROHA_EFUSE_EN7561G		0xc0000
++
++/* Additional package selectors used by the legacy vendor code. */
++#define AIROHA_EN751627_QFP_MASK	BIT(15)
++#define AIROHA_EN7526C_FP_MASK		BIT(10)
++#define AIROHA_EN7526C_FTC_BIT		BIT(9)
++#define AIROHA_EN7526C_FTC_REMARK_BIT	BIT(10)
++
++/* MT7510/MT7520 module-selection bits in EFUSE_VERIFY_DATA0. */
++#define AIROHA_MT751020_ENP_SEL		BIT(3)
++#define AIROHA_MT751020_ENP_LOW		BIT(1)
++#define AIROHA_MT751020_ENP_HIGH	BIT(5)
++#define AIROHA_MT751020_ENS_LOW		BIT(2)
++#define AIROHA_MT751020_ENS_HIGH	BIT(6)
+ 
+ enum airoha_pkg {
+ 	/* AN7583 */
+ 	AN7583_PKG = 0x10,
+ 
+-	/* AM7552 */
++	/* AN7552 */
+ 	AN7552_PKG = 0xf,
+ 
+ 	/* EN7581 */
+@@ -42,7 +96,7 @@ enum airoha_pkg {
+ 	/* EN7516, EN7527 */
+ 	EN751627_PKG = 0x9,
+ 
+-	/* EN7526c, EN7522 */
++	/* EN7526C, EN7522 */
+ 	EN7526C_PKG = 0x8,
+ 
+ 	/* EN7512, EN7521 */
+@@ -56,7 +110,7 @@ enum airoha_pkg {
+ };
+ 
+ enum airoha_pkg_ids {
+-	/*EN7523*/
++	/* EN7523 */
+ 	EN7529DU,
+ 	EN7529DT,
+ 	EN7529CU,
+@@ -81,24 +135,25 @@ enum airoha_pkg_ids {
+ 	EN7562CTM,
+ 	EN7523DTM,
+ 
+-	/*EN7528*/
++	/* EN7528 */
+ 	EN7528HU,
+ 	EN7528DU,
+ 	EN7561DU,
+-	EN7526FHEN7528DU,
+-	EN7521GEN7528DU,
++	EN7526FH_EN7528DU,
++	EN7561HU,
++	EN7521G_EN7528DU,
+ 
+ 	/* EN7580 */
+ 	EN7580GT,
+ 	EN7580ST,
+ 	EN7580GAT,
+ 	EN7565,
++	EN7528GT_EN7580,
+ 	EN7580,
+ 
+-	/* EN7516 */
++	/* EN7516 / EN7527 */
+ 	EN7516G,
+-
+-	/* EN7527 */
++	EN7527H,
+ 	EN7527G,
+ 	EN7561G,
+ 	EN751627,
+@@ -108,19 +163,23 @@ enum airoha_pkg_ids {
+ 	EN7513,
+ 	EN7513G,
+ 
+-	/* EN7521, EN7521FC */
++	/* EN7521 / EN7526 */
+ 	EN7521FCUD,
+ 	EN7521F,
+ 	EN7521S,
++	EN7521G,
+ 	EN7526D,
+ 	EN7526F,
+ 	EN7526G,
+ 	EN7526FT,
+ 	EN7526FP,
+ 	EN7526FT_C,
++	EN7586,
+ 	EN751221,
+ 
+-	/* MT7520 */
++	/* MT7510 / MT7520 */
++	MT7510,
++	MT7511,
+ 	MT7520S,
+ 	MT7520,
+ 	MT7520G,
+@@ -175,11 +234,14 @@ enum airoha_pkg_ids {
+ 	AN7583FS,
+ 	AN7583FF,
+ 
+-	END_PACKAGE_ID = 0xFFFFFFFF,
++	END_PACKAGE_ID = 0xffffffff,
+ };
+ 
++/* Compatibility aliases for the names used by the previous header. */
++#define EN7526FHEN7528DU	EN7526FH_EN7528DU
++#define EN7521GEN7528DU	EN7521G_EN7528DU
++
+ static const char *const airoha_pkg_id_names[] = {
+-	/* EN7523 */
+ 	AIROHA_PKG_ID_NAME(EN7529DU),
+ 	AIROHA_PKG_ID_NAME(EN7529DT),
+ 	AIROHA_PKG_ID_NAME(EN7529CU),
+@@ -203,54 +265,45 @@ static const char *const airoha_pkg_id_names[] = {
+ 	AIROHA_PKG_ID_NAME(EN7529CTM),
+ 	AIROHA_PKG_ID_NAME(EN7562CTM),
+ 	AIROHA_PKG_ID_NAME(EN7523DTM),
+-
+-	/* EN7528 */
+ 	AIROHA_PKG_ID_NAME(EN7528HU),
+ 	AIROHA_PKG_ID_NAME(EN7528DU),
+ 	AIROHA_PKG_ID_NAME(EN7561DU),
+-	AIROHA_PKG_ID_NAME(EN7526FHEN7528DU),
+-	AIROHA_PKG_ID_NAME(EN7521GEN7528DU),
+-
+-	/* EN7580 */
++	AIROHA_PKG_ID_NAME(EN7526FH_EN7528DU),
++	AIROHA_PKG_ID_NAME(EN7561HU),
++	AIROHA_PKG_ID_NAME(EN7521G_EN7528DU),
+ 	AIROHA_PKG_ID_NAME(EN7580GT),
+ 	AIROHA_PKG_ID_NAME(EN7580ST),
+ 	AIROHA_PKG_ID_NAME(EN7580GAT),
+ 	AIROHA_PKG_ID_NAME(EN7565),
++	AIROHA_PKG_ID_NAME(EN7528GT_EN7580),
+ 	AIROHA_PKG_ID_NAME(EN7580),
+-
+-	/* EN7516 */
+ 	AIROHA_PKG_ID_NAME(EN7516G),
+-
+-	/* EN7527 */
++	AIROHA_PKG_ID_NAME(EN7527H),
+ 	AIROHA_PKG_ID_NAME(EN7527G),
+ 	AIROHA_PKG_ID_NAME(EN7561G),
+ 	AIROHA_PKG_ID_NAME(EN751627),
+-
+-	/* EN7512 */
+ 	AIROHA_PKG_ID_NAME(EN7512),
+ 	AIROHA_PKG_ID_NAME(EN7513),
+ 	AIROHA_PKG_ID_NAME(EN7513G),
+-
+-	/* EN7521 / EN7526 */
+ 	AIROHA_PKG_ID_NAME(EN7521FCUD),
+ 	AIROHA_PKG_ID_NAME(EN7521F),
+ 	AIROHA_PKG_ID_NAME(EN7521S),
++	AIROHA_PKG_ID_NAME(EN7521G),
+ 	AIROHA_PKG_ID_NAME(EN7526D),
+ 	AIROHA_PKG_ID_NAME(EN7526F),
+ 	AIROHA_PKG_ID_NAME(EN7526G),
+ 	AIROHA_PKG_ID_NAME(EN7526FT),
+ 	AIROHA_PKG_ID_NAME(EN7526FP),
+ 	AIROHA_PKG_ID_NAME(EN7526FT_C),
++	AIROHA_PKG_ID_NAME(EN7586),
+ 	AIROHA_PKG_ID_NAME(EN751221),
+-
+-	/* MT7520 */
++	AIROHA_PKG_ID_NAME(MT7510),
++	AIROHA_PKG_ID_NAME(MT7511),
+ 	AIROHA_PKG_ID_NAME(MT7520S),
+ 	AIROHA_PKG_ID_NAME(MT7520),
+ 	AIROHA_PKG_ID_NAME(MT7520G),
+ 	AIROHA_PKG_ID_NAME(MT7525),
+ 	AIROHA_PKG_ID_NAME(MT7525G),
+-
+-	/* AN7581 */
+ 	AIROHA_PKG_ID_NAME(AN7581GT),
+ 	AIROHA_PKG_ID_NAME(AN7566GT),
+ 	AIROHA_PKG_ID_NAME(AN7581PT),
+@@ -265,15 +318,11 @@ static const char *const airoha_pkg_id_names[] = {
+ 	AIROHA_PKG_ID_NAME(AN7566PT),
+ 	AIROHA_PKG_ID_NAME(AN7581IT),
+ 	AIROHA_PKG_ID_NAME(AN7581SIT),
+-
+-	/* AN7552 */
+ 	AIROHA_PKG_ID_NAME(AN7552CT),
+ 	AIROHA_PKG_ID_NAME(AN7552ST),
+ 	AIROHA_PKG_ID_NAME(AN7552FT),
+ 	AIROHA_PKG_ID_NAME(AN7563CT),
+ 	AIROHA_PKG_ID_NAME(AN7563PT),
+-
+-	/* AN7583 */
+ 	AIROHA_PKG_ID_NAME(AN7583GT),
+ 	AIROHA_PKG_ID_NAME(AN7583GIT),
+ 	AIROHA_PKG_ID_NAME(AN7583CT),
+@@ -293,30 +342,55 @@ static const char *const airoha_pkg_id_names[] = {
+ 	AIROHA_PKG_ID_NAME(AN7583FF),
+ };
+ 
++struct airoha_soc_id_regs {
++	u32 hir;
++	u32 pdidr;
++	u32 pkgid;
++	u32 efuse_data0;
++	u32 efuse_data1;
++	u32 np_scu_submodel;
++	u32 chip_scu_package;
++	u32 chip_scu_config;
++};
++
+ static inline const char *airoha_pkg_id_name(enum airoha_pkg_ids id)
+ {
+-	if (id >= END_PACKAGE_ID ||
++	if (id == END_PACKAGE_ID ||
+ 	    (unsigned int)id >= ARRAY_SIZE(airoha_pkg_id_names) ||
+ 	    !airoha_pkg_id_names[id])
+ 		return "unknown";
++
+ 	return airoha_pkg_id_names[id];
+ }
+ 
+-static inline const char *
+-airoha_pkg_id_range_name(u32 pkgid, enum airoha_pkg_ids first,
++static inline enum airoha_pkg_ids
++airoha_pkg_id_from_range(u32 pkgid, enum airoha_pkg_ids first,
+ 			 enum airoha_pkg_ids last)
+ {
+ 	u32 id;
+ 
+ 	if (pkgid > (u32)(last - first))
+-		return NULL;
++		return END_PACKAGE_ID;
+ 
+ 	id = first + pkgid;
+ 	if (id >= ARRAY_SIZE(airoha_pkg_id_names) ||
+ 	    !airoha_pkg_id_names[id])
++		return END_PACKAGE_ID;
++
++	return id;
++}
++
++static inline const char *
++airoha_pkg_id_range_name(u32 pkgid, enum airoha_pkg_ids first,
++			 enum airoha_pkg_ids last)
++{
++	enum airoha_pkg_ids id;
++
++	id = airoha_pkg_id_from_range(pkgid, first, last);
++	if (id == END_PACKAGE_ID)
+ 		return NULL;
+ 
+-	return airoha_pkg_id_names[id];
++	return airoha_pkg_id_name(id);
+ }
+ 
+ static inline enum airoha_pkg airoha_pkg_from_id(u32 id)
+@@ -401,44 +475,253 @@ static inline const char *airoha_pkg_family_name(enum airoha_pkg pkg)
+ 	}
+ }
+ 
+-static inline const char *
+-airoha_soc_variant_name(enum airoha_pkg pkg, u32 pkgid)
++static inline u32 airoha_efuse_pkg_value(u32 efuse_data0)
++{
++	if (efuse_data0 & AIROHA_EFUSE_REMARK_BIT)
++		return (efuse_data0 >> AIROHA_EFUSE_PKG_REMARK_SHIFT) &
++		       AIROHA_EFUSE_PKG_MASK;
++
++	return efuse_data0 & AIROHA_EFUSE_PKG_MASK;
++}
++
++static inline u32 airoha_efuse_7516_pkg_value(u32 efuse_data0)
++{
++	if (efuse_data0 & AIROHA_EFUSE_7516_REMARK_BIT)
++		return (efuse_data0 >> AIROHA_EFUSE_7516_REMARK_SHIFT) &
++		       AIROHA_EFUSE_7516_PKG_MASK;
++
++	return efuse_data0 & AIROHA_EFUSE_7516_PKG_MASK;
++}
++
++static inline bool airoha_efuse_is_ddr3(u32 efuse_data0)
++{
++	if (efuse_data0 & AIROHA_EFUSE_REMARK_BIT)
++		return !!(efuse_data0 & AIROHA_EFUSE_DDR3_REMARK_BIT);
++
++	return !!(efuse_data0 & AIROHA_EFUSE_DDR3_BIT);
++}
++
++static inline bool
++airoha_en7526c_is_ft_c(u32 efuse_data0, u32 efuse_data1)
++{
++	if (efuse_data0 & AIROHA_EFUSE_REMARK_BIT)
++		return !!(efuse_data1 & AIROHA_EN7526C_FTC_REMARK_BIT);
++
++	return !!(efuse_data1 & AIROHA_EN7526C_FTC_BIT);
++}
++
++static inline enum airoha_pkg_ids
++airoha_en751221_variant_id(u32 efuse_data0)
++{
++	switch (airoha_efuse_pkg_value(efuse_data0)) {
++	case AIROHA_EFUSE_EN7526F:
++		return EN7526F;
++	case AIROHA_EFUSE_EN7526D:
++		return EN7526D;
++	case AIROHA_EFUSE_EN7526G:
++		return EN7526G;
++	case AIROHA_EFUSE_EN7512:
++		return EN7512;
++	case AIROHA_EFUSE_EN7513:
++		return EN7513;
++	case AIROHA_EFUSE_EN7513G:
++		return EN7513G;
++	case AIROHA_EFUSE_EN7586:
++		return EN7586;
++	case AIROHA_EFUSE_EN7521F:
++		return EN7521F;
++	case AIROHA_EFUSE_EN7526FT:
++		return EN7526FT;
++	case AIROHA_EFUSE_EN7521G:
++		return EN7521G;
++	case AIROHA_EFUSE_EN7521S:
++		return EN7521S;
++	default:
++		return EN751221;
++	}
++}
++
++static inline enum airoha_pkg_ids
++airoha_en7526c_variant_id(u32 efuse_data0, u32 efuse_data1,
++			 u32 chip_scu_config)
++{
++	u32 pkg = airoha_efuse_pkg_value(efuse_data0) &
++		  AIROHA_EFUSE_PKG_IGNORE_BIT01;
++
++	/* The vendor macros make these refinements orthogonal to the base ID. */
++	if (airoha_en7526c_is_ft_c(efuse_data0, efuse_data1))
++		return EN7526FT_C;
++
++	switch (pkg) {
++	case AIROHA_EFUSE_EN7526F:
++		if (chip_scu_config & AIROHA_EN7526C_FP_MASK)
++			return EN7526FP;
++		return EN7526F;
++	case AIROHA_EFUSE_EN7521F:
++		if (airoha_efuse_is_ddr3(efuse_data0))
++			return EN7521FCUD;
++		return EN7521F;
++	case AIROHA_EFUSE_EN7521S:
++		return EN7521S;
++	default:
++		return END_PACKAGE_ID;
++	}
++}
++
++static inline enum airoha_pkg_ids
++airoha_en751627_variant_id(u32 efuse_data0, u32 chip_scu_package)
++{
++	switch (airoha_efuse_7516_pkg_value(efuse_data0)) {
++	case AIROHA_EFUSE_EN7527G:
++		if (chip_scu_package & AIROHA_EN751627_QFP_MASK)
++			return EN7527H;
++		return EN7527G;
++	case AIROHA_EFUSE_EN7516G:
++		return EN7516G;
++	case AIROHA_EFUSE_EN7561G:
++		return EN7561G;
++	default:
++		return EN751627;
++	}
++}
++
++static inline bool airoha_mt751020_is_enp(u32 efuse_data0)
++{
++	if (efuse_data0 & AIROHA_MT751020_ENP_SEL)
++		return !!(efuse_data0 & AIROHA_MT751020_ENP_HIGH);
++
++	return !!(efuse_data0 & AIROHA_MT751020_ENP_LOW);
++}
++
++static inline bool airoha_mt751020_is_ens(u32 efuse_data0)
++{
++	if (efuse_data0 & AIROHA_MT751020_ENP_SEL)
++		return !!(efuse_data0 & AIROHA_MT751020_ENS_HIGH);
++
++	return !!(efuse_data0 & AIROHA_MT751020_ENS_LOW);
++}
++
++static inline enum airoha_pkg_ids
++airoha_mt751020_variant_id(u32 submodel, u32 efuse_data0)
++{
++	bool enp = airoha_mt751020_is_enp(efuse_data0);
++	bool ens = airoha_mt751020_is_ens(efuse_data0);
++
++	switch (FIELD_GET(AIROHA_NP_SCU_SUBMODEL_MASK, submodel)) {
++	case 0:
++		return enp ? MT7510 : MT7511;
++	case 2:
++		if (ens)
++			return MT7520S;
++		return enp ? MT7520 : MT7525;
++	case 3:
++		return enp ? MT7520G : MT7525G;
++	default:
++		return END_PACKAGE_ID;
++	}
++}
++
++static inline enum airoha_pkg_ids
++airoha_pkgid_variant_id(enum airoha_pkg pkg, u32 pkgid)
+ {
+ 	switch (airoha_pkg_from_id(pkg)) {
+ 	case AN7583_PKG:
+-		return airoha_pkg_id_range_name(pkgid, AN7583GT, AN7583FF);
++		return airoha_pkg_id_from_range(pkgid, AN7583GT, AN7583FF);
+ 	case AN7552_PKG:
+-		return airoha_pkg_id_range_name(pkgid, AN7552CT, AN7563PT);
++		return airoha_pkg_id_from_range(pkgid, AN7552CT, AN7563PT);
+ 	case EN7581_PKG:
+-		return airoha_pkg_id_range_name(pkgid, AN7581GT, AN7581SIT);
++		return airoha_pkg_id_from_range(pkgid, AN7581GT, AN7581SIT);
+ 	case EN7523_PKG:
+-		return airoha_pkg_id_range_name(pkgid, EN7529DU, EN7523DTM);
++		return airoha_pkg_id_from_range(pkgid, EN7529DU, EN7523DTM);
+ 	case EN7528_PKG:
+-		return airoha_pkg_id_range_name(pkgid, EN7528HU,
+-						EN7521GEN7528DU);
++		switch (pkgid) {
++		case 0x0:
++			return EN7528HU;
++		case 0x1:
++			return EN7528DU;
++		case 0x2:
++			return EN7561DU;
++		case 0x3:
++			return EN7526FH_EN7528DU;
++		case 0x4:
++			return EN7561HU;
++		case 0x7:
++			return EN7521G_EN7528DU;
++		default:
++			return END_PACKAGE_ID;
++		}
+ 	case EN7580_PKG:
+-		return airoha_pkg_id_range_name(pkgid, EN7580GT, EN7580);
+-	case EN751627_PKG:
+-		return airoha_pkg_id_range_name(pkgid, EN7516G, EN751627);
+-	case EN7526C_PKG:
+-		return airoha_pkg_id_range_name(pkgid, EN7521FCUD, EN751221);
++		switch (pkgid) {
++		case 0x0:
++			return EN7580GT;
++		case 0x1:
++			return EN7580ST;
++		case 0x2:
++			return EN7580GAT;
++		case 0x3:
++			return EN7565;
++		case 0x4:
++			return EN7528GT_EN7580;
++		default:
++			return END_PACKAGE_ID;
++		}
++	default:
++		return END_PACKAGE_ID;
++	}
++}
++
++static inline enum airoha_pkg_ids
++airoha_soc_variant_id(const struct airoha_soc_id_regs *regs)
++{
++	enum airoha_pkg pkg;
++
++	pkg = airoha_pkg_from_id(regs->hir);
++	if (!pkg)
++		pkg = airoha_pkg_from_id(regs->pdidr);
++
++	switch (pkg) {
+ 	case EN751221_PKG:
+-		return airoha_pkg_id_range_name(pkgid, EN7512, EN751221);
++		return airoha_en751221_variant_id(regs->efuse_data0);
++	case EN7526C_PKG:
++		return airoha_en7526c_variant_id(regs->efuse_data0,
++						  regs->efuse_data1,
++						  regs->chip_scu_config);
++	case EN751627_PKG:
++		return airoha_en751627_variant_id(regs->efuse_data0,
++						   regs->chip_scu_package);
+ 	case MT751020_PKG:
+-		return airoha_pkg_id_range_name(pkgid, MT7520S, MT7525G);
++		return airoha_mt751020_variant_id(regs->np_scu_submodel,
++						   regs->efuse_data0);
+ 	default:
+-		return NULL;
++		return airoha_pkgid_variant_id(pkg, regs->pkgid);
+ 	}
+ }
+ 
+-static inline const char *airoha_soc_name(enum airoha_pkg pkg, u32 pkgid)
++static inline const char *
++airoha_soc_variant_name_from_id_regs(const struct airoha_soc_id_regs *regs)
++{
++	enum airoha_pkg_ids id = airoha_soc_variant_id(regs);
++
++	if (id == END_PACKAGE_ID)
++		return NULL;
++
++	return airoha_pkg_id_name(id);
++}
++
++static inline const char *
++airoha_soc_name_from_id_regs(const struct airoha_soc_id_regs *regs)
+ {
++	enum airoha_pkg pkg;
+ 	const char *name;
+ 
+-	name = airoha_soc_variant_name(pkg, pkgid);
++	name = airoha_soc_variant_name_from_id_regs(regs);
+ 	if (name)
+ 		return name;
+ 
++	pkg = airoha_pkg_from_id(regs->hir);
++	if (!pkg)
++		pkg = airoha_pkg_from_id(regs->pdidr);
++
+ 	name = airoha_pkg_family_name(pkg);
+ 	if (name)
+ 		return name;
+@@ -446,26 +729,53 @@ static inline const char *airoha_soc_name(enum airoha_pkg pkg, u32 pkgid)
+ 	return "unknown";
+ }
+ 
+-static inline const char *
+-airoha_soc_name_from_regs(u32 hir, u32 pkgid, u32 pdidr)
++/*
++ * Package-only helper. EN751221, EN7526C, EN751627 and MT751020 require
++ * additional eFuse/strap data and intentionally resolve only to a family here.
++ */
++static inline const char *airoha_soc_variant_name(enum airoha_pkg pkg, u32 pkgid)
++{
++	enum airoha_pkg_ids id = airoha_pkgid_variant_id(pkg, pkgid);
++
++	if (id == END_PACKAGE_ID)
++		return NULL;
++
++	return airoha_pkg_id_name(id);
++}
++
++static inline const char *airoha_soc_name(enum airoha_pkg pkg, u32 pkgid)
+ {
+-	enum airoha_pkg hir_pkg = airoha_pkg_from_id(hir);
+-	enum airoha_pkg pdidr_pkg = airoha_pkg_from_id(pdidr);
+ 	const char *name;
+ 
+-	name = airoha_soc_variant_name(hir_pkg, pkgid);
++	name = airoha_soc_variant_name(pkg, pkgid);
+ 	if (name)
+ 		return name;
+ 
+-	name = airoha_soc_variant_name(pdidr_pkg, pkgid);
++	name = airoha_pkg_family_name(pkg);
+ 	if (name)
+ 		return name;
+ 
+-	name = airoha_pkg_family_name(hir_pkg);
++	return "unknown";
++}
++
++/*
++ * Legacy API retained for callers that only have HIR/PKGID/PDIDR. It does not
++ * guess an eFuse-selected variant when the required eFuse values are absent.
++ */
++static inline const char *
++airoha_soc_name_from_regs(u32 hir, u32 pkgid, u32 pdidr)
++{
++	enum airoha_pkg pkg = airoha_pkg_from_id(hir);
++	const char *name;
++
++	if (!pkg)
++		pkg = airoha_pkg_from_id(pdidr);
++
++	name = airoha_soc_variant_name(pkg, pkgid);
+ 	if (name)
+ 		return name;
+ 
+-	name = airoha_pkg_family_name(pdidr_pkg);
++	name = airoha_pkg_family_name(pkg);
+ 	if (name)
+ 		return name;
+ 
+@@ -541,4 +851,9 @@ static inline u32 get_pdidr_mem(void __iomem *np_scu)
+ 			 readl(np_scu + AIROHA_NP_SCU_PDIDR));
+ }
+ 
++static inline u32 get_submodel_mem(void __iomem *np_scu)
++{
++	return readl(np_scu + AIROHA_NP_SCU_SUBMODEL);
++}
++
+ #endif
+-- 
+2.55.0
+

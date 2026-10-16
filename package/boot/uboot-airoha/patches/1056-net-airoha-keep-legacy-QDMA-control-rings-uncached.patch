@@ -1,0 +1,54 @@
+From dbdb6ba85f26b672daebb1f2cd5e63cb4bef0441 Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Fri, 18 Sep 2026 22:16:12 +0000
+Subject: [PATCH] net: airoha: keep legacy QDMA control rings uncached
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/airoha_eth.c | 23 +++++++++++++++++------
+ 1 file changed, 17 insertions(+), 6 deletions(-)
+
+diff --git a/drivers/net/airoha_eth.c b/drivers/net/airoha_eth.c
+index edb7080f5a7..6bb42ebefc2 100644
+--- a/drivers/net/airoha_eth.c
++++ b/drivers/net/airoha_eth.c
+@@ -800,8 +800,10 @@ static void *airoha_dma_alloc_uncached(size_t size, unsigned long *dma_addr)
+ 
+ 	/*
+ 	 * Drop any cache lines created for the allocator's KSEG0 alias before
+-	 * permanently accessing this DMA object through KSEG1.  The EN7528
+-	 * QDMA is not coherent with the CPU caches.
++	 * permanently accessing this DMA object through KSEG1.  Generation-1
++	 * EN75xx QDMA is not coherent with the CPU caches, and a recovery/
++	 * chainload path may inherit an active secondary cache which U-Boot does
++	 * not otherwise maintain.
+ 	 */
+ 	start = ALIGN_DOWN((uintptr_t)buf, ARCH_DMA_MINALIGN);
+ 	end = ALIGN((uintptr_t)buf + size, ARCH_DMA_MINALIGN);
+@@ -816,10 +818,19 @@ static void *airoha_dma_alloc_uncached(size_t size, unsigned long *dma_addr)
+ static void *en751221_dma_alloc_control(struct airoha_qdma *qdma, size_t size,
+ 					unsigned long *dma_addr)
+ {
+-	if (qdma->eth->soc->version == 0x7528)
+-		return airoha_dma_alloc_uncached(size, dma_addr);
+-
+-	return airoha_dma_alloc_coherent(size, dma_addr);
++	/*
++	 * Keep all legacy-QDMA control memory uncached.  This was originally
++	 * required only by EN7528 chainload testing, but EN751221 BootROM
++	 * recovery leaves the same kind of cache state behind: QDMA can consume
++	 * a TX descriptor and advance TX_DMA_IDX while the CPU keeps seeing a
++	 * stale cached copy without the DONE writeback.
++	 *
++	 * Descriptor and IRQ-queue accesses are word-sized, so this deliberately
++	 * does not expose packet buffers to KSEG1.  EN751221 has unsafe uncached
++	 * byte stores, therefore payload buffers must keep using the normal DMA
++	 * cache-maintenance path.
++	 */
++	return airoha_dma_alloc_uncached(size, dma_addr);
+ }
+ 
+ static bool airoha_is_gen1(struct airoha_eth *eth)
+-- 
+2.55.0
+

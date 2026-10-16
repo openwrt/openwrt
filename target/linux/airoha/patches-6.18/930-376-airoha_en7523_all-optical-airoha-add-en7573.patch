@@ -1,0 +1,741 @@
+From e74a6361ecfc0d060695288bbe641adb4c2ae761 Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Tue, 6 Oct 2026 23:01:14 -0300
+Subject: [PATCH] optical: airoha: add en7573
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ .../bindings/net/airoha,en7572.yaml           |  86 ++++++++++
+ MAINTAINERS                                   |   1 +
+ drivers/net/optical/airoha/Kconfig            |   6 +-
+ drivers/net/optical/airoha/airoha_lddla.h     |  23 ++-
+ .../net/optical/airoha/airoha_lddla_core.c    |  61 +++++--
+ drivers/net/optical/airoha/en7572.h           |   6 +-
+ drivers/net/optical/airoha/en7572_ddmi.c      |   2 +-
+ drivers/net/optical/airoha/en7572_loop.c      |   2 +-
+ drivers/net/optical/airoha/en7572_main.c      | 160 ++++++++++++++----
+ drivers/net/optical/airoha/en7572_regs.h      |   5 +-
+ include/linux/optical_frontend.h              |   1 +
+ 11 files changed, 289 insertions(+), 64 deletions(-)
+ create mode 100644 Documentation/devicetree/bindings/net/airoha,en7572.yaml
+
+diff --git a/Documentation/devicetree/bindings/net/airoha,en7572.yaml b/Documentation/devicetree/bindings/net/airoha,en7572.yaml
+new file mode 100644
+index 000000000..c312041a6
+--- /dev/null
++++ b/Documentation/devicetree/bindings/net/airoha,en7572.yaml
+@@ -0,0 +1,86 @@
++# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
++%YAML 1.2
++---
++$id: http://devicetree.org/schemas/net/airoha,en7572.yaml#
++$schema: http://devicetree.org/meta-schemas/core.yaml#
++
++title: Airoha EN7572, EN7573 and AN8901 optical frontends
++
++maintainers:
++  - Matheus Sampaio Queiroga <srherobrine20@gmail.com>
++
++description: |
++  Laser-driver and limiting-amplifier controllers with an embedded MD32.
++  Each controller occupies I2C addresses 0x50 (A0) and 0x51 (A2). Describe
++  only one device at 0x50; the driver also accesses 0x51 on the same bus.
++  Both pages use 16-bit big-endian register addresses. CSR words are
++  little-endian, while SFF-8472 diagnostics are big-endian.
++
++  The compatible selects the chip and its MD32 firmware. The shared
++  identity registers cannot distinguish EN7572 from EN7573. EN7573 uses
++  airoha/en7573-pm.bin and airoha/en7573-dm.bin for program and data memory.
++  Images must be nonempty, aligned to four bytes and fit in 16 KiB (PM)
++  or 4 KiB (DM); unused memory is zero-filled.
++
++  The BOB calibration image contains the A0 and A2 pages as 512 bytes in
++  device order. It is not an EN7570/EN7571 table of 32-bit factory words:
++  do not byte-swap it or insert a word-table signature at offset 0x94.
++
++allOf:
++  - $ref: optical-frontend.yaml#
++  - $ref: /schemas/nvmem/nvmem-consumer.yaml#
++
++properties:
++  compatible:
++    enum:
++      - airoha,en7572
++      - airoha,en7573
++      - airoha,an8901
++
++  reg:
++    const: 0x50
++
++  '#optical-frontend-cells':
++    const: 0
++
++  firmware-name:
++    $ref: /schemas/types.yaml#/definitions/string
++    description: |
++      Optional name of the 512-byte BOB calibration firmware. Defaults to
++      airoha/en7572-bob.bin, airoha/en7573-bob.bin or airoha/an8901-bob.bin,
++      according to the compatible. A BOB NVMEM cell takes precedence.
++
++  nvmem-cells:
++    maxItems: 1
++    description: Factory BOB calibration image (512 bytes).
++
++  nvmem-cell-names:
++    const: calibration
++
++required:
++  - compatible
++  - reg
++  - '#optical-frontend-cells'
++
++dependentRequired:
++  nvmem-cells:
++    - nvmem-cell-names
++  nvmem-cell-names:
++    - nvmem-cells
++
++unevaluatedProperties: false
++
++examples:
++  - |
++    i2c {
++        #address-cells = <1>;
++        #size-cells = <0>;
++
++        optical: optical-frontend@50 {
++            compatible = "airoha,en7573";
++            reg = <0x50>;
++            #optical-frontend-cells = <0>;
++            firmware-name = "airoha/en7573-bob.bin";
++        };
++    };
++...
+diff --git a/MAINTAINERS b/MAINTAINERS
+index 57127d151..35c8f5b11 100644
+--- a/MAINTAINERS
++++ b/MAINTAINERS
+@@ -19478,6 +19478,7 @@ OPTICAL FRONTEND SUBSYSTEM
+ M:	Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+ L:	netdev@vger.kernel.org
+ S:	Maintained
++F:	Documentation/devicetree/bindings/net/airoha,en7572.yaml
+ F:	Documentation/devicetree/bindings/net/optical-frontend.yaml
+ F:	Documentation/devicetree/bindings/net/semtech,gn25l95.yaml
+ F:	Documentation/driver-api/optical-frontend.rst
+diff --git a/drivers/net/optical/airoha/Kconfig b/drivers/net/optical/airoha/Kconfig
+index e48278c47..1f32610e4 100644
+--- a/drivers/net/optical/airoha/Kconfig
++++ b/drivers/net/optical/airoha/Kconfig
+@@ -24,9 +24,11 @@ config EN7571_PHY
+ 	  Enable the EN7571 provider in the shared Airoha LDDLA driver.
+ 
+ config EN7572_PHY
+-	bool "Airoha EN7572 / AN8901 optical frontend"
++	bool "Airoha EN7572 / EN7573 / AN8901 optical frontend"
+ 	default y
+ 	help
+-	  Enable the EN7572 and AN8901 providers in the shared Airoha LDDLA driver.
++	  Enable the EN7572, EN7573 and AN8901 providers in the shared Airoha
++	  LDDLA driver. These devices share the MD32 firmware loader, I2C
++	  transport and diagnostics implementation.
+ 
+ endif
+diff --git a/drivers/net/optical/airoha/airoha_lddla.h b/drivers/net/optical/airoha/airoha_lddla.h
+index bc6428689..a63318b8d 100644
+--- a/drivers/net/optical/airoha/airoha_lddla.h
++++ b/drivers/net/optical/airoha/airoha_lddla.h
+@@ -2,10 +2,10 @@
+ /*
+  * Shared Airoha EN757x xPON laser-driver / limiting-amplifier core.
+  *
+- * EN7570/EN7571 use the shared 0x70 transport helpers below. EN7572 keeps its
+- * own transport but reuses the Airoha family state and provider bridge. Generic
+- * telemetry, hwmon, SFF compatibility and consumer lookup live in the vendor-
+- * neutral optical_frontend subsystem.
++ * EN7570/EN7571 use the shared 0x70 transport helpers below. EN7572/EN7573 keep
++ * their own transport but reuse the Airoha family state and provider bridge.
++ * Generic telemetry, hwmon, SFF compatibility and consumer lookup live in the
++ * vendor-neutral optical_frontend subsystem.
+  *
+  * This header defines the Airoha family state, per-chip operations, EN757x
+  * calibration helpers and legacy SFF-8472 units used by the chip algorithms.
+@@ -88,10 +88,16 @@ enum airoha_lddla_bob_profile {
+ 	 (AIROHA_LDDLA_BOB_MAGIC_BASE | \
+ 	  ((u32)(_variant) & AIROHA_LDDLA_BOB_MAGIC_VARIANT_MASK)))
+ 
++enum airoha_lddla_bob_format {
++	AIROHA_LDDLA_BOB_FORMAT_WORDS,
++	AIROHA_LDDLA_BOB_FORMAT_A0A2,
++};
++
+ enum airoha_lddla_bob_endian {
+ 	AIROHA_LDDLA_BOB_ENDIAN_UNKNOWN,
+ 	AIROHA_LDDLA_BOB_ENDIAN_LITTLE,
+ 	AIROHA_LDDLA_BOB_ENDIAN_BIG,
++	AIROHA_LDDLA_BOB_ENDIAN_BYTES,
+ };
+ 
+ enum airoha_lddla_bob_source {
+@@ -137,7 +143,9 @@ airoha_lddla_default_thresholds;
+  * @date_code: SFP MSA date code (6 chars).
+  * @protocols: BIT(OPTICAL_FRONTEND_PROTO_*) bitmap supported by this chip.
+  * @thresholds: normalized alarm thresholds for this chip/firmware family.
+- * @bob_size: expected BOB/calibration image size in bytes.
++ * @bob_format: calibration layout; defaults to the EN7570/EN7571 word table.
++ * @bob_size_min: minimum BOB/calibration image size in bytes.
++ * @bob_size_max: maximum BOB/calibration image size in bytes.
+  * @temp_refresh: refresh the temperature DDMI word; return IC temp (m degC).
+  * @bosa_temp_refresh: refresh and return BOSA temperature (m degC).
+  * @vcc_refresh: refresh and return the cached supply-voltage word.
+@@ -161,6 +169,7 @@ struct airoha_lddla_ops {
+ 	const char *date_code;
+ 	u32 protocols;
+ 	const struct optical_frontend_thresholds *thresholds;
++	enum airoha_lddla_bob_format bob_format;
+ 	size_t bob_size_min;
+ 	size_t bob_size_max;
+ 
+@@ -186,12 +195,12 @@ struct airoha_lddla_ops {
+  * @frontend_desc: immutable description exported to generic consumers.
+  * @debugfs: per-device debugfs directory.
+  * @bob_fw_name: calibration/BOB firmware blob name.
+- * @bob: canonical little-endian in-memory BOB image.
++ * @bob: little-endian word table or unmodified A0/A2 calibration pages.
+  * @bob_len: number of valid bytes in @bob.
+  * @bob_valid: true when a valid BOB image was loaded.
+  * @bob_source: origin of the active BOB image.
+  * @bob_source_endian: byte order detected in the source blob.
+- * @bob_magic: normalized BOB magic read from byte 0x94.
++ * @bob_magic: normalized word-table magic at byte 0x94; absent for A0/A2.
+  * @bob_chip_id: model/variant byte dynamically extracted from @bob_magic.
+  * @bob_profile: PON/profile byte dynamically extracted from @bob_magic.
+  * @pon_mode: AIROHA_PON_* operating mode.
+diff --git a/drivers/net/optical/airoha/airoha_lddla_core.c b/drivers/net/optical/airoha/airoha_lddla_core.c
+index ade3d830d..f25ef84b4 100644
+--- a/drivers/net/optical/airoha/airoha_lddla_core.c
++++ b/drivers/net/optical/airoha/airoha_lddla_core.c
+@@ -293,6 +293,36 @@ static int lddla_bob_import(struct airoha_lddla *lddla, const u8 *data,
+ 	    max_bob > sizeof(lddla->bob))
+ 		return -EINVAL;
+ 
++	/*
++	 * EN7572/EN7573 firmware consumes two byte-addressed A0/A2 pages.
++	 * Offset 0x94 is FAST_INST_CTRL, not the EN7570/EN7571 word-table
++	 * signature. Preserve every byte, including the mixed-endian fields.
++	 */
++	if (lddla->ops->bob_format == AIROHA_LDDLA_BOB_FORMAT_A0A2) {
++		if (len != max_bob || min_bob != max_bob) {
++			dev_err(lddla->dev,
++				"%s A0/A2 BOB must be %zu bytes (got %zu)\n",
++				source, max_bob, len);
++			return -EINVAL;
++		}
++		if (!memchr_inv(data, 0xff, len) || !memchr_inv(data, 0, len)) {
++			dev_err(lddla->dev, "%s A0/A2 BOB is blank\n", source);
++			return -EINVAL;
++		}
++
++		memset(lddla->bob, 0xff, sizeof(lddla->bob));
++		memcpy(lddla->bob, data, len);
++		lddla->bob_len = len;
++		lddla->bob_valid = true;
++		lddla->bob_source_endian = AIROHA_LDDLA_BOB_ENDIAN_BYTES;
++		lddla->bob_magic = 0;
++		lddla->bob_chip_id = 0;
++		lddla->bob_profile = 0;
++		dev_info(lddla->dev, "loaded %zu-byte A0/A2 BOB from %s\n",
++			 len, source);
++		return 0;
++	}
++
+ 	if (len < min_bob) {
+ 		dev_err(lddla->dev, "%s BOB is too small (%zu < %zu bytes)\n",
+ 			source, len, min_bob);
+@@ -394,14 +424,14 @@ static int lddla_bob_load_firmware(struct airoha_lddla *lddla)
+  * lddla_bob_load() - load and normalize an Airoha factory BOB image.
+  * @lddla: device
+  *
+- * NVMEM is preferred over a firmware file.  The magic at byte 0x94 identifies
+- * both the EN757x family member and whether the source stores 32-bit words in
+- * little or big endian.  The in-memory image is always normalized to
+- * little-endian bytes, so the chip algorithms behave identically on LE and BE
+- * hosts and no userspace byte-swap step is required.
++ * NVMEM is preferred over a firmware file. For EN7570/EN7571 word tables,
++ * the magic at byte 0x94 identifies the chip/profile and the source word
++ * order. These tables are normalized to little-endian words. EN7572/EN7573
++ * A0/A2 pages are copied unchanged; they have no word-table signature and
++ * contain fields in different byte orders, independent of the host CPU.
+  *
+- * Missing calibration is non-fatal and leaves an erased mirror.  A present but
+- * malformed or wrong-chip BOB is rejected.
++ * Missing calibration is non-fatal and leaves an erased mirror. Import rejects
++ * invalid layouts and blank A0/A2 images; calibration remains board-specific.
+  */
+ int lddla_bob_load(struct airoha_lddla *lddla)
+ {
+@@ -683,6 +713,9 @@ static ssize_t endian_show(struct device *dev,
+ 	case AIROHA_LDDLA_BOB_ENDIAN_BIG:
+ 		endian = "big";
+ 		break;
++	case AIROHA_LDDLA_BOB_ENDIAN_BYTES:
++		endian = "bytes";
++		break;
+ 	case AIROHA_LDDLA_BOB_ENDIAN_UNKNOWN:
+ 	default:
+ 		endian = "unknown";
+@@ -709,7 +742,8 @@ static ssize_t magic_show(struct device *dev,
+ 
+ 	if (!lddla)
+ 		return -ENODEV;
+-	if (!lddla->bob_valid)
++	if (!lddla->bob_valid ||
++	    lddla->bob_source_endian == AIROHA_LDDLA_BOB_ENDIAN_BYTES)
+ 		return -ENODATA;
+ 	return sysfs_emit(buf, "0x%08x\n", lddla->bob_magic);
+ }
+@@ -722,7 +756,8 @@ static ssize_t chip_id_show(struct device *dev,
+ 
+ 	if (!lddla)
+ 		return -ENODEV;
+-	if (!lddla->bob_valid)
++	if (!lddla->bob_valid ||
++	    lddla->bob_source_endian == AIROHA_LDDLA_BOB_ENDIAN_BYTES)
+ 		return -ENODATA;
+ 	return sysfs_emit(buf, "0x%02x\n", lddla->bob_chip_id);
+ }
+@@ -735,7 +770,8 @@ static ssize_t profile_show(struct device *dev,
+ 
+ 	if (!lddla)
+ 		return -ENODEV;
+-	if (!lddla->bob_valid)
++	if (!lddla->bob_valid ||
++	    lddla->bob_source_endian == AIROHA_LDDLA_BOB_ENDIAN_BYTES)
+ 		return -ENODATA;
+ 	return sysfs_emit(buf, "0x%02x\n", lddla->bob_profile);
+ }
+@@ -831,11 +867,12 @@ static int airoha_lddla_diag_show(struct seq_file *s, void *unused)
+ 	seq_printf(s, "ddmi tx_pwr: 0x%04x\n", lddla->ddmi_tx_power);
+ 	seq_printf(s, "ddmi rx_pwr: 0x%04x\n", lddla->ddmi_rx_power);
+ 	seq_printf(s, "alarm:       0x%04x\n", lddla->alarm);
+-	seq_printf(s, "bob:         %s, %zu bytes, source %s-endian\n",
++	seq_printf(s, "bob:         %s, %zu bytes, source format %s\n",
+ 		   lddla->bob_valid ? "valid" : "not loaded", lddla->bob_len,
+ 		   lddla->bob_source_endian == AIROHA_LDDLA_BOB_ENDIAN_BIG ?
+ 		   "big" : lddla->bob_source_endian == AIROHA_LDDLA_BOB_ENDIAN_LITTLE ?
+-		   "little" : "unknown");
++		   "little" : lddla->bob_source_endian == AIROHA_LDDLA_BOB_ENDIAN_BYTES ?
++		   "A0/A2 bytes" : "unknown");
+ 	if (lddla->ops->diag_show)
+ 		lddla->ops->diag_show(lddla, s);
+ 	mutex_unlock(&lddla->lock);
+diff --git a/drivers/net/optical/airoha/en7572.h b/drivers/net/optical/airoha/en7572.h
+index 38d22847a..e7d97dd24 100644
+--- a/drivers/net/optical/airoha/en7572.h
++++ b/drivers/net/optical/airoha/en7572.h
+@@ -1,6 +1,6 @@
+ /* SPDX-License-Identifier: GPL-2.0 */
+ /*
+- * Airoha EN7572 / AN8901 xPON LDDLA controller driver.
++ * Airoha EN7572 / EN7573 / AN8901 xPON LDDLA controller driver.
+  *
+  * Per-device state and internal API.  The shared transport-agnostic
+  * scaffolding (hwmon, optical frontend, debugfs, module entry) lives in the
+@@ -25,7 +25,7 @@
+ #define EN7572_VERSION			1
+ 
+ /*
+- * Per-device state for one EN7572 / AN8901 LDDLA controller.  The shared
++ * Per-device state for one EN7572 / EN7573 / AN8901 controller. The shared
+  * airoha_lddla object (hwmon / SFP / debugfs) must be the first member.  The
+  * A0 (0x50) and A2 (0x51) pages are both reached over the embedded client's
+  * I2C adapter using explicit slave addresses.
+@@ -67,7 +67,7 @@ u16 en7572_word_rd(struct en7572_priv *priv, u8 dev, u16 reg);
+ void en7572_byte_wr(struct en7572_priv *priv, u8 dev, u16 reg, u8 val);
+ void en7572_word_wr(struct en7572_priv *priv, u8 dev, u16 reg, u16 val);
+ u32 en7572_bit_rd(struct en7572_priv *priv, u16 reg, int start, int end);
+-void en7572_bit_wr(struct en7572_priv *priv, u16 reg, int start, int end, u32 val);
++int en7572_bit_wr(struct en7572_priv *priv, u16 reg, int start, int end, u32 val);
+ 
+ /* A2-page (mailbox/CSR) convenience wrappers. */
+ static inline u8 en7572_a2_byte(struct en7572_priv *priv, u16 reg)
+diff --git a/drivers/net/optical/airoha/en7572_ddmi.c b/drivers/net/optical/airoha/en7572_ddmi.c
+index 9633ad854..12ff87cc0 100644
+--- a/drivers/net/optical/airoha/en7572_ddmi.c
++++ b/drivers/net/optical/airoha/en7572_ddmi.c
+@@ -1,6 +1,6 @@
+ // SPDX-License-Identifier: GPL-2.0
+ /*
+- * EN7572 / AN8901 SFF-8472 diagnostics readback and alarm evaluation.
++ * EN7572 / EN7573 / AN8901 SFF-8472 diagnostics and alarm evaluation.
+  *
+  * The MD32 firmware maintains the SFF-8472 diagnostic block on the A2 page
+  * (big-endian words at 0x60-0x6B) already in MSA units, so temperature,
+diff --git a/drivers/net/optical/airoha/en7572_loop.c b/drivers/net/optical/airoha/en7572_loop.c
+index f4044e8c9..f46ab7027 100644
+--- a/drivers/net/optical/airoha/en7572_loop.c
++++ b/drivers/net/optical/airoha/en7572_loop.c
+@@ -1,6 +1,6 @@
+ // SPDX-License-Identifier: GPL-2.0
+ /*
+- * EN7572 / AN8901 runtime control loops.
++ * EN7572 / EN7573 / AN8901 runtime control loops.
+  *
+  * The MD32 firmware runs the closed-loop laser control on its own; these are
+  * the host-side assists the vendor driver layers on top:
+diff --git a/drivers/net/optical/airoha/en7572_main.c b/drivers/net/optical/airoha/en7572_main.c
+index 3a1035d64..b9158d963 100644
+--- a/drivers/net/optical/airoha/en7572_main.c
++++ b/drivers/net/optical/airoha/en7572_main.c
+@@ -1,6 +1,6 @@
+ // SPDX-License-Identifier: GPL-2.0
+ /*
+- * Airoha EN7572 / AN8901 xPON LDDLA controller: I2C transport, MD32 firmware
++ * Airoha EN7572 / EN7573 / AN8901 controller: I2C transport, MD32 firmware
+  * loader, reset / detect, the per-chip ops table and the 1 Hz worker.
+  *
+  * The device exposes two I2C slaves on the same bus: the A0 page (0x50, used
+@@ -144,18 +144,23 @@ u32 en7572_bit_rd(struct en7572_priv *priv, u16 reg, int start, int end)
+  * @start: least-significant bit of the field
+  * @end:   most-significant bit of the field
+  * @val:   value to place in the field
++ *
++ * Return: 0 on success, negative errno on failure.
+  */
+-void en7572_bit_wr(struct en7572_priv *priv, u16 reg, int start, int end, u32 val)
++int en7572_bit_wr(struct en7572_priv *priv, u16 reg, int start, int end, u32 val)
+ {
+ 	u8 b[4] = { 0 };
+ 	u32 cur, mask;
++	int ret;
+ 
+ 	if (end < start)
+ 		swap(start, end);
+ 
+ 	mask = ((end - start == 31) ? 0xffffffff : (BIT(end - start + 1) - 1)) << start;
+ 
+-	en7572_rd(priv, EN7572_DEV_A2, reg, b, 4);
++	ret = en7572_rd(priv, EN7572_DEV_A2, reg, b, 4);
++	if (ret)
++		return ret;
+ 	cur = b[0] | (b[1] << 8) | (b[2] << 16) | (b[3] << 24);
+ 	cur = (cur & ~mask) | ((val << start) & mask);
+ 
+@@ -163,7 +168,7 @@ void en7572_bit_wr(struct en7572_priv *priv, u16 reg, int start, int end, u32 va
+ 	b[1] = cur >> 8;
+ 	b[2] = cur >> 16;
+ 	b[3] = cur >> 24;
+-	en7572_wr(priv, EN7572_DEV_A2, reg, b, 4);
++	return en7572_wr(priv, EN7572_DEV_A2, reg, b, 4);
+ }
+ 
+ /* ------------------------------------------------------------------ */
+@@ -171,17 +176,28 @@ void en7572_bit_wr(struct en7572_priv *priv, u16 reg, int start, int end, u32 va
+ /* ------------------------------------------------------------------ */
+ 
+ /**
+- * en7572_detect() - confirm an EN7572/AN8901 is present.
++ * en7572_detect() - confirm an EN7572/EN7573/AN8901 is present.
+  * @priv: device
+  *
+- * Return: 0 if the identity word reads back as expected, -ENODEV otherwise.
++ * The SDK identifies EN7572/EN7573 using either identity word. These words
++ * identify the family, so the board's match data selects the chip variant.
++ *
++ * Return: 0 on a family match, -ENODEV on mismatch, or an I2C error.
+  */
+ int en7572_detect(struct en7572_priv *priv)
+ {
+-	u16 id = en7572_a2_word(priv, EN7572_CSR_CHIP_ID);
++	u8 b[4];
++	u16 id, id2;
++	int ret;
+ 
+-	if (id != EN7572_CHIP_ID) {
+-		dev_info(priv->lddla.dev, "no EN7572 (id 0x%04x)\n", id);
++	ret = en7572_rd(priv, EN7572_DEV_A2, EN7572_CSR_CHIP_ID, b, sizeof(b));
++	if (ret)
++		return ret;
++	id = b[0] | (b[1] << 8);
++	id2 = b[2] | (b[3] << 8);
++	if (id != EN7572_CHIP_ID && id2 != EN7572_CHIP_ID2) {
++		dev_info(priv->lddla.dev, "no %s (ids 0x%04x, 0x%04x)\n",
++			 priv->lddla.ops->part_number, id, id2);
+ 		return -ENODEV;
+ 	}
+ 	return 0;
+@@ -192,20 +208,29 @@ int en7572_detect(struct en7572_priv *priv)
+ /* ------------------------------------------------------------------ */
+ 
+ /* Stream one firmware image into MD32 memory, 32 bits at a time. */
+-static void en7572_load_block(struct en7572_priv *priv, u16 cfg, u16 addr_reg,
+-			      u16 data_reg, const u8 *data, size_t size, u32 base)
++static int en7572_load_block(struct en7572_priv *priv, u16 cfg, u16 addr_reg,
++			     u16 data_reg, const u8 *data, size_t size, u32 base)
+ {
+ 	size_t i;
++	int ret;
+ 
+-	en7572_bit_wr(priv, cfg, 0, 0, 1);
+-	en7572_bit_wr(priv, addr_reg, 0, 31, base);
+-	for (i = 0; i + 4 <= size; i += 4)
+-		en7572_wr(priv, EN7572_DEV_A0, data_reg, &data[i], 4);
++	ret = en7572_bit_wr(priv, cfg, 0, 0, 1);
++	if (ret)
++		return ret;
++	ret = en7572_bit_wr(priv, addr_reg, 0, 31, base);
++	if (ret)
++		return ret;
++	for (i = 0; i + 4 <= size; i += 4) {
++		ret = en7572_wr(priv, EN7572_DEV_A0, data_reg, &data[i], 4);
++		if (ret)
++			return ret;
++	}
++	return 0;
+ }
+ 
+-/* Load a firmware image of the expected size, or return an error. */
++/* The SDK zero-fills unused PM/DM memory for shorter word-aligned images. */
+ static int en7572_request_image(struct en7572_priv *priv, const char *name,
+-				u8 *dst, size_t want)
++				u8 *dst, size_t capacity)
+ {
+ 	const struct firmware *fw;
+ 	int ret;
+@@ -215,13 +240,14 @@ static int en7572_request_image(struct en7572_priv *priv, const char *name,
+ 		dev_err(priv->lddla.dev, "firmware '%s' not found (%d)\n", name, ret);
+ 		return ret;
+ 	}
+-	if (fw->size < want) {
+-		dev_err(priv->lddla.dev, "firmware '%s' too small (%zu < %zu)\n",
+-			name, fw->size, want);
++	if (!fw->size || fw->size > capacity || !IS_ALIGNED(fw->size, 4)) {
++		dev_err(priv->lddla.dev, "firmware '%s' has invalid size %zu (max %zu)\n",
++			name, fw->size, capacity);
+ 		release_firmware(fw);
+ 		return -EINVAL;
+ 	}
+-	memcpy(dst, fw->data, want);
++	memset(dst, 0, capacity);
++	memcpy(dst, fw->data, fw->size);
+ 	release_firmware(fw);
+ 	return 0;
+ }
+@@ -253,19 +279,25 @@ static int en7572_load_firmware(struct en7572_priv *priv)
+ 	if (ret)
+ 		goto out;
+ 
+-	en7572_load_block(priv, EN7572_MD32_PM_CFG, EN7572_MD32_PM_ADDR,
+-			  EN7572_MD32_PM_DATA, pm, EN7572_PM_SIZE, 0);
+-	en7572_load_block(priv, EN7572_MD32_DM_CFG, EN7572_MD32_DM_ADDR,
+-			  EN7572_MD32_DM_DATA, dm, EN7572_DM_SIZE, 0);
++	ret = en7572_load_block(priv, EN7572_MD32_PM_CFG, EN7572_MD32_PM_ADDR,
++				EN7572_MD32_PM_DATA, pm, EN7572_PM_SIZE, 0);
++	if (ret)
++		goto out;
++	ret = en7572_load_block(priv, EN7572_MD32_DM_CFG, EN7572_MD32_DM_ADDR,
++				EN7572_MD32_DM_DATA, dm, EN7572_DM_SIZE, 0);
++	if (ret)
++		goto out;
+ 	dev_dbg(priv->lddla.dev, "MD32 PM/DM loaded\n");
+ 
+ 	ret = lddla_bob_load(&priv->lddla);
+ 	if (ret)
+ 		goto out;
+ 	if (priv->lddla.bob_valid) {
+-		en7572_load_block(priv, EN7572_MD32_DM_CFG, EN7572_MD32_DM_ADDR,
+-				  EN7572_MD32_DM_DATA, priv->lddla.bob,
+-				  EN7572_BOB_SIZE, EN7572_MD32_BOB_DM_OFFSET);
++		ret = en7572_load_block(priv, EN7572_MD32_DM_CFG, EN7572_MD32_DM_ADDR,
++					EN7572_MD32_DM_DATA, priv->lddla.bob,
++					EN7572_BOB_SIZE, EN7572_MD32_BOB_DM_OFFSET);
++		if (ret)
++			goto out;
+ 		dev_dbg(priv->lddla.dev, "BOB table loaded\n");
+ 	} else {
+ 		dev_warn(priv->lddla.dev,
+@@ -309,13 +341,23 @@ int en7572_init(struct en7572_priv *priv)
+ {
+ 	int ret;
+ 
+-	en7572_bit_wr(priv, EN7572_MD32_EN_CFG, 0, 0, 0);	/* hold MCU */
+-	en7572_bit_wr(priv, EN7572_RG_OCP_CTRL, 30, 30, 0);	/* OCP off */
+-	en7572_bit_wr(priv, EN7572_RG_APD_DAC_CODE, 8, 8, 0);	/* APD off */
++	ret = en7572_bit_wr(priv, EN7572_MD32_EN_CFG, 0, 0, 0); /* hold MCU */
++	if (ret)
++		return ret;
++	ret = en7572_bit_wr(priv, EN7572_RG_OCP_CTRL, 30, 30, 0); /* OCP off */
++	if (ret)
++		return ret;
++	ret = en7572_bit_wr(priv, EN7572_RG_APD_DAC_CODE, 8, 8, 0); /* APD off */
++	if (ret)
++		return ret;
+ 	msleep(100);
+ 
+-	en7572_bit_wr(priv, EN7572_RG_SYS_RESET, 30, 31, 0);
+-	en7572_bit_wr(priv, EN7572_RG_SYS_RESET, 30, 31, 3);
++	ret = en7572_bit_wr(priv, EN7572_RG_SYS_RESET, 30, 31, 0);
++	if (ret)
++		return ret;
++	ret = en7572_bit_wr(priv, EN7572_RG_SYS_RESET, 30, 31, 3);
++	if (ret)
++		return ret;
+ 
+ 	ret = en7572_load_firmware(priv);
+ 	if (ret)
+@@ -329,7 +371,9 @@ int en7572_init(struct en7572_priv *priv)
+ 	en7572_word_wr(priv, EN7572_DEV_A2, EN7572_A2_ALARM_FLAGS, 0);
+ 	en7572_word_wr(priv, EN7572_DEV_A2, EN7572_A2_WARN_FLAGS, 0);
+ 
+-	en7572_bit_wr(priv, EN7572_MD32_EN_CFG, 0, 0, 1);	/* release MCU */
++	ret = en7572_bit_wr(priv, EN7572_MD32_EN_CFG, 0, 0, 1); /* release MCU */
++	if (ret)
++		return ret;
+ 	priv->mcu_ready = true;
+ 
+ 	/* Arm the control loops: first pass after BEN comes up. */
+@@ -416,6 +460,29 @@ static const struct airoha_lddla_ops en7572_ops = {
+ 			  BIT(OPTICAL_FRONTEND_PROTO_XGSPON) |
+ 			  BIT(OPTICAL_FRONTEND_PROTO_NGPON2),
+ 	.thresholds	= &en7572_thresholds,
++	.bob_format	= AIROHA_LDDLA_BOB_FORMAT_A0A2,
++	.bob_size_min	= EN7572_BOB_SIZE,
++	.bob_size_max	= EN7572_BOB_SIZE,
++	.temp_refresh	= en7572_temp_refresh,
++	.vcc_refresh	= en7572_vcc_refresh,
++	.bias_refresh	= en7572_bias_refresh,
++	.tx_power_refresh = en7572_tx_power_refresh,
++	.rx_power_refresh = en7572_rx_power_refresh,
++	.diag_show	= en7572_diag_show,
++};
++
++static const struct airoha_lddla_ops en7573_ops = {
++	.name		= "en7573",
++	.part_number	= "EN7573",
++	.serial		= "0000000000000000",
++	.date_code	= "000000",
++	.protocols	= BIT(OPTICAL_FRONTEND_PROTO_EPON) |
++			  BIT(OPTICAL_FRONTEND_PROTO_GPON) |
++			  BIT(OPTICAL_FRONTEND_PROTO_XGPON) |
++			  BIT(OPTICAL_FRONTEND_PROTO_XGSPON) |
++			  BIT(OPTICAL_FRONTEND_PROTO_NGPON2),
++	.thresholds	= &en7572_thresholds,
++	.bob_format	= AIROHA_LDDLA_BOB_FORMAT_A0A2,
+ 	.bob_size_min	= EN7572_BOB_SIZE,
+ 	.bob_size_max	= EN7572_BOB_SIZE,
+ 	.temp_refresh	= en7572_temp_refresh,
+@@ -432,12 +499,25 @@ static const struct airoha_lddla_ops en7572_ops = {
+ 
+ static const struct {
+ 	const char *pm, *dm, *bob;
++	const struct airoha_lddla_ops *ops;
+ } en7572_fw[] = {
+ 	[EN7572_VARIANT_EN7572] = {
+-		"airoha/en7572-pm.bin", "airoha/en7572-dm.bin", "airoha/en7572-bob.bin",
++		.pm = "airoha/en7572-pm.bin",
++		.dm = "airoha/en7572-dm.bin",
++		.bob = "airoha/en7572-bob.bin",
++		.ops = &en7572_ops,
+ 	},
+ 	[EN7572_VARIANT_AN8901] = {
+-		"airoha/an8901-pm.bin", "airoha/an8901-dm.bin", "airoha/an8901-bob.bin",
++		.pm = "airoha/an8901-pm.bin",
++		.dm = "airoha/an8901-dm.bin",
++		.bob = "airoha/an8901-bob.bin",
++		.ops = &en7572_ops,
++	},
++	[EN7572_VARIANT_EN7573] = {
++		.pm = "airoha/en7573-pm.bin",
++		.dm = "airoha/en7573-dm.bin",
++		.bob = "airoha/en7573-bob.bin",
++		.ops = &en7573_ops,
+ 	},
+ };
+ 
+@@ -452,7 +532,6 @@ static int en7572_probe(struct i2c_client *client)
+ 
+ 	priv->lddla.client = client;
+ 	priv->lddla.dev = &client->dev;
+-	priv->lddla.ops = &en7572_ops;
+ 	priv->lddla.pon_mode = AIROHA_PON_GPON;
+ 	mutex_init(&priv->lddla.lock);
+ 	i2c_set_clientdata(client, priv);
+@@ -460,6 +539,7 @@ static int en7572_probe(struct i2c_client *client)
+ 	priv->variant = (uintptr_t)i2c_get_match_data(client);
+ 	if (priv->variant >= ARRAY_SIZE(en7572_fw))
+ 		priv->variant = EN7572_VARIANT_EN7572;
++	priv->lddla.ops = en7572_fw[priv->variant].ops;
+ 	priv->fw_pm = en7572_fw[priv->variant].pm;
+ 	priv->fw_dm = en7572_fw[priv->variant].dm;
+ 	if (device_property_read_string(&client->dev, "firmware-name",
+@@ -500,6 +580,7 @@ static void en7572_remove(struct i2c_client *client)
+ static const struct i2c_device_id en7572_id[] = {
+ 	{ "en7572", EN7572_VARIANT_EN7572 },
+ 	{ "an8901", EN7572_VARIANT_AN8901 },
++	{ "en7573", EN7572_VARIANT_EN7573 },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, en7572_id);
+@@ -507,6 +588,7 @@ MODULE_DEVICE_TABLE(i2c, en7572_id);
+ static const struct of_device_id en7572_of_match[] = {
+ 	{ .compatible = "airoha,en7572", .data = (void *)EN7572_VARIANT_EN7572 },
+ 	{ .compatible = "airoha,an8901", .data = (void *)EN7572_VARIANT_AN8901 },
++	{ .compatible = "airoha,en7573", .data = (void *)EN7572_VARIANT_EN7573 },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(of, en7572_of_match);
+@@ -520,3 +602,7 @@ struct i2c_driver en7572_i2c_driver = {
+ 	.remove = en7572_remove,
+ 	.id_table = en7572_id,
+ };
++
++MODULE_FIRMWARE("airoha/en7573-pm.bin");
++MODULE_FIRMWARE("airoha/en7573-dm.bin");
++MODULE_FIRMWARE("airoha/en7573-bob.bin");
+diff --git a/drivers/net/optical/airoha/en7572_regs.h b/drivers/net/optical/airoha/en7572_regs.h
+index ced4a89e1..6b9c70247 100644
+--- a/drivers/net/optical/airoha/en7572_regs.h
++++ b/drivers/net/optical/airoha/en7572_regs.h
+@@ -1,6 +1,6 @@
+ /* SPDX-License-Identifier: GPL-2.0 */
+ /*
+- * Register / mailbox map for the Airoha EN7572 / AN8901 xPON LDDLA controller.
++ * Register / mailbox map for the Airoha EN7572 / EN7573 / AN8901 controller.
+  *
+  * Unlike the EN7570/EN7571 (whose host directly drives the analog ADC and
+  * power-control registers), the EN7572/AN8901 carries an embedded MD32
+@@ -60,10 +60,12 @@
+ #define EN7572_RG_TX_DIS		0x000003e0	/* TX_DIS / status */
+ #define EN7572_RG_OCP_STATUS		0x000003e4	/* OCP detected (bit 8) */
+ #define EN7572_CSR_CHIP_ID		0x00000408	/* identity word == 0x1388 */
++#define EN7572_CSR_CHIP_ID2		0x0000040a	/* identity word == 0x007d */
+ #define EN7572_RG_LOS_DAC		0x0000043c	/* LOS/SD DAC */
+ #define EN7572_RG_BEN_STATUS		0x00000488	/* burst-enable (bit 0) */
+ 
+ #define EN7572_CHIP_ID			0x1388		/* WordReadA2(0x408) */
++#define EN7572_CHIP_ID2			0x007d		/* WordReadA2(0x40a) */
+ 
+ /* A2 firmware mailbox (device 0x51, byte offsets 0x80-0xFF). */
+ #define EN7572_A2_FW_VER		0x82
+@@ -115,5 +117,6 @@
+ /* Chip variants (driver_data / of_device_id data). */
+ #define EN7572_VARIANT_EN7572		0
+ #define EN7572_VARIANT_AN8901		1
++#define EN7572_VARIANT_EN7573		2
+ 
+ #endif /* _EN7572_REGS_H */
+diff --git a/include/linux/optical_frontend.h b/include/linux/optical_frontend.h
+index aa7db192b..e56e85dc0 100644
+--- a/include/linux/optical_frontend.h
++++ b/include/linux/optical_frontend.h
+@@ -54,6 +54,7 @@ enum optical_frontend_protocol {
+ 	OPTICAL_FRONTEND_PROTO_UNSPEC,
+ 	OPTICAL_FRONTEND_PROTO_ETHERNET,
+ 	OPTICAL_FRONTEND_PROTO_EPON,
++	OPTICAL_FRONTEND_PROTO_XEPON,
+ 	OPTICAL_FRONTEND_PROTO_GPON,
+ 	OPTICAL_FRONTEND_PROTO_XGPON,
+ 	OPTICAL_FRONTEND_PROTO_XGSPON,
+-- 
+2.55.0
+

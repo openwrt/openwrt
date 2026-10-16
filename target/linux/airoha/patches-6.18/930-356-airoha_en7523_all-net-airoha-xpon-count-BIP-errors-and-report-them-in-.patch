@@ -1,0 +1,372 @@
+From bd00c58192f306eb834470f6a8044496249139e9 Mon Sep 17 00:00:00 2001
+From: Cristian Papa <pcristian292@gmail.com>
+Date: Fri, 25 Sep 2026 01:45:18 -0300
+Subject: [PATCH] net: airoha: xpon: count BIP errors and report them in REI
+
+The GPON MAC always reports zero errors to the OLT in REI, and BIP
+errors are not visible anywhere. On EN751221 the PHY has a BIP counter
+(0x24c) that the vendor reads by latching it, reading it and clearing
+it through the RX counter command register.
+
+Add airoha_xpon_phy_take_gpon_bip() for that sequence, serialized with
+the PHY counter clears, and enable it on EN751221. In the MAC, start a
+new BIP session at every O5 entry (the first read only discards what
+was counted while acquiring), sample the counter about once a second
+from the link poll and again in the BER timer, and report the errors
+accumulated since the last REI. SoCs without the counter keep reporting
+zero; a failed read skips that report instead of claiming zero errors.
+Expose the totals read-only in the gpon_bip sysfs attribute.
+
+BIP counts were what exposed an over-biased APD on the Archer XR500v
+(errors starting as the optics warmed up), and my daily build has been
+reporting real REI to a Movistar (AR) OLT since mid-September.
+
+Co-Authored-By: Claude Opus 5.5 (1M context) <noreply@anthropic.com>
+Signed-off-by: Cristian Papa <pcristian292@gmail.com>
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/ethernet/airoha/airoha_xpon.c | 132 +++++++++++++++++++++-
+ drivers/net/ethernet/airoha/airoha_xpon.h |  10 ++
+ drivers/phy/airoha/phy-airoha-xpon.c      |  46 ++++++++
+ include/linux/phy/phy-airoha-xpon.h       |   2 +
+ 4 files changed, 189 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/net/ethernet/airoha/airoha_xpon.c b/drivers/net/ethernet/airoha/airoha_xpon.c
+index 4208e3c7b..69b2e2eba 100644
+--- a/drivers/net/ethernet/airoha/airoha_xpon.c
++++ b/drivers/net/ethernet/airoha/airoha_xpon.c
+@@ -1570,9 +1570,112 @@ static void gpon_cb_request_new_key(void *hw_priv)
+ 	ploam_set_aes_key(priv->ploam, priv->aes_key);
+ }
+ 
++/*
++ * BIP accounting.  The PHY counter is read-and-clear, so only these helpers
++ * consume it: the link poll samples it about once a second in O5 and the BER
++ * timer samples it again before reporting REI.  Call with bip_lock held.
++ */
++static int gpon_bip_sample_locked(struct xpon_priv *priv)
++{
++	u32 count;
++	int ret;
++
++	if (!priv->bip_active)
++		return -EHOSTDOWN;
++
++	ret = airoha_xpon_phy_take_gpon_bip(priv->phy, &count);
++	priv->bip_next = jiffies + HZ;
++	if (ret)
++		return ret;
++
++	/* The first read only clears what was counted while acquiring. */
++	if (!priv->bip_valid) {
++		priv->bip_valid = true;
++		return 0;
++	}
++
++	priv->bip_last = count;
++	priv->bip_total += count;
++	priv->bip_session_total += count;
++	priv->bip_pending += count;
++	return 0;
++}
++
++static void gpon_bip_set_active(struct xpon_priv *priv, bool o5)
++{
++	unsigned long flags;
++
++	spin_lock_irqsave(&priv->bip_lock, flags);
++	if (o5 && !priv->bip_active) {
++		priv->bip_active = true;
++		priv->bip_valid = false;
++		priv->bip_session++;
++		priv->bip_session_total = 0;
++		priv->bip_pending = 0;
++		priv->bip_last = 0;
++		gpon_bip_sample_locked(priv);
++	} else if (!o5) {
++		priv->bip_active = false;
++		priv->bip_valid = false;
++	}
++	spin_unlock_irqrestore(&priv->bip_lock, flags);
++}
++
++static void gpon_bip_poll(struct xpon_priv *priv)
++{
++	unsigned long flags;
++
++	spin_lock_irqsave(&priv->bip_lock, flags);
++	if (priv->bip_active && time_after_eq(jiffies, priv->bip_next))
++		gpon_bip_sample_locked(priv);
++	spin_unlock_irqrestore(&priv->bip_lock, flags);
++}
++
++static ssize_t gpon_bip_show(struct device *dev, struct device_attribute *attr,
++			     char *buf)
++{
++	struct xpon_priv *priv = dev_get_drvdata(dev);
++	unsigned long flags;
++	u64 total, session_total, pending;
++	u32 session, last;
++	bool active;
++
++	if (!priv)
++		return -ENODEV;
++
++	spin_lock_irqsave(&priv->bip_lock, flags);
++	active = priv->bip_active && priv->bip_valid;
++	session = priv->bip_session;
++	last = priv->bip_last;
++	total = priv->bip_total;
++	session_total = priv->bip_session_total;
++	pending = priv->bip_pending;
++	spin_unlock_irqrestore(&priv->bip_lock, flags);
++
++	return sysfs_emit(buf,
++			  "active=%u session=%u total=%llu session_total=%llu last=%u pending_rei=%llu\n",
++			  active, session, total, session_total, last, pending);
++}
++static DEVICE_ATTR_RO(gpon_bip);
++
++static struct attribute *gpon_bip_attrs[] = {
++	&dev_attr_gpon_bip.attr,
++	NULL
++};
++
++static const struct attribute_group gpon_bip_group = {
++	.attrs = gpon_bip_attrs,
++};
++
+ static void gpon_cb_set_ber_interval(void *hw_priv, u32 interval_ms)
+ {
+ 	struct xpon_priv *priv = hw_priv;
++	unsigned long flags;
++
++	/* A new BER interval starts a new reporting window. */
++	spin_lock_irqsave(&priv->bip_lock, flags);
++	priv->bip_pending = 0;
++	spin_unlock_irqrestore(&priv->bip_lock, flags);
+ 
+ 	dev_info(priv->dev, "GPON BER reporting interval=%u ms\n",
+ 		 interval_ms);
+@@ -2075,6 +2178,7 @@ static void gpon_cb_state_changed(void *hw_priv, enum gpon_state state)
+ 
+ 	/* Keep the hardware activation state in sync with the PLOAM FSM. */
+ 	gpon_write(priv, GPON_ACTIVATION_ST, state & 0x7);
++	gpon_bip_set_active(priv, state == GPON_O5_OPERATION);
+ 	dev_info(priv->dev, "GPON state -> %s (%u), activation_reg=%#08x\n",
+ 		 gpon_state_name(state), state,
+ 		 gpon_read(priv, GPON_ACTIVATION_ST));
+@@ -2412,6 +2516,7 @@ static void gpon_disable(struct xpon_priv *priv)
+ 	 * remains enabled so no activation edge is lost across a restart.
+ 	 */
+ 	WRITE_ONCE(priv->mac_enabled, false);
++	gpon_bip_set_active(priv, false);
+ 	if (mac_enabled) {
+ 		gpon_write(priv, GPON_INT_ENABLE, 0);
+ 		gpon_write(priv, GPON_INT_STATUS, ~0U);
+@@ -2507,7 +2612,9 @@ static void gpon_disable(struct xpon_priv *priv)
+ static void gpon_ber_timer_fn(struct timer_list *t)
+ {
+ 	struct xpon_priv *priv = timer_container_of(priv, t, ber_timer);
++	unsigned long flags;
+ 	bool ready, los;
++	u32 count = 0;
+ 	int ret;
+ 
+ 	if (!READ_ONCE(priv->mac_enabled) || !priv->ber_interval_ms ||
+@@ -2520,7 +2627,19 @@ static void gpon_ber_timer_fn(struct timer_list *t)
+ 		return;
+ 	}
+ 
+-	ploam_notify_ber(priv->ploam, 0);
++	spin_lock_irqsave(&priv->bip_lock, flags);
++	ret = gpon_bip_sample_locked(priv);
++	if (!ret) {
++		count = min_t(u64, priv->bip_pending, U32_MAX);
++		priv->bip_pending -= count;
++	}
++	spin_unlock_irqrestore(&priv->bip_lock, flags);
++	/*
++	 * Without a BIP counter keep reporting zero; a failed read is missing
++	 * data, not zero errors, so that report is skipped.
++	 */
++	if (!ret || ret == -EOPNOTSUPP)
++		ploam_notify_ber(priv->ploam, count);
+ 	if (READ_ONCE(priv->mac_enabled) && priv->ber_interval_ms &&
+ 	    ploam_get_state(priv->ploam) == GPON_O5_OPERATION)
+ 		mod_timer(&priv->ber_timer,
+@@ -2594,6 +2713,10 @@ static void airoha_xpon_phy_link_work_fn(struct work_struct *work)
+ 			gpon_handle_irq_status(priv, mac_status, mac_enable);
+ 	}
+ 
++	if (link && priv->mode == AIROHA_XPON_MODE_GPON &&
++	    ploam_get_state(priv->ploam) == GPON_O5_OPERATION)
++		gpon_bip_poll(priv);
++
+ 	if (!link && priv->mode == AIROHA_XPON_MODE_GPON &&
+ 	    ploam_get_state(priv->ploam) == GPON_O5_OPERATION) {
+ 		dev_warn(priv->dev,
+@@ -3990,6 +4113,7 @@ static int airoha_xpon_init_gpon(struct platform_device *pdev,
+ 		goto err_destroy_fsm_wq;
+ 
+ 	priv->ber_interval_ms = 1000;
++	spin_lock_init(&priv->bip_lock);
+ 	timer_setup(&priv->ber_timer, gpon_ber_timer_fn, 0);
+ 
+ 	priv->ploam = ploam_alloc(&gpon_ploam_ops, priv, priv->hw_sn,
+@@ -4307,6 +4431,12 @@ static int airoha_xpon_probe(struct platform_device *pdev)
+ 	}
+ 
+ 	platform_set_drvdata(pdev, priv);
++	if (airoha_xpon_is_gpon(priv)) {
++		ret = devm_device_add_group(dev, &gpon_bip_group);
++		if (ret)
++			dev_warn(dev, "failed to add the BIP sysfs group: %d\n",
++				 ret);
++	}
+ 	if (airoha_xpon_is_gpon(priv))
+ 		dev_info(dev,
+ 			 "GPON probe complete: datapath=%s omci-genl=%u irq=%d dying-gasp-irq=%d mac-reset=%u default_state=%s\n",
+diff --git a/drivers/net/ethernet/airoha/airoha_xpon.h b/drivers/net/ethernet/airoha/airoha_xpon.h
+index 705af1bcb..db65eb6ca 100644
+--- a/drivers/net/ethernet/airoha/airoha_xpon.h
++++ b/drivers/net/ethernet/airoha/airoha_xpon.h
+@@ -432,6 +432,16 @@ struct xpon_priv {
+ 	/* BER measurement timer */
+ 	struct timer_list	ber_timer;
+ 	u32			ber_interval_ms;
++	/* BIP errors, from the PHY read-and-clear counter, for REI and sysfs */
++	spinlock_t		bip_lock;
++	bool			bip_active;
++	bool			bip_valid;
++	u32			bip_session;
++	u32			bip_last;
++	u64			bip_total;
++	u64			bip_session_total;
++	u64			bip_pending;
++	unsigned long		bip_next;
+ 
+ 	/* Protects the hardware T-CONT table and its software allocation maps. */
+ 	struct mutex		tcont_lock;
+diff --git a/drivers/phy/airoha/phy-airoha-xpon.c b/drivers/phy/airoha/phy-airoha-xpon.c
+index ad454c9b7..8dea4d3ae 100644
+--- a/drivers/phy/airoha/phy-airoha-xpon.c
++++ b/drivers/phy/airoha/phy-airoha-xpon.c
+@@ -53,6 +53,9 @@
+ #define XPON_RX_FEC_STATUS		0x021c
+ #define XPON_RX_COUNTER_ENABLE		0x0230
+ #define XPON_RX_COUNTER_CTRL		0x0234
++#define XPON_RX_BIP_COUNTER		0x024c
++#define XPON_RX_BIP_LATCH		BIT(2)
++#define XPON_RX_BIP_CLEAR		BIT(3)
+ #define XPON_RX_COUNTER_CTRL2		0x0298
+ #define XPON_GPON_PREAMBLE		0x0400
+ #define XPON_GPON_DELIMITER_GUARD	0x0404
+@@ -158,6 +161,7 @@ struct airoha_xpon_phy_soc_data {
+ 	u32 gpon_bit_delay_enable;
+ 	bool has_integrated_pma;
+ 	bool manages_fw_ready;
++	bool has_gpon_bip;
+ 	int (*configure)(struct airoha_xpon_phy *priv);
+ };
+ 
+@@ -175,6 +179,8 @@ struct airoha_xpon_phy {
+ 	bool initialized;
+ 	bool powered;
+ 	bool ready_reported;
++	/* Serializes the RX counter command register (latch/clear). */
++	spinlock_t counter_lock;
+ };
+ 
+ static u32 airoha_xpon_phy_read(struct airoha_xpon_phy *priv, u32 reg)
+@@ -273,6 +279,40 @@ static int airoha_xpon_phy_get_active_gpon(
+ 	return 0;
+ }
+ 
++/*
++ * Latch, read and clear the GPON BIP error counter, as the vendor
++ * phy_bip_counter() does.  The command register takes one command at a
++ * time and is never read-modify-written.  Safe in atomic context.
++ */
++int airoha_xpon_phy_take_gpon_bip(struct phy *phy, u32 *count)
++{
++	struct airoha_xpon_phy *priv;
++	unsigned long flags;
++	int ret;
++
++	if (!count)
++		return -EINVAL;
++
++	ret = airoha_xpon_phy_get_active_gpon(phy, &priv);
++	if (ret)
++		return ret;
++	if (!priv->soc->has_gpon_bip)
++		return -EOPNOTSUPP;
++
++	spin_lock_irqsave(&priv->counter_lock, flags);
++	airoha_xpon_phy_write(priv, XPON_RX_COUNTER_CTRL, XPON_RX_BIP_LATCH);
++	/* The vendor reads the latched value twice. */
++	airoha_xpon_phy_read(priv, XPON_RX_BIP_COUNTER);
++	*count = airoha_xpon_phy_read(priv, XPON_RX_BIP_COUNTER);
++	airoha_xpon_phy_write(priv, XPON_RX_COUNTER_CTRL, XPON_RX_BIP_CLEAR);
++	/* Flush the posted clear before the lock is released. */
++	airoha_xpon_phy_read(priv, XPON_RX_COUNTER_CTRL);
++	spin_unlock_irqrestore(&priv->counter_lock, flags);
++
++	return 0;
++}
++EXPORT_SYMBOL_GPL(airoha_xpon_phy_take_gpon_bip);
++
+ int airoha_xpon_phy_get_gpon_tx_counters(struct phy *phy,
+ 					 u32 *frame_count,
+ 					 u32 *burst_count)
+@@ -756,6 +796,9 @@ static int airoha_en7523_xpon_phy_configure(struct airoha_xpon_phy *priv)
+ static void
+ econet_xpon_phy_counter_clear(struct airoha_xpon_phy *priv, u32 mask)
+ {
++	unsigned long flags;
++
++	spin_lock_irqsave(&priv->counter_lock, flags);
+ 	/*
+ 	 * EcoNet 1G phy_counter_clear().  The RX counter clear register is a
+ 	 * command register: the vendor writes one command at a time rather than
+@@ -772,6 +815,7 @@ econet_xpon_phy_counter_clear(struct airoha_xpon_phy *priv, u32 mask)
+ 				    BIT(2));
+ 	if (mask & ECONET_XPON_COUNTER_CLEAR_RX3)
+ 		airoha_xpon_phy_write(priv, XPON_RX_COUNTER_CTRL2, BIT(4));
++	spin_unlock_irqrestore(&priv->counter_lock, flags);
+ }
+ 
+ static void
+@@ -1202,6 +1246,7 @@ static int airoha_xpon_phy_probe(struct platform_device *pdev)
+ 	priv->soc = soc;
+ 	priv->submode = AIROHA_XPON_PHY_SUBMODE_GPON;
+ 	priv->trans_invert = airoha_xpon_phy_trans_invert(dev);
++	spin_lock_init(&priv->counter_lock);
+ 	INIT_DELAYED_WORK(&priv->ready_work, airoha_xpon_phy_ready_work);
+ 
+ 	/*
+@@ -1264,6 +1309,7 @@ static int airoha_xpon_phy_probe(struct platform_device *pdev)
+ 
+ static const struct airoha_xpon_phy_soc_data econet_en751221_xpon_phy_data = {
+ 	.name = "EN751221",
++	.has_gpon_bip = true,
+ 	.min_size = ECONET_XPON_PHY_MIN_SIZE,
+ 	.gpon_bit_delay_reg = XPON_PHYSET5,
+ 	.gpon_bit_delay_mask = XPON_PHYSET5_BIT_DELAY_MASK,
+diff --git a/include/linux/phy/phy-airoha-xpon.h b/include/linux/phy/phy-airoha-xpon.h
+index 8c8e2e6ab..6eb01a772 100644
+--- a/include/linux/phy/phy-airoha-xpon.h
++++ b/include/linux/phy/phy-airoha-xpon.h
+@@ -25,6 +25,8 @@ enum airoha_xpon_phy_gpon_oper_state {
+ };
+ 
+ int airoha_xpon_phy_get_link_state(struct phy *phy, bool *ready, bool *los);
++/* EN751221: latch, read and clear the BIP error counter; atomic-safe. */
++int airoha_xpon_phy_take_gpon_bip(struct phy *phy, u32 *count);
+ int airoha_xpon_phy_get_gpon_tx_counters(struct phy *phy,
+ 					 u32 *frame_count,
+ 					 u32 *burst_count);
+-- 
+2.55.0
+

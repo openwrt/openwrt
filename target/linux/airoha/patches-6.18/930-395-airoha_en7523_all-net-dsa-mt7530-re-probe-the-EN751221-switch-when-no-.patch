@@ -1,0 +1,151 @@
+From 2926cc567adf32892a166eee5e41c281646b6523 Mon Sep 17 00:00:00 2001
+From: Cristian Papa <pcristian292@gmail.com>
+Date: Sat, 26 Sep 2026 05:37:20 -0300
+Subject: [PATCH] net: dsa: mt7530: re-probe the EN751221 switch when no TRGMII
+ lane trains
+
+When no SoC -> companion lane trains, the companion RX checker reads
+value 0x00 with all error bits set on all five lanes, and LAN is dead
+until the next reboot. On the Archer XR500v this came from the hardware
+PHY polling that U-Boot leaves on, which the first patch of this series
+stops. Keep a way out in case the link still comes up like that, for
+example with a bootloader that leaves some other state behind.
+
+Neither redoing the link setup (the retry) nor a SYS_CTRL SW_RST of the
+companion or of the on-die switch brings the lanes back. Unbinding and
+binding the on-die switch driver does, in the same boot: the full probe
+resets the on-die switch through its reset line, which also leaves the
+hardware polling off, and resets and sets up the companion again.
+
+So when the retry fails, schedule a re-probe of the on-die switch from a
+work item (the probe path holds the device lock), at most twice per
+boot, with a warning each time. The count is kept outside struct
+mt7530_priv, because the re-probe frees and reallocates it. The
+training result of every boot is reported at debug level.
+
+Without the first patch, 120 TFTP boots: 116 trained directly, and the
+4 no-window boots each recovered with one re-probe after about two
+seconds. With it, 120 TFTP boots all trained directly and the
+re-probe never ran.
+
+Assisted-by: Claude:claude-opus-5-5
+Signed-off-by: Cristian Papa <pcristian292@gmail.com>
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/dsa/mt7530.c | 59 +++++++++++++++++++++++++++++++++++++++-
+ drivers/net/dsa/mt7530.h |  6 ++++
+ 2 files changed, 64 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/net/dsa/mt7530.c b/drivers/net/dsa/mt7530.c
+index d56c45ec3..675a22723 100644
+--- a/drivers/net/dsa/mt7530.c
++++ b/drivers/net/dsa/mt7530.c
+@@ -18,6 +18,8 @@
+ #include <linux/regmap.h>
+ #include <linux/regulator/consumer.h>
+ #include <linux/reset.h>
++#include <linux/slab.h>
++#include <linux/workqueue.h>
+ #include <linux/gpio/consumer.h>
+ #include <linux/gpio/driver.h>
+ #include <net/dsa.h>
+@@ -813,10 +815,59 @@ static void en751221_trgmii_dump(struct mt7530_priv *ext,
+ 	}
+ }
+ 
++/*
++ * Rare boots come up with no SoC -> companion lane trainable, and neither
++ * redoing the link setup nor a SW_RST of either switch brings it back.  A
++ * full re-probe of the on-die switch does (hardware GSW reset, companion
++ * SYS_CTRL reset and setup, training), so schedule one, at most twice per
++ * boot.  The probe path holds the device lock, hence the work item.  The
++ * count cannot live in struct mt7530_priv: the re-probe frees and
++ * reallocates it, which would reset the limit on every attempt.
++ */
++static unsigned int en751221_trgmii_reprobes;
++
++static void en751221_trgmii_reprobe_fn(struct work_struct *work)
++{
++	struct en751221_trgmii_reprobe *r =
++		container_of(work, struct en751221_trgmii_reprobe, work);
++	int ret;
++
++	ret = device_reprobe(r->dev);
++	if (ret)
++		dev_err(r->dev, "EN751221 TRGMII: switch re-probe failed: %d\n",
++			ret);
++	put_device(r->dev);
++	kfree(r);
++}
++
++static void en751221_trgmii_schedule_reprobe(struct mt7530_priv *ondie)
++{
++	struct en751221_trgmii_reprobe *r;
++
++	if (en751221_trgmii_reprobes >= 2) {
++		dev_err(ondie->dev,
++			"EN751221 TRGMII: no SoC->MCM window after %u re-probes, giving up\n",
++			en751221_trgmii_reprobes);
++		return;
++	}
++
++	r = kzalloc(sizeof(*r), GFP_KERNEL);
++	if (!r)
++		return;
++
++	en751221_trgmii_reprobes++;
++	INIT_WORK(&r->work, en751221_trgmii_reprobe_fn);
++	r->dev = get_device(ondie->dev);
++	dev_warn(ondie->dev,
++		 "EN751221 TRGMII: no SoC->MCM window, re-probing the switch (%u)\n",
++		 en751221_trgmii_reprobes);
++	schedule_work(&r->work);
++}
++
+ static void en751221_trgmii_pair_setup(struct mt7530_priv *ext,
+ 				       struct mt7530_priv *ondie)
+ {
+-	int trained;
++	int trained, retried = 0;
+ 
+ 	if (ondie->en751221_trgmii_ready)
+ 		return;
+@@ -883,12 +934,18 @@ static void en751221_trgmii_pair_setup(struct mt7530_priv *ext,
+ 			 "EN751221 TRGMII: redoing the link setup and training once\n");
+ 		en751221_trgmii_link_setup(ext, ondie);
+ 		trained = en751221_trgmii_calibrate(ext, ondie);
++		retried = 1;
+ 		if (!trained)
+ 			en751221_trgmii_dump(ext, ondie,
+ 					     "still no SoC->MCM window after the retry");
+ 	}
+ 
+ 	ondie->en751221_trgmii_ready = true;
++	dev_dbg(ondie->dev,
++		"EN751221 TRGMII result: retry=%d trained=%d reprobes=%u\n",
++		retried, trained, en751221_trgmii_reprobes);
++	if (!trained)
++		en751221_trgmii_schedule_reprobe(ondie);
+ }
+ 
+ static void
+diff --git a/drivers/net/dsa/mt7530.h b/drivers/net/dsa/mt7530.h
+index a6796700c..88ba9ec76 100644
+--- a/drivers/net/dsa/mt7530.h
++++ b/drivers/net/dsa/mt7530.h
+@@ -884,6 +884,12 @@ struct mt753x_info {
+ 				phy_interface_t interface);
+ };
+ 
++/* Deferred re-probe of the EN751221 on-die switch, see mt7530.c */
++struct en751221_trgmii_reprobe {
++	struct work_struct work;
++	struct device *dev;
++};
++
+ /* struct mt7530_priv -	This is the main data structure for holding the state
+  *			of the driver
+  * @dev:		The device pointer
+-- 
+2.55.0
+

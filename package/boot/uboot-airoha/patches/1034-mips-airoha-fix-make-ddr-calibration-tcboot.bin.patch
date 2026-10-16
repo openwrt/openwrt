@@ -1,0 +1,76 @@
+From 7a884e5b8644df682b8395754a4d79f404c3e836 Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Tue, 8 Sep 2026 18:24:21 -0300
+Subject: [PATCH] mips: airoha: fix make ddr calibration tcboot.bin
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ Makefile                  | 14 +++++++++-----
+ tools/build-econet-ddr.sh |  9 ++++++++-
+ 2 files changed, 17 insertions(+), 6 deletions(-)
+
+diff --git a/Makefile b/Makefile
+index 6c62b48a6f9..0bb8828a0ed 100644
+--- a/Makefile
++++ b/Makefile
+@@ -1392,21 +1392,25 @@ endef
+ # Build the EcoNet DDR payload before Binman consumes it, including O= builds.
+ ifeq ($(CONFIG_ARCH_ECONET)$(CONFIG_TPL),yy)
+ econet-ddr-soc-$(CONFIG_TARGET_EN751221) := en751221
++econet-ddr-soc-$(CONFIG_TARGET_EN751627) := en751627
++econet-ddr-soc-$(CONFIG_TARGET_EN7528) := en7528
+ econet-ddr-soc-$(CONFIG_TARGET_EN7580) := en7580
+ econet-ddr-soc := $(econet-ddr-soc-y)
++
+ econet-ddr-dir := $(srctree)/arch/mips/mach-econet/$(econet-ddr-soc)/ddr
+ econet-ddr-image := $(econet-ddr-soc)_ddr.bin
++econet-ddr-script := $(abspath $(srctree)/tools/build-econet-ddr.sh)
+ 
+ quiet_cmd_econet_ddr = DDR     $@
+ cmd_econet_ddr = srctree="$(abspath $(srctree))" \
+ 	objtree="$(CURDIR)" CROSS_COMPILE="$(CROSS_COMPILE)" \
+-	$(CONFIG_SHELL) $(srctree)/tools/build-econet-ddr.sh $(econet-ddr-soc)
++	$(CONFIG_SHELL) $(econet-ddr-script) $(econet-ddr-soc)
+ 
+ $(econet-ddr-image): $(wildcard $(econet-ddr-dir)/reconstructed/*.S) \
+-		   $(wildcard $(econet-ddr-dir)/*.c) \
+-		   $(wildcard $(econet-ddr-dir)/*.S) \
+-		   $(econet-ddr-dir)/ddr.lds \
+-		   $(srctree)/tools/build-econet-ddr.sh FORCE
++		     $(wildcard $(econet-ddr-dir)/*.c) \
++		     $(wildcard $(econet-ddr-dir)/*.S) \
++		     $(econet-ddr-dir)/ddr.lds \
++		     $(econet-ddr-script) FORCE
+ 	$(call if_changed,econet_ddr)
+ 
+ targets += $(econet-ddr-image)
+diff --git a/tools/build-econet-ddr.sh b/tools/build-econet-ddr.sh
+index 72e7daffafe..1e5bd65519b 100755
+--- a/tools/build-econet-ddr.sh
++++ b/tools/build-econet-ddr.sh
+@@ -14,6 +14,13 @@ case "$soc" in
+   cc_default=mips-linux-gnu-
+   out="$objtree/en751221_ddr.bin"
+   ;;
++ en751627)
++  dir="$srctree/arch/mips/mach-econet/en751627/ddr"
++  endian=-EB
++  emulation=elf32ltsmip
++  cc_default=mips-linux-gnu-
++  out="$objtree/en751627_ddr.bin"
++  ;;
+  en7528)
+   dir="$srctree/arch/mips/mach-econet/en7528/ddr"
+   endian=-EL
+@@ -29,7 +36,7 @@ case "$soc" in
+   out="$objtree/en7580_ddr.bin"
+   ;;
+  *)
+-  echo "usage: $0 {en751221|en7528|en7580}" >&2
++  echo "usage: $0 {en751221|en751627|en7528|en7580}" >&2
+   exit 2
+   ;;
+ esac
+-- 
+2.55.0
+

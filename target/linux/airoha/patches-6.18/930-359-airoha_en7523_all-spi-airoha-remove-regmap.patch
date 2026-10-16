@@ -1,0 +1,456 @@
+From dcdfeec581e768be2319f74d1588fe7264f121ca Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Tue, 29 Sep 2026 23:38:41 -0300
+Subject: [PATCH] spi: airoha: remove regmap
+
+(cherry picked from commit 19e3a0e720d27ec3b08fece04b297209e7af8525)
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/spi/spi-airoha-snfi.c | 290 ++++++++++------------------------
+ 1 file changed, 85 insertions(+), 205 deletions(-)
+
+diff --git a/drivers/spi/spi-airoha-snfi.c b/drivers/spi/spi-airoha-snfi.c
+index ddfe1ceff..1d737ae52 100644
+--- a/drivers/spi/spi-airoha-snfi.c
++++ b/drivers/spi/spi-airoha-snfi.c
+@@ -227,6 +227,11 @@
+ #define SPI_MAX_TRANSFER_SIZE			511
+ #define AIROHA_SPI_NUM_CHIPSELECTS		2
+ 
++#define CTRL_READ(priv, reg)			readl((priv)->ctrl_base + reg)
++#define CTRL_WRITE(priv, reg, data)		writel(data, (priv)->ctrl_base + reg)
++#define NFI_READ(priv, reg)			readl((priv)->nfi_base + reg)
++#define NFI_WRITE(priv, reg, data)		writel(data, (priv)->nfi_base + reg)
++
+ enum airoha_spi_mode {
+ 	SPI_MODE_AUTO,
+ 	SPI_MODE_MANUAL,
+@@ -262,8 +267,7 @@ struct airoha_spi_soc_data {
+ struct airoha_spi_ctrl {
+ 	struct device *dev;
+ 	void __iomem *ctrl_base;
+-	struct regmap *regmap_ctrl;
+-	struct regmap *regmap_nfi;
++	void __iomem *nfi_base;
+ 	struct regmap *scuclk;
+ 	struct clk *spi_clk;
+ 	struct gpio_desc *cs_mux;
+@@ -282,13 +286,12 @@ static enum airoha_spi_type airoha_spi_type(struct airoha_spi_ctrl *as_ctrl)
+ 	}
+ 
+ 	if (as_ctrl->soc->has_nfi) {
+-		regmap_read(as_ctrl->regmap_nfi,
+-			    REG_SPI_NFI_SNF_NFI_CNFG, &val);
++		val = NFI_READ(as_ctrl, REG_SPI_NFI_SNF_NFI_CNFG);
+ 		if (!(val & BIT(2)))
+ 			return SPI_CTRL_PARALLEL_NAND;
+ 	}
+ 
+-	regmap_read(as_ctrl->regmap_ctrl, REG_SPI_CTRL_SFC_STRAP, &val);
++	val = CTRL_READ(as_ctrl, REG_SPI_CTRL_SFC_STRAP);
+ 
+ 	return val & BIT(1) ? SPI_CTRL_NAND : SPI_CTRL_NOR;
+ }
+@@ -296,31 +299,26 @@ static enum airoha_spi_type airoha_spi_type(struct airoha_spi_ctrl *as_ctrl)
+ static int airoha_spi_set_fifo_op(struct airoha_spi_ctrl *as_ctrl,
+ 				    u8 op_cmd, int op_len)
+ {
+-	int err;
+ 	u32 val;
++	int err;
+ 
+-	err = regmap_write(as_ctrl->regmap_ctrl, REG_SPI_CTRL_OPFIFO_WDATA,
+-			   FIELD_PREP(SPI_CTRL_OPFIFO_LEN, op_len) |
+-			   FIELD_PREP(SPI_CTRL_OPFIFO_OP, op_cmd));
+-	if (err)
+-		return err;
++	CTRL_WRITE(as_ctrl, REG_SPI_CTRL_OPFIFO_WDATA,
++		   FIELD_PREP(SPI_CTRL_OPFIFO_LEN, op_len) |
++		   FIELD_PREP(SPI_CTRL_OPFIFO_OP, op_cmd));
+ 
+-	err = regmap_read_poll_timeout(as_ctrl->regmap_ctrl,
+-				       REG_SPI_CTRL_OPFIFO_FULL,
+-				       val, !(val & SPI_CTRL_OPFIFO_FULL),
+-				       0, 250 * USEC_PER_MSEC);
++	err = read_poll_timeout_atomic(CTRL_READ, val,
++				       !(val & SPI_CTRL_OPFIFO_FULL),
++				       0, 250 * USEC_PER_MSEC, false,
++				       as_ctrl, REG_SPI_CTRL_OPFIFO_FULL);
+ 	if (err)
+ 		return err;
+ 
+-	err = regmap_write(as_ctrl->regmap_ctrl, REG_SPI_CTRL_OPFIFO_WR,
+-			   SPI_CTRL_OPFIFO_WR);
+-	if (err)
+-		return err;
++	CTRL_WRITE(as_ctrl, REG_SPI_CTRL_OPFIFO_WR, SPI_CTRL_OPFIFO_WR);
+ 
+-	return regmap_read_poll_timeout(as_ctrl->regmap_ctrl,
+-					REG_SPI_CTRL_OPFIFO_EMPTY,
+-					val, (val & SPI_CTRL_OPFIFO_EMPTY),
+-					0, 250 * USEC_PER_MSEC);
++	return read_poll_timeout_atomic(CTRL_READ, val,
++					(val & SPI_CTRL_OPFIFO_EMPTY),
++					0, 250 * USEC_PER_MSEC, false,
++					as_ctrl, REG_SPI_CTRL_OPFIFO_EMPTY);
+ }
+ 
+ static int airoha_spi_set_cs(struct airoha_spi_ctrl *as_ctrl, u8 cs)
+@@ -353,13 +351,14 @@ static int airoha_spi_select_device(struct airoha_spi_ctrl *as_ctrl,
+ 	 * keep the controller on native CS0 and route it to the requested
+ 	 * flash through the mux GPIO.
+ 	 */
+-	err = regmap_update_bits(as_ctrl->regmap_ctrl,
+-				 REG_SPI_CTRL_SLAVE_SEL,
+-				 SPI_CTRL_SLAVE_SEL,
+-				 FIELD_PREP(SPI_CTRL_SLAVE_SEL,
+-					    native_cs));
+-	if (err)
+-		return err;
++	{
++		u32 val;
++
++		val = CTRL_READ(as_ctrl, REG_SPI_CTRL_SLAVE_SEL);
++		val &= ~SPI_CTRL_SLAVE_SEL;
++		val |= FIELD_PREP(SPI_CTRL_SLAVE_SEL, native_cs);
++		CTRL_WRITE(as_ctrl, REG_SPI_CTRL_SLAVE_SEL, val);
++	}
+ 
+ 	/* Keep the newly selected native line inactive while switching. */
+ 	err = airoha_spi_set_cs(as_ctrl, SPI_CHIP_SEL_HIGH);
+@@ -383,68 +382,24 @@ static int airoha_spi_write_data_to_fifo(struct airoha_spi_ctrl *as_ctrl,
+ 		u32 val;
+ 
+ 		/* 1. Wait until dfifo is not full */
+-		err = regmap_read_poll_timeout(as_ctrl->regmap_ctrl,
+-					       REG_SPI_CTRL_DFIFO_FULL, val,
++		err = read_poll_timeout_atomic(CTRL_READ, val,
+ 					       !(val & SPI_CTRL_DFIFO_FULL),
+-					       0, 250 * USEC_PER_MSEC);
++					       0, 250 * USEC_PER_MSEC, false,
++					       as_ctrl, REG_SPI_CTRL_DFIFO_FULL);
+ 		if (err)
+ 			return err;
+ 
+ 		/* 2. Write data to register DFIFO_WDATA */
+-		err = regmap_write(as_ctrl->regmap_ctrl,
+-				   REG_SPI_CTRL_DFIFO_WDATA,
+-				   FIELD_PREP(SPI_CTRL_DFIFO_WDATA, data[i]));
+-		if (err)
+-			return err;
++		CTRL_WRITE(as_ctrl, REG_SPI_CTRL_DFIFO_WDATA,
++			   FIELD_PREP(SPI_CTRL_DFIFO_WDATA, data[i]));
+ 
+ 		/* 3. Wait until dfifo is not full */
+-		err = regmap_read_poll_timeout(as_ctrl->regmap_ctrl,
+-					       REG_SPI_CTRL_DFIFO_FULL, val,
++		err = read_poll_timeout_atomic(CTRL_READ, val,
+ 					       !(val & SPI_CTRL_DFIFO_FULL),
+-					       0, 250 * USEC_PER_MSEC);
+-		if (err)
+-			return err;
+-	}
+-
+-	return 0;
+-}
+-
+-/*
+- * Every SPI-NAND page read on EN751221 goes through the manual FIFO one byte
+- * at a time: three register accesses per byte. Through regmap each of them
+- * takes the regmap lock, and the poll adds a ktime_get(), which costs about
+- * five times the time the 12.5 MHz dual-wire bus needs per byte.
+- */
+-static bool fast_fifo_read = true;
+-module_param(fast_fifo_read, bool, 0644);
+-MODULE_PARM_DESC(fast_fifo_read,
+-		 "Read the manual FIFO with plain MMIO accesses instead of regmap");
+-
+-static int airoha_spi_read_fifo_mmio(struct airoha_spi_ctrl *as_ctrl,
+-				     u8 *ptr, int len)
+-{
+-	void __iomem *base = as_ctrl->ctrl_base;
+-	int i;
+-
+-	/*
+-	 * The same little-endian 32-bit accesses regmap-mmio does for this
+-	 * map, minus its lock: the controller is only driven with the SPI
+-	 * core's bus lock held.
+-	 */
+-	for (i = 0; i < len; i++) {
+-		int err;
+-		u32 val;
+-
+-		err = readl_poll_timeout_atomic(base + REG_SPI_CTRL_DFIFO_EMPTY,
+-						val,
+-						!(val & SPI_CTRL_DFIFO_EMPTY),
+-						0, 250 * USEC_PER_MSEC);
++					       0, 250 * USEC_PER_MSEC, false,
++					       as_ctrl, REG_SPI_CTRL_DFIFO_FULL);
+ 		if (err)
+ 			return err;
+-
+-		val = readl(base + REG_SPI_CTRL_DFIFO_RDATA);
+-		ptr[i] = FIELD_GET(SPI_CTRL_DFIFO_RDATA, val);
+-		writel(SPI_CTRL_DFIFO_RD, base + REG_SPI_CTRL_DFIFO_RD);
+ 	}
+ 
+ 	return 0;
+@@ -455,33 +410,24 @@ static int airoha_spi_read_data_from_fifo(struct airoha_spi_ctrl *as_ctrl,
+ {
+ 	int i;
+ 
+-	if (READ_ONCE(fast_fifo_read))
+-		return airoha_spi_read_fifo_mmio(as_ctrl, ptr, len);
+-
+ 	for (i = 0; i < len; i++) {
+ 		int err;
+ 		u32 val;
+ 
+ 		/* 1. wait until dfifo is not empty */
+-		err = regmap_read_poll_timeout(as_ctrl->regmap_ctrl,
+-					       REG_SPI_CTRL_DFIFO_EMPTY, val,
++		err = read_poll_timeout_atomic(CTRL_READ, val,
+ 					       !(val & SPI_CTRL_DFIFO_EMPTY),
+-					       0, 250 * USEC_PER_MSEC);
++					       0, 250 * USEC_PER_MSEC, false,
++					       as_ctrl, REG_SPI_CTRL_DFIFO_EMPTY);
+ 		if (err)
+ 			return err;
+ 
+ 		/* 2. read from dfifo to register DFIFO_RDATA */
+-		err = regmap_read(as_ctrl->regmap_ctrl,
+-				  REG_SPI_CTRL_DFIFO_RDATA, &val);
+-		if (err)
+-			return err;
+-
++		val = CTRL_READ(as_ctrl, REG_SPI_CTRL_DFIFO_RDATA);
+ 		ptr[i] = FIELD_GET(SPI_CTRL_DFIFO_RDATA, val);
++
+ 		/* 3. enable register DFIFO_RD to read next byte */
+-		err = regmap_write(as_ctrl->regmap_ctrl,
+-				   REG_SPI_CTRL_DFIFO_RD, SPI_CTRL_DFIFO_RD);
+-		if (err)
+-			return err;
++		CTRL_WRITE(as_ctrl, REG_SPI_CTRL_DFIFO_RD, SPI_CTRL_DFIFO_RD);
+ 	}
+ 
+ 	return 0;
+@@ -490,90 +436,48 @@ static int airoha_spi_read_data_from_fifo(struct airoha_spi_ctrl *as_ctrl,
+ static int airoha_spi_set_mode(struct airoha_spi_ctrl *as_ctrl,
+ 				 enum airoha_spi_mode mode)
+ {
++	u32 val;
+ 	int err;
+ 
+ 	switch (mode) {
+-	case SPI_MODE_MANUAL: {
+-		u32 val;
+-
+-		if (as_ctrl->soc->has_nfi2spi) {
+-			err = regmap_write(as_ctrl->regmap_ctrl,
+-					   REG_SPI_CTRL_NFI2SPI_EN, 0);
+-			if (err)
+-				return err;
+-		}
++	case SPI_MODE_MANUAL:
++		if (as_ctrl->soc->has_nfi2spi)
++			CTRL_WRITE(as_ctrl, REG_SPI_CTRL_NFI2SPI_EN, 0);
+ 
+-		err = regmap_write(as_ctrl->regmap_ctrl,
+-				   REG_SPI_CTRL_READ_IDLE_EN, 0);
+-		if (err)
+-			return err;
++		CTRL_WRITE(as_ctrl, REG_SPI_CTRL_READ_IDLE_EN, 0);
+ 
+-		err = regmap_read_poll_timeout(as_ctrl->regmap_ctrl,
+-					       REG_SPI_CTRL_RDCTL_FSM, val,
++		err = read_poll_timeout_atomic(CTRL_READ, val,
+ 					       !(val & SPI_CTRL_RDCTL_FSM),
+-					       0, 250 * USEC_PER_MSEC);
+-		if (err)
+-			return err;
+-
+-		err = regmap_write(as_ctrl->regmap_ctrl,
+-				   REG_SPI_CTRL_MTX_MODE_TOG, 9);
++					       0, 250 * USEC_PER_MSEC, false,
++					       as_ctrl, REG_SPI_CTRL_RDCTL_FSM);
+ 		if (err)
+ 			return err;
+ 
+-		err = regmap_write(as_ctrl->regmap_ctrl,
+-				   REG_SPI_CTRL_MANUAL_EN, SPI_CTRL_MANUAL_EN);
+-		if (err)
+-			return err;
++		CTRL_WRITE(as_ctrl, REG_SPI_CTRL_MTX_MODE_TOG, 9);
++		CTRL_WRITE(as_ctrl, REG_SPI_CTRL_MANUAL_EN, SPI_CTRL_MANUAL_EN);
+ 		break;
+-	}
+ 	case SPI_MODE_DMA:
+ 		if (!as_ctrl->soc->has_nfi2spi)
+ 			return -EOPNOTSUPP;
+ 
+-		err = regmap_write(as_ctrl->regmap_ctrl,
+-				   REG_SPI_CTRL_NFI2SPI_EN,
+-				   SPI_CTRL_NFI2SPI_EN);
+-		if (err)
+-			return err;
+-
+-		err = regmap_write(as_ctrl->regmap_ctrl,
+-				   REG_SPI_CTRL_MTX_MODE_TOG, 0);
+-		if (err)
+-			return err;
+-
+-		err = regmap_write(as_ctrl->regmap_ctrl,
+-				   REG_SPI_CTRL_MANUAL_EN, 0);
+-		if (err)
+-			return err;
++		CTRL_WRITE(as_ctrl, REG_SPI_CTRL_NFI2SPI_EN, SPI_CTRL_NFI2SPI_EN);
++		CTRL_WRITE(as_ctrl, REG_SPI_CTRL_MTX_MODE_TOG, 0);
++		CTRL_WRITE(as_ctrl, REG_SPI_CTRL_MANUAL_EN, 0);
+ 		break;
+ 	case SPI_MODE_AUTO:
+-		if (as_ctrl->soc->has_nfi2spi) {
+-			err = regmap_write(as_ctrl->regmap_ctrl,
+-					   REG_SPI_CTRL_NFI2SPI_EN, 0);
+-			if (err)
+-				return err;
+-		}
+-
+-		err = regmap_write(as_ctrl->regmap_ctrl,
+-				   REG_SPI_CTRL_MTX_MODE_TOG, 0);
+-		if (err)
+-			return err;
+-
+-		err = regmap_write(as_ctrl->regmap_ctrl,
+-				   REG_SPI_CTRL_MANUAL_EN, 0);
+-		if (err)
+-			return err;
++		if (as_ctrl->soc->has_nfi2spi)
++			CTRL_WRITE(as_ctrl, REG_SPI_CTRL_NFI2SPI_EN, 0);
+ 
+-		err = regmap_write(as_ctrl->regmap_ctrl,
+-				   REG_SPI_CTRL_READ_IDLE_EN, 1);
+-		if (err)
+-			return err;
++		CTRL_WRITE(as_ctrl, REG_SPI_CTRL_MTX_MODE_TOG, 0);
++		CTRL_WRITE(as_ctrl, REG_SPI_CTRL_MANUAL_EN, 0);
++		CTRL_WRITE(as_ctrl, REG_SPI_CTRL_READ_IDLE_EN, 1);
+ 		break;
+ 	}
+ 
+-	return regmap_write(as_ctrl->regmap_ctrl, REG_SPI_CTRL_DUMMY,
+-			    mode == SPI_MODE_DMA ? 0 :
+-			    as_ctrl->soc->manual_dummy);
++	CTRL_WRITE(as_ctrl, REG_SPI_CTRL_DUMMY,
++		   mode == SPI_MODE_DMA ? 0 : as_ctrl->soc->manual_dummy);
++
++	return 0;
+ }
+ 
+ static int airoha_spi_txrx_op(int tx_buswidth, int rx_buswidth)
+@@ -704,31 +608,29 @@ static int airoha_spi_read_data(struct airoha_spi_ctrl *as_ctrl,
+ 
+ static int airoha_spi_nfi_init(struct airoha_spi_ctrl *as_ctrl)
+ {
+-	int err;
++	u32 val;
+ 
+ 	/* switch to SNFI mode */
+-	err = regmap_write(as_ctrl->regmap_nfi, REG_SPI_NFI_SNF_NFI_CNFG,
+-			   SPI_NFI_SPI_MODE);
+-	if (err)
+-		return err;
++	NFI_WRITE(as_ctrl, REG_SPI_NFI_SNF_NFI_CNFG, SPI_NFI_SPI_MODE);
+ 
+ 	/* Enable DMA */
+-	return regmap_update_bits(as_ctrl->regmap_nfi, REG_SPI_NFI_INTR_EN,
+-				  SPI_NFI_ALL_IRQ_EN, SPI_NFI_AHB_DONE_EN);
++	val = NFI_READ(as_ctrl, REG_SPI_NFI_INTR_EN);
++	val &= ~SPI_NFI_ALL_IRQ_EN;
++	val |= SPI_NFI_AHB_DONE_EN;
++	NFI_WRITE(as_ctrl, REG_SPI_NFI_INTR_EN, val);
++
++	return 0;
+ }
+ 
+ static int airoha_spi_nor_init(struct airoha_spi_ctrl *as_ctrl)
+ {
+-	int err;
++	/* Disable Manual/AUTO mode clash interrupt */
++	CTRL_WRITE(as_ctrl, REG_SPI_CTRL_INTERRUPT, 0);
+ 
+-	// Disable Manual/AUTO mode clash interrupt
+-	err = regmap_write(as_ctrl->regmap_ctrl, REG_SPI_CTRL_INTERRUPT, 0);
+-	if (err)
+-		return err;
++	/* Disable DMA */
++	CTRL_WRITE(as_ctrl, REG_SPI_CTRL_INTERRUPT_EN, 0);
+ 
+-	// Disable DMA
+-	err = regmap_write(as_ctrl->regmap_ctrl, REG_SPI_CTRL_INTERRUPT_EN, 0);
+-	return err;
++	return 0;
+ }
+ 
+ static bool airoha_spi_is_page_ops(const struct spi_mem_op *op)
+@@ -997,22 +899,6 @@ static int airoha_spi_setup(struct spi_device *spi)
+ 	return 0;
+ }
+ 
+-static const struct regmap_config spi_ctrl_regmap_config = {
+-	.name		= "ctrl",
+-	.reg_bits	= 32,
+-	.val_bits	= 32,
+-	.reg_stride	= 4,
+-	.max_register	= REG_SPI_CTRL_NFI2SPI_EN,
+-};
+-
+-static const struct regmap_config spi_nfi_regmap_config = {
+-	.name		= "nfi",
+-	.reg_bits	= 32,
+-	.val_bits	= 32,
+-	.reg_stride	= 4,
+-	.max_register	= REG_SPI_NFI_SNF_NFI_CNFG,
+-};
+-
+ static int airoha_spi_probe(struct platform_device *pdev)
+ {
+ 	struct airoha_spi_ctrl *as_ctrl;
+@@ -1032,27 +918,21 @@ static int airoha_spi_probe(struct platform_device *pdev)
+ 	if (!as_ctrl->soc)
+ 		return -EINVAL;
+ 
+-	base = devm_platform_ioremap_resource(pdev, 0);
++	base = devm_platform_ioremap_resource_byname(pdev, "ctrl");
++	if (IS_ERR(base))
++		base = devm_platform_ioremap_resource(pdev, 0);
+ 	if (IS_ERR(base))
+ 		return PTR_ERR(base);
+ 
+ 	as_ctrl->ctrl_base = base;
+-	as_ctrl->regmap_ctrl = devm_regmap_init_mmio(dev, base,
+-					     &spi_ctrl_regmap_config);
+-	if (IS_ERR(as_ctrl->regmap_ctrl))
+-		return dev_err_probe(dev, PTR_ERR(as_ctrl->regmap_ctrl),
+-				     "failed to init spi ctrl regmap\n");
+-
+ 	if (as_ctrl->soc->has_nfi) {
+-		base = devm_platform_ioremap_resource(pdev, 1);
++		base = devm_platform_ioremap_resource_byname(pdev, "nfi");
++		if (IS_ERR(base))
++			base = devm_platform_ioremap_resource(pdev, 1);
+ 		if (IS_ERR(base))
+ 			return PTR_ERR(base);
+ 
+-		as_ctrl->regmap_nfi = devm_regmap_init_mmio(dev, base,
+-							    &spi_nfi_regmap_config);
+-		if (IS_ERR(as_ctrl->regmap_nfi))
+-			return dev_err_probe(dev, PTR_ERR(as_ctrl->regmap_nfi),
+-					     "failed to init spi nfi regmap\n");
++		as_ctrl->nfi_base = base;
+ 	}
+ 
+ 	as_ctrl->spi_clk = devm_clk_get_enabled(dev, "spi");
+-- 
+2.55.0
+

@@ -1,0 +1,931 @@
+From d75209100e4802a444a62b226a4edfb1e2918d1f Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Tue, 6 Oct 2026 21:08:10 -0300
+Subject: [PATCH] en7580: add usb driver
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ .../bindings/nvmem/econet,en7580-efuse.yaml   |  52 +++++
+ .../bindings/phy/econet,en7528-usb-phy.yaml   |  61 +++++
+ .../bindings/usb/econet,en7528-xhci.yaml      |  98 ++++++++
+ MAINTAINERS                                   |   5 +
+ arch/mips/boot/dts/econet/en7580.dtsi         |  95 +++++++-
+ drivers/nvmem/Kconfig                         |  11 +
+ drivers/nvmem/Makefile                        |   2 +
+ drivers/nvmem/econet-efuse.c                  |  69 ++++++
+ drivers/phy/Kconfig                           |   9 +-
+ drivers/phy/phy-en7528-usb.c                  | 216 ++++++++++++++++--
+ drivers/usb/host/xhci-mtk.c                   |  18 +-
+ 11 files changed, 599 insertions(+), 37 deletions(-)
+ create mode 100644 Documentation/devicetree/bindings/nvmem/econet,en7580-efuse.yaml
+ create mode 100644 Documentation/devicetree/bindings/phy/econet,en7528-usb-phy.yaml
+ create mode 100644 Documentation/devicetree/bindings/usb/econet,en7528-xhci.yaml
+ create mode 100644 drivers/nvmem/econet-efuse.c
+
+diff --git a/Documentation/devicetree/bindings/nvmem/econet,en7580-efuse.yaml b/Documentation/devicetree/bindings/nvmem/econet,en7580-efuse.yaml
+new file mode 100644
+index 000000000..1b9c951cb
+--- /dev/null
++++ b/Documentation/devicetree/bindings/nvmem/econet,en7580-efuse.yaml
+@@ -0,0 +1,52 @@
++# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
++%YAML 1.2
++---
++$id: http://devicetree.org/schemas/nvmem/econet,en7580-efuse.yaml#
++$schema: http://devicetree.org/meta-schemas/core.yaml#
++
++title: EcoNet EN7580 eFuse shadow
++
++maintainers:
++  - Matheus Sampaio Queiroga <srherobrine20@gmail.com>
++
++description:
++  The EN7580 exposes a byte-addressed eFuse shadow containing package and
++  factory calibration data. This is the region read by the vendor
++  package-info parser. Only read access to the shadow is supported.
++
++allOf:
++  - $ref: nvmem.yaml#
++
++properties:
++  compatible:
++    const: econet,en7580-efuse
++
++  reg:
++    maxItems: 1
++
++  read-only: true
++
++required:
++  - compatible
++  - reg
++
++unevaluatedProperties: false
++
++examples:
++  - |
++    efuse@1fa40b00 {
++        compatible = "econet,en7580-efuse";
++        reg = <0x1fa40b00 0x3c>;
++        read-only;
++
++        nvmem-layout {
++            compatible = "fixed-layout";
++            #address-cells = <1>;
++            #size-cells = <1>;
++
++            usb3-tx-imp@6 {
++                reg = <0x6 0x2>;
++                bits = <4 5>;
++            };
++        };
++    };
+diff --git a/Documentation/devicetree/bindings/phy/econet,en7528-usb-phy.yaml b/Documentation/devicetree/bindings/phy/econet,en7528-usb-phy.yaml
+new file mode 100644
+index 000000000..c30686e80
+--- /dev/null
++++ b/Documentation/devicetree/bindings/phy/econet,en7528-usb-phy.yaml
+@@ -0,0 +1,61 @@
++# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
++%YAML 1.2
++---
++$id: http://devicetree.org/schemas/phy/econet,en7528-usb-phy.yaml#
++$schema: http://devicetree.org/meta-schemas/core.yaml#
++
++title: EcoNet EN7528 and EN7580 USB PHYs
++
++maintainers:
++  - Matheus Sampaio Queiroga <srherobrine20@gmail.com>
++
++description:
++  EN7528 has two USB2 PHYs sharing a frequency meter and one USB3 PHY.
++  EN7580 has one USB2 PHY, one USB3 PHY and an independent frequency meter
++  for each of its two host controllers. PHY_TYPE_USB2 and PHY_TYPE_USB3
++  select the PHY type. EN7580 factory trims may be supplied through NVMEM.
++
++properties:
++  compatible:
++    enum:
++      - econet,en7528-usb-phy
++      - econet,en7580-usb-phy
++
++  reg:
++    maxItems: 1
++
++  "#phy-cells":
++    const: 1
++
++  nvmem-cells:
++    items:
++      - description: USB2 internal current calibration
++      - description: USB3 external current calibration
++      - description: USB3 transmitter impedance calibration
++      - description: USB3 receiver impedance calibration
++
++  nvmem-cell-names:
++    items:
++      - const: u2-intr
++      - const: u3-intr
++      - const: tx-imp
++      - const: rx-imp
++
++dependencies:
++  nvmem-cells: [nvmem-cell-names]
++  nvmem-cell-names: [nvmem-cells]
++
++required:
++  - compatible
++  - reg
++  - "#phy-cells"
++
++additionalProperties: false
++
++examples:
++  - |
++    usb-phy@1fa80000 {
++        compatible = "econet,en7580-usb-phy";
++        reg = <0x1fa80000 0x1000>;
++        #phy-cells = <1>;
++    };
+diff --git a/Documentation/devicetree/bindings/usb/econet,en7528-xhci.yaml b/Documentation/devicetree/bindings/usb/econet,en7528-xhci.yaml
+new file mode 100644
+index 000000000..c03e6f829
+--- /dev/null
++++ b/Documentation/devicetree/bindings/usb/econet,en7528-xhci.yaml
+@@ -0,0 +1,98 @@
++# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
++%YAML 1.2
++---
++$id: http://devicetree.org/schemas/usb/econet,en7528-xhci.yaml#
++$schema: http://devicetree.org/meta-schemas/core.yaml#
++
++title: EcoNet EN7528 and EN7580 USB3 xHCI host controllers
++
++maintainers:
++  - Matheus Sampaio Queiroga <srherobrine20@gmail.com>
++
++allOf:
++  - $ref: usb-xhci.yaml#
++
++description:
++  These controllers use the MediaTek xHCI host driver. EN7528 has one
++  controller and EN7580 has two independent controllers. Each controller
++  has a MAC register bank and an IP Port Control register bank.
++
++properties:
++  compatible:
++    enum:
++      - econet,en7528-xhci
++      - econet,en7580-xhci
++
++  reg:
++    items:
++      - description: xHCI MAC registers
++      - description: IP Port Control registers
++
++  reg-names:
++    items:
++      - const: mac
++      - const: ippc
++
++  interrupts:
++    maxItems: 1
++
++  interrupt-names:
++    items:
++      - const: host
++
++  phys:
++    items:
++      - description: USB2 PHY
++      - description: USB3 PHY
++
++  phy-names:
++    items:
++      - const: usb2-phy
++      - const: usb3-phy
++
++  vbus-supply:
++    description: Regulator supplying USB VBUS
++
++  vusb33-supply:
++    description: Regulator supplying the USB 3.3 V rail
++
++  resets:
++    maxItems: 1
++
++  usb3-lpm-capable: true
++
++  usb2-lpm-disable: true
++
++  mediatek,u2p-dis-msk:
++    $ref: /schemas/types.yaml#/definitions/uint32
++    description: Mask of disabled USB2 ports
++
++  mediatek,u3p-dis-msk:
++    $ref: /schemas/types.yaml#/definitions/uint32
++    description: Mask of disabled USB3 ports
++
++required:
++  - compatible
++  - reg
++  - reg-names
++  - interrupts
++  - phys
++
++unevaluatedProperties: false
++
++examples:
++  - |
++    #include <dt-bindings/interrupt-controller/mips-gic.h>
++    #include <dt-bindings/interrupt-controller/irq.h>
++    #include <dt-bindings/phy/phy.h>
++
++    usb@1fb90000 {
++        compatible = "econet,en7580-xhci";
++        reg = <0x1fb90000 0x4000>, <0x1fa84700 0x100>;
++        reg-names = "mac", "ippc";
++        interrupts = <GIC_SHARED 17 IRQ_TYPE_LEVEL_HIGH>;
++        interrupt-names = "host";
++        phys = <&usb_phy0 PHY_TYPE_USB2>, <&usb_phy0 PHY_TYPE_USB3>;
++        phy-names = "usb2-phy", "usb3-phy";
++        usb3-lpm-capable;
++    };
+diff --git a/MAINTAINERS b/MAINTAINERS
+index f27247a06..57127d151 100644
+--- a/MAINTAINERS
++++ b/MAINTAINERS
+@@ -8876,11 +8876,16 @@ L:	linux-mips@vger.kernel.org
+ S:	Maintained
+ F:	Documentation/devicetree/bindings/interrupt-controller/econet,en751221-intc.yaml
+ F:	Documentation/devicetree/bindings/mips/econet.yaml
++F:	Documentation/devicetree/bindings/nvmem/econet,en7580-efuse.yaml
++F:	Documentation/devicetree/bindings/phy/econet,en7528-usb-phy.yaml
+ F:	Documentation/devicetree/bindings/timer/econet,en751221-timer.yaml
++F:	Documentation/devicetree/bindings/usb/econet,en7528-xhci.yaml
+ F:	arch/mips/boot/dts/econet/
+ F:	arch/mips/econet/
+ F:	drivers/clocksource/timer-econet-en751221.c
+ F:	drivers/irqchip/irq-econet-en751221.c
++F:	drivers/nvmem/econet-efuse.c
++F:	drivers/phy/phy-en7528-usb.c
+ F:	include/dt-bindings/clock/econet,en751221-scu.h
+ F:	include/dt-bindings/clock/econet,en7528-scu.h
+ F:	include/dt-bindings/clock/econet,en7580-scu.h
+diff --git a/arch/mips/boot/dts/econet/en7580.dtsi b/arch/mips/boot/dts/econet/en7580.dtsi
+index 079bf38af..c628db157 100644
+--- a/arch/mips/boot/dts/econet/en7580.dtsi
++++ b/arch/mips/boot/dts/econet/en7580.dtsi
+@@ -326,19 +326,98 @@ i2c0: i2c0@1fbf8000 {
+ 			status = "disabled";
+ 		};
+ 
+-		usb_phy: usb-phy@1fa80000 {
+-			compatible = "econet,en7528-usb-phy";
+-			reg = <0x1fa80000 0x1400>;
++		efuse: efuse@1fa40b00 {
++			compatible = "econet,en7580-efuse";
++			reg = <0x1fa40b00 0x3c>;
++			read-only;
++
++			nvmem-layout {
++				compatible = "fixed-layout";
++				#address-cells = <1>;
++				#size-cells = <1>;
++
++				usb0_tx_imp: usb3-tx-imp@6 {
++					reg = <0x6 0x2>;
++					bits = <4 5>;
++				};
++
++				usb0_rx_imp: usb3-rx-imp@7,1 {
++					reg = <0x7 0x1>;
++					bits = <1 5>;
++				};
++
++				usb0_u3_intr: usb3-intr@7,6 {
++					reg = <0x7 0x2>;
++					bits = <6 6>;
++				};
++
++				usb1_tx_imp: usb3-tx-imp@8 {
++					reg = <0x8 0x2>;
++					bits = <4 5>;
++				};
++
++				usb1_rx_imp: usb3-rx-imp@9,1 {
++					reg = <0x9 0x1>;
++					bits = <1 5>;
++				};
++
++				usb1_u3_intr: usb3-intr@9,6 {
++					reg = <0x9 0x2>;
++					bits = <6 6>;
++				};
++
++				usb0_u2_intr: usb2-intr@35 {
++					reg = <0x35 0x2>;
++					bits = <7 5>;
++				};
++
++				usb1_u2_intr: usb2-intr@36 {
++					reg = <0x36 0x2>;
++					bits = <4 5>;
++				};
++			};
++		};
++
++		usb_phy: usb_phy0: usb-phy@1fa80000 {
++			compatible = "econet,en7580-usb-phy";
++			reg = <0x1fa80000 0x1000>;
++			#phy-cells = <1>;
++			nvmem-cells = <&usb0_u2_intr>, <&usb0_u3_intr>,
++				      <&usb0_tx_imp>, <&usb0_rx_imp>;
++			nvmem-cell-names = "u2-intr", "u3-intr", "tx-imp", "rx-imp";
++		};
++
++		usb_phy1: usb-phy@1fa90000 {
++			compatible = "econet,en7580-usb-phy";
++			reg = <0x1fa90000 0x1000>;
+ 			#phy-cells = <1>;
++			nvmem-cells = <&usb1_u2_intr>, <&usb1_u3_intr>,
++				      <&usb1_tx_imp>, <&usb1_rx_imp>;
++			nvmem-cell-names = "u2-intr", "u3-intr", "tx-imp", "rx-imp";
+ 		};
+ 
+-		usb: usb@1fb90000 {
+-			compatible = "econet,en7528-xhci";
+-			reg = <0x1fb90000 0x3e00>,
+-			      <0x1fb93e00 0x100>;
++		usb: usb0: usb@1fb90000 {
++			compatible = "econet,en7580-xhci";
++			reg = <0x1fb90000 0x4000>,
++			      <0x1fa84700 0x100>;
+ 			reg-names = "mac", "ippc";
+ 			interrupts = <GIC_SHARED 17 IRQ_TYPE_LEVEL_HIGH>;
++			interrupt-names = "host";
+ 			phys = <&usb_phy PHY_TYPE_USB2>, <&usb_phy PHY_TYPE_USB3>;
++			phy-names = "usb2-phy", "usb3-phy";
++			usb3-lpm-capable;
++			status = "disabled";
++		};
++
++		usb1: usb@1fba0000 {
++			compatible = "econet,en7580-xhci";
++			reg = <0x1fba0000 0x4000>,
++			      <0x1fa94700 0x100>;
++			reg-names = "mac", "ippc";
++			interrupts = <GIC_SHARED 48 IRQ_TYPE_LEVEL_HIGH>;
++			interrupt-names = "host";
++			phys = <&usb_phy1 PHY_TYPE_USB2>, <&usb_phy1 PHY_TYPE_USB3>;
++			phy-names = "usb2-phy", "usb3-phy";
+ 			usb3-lpm-capable;
+ 			status = "disabled";
+ 		};
+@@ -535,7 +614,7 @@ xsi_pcs: pcs@1fa04000 {
+ 
+ 		xpon_phy: phy@1faf0000 {
+ 			compatible = "airoha,en7580-xpon-phy";
+-			reg = <0x1faf0000 0x5000>;
++			reg = <0x1faf0000 0x2000>;
+ 
+ 			pinctrl-names = "default";
+ 			pinctrl-0 = <&pon_pinctrl>;
+diff --git a/drivers/nvmem/Kconfig b/drivers/nvmem/Kconfig
+index aac1b2521..dff0530a0 100644
+--- a/drivers/nvmem/Kconfig
++++ b/drivers/nvmem/Kconfig
+@@ -96,6 +96,17 @@ config NVMEM_BRCM_NVRAM
+ 	  This driver provides support for Broadcom's NVRAM that can be accessed
+ 	  using I/O mapping.
+ 
++config NVMEM_ECONET_EFUSE
++	tristate "EcoNet EN7580 eFuse shadow support"
++	depends on ECONET || COMPILE_TEST
++	depends on OF && HAS_IOMEM
++	help
++	  Say Y here to expose the EN7580 eFuse shadow as read-only NVMEM.
++	  The shadow contains factory calibration values used by the USB PHYs.
++
++	  This driver can also be built as a module. If so, the module will
++	  be called nvmem-econet-efuse.
++
+ config NVMEM_IMX_IIM
+ 	tristate "i.MX IC Identification Module support"
+ 	depends on ARCH_MXC || COMPILE_TEST
+diff --git a/drivers/nvmem/Makefile b/drivers/nvmem/Makefile
+index b0bb3e166..6602fb029 100644
+--- a/drivers/nvmem/Makefile
++++ b/drivers/nvmem/Makefile
+@@ -22,6 +22,8 @@ obj-$(CONFIG_NVMEM_BLOCK)		+= nvmem-block.o
+ nvmem-block-y				:= block.o
+ obj-$(CONFIG_NVMEM_BRCM_NVRAM)		+= nvmem_brcm_nvram.o
+ nvmem_brcm_nvram-y			:= brcm_nvram.o
++obj-$(CONFIG_NVMEM_ECONET_EFUSE)	+= nvmem-econet-efuse.o
++nvmem-econet-efuse-y			:= econet-efuse.o
+ obj-$(CONFIG_NVMEM_IMX_IIM)		+= nvmem-imx-iim.o
+ nvmem-imx-iim-y				:= imx-iim.o
+ obj-$(CONFIG_NVMEM_IMX_OCOTP)		+= nvmem-imx-ocotp.o
+diff --git a/drivers/nvmem/econet-efuse.c b/drivers/nvmem/econet-efuse.c
+new file mode 100644
+index 000000000..0323999ec
+--- /dev/null
++++ b/drivers/nvmem/econet-efuse.c
+@@ -0,0 +1,69 @@
++// SPDX-License-Identifier: GPL-2.0-only
++/* Read-only access to the EcoNet EN7580 eFuse shadow. */
++
++#include <linux/io.h>
++#include <linux/module.h>
++#include <linux/mod_devicetable.h>
++#include <linux/nvmem-provider.h>
++#include <linux/platform_device.h>
++
++static int econet_efuse_read(void *context, unsigned int offset,
++			     void *val, size_t bytes)
++{
++	void __iomem *base = context;
++	u8 *buf = val;
++	size_t i;
++
++	/* Match the byte addressing used by the vendor package-info parser. */
++	for (i = 0; i < bytes; i++)
++		buf[i] = readb(base + offset + i);
++
++	return 0;
++}
++
++static int econet_efuse_probe(struct platform_device *pdev)
++{
++	struct device *dev = &pdev->dev;
++	struct nvmem_config config = {
++		.dev = dev,
++		.name = "en7580-efuse",
++		.id = NVMEM_DEVID_AUTO,
++		.type = NVMEM_TYPE_OTP,
++		.read_only = true,
++		.root_only = true,
++		.stride = 1,
++		.word_size = 1,
++		.reg_read = econet_efuse_read,
++	};
++	struct nvmem_device *nvmem;
++	struct resource *res;
++	void __iomem *base;
++
++	base = devm_platform_get_and_ioremap_resource(pdev, 0, &res);
++	if (IS_ERR(base))
++		return PTR_ERR(base);
++
++	config.priv = base;
++	config.size = resource_size(res);
++	nvmem = devm_nvmem_register(dev, &config);
++
++	return PTR_ERR_OR_ZERO(nvmem);
++}
++
++static const struct of_device_id econet_efuse_of_match[] = {
++	{ .compatible = "econet,en7580-efuse" },
++	{ }
++};
++MODULE_DEVICE_TABLE(of, econet_efuse_of_match);
++
++static struct platform_driver econet_efuse_driver = {
++	.probe = econet_efuse_probe,
++	.driver = {
++		.name = "econet-efuse",
++		.of_match_table = econet_efuse_of_match,
++	},
++};
++module_platform_driver(econet_efuse_driver);
++
++MODULE_DESCRIPTION("EcoNet EN7580 eFuse shadow driver");
++MODULE_LICENSE("GPL");
+diff --git a/drivers/phy/Kconfig b/drivers/phy/Kconfig
+index 8f6e883db..d44bdb62f 100644
+--- a/drivers/phy/Kconfig
++++ b/drivers/phy/Kconfig
+@@ -138,15 +138,16 @@ config PHY_EN7528_PCIE
+ 	  on EN7528 SoC.
+ 
+ config PHY_EN7528_USB
+-	tristate "EcoNet EN7528 USB PHY Driver"
++	tristate "EcoNet EN7528/EN7580 USB PHY Driver"
+ 	depends on ECONET || COMPILE_TEST
+ 	depends on OF
+ 	select GENERIC_PHY
++	select NVMEM
+ 	select REGMAP_MMIO
+ 	help
+-	  Say 'Y' here to add support for EcoNet EN7528 USB PHY driver.
+-	  This driver creates the basic PHY instance and provides
+-	  initialization callback for the USB port.
++	  Say Y here to add support for the EcoNet EN7528 and EN7580 USB PHYs.
++	  This driver initializes and calibrates the USB2 and USB3 PHYs.
++	  EN7580 factory calibration data is provided by NVMEM_ECONET_EFUSE.
+ 
+ source "drivers/phy/airoha/Kconfig"
+ source "drivers/phy/allwinner/Kconfig"
+diff --git a/drivers/phy/phy-en7528-usb.c b/drivers/phy/phy-en7528-usb.c
+index e14d16d95..ee23a7f52 100644
+--- a/drivers/phy/phy-en7528-usb.c
++++ b/drivers/phy/phy-en7528-usb.c
+@@ -1,6 +1,6 @@
+ // SPDX-License-Identifier: GPL-2.0
+ /*
+- * EcoNet EN7528 USB PHY driver
++ * EcoNet EN7528/EN7580 USB PHY driver
+  *
+  * Based on GPL vendor code at https://github.com/keenetic/kernel-49
+  * and the Airoha AN7581 USB PHY driver by
+@@ -9,10 +9,13 @@
+ 
+ #include <dt-bindings/phy/phy.h>
+ #include <linux/bitfield.h>
++#include <linux/delay.h>
+ #include <linux/math.h>
+ #include <linux/module.h>
++#include <linux/nvmem-consumer.h>
+ #include <linux/phy/phy.h>
+ #include <linux/platform_device.h>
++#include <linux/property.h>
+ #include <linux/regmap.h>
+ 
+ /* Frequency Meter registers (shared across ports) */
+@@ -46,6 +49,25 @@
+ #define EN7528_USB_PHY_SR_COEF_DIVISOR		1000
+ #define EN7528_USB_PHY_DEFAULT_SR		4
+ 
++/* EN7580 has one U2/U3 pair and one frequency meter per controller. */
++#define EN7580_USB_PHY_ACR1			0x304
++#define   EN7580_USB_PHY_INTR_CAL		GENMASK(23, 19)
++#define EN7580_USB_PHY_ACR5			0x314
++#define   EN7580_USB_PHY_HSTX_SRCAL_EN		BIT(15)
++#define   EN7580_USB_PHY_HSTX_SRCTRL		GENMASK(14, 12)
++#define   EN7580_USB_PHY_HS_100U_U3_EN		BIT(11)
++#define EN7580_USB_PHY_ACR6			0x318
++#define   EN7580_USB_PHY_BC11_SW_EN		BIT(23)
++#define EN7580_USB_PHY_U3_IMP_TX			0x910
++#define EN7580_USB_PHY_U3_IMP_RX			0x914
++#define   EN7580_USB_PHY_U3_IMP_SEL		GENMASK(28, 24)
++#define EN7580_USB_PHY_U3_DEEMPH			0xa04
++#define   EN7580_USB_PHY_FORCE_DEEMPH		BIT(22)
++#define   EN7580_USB_PHY_DEEMPH_3P5DB		GENMASK(21, 16)
++#define EN7580_USB_PHY_U3_PHYA_REG0		0xb00
++#define   EN7580_USB_PHY_IEXT_INTR_CTRL		GENMASK(15, 10)
++#define EN7580_USB_PHY_DEFAULT_SR		5
++
+ #define EN7528_USB_PHY_FREQDET_SLEEP		1000	/* 1ms */
+ #define EN7528_USB_PHY_FREQDET_TIMEOUT		(EN7528_USB_PHY_FREQDET_SLEEP * 10)
+ 
+@@ -59,6 +81,22 @@ struct en7528_usb_phy_instance {
+ 	u32 type;
+ };
+ 
++struct en7528_usb_phy_soc_data {
++	unsigned int num_u2_ports;
++	unsigned int sr_reg;
++	u32 sr_cal_en;
++	u32 sr_ctrl;
++	u32 default_sr;
++	bool en7580;
++};
++
++struct en7580_usb_phy_trim {
++	u32 u2_intr;
++	u32 u3_intr;
++	u32 tx_imp;
++	u32 rx_imp;
++};
++
+ enum en7528_usb_phy_type {
+ 	EN7528_PHY_USB2,
+ 	EN7528_PHY_USB3,
+@@ -69,6 +107,8 @@ enum en7528_usb_phy_type {
+ struct en7528_usb_phy_priv {
+ 	struct device *dev;
+ 	struct regmap *regmap;
++	const struct en7528_usb_phy_soc_data *soc;
++	struct en7580_usb_phy_trim trim;
+ 
+ 	struct en7528_usb_phy_instance *phys[EN7528_PHY_USB_MAX];
+ };
+@@ -77,13 +117,14 @@ static void en7528_usb_phy_slew_rate_calibration(struct en7528_usb_phy_priv *pri
+ 						 unsigned int port_id,
+ 						 unsigned int port_base)
+ {
+-	unsigned int acr0 = port_base + EN7528_USB_PHY_ACR0;
+-	u32 fm_out;
++	const struct en7528_usb_phy_soc_data *soc = priv->soc;
++	unsigned int acr0 = port_base + soc->sr_reg;
++	u32 fm_out = 0;
+ 	u32 srctrl;
+ 
+ 	/* Enable HS TX SR calibration */
+ 	regmap_set_bits(priv->regmap, acr0,
+-			EN7528_USB_PHY_HSTX_SRCAL_EN);
++			soc->sr_cal_en);
+ 
+ 	usleep_range(1000, 1500);
+ 
+@@ -91,10 +132,11 @@ static void en7528_usb_phy_slew_rate_calibration(struct en7528_usb_phy_priv *pri
+ 	regmap_set_bits(priv->regmap, EN7528_USB_PHY_FMMONR1,
+ 			EN7528_USB_PHY_FRCK_EN);
+ 
+-	/* Select monitor clock: port 0 = MONCLK_SEL 0, port 1 = MONCLK_SEL 1 */
+-	regmap_update_bits(priv->regmap, EN7528_USB_PHY_FMCR0,
+-			   EN7528_USB_PHY_MONCLK_SEL,
+-			   FIELD_PREP(EN7528_USB_PHY_MONCLK_SEL, port_id));
++	/* Only EN7528 shares a frequency meter between its U2 ports. */
++	if (!soc->en7580)
++		regmap_update_bits(priv->regmap, EN7528_USB_PHY_FMCR0,
++				   EN7528_USB_PHY_MONCLK_SEL,
++				   FIELD_PREP(EN7528_USB_PHY_MONCLK_SEL, port_id));
+ 
+ 	/* Set cycle count */
+ 	regmap_update_bits(priv->regmap, EN7528_USB_PHY_FMCR0,
+@@ -122,12 +164,12 @@ static void en7528_usb_phy_slew_rate_calibration(struct en7528_usb_phy_priv *pri
+ 
+ 	/* Disable HS TX SR calibration */
+ 	regmap_clear_bits(priv->regmap, acr0,
+-			  EN7528_USB_PHY_HSTX_SRCAL_EN);
++			  soc->sr_cal_en);
+ 
+ 	usleep_range(1000, 1500);
+ 
+ 	if (!fm_out) {
+-		srctrl = EN7528_USB_PHY_DEFAULT_SR;
++		srctrl = soc->default_sr;
+ 		dev_err(priv->dev, "port%u: frequency not detected, using default SR calibration.\n",
+ 			port_id);
+ 	} else {
+@@ -141,8 +183,85 @@ static void en7528_usb_phy_slew_rate_calibration(struct en7528_usb_phy_priv *pri
+ 	}
+ 
+ 	regmap_update_bits(priv->regmap, acr0,
+-			   EN7528_USB_PHY_HSTX_SRCTRL,
+-			   FIELD_PREP(EN7528_USB_PHY_HSTX_SRCTRL, srctrl));
++			   soc->sr_ctrl, field_prep(soc->sr_ctrl, srctrl));
++}
++
++static int en7580_usb_phy_init(struct en7528_usb_phy_priv *priv, u32 type)
++{
++	const struct en7580_usb_phy_trim *trim = &priv->trim;
++	u32 intr;
++	int ret;
++
++	switch (type) {
++	case PHY_TYPE_USB2:
++		ret = regmap_clear_bits(priv->regmap, EN7580_USB_PHY_ACR6,
++					EN7580_USB_PHY_BC11_SW_EN);
++		if (ret)
++			return ret;
++		usleep_range(1000, 1500);
++
++		ret = regmap_clear_bits(priv->regmap, EN7580_USB_PHY_ACR5,
++					EN7580_USB_PHY_HS_100U_U3_EN);
++		if (ret)
++			return ret;
++		usleep_range(1000, 1500);
++
++		/* The SDK adds three to the programmed U2 factory trim. */
++		intr = trim->u2_intr ? min(trim->u2_intr + 3, 31U) : 0x17;
++		ret = regmap_update_bits(priv->regmap, EN7580_USB_PHY_ACR1,
++					 EN7580_USB_PHY_INTR_CAL,
++					 FIELD_PREP(EN7580_USB_PHY_INTR_CAL, intr));
++		break;
++	case PHY_TYPE_USB3:
++		/* Force a 3.5 dB de-emphasis value of 18, as in the SDK. */
++		ret = regmap_update_bits(priv->regmap, EN7580_USB_PHY_U3_DEEMPH,
++					 EN7580_USB_PHY_FORCE_DEEMPH |
++					 EN7580_USB_PHY_DEEMPH_3P5DB,
++					 EN7580_USB_PHY_FORCE_DEEMPH |
++					 FIELD_PREP(EN7580_USB_PHY_DEEMPH_3P5DB, 18));
++		if (ret)
++			return ret;
++		usleep_range(1000, 1500);
++
++		if (trim->u3_intr > 23) {
++			ret = regmap_update_bits(priv->regmap,
++						 EN7580_USB_PHY_U3_PHYA_REG0,
++						 EN7580_USB_PHY_IEXT_INTR_CTRL,
++						 FIELD_PREP(EN7580_USB_PHY_IEXT_INTR_CTRL,
++							    trim->u3_intr));
++			if (ret)
++				return ret;
++			usleep_range(1000, 1500);
++		}
++
++		if (trim->tx_imp) {
++			ret = regmap_update_bits(priv->regmap, EN7580_USB_PHY_U3_IMP_TX,
++						 EN7580_USB_PHY_U3_IMP_SEL,
++						 FIELD_PREP(EN7580_USB_PHY_U3_IMP_SEL,
++							    trim->tx_imp));
++			if (ret)
++				return ret;
++			usleep_range(1000, 1500);
++		}
++
++		if (trim->rx_imp) {
++			ret = regmap_update_bits(priv->regmap, EN7580_USB_PHY_U3_IMP_RX,
++						 EN7580_USB_PHY_U3_IMP_SEL,
++						 FIELD_PREP(EN7580_USB_PHY_U3_IMP_SEL,
++							    trim->rx_imp));
++			if (ret)
++				return ret;
++			usleep_range(1000, 1500);
++		}
++		return 0;
++	default:
++		return -EINVAL;
++	}
++
++	if (!ret)
++		usleep_range(1000, 1500);
++
++	return ret;
+ }
+ 
+ static int en7528_usb_phy_init(struct phy *phy)
+@@ -151,6 +270,9 @@ static int en7528_usb_phy_init(struct phy *phy)
+ 	struct en7528_usb_phy_priv *priv = dev_get_drvdata(phy->dev.parent);
+ 	unsigned int i;
+ 
++	if (priv->soc->en7580)
++		return en7580_usb_phy_init(priv, instance->type);
++
+ 	switch (instance->type) {
+ 	case PHY_TYPE_USB2:
+ 		/* Enable both U2 PHY ports before calibration */
+@@ -182,8 +304,8 @@ static int en7528_usb_phy_power_on(struct phy *phy)
+ 	if (instance->type != PHY_TYPE_USB2)
+ 		return 0;
+ 
+-	/* Calibrate slew rate for both U2 PHY ports */
+-	for (i = 0; i < EN7528_USB_PHY_NUM_U2_PORTS; i++)
++	/* Calibrate each U2 PHY controlled by this provider. */
++	for (i = 0; i < priv->soc->num_u2_ports; i++)
+ 		en7528_usb_phy_slew_rate_calibration(priv, i,
+ 						     en7528_u2_port_bases[i]);
+ 
+@@ -236,26 +358,66 @@ static const struct regmap_config en7528_usb_phy_regmap_config = {
+ 	.max_register = EN7528_USB_PHY_U2_P1_BASE + EN7528_USB_PHY_ACR3,
+ };
+ 
++static const struct regmap_config en7580_usb_phy_regmap_config = {
++	.reg_bits = 32,
++	.val_bits = 32,
++	.reg_stride = 4,
++	.max_register = EN7580_USB_PHY_U3_PHYA_REG0,
++};
++
++static int en7580_usb_phy_get_trim(struct en7528_usb_phy_priv *priv)
++{
++	struct device *dev = priv->dev;
++	struct en7580_usb_phy_trim *trim = &priv->trim;
++	int ret;
++
++	if (!priv->soc->en7580 || !device_property_present(dev, "nvmem-cells"))
++		return 0;
++
++	ret = nvmem_cell_read_variable_le_u32(dev, "u2-intr", &trim->u2_intr);
++	if (ret)
++		return ret;
++	ret = nvmem_cell_read_variable_le_u32(dev, "u3-intr", &trim->u3_intr);
++	if (ret)
++		return ret;
++	ret = nvmem_cell_read_variable_le_u32(dev, "tx-imp", &trim->tx_imp);
++	if (ret)
++		return ret;
++
++	return nvmem_cell_read_variable_le_u32(dev, "rx-imp", &trim->rx_imp);
++}
++
+ static int en7528_usb_phy_probe(struct platform_device *pdev)
+ {
+ 	struct phy_provider *phy_provider;
++	const struct regmap_config *config;
+ 	struct en7528_usb_phy_priv *priv;
+ 	struct device *dev = &pdev->dev;
+ 	unsigned int index;
+ 	void __iomem *base;
++	int ret;
+ 
+ 	priv = devm_kzalloc(dev, sizeof(*priv), GFP_KERNEL);
+ 	if (!priv)
+ 		return -ENOMEM;
+ 
+ 	priv->dev = dev;
++	priv->soc = device_get_match_data(dev);
++	if (!priv->soc)
++		return -EINVAL;
++
++	ret = en7580_usb_phy_get_trim(priv);
++	if (ret)
++		return dev_err_probe(dev, ret, "failed to read PHY calibration data\n");
+ 
+ 	base = devm_platform_ioremap_resource(pdev, 0);
+ 	if (IS_ERR(base))
+ 		return PTR_ERR(base);
+ 
+-	priv->regmap = devm_regmap_init_mmio(dev, base,
+-					     &en7528_usb_phy_regmap_config);
++	config = priv->soc->en7580 ? &en7580_usb_phy_regmap_config :
++				   &en7528_usb_phy_regmap_config;
++
++	priv->regmap = devm_regmap_init_mmio(dev, base, config);
+ 	if (IS_ERR(priv->regmap))
+ 		return PTR_ERR(priv->regmap);
+ 
+@@ -297,8 +459,26 @@ static int en7528_usb_phy_probe(struct platform_device *pdev)
+ 	return PTR_ERR_OR_ZERO(phy_provider);
+ }
+ 
++static const struct en7528_usb_phy_soc_data en7528_usb_phy_data = {
++	.num_u2_ports = EN7528_USB_PHY_NUM_U2_PORTS,
++	.sr_reg = EN7528_USB_PHY_ACR0,
++	.sr_cal_en = EN7528_USB_PHY_HSTX_SRCAL_EN,
++	.sr_ctrl = EN7528_USB_PHY_HSTX_SRCTRL,
++	.default_sr = EN7528_USB_PHY_DEFAULT_SR,
++};
++
++static const struct en7528_usb_phy_soc_data en7580_usb_phy_data = {
++	.num_u2_ports = 1,
++	.sr_reg = EN7580_USB_PHY_ACR5 - EN7528_USB_PHY_U2_P0_BASE,
++	.sr_cal_en = EN7580_USB_PHY_HSTX_SRCAL_EN,
++	.sr_ctrl = EN7580_USB_PHY_HSTX_SRCTRL,
++	.default_sr = EN7580_USB_PHY_DEFAULT_SR,
++	.en7580 = true,
++};
++
+ static const struct of_device_id en7528_usb_phy_match[] = {
+-	{ .compatible = "econet,en7528-usb-phy" },
++	{ .compatible = "econet,en7528-usb-phy", .data = &en7528_usb_phy_data },
++	{ .compatible = "econet,en7580-usb-phy", .data = &en7580_usb_phy_data },
+ 	{ },
+ };
+ MODULE_DEVICE_TABLE(of, en7528_usb_phy_match);
+@@ -314,4 +494,4 @@ static struct platform_driver en7528_usb_phy_driver = {
+ module_platform_driver(en7528_usb_phy_driver);
+ 
+ MODULE_LICENSE("GPL");
+-MODULE_DESCRIPTION("EcoNet EN7528 USB PHY driver");
++MODULE_DESCRIPTION("EcoNet EN7528/EN7580 USB PHY driver");
+diff --git a/drivers/usb/host/xhci-mtk.c b/drivers/usb/host/xhci-mtk.c
+index f01c95855..ae5fbf628 100644
+--- a/drivers/usb/host/xhci-mtk.c
++++ b/drivers/usb/host/xhci-mtk.c
+@@ -80,6 +80,7 @@
+ #define SS_GEN2_EOF_CFG		0x990
+ #define SSG2EOF_OFFSET		0x3c
+ 
++#define XHCI_MTK_LTSSM_TIMING_PARAMETER3	0x2514
+ #define XHCI_MTK_LTSSM_TIMING_PARAMETER5	0x251c
+ 
+ #define XSEOF_OFFSET_MASK	GENMASK(11, 0)
+@@ -193,16 +194,18 @@ static void xhci_mtk_rxfifo_depth_set(struct xhci_hcd_mtk *mtk)
+ 	writel(value, hcd->regs + HSCH_CFG1);
+ }
+ 
+-/* EN7528: fix TD 6.5 compliance test failure */
++/* EcoNet controllers need different LTSSM polling timeout settings. */
+ static void xhci_mtk_ltssm_quirk(struct xhci_hcd_mtk *mtk)
+ {
+ 	struct device *dev = mtk->dev;
+ 	struct usb_hcd *hcd = mtk->hcd;
+ 
+-	if (!of_device_is_compatible(dev->of_node, "econet,en7528-xhci"))
+-		return;
+-
+-	writel(0x203e8, hcd->regs + XHCI_MTK_LTSSM_TIMING_PARAMETER5);
++	if (of_device_is_compatible(dev->of_node, "econet,en7528-xhci"))
++		/* Fix the EN7528 TD 6.5 compliance test failure. */
++		writel(0x203e8, hcd->regs + XHCI_MTK_LTSSM_TIMING_PARAMETER5);
++	else if (of_device_is_compatible(dev->of_node, "econet,en7580-xhci"))
++		/* Extend the EN7580 Polling.LFPS timeout from 360 ms to 1 s. */
++		writel(0x3e8012c, hcd->regs + XHCI_MTK_LTSSM_TIMING_PARAMETER3);
+ }
+ 
+ static void xhci_mtk_init_quirk(struct xhci_hcd_mtk *mtk)
+@@ -213,7 +216,7 @@ static void xhci_mtk_init_quirk(struct xhci_hcd_mtk *mtk)
+ 	/* workaround for SoCs using SSUSB about before IPM v1.6.0 */
+ 	xhci_mtk_rxfifo_depth_set(mtk);
+ 
+-	/* EN7528 LTSSM timing fix */
++	/* EcoNet LTSSM timing fixes */
+ 	xhci_mtk_ltssm_quirk(mtk);
+ }
+ 
+@@ -863,7 +866,8 @@ static const struct dev_pm_ops xhci_mtk_pm_ops = {
+ static const struct of_device_id mtk_xhci_of_match[] = {
+ 	{ .compatible = "mediatek,mt8173-xhci"},
+ 	{ .compatible = "mediatek,mt8195-xhci"},
+-	{ .compatible = "econet,en7528-xhci"},
++	{ .compatible = "econet,en7528-xhci" },
++	{ .compatible = "econet,en7580-xhci" },
+ 	{ .compatible = "mediatek,mtk-xhci"},
+ 	{ },
+ };
+-- 
+2.55.0
+
