@@ -54,6 +54,8 @@ struct sta_info;
 #include <libubus.h>
 #include "utils/list.h"
 
+#define UBUS_LMR_TOKEN 1
+
 struct hostapd_ubus_bss {
 	struct ubus_object obj;
 	struct dl_list pending;
@@ -75,7 +77,7 @@ void hostapd_ubus_add_vlan(struct hostapd_data *hapd, struct hostapd_vlan *vlan)
 void hostapd_ubus_remove_vlan(struct hostapd_data *hapd, struct hostapd_vlan *vlan);
 
 int hostapd_ubus_handle_event(struct hostapd_data *hapd, struct hostapd_ubus_request *req);
-void hostapd_ubus_handle_link_measurement(struct hostapd_data *hapd, const u8 *data, size_t len);
+int hostapd_ubus_handle_link_measurement(struct hostapd_data *hapd, const u8 *data, size_t len);
 void hostapd_ubus_notify(struct hostapd_data *hapd, const char *type, const u8 *mac);
 void hostapd_ubus_notify_sta(struct hostapd_data *hapd, const char *type,
 			     struct sta_info *sta);
@@ -156,8 +158,9 @@ static inline int hostapd_ubus_handle_event(struct hostapd_data *hapd, struct ho
 	return 0;
 }
 
-static inline void hostapd_ubus_handle_link_measurement(struct hostapd_data *hapd, const u8 *data, size_t len)
+static inline int hostapd_ubus_handle_link_measurement(struct hostapd_data *hapd, const u8 *data, size_t len)
 {
+	return 0;
 }
 
 static inline void hostapd_ubus_notify(struct hostapd_data *hapd, const char *type, const u8 *mac)
