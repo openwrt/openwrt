@@ -86,12 +86,12 @@ SCAN_DEPS_packageinfo:=target/linux/*/modules.mk target/linux/feeds/*/modules.mk
 
 # $(1): scan target, $(2): scan directory, $(3): scan depth
 SCAN_STAMP=tmp/info/.scan-$(1).stamp
-scan_unchanged=[ -f $(SCAN_STAMP) ] && \
-	[ -z "$$(find -L $(2) -maxdepth $(3) \( -type d -o -name Makefile -o -name '*.mk' \) \
-		-newer $(SCAN_STAMP) -print -quit 2>/dev/null)" ] && \
-	[ -z "$$(find include rules.mk .config $(SCAN_DEPS_$(1)) -maxdepth 1 \
+scan_unchanged=[ -f tmp/.$(1) ] && [ -f $(SCAN_STAMP) ] && \
+	scan_changed="$$(find -L $(2) -maxdepth $(3) \( -type d -o -name Makefile -o -name '*.mk' \) \
+		-newer $(SCAN_STAMP) -print -quit 2>/dev/null)" && [ -z "$$scan_changed" ] && \
+	scan_changed="$$(find include rules.mk $(wildcard .config $(SCAN_DEPS_$(1))) -maxdepth 1 \
 		\( -name '*.mk' -o -name .config \) \
-		-newer $(SCAN_STAMP) -print -quit 2>/dev/null)" ]
+		-newer $(SCAN_STAMP) -print -quit 2>/dev/null)" && [ -z "$$scan_changed" ]
 
 # $(1): output file, $(2): package-metadata.pl command
 tmpinfo_gen=[ $(1) -nt tmp/.packageinfo ] && [ $(1) -nt scripts/package-metadata.pl ] && \
