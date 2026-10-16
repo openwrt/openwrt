@@ -1,0 +1,201 @@
+From f2164c2d4c481cda58986bc6f7f0a3880b9cb386 Mon Sep 17 00:00:00 2001
+From: Russell Ballestrini <russell@unturf.com>
+Date: Fri, 10 Oct 2026 12:00:00 -0400
+Subject: [PATCH 29/29] b43: AC-PHY: turn the verified BCM4360 feature set on by default
+
+The bring-up parameters stay available for comparison; their defaults
+become the set verified on the Netgear R6400 against a 2x2 client
+(2026-10-08): radio power-on, wl's PHY reset pulse, HT40 with the 40 MHz
+power rows, A-MPDU RX/TX with the status fixes, multi-rate retries, AP
+power save, the HT-dead restart safety net, hardware CCMP, the per-frame
+fast path, 2 spatial streams and the aggregate length limits (124 / 132
+Mbit/s over the air, MCS 15 both ways).
+---
+ drivers/net/wireless/broadcom/b43/main.c   |  4 ++--
+ drivers/net/wireless/broadcom/b43/phy_ac.c | 20 +++++++-------
+ drivers/net/wireless/broadcom/b43/xmit.c   | 36 ++++++++++++------------
+ 3 files changed, 30 insertions(+), 30 deletions(-)
+
+--- a/drivers/net/wireless/broadcom/b43/main.c
++++ b/drivers/net/wireless/broadcom/b43/main.c
+@@ -6297,10 +6297,10 @@ static void b43_wireless_core_exit(struc
+  * shared-memory words so a trial can confirm what the ucode reads. It
+  * changes nothing when the parameter is 0.
+  */
+-static unsigned int b43_modparam_acphy_retryfix;
++static unsigned int b43_modparam_acphy_retryfix = 3;
+ module_param_named(acphy_retryfix, b43_modparam_acphy_retryfix, uint, 0444);
+ MODULE_PARM_DESC(acphy_retryfix,
+-		 "AC-PHY retry ceilings (core rev >= 40): 1 = max short/long retry limits, 2 = max fallback counts, 4 = re-assert EDCF status (default 0)");
++		 "AC-PHY retry ceilings (core rev >= 40): 1 = max short/long retry limits, 2 = max fallback counts, 4 = re-assert EDCF status (default 3)");
+ 
+ #define B43_AC_RETRYFIX_SRL	0x1
+ #define B43_AC_RETRYFIX_FBLIM	0x2
+--- a/drivers/net/wireless/broadcom/b43/phy_ac.c
++++ b/drivers/net/wireless/broadcom/b43/phy_ac.c
+@@ -62,10 +62,10 @@
+ /* acphy_desense: wl's 1 s watchdog ("ACI and hwaci engines" below) */
+ static void b43_ac2069_desense_work(struct work_struct *work);
+ 
+-static bool acphy_pwron;
++static bool acphy_pwron = true;
+ module_param_named(acphy_pwron, acphy_pwron, bool, 0644);
+ MODULE_PARM_DESC(acphy_pwron,
+-	"Run the radio power-on, prefregs, R/RC cal and VCO cal during PHY init (default off)");
++	"Run the radio power-on, prefregs, R/RC cal and VCO cal during PHY init (default on)");
+ 
+ /*
+  * TX IQ/LO calibration after each radio 0x2069 channel set
+@@ -1129,10 +1129,10 @@ static void b43_ac2069_bw40fix_early(str
+ #define B43_AC_BW40FIX_RESET		0x02
+ #define B43_AC_BW40FIX_REINIT		0x04
+ #define B43_AC_BW40FIX_EDTHRES		0x08
+-static unsigned int acphy_bw40fix;
++static unsigned int acphy_bw40fix = 1;
+ module_param_named(acphy_bw40fix, acphy_bw40fix, uint, 0444);
+ MODULE_PARM_DESC(acphy_bw40fix,
+-	"40/80 MHz RX fault candidates, bitmask: 1 IOCTL bandwidth bits before the radio-on (wl's order), 2 wl PHY reset pulse after that flip, 4 re-init the PHY on a bandwidth change at a later set, 8 ED thresholds (acphy_edthresh) at every set (default 0)");
++	"40/80 MHz RX fault candidates, bitmask: 1 IOCTL bandwidth bits before the radio-on (wl's order), 2 wl PHY reset pulse after that flip, 4 re-init the PHY on a bandwidth change at a later set, 8 ED thresholds (acphy_edthresh) at every set (default 1)");
+ 
+ /*
+  * acphy_initfix: the per-load "HT TX dead" state is drawn
+@@ -1860,10 +1860,10 @@ static int b43_ac2069_radio_on_again(str
+  * offer 20 MHz only, so nothing changes until the parameter is set. Read
+  * by main.c for the band's HT capabilities, so it cannot change after load.
+  */
+-bool b43_modparam_ac_bw40;
++bool b43_modparam_ac_bw40 = true;
+ module_param_named(acphy_bw40, b43_modparam_ac_bw40, bool, 0444);
+ MODULE_PARM_DESC(acphy_bw40,
+-	"AC-PHY 40 MHz channels (HT40): radio 0x2069 40 MHz channel sets and 20/40 MHz HT capabilities (default 0 = 20 MHz only)");
++	"AC-PHY 40 MHz channels (HT40): radio 0x2069 40 MHz channel sets and 20/40 MHz HT capabilities (default 1)");
+ 
+ /*
+  * 80 MHz channel sets (VHT80). Off by default: an 80 MHz
+@@ -2014,10 +2014,10 @@ static void b43_ac2069_bw40fix_early(str
+  *    completed set reached returns before any access. wl runs one set per
+  *    `up`; b43's PHY init, op_config and AP start run four or five.
+  */
+-unsigned int b43_modparam_ac_initorder;
++unsigned int b43_modparam_ac_initorder = 1;
+ module_param_named(acphy_initorder, b43_modparam_ac_initorder, uint, 0444);
+ MODULE_PARM_DESC(acphy_initorder,
+-	"wl's order around the PHY init, bitmask: 1 wl PHY reset pulse, 2 MAC-PHY clock enable before the radio-on, 4 skip repeated sets to the same chanspec (default 0)");
++	"wl's order around the PHY init, bitmask: 1 wl PHY reset pulse, 2 MAC-PHY clock enable before the radio-on, 4 skip repeated sets to the same chanspec (default 1)");
+ 
+ /*
+  * wlc_bmac_phy_reset @0x15cfc4, PHY type 11: si_core_cflags(sih, 0xce,
+@@ -5338,10 +5338,10 @@ MODULE_PARM_DESC(acphy_mcsbw5gpo,
+ #define B43_AC_BW40PWR_WL		0x01
+ #define B43_AC_BW40PWR_ROW20		0x02
+ #define B43_AC_BW40PWR_LOG		0x04
+-static unsigned int acphy_bw40pwr;
++static unsigned int acphy_bw40pwr = 5;
+ module_param_named(acphy_bw40pwr, acphy_bw40pwr, uint, 0444);
+ MODULE_PARM_DESC(acphy_bw40pwr,
+-	"40 MHz TX power target, bitmask: 1 wl's target (MCS 40 from mcsbw405g*po, 20-in-40 = 20 MHz rates plus sb20in40 offsets, 0 without acphy_sb20in40po as wl for missing keys), 2 keep the 20 MHz target and row at 40 MHz (diagnostic, wins over 1), 4 log the rate values (default 0: lowest-power row without acphy_sb20in40po)");
++	"40 MHz TX power target, bitmask: 1 wl's target (MCS 40 from mcsbw405g*po, 20-in-40 = 20 MHz rates plus sb20in40 offsets, 0 without acphy_sb20in40po as wl for missing keys), 2 keep the 20 MHz target and row at 40 MHz (diagnostic, wins over 1), 4 log the rate values (default 5)");
+ 
+ /* how the 40 MHz set got its 20-in-40 offsets (struct b43_ac_txpwr sbsrc) */
+ #define B43_AC_SBSRC_NONE	0	/* not a 40 MHz set, or refused */
+--- a/drivers/net/wireless/broadcom/b43/xmit.c
++++ b/drivers/net/wireless/broadcom/b43/xmit.c
+@@ -321,13 +321,13 @@ void b43_ac_txcore_shm_write(struct b43_
+ /*
+  * HT on the AC-PHY: spatial streams offered (rx_mask in the band's ht_cap,
+  * TX MCS limit). wl runs this 3x3 board (txchain = rxchain = 7) at up to
+- * three streams; b43 has only run single-core legacy TX on it, so the
+- * default is one stream (MCS 0..7). 0 turns HT off (legacy only, as before).
++ * three streams; the default is two streams (MCS 0..15), the set verified
++ * on the air. 0 turns HT off (legacy only, as before).
+  */
+-static int b43_modparam_ac_htnss = 1;
++static int b43_modparam_ac_htnss = 2;
+ module_param_named(acphy_htnss, b43_modparam_ac_htnss, int, 0444);
+ MODULE_PARM_DESC(acphy_htnss,
+-		 "AC-PHY 802.11n spatial streams, 0 = HT off, 1..3 (default 1)");
++		 "AC-PHY 802.11n spatial streams, 0 = HT off, 1..3 (default 2)");
+ 
+ /*
+  * VHT (802.11ac) on the AC-PHY: VHT capabilities (main.c),
+@@ -476,10 +476,10 @@ static int b43_modparam_ac_mimo_dens = -
+ module_param_named(acphy_mimo_dens, b43_modparam_ac_mimo_dens, int, 0644);
+ MODULE_PARM_DESC(acphy_mimo_dens,
+ 		 "AC-PHY HT TX with 2+ streams: A-MPDU MPDU density code 0..7 in the header tail (default -1 = the peer's)");
+-static int b43_modparam_ac_mimo_ampdu;
++static int b43_modparam_ac_mimo_ampdu = 16;
+ module_param_named(acphy_mimo_ampdu, b43_modparam_ac_mimo_ampdu, int, 0644);
+ MODULE_PARM_DESC(acphy_mimo_ampdu,
+-		 "AC-PHY HT TX with 2+ streams: 0 = aggregate as with one stream, 1 = never aggregate, N = at most N MPDUs per aggregate (default 0)");
++		 "AC-PHY HT TX with 2+ streams: 0 = aggregate as with one stream, 1 = never aggregate, N = at most N MPDUs per aggregate (default 16)");
+ 
+ static int b43_modparam_ac_mimo_log;
+ module_param_named(acphy_mimo_log, b43_modparam_ac_mimo_log, int, 0644);
+@@ -583,10 +583,10 @@ bool b43_ac_mimo_log_info(struct b43_wld
+  *   corruption is then past the FIFO (the MPDUs are block-acked, so their
+  *   FCS is good on the air: their payload, MIC or PN is not).
+  */
+-static unsigned int b43_modparam_ac_mimo_ffpld;
++static unsigned int b43_modparam_ac_mimo_ffpld = 50;
+ module_param_named(acphy_mimo_ffpld, b43_modparam_ac_mimo_ffpld, uint, 0644);
+ MODULE_PARM_DESC(acphy_mimo_ffpld,
+-		 "AC-PHY A-MPDU TX: FIFO fill rate in Mbit/s for brcmsmac's per-rate MPDU limit, applied to rates above it (default 0 = off)");
++		 "AC-PHY A-MPDU TX: FIFO fill rate in Mbit/s for brcmsmac's per-rate MPDU limit, applied to rates above it (default 50)");
+ 
+ static unsigned int b43_modparam_ac_mimo_pld = 16384;
+ module_param_named(acphy_mimo_pld, b43_modparam_ac_mimo_pld, uint, 0644);
+@@ -1010,16 +1010,16 @@ static int b43_ac_vht_entry(struct b43_w
+  * so the rate, bandwidth, flags and signal of the last good frame with a
+  * PLCP are reused. An HT PLCP is never zero in bytes 1..2 (HT-SIG length).
+  */
+-unsigned int b43_modparam_acphy_ampdu;
++unsigned int b43_modparam_acphy_ampdu = 0x6d3;
+ module_param_named(acphy_ampdu, b43_modparam_acphy_ampdu, uint, 0444);
+ MODULE_PARM_DESC(acphy_ampdu,
+-		 "AC-PHY A-MPDU: 1 = RX block ack sessions, 2 = TX (hardware AQM aggregation), 4 = wl's A-MPDU shm words, 8 = 64 MPDUs per aggregate, 16 = aggregate in bursts only, lone MPDUs non-aggregated, 32 = TX host flag, 64 = accept TX block ack sessions, 128 = A-MPDU header fields for session frames, 256 = ucode sequence numbers for session frames, 512 = A-MPDU status counts as rounds for rate control, 1024 = plain session frames (rate probes) visible to rate control as one-MPDU aggregates (default 0)");
++		 "AC-PHY A-MPDU: 1 = RX block ack sessions, 2 = TX (hardware AQM aggregation), 4 = wl's A-MPDU shm words, 8 = 64 MPDUs per aggregate, 16 = aggregate in bursts only, lone MPDUs non-aggregated, 32 = TX host flag, 64 = accept TX block ack sessions, 128 = A-MPDU header fields for session frames, 256 = ucode sequence numbers for session frames, 512 = A-MPDU status counts as rounds for rate control, 1024 = plain session frames (rate probes) visible to rate control as one-MPDU aggregates (default 0x6d3)");
+ 
+ /* AP power save trial hook, see xmit.h */
+-unsigned int b43_modparam_acphy_psfix;
++unsigned int b43_modparam_acphy_psfix = 23;
+ module_param_named(acphy_psfix, b43_modparam_acphy_psfix, uint, 0444);
+ MODULE_PARM_DESC(acphy_psfix,
+-		 "AC AP power save: 1 = PSFIX log lines, 2 = hardware PMQ (DISCPMQ clear, TX filtered status, ignore-PMQ bit), 4 = AP_LINK_PS from the PMQ, 8 = an AMT entry per station, 16 = hold PMQ entries while a station dozes (4, 8, 16 imply 2) (default 0)");
++		 "AC AP power save: 1 = PSFIX log lines, 2 = hardware PMQ (DISCPMQ clear, TX filtered status, ignore-PMQ bit), 4 = AP_LINK_PS from the PMQ, 8 = an AMT entry per station, 16 = hold PMQ entries while a station dozes (4, 8, 16 imply 2) (default 23)");
+ 
+ unsigned int b43_modparam_acphy_psamt = 0x8004;
+ module_param_named(acphy_psamt, b43_modparam_acphy_psamt, uint, 0444);
+@@ -1027,16 +1027,16 @@ MODULE_PARM_DESC(acphy_psamt,
+ 		 "AC AP power save: AMT attribute of a station's entry with acphy_psfix bit 8 (0x8000 valid, 0x8 A1, 0x4 A2, 0x2 A3; default 0x8004)");
+ 
+ /* hardware keys on ucode 907 (xmit.h, b43.h B43_AC_HWKEY_*) */
+-int b43_modparam_acphy_hwcrypto;
++int b43_modparam_acphy_hwcrypto = 1;
+ module_param_named(acphy_hwcrypto, b43_modparam_acphy_hwcrypto, int, 0444);
+ MODULE_PARM_DESC(acphy_hwcrypto,
+-		 "AC-PHY hardware keys on core rev >= 40: 1 = CCMP (pairwise key in slot 4 + the station's AMT entry, group key in slot keyidx), 2 = WEP, 4 = leave the ucode's PMQ power save on for a keyed station (else its frames carry the ignore-PMQ bit unless acphy_psfix bit 8 is set); TKIP and anything else stay in software (default 0)");
++		 "AC-PHY hardware keys on core rev >= 40: 1 = CCMP (pairwise key in slot 4 + the station's AMT entry, group key in slot keyidx), 2 = WEP, 4 = leave the ucode's PMQ power save on for a keyed station (else its frames carry the ignore-PMQ bit unless acphy_psfix bit 8 is set); TKIP and anything else stay in software (default 1)");
+ 
+ /* per-frame CPU cost cuts on core rev >= 40, see xmit.h */
+-unsigned int b43_modparam_acphy_fastpath;
++unsigned int b43_modparam_acphy_fastpath = 0x37;
+ module_param_named(acphy_fastpath, b43_modparam_acphy_fastpath, uint, 0444);
+ MODULE_PARM_DESC(acphy_fastpath,
+-		 "AC core per-frame CPU cuts: 1 = no per-frame diagnostics, 2 = TX worker kick per interrupt, 4 = re-poll interrupt reasons before unmasking, 8 = A-MSDU TX via mac80211, 16 = RX cache maintenance over the frame only, 32 = batched RX delivery (default 0)");
++		 "AC core per-frame CPU cuts: 1 = no per-frame diagnostics, 2 = TX worker kick per interrupt, 4 = re-poll interrupt reasons before unmasking, 8 = A-MSDU TX via mac80211, 16 = RX cache maintenance over the frame only, 32 = batched RX delivery (default 0x37)");
+ 
+ unsigned int b43_modparam_acphy_rxlazy;
+ module_param_named(acphy_rxlazy, b43_modparam_acphy_rxlazy, uint, 0444);
+@@ -1061,10 +1061,10 @@ MODULE_PARM_DESC(acphy_rxlazy,
+  * after each "Controller restarted" (its auth/assoc/EAPOL acked), then
+  * sent HT at MCS 7.
+  */
+-int b43_modparam_acphy_htdead;
++int b43_modparam_acphy_htdead = 1;
+ module_param_named(acphy_htdead, b43_modparam_acphy_htdead, int, 0444);
+ MODULE_PARM_DESC(acphy_htdead,
+-		 "AC-PHY: 1 = restart the controller when a core init came up with HT TX dead (every HT frame fails all its attempts, none acked since the init) (default 0)");
++		 "AC-PHY: 1 = restart the controller when a core init came up with HT TX dead (every HT frame fails all its attempts, none acked since the init) (default 1)");
+ 
+ static int b43_modparam_acphy_htdead_n = 3;
+ module_param_named(acphy_htdead_n, b43_modparam_acphy_htdead_n, int, 0644);
