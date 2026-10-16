@@ -1,0 +1,45 @@
+From 02f72964395911e7a09bb2ea2fe6f79eda4ea2c2 Mon Sep 17 00:00:00 2001
+From: Lorenzo Bianconi <lorenzo@kernel.org>
+Date: Wed, 8 Apr 2026 12:20:09 +0200
+Subject: [PATCH] net: airoha: Fix FE_PSE_BUF_SET configuration if PPE2 is
+ available
+
+airoha_fe_set routine is used to set specified bits to 1 in the selected
+register. In the FE_PSE_BUF_SET case this can due to a overestimation of
+the required buffers for I/O queues since we can miss to set some bits
+of PSE_ALLRSV_MASK subfield to 0. Fix the issue relying on airoha_fe_rmw
+routine instead.
+
+Fixes: 8e38e08f2c560 ("net: airoha: fix PSE memory configuration in airoha_fe_pse_ports_init()")
+Tested-by: Xuegang Lu <xuegang.lu@airoha.com>
+Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
+Link: https://patch.msgid.link/20260408-airoha-reg_fe_pse_buf_set-v1-1-0c4fa8f4d1d9@kernel.org
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ drivers/net/ethernet/airoha/airoha_eth.c | 8 +++++---
+ 1 file changed, 5 insertions(+), 3 deletions(-)
+
+--- a/drivers/net/ethernet/airoha/airoha_eth.c
++++ b/drivers/net/ethernet/airoha/airoha_eth.c
+@@ -293,16 +293,18 @@ static void airoha_fe_pse_ports_init(str
+ 		[FE_PSE_PORT_GDM4] = 2,
+ 		[FE_PSE_PORT_CDM5] = 2,
+ 	};
+-	u32 all_rsv;
+ 	int q;
+ 
+-	all_rsv = airoha_fe_get_pse_all_rsv(eth);
+ 	if (airoha_ppe_is_enabled(eth, 1)) {
++		u32 all_rsv;
++
+ 		/* hw misses PPE2 oq rsv */
++		all_rsv = airoha_fe_get_pse_all_rsv(eth);
+ 		all_rsv += PSE_RSV_PAGES *
+ 			   pse_port_num_queues[FE_PSE_PORT_PPE2];
++		airoha_fe_rmw(eth, REG_FE_PSE_BUF_SET, PSE_ALLRSV_MASK,
++			      FIELD_PREP(PSE_ALLRSV_MASK, all_rsv));
+ 	}
+-	airoha_fe_set(eth, REG_FE_PSE_BUF_SET, all_rsv);
+ 
+ 	/* CMD1 */
+ 	for (q = 0; q < pse_port_num_queues[FE_PSE_PORT_CDM1]; q++)

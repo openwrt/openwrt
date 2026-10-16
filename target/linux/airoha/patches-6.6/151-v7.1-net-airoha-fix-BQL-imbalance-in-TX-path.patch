@@ -1,0 +1,59 @@
+From 2d9f5a118205da2683ffcec78b9347f1f01a820e Mon Sep 17 00:00:00 2001
+From: Lorenzo Bianconi <lorenzo@kernel.org>
+Date: Tue, 21 Apr 2026 08:35:11 +0200
+Subject: [PATCH] net: airoha: fix BQL imbalance in TX path
+
+Fix a possible BQL imbalance in airoha_dev_xmit(), where inflight
+packets are accounted only for the AIROHA_NUM_TX_RING netdev TX
+queues. The queue index is computed as:
+
+    qid = skb_get_queue_mapping(skb) % ARRAY_SIZE(qdma->q_tx)
+    txq = netdev_get_tx_queue(dev, qid);
+
+However, airoha_qdma_tx_napi_poll() accounts completions across all
+netdev TX queues (num_tx_queues), leading to inconsistent BQL
+accounting.
+
+Also reset all netdev TX queues in the ndo_stop callback.
+
+Fixes: 1d304174106c ("net: airoha: Implement BQL support")
+Fixes: c9f947769b77 ("net: airoha: Reset BQL stopping the netdevice")
+Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
+Link: https://patch.msgid.link/20260421-airoha-fix-bql-v1-1-f135afe4275b@kernel.org
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ drivers/net/ethernet/airoha/airoha_eth.c | 7 +++----
+ 1 file changed, 3 insertions(+), 4 deletions(-)
+
+--- a/drivers/net/ethernet/airoha/airoha_eth.c
++++ b/drivers/net/ethernet/airoha/airoha_eth.c
+@@ -929,10 +929,9 @@ static int airoha_qdma_tx_napi_poll(stru
+ 		q->queued--;
+ 
+ 		if (skb) {
+-			u16 queue = skb_get_queue_mapping(skb);
+ 			struct netdev_queue *txq;
+ 
+-			txq = netdev_get_tx_queue(skb->dev, queue);
++			txq = skb_get_tx_queue(skb->dev, skb);
+ 			netdev_tx_completed_queue(txq, 1, skb->len);
+ 			dev_kfree_skb_any(skb);
+ 		}
+@@ -1744,7 +1743,7 @@ static int airoha_dev_stop(struct net_de
+ 	if (err)
+ 		return err;
+ 
+-	for (i = 0; i < ARRAY_SIZE(qdma->q_tx); i++)
++	for (i = 0; i < dev->num_tx_queues; i++)
+ 		netdev_tx_reset_subqueue(dev, i);
+ 
+ 	airoha_set_gdm_port_fwd_cfg(qdma->eth, REG_GDM_FWD_CFG(port->id),
+@@ -2039,7 +2038,7 @@ static netdev_tx_t airoha_dev_xmit(struc
+ 
+ 	spin_lock_bh(&q->lock);
+ 
+-	txq = netdev_get_tx_queue(dev, qid);
++	txq = skb_get_tx_queue(dev, skb);
+ 	nr_frags = 1 + skb_shinfo(skb)->nr_frags;
+ 
+ 	if (q->queued + nr_frags >= q->ndesc) {

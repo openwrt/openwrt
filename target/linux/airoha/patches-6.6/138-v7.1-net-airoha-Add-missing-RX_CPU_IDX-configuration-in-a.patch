@@ -1,0 +1,34 @@
+From 656121b155030086b01cfce9bd31b0c925ee6860 Mon Sep 17 00:00:00 2001
+From: Lorenzo Bianconi <lorenzo@kernel.org>
+Date: Wed, 8 Apr 2026 20:26:56 +0200
+Subject: [PATCH] net: airoha: Add missing RX_CPU_IDX() configuration in
+ airoha_qdma_cleanup_rx_queue()
+
+When the descriptor index written in REG_RX_CPU_IDX() is equal to the one
+stored in REG_RX_DMA_IDX(), the hw will stop since the QDMA RX ring is
+empty.
+Add missing REG_RX_CPU_IDX() configuration in airoha_qdma_cleanup_rx_queue
+routine during QDMA RX ring cleanup.
+
+Fixes: 514aac359987 ("net: airoha: Add missing cleanup bits in airoha_qdma_cleanup_rx_queue()")
+Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
+Link: https://patch.msgid.link/20260408-airoha-cpu-idx-airoha_qdma_cleanup_rx_queue-v1-1-8efa64844308@kernel.org
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ drivers/net/ethernet/airoha/airoha_eth.c | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+--- a/drivers/net/ethernet/airoha/airoha_eth.c
++++ b/drivers/net/ethernet/airoha/airoha_eth.c
+@@ -824,6 +824,11 @@ static void airoha_qdma_cleanup_rx_queue
+ 	}
+ 
+ 	q->head = q->tail;
++	/* Set RX_DMA_IDX to RX_CPU_IDX to notify the hw the QDMA RX ring is
++	 * empty.
++	 */
++	airoha_qdma_rmw(qdma, REG_RX_CPU_IDX(qid), RX_RING_CPU_IDX_MASK,
++			FIELD_PREP(RX_RING_CPU_IDX_MASK, q->head));
+ 	airoha_qdma_rmw(qdma, REG_RX_DMA_IDX(qid), RX_RING_DMA_IDX_MASK,
+ 			FIELD_PREP(RX_RING_DMA_IDX_MASK, q->tail));
+ }
