@@ -18,7 +18,7 @@ define Build/imx-combined-image
 
 	mkimage -A arm -O linux -T script -C none -a 0 -e 0 \
 		-n '$(DEVICE_ID) OpenWrt bootscript' \
-		-d bootscript-$(DEVICE_NAME) \
+		-d bootscript-$(if $(BOARD_NAME),$(BOARD_NAME),$(DEVICE_NAME)) \
 		$@.boot/boot.scr
 
 	cp $@ $@.fs
