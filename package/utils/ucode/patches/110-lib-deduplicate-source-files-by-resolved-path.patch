@@ -1,0 +1,116 @@
+From f2d62f82a5224ac1cc3f9588c0b86df8848e283b Mon Sep 17 00:00:00 2001
+From: Jo-Philipp Wich <jo@mein.io>
+Date: Sat, 8 Aug 2026 02:57:48 +0200
+Subject: [PATCH] lib: deduplicate source files by resolved path in vm->sources
+ cache
+
+Hold an lh_table of uc_source_t objects keyed by realpath in the
+previously unused vm->sources field. When loadfile() (and thus
+include()) encounters a file that is already cached, it reuses the
+existing source instead of opening a new FILE* fd.
+
+This eliminates redundant file descriptors for repeated includes of
+the same file, which is the common cause of "too many open files"
+errors in applications with many runtime include() calls.
+
+Ref: https://github.com/openwrt/openwrt/issues/24598
+Signed-off-by: Jo-Philipp Wich <jo@mein.io>
+---
+ include/ucode/types.h |  2 +-
+ lib.c                 | 27 +++++++++++++++++++++------
+ vm.c                  | 19 +++++++++++++++++++
+ 3 files changed, 41 insertions(+), 7 deletions(-)
+
+diff --git a/include/ucode/types.h b/include/ucode/types.h
+--- a/include/ucode/types.h
++++ b/include/ucode/types.h
+@@ -335,7 +335,7 @@ struct uc_vm {
+ 	uc_parse_config_t *config;
+ 	uc_value_t *globals;
+ 	uc_value_t *registry;
+-	uc_source_t *sources;
++	struct lh_table *sources;
+ 	uc_weakref_t values;
+ 	uc_resource_types_t restypes;
+ 	char _reserved[sizeof(uc_modexports_t)];
+diff --git a/lib.c b/lib.c
+--- a/lib.c
++++ b/lib.c
+@@ -5653,20 +5653,35 @@ static uc_value_t *
+ uc_loadfile(uc_vm_t *vm, size_t nargs)
+ {
+ 	uc_value_t *path = uc_fn_arg(0);
+-	uc_source_t *source;
++	uc_source_t *source = NULL;
++	char *resolved;
+ 
+ 	if (ucv_type(path) != UC_STRING)
+ 		return NULL;
+ 
+-	source = uc_source_new_file(ucv_string_get(path));
++	resolved = realpath(ucv_string_get(path), NULL);
+ 
+-	if (!source) {
+-		uc_vm_raise_exception(vm, EXCEPTION_RUNTIME,
+-			"Unable to open source file %s: %s",
+-			ucv_string_get(path), strerror(errno));
++	if (resolved && lh_table_lookup_ex(vm->sources, (const void *)resolved, (void **)&source)) {
++		source = uc_source_get(source);
++	}
+ 
+-		return NULL;
++	if (!source) {
++		source = uc_source_new_file(ucv_string_get(path));
++
++		if (!source) {
++			free(resolved);
++			uc_vm_raise_exception(vm, EXCEPTION_RUNTIME,
++				"Unable to open source file %s: %s",
++				ucv_string_get(path), strerror(errno));
++
++			return NULL;
++		}
++
++		if (resolved)
++			lh_table_insert(vm->sources, xstrdup(resolved), uc_source_get(source));
+ 	}
+ 
++	free(resolved);
++
+ 	return uc_load_common(vm, nargs, source);
+ }
+diff --git a/vm.c b/vm.c
+--- a/vm.c
++++ b/vm.c
+@@ -237,6 +237,8 @@ void uc_vm_init(uc_vm_t *vm, uc_parse_config_t *config)
+ 
+ 	vm->open_upvals = NULL;
+ 
++	vm->sources = lh_kchar_table_new(16, NULL);
++
+ 	vm->values.prev = &vm->values;
+ 	vm->values.next = &vm->values;
+ 
+@@ -283,5 +285,22 @@ void uc_vm_free(uc_vm_t *vm)
+ 
+ 	ucv_freeall(vm);
+ 
++	/* Release source cache entries after freeall so that all program refs
++	 * to sources are already gone and the cache refs are the last ones. */
++	if (vm->sources) {
++		struct lh_entry *entry, *next;
++
++		entry = vm->sources->head;
++
++		while (entry) {
++			next = entry->next;
++			ucv_put((uc_value_t *)lh_entry_v(entry));
++			free((char *)lh_entry_k(entry));
++			entry = next;
++		}
++
++		lh_table_free(vm->sources);
++	}
++
+ 	for (i = 0; i < vm->restypes.count; i++)
+ 		free(vm->restypes.entries[i]);
