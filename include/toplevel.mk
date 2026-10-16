@@ -270,8 +270,10 @@ CONFIG_CHECK_FILES:=.config Config.in config target toolchain package feeds \
 %::
 	@+$(PREP_MK) $(NO_TRACE_MAKE) -r -s prereq
 	@( \
-		[ -f $(CONFIG_CHECK_STAMP) ] && [ -z "$$(find $(CONFIG_CHECK_FILES) -newer $(CONFIG_CHECK_STAMP) \
-			\( -name .config -o -name conf -o -name '*.in' -o -name 'Config.*' \) -print -quit 2>/dev/null)" ] && exit 0; \
+		[ -f $(CONFIG_CHECK_STAMP) ] && \
+		config_changed="$$(find -L $(CONFIG_CHECK_FILES) -newer $(CONFIG_CHECK_STAMP) \
+			\( -name .config -o -name conf -o -name '*.in' -o -name 'Config.*' \) -print -quit 2>/dev/null)" && \
+		[ -z "$$config_changed" ] && exit 0; \
 		trap 'rm -f $(CONFIG_CHECK_STAMP).new' EXIT; \
 		rm -f $(CONFIG_CHECK_STAMP) && \
 		touch $(CONFIG_CHECK_STAMP).new && \
