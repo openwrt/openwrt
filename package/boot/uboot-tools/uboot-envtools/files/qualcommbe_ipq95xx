@@ -15,6 +15,13 @@ askey,sbe1v1k)
 linksys,ln6001)
 	ubootenv_add_mmc "u_env" "" "0x0" "0x40000" "0x40000"
 	;;
+jiorouter,ax6000-jidu6j11-6111|\
+jiorouter,ax6000-jidu6j11-6411|\
+jiorouter,ax6000-jidu6j11-6611|\
+jiorouter,ax6000-jidu6j11-6811|\
+jiorouter,ax6000-jidu6j11-6911)
+	ubootenv_add_mtd "0:APPSBLENV" "0x0" "0x40000" "0x20000"
+	;;
 esac
 
 config_load ubootenv
