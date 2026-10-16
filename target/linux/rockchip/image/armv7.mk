@@ -47,7 +47,7 @@ define Device/herospeed_rv1126-imx415
   DEVICE_PACKAGES := kmod-rtc-pcf8563 kmod-video-core kmod-video-imx415 \
 	kmod-video-rockchip-cif kmod-phy-rockchip-inno-csidphy \
 	kmod-leds-pwm-flash kmod-crypto-hw-rockchip2 kmod-video-hantro \
-	video-support
+	kmod-video-rockchip-isp2 video-support
   IMAGES := sysupgrade.bin factory-RV1126_IMX415.fls
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
   IMAGE/factory-RV1126_IMX415.fls := herospeed-fls
