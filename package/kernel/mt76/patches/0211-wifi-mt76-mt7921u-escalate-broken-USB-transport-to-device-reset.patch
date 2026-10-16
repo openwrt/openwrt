@@ -1,0 +1,118 @@
+From 91f19ba39348a8747f4c5a809fe759023165b958 Mon Sep 17 00:00:00 2001
+From: Sean Wang <sean.wang@mediatek.com>
+Date: Wed, 1 Apr 2026 14:06:32 -0500
+Subject: [PATCH] wifi: mt76: mt7921u: escalate broken USB transport to device
+ reset
+
+Check the USB control path before running the normal WFSYS reset flow.
+
+If USB access is no longer reliable, stop the WFSYS-only reset path,
+mark the device as bus_hung, and queue a USB device reset instead.
+
+Reuse the existing bus_hung state to represent transport-level failure,
+keeping the semantics consistent with the SDIO path.
+
+Also initialize bus_hung explicitly during probe for consistency.
+
+Reported-by: Bryam Vargas <bryamestebanvargas@gmail.com>
+Closes: https://lore.kernel.org/r/CANAPQziOh3sB7B8G+U3AZsFfeFN1uAg4munhwA_feZi56D7W+Q@mail.gmail.com
+Signed-off-by: Sean Wang <sean.wang@mediatek.com>
+Link: https://patch.msgid.link/20260401190632.147042-2-sean.wang@kernel.org
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+ mt7921/mac.c |  4 +++-
+ mt7921/usb.c |  5 +++++
+ mt792x.h     |  1 +
+ mt792x_usb.c | 26 ++++++++++++++++++++++++++
+ 4 files changed, 35 insertions(+), 1 deletion(-)
+
+diff --git a/mt7921/mac.c b/mt7921/mac.c
+index 42b23de9..80250bef 100644
+--- a/mt7921/mac.c
++++ b/mt7921/mac.c
+@@ -683,7 +683,9 @@ void mt7921_mac_reset_work(struct work_struct *work)
+ 		if (!ret)
+ 			break;
+ 	}
+-	if (mt76_is_sdio(&dev->mt76) && atomic_read(&dev->mt76.bus_hung))
++
++	if ((mt76_is_sdio(&dev->mt76) || mt76_is_usb(&dev->mt76)) &&
++	    atomic_read(&dev->mt76.bus_hung))
+ 		return;
+ 
+ 	if (i == 10)
+diff --git a/mt7921/usb.c b/mt7921/usb.c
+index 6be28f41..8c0f0e4e 100644
+--- a/mt7921/usb.c
++++ b/mt7921/usb.c
+@@ -88,6 +88,10 @@ static int mt7921u_mac_reset(struct mt792x_dev *dev)
+ {
+ 	int err;
+ 
++	mt792xu_reset_on_bus_error(dev);
++	if (atomic_read(&dev->mt76.bus_hung))
++		return 0;
++
+ 	mt76_txq_schedule_all(&dev->mphy);
+ 	mt76_worker_disable(&dev->mt76.tx_worker);
+ 
+@@ -196,6 +200,7 @@ static int mt7921u_probe(struct usb_interface *usb_intf,
+ 	dev = container_of(mdev, struct mt792x_dev, mt76);
+ 	dev->fw_features = features;
+ 	dev->hif_ops = &hif_ops;
++	atomic_set(&dev->mt76.bus_hung, false);
+ 	mt792xu_reset_work_init(dev);
+ 
+ 	udev = usb_get_dev(udev);
+diff --git a/mt792x.h b/mt792x.h
+index 5f060745..74222c50 100644
+--- a/mt792x.h
++++ b/mt792x.h
+@@ -494,6 +494,7 @@ int mt792xu_init_reset(struct mt792x_dev *dev);
+ void mt792xu_reset_work_init(struct mt792x_dev *dev);
+ void mt792xu_reset_work_cleanup(struct mt792x_dev *dev);
+ int mt792xu_check_bus(struct mt792x_dev *dev);
++int mt792xu_reset_on_bus_error(struct mt792x_dev *dev);
+ u32 mt792xu_rr(struct mt76_dev *dev, u32 addr);
+ void mt792xu_wr(struct mt76_dev *dev, u32 addr, u32 val);
+ u32 mt792xu_rmw(struct mt76_dev *dev, u32 addr, u32 mask, u32 val);
+diff --git a/mt792x_usb.c b/mt792x_usb.c
+index 2558d87b..6b10d035 100644
+--- a/mt792x_usb.c
++++ b/mt792x_usb.c
+@@ -60,6 +60,32 @@ int mt792xu_check_bus(struct mt792x_dev *dev)
+ }
+ EXPORT_SYMBOL_GPL(mt792xu_check_bus);
+ 
++int mt792xu_reset_on_bus_error(struct mt792x_dev *dev)
++{
++	int err = 0;
++
++	if (!atomic_read(&dev->mt76.bus_hung))
++		err = mt792xu_check_bus(dev);
++
++	if (err) {
++		atomic_set(&dev->mt76.bus_hung, true);
++
++		if (!atomic_xchg(&dev->usb_reset_pending, 1)) {
++			dev_warn(dev->mt76.dev,
++				 "USB transport access failed (%d), queueing device reset\n",
++				 err);
++
++			schedule_work(&dev->usb_reset_work);
++		}
++
++		return err;
++	}
++
++	atomic_set(&dev->mt76.bus_hung, false);
++	return 0;
++}
++EXPORT_SYMBOL_GPL(mt792xu_reset_on_bus_error);
++
+ u32 mt792xu_rr(struct mt76_dev *dev, u32 addr)
+ {
+ 	u32 ret;
+-- 
+2.54.0 (Apple Git-157)
+
