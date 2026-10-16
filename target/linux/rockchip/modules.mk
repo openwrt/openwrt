@@ -282,3 +282,19 @@ define KernelPackage/video-rockchip-isp2/description
 endef
 
 $(eval $(call KernelPackage,video-rockchip-isp2))
+
+define KernelPackage/video-rockchip-rkvenc
+  TITLE:=Rockchip RKVENC H.264/HEVC video encoder
+  DEPENDS:=@TARGET_rockchip +kmod-video-mem2mem +kmod-video-dma-contig
+  KCONFIG:=CONFIG_VIDEO_ROCKCHIP_RKVENC
+  FILES:=$(LINUX_DIR)/drivers/media/platform/rockchip/rkvenc/rockchip-rkvenc.ko
+  AUTOLOAD:=$(call AutoProbe,rockchip-rkvenc)
+  $(call AddDepends/video)
+endef
+
+define KernelPackage/video-rockchip-rkvenc/description
+  Stateful V4L2 memory-to-memory encoder driver for the RKVENC v1 video
+  encoder of the Rockchip RV1126 and RK3568 SoCs (H.264 and HEVC).
+endef
+
+$(eval $(call KernelPackage,video-rockchip-rkvenc))

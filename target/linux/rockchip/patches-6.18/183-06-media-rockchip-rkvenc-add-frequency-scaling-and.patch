@@ -1,0 +1,601 @@
+From 199c03b142bb66890d48de1685b42d54290a5394 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Fri, 16 Oct 2026 23:57:17 +0100
+Subject: [PATCH] media: rockchip: rkvenc: Add frequency scaling and cooling
+
+The encoder core runs at the fixed 396 MHz of the clock tree setup,
+which is a little short of a 4K stream at 30 frames per second.
+
+Register the core clock with devfreq. The simple_ondemand governor
+runs whenever a job completes and takes the busy time of the jobs as
+load, so no polling interval is involved. The clock changes only
+while no job is on the hardware: a job start waits for a clock change
+in progress and a clock change waits for the running job. A venc-supply
+in the node is scaled with the operating points.
+
+Register a cooling device on top. Its first states lower the highest
+allowed operating point through a PM QoS frequency limit, one point
+per state. The remaining states stretch the period between jobs so
+that the busy time stays at 75, 50 and 25 percent of it, which limits
+the frame rate once the lowest point is reached. The cooling device,
+the QoS request and the devfreq device are removed from remove(),
+before the driver data goes away, since their callbacks use it.
+
+Assisted-by: LLM
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ .../media/platform/rockchip/rkvenc/Kconfig    |   3 +
+ .../media/platform/rockchip/rkvenc/Makefile   |   1 +
+ .../platform/rockchip/rkvenc/rkvenc-dvfs.c    | 352 ++++++++++++++++++
+ .../platform/rockchip/rkvenc/rkvenc-v4l2.c    |  19 +-
+ .../media/platform/rockchip/rkvenc/rkvenc.c   |  10 +-
+ .../media/platform/rockchip/rkvenc/rkvenc.h   |  45 +++
+ 6 files changed, 427 insertions(+), 3 deletions(-)
+ create mode 100644 drivers/media/platform/rockchip/rkvenc/rkvenc-dvfs.c
+
+--- a/drivers/media/platform/rockchip/rkvenc/Kconfig
++++ b/drivers/media/platform/rockchip/rkvenc/Kconfig
+@@ -3,7 +3,10 @@ config VIDEO_ROCKCHIP_RKVENC
+ 	tristate "Rockchip RKVENC (vepu540/vepu541) H.264/HEVC encoder"
+ 	depends on ARCH_ROCKCHIP || COMPILE_TEST
+ 	depends on VIDEO_DEV
++	select DEVFREQ_GOV_SIMPLE_ONDEMAND
+ 	select MEDIA_CONTROLLER
++	select PM_DEVFREQ
++	select PM_OPP
+ 	select VIDEOBUF2_DMA_CONTIG
+ 	select V4L2_MEM2MEM_DEV
+ 	help
+--- a/drivers/media/platform/rockchip/rkvenc/Makefile
++++ b/drivers/media/platform/rockchip/rkvenc/Makefile
+@@ -1,5 +1,6 @@
+ # SPDX-License-Identifier: GPL-2.0-only
+ rockchip-rkvenc-y += rkvenc.o \
++		     rkvenc-dvfs.o \
+ 		     rkvenc-v4l2.o \
+ 		     rkvenc-gop.o \
+ 		     rkvenc-ref.o \
+--- /dev/null
++++ b/drivers/media/platform/rockchip/rkvenc/rkvenc-dvfs.c
+@@ -0,0 +1,352 @@
++// SPDX-License-Identifier: GPL-2.0-only
++/*
++ * Rockchip RKVENC v1 frequency scaling and thermal cooling.
++ *
++ * The core clock follows the load through devfreq. The governor is
++ * evaluated whenever a job completes, so there is no polling interval.
++ * The clock only changes while no job is running.
++ *
++ * The cooling device lowers the highest allowed frequency state by state.
++ * Once the lowest operating point is reached, further states stretch the
++ * period between jobs so that the busy time stays within a share of it.
++ */
++
++#include <linux/devfreq.h>
++#include <linux/ktime.h>
++#include <linux/math64.h>
++#include <linux/pm_opp.h>
++#include <linux/pm_qos.h>
++#include <linux/thermal.h>
++#include <linux/units.h>
++
++#include "rkvenc.h"
++
++#define RKVENC_THROTTLE_STEPS 3
++#define RKVENC_THROTTLE_STEP_PCT 25
++
++static unsigned long rkvenc_dvfs_us(ktime_t t)
++{
++	return min_t(u64, ktime_to_us(t), ULONG_MAX);
++}
++
++static int rkvenc_dvfs_target(struct device *dev, unsigned long *freq,
++			      u32 flags)
++{
++	struct rkvenc_dev *rkvenc = dev_get_drvdata(dev);
++	struct rkvenc_dvfs *dvfs = &rkvenc->dvfs;
++	struct dev_pm_opp *opp;
++	int ret;
++
++	opp = devfreq_recommended_opp(dev, freq, flags);
++	if (IS_ERR(opp))
++		return PTR_ERR(opp);
++
++	*freq = dev_pm_opp_get_freq(opp);
++	dev_pm_opp_put(opp);
++
++	mutex_lock(&dvfs->freq_lock);
++	wait_event(dvfs->idle_wq, !READ_ONCE(dvfs->busy));
++	ret = dev_pm_opp_set_rate(dev, *freq);
++	mutex_unlock(&dvfs->freq_lock);
++
++	return ret;
++}
++
++static int rkvenc_dvfs_cur_freq(struct device *dev, unsigned long *freq)
++{
++	struct rkvenc_dev *rkvenc = dev_get_drvdata(dev);
++
++	*freq = clk_get_rate(rkvenc->clocks[RKVENC_CLK_CORE].clk);
++	return 0;
++}
++
++static int rkvenc_dvfs_status(struct device *dev,
++			      struct devfreq_dev_status *stat)
++{
++	struct rkvenc_dev *rkvenc = dev_get_drvdata(dev);
++	struct rkvenc_dvfs *dvfs = &rkvenc->dvfs;
++	unsigned long flags;
++	ktime_t now, busy;
++
++	spin_lock_irqsave(&dvfs->lock, flags);
++	now = ktime_get();
++	busy = dvfs->busy_total;
++	if (dvfs->busy) {
++		busy = ktime_add(busy, ktime_sub(now, dvfs->busy_since));
++		dvfs->busy_since = now;
++	}
++	stat->total_time = rkvenc_dvfs_us(ktime_sub(now, dvfs->last_eval));
++	stat->busy_time = min(rkvenc_dvfs_us(busy), stat->total_time);
++	dvfs->busy_total = 0;
++	dvfs->last_eval = now;
++	spin_unlock_irqrestore(&dvfs->lock, flags);
++
++	rkvenc_dvfs_cur_freq(dev, &stat->current_frequency);
++	return 0;
++}
++
++void rkvenc_dvfs_job_begin(struct rkvenc_dev *rkvenc)
++{
++	struct rkvenc_dvfs *dvfs = &rkvenc->dvfs;
++	unsigned long flags;
++
++	mutex_lock(&dvfs->freq_lock);
++	spin_lock_irqsave(&dvfs->lock, flags);
++	dvfs->busy = true;
++	dvfs->job_start = ktime_get();
++	dvfs->busy_since = dvfs->job_start;
++	spin_unlock_irqrestore(&dvfs->lock, flags);
++	mutex_unlock(&dvfs->freq_lock);
++}
++
++bool rkvenc_dvfs_start_allowed(struct rkvenc_dev *rkvenc)
++{
++	struct rkvenc_dvfs *dvfs = &rkvenc->dvfs;
++	unsigned long flags, delay;
++	s64 delay_us;
++	bool allowed;
++
++	spin_lock_irqsave(&dvfs->lock, flags);
++	delay_us = ktime_to_us(ktime_sub(dvfs->next_start, ktime_get()));
++	allowed = dvfs->duty_pct >= 100 || delay_us <= 0;
++	delay = usecs_to_jiffies(clamp_t(s64, delay_us, 0, UINT_MAX));
++	if (!allowed)
++		queue_delayed_work(system_wq, &dvfs->throttle_work, delay);
++	spin_unlock_irqrestore(&dvfs->lock, flags);
++
++	return allowed;
++}
++
++void rkvenc_dvfs_job_end(struct rkvenc_dev *rkvenc)
++{
++	struct rkvenc_dvfs *dvfs = &rkvenc->dvfs;
++	struct devfreq *devfreq = dvfs->devfreq;
++	unsigned long flags;
++	ktime_t now;
++
++	spin_lock_irqsave(&dvfs->lock, flags);
++	now = ktime_get();
++	dvfs->busy_total =
++		ktime_add(dvfs->busy_total, ktime_sub(now, dvfs->busy_since));
++	dvfs->next_start = ktime_add_ns(
++		dvfs->job_start,
++		div_u64(ktime_to_ns(ktime_sub(now, dvfs->job_start)) * 100,
++			dvfs->duty_pct));
++	dvfs->busy = false;
++	spin_unlock_irqrestore(&dvfs->lock, flags);
++	wake_up(&dvfs->idle_wq);
++
++	if (!devfreq)
++		return;
++
++	mutex_lock(&devfreq->lock);
++	update_devfreq(devfreq);
++	mutex_unlock(&devfreq->lock);
++}
++
++static int rkvenc_dvfs_freqs_get(struct rkvenc_dev *rkvenc)
++{
++	struct rkvenc_dvfs *dvfs = &rkvenc->dvfs;
++	struct device *dev = rkvenc->dev;
++	struct dev_pm_opp *opp;
++	unsigned long freq = 0;
++	int num, i;
++
++	num = dev_pm_opp_get_opp_count(dev);
++	if (num <= 0)
++		return num ? num : -ENODEV;
++
++	dvfs->freqs = devm_kcalloc(dev, num, sizeof(*dvfs->freqs), GFP_KERNEL);
++	if (!dvfs->freqs)
++		return -ENOMEM;
++
++	for (i = 0; i < num; i++, freq++) {
++		opp = dev_pm_opp_find_freq_ceil(dev, &freq);
++		if (IS_ERR(opp))
++			return PTR_ERR(opp);
++		dvfs->freqs[i] = freq;
++		dev_pm_opp_put(opp);
++	}
++
++	dvfs->num_freqs = num;
++	return 0;
++}
++
++static int rkvenc_cdev_max_state(struct thermal_cooling_device *cdev,
++				 unsigned long *state)
++{
++	struct rkvenc_dvfs *dvfs = cdev->devdata;
++
++	*state = dvfs->num_freqs - 1 + RKVENC_THROTTLE_STEPS;
++	return 0;
++}
++
++static int rkvenc_cdev_cur_state(struct thermal_cooling_device *cdev,
++				 unsigned long *state)
++{
++	struct rkvenc_dvfs *dvfs = cdev->devdata;
++
++	*state = dvfs->cooling_state;
++	return 0;
++}
++
++static int rkvenc_cdev_set_state(struct thermal_cooling_device *cdev,
++				 unsigned long state)
++{
++	struct rkvenc_dvfs *dvfs = cdev->devdata;
++	unsigned long idx = min_t(unsigned long, state, dvfs->num_freqs - 1);
++	unsigned long freq = dvfs->freqs[dvfs->num_freqs - 1 - idx];
++	unsigned long flags;
++	int ret;
++
++	ret = dev_pm_qos_update_request(&dvfs->max_freq_req, freq / HZ_PER_KHZ);
++	if (ret < 0)
++		return ret;
++
++	spin_lock_irqsave(&dvfs->lock, flags);
++	dvfs->duty_pct = 100 - RKVENC_THROTTLE_STEP_PCT * (state - idx);
++	spin_unlock_irqrestore(&dvfs->lock, flags);
++	dvfs->cooling_state = state;
++
++	return 0;
++}
++
++static const struct thermal_cooling_device_ops rkvenc_cdev_ops = {
++	.get_max_state = rkvenc_cdev_max_state,
++	.get_cur_state = rkvenc_cdev_cur_state,
++	.set_cur_state = rkvenc_cdev_set_state,
++};
++
++static void rkvenc_dvfs_throttle_work(struct work_struct *work)
++{
++	struct rkvenc_dvfs *dvfs = container_of(
++		to_delayed_work(work), struct rkvenc_dvfs, throttle_work);
++	struct rkvenc_ctx *ctx;
++
++	mutex_lock(&dvfs->ctx_lock);
++	list_for_each_entry(ctx, &dvfs->ctx_list, dvfs_node)
++		v4l2_m2m_try_schedule(ctx->m2m_ctx);
++	mutex_unlock(&dvfs->ctx_lock);
++}
++
++void rkvenc_dvfs_ctx_add(struct rkvenc_dev *rkvenc, struct rkvenc_ctx *ctx)
++{
++	struct rkvenc_dvfs *dvfs = &rkvenc->dvfs;
++
++	mutex_lock(&dvfs->ctx_lock);
++	list_add_tail(&ctx->dvfs_node, &dvfs->ctx_list);
++	mutex_unlock(&dvfs->ctx_lock);
++}
++
++void rkvenc_dvfs_ctx_del(struct rkvenc_dev *rkvenc, struct rkvenc_ctx *ctx)
++{
++	struct rkvenc_dvfs *dvfs = &rkvenc->dvfs;
++
++	mutex_lock(&dvfs->ctx_lock);
++	list_del(&ctx->dvfs_node);
++	mutex_unlock(&dvfs->ctx_lock);
++}
++
++void rkvenc_dvfs_exit(struct rkvenc_dev *rkvenc)
++{
++	struct rkvenc_dvfs *dvfs = &rkvenc->dvfs;
++
++	thermal_cooling_device_unregister(dvfs->cdev);
++	dvfs->cdev = NULL;
++
++	if (dvfs->qos_added)
++		dev_pm_qos_remove_request(&dvfs->max_freq_req);
++	dvfs->qos_added = false;
++
++	if (dvfs->devfreq)
++		devfreq_remove_device(dvfs->devfreq);
++	dvfs->devfreq = NULL;
++
++	cancel_delayed_work_sync(&dvfs->throttle_work);
++}
++
++static int rkvenc_dvfs_cooling_init(struct rkvenc_dev *rkvenc)
++{
++	struct rkvenc_dvfs *dvfs = &rkvenc->dvfs;
++	struct device *dev = rkvenc->dev;
++	int ret;
++
++	if (!of_property_present(dev->of_node, "#cooling-cells"))
++		return 0;
++
++	ret = dev_pm_qos_add_request(dev, &dvfs->max_freq_req,
++				     DEV_PM_QOS_MAX_FREQUENCY,
++				     PM_QOS_MAX_FREQUENCY_DEFAULT_VALUE);
++	if (ret < 0)
++		return ret;
++	dvfs->qos_added = true;
++
++	dvfs->cdev = thermal_of_cooling_device_register(dev->of_node, "rkvenc",
++							dvfs, &rkvenc_cdev_ops);
++	if (IS_ERR(dvfs->cdev)) {
++		ret = PTR_ERR(dvfs->cdev);
++		dvfs->cdev = NULL;
++		return dev_err_probe(dev, ret,
++				     "could not add the cooling device\n");
++	}
++
++	return 0;
++}
++
++int rkvenc_dvfs_init(struct rkvenc_dev *rkvenc)
++{
++	static const char *const clk_names[] = { "core", NULL };
++	static const char *const supply_names[] = { "venc", NULL };
++	struct dev_pm_opp_config opp_config = { .clk_names = clk_names };
++	struct rkvenc_dvfs *dvfs = &rkvenc->dvfs;
++	struct device *dev = rkvenc->dev;
++	struct devfreq *devfreq;
++	int ret;
++
++	spin_lock_init(&dvfs->lock);
++	mutex_init(&dvfs->freq_lock);
++	mutex_init(&dvfs->ctx_lock);
++	INIT_LIST_HEAD(&dvfs->ctx_list);
++	INIT_DELAYED_WORK(&dvfs->throttle_work, rkvenc_dvfs_throttle_work);
++	init_waitqueue_head(&dvfs->idle_wq);
++	dvfs->last_eval = ktime_get();
++	dvfs->duty_pct = 100;
++
++	if (!of_property_present(dev->of_node, "operating-points-v2"))
++		return 0;
++
++	if (of_property_present(dev->of_node, "venc-supply"))
++		opp_config.regulator_names = supply_names;
++
++	ret = devm_pm_opp_set_config(dev, &opp_config);
++	if (ret)
++		return ret;
++
++	ret = devm_pm_opp_of_add_table(dev);
++	if (ret)
++		return ret;
++
++	ret = rkvenc_dvfs_freqs_get(rkvenc);
++	if (ret)
++		return ret;
++
++	dvfs->profile.target = rkvenc_dvfs_target;
++	dvfs->profile.get_dev_status = rkvenc_dvfs_status;
++	dvfs->profile.get_cur_freq = rkvenc_dvfs_cur_freq;
++	dvfs->profile.freq_table = dvfs->freqs;
++	dvfs->profile.max_state = dvfs->num_freqs;
++	rkvenc_dvfs_cur_freq(dev, &dvfs->profile.initial_freq);
++
++	devfreq = devfreq_add_device(dev, &dvfs->profile,
++				     DEVFREQ_GOV_SIMPLE_ONDEMAND, NULL);
++	if (IS_ERR(devfreq))
++		return dev_err_probe(dev, PTR_ERR(devfreq),
++				     "could not add the devfreq device\n");
++
++	dvfs->devfreq = devfreq;
++	ret = rkvenc_dvfs_cooling_init(rkvenc);
++	if (ret)
++		rkvenc_dvfs_exit(rkvenc);
++
++	return ret;
++}
+--- a/drivers/media/platform/rockchip/rkvenc/rkvenc-v4l2.c
++++ b/drivers/media/platform/rockchip/rkvenc/rkvenc-v4l2.c
+@@ -517,17 +517,22 @@ static void rkvenc_device_run(void *priv
+ 	else
+ 		rkvenc_hevc_build_pic(ctx, &f.hevc, idr);
+ 
++	rkvenc_dvfs_job_begin(dev);
++
+ 	ret = pm_runtime_resume_and_get(dev->dev);
+ 	if (ret)
+-		goto finish_error;
++		goto finish_error_idle;
+ 
+ 	ret = rkvenc_hw_run(dev, &f);
+ 	if (ret) {
+ 		pm_runtime_put(dev->dev);
+-		goto finish_error;
++		goto finish_error_idle;
+ 	}
+ 	return;
+ 
++finish_error_idle:
++	rkvenc_dvfs_job_end(dev);
++
+ finish_error:
+ 	dev->job_running = false;
+ 	dev->job_ctx = NULL;
+@@ -538,8 +543,16 @@ finish_error:
+ 		v4l2_m2m_job_finish(dev->m2m_dev, ctx->m2m_ctx);
+ }
+ 
++static int rkvenc_job_ready(void *priv)
++{
++	struct rkvenc_ctx *ctx = priv;
++
++	return rkvenc_dvfs_start_allowed(ctx->dev);
++}
++
+ const struct v4l2_m2m_ops rkvenc_m2m_ops = {
+ 	.device_run = rkvenc_device_run,
++	.job_ready = rkvenc_job_ready,
+ };
+ 
+ /* ----------------------------------------------------------------------- */
+@@ -1024,6 +1037,7 @@ static int rkvenc_open(struct file *filp
+ 	if (ret)
+ 		goto err_m2m;
+ 
++	rkvenc_dvfs_ctx_add(dev, ctx);
+ 	v4l2_fh_add(&ctx->fh, filp);
+ 	return 0;
+ 
+@@ -1039,6 +1053,7 @@ static int rkvenc_release(struct file *f
+ {
+ 	struct rkvenc_ctx *ctx = fh_to_rkvenc_ctx(filp->private_data);
+ 
++	rkvenc_dvfs_ctx_del(ctx->dev, ctx);
+ 	v4l2_m2m_ctx_release(ctx->m2m_ctx);
+ 	v4l2_ctrl_handler_free(&ctx->ctrl_hdl);
+ 	v4l2_fh_del(&ctx->fh, filp);
+--- a/drivers/media/platform/rockchip/rkvenc/rkvenc.c
++++ b/drivers/media/platform/rockchip/rkvenc/rkvenc.c
+@@ -240,6 +240,7 @@ static void rkvenc_finish_job(struct rkv
+ 
+ 	dev->job_ctx = NULL;
+ 	pm_runtime_put(dev->dev);
++	rkvenc_dvfs_job_end(dev);
+ 
+ 	v4l2_m2m_buf_done_and_job_finish(dev->m2m_dev, ctx->m2m_ctx, state);
+ }
+@@ -466,12 +467,18 @@ static int rkvenc_probe(struct platform_
+ 		goto err_unreg_v4l2;
+ 	}
+ 
+-	ret = rkvenc_v4l2_init(rkvenc);
++	ret = rkvenc_dvfs_init(rkvenc);
+ 	if (ret)
+ 		goto err_release_m2m;
+ 
++	ret = rkvenc_v4l2_init(rkvenc);
++	if (ret)
++		goto err_dvfs;
++
+ 	return 0;
+ 
++err_dvfs:
++	rkvenc_dvfs_exit(rkvenc);
+ err_release_m2m:
+ 	v4l2_m2m_release(rkvenc->m2m_dev);
+ err_unreg_v4l2:
+@@ -486,6 +493,7 @@ static void rkvenc_remove(struct platfor
+ 	struct rkvenc_dev *rkvenc = platform_get_drvdata(pdev);
+ 
+ 	cancel_delayed_work_sync(&rkvenc->watchdog);
++	rkvenc_dvfs_exit(rkvenc);
+ 	rkvenc_v4l2_cleanup(rkvenc);
+ 	v4l2_m2m_release(rkvenc->m2m_dev);
+ 	v4l2_device_unregister(&rkvenc->v4l2_dev);
+--- a/drivers/media/platform/rockchip/rkvenc/rkvenc.h
++++ b/drivers/media/platform/rockchip/rkvenc/rkvenc.h
+@@ -15,8 +15,14 @@
+ #include <linux/clk.h>
+ #include <linux/completion.h>
+ #include <linux/delay.h>
++#include <linux/devfreq.h>
++#include <linux/ktime.h>
++#include <linux/list.h>
+ #include <linux/mutex.h>
++#include <linux/pm_qos.h>
+ #include <linux/spinlock.h>
++#include <linux/thermal.h>
++#include <linux/wait.h>
+ #include <linux/workqueue.h>
+ #include <linux/reset.h>
+ 
+@@ -37,6 +43,7 @@
+ /* Clock and reset names, in bulk-programming order (design/02 3). */
+ #define RKVENC_NUM_CLKS		3
+ #define RKVENC_NUM_RESETS	3
++#define RKVENC_CLK_CORE 2
+ 
+ /* Consecutive-job failure policy (design/04 C10: "needs approval").
+  * A second consecutive failed job of one context ends the stream. Until
+@@ -47,6 +54,33 @@
+ 
+ struct rkvenc_dev;
+ 
++struct rkvenc_dvfs {
++	struct devfreq *devfreq;
++	struct devfreq_dev_profile profile;
++	unsigned long *freqs;
++	unsigned int num_freqs;
++
++	struct mutex freq_lock;
++	wait_queue_head_t idle_wq;
++
++	struct thermal_cooling_device *cdev;
++	struct dev_pm_qos_request max_freq_req;
++	bool qos_added;
++	unsigned int cooling_state;
++	struct delayed_work throttle_work;
++	struct mutex ctx_lock; /* protects ctx_list */
++	struct list_head ctx_list;
++
++	spinlock_t lock; /* protects the fields below */
++	bool busy;
++	ktime_t job_start;
++	ktime_t busy_since;
++	ktime_t busy_total;
++	ktime_t last_eval;
++	ktime_t next_start;
++	unsigned int duty_pct;
++};
++
+ /**
+  * struct rkvenc_variant - per-SoC integration differences.
+  * @vepu540: true for the RK3566/RK3568 "vepu540" (longer HEVC L2, tiles,
+@@ -78,6 +112,7 @@ struct rkvenc_dev {
+ 	const struct rkvenc_variant *variant;
+ 
+ 	struct rkvenc_img img;
++	struct rkvenc_dvfs dvfs;
+ 
+ 	struct mutex vdev_lock;		/* serialises the video node ioctls */
+ 	spinlock_t irq_lock;
+@@ -144,6 +179,7 @@ struct rkvenc_ctx {
+ 	struct v4l2_m2m_ctx *m2m_ctx;
+ 	struct v4l2_ctrl_handler ctrl_hdl;
+ 	struct mutex vlock;
++	struct list_head dvfs_node;
+ 
+ 	u32 src_fourcc;
+ 	u32 coded_fourcc;
+@@ -215,6 +251,15 @@ void rkvenc_hw_recover(struct rkvenc_dev
+ int rkvenc_v4l2_init(struct rkvenc_dev *dev);
+ void rkvenc_v4l2_cleanup(struct rkvenc_dev *dev);
+ 
++/* rkvenc-dvfs.c */
++int rkvenc_dvfs_init(struct rkvenc_dev *dev);
++void rkvenc_dvfs_exit(struct rkvenc_dev *dev);
++void rkvenc_dvfs_job_begin(struct rkvenc_dev *dev);
++void rkvenc_dvfs_job_end(struct rkvenc_dev *dev);
++bool rkvenc_dvfs_start_allowed(struct rkvenc_dev *dev);
++void rkvenc_dvfs_ctx_add(struct rkvenc_dev *dev, struct rkvenc_ctx *ctx);
++void rkvenc_dvfs_ctx_del(struct rkvenc_dev *dev, struct rkvenc_ctx *ctx);
++
+ /* rkvenc-v4l2.c */
+ extern const struct v4l2_m2m_ops rkvenc_m2m_ops;
+ 

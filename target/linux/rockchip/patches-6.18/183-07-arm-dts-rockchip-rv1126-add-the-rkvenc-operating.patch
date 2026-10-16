@@ -1,0 +1,60 @@
+From bb8ac0eccd38910345f8a60201906a40bed4c1b5 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Fri, 16 Oct 2026 21:16:15 +0100
+Subject: [PATCH] ARM: dts: rockchip: rv1126: Add the RKVENC operating points
+
+Add the four core clock rates of the encoder, 297, 396, 500 and 594
+MHz, which the clock tree provides as GPLL/4, GPLL/3, CPLL and GPLL/2,
+with the voltages of 725, 725, 750 and 825 mV that the vendor device
+tree gives them. The voltages apply on boards that describe the supply
+of the encoder as venc-supply. Make the encoder a cooling device so
+that thermal zones can use it.
+
+Assisted-by: LLM
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ arch/arm/boot/dts/rockchip/rv1126.dtsi | 26 ++++++++++++++++++++++++++
+ 1 file changed, 26 insertions(+)
+
+--- a/arch/arm/boot/dts/rockchip/rv1126.dtsi
++++ b/arch/arm/boot/dts/rockchip/rv1126.dtsi
+@@ -236,6 +236,30 @@
+ 		#clock-cells = <0>;
+ 	};
+ 
++	venc_opp_table: opp-table-venc {
++		compatible = "operating-points-v2";
++
++		opp-297000000 {
++			opp-hz = /bits/ 64 <297000000>;
++			opp-microvolt = <725000 725000 1000000>;
++		};
++
++		opp-396000000 {
++			opp-hz = /bits/ 64 <396000000>;
++			opp-microvolt = <725000 725000 1000000>;
++		};
++
++		opp-500000000 {
++			opp-hz = /bits/ 64 <500000000>;
++			opp-microvolt = <750000 750000 1000000>;
++		};
++
++		opp-594000000 {
++			opp-hz = /bits/ 64 <594000000>;
++			opp-microvolt = <825000 825000 1000000>;
++		};
++	};
++
+ 	grf: syscon@fe000000 {
+ 		compatible = "rockchip,rv1126-grf", "syscon", "simple-mfd";
+ 		reg = <0xfe000000 0x20000>;
+@@ -1350,6 +1374,8 @@
+ 		clock-names = "axi", "ahb", "core";
+ 		assigned-clocks = <&cru ACLK_VENC>, <&cru CLK_VENC_CORE>;
+ 		assigned-clock-rates = <297000000>, <396000000>;
++		operating-points-v2 = <&venc_opp_table>;
++		#cooling-cells = <2>;
+ 		resets = <&cru SRST_VENC_A>, <&cru SRST_VENC_H>,
+ 			 <&cru SRST_VENC_CORE>;
+ 		reset-names = "axi", "ahb", "core";
