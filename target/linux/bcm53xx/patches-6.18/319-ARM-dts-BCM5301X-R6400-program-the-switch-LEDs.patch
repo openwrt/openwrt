@@ -1,0 +1,38 @@
+From 58e624ca09ca0161363015a147d0b108a290f870 Mon Sep 17 00:00:00 2001
+From: Erik Conijn <egc112@msn.com>
+Date: Tue, 13 Oct 2026 09:34:46 +0200
+Subject: [PATCH] ARM: dts: BCM5301X: R6400: program the switch LEDs
+
+On the R6400 v1 and v2 the Internet LED is lit by the WAN port LED
+output of the switch, while GPIO 7 (white) and GPIO 6 (amber) select
+the colour. The bootloaders leave the switch LED registers differently
+(v1: LED function 0 = 0x0220, v2: 0x3000, neither maps function 1 to
+the WAN port): on the v1 the gigabit port LEDs show amber, on the v2
+the Internet LED stays dark. Program the values the vendor firmware
+uses: function 0 = 0x3000, function 1 = 0x78 mapped to port 0.
+
+Verified on an R6400 v1 (U12H332T00) and v2 (U12H332T30): white port
+LEDs at 1 Gbps, Internet LED white with WAN link and dark without.
+
+Assisted-by: Claude:claude-opus-5-5
+Signed-off-by: Erik Conijn <egc112@msn.com>
+---
+--- a/arch/arm/boot/dts/broadcom/bcm4708-netgear-r6400-v1.dts
++++ b/arch/arm/boot/dts/broadcom/bcm4708-netgear-r6400-v1.dts
+@@ -143,6 +143,16 @@
+ &srab {
+ 	status = "okay";
+ 
++	/*
++	 * The Internet LED is lit by the WAN port LED output of the switch,
++	 * GPIO 6/7 only select amber or white. Program the switch LEDs as the
++	 * vendor firmware does: function 0 for the port LEDs (white at 1 Gbps),
++	 * function 1 for port 0 (WAN), which feeds the Internet LED.
++	 */
++	brcm,led-func0-ctl = <0x3000>;
++	brcm,led-func1-ctl = <0x78>;
++	brcm,led-func-map = <0x01>;
++
+ 	ports {
+ 		port@0 {
+ 			label = "wan";
