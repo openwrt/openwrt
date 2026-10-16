@@ -152,6 +152,33 @@ linksys_lgs328mpc_v2() {
 	echo 2 > "$path_to_hwmon/pwm1_enable"
 }
 
+zyxel_gs2210_24lp() {
+	# Following settings have been copied from a i2c trace gathered from ZyNOS
+	# running on a Zyxel GS2210-24LP. It sets the upper/lower temperature values
+	# of remote temperature sensor 1 and then hands it off to the ADT chip automatic
+	# fancontrol
+
+	local path_to_hwmon="$(find /sys/bus/i2c/devices/4-002e/hwmon/ -type d -maxdepth 1 -mindepth 1 -name 'hwmon*')"
+
+	[ -n "$path_to_hwmon" ] || return
+
+	# lm85 merges writes with cached register values; a read fills the cache
+	cat "$path_to_hwmon/pwm1_freq" > /dev/null
+
+	echo 54000 > "$path_to_hwmon/temp1_auto_temp_min"      # Tmin; range follows from auto_temp_max
+	echo 64000 > "$path_to_hwmon/temp1_auto_temp_max"
+	echo 50000 > "$path_to_hwmon/temp1_auto_temp_off"      # Tmin - 4 °C hysteresis
+	for fan in 1 2 3; do
+		echo 35 > "$path_to_hwmon/pwm${fan}_freq"
+		echo 0  > "$path_to_hwmon/pwm${fan}_auto_pwm_min"
+		echo 0  > "$path_to_hwmon/pwm${fan}_auto_pwm_minctl"
+		echo 1  > "$path_to_hwmon/pwm${fan}_auto_channels"   # zone 1 = Remote 1 = temp1; this also turns on auto mode
+	done
+ 	# Config 3 as set by ZyNOS: continuous tach, else fans read 0 RPM at 0 % PWM.
+	# lm85 has no sysfs file for it; -f because lm85 holds the device.
+	i2cset -f -y 4 0x2e 0x78 0xf8
+}
+
 boot() {
 	case $(board_name) in
 	plasmacloud,esx28|\
@@ -174,6 +201,9 @@ boot() {
 		;;
 	linksys,lgs328mpc-v2)
 		linksys_lgs328mpc_v2
+		;;
+	zyxel,gs2210-24lp)
+		zyxel_gs2210_24lp
 		;;
 	esac
 }
