@@ -1,0 +1,164 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+/dts-v1/;
+
+#include "ipq5018.dtsi"
+#include "ipq5018-ess.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+
+/ {
+	model = "TP-Link Deco XE75 v3";
+	compatible = "tplink,deco-xe75-v3", "qcom,ipq5018";
+
+	aliases {
+		serial0 = &blsp1_uart1;
+		led-boot = &led_blue;
+		led-failsafe = &led_red;
+		led-running = &led_green;
+		led-upgrade = &led_red;
+	};
+
+	chosen {
+		stdout-path = "serial0:115200n8";
+		bootargs-append = " coherent_pool=2M";
+	};
+
+	keys {
+		compatible = "gpio-keys";
+		pinctrl-0 = <&button_pins>;
+		pinctrl-names = "default";
+
+		button-reset {
+			label = "reset";
+			gpios = <&tlmm 12 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		pinctrl-0 = <&led_pins>;
+		pinctrl-names = "default";
+
+		led_red: led-red {
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_RED>;
+			gpios = <&tlmm 22 GPIO_ACTIVE_LOW>;
+		};
+
+		led_green: led-green {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_POWER;
+			gpios = <&tlmm 38 GPIO_ACTIVE_LOW>;
+			default-state = "on";
+		};
+
+		led_blue: led-blue {
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_BLUE>;
+			gpios = <&tlmm 13 GPIO_ACTIVE_LOW>;
+		};
+	};
+};
+
+&sleep_clk {
+	clock-frequency = <32000>;
+};
+
+&xo_board_clk {
+	clock-div = <4>;
+	clock-mult = <1>;
+};
+
+&blsp1_uart1 {
+	status = "okay";
+};
+
+&prng {
+	status = "okay";
+};
+
+&qfprom {
+	status = "okay";
+};
+
+/* No flash access until an installation and recovery method is supported. */
+&qpic_bam {
+	status = "disabled";
+};
+
+&qpic_nand {
+	status = "disabled";
+};
+
+/*
+ * mdio0 must remain enabled even though gmac0 and the internal GE PHY are
+ * unused. On IPQ5018 its reset path also gates the MDC/MDIO path used by mdio1.
+ */
+&mdio0 {
+	status = "okay";
+};
+
+&uniphy0 {
+	status = "okay";
+
+	assigned-clocks = <&uniphy0 UNIPHY_CLK_REF>;
+	assigned-clock-rates = <UNIPHY_REFCLK_50MHZ>;
+};
+
+&gmac1 {
+	/*
+	 * The RTL8367D has no matching DSA driver yet. Do not reset it:
+	 * RAM-boot Ethernet experiments depend on U-Boot initialization.
+	 * This fixed link describes only the SoC-to-switch connection.
+	 */
+	status = "okay";
+	label = "lan";
+	phy-mode = "2500base-x";
+
+	fixed-link {
+		speed = <2500>;
+		full-duplex;
+	};
+};
+
+&mdio1 {
+	status = "okay";
+	pinctrl-0 = <&mdio1_pins>;
+	pinctrl-names = "default";
+};
+
+&tlmm {
+	button_pins: button-state {
+		pins = "gpio12";
+		function = "gpio";
+		drive-strength = <8>;
+		bias-pull-up;
+	};
+
+	led_pins: led-state {
+		pins = "gpio13", "gpio22", "gpio38";
+		function = "gpio";
+		drive-strength = <2>;
+		bias-disable;
+	};
+
+	mdio1_pins: mdio1-state {
+		mdc-pins {
+			pins = "gpio36";
+			function = "mdc";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+
+		mdio-pins {
+			pins = "gpio37";
+			function = "mdio";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+	};
+};
