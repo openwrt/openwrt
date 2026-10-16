@@ -1,0 +1,59 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Nikolai Semendiaev <agent00791@gmail.com>
+Date: Tue, 6 Oct 2026 01:42:32 +0600
+Subject: [PATCH] wifi: ath12k: make external IRQ control idempotent
+
+Based on Mark Ruvald Pedersen's ath11k IRQ lifecycle fix.
+Perform each hardware IRQ transition only when the corresponding NAPI
+state changes. Keep IRQ masking before NAPI shutdown and NAPI startup
+before IRQ unmasking. Existing PCI enabled-bit guards remain in place.
+
+Link: https://lore.kernel.org/linux-wireless/20260719215817.2468580-3-wabsie@gmail.com/
+Signed-off-by: Nikolai Semendiaev <agent00791@gmail.com>
+---
+--- a/drivers/net/wireless/ath/ath12k/ahb.c
++++ b/drivers/net/wireless/ath/ath12k/ahb.c
+@@ -166,8 +166,8 @@ static void __ath12k_ahb_ext_irq_disable
+ 	for (i = 0; i < ATH12K_EXT_IRQ_GRP_NUM_MAX; i++) {
+ 		struct ath12k_ext_irq_grp *irq_grp = &ab->ext_irq_grp[i];
+ 
+-		ath12k_ahb_ext_grp_disable(irq_grp);
+ 		if (irq_grp->napi_enabled) {
++			ath12k_ahb_ext_grp_disable(irq_grp);
+ 			napi_synchronize(&irq_grp->napi);
+ 			napi_disable(&irq_grp->napi);
+ 			irq_grp->napi_enabled = false;
+@@ -310,8 +310,8 @@ static void ath12k_ahb_ext_irq_enable(st
+ 		if (!irq_grp->napi_enabled) {
+ 			napi_enable(&irq_grp->napi);
+ 			irq_grp->napi_enabled = true;
++			ath12k_ahb_ext_grp_enable(irq_grp);
+ 		}
+-		ath12k_ahb_ext_grp_enable(irq_grp);
+ 	}
+ }
+ 
+--- a/drivers/net/wireless/ath/ath12k/pci.c
++++ b/drivers/net/wireless/ath/ath12k/pci.c
+@@ -454,9 +454,8 @@ static void __ath12k_pci_ext_irq_disable
+ 	for (i = 0; i < ATH12K_EXT_IRQ_GRP_NUM_MAX; i++) {
+ 		struct ath12k_ext_irq_grp *irq_grp = &ab->ext_irq_grp[i];
+ 
+-		ath12k_pci_ext_grp_disable(irq_grp);
+-
+ 		if (irq_grp->napi_enabled) {
++			ath12k_pci_ext_grp_disable(irq_grp);
+ 			napi_synchronize(&irq_grp->napi);
+ 			napi_disable(&irq_grp->napi);
+ 			irq_grp->napi_enabled = false;
+@@ -1091,9 +1090,8 @@ void ath12k_pci_ext_irq_enable(struct at
+ 		if (!irq_grp->napi_enabled) {
+ 			napi_enable(&irq_grp->napi);
+ 			irq_grp->napi_enabled = true;
++			ath12k_pci_ext_grp_enable(irq_grp);
+ 		}
+-
+-		ath12k_pci_ext_grp_enable(irq_grp);
+ 	}
+ 
+ 	set_bit(ATH12K_FLAG_EXT_IRQ_ENABLED, &ab->dev_flags);
