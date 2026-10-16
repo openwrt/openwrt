@@ -210,6 +210,7 @@ const struct rtldsa_config rtldsa_839x_cfg = {
 	.stat_rst = RTL839X_STAT_RST,
 	.stat_port_std_mib = RTL839X_STAT_PORT_STD_MIB,
 	.mib_desc = &otto_stats_839x_mib_desc,
+	.drop_desc = &otto_stats_839x_drop_desc,
 	.stat_counters_lock = otto_stats_counters_lock_register,
 	.stat_counters_unlock = otto_stats_counters_unlock_register,
 	.stat_update_counters_atomically = otto_stats_update_counters_atomically,

@@ -167,6 +167,13 @@ extern const struct otto_stats_mib_desc otto_stats_839x_mib_desc;
 extern const struct otto_stats_mib_desc otto_stats_930x_mib_desc;
 extern const struct otto_stats_mib_desc otto_stats_931x_mib_desc;
 
+struct otto_stats_drop_desc;
+
+extern const struct otto_stats_drop_desc otto_stats_838x_drop_desc;
+extern const struct otto_stats_drop_desc otto_stats_839x_drop_desc;
+extern const struct otto_stats_drop_desc otto_stats_930x_drop_desc;
+extern const struct otto_stats_drop_desc otto_stats_931x_drop_desc;
+
 struct dsa_switch;
 struct ethtool_eth_ctrl_stats;
 struct ethtool_eth_mac_stats;
@@ -179,6 +186,8 @@ struct rtnl_link_stats64;
 
 void otto_stats_init(struct otto_dsa_priv *priv);
 void otto_stats_init_counters(struct otto_dsa_priv *priv);
+void otto_stats_dbgfs_init(struct otto_dsa_priv *priv);
+void otto_stats_dbgfs_remove(struct otto_dsa_priv *priv);
 void otto_stats_838x_init(struct otto_dsa_priv *priv);
 u64 otto_stats_931x_port_table_read(int port, unsigned int mib_size,
 				    unsigned int mib_offset, bool is_pvt);
