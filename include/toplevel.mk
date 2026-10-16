@@ -110,7 +110,12 @@ prepare-tmpinfo: FORCE
 		touch $(call SCAN_STAMP,targetinfo); }
 	for type in package target; do \
 		f=tmp/.$${type}info; t=tmp/.config-$${type}.in; \
-		[ "$$t" -nt "$$f" ] || ./scripts/$${type}-metadata.pl $(_ignore) config "$$f" > "$$t" || { rm -f "$$t"; echo "Failed to build $$t"; false; break; }; \
+		[ "$$t" -nt "$$f" ] || { \
+			./scripts/$${type}-metadata.pl $(_ignore) config "$$f" > "$$t.tmp" && \
+				mv "$$t.tmp" "$$t" || { \
+				rm -f "$$t.tmp"; echo "Failed to build $$t" >&2; exit 1; \
+			}; \
+		}; \
 	done
 	./scripts/feeds feed_config > tmp/.config-feeds.in.new
 	cmp -s tmp/.config-feeds.in.new tmp/.config-feeds.in && rm -f tmp/.config-feeds.in.new || \
