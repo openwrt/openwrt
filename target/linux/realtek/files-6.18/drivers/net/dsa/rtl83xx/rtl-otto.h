@@ -377,12 +377,16 @@ struct rtldsa_config {
 	void (*vlan_tables_read)(u32 vlan, struct otto_vlan_info *info);
 	void (*vlan_set_tagged)(u32 vlan, struct otto_vlan_info *info);
 	void (*vlan_set_untagged)(u32 vlan, u64 portmask);
-	int (*vlan_profile_get)(int index, struct rtldsa_vlan_profile *profile);
+	int (*vlan_profile_get)(struct otto_dsa_priv *priv, int index,
+				struct rtldsa_vlan_profile *profile);
 	void (*vlan_profile_dump)(struct otto_dsa_priv *priv, int index);
-	void (*vlan_profile_setup)(int profile);
-	void (*vlan_port_pvidmode_set)(int port, enum pbvlan_type type, enum pbvlan_mode mode);
-	void (*vlan_port_pvid_set)(int port, enum pbvlan_type type, int pvid);
-	void (*vlan_port_keep_tag_set)(int port, bool keep_outer, bool keep_inner);
+	void (*vlan_profile_setup)(struct otto_dsa_priv *priv, int profile);
+	void (*vlan_port_pvidmode_set)(struct otto_dsa_priv *priv, int port, enum pbvlan_type type,
+				       enum pbvlan_mode mode);
+	void (*vlan_port_pvid_set)(struct otto_dsa_priv *priv, int port, enum pbvlan_type type,
+				   int pvid);
+	void (*vlan_port_keep_tag_set)(struct otto_dsa_priv *priv, int port, bool keep_outer,
+				       bool keep_inner);
 	int (*fast_age)(struct otto_dsa_priv *priv, int port, int vid);
 	void (*set_vlan_igr_filter)(int port, enum igr_filter state);
 	void (*set_vlan_egr_filter)(int port, enum egr_filter state);
@@ -458,7 +462,7 @@ struct rtldsa_config {
 	u32 (*l2_hash_key)(struct otto_dsa_priv *priv, u64 seed);
 	u64 (*read_mcast_pmask)(int idx);
 	void (*write_mcast_pmask)(int idx, u64 portmask);
-	void (*vlan_fwd_on_inner)(int port, bool is_set);
+	void (*vlan_fwd_on_inner)(struct otto_dsa_priv *priv, int port, bool is_set);
 	void (*pie_init)(struct otto_dsa_priv *priv);
 	int (*pie_rule_read)(struct otto_dsa_priv *priv, int idx, struct  pie_rule *pr);
 	int (*pie_rule_write)(struct otto_dsa_priv *priv, int idx, struct pie_rule *pr);

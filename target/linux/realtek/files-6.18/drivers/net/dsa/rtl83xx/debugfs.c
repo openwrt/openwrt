@@ -383,7 +383,7 @@ static int rtldsa_vlan_profiles_show(struct seq_file *m, void *v)
 	seq_printf(m,
 		   "prof-idx: L2 learn | UNKN L2MC FLD PMSK (IDX) | UNKN IPMC FLD PMSK (IDX) | UNKN IPv6MC FLD PMSK (IDX)\n");
 	for (int i = 0; i <= profiles_max; i++) {
-		ret = priv->r->vlan_profile_get(i, &profile);
+		ret = priv->r->vlan_profile_get(priv, i, &profile);
 		if (ret < 0)
 			break;
 

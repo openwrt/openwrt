@@ -623,7 +623,7 @@ static int rtldsa_port_enable(struct dsa_switch *ds, int port, struct phy_device
 	priv->ports[port].enable = true;
 
 	/* enable inner tagging on egress, do not keep any tags */
-	priv->r->vlan_port_keep_tag_set(port, 0, 1);
+	priv->r->vlan_port_keep_tag_set(priv, port, 0, 1);
 
 	if (dsa_is_cpu_port(ds, port))
 		return 0;

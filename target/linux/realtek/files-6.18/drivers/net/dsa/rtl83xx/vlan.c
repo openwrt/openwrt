@@ -2,6 +2,7 @@
 
 #include <asm/mach-rtl-otto/mach-rtl-otto.h>
 #include <linux/if_bridge.h>
+#include <linux/regmap.h>
 #include <net/dsa.h>
 
 #include "rtl-otto.h"
@@ -127,11 +128,11 @@ static void otto_vlan_port_pvid_set(struct otto_dsa_priv *priv,
 				    int port, int pvid)
 {
 	/* Set both inner and outer PVID of the port */
-	priv->r->vlan_port_pvid_set(port, PBVLAN_TYPE_INNER, pvid);
-	priv->r->vlan_port_pvid_set(port, PBVLAN_TYPE_OUTER, pvid);
-	priv->r->vlan_port_pvidmode_set(port, PBVLAN_TYPE_INNER,
+	priv->r->vlan_port_pvid_set(priv, port, PBVLAN_TYPE_INNER, pvid);
+	priv->r->vlan_port_pvid_set(priv, port, PBVLAN_TYPE_OUTER, pvid);
+	priv->r->vlan_port_pvidmode_set(priv, port, PBVLAN_TYPE_INNER,
 					PBVLAN_MODE_UNTAG_AND_PRITAG);
-	priv->r->vlan_port_pvidmode_set(port, PBVLAN_TYPE_OUTER,
+	priv->r->vlan_port_pvidmode_set(priv, port, PBVLAN_TYPE_OUTER,
 					PBVLAN_MODE_UNTAG_AND_PRITAG);
 
 	priv->ports[port].pvid = pvid;
@@ -146,7 +147,7 @@ void otto_vlan_setup(struct otto_dsa_priv *priv)
 
 	pr_info("In %s\n", __func__);
 
-	priv->r->vlan_profile_setup(0);
+	priv->r->vlan_profile_setup(priv, 0);
 	priv->r->vlan_profile_dump(priv, 0);
 
 	/* Initialize normal VLANs 1-4095 */
@@ -168,7 +169,7 @@ void otto_vlan_setup(struct otto_dsa_priv *priv)
 
 	/* Set forwarding action based on inner VLAN tag */
 	for (int i = 0; i < priv->r->cpu_port; i++)
-		priv->r->vlan_fwd_on_inner(i, true);
+		priv->r->vlan_fwd_on_inner(priv, i, true);
 }
 
 /* RTL838x VLAN operations */
@@ -219,23 +220,23 @@ void otto_vlan_838x_set_untagged(u32 vlan, u64 portmask)
 
 /* Sets the L2 forwarding to be based on either the inner VLAN tag or the outer
  */
-void otto_vlan_838x_port_forward_on_inner(int port, bool is_set)
+void otto_vlan_838x_port_forward_on_inner(struct otto_dsa_priv *priv, int port, bool is_set)
 {
 	if (is_set)
-		sw_w32_mask(BIT(port), 0, RTL838X_VLAN_PORT_FWD);
+		regmap_write_bits(priv->map, RTL838X_VLAN_PORT_FWD, BIT(port), 0);
 	else
-		sw_w32_mask(0, BIT(port), RTL838X_VLAN_PORT_FWD);
+		regmap_write_bits(priv->map, RTL838X_VLAN_PORT_FWD, BIT(port), BIT(port));
 }
 
 int
-otto_vlan_838x_profile_get(int idx, struct rtldsa_vlan_profile *profile)
+otto_vlan_838x_profile_get(struct otto_dsa_priv *priv, int idx, struct rtldsa_vlan_profile *profile)
 {
 	u32 p;
 
 	if (idx < 0 || idx > RTL838X_VLAN_PROFILE_MAX)
 		return -EINVAL;
 
-	p = sw_r32(RTL838X_VLAN_PROFILE(idx));
+	regmap_read(priv->map, RTL838X_VLAN_PROFILE(idx), &p);
 
 	*profile = (struct rtldsa_vlan_profile) {
 		.l2_learn = RTL838X_VLAN_L2_LEARN_EN_R(p),
@@ -250,39 +251,47 @@ otto_vlan_838x_profile_get(int idx, struct rtldsa_vlan_profile *profile)
 	return 0;
 }
 
-void otto_vlan_838x_profile_setup(int profile)
+void otto_vlan_838x_profile_setup(struct otto_dsa_priv *priv, int profile)
 {
 	u32 p = RTL838X_VLAN_L2_LEARN_EN(1) |
 		RTL838X_VLAN_L2_UNKN_MC_FLD(MC_PMASK_ALL_PORTS_IDX) |
 		RTL838X_VLAN_IP4_UNKN_MC_FLD(MC_PMASK_ALL_PORTS_IDX) |
 		RTL838X_VLAN_IP6_UNKN_MC_FLD(MC_PMASK_ALL_PORTS_IDX);
 
-	sw_w32(p, RTL838X_VLAN_PROFILE(profile));
+	regmap_write(priv->map, RTL838X_VLAN_PROFILE(profile), p);
 }
 
-void otto_vlan_838x_port_keep_tag_set(int port, bool keep_outer, bool keep_inner)
+void otto_vlan_838x_port_keep_tag_set(struct otto_dsa_priv *priv, int port, bool keep_outer,
+				      bool keep_inner)
 {
-	sw_w32(FIELD_PREP(RTL838X_VLAN_PORT_TAG_STS_CTRL_OTAG_STS_MASK,
-			  keep_outer ? RTL838X_VLAN_PORT_TAG_STS_TAGGED : RTL838X_VLAN_PORT_TAG_STS_UNTAG) |
-	       FIELD_PREP(RTL838X_VLAN_PORT_TAG_STS_CTRL_ITAG_STS_MASK,
-			  keep_inner ? RTL838X_VLAN_PORT_TAG_STS_TAGGED : RTL838X_VLAN_PORT_TAG_STS_UNTAG),
-	       RTL838X_VLAN_PORT_TAG_STS_CTRL(port));
+	regmap_write(priv->map, RTL838X_VLAN_PORT_TAG_STS_CTRL(port),
+		     FIELD_PREP(RTL838X_VLAN_PORT_TAG_STS_CTRL_OTAG_STS_MASK,
+				keep_outer ? RTL838X_VLAN_PORT_TAG_STS_TAGGED :
+					     RTL838X_VLAN_PORT_TAG_STS_UNTAG) |
+		     FIELD_PREP(RTL838X_VLAN_PORT_TAG_STS_CTRL_ITAG_STS_MASK,
+				keep_inner ? RTL838X_VLAN_PORT_TAG_STS_TAGGED :
+					     RTL838X_VLAN_PORT_TAG_STS_UNTAG));
 }
 
-void otto_vlan_838x_port_pvid_mode_set(int port, enum pbvlan_type type, enum pbvlan_mode mode)
-{
-	if (type == PBVLAN_TYPE_INNER)
-		sw_w32_mask(0x3, mode, RTL838X_VLAN_PORT_PB_VLAN + (port << 2));
-	else
-		sw_w32_mask(0x3 << 14, mode << 14, RTL838X_VLAN_PORT_PB_VLAN + (port << 2));
-}
-
-void otto_vlan_838x_port_pvid_set(int port, enum pbvlan_type type, int pvid)
+void otto_vlan_838x_port_pvid_mode_set(struct otto_dsa_priv *priv, int port, enum pbvlan_type type,
+				       enum pbvlan_mode mode)
 {
 	if (type == PBVLAN_TYPE_INNER)
-		sw_w32_mask(0xfff << 2, pvid << 2, RTL838X_VLAN_PORT_PB_VLAN + (port << 2));
+		regmap_write_bits(priv->map, RTL838X_VLAN_PORT_PB_VLAN + (port << 2), 0x3, mode);
 	else
-		sw_w32_mask(0xfff << 16, pvid << 16, RTL838X_VLAN_PORT_PB_VLAN + (port << 2));
+		regmap_write_bits(priv->map, RTL838X_VLAN_PORT_PB_VLAN + (port << 2), 0x3 << 14,
+				  mode << 14);
+}
+
+void otto_vlan_838x_port_pvid_set(struct otto_dsa_priv *priv, int port, enum pbvlan_type type,
+				  int pvid)
+{
+	if (type == PBVLAN_TYPE_INNER)
+		regmap_write_bits(priv->map, RTL838X_VLAN_PORT_PB_VLAN + (port << 2), 0xfff << 2,
+				  pvid << 2);
+	else
+		regmap_write_bits(priv->map, RTL838X_VLAN_PORT_PB_VLAN + (port << 2), 0xfff << 16,
+				  pvid << 16);
 }
 
 void
@@ -290,7 +299,7 @@ otto_vlan_838x_profile_dump(struct otto_dsa_priv *priv, int idx)
 {
 	struct rtldsa_vlan_profile p;
 
-	if (otto_vlan_838x_profile_get(idx, &p) < 0)
+	if (otto_vlan_838x_profile_get(priv, idx, &p) < 0)
 		return;
 
 	dev_dbg(priv->dev,
@@ -360,7 +369,7 @@ void otto_vlan_839x_set_untagged(u32 vlan, u64 portmask)
 }
 
 /* Sets the L2 forwarding to be based on either the inner VLAN tag or the outer */
-void otto_vlan_839x_port_forward_on_inner(int port, bool is_set)
+void otto_vlan_839x_port_forward_on_inner(struct otto_dsa_priv *priv, int port, bool is_set)
 {
 	if (is_set)
 		rtl839x_mask_port_reg_be(BIT_ULL(port), 0ULL, RTL839X_VLAN_PORT_FWD);
@@ -369,15 +378,15 @@ void otto_vlan_839x_port_forward_on_inner(int port, bool is_set)
 }
 
 int
-otto_vlan_839x_profile_get(int idx, struct rtldsa_vlan_profile *profile)
+otto_vlan_839x_profile_get(struct otto_dsa_priv *priv, int idx, struct rtldsa_vlan_profile *profile)
 {
 	u32 p[2];
 
 	if (idx < 0 || idx > RTL839X_VLAN_PROFILE_MAX)
 		return -EINVAL;
 
-	p[0] = sw_r32(RTL839X_VLAN_PROFILE(idx));
-	p[1] = sw_r32(RTL839X_VLAN_PROFILE(idx) + 4);
+	regmap_read(priv->map, RTL839X_VLAN_PROFILE(idx), &p[0]);
+	regmap_read(priv->map, RTL839X_VLAN_PROFILE(idx) + 4, &p[1]);
 
 	*profile = (struct rtldsa_vlan_profile) {
 		.l2_learn = RTL839X_VLAN_L2_LEARN_EN_R(p),
@@ -392,7 +401,7 @@ otto_vlan_839x_profile_get(int idx, struct rtldsa_vlan_profile *profile)
 	return 0;
 }
 
-void otto_vlan_839x_profile_setup(int profile)
+void otto_vlan_839x_profile_setup(struct otto_dsa_priv *priv, int profile)
 {
 	u32 p[2] = { 0, 0 };
 
@@ -401,50 +410,61 @@ void otto_vlan_839x_profile_setup(int profile)
 		RTL839X_VLAN_IP4_UNKN_MC_FLD(MC_PMASK_ALL_PORTS_IDX);
 	p[0] |= RTL839X_VLAN_IP6_UNKN_MC_FLD(MC_PMASK_ALL_PORTS_IDX);
 
-	sw_w32(p[0], RTL839X_VLAN_PROFILE(profile));
-	sw_w32(p[1], RTL839X_VLAN_PROFILE(profile) + 4);
+	regmap_write(priv->map, RTL839X_VLAN_PROFILE(profile), p[0]);
+	regmap_write(priv->map, RTL839X_VLAN_PROFILE(profile) + 4, p[1]);
 }
 
 void
 otto_vlan_839x_profile_dump(struct otto_dsa_priv *priv, int idx)
 {
 	struct rtldsa_vlan_profile p;
+	u32 raw[2];
 
-	if (otto_vlan_839x_profile_get(idx, &p) < 0)
+	if (otto_vlan_839x_profile_get(priv, idx, &p) < 0)
 		return;
+
+	regmap_read(priv->map, RTL839X_VLAN_PROFILE(idx), &raw[0]);
+	regmap_read(priv->map, RTL839X_VLAN_PROFILE(idx) + 4, &raw[1]);
 
 	dev_dbg(priv->dev,
 		"VLAN profile %d: L2 learning: %d, UNKN L2MC FLD PMSK %d, UNKN IPMC FLD PMSK %d, UNKN IPv6MC FLD PMSK: %d\n"
 		"VLAN profile %d: raw %08x, %08x\n", idx,
 		p.l2_learn, p.unkn_mc_fld.pmsks_idx.l2,
 		p.unkn_mc_fld.pmsks_idx.ip, p.unkn_mc_fld.pmsks_idx.ip6, idx,
-		sw_r32(RTL839X_VLAN_PROFILE(idx)),
-		sw_r32(RTL839X_VLAN_PROFILE(idx) + 4));
+		raw[0], raw[1]);
 }
 
-void otto_vlan_839x_port_keep_tag_set(int port, bool keep_outer, bool keep_inner)
+void otto_vlan_839x_port_keep_tag_set(struct otto_dsa_priv *priv, int port, bool keep_outer,
+				      bool keep_inner)
 {
-	sw_w32(FIELD_PREP(RTL839X_VLAN_PORT_TAG_STS_CTRL_OTAG_STS_MASK,
-			  keep_outer ? RTL839X_VLAN_PORT_TAG_STS_TAGGED : RTL839X_VLAN_PORT_TAG_STS_UNTAG) |
-	       FIELD_PREP(RTL839X_VLAN_PORT_TAG_STS_CTRL_ITAG_STS_MASK,
-			  keep_inner ? RTL839X_VLAN_PORT_TAG_STS_TAGGED : RTL839X_VLAN_PORT_TAG_STS_UNTAG),
-	       RTL839X_VLAN_PORT_TAG_STS_CTRL(port));
+	regmap_write(priv->map, RTL839X_VLAN_PORT_TAG_STS_CTRL(port),
+		     FIELD_PREP(RTL839X_VLAN_PORT_TAG_STS_CTRL_OTAG_STS_MASK,
+				keep_outer ? RTL839X_VLAN_PORT_TAG_STS_TAGGED :
+					     RTL839X_VLAN_PORT_TAG_STS_UNTAG) |
+		     FIELD_PREP(RTL839X_VLAN_PORT_TAG_STS_CTRL_ITAG_STS_MASK,
+				keep_inner ? RTL839X_VLAN_PORT_TAG_STS_TAGGED :
+					     RTL839X_VLAN_PORT_TAG_STS_UNTAG));
 }
 
-void otto_vlan_839x_port_pvid_mode_set(int port, enum pbvlan_type type, enum pbvlan_mode mode)
-{
-	if (type == PBVLAN_TYPE_INNER)
-		sw_w32_mask(0x3, mode, RTL839X_VLAN_PORT_PB_VLAN + (port << 2));
-	else
-		sw_w32_mask(0x3 << 14, mode << 14, RTL839X_VLAN_PORT_PB_VLAN + (port << 2));
-}
-
-void otto_vlan_839x_port_pvid_set(int port, enum pbvlan_type type, int pvid)
+void otto_vlan_839x_port_pvid_mode_set(struct otto_dsa_priv *priv, int port, enum pbvlan_type type,
+				       enum pbvlan_mode mode)
 {
 	if (type == PBVLAN_TYPE_INNER)
-		sw_w32_mask(0xfff << 2, pvid << 2, RTL839X_VLAN_PORT_PB_VLAN + (port << 2));
+		regmap_write_bits(priv->map, RTL839X_VLAN_PORT_PB_VLAN + (port << 2), 0x3, mode);
 	else
-		sw_w32_mask(0xfff << 16, pvid << 16, RTL839X_VLAN_PORT_PB_VLAN + (port << 2));
+		regmap_write_bits(priv->map, RTL839X_VLAN_PORT_PB_VLAN + (port << 2), 0x3 << 14,
+				  mode << 14);
+}
+
+void otto_vlan_839x_port_pvid_set(struct otto_dsa_priv *priv, int port, enum pbvlan_type type,
+				  int pvid)
+{
+	if (type == PBVLAN_TYPE_INNER)
+		regmap_write_bits(priv->map, RTL839X_VLAN_PORT_PB_VLAN + (port << 2), 0xfff << 2,
+				  pvid << 2);
+	else
+		regmap_write_bits(priv->map, RTL839X_VLAN_PORT_PB_VLAN + (port << 2), 0xfff << 16,
+				  pvid << 16);
 }
 
 /* RTL930x VLAN operations */
@@ -492,7 +512,7 @@ void otto_vlan_930x_set_tagged(u32 vlan, struct otto_vlan_info *info)
 }
 
 int
-otto_vlan_930x_profile_get(int idx, struct rtldsa_vlan_profile *profile)
+otto_vlan_930x_profile_get(struct otto_dsa_priv *priv, int idx, struct rtldsa_vlan_profile *profile)
 {
 	u32 p[5];
 
@@ -500,7 +520,7 @@ otto_vlan_930x_profile_get(int idx, struct rtldsa_vlan_profile *profile)
 		return -EINVAL;
 
 	for (int i = 0; i < 5; i++)
-		p[i] = sw_r32(RTL930X_VLAN_PROFILE_SET(idx) + i * 4);
+		regmap_read(priv->map, RTL930X_VLAN_PROFILE_SET(idx) + i * 4, &p[i]);
 
 	*profile = (struct rtldsa_vlan_profile) {
 		.l2_learn = RTL930X_VLAN_L2_LEARN_EN_R(p),
@@ -525,9 +545,13 @@ void
 otto_vlan_930x_profile_dump(struct otto_dsa_priv *priv, int idx)
 {
 	struct rtldsa_vlan_profile p;
+	u32 raw[5];
 
-	if (otto_vlan_930x_profile_get(idx, &p) < 0)
+	if (otto_vlan_930x_profile_get(priv, idx, &p) < 0)
 		return;
+
+	for (int i = 0; i < 5; i++)
+		regmap_read(priv->map, RTL930X_VLAN_PROFILE_SET(idx) + i * 4, &raw[i]);
 
 	dev_dbg(priv->dev,
 		"VLAN %d: L2 learn: %d; Unknown MC PMasks: L2 %llx, IPv4 %llx, IPv6: %llx\n"
@@ -539,11 +563,8 @@ otto_vlan_930x_profile_dump(struct otto_dsa_priv *priv, int idx)
 		p.routing_ipuc ? 'y' : 'n', p.routing_ip6uc ? 'y' : 'n',
 		p.routing_ipmc ? 'y' : 'n', p.routing_ip6mc ? 'y' : 'n',
 		p.bridge_ipmc ? 'y' : 'n', p.bridge_ip6mc ? 'y' : 'n', idx,
-		sw_r32(RTL930X_VLAN_PROFILE_SET(idx)),
-		sw_r32(RTL930X_VLAN_PROFILE_SET(idx) + 4),
-		sw_r32(RTL930X_VLAN_PROFILE_SET(idx) + 8) & 0x1FFFFFFF,
-		sw_r32(RTL930X_VLAN_PROFILE_SET(idx) + 12) & 0x1FFFFFFF,
-		sw_r32(RTL930X_VLAN_PROFILE_SET(idx) + 16) & 0x1FFFFFFF);
+		raw[0], raw[1], raw[2] & 0x1FFFFFFF, raw[3] & 0x1FFFFFFF,
+		raw[4] & 0x1FFFFFFF);
 }
 
 void otto_vlan_930x_set_untagged(u32 vlan, u64 portmask)
@@ -554,22 +575,22 @@ void otto_vlan_930x_set_untagged(u32 vlan, u64 portmask)
 }
 
 /* Sets the L2 forwarding to be based on either the inner VLAN tag or the outer */
-void otto_vlan_930x_port_forward_on_inner(int port, bool is_set)
+void otto_vlan_930x_port_forward_on_inner(struct otto_dsa_priv *priv, int port, bool is_set)
 {
 	/* Always set all tag modes to fwd based on either inner or outer tag */
 	if (is_set)
-		sw_w32_mask(0xf, 0, RTL930X_VLAN_PORT_FWD + (port << 2));
+		regmap_write_bits(priv->map, RTL930X_VLAN_PORT_FWD + (port << 2), 0xf, 0);
 	else
-		sw_w32_mask(0, 0xf, RTL930X_VLAN_PORT_FWD + (port << 2));
+		regmap_write_bits(priv->map, RTL930X_VLAN_PORT_FWD + (port << 2), 0xf, 0xf);
 }
 
-void otto_vlan_930x_profile_setup(int profile)
+void otto_vlan_930x_profile_setup(struct otto_dsa_priv *priv, int profile)
 {
 	u32 p[5];
 
 	pr_debug("In %s\n", __func__);
-	p[0] = sw_r32(RTL930X_VLAN_PROFILE_SET(profile));
-	p[1] = sw_r32(RTL930X_VLAN_PROFILE_SET(profile) + 4);
+	regmap_read(priv->map, RTL930X_VLAN_PROFILE_SET(profile), &p[0]);
+	regmap_read(priv->map, RTL930X_VLAN_PROFILE_SET(profile) + 4, &p[1]);
 
 	/* Enable routing of Ipv4/6 Unicast and IPv4/6 Multicast traffic */
 	p[0] |= BIT(17) | BIT(16) | BIT(13) | BIT(12);
@@ -578,41 +599,49 @@ void otto_vlan_930x_profile_setup(int profile)
 	p[3] = RTL930X_VLAN_IP4_UNKN_MC_FLD(RTL930X_MC_PMASK_ALL_PORTS);
 	p[4] = RTL930X_VLAN_IP6_UNKN_MC_FLD(RTL930X_MC_PMASK_ALL_PORTS);
 
-	sw_w32(p[0], RTL930X_VLAN_PROFILE_SET(profile));
-	sw_w32(p[1], RTL930X_VLAN_PROFILE_SET(profile) + 4);
-	sw_w32(p[2], RTL930X_VLAN_PROFILE_SET(profile) + 8);
-	sw_w32(p[3], RTL930X_VLAN_PROFILE_SET(profile) + 12);
-	sw_w32(p[4], RTL930X_VLAN_PROFILE_SET(profile) + 16);
+	regmap_write(priv->map, RTL930X_VLAN_PROFILE_SET(profile), p[0]);
+	regmap_write(priv->map, RTL930X_VLAN_PROFILE_SET(profile) + 4, p[1]);
+	regmap_write(priv->map, RTL930X_VLAN_PROFILE_SET(profile) + 8, p[2]);
+	regmap_write(priv->map, RTL930X_VLAN_PROFILE_SET(profile) + 12, p[3]);
+	regmap_write(priv->map, RTL930X_VLAN_PROFILE_SET(profile) + 16, p[4]);
 }
 
-void otto_vlan_930x_port_keep_tag_set(int port, bool keep_outer, bool keep_inner)
+void otto_vlan_930x_port_keep_tag_set(struct otto_dsa_priv *priv, int port, bool keep_outer,
+				      bool keep_inner)
 {
-	sw_w32(FIELD_PREP(RTL930X_VLAN_PORT_TAG_STS_CTRL_EGR_OTAG_STS_MASK,
-			  keep_outer ? RTL930X_VLAN_PORT_TAG_STS_TAGGED : RTL930X_VLAN_PORT_TAG_STS_UNTAG) |
-	       FIELD_PREP(RTL930X_VLAN_PORT_TAG_STS_CTRL_EGR_ITAG_STS_MASK,
-			  keep_inner ? RTL930X_VLAN_PORT_TAG_STS_TAGGED : RTL930X_VLAN_PORT_TAG_STS_UNTAG),
-	       RTL930X_VLAN_PORT_TAG_STS_CTRL(port));
+	regmap_write(priv->map, RTL930X_VLAN_PORT_TAG_STS_CTRL(port),
+		     FIELD_PREP(RTL930X_VLAN_PORT_TAG_STS_CTRL_EGR_OTAG_STS_MASK,
+				keep_outer ? RTL930X_VLAN_PORT_TAG_STS_TAGGED :
+					     RTL930X_VLAN_PORT_TAG_STS_UNTAG) |
+		     FIELD_PREP(RTL930X_VLAN_PORT_TAG_STS_CTRL_EGR_ITAG_STS_MASK,
+				keep_inner ? RTL930X_VLAN_PORT_TAG_STS_TAGGED :
+					     RTL930X_VLAN_PORT_TAG_STS_UNTAG));
 }
 
-void otto_vlan_930x_port_pvid_mode_set(int port, enum pbvlan_type type, enum pbvlan_mode mode)
-{
-	if (type == PBVLAN_TYPE_INNER)
-		sw_w32_mask(0x3, mode, RTL930X_VLAN_PORT_PB_VLAN + (port << 2));
-	else
-		sw_w32_mask(0x3 << 14, mode << 14, RTL930X_VLAN_PORT_PB_VLAN + (port << 2));
-}
-
-void otto_vlan_930x_port_pvid_set(int port, enum pbvlan_type type, int pvid)
+void otto_vlan_930x_port_pvid_mode_set(struct otto_dsa_priv *priv, int port, enum pbvlan_type type,
+				       enum pbvlan_mode mode)
 {
 	if (type == PBVLAN_TYPE_INNER)
-		sw_w32_mask(0xfff << 2, pvid << 2, RTL930X_VLAN_PORT_PB_VLAN + (port << 2));
+		regmap_write_bits(priv->map, RTL930X_VLAN_PORT_PB_VLAN + (port << 2), 0x3, mode);
 	else
-		sw_w32_mask(0xfff << 16, pvid << 16, RTL930X_VLAN_PORT_PB_VLAN + (port << 2));
+		regmap_write_bits(priv->map, RTL930X_VLAN_PORT_PB_VLAN + (port << 2), 0x3 << 14,
+				  mode << 14);
+}
+
+void otto_vlan_930x_port_pvid_set(struct otto_dsa_priv *priv, int port, enum pbvlan_type type,
+				  int pvid)
+{
+	if (type == PBVLAN_TYPE_INNER)
+		regmap_write_bits(priv->map, RTL930X_VLAN_PORT_PB_VLAN + (port << 2), 0xfff << 2,
+				  pvid << 2);
+	else
+		regmap_write_bits(priv->map, RTL930X_VLAN_PORT_PB_VLAN + (port << 2), 0xfff << 16,
+				  pvid << 16);
 }
 
 /* RTL931x VLAN operations */
 int
-otto_vlan_931x_profile_get(int idx, struct rtldsa_vlan_profile *profile)
+otto_vlan_931x_profile_get(struct otto_dsa_priv *priv, int idx, struct rtldsa_vlan_profile *profile)
 {
 	u32 p[7];
 
@@ -620,7 +649,7 @@ otto_vlan_931x_profile_get(int idx, struct rtldsa_vlan_profile *profile)
 		return -EINVAL;
 
 	for (int i = 0; i < 7; i++)
-		p[i] = sw_r32(RTL931X_VLAN_PROFILE_SET(idx) + i * 4);
+		regmap_read(priv->map, RTL931X_VLAN_PROFILE_SET(idx) + i * 4, &p[i]);
 
 	*profile = (struct rtldsa_vlan_profile) {
 		.l2_learn = RTL931X_VLAN_L2_LEARN_EN_R(p),
@@ -639,7 +668,7 @@ otto_vlan_931x_profile_dump(struct otto_dsa_priv *priv, int idx)
 {
 	struct rtldsa_vlan_profile p;
 
-	if (otto_vlan_931x_profile_get(idx, &p) < 0)
+	if (otto_vlan_931x_profile_get(priv, idx, &p) < 0)
 		return;
 
 	dev_dbg(priv->dev,
@@ -715,16 +744,16 @@ void otto_vlan_931x_set_untagged(u32 vlan, u64 portmask)
 	otto_table_write(RTL9310_TBL_VLAN_UNTAG, vlan, &buf);
 }
 
-void otto_vlan_931x_port_forward_on_inner(int port, bool is_set)
+void otto_vlan_931x_port_forward_on_inner(struct otto_dsa_priv *priv, int port, bool is_set)
 {
 	/* Always set all tag modes to fwd based on either inner or outer tag */
 	if (is_set)
-		sw_w32_mask(0xf, 0, RTL931X_VLAN_PORT_FWD + (port << 2));
+		regmap_write_bits(priv->map, RTL931X_VLAN_PORT_FWD + (port << 2), 0xf, 0);
 	else
-		sw_w32_mask(0, 0xf, RTL931X_VLAN_PORT_FWD + (port << 2));
+		regmap_write_bits(priv->map, RTL931X_VLAN_PORT_FWD + (port << 2), 0xf, 0xf);
 }
 
-void otto_vlan_931x_profile_setup(int profile)
+void otto_vlan_931x_profile_setup(struct otto_dsa_priv *priv, int profile)
 {
 	u32 p[7];
 
@@ -733,7 +762,7 @@ void otto_vlan_931x_profile_setup(int profile)
 	if (profile > 15)
 		return;
 
-	p[0] = sw_r32(RTL931X_VLAN_PROFILE_SET(profile));
+	regmap_read(priv->map, RTL931X_VLAN_PROFILE_SET(profile), &p[0]);
 
 	/* Enable routing of Ipv4/6 Unicast and IPv4/6 Multicast traffic */
 	/* p[0] |= BIT(17) | BIT(16) | BIT(13) | BIT(12); */
@@ -747,33 +776,41 @@ void otto_vlan_931x_profile_setup(int profile)
 	p[6] = RTL931X_VLAN_IP6_UNKN_MC_FLD_L(RTL931X_MC_PMASK_ALL_PORTS);
 
 	for (int i = 0; i < 7; i++)
-		sw_w32(p[i], RTL931X_VLAN_PROFILE_SET(profile) + i * 4);
+		regmap_write(priv->map, RTL931X_VLAN_PROFILE_SET(profile) + i * 4, p[i]);
 	pr_debug("Leaving %s\n", __func__);
 }
 
-void otto_vlan_931x_port_keep_tag_set(int port, bool keep_outer, bool keep_inner)
+void otto_vlan_931x_port_keep_tag_set(struct otto_dsa_priv *priv, int port, bool keep_outer,
+				      bool keep_inner)
 {
-	sw_w32(FIELD_PREP(RTL931X_VLAN_PORT_TAG_EGR_OTAG_STS_MASK,
-			  keep_outer ? RTL931X_VLAN_PORT_TAG_STS_TAGGED : RTL931X_VLAN_PORT_TAG_STS_UNTAG) |
-	       FIELD_PREP(RTL931X_VLAN_PORT_TAG_EGR_ITAG_STS_MASK,
-			  keep_inner ? RTL931X_VLAN_PORT_TAG_STS_TAGGED : RTL931X_VLAN_PORT_TAG_STS_UNTAG),
-	       RTL931X_VLAN_PORT_TAG_CTRL(port));
+	regmap_write(priv->map, RTL931X_VLAN_PORT_TAG_CTRL(port),
+		     FIELD_PREP(RTL931X_VLAN_PORT_TAG_EGR_OTAG_STS_MASK,
+				keep_outer ? RTL931X_VLAN_PORT_TAG_STS_TAGGED :
+					     RTL931X_VLAN_PORT_TAG_STS_UNTAG) |
+		     FIELD_PREP(RTL931X_VLAN_PORT_TAG_EGR_ITAG_STS_MASK,
+				keep_inner ? RTL931X_VLAN_PORT_TAG_STS_TAGGED :
+					     RTL931X_VLAN_PORT_TAG_STS_UNTAG));
 }
 
-void otto_vlan_931x_port_pvid_mode_set(int port, enum pbvlan_type type, enum pbvlan_mode mode)
+void otto_vlan_931x_port_pvid_mode_set(struct otto_dsa_priv *priv, int port, enum pbvlan_type type,
+				       enum pbvlan_mode mode)
 {
 	if (type == PBVLAN_TYPE_INNER)
-		sw_w32_mask(0x3 << 12, mode << 12, RTL931X_VLAN_PORT_IGR_CTRL + (port << 2));
+		regmap_write_bits(priv->map, RTL931X_VLAN_PORT_IGR_CTRL + (port << 2), 0x3 << 12,
+				  mode << 12);
 	else
-		sw_w32_mask(0x3 << 26, mode << 26, RTL931X_VLAN_PORT_IGR_CTRL + (port << 2));
+		regmap_write_bits(priv->map, RTL931X_VLAN_PORT_IGR_CTRL + (port << 2), 0x3 << 26,
+				  mode << 26);
 }
 
-void otto_vlan_931x_port_pvid_set(int port, enum pbvlan_type type, int pvid)
+void otto_vlan_931x_port_pvid_set(struct otto_dsa_priv *priv, int port, enum pbvlan_type type,
+				  int pvid)
 {
 	if (type == PBVLAN_TYPE_INNER)
-		sw_w32_mask(0xfff, pvid, RTL931X_VLAN_PORT_IGR_CTRL + (port << 2));
+		regmap_write_bits(priv->map, RTL931X_VLAN_PORT_IGR_CTRL + (port << 2), 0xfff, pvid);
 	else
-		sw_w32_mask(0xfff << 14, pvid << 14, RTL931X_VLAN_PORT_IGR_CTRL + (port << 2));
+		regmap_write_bits(priv->map, RTL931X_VLAN_PORT_IGR_CTRL + (port << 2), 0xfff << 14,
+				  pvid << 14);
 }
 
 int otto_vlan_port_filtering(struct dsa_switch *ds, int port,
