@@ -1,0 +1,166 @@
+From a1fdb4616f0c8428620cea4bba3d8eb71a2e3e36 Mon Sep 17 00:00:00 2001
+From: Jacopo Mondi <jacopo.mondi@ideasonboard.com>
+Date: Sat, 27 Jun 2026 15:42:03 +0200
+Subject: [PATCH 858/858] media: v4l2-isp: Add helpers for stats buffer
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Add two helper functions to v4l2-isp to handle statistics:
+
+- v4l2_isp_stats_init_buffer() to initialize a statistics buffer
+- v4l2_isp_stats_init_block() to initialize a statistics block in the
+  next available memory location of a buffer
+
+The v4l2_isp_stats_init_buffer() resets the data size counter of the
+buffer and initializes its 'version' field.
+
+The v4l2_isp_stats_init_block() helper accepts the type of the stats
+block about to be populated, an array of per-block-type information and
+the maximum size of the v4l2-isp buffer. If enough space for the new
+block is available, the function increments the
+v4l2_isp_buffer.data_size counter, initializes the new stats block
+header and returns a pointer to the block for the driver to populate it.
+
+Reviewed-by: Niklas Söderlund <niklas.soderlund+renesas@ragnatech.se>
+Signed-off-by: Jacopo Mondi <jacopo.mondi@ideasonboard.com>
+Signed-off-by: Sakari Ailus <sakari.ailus@linux.intel.com>
+---
+ drivers/media/v4l2-core/v4l2-isp.c | 52 ++++++++++++++++++++++++++
+ include/media/v4l2-isp.h           | 59 +++++++++++++++++++++++++++++-
+ 2 files changed, 110 insertions(+), 1 deletion(-)
+
+--- a/drivers/media/v4l2-core/v4l2-isp.c
++++ b/drivers/media/v4l2-core/v4l2-isp.c
+@@ -130,6 +130,58 @@ int v4l2_isp_params_validate_buffer(stru
+ }
+ EXPORT_SYMBOL_GPL(v4l2_isp_params_validate_buffer);
+ 
++void v4l2_isp_stats_init_buffer(struct v4l2_isp_buffer *buf,
++				enum v4l2_isp_version version)
++{
++	if (WARN_ON(!buf))
++		return;
++
++	if (WARN_ON(version > V4L2_ISP_VERSION_V1))
++		return;
++
++	buf->version = version;
++	buf->data_size = 0;
++}
++EXPORT_SYMBOL_GPL(v4l2_isp_stats_init_buffer);
++
++struct v4l2_isp_block_header *
++v4l2_isp_stats_init_block(struct device *dev, struct v4l2_isp_buffer *buf,
++			  const struct v4l2_isp_stats_block_type_info *type_info,
++			  size_t num_block_types, unsigned int block_type,
++			  size_t max_size)
++{
++	const struct v4l2_isp_stats_block_type_info *block_info;
++	struct v4l2_isp_block_header *header;
++	size_t used;
++
++	if (WARN_ON(!dev || !buf || !type_info))
++		return ERR_PTR(-EINVAL);
++
++	if (block_type >= num_block_types) {
++		dev_err(dev, "Invalid block type %u\n", block_type);
++		return ERR_PTR(-EINVAL);
++	}
++
++	block_info = &type_info[block_type];
++	used = buf->data_size;
++
++	if (used + block_info->size > max_size) {
++		dev_err(dev, "No space for stats block type %u of size %zu\n",
++			block_type, block_info->size);
++		return ERR_PTR(-ENOMEM);
++	}
++
++	buf->data_size += block_info->size;
++
++	header = (struct v4l2_isp_block_header *)&buf->data[used];
++	header->type = block_type;
++	header->size = block_info->size;
++	header->flags = 0;
++
++	return header;
++}
++EXPORT_SYMBOL_GPL(v4l2_isp_stats_init_block);
++
+ MODULE_LICENSE("GPL");
+ MODULE_AUTHOR("Jacopo Mondi <jacopo.mondi@ideasonboard.com");
+ MODULE_DESCRIPTION("V4L2 generic ISP parameters and statistics helpers");
+--- a/include/media/v4l2-isp.h
++++ b/include/media/v4l2-isp.h
+@@ -53,7 +53,7 @@ int v4l2_isp_params_validate_buffer_size
+ 					 size_t max_size);
+ 
+ /**
+- * struct v4l2_isp_params_block_type_info - V4L2 ISP per-block-type info
++ * struct v4l2_isp_params_block_type_info - V4L2 ISP params per-block-type info
+  * @size: the block type expected size
+  * @block_validate: driver's callback to implement per-block validation
+  *
+@@ -97,4 +97,61 @@ int v4l2_isp_params_validate_buffer(stru
+ 				    const struct v4l2_isp_params_block_type_info *type_info,
+ 				    size_t num_block_types);
+ 
++/**
++ * struct v4l2_isp_stats_block_type_info - V4L2 ISP stats per-block-type info
++ * @size: the block type expected size
++ *
++ * The v4l2_isp_stats_block_type_info collects information of the ISP
++ * statistics block types for validation purposes. It currently only contains
++ * the expected block size.
++ *
++ * Drivers shall prepare a list of statistics block type info, indexed by block
++ * type, one for each supported ISP statistics block type and correctly populate
++ * them with the expected block size.
++ */
++struct v4l2_isp_stats_block_type_info {
++	size_t size;
++};
++
++/**
++ * v4l2_isp_stats_init_buffer - Initialize a statistics buffer
++ *
++ * Initialize a buffer of statistics. Only set the 'version' field and reset
++ * 'data_size' to 0.
++ *
++ * @buf: the v4l2_isp_buffer to initialize
++ * @version: the v4l2-isp serialization format version used by the driver
++ */
++void v4l2_isp_stats_init_buffer(struct v4l2_isp_buffer *buf,
++				enum v4l2_isp_version version);
++
++/**
++ * v4l2_isp_stats_init_block - Create and initialize a new block in a statistics
++ *			       buffer
++ * @dev: the driver's device pointer
++ * @buf: the v4l2_isp_buffer where statistics are serialized
++ * @type_info: the array of per-block-type validation info
++ * @num_block_types: the number of block types in the type_info array
++ * @block_type: the type of the statistics block to initialize
++ * @max_size: the maximum size of the data[] member of @buf
++ *
++ * This function locates and initialize a new statistics block in @buf for the
++ * driver to populate its content. The function checks that enough space for the
++ * requested @block_type is available in @buf and increments the 'data_size'
++ * member of @buf. The newly created statistics block's header is initialized
++ * with the size and type information provided by the caller in @type_info.
++ *
++ * Drivers should call this function before populating a new statistics block
++ * content.
++ *
++ * Returns a pointer to the next available location in @buf, or an error pointer
++ * if the requested @block_size is not available in @buf or @block_type is not
++ * valid.
++ */
++struct v4l2_isp_block_header *
++v4l2_isp_stats_init_block(struct device *dev, struct v4l2_isp_buffer *buf,
++			  const struct v4l2_isp_stats_block_type_info *type_info,
++			  size_t num_block_types, unsigned int block_type,
++			  size_t max_size);
++
+ #endif /* _V4L2_ISP_H_ */

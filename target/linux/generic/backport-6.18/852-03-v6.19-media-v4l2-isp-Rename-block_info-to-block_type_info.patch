@@ -1,0 +1,124 @@
+From 8293191669f57cc01a4b551c9c0459928f7712ac Mon Sep 17 00:00:00 2001
+From: Jacopo Mondi <jacopo.mondi@ideasonboard.com>
+Date: Fri, 14 Nov 2025 12:02:11 +0100
+Subject: [PATCH 854/858] media: v4l2-isp: Rename block_info to block_type_info
+
+The v4l2_isp_params_block_info structure contains validation information
+that apply to a block -type- and not only to a specific ISP block
+implementation.
+
+Clarify this by renaming v4l2_isp_params_block_info in
+v4l2_isp_params_block_type_info and update the documentation and the
+users of v4l2-isp accordingly.
+
+Signed-off-by: Jacopo Mondi <jacopo.mondi@ideasonboard.com>
+Reviewed-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Reviewed-by: Sakari Ailus <sakari.ailus@linux.intel.com>
+Signed-off-by: Hans Verkuil <hverkuil+cisco@kernel.org>
+---
+ drivers/media/v4l2-core/v4l2-isp.c | 16 ++++++++--------
+ include/media/v4l2-isp.h           | 26 +++++++++++++-------------
+ 2 files changed, 21 insertions(+), 21 deletions(-)
+
+--- a/drivers/media/v4l2-core/v4l2-isp.c
++++ b/drivers/media/v4l2-core/v4l2-isp.c
+@@ -38,8 +38,8 @@ EXPORT_SYMBOL_GPL(v4l2_isp_params_valida
+ 
+ int v4l2_isp_params_validate_buffer(struct device *dev, struct vb2_buffer *vb,
+ 				    const struct v4l2_isp_params_buffer *buffer,
+-				    const struct v4l2_isp_params_block_info *info,
+-				    size_t num_blocks)
++				    const struct v4l2_isp_params_block_type_info *type_info,
++				    size_t num_block_types)
+ {
+ 	size_t header_size = offsetof(struct v4l2_isp_params_buffer, data);
+ 	size_t payload_size = vb2_get_plane_payload(vb, 0);
+@@ -71,13 +71,13 @@ int v4l2_isp_params_validate_buffer(stru
+ 	/* Walk the list of ISP configuration blocks and validate them. */
+ 	buffer_size = buffer->data_size;
+ 	while (buffer_size >= sizeof(struct v4l2_isp_params_block_header)) {
+-		const struct v4l2_isp_params_block_info *block_info;
++		const struct v4l2_isp_params_block_type_info *info;
+ 		const struct v4l2_isp_params_block_header *block;
+ 
+ 		block = (const struct v4l2_isp_params_block_header *)
+ 			(buffer->data + block_offset);
+ 
+-		if (block->type >= num_blocks) {
++		if (block->type >= num_block_types) {
+ 			dev_dbg(dev,
+ 				"Invalid block type %u at offset %zu\n",
+ 				block->type, block_offset);
+@@ -100,17 +100,17 @@ int v4l2_isp_params_validate_buffer(stru
+ 		}
+ 
+ 		/*
+-		 * Match the block reported size against the info provided
++		 * Match the block reported size against the type info provided
+ 		 * one, but allow the block to only contain the header in
+ 		 * case it is going to be disabled.
+ 		 */
+-		block_info = &info[block->type];
+-		if (block->size != block_info->size &&
++		info = &type_info[block->type];
++		if (block->size != info->size &&
+ 		    (!(block->flags & V4L2_ISP_PARAMS_FL_BLOCK_DISABLE) ||
+ 		    block->size != sizeof(*block))) {
+ 			dev_dbg(dev,
+ 				"Invalid block size %u (expected %zu) at offset %zu\n",
+-				block->size, block_info->size, block_offset);
++				block->size, info->size, block_offset);
+ 			return -EINVAL;
+ 		}
+ 
+--- a/include/media/v4l2-isp.h
++++ b/include/media/v4l2-isp.h
+@@ -49,18 +49,18 @@ int v4l2_isp_params_validate_buffer_size
+ 					 size_t max_size);
+ 
+ /**
+- * struct v4l2_isp_params_block_info - V4L2 ISP per-block info
+- * @size: the block expected size
++ * struct v4l2_isp_params_block_type_info - V4L2 ISP per-block-type info
++ * @size: the block type expected size
+  *
+- * The v4l2_isp_params_block_info collects information of the ISP configuration
+- * blocks for validation purposes. It currently only contains the expected
+- * block size.
++ * The v4l2_isp_params_block_type_info collects information of the ISP
++ * configuration block types for validation purposes. It currently only contains
++ * the expected block type size.
+  *
+- * Drivers shall prepare a list of block info, indexed by block type, one for
+- * each supported ISP block and correctly populate them with the expected block
+- * size.
++ * Drivers shall prepare a list of block type info, indexed by block type, one
++ * for each supported ISP block type and correctly populate them with the
++ * expected block type size.
+  */
+-struct v4l2_isp_params_block_info {
++struct v4l2_isp_params_block_type_info {
+ 	size_t size;
+ };
+ 
+@@ -69,8 +69,8 @@ struct v4l2_isp_params_block_info {
+  * @dev: the driver's device pointer
+  * @vb: the videobuf2 buffer
+  * @buffer: the V4L2 ISP parameters buffer
+- * @info: the list of per-block validation info
+- * @num_blocks: the number of blocks
++ * @type_info: the array of per-block-type validation info
++ * @num_block_types: the number of block types in the type_info array
+  *
+  * This function completes the validation of a V4L2 ISP parameters buffer,
+  * verifying each configuration block correctness before the driver can use
+@@ -85,7 +85,7 @@ struct v4l2_isp_params_block_info {
+  */
+ int v4l2_isp_params_validate_buffer(struct device *dev, struct vb2_buffer *vb,
+ 				    const struct v4l2_isp_params_buffer *buffer,
+-				    const struct v4l2_isp_params_block_info *info,
+-				    size_t num_blocks);
++				    const struct v4l2_isp_params_block_type_info *type_info,
++				    size_t num_block_types);
+ 
+ #endif /* _V4L2_ISP_H_ */
