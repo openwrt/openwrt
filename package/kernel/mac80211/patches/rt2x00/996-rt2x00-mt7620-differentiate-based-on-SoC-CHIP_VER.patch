@@ -29,7 +29,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
   */
 --- a/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
 +++ b/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
-@@ -3844,14 +3844,16 @@ static void rt2800_config_channel_rf7620
+@@ -3943,14 +3943,16 @@ static void rt2800_config_channel_rf7620
  	rt2x00_set_field8(&rfcsr, RFCSR19_K, rf->rf4);
  	rt2800_rfcsr_write(rt2x00dev, 19, rfcsr);
  
@@ -54,7 +54,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  
  	rfcsr = rt2800_rfcsr_read(rt2x00dev, 1);
  	rt2x00_set_field8(&rfcsr, RFCSR1_TX2_EN_MT7620,
-@@ -3885,18 +3887,23 @@ static void rt2800_config_channel_rf7620
+@@ -3984,18 +3986,23 @@ static void rt2800_config_channel_rf7620
  		rt2800_rfcsr_write_dccal(rt2x00dev, 59, 0x20);
  	}
  
@@ -88,7 +88,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  
  	if (!test_bit(DEVICE_STATE_SCANNING, &rt2x00dev->flags)) {
  		if (conf_is_ht40(conf)) {
-@@ -4010,25 +4017,29 @@ static void rt2800_config_alc_rt6352(str
+@@ -4109,25 +4116,29 @@ static void rt2800_config_alc_rt6352(str
  	if (unlikely(rt2800_wait_bbp_rf_ready(rt2x00dev, MAC_STATUS_CFG_BBP_RF_BUSY)))
  		rt2x00_warn(rt2x00dev, "RF busy while configuring ALC\n");
  
@@ -136,7 +136,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	rt2800_register_write(rt2x00dev, MAC_SYS_CTRL, mac_sys_ctrl);
  
  	rt2800_vco_calibration(rt2x00dev);
-@@ -4526,7 +4537,8 @@ static void rt2800_config_channel(struct
+@@ -4625,7 +4636,8 @@ static void rt2800_config_channel(struct
  	if (rt2x00_rt(rt2x00dev, RT6352)) {
  		/* BBP for GLRT BW */
  		bbp = conf_is_ht40(conf) ?
@@ -146,7 +146,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  		      0x15 : 0x1a;
  		rt2800_bbp_glrt_write(rt2x00dev, 141, bbp);
  
-@@ -6044,18 +6056,34 @@ static int rt2800_init_registers(struct
+@@ -6143,18 +6155,34 @@ static int rt2800_init_registers(struct
  	} else if (rt2x00_rt(rt2x00dev, RT5350)) {
  		rt2800_register_write(rt2x00dev, TX_SW_CFG0, 0x00000404);
  	} else if (rt2x00_rt(rt2x00dev, RT6352)) {
@@ -193,7 +193,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  		reg = rt2800_register_read(rt2x00dev, TX_ALC_CFG_1);
  		rt2x00_set_field32(&reg, TX_ALC_CFG_1_ROS_BUSY_EN, 0);
  		rt2800_register_write(rt2x00dev, TX_ALC_CFG_1, reg);
-@@ -7162,14 +7190,16 @@ static void rt2800_init_bbp_6352(struct
+@@ -7261,14 +7289,16 @@ static void rt2800_init_bbp_6352(struct
  	rt2800_bbp_write(rt2x00dev, 188, 0x00);
  	rt2800_bbp_write(rt2x00dev, 189, 0x00);
  
@@ -218,7 +218,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  
  	/* BBP for G band GLRT function (BBP_128 ~ BBP_221) */
  	rt2800_bbp_glrt_write(rt2x00dev, 0, 0x00);
-@@ -10400,6 +10430,9 @@ static void rt2800_restore_rf_bbp_rt6352
+@@ -10499,6 +10529,9 @@ static void rt2800_restore_rf_bbp_rt6352
  		rt2800_register_write(rt2x00dev, RF_BYPASS3, 0x0);
  	}
  
@@ -228,7 +228,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	if (rt2x00_has_cap_external_lna_bg(rt2x00dev)) {
  		rt2800_rfcsr_write_chanreg(rt2x00dev, 14, 0x16);
  		rt2800_rfcsr_write_chanreg(rt2x00dev, 17, 0x23);
-@@ -10481,6 +10514,9 @@ static void rt2800_calibration_rt6352_st
+@@ -10580,6 +10613,9 @@ static void rt2800_calibration_rt6352_st
  		rt2800_register_write(rt2x00dev, RF_BYPASS3, reg);
  	}
  
@@ -238,7 +238,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	if (rt2x00_has_cap_external_lna_bg(rt2x00dev)) {
  		rt2800_rfcsr_write_chanreg(rt2x00dev, 14, 0x66);
  		rt2800_rfcsr_write_chanreg(rt2x00dev, 17, 0x20);
-@@ -10571,31 +10607,36 @@ static void rt2800_init_rfcsr_6352(struc
+@@ -10670,31 +10706,36 @@ static void rt2800_init_rfcsr_6352(struc
  	rt2800_rfcsr_write(rt2x00dev, 42, 0x5B);
  	rt2800_rfcsr_write(rt2x00dev, 43, 0x00);
  
@@ -300,7 +300,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  
  	/* Initialize RF channel register to default value */
  	rt2800_rfcsr_write_chanreg(rt2x00dev, 0, 0x03);
-@@ -10661,63 +10702,71 @@ static void rt2800_init_rfcsr_6352(struc
+@@ -10760,63 +10801,71 @@ static void rt2800_init_rfcsr_6352(struc
  
  	rt2800_rfcsr_write_bank(rt2x00dev, 6, 45, 0xC5);
  
@@ -427,7 +427,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  
  	/* Initialize RF DC calibration register to default value */
  	rt2800_rfcsr_write_dccal(rt2x00dev, 0, 0x47);
-@@ -10780,12 +10829,17 @@ static void rt2800_init_rfcsr_6352(struc
+@@ -10879,12 +10928,17 @@ static void rt2800_init_rfcsr_6352(struc
  	rt2800_rfcsr_write_dccal(rt2x00dev, 62, 0x00);
  	rt2800_rfcsr_write_dccal(rt2x00dev, 63, 0x00);
  
