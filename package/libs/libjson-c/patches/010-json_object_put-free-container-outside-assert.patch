@@ -1,0 +1,29 @@
+From: Felix Fietkau <nbd@nbd.name>
+Subject: [PATCH] json_object: free a container object outside of assert()
+
+json_object_put() frees a container object, after all of its children,
+in a call inside assert(). A build with NDEBUG compiles that call out,
+so every released object or array stays allocated.
+
+Call the function before the assertion.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/json_object.c
++++ b/json_object.c
+@@ -435,11 +435,14 @@ int json_object_put(struct json_object *
+ 		// All slots are cleared, now pop back up to the parent
+ 		{
+ 			json_object *parent = jso->_delete_parent;
++			int freed;
+ 			// jso is a child that's already been detached from its parent
+ 			// so we need to actually free it now
+ 			assert(jso->_ref_count == 0);
+ 			jso->_ref_count++;   // We're the exclusive owner of jso, non-atomic add is ok.
+-			assert(_json_object_put_maybe_free(jso, 1) == 0);
++			freed = _json_object_put_maybe_free(jso, 1);
++			assert(freed == 0);
++			(void)freed;
+ 			jso = parent;
+ 			// iteration will be reset at the top of the loop
+ 		}
