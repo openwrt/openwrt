@@ -233,6 +233,7 @@ const struct rtldsa_config rtldsa_839x_cfg = {
 	.n_counters = 1024,
 	.n_pie_blocks = 18,
 	.pie_cls_flower = true,
+	.pie_mirror_group = true,
 	.port_ignore = 0x3f,
 	.vlan_tables_read = otto_vlan_839x_tables_read,
 	.vlan_set_tagged = otto_vlan_839x_set_tagged,

@@ -110,7 +110,8 @@ static int rtldsa_mirror_group_find(struct otto_dsa_priv *priv, int port)
 static void rtldsa_mirror_group_release(struct otto_dsa_priv *priv, int group,
 					struct rtldsa_mirror_config *config)
 {
-	if (priv->r->get_port_reg_be(config->spm) ||
+	if (priv->mirror_group_flower[group] ||
+	    priv->r->get_port_reg_be(config->spm) ||
 	    priv->r->get_port_reg_be(config->dpm))
 		return;
 
@@ -196,5 +197,44 @@ void rtldsa_port_mirror_del(struct dsa_switch *ds, int port,
 		}
 
 		rtldsa_mirror_group_release(priv, group, &config);
+	}
+}
+
+/* A flower rule mirrors through the group of its mirror port: the ACL mirror
+ * action picks the frames, the group's port masks stay as they are.
+ */
+int rtldsa_mirror_group_get(struct otto_dsa_priv *priv, int port)
+{
+	struct rtldsa_mirror_config config;
+	int group, r;
+
+	if (!priv->r->get_mirror_config)
+		return -EOPNOTSUPP;
+
+	scoped_guard(mutex, &priv->reg_mutex) {
+		group = rtldsa_mirror_group_find(priv, port);
+		if (group < 0)
+			return group;
+
+		r = priv->r->get_mirror_config(&config, group, port);
+		if (r < 0)
+			return r;
+
+		regmap_write(priv->map, config.ctrl, config.val);
+		priv->mirror_group_ports[group] = port;
+		priv->mirror_group_flower[group]++;
+	}
+
+	return group;
+}
+
+void rtldsa_mirror_group_put(struct otto_dsa_priv *priv, int group)
+{
+	struct rtldsa_mirror_config config;
+
+	scoped_guard(mutex, &priv->reg_mutex) {
+		priv->mirror_group_flower[group]--;
+		if (!priv->r->get_mirror_config(&config, group, priv->mirror_group_ports[group]))
+			rtldsa_mirror_group_release(priv, group, &config);
 	}
 }

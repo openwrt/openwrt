@@ -260,7 +260,7 @@ static int otto_tc_add_flow(struct otto_dsa_priv *priv, struct flow_cls_offload 
 {
 	struct flow_rule *rule = flow_cls_offload_flow_rule(f);
 	const struct flow_action_entry *act;
-	int i, err;
+	int i, err, port;
 
 	dev_dbg(priv->dev, "adding flower rule\n");
 
@@ -340,10 +340,30 @@ static int otto_tc_add_flow(struct otto_dsa_priv *priv, struct flow_cls_offload 
 
 		case FLOW_ACTION_MIRRED:
 			dev_dbg(priv->dev, "action MIRRED\n");
-			err = otto_tc_parse_fwd(priv, act, flow);
-			if (err)
+			if (!priv->r->pie_mirror_group) {
+				err = otto_tc_parse_fwd(priv, act, flow);
+				if (err)
+					return err;
+				flow->rule.fwd_act = PIE_ACT_COPY_TO_PORT;
+				break;
+			}
+			port = rtl83xx_port_is_under(act->dev, priv);
+			if (port < 0) {
+				netdev_info(act->dev, "not a DSA port on this switch\n");
+				return -EINVAL;
+			}
+			/* A copy through the forwarding action would take over the
+			 * forwarding decision of the L3 rules in later blocks.
+			 */
+			err = rtldsa_mirror_group_get(priv, port);
+			if (err < 0) {
+				if (err == -ENOSPC)
+					NL_SET_ERR_MSG_MOD(f->common.extack,
+							   "all four mirror groups are in use");
 				return err;
-			flow->rule.fwd_act = PIE_ACT_COPY_TO_PORT;
+			}
+			flow->rule.mir_sel = true;
+			flow->rule.mir_data = err;
 			break;
 
 		default:
@@ -408,6 +428,8 @@ static void otto_tc_flow_free(void *ptr, void *arg)
 
 	priv->r->pie_rule_rm(priv, &flow->rule);
 	otto_tc_packet_cntr_put(priv, flow->rule.packet_cntr);
+	if (flow->rule.mir_sel)
+		rtldsa_mirror_group_put(priv, flow->rule.mir_data);
 
 	/* Readers may still hold an RCU-protected reference after the
 	 * object has been removed from the hash table.
@@ -521,6 +543,8 @@ static int otto_tc_configure_flower(struct otto_dsa_priv *priv,
 out_remove:
 	rhashtable_remove_fast(&priv->tc_ht, &flow->node, tc_ht_params);
 	otto_tc_packet_cntr_put(priv, flow->rule.packet_cntr);
+	if (flow->rule.mir_sel)
+		rtldsa_mirror_group_put(priv, flow->rule.mir_data);
 	/* published in tc_ht above; a concurrent reader may still hold a ref */
 	kfree_rcu(flow, rcu_head);
 	goto out_err;
@@ -562,6 +586,8 @@ static int otto_tc_delete_flower(struct otto_dsa_priv *priv,
 
 	priv->r->pie_rule_rm(priv, &flow->rule);
 	otto_tc_packet_cntr_put(priv, flow->rule.packet_cntr);
+	if (flow->rule.mir_sel)
+		rtldsa_mirror_group_put(priv, flow->rule.mir_data);
 
 	kfree_rcu(flow, rcu_head);
 

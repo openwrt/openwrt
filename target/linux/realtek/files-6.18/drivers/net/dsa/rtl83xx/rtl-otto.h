@@ -367,6 +367,7 @@ struct rtldsa_config {
 	bool pie_rule_id_is_log_counter;
 	/* The PIE takes ingress tc flower rules */
 	bool pie_cls_flower;
+	bool pie_mirror_group;
 	u8 num_lag_ids;
 	u8 cpu_port;
 	u8 port_ignore;
@@ -515,6 +516,7 @@ struct otto_dsa_priv {
 	struct mutex pie_mutex;		/* Mutex for Packet Inspection Engine */
 	int link_state_irq;
 	int mirror_group_ports[4];
+	int mirror_group_flower[4];	/* flower rules mirroring through each group */
 	const struct rtldsa_config *r;
 	struct otto_l3_ctrl *l3_ctrl;
 	u64 irq_mask;
