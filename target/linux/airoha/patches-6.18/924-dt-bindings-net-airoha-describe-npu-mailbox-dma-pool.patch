@@ -1,0 +1,59 @@
+From 6bd4074ae3458d3e2325099267c4ba675f281d84 Mon Sep 17 00:00:00 2001
+From: Daniel Pawlik <pawlik.dan@gmail.com>
+Date: Fri, 16 Oct 2026 08:09:04 +0200
+Subject: [PATCH] dt-bindings: net: airoha: describe NPU mailbox DMA pool
+
+The EN7581 NPU can only address host DRAM at 0x80000000-0xbfffffff.
+Allow an optional restricted DMA pool after the firmware region, or
+after the WLAN regions, to keep streaming mailbox mappings in that
+window. Keep the firmware region first for existing driver users.
+
+Also describe the firmware names and WLAN Block Ack region already
+supported by the backported driver.
+
+Assisted-by: Codex Astra
+Signed-off-by: Daniel Pawlik <pawlik.dan@gmail.com>
+
+--- a/Documentation/devicetree/bindings/net/airoha,en7581-npu.yaml
++++ b/Documentation/devicetree/bindings/net/airoha,en7581-npu.yaml
+@@ -44,18 +44,36 @@ properties:
+     oneOf:
+       - items:
+           - description: NPU firmware binary region
++          - description: Restricted DMA pool for NPU mailbox buffers
++        minItems: 1
+       - items:
+           - description: NPU firmware binary region
+           - description: NPU wlan offload RX buffers region
+           - description: NPU wlan offload TX buffers region
+           - description: NPU wlan offload TX packet identifiers region
++          - description: NPU wlan Block Ack buffers region
++          - description: Restricted DMA pool for NPU mailbox buffers
++        minItems: 4
+ 
+   memory-region-names:
++    oneOf:
++      - items:
++          - const: firmware
++          - const: dma
++        minItems: 1
++      - items:
++          - const: firmware
++          - const: pkt
++          - const: tx-pkt
++          - const: tx-bufid
++          - const: ba
++          - const: dma
++        minItems: 4
++
++  firmware-name:
+     items:
+-      - const: firmware
+-      - const: pkt
+-      - const: tx-pkt
+-      - const: tx-bufid
++      - description: Firmware name of RiscV core
++      - description: Firmware name of Data section
+ 
+ required:
+   - compatible
