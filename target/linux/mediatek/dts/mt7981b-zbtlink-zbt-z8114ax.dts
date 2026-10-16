@@ -10,7 +10,7 @@
 
 / {
 	model = "Zbtlink ZBT-Z8114AX-DS";
-	compatible = "zbtlink,z8114ax-ds", "mediatek,mt7981b";
+	compatible = "zbtlink,zbt-z8114ax-ds", "mediatek,mt7981b";
 
 	aliases {
 		serial0 = &uart0;
@@ -62,38 +62,57 @@
 	leds {
 		compatible = "gpio-leds";
 
-		led_status: status {
+		led-status: status {
 			function = LED_FUNCTION_STATUS;
 			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&pio 7 GPIO_ACTIVE_LOW>;
 		};
 
-		led_power {
+		led-power: power {
 			function = LED_FUNCTION_POWER;
 			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&pio 3 GPIO_ACTIVE_LOW>;
 		};
 
-		led_4g {
+		led-4g: mobile {
 			function = LED_FUNCTION_MOBILE;
 			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&pio 5 GPIO_ACTIVE_LOW>;
 		};
 
-		led_rssi1 {
+		led-wifi_2g: wifi-2g {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WLAN_2GHZ;
+			function-enumerator = <0>;
+			gpios = <&pio> // i will come back later
+			linux,default-trigger = "phy0tpt";
+		};
+
+		led-wifi_5g: wifi-5g {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WLAN_5GHZ;
+			function-enumerator = <1>;
+			gpios = <&pio> // i will come back later
+			linux,default-trigger = "phy1tpt";
+		};
+
+		led-rssi1: rssi-red {
 			function = "rssi1";
+			function-enumerator = <0>;
 			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&pio 9 GPIO_ACTIVE_LOW>;
 		};
 
-		led_rssi2 {
+		led-rssi2: rssi-blue {
 			function = "rssi2";
+			function-enumerator = <0>;
 			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&pio 11 GPIO_ACTIVE_LOW>;
 		};
 
-		led_rssi3 {
+		led_rssi3: rssi-green {
 			function = "rssi3";
+			function-enumerator = <0>;
 			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&pio 10 GPIO_ACTIVE_LOW>;
 		};
@@ -160,10 +179,10 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 
-    		port@0 {
-                	reg = <0>;
-	                label = "lan1";
-    		};
+		port@0 {
+			reg = <0>;
+			label = "lan1";
+    	};
 
 		/* 5G Module Ethernet data path, usb0 is the same modem over USB */
 		port@4 {
@@ -338,6 +357,10 @@
 	};
 };
 
+
+&mmc0 {
+	status = "okay";
+}
 
 &usb_phy {
 	status = "okay";
