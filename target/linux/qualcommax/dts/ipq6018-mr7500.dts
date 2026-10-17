@@ -10,6 +10,11 @@
 #include <dt-bindings/input/input.h>
 #include <dt-bindings/leds/common.h>
 
+/* ipq6018-cp-cpu.dtsi re-includes ipq6018.dtsi and resets the 512M q6_region override */
+&q6_region {
+	reg = <0x0 0x4ab00000 0x0 0x3700000>;
+};
+
 / {
 	model = "Linksys MR7500";
 	compatible = "linksys,mr7500", "qcom,ipq6018";
