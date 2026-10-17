@@ -1,3 +1,52 @@
+define Build/boot-scr
+	rm -f $@.scr
+	mkimage -A powerpc -O linux -T script -C none -a 0 -e 0 \
+		-d turris1x.bootscript $@.scr
+endef
+
+# The boot partition has to be FAT and the file name is fixed: the U-Boot
+# the Turris 1.x routers ship with (2015.04) runs "fatload mmc 0:1 ... zImage"
+# from its built-in bootcmd.
+define Build/boot-img
+	rm -f $@.boot
+	mkfs.fat --invariant -C $@.boot $$(( $(CONFIG_TARGET_KERNEL_PARTSIZE) * 1024 ))
+	mcopy -i $@.boot $(IMAGE_KERNEL) ::zImage
+	mcopy -i $@.boot $@.scr ::boot.scr
+endef
+
+define Build/sdcard-img
+	SIGNATURE="$(IMG_PART_SIGNATURE)" \
+	./gen_mpc85xx_sdcard_img.sh $@ \
+		c $(CONFIG_TARGET_KERNEL_PARTSIZE) $@.boot \
+		83 $(CONFIG_TARGET_ROOTFS_PARTSIZE) $(IMAGE_ROOTFS)
+endef
+
+define Device/cznic_turris1x
+  DEVICE_VENDOR := CZ.NIC
+  DEVICE_MODEL := Turris 1.x
+  DEVICE_PACKAGES := kmod-dsa-qca8k kmod-fs-ext4 kmod-fs-vfat \
+	  kmod-gpio-pca953x kmod-hwmon-lm90 kmod-leds-turris-1x kmod-nls-cp437 \
+	  kmod-nls-iso8859-1 kmod-phy-micrel kmod-phy-qca83xx kmod-rtc-ds1307 \
+	  kmod-usb-storage-uas kmod-usb3 e2fsprogs
+  KERNEL_NAME := zImage.la3000000
+  KERNEL_LOADADDR := 0x3000000
+  KERNEL_ENTRY := 0x3000000
+  KERNEL = kernel-bin | fit none $(KDIR)/image-$$(DEVICE_DTS).dtb
+  # Micron MT29F2G08ABAEAWP: 2 KiB pages, 128 KiB eraseblocks. The VID
+  # headers go at the page size, where the factory U-Boot expects them.
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  VID_HDR_OFFSET := 2048
+  KERNEL_IN_UBI := 1
+  # The boot arguments name squashfs, so do not offer an ext4 variant.
+  FILESYSTEMS := squashfs
+  IMAGES := sdcard.img.gz factory-nand.ubi sysupgrade.bin
+  IMAGE/sdcard.img.gz := boot-scr | boot-img | sdcard-img | libdeflate-gzip
+  IMAGE/factory-nand.ubi := append-ubi
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+endef
+TARGET_DEVICES += cznic_turris1x
+
 define Device/freescale_p2020rdb
   DEVICE_VENDOR := Freescale
   DEVICE_MODEL := P2020RDB
