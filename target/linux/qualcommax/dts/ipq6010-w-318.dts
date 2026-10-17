@@ -1,0 +1,545 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+/dts-v1/;
+
+#include "ipq6018.dtsi"
+#include "ipq6018-ess.dtsi"
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+
+/ {
+	model = "Arista W-318";
+	compatible = "arista,w-318", "qcom,ipq6018-cp01", "qcom,ipq6018";
+
+	aliases {
+		serial0 = &blsp1_uart3;
+		serial1 = &blsp1_uart2;
+		ethernet0 = &swport5;
+		label-mac-device = &swport5;
+		led-boot = &led_power_amber;
+		led-failsafe = &led_power_amber;
+		led-running = &led_power_green;
+		led-upgrade = &led_power_amber;
+	};
+
+	chosen {
+		stdout-path = "serial0:115200n8";
+	};
+
+	gpio-export {
+		compatible = "gpio-export";
+
+		ble-nreset {
+			gpio-export,name = "ble-nreset";
+			gpio-export,output = <1>;
+			gpios = <&tlmm 42 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	keys {
+		compatible = "gpio-keys";
+		pinctrl-0 = <&button_pins>;
+		pinctrl-names = "default";
+
+		reset {
+			label = "reset";
+			gpios = <&tlmm 23 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+			debounce-interval = <60>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		pinctrl-0 = <&led_pins>;
+		pinctrl-names = "default";
+
+		led_power_green: led-0 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_POWER;
+			gpios = <&tlmm 18 GPIO_ACTIVE_HIGH>;
+		};
+
+		led_power_amber: led-1 {
+			color = <LED_COLOR_ID_AMBER>;
+			function = LED_FUNCTION_POWER;
+			gpios = <&tlmm 43 GPIO_ACTIVE_HIGH>;
+		};
+
+		led-2 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = "uplink";
+			gpios = <&tlmm 24 GPIO_ACTIVE_HIGH>;
+		};
+
+		led-3 {
+			color = <LED_COLOR_ID_ORANGE>;
+			function = "uplink";
+			gpios = <&tlmm 25 GPIO_ACTIVE_HIGH>;
+		};
+
+		led-4 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WLAN_2GHZ;
+			gpios = <&tlmm 29 GPIO_ACTIVE_HIGH>;
+		};
+
+		led-5 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WLAN_5GHZ;
+			gpios = <&tlmm 33 GPIO_ACTIVE_HIGH>;
+		};
+
+		led-6 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WLAN_6GHZ;
+			gpios = <&tlmm 36 GPIO_ACTIVE_HIGH>;
+		};
+
+		/* one LED for the three LAN ports, "Network 1/2/3" */
+		led-7 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_LAN;
+			gpios = <&tlmm 30 GPIO_ACTIVE_HIGH>;
+		};
+
+		led-8 {
+			color = <LED_COLOR_ID_AMBER>;
+			function = LED_FUNCTION_LAN;
+			gpios = <&tlmm 31 GPIO_ACTIVE_HIGH>;
+		};
+	};
+};
+
+&blsp1_spi1 {
+	pinctrl-0 = <&spi_0_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	flash@0 {
+		reg = <0>;
+		/* U-Boot looks for the "n25q128a11" node */
+		linux,modalias = "m25p80", "n25q128a11";
+		compatible = "micron,n25q128a11", "jedec,spi-nor";
+		spi-max-frequency = <50000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "0:SBL1";
+				reg = <0x0 0xc0000>;
+				read-only;
+			};
+
+			partition@c0000 {
+				label = "0:MIBIB";
+				reg = <0xc0000 0x10000>;
+				read-only;
+			};
+
+			partition@d0000 {
+				label = "0:BOOTCONFIG";
+				reg = <0xd0000 0x20000>;
+				read-only;
+			};
+
+			partition@f0000 {
+				label = "0:BOOTCONFIG1";
+				reg = <0xf0000 0x20000>;
+				read-only;
+			};
+
+			partition@110000 {
+				label = "0:QSEE";
+				reg = <0x110000 0x1a0000>;
+				read-only;
+			};
+
+			partition@2b0000 {
+				label = "0:QSEE_1";
+				reg = <0x2b0000 0x1a0000>;
+				read-only;
+			};
+
+			partition@450000 {
+				label = "0:DEVCFG";
+				reg = <0x450000 0x10000>;
+				read-only;
+			};
+
+			partition@460000 {
+				label = "0:DEVCFG_1";
+				reg = <0x460000 0x10000>;
+				read-only;
+			};
+
+			partition@470000 {
+				label = "0:RPM";
+				reg = <0x470000 0x40000>;
+				read-only;
+			};
+
+			partition@4b0000 {
+				label = "0:RPM_1";
+				reg = <0x4b0000 0x40000>;
+				read-only;
+			};
+
+			partition@4f0000 {
+				label = "0:CDT";
+				reg = <0x4f0000 0x10000>;
+				read-only;
+			};
+
+			partition@500000 {
+				label = "0:CDT_1";
+				reg = <0x500000 0x10000>;
+				read-only;
+			};
+
+			partition@510000 {
+				label = "0:APPSBLENV";
+				reg = <0x510000 0x10000>;
+			};
+
+			partition@520000 {
+				label = "0:APPSBL";
+				reg = <0x520000 0x100000>;
+				read-only;
+			};
+
+			partition@620000 {
+				label = "0:APPSBL_1";
+				reg = <0x620000 0x100000>;
+				read-only;
+			};
+
+			partition@720000 {
+				label = "0:ART";
+				reg = <0x720000 0x80000>;
+				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_art_0: macaddr@0 {
+						reg = <0x0 0x6>;
+					};
+
+					macaddr_art_6: macaddr@6 {
+						reg = <0x6 0x6>;
+					};
+
+					macaddr_art_c: macaddr@c {
+						reg = <0xc 0x6>;
+					};
+
+					macaddr_art_12: macaddr@12 {
+						reg = <0x12 0x6>;
+					};
+
+					caldata_ipq6018: calibration@1000 {
+						reg = <0x1000 0x10000>;
+					};
+
+					caldata_qcn9074: calibration@26800 {
+						reg = <0x26800 0x20000>;
+					};
+				};
+			};
+
+			/* OpenWrt's kernel; the stock firmware's slot 0 kernel */
+			partition@7a0000 {
+				label = "0:HLOS";
+				reg = <0x7a0000 0x800000>;
+			};
+
+			/* the stock firmware's slot 1 kernel */
+			partition@fa0000 {
+				label = "0:HLOS_1";
+				reg = <0xfa0000 0x800000>;
+				read-only;
+			};
+
+			partition@17a0000 {
+				label = "CONFIG";
+				reg = <0x17a0000 0x400000>;
+				read-only;
+			};
+
+			partition@1ba0000 {
+				label = "DEVCERT";
+				reg = <0x1ba0000 0x20000>;
+				read-only;
+			};
+
+			partition@1bc0000 {
+				label = "SYS_DATA";
+				reg = <0x1bc0000 0x220000>;
+				read-only;
+			};
+
+			partition@1de0000 {
+				label = "RESERVED";
+				reg = <0x1de0000 0x220000>;
+				read-only;
+			};
+		};
+	};
+};
+
+&blsp1_spi5 {
+	pinctrl-0 = <&tpm_spi_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	tpm@0 {
+		compatible = "tcg,tpm_tis-spi";
+		reg = <0>;
+		spi-max-frequency = <500000>;
+	};
+};
+
+/* the Nordic nRF52833 Bluetooth LE controller, H4 without flow control */
+&blsp1_uart2 {
+	pinctrl-0 = <&ble_uart_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&blsp1_uart3 {
+	pinctrl-0 = <&serial_3_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&edma {
+	status = "okay";
+};
+
+&mdio {
+	status = "okay";
+	pinctrl-0 = <&mdio_pins>;
+	pinctrl-names = "default";
+	reset-gpios = <&tlmm 75 GPIO_ACTIVE_LOW>;
+	reset-delay-us = <10000>;
+	reset-post-delay-us = <50000>;
+
+	ethernet-phy-package@0 {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		compatible = "qcom,qca8075-package";
+		reg = <0>;
+
+		qcom,package-mode = "psgmii";
+
+		qca8075_1: ethernet-phy@1 {
+			compatible = "ethernet-phy-ieee802.3-c22";
+			reg = <1>;
+		};
+
+		qca8075_2: ethernet-phy@2 {
+			compatible = "ethernet-phy-ieee802.3-c22";
+			reg = <2>;
+		};
+
+		qca8075_3: ethernet-phy@3 {
+			compatible = "ethernet-phy-ieee802.3-c22";
+			reg = <3>;
+		};
+	};
+
+	qca8081: ethernet-phy@24 {
+		compatible = "ethernet-phy-id004d.d101";
+		reg = <24>;
+		reset-gpios = <&tlmm 77 GPIO_ACTIVE_LOW>;
+		reset-assert-us = <10000>;
+		reset-deassert-us = <50000>;
+	};
+};
+
+&pcie0 {
+	status = "okay";
+	perst-gpios = <&tlmm 60 GPIO_ACTIVE_LOW>;
+
+	pcie@0 {
+		/* QCN9072, the 2x2 QCN9074: the 6 GHz radio */
+		wifi@0,0 {
+			compatible = "pci17cb,1104";
+			reg = <0x00010000 0 0 0 0>;
+
+			qcom,ath11k-fw-memory-mode = <0>;
+			qcom,calibration-variant = "Arista-W318";
+			nvmem-cells = <&caldata_qcn9074>;
+			nvmem-cell-names = "calibration";
+		};
+	};
+};
+
+&pcie_phy {
+	status = "okay";
+};
+
+&qusb_phy_0 {
+	status = "okay";
+};
+
+&rpm {
+	status = "disabled";
+};
+
+&sdhc {
+	bus-width = <8>;
+	mmc-ddr-1_8v;
+	mmc-hs200-1_8v;
+	non-removable;
+	status = "okay";
+};
+
+&ssphy_0 {
+	status = "okay";
+};
+
+&switch {
+	status = "okay";
+
+	ports {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		port@0 {
+			reg = <0>;
+			ethernet = <&edma>;
+			phy-mode = "internal";
+
+			fixed-link {
+				speed = <1000>;
+				full-duplex;
+			};
+		};
+
+		/* the panel numbers the LAN ports the other way round from the PHYs */
+		swport2: port@2 {
+			reg = <2>;
+			label = "lan3";
+			phy-handle = <&qca8075_1>;
+			phy-mode = "psgmii";
+			pcs-handle = <&uniphy0 1>;
+			nvmem-cells = <&macaddr_art_6>;
+			nvmem-cell-names = "mac-address";
+		};
+
+		swport3: port@3 {
+			reg = <3>;
+			label = "lan2";
+			phy-handle = <&qca8075_2>;
+			phy-mode = "psgmii";
+			pcs-handle = <&uniphy0 2>;
+			nvmem-cells = <&macaddr_art_c>;
+			nvmem-cell-names = "mac-address";
+		};
+
+		swport4: port@4 {
+			reg = <4>;
+			label = "lan1";
+			phy-handle = <&qca8075_3>;
+			phy-mode = "psgmii";
+			pcs-handle = <&uniphy0 3>;
+			nvmem-cells = <&macaddr_art_12>;
+			nvmem-cell-names = "mac-address";
+		};
+
+		/* 2.5 GbE, PoE in */
+		swport5: port@5 {
+			reg = <5>;
+			label = "uplink";
+			phy-handle = <&qca8081>;
+			phy-mode = "2500base-x";
+			pcs-handle = <&uniphy1 0>;
+			nvmem-cells = <&macaddr_art_0>;
+			nvmem-cell-names = "mac-address";
+		};
+	};
+};
+
+&tlmm {
+	/* TZ has exclusive control over GPIO20 */
+	gpio-reserved-ranges = <20 1>;
+
+	mdio_pins: mdio-pins {
+		mdc {
+			pins = "gpio64";
+			function = "mdc";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+
+		mdio {
+			pins = "gpio65";
+			function = "mdio";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+	};
+
+	spi_0_pins: spi-0-state {
+		pins = "gpio38", "gpio39", "gpio40", "gpio41";
+		function = "blsp0_spi";
+		drive-strength = <8>;
+		bias-pull-down;
+	};
+
+	button_pins: button-state {
+		pins = "gpio23";
+		function = "gpio";
+		drive-strength = <8>;
+		bias-pull-up;
+	};
+
+	ble_uart_pins: ble-uart-state {
+		pins = "gpio69", "gpio70", "gpio71", "gpio72";
+		function = "blsp1_uart";
+		drive-strength = <8>;
+		bias-disable;
+	};
+
+	tpm_spi_pins: tpm-spi-state {
+		pins = "gpio55", "gpio56", "gpio57", "gpio58";
+		function = "blsp4_spi";
+		drive-strength = <8>;
+		bias-disable;
+	};
+
+	led_pins: led-state {
+		pins = "gpio18", "gpio24", "gpio25", "gpio29", "gpio30", "gpio31",
+		       "gpio33", "gpio36", "gpio43";
+		function = "gpio";
+		drive-strength = <8>;
+		bias-pull-down;
+	};
+};
+
+&uniphy0 {
+	status = "okay";
+};
+
+&uniphy1 {
+	status = "okay";
+};
+
+&usb3 {
+	status = "okay";
+};
+
+&wifi {
+	status = "okay";
+	qcom,calibration-variant = "Arista-W318";
+	nvmem-cells = <&caldata_ipq6018>;
+	nvmem-cell-names = "calibration";
+};
