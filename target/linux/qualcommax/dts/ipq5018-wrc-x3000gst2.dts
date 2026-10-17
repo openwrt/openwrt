@@ -5,6 +5,18 @@
 / {
 	model = "ELECOM WRC-X3000GST2";
 	compatible = "elecom,wrc-x3000gst2", "qcom,ipq5018";
+
+	reserved-memory {
+		q6_region_qcn6122_1: q6-region-qcn6122-1@4d200000 {
+			reg = <0x0 0x4d200000 0x0 0xd00000>;
+			no-map;
+		};
+
+		m3_dump_qcn6122_1: m3-dump-qcn6122-1@4df00000 {
+			reg = <0x0 0x4df00000 0x0 0x100000>;
+			no-map;
+		};
+	};
 };
 
 &q6v5_wcss {
@@ -13,10 +25,15 @@
 
 &wifi {
 	status = "okay";
+
 	qcom,ath11k-fw-memory-mode = <1>;
 };
 
 &wifi1 {
 	status = "okay";
+
 	qcom,ath11k-fw-memory-mode = <1>;
+
+	memory-region = <&q6_region_qcn6122_1>, <&q6_region_ipq5018>, <&m3_dump_qcn6122_1>;
+	memory-region-names = "q6-region", "m3-region", "m3-dump";
 };

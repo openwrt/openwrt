@@ -5,131 +5,247 @@
  * Copyright (c) 2023-2025 The Linux Foundation. All rights reserved.
  */
 
-&q6_region {
-	reg = <0x0 0x4b000000 0x0 0x3000000>;
+/ {
+	reserved-memory {
+		q6_region_ipq5018: q6-region-ipq5018@4c400000 {
+			reg = <0x0 0x4c400000 0x0 0xd00000>;
+			no-map;
+		};
+
+		m3_dump_ipq5018: m3-dump-ipq5018@4d100000 {
+			reg = <0x0 0x4d100000 0x0 0x100000>;
+			no-map;
+		};
+	};
 };
 
-&q6v5_wcss {
-	compatible = "qcom,ipq5018-q6-mpd";
+&q6_region {
+	reg = <0x0 0x4b000000 0x0 0x1400000>;
+};
 
-	firmware-name = "ath11k/IPQ5018/hw1.0/q6_fw.mdt",
-			"ath11k/IPQ5018/hw1.0/m3_fw.mdt",
- 			"ath11k/QCN6122/hw1.0/m3_fw.mdt";
+&wifi {
+	/delete-property/ interrupts;
 
-	// IPQ5018
-	q6_wcss_pd1: pd-1 {
-		firmware-name = "ath11k/IPQ5018/hw1.0/q6_fw.mdt";
+	interrupts-extended = <&intc GIC_SPI 288 IRQ_TYPE_EDGE_RISING>,
+			      <&intc GIC_SPI 289 IRQ_TYPE_EDGE_RISING>,
+			      <&intc GIC_SPI 290 IRQ_TYPE_EDGE_RISING>,
+			      <&intc GIC_SPI 291 IRQ_TYPE_EDGE_RISING>,
+			      <&intc GIC_SPI 292 IRQ_TYPE_EDGE_RISING>,
+			      <&intc GIC_SPI 293 IRQ_TYPE_EDGE_RISING>,
+			      <&intc GIC_SPI 294 IRQ_TYPE_EDGE_RISING>,
+			      <&intc GIC_SPI 295 IRQ_TYPE_EDGE_RISING>,
+			      <&intc GIC_SPI 296 IRQ_TYPE_EDGE_RISING>,
+			      <&intc GIC_SPI 297 IRQ_TYPE_EDGE_RISING>,
+			      <&intc GIC_SPI 298 IRQ_TYPE_EDGE_RISING>,
+			      <&intc GIC_SPI 299 IRQ_TYPE_EDGE_RISING>,
+			      <&intc GIC_SPI 300 IRQ_TYPE_EDGE_RISING>,
+			      <&intc GIC_SPI 301 IRQ_TYPE_EDGE_RISING>,
+			      <&intc GIC_SPI 302 IRQ_TYPE_EDGE_RISING>,
+			      <&intc GIC_SPI 303 IRQ_TYPE_EDGE_RISING>,
+			      <&intc GIC_SPI 304 IRQ_TYPE_EDGE_RISING>,
+			      <&intc GIC_SPI 305 IRQ_TYPE_EDGE_RISING>,
+			      <&intc GIC_SPI 306 IRQ_TYPE_EDGE_RISING>,
+			      <&intc GIC_SPI 307 IRQ_TYPE_EDGE_RISING>,
+			      <&intc GIC_SPI 308 IRQ_TYPE_EDGE_RISING>,
+			      <&intc GIC_SPI 309 IRQ_TYPE_EDGE_RISING>,
+			      <&intc GIC_SPI 310 IRQ_TYPE_EDGE_RISING>,
+			      <&intc GIC_SPI 311 IRQ_TYPE_EDGE_RISING>,
+			      <&intc GIC_SPI 334 IRQ_TYPE_EDGE_RISING>,
+			      <&intc GIC_SPI 313 IRQ_TYPE_EDGE_RISING>,
+			      <&intc GIC_SPI 314 IRQ_TYPE_EDGE_RISING>,
+			      <&intc GIC_SPI 315 IRQ_TYPE_EDGE_RISING>,
+			      <&intc GIC_SPI 316 IRQ_TYPE_EDGE_RISING>,
+			      <&intc GIC_SPI 317 IRQ_TYPE_EDGE_RISING>,
+			      <&intc GIC_SPI 318 IRQ_TYPE_EDGE_RISING>,
+			      <&intc GIC_SPI 319 IRQ_TYPE_EDGE_RISING>,
+			      <&intc GIC_SPI 320 IRQ_TYPE_EDGE_RISING>,
+			      <&intc GIC_SPI 321 IRQ_TYPE_EDGE_RISING>,
+			      <&intc GIC_SPI 322 IRQ_TYPE_EDGE_RISING>,
+			      <&intc GIC_SPI 323 IRQ_TYPE_EDGE_RISING>,
+			      <&intc GIC_SPI 324 IRQ_TYPE_EDGE_RISING>,
+			      <&intc GIC_SPI 325 IRQ_TYPE_EDGE_RISING>,
+			      <&intc GIC_SPI 326 IRQ_TYPE_EDGE_RISING>,
+			      <&intc GIC_SPI 327 IRQ_TYPE_EDGE_RISING>,
+			      <&intc GIC_SPI 328 IRQ_TYPE_EDGE_RISING>,
+			      <&intc GIC_SPI 329 IRQ_TYPE_EDGE_RISING>,
+			      <&intc GIC_SPI 330 IRQ_TYPE_EDGE_RISING>,
+			      <&intc GIC_SPI 331 IRQ_TYPE_EDGE_RISING>,
+			      <&intc GIC_SPI 332 IRQ_TYPE_EDGE_RISING>,
+			      <&intc GIC_SPI 333 IRQ_TYPE_EDGE_RISING>,
+			      <&intc GIC_SPI 312 IRQ_TYPE_EDGE_RISING>,
+			      <&intc GIC_SPI 335 IRQ_TYPE_EDGE_RISING>,
+			      <&intc GIC_SPI 336 IRQ_TYPE_EDGE_RISING>,
+			      <&intc GIC_SPI 337 IRQ_TYPE_EDGE_RISING>,
+			      <&intc GIC_SPI 338 IRQ_TYPE_EDGE_RISING>,
+			      <&intc GIC_SPI 339 IRQ_TYPE_EDGE_RISING>,
+			      <&wcss_smp2p_in 8 IRQ_TYPE_NONE>,
+			      <&wcss_smp2p_in 9 IRQ_TYPE_NONE>,
+			      <&wcss_smp2p_in 12 IRQ_TYPE_NONE>,
+			      <&wcss_smp2p_in 11 IRQ_TYPE_NONE>;
+	interrupt-names = "misc-pulse1",
+			  "misc-latch",
+			  "sw-exception",
+			  "watchdog",
+			  "ce0",
+			  "ce1",
+			  "ce2",
+			  "ce3",
+			  "ce4",
+			  "ce5",
+			  "ce6",
+			  "ce7",
+			  "ce8",
+			  "ce9",
+			  "ce10",
+			  "ce11",
+			  "host2wbm-desc-feed",
+			  "host2reo-re-injection",
+			  "host2reo-command",
+			  "host2rxdma-monitor-ring3",
+			  "host2rxdma-monitor-ring2",
+			  "host2rxdma-monitor-ring1",
+			  "reo2ost-exception",
+			  "wbm2host-rx-release",
+			  "reo2host-status",
+			  "reo2host-destination-ring4",
+			  "reo2host-destination-ring3",
+			  "reo2host-destination-ring2",
+			  "reo2host-destination-ring1",
+			  "rxdma2host-monitor-destination-mac3",
+			  "rxdma2host-monitor-destination-mac2",
+			  "rxdma2host-monitor-destination-mac1",
+			  "ppdu-end-interrupts-mac3",
+			  "ppdu-end-interrupts-mac2",
+			  "ppdu-end-interrupts-mac1",
+			  "rxdma2host-monitor-status-ring-mac3",
+			  "rxdma2host-monitor-status-ring-mac2",
+			  "rxdma2host-monitor-status-ring-mac1",
+			  "host2rxdma-host-buf-ring-mac3",
+			  "host2rxdma-host-buf-ring-mac2",
+			  "host2rxdma-host-buf-ring-mac1",
+			  "rxdma2host-destination-ring-mac3",
+			  "rxdma2host-destination-ring-mac2",
+			  "rxdma2host-destination-ring-mac1",
+			  "host2tcl-input-ring4",
+			  "host2tcl-input-ring3",
+			  "host2tcl-input-ring2",
+			  "host2tcl-input-ring1",
+			  "wbm2host-tx-completions-ring3",
+			  "wbm2host-tx-completions-ring2",
+			  "wbm2host-tx-completions-ring1",
+			  "tcl2host-status-ring",
+			  "fatal",
+			  "ready",
+			  "spawn",
+			  "stop-ack";
 
-		interrupts-extended =
-			<&wcss_smp2p_in 8 IRQ_TYPE_NONE>,
-			<&wcss_smp2p_in 9 IRQ_TYPE_NONE>,
-			<&wcss_smp2p_in 12 IRQ_TYPE_NONE>,
-			<&wcss_smp2p_in 11 IRQ_TYPE_NONE>;
-		interrupt-names =
-			"fatal",
-			"ready",
-			"spawn-ack",
-			"stop-ack";
+	qcom,smem-states = <&wcss_smp2p_out 8>,
+			   <&wcss_smp2p_out 9>,
+			   <&wcss_smp2p_out 10>;
+	qcom,smem-state-names = "shutdown",
+				"stop",
+				"spawn";
 
-		qcom,smem-states =
-			<&wcss_smp2p_out 8>,
-			<&wcss_smp2p_out 9>,
-			<&wcss_smp2p_out 10>;
-		qcom,smem-state-names =
-			"shutdown",
-			"stop",
-			"spawn";
-	};
-
-	// QCN6122
-	q6_wcss_pd2: pd-2 {
-		firmware-name = "ath11k/IPQ5018/hw1.0/q6_fw.mdt";
-
-		interrupts-extended =
-			<&wcss_smp2p_in 16 IRQ_TYPE_NONE>,
-			<&wcss_smp2p_in 17 IRQ_TYPE_NONE>,
-			<&wcss_smp2p_in 20 IRQ_TYPE_NONE>,
-			<&wcss_smp2p_in 19 IRQ_TYPE_NONE>;
-		interrupt-names =
-			"fatal",
-			"ready",
-			"spawn-ack",
-			"stop-ack";
-
-		qcom,smem-states =
-			<&wcss_smp2p_out 16>,
-			<&wcss_smp2p_out 17>,
-			<&wcss_smp2p_out 18>;
-		qcom,smem-state-names =
-			"shutdown",
-			"stop",
-			"spawn";
-	};
-
-	// QCN6122
-	q6_wcss_pd3: pd-3 {
-		firmware-name = "ath11k/IPQ5018/hw1.0/q6_fw.mdt";
-
-		interrupts-extended =
-			<&wcss_smp2p_in 24 IRQ_TYPE_NONE>,
-			<&wcss_smp2p_in 25 IRQ_TYPE_NONE>,
-			<&wcss_smp2p_in 28 IRQ_TYPE_NONE>,
-			<&wcss_smp2p_in 27 IRQ_TYPE_NONE>;
-		interrupt-names =
-			"fatal",
-			"ready",
-			"spawn-ack",
-			"stop-ack";
-
-		qcom,smem-states =
-			<&wcss_smp2p_out 24>,
-			<&wcss_smp2p_out 25>,
-			<&wcss_smp2p_out 26>;
-		qcom,smem-state-names =
-			"shutdown",
-			"stop",
-			"spawn";
-	};
+	memory-region = <&q6_region_ipq5018>, <&q6_region_ipq5018>, <&m3_dump_ipq5018>;
+	memory-region-names = "q6-region", "m3-region", "m3-dump";
 };
 
 &soc {
-	//QCN6122: 1st instance
 	wifi1: wifi@b00a040 {
 		reg = <0x0b00a040 0x0>;
 		compatible = "qcom,qcn6122-wifi";
-		interrupts = <GIC_SPI 416 IRQ_TYPE_EDGE_RISING>,
-			     <GIC_SPI 417 IRQ_TYPE_EDGE_RISING>,
-			     <GIC_SPI 418 IRQ_TYPE_EDGE_RISING>,
-			     <GIC_SPI 419 IRQ_TYPE_EDGE_RISING>,
-			     <GIC_SPI 420 IRQ_TYPE_EDGE_RISING>,
-			     <GIC_SPI 421 IRQ_TYPE_EDGE_RISING>,
-			     <GIC_SPI 422 IRQ_TYPE_EDGE_RISING>,
-			     <GIC_SPI 423 IRQ_TYPE_EDGE_RISING>,
-			     <GIC_SPI 424 IRQ_TYPE_EDGE_RISING>,
-			     <GIC_SPI 425 IRQ_TYPE_EDGE_RISING>,
-			     <GIC_SPI 426 IRQ_TYPE_EDGE_RISING>,
-			     <GIC_SPI 427 IRQ_TYPE_EDGE_RISING>,
-			     <GIC_SPI 428 IRQ_TYPE_EDGE_RISING>;
+
+		interrupts-extended = <&intc GIC_SPI 416 IRQ_TYPE_EDGE_RISING>,
+				      <&intc GIC_SPI 417 IRQ_TYPE_EDGE_RISING>,
+				      <&intc GIC_SPI 418 IRQ_TYPE_EDGE_RISING>,
+				      <&intc GIC_SPI 419 IRQ_TYPE_EDGE_RISING>,
+				      <&intc GIC_SPI 420 IRQ_TYPE_EDGE_RISING>,
+				      <&intc GIC_SPI 421 IRQ_TYPE_EDGE_RISING>,
+				      <&intc GIC_SPI 422 IRQ_TYPE_EDGE_RISING>,
+				      <&intc GIC_SPI 423 IRQ_TYPE_EDGE_RISING>,
+				      <&intc GIC_SPI 424 IRQ_TYPE_EDGE_RISING>,
+				      <&intc GIC_SPI 425 IRQ_TYPE_EDGE_RISING>,
+				      <&intc GIC_SPI 426 IRQ_TYPE_EDGE_RISING>,
+				      <&intc GIC_SPI 427 IRQ_TYPE_EDGE_RISING>,
+				      <&intc GIC_SPI 428 IRQ_TYPE_EDGE_RISING>,
+				      <&wcss_smp2p_in 16 IRQ_TYPE_NONE>,
+				      <&wcss_smp2p_in 17 IRQ_TYPE_NONE>,
+				      <&wcss_smp2p_in 20 IRQ_TYPE_NONE>,
+				      <&wcss_smp2p_in 19 IRQ_TYPE_NONE>;
+		interrupt-names = "ce1",
+				  "ce2",
+				  "ce3",
+				  "ce4",
+				  "ce5",
+				  "dp1",
+				  "dp2",
+				  "dp3",
+				  "dp4",
+				  "dp5",
+				  "dp6",
+				  "dp7",
+				  "dp8",
+				  "fatal",
+				  "ready",
+				  "spawn",
+				  "stop-ack";
+
+		qcom,smem-states = <&wcss_smp2p_out 16>,
+				   <&wcss_smp2p_out 17>,
+				   <&wcss_smp2p_out 18>;
+		qcom,smem-state-names = "shutdown",
+					"stop",
+					"spawn";
+
 		status = "disabled";
 	};
 
-	//QCN6122: 2nd instance
 	wifi2: wifi@b00b040 {
 		reg = <0x0b00b040 0x0>;
 		compatible = "qcom,qcn6122-wifi";
-		interrupts = <GIC_SPI 448 IRQ_TYPE_EDGE_RISING>,
-			     <GIC_SPI 449 IRQ_TYPE_EDGE_RISING>,
-			     <GIC_SPI 450 IRQ_TYPE_EDGE_RISING>,
-			     <GIC_SPI 451 IRQ_TYPE_EDGE_RISING>,
-			     <GIC_SPI 452 IRQ_TYPE_EDGE_RISING>,
-			     <GIC_SPI 453 IRQ_TYPE_EDGE_RISING>,
-			     <GIC_SPI 454 IRQ_TYPE_EDGE_RISING>,
-			     <GIC_SPI 455 IRQ_TYPE_EDGE_RISING>,
-			     <GIC_SPI 456 IRQ_TYPE_EDGE_RISING>,
-			     <GIC_SPI 457 IRQ_TYPE_EDGE_RISING>,
-			     <GIC_SPI 458 IRQ_TYPE_EDGE_RISING>,
-			     <GIC_SPI 459 IRQ_TYPE_EDGE_RISING>,
-			     <GIC_SPI 460 IRQ_TYPE_EDGE_RISING>;
+
+		interrupts-extended = <&intc GIC_SPI 448 IRQ_TYPE_EDGE_RISING>,
+				      <&intc GIC_SPI 449 IRQ_TYPE_EDGE_RISING>,
+				      <&intc GIC_SPI 450 IRQ_TYPE_EDGE_RISING>,
+				      <&intc GIC_SPI 451 IRQ_TYPE_EDGE_RISING>,
+				      <&intc GIC_SPI 452 IRQ_TYPE_EDGE_RISING>,
+				      <&intc GIC_SPI 453 IRQ_TYPE_EDGE_RISING>,
+				      <&intc GIC_SPI 454 IRQ_TYPE_EDGE_RISING>,
+				      <&intc GIC_SPI 455 IRQ_TYPE_EDGE_RISING>,
+				      <&intc GIC_SPI 456 IRQ_TYPE_EDGE_RISING>,
+				      <&intc GIC_SPI 457 IRQ_TYPE_EDGE_RISING>,
+				      <&intc GIC_SPI 458 IRQ_TYPE_EDGE_RISING>,
+				      <&intc GIC_SPI 459 IRQ_TYPE_EDGE_RISING>,
+				      <&intc GIC_SPI 460 IRQ_TYPE_EDGE_RISING>,
+				      <&wcss_smp2p_in 24 IRQ_TYPE_NONE>,
+				      <&wcss_smp2p_in 25 IRQ_TYPE_NONE>,
+				      <&wcss_smp2p_in 28 IRQ_TYPE_NONE>,
+				      <&wcss_smp2p_in 27 IRQ_TYPE_NONE>;
+		interrupt-names = "ce1",
+				  "ce2",
+				  "ce3",
+				  "ce4",
+				  "ce5",
+				  "dp1",
+				  "dp2",
+				  "dp3",
+				  "dp4",
+				  "dp5",
+				  "dp6",
+				  "dp7",
+				  "dp8",
+				  "fatal",
+				  "ready",
+				  "spawn",
+				  "stop-ack";
+
+		qcom,smem-states = <&wcss_smp2p_out 24>,
+				   <&wcss_smp2p_out 25>,
+				   <&wcss_smp2p_out 26>;
+		qcom,smem-state-names = "shutdown",
+					"stop",
+					"spawn";
+
 		status = "disabled";
 	};
 };

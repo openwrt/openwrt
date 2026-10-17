@@ -13,6 +13,18 @@
 		bootargs-append = " root=/dev/ubiblock0_0 coherent_pool=2M";
 		stdout-path = "serial0:115200n8";
 	};
+
+	reserved-memory {
+		q6_region_qcn6122_1: q6-region-qcn6122-1@4d200000 {
+			reg = <0x0 0x4d200000 0x0 0xd00000>;
+			no-map;
+		};
+
+		m3_dump_qcn6122_1: m3-dump-qcn6122-1@4df00000 {
+			reg = <0x0 0x4df00000 0x0 0x100000>;
+			no-map;
+		};
+	};
 };
 
 /*
@@ -153,19 +165,18 @@
 &wifi {
 	status = "okay";
 
-	qcom,rproc = <&q6_wcss_pd1>;
+	qcom,rproc = <&q6v5_wcss>;
 	qcom,ath11k-calibration-variant = "Linksys-MX2000";
 	qcom,ath11k-fw-memory-mode = <1>;
-	qcom,bdf-addr = <0x4c400000>;
 };
 
 &wifi1 {
 	status = "okay";
 
-	qcom,rproc = <&q6_wcss_pd2>;
-	qcom,userpd-subsys-name = "q6v5_wcss_userpd2";
+	qcom,rproc = <&q6v5_wcss>;
 	qcom,ath11k-calibration-variant = "Linksys-MX2000";
 	qcom,ath11k-fw-memory-mode = <1>;
-	qcom,bdf-addr = <0x4d100000>;
-	qcom,m3-dump-addr = <0x4df00000>;
+
+	memory-region = <&q6_region_qcn6122_1>, <&q6_region_ipq5018>, <&m3_dump_qcn6122_1>;
+	memory-region-names = "q6-region", "m3-region", "m3-dump";
 };
