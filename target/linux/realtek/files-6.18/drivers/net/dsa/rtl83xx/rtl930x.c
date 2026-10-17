@@ -263,10 +263,11 @@ static void rtldsa_930x_set_mac_eee(struct otto_dsa_priv *priv, int port, bool e
 		return;
 
 	pr_debug("In %s: setting port %d to %d\n", __func__, port, enable);
-	v = enable ? 0x3f : 0x0;
 
 	/* Set EEE/EEEP state for 100, 500, 1000MBit and 2.5, 5 and 10GBit */
-	sw_w32_mask(0, v << 10, rtl930x_mac_force_mode_ctrl(port));
+	sw_w32_mask(RTL930X_MAC_FORCE_EEE_MASK,
+		    enable ? RTL930X_MAC_FORCE_EEE_MASK : 0,
+		    rtl930x_mac_force_mode_ctrl(port));
 
 	/* Set TX/RX EEE state */
 	v = enable ? 0x3 : 0x0;
@@ -647,6 +648,7 @@ const struct rtldsa_config rtldsa_930x_cfg = {
 		.rx_pause_mask = RTL930X_RX_PAUSE_EN,
 		.media_mask = RTL930X_MEDIA_SEL,
 	},
+	.mac_force_mode_eee_mask = RTL930X_MAC_FORCE_EEE_MASK,
 	.mac_force_mode_ctrl = rtl930x_mac_force_mode_ctrl,
 	.mac_link_state_source_set = rtldsa_930x_mac_link_state_source_set,
 	.mac_port_ctrl = rtl930x_mac_port_ctrl,
