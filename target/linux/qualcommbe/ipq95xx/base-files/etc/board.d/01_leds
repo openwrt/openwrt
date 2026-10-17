@@ -1,0 +1,25 @@
+#
+# Copyright (c) 2026 OpenWrt.org
+#
+
+. /lib/functions/uci-defaults.sh
+
+board_config_update
+
+board=$(board_name)
+
+case "$board" in
+alta,route10)
+	# Each SFP cage has a single bi-colour LED: white at 10G, blue below
+	# it. The two colours share one package, so the speed rules are kept
+	# mutually exclusive to avoid lighting both at once.
+	ucidef_set_led_netdev "led10g_wan2" "WAN2 10G" "white:wan-2" "wan2" "link_10000"
+	ucidef_set_led_netdev "led1g_wan2" "WAN2 sub-10G" "blue:wan-2" "wan2" "link_10 link_100 link_1000 link_2500 link_5000"
+	ucidef_set_led_netdev "led10g_lan4" "LAN4 10G" "white:lan-4" "lan4" "link_10000"
+	ucidef_set_led_netdev "led1g_lan4" "LAN4 sub-10G" "blue:lan-4" "lan4" "link_10 link_100 link_1000 link_2500 link_5000"
+	;;
+esac
+
+board_config_flush
+
+exit 0
