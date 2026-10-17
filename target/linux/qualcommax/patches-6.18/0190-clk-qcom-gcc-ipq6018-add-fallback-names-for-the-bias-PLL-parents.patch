@@ -1,0 +1,73 @@
+From: Vladyslav Andreichykov <vladdrako007@gmail.com>
+Date: Fri, 14 Oct 2026 09:01:00 +0300
+Subject: [PATCH] clk: qcom: gcc-ipq6018: add fallback names for the bias PLL
+ parents
+
+bias_pll_cc_clk and bias_pll_nss_noc_clk are outputs of the CMN PLL,
+which takes its AHB and SYS clocks from this controller, so the device
+tree does not pass them to GCC. With only .fw_name these parents stay
+unresolved, and setting nss_ppe_clk_src to 300 MHz fails with -EINVAL.
+
+Add .name fallbacks so they resolve to the clocks the CMN PLL registers,
+as gcc-ipq8074 already does.
+
+Signed-off-by: Vladyslav Andreichykov <vladdrako007@gmail.com>
+Assisted-by: Claude:claude-opus-5-5
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+---
+--- a/drivers/clk/qcom/gcc-ipq6018.c
++++ b/drivers/clk/qcom/gcc-ipq6018.c
+@@ -360,7 +360,7 @@ static const struct freq_tbl ftbl_nss_pp
+ 
+ static const struct clk_parent_data gcc_xo_bias_gpll0_gpll4_nss_ubi32[] = {
+ 	{ .fw_name = "xo" },
+-	{ .fw_name = "bias_pll_cc_clk" },
++	{ .fw_name = "bias_pll_cc_clk", .name = "bias_pll_cc_clk" },
+ 	{ .hw = &gpll0.clkr.hw },
+ 	{ .hw = &gpll4.clkr.hw },
+ 	{ .hw = &nss_crypto_pll.clkr.hw },
+@@ -539,7 +539,7 @@ gcc_xo_uniphy0_rx_tx_uniphy1_rx_tx_ubi32
+ 	{ .fw_name = "uniphy1_gcc_rx_clk" },
+ 	{ .fw_name = "uniphy1_gcc_tx_clk" },
+ 	{ .hw = &ubi32_pll.clkr.hw },
+-	{ .fw_name = "bias_pll_cc_clk" },
++	{ .fw_name = "bias_pll_cc_clk", .name = "bias_pll_cc_clk" },
+ };
+ 
+ static const struct parent_map
+@@ -594,7 +594,7 @@ gcc_xo_uniphy0_tx_rx_uniphy1_tx_rx_ubi32
+ 	{ .fw_name = "uniphy1_gcc_tx_clk" },
+ 	{ .fw_name = "uniphy1_gcc_rx_clk" },
+ 	{ .hw = &ubi32_pll.clkr.hw },
+-	{ .fw_name = "bias_pll_cc_clk" },
++	{ .fw_name = "bias_pll_cc_clk", .name = "bias_pll_cc_clk" },
+ };
+ 
+ static const struct parent_map
+@@ -733,7 +733,7 @@ static const struct clk_parent_data gcc_
+ 	{ .fw_name = "uniphy0_gcc_rx_clk" },
+ 	{ .fw_name = "uniphy0_gcc_tx_clk" },
+ 	{ .hw = &ubi32_pll.clkr.hw },
+-	{ .fw_name = "bias_pll_cc_clk" },
++	{ .fw_name = "bias_pll_cc_clk", .name = "bias_pll_cc_clk" },
+ };
+ 
+ static const struct parent_map gcc_xo_uniphy0_rx_tx_ubi32_bias_map[] = {
+@@ -769,7 +769,7 @@ static const struct clk_parent_data gcc_
+ 	{ .fw_name = "uniphy0_gcc_tx_clk" },
+ 	{ .fw_name = "uniphy0_gcc_rx_clk" },
+ 	{ .hw = &ubi32_pll.clkr.hw },
+-	{ .fw_name = "bias_pll_cc_clk" },
++	{ .fw_name = "bias_pll_cc_clk", .name = "bias_pll_cc_clk" },
+ };
+ 
+ static const struct parent_map gcc_xo_uniphy0_tx_rx_ubi32_bias_map[] = {
+@@ -1920,7 +1920,7 @@ static const struct clk_parent_data
+ 	{ .fw_name = "xo" },
+ 	{ .hw = &gpll0.clkr.hw },
+ 	{ .hw = &gpll2.clkr.hw },
+-	{ .fw_name = "bias_pll_nss_noc_clk" },
++	{ .fw_name = "bias_pll_nss_noc_clk", .name = "bias_pll_nss_noc_clk" },
+ };
+ 
+ static const struct parent_map gcc_xo_gpll0_gpll2_bias_pll_nss_noc_clk_map[] = {
