@@ -1013,6 +1013,8 @@ struct qca_ppe_priv {
 	u16 mirror_ref[2];
 	u8 mirror_dir_ref[QCA_PPE_MAX_PORTS][2];
 	struct ppe_port_shaper shaper[QCA_PPE_MAX_PORTS];
+	/* the pause each port's link resolved, which shaping overrides */
+	bool port_tx_pause[PPE_NUM_PORTS];
 	struct dentry *debugfs;
 	DECLARE_BITMAP(vsi_bitmap, PPE_VSI_MAX);
 	DECLARE_BITMAP(xlt_bitmap, PPE_XLT_TBL_NUM);
@@ -1107,6 +1109,7 @@ int ppe_scheduler_ready(struct qca_ppe_priv *priv);
 void ppe_scheduler_unready(struct qca_ppe_priv *priv);
 void ppe_scheduler_exit(struct qca_ppe_priv *priv);
 void ppe_port_queues_enable(struct qca_ppe_priv *priv, int port, bool en);
+void ppe_pause_update(struct qca_ppe_priv *priv);
 int qca_ppe_setup_tc(struct dsa_switch *ds, int port, enum tc_setup_type type,
 		     void *type_data);
 int qca_ppe_devlink_sb_setup(struct dsa_switch *ds);

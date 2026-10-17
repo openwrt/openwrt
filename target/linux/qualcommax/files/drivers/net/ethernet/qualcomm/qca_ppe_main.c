@@ -1588,6 +1588,10 @@ static void qca_ppe_mac_link_up(struct phylink_config *config,
 		break;
 	}
 
+	/* The MAC sends pause only when its buffer-manager port asks for it. */
+	priv->port_tx_pause[port] = tx_pause;
+	ppe_pause_update(priv);
+
 	clk_set_rate(priv->port_rx_clk[port], rate);
 	clk_set_rate(priv->port_tx_clk[port], rate);
 
