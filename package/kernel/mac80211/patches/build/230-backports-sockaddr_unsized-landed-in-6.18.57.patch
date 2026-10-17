@@ -1,0 +1,20 @@
+From: John Audia <therealgraysky@proton.me>
+Subject: [PATCH] backports: sockaddr_unsized landed in 6.18.57
+
+Linux 6.18.57 backported struct sockaddr_unsized to include/linux/socket.h
+via stable commit 946dc5835c8f ("net: Convert proto_ops bind() callbacks
+to use sockaddr_unsized"), so only define it for older kernels.
+
+Signed-off-by: John Audia <therealgraysky@proton.me>
+---
+--- a/backport-include/linux/socket.h
++++ b/backport-include/linux/socket.h
+@@ -11,7 +11,7 @@
+ #define SOL_NFC		280
+ #endif
+ 
+-#if LINUX_VERSION_IS_LESS(6,19,0)
++#if LINUX_VERSION_IS_LESS(6,18,57)
+ /**
+  * struct sockaddr_unsized - Unspecified size sockaddr for callbacks
+  * @sa_family: Address family (AF_UNIX, AF_INET, AF_INET6, etc.)

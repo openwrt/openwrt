@@ -23,5 +23,5 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +	q->memory_limit = 4 << 20; /* 4 MBytes */
 +#endif
  	q->drop_batch_size = 64;
- 	mtu = clamp_t(u32, psched_mtu(qdisc_dev(sch)), 256, FQ_CODEL_QUANTUM_MAX);
- 	q->quantum = mtu;
+ 	mtu = min_t(u32, psched_mtu(qdisc_dev(sch)), FQ_CODEL_QUANTUM_MAX);
+ 	q->quantum = clamp_t(u32, mtu, 256, FQ_CODEL_QUANTUM_MAX);
