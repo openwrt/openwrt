@@ -1,0 +1,58 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Luca C <clubdog123@gmail.com>
+Date: Tue, 14 Oct 2026 12:00:00 +0100
+Subject: [PATCH] net: phy: qca808x: configure switch core memories in switch mode
+
+In switch mode the QCA8386 switch-core memories must be handed over
+explicitly, and the vendor requires it before UNIPHY1 is initialised.
+Without it the switch core answers its hard-wired ID register but every
+SRAM-backed register reads zero and writes are dropped.
+
+Program MEM_CTRL/MEM_ACC for switch mode ahead of the uniphy bring-up.
+
+Signed-off-by: Luca C <clubdog123@gmail.com>
+---
+--- a/drivers/net/phy/qcom/qca808x.c
++++ b/drivers/net/phy/qcom/qca808x.c
+@@ -154,6 +154,16 @@
+ #define QCA8084_WORK_MODE_SWITCH		BIT(4)
+ #define QCA8084_WORK_MODE_SWITCH_PORT4_SGMII	BIT(5)
+ 
++/* Switch-core memory configuration. In switch mode the core's memories have to
++ * be handed over explicitly before UNIPHY1 comes up; until then every
++ * SRAM-backed switch register reads back 0 and writes are dropped.
++ */
++#define QCA8084_MEM_CTRL_CFG			0xc90f044
++#define QCA8084_MEM_CTRL_DVS_MASK		GENMASK(9, 4)
++#define QCA8084_MEM_CTRL_DVS_SWITCH		BIT(5)
++#define QCA8084_MEM_ACC_CFG			0xc90f048
++#define QCA8084_MEM_ACC_SWITCH			0x000c0c0c
++
+ MODULE_DESCRIPTION("Qualcomm Atheros QCA808X PHY driver");
+ MODULE_AUTHOR("Matus Ujhelyi, Luo Jie");
+ MODULE_LICENSE("GPL");
+@@ -956,6 +966,24 @@ static int qca8084_phy_package_config_in
+ 	switch (shared_priv->package_mode) {
+ 	case QCA808X_PCS1_SGMII_MAC_PCS0_SGMII_MAC:
+ 	case QCA808X_PCS1_SGMII_MAC_PCS0_SGMII_PHY:
++		/* Hand the switch core its memories BEFORE UNIPHY1 is brought
++		 * up - the vendor SSDK has the same ordering requirement in
++		 * qca_mht_mem_ctrl_set(). Skipping this leaves the whole switch
++		 * core reading back zeros: the hard-wired ID register answers,
++		 * but PORT_STATUS/GLOBAL_FW_CTRL/PORT_LOOKUP never do, so no
++		 * frame can be forwarded.
++		 */
++		ret = qca8084_mii_modify(phydev, QCA8084_MEM_CTRL_CFG,
++					 QCA8084_MEM_CTRL_DVS_MASK,
++					 QCA8084_MEM_CTRL_DVS_SWITCH);
++		if (ret)
++			return ret;
++
++		ret = qca8084_mii_modify(phydev, QCA8084_MEM_ACC_CFG,
++					 U32_MAX, QCA8084_MEM_ACC_SWITCH);
++		if (ret)
++			return ret;
++
+ 		/* Switch mode: PCS1 runs SGMII+ towards the switch MAC0. There
+ 		 * is no xpcs node in this mode, so mdiodev[1] is NULL - do not
+ 		 * touch it here.
