@@ -17,6 +17,6 @@ define Device/siflower_sf19a2890-evb
   DEVICE_MODEL := SF19A2890 EVB
   BOARD_NAME := siflower,sf19a2890-evb
   DEVICE_DTS := sf19a2890_evb
-  DEVICE_PACKAGES := kmod-switch-rtl8367b swconfig
+  DEVICE_PACKAGES := kmod-dsa-rtl8365mb
 endef
 TARGET_DEVICES += siflower_sf19a2890-evb
