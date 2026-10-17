@@ -1,0 +1,516 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Devon Openheim <devopenm@proton.me>
+Date: Wed, 2 Sep 2026 12:00:00 +0100
+Subject: [PATCH] PCI: asr: add ASR1802S Kagu PCIe host controller driver
+
+Add support for the ASR1802S Kagu dual-port DesignWare PCIe host controller.
+The controller manages two PCIe Gen1 x1 root ports connected to RTL8812FE
+and RTL8192FR WiFi cards on the Notion P298 gateway.
+
+The driver implements a thin platform wrapper around the DesignWare PCIe
+core (pcie-designware-host.c), providing PHY initialization, clock
+management, reset GPIO control, and interrupt routing via the ICU
+interrupt controller.
+
+Signed-off-by: Devon Openheim <devopenm@proton.me>
+
+---
+--- a/drivers/pci/controller/dwc/Kconfig
++++ b/drivers/pci/controller/dwc/Kconfig
+@@ -517,5 +517,21 @@ config PCIE_VISCONTI_HOST
+ 	help
+ 	  Say Y here if you want PCIe controller support on Toshiba Visconti SoC.
+ 	  This driver supports TMPV7708 SoC.
+ 
++
++config PCIE_ASR_KAGU
++	bool "ASR1802S Kagu PCIe controller"
++	depends on ARCH_ASR || COMPILE_TEST
++	depends on PCI_MSI
++	select PCIE_DW_HOST
++	select PCI_HOST_COMMON
++	help
++	  Say Y here if you want PCIe controller support on ASR1802S SoCs.
++	  The ASR1802S Kagu PCIe controller is a dual-port DesignWare PCIe
++	  Root Complex with two Gen1 x1 links. It is used on the Notion P298
++	  ASR gateway where the two ports connect to RTL8812FE and RTL8192FR
++	  WiFi cards. This driver provides PHY initialization, clock management,
++	  reset GPIO control, and interrupt routing via the ICU interrupt
++	  controller.
++
+ endmenu
+--- a/drivers/pci/controller/dwc/Makefile
++++ b/drivers/pci/controller/dwc/Makefile
+@@ -31,7 +31,8 @@ obj-$(CONFIG_PCIE_UNIPHIER) += pcie-uniphier.o
+ obj-$(CONFIG_PCIE_UNIPHIER_EP) += pcie-uniphier-ep.o
+ obj-$(CONFIG_PCIE_VISCONTI_HOST) += pcie-visconti.o
+ obj-$(CONFIG_PCIE_RCAR_GEN4) += pcie-rcar-gen4.o
+ obj-$(CONFIG_PCIE_STM32_HOST) += pcie-stm32.o
++obj-$(CONFIG_PCIE_ASR_KAGU) += pcie-asr-kagu.o
+ obj-$(CONFIG_PCIE_STM32_EP) += pcie-stm32-ep.o
+ 
+ # The following drivers are for devices that use the generic ACPI
+--- /dev/null
++++ b/drivers/pci/controller/dwc/pcie-asr-kagu.c
+@@ -0,0 +1,461 @@
++// SPDX-License-Identifier: GPL-2.0
++/*
++ * ASR1802S Kagu PCIe Host Controller Driver
++ *
++ * Copyright (C) 2026 Devon Openheim <devopenm@proton.me>
++ *
++ * Minimal DesignWare PCIe host controller wrapper for ASR1802S Kagu.
++ * Dual-port Gen1 x1, used on Notion P298 gateway.
++ */
++
++#include <linux/clk.h>
++#include <linux/delay.h>
++#include <linux/gpio/consumer.h>
++#include <linux/interrupt.h>
++#include <linux/kernel.h>
++#include <linux/module.h>
++#include <linux/of.h>
++#include <linux/of_address.h>
++#include <linux/of_device.h>
++#include <linux/of_gpio.h>
++#include <linux/of_irq.h>
++#include <linux/pci.h>
++#include <linux/platform_device.h>
++#include <linux/resource.h>
++#include <linux/slab.h>
++#include <linux/types.h>
++#include <linux/wait.h>
++#include <linux/iopoll.h>
++
++#include "pcie-designware.h"
++
++#define KAGU_PCIE_NUM_PORTS 2
++#define KAGU_PCIE_PHY_SIZE 0x800
++#define KAGU_PCIE_DBI_SIZE 0x1000
++
++/* PHY register offsets (standard DesignWare PHY layout) */
++#define KAGU_PHY_CTRL 0x000
++#define KAGU_PHY_STATUS 0x004
++#define KAGU_PLL_CTRL 0x010
++#define KAGU_PLL_STATUS 0x014
++#define KAGU_LTSSM_CTRL 0x020
++#define KAGU_LTSSM_STATUS 0x024
++#define KAGU_LANE_CTRL 0x030
++#define KAGU_PIPE_CTRL 0x040
++
++/* PHY_CTRL bits */
++#define PHY_CTRL_POWER_DOWN BIT(0)
++#define PHY_CTRL_RESET BIT(1)
++#define PHY_CTRL_ENABLE BIT(2)
++
++/* PHY_STATUS bits */
++#define PHY_STATUS_PLL_LOCK BIT(0)
++#define PHY_STATUS_PHY_READY BIT(1)
++
++/* PLL_CTRL bits */
++#define PLL_CTRL_FBDIV_MASK GENMASK(11, 0)
++#define PLL_CTRL_REFDIV_MASK GENMASK(17, 12)
++#define PLL_CTRL_POSTDIV_MASK GENMASK(21, 18)
++#define PLL_CTRL_BYPASS BIT(31)
++
++/* LTSSM_CTRL bits */
++#define LTSSM_CTRL_ENABLE BIT(0)
++#define LTSSM_CTRL_DISABLE BIT(1)
++
++/* LANE_CTRL bits */
++#define LANE_CTRL_WIDTH_MASK GENMASK(3, 0)
++#define LANE_CTRL_WIDTH_X1 0x1
++
++struct kagu_pcie_port {
++	void __iomem *phy_base;
++	void __iomem *dbi_base;
++	struct clk *clk_axi;
++	struct clk *clk_periph;
++	struct gpio_desc *rst_gpio;
++	int port_id;
++	int irq;
++	struct dw_pcie *pci;
++};
++
++struct kagu_pcie {
++	struct device *dev;
++	struct kagu_pcie_port ports[KAGU_PCIE_NUM_PORTS];
++	void __iomem *phy_base[KAGU_PCIE_NUM_PORTS];
++	void __iomem *dbi_base[KAGU_PCIE_NUM_PORTS];
++};
++
++static const struct of_device_id kagu_pcie_of_match[] = {
++	{ .compatible = "asr,pcie-kagu" },
++	{ }
++};
++MODULE_DEVICE_TABLE(of, kagu_pcie_of_match);
++
++static inline u32 kagu_phy_readl(struct kagu_pcie_port *port, u32 offset)
++{
++	return readl(port->phy_base + offset);
++}
++
++static inline void kagu_phy_writel(struct kagu_pcie_port *port, u32 offset, u32 val)
++{
++	writel(val, port->phy_base + offset);
++}
++
++static int kagu_pcie_phy_init(struct kagu_pcie_port *port)
++{
++	u32 val;
++	int ret;
++
++	dev_dbg(port->pci->dev, "Initializing PHY for port %d\n", port->port_id);
++
++	/* Power up PHY */
++	kagu_phy_writel(port, KAGU_PHY_CTRL, PHY_CTRL_ENABLE | PHY_CTRL_RESET);
++	udelay(10);
++	kagu_phy_writel(port, KAGU_PHY_CTRL, PHY_CTRL_ENABLE);
++	udelay(100);
++
++	/* Configure PLL for Gen1 (2.5 GT/s) */
++	/* FBDIV = 100 (for 25MHz refclk -> 2.5GHz), REFDIV = 1, POSTDIV = 2 */
++	val = (100 << 0) | (1 << 12) | (2 << 18);
++	kagu_phy_writel(port, KAGU_PLL_CTRL, val);
++	udelay(10);
++
++	/* Wait for PLL lock */
++	ret = readl_poll_timeout(port->phy_base + KAGU_PLL_STATUS, val,
++				 val & PHY_STATUS_PLL_LOCK, 10, 100000);
++	if (ret) {
++		dev_err(port->pci->dev, "Port %d: PLL lock timeout\n", port->port_id);
++		return ret;
++	}
++
++	/* Configure lane width (x1) */
++	kagu_phy_writel(port, KAGU_LANE_CTRL, LANE_CTRL_WIDTH_X1);
++	udelay(10);
++
++	/* Enable LTSSM */
++	kagu_phy_writel(port, KAGU_LTSSM_CTRL, LTSSM_CTRL_ENABLE);
++	udelay(100);
++
++	dev_dbg(port->pci->dev, "Port %d: PHY init done\n", port->port_id);
++	return 0;
++}
++
++static void kagu_pcie_phy_deinit(struct kagu_pcie_port *port)
++{
++	/* Disable LTSSM */
++	kagu_phy_writel(port, KAGU_LTSSM_CTRL, LTSSM_CTRL_DISABLE);
++	udelay(10);
++
++	/* Power down PHY */
++	kagu_phy_writel(port, KAGU_PHY_CTRL, PHY_CTRL_POWER_DOWN);
++}
++
++static int kagu_pcie_wait_for_link(struct kagu_pcie_port *port)
++{
++	u32 val;
++	int ret;
++
++	/* Wait for LTSSM to reach L0 (0x11) via DBI register */
++	ret = readl_poll_timeout(port->dbi_base + PCIE_PORT_DEBUG0, val,
++				 (val & PORT_LOGIC_LTSSM_STATE_MASK) == PORT_LOGIC_LTSSM_STATE_L0,
++				 1000, 5000000);
++	if (ret) {
++		dev_err(port->pci->dev, "Port %d: Link up timeout, LTSSM=0x%x\n",
++			port->port_id, val & PORT_LOGIC_LTSSM_STATE_MASK);
++		return ret;
++	}
++
++	dev_info(port->pci->dev, "Port %d: Link up (Gen1 x1)\n", port->port_id);
++	return 0;
++}
++
++static int kagu_pcie_start_link(struct dw_pcie *pci)
++{
++	struct kagu_pcie *kagu = dev_get_drvdata(pci->dev);
++	int ret, i;
++
++	dev_dbg(pci->dev, "Starting PCIe link\n");
++
++	for (i = 0; i < KAGU_PCIE_NUM_PORTS; i++) {
++		struct kagu_pcie_port *port = &kagu->ports[i];
++
++		if (!port->phy_base || !port->dbi_base)
++			continue;
++
++		/* Assert reset GPIO */
++		if (port->rst_gpio)
++			gpiod_set_value_cansleep(port->rst_gpio, 1);
++		msleep(10);
++
++		/* Deassert reset GPIO */
++		if (port->rst_gpio)
++			gpiod_set_value_cansleep(port->rst_gpio, 0);
++		msleep(100);
++
++		/* Initialize PHY */
++		ret = kagu_pcie_phy_init(port);
++		if (ret)
++			return ret;
++
++		/* Wait for link */
++		ret = kagu_pcie_wait_for_link(port);
++		if (ret)
++			return ret;
++	}
++
++	return 0;
++}
++
++static void kagu_pcie_stop_link(struct dw_pcie *pci)
++{
++	struct kagu_pcie *kagu = dev_get_drvdata(pci->dev);
++	int i;
++
++	for (i = 0; i < KAGU_PCIE_NUM_PORTS; i++) {
++		struct kagu_pcie_port *port = &kagu->ports[i];
++
++		if (port->phy_base)
++			kagu_pcie_phy_deinit(port);
++
++		if (port->rst_gpio)
++			gpiod_set_value_cansleep(port->rst_gpio, 1);
++	}
++}
++
++static enum dw_pcie_ltssm kagu_pcie_get_ltssm(struct dw_pcie *pci)
++{
++	u32 val = dw_pcie_readl_dbi(pci, PCIE_PORT_DEBUG0);
++	return (enum dw_pcie_ltssm)FIELD_GET(PORT_LOGIC_LTSSM_STATE_MASK, val);
++}
++
++static const struct dw_pcie_ops kagu_pcie_ops = {
++	.start_link = kagu_pcie_start_link,
++	.stop_link = kagu_pcie_stop_link,
++	.get_ltssm = kagu_pcie_get_ltssm,
++};
++
++static int kagu_pcie_host_init(struct dw_pcie_rp *pp)
++{
++	struct dw_pcie *pci = to_dw_pcie_from_pp(pp);
++	struct kagu_pcie *kagu = dev_get_drvdata(pci->dev);
++	int ret, i;
++
++	dev_dbg(pci->dev, "Initializing PCIe host\n");
++
++	/* Enable clocks for all ports */
++	for (i = 0; i < KAGU_PCIE_NUM_PORTS; i++) {
++		struct kagu_pcie_port *port = &kagu->ports[i];
++
++		if (port->clk_axi) {
++			ret = clk_prepare_enable(port->clk_axi);
++			if (ret) {
++				dev_err(pci->dev, "Failed to enable AXI clock for port %d\n", i);
++				goto err_clk;
++			}
++		}
++
++		if (port->clk_periph) {
++			ret = clk_prepare_enable(port->clk_periph);
++			if (ret) {
++				dev_err(pci->dev, "Failed to enable PERIPH clock for port %d\n", i);
++				goto err_clk;
++			}
++		}
++	}
++
++	/* Initialize DBI base for each port */
++	for (i = 0; i < KAGU_PCIE_NUM_PORTS; i++) {
++		struct kagu_pcie_port *port = &kagu->ports[i];
++
++		if (!kagu->dbi_base[i]) {
++			dev_err(pci->dev, "Port %d: DBI base not mapped\n", i);
++			ret = -ENODEV;
++			goto err_clk;
++		}
++		port->dbi_base = kagu->dbi_base[i];
++		port->phy_base = kagu->phy_base[i];
++		port->pci = pci;
++	}
++
++	/* Start link (PHY init + LTSSM) */
++	ret = kagu_pcie_start_link(pci);
++	if (ret)
++		goto err_clk;
++
++	return 0;
++
++err_clk:
++	for (i = 0; i < KAGU_PCIE_NUM_PORTS; i++) {
++		struct kagu_pcie_port *port = &kagu->ports[i];
++
++		if (port->clk_periph)
++			clk_disable_unprepare(port->clk_periph);
++		if (port->clk_axi)
++			clk_disable_unprepare(port->clk_axi);
++	}
++	return ret;
++}
++
++static void kagu_pcie_host_deinit(struct dw_pcie_rp *pp)
++{
++	struct dw_pcie *pci = to_dw_pcie_from_pp(pp);
++	struct kagu_pcie *kagu = dev_get_drvdata(pci->dev);
++	int i;
++
++	kagu_pcie_stop_link(pci);
++
++	for (i = 0; i < KAGU_PCIE_NUM_PORTS; i++) {
++		struct kagu_pcie_port *port = &kagu->ports[i];
++
++		if (port->clk_periph)
++			clk_disable_unprepare(port->clk_periph);
++		if (port->clk_axi)
++			clk_disable_unprepare(port->clk_axi);
++	}
++}
++
++static const struct dw_pcie_host_ops kagu_pcie_host_ops = {
++	.init = kagu_pcie_host_init,
++	.deinit = kagu_pcie_host_deinit,
++};
++
++static irqreturn_t kagu_pcie_irq_handler(int irq, void *arg)
++{
++	struct dw_pcie_rp *pp = arg;
++	dw_handle_msi_irq(pp);
++	return IRQ_HANDLED;
++}
++
++static int kagu_pcie_probe(struct platform_device *pdev)
++{
++	struct device *dev = &pdev->dev;
++	struct kagu_pcie *kagu;
++	struct dw_pcie *pci;
++	struct resource *res;
++	int ret, i;
++
++	kagu = devm_kzalloc(dev, sizeof(*kagu), GFP_KERNEL);
++	if (!kagu)
++		return -ENOMEM;
++
++	kagu->dev = dev;
++	platform_set_drvdata(pdev, kagu);
++
++	/* Map PHY and DBI register regions */
++	for (i = 0; i < KAGU_PCIE_NUM_PORTS; i++) {
++		char phy_name[16], dbi_name[16];
++
++		snprintf(phy_name, sizeof(phy_name), "pcie%d-phy", i + 1);
++		snprintf(dbi_name, sizeof(dbi_name), "pcie%d-config", i + 1);
++
++		res = platform_get_resource_byname(pdev, IORESOURCE_MEM, phy_name);
++		if (res) {
++			kagu->phy_base[i] = devm_ioremap_resource(dev, res);
++			if (IS_ERR(kagu->phy_base[i]))
++				return PTR_ERR(kagu->phy_base[i]);
++		}
++
++		res = platform_get_resource_byname(pdev, IORESOURCE_MEM, dbi_name);
++		if (res) {
++			kagu->dbi_base[i] = devm_ioremap_resource(dev, res);
++			if (IS_ERR(kagu->dbi_base[i]))
++				return PTR_ERR(kagu->dbi_base[i]);
++		}
++	}
++
++	/* Get clocks */
++	for (i = 0; i < KAGU_PCIE_NUM_PORTS; i++) {
++		struct kagu_pcie_port *port = &kagu->ports[i];
++
++		port->port_id = i;
++		port->clk_axi = devm_clk_get(dev, "axi");
++		if (IS_ERR(port->clk_axi)) {
++			dev_dbg(dev, "AXI clock not found for port %d\n", i);
++			port->clk_axi = NULL;
++		}
++
++		port->clk_periph = devm_clk_get(dev, "periph");
++		if (IS_ERR(port->clk_periph)) {
++			dev_dbg(dev, "PERIPH clock not found for port %d\n", i);
++			port->clk_periph = NULL;
++		}
++	}
++
++	/* Get reset GPIOs */
++	for (i = 0; i < KAGU_PCIE_NUM_PORTS; i++) {
++		struct kagu_pcie_port *port = &kagu->ports[i];
++
++		port->rst_gpio = devm_gpiod_get_index_optional(dev, "reset", i,
++							     GPIOD_OUT_HIGH);
++		if (IS_ERR(port->rst_gpio))
++			return PTR_ERR(port->rst_gpio);
++	}
++
++	/* Allocate DW PCIe structure */
++	pci = devm_kzalloc(dev, sizeof(*pci), GFP_KERNEL);
++	if (!pci)
++		return -ENOMEM;
++
++	pci->dev = dev;
++	pci->ops = &kagu_pcie_ops;
++	pci->pp.ops = &kagu_pcie_host_ops;
++
++	/* Set DBI base to first port's DBI (primary) */
++	pci->dbi_base = kagu->dbi_base[0];
++	if (!pci->dbi_base) {
++		dev_err(dev, "Primary DBI base not mapped\n");
++		return -ENODEV;
++	}
++
++	/* Get IRQ for INTx (first port) */
++	pci->pp.irq = platform_get_irq(pdev, 0);
++	if (pci->pp.irq < 0) {
++		dev_err(dev, "Failed to get IRQ\n");
++		return pci->pp.irq;
++	}
++
++	/* Get MSI IRQ (second interrupt) */
++	pci->pp.msi_irq[0] = platform_get_irq(pdev, 1);
++	if (pci->pp.msi_irq[0] < 0)
++		dev_dbg(dev, "MSI IRQ not available\n");
++
++	/* Register INTx interrupt handler */
++	ret = devm_request_irq(dev, pci->pp.irq, kagu_pcie_irq_handler,
++			       IRQF_SHARED, "kagu-pcie", &pci->pp);
++	if (ret) {
++		dev_err(dev, "Failed to request IRQ: %d\n", ret);
++		return ret;
++	}
++
++	/* Initialize DW PCIe host */
++	ret = dw_pcie_host_init(&pci->pp);
++	if (ret) {
++		dev_err(dev, "Failed to init host: %d\n", ret);
++		return ret;
++	}
++
++	dev_info(dev, "ASR Kagu PCIe Host Bridge initialized\n");
++	return 0;
++}
++
++static void kagu_pcie_remove(struct platform_device *pdev)
++{
++	struct kagu_pcie *kagu = platform_get_drvdata(pdev);
++	struct dw_pcie *pci = kagu->ports[0].pci;
++
++	if (pci)
++		dw_pcie_host_deinit(&pci->pp);
++}
++
++static struct platform_driver kagu_pcie_driver = {
++	.probe = kagu_pcie_probe,
++	.remove = kagu_pcie_remove,
++	.driver = {
++		.name = "pcie-asr-kagu",
++		.of_match_table = kagu_pcie_of_match,
++	},
++};
++builtin_platform_driver(kagu_pcie_driver);
++
++MODULE_AUTHOR("Devon Openheim <devopenm@proton.me>");
++MODULE_DESCRIPTION("ASR1802S Kagu PCIe Host Controller Driver");
++MODULE_LICENSE("GPL v2");
