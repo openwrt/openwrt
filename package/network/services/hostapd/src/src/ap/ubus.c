@@ -105,6 +105,7 @@ static struct hostapd_ubus_bss *hostapd_ubus_state(struct hostapd_data *hapd)
 struct ubus_banned_client {
 	struct avl_node avl;
 	u8 addr[ETH_ALEN];
+	u16 status;
 };
 
 static void ubus_reconnect_timeout(void *eloop_data, void *user_ctx)
@@ -192,7 +193,8 @@ hostapd_bss_flush_bans(struct hostapd_ubus_bss *ubus)
 }
 
 static void
-hostapd_bss_ban_client(struct hostapd_ubus_bss *ubus, u8 *addr, int time)
+hostapd_bss_ban_client(struct hostapd_ubus_bss *ubus, u8 *addr, int time,
+		       u16 status)
 {
 	struct ubus_banned_client *ban;
 
@@ -216,6 +218,7 @@ hostapd_bss_ban_client(struct hostapd_ubus_bss *ubus, u8 *addr, int time)
 		}
 	}
 
+	ban->status = status;
 	eloop_register_timeout(0, time * 1000, hostapd_bss_del_ban, ban, ubus);
 }
 
@@ -720,6 +723,7 @@ enum {
 	DEL_CLIENT_REASON,
 	DEL_CLIENT_DEAUTH,
 	DEL_CLIENT_BAN_TIME,
+	DEL_CLIENT_BAN_STATUS,
 	__DEL_CLIENT_MAX
 };
 
@@ -786,6 +790,7 @@ static const struct blobmsg_policy del_policy[__DEL_CLIENT_MAX] = {
 	[DEL_CLIENT_REASON] = { "reason", BLOBMSG_TYPE_INT32 },
 	[DEL_CLIENT_DEAUTH] = { "deauth", BLOBMSG_TYPE_INT8 },
 	[DEL_CLIENT_BAN_TIME] = { "ban_time", BLOBMSG_TYPE_INT32 },
+	[DEL_CLIENT_BAN_STATUS] = { "ban_status", BLOBMSG_TYPE_INT32 },
 };
 
 static int
@@ -800,6 +805,7 @@ hostapd_bss_del_client(struct ubus_context *ctx, struct ubus_object *obj,
 	struct sta_info *sta;
 	bool deauth = false;
 	int reason = WLAN_REASON_UNSPECIFIED;
+	u32 ban_status = WLAN_STATUS_AP_UNABLE_TO_HANDLE_NEW_STA;
 	u8 addr[ETH_ALEN];
 
 	blobmsg_parse(del_policy, __DEL_CLIENT_MAX, tb, blob_data(msg), blob_len(msg));
@@ -809,6 +815,13 @@ hostapd_bss_del_client(struct ubus_context *ctx, struct ubus_object *obj,
 
 	if (hwaddr_aton(blobmsg_data(tb[DEL_CLIENT_ADDR]), addr))
 		return UBUS_STATUS_INVALID_ARGUMENT;
+
+	/* A ban answers the station with this Status Code, and 0 admits it. */
+	if (tb[DEL_CLIENT_BAN_STATUS]) {
+		ban_status = blobmsg_get_u32(tb[DEL_CLIENT_BAN_STATUS]);
+		if (!ban_status || ban_status > 0xffff)
+			return UBUS_STATUS_INVALID_ARGUMENT;
+	}
 
 	if (tb[DEL_CLIENT_REASON])
 		reason = blobmsg_get_u32(tb[DEL_CLIENT_REASON]);
@@ -833,7 +846,8 @@ hostapd_bss_del_client(struct ubus_context *ctx, struct ubus_object *obj,
 
 	if (tb[DEL_CLIENT_BAN_TIME])
 		hostapd_bss_ban_client(hostapd_ubus_obj_state(obj), addr,
-				       blobmsg_get_u32(tb[DEL_CLIENT_BAN_TIME]));
+				       blobmsg_get_u32(tb[DEL_CLIENT_BAN_TIME]),
+				       ban_status);
 
 	return 0;
 }
@@ -2570,11 +2584,11 @@ int hostapd_ubus_handle_event(struct hostapd_data *hapd, struct hostapd_ubus_req
 
 	ban = avl_find_element(&hostapd_ubus_state(hapd)->banned, addr, ban, avl);
 	if (ban)
-		return WLAN_STATUS_AP_UNABLE_TO_HANDLE_NEW_STA;
+		return ban->status;
 
 	ban = avl_find_element(&hostapd_ubus_state(hapd)->banned, bcast, ban, avl);
 	if (ban)
-		return WLAN_STATUS_AP_UNABLE_TO_HANDLE_NEW_STA;
+		return ban->status;
 
 	if (!obj->has_subscribers)
 		return WLAN_STATUS_SUCCESS;

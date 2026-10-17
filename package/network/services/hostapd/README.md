@@ -66,6 +66,7 @@ Kick a client off the network.
 | reason | int32 | no | 802.11 reason code |
 | deauth | bool | no | deauthenticates client instead of disassociating |
 | ban_time | int32 | no | ban client for N milliseconds |
+| ban_status | int32 | no | Status Code the ban answers the client's authentication and association with, 1 to 65535 (default 17) |
 
 ### example
 `ubus call hostapd.wl5-fb del_client '{ "addr": "68:2f:67:8b:98:ed", "reason": 5, "deauth": true, "ban_time": 10000 }'`
