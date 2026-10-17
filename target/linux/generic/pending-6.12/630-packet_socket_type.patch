@@ -55,7 +55,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		goto out;
  
  	if (!net_eq(dev_net(dev), sock_net(sk)))
-@@ -2196,12 +2198,12 @@ static int packet_rcv(struct sk_buff *sk
+@@ -2197,12 +2199,12 @@ static int packet_rcv(struct sk_buff *sk
  	int skb_len = skb->len;
  	unsigned int snaplen, res;
  
@@ -71,7 +71,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	if (!net_eq(dev_net(dev), sock_net(sk)))
  		goto drop;
  
-@@ -2325,12 +2327,12 @@ static int tpacket_rcv(struct sk_buff *s
+@@ -2326,12 +2328,12 @@ static int tpacket_rcv(struct sk_buff *s
  	BUILD_BUG_ON(TPACKET_ALIGN(sizeof(*h.h2)) != 32);
  	BUILD_BUG_ON(TPACKET_ALIGN(sizeof(*h.h3)) != 48);
  
@@ -87,7 +87,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	if (!net_eq(dev_net(dev), sock_net(sk)))
  		goto drop;
  
-@@ -3492,6 +3494,7 @@ static int packet_create(struct net *net
+@@ -3496,6 +3498,7 @@ static int packet_create(struct net *net
  	mutex_init(&po->pg_vec_lock);
  	po->rollover = NULL;
  	po->prot_hook.func = packet_rcv;
@@ -95,7 +95,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	if (sock->type == SOCK_PACKET)
  		po->prot_hook.func = packet_rcv_spkt;
-@@ -4159,6 +4162,16 @@ packet_setsockopt(struct socket *sock, i
+@@ -4163,6 +4166,16 @@ packet_setsockopt(struct socket *sock, i
  		packet_sock_flag_set(po, PACKET_SOCK_QDISC_BYPASS, val);
  		return 0;
  	}
@@ -112,7 +112,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	default:
  		return -ENOPROTOOPT;
  	}
-@@ -4221,6 +4234,13 @@ static int packet_getsockopt(struct sock
+@@ -4225,6 +4238,13 @@ static int packet_getsockopt(struct sock
  	case PACKET_COPY_THRESH:
  		val = READ_ONCE(pkt_sk(sk)->copy_thresh);
  		break;
