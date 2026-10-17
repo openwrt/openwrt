@@ -57,20 +57,22 @@ function set_task_cpu(pid, cpu) {
 
 function cpu_mask(cpu)
 {
-	let mask;
+	let mask = 0;
 	if (cpu < 0)
-		mask = (1 << length(cpus)) - 1;
+		for (let c in cpus)
+			mask |= (1 << c.id);
 	else
 		mask = (1 << int(cpu));
+	let hi = (mask >> 32) & 0xffffffff;
+	if (hi)
+		return sprintf("%x,%08x", hi, mask & 0xffffffff);
 	return sprintf("%x", mask);
 }
 
 function set_netdev_cpu(dev, cpu, rx_queue) {
 	rx_queue ??= "rx-*";
 	let queues = glob(`/sys/class/net/${dev}/queues/${rx_queue}/rps_cpus`);
-	let val = cpu_mask(cpu);
-	if (disable)
-		val = 0;
+	let val = disable ? 0 : cpu_mask(cpu);
 	for (let queue in queues) {
 		if (debug || do_nothing)
 			warn(`echo ${val} > ${queue}\n`);
@@ -108,13 +110,16 @@ cpus = map(glob("/sys/bus/cpu/devices/*"), (path) => {
 	};
 });
 
-cpus = slice(cpus, 0, 64);
+sort(cpus, (a, b) => a.id - b.id);
+// cpu_mask() only handles ids below 64; the disabled path resets affinity and rps_cpus without it
+if (!disable)
+	cpus = filter(cpus, (c) => c.id < 64);
 if (length(cpus) < 2)
 	exit(0);
 
 function cpu_add_weight(cpu_id, weight)
 {
-	let cpu = cpus[cpu_id];
+	let cpu = filter(cpus, (c) => c.id == cpu_id)[0];
 	cpu.load += weight;
 	for (let sibling in cpus) {
 		if (sibling == cpu || sibling.core != cpu.core)
@@ -125,8 +130,9 @@ function cpu_add_weight(cpu_id, weight)
 
 function get_next_cpu(weight, prev_cpu)
 {
+	// Even when disabled, the ethernet bias passes this id to cpu_add_weight()
 	if (disable)
-		return 0;
+		return cpus[0].id;
 
 	let sort_cpus = sort(slice(cpus), (a, b) => a.load - b.load);
 	let idx = 0;
@@ -207,7 +213,7 @@ function assign_dev_queues_cpu(dev) {
 
 		let task = dev.rx_tasks[i];
 		if (num >= length(cpus))
-			cpu = i % length(cpus);
+			cpu = cpus[i % length(cpus)].id;
 		else if (task)
 			cpu = get_next_cpu(napi_weight);
 		else
@@ -219,7 +225,7 @@ function assign_dev_queues_cpu(dev) {
 			continue;
 
 		if (num >= length(cpus))
-			cpu = (i + 1) % length(cpus);
+			cpu = cpus[(i + 1) % length(cpus)].id;
 		else if (all_cpus)
 			cpu = -1;
 		else
