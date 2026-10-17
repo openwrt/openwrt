@@ -12,7 +12,7 @@ if len(argv) != 2:
     exit(1)
 
 output_path = Path(argv[1])
-output_dir = output_path.parent
+artifact_dir = Path(getenv("BIN_DIR", output_path.parent))
 
 assert getenv("WORK_DIR"), "$WORK_DIR required"
 
@@ -31,7 +31,7 @@ def get_initial_output(image_info):
 
 
 def add_artifact(artifact, prefix="openwrt-"):
-    files = list(output_dir.glob(f"{prefix}{artifact}-*"))
+    files = sorted(artifact_dir.glob(f"{prefix}{artifact}-*"))
     if len(files):
         output[artifact] = {}
         for file in files:
