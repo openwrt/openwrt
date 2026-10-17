@@ -1,0 +1,66 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aliaksandr Babrykovich <abobrikovich@gmail.com>
+Date: Sun, 12 Jul 2026 14:30:00 +0200
+Subject: [PATCH] rndis_host: Fibocom FM350-GL WWAN RNDIS bind
+
+FM350-GL (MediaTek 0e8d) exposes RNDIS on USB interface 0 with CDC ACM
+class 02/02/ff. GTUSBMODE=40 uses PID 7126, GTUSBMODE=41 uses PID 7127.
+
+The generic RNDIS COMM matcher uses rndis_bind() with
+FLAG_RNDIS_PHYM_NOT_WIRELESS, but FM350 reports WIRELESS_LAN and needs
+WWAN netdev flags (FLAG_WWAN, FLAG_NOARP). Match both PIDs explicitly
+and skip the physical-medium gate.
+
+Signed-off-by: Aliaksandr Babrykovich <abobrikovich@gmail.com>
+---
+ drivers/net/usb/rndis_host.c | 28 ++++++++++++++++++++++++++++
+ 1 file changed, 28 insertions(+)
+
+--- a/drivers/net/usb/rndis_host.c
++++ b/drivers/net/usb/rndis_host.c
+@@ -471,6 +471,11 @@ static int zte_rndis_bind(struct usbnet
+ 	return status;
+ }
+ 
++static int fm350_rndis_bind(struct usbnet *dev, struct usb_interface *intf)
++{
++	return generic_rndis_bind(dev, intf, 0);
++}
++
+ void rndis_unbind(struct usbnet *dev, struct usb_interface *intf)
+ {
+ 	struct rndis_halt	*halt;
+@@ -640,6 +645,16 @@ static const struct driver_info asr_rndi
+ 	.tx_fixup =	rndis_tx_fixup,
+ };
+ 
++static const struct driver_info fm350_rndis_info = {
++	.description =	"Fibocom FM350-GL RNDIS",
++	.flags =	FLAG_WWAN | FLAG_POINTTOPOINT | FLAG_FRAMING_RN | FLAG_NO_SETINT | FLAG_NOARP,
++	.bind =		fm350_rndis_bind,
++	.unbind =	rndis_unbind,
++	.status =	rndis_status,
++	.rx_fixup =	rndis_rx_fixup,
++	.tx_fixup =	rndis_tx_fixup,
++};
++
+ /*-------------------------------------------------------------------------*/
+ 
+ static const struct usb_device_id	products [] = {
+@@ -664,6 +679,16 @@ static const struct usb_device_id	produc
+ 				      USB_CLASS_COMM, 2 /* ACM */, 0x0ff),
+ 	.driver_info = (unsigned long)&zte_rndis_info,
+ }, {
++	/* Fibocom FM350-GL, GTUSBMODE=40 */
++	USB_DEVICE_AND_INTERFACE_INFO(0x0e8d, 0x7126,
++				      USB_CLASS_COMM, 2 /* ACM */, 0x0ff),
++	.driver_info = (unsigned long) &fm350_rndis_info,
++}, {
++	/* Fibocom FM350-GL, GTUSBMODE=41 (default) */
++	USB_DEVICE_AND_INTERFACE_INFO(0x0e8d, 0x7127,
++				      USB_CLASS_COMM, 2 /* ACM */, 0x0ff),
++	.driver_info = (unsigned long) &fm350_rndis_info,
++}, {
+ 	/* RNDIS is MSFT's un-official variant of CDC ACM */
+ 	USB_INTERFACE_INFO(USB_CLASS_COMM, 2 /* ACM */, 0x0ff),
+ 	.driver_info = (unsigned long) &rndis_info,
