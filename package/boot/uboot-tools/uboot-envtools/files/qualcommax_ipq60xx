@@ -16,7 +16,8 @@ ubootenv_add_mtd() {
 case "$board" in
 8devices,mango-dvk|\
 8devices,mango-dvk-sfp|\
-cambiumnetworks,xe3-4)
+cambiumnetworks,xe3-4|\
+wallys,dr6018s)
 	ubootenv_add_mtd "0:APPSBLENV" "0x0" "0x10000" "0x10000"
 	;;
 glinet,gl-ax1800|\
