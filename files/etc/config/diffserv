@@ -1,0 +1,20 @@
+config diffserv 'settings'
+	option enabled '1'
+
+# MAVLink serial-to-UDP bridge (socat port 2000)
+config rule 'mavlink_serial'
+	option dest_port '2000'
+	option proto 'udp'
+	option dscp 'CS6'
+
+# MAVLink GCS (QGC/Mission Planner default port)
+config rule 'mavlink_gcs'
+	option dest_port '14550'
+	option proto 'udp'
+	option dscp 'CS6'
+
+# WFB-NG video stream
+config rule 'wfbng_video'
+	option dest_port '5600'
+	option proto 'udp'
+	option dscp 'CS5'

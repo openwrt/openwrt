@@ -1,0 +1,15 @@
+#!/bin/sh /etc/rc.common
+# ip rule/route for bat0 traffic steering.
+START=92
+USE_PROCD=1
+
+start_service() {
+	ip rule add pref 10 lookup 10 2>/dev/null || true
+	ip route add default dev bat0 table 10 2>/dev/null || true
+	echo 1 > /proc/sys/net/ipv4/conf/bat0/accept_local 2>/dev/null || true
+}
+
+stop_service() {
+	ip rule del pref 10 lookup 10 2>/dev/null || true
+	ip route flush table 10 2>/dev/null || true
+}

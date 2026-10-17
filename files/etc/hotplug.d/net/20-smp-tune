@@ -1,0 +1,30 @@
+#!/bin/sh
+# Distribute IRQ affinity and RPS/XPS across CPUs for better mesh throughput.
+# Standard IRQ/RPS tuning for mesh throughput.
+# Only active if default_ps is set in network globals.
+
+. /lib/functions.sh
+
+config_load network
+config_get_bool default_ps globals default_ps 0
+[ "$default_ps" -eq 1 ] || exit 0
+
+dev="$INTERFACE"
+[ -n "$dev" ] || exit 0
+
+# Find IRQ for this device
+irq=$(cat /proc/interrupts 2>/dev/null | awk -v dev="$dev" '$NF == dev {print $1+0}')
+[ -n "$irq" ] || exit 0
+
+ncpu=$(nproc)
+[ "$ncpu" -gt 1 ] || exit 0
+
+# Assign IRQ to CPU 0, RX queues to remaining CPUs
+irq_cpu=0
+echo "$irq_cpu" > /proc/irq/$irq/smp_affinity_list 2>/dev/null
+
+rx_cpu=$(( (irq_cpu + 1) % ncpu ))
+for rx in /sys/class/net/$dev/queues/rx-*/rps_cpus; do
+	[ -f "$rx" ] || continue
+	printf '%x' $(( (1 << ncpu) - 1 - (1 << irq_cpu) )) > "$rx" 2>/dev/null
+done

@@ -8,6 +8,9 @@ ath79_setup_interfaces()
 	local board="$1"
 
 	case "$board" in
+	doodlelabs,smartradio)
+		ucidef_set_interface_lan "eth0 eth1"
+		;;
 	adtran,bsap1800-v2|\
 	adtran,bsap1840|\
 	allnet,all-wap02860ac|\

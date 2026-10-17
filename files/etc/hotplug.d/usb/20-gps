@@ -1,0 +1,18 @@
+#!/bin/sh
+# Create /dev/GPS symlink for the first USB GPS serial adapter.
+# gpsd is configured to use /dev/GPS as its device path.
+[ "$DEVTYPE" = "usb" ] || exit 0
+
+case "$ACTION" in
+add)
+	echo "$DEVNAME" | grep -q "ttyUSB" || exit 0
+	[ -e /dev/GPS ] && exit 0
+	ln -sf "$DEVNAME" /dev/GPS
+	logger -t hotplug "GPS: linked $DEVNAME → /dev/GPS"
+	# Restart gpsd if it's enabled
+	/etc/init.d/gpsd enabled 2>/dev/null && /etc/init.d/gpsd restart
+	;;
+remove)
+	[ "$(readlink /dev/GPS)" = "$DEVNAME" ] && rm -f /dev/GPS
+	;;
+esac

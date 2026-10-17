@@ -1,0 +1,94 @@
+#!/bin/sh
+# rf-ctrl — RF front-end control stub for QCA9533 Smart Radio.
+#
+# On RM-2450-12M3 the frequency shift hardware is absent (shift=0 always).
+# LNA control drives GPIO4 or GPIO15 via sysfs.
+#
+# Usage:
+#   rf-ctrl [-d <dev>] -c <CMD> [-w <data>]
+#   rf-ctrl <rw> <cmdidx> [data]   (legacy numeric format: rw=0=read, rw=1=write)
+
+# GPIO pin for LNA control on RM-2450-12M3 (verify with logic analyzer)
+LNA_GPIO=4   # set to 0 to disable GPIO control until verified
+
+_gpio_write() {
+    local pin=$1 val=$2
+    [ "$pin" -le 0 ] 2>/dev/null && return 0
+    [ -d /sys/class/gpio/gpio${pin} ] || \
+        echo $pin > /sys/class/gpio/export 2>/dev/null
+    echo out > /sys/class/gpio/gpio${pin}/direction 2>/dev/null
+    echo $val > /sys/class/gpio/gpio${pin}/value 2>/dev/null
+}
+
+_gpio_read() {
+    local pin=$1
+    [ "$pin" -le 0 ] 2>/dev/null && echo 1 && return
+    cat /sys/class/gpio/gpio${pin}/value 2>/dev/null || echo 1
+}
+
+# Parse arguments
+DEVICE=0 CMD="" WRITE="" DATA=""
+
+if [ $# -ge 2 ] && [ "$1" -eq "$1" ] 2>/dev/null; then
+    RW=$1 CMDIDX=$2 DATA=${3:-}
+    [ "$RW" -eq 0 ] && CMD="read" || CMD="write"
+    case $CMDIDX in
+    0)  CMD_NAME=FREQ_OFFSET ;;
+    1)  CMD_NAME=GAIN_INDEX ;;
+    2)  CMD_NAME=ONOFF ;;
+    3)  CMD_NAME=POWERDOWN ;;
+    5)  CMD_NAME=OP_FREQ ;;
+    7)  CMD_NAME=PARAM1 ;;
+    11) CMD_NAME=PARAM5 ;;
+    15) CMD_NAME=VERSION ;;
+    *)  echo "0"; exit 0 ;;
+    esac
+else
+    while [ $# -gt 0 ]; do
+        case "$1" in
+        -d) DEVICE=$2; shift ;;
+        -c) CMD_NAME=$2; shift ;;
+        -w) DATA=$2; CMD=write; shift ;;
+        esac
+        shift
+    done
+    [ -z "$DATA" ] && CMD=read || CMD=write
+fi
+
+case "$CMD_NAME" in
+VERSION|15)
+    echo "1"
+    ;;
+FREQ_OFFSET|0)
+    [ "$CMD" = write ] && true || echo "0"
+    ;;
+PARAM1|7)
+    if [ "$CMD" = write ]; then
+        case "$DATA" in
+        0|2) _gpio_write $LNA_GPIO 0 ;;
+        1|3) _gpio_write $LNA_GPIO 1 ;;
+        esac
+        echo "$DATA"
+    else
+        _gpio_read $LNA_GPIO
+    fi
+    ;;
+ONOFF|2)
+    echo "1"
+    ;;
+POWERDOWN|3)
+    echo "0"
+    ;;
+OP_FREQ|5)
+    iw dev wlan0 info 2>/dev/null | awk '/channel/{print $4+0}' || echo "2450"
+    ;;
+GAIN_INDEX|1)
+    echo "16"
+    ;;
+PARAM5|11)
+    echo "0"
+    ;;
+*)
+    echo "0"
+    ;;
+esac

@@ -1,0 +1,28 @@
+#!/bin/sh
+# First-boot board setup for Smart Radio (QCA9533)
+# Sets hostname and installs batman-adv on the wireless mesh interface.
+
+[ -e /etc/config/.smartradio_configured ] && exit 0
+
+# Unique suffix from last 3 bytes of eth0 MAC
+ETH0_MAC=$(cat /sys/class/net/eth0/address 2>/dev/null)
+if [ -n "$ETH0_MAC" ]; then
+	SUFFIX=$(echo "$ETH0_MAC" | tr -d ':' | tail -c 7 | cut -c1-6 | tr 'a-f' 'A-F')
+	HOSTNAME="smartradio-${SUFFIX}"
+	uci set system.@system[0].hostname="$HOSTNAME"
+	uci commit system
+
+	# Set unique AP SSID: SmartRadio-XXXX
+	uci set wireless.ap0.ssid="SmartRadio-${SUFFIX}"
+	uci commit wireless
+fi
+
+# Set batman-adv interface type on wlan0
+uci set network.wmesh=interface
+uci set network.wmesh.device='wlan0'
+uci set network.wmesh.proto='batadv_hardif'
+uci set network.wmesh.master='bat0'
+uci commit network
+
+touch /etc/config/.smartradio_configured
+exit 0

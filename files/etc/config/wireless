@@ -1,0 +1,33 @@
+config wifi-device 'radio0'
+	option type 'mac80211'
+	option path 'platform/ahb/18100000.wmac'
+	option band '2g'
+	option htmode 'HT20'
+	# Default 10 MHz channel for RM-2450
+	# Change channel to match your frequency plan:
+	#   RM-2450v3: channel 7 (2442 MHz at 10 MHz BW)
+	#   RM-2455v3: channel 9 (2452 MHz at 10 MHz BW)
+	option channel '7'
+	option txpower '20'
+	option country 'US'
+
+# Management AP — connect smartphone/laptop to configure the radio
+# SSID and password are set on first boot by uci-defaults/32_smartradio-board
+# Default: SSID=SmartRadio-XXXX, password=smartradio
+config wifi-iface 'ap0'
+	option device 'radio0'
+	option mode 'ap'
+	option ssid 'SmartRadio'
+	option encryption 'psk2'
+	option key 'smartradio'
+	option network 'lan'
+	option disabled '0'
+
+# 802.11s mesh point — feeds into batman-adv bat0
+config wifi-iface 'mesh0'
+	option device 'radio0'
+	option mode 'mesh'
+	option mesh_id 'smartradio-mesh'
+	option encryption 'sae'
+	option key 'changeme'
+	option network 'wmesh'

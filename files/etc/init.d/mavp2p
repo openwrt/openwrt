@@ -1,0 +1,18 @@
+#!/bin/sh /etc/rc.common
+START=97
+USE_PROCD=1
+start_service() {
+    local enabled serial_port serial_baud udp_port
+    config_load mavlink
+    config_get enabled settings enabled 0
+    [ "$enabled" = "1" ] || return 0
+    config_get serial_port settings serial_port "/dev/ttyS1"
+    config_get serial_baud settings serial_baud "57600"
+    config_get udp_port settings udp_port "14550"
+    procd_open_instance
+    procd_set_param command /usr/bin/mavp2p \
+        --serial=$serial_port:$serial_baud \
+        --udp-server=:$udp_port
+    procd_set_param respawn
+    procd_close_instance
+}

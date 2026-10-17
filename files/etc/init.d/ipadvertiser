@@ -1,0 +1,19 @@
+#!/bin/sh /etc/rc.common
+# IP/MAC discovery broadcaster.
+# Broadcasts device IP:MAC on UDP 11111 every 10s so GCS tools can discover it.
+START=95
+USE_PROCD=1
+
+start_service() {
+	procd_open_instance
+	procd_set_param command /bin/sh -c '
+		while true; do
+			IP=$(ip -4 addr show eth0 2>/dev/null | awk "/inet/{print \$2}" | cut -d/ -f1)
+			MAC=$(cat /sys/class/net/eth0/address 2>/dev/null)
+			[ -n "$IP" ] && echo "IP:$IP MAC:$MAC HOSTNAME:$(cat /proc/sys/kernel/hostname)" | \
+				socat - UDP-DATAGRAM:255.255.255.255:11111,broadcast 2>/dev/null
+			sleep 10
+		done'
+	procd_set_param respawn
+	procd_close_instance
+}
