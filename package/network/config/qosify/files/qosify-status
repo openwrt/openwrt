@@ -2,7 +2,8 @@
 . /usr/share/libubox/jshn.sh
 
 dev_status() {
-	tc -s qdisc sh dev "$1" root
+	# cake_mq keeps the tin stats on its per-queue cake qdiscs
+	tc -s qdisc sh dev "$1" | awk '/^qdisc /{s=$4=="root";if(s)h=" parent "$3;else s=h&&index($0,h)} s'
 	echo
 }
 
