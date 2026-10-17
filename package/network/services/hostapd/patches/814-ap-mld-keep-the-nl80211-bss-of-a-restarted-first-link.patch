@@ -87,7 +87,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	 * @link_id: The link ID which the link STA is using
 --- a/src/drivers/driver_nl80211.c
 +++ b/src/drivers/driver_nl80211.c
-@@ -10613,6 +10613,28 @@ static void nl80211_remove_links(struct
+@@ -10623,6 +10623,28 @@ static void nl80211_remove_links(struct
  }
  
  
@@ -116,7 +116,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  static int wpa_driver_nl80211_deinit_ap(void *priv)
  {
  	struct i802_bss *bss = priv;
-@@ -11912,7 +11934,6 @@ static int driver_nl80211_link_remove(vo
+@@ -11922,7 +11944,6 @@ static int driver_nl80211_link_remove(vo
  				      const char *ifname, u8 link_id)
  {
  	struct i802_bss *bss = priv;
@@ -124,7 +124,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	int ret;
  
  	if (type == WPA_IF_AP_VLAN)
-@@ -11925,16 +11946,7 @@ static int driver_nl80211_link_remove(vo
+@@ -11935,16 +11956,7 @@ static int driver_nl80211_link_remove(vo
  		   "nl80211: Teardown AP(%s) link %d (type=%d ifname=%s links=0x%x)",
  		   bss->ifname, link_id, type, ifname, bss->valid_links);
  
@@ -142,7 +142,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	if (!bss->valid_links) {
  		void *ctx = bss->ctx;
-@@ -11953,6 +11965,18 @@ static int driver_nl80211_link_remove(vo
+@@ -11963,6 +11975,18 @@ static int driver_nl80211_link_remove(vo
  }
  
  
@@ -161,7 +161,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  static bool nl80211_is_drv_shared(void *priv, int link_id)
  {
  	struct i802_bss *bss = priv;
-@@ -17014,6 +17038,7 @@ const struct wpa_driver_ops wpa_driver_n
+@@ -17024,6 +17048,7 @@ const struct wpa_driver_ops wpa_driver_n
  	.is_drv_shared = nl80211_is_drv_shared,
  	.link_sta_remove = wpa_driver_nl80211_link_sta_remove,
  	.can_share_drv = wpa_driver_nl80211_can_share_drv,
