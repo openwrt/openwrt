@@ -1,0 +1,54 @@
+From ce494faad64a11f8792d56b23184d104531e4577 Mon Sep 17 00:00:00 2001
+From: Navid Ghahremani <ghahramani.navid@gmail.com>
+Date: Mon, 12 Oct 2026 07:46:04 +0100
+Subject: [PATCH 06/24] clk: zte: Add ZX279128S CRM clock and reset driver
+
+Support the top CRM and low-speed peripheral clock controllers of the
+ZTE ZX279128S SoC. Implement custom reset controller ops mapping
+logical reset IDs to internal hardware register offsets, and provide
+CRM2 clock gating and reset controller support for PCIe.
+
+Signed-off-by: Navid Ghahremani <ghahramani.navid@gmail.com>
+---
+
+--- a/drivers/clk/Kconfig
++++ b/drivers/clk/Kconfig
+@@ -549,6 +549,7 @@ source "drivers/clk/uniphier/Kconfig"
+ source "drivers/clk/visconti/Kconfig"
+ source "drivers/clk/x86/Kconfig"
+ source "drivers/clk/xilinx/Kconfig"
++source "drivers/clk/zte/Kconfig"
+ source "drivers/clk/zynqmp/Kconfig"
+ 
+ # Kunit test cases
+--- a/drivers/clk/Makefile
++++ b/drivers/clk/Makefile
+@@ -166,5 +166,6 @@ ifeq ($(CONFIG_COMMON_CLK), y)
+ obj-$(CONFIG_X86)			+= x86/
+ endif
+ obj-y					+= xilinx/
++obj-y					+= zte/
+ obj-$(CONFIG_ARCH_ZYNQ)			+= zynq/
+ obj-$(CONFIG_COMMON_CLK_ZYNQMP)         += zynqmp/
+--- /dev/null
++++ b/drivers/clk/zte/Kconfig
+@@ -0,0 +1,14 @@
++# SPDX-License-Identifier: GPL-2.0-only
++config CLK_ZX279128S
++	bool "ZTE zx279128s clock driver"
++	depends on SOC_ZX279128S || COMPILE_TEST
++	depends on OF
++	default SOC_ZX279128S
++	select RESET_CONTROLLER
++	select RESET_SIMPLE
++	help
++	  This driver supports the clocks of the ZTE zx279128s SoC: the
++	  top clock and reset module (CRM) with the PLLs, the CPU, bus and
++	  peripheral group clocks, and the CRPMs of the two groups of low
++	  speed peripherals (UARTs, SPI flash controller, GPIO, MDIO).
++	  Say Y if you build a kernel for a board with this SoC.
+--- /dev/null
++++ b/drivers/clk/zte/Makefile
+@@ -0,0 +1,2 @@
++# SPDX-License-Identifier: GPL-2.0-only
++obj-$(CONFIG_CLK_ZX279128S)	+= clk-zx279128s.o

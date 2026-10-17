@@ -1,0 +1,43 @@
+From e598a07f1d1cf9079ced1c91a473d4a59e4f78d7 Mon Sep 17 00:00:00 2001
+From: Navid Ghahremani <ghahramani.navid@gmail.com>
+Date: Mon, 12 Oct 2026 07:48:09 +0100
+Subject: [PATCH 11/24] phy: zte: Add ZTE ZX279128S PCIe PHY driver
+
+Add a generic PHY driver for the PCIe SerDes PHY inside the Top CRM
+block of the ZTE ZX279128S SoC. This driver configures PLL power
+and analog SerDes calibration for the two PCIe ports.
+
+Signed-off-by: Navid Ghahremani <ghahramani.navid@gmail.com>
+---
+
+--- a/drivers/phy/Kconfig
++++ b/drivers/phy/Kconfig
+@@ -80,6 +80,18 @@ config PHY_XGENE
+ 	help
+ 	  This option enables support for APM X-Gene SoC multi-purpose PHY.
+ 
++config PHY_ZX279128S_PCIE
++	tristate "ZTE ZX279128S PCIe PHY driver"
++	depends on ARCH_ZTE || COMPILE_TEST
++	depends on OF
++	select GENERIC_PHY
++	select MFD_SYSCON
++	help
++	  Enable support for the PCIe SerDes PHY found inside the Top CRM
++	  of ZTE ZX279128S SoCs. This driver configures PLL power and analog
++	  calibration for the two PCIe ports.
++	  If you say Y or M here, you will enable PCIe PHY initialization.
++
+ config USB_LGM_PHY
+ 	tristate "INTEL Lightning Mountain USB PHY Driver"
+ 	depends on USB_SUPPORT
+--- a/drivers/phy/Makefile
++++ b/drivers/phy/Makefile
+@@ -15,6 +15,7 @@ obj-$(CONFIG_PHY_SNPS_EUSB2)		+= phy-snp
+ obj-$(CONFIG_USB_LGM_PHY)		+= phy-lgm-usb.o
+ obj-$(CONFIG_PHY_AIROHA_PCIE)		+= phy-airoha-pcie.o
+ obj-$(CONFIG_PHY_NXP_PTN3222)		+= phy-nxp-ptn3222.o
++obj-$(CONFIG_PHY_ZX279128S_PCIE)	+= phy-zx279128s-pcie.o
+ obj-$(CONFIG_GENERIC_PHY)		+= allwinner/	\
+ 					   amlogic/	\
+ 					   broadcom/	\
