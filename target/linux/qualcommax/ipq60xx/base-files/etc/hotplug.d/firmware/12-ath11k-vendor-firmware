@@ -1,0 +1,46 @@
+#!/bin/sh
+#
+# Some boards' ath11k cards start only with their vendor's own build of the
+# firmware, which OpenWrt cannot ship. Each such board still carries it, in
+# the vendor system on its own flash. When the driver first asks for a file
+# that is missing, copy it from there, unmodified.
+
+[ -e "/lib/firmware/$FIRMWARE" ] && exit 0
+
+. /lib/functions.sh
+
+# vendor_firmware_extract_mmc PARTNAME SRC FILE...: the FILEs, from the
+# directory SRC of the squashfs in the eMMC partition named PARTNAME, into
+# the directory of $FIRMWARE
+vendor_firmware_extract_mmc() {
+	local part=$1 src=$2 dev tmp f
+	shift 2
+
+	dev=$(find_mmc_part "$part")
+	[ -n "$dev" ] || return 1
+	tmp=$(mktemp -d)
+	unsquashfs -n -d "$tmp" "$dev" \
+		$(for f in "$@"; do echo "$src/$f"; done) > /dev/null 2>&1
+	mkdir -p "/lib/firmware/${FIRMWARE%/*}"
+	for f in "$@"; do
+		[ -s "$tmp/$src/$f" ] && cp "$tmp/$src/$f" "/lib/firmware/${FIRMWARE%/*}/$f"
+	done
+	rm -rf "$tmp"
+	[ -s "/lib/firmware/$FIRMWARE" ]
+}
+
+board=$(board_name)
+
+case "$FIRMWARE" in
+"ath11k/QCN9074/hw1.0/amss.bin"|\
+"ath11k/QCN9074/hw1.0/m3.bin")
+	case "$board" in
+	arista,w-318)
+		# Arista's build of WLAN.HK.2.5.r4, in its system in eMMC slot 1
+		vendor_firmware_extract_mmc rootfs_1 \
+			lib/firmware/IPQ6018/WIFI_FW/qcn9000 amss.bin m3.bin ||
+			logger -t ath11k-vendor-firmware "no $FIRMWARE in the Arista system"
+		;;
+	esac
+	;;
+esac
