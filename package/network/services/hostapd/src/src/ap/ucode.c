@@ -915,6 +915,26 @@ uc_hostapd_iface_csa_in_progress(uc_vm_t *vm, size_t nargs)
 	return ucv_boolean_new(hostapd_csa_in_progress(iface));
 }
 
+/* The channel the interface runs, which a channel switch hostapd made by
+ * itself (a radar) moves away from the one its configuration names. */
+static uc_value_t *
+uc_hostapd_iface_freq_running(uc_vm_t *vm, size_t nargs)
+{
+	struct hostapd_iface *iface = uc_fn_thisval("hostapd.iface");
+	uc_value_t *ret;
+
+	if (!iface || !iface->freq)
+		return NULL;
+
+	ret = ucv_object_new(vm);
+	ucv_object_add(ret, "frequency", ucv_int64_new(iface->freq));
+	ucv_object_add(ret, "sec_channel", ucv_int64_new(iface->conf->secondary_channel));
+	ucv_object_add(ret, "center_seg0_idx",
+		       ucv_int64_new(hostapd_get_oper_centr_freq_seg0_idx(iface->conf)));
+
+	return ret;
+}
+
 static int
 hostapd_ucode_bss_set_iface(struct hostapd_data *hapd, const char *ifname)
 {
@@ -1456,6 +1476,7 @@ int hostapd_ucode_init(struct hapd_interfaces *ifaces)
 		{ "start", uc_hostapd_iface_start },
 		{ "switch_channel", uc_hostapd_iface_switch_channel },
 		{ "csa_in_progress", uc_hostapd_iface_csa_in_progress },
+		{ "freq_running", uc_hostapd_iface_freq_running },
 	};
 
 	interfaces = ifaces;

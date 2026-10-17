@@ -1021,6 +1021,26 @@ function iface_start_failed(name)
 	       !hostapd.data.apsta_stopped[name];
 }
 
+// Whether the interface runs the channel `config` names already. A channel
+// switch hostapd makes by itself, after a radar, leaves the stored config on
+// the channel it left, so a config that names the channel it moved to is no
+// change of channel.
+function iface_runs_channel(name, config)
+{
+	let iface = hostapd.interfaces[name];
+	if (!iface || iface.state() != "ENABLED" || !config.radio.frequency)
+		return false;
+
+	let running = iface.freq_running();
+	let wanted = iface_freq_info(iface, config, { frequency: config.radio.frequency });
+	if (!running || !wanted)
+		return false;
+
+	return running.frequency == wanted.frequency &&
+	       running.sec_channel == wanted.sec_channel &&
+	       (!wanted.sec_channel || running.center_seg0_idx == wanted.center_seg0_idx);
+}
+
 function iface_reload_config(name, phydev, config, old_config)
 {
 	let phy = phydev.name;
@@ -1032,6 +1052,8 @@ function iface_reload_config(name, phydev, config, old_config)
 	case "restart":
 		return false;
 	case "channel":
+		if (iface_runs_channel(name, config))
+			break;
 		if (!iface_channel_switch(name, config))
 			return false;
 		break;
