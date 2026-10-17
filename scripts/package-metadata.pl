@@ -713,6 +713,45 @@ sub image_manifest_packages($)
 	return %packages;
 }
 
+# kernel version as used in kmod versions, from the kernel package version
+sub sbom_kernel_version($) {
+	my $version = shift or return;
+
+	$version =~ s/-r\d+$//;
+	$version =~ s/~.*$//;
+
+	return $version;
+}
+
+# kernel version from a kmod's "kernel (=<ver>~<vermagic>-rN)" dependency
+sub sbom_kmod_kernel_version($) {
+	my $pkg = shift;
+	my $depends = join(" ", @{$pkg->{depends} || []});
+
+	return sbom_kernel_version($1)
+		if $depends =~ /(?:^|[\s,])kernel\s*\(\s*=\s*([^)\s]+)\s*\)/;
+	return undef;
+}
+
+sub sbom_component_version($$$) {
+	my ($name, $version, $kernel_version) = @_;
+	return $version unless $version;
+
+	$version =~ s/-r\d+$//;
+	if ($name eq "kernel") {
+		$version = sbom_kernel_version($version);
+	} elsif ($name =~ /^kmod-/) {
+		if ($kernel_version) {
+			# out-of-tree kmods append their own PKG_VERSION
+			$version = $1 if $version =~ /^\Q$kernel_version\E\.(.+)$/;
+		} elsif ($version =~ /^(\d+\.\d+\.\d+)/) {
+			$version = $1;
+		}
+	}
+
+	return $version;
+}
+
 sub dump_cyclonedxsbom_json {
 	my (@components) = @_;
 
@@ -775,6 +814,8 @@ sub gen_image_cyclonedxsbom() {
 		$abimap{$abipkg} = $name;
 	}
 
+	my $kernel_version = sbom_kernel_version($image_packages{"kernel"});
+
 	foreach my $name (sort {uc($a) cmp uc($b)} keys %image_packages) {
 		my $pkg = $package{$name};
 		if (!$pkg) {
@@ -809,10 +850,7 @@ sub gen_image_cyclonedxsbom() {
 		if ($image_packages{$name}) {
 			$version = $image_packages{$name};
 		}
-		$version =~ s/-r\d+$// if $version;
-		if ($name =~ /^(kernel|kmod-)/ and $version =~ /^(\d+\.\d+\.\d+)/) {
-			$version = $1;
-		}
+		$version = sbom_component_version($name, $version, $kernel_version);
 
 		push @components, {
 			name => $pkg->{name},
@@ -834,6 +872,10 @@ sub gen_package_cyclonedxsbom() {
 
 	%mpkgs = parse_package_manifest_metadata($pkgmanifest);
 	%mpkgs or exit 1;
+
+	my $kernel_version;
+	$kernel_version = sbom_kernel_version($mpkgs{"kernel"}->{version})
+		if $mpkgs{"kernel"};
 
 	foreach my $name (sort {uc($a) cmp uc($b)} keys %mpkgs) {
 		my $pkg = $mpkgs{$name};
@@ -861,11 +903,8 @@ sub gen_package_cyclonedxsbom() {
 			}
 		}
 
-		my $version = $pkg->{version};
-		$version =~ s/-r\d+$// if $version;
-		if ($name =~ /^(kernel|kmod-)/ and $version =~ /^(\d+\.\d+\.\d+)/) {
-			$version = $1;
-		}
+		my $version = sbom_component_version($name, $pkg->{version},
+			sbom_kmod_kernel_version($pkg) || $kernel_version);
 
 		push @components, {
 			name => $name,
