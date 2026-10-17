@@ -1,0 +1,277 @@
+From: Rosen Penev <rosenp@gmail.com>
+Date: Wed, 14 Oct 2026 17:00:00 -0700
+Subject: [PATCH] net: gro: skip the checksum of fraglist GRO packets
+
+TCP fraglist GRO is used for packets that are not for a local socket. It
+chains the original packets instead of merging them, and the segmentation
+on the way out restores them as they were, each with its own checksum.
+GRO still verifies the checksum of every packet before merging it, which
+on a NIC without RX checksum offload means computing it in software over
+all of the payload. On a router this is the only time the payload is
+read: forwarding a packet otherwise only touches its headers.
+
+Skip the check for a fraglist skb when it would have to be done in
+software and leave the merged skb CHECKSUM_NONE instead of marking it
+CHECKSUM_UNNECESSARY. A corrupted packet is then forwarded unchanged and
+dropped by the receiver, as it would be without GRO. NICs with RX
+checksum offload keep verifying it, which costs them nothing.
+
+The checksum in the head of such an skb does not cover the packets on
+its frag_list, so a plain __skb_checksum_complete() of it would fail.
+Make __skb_checksum_complete() verify each packet against its own
+headers instead, and mark the skb CHECKSUM_UNNECESSARY when they all
+match. This covers whatever asks for the checksum later: conntrack with
+nf_conntrack_checksum enabled, and local delivery, which happens for
+example when a REDIRECT rule sends a connection without a local socket
+to one. Only fraglist skbs of plain TCP over IPv4 or IPv6 without
+extension headers are left unverified, which is what that function can
+check.
+
+With nf_conntrack_checksum enabled, the default outside of OpenWrt,
+conntrack now computes the checksum that GRO used to, so the work moves
+rather than disappears; with RPS it can move to a busier CPU.
+
+A fraglist skb whose geometry was changed after GRO, by NAT or
+bpf_skb_pull_data(), is segmented by skb_segment(), which computes new
+checksums. Such a packet is now forwarded with a valid checksum even if
+it was corrupted before it arrived; the packet boundaries needed to
+check it are gone by then.
+
+Cisco Meraki MX65 (BCM58625, 2x Cortex-A9 at 1.2 GHz, bgmac without RX
+checksum offload), TCP forwarded through the router, CPU bound with an
+MSS of 536, median of four runs in Mbit/s, in one boot:
+
+             checked  skipped
+  WAN->LAN     496      621
+  LAN->WAN     682      802
+
+At the full MSS the router already forwards at line rate in each
+direction, and csum_partial(), which took 27% of the cycles, drops out
+of the profile.
+
+Assisted-by: Claude:claude-opus-5-5
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+---
+--- a/include/net/gro.h
++++ b/include/net/gro.h
+@@ -282,6 +282,19 @@ static inline void skb_gro_incr_csum_unn
+ #define skb_gro_checksum_simple_validate(skb)				\
+ 	__skb_gro_checksum_validate(skb, 0, false, 0, null_compute_pseudo)
+ 
++/* A TCP fraglist GRO skb is only built for packets that are not for a local
++ * socket, and is segmented back into the original packets, each with its own
++ * checksum. Leave the checksum of such a packet unverified when that would
++ * mean computing it in software: the merged skb stays CHECKSUM_NONE, and
++ * __skb_checksum_complete() verifies the packets one by one if anything on the
++ * way asks for it.
++ */
++static inline bool skb_gro_flist_skip_csum(const struct sk_buff *skb)
++{
++	return NAPI_GRO_CB(skb)->is_flist && !NAPI_GRO_CB(skb)->encap_mark &&
++	       skb->ip_summed == CHECKSUM_NONE;
++}
++
+ static inline bool __skb_gro_checksum_convert_check(struct sk_buff *skb)
+ {
+ 	return (NAPI_GRO_CB(skb)->csum_cnt == 0 &&
+--- a/net/core/skbuff.c
++++ b/net/core/skbuff.c
+@@ -3737,6 +3737,69 @@ __sum16 __skb_checksum_complete_head(str
+ }
+ EXPORT_SYMBOL(__skb_checksum_complete_head);
+ 
++/* Verify the TCP checksum of one packet of a TCP fraglist GRO skb: the
++ * head, whose data starts at or before its TCP header, or one of the skbs on
++ * its frag_list, whose data starts at the payload with the headers in front
++ * of it.
++ */
++static __sum16 skb_flist_tcp_checksum(const struct sk_buff *skb)
++{
++	const struct iphdr *iph = ip_hdr(skb);
++	const unsigned char *th;
++	unsigned int len;
++	__wsum csum;
++	__sum16 sum;
++	int off;
++
++	if (iph->version == 4)
++		th = skb_network_header(skb) + iph->ihl * 4;
++	else if (ipv6_hdr(skb)->nexthdr == IPPROTO_TCP)
++		th = skb_network_header(skb) + sizeof(struct ipv6hdr);
++	else
++		return 1;
++
++	off = th - skb->data;
++	if (off > (int)skb_headlen(skb) || -off > (int)skb_headroom(skb))
++		return 1;
++
++	len = skb_pagelen(skb) - off;
++	csum = skb_checksum(skb, off, len, 0);
++
++	if (iph->version == 4)
++		sum = csum_tcpudp_magic(iph->saddr, iph->daddr, len,
++					IPPROTO_TCP, csum);
++	else
++		sum = csum_ipv6_magic(&ipv6_hdr(skb)->saddr,
++				      &ipv6_hdr(skb)->daddr, len,
++				      IPPROTO_TCP, csum);
++
++	return sum;
++}
++
++/* TCP fraglist GRO may leave the checksum unverified, see
++ * skb_gro_flist_skip_csum(). The checksum of the head does not cover the
++ * packets on its frag_list, which all still carry their own headers, so
++ * verify each of them.
++ */
++static __sum16 skb_flist_checksum_complete(struct sk_buff *skb)
++{
++	struct sk_buff *seg;
++
++	if (skb->encapsulation || skb_flist_tcp_checksum(skb))
++		return 1;
++
++	skb_walk_frags(skb, seg)
++		if (skb_flist_tcp_checksum(seg))
++			return 1;
++
++	if (!skb_shared(skb)) {
++		skb->ip_summed = CHECKSUM_UNNECESSARY;
++		skb->csum_level = 0;
++	}
++
++	return 0;
++}
++
+ /* This function assumes skb->csum already holds pseudo header's checksum,
+  * which has been changed from the hardware checksum, for example, by
+  * __skb_checksum_validate_complete(). And, the original skb->csum must
+@@ -3751,6 +3814,11 @@ __sum16 __skb_checksum_complete(struct s
+ 	__wsum csum;
+ 	__sum16 sum;
+ 
++	if (unlikely(skb->ip_summed == CHECKSUM_NONE && skb_is_gso(skb) &&
++		     (skb_shinfo(skb)->gso_type & SKB_GSO_FRAGLIST) &&
++		     (skb_shinfo(skb)->gso_type & (SKB_GSO_TCPV4 | SKB_GSO_TCPV6))))
++		return skb_flist_checksum_complete(skb);
++
+ 	csum = skb_checksum(skb, 0, skb->len, 0);
+ 
+ 	sum = csum_fold(csum_add(skb->csum, csum));
+--- a/net/ipv4/tcp_offload.c
++++ b/net/ipv4/tcp_offload.c
+@@ -432,8 +432,11 @@ static void tcp4_check_fraglist_gro(stru
+ 			return;
+ 		}
+ 
+-		/* Fall back to the regular GRO path */
+-		if (NAPI_GRO_CB(p)->count == 1)
++		/* Fall back to the regular GRO path, unless the checksum of p
++		 * was left unverified: regular GRO would compute a new one on
++		 * the way out. p is flushed instead.
++		 */
++		if (NAPI_GRO_CB(p)->count == 1 && p->ip_summed != CHECKSUM_NONE)
+ 			NAPI_GRO_CB(p)->is_flist = 0;
+ 
+ 		NAPI_GRO_CB(skb)->is_flist = 0;
+@@ -455,10 +458,18 @@ static void tcp4_check_fraglist_gro(stru
+ INDIRECT_CALLABLE_SCOPE
+ struct sk_buff *tcp4_gro_receive(struct list_head *head, struct sk_buff *skb)
+ {
++	unsigned int off = skb_gro_offset(skb);
+ 	struct tcphdr *th;
+ 
++	th = skb_gro_header(skb, off + sizeof(*th), off);
++	if (unlikely(!th))
++		goto flush;
++
++	if (unlikely(skb->dev->features & NETIF_F_GRO_FRAGLIST))
++		tcp4_check_fraglist_gro(head, skb, th);
++
+ 	/* Don't bother verifying checksum if we're going to flush anyway. */
+-	if (!NAPI_GRO_CB(skb)->flush &&
++	if (!NAPI_GRO_CB(skb)->flush && !skb_gro_flist_skip_csum(skb) &&
+ 	    skb_gro_checksum_validate(skb, IPPROTO_TCP,
+ 				      inet_gro_compute_pseudo))
+ 		goto flush;
+@@ -467,9 +478,6 @@ struct sk_buff *tcp4_gro_receive(struct
+ 	if (!th)
+ 		goto flush;
+ 
+-	if (unlikely(skb->dev->features & NETIF_F_GRO_FRAGLIST))
+-		tcp4_check_fraglist_gro(head, skb, th);
+-
+ 	return tcp_gro_receive(head, skb, th);
+ 
+ flush:
+@@ -487,7 +495,9 @@ INDIRECT_CALLABLE_SCOPE int tcp4_gro_com
+ 		skb_shinfo(skb)->gso_type |= SKB_GSO_FRAGLIST | SKB_GSO_TCPV4;
+ 		skb_shinfo(skb)->gso_segs = NAPI_GRO_CB(skb)->count;
+ 
+-		__skb_incr_checksum_unnecessary(skb);
++		/* not verified, see skb_gro_flist_skip_csum() */
++		if (skb->ip_summed != CHECKSUM_NONE)
++			__skb_incr_checksum_unnecessary(skb);
+ 
+ 		return 0;
+ 	}
+--- a/net/ipv6/tcpv6_offload.c
++++ b/net/ipv6/tcpv6_offload.c
+@@ -35,8 +35,11 @@ static void tcp6_check_fraglist_gro(stru
+ 			return;
+ 		}
+ 
+-		/* Fall back to the regular GRO path */
+-		if (NAPI_GRO_CB(p)->count == 1)
++		/* Fall back to the regular GRO path, unless the checksum of p
++		 * was left unverified: regular GRO would compute a new one on
++		 * the way out. p is flushed instead.
++		 */
++		if (NAPI_GRO_CB(p)->count == 1 && p->ip_summed != CHECKSUM_NONE)
+ 			NAPI_GRO_CB(p)->is_flist = 0;
+ 
+ 		NAPI_GRO_CB(skb)->is_flist = 0;
+@@ -59,10 +62,22 @@ static void tcp6_check_fraglist_gro(stru
+ INDIRECT_CALLABLE_SCOPE
+ struct sk_buff *tcp6_gro_receive(struct list_head *head, struct sk_buff *skb)
+ {
++	const struct ipv6hdr *iph = skb_gro_network_header(skb);
++	unsigned int off = skb_gro_offset(skb);
+ 	struct tcphdr *th;
+ 
+-	/* Don't bother verifying checksum if we're going to flush anyway. */
++	th = skb_gro_header(skb, off + sizeof(*th), off);
++	if (unlikely(!th))
++		goto flush;
++
++	tcp6_check_fraglist_gro(head, skb, th);
++
++	/* Don't bother verifying checksum if we're going to flush anyway.
++	 * __skb_checksum_complete() can only verify the packets of a fraglist
++	 * skb without extension headers.
++	 */
+ 	if (!NAPI_GRO_CB(skb)->flush &&
++	    !(skb_gro_flist_skip_csum(skb) && iph->nexthdr == IPPROTO_TCP) &&
+ 	    skb_gro_checksum_validate(skb, IPPROTO_TCP,
+ 				      ip6_gro_compute_pseudo))
+ 		goto flush;
+@@ -71,8 +86,6 @@ struct sk_buff *tcp6_gro_receive(struct
+ 	if (!th)
+ 		goto flush;
+ 
+-	tcp6_check_fraglist_gro(head, skb, th);
+-
+ 	return tcp_gro_receive(head, skb, th);
+ 
+ flush:
+@@ -90,7 +103,9 @@ INDIRECT_CALLABLE_SCOPE int tcp6_gro_com
+ 		skb_shinfo(skb)->gso_type |= SKB_GSO_FRAGLIST | SKB_GSO_TCPV6;
+ 		skb_shinfo(skb)->gso_segs = NAPI_GRO_CB(skb)->count;
+ 
+-		__skb_incr_checksum_unnecessary(skb);
++		/* not verified, see skb_gro_flist_skip_csum() */
++		if (skb->ip_summed != CHECKSUM_NONE)
++			__skb_incr_checksum_unnecessary(skb);
+ 
+ 		return 0;
+ 	}
