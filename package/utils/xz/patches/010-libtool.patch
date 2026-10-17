@@ -1,0 +1,36 @@
+# Fix shared library building in XZ Utils 5.2.13, 5.4.7, and 5.6.2
+#
+# The releases were made with a development version of GNU Libtool
+# (2.5.0+1+g38c166c8). The benefit is that there tend to be fixes that
+# aren't in a stable release yet. At the same time there is a higher
+# risk of new bugs. Unfortunately there was a bug that breaks building
+# of shared libraries on some systems like mips64.
+#
+# This patch was made by taking the upstream commit to m4/libtool.m4
+# and then running "autoconf" to update the generated "configure".
+# This patch only modifies "configure" so that the changed timestamps
+# won't cause the build system to regenerate more files, which would
+# only work if one has all Autotools packages installed.
+#
+# https://git.savannah.gnu.org/cgit/libtool.git/commit/?id=9a4a02615c9e7cbcfd690ed31874822a7d6aaea2
+# https://lore.kernel.org/distributions/3299713.44csPzL39Z@pinacolada/
+
+--- a/configure
++++ b/configure
+@@ -9475,7 +9475,7 @@ do
+   esac
+     for ac_exec_ext in '' $ac_executable_extensions; do
+   if as_fn_executable_p "$as_dir$ac_word$ac_exec_ext"; then
+-    ac_cv_prog_FILECMD=":"
++    ac_cv_prog_FILECMD="file"
+     printf "%s\n" "$as_me:${as_lineno-$LINENO}: found $as_dir$ac_word$ac_exec_ext" >&5
+     break 2
+   fi
+@@ -9483,6 +9483,7 @@ done
+   done
+ IFS=$as_save_IFS
+ 
++  test -z "$ac_cv_prog_FILECMD" && ac_cv_prog_FILECMD=":"
+ fi ;;
+ esac
+ fi
