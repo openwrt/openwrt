@@ -1,0 +1,39 @@
+// SPDX-License-Identifier: GPL-2.0-only OR MIT
+
+#include "qcom-ipq4018-utr.dtsi"
+
+/ {
+	model = "Ubiquiti UniFi Travel Router LR";
+	compatible = "ubnt,utr-lr", "qcom,ipq4019";
+};
+
+&display {
+	compatible = "ubnt,utr-lr-lcd", "panel-mipi-dbi-spi";
+
+	panel-timing {
+		hback-porch = <52>;
+	};
+};
+
+&i2c_gpio {
+	typec@20 {
+		compatible = "ti,tps25751", "ti,tps25750";
+		reg = <0x20>, <0x31>;
+		reg-names = "main", "patch-address";
+
+		connector {
+			compatible = "usb-c-connector";
+			label = "USB-C";
+			data-role = "dual";
+			power-role = "dual";
+		};
+	};
+};
+
+&wifi0 {
+	qcom,ath10k-calibration-variant = "Ubiquiti-UniFi-Travel-Router-LR";
+};
+
+&wifi1 {
+	qcom,ath10k-calibration-variant = "Ubiquiti-UniFi-Travel-Router-LR";
+};
