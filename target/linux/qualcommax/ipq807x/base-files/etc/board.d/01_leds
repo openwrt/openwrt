@@ -11,6 +11,12 @@ arcadyan,aw1000)
 	ucidef_set_led_netdev "wan" "WAN" "green:internet" "wan"
 	ucidef_set_led_netdev "wan-port-link" "WAN-PORT-LINK" "90000.mdio-1:1c:green:wan" "wan" "tx rx link_10 link_100 link_1000 link_2500"
 	;;
+arista,c360)
+	ucidef_set_led_netdev "lan1-mgig" "LAN1-MGIG" "green:lan-1" "lan1" "link_2500 link_5000 link_10000"
+	ucidef_set_led_netdev "lan1" "LAN1" "orange:lan-1" "lan1" "link_10 link_100 link_1000"
+	ucidef_set_led_netdev "lan2-mgig" "LAN2-MGIG" "green:lan-2" "lan2" "link_2500 link_5000 link_10000"
+	ucidef_set_led_netdev "lan2" "LAN2" "orange:lan-2" "lan2" "link_10 link_100 link_1000"
+	;;
 asus,rt-ax89x)
 	ucidef_set_led_netdev "aqr" "AQR" "white:aqr10g" "10g-copper"
 	ucidef_set_led_netdev "sfp" "SFP" "white:sfp" "10g-sfp"
