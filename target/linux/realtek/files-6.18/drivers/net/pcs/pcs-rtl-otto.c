@@ -18,6 +18,7 @@
 
 #define RTPCS_SDS_CNT				14
 #define RTPCS_MAX_LINKS_PER_SDS			8
+#define RTPCS_RXCAL_START_MS			1000
 #define RTPCS_RXCAL_POLL_MS			500
 #define RTPCS_RXCAL_MAX_TRIES			3
 #define RTPCS_RXCAL_RETRY_MS			1000
@@ -3507,7 +3508,7 @@ static int rtpcs_930x_sds_post_config(struct rtpcs_serdes *sds, enum rtpcs_sds_m
 		sds->id, hw_mode);
 	sds->rxcal_tries = 0;
 	sds->rxcal_pending = true;
-	mod_delayed_work(system_wq, &sds->cali_work, msecs_to_jiffies(1000));
+	mod_delayed_work(system_wq, &sds->cali_work, msecs_to_jiffies(RTPCS_RXCAL_START_MS));
 	return 0;
 }
 
@@ -4304,19 +4305,28 @@ static int rtpcs_931x_sds_config_attachment(struct rtpcs_serdes *sds,
 				 BIT(sds->id - 2), BIT(sds->id - 2));
 }
 
-/*
- * rtpcs_931x_sds_post_config() - RX calibration, run after power-up.
- *
- * Vendor SDK: _phy_rtl9310_rxCali(). Dispatches by attachment, mirroring
- * the SDK's own split into separate calibration paths per attachment.
- */
-static int rtpcs_931x_sds_post_config(struct rtpcs_serdes *sds, enum rtpcs_sds_mode hw_mode)
+static void rtpcs_931x_rx_cali_work_handler(struct work_struct *work)
 {
-	int ret = 0;
+	struct rtpcs_serdes *sds;
+	int ret;
 
-	if (sds->type != RTPCS_SDS_TYPE_10G)
-		return 0;
-	if (hw_mode != RTPCS_SDS_MODE_XSGMII)
+	sds = container_of(to_delayed_work(work), struct rtpcs_serdes, cali_work);
+
+	mutex_lock(&sds->ctrl->lock);
+	if (!sds->rxcal_pending)
+		goto unlock;
+
+	ret = rtpcs_93xx_sds_rxcal_ready(sds);
+	if (ret < 0)
+		dev_err_ratelimited(sds->ctrl->dev, "SerDes %u: RX calibration readiness check failed: %d\n",
+			sds->id, ret);
+	if (ret <= 0) {
+		schedule_delayed_work(&sds->cali_work, msecs_to_jiffies(RTPCS_RXCAL_POLL_MS));
+		goto unlock;
+	}
+
+	sds->rxcal_tries++;
+	if (sds->hw_mode != RTPCS_SDS_MODE_XSGMII)
 		rtpcs_931x_sds_reset_leq_dfe(sds);
 
 	switch (sds->attachment) {
@@ -4325,8 +4335,6 @@ static int rtpcs_931x_sds_post_config(struct rtpcs_serdes *sds, enum rtpcs_sds_m
 		break;
 
 	case RTPCS_SDS_ATTACH_FIBER:
-		if (hw_mode != RTPCS_SDS_MODE_10GBASER)
-			break;
 		ret = rtpcs_sds_write_mask(sds, PAGE_ANA_10G, ANA_SPD_REG14,
 					   RTL931X_RXCAL_SEL, RTL931X_RXCAL_SEL_FIBER);
 		if (ret < 0) {
@@ -4338,12 +4346,48 @@ static int rtpcs_931x_sds_post_config(struct rtpcs_serdes *sds, enum rtpcs_sds_m
 		break;
 
 	default:
+		sds->rxcal_pending = false;
 		/* TODO: DAC RX calibration */
-		break;
+		goto unlock;
 	}
 
-	if (ret < 0 && hw_mode != RTPCS_SDS_MODE_XSGMII)
+	dev_dbg(sds->ctrl->dev, "SerDes %u: RX calibration attempt %u/%u returned %d\n",
+		sds->id, sds->rxcal_tries, RTPCS_RXCAL_MAX_TRIES, ret);
+	if (ret < 0) {
+		if (sds->hw_mode != RTPCS_SDS_MODE_XSGMII)
+			rtpcs_931x_sds_reset_leq_dfe(sds);
+		if (sds->rxcal_tries < RTPCS_RXCAL_MAX_TRIES) {
+			schedule_delayed_work(&sds->cali_work,
+					      msecs_to_jiffies(RTPCS_RXCAL_RETRY_MS));
+			goto unlock;
+		}
+		dev_warn(sds->ctrl->dev, "SerDes %u: RX calibration ultimately failed: %d\n",
+			 sds->id, ret);
+	}
+	sds->rxcal_pending = false;
+unlock:
+	mutex_unlock(&sds->ctrl->lock);
+}
+
+/* Apply acquisition defaults after power-up; defer calibration until RX is ready. */
+static int rtpcs_931x_sds_post_config(struct rtpcs_serdes *sds, enum rtpcs_sds_mode hw_mode)
+{
+	if (sds->type != RTPCS_SDS_TYPE_10G)
+		return 0;
+	if (hw_mode != RTPCS_SDS_MODE_10GBASER &&
+	    hw_mode != RTPCS_SDS_MODE_XSGMII &&
+	    hw_mode != RTPCS_SDS_MODE_USXGMII)
+		return 0;
+
+	if (hw_mode != RTPCS_SDS_MODE_XSGMII)
 		rtpcs_931x_sds_reset_leq_dfe(sds);
+
+	if (sds->attachment != RTPCS_SDS_ATTACH_PHY && hw_mode != RTPCS_SDS_MODE_10GBASER)
+		return 0;
+
+	sds->rxcal_tries = 0;
+	sds->rxcal_pending = true;
+	mod_delayed_work(system_wq, &sds->cali_work, msecs_to_jiffies(RTPCS_RXCAL_START_MS));
 
 	return 0;
 }
@@ -4431,6 +4475,7 @@ static int rtpcs_931x_init_mac_groups(struct rtpcs_ctrl *ctrl)
 static int rtpcs_931x_sds_probe(struct rtpcs_serdes *sds)
 {
 	u32 base = RTPCS_931X_SERDES_MODE_CTRL + 4 * (sds->id >> 2);
+	struct device *dev = sds->ctrl->dev;
 	u8 lsb = (sds->id & 3) * 8;
 	int ret;
 
@@ -4471,7 +4516,9 @@ static int rtpcs_931x_sds_probe(struct rtpcs_serdes *sds)
 			return ret;
 	}
 
-	return 0;
+	INIT_DELAYED_WORK(&sds->cali_work, rtpcs_931x_rx_cali_work_handler);
+
+	return devm_add_action_or_reset(dev, rtpcs_sds_cancel_rxcal_work, sds);
 }
 
 static int rtpcs_931x_init(struct rtpcs_ctrl *ctrl)
