@@ -1,0 +1,179 @@
+From: Rosen Penev <rosenp@gmail.com>
+Subject: [PATCH] net: ag71xx: use page_pool for RX buffers
+
+Allocate receive buffers from a page_pool instead of napi_alloc_frag()
+and recycle them once the stack is done with them. Pages are mapped
+once by the pool, so only the area the MAC writes to needs to be
+synced before handing a buffer back to the hardware, and the headroom
+is no longer invalidated.
+
+Throughput on the TP-Link Archer C7 v2 is unchanged within the
+measurement noise.
+
+Assisted-by: Claude:claude-opus-5-5
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+---
+--- a/drivers/net/ethernet/atheros/ag71xx.c
++++ b/drivers/net/ethernet/atheros/ag71xx.c
+@@ -39,6 +39,7 @@
+ #include <linux/reset.h>
+ #include <linux/clk.h>
+ #include <linux/io.h>
++#include <net/page_pool/helpers.h>
+ #include <net/selftests.h>
+ 
+ #define AG71XX_OOM_REFILL	(1 + HZ / 10)
+@@ -351,6 +352,8 @@ struct ag71xx_ring {
+ 	unsigned int curr;
+ 	unsigned int dirty;
+ 
++	struct page_pool *page_pool;
++
+ 	/* "Cold" fields - not used in the data path. */
+ 	struct ag71xx_buf *buf;
+ 	u16 order;
+@@ -1219,10 +1222,9 @@ static void ag71xx_ring_rx_clean(struct
+ 
+ 	for (i = 0; i < ring_size; i++)
+ 		if (ring->buf[i].rx.rx_buf) {
+-			dma_unmap_single(&ag->pdev->dev,
+-					 ring->buf[i].rx.dma_addr,
+-					 ag->rx_buf_size, DMA_FROM_DEVICE);
+-			skb_free_frag(ring->buf[i].rx.rx_buf);
++			page_pool_free_va(ring->page_pool,
++					  ring->buf[i].rx.rx_buf, false);
++			ring->buf[i].rx.rx_buf = NULL;
+ 		}
+ }
+ 
+@@ -1233,27 +1235,27 @@ static int ag71xx_buffer_size(struct ag7
+ }
+ 
+ static bool ag71xx_fill_rx_buf(struct ag71xx *ag, struct ag71xx_buf *buf,
+-			       int offset,
+-			       void *(*alloc)(unsigned int size))
++			       int offset)
+ {
+ 	struct ag71xx_ring *ring = &ag->rx_ring;
++	unsigned int size = ag71xx_buffer_size(ag);
+ 	struct ag71xx_desc *desc;
+ 	void *data;
+ 
+ 	desc = ag71xx_ring_desc(ring, buf - &ring->buf[0]);
+ 
+-	data = alloc(ag71xx_buffer_size(ag));
++	data = page_pool_dev_alloc_va(ring->page_pool, &size);
+ 	if (!data)
+ 		return false;
+ 
+ 	buf->rx.rx_buf = data;
+-	buf->rx.dma_addr = dma_map_single(&ag->pdev->dev, data, ag->rx_buf_size,
+-					  DMA_FROM_DEVICE);
+-	if (dma_mapping_error(&ag->pdev->dev, buf->rx.dma_addr)) {
+-		skb_free_frag(data);
+-		buf->rx.rx_buf = NULL;
+-		return false;
+-	}
++	buf->rx.dma_addr = page_pool_get_dma_addr(virt_to_head_page(data)) +
++			   offset_in_page(data);
++
++	/* only the area written by the MAC needs to be invalidated */
++	dma_sync_single_for_device(&ag->pdev->dev, buf->rx.dma_addr + offset,
++				   ag->rx_buf_size - offset, DMA_FROM_DEVICE);
++
+ 	desc->data = (u32)buf->rx.dma_addr + offset;
+ 	return true;
+ }
+@@ -1281,8 +1283,7 @@ static int ag71xx_ring_rx_init(struct ag
+ 	for (i = 0; i < ring_size; i++) {
+ 		struct ag71xx_desc *desc = ag71xx_ring_desc(ring, i);
+ 
+-		if (!ag71xx_fill_rx_buf(ag, &ring->buf[i], ag->rx_buf_offset,
+-					netdev_alloc_frag)) {
++		if (!ag71xx_fill_rx_buf(ag, &ring->buf[i], ag->rx_buf_offset)) {
+ 			ret = -ENOMEM;
+ 			break;
+ 		}
+@@ -1315,8 +1316,7 @@ static int ag71xx_ring_rx_refill(struct
+ 		desc = ag71xx_ring_desc(ring, i);
+ 
+ 		if (!ring->buf[i].rx.rx_buf &&
+-		    !ag71xx_fill_rx_buf(ag, &ring->buf[i], offset,
+-					napi_alloc_frag))
++		    !ag71xx_fill_rx_buf(ag, &ring->buf[i], offset))
+ 			break;
+ 
+ 		desc->ctrl = DESC_EMPTY;
+@@ -1332,8 +1332,11 @@ static int ag71xx_ring_rx_refill(struct
+ 	return count;
+ }
+ 
++static void ag71xx_rings_free(struct ag71xx *ag);
++
+ static int ag71xx_rings_init(struct ag71xx *ag)
+ {
++	struct page_pool_params pp_params = {};
+ 	struct ag71xx_ring *tx = &ag->tx_ring;
+ 	struct ag71xx_ring *rx = &ag->rx_ring;
+ 	int ring_size, tx_size;
+@@ -1358,6 +1361,24 @@ static int ag71xx_rings_init(struct ag71
+ 	rx->descs_cpu = ((void *)tx->descs_cpu) + tx_size * AG71XX_DESC_SIZE;
+ 	rx->descs_dma = tx->descs_dma + tx_size * AG71XX_DESC_SIZE;
+ 
++	pp_params.order = get_order(ag71xx_buffer_size(ag));
++	pp_params.pool_size = BIT(rx->order);
++	pp_params.nid = NUMA_NO_NODE;
++	pp_params.dev = &ag->pdev->dev;
++	pp_params.napi = &ag->napi;
++	pp_params.netdev = ag->ndev;
++	pp_params.dma_dir = DMA_FROM_DEVICE;
++	pp_params.flags = PP_FLAG_DMA_MAP;
++
++	rx->page_pool = page_pool_create(&pp_params);
++	if (IS_ERR(rx->page_pool)) {
++		int err = PTR_ERR(rx->page_pool);
++
++		rx->page_pool = NULL;
++		ag71xx_rings_free(ag);
++		return err;
++	}
++
+ 	ag71xx_ring_tx_init(ag);
+ 	return ag71xx_ring_rx_init(ag);
+ }
+@@ -1376,6 +1397,9 @@ static void ag71xx_rings_free(struct ag7
+ 
+ 	kfree(tx->buf);
+ 
++	page_pool_destroy(rx->page_pool);
++	rx->page_pool = NULL;
++
+ 	tx->descs_cpu = NULL;
+ 	rx->descs_cpu = NULL;
+ 	tx->buf = NULL;
+@@ -1763,8 +1787,9 @@ static int ag71xx_rx_packets(struct ag71
+ 		pktlen = desc->ctrl & pktlen_mask;
+ 		pktlen -= ETH_FCS_LEN;
+ 
+-		dma_unmap_single(&ag->pdev->dev, ring->buf[i].rx.dma_addr,
+-				 ag->rx_buf_size, DMA_FROM_DEVICE);
++		dma_sync_single_for_cpu(&ag->pdev->dev,
++					ring->buf[i].rx.dma_addr + offset,
++					pktlen, DMA_FROM_DEVICE);
+ 
+ 		ndev->stats.rx_packets++;
+ 		ndev->stats.rx_bytes += pktlen;
+@@ -1772,10 +1797,12 @@ static int ag71xx_rx_packets(struct ag71
+ 		skb = napi_build_skb(ring->buf[i].rx.rx_buf, ag71xx_buffer_size(ag));
+ 		if (!skb) {
+ 			ndev->stats.rx_errors++;
+-			skb_free_frag(ring->buf[i].rx.rx_buf);
++			page_pool_free_va(ring->page_pool,
++					  ring->buf[i].rx.rx_buf, true);
+ 			goto next;
+ 		}
+ 
++		skb_mark_for_recycle(skb);
+ 		skb_reserve(skb, offset);
+ 		skb_put(skb, pktlen);
+ 

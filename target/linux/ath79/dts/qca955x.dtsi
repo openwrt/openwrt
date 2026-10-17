@@ -202,6 +202,11 @@
 			reg = <0x18070000 0x58>;
 		};
 
+		csum: checksum@18400000 {
+			compatible = "qca,qca9550-checksum";
+			reg = <0x18400000 0x58>;
+		};
+
 		pcie0: pcie@180c0000 {
 			compatible = "qcom,qca9550-pci", "qcom,ar7240-pci";
 			#address-cells = <3>;
@@ -352,6 +357,8 @@
 &eth0 {
 	compatible = "qca,qca9550-eth", "syscon";
 
+	qca,checksum-engine = <&csum>;
+
 	pll-reg = <0 0x28 0>;
 	pll-handle = <&pll>;
 
@@ -370,6 +377,8 @@
 
 &eth1 {
 	compatible = "qca,qca9550-eth", "syscon";
+
+	qca,checksum-engine = <&csum>;
 
 	pll-reg = <0 0x48 0>;
 	pll-handle = <&pll>;
