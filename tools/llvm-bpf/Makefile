@@ -15,6 +15,7 @@ PKG_HASH:=2488c33a959eafba1c44f253e5bbe7ac958eb53fa626298a3a5f4b87373767cd
 PKG_CPE_ID:=cpe:/a:llvm:llvm
 
 HOST_BUILD_DIR:=$(BUILD_DIR_HOST)/$(PKG_NAME)-$(PKG_VERSION).src
+HOST_PREPARED_DEPENDS += CONFIG_BUILD_BINDGEN
 
 CMAKE_BINARY_SUBDIR := build
 CMAKE_SOURCE_SUBDIR := llvm
@@ -59,6 +60,7 @@ CMAKE_HOST_OPTIONS += \
 define Host/Install
 	rm -rf $(STAGING_DIR_HOST)/llvm-bpf*
 	$(Host/Install/Default)
+	$(if $(CONFIG_BUILD_BINDGEN),+$(NINJA) -C $(HOST_CMAKE_BINARY_DIR) install-libclang)
 	ln -s $(LLVM_BPF_PREFIX) $(STAGING_DIR_HOST)/llvm-bpf
 	STRIP_KMOD= PATCHELF= STRIP=strip $(SCRIPT_DIR)/rstrip.sh $(STAGING_DIR_HOST)/llvm-bpf
 	echo "$(PKG_VERSION)" > $(CMAKE_HOST_INSTALL_PREFIX)/.llvm-version
