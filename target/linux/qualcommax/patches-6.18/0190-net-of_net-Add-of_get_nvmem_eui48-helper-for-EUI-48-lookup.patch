@@ -1,0 +1,125 @@
+From 4278babf76f081a090e0f16c99738c98fdb041de Mon Sep 17 00:00:00 2001
+From: Loic Poulain <loic.poulain@oss.qualcomm.com>
+Date: Thu, 6 Aug 2026 16:38:40 +0200
+Subject: [PATCH v10 07/10] net: of_net: Add of_get_nvmem_eui48() helper for EUI-48 lookup
+ lookup
+
+Factor out the common NVMEM EUI-48 retrieval logic from
+of_get_mac_address_nvmem() into a new of_get_nvmem_eui48() helper that
+accepts the NVMEM cell name as a parameter. This allows other subsystems
+(e.g. Bluetooth) to reuse the same lookup-validate-copy pattern with a
+different cell name, without duplicating code.
+
+of_get_mac_address_nvmem() is updated to call of_get_nvmem_eui48() with
+"mac-address", preserving its existing behavior.
+
+Reviewed-by: Bartosz Golaszewski <bartosz.golaszewski@oss.qualcomm.com>
+Signed-off-by: Loic Poulain <loic.poulain@oss.qualcomm.com>
+---
+ include/linux/of_net.h |  7 ++++++
+ net/core/of_net.c      | 52 ++++++++++++++++++++++++++++++++----------
+ 2 files changed, 47 insertions(+), 12 deletions(-)
+
+--- a/include/linux/of_net.h
++++ b/include/linux/of_net.h
+@@ -15,6 +15,7 @@ struct net_device;
+ extern int of_get_phy_mode(struct device_node *np, phy_interface_t *interface);
+ extern int of_get_mac_address(struct device_node *np, u8 *mac);
+ extern int of_get_mac_address_nvmem(struct device_node *np, u8 *mac);
++int of_get_nvmem_eui48(struct device_node *np, const char *cell_name, u8 *addr);
+ int of_get_ethdev_address(struct device_node *np, struct net_device *dev);
+ extern struct net_device *of_find_net_device_by_node(struct device_node *np);
+ #else
+@@ -33,6 +34,12 @@ static inline int of_get_mac_address_nvm
+ {
+ 	return -ENODEV;
+ }
++
++static inline int of_get_nvmem_eui48(struct device_node *np,
++				      const char *cell_name, u8 *addr)
++{
++	return -ENODEV;
++}
+ 
+ static inline int of_get_ethdev_address(struct device_node *np, struct net_device *dev)
+ {
+--- a/net/core/of_net.c
++++ b/net/core/of_net.c
+@@ -61,9 +61,7 @@ static int of_get_mac_addr(struct device
+ int of_get_mac_address_nvmem(struct device_node *np, u8 *addr)
+ {
+ 	struct platform_device *pdev = of_find_device_by_node(np);
+-	struct nvmem_cell *cell;
+-	const void *mac;
+-	size_t len;
++	u8 mac[ETH_ALEN] __aligned(sizeof(u16));
+ 	int ret;
+ 
+ 	/* Try lookup by device first, there might be a nvmem_cell_lookup
+@@ -75,27 +73,57 @@ int of_get_mac_address_nvmem(struct devi
+ 		return ret;
+ 	}
+ 
+-	cell = of_nvmem_cell_get(np, "mac-address");
++	ret = of_get_nvmem_eui48(np, "mac-address", mac);
++	if (ret)
++		return ret;
++
++	if (!is_valid_ether_addr(mac))
++		return -EINVAL;
++
++	memcpy(addr, mac, ETH_ALEN);
++	return 0;
++}
++EXPORT_SYMBOL(of_get_mac_address_nvmem);
++
++/**
++ * of_get_nvmem_eui48 - Read a 6-byte EUI-48 address from a named NVMEM cell.
++ * @np:		Device node to look up the NVMEM cell from.
++ * @cell_name:	Name of the NVMEM cell (e.g. "mac-address", "local-bd-address").
++ * @addr:	Output buffer for the 6-byte address.
++ *
++ * Reads the named NVMEM cell and validates that it contains a non-zero 6-byte
++ * address. Returns 0 on success, negative errno on failure.
++ */
++int of_get_nvmem_eui48(struct device_node *np, const char *cell_name, u8 *addr)
++{
++	struct nvmem_cell *cell;
++	const void *eui48;
++	size_t len;
++
++	cell = of_nvmem_cell_get(np, cell_name);
+ 	if (IS_ERR(cell))
+ 		return PTR_ERR(cell);
+ 
+-	mac = nvmem_cell_read(cell, &len);
++	eui48 = nvmem_cell_read(cell, &len);
+ 	nvmem_cell_put(cell);
+ 
+-	if (IS_ERR(mac))
+-		return PTR_ERR(mac);
++	if (IS_ERR(eui48))
++		return PTR_ERR(eui48);
+ 
+-	if (len != ETH_ALEN || !is_valid_ether_addr(mac)) {
+-		kfree(mac);
++	/* Reject unprogrammed cells that read as all-zeroes or all-ones */
++	if (len != ETH_ALEN ||
++	    !memchr_inv(eui48, 0x00, ETH_ALEN) ||
++	    !memchr_inv(eui48, 0xff, ETH_ALEN)) {
++		kfree(eui48);
+ 		return -EINVAL;
+ 	}
+ 
+-	memcpy(addr, mac, ETH_ALEN);
+-	kfree(mac);
++	memcpy(addr, eui48, ETH_ALEN);
++	kfree(eui48);
+ 
+ 	return 0;
+ }
+-EXPORT_SYMBOL(of_get_mac_address_nvmem);
++EXPORT_SYMBOL_GPL(of_get_nvmem_eui48);
+ 
+ static int of_add_mac_address(struct device_node *np, u8* addr)
+ {

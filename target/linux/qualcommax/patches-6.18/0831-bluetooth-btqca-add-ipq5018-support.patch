@@ -1,0 +1,103 @@
+From e0515f10f340233854565a85c20a7732ac4ee1a0 Mon Sep 17 00:00:00 2001
+From: George Moussalem <george.moussalem@outlook.com>
+Date: Thu, 09 Jul 2026 13:17:04 +0400
+Subject: [PATCH v5 2/6] Bluetooth: btqca: Add IPQ5018 support
+MIME-Version: 1.0
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+Message-Id: <20260709-ipq5018-bluetooth-v5-2-0da36dcc3373@outlook.com>
+
+Add the IPQ5018 SoC type and support for loading its firmware.
+
+The firmware tested has been taken from GPL sources of various router
+boards. Firmware files needed are:
+- qca/bt_fw_patch.mbn
+- qca/mpnv10.bin
+
+Acked-by: Bartosz Golaszewski <bartosz.golaszewski@oss.qualcomm.com>
+Signed-off-by: George Moussalem <george.moussalem@outlook.com>
+---
+ drivers/bluetooth/btqca.c | 16 ++++++++++++++++
+ drivers/bluetooth/btqca.h |  3 +++
+ 2 files changed, 19 insertions(+)
+
+--- a/drivers/bluetooth/btqca.c
++++ b/drivers/bluetooth/btqca.c
+@@ -380,6 +380,9 @@ static int qca_tlv_check_data(struct hci
+ 		break;
+ 
+ 	case TLV_TYPE_NVM:
++		if (soc_type == QCA_IPQ5018)
++			break;
++
+ 		if (fw_size < sizeof(struct tlv_type_hdr))
+ 			return -EINVAL;
+ 
+@@ -814,6 +817,9 @@ int qca_uart_setup(struct hci_dev *hdev,
+ 	else
+ 		rom_ver = ((soc_ver & 0x00000f00) >> 0x04) | (soc_ver & 0x0000000f);
+ 
++	if (soc_type == QCA_IPQ5018)
++		goto download_nvm;
++
+ 	if (soc_type == QCA_WCN6750)
+ 		qca_send_patch_config_cmd(hdev);
+ 
+@@ -879,6 +885,7 @@ int qca_uart_setup(struct hci_dev *hdev,
+ 	if (soc_type == QCA_QCA2066 || soc_type == QCA_WCN7850)
+ 		qca_read_fw_board_id(hdev, &boardid);
+ 
++download_nvm:
+ 	/* Download NVM configuration */
+ 	config.type = TLV_TYPE_NVM;
+ 	if (firmware_name) {
+@@ -892,6 +899,10 @@ int qca_uart_setup(struct hci_dev *hdev,
+ 		}
+ 	} else {
+ 		switch (soc_type) {
++		case QCA_IPQ5018:
++			snprintf(config.fwname, sizeof(config.fwname),
++				 "qca/mpnv%02x.bin", rom_ver);
++			break;
+ 		case QCA_QCA2066:
+ 			qca_get_nvm_name_by_board(config.fwname,
+ 						  sizeof(config.fwname),
+@@ -949,7 +960,11 @@ int qca_uart_setup(struct hci_dev *hdev,
+ 		return err;
+ 	}
+ 
++	if (soc_type == QCA_IPQ5018)
++		msleep(NVM_READY_DELAY_MS);
++
+ 	switch (soc_type) {
++	case QCA_IPQ5018:
+ 	case QCA_QCA2066:
+ 	case QCA_QCA6390:
+ 	case QCA_WCN3991:
+@@ -988,6 +1003,7 @@ int qca_uart_setup(struct hci_dev *hdev,
+ 	}
+ 
+ 	switch (soc_type) {
++	case QCA_IPQ5018:
+ 	case QCA_WCN3991:
+ 	case QCA_WCN6750:
+ 	case QCA_WCN6855:
+--- a/drivers/bluetooth/btqca.h
++++ b/drivers/bluetooth/btqca.h
+@@ -54,6 +54,8 @@
+ #define QCA_HSP_GF_SOC_ID		0x1200
+ #define QCA_HSP_GF_SOC_MASK		0x0000ff00
+ 
++#define NVM_READY_DELAY_MS		1500
++
+ enum qca_baudrate {
+ 	QCA_BAUDRATE_115200	= 0,
+ 	QCA_BAUDRATE_57600,
+@@ -158,6 +160,7 @@ enum qca_btsoc_type {
+ 	QCA_WCN6750,
+ 	QCA_WCN6855,
+ 	QCA_WCN7850,
++	QCA_IPQ5018,
+ };
+ 
+ #if IS_ENABLED(CONFIG_BT_QCA)
