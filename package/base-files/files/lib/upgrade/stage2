@@ -15,6 +15,80 @@ RAMFS_COPY_DATA=	# extra data files
 
 include /lib/upgrade
 
+umount_old_root_children() {
+	local list="/tmp/old-root.mounts.$$"
+	local line mp ret=0
+
+	while read -r _ _ _ _ mp _; do
+		case "$mp" in
+		/mnt/*)
+			printf '%s %s\n' "${#mp}" "$mp"
+			;;
+		esac
+	done < /proc/self/mountinfo | sort -rn > "$list"
+
+	while IFS= read -r line; do
+		mp="${line#* }"
+		[ -n "$mp" ] || continue
+		mp="$(printf '%b' "$mp")"
+
+		/bin/umount "$mp" || {
+			v "Failed to unmount old root child $mp."
+			ret=1
+		}
+	done < "$list"
+
+	rm -f "$list"
+	return $ret
+}
+
+ramfs_stage2() {
+	RAMFS_COPY_LOSETUP="$(command -v /usr/sbin/losetup)"
+	RAMFS_COPY_LVM="$(command -v lvm)"
+
+	# Tear down the old root only after stage2 is already running
+	# from ramfs, otherwise the current shell can lose its backing files.
+	/bin/mount -o remount,ro /mnt
+
+	umount_old_root_children
+
+	# Prefer a clean unmount and keep lazy unmount only as a last resort,
+	# because later steps must not keep using the old root implicitly.
+	/bin/umount /mnt || /bin/umount -l /mnt || {
+		v "Failed to unmount old root."
+		exit 1
+	}
+
+	# Drop device-mapper and loopback mounts before deactivating their
+	# backing devices, or teardown can fail partway through.
+	grep -e "^/dev/dm-.*" -e "^/dev/loop.*" /proc/mounts | while read bdev mp _r; do
+		umount $mp
+	done
+
+	# Detach loop devices only after their filesystems have been unmounted.
+	[ "$RAMFS_COPY_LOSETUP" ] && losetup -D
+	[ "$RAMFS_COPY_LVM" ] && {
+		mkdir -p /tmp/lvm/cache
+		# Deactivate copied volume groups so the old root stack is fully gone
+		# before handing control to the upgrade command.
+		$RAMFS_COPY_LVM vgchange -aln --ignorelockingfailure
+	}
+
+	# Overlay can still hold references into the old root, so remount it
+	# read-only and lazily detach it before starting the upgrade command.
+	grep " /overlay " /proc/mounts > /dev/null && {
+		/bin/mount -o noatime,remount,ro /overlay
+		/bin/umount -l /overlay
+	}
+
+	# Start the upgrade command only after old-root teardown, so nothing
+	# resumes normal stage2 flow with /mnt already gone.
+	exec /bin/busybox ash -c "$COMMAND"
+
+	v "Failed to exec upgrade command from ramfs."
+	exit 1
+}
+
 
 supivot() { # <new_root> <old_root>
 	/bin/mount | grep "on $1 type" 2>&- 1>&- || /bin/mount -o bind $1 $1
@@ -24,6 +98,8 @@ supivot() { # <new_root> <old_root>
 		/bin/umount -l $1 $1
 		return 1
 	}
+
+	cd /
 
 	/bin/mount -o noatime,move $2/sys /sys
 	/bin/mount -o noatime,move $2/dev /dev
@@ -53,8 +129,9 @@ switch_to_ramfs() {
 		local file="$(command -v "$binary" 2>/dev/null)"
 		[ -n "$file" ] && install_bin "$file"
 	done
+	# stage2 itself must be present in ramfs for the re-exec below.
 	install_file /etc/resolv.conf /lib/*.sh /lib/functions/*.sh	\
-		/lib/upgrade/*.sh /lib/upgrade/do_stage2 		\
+		/lib/upgrade/*.sh /lib/upgrade/stage2 /lib/upgrade/do_stage2 \
 		/usr/share/libubox/jshn.sh /usr/sbin/fw_setenv		\
 		/etc/fw_env.config $RAMFS_COPY_DATA
 
@@ -67,23 +144,14 @@ switch_to_ramfs() {
 		exit 1
 	}
 
-	/bin/mount -o remount,ro /mnt
-	/bin/umount -l /mnt
+	# Re-exec stage2 from ramfs before teardown so the running shell and
+	# helpers do not disappear when the old root is unmounted.
+	# run the old tail.
+	export RAMFS_STAGE2=1
+	exec /bin/busybox ash /lib/upgrade/stage2 "$IMAGE" "$COMMAND"
 
-	grep -e "^/dev/dm-.*" -e "^/dev/loop.*" /proc/mounts | while read bdev mp _r; do
-		umount $mp
-	done
-
-	[ "$RAMFS_COPY_LOSETUP" ] && losetup -D
-	[ "$RAMFS_COPY_LVM" ] && {
-		mkdir -p /tmp/lvm/cache
-		$RAMFS_COPY_LVM vgchange -aln --ignorelockingfailure
-	}
-
-	grep /overlay /proc/mounts > /dev/null && {
-		/bin/mount -o noatime,remount,ro /overlay
-		/bin/umount -l /overlay
-	}
+	v "Failed to re-exec stage2 from ramfs."
+	exit 1
 }
 
 kill_remaining() { # [ <signal> [ <loop> ] ]
@@ -131,6 +199,10 @@ kill_remaining() { # [ <signal> [ <loop> ] ]
 		}
 	done
 }
+
+# After re-exec from ramfs, finish the shutdown path there so old-root
+# teardown and the upgrade command run from a filesystem that survives it.
+[ -n "$RAMFS_STAGE2" ] && ramfs_stage2
 
 indicate_upgrade
 
