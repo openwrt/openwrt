@@ -5,9 +5,9 @@ PKG_RELEASE:=1
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=https://github.com/cjdelisle/econet_eth.git
-PKG_MIRROR_HASH:=ea8402a4eba5e593a799f63ee4793486520837f0f659f34962e436eefd7c1945
-PKG_SOURCE_DATE:=2026-07-21
-PKG_SOURCE_VERSION:=3ba0abe30cfa0dc1e76e41218140bc061be131fb
+PKG_SOURCE_DATE:=2026-09-22
+PKG_MIRROR_HASH:=040b717d8e096278c2eeac1519ef3fb988a19fb2e317127a273d938f6e5fcf36
+PKG_SOURCE_VERSION:=df20a0548c9142ef80ee613a81da90885b57e6c5
 
 include $(INCLUDE_DIR)/kernel.mk
 include $(INCLUDE_DIR)/package.mk
@@ -16,8 +16,11 @@ define KernelPackage/econet-eth
   SUBMENU:=Network Devices
   TITLE:=EcoNet EN751221 Ethernet Driver
   DEPENDS:=@TARGET_econet
-  FILES:=$(PKG_BUILD_DIR)/econet-eth.ko
-  AUTOLOAD:=$(call AutoLoad,90,econet-eth)
+  FILES:=$(PKG_BUILD_DIR)/econet-eth.ko \
+    $(PKG_BUILD_DIR)/mt7530.ko \
+    $(PKG_BUILD_DIR)/mt7530-mmio.ko \
+    $(PKG_BUILD_DIR)/mt7530-mdio.ko
+  AUTOLOAD:=$(call AutoLoad,90,econet-eth mt7530 mt7530-mdio mt7530-mmio)
 endef
 
 define KernelPackage/econet-eth/description

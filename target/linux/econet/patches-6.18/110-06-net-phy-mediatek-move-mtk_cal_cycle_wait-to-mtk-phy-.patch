@@ -1,0 +1,122 @@
+From 0001369bd604feac9302534c34356470705b1250 Mon Sep 17 00:00:00 2001
+From: Caleb James DeLisle <cjd@cjdns.fr>
+Date: Fri, 21 Aug 2026 23:37:27 +0000
+Subject: [PATCH 08/10] net: phy: mediatek: move mtk_cal_cycle_wait to
+ mtk-phy-lib
+
+mtk_cal_cycle_wait() is shared between mtk-ge-soc.c and airoha-ge-soc.c
+making airoha-ge-soc fail to build unless mtk-ge-soc is built too.
+
+Move it to mtk-phy-lib.c which is for this purpose.
+
+Signed-off-by: Caleb James DeLisle <cjd@cjdns.fr>
+---
+ drivers/net/phy/mediatek/mtk-ge-soc.c  | 28 -------------------------
+ drivers/net/phy/mediatek/mtk-ge-soc.h  |  3 ---
+ drivers/net/phy/mediatek/mtk-phy-lib.c | 29 ++++++++++++++++++++++++++
+ drivers/net/phy/mediatek/mtk.h         |  2 ++
+ 4 files changed, 31 insertions(+), 31 deletions(-)
+
+--- a/drivers/net/phy/mediatek/mtk-ge-soc.c
++++ b/drivers/net/phy/mediatek/mtk-ge-soc.c
+@@ -38,34 +38,6 @@ struct mtk_socphy_shared {
+ 	struct mtk_socphy_priv	priv[4];
+ };
+ 
+-int mtk_cal_cycle_wait(struct phy_device *phydev)
+-{
+-	int reg_val;
+-	int ret;
+-
+-	phy_set_bits_mmd(phydev, MDIO_MMD_VEND1, MTK_PHY_RG_AD_CALIN,
+-			 MTK_PHY_DA_CALIN_FLAG);
+-
+-	ret = phy_read_mmd_poll_timeout(phydev, MDIO_MMD_VEND1,
+-					MTK_PHY_RG_AD_CAL_CLK, reg_val,
+-					reg_val & MTK_PHY_DA_CAL_CLK, 500,
+-					ANALOG_INTERNAL_OPERATION_MAX_US,
+-					false);
+-	if (ret) {
+-		phydev_err(phydev, "Calibration cycle timeout\n");
+-		return ret;
+-	}
+-
+-	phy_clear_bits_mmd(phydev, MDIO_MMD_VEND1, MTK_PHY_RG_AD_CALIN,
+-			   MTK_PHY_DA_CALIN_FLAG);
+-	ret = phy_read_mmd(phydev, MDIO_MMD_VEND1, MTK_PHY_RG_AD_CAL_COMP);
+-	if (ret < 0)
+-		return ret;
+-
+-	return FIELD_GET(MTK_PHY_AD_CAL_COMP_OUT_MASK, ret);
+-}
+-EXPORT_SYMBOL_GPL(mtk_cal_cycle_wait);
+-
+ /* One calibration cycle consists of:
+  * 1.Set DA_CALIN_FLAG high to start calibration. Keep it high
+  *   until AD_CAL_COMP is ready to output calibration result.
+--- a/drivers/net/phy/mediatek/mtk-ge-soc.h
++++ b/drivers/net/phy/mediatek/mtk-ge-soc.h
+@@ -367,7 +367,4 @@ enum CAL_MODE {
+ 	SW_M
+ };
+ 
+-/* MTK GE SoC common functions */
+-int mtk_cal_cycle_wait(struct phy_device *phydev);
+-
+ #endif /* _MTK_GE_SOC_H_ */
+--- a/drivers/net/phy/mediatek/mtk-phy-lib.c
++++ b/drivers/net/phy/mediatek/mtk-phy-lib.c
+@@ -5,6 +5,7 @@
+ #include <linux/netdevice.h>
+ 
+ #include "mtk.h"
++#include "mtk-ge-soc.h"
+ 
+ /* Difference between functions with mtk_tr* and __mtk_tr* prefixes is
+  * mtk_tr* functions: wrapped by page switching operations
+@@ -414,6 +415,34 @@ int mt798x_phy_led_hw_control_set(struct
+ };
+ EXPORT_SYMBOL_GPL(mt798x_phy_led_hw_control_set);
+ 
++int mtk_cal_cycle_wait(struct phy_device *phydev)
++{
++	int reg_val;
++	int ret;
++
++	phy_set_bits_mmd(phydev, MDIO_MMD_VEND1, MTK_PHY_RG_AD_CALIN,
++			 MTK_PHY_DA_CALIN_FLAG);
++
++	ret = phy_read_mmd_poll_timeout(phydev, MDIO_MMD_VEND1,
++					MTK_PHY_RG_AD_CAL_CLK, reg_val,
++					reg_val & MTK_PHY_DA_CAL_CLK, 500,
++					ANALOG_INTERNAL_OPERATION_MAX_US,
++					false);
++	if (ret) {
++		phydev_err(phydev, "Calibration cycle timeout\n");
++		return ret;
++	}
++
++	phy_clear_bits_mmd(phydev, MDIO_MMD_VEND1, MTK_PHY_RG_AD_CALIN,
++			   MTK_PHY_DA_CALIN_FLAG);
++	ret = phy_read_mmd(phydev, MDIO_MMD_VEND1, MTK_PHY_RG_AD_CAL_COMP);
++	if (ret < 0)
++		return ret;
++
++	return FIELD_GET(MTK_PHY_AD_CAL_COMP_OUT_MASK, ret);
++}
++EXPORT_SYMBOL_GPL(mtk_cal_cycle_wait);
++
+ MODULE_DESCRIPTION("MediaTek Ethernet PHY driver common");
+ MODULE_AUTHOR("Sky Huang <SkyLake.Huang@mediatek.com>");
+ MODULE_AUTHOR("Daniel Golle <daniel@makrotopia.org>");
+--- a/drivers/net/phy/mediatek/mtk.h
++++ b/drivers/net/phy/mediatek/mtk.h
+@@ -87,6 +87,8 @@ void __mtk_tr_clr_bits(struct phy_device
+ int mtk_phy_read_page(struct phy_device *phydev);
+ int mtk_phy_write_page(struct phy_device *phydev, int page);
+ 
++int mtk_cal_cycle_wait(struct phy_device *phydev);
++
+ int mtk_phy_led_hw_is_supported(struct phy_device *phydev, u8 index,
+ 				unsigned long rules,
+ 				unsigned long supported_triggers);

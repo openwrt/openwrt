@@ -1,0 +1,45 @@
+From 84e09c91c54da96bd5ca222eae5b34d8e8e26ec5 Mon Sep 17 00:00:00 2001
+From: Caleb James DeLisle <cjd@cjdns.fr>
+Date: Thu, 27 Aug 2026 06:22:58 +0000
+Subject: [PATCH v2 net-next 1/2] net: phy: mediatek: differentiate MT7530 GE
+ PHY from EcoNet FE PHY
+
+MT7530 gigabit PHY has the same ID as an EcoNet EN751221 10/100
+PHY. Differentiate by checking whether the PHY supports 1000BASE-T
+which is always supported by MT7530.
+
+Signed-off-by: Caleb James DeLisle <cjd@cjdns.fr>
+---
+ drivers/net/phy/mediatek/mtk-ge.c | 14 ++++++++++++++
+ 1 file changed, 14 insertions(+)
+
+--- a/drivers/net/phy/mediatek/mtk-ge.c
++++ b/drivers/net/phy/mediatek/mtk-ge.c
+@@ -130,6 +130,19 @@ static int mt7531_phy_config_init(struct
+ 	return 0;
+ }
+ 
++/*
++ * MTK_GPHY_ID_MT7530 collides with ECONET_FEPHY_ID_LEGACY
++ * but this is a gigabit PHY so ESTATUS lists 1000BASE-T.
++ */
++static int mt7530_phy_match(struct phy_device *phydev,
++			    const struct phy_driver *phydrv)
++{
++	if (phydev->phy_id != MTK_GPHY_ID_MT7530)
++		return false;
++
++	return (phy_read(phydev, MII_ESTATUS) & ESTATUS_1000_TFULL) != 0;
++}
++
+ static struct phy_driver mtk_gephy_driver[] = {
+ 	{
+ 		PHY_ID_MATCH_EXACT(MTK_GPHY_ID_MT7530),
+@@ -140,6 +153,7 @@ static struct phy_driver mtk_gephy_drive
+ 		 */
+ 		.config_intr	= genphy_no_config_intr,
+ 		.handle_interrupt = genphy_handle_interrupt_no_ack,
++		.match_phy_device = mt7530_phy_match,
+ 		.suspend	= genphy_suspend,
+ 		.resume		= genphy_resume,
+ 		.read_page	= mtk_phy_read_page,
