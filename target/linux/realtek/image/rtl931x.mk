@@ -24,6 +24,28 @@ define Device/hasivo_s1300wp-8xgt-4s-plus
 endef
 TARGET_DEVICES += hasivo_s1300wp-8xgt-4s-plus
 
+define Device/horaco_zx-swtgw2c48ns
+  SOC := rtl9313
+  DEVICE_VENDOR := Horaco
+  DEVICE_MODEL := ZX-SWTGW2C48NS
+  DEVICE_ALT0_VENDOR := HRUI
+  DEVICE_ALT0_MODEL := HR-SWTGW2C48NS
+  DEVICE_ALT1_VENDOR := SODOLA
+  DEVICE_ALT1_MODEL := SL-SWTGW2C48NS
+  DEVICE_PACKAGES := rtl826x-firmware kmod-hwmon-adt7475
+  IMAGE_SIZE := 28672k
+  UIMAGE_MAGIC := 0x83800000
+  $(Device/kernel-lzma)
+  IMAGES += factory.bin
+  IMAGE/factory.bin := \
+	append-kernel | \
+	pad-to 64k | \
+	append-rootfs | \
+	pad-rootfs | \
+	check-size
+endef
+TARGET_DEVICES += horaco_zx-swtgw2c48ns
+
 define Device/mokerlink_10gt080m
   SOC := rtl9313
   DEVICE_VENDOR := MokerLink
