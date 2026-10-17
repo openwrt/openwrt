@@ -38,6 +38,8 @@ LINUX_DIR := $(PKG_BUILD_DIR)
 include $(INCLUDE_DIR)/bpf.mk
 include $(INCLUDE_DIR)/package.mk
 
+PKG_BUILD_DEPENDS:=bpftool/host
+
 define Package/bpf-headers
   SECTION:=kernel
   CATEGORY:=Kernel modules
@@ -93,8 +95,45 @@ define Build/Configure
 		> $(PKG_BUILD_DIR)/tools/lib/bpf/bpf_helper_defs.h
 endef
 
+VMLINUX = $(REAL_LINUX_DIR)/vmlinux
+KERNEL_CONFIG = $(REAL_LINUX_DIR)/.config
+
+BPFTOOL = $(STAGING_DIR_HOST)/usr/sbin/bpftool
+
+VMLINUX_H_TEMP = $(PKG_BUILD_DIR)/vmlinux.h
+VMLINUX_H_DEST = $(PKG_BUILD_DIR)/include/bpf/vmlinux.h
+
+define Build/BpfVmlinuxHeader
+	@[ -s '$(VMLINUX)' ] || { \
+	  echo >&2 ; \
+	  echo 'missing "vmlinux" in $(dir $(VMLINUX))' >&2 ; \
+	  echo >&2 ; \
+	  exit 1 ; \
+	}
+
+	@if [ -s '$(VMLINUX_H_DEST)' ] ; then \
+	  echo >&2 ; \
+	  echo '"include/bpf/vmlinux.h" already exists in $(PKG_BUILD_DIR)/' >&2 ; \
+	  echo >&2 ; \
+	  exit 1 ; \
+	fi
+
+	@grep -Fxq CONFIG_DEBUG_INFO_BTF=y '$(KERNEL_CONFIG)' || { \
+	  echo >&2 ; \
+	  echo 'Kernel is built without CONFIG_DEBUG_INFO_BTF' >&2 ; \
+	  echo >&2 ; \
+	  echo '#error "Kernel is built without CONFIG_DEBUG_INFO_BTF, no type info available"' > '$(VMLINUX_H_TEMP)' ; \
+	}
+	if grep -Fxq CONFIG_DEBUG_INFO_BTF=y '$(KERNEL_CONFIG)' ; then \
+	  '$(BPFTOOL)' btf dump file '$(VMLINUX)' format c > '$(VMLINUX_H_TEMP)' ; \
+	fi
+	mkdir -p '$(dir $(VMLINUX_H_DEST))'
+	$(INSTALL_DATA) '$(VMLINUX_H_TEMP)' '$(VMLINUX_H_DEST)'
+endef
+
 define Build/Compile
 	$(KERNEL_MAKE) archprepare headers_install
+	$(Build/BpfVmlinuxHeader)
 endef
 
 define Build/InstallDev
