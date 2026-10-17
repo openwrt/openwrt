@@ -208,3 +208,55 @@ CONFIG_ZLIB_INFLATE=y
 CONFIG_ZSTD_COMMON=y
 CONFIG_ZSTD_COMPRESS=y
 CONFIG_ZSTD_DECOMPRESS=y
+# Required by en751221.dtsi's syscon nodes and clk-en7523; without it
+# clk-en7523 probe fails -ENOTSUPP, taking down the reset controller and
+# Ethernet. Sibling subtargets en7528/en751627 already set it.
+CONFIG_MFD_SYSCON=y
+
+# Parallel NAND (Macronix MX30LF1G18AC on the MediaTek NFI). ARM-gated
+# upstream; the NAND patch block adds ECONET. No ECC interrupt is wired on
+# this SoC, so the ECC engine uses a polling fallback.
+CONFIG_MTD_NAND_ECC_MEDIATEK=y
+CONFIG_MTD_NAND_MTK=y
+CONFIG_MTD_RAW_NAND=y
+# Software BCH ECC: the mtk_nand.c read/write paths call lib/bch.c directly;
+# omitting this is an undefined-reference link failure.
+CONFIG_MTD_NAND_ECC_SW_BCH=y
+CONFIG_BCH=y
+
+# Mainline mt7530-mmio DSA driver for the board DTS's switch@1fb58000 node.
+# MDIO variant not needed: this switch is MMIO-mapped, not on an MDIO bus.
+CONFIG_NET_DSA=y
+CONFIG_NET_DSA_MT7530=y
+CONFIG_NET_DSA_MT7530_MMIO=y
+# CONFIG_NET_DSA_MT7530_MDIO is not set
+CONFIG_NET_DSA_TAG_MTK=y
+
+# PHY drivers for the four LAN-facing GE PHYs behind the external switch.
+CONFIG_MEDIATEK_GE_PHY=y
+CONFIG_MTK_NET_PHYLIB=y
+
+# Front-panel LEDs: en751221 doesn't build the GPIO/LED drivers by default
+# like sibling subtargets do. GPIO_EN7523 is enabled for MIPS/ECONET by
+# 320-gpio-en7523-enable-for-econet-mips.patch but LEDS_GPIO itself is
+# still missing.
+CONFIG_GPIO_EN7523=y
+CONFIG_LEDS_GPIO=y
+
+# Pinned explicitly: each only becomes a real (non-"NEW") symbol once
+# MIPS_MT_SMP=y is in effect, and the seed config predates that, so
+# non-interactive syncconfig would otherwise stall asking for a default.
+CONFIG_MIPS_MT_SMP=y
+CONFIG_MIPS_MT_FPAFF=y
+CONFIG_SCHED_SMT=y
+# CONFIG_SCHED_CORE is not set
+
+# Shared EcoNet USB PHY driver, extended with the vendor's
+# usb_mt751020_phy_init() bring-up sequence. Must be builtin, not =m: the
+# OHCI's first register read hangs the SoC if the PHY isn't up first.
+CONFIG_PHY_EN7528_USB=y
+
+# MediaTek SoC-internal GPHYs -- not used, the H267A has an external MT7530
+# switch with external LAN PHYs. Pinned off explicitly to avoid a
+# non-interactive syncconfig stall (it surfaces as a NEW symbol here too).
+# CONFIG_MEDIATEK_GE_SOC_PHY is not set

@@ -1,0 +1,127 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Sergey Lebedev <sergey@lebedev.mobi>
+Date: Mon, 31 Aug 2026 00:00:00 +0000
+Subject: [PATCH] clk: en7523: vendor-faithful EN751221 PCIe prepare
+
+The EN751221's PCIe complex needs a different bring-up sequence than
+the EN7523 model it currently borrows:
+
+* en7523_pci_prepare() sets REFCLK_EN1 and pulses PERSTOUT/PERSTOUT1 --
+  on the EN751221 the vendor never sets REFCLK_EN1 for this chip
+  variant, and the per-port PERST deassert lives at BIT(26)|BIT(27)
+  with BIT(29)|BIT(22)|BIT(23) clear (steady-state value 0x13C08000,
+  read from the working vendor system).
+
+* The vendor additionally enables PCIe clock gates at SCU offset 0x860
+  (BIT(19)|BIT(20)) which this driver never touches.
+
+Replace en751221_pci_prepare() with the vendor sequence:
+1. 0x860 |= 0x180000 (clock gates)
+2. RST_CTRL1 main pulse PCIE1|PCIE2|PCIEHB (already matched vendor)
+3. REG_PCI_CONTROL = 0x13C08000 (steady-state: PERST deasserted for
+   both ports, REFCLK_EN0/EN1/PERSTOUT clear)
+
+is_enabled now reports the per-port PERST bits (26/27) instead of
+REFCLK_EN1, and unprepare is a no-op: the vendor never powers the
+complex down, and tearing it down between the two ports' probes was
+the structural hazard behind an earlier reverted one-shot-prepare
+attempt. With is_enabled keyed to the PERST bits, the second port's
+clk_prepare_enable sees the clock already prepared and skips a second
+run -- one vendor-style pass covers both ports.
+
+Pairs with the matching pcie-mediatek/phy-econet-pcie changes.
+Verified on real hardware (ZTE ZXHN H267A): both radios enumerate.
+
+Signed-off-by: Sergey Lebedev <sergey@lebedev.mobi>
+---
+--- a/drivers/clk/clk-en7523.c
++++ b/drivers/clk/clk-en7523.c
+@@ -23,6 +23,8 @@
+ #define   REG_PCI_CONTROL_REFCLK_EN0	BIT(23)
+ #define   REG_PCI_CONTROL_REFCLK_EN1	BIT(22)
+ #define   REG_PCI_CONTROL_PERSTOUT2	BIT(16)
++#define   REG_PCI_CONTROL_EN751221_PERST	(BIT(26) | BIT(27))
++#define   REG_PCI_CONTROL_EN751221_STEADY	0x13C08000
+ #define REG_GSW_CLK_DIV_SEL		0x1b4
+ #define REG_EMI_CLK_DIV_SEL		0x1b8
+ #define REG_BUS_CLK_DIV_SEL		0x1bc
+@@ -33,6 +35,8 @@
+ #define REG_RESET_CONTROL2		0x830
+ #define   REG_RESET2_CONTROL_PCIE2	BIT(27)
+ #define REG_RESET_CONTROL1		0x834
++#define REG_EN751221_PCIE_CLKGATE	0x860
++#define   REG_EN751221_PCIE_CLKGATE_BITS	(BIT(19) | BIT(20))
+ #define   REG_RESET_CONTROL_PCIEHB	BIT(29)
+ #define   REG_RESET_CONTROL_PCIE1	BIT(27)
+ #define   REG_RESET_CONTROL_PCIE2	BIT(26)
+@@ -543,6 +547,13 @@ static int en7523_pci_is_enabled(struct
+ 	return !!(readl(cg->base + REG_PCI_CONTROL) & REG_PCI_CONTROL_REFCLK_EN1);
+ }
+ 
++static int en751221_pci_is_enabled(struct clk_hw *hw)
++{
++	struct en_clk_gate *cg = container_of(hw, struct en_clk_gate, hw);
++
++	return !!(readl(cg->base + REG_PCI_CONTROL) & REG_PCI_CONTROL_EN751221_PERST);
++}
++
+ static int en7523_pci_prepare(struct clk_hw *hw)
+ {
+ 	struct en_clk_gate *cg = container_of(hw, struct en_clk_gate, hw);
+@@ -593,6 +604,43 @@ static void en7523_pci_unprepare(struct
+ 	writel(val, np_base + REG_PCI_CONTROL);
+ }
+ 
++static int en751221_pci_prepare(struct clk_hw *hw)
++{
++	struct en_clk_gate *cg = container_of(hw, struct en_clk_gate, hw);
++	void __iomem *np_base = cg->base;
++	u32 val, mask;
++
++	/* PCIe clock gates the vendor enables (SCU 0x860 bits 19/20) */
++	val = readl(np_base + REG_EN751221_PCIE_CLKGATE);
++	writel(val | REG_EN751221_PCIE_CLKGATE_BITS,
++	       np_base + REG_EN751221_PCIE_CLKGATE);
++	usleep_range(1000, 2000);
++
++	/* RST_CTRL1 main pulse PCIE1|PCIE2|PCIEHB (vendor sequence) */
++	val = readl(np_base + REG_RESET_CONTROL1);
++	mask = REG_RESET_CONTROL_PCIE1 | REG_RESET_CONTROL_PCIE2 |
++	       REG_RESET_CONTROL_PCIEHB;
++	writel(val & ~mask, np_base + REG_RESET_CONTROL1);
++	usleep_range(1000, 2000);
++	writel(val | mask, np_base + REG_RESET_CONTROL1);
++	msleep(100);
++	writel(val & ~mask, np_base + REG_RESET_CONTROL1);
++	usleep_range(1000, 2000);
++
++	/* PERST deassert for both ports + steady-state PCI_CONTROL */
++	writel(REG_PCI_CONTROL_EN751221_STEADY, np_base + REG_PCI_CONTROL);
++	msleep(10);
++
++	return 0;
++}
++
++static void en751221_pci_unprepare(struct clk_hw *hw)
++{
++	/* The vendor never powers the PCIe complex down; keep the state.
++	 * Tearing it down between the two ports' probes is a hazard.
++	 */
++}
++
+ static struct clk_hw *en7523_register_pcie_clk(struct device *dev,
+ 					       void __iomem *np_base)
+ {
+@@ -1004,9 +1052,9 @@ static const struct en_clk_soc_data en75
+ static const struct en_clk_soc_data en751221_data = {
+ 	.num_clocks = EN751221_MAX_CLKS,
+ 	.pcie_ops = {
+-		.is_enabled = en7523_pci_is_enabled,
+-		.prepare = en7523_pci_prepare,
+-		.unprepare = en7523_pci_unprepare,
++		.is_enabled = en751221_pci_is_enabled,
++		.prepare = en751221_pci_prepare,
++		.unprepare = en751221_pci_unprepare,
+ 	},
+ 	.hw_init = en751221_clk_hw_init,
+ };
