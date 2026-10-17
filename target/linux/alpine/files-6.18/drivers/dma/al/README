@@ -1,0 +1,236 @@
+Linux driver for Annapurna Labs DMA device
+
+Architecture:
+=============
+
+This driver implements standard Linux DMA device, the kernel communicates with
+the driver using the dma_device structure (defined at
+include/linux/dmaengine.h). The DMA device is implemented as integrated PCI-E
+End point, hence the driver uses the PCI interface for probing the device and
+other various management functions.
+
+The driver communicates with the hardware using the Annapurna Labs Storage and
+Memory Services Acceleration Engine and UDMA HAL drivers.
+
+Internal Data Structures:
+=========================
+al_dma_device:
+--------------
+  This structure holds all the information needed to operate the adapter.
+  Fields:
+  - pdev: pointer to Linux PCI device structure
+  - raid_dma_params: data structure used to pass various parameters to the HAL
+  - udma_regs_base: UDMA registers base address
+  - app_regs_base: engine internal registers base address
+  - hal_raid: the HAL structure used by HAL to manage the adapter
+  - common: Linux DMA device structure
+  - irq_tbl: array of al_eth_irq, each interrupt used by the driver has entry
+    in this array.
+  - msix_entries: pointer to linux data structure used to communicate with the
+    kernel which entries to use for msix, and which irqs the kernel assigned
+    for those interrupts.
+  - channels: an array of channel information
+  - max_channels: the number of existing channels
+  - cache: kmem cache for allocating ring entries
+
+al_dma_chan:
+------------
+  This structure is used for saving the context of a single chhanel.
+  Fields:
+  - common: Linux DMA channel structure
+  - hal_raid: the HAL structure used by HAL to manage the adapter
+  - idx: the channel's index
+  - device: the parent device
+  - affinity_mask: cpu irq affinity mask
+  - sw_ring: SW descriptor ring
+  - tx_descs_num: number of descriptors in TX queue
+  - tx_dma_desc_vir: TX descriptor ring
+  - tx_dma_desc: TX descriptor ring physical base address
+  - rx_descs_num: number of descriptors in RX queue
+  - rx_dma_desc_vir: RX descriptor ring
+  - rx_dma_desc: RX descriptor ring physical base address
+  - rx_dma_cdesc_virt: RX completion descriptors ring
+  - rx_dma_cdesc: RX completion descriptors ring physical address
+  - kobj: sysfs kobj
+  - alloc_order: channel allocation order (log2 of the size)
+  - prep_lock: channel transaction preparation lock
+  - head: SW ring head
+  - sw_desc_num_locked: number of SW descriptors locked
+  - tx_desc_produced: number of tx descriptors produced and not issued
+  - stats_prep: preparation statistics
+  - cleanup_lock: operation completion cleanup lock
+  - cleanup_task: operation completion cleanup tasklet
+  - completed_cookie: completed cookie
+  - tail: SW ring tail
+  - stats_prep: operation completion statistics
+
+al_dma_chan_stats_prep:
+-----------------------
+  DMA channel statistics - preparation
+  Fields:
+  - int_num: Total number of interrupt requests
+  - memcpy_num: Total number of memcpy operations
+  - memcpy_size: Total size of memcpy operations
+  - memset_num: Total number of memset operations
+  - memset_size: Total size of memset operations
+  - xor_num: Total number of xor operations
+  - xor_size: Total size of xor operations
+  - pq_num: Total number of pq operations
+  - pq_size: Total size of pq operations
+  - pq_val_num: Total number of pq validation operations
+  - pq_val_size: Total size of pq validation operations
+  - xor_val_num: Total number of xor validation operations
+  - xor_val_size: Total size of xor validation operations
+  - matching_cpu: Number of preparations with matching queue and cpu
+  - mismatching_cpu: Number of preparations with mismatching queue and cpu
+
+al_dma_chan_stats_comp:
+-----------------------
+  DMA channel statistics - completion
+  Fields:
+  - redundant_int_cnt: Total number of redundant interrupts (interrupts for
+    which there was no completions
+  - matching_cpu: Number of completions with matching queue and cpu
+  - mismatching_cpu: Number of completions with mismatching queue and cpu
+
+Interrupts mode:
+================
+The Annapurna Labs Storage and Memory Services Acceleration Engine supports the
+TrueMultiCore(TM) technology and is based on Annapurna Labs Unified DMA (aka
+UDMA), thus it has an interrupt controller that can generate legacy level
+sensitive interrupt, or alternatively, MSI-X interrupt for each cause bit.
+
+The driver tries first to work in per-queue MSI-X mode for optimal performance,
+with MSI-X interrupt for each channel.
+If it fails to enable the per-queue MSI-X mode, it tries to use single MSI-X
+interrupt for all the events. If it fails, it falls back to single legacy level
+sensitive interrupt wire for all the events.
+
+The systems interrupts status can be viewed by the /proc/interrupts pseudo file.
+when legacy mode used, the registered interrupt name will be:
+al-dma-intx-all@pci:<pci device name of the adapter>
+when single MSI-X interrupt mode is used, the registered interrupt name will be:
+al-dma-msix-all@pci:<pci device name of the adapter>
+and when per-queue MSI-X mode is used, for each channel an interrupt will be
+registered with the following name:
+al-dma-comp-<queue index><pci:<pci device name of the adapter>.
+
+When working in the mode of interrupt per channel the irq affinity is set so
+there will be a dedicated CPU per channel irq - this corresponds to DMA engine
+behavior of balancing the channels between the CPUs so that channel X goes to
+CPU X.
+
+Memory allocations:
+===================
+Cache coherent buffers for following DMA rings:
+- TX submission ring
+- RX submission ring
+- RX completion ring
+kmem cache buffers for the SW rings.
+All these buffers allocated upon channel creation and freed upon channel
+destruction.
+
+MULTIQUEUE:
+===========
+As part of the TrueMultiCore(TM) technology, the driver support multiqueue mode.
+This mode have various benefits when channels are allocated to different CPU
+cores/threads:
+1. Reduced CPU/thread/process contention on a given channel
+2. Cache miss rate on transaction completion is reduced
+3. In hardware interrupt re-direction
+
+Channel selection: the driver is optimized for the case where number of cpus
+equals to number of channels, in this case, each cpu mapped to a single channel.
+This mapping is done by the DMA engine Linux layer.
+
+Interrupts affinity:
+-------------------
+In order to utilize the multiqueue benefits, the per-queue MSI-X mode should be
+used.
+In this mode the irq affinity is set so there will be a dedicated CPU per
+channel irq - the same CPU that triggered the transaction and "owns" the
+channel.
+
+Locks and atomic variables:
+===========================
+The following locks and atomic variables are used in the driver:
+- Prep lock for locking sw ring (al_dma_chan->prep_lock)
+- Cleanup lock for completion ring in each channel (al_dma_chan->cleanup_lock)
+
+Work flow:
+==================
+1. The stack maps the source and destination buffers
+2. The stack calls al_dma_prep_xxx_lock, which does the following:
+   - Populate the HAL structure used to transaction
+   - Updates relevant statistics
+   - Add the transaction to the SW ring
+3. The stack calls al_dma_tx_submit_unlock, which adds the transaction to the
+   TX UDMA hardware
+4. When the UDMA hardware finishes the transaction, it raises RX completion
+   interrupt, which schedules a completion tasklet
+5. The completion tasklet performs the following:
+   - Acknowledges all completions
+   - Updates relevant statistics
+   - Unmaps buffers which are not marked for not unmapping
+   - Calls the transaction callback defined by the stack
+
+File structure
+==============
+
+Module init and PCI registration
+--------------------------------
+./al_dma.c
+
+Driver core
+-----------
+./al_dma_core.c
+./al_dma.h
+
+Operation cleanup (upon completion)
+-----------------------------------
+./al_dma_cleanup.c
+
+Operation preparation
+---------------------
+./al_dma_prep.h
+./al_dma_prep_interrupt.c
+./al_dma_prep_memcpy.c
+./al_dma_prep_memset.c
+./al_dma_prep_pq.c
+./al_dma_prep_pq_val.c
+./al_dma_prep_xor.c
+./al_dma_prep_xor_val.c
+
+/sys FS registration
+--------------------
+./al_dma_sysfs.c
+./al_dma_sysfs.h
+
+Hardware abstraction layer
+--------------------------
+./al_hal_raid_accelerator_regs.h
+./al_hal_raid.c
+./al_hal_raid.h
+
+Misc
+----
+./README
+./Makefile
+
+
+TODO:
+=====
+ - get number of channels/max lengh from device information
+ - implement intx isr
+ - interrupt registers configuration
+ - error handling
+ - self test
+ - Clean TODO spread in the code
+ - Add support for ins mod/rmmod
+ - Add support for enabling Group D int (errors) and report them
+ - SR-IOV support
+ - Add statistics that can later imply how the driver should be optimized:
+    Maxsize request.
+    Min size request.
+    Number of req < 4k req, number of req > 4k < 16k req, etc.
+
