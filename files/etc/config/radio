@@ -1,0 +1,26 @@
+config radio 'main'
+	# mode: 'mesh' (batman-adv over 802.11s) | 'wfbng' (wifibroadcast inject)
+	# Single radio => one mode at a time.
+	option mode 'mesh'
+
+	# Regulatory. Default a conservative, lawful country. 'GV' is only honoured
+	# in an approved build AND when gv_email is set to a valid operator address.
+	option regdomain 'US'
+	# GV gate: set to your operator contact email to activate extended bands.
+	option gv_email ''
+
+	# shared RF
+	option channel '6'
+	option band '2g'
+	option htmode 'HT20'
+
+config mesh 'mesh'
+	option mesh_id 'smartradio-mesh'
+	# batman-adv bat0 config lives in /etc/config/network (proto batadv)
+
+config wfbng 'wfbng'
+	# This SoC is 2.4 GHz only (AR9531), so wfb-ng runs on a 2g channel.
+	option channel '13'
+	option tx '1'               # 1 = this unit transmits (air), 0 = receives (ground)
+	option udp_port '5600'
+	option key '/etc/wfb.key'   # from wfb_keygen; generate per link

@@ -1,0 +1,19 @@
+#!/bin/sh
+# Add doodlelabs,smartradio to uboot-envtools so fw_printenv/fw_setenv
+# work without manually creating /etc/fw_env.config.
+# MTD layout: u-boot-env at offset 0x40000, size 0x40000, erase 0x10000.
+
+[ -e /etc/config/ubootenv ] && exit 0
+
+board=$(board_name)
+case "$board" in
+doodlelabs,smartradio)
+	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x40000" "0x10000"
+	;;
+esac
+
+. /lib/uboot-envtools.sh
+config_load ubootenv
+config_foreach ubootenv_add_app_config ubootenv
+
+exit 0

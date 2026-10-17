@@ -1,0 +1,79 @@
+#!/bin/sh /etc/rc.common
+# RF front-end control daemon for QCA9533 Smart Radio.
+#
+# On RM-2450-12M3: frequency shifting is a NO-OP (shift=0).
+# LNA control is via GPIO4/GPIO15 (tentative — verify on hardware).
+# TX power control deferred to ath9k built-in TPC.
+#
+# Exposes rf_ctrl.0 ubus interface for linkstate and other scripts.
+
+START=18
+USE_PROCD=1
+
+LNA_GPIO=0    # GPIO4 or GPIO15 — set to actual GPIO after hardware probing
+DEVICE=0
+
+_lna_set() {
+	local state="$1"
+	[ "$LNA_GPIO" -gt 0 ] || return 0
+	case "$state" in
+	0) echo 0 > /sys/class/gpio/gpio${LNA_GPIO}/value 2>/dev/null ;;
+	1) echo 1 > /sys/class/gpio/gpio${LNA_GPIO}/value 2>/dev/null ;;
+	3) echo 1 > /sys/class/gpio/gpio${LNA_GPIO}/value 2>/dev/null ;;
+	esac
+}
+
+_gpio_export() {
+	[ "$LNA_GPIO" -gt 0 ] || return 0
+	[ -d /sys/class/gpio/gpio${LNA_GPIO} ] || echo $LNA_GPIO > /sys/class/gpio/export 2>/dev/null
+	echo out > /sys/class/gpio/gpio${LNA_GPIO}/direction 2>/dev/null
+}
+
+start_service() {
+	_gpio_export
+
+	procd_open_instance
+	procd_set_param command /bin/ucode -e '
+import * as ubus from "ubus";
+
+let conn = ubus.connect();
+
+let obj = {
+    version: function(req) {
+        req.reply({ version: "community-1.0", hw: "RM-2450-12M3" });
+    },
+    status: function(req) {
+        let dev = req.args.device ?? 0;
+        req.reply({
+            enabled: true,
+            freq_hz: 2450000000,
+            shift_hz: 0,
+            bw_hz: 10000000,
+            power_dbm: 20,
+            lna_enabled: true
+        });
+    },
+    enable:  function(req) { req.reply({ result: "ok" }); },
+    disable: function(req) { req.reply({ result: "ok" }); },
+    set_freq: function(req) {
+        req.reply({ result: "ok", note: "shift=0 on this hardware" });
+    },
+    set_power: function(req) {
+        req.reply({ result: "ok" });
+    },
+    lna: function(req) {
+        let state = req.args.state ?? 1;
+        system("sh -c '"'"'
+            LNA_GPIO='" + LNA_GPIO + @'"
+            [ $LNA_GPIO -gt 0 ] && echo '" + (req.args.state ?? 1) + @'" > /sys/class/gpio/gpio${LNA_GPIO}/value
+        '"'"'");
+        req.reply({ result: "ok", lna_state: state });
+    }
+};
+
+conn.publish("rf_ctrl.0", obj);
+uloop.run();
+'
+	procd_set_param respawn
+	procd_close_instance
+}

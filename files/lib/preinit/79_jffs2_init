@@ -1,0 +1,30 @@
+#!/bin/sh
+# Auto-initialize jffs2 overlay when rootfs_data contains the fwtool
+# firstboot marker (0xdeadc0de) but mount_root can't format it.
+# Runs BEFORE mount_root (80_mount_root) so jffs2 is ready when needed.
+
+jffs2_init() {
+	local mtd_dev
+
+	# Find rootfs_data MTD device
+	mtd_dev=$(grep '"rootfs_data"' /proc/mtd 2>/dev/null | cut -d: -f1 | sed 's/mtd//')
+	[ -n "$mtd_dev" ] || return
+
+	# Check first 4 bytes for dead c0de (firstboot marker)
+	local magic
+	magic=$(dd if=/dev/mtd${mtd_dev} bs=4 count=1 2>/dev/null | hexdump -e '1/4 "%08x"')
+	[ "$magic" = "deadc0de" ] || return
+
+	# Erase and format jffs2 so mount_root can mount it
+	logger -t jffs2-init "Initializing jffs2 on mtd${mtd_dev}..."
+	mtd erase "rootfs_data" 2>/dev/null || return
+	mkdir -p /tmp/jffs2_init
+	mount -t jffs2 /dev/mtdblock${mtd_dev} /tmp/jffs2_init 2>/dev/null && {
+		touch /tmp/jffs2_init/.initialized
+		umount /tmp/jffs2_init
+		logger -t jffs2-init "jffs2 initialized on mtd${mtd_dev}"
+	}
+	rmdir /tmp/jffs2_init 2>/dev/null
+}
+
+boot_hook_add preinit_main jffs2_init

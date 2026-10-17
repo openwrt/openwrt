@@ -1,0 +1,97 @@
+#!/bin/sh /etc/rc.common
+# Owns phy0: brings up EITHER batman-adv mesh OR wfb-ng injection, and
+# enforces the regulatory lock. Single radio => exactly one mode.
+
+START=99
+USE_PROCD=1
+
+PHY=phy0
+WIFI_DEV=wlan0
+
+_valid_email() {
+	# Minimal RFC-5321 check: local@domain.tld — at least confirms a human typed it.
+	echo "$1" | grep -qE '^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$'
+}
+
+apply_regdomain() {
+	local reg; config_get reg main regdomain US
+	local gv_email; config_get gv_email main gv_email ""
+
+	if [ "$reg" = "GV" ]; then
+		# Gate 1: operator must supply a valid email (licence acknowledgement).
+		if ! _valid_email "$gv_email"; then
+			logger -t radio-mode \
+				"GV denied: set radio.main.gv_email to your operator contact email"
+			reg=US
+		# Gate 2: regdb must actually contain GV (approved build).
+		else
+			iw reg set GV
+			sleep 1
+			if iw reg get 2>/dev/null | grep -q "^country GV"; then
+				logger -t radio-mode \
+					"regdomain GV active — operator: $gv_email"
+				return
+			fi
+			logger -t radio-mode \
+				"GV not in regdb; rebuild with CONFIG_SMARTRADIO_REGDB_GV_UNLOCK=y"
+			reg=US
+		fi
+	fi
+	iw reg set "$reg"
+}
+
+start_mesh() {
+	local mid; config_get mid mesh mesh_id smartradio-mesh
+	local ch;  config_get ch  main channel 6
+	iw dev "$WIFI_DEV" del 2>/dev/null
+	iw phy "$PHY" interface add "$WIFI_DEV" type mp
+	iw dev "$WIFI_DEV" set channel "$ch"
+	ip link set "$WIFI_DEV" up
+	iw dev "$WIFI_DEV" mesh join "$mid"
+	# hand the mesh iface to batman-adv (bat0 is configured in /etc/config/network)
+	batctl if add "$WIFI_DEV" 2>/dev/null
+	ip link set bat0 up 2>/dev/null
+	logger -t radio-mode "mesh up on $WIFI_DEV ch$ch id=$mid"
+}
+
+start_wfbng() {
+	local ch;   config_get ch   wfbng channel 13
+	local tx;   config_get tx   wfbng tx 1
+	local port; config_get port wfbng udp_port 5600
+	local key;  config_get key  wfbng key /etc/wfb.key
+	iw dev "$WIFI_DEV" del 2>/dev/null
+	iw phy "$PHY" interface add "$WIFI_DEV" type monitor
+	ip link set "$WIFI_DEV" up
+	iw dev "$WIFI_DEV" set channel "$ch"
+	if [ "$tx" = "1" ]; then
+		procd_open_instance wfb_tx
+		procd_set_param command wfb_tx -p 0 -u "$port" -K "$key" -B 20 "$WIFI_DEV"
+		procd_set_param respawn
+		procd_close_instance
+		logger -t radio-mode "wfb-ng TX on $WIFI_DEV ch$ch -> udp:$port"
+	else
+		procd_open_instance wfb_rx
+		procd_set_param command wfb_rx -p 0 -u "$port" -K "$key" "$WIFI_DEV"
+		procd_set_param respawn
+		procd_close_instance
+		logger -t radio-mode "wfb-ng RX on $WIFI_DEV ch$ch -> udp:$port"
+	fi
+}
+
+start_service() {
+	config_load radio
+	apply_regdomain
+	local mode; config_get mode main mode mesh
+	case "$mode" in
+		wfbng) start_wfbng ;;
+		*)     start_mesh ;;
+	esac
+}
+
+stop_service() {
+	iw dev "$WIFI_DEV" del 2>/dev/null
+}
+
+service_triggers() {
+	procd_add_reload_trigger radio
+}

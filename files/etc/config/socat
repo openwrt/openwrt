@@ -1,0 +1,15 @@
+config socat 'serial_bridge'
+	option enable '0'
+	# MAVLink serial-to-UDP bridge
+	# Set enable=1 once a serial MAVLink source is connected.
+	# Stock firmware uses /dev/uart0 (internal UART1/ttyS1) at 57600 baud.
+	# Adjust device to match your hardware (e.g. /dev/ttyS1 or /dev/ttyUSB0).
+	option SocatOptions '-d'
+	option proto1 'file'
+	option path1 '/dev/ttyS1'
+	option serialmode1 'raw'
+	option baudrate1 '57600'
+	option proto2 'UDP-RECVFROM'
+	option port2 '2000'
+	option fork2 '1'
+	option reuseaddr2 '1'

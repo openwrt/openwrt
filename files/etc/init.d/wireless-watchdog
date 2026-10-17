@@ -1,0 +1,32 @@
+#!/bin/sh /etc/rc.common
+# Wireless interface type watchdog.
+# Compares UCI radio.main.mode vs actual iw type; restarts after 3 consecutive mismatches.
+START=98
+USE_PROCD=1
+
+start_service() {
+	procd_open_instance
+	procd_set_param command /bin/sh -c '
+		FAIL=0
+		while true; do
+			sleep 30
+			MODE=$(uci -q get radio.main.mode)
+			case "$MODE" in
+				mesh)  EXPECT="mesh point" ;;
+				wfbng) EXPECT="monitor" ;;
+				*)     EXPECT="mesh point" ;;
+			esac
+			ACTUAL=$(iw dev wlan0 info 2>/dev/null | awk "/type/{print \$2,\$3}" | xargs)
+			if [ -z "$ACTUAL" ] || [ "$ACTUAL" != "$EXPECT" ]; then
+				FAIL=$((FAIL + 1))
+				[ $FAIL -ge 3 ] || continue
+				logger -t wireless-watchdog "wlan0 type mismatch (want=$EXPECT got=$ACTUAL) x$FAIL — restarting radio"
+				/etc/init.d/radio-mode restart
+				FAIL=0
+			else
+				FAIL=0
+			fi
+		done'
+	procd_set_param respawn
+	procd_close_instance
+}

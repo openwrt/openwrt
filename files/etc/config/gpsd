@@ -1,0 +1,7 @@
+config gpsd
+	option enabled '0'
+	# Set device to the USB GPS serial port (e.g. /dev/ttyUSB0 for u-blox via FTDI)
+	option device '/dev/GPS'
+	option port '2947'
+	option listen_globally '0'
+	option usbauto '1'

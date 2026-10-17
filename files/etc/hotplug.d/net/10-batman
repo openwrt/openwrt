@@ -1,0 +1,13 @@
+#!/bin/sh
+# Add/remove wlan0 from bat0 on interface up/down events.
+[ "$INTERFACE" = "wlan0" ] || exit 0
+
+case "$ACTION" in
+DEVUP)
+	batctl if add wlan0 2>/dev/null
+	ip link set bat0 up 2>/dev/null
+	;;
+DEVDOWN)
+	batctl if del wlan0 2>/dev/null
+	;;
+esac

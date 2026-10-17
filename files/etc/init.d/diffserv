@@ -1,0 +1,27 @@
+#!/bin/sh /etc/rc.common
+# Apply DSCP marks from /etc/config/diffserv via iptables mangle.
+# Replaces stock kmod-qdetection (proprietary).
+START=85
+
+start() {
+	config_load diffserv
+	local enabled
+	config_get enabled settings enabled 0
+	[ "$enabled" = "1" ] || return 0
+
+	config_foreach _add_rule rule
+}
+
+_add_rule() {
+	local port proto dscp
+	config_get port "$1" dest_port
+	config_get proto "$1" proto udp
+	config_get dscp "$1" dscp CS6
+	[ -n "$port" ] || return 0
+	iptables -t mangle -A POSTROUTING -p "$proto" --dport "$port" \
+		-j DSCP --set-dscp-class "$dscp" 2>/dev/null
+}
+
+stop() {
+	iptables -t mangle -F POSTROUTING 2>/dev/null
+}

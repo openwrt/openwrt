@@ -1,0 +1,11 @@
+#!/bin/sh
+# Mount tmpfs on /tmp before root pivot so mount_root can use /tmp/overlay.
+# Also pre-create /var/run so ubusd can always create its socket path.
+
+do_mount_tmp() {
+	grep -q "tmpfs /tmp" /proc/mounts 2>/dev/null && return
+	mount -t tmpfs -o size=32m,nosuid,nodev,mode=1777 tmpfs /tmp
+	mkdir -p /tmp/run /tmp/lock /tmp/state
+}
+
+boot_hook_add preinit_main do_mount_tmp

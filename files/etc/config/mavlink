@@ -1,0 +1,12 @@
+config mavlink 'settings'
+	option enabled '0'
+	option serial_port '/dev/ttyS1'
+	option serial_baud '57600'
+	option udp_port '14550'
+	option rssi_interface 'wlan0'
+	# MAVLink RADIO_STATUS injection (requires linkstate daemon)
+	option rssi_enabled '0'
+	option sysid '51'
+	option compid '68'
+	# GCS address for point-to-point; use 255.255.255.255 for broadcast
+	option gcs_ip '255.255.255.255'

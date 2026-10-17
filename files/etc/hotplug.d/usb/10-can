@@ -1,0 +1,19 @@
+#!/bin/sh
+# Auto-bring up CAN interface when a USB CAN adapter is plugged in.
+# Supported: 8devices USB2CAN, EMS CPC-USB, PEAK PCAN-USB, Kvaser Leaf.
+[ "$DEVTYPE" = "usb" ] || exit 0
+
+case "$ACTION" in
+add)
+	for iface in can0 can1; do
+		[ -d "/sys/class/net/$iface" ] || continue
+		ip link set "$iface" up type can bitrate 500000 2>/dev/null && \
+			logger -t hotplug "CAN: brought up $iface at 500000 bps"
+	done
+	;;
+remove)
+	for iface in can0 can1; do
+		ip link set "$iface" down 2>/dev/null
+	done
+	;;
+esac

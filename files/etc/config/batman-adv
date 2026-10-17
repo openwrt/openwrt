@@ -1,0 +1,12 @@
+config mesh 'bat0'
+	option aggregation '1'
+	option ap_isolation '0'
+	option bonding '0'
+	option bridge_loop_avoidance '1'
+	option distributed_arp_table '1'
+	option fragmentation '1'
+	# BATMAN_IV gives better behavior on low-bandwidth mesh links (10 MHz)
+	option routing_algo 'BATMAN_IV'
+	option orig_interval '1000'
+	option hop_penalty '30'
+	option log_level '0'

@@ -1,0 +1,20 @@
+#!/bin/sh
+# Start ubusd before exec-ing procd so the socket exists when procd connects.
+# In the post-pivot overlayfs environment, procd's internal ubusd fork fails
+# silently causing an infinite wait. Pre-starting ubusd from preinit avoids
+# this race.
+
+ubusd_prestart() {
+	[ "$FAILSAFE" = "1" ] && return   # failsafe handles its own console, skip
+
+	mkdir -p /var/run/ubus 2>/dev/null
+	/sbin/ubusd &
+	local i
+	for i in $(seq 1 5); do
+		[ -S /var/run/ubus.sock ] && return
+		sleep 1
+	done
+	# Socket didn't appear within 1s — ubusd may have failed; procd will retry
+}
+
+boot_hook_add preinit_main ubusd_prestart

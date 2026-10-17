@@ -1,0 +1,25 @@
+config ser2net 'global'
+	option enabled '0'
+
+# Serial-over-telnet bridges (disabled by default)
+# Enable and set tty_path to connect a serial device over TCP
+config port 'mavlink_uart'
+	option enabled '0'
+	option tty '/dev/ttyS1'
+	option baudrate '57600'
+	option tcpport '5000'
+	option mode 'telnet'
+
+config port 'gps_usb'
+	option enabled '0'
+	option tty '/dev/ttyUSB0'
+	option baudrate '115200'
+	option tcpport '5001'
+	option mode 'telnet'
+
+config port 'can_debug'
+	option enabled '0'
+	option tty '/dev/ttyUSB1'
+	option baudrate '9600'
+	option tcpport '5002'
+	option mode 'raw'

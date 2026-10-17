@@ -1,0 +1,12 @@
+#!/bin/sh
+# Reset button (GPIO16, active-low): hold >5s to firstboot, short press ignored.
+[ "$BUTTON" = "reset" ] || exit 0
+
+case "$ACTION" in
+released)
+	if [ "$SEEN" -gt 5 ]; then
+		logger -t button "reset held ${SEEN}s — running firstboot"
+		firstboot -y && reboot
+	fi
+	;;
+esac
