@@ -125,7 +125,6 @@
 
 };
 
-
 &eth {
 	pinctrl-names = "default";
 	pinctrl-0 = <&mdio_pins>;
@@ -158,7 +157,6 @@
 	};
 };
 
-
 &mdio_bus {
 	switch: switch@1f {
 		compatible = "mediatek,mt7531";
@@ -170,7 +168,6 @@
 		interrupts = <38 IRQ_TYPE_LEVEL_HIGH>;
 	};
 };
-
 
 &switch {
 	ports {
@@ -201,7 +198,6 @@
 		};
 	};
 };
-
 
 &spi0 {
 	pinctrl-names = "default";
@@ -294,7 +290,6 @@
 	};
 };
 
-
 &pio {
 	spi0_flash_pins: spi0-pins {
 		mux {
@@ -323,13 +318,11 @@
 	};
 };
 
-
 &pwm {
 	pinctrl-names = "default";
 	pinctrl-0 = <&pwm0_pins>;
 	status = "okay";
 };
-
 
 &wifi {
 	status = "okay";
@@ -354,11 +347,6 @@
 		nvmem-cell-names = "mac-address";
 	};
 };
-
-
-&mmc0 {
-	status = "okay";
-}
 
 &usb_phy {
 	status = "okay";
