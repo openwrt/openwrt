@@ -1,0 +1,311 @@
+From: Kenneth Kasilag <kenneth@kasilag.me>
+Date: Sun, 05 Jul 2026 00:00:00 +0000
+Subject: [PATCH] net: ethernet: qualcomm: ppe: add tunnel decap transactions
+
+Add the serialized APPE tunnel lookup-table transaction used by tunnel
+termination. The working vendor driver writes a 14-word operand and commits
+it through TL_TBL_OP, then uses a separate get command and result block.
+
+Require post-add readback and return the selected index before a readback
+failure so the caller can remove or quarantine a row whose add succeeded.
+Return -ETIMEDOUT when the command remains busy after 64 reads instead of
+copying the vendor helper's stuck-busy success bug. Indexed deletion clears
+the associated counter only after the hardware removes the row.
+
+Add the device-level mutex here because the operand and command registers
+are shared by every later tunnel transaction.
+
+Signed-off-by: Kenneth Kasilag <kenneth@kasilag.me>
+---
+--- a/drivers/net/ethernet/qualcomm/ppe/Makefile
++++ b/drivers/net/ethernet/qualcomm/ppe/Makefile
+@@ -5,6 +5,7 @@
+ 
+ obj-$(CONFIG_QCOM_PPE) += qcom-ppe.o
+ qcom-ppe-objs := ppe.o ppe_config.o ppe_debugfs.o ppe_port.o ppe_api.o ppe_bridge.o ppe_flow.o ppe_flowtable.o
++qcom-ppe-objs += ppe_tunnel.o
+ 
+ #EDMA
+ qcom-ppe-objs += edma.o edma_cfg_rx.o edma_cfg_tx.o edma_debugfs.o edma_port.o edma_rx.o edma_tx.o edma_ethtool.o
+--- a/drivers/net/ethernet/qualcomm/ppe/ppe.c
++++ b/drivers/net/ethernet/qualcomm/ppe/ppe.c
+@@ -21,6 +21,7 @@
+ #include "ppe_config.h"
+ #include "ppe_debugfs.h"
+ #include "ppe_flow.h"
++#include "ppe_tunnel.h"
+ #include "ppe_flowtable.h"
+ #include "ppe_port.h"
+ 
+@@ -217,6 +218,9 @@ static int qcom_ppe_probe(struct platfor
+ 	ret = ppe_flow_hw_init(ppe_dev);
+ 	if (ret)
+ 		return dev_err_probe(dev, ret, "PPE flow engine init failed\n");
++	ret = ppe_tunnel_hw_init(ppe_dev);
++	if (ret)
++		return dev_err_probe(dev, ret, "PPE tunnel engine init failed\n");
+ 
+ 	ret = edma_setup(ppe_dev);
+ 	if (ret)
+--- a/drivers/net/ethernet/qualcomm/ppe/ppe.h
++++ b/drivers/net/ethernet/qualcomm/ppe/ppe.h
+@@ -70,6 +70,7 @@ struct ppe_variant {
+  * @fdb_cmd_id: Rolling command ID of the last issued FDB operation.
+  * @flow_lock: Lock to serialize the L3 flow operation registers.
+  * @flow_cmd_id: Rolling command ID of the last issued flow operation.
++ * @tunnel_lock: Lock serializing tunnel operands, commands and tables.
+  * @num_icc_paths: Number of interconnect paths.
+  * @icc_paths: Interconnect path array.
+  *
+@@ -93,6 +94,8 @@ struct ppe_device {
+ 	/* Serialize the L3 flow operation registers. */
+ 	struct mutex flow_lock;
+ 	u8 flow_cmd_id;
++	/* Serialize the APPE tunnel command and table registers. */
++	struct mutex tunnel_lock;
+ 	unsigned int num_icc_paths;
+ 	struct icc_bulk_data icc_paths[] __counted_by(num_icc_paths);
+ };
+--- a/drivers/net/ethernet/qualcomm/ppe/ppe_regs.h
++++ b/drivers/net/ethernet/qualcomm/ppe/ppe_regs.h
+@@ -757,6 +757,31 @@
+ #define PPE_PPPOE_SESSION_EXT2_L3_IF		GENMASK(15, 8)
+ #define PPE_PPPOE_SESSION_EXT2_L3_IF_VALID	BIT(16)
+ 
++/* APPE tunnel lookup commands. Add/delete use one shared 14-word operand;
++ * get has a separate command, operand and result block. The backing table is
++ * not the insertion interface.
++ */
++#define PPE_TUNNEL_TBL_OP_ADDR			0x300000
++#define PPE_TUNNEL_TBL_OP_DATA_ADDR		0x300004
++#define PPE_TUNNEL_TBL_RD_OP_ADDR		0x300054
++#define PPE_TUNNEL_TBL_RD_OP_DATA_ADDR		0x300058
++#define PPE_TUNNEL_TBL_RD_RESULT_ADDR		0x3000a0
++#define PPE_TUNNEL_OP_TYPE			GENMASK(2, 0)
++#define PPE_TUNNEL_OP_HASH_BLOCK_BITMAP		GENMASK(4, 3)
++#define PPE_TUNNEL_OP_MODE			BIT(5)
++#define PPE_TUNNEL_OP_ENTRY_INDEX		GENMASK(12, 6)
++#define PPE_TUNNEL_OP_RESULT			BIT(13)
++#define PPE_TUNNEL_OP_BUSY			BIT(14)
++#define PPE_TUNNEL_OP_POLLS			64
++#define PPE_TUNNEL_ENTRIES			128
++
++/* Tunnel decap hit counters are in the ingress-policer block despite the
++ * TL name. Clear them only after an indexed delete succeeds.
++ */
++#define PPE_TUNNEL_COUNTER_ADDR			0x154000
++#define PPE_TUNNEL_COUNTER_INC			0x10
++#define PPE_TUNNEL_COUNTER_WORDS		3
++
+ /* Per-VSI L3 interface binding: routed packets classified into the VSI
+  * take this ingress L3 interface instead of the one bound to their
+  * ingress port.
+--- /dev/null
++++ b/drivers/net/ethernet/qualcomm/ppe/ppe_tunnel.c
+@@ -0,0 +1,176 @@
++// SPDX-License-Identifier: GPL-2.0-only
++/* Copyright (c) 2026 Kenneth Kasilag <kenneth@kasilag.me> */
++
++/* Low-level APPE tunnel termination transactions. The command operand and
++ * result blocks are shared hardware resources, so every operation is
++ * serialized by the device tunnel lock. Higher layers own IDs and compose
++ * these primitives into a refcounted lifecycle before publishing any flow.
++ */
++
++#include <linux/bitfield.h>
++#include <linux/device.h>
++#include <linux/errno.h>
++#include <linux/kernel.h>
++#include <linux/regmap.h>
++
++#include "ppe.h"
++#include "ppe_regs.h"
++#include "ppe_tunnel.h"
++
++enum ppe_tunnel_op {
++	PPE_TUNNEL_OP_ADD,
++	PPE_TUNNEL_OP_DEL,
++	PPE_TUNNEL_OP_GET,
++};
++
++static int ppe_tunnel_check(struct ppe_device *ppe_dev)
++{
++	if (!ppe_dev->variant->has_tunnel_engine)
++		return -EOPNOTSUPP;
++
++	return 0;
++}
++
++static int ppe_tunnel_op_wait(struct ppe_device *ppe_dev, u32 reg, u32 *value)
++{
++	int i, ret;
++	u32 val;
++
++	for (i = 0; i < PPE_TUNNEL_OP_POLLS; i++) {
++		ret = regmap_read(ppe_dev->regmap, reg, &val);
++		if (ret)
++			return ret;
++		if (!(val & PPE_TUNNEL_OP_BUSY)) {
++			*value = val;
++			return 0;
++		}
++		cpu_relax();
++	}
++
++	return -ETIMEDOUT;
++}
++
++static int ppe_tunnel_op_issue(struct ppe_device *ppe_dev, u32 reg,
++			       enum ppe_tunnel_op op, bool by_index,
++			       int *index)
++{
++	u32 val;
++	int ret;
++
++	val = FIELD_PREP(PPE_TUNNEL_OP_TYPE, op) |
++	      FIELD_PREP(PPE_TUNNEL_OP_HASH_BLOCK_BITMAP, 3) |
++	      PPE_TUNNEL_OP_BUSY;
++	if (by_index)
++		val |= PPE_TUNNEL_OP_MODE |
++		       FIELD_PREP(PPE_TUNNEL_OP_ENTRY_INDEX, *index);
++
++	ret = regmap_write(ppe_dev->regmap, reg, val);
++	if (ret)
++		return ret;
++	ret = ppe_tunnel_op_wait(ppe_dev, reg, &val);
++	if (ret)
++		return ret;
++	if (val & PPE_TUNNEL_OP_RESULT)
++		return op == PPE_TUNNEL_OP_ADD ? -ENOSPC : -ENOENT;
++
++	*index = FIELD_GET(PPE_TUNNEL_OP_ENTRY_INDEX, val);
++	return 0;
++}
++
++static int ppe_tunnel_decap_get_locked(struct ppe_device *ppe_dev, int index,
++				       struct ppe_tunnel_decap_entry *entry)
++{
++	int ret;
++
++	ret = ppe_tunnel_op_issue(ppe_dev, PPE_TUNNEL_TBL_RD_OP_ADDR,
++				  PPE_TUNNEL_OP_GET, true, &index);
++	if (ret)
++		return ret;
++
++	return regmap_bulk_read(ppe_dev->regmap,
++				PPE_TUNNEL_TBL_RD_RESULT_ADDR, entry->word,
++				ARRAY_SIZE(entry->word));
++}
++
++int ppe_tunnel_decap_add(struct ppe_device *ppe_dev,
++			 const struct ppe_tunnel_decap_entry *entry,
++			 int *index, struct ppe_tunnel_decap_entry *readback)
++{
++	struct ppe_tunnel_decap_entry verify;
++	int ret, hw_index = 0;
++
++	if (!entry || !index)
++		return -EINVAL;
++	ret = ppe_tunnel_check(ppe_dev);
++	if (ret)
++		return ret;
++
++	*index = -1;
++	if (!readback)
++		readback = &verify;
++	mutex_lock(&ppe_dev->tunnel_lock);
++	ret = regmap_bulk_write(ppe_dev->regmap, PPE_TUNNEL_TBL_OP_DATA_ADDR,
++				entry->word, ARRAY_SIZE(entry->word));
++	if (!ret)
++		ret = ppe_tunnel_op_issue(ppe_dev, PPE_TUNNEL_TBL_OP_ADDR,
++					  PPE_TUNNEL_OP_ADD, false, &hw_index);
++	if (!ret) {
++		/* Publish the returned index before readback. If readback fails,
++		 * the caller can still remove or quarantine the live row.
++		 */
++		*index = hw_index;
++		ret = ppe_tunnel_decap_get_locked(ppe_dev, hw_index, readback);
++	}
++	mutex_unlock(&ppe_dev->tunnel_lock);
++
++	return ret;
++}
++
++int ppe_tunnel_decap_get(struct ppe_device *ppe_dev, int index,
++			 struct ppe_tunnel_decap_entry *entry)
++{
++	int ret;
++
++	if (!entry || index < 0 || index >= PPE_TUNNEL_ENTRIES)
++		return -EINVAL;
++	ret = ppe_tunnel_check(ppe_dev);
++	if (ret)
++		return ret;
++
++	mutex_lock(&ppe_dev->tunnel_lock);
++	ret = ppe_tunnel_decap_get_locked(ppe_dev, index, entry);
++	mutex_unlock(&ppe_dev->tunnel_lock);
++
++	return ret;
++}
++
++int ppe_tunnel_decap_del(struct ppe_device *ppe_dev, int index)
++{
++	u32 counter[PPE_TUNNEL_COUNTER_WORDS] = {};
++	int ret;
++
++	if (index < 0 || index >= PPE_TUNNEL_ENTRIES)
++		return -EINVAL;
++	ret = ppe_tunnel_check(ppe_dev);
++	if (ret)
++		return ret;
++
++	mutex_lock(&ppe_dev->tunnel_lock);
++	ret = ppe_tunnel_op_issue(ppe_dev, PPE_TUNNEL_TBL_OP_ADDR,
++				  PPE_TUNNEL_OP_DEL, true, &index);
++	if (!ret)
++		ret = regmap_bulk_write(ppe_dev->regmap,
++					PPE_TUNNEL_COUNTER_ADDR +
++					index * PPE_TUNNEL_COUNTER_INC,
++					counter, ARRAY_SIZE(counter));
++	mutex_unlock(&ppe_dev->tunnel_lock);
++
++	return ret;
++}
++
++int ppe_tunnel_hw_init(struct ppe_device *ppe_dev)
++{
++	mutex_init(&ppe_dev->tunnel_lock);
++
++	return 0;
++}
+--- /dev/null
++++ b/drivers/net/ethernet/qualcomm/ppe/ppe_tunnel.h
+@@ -0,0 +1,27 @@
++/* SPDX-License-Identifier: GPL-2.0-only
++ *
++ * Copyright (c) 2026 Kenneth Kasilag <kenneth@kasilag.me>
++ */
++
++#ifndef __PPE_TUNNEL_H__
++#define __PPE_TUNNEL_H__
++
++#include <linux/types.h>
++
++#define PPE_TUNNEL_DECAP_WORDS		14
++
++struct ppe_device;
++
++struct ppe_tunnel_decap_entry {
++	u32 word[PPE_TUNNEL_DECAP_WORDS];
++};
++
++int ppe_tunnel_hw_init(struct ppe_device *ppe_dev);
++int ppe_tunnel_decap_add(struct ppe_device *ppe_dev,
++			 const struct ppe_tunnel_decap_entry *entry,
++			 int *index, struct ppe_tunnel_decap_entry *readback);
++int ppe_tunnel_decap_get(struct ppe_device *ppe_dev, int index,
++			 struct ppe_tunnel_decap_entry *entry);
++int ppe_tunnel_decap_del(struct ppe_device *ppe_dev, int index);
++
++#endif
