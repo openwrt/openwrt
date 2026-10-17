@@ -15,12 +15,12 @@ In function 'mbedtls_xor_no_simd',
 
 Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
 ---
- library/common.h | 3 ++-
+ tf-psa-crypto/core/tf_psa_crypto_common.h | 3 ++-
  1 file changed, 2 insertions(+), 1 deletion(-)
 
---- a/library/common.h
-+++ b/library/common.h
-@@ -332,7 +332,8 @@ static inline void mbedtls_xor_no_simd(u
+--- a/tf-psa-crypto/core/tf_psa_crypto_common.h
++++ b/tf-psa-crypto/core/tf_psa_crypto_common.h
+@@ -359,7 +359,8 @@ static inline void mbedtls_xor_no_simd(u
          uint32_t x = mbedtls_get_unaligned_uint32(a + i) ^ mbedtls_get_unaligned_uint32(b + i);
          mbedtls_put_unaligned_uint32(r + i, x);
      }
