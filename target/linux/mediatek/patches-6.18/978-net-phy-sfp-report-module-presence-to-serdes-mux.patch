@@ -1,0 +1,113 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Łukasz Buśko <lukasz.busko@guns4hire.cc>
+Date: Mon, 12 Oct 2026 07:27:39 +0200
+Subject: [PATCH] net: phy: sfp: report module presence to SerDes mux consumers
+
+The passive SerDes mux on the Bananapi BPi-R4 Pro 8X selects between an
+external PHY and an SFP cage that both hang off the same SerDes lane, so
+it has to follow the module detect line of that cage. Requesting the line
+a second time would need GPIOD_FLAGS_BIT_NONEXCLUSIVE, which gpiolib
+marks as deprecated and not for use in new code.
+
+Report the state the socket driver already tracks instead: add a
+module_present socket operation and a sfp_bus_module_present() helper
+that returns it. A mux driver resolves the cage of its SFP channel with
+sfp_bus_find_fwnode() and then polls the presence through the cage, which
+also keeps the GPIO handling, the debouncing and the module state machine
+in the sfp driver. The helper is called under the rtnl lock, the lock under
+which a socket driver is unbound from the bus, and asserts it.
+---
+ drivers/net/phy/sfp-bus.c | 25 +++++++++++++++++++++++++
+ drivers/net/phy/sfp.c     |  6 ++++++
+ drivers/net/phy/sfp.h     |  1 +
+ include/linux/sfp.h       |  6 ++++++
+ 4 files changed, 38 insertions(+)
+
+--- a/drivers/net/phy/sfp-bus.c
++++ b/drivers/net/phy/sfp-bus.c
+@@ -590,6 +590,31 @@ void sfp_upstream_set_signal_rate(struct
+ EXPORT_SYMBOL_GPL(sfp_upstream_set_signal_rate);
+ 
+ /**
++ * sfp_bus_module_present() - report whether a module is plugged into the cage
++ * @bus: a pointer to the &struct sfp_bus structure for the sfp module
++ *
++ * Lets a driver that shares a SerDes lane between a fixed PHY and an SFP
++ * cage follow the module detect line of the cage without requesting its
++ * GPIO a second time.
++ *
++ * Context: Must be called with the rtnl lock held - sfp_unregister_socket()
++ * clears the socket bound to @bus while holding that lock.
++ *
++ * Returns 1 while a module is present, 0 while the cage is empty, or
++ * %-ENODEV if no socket driver is bound to @bus.
++ */
++int sfp_bus_module_present(struct sfp_bus *bus)
++{
++	ASSERT_RTNL();
++
++	if (!bus || !bus->sfp)
++		return -ENODEV;
++
++	return bus->socket_ops->module_present(bus->sfp);
++}
++EXPORT_SYMBOL_GPL(sfp_bus_module_present);
++
++/**
+  * sfp_bus_find_fwnode() - parse and locate the SFP bus from fwnode
+  * @fwnode: firmware node for the parent device (MAC or PHY)
+  *
+--- a/drivers/net/phy/sfp.c
++++ b/drivers/net/phy/sfp.c
+@@ -3090,6 +3090,11 @@ static void sfp_set_signal_rate(struct s
+ 	sfp_mod_state(sfp, SFP_F_RS0 | SFP_F_RS1, set);
+ }
+ 
++static int sfp_module_present(struct sfp *sfp)
++{
++	return !!(sfp->state & SFP_F_PRESENT);
++}
++
+ static int sfp_module_info(struct sfp *sfp, struct ethtool_modinfo *modinfo)
+ {
+ 	/* locking... and check module is present */
+@@ -3175,6 +3180,7 @@ static const struct sfp_socket_ops sfp_m
+ 	.start = sfp_start,
+ 	.stop = sfp_stop,
+ 	.set_signal_rate = sfp_set_signal_rate,
++	.module_present = sfp_module_present,
+ 	.module_info = sfp_module_info,
+ 	.module_eeprom = sfp_module_eeprom,
+ 	.module_eeprom_by_page = sfp_module_eeprom_by_page,
+--- a/drivers/net/phy/sfp.h
++++ b/drivers/net/phy/sfp.h
+@@ -20,6 +20,7 @@ struct sfp_socket_ops {
+ 	void (*start)(struct sfp *sfp);
+ 	void (*stop)(struct sfp *sfp);
+ 	void (*set_signal_rate)(struct sfp *sfp, unsigned int rate_kbd);
++	int (*module_present)(struct sfp *sfp);
+ 	int (*module_info)(struct sfp *sfp, struct ethtool_modinfo *modinfo);
+ 	int (*module_eeprom)(struct sfp *sfp, struct ethtool_eeprom *ee,
+ 			     u8 *data);
+--- a/include/linux/sfp.h
++++ b/include/linux/sfp.h
+@@ -595,6 +595,7 @@ int sfp_bus_add_upstream(struct sfp_bus
+ 			 const struct sfp_upstream_ops *ops);
+ void sfp_bus_del_upstream(struct sfp_bus *bus);
+ const char *sfp_get_name(struct sfp_bus *bus);
++int sfp_bus_module_present(struct sfp_bus *bus);
+ #else
+ static inline const struct sfp_module_caps *
+ sfp_get_module_caps(struct sfp_bus *bus)
+@@ -664,6 +665,11 @@ static inline const char *sfp_get_name(s
+ {
+ 	return NULL;
+ }
++
++static inline int sfp_bus_module_present(struct sfp_bus *bus)
++{
++	return -EOPNOTSUPP;
++}
+ #endif
+ 
+ #endif
