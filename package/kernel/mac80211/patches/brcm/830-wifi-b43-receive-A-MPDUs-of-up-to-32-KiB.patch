@@ -1,0 +1,37 @@
+From df28a12dbb3599144733e6e3a140b391fa9aa116 Mon Sep 17 00:00:00 2001
+From: Rosen Penev <rosenp@gmail.com>
+Date: Thu, 15 Oct 2026 15:21:34 -0700
+Subject: [PATCH] wifi: b43: receive A-MPDUs of up to 32 KiB
+
+b43 limits received A-MPDUs to 8 KiB, so a station sends only a few
+MPDUs per PPDU, and the preamble, the block ack and the contention
+around them take a large part of the airtime.
+
+The N-PHY firmware takes the longest PSDU it receives from M_MIMO_MAXSYM
+in shared memory, which brcmsmac sets to 32 KiB for every factor below
+64 KiB. Firmware 666.2 has it at the same offset, and its initial
+values already set it to 32 KiB. Advertise that length.
+
+Tested on an ASUS RT-N16 as an access point with an Intel 3168 client
+on channel 11, with the short guard interval: TCP from the client to
+the router goes from 19-20 to 23-24 Mbit/s. 16 KiB gives the same, and
+64 KiB, with M_MIMO_MAXSYM and M_WATCHDOG_8TU raised as brcmsmac does,
+gives nothing more.
+
+Assisted-by: LLM
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+---
+ drivers/net/wireless/broadcom/b43/main.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/net/wireless/broadcom/b43/main.c
++++ b/drivers/net/wireless/broadcom/b43/main.c
+@@ -374,7 +374,7 @@ static struct ieee80211_supported_band b
+ 	.ht_supported	= true,						\
+ 	.cap		= IEEE80211_HT_CAP_SM_PS |			\
+ 			  IEEE80211_HT_CAP_SGI_20,			\
+-	.ampdu_factor	= IEEE80211_HT_MAX_AMPDU_8K,			\
++	.ampdu_factor	= IEEE80211_HT_MAX_AMPDU_32K,			\
+ 	.ampdu_density	= IEEE80211_HT_MPDU_DENSITY_8,			\
+ 	.mcs = {							\
+ 		.rx_mask	= { 0xff },				\

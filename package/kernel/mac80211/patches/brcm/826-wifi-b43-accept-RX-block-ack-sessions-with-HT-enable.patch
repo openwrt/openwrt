@@ -1,0 +1,206 @@
+From 9430065cfcda37cfb435325fde7975f2338069c1 Mon Sep 17 00:00:00 2001
+From: Rosen Penev <rosenp@gmail.com>
+Date: Thu, 15 Oct 2026 02:33:38 -0700
+Subject: [PATCH] wifi: b43: accept RX block ack sessions with HT enabled
+
+With HT enabled, stations send A-MPDUs once they have set up a block
+ack session, and b43 refuses those sessions. Receiving an A-MPDU needs
+nothing from the driver: the firmware sends the block ack, and
+mac80211 reorders the MPDUs.
+
+Accept RX sessions in a new ampdu_action callback and set
+AMPDU_AGGREGATION when HT is enabled. TX aggregation is still not
+supported. With firmware older than 598, whose block ack template b43
+does not fill in, RX sessions are refused. Advertise an MPDU density of
+8 us, as brcmsmac does, and keep the maximum A-MPDU length at 8 KiB,
+which the firmware handles without the shared memory settings brcmsmac
+writes for longer ones.
+
+The firmware only passes the HT-SIG with the first MPDU of an A-MPDU;
+the MPDUs after it have zeros in the PLCP header, so they would be
+reported as MCS 0 with the long guard interval. Their PHY status is not
+valid either, except for the last MPDU, which is the only one with a
+valid signal strength. Give the MPDUs without an HT-SIG the rate of the
+first MPDU of their A-MPDU, and the MPDUs without valid PHY status the
+signal strength of the last frame that had it. B43_RX_MAC_AGGTYPE does
+not tell the MPDUs apart: firmware 666.2 sets it to 3 for all of them.
+
+Tested on an ASUS RT-N16 as an access point with an Intel 3168 client
+on channel 11: TCP from the client to the router goes from 12 Mbit/s
+with 802.11g to 21-23 Mbit/s, open and with WPA2 using hardware CCMP,
+and the router reports the rate and signal of the client correctly.
+
+Assisted-by: LLM
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+---
+ drivers/net/wireless/broadcom/b43/b43.h  | 15 ++++++++
+ drivers/net/wireless/broadcom/b43/main.c | 46 ++++++++++++++++++++++--
+ drivers/net/wireless/broadcom/b43/xmit.c | 30 +++++++++++++++-
+ 3 files changed, 88 insertions(+), 3 deletions(-)
+
+--- a/drivers/net/wireless/broadcom/b43/b43.h
++++ b/drivers/net/wireless/broadcom/b43/b43.h
+@@ -826,6 +826,20 @@ enum {
+ 		smp_wmb();					\
+ 					} while (0)
+ 
++/*
++ * What the PHY reported for the PPDU being received. The firmware only
++ * passes the HT-SIG with the first MPDU of an A-MPDU, and valid PHY
++ * status, such as the signal strength, with the last one.
++ */
++struct b43_rx_ppdu {
++	bool ht_valid;
++	u8 rate_idx;
++	u8 enc_flags;
++	u8 bw;
++	bool signal_valid;
++	s8 signal;
++};
++
+ /* Data structure for one wireless device (802.11 core) */
+ struct b43_wldev {
+ 	struct b43_bus_dev *dev;
+@@ -841,6 +855,7 @@ struct b43_wldev {
+ 	bool dfq_valid;		/* Directed frame queue valid (IBSS PS mode, ATIM) */
+ 	bool radio_hw_enable;	/* saved state of radio hardware enabled state */
+ 	bool qos_enabled;		/* TRUE, if QoS is used. */
++	struct b43_rx_ppdu rx_ppdu;
+ 	bool hwcrypto_enabled;		/* TRUE, if HW crypto acceleration is enabled. */
+ 	bool use_pio;			/* TRUE if next init should use PIO */
+ 	int gpiomask;			/* GPIO LED mask as a module parameter */
+--- a/drivers/net/wireless/broadcom/b43/main.c
++++ b/drivers/net/wireless/broadcom/b43/main.c
+@@ -369,12 +369,12 @@ static struct ieee80211_supported_band b
+ 	.n_bitrates	= b43_g_ratetable_size,
+ };
+ 
+-/* HT20 with one spatial stream and no A-MPDU */
++/* HT20 with one spatial stream, receiving A-MPDUs only */
+ #define B43_HT_CAP {							\
+ 	.ht_supported	= true,						\
+ 	.cap		= IEEE80211_HT_CAP_SM_PS,			\
+ 	.ampdu_factor	= IEEE80211_HT_MAX_AMPDU_8K,			\
+-	.ampdu_density	= IEEE80211_HT_MPDU_DENSITY_NONE,		\
++	.ampdu_density	= IEEE80211_HT_MPDU_DENSITY_8,			\
+ 	.mcs = {							\
+ 		.rx_mask	= { 0xff },				\
+ 		.tx_params	= IEEE80211_HT_MCS_TX_DEFINED,		\
+@@ -4999,6 +4999,7 @@ static int b43_wireless_core_init(struct
+ 
+ 	b43_rate_memory_init(dev);
+ 	b43_set_phytxctl_defaults(dev);
++	memset(&dev->rx_ppdu, 0, sizeof(dev->rx_ppdu));
+ 
+ 	/* Minimum Contention Window */
+ 	if (phy->type == B43_PHYTYPE_B)
+@@ -5248,6 +5249,44 @@ static void b43_op_sw_scan_complete_noti
+ 	mutex_unlock(&wl->mutex);
+ }
+ 
++/* Whether the firmware sends HT frames and block acks */
++static bool b43_ht_fw_loaded(struct b43_wl *wl)
++{
++	struct b43_wldev *dev;
++	bool ret;
++
++	mutex_lock(&wl->mutex);
++	dev = wl->current_dev;
++	ret = dev && b43_status(dev) >= B43_STAT_INITIALIZED &&
++	      dev->fw.hdr_format == B43_FW_HDR_598;
++	mutex_unlock(&wl->mutex);
++
++	return ret;
++}
++
++static int b43_op_ampdu_action(struct ieee80211_hw *hw,
++			       struct ieee80211_vif *vif,
++			       struct ieee80211_ampdu_params *params)
++{
++	struct b43_wl *wl = hw_to_b43_wl(hw);
++
++	switch (params->action) {
++	case IEEE80211_AMPDU_RX_START:
++		/* b43 fills in the block ack template of firmware 598 only */
++		if (!b43_ht_fw_loaded(wl))
++			return -EOPNOTSUPP;
++		fallthrough;
++	case IEEE80211_AMPDU_RX_STOP:
++		/*
++		 * The firmware sends the block acks, and mac80211 reorders
++		 * the frames, so there is nothing to set up.
++		 */
++		return 0;
++	default:
++		return -EOPNOTSUPP;
++	}
++}
++
+ static int b43_op_get_survey(struct ieee80211_hw *hw, int idx,
+ 			     struct survey_info *survey)
+ {
+@@ -5330,6 +5369,7 @@ static const struct ieee80211_ops b43_hw
+ 	.stop			= b43_op_stop,
+ 	.set_tim		= b43_op_beacon_set_tim,
+ 	.sta_notify		= b43_op_sta_notify,
++	.ampdu_action		= b43_op_ampdu_action,
+ 	.sw_scan_start		= b43_op_sw_scan_start_notifier,
+ 	.sw_scan_complete	= b43_op_sw_scan_complete_notifier,
+ 	.get_survey		= b43_op_get_survey,
+@@ -5730,6 +5770,8 @@ static struct b43_wl *b43_wireless_init(
+ 	ieee80211_hw_set(hw, RX_INCLUDES_FCS);
+ 	ieee80211_hw_set(hw, SIGNAL_DBM);
+ 	ieee80211_hw_set(hw, MFP_CAPABLE);
++	if (modparam_ht)
++		ieee80211_hw_set(hw, AMPDU_AGGREGATION);
+ 	hw->wiphy->interface_modes =
+ 		BIT(NL80211_IFTYPE_AP) |
+ 		BIT(NL80211_IFTYPE_MESH_POINT) |
+--- a/drivers/net/wireless/broadcom/b43/xmit.c
++++ b/drivers/net/wireless/broadcom/b43/xmit.c
+@@ -869,16 +869,44 @@ void b43_rx(struct b43_wldev *dev, struc
+ 		break;
+ 	}
+ 
++	/*
++	 * Only the last MPDU of an A-MPDU has valid PHY status. The MPDUs
++	 * before it get the signal strength of the last PPDU that had it.
++	 */
++	if (dev->fw.hdr_format == B43_FW_HDR_598) {
++		if (macstat & B43_RX_MAC_RXST_VALID) {
++			dev->rx_ppdu.signal = status.signal;
++			dev->rx_ppdu.signal_valid = true;
++		} else if (dev->rx_ppdu.signal_valid) {
++			status.signal = dev->rx_ppdu.signal;
++		}
++	}
++
+ 	switch (phystat0 & B43_RX_PHYST0_FTYPE) {
+ 	case B43_RX_PHYST0_PRE_N:
+ 	case B43_RX_PHYST0_STD_N:
+-		/* The HT-SIG holds the MCS, bandwidth and guard interval */
++		/*
++		 * The HT-SIG holds the MCS, bandwidth and guard interval.
++		 * Only the first MPDU of an A-MPDU comes with it, the
++		 * others have zeros there and get the rate of the first.
++		 */
+ 		status.encoding = RX_ENC_HT;
++		if (!(plcp->raw[0] | plcp->raw[1] | plcp->raw[2]) &&
++		    dev->rx_ppdu.ht_valid) {
++			rate_idx = dev->rx_ppdu.rate_idx;
++			status.bw = dev->rx_ppdu.bw;
++			status.enc_flags = dev->rx_ppdu.enc_flags;
++			break;
++		}
+ 		rate_idx = plcp->raw[0] & 0x7f;
+ 		if (plcp->raw[0] & 0x80)
+ 			status.bw = RATE_INFO_BW_40;
+ 		if (plcp->raw[3] & 0x80)
+ 			status.enc_flags |= RX_ENC_FLAG_SHORT_GI;
++		dev->rx_ppdu.ht_valid = true;
++		dev->rx_ppdu.rate_idx = rate_idx;
++		dev->rx_ppdu.bw = status.bw;
++		dev->rx_ppdu.enc_flags = status.enc_flags;
+ 		break;
+ 	case B43_RX_PHYST0_OFDM:
+ 		rate_idx = b43_plcp_get_bitrate_idx_ofdm(plcp,

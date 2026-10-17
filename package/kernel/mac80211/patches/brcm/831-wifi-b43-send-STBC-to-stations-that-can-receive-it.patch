@@ -1,0 +1,186 @@
+From ea2774157275e79c2df08c59ed47d695c2924ca4 Mon Sep 17 00:00:00 2001
+From: Rosen Penev <rosenp@gmail.com>
+Date: Thu, 15 Oct 2026 20:35:37 -0700
+Subject: [PATCH] wifi: b43: send STBC to stations that can receive it
+
+N-PHY devices with two TX chains send HT frames on one of them, as
+SISO. A station that can receive STBC gets a more robust signal if
+both chains send the single spatial stream with Alamouti coding, which
+the PHY supports.
+
+Advertise IEEE80211_HT_CAP_TX_STBC, so that mac80211 takes the RX STBC
+capability of stations into account and rate control asks for STBC.
+For HT frames with IEEE80211_TX_CTL_STBC, set the STBC mode in the PHY
+TX control word 1 and one extra space-time stream in the HT-SIG, as
+brcmsmac does, and count the second HT-LTF and the even number of data
+symbols STBC needs in the L-SIG length. Rate control also sets the flag
+on frames sent at legacy rates, which are left alone.
+
+Tested on an ASUS RT-N16 (N-PHY rev 5) with an Intel 3168 client,
+which can receive one STBC stream: it receives MCS 7 with the short
+guard interval as before, and the router signal it measures goes up by
+3-4 dB, from -68/-69 to -65/-66 dBm with the router TX power lowered.
+TCP throughput is unchanged at that range, 35-40 Mbit/s from the
+router, open and with WPA2.
+
+Assisted-by: LLM
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01SMDLymmFQNoa7E1E6v1hNR
+---
+ drivers/net/wireless/broadcom/b43/main.c |  3 +-
+ drivers/net/wireless/broadcom/b43/xmit.c | 53 ++++++++++++++++--------
+ 2 files changed, 38 insertions(+), 18 deletions(-)
+
+--- a/drivers/net/wireless/broadcom/b43/main.c
++++ b/drivers/net/wireless/broadcom/b43/main.c
+@@ -373,7 +373,8 @@ static struct ieee80211_supported_band b
+ #define B43_HT_CAP {							\
+ 	.ht_supported	= true,						\
+ 	.cap		= IEEE80211_HT_CAP_SM_PS |			\
+-			  IEEE80211_HT_CAP_SGI_20,			\
++			  IEEE80211_HT_CAP_SGI_20 |			\
++			  IEEE80211_HT_CAP_TX_STBC,			\
+ 	.ampdu_factor	= IEEE80211_HT_MAX_AMPDU_32K,			\
+ 	.ampdu_density	= IEEE80211_HT_MPDU_DENSITY_8,			\
+ 	.mcs = {							\
+--- a/drivers/net/wireless/broadcom/b43/xmit.c
++++ b/drivers/net/wireless/broadcom/b43/xmit.c
+@@ -209,15 +209,17 @@ static const u8 b43_ht_legacy_rate[] = {
+ 	B43_OFDM_RATE_54MB, B43_OFDM_RATE_54MB,
+ };
+ 
+-static u16 b43_generate_tx_phy_ctl1_ht(u8 mcs)
++static u16 b43_generate_tx_phy_ctl1_ht(u8 mcs, bool stbc)
+ {
+-	return B43_TXH_PHY1_BW_20 | B43_TXH_PHY1_MODE_SISO |
++	return B43_TXH_PHY1_BW_20 |
++	       (stbc ? B43_TXH_PHY1_MODE_STBC : B43_TXH_PHY1_MODE_SISO) |
+ 	       (b43_ht_phy_ctl1_mod[mcs] << 8);
+ }
+ 
+ /* Generate a mixed-mode HT PLCP header (HT-SIG) */
+ static void b43_generate_ht_plcp_hdr(struct b43_plcp_hdr6 *plcp,
+-				     unsigned int octets, u8 mcs, bool sgi)
++				     unsigned int octets, u8 mcs, bool sgi,
++				     bool stbc)
+ {
+ 	memset(plcp, 0, sizeof(*plcp));
+ 	plcp->raw[0] = mcs;
+@@ -225,6 +227,9 @@ static void b43_generate_ht_plcp_hdr(str
+ 	plcp->raw[2] = (octets >> 8) & 0xff;
+ 	/* Smoothing, not a sounding PPDU, reserved bit set */
+ 	plcp->raw[3] = 0x07;
++	/* One extra space-time stream: STBC of a single spatial stream */
++	if (stbc)
++		plcp->raw[3] |= 0x10;
+ 	if (sgi)
+ 		plcp->raw[3] |= 0x80;
+ }
+@@ -234,18 +239,23 @@ static void b43_generate_ht_plcp_hdr(str
+  * defer for the whole frame: its duration in 4 us legacy symbols, as bytes
+  * at 6 Mbit/s.
+  */
+-static u16 b43_ht_lsig_len(u8 mcs, bool sgi, unsigned int octets)
++static u16 b43_ht_lsig_len(u8 mcs, bool sgi, bool stbc, unsigned int octets)
+ {
+ 	unsigned int kbps = b43_ht_rate_kbps[mcs];
+-	unsigned int nsyms;
++	unsigned int nsyms, bits;
+ 
+ 	if (sgi)
+ 		kbps = DIV_ROUND_UP(kbps * 10, 9);
+ 
+ 	/* 16 service bits and 6 tail bits, in 4 us symbols */
+-	nsyms = DIV_ROUND_UP((16 + 8 * octets + 6) * 1000, kbps * 4);
+-	/* One HT-LTF for one spatial stream, two HT-SIG and the HT-STF */
+-	nsyms += 1 + 3;
++	bits = (16 + 8 * octets + 6) * 1000;
++	if (stbc)
++		/* STBC sends the data symbols in pairs */
++		nsyms = 2 * DIV_ROUND_UP(bits, 2 * kbps * 4);
++	else
++		nsyms = DIV_ROUND_UP(bits, kbps * 4);
++	/* An HT-LTF per space-time stream, two HT-SIG and the HT-STF */
++	nsyms += (stbc ? 2 : 1) + 3;
+ 
+ 	return 3 * nsyms - 3;
+ }
+@@ -288,10 +298,11 @@ void b43_ampdu_txhdr_set_len(struct b43_
+ 	plcp->raw[2] = (len >> 8) & 0xff;
+ 	txhdr->mimo_modelen =
+ 		cpu_to_le16(b43_ht_lsig_len(plcp->raw[0], plcp->raw[3] & 0x80,
+-					    len));
++					    plcp->raw[3] & 0x10, len));
+ 	txhdr->mimo_ratelen_fb =
+ 		cpu_to_le16(b43_ht_lsig_len(plcp_fb->raw[0],
+-					    plcp_fb->raw[3] & 0x80, len));
++					    plcp_fb->raw[3] & 0x80,
++					    plcp_fb->raw[3] & 0x10, len));
+ }
+ 
+ /* Mark a frame's position in the A-MPDU being queued */
+@@ -390,7 +401,7 @@ int b43_generate_txhdr(struct b43_wldev
+ 	struct ieee80211_tx_rate *rate_fb_ctl;
+ 	/* Only the 598 TX header has room for an HT-SIG */
+ 	bool ht_fw = dev->fw.hdr_format == B43_FW_HDR_598;
+-	bool ht, ht_fb, sgi, sgi_fb;
++	bool ht, ht_fb, sgi, sgi_fb, stbc;
+ 	u8 mcs = 0, mcs_fb = 0;
+ 
+ 	memset(txhdr, 0, sizeof(*txhdr));
+@@ -405,6 +416,12 @@ int b43_generate_txhdr(struct b43_wldev
+ 	ht_fb = rate_fb_ctl->flags & IEEE80211_TX_RC_MCS;
+ 	sgi = rates[0].flags & IEEE80211_TX_RC_SHORT_GI;
+ 	sgi_fb = rate_fb_ctl->flags & IEEE80211_TX_RC_SHORT_GI;
++	/*
++	 * Rate control asks for STBC on all frames to a station that can
++	 * receive it, and it only applies to HT rates. Both TX chains send
++	 * the single spatial stream.
++	 */
++	stbc = ht && (info->flags & IEEE80211_TX_CTL_STBC);
+ 
+ 	if (ht) {
+ 		mcs = rates[0].idx;
+@@ -516,7 +533,8 @@ int b43_generate_txhdr(struct b43_wldev
+ 	case B43_FW_HDR_598:
+ 		if (ht)
+ 			b43_generate_ht_plcp_hdr(&txhdr->format_598.plcp,
+-						 plcp_fragment_len, mcs, sgi);
++						 plcp_fragment_len, mcs, sgi,
++						 stbc);
+ 		else
+ 			b43_generate_plcp_hdr((struct b43_plcp_hdr4 *)(&txhdr->format_598.plcp),
+ 					      plcp_fragment_len, rate);
+@@ -532,7 +550,7 @@ int b43_generate_txhdr(struct b43_wldev
+ 	}
+ 	if (ht_fb)
+ 		b43_generate_ht_plcp_hdr(&txhdr->plcp_fb, plcp_fragment_len,
+-					 mcs_fb, sgi_fb);
++					 mcs_fb, sgi_fb, stbc);
+ 	else
+ 		b43_generate_plcp_hdr((struct b43_plcp_hdr4 *)(&txhdr->plcp_fb),
+ 				      plcp_fragment_len, rate_fb);
+@@ -743,8 +761,8 @@ int b43_generate_txhdr(struct b43_wldev
+ 
+ 		if (ht) {
+ 			txhdr->phy_ctl1 =
+-				cpu_to_le16(b43_generate_tx_phy_ctl1_ht(mcs));
+-			len = b43_ht_lsig_len(mcs, sgi, plcp_fragment_len);
++				cpu_to_le16(b43_generate_tx_phy_ctl1_ht(mcs, stbc));
++			len = b43_ht_lsig_len(mcs, sgi, stbc, plcp_fragment_len);
+ 			txhdr->mimo_modelen = cpu_to_le16(len);
+ 		} else {
+ 			txhdr->phy_ctl1 =
+@@ -752,8 +770,9 @@ int b43_generate_txhdr(struct b43_wldev
+ 		}
+ 		if (ht_fb) {
+ 			txhdr->phy_ctl1_fb =
+-				cpu_to_le16(b43_generate_tx_phy_ctl1_ht(mcs_fb));
+-			len = b43_ht_lsig_len(mcs_fb, sgi_fb,
++				cpu_to_le16(b43_generate_tx_phy_ctl1_ht(mcs_fb,
++									stbc));
++			len = b43_ht_lsig_len(mcs_fb, sgi_fb, stbc,
+ 					      plcp_fragment_len);
+ 			txhdr->mimo_ratelen_fb = cpu_to_le16(len);
+ 		} else {
