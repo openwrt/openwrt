@@ -1,0 +1,88 @@
+$id: https://openwrt.org/schema/wifi.yaml
+title: WiFi
+description: WiFi hardware description
+type: object
+
+required:
+  - freq_ghz
+  - hardware
+  - driver
+
+examples:
+  - driver: unknown
+    freq_ghz: 2.4
+    hardware: Atheros AR2315
+
+items:
+  anyOf:
+  - $id: '#/properties/wifi/items/anyOf/0'
+    properties:
+      freq_ghz:
+        $id: '#/properties/wifi/items/anyOf/0/properties/freq_ghz'
+        title: Frequency in GHz
+        type: number
+
+      driver:
+        $id: '#/properties/wifi/items/anyOf/0/properties/driver'
+        title: WiFi driver
+        type: string
+        enum:
+          - ath10k
+          - ath10k-ct
+          - ath10k-ct-smallbuffers
+          - ath5k
+          - ath9k
+          - b43 legacy
+          - b43
+          - brcmfmac
+          - brcmsmac
+          - broadcom-wl
+          - mt76
+          - mwlwifi
+          - none
+          - other
+          - rt2500pci
+          - rt2800pci
+          - rt2800soc
+          - rt2800usb
+          - rtl819x
+          - rtl8xxxu
+          - unknown
+
+      hardware:
+        $id: '#/properties/wifi/items/anyOf/0/properties/hardware'
+        title: WiFi hardware
+        type: string
+
+      version:
+        $id: '#/properties/wifi/items/anyOf/0/properties/version'
+        title: WiFi Alliance Version
+        type: array
+        items:
+          type: string
+          enum:
+            - Wi-Fi 6
+            - Wi-Fi 7
+
+      protocols:
+        $id: '#/properties/wifi/items/anyOf/0/properties/protocols'
+        title: WiFi protocol
+        type: array
+        items:
+          type: string
+          enum:
+            - a
+            - ac
+            - ad
+            - af
+            - ah
+            - ai
+            - aj
+            - aq
+            - ax
+            - ay
+            - b
+            - ba
+            - be
+            - g
+            - n
