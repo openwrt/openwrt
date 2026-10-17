@@ -13,6 +13,11 @@
 		label-mac-device = &eth0;
 	};
 
+	chosen {
+		/* ttyS0 is wired to the status MCU, not to a console */
+		bootargs = "console=ttynull";
+	};
+
 	keys {
 		compatible = "gpio-keys";
 
@@ -51,6 +56,14 @@
 		reg = <0x0000 0 0 0 0>;
 		nvmem-cells = <&macaddr_art_0 2>;
 		nvmem-cell-names = "mac-address";
+	};
+};
+
+&uart {
+	status = "okay";
+
+	mcu {
+		compatible = "glinet,gl-e750-mcu";
 	};
 };
 
