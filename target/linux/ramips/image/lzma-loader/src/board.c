@@ -34,6 +34,11 @@
 #define UART_THR			(UART_BASE + 0x04)
 #define UART_LSR			(UART_BASE + 0x1c)
 #define UART_LSR_MASK			UART_LSR_TEMT
+#elif defined(SOC_MT7628)
+#define UART_BASE			KSEG1ADDR(0x10000c00)
+#define UART_THR			(UART_BASE + 0x00)
+#define UART_LSR			(UART_BASE + 0x14)
+#define UART_LSR_MASK			UART_LSR_TEMT
 #elif defined(SOC_MT7621)
 #define UART_BASE			KSEG1ADDR(0x1e000c00)
 #define UART_THR			(UART_BASE + 0x00)
