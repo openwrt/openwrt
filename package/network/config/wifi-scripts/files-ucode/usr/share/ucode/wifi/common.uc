@@ -160,9 +160,25 @@ export function comment(comment) {
 	append_raw('\n# ' + comment);
 };
 
+export function open_config(path) {
+	let file = fs.open(path, 'w', 0600);
+
+	if (!file || !fs.chown(path, 0, 'network') || !fs.chmod(path, 0640))
+		die(`Failed to secure ${path}: ${fs.error()}\n`);
+
+	return file;
+};
+
 export function dump_config(file) {
-	if (file)
-		fs.writefile(file, config_data);
+	if (file) {
+		let prev = file + '.prev';
+		if (fs.stat(prev) && (!fs.chown(prev, 0, 'network') || !fs.chmod(prev, 0640)))
+			die(`Failed to secure ${prev}: ${fs.error()}\n`);
+
+		let fd = open_config(file);
+		fd.write(config_data);
+		fd.close();
+	}
 
 	return config_data;
 };
@@ -172,10 +188,7 @@ export function dump_network(file) {
 	config_data += network_data;;
 	config_data += '}\n';
 
-	if (file)
-		fs.writefile(file, config_data);
-
-	return config_data;
+	return dump_config(file);
 };
 
 export function flush_config() {
