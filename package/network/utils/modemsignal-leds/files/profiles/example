@@ -1,0 +1,26 @@
+# Example board profile for modemsignal-leds (all lines commented = inert).
+#
+# Copy this to  /usr/share/modemsignal-leds/profiles/<board_name>  (the value
+# of /tmp/sysinfo/board_name) to give a specific device a default config. It is
+# installed as /etc/config/modemsignal-leds on first boot when the user has not
+# configured anything.
+#
+# Single-modem devices with *:mobile-N LEDs need NO profile -- the service
+# auto-discovers and drives them. Ship a profile only for devices that need
+# explicit grouping (multiple modems, or per-module indicators).
+#
+# Example: two modem modules, one indicator LED each.
+#
+# config modem 'modem0'
+#     option interface 'wwan'
+#     option mode 'status'
+# config led
+#     option modem 'modem0'
+#     option sysfs 'green:mobile-1'
+#
+# config modem 'modem1'
+#     option interface 'wwan2'
+#     option mode 'status'
+# config led
+#     option modem 'modem1'
+#     option sysfs 'green:mobile-2'

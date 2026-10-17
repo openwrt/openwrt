@@ -1,0 +1,222 @@
+#!/bin/sh /etc/rc.common
+# SPDX-License-Identifier: GPL-2.0-or-later
+# Drive cellular signal-strength LEDs from a modem.
+
+USE_PROCD=1
+START=96
+STOP=10
+
+BIN=/usr/sbin/modemsignal-leds
+BACKEND=/usr/libexec/modemsignal-leds/backend
+
+# a bare newline; used to field-split safely regardless of the caller's IFS
+# (OpenWrt's config helpers leave IFS="," which would split "name,min,max")
+NL='
+'
+
+MLEDS=""
+count=0
+
+_count() { count=$((count + 1)); }
+
+collect_led() {
+	local cfg="$1" want="$2" modem sysfs min max
+	config_get modem "$cfg" modem
+	[ "$modem" = "$want" ] || return 0
+	config_get sysfs "$cfg" sysfs
+	[ -n "$sysfs" ] || return 0
+	config_get min "$cfg" min ""
+	config_get max "$cfg" max ""
+	MLEDS="${MLEDS}${sysfs}|${min}|${max}${NL}"
+}
+
+# append "-l name[,min,max]" command params for the collected LEDs
+append_leds() {
+	local mode="$1" n="$2" oIFS="$IFS" entry name min max i=0
+	IFS="$NL"
+	for entry in $MLEDS; do
+		IFS="|"; set -- $entry; IFS="$NL"
+		name="$1"; min="$2"; max="$3"
+		[ -n "$name" ] || continue
+		if [ "$mode" = status ]; then
+			procd_append_param command -l "$name"
+		else
+			[ -n "$min" ] || min=$(( i * 100 / n ))
+			[ -n "$max" ] || max=$(( (i + 1) * 100 / n ))
+			procd_append_param command -l "$name,$min,$max"
+		fi
+		i=$((i + 1))
+	done
+	IFS="$oIFS"
+}
+
+start_modem() {
+	local s="$1" backend device interface mode refresh target n
+	config_get backend   "$s" backend   auto
+	config_get device    "$s" device    ""
+	config_get interface "$s" interface "$s"
+	config_get mode      "$s" mode      bars
+	config_get refresh   "$s" refresh   10
+
+	MLEDS=""
+	config_foreach collect_led led "$s"
+	n=$(printf '%s' "$MLEDS" | grep -c .)
+	[ "$n" -gt 0 ] || { logger -t modemsignal-leds "modem '$s': no LEDs, skipping"; return 0; }
+
+	# gate on the interface only when it really is one: "interface" falls back
+	# to the section name above, and an explicit at/qmi config named e.g.
+	# modem0 would otherwise never get past iface_up() in the backend
+	[ "$(uci -q get "network.$interface")" = interface ] || interface=""
+
+	case "$backend" in
+		auto)	target="$interface" ;;
+		*)	target="$device" ;;
+	esac
+	[ -n "$target" ] || {
+		logger -t modemsignal-leds "modem '$s': no usable interface/device, skipping"
+		return 0
+	}
+
+	procd_open_instance "$s"
+	procd_set_param command "$BIN" -i "$refresh" -m "$mode"
+	append_leds "$mode" "$n"
+	procd_append_param command "$BACKEND" "$backend" "$target" "$interface"
+	procd_set_param respawn
+	procd_set_param stderr 1
+	procd_close_instance
+}
+
+# Cellular network interfaces, one per line.
+find_wwan_ifaces() {
+	local i proto
+	for i in $(uci -q show network | sed -n 's/^network\.\([^.]*\)\.proto=.*/\1/p'); do
+		proto=$(uci -q get "network.$i.proto")
+		case "$proto" in
+			ncm|qmi|mbim|3g|wwan) echo "$i" ;;
+		esac
+	done
+}
+
+# LEDs that already have a job in /etc/config/system - a netdev, switch,
+# usbport or rssi trigger, or a user assignment. rssileds drives its LEDs
+# this way, so this is what keeps us off a wireless RSSI display on a board
+# that has both a modem and rssileds.
+claimed_leds() {
+	uci -q show system | sed -n "s/^system\.[^.]*\.sysfs='\(.*\)'$/\1/p"
+}
+
+# The boot/failsafe/running/upgrade LED is not in /etc/config/system: it comes
+# from a DT alias and diag.sh writes it straight to sysfs. Several boards point
+# those aliases at one of the signal LEDs, so it has to be excluded separately
+# or the running indication is lost.
+status_leds() {
+	local f
+	[ -r /lib/functions/leds.sh ] || return 0
+	. /lib/functions/leds.sh
+	for f in boot failsafe running upgrade; do
+		get_dt_led "$f"
+	done
+}
+
+# Cellular signal LEDs, sorted by their index. Three name families are used
+# in tree: <color>:signal<N> (1-based), <color>:rssi<N> (0-based) and
+# <color>:mobile[-<N>]. LEDs are used positionally, so the base does not
+# matter. Deliberately not matched: :sig* is wireless only in tree, and
+# :lte/:4g/:5g are network-type indicators rather than a level.
+list_signal_leds() {
+	local l num claimed
+	claimed=$(claimed_leds; status_leds)
+	for l in $(ls /sys/class/leds 2>/dev/null); do
+		echo "$l" | grep -qE ':(signal|rssi|mobile)(-?[0-9]+)?$' || continue
+		echo "$claimed" | grep -qxF "$l" && continue
+		num=$(echo "$l" | sed -n 's/.*[^0-9]\([0-9]\{1,\}\)$/\1/p')
+		[ -n "$num" ] || num=0
+		printf '%s\t%s\n' "$num" "$l"
+	done | sort -n -k1,1 | cut -f2
+}
+
+# "green:mobile-1" -> "green:mobile",  "blue:signal1" -> "blue:signal"
+led_group() { echo "$1" | sed -E 's/-?[0-9]+$//'; }
+# ... -> "mobile" / "signal" / "rssi"
+led_base()  { led_group "$1" | sed 's/.*://'; }
+
+# zero-config: drive an unclaimed, same-colour set of cellular signal LEDs.
+# A lone LED becomes a connection indicator (status); a set becomes a bar
+# graph. signal<N>/rssi<N> are unambiguous levels; mobile-<N> is not - the
+# MOFI5500 uses mobile-1/-2 for two modem modules - so it is only treated as
+# a bar graph when there is exactly one modem.
+autodiscover() {
+	local leds n iface ifaces nif mode=bars oIFS="$IFS" name groups base level i=0
+
+	ifaces=$(find_wwan_ifaces)
+	nif=$(printf '%s\n' "$ifaces" | grep -c .)
+	[ "$nif" -gt 0 ] || {
+		logger -t modemsignal-leds "autodiscover: no ncm/qmi/mbim interface, not starting"
+		return 0
+	}
+
+	leds=$(list_signal_leds)
+	[ -n "$leds" ] || { logger -t modemsignal-leds "autodiscover: no free signal LEDs"; return 0; }
+
+	# A board often has both a connection indicator and a bar graph, e.g.
+	# blue:mobile next to blue:signal1..3. signal/rssi name a level, so they
+	# win over mobile, which usually just says "connected".
+	groups=$(for name in $leds; do led_group "$name"; done | sort -u)
+	level=$(printf '%s\n' "$groups" | grep -E ':(signal|rssi)$')
+	[ -n "$level" ] && groups="$level"
+
+	if [ "$(printf '%s\n' "$groups" | grep -c .)" -gt 1 ]; then
+		logger -t modemsignal-leds "autodiscover: mixed LED groups; needs a profile"
+		return 0
+	fi
+
+	# keep only the LEDs of the chosen group
+	leds=$(for name in $leds; do
+		[ "$(led_group "$name")" = "$groups" ] && echo "$name"
+	done)
+
+	n=$(printf '%s\n' "$leds" | grep -c .)
+	base=$(led_base "$(printf '%s\n' "$leds" | head -1)")
+	iface=$(printf '%s\n' "$ifaces" | head -1)
+
+	if [ "$n" -lt 2 ]; then
+		mode=status
+	elif [ "$base" = mobile ] && [ "$nif" -ne 1 ]; then
+		logger -t modemsignal-leds \
+			"autodiscover: $n :mobile LEDs with $nif modems is ambiguous; needs a profile"
+		return 0
+	fi
+
+	procd_open_instance modemsignal-auto
+	procd_set_param command "$BIN" -i 10 -m "$mode"
+	IFS="$NL"
+	for name in $leds; do
+		if [ "$mode" = status ]; then
+			procd_append_param command -l "$name"
+		else
+			procd_append_param command -l "$name,$(( i * 100 / n )),$(( (i + 1) * 100 / n ))"
+		fi
+		i=$((i + 1))
+	done
+	IFS="$oIFS"
+	procd_append_param command "$BACKEND" auto "$iface"
+	procd_set_param respawn
+	procd_set_param stderr 1
+	procd_close_instance
+	logger -t modemsignal-leds "autodiscover: $n $base LED(s) mode=$mode, iface '$iface'"
+}
+
+start_service() {
+	count=0
+	config_load modemsignal-leds
+	config_foreach _count modem
+	if [ "$count" -gt 0 ]; then
+		config_foreach start_modem modem
+	else
+		autodiscover
+	fi
+}
+
+service_triggers() {
+	procd_add_reload_trigger modemsignal-leds
+}
