@@ -1,0 +1,88 @@
+name: Build affected targets
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/target.yml'
+      - 'target/linux/**'
+  push:
+    paths:
+      - '.github/workflows/target.yml'
+      - 'target/linux/**'
+
+permissions:
+  contents: read
+  packages: read
+
+jobs:
+  generate_matrix:
+    name: Set matrix
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.find_targets.outputs.matrix }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Set targets
+        id: find_targets
+        run: |
+          BRANCH="${GITHUB_BASE_REF#refs/heads/}"
+          BRANCH=master
+          git fetch origin "$BRANCH"
+          JSON='['
+          FIRST=1
+
+          while read -r line;
+          do
+            IFS=' ' read -r TARGET KERNEL TESTING_KERNEL <<< "$line"
+
+            echo "$TARGET $KERNEL $TESTING_KERNEL"
+
+            # skip if no changes happend
+            [[ $(git diff "origin/$BRANCH..." -- target/linux/${TARGET%/*}) != "" ]] || continue
+
+            # check if testing kernel is used
+            ENABLE_TESTING=""
+            [[ -n "$TESTING_KERNEL" ]] || TESTING_KERNEL=$KERNEL
+            [[ "$KERNEL" == "$TESTING_KERNEL" ]] || ENABLE_TESTING=",true"
+
+            [[ $FIRST -ne 1 ]] && JSON="$JSON"','
+            
+            JSON="$JSON"'{"target":"'"$TARGET"'","testing":[false'"$ENABLE_TESTING"']}'
+            FIRST=0
+          done <<< "$(perl ./scripts/dump-target-info.pl kernels 2>/dev/null)"
+
+          JSON='{"include":'"$JSON"']}'
+          echo -e "\n---- targets ----\n"
+          echo "$JSON"
+          echo -e "\n---- targets ----\n"
+          echo "matrix=$JSON" >> $GITHUB_OUTPUT
+
+  build_int:
+    name: Build ${{ matrix.target }}
+    needs: generate_matrix
+    strategy:
+      fail-fast: False
+      matrix: ${{fromJson(needs.generate_matrix.outputs.matrix)}}
+    uses: ./.github/workflows/build.yml
+    with:
+      target: ${{ matrix.target }}
+      testing: ${{ matrix.testing }}
+      build_toolchain: true
+      build_kernel: true
+      build_full: true
+      build_all_boards: true
+
+  check-kernel-patches:
+    needs: generate_matrix
+    strategy:
+      fail-fast: False
+      matrix: ${{fromJson(needs.generate_matrix.outputs.matrix)}}
+    uses: ./.github/workflows/check-kernel-patches.yml
+    with:
+      target: ${{ matrix.target }}
+      testing: ${{ matrix.testing }}
