@@ -12,8 +12,7 @@ CPU_TYPE := cortex-a9
 CPU_SUBTYPE := vfpv3-d16
 SUBTARGETS := generic
 
-KERNEL_PATCHVER := 6.12
-KERNEL_TESTING_PATCHVER := 6.18
+KERNEL_PATCHVER := 6.18
 
 include $(INCLUDE_DIR)/target.mk
 
