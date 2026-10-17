@@ -232,6 +232,13 @@
 
 #define PPE_EG_UNTOUCHED		3
 
+/* Flows of one class spread across this many queues of their egress port by
+ * the packet's RSS hash: fixed-bucket fair queueing in silicon. Two bands
+ * per port - bulk at the bottom, the classified priorities above - each
+ * hash-spread, DRR-fair inside, strict priority between them.
+ */
+#define PPE_FLOW_SPREAD_QUEUES		4
+
 /* --- L2 (base 0x060000) --- */
 #define PPE_L2_BASE			0x060000
 
@@ -499,9 +506,6 @@
 #define PPE_RSS_HASH_SEED_IPV4		(0x0b0000 + 0x4384)
 #define PPE_RSS_HASH_MIX_IPV4(i)	(0x0b0000 + 0x4390 + (i) * 0x4)
 #define PPE_RSS_HASH_FIN_IPV4(i)	(0x0b0000 + 0x43b0 + (i) * 0x4)
-
-/* CPU port unicast queues a flow is spread over by its hash. */
-#define PPE_CPU_RSS_QUEUES		4
 
 #define PPE_QM_UCAST_PRI_MAP(i)		(PPE_QM_BASE + 0x42000 + (i) * 0x10)
 #define   PPE_QM_PRI_CLASS		GENMASK(3, 0)
