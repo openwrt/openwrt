@@ -1256,6 +1256,23 @@ endef
 $(eval $(call KernelPackage,nfnetlink-cttimeout))
 
 
+define KernelPackage/nf-conntrack-bridge
+  SUBMENU:=$(NF_MENU)
+  TITLE:=IPv4/IPv6 bridge connection tracking support
+  DEPENDS:=+kmod-nf-conntrack
+  FILES:=$(LINUX_DIR)/net/bridge/netfilter/nf_conntrack_bridge.ko
+  KCONFIG:=CONFIG_NF_CONNTRACK_BRIDGE
+  AUTOLOAD:=$(call AutoProbe,nf_conntrack_bridge)
+endef
+
+define KernelPackage/nf-conntrack-bridge/description
+ Native bridge connection tracking, replacement for br_netfilter.
+ Required for nft_flow_offload bridge offload (bridge fastpath).
+endef
+
+$(eval $(call KernelPackage,nf-conntrack-bridge))
+
+
 define KernelPackage/nf-conntrack-netlink
   TITLE:=Connection tracking netlink interface
   FILES:=$(LINUX_DIR)/net/netfilter/nf_conntrack_netlink.ko

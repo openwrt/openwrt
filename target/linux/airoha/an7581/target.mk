@@ -6,7 +6,7 @@ KERNELNAME:=Image dtbs
 FEATURES+=pwm
 
 DEFAULT_PACKAGES += \
-	airoha-en7581-npu-firmware uboot-envtools
+	airoha-en7581-npu-firmware kmod-nf-conntrack-bridge uboot-envtools
 
 define Target/Description
 	Build firmware images for Airoha an7581 ARM based boards.
