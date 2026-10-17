@@ -8,12 +8,13 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=f2fs-tools
-PKG_VERSION:=1.16.0
-PKG_RELEASE:=4
+PKG_VERSION:=1.17.0
+PKG_RELEASE:=2
 
-PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_SOURCE_URL:=https://git.kernel.org/pub/scm/linux/kernel/git/jaegeuk/f2fs-tools.git/snapshot/
-PKG_HASH:=208c7a07e95383fbd7b466b5681590789dcb41f41bf197369c41a95383b57c5e
+PKG_SOURCE_PROTO:=git
+PKG_SOURCE_URL:=https://git.kernel.org/pub/scm/linux/kernel/git/jaegeuk/f2fs-tools.git
+PKG_SOURCE_VERSION:=$(PKG_VERSION)
+PKG_MIRROR_HASH:=1b44cf0785d10a4912f3c94d3bd53f883a710c4702b0133feccaa496bbc132ef
 
 PKG_MAINTAINER:=Felix Fietkau <nbd@nbd.name>
 PKG_LICENSE:=GPL-2.0-only
@@ -32,52 +33,33 @@ define Package/f2fs-tools/Default
   SUBMENU:=Filesystem
   DEPENDS:=+libf2fs
   URL:=https://git.kernel.org/pub/scm/linux/kernel/git/jaegeuk/f2fs-tools.git
-  VARIANT:=default
-endef
-
-define Package/f2fs-tools/SELinux
-  SECTION:=utils
-  CATEGORY:=Utilities
-  SUBMENU:=Filesystem
-  DEPENDS:=+libf2fs-selinux +libselinux
-  URL:=https://git.kernel.org/pub/scm/linux/kernel/git/jaegeuk/f2fs-tools.git
-  VARIANT:=selinux
 endef
 
 define Package/mkf2fs
   $(Package/f2fs-tools/Default)
   TITLE:=Utility for creating a Flash-Friendly File System (F2FS)
-  CONFLICTS:=mkf2fs-selinux
-  DEFAULT_VARIANT:=1
-endef
-
-define Package/mkf2fs-selinux
-  $(Package/f2fs-tools/SELinux)
-  TITLE:=Utility for creating a Flash-Friendly File System (F2FS) with SELinux support
 endef
 
 define Package/f2fsck
   $(Package/f2fs-tools/Default)
   TITLE:=Utility for checking/repairing a Flash-Friendly File System (F2FS)
   CONFLICTS:=f2fsck-selinux
+  VARIANT:=default
+  DEFAULT_VARIANT:=1
 endef
 
 define Package/f2fsck-selinux
-  $(Package/f2fs-tools/SELinux)
+  $(Package/f2fs-tools/Default)
   TITLE:=Utility for checking/repairing a Flash-Friendly File System (F2FS) with SELinux support
+  DEPENDS += +libselinux
+  PROVIDES:=f2fsck
+  VARIANT:=selinux
 endef
 
 define Package/f2fs-tools
   $(Package/f2fs-tools/Default)
   TITLE:=Tools for Flash-Friendly File System (F2FS)
   DEPENDS += +mkf2fs +f2fsck
-  CONFLICTS:=f2fs-tools-selinux
-endef
-
-define Package/f2fs-tools-selinux
-  $(Package/f2fs-tools/SELinux)
-  TITLE:=Tools for Flash-Friendly File System (F2FS) with SELinux support
-  DEPENDS += +mkf2fs-selinux +f2fsck-selinux
 endef
 
 define Package/libf2fs
@@ -85,19 +67,7 @@ define Package/libf2fs
   CATEGORY:=Libraries
   TITLE:=Library for Flash-Friendly File System (F2FS) tools
   DEPENDS:=+libuuid
-  ABI_VERSION:=6
-  CONFLICTS:=libf2fs-selinux
-  VARIANT:=default
-  DEFAULT_VARIANT:=1
-endef
-
-define Package/libf2fs-selinux
-  SECTION:=libs
-  CATEGORY:=Libraries
-  TITLE:=Library for Flash-Friendly File System (F2FS) tools with SELinux support
-  DEPENDS:=+libuuid +libselinux
-  ABI_VERSION:=6
-  VARIANT:=selinux
+  ABI_VERSION:=11
 endef
 
 CONFIGURE_ARGS += \
@@ -106,16 +76,18 @@ CONFIGURE_ARGS += \
 	--without-lzo2 \
 	--without-lz4
 
-ifneq ($(BUILD_VARIANT),selinux)
-  CONFIGURE_ARGS += --without-selinux
-endif
-
 CONFIGURE_VARS += \
 	ac_cv_file__git=no
 
-ifneq ($(CONFIG_USE_MUSL),)
-  CONFIGURE_VARS += ac_cv_func_lseek64=yes
-endif
+CONFIGURE_ARGS += $(if $(filter selinux,$(BUILD_VARIANT)),--with,--without)-selinux
+
+# We share one libf2fs between variants: validate that only fsck uses selinux.
+define Build/check-selinux-usage
+	grep -rEn $(addprefix --exclude-dir=,fsck patches .pc) \
+		$(addprefix --exclude=,configure.ac f2fs_fs.h android_config.h) \
+		'libselinux_LIBS|HAVE_LIBSELINUX' "$(PKG_BUILD_DIR)"; test "$$$$?" -eq 1
+endef
+Hooks/Prepare/Post += Build/check-selinux-usage
 
 define Package/libf2fs/install
 	$(INSTALL_DIR) $(1)/usr/lib
@@ -123,14 +95,10 @@ define Package/libf2fs/install
 		$(PKG_INSTALL_DIR)/usr/lib/libf2fs.so.* $(1)/usr/lib/
 endef
 
-Package/libf2fs-selinux/install = $(Package/libf2fs/install)
-
 define Package/mkf2fs/install
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/mkfs.f2fs $(1)/usr/sbin
 endef
-
-Package/mkf2fs-selinux/install = $(Package/mkf2fs/install)
 
 define Package/f2fsck/install
 	$(INSTALL_DIR) $(1)/usr/sbin
@@ -146,17 +114,13 @@ Package/f2fsck-selinux/install = $(Package/f2fsck/install)
 
 define Package/f2fs-tools/install
 	$(INSTALL_DIR) $(1)/usr/sbin
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/f2fs_io $(1)/usr/sbin
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/fibmap.f2fs $(1)/usr/sbin
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/parse.f2fs $(1)/usr/sbin
 endef
 
-Package/f2fs-tools-selinux/install = $(Package/f2fs-tools/install)
-
 $(eval $(call BuildPackage,libf2fs))
-$(eval $(call BuildPackage,libf2fs-selinux))
 $(eval $(call BuildPackage,mkf2fs))
-$(eval $(call BuildPackage,mkf2fs-selinux))
 $(eval $(call BuildPackage,f2fsck))
 $(eval $(call BuildPackage,f2fsck-selinux))
 $(eval $(call BuildPackage,f2fs-tools))
-$(eval $(call BuildPackage,f2fs-tools-selinux))
