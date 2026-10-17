@@ -493,35 +493,28 @@ static void ppe_qm_init(struct qca_ppe_priv *priv)
 
 	for (i = 0; i < PPE_NUM_PORTS; i++) {
 		for (pri = 0; pri < 16; pri++) {
-			/* Two bands per port plus, on a user port, the queues
-			 * of the second scheduler node. The hash offset is
-			 * added to the class for every packet, so a class must
-			 * be as wide as the spread or the smear crosses into
-			 * the next. l0_port0[] and ppe_l0_scheduler_init() have
-			 * already put the second band a strict priority above
-			 * the first, which is what the small-frame classifier
-			 * in the ACL needs to be worth anything: without it
-			 * every priority shares one queue, and a frame on its
-			 * way to a Wi-Fi client waits behind whatever bulk that
-			 * queue is holding.
+			/* Three bands per port. The hash offset is added to the
+			 * class for every packet, so a class must be as wide as
+			 * the spread or the smear crosses into the next, and
+			 * the third band is the second scheduler node's queues.
+			 * l0_port0[] and ppe_l0_scheduler_init() have already
+			 * put each band a strict priority above
+			 * the one below, which is what the small-frame
+			 * classifier in the ACL needs to be worth anything:
+			 * without it every priority shares one queue, and a
+			 * frame on its way to a Wi-Fi client waits behind
+			 * whatever bulk that queue is holding.
 			 *
-			 * Priorities eight and up select the second node's
-			 * queues. No classifier resolves there on its own -
-			 * the DSCP and PCP tables map below eight unless told
-			 * otherwise - so the node carries exactly the traffic
-			 * a rule names into it, and a shaper on the node then
-			 * governs that traffic and nothing else. The CPU port
-			 * has no second node built and folds these priorities
-			 * to best effort.
+			 * Priorities eight and up select the third band. No
+			 * classifier resolves there on its own - the DSCP and
+			 * PCP tables map below eight unless told otherwise -
+			 * so the band carries exactly the traffic a rule names
+			 * into it, and a shaper on it then governs that
+			 * traffic and nothing else (cpu_port_rate on the CPU
+			 * port).
 			 */
-			u8 cls;
-
-			if (pri < PPE_FLOW_SPREAD_QUEUES)
-				cls = 0;
-			else if (pri < 2 * PPE_FLOW_SPREAD_QUEUES)
-				cls = PPE_FLOW_SPREAD_QUEUES;
-			else
-				cls = i ? 2 * PPE_FLOW_SPREAD_QUEUES : 0;
+			u8 cls = min(pri / PPE_FLOW_SPREAD_QUEUES, 2) *
+				 PPE_FLOW_SPREAD_QUEUES;
 
 			if (i) {
 				regmap_write(priv->regmap,
@@ -729,7 +722,7 @@ struct l1_cfg {
 
 static const struct l1_cfg l1_cfg[] = {
 	{  0, 0, 0,  0 },
-	{  1, 0, 0,  0 },
+	{  1, 0, 1,  1 },
 	{ 36, 1, 0,  8 },
 	{ 37, 1, 1,  9 },
 	{ 40, 2, 0, 12 },
@@ -784,13 +777,14 @@ struct l0_cfg {
 };
 
 /* The CPU port's bands are four queues each, one DRR node per band: queues 0
- * to 3 and 8 to 11 at the bottom, queues 4 to 7 a strict priority above.
+ * to 3 at the bottom, queues 4 to 7 a strict priority above, and queues 8 to
+ * 11 on the port's second L1 node, which sits above the first.
  */
 static const struct l0_cfg l0_port0[] = {
 	{   0, 0, 0, 0, 0, 0, 0 }, {   1, 0, 0, 0, 0, 0, 0 },
 	{   2, 0, 0, 0, 0, 0, 0 }, {   3, 0, 0, 0, 0, 0, 0 },
-	{   8, 0, 0, 0, 0, 0, 0 }, {   9, 0, 0, 0, 0, 0, 0 },
-	{  10, 0, 0, 0, 0, 0, 0 }, {  11, 0, 0, 0, 0, 0, 0 },
+	{   8, 0, 1, 0, 4, 0, 4 }, {   9, 0, 1, 0, 4, 0, 4 },
+	{  10, 0, 1, 0, 4, 0, 4 }, {  11, 0, 1, 0, 4, 0, 4 },
 	{ 256, 0, 0, 0, 0, 0, 0 }, { 260, 0, 0, 0, 0, 0, 0 },
 	{   4, 0, 0, 1, 1, 1, 1 }, {   5, 0, 0, 1, 1, 1, 1 },
 	{   6, 0, 0, 1, 1, 1, 1 }, {   7, 0, 0, 1, 1, 1, 1 },
@@ -1317,8 +1311,14 @@ static u32 ppe_port_frame_len(struct qca_ppe_priv *priv, int port)
  */
 #define PPE_AC_MIN_FRAMES	8
 
+/* The CPU port's third band: the queues priorities eight and up select
+ * (ppe_qm_init()), on the L1 node cpu_port_rate shapes.
+ */
+#define PPE_CPU_PORT_DL_QUEUE	(2 * PPE_FLOW_SPREAD_QUEUES)
+#define PPE_CPU_PORT_DL_NODE	1
+
 static u32 ppe_ac_uni_static(struct qca_ppe_priv *priv, int port, u64 rate_bps,
-			     u32 limit)
+			     u32 limit, u32 ceiling)
 {
 	u32 bufs, min_bufs;
 
@@ -1332,7 +1332,7 @@ static u32 ppe_ac_uni_static(struct qca_ppe_priv *priv, int port, u64 rate_bps,
 				 BITS_PER_BYTE * PPE_BM_BUF_SIZE *
 				 (u64)USEC_PER_SEC);
 
-	bufs = clamp_t(u32, bufs, min_bufs, priv->data->qm_ceiling);
+	bufs = clamp_t(u32, bufs, min_bufs, ceiling);
 
 	return PPE_AC_EN | PPE_AC_FORCE_AC_EN |
 	       FIELD_PREP(PPE_AC_SHARED_WEIGHT, 4) |
@@ -1355,15 +1355,43 @@ static void ppe_port_queue_limit_set(struct qca_ppe_priv *priv, int port)
 	u32 w0;
 	int i;
 
+	w0 = sh->rate_bps ? ppe_ac_uni_static(priv, port, sh->rate_bps,
+					      sh->limit,
+					      priv->data->qm_ceiling) :
+			    ppe_ac_uni_default(priv);
+
+	/* The CPU port owns every queue below the first user port's base, and it
+	 * is not in the table below because the driver does not build its
+	 * scheduler. Its admission entries are still ours to size: the band
+	 * cpu_port_rate shapes is a bottleneck the way a shaped port is, and
+	 * without this it keeps the dynamic limit every queue is probed with -
+	 * which the comment above this function explains does not bind.
+	 */
+	if (port == QCA_PPE_CPU_PORT) {
+		u32 def = ppe_ac_uni_default(priv);
+
+		/* Each band queue takes a quarter of the depth, as on a user
+		 * port.
+		 */
+		if (sh->rate_bps)
+			w0 = ppe_ac_uni_static(priv, port, sh->rate_bps,
+					       sh->limit /
+					       PPE_FLOW_SPREAD_QUEUES,
+					       priv->data->qm_ceiling);
+
+		for (i = 0; i < port_l0[0].ucast_base; i++)
+			ppe_ac_uni_write(priv, i,
+					 i >= PPE_CPU_PORT_DL_QUEUE &&
+					 i < PPE_CPU_PORT_DL_QUEUE +
+					 PPE_FLOW_SPREAD_QUEUES ? w0 : def);
+		return;
+	}
+
 	for (i = 0; i < ARRAY_SIZE(port_l0); i++)
 		if (port_l0[i].port == port)
 			p = &port_l0[i];
 	if (!p)
 		return;
-
-	w0 = sh->rate_bps ? ppe_ac_uni_static(priv, port, sh->rate_bps,
-					      sh->limit) :
-			    ppe_ac_uni_default(priv);
 
 	for (i = 0; i < p->ucast_count; i++) {
 		u64 rate = i < ARRAY_SIZE(sh->queue_rate) ? sh->queue_rate[i] : 0;
@@ -1379,7 +1407,8 @@ static void ppe_port_queue_limit_set(struct qca_ppe_priv *priv, int port)
 		if (rate)
 			w = ppe_ac_uni_static(priv, port, rate,
 					      div_u64(rate * 10,
-						      BITS_PER_BYTE * 1000));
+						      BITS_PER_BYTE * 1000),
+					      priv->data->qm_ceiling);
 		else if (sh->rate_bps && i < 3 * PPE_FLOW_SPREAD_QUEUES)
 			/* A band bucket holds a share of the flows and drains
 			 * at no less than its share of the port, so it takes
@@ -1388,7 +1417,8 @@ static void ppe_port_queue_limit_set(struct qca_ppe_priv *priv, int port)
 			 */
 			w = ppe_ac_uni_static(priv, port, sh->rate_bps,
 					      sh->limit /
-					      PPE_FLOW_SPREAD_QUEUES);
+					      PPE_FLOW_SPREAD_QUEUES,
+					      priv->data->qm_ceiling);
 
 		ppe_ac_uni_write(priv, p->ucast_base + i, w);
 	}
@@ -1602,8 +1632,8 @@ static void ppe_port_shaper_stats(struct qca_ppe_priv *priv, int port,
  * line rate with its committed credit pegged negative. A single rate is both
  * buckets - the rate in the committed one and the excess one armed empty.
  */
-static int ppe_node_shaper_set(struct qca_ppe_priv *priv, int port, u32 cfg,
-			       u32 credit, u32 slot, u64 rate_bps)
+static int ppe_node_shaper_set(struct qca_ppe_priv *priv, u32 cfg, u32 credit,
+			       u32 slot, u64 rate_bps, u32 burst)
 {
 	u32 cir = 0, cbs = 0;
 	unsigned long clk;
@@ -1614,12 +1644,7 @@ static int ppe_node_shaper_set(struct qca_ppe_priv *priv, int port, u32 cfg,
 		if (!clk)
 			return -ENODEV;
 
-		/* A bucket that cannot hold one full frame stalls the node, so
-		 * the burst is a frame of whatever size the port carries rather
-		 * than something to configure.
-		 */
-		sel = ppe_token_bucket(clk, slot, rate_bps,
-				       ppe_port_frame_len(priv, port),
+		sel = ppe_token_bucket(clk, slot, rate_bps, burst,
 				       FIELD_MAX(PPE_SHP_CIR),
 				       FIELD_MAX(PPE_SHP_CBS), &cir, &cbs);
 		if (sel < 0)
@@ -1661,15 +1686,14 @@ static void ppe_port_shapers_clear(struct qca_ppe_priv *priv,
 	int i, node;
 
 	for (i = 0; i < p->ucast_count; i++)
-		ppe_node_shaper_set(priv, p->port,
-				    PPE_TM_L0_SHP_CFG(p->ucast_base + i),
+		ppe_node_shaper_set(priv, PPE_TM_L0_SHP_CFG(p->ucast_base + i),
 				    PPE_TM_L0_SHP_CREDIT(p->ucast_base + i),
-				    PPE_L0_SHAPER_SLOT, 0);
+				    PPE_L0_SHAPER_SLOT, 0, 0);
 
 	for (i = 0; (node = ppe_l1_node(p->port, i)) >= 0; i++)
-		ppe_node_shaper_set(priv, p->port, PPE_TM_L1_SHP_CFG(node),
+		ppe_node_shaper_set(priv, PPE_TM_L1_SHP_CFG(node),
 				    PPE_TM_L1_SHP_CREDIT(node),
-				    PPE_L1_SHAPER_SLOT, 0);
+				    PPE_L1_SHAPER_SLOT, 0, 0);
 
 	memset(sh->queue_rate, 0, sizeof(sh->queue_rate));
 	ppe_port_queue_limit_set(priv, p->port);
@@ -1803,8 +1827,13 @@ int qca_ppe_setup_tc_mqprio(struct qca_ppe_priv *priv, int port,
 		if (!prog[tc].rate_bps)
 			continue;
 
-		ppe_node_shaper_set(priv, port, prog[tc].cfg, prog[tc].credit,
-				    prog[tc].slot, prog[tc].rate_bps);
+		/* A bucket that cannot hold one full frame stalls the node, and
+		 * a port drains its queues as fast as they fill, so a frame is
+		 * all the burst a class needs.
+		 */
+		ppe_node_shaper_set(priv, prog[tc].cfg, prog[tc].credit,
+				    prog[tc].slot, prog[tc].rate_bps,
+				    ppe_port_frame_len(priv, port));
 
 		for (i = q->offset[tc]; i < q->offset[tc] + q->count[tc]; i++)
 			priv->shaper[port].queue_rate[i] = prog[tc].rate_bps;
@@ -2068,6 +2097,92 @@ static void ppe_rate_limit_init(struct qca_ppe_priv *priv)
 			     FIELD_PREP(PPE_CMPST_LENGTH, ETH_FCS_LEN));
 }
 
+/* The port every packet on its way to the host leaves by, and the only one with
+ * no netdev of its own: DSA gives a qdisc to the user ports and nothing to this
+ * one, so neither a tbf nor an mqprio can name it. A frame bound for a Wi-Fi
+ * client leaves here, which makes this the only queue in the switch that can
+ * hold that traffic - a meter on the arriving port is the alternative, and a
+ * meter drops where this delays.
+ *
+ * What is shaped is the port's third band, the queue priorities eight and up
+ * select (ppe_qm_init()): the traffic a rule marks into it, which is a routed
+ * download when the rule is on the uplink, and nothing else. A bridged
+ * transfer to a Wi-Fi client crosses this port unmarked and is not held.
+ */
+static int ppe_cpu_port_dl_set(struct qca_ppe_priv *priv, u64 rate_bps)
+{
+	struct ppe_port_shaper *sh = &priv->shaper[QCA_PPE_CPU_PORT];
+	u32 depth = div_u64(rate_bps * 10, BITS_PER_BYTE * 1000);
+	int ret;
+
+	/* A user port's queue depth comes from its tbf limit. Nothing can put a
+	 * tbf on this port, so the depth is the driver's to choose, and it is
+	 * chosen the same way: ten milliseconds of the rate, which
+	 * ppe_port_queue_limit_set() then clamps to the four queues' worth of
+	 * admission a user port's download band gets. One millisecond - what a
+	 * shaped port falls back to with no limit - is too shallow to hold a
+	 * flow at the rate it was shaped to.
+	 *
+	 * The burst is the same ten milliseconds, and unlike a user port's
+	 * class it cannot be a frame: this port drains only as fast as the
+	 * host takes frames off the ring, and a bucket of one frame forgets
+	 * every token that accrues between two of the host's visits.
+	 */
+	ret = ppe_node_shaper_set(priv, PPE_TM_L1_SHP_CFG(PPE_CPU_PORT_DL_NODE),
+				  PPE_TM_L1_SHP_CREDIT(PPE_CPU_PORT_DL_NODE),
+				  PPE_L1_SHAPER_SLOT, rate_bps, depth);
+	if (ret)
+		return ret;
+
+	sh->rate_bps = rate_bps;
+	sh->limit = depth;
+	ppe_port_queue_limit_set(priv, QCA_PPE_CPU_PORT);
+
+	return 0;
+}
+
+static int ppe_cpu_port_rate_get(struct devlink *dl, u32 id,
+				 struct devlink_param_gset_ctx *ctx)
+{
+	struct qca_ppe_priv *priv = ds_to_priv(dsa_devlink_to_ds(dl));
+
+	ctx->val.vu32 = div_u64(priv->shaper[QCA_PPE_CPU_PORT].rate_bps, 1000);
+	return 0;
+}
+
+static int ppe_cpu_port_rate_set(struct devlink *dl, u32 id,
+				 struct devlink_param_gset_ctx *ctx,
+				 struct netlink_ext_ack *extack)
+{
+	struct qca_ppe_priv *priv = ds_to_priv(dsa_devlink_to_ds(dl));
+
+	return ppe_cpu_port_dl_set(priv, (u64)ctx->val.vu32 * 1000);
+}
+
+enum {
+	PPE_DEVLINK_PARAM_CPU_PORT_RATE = DEVLINK_PARAM_GENERIC_ID_MAX + 1,
+};
+
+/* kbit/s, 0 disables */
+static const struct devlink_param ppe_params[] = {
+	DEVLINK_PARAM_DRIVER(PPE_DEVLINK_PARAM_CPU_PORT_RATE, "cpu_port_rate",
+			     DEVLINK_PARAM_TYPE_U32,
+			     BIT(DEVLINK_PARAM_CMODE_RUNTIME),
+			     ppe_cpu_port_rate_get, ppe_cpu_port_rate_set, NULL),
+};
+
+void ppe_scheduler_unready(struct qca_ppe_priv *priv)
+{
+	devlink_params_unregister(priv->ds.devlink, ppe_params,
+				  ARRAY_SIZE(ppe_params));
+}
+
+/* The shaper goes with the driver, so the switch is left the way it was found. */
+void ppe_scheduler_exit(struct qca_ppe_priv *priv)
+{
+	ppe_cpu_port_dl_set(priv, 0);
+}
+
 void ppe_scheduler_init(struct qca_ppe_priv *priv)
 {
 	ppe_tdm_init(priv);
@@ -2079,4 +2194,10 @@ void ppe_scheduler_init(struct qca_ppe_priv *priv)
 	ppe_qos_init(priv);
 	ppe_rss_hash_init(priv);
 	ppe_rate_limit_init(priv);
+}
+
+int ppe_scheduler_ready(struct qca_ppe_priv *priv)
+{
+	return devlink_params_register(priv->ds.devlink, ppe_params,
+				       ARRAY_SIZE(ppe_params));
 }
