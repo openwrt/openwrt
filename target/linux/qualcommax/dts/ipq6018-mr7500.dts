@@ -221,7 +221,7 @@
 		compatible = "qcom,qca8075-package";
 		reg = <0>;
 
-		qcom,package-mode = "qsgmii";
+		qcom,package-mode = "psgmii";
 
 		qca8075_0: ethernet-phy@0 {
 			compatible = "ethernet-phy-ieee802.3-c22";
@@ -385,7 +385,7 @@
 			reg = <1>;
 			label = "lan1";
 			phy-handle = <&qca8075_0>;
-			phy-mode = "qsgmii";
+			phy-mode = "psgmii";
 			pcs-handle = <&uniphy0 0>;
 			nvmem-cells = <&hw_mac_addr 1>;
 			nvmem-cell-names = "mac-address";
@@ -395,7 +395,7 @@
 			reg = <2>;
 			label = "lan2";
 			phy-handle = <&qca8075_1>;
-			phy-mode = "qsgmii";
+			phy-mode = "psgmii";
 			pcs-handle = <&uniphy0 1>;
 			nvmem-cells = <&hw_mac_addr 1>;
 			nvmem-cell-names = "mac-address";
@@ -405,7 +405,7 @@
 			reg = <3>;
 			label = "lan3";
 			phy-handle = <&qca8075_2>;
-			phy-mode = "qsgmii";
+			phy-mode = "psgmii";
 			pcs-handle = <&uniphy0 2>;
 			nvmem-cells = <&hw_mac_addr 1>;
 			nvmem-cell-names = "mac-address";
@@ -415,7 +415,7 @@
 			reg = <4>;
 			label = "lan4";
 			phy-handle = <&qca8075_3>;
-			phy-mode = "qsgmii";
+			phy-mode = "psgmii";
 			pcs-handle = <&uniphy0 3>;
 			nvmem-cells = <&hw_mac_addr 1>;
 			nvmem-cell-names = "mac-address";
