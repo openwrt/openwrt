@@ -1,11 +1,12 @@
 From fce11f68491b46b93df69de0630cd9edb90bc772 Mon Sep 17 00:00:00 2001
 From: Birger Koblitz <git@birger-koblitz.de>
 Date: Wed, 29 Dec 2021 21:54:21 +0100
-Subject: [PATCH] realtek: Create 4 different Realtek Platforms
+Subject: [PATCH] realtek: Create 5 different Realtek Platforms
 
 Creates RTL83XX as a basic kernel config parameter for the
-RTL838X, RTL839x, RTL930X and RTL931X platforms with respective
-configurations for the SoCs, which are introduced in addition.
+RTL838X, RTL839x, RTL930X, RTL931X and RTL960X platforms with
+respective configurations for the SoCs, which are introduced in
+addition.
 
 Submitted-by: Birger Koblitz <git@birger-koblitz.de>
 ---
@@ -38,7 +39,7 @@ Submitted-by: Birger Koblitz <git@birger-koblitz.de>
  
  config SGI_IP22
  	bool "SGI IP22 (Indy/Indigo2)"
-@@ -1056,6 +1060,37 @@ config FIT_IMAGE_FDT_EPM5
+@@ -1056,6 +1060,53 @@ config FIT_IMAGE_FDT_EPM5
  	  from Mobileye in the FIT kernel image.
  	  This requires u-boot on the platform.
  
@@ -72,6 +73,22 @@ Submitted-by: Birger Koblitz <git@birger-koblitz.de>
 +	select SYS_SUPPORTS_VPE_LOADER
 +	select SYS_SUPPORTS_SMP
 +	select SYS_SUPPORTS_MIPS_CPS
++
++config RTL960X
++	bool "Realtek RTL960X based platforms"
++	depends on MACH_REALTEK_RTL
++	select MIPS_CPU_SCACHE
++	select SYS_SUPPORTS_MULTITHREADING
++	select MIPS_GIC
++	select COMMON_CLK
++	select CLKSRC_MIPS_GIC
++	select SYS_SUPPORTS_VPE_LOADER
++	select SYS_SUPPORTS_SMP
++	select SYS_SUPPORTS_MIPS_CPS
++	select HAVE_PCI
++	select PCI_DRIVERS_GENERIC
++	select SYS_SUPPORTS_ZBOOT
++	select MIPS_EXTERNAL_TIMER
 +
  source "arch/mips/alchemy/Kconfig"
  source "arch/mips/ath25/Kconfig"
