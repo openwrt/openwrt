@@ -1,0 +1,34 @@
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Date: Sun, 13 Sep 2026 12:32:09 +0200
+Subject: [PATCH] netfilter: flowtable: fill the vlan key from the
+ outermost tag only
+
+The else branch of the second encapsulation block stores encap[1] in
+the vlan key whenever the first block left it unfilled. The first
+block skips encap[0] when the switch strips it, and also when it is
+not 802.1Q. In the second case, an 802.1ad tag outside an 802.1Q tag,
+encap[0] is still the first tag on the frame and the key describes
+the inner tag as the outer one.
+
+Store encap[1] in the vlan key only when encap[0] is stripped. The
+802.1ad case then gets no vlan key, as a single 802.1ad tag does
+today. The action list is unchanged.
+
+Fixes: 3e1b0c168f6c ("netfilter: flowtable: add vlan match offload support")
+Assisted-by: Claude:claude-fable-5-1
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+---
+ net/netfilter/nf_flow_table_offload.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/net/netfilter/nf_flow_table_offload.c
++++ b/net/netfilter/nf_flow_table_offload.c
+@@ -135,7 +135,7 @@ static int nf_flow_rule_match(struct nf_
+ 			nf_flow_rule_vlan_match(&key->cvlan, &mask->cvlan,
+ 						tuple->encap[1].id,
+ 						tuple->encap[1].proto);
+-		} else {
++		} else if (tuple->in_vlan_ingress & BIT(0)) {
+ 			NF_FLOW_DISSECTOR(match, FLOW_DISSECTOR_KEY_VLAN,
+ 					  vlan);
+ 			nf_flow_rule_vlan_match(&key->vlan, &mask->vlan,

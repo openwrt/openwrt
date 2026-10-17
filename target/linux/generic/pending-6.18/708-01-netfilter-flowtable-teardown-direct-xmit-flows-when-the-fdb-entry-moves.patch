@@ -1,0 +1,143 @@
+From 82cf4b6729c8f4bd429f0680982eb92009622522 Mon Sep 17 00:00:00 2001
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Date: Fri, 2 Oct 2026 23:30:00 +0200
+Subject: [PATCH] netfilter: flowtable: tear down direct xmit flows when the
+ fdb entry moves
+
+A direct xmit flow stores the bridge port the fdb resolved when the flow
+was created. When the host moves to another port of the bridge, the flow
+keeps sending to the old port, and packets from the other side keep it
+from timing out. A hardware offloaded flow behaves the same.
+
+Look the forward path up again in the gc and tear the flow down when the
+bridge now resolves the destination to another port. An aged out fdb
+entry leaves the flow alone, because offloaded packets do not refresh
+it. The tuple stores the route's output device, where the lookup starts,
+and the bridge port, which differs from out.ifidx when the port is a
+vlan device.
+
+The check adds about 1.4 us per bridged flow and gc run (1800 flows,
+x86 guest with lockdep, 3 runs: 2.2 -> 4.7 ms).
+
+Assisted-by: Claude:claude-opus-5-5
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+---
+ include/net/netfilter/nf_flow_table.h |    4 +++
+ net/netfilter/nf_flow_table_core.c    |   39 +++++++++++++++++++++++++++++++++++++++
+ net/netfilter/nf_flow_table_path.c    |    7 ++++++
+ 3 files changed, 50 insertions(+)
+
+--- a/include/net/netfilter/nf_flow_table.h
++++ b/include/net/netfilter/nf_flow_table.h
+@@ -147,6 +147,8 @@ struct flow_offload_tuple {
+ 		struct {
+ 			u32		ifidx;
+ 			u32		hw_ifidx;
++			u32		path_ifidx;
++			u32		bridge_ifidx;
+ 			u8		h_source[ETH_ALEN];
+ 			u8		h_dest[ETH_ALEN];
+ 		} out;
+@@ -213,6 +215,8 @@ struct nf_flow_route {
+ 		struct {
+ 			u32			ifindex;
+ 			u32			hw_ifindex;
++			u32			path_ifindex;
++			u32			bridge_ifindex;
+ 			u8			h_source[ETH_ALEN];
+ 			u8			h_dest[ETH_ALEN];
+ 		} out;
+--- a/net/netfilter/nf_flow_table_core.c
++++ b/net/netfilter/nf_flow_table_core.c
+@@ -128,6 +128,9 @@ static int flow_offload_fill_route(struc
+ 		       ETH_ALEN);
+ 		flow_tuple->out.ifidx = route->tuple[dir].out.ifindex;
+ 		flow_tuple->out.hw_ifidx = route->tuple[dir].out.hw_ifindex;
++		flow_tuple->out.path_ifidx = route->tuple[dir].out.path_ifindex;
++		flow_tuple->out.bridge_ifidx =
++			route->tuple[dir].out.bridge_ifindex;
+ 		dst_release(dst);
+ 		break;
+ 	case FLOW_OFFLOAD_XMIT_XFRM:
+@@ -565,13 +568,51 @@ static void nf_flow_table_extend_ct_time
+ 	nf_ct_put(ct);
+ }
+ 
++/* A direct xmit flow through a bridge is stale once the bridge resolves
++ * its destination to another port. An fdb entry that aged out is not a
++ * move: offloaded packets do not pass the bridge to refresh it.
++ */
++static bool nf_flow_bridge_port_stale(struct net *net,
++				      const struct flow_offload_tuple *tuple)
++{
++	struct net_device_path_ctx ctx = {
++		.ieee80211 = true,
++	};
++	struct net_device_path_stack stack;
++	bool stale = false;
++	int i, port = 0;
++
++	if (tuple->xmit_type != FLOW_OFFLOAD_XMIT_DIRECT ||
++	    !tuple->out.bridge_ifidx)
++		return false;
++
++	ether_addr_copy(ctx.daddr, tuple->out.h_dest);
++
++	rcu_read_lock();
++	ctx.dev = dev_get_by_index_rcu(net, tuple->out.path_ifidx);
++	if (ctx.dev && !dev_fill_forward_path(&ctx, &stack)) {
++		/* The last bridge, as in nft_dev_path_info() */
++		for (i = 0; i < stack.num_paths - 1; i++) {
++			if (stack.path[i].type == DEV_PATH_BRIDGE)
++				port = stack.path[i + 1].dev->ifindex;
++		}
++		stale = port && port != tuple->out.bridge_ifidx;
++	}
++	rcu_read_unlock();
++
++	return stale;
++}
++
+ static void nf_flow_offload_gc_step(struct nf_flowtable *flow_table,
+ 				    struct flow_offload *flow, void *data)
+ {
++	struct net *net = read_pnet(&flow_table->net);
+ 	bool teardown = test_bit(NF_FLOW_TEARDOWN, &flow->flags);
+ 
+ 	if (nf_flow_has_expired(flow) ||
+ 	    nf_ct_is_dying(flow->ct) ||
++	    nf_flow_bridge_port_stale(net, &flow->tuplehash[FLOW_OFFLOAD_DIR_ORIGINAL].tuple) ||
++	    nf_flow_bridge_port_stale(net, &flow->tuplehash[FLOW_OFFLOAD_DIR_REPLY].tuple) ||
+ 	    nf_flow_custom_gc(flow_table, flow)) {
+ 		flow_offload_teardown(flow);
+ 		teardown = true;
+--- a/net/netfilter/nf_flow_table_path.c
++++ b/net/netfilter/nf_flow_table_path.c
+@@ -89,6 +89,7 @@ struct nft_forward_info {
+ 		__be16	proto;
+ 	} encap[NF_FLOW_TABLE_ENCAP_MAX];
+ 	u8 num_encaps;
++	u32 bridge_ifidx;
+ 	u8 ingress_vlans;
+ 	u8 h_source[ETH_ALEN];
+ 	u8 h_dest[ETH_ALEN];
+@@ -163,6 +164,10 @@ static int nft_dev_path_info(const struc
+ 			case DEV_PATH_BR_VLAN_KEEP:
+ 				break;
+ 			}
++			/* dev_fill_forward_path() adds the bridge port after
++			 * the bridge.
++			 */
++			info->bridge_ifidx = stack->path[i + 1].dev->ifindex;
+ 			info->xmit_type = FLOW_OFFLOAD_XMIT_DIRECT;
+ 			break;
+ 		default:
+@@ -231,6 +236,8 @@ static int nft_dev_forward_path(struct n
+ 		memcpy(route->tuple[dir].out.h_source, info.h_source, ETH_ALEN);
+ 		memcpy(route->tuple[dir].out.h_dest, info.h_dest, ETH_ALEN);
+ 		route->tuple[dir].out.hw_ifindex = info.hw_outdev->ifindex;
++		route->tuple[dir].out.path_ifindex = dst->dev->ifindex;
++		route->tuple[dir].out.bridge_ifindex = info.bridge_ifidx;
+ 		route->tuple[dir].xmit_type = info.xmit_type;
+ 	}
+ 

@@ -68,6 +68,7 @@
 #define EDMA_REG_TXCMPL_PROD_IDX(b, n)	((b) + 0x004 + (0x1000 * (n)))
 #define EDMA_REG_TXCMPL_CONS_IDX(b, n)	((b) + 0x008 + (0x1000 * (n)))
 #define EDMA_REG_TXCMPL_RING_SIZE(b, n)	((b) + 0x00c + (0x1000 * (n)))
+#define EDMA_REG_TXCMPL_UGT_THRE(b, n)	((b) + 0x010 + (0x1000 * (n)))
 #define EDMA_REG_TXCMPL_CTRL(b, n)	((b) + 0x014 + (0x1000 * (n)))
 
 #define EDMA_TXCMPL_PROD_IDX_MASK	0xffff
@@ -112,6 +113,7 @@
 #define EDMA_REG_RXDESC_PROD_IDX(n)	(0x39004 + (0x1000 * (n)))
 #define EDMA_REG_RXDESC_CONS_IDX(n)	(0x39008 + (0x1000 * (n)))
 #define EDMA_REG_RXDESC_RING_SIZE(n)	(0x3900c + (0x1000 * (n)))
+#define EDMA_REG_RXDESC_UGT_THRE(n)	(0x39014 + (0x1000 * (n)))
 #define EDMA_REG_RXDESC_CTRL(n)		(0x39018 + (0x1000 * (n)))
 
 #define EDMA_RXDESC_PROD_IDX_MASK	0xffff
@@ -120,6 +122,7 @@
 #define EDMA_RXDESC_PL_OFFSET_MASK	0x1ff
 #define EDMA_RXDESC_PL_OFFSET_SHIFT	16
 #define EDMA_RXDESC_RX_EN		0x1
+#define EDMA_RXDESC_CTAG_REMOVE_EN	0x4
 #define EDMA_RXDESC_PACKET_LEN_MASK	0x3fff
 /* A frame the engine had to spread over several receive descriptors. The fill
  * buffers are sized for the largest frame the conduit accepts, so it does not
@@ -134,7 +137,14 @@
 #define EDMA_REG_RX_INT_CTRL(n)		(0x4900c + (0x1000 * (n)))
 
 #define EDMA_RXDESC_INT_MASK_PKT_INT	0x1
-#define EDMA_RX_MOD_TIMER_INIT		1000
+/* Default moderation: an interrupt per 16 frames, or after 25 us on RX. */
+#define EDMA_RX_COAL_US			25
+#define EDMA_COAL_FRAMES		16
+
+/* A moderation timer counts 128 cycles of the EDMA clock. */
+#define EDMA_MOD_TIMER_CYCLES		128
+#define EDMA_MOD_TIMER_MAX		0xffff
+#define EDMA_UGT_THRE_MAX		0xffff
 
 /* RX descriptor status fields */
 #define EDMA_RXDESC_L4_CSUM_OK	BIT(14)
@@ -155,6 +165,12 @@
 #define EDMA_RXPH_HASH_FLAG_MASK	0x7
 #define EDMA_RXPH_HASH_5TUPLE		1
 #define EDMA_RXPH_HASH_3TUPLE		2
+/* Where a stripped tag is reported: the tag flags in pre2 and the S-tag and
+ * C-tag TCIs in the high and low halves of pre3.
+ */
+#define EDMA_RXPH_CTAG_FLAG		BIT(30)
+#define EDMA_RXPH_CTAG_TCI		GENMASK(15, 0)
+#define EDMA_RXPH_CPU_CODE		GENMASK(31, 24)
 #define EDMA_RXPH_L3_OFFSET_SHIFT	16
 #define EDMA_RXPH_L3_OFFSET_MASK	0xff
 #define EDMA_RXPH_L4_OFFSET_SHIFT	8
@@ -190,6 +206,13 @@
 #define EDMA_TX_MIN_SEG		16
 #define EDMA_TX_RING_THRESH	(EDMA_TX_MAX_SEGS + 1)
 
+/* A ring index wraps by masking, so a ring is a power of two. The size
+ * registers are sixteen bits wide, but a fill ring pins a page per entry and
+ * the ceiling below is that, not the field.
+ */
+#define EDMA_MIN_RING_SIZE 64
+#define EDMA_MAX_RING_SIZE 8192
+
 /* Descriptor accessors */
 #define EDMA_GET_DESC(R, i, type) (&(((type *)((R)->desc))[i]))
 #define EDMA_RXFILL_DESC(R, i) EDMA_GET_DESC(R, i, struct edma_rxfill_desc)
@@ -206,7 +229,14 @@
 #define EDMA_TXDESC_DATA_OFFSET_MASK	0xff
 #define EDMA_TXDESC_DATA_LENGTH_MASK	0xffff
 
-/* TX preheader fields */
+/* TX preheader fields. A tag to insert is flagged in pre2, its TCI given in
+ * pre3 (S-tag high, C-tag low) and the insertion commanded in pre4.
+ */
+#define EDMA_TX_PRE2_STAG_FLAG		BIT(31)
+#define EDMA_TX_PRE2_CTAG_FLAG		BIT(30)
+#define EDMA_TX_PRE3_STAG_SHIFT		16
+#define EDMA_TX_PRE4_CTAG_ADD		(0x1 << 24)
+#define EDMA_TX_PRE4_STAG_ADD		(0x1 << 26)
 #define EDMA_TX_PRE4_ADV_OFFLOAD_EN	BIT(28)
 #define EDMA_TX_PRE6_CSUM_MODE_L4	(0x1 << 29)
 #define EDMA_TX_PRE6_MSS_MASK		0x3fff
@@ -307,6 +337,13 @@ struct edma_priv {
 	struct page_pool *page_pool;
 	u32 rx_buffer_size;
 	u8 rx_page_order;
+	u16 tx_ring_size;
+	u16 rx_ring_size;
+	unsigned long clk_rate;
+	u16 tx_mod_timer;
+	u16 rx_mod_timer;
+	u16 tx_ugt_thre;
+	u16 rx_ugt_thre;
 
 	/* The frame a run of completions belongs to, named by the first of
 	 * them and released on the last.

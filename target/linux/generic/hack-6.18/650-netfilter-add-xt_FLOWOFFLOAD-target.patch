@@ -44,7 +44,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  obj-$(CONFIG_NETFILTER_XT_TARGET_LED) += xt_LED.o
 --- /dev/null
 +++ b/net/netfilter/xt_FLOWOFFLOAD.c
-@@ -0,0 +1,709 @@
+@@ -0,0 +1,714 @@
 +/*
 + * Copyright (C) 2018-2021 Felix Fietkau <nbd@nbd.name>
 + *
@@ -410,6 +410,9 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +{
 +	const void *daddr = &ct->tuplehash[!dir].tuple.src.u3;
 +	struct net_device *dev = dst_cache->dev;
++	struct net_device_path_ctx ctx = {
++		.dev = dev,
++	};
 +	struct neighbour *n;
 +	u8 nud_state;
 +
@@ -430,7 +433,9 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +		return -1;
 +
 +out:
-+	return dev_fill_forward_path(dev, ha, stack);
++	ether_addr_copy(ctx.daddr, ha);
++
++	return dev_fill_forward_path(&ctx, stack);
 +}
 +
 +static void nf_dev_forward_path(struct nf_flow_route *route,
@@ -764,7 +769,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  #include <net/netfilter/nf_flow_table.h>
  #include <net/netfilter/nf_conntrack.h>
  #include <net/netfilter/nf_conntrack_core.h>
-@@ -422,8 +421,7 @@ flow_offload_lookup(struct nf_flowtable
+@@ -433,8 +432,7 @@ flow_offload_lookup(struct nf_flowtable
  }
  EXPORT_SYMBOL_GPL(flow_offload_lookup);
  
@@ -774,7 +779,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		      void (*iter)(struct nf_flowtable *flowtable,
  				   struct flow_offload *flow, void *data),
  		      void *data)
-@@ -596,6 +594,7 @@ static void nf_flow_offload_gc_step(stru
+@@ -645,6 +643,7 @@ static void nf_flow_offload_gc_step(stru
  		nf_flow_offload_stats(flow_table, flow);
  	}
  }
@@ -804,7 +809,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +#endif /* _XT_FLOWOFFLOAD_H */
 --- a/include/net/netfilter/nf_flow_table.h
 +++ b/include/net/netfilter/nf_flow_table.h
-@@ -302,6 +302,11 @@ void nf_flow_table_free(struct nf_flowta
+@@ -313,6 +313,11 @@ void nf_flow_table_free(struct nf_flowta
  
  void flow_offload_teardown(struct flow_offload *flow);
  

@@ -1,0 +1,129 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Date: Sat, 10 Oct 2026 10:24:05 +0200
+Subject: [PATCH] net: dsa: tag_qca: add a tag_8021q variant
+
+The QCA8K header carries the destination port bitmap on transmit and
+the source port number on receive, so a frame to and a frame from the
+same port carry different headers. An offload engine that adds and
+matches one tag per port cannot carry it. Add a "qca-8021q" tagging
+protocol on top of tag_8021q, where each port, or the bridge it
+forwards in, is one 802.1Q VLAN in both directions. Register and MIB
+frames keep the header, behind the "qca-etype" type, and go to the
+qca8k handlers as before.
+
+Assisted-by: Claude:claude-opus-5-5
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+--- a/include/net/dsa.h
++++ b/include/net/dsa.h
+@@ -59,6 +59,7 @@ struct tc_action;
+ #define DSA_TAG_PROTO_MXL862_8021Q_VALUE	31
+ #define DSA_TAG_PROTO_OOB_VALUE			32
+ #define DSA_TAG_PROTO_QCA_ETYPE_VALUE		33
++#define DSA_TAG_PROTO_QCA_8021Q_VALUE		34
+ 
+ enum dsa_tag_protocol {
+ 	DSA_TAG_PROTO_NONE		= DSA_TAG_PROTO_NONE_VALUE,
+@@ -95,6 +96,7 @@ enum dsa_tag_protocol {
+ 	DSA_TAG_PROTO_MXL862_8021Q	= DSA_TAG_PROTO_MXL862_8021Q_VALUE,
+ 	DSA_TAG_PROTO_OOB		= DSA_TAG_PROTO_OOB_VALUE,
+ 	DSA_TAG_PROTO_QCA_ETYPE		= DSA_TAG_PROTO_QCA_ETYPE_VALUE,
++	DSA_TAG_PROTO_QCA_8021Q		= DSA_TAG_PROTO_QCA_8021Q_VALUE,
+ };
+ 
+ struct dsa_switch;
+--- a/net/dsa/tag_qca.c
++++ b/net/dsa/tag_qca.c
+@@ -8,10 +8,14 @@
+ #include <net/dsa.h>
+ #include <linux/dsa/tag_qca.h>
+ 
++#include <linux/dsa/8021q.h>
++
+ #include "tag.h"
++#include "tag_8021q.h"
+ 
+ #define QCA_NAME "qca"
+ #define QCA_ETYPE_NAME "qca-etype"
++#define QCA_8021Q_NAME "qca-8021q"
+ 
+ static struct sk_buff *__qca_tag_xmit(struct sk_buff *skb,
+ 				      struct net_device *dev, unsigned int len)
+@@ -177,14 +181,77 @@ static const struct dsa_device_ops qca_e
+ 
+ DSA_TAG_DRIVER(qca_etype_netdev_ops);
+ 
++/* The port, or the bridge it forwards in, as an 802.1Q VLAN that the switch
++ * adds on receive and strips on transmit, so the tag reads the same in both
++ * directions.
++ */
++static struct sk_buff *qca_8021q_tag_xmit(struct sk_buff *skb,
++					  struct net_device *dev)
++{
++	struct dsa_port *dp = dsa_user_to_port(dev);
++	u16 tx_vid = dsa_tag_8021q_standalone_vid(dp);
++
++	if (skb->offload_fwd_mark) {
++		struct net_device *br = dsa_port_bridge_dev_get(dp);
++
++		if (br_vlan_enabled(br))
++			return skb;
++
++		tx_vid = dsa_tag_8021q_bridge_vid(dsa_port_bridge_num_get(dp));
++	}
++
++	return dsa_8021q_xmit(skb, dev, ETH_P_8021Q, tx_vid);
++}
++
++static struct sk_buff *qca_8021q_tag_rcv(struct sk_buff *skb,
++					 struct net_device *dev)
++{
++	int src_port = -1, switch_id = -1, vbid = -1, vid = -1;
++
++	/* Register and MIB frames keep the header, behind its type */
++	if (!skb_vlan_tag_present(skb) &&
++	    eth_hdr(skb)->h_proto == htons(QCA_HDR_ETYPE))
++		return __qca_tag_rcv(skb, dev, QCA_ETYPE_HDR_LEN);
++
++	if (!skb_vlan_tag_present(skb) &&
++	    eth_hdr(skb)->h_proto != htons(ETH_P_8021Q))
++		return NULL;
++
++	dsa_8021q_rcv(skb, &src_port, &switch_id, &vbid, &vid);
++
++	skb->dev = dsa_tag_8021q_find_user(dev, src_port, switch_id, vid,
++					   vbid);
++	if (!skb->dev)
++		return NULL;
++
++	dsa_default_offload_fwd_mark(skb);
++
++	return skb;
++}
++
++static const struct dsa_device_ops qca_8021q_netdev_ops = {
++	.name	= QCA_8021Q_NAME,
++	.proto	= DSA_TAG_PROTO_QCA_8021Q,
++	.connect = qca_tag_connect,
++	.disconnect = qca_tag_disconnect,
++	.xmit	= qca_8021q_tag_xmit,
++	.rcv	= qca_8021q_tag_rcv,
++	.needed_headroom = VLAN_HLEN,
++	.promisc_on_conduit = true,
++};
++
++DSA_TAG_DRIVER(qca_8021q_netdev_ops);
++
+ static struct dsa_tag_driver *dsa_tag_driver_array[] = {
+ 	&DSA_TAG_DRIVER_NAME(qca_netdev_ops),
+ 	&DSA_TAG_DRIVER_NAME(qca_etype_netdev_ops),
++	&DSA_TAG_DRIVER_NAME(qca_8021q_netdev_ops),
+ };
+ 
+ MODULE_DESCRIPTION("DSA tag driver for Qualcomm Atheros QCA8K switches");
+ MODULE_LICENSE("GPL");
+ MODULE_ALIAS_DSA_TAG_DRIVER(DSA_TAG_PROTO_QCA, QCA_NAME);
+ MODULE_ALIAS_DSA_TAG_DRIVER(DSA_TAG_PROTO_QCA_ETYPE, QCA_ETYPE_NAME);
++MODULE_ALIAS_DSA_TAG_DRIVER(DSA_TAG_PROTO_QCA_8021Q, QCA_8021Q_NAME);
+ 
+ module_dsa_tag_drivers(dsa_tag_driver_array);
