@@ -264,3 +264,37 @@ define KernelPackage/rockchip-dfi
 endef
 
 $(eval $(call KernelPackage,rockchip-dfi))
+
+define KernelPackage/video-rockchip-isp2
+  TITLE:=Rockchip rkisp2 Image Signal Processor
+  DEPENDS:=@TARGET_rockchip +kmod-video-v4l2-isp \
+	+kmod-video-dma-contig +kmod-video-fwnode +kmod-video-vmalloc
+  KCONFIG:=CONFIG_VIDEO_ROCKCHIP_ISP2
+  FILES:=$(LINUX_DIR)/drivers/media/platform/rockchip/rkisp2/rockchip-isp2.ko
+  AUTOLOAD:=$(call AutoProbe,rockchip-isp2)
+  $(call AddDepends/video)
+endef
+
+define KernelPackage/video-rockchip-isp2/description
+  Driver for the Image Signal Processor found in the Rockchip RK3588
+  and RV1126 SoCs. Provides demosaicing, 3A statistics and the
+  parameters queue used by libcamera.
+endef
+
+$(eval $(call KernelPackage,video-rockchip-isp2))
+
+define KernelPackage/video-rockchip-rkvenc
+  TITLE:=Rockchip RKVENC H.264/HEVC video encoder
+  DEPENDS:=@TARGET_rockchip +kmod-video-mem2mem +kmod-video-dma-contig
+  KCONFIG:=CONFIG_VIDEO_ROCKCHIP_RKVENC
+  FILES:=$(LINUX_DIR)/drivers/media/platform/rockchip/rkvenc/rockchip-rkvenc.ko
+  AUTOLOAD:=$(call AutoProbe,rockchip-rkvenc)
+  $(call AddDepends/video)
+endef
+
+define KernelPackage/video-rockchip-rkvenc/description
+  Stateful V4L2 memory-to-memory encoder driver for the RKVENC v1 video
+  encoder of the Rockchip RV1126 and RK3568 SoCs (H.264 and HEVC).
+endef
+
+$(eval $(call KernelPackage,video-rockchip-rkvenc))

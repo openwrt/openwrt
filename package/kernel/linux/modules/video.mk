@@ -1000,6 +1000,24 @@ endef
 
 $(eval $(call KernelPackage,video-videobuf2))
 
+define KernelPackage/video-v4l2-isp
+  TITLE:=V4L2 generic ISP parameters/stats framework
+  HIDDEN:=1
+  DEPENDS:=+kmod-video-videobuf2
+  KCONFIG:=CONFIG_V4L2_ISP
+  FILES:=$(LINUX_DIR)/drivers/media/v4l2-core/v4l2-isp.ko
+  AUTOLOAD:=$(call AutoProbe,v4l2-isp)
+  $(call AddDepends/video)
+endef
+
+define KernelPackage/video-v4l2-isp/description
+  Generic in-kernel framework providing the V4L2 ISP parameters and
+  statistics meta-buffer helpers, used by ISP drivers such as the
+  Rockchip rkisp2.
+endef
+
+$(eval $(call KernelPackage,video-v4l2-isp))
+
 define KernelPackage/video-vmalloc
   SUBMENU:=$(VIDEO_MENU)
   TITLE:=Video vmalloc support
