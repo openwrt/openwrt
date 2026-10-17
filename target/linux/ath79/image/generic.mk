@@ -3480,3 +3480,27 @@ define Device/zyxel_nbg6616
   SUPPORTED_DEVICES += nbg6616
 endef
 TARGET_DEVICES += zyxel_nbg6616
+# Append to target/linux/ath79/image/generic.mk
+#
+# 32 MiB flash, kernel loaded by stock u-boot via `bootm 0x9f0c0000`
+# (flash offset 0xc0000). We keep u-boot + u-boot-env + art untouched and
+# only (sys)upgrade the "firmware" partition. KERNEL_LOADADDR/entry are the
+# ath79 defaults; the legacy uImage is what stock u-boot bootm expects.
+
+define Device/doodlelabs_smartradio
+  SOC := qca9533
+  DEVICE_VENDOR := Doodle Labs
+  DEVICE_MODEL := Smart Radio
+  # Accept the legacy stock board name ("smartradio") so stock sysupgrade does
+  # not reject our image on the board-name check. Still prefer the initramfs
+  # RAM-boot path for the FIRST install (validates before committing to flash).
+  SUPPORTED_DEVICES += smartradio
+  DEVICE_PACKAGES := kmod-ath9k kmod-batman-adv wpad-mesh-openssl \
+	batctl-default alfred
+  IMAGE_SIZE := 32000k
+  IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | \
+	check-size | append-metadata
+  # First install from stock: produce a bootm-loadable image at 0xc0000.
+  # Recovery is u-boot TFTP (see README) - keep serial console before flashing.
+endef
+TARGET_DEVICES += doodlelabs_smartradio
