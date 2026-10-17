@@ -204,6 +204,7 @@ platform_do_upgrade() {
 	netis,nx32u|\
 	nokia,ea0326gmp|\
 	openwrt,one|\
+	oray,pgy-x1pro|\
 	netcore,n60|\
 	netcore,n60-pro|\
 	qihoo,360t7|\
@@ -459,6 +460,7 @@ platform_check_image() {
 	netis,n6-v2|\
 	netis,nx32u|\
 	openwrt,one|\
+	oray,pgy-x1pro|\
 	netcore,n60|\
 	qihoo,360t7|\
 	qihoo,360t7-ubi|\
