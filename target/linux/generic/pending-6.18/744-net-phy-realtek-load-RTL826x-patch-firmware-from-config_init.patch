@@ -1,0 +1,97 @@
+From 7952ad9141c97776701939fc8c451c19425cbb40 Mon Sep 17 00:00:00 2001
+From: Yu-Cheng Chen <as95195100@gmail.com>
+Date: Thu, 15 Oct 2026 04:12:52 +0000
+Subject: [PATCH] net: phy: realtek: load RTL826x patch firmware from
+ config_init
+
+rtl826x_probe() requests the register patch firmware and turns -ENOENT
+into -EPROBE_DEFER. With the driver built in, as on filogic where
+CONFIG_REALTEK_PHY=y, the PHYs probe before the root filesystem holding
+rtl8261n.bin/rtl8264b.bin is mounted, so the first probe always defers.
+
+When probe fails, phy_probe() asserts the PHY reset GPIO again. The
+next attempt runs the driver's match_phy_device() before phy_probe()
+releases the reset, so the RTL8261BE/RTL8261N callbacks read
+PKG_MODEL/VERSION_ID from a PHY held in reset. Since the match was
+tightened to require a PKG_MODEL of 0x8261, nothing matches any more
+and the PHY stays unbound until phy_attach_direct() binds the generic
+Clause 45 driver to it. Without the vendor patch sequence the USXGMII
+link never comes up.
+
+This breaks both 10G ports of the LTC Velo7 Max (RTL8261BE behind
+reset-gpios):
+
+  RTL8261BE 10Gbps PHY mdio-bus:06: PMA low-power suspend disabled
+  RTL8261BE 10Gbps PHY mdio-bus:07: PMA low-power suspend disabled
+  ...
+  mtk_soc_eth 15100000.ethernet eth1: PHY [mdio-bus:06] driver [Generic Clause 45 PHY] (irq=POLL)
+  mtk_soc_eth 15100000.ethernet eth2: PHY [mdio-bus:07] driver [Generic Clause 45 PHY] (irq=POLL)
+
+Load the firmware on the first config_init() instead, as the upstream
+RTL8261C_CG support does. config_init() runs when the PHY is attached
+to its netdev, by which point the firmware is available, so probe no
+longer defers and the reset GPIO is left alone. A missing firmware
+file now fails the attach with an error message instead of silently
+falling back to the generic driver.
+
+Signed-off-by: Yu-Cheng Chen <as95195100@gmail.com>
+---
+ drivers/net/phy/realtek/phy_patch_rtl826x.c |  9 ++-------
+ drivers/net/phy/realtek/realtek_main.c      | 18 ++++++++++++++----
+ 2 files changed, 16 insertions(+), 11 deletions(-)
+
+--- a/drivers/net/phy/realtek/phy_patch_rtl826x.c
++++ b/drivers/net/phy/realtek/phy_patch_rtl826x.c
+@@ -235,13 +235,8 @@ static int rtl826x_phy_patch_db_init(str
+ 
+ 	ret = request_firmware_direct(&fw, fw_name, dev);
+ 	if (ret) {
+-		if (ret == -ENOENT) {
+-			phydev_dbg(phydev, "Failed to request %s: defer probing\n", fw_name);
+-			return -EPROBE_DEFER;
+-		} else {
+-			phydev_err(phydev, "Failed to request %s: %d\n", fw_name, ret);
+-			return ret;
+-		}
++		phydev_err(phydev, "Failed to request %s: %d\n", fw_name, ret);
++		return ret;
+ 	}
+ 
+ 	if (!fw->size || fw->size % sizeof(*patches) != 0) {
+--- a/drivers/net/phy/realtek/realtek_main.c
++++ b/drivers/net/phy/realtek/realtek_main.c
+@@ -3369,10 +3369,6 @@ static int rtl826x_probe(struct phy_devi
+ 	phy_disable_eee_mode(phydev, ETHTOOL_LINK_MODE_5000baseT_Full_BIT);
+ 	phy_disable_eee_mode(phydev, ETHTOOL_LINK_MODE_10000baseT_Full_BIT);
+ 
+-	ret = rtl826x_patch_db_init(phydev);
+-	if (ret < 0)
+-		return ret;
+-
+ 	if (IS_ENABLED(CONFIG_REALTEK_PHY_HWMON))
+ 		return rtl822x_hwmon_init(phydev);
+ 
+@@ -3414,9 +3410,23 @@ static int rtl826x_config_serdes_polarit
+ static int rtl826x_config_init(struct phy_device *phydev)
+ {
+ 	const unsigned int max_dereset_tries = 5;
++	struct rtl826x_priv *priv = phydev->priv;
+ 	unsigned int tries = 0;
+ 	int ret;
+ 
++	/* Load the patch firmware on first use rather than from probe. When
++	 * the driver is built in, probe runs before the root filesystem is
++	 * mounted, and a deferred probe makes phylib assert the PHY reset
++	 * GPIO again. The PHY then reads back as another package model while
++	 * held in reset, no longer matches and ends up attached to the generic
++	 * Clause 45 driver.
++	 */
++	if (!priv->patch) {
++		ret = rtl826x_patch_db_init(phydev);
++		if (ret < 0)
++			return ret;
++	}
++
+ 	/* Suppress PHY interrupt output before the hardware reset below.
+ 	 * The RTL8261N asserts its interrupt pin during power-on reset, which
+ 	 * races with phylib registering phy_interrupt. If the IRQ fires first
