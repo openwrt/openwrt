@@ -1,6 +1,10 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
-#include "ipq6018.dtsi"
+/*
+ * ipq6018.dtsi must already be included, by the board DTS or through
+ * ipq6018-mp5496.dtsi, otherwise it is read twice and resets the
+ * q6_region override below.
+ */
 
 &q6_region {
 	reg = <0x0 0x4ab00000 0x0 0x3700000>;
