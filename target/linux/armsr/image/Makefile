@@ -90,7 +90,7 @@ define Device/efi-default
   KERNEL_INSTALL := 1
   IMAGES := $$(IMAGES-y)
   ARTIFACTS := $$(ARTIFACTS-y)
-  SUPPORTED_DEVICES :=
+  SUPPORTED_DEVICES := generic
  ifeq ($(CONFIG_arm),y)
   KERNEL_NAME = zImage
  endif
