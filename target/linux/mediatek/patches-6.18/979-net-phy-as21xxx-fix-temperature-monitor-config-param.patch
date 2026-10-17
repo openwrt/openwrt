@@ -1,0 +1,31 @@
+From: Pietro Ameruoso <p.ameruoso@live.it>
+Date: Wed, 2 Sep 2026 00:00:00 +0200
+Subject: [PATCH] net: phy: as21xxx: fix temperature monitor config parameter
+
+The CFG_PARAM/DIRECT temperature monitor parameter is decimal 11 in the
+AS21xxx firmware, so it must be encoded as 0xb rather than the hexadecimal
+literal 0x11 used by the upstream define.
+
+This value was verified against firmware 1.9.1 during hardware testing: the
+configuration payload uses { 0x4, 11, 0x3, 0x1 } and the monitor returns valid
+samples after configuration and start. The adjacent
+IPC_CFG_PARAM_DIRECT_SDS_RESTART_AN (0x10) and
+IPC_CFG_PARAM_DIRECT_WOL (0x12) values are unchanged because they were not
+verified by this change.
+
+Signed-off-by: Pietro Ameruoso <p.ameruoso@live.it>
+---
+ drivers/net/phy/as21xxx.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/net/phy/as21xxx.c
++++ b/drivers/net/phy/as21xxx.c
+@@ -110,7 +110,7 @@
+ #define IPC_CFG_PARAM_DIRECT_DPC_SDS_WAIT_ETH 0x8
+ #define IPC_CFG_PARAM_DIRECT_WDT	0x9
+ #define IPC_CFG_PARAM_DIRECT_SDS_RESTART_AN 0x10
+-#define IPC_CFG_PARAM_DIRECT_TEMP_MON	0x11
++#define IPC_CFG_PARAM_DIRECT_TEMP_MON	0xb
+ #define IPC_CFG_PARAM_DIRECT_WOL	0x12
+ 
+ /* Sub command of CMD_TEMP_MON */
