@@ -1,0 +1,28 @@
+From 33ccd2903b8da9c93542dc776e6fd5a24a07846f Mon Sep 17 00:00:00 2001
+From: Mieczyslaw Nalewaj <namiltd@yahoo.com>
+Date: Sat, 10 Oct 2026 15:57:56 +0200
+Subject: [PATCH net-next v6 1/9] dt-bindings: net: dsa: realtek: add
+ RTL8367S-VB
+
+The RTL8367S-VB (chip ID 0x6642) is supported by the rtl8365mb driver
+with the changes that follow in this series. It is identified by its
+chip ID register, so it does not need a compatible string of its own.
+List it under realtek,rtl8365mb.
+
+Signed-off-by: Mieczyslaw Nalewaj <namiltd@yahoo.com>
+Reviewed-by: Linus Walleij <linusw@kernel.org>
+---
+ Documentation/devicetree/bindings/net/dsa/realtek.yaml | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/Documentation/devicetree/bindings/net/dsa/realtek.yaml
++++ b/Documentation/devicetree/bindings/net/dsa/realtek.yaml
+@@ -43,7 +43,7 @@ properties:
+       realtek,rtl8365mb:
+         Use with models RTL8363NB, RTL8363NB-VB, RTL8363SC, RTL8363SC-VB,
+         RTL8364NB, RTL8364NB-VB, RTL8365MB, RTL8366SC, RTL8367RB-VB, RTL8367S,
+-        RTL8367SB, RTL8370MB, RTL8310SR
++        RTL8367S-VB, RTL8367SB, RTL8370MB, RTL8310SR
+       realtek,rtl8366rb:
+         Use with models RTL8366RB, RTL8366S
+ 
