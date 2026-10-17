@@ -1,0 +1,469 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "qcom-ipq4019.dtsi"
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/soc/qcom,tcsr.h>
+#include <dt-bindings/leds/common.h>
+
+/ {
+	model = "Netgear RBS40V";
+	compatible = "netgear,rbs40v";
+
+	chosen {
+		stdout-path = "serial0:115200n8";
+		bootargs-append = " root=/dev/ubiblock0_1";
+	};
+
+	aliases {
+		led-boot = &lp5562_blue;
+		led-failsafe = &lp5562_white;
+		led-running = &lp5562_green;
+		led-upgrade = &lp5562_red;
+		label-mac-device = &gmac;
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "reset";
+			gpios = <&tlmm 18 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+
+		wps {
+			label = "wps";
+			gpios = <&tlmm 23 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_WPS_BUTTON>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led-0 {
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&tlmm 12 GPIO_ACTIVE_HIGH>;
+			default-state = "on";
+		};
+
+		led-1 {
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_RED>;
+			gpios = <&tlmm 22 GPIO_ACTIVE_HIGH>;
+			panic-indicator;
+		};
+	};
+
+	soc {
+		tcsr@1949000 {
+			compatible = "qcom,tcsr";
+			reg = <0x1949000 0x100>;
+			qcom,wifi_glb_cfg = <TCSR_WIFI_GLB_CFG>;
+		};
+
+		tcsr@194b000 {
+			status = "okay";
+
+			compatible = "qcom,tcsr";
+			reg = <0x194b000 0x100>;
+			qcom,usb-hsphy-mode-select = <TCSR_USB_HSPHY_HOST_MODE>;
+		};
+
+		ess_tcsr@1953000 {
+			compatible = "qcom,tcsr";
+			reg = <0x1953000 0x1000>;
+			qcom,ess-interface-select = <TCSR_ESS_PSGMII>;
+		};
+
+		tcsr@1957000 {
+			compatible = "qcom,tcsr";
+			reg = <0x1957000 0x100>;
+			qcom,wifi_noc_memtype_m0_m2 = <TCSR_WIFI_NOC_MEMTYPE_M0_M2>;
+		};
+	};
+};
+
+&prng {
+	status = "okay";
+};
+
+&mdio {
+	status = "okay";
+	pinctrl-0 = <&mdio_pins>;
+	pinctrl-names = "default";
+};
+
+&watchdog {
+	status = "okay";
+};
+
+&blsp_dma {
+	status = "okay";
+};
+
+&qpic_bam {
+	status = "okay";
+};
+
+&tlmm {
+	mdio_pins: mdio-pinmux {
+		mux_mdio {
+			pins = "gpio6";
+			function = "mdio";
+			bias-pull-up;
+		};
+
+		mux_mdc {
+			pins = "gpio7";
+			function = "mdc";
+			bias-pull-up;
+		};
+	};
+
+	serial_pins: serial-pinmux {
+		function = "blsp_uart0";
+		pins = "gpio16", "gpio17";
+		bias-disable;
+	};
+
+	nand_pins: nand-pins {
+		pullups {
+			pins = "gpio53", "gpio58", "gpio59";
+			function = "qpic";
+			bias-pull-up;
+		};
+
+		pulldowns {
+			pins = "gpio54", "gpio55", "gpio56",
+				"gpio57", "gpio60", "gpio61",
+				"gpio62", "gpio63", "gpio64",
+				"gpio65", "gpio66", "gpio67",
+				"gpio68", "gpio69";
+			function = "qpic";
+			bias-pull-down;
+		};
+	};
+};
+
+&blsp1_i2c3 {
+	status = "okay";
+
+	lp5562@32 {
+		compatible = "ti,lp5562";
+		reg = <0x32>;
+		clock-mode = [02];
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		lp5562_red: led@0 {
+			chan-name = "red:status";
+			led-cur = [20];
+			max-cur = [60];
+			color = <LED_COLOR_ID_RED>;
+			reg = <0>;
+		};
+
+		lp5562_green: led@1 {
+			chan-name = "green:status";
+			led-cur = [20];
+			max-cur = [60];
+			color = <LED_COLOR_ID_GREEN>;
+			reg = <1>;
+		};
+
+		lp5562_blue: led@2 {
+			chan-name = "blue:status";
+			led-cur = [20];
+			max-cur = [60];
+			color = <LED_COLOR_ID_BLUE>;
+			reg = <2>;
+		};
+
+		lp5562_white: led@3 {
+			chan-name = "white:status";
+			led-cur = [20];
+			max-cur = [60];
+			color = <LED_COLOR_ID_WHITE>;
+			reg = <3>;
+		};
+	};
+};
+
+&blsp1_i2c4 {
+	status = "okay";
+
+	// There is also an alc1312 codec at 0x1a, but no driver exists.
+
+	rt5616@1b {
+		compatible = "realtek,rt5616";
+		reg = <0x1b>;
+		status = "okay";
+	};
+
+};
+
+&blsp1_uart1 {
+	status = "okay";
+	pinctrl-0 = <&serial_pins>;
+	pinctrl-names = "default";
+};
+
+&gmac {
+	status = "okay";
+
+	nvmem-cell-names = "mac-address";
+	nvmem-cells = <&mac_address_lan 0>;
+};
+
+&switch {
+	status = "okay";
+};
+
+&pcie0 {
+	status = "okay";
+
+	perst-gpios = <&tlmm 38 GPIO_ACTIVE_LOW>;
+	wake-gpios = <&tlmm 50 GPIO_ACTIVE_LOW>;
+};
+
+&pcie_bridge0 {
+	wifi@0,0 {
+		compatible = "qcom,ath10k";
+		reg = <0x00010000 0 0 0 0>;
+		ieee80211-freq-limit = <5170000 5350000>;
+		nvmem-cell-names = "pre-calibration", "mac-address";
+		nvmem-cells = <&precal_art_9000>, <&mac_address_wlan 1>;
+		qcom,ath10k-calibration-variant = "Netgear-RBS40V";
+	};
+};
+
+&wifi0 {
+	status = "okay";
+	nvmem-cell-names = "pre-calibration", "mac-address";
+	nvmem-cells = <&precal_art_1000>, <&mac_address_lan 0>;
+	qcom,ath10k-calibration-variant = "Netgear-RBS40V";
+};
+
+&wifi1 {
+	status = "okay";
+	ieee80211-freq-limit = <5470000 5815000>;
+	nvmem-cell-names = "pre-calibration", "mac-address";
+	nvmem-cells = <&precal_art_5000>, <&mac_address_wlan 0>;
+	qcom,ath10k-calibration-variant = "Netgear-RBS40V";
+};
+
+&usb3_ss_phy {
+	status = "okay";
+};
+
+&usb3_hs_phy {
+	status = "okay";
+};
+
+&usb3 {
+	status = "okay";
+};
+
+&usb2_hs_phy {
+	status = "okay";
+};
+
+&usb2 {
+	status = "okay";
+};
+
+&nand {
+	pinctrl-0 = <&nand_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	nand@0 {
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "0:SBL1";
+				reg = <0x00000000 0x00100000>;
+				read-only;
+			};
+
+			partition@100000 {
+				label = "0:MIBIB";
+				reg = <0x00100000 0x00100000>;
+				read-only;
+			};
+
+			partition@200000 {
+				label = "0:BOOTCONFIG";
+				reg = <0x00200000 0x00100000>;
+				read-only;
+			};
+
+			partition@300000 {
+				label = "0:QSEE";
+				reg = <0x00300000 0x00100000>;
+				read-only;
+			};
+
+			partition@400000 {
+				label = "0:QSEE_1";
+				reg = <0x00400000 0x00100000>;
+				read-only;
+			};
+
+			partition@500000 {
+				label = "0:CDT";
+				reg = <0x00500000 0x00080000>;
+				read-only;
+			};
+
+			partition@580000 {
+				label = "0:CDT_1";
+				reg = <0x00580000 0x00080000>;
+				read-only;
+			};
+
+			partition@600000 {
+				label = "0:DDRPARAMS";
+				reg = <0x00600000 0x00080000>;
+				read-only;
+			};
+
+			partition@680000 {
+				label = "0:APPSBLENV";
+				reg = <0x00680000 0x00080000>;
+			};
+
+			partition@700000 {
+				label = "0:APPSBL";
+				reg = <0x00700000 0x00200000>;
+				read-only;
+			};
+
+			partition@900000 {
+				label = "0:APPSBL_1";
+				reg = <0x00900000 0x00200000>;
+				read-only;
+			};
+
+			partition@b00000 {
+				label = "0:ART";
+				reg = <0x00b00000 0x00080000>;
+				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					precal_art_1000: precal@1000 {
+						reg = <0x1000 0x2f20>;
+					};
+
+					precal_art_5000: precal@5000 {
+						reg = <0x5000 0x2f20>;
+					};
+
+					precal_art_9000: precal@9000 {
+						reg = <0x9000 0x2f20>;
+					};
+				};
+			};
+
+			partition@b80000 {
+				label = "nvram";
+				reg = <0x00b80000 0x00200000>;
+				read-only;
+			};
+
+			partition@d80000 {
+				label = "nvram2";
+				reg = <0x00d80000 0x00200000>;
+				read-only;
+			};
+
+			partition@f80000 {
+				label = "board_data";
+				reg = <0x00f80000 0x00100000>;
+				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					mac_address_lan: macaddr@40 {
+						compatible = "mac-base";
+						reg = <0x40 0x6>;
+						#nvmem-cell-cells = <1>;
+					};
+
+					mac_address_wlan: macaddr@46 {
+						compatible = "mac-base";
+						reg = <0x46 0x6>;
+						#nvmem-cell-cells = <1>;
+					};
+				};
+			};
+
+			partition@1080000 {
+				label = "POT1";
+				reg = <0x01080000 0x00100000>;
+				read-only;
+			};
+
+			partition@1180000 {
+				label = "POT2";
+				reg = <0x01180000 0x00100000>;
+				read-only;
+			};
+
+			partition@1280000 {
+				label = "ML1";
+				reg = <0x01280000 0x00100000>;
+				read-only;
+			};
+
+			partition@1380000 {
+				label = "DebugMsg";
+				reg = <0x01380000 0x00100000>;
+				read-only;
+			};
+
+			partition@1480000 {
+				label = "Reserved";
+				reg = <0x01480000 0x01100000>;
+				read-only;
+			};
+
+			partition@2580000 {
+				// This is the orbi mode boot target
+				label = "rootfs";
+				reg = <0x02580000 0x06980000>;
+			};
+
+			partition@8f00000 {
+				// This is the extender mode boot target
+				label = "rootfs_ALT";
+				reg = <0x08f00000 0x06980000>;
+			};
+		};
+	};
+};
+
+&swport4 {
+	status = "okay";
+
+	label = "lan1";
+};
+
+&swport5 {
+	status = "okay";
+
+	label = "lan2";
+};
