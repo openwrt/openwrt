@@ -16,11 +16,13 @@ PKG_SOURCE_URL:=https://github.com/dosfstools/dosfstools/releases/download/v$(PK
 		https://fossies.org/linux/misc
 PKG_HASH:=64926eebf90092dca21b14259a5301b7b98e7b1943e8a201c7d726084809b527
 
-HOST_FIXUP:=autoreconf
 HOST_BUILD_PARALLEL:=1
 HOST_CONFIGURE_CACHE:=1
 
 include $(INCLUDE_DIR)/host-build.mk
+
+HOST_CONFIGURE_ARGS += \
+	--without-iconv
 
 ifeq ($(HOST_OS),Darwin)
 HOST_CFLAGS += -UHAVE_ENDIAN_H
