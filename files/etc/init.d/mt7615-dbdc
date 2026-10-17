@@ -1,0 +1,20 @@
+#!/bin/sh /etc/rc.common
+
+START=99
+
+start() {
+	local dbdc_path="/sys/kernel/debug/ieee80211/phy0/mt76/dbdc"
+	local timeout=30
+	local i=0
+
+	while [ ! -f "$dbdc_path" ] && [ "$i" -lt "$timeout" ]; do
+		sleep 1
+		i=$((i + 1))
+	done
+
+	if [ -f "$dbdc_path" ]; then
+		echo 1 > "$dbdc_path"
+		sleep 1
+		wifi reload
+	fi
+}
