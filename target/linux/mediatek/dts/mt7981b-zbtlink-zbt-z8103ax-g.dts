@@ -1,0 +1,18 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+/dts-v1/;
+
+#include "mt7981b-zbtlink-zbt-z8103ax.dtsi"
+
+/ {
+	model = "Zbtlink ZBT-Z8103AX-G";
+	compatible = "zbtlink,zbt-z8103ax-g", "mediatek,mt7981b";
+};
+
+&usb_phy {
+	status = "okay";
+};
+
+&xhci {
+	status = "okay";
+};
