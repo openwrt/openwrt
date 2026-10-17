@@ -2438,6 +2438,8 @@ return {
 		});
 		if (response && response.response)
 			return response.response;
+		if (response && response.pending)
+			return true;
 		return null;
 	},
 	wps_m7_rx: function(ifname, addr, data) {

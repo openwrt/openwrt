@@ -1266,6 +1266,7 @@ static uc_value_t *
 uc_hostapd_bss_dpp_send_gas_resp(uc_vm_t *vm, size_t nargs)
 {
 	struct hostapd_data *hapd = uc_fn_thisval("hostapd.bss");
+	struct hostapd_data *hapd_freq;
 	uc_value_t *dst_arg = uc_fn_arg(0);
 	uc_value_t *token_arg = uc_fn_arg(1);
 	uc_value_t *data_arg = uc_fn_arg(2);
@@ -1291,12 +1292,6 @@ uc_hostapd_bss_dpp_send_gas_resp(uc_vm_t *vm, size_t nargs)
 	if (dialog_token == 0)
 		return NULL;
 
-	freq = ucv_int64_get(freq_arg);
-	if (!freq)
-		freq = hapd->iface->freq;
-	else
-		hapd = hostapd_dpp_freq_bss(hapd, freq);
-
 	data_b64 = ucv_string_get(data_arg);
 	data = base64_decode(data_b64, os_strlen(data_b64), &data_len);
 	if (!data)
@@ -1307,7 +1302,20 @@ uc_hostapd_bss_dpp_send_gas_resp(uc_vm_t *vm, size_t nargs)
 	if (!buf)
 		return NULL;
 
-	gas_serv_req_dpp_processing(hapd, dst, dialog_token, 0, buf, freq);
+	hapd_freq = hapd;
+	freq = ucv_int64_get(freq_arg);
+	if (freq)
+		hapd_freq = hostapd_dpp_freq_bss(hapd, freq);
+	else
+		freq = hapd->iface->freq;
+
+	/* The dialog is held by the link that received the request. */
+	if (gas_serv_dpp_resp_fill(hapd, dst, dialog_token, buf) == 0 ||
+	    (hapd_freq != hapd &&
+	     gas_serv_dpp_resp_fill(hapd_freq, dst, dialog_token, buf) == 0))
+		return ucv_boolean_new(true);
+
+	gas_serv_req_dpp_processing(hapd_freq, dst, dialog_token, 0, buf, freq);
 
 	return ucv_boolean_new(true);
 }
@@ -1375,7 +1383,13 @@ struct wpabuf *hostapd_ucode_dpp_gas_req(struct hostapd_data *hapd,
 	os_free(query_b64);
 
 	val = wpa_ucode_call(5);
-	if (ucv_type(val) == UC_STRING) {
+	/*
+	 * true: the response comes later through dpp_send_gas_resp(); the empty
+	 * buffer has gas_serv_req_dpp_processing() hold a dialog for it.
+	 */
+	if (ucv_boolean_get(val)) {
+		ret = wpabuf_alloc(0);
+	} else if (ucv_type(val) == UC_STRING) {
 		const char *resp_b64 = ucv_string_get(val);
 		size_t resp_len;
 		unsigned char *resp_data;
