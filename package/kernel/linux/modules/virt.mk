@@ -75,6 +75,29 @@ endef
 $(eval $(call KernelPackage,kvm-amd))
 
 
+define KernelPackage/pvpanic
+  SUBMENU:=Virtualization
+  TITLE:=QEMU pvpanic device support
+  DEPENDS:=@TARGET_x86||TARGET_armsr @PCI_SUPPORT
+  KCONFIG:= \
+	CONFIG_PVPANIC=y \
+	CONFIG_PVPANIC_MMIO \
+	CONFIG_PVPANIC_PCI
+  FILES:= \
+	$(LINUX_DIR)/drivers/misc/pvpanic/pvpanic.ko \
+	$(LINUX_DIR)/drivers/misc/pvpanic/pvpanic-mmio.ko \
+	$(LINUX_DIR)/drivers/misc/pvpanic/pvpanic-pci.ko
+  AUTOLOAD:=$(call AutoProbe,pvpanic-mmio pvpanic-pci)
+endef
+
+define KernelPackage/pvpanic/description
+  Support for the QEMU -device pvpanic device exposed through ACPI QEMU0001
+  and an I/O port, and for the -device pvpanic-pci PCI device.
+endef
+
+$(eval $(call KernelPackage,pvpanic))
+
+
 define KernelPackage/vfio
   SUBMENU:=Virtualization
   TITLE:=VFIO Non-Privileged userspace driver framework
