@@ -1,0 +1,152 @@
+From 1d65a348fa1f88f967ce81960e83860163c92dc4 Mon Sep 17 00:00:00 2001
+From: Aleksandr Vlasov <vlasov@gmail.com>
+Date: Sun, 11 Oct 2026 16:52:46 +0300
+Subject: [PATCH] wifi: rt2x00: rt2800: export the GPIO pins as a gpio_chip
+
+The ZyXEL Keenetic LTE wires its WLAN and FN buttons to GPIO12/GPIO14 of
+the RT5392 PCIe radio. Register a gpio_chip for PCI devices whose device
+tree node is marked "gpio-controller" so gpio-keys can use those pins.
+
+Signed-off-by: Aleksandr Vlasov <vlasov@gmail.com>
+---
+--- a/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
++++ b/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
+@@ -22,6 +22,7 @@
+  */
+ 
+ #include <linux/crc-ccitt.h>
++#include <linux/gpio/driver.h>
+ #include <linux/kernel.h>
+ #include <linux/module.h>
+ #include <linux/nvmem-consumer.h>
+@@ -12197,6 +12198,118 @@
+ 	return 0;
+ }
+ 
++#if IS_ENABLED(CONFIG_GPIOLIB)
++/*
++ * GPIO_CTRL: pins 0-7 have their value in bits 0-7 and direction in bits
++ * 8-15, pins 8-15 have their value in bits 16-23 and direction in bits
++ * 24-31. A set direction bit means input.
++ */
++struct rt2800_gpio {
++	struct gpio_chip gc;
++	struct rt2x00_dev *rt2x00dev;
++	spinlock_t lock;
++};
++
++static u32 rt2800_gpio_val_bit(unsigned int pin)
++{
++	return BIT(pin < 8 ? pin : pin + 8);
++}
++
++static u32 rt2800_gpio_dir_bit(unsigned int pin)
++{
++	return BIT(pin < 8 ? pin + 8 : pin + 16);
++}
++
++static void rt2800_gpio_rmw(struct rt2800_gpio *g, u32 clear, u32 set)
++{
++	unsigned long flags;
++	u32 reg;
++
++	spin_lock_irqsave(&g->lock, flags);
++	reg = rt2800_register_read(g->rt2x00dev, GPIO_CTRL);
++	rt2800_register_write(g->rt2x00dev, GPIO_CTRL, (reg & ~clear) | set);
++	spin_unlock_irqrestore(&g->lock, flags);
++}
++
++static int rt2800_gpio_get(struct gpio_chip *gc, unsigned int pin)
++{
++	struct rt2800_gpio *g = gpiochip_get_data(gc);
++
++	return !!(rt2800_register_read(g->rt2x00dev, GPIO_CTRL) &
++		  rt2800_gpio_val_bit(pin));
++}
++
++static int rt2800_gpio_get_direction(struct gpio_chip *gc, unsigned int pin)
++{
++	struct rt2800_gpio *g = gpiochip_get_data(gc);
++
++	return rt2800_register_read(g->rt2x00dev, GPIO_CTRL) &
++	       rt2800_gpio_dir_bit(pin) ? GPIO_LINE_DIRECTION_IN :
++					  GPIO_LINE_DIRECTION_OUT;
++}
++
++static int rt2800_gpio_set(struct gpio_chip *gc, unsigned int pin, int value)
++{
++	u32 bit = rt2800_gpio_val_bit(pin);
++
++	rt2800_gpio_rmw(gpiochip_get_data(gc), value ? 0 : bit, value ? bit : 0);
++	return 0;
++}
++
++static int rt2800_gpio_direction_input(struct gpio_chip *gc, unsigned int pin)
++{
++	rt2800_gpio_rmw(gpiochip_get_data(gc), 0, rt2800_gpio_dir_bit(pin));
++	return 0;
++}
++
++static int rt2800_gpio_direction_output(struct gpio_chip *gc, unsigned int pin,
++					int value)
++{
++	u32 bit = rt2800_gpio_val_bit(pin);
++
++	rt2800_gpio_rmw(gpiochip_get_data(gc),
++			rt2800_gpio_dir_bit(pin) | (value ? 0 : bit),
++			value ? bit : 0);
++	return 0;
++}
++
++/* Only done when the device tree node is marked as a GPIO controller. */
++static int rt2800_register_gpiochip(struct rt2x00_dev *rt2x00dev)
++{
++	struct device *dev = rt2x00dev->dev;
++	struct rt2800_gpio *g;
++
++	if (!rt2x00_is_pci(rt2x00dev) || !dev->of_node ||
++	    !of_property_read_bool(dev->of_node, "gpio-controller"))
++		return 0;
++
++	g = devm_kzalloc(dev, sizeof(*g), GFP_KERNEL);
++	if (!g)
++		return -ENOMEM;
++
++	spin_lock_init(&g->lock);
++	g->rt2x00dev = rt2x00dev;
++	g->gc.label = dev_name(dev);
++	g->gc.parent = dev;
++	g->gc.owner = THIS_MODULE;
++	g->gc.base = -1;
++	g->gc.ngpio = 16;
++	g->gc.can_sleep = false;
++	g->gc.get = rt2800_gpio_get;
++	g->gc.set = rt2800_gpio_set;
++	g->gc.get_direction = rt2800_gpio_get_direction;
++	g->gc.direction_input = rt2800_gpio_direction_input;
++	g->gc.direction_output = rt2800_gpio_direction_output;
++
++	return devm_gpiochip_add_data(dev, &g->gc, g);
++}
++#else
++static int rt2800_register_gpiochip(struct rt2x00_dev *rt2x00dev)
++{
++	return 0;
++}
++#endif
++
+ int rt2800_probe_hw(struct rt2x00_dev *rt2x00dev)
+ {
+ 	int retval;
+@@ -12272,6 +12385,11 @@
+ 	 */
+ 	rt2x00dev->rssi_offset = DEFAULT_RSSI_OFFSET;
+ 
++	retval = rt2800_register_gpiochip(rt2x00dev);
++	if (retval)
++		rt2x00_warn(rt2x00dev, "Failed to register GPIO chip (%d)\n",
++			    retval);
++
+ 	return 0;
+ }
+ EXPORT_SYMBOL_GPL(rt2800_probe_hw);

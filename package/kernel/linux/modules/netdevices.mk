@@ -830,6 +830,36 @@ endef
 $(eval $(call KernelPackage,dsa-ksz9477-spi))
 
 
+define KernelPackage/dsa-mt7530
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=MediaTek MT7530/MT7531 Ethernet switch support (MDIO)
+  DEPENDS:=@TARGET_econet_en751221 +kmod-dsa +kmod-regmap-core
+  KCONFIG:= \
+	CONFIG_MEDIATEK_GE_PHY \
+	CONFIG_MTK_NET_PHYLIB \
+	CONFIG_NET_DSA_MT7530 \
+	CONFIG_NET_DSA_MT7530_MDIO \
+	CONFIG_NET_DSA_MT7530_MMIO=n \
+	CONFIG_NET_DSA_TAG_MTK \
+	CONFIG_PCS_MTK_LYNXI
+  FILES:= \
+	$(LINUX_DIR)/drivers/net/dsa/mt7530.ko \
+	$(LINUX_DIR)/drivers/net/dsa/mt7530-mdio.ko \
+	$(LINUX_DIR)/drivers/net/pcs/pcs-mtk-lynxi.ko \
+	$(LINUX_DIR)/drivers/net/phy/mediatek/mtk-ge.ko \
+	$(LINUX_DIR)/drivers/net/phy/mediatek/mtk-phy-lib.ko \
+	$(LINUX_DIR)/net/dsa/tag_mtk.ko
+  AUTOLOAD:=$(call AutoProbe,tag_mtk mtk-phy-lib mtk-ge pcs-mtk-lynxi mt7530 mt7530-mdio)
+endef
+
+define KernelPackage/dsa-mt7530/description
+  DSA driver for the MediaTek MT7530/MT7531 Ethernet switches connected over
+  MDIO, including the MediaTek tag protocol and switch PHY drivers.
+endef
+
+$(eval $(call KernelPackage,dsa-mt7530))
+
+
 define KernelPackage/dsa-mv88e6060
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=Marvell MV88E6060 DSA Switch

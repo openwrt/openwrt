@@ -1,0 +1,37 @@
+From 6f7a499830b9e340b8d4a79df2d9699722220734 Mon Sep 17 00:00:00 2001
+From: Aleksandr Vlasov <vlasov@gmail.com>
+Date: Sun, 11 Oct 2026 16:52:45 +0300
+Subject: [PATCH] mtd: rawnand: add RT63365/RT63368 NAND controller
+
+Hook up the driver for the parallel NAND controller of the Ralink/
+TrendChip RT63365/RT63368 (files/drivers/mtd/nand/raw/rt63368_nand.c).
+
+Signed-off-by: Aleksandr Vlasov <vlasov@gmail.com>
+---
+--- a/drivers/mtd/nand/raw/Kconfig
++++ b/drivers/mtd/nand/raw/Kconfig
+@@ -364,6 +364,14 @@
+ 	  connected to GPIO pins, and commands and data are communicated
+ 	  via a memory mapped interface.
+ 
++config MTD_NAND_RT63368
++	bool "RT63365/RT63368 parallel NAND controller"
++	depends on MIPS || COMPILE_TEST
++	help
++	  Parallel NAND flash controller of the Ralink/TrendChip RT63365 and
++	  RT63368 (e.g. ZyXEL Keenetic LTE), with its 1-bit hardware Hamming
++	  ECC. Currently read-only.
++
+ config MTD_NAND_PLATFORM
+ 	tristate "Generic NAND controller"
+ 	depends on HAS_IOMEM
+--- a/drivers/mtd/nand/raw/Makefile
++++ b/drivers/mtd/nand/raw/Makefile
+@@ -23,6 +23,7 @@
+ obj-$(CONFIG_MTD_NAND_OMAP_BCH_BUILD)	+= omap_elm.o
+ obj-$(CONFIG_MTD_NAND_MARVELL)		+= marvell_nand.o
+ obj-$(CONFIG_MTD_NAND_PLATFORM)		+= plat_nand.o
++obj-$(CONFIG_MTD_NAND_RT63368)		+= rt63368_nand.o
+ obj-$(CONFIG_MTD_NAND_PASEMI)		+= pasemi_nand.o
+ obj-$(CONFIG_MTD_NAND_ORION)		+= orion_nand.o
+ obj-$(CONFIG_MTD_NAND_FSL_ELBC)		+= fsl_elbc_nand.o

@@ -1,0 +1,72 @@
+From adabaeb5ef798cd589909ef21c51623b36441ad8 Mon Sep 17 00:00:00 2001
+From: Aleksandr Vlasov <vlasov@gmail.com>
+Date: Sun, 11 Oct 2026 16:52:45 +0300
+Subject: [PATCH] mips: econet: restart RT63368 through the PBUS watchdog
+
+The RT63368 (EN751221 predecessor, e.g. ZyXEL Keenetic LTE) ignores the
+AHB software reset bit, so "reboot" ends in "Reboot failed -- System
+halted". Boards whose DT root is compatible with "econet,rt63368" restart
+by arming the PBUS timer 5 watchdog instead, as the vendor kernel does.
+
+Signed-off-by: Aleksandr Vlasov <vlasov@gmail.com>
+---
+--- a/arch/mips/econet/init.c
++++ b/arch/mips/econet/init.c
+@@ -8,6 +8,7 @@
+ #include <linux/init.h>
+ #include <linux/of_clk.h>
+ #include <linux/irqchip.h>
++#include <linux/libfdt.h>
+ 
+ #include <asm/addrspace.h>
+ #include <asm/io.h>
+@@ -33,6 +34,39 @@
+ 	iowrite32(RESET, CR_AHB_RSTCR);
+ }
+ 
++/*
++ * RT63368 (EN751221 predecessor): the AHB software reset bit does not reset
++ * the SoC. Arm the PBUS timer 5 watchdog with a short interval instead, as
++ * the vendor kernel does, and wait for it to fire.
++ */
++#define RT63368_TIMER_CTRL	((void __iomem *)CKSEG1ADDR(0x1fbf0100))
++#define RT63368_TIMER5_LVR	((void __iomem *)CKSEG1ADDR(0x1fbf012c))
++#define RT63368_WDOG_THSLD	((void __iomem *)CKSEG1ADDR(0x1fbf0134))
++#define RT63368_TIMER5_EN	BIT(5)
++#define RT63368_TIMER5_PERIODIC	BIT(13)
++#define RT63368_TIMER_INT_ACK	(BIT(16) | BIT(17) | BIT(18) | BIT(21))
++#define RT63368_WDG_EN		BIT(25)
++#define RT63368_TIMER5_HALT	BIT(31)
++
++static void rt63368_wdt_reset(char *command)
++{
++	u32 ctrl;
++
++	local_irq_disable();
++
++	ctrl = __raw_readl(RT63368_TIMER_CTRL);
++	__raw_writel(U32_MAX, RT63368_WDOG_THSLD);
++	__raw_writel(0x00400000, RT63368_TIMER5_LVR);
++
++	ctrl &= ~(RT63368_TIMER_INT_ACK | RT63368_TIMER5_HALT |
++		  RT63368_TIMER5_PERIODIC);
++	ctrl |= RT63368_WDG_EN | RT63368_TIMER5_EN;
++	__raw_writel(ctrl, RT63368_TIMER_CTRL);
++
++	for (;;)
++		cpu_relax();
++}
++
+ /* 1. Bring up early printk. */
+ void __init prom_init(void)
+ {
+@@ -54,6 +88,9 @@
+ 	__dt_setup_arch(dtb);
+ 
+ 	early_init_dt_scan_memory();
++
++	if (!fdt_node_check_compatible(dtb, 0, "econet,rt63368"))
++		_machine_restart = rt63368_wdt_reset;
+ }
+ 
+ /* 3. Overload __weak device_tree_init(), register SMP ops */

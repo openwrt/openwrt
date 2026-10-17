@@ -83,6 +83,27 @@ define Device/tplink_archer-vr1200v-v2
 endef
 TARGET_DEVICES += tplink_archer-vr1200v-v2
 
+# RT63368, the predecessor of EN751221. The stock U-Boot boots a legacy
+# uImage from the kernel partition (bootm 0xB0060000); install by booting
+# the initramfs over TFTP and running sysupgrade.
+define Device/zyxel_keenetic-lte
+  DEVICE_VENDOR := Zyxel
+  DEVICE_MODEL := Keenetic LTE
+  DEVICE_DTS := rt63368_zyxel_keenetic-lte
+  DEVICE_PACKAGES := -kmod-econet-eth kmod-rt63368-eth kmod-dsa-mt7530 \
+	kmod-rt63368-pcie kmod-rt2800-pci kmod-usb2 kmod-usb-ohci \
+	kmod-usb-ledtrig-usbport kmod-leds-gpio kmod-gpio-button-hotplug \
+	wpad-basic-mbedtls
+  KERNEL_SIZE := 4096k
+  IMAGE_SIZE := 29952k
+  KERNEL := kernel-bin | append-dtb | uImage none | check-size $$(KERNEL_SIZE)
+  KERNEL_INITRAMFS := kernel-bin | append-dtb | uImage none
+  IMAGES := sysupgrade.bin
+  IMAGE/sysupgrade.bin := sysupgrade-tar | check-size $$(IMAGE_SIZE) | \
+    append-metadata
+endef
+TARGET_DEVICES += zyxel_keenetic-lte
+
 define Device/zyxel_pmg5617ga
   DEVICE_VENDOR := Zyxel
   DEVICE_MODEL := PMG5617GA

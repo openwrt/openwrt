@@ -1,0 +1,92 @@
+From 5631efae3ee546ebd00bceed9cbe26f97fbaed2c Mon Sep 17 00:00:00 2001
+From: Aleksandr Vlasov <vlasov@gmail.com>
+Date: Sun, 11 Oct 2026 16:52:45 +0300
+Subject: [PATCH] wifi: rt2x00: word-copy MMIO buffers on EcoNet RT63368
+
+The RT63368 PCIe window swaps byte lanes: readl/writel are correct but
+raw copies reverse each 32-bit word. Copy multiread/multiwrite buffers
+word by word with explicit little-endian conversion on boards whose DT
+root is compatible with "econet,rt63368". Fixes unicast ACKs (MAC_ADDR
+registers), key tables, beacons and firmware upload on the RT5392 of the
+ZyXEL Keenetic LTE.
+
+Signed-off-by: Aleksandr Vlasov <vlasov@gmail.com>
+---
+--- a/drivers/net/wireless/ralink/rt2x00/rt2x00mmio.h
++++ b/drivers/net/wireless/ralink/rt2x00/rt2x00mmio.h
+@@ -14,6 +14,30 @@
+ #define RT2X00MMIO_H
+ 
+ #include <linux/io.h>
++#include <linux/of.h>
++#include <linux/unaligned.h>
++
++/*
++ * EcoNet RT63368 (e.g. ZyXEL Keenetic LTE): the big-endian PCIe window swaps
++ * byte lanes, so readl()/writel() return correct register values while raw
++ * copies (memcpy_fromio, __iowrite32_copy) reverse every 32-bit word. The
++ * buffers used with multiread/multiwrite are in device (little-endian)
++ * order, so copy them word by word. Without this MAC_ADDR_DW0/1 is written
++ * byte-reversed, the chip never ACKs unicast frames and association times
++ * out; key tables, beacons and firmware are corrupted as well.
++ */
++static inline bool rt2x00mmio_word_copy(void)
++{
++#ifdef CONFIG_ECONET
++	static int word_copy = -1;
++
++	if (word_copy < 0)
++		word_copy = of_machine_is_compatible("econet,rt63368");
++	return word_copy;
++#else
++	return false;
++#endif
++}
+ 
+ /*
+  * Register access.
+@@ -28,7 +52,22 @@
+ 						 const unsigned int offset,
+ 						 void *value, const u32 length)
+ {
+-	memcpy_fromio(value, rt2x00dev->csr.base + offset, length);
++	u8 *dst = value;
++	u32 i, word;
++
++	if (!rt2x00mmio_word_copy()) {
++		memcpy_fromio(value, rt2x00dev->csr.base + offset, length);
++		return;
++	}
++
++	for (i = 0; i + 4 <= length; i += 4)
++		put_unaligned_le32(readl(rt2x00dev->csr.base + offset + i),
++				   dst + i);
++	if (i < length) {
++		word = readl(rt2x00dev->csr.base + offset + i);
++		for (; i < length; i++, word >>= 8)
++			dst[i] = word & 0xff;
++	}
+ }
+ 
+ static inline void rt2x00mmio_register_write(struct rt2x00_dev *rt2x00dev,
+@@ -43,7 +82,19 @@
+ 						  const void *value,
+ 						  const u32 length)
+ {
+-	__iowrite32_copy(rt2x00dev->csr.base + offset, value, length >> 2);
++	const u8 *src = value;
++	u32 i;
++
++	if (!rt2x00mmio_word_copy()) {
++		__iowrite32_copy(rt2x00dev->csr.base + offset, value,
++				 length >> 2);
++		return;
++	}
++
++	/* Trailing bytes are dropped exactly as __iowrite32_copy() does. */
++	for (i = 0; i + 4 <= length; i += 4)
++		writel(get_unaligned_le32(src + i),
++		       rt2x00dev->csr.base + offset + i);
+ }
+ 
+ /**
