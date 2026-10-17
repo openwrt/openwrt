@@ -1,0 +1,39 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Abdalla Ashry <abdallah.ashry@hotmail.com>
+Date: Wed, 07 Oct 2026 12:00:00 +0200
+Subject: [PATCH] arm64: dts: rockchip: add led aliases for NanoPi RK3528 boards
+
+Use the red SYS LED as OpenWrt status LED on the NanoPi R28S and
+Zero2, and drop its heartbeat trigger and default-on state so the
+boot/failsafe/upgrade states are visible.
+
+Signed-off-by: Abdalla Ashry <abdallah.ashry@hotmail.com>
+---
+--- a/arch/arm64/boot/dts/rockchip/rk3528-nanopi.dtsi
++++ b/arch/arm64/boot/dts/rockchip/rk3528-nanopi.dtsi
+@@ -9,6 +9,10 @@
+ 	aliases {
+ 		ethernet0 = &gmac1;
+ 		i2c1 = &i2c1;
++		led-boot = &led_sys;
++		led-failsafe = &led_sys;
++		led-running = &led_sys;
++		led-upgrade = &led_sys;
+ 		mmc0 = &sdhci;
+ 		mmc1 = &sdmmc;
+ 		serial0 = &uart0;
+@@ -37,12 +41,10 @@
+ 		pinctrl-names = "default";
+ 		pinctrl-0 = <&led_sys_pin>, <&led1_pin>;
+ 
+-		led-0 {
++		led_sys: led-0 {
+ 			color = <LED_COLOR_ID_RED>;
+-			default-state = "on";
+-			function = LED_FUNCTION_HEARTBEAT;
++			function = LED_FUNCTION_POWER;
+ 			gpios = <&gpio4 RK_PB0 GPIO_ACTIVE_HIGH>;
+-			linux,default-trigger = "heartbeat";
+ 		};
+ 
+ 		/* The purpose of the second LED differs per board. */
