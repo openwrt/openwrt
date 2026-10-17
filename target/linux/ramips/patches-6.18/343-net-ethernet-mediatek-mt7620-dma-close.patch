@@ -1,0 +1,58 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Gleb Pesin <dormancygrace@gmail.com>
+Date: Thu, 1 Oct 2026 20:35:55 +0000
+Subject: [PATCH] net: ethernet: mediatek: reset busy MT7620 DMA before freeing
+
+Backport the MT7620 FE reset fallback from the Linux preparation. If DMA
+remains busy after the existing bounded stop wait, drain the read-clear
+counters and reset FE before freeing descriptor rings.
+
+Restore RX/TX interrupt moderation, the pinned CDMA VLAN table and
+checksum parser on every DMA start. A forced FE reset clears those
+registers while software VID assignments and extended statistics
+persist. The following GDMA setup restores MTU and forwarding before the
+transmit queues are started.
+
+Assisted-by: Codex (OpenAI GPT-6)
+Signed-off-by: Gleb Pesin <dormancygrace@gmail.com>
+---
+
+--- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
++++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
+@@ -3888,6 +3888,10 @@ static void mtk_poll_controller(struct n
+ }
+ #endif
+ 
++static void mtk_mt7620_vlan_restore(struct mtk_eth *eth);
++static void mtk_dim_rx(struct work_struct *work);
++static void mtk_dim_tx(struct work_struct *work);
++
+ static int mtk_start_dma(struct mtk_eth *eth)
+ {
+ 	u32 val, rx_2b_offset = (NET_IP_ALIGN == 2) ? MTK_RX_2B_OFFSET : 0;
+@@ -3921,6 +3925,11 @@ static int mtk_start_dma(struct mtk_eth
+ 			MTK_RX_BT_32DWORDS | MTK_MULTI_EN,
+ 			reg_map->pdma.glo_cfg);
+ 	} else if (MTK_HAS_CAPS(eth->soc->caps, MTK_SOC_MT7620)) {
++		/* Restore state cleared by a forced FE reset during close. */
++		mtk_dim_rx(&eth->rx_dim.work);
++		mtk_dim_tx(&eth->tx_dim.work);
++		mtk_mt7620_vlan_restore(eth);
++		mtk_m32(eth, 0, MT7620_CDMA_CSUM_EN, MT7620_CDMA_CSG_CFG);
+ 		mtk_w32(eth, MTK_TX_WB_DDONE | MTK_TX_DMA_EN |
+ 			 MTK_RX_DMA_EN | rx_2b_offset |
+ 			 MT7620_PDMA_BT_16DWORDS,
+@@ -4248,6 +4257,13 @@ static void mtk_stop_dma(struct mtk_eth
+ 		}
+ 		break;
+ 	}
++	if (i == 10 && MTK_HAS_CAPS(eth->soc->caps, MTK_SOC_MT7620)) {
++		mt7620_stats_read(eth);
++		reset_control_assert(eth->rst_fe);
++		usleep_range(60, 120);
++		reset_control_deassert(eth->rst_fe);
++		usleep_range(1000, 1200);
++	}
+ }
+ 
+ static int mtk_stop(struct net_device *dev)

@@ -1,0 +1,27 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Gleb Pesin <dormancygrace@gmail.com>
+Date: Thu, 1 Oct 2026 20:35:55 +0000
+Subject: [PATCH] net: ethernet: mediatek: honor disabled RX checksum trust
+
+Backport the RX checksum feature check from the Linux MT7620
+preparation. The parser may remain active after ethtool disables RX
+checksum offload. Only mark the skb CHECKSUM_UNNECESSARY when the
+netdevice advertises NETIF_F_RXCSUM as enabled; otherwise let the stack
+verify the checksum.
+
+Assisted-by: Codex (OpenAI GPT-6)
+Signed-off-by: Gleb Pesin <dormancygrace@gmail.com>
+---
+
+--- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
++++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
+@@ -2757,7 +2757,8 @@ static int mtk_poll_rx(struct napi_struc
+ 			rxdcsum = &trxd.rxd4;
+ 		}
+ 
+-		if (*rxdcsum & eth->soc->rx.dma_l4_valid)
++		if ((netdev->features & NETIF_F_RXCSUM) &&
++		    (*rxdcsum & eth->soc->rx.dma_l4_valid))
+ 			skb->ip_summed = CHECKSUM_UNNECESSARY;
+ 		else
+ 			skb_checksum_none_assert(skb);
