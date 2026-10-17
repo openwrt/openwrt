@@ -21,7 +21,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 
 --- a/drivers/rng/Kconfig
 +++ b/drivers/rng/Kconfig
-@@ -45,6 +45,15 @@ config RNG_MTK
+@@ -52,6 +52,15 @@ config RNG_MTK
  	  Enable support for the hardware random number generator
  	  on Mediatek SoCs (e.g. MT7623, MT7986).
  
@@ -39,7 +39,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	depends on DM_RNG && !LIB_RAND
 --- a/drivers/rng/Makefile
 +++ b/drivers/rng/Makefile
-@@ -8,6 +8,7 @@ obj-$(CONFIG_RNG_MESON) += meson-rng.o
+@@ -9,6 +9,7 @@ obj-$(CONFIG_RNG_MPFS) += mpfs_rng.o
  obj-$(CONFIG_RNG_SANDBOX) += sandbox_rng.o
  obj-$(CONFIG_RNG_MSM) += msm_rng.o
  obj-$(CONFIG_RNG_MTK) += mtk-rng.o
