@@ -1,0 +1,130 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Navid Ghahremani <ghahramani.navid@gmail.com>
+Date: Sun, 27 Sep 2026 22:20:00 +0100
+Subject: [PATCH] net: dsa: mt7530: add EN751627 support
+
+Add EN751627 support to the MT7530 DSA driver, matching the switch MMIO
+glue and port mapping.
+
+Signed-off-by: Navid Ghahremani <ghahramani.navid@gmail.com>
+---
+--- a/drivers/net/dsa/mt7530.h
++++ b/drivers/net/dsa/mt7530.h
+@@ -22,6 +22,7 @@ enum mt753x_id {
+ 	ID_EN7581 = 4,
+ 	ID_AN7583 = 5,
+ 	ID_EN7528 = 6,
++	ID_EN751627 = 7,
+ };
+
+ #define	NUM_TRGMII_CTRL			5
+--- a/drivers/net/dsa/mt7530-mmio.c
++++ b/drivers/net/dsa/mt7530-mmio.c
+@@ -14,6 +14,7 @@ static const struct of_device_id mt7988_
+ 	{ .compatible = "airoha,an7583-switch", .data = &mt753x_table[ID_AN7583], },
+ 	{ .compatible = "airoha,en7581-switch", .data = &mt753x_table[ID_EN7581], },
+ 	{ .compatible = "econet,en7528-switch", .data = &mt753x_table[ID_EN7528], },
++	{ .compatible = "econet,en751627-switch", .data = &mt753x_table[ID_EN751627], },
+ 	{ .compatible = "mediatek,mt7988-switch", .data = &mt753x_table[ID_MT7988], },
+ 	{ /* sentinel */ },
+ };
+--- a/drivers/net/dsa/mt7530.c
++++ b/drivers/net/dsa/mt7530.c
+@@ -2853,6 +2853,31 @@ static void en7528_mac_port_get_caps(str
+ 	}
+ }
+
++/* EN751627 exposes user ports 0-4 and connects port 6 to the SoC GMAC. */
++static void en751627_mac_port_get_caps(struct dsa_switch *ds, int port,
++				       struct phylink_config *config)
++{
++	switch (port) {
++	/* Ports which are connected to switch PHYs. There is no MII pinout. */
++	case 0 ... 4:
++		__set_bit(PHY_INTERFACE_MODE_INTERNAL,
++			  config->supported_interfaces);
++
++		config->mac_capabilities |= MAC_10 | MAC_100 | MAC_1000FD;
++		break;
++
++	/* Port 6 is connected to SoC's GMAC at 1000 Mbps full duplex. There
++	 * is no MII pinout.
++	 */
++	case 6:
++		__set_bit(PHY_INTERFACE_MODE_INTERNAL,
++			  config->supported_interfaces);
++
++		config->mac_capabilities |= MAC_1000FD;
++		break;
++	}
++}
++
+ static void
+ mt7530_mac_config(struct dsa_switch *ds, int port, unsigned int mode,
+ 		  phy_interface_t interface)
+@@ -3053,7 +3078,7 @@ static void mt753x_phylink_get_caps(stru
+ 	 * phylink disables EEE on these PHYs and refuses to enable it from
+ 	 * userspace.
+ 	 */
+-	if (priv->id != ID_EN7528 &&
++	if (priv->id != ID_EN7528 && priv->id != ID_EN751627 &&
+ 	    config->mac_capabilities & (MAC_100FD | MAC_1000FD)) {
+ 		u32 eeecr = mt7530_read(priv, MT753X_PMEEECR_P(port));
+
+@@ -3196,7 +3221,7 @@ mt753x_conduit_state_change(struct dsa_s
+ 	 * interface is up.
+ 	 */
+ 	if (priv->id != ID_MT7530 && priv->id != ID_MT7621 &&
+-	    priv->id != ID_EN7528)
++	    priv->id != ID_EN7528 && priv->id != ID_EN751627)
+ 		return;
+
+ 	mask = BIT(cpu_dp->index);
+@@ -3266,10 +3291,12 @@ static int mt7988_setup(struct dsa_switc
+ 	struct mt7530_priv *priv = ds->priv;
+
+ 	/* Reset the switch */
+-	reset_control_assert(priv->rstc);
+-	usleep_range(20, 50);
+-	reset_control_deassert(priv->rstc);
+-	usleep_range(20, 50);
++	if (priv->id != ID_EN751627) {
++		reset_control_assert(priv->rstc);
++		usleep_range(20, 50);
++		reset_control_deassert(priv->rstc);
++		usleep_range(20, 50);
++	}
+
+ 	/* AN7583 require additional tweak to CONN_CFG */
+ 	if (priv->id == ID_AN7583)
+@@ -3282,7 +3309,12 @@ static int mt7988_setup(struct dsa_switc
+ 			   FIELD_PREP(AN7583_CSR_ETHER_AFE_PWD, 0));
+
+ 	/* Reset the switch PHYs */
+-	mt7530_write(priv, MT7530_SYS_CTRL, SYS_CTRL_PHY_RST);
++	if (priv->id != ID_EN751627) {
++		mt7530_write(priv, MT7530_SYS_CTRL, SYS_CTRL_PHY_RST);
++	} else {
++		mt7530_write(priv, MT7530_LED_EN, 0x77777);
++		mt7530_write(priv, MT7530_LED_IO_MODE, 0x77777);
++	}
+
+ 	return mt7531_setup_common(ds);
+ }
+@@ -3409,6 +3441,16 @@ const struct mt753x_info mt753x_table[]
+ 		.phy_write_c45 = mt7531_ind_c45_phy_write,
+ 		.mac_port_get_caps = en7528_mac_port_get_caps,
+ 	},
++	[ID_EN751627] = {
++		.id = ID_EN751627,
++		.pcs_ops = &mt7530_pcs_ops,
++		.sw_setup = mt7988_setup,
++		.phy_read_c22 = mt7531_ind_c22_phy_read,
++		.phy_write_c22 = mt7531_ind_c22_phy_write,
++		.phy_read_c45 = mt7531_ind_c45_phy_read,
++		.phy_write_c45 = mt7531_ind_c45_phy_write,
++		.mac_port_get_caps = en751627_mac_port_get_caps,
++	},
+ };
+ EXPORT_SYMBOL_GPL(mt753x_table);
+
