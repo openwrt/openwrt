@@ -302,6 +302,35 @@
 	pinctrl-0 = <&pcie2_rst_pins>;
 };
 
+&cpufreq {
+	reg = <0x0 0x1fa20000 0x0 0x2c0
+	       0x0 0x1efbe000 0x0 0x800>;
+	reg-names = "chip-scu", "mcucfg";
+	airoha,force-direct-pll;
+};
+
+&cpu_opp_table {
+	opp-1250000000 {
+		opp-hz = /bits/ 64 <1250000000>;
+		required-opps = <&smcc_opp15>;
+	};
+
+	opp-1300000000 {
+		opp-hz = /bits/ 64 <1300000000>;
+		required-opps = <&smcc_opp16>;
+	};
+};
+
+&cpu_smcc_opp_table {
+	smcc_opp15: opp15 {
+		opp-level = <15>;
+	};
+
+	smcc_opp16: opp16 {
+		opp-level = <16>;
+	};
+};
+
 &npu {
 	status = "okay";
 };
