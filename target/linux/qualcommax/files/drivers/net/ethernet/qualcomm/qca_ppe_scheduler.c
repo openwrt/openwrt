@@ -1354,6 +1354,7 @@ static void ppe_port_queue_limit_set(struct qca_ppe_priv *priv, int port)
 		for (i = 0; i < port_l0[0].ucast_base; i++)
 			ppe_ac_uni_write(priv, i,
 					 i == PPE_CPU_PORT_DL_QUEUE ? w0 : def);
+		ppe_pause_update(priv);
 		return;
 	}
 
@@ -1391,6 +1392,38 @@ static void ppe_port_queue_limit_set(struct qca_ppe_priv *priv, int port)
 					      priv->data->qm_ceiling);
 
 		ppe_ac_uni_write(priv, p->ucast_base + i, w);
+	}
+
+	ppe_pause_update(priv);
+}
+
+/* A shaper's queue is where SQM drops, and a port that pauses its link when
+ * its ingress buffers fill moves that queue into the device on the other end
+ * instead: the client on an upload, the modem on a download. While anything on
+ * the switch is shaped, no port asks its link to pause.
+ */
+void ppe_pause_update(struct qca_ppe_priv *priv)
+{
+	static DEFINE_MUTEX(lock);
+	bool shaped = false;
+	int port, i, bm;
+
+	guard(mutex)(&lock);
+
+	for (port = 0; port < PPE_NUM_PORTS; port++) {
+		struct ppe_port_shaper *sh = &priv->shaper[port];
+
+		shaped |= !!sh->rate_bps;
+		for (i = 0; i < ARRAY_SIZE(sh->queue_rate); i++)
+			shaped |= !!sh->queue_rate[i];
+	}
+
+	for (port = 1; port < PPE_NUM_PORTS; port++) {
+		bm = PPE_BM_PHY_START + port - 1;
+		if (bm <= priv->data->bm_phy_end)
+			regmap_write(priv->regmap, PPE_BM_FC_MODE(bm),
+				     priv->port_tx_pause[port] && !shaped ?
+				     PPE_BM_FC_EN : 0);
 	}
 }
 
