@@ -67,7 +67,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  	/* Do switch core reset if available */
  	reset = devm_reset_control_get_optional_shared(&pdev->dev, "switch");
  	if (IS_ERR(reset))
-@@ -936,10 +941,22 @@ static void mchp_sparx5_remove(struct pl
+@@ -937,10 +942,22 @@ static void mchp_sparx5_remove(struct pl
  	destroy_workqueue(sparx5->mact_queue);
  }
  

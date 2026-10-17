@@ -136,7 +136,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  struct sparx5;
  
  struct sparx5_calendar_data {
-@@ -499,6 +501,9 @@ void sparx5_ptp_txtstamp_release(struct
+@@ -500,6 +502,9 @@ void sparx5_ptp_txtstamp_release(struct
  				 struct sk_buff *skb);
  irqreturn_t sparx5_ptp_irq_handler(int irq, void *args);
  int sparx5_ptp_gettime64(struct ptp_clock_info *ptp, struct timespec64 *ts);

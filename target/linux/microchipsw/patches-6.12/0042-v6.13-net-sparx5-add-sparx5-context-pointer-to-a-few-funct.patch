@@ -32,7 +32,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		       sparx5->ports[fi.src_port] :
 --- a/drivers/net/ethernet/microchip/sparx5/sparx5_main.h
 +++ b/drivers/net/ethernet/microchip/sparx5/sparx5_main.h
-@@ -401,7 +401,7 @@ struct frame_info {
+@@ -402,7 +402,7 @@ struct frame_info {
  };
  
  void sparx5_xtr_flush(struct sparx5 *sparx5, u8 grp);
@@ -41,7 +41,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  irqreturn_t sparx5_xtr_handler(int irq, void *_priv);
  netdev_tx_t sparx5_port_xmit_impl(struct sk_buff *skb, struct net_device *dev);
  int sparx5_manual_injection_mode(struct sparx5 *sparx5);
-@@ -469,10 +469,13 @@ static inline int sparx5_dcb_init(struct
+@@ -470,10 +470,13 @@ static inline int sparx5_dcb_init(struct
  #endif
  
  /* sparx5_netdev.c */

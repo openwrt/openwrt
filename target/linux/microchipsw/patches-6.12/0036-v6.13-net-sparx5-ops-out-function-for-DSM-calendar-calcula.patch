@@ -81,7 +81,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  			goto cal_out;
 --- a/drivers/net/ethernet/microchip/sparx5/sparx5_main.c
 +++ b/drivers/net/ethernet/microchip/sparx5/sparx5_main.c
-@@ -994,6 +994,7 @@ static const struct sparx5_ops sparx5_op
+@@ -995,6 +995,7 @@ static const struct sparx5_ops sparx5_op
  	.get_sdlb_group          = &sparx5_get_sdlb_group,
  	.set_port_mux            = &sparx5_port_mux_set,
  	.ptp_irq_handler         = &sparx5_ptp_irq_handler,
@@ -125,7 +125,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  };
  
  struct sparx5_main_io_resource {
-@@ -418,6 +436,9 @@ void sparx5_vlan_port_apply(struct sparx
+@@ -419,6 +437,9 @@ void sparx5_vlan_port_apply(struct sparx
  /* sparx5_calendar.c */
  int sparx5_config_auto_calendar(struct sparx5 *sparx5);
  int sparx5_config_dsm_calendar(struct sparx5 *sparx5);
