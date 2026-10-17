@@ -11,6 +11,7 @@
 #include <linux/interrupt.h>
 #include <linux/ip.h>
 #include <linux/ipv6.h>
+#include <linux/log2.h>
 #include <linux/module.h>
 #include <linux/of.h>
 #include <linux/of_address.h>
@@ -966,22 +967,22 @@ static int edma_queue_rings_alloc(struct edma_queue *q)
 	struct edma_priv *priv = q->priv;
 	int ret;
 
-	ret = edma_tx_ring_alloc(priv, &q->txdesc_ring, EDMA_TX_RING_SIZE,
+	ret = edma_tx_ring_alloc(priv, &q->txdesc_ring, priv->tx_ring_size,
 				 sizeof(struct edma_txdesc));
 	if (ret)
 		return ret;
 
-	ret = edma_ring_alloc(priv, &q->txcmpl_ring, EDMA_TX_RING_SIZE,
+	ret = edma_ring_alloc(priv, &q->txcmpl_ring, priv->tx_ring_size,
 			      sizeof(struct edma_txcmpl));
 	if (ret)
 		goto err_txcmpl;
 
-	ret = edma_rx_ring_alloc(priv, &q->rxfill_ring, EDMA_RX_RING_SIZE,
+	ret = edma_rx_ring_alloc(priv, &q->rxfill_ring, priv->rx_ring_size,
 				 sizeof(struct edma_rxfill_desc));
 	if (ret)
 		goto err_rxfill;
 
-	ret = edma_ring_alloc(priv, &q->rxdesc_ring, EDMA_RX_RING_SIZE,
+	ret = edma_ring_alloc(priv, &q->rxdesc_ring, priv->rx_ring_size,
 			      sizeof(struct edma_rxdesc));
 	if (ret)
 		goto err_rxdesc;
@@ -1286,10 +1287,47 @@ static void edma_get_ringparam(struct net_device *netdev,
 			       struct kernel_ethtool_ringparam *kernel_ring,
 			       struct netlink_ext_ack *extack)
 {
-	ring->tx_max_pending = EDMA_TX_RING_SIZE;
-	ring->rx_max_pending = EDMA_RX_RING_SIZE;
-	ring->tx_pending = EDMA_TX_RING_SIZE;
-	ring->rx_pending = EDMA_RX_RING_SIZE;
+	struct edma_priv *priv = netdev_priv(netdev);
+
+	ring->tx_max_pending = EDMA_MAX_RING_SIZE;
+	ring->rx_max_pending = EDMA_MAX_RING_SIZE;
+	ring->tx_pending = priv->tx_ring_size;
+	ring->rx_pending = priv->rx_ring_size;
+}
+
+static int edma_reconfigure(struct edma_priv *priv, u8 order, unsigned int nq,
+			    u16 tx_size, u16 rx_size);
+
+/* The core has already held the request to what get_ringparam calls the
+ * maximum; the floor and the power of two are this driver's, and a transmit
+ * ring shorter than the threshold it stops the queue at would never start it
+ * again.
+ */
+static int edma_set_ringparam(struct net_device *netdev,
+			      struct ethtool_ringparam *ring,
+			      struct kernel_ethtool_ringparam *kernel_ring,
+			      struct netlink_ext_ack *extack)
+{
+	struct edma_priv *priv = netdev_priv(netdev);
+
+	if (!is_power_of_2(ring->tx_pending) ||
+	    !is_power_of_2(ring->rx_pending)) {
+		NL_SET_ERR_MSG_MOD(extack, "a ring index wraps by a mask, so a ring is a power of two");
+		return -EINVAL;
+	}
+
+	if (ring->tx_pending < EDMA_MIN_RING_SIZE ||
+	    ring->rx_pending < EDMA_MIN_RING_SIZE) {
+		NL_SET_ERR_MSG_MOD(extack, "ring shorter than this driver's floor");
+		return -EINVAL;
+	}
+
+	if (ring->tx_pending == priv->tx_ring_size &&
+	    ring->rx_pending == priv->rx_ring_size)
+		return 0;
+
+	return edma_reconfigure(priv, priv->rx_page_order, priv->num_queues,
+				ring->tx_pending, ring->rx_pending);
 }
 
 /* The registers the driver drives, in the order it configures them: the
@@ -1439,8 +1477,6 @@ static void edma_get_channels(struct net_device *netdev,
 	ch->combined_count = priv->num_queues;
 }
 
-static int edma_reconfigure(struct edma_priv *priv, u8 order, unsigned int nq);
-
 static int edma_set_channels(struct net_device *netdev,
 			     struct ethtool_channels *ch)
 {
@@ -1452,7 +1488,8 @@ static int edma_set_channels(struct net_device *netdev,
 	if (ch->combined_count == priv->num_queues)
 		return 0;
 
-	return edma_reconfigure(priv, priv->rx_page_order, ch->combined_count);
+	return edma_reconfigure(priv, priv->rx_page_order, ch->combined_count,
+				priv->tx_ring_size, priv->rx_ring_size);
 }
 
 static u32 edma_get_rx_ring_count(struct net_device *netdev)
@@ -1506,6 +1543,7 @@ static const struct ethtool_ops edma_ethtool_ops = {
 	.get_ethtool_stats = edma_get_ethtool_stats,
 	.get_link = ethtool_op_get_link,
 	.get_ringparam = edma_get_ringparam,
+	.set_ringparam = edma_set_ringparam,
 	.get_regs_len = edma_get_regs_len,
 	.get_regs = edma_get_regs,
 	.get_channels = edma_get_channels,
@@ -1717,11 +1755,12 @@ static u32 edma_rx_buffer_size(u8 order)
 }
 
 static struct page_pool *edma_page_pool_create(struct edma_priv *priv,
-					       u8 order, struct napi_struct *napi)
+					       u8 order, u16 size,
+					       struct napi_struct *napi)
 {
 	struct page_pool_params pp = {
 		.order     = order,
-		.pool_size = EDMA_RX_RING_SIZE,
+		.pool_size = size,
 		.nid       = NUMA_NO_NODE,
 		.dev       = &priv->pdev->dev,
 		.dma_dir   = DMA_FROM_DEVICE,
@@ -1742,14 +1781,15 @@ static void edma_page_pools_destroy(struct page_pool **pools, unsigned int n)
 		page_pool_destroy(pools[i]);
 }
 
-static int edma_page_pools_create(struct edma_priv *priv, u8 order,
+static int edma_page_pools_create(struct edma_priv *priv, u8 order, u16 size,
 				  struct page_pool **pools, unsigned int n)
 {
 	unsigned int i;
 
 	memset(pools, 0, EDMA_MAX_QUEUES * sizeof(*pools));
 	for (i = 0; i < n; i++) {
-		pools[i] = edma_page_pool_create(priv, order, &priv->q[i].napi);
+		pools[i] = edma_page_pool_create(priv, order, size,
+						 &priv->q[i].napi);
 		if (IS_ERR(pools[i])) {
 			int ret = PTR_ERR(pools[i]);
 
@@ -1780,22 +1820,25 @@ static void edma_set_xps(struct edma_priv *priv)
 				    cpumask_of(i % num_possible_cpus()), i);
 }
 
-/* The receive buffer size and the number of ring sets are both fixed at the
- * moment the rings are allocated, so either one changing means taking them
- * down and bringing them back - and putting the old ones back if that fails,
- * rather than leaving the conduit without a datapath.
+/* The receive buffer size, the number of ring sets and the ring sizes are all
+ * fixed at the moment the rings are allocated, so any of them changing means
+ * taking them down and bringing them back - and putting the old ones back if
+ * that fails, rather than leaving the conduit without a datapath.
  */
-static int edma_reconfigure(struct edma_priv *priv, u8 order, unsigned int nq)
+static int edma_reconfigure(struct edma_priv *priv, u8 order, unsigned int nq,
+			    u16 tx_size, u16 rx_size)
 {
 	struct page_pool *pools[EDMA_MAX_QUEUES];
 	struct net_device *netdev = priv->netdev;
 	unsigned int old_nq = priv->num_queues;
 	u8 old_order = priv->rx_page_order;
+	u16 old_tx = priv->tx_ring_size;
+	u16 old_rx = priv->rx_ring_size;
 	unsigned int i;
 	bool running;
 	int ret;
 
-	ret = edma_page_pools_create(priv, order, pools, nq);
+	ret = edma_page_pools_create(priv, order, rx_size, pools, nq);
 	if (ret)
 		return ret;
 
@@ -1817,6 +1860,8 @@ static int edma_reconfigure(struct edma_priv *priv, u8 order, unsigned int nq)
 	priv->num_queues = nq;
 	priv->rx_page_order = order;
 	priv->rx_buffer_size = edma_rx_buffer_size(order);
+	priv->tx_ring_size = tx_size;
+	priv->rx_ring_size = rx_size;
 
 	ret = edma_hw_init(priv);
 	if (ret) {
@@ -1826,6 +1871,8 @@ static int edma_reconfigure(struct edma_priv *priv, u8 order, unsigned int nq)
 		priv->num_queues = old_nq;
 		priv->rx_page_order = old_order;
 		priv->rx_buffer_size = edma_rx_buffer_size(old_order);
+		priv->tx_ring_size = old_tx;
+		priv->rx_ring_size = old_rx;
 		edma_page_pools_destroy(pools, nq);
 
 		restore_ret = edma_hw_init(priv);
@@ -1859,7 +1906,8 @@ static int edma_ndo_change_mtu(struct net_device *netdev, int new_mtu)
 	int ret = 0;
 
 	if (order != priv->rx_page_order)
-		ret = edma_reconfigure(priv, order, priv->num_queues);
+		ret = edma_reconfigure(priv, order, priv->num_queues,
+				       priv->tx_ring_size, priv->rx_ring_size);
 	if (!ret)
 		WRITE_ONCE(netdev->mtu, new_mtu);
 
@@ -1987,9 +2035,12 @@ static int edma_probe(struct platform_device *pdev)
 	if (ret)
 		eth_hw_addr_random(netdev);
 
+	priv->tx_ring_size = EDMA_TX_RING_SIZE;
+	priv->rx_ring_size = EDMA_RX_RING_SIZE;
 	priv->rx_page_order = edma_rx_page_order(netdev->mtu);
 	priv->rx_buffer_size = edma_rx_buffer_size(priv->rx_page_order);
-	ret = edma_page_pools_create(priv, priv->rx_page_order, pools, nq);
+	ret = edma_page_pools_create(priv, priv->rx_page_order,
+				     priv->rx_ring_size, pools, nq);
 	if (ret)
 		return ret;
 	edma_page_pools_swap(priv, pools);
