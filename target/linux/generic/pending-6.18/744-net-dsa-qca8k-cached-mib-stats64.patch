@@ -1,0 +1,254 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Salah Ahmed <haddad2inc@gmail.com>
+Date: Sat, 10 Oct 2026 19:37:03 +0300
+Subject: [PATCH] net: dsa: qca8k: expose cached per-port MIB counters via
+ get_stats64
+
+DSA user port netdev statistics count only CPU-seen traffic, so bridge
+offloaded forwarding is invisible to /sys/class/net/<port>/statistics, to
+rtnetlink IFLA_STATS and to every kernel consumer of them, including the
+netdev LED trigger. The switch MIB counters see every frame crossing the
+port, but reading them costs a register transaction per counter on a bus
+that is either MDIO or MDIO-over-Ethernet, while consumers such as the LED
+trigger call dev_get_stats() several times per second.
+
+Use the pattern that is already established for switch drivers: ar9331 in
+this same directory caches a rtnl_link_stats64 behind a spinlock, refreshes
+it from a delayed work and serves it from .get_stats64, and ksz does the
+same. Poll RxGoodByte/TxByte per user port and serve the cached values.
+
+The poll is adaptive rather than fixed. A consumer that derives a rate from
+these counters only sees the wire when the cache moves, so a fixed period
+sets the latency of every rate-based consumer to that period. Refresh four
+times a second while the counters move and once a second while they are
+idle: an idle switch stays cheap, and a busy one is reported within a
+quarter of a second. The work also runs once as soon as it is armed, so the
+first consumer after a link comes up does not read zeros for a whole period.
+
+The work is scheduled with schedule_delayed_work(), i.e. on system_wq like
+ar9331 does, and not on system_power_efficient_wq. With
+CONFIG_WQ_POWER_EFFICIENT_DEFAULT the power-efficient workqueue arms
+deferrable timers, which do not wake an idle CPU; on a single-core switch
+SoC that is mostly idle this deferred a nominal 3 s poll by several more
+seconds, and consumers saw the wire that late.
+
+DSA serves a user port either from the driver's .get_stats64 or from
+dev_get_tstats64(), never from both, so the cache has to be layered on top
+of the software counters: start from dev_get_tstats64() and override only
+the byte counters with the wire values. Otherwise installing .get_stats64
+would drop rx_packets/tx_packets to zero and break every consumer that
+looks at packets, including the netdev LED trigger in tx/rx mode. The MIB
+counts every frame crossing the port including the CPU-bound ones, so the
+wire byte counters are a superset of the software ones and replacing them
+loses nothing.
+
+Each 64-bit counter is read with a single regmap_bulk_read() so that no
+other register access can land between the low and the high half of the
+same counter.
+
+The cache fields sit at the top of struct qca8k_priv to stay clear of
+target-specific patches that extend its tail, such as the ipq40xx IPQ4019
+built-in switch support. The poll work is armed at the end of
+qca8k_setup(): a failing setup never reaches the remove callback, so
+arming it earlier would leave the delayed work running after the driver is
+gone.
+
+The poll work is armed at the end of qca8k_setup() and stopped from a new
+.teardown op. DSA calls .teardown both on the dsa_switch_setup() error
+paths that follow a successful ops->setup() - the tag protocol setup and
+the user MDIO bus allocation and registration - and from
+dsa_unregister_switch(), so the work cannot outlive the driver data it
+reads. Stopping it in qca8k_sw_remove() alone misses the probe error
+path: dsa_register_switch() fails, probe fails, devm frees priv and the
+armed work then runs on freed memory.
+
+Signed-off-by: Salah Ahmed <haddad2inc@gmail.com>
+---
+--- a/drivers/net/dsa/qca/qca8k-8xxx.c
++++ b/drivers/net/dsa/qca/qca8k-8xxx.c
+@@ -2110,6 +2110,14 @@ qca8k_setup(struct dsa_switch *ds)
+ 	/* HW learn on CPU port is limited and require manual setting */
+ 	ds->assisted_learning_on_cpu_port = true;
+ 
++	/* Arm the MIB poll work only after every failure path in this
++	 * function is behind us. DSA calls .teardown both on the
++	 * dsa_switch_setup() error paths that follow a successful
++	 * ops->setup() and from dsa_unregister_switch(), so the work is
++	 * always stopped again.
++	 */
++	qca8k_mib_poll_start(priv);
++
+ 	return 0;
+ }
+ 
+@@ -2120,11 +2128,20 @@ static const struct phylink_mac_ops qca8
+ 	.mac_link_up	= qca8k_phylink_mac_link_up,
+ };
+ 
++static void qca8k_teardown(struct dsa_switch *ds)
++{
++	struct qca8k_priv *priv = ds->priv;
++
++	qca8k_mib_poll_stop(priv);
++}
++
+ static const struct dsa_switch_ops qca8k_switch_ops = {
+ 	.get_tag_protocol	= qca8k_get_tag_protocol,
+ 	.setup			= qca8k_setup,
++	.teardown		= qca8k_teardown,
+ 	.get_strings		= qca8k_get_strings,
+ 	.get_ethtool_stats	= qca8k_get_ethtool_stats,
++	.get_stats64		= qca8k_get_stats64,
+ 	.get_sset_count		= qca8k_get_sset_count,
+ 	.set_ageing_time	= qca8k_set_ageing_time,
+ 	.support_eee		= dsa_supports_eee,
+--- a/drivers/net/dsa/qca/qca8k-common.c
++++ b/drivers/net/dsa/qca/qca8k-common.c
+@@ -553,6 +553,116 @@ void qca8k_get_ethtool_stats(struct dsa_
+ 	}
+ }
+ 
++/* Two cadences, picked per round by the work itself: while the wire counters
++ * move the cache is refreshed four times a second so that a rate consumer
++ * sees the traffic almost immediately, and once a second while they are
++ * idle, which keeps the MDIO cost of an idle switch low.
++ *
++ * schedule_delayed_work() (system_wq) is used deliberately instead of a
++ * power-efficient workqueue: with CONFIG_WQ_POWER_EFFICIENT_DEFAULT the
++ * latter arms deferrable timers that do not wake an idle CPU, which on a
++ * single-core switch SoC delayed a 3 s poll by several more seconds and
++ * made consumers see the wire late. ar9331 schedules its equivalent MIB
++ * work the same way.
++ */
++#define QCA8K_MIB_POLL_IDLE	HZ
++#define QCA8K_MIB_POLL_ACTIVE	(HZ / 4)
++
++/* RxGoodByte / TxByte offsets in the per-port MIB block, both 64-bit wide */
++#define QCA8K_MIB_RXGOODBYTE	0x3c
++#define QCA8K_MIB_TXBYTE	0x84
++
++/* Read one 64-bit MIB counter in a single regmap transaction, so that no
++ * other register access can land between the low and the high half.
++ */
++static int qca8k_mib_read_wire(struct qca8k_priv *priv, int port, u32 off,
++			       u64 *val)
++{
++	u32 raw[2];
++	int ret;
++
++	ret = regmap_bulk_read(priv->regmap, QCA8K_PORT_MIB_COUNTER(port) + off,
++			       raw, ARRAY_SIZE(raw));
++	if (ret)
++		return ret;
++
++	*val = raw[0] | ((u64)raw[1] << 32);
++
++	return 0;
++}
++
++static void qca8k_mib_poll_work_fn(struct work_struct *work)
++{
++	struct qca8k_priv *priv = container_of(work, struct qca8k_priv,
++					       mib_poll_work.work);
++	struct dsa_switch *ds = priv->ds;
++	bool busy = false;
++	u64 rx, tx;
++	int port;
++
++	for (port = 0; port < QCA8K_NUM_PORTS; port++) {
++		if (!dsa_is_user_port(ds, port))
++			continue;
++		if (qca8k_mib_read_wire(priv, port, QCA8K_MIB_RXGOODBYTE, &rx))
++			continue;
++		if (qca8k_mib_read_wire(priv, port, QCA8K_MIB_TXBYTE, &tx))
++			continue;
++
++		spin_lock_bh(&priv->stats_lock);
++		if (priv->port_stats[port].rx_bytes != rx ||
++		    priv->port_stats[port].tx_bytes != tx)
++			busy = true;
++		priv->port_stats[port].rx_bytes = rx;
++		priv->port_stats[port].tx_bytes = tx;
++		spin_unlock_bh(&priv->stats_lock);
++	}
++
++	schedule_delayed_work(&priv->mib_poll_work,
++			      busy ? QCA8K_MIB_POLL_ACTIVE : QCA8K_MIB_POLL_IDLE);
++}
++
++/* Serve the wire counters on top of the software ones. May be called in
++ * atomic context, so only the cache is touched here. The MIB sees every
++ * frame crossing the port, including bridge-offloaded traffic that never
++ * reaches the CPU, so DSA user ports finally report the truth on the wire
++ * to every standard kernel consumer, without ethtool or userspace helpers.
++ *
++ * DSA calls either .get_stats64 or dev_get_tstats64(), never both, so the
++ * packet and error counters collected by the DSA xmit/receive paths have to
++ * be picked up here as well or they would be lost.
++ */
++void qca8k_get_stats64(struct dsa_switch *ds, int port,
++		       struct rtnl_link_stats64 *s)
++{
++	struct qca8k_priv *priv = ds->priv;
++	struct rtnl_link_stats64 wire;
++
++	dev_get_tstats64(dsa_to_port(ds, port)->user, s);
++
++	spin_lock_bh(&priv->stats_lock);
++	wire = priv->port_stats[port];
++	spin_unlock_bh(&priv->stats_lock);
++
++	s->rx_bytes = wire.rx_bytes;
++	s->tx_bytes = wire.tx_bytes;
++}
++
++void qca8k_mib_poll_start(struct qca8k_priv *priv)
++{
++	spin_lock_init(&priv->stats_lock);
++	INIT_DELAYED_WORK(&priv->mib_poll_work, qca8k_mib_poll_work_fn);
++
++	/* Read once right away: without it the first consumer after a link
++	 * comes up sees zeros for a whole poll period.
++	 */
++	schedule_delayed_work(&priv->mib_poll_work, 0);
++}
++
++void qca8k_mib_poll_stop(struct qca8k_priv *priv)
++{
++	cancel_delayed_work_sync(&priv->mib_poll_work);
++}
++
+ int qca8k_get_sset_count(struct dsa_switch *ds, int port, int sset)
+ {
+ 	struct qca8k_priv *priv = ds->priv;
+--- a/drivers/net/dsa/qca/qca8k.h
++++ b/drivers/net/dsa/qca/qca8k.h
+@@ -443,6 +443,15 @@ struct qca8k_led {
+ };
+ 
+ struct qca8k_priv {
++	/* Cached per-port wire statistics from the switch MIB, refreshed by
++	 * mib_poll_work so that .get_stats64 (atomic context) never sleeps.
++	 * Placed at the top of the struct to stay clear of target-specific
++	 * patches that extend its tail (e.g. ipq40xx IPQ4019 support).
++	 */
++	struct rtnl_link_stats64 port_stats[QCA8K_NUM_PORTS];
++	spinlock_t stats_lock;
++	struct delayed_work mib_poll_work;
++
+ 	u8 switch_id;
+ 	u8 switch_revision;
+ 	u8 mirror_rx;
+@@ -513,6 +522,12 @@ int qca8k_rmw(struct qca8k_priv *priv, u
+ /* Common ops function */
+ void qca8k_fdb_flush(struct qca8k_priv *priv);
+ 
++/* Cached MIB statistics served from atomic context */
++void qca8k_get_stats64(struct dsa_switch *ds, int port,
++			       struct rtnl_link_stats64 *s);
++void qca8k_mib_poll_start(struct qca8k_priv *priv);
++void qca8k_mib_poll_stop(struct qca8k_priv *priv);
++
+ /* Common ethtool stats function */
+ void qca8k_get_strings(struct dsa_switch *ds, int port, u32 stringset, uint8_t *data);
+ void qca8k_get_ethtool_stats(struct dsa_switch *ds, int port,
