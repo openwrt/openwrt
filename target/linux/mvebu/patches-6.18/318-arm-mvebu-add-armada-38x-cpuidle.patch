@@ -1,0 +1,163 @@
+From de86576eec647ac7df7fb2e11c7193d04f0f4a27 Mon Sep 17 00:00:00 2001
+From: Gabriel Rodriguez <lifehacksback@gmail.com>
+Date: Thu, 17 Sep 2026 20:15:28 -0700
+Subject: [PATCH] ARM: mvebu: add Armada 38x cpuidle support
+
+Enable the existing Armada 38x CPU idle state with noncached suspend
+context storage. Testing on Armada 385 found that removing the idle
+disable with the Cortex-A9 errata workarounds alone still allowed resets;
+adding noncached context storage survived the tested CPU/timer and
+Ethernet workload. The underlying failure mechanism is not established.
+
+Reuse the cpuidle platform device. Registration supplies 32-bit DMA masks
+and runs the MVEBU coherency notifier; override dma_coherent afterwards
+so dma_alloc_coherent() supplies a noncached CPU mapping. Publish its
+physical address only after the hardware prerequisites are resolved.
+Complete this at arch_initcall, before the cpuidle driver's
+device_initcall, and remove the device on failure. The installed area
+is permanent.
+
+Retain the existing PMSU/SCU/WFI entry and resume code. This requests CPU
+power-down and SCU per-CPU power-off mode, not PMSU L2 deep idle or full
+SoC deep idle. CPU hotplug remains disabled.
+
+Signed-off-by: Gabriel Rodriguez <lifehacksback@gmail.com>
+
+--- a/arch/arm/mach-mvebu/pmsu.c
++++ b/arch/arm/mach-mvebu/pmsu.c
+@@ -18,10 +18,13 @@
+ #include <linux/clk.h>
+ #include <linux/cpu_pm.h>
+ #include <linux/delay.h>
++#include <linux/dma-direct.h>
++#include <linux/dma-mapping.h>
+ #include <linux/init.h>
+ #include <linux/io.h>
+ #include <linux/kernel.h>
+ #include <linux/mbus.h>
++#include <linux/mm.h>
+ #include <linux/mvebu-pmsu.h>
+ #include <linux/of.h>
+ #include <linux/of_address.h>
+@@ -374,7 +377,14 @@ static struct notifier_block mvebu_v7_cp
+ 	.notifier_call = mvebu_v7_cpu_pm_notify,
+ };
+ 
+-static struct platform_device mvebu_v7_cpuidle_device;
++static void mvebu_v7_cpuidle_release(struct device *dev)
++{
++	/* The platform device is statically allocated. */
++}
++
++static struct platform_device mvebu_v7_cpuidle_device = {
++	.dev.release = mvebu_v7_cpuidle_release,
++};
+ 
+ static int broken_idle(struct device_node *np)
+ {
+@@ -420,14 +430,37 @@ end:
+ 	return 0;
+ }
+ 
++static int __init armada_38x_suspend_context_init(struct device *dev)
++{
++	dma_addr_t dma;
++	phys_addr_t phys;
++	void *ctx;
++	int ret;
++
++	/* Override the MVEBU bus notifier after device registration. */
++	dev->dma_coherent = false;
++	ctx = dma_alloc_coherent(dev, PAGE_SIZE, &dma, GFP_KERNEL);
++	if (!ctx)
++		return -ENOMEM;
++
++	/* The MMU-off resume code needs a physical, not a DMA, address. */
++	phys = dma_to_phys(dev, dma);
++	ret = cpu_suspend_set_noncached_area(ctx, phys, PAGE_SIZE);
++	if (ret)
++		dma_free_coherent(dev, PAGE_SIZE, ctx, dma);
++
++	/* On success the ARM suspend code owns this kernel-lifetime area. */
++	return ret;
++}
++
+ static __init int armada_38x_cpuidle_init(void)
+ {
+ 	struct device_node *np;
+ 	void __iomem *mpsoc_base;
+ 	u32 reg;
+ 
+-	pr_warn("CPU idle is currently broken on Armada 38x: disabling\n");
+-	return 0;
++	if (!pmsu_mp_base || !mvebu_get_scu_base())
++		return -ENODEV;
+ 
+ 	np = of_find_compatible_node(NULL, NULL,
+ 				     "marvell,armada-380-coherency-fabric");
+@@ -444,7 +477,10 @@ static __init int armada_38x_cpuidle_ini
+ 	if (!np)
+ 		return -ENODEV;
+ 	mpsoc_base = of_iomap(np, 0);
+-	BUG_ON(!mpsoc_base);
++	if (!mpsoc_base) {
++		of_node_put(np);
++		return -ENOMEM;
++	}
+ 
+ 	/* Set up reset mask when powering down the cpus */
+ 	reg = readl(mpsoc_base + MPCORE_RESET_CTL);
+@@ -499,11 +535,7 @@ static int __init mvebu_v7_cpu_pm_init(v
+ 		return 0;
+ 	of_node_put(np);
+ 
+-	/*
+-	 * Currently the CPU idle support for Armada 38x is broken, as
+-	 * the CPU hotplug uses some of the CPU idle functions it is
+-	 * broken too, so let's disable it
+-	 */
++	/* CPU hotplug support remains disabled on Armada 38x. */
+ 	if (of_machine_is_compatible("marvell,armada380")) {
+ 		cpu_hotplug_disable();
+ 		pr_warn("CPU hotplug support is currently broken on Armada 38x: disabling\n");
+@@ -522,11 +554,37 @@ static int __init mvebu_v7_cpu_pm_init(v
+ 		return ret;
+ 
+ 	mvebu_v7_pmsu_enable_l2_powerdown_onidle();
+-	if (mvebu_v7_cpuidle_device.name)
+-		platform_device_register(&mvebu_v7_cpuidle_device);
+-	cpu_pm_register_notifier(&mvebu_v7_cpu_pm_notifier);
++	ret = cpu_pm_register_notifier(&mvebu_v7_cpu_pm_notifier);
++	if (ret)
++		return ret;
++
++	if (!mvebu_v7_cpuidle_device.name)
++		return 0;
++
++	ret = platform_device_register(&mvebu_v7_cpuidle_device);
++	if (ret)
++		goto err_put_device;
++
++	/*
++	 * Registration supplies 32-bit DMA masks and runs the coherency
++	 * notifier. The cpuidle driver probes at device_initcall, after
++	 * this arch_initcall has installed the suspend context.
++	 */
++	if (of_machine_is_compatible("marvell,armada380")) {
++		ret = armada_38x_suspend_context_init(&mvebu_v7_cpuidle_device.dev);
++		if (ret) {
++			pr_err("failed to set up suspend context: %d\n", ret);
++			platform_device_del(&mvebu_v7_cpuidle_device);
++			goto err_put_device;
++		}
++	}
+ 
+ 	return 0;
++
++err_put_device:
++	platform_device_put(&mvebu_v7_cpuidle_device);
++	cpu_pm_unregister_notifier(&mvebu_v7_cpu_pm_notifier);
++	return ret;
+ }
+ 
+ arch_initcall(mvebu_v7_cpu_pm_init);
