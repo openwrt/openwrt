@@ -642,7 +642,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	if (MTK_HAS_CAPS(eth->soc->caps, MTK_SHARED_INT)) {
  		err = devm_request_irq(eth->dev, eth->irq[MTK_FE_IRQ_SHARED],
  				       mtk_handle_irq, 0,
-@@ -5446,6 +5678,11 @@ static void mtk_remove(struct platform_d
+@@ -5460,6 +5692,11 @@ static void mtk_remove(struct platform_d
  		mtk_stop(eth->netdev[i]);
  		mac = netdev_priv(eth->netdev[i]);
  		phylink_disconnect_phy(mac->phylink);

@@ -136,7 +136,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	SPX5_CORE_CLOCK_500MHZ,   /* 500MHZ core clock frequency */
  	SPX5_CORE_CLOCK_625MHZ,   /* 625MHZ core clock frequency */
  };
-@@ -641,6 +654,8 @@ static inline u32 sparx5_clk_period(enum
+@@ -642,6 +655,8 @@ static inline u32 sparx5_clk_period(enum
  	switch (cclock) {
  	case SPX5_CORE_CLOCK_250MHZ:
  		return 4000;

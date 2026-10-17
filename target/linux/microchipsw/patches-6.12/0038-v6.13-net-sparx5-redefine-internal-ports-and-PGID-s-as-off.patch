@@ -153,7 +153,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  
  #define PGID_TABLE_SIZE	       3290
  
-@@ -500,6 +498,7 @@ enum sparx5_pgid_type {
+@@ -501,6 +499,7 @@ enum sparx5_pgid_type {
  void sparx5_pgid_init(struct sparx5 *spx5);
  int sparx5_pgid_alloc_mcast(struct sparx5 *spx5, u16 *idx);
  int sparx5_pgid_free(struct sparx5 *spx5, u16 idx);
@@ -161,7 +161,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  
  /* sparx5_pool.c */
  struct sparx5_pool_entry {
-@@ -516,6 +515,7 @@ int sparx5_pool_get_with_idx(struct spar
+@@ -517,6 +516,7 @@ int sparx5_pool_get_with_idx(struct spar
  /* sparx5_port.c */
  int sparx5_port_mux_set(struct sparx5 *sparx5, struct sparx5_port *port,
  			struct sparx5_port_config *conf);

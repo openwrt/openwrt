@@ -24,7 +24,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
 
 --- a/drivers/net/ethernet/microchip/sparx5/sparx5_main.c
 +++ b/drivers/net/ethernet/microchip/sparx5/sparx5_main.c
-@@ -989,6 +989,8 @@ static const struct sparx5_ops sparx5_op
+@@ -990,6 +990,8 @@ static const struct sparx5_ops sparx5_op
  	.is_port_25g             = &sparx5_port_is_25g,
  	.get_port_dev_index      = &sparx5_port_dev_mapping,
  	.get_port_dev_bit        = &sparx5_port_dev_mapping,
@@ -44,7 +44,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  };
  
  struct sparx5_main_io_resource {
-@@ -501,6 +503,7 @@ struct sparx5_sdlb_group {
+@@ -502,6 +504,7 @@ struct sparx5_sdlb_group {
  };
  
  extern struct sparx5_sdlb_group sdlb_groups[SPX5_SDLB_GROUP_CNT];

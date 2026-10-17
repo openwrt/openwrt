@@ -583,7 +583,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	u64 packets;
  	u64 dropped;
  };
-@@ -449,6 +466,8 @@ int sparx5_fdma_napi_callback(struct nap
+@@ -450,6 +467,8 @@ int sparx5_fdma_napi_callback(struct nap
  int sparx5_fdma_xmit(struct sparx5 *sparx5, u32 *ifh, struct sk_buff *skb,
  		     struct net_device *dev);
  irqreturn_t sparx5_fdma_handler(int irq, void *args);

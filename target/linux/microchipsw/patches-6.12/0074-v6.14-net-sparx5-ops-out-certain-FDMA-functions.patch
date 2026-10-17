@@ -67,7 +67,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  			if (!err)
  				sparx5_fdma_start(sparx5);
  		}
-@@ -1030,6 +1030,7 @@ cleanup_pnode:
+@@ -1031,6 +1031,7 @@ cleanup_pnode:
  static void mchp_sparx5_remove(struct platform_device *pdev)
  {
  	struct sparx5 *sparx5 = platform_get_drvdata(pdev);
@@ -75,7 +75,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  
  	debugfs_remove_recursive(sparx5->debugfs_root);
  	if (sparx5->xtr_irq) {
-@@ -1041,7 +1042,7 @@ static void mchp_sparx5_remove(struct pl
+@@ -1042,7 +1043,7 @@ static void mchp_sparx5_remove(struct pl
  		sparx5->fdma_irq = -ENXIO;
  	}
  	sparx5_ptp_deinit(sparx5);
@@ -84,7 +84,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	sparx5_cleanup_ports(sparx5);
  	sparx5_vcap_destroy(sparx5);
  	/* Unregister netdevs */
-@@ -1096,6 +1097,10 @@ static const struct sparx5_ops sparx5_op
+@@ -1097,6 +1098,10 @@ static const struct sparx5_ops sparx5_op
  	.set_port_mux            = &sparx5_port_mux_set,
  	.ptp_irq_handler         = &sparx5_ptp_irq_handler,
  	.dsm_calendar_calc       = &sparx5_dsm_calendar_calc,
@@ -109,7 +109,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  };
  
  struct sparx5_main_io_resource {
-@@ -440,7 +445,9 @@ int sparx5_fdma_init(struct sparx5 *spar
+@@ -441,7 +446,9 @@ int sparx5_fdma_init(struct sparx5 *spar
  int sparx5_fdma_deinit(struct sparx5 *sparx5);
  int sparx5_fdma_start(struct sparx5 *sparx5);
  int sparx5_fdma_stop(struct sparx5 *sparx5);
