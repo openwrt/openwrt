@@ -110,6 +110,19 @@ define Device/xikestor_sks8300-12x-v1
 endef
 TARGET_DEVICES += xikestor_sks8300-12x-v1
 
+define Device/xikestor_sks8300-12x-v2
+  SOC := rtl9313
+  DEVICE_VENDOR := XikeStor
+  DEVICE_MODEL := SKS8300-12X
+  DEVICE_VARIANT := V2
+  IMAGE_SIZE := 13312k
+  DEVICE_PACKAGES := kmod-hwmon-max6650 kmod-hwmon-lm75 kmod-thermal
+  IMAGE/sysupgrade.bin := pad-extra 16 | append-kernel | pad-to 64k | \
+	append-rootfs | pad-rootfs | append-metadata | check-size
+  $(Device/kernel-lzma)
+endef
+TARGET_DEVICES += xikestor_sks8300-12x-v2
+
 define Device/zyxel_xs1930
   SOC := rtl9313
   DEVICE_PACKAGES := kmod-hwmon-lm85 kmod-hwmon-gpiofan
