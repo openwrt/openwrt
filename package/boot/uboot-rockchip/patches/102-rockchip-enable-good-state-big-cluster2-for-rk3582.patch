@@ -1,0 +1,26 @@
+From 3526d76b9ffffb680e26198af424eb6a9048bf8e Mon Sep 17 00:00:00 2001
+From: xiao bo <peterwillcn@gmail.com>
+Date: Wed, 29 Jul 2026 09:58:04 +0800
+Subject: [PATCH] rockchip: enable good state big cluster2 for rk3582
+
+Enable the second big CPU cluster on RK3582 parts where OTP ip-state
+indicates the cluster is functional.
+
+Signed-off-by: xiao bo <peterwillcn@gmail.com>
+---
+ arch/arm/mach-rockchip/rk3588/rk3588.c | 4 ----
+ 1 file changed, 4 deletions(-)
+
+--- a/arch/arm/mach-rockchip/rk3588/rk3588.c
++++ b/arch/arm/mach-rockchip/rk3588/rk3588.c
+@@ -400,10 +400,6 @@ int ft_system_setup(void *blob, struct b
+ 	if (ip_state[0] & FAIL_CPU_CLUSTER2)
+ 		ip_state[0] |= FAIL_CPU_CLUSTER2;
+ 
+-	/* policy: always fail one big core cluster on rk3582 */
+-	if (!(ip_state[0] & (FAIL_CPU_CLUSTER1 | FAIL_CPU_CLUSTER2)))
+-		ip_state[0] |= FAIL_CPU_CLUSTER2;
+-
+ 	/* policy: always fail gpu on rk3582 */
+ 	ip_state[1] |= FAIL_GPU;
+ 
