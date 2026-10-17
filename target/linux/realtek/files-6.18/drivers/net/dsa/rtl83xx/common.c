@@ -448,6 +448,8 @@ static int rtl83xx_sw_probe(struct platform_device *pdev)
 	if (priv->r->lag_switch_init)
 		priv->r->lag_switch_init(priv);
 
+	otto_stats_dbgfs_init(priv);
+
 	return 0;
 
 err_register_l3:
@@ -468,6 +470,9 @@ static void rtl83xx_sw_remove(struct platform_device *pdev)
 
 	/* TODO: */
 	pr_debug("Removing platform driver for rtl83xx-sw\n");
+
+	/* Stop debugfs readers before tearing down the switch. */
+	otto_stats_dbgfs_remove(priv);
 
 	/* unregister notifiers which will create workqueue entries with
 	 * references to the switch structures. Also stop self-arming delayed

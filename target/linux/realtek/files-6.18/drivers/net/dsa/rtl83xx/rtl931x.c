@@ -437,6 +437,7 @@ const struct rtldsa_config rtldsa_931x_cfg = {
 	.stat_rst = RTL931X_STAT_RST,
 	.stat_port_std_mib = 0,  /* Not defined */
 	.mib_desc = &otto_stats_931x_mib_desc,
+	.drop_desc = &otto_stats_931x_drop_desc,
 	.stat_port_table_read = otto_stats_931x_port_table_read,
 	.stat_counters_lock = otto_stats_counters_lock_table,
 	.stat_counters_unlock = otto_stats_counters_unlock_table,

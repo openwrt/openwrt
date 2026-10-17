@@ -602,6 +602,7 @@ const struct rtldsa_config rtldsa_930x_cfg = {
 	.stat_port_std_mib = RTL930X_STAT_PORT_MIB_CNTR,
 	.stat_port_prv_mib = RTL930X_STAT_PORT_PRVTE_CNTR,
 	.mib_desc = &otto_stats_930x_mib_desc,
+	.drop_desc = &otto_stats_930x_drop_desc,
 	.stat_counters_lock = otto_stats_counters_lock_register,
 	.stat_counters_unlock = otto_stats_counters_unlock_register,
 	.stat_update_counters_atomically = otto_stats_update_counters_atomically,

@@ -329,6 +329,7 @@ struct rtldsa_config {
 	int stat_port_std_mib;
 	int stat_port_prv_mib;
 	const struct otto_stats_mib_desc *mib_desc;
+	const struct otto_stats_drop_desc *drop_desc;
 	u64 (*stat_port_table_read)(int port, unsigned int mib_size, unsigned int offset, bool is_pvt);
 	void (*stat_counters_lock)(struct otto_dsa_priv *priv, int port);
 	void (*stat_counters_unlock)(struct otto_dsa_priv *priv, int port);
@@ -515,6 +516,7 @@ struct otto_dsa_priv {
 	struct otto_l3_ctrl *l3_ctrl;
 	u64 irq_mask;
 	struct dentry *dbgfs_dir;
+	struct dentry *stats_dbgfs_dir;
 
 	/** @lags_port_members: Port (bit) is part of a specific LAG */
 	u64 lags_port_members[MAX_LAGS];
