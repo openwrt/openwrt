@@ -1,0 +1,37 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Fil Dunsky <filipp.dunsky@gmail.com>
+Date: Sun, 11 Oct 2026 15:49:49 +0300
+Subject: [PATCH] arm64: dts: meson-gxbb-odroidc2: use color and function
+ for the status LED
+
+Replace the legacy label on the blue status LED with the standard
+color and function properties, following what the other Amlogic boards
+already do.  The LED then shows up with a generic blue:status name
+instead of the board-specific c2:blue:alive.
+
+Link: https://lore.kernel.org/all/20261011-odroidc2-dts-v2-0-a3a4a752f2ab@gmail.com/
+Signed-off-by: Fil Dunsky <filipp.dunsky@gmail.com>
+---
+ arch/arm64/boot/dts/amlogic/meson-gxbb-odroidc2.dts | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+--- a/arch/arm64/boot/dts/amlogic/meson-gxbb-odroidc2.dts
++++ b/arch/arm64/boot/dts/amlogic/meson-gxbb-odroidc2.dts
+@@ -9,6 +9,7 @@
+ 
+ #include "meson-gxbb.dtsi"
+ #include <dt-bindings/gpio/gpio.h>
++#include <dt-bindings/leds/common.h>
+ #include <dt-bindings/sound/meson-aiu.h>
+ 
+ / {
+@@ -51,7 +52,8 @@
+ 	leds {
+ 		compatible = "gpio-leds";
+ 		led-blue {
+-			label = "c2:blue:alive";
++			color = <LED_COLOR_ID_BLUE>;
++			function = LED_FUNCTION_STATUS;
+ 			gpios = <&gpio_ao GPIOAO_13 GPIO_ACTIVE_LOW>;
+ 			linux,default-trigger = "heartbeat";
+ 			default-state = "off";

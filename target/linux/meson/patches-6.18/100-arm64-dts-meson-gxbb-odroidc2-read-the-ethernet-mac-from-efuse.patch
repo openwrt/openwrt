@@ -1,0 +1,51 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Fil Dunsky <filipp.dunsky@gmail.com>
+Date: Sun, 11 Oct 2026 15:49:28 +0300
+Subject: [PATCH] arm64: dts: meson-gxbb-odroidc2: read the Ethernet MAC
+ address from eFuse
+
+The vendor programs a unique factory MAC address into the SoC eFuse at
+offset 0x34, where meson-gx.dtsi already describes the eth_mac nvmem
+cell.  Reference the cell from the Ethernet controller so the kernel
+picks up the factory address itself instead of depending on the
+bootloader to populate local-mac-address, or falling back to a random
+one when it does not.
+
+The cell is 16 bytes long in meson-gx.dtsi, while
+of_get_mac_address_nvmem() only accepts a cell of exactly ETH_ALEN
+bytes, so narrow it to the 6 bytes of the address for this board.
+
+Tested on an ODROID-C2 with the bootloader's MAC fixup out of the way
+(ethernet0 alias removed from the DTB): with the 16-byte cell the
+driver falls back to a random address, with the 6-byte cell eth0 comes
+up with the factory address from the eFuse.
+
+Link: https://lore.kernel.org/all/20261011-odroidc2-dts-v2-0-a3a4a752f2ab@gmail.com/
+Signed-off-by: Fil Dunsky <filipp.dunsky@gmail.com>
+---
+ arch/arm64/boot/dts/amlogic/meson-gxbb-odroidc2.dts | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+--- a/arch/arm64/boot/dts/amlogic/meson-gxbb-odroidc2.dts
++++ b/arch/arm64/boot/dts/amlogic/meson-gxbb-odroidc2.dts
+@@ -224,6 +224,10 @@
+ 	hdmi-phandle = <&hdmi_tx>;
+ };
+ 
++&eth_mac {
++	reg = <0x34 0x6>;
++};
++
+ &ethmac {
+ 	status = "okay";
+ 	pinctrl-0 = <&eth_rgmii_pins>;
+@@ -231,6 +235,9 @@
+ 	phy-handle = <&eth_phy0>;
+ 	phy-mode = "rgmii";
+ 
++	nvmem-cells = <&eth_mac>;
++	nvmem-cell-names = "mac-address";
++
+ 	amlogic,tx-delay-ns = <2>;
+ 
+ 	mdio {

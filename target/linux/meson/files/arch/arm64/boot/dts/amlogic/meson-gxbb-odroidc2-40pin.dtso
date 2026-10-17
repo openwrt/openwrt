@@ -1,0 +1,59 @@
+// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
+
+/dts-v1/;
+/plugin/;
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/gpio/meson-gxbb-gpio.h>
+
+&{/aliases} {
+	serial1 = "/soc/bus@c1100000/serial@84c0";
+	serial2 = "/soc/bus@c1100000/serial@8700";
+	i2c0 = "/soc/bus@c1100000/i2c@8500";
+	i2c1 = "/soc/bus@c1100000/i2c@87c0";
+	spi0 = "/spi-gpio";
+};
+
+&{/} {
+	spi-gpio {
+		compatible = "spi-gpio";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		sck-gpios = <&gpio GPIOX_2 GPIO_ACTIVE_HIGH>;
+		miso-gpios = <&gpio GPIOX_4 GPIO_ACTIVE_HIGH>;
+		mosi-gpios = <&gpio GPIOX_7 GPIO_ACTIVE_HIGH>;
+		cs-gpios = <&gpio GPIOX_1 GPIO_ACTIVE_LOW>,
+			   <&gpio GPIOX_3 GPIO_ACTIVE_LOW>;
+		num-chipselects = <2>;
+
+		spidev@0 {
+			compatible = "rohm,dh2228fv";
+			reg = <0>;
+			spi-max-frequency = <10000000>;
+		};
+
+		spidev@1 {
+			compatible = "rohm,dh2228fv";
+			reg = <1>;
+			spi-max-frequency = <10000000>;
+		};
+	};
+};
+
+&i2c_B {
+	pinctrl-0 = <&i2c_b_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&uart_A {
+	pinctrl-0 = <&uart_a_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&uart_C {
+	pinctrl-0 = <&uart_c_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+};
