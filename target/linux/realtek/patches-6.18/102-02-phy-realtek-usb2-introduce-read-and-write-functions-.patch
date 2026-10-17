@@ -1,0 +1,78 @@
+From 219e64b21c23dbe539ee762674bce7275870d637 Mon Sep 17 00:00:00 2001
+From: Rustam Adilov <adilov@disroot.org>
+Date: Mon, 23 Mar 2026 14:56:24 +0500
+Subject: [PATCH v7 2/6] phy: realtek: usb2: introduce read and write functions
+ to phy_reg_desc struct
+
+RTL9607C is a big endian SoC with little endian USB host controller but
+vstatus register is from big endian memory region and thus existing
+writel doesn't work. It needs either __raw_writel or iowrite32be
+instead.
+
+To handle this situation, introduce read and write function to the
+phy_reg_desc struct and add a default variation that is going to be
+ponted by the existing rtd_phy_reg_desc.
+
+Co-developed-by: Michael Zavertkin <misha.zavertkin@mail.ru>
+Signed-off-by: Michael Zavertkin <misha.zavertkin@mail.ru>
+Signed-off-by: Rustam Adilov <adilov@disroot.org>
+---
+ drivers/phy/realtek/phy-rtk-usb2.c | 19 ++++++++++++++++---
+ 1 file changed, 16 insertions(+), 3 deletions(-)
+
+--- a/drivers/phy/realtek/phy-rtk-usb2.c
++++ b/drivers/phy/realtek/phy-rtk-usb2.c
+@@ -64,6 +64,8 @@ struct phy_reg_desc {
+ 	int vstatus_offset;
+ 	u32 vstatus_busy;
+ 	u32 new_reg_req;
++	u32 (*read)(void __iomem *reg);
++	void (*write)(u32 val, void __iomem *reg);
+ };
+ 
+ struct phy_reg {
+@@ -130,6 +132,16 @@ struct rtk_phy {
+ 	struct dentry *debug_dir;
+ };
+ 
++static u32 rtk_usb2phy_read(void __iomem *reg)
++{
++	return readl(reg);
++}
++
++static void rtk_usb2phy_write(u32 val, void __iomem *reg)
++{
++	writel(val, reg);
++}
++
+ /* mapping 0xE0 to 0 ... 0xE7 to 7, 0xF0 to 8 ,,, 0xF7 to 15 */
+ static inline int page_addr_to_array_index(u8 addr)
+ {
+@@ -204,8 +216,8 @@ static int rtk_phy_write(struct phy_reg
+ 	int ret = 0;
+ 
+ 	/* write data to VStatusOut2 (data output to phy) */
+-	writel((u32)data << shift_bits,
+-	       reg_wrap_vstatus + reg_desc->vstatus_offset);
++	reg_desc->write((u32)data << shift_bits,
++		       reg_wrap_vstatus + reg_desc->vstatus_offset);
+ 
+ 	ret = utmi_wait_register(reg_gusb2phyacc0, reg_desc->vstatus_busy, 0);
+ 	if (ret)
+@@ -988,7 +1000,6 @@ static int parse_phy_data(struct rtk_phy
+ 		phy_parameter->phy_reg.vstatus_index = index;
+ 		phy_parameter->phy_reg.desc = phy_cfg->reg_desc;
+ 
+-
+ 		if (of_property_read_bool(np, "realtek,inverse-hstx-sync-clock"))
+ 			phy_parameter->inverse_hstx_sync_clock = true;
+ 		else
+@@ -1078,6 +1089,8 @@ static const struct phy_reg_desc rtd_phy
+ 	.vstatus_offset = 0,
+ 	.vstatus_busy = PHY_VSTS_BUSY,
+ 	.new_reg_req = PHY_NEW_REG_REQ,
++	.read = rtk_usb2phy_read,
++	.write = rtk_usb2phy_write,
+ };
+ 
+ static const struct phy_cfg rtd1295_phy_cfg = {

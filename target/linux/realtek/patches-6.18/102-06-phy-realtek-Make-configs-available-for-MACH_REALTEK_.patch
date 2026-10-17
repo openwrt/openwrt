@@ -1,0 +1,32 @@
+From 146db95cf4b175f5174260ac91b194fa699c22bd Mon Sep 17 00:00:00 2001
+From: Rustam Adilov <adilov@disroot.org>
+Date: Mon, 23 Mar 2026 18:00:20 +0500
+Subject: [PATCH v7 6/6] phy: realtek: Make configs available for
+ MACH_REALTEK_RTL
+
+Add the MACH_REALTEK_RTL to the if statement to make the config
+options available for Realtek RTL SoCs as well.
+
+Reviewed-by: Manivannan Sadhasivam <manivannan.sadhasivam@oss.qualcomm.com>
+Signed-off-by: Rustam Adilov <adilov@disroot.org>
+---
+ drivers/phy/realtek/Kconfig | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/drivers/phy/realtek/Kconfig
++++ b/drivers/phy/realtek/Kconfig
+@@ -3,7 +3,7 @@
+ # Phy drivers for Realtek platforms
+ #
+ 
+-if ARCH_REALTEK || COMPILE_TEST
++if ARCH_REALTEK || MACH_REALTEK_RTL || COMPILE_TEST
+ 
+ config PHY_RTK_RTD_USB2PHY
+ 	tristate "Realtek RTD USB2 PHY Transceiver Driver"
+@@ -29,4 +29,4 @@ config PHY_RTK_RTD_USB3PHY
+ 	  DWC3 USB IP. This driver will do the PHY initialization
+ 	  of the parameters.
+ 
+-endif # ARCH_REALTEK || COMPILE_TEST
++endif # ARCH_REALTEK || MACH_REALTEK_RTL || COMPILE_TEST

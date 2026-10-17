@@ -1,6 +1,6 @@
 --- a/arch/mips/Kconfig
 +++ b/arch/mips/Kconfig
-@@ -1091,6 +1091,22 @@ config RTL931X
+@@ -1091,6 +1091,23 @@ config RTL931X
  	select SYS_SUPPORTS_SMP
  	select SYS_SUPPORTS_MIPS_CPS
  
@@ -12,6 +12,7 @@
 +	select MIPS_GIC
 +	select COMMON_CLK
 +	select CLKSRC_MIPS_GIC
++	select SWAP_IO_SPACE
 +	select SYS_SUPPORTS_VPE_LOADER
 +	select SYS_SUPPORTS_SMP
 +	select SYS_SUPPORTS_MIPS_CPS
