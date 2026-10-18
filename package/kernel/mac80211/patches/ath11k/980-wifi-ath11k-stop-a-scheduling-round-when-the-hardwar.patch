@@ -1,0 +1,169 @@
+From 63b0f9d8a08d67ce01f56100fc1a9b69bda07c30 Mon Sep 17 00:00:00 2001
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Date: Mon, 24 Aug 2026 15:38:05 +0200
+Subject: [PATCH ath-next v6 8/9] wifi: ath11k: stop a scheduling round when
+ the hardware refuses a frame
+
+ath11k_dp_tx() returns -ENOSPC when the MSDU idr is full and -ENOMEM
+when no TCL descriptor is free or a DMA mapping fails; it frees the
+frame, and the round then dequeues and frees the next frame of the same
+flow. End the round on those errors, leaving the frames behind queued;
+other errors concern only the frame. A category whose round ended this
+way or on a full TCL ring may have nothing of its own in flight, so mark
+it and start its round from the next tx completion on the device.
+
+Such a completion is due only while a frame is pending, so the round
+ends only then. It marks the category before it reads the pending
+counts, and tx completion reads the marks after the fully ordered
+decrement of its frame's count, so either the round sees no frame
+pending and goes on, or a completion sees the mark. With no frame
+pending, a refused frame is dropped and the round goes on, as before.
+
+Tested-on: IPQ8074 hw2.0 AHB WLAN.HK.2.9.0.1-02146-QCAHKSWPL_SILICONZ-1
+
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+
+--- a/drivers/net/wireless/ath/ath11k/core.h
++++ b/drivers/net/wireless/ath/ath11k/core.h
+@@ -719,6 +719,8 @@ struct ath11k {
+ 	 * other contexts that drive it
+ 	 */
+ 	spinlock_t txq_lock[IEEE80211_NUM_ACS];
++	/* access categories whose round ended for lack of room */
++	unsigned long txq_starved;
+ 
+ 	struct list_head arvifs;
+ 	/* should never be NULL; needed for regular htt rx */
+--- a/drivers/net/wireless/ath/ath11k/dp_tx.c
++++ b/drivers/net/wireless/ath/ath11k/dp_tx.c
+@@ -818,8 +818,18 @@ void ath11k_dp_tx_completion_handler(str
+ 	/* A completion returns the airtime the frame was charged, which is
+ 	 * what an airtime-limited station in that access category is waiting
+ 	 * on. The arrivals that would otherwise start a round are themselves
+-	 * queued behind that limit.
++	 * queued behind that limit. It also frees the ring space and MSDU ids
++	 * that a round ended early on any radio is waiting on. The fully
++	 * ordered decrement of num_tx_pending orders the read of the mark
++	 * after the frame is counted done.
+ 	 */
++	for (i = 0; i < ab->num_radios; i++) {
++		ar = ab->pdevs[i].ar;
++		if (unlikely(READ_ONCE(ar->txq_starved)))
++			push |= xchg(&ar->txq_starved, 0) <<
++				(i * IEEE80211_NUM_ACS);
++	}
++
+ 	for_each_set_bit(i, &push, ab->num_radios * IEEE80211_NUM_ACS)
+ 		ath11k_mac_tx_push_pending(ab->pdevs[i / IEEE80211_NUM_ACS].ar,
+ 					   i % IEEE80211_NUM_ACS);
+--- a/drivers/net/wireless/ath/ath11k/mac.c
++++ b/drivers/net/wireless/ath/ath11k/mac.c
+@@ -6510,9 +6510,9 @@ static int ath11k_mac_mgmt_tx(struct ath
+ 	return 0;
+ }
+ 
+-static void ath11k_mac_op_tx(struct ieee80211_hw *hw,
+-			     struct ieee80211_tx_control *control,
+-			     struct sk_buff *skb)
++static int ath11k_mac_tx(struct ieee80211_hw *hw,
++			 struct ieee80211_tx_control *control,
++			 struct sk_buff *skb)
+ {
+ 	struct ath11k_skb_cb *skb_cb = ATH11K_SKB_CB(skb);
+ 	struct ath11k *ar = hw->priv;
+@@ -6544,7 +6544,7 @@ static void ath11k_mac_op_tx(struct ieee
+ 				    ret);
+ 			ieee80211_free_txskb(ar->hw, skb);
+ 		}
+-		return;
++		return ret;
+ 	}
+ 
+ 	if (control->sta)
+@@ -6555,6 +6555,15 @@ static void ath11k_mac_op_tx(struct ieee
+ 		ath11k_warn(ar->ab, "failed to transmit frame %d\n", ret);
+ 		ieee80211_free_txskb(ar->hw, skb);
+ 	}
++
++	return ret;
++}
++
++static void ath11k_mac_op_tx(struct ieee80211_hw *hw,
++			     struct ieee80211_tx_control *control,
++			     struct sk_buff *skb)
++{
++	ath11k_mac_tx(hw, control, skb);
+ }
+ 
+ void ath11k_mac_drain_tx(struct ath11k *ar)
+@@ -10096,6 +10105,26 @@ static int ath11k_mac_op_sta_state(struc
+ 	return ret;
+ }
+ 
++/* A round that stops for lack of room is restarted by the next tx completion
++ * on the device, which reads the mark after counting its frame done. Mark
++ * first, then check that a frame is still pending, or no completion is due.
++ */
++static bool ath11k_mac_mark_txq_starved(struct ath11k *ar, u8 ac)
++{
++	struct ath11k_base *ab = ar->ab;
++	int i;
++
++	set_bit(ac, &ar->txq_starved);
++	/* pairs with the decrement of num_tx_pending in tx completion */
++	smp_mb__after_atomic();
++
++	for (i = 0; i < ab->num_radios; i++)
++		if (atomic_read(&ab->pdevs[i].ar->dp.num_tx_pending))
++			return true;
++
++	return false;
++}
++
+ static int ath11k_mac_tx_push_txq(struct ath11k *ar, struct ieee80211_txq *txq)
+ {
+ 	struct ieee80211_tx_control control = {
+@@ -10107,6 +10136,7 @@ static int ath11k_mac_tx_push_txq(struct
+ 	struct sk_buff *skb;
+ 	u32 ring_selector;
+ 	int num_free;
++	int ret;
+ 	u8 ring_id;
+ 
+ 	ring_selector = ar->ab->hw_params.hw_ops->get_ring_selector(txq->ac);
+@@ -10116,7 +10146,8 @@ static int ath11k_mac_tx_push_txq(struct
+ 
+ 	/* ieee80211_tx_dequeue() applies the airtime queue limit, so a
+ 	 * selection ends where that limit binds or the queue empties. A full
+-	 * TCL ring ends the whole round.
++	 * TCL ring ends the whole round, and so does a frame the hardware
++	 * refuses, as long as a frame in flight will restart it.
+ 	 */
+ 	while (1) {
+ 		if (unlikely(test_bit(ATH11K_FLAG_CRASH_FLUSH,
+@@ -10131,7 +10162,9 @@ static int ath11k_mac_tx_push_txq(struct
+ 
+ 		if (num_free == 0) {
+ 			spin_unlock_bh(&tx_ring->wake_tx_lock);
+-			return -ENOSPC;
++			if (ath11k_mac_mark_txq_starved(ar, txq->ac))
++				return -ENOSPC;
++			continue;
+ 		}
+ 
+ 		skb = ieee80211_tx_dequeue(hw, txq);
+@@ -10140,9 +10173,13 @@ static int ath11k_mac_tx_push_txq(struct
+ 			break;
+ 		}
+ 
+-		ath11k_mac_op_tx(hw, &control, skb);
++		ret = ath11k_mac_tx(hw, &control, skb);
+ 
+ 		spin_unlock_bh(&tx_ring->wake_tx_lock);
++
++		if (unlikely(ret == -ENOSPC || ret == -ENOMEM) &&
++		    ath11k_mac_mark_txq_starved(ar, txq->ac))
++			return ret;
+ 	}
+ 
+ 	return 0;

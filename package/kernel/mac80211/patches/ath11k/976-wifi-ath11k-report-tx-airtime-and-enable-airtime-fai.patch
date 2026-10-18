@@ -1,0 +1,69 @@
+From 9ac3fd6ae2b8cb98ef4b413e5168691518937091 Mon Sep 17 00:00:00 2001
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Date: Mon, 24 Aug 2026 15:38:04 +0200
+Subject: [PATCH ath-next v6 4/9] wifi: ath11k: report tx airtime and enable
+ airtime fairness
+
+mac80211 charges the airtime deficit only through
+ieee80211_sta_register_airtime(), which ath11k never calls, so with
+NL80211_EXT_FEATURE_AIRTIME_FAIRNESS alone every station stays in
+credit. Register fes_duration_us from the PPDU stats, which ath11k
+already adds to arsta->tx_duration, and set the bit. The TID comes from
+the ack/BA status TLV, sent only for a PPDU that drew a response, then
+from the completion or rate TLV, then BE. Each user of a downlink MU
+PPDU is charged the whole duration, as arsta->tx_duration is; every PPDU
+on this hardware had one user. mac80211 takes only
+local->active_txq_lock[ac] inside the call, which runs under
+ar->data_lock and ab->base_lock.
+
+'iw station set <mac> airtime_weight' fails with -EOPNOTSUPP before this
+patch and succeeds after it.
+
+Tested-on: IPQ8074 hw2.0 AHB WLAN.HK.2.9.0.1-02146-QCAHKSWPL_SILICONZ-1
+
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+
+--- a/drivers/net/wireless/ath/ath11k/dp_rx.c
++++ b/drivers/net/wireless/ath/ath11k/dp_rx.c
+@@ -1377,6 +1377,7 @@ ath11k_update_per_peer_tx_stats(struct a
+ 	u16 rate = 0, succ_pkts = 0;
+ 	u32 tx_duration = 0;
+ 	u8 tid = HTT_PPDU_STATS_NON_QOS_TID;
++	u8 airtime_tid;
+ 	bool is_ampdu = false;
+ 
+ 	if (!(usr_stats->tlv_flags & BIT(HTT_PPDU_STATS_TAG_USR_RATE)))
+@@ -1490,6 +1491,22 @@ ath11k_update_per_peer_tx_stats(struct a
+ 
+ 	arsta->txrate.bw = ath11k_mac_bw_to_mac80211_bw(bw);
+ 	arsta->tx_duration += tx_duration;
++
++	/* The ack/BA status TLV names the TID only for a PPDU that drew a
++	 * response; fall back to the completion and rate TLVs, then to BE.
++	 */
++	airtime_tid = tid;
++	if (airtime_tid >= IEEE80211_NUM_TIDS &&
++	    usr_stats->tlv_flags & BIT(HTT_PPDU_STATS_TAG_USR_COMPLTN_COMMON))
++		airtime_tid = usr_stats->cmpltn_cmn.tid_num;
++	if (airtime_tid >= IEEE80211_NUM_TIDS)
++		airtime_tid = user_rate->tid_num;
++	if (airtime_tid >= IEEE80211_NUM_TIDS)
++		airtime_tid = 0;
++
++	if (tx_duration)
++		ieee80211_sta_register_airtime(sta, airtime_tid, tx_duration, 0);
++
+ 	memcpy(&arsta->last_txrate, &arsta->txrate, sizeof(struct rate_info));
+ 
+ 	/* PPDU stats reported for mgmt packet doesn't have valid tx bytes.
+--- a/drivers/net/wireless/ath/ath11k/mac.c
++++ b/drivers/net/wireless/ath/ath11k/mac.c
+@@ -10671,6 +10671,8 @@ static int __ath11k_mac_register(struct
+ 
+ 	wiphy_ext_feature_set(ar->hw->wiphy, NL80211_EXT_FEATURE_CQM_RSSI_LIST);
+ 	wiphy_ext_feature_set(ar->hw->wiphy, NL80211_EXT_FEATURE_AQL);
++	wiphy_ext_feature_set(ar->hw->wiphy,
++			      NL80211_EXT_FEATURE_AIRTIME_FAIRNESS);
+ 	wiphy_ext_feature_set(ar->hw->wiphy, NL80211_EXT_FEATURE_STA_TX_PWR);
+ 	if (test_bit(WMI_TLV_SERVICE_BSS_COLOR_OFFLOAD,
+ 		     ar->ab->wmi_ab.svc_map)) {
