@@ -845,7 +845,7 @@ $(eval $(call KernelPackage,crypto-sha512))
 
 define KernelPackage/crypto-test
   TITLE:=Test CryptoAPI module
-  KCONFIG:=CONFIG_CRYPTO_TEST
+  KCONFIG:=CONFIG_CRYPTO_BENCHMARK
   FILES:=$(LINUX_DIR)/crypto/tcrypt.ko
   $(call AddDepends/crypto,+kmod-crypto-manager)
 endef
