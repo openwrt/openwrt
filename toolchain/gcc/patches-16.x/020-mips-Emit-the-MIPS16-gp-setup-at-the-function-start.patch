@@ -1,0 +1,78 @@
+From b5c80e2578eb35ac98508ab10eb0ca28d52693f9 Mon Sep 17 00:00:00 2001
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Date: Thu, 8 Oct 2026 16:44:25 +0200
+Subject: [PATCH] mips: Emit the MIPS16 $gp setup at the function start
+ [PR125582]
+
+mips16_gp_pseudo_reg emits the $gp load in the topmost sequence before
+its first real insn.  The scan skips CODE_LABELs, so the load can land
+in a later block, and since r16-1398 that block can be expanded but not
+BB_RTL yet, where add_insn_after crashes on BB_END.
+
+Emit the load and the clobbers after entry_of_function () instead, as
+other ports do.  Before construct_init_block that is not usable, but
+everything after the first insn of the topmost sequence then becomes
+the init block, so emit after that insn.  The current sequence does not
+work there: expand_phi_nodes can call this while emitting the copies
+for one PHI edge.  The entry edge does not work either: pass_expand
+puts those insns after the parameter setup, which can itself use $gp.
+
+Assisted-by: Claude:claude-opus-5-5
+
+	PR target/125582
+
+gcc/ChangeLog:
+
+	* config/mips/mips.cc (mips16_gp_pseudo_reg): Emit the $gp load
+	and the clobbers after entry_of_function (), or after the first
+	insn before the init block exists.
+
+gcc/testsuite/ChangeLog:
+
+	* gcc.target/mips/pr125582.c: New test.
+
+Suggested-by: Jakub Jelinek <jakub@redhat.com>
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+Link: https://inbox.sourceware.org/gcc-patches/20261017115008.132337-1-julius@bairaktaris.de/
+---
+ gcc/config/mips/mips.cc | 19 ++++++++++---------
+ 1 file changed, 10 insertions(+), 9 deletions(-)
+
+--- a/gcc/config/mips/mips.cc
++++ b/gcc/config/mips/mips.cc
+@@ -3399,18 +3399,11 @@ mips16_gp_pseudo_reg (void)
+ {
+   if (cfun->machine->mips16_gp_pseudo_rtx == NULL_RTX)
+     {
+-      rtx_insn *scan;
+-
+       cfun->machine->mips16_gp_pseudo_rtx = gen_reg_rtx (Pmode);
+ 
+-      push_topmost_sequence ();
+-
+-      scan = get_insns ();
+-      while (NEXT_INSN (scan) && !INSN_P (NEXT_INSN (scan)))
+-	scan = NEXT_INSN (scan);
+-
++      start_sequence ();
+       rtx set = gen_load_const_gp (cfun->machine->mips16_gp_pseudo_rtx);
+-      rtx_insn *insn = emit_insn_after (set, scan);
++      rtx_insn *insn = emit_insn (set);
+       INSN_LOCATION (insn) = 0;
+       /* NewABI support hasn't been implement.  NewABI should generate RTL
+ 	 sequence instead of ASM sequence directly.  */
+@@ -3419,6 +3412,14 @@ mips16_gp_pseudo_reg (void)
+ 	  emit_clobber (MIPS16_PIC_TEMP);
+ 	  emit_clobber (MIPS_PROLOGUE_TEMP (Pmode));
+ 	}
++      rtx_insn *seq = end_sequence ();
++
++      /* Until construct_init_block, everything after the first insn of
++	 the topmost sequence becomes the init block.  The current sequence
++	 can then be the copies on one PHI edge from expand_phi_nodes.  */
++      push_topmost_sequence ();
++      emit_insn_after (seq, (ENTRY_BLOCK_PTR_FOR_FN (cfun)->flags & BB_RTL
++			     ? entry_of_function () : get_insns ()));
+       pop_topmost_sequence ();
+     }
+ 
