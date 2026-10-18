@@ -1,0 +1,30 @@
+#!/bin/sh
+# Arista C-260: each radio LED follows its radio, found by device path.
+# Phy numbers follow the order the radios were first found in, which
+# differs between units. 2.4 and 5 are the IPQ8074's radios, WLAN is the
+# QCA988x card on pcie0. "phyNradio" lights the LED while the radio is
+# enabled.
+
+[ "$ACTION" = add ] || exit 0
+
+. /lib/functions.sh
+
+[ "$(board_name)" = arista,c-260 ] || exit 0
+
+case "$(readlink "/sys/class/ieee80211/$DEVICENAME/device")" in
+*/c000000.wifi)
+	if iw phy "$DEVICENAME" info | grep -q "Band 1:"; then
+		led=green:wlan-2ghz
+	else
+		led=green:wlan-5ghz
+	fi
+	;;
+*/0000:01:00.0)
+	led=green:wlan
+	;;
+*)
+	exit 0
+	;;
+esac
+
+echo "${DEVICENAME}radio" > "/sys/class/leds/$led/trigger"
