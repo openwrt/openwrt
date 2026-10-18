@@ -1,0 +1,130 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
+/dts-v1/;
+
+#include "qca953x.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+
+/*
+ * Doodle Labs Smart Radio (QCA9533 / AR9531 integrated 2.4 GHz radio)
+ *
+ * Reconstructed from the running stock unit (no DTB existed: legacy ar71xx
+ * board-file). Facts captured live:
+ *   SoC      : Qualcomm Atheros QCA9533 ver2 rev0, CPU 650 / DDR 597 / AHB 216 MHz
+ *   RAM      : 64 MiB
+ *   Flash    : Winbond w25q256, 32 MiB, SPI-NOR @ spi0.0
+ *   WMAC     : AR9531 rev2, cal + MACs in "art" @ 0x80000
+ *   eth0     : GMAC0 -> built-in switch PHY4 (MII, seen 100M/full)
+ *   eth1     : GMAC1 -> built-in 5-port switch (GMII)
+ *   button   : BTN_1 on GPIO16 (firstboot/reset)
+ *   u-boot   : bootcmd = "bootm 0x9f0c0000"  => kernel at flash offset 0xc0000
+ *
+ * Note: GPIO4 and GPIO15 are exported by stock f/w but their role is
+ * unverified (likely RF front-end band-select for the frequency-shifted
+ * variants). Left UNCONFIGURED on purpose - driving an unknown RF control
+ * line could mis-set the front end. Add led/gpio nodes only after probing.
+ */
+
+/ {
+	model = "Doodle Labs Smart Radio";
+	compatible = "doodlelabs,smartradio", "qca,qca9533";
+
+	aliases {
+		serial0 = &uart;
+		label-mac-device = &eth0;
+	};
+
+	keys {
+		compatible = "gpio-keys";
+		reset {
+			label = "reset";
+			linux,code = <KEY_RESTART>;
+			/* GPIO_ACTIVE_LOW confirmed from 2025-06.5 firmware hotplug.d/button */
+			gpios = <&gpio 16 GPIO_ACTIVE_LOW>;
+			debounce-interval = <60>;
+		};
+	};
+};
+
+&uart {
+	status = "okay";
+};
+
+&spi {
+	status = "okay";
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <25000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			/* Offsets MUST match stock u-boot (bootm 0x9f0c0000). */
+			partition@0 {
+				label = "u-boot";
+				reg = <0x000000 0x040000>;
+				read-only;
+			};
+
+			partition@40000 {
+				label = "u-boot-env";
+				reg = <0x040000 0x040000>;
+			};
+
+			art: partition@80000 {
+				label = "art";
+				reg = <0x080000 0x040000>;
+				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_art_0: macaddr@0 {
+						reg = <0x0 0x6>;
+					};
+
+					cal_art_1000: calibration@1000 {
+						reg = <0x1000 0x440>;
+					};
+				};
+			};
+
+			partition@c0000 {
+				compatible = "denx,uimage";
+				label = "firmware";
+				reg = <0x0c0000 0x1f40000>;
+			};
+		};
+	};
+};
+
+&eth0 {
+	status = "okay";
+	phy-mode = "mii";
+	/* swphy4 = built-in switch CPU/uplink port */
+	phy-handle = <&swphy4>;
+
+	nvmem-cells = <&macaddr_art_0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&eth1 {
+	nvmem-cells = <&macaddr_art_0>;
+	nvmem-cell-names = "mac-address";
+	mac-address-increment = <1>;
+};
+
+&wmac {
+	status = "okay";
+
+	nvmem-cells = <&cal_art_1000>, <&macaddr_art_0>;
+	nvmem-cell-names = "calibration", "mac-address";
+	mac-address-increment = <2>;
+};
