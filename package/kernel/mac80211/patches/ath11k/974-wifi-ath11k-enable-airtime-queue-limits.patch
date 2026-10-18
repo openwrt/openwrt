@@ -1,0 +1,46 @@
+From ccb903d9fc8a0e4f9abbfea76fac7b890031363a Mon Sep 17 00:00:00 2001
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Date: Mon, 24 Aug 2026 15:38:03 +0200
+Subject: [PATCH ath-next v6 2/9] wifi: ath11k: enable airtime queue limits
+
+Without NL80211_EXT_FEATURE_AQL, mac80211 applies no airtime queue limit,
+and a saturated download moves every queued frame into the hardware TX
+rings. Set the bit. mac80211 estimates each frame's airtime from the
+rate ath11k reports through ieee80211_tx_status_ext(), and charges its
+4 us floor while that rate is unset. Only the PPDU stats set it, so
+single pdev chips, which take the rate from the tx completion instead,
+would stay at the floor; set it there as well.
+
+With the series and the AP pinned to VHT MCS 0, a TCP download to one
+1x1 VHT80 station keeps 22 Mbit/s while the sender's mean RTT falls from
+526-587 ms to 42-44 ms (three interleaved runs per arm, default limits).
+
+Tested-on: IPQ8074 hw2.0 AHB WLAN.HK.2.9.0.1-02146-QCAHKSWPL_SILICONZ-1
+
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+
+--- a/drivers/net/wireless/ath/ath11k/dp_tx.c
++++ b/drivers/net/wireless/ath/ath11k/dp_tx.c
+@@ -578,6 +578,12 @@ void ath11k_dp_tx_update_txcompl(struct
+ 			ath11k_mac_he_ru_tones_to_nl80211_he_ru_alloc(ru_tones);
+ 	}
+ 
++	/* Single pdev chips have no other source for the rate reported to
++	 * mac80211, which estimates airtime from it.
++	 */
++	if (ab->hw_params.single_pdev_only)
++		arsta->last_txrate = arsta->txrate;
++
+ 	if (ath11k_debugfs_is_extd_tx_stats_enabled(ar))
+ 		ath11k_debugfs_sta_add_tx_stats(arsta, peer_stats, rate_idx);
+ 
+--- a/drivers/net/wireless/ath/ath11k/mac.c
++++ b/drivers/net/wireless/ath/ath11k/mac.c
+@@ -10657,6 +10657,7 @@ static int __ath11k_mac_register(struct
+ 	ar->hw->sta_data_size = sizeof(struct ath11k_sta);
+ 
+ 	wiphy_ext_feature_set(ar->hw->wiphy, NL80211_EXT_FEATURE_CQM_RSSI_LIST);
++	wiphy_ext_feature_set(ar->hw->wiphy, NL80211_EXT_FEATURE_AQL);
+ 	wiphy_ext_feature_set(ar->hw->wiphy, NL80211_EXT_FEATURE_STA_TX_PWR);
+ 	if (test_bit(WMI_TLV_SERVICE_BSS_COLOR_OFFLOAD,
+ 		     ar->ab->wmi_ab.svc_map)) {
