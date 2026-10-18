@@ -87,22 +87,6 @@ endef
 $(eval $(call KernelPackage,lib-crc16))
 
 
-define KernelPackage/lib-crc32c
-  SUBMENU:=$(LIB_MENU)
-  TITLE:=CRC32 support
-  KCONFIG:=CONFIG_LIBCRC32C
-  DEPENDS:=@LINUX_6_12 +kmod-crypto-crc32c
-  FILES:=$(LINUX_DIR)/lib/libcrc32c.ko
-  AUTOLOAD:=$(call AutoProbe,libcrc32c)
-endef
-
-define KernelPackage/lib-crc32c/description
- Kernel module for CRC32 support
-endef
-
-$(eval $(call KernelPackage,lib-crc32c))
-
-
 define KernelPackage/lib-lzo
   SUBMENU:=$(LIB_MENU)
   TITLE:=LZO support

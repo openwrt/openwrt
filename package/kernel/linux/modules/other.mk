@@ -934,23 +934,6 @@ endef
 $(eval $(call KernelPackage,thermal))
 
 
-define KernelPackage/echo
-  SUBMENU:=$(OTHER_MENU)
-  TITLE:=Line Echo Canceller
-  DEPENDS:=@LINUX_6_12
-  KCONFIG:=CONFIG_ECHO
-  FILES:=$(LINUX_DIR)/drivers/misc/echo/echo.ko
-  AUTOLOAD:=$(call AutoLoad,50,echo)
-endef
-
-define KernelPackage/echo/description
- This driver provides line echo cancelling support for mISDN and
- DAHDI drivers
-endef
-
-$(eval $(call KernelPackage,echo))
-
-
 define KernelPackage/tee
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Trusted Execution Environment (TEE) support
