@@ -177,7 +177,7 @@ $(eval $(call KernelPackage,it87-wdt))
 define KernelPackage/itco-wdt
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Intel iTCO Watchdog Timer
-  DEPENDS:=@TARGET_x86
+  DEPENDS:=@TARGET_x86 +kmod-wdat-wdt
   KCONFIG:=\
 	CONFIG_ITCO_WDT \
 	CONFIG_ITCO_VENDOR_SUPPORT=y \
@@ -192,6 +192,26 @@ define KernelPackage/itco-wdt/description
 endef
 
 $(eval $(call KernelPackage,itco-wdt))
+
+
+define KernelPackage/wdat-wdt
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=ACPI Watchdog Action Table (WDAT) Watchdog
+  DEPENDS:=@TARGET_x86
+  KCONFIG:=\
+	CONFIG_WDAT_WDT \
+	CONFIG_WATCHDOG_CORE=y
+  FILES:=$(LINUX_DIR)/drivers/watchdog/wdat_wdt.ko
+  AUTOLOAD:=$(call AutoLoad,50,wdat_wdt,1)
+endef
+
+define KernelPackage/wdat-wdt/description
+  Kernel module for the watchdog described by the ACPI Watchdog Action
+  Table (WDAT). Where the firmware provides this table, the kernel hands
+  the chipset watchdog to this driver instead of iTCO_wdt.
+endef
+
+$(eval $(call KernelPackage,wdat-wdt))
 
 
 define KernelPackage/pcengines-apuv2
