@@ -1531,11 +1531,6 @@ menu "Filesystem ACL and attr support options"
 	config KERNEL_NFSD_V3_ACL_SUPPORT
 		bool "Enable ACLs for NFSDv3"
 
-	config KERNEL_REISER_FS_POSIX_ACL
-		bool "Enable POSIX ACLs for ReiserFS"
-		select KERNEL_FS_POSIX_ACL
-		default y if USE_FS_ACL_ATTR
-
 	config KERNEL_XFS_POSIX_ACL
 		bool "Enable POSIX ACLs for XFS"
 		select KERNEL_FS_POSIX_ACL

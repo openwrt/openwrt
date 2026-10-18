@@ -167,18 +167,6 @@ endef
 $(eval $(call KernelPackage,stm32-adc))
 
 
-define KernelPackage/stm32-crc32
-  TITLE:=Support for STM32 crc accelerators
-  KCONFIG:=CONFIG_CRYPTO_DEV_STM32_CRC \
-	   CONFIG_CRYPTO_HW=y
-  FILES:=$(LINUX_DIR)/drivers/crypto/stm32/stm32-crc32.ko
-  AUTOLOAD:=$(call AutoProbe,stm32-crc32)
-  $(call AddDepends/crypto,@TARGET_stm32 +kmod-crypto-crc32)
-endef
-
-$(eval $(call KernelPackage,stm32-crc32))
-
-
 define KernelPackage/stm32-cryp
   TITLE:=Support for STM32 cryp accelerators
   KCONFIG:=CONFIG_CRYPTO_DEV_STM32_CRYP \
