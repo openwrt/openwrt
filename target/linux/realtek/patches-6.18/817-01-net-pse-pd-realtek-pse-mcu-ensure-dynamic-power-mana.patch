@@ -22,7 +22,7 @@ Signed-off-by: Russell Senior <russell@personaltelco.net>
 
 --- a/drivers/net/pse-pd/realtek-pse-mcu-core.c
 +++ b/drivers/net/pse-pd/realtek-pse-mcu-core.c
-@@ -70,10 +70,14 @@
+@@ -68,10 +68,14 @@
  /* Nominal PSE rail; 802.3at/bt operating range. */
  #define RTPSE_MCU_PSE_VOLTAGE_UV		54000000
  
@@ -37,7 +37,7 @@ Signed-off-by: Russell Senior <russell@personaltelco.net>
  
  	RTPSE_MCU_CMD_PORT_ENABLE,
  	RTPSE_MCU_CMD_PORT_SET_POWER_LIMIT_TYPE,
-@@ -382,6 +386,26 @@ static int rtpse_mcu_set_global_state(st
+@@ -369,6 +373,26 @@ static int rtpse_mcu_set_global_state(st
  	return (resp.payload[0] == 0x0) ? 0 : -EIO;
  }
  
@@ -64,7 +64,7 @@ Signed-off-by: Russell Senior <russell@personaltelco.net>
  /* Port operations */
  
  static int rtpse_mcu_port_get_status(struct rtpse_mcu_ctrl *pse, unsigned int port,
-@@ -983,6 +1007,11 @@ int rtpse_mcu_register(struct rtpse_mcu_
+@@ -837,6 +861,11 @@ int rtpse_mcu_register(struct rtpse_mcu_
  		return dev_err_probe(pse->dev, PTR_ERR(gpiod),
  				     "failed to get disable-ports gpio\n");
  
@@ -76,7 +76,7 @@ Signed-off-by: Russell Senior <russell@personaltelco.net>
  	if (!info.system_enable) {
  		ret = rtpse_mcu_set_global_state(pse, true);
  		/* Dialects without a global-state concept (e.g. Gen1) return
-@@ -1096,6 +1125,7 @@ static const struct rtpse_mcu_dialect rt
+@@ -944,6 +973,7 @@ static const struct rtpse_mcu_dialect rt
  		[RTPSE_MCU_CMD_SET_GLOBAL_STATE]	= RTPSE_MCU_OP(0x00),
  		[RTPSE_MCU_CMD_GET_SYSTEM_INFO]		= RTPSE_MCU_OP(0x40),
  		[RTPSE_MCU_CMD_GET_EXT_CONFIG]		= RTPSE_MCU_OP(0x4a),
@@ -84,7 +84,7 @@ Signed-off-by: Russell Senior <russell@personaltelco.net>
  
  		[RTPSE_MCU_CMD_PORT_ENABLE]		= RTPSE_MCU_OP(0x01),
  		[RTPSE_MCU_CMD_PORT_SET_POWER_LIMIT_TYPE] = RTPSE_MCU_OP(0x12),
-@@ -1119,6 +1149,7 @@ static const struct rtpse_mcu_dialect rt
+@@ -964,6 +994,7 @@ static const struct rtpse_mcu_dialect rt
  	.opcode = {
  		[RTPSE_MCU_CMD_GET_SYSTEM_INFO]		= RTPSE_MCU_OP(0x20),
  		[RTPSE_MCU_CMD_GET_EXT_CONFIG]		= RTPSE_MCU_OP(0x2b),
