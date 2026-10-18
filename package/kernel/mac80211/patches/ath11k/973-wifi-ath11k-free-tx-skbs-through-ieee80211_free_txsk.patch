@@ -1,0 +1,39 @@
+From fb78a3b7ab759f61df4f7d6fa394a6e5ebff3a2a Mon Sep 17 00:00:00 2001
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Date: Mon, 24 Aug 2026 15:38:02 +0200
+Subject: [PATCH ath-next v5 1/9] wifi: ath11k: free tx skbs through
+ ieee80211_free_txskb()
+
+ath11k_dp_tx_free_txbuf(), reached for the HTT REINJ and INSPECT
+statuses, frees the frame with dev_kfree_skb_any(), unlike every other
+tx completion path in dp_tx.c. This leaks the tx status clone and idr
+entry mac80211 keeps for a frame whose socket asked for status, as
+commit 29d15589f084 ("wifi: ath11k: Cleanup mac80211 references on
+failure during tx_complete") fixed on three sibling paths. With
+NL80211_EXT_FEATURE_AQL, set by the next patch, it also keeps the
+frame's airtime charge, and an access category at its limit is never
+scheduled again.
+
+Free the frame with ieee80211_free_txskb(). Neither status occurred on
+the hardware below; the change is by inspection.
+
+Tested-on: IPQ8074 hw2.0 AHB WLAN.HK.2.9.0.1-02146-QCAHKSWPL_SILICONZ-1
+
+Fixes: d5c65159f289 ("ath11k: driver for Qualcomm IEEE 802.11ax devices")
+Link: https://lore.kernel.org/all/20261018174904.1757161-2-julius@bairaktaris.de/
+Assisted-by: Claude:claude-opus-5-5
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+--- a/drivers/net/wireless/ath/ath11k/dp_tx.c
++++ b/drivers/net/wireless/ath/ath11k/dp_tx.c
+@@ -305,9 +305,10 @@ static void ath11k_dp_tx_free_txbuf(stru
+ 	skb_cb = ATH11K_SKB_CB(msdu);
+ 
+ 	dma_unmap_single(ab->dev, skb_cb->paddr, msdu->len, DMA_TO_DEVICE);
+-	dev_kfree_skb_any(msdu);
+ 
+ 	ar = ab->pdevs[mac_id].ar;
++	ieee80211_free_txskb(ar->hw, msdu);
++
+ 	if (atomic_dec_and_test(&ar->dp.num_tx_pending))
+ 		wake_up(&ar->dp.tx_empty_waitq);
+ }

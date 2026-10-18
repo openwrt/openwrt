@@ -1,0 +1,97 @@
+From 4b29fe29ed4bb0ff96bde0a92d90fa60a24c7ddc Mon Sep 17 00:00:00 2001
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Date: Mon, 24 Aug 2026 15:38:06 +0200
+Subject: [PATCH ath-next v5 9/9] wifi: ath11k: budget the tx completion
+ handler
+
+ath11k_dp_tx_completion_handler() reaps the whole release ring, and
+ath11k_dp_service_srng() charges none of it against the NAPI budget,
+unlike the receive handlers. Since the handler now ends in a scheduling
+round, a full ring gets one round for all of it. Reap at most the budget
+per poll and return the count, so a round runs once per budget of
+completions; NAPI polls again at once for the rest.
+
+BE aql_txq_limit 500/1000 us, three interleaved runs per arm: both arms
+reach 94.4 to 94.8 Mbit/s, and the sender retransmits 4, 6 and 8
+segments with this patch against 8, 644 and 296 without.
+
+Tested-on: IPQ8074 hw2.0 AHB WLAN.HK.2.9.0.1-02146-QCAHKSWPL_SILICONZ-1
+
+Link: https://lore.kernel.org/all/20261018174904.1757161-10-julius@bairaktaris.de/
+Assisted-by: Claude:claude-opus-5-5
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+--- a/drivers/net/wireless/ath/ath11k/dp.c
++++ b/drivers/net/wireless/ath/ath11k/dp.c
+@@ -781,8 +781,14 @@ int ath11k_dp_service_srng(struct ath11k
+ 
+ 	for (i = 0; i < ab->hw_params.hal_params->num_tx_rings; i++) {
+ 		if (BIT(ab->hw_params.hal_params->tcl2wbm_rbm_map[i].wbm_ring_num) &
+-		    ab->hw_params.ring_mask->tx[grp_id])
+-			ath11k_dp_tx_completion_handler(ab, i);
++		    ab->hw_params.ring_mask->tx[grp_id]) {
++			work_done =
++				ath11k_dp_tx_completion_handler(ab, i, budget);
++			budget -= work_done;
++			tot_work_done += work_done;
++			if (budget <= 0)
++				goto done;
++		}
+ 	}
+ 
+ 	if (ab->hw_params.ring_mask->rx_err[grp_id]) {
+--- a/drivers/net/wireless/ath/ath11k/dp_tx.c
++++ b/drivers/net/wireless/ath/ath11k/dp_tx.c
+@@ -692,7 +692,8 @@ static inline void ath11k_dp_tx_status_p
+ 		ts->rate_stats = 0;
+ }
+ 
+-void ath11k_dp_tx_completion_handler(struct ath11k_base *ab, int ring_id)
++int ath11k_dp_tx_completion_handler(struct ath11k_base *ab, int ring_id,
++				    int budget)
+ {
+ 	struct ath11k *ar;
+ 	struct ath11k_dp *dp = &ab->dp;
+@@ -702,6 +703,7 @@ void ath11k_dp_tx_completion_handler(str
+ 	struct hal_tx_status ts = {};
+ 	struct dp_tx_ring *tx_ring = &dp->tx_ring[ring_id];
+ 	unsigned long push = 0;
++	int done = 0;
+ 	u32 *desc;
+ 	u32 msdu_id;
+ 	u8 mac_id, i;
+@@ -730,10 +732,13 @@ void ath11k_dp_tx_completion_handler(str
+ 
+ 	spin_unlock_bh(&status_ring->lock);
+ 
+-	while (ATH11K_TX_COMPL_NEXT(tx_ring->tx_status_tail) != tx_ring->tx_status_head) {
++	while (done < budget &&
++	       ATH11K_TX_COMPL_NEXT(tx_ring->tx_status_tail) !=
++	       tx_ring->tx_status_head) {
+ 		struct hal_wbm_release_ring *tx_status;
+ 		u32 desc_id;
+ 
++		done++;
+ 		tx_ring->tx_status_tail =
+ 			ATH11K_TX_COMPL_NEXT(tx_ring->tx_status_tail);
+ 		tx_status = &tx_ring->tx_status[tx_ring->tx_status_tail];
+@@ -789,6 +794,8 @@ void ath11k_dp_tx_completion_handler(str
+ 	for_each_set_bit(i, &push, ab->num_radios * IEEE80211_NUM_ACS)
+ 		ath11k_mac_tx_push_pending(ab->pdevs[i / IEEE80211_NUM_ACS].ar,
+ 					   i % IEEE80211_NUM_ACS);
++
++	return done;
+ }
+ 
+ int ath11k_dp_tx_send_reo_cmd(struct ath11k_base *ab, struct dp_rx_tid *rx_tid,
+--- a/drivers/net/wireless/ath/ath11k/dp_tx.h
++++ b/drivers/net/wireless/ath/ath11k/dp_tx.h
+@@ -21,7 +21,8 @@ void ath11k_dp_tx_update_txcompl(struct
+ int ath11k_dp_tx_htt_h2t_ver_req_msg(struct ath11k_base *ab);
+ int ath11k_dp_tx(struct ath11k *ar, struct ath11k_vif *arvif,
+ 		 struct ath11k_sta *arsta, struct sk_buff *skb);
+-void ath11k_dp_tx_completion_handler(struct ath11k_base *ab, int ring_id);
++int ath11k_dp_tx_completion_handler(struct ath11k_base *ab, int ring_id,
++				    int budget);
+ int ath11k_dp_tx_send_reo_cmd(struct ath11k_base *ab, struct dp_rx_tid *rx_tid,
+ 			      enum hal_reo_cmd_type type,
+ 			      struct ath11k_hal_reo_cmd *cmd,

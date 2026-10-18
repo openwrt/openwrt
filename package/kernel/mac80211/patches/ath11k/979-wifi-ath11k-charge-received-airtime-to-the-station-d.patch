@@ -1,0 +1,76 @@
+From d6a4608f1610dc8ff026d08ad83c4118afeec3b2 Mon Sep 17 00:00:00 2001
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Date: Mon, 24 Aug 2026 15:38:05 +0200
+Subject: [PATCH ath-next v5 7/9] wifi: ath11k: charge received airtime to the
+ station deficit
+
+mac80211 charges received airtime to the same deficit, as AIRTIME_USE_RX
+is set by default, but ath11k reports none. Register each received
+PPDU's duration, which ath11k already adds to rx_duration, once against
+the PPDU's first TID, or BE when it names none. The TID comes from the
+PPDU end user stats TLV, which is added to the default monitor status
+filter. The call runs after ab->base_lock is dropped, under the RCU read
+lock.
+
+A station uploading with DSCP CS5 moved its VI deficit in 3 of 3 runs;
+uploads marked BE left it unchanged in 3 of 3.
+
+Tested-on: IPQ8074 hw2.0 AHB WLAN.HK.2.9.0.1-02146-QCAHKSWPL_SILICONZ-1
+
+Link: https://lore.kernel.org/all/20261018174904.1757161-8-julius@bairaktaris.de/
+Assisted-by: Claude:claude-opus-5-5
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+--- a/drivers/net/wireless/ath/ath11k/dp_rx.c
++++ b/drivers/net/wireless/ath/ath11k/dp_rx.c
+@@ -5293,7 +5293,9 @@ int ath11k_dp_rx_process_mon_status(stru
+ 	struct sk_buff_head skb_list;
+ 	struct ath11k_peer *peer;
+ 	struct ath11k_sta *arsta;
++	struct ieee80211_sta *sta;
+ 	int num_buffs_reaped = 0;
++	u8 tid;
+ 	u32 rx_buf_sz;
+ 	u16 log_type;
+ 	struct ath11k_mon_data *pmon = (struct ath11k_mon_data *)&ar->dp.mon_data;
+@@ -5347,6 +5349,7 @@ int ath11k_dp_rx_process_mon_status(stru
+ 			continue;
+ 		}
+ 
++		sta = NULL;
+ 		rcu_read_lock();
+ 		spin_lock_bh(&ab->base_lock);
+ 		peer = ath11k_peer_find_by_id(ab, ppdu_info->peer_id);
+@@ -5360,12 +5363,23 @@ int ath11k_dp_rx_process_mon_status(stru
+ 
+ 		arsta = ath11k_sta_to_arsta(peer->sta);
+ 		ath11k_dp_rx_update_peer_stats(arsta, ppdu_info);
++		sta = peer->sta;
+ 
+ 		if (ath11k_debugfs_is_pktlog_peer_valid(ar, peer->addr))
+ 			trace_ath11k_htt_rxdesc(ar, skb->data, log_type, rx_buf_sz);
+ 
+ next_skb:
+ 		spin_unlock_bh(&ab->base_lock);
++
++		/* Charged once per PPDU with the measured duration, as on
++		 * the transmit side, to the first TID of the PPDU; BE when
++		 * it names none. Outside base_lock, which tx completion
++		 * contends for; sta is held by the rcu read lock.
++		 */
++		tid = ppdu_info->tid < IEEE80211_NUM_TIDS ? ppdu_info->tid : 0;
++		if (sta && ppdu_info->rx_duration)
++			ieee80211_sta_register_airtime(sta, tid, 0,
++						       ppdu_info->rx_duration);
+ 		rcu_read_unlock();
+ 
+ 		dev_kfree_skb_any(skb);
+--- a/drivers/net/wireless/ath/ath11k/mac.c
++++ b/drivers/net/wireless/ath/ath11k/mac.c
+@@ -229,6 +229,7 @@ ath11k_phymodes[NUM_NL80211_BANDS][ATH11
+ const struct htt_rx_ring_tlv_filter ath11k_mac_mon_status_filter_default = {
+ 	.rx_filter = HTT_RX_FILTER_TLV_FLAGS_MPDU_START |
+ 		     HTT_RX_FILTER_TLV_FLAGS_PPDU_END |
++		     HTT_RX_FILTER_TLV_FLAGS_PPDU_END_USER_STATS |
+ 		     HTT_RX_FILTER_TLV_FLAGS_PPDU_END_STATUS_DONE,
+ 	.pkt_filter_flags0 = HTT_RX_FP_MGMT_FILTER_FLAGS0,
+ 	.pkt_filter_flags1 = HTT_RX_FP_MGMT_FILTER_FLAGS1,

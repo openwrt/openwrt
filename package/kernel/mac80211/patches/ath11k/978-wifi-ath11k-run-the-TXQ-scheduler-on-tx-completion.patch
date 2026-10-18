@@ -1,0 +1,165 @@
+From 0b60f2703d1d6289ba8d36ac3e99d0b36103c2db Mon Sep 17 00:00:00 2001
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Date: Mon, 24 Aug 2026 15:38:04 +0200
+Subject: [PATCH ath-next v5 6/9] wifi: ath11k: run the TXQ scheduler on tx
+ completion
+
+A station at its airtime queue limit gets airtime back only when the
+hardware completes its frames, but ath11k starts a round only from
+wake_tx_queue, so the backlog waits for the next frame from the stack.
+Start a round for each access category, taken from the frame's queue
+mapping, that a reaped completion belonged to, whether the hardware or
+the firmware released the frame.
+
+TCP download from a wired host to one 1x1 VHT80 station, BE
+aql_txq_limit 500/1000 us, 20 s, three interleaved runs per arm, sender
+RTT:
+
+                    Mbit/s              RTT mean ms   RTT max ms
+  with this patch   94.5, 94.4, 94.6    68, 62, 67    126, 135, 121
+  without           74.0, 78.5, 72.4    28, 27, 27     55,  40,  40
+
+Without it the link idles between arrivals, which also lowers its RTT.
+At the default limits both arms reach 88 to 95 Mbit/s.
+
+Tested-on: IPQ8074 hw2.0 AHB WLAN.HK.2.9.0.1-02146-QCAHKSWPL_SILICONZ-1
+
+Link: https://lore.kernel.org/all/20261018174904.1757161-7-julius@bairaktaris.de/
+Assisted-by: Claude:claude-opus-5-5
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+--- a/drivers/net/wireless/ath/ath11k/dp_tx.c
++++ b/drivers/net/wireless/ath/ath11k/dp_tx.c
+@@ -286,7 +286,8 @@ fail_remove_idr:
+ 
+ static void ath11k_dp_tx_free_txbuf(struct ath11k_base *ab, u8 mac_id,
+ 				    int msdu_id,
+-				    struct dp_tx_ring *tx_ring)
++				    struct dp_tx_ring *tx_ring,
++				    unsigned long *push)
+ {
+ 	struct ath11k *ar;
+ 	struct sk_buff *msdu;
+@@ -307,6 +308,8 @@ static void ath11k_dp_tx_free_txbuf(stru
+ 	dma_unmap_single(ab->dev, skb_cb->paddr, msdu->len, DMA_TO_DEVICE);
+ 
+ 	ar = ab->pdevs[mac_id].ar;
++	__set_bit(mac_id * IEEE80211_NUM_ACS + skb_get_queue_mapping(msdu),
++		  push);
+ 	ieee80211_free_txskb(ar->hw, msdu);
+ 
+ 	if (atomic_dec_and_test(&ar->dp.num_tx_pending))
+@@ -316,7 +319,8 @@ static void ath11k_dp_tx_free_txbuf(stru
+ static void
+ ath11k_dp_tx_htt_tx_complete_buf(struct ath11k_base *ab,
+ 				 struct dp_tx_ring *tx_ring,
+-				 struct ath11k_dp_htt_wbm_tx_status *ts)
++				 struct ath11k_dp_htt_wbm_tx_status *ts,
++				 unsigned long *push)
+ {
+ 	struct ieee80211_tx_status status = {};
+ 	struct sk_buff *msdu;
+@@ -339,6 +343,8 @@ ath11k_dp_tx_htt_tx_complete_buf(struct
+ 	info = IEEE80211_SKB_CB(msdu);
+ 
+ 	ar = skb_cb->ar;
++	__set_bit(ar->pdev_idx * IEEE80211_NUM_ACS +
++		  skb_get_queue_mapping(msdu), push);
+ 
+ 	if (atomic_dec_and_test(&ar->dp.num_tx_pending))
+ 		wake_up(&ar->dp.tx_empty_waitq);
+@@ -390,7 +396,8 @@ ath11k_dp_tx_htt_tx_complete_buf(struct
+ static void
+ ath11k_dp_tx_process_htt_tx_complete(struct ath11k_base *ab,
+ 				     void *desc, u8 mac_id,
+-				     u32 msdu_id, struct dp_tx_ring *tx_ring)
++				     u32 msdu_id, struct dp_tx_ring *tx_ring,
++				     unsigned long *push)
+ {
+ 	struct htt_tx_wbm_completion *status_desc;
+ 	struct ath11k_dp_htt_wbm_tx_status ts = {};
+@@ -415,12 +422,12 @@ ath11k_dp_tx_process_htt_tx_complete(str
+ 		else
+ 			ts.peer_id = HTT_INVALID_PEER_ID;
+ 
+-		ath11k_dp_tx_htt_tx_complete_buf(ab, tx_ring, &ts);
++		ath11k_dp_tx_htt_tx_complete_buf(ab, tx_ring, &ts, push);
+ 
+ 		break;
+ 	case HAL_WBM_REL_HTT_TX_COMP_STATUS_REINJ:
+ 	case HAL_WBM_REL_HTT_TX_COMP_STATUS_INSPECT:
+-		ath11k_dp_tx_free_txbuf(ab, mac_id, msdu_id, tx_ring);
++		ath11k_dp_tx_free_txbuf(ab, mac_id, msdu_id, tx_ring, push);
+ 		break;
+ 	case HAL_WBM_REL_HTT_TX_COMP_STATUS_MEC_NOTIFY:
+ 		/* This event is to be handled only when the driver decides to
+@@ -694,9 +701,10 @@ void ath11k_dp_tx_completion_handler(str
+ 	struct sk_buff *msdu;
+ 	struct hal_tx_status ts = {};
+ 	struct dp_tx_ring *tx_ring = &dp->tx_ring[ring_id];
++	unsigned long push = 0;
+ 	u32 *desc;
+ 	u32 msdu_id;
+-	u8 mac_id;
++	u8 mac_id, i;
+ 
+ 	spin_lock_bh(&status_ring->lock);
+ 
+@@ -740,7 +748,7 @@ void ath11k_dp_tx_completion_handler(str
+ 			ath11k_dp_tx_process_htt_tx_complete(ab,
+ 							     (void *)tx_status,
+ 							     mac_id, msdu_id,
+-							     tx_ring);
++							     tx_ring, &push);
+ 			continue;
+ 		}
+ 
+@@ -756,12 +764,23 @@ void ath11k_dp_tx_completion_handler(str
+ 		spin_unlock(&tx_ring->tx_idr_lock);
+ 
+ 		ar = ab->pdevs[mac_id].ar;
++		__set_bit(mac_id * IEEE80211_NUM_ACS + skb_get_queue_mapping(msdu),
++			  &push);
+ 
+ 		if (atomic_dec_and_test(&ar->dp.num_tx_pending))
+ 			wake_up(&ar->dp.tx_empty_waitq);
+ 
+ 		ath11k_dp_tx_complete_msdu(ar, msdu, &ts);
+ 	}
++
++	/* A completion returns the airtime the frame was charged, which is
++	 * what an airtime-limited station in that access category is waiting
++	 * on. The arrivals that would otherwise start a round are themselves
++	 * queued behind that limit.
++	 */
++	for_each_set_bit(i, &push, ab->num_radios * IEEE80211_NUM_ACS)
++		ath11k_mac_tx_push_pending(ab->pdevs[i / IEEE80211_NUM_ACS].ar,
++					   i % IEEE80211_NUM_ACS);
+ }
+ 
+ int ath11k_dp_tx_send_reo_cmd(struct ath11k_base *ab, struct dp_rx_tid *rx_tid,
+--- a/drivers/net/wireless/ath/ath11k/mac.c
++++ b/drivers/net/wireless/ath/ath11k/mac.c
+@@ -10160,6 +10160,13 @@ static void ath11k_mac_op_wake_tx_queue(
+ 	ath11k_mac_schedule_txq(hw->priv, txq->ac);
+ }
+ 
++void ath11k_mac_tx_push_pending(struct ath11k *ar, u8 ac)
++{
++	rcu_read_lock();
++	ath11k_mac_schedule_txq(ar, ac);
++	rcu_read_unlock();
++}
++
+ static const struct ieee80211_ops ath11k_ops = {
+ 	.tx				= ath11k_mac_op_tx,
+ 	.wake_tx_queue			= ath11k_mac_op_wake_tx_queue,
+--- a/drivers/net/wireless/ath/ath11k/mac.h
++++ b/drivers/net/wireless/ath/ath11k/mac.h
+@@ -161,6 +161,7 @@ struct ath11k *ath11k_mac_get_ar_by_vdev
+ struct ath11k *ath11k_mac_get_ar_by_pdev_id(struct ath11k_base *ab, u32 pdev_id);
+ 
+ void ath11k_mac_drain_tx(struct ath11k *ar);
++void ath11k_mac_tx_push_pending(struct ath11k *ar, u8 ac);
+ void ath11k_mac_peer_cleanup_all(struct ath11k *ar);
+ int ath11k_mac_tx_mgmt_pending_free(int buf_id, void *skb, void *ctx);
+ u8 ath11k_mac_bw_to_mac80211_bw(u8 bw);
