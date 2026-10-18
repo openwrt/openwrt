@@ -53,6 +53,9 @@ ipq50xx_setup_interfaces()
 	tplink,re700x)
 		ucidef_set_interface_lan "lan" "dhcp"
 		;;
+	zte,t5400)
+		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" "eth0"
+		;;
 	esac
 }
 
