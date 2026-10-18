@@ -80,8 +80,8 @@ to the monitor RX delivery path.
 +			u32 old_len = mon_skb->len;
 +
 +			skb_trim(mon_skb, old_len - (FCS_LEN * 2));
-+			ath11k_warn(ar->ab, "%s:%d DELIVER trim8 len %u -> %u\n",
-+				    __func__, __LINE__, old_len, mon_skb->len);
++			ath11k_dbg(ar->ab, ATH11K_DBG_DATA, "monitor trim len %u -> %u\n",
++				   old_len, mon_skb->len);
 +		}
 +
  		skb_next = mon_skb->next;
