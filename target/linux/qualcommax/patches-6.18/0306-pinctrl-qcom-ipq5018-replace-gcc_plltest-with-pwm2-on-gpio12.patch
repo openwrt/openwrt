@@ -1,0 +1,67 @@
+From 40520c74d15b0a74018224d5eb408bdeb3a840c3 Mon Sep 17 00:00:00 2001
+From: Adriel Santos <adriel@adriel.eu>
+Date: Fri, 2 Oct 2026 11:36:29 -0300
+Subject: [PATCH] pinctrl: qcom: ipq5018: replace gcc_plltest with pwm2 on
+ gpio12
+
+The pingroup table has gcc_plltest at function 5 of gpio12 and does not
+offer pwm2 on that pin, so the pinmux core rejects a request for pwm2 on
+gpio12 as an invalid group. On the hardware, function 5 of gpio12
+carries the PWM2 output: the Xiaomi AX3000T v2 drives its blue status
+LED from PWM2 on gpio12.
+
+The vendor kernel shipped on that router (Linux 4.4, stock firmware
+2.0.28) has pwm2 in this slot. Its pingroup table, as read from the
+firmware image, lists these functions for gpio12:
+
+  gpio, blsp0_spi, blsp0_i2c, blsp1_uart0, _, pwm2, qdss_tracedata_a,
+  _, _, _
+
+and has pwm3 at function 4 of gpio13, matching commit c6c159fcdb4e
+("pinctrl: qcom: ipq5018: add missing pwm3 function on gpio13").
+
+Measured on the board: with gpio12 set to each of the 16 function
+values in turn, and PWM2 held at 0% and then at 100% duty, the pad
+level read back from GPIO_IN follows PWM2 only at function 5. There it
+does not follow PWM channels 0, 1 or 3, and the LED switches with PWM2.
+Functions 4 and 7, which the table leaves empty, do not carry PWM2.
+
+Put pwm2 in function 5 of gpio12 and list gpio12 in pwm2_groups. Drop
+gpio12 from gcc_plltest_groups: none of its functions is gcc_plltest
+any more, and selecting it would trigger the WARN_ON() in
+msm_pinmux_set_mux().
+
+Fixes: 725d1c891658 ("pinctrl: qcom: Add IPQ5018 pinctrl driver")
+Assisted-by: LLM
+Signed-off-by: Adriel Santos <adriel@adriel.eu>
+Link: https://patch.msgid.link/20261002160958.908424-1-adriel@adriel.eu
+---
+--- a/drivers/pinctrl/qcom/pinctrl-ipq5018.c
++++ b/drivers/pinctrl/qcom/pinctrl-ipq5018.c
+@@ -363,7 +363,7 @@ static const char * const blsp1_uart0_gr
+ };
+ 
+ static const char * const gcc_plltest_groups[] = {
+-	"gpio10", "gpio12",
++	"gpio10",
+ };
+ 
+ static const char * const gcc_tlmm_groups[] = {
+@@ -557,7 +557,7 @@ static const char * const qdss_cti_trig_
+ };
+ 
+ static const char * const pwm2_groups[] = {
+-	"gpio44",
++	"gpio12", "gpio44",
+ };
+ 
+ static const char * const qdss_cti_trig_out_b1_groups[] = {
+@@ -690,7 +690,7 @@ static const struct msm_pingroup ipq5018
+ 	PINGROUP(9, sdc1_clk, qspi_clk, _, qdss_tracedata_a, _, _, _, _, _),
+ 	PINGROUP(10, blsp0_spi, blsp1_uart0, led0, gcc_plltest, qdss_tracedata_a, _, _, _, _),
+ 	PINGROUP(11, blsp0_spi, blsp1_uart0, _, gcc_tlmm, qdss_tracedata_a, _, _, _, _),
+-	PINGROUP(12, blsp0_spi, blsp0_i2c, blsp1_uart0, _, gcc_plltest, qdss_tracedata_a, _, _, _),
++	PINGROUP(12, blsp0_spi, blsp0_i2c, blsp1_uart0, _, pwm2, qdss_tracedata_a, _, _, _),
+ 	PINGROUP(13, blsp0_spi, blsp0_i2c, blsp1_uart0, pwm3, qdss_tracedata_a, _, _, _, _),
+ 	PINGROUP(14, pcie0_clk, _, _, cri_trng0, qdss_tracedata_a, _, _, _, _),
+ 	PINGROUP(15, _, _, cri_trng1, qdss_tracedata_a, _, _, _, _, _),
