@@ -1326,21 +1326,12 @@ define KernelPackage/sctp
   TITLE:=SCTP protocol kernel support
   KCONFIG:=\
      CONFIG_IP_SCTP \
-     CONFIG_SCTP_DBG_MSG=n \
      CONFIG_SCTP_DBG_OBJCNT=n \
-     CONFIG_SCTP_HMAC_NONE=n \
-     CONFIG_SCTP_HMAC_SHA1=n \
-     CONFIG_SCTP_HMAC_MD5=y \
-     CONFIG_SCTP_COOKIE_HMAC_SHA1=n \
-     CONFIG_SCTP_COOKIE_HMAC_MD5=y \
-     CONFIG_SCTP_DEFAULT_COOKIE_HMAC_NONE=n \
-     CONFIG_SCTP_DEFAULT_COOKIE_HMAC_SHA1=n \
-     CONFIG_SCTP_DEFAULT_COOKIE_HMAC_SHA256=n@ge6.18 \
-     CONFIG_SCTP_DEFAULT_COOKIE_HMAC_MD5=y
+     CONFIG_SCTP_DEFAULT_COOKIE_HMAC_SHA256=y \
+     CONFIG_SCTP_DEFAULT_COOKIE_HMAC_NONE=n
   FILES:= $(LINUX_DIR)/net/sctp/sctp.ko
   AUTOLOAD:= $(call AutoLoad,32,sctp)
-  DEPENDS:=+kmod-crypto-md5 +kmod-crypto-hmac \
-    +kmod-udptunnel4 +kmod-udptunnel6
+  DEPENDS:=+kmod-udptunnel4 +kmod-udptunnel6
 endef
 
 define KernelPackage/sctp/description
