@@ -1,0 +1,41 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Tomasz Janowski <janaz9@gmail.com>
+Date: Sun, 18 Oct 2026 10:00:00 +0000
+Subject: [PATCH] net: dsa: qca8k: do not force SGMII mode on QCA8337
+
+Since 6.12.109 (stable backport), qca8k_pcs_config() sets
+QCA8K_PORT_PAD_SGMII_FORCE_MODE on QCA8337 whenever phylink uses
+out-of-band negotiation, which is the case for a fixed-link CPU port.
+
+IPQ50xx boards such as the GL.iNet GL-B3000 connect the QCA8337 CPU port
+to the SoC MAC over SGMII with a fixed-link, and the SoC side still
+auto-negotiates (see "net: dsa: qca8k: always enable SGMII
+auto-negotiation"). Forcing the switch side breaks the CPU link, so no
+traffic passes between the LAN ports and the SoC.
+
+Keep the force bit cleared.
+
+Signed-off-by: Tomasz Janowski <janaz9@gmail.com>
+---
+--- a/drivers/net/dsa/qca/qca8k-8xxx.c
++++ b/drivers/net/dsa/qca/qca8k-8xxx.c
+@@ -1616,14 +1616,13 @@ static int qca8k_pcs_config(struct phyli
+ 			QCA8K_PORT0_PAD_SGMII_TXCLK_FALLING_EDGE) : 0;
+ 
+ 	/*
+-	 * (Un)set force mode on QCA8337 only, don't include it in the mask for
+-	 * others. It is written to the PORT0 PAD register for both port 0 and 6.
++	 * Always clear force mode on QCA8337 only, don't include it in the mask
++	 * for others. The SoC side of the CPU link keeps auto-negotiating, see
++	 * "net: dsa: qca8k: always enable SGMII auto-negotiation". It is written
++	 * to the PORT0 PAD register for both port 0 and 6.
+ 	 */
+-	if (priv->switch_id == QCA8K_ID_QCA8337) {
+-		if (neg_mode == PHYLINK_PCS_NEG_OUTBAND)
+-			val |= QCA8K_PORT_PAD_SGMII_FORCE_MODE;
++	if (priv->switch_id == QCA8K_ID_QCA8337)
+ 		mask |= QCA8K_PORT_PAD_SGMII_FORCE_MODE;
+-	}
+ 
+ 	if (mask)
+ 		ret = qca8k_rmw(priv, reg, mask, val);
