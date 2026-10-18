@@ -631,7 +631,8 @@ define Device/Build/initramfs
   .IGNORE: $(BIN_DIR)/$$(KERNEL_INITRAMFS_IMAGE)
 
   $(BIN_DIR)/$$(KERNEL_INITRAMFS_IMAGE): $(KDIR)/tmp/$$(KERNEL_INITRAMFS_IMAGE)
-	cp $$^ $$@
+	rm -f $$@
+	[ -e $$<.dropped ] || cp $$< $$@
 
   $(KDIR)/tmp/$$(KERNEL_INITRAMFS_IMAGE): $(KDIR)/$$(KERNEL_INITRAMFS_NAME)$$(strip \
 						$(if $(TARGET_PER_DEVICE_ROOTFS),.$$(ROOTFS_ID/$(1))) \
@@ -772,7 +773,8 @@ define Device/Build/image
   .IGNORE: $(BIN_DIR)/$(call DEVICE_IMG_NAME,$(1),$(2))
 
   $(BIN_DIR)/$(call DEVICE_IMG_NAME,$(1),$(2)): $(KDIR)/tmp/$(call DEVICE_IMG_NAME,$(1),$(2))
-	cp $$^ $$@
+	rm -f $$@
+	[ -e $$<.dropped ] || cp $$< $$@
 
   $(BUILD_DIR)/json_info_files/$(call DEVICE_IMG_NAME,$(1),$(2)).json: $(BIN_DIR)/$(call DEVICE_IMG_NAME,$(1),$(2))
 	@mkdir -p $$(shell dirname $$@)
@@ -829,7 +831,8 @@ define Device/Build/artifact
   .IGNORE: $(BIN_DIR)/$(DEVICE_IMG_PREFIX)-$(1)
 
   $(BIN_DIR)/$(DEVICE_IMG_PREFIX)-$(1): $(KDIR)/tmp/$(DEVICE_IMG_PREFIX)-$(1)
-	cp $$^ $$@
+	rm -f $$@
+	[ -e $$<.dropped ] || cp $$< $$@
 
   $(BUILD_DIR)/json_info_files/$(DEVICE_IMG_PREFIX)-$(1).json: $(BIN_DIR)/$(DEVICE_IMG_PREFIX)-$(1)
 	@mkdir -p $$(shell dirname $$@)
