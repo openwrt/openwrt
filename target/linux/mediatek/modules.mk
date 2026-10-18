@@ -19,7 +19,7 @@ define KernelPackage/btmtkuart
   SUBMENU:=Other modules
   TITLE:=MediaTek HCI UART driver
   DEPENDS:=@TARGET_mediatek_mt7622 +kmod-bluetooth +kmod-btmtk +mt7622bt-firmware \
-	   +!LINUX_6_12:kmod-hci-uart
+	   +kmod-hci-uart
   KCONFIG:=CONFIG_BT_MTKUART
   FILES:= \
 	$(LINUX_DIR)/drivers/bluetooth/btmtkuart.ko
@@ -43,7 +43,7 @@ $(eval $(call KernelPackage,iio-mt6577-auxadc))
 define KernelPackage/phy-mediatek-2p5g
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=MediaTek 2.5G Ethernet PHY
-  DEPENDS:=@TARGET_mediatek_filogic @!LINUX_6_12 +kmod-libphy
+  DEPENDS:=@TARGET_mediatek_filogic +kmod-libphy
   KCONFIG:=CONFIG_MEDIATEK_2P5GE_PHY
   FILES:= \
    $(LINUX_DIR)/drivers/net/phy/mediatek/mtk-2p5ge.ko
