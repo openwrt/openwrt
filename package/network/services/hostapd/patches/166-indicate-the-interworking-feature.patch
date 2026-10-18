@@ -1,0 +1,22 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Sun, 18 Oct 2026 10:00:00 +0200
+Subject: [PATCH] build_features: indicate CONFIG_INTERWORKING
+
+A program that configures hostapd cannot tell whether the build holds
+CONFIG_INTERWORKING, which SET_QOS_MAP_SET and SEND_QOS_MAP_CONF need.
+Answer "interworking" in has_feature(), so that `hostapd -vinterworking`
+tells it.
+
+--- a/src/utils/build_features.h
++++ b/src/utils/build_features.h
+@@ -69,6 +69,10 @@ static inline int has_feature(const char
+ 	if (!strcmp(feat, "dpp-map"))
+ 		return 1;
+ #endif
++#ifdef CONFIG_INTERWORKING
++	if (!strcmp(feat, "interworking"))
++		return 1;
++#endif
+ 	return 0;
+ }
+
