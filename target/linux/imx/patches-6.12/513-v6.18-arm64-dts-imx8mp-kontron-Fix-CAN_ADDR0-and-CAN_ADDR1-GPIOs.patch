@@ -1,0 +1,89 @@
+From f1b27d420b6ff0feed64208e28b033d7b931ceb1 Mon Sep 17 00:00:00 2001
+From: Annette Kobou <annette.kobou@kontron.de>
+Date: Mon, 21 Jul 2025 12:05:41 +0200
+Subject: arm64: dts: imx8mp-kontron: Fix CAN_ADDR0 and CAN_ADDR1 GPIOs
+
+Some signal assignments were modified between hardware revisions
+1 and 2:
+
+Revision 1:
+
+  - SPI_A_WP   -> CAN_ADDR0
+  - SPI_A_HOLD -> CAN_ADDR1
+
+Revision 2 and later:
+
+  - SPI_A_SDI -> CAN_ADDR0
+  - SPI_A_SDO -> CAN_ADDR1
+
+Fix the labels and add the missing pinctrls.
+
+Signed-off-by: Annette Kobou <annette.kobou@kontron.de>
+Signed-off-by: Frieder Schrempf <frieder.schrempf@kontron.de>
+Signed-off-by: Shawn Guo <shawnguo@kernel.org>
+---
+ .../boot/dts/freescale/imx8mp-kontron-bl-osm-s.dts | 31 +++++++++++++++++++---
+ 1 file changed, 27 insertions(+), 4 deletions(-)
+
+--- a/arch/arm64/boot/dts/freescale/imx8mp-kontron-bl-osm-s.dts
++++ b/arch/arm64/boot/dts/freescale/imx8mp-kontron-bl-osm-s.dts
+@@ -123,14 +123,12 @@
+ 
+ /*
+  * Rename SoM signals according to board usage:
+- *   SPI_A_WP      -> CAN_ADDR0
+- *   SPI_A_HOLD    -> CAN_ADDR1
+  *   GPIO_B_0      -> DIO1_OUT
+  *   GPIO_B_1      -> DIO2_OUT
+  */
+ &gpio3 {
+ 	gpio-line-names = "PCIE_WAKE", "PCIE_CLKREQ", "PCIE_A_PERST", "SDIO_B_D5",
+-			  "SDIO_B_D6", "SDIO_B_D7", "CAN_ADDR0", "CAN_ADDR1",
++			  "SDIO_B_D6", "SDIO_B_D7", "SPI_A_WP", "SPI_A_HOLD",
+ 			  "UART_B_RTS", "UART_B_CTS", "SDIO_B_D0", "SDIO_B_D1",
+ 			  "SDIO_B_D2", "SDIO_B_D3", "SDIO_B_WP", "SDIO_B_D4",
+ 			  "PCIE_SM_ALERT", "SDIO_B_CLK", "SDIO_B_CMD", "DIO1_OUT",
+@@ -159,6 +157,24 @@
+ 			  "GPIO_A_7", "CARRIER_PWR_EN", "I2S_A_DATA_IN", "I2S_LRCLK";
+ };
+ 
++/*
++ * Rename SoM signals according to board usage:
++ *   SPI_A_SDI	-> CAN_ADDR0
++ *   SPI_A_SDO	-> CAN_ADDR1
++ */
++&gpio5 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_gpio5>;
++	gpio-line-names = "I2S_BITCLK", "I2S_A_DATA_OUT", "I2S_MCLK", "PWM_2",
++			  "PWM_1", "PWM_0", "SPI_A_SCK", "CAN_ADDR1",
++			  "CAN_ADDR0", "SPI_A_CS0", "SPI_B_SCK", "SPI_B_SDO",
++			  "SPI_B_SDI", "SPI_B_CS0", "I2C_A_SCL", "I2C_A_SDA",
++			  "I2C_B_SCL", "I2C_B_SDA", "PCIE_SMCLK", "PCIE_SMDAT",
++			  "I2C_CAM_SCL", "I2C_CAM_SDA", "UART_A_RX", "UART_A_TX",
++			  "UART_C_RX", "UART_C_TX", "UART_CON_RX", "UART_CON_TX",
++			  "UART_B_RX", "UART_B_TX";
++};
++
+ &hdmi_pvi {
+ 	status = "okay";
+ };
+@@ -297,9 +313,16 @@
+ 		>;
+ 	};
+ 
++	pinctrl_gpio5: gpio5grp {
++		fsl,pins = <
++			MX8MP_IOMUXC_ECSPI1_MOSI__GPIO5_IO07		0x46 /* CAN_ADR0 */
++			MX8MP_IOMUXC_ECSPI1_MISO__GPIO5_IO08		0x46 /* CAN_ADR1 */
++		>;
++	};
++
+ 	pinctrl_usb_hub: usbhubgrp {
+ 		fsl,pins = <
+ 			MX8MP_IOMUXC_NAND_DQS__GPIO3_IO14		0x46
+ 		>;
+ 	};
+-};
++};
+\ No newline at end of file
