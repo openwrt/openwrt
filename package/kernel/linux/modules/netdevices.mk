@@ -672,7 +672,7 @@ $(eval $(call KernelPackage,phy-motorcomm))
 define KernelPackage/dwmac-motorcomm
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=Motorcomm PCI DWMAC support
-  DEPENDS:=@PCI_SUPPORT +kmod-phy-motorcomm +kmod-stmmac-core
+  DEPENDS:=@PCI_SUPPORT +kmod-phy-motorcomm +!TARGET_rockchip:kmod-stmmac-core
   KCONFIG:=CONFIG_DWMAC_MOTORCOMM
   FILES:=$(LINUX_DIR)/drivers/net/ethernet/stmicro/stmmac/dwmac-motorcomm.ko
   AUTOLOAD:=$(call AutoProbe,dwmac-motorcomm,1)
