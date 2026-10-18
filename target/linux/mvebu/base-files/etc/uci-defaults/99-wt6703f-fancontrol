@@ -1,0 +1,9 @@
+#!/bin/sh
+
+if [ -r /proc/device-tree/compatible ] &&
+		tr '\0' '\n' < /proc/device-tree/compatible |
+		grep -qx 'wd,cloud-ex2-ultra'; then
+	/etc/init.d/wt6703f-fancontrol enable
+fi
+
+exit 0
