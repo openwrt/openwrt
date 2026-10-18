@@ -798,3 +798,31 @@ define KernelPackage/sound-soc-es8316
 endef
 
 $(eval $(call KernelPackage,sound-soc-es8316))
+
+
+define KernelPackage/sound-soc-es8328
+  TITLE:=Everest Semi ES8328/ES8388 codec support
+  KCONFIG:= \
+	CONFIG_SND_SOC_ES8328 \
+	CONFIG_SND_SOC_ES8328_I2C
+  FILES:= \
+	$(LINUX_DIR)/sound/soc/codecs/snd-soc-es8328.ko \
+	$(LINUX_DIR)/sound/soc/codecs/snd-soc-es8328-i2c.ko
+  DEPENDS:=+kmod-sound-soc-core +kmod-i2c-core +kmod-regmap-i2c
+  AUTOLOAD:=$(call AutoProbe,snd-soc-es8328 snd-soc-es8328-i2c)
+  $(call AddDepends/sound)
+endef
+
+$(eval $(call KernelPackage,sound-soc-es8328))
+
+
+define KernelPackage/sound-soc-simple-amplifier
+  TITLE:=ASoC simple audio amplifier support
+  KCONFIG:=CONFIG_SND_SOC_SIMPLE_AMPLIFIER
+  FILES:=$(LINUX_DIR)/sound/soc/codecs/snd-soc-simple-amplifier.ko
+  DEPENDS:=+kmod-sound-soc-core
+  AUTOLOAD:=$(call AutoProbe,snd-soc-simple-amplifier)
+  $(call AddDepends/sound)
+endef
+
+$(eval $(call KernelPackage,sound-soc-simple-amplifier))
