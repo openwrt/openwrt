@@ -1,0 +1,31 @@
+From 7b6a12fbe0853f7faf2987610e25957d2017bd54 Mon Sep 17 00:00:00 2001
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Date: Sat, 24 Oct 2026 12:22:23 +0200
+Subject: [PATCH] net: gso: count the inner UDP header of encapsulated UDP GSO
+ packets
+
+skb_gso_transport_seglen() adds the inner TCP header length for an
+encapsulated GSO packet, but not the inner UDP header for
+SKB_GSO_UDP_L4, whose gso_size covers the payload only. Every segment
+of a UDP GSO packet in a UDP tunnel, built by UDP GRO behind a tunnel
+socket or sent with UDP_SEGMENT over VXLAN, is counted 8 bytes short.
+ip_forward() and ip_finish_output_gso() then let DF segments that
+exceed the MTU by up to 8 bytes leave unfragmented.
+
+Add the inner UDP header as the unencapsulated branch does.
+
+Fixes: ee80d1ebe5ba ("udp: add udp gso")
+Link: https://lore.kernel.org/netdev/cover.1792838740.git.julius@bairaktaris.de/
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+---
+--- a/net/core/gso.c
++++ b/net/core/gso.c
+@@ -151,6 +151,8 @@ static unsigned int skb_gso_transport_se
+ 
+ 		if (likely(shinfo->gso_type & (SKB_GSO_TCPV4 | SKB_GSO_TCPV6)))
+ 			thlen += inner_tcp_hdrlen(skb);
++		else if (shinfo->gso_type & SKB_GSO_UDP_L4)
++			thlen += sizeof(struct udphdr);
+ 	} else if (likely(shinfo->gso_type & (SKB_GSO_TCPV4 | SKB_GSO_TCPV6))) {
+ 		thlen = tcp_hdrlen(skb);
+ 	} else if (unlikely(skb_is_gso_sctp(skb))) {
