@@ -1582,6 +1582,7 @@ static void otto_pie_839x_read_action(u32 r[],  struct pie_rule *pr)
 
 	pr->fwd_data = r[14] >> 18;
 	pr->log_data = (r[14] >> 6) & 0x7ff;
+	pr->mir_data = (r[14] >> 3) & 0x3;
 
 	/* TODO: Read in the other data fields */
 
