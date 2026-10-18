@@ -18,6 +18,8 @@
 #include "stp.h"
 #include "vlan.h"
 
+#define MAX_PRIOS 8
+
 /* special port action controls */
 /* values:
  *      0 = FORWARD (default)
@@ -88,6 +90,10 @@ struct rtldsa_port {
 	bool vlan_filtering:1;
 	unsigned long rate_police_egress;
 	unsigned long rate_police_ingress;
+	u32 ets_handle;
+	u16 ets_children;
+	bool ets_offloadable;
+	u8 ets_weights[MAX_PRIOS];
 	unsigned long cached_flags;
 	u64 pm;
 	u16 pvid;
@@ -484,6 +490,8 @@ struct rtldsa_config {
 	void (*led_init)(struct otto_dsa_priv *priv);
 	u32 (*get_egress_rate)(struct otto_dsa_priv *priv, int port);
 	int (*set_egress_rate)(struct otto_dsa_priv *priv, int port, u32 rate);
+	void (*queue_sched_set)(struct otto_dsa_priv *priv, int port, int queue, u32 weight,
+				bool strict);
 	void (*qos_init)(struct otto_dsa_priv *priv);
 	int (*trk_mbr_ctr)(int group);
 	void (*lag_switch_init)(struct otto_dsa_priv *priv);

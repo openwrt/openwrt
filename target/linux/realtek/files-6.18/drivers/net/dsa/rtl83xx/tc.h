@@ -4,6 +4,7 @@
 #define _OTTO_TC_H
 
 #include <linux/types.h>
+#include <net/pkt_cls.h>
 
 struct dsa_switch;
 struct flow_action_entry;
@@ -32,5 +33,8 @@ int otto_tc_931x_port_rate_police_add(struct dsa_switch *ds, int port,
 int otto_tc_931x_port_rate_police_del(struct dsa_switch *ds, int port,
 				      struct flow_cls_offload *cls,
 				      bool ingress);
+
+int otto_tc_port_setup_tc(struct dsa_switch *ds, int port, enum tc_setup_type type,
+			  void *type_data);
 
 #endif /* _OTTO_TC_H */
