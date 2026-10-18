@@ -24,7 +24,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/net/mac80211/ieee80211_i.h
 +++ b/net/mac80211/ieee80211_i.h
-@@ -2268,6 +2268,7 @@ int ieee80211_set_scs(struct wiphy *wiph
+@@ -2269,6 +2269,7 @@ int ieee80211_set_scs(struct wiphy *wiph
  int ieee80211_set_mscs(struct wiphy *wiphy, struct net_device *dev,
  		       const u8 *peer, struct cfg80211_mscs_desc *desc);
  void ieee80211_sta_scs_free(struct sta_info *sta);
@@ -32,7 +32,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  /* link handling */
  void ieee80211_link_setup(struct ieee80211_link_data *link);
-@@ -2320,7 +2321,7 @@ void __ieee80211_xmit_fast(struct ieee80
+@@ -2321,7 +2322,7 @@ void __ieee80211_xmit_fast(struct ieee80
  			   struct sta_info *sta,
  			   struct ieee80211_fast_tx *fast_tx,
  			   struct sk_buff *skb, bool ampdu,
