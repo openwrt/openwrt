@@ -135,7 +135,6 @@ define KernelPackage/iio-ad799x
   DEPENDS:=+kmod-i2c-core +kmod-industrialio-triggered-buffer
   TITLE:=Analog Devices AD799x ADC driver
   KCONFIG:= \
-	CONFIG_AD799X_RING_BUFFER=y \
 	CONFIG_AD799X
   FILES:=$(LINUX_DIR)/drivers/iio/adc/ad799x.ko
   AUTOLOAD:=$(call AutoLoad,56,ad799x)

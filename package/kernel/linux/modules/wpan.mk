@@ -84,7 +84,6 @@ define KernelPackage/at86rf230
   TITLE:=AT86RF230 transceiver driver
   DEPENDS:=+kmod-mac802154 +kmod-regmap-spi
   KCONFIG:=CONFIG_IEEE802154_AT86RF230 \
-	CONFIG_IEEE802154_AT86RF230_DEBUGFS=n \
 	CONFIG_SPI=y \
 	CONFIG_SPI_MASTER=y
   FILES:=$(LINUX_DIR)/drivers/net/ieee802154/at86rf230.ko

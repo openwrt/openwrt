@@ -64,13 +64,9 @@ define KernelPackage/backlight
 	DEPENDS:=video-support
 	HIDDEN:=1
 	KCONFIG:=CONFIG_BACKLIGHT_CLASS_DEVICE \
-		CONFIG_BACKLIGHT_LCD_SUPPORT=y \
 		CONFIG_LCD_CLASS_DEVICE=n \
-		CONFIG_BACKLIGHT_GENERIC=n \
 		CONFIG_BACKLIGHT_ADP8860=n \
-		CONFIG_BACKLIGHT_ADP8870=n \
-		CONFIG_BACKLIGHT_OT200=n \
-		CONFIG_BACKLIGHT_PM8941_WLED=n
+		CONFIG_BACKLIGHT_ADP8870=n
 	FILES:=$(LINUX_DIR)/drivers/video/backlight/backlight.ko
 	AUTOLOAD:=$(call AutoProbe,video backlight)
 endef
@@ -119,7 +115,6 @@ define KernelPackage/fb
   KCONFIG:= \
 	CONFIG_FB \
 	CONFIG_FB_DEVICE=y \
-	CONFIG_FB_MXS=n \
 	CONFIG_FB_SM750=n \
 	CONFIG_FRAMEBUFFER_CONSOLE=y \
 	CONFIG_FRAMEBUFFER_CONSOLE_DETECT_PRIMARY=y \
@@ -469,8 +464,7 @@ define KernelPackage/drm-ttm-helper
   TITLE:=Helpers for ttm-based gem objects
   HIDDEN:=1
   DEPENDS:=video-support +kmod-drm-ttm +kmod-drm-kms-helper
-  KCONFIG:=CONFIG_DRM_TTM_HELPER \
-	   CONFIG_DRM_DISPLAY_HELPER_CEC=n
+  KCONFIG:=CONFIG_DRM_TTM_HELPER
   FILES:=$(LINUX_DIR)/drivers/gpu/drm/drm_ttm_helper.ko
   AUTOLOAD:=$(call AutoProbe,drm_ttm_helper)
 endef
@@ -759,10 +753,6 @@ define KernelPackage/drm-imx
   KCONFIG:=CONFIG_DRM_IMX \
 	CONFIG_IMX_IPUV3_CORE \
 	CONFIG_RESET_CONTROLLER=y \
-	CONFIG_DRM_IMX_IPUV3 \
-	CONFIG_IMX_IPUV3 \
-	CONFIG_DRM_GEM_CMA_HELPER=y \
-	CONFIG_DRM_KMS_CMA_HELPER=y \
 	CONFIG_DRM_IMX_PARALLEL_DISPLAY=n \
 	CONFIG_DRM_IMX_TVE=n \
 	CONFIG_DRM_IMX_LDB=n \
@@ -810,9 +800,7 @@ define KernelPackage/drm-imx-ldb
 	CONFIG_DRM_PANEL_SAMSUNG_LD9040=n \
 	CONFIG_DRM_PANEL_SAMSUNG_S6E8AA0=n \
 	CONFIG_DRM_PANEL_LG_LG4573=n \
-	CONFIG_DRM_PANEL_LD9040=n \
 	CONFIG_DRM_PANEL_LVDS=n \
-	CONFIG_DRM_PANEL_S6E8AA0=n \
 	CONFIG_DRM_PANEL_SITRONIX_ST7789V=n
   FILES:= \
 	$(LINUX_DIR)/drivers/gpu/drm/bridge/imx/imx-legacy-bridge.ko@ge6.18 \

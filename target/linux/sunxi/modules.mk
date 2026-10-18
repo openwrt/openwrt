@@ -59,7 +59,6 @@ define KernelPackage/sunxi-ir
     DEPENDS:=@(TARGET_sunxi&&RTC_SUPPORT) +kmod-input-core
     KCONFIG:= \
 	CONFIG_MEDIA_SUPPORT=y \
-	CONFIG_MEDIA_RC_SUPPORT=y \
 	CONFIG_RC_DEVICES=y \
 	CONFIG_RC_CORE=y \
 	CONFIG_IR_SUNXI

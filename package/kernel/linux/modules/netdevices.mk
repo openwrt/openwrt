@@ -275,8 +275,7 @@ define KernelPackage/et131x
   FILES:= \
 	$(LINUX_DIR)/drivers/net/ethernet/agere/et131x.ko
   KCONFIG:= \
-	CONFIG_ET131X \
-	CONFIG_ET131X_DEBUG=n
+	CONFIG_ET131X
   DEPENDS:=@PCI_SUPPORT +kmod-libphy
   AUTOLOAD:=$(call AutoProbe,et131x)
 endef
@@ -1185,8 +1184,7 @@ define KernelPackage/r6040
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=RDC Fast-Ethernet support
   DEPENDS:=@PCI_SUPPORT +kmod-libphy
-  KCONFIG:=CONFIG_R6040 \
-		CONFIG_R6040_NAPI=y
+  KCONFIG:=CONFIG_R6040
   FILES:=$(LINUX_DIR)/drivers/net/ethernet/rdc/r6040.ko
   AUTOLOAD:=$(call AutoProbe,r6040)
 endef
@@ -1395,9 +1393,7 @@ define KernelPackage/e1000
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=Intel(R) PRO/1000 PCI cards kernel support
   DEPENDS:=@PCI_SUPPORT
-  KCONFIG:=CONFIG_E1000 \
-    CONFIG_E1000_DISABLE_PACKET_SPLIT=n \
-    CONFIG_E1000_NAPI=y
+  KCONFIG:=CONFIG_E1000
   FILES:=$(LINUX_DIR)/drivers/net/ethernet/intel/e1000/e1000.ko
   AUTOLOAD:=$(call AutoLoad,35,e1000,1)
 endef
@@ -1708,7 +1704,6 @@ define KernelPackage/tulip
     CONFIG_TULIP_MMIO=y \
     CONFIG_TULIP_NAPI=y \
     CONFIG_TULIP_NAPI_HW_MITIGATION=y \
-    CONFIG_DE4X5=n \
     CONFIG_WINBOND_840 \
     CONFIG_DM9102 \
     CONFIG_ULI526X
@@ -1785,7 +1780,6 @@ define KernelPackage/dm9000
   TITLE:=Davicom 9000 Ethernet support
   DEPENDS:=+kmod-mii
   KCONFIG:=CONFIG_DM9000 \
-    CONFIG_DM9000_DEBUGLEVEL=4 \
     CONFIG_DM9000_FORCE_SIMPLE_PHY_POLL=y
   FILES:=$(LINUX_DIR)/drivers/net/ethernet/davicom/dm9000.ko
   AUTOLOAD:=$(call AutoLoad,34,dm9000)
@@ -1991,13 +1985,10 @@ define KernelPackage/mlx5-core
 	CONFIG_MLX5_EN_TLS=n \
 	CONFIG_MLX5_ESWITCH=n \
 	CONFIG_MLX5_FPGA=n \
-	CONFIG_MLX5_FPGA_IPSEC=n \
-	CONFIG_MLX5_FPGA_TLS=n \
 	CONFIG_MLX5_MACSEC=y \
 	CONFIG_MLX5_MPFS=y \
 	CONFIG_MLX5_SW_STEERING=n \
 	CONFIG_MLX5_TC_CT=n \
-	CONFIG_MLX5_TLS=n \
 	CONFIG_MLX5_VFIO_PCI=n
   AUTOLOAD:=$(call AutoLoad,45,mlx5_core,1)
 endef

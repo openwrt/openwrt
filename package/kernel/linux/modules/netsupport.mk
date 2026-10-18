@@ -46,9 +46,7 @@ define KernelPackage/appletalk
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=Appletalk protocol support
   KCONFIG:= \
-        CONFIG_ATALK \
-        CONFIG_DEV_APPLETALK \
-        CONFIG_IPDDP=n
+        CONFIG_ATALK
   FILES:=$(LINUX_DIR)/net/appletalk/appletalk.ko
   AUTOLOAD:=$(call AutoLoad,40,appletalk)
 endef

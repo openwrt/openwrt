@@ -191,7 +191,6 @@ define KernelPackage/sound-soc-core
   DEPENDS:=+kmod-regmap-core +kmod-ac97
   KCONFIG:= \
 	CONFIG_SND_SOC \
-	CONFIG_SND_SOC_ADI=n \
 	CONFIG_SND_SOC_GENERIC_DMAENGINE_PCM=y \
 	CONFIG_SND_SOC_ALL_CODECS=n
   FILES:=$(LINUX_DIR)/sound/soc/snd-soc-core.ko
@@ -643,7 +642,6 @@ define KernelPackage/sound-hda-intel
   TITLE:=HD Audio Intel Driver
   DEPENDS:=@TARGET_x86
   KCONFIG:= \
-	CONFIG_SOUND_PCI \
 	CONFIG_SND_HDA_INTEL
   FILES:= \
 	$(LINUX_DIR)/sound/pci/hda/snd-hda-intel.ko@lt6.18 \

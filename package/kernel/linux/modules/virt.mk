@@ -21,7 +21,6 @@ define KernelPackage/kvm-x86
   DEPENDS:=@TARGET_x86_generic||TARGET_x86_64 +kmod-irqbypass
   KCONFIG:=\
 	  CONFIG_KVM \
-	  CONFIG_KVM_MMU_AUDIT=n \
 	  CONFIG_KVM_SMM=y \
 	  CONFIG_VIRTUALIZATION=y
   FILES:= $(LINUX_DIR)/arch/$(LINUX_KARCH)/kvm/kvm.ko

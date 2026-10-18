@@ -283,7 +283,6 @@ define KernelPackage/usb-uhci
   TITLE:=Support for UHCI controllers
   KCONFIG:= \
 	CONFIG_USB_PCI=y \
-	CONFIG_USB_UHCI_ALT \
 	CONFIG_USB_UHCI_HCD
   FILES:=$(LINUX_DIR)/drivers/usb/host/uhci-hcd.ko
   AUTOLOAD:=$(call AutoLoad,50,uhci-hcd,1)
@@ -305,10 +304,8 @@ define KernelPackage/usb-ohci
 	+TARGET_bcm47xx:kmod-usb-bcma \
 	+TARGET_bcm47xx:kmod-usb-ssb
   KCONFIG:= \
-	CONFIG_USB_OHCI \
 	CONFIG_USB_OHCI_HCD \
 	CONFIG_USB_OHCI_HCD_AT91=y \
-	CONFIG_USB_OHCI_BCM63XX=y \
 	CONFIG_USB_OCTEON_OHCI=y \
 	CONFIG_USB_OHCI_HCD_OMAP3=y \
 	CONFIG_USB_OHCI_HCD_PLATFORM=y
@@ -394,9 +391,6 @@ define KernelPackage/usb2
 	+kmod-usb-ehci
   KCONFIG:=\
 	CONFIG_USB_EHCI_HCD_PLATFORM \
-	CONFIG_USB_EHCI_BCM63XX=y \
-	CONFIG_USB_IMX21_HCD=y \
-	CONFIG_USB_EHCI_MXC=y \
 	CONFIG_USB_OCTEON_EHCI=y \
 	CONFIG_USB_EHCI_HCD_ORION=y \
 	CONFIG_USB_EHCI_HCD_AT91=y \
@@ -534,9 +528,7 @@ define KernelPackage/usb-dwc3
 	   +USB_SUPPORT:kmod-usb-core \
 	   +kmod-usb-roles
   KCONFIG:= \
-	CONFIG_USB_DWC3 \
-	CONFIG_USB_DWC3_DEBUG=n \
-	CONFIG_USB_DWC3_VERBOSE=n
+	CONFIG_USB_DWC3
 ifeq ($(CONFIG_USB_SUPPORT)$(CONFIG_USB_GADGET_SUPPORT),yy)
   KCONFIG+= \
 	CONFIG_USB_DWC3_HOST=n \
@@ -1005,19 +997,7 @@ $(eval $(call KernelPackage,usb-serial-cypress-m8))
 define KernelPackage/usb-serial-keyspan
   TITLE:=Support for Keyspan USB-to-Serial devices
   KCONFIG:= \
-	CONFIG_USB_SERIAL_KEYSPAN \
-	CONFIG_USB_SERIAL_KEYSPAN_USA28 \
-	CONFIG_USB_SERIAL_KEYSPAN_USA28X \
-	CONFIG_USB_SERIAL_KEYSPAN_USA28XA \
-	CONFIG_USB_SERIAL_KEYSPAN_USA28XB \
-	CONFIG_USB_SERIAL_KEYSPAN_USA19 \
-	CONFIG_USB_SERIAL_KEYSPAN_USA18X \
-	CONFIG_USB_SERIAL_KEYSPAN_USA19W \
-	CONFIG_USB_SERIAL_KEYSPAN_USA19QW \
-	CONFIG_USB_SERIAL_KEYSPAN_USA19QI \
-	CONFIG_USB_SERIAL_KEYSPAN_MPR \
-	CONFIG_USB_SERIAL_KEYSPAN_USA49W \
-	CONFIG_USB_SERIAL_KEYSPAN_USA49WLC
+	CONFIG_USB_SERIAL_KEYSPAN
   FILES:= \
 	$(LINUX_DIR)/drivers/usb/serial/keyspan.ko \
 	$(wildcard $(LINUX_DIR)/drivers/usb/misc/ezusb.ko)
@@ -1712,7 +1692,7 @@ $(eval $(call KernelPackage,usb-hid-mcp2221))
 define KernelPackage/usb-yealink
   TITLE:=USB Yealink VOIP phone
   DEPENDS:=+kmod-input-evdev
-  KCONFIG:=CONFIG_USB_YEALINK CONFIG_INPUT_YEALINK CONFIG_INPUT=m CONFIG_INPUT_MISC=y
+  KCONFIG:=CONFIG_INPUT_YEALINK CONFIG_INPUT=m CONFIG_INPUT_MISC=y
   FILES:=$(LINUX_DIR)/drivers/$(USBINPUT_DIR)/yealink.ko
   AUTOLOAD:=$(call AutoProbe,yealink)
   $(call AddDepends/usb)
@@ -1728,7 +1708,7 @@ $(eval $(call KernelPackage,usb-yealink))
 define KernelPackage/usb-cm109
   TITLE:=Support for CM109 device
   DEPENDS:=+kmod-input-evdev
-  KCONFIG:=CONFIG_USB_CM109 CONFIG_INPUT_CM109 CONFIG_INPUT=m CONFIG_INPUT_MISC=y
+  KCONFIG:=CONFIG_INPUT_CM109 CONFIG_INPUT=m CONFIG_INPUT_MISC=y
   FILES:=$(LINUX_DIR)/drivers/$(USBINPUT_DIR)/cm109.ko
   AUTOLOAD:=$(call AutoProbe,cm109)
   $(call AddDepends/usb)
@@ -1801,8 +1781,7 @@ define KernelPackage/usb-chipidea
 	CONFIG_USB_CHIPIDEA \
 	CONFIG_USB_CHIPIDEA_GENERIC \
 	CONFIG_USB_CHIPIDEA_HOST=y \
-	CONFIG_USB_CHIPIDEA_UDC=y \
-	CONFIG_USB_CHIPIDEA_DEBUG=y
+	CONFIG_USB_CHIPIDEA_UDC=y
   FILES:= \
 	$(LINUX_DIR)/drivers/extcon/extcon-core.ko \
 	$(LINUX_DIR)/drivers/usb/chipidea/ci_hdrc.ko \
@@ -1825,8 +1804,7 @@ define KernelPackage/usb-chipidea2
 	CONFIG_EXTCON \
 	CONFIG_USB_CHIPIDEA \
 	CONFIG_USB_CHIPIDEA_HOST=y \
-	CONFIG_USB_CHIPIDEA_UDC=y \
-	CONFIG_USB_CHIPIDEA_DEBUG=y
+	CONFIG_USB_CHIPIDEA_UDC=y
   FILES:= \
 	$(LINUX_DIR)/drivers/extcon/extcon-core.ko \
 	$(LINUX_DIR)/drivers/usb/chipidea/ci_hdrc_usb2.ko

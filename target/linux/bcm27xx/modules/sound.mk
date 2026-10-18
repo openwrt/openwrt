@@ -26,7 +26,6 @@ define KernelPackage/sound-soc-bcm2835-i2s
   TITLE:=SoC Audio support for the Broadcom 2835 I2S module
   KCONFIG:= \
     CONFIG_SND_BCM2835_SOC_I2S \
-    CONFIG_SND_SOC_DMAENGINE_PCM=y \
     CONFIG_SND_SOC_GENERIC_DMAENGINE_PCM=y
   FILES:= \
     $(LINUX_DIR)/sound/soc/bcm/snd-soc-bcm2835-i2s.ko
@@ -509,8 +508,7 @@ $(eval $(call KernelPackage,sound-soc-fe-pi))
 define KernelPackage/sound-soc-googlevoicehat
   TITLE:=Support for Google VoiceHAT Sound Card
   KCONFIG:= \
-    CONFIG_SND_BCM2708_SOC_GOOGLEVOICEHAT_SOUNDCARD \
-    CONFIG_SND_SOC_VOICEHAT
+    CONFIG_SND_BCM2708_SOC_GOOGLEVOICEHAT_SOUNDCARD
   FILES:= \
     $(LINUX_DIR)/sound/soc/bcm/snd-soc-googlevoicehat-codec.ko
   AUTOLOAD:=$(call AutoLoad,68,snd-soc-googlevoicehat-codec)
@@ -531,7 +529,6 @@ define KernelPackage/sound-soc-hifiberry-adc
   TITLE:=Support for HifiBerry ADC
   KCONFIG:= \
     CONFIG_SND_BCM2708_SOC_HIFIBERRY_ADC \
-    CONFIG_SND_RPI_HIFIBERRY_ADC \
     CONFIG_SND_SOC_PCM186X_I2C
   FILES:= \
     $(LINUX_DIR)/sound/soc/bcm/snd-soc-hifiberry-adc.ko \
@@ -937,7 +934,6 @@ define KernelPackage/sound-soc-pifi-40-amp
   TITLE:=Support for PiFi-40 amp
   KCONFIG:= \
     CONFIG_SND_BCM2708_SOC_PIFI_40 \
-    CONFIG_SND_PIFI_40 \
     CONFIG_SND_SOC_TAS571X
   FILES:= \
     $(LINUX_DIR)/sound/soc/bcm/snd-soc-pifi-40.ko \
@@ -988,7 +984,6 @@ define KernelPackage/sound-soc-rpi-cirrus
     CONFIG_MFD_WM5110=n \
     CONFIG_MFD_WM8997=n \
     CONFIG_MFD_WM8998=n \
-    CONFIG_REGULATOR_ARIZONA \
     CONFIG_REGULATOR_ARIZONA_LDO1 \
     CONFIG_REGULATOR_ARIZONA_MICSUPP \
     CONFIG_SND_BCM2708_SOC_RPI_CIRRUS \
