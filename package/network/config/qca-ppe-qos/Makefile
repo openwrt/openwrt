@@ -1,6 +1,6 @@
 include $(TOPDIR)/rules.mk
 
-PKG_NAME:=ppe-qos
+PKG_NAME:=qca-ppe-qos
 PKG_VERSION:=1.0
 PKG_RELEASE:=1
 PKG_LICENSE:=GPL-2.0-only
@@ -9,7 +9,7 @@ PKG_MAINTAINER:=Julius Bairaktaris <julius@bairaktaris.de>
 
 include $(INCLUDE_DIR)/package.mk
 
-define Package/ppe-qos
+define Package/qca-ppe-qos
   SECTION:=net
   CATEGORY:=Network
   TITLE:=Qualcomm PPE hardware QoS classifiers
@@ -18,7 +18,7 @@ define Package/ppe-qos
   PKGARCH:=all
 endef
 
-define Package/ppe-qos/description
+define Package/qca-ppe-qos/description
 Configures the classifiers that pick a hardware egress queue on the
 Qualcomm PPE: per-port DSCP-to-priority maps (via dcb app) and the
 switch's small-packet priority, so latency-sensitive traffic is served
@@ -29,16 +29,16 @@ endef
 define Build/Compile
 endef
 
-define Package/ppe-qos/conffiles
-/etc/config/ppe-qos
+define Package/qca-ppe-qos/conffiles
+/etc/config/qca-ppe-qos
 endef
 
-define Package/ppe-qos/install
+define Package/qca-ppe-qos/install
 	$(INSTALL_DIR) $(1)/etc/config $(1)/etc/init.d
-	$(INSTALL_CONF) ./files/ppe-qos.config $(1)/etc/config/ppe-qos
-	$(INSTALL_BIN) ./files/ppe-qos.init $(1)/etc/init.d/ppe-qos
+	$(INSTALL_CONF) ./files/qca-ppe-qos.config $(1)/etc/config/qca-ppe-qos
+	$(INSTALL_BIN) ./files/qca-ppe-qos.init $(1)/etc/init.d/qca-ppe-qos
 	$(INSTALL_DIR) $(1)/etc/hotplug.d/net
-	$(INSTALL_DATA) ./files/ppe-qos.hotplug $(1)/etc/hotplug.d/net/20-ppe-qos
+	$(INSTALL_DATA) ./files/qca-ppe-qos.hotplug $(1)/etc/hotplug.d/net/20-qca-ppe-qos
 endef
 
-$(eval $(call BuildPackage,ppe-qos))
+$(eval $(call BuildPackage,qca-ppe-qos))

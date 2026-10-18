@@ -60,8 +60,8 @@ prio_of() {
 	done
 }
 
-# Trust boundary: /etc/config/ppe-qos is writable by any LuCI role holding the
-# ppe-qos ACL, and its values are pasted into the tc command lines below, which
+# Trust boundary: /etc/config/qca-ppe-qos is writable by any LuCI role holding the
+# qca-ppe-qos ACL, and its values are pasted into the tc command lines below, which
 # run as root. The LuCI form's datatype checks run in the browser only, so
 # re-validate here - none of these fields legitimately holds a shell
 # metacharacter.
@@ -130,7 +130,7 @@ add_filter() {
 			INSTALLED=$((INSTALLED + 1))
 		else
 			SKIPPED=$((SKIPPED + 1))
-			logger -t ppe-qos "port $1: switch refused $2/$3 $4"
+			logger -t qca-ppe-qos "port $1: switch refused $2/$3 $4"
 		fi
 	done
 }
@@ -214,12 +214,12 @@ apply_rule() {
 	config_get dport "$cfg" dest_port
 
 	dscp=$(class_to_dscp "$class") || {
-		logger -t ppe-qos "rule '$name': unknown class '$class', skipped"
+		logger -t qca-ppe-qos "rule '$name': unknown class '$class', skipped"
 		return 0
 	}
 	valid_addrs "$sip" && valid_addrs "$dip" &&
 	valid_ports "${sport:-0}" && valid_ports "${dport:-0}" || {
-		logger -t ppe-qos "rule '$name': address or port list rejected, skipped"
+		logger -t qca-ppe-qos "rule '$name': address or port list rejected, skipped"
 		return 0
 	}
 
@@ -293,7 +293,7 @@ wifi_clear() {
 apply() {
 	local len prio pairs="" port dev
 
-	config_load ppe-qos
+	config_load qca-ppe-qos
 	config_get_bool ENABLED global enabled 1
 	config_get len global small_pkt_len 1000
 	config_get prio global small_pkt_prio 5
@@ -332,7 +332,7 @@ apply() {
 		config_get p "$1" prio
 		[ -n "$d" ] && [ -n "$p" ] || return 0
 		case "$d$p" in *[!0-9]*)
-			logger -t ppe-qos "dscp map '$d:$p' is not numeric, skipped"
+			logger -t qca-ppe-qos "dscp map '$d:$p' is not numeric, skipped"
 			return 0 ;;
 		esac
 		pairs="$pairs dscp-prio $d:$p"
@@ -350,14 +350,14 @@ apply() {
 			[ -n "$pairs" ] && dcb app add dev "$port" $pairs
 		done
 	elif [ -n "$pairs" ]; then
-		logger -t ppe-qos "dscp maps skipped: the kernel is built without DCB"
+		logger -t qca-ppe-qos "dscp maps skipped: the kernel is built without DCB"
 	fi
 
 	flush_filters
 
 	WAN_PORT=$(wan_port)
 	[ -n "$WAN_PORT" ] ||
-		logger -t ppe-qos "the uplink is not a switch port; every rule's download half is skipped - set ppe-qos.global.wan_port"
+		logger -t qca-ppe-qos "the uplink is not a switch port; every rule's download half is skipped - set qca-ppe-qos.global.wan_port"
 
 	# The uplink port carries the download half of every rule, which is what
 	# a mark is actually worth here: it picks the egress queue toward the
@@ -393,9 +393,9 @@ apply() {
 	# more where it matches an IPv6 address, which does not fit in a single
 	# entry. Say what fitted, so that a rule quietly missing from half the
 	# ports is visible.
-	logger -t ppe-qos "marking rules: $INSTALLED filters installed, $SKIPPED refused"
+	logger -t qca-ppe-qos "marking rules: $INSTALLED filters installed, $SKIPPED refused"
 	[ "$SKIPPED" = 0 ] ||
-		logger -t ppe-qos "the switch classifier is full; disable rules or narrow their port lists"
+		logger -t qca-ppe-qos "the switch classifier is full; disable rules or narrow their port lists"
 }
 
 EXTRA_COMMANDS="wifi_dev"
@@ -412,7 +412,7 @@ wifi_dev() {
 	local dev="$1" len prio
 
 	[ -n "$dev" ] || return 1
-	config_load ppe-qos
+	config_load qca-ppe-qos
 	config_get_bool ENABLED global enabled 1
 	config_get len global small_pkt_len 1000
 	config_get prio global small_pkt_prio 5
@@ -425,7 +425,7 @@ reload_service() {
 }
 
 service_triggers() {
-	procd_add_reload_trigger "ppe-qos"
+	procd_add_reload_trigger "qca-ppe-qos"
 }
 
 # The egress block on an AP netdev is shared with whatever else is on the
