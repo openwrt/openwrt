@@ -35,6 +35,11 @@ jiofiber,jcow414)
 	ucidef_set_led_netdev "lan3-green" "lan3" "mt7530-0:0b:green:lan-3" "lan3" "tx rx"
 	ucidef_set_led_netdev "lan4-green" "lan4" "mt7530-0:0c:green:lan-4" "lan4" "tx rx"
 	;;
+zyxel,keenetic-lte)
+	ucidef_set_led_usbport "usb" "USB" "green:usb" "usb1-port1" "usb2-port1"
+	ucidef_set_led_netdev "internet" "Internet" "green:internet" "wan" "link tx rx"
+	ucidef_set_led_wlan "wifi" "Wi-Fi" "orange:wifi" "phy0tpt"
+	;;
 esac
 
 board_config_flush

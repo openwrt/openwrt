@@ -1,0 +1,42 @@
+From 28b3a90a403f57c3aee7cb6d4d14c45607d2eda0 Mon Sep 17 00:00:00 2001
+From: Aleksandr Vlasov <vlasov@gmail.com>
+Date: Sun, 11 Oct 2026 16:52:46 +0300
+Subject: [PATCH] wifi: rt2x00: rt2800: support big-endian EEPROM in NVMEM
+
+The RT63368 SoC boards (e.g. ZyXEL Keenetic LTE) keep the RT5392
+calibration EEPROM in flash as big-endian 16-bit words, with the MAC
+address as a plain byte string. Convert such data after reading it from
+the "eeprom" NVMEM cell when the device node has the boolean property
+"ralink,eeprom-big-endian".
+
+Signed-off-by: Aleksandr Vlasov <vlasov@gmail.com>
+---
+--- a/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
++++ b/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
+@@ -11146,6 +11146,26 @@
+ 
+ 	memcpy(rt2x00dev->eeprom, data, len);
+ 	kfree(data);
++
++	/*
++	 * Some SoC boards (e.g. RT63368 based) store the EEPROM as big-endian
++	 * 16-bit words. The MAC address is kept as a byte string in address
++	 * order there, so leave those words alone.
++	 */
++	if (device_property_read_bool(dev, "ralink,eeprom-big-endian")) {
++		unsigned int mac0, mac2, i;
++
++		mac0 = rt2800_eeprom_word_index(rt2x00dev, EEPROM_MAC_ADDR_0);
++		mac2 = rt2800_eeprom_word_index(rt2x00dev, EEPROM_MAC_ADDR_2);
++		for (i = 0; i < len / sizeof(u16); i++) {
++			if (i >= mac0 && i <= mac2)
++				continue;
++			rt2x00dev->eeprom[i] =
++				cpu_to_le16(be16_to_cpu((__force __be16)
++							rt2x00dev->eeprom[i]));
++		}
++	}
++
+ 	return 0;
+ }
+ EXPORT_SYMBOL_GPL(rt2800_read_eeprom_nvmem);
