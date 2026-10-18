@@ -2213,7 +2213,7 @@ define KernelPackage/stmmac-core
   KCONFIG:=CONFIG_STMMAC_ETH \
     CONFIG_STMMAC_SELFTESTS=n \
     CONFIG_STMMAC_PLATFORM \
-    CONFIG_CONFIG_DWMAC_DWC_QOS_ETH=n \
+    CONFIG_DWMAC_DWC_QOS_ETH=n \
     CONFIG_DWMAC_GENERIC
   FILES=$(LINUX_DIR)/drivers/net/ethernet/stmicro/stmmac/stmmac.ko \
     $(LINUX_DIR)/drivers/net/ethernet/stmicro/stmmac/stmmac-platform.ko \
