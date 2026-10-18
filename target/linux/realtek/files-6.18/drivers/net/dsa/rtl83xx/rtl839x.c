@@ -243,6 +243,7 @@ const struct rtldsa_config rtldsa_839x_cfg = {
 	.vlan_port_aft = RTL839X_VLAN_PORT_AFT,
 	.vlan_fwd_on_inner = otto_vlan_839x_port_forward_on_inner,
 	.vlan_port_keep_tag_set = otto_vlan_839x_port_keep_tag_set,
+	.vlan_port_qinq_set = otto_vlan_839x_port_qinq_set,
 	.vlan_port_pvidmode_set = otto_vlan_839x_port_pvid_mode_set,
 	.vlan_port_pvid_set = otto_vlan_839x_port_pvid_set,
 	.set_vlan_igr_filter = rtl839x_set_igr_filter,

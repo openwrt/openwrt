@@ -118,6 +118,7 @@ void otto_vlan_839x_port_pvid_mode_set(struct otto_dsa_priv *priv, int port, enu
 				       enum pbvlan_mode mode);
 void otto_vlan_839x_port_pvid_set(struct otto_dsa_priv *priv, int port, enum pbvlan_type type,
 				  int pvid);
+void otto_vlan_839x_port_qinq_set(struct otto_dsa_priv *priv, int port, bool enable);
 
 void otto_vlan_930x_tables_read(u32 vlan, struct otto_vlan_info *info);
 void otto_vlan_930x_set_tagged(u32 vlan, struct otto_vlan_info *info);
