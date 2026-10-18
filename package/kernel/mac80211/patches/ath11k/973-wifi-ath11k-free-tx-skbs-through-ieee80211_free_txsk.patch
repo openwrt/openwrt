@@ -1,0 +1,102 @@
+From 9da31b5f6288a69d93680c04bbbbc426b22b686d Mon Sep 17 00:00:00 2001
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Date: Mon, 24 Aug 2026 15:38:02 +0200
+Subject: [PATCH ath-next v6 1/9] wifi: ath11k: free tx skbs through
+ ieee80211_free_txskb()
+
+ath11k_dp_tx_free_txbuf(), reached for the HTT REINJ and INSPECT
+statuses, frees the frame with dev_kfree_skb_any(), unlike every other
+tx completion path in dp_tx.c, and so does ath11k_dp_free() for the
+frames in flight when firmware recovery tears the rings down. This leaks
+the tx status clone and idr entry mac80211 keeps for a frame whose
+socket asked for status, as commit 29d15589f084 ("wifi: ath11k: Cleanup
+mac80211 references on failure during tx_complete") fixed on three
+sibling paths. With NL80211_EXT_FEATURE_AQL, set by the next patch, it
+also keeps the frame's airtime charge, which ieee80211_restart_hw() does
+not reset, and an access category at its limit is never scheduled again.
+
+Free the REINJ and INSPECT frame with ieee80211_free_txskb(), and return
+the frames in flight to mac80211 in ath11k_core_reconfigure_on_crash()
+before ath11k_dp_free(), which also runs at teardown after the radios
+are freed. Neither HTT status occurred on the hardware below, and the
+recovery path was not exercised; both changes are by inspection.
+
+Tested-on: IPQ8074 hw2.0 AHB WLAN.HK.2.9.0.1-02146-QCAHKSWPL_SILICONZ-1
+
+Fixes: d5c65159f289 ("ath11k: driver for Qualcomm IEEE 802.11ax devices")
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+
+--- a/drivers/net/wireless/ath/ath11k/core.c
++++ b/drivers/net/wireless/ath/ath11k/core.c
+@@ -2494,6 +2494,7 @@ static int ath11k_core_reconfigure_on_cr
+ 	ath11k_dp_pdev_reo_cleanup(ab);
+ 	mutex_unlock(&ab->core_lock);
+ 
++	ath11k_dp_tx_free_pending(ab);
+ 	ath11k_dp_free(ab);
+ 	ath11k_hal_srng_clear(ab);
+ 
+--- a/drivers/net/wireless/ath/ath11k/dp_tx.c
++++ b/drivers/net/wireless/ath/ath11k/dp_tx.c
+@@ -305,13 +305,50 @@ static void ath11k_dp_tx_free_txbuf(stru
+ 	skb_cb = ATH11K_SKB_CB(msdu);
+ 
+ 	dma_unmap_single(ab->dev, skb_cb->paddr, msdu->len, DMA_TO_DEVICE);
+-	dev_kfree_skb_any(msdu);
+ 
+ 	ar = ab->pdevs[mac_id].ar;
++	ieee80211_free_txskb(ar->hw, msdu);
++
+ 	if (atomic_dec_and_test(&ar->dp.num_tx_pending))
+ 		wake_up(&ar->dp.tx_empty_waitq);
+ }
+ 
++/**
++ * ath11k_dp_tx_free_pending() - return the frames a crashed firmware holds
++ * @ab: device being recovered
++ *
++ * The radios outlive the firmware restart, and mac80211 keeps the tx status
++ * and the airtime charge of each frame until the driver returns it.
++ */
++void ath11k_dp_tx_free_pending(struct ath11k_base *ab)
++{
++	struct ath11k_skb_cb *skb_cb;
++	struct sk_buff_head pending;
++	struct dp_tx_ring *tx_ring;
++	struct sk_buff *msdu;
++	int i, msdu_id;
++
++	__skb_queue_head_init(&pending);
++
++	for (i = 0; i < ab->hw_params.hal_params->num_tx_rings; i++) {
++		tx_ring = &ab->dp.tx_ring[i];
++
++		spin_lock_bh(&tx_ring->tx_idr_lock);
++		idr_for_each_entry(&tx_ring->txbuf_idr, msdu, msdu_id) {
++			idr_remove(&tx_ring->txbuf_idr, msdu_id);
++			__skb_queue_tail(&pending, msdu);
++		}
++		spin_unlock_bh(&tx_ring->tx_idr_lock);
++	}
++
++	while ((msdu = __skb_dequeue(&pending))) {
++		skb_cb = ATH11K_SKB_CB(msdu);
++		dma_unmap_single(ab->dev, skb_cb->paddr, msdu->len,
++				 DMA_TO_DEVICE);
++		ieee80211_free_txskb(skb_cb->ar->hw, msdu);
++	}
++}
++
+ static void
+ ath11k_dp_tx_htt_tx_complete_buf(struct ath11k_base *ab,
+ 				 struct dp_tx_ring *tx_ring,
+--- a/drivers/net/wireless/ath/ath11k/dp_tx.h
++++ b/drivers/net/wireless/ath/ath11k/dp_tx.h
+@@ -22,6 +22,7 @@ int ath11k_dp_tx_htt_h2t_ver_req_msg(str
+ int ath11k_dp_tx(struct ath11k *ar, struct ath11k_vif *arvif,
+ 		 struct ath11k_sta *arsta, struct sk_buff *skb);
+ void ath11k_dp_tx_completion_handler(struct ath11k_base *ab, int ring_id);
++void ath11k_dp_tx_free_pending(struct ath11k_base *ab);
+ int ath11k_dp_tx_send_reo_cmd(struct ath11k_base *ab, struct dp_rx_tid *rx_tid,
+ 			      enum hal_reo_cmd_type type,
+ 			      struct ath11k_hal_reo_cmd *cmd,
