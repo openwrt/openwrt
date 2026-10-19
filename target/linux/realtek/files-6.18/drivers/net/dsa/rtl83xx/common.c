@@ -164,6 +164,7 @@ static int rtldsa_ports_probe(struct otto_dsa_priv *priv)
 	led_node = of_find_compatible_node(NULL, NULL, "realtek,rtl9300-leds");
 
 	for_each_node_by_name(dn, "port") {
+		const char *managed;
 		u32 led_set;
 		char led_set_str[16] = {0};
 
@@ -196,6 +197,10 @@ static int rtldsa_ports_probe(struct otto_dsa_priv *priv)
 		}
 
 		priv->ports[pn].phy = !!phy_node;
+		/* In-band status as phylink reads it */
+		if (!of_property_read_string(dn, "managed", &managed) &&
+		    !strcmp(managed, "in-band-status"))
+			priv->ports[pn].inband = true;
 	}
 
 	return 0;
@@ -243,6 +248,30 @@ int rtl83xx_port_is_under(const struct net_device *dev, struct otto_dsa_priv *pr
 	return -EINVAL;
 }
 
+/*
+ * A port with a PHY and without in-band status takes its link state from
+ * phylib, which polls the PHY once a second. Reporting a MAC link loss to
+ * phylink would make it take the link down and then straight back up from the
+ * PHY state of the last poll, until the next poll reads the link as down. Let
+ * phylib read the PHY now instead, which also reports a new link without
+ * waiting for the poll.
+ *
+ * With in-band status, phylink takes the link state also from the PCS, and
+ * needs the MAC link change to resolve the link again when the PCS comes up
+ * after the PHY. The SFP ports have no PHY in the device tree, so the PHY of
+ * an SFP module, which goes away with the module, is not used here.
+ */
+static void rtldsa_port_link_change(struct dsa_switch *ds, int port,
+				    const struct rtldsa_port *p, bool up)
+{
+	struct dsa_port *dp = dsa_to_port(ds, port);
+
+	if (p->phy && !p->inband && dp->user && dp->user->phydev)
+		phy_mac_interrupt(dp->user->phydev);
+	else
+		dsa_port_phylink_mac_change(ds, port, up);
+}
+
 static irqreturn_t rtldsa_switch_irq(int irq, void *dev_id)
 {
 	struct otto_dsa_priv *priv;
@@ -259,7 +288,8 @@ static irqreturn_t rtldsa_switch_irq(int irq, void *dev_id)
 
 	for (int port = 0; port < priv->r->cpu_port; port++)
 		if (ports & BIT_ULL(port))
-			dsa_port_phylink_mac_change(ds, port, link & BIT_ULL(port));
+			rtldsa_port_link_change(ds, port, &priv->ports[port],
+						link & BIT_ULL(port));
 
 	return IRQ_HANDLED;
 }

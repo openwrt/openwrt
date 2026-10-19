@@ -93,6 +93,7 @@ struct rtldsa_port {
 	u16 pvid;
 	bool eee_enabled;
 	bool has_pcs;
+	bool inband;
 	int led_set;
 	enum rtldsa_flood_type flood_type;
 	int leds_on_this_port;
