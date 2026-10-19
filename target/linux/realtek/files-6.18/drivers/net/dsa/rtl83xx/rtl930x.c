@@ -44,6 +44,7 @@
 #define RTL930X_MAC_LINK_STS			(0xCB10)
 
 #define RTL930X_EEE_CTRL(p)			(0x3274 + ((p) << 6))
+#define RTL930X_VLAN_PORT_AFT			(0x8260)
 
 #define RTL930X_TRK_HASH_CTRL			(0x9F80)
 #define RTL930X_TRK_CTRL			(0x9F88)
@@ -630,6 +631,7 @@ const struct rtldsa_config rtldsa_930x_cfg = {
 	.vlan_profile_get = otto_vlan_930x_profile_get,
 	.vlan_profile_dump = otto_vlan_930x_profile_dump,
 	.vlan_profile_setup = otto_vlan_930x_profile_setup,
+	.vlan_port_aft = RTL930X_VLAN_PORT_AFT,
 	.vlan_fwd_on_inner = otto_vlan_930x_port_forward_on_inner,
 	.vlan_qinq_setup = otto_vlan_930x_qinq_setup,
 	.vlan_port_qinq_set = otto_vlan_930x_port_qinq_set,

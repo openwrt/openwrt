@@ -109,8 +109,6 @@
 #define RTL930X_VLAN_TAG_TPID_CTRL(idx)				(0xC7AC + ((idx) << 2))
 #define RTL930X_VLAN_PORT_ITAG_TPID_CMP_MSK(port)		(0x327C + ((port) << 6))
 #define RTL930X_VLAN_PORT_OTAG_TPID_CMP_MSK(port)		(0x3280 + ((port) << 6))
-#define RTL930X_VLAN_PORT_AFT(port)				(0x8260 + ((port) << 2))
-#define RTL930X_VLAN_PORT_AFT_ACCEPT_ALL			GENMASK(3, 0)
 #define RTL930X_VLAN_PORT_EGR_TPID_CTRL(port)			(0xCE98 + ((port) << 2))
 #define RTL930X_VLAN_PORT_EGR_TPID_OTPID_IDX			GENMASK(5, 4)
 #define RTL930X_VLAN_PORT_EGR_TPID_OTPID_KEEP			BIT(3)
@@ -678,8 +676,8 @@ void otto_vlan_930x_qinq_setup(struct otto_dsa_priv *priv)
 		regmap_write(priv->map, RTL930X_VLAN_PORT_ITAG_TPID_CMP_MSK(port), BIT(0));
 		regmap_write(priv->map, RTL930X_VLAN_PORT_OTAG_TPID_CMP_MSK(port),
 			     port == cpu_port ? BIT(0) : 0);
-		regmap_write(priv->map, RTL930X_VLAN_PORT_AFT(port),
-			     RTL930X_VLAN_PORT_AFT_ACCEPT_ALL);
+		regmap_write(priv->map, priv->r->vlan_port_aft + (port << 2),
+			     RTLDSA_VLAN_PORT_AFT_ALL);
 	}
 
 	regmap_write_bits(priv->map, RTL930X_VLAN_PORT_FWD + (cpu_port << 2), GENMASK(3, 0),
