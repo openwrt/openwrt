@@ -84,6 +84,8 @@ struct rtldsa_port {
 	bool phy:1;
 	bool isolated:1;
 	bool qinq:1;
+	bool bridged:1;
+	bool vlan_filtering:1;
 	unsigned long rate_police_egress;
 	unsigned long rate_police_ingress;
 	unsigned long cached_flags;
@@ -464,6 +466,7 @@ struct rtldsa_config {
 	u32 (*l2_hash_key)(struct otto_dsa_priv *priv, u64 seed);
 	u64 (*read_mcast_pmask)(int idx);
 	void (*write_mcast_pmask)(int idx, u64 portmask);
+	u32 vlan_port_aft;
 	void (*vlan_fwd_on_inner)(struct otto_dsa_priv *priv, int port, bool is_set);
 	void (*vlan_qinq_setup)(struct otto_dsa_priv *priv);
 	void (*vlan_port_qinq_set)(struct otto_dsa_priv *priv, int port, bool enable);

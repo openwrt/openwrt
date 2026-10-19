@@ -152,6 +152,7 @@ void otto_vlan_931x_port_pvid_set(struct otto_dsa_priv *priv, int port, enum pbv
 				  int pvid);
 
 void otto_vlan_setup(struct otto_dsa_priv *priv);
+void otto_vlan_port_untagged_set(struct otto_dsa_priv *priv, int port);
 int otto_vlan_port_filtering(struct dsa_switch *ds, int port, bool vlan_filtering,
 			     struct netlink_ext_ack *extack);
 int otto_vlan_port_add(struct dsa_switch *ds, int port, const struct switchdev_obj_port_vlan *vlan,

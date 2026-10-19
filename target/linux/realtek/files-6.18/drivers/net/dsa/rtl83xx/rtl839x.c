@@ -51,6 +51,7 @@
 
 #define RTL839X_SPCL_TRAP_EAPOL_CTRL		(0x105C)
 #define RTL839X_SPCL_TRAP_SWITCH_MAC_CTRL	(0x1068)
+#define RTL839X_VLAN_PORT_AFT			(0x2600)
 
 #define RTL839X_IMR_GLB				(0x0064)
 #define RTL839X_IMR_PORT_LINK_STS_CHG		(0x0068)
@@ -239,6 +240,7 @@ const struct rtldsa_config rtldsa_839x_cfg = {
 	.vlan_profile_get = otto_vlan_839x_profile_get,
 	.vlan_profile_dump = otto_vlan_839x_profile_dump,
 	.vlan_profile_setup = otto_vlan_839x_profile_setup,
+	.vlan_port_aft = RTL839X_VLAN_PORT_AFT,
 	.vlan_fwd_on_inner = otto_vlan_839x_port_forward_on_inner,
 	.vlan_port_keep_tag_set = otto_vlan_839x_port_keep_tag_set,
 	.vlan_port_pvidmode_set = otto_vlan_839x_port_pvid_mode_set,

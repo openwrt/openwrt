@@ -133,6 +133,31 @@
 #define RTL931X_VLAN_PORT_TAG_ITPID_IDX_MASK			GENMASK(2, 1)
 #define RTL931X_VLAN_PORT_TAG_ITPID_KEEP_MASK			GENMASK(0, 0)
 
+#define RTLDSA_VLAN_PORT_AFT_ITAG_UNTAG		BIT(1)
+#define RTLDSA_VLAN_PORT_AFT_OTAG_UNTAG		BIT(3)
+#define RTLDSA_VLAN_PORT_AFT_ALL		GENMASK(3, 0)
+
+/*
+ * Every port is a member of VID 0 for the frames the CPU sends, see
+ * otto_vlan_setup(). A port without PVID in a VLAN-filtering bridge must not
+ * flood its untagged frames there, so it accepts only tagged ones, outer tagged
+ * ones as an 802.1ad port. Standalone ports can have VLAN filtering on.
+ */
+void otto_vlan_port_untagged_set(struct otto_dsa_priv *priv, int port)
+{
+	struct rtldsa_port *p = &priv->ports[port];
+	u32 aft = RTLDSA_VLAN_PORT_AFT_ALL;
+
+	if (!priv->r->vlan_port_aft || port == priv->r->cpu_port)
+		return;
+
+	if (p->bridged && p->vlan_filtering && !p->pvid)
+		aft &= ~(p->qinq ? RTLDSA_VLAN_PORT_AFT_OTAG_UNTAG :
+				   RTLDSA_VLAN_PORT_AFT_ITAG_UNTAG);
+
+	regmap_write(priv->map, priv->r->vlan_port_aft + (port << 2), aft);
+}
+
 static void otto_vlan_port_pvid_set(struct otto_dsa_priv *priv,
 				    int port, int pvid)
 {
@@ -145,6 +170,7 @@ static void otto_vlan_port_pvid_set(struct otto_dsa_priv *priv,
 					PBVLAN_MODE_UNTAG_AND_PRITAG);
 
 	priv->ports[port].pvid = pvid;
+	otto_vlan_port_untagged_set(priv, port);
 }
 
 /* Initialize all VLANS */
@@ -904,6 +930,9 @@ int otto_vlan_port_filtering(struct dsa_switch *ds, int port,
 
 		priv->r->set_vlan_egr_filter(port, EGR_DISABLE);
 	}
+
+	priv->ports[port].vlan_filtering = vlan_filtering;
+	otto_vlan_port_untagged_set(priv, port);
 
 	/* Do we need to do something to the CPU-Port, too? */
 	mutex_unlock(&priv->reg_mutex);
