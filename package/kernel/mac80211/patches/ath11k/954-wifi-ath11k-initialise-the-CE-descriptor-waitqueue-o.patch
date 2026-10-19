@@ -1,0 +1,72 @@
+From e52f7a5259fa7be23a56323cf922f61f3bcd9120 Mon Sep 17 00:00:00 2001
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Date: Sat, 17 Oct 2026 12:46:11 +0200
+Subject: [PATCH 954/957] wifi: ath11k: initialise the CE descriptor waitqueue
+ once per device
+
+ath11k_connect_pdev_htc_service() initialises tx_ce_desc_wq. Firmware
+crash recovery calls it again through ath11k_core_start() ->
+ath11k_wmi_connect(), while a WMI command on a part without credit flow
+can still be sleeping on that queue in ath11k_wmi_cmd_send().
+finish_wait() then removes the entry from a list head that was reset
+under it:
+
+  WARNING: CPU: 1 PID: 1861 at lib/list_debug.c:62 __list_del_entry_valid_or_report+0x110/0x154
+  CPU: 0 UID: 101 Comm: hostapd
+  Call trace:
+   __list_del_entry_valid_or_report+0x110/0x154 (P)
+   finish_wait+0xcc/0xd0
+   ath11k_wmi_cmd_send+0x150/0x2f4 [ath11k]
+   ath11k_wmi_vdev_set_param_cmd+0x64/0xd8 [ath11k]
+   ath11k_mac_op_bss_info_changed+0xe8/0xf60 [ath11k]
+   drv_link_info_changed+0x118/0x160 [mac80211]
+   ieee80211_link_info_change_notify+0xe0/0x100 [mac80211]
+   ieee80211_change_bss+0x1c8/0x250 [mac80211]
+   nl80211_set_bss+0x1a0/0x330 [cfg80211]
+
+Initialise the queues once in ath11k_core_alloc(), next to
+tx_credits_wq.
+
+Tested-on: IPQ8074 hw2.0 AHB WLAN.HK.2.12-01460-QCAHKSWPL_SILICONZ-1
+
+Fixes: f951380a6022 ("ath11k: Disabling credit flow for WMI path")
+Reviewed-by: Baochen Qiang <baochen.qiang@oss.qualcomm.com>
+Link: https://lore.kernel.org/all/20261018210153.1925962-2-julius@bairaktaris.de/
+Assisted-by: Claude:claude-opus-5-5
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+---
+ drivers/net/wireless/ath/ath11k/core.c | 5 +++++
+ drivers/net/wireless/ath/ath11k/wmi.c  | 1 -
+ 2 files changed, 5 insertions(+), 1 deletion(-)
+
+--- a/drivers/net/wireless/ath/ath11k/core.c
++++ b/drivers/net/wireless/ath/ath11k/core.c
+@@ -2925,6 +2925,7 @@ struct ath11k_base *ath11k_core_alloc(st
+ 				      enum ath11k_bus bus)
+ {
+ 	struct ath11k_base *ab;
++	int i;
+ 
+ 	ab = kzalloc(sizeof(*ab) + priv_size, GFP_KERNEL);
+ 	if (!ab)
+@@ -2951,6 +2952,10 @@ struct ath11k_base *ath11k_core_alloc(st
+ 	INIT_LIST_HEAD(&ab->peers);
+ 	init_waitqueue_head(&ab->peer_mapping_wq);
+ 	init_waitqueue_head(&ab->wmi_ab.tx_credits_wq);
++
++	for (i = 0; i < ARRAY_SIZE(ab->wmi_ab.wmi); i++)
++		init_waitqueue_head(&ab->wmi_ab.wmi[i].tx_ce_desc_wq);
++
+ 	init_waitqueue_head(&ab->qmi.cold_boot_waitq);
+ 	INIT_WORK(&ab->restart_work, ath11k_core_restart);
+ 	INIT_WORK(&ab->update_11d_work, ath11k_update_11d);
+--- a/drivers/net/wireless/ath/ath11k/wmi.c
++++ b/drivers/net/wireless/ath/ath11k/wmi.c
+@@ -9064,7 +9064,6 @@ static int ath11k_connect_pdev_htc_servi
+ 	ab->wmi_ab.wmi_endpoint_id[pdev_idx] = conn_resp.eid;
+ 	ab->wmi_ab.wmi[pdev_idx].eid = conn_resp.eid;
+ 	ab->wmi_ab.max_msg_len[pdev_idx] = conn_resp.max_msg_len;
+-	init_waitqueue_head(&ab->wmi_ab.wmi[pdev_idx].tx_ce_desc_wq);
+ 
+ 	return 0;
+ }

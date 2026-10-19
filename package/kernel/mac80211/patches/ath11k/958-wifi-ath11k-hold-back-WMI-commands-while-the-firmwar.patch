@@ -1,0 +1,52 @@
+From 7913697c90e093fb08b3271374dba6b26278b67b Mon Sep 17 00:00:00 2001
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Date: Sun, 18 Oct 2026 19:28:42 +0200
+Subject: [PATCH] wifi: ath11k: hold back WMI commands while the firmware
+ restarts
+
+ath11k_core_restart() brings the firmware up outside mac80211's restart,
+so cfg80211 operations keep sending WMI commands while the HTC services
+reconnect and before the firmware reports ready. These commands crash
+the restarting firmware again, and recovery then fails on the unified
+ready timeout:
+
+  ath11k c000000.wifi: failed to receive wmi unified ready event: -110
+  ath11k c000000.wifi: failed to reconfigure driver on crash recovery
+
+With iw setting the RTS threshold in a loop from the moment the firmware
+stops, the firmware crashed 15, 15 and 11 times on three triggers
+before recovery succeeded. With this patch it crashed once per trigger
+(5 of 5).
+
+Return -ESHUTDOWN for commands from outside the restart worker while
+ATH11K_FLAG_RECOVERY is set. mac80211 replays the configuration when the
+driver restarts the hardware.
+
+Tested-on: IPQ8074 hw2.0 AHB WLAN.HK.2.9.0.1-02146-QCAHKSWPL_SILICONZ-1
+
+Fixes: d5c65159f289 ("ath11k: driver for Qualcomm IEEE 802.11ax devices")
+Link: https://lore.kernel.org/all/20261018210153.1925962-6-julius@bairaktaris.de/
+Assisted-by: Claude:claude-opus-5-5
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+---
+ drivers/net/wireless/ath/ath11k/wmi.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/drivers/net/wireless/ath/ath11k/wmi.c b/drivers/net/wireless/ath/ath11k/wmi.c
+index 3d5b6605eace8..5c27e7057e6ad 100644
+--- a/drivers/net/wireless/ath/ath11k/wmi.c
++++ b/drivers/net/wireless/ath/ath11k/wmi.c
+@@ -312,6 +312,10 @@ int ath11k_wmi_cmd_send(struct ath11k_pdev_wmi *wmi, struct sk_buff *skb,
+ 
+ 	might_sleep();
+ 
++	if (test_bit(ATH11K_FLAG_RECOVERY, &ab->dev_flags) &&
++	    current_work() != &ab->restart_work)
++		return -ESHUTDOWN;
++
+ 	if (ab->hw_params.credit_flow) {
+ 		wait_event_timeout(wmi_ab->tx_credits_wq, ({
+ 			ret = ath11k_wmi_cmd_send_nowait(wmi, skb, cmd_id);
+-- 
+2.53.0
+

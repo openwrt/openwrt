@@ -1,0 +1,65 @@
+From 3fedbc77ec029ba8250b4d944615a1c0a140f9b0 Mon Sep 17 00:00:00 2001
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Date: Mon, 24 Aug 2026 13:21:10 +0200
+Subject: [PATCH 956/957] wifi: ath11k: keep the srng allocations when a
+ firmware recovery fails
+
+ath11k_hal_srng_init() runs once per device, from ath11k_ahb_probe() and
+ath11k_pci_probe(). It allocates the shared read and write pointer
+buffers with dma_alloc_coherent() and the ring configuration table with
+kmalloc(); ath11k_hal_srng_deinit() releases them, and nothing on the
+recovery path allocates them again.
+
+ath11k_core_reconfigure_on_crash() nevertheless calls
+ath11k_hal_srng_deinit() when the firmware bring-up fails. That was
+balanced while the same function deinitialised and reinitialised the hal
+on its success path.
+
+Commit 32be3ca4cf78 ("wifi: ath11k: HAL SRNG: don't deinitialize and
+re-initialize again") replaced the pair with ath11k_hal_srng_clear(),
+which only zeroes the state, and left the error label behind, so a
+recovery that fails now frees buffers the driver and the device still
+refer to. The stale hp/tp pointers derived from hal.rdp.vaddr are
+dereferenced immediately afterwards:
+
+  ath11k c000000.wifi: failed to reconfigure driver on crash recovery
+  Unable to handle kernel paging request at virtual address
+  ffffffc081346090
+  [ffffffc081346090] pgd=1000000041e2c003, pmd=10000000421fc403,
+                     pte=0000000000000000
+  Internal error: Oops: 0000000096000007 [#1] SMP
+
+Return the error instead. A recovery that fails leaves the device dead
+until the module is reloaded, and the teardown paths in
+ath11k_ahb_remove() and ath11k_pci_remove() still release the
+allocations.
+
+Tested-on: IPQ8074 hw2.0 AHB WLAN.HK.2.9.0.1-02146-QCAHKSWPL_SILICONZ-1
+
+Fixes: 32be3ca4cf78 ("wifi: ath11k: HAL SRNG: don't deinitialize and re-initialize again")
+Link: https://lore.kernel.org/all/20261018210153.1925962-4-julius@bairaktaris.de/
+Assisted-by: Claude:claude-opus-5
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+---
+ drivers/net/wireless/ath/ath11k/core.c | 6 +-----
+ 1 file changed, 1 insertion(+), 5 deletions(-)
+
+--- a/drivers/net/wireless/ath/ath11k/core.c
++++ b/drivers/net/wireless/ath/ath11k/core.c
+@@ -2505,15 +2505,11 @@ static int ath11k_core_reconfigure_on_cr
+ 
+ 	ret = ath11k_core_qmi_firmware_ready(ab);
+ 	if (ret)
+-		goto err_hal_srng_deinit;
++		return ret;
+ 
+ 	clear_bit(ATH11K_FLAG_RECOVERY, &ab->dev_flags);
+ 
+ 	return 0;
+-
+-err_hal_srng_deinit:
+-	ath11k_hal_srng_deinit(ab);
+-	return ret;
+ }
+ 
+ void ath11k_core_halt(struct ath11k *ar)
