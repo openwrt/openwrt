@@ -941,6 +941,9 @@ hostapd_bss_update_beacon(struct ubus_context *ctx, struct ubus_object *obj,
 	int rc;
 	struct hostapd_data *hapd = get_hapd_from_object(obj);
 
+	if (!hapd->started || !hapd->beacon_set_done)
+		return 0;
+
 	rc = ieee802_11_set_beacon(hapd);
 
 	if (rc != 0)
