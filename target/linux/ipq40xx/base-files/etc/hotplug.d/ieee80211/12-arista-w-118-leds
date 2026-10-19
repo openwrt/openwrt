@@ -1,0 +1,28 @@
+#!/bin/sh
+# Arista W-118: each radio LED follows its radio, found by device path.
+# Phy numbers follow the order the radios were first found in. 2.4 and 5
+# are the IPQ4019's own radios, the third is the QCA9882 card on pcie0.
+# "phyNradio" lights the LED while the radio is enabled.
+
+[ "$ACTION" = add ] || exit 0
+
+. /lib/functions.sh
+
+[ "$(board_name)" = arista,w-118 ] || exit 0
+
+case "$(readlink "/sys/class/ieee80211/$DEVICENAME/device")" in
+*/a000000.wifi)
+	led=green:wlan-2ghz
+	;;
+*/a800000.wifi)
+	led=green:wlan-5ghz
+	;;
+*/0000:01:00.0)
+	led=green:wlan
+	;;
+*)
+	exit 0
+	;;
+esac
+
+echo "${DEVICENAME}radio" > "/sys/class/leds/$led/trigger"
