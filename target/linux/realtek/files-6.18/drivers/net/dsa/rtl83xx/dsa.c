@@ -10,6 +10,7 @@
 #include <asm/mach-rtl-otto/mach-rtl-otto.h>
 
 #include "lag.h"
+#include "flow.h"
 #include "mirror.h"
 #include "mac.h"
 #include "l2.h"
@@ -1460,6 +1461,7 @@ const struct phylink_mac_ops rtldsa_93xx_phylink_mac_ops = {
 };
 
 const struct dsa_switch_ops rtldsa_93xx_switch_ops = {
+	.port_setup_tc		= otto_flow_setup_tc,
 	.get_tag_protocol	= rtldsa_get_tag_protocol,
 	.setup			= rtldsa_93xx_setup,
 

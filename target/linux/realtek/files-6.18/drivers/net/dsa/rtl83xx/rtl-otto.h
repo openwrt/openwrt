@@ -187,6 +187,7 @@ enum pie_phase {
  */
 struct pie_rule {
 	int id;
+	u8 flow_n_rules;		/* Fasttrack classifier rows: one IPv4, two IPv6 */
 	enum pie_phase phase;	/* Phase in which this template is applied */
 	int packet_cntr;	/* ID of a packet counter assigned to this rule */
 	int octet_cntr;		/* ID of a byte counter assigned to this rule */
@@ -278,6 +279,10 @@ struct pie_rule {
 	u16 dport;		/* TCP/UDP destination port */
 	u16 icmp_igmp;
 	u16 tcp_info;
+	u16 l34_header;
+	u16 field_selector0;
+	u16 field_selector1;
+	u16 field_selector_valid;
 	u16 dsap_ssap;		/* Destination / Source Service Access Point bytes (802.3) */
 
 	u64 spm_m;
@@ -296,6 +301,10 @@ struct pie_rule {
 	u16 dport_m;
 	u16 icmp_igmp_m;
 	u16 tcp_info_m;
+	u16 l34_header_m;
+	u16 field_selector0_m;
+	u16 field_selector1_m;
+	u16 field_selector_valid_m;
 	u16 dsap_ssap_m;
 
 	/* Data associated with actions */
@@ -546,6 +555,10 @@ struct otto_dsa_priv {
 	int mirror_group_flower[4];	/* flower rules mirroring through each group */
 	const struct rtldsa_config *r;
 	struct otto_l3_ctrl *l3_ctrl;
+	struct otto_flow_ctrl *flow_ctrl;
+	struct otto_pie_flow_state *flow_pie;
+	bool flow_pie_reserved;
+	bool flow_pie_failed;	/* flow blocks stay disabled after a hardware error */
 	u64 irq_mask;
 	struct dentry *dbgfs_dir;
 	struct dentry *stats_dbgfs_dir;
