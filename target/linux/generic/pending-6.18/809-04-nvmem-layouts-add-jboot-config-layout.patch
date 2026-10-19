@@ -1,0 +1,41 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Ulv Michel <ulv@on2.de>
+Date: Mon, 19 Oct 2026 09:51:10 +0200
+Subject: [PATCH] nvmem: layouts: add AMIT JBOOT config layout
+
+Add build bits for the AMIT JBOOT factory config NVMEM layout driver.
+The driver source lives in target/linux/generic/files.
+
+Signed-off-by: Ulv Michel <ulv@on2.de>
+---
+ drivers/nvmem/layouts/Kconfig  | 11 +++++++++++
+ drivers/nvmem/layouts/Makefile |  1 +
+ 2 files changed, 12 insertions(+)
+
+--- a/drivers/nvmem/layouts/Kconfig
++++ b/drivers/nvmem/layouts/Kconfig
+@@ -50,6 +50,17 @@ config NVMEM_LAYOUT_ASCII_ENV
+ 
+ 	  If unsure, say N.
+ 
++config NVMEM_LAYOUT_JBOOT_CONFIG
++	tristate "AMIT JBOOT factory config layout"
++	select GENERIC_NET_UTILS
++	help
++	  Devices running the AMIT JBOOT loader store factory data such as the
++	  base MAC address and wireless calibration data as variable length
++	  records in a config partition. This driver parses those records and
++	  exposes them as NVMEM cells.
++
++	  If unsure, say N.
++
+ endmenu
+ 
+ endif
+--- a/drivers/nvmem/layouts/Makefile
++++ b/drivers/nvmem/layouts/Makefile
+@@ -8,3 +8,4 @@ obj-$(CONFIG_NVMEM_LAYOUT_SL28_VPD) += s
+ obj-$(CONFIG_NVMEM_LAYOUT_ONIE_TLV) += onie-tlv.o
+ obj-$(CONFIG_NVMEM_LAYOUT_U_BOOT_ENV) += u-boot-env.o
+ obj-$(CONFIG_NVMEM_LAYOUT_ASCII_ENV) += ascii-env.o
++obj-$(CONFIG_NVMEM_LAYOUT_JBOOT_CONFIG) += jboot-config.o
