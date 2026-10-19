@@ -4049,6 +4049,11 @@ static int rtpcs_931x_sds_rxcal_fiber_adapt(struct rtpcs_serdes *sds)
 		rtpcs_931x_sds_clear_symerr(sds, RTPCS_SDS_MODE_10GBASER);
 		msleep(300);
 		symerr = rtpcs_931x_sds_fiber_get_symerr(sds, RTPCS_SDS_MODE_10GBASER);
+		if (symerr < 0) {
+			dev_err(dev, "SerDes %u: RX calibration symbol-error read failed: %d\n",
+				sds->id, symerr);
+			return symerr;
+		}
 		link = rtpcs_93xx_sds_10gr_link_status(sds);
 		if (link < 0) {
 			dev_err(dev, "SerDes %u: RX calibration link-status read failed: %d\n",
@@ -4063,22 +4068,16 @@ static int rtpcs_931x_sds_rxcal_fiber_adapt(struct rtpcs_serdes *sds)
 		 * link - don't trust it without link confirming there's
 		 * actually something being decoded.
 		 */
-		if (link && symerr >= 0 && symerr <= 5) {
+		if (link && symerr <= 5) {
 			dev_dbg(dev, "SerDes %u fiber RX calibration OK (check %d)\n",
 				sds->id, i + 1);
 			return 0;
 		}
 	}
 
-	if (link) {
-		dev_dbg(dev, "SerDes %u fiber RX calibration: symErr still 0x%x after %d checks, link up anyway\n",
-			 sds->id, symerr, i);
-		return 0;
-	}
-
-	dev_warn(dev, "SerDes %u fiber RX calibration failed after %d symErr checks\n",
-		 sds->id, i);
-	return -ENOLINK;
+	dev_warn(dev, "SerDes %u fiber RX calibration failed after %d checks: linkUp=%d symErr=0x%x\n",
+		 sds->id, i, link, symerr);
+	return link ? -EIO : -ENOLINK;
 }
 
 static int rtpcs_931x_sds_get_pll_select(struct rtpcs_serdes *sds, enum rtpcs_sds_pll_type *pll)
