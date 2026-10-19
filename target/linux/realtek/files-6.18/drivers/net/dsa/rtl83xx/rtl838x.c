@@ -277,6 +277,7 @@ const struct rtldsa_config rtldsa_838x_cfg = {
 	.read_cam = otto_l2_838x_read_cam,
 	.write_cam = otto_l2_838x_write_cam,
 	.vlan_port_keep_tag_set = otto_vlan_838x_port_keep_tag_set,
+	.vlan_port_qinq_set = otto_vlan_838x_port_qinq_set,
 	.vlan_port_pvidmode_set = otto_vlan_838x_port_pvid_mode_set,
 	.vlan_port_pvid_set = otto_vlan_838x_port_pvid_set,
 	.fast_age = otto_l2_838x_fast_age,
