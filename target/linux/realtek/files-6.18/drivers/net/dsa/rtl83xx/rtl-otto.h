@@ -177,6 +177,7 @@ enum pie_phase {
  */
 struct pie_rule {
 	int id;
+	u8 flow_n_rules;		/* Fasttrack classifier rows: one IPv4, two IPv6 */
 	enum pie_phase phase;	/* Phase in which this template is applied */
 	int packet_cntr;	/* ID of a packet counter assigned to this rule */
 	int octet_cntr;		/* ID of a byte counter assigned to this rule */
@@ -201,7 +202,7 @@ struct pie_rule {
 	bool itag_fmt;		/* 0: inner tag packet, 1: inner priority tag or untagged */
 	bool otag_exist;	/* packet with outer tag */
 	bool itag_exist;	/* packet with inner tag */
-	bool frame_type_l2;	/* 0: Ethernet, 1: LLC_SNAP, 2: LLC_Other, 3: Reserved */
+	u8 frame_type_l2;	/* 0: Ethernet, 1: LLC_SNAP, 2: LLC_Other, 3: Reserved */
 	bool igr_normal_port;	/* Ingress port is not cpu or stacking port */
 	u8 tid;			/* The template ID defining the what the templated fields mean */
 
@@ -219,7 +220,7 @@ struct pie_rule {
 	bool itag_fmt_m;
 	bool otag_exist_m;
 	bool itag_exist_m;
-	bool frame_type_l2_m;
+	u8 frame_type_l2_m;
 	bool igr_normal_port_m;
 	u8 tid_m;
 
@@ -268,6 +269,10 @@ struct pie_rule {
 	u16 dport;		/* TCP/UDP destination port */
 	u16 icmp_igmp;
 	u16 tcp_info;
+	u16 l34_header;
+	u16 field_selector0;
+	u16 field_selector1;
+	u16 field_selector_valid;
 	u16 dsap_ssap;		/* Destination / Source Service Access Point bytes (802.3) */
 
 	u64 spm_m;
@@ -286,6 +291,10 @@ struct pie_rule {
 	u16 dport_m;
 	u16 icmp_igmp_m;
 	u16 tcp_info_m;
+	u16 l34_header_m;
+	u16 field_selector0_m;
+	u16 field_selector1_m;
+	u16 field_selector_valid_m;
 	u16 dsap_ssap_m;
 
 	/* Data associated with actions */
@@ -524,10 +533,15 @@ struct otto_dsa_priv {
 	struct mutex reg_mutex;		/* Mutex for individual register manipulations */
 	struct mutex pie_mutex;		/* Mutex for Packet Inspection Engine */
 	int link_state_irq;
+	bool link_state_irq_requested;
 	int mirror_group_ports[4];
 	int mirror_group_flower[4];	/* flower rules mirroring through each group */
 	const struct rtldsa_config *r;
 	struct otto_l3_ctrl *l3_ctrl;
+	struct otto_flow_ctrl *flow_ctrl;
+	struct otto_pie_flow_state *flow_pie;
+	bool flow_pie_reserved;
+	bool flow_pie_failed;	/* flow blocks stay disabled after a hardware error */
 	u64 irq_mask;
 	struct dentry *dbgfs_dir;
 	struct dentry *stats_dbgfs_dir;

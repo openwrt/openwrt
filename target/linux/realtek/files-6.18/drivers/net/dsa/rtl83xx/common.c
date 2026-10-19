@@ -17,6 +17,7 @@
 
 #include "l2.h"
 #include "l3.h"
+#include "flow.h"
 #include "pie.h"
 #include "rtl-otto.h"
 #include "tc.h"
@@ -436,6 +437,8 @@ static int rtl83xx_sw_probe(struct platform_device *pdev)
 	if (err) {
 		dev_err(dev, "Error setting up switch interrupt.\n");
 		/* Need to free allocated switch here */
+	} else {
+		priv->link_state_irq_requested = true;
 	}
 
 	/* Enable interrupts for switch, on RTL931x, the IRQ is always on globally */
@@ -454,6 +457,12 @@ static int rtl83xx_sw_probe(struct platform_device *pdev)
 	err = otto_l3_probe(dev, priv);
 	if (err)
 		goto err_register_l3;
+	err = otto_flow_init(priv);
+	if (err)
+		dev_warn(dev, "fasttrack controller unavailable (%d)\n", err);
+	err = otto_l3_runtime_register(priv);
+	if (err)
+		dev_warn(dev, "fasttrack runtime control unavailable (%d)\n", err);
 
 	/* TODO: put this into l2_setup() */
 	switch (soc_info.family) {
@@ -483,7 +492,10 @@ static int rtl83xx_sw_probe(struct platform_device *pdev)
 	return 0;
 
 err_register_l3:
-	dsa_switch_shutdown(priv->ds);
+	if (priv->link_state_irq_requested)
+		free_irq(priv->link_state_irq, priv->ds);
+	cancel_delayed_work_sync(&priv->counters_work);
+	dsa_unregister_switch(priv->ds);
 err_register_switch:
 	otto_tc_cleanup(priv);
 	destroy_workqueue(priv->wq);
@@ -498,21 +510,20 @@ static void rtl83xx_sw_remove(struct platform_device *pdev)
 	if (!priv)
 		return;
 
-	/* TODO: */
 	pr_debug("Removing platform driver for rtl83xx-sw\n");
 
 	/* Stop debugfs readers before tearing down the switch. */
 	otto_stats_dbgfs_remove(priv);
 
-	/* unregister notifiers which will create workqueue entries with
-	 * references to the switch structures. Also stop self-arming delayed
-	 * work items to avoid them still accessing the DSA structures
-	 * when they are getting shut down.
+	/* Stop workers and interrupts before unregistering their port devices.
+	 * The L3 control and flow callbacks stay alive through flowtable unbind.
 	 */
 	otto_l3_remove(priv);
 	cancel_delayed_work_sync(&priv->counters_work);
-
-	dsa_switch_shutdown(priv->ds);
+	if (priv->link_state_irq_requested)
+		free_irq(priv->link_state_irq, priv->ds);
+	dsa_unregister_switch(priv->ds);
+	otto_flow_cleanup(priv);
 
 	otto_tc_cleanup(priv);
 
