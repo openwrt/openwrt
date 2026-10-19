@@ -1,0 +1,66 @@
+From 5fda4810cb98a13dd8d8616dd2ed9ad5ce0a7e66 Mon Sep 17 00:00:00 2001
+From: David Mestre <dev@davidmestre.net>
+Date: Tue, 20 Oct 2026 00:51:20 +0200
+Subject: [PATCH] wifi: mt76: clean up all registered RX NAPI instances
+
+Use the registered NAPI list during teardown and stop mt7996 RX
+polling before releasing WED RRO resources.
+
+Signed-off-by: David Mestre <dev@davidmestre.net>
+---
+ dma.c         | 5 ++++-
+ mt7996/init.c | 8 +++-----
+ 2 files changed, 7 insertions(+), 6 deletions(-)
+
+--- a/dma.c
++++ b/dma.c
+@@ -1194,12 +1194,16 @@ EXPORT_SYMBOL_GPL(mt76_dma_attach);
+ 
+ void mt76_dma_cleanup(struct mt76_dev *dev)
+ {
++	struct napi_struct *napi, *tmp;
+ 	int i;
+ 
+ 	mt76_worker_disable(&dev->tx_worker);
+ 	napi_disable(&dev->tx_napi);
+ 	netif_napi_del(&dev->tx_napi);
+ 
++	list_for_each_entry_safe(napi, tmp, &dev->napi_dev->napi_list, dev_list)
++		netif_napi_del(napi);
++
+ 	for (i = 0; i < ARRAY_SIZE(dev->phys); i++) {
+ 		struct mt76_phy *phy = dev->phys[i];
+ 		int j;
+@@ -1217,7 +1221,6 @@ void mt76_dma_cleanup(struct mt76_dev *d
+ 	mt76_for_each_q_rx(dev, i) {
+ 		struct mt76_queue *q = &dev->q_rx[i];
+ 
+-		netif_napi_del(&dev->napi[i]);
+ 		mt76_dma_rx_cleanup(dev, q);
+ 
+ 		page_pool_destroy(q->page_pool);
+--- a/mt7996/init.c
++++ b/mt7996/init.c
+@@ -1828,7 +1828,7 @@ error:
+ 
+ void mt7996_unregister_device(struct mt7996_dev *dev)
+ {
+-	int i;
++	struct napi_struct *napi;
+ 
+ 	cancel_work_sync(&dev->dump_work);
+ 	cancel_work_sync(&dev->wed_rro.work);
+@@ -1839,11 +1839,9 @@ void mt7996_unregister_device(struct mt7
+ 	mt7996_unregister_thermal(&dev->phy);
+ 	mt7996_coredump_unregister(dev);
+ 	mt76_unregister_device(&dev->mt76);
++	list_for_each_entry(napi, &dev->mt76.napi_dev->napi_list, dev_list)
++		napi_disable(napi);
+ 	mt7996_wed_rro_free(dev);
+-	for (i = 0; i < ARRAY_SIZE(dev->mt76.napi); i++) {
+-		if (dev->mt76.napi[i].dev)
+-			napi_disable(&dev->mt76.napi[i]);
+-	}
+ 	mt7996_mcu_exit(dev);
+ 	mt7996_tx_token_put(dev);
+ 	mt7996_dma_cleanup(dev);
