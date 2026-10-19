@@ -18,9 +18,11 @@
 #include <linux/iopoll.h>
 #include <linux/module.h>
 #include <linux/of.h>
+#include <linux/of_mdio.h>
 #include <linux/of_platform.h>
 #include <linux/pcs/pcs-provider.h>
 #include <linux/pcs/pcs-qca-uniphy.h>
+#include <linux/phy.h>
 #include <linux/phylink.h>
 #include <linux/platform_device.h>
 #include <linux/regmap.h>
@@ -476,6 +478,84 @@ static u32 uniphy_sgmii_mode(struct qca_uniphy *uniphy)
 	return UNIPHY_SGMII_MODE;
 }
 
+#define PHY_ID_QCA8072			0x004dd0b2
+#define PHY_ID_QCA8075			0x004dd0b1
+/* The SerDes of a QCA807x package sits at package address offset 5 */
+#define QCA807X_PQSGMII_ADDR		5
+#define QCA807X_PQSGMII_CTRL		0x0
+#define QCA807X_PQSGMII_ANALOG_SW_RESET	BIT(6)
+
+static int qca807x_serdes_reset(struct phy_device *phydev)
+{
+	struct device_node *np __free(device_node) =
+		of_get_parent(phydev->mdio.dev.of_node);
+	struct mii_bus *bus = phydev->mdio.bus;
+	int addr, val, ret;
+	u32 base;
+
+	/* The package node holds the base address of the package */
+	if (!np || of_property_read_u32(np, "reg", &base))
+		return 0;
+
+	addr = base + QCA807X_PQSGMII_ADDR;
+
+	val = mdiobus_read(bus, addr, QCA807X_PQSGMII_CTRL);
+	if (val < 0)
+		return val;
+
+	ret = mdiobus_write(bus, addr, QCA807X_PQSGMII_CTRL,
+			    val & ~QCA807X_PQSGMII_ANALOG_SW_RESET);
+	if (ret)
+		return ret;
+
+	msleep(100);
+
+	return mdiobus_write(bus, addr, QCA807X_PQSGMII_CTRL,
+			     val | QCA807X_PQSGMII_ANALOG_SW_RESET);
+}
+
+/* A QSGMII port whose copper link comes up after the calibration passes no
+ * frames until the QCA807x SerDes is reset again. The PHY driver resets it
+ * when the PHY attaches, before the first pcs_config() calibrates the
+ * instance, so reset the package behind the first port of the instance with
+ * a QCA807x PHY once the calibration is done.
+ */
+static int qca_uniphy_qsgmii_phy_reset(struct qca_uniphy *uniphy)
+{
+	struct of_phandle_args args;
+	struct device_node *np, *phy_np;
+	struct phy_device *phydev;
+	int ret;
+
+	for_each_node_with_property(np, "pcs-handle") {
+		if (of_parse_phandle_with_args(np, "pcs-handle", "#pcs-cells",
+					       0, &args))
+			continue;
+		of_node_put(args.np);
+		if (args.np != uniphy->dev->of_node)
+			continue;
+
+		phy_np = of_parse_phandle(np, "phy-handle", 0);
+		phydev = of_phy_find_device(phy_np);
+		of_node_put(phy_np);
+		if (!phydev)
+			continue;
+
+		if (phydev->phy_id != PHY_ID_QCA8072 &&
+		    phydev->phy_id != PHY_ID_QCA8075) {
+			put_device(&phydev->mdio.dev);
+			continue;
+		}
+
+		ret = qca807x_serdes_reset(phydev);
+		put_device(&phydev->mdio.dev);
+		of_node_put(np);
+		return ret;
+	}
+
+	return 0;
+}
+
 static int qca_uniphy_pcs_config_mode(struct phylink_pcs *pcs,
 				      unsigned int neg_mode,
 				      phy_interface_t interface,
@@ -655,6 +735,12 @@ static int qca_uniphy_pcs_config_mode(struct phylink_pcs *pcs,
 			if (ret)
 				return ret;
 		}
+	}
+
+	if (interface == PHY_INTERFACE_MODE_QSGMII) {
+		ret = qca_uniphy_qsgmii_phy_reset(uniphy);
+		if (ret)
+			return ret;
 	}
 
 	/* Cache the mode last: a bail-out anywhere above leaves the instance
