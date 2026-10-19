@@ -26,7 +26,7 @@ define Package/apk/default
   SECTION:=base
   CATEGORY:=Base system
   TITLE:=apk package manager
-  DEPENDS:=+zlib +wget-any
+  DEPENDS:=+zlib +libuclient
   URL:=$(PKG_SOURCE_URL)
   PROVIDES:=apk
 endef
@@ -57,7 +57,6 @@ MESON_COMMON_ARGS = \
 	-Dhelp=enabled \
 	-Dlua_version=5.1 \
 	-Ddefault_library=static \
-	-Durl_backend=wget \
 	-Dzstd=disabled \
 	-Dpython=disabled \
 	-Dtests=disabled
@@ -68,6 +67,7 @@ MESON_HOST_ARGS += \
 
 MESON_ARGS += \
 	$(MESON_COMMON_ARGS) \
+	-Durl_backend=libuclient \
 	-Dcrypto_backend=$(BUILD_VARIANT) \
 	-Dminimal=true
 

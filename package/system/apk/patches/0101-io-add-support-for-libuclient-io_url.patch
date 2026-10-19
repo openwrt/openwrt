@@ -1,0 +1,628 @@
+From 987992d1050eeff3ccf7deada2bcf35d8f982743 Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Mon, 19 Oct 2026 23:49:49 +0200
+Subject: [PATCH] io: add support for libuclient io_url
+
+Add support for an alternative io_url helper that use uclient library.
+
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+---
+ meson.build                  |   9 +-
+ meson_options.txt            |   2 +-
+ src/io_url_libuclient.c      | 135 +++++++++++++
+ src/io_url_libuclient_spec.c | 363 +++++++++++++++++++++++++++++++++++
+ src/io_url_libuclient_spec.h |  17 ++
+ src/meson.build              |   8 +-
+ 6 files changed, 529 insertions(+), 5 deletions(-)
+ create mode 100644 src/io_url_libuclient.c
+ create mode 100644 src/io_url_libuclient_spec.c
+ create mode 100644 src/io_url_libuclient_spec.h
+
+diff --git a/meson.build b/meson.build
+index c098c11cd60c..b6c8da45719f 100644
+--- a/meson.build
++++ b/meson.build
+@@ -32,6 +32,12 @@ endif
+ 
+ apk_deps = [ crypto_dep, zlib_dep, libzstd_dep ]
+ 
++if get_option('url_backend') == 'libuclient'
++	url_backend_dep = dependency('uclient')
++else
++	url_backend_dep = dependency('', required: false)
++endif
++
+ add_project_arguments('-D_GNU_SOURCE', language: 'c')
+ 
+ # Needed for 64-bit off_t and friends on glibc.
+@@ -82,8 +88,7 @@ subdir('doc')
+ subdir('portability')
+ if get_option('url_backend') == 'libfetch'
+ 	subdir('libfetch')
+-else
+-	libfetch_dep = dependency('', required: false)
++	url_backend_dep = libfetch_dep
+ endif
+ subdir('src')
+ if lua_dep.found()
+diff --git a/meson_options.txt b/meson_options.txt
+index 6341145d9da5..e892a9594d5d 100644
+--- a/meson_options.txt
++++ b/meson_options.txt
+@@ -11,6 +11,6 @@ option('lua_version', description: 'Lua version to use with unset lua_bin and lu
+ option('minimal', description: 'Build with minimal set of commands', type: 'boolean', value: false)
+ option('python', description: 'Build python binding', type: 'feature', value: 'auto')
+ option('tests', description: 'Build tests', type: 'feature', value: 'auto')
+-option('url_backend', description: 'URL backend', type: 'combo', choices: ['libfetch', 'wget'], value: 'libfetch')
++option('url_backend', description: 'URL backend', type: 'combo', choices: ['libfetch', 'libuclient', 'wget'], value: 'libfetch')
+ option('uvol_db_target', description: 'Default target for uvol database layer', type: 'string')
+ option('zstd', description: 'Build with zstd support', type: 'feature', value: 'auto', deprecated: {'true': 'enabled', 'false': 'disabled'})
+diff --git a/src/io_url_libuclient.c b/src/io_url_libuclient.c
+new file mode 100644
+index 000000000000..3e3f3e1f7ba0
+--- /dev/null
++++ b/src/io_url_libuclient.c
+@@ -0,0 +1,135 @@
++#include <stdio.h>
++
++#include "apk_io.h"
++#include "io_url_libuclient_spec.h"
++
++struct apk_uclient_istream {
++	struct apk_istream is;
++	struct uclient_stream *stream;
++	struct apk_file_meta meta;
++};
++
++static int uclient_http_error(int status)
++{
++	switch (status) {
++	case 304:
++		return -APKE_FILE_UNCHANGED;
++	case 400:
++		return -APKE_HTTP_400_BAD_REQUEST;
++	case 401:
++		return -APKE_HTTP_401_UNAUTHORIZED;
++	case 403:
++		return -APKE_HTTP_403_FORBIDDEN;
++	case 404:
++		return -APKE_HTTP_404_NOT_FOUND;
++	case 405:
++		return -APKE_HTTP_405_METHOD_NOT_ALLOWED;
++	case 500:
++		return -APKE_HTTP_500_INTERNAL_SERVER_ERROR;
++	case 501:
++		return -APKE_HTTP_501_NOT_IMPLEMENTED;
++	case 502:
++		return -APKE_HTTP_502_BAD_GATEWAY;
++	case 503:
++		return -APKE_HTTP_503_SERVICE_UNAVAILABLE;
++	case 504:
++		return -APKE_HTTP_504_GATEWAY_TIMEOUT;
++	default:
++		return -APKE_HTTP_UNKNOWN;
++	}
++}
++
++static void uclient_get_meta(struct apk_istream *is,
++			    struct apk_file_meta *meta)
++{
++	struct apk_uclient_istream *fis =
++		container_of(is, struct apk_uclient_istream, is);
++
++	*meta = fis->meta;
++}
++
++static ssize_t uclient_read(struct apk_istream *is, void *buf, size_t size)
++{
++	struct apk_uclient_istream *fis =
++		container_of(is, struct apk_uclient_istream, is);
++	ssize_t ret;
++	int status;
++
++	ret = uclient_stream_read(fis->stream, buf, size);
++	if (ret >= 0)
++		return ret;
++
++	ret = uclient_stream_err(fis->stream);
++	if (ret && ret == -EACCES)
++		ret = -APKE_TLS_SERVER_CERT_UNTRUSTED;
++
++	status = uclient_stream_status(fis->stream);
++	if (status >= 400 || status == 304)
++		ret = uclient_http_error(status);
++
++	is->err = ret;
++	return ret;
++}
++
++static int uclient_close(struct apk_istream *is)
++{
++	int r = is->err;
++	struct apk_uclient_istream *fis =
++		container_of(is, struct apk_uclient_istream, is);
++
++	uclient_stream_close(fis->stream);
++	free(fis);
++
++	return r < 0 ? r : 0;
++}
++
++static const struct apk_istream_ops uclient_istream_ops = {
++	.get_meta = uclient_get_meta,
++	.read = uclient_read,
++	.close = uclient_close,
++};
++
++struct apk_istream *apk_io_url_istream(const char *url, time_t since)
++{
++	struct apk_uclient_istream *fis;
++
++	fis = calloc(1, sizeof(*fis) + apk_io_bufsize);
++	if (!fis)
++		return ERR_PTR(-ENOMEM);
++
++	fis->is.ops = &uclient_istream_ops;
++	fis->is.buf = (uint8_t *)(fis + 1);
++	fis->is.buf_size = apk_io_bufsize;
++	fis->is.ptr = fis->is.buf;
++	fis->is.end = fis->is.buf;
++
++	fis->stream = uclient_stream_process(url, since);
++	if (!fis->stream) {
++		int ret = errno ? -errno : -EIO;
++
++		free(fis);
++		return ERR_PTR(ret);
++	}
++
++	return &fis->is;
++}
++
++void apk_io_url_init(struct apk_out *out)
++{
++	atexit(uclient_stream_exit);
++}
++
++void apk_io_url_set_timeout(int seconds)
++{
++	uclient_stream_set_timeout(seconds);
++}
++
++void apk_io_url_check_certificate(bool check_cert)
++{
++	uclient_stream_check_certificate(check_cert);
++}
++
++void apk_io_url_set_redirect_callback(void (*cb)(int, const char *))
++{
++	uclient_stream_set_redirect_callback(cb);
++}
+diff --git a/src/io_url_libuclient_spec.c b/src/io_url_libuclient_spec.c
+new file mode 100644
+index 000000000000..a904bb3e3589
+--- /dev/null
++++ b/src/io_url_libuclient_spec.c
+@@ -0,0 +1,363 @@
++#include <errno.h>
++#include <limits.h>
++#include <stdbool.h>
++#include <stdlib.h>
++#include <string.h>
++#include <time.h>
++#include <glob.h>
++#include <unistd.h>
++
++#include <stdio.h>
++
++#include <libubox/uclient.h>
++#include <libubox/uloop.h>
++
++#include "io_url_libuclient_spec.h"
++
++#define APK_CA_BUNDLE "/etc/apk/ca.pem"
++#define SYSTEM_CA_CERTS "/etc/ssl/certs/*.crt"
++#define SYSTEM_CA_BUNDLE "/etc/ssl/certs/ca-certificates.crt"
++
++static struct ustream_ssl_ctx *ssl_ctx;
++static const struct ustream_ssl_ops *ssl_ops;
++static bool uloop_initialized = false;
++static bool cert_loaded = false;
++
++static unsigned long timeout;
++static bool check_certificate = true;
++static void (*redirect_callback)(int, const char *);
++
++static bool url_is_https(const char *url)
++{
++	return strncasecmp(url, "https://", 7) == 0;
++}
++
++static char *uclient_url_string(const struct uclient_url *url)
++{
++	const char *scheme;
++	char *str;
++	bool ipv6;
++
++	switch (url->prefix) {
++	case 0:
++		scheme = "http://";
++		break;
++	case 1:
++		scheme = "https://";
++		break;
++	default:
++		return NULL;
++	}
++
++	ipv6 = strchr(url->host, ':') != NULL;
++
++	if (asprintf(&str, "%s%s%s%s%s%s%s%s",
++		     scheme,
++		     ipv6 ? "[" : "",
++		     url->host,
++		     ipv6 ? "]" : "",
++		     url->port ? ":" : "",
++		     url->port ? url->port : "",
++		     url->location,
++		     "") < 0)
++		return NULL;
++
++	return str;
++}
++
++static int uclient_load_ca_certs(const struct ustream_ssl_ops *ops,
++				 struct ustream_ssl_ctx *ctx)
++{
++	int ret = 0;
++	glob_t gl;
++	size_t i;
++
++	if (cert_loaded)
++		return 0;
++
++	if (!access(APK_CA_BUNDLE, R_OK))
++		return ops->context_add_ca_crt_file(ctx, APK_CA_BUNDLE);
++
++	if (!access(SYSTEM_CA_BUNDLE, R_OK))
++		return ops->context_add_ca_crt_file(ctx, SYSTEM_CA_BUNDLE);
++
++	if (glob(SYSTEM_CA_CERTS, 0, NULL, &gl))
++		return -EINVAL;
++
++	for (i = 0; i < gl.gl_pathc; i++) {
++		ret = ops->context_add_ca_crt_file(ctx, gl.gl_pathv[i]);
++		if (ret)
++			break;
++	}
++
++	globfree(&gl);
++
++	return ret;
++}
++
++static int stream_init(bool ssl)
++{
++	int ret;
++
++	if (!uloop_initialized) {
++		if (uloop_init())
++			return -EIO;
++
++		uloop_initialized = true;
++	}
++
++	if (!ssl)
++		return 0;
++
++	if (!ssl_ctx) {
++		ssl_ctx = uclient_new_ssl_context(&ssl_ops);
++		if (!ssl_ctx)
++			return -ENOMEM;
++	}
++
++	if (ssl_ctx && check_certificate) {
++		ret = uclient_load_ca_certs(ssl_ops, ssl_ctx);
++		if (ret)
++			return ret;
++
++		cert_loaded = true;
++	}
++
++	return 0;
++}
++
++static void uclient_data_read(struct uclient *cl)
++{
++}
++
++static void uclient_header_done(struct uclient *cl)
++{
++	struct uclient_stream *s = cl->priv;
++
++	if (uclient_http_redirect(cl)) {
++		char *url;
++
++		if (!redirect_callback)
++			return;
++
++		url = uclient_url_string(cl->url);
++		if (!url)
++			return;
++
++		redirect_callback(cl->status_code, url);
++
++		free(url);
++		return;
++	}
++
++	s->status = cl->status_code;
++
++	switch (cl->status_code) {
++	case 200:
++	case 206:
++		return;
++	case 304:
++		s->err = -ENODATA;
++		break;
++	default:
++		s->err = -EPROTO;
++		break;
++	}
++
++	s->done = true;
++}
++
++static void uclient_data_eof(struct uclient *cl)
++{
++	struct uclient_stream *s = cl->priv;
++
++	if (!cl->data_eof)
++		s->err = -EIO;
++
++	s->done = true;
++}
++
++static void uclient_error(struct uclient *cl, int code)
++{
++	struct uclient_stream *s = cl->priv;
++
++	switch (code) {
++	case UCLIENT_ERROR_TIMEDOUT:
++		s->err = -ETIMEDOUT;
++		break;
++	case UCLIENT_ERROR_SSL_INVALID_CERT:
++	case UCLIENT_ERROR_SSL_CN_MISMATCH:
++		s->err = -EACCES;
++		break;
++	default:
++		s->err = -EIO;
++		break;
++	}
++
++	s->done = true;
++}
++
++static const struct uclient_cb uclient_cb = {
++	.data_read = uclient_data_read,
++	.header_done = uclient_header_done,
++	.data_eof = uclient_data_eof,
++	.error = uclient_error,
++};
++
++struct uclient_stream *uclient_stream_process(const char *url, time_t since)
++{
++	struct uclient_stream *s;
++	char date[64];
++	struct tm tm;
++	int ret;
++
++	ret = stream_init(url_is_https(url));
++	if (ret)
++		goto error;
++
++	s = calloc(1, sizeof(*s));
++	if (!s) {
++		ret = -ENOMEM;
++		goto error;
++	}
++
++	s->cl = uclient_new(url, NULL, &uclient_cb);
++	if (!s->cl) {
++		ret = -ENOMEM;
++		goto error_stream;
++	}
++
++	s->cl->priv = s;
++
++	ret = uclient_http_set_ssl_ctx(s->cl, ssl_ops, ssl_ctx,
++				       check_certificate);
++	if (ret)
++		goto error_uclient;
++
++	ret = uclient_set_timeout(s->cl, timeout);
++	if (ret)
++		goto error_uclient;
++
++	ret = uclient_connect(s->cl);
++	if (ret)
++		goto error_uclient;
++
++	ret = uclient_http_reset_headers(s->cl);
++	if (ret)
++		goto error_uclient;
++
++	ret = uclient_http_set_request_type(s->cl, "GET");
++	if (ret)
++		goto error_uclient;
++
++	if (since > 0) {
++		if (gmtime_r(&since, &tm) &&
++		    strftime(date, sizeof(date),
++			     "%a, %d %b %Y %H:%M:%S GMT", &tm)) {
++			ret = uclient_http_set_header(
++				s->cl, "If-Modified-Since", date);
++			if (ret)
++				goto error_uclient;
++		}
++	}
++
++	ret = uclient_request(s->cl);
++	if (ret)
++		goto error_uclient;
++
++	return s;
++
++error_uclient:
++	s->cl->priv = NULL;
++	uclient_disconnect(s->cl);
++	uclient_free(s->cl);
++error_stream:
++	free(s);
++error:
++	errno = ret < 0 ? -ret : EIO;
++	return NULL;
++}
++
++ssize_t uclient_stream_read(struct uclient_stream *s, void *buf, size_t size)
++{
++	int pending, ret;
++
++	if (!s || !buf)
++		return -EINVAL;
++
++	if (!size)
++		return 0;
++
++	while (!s->err) {
++		pending = uclient_pending_bytes(s->cl, false);
++
++		if (pending > 0) {
++			ret = uclient_read(s->cl, buf,
++					   size > INT_MAX ? INT_MAX : size);
++			if (ret < 0) {
++				s->err = -EIO;
++				return -EIO;
++			}
++			if (ret > 0)
++				return ret;
++		}
++
++		if (s->done)
++			return 0;
++
++		ret = uloop_run_timeout(1000);
++		if (ret) {
++			s->err = -EINTR;
++			return -EINTR;
++		}
++	}
++
++	return -EIO;
++}
++
++int uclient_stream_err(const struct uclient_stream *s)
++{
++	return s ? s->err : 0;
++}
++
++int uclient_stream_status(const struct uclient_stream *s)
++{
++	return s ? s->status : 0;
++}
++
++int uclient_stream_close(struct uclient_stream *s)
++{
++	if (!s)
++		return 0;
++
++	uclient_disconnect(s->cl);
++	uclient_free(s->cl);
++	free(s);
++
++	return 0;
++}
++
++void uclient_stream_set_timeout(int seconds)
++{
++	/* timeout is in ms */
++	timeout = seconds * 1000;
++}
++
++void uclient_stream_check_certificate(bool check_cert)
++{
++	check_certificate = check_cert;
++}
++
++void uclient_stream_set_redirect_callback(void (*cb)(int, const char *))
++{
++	redirect_callback = cb;
++}
++
++void uclient_stream_exit(void)
++{
++	if (ssl_ctx)
++		ssl_ops->context_free(ssl_ctx);
++
++	if (uloop_initialized)
++		uloop_done();
++}
+diff --git a/src/io_url_libuclient_spec.h b/src/io_url_libuclient_spec.h
+new file mode 100644
+index 000000000000..ba461df3c2ca
+--- /dev/null
++++ b/src/io_url_libuclient_spec.h
+@@ -0,0 +1,17 @@
++
++struct uclient_stream {
++	struct uclient *cl;
++	bool done;
++	int err;
++	int status;
++};
++
++struct uclient_stream *uclient_stream_process(const char *url, time_t since);
++ssize_t uclient_stream_read(struct uclient_stream *s, void *buf, size_t size);
++int uclient_stream_close(struct uclient_stream *s);
++int uclient_stream_err(const struct uclient_stream *s);
++int uclient_stream_status(const struct uclient_stream *s);
++void uclient_stream_set_timeout(int seconds);
++void uclient_stream_check_certificate(bool check_cert);
++void uclient_stream_set_redirect_callback(void (*cb)(int, const char *));
++void uclient_stream_exit(void);
+diff --git a/src/meson.build b/src/meson.build
+index 6ba382a7d940..6930b27938db 100644
+--- a/src/meson.build
++++ b/src/meson.build
+@@ -41,6 +41,10 @@ libapk_src = [
+ 	'version.c',
+ ]
+ 
++if url_backend == 'libuclient'
++	libapk_src += ['io_url_libuclient_spec.c']
++endif
++
+ libapk_headers = [
+ 	'adb.h',
+ 	'apk_atom.h',
+@@ -147,7 +151,7 @@ libapk_lib = library(
+ 	soversion: libapk_so_version,
+ 	install: not subproject,
+ 	dependencies: [
+-		libfetch_dep,
++		url_backend_dep,
+ 		libportability_dep,
+ 		apk_deps,
+ 	],
+@@ -179,7 +183,7 @@ apk_exe = executable(
+ 	dependencies: [
+ 		libapk_dep,
+ 		apk_deps,
+-		libfetch_dep.partial_dependency(includes: true),
++		url_backend_dep.partial_dependency(includes: true),
+ 		libportability_dep.partial_dependency(includes: true),
+ 	],
+ 	c_args: apk_cargs,
+-- 
+2.55.0
+
