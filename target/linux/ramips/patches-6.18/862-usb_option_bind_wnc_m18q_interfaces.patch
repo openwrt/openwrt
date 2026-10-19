@@ -1,0 +1,25 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Ulv Michel <ulv@on2.de>
+Date: Mon, 19 Oct 2026 09:51:10 +0200
+Subject: [PATCH] USB: serial: option: add Wistron NeWeb M18QW
+
+Add the Wistron NeWeb M18QW LTE module (1435:3185), found in the ZyXEL
+LTE3302, so the option driver binds its serial (AT/diag) interfaces.
+Only interfaces with class/subclass/protocol ff/00/00 are matched, the
+QMI interface is handled by qmi_wwan.
+
+Signed-off-by: Ulv Michel <ulv@on2.de>
+---
+ drivers/usb/serial/option.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/drivers/usb/serial/option.c
++++ b/drivers/usb/serial/option.c
+@@ -2407,6 +2407,7 @@ static const struct usb_device_id option
+ 	{ USB_DEVICE_AND_INTERFACE_INFO(0x07d1, 0x7e11, 0xff, 0xff, 0xff) },	/* D-Link DWM-156/A3 */
+ 	{ USB_DEVICE_INTERFACE_CLASS(0x1435, 0xd191, 0xff),			/* Wistron Neweb D19Q1 */
+ 	  .driver_info = RSVD(1) | RSVD(4) },
++	{ USB_DEVICE_AND_INTERFACE_INFO(0x1435, 0x3185, 0xff, 0x00, 0x00) },    /* Wistron Neweb M18QW */
+ 	{ USB_DEVICE_INTERFACE_CLASS(0x1690, 0x7588, 0xff),			/* ASKEY WWHC050 */
+ 	  .driver_info = RSVD(1) | RSVD(4) },
+ 	{ USB_DEVICE_INTERFACE_CLASS(0x2020, 0x2031, 0xff),			/* Olicard 600 */
