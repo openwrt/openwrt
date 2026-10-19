@@ -1,0 +1,1304 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Semih Baskan <strst.gs@gmail.com>
+Date: Tue, 13 Oct 2026 00:00:00 +0300
+Subject: [PATCH] ARM: dts: BCM5301X: use IMP0 port 8 as the CPU port
+
+The switch blocks of most BCM5301X boards in tree make port 5 (on some
+boards 7) the CPU port and leave port 8, the IMP0 management port,
+disabled. The switch sends frames it cannot place, such as a tagged
+frame whose VID is missing from the VLAN table, only toward the
+management port. With port 8 disabled those frames are dropped, so on a
+standalone port a VLAN tagged uplink, for example a tagged PPPoE WAN,
+never comes up.
+
+Make port 8 the only CPU port on the 30 boards below and disable the
+old CPU port, the layout bcm47094-netgear-r8500.dts already uses. Where
+the old conduit stays enabled, it sits behind its disabled port and
+carries no traffic.
+
+gmac2 needs its own MAC cell. Without one bgmac takes et2macaddr from
+nvram, which most of these CFEs do not set, and otherwise a random
+address on every boot. gmac2 gets a cell on 27 boards:
+
+- The MR26 and MR32 move their cell from gmac0 to gmac2.
+- The EA6300 V1, RT-AC87U, the four Luxul boards and the K3 point gmac2
+  at their existing et0macaddr or et1macaddr node, index 0. On the
+  RT-AC3100, RT-AC3200, RT-AC5300 and RT-AC88U gmac2 already had a cell
+  with index 2 (1 on the RT-AC88U); it drops to 0, which is also the
+  address the vendor firmware gives gmac2.
+- Twelve boards get a new brcm,nvram node with an et0macaddr cell,
+  the address the old conduit read from nvram.
+- The Archer C5 V2 and C9 V1 have no nvram partition. gmac2 reads the
+  label MAC from their default-mac partition: a 32-bit length of 6,
+  then the MAC at offset 8, the layout the vendor firmware reads.
+
+The SR400ac and the R7900 get no cell, and bgmac reads et2macaddr from
+nvram; on the Tenda AC9 port 8 is gmac0, which reads et0macaddr.
+
+If a new node does not start on the nvram header, brcm_nvram fails to
+probe and gmac2 waits for its cell forever, so the board has no
+conduit. Each offset comes from that model where a read exists:
+
+Board          Node                    Source
+RT-N18U        NAND 0x80000 0x180000   partition table on the unit
+RT-AC56U       NAND 0x80000 0x180000   OpenWrt boot log
+RT-AC68U       NAND 0x80000 0x180000   OpenWrt boot log
+R6250 V1       NAND 0x80000 0x180000   OpenWrt boot log
+R6300 V2       NAND 0x80000 0x180000   OpenWrt boot log
+R7000          NAND 0x80000 0x180000   OpenWrt boot log and /proc/mtd
+R6400 V1       NAND 0x80000 0x180000   R6250 V1, R6300 V2, R7000
+EA6500 V2      NAND 0x80000 0x100000   /proc/mtd of the EA6700
+WZR-600DHP2    NAND 0xa0000 0x160000   CFE "show devices" on a unit
+WZR-900DHP     NAND 0xa0000 0x160000   LEDE boot log
+WZR-1750DHP    NOR  0xf0000 0x10000    dump of a unit, FLSH at 0xf0000
+WXR-1900DHP    NOR  0x70000 0x10000    OpenWrt boot log
+
+The EA6500 V2 has no log of its own. The EA6700 is the same board apart
+from the LEDs, and its /proc/mtd matches the CFE layout in the Linksys
+GPL. The R6400 V1 has no log of its own. The three Netgear NAND boards
+above, on the same vendor firmware base, all keep nvram at that
+offset. The two NOR nodes sit in the serial flash window, as the Luxul
+nodes in tree do.
+
+Board                     CPU port          Conduit
+Asus RT-AC56U             5 -> 8            eth0 -> eth2
+Asus RT-AC68U             5 -> 8            eth0 -> eth2
+Asus RT-AC3100            5, 7, 8 -> 8      eth0 -> eth2
+Asus RT-AC3200            5, 7, 8 -> 8      eth0 -> eth2
+Asus RT-AC5300            5, 7, 8 -> 8      eth0 -> eth2
+Asus RT-AC87U             7 -> 8            eth1 -> eth2
+Asus RT-AC88U             7, 8 -> 8         eth0 -> eth1
+Asus RT-N18U              5 -> 8            eth0 -> eth2
+Buffalo WZR-600DHP2       5 -> 8            eth0 -> eth2
+Buffalo WZR-900DHP        5 -> 8            eth0 -> eth2
+Buffalo WZR-1750DHP       5 -> 8            eth0 -> eth2
+Buffalo WXR-1900DHP       5 -> 8            eth0 -> eth2
+Linksys EA6300 V1         5 -> 8            eth0 -> eth2
+Linksys EA6500 V2         5 -> 8            eth0 -> eth2
+Luxul ABR-4500 V1         5 -> 8            eth0 -> eth2
+Luxul XAP-1610 V1         5 -> 8            eth0 -> eth2
+Luxul XBR-4500 V1         5 -> 8            eth0 -> eth2
+Luxul XWR-3150 V1         5 -> 8            eth0 -> eth2
+Meraki MR26               5 -> 8            eth0 -> eth0
+Meraki MR32               5 -> 8            eth0 -> eth0
+Netgear R6250 V1          5 -> 8            eth0 -> eth2
+Netgear R6300 V2          5 -> 8            eth0 -> eth2
+Netgear R6400 V1          5 -> 8            eth0 -> eth2
+Netgear R7000             5 -> 8            eth0 -> eth2
+Netgear R7900             none -> 8         none -> eth2
+Phicomm K3                5 -> 8            eth0 -> eth2
+SmartRG SR400ac           5 -> 8            eth0 -> eth2
+Tenda AC9                 5, 8 -> 8         eth1 -> eth0
+TP-Link Archer C5 V2      5 -> 8            eth0 -> eth2
+TP-Link Archer C9 V1      5 -> 8            eth0 -> eth2
+
+Where more than one CPU port was enabled, DSA picked the first one. With
+gmac0 disabled on the RT-AC88U, its gmac2 is eth1. The MR26 and MR32
+enable only gmac2, which keeps the conduit at eth0. The R7900 had no DSA
+ports before, since its switch was never enabled. On the Tenda AC9
+(BCM53573) port 8 is wired to gmac0. The RT-AC87U also moves its QTN link
+to port 5, where the Quantenna chip is wired, and disables the unused
+port 4.
+
+Tested only on an Asus RT-N18U (BCM53011 rev 5) on the 6.18 kernel,
+across two boots, with a second router as the tagged-link peer and PPPoE
+concentrator. The conduit comes up as eth2 with et0macaddr on both boots,
+eth0 stays present and idle, and lan1 to lan4 and wan keep their names and
+the brcm tagging. The switch selects IMP0 as its management port, so the
+frames it steers there, the tagged miss path included, now end at the CPU
+port. Tagged reception on the standalone wan works with nothing in the
+VLAN table: wan.60 exchanges pings with the peer. A PPPoE session over
+wan.35 establishes with the default route on pppoe-wan. Untagged traffic
+on wan and bridged LAN traffic work, a bridge VLAN under vlan_filtering 1
+programs the table as before, and management over br-lan survived the
+flash. The known trade-off was measured as well: after the wan.60 upper is
+deleted, VID-60 frames still reach the CPU, because the miss path now ends
+at the CPU port.
+
+Signed-off-by: Semih Baskan <strst.gs@gmail.com>
+---
+ .../dts/broadcom/bcm4708-asus-rt-ac56u.dts    | 20 ++++++++---
+ .../dts/broadcom/bcm4708-asus-rt-ac68u.dts    | 20 ++++++++---
+ .../broadcom/bcm4708-buffalo-wzr-1750dhp.dts  | 20 ++++++++---
+ .../broadcom/bcm4708-linksys-ea6300-v1.dts    | 11 +++---
+ .../broadcom/bcm4708-linksys-ea6500-v2.dts    | 20 ++++++++---
+ .../dts/broadcom/bcm4708-netgear-r6250.dts    | 20 ++++++++---
+ .../dts/broadcom/bcm4708-netgear-r6300-v2.dts | 20 ++++++++---
+ .../dts/broadcom/bcm4708-netgear-r6400-v1.dts | 20 ++++++++---
+ .../dts/broadcom/bcm4708-smartrg-sr400ac.dts  |  6 +---
+ .../dts/broadcom/bcm47081-asus-rt-n18u.dts    | 20 ++++++++---
+ .../broadcom/bcm47081-buffalo-wzr-600dhp2.dts | 20 ++++++++---
+ .../broadcom/bcm47081-buffalo-wzr-900dhp.dts  | 20 ++++++++---
+ .../broadcom/bcm47081-tplink-archer-c5-v2.dts | 25 +++++++++++---
+ .../dts/broadcom/bcm4709-asus-rt-ac3200.dts   | 10 +++++-
+ .../dts/broadcom/bcm4709-asus-rt-ac87u.dts    | 21 +++++++++---
+ .../broadcom/bcm4709-buffalo-wxr-1900dhp.dts  | 20 ++++++++---
+ .../dts/broadcom/bcm4709-netgear-r7000.dts    | 20 ++++++++---
+ .../dts/broadcom/bcm4709-netgear-r7900.dts    | 34 +++++++++++++++++++
+ .../broadcom/bcm4709-tplink-archer-c9-v1.dts  | 25 +++++++++++---
+ .../dts/broadcom/bcm47094-asus-rt-ac3100.dts  | 10 +++++-
+ .../dts/broadcom/bcm47094-asus-rt-ac3100.dtsi |  6 +---
+ .../dts/broadcom/bcm47094-asus-rt-ac5300.dts  | 10 +++++-
+ .../dts/broadcom/bcm47094-asus-rt-ac88u.dts   |  2 +-
+ .../dts/broadcom/bcm47094-luxul-abr-4500.dts  | 11 +++---
+ .../dts/broadcom/bcm47094-luxul-xap-1610.dts  | 11 +++---
+ .../dts/broadcom/bcm47094-luxul-xbr-4500.dts  | 11 +++---
+ .../broadcom/bcm47094-luxul-xwr-3150-v1.dts   | 11 +++---
+ .../boot/dts/broadcom/bcm47094-phicomm-k3.dts | 11 +++---
+ .../boot/dts/broadcom/bcm47189-tenda-ac9.dts  | 13 +++++++
+ .../dts/broadcom/bcm53015-meraki-mr26.dts     | 21 ++++--------
+ .../dts/broadcom/bcm53016-meraki-mr32.dts     | 19 ++++-------
+ 31 files changed, 362 insertions(+), 146 deletions(-)
+
+--- a/arch/arm/boot/dts/broadcom/bcm4708-asus-rt-ac56u.dts
++++ b/arch/arm/boot/dts/broadcom/bcm4708-asus-rt-ac56u.dts
+@@ -25,6 +25,15 @@
+ 		      <0x88000000 0x08000000>;
+ 	};
+ 
++	nvram@1c080000 {
++		compatible = "brcm,nvram";
++		reg = <0x1c080000 0x180000>;
++
++		et0macaddr: et0macaddr {
++			#nvmem-cell-cells = <1>;
++		};
++	};
++
+ 	leds {
+ 		compatible = "gpio-leds";
+ 
+@@ -110,6 +119,11 @@
+ 	status = "okay";
+ };
+ 
++&gmac2 {
++	nvmem-cells = <&et0macaddr 0>;
++	nvmem-cell-names = "mac-address";
++};
++
+ &srab {
+ 	status = "okay";
+ 
+@@ -135,14 +149,10 @@
+ 		};
+ 
+ 		port@5 {
+-			label = "cpu";
+-		};
+-
+-		port@7 {
+ 			status = "disabled";
+ 		};
+ 
+-		port@8 {
++		port@7 {
+ 			status = "disabled";
+ 		};
+ 	};
+--- a/arch/arm/boot/dts/broadcom/bcm4708-asus-rt-ac68u.dts
++++ b/arch/arm/boot/dts/broadcom/bcm4708-asus-rt-ac68u.dts
+@@ -25,6 +25,15 @@
+ 		      <0x88000000 0x08000000>;
+ 	};
+ 
++	nvram@1c080000 {
++		compatible = "brcm,nvram";
++		reg = <0x1c080000 0x180000>;
++
++		et0macaddr: et0macaddr {
++			#nvmem-cell-cells = <1>;
++		};
++	};
++
+ 	leds {
+ 		compatible = "gpio-leds";
+ 
+@@ -101,6 +110,11 @@
+ 	status = "okay";
+ };
+ 
++&gmac2 {
++	nvmem-cells = <&et0macaddr 0>;
++	nvmem-cell-names = "mac-address";
++};
++
+ &srab {
+ 	status = "okay";
+ 
+@@ -126,14 +140,10 @@
+ 		};
+ 
+ 		port@5 {
+-			label = "cpu";
+-		};
+-
+-		port@7 {
+ 			status = "disabled";
+ 		};
+ 
+-		port@8 {
++		port@7 {
+ 			status = "disabled";
+ 		};
+ 	};
+--- a/arch/arm/boot/dts/broadcom/bcm4708-buffalo-wzr-1750dhp.dts
++++ b/arch/arm/boot/dts/broadcom/bcm4708-buffalo-wzr-1750dhp.dts
+@@ -25,6 +25,15 @@
+ 		      <0x88000000 0x18000000>;
+ 	};
+ 
++	nvram@1e0f0000 {
++		compatible = "brcm,nvram";
++		reg = <0x1e0f0000 0x10000>;
++
++		et0macaddr: et0macaddr {
++			#nvmem-cell-cells = <1>;
++		};
++	};
++
+ 	spi {
+ 		compatible = "spi-gpio";
+ 		num-chipselects = <1>;
+@@ -167,6 +176,11 @@
+ 	status = "okay";
+ };
+ 
++&gmac2 {
++	nvmem-cells = <&et0macaddr 0>;
++	nvmem-cell-names = "mac-address";
++};
++
+ &srab {
+ 	status = "okay";
+ 
+@@ -192,14 +206,10 @@
+ 		};
+ 
+ 		port@5 {
+-			label = "cpu";
+-		};
+-
+-		port@7 {
+ 			status = "disabled";
+ 		};
+ 
+-		port@8 {
++		port@7 {
+ 			status = "disabled";
+ 		};
+ 	};
+--- a/arch/arm/boot/dts/broadcom/bcm4708-linksys-ea6300-v1.dts
++++ b/arch/arm/boot/dts/broadcom/bcm4708-linksys-ea6300-v1.dts
+@@ -60,6 +60,11 @@
+ 	status = "okay";
+ };
+ 
++&gmac2 {
++	nvmem-cells = <&et0macaddr 0>;
++	nvmem-cell-names = "mac-address";
++};
++
+ &srab {
+ 	status = "okay";
+ 
+@@ -88,14 +93,10 @@
+ 		};
+ 
+ 		port@5 {
+-			label = "cpu";
+-		};
+-
+-		port@7 {
+ 			status = "disabled";
+ 		};
+ 
+-		port@8 {
++		port@7 {
+ 			status = "disabled";
+ 		};
+ 	};
+--- a/arch/arm/boot/dts/broadcom/bcm4708-linksys-ea6500-v2.dts
++++ b/arch/arm/boot/dts/broadcom/bcm4708-linksys-ea6500-v2.dts
+@@ -23,6 +23,15 @@
+ 		      <0x88000000 0x08000000>;
+ 	};
+ 
++	nvram@1c080000 {
++		compatible = "brcm,nvram";
++		reg = <0x1c080000 0x100000>;
++
++		et0macaddr: et0macaddr {
++			#nvmem-cell-cells = <1>;
++		};
++	};
++
+ 	gpio-keys {
+ 		compatible = "gpio-keys";
+ 
+@@ -53,6 +62,11 @@
+ 	status = "okay";
+ };
+ 
++&gmac2 {
++	nvmem-cells = <&et0macaddr 0>;
++	nvmem-cell-names = "mac-address";
++};
++
+ &srab {
+ 	status = "okay";
+ 
+@@ -78,14 +92,10 @@
+ 		};
+ 
+ 		port@5 {
+-			label = "cpu";
+-		};
+-
+-		port@7 {
+ 			status = "disabled";
+ 		};
+ 
+-		port@8 {
++		port@7 {
+ 			status = "disabled";
+ 		};
+ 	};
+--- a/arch/arm/boot/dts/broadcom/bcm4708-netgear-r6250.dts
++++ b/arch/arm/boot/dts/broadcom/bcm4708-netgear-r6250.dts
+@@ -26,6 +26,15 @@
+ 		      <0x88000000 0x08000000>;
+ 	};
+ 
++	nvram@1c080000 {
++		compatible = "brcm,nvram";
++		reg = <0x1c080000 0x180000>;
++
++		et0macaddr: et0macaddr {
++			#nvmem-cell-cells = <1>;
++		};
++	};
++
+ 	leds {
+ 		compatible = "gpio-leds";
+ 
+@@ -104,6 +113,11 @@
+ 	status = "okay";
+ };
+ 
++&gmac2 {
++	nvmem-cells = <&et0macaddr 0>;
++	nvmem-cell-names = "mac-address";
++};
++
+ &srab {
+ 	status = "okay";
+ 
+@@ -129,14 +143,10 @@
+ 		};
+ 
+ 		port@5 {
+-			label = "cpu";
+-		};
+-
+-		port@7 {
+ 			status = "disabled";
+ 		};
+ 
+-		port@8 {
++		port@7 {
+ 			status = "disabled";
+ 		};
+ 	};
+--- a/arch/arm/boot/dts/broadcom/bcm4708-netgear-r6300-v2.dts
++++ b/arch/arm/boot/dts/broadcom/bcm4708-netgear-r6300-v2.dts
+@@ -25,6 +25,15 @@
+ 		      <0x88000000 0x08000000>;
+ 	};
+ 
++	nvram@1c080000 {
++		compatible = "brcm,nvram";
++		reg = <0x1c080000 0x180000>;
++
++		et0macaddr: et0macaddr {
++			#nvmem-cell-cells = <1>;
++		};
++	};
++
+ 	leds {
+ 		compatible = "gpio-leds";
+ 
+@@ -96,6 +105,11 @@
+ 	status = "okay";
+ };
+ 
++&gmac2 {
++	nvmem-cells = <&et0macaddr 0>;
++	nvmem-cell-names = "mac-address";
++};
++
+ &srab {
+ 	status = "okay";
+ 
+@@ -121,14 +135,10 @@
+ 		};
+ 
+ 		port@5 {
+-			label = "cpu";
+-		};
+-
+-		port@7 {
+ 			status = "disabled";
+ 		};
+ 
+-		port@8 {
++		port@7 {
+ 			status = "disabled";
+ 		};
+ 	};
+--- a/arch/arm/boot/dts/broadcom/bcm4708-netgear-r6400-v1.dts
++++ b/arch/arm/boot/dts/broadcom/bcm4708-netgear-r6400-v1.dts
+@@ -29,6 +29,15 @@
+ 		      <0x88000000 0x08000000>;
+ 	};
+ 
++	nvram@1c080000 {
++		compatible = "brcm,nvram";
++		reg = <0x1c080000 0x180000>;
++
++		et0macaddr: et0macaddr {
++			#nvmem-cell-cells = <1>;
++		};
++	};
++
+ 	usb_power: regulator-usb {
+ 		compatible = "regulator-fixed";
+ 		regulator-name = "usb-vcc";
+@@ -140,6 +149,11 @@
+ 	status = "okay";
+ };
+ 
++&gmac2 {
++	nvmem-cells = <&et0macaddr 0>;
++	nvmem-cell-names = "mac-address";
++};
++
+ &srab {
+ 	status = "okay";
+ 
+@@ -165,14 +179,10 @@
+ 		};
+ 
+ 		port@5 {
+-			label = "cpu";
+-		};
+-
+-		port@7 {
+ 			status = "disabled";
+ 		};
+ 
+-		port@8 {
++		port@7 {
+ 			status = "disabled";
+ 		};
+ 	};
+--- a/arch/arm/boot/dts/broadcom/bcm4708-smartrg-sr400ac.dts
++++ b/arch/arm/boot/dts/broadcom/bcm4708-smartrg-sr400ac.dts
+@@ -143,14 +143,10 @@
+ 		};
+ 
+ 		port@5 {
+-			label = "cpu";
+-		};
+-
+-		port@7 {
+ 			status = "disabled";
+ 		};
+ 
+-		port@8 {
++		port@7 {
+ 			status = "disabled";
+ 		};
+ 	};
+--- a/arch/arm/boot/dts/broadcom/bcm47081-asus-rt-n18u.dts
++++ b/arch/arm/boot/dts/broadcom/bcm47081-asus-rt-n18u.dts
+@@ -25,6 +25,15 @@
+ 		      <0x88000000 0x08000000>;
+ 	};
+ 
++	nvram@1c080000 {
++		compatible = "brcm,nvram";
++		reg = <0x1c080000 0x180000>;
++
++		et0macaddr: et0macaddr {
++			#nvmem-cell-cells = <1>;
++		};
++	};
++
+ 	leds {
+ 		compatible = "gpio-leds";
+ 
+@@ -95,6 +104,11 @@
+ 	status = "okay";
+ };
+ 
++&gmac2 {
++	nvmem-cells = <&et0macaddr 0>;
++	nvmem-cell-names = "mac-address";
++};
++
+ &srab {
+ 	status = "okay";
+ 
+@@ -120,14 +134,10 @@
+ 		};
+ 
+ 		port@5 {
+-			label = "cpu";
+-		};
+-
+-		port@7 {
+ 			status = "disabled";
+ 		};
+ 
+-		port@8 {
++		port@7 {
+ 			status = "disabled";
+ 		};
+ 	};
+--- a/arch/arm/boot/dts/broadcom/bcm47081-buffalo-wzr-600dhp2.dts
++++ b/arch/arm/boot/dts/broadcom/bcm47081-buffalo-wzr-600dhp2.dts
+@@ -25,6 +25,15 @@
+ 		      <0x88000000 0x08000000>;
+ 	};
+ 
++	nvram@1c0a0000 {
++		compatible = "brcm,nvram";
++		reg = <0x1c0a0000 0x160000>;
++
++		et0macaddr: et0macaddr {
++			#nvmem-cell-cells = <1>;
++		};
++	};
++
+ 	spi {
+ 		compatible = "spi-gpio";
+ 		num-chipselects = <1>;
+@@ -118,6 +127,11 @@
+ 	};
+ };
+ 
++&gmac2 {
++	nvmem-cells = <&et0macaddr 0>;
++	nvmem-cell-names = "mac-address";
++};
++
+ &srab {
+ 	status = "okay";
+ 
+@@ -143,14 +157,10 @@
+ 		};
+ 
+ 		port@5 {
+-			label = "cpu";
+-		};
+-
+-		port@7 {
+ 			status = "disabled";
+ 		};
+ 
+-		port@8 {
++		port@7 {
+ 			status = "disabled";
+ 		};
+ 	};
+--- a/arch/arm/boot/dts/broadcom/bcm47081-buffalo-wzr-900dhp.dts
++++ b/arch/arm/boot/dts/broadcom/bcm47081-buffalo-wzr-900dhp.dts
+@@ -25,6 +25,15 @@
+ 		      <0x88000000 0x08000000>;
+ 	};
+ 
++	nvram@1c0a0000 {
++		compatible = "brcm,nvram";
++		reg = <0x1c0a0000 0x160000>;
++
++		et0macaddr: et0macaddr {
++			#nvmem-cell-cells = <1>;
++		};
++	};
++
+ 	spi {
+ 		compatible = "spi-gpio";
+ 		num-chipselects = <1>;
+@@ -124,6 +133,11 @@
+ 	status = "okay";
+ };
+ 
++&gmac2 {
++	nvmem-cells = <&et0macaddr 0>;
++	nvmem-cell-names = "mac-address";
++};
++
+ &srab {
+ 	status = "okay";
+ 
+@@ -149,14 +163,10 @@
+ 		};
+ 
+ 		port@5 {
+-			label = "cpu";
+-		};
+-
+-		port@7 {
+ 			status = "disabled";
+ 		};
+ 
+-		port@8 {
++		port@7 {
+ 			status = "disabled";
+ 		};
+ 	};
+--- a/arch/arm/boot/dts/broadcom/bcm47081-tplink-archer-c5-v2.dts
++++ b/arch/arm/boot/dts/broadcom/bcm47081-tplink-archer-c5-v2.dts
+@@ -100,6 +100,11 @@
+ 	};
+ };
+ 
++&gmac2 {
++	nvmem-cells = <&macaddr_default_mac_8>;
++	nvmem-cell-names = "mac-address";
++};
++
+ &srab {
+ 	status = "okay";
+ 
+@@ -125,14 +130,10 @@
+ 		};
+ 
+ 		port@5 {
+-			label = "cpu";
+-		};
+-
+-		port@7 {
+ 			status = "disabled";
+ 		};
+ 
+-		port@8 {
++		port@7 {
+ 			status = "disabled";
+ 		};
+ 	};
+@@ -152,6 +153,20 @@
+ 		partition-file-system {
+ 			linux,rootfs;
+ 		};
++
++		partition-default-mac {
++			read-only;
++
++			nvmem-layout {
++				compatible = "fixed-layout";
++				#address-cells = <1>;
++				#size-cells = <1>;
++
++				macaddr_default_mac_8: macaddr@8 {
++					reg = <0x8 0x6>;
++				};
++			};
++		};
+ 	};
+ };
+ 
+--- a/arch/arm/boot/dts/broadcom/bcm4709-asus-rt-ac3200.dts
++++ b/arch/arm/boot/dts/broadcom/bcm4709-asus-rt-ac3200.dts
+@@ -95,7 +95,7 @@
+ };
+ 
+ &gmac2 {
+-	nvmem-cells = <&et0macaddr 2>;
++	nvmem-cells = <&et0macaddr 0>;
+ 	nvmem-cell-names = "mac-address";
+ };
+ 
+@@ -147,6 +147,14 @@
+ 		port@4 {
+ 			label = "lan1";
+ 		};
++
++		port@5 {
++			status = "disabled";
++		};
++
++		port@7 {
++			status = "disabled";
++		};
+ 	};
+ };
+ 
+--- a/arch/arm/boot/dts/broadcom/bcm4709-asus-rt-ac87u.dts
++++ b/arch/arm/boot/dts/broadcom/bcm4709-asus-rt-ac87u.dts
+@@ -85,6 +85,11 @@
+ 	nvmem-cell-names = "mac-address";
+ };
+ 
++&gmac2 {
++	nvmem-cells = <&et1macaddr 0>;
++	nvmem-cell-names = "mac-address";
++};
++
+ &usb2 {
+ 	vbus-supply = <&usb_power>;
+ };
+@@ -120,15 +125,23 @@
+ 			label = "lan3";
+ 		};
+ 
+-		port@5 {
++		port@4 {
+ 			status = "disabled";
+ 		};
+ 
+-		port@7 {
+-			label = "cpu";
++		port@5 {
++			/delete-property/ethernet;
++
++			label = "qtn";
++			phy-mode = "rgmii";
++
++			fixed-link {
++				speed = <1000>;
++				full-duplex;
++			};
+ 		};
+ 
+-		port@8 {
++		port@7 {
+ 			status = "disabled";
+ 		};
+ 	};
+--- a/arch/arm/boot/dts/broadcom/bcm4709-buffalo-wxr-1900dhp.dts
++++ b/arch/arm/boot/dts/broadcom/bcm4709-buffalo-wxr-1900dhp.dts
+@@ -25,6 +25,15 @@
+ 		      <0x88000000 0x18000000>;
+ 	};
+ 
++	nvram@1e070000 {
++		compatible = "brcm,nvram";
++		reg = <0x1e070000 0x10000>;
++
++		et0macaddr: et0macaddr {
++			#nvmem-cell-cells = <1>;
++		};
++	};
++
+ 	leds {
+ 		compatible = "gpio-leds";
+ 
+@@ -139,6 +148,11 @@
+ 	status = "okay";
+ };
+ 
++&gmac2 {
++	nvmem-cells = <&et0macaddr 0>;
++	nvmem-cell-names = "mac-address";
++};
++
+ &srab {
+ 	status = "okay";
+ 
+@@ -164,14 +178,10 @@
+ 		};
+ 
+ 		port@5 {
+-			label = "cpu";
+-		};
+-
+-		port@7 {
+ 			status = "disabled";
+ 		};
+ 
+-		port@8 {
++		port@7 {
+ 			status = "disabled";
+ 		};
+ 	};
+--- a/arch/arm/boot/dts/broadcom/bcm4709-netgear-r7000.dts
++++ b/arch/arm/boot/dts/broadcom/bcm4709-netgear-r7000.dts
+@@ -25,6 +25,15 @@
+ 		      <0x88000000 0x08000000>;
+ 	};
+ 
++	nvram@1c080000 {
++		compatible = "brcm,nvram";
++		reg = <0x1c080000 0x180000>;
++
++		et0macaddr: et0macaddr {
++			#nvmem-cell-cells = <1>;
++		};
++	};
++
+ 	leds {
+ 		compatible = "gpio-leds";
+ 
+@@ -114,6 +123,11 @@
+ 	status = "okay";
+ };
+ 
++&gmac2 {
++	nvmem-cells = <&et0macaddr 0>;
++	nvmem-cell-names = "mac-address";
++};
++
+ &srab {
+ 	status = "okay";
+ 
+@@ -139,14 +153,10 @@
+ 		};
+ 
+ 		port@5 {
+-			label = "cpu";
+-		};
+-
+-		port@7 {
+ 			status = "disabled";
+ 		};
+ 
+-		port@8 {
++		port@7 {
+ 			status = "disabled";
+ 		};
+ 	};
+--- a/arch/arm/boot/dts/broadcom/bcm4709-netgear-r7900.dts
++++ b/arch/arm/boot/dts/broadcom/bcm4709-netgear-r7900.dts
+@@ -50,3 +50,37 @@
+ &uart0 {
+ 	status = "okay";
+ };
++
++&srab {
++	status = "okay";
++
++	ports {
++		port@0 {
++			label = "lan1";
++		};
++
++		port@1 {
++			label = "lan2";
++		};
++
++		port@2 {
++			label = "lan3";
++		};
++
++		port@3 {
++			label = "lan4";
++		};
++
++		port@4 {
++			label = "wan";
++		};
++
++		port@5 {
++			status = "disabled";
++		};
++
++		port@7 {
++			status = "disabled";
++		};
++	};
++};
+--- a/arch/arm/boot/dts/broadcom/bcm4709-tplink-archer-c9-v1.dts
++++ b/arch/arm/boot/dts/broadcom/bcm4709-tplink-archer-c9-v1.dts
+@@ -118,6 +118,11 @@
+ 	vbus-supply = <&usb3_power>;
+ };
+ 
++&gmac2 {
++	nvmem-cells = <&macaddr_default_mac_8>;
++	nvmem-cell-names = "mac-address";
++};
++
+ &srab {
+ 	status = "okay";
+ 
+@@ -143,14 +148,10 @@
+ 		};
+ 
+ 		port@5 {
+-			label = "cpu";
+-		};
+-
+-		port@7 {
+ 			status = "disabled";
+ 		};
+ 
+-		port@8 {
++		port@7 {
+ 			status = "disabled";
+ 		};
+ 	};
+@@ -170,6 +171,20 @@
+ 		partition-file-system {
+ 			linux,rootfs;
+ 		};
++
++		partition-default-mac {
++			read-only;
++
++			nvmem-layout {
++				compatible = "fixed-layout";
++				#address-cells = <1>;
++				#size-cells = <1>;
++
++				macaddr_default_mac_8: macaddr@8 {
++					reg = <0x8 0x6>;
++				};
++			};
++		};
+ 	};
+ };
+ 
+--- a/arch/arm/boot/dts/broadcom/bcm47094-asus-rt-ac3100.dtsi
++++ b/arch/arm/boot/dts/broadcom/bcm47094-asus-rt-ac3100.dtsi
+@@ -154,12 +154,8 @@
+ 			label = "wan";
+ 		};
+ 
+-		port@5 {
+-			label = "cpu";
+-		};
+-
+ 		port@7 {
+-			label = "cpu";
++			status = "disabled";
+ 		};
+ 
+ 		port@8 {
+--- a/arch/arm/boot/dts/broadcom/bcm47094-asus-rt-ac3100.dts
++++ b/arch/arm/boot/dts/broadcom/bcm47094-asus-rt-ac3100.dts
+@@ -29,6 +29,14 @@
+ };
+ 
+ &gmac2 {
+-	nvmem-cells = <&et0macaddr 2>;
++	nvmem-cells = <&et0macaddr 0>;
+ 	nvmem-cell-names = "mac-address";
+ };
++
++&srab {
++	ports {
++		port@5 {
++			status = "disabled";
++		};
++	};
++};
+--- a/arch/arm/boot/dts/broadcom/bcm47094-asus-rt-ac88u.dts
++++ b/arch/arm/boot/dts/broadcom/bcm47094-asus-rt-ac88u.dts
+@@ -103,7 +103,7 @@
+ };
+ 
+ &gmac2 {
+-	nvmem-cells = <&et1macaddr 1>;
++	nvmem-cells = <&et1macaddr 0>;
+ 	nvmem-cell-names = "mac-address";
+ };
+ 
+--- a/arch/arm/boot/dts/broadcom/bcm47094-asus-rt-ac5300.dts
++++ b/arch/arm/boot/dts/broadcom/bcm47094-asus-rt-ac5300.dts
+@@ -101,7 +101,7 @@
+ };
+ 
+ &gmac2 {
+-	nvmem-cells = <&et1macaddr 2>;
++	nvmem-cells = <&et1macaddr 0>;
+ 	nvmem-cell-names = "mac-address";
+ };
+ 
+@@ -153,6 +153,14 @@
+ 		port@4 {
+ 			label = "lan4";
+ 		};
++
++		port@5 {
++			status = "disabled";
++		};
++
++		port@7 {
++			status = "disabled";
++		};
+ 	};
+ };
+ 
+--- a/arch/arm/boot/dts/broadcom/bcm47094-luxul-abr-4500.dts
++++ b/arch/arm/boot/dts/broadcom/bcm47094-luxul-abr-4500.dts
+@@ -79,6 +79,11 @@
+ 	nvmem-cell-names = "mac-address";
+ };
+ 
++&gmac2 {
++	nvmem-cells = <&et0macaddr 0>;
++	nvmem-cell-names = "mac-address";
++};
++
+ &spi_nor {
+ 	status = "okay";
+ };
+@@ -114,14 +119,10 @@
+ 		};
+ 
+ 		port@5 {
+-			label = "cpu";
+-		};
+-
+-		port@7 {
+ 			status = "disabled";
+ 		};
+ 
+-		port@8 {
++		port@7 {
+ 			status = "disabled";
+ 		};
+ 	};
+--- a/arch/arm/boot/dts/broadcom/bcm47094-luxul-xap-1610.dts
++++ b/arch/arm/boot/dts/broadcom/bcm47094-luxul-xap-1610.dts
+@@ -64,6 +64,11 @@
+ 	nvmem-cell-names = "mac-address";
+ };
+ 
++&gmac2 {
++	nvmem-cells = <&et0macaddr>;
++	nvmem-cell-names = "mac-address";
++};
++
+ 
+ &pcie_bridge0 {
+ 	wifi@0,0 {
+@@ -98,14 +103,10 @@
+ 		};
+ 
+ 		port@5 {
+-			label = "cpu";
+-		};
+-
+-		port@7 {
+ 			status = "disabled";
+ 		};
+ 
+-		port@8 {
++		port@7 {
+ 			status = "disabled";
+ 		};
+ 	};
+--- a/arch/arm/boot/dts/broadcom/bcm47094-luxul-xbr-4500.dts
++++ b/arch/arm/boot/dts/broadcom/bcm47094-luxul-xbr-4500.dts
+@@ -79,6 +79,11 @@
+ 	nvmem-cell-names = "mac-address";
+ };
+ 
++&gmac2 {
++	nvmem-cells = <&et0macaddr 0>;
++	nvmem-cell-names = "mac-address";
++};
++
+ &spi_nor {
+ 	status = "okay";
+ };
+@@ -114,14 +119,10 @@
+ 		};
+ 
+ 		port@5 {
+-			label = "cpu";
+-		};
+-
+-		port@7 {
+ 			status = "disabled";
+ 		};
+ 
+-		port@8 {
++		port@7 {
+ 			status = "disabled";
+ 		};
+ 	};
+--- a/arch/arm/boot/dts/broadcom/bcm47094-luxul-xwr-3150-v1.dts
++++ b/arch/arm/boot/dts/broadcom/bcm47094-luxul-xwr-3150-v1.dts
+@@ -90,6 +90,11 @@
+ 	nvmem-cell-names = "mac-address";
+ };
+ 
++&gmac2 {
++	nvmem-cells = <&et0macaddr 0>;
++	nvmem-cell-names = "mac-address";
++};
++
+ &pcie_bridge0 {
+ 	wifi@0,0 {
+ 		compatible = "brcm,bcm4366-fmac", "brcm,bcm4329-fmac";
+@@ -145,14 +150,10 @@
+ 		};
+ 
+ 		port@5 {
+-			label = "cpu";
+-		};
+-
+-		port@7 {
+ 			status = "disabled";
+ 		};
+ 
+-		port@8 {
++		port@7 {
+ 			status = "disabled";
+ 		};
+ 	};
+--- a/arch/arm/boot/dts/broadcom/bcm47094-phicomm-k3.dts
++++ b/arch/arm/boot/dts/broadcom/bcm47094-phicomm-k3.dts
+@@ -47,6 +47,11 @@
+ 	status = "okay";
+ };
+ 
++&gmac2 {
++	nvmem-cells = <&et0macaddr 0>;
++	nvmem-cell-names = "mac-address";
++};
++
+ &srab {
+ 	status = "okay";
+ 
+@@ -71,14 +76,10 @@
+ 		};
+ 
+ 		port@5 {
+-			label = "cpu";
+-		};
+-
+-		port@7 {
+ 			status = "disabled";
+ 		};
+ 
+-		port@8 {
++		port@7 {
+ 			status = "disabled";
+ 		};
+ 	};
+--- a/arch/arm/boot/dts/broadcom/bcm47189-tenda-ac9.dts
++++ b/arch/arm/boot/dts/broadcom/bcm47189-tenda-ac9.dts
+@@ -106,6 +106,10 @@
+ 	};
+ };
+ 
++&gmac1 {
++	status = "disabled";
++};
++
+ &switch {
+ 	status = "okay";
+ 
+@@ -130,8 +134,17 @@
+ 			label = "lan4";
+ 		};
+ 
++		port@5 {
++			status = "disabled";
++		};
++
+ 		port@8 {
+ 			label = "cpu";
++
++			fixed-link {
++				speed = <1000>;
++				full-duplex;
++			};
+ 		};
+ 	};
+ };
+--- a/arch/arm/boot/dts/broadcom/bcm53015-meraki-mr26.dts
++++ b/arch/arm/boot/dts/broadcom/bcm53015-meraki-mr26.dts
+@@ -58,17 +58,17 @@
+ };
+ 
+ &gmac0 {
+-	status = "okay";
+-
+-	nvmem-cells = <&macaddr_board_config_66 0>;
+-	nvmem-cell-names = "mac-address";
++	status = "disabled";
+ };
+ 
+ &gmac1 {
+ 	status = "disabled";
+ };
+ &gmac2 {
+-	status = "disabled";
++	status = "okay";
++
++	nvmem-cells = <&macaddr_board_config_66 0>;
++	nvmem-cell-names = "mac-address";
+ };
+ &gmac3 {
+ 	status = "disabled";
+@@ -166,19 +166,10 @@
+ 		};
+ 
+ 		port@5 {
+-			label = "cpu";
+-
+-			fixed-link {
+-				speed = <1000>;
+-				full-duplex;
+-			};
+-		};
+-
+-		port@7 {
+ 			status = "disabled";
+ 		};
+ 
+-		port@8 {
++		port@7 {
+ 			status = "disabled";
+ 		};
+ 	};
+--- a/arch/arm/boot/dts/broadcom/bcm53016-meraki-mr32.dts
++++ b/arch/arm/boot/dts/broadcom/bcm53016-meraki-mr32.dts
+@@ -104,15 +104,17 @@
+ };
+ 
+ &gmac0 {
+-	nvmem-cell-names = "mac-address";
+-	nvmem-cells = <&mac_address>;
++	status = "disabled";
+ };
+ 
+ &gmac1 {
+ 	status = "disabled";
+ };
+ &gmac2 {
+-	status = "disabled";
++	status = "okay";
++
++	nvmem-cell-names = "mac-address";
++	nvmem-cells = <&mac_address>;
+ };
+ &gmac3 {
+ 	status = "disabled";
+@@ -178,19 +180,10 @@
+ 		};
+ 
+ 		port@5 {
+-			label = "cpu";
+-
+-			fixed-link {
+-				speed = <1000>;
+-				full-duplex;
+-			};
+-		};
+-
+-		port@7 {
+ 			status = "disabled";
+ 		};
+ 
+-		port@8 {
++		port@7 {
+ 			status = "disabled";
+ 		};
+ 	};
