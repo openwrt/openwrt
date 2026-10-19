@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=json-c
 PKG_VERSION:=0.19
-PKG_RELEASE:=2
+PKG_RELEASE:=3
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION)-nodoc.tar.gz
 PKG_SOURCE_URL:=https://github.com/json-c/json-c/releases/download/json-c-$(PKG_VERSION)-20260627
