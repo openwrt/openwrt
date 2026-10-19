@@ -1,0 +1,226 @@
+From a47443907dec3adc21df2eba7f75d5cc41a2ca84 Mon Sep 17 00:00:00 2001
+From: David Mestre <dev@davidmestre.net>
+Date: Tue, 20 Oct 2026 00:51:16 +0200
+Subject: [PATCH] device: restore original ethtool link settings
+
+Capture the original link settings and advertising mask. Restore
+removed options in one update while preserving options still configured.
+
+Signed-off-by: David Mestre <dev@davidmestre.net>
+---
+ device.c       | 38 ++++++++++++++++++---
+ device.h       |  6 ++++
+ system-linux.c | 91 +++++++++++++++++++++++++++++++++++++++++++++-----
+ 3 files changed, 122 insertions(+), 13 deletions(-)
+
+--- a/device.c
++++ b/device.c
+@@ -1245,22 +1245,52 @@ device_apply_live_settings(struct device
+ 	struct device_settings *os = &dev->orig_settings;
+ 	uint64_t added   = apply_mask &  s->flags;
+ 	uint64_t removed = apply_mask & ~s->flags;
++	const uint64_t link_mask = DEV_OPT_SPEED | DEV_OPT_DUPLEX |
++		DEV_OPT_PAUSE | DEV_OPT_ASYM_PAUSE | DEV_OPT_RXPAUSE |
++		DEV_OPT_TXPAUSE | DEV_OPT_AUTONEG;
++	uint64_t link_changed = apply_mask & link_mask;
+ 
+-	if (added)
+-		system_if_apply_settings(dev, s, added);
++	if (added & ~link_mask)
++		system_if_apply_settings(dev, s, added & ~link_mask);
+ 
+ 	/*
+ 	 * For attrs dropped from UCI, restore the value captured at bringup.
+ 	 * orig_settings.flags still holds these bits because the previous
+ 	 * settings.flags did, and set_device_state() intersects the two.
+ 	 */
+-	if (removed) {
+-		uint64_t restore = removed & os->valid_flags & os->flags;
++	if (removed & ~link_mask) {
++		uint64_t restore = (removed & ~link_mask) & os->valid_flags & os->flags;
+ 
+ 		if (restore)
+ 			system_if_apply_settings(dev, os, restore);
+ 	}
+ 
++	if (link_changed) {
++		uint64_t restore = (removed & link_mask) & os->valid_flags & os->flags;
++		struct device_settings merged;
++
++		if ((s->flags & link_mask) || restore ||
++		    ((removed & link_mask) && os->link_advertising_nwords)) {
++			device_merge_settings(dev, &merged);
++			merged.flags = (s->flags & link_mask) | restore |
++				(os->valid_flags & DEV_OPT_AUTONEG);
++			if ((merged.flags & DEV_OPT_AUTONEG) && !merged.autoneg)
++				merged.flags |= os->valid_flags &
++					(DEV_OPT_SPEED | DEV_OPT_DUPLEX);
++			merged.link_filter_flags = s->flags & link_mask;
++			merged.use_link_filter_flags = true;
++			merged.restore_link_advertising = (removed & link_mask) &&
++				!(s->flags & DEV_OPT_SPEED) &&
++				!(s->flags & DEV_OPT_AUTONEG && s->autoneg &&
++				  !os->autoneg);
++			merged.link_advertising_nwords = os->link_advertising_nwords;
++			memcpy(merged.link_advertising, os->link_advertising,
++			       sizeof(merged.link_advertising));
++			system_if_apply_settings(dev, &merged,
++					 merged.flags & link_mask);
++		}
++	}
++
+ 	/*
+ 	 * Rebalance orig_settings.flags to match the new settings.flags so
+ 	 * an eventual teardown restores the right set.
+--- a/device.h
++++ b/device.h
+@@ -267,6 +267,12 @@ struct device_settings {
+ 	bool rxpause;
+ 	bool txpause;
+ 	bool autoneg;
++	/* Original advertised modes are needed to undo a forced link setting. */
++	uint8_t link_advertising_nwords;
++	uint32_t link_advertising[127];
++	uint64_t link_filter_flags;
++	bool use_link_filter_flags;
++	bool restore_link_advertising;
+ 	bool gro;
+ 	int master_ifindex;
+ 	bool eee;
+--- a/system-linux.c
++++ b/system-linux.c
+@@ -2518,6 +2518,7 @@ system_set_ethtool_settings(struct devic
+ 	size_t i;
+ 	__s8 nwords;
+ 	__u32 *supported, *advertising;
++	uint64_t filter_flags;
+ 
+ 	system_set_ethtool_pause(dev, s);
+ 
+@@ -2551,16 +2552,22 @@ system_set_ethtool_settings(struct devic
+ 	nwords = ecmd.req.link_mode_masks_nwords;
+ 	supported = &ecmd.link_mode_data[0];
+ 	advertising = &ecmd.link_mode_data[nwords];
+-	memcpy(advertising, supported, sizeof(__u32) * nwords);
++	filter_flags = s->use_link_filter_flags ? s->link_filter_flags :
++		(s == &dev->orig_settings ? 0 : s->flags);
++	if ((s == &dev->orig_settings || s->restore_link_advertising) &&
++	    s->link_advertising_nwords == nwords)
++		memcpy(advertising, s->link_advertising, sizeof(__u32) * nwords);
++	else
++		memcpy(advertising, supported, sizeof(__u32) * nwords);
+ 
+ 	for (i = 0; i < ARRAY_SIZE(ethtool_modes); i++) {
+-		if (s->flags & DEV_OPT_DUPLEX) {
++		if (filter_flags & DEV_OPT_DUPLEX) {
+ 			if (s->duplex)
+ 				ethtool_link_mode_clear_bit(nwords, ethtool_modes[i].bit_half, advertising);
+ 			else
+ 				ethtool_link_mode_clear_bit(nwords, ethtool_modes[i].bit_full, advertising);
+ 		}
+-		if (!(s->flags & DEV_OPT_SPEED) ||
++		if (!(filter_flags & DEV_OPT_SPEED) ||
+ 		    s->speed == ethtool_modes[i].speed)
+ 			continue;
+ 
+@@ -2568,13 +2575,30 @@ system_set_ethtool_settings(struct devic
+ 		ethtool_link_mode_clear_bit(nwords, ethtool_modes[i].bit_half, advertising);
+ 	}
+ 
+-	if (s->flags & DEV_OPT_PAUSE)
+-		if (!s->pause)
+-			ethtool_link_mode_clear_bit(nwords, ETHTOOL_LINK_MODE_Pause_BIT, advertising);
+-
+-	if (s->flags & DEV_OPT_ASYM_PAUSE)
+-		if (!s->asym_pause)
+-			ethtool_link_mode_clear_bit(nwords, ETHTOOL_LINK_MODE_Asym_Pause_BIT, advertising);
++	/* Pause modes must follow their own UCI options, not the speed mask. */
++	if (ETHTOOL_LINK_MODE_Pause_BIT < nwords * 32) {
++		size_t word = ETHTOOL_LINK_MODE_Pause_BIT / 32;
++		__u32 bit = 1U << (ETHTOOL_LINK_MODE_Pause_BIT % 32);
++
++		if (filter_flags & DEV_OPT_PAUSE)
++			advertising[word] = (advertising[word] & ~bit) |
++				(s->pause ? supported[word] & bit : 0);
++		else if (s->link_advertising_nwords == nwords)
++			advertising[word] = (advertising[word] & ~bit) |
++				(s->link_advertising[word] & bit);
++	}
++
++	if (ETHTOOL_LINK_MODE_Asym_Pause_BIT < nwords * 32) {
++		size_t word = ETHTOOL_LINK_MODE_Asym_Pause_BIT / 32;
++		__u32 bit = 1U << (ETHTOOL_LINK_MODE_Asym_Pause_BIT % 32);
++
++		if (filter_flags & DEV_OPT_ASYM_PAUSE)
++			advertising[word] = (advertising[word] & ~bit) |
++				(s->asym_pause ? supported[word] & bit : 0);
++		else if (s->link_advertising_nwords == nwords)
++			advertising[word] = (advertising[word] & ~bit) |
++				(s->link_advertising[word] & bit);
++	}
+ 
+ 	if (s->flags & DEV_OPT_AUTONEG) {
+ 		ecmd.req.autoneg = s->autoneg ? AUTONEG_ENABLE : AUTONEG_DISABLE;
+@@ -2598,6 +2622,54 @@ system_set_ethtool_settings_after_up(str
+ 		system_set_ethtool_gro(dev, s);
+ }
+ 
++static void
++system_get_ethtool_settings(struct device *dev, struct device_settings *s)
++{
++	struct {
++		struct ethtool_link_settings req;
++		__u32 link_mode_data[3 * 127];
++	} ecmd;
++	struct ifreq ifr = {
++		.ifr_data = (caddr_t)&ecmd,
++	};
++	__s8 nwords;
++
++	memset(&ecmd, 0, sizeof(ecmd));
++	ecmd.req.cmd = ETHTOOL_GLINKSETTINGS;
++	strncpy(ifr.ifr_name, dev->ifname, sizeof(ifr.ifr_name) - 1);
++
++	if (ioctl(sock_ioctl, SIOCETHTOOL, &ifr) < 0 ||
++	    ecmd.req.link_mode_masks_nwords >= 0 ||
++	    ecmd.req.cmd != ETHTOOL_GLINKSETTINGS)
++		return;
++
++	ecmd.req.link_mode_masks_nwords = -ecmd.req.link_mode_masks_nwords;
++	if (ioctl(sock_ioctl, SIOCETHTOOL, &ifr) < 0 ||
++	    ecmd.req.link_mode_masks_nwords <= 0 ||
++	    ecmd.req.cmd != ETHTOOL_GLINKSETTINGS)
++		return;
++
++	nwords = ecmd.req.link_mode_masks_nwords;
++	memcpy(s->link_advertising, &ecmd.link_mode_data[nwords],
++	       sizeof(__u32) * nwords);
++	s->link_advertising_nwords = nwords;
++
++	if (ecmd.req.autoneg == AUTONEG_ENABLE ||
++	    ecmd.req.autoneg == AUTONEG_DISABLE) {
++		s->autoneg = ecmd.req.autoneg == AUTONEG_ENABLE;
++		s->flags |= DEV_OPT_AUTONEG;
++	}
++	if (ethtool_validate_speed(ecmd.req.speed) &&
++	    ecmd.req.speed != (__u32)SPEED_UNKNOWN && ecmd.req.speed) {
++		s->speed = ecmd.req.speed;
++		s->flags |= DEV_OPT_SPEED;
++	}
++	if (ecmd.req.duplex == DUPLEX_FULL || ecmd.req.duplex == DUPLEX_HALF) {
++		s->duplex = ecmd.req.duplex == DUPLEX_FULL;
++		s->flags |= DEV_OPT_DUPLEX;
++	}
++}
++
+ void
+ system_if_get_settings(struct device *dev, struct device_settings *s)
+ {
+@@ -2607,6 +2679,7 @@ system_if_get_settings(struct device *de
+ 
+ 	memset(&ifr, 0, sizeof(ifr));
+ 	strncpy(ifr.ifr_name, dev->ifname, sizeof(ifr.ifr_name) - 1);
++	system_get_ethtool_settings(dev, s);
+ 
+ 	if (ioctl(sock_ioctl, SIOCGIFMTU, &ifr) == 0) {
+ 		s->mtu = ifr.ifr_mtu;
