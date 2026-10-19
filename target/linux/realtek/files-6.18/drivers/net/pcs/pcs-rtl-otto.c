@@ -26,6 +26,7 @@
 #define RTPCS_RXCAL_XSG_ERR_SATURATION		0xffff00
 #define RTPCS_RXMON_POLL_MS			500
 #define RTPCS_RXMON_DOWN_SAMPLES			3
+#define RTPCS_RXMON_RECOVERY_MS			30000
 
 #define RTPCS_SPEED_10				0
 #define RTPCS_SPEED_100				1
@@ -571,6 +572,7 @@ struct rtpcs_serdes {
 	struct delayed_work linkmon_work;
 	bool rxmon_active;
 	u8 rxmon_down;
+	u64 rxmon_recovery_after;
 };
 
 struct rtpcs_ctrl {
@@ -4438,16 +4440,22 @@ static void rtpcs_931x_rx_linkmon_work_handler(struct work_struct *work)
 		goto rearm;
 	}
 
-	sds->rxmon_down++;
-	dev_dbg(sds->ctrl->dev, "SerDes %u: RX link down, sample %u/%u\n",
-		sds->id, sds->rxmon_down, RTPCS_RXMON_DOWN_SAMPLES);
-	if (sds->rxmon_down < RTPCS_RXMON_DOWN_SAMPLES)
+	/* Saturate the debounce count while waiting for the recovery deadline. */
+	if (sds->rxmon_down < RTPCS_RXMON_DOWN_SAMPLES) {
+		sds->rxmon_down++;
+		dev_dbg(sds->ctrl->dev, "SerDes %u: RX link down, sample %u/%u\n",
+			sds->id, sds->rxmon_down, RTPCS_RXMON_DOWN_SAMPLES);
+	}
+	if (sds->rxmon_down < RTPCS_RXMON_DOWN_SAMPLES ||
+	    time_before64(get_jiffies_64(), sds->rxmon_recovery_after))
 		goto rearm;
 
 	dev_dbg(sds->ctrl->dev,
 		"SerDes %u: RX link loss confirmed; restoring baseline and rearming calibration\n",
 		sds->id);
 	rtpcs_931x_sds_post_config(sds, sds->hw_mode);
+	sds->rxmon_recovery_after = get_jiffies_64() +
+				    msecs_to_jiffies(RTPCS_RXMON_RECOVERY_MS);
 	goto unlock;
 
 rearm:
