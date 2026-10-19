@@ -233,6 +233,7 @@ const struct rtldsa_config rtldsa_838x_cfg = {
 	.imr_glb = RTL838X_IMR_GLB,
 	.n_counters = 128,
 	.n_pie_blocks = 12,
+	.pie_cls_flower = true,
 	.port_ignore = 0x1f,
 	.vlan_tables_read = otto_vlan_838x_tables_read,
 	.vlan_set_tagged = otto_vlan_838x_set_tagged,
