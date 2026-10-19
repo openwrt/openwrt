@@ -1,0 +1,34 @@
+From e92c98e606c1f0204f98f0e8d7fcca79898c5e1e Mon Sep 17 00:00:00 2001
+From: João Silva (vankxr) <jgc3silva@gmail.com>
+Date: Mon, 19 Oct 2026 13:38:45 +0100
+Subject: [PATCH] net: dsa: let switch drivers offload flow tables
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Some DSA switches contain their own routing engine, so hardware flow-table
+offload must be handled by the switch rather than its Ethernet conduit.
+Give port_setup_tc first refusal for TC_SETUP_FT and retain the conduit
+fallback for switches that do not implement it.
+
+Signed-off-by: João Silva <jgc3silva@gmail.com>
+---
+ net/dsa/user.c | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+--- a/net/dsa/user.c
++++ b/net/dsa/user.c
+@@ -1722,6 +1722,13 @@ static int dsa_user_setup_ft_block(struc
+ 				   void *type_data)
+ {
+ 	struct net_device *conduit = dsa_port_to_conduit(dsa_to_port(ds, port));
++	int err;
++
++	if (ds->ops->port_setup_tc) {
++		err = ds->ops->port_setup_tc(ds, port, TC_SETUP_FT, type_data);
++		if (err != -EOPNOTSUPP)
++			return err;
++	}
+ 
+ 	if (!conduit->netdev_ops->ndo_setup_tc)
+ 		return -EOPNOTSUPP;
