@@ -1,0 +1,25 @@
+From 5ff4b90ffe734dd4109699cff83f2d6afbcea4c4 Mon Sep 17 00:00:00 2001
+From: David Mestre <dev@davidmestre.net>
+Date: Tue, 20 Oct 2026 00:51:17 +0200
+Subject: [PATCH] system-linux: log failed ethtool link updates
+
+Report the interface and errno when ETHTOOL_SLINKSETTINGS fails.
+
+Signed-off-by: David Mestre <dev@davidmestre.net>
+---
+ system-linux.c | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+--- a/system-linux.c
++++ b/system-linux.c
+@@ -2588,7 +2588,9 @@ system_set_ethtool_settings(struct devic
+ 	}
+ 
+ 	ecmd.req.cmd = ETHTOOL_SLINKSETTINGS;
+-	ioctl(sock_ioctl, SIOCETHTOOL, &ifr);
++	if (ioctl(sock_ioctl, SIOCETHTOOL, &ifr) < 0)
++		netifd_log_message(L_WARNING, "%s: setting link modes failed: %s",
++				   dev->ifname, strerror(errno));
+ }
+ 
+ static void
