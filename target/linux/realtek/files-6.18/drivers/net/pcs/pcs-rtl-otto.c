@@ -1579,18 +1579,18 @@ static int rtpcs_93xx_sds_rxcal_ready(struct rtpcs_serdes *sds)
 	return !ret;
 }
 
-static bool rtpcs_93xx_sds_10gr_link_up(struct rtpcs_serdes *sds)
+static int rtpcs_93xx_sds_10gr_link_status(struct rtpcs_serdes *sds)
 {
 	int link;
 
 	/* Link status may be latched low; the second read is current state. */
 	link = rtpcs_sds_read(sds, PAGE_TGR_STD_1, TGR_STD_1_REG00);
 	if (link < 0)
-		return false;
+		return link;
 
 	link = rtpcs_sds_read(sds, PAGE_TGR_STD_1, TGR_STD_1_REG00);
 	if (link < 0)
-		return false;
+		return link;
 
 	return (link & RTL93XX_10GBASE_R_T_RX_LINK) == RTL93XX_10GBASE_R_T_RX_LINK;
 }
@@ -2085,7 +2085,13 @@ static bool rtpcs_930x_sds_rx_link_up(struct rtpcs_serdes *sds)
 	switch (sds->hw_mode) {
 	case RTPCS_SDS_MODE_10GBASER:
 	case RTPCS_SDS_MODE_USXGMII:
-		return rtpcs_93xx_sds_10gr_link_up(sds);
+		val = rtpcs_93xx_sds_10gr_link_status(sds);
+		if (val < 0) {
+			dev_err(sds->ctrl->dev, "SerDes %u: RX link-status read failed: %d\n",
+				sds->id, val);
+			return false;
+		}
+		return val > 0;
 
 	case RTPCS_SDS_MODE_XSGMII:
 		if (sds->id != 2 && sds->id != 3)
@@ -2289,7 +2295,7 @@ static void rtpcs_930x_sds_reset_state_machine(struct rtpcs_serdes *sds)
 static int rtpcs_930x_sds_init_state_machine(struct rtpcs_serdes *sds,
 					     enum rtpcs_sds_mode hw_mode)
 {
-	int loopback, cnt = 20, ret;
+	int link, loopback, cnt = 20, ret;
 
 	if (hw_mode != RTPCS_SDS_MODE_10GBASER)
 		return 0;
@@ -2310,7 +2316,12 @@ static int rtpcs_930x_sds_init_state_machine(struct rtpcs_serdes *sds,
 	while (cnt-- && ret) {
 		rtpcs_930x_sds_reset_state_machine(sds);
 
-		if (rtpcs_93xx_sds_10gr_link_up(sds))
+		link = rtpcs_93xx_sds_10gr_link_status(sds);
+		if (link < 0) {
+			ret = link;
+			break;
+		}
+		if (link)
 			ret = 0;
 	}
 
@@ -3987,9 +3998,8 @@ static int rtpcs_931x_sds_rxcal_leq_adapt(struct rtpcs_serdes *sds)
 static int rtpcs_931x_sds_rxcal_fiber_adapt(struct rtpcs_serdes *sds)
 {
 	unsigned int vth_p = 0, vth_n = 0, sum_p = 0, sum_n = 0;
+	int i, link = 0, samples = 0, symerr = -1;
 	struct device *dev = sds->ctrl->dev;
-	int i, samples = 0, symerr = -1;
-	bool link_up = false;
 
 	dev_dbg(dev, "SerDes %u fiber RX calibration...\n", sds->id);
 	/* per-port calibration offset in the SDK, kept 0 here */
@@ -4038,23 +4048,28 @@ static int rtpcs_931x_sds_rxcal_fiber_adapt(struct rtpcs_serdes *sds)
 		rtpcs_931x_sds_clear_symerr(sds, RTPCS_SDS_MODE_10GBASER);
 		msleep(300);
 		symerr = rtpcs_931x_sds_fiber_get_symerr(sds, RTPCS_SDS_MODE_10GBASER);
-		link_up = rtpcs_93xx_sds_10gr_link_up(sds);
+		link = rtpcs_93xx_sds_10gr_link_status(sds);
+		if (link < 0) {
+			dev_err(dev, "SerDes %u: RX calibration link-status read failed: %d\n",
+				sds->id, link);
+			return link;
+		}
 		dev_dbg(dev, "SerDes %u symErr check %d: linkUp=%d symErr=0x%x\n", sds->id,
-			i + 1, link_up, symerr);
+			i + 1, link, symerr);
 
 		/*
 		 * symErr also reads 0 with no signal at all, not just a clean
-		 * link - don't trust it without link_up confirming there's
+		 * link - don't trust it without link confirming there's
 		 * actually something being decoded.
 		 */
-		if (link_up && symerr >= 0 && symerr <= 5) {
+		if (link && symerr >= 0 && symerr <= 5) {
 			dev_dbg(dev, "SerDes %u fiber RX calibration OK (check %d)\n",
 				sds->id, i + 1);
 			return 0;
 		}
 	}
 
-	if (link_up) {
+	if (link) {
 		dev_dbg(dev, "SerDes %u fiber RX calibration: symErr still 0x%x after %d checks, link up anyway\n",
 			 sds->id, symerr, i);
 		return 0;
