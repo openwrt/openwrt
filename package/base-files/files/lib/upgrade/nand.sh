@@ -341,7 +341,7 @@ nand_upgrade_tar() {
 			# These devices brick if the kernel partition is erased.
 			# Hence only invalidate kernel for now.
 			dd if=/dev/zero bs=4096 count=1 2> /dev/null | \
-				mtd write - "$CI_KERNPART"
+				mtd write - "$CI_KERNPART" || return 1
 		else
 			ubi_kernel_length="$kernel_length"
 		fi
@@ -354,23 +354,23 @@ nand_upgrade_tar() {
 		local ubidev="$( nand_find_ubi "${CI_ROOT_UBIPART:-$CI_UBIPART}" )"
 		local root_ubivol="$( nand_find_volume $ubidev "$CI_ROOTPART" )"
 		$cmd < "$tar_file" | tar xOf - "$board_dir/root" | \
-			ubiupdatevol /dev/$root_ubivol -s "$rootfs_length" -
+			ubiupdatevol /dev/$root_ubivol -s "$rootfs_length" - || return 1
 	fi
 	if [ "$kernel_length" ]; then
 		if [ "$kernel_mtd" ]; then
 			if [ "$jffs2_markers" = 1 ]; then
-				flash_erase -j "/dev/mtd${kernel_mtd}" 0 0
+				flash_erase -j "/dev/mtd${kernel_mtd}" 0 0 || return 1
 				$cmd < "$tar_file" | tar xOf - "$board_dir/kernel" | \
-					nandwrite "/dev/mtd${kernel_mtd}" -
+					nandwrite "/dev/mtd${kernel_mtd}" - || return 1
 			else
 				$cmd < "$tar_file" | tar xOf - "$board_dir/kernel" | \
-					mtd write - "$CI_KERNPART"
+					mtd write - "$CI_KERNPART" || return 1
 			fi
 		else
 			local ubidev="$( nand_find_ubi "${CI_KERN_UBIPART:-$CI_UBIPART}" )"
 			local kern_ubivol="$( nand_find_volume $ubidev "$CI_KERNPART" )"
 			$cmd < "$tar_file" | tar xOf - "$board_dir/kernel" | \
-				ubiupdatevol /dev/$kern_ubivol -s "$kernel_length" -
+				ubiupdatevol /dev/$kern_ubivol -s "$kernel_length" - || return 1
 		fi
 	fi
 
