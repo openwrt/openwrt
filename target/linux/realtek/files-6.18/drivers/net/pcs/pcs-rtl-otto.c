@@ -293,7 +293,7 @@ enum rtpcs_page {
 #define  RTL93XX_DBGO_SEL_0		GENMASK(15, 0)
 #define   RTL930X_DBGO_SEL_0_RXEQ_EVEN_LANE	0x2f
 #define   RTL930X_DBGO_SEL_0_RXEQ_ODD_LANE	0x31
-#define   RTL930X_DBGO_SEL_0_RX_STATUS		0x35
+#define   RTL93XX_DBGO_SEL_0_RX_STATUS		0x35
 #define   RTL931X_DBGO_SEL_0_RXEQ_EVEN_LANE	0x4b
 #define   RTL931X_DBGO_SEL_0_RXEQ_ODD_LANE	0x4c
 
@@ -1551,6 +1551,34 @@ static const s16 rtpcs_93xx_sds_hw_mode_vals[RTPCS_SDS_MODE_MAX] = {
 	[RTPCS_SDS_MODE_USXGMII]		= RTPCS_93XX_SDS_MODE_USXGMII,
 };
 
+static int rtpcs_93xx_sds_rxcal_ready(struct rtpcs_serdes *sds)
+{
+	struct rtpcs_serdes *even_sds = rtpcs_sds_get_even(sds);
+	int bit, ret;
+
+	switch (sds->hw_mode) {
+	case RTPCS_SDS_MODE_10GBASER:
+	case RTPCS_SDS_MODE_USXGMII:
+	case RTPCS_SDS_MODE_XSGMII:
+		break;
+	default:
+		return -EOPNOTSUPP;
+	}
+
+	bit = sds == even_sds ? 0 : 1;
+	ret = rtpcs_sds_write_mask(even_sds, PAGE_WDIG, WDIG_REG02,
+				   RTL93XX_DBGO_SEL_0, RTL93XX_DBGO_SEL_0_RX_STATUS);
+	if (ret < 0)
+		return ret;
+
+	ret = rtpcs_sds_read_bits(even_sds, PAGE_WDIG, WDIG_REG20, bit, bit);
+	if (ret < 0)
+		return ret;
+	dev_dbg(sds->ctrl->dev, "SerDes %u: RX readiness: mode=%u RX_IDLE=%d (%s)\n",
+		sds->id, sds->hw_mode, ret, ret ? "waiting" : "ready");
+	return !ret;
+}
+
 static bool rtpcs_93xx_sds_10gr_link_up(struct rtpcs_serdes *sds)
 {
 	int link;
@@ -2221,7 +2249,7 @@ static int rtpcs_930x_sds_wait_clock_ready(struct rtpcs_serdes *sds)
 		usleep_range(10000, 15000);
 
 		ret = rtpcs_sds_write_mask(even_sds, PAGE_WDIG, WDIG_REG02,
-					   RTL93XX_DBGO_SEL_0, RTL930X_DBGO_SEL_0_RX_STATUS);
+					   RTL93XX_DBGO_SEL_0, RTL93XX_DBGO_SEL_0_RX_STATUS);
 		if (ret)
 			return ret;
 
@@ -3091,10 +3119,10 @@ static int rtpcs_930x_sds_check_calibration(struct rtpcs_serdes *sds,
 
 static void rtpcs_930x_rx_cali_work_handler(struct work_struct *work)
 {
-	struct rtpcs_serdes *sds, *even_sds;
 	unsigned long lock_start, attempt_start;
-	bool calib_failed, rxcal_ready;
-	int latch_sts, bit, ret;
+	struct rtpcs_serdes *sds;
+	int latch_sts, ret;
+	bool calib_failed;
 
 	sds = container_of(to_delayed_work(work), struct rtpcs_serdes, cali_work);
 
@@ -3112,27 +3140,14 @@ static void rtpcs_930x_rx_cali_work_handler(struct work_struct *work)
 		goto unlock;
 	}
 
-	/* Select the 10G RX status readback. */
-	even_sds = rtpcs_sds_get_even(sds);
-	bit = (sds == even_sds) ? 0 : 1;
-	ret = rtpcs_sds_write_mask(even_sds, PAGE_WDIG, WDIG_REG02, RTL93XX_DBGO_SEL_0,
-				   RTL930X_DBGO_SEL_0_RX_STATUS);
+	ret = rtpcs_93xx_sds_rxcal_ready(sds);
 	if (ret < 0) {
-		dev_err(sds->ctrl->dev, "SerDes %u: RX calibration status selection failed: %d\n",
+		dev_err(sds->ctrl->dev, "SerDes %u: RX calibration readiness check failed: %d\n",
 			sds->id, ret);
 		goto terminate;
 	}
 
-	ret = rtpcs_sds_read_bits(even_sds, PAGE_WDIG, WDIG_REG20, bit, bit);
-	if (ret < 0) {
-		dev_err(sds->ctrl->dev, "SerDes %u: RX calibration idle-status read failed: %d\n",
-			sds->id, ret);
-		goto terminate;
-	}
-
-	/* The SDK permits calibration when RX_IDLE is deasserted. */
-	rxcal_ready = !ret;
-	if (!rxcal_ready) {
+	if (!ret) {
 		dev_dbg(sds->ctrl->dev, "SerDes %u: RX not ready for calibration, checking again in %u ms\n",
 			sds->id, RTPCS_RXCAL_POLL_MS);
 		schedule_delayed_work(&sds->cali_work, msecs_to_jiffies(RTPCS_RXCAL_POLL_MS));
