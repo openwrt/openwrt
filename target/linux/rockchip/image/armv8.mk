@@ -487,6 +487,14 @@ define Device/sinovoip_bpi-r2-pro
 endef
 TARGET_DEVICES += sinovoip_bpi-r2-pro
 
+define Device/xunlong_orangepi-5-pro
+  $(Device/rk3588s)
+  DEVICE_VENDOR := Xunlong
+  DEVICE_MODEL := Orange Pi 5 Pro
+  DEVICE_PACKAGES := blkdiscard block-mount kmod-dwmac-motorcomm kmod-hwmon-pwmfan kmod-nvme
+endef
+TARGET_DEVICES += xunlong_orangepi-5-pro
+
 define Device/xunlong_orangepi-r1-plus
   $(Device/rk3328)
   DEVICE_VENDOR := Xunlong

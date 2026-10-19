@@ -1,0 +1,40 @@
+From 8a0b7299d78c94fa56f2210faf63599bd4124ba1 Mon Sep 17 00:00:00 2001
+From: Kel Modderman <kelvmod@gmail.com>
+Date: Sat, 24 Oct 2026 17:40:00 +1000
+Subject: [PATCH] arm64: dts: rockchip: Update LED properties for Orange Pi 5
+ Pro
+
+Add OpenWrt's LED aliases for showing system status on the blue status
+LED, and drop its heartbeat trigger so that status can be seen. The green
+activity LED keeps its heartbeat.
+
+Signed-off-by: Kel Modderman <kelvmod@gmail.com>
+---
+ arch/arm64/boot/dts/rockchip/rk3588s-orangepi-5-pro.dts | 7 +++++--
+ 1 file changed, 5 insertions(+), 2 deletions(-)
+
+--- a/arch/arm64/boot/dts/rockchip/rk3588s-orangepi-5-pro.dts
++++ b/arch/arm64/boot/dts/rockchip/rk3588s-orangepi-5-pro.dts
+@@ -12,6 +12,10 @@
+ 		mmc0 = &sdhci;
+ 		mmc1 = &sdmmc;
+ 		mmc2 = &sdio;
++		led-boot = &status_led;
++		led-failsafe = &status_led;
++		led-running = &status_led;
++		led-upgrade = &status_led;
+ 	};
+ 
+ 	analog-sound {
+@@ -47,10 +51,9 @@
+ 	pwm-leds {
+ 		compatible = "pwm-leds";
+ 
+-		led-0 {
++		status_led: led-0 {
+ 			color = <LED_COLOR_ID_BLUE>;
+ 			function = LED_FUNCTION_STATUS;
+-			linux,default-trigger = "heartbeat";
+ 			max-brightness = <255>;
+ 			pwms = <&pwm15 0 1000000 0>;
+ 		};
