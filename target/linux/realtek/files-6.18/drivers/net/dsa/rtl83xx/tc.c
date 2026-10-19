@@ -10,6 +10,7 @@
 #include <linux/rhashtable.h>
 #include <asm/mach-rtl-otto/mach-rtl-otto.h>
 
+#include "flow.h"
 #include "mirror.h"
 #include "pie.h"
 #include "qos.h"
@@ -1215,6 +1216,8 @@ int otto_tc_port_setup_tc(struct dsa_switch *ds, int port, enum tc_setup_type ty
 	struct otto_dsa_priv *priv = ds->priv;
 
 	switch (type) {
+	case TC_SETUP_FT:
+		return otto_flow_setup_tc(ds, port, type, type_data);
 	case TC_SETUP_QDISC_TBF:
 		return otto_tc_setup_qdisc_tbf(priv, port, type_data);
 	case TC_SETUP_QDISC_ETS:

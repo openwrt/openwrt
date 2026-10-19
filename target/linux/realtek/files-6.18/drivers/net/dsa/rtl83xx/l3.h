@@ -171,6 +171,10 @@ struct otto_l3_config {
 	void (*dbgfs_init)(struct otto_l3_ctrl *ctrl);
 	/* Print the router MAC table as the hardware holds it */
 	int (*router_mac_dump)(struct otto_l3_ctrl *ctrl, struct seq_file *s);
+	/* Fasttrack: switch between FIB and flowtable forwarding. A family
+	 * without mode_set has none.
+	 */
+	int (*mode_set)(struct otto_l3_ctrl *ctrl, bool enabled);
 };
 
 struct otto_l3_ctrl {
@@ -198,6 +202,9 @@ struct otto_l3_ctrl {
 	bool v4_fwd_off;	/* policy rules keep IPv4 forwarding in software */
 	bool v6_fwd_off;	/* policy rules keep IPv6 forwarding in software */
 	bool fasttrack;	/* only flowtable rules may forward in hardware */
+	bool cpu_nh_reserved;
+	bool mode_barrier;	/* router MACs trap until a mode change completes */
+	u32 mode_router_macs[MAX_ROUTER_MACS][7];
 	/* Shared FIB/flow resources. Lock order: RTNL -> resources -> registers. */
 	struct mutex resource_lock;
 	struct mutex *lock; /* protect register access */
@@ -206,6 +213,9 @@ struct otto_l3_ctrl {
 int otto_l3_probe(struct device *dev, struct otto_dsa_priv *priv);
 void otto_l3_remove(struct otto_dsa_priv *priv);
 bool otto_l3_fasttrack(struct otto_dsa_priv *priv);
+int otto_l3_flow_dump(struct otto_dsa_priv *priv, struct seq_file *s);
+int otto_l3_runtime_register(struct otto_dsa_priv *priv);
+void otto_l3_runtime_unregister(struct otto_dsa_priv *priv);
 /* Get requires RTNL. Put needs no RTNL; remove the PIE rule before calling it. */
 int otto_l3_flow_nexthop_get(struct otto_dsa_priv *priv, struct otto_l3_nexthop *nh,
 			     u64 smac, u64 dmac, u16 vlan, int port);
