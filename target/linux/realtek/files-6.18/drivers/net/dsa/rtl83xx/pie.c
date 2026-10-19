@@ -175,7 +175,7 @@ static void otto_pie_838x_rule_del(struct otto_dsa_priv *priv, int index_from, i
 
 	/* Re-enable rule lookup */
 	for (int block = block_from; block <= block_to; block++) {
-		if (!(block_state & BIT(block)))
+		if (block_state & BIT(block))
 			sw_w32(block_state | BIT(block), RTL838X_ACL_BLK_LOOKUP_CTRL);
 	}
 
