@@ -52,7 +52,7 @@
 
 		sim {
 			gpio-export,name = "sim";
-			gpio-export,output = <1>;      /* SIM1 by default */
+			gpio-export,output = <0>;      /* SIM1 by default */
 			gpios = <&pio 6 GPIO_ACTIVE_HIGH>;
 		};
 	};
@@ -60,66 +60,61 @@
 	leds {
 		compatible = "gpio-leds";
 
-		led-status: status {
+		led_status: status {
 			function = LED_FUNCTION_STATUS;
 			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&pio 7 GPIO_ACTIVE_LOW>;
 		};
 
-		led-power: power {
+		led_power: power {
 			function = LED_FUNCTION_POWER;
 			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&pio 3 GPIO_ACTIVE_LOW>;
 		};
 
-		led-4g: mobile {
+		led_4g: mobile {
 			function = LED_FUNCTION_MOBILE;
 			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&pio 5 GPIO_ACTIVE_LOW>;
 		};
 
-		led-wifi_2g: wifi-2g {
+		led_wifi_2g: wifi-2g {
 			color = <LED_COLOR_ID_GREEN>;
 			function = LED_FUNCTION_WLAN_2GHZ;
-			function-enumerator = <0>;
-			gpios = <&pio> // i will come back later
+			gpios = <&pio 34 GPIO_ACTIVE_LOW>;
 			linux,default-trigger = "phy0tpt";
 		};
 
-		led-wifi_5g: wifi-5g {
+		led_wifi_5g: wifi-5g {
 			color = <LED_COLOR_ID_GREEN>;
 			function = LED_FUNCTION_WLAN_5GHZ;
-			function-enumerator = <1>;
-			gpios = <&pio> // i will come back later
+			gpios = <&pio 35 GPIO_ACTIVE_LOW>;
 			linux,default-trigger = "phy1tpt";
 		};
 
-		led-rssi1: rssi-red {
-			function = "rssi1";
-			function-enumerator = <0>;
-			color = <LED_COLOR_ID_GREEN>;
+		led_rssi1: rssi-red {
+			function = "rssi";
+			color = <LED_COLOR_ID_RED>;
 			gpios = <&pio 9 GPIO_ACTIVE_LOW>;
 		};
 
-		led-rssi2: rssi-blue {
-			function = "rssi2";
-			function-enumerator = <0>;
-			color = <LED_COLOR_ID_GREEN>;
-			gpios = <&pio 11 GPIO_ACTIVE_LOW>;
-		};
-
-		led_rssi3: rssi-green {
-			function = "rssi3";
-			function-enumerator = <0>;
+		led_rssi2: rssi-green {
+			function = "rssi";
 			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&pio 10 GPIO_ACTIVE_LOW>;
+		};
+
+		led_rssi3: rssi-blue {
+			function = "rssi";
+			color = <LED_COLOR_ID_BLUE>;
+			gpios = <&pio 11 GPIO_ACTIVE_LOW>;
 		};
 	};
 
 	fan: pwm-fan {
 		compatible = "pwm-fan";
 		pwms = <&pwm 0 100000 0>;
-		cooling-levels = <255>;
+		cooling-levels = <0 128 255 255>; /* off, normal, full */
 		status = "okay";
 	};
 
@@ -180,7 +175,7 @@
 		port@0 {
 			reg = <0>;
 			label = "lan1";
-    	};
+		};
 
 		/* 5G Module Ethernet data path, usb0 is the same modem over USB */
 		port@4 {
@@ -331,16 +326,41 @@
 };
 
 
+&cpu_thermal {
+	trips {
+		fan_normal: fan-normal {
+			temperature = <51000>;
+			hysteresis = <1000>;
+			type = "active";
+		};
+
+		fan_full: fan-full {
+			temperature = <60000>;
+			hysteresis = <2000>;
+			type = "active";
+		};
+	};
+
+	cooling-maps {
+		map-normal {
+			trip = <&fan_normal>;
+			cooling-device = <&fan 1 1>;
+		};
+
+		map-full {
+			trip = <&fan_full>;
+			cooling-device = <&fan 2 2>;
+		};
+	};
+};
+
+
 &wifi {
 	status = "okay";
 	nvmem-cells = <&eeprom_factory>;
 	nvmem-cell-names = "eeprom";
 	#address-cells = <1>;
 	#size-cells = <0>;
-
-	led {
-		led-active-low;
-	};
 
 	band@0 {
 		reg = <0>;
@@ -356,21 +376,20 @@
 };
 
 
-&mmc0 {
-	status = "okay";
-}
-
 &usb_phy {
 	status = "okay";
 };
+
 
 &xhci {
 	status = "okay";
 };
 
+
 &uart0 {
 	status = "okay";
 };
+
 
 &watchdog {
 	status = "okay";

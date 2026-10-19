@@ -450,10 +450,10 @@ zbtlink,zbt-z8106ax-t)
 	ucidef_set_led_netdev "wan" "wan" "amber:wan" "eth1" "link tx rx"
 	ucidef_set_led_netdev "mobile" "mobile" "green:mobile" "wwan" "link tx rx"
 	;;
-zbtlink,z8114ax-ds)
-	ucidef_set_led_netdev "mobile" "MOBILE" "green:mobile" "wwan" "link rx tx"
-	ucidef_set_led_netdev "wifi-24g" "WIFI-2.4G" "mt76-phy0" "phy0-ap0" "link tx rx"
-	ucidef_set_led_netdev "wifi-5g" "WIFI-5G" "mt76-phy1" "phy1-ap0" "link tx rx"
+zbtlink,zbt-z8114ax-ds)
+	ucidef_set_led_netdev "mobile" "MOBILE" "green:mobile" "wwan0" "link rx tx"
+	ucidef_set_led_netdev "wifi-2g" "WIFI-2.4G" "green:wlan-2ghz" "phy0-ap0" "link tx rx"
+	ucidef_set_led_netdev "wifi-5g" "WIFI-5.8G" "green:wlan-5ghz" "phy1-ap0" "link tx rx"
 	;;
 zyxel,ex5601-t0-stock|\
 zyxel,ex5601-t0-ubootmod)

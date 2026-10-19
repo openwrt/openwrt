@@ -4393,10 +4393,10 @@ define Device/zbtlink_zbt-z8114ax
   DEVICE_MODEL := ZBT-Z8114AX-DS
   DEVICE_ALT0_VENDOR := Zbtlink
   DEVICE_ALT0_MODEL := ZBT-Z8114AX-M2-T
-  SUPPORTED_DEVICES += zbtlink,z8114ax-ds
+  SUPPORTED_DEVICES += zbtlink,zbt-z8114ax-ds
   DEVICE_DTS := mt7981b-zbtlink-zbt-z8114ax
   DEVICE_DTS_DIR := ../dts
-  DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware kmod-usb3 kmod-usb-net-qmi-wwan kmod-usb-serial-option kmod-usb-net-cdc-mbim kmod-usb-xhci-mtk kmod-usb-storage kmod-hwmon-pwmfan 
+  DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware kmod-usb-net-qmi-wwan kmod-usb-serial-option kmod-usb3 kmod-usb-storage kmod-hwmon-pwmfan
   KERNEL_IN_UBI := 1
   UBINIZE_OPTS := -E 5
   BLOCKSIZE := 128k
