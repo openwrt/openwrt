@@ -876,6 +876,16 @@ static void rteth_838x_set_rx_mode(struct net_device *dev)
 		regmap_write(ctrl->map, RTETH_838X_RMA_CTRL_0, GENMASK(21, 0));
 		regmap_write(ctrl->map, RTETH_838X_RMA_CTRL_1, GENMASK(14, 0));
 	}
+
+	/*
+	 * Always trap slow protocols to 01-80-C2-00-00-02 (e.g. LACP, not OAM),
+	 * past STP and VLAN filtering. Program the bypasses before the trap:
+	 * bit 0: SLOW_PROTO_BYPASS_STP
+	 * bit 9: RMA_SLOWPRO_BYPASS_VLAN
+	 */
+	regmap_set_bits(ctrl->map, RTETH_838X_RMA_CTRL_1, BIT(0) | BIT(9));
+	regmap_update_bits(ctrl->map, RTETH_838X_RMA_CTRL_0, GENMASK(3, 2),
+			   RTETH_838X_RMA_CTRL_0_SLOW_TRAP);
 }
 
 static void rteth_839x_set_rx_mode(struct net_device *dev)
