@@ -1,0 +1,29 @@
+From 52691546764ccf8fa455db574c8887e5b659725e Mon Sep 17 00:00:00 2001
+From: David Mestre <dev@davidmestre.net>
+Date: Tue, 20 Oct 2026 00:51:15 +0200
+Subject: [PATCH] net: sfp: add quirk for OEM SFP-2.5G-T-C
+
+The OEM SFP-2.5G-T-C module needs the same fixed 2500BASE-X host link
+as the existing OEM SFP-2.5G-T entry. With in-band autonegotiation
+enabled, the tested MT7988 host has no carrier. Forcing 2500 Mbit/s,
+full duplex and autonegotiation off restores the link.
+
+The existing OEM SFP-2.5G-T entry requires an exact part-name match,
+so it does not match the -C variant. Reuse its quirk for the exact
+additional part name.
+
+Signed-off-by: David Mestre <dev@davidmestre.net>
+---
+ drivers/net/phy/sfp.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/drivers/net/phy/sfp.c
++++ b/drivers/net/phy/sfp.c
+@@ -642,6 +642,7 @@ static const struct sfp_quirk sfp_quirks
+ 
+ 	SFP_QUIRK_F("OEM", "SFP-10G-T", sfp_fixup_rollball_cc),
+ 	SFP_QUIRK_S("OEM", "SFP-2.5G-T", sfp_quirk_oem_2_5g),
++	SFP_QUIRK_S("OEM", "SFP-2.5G-T-C", sfp_quirk_oem_2_5g),
+ 	SFP_QUIRK_S("OEM", "SFP-2.5G-BX10-D", sfp_quirk_2500basex),
+ 	SFP_QUIRK_S("OEM", "SFP-2.5G-BX10-U", sfp_quirk_2500basex),
+ 	SFP_QUIRK_S("OEM", "SFP-2.5G-LH03-B", sfp_quirk_2500basex),
