@@ -57,6 +57,7 @@
 
 #define RTL838X_SPCL_TRAP_EAPOL_CTRL		(0x6988)
 #define RTL838X_SPCL_TRAP_SWITCH_MAC_CTRL	(0x6998)
+#define RTL838X_VLAN_PORT_AFT			(0x3A00)
 
 /* Switch interrupts */
 #define RTL838X_IMR_GLB				(0x1100)
@@ -251,6 +252,7 @@ const struct rtldsa_config rtldsa_838x_cfg = {
 	.vlan_profile_get = otto_vlan_838x_profile_get,
 	.vlan_profile_dump = otto_vlan_838x_profile_dump,
 	.vlan_profile_setup = otto_vlan_838x_profile_setup,
+	.vlan_port_aft = RTL838X_VLAN_PORT_AFT,
 	.vlan_fwd_on_inner = otto_vlan_838x_port_forward_on_inner,
 	.set_vlan_igr_filter = rtl838x_set_igr_filter,
 	.set_vlan_egr_filter = rtl838x_set_egr_filter,
