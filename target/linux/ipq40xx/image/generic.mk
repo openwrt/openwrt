@@ -170,7 +170,8 @@ define Device/arista_w-118
 	SOC := qcom-ipq4019
 	BLOCKSIZE := 128k
 	PAGESIZE := 2048
-	DEVICE_PACKAGES := ipq-wifi-arista_w-118 ath10k-firmware-qca988x-ct
+	DEVICE_PACKAGES := ipq-wifi-arista_w-118 ath10k-firmware-qca988x-ct \
+		bluetooth-uart
 endef
 TARGET_DEVICES += arista_w-118
 
