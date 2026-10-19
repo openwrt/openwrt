@@ -41,6 +41,9 @@ enum otto_table_id {
 	RTL8380_TBL_IACL,
 	RTL8380_TBL_MSTI,
 	RTL8380_TBL_LOG,
+	/* the LOG rows at the address bits that clear a counter: write only */
+	RTL8380_TBL_LOG_CLRL,
+	RTL8380_TBL_LOG_CLRH,
 
 	RTL8380_TBL_UNTAG,
 	RTL8380_TBL_ROUTING,
