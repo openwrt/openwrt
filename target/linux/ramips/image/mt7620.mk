@@ -1667,7 +1667,8 @@ define Device/zyxel_lte3302
   DLINK_ROM_ID := ZXL6E2431001
   DLINK_FAMILY_MEMBER := 0x6E24
   DLINK_FIRMWARE_SIZE := 0xFB0000
-  DEVICE_PACKAGES += kmod-usb-net-qmi-wwan kmod-usb-serial-option uqmi
+  DEVICE_PACKAGES += kmod-usb-net-qmi-wwan kmod-usb-serial-option uqmi \
+	-jboot-tools
 endef
 TARGET_DEVICES += zyxel_lte3302
 

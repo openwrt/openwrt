@@ -13,6 +13,7 @@
 	aliases {
 		led-boot = &led_sstrengthg;
 		led-failsafe = &led_onliney;
+		label-mac-device = &ethernet;
 	};
 
 	keys {
@@ -116,29 +117,36 @@
 
 			partition@10000 {
 				compatible = "openwrt,uimage", "denx,uimage";
-				openwrt,ih-magic = <IH_MAGIC_OKLI>; 
+				openwrt,ih-magic = <IH_MAGIC_OKLI>;
 				openwrt,offset = <0x10000>;
 				label = "firmware";
 				reg = <0x10000 0xfe0000>;
 			};
-			
+
 			partition@ff0000 {
 				label = "config";
 				reg = <0xff0000 0x10000>;
 				read-only;
-				nvmem-layout {
-					compatible = "fixed-layout";
-					#address-cells = <1>;
-					#size-cells = <1>;
 
-					eeprom_config: eeprom@e07c {
-						reg = <0xe07c 0x200>;
-					};
+				compatible = "fixed-partitions";
+				#address-cells = <1>;
+				#size-cells = <1>;
 
-					macaddr_config: macaddr@e2cd {
-						compatible = "mac-base";
-						reg = <0xc2cd 0x6>;
-						#nvmem-cell-cells = <1>;
+				/* JBOOT factory block: STAG/CSXF header + records */
+				partition@e000 {
+					label = "jboot-config";
+					reg = <0xe000 0x2000>;
+					read-only;
+
+					nvmem-layout {
+						compatible = "amit,jboot-config";
+
+						macaddr_config: mac-address {
+							#nvmem-cell-cells = <1>;
+						};
+
+						eeprom_config: eeprom {
+						};
 					};
 				};
 			};
@@ -155,8 +163,8 @@
 };
 
 &wmac {
-	nvmem-cells = <&eeprom_config>;
-	nvmem-cell-names = "eeprom";
+	nvmem-cells = <&eeprom_config>, <&macaddr_config 1>;
+	nvmem-cell-names = "eeprom", "mac-address";
 };
 
 &ethernet {

@@ -458,10 +458,6 @@ ramips_setup_macs()
 	zyxel,keenetic-viva)
 		wan_mac=$(mtd_get_mac_binary factory 0x28)
 		;;
-	zyxel,lte3302)
-		lan_mac=$(jboot_config_read -m -i $(find_mtd_part "config") -o 0xE000)
-		label_mac=$lan_mac
-		;;
 	esac
 
 	[ -n "$lan_mac" ] && ucidef_set_interface_macaddr "lan" $lan_mac
