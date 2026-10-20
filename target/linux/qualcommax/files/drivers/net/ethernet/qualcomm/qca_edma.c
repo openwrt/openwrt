@@ -604,6 +604,26 @@ static void edma_rx_vlan(struct net_device *netdev, struct sk_buff *skb,
 		__vlan_hwaccel_put_tag(skb, htons(ETH_P_8021Q), tci);
 }
 
+/* Reads a descriptor and hands its frame's lines to the CPU. The preheader
+ * and the headers behind it are prefetched, which the caller does one frame
+ * ahead so that they arrive while the frame before is processed.
+ */
+static void edma_rx_peek(struct edma_queue *q, u16 idx, u32 *addr, u32 *status)
+{
+	struct edma_rxdesc *rxdesc = EDMA_RXDESC_DESC(&q->rxdesc_ring, idx);
+	void *rxph;
+
+	*addr = le32_to_cpu(rxdesc->buffer_addr);
+	*status = le32_to_cpu(rxdesc->status);
+	rxph = phys_to_virt(*addr);
+	page_pool_dma_sync_for_cpu(q->page_pool, virt_to_head_page(rxph), 0,
+				   min_t(u32, EDMA_RX_PREHDR_SIZE +
+					 (*status & EDMA_RXDESC_PACKET_LEN_MASK),
+					 q->priv->rx_frame_len));
+	prefetch(rxph);
+	prefetch(rxph + L1_CACHE_BYTES);
+}
+
 static u32 edma_clean_rx(struct edma_queue *q, int budget)
 {
 	struct edma_ring *rxdesc_ring = &q->rxdesc_ring;
@@ -612,8 +632,9 @@ static u32 edma_clean_rx(struct edma_queue *q, int budget)
 	struct platform_device *pdev = priv->pdev;
 	struct dsa_oob_tag_info *tag_info;
 	struct edma_rx_preheader *rxph;
-	struct edma_rxdesc *rxdesc;
+	u32 next_addr, next_status;
 	unsigned char *frame;
+	bool ahead = false;
 	struct sk_buff *skb;
 	u16 prod, cons;
 	struct page *page;
@@ -627,11 +648,22 @@ static u32 edma_clean_rx(struct edma_queue *q, int budget)
 
 	while (cons != prod && done < budget) {
 		u32 desc_addr, desc_status;
+		u16 next = cons + 1;
 		u32 store_idx;
 
-		rxdesc = EDMA_RXDESC_DESC(rxdesc_ring, cons);
-		desc_addr = le32_to_cpu(rxdesc->buffer_addr);
-		desc_status = le32_to_cpu(rxdesc->status);
+		if (ahead) {
+			desc_addr = next_addr;
+			desc_status = next_status;
+		} else {
+			edma_rx_peek(q, cons, &desc_addr, &desc_status);
+		}
+
+		if (next == rxdesc_ring->count)
+			next = 0;
+		ahead = next != prod && done + 1 < budget;
+		if (ahead)
+			edma_rx_peek(q, next, &next_addr, &next_status);
+
 		rxph = phys_to_virt(desc_addr);
 		page = virt_to_head_page(rxph);
 
@@ -640,8 +672,6 @@ static u32 edma_clean_rx(struct edma_queue *q, int budget)
 		if (unlikely(desc_status & EDMA_RXDESC_MORE))
 			q->stats.rx_split_frame++;
 
-		page_pool_dma_sync_for_cpu(q->page_pool, page, 0,
-					   EDMA_RX_PREHDR_SIZE + pkt_len);
 		store_idx = le32_to_cpu(rxph->opaque);
 		if (unlikely(!edma_rx_page_take(q, page, store_idx))) {
 			q->stats.rx_untracked_page++;
