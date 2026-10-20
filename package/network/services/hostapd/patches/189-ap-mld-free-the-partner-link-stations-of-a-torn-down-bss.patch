@@ -25,7 +25,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/src/ap/hostapd.c
 +++ b/src/ap/hostapd.c
-@@ -944,6 +944,9 @@ static int hostapd_flush_old_stations(st
+@@ -948,6 +948,9 @@ static int hostapd_flush_old_stations(st
  
  void hostapd_bss_deinit_no_free(struct hostapd_data *hapd)
  {
@@ -60,7 +60,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
 --- a/src/ap/sta_info.h
 +++ b/src/ap/sta_info.h
-@@ -477,6 +477,7 @@ static inline void ap_sta_set_mld(struct
+@@ -478,6 +478,7 @@ static inline void ap_sta_set_mld(struct
  void ap_sta_free_sta_profile(struct mld_info *info);
  
  void hostapd_free_link_stas(struct hostapd_data *hapd);
