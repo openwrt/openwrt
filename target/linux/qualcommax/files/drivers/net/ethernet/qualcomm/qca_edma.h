@@ -408,7 +408,6 @@ struct edma_priv {
 	 * from each of the bases 0, 4 and 8.
 	 */
 	u8 rss_indir[EDMA_RSS_QUEUES];
-	bool threaded_set;
 
 	int misc_irq;
 };

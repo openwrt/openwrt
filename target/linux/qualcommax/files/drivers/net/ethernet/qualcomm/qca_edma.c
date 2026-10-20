@@ -1803,15 +1803,6 @@ static int edma_ndo_open(struct net_device *netdev)
 		netdev_tx_reset_queue(netdev_get_tx_queue(netdev, i));
 		napi_enable(&q->napi);
 	}
-	/* A NAPI thread is named after its NAPI ID, which a NAPI only gets once
-	 * it is enabled, and the name is what packet steering pairs a thread
-	 * with its queue by. So threading starts at the first open.
-	 */
-	if (!priv->threaded_set) {
-		priv->threaded_set = true;
-		if (dev_set_threaded(netdev, NETDEV_NAPI_THREADED_ENABLED))
-			netdev_warn(netdev, "failed to enable threaded NAPI\n");
-	}
 
 	netif_tx_start_all_queues(netdev);
 	for (i = 0; i < priv->num_queues; i++) {
