@@ -757,7 +757,9 @@ define KernelPackage/crypto-sha1
   DEPENDS:=+kmod-crypto-hash
   KCONFIG:= \
 	CONFIG_CRYPTO_SHA1
-  FILES:=$(LINUX_DIR)/crypto/sha1.ko
+  FILES:= \
+	$(LINUX_DIR)/crypto/sha1.ko \
+	$(LINUX_DIR)/lib/crypto/libsha1.ko
   AUTOLOAD:=$(call AutoLoad,09,sha1)
   $(call AddDepends/crypto)
 endef
