@@ -1,0 +1,367 @@
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Subject: [PATCH] wifi: ath11k: use page_pool for the RX refill ring
+
+The RX refill ring takes every buffer from dev_alloc_skb(), maps it with
+dma_map_single() and unmaps it again when the frame is reaped. Buffers
+of the ring share the per-CPU page-frag caches with unrelated
+allocations, so one long-lived skb pins a whole high-order page.
+
+Give the refill ring of each radio its own page_pool. The pool keeps
+the DMA mapping of its pages, the reap paths sync the buffer for the CPU
+instead of unmapping it, and freed skbs return their page to the pool.
+Each order-1 page carries three 128-byte aligned buffers, which is no
+more memory than the page-frag allocation took. The monitor rings keep
+dev_alloc_skb().
+
+Suggested-by: Mark Ruvald Pedersen <wabsie@gmail.com>
+Link: https://lore.kernel.org/linux-wireless/20260719215817.2468580-1-wabsie@gmail.com/
+Link: https://lore.kernel.org/linux-wireless/20261008-ath12k-pp-v1-0-68f888cd7eec@oss.qualcomm.com/
+Assisted-by: Claude:claude-opus-5-5
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+--- a/drivers/net/wireless/ath/ath11k/Kconfig
++++ b/drivers/net/wireless/ath/ath11k/Kconfig
+@@ -6,6 +6,7 @@ config ATH11K
+ 	depends on MAC80211 && HAS_DMA
+ 	select ATH_COMMON
+ 	select QCOM_QMI_HELPERS
++	select PAGE_POOL
+ 	help
+ 	  This module adds support for Qualcomm Technologies 802.11ax family of
+ 	  chipsets.
+--- a/drivers/net/wireless/ath/ath11k/dp.h
++++ b/drivers/net/wireless/ath/ath11k/dp.h
+@@ -72,6 +72,7 @@ struct dp_srng {
+ 
+ struct dp_rxdma_ring {
+ 	struct dp_srng refill_buf_ring;
++	struct page_pool *page_pool;
+ 	struct idr bufs_idr;
+ 	/* Protects bufs_idr */
+ 	spinlock_t idr_lock;
+@@ -231,6 +232,9 @@ struct ath11k_pdev_dp {
+ #define DP_RX_BUFFER_SIZE	2048
+ #define	DP_RX_BUFFER_SIZE_LITE  1024
+ #define DP_RX_BUFFER_ALIGN_SIZE	128
++#define DP_RX_PP_ORDER		1
++#define DP_RX_PP_FRAG_SIZE	ALIGN(SKB_HEAD_ALIGN(DP_RX_BUFFER_SIZE), \
++				      DP_RX_BUFFER_ALIGN_SIZE)
+ 
+ #define DP_RXDMA_BUF_COOKIE_BUF_ID	GENMASK(17, 0)
+ #define DP_RXDMA_BUF_COOKIE_PDEV_ID	GENMASK(20, 18)
+--- a/drivers/net/wireless/ath/ath11k/dp_rx.c
++++ b/drivers/net/wireless/ath/ath11k/dp_rx.c
+@@ -8,6 +8,7 @@
+ #include <linux/ieee80211.h>
+ #include <linux/kernel.h>
+ #include <linux/skbuff.h>
++#include <net/page_pool/helpers.h>
+ #include "core.h"
+ #include "debug.h"
+ #include "debugfs_htt_stats.h"
+@@ -340,6 +341,56 @@ static int ath11k_dp_purge_mon_ring(stru
+ 	return -ETIMEDOUT;
+ }
+ 
++static bool ath11k_dp_rx_buf_is_pp(struct sk_buff *skb)
++{
++	return skb->pp_recycle && skb->head_frag;
++}
++
++static void ath11k_dp_rx_unmap_buf(struct ath11k_base *ab, struct sk_buff *skb,
++				   enum dma_data_direction dir)
++{
++	struct ath11k_skb_rxcb *rxcb = ATH11K_SKB_RXCB(skb);
++	unsigned int len = skb->len + skb_tailroom(skb);
++
++	if (ath11k_dp_rx_buf_is_pp(skb))
++		dma_sync_single_for_cpu(ab->dev, rxcb->paddr, len,
++					DMA_BIDIRECTIONAL);
++	else
++		dma_unmap_single(ab->dev, rxcb->paddr, len, dir);
++}
++
++static dma_addr_t ath11k_dp_rx_pp_dma_addr(struct sk_buff *skb)
++{
++	struct page *page = virt_to_head_page(skb->data);
++
++	return page_pool_get_dma_addr(page) +
++	       (skb->data - (u8 *)page_address(page));
++}
++
++static struct sk_buff *ath11k_dp_rx_pp_alloc_skb(struct dp_rxdma_ring *rx_ring)
++{
++	struct sk_buff *skb;
++	unsigned int offset;
++	struct page *page;
++	void *va;
++
++	page = page_pool_dev_alloc_frag(rx_ring->page_pool, &offset,
++					DP_RX_PP_FRAG_SIZE);
++	if (!page)
++		return NULL;
++
++	va = page_address(page) + offset;
++	skb = build_skb(va, DP_RX_PP_FRAG_SIZE);
++	if (!skb) {
++		page_pool_put_full_page(rx_ring->page_pool, page, false);
++		return NULL;
++	}
++
++	skb_mark_for_recycle(skb);
++
++	return skb;
++}
++
+ /* Returns number of Rx buffers replenished */
+ int ath11k_dp_rxbufs_replenish(struct ath11k_base *ab, int mac_id,
+ 			       struct dp_rxdma_ring *rx_ring,
+@@ -371,23 +422,32 @@ int ath11k_dp_rxbufs_replenish(struct at
+ 	num_remain = req_entries;
+ 
+ 	while (num_remain > 0) {
+-		skb = dev_alloc_skb(DP_RX_BUFFER_SIZE +
+-				    DP_RX_BUFFER_ALIGN_SIZE);
+-		if (!skb)
+-			break;
++		if (rx_ring->page_pool) {
++			skb = ath11k_dp_rx_pp_alloc_skb(rx_ring);
++			if (!skb)
++				break;
+ 
+-		if (!IS_ALIGNED((unsigned long)skb->data,
+-				DP_RX_BUFFER_ALIGN_SIZE)) {
+-			skb_pull(skb,
+-				 PTR_ALIGN(skb->data, DP_RX_BUFFER_ALIGN_SIZE) -
+-				 skb->data);
+-		}
++			paddr = ath11k_dp_rx_pp_dma_addr(skb);
++		} else {
++			skb = dev_alloc_skb(DP_RX_BUFFER_SIZE +
++					    DP_RX_BUFFER_ALIGN_SIZE);
++			if (!skb)
++				break;
+ 
+-		paddr = dma_map_single(ab->dev, skb->data,
+-				       skb->len + skb_tailroom(skb),
+-				       DMA_FROM_DEVICE);
+-		if (dma_mapping_error(ab->dev, paddr))
+-			goto fail_free_skb;
++			if (!IS_ALIGNED((unsigned long)skb->data,
++					DP_RX_BUFFER_ALIGN_SIZE)) {
++				skb_pull(skb,
++					 PTR_ALIGN(skb->data,
++						   DP_RX_BUFFER_ALIGN_SIZE) -
++					 skb->data);
++			}
++
++			paddr = dma_map_single(ab->dev, skb->data,
++					       skb->len + skb_tailroom(skb),
++					       DMA_FROM_DEVICE);
++			if (dma_mapping_error(ab->dev, paddr))
++				goto fail_free_skb;
++		}
+ 
+ 		spin_lock_bh(&rx_ring->idr_lock);
+ 		buf_id = idr_alloc(&rx_ring->bufs_idr, skb, 1,
+@@ -421,8 +481,9 @@ fail_idr_remove:
+ 	idr_remove(&rx_ring->bufs_idr, buf_id);
+ 	spin_unlock_bh(&rx_ring->idr_lock);
+ fail_dma_unmap:
+-	dma_unmap_single(ab->dev, paddr, skb->len + skb_tailroom(skb),
+-			 DMA_FROM_DEVICE);
++	if (!rx_ring->page_pool)
++		dma_unmap_single(ab->dev, paddr, skb->len + skb_tailroom(skb),
++				 DMA_FROM_DEVICE);
+ fail_free_skb:
+ 	dev_kfree_skb_any(skb);
+ 
+@@ -445,14 +506,18 @@ static int ath11k_dp_rxdma_buf_ring_free
+ 		/* TODO: Understand where internal driver does this dma_unmap
+ 		 * of rxdma_buffer.
+ 		 */
+-		dma_unmap_single(ar->ab->dev, ATH11K_SKB_RXCB(skb)->paddr,
+-				 skb->len + skb_tailroom(skb), DMA_FROM_DEVICE);
++		ath11k_dp_rx_unmap_buf(ar->ab, skb, DMA_FROM_DEVICE);
+ 		dev_kfree_skb_any(skb);
+ 	}
+ 
+ 	idr_destroy(&rx_ring->bufs_idr);
+ 	spin_unlock_bh(&rx_ring->idr_lock);
+ 
++	if (rx_ring->page_pool) {
++		page_pool_destroy(rx_ring->page_pool);
++		rx_ring->page_pool = NULL;
++	}
++
+ 	return 0;
+ }
+ 
+@@ -486,6 +551,25 @@ static int ath11k_dp_rxdma_ring_buf_setu
+ 	num_entries = rx_ring->refill_buf_ring.size /
+ 		ath11k_hal_srng_get_entrysize(ar->ab, ringtype);
+ 
++	if (ringtype == HAL_RXDMA_BUF) {
++		struct page_pool_params pp_params = {
++			.order = DP_RX_PP_ORDER,
++			.flags = PP_FLAG_DMA_MAP | PP_FLAG_DMA_SYNC_DEV,
++			.pool_size = num_entries,
++			.nid = NUMA_NO_NODE,
++			.dev = ar->ab->dev,
++			.dma_dir = DMA_BIDIRECTIONAL,
++			.max_len = PAGE_SIZE << DP_RX_PP_ORDER,
++		};
++		struct page_pool *pp;
++
++		pp = page_pool_create(&pp_params);
++		if (IS_ERR(pp))
++			return PTR_ERR(pp);
++
++		rx_ring->page_pool = pp;
++	}
++
+ 	rx_ring->bufs_max = num_entries;
+ 	ath11k_dp_rxbufs_replenish(ar->ab, dp->mac_id, rx_ring, num_entries,
+ 				   ar->ab->hw_params.hal_params->rx_buf_rbm);
+@@ -497,9 +581,11 @@ static int ath11k_dp_rxdma_pdev_buf_setu
+ 	struct ath11k_pdev_dp *dp = &ar->dp;
+ 	struct ath11k_base *ab = ar->ab;
+ 	struct dp_rxdma_ring *rx_ring = &dp->rx_refill_buf_ring;
+-	int i;
++	int i, ret;
+ 
+-	ath11k_dp_rxdma_ring_buf_setup(ar, rx_ring, HAL_RXDMA_BUF);
++	ret = ath11k_dp_rxdma_ring_buf_setup(ar, rx_ring, HAL_RXDMA_BUF);
++	if (ret)
++		return ret;
+ 
+ 	if (ar->ab->hw_params.rxdma1_enable) {
+ 		rx_ring = &dp->rxdma_mon_buf_ring;
+@@ -2727,9 +2813,7 @@ try_again:
+ 		spin_unlock_bh(&rx_ring->idr_lock);
+ 
+ 		rxcb = ATH11K_SKB_RXCB(msdu);
+-		dma_unmap_single(ab->dev, rxcb->paddr,
+-				 msdu->len + skb_tailroom(msdu),
+-				 DMA_FROM_DEVICE);
++		ath11k_dp_rx_unmap_buf(ab, msdu, DMA_FROM_DEVICE);
+ 
+ 		num_buffs_reaped[mac_id]++;
+ 
+@@ -3161,9 +3245,7 @@ static int ath11k_dp_rx_reap_mon_status_
+ 				idr_remove(&rx_ring->bufs_idr, buf_id);
+ 				spin_unlock_bh(&rx_ring->idr_lock);
+ 
+-				dma_unmap_single(ab->dev, rxcb->paddr,
+-						 skb->len + skb_tailroom(skb),
+-						 DMA_FROM_DEVICE);
++				ath11k_dp_rx_unmap_buf(ab, skb, DMA_FROM_DEVICE);
+ 
+ 				dev_kfree_skb_any(skb);
+ 				pmon->buf_state = DP_MON_STATUS_REPLINISH;
+@@ -3179,9 +3261,7 @@ static int ath11k_dp_rx_reap_mon_status_
+ 					pmon->buf_state = DP_MON_STATUS_MATCH;
+ 			}
+ 
+-			dma_unmap_single(ab->dev, rxcb->paddr,
+-					 skb->len + skb_tailroom(skb),
+-					 DMA_FROM_DEVICE);
++			ath11k_dp_rx_unmap_buf(ab, skb, DMA_FROM_DEVICE);
+ 
+ 			__skb_queue_tail(skb_list, skb);
+ 		} else {
+@@ -3468,11 +3548,20 @@ static int ath11k_dp_rx_h_defrag_reo_rei
+ 	/* change msdu len in hal rx desc */
+ 	ath11k_dp_rxdesc_set_msdu_len(ab, rx_desc, defrag_skb->len - hal_rx_desc_sz);
+ 
+-	paddr = dma_map_single(ab->dev, defrag_skb->data,
+-			       defrag_skb->len + skb_tailroom(defrag_skb),
+-			       DMA_TO_DEVICE);
+-	if (dma_mapping_error(ab->dev, paddr))
+-		return -ENOMEM;
++	if (ath11k_dp_rx_buf_is_pp(defrag_skb)) {
++		paddr = ath11k_dp_rx_pp_dma_addr(defrag_skb);
++		dma_sync_single_for_device(ab->dev, paddr,
++					   defrag_skb->len +
++					   skb_tailroom(defrag_skb),
++					   DMA_BIDIRECTIONAL);
++	} else {
++		paddr = dma_map_single(ab->dev, defrag_skb->data,
++				       defrag_skb->len +
++				       skb_tailroom(defrag_skb),
++				       DMA_TO_DEVICE);
++		if (dma_mapping_error(ab->dev, paddr))
++			return -ENOMEM;
++	}
+ 
+ 	spin_lock_bh(&rx_refill_ring->idr_lock);
+ 	buf_id = idr_alloc(&rx_refill_ring->bufs_idr, defrag_skb, 0,
+@@ -3535,8 +3624,10 @@ err_free_idr:
+ 	idr_remove(&rx_refill_ring->bufs_idr, buf_id);
+ 	spin_unlock_bh(&rx_refill_ring->idr_lock);
+ err_unmap_dma:
+-	dma_unmap_single(ab->dev, paddr, defrag_skb->len + skb_tailroom(defrag_skb),
+-			 DMA_TO_DEVICE);
++	if (!ath11k_dp_rx_buf_is_pp(defrag_skb))
++		dma_unmap_single(ab->dev, paddr,
++				 defrag_skb->len + skb_tailroom(defrag_skb),
++				 DMA_TO_DEVICE);
+ 	return ret;
+ }
+ 
+@@ -3776,9 +3867,7 @@ ath11k_dp_process_rx_err_buf(struct ath1
+ 	spin_unlock_bh(&rx_ring->idr_lock);
+ 
+ 	rxcb = ATH11K_SKB_RXCB(msdu);
+-	dma_unmap_single(ar->ab->dev, rxcb->paddr,
+-			 msdu->len + skb_tailroom(msdu),
+-			 DMA_FROM_DEVICE);
++	ath11k_dp_rx_unmap_buf(ar->ab, msdu, DMA_FROM_DEVICE);
+ 
+ 	if (drop) {
+ 		dev_kfree_skb_any(msdu);
+@@ -4209,9 +4298,7 @@ int ath11k_dp_rx_process_wbm_err(struct
+ 		spin_unlock_bh(&rx_ring->idr_lock);
+ 
+ 		rxcb = ATH11K_SKB_RXCB(msdu);
+-		dma_unmap_single(ab->dev, rxcb->paddr,
+-				 msdu->len + skb_tailroom(msdu),
+-				 DMA_FROM_DEVICE);
++		ath11k_dp_rx_unmap_buf(ab, msdu, DMA_FROM_DEVICE);
+ 
+ 		num_buffs_reaped[mac_id]++;
+ 		total_num_buffs_reaped++;
+@@ -4335,9 +4422,7 @@ int ath11k_dp_process_rxdma_err(struct a
+ 			spin_unlock_bh(&rx_ring->idr_lock);
+ 
+ 			rxcb = ATH11K_SKB_RXCB(skb);
+-			dma_unmap_single(ab->dev, rxcb->paddr,
+-					 skb->len + skb_tailroom(skb),
+-					 DMA_FROM_DEVICE);
++			ath11k_dp_rx_unmap_buf(ab, skb, DMA_FROM_DEVICE);
+ 			dev_kfree_skb_any(skb);
+ 
+ 			num_buf_freed++;
+@@ -4808,10 +4893,7 @@ u32 ath11k_dp_rx_mon_mpdu_pop(struct ath
+ 			}
+ 			rxcb = ATH11K_SKB_RXCB(msdu);
+ 			if (!rxcb->unmapped) {
+-				dma_unmap_single(ar->ab->dev, rxcb->paddr,
+-						 msdu->len +
+-						 skb_tailroom(msdu),
+-						 DMA_FROM_DEVICE);
++				ath11k_dp_rx_unmap_buf(ar->ab, msdu, DMA_FROM_DEVICE);
+ 				rxcb->unmapped = 1;
+ 			}
+ 			if (drop_mpdu) {
+@@ -5477,10 +5559,7 @@ ath11k_dp_rx_full_mon_mpdu_pop(struct at
+ 
+ 			rxcb = ATH11K_SKB_RXCB(msdu);
+ 			if (!rxcb->unmapped) {
+-				dma_unmap_single(ar->ab->dev, rxcb->paddr,
+-						 msdu->len +
+-						 skb_tailroom(msdu),
+-						 DMA_FROM_DEVICE);
++				ath11k_dp_rx_unmap_buf(ar->ab, msdu, DMA_FROM_DEVICE);
+ 				rxcb->unmapped = 1;
+ 			}
+ 			if (drop_mpdu) {
