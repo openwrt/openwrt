@@ -38,6 +38,13 @@ define Package/rtl8188fu-firmware/install
 endef
 $(eval $(call BuildPackage,rtl8188fu-firmware))
 
+Package/rtl8192fu-firmware = $(call Package/firmware-default,RealTek RTL8192FU firmware,,LICENCE.rtlwifi_firmware.txt)
+define Package/rtl8192fu-firmware/install
+	$(INSTALL_DIR) $(1)/lib/firmware/rtlwifi
+	$(CP) $(PKG_BUILD_DIR)/rtlwifi/rtl8192fufw.bin $(1)/lib/firmware/rtlwifi
+endef
+$(eval $(call BuildPackage,rtl8192fu-firmware))
+
 Package/rtl8192ce-firmware = $(call Package/firmware-default,RealTek RTL8192CE firmware,,LICENCE.rtlwifi_firmware.txt)
 define Package/rtl8192ce-firmware/install
 	$(INSTALL_DIR) $(1)/lib/firmware/rtlwifi

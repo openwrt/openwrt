@@ -1,0 +1,31 @@
+From a63cc9a8c81d6282fb3d38930d18c6b06a9a264d Mon Sep 17 00:00:00 2001
+From: Devon Openheim <devopenm@proton.me>
+Date: Wed, 12 Aug 2026 12:29:04 +0100
+Subject: [PATCH] dt-bindings: vendor-prefixes: add ASR Microelectronics
+
+Document the `asr` vendor prefix (ASR Microelectronics), required by
+the ASR1802S SoC and P298 board support.
+
+Only the SoC vendor prefix is registered. The board is a Notion design sold by
+operator Ooredoo under carrier branding, but the compatible string uses the SoC
+vendor (`asr`) plus the hardware platform code (P298, from the board silkscreen,
+the U-Boot banner "ASR KAGU EVB P298" and ASR's own kernel build string), so a
+`notion` prefix would be registered without ever being used. The operator SKU
+string is also deliberately unused: an unrelated MediaTek MT7621A product is
+sold as "R291" too, which would make it ambiguous across two devices.
+
+Signed-off-by: Devon Openheim <devopenm@proton.me>
+
+---
+
+--- a/Documentation/devicetree/bindings/vendor-prefixes.yaml
++++ b/Documentation/devicetree/bindings/vendor-prefixes.yaml
+@@ -178,6 +178,8 @@
+     description: ASIX Electronics Corporation
+   "^aspeed,.*":
+     description: ASPEED Technology Inc.
++  "^asr,.*":
++    description: ASR Microelectronics Co., Ltd.
+   "^asrock,.*":
+     description: ASRock Inc.
+   "^asteralabs,.*":
