@@ -25,6 +25,7 @@
 	interface@0 {
 		ethernet@0 {
 			label = "lan5";
+			openwrt,netdev-name = "lan5";
 			status = "okay";
 			phy-mode = "qsgmii";
 			phy-handle = <&phy4>;
@@ -38,6 +39,7 @@
 
 		ethernet@0 {
 			label = "lan3";
+			openwrt,netdev-name = "lan3";
 			status = "okay";
 			phy-mode = "qsgmii";
 			phy-handle = <&phy8>;
@@ -47,6 +49,7 @@
 
 		ethernet@1 {
 			label = "lan4";
+			openwrt,netdev-name = "lan4";
 			status = "okay";
 			phy-mode = "qsgmii";
 			phy-handle = <&phy9>;
