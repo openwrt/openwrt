@@ -2234,6 +2234,22 @@ static void ppe_port_shapers_clear(struct qca_ppe_priv *priv,
 	ppe_port_queue_limit_set(priv, p->port);
 }
 
+/* A sender's bursts leave a class's queues empty between them, and a bucket of
+ * one frame forfeits every token that accrues while they are: measured on
+ * IPQ8074, a class shaped to 305 Mbit/s carried 226-268 Mbit/s of a TCP
+ * download with one frame of burst and 278-284 Mbit/s with ten milliseconds
+ * of its rate, with the same latency under load. Ten milliseconds is also the
+ * burst cpu_port_rate gets.
+ */
+static u32 ppe_class_burst(struct qca_ppe_priv *priv, int port,
+			   const struct ppe_class_shaper *c)
+{
+	u64 bps = max(c->min_bps, c->rate_bps);
+
+	return max_t(u64, ppe_port_frame_len(priv, port),
+		     div_u64(bps * 10, BITS_PER_BYTE * 1000));
+}
+
 /* Where a class's rate goes: one queue's own node, or the node a whole group of
  * them hangs off. Nothing is programmed from here - the caller wants every
  * class checked before any of them is committed.
@@ -2346,8 +2362,8 @@ int qca_ppe_setup_tc_mqprio(struct qca_ppe_priv *priv, int port,
 
 		if (ppe_node_shaper_words(clk, prog[tc].slot, prog[tc].min_bps,
 					  prog[tc].rate_bps,
-					  ppe_port_frame_len(priv, port), floor,
-					  w)) {
+					  ppe_class_burst(priv, port, &prog[tc]),
+					  floor, w)) {
 			dev_err(priv->ds.dev,
 				"port %d: class %d rate is outside the shaper's range\n",
 				port, tc);
@@ -2365,14 +2381,10 @@ int qca_ppe_setup_tc_mqprio(struct qca_ppe_priv *priv, int port,
 		if (!floor && !prog[tc].min_bps && !prog[tc].rate_bps)
 			continue;
 
-		/* A bucket that cannot hold one full frame stalls the node, and
-		 * a port drains its queues as fast as they fill, so a frame is
-		 * all the burst a class needs.
-		 */
 		ppe_node_shaper_set(priv, prog[tc].cfg, prog[tc].credit,
 				    prog[tc].slot, prog[tc].min_bps,
 				    prog[tc].rate_bps,
-				    ppe_port_frame_len(priv, port), floor);
+				    ppe_class_burst(priv, port, &prog[tc]), floor);
 
 		for (i = q->offset[tc]; i < q->offset[tc] + q->count[tc]; i++)
 			priv->shaper[port].queue_rate[i] = prog[tc].rate_bps;
@@ -3201,10 +3213,10 @@ static int ppe_cpu_port_dl_set(struct qca_ppe_priv *priv, u64 rate_bps)
 	 * shaped port falls back to with no limit - is too shallow to hold a
 	 * flow at the rate it was shaped to.
 	 *
-	 * The burst is the same ten milliseconds, and unlike a user port's
-	 * class it cannot be a frame: this port drains only as fast as the
-	 * host takes frames off the ring, and a bucket of one frame forgets
-	 * every token that accrues between two of the host's visits.
+	 * The burst is the same ten milliseconds a user port's class gets
+	 * (ppe_class_burst()): this port drains only as fast as the host takes
+	 * frames off the ring, and a bucket of one frame forgets every token
+	 * that accrues between two of the host's visits.
 	 */
 	ret = ppe_node_shaper_set(priv, PPE_TM_L1_SHP_CFG(PPE_CPU_PORT_DL_NODE),
 				  PPE_TM_L1_SHP_CREDIT(PPE_CPU_PORT_DL_NODE),
