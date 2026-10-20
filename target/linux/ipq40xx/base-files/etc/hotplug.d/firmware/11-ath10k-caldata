@@ -88,6 +88,7 @@ case "$FIRMWARE" in
 		( [ -f "$wlan_data" ] && caldata_sysfsload_from_file "$wlan_data" 0x0 0x2f20 ) || \
 		( [ -d "$wlan_data" ] && caldata_sysfsload_from_file "$wlan_data/data_0" 0x0 0x2f20 )
 		;;
+	gryphon,tower|\
 	netgear,rbr40|\
 	netgear,rbs40|\
 	netgear,rbr50|\
@@ -171,6 +172,7 @@ case "$FIRMWARE" in
 		( [ -f "$wlan_data" ] && caldata_sysfsload_from_file "$wlan_data" 0x8000 0x2f20 ) || \
 		( [ -d "$wlan_data" ] && caldata_sysfsload_from_file "$wlan_data/data_2" 0x0 0x2f20 )
 		;;
+	gryphon,tower|\
 	netgear,rbr40|\
 	netgear,rbs40|\
 	netgear,rbr50|\

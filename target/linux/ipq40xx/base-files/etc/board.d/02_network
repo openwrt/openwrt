@@ -70,6 +70,7 @@ ipq40xx_setup_interfaces()
 	aruba,ap-303h|\
 	buffalo,wtr-m2133hp|\
 	ezviz,cs-w3-wd1200g-eup|\
+	gryphon,tower|\
 	netgear,rbr40|\
 	netgear,rbr50|\
 	netgear,srr60)
@@ -234,6 +235,7 @@ ipq40xx_setup_macs()
 		lan_mac=$(cat /sys/firmware/mikrotik/hard_config/mac_base)
 		label_mac="$lan_mac"
 		;;
+	gryphon,tower|\
 	netgear,rbr40|\
 	netgear,rbr50|\
 	netgear,srr60|\

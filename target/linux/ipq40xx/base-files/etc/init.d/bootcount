@@ -37,6 +37,13 @@ boot() {
 		[ -n "$(fw_printenv bootcount changed 2>/dev/null)" ] &&\
 			echo -e "bootcount\nchanged\n" | /usr/sbin/fw_setenv -s -
 		;;
+	gryphon,tower)
+		case "$(fw_printenv -n bootcmd 2>/dev/null)" in *bootipq*)
+        		fw_setenv bootcmd 'mmc read 0x84000000 0x2c22 0x4000; bootm 0x84000000'
+        		fw_setenv bootargs 'root=/dev/mmcblk0p14 rootfstype=squashfs rootwait'
+        	;;
+    		esac
+    	;;
 	linksys,ea6350v3|\
 	linksys,ea8300|\
 	linksys,mr6350|\

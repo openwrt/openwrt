@@ -61,9 +61,13 @@ linksys,whw03v2)
 zyxel,nbg6617)
 	ubootenv_add_uci_config "/dev/mtd6" "0x0" "0x10000" "0x10000"
 	;;
+gryphon,tower)
+	ubootenv_add_uci_config "/dev/mmcblk0p8" "0x0" "0x40000"
+	;;
 esac
 
 config_load ubootenv
 config_foreach ubootenv_add_app_config ubootenv
 
 exit 0
+

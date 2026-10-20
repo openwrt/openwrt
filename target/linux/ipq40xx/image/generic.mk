@@ -644,6 +644,20 @@ define Device/glinet_gl-s1300
 endef
 TARGET_DEVICES += glinet_gl-s1300
 
+define Device/gryphon_tower
+	$(call Device/FitImage)
+	DEVICE_VENDOR := Gryphon
+	DEVICE_MODEL := Tower
+	SOC := qcom-ipq4019
+	DEVICE_DTS := qcom-ipq4019-gryphon-tower
+	IMAGE_SIZE := 131072k
+	DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca4019-ct \
+		kmod-ath10k-ct-pci ath10k-firmware-qca9984-ct ipq-wifi-gryphon_tower \
+		kmod-hci-uart uboot-envtools
+	SUPPORTED_DEVICES := gryphon,tower
+endef
+TARGET_DEVICES += gryphon_tower
+
 define Device/kernel-size-6350-8300
 	DEVICE_COMPAT_VERSION := 2.0
 	DEVICE_COMPAT_MESSAGE := Kernel partition size must be increased for \

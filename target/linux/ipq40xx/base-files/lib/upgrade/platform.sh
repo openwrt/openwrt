@@ -154,6 +154,7 @@ platform_do_upgrade() {
 		CI_UBIPART="ubifs"
 		askey_do_upgrade "$1"
 		;;
+	gryphon,tower|\
 	glinet,gl-b2200)
 		CI_KERNPART="0:HLOS"
 		CI_ROOTPART="rootfs"
