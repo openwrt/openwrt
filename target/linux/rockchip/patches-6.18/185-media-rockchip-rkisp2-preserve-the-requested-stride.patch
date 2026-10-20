@@ -17,7 +17,7 @@ Assisted-by: LLM
 
 --- a/drivers/media/platform/rockchip/rkisp2/rkisp2-capture.c
 +++ b/drivers/media/platform/rockchip/rkisp2/rkisp2-capture.c
-@@ -1118,7 +1118,6 @@ rkisp2_fill_pixfmt(const struct rkisp2_c
+@@ -1106,7 +1106,6 @@ rkisp2_fill_pixfmt(const struct rkisp2_c
  	unsigned int i;
  	u32 stride;
  
@@ -25,7 +25,7 @@ Assisted-by: LLM
  	info = v4l2_format_info(pixm->pixelformat);
  	pixm->num_planes = info->mem_planes;
  
-@@ -1129,6 +1128,7 @@ rkisp2_fill_pixfmt(const struct rkisp2_c
+@@ -1117,6 +1116,7 @@ rkisp2_fill_pixfmt(const struct rkisp2_c
  	stride = clamp(DIV_ROUND_UP(plane_y->bytesperline, info->bpp[0]),
  		       pixm->width, 65536U);
  
