@@ -1,21 +1,18 @@
 From: Felix Fietkau <nbd@nbd.name>
-Date: Fri, 2 Oct 2026 09:44:34 +0200
-Subject: [PATCH] WNM: pass the space left in the BSS TM Request buffer to
- mbo_add_ie()
+Date: Tue, 6 Oct 2026 07:36:29 +0200
+Subject: [PATCH] WNM: Pass the space left in the BSS TM Request buffer to mbo_add_ie()
 
-wnm_send_bss_tm_req() passed buf + sizeof(buf) - pos as the space left
-for the MBO element. buf is a pointer, so sizeof(buf) is the size of the
-pointer, and pos is always past the fixed fields of the frame. The
-difference is negative and converts to a size_t near SIZE_MAX, so the
-length check in mbo_add_ie() could never fail.
+wnm_send_bss_tm_req() passes buf + sizeof(buf) - pos as the space left
+for the MBO element. buf is a pointer, so the difference is negative and
+converts to a size_t near SIZE_MAX. The length check in mbo_add_ie()
+thus never fails.
 
-The allocation holds 1000 octets plus the neighbour reports and the MBO
-attributes. The header and the fixed fields (31 octets), the BSS
-Termination Duration (12) and the Session Information URL (at most 256)
-take at most 299 of the 1000, and the MBO element header 6 more, so no
-write went past the buffer. Pass the space that is left in the
-allocation.
+Pass the space that is left in the allocation. No write went past the
+buffer, because the frame without the Neighbor Report elements and the
+MBO attributes takes at most 305 of the 1000 octets that the allocation
+adds for it.
 
+Fixes: c0e2a172a768 ("hostapd: Add MBO IE to BSS Transition Management Request frame")
 Signed-off-by: Felix Fietkau <nbd@nbd.name>
 ---
 

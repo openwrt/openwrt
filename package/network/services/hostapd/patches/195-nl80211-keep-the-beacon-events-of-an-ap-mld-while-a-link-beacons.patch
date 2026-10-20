@@ -1,20 +1,18 @@
-From 4b1e444f1f1b5fa0192d5601fea3544c1eb68dc9 Mon Sep 17 00:00:00 2001
 From: Felix Fietkau <nbd@nbd.name>
-Date: Tue, 29 Sep 2026 08:24:34 +0200
-Subject: [PATCH] nl80211: keep the Beacon events of an AP MLD while a link
- beacons
+Date: Tue, 6 Oct 2026 07:53:30 +0200
+Subject: [PATCH] nl80211: Keep the Beacon events of an AP MLD while a link beacons
 
-wpa_driver_nl80211_del_beacon() gave up the wiphy's Beacon event
-subscription whenever one link stopped beaconing. The subscription is
-the interface's, and the other links of an AP MLD lost the OBSS Beacon
-events that feed OLBC detection and the AP list (handle_beacon(),
-ap_list_process_beacon()). Give it up only once no link of the
-interface beacons.
+wpa_driver_nl80211_del_beacon() drops the reference of the interface to
+the Beacon event subscription of the wiphy whenever one link stops
+beaconing. If no other BSS of the same driver instance holds a
+reference, the other links of an AP MLD lose the OBSS Beacon events
+that feed OLBC detection and the AP list. A link that keeps beaconing
+does not take the reference again.
+
+Drop the reference only when no link of the interface beacons.
 
 Signed-off-by: Felix Fietkau <nbd@nbd.name>
 ---
- src/drivers/driver_nl80211.c | 21 ++++++++++++++++++++-
- 1 file changed, 20 insertions(+), 1 deletion(-)
 
 --- a/src/drivers/driver_nl80211.c
 +++ b/src/drivers/driver_nl80211.c
@@ -40,11 +38,14 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  static int wpa_driver_nl80211_del_beacon(struct i802_bss *bss,
  					 int link_id)
  {
-@@ -3643,7 +3658,8 @@ static int wpa_driver_nl80211_del_beacon
+@@ -3643,7 +3658,11 @@ static int wpa_driver_nl80211_del_beacon
  	link->beacon_set = 0;
  	link->freq = 0;
  
 -	nl80211_put_wiphy_data_ap(bss);
++	/* The Beacon event subscription is the interface's, and the other
++	 * links of an AP MLD still feed OLBC detection and the AP list with
++	 * the Beacons it delivers. */
 +	if (!nl80211_bss_beaconing(bss))
 +		nl80211_put_wiphy_data_ap(bss);
  	msg = nl80211_bss_msg(bss, 0, NL80211_CMD_DEL_BEACON);
