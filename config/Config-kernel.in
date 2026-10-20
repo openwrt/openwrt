@@ -139,17 +139,6 @@ config KERNEL_UBSAN
 	  via boot parameter ubsan_handle
 	  (see: Documentation/dev-tools/ubsan.rst).
 
-config KERNEL_UBSAN_SANITIZE_ALL
-	bool "Enable instrumentation for the entire kernel"
-	depends on KERNEL_UBSAN
-	default y
-	help
-	  This option activates instrumentation for the entire kernel.
-	  If you don't enable this option, you have to explicitly specify
-	  UBSAN_SANITIZE := y for the files/directories you want to check for UB.
-	  Enabling this option will get kernel image size increased
-	  significantly.
-
 config KERNEL_UBSAN_ALIGNMENT
 	bool "Enable checking of pointers alignment"
 	depends on KERNEL_UBSAN
