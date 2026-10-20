@@ -671,12 +671,9 @@ function bss_qos_map_stations(bss)
 
 // An empty SET_QOS_MAP_SET clears the map (patch 781). No frame removes a map
 // from a station, so it keeps the old one until it associates again.
-function bss_qos_map_apply(bss, ifname, value, prev)
+function bss_qos_map_apply(bss, ifname, value)
 {
 	if (!bss_ctrl_ok(bss, ifname, `SET_QOS_MAP_SET ${value ?? ""}`))
-		return false;
-
-	if (!value != !prev && !bss_ctrl_ok(bss, ifname, "UPDATE_BEACON"))
 		return false;
 
 	if (!value)
@@ -727,7 +724,7 @@ function bss_inplace_changes(config, prev, bss, changed)
 		push(changed, val[0]);
 		if (!bss_inplace_field(bss, val[0]))
 			inplace = false;
-		changes[val[0]] = { value: null, prev: val[1] };
+		changes[val[0]] = { value: null };
 	}
 
 	for (let line in data) {
@@ -738,8 +735,7 @@ function bss_inplace_changes(config, prev, bss, changed)
 		push(changed, val[0]);
 		if (!bss_inplace_field(bss, val[0]))
 			inplace = false;
-		changes[val[0]] ??= { prev: null };
-		changes[val[0]].value = val[1];
+		changes[val[0]] = { value: val[1] };
 	}
 
 	return (inplace && length(changes)) ? changes : null;
@@ -774,7 +770,7 @@ function bss_find_inplace(config, prev_config, prev_hash, bss)
 function bss_inplace_apply(bss, ifname, changes)
 {
 	for (let key, change in changes)
-		if (!BSS_INPLACE_FIELDS[key].apply(bss, ifname, change.value, change.prev))
+		if (!BSS_INPLACE_FIELDS[key].apply(bss, ifname, change.value))
 			return false;
 
 	hostapd.printf(`Updated ${join(", ", keys(changes))} of bss ${ifname} in place`);
@@ -1961,7 +1957,7 @@ function dpp_channel_handle_request(channel, req)
 			return libubus.STATUS_NOT_FOUND;
 		let val = data.enable ? "dd04506f9a1e" : "";
 		bss.ctrl("SET vendor_elements " + val);
-		bss.ctrl("UPDATE_BEACON");
+		bss.update_beacon();
 		return 0;
 
 	default:

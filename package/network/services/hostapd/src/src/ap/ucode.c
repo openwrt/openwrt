@@ -676,6 +676,17 @@ uc_hostapd_bss_ctrl(uc_vm_t *vm, size_t nargs)
 	return ucv_string_new_length(reply, reply_len);
 }
 
+static uc_value_t *
+uc_hostapd_bss_update_beacon(uc_vm_t *vm, size_t nargs)
+{
+	struct hostapd_data *hapd = uc_fn_thisval("hostapd.bss");
+
+	if (!hapd)
+		return NULL;
+
+	return ucv_boolean_new(!ieee802_11_update_beacon(hapd));
+}
+
 #ifdef CONFIG_IEEE80211BE
 static uc_value_t *
 uc_hostapd_bss_link_remove(uc_vm_t *vm, size_t nargs)
@@ -1471,6 +1482,7 @@ int hostapd_ucode_init(struct hapd_interfaces *ifaces)
 	};
 	static const uc_function_list_t bss_fns[] = {
 		{ "ctrl", uc_hostapd_bss_ctrl },
+		{ "update_beacon", uc_hostapd_bss_update_beacon },
 		{ "set_config", uc_hostapd_bss_set_config },
 		{ "rename", uc_hostapd_bss_rename },
 		{ "delete", uc_hostapd_bss_delete },

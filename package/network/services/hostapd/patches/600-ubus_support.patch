@@ -79,6 +79,31 @@ probe/assoc/auth requests via object subscribe.
  	/* TODO: verify that supp_rates contains at least one matching rate
  	 * with AP configuration */
  
+@@ -3424,14 +3436,22 @@ int ieee802_11_set_beacons(struct hostap
+ 
+ 
+ /* only update beacons if started */
++int ieee802_11_update_beacon(struct hostapd_data *hapd)
++{
++	if (!hapd->beacon_set_done || !hapd->started)
++		return 0;
++
++	return ieee802_11_set_beacon(hapd);
++}
++
++
+ int ieee802_11_update_beacons(struct hostapd_iface *iface)
+ {
+ 	size_t i;
+ 	int ret = 0;
+ 
+ 	for (i = 0; i < iface->num_bss; i++) {
+-		if (iface->bss[i]->beacon_set_done && iface->bss[i]->started &&
+-		    ieee802_11_set_beacon(iface->bss[i]) < 0)
++		if (ieee802_11_update_beacon(iface->bss[i]) < 0)
+ 			ret = -1;
+ 	}
+ 
 --- a/src/ap/dfs.c
 +++ b/src/ap/dfs.c
 @@ -1543,6 +1543,8 @@ int hostapd_dfs_radar_detected(struct ho
@@ -781,3 +806,13 @@ probe/assoc/auth requests via object subscribe.
  		break;
  	case WLAN_PA_GAS_COMEBACK_REQ:
  		gas_serv_rx_gas_comeback_req(hapd, sa, data + 1, len - 1, prot,
+--- a/src/ap/beacon.h
++++ b/src/ap/beacon.h
+@@ -20,6 +20,7 @@ int ieee802_11_set_beacon(struct hostapd
+ int ieee802_11_start_beacon(struct hostapd_data *hapd);
+ bool ieee802_11_beacon_held(struct hostapd_data *hapd);
+ int ieee802_11_set_beacons(struct hostapd_iface *iface);
++int ieee802_11_update_beacon(struct hostapd_data *hapd);
+ int ieee802_11_update_beacons(struct hostapd_iface *iface);
+ int ieee802_11_build_ap_params(struct hostapd_data *hapd,
+ 			       struct wpa_driver_ap_params *params);

@@ -994,15 +994,9 @@ hostapd_bss_update_beacon(struct ubus_context *ctx, struct ubus_object *obj,
 			struct ubus_request_data *req, const char *method,
 			struct blob_attr *msg)
 {
-	int rc;
 	struct hostapd_data *hapd = get_hapd_from_object(obj);
 
-	if (!hapd->started || !hapd->beacon_set_done)
-		return 0;
-
-	rc = ieee802_11_set_beacon(hapd);
-
-	if (rc != 0)
+	if (ieee802_11_update_beacon(hapd))
 		return UBUS_STATUS_NOT_SUPPORTED;
 
 	return 0;
