@@ -390,6 +390,7 @@ struct edma_priv {
 	void __iomem *base;
 	struct reset_control *rst;
 	u32 rx_buffer_size;
+	u32 rx_frame_len;
 	u8 rx_page_order;
 	u16 tx_ring_size;
 	u16 rx_ring_size;

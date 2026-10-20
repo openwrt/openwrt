@@ -649,6 +649,12 @@ static u32 edma_clean_rx(struct edma_queue *q, int budget)
 			goto next;
 		}
 
+		if (unlikely(EDMA_RX_PREHDR_SIZE + pkt_len > priv->rx_frame_len)) {
+			page_pool_put_full_page(q->page_pool, page, true);
+			DEV_STATS_INC(netdev, rx_length_errors);
+			goto next;
+		}
+
 		if (EDMA_RXPH_SRC_INFO_TYPE_GET(rxph) !=
 		    EDMA_PREHDR_DSTINFO_PORTID_IND) {
 			dev_warn_ratelimited(&pdev->dev,
@@ -1412,7 +1418,7 @@ static void edma_get_ringparam(struct net_device *netdev,
 	ring->rx_pending = priv->rx_ring_size;
 }
 
-static int edma_reconfigure(struct edma_priv *priv, u8 order, unsigned int nq,
+static int edma_reconfigure(struct edma_priv *priv, int mtu, unsigned int nq,
 			    u16 tx_size, u16 rx_size);
 
 /* The core has already held the request to what get_ringparam calls the
@@ -1443,7 +1449,7 @@ static int edma_set_ringparam(struct net_device *netdev,
 	    ring->rx_pending == priv->rx_ring_size)
 		return 0;
 
-	return edma_reconfigure(priv, priv->rx_page_order, priv->num_queues,
+	return edma_reconfigure(priv, netdev->mtu, priv->num_queues,
 				ring->tx_pending, ring->rx_pending);
 }
 
@@ -1456,7 +1462,7 @@ static int edma_reset(struct net_device *netdev, u32 *flags)
 	if (!(*flags & ETH_RESET_DMA))
 		return -EINVAL;
 
-	ret = edma_reconfigure(priv, priv->rx_page_order, priv->num_queues,
+	ret = edma_reconfigure(priv, netdev->mtu, priv->num_queues,
 			       priv->tx_ring_size, priv->rx_ring_size);
 	if (!ret)
 		*flags &= ~ETH_RESET_DMA;
@@ -1699,7 +1705,7 @@ static int edma_set_channels(struct net_device *netdev,
 	if (ch->combined_count == priv->num_queues)
 		return 0;
 
-	return edma_reconfigure(priv, priv->rx_page_order, ch->combined_count,
+	return edma_reconfigure(priv, netdev->mtu, ch->combined_count,
 				priv->tx_ring_size, priv->rx_ring_size);
 }
 
@@ -2038,13 +2044,19 @@ static int edma_irq_init(struct edma_priv *priv)
 	return 0;
 }
 
+/* The longest frame the ports admit, preheader included. The page pool only
+ * syncs this much for the device, so a longer frame the PPE still redirects to
+ * the CPU may land on stale lines past it and is dropped.
+ */
+static u32 edma_rx_frame_len(int mtu)
+{
+	return EDMA_RX_PREHDR_SIZE + mtu + ETH_HLEN + 2 * VLAN_HLEN;
+}
+
 static u8 edma_rx_page_order(int mtu)
 {
-	size_t size = NET_SKB_PAD + EDMA_RX_PREHDR_SIZE + mtu + ETH_HLEN +
-		      2 * VLAN_HLEN +
-		      SKB_DATA_ALIGN(sizeof(struct skb_shared_info));
-
-	return get_order(size);
+	return get_order(NET_SKB_PAD + edma_rx_frame_len(mtu) +
+			 SKB_DATA_ALIGN(sizeof(struct skb_shared_info)));
 }
 
 static u32 edma_rx_buffer_size(u8 order)
@@ -2054,7 +2066,7 @@ static u32 edma_rx_buffer_size(u8 order)
 }
 
 static struct page_pool *edma_page_pool_create(struct edma_priv *priv,
-					       u8 order, u16 size,
+					       u8 order, u32 len, u16 size,
 					       struct napi_struct *napi)
 {
 	struct page_pool_params pp = {
@@ -2064,7 +2076,7 @@ static struct page_pool *edma_page_pool_create(struct edma_priv *priv,
 		.dev       = &priv->pdev->dev,
 		.dma_dir   = DMA_FROM_DEVICE,
 		.offset    = NET_SKB_PAD,
-		.max_len   = edma_rx_buffer_size(order),
+		.max_len   = len,
 		.flags     = PP_FLAG_DMA_MAP | PP_FLAG_DMA_SYNC_DEV,
 		.napi      = napi,
 	};
@@ -2080,14 +2092,15 @@ static void edma_page_pools_destroy(struct page_pool **pools, unsigned int n)
 		page_pool_destroy(pools[i]);
 }
 
-static int edma_page_pools_create(struct edma_priv *priv, u8 order, u16 size,
+static int edma_page_pools_create(struct edma_priv *priv, int mtu, u16 size,
 				  struct page_pool **pools, unsigned int n)
 {
 	unsigned int i;
 
 	memset(pools, 0, EDMA_MAX_QUEUES * sizeof(*pools));
 	for (i = 0; i < n; i++) {
-		pools[i] = edma_page_pool_create(priv, order, size,
+		pools[i] = edma_page_pool_create(priv, edma_rx_page_order(mtu),
+						 edma_rx_frame_len(mtu), size,
 						 &priv->q[i].napi);
 		if (IS_ERR(pools[i])) {
 			int ret = PTR_ERR(pools[i]);
@@ -2124,20 +2137,21 @@ static void edma_set_xps(struct edma_priv *priv)
  * taking them down and bringing them back - and putting the old ones back if
  * that fails, rather than leaving the conduit without a datapath.
  */
-static int edma_reconfigure(struct edma_priv *priv, u8 order, unsigned int nq,
+static int edma_reconfigure(struct edma_priv *priv, int mtu, unsigned int nq,
 			    u16 tx_size, u16 rx_size)
 {
 	struct page_pool *pools[EDMA_MAX_QUEUES];
 	struct net_device *netdev = priv->netdev;
 	unsigned int old_nq = priv->num_queues;
 	u8 old_order = priv->rx_page_order;
+	u32 old_len = priv->rx_frame_len;
 	u16 old_tx = priv->tx_ring_size;
 	u16 old_rx = priv->rx_ring_size;
 	unsigned int i;
 	bool running;
 	int ret;
 
-	ret = edma_page_pools_create(priv, order, rx_size, pools, nq);
+	ret = edma_page_pools_create(priv, mtu, rx_size, pools, nq);
 	if (ret)
 		return ret;
 
@@ -2157,8 +2171,9 @@ static int edma_reconfigure(struct edma_priv *priv, u8 order, unsigned int nq,
 
 	edma_page_pools_swap(priv, pools);
 	priv->num_queues = nq;
-	priv->rx_page_order = order;
-	priv->rx_buffer_size = edma_rx_buffer_size(order);
+	priv->rx_page_order = edma_rx_page_order(mtu);
+	priv->rx_buffer_size = edma_rx_buffer_size(priv->rx_page_order);
+	priv->rx_frame_len = edma_rx_frame_len(mtu);
 	priv->tx_ring_size = tx_size;
 	priv->rx_ring_size = rx_size;
 
@@ -2170,6 +2185,7 @@ static int edma_reconfigure(struct edma_priv *priv, u8 order, unsigned int nq,
 		priv->num_queues = old_nq;
 		priv->rx_page_order = old_order;
 		priv->rx_buffer_size = edma_rx_buffer_size(old_order);
+		priv->rx_frame_len = old_len;
 		priv->tx_ring_size = old_tx;
 		priv->rx_ring_size = old_rx;
 		edma_page_pools_destroy(pools, nq);
@@ -2201,11 +2217,10 @@ static int edma_reconfigure(struct edma_priv *priv, u8 order, unsigned int nq,
 static int edma_ndo_change_mtu(struct net_device *netdev, int new_mtu)
 {
 	struct edma_priv *priv = netdev_priv(netdev);
-	u8 order = edma_rx_page_order(new_mtu);
 	int ret = 0;
 
-	if (order != priv->rx_page_order)
-		ret = edma_reconfigure(priv, order, priv->num_queues,
+	if (edma_rx_frame_len(new_mtu) != priv->rx_frame_len)
+		ret = edma_reconfigure(priv, new_mtu, priv->num_queues,
 				       priv->tx_ring_size, priv->rx_ring_size);
 	if (!ret)
 		WRITE_ONCE(netdev->mtu, new_mtu);
@@ -2351,8 +2366,9 @@ static int edma_probe(struct platform_device *pdev)
 	priv->tx_ugt_thre = EDMA_COAL_FRAMES - 1;
 	priv->rx_page_order = edma_rx_page_order(netdev->mtu);
 	priv->rx_buffer_size = edma_rx_buffer_size(priv->rx_page_order);
-	ret = edma_page_pools_create(priv, priv->rx_page_order,
-				     priv->rx_ring_size, pools, nq);
+	priv->rx_frame_len = edma_rx_frame_len(netdev->mtu);
+	ret = edma_page_pools_create(priv, netdev->mtu, priv->rx_ring_size,
+				     pools, nq);
 	if (ret)
 		return ret;
 	edma_page_pools_swap(priv, pools);
