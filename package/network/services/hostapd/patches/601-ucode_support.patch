@@ -514,7 +514,7 @@ as adding/removing interfaces.
  
 --- a/src/ap/sta_info.c
 +++ b/src/ap/sta_info.c
-@@ -567,6 +567,11 @@ void ap_free_sta(struct hostapd_data *ha
+@@ -595,6 +595,11 @@ void ap_free_sta(struct hostapd_data *ha
  	os_free(sta->eap_auth_data.rsnxe);
  #endif /* CONFIG_IEEE8021X_AUTH */
  
@@ -526,7 +526,7 @@ as adding/removing interfaces.
  	os_free(sta);
  }
  
-@@ -1826,6 +1831,8 @@ void ap_sta_set_authorized_event(struct
+@@ -1854,6 +1859,8 @@ void ap_sta_set_authorized_event(struct
  #endif /* CONFIG_P2P */
  	const u8 *ip_ptr = NULL;
  

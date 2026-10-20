@@ -21,7 +21,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/src/ap/sta_info.c
 +++ b/src/ap/sta_info.c
-@@ -606,6 +606,7 @@ void hostapd_free_link_stas(struct hosta
+@@ -634,6 +634,7 @@ void hostapd_free_link_stas(struct hosta
  
  		wpa_printf(MSG_DEBUG, "Removing link station from MLD " MACSTR,
  			   MAC2STR(prev->addr));
