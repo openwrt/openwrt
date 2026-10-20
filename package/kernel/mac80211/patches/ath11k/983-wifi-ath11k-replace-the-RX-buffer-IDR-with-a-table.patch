@@ -1,0 +1,450 @@
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Subject: [PATCH] wifi: ath11k: replace the RX buffer IDR with a table
+
+Every RX buffer gets an id from the ring's IDR when it is posted and gives
+it back when it is reaped, and the IDR allocation is one of the larger
+costs per received frame. The ids a ring hands out are bounded by the
+ring size, so keep them in a table indexed by id with a stack of the free
+ones instead. Posting a buffer pops an id and reaping it pushes the id
+back, both in constant time under the existing ring lock.
+
+The table holds twice the ring size: a ring never has more buffers posted
+than entries, plus the defragmented frames reinjected into the refill
+ring. Id 0 stays unused, as with the IDR, because the refill path treats
+it as invalid.
+
+Assisted-by: Claude:claude-opus-5-5
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+--- a/drivers/net/wireless/ath/ath11k/dp.c
++++ b/drivers/net/wireless/ath/ath11k/dp.c
+@@ -901,16 +901,13 @@ void ath11k_dp_pdev_pre_alloc(struct ath
+ 		ar = ab->pdevs[i].ar;
+ 		dp = &ar->dp;
+ 		dp->mac_id = i;
+-		idr_init(&dp->rx_refill_buf_ring.bufs_idr);
+-		spin_lock_init(&dp->rx_refill_buf_ring.idr_lock);
++		spin_lock_init(&dp->rx_refill_buf_ring.bufs_lock);
+ 		atomic_set(&dp->num_tx_pending, 0);
+ 		init_waitqueue_head(&dp->tx_empty_waitq);
+ 		for (j = 0; j < ab->hw_params.num_rxdma_per_pdev; j++) {
+-			idr_init(&dp->rx_mon_status_refill_ring[j].bufs_idr);
+-			spin_lock_init(&dp->rx_mon_status_refill_ring[j].idr_lock);
++			spin_lock_init(&dp->rx_mon_status_refill_ring[j].bufs_lock);
+ 		}
+-		idr_init(&dp->rxdma_mon_buf_ring.bufs_idr);
+-		spin_lock_init(&dp->rxdma_mon_buf_ring.idr_lock);
++		spin_lock_init(&dp->rxdma_mon_buf_ring.bufs_lock);
+ 	}
+ }
+ 
+--- a/drivers/net/wireless/ath/ath11k/dp.h
++++ b/drivers/net/wireless/ath/ath11k/dp.h
+@@ -73,9 +73,13 @@ struct dp_srng {
+ struct dp_rxdma_ring {
+ 	struct dp_srng refill_buf_ring;
+ 	struct page_pool *page_pool;
+-	struct idr bufs_idr;
+-	/* Protects bufs_idr */
+-	spinlock_t idr_lock;
++	/* Buffers by the id their descriptor carries, and the ids not in use */
++	struct sk_buff **bufs;
++	u32 *free_ids;
++	u32 num_free;
++	u32 num_ids;
++	/* Protects bufs and free_ids */
++	spinlock_t bufs_lock;
+ 	int bufs_max;
+ };
+ 
+--- a/drivers/net/wireless/ath/ath11k/dp_rx.c
++++ b/drivers/net/wireless/ath/ath11k/dp_rx.c
+@@ -341,6 +341,67 @@ static int ath11k_dp_purge_mon_ring(stru
+ 	return -ETIMEDOUT;
+ }
+ 
++/* The ids a ring hands out, as a table indexed by id with a stack of the
++ * free ones: the descriptor cookie names the buffer directly. Id 0 is never
++ * handed out, because the refill path treats it as invalid. Callers of the
++ * id helpers hold bufs_lock.
++ */
++static int ath11k_dp_rx_bufs_init(struct dp_rxdma_ring *rx_ring)
++{
++	u32 num = rx_ring->bufs_max * 2 + 1;
++	u32 id;
++
++	rx_ring->bufs = kcalloc(num, sizeof(*rx_ring->bufs), GFP_KERNEL);
++	rx_ring->free_ids = kcalloc(num, sizeof(*rx_ring->free_ids),
++				    GFP_KERNEL);
++	if (!rx_ring->bufs || !rx_ring->free_ids) {
++		kfree(rx_ring->bufs);
++		kfree(rx_ring->free_ids);
++		rx_ring->bufs = NULL;
++		rx_ring->free_ids = NULL;
++		return -ENOMEM;
++	}
++
++	rx_ring->num_ids = num;
++	rx_ring->num_free = 0;
++	for (id = num; id-- > 1;)
++		rx_ring->free_ids[rx_ring->num_free++] = id;
++
++	return 0;
++}
++
++static int ath11k_dp_rx_buf_get_id(struct dp_rxdma_ring *rx_ring,
++				   struct sk_buff *skb)
++{
++	u32 id;
++
++	if (unlikely(!rx_ring->num_free))
++		return -ENOSPC;
++
++	id = rx_ring->free_ids[--rx_ring->num_free];
++	rx_ring->bufs[id] = skb;
++
++	return id;
++}
++
++static struct sk_buff *ath11k_dp_rx_buf_lookup(struct dp_rxdma_ring *rx_ring,
++					       u32 id)
++{
++	if (unlikely(id >= rx_ring->num_ids))
++		return NULL;
++
++	return rx_ring->bufs[id];
++}
++
++static void ath11k_dp_rx_buf_put_id(struct dp_rxdma_ring *rx_ring, u32 id)
++{
++	if (unlikely(id >= rx_ring->num_ids || !rx_ring->bufs[id]))
++		return;
++
++	rx_ring->bufs[id] = NULL;
++	rx_ring->free_ids[rx_ring->num_free++] = id;
++}
++
+ static bool ath11k_dp_rx_buf_is_pp(struct sk_buff *skb)
+ {
+ 	return skb->pp_recycle && skb->head_frag;
+@@ -449,10 +510,9 @@ int ath11k_dp_rxbufs_replenish(struct at
+ 				goto fail_free_skb;
+ 		}
+ 
+-		spin_lock_bh(&rx_ring->idr_lock);
+-		buf_id = idr_alloc(&rx_ring->bufs_idr, skb, 1,
+-				   (rx_ring->bufs_max * 3) + 1, GFP_ATOMIC);
+-		spin_unlock_bh(&rx_ring->idr_lock);
++		spin_lock_bh(&rx_ring->bufs_lock);
++		buf_id = ath11k_dp_rx_buf_get_id(rx_ring, skb);
++		spin_unlock_bh(&rx_ring->bufs_lock);
+ 		if (buf_id <= 0)
+ 			goto fail_dma_unmap;
+ 
+@@ -477,9 +537,9 @@ int ath11k_dp_rxbufs_replenish(struct at
+ 	return req_entries - num_remain;
+ 
+ fail_idr_remove:
+-	spin_lock_bh(&rx_ring->idr_lock);
+-	idr_remove(&rx_ring->bufs_idr, buf_id);
+-	spin_unlock_bh(&rx_ring->idr_lock);
++	spin_lock_bh(&rx_ring->bufs_lock);
++	ath11k_dp_rx_buf_put_id(rx_ring, buf_id);
++	spin_unlock_bh(&rx_ring->bufs_lock);
+ fail_dma_unmap:
+ 	if (!rx_ring->page_pool)
+ 		dma_unmap_single(ab->dev, paddr, skb->len + skb_tailroom(skb),
+@@ -500,9 +560,13 @@ static int ath11k_dp_rxdma_buf_ring_free
+ 	struct sk_buff *skb;
+ 	int buf_id;
+ 
+-	spin_lock_bh(&rx_ring->idr_lock);
+-	idr_for_each_entry(&rx_ring->bufs_idr, skb, buf_id) {
+-		idr_remove(&rx_ring->bufs_idr, buf_id);
++	spin_lock_bh(&rx_ring->bufs_lock);
++	for (buf_id = 0; buf_id < rx_ring->num_ids; buf_id++) {
++		skb = rx_ring->bufs[buf_id];
++		if (!skb)
++			continue;
++
++		ath11k_dp_rx_buf_put_id(rx_ring, buf_id);
+ 		/* TODO: Understand where internal driver does this dma_unmap
+ 		 * of rxdma_buffer.
+ 		 */
+@@ -510,8 +574,13 @@ static int ath11k_dp_rxdma_buf_ring_free
+ 		dev_kfree_skb_any(skb);
+ 	}
+ 
+-	idr_destroy(&rx_ring->bufs_idr);
+-	spin_unlock_bh(&rx_ring->idr_lock);
++	kfree(rx_ring->bufs);
++	kfree(rx_ring->free_ids);
++	rx_ring->bufs = NULL;
++	rx_ring->free_ids = NULL;
++	rx_ring->num_ids = 0;
++	rx_ring->num_free = 0;
++	spin_unlock_bh(&rx_ring->bufs_lock);
+ 
+ 	if (rx_ring->page_pool) {
+ 		page_pool_destroy(rx_ring->page_pool);
+@@ -571,6 +640,14 @@ static int ath11k_dp_rxdma_ring_buf_setu
+ 	}
+ 
+ 	rx_ring->bufs_max = num_entries;
++	if (ath11k_dp_rx_bufs_init(rx_ring)) {
++		if (rx_ring->page_pool) {
++			page_pool_destroy(rx_ring->page_pool);
++			rx_ring->page_pool = NULL;
++		}
++		return -ENOMEM;
++	}
++
+ 	ath11k_dp_rxbufs_replenish(ar->ab, dp->mac_id, rx_ring, num_entries,
+ 				   ar->ab->hw_params.hal_params->rx_buf_rbm);
+ 	return 0;
+@@ -2800,17 +2877,17 @@ try_again:
+ 
+ 		ar = ab->pdevs[mac_id].ar;
+ 		rx_ring = &ar->dp.rx_refill_buf_ring;
+-		spin_lock_bh(&rx_ring->idr_lock);
+-		msdu = idr_find(&rx_ring->bufs_idr, buf_id);
++		spin_lock_bh(&rx_ring->bufs_lock);
++		msdu = ath11k_dp_rx_buf_lookup(rx_ring, buf_id);
+ 		if (unlikely(!msdu)) {
+ 			ath11k_warn(ab, "frame rx with invalid buf_id %d\n",
+ 				    buf_id);
+-			spin_unlock_bh(&rx_ring->idr_lock);
++			spin_unlock_bh(&rx_ring->bufs_lock);
+ 			continue;
+ 		}
+ 
+-		idr_remove(&rx_ring->bufs_idr, buf_id);
+-		spin_unlock_bh(&rx_ring->idr_lock);
++		ath11k_dp_rx_buf_put_id(rx_ring, buf_id);
++		spin_unlock_bh(&rx_ring->bufs_lock);
+ 
+ 		rxcb = ATH11K_SKB_RXCB(msdu);
+ 		ath11k_dp_rx_unmap_buf(ab, msdu, DMA_FROM_DEVICE);
+@@ -2991,10 +3068,9 @@ static struct sk_buff *ath11k_dp_rx_allo
+ 	if (unlikely(dma_mapping_error(ab->dev, paddr)))
+ 		goto fail_free_skb;
+ 
+-	spin_lock_bh(&rx_ring->idr_lock);
+-	*buf_id = idr_alloc(&rx_ring->bufs_idr, skb, 0,
+-			    rx_ring->bufs_max, GFP_ATOMIC);
+-	spin_unlock_bh(&rx_ring->idr_lock);
++	spin_lock_bh(&rx_ring->bufs_lock);
++	*buf_id = ath11k_dp_rx_buf_get_id(rx_ring, skb);
++	spin_unlock_bh(&rx_ring->bufs_lock);
+ 	if (*buf_id < 0)
+ 		goto fail_dma_unmap;
+ 
+@@ -3063,9 +3139,9 @@ int ath11k_dp_rx_mon_status_bufs_repleni
+ 	return req_entries - num_remain;
+ 
+ fail_desc_get:
+-	spin_lock_bh(&rx_ring->idr_lock);
+-	idr_remove(&rx_ring->bufs_idr, buf_id);
+-	spin_unlock_bh(&rx_ring->idr_lock);
++	spin_lock_bh(&rx_ring->bufs_lock);
++	ath11k_dp_rx_buf_put_id(rx_ring, buf_id);
++	spin_unlock_bh(&rx_ring->bufs_lock);
+ 	dma_unmap_single(ab->dev, paddr, skb->len + skb_tailroom(skb),
+ 			 DMA_FROM_DEVICE);
+ 	dev_kfree_skb_any(skb);
+@@ -3133,9 +3209,9 @@ ath11k_dp_rx_mon_buf_done(struct ath11k_
+ 
+ 	buf_id = FIELD_GET(DP_RXDMA_BUF_COOKIE_BUF_ID, cookie);
+ 
+-	spin_lock_bh(&rx_ring->idr_lock);
+-	skb = idr_find(&rx_ring->bufs_idr, buf_id);
+-	spin_unlock_bh(&rx_ring->idr_lock);
++	spin_lock_bh(&rx_ring->bufs_lock);
++	skb = ath11k_dp_rx_buf_lookup(rx_ring, buf_id);
++	spin_unlock_bh(&rx_ring->bufs_lock);
+ 
+ 	if (!skb)
+ 		return DP_MON_STATUS_NO_DMA;
+@@ -3197,9 +3273,9 @@ static int ath11k_dp_rx_reap_mon_status_
+ 		if (paddr) {
+ 			buf_id = FIELD_GET(DP_RXDMA_BUF_COOKIE_BUF_ID, cookie);
+ 
+-			spin_lock_bh(&rx_ring->idr_lock);
+-			skb = idr_find(&rx_ring->bufs_idr, buf_id);
+-			spin_unlock_bh(&rx_ring->idr_lock);
++			spin_lock_bh(&rx_ring->bufs_lock);
++			skb = ath11k_dp_rx_buf_lookup(rx_ring, buf_id);
++			spin_unlock_bh(&rx_ring->bufs_lock);
+ 
+ 			if (!skb) {
+ 				ath11k_warn(ab, "rx monitor status with invalid buf_id %d\n",
+@@ -3241,9 +3317,9 @@ static int ath11k_dp_rx_reap_mon_status_
+ 				if (reap_status == DP_MON_STATUS_NO_DMA)
+ 					continue;
+ 
+-				spin_lock_bh(&rx_ring->idr_lock);
+-				idr_remove(&rx_ring->bufs_idr, buf_id);
+-				spin_unlock_bh(&rx_ring->idr_lock);
++				spin_lock_bh(&rx_ring->bufs_lock);
++				ath11k_dp_rx_buf_put_id(rx_ring, buf_id);
++				spin_unlock_bh(&rx_ring->bufs_lock);
+ 
+ 				ath11k_dp_rx_unmap_buf(ab, skb, DMA_FROM_DEVICE);
+ 
+@@ -3252,9 +3328,9 @@ static int ath11k_dp_rx_reap_mon_status_
+ 				goto move_next;
+ 			}
+ 
+-			spin_lock_bh(&rx_ring->idr_lock);
+-			idr_remove(&rx_ring->bufs_idr, buf_id);
+-			spin_unlock_bh(&rx_ring->idr_lock);
++			spin_lock_bh(&rx_ring->bufs_lock);
++			ath11k_dp_rx_buf_put_id(rx_ring, buf_id);
++			spin_unlock_bh(&rx_ring->bufs_lock);
+ 			if (ab->hw_params.full_monitor_mode) {
+ 				ath11k_dp_rx_mon_update_status_buf_state(pmon, tlv);
+ 				if (paddr == pmon->mon_status_paddr)
+@@ -3563,10 +3639,9 @@ static int ath11k_dp_rx_h_defrag_reo_rei
+ 			return -ENOMEM;
+ 	}
+ 
+-	spin_lock_bh(&rx_refill_ring->idr_lock);
+-	buf_id = idr_alloc(&rx_refill_ring->bufs_idr, defrag_skb, 0,
+-			   rx_refill_ring->bufs_max * 3, GFP_ATOMIC);
+-	spin_unlock_bh(&rx_refill_ring->idr_lock);
++	spin_lock_bh(&rx_refill_ring->bufs_lock);
++	buf_id = ath11k_dp_rx_buf_get_id(rx_refill_ring, defrag_skb);
++	spin_unlock_bh(&rx_refill_ring->bufs_lock);
+ 	if (buf_id < 0) {
+ 		ret = -ENOMEM;
+ 		goto err_unmap_dma;
+@@ -3620,9 +3695,9 @@ static int ath11k_dp_rx_h_defrag_reo_rei
+ 	return 0;
+ 
+ err_free_idr:
+-	spin_lock_bh(&rx_refill_ring->idr_lock);
+-	idr_remove(&rx_refill_ring->bufs_idr, buf_id);
+-	spin_unlock_bh(&rx_refill_ring->idr_lock);
++	spin_lock_bh(&rx_refill_ring->bufs_lock);
++	ath11k_dp_rx_buf_put_id(rx_refill_ring, buf_id);
++	spin_unlock_bh(&rx_refill_ring->bufs_lock);
+ err_unmap_dma:
+ 	if (!ath11k_dp_rx_buf_is_pp(defrag_skb))
+ 		dma_unmap_single(ab->dev, paddr,
+@@ -3854,17 +3929,17 @@ ath11k_dp_process_rx_err_buf(struct ath1
+ 	u16 msdu_len;
+ 	u32 hal_rx_desc_sz = ar->ab->hw_params.hal_desc_sz;
+ 
+-	spin_lock_bh(&rx_ring->idr_lock);
+-	msdu = idr_find(&rx_ring->bufs_idr, buf_id);
++	spin_lock_bh(&rx_ring->bufs_lock);
++	msdu = ath11k_dp_rx_buf_lookup(rx_ring, buf_id);
+ 	if (!msdu) {
+ 		ath11k_warn(ar->ab, "rx err buf with invalid buf_id %d\n",
+ 			    buf_id);
+-		spin_unlock_bh(&rx_ring->idr_lock);
++		spin_unlock_bh(&rx_ring->bufs_lock);
+ 		return -EINVAL;
+ 	}
+ 
+-	idr_remove(&rx_ring->bufs_idr, buf_id);
+-	spin_unlock_bh(&rx_ring->idr_lock);
++	ath11k_dp_rx_buf_put_id(rx_ring, buf_id);
++	spin_unlock_bh(&rx_ring->bufs_lock);
+ 
+ 	rxcb = ATH11K_SKB_RXCB(msdu);
+ 	ath11k_dp_rx_unmap_buf(ar->ab, msdu, DMA_FROM_DEVICE);
+@@ -4285,17 +4360,17 @@ int ath11k_dp_rx_process_wbm_err(struct
+ 		ar = ab->pdevs[mac_id].ar;
+ 		rx_ring = &ar->dp.rx_refill_buf_ring;
+ 
+-		spin_lock_bh(&rx_ring->idr_lock);
+-		msdu = idr_find(&rx_ring->bufs_idr, buf_id);
++		spin_lock_bh(&rx_ring->bufs_lock);
++		msdu = ath11k_dp_rx_buf_lookup(rx_ring, buf_id);
+ 		if (!msdu) {
+ 			ath11k_warn(ab, "frame rx with invalid buf_id %d pdev %d\n",
+ 				    buf_id, mac_id);
+-			spin_unlock_bh(&rx_ring->idr_lock);
++			spin_unlock_bh(&rx_ring->bufs_lock);
+ 			continue;
+ 		}
+ 
+-		idr_remove(&rx_ring->bufs_idr, buf_id);
+-		spin_unlock_bh(&rx_ring->idr_lock);
++		ath11k_dp_rx_buf_put_id(rx_ring, buf_id);
++		spin_unlock_bh(&rx_ring->bufs_lock);
+ 
+ 		rxcb = ATH11K_SKB_RXCB(msdu);
+ 		ath11k_dp_rx_unmap_buf(ab, msdu, DMA_FROM_DEVICE);
+@@ -4409,17 +4484,17 @@ int ath11k_dp_process_rxdma_err(struct a
+ 			buf_id = FIELD_GET(DP_RXDMA_BUF_COOKIE_BUF_ID,
+ 					   msdu_cookies[i]);
+ 
+-			spin_lock_bh(&rx_ring->idr_lock);
+-			skb = idr_find(&rx_ring->bufs_idr, buf_id);
++			spin_lock_bh(&rx_ring->bufs_lock);
++			skb = ath11k_dp_rx_buf_lookup(rx_ring, buf_id);
+ 			if (!skb) {
+ 				ath11k_warn(ab, "rxdma error with invalid buf_id %d\n",
+ 					    buf_id);
+-				spin_unlock_bh(&rx_ring->idr_lock);
++				spin_unlock_bh(&rx_ring->bufs_lock);
+ 				continue;
+ 			}
+ 
+-			idr_remove(&rx_ring->bufs_idr, buf_id);
+-			spin_unlock_bh(&rx_ring->idr_lock);
++			ath11k_dp_rx_buf_put_id(rx_ring, buf_id);
++			spin_unlock_bh(&rx_ring->bufs_lock);
+ 
+ 			rxcb = ATH11K_SKB_RXCB(skb);
+ 			ath11k_dp_rx_unmap_buf(ab, skb, DMA_FROM_DEVICE);
+@@ -4883,9 +4958,9 @@ u32 ath11k_dp_rx_mon_mpdu_pop(struct ath
+ 			buf_id = FIELD_GET(DP_RXDMA_BUF_COOKIE_BUF_ID,
+ 					   msdu_list.sw_cookie[i]);
+ 
+-			spin_lock_bh(&rx_ring->idr_lock);
+-			msdu = idr_find(&rx_ring->bufs_idr, buf_id);
+-			spin_unlock_bh(&rx_ring->idr_lock);
++			spin_lock_bh(&rx_ring->bufs_lock);
++			msdu = ath11k_dp_rx_buf_lookup(rx_ring, buf_id);
++			spin_unlock_bh(&rx_ring->bufs_lock);
+ 			if (!msdu) {
+ 				ath11k_dbg(ar->ab, ATH11K_DBG_DATA,
+ 					   "msdu_pop: invalid buf_id %d\n", buf_id);
+@@ -4952,9 +5027,9 @@ u32 ath11k_dp_rx_mon_mpdu_pop(struct ath
+ next_msdu:
+ 			pmon->mon_last_buf_cookie = msdu_list.sw_cookie[i];
+ 			rx_bufs_used++;
+-			spin_lock_bh(&rx_ring->idr_lock);
+-			idr_remove(&rx_ring->bufs_idr, buf_id);
+-			spin_unlock_bh(&rx_ring->idr_lock);
++			spin_lock_bh(&rx_ring->bufs_lock);
++			ath11k_dp_rx_buf_put_id(rx_ring, buf_id);
++			spin_unlock_bh(&rx_ring->bufs_lock);
+ 		}
+ 
+ 		ath11k_hal_rx_buf_addr_info_set(rx_link_buf_info, paddr, sw_cookie, rbm);
+@@ -5545,17 +5620,17 @@ ath11k_dp_rx_full_mon_mpdu_pop(struct at
+ 			buf_id = FIELD_GET(DP_RXDMA_BUF_COOKIE_BUF_ID,
+ 					   msdu_list.sw_cookie[i]);
+ 
+-			spin_lock_bh(&rx_ring->idr_lock);
+-			msdu = idr_find(&rx_ring->bufs_idr, buf_id);
++			spin_lock_bh(&rx_ring->bufs_lock);
++			msdu = ath11k_dp_rx_buf_lookup(rx_ring, buf_id);
+ 			if (!msdu) {
+ 				ath11k_dbg(ar->ab, ATH11K_DBG_DATA,
+ 					   "full mon msdu_pop: invalid buf_id %d\n",
+ 					    buf_id);
+-				spin_unlock_bh(&rx_ring->idr_lock);
++				spin_unlock_bh(&rx_ring->bufs_lock);
+ 				goto next_msdu;
+ 			}
+-			idr_remove(&rx_ring->bufs_idr, buf_id);
+-			spin_unlock_bh(&rx_ring->idr_lock);
++			ath11k_dp_rx_buf_put_id(rx_ring, buf_id);
++			spin_unlock_bh(&rx_ring->bufs_lock);
+ 
+ 			rxcb = ATH11K_SKB_RXCB(msdu);
+ 			if (!rxcb->unmapped) {
