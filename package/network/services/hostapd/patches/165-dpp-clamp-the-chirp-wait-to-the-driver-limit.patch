@@ -1,44 +1,44 @@
 From: Felix Fietkau <nbd@nbd.name>
-Date: Sun, 27 Sep 2026 19:00:00 +0200
-Subject: [PATCH] DPP: clamp the chirp wait time to the driver limit
+Date: Tue, 6 Oct 2026 07:44:08 +0200
+Subject: [PATCH] wpa_supplicant: Clamp the off-channel TX wait time to the driver limit
 
-wpas_dpp_chirp_start() sends each Presence Announcement with a wait time
-of 2000 ms. cfg80211 refuses a frame whose wait exceeds the driver's
-maximum remain-on-channel duration with -EINVAL (nl80211_tx_mgmt()), so
-on a driver with a smaller maximum, such as mac80211_hwsim with 1000 ms,
-no chirp is ever transmitted and the enrollee cannot be found.
+offchannel_send_action() limits the wait time to max_remain_on_chan
+only when it requests a remain-on-channel operation. With
+WPA_DRIVER_FLAGS_OFFCHANNEL_TX, it passes the wait time to
+wpa_drv_send_action() unchanged. cfg80211 refuses a frame whose wait
+time is longer than the maximum remain-on-channel duration of the driver
+with -EINVAL (nl80211_tx_mgmt()). wpas_dpp_chirp_start() sends each
+Presence Announcement with a wait time of 2000 ms. On a driver with a
+smaller maximum, such as a mac80211_hwsim radio with channel contexts
+(1000 ms), no chirp goes out, and the Configurator cannot find the
+Enrollee. The PKEX Exchange Request retransmission after a push button
+start has the same problem, since wpas_dpp_pb_pkex_init() sets the
+retransmission wait time to 2000 ms.
 
-Clamp the wait time to max_remain_on_chan, as the other DPP transmit
-paths in this file do.
+Clamp the wait time on the driver TX path as well, so that every caller
+gets the same limit.
 
 Signed-off-by: Felix Fietkau <nbd@nbd.name>
 ---
---- a/wpa_supplicant/dpp_supplicant.c
-+++ b/wpa_supplicant/dpp_supplicant.c
-@@ -5143,6 +5143,7 @@ static void wpas_dpp_chirp_tx_status(str
- static void wpas_dpp_chirp_start(struct wpa_supplicant *wpa_s)
- {
- 	struct wpabuf *msg, *announce = NULL;
-+	unsigned int wait_time;
- 	int type;
+
+--- a/wpa_supplicant/offchannel.c
++++ b/wpa_supplicant/offchannel.c
+@@ -245,7 +245,8 @@ void offchannel_send_action_tx_status(
+  * @bssid: Action frame BSSID
+  * @buf: Frame to transmit starting from the Category field
+  * @len: Length of @buf in bytes
+- * @wait_time: Wait time for response in milliseconds
++ * @wait_time: Wait time for response in milliseconds, limited to the maximum
++ *	remain-on-channel duration of the driver
+  * @tx_cb: Callback function for indicating TX status or %NULL for no callback
+  * @no_cck: Whether CCK rates are to be disallowed for TX rate selection
+  * Returns: 0 on success or -1 on failure
+@@ -309,6 +310,8 @@ int offchannel_send_action(struct wpa_su
+ 		int ret;
  
- 	msg = wpa_s->dpp_presence_announcement;
-@@ -5166,6 +5167,9 @@ static void wpas_dpp_chirp_start(struct
- 			return;
- 		type = DPP_PA_RECONFIG_ANNOUNCEMENT;
- 	}
-+	wait_time = wpa_s->max_remain_on_chan;
-+	if (wait_time > 2000)
-+		wait_time = 2000;
- 	wpa_printf(MSG_DEBUG, "DPP: Chirp on %d MHz", wpa_s->dpp_chirp_freq);
- 	wpa_msg(wpa_s, MSG_INFO, DPP_EVENT_TX "dst=" MACSTR " freq=%u type=%d",
- 		MAC2STR(broadcast), wpa_s->dpp_chirp_freq, type);
-@@ -5173,7 +5177,7 @@ static void wpas_dpp_chirp_start(struct
- 		    wpa_s, wpa_s->dpp_chirp_freq, broadcast,
- 		    wpa_s->own_addr, broadcast,
- 		    wpabuf_head(msg), wpabuf_len(msg),
--		    2000, wpas_dpp_chirp_tx_status, 0) < 0)
-+		    wait_time, wpas_dpp_chirp_tx_status, 0) < 0)
- 		wpas_dpp_chirp_tx_status(wpa_s, wpa_s->dpp_chirp_freq,
- 					 broadcast, wpa_s->own_addr, broadcast,
- 					 wpabuf_head(msg), wpabuf_len(msg),
+ 		iface = wpas_get_tx_interface(wpa_s, src);
++		if (wait_time > wpa_s->max_remain_on_chan)
++			wait_time = wpa_s->max_remain_on_chan;
+ 		wpa_s->action_tx_wait_time = wait_time;
+ 		if (wait_time)
+ 			wpa_s->action_tx_wait_time_used = 1;

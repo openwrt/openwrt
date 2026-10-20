@@ -362,7 +362,7 @@ This allows building both hostapd and wpa_supplicant as a single binary
  	os_memset(&global, 0, sizeof(global));
 --- a/wpa_supplicant/wpa_supplicant.c
 +++ b/wpa_supplicant/wpa_supplicant.c
-@@ -8454,7 +8454,6 @@ struct wpa_interface * wpa_supplicant_ma
+@@ -8453,7 +8453,6 @@ struct wpa_interface * wpa_supplicant_ma
  	return NULL;
  }
  
@@ -370,7 +370,7 @@ This allows building both hostapd and wpa_supplicant as a single binary
  /**
   * wpa_supplicant_match_existing - Match existing interfaces
   * @global: Pointer to global data from wpa_supplicant_init()
-@@ -8489,6 +8488,11 @@ static int wpa_supplicant_match_existing
+@@ -8488,6 +8487,11 @@ static int wpa_supplicant_match_existing
  
  #endif /* CONFIG_MATCH_IFACE */
  
@@ -382,7 +382,7 @@ This allows building both hostapd and wpa_supplicant as a single binary
  
  /**
   * wpa_supplicant_add_iface - Add a new network interface
-@@ -8745,6 +8749,8 @@ struct wpa_global * wpa_supplicant_init(
+@@ -8744,6 +8748,8 @@ struct wpa_global * wpa_supplicant_init(
  #ifndef CONFIG_NO_WPA_MSG
  	wpa_msg_register_ifname_cb(wpa_supplicant_msg_ifname_cb);
  #endif /* CONFIG_NO_WPA_MSG */

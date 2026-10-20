@@ -1,28 +1,24 @@
 From: Felix Fietkau <nbd@nbd.name>
-Date: Sat, 26 Sep 2026 10:00:00 +0200
-Subject: [PATCH] DPP: store the Network Introduction PMKSA for the AP MLD as
- well
+Date: Tue, 6 Oct 2026 07:41:40 +0200
+Subject: [PATCH] DPP: Store the Network Introduction PMKSA for the AP MLD as well
 
-wpas_dpp_rx_peer_disc_resp() adds the PMKSA it derives under the address
-of the affiliated AP that sent the Peer Discovery Response. For an MLD
-association, sme_send_authentication() and wpas_populate_assoc_ies() look
-up the PMKSA by the AP MLD address instead. The lookup misses whenever the
-link address differs from the MLD address, the Association Request then
-carries the DPP AKM without a PMKID, and the AP rejects it with status 53
-(invalid PMKID), because wpa_validate_wpa_ie() requires a PMKSA for DPP.
+wpas_dpp_rx_peer_disc_resp() adds the PMKSA under the address of the
+affiliated AP that sent the Peer Discovery Response. For an MLD
+association, sme_send_authentication() and wpas_populate_assoc_ies()
+look up the PMKSA by the AP MLD address. If the two addresses differ,
+the Association Request carries the DPP AKM without a PMKID, and the AP
+rejects it with status code 53 (invalid PMKID).
 
-The AP side already stores the PMKSA in the per-link and the MLD-level
-cache (commit 0de2f1865d31 "AP MLD: Store PMKSA from DPP to both per-link
-and MLD-level cache"). Do the same in the station: add a copy of the entry
-under the AP MLD address when the scan entry of the responding AP names
-one.
+Also store the entry under the AP MLD address, as the AP does since
+commit 0de2f1865d31 ("AP MLD: Store PMKSA from DPP to both per-link and
+MLD-level cache"). Do the same for the Private Peer Introduction.
 
 Signed-off-by: Felix Fietkau <nbd@nbd.name>
 ---
 
 --- a/wpa_supplicant/dpp_supplicant.c
 +++ b/wpa_supplicant/dpp_supplicant.c
-@@ -2775,6 +2775,27 @@ wpas_dpp_rx_reconfig_auth_conf(struct wp
+@@ -2775,6 +2775,28 @@ wpas_dpp_rx_reconfig_auth_conf(struct wp
  #endif /* CONFIG_DPP2 */
  
  
@@ -32,7 +28,8 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +	struct rsn_pmksa_cache_entry *mld_entry = NULL;
 +	struct wpa_bss *bss;
 +
-+	/* An MLD association looks up the PMKSA by the AP MLD address */
++	/* An MLD association looks up the PMKSA by the AP MLD address, while
++	 * the Peer Discovery Response comes from one affiliated AP. */
 +	bss = wpa_bss_get_bssid_latest(wpa_s, entry->aa);
 +	if (bss && !is_zero_ether_addr(bss->mld_addr) &&
 +	    !ether_addr_equal(bss->mld_addr, entry->aa)) {
@@ -50,7 +47,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  static void wpas_dpp_rx_peer_disc_resp(struct wpa_supplicant *wpa_s,
  				       const u8 *src,
  				       const u8 *buf, size_t len)
-@@ -2917,7 +2938,7 @@ static void wpas_dpp_rx_peer_disc_resp(s
+@@ -2917,7 +2939,7 @@ static void wpas_dpp_rx_peer_disc_resp(s
  	entry->expiration = rnow.sec + seconds;
  	entry->reauth_time = rnow.sec + seconds;
  	entry->network_ctx = ssid;
@@ -59,7 +56,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	wpa_msg(wpa_s, MSG_INFO, DPP_EVENT_INTRO "peer=" MACSTR
  		" status=%u version=%u", MAC2STR(src), status[0], peer_version);
-@@ -4070,7 +4091,7 @@ wpas_dpp_rx_priv_peer_intro_notify(struc
+@@ -4070,7 +4092,7 @@ wpas_dpp_rx_priv_peer_intro_notify(struc
  	entry->expiration = rnow.sec + seconds;
  	entry->reauth_time = rnow.sec + seconds;
  	entry->network_ctx = ssid;

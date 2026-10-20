@@ -16,7 +16,7 @@ as adding/removing interfaces.
  
  	if (state == WPA_COMPLETED && new_connection &&
  	    wpa_s->conf->wfa_gen_capa == WFA_GEN_CAPA_PROTECTED &&
-@@ -8587,6 +8588,8 @@ struct wpa_supplicant * wpa_supplicant_a
+@@ -8586,6 +8587,8 @@ struct wpa_supplicant * wpa_supplicant_a
  	}
  #endif /* CONFIG_P2P */
  
@@ -25,7 +25,7 @@ as adding/removing interfaces.
  	return wpa_s;
  }
  
-@@ -8613,6 +8616,8 @@ int wpa_supplicant_remove_iface(struct w
+@@ -8612,6 +8615,8 @@ int wpa_supplicant_remove_iface(struct w
  	struct wpa_supplicant *parent = wpa_s->parent;
  #endif /* CONFIG_MESH */
  
@@ -34,7 +34,7 @@ as adding/removing interfaces.
  	/* Remove interface from the global list of interfaces */
  	prev = global->ifaces;
  	if (prev == wpa_s) {
-@@ -8932,6 +8937,7 @@ struct wpa_global * wpa_supplicant_init(
+@@ -8931,6 +8936,7 @@ struct wpa_global * wpa_supplicant_init(
  
  	eloop_register_timeout(WPA_SUPPLICANT_CLEANUP_INTERVAL, 0,
  			       wpas_periodic, global, NULL);
@@ -42,7 +42,7 @@ as adding/removing interfaces.
  
  	return global;
  }
-@@ -9004,6 +9010,8 @@ void wpa_supplicant_deinit(struct wpa_gl
+@@ -9003,6 +9009,8 @@ void wpa_supplicant_deinit(struct wpa_gl
  
  	wpas_notify_supplicant_deinitialized(global);
  
@@ -1141,7 +1141,7 @@ as adding/removing interfaces.
  
  
  static int wpas_dpp_listen_start(struct wpa_supplicant *wpa_s,
-@@ -4144,6 +4145,9 @@ void wpas_dpp_rx_action(struct wpa_suppl
+@@ -4145,6 +4146,9 @@ void wpas_dpp_rx_action(struct wpa_suppl
  		return;
  	}
  	wpa_hexdump(MSG_MSGDUMP, "DPP: Received message attributes", buf, len);
