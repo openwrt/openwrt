@@ -1,0 +1,51 @@
+From e2866b8fd37af9b35d529930f1883f9a4c59a0b1 Mon Sep 17 00:00:00 2001
+From: Satoshi Ikeuchi <satosan.ikm@gmail.com>
+Date: Tue, 20 Oct 2026 22:32:01 +0900
+Subject: [PATCH] net: ethernet: qualcomm: ppe: prevent TX error counter
+ underflow
+
+XGMAC reports total and good TX frames through separate counters. If the
+good-frame count exceeds the total, unsigned subtraction wraps and reports
+almost U64_MAX TX errors. On the Arista C-460, the gap persisted while
+idle and grew after link down/up cycles, so read timing alone does not
+explain it.
+
+Read the counters consecutively to narrow the sampling gap and clamp the
+difference at zero to prevent wraparound. Preserve positive differences,
+subsequent GMAC error additions and unrelated statistics. The clamp does
+not correct a persistent offset or recover errors it may hide.
+
+Link: https://github.com/openwrt/openwrt/issues/26054
+Link: https://github.com/openwrt/openwrt/pull/26055#issuecomment-6904694860
+Signed-off-by: Satoshi Ikeuchi <satosan.ikm@gmail.com>
+
+--- a/drivers/net/ethernet/qualcomm/ppe/ppe_port.c
++++ b/drivers/net/ethernet/qualcomm/ppe/ppe_port.c
+@@ -493,6 +493,8 @@ void ppe_port_get_ethtool_stats(struct p
+ void ppe_port_get_stats64(struct ppe_port *ppe_port,
+ 			  struct rtnl_link_stats64 *s)
+ {
++	u64 tx_good;
++
+ 	s->multicast = ppe_port_xgmib_get(ppe_port, xgmib_rx_multicast_g);
+ 
+ 	s->rx_packets = s->multicast;
+@@ -500,6 +502,9 @@ void ppe_port_get_stats64(struct ppe_por
+ 	s->rx_packets += ppe_port_xgmib_get(ppe_port, xgmib_rx_broadcast_g);
+ 
+ 	s->tx_packets = ppe_port_xgmib_get(ppe_port, xgmib_tx_frames);
++	tx_good = ppe_port_xgmib_get(ppe_port, xgmib_tx_frames_g);
++	/* The good-frame count can exceed the total-frame count. */
++	s->tx_errors = s->tx_packets > tx_good ? s->tx_packets - tx_good : 0;
+ 	s->rx_bytes = ppe_port_xgmib_get(ppe_port, xgmib_rx_bytes);
+ 	s->tx_bytes = ppe_port_xgmib_get(ppe_port, xgmib_tx_bytes);
+ 
+@@ -514,8 +519,6 @@ void ppe_port_get_stats64(struct ppe_por
+ 
+ 	s->tx_fifo_errors = ppe_port_xgmib_get(ppe_port,
+ 					       xgmib_tx_underflow_err);
+-	s->tx_errors = s->tx_packets -
+-		ppe_port_xgmib_get(ppe_port, xgmib_tx_frames_g);
+ 
+ 	if (ppe_port->gmib_stats) {
+ 		u64 *gsrc = ppe_port->gmib_stats;
