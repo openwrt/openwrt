@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later OR MIT
 
 #include <linux/delay.h>
+#include <linux/dsa/oob.h>
 #include <linux/clk.h>
 #include <linux/module.h>
 #include <linux/of_device.h>
@@ -2871,6 +2872,19 @@ void qca_ppe_port_mirror_del(struct dsa_switch *ds, int port,
 	ppe_mirror_put(priv, BIT(mirror->ingress));
 }
 
+static int qca_ppe_connect_tag_protocol(struct dsa_switch *ds,
+					enum dsa_tag_protocol proto)
+{
+	struct dsa_oob_tagger_data *data = ds->tagger_data;
+
+	if (proto != DSA_TAG_PROTO_OOB)
+		return -EPROTONOSUPPORT;
+
+	data->flow_xmit = ppe_flow_xmit;
+
+	return 0;
+}
+
 static const struct dsa_switch_ops qca_ppe_ops = {
 	.port_setup_tc		= qca_ppe_setup_tc,
 	.cls_flower_add		= qca_ppe_cls_flower_add,
@@ -2888,6 +2902,7 @@ static const struct dsa_switch_ops qca_ppe_ops = {
 	.port_get_apptrust	= qca_ppe_port_get_apptrust,
 	.port_set_apptrust	= qca_ppe_port_set_apptrust,
 	.get_tag_protocol	= qca_ppe_get_tag_protocol,
+	.connect_tag_protocol	= qca_ppe_connect_tag_protocol,
 	.setup			= qca_ppe_setup,
 	.teardown		= qca_ppe_teardown,
 	.set_ageing_time	= qca_ppe_set_ageing_time,

@@ -1445,6 +1445,8 @@ struct qca_ppe_priv {
 	struct ppe_res *nexthop;
 	struct ppe_res *my_mac;
 	u16 *host_ref;
+	int *flow_xdev;
+	atomic_t flow_xmit_drop;
 	u16 l3_if_ref[PPE_VSI_MAX];
 	struct ppe_uplink uplink[PPE_PPPOE_SESSIONS];
 	struct ppe_pppoe_session pppoe[PPE_PPPOE_SESSIONS];
@@ -1733,6 +1735,7 @@ struct flow_block_offload;
 int ppe_setup_ft_block(struct qca_ppe_priv *priv,
 		       struct flow_block_offload *f);
 int ppe_flow_offload_init(struct qca_ppe_priv *priv);
+bool ppe_flow_xmit(struct dsa_switch *ds, struct sk_buff *skb, u32 flow);
 void ppe_flow_purge_vsi(struct qca_ppe_priv *priv, u32 vsi);
 void ppe_flow_offload_exit(struct qca_ppe_priv *priv);
 
