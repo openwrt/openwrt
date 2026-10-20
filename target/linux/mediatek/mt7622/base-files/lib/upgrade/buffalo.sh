@@ -118,12 +118,23 @@ buffalo_upgrade_ubinized() {
 	echo 3 > /proc/sys/vm/drop_caches
 
 	local mtdnum="$( find_mtd_index "ubi" )"
+	local was_concat=0
+	buffalo_ubi_is_concat && was_concat=1
 	# if no "ubi", don't return error for the purpose of recovery
 	# ex: recovery after accidental erasing "firmware" partition
 	if [ ! "$mtdnum" ]; then
 		echo "cannot find ubi mtd partition \"ubi\", skip detachment"
 	else
 		ubidetach -m "$mtdnum"
+	fi
+
+	# the image has the old layout, whose "ubi" does not include WTB: do not leave the
+	# data of the concatenated UBI there
+	if [ "$was_concat" = 1 ]; then
+		mtd erase WTB || {
+			echo "Failed to erase the WTB partition"
+			exit 1
+		}
 	fi
 
 	# erase all data in "firmware"
@@ -136,11 +147,57 @@ buffalo_upgrade_ubinized() {
 	fi
 }
 
+# On the WSR-3200AX4S the "ubi" partition is the UBI area of "firmware" (18 MiB) and the
+# "WTB" partition (54 MiB) concatenated by the device tree (virtual_flash). The stock
+# firmware keeps its own UBI ("dpi" volume) in WTB, and a UBI that mixes two UBI images
+# can not be attached. A factory image is not affected, it carries the UBI EOF marker and
+# UBI erases every block after the marker before it compares image sequence numbers. A
+# sysupgrade image has no marker, so there WTB has to be empty when it becomes a part of
+# "ubi" and has to be emptied again when the old layout comes back.
+
+# true if the running kernel has the concatenated "ubi" (bigger than the UBI area of "firmware")
+buffalo_ubi_is_concat() {
+	local ubi_size
+
+	[ "$(board_name)" = "buffalo,wsr-3200ax4s" ] || return 1
+
+	# the size of "ubi" is the 3rd column of /proc/mtd, in hex
+	ubi_size="$(grep '"ubi"' /proc/mtd | sed 's/^mtd[0-9]*:[ \t]*\([0-9a-f]*\).*/\1/')"
+	[ -n "$ubi_size" ] && [ "$((0x$ubi_size))" -gt "$((0x1200000))" ]
+}
+
+# erase WTB, its UBI (if any) is detached first
+buffalo_erase_wtb() {
+	local wtb_mtd="$(find_mtd_index WTB)"
+
+	[ -n "$wtb_mtd" ] || return 0
+	echo "Erasing the WTB partition"
+	if [ -n "$(nand_find_ubi WTB)" ]; then
+		nand_detach_ubi WTB || return 1
+	fi
+	mtd erase WTB
+}
+
+# While the kernel still has the old layout, erase WTB before a sysupgrade so that it is
+# empty when it becomes a part of "ubi" after the next boot.
+buffalo_prepare_wtb() {
+	[ "$(board_name)" = "buffalo,wsr-3200ax4s" ] || return 0
+
+	# already the concatenated layout: WTB is a part of the running UBI
+	buffalo_ubi_is_concat && return 0
+
+	buffalo_erase_wtb
+}
+
 buffalo_do_upgrade() {
 	if [ "$(get_magic_long "$1")" = "$BUFFALO_TRX_MAGIC" ]; then
 		buffalo_upgrade_ubinized "$1"
 	else
 		CI_KERNPART="firmware"
+		buffalo_prepare_wtb || {
+			echo "Failed to prepare the WTB partition"
+			exit 1
+		}
 		nand_do_upgrade "$1"
 	fi
 }
