@@ -305,7 +305,7 @@ ifeq ($(DUMP),1)
     ifneq ($(CONFIG_OF),)
       FEATURES += dt
     endif
-    ifneq ($(CONFIG_GENERIC_GPIO)$(CONFIG_GPIOLIB),)
+    ifneq ($(CONFIG_GPIOLIB),)
       FEATURES += gpio
     endif
     ifneq ($(CONFIG_PCI),)
