@@ -423,7 +423,7 @@ define KernelPackage/sound-hda-codec-realtek
 	$(LINUX_DIR)/sound/hda/codecs/realtek/snd-hda-codec-alc861vd.ko \
 	$(LINUX_DIR)/sound/hda/codecs/realtek/snd-hda-codec-alc880.ko \
 	$(LINUX_DIR)/sound/hda/codecs/realtek/snd-hda-codec-alc882.ko
-  AUTOLOAD:=$(call AutoProbe,snd-hda-codec-realtek LINUX_6_18:snd-hda-codec-realtek-lib LINUX_6_18:snd-hda-codec-alc260 LINUX_6_18:snd-hda-codec-alc262 LINUX_6_18:snd-hda-codec-alc268 LINUX_6_18:snd-hda-codec-alc269 LINUX_6_18:snd-hda-codec-alc662 LINUX_6_18:snd-hda-codec-alc680 LINUX_6_18:snd-hda-codec-alc861 LINUX_6_18:snd-hda-codec-alc861vd LINUX_6_18:snd-hda-codec-alc880 LINUX_6_18:snd-hda-codec-alc882)
+  AUTOLOAD:=$(call AutoProbe,snd-hda-codec-realtek-lib snd-hda-codec-alc260 snd-hda-codec-alc262 snd-hda-codec-alc268 snd-hda-codec-alc269 snd-hda-codec-alc662 snd-hda-codec-alc680 snd-hda-codec-alc861 snd-hda-codec-alc861vd snd-hda-codec-alc880 snd-hda-codec-alc882)
   $(call AddDepends/sound,kmod-sound-hda-core +kmod-snd-hda-scodec-component)
 endef
 
@@ -513,7 +513,7 @@ define KernelPackage/sound-hda-codec-cirrus
   	$(LINUX_DIR)/sound/hda/codecs/cirrus/snd-hda-codec-cs420x.ko \
 	$(LINUX_DIR)/sound/hda/codecs/cirrus/snd-hda-codec-cs421x.ko \
 	$(LINUX_DIR)/sound/hda/codecs/cirrus/snd-hda-codec-cs8409.ko
-  AUTOLOAD:=$(call AutoProbe,snd-hda-codec-cirrus LINUX_6_18:snd-hda-codec-cs420x LINUX_6_18:snd-hda-codec-cs421x LINUX_6_18:snd-hda-codec-cs8409)
+  AUTOLOAD:=$(call AutoProbe,snd-hda-codec-cs420x snd-hda-codec-cs421x snd-hda-codec-cs8409)
   $(call AddDepends/sound,kmod-sound-hda-core)
 endef
 
@@ -612,7 +612,7 @@ define KernelPackage/sound-hda-codec-hdmi
 	$(LINUX_DIR)/sound/hda/codecs/hdmi/snd-hda-codec-nvhdmi.ko \
 	$(LINUX_DIR)/sound/hda/codecs/hdmi/snd-hda-codec-nvhdmi-mcp.ko \
 	$(LINUX_DIR)/sound/hda/codecs/hdmi/snd-hda-codec-tegrahdmi.ko
-  AUTOLOAD:=$(call AutoProbe,snd-hda-codec-hdmi LINUX_6_18:snd-hda-codec-simplehdmi LINUX_6_18:snd-hda-codec-intelhdmi LINUX_6_18:snd-hda-codec-atihdmi LINUX_6_18:snd-hda-codec-nvhdmi LINUX_6_18:snd-hda-codec-nvhdmi-mcp LINUX_6_18:snd-hda-codec-tegrahdmi)
+  AUTOLOAD:=$(call AutoProbe,snd-hda-codec-hdmi snd-hda-codec-simplehdmi snd-hda-codec-intelhdmi snd-hda-codec-atihdmi snd-hda-codec-nvhdmi snd-hda-codec-nvhdmi-mcp snd-hda-codec-tegrahdmi)
   $(call AddDepends/sound,kmod-sound-hda-core)
 endef
 

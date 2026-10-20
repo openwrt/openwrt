@@ -294,7 +294,6 @@ define KernelPackage/cec-core
   TITLE:=CEC framework
   HIDDEN:=1
   KCONFIG:=CONFIG_CEC_CORE
-  DEPENDS:=@LINUX_6_18
   FILES:=$(LINUX_DIR)/drivers/media/cec/core/cec.ko
   AUTOLOAD:=$(call AutoProbe,cec)
 endef
@@ -344,7 +343,7 @@ $(eval $(call KernelPackage,drm-buddy))
 define KernelPackage/drm-display-helper
   SUBMENU:=$(VIDEO_MENU)
   TITLE:=DRM helpers for display adapters drivers
-  DEPENDS:=video-support +kmod-drm-kms-helper +LINUX_6_18:kmod-cec-core
+  DEPENDS:=video-support +kmod-drm-kms-helper +kmod-cec-core
   HIDDEN:=1
   KCONFIG:=CONFIG_DRM_DISPLAY_HELPER
   FILES:=$(LINUX_DIR)/drivers/gpu/drm/display/drm_display_helper.ko
@@ -794,7 +793,7 @@ $(eval $(call KernelPackage,drm-imx-hdmi))
 define KernelPackage/drm-imx-ldb
   SUBMENU:=$(VIDEO_MENU)
   TITLE:=Freescale i.MX LVDS DRM support
-  DEPENDS:=@(TARGET_imx&&TARGET_imx_cortexa9) +kmod-backlight +kmod-drm-panel-simple kmod-drm-imx +LINUX_6_18:kmod-drm-display-helper
+  DEPENDS:=@(TARGET_imx&&TARGET_imx_cortexa9) +kmod-backlight +kmod-drm-panel-simple kmod-drm-imx +kmod-drm-display-helper
   KCONFIG:=CONFIG_DRM_IMX_LDB \
 	CONFIG_DRM_IMX_LEGACY_BRIDGE \
 	CONFIG_DRM_PANEL_SAMSUNG_LD9040=n \
