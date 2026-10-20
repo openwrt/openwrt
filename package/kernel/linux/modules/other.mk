@@ -166,8 +166,7 @@ define KernelPackage/mlxreg
 	CONFIG_SENSORS_MLXREG_FAN \
 	CONFIG_LEDS_MLXREG
   FILES:= \
-	$(LINUX_DIR)/drivers/platform/x86/mlx-platform.ko@lt6.18 \
-	$(LINUX_DIR)/drivers/platform/mellanox/mlx-platform.ko@ge6.18 \
+	$(LINUX_DIR)/drivers/platform/mellanox/mlx-platform.ko \
 	$(LINUX_DIR)/drivers/platform/mellanox/mlxreg-hotplug.ko \
 	$(LINUX_DIR)/drivers/platform/mellanox/mlxreg-io.ko \
 	$(LINUX_DIR)/drivers/hwmon/mlxreg-fan.ko \
@@ -874,8 +873,7 @@ define KernelPackage/ptp-qoriq
   TITLE:=Freescale QorIQ PTP support
   DEPENDS:=@(TARGET_mpc85xx||TARGET_qoriq) +kmod-ptp
   KCONFIG:=CONFIG_PTP_1588_CLOCK_QORIQ
-  FILES:=$(LINUX_DIR)/drivers/ptp/ptp-qoriq.ko@lt6.18 \
-	$(LINUX_DIR)/drivers/ptp/ptp_qoriq.ko@ge6.18
+  FILES:=$(LINUX_DIR)/drivers/ptp/ptp_qoriq.ko
   AUTOLOAD:=$(call AutoProbe,ptp-qoriq)
 endef
 

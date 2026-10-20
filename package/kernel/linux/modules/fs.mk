@@ -103,7 +103,6 @@ define KernelPackage/fs-smbfs-common
   KCONFIG:=\
 	CONFIG_SMBFS
   FILES:= \
-	$(LINUX_DIR)/fs/smb/common/cifs_arc4.ko@lt6.18 \
 	$(LINUX_DIR)/fs/smb/common/cifs_md4.ko
 endef
 
@@ -468,7 +467,7 @@ define KernelPackage/fs-nfs-common
 	CONFIG_NFS_V4_1_IMPLEMENTATION_ID_DOMAIN="kernel.org" \
 	CONFIG_NFS_V4_1_MIGRATION=n \
 	CONFIG_NFS_V4_2=y \
-	CONFIG_NFSD_V4_DELEG_TIMESTAMPS=n@ge6.18 \
+	CONFIG_NFSD_V4_DELEG_TIMESTAMPS=n \
 	CONFIG_NFS_V4_2_READ_PLUS=n
   FILES:= \
 	$(LINUX_DIR)/fs/lockd/lockd.ko \

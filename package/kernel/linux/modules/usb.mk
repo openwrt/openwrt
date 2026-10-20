@@ -575,8 +575,8 @@ define KernelPackage/usb-dwc3-qcom
   KCONFIG:= CONFIG_USB_DWC3_QCOM
   FILES:= \
 	$(LINUX_DIR)/drivers/usb/dwc3/dwc3-qcom.ko \
-	$(LINUX_DIR)/drivers/usb/dwc3/dwc3-qcom-legacy.ko@ge6.18
-  AUTOLOAD:=$(call AutoLoad,53,dwc3-qcom dwc3-qcom-legacy@ge6.18,1)
+	$(LINUX_DIR)/drivers/usb/dwc3/dwc3-qcom-legacy.ko
+  AUTOLOAD:=$(call AutoLoad,53,dwc3-qcom dwc3-qcom-legacy,1)
   $(call AddDepends/usb)
 endef
 
