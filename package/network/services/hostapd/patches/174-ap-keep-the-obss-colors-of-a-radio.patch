@@ -48,7 +48,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	hostapd_cleanup_iface_partial(iface);
  	hostapd_config_free(iface->conf);
-@@ -5069,6 +5072,7 @@ void hostapd_switch_color_timeout_handle
+@@ -5098,6 +5101,7 @@ void hostapd_switch_color_timeout_handle
  	struct hostapd_data *hapd = (struct hostapd_data *) eloop_data;
  	os_time_t delta_t;
  	unsigned int b;
@@ -56,7 +56,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	int i, r;
  
  	 /* CCA can be triggered once the handler constantly receives
-@@ -5086,10 +5090,12 @@ void hostapd_switch_color_timeout_handle
+@@ -5115,10 +5119,12 @@ void hostapd_switch_color_timeout_handle
  	 * during the CCA countdown carry the correct Disabled=1 state.
  	 */
  	hapd->iface->conf->he_op.he_bss_color_disabled = 1;
@@ -70,7 +70,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  			break;
  
  		r = (r + 1) % HE_OPERATION_BSS_COLOR_MAX;
-@@ -5132,6 +5138,112 @@ void hostapd_switch_color_timeout_handle
+@@ -5161,6 +5167,112 @@ void hostapd_switch_color_timeout_handle
  }
  
  
@@ -183,7 +183,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  bool hostapd_is_cca_in_progress(struct hostapd_iface *iface)
  {
  	size_t i;
-@@ -5155,7 +5267,6 @@ void hostapd_switch_color(struct hostapd
+@@ -5184,7 +5296,6 @@ void hostapd_switch_color(struct hostapd
  	if (os_get_reltime(&now))
  		return;
  
@@ -201,7 +201,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  #endif /* CONFIG_IEEE80211AX */
  
  #ifdef CONFIG_P2P
-@@ -791,6 +790,14 @@ struct hostapd_iface {
+@@ -793,6 +792,14 @@ struct hostapd_iface {
  		bool data_valid;
  	} afc;
  #endif /* CONFIG_AFC */
@@ -216,7 +216,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  };
  
  /* hostapd.c */
-@@ -846,6 +853,12 @@ int hostapd_owe_trans_get_info(struct ho
+@@ -848,6 +855,12 @@ int hostapd_owe_trans_get_info(struct ho
  void hostapd_ocv_check_csa_sa_query(void *eloop_ctx, void *timeout_ctx);
  
  void hostapd_switch_color(struct hostapd_data *hapd, u64 bitmap);
@@ -229,7 +229,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  void hostapd_cleanup_cca_params(struct hostapd_data *hapd);
  #ifdef CONFIG_AFC
  int hostap_afc_get_chan_max_eirp_power(struct hostapd_iface *iface, bool psd,
-@@ -953,6 +966,7 @@ void free_beacon_data(struct beacon_data
+@@ -955,6 +968,7 @@ void free_beacon_data(struct beacon_data
  int hostapd_fill_cca_settings(struct hostapd_data *hapd,
  			      struct cca_settings *settings);
  void hostapd_switch_color_timeout_handler(void *eloop_data, void *user_ctx);

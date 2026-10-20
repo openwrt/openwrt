@@ -380,7 +380,7 @@ as adding/removing interfaces.
  {
  	if (!hapd)
  		return;
-@@ -3323,7 +3341,7 @@ fail:
+@@ -3359,7 +3377,7 @@ fail:
  }
  
  
@@ -389,7 +389,7 @@ as adding/removing interfaces.
  {
  #ifdef CONFIG_IEEE80211BE
  	struct hostapd_mld *mld, **all_mld;
-@@ -4204,7 +4222,8 @@ int hostapd_remove_iface(struct hapd_int
+@@ -4240,7 +4258,8 @@ int hostapd_remove_iface(struct hapd_int
  		hapd_iface = interfaces->iface[i];
  		if (hapd_iface == NULL)
  			return -1;
@@ -429,7 +429,7 @@ as adding/removing interfaces.
  	int interface_added; /* virtual interface added for this BSS */
  	unsigned int started:1;
  	unsigned int disabled:1;
-@@ -595,6 +602,7 @@ struct hostapd_mld {
+@@ -597,6 +604,7 @@ struct hostapd_mld {
   */
  struct hostapd_iface {
  	struct hapd_interfaces *interfaces;
@@ -437,7 +437,7 @@ as adding/removing interfaces.
  	void *owner;
  	char *config_fname;
  	struct hostapd_config *conf;
-@@ -841,11 +849,16 @@ struct hostapd_iface * hostapd_init(stru
+@@ -843,11 +851,16 @@ struct hostapd_iface * hostapd_init(stru
  struct hostapd_iface *
  hostapd_interface_init_bss(struct hapd_interfaces *interfaces, const char *phy,
  			   const char *config_fname, int debug);
@@ -454,7 +454,7 @@ as adding/removing interfaces.
  int hostapd_enable_iface(struct hostapd_iface *hapd_iface);
  int hostapd_reload_iface(struct hostapd_iface *hapd_iface);
  int hostapd_reload_bss_only(struct hostapd_data *bss);
-@@ -871,6 +884,7 @@ hostapd_switch_channel_fallback(struct h
+@@ -873,6 +886,7 @@ hostapd_switch_channel_fallback(struct h
  void hostapd_cleanup_cs_params(struct hostapd_data *hapd);
  void hostapd_periodic_iface(struct hostapd_iface *iface);
  int hostapd_owe_trans_get_info(struct hostapd_data *hapd);

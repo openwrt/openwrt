@@ -21,7 +21,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 ---
 --- a/src/ap/hostapd.c
 +++ b/src/ap/hostapd.c
-@@ -5404,7 +5404,8 @@ void hostapd_switch_color_timeout_handle
+@@ -5440,7 +5440,8 @@ void hostapd_switch_color_timeout_handle
  {
  	struct hostapd_data *hapd = (struct hostapd_data *) eloop_data;
  	os_time_t delta_t;
@@ -31,7 +31,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	u64 avoided;
  	int i, r;
  
-@@ -5422,6 +5423,7 @@ void hostapd_switch_color_timeout_handle
+@@ -5458,6 +5459,7 @@ void hostapd_switch_color_timeout_handle
  	 * hostapd_fill_cca_settings()) and any incidental beacon rebuild
  	 * during the CCA countdown carry the correct Disabled=1 state.
  	 */
@@ -39,7 +39,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	hapd->iface->conf->he_op.he_bss_color_disabled = 1;
  	hostapd_bss_colors_in_use_update(hapd->iface);
  
-@@ -5464,12 +5466,19 @@ void hostapd_switch_color_timeout_handle
+@@ -5500,12 +5502,19 @@ void hostapd_switch_color_timeout_handle
  		ret = hostapd_drv_switch_color(bss, &settings);
  		if (ret)
  			hostapd_cleanup_cca_params(bss);

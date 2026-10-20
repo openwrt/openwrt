@@ -1,0 +1,160 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Tue, 20 Oct 2026 14:42:20 +0200
+Subject: [PATCH] AP MLD: Assign a free link ID to an affiliated AP
+
+hostapd_bss_alloc_link_id() gives each affiliated AP the next value of
+next_link_id and never checks it against MAX_NUM_MLD_LINKS. A link
+that is removed and added again at run time takes a new link ID. After
+15 link additions to one AP MLD, for example with REMOVE and ADD on the
+global control interface, the link ID indexes past the per-link arrays
+such as links[] of struct mld_info.
+
+Track the link IDs that the affiliated APs of an AP MLD use, and assign
+the first free one from next_link_id on, wrapping around. Refuse the AP
+if no link ID is free.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+
+--- a/src/ap/hostapd.c
++++ b/src/ap/hostapd.c
+@@ -3128,11 +3128,15 @@ static void hostapd_mld_ref_inc(struct h
+ }
+ 
+ 
+-static void hostapd_mld_ref_dec(struct hostapd_mld *mld)
++static void hostapd_mld_ref_dec(struct hostapd_data *hapd)
+ {
++	struct hostapd_mld *mld = hapd->mld;
++
+ 	if (!mld)
+ 		return;
+ 
++	mld->used_link_ids &= ~BIT(hapd->mld_link_id);
++
+ 	if (!mld->refcount) {
+ 		wpa_printf(MSG_ERROR, "AP MLD %s: Ref count underflow",
+ 			   mld->name);
+@@ -3154,7 +3158,7 @@ void hostapd_interface_free(struct hosta
+ 			break;
+ #ifdef CONFIG_IEEE80211BE
+ 		if (iface->bss[j])
+-			hostapd_mld_ref_dec(iface->bss[j]->mld);
++			hostapd_mld_ref_dec(iface->bss[j]);
+ #endif /* CONFIG_IEEE80211BE */
+ 		wpa_printf(MSG_DEBUG, "%s: free hapd %p",
+ 			   __func__, iface->bss[j]);
+@@ -3179,12 +3183,39 @@ struct hostapd_iface * hostapd_alloc_ifa
+ 
+ 
+ #ifdef CONFIG_IEEE80211BE
+-static void hostapd_bss_alloc_link_id(struct hostapd_data *hapd)
++
++static int hostapd_mld_unused_link_id(struct hostapd_mld *mld)
++{
++	int i, link_id;
++
++	for (i = 0; i < MAX_NUM_MLD_LINKS; i++) {
++		link_id = (mld->next_link_id + i) % MAX_NUM_MLD_LINKS;
++		if (!(mld->used_link_ids & BIT(link_id)))
++			return link_id;
++	}
++
++	return -1;
++}
++
++
++static int hostapd_bss_alloc_link_id(struct hostapd_data *hapd,
++				     struct hostapd_mld *mld)
+ {
+-	hapd->mld_link_id = hapd->mld->next_link_id++;
++	int link_id = hostapd_mld_unused_link_id(mld);
++
++	if (link_id < 0) {
++		wpa_printf(MSG_ERROR, "AP MLD %s: No free link ID", mld->name);
++		return -1;
++	}
++	mld->next_link_id = (link_id + 1) % MAX_NUM_MLD_LINKS;
++
++	mld->used_link_ids |= BIT(link_id);
++	hapd->mld_link_id = link_id;
+ 	wpa_printf(MSG_DEBUG, "AP MLD: %s: Link ID %d assigned.",
+-		   hapd->mld->name, hapd->mld_link_id);
++		   mld->name, hapd->mld_link_id);
++	return 0;
+ }
++
+ #endif /* CONFIG_IEEE80211BE */
+ 
+ 
+@@ -3210,14 +3241,12 @@ void hostapd_bss_setup_multi_link(struct
+ 		if (!mld || os_strcmp(conf->iface, mld->name) != 0)
+ 			continue;
+ 
++		if (hostapd_bss_alloc_link_id(hapd, mld))
++			return;
+ 		hapd->mld = mld;
+ 		hostapd_mld_ref_inc(mld);
+-		hostapd_bss_alloc_link_id(hapd);
+-		break;
+-	}
+-
+-	if (hapd->mld)
+ 		return;
++	}
+ 
+ 	mld = os_zalloc(sizeof(struct hostapd_mld));
+ 	if (!mld)
+@@ -3233,12 +3262,12 @@ void hostapd_bss_setup_multi_link(struct
+ 
+ 	/* Initialize MLD control interfaces early to allow external monitoring
+ 	 * of link setup operations. */
+-	if (interfaces->mld_ctrl_iface_init(mld))
++	if (interfaces->mld_ctrl_iface_init(mld) ||
++	    hostapd_bss_alloc_link_id(hapd, mld))
+ 		goto fail;
+ 
+ 	hapd->mld = mld;
+ 	hostapd_mld_ref_inc(mld);
+-	hostapd_bss_alloc_link_id(hapd);
+ 
+ 	all_mld = os_realloc_array(interfaces->mld, interfaces->mld_count + 1,
+ 				   sizeof(struct hostapd_mld *));
+@@ -3983,7 +4012,7 @@ int hostapd_add_iface(struct hapd_interf
+ 				hostapd_config_free_bss(hapd->conf);
+ 				hapd->conf = NULL;
+ #ifdef CONFIG_IEEE80211BE
+-				hostapd_mld_ref_dec(hapd->mld);
++				hostapd_mld_ref_dec(hapd);
+ #endif /* CONFIG_IEEE80211BE */
+ 				os_free(hapd);
+ 				return -1;
+@@ -4077,7 +4106,7 @@ fail:
+ 				hostapd_bss_link_deinit(hapd);
+ 				hostapd_cleanup(hapd);
+ #ifdef CONFIG_IEEE80211BE
+-				hostapd_mld_ref_dec(hapd->mld);
++				hostapd_mld_ref_dec(hapd);
+ #endif /* CONFIG_IEEE80211BE */
+ 				os_free(hapd);
+ 				hapd_iface->bss[i] = NULL;
+@@ -4112,7 +4141,7 @@ static int hostapd_remove_bss(struct hos
+ 		hostapd_config_free_bss(hapd->conf);
+ 		hapd->conf = NULL;
+ #ifdef CONFIG_IEEE80211BE
+-		hostapd_mld_ref_dec(hapd->mld);
++		hostapd_mld_ref_dec(hapd);
+ #endif /* CONFIG_IEEE80211BE */
+ 		os_free(hapd);
+ 
+--- a/src/ap/hostapd.h
++++ b/src/ap/hostapd.h
+@@ -552,6 +552,8 @@ struct hostapd_mld {
+ 	char name[IFNAMSIZ + 1];
+ 	u8 mld_addr[ETH_ALEN];
+ 	u8 next_link_id;
++	u16 used_link_ids; /* bitmap of the link IDs of the hapds referencing
++			    * this */
+ 	u8 num_links;
+ 	/* Number of hostapd_data (hapd) referencing this. num_links cannot be
+ 	 * used since num_links can go to 0 even when a BSS is disabled and
