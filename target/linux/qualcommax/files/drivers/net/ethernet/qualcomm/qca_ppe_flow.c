@@ -303,6 +303,8 @@ static int ppe_offload_show(struct seq_file *s, void *data)
 	seq_printf(s, "%-24s %u\n", "reinstalled", priv->flow_reinstalled);
 	seq_printf(s, "%-24s %u\n", "destroy_miss", priv->flow_destroy_miss);
 	seq_printf(s, "%-24s %u\n", "stale", priv->flow_stale);
+	seq_printf(s, "%-24s %u\n", "xmit_drop",
+		   atomic_read(&priv->flow_xmit_drop));
 	seq_printf(s, "%-24s %u\n", "sparse_promoted",
 		   priv->flow_sparse_promoted);
 	seq_printf(s, "%-24s %u\n", "sparse_demoted",

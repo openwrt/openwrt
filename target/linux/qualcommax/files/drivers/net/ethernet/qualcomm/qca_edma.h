@@ -11,6 +11,7 @@
 #include <linux/if_vlan.h>
 #include <linux/netdevice.h>
 #include <linux/platform_device.h>
+#include <net/dsa.h>
 #include <net/page_pool/helpers.h>
 
 #define EDMA_HW_RESET_ID "edma_rst"
@@ -165,6 +166,7 @@
 #define EDMA_RXPH_HASH_FLAG_MASK	0x7
 #define EDMA_RXPH_HASH_5TUPLE		1
 #define EDMA_RXPH_HASH_3TUPLE		2
+#define EDMA_RXPH_HASH_FLOW		7
 /* Where a stripped tag is reported: the tag flags in pre2 and the S-tag and
  * C-tag TCIs in the high and low halves of pre3.
  */

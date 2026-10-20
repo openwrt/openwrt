@@ -17,6 +17,7 @@
  */
 
 #include <linux/bitfield.h>
+#include <linux/hash.h>
 #include <linux/if_pppox.h>
 #include <linux/if_vlan.h>
 #include <linux/netdevice.h>
@@ -75,6 +76,7 @@ struct ppe_flow_entry {
 	int uplink;
 	int in_uplink;
 	int session;
+	int xdev;
 	u8 iport;
 	u8 oport;
 	u16 ivid;
@@ -979,6 +981,57 @@ static void ppe_flow_free_egress(struct qca_ppe_priv *priv,
 		ppe_uplink_put(priv, entry->uplink);
 }
 
+static bool ppe_cpu_xmit = true;
+module_param_named(cpu_xmit, ppe_cpu_xmit, bool, 0644);
+MODULE_PARM_DESC(cpu_xmit,
+		 "Route flows to devices outside the switch in hardware and pass them out through the CPU port");
+
+/* A flow out of a device the switch cannot reach, such as a Wi-Fi interface,
+ * is still routed by the PPE. Its frames come to the CPU finished, and the
+ * driver only queues them on the device. The device has to take Ethernet
+ * frames as the nexthop builds them, with no tag or session to push.
+ */
+static bool ppe_cpu_xmit_ok(const struct ppe_flow_data *data)
+{
+	return ppe_cpu_xmit && data->odev->type == ARPHRD_ETHER &&
+	       !data->vlan_valid && !data->pppoe_valid;
+}
+
+/* A frame the PPE routed to the CPU port for a flow whose egress is a
+ * device outside the switch. It arrives finished, so it goes straight out.
+ */
+bool ppe_flow_xmit(struct dsa_switch *ds, struct sk_buff *skb, u32 flow)
+{
+	struct qca_ppe_priv *priv = ds_to_priv(ds);
+	struct net_device *dev;
+	int ifindex;
+
+	if (flow >= priv->data->num_flow_entries)
+		return false;
+	ifindex = READ_ONCE(priv->flow_xdev[flow]);
+	if (!ifindex)
+		return false;
+
+	dev = dev_get_by_index_rcu(dev_net(skb->dev), ifindex);
+	if (unlikely(!dev || !netif_running(dev))) {
+		atomic_inc(&priv->flow_xmit_drop);
+		kfree_skb(skb);
+		return true;
+	}
+
+	/* What the egress classifies on - tc, the Wi-Fi access category -
+	 * reads the IP header and the flow hash, so both are set as the
+	 * receive path would have. The flow index is unique per flow.
+	 */
+	skb->dev = dev;
+	skb_reset_mac_header(skb);
+	skb_set_network_header(skb, ETH_HLEN);
+	skb->protocol = eth_hdr(skb)->h_proto;
+	skb_set_hash(skb, hash_32(flow, 32), PKT_HASH_TYPE_L4);
+	dev_queue_xmit(skb);
+	return true;
+}
+
 /* Build the egress L3 interface, nexthop and public-address entries this rule
  * needs, and program any that were not already in use by another flow.
  */
@@ -993,6 +1046,10 @@ static int ppe_flow_alloc_egress(struct qca_ppe_priv *priv,
 	int port, ret;
 
 	port = ppe_flow_port_by_ifindex(priv, data->odev->ifindex);
+	if (port < 0 && ppe_cpu_xmit_ok(data)) {
+		port = QCA_PPE_CPU_PORT;
+		entry->xdev = data->odev->ifindex;
+	}
 	if (port < 0)
 		return port;
 
@@ -1234,8 +1291,12 @@ static void ppe_flow_entry_destroy(struct qca_ppe_priv *priv,
 
 		ppe_flow_account(priv, entry, pkts, bytes);
 	}
-	if (age != -ENOENT)
+	/* A slot handed on may carry another flow's egress by now. */
+	if (age != -ENOENT) {
+		if (entry->xdev)
+			WRITE_ONCE(priv->flow_xdev[entry->index], 0);
 		ppe_flow_entry_delete(priv, entry->index);
+	}
 	ppe_host_ref_put(priv, entry->host_index);
 	ppe_flow_free_egress(priv, entry);
 	ppe_flow_free_ingress(priv, entry);
@@ -1592,6 +1653,8 @@ static int ppe_flow_offload_replace(struct ppe_flow_block *fb,
 	}
 
 	ppe_host_ref_get(priv, entry->host_index);
+	if (entry->xdev)
+		WRITE_ONCE(priv->flow_xdev[entry->index], entry->xdev);
 
 	/* The hardware writes the host index it resolved into the entry and
 	 * counts the age down from there, so the stored image carries the one
@@ -1848,11 +1911,16 @@ static int ppe_flow_profile_set(struct qca_ppe_priv *priv,
 	ret = ppe_flow_entry_delete(priv, entry->index);
 	if (ret)
 		return ret;
+	if (entry->xdev)
+		WRITE_ONCE(priv->flow_xdev[entry->index], 0);
 
 	ret = ppe_flow_op(priv, PPE_TBL_OP_ADD, w, entry->nwords,
 			  entry->hwords, entry->nhwords, &index, &host_index);
 	if (ret)
 		return ret;
+	/* The re-added entry may sit in another slot, and its frames name it. */
+	if (entry->xdev)
+		WRITE_ONCE(priv->flow_xdev[index], entry->xdev);
 
 	if (host_index != entry->host_index) {
 		ppe_host_ref_get(priv, host_index);
@@ -1937,8 +2005,10 @@ int ppe_flow_offload_init(struct qca_ppe_priv *priv)
 				      sizeof(*priv->host_ref), GFP_KERNEL);
 	priv->my_mac = devm_kcalloc(dev, PPE_MY_MAC_ENTRIES,
 				    sizeof(*priv->my_mac), GFP_KERNEL);
+	priv->flow_xdev = devm_kcalloc(dev, priv->data->num_flow_entries,
+				       sizeof(*priv->flow_xdev), GFP_KERNEL);
 	if (!priv->eg_l3_if || !priv->pub_ip || !priv->nexthop ||
-	    !priv->host_ref || !priv->my_mac)
+	    !priv->host_ref || !priv->my_mac || !priv->flow_xdev)
 		return -ENOMEM;
 
 	INIT_LIST_HEAD(&priv->flow_list);

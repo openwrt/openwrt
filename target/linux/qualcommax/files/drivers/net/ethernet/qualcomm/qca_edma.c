@@ -612,6 +612,33 @@ static void edma_rx_vlan(struct net_device *netdev, struct sk_buff *skb,
 		__vlan_hwaccel_put_tag(skb, htons(ETH_P_8021Q), tci);
 }
 
+/* The switch routed the frame to the CPU port on a flow it holds, with no
+ * exception: its driver may own the egress and send it on unchanged.
+ */
+static bool edma_rx_flow(struct net_device *netdev, struct sk_buff *skb,
+			 const struct edma_rx_preheader *rxph)
+{
+	u32 pre2 = le32_to_cpu(rxph->rx_pre2);
+	struct dsa_oob_tagger_data *data;
+	struct dsa_port *cpu_dp;
+
+	if (((pre2 >> EDMA_RXPH_HASH_FLAG_SHIFT) & EDMA_RXPH_HASH_FLAG_MASK) !=
+	    EDMA_RXPH_HASH_FLOW ||
+	    le16_to_cpu(rxph->dst_info) != EDMA_PREHDR_DSTINFO_PORTID_IND << 8 ||
+	    FIELD_GET(EDMA_RXPH_CPU_CODE, le32_to_cpu(rxph->rx_pre4)))
+		return false;
+
+	cpu_dp = netdev->dsa_ptr;
+	if (!cpu_dp)
+		return false;
+	data = cpu_dp->ds->tagger_data;
+	if (!data || !data->flow_xmit)
+		return false;
+
+	skb->dev = netdev;
+	return data->flow_xmit(cpu_dp->ds, skb, pre2 & EDMA_RXPH_HASH_MASK);
+}
+
 /* Reads a descriptor and hands its frame's lines to the CPU. The preheader
  * and the headers behind it are prefetched, which the caller does one frame
  * ahead so that they arrive while the frame before is processed.
@@ -719,6 +746,11 @@ static u32 edma_clean_rx(struct edma_queue *q, int budget)
 		skb_mark_for_recycle(skb);
 		skb_reserve(skb, NET_SKB_PAD + EDMA_RX_PREHDR_SIZE);
 		skb_put(skb, pkt_len);
+
+		if (edma_rx_flow(netdev, skb, rxph)) {
+			dev_sw_netstats_rx_add(netdev, pkt_len);
+			goto next;
+		}
 
 		edma_rx_vlan(netdev, skb, rxph);
 		frame = skb->data;
