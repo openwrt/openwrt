@@ -1,0 +1,95 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Tue, 20 Oct 2026 14:21:23 +0200
+Subject: [PATCH] SAE: Fail PWE derivation when the y coordinate cannot be computed
+
+Since sae_derive_pwe_ecc() computes the y coordinate itself, its "Could
+not solve y" error path returns the result of the last hunting and
+pecking iteration, 0 or 1, instead of -1. sae_prepare_commit() then
+continues with sae->tmp->pwe_ecc NULL and passes it to
+crypto_ec_point_mul() for the commit element. With OpenSSL the result is
+the point at infinity, and the commit fails only later in
+sae_write_commit(); other crypto backends get a NULL point.
+
+dragonfly_sqrt() supports only primes with p = 3 mod 4, so group 26
+(p = 1 mod 4), which CONFIG_TESTING_OPTIONS builds allow, always takes
+this path. A failure of crypto_ec_point_compute_y_sqr() or of the bignum
+operations after it does the same. Reachable via sae_prepare_commit()
+from sme_auth_build_sae_commit(), auth_build_sae_commit() and
+mesh_rsn_build_sae_commit().
+
+Return -1 on this path like on the other error paths of the function.
+
+Fixes: 6c380f4c87fb ("SAE: Derive the y coordinate for PWE with own implementation")
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+
+--- a/src/common/common_module_tests.c
++++ b/src/common/common_module_tests.c
+@@ -517,6 +517,49 @@ fail:
+ }
+ 
+ 
++static int sae_pwe_failure_tests(void)
++{
++#ifdef CONFIG_SAE
++	char pattern[] = "1:crypto_ec_point_compute_y_sqr;=sae_derive_pwe_ecc";
++	char no_pattern[] = "";
++	const u8 addr1[ETH_ALEN] = { 0x02, 0x00, 0x00, 0x00, 0x00, 0x01 };
++	const u8 addr2[ETH_ALEN] = { 0x02, 0x00, 0x00, 0x00, 0x00, 0x02 };
++	const char *pw = "password";
++	struct sae_data sae;
++	char buf[100];
++	int res, len;
++
++	os_memset(&sae, 0, sizeof(sae));
++	if (sae_set_group(&sae, 19) < 0)
++		return -1;
++	if (testing_set_fail_pattern(false, pattern) < 0) {
++		sae_clear_data(&sae);
++		return 0;
++	}
++
++	res = sae_prepare_commit(addr1, addr2, (const u8 *) pw, os_strlen(pw),
++				 &sae);
++	len = testing_get_fail_pattern(false, buf, sizeof(buf));
++	testing_set_fail_pattern(false, no_pattern);
++	sae_clear_data(&sae);
++
++	if (len < 2 || os_strncmp(buf, "0:", 2) != 0) {
++		wpa_printf(MSG_ERROR, "SAE: y derivation failure not triggered");
++		return -1;
++	}
++	if (res >= 0) {
++		wpa_printf(MSG_ERROR,
++			   "SAE: PWE accepted without a y coordinate");
++		return -1;
++	}
++
++	return 0;
++#else /* CONFIG_SAE */
++	return 0;
++#endif /* CONFIG_SAE */
++}
++
++
+ static int sae_pk_tests(void)
+ {
+ #ifdef CONFIG_SAE_PK
+@@ -790,6 +833,7 @@ int common_module_tests(void)
+ 	if (ieee802_11_parse_tests() < 0 ||
+ 	    gas_tests() < 0 ||
+ 	    sae_tests() < 0 ||
++	    sae_pwe_failure_tests() < 0 ||
+ 	    sae_pk_tests() < 0 ||
+ 	    pasn_tests() < 0 ||
+ 	    rsn_ie_parse_tests() < 0)
+--- a/src/common/sae.c
++++ b/src/common/sae.c
+@@ -425,6 +425,7 @@ static int sae_derive_pwe_ecc(struct sae
+ 	    crypto_bignum_to_bin(y, x_y + SAE_MAX_ECC_PRIME_LEN,
+ 				 SAE_MAX_ECC_PRIME_LEN, prime_len) < 0) {
+ 		wpa_printf(MSG_DEBUG, "SAE: Could not solve y");
++		res = -1;
+ 		goto fail;
+ 	}
+ 

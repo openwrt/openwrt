@@ -1,0 +1,66 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Tue, 20 Oct 2026 14:22:05 +0200
+Subject: [PATCH] DPP2: Keep the c-sign-key curve for the Configurator
+
+Since the ppKey was added, dpp_keygen_configurator() passes conf->curve
+to dpp_set_keypair() for both the c-sign-key and the ppKey.
+dpp_set_keypair() sets the curve to NULL for a key on a group that the
+crypto backend knows but DPP does not support. Without ppkey=, the
+function then calls dpp_gen_keypair(NULL), which dereferences the NULL
+curve. With OpenSSL, crypto_ec_key_group() rejects such a key before
+this. The wolfSSL version of crypto_ec_key_group() maps P-192 and P-224
+keys to groups 25 and 26, so these keys reach it. Reachable via
+DPP_CONFIGURATOR_ADD key=<key>.
+
+A ppKey on another curve also replaces conf->curve. The Configurator
+then signs Connectors with the c-sign-key, but takes the "alg" value
+and the hash function from the ppKey curve. Reachable via
+DPP_CONFIGURATOR_ADD with key= and ppkey= on different curves, or with
+ppkey= on a curve other than curve=.
+
+Stop when the c-sign-key cannot be set up, before the ppKey is handled.
+Reject a ppKey on a curve other than that of the c-sign-key, like
+dpp_configurator_from_backup() does. The ppKey entry in Table 9 of the
+DPP specification says that the ppKey "uses the same curve as the
+C-sign-key".
+
+Fixes: 9c1fbff07404 ("DPP2: Generate a privacy protection key for Configurator")
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+
+--- a/src/common/dpp.c
++++ b/src/common/dpp.c
+@@ -4017,6 +4017,7 @@ dpp_keygen_configurator(const char *curv
+ 			size_t privkey_len, const u8 *pp_key, size_t pp_key_len)
+ {
+ 	struct dpp_configurator *conf;
++	const struct dpp_curve_params *curve_pp;
+ 
+ 	conf = os_zalloc(sizeof(*conf));
+ 	if (!conf)
+@@ -4034,12 +4035,20 @@ dpp_keygen_configurator(const char *curv
+ 					      privkey_len);
+ 	else
+ 		conf->csign = dpp_gen_keypair(conf->curve);
+-	if (pp_key)
+-		conf->pp_key = dpp_set_keypair(&conf->curve, pp_key,
+-					       pp_key_len);
+-	else
++	if (!conf->csign)
++		goto fail;
++
++	if (pp_key) {
++		conf->pp_key = dpp_set_keypair(&curve_pp, pp_key, pp_key_len);
++		if (conf->pp_key && curve_pp != conf->curve) {
++			wpa_printf(MSG_INFO,
++				   "DPP: Mismatch in c-sign-key and ppKey groups");
++			goto fail;
++		}
++	} else {
+ 		conf->pp_key = dpp_gen_keypair(conf->curve);
+-	if (!conf->csign || !conf->pp_key)
++	}
++	if (!conf->pp_key)
+ 		goto fail;
+ 	conf->own = 1;
+ 
