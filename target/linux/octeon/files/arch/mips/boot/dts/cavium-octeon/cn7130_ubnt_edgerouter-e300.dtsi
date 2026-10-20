@@ -190,6 +190,7 @@
 
 		ethernet@1 {
 			label = "lan0";
+			openwrt,netdev-name = "lan0";
 			status = "okay";
 			phy-mode = "qsgmii";
 			phy-handle = <&phy5>;
@@ -199,6 +200,7 @@
 
 		ethernet@2 {
 			label = "lan1";
+			openwrt,netdev-name = "lan1";
 			status = "okay";
 			phy-mode = "qsgmii";
 			phy-handle = <&phy6>;
@@ -208,6 +210,7 @@
 
 		ethernet@3 {
 			label = "lan2";
+			openwrt,netdev-name = "lan2";
 			status = "okay";
 			phy-mode = "qsgmii";
 			phy-handle = <&phy7>;
