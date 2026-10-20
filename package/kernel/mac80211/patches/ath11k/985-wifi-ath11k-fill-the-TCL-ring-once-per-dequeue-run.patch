@@ -1,0 +1,208 @@
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Subject: [PATCH] wifi: ath11k: fill the TCL ring once per dequeue run
+
+Each frame a TXQ hands over took the TCL ring lock twice, read the
+hardware tail pointer three times and wrote the head pointer once. Take
+the ring once for the whole dequeue run instead: read the free count at
+the start, queue the frames on that ring and write the head pointer after
+the last one. ath11k_dp_tx() takes the ring the caller holds and does not
+fall back to another ring while it is held.
+
+Assisted-by: Claude:claude-opus-5-5
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+--- a/drivers/net/wireless/ath/ath11k/dp_tx.c
++++ b/drivers/net/wireless/ath/ath11k/dp_tx.c
+@@ -79,8 +79,12 @@ enum hal_encrypt_type ath11k_dp_tx_get_e
+ 	}
+ }
+ 
++/* A caller that passes @held_ring holds that TCL ring's lock with an access
++ * open, and ends the access itself once it has queued its last frame; the frame
++ * goes on that ring or not at all.
++ */
+ int ath11k_dp_tx(struct ath11k *ar, struct ath11k_vif *arvif,
+-		 struct ath11k_sta *arsta, struct sk_buff *skb)
++		 struct ath11k_sta *arsta, struct sk_buff *skb, int held_ring)
+ {
+ 	struct ath11k_base *ab = ar->ab;
+ 	struct ath11k_dp *dp = &ab->dp;
+@@ -108,7 +112,10 @@ int ath11k_dp_tx(struct ath11k *ar, stru
+ 
+ 	pool_id = skb_get_queue_mapping(skb) & (ATH11K_HW_MAX_QUEUES - 1);
+ 
+-	ring_selector = ab->hw_params.hw_ops->get_ring_selector(skb_get_queue_mapping(skb));
++	if (held_ring >= 0)
++		ring_selector = held_ring;
++	else
++		ring_selector = ab->hw_params.hw_ops->get_ring_selector(skb_get_queue_mapping(skb));
+ 
+ tcl_ring_sel:
+ 	tcl_ring_retry = false;
+@@ -126,7 +133,7 @@ tcl_ring_sel:
+ 	spin_unlock_bh(&tx_ring->tx_idr_lock);
+ 
+ 	if (unlikely(ret < 0)) {
+-		if (ring_map == (BIT(num_tx_rings) - 1) ||
++		if (held_ring >= 0 || ring_map == (BIT(num_tx_rings) - 1) ||
+ 		    !ab->hw_params.tcl_ring_retry) {
+ 			atomic_inc(&ab->soc_stats.tx_err.misc_fail);
+ 			return -ENOSPC;
+@@ -225,11 +232,17 @@ tcl_ring_sel:
+ 	hal_ring_id = tx_ring->tcl_data_ring.ring_id;
+ 	tcl_ring = &ab->hal.srng_list[hal_ring_id];
+ 
+-	spin_lock_bh(&tcl_ring->lock);
+-
+-	ath11k_hal_srng_access_begin(ab, tcl_ring);
++	if (held_ring < 0) {
++		spin_lock_bh(&tcl_ring->lock);
++		ath11k_hal_srng_access_begin(ab, tcl_ring);
++	}
+ 
+ 	hal_tcl_desc = (void *)ath11k_hal_srng_src_get_next_entry(ab, tcl_ring);
++	if (unlikely(!hal_tcl_desc && held_ring >= 0)) {
++		ab->soc_stats.tx_err.desc_na[ti.ring_id]++;
++		ret = -ENOSPC;
++		goto fail_unmap_dma;
++	}
+ 	if (unlikely(!hal_tcl_desc)) {
+ 		/* NOTE: It is highly unlikely we'll be running out of tcl_ring
+ 		 * desc because the desc is directly enqueued onto hw queue.
+@@ -256,11 +269,12 @@ tcl_ring_sel:
+ 	ath11k_hal_tx_cmd_desc_setup(ab, hal_tcl_desc +
+ 					 sizeof(struct hal_tlv_hdr), &ti);
+ 
+-	ath11k_hal_srng_access_end(ab, tcl_ring);
+-
+-	ath11k_dp_shadow_start_timer(ab, tcl_ring, &dp->tx_ring_timer[ti.ring_id]);
+-
+-	spin_unlock_bh(&tcl_ring->lock);
++	if (held_ring < 0) {
++		ath11k_hal_srng_access_end(ab, tcl_ring);
++		ath11k_dp_shadow_start_timer(ab, tcl_ring,
++					     &dp->tx_ring_timer[ti.ring_id]);
++		spin_unlock_bh(&tcl_ring->lock);
++	}
+ 
+ 	ath11k_dbg_dump(ab, ATH11K_DBG_DP_TX, NULL, "dp tx msdu: ",
+ 			skb->data, skb->len);
+--- a/drivers/net/wireless/ath/ath11k/dp_tx.h
++++ b/drivers/net/wireless/ath/ath11k/dp_tx.h
+@@ -20,7 +20,7 @@ struct ath11k_dp_htt_wbm_tx_status {
+ void ath11k_dp_tx_update_txcompl(struct ath11k *ar, struct hal_tx_status *ts);
+ int ath11k_dp_tx_htt_h2t_ver_req_msg(struct ath11k_base *ab);
+ int ath11k_dp_tx(struct ath11k *ar, struct ath11k_vif *arvif,
+-		 struct ath11k_sta *arsta, struct sk_buff *skb);
++		 struct ath11k_sta *arsta, struct sk_buff *skb, int held_ring);
+ int ath11k_dp_tx_completion_handler(struct ath11k_base *ab, int ring_id,
+ 				    int budget);
+ int ath11k_dp_tx_send_reo_cmd(struct ath11k_base *ab, struct dp_rx_tid *rx_tid,
+--- a/drivers/net/wireless/ath/ath11k/mac.c
++++ b/drivers/net/wireless/ath/ath11k/mac.c
+@@ -6512,7 +6512,7 @@ static int ath11k_mac_mgmt_tx(struct ath
+ 
+ static int ath11k_mac_tx(struct ieee80211_hw *hw,
+ 			 struct ieee80211_tx_control *control,
+-			 struct sk_buff *skb)
++			 struct sk_buff *skb, int held_ring)
+ {
+ 	struct ath11k_skb_cb *skb_cb = ATH11K_SKB_CB(skb);
+ 	struct ath11k *ar = hw->priv;
+@@ -6550,7 +6550,7 @@ static int ath11k_mac_tx(struct ieee8021
+ 	if (control->sta)
+ 		arsta = ath11k_sta_to_arsta(control->sta);
+ 
+-	ret = ath11k_dp_tx(ar, arvif, arsta, skb);
++	ret = ath11k_dp_tx(ar, arvif, arsta, skb, held_ring);
+ 	if (unlikely(ret)) {
+ 		ath11k_warn(ar->ab, "failed to transmit frame %d\n", ret);
+ 		ieee80211_free_txskb(ar->hw, skb);
+@@ -6563,7 +6563,7 @@ static void ath11k_mac_op_tx(struct ieee
+ 			     struct ieee80211_tx_control *control,
+ 			     struct sk_buff *skb)
+ {
+-	ath11k_mac_tx(hw, control, skb);
++	ath11k_mac_tx(hw, control, skb, -1);
+ }
+ 
+ void ath11k_mac_drain_tx(struct ath11k *ar)
+@@ -10115,7 +10115,7 @@ static int ath11k_mac_tx_push_txq(struct
+ 	struct hal_srng *tcl_ring;
+ 	struct sk_buff *skb;
+ 	u32 ring_selector;
+-	int num_free;
++	int num_free, avail;
+ 	int ret;
+ 	u8 ring_id;
+ 
+@@ -10128,38 +10128,49 @@ static int ath11k_mac_tx_push_txq(struct
+ 	 * selection ends where that limit binds or the queue empties. A full
+ 	 * TCL ring ends the whole round, and so does a frame the hardware
+ 	 * refuses.
++	 *
++	 * The run holds the TCL ring for its whole length: the free count is
++	 * read once and the head pointer written once, after the last frame,
++	 * rather than per frame. The head pointer is a device register, which
++	 * is not written while the firmware restarts or when no frame was
++	 * added.
+ 	 */
+-	while (1) {
++	if (unlikely(test_bit(ATH11K_FLAG_CRASH_FLUSH, &ar->ab->dev_flags)))
++		return -ESHUTDOWN;
++
++	spin_lock_bh(&tx_ring->wake_tx_lock);
++	spin_lock_bh(&tcl_ring->lock);
++	ath11k_hal_srng_access_begin(ar->ab, tcl_ring);
++	num_free = ath11k_hal_srng_src_num_free(ar->ab, tcl_ring, false);
++	avail = num_free;
++
++	ret = 0;
++	while (num_free) {
+ 		if (unlikely(test_bit(ATH11K_FLAG_CRASH_FLUSH,
+ 				      &ar->ab->dev_flags)))
+ 			break;
+ 
+-		spin_lock_bh(&tx_ring->wake_tx_lock);
+-
+-		spin_lock_bh(&tcl_ring->lock);
+-		num_free = ath11k_hal_srng_src_num_free(ar->ab, tcl_ring, true);
+-		spin_unlock_bh(&tcl_ring->lock);
+-
+-		if (num_free == 0) {
+-			spin_unlock_bh(&tx_ring->wake_tx_lock);
+-			return -ENOSPC;
+-		}
+-
+ 		skb = ieee80211_tx_dequeue(hw, txq);
+-		if (!skb) {
+-			spin_unlock_bh(&tx_ring->wake_tx_lock);
++		if (!skb)
+ 			break;
+-		}
+-
+-		ret = ath11k_mac_tx(hw, &control, skb);
+-
+-		spin_unlock_bh(&tx_ring->wake_tx_lock);
+ 
++		ret = ath11k_mac_tx(hw, &control, skb, ring_id);
+ 		if (unlikely(ret == -ENOSPC || ret == -ENOMEM))
+-			return ret;
++			break;
++		ret = 0;
++		num_free--;
+ 	}
+ 
+-	return 0;
++	if (num_free != avail &&
++	    likely(!test_bit(ATH11K_FLAG_CRASH_FLUSH, &ar->ab->dev_flags))) {
++		ath11k_hal_srng_access_end(ar->ab, tcl_ring);
++		ath11k_dp_shadow_start_timer(ar->ab, tcl_ring,
++					     &ar->ab->dp.tx_ring_timer[ring_id]);
++	}
++	spin_unlock_bh(&tcl_ring->lock);
++	spin_unlock_bh(&tx_ring->wake_tx_lock);
++
++	return num_free ? ret : -ENOSPC;
+ }
+ 
+ static void ath11k_mac_schedule_txq(struct ath11k *ar, u8 ac)
