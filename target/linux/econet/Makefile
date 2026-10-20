@@ -22,6 +22,6 @@ include $(INCLUDE_DIR)/target.mk
 DEFAULT_PACKAGES += nand-utils \
 	kmod-econet-eth \
 	kmod-leds-gpio \
-	gpio-button-hotplug
+	kmod-gpio-button-hotplug
 
 $(eval $(call BuildTarget))
