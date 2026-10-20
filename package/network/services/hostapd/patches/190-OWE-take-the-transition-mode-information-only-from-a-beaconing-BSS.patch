@@ -93,7 +93,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  static void hostapd_reload_bss(struct hostapd_data *hapd)
  {
  	struct hostapd_ssid *ssid;
-@@ -2550,7 +2547,8 @@ static int hostapd_owe_iface_iter(struct
+@@ -2547,7 +2544,8 @@ static int hostapd_owe_iface_iter(struct
  			   MAC2STR(bss->own_addr),
  			   wpa_ssid_txt(bss->conf->ssid.ssid,
  					bss->conf->ssid.ssid_len));
@@ -103,7 +103,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		    !bss->conf->ssid.ssid_len ||
  		    is_zero_ether_addr(bss->own_addr))
  			continue;
-@@ -2623,7 +2621,7 @@ static int hostapd_owe_iface_iter2(struc
+@@ -2620,7 +2618,7 @@ static int hostapd_owe_iface_iter2(struc
  		struct hostapd_data *bss = iface->bss[i];
  		int res;
  
@@ -112,7 +112,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  			continue;
  		if (bss->iface->state != HAPD_IFACE_ENABLED) {
  			wpa_printf(MSG_DEBUG,
-@@ -2665,7 +2663,7 @@ static void hostapd_owe_update_trans_ifa
+@@ -2662,7 +2660,7 @@ static void hostapd_owe_update_trans_ifa
  }
  
  
