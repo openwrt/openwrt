@@ -105,7 +105,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/src/ap/beacon.c
 +++ b/src/ap/beacon.c
-@@ -2794,6 +2794,15 @@ static int __ieee802_11_set_beacon(struc
+@@ -2800,6 +2800,15 @@ static int __ieee802_11_set_beacon(struc
  		return -1;
  	}
  
@@ -123,7 +123,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		return -1;
 --- a/src/ap/hostapd.c
 +++ b/src/ap/hostapd.c
-@@ -496,6 +496,240 @@ static void hostapd_link_remove_timeout_
+@@ -497,6 +497,240 @@ static void hostapd_link_remove_timeout_
  }
  
  
@@ -364,7 +364,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  static void hostapd_link_remove_timeout_handler(void *eloop_data,
  						void *user_ctx)
  {
-@@ -509,13 +743,12 @@ static void hostapd_link_remove_timeout_
+@@ -510,13 +744,12 @@ static void hostapd_link_remove_timeout_
  		   hapd->mld_link_id,
  		   hapd->eht_mld_link_removal_count);
  
@@ -380,7 +380,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	hostapd_link_remove_timeout_register(hapd);
  }
  
-@@ -528,9 +761,29 @@ int hostapd_link_remove(struct hostapd_d
+@@ -529,9 +762,29 @@ int hostapd_link_remove(struct hostapd_d
  	    count > 0xffff)
  		return -1;
  
@@ -411,7 +411,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	wpa_printf(MSG_DEBUG,
  		   "MLD: Remove link_id=%u in %u beacons",
  		   hapd->mld_link_id, count);
-@@ -541,10 +794,9 @@ int hostapd_link_remove(struct hostapd_d
+@@ -542,10 +795,9 @@ int hostapd_link_remove(struct hostapd_d
  	if (hapd->eht_mld_bss_param_change == 255)
  		hapd->eht_mld_bss_param_change = 0;
  
@@ -423,7 +423,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	return 0;
  }
  
-@@ -555,7 +807,10 @@ void hostapd_free_hapd_data(struct hosta
+@@ -556,7 +808,10 @@ void hostapd_free_hapd_data(struct hosta
  {
  #ifdef CONFIG_IEEE80211BE
  	eloop_cancel_timeout(hostapd_link_remove_timeout_handler, hapd, NULL);
@@ -436,7 +436,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	os_free(hapd->probereq_cb);
 --- a/src/ap/hostapd.h
 +++ b/src/ap/hostapd.h
-@@ -547,6 +547,8 @@ struct hostapd_data {
+@@ -553,6 +553,8 @@ struct hostapd_data {
  	u16 eht_mld_link_removal_start;
  	u16 eht_mld_link_removal_count;
  	struct os_reltime eht_mld_link_removal_due;
@@ -445,7 +445,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  #endif /* CONFIG_IEEE80211BE */
  
  #ifdef CONFIG_NAN_USD
-@@ -991,6 +993,10 @@ struct hostapd_data * hostapd_mld_get_li
+@@ -998,6 +1000,10 @@ struct hostapd_data * hostapd_mld_get_li
  					       u8 link_id);
  int hostapd_link_remove(struct hostapd_data *hapd, u32 count);
  bool hostapd_link_remove_critical_update(struct hostapd_data *hapd);

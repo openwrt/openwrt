@@ -83,7 +83,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
 --- a/src/ap/hostapd.c
 +++ b/src/ap/hostapd.c
-@@ -447,7 +447,52 @@ static int hostapd_broadcast_wep_set(str
+@@ -451,7 +451,52 @@ static int hostapd_broadcast_wep_set(str
  
  
  #ifdef CONFIG_IEEE80211BE
@@ -137,7 +137,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  static void hostapd_link_remove_timeout_handler(void *eloop_data,
  						void *user_ctx)
-@@ -466,44 +511,51 @@ static void hostapd_link_remove_timeout_
+@@ -470,44 +515,51 @@ static void hostapd_link_remove_timeout_
  
  	if (!hapd->eht_mld_link_removal_count) {
  		hostapd_free_link_stas(hapd);
@@ -198,7 +198,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	os_free(hapd->probereq_cb);
  	hapd->probereq_cb = NULL;
  	hapd->num_probereq_cb = 0;
-@@ -658,11 +710,6 @@ void hostapd_free_hapd_data(struct hosta
+@@ -665,11 +717,6 @@ void hostapd_free_hapd_data(struct hosta
  
  #ifdef CONFIG_IEEE80211AX
  	eloop_cancel_timeout(hostapd_switch_color_timeout_handler, hapd, NULL);
@@ -212,7 +212,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  }
 --- a/src/ap/hostapd.h
 +++ b/src/ap/hostapd.h
-@@ -517,9 +517,9 @@ struct hostapd_data {
+@@ -523,9 +523,9 @@ struct hostapd_data {
  	 * total, additional 7 characters required. */
  	char ctrl_sock_iface[IFNAMSIZ + 7 + 1];
  
@@ -225,7 +225,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  #endif /* CONFIG_IEEE80211BE */
  
  #ifdef CONFIG_NAN_USD
-@@ -955,6 +955,7 @@ int hostapd_mbssid_get_bss_index(struct
+@@ -962,6 +962,7 @@ int hostapd_mbssid_get_bss_index(struct
  struct hostapd_data * hostapd_mld_get_link_bss(struct hostapd_data *hapd,
  					       u8 link_id);
  int hostapd_link_remove(struct hostapd_data *hapd, u32 count);
