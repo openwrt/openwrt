@@ -348,6 +348,19 @@ struct edma_queue {
 	struct edma_ring rxfill_ring;
 	struct edma_ring rxdesc_ring;
 
+	/* The ring indices only the driver moves, kept here so that the data
+	 * path reads from the engine only what the engine moves: its consumer
+	 * index of a ring the driver fills and its producer index of a ring
+	 * the driver drains. tx_cons is the last consumer index read and is
+	 * read again only when it reports too little room.
+	 */
+	u16 tx_prod;
+	u16 tx_cons;
+	u16 txcmpl_cons;
+	u16 rxfill_prod;
+	u16 rxdesc_cons;
+	bool tx_kick;
+
 	spinlock_t tx_lock;
 
 	/* Counted here rather than in netdev->stats, which cannot say which of
@@ -374,6 +387,7 @@ struct edma_priv {
 	struct net_device *netdev;
 	struct platform_device *pdev;
 	struct regmap *regmap;
+	void __iomem *base;
 	struct reset_control *rst;
 	u32 rx_buffer_size;
 	u8 rx_page_order;

@@ -244,6 +244,19 @@ static void edma_tx_ring_free(struct edma_queue *q, struct edma_ring *ring,
 	edma_ring_free(priv, ring, desc_size);
 }
 
+/* The ring index registers are accessed per frame and per poll, which the
+ * register map's checks would cost more than the access itself.
+ */
+static u32 edma_idx_read(struct edma_priv *priv, u32 reg)
+{
+	return readl(priv->base + reg);
+}
+
+static void edma_idx_write(struct edma_priv *priv, u32 reg, u32 val)
+{
+	writel(val, priv->base + reg);
+}
+
 static int edma_rx_fill(struct edma_queue *q)
 {
 	struct edma_ring *rxfill_ring = &q->rxfill_ring;
@@ -254,15 +267,10 @@ static int edma_rx_fill(struct edma_queue *q)
 	struct page *page;
 	u16 filled = 0;
 	dma_addr_t dma;
-	u32 val;
 
-	regmap_read(priv->regmap, EDMA_REG_RXFILL_PROD_IDX(q->rxfill),
-		    &val);
-	prod = val & EDMA_RXFILL_PROD_IDX_MASK & (rxfill_ring->count - 1);
-
-	regmap_read(priv->regmap, EDMA_REG_RXFILL_CONS_IDX(q->rxfill),
-		    &val);
-	cons = val & EDMA_RXFILL_CONS_IDX_MASK & (rxfill_ring->count - 1);
+	prod = q->rxfill_prod;
+	cons = edma_idx_read(priv, EDMA_REG_RXFILL_CONS_IDX(q->rxfill)) &
+	       EDMA_RXFILL_CONS_IDX_MASK & (rxfill_ring->count - 1);
 
 	while (1) {
 		next = prod + 1;
@@ -296,10 +304,9 @@ static int edma_rx_fill(struct edma_queue *q)
 	}
 
 	if (filled) {
-		wmb();
-		regmap_write(priv->regmap,
-			     EDMA_REG_RXFILL_PROD_IDX(q->rxfill),
-			     prod & EDMA_RXFILL_PROD_IDX_MASK);
+		q->rxfill_prod = prod;
+		edma_idx_write(priv, EDMA_REG_RXFILL_PROD_IDX(q->rxfill),
+			       prod & EDMA_RXFILL_PROD_IDX_MASK);
 	}
 
 	return filled;
@@ -342,17 +349,21 @@ static bool edma_rx_page_take(struct edma_queue *q, struct page *page,
  */
 static u16 edma_txdesc_free(struct edma_queue *q)
 {
-	struct edma_priv *priv = q->priv;
-	u32 prod, cons;
+	u16 prod = READ_ONCE(q->tx_prod);
+	u32 cons;
 
-	regmap_read(priv->regmap, EDMA_REG_TXDESC_PROD_IDX(q->txdesc),
-		    &prod);
-	regmap_read(priv->regmap, EDMA_REG_TXDESC_CONS_IDX(q->txdesc),
-		    &cons);
+	cons = edma_idx_read(q->priv, EDMA_REG_TXDESC_CONS_IDX(q->txdesc));
 
-	return ((cons & EDMA_TXDESC_CONS_IDX_MASK) -
-		(prod & EDMA_TXDESC_PROD_IDX_MASK) - 1) &
+	return ((cons & EDMA_TXDESC_CONS_IDX_MASK) - prod - 1) &
 	       (q->txdesc_ring.count - 1);
+}
+
+/* Hands the engine every descriptor placed since the last kick. */
+static void edma_tx_kick(struct edma_queue *q)
+{
+	edma_idx_write(q->priv, EDMA_REG_TXDESC_PROD_IDX(q->txdesc),
+		       q->tx_prod & EDMA_TXDESC_PROD_IDX_MASK);
+	q->tx_kick = false;
 }
 
 /* Unmaps every descriptor the frame was written from and releases the slots
@@ -408,19 +419,11 @@ static u32 edma_clean_tx(struct edma_queue *q, int budget, int napi_budget)
 	struct edma_txcmpl *txcmpl;
 	struct sk_buff *skb;
 	u16 prod, cons;
-	u32 val;
 
-	regmap_read(priv->regmap,
-		    EDMA_REG_TXCMPL_PROD_IDX(soc->txcmpl_base,
-					     q->txcmpl),
-		    &val);
-	prod = val & EDMA_TXCMPL_PROD_IDX_MASK;
-
-	regmap_read(priv->regmap,
-		    EDMA_REG_TXCMPL_CONS_IDX(soc->txcmpl_base,
-					     q->txcmpl),
-		    &val);
-	cons = val & EDMA_TXCMPL_CONS_IDX_MASK;
+	prod = edma_idx_read(priv, EDMA_REG_TXCMPL_PROD_IDX(soc->txcmpl_base,
+							    q->txcmpl)) &
+	       EDMA_TXCMPL_PROD_IDX_MASK;
+	cons = q->txcmpl_cons;
 
 	while (cons != prod && cleaned < budget) {
 		txcmpl = EDMA_TXCMPL_DESC(txcmpl_ring, cons);
@@ -483,12 +486,9 @@ static u32 edma_clean_tx(struct edma_queue *q, int budget, int napi_budget)
 				   pkts, bytes, edma_txdesc_free(q),
 				   EDMA_TX_RING_THRESH, !napi_budget);
 
-	/* Ensure all TX completions are processed before updating cons idx */
-	wmb();
-	regmap_write(priv->regmap,
-		     EDMA_REG_TXCMPL_CONS_IDX(soc->txcmpl_base,
-					      q->txcmpl),
-		     cons);
+	q->txcmpl_cons = cons;
+	edma_idx_write(priv, EDMA_REG_TXCMPL_CONS_IDX(soc->txcmpl_base,
+						      q->txcmpl), cons);
 
 	return cleaned;
 }
@@ -620,15 +620,10 @@ static u32 edma_clean_rx(struct edma_queue *q, int budget)
 	u32 done = 0;
 	u32 src_port;
 	int pkt_len;
-	u32 val;
 
-	regmap_read(priv->regmap, EDMA_REG_RXDESC_PROD_IDX(q->rxdesc),
-		    &val);
-	prod = val & EDMA_RXDESC_PROD_IDX_MASK;
-
-	regmap_read(priv->regmap, EDMA_REG_RXDESC_CONS_IDX(q->rxdesc),
-		    &val);
-	cons = val & EDMA_RXDESC_CONS_IDX_MASK;
+	prod = edma_idx_read(priv, EDMA_REG_RXDESC_PROD_IDX(q->rxdesc)) &
+	       EDMA_RXDESC_PROD_IDX_MASK;
+	cons = q->rxdesc_cons;
 
 	while (cons != prod && done < budget) {
 		u32 desc_addr, desc_status;
@@ -710,10 +705,10 @@ next:
 
 	edma_rx_fill(q);
 
-	wmb();
-	regmap_write(priv->regmap,
-		     EDMA_REG_RXDESC_CONS_IDX(q->rxdesc),
-		     cons);
+	if (done) {
+		q->rxdesc_cons = cons;
+		edma_idx_write(priv, EDMA_REG_RXDESC_CONS_IDX(q->rxdesc), cons);
+	}
 	return done;
 }
 
@@ -727,7 +722,6 @@ static int edma_napi(struct napi_struct *napi, int budget)
 	const struct edma_soc_data *soc = priv->soc;
 	u32 tx, rx, fill;
 	u16 prod, cons;
-	u32 val;
 	int done;
 
 	edma_clean_tx(q, budget, budget);
@@ -735,17 +729,16 @@ static int edma_napi(struct napi_struct *napi, int budget)
 	if (done >= budget)
 		return budget;
 
-	regmap_read(priv->regmap,
-		    EDMA_REG_TX_INT_STAT(soc->tx_int_base, q->txcmpl), &tx);
-	regmap_read(priv->regmap, EDMA_REG_RXDESC_INT_STAT(q->rxdesc), &rx);
-	regmap_read(priv->regmap, EDMA_REG_RXFILL_INT_STAT(q->rxfill), &fill);
+	tx = edma_idx_read(priv, EDMA_REG_TX_INT_STAT(soc->tx_int_base,
+						      q->txcmpl));
+	rx = edma_idx_read(priv, EDMA_REG_RXDESC_INT_STAT(q->rxdesc));
+	fill = edma_idx_read(priv, EDMA_REG_RXFILL_INT_STAT(q->rxfill));
 	if (tx || rx || fill)
 		return budget;
 
-	regmap_read(priv->regmap, EDMA_REG_RXFILL_PROD_IDX(q->rxfill), &val);
-	prod = val & (q->rxfill_ring.count - 1);
-	regmap_read(priv->regmap, EDMA_REG_RXFILL_CONS_IDX(q->rxfill), &val);
-	cons = val & (q->rxfill_ring.count - 1);
+	prod = q->rxfill_prod;
+	cons = edma_idx_read(priv, EDMA_REG_RXFILL_CONS_IDX(q->rxfill)) &
+	       (q->rxfill_ring.count - 1);
 	if (prod == cons) {
 		dev_warn_ratelimited(&priv->pdev->dev, "RXFILL ring starved\n");
 		q->stats.rx_fill_starved++;
@@ -863,23 +856,25 @@ static netdev_tx_t edma_ring_xmit(struct edma_queue *q, struct net_device *netde
 	u16 ndesc = edma_tx_ndesc(skb);
 	struct edma_txdesc *txdesc;
 	u16 prod, cons, dst_info, n;
-	u32 val, idx, i, len, bytes, tso;
+	u32 idx, i, len, bytes, tso;
 	struct sk_buff *seg;
 	dma_addr_t head_dma;
 	bool taken = false;
+	bool stop;
 	__be16 proto;
 
 	spin_lock_bh(&q->tx_lock);
 
-	regmap_read(priv->regmap,
-		    EDMA_REG_TXDESC_PROD_IDX(q->txdesc),
-		    &val);
-	prod = val & EDMA_TXDESC_PROD_IDX_MASK;
-
-	regmap_read(priv->regmap,
-		    EDMA_REG_TXDESC_CONS_IDX(q->txdesc),
-		    &val);
-	cons = val & EDMA_TXDESC_CONS_IDX_MASK;
+	/* The stop below is decided on the cached index too, so it is read
+	 * again before it could stop the queue on room the engine has freed.
+	 */
+	prod = q->tx_prod;
+	cons = q->tx_cons;
+	if (((cons - prod - 1) & mask) < EDMA_TX_RING_THRESH + ndesc) {
+		cons = edma_idx_read(priv, EDMA_REG_TXDESC_CONS_IDX(q->txdesc)) &
+		       EDMA_TXDESC_CONS_IDX_MASK;
+		q->tx_cons = cons;
+	}
 
 	idx = prod & mask;
 
@@ -963,15 +958,18 @@ static netdev_tx_t edma_ring_xmit(struct edma_queue *q, struct net_device *netde
 	} while (seg);
 
 	prod = (prod + ndesc) & mask;
+	WRITE_ONCE(q->tx_prod, prod);
+	stop = ((cons - prod - 1) & mask) < EDMA_TX_RING_THRESH;
 
 	dev_sw_netstats_tx_add(netdev, 1, bytes);
-	netdev_tx_sent_queue(txq, bytes);
 
-	/* Ensure descriptor writes are visible before updating prod idx */
-	wmb();
-	regmap_write(priv->regmap,
-		     EDMA_REG_TXDESC_PROD_IDX(q->txdesc),
-		     prod & EDMA_TXDESC_PROD_IDX_MASK);
+	/* A queue about to stop gets its frames now: nothing after the stop
+	 * would hand them over.
+	 */
+	if (__netdev_tx_sent_queue(txq, bytes, netdev_xmit_more() && !stop))
+		edma_tx_kick(q);
+	else
+		q->tx_kick = true;
 
 	/* The queue is rechecked against the hardware once it is stopped: a
 	 * completion that drains the ring between the descriptor going out and
@@ -980,7 +978,7 @@ static netdev_tx_t edma_ring_xmit(struct edma_queue *q, struct net_device *netde
 	 * placed from decide whether to stop at all, since a consumer index
 	 * only ages into reporting less room than the ring has.
 	 */
-	if (((cons - prod - 1) & mask) < EDMA_TX_RING_THRESH)
+	if (stop)
 		netif_txq_try_stop(txq, edma_txdesc_free(q),
 				   EDMA_TX_RING_THRESH);
 
@@ -1002,10 +1000,15 @@ unmap:
 	txdesc_ring->skb_store[idx] = NULL;
 drop:
 	dev_kfree_skb_any(skb);
+	if (q->tx_kick)
+		edma_tx_kick(q);
 	spin_unlock_bh(&q->tx_lock);
 	return NETDEV_TX_OK;
 
 busy:
+	if (q->tx_kick)
+		edma_tx_kick(q);
+
 	/* A refusal stops the queue here rather than in the caller, so that the
 	 * recheck happens against the state this refusal was decided on: a
 	 * completion that drains the ring once the lock is dropped would
@@ -1086,22 +1089,27 @@ static void edma_queue_rings_drain(struct edma_queue *q)
 {
 	struct edma_priv *priv = q->priv;
 
-	edma_clean_tx(q, INT_MAX, 0);
-	q->txcmpl_skb = NULL;
-	q->txcmpl_run = false;
-
 	edma_tx_ring_free(q, &q->txdesc_ring, sizeof(struct edma_txdesc));
 	edma_ring_free(priv, &q->txcmpl_ring, sizeof(struct edma_txcmpl));
 	edma_rx_ring_free(q, &q->rxfill_ring, sizeof(struct edma_rxfill_desc));
 	edma_ring_free(priv, &q->rxdesc_ring, sizeof(struct edma_rxdesc));
 }
 
+/* Completions are only walked on rings the engine ran: a set that fails to
+ * come up behind a reset has indices from the configuration before it.
+ */
 static void edma_rings_drain(struct edma_priv *priv)
 {
 	unsigned int i;
 
-	for (i = 0; i < priv->num_queues; i++)
-		edma_queue_rings_drain(&priv->q[i]);
+	for (i = 0; i < priv->num_queues; i++) {
+		struct edma_queue *q = &priv->q[i];
+
+		edma_clean_tx(q, INT_MAX, 0);
+		q->txcmpl_skb = NULL;
+		q->txcmpl_run = false;
+		edma_queue_rings_drain(q);
+	}
 }
 
 static int edma_rings_alloc(struct edma_priv *priv)
@@ -1141,6 +1149,12 @@ static void edma_configure_txdesc_ring(struct edma_queue *q)
 	regmap_update_bits(priv->regmap,
 			   EDMA_REG_TXDESC_PROD_IDX(q->txdesc),
 			   EDMA_TXDESC_PROD_IDX_MASK, val);
+
+	q->tx_prod = edma_idx_read(priv, EDMA_REG_TXDESC_PROD_IDX(q->txdesc)) &
+		     EDMA_TXDESC_PROD_IDX_MASK;
+	q->tx_cons = edma_idx_read(priv, EDMA_REG_TXDESC_CONS_IDX(q->txdesc)) &
+		     EDMA_TXDESC_CONS_IDX_MASK;
+	q->tx_kick = false;
 }
 
 static void edma_configure_txcmpl_ring(struct edma_queue *q)
@@ -1176,6 +1190,11 @@ static void edma_configure_txcmpl_ring(struct edma_queue *q)
 		     EDMA_REG_TX_INT_CTRL(soc->tx_int_base,
 					  q->txcmpl),
 		     0x2);
+
+	q->txcmpl_cons = edma_idx_read(priv,
+				       EDMA_REG_TXCMPL_CONS_IDX(soc->txcmpl_base,
+								q->txcmpl)) &
+			 EDMA_TXCMPL_CONS_IDX_MASK;
 }
 
 static void edma_configure_rxdesc_ring(struct edma_queue *q)
@@ -1206,6 +1225,9 @@ static void edma_configure_rxdesc_ring(struct edma_queue *q)
 	regmap_write(priv->regmap,
 		     EDMA_REG_RX_INT_CTRL(q->rxdesc),
 		     0x2);
+
+	q->rxdesc_cons = edma_idx_read(priv, EDMA_REG_RXDESC_CONS_IDX(q->rxdesc)) &
+			 EDMA_RXDESC_CONS_IDX_MASK;
 }
 
 static void edma_configure_rxfill_ring(struct edma_queue *q)
@@ -1221,6 +1243,8 @@ static void edma_configure_rxfill_ring(struct edma_queue *q)
 		     EDMA_REG_RXFILL_RING_SIZE(q->rxfill),
 		     rxfill_ring->count & EDMA_RXFILL_RING_SIZE_MASK);
 
+	q->rxfill_prod = edma_idx_read(priv, EDMA_REG_RXFILL_PROD_IDX(q->rxfill)) &
+			 EDMA_RXFILL_PROD_IDX_MASK & (rxfill_ring->count - 1);
 	edma_rx_fill(q);
 }
 
@@ -1873,9 +1897,21 @@ static netdev_features_t edma_ndo_features_check(struct sk_buff *skb,
 	return vlan_features_check(skb, features);
 }
 
+/* A frame refused before it reaches the ring may have been the last of a
+ * batch whose earlier frames wait for their kick.
+ */
+static void edma_tx_flush(struct edma_queue *q)
+{
+	spin_lock_bh(&q->tx_lock);
+	if (q->tx_kick)
+		edma_tx_kick(q);
+	spin_unlock_bh(&q->tx_lock);
+}
+
 static netdev_tx_t edma_ndo_xmit(struct sk_buff *skb, struct net_device *netdev)
 {
 	struct edma_priv *priv = netdev_priv(netdev);
+	struct edma_queue *q = &priv->q[skb_get_queue_mapping(skb)];
 	const struct edma_soc_data *soc = priv->soc;
 	u32 nhead;
 
@@ -1892,6 +1928,7 @@ static netdev_tx_t edma_ndo_xmit(struct sk_buff *skb, struct net_device *netdev)
 	 */
 	if (skb_put_padto(skb, soc->tx_min_size)) {
 		DEV_STATS_INC(netdev, tx_dropped);
+		edma_tx_flush(q);
 		return NETDEV_TX_OK;
 	}
 
@@ -1901,11 +1938,12 @@ static netdev_tx_t edma_ndo_xmit(struct sk_buff *skb, struct net_device *netdev)
 	    pskb_expand_head(skb, nhead, 0, GFP_ATOMIC))
 		goto drop;
 
-	return edma_ring_xmit(&priv->q[skb_get_queue_mapping(skb)], netdev, skb);
+	return edma_ring_xmit(q, netdev, skb);
 
 drop:
 	dev_kfree_skb_any(skb);
 	DEV_STATS_INC(netdev, tx_dropped);
+	edma_tx_flush(q);
 
 	return NETDEV_TX_OK;
 }
@@ -2281,6 +2319,7 @@ static int edma_probe(struct platform_device *pdev)
 
 	priv = netdev_priv(netdev);
 	priv->regmap = regmap;
+	priv->base = base;
 	priv->rst = rst;
 	priv->pdev = pdev;
 	priv->soc = device_get_match_data(dev);
