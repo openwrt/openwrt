@@ -328,7 +328,7 @@ probe/assoc/auth requests via object subscribe.
  		hostapd_logger(hapd, sta->addr, HOSTAPD_MODULE_IEEE80211,
  			       HOSTAPD_LEVEL_INFO, "deauthenticated due to "
  			       "local deauth request");
-+		hostapd_ubus_notify(hapd, "local-deauth", sta->addr);
++		hostapd_ubus_notify_sta(hapd, "local-deauth", sta);
  		ap_free_sta(hapd, sta);
  		return;
  	}
@@ -336,7 +336,7 @@ probe/assoc/auth requests via object subscribe.
  		mlme_deauthenticate_indication(
  			hapd, sta,
  			WLAN_REASON_PREV_AUTH_NOT_VALID);
-+		hostapd_ubus_notify(hapd, "inactive-deauth", sta->addr);
++		hostapd_ubus_notify_sta(hapd, "inactive-deauth", sta);
  		ap_free_sta(hapd, sta);
  		break;
  	}
@@ -405,7 +405,7 @@ probe/assoc/auth requests via object subscribe.
 +					  dpp_pkhash_buf, vlanid_buf, alg_buf);
  	} else {
  		wpa_msg(hapd->msg_ctx, MSG_INFO, AP_STA_DISCONNECTED "%s", buf);
-+		hostapd_ubus_notify(hapd, "disassoc", sta->addr);
++		hostapd_ubus_notify_sta(hapd, "disassoc", sta);
  
  		if (hapd->msg_ctx_parent &&
  		    hapd->msg_ctx_parent != hapd->msg_ctx)

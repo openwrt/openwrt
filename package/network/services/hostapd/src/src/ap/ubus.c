@@ -2680,6 +2680,17 @@ void hostapd_ubus_notify(struct hostapd_data *hapd, const char *type, const u8 *
 	ubus_notify(ctx, obj, type, b.head, -1);
 }
 
+/* The links of an AP MLD share one object, on which the station of the
+ * association link stands for the non-AP MLD. */
+void hostapd_ubus_notify_sta(struct hostapd_data *hapd, const char *type,
+			     struct sta_info *sta)
+{
+	if (hostapd_sta_is_link_sta(hapd, sta))
+		return;
+
+	hostapd_ubus_notify(hapd, type, sta->addr);
+}
+
 /* `frame`: the body of the frame that rsn_error names */
 void hostapd_ubus_notify_key_mismatch(struct hostapd_data *hapd, const u8 *addr,
 				      enum hostapd_ubus_rsn_error rsn_error,
@@ -2729,7 +2740,7 @@ void hostapd_ubus_notify_authorized(struct hostapd_data *hapd, struct sta_info *
 {
 	struct ubus_object *obj = hostapd_ubus_notify_obj(hapd);
 
-	if (!obj->has_subscribers)
+	if (!obj->has_subscribers || hostapd_sta_is_link_sta(hapd, sta))
 		return;
 
 	blob_buf_init(&b, 0);
