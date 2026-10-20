@@ -1,0 +1,113 @@
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Subject: [PATCH] wifi: ath11k: batch TX completion frees and peer lookups
+
+The TX completion handler takes base_lock and searches the peer list for
+every frame, although consecutive completions mostly belong to one peer,
+and it frees each buffer on its own. Carry the peer's station and TX rate
+across one completion run and look them up again only when the peer ID
+changes. Collect the completed buffers on the status free list and free
+them with napi_consume_skb() at the end of the run.
+
+Assisted-by: Claude:claude-opus-5-5
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+--- a/drivers/net/wireless/ath/ath11k/dp_tx.c
++++ b/drivers/net/wireless/ath/ath11k/dp_tx.c
+@@ -556,9 +556,20 @@ err_out:
+ 	spin_unlock_bh(&ab->base_lock);
+ }
+ 
++/* State carried across one completion run: consecutive frames mostly belong
++ * to one peer, and the statuses hand their buffers back to be freed in bulk.
++ */
++struct ath11k_dp_tx_compl {
++	struct list_head free;
++	struct ieee80211_sta *sta;
++	struct rate_info rate;
++	u16 peer_id;
++};
++
+ static void ath11k_dp_tx_complete_msdu(struct ath11k *ar,
+ 				       struct sk_buff *msdu,
+-				       struct hal_tx_status *ts)
++				       struct hal_tx_status *ts,
++				       struct ath11k_dp_tx_compl *c)
+ {
+ 	struct ieee80211_tx_status status = {};
+ 	struct ieee80211_rate_status status_rate = {};
+@@ -566,8 +577,6 @@ static void ath11k_dp_tx_complete_msdu(s
+ 	struct ieee80211_tx_info *info;
+ 	struct ath11k_skb_cb *skb_cb;
+ 	struct ath11k_peer *peer;
+-	struct ath11k_sta *arsta;
+-	struct rate_info rate;
+ 
+ 	if (WARN_ON_ONCE(ts->buf_rel_source != HAL_WBM_REL_SRC_MODULE_TQM)) {
+ 		/* Must not happen */
+@@ -634,30 +643,34 @@ static void ath11k_dp_tx_complete_msdu(s
+ 		ath11k_dp_tx_cache_peer_stats(ar, msdu, ts);
+ 	}
+ 
+-	spin_lock_bh(&ab->base_lock);
+-	peer = ath11k_peer_find_by_id(ab, ts->peer_id);
+-	if (!peer || !peer->sta) {
++	if (!c->sta || c->peer_id != ts->peer_id) {
++		spin_lock_bh(&ab->base_lock);
++		peer = ath11k_peer_find_by_id(ab, ts->peer_id);
++		c->sta = peer ? peer->sta : NULL;
++		c->peer_id = ts->peer_id;
++		if (c->sta)
++			c->rate = ath11k_sta_to_arsta(c->sta)->last_txrate;
++		spin_unlock_bh(&ab->base_lock);
++	}
++
++	if (!c->sta) {
+ 		ath11k_dbg(ab, ATH11K_DBG_DATA,
+ 			   "dp_tx: failed to find the peer with peer_id %d\n",
+ 			    ts->peer_id);
+-		spin_unlock_bh(&ab->base_lock);
+ 		ieee80211_free_txskb(ar->hw, msdu);
+ 		return;
+ 	}
+-	arsta = ath11k_sta_to_arsta(peer->sta);
+-	status.sta = peer->sta;
++	status.sta = c->sta;
+ 	status.skb = msdu;
+ 	status.info = info;
+-	rate = arsta->last_txrate;
++	status.free_list = &c->free;
+ 
+-	status_rate.rate_idx = rate;
++	status_rate.rate_idx = c->rate;
+ 	status_rate.try_count = 1;
+ 
+ 	status.rates = &status_rate;
+ 	status.n_rates = 1;
+ 
+-	spin_unlock_bh(&ab->base_lock);
+-
+ 	ieee80211_tx_status_ext(ar->hw, &status);
+ }
+ 
+@@ -702,6 +715,8 @@ int ath11k_dp_tx_completion_handler(stru
+ 	struct sk_buff *msdu;
+ 	struct hal_tx_status ts = {};
+ 	struct dp_tx_ring *tx_ring = &dp->tx_ring[ring_id];
++	struct ath11k_dp_tx_compl c = { .free = LIST_HEAD_INIT(c.free) };
++	struct sk_buff *tmp;
+ 	unsigned long push = 0;
+ 	int done = 0;
+ 	u32 *desc;
+@@ -775,7 +790,12 @@ int ath11k_dp_tx_completion_handler(stru
+ 		if (atomic_dec_and_test(&ar->dp.num_tx_pending))
+ 			wake_up(&ar->dp.tx_empty_waitq);
+ 
+-		ath11k_dp_tx_complete_msdu(ar, msdu, &ts);
++		ath11k_dp_tx_complete_msdu(ar, msdu, &ts, &c);
++	}
++
++	list_for_each_entry_safe(msdu, tmp, &c.free, list) {
++		skb_list_del_init(msdu);
++		napi_consume_skb(msdu, budget);
+ 	}
+ 
+ 	/* A completion returns the airtime the frame was charged, which is
