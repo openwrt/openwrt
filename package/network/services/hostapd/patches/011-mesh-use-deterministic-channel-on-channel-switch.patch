@@ -15,9 +15,8 @@ mesh network.
 
 Signed-off-by: Markus Theil <markus.theil@tu-ilmenau.de>
 ---
- src/ap/dfs.c                 | 20 +++++++++++++++++++-
- src/drivers/driver_nl80211.c |  4 ++++
- 2 files changed, 23 insertions(+), 1 deletion(-)
+ src/ap/dfs.c | 20 +++++++++++++++++++-
+ 1 file changed, 19 insertions(+), 1 deletion(-)
 
 --- a/src/ap/dfs.c
 +++ b/src/ap/dfs.c
@@ -66,16 +65,3 @@ Signed-off-by: Markus Theil <markus.theil@tu-ilmenau.de>
  	chan_idx = _rand % num_available_chandefs;
  	wpa_printf(MSG_DEBUG, "DFS: Picked random entry from the list: %d/%d",
  		   chan_idx, num_available_chandefs);
---- a/src/drivers/driver_nl80211.c
-+++ b/src/drivers/driver_nl80211.c
-@@ -12389,6 +12389,10 @@ static int nl80211_switch_channel(void *
- 	if (ret)
- 		goto error;
- 
-+	if (drv->nlmode == NL80211_IFTYPE_MESH_POINT) {
-+		nla_put_flag(msg, NL80211_ATTR_HANDLE_DFS);
-+	}
-+
- 	/* beacon_csa params */
- 	beacon_csa = nla_nest_start(msg, NL80211_ATTR_CSA_IES);
- 	if (!beacon_csa)
