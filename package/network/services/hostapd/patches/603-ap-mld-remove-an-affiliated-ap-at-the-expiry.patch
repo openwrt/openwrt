@@ -105,7 +105,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/src/ap/beacon.c
 +++ b/src/ap/beacon.c
-@@ -2779,6 +2779,15 @@ static int __ieee802_11_set_beacon(struc
+@@ -2794,6 +2794,15 @@ static int __ieee802_11_set_beacon(struc
  		return -1;
  	}
  
@@ -436,7 +436,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	os_free(hapd->probereq_cb);
 --- a/src/ap/hostapd.h
 +++ b/src/ap/hostapd.h
-@@ -546,6 +546,8 @@ struct hostapd_data {
+@@ -547,6 +547,8 @@ struct hostapd_data {
  	u16 eht_mld_link_removal_start;
  	u16 eht_mld_link_removal_count;
  	struct os_reltime eht_mld_link_removal_due;
@@ -445,7 +445,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  #endif /* CONFIG_IEEE80211BE */
  
  #ifdef CONFIG_NAN_USD
-@@ -987,6 +989,10 @@ struct hostapd_data * hostapd_mld_get_li
+@@ -988,6 +990,10 @@ struct hostapd_data * hostapd_mld_get_li
  					       u8 link_id);
  int hostapd_link_remove(struct hostapd_data *hapd, u32 count);
  bool hostapd_link_remove_critical_update(struct hostapd_data *hapd);

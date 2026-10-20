@@ -246,15 +246,15 @@ as adding/removing interfaces.
  	if (iface->config_fname == NULL) {
  		/* Only in-memory config in use - assume it has been updated */
  		hostapd_clear_old(iface);
-@@ -577,6 +579,7 @@ void hostapd_free_hapd_data(struct hosta
- 	hapd->beacon_set_done = 0;
+@@ -578,6 +580,7 @@ void hostapd_free_hapd_data(struct hosta
+ 	hapd->beacon_started = 0;
  
  	wpa_printf(MSG_DEBUG, "%s(%s)", __func__, hapd->conf->iface);
 +	hostapd_ucode_free_bss(hapd);
  	hostapd_ubus_free_bss(hapd);
  	accounting_deinit(hapd);
  	hostapd_deinit_wpa(hapd);
-@@ -733,7 +736,7 @@ static void hostapd_mld_move_vlan_list(s
+@@ -734,7 +737,7 @@ static void hostapd_mld_move_vlan_list(s
   * If the BSS being removed is the first link, the next link becomes the first
   * link.
   */
@@ -263,7 +263,7 @@ as adding/removing interfaces.
  {
  #ifdef CONFIG_IEEE80211BE
  	int i;
-@@ -842,6 +845,7 @@ void hostapd_cleanup_iface_partial(struc
+@@ -843,6 +846,7 @@ void hostapd_cleanup_iface_partial(struc
  static void hostapd_cleanup_iface(struct hostapd_iface *iface)
  {
  	wpa_printf(MSG_DEBUG, "%s(%p)", __func__, iface);
@@ -271,7 +271,7 @@ as adding/removing interfaces.
  	hostapd_afc_stop(iface);
  	eloop_cancel_timeout(hostapd_interface_setup_failure_handler, iface,
  			     NULL);
-@@ -1438,6 +1442,7 @@ static int hostapd_start_beacon(struct h
+@@ -1439,6 +1443,7 @@ static int hostapd_start_beacon(struct h
  		hapd->driver->set_operstate(hapd->drv_priv, 1);
  
  	hostapd_ubus_add_bss(hapd);
@@ -279,7 +279,7 @@ as adding/removing interfaces.
  
  	return 0;
  }
-@@ -1513,7 +1518,7 @@ static int hostapd_bss_radius_init(struc
+@@ -1514,7 +1519,7 @@ static int hostapd_bss_radius_init(struc
   * initialized. Most of the modules that are initialized here will be
   * deinitialized in hostapd_cleanup().
   */
@@ -288,7 +288,7 @@ as adding/removing interfaces.
  			     bool start_beacon)
  {
  	struct hostapd_bss_config *conf = hapd->conf;
-@@ -1556,12 +1561,17 @@ static int hostapd_setup_bss(struct host
+@@ -1557,12 +1562,17 @@ static int hostapd_setup_bss(struct host
  
  	if (!first) {
  		u8 *addr = hapd->own_addr;
@@ -307,7 +307,7 @@ as adding/removing interfaces.
  					     hapd->iface->bss[0]->own_addr) ==
  			    0) {
  				wpa_printf(MSG_ERROR, "BSS '%s' may not have "
-@@ -1591,6 +1601,7 @@ static int hostapd_setup_bss(struct host
+@@ -1592,6 +1602,7 @@ static int hostapd_setup_bss(struct host
  					   hapd->mld_link_id, hapd->conf->iface);
  				goto setup_mld;
  			}
@@ -315,7 +315,7 @@ as adding/removing interfaces.
  		}
  #endif /* CONFIG_IEEE80211BE */
  
-@@ -1599,7 +1610,7 @@ static int hostapd_setup_bss(struct host
+@@ -1600,7 +1611,7 @@ static int hostapd_setup_bss(struct host
  				   conf->iface, addr, hapd,
  				   &hapd->drv_priv, force_ifname, if_addr,
  				   conf->bridge[0] ? conf->bridge : NULL,
@@ -324,7 +324,7 @@ as adding/removing interfaces.
  			wpa_printf(MSG_ERROR, "Failed to add BSS (BSSID="
  				   MACSTR ")", MAC2STR(hapd->own_addr));
  			hapd->interface_added = 0;
-@@ -1610,12 +1621,17 @@ static int hostapd_setup_bss(struct host
+@@ -1611,12 +1622,17 @@ static int hostapd_setup_bss(struct host
  			os_memcpy(hapd->own_addr, if_addr, ETH_ALEN);
  
  #ifdef CONFIG_IEEE80211BE
@@ -344,7 +344,7 @@ as adding/removing interfaces.
  		}
  #endif /* CONFIG_IEEE80211BE */
  	}
-@@ -1640,6 +1656,8 @@ setup_mld:
+@@ -1641,6 +1657,8 @@ setup_mld:
  	}
  #endif /* CONFIG_IEEE80211BE */
  
@@ -353,7 +353,7 @@ as adding/removing interfaces.
  	if (conf->wmm_enabled < 0)
  		conf->wmm_enabled = hapd->iconf->ieee80211n |
  			hapd->iconf->ieee80211ax;
-@@ -1968,7 +1986,7 @@ int hostapd_set_acl(struct hostapd_data
+@@ -1969,7 +1987,7 @@ int hostapd_set_acl(struct hostapd_data
  }
  
  
@@ -362,7 +362,7 @@ as adding/removing interfaces.
  {
  #ifdef CONFIG_IEEE80211BE
  	int ret;
-@@ -2641,7 +2659,7 @@ static int hostapd_owe_iface_iter2(struc
+@@ -2642,7 +2660,7 @@ static int hostapd_owe_iface_iter2(struc
  #endif /* CONFIG_OWE */
  
  
@@ -371,7 +371,7 @@ as adding/removing interfaces.
  {
  #ifdef CONFIG_OWE
  	/* Check whether the enabled BSS can complete OWE transition mode
-@@ -3113,7 +3131,7 @@ hostapd_alloc_bss_data(struct hostapd_if
+@@ -3114,7 +3132,7 @@ hostapd_alloc_bss_data(struct hostapd_if
  }
  
  
@@ -380,7 +380,7 @@ as adding/removing interfaces.
  {
  	if (!hapd)
  		return;
-@@ -3322,7 +3340,7 @@ fail:
+@@ -3323,7 +3341,7 @@ fail:
  }
  
  
@@ -389,7 +389,7 @@ as adding/removing interfaces.
  {
  #ifdef CONFIG_IEEE80211BE
  	struct hostapd_mld *mld, **all_mld;
-@@ -4203,7 +4221,8 @@ int hostapd_remove_iface(struct hapd_int
+@@ -4204,7 +4222,8 @@ int hostapd_remove_iface(struct hapd_int
  		hapd_iface = interfaces->iface[i];
  		if (hapd_iface == NULL)
  			return -1;
@@ -429,7 +429,7 @@ as adding/removing interfaces.
  	int interface_added; /* virtual interface added for this BSS */
  	unsigned int started:1;
  	unsigned int disabled:1;
-@@ -594,6 +601,7 @@ struct hostapd_mld {
+@@ -595,6 +602,7 @@ struct hostapd_mld {
   */
  struct hostapd_iface {
  	struct hapd_interfaces *interfaces;
@@ -437,7 +437,7 @@ as adding/removing interfaces.
  	void *owner;
  	char *config_fname;
  	struct hostapd_config *conf;
-@@ -840,11 +848,16 @@ struct hostapd_iface * hostapd_init(stru
+@@ -841,11 +849,16 @@ struct hostapd_iface * hostapd_init(stru
  struct hostapd_iface *
  hostapd_interface_init_bss(struct hapd_interfaces *interfaces, const char *phy,
  			   const char *config_fname, int debug);
@@ -454,7 +454,7 @@ as adding/removing interfaces.
  int hostapd_enable_iface(struct hostapd_iface *hapd_iface);
  int hostapd_reload_iface(struct hostapd_iface *hapd_iface);
  int hostapd_reload_bss_only(struct hostapd_data *bss);
-@@ -870,6 +883,7 @@ hostapd_switch_channel_fallback(struct h
+@@ -871,6 +884,7 @@ hostapd_switch_channel_fallback(struct h
  void hostapd_cleanup_cs_params(struct hostapd_data *hapd);
  void hostapd_periodic_iface(struct hostapd_iface *iface);
  int hostapd_owe_trans_get_info(struct hostapd_data *hapd);

@@ -431,7 +431,7 @@ Signed-off-by: John Crispin <john@phrozen.org>
  #ifdef NEED_AP_MLME
  
  static void hostapd_event_iface_unavailable(struct hostapd_data *hapd)
-@@ -2838,6 +2862,7 @@ void wpa_supplicant_event(void *ctx, enu
+@@ -2837,6 +2861,7 @@ void wpa_supplicant_event(void *ctx, enu
  		break;
  	case EVENT_SURVEY:
  		hostapd_event_get_survey(hapd->iface, &data->survey_results);
