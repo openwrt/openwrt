@@ -14,9 +14,6 @@ config-$(call config_package,rt2x00-usb) += RT2X00_LIB_USB
 config-$(CONFIG_PACKAGE_RT2X00_LIB_DEBUGFS) += RT2X00_LIB_DEBUGFS
 config-$(CONFIG_PACKAGE_RT2X00_DEBUG) += RT2X00_DEBUG
 
-config-$(call config_package,rt2400-pci) += RT2400PCI
-config-$(call config_package,rt2500-pci) += RT2500PCI
-config-$(call config_package,rt2500-usb) += RT2500USB
 config-$(call config_package,rt61-pci) += RT61PCI
 config-$(call config_package,rt73-usb) += RT73USB
 
