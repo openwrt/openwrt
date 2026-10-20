@@ -12,7 +12,7 @@
 		ethernet@0 {
 			label = "lan3";
 			status = "okay";
-			phy-mode = "sgmii";
+			phy-mode = "qsgmii";
 			phy-handle = <&phy4>;
 			nvmem-cells = <&macaddr_eeprom_0 0>;
 			nvmem-cell-names = "mac-address";
