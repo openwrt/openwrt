@@ -137,7 +137,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	reply_res = send_auth_reply(hapd, sta, dst, auth_alg,
  				    auth_alg == WLAN_AUTH_SAE ?
  				    auth_transaction : auth_transaction + 1,
-@@ -8498,6 +8524,10 @@ static void handle_auth_cb(struct hostap
+@@ -8500,6 +8526,10 @@ static void handle_auth_cb(struct hostap
  	bool success_status;
  
  	sta = ap_get_sta(hapd, mgmt->da);

@@ -53,7 +53,7 @@ probe/assoc/auth requests via object subscribe.
  	}
 --- a/src/ap/beacon.c
 +++ b/src/ap/beacon.c
-@@ -1492,6 +1492,12 @@ void handle_probe_req(struct hostapd_dat
+@@ -1479,6 +1479,12 @@ void handle_probe_req(struct hostapd_dat
  	int mld_id;
  	u16 links;
  #endif /* CONFIG_IEEE80211BE */
@@ -66,7 +66,7 @@ probe/assoc/auth requests via object subscribe.
  
  	if (hapd->iconf->rssi_ignore_probe_request && ssi_signal &&
  	    ssi_signal < hapd->iconf->rssi_ignore_probe_request)
-@@ -1699,6 +1705,12 @@ void handle_probe_req(struct hostapd_dat
+@@ -1686,6 +1692,12 @@ void handle_probe_req(struct hostapd_dat
  	}
  #endif /* CONFIG_P2P */
  
@@ -126,7 +126,7 @@ probe/assoc/auth requests via object subscribe.
  		if (is_dfs0 > 0 &&
 --- a/src/ap/hostapd.c
 +++ b/src/ap/hostapd.c
-@@ -586,6 +586,7 @@ void hostapd_free_hapd_data(struct hosta
+@@ -534,6 +534,7 @@ void hostapd_free_hapd_data(struct hosta
  #endif /* CONFIG_OWE */
  
  	wpa_printf(MSG_DEBUG, "%s(%s)", __func__, hapd->conf->iface);
@@ -134,7 +134,7 @@ probe/assoc/auth requests via object subscribe.
  	accounting_deinit(hapd);
  	hostapd_deinit_wpa(hapd);
  	vlan_deinit(hapd);
-@@ -1445,6 +1446,8 @@ static int hostapd_start_beacon(struct h
+@@ -1398,6 +1399,8 @@ static int hostapd_start_beacon(struct h
  	if (hapd->driver && hapd->driver->set_operstate)
  		hapd->driver->set_operstate(hapd->drv_priv, 1);
  
@@ -143,7 +143,7 @@ probe/assoc/auth requests via object subscribe.
  	return 0;
  }
  
-@@ -2742,6 +2745,7 @@ static int hostapd_setup_interface_compl
+@@ -2695,6 +2698,7 @@ static int hostapd_setup_interface_compl
  	if (err)
  		goto fail;
  
@@ -151,7 +151,7 @@ probe/assoc/auth requests via object subscribe.
  	wpa_printf(MSG_DEBUG, "Completing interface initialization");
  	if (iface->freq) {
  #ifdef NEED_AP_MLME
-@@ -2971,6 +2975,7 @@ dfs_offload:
+@@ -2924,6 +2928,7 @@ dfs_offload:
  
  fail:
  	wpa_printf(MSG_ERROR, "Interface initialization failed");
@@ -159,7 +159,7 @@ probe/assoc/auth requests via object subscribe.
  
  	if (iface->is_no_ir) {
  		hostapd_set_state(iface, HAPD_IFACE_NO_IR);
-@@ -3757,6 +3762,7 @@ void hostapd_interface_deinit_free(struc
+@@ -3710,6 +3715,7 @@ void hostapd_interface_deinit_free(struc
  		   (unsigned int) iface->conf->num_bss);
  	driver = iface->bss[0]->driver;
  	drv_priv = iface->bss[0]->drv_priv;
@@ -242,7 +242,7 @@ probe/assoc/auth requests via object subscribe.
  	if (res == HOSTAPD_ACL_PENDING)
  		return;
  
-@@ -7383,7 +7400,7 @@ static void handle_assoc(struct hostapd_
+@@ -7385,7 +7402,7 @@ static void handle_assoc(struct hostapd_
  	int resp = WLAN_STATUS_SUCCESS;
  	u16 reply_res = WLAN_STATUS_UNSPECIFIED_FAILURE;
  	const u8 *pos;
@@ -251,7 +251,7 @@ probe/assoc/auth requests via object subscribe.
  	struct sta_info *sta;
  	u8 *tmp = NULL;
  #ifdef CONFIG_FILS
-@@ -7663,6 +7680,11 @@ static void handle_assoc(struct hostapd_
+@@ -7665,6 +7682,11 @@ static void handle_assoc(struct hostapd_
  		left = res;
  	}
  #endif /* CONFIG_FILS */
@@ -263,7 +263,7 @@ probe/assoc/auth requests via object subscribe.
  
  	/* followed by SSID and Supported rates; and HT capabilities if 802.11n
  	 * is used */
-@@ -7765,6 +7787,7 @@ static void handle_assoc(struct hostapd_
+@@ -7767,6 +7789,7 @@ static void handle_assoc(struct hostapd_
  
  #ifdef CONFIG_TAXONOMY
  	taxonomy_sta_info_assoc_req(hapd, sta, pos, left);
@@ -271,7 +271,7 @@ probe/assoc/auth requests via object subscribe.
  #endif /* CONFIG_TAXONOMY */
  
  	sta->pending_wds_enable = 0;
-@@ -7778,6 +7801,13 @@ static void handle_assoc(struct hostapd_
+@@ -7780,6 +7803,13 @@ static void handle_assoc(struct hostapd_
  	}
  #endif /* CONFIG_FILS */
  
@@ -285,7 +285,7 @@ probe/assoc/auth requests via object subscribe.
   fail:
  #ifdef CONFIG_IEEE80211BE
  	if (reset_prev_assoc)
-@@ -8029,6 +8059,7 @@ static void handle_disassoc(struct hosta
+@@ -8031,6 +8061,7 @@ static void handle_disassoc(struct hosta
  			   (unsigned long) len);
  		return;
  	}
@@ -293,7 +293,7 @@ probe/assoc/auth requests via object subscribe.
  
  	sta = ap_get_sta(hapd, mgmt->sa);
  	if (!sta) {
-@@ -8060,6 +8091,8 @@ static void handle_deauth(struct hostapd
+@@ -8062,6 +8093,8 @@ static void handle_deauth(struct hostapd
  	/* Clear the PTKSA cache entries for PASN */
  	ptksa_cache_flush(hapd->ptksa, mgmt->sa, WPA_CIPHER_NONE);
  

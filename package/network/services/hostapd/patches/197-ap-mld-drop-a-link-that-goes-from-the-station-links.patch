@@ -43,7 +43,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/src/ap/ieee802_11_eht.c
 +++ b/src/ap/ieee802_11_eht.c
-@@ -1586,6 +1586,28 @@ void ml_deinit_link_reconf_req(struct li
+@@ -1607,6 +1607,28 @@ void ml_deinit_link_reconf_req(struct li
  }
  
  
@@ -72,7 +72,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  void hostapd_link_reconf_resp_tx_status(struct hostapd_data *hapd,
  					struct sta_info *sta,
  					const struct ieee80211_mgmt *mgmt,
-@@ -1636,21 +1658,8 @@ void hostapd_link_reconf_resp_tx_status(
+@@ -1657,21 +1679,8 @@ void hostapd_link_reconf_resp_tx_status(
  			   "; revert link additions",
  			   MAC2STR(mgmt->da));
  
@@ -96,7 +96,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		goto exit;
  	}
  
-@@ -1739,24 +1748,7 @@ void hostapd_link_reconf_resp_tx_status(
+@@ -1760,24 +1769,7 @@ void hostapd_link_reconf_resp_tx_status(
  		wpa_msg(hapd->msg_ctx, MSG_INFO,
  			WPA_EVENT_LINK_STA_REMOVED "sta=" MACSTR " link_id=%u",
  			MAC2STR(lsta->addr), link_id);
@@ -122,7 +122,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	}
  
  exit:
-@@ -1850,31 +1842,20 @@ hostapd_reject_all_reconf_req(struct hos
+@@ -1871,31 +1863,20 @@ hostapd_reject_all_reconf_req(struct hos
  			      struct link_reconf_req_list *req_list)
  {
  	struct link_reconf_req_info *info;
@@ -157,7 +157,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		wpa_printf(MSG_DEBUG, "MLD: Reject add-link=%u with status=%u",
  			   info->link_id, status);
  		pos += 2;
-@@ -2594,7 +2575,7 @@ hostapd_validate_link_reconf_req(struct
+@@ -2615,7 +2596,7 @@ hostapd_validate_link_reconf_req(struct
  						  req_list->sta_mld_addr);
  
  			if (lsta)
@@ -166,7 +166,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		} else {
  			total_kde_len += link_kde_len;
  			links_add_ok |= BIT(info->link_id);
-@@ -2623,14 +2604,14 @@ hostapd_validate_link_reconf_req(struct
+@@ -2644,14 +2625,14 @@ hostapd_validate_link_reconf_req(struct
  	    (links_del_ok && !(valid_links & links_del_ok))) {
  		wpa_printf(MSG_INFO,
  			   "MLD: Links requested failed to satisfy valid links");
@@ -183,7 +183,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	}
  
  	valid_links |= links_add_ok;
-@@ -2639,7 +2620,7 @@ hostapd_validate_link_reconf_req(struct
+@@ -2660,7 +2641,7 @@ hostapd_validate_link_reconf_req(struct
  		if (!recover_from_zero_links(&links_del_ok, &recovery_link)) {
  			wpa_printf(MSG_INFO,
  				   "MLD: Total-links validation failed");
@@ -192,7 +192,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		}
  		/* Add the recovery link back to valid_links */
  		valid_links |= BIT(recovery_link);
-@@ -2653,6 +2634,10 @@ hostapd_validate_link_reconf_req(struct
+@@ -2674,6 +2655,10 @@ hostapd_validate_link_reconf_req(struct
  	assoc_sta->reconf_req = req_list;
  
  	return true;
@@ -203,7 +203,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  }
  
  
-@@ -2787,6 +2772,9 @@ skip_oci_validation:
+@@ -2808,6 +2793,9 @@ skip_oci_validation:
  
  out:
  	if (ret) {

@@ -116,7 +116,7 @@ This allows building both hostapd and wpa_supplicant as a single binary
  	struct hapd_interfaces *interfaces = ctx;
 --- a/src/ap/hostapd.c
 +++ b/src/ap/hostapd.c
-@@ -596,7 +596,7 @@ void hostapd_free_hapd_data(struct hosta
+@@ -544,7 +544,7 @@ void hostapd_free_hapd_data(struct hosta
  		struct hapd_interfaces *ifaces = hapd->iface->interfaces;
  		size_t i;
  

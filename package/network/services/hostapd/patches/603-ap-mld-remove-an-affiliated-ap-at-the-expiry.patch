@@ -3,7 +3,7 @@ From: Felix Fietkau <nbd@nbd.name>
 Date: Tue, 29 Sep 2026 09:48:03 +0200
 Subject: [PATCH] AP MLD: remove an affiliated AP at the expiry of its timer
 
-Depends on 186-ap-mld-announce-the-removal-of-an-affiliated-ap.patch,
+Depends on 602-ap-mld-announce-the-removal-of-an-affiliated-ap.patch,
 which counts the AP Removal Timer and left the BSS running at 0.
 
 The BSS kept beaconing until the caller reconfigured the AP MLD, 1.64 s
@@ -458,7 +458,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  u8 hostapd_get_mld_id(struct hostapd_data *hapd);
 --- a/src/ap/ieee802_11.c
 +++ b/src/ap/ieee802_11.c
-@@ -9208,10 +9208,16 @@ void ieee802_11_mgmt_cb(struct hostapd_d
+@@ -9210,10 +9210,16 @@ void ieee802_11_mgmt_cb(struct hostapd_d
  	case WLAN_FC_STYPE_DEAUTH:
  		wpa_printf(MSG_DEBUG, "mgmt::deauth cb");
  		handle_deauth_cb(hapd, mgmt, len, ok);
