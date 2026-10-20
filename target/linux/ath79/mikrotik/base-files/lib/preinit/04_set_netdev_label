@@ -1,0 +1,19 @@
+set_netdev_labels() {
+	local dir
+	local label
+	local netdev
+	local node
+
+	for dir in /sys/class/net/*; do
+		# ag71xx only links the device tree node to its parent device
+		node="$dir/of_node"
+		[ -e "$node" ] || node="$dir/device/of_node"
+		[ -r "$node/openwrt,netdev-name" ] || continue
+		read -r label < "$node/openwrt,netdev-name"
+		netdev="${dir##*/}"
+		[ "$netdev" = "$label" ] && continue
+		ip link set "$netdev" name "$label"
+	done
+}
+
+boot_hook_add preinit_main set_netdev_labels
