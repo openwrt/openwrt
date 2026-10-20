@@ -499,7 +499,7 @@ as adding/removing interfaces.
  		}
  	}
  
-@@ -4638,6 +4661,12 @@ static void handle_auth(struct hostapd_d
+@@ -4640,6 +4663,12 @@ static void handle_auth(struct hostapd_d
  		goto fail;
  	}
  
@@ -514,7 +514,7 @@ as adding/removing interfaces.
  
 --- a/src/ap/sta_info.c
 +++ b/src/ap/sta_info.c
-@@ -595,6 +595,11 @@ void ap_free_sta(struct hostapd_data *ha
+@@ -610,6 +610,11 @@ void ap_free_sta(struct hostapd_data *ha
  	os_free(sta->eap_auth_data.rsnxe);
  #endif /* CONFIG_IEEE8021X_AUTH */
  
@@ -526,7 +526,7 @@ as adding/removing interfaces.
  	os_free(sta);
  }
  
-@@ -1854,6 +1859,8 @@ void ap_sta_set_authorized_event(struct
+@@ -1869,6 +1874,8 @@ void ap_sta_set_authorized_event(struct
  #endif /* CONFIG_P2P */
  	const u8 *ip_ptr = NULL;
  

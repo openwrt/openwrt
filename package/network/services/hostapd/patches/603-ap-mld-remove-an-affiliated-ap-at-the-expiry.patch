@@ -458,7 +458,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  u8 hostapd_get_mld_id(struct hostapd_data *hapd);
 --- a/src/ap/ieee802_11.c
 +++ b/src/ap/ieee802_11.c
-@@ -9210,10 +9210,16 @@ void ieee802_11_mgmt_cb(struct hostapd_d
+@@ -9208,10 +9208,16 @@ void ieee802_11_mgmt_cb(struct hostapd_d
  	case WLAN_FC_STYPE_DEAUTH:
  		wpa_printf(MSG_DEBUG, "mgmt::deauth cb");
  		handle_deauth_cb(hapd, mgmt, len, ok);
@@ -477,10 +477,10 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		wpa_printf(MSG_DEBUG, "mgmt::action cb ok=%d", ok);
 --- a/src/ap/sta_info.h
 +++ b/src/ap/sta_info.h
-@@ -352,6 +352,7 @@ struct sta_info {
- 	 * transaction 1 is the only peer link address available for the reply.
- 	 */
- 	u8 auth_link_addr[ETH_ALEN];
+@@ -347,6 +347,7 @@ struct sta_info {
+ 	struct mld_info mld_info;
+ 	u8 mld_assoc_link_id;
+ 	struct link_reconf_req_list *reconf_req;
 +	bool link_removal_tx;
  #endif /* CONFIG_IEEE80211BE */
  
