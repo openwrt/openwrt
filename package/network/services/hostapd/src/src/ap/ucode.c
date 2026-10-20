@@ -911,7 +911,9 @@ uc_hostapd_iface_switch_channel(uc_vm_t *vm, size_t nargs)
 	if ((intval = ucv_int64_get(ucv_object_get(info, "center_freq2", NULL))) && !errno)
 		csa.freq_params.center_freq2 = intval;
 
-	for (i = 0; i < iface->num_bss; i++)
+	/* mac80211 completes the switch only if every BSS of the radio
+	 * takes part */
+	for (i = 0; i < iface->num_bss && !ret; i++)
 		ret = hostapd_switch_channel(iface->bss[i], &csa);
 
 	return ucv_boolean_new(!ret);
