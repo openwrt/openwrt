@@ -256,7 +256,8 @@ platform_do_upgrade() {
 		CI_UBIPART="rootfs"
 		nand_do_upgrade "$1"
 		;;
-	ubnt,utr)
+	ubnt,utr|\
+	ubnt,utr-lr)
 		CI_UBIPART="kernel1"
 		CI_KERNPART="vol"
 		nand_do_upgrade "$1"
