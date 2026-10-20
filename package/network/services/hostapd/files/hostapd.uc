@@ -105,34 +105,64 @@ start_disabled=1
 	return str;
 }
 
+// The width argument of hostapd.freq_info() for an oper_chwidth value and for
+// an operating class. freq_info() has no width for 80+80 MHz.
+const CHWIDTH_FREQ_INFO_WIDTH = { "0": 0, "1": 1, "2": 2, "9": 3 };
+const OP_CLASS_FREQ_INFO_WIDTH = { "128": 1, "129": 2, "133": 1, "134": 2, "137": 3 };
+const OP_CLASS_80P80 = [ "130", "135" ];
+
+const radio_op_class_re = /^op_class=([0-9]+)$/;
+const radio_oper_chwidth_re = /^(vht|he|eht)_oper_chwidth=([0-9]+)$/;
+
+// hostapd takes the width from op_class where the config has one and ignores
+// the oper_chwidth fields then (op_class_to_ch_width()).
+function radio_freq_info_width(radio)
+{
+	for (let line in radio.data) {
+		let m = match(line, radio_op_class_re);
+		if (!m)
+			continue;
+		if (index(OP_CLASS_80P80, m[1]) >= 0)
+			return null;
+		return OP_CLASS_FREQ_INFO_WIDTH[m[1]] ?? 0;
+	}
+
+	let width = 0;
+	for (let line in radio.data) {
+		let m = match(line, radio_oper_chwidth_re);
+		if (!m)
+			continue;
+
+		let val = CHWIDTH_FREQ_INFO_WIDTH[m[2]];
+		if (val == null)
+			return null;
+		if (val > width)
+			width = val;
+	}
+
+	return width;
+}
+
 function iface_freq_info(iface, config, params)
 {
 	let freq = params.frequency;
 	if (!freq)
 		return null;
 
+	let width = freq < 4000 ? 0 : radio_freq_info_width(config.radio);
+	if (width == null)
+		return null;
+
 	let sec_offset = params.sec_chan_offset;
 	if (sec_offset != -1 && sec_offset != 1)
 		sec_offset = 0;
 
-	let width = 0;
 	for (let line in config.radio.data) {
 		if (!sec_offset && match(line, /^ht_capab=.*HT40/)) {
 			sec_offset = null; // auto-detect
-			continue;
+			break;
 		}
-
-		let val = match(line, /^(vht_oper_chwidth|he_oper_chwidth)=(\d+)/);
-		if (!val)
-			continue;
-
-		val = int(val[2]);
-		if (val > width)
-			width = val;
 	}
-
-	if (freq < 4000)
-		width = 0;
 
 	/*
 	 * 6 GHz has no HT Operation IE, so the secondary channel offset cannot
@@ -267,6 +297,46 @@ function iface_supplicant_start(phydev)
 	});
 }
 
+const PHY_WAIT_MS = 100;
+const PHY_WAIT_MAX = 300;
+
+function phy_busy(phy, self)
+{
+	for (let name, config in hostapd.data.config) {
+		let iface = hostapd.interfaces[name];
+		if (name == self || config.phy != phy || !iface)
+			continue;
+
+		if (iface.csa_in_progress())
+			return "channel switch";
+
+		let state = iface.state();
+		if (state == "ACS" || state == "HT_SCAN")
+			return "scan";
+	}
+
+	return null;
+}
+
+// The radios of a multi-radio wiphy share its limits: mac80211 brings up no
+// interface during a channel switch (ieee80211_check_concurrent_iface()), and
+// cfg80211 runs one scan at a time. hostapd retries a refused 20/40 MHz
+// coexistence scan for 15 s only, which an ACS on another radio can exceed.
+function iface_pending_phy_wait(pending)
+{
+	let busy = phy_busy(pending.phydev.phy, pending.phy);
+	if (!busy)
+		return false;
+
+	if (++pending.phy_wait > PHY_WAIT_MAX) {
+		hostapd.printf(`The ${busy} on phy ${pending.phydev.phy} did not end, starting ${pending.phy} anyway`);
+		return false;
+	}
+
+	pending.wait(PHY_WAIT_MS);
+	return true;
+}
+
 function __iface_pending_next(pending, state, ret, data)
 {
 	let config = pending.config;
@@ -297,6 +367,11 @@ function __iface_pending_next(pending, state, ret, data)
 			}
 		}
 
+		return "phy_check";
+	case "phy_check":
+		if (iface_pending_phy_wait(pending))
+			return "phy_check";
+
 		pending.call("wpa_supplicant", "phy_status", {
 			phy: phydev.phy,
 			radio: phydev.radio ?? -1,
@@ -317,6 +392,9 @@ function __iface_pending_next(pending, state, ret, data)
 		});
 		return "wpas_stopped";
 	case "wpas_stopped":
+		if (iface_pending_phy_wait(pending))
+			return "wpas_stopped";
+
 		if (!iface_add(phy, config))
 			hostapd.printf(`hostapd.add_iface failed for phy ${phy} ifname=${bss.ifname}`);
 		pending.call("wpa_supplicant", "phy_set_state", {
@@ -350,7 +428,7 @@ function iface_pending_next(ret, data)
 			__iface_pending_next(cfg, "done");
 			return;
 		}
-		pending = !this.defer;
+		pending = !this.defer && !this.timer;
 	}
 }
 
@@ -376,10 +454,21 @@ function iface_pending_ubus_call(obj, method, arg)
 	});
 }
 
+function iface_pending_wait(ms)
+{
+	let pending = this;
+
+	this.timer = uloop.timer(ms, () => {
+		delete pending.timer;
+		pending.next();
+	});
+}
+
 const iface_pending_proto = {
 	next: iface_pending_next,
 	call: iface_pending_ubus_call,
 	abort: iface_pending_abort,
+	wait: iface_pending_wait,
 };
 
 function iface_pending_init(phydev, config)
@@ -388,6 +477,7 @@ function iface_pending_init(phydev, config)
 
 	let pending = proto({
 		next_state: "init",
+		phy_wait: 0,
 		phydev: phydev,
 		phy: phy,
 		config: config,
@@ -837,7 +927,7 @@ function radio_base(radio)
 	return map(filter(radio.data, (line) => !radio_line_is_chan(line)), (line) => {
 		if (substr(line, 0, 9) != "ht_capab=")
 			return line;
-		return replace(replace(line, "[HT40+]", ""), "[HT40-]", "");
+		return replace(replace(line, "[HT40+]", "[HT40]"), "[HT40-]", "[HT40]");
 	});
 }
 
@@ -1149,6 +1239,9 @@ function iface_reload_config(name, phydev, config, old_config)
 	if (!old_config)
 		return false;
 
+	let prev_macaddr_bss = bss_list_prev_macaddr(config.bss, old_config.bss);
+	let bss_same = is_equal(old_config.bss, prev_macaddr_bss);
+
 	switch (radio_reload_class(old_config.radio, config.radio)) {
 	case "restart":
 		return false;
@@ -1159,7 +1252,9 @@ function iface_reload_config(name, phydev, config, old_config)
 	case "channel":
 		if (iface_runs_channel(name, config))
 			break;
-		if (!iface_channel_switch(name, config))
+		// A BSS reload stops and starts the BSS, which ends its part of the
+		// channel switch in mac80211 while hostapd still holds it in a CSA.
+		if (!bss_same || !iface_channel_switch(name, config))
 			return false;
 		break;
 	}
@@ -1167,8 +1262,7 @@ function iface_reload_config(name, phydev, config, old_config)
 	// A configuration whose restart failed has no interface, and one whose
 	// start failed has a disabled one. Only a running or pending one is up
 	// to date.
-	let prev_macaddr_bss = bss_list_prev_macaddr(config.bss, old_config.bss);
-	if (is_equal(old_config.bss, prev_macaddr_bss)) {
+	if (bss_same) {
 		if (!hostapd.data.pending_config[name] && iface_start_failed(name)) {
 			hostapd.printf(`Interface for phy ${name} failed to start`);
 			return false;
