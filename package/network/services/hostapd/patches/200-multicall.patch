@@ -114,6 +114,17 @@ This allows building both hostapd and wpa_supplicant as a single binary
  				 union wpa_event_data *data)
  {
  	struct hapd_interfaces *interfaces = ctx;
+--- a/src/ap/hostapd.c
++++ b/src/ap/hostapd.c
+@@ -587,7 +587,7 @@ void hostapd_free_hapd_data(struct hosta
+ 		struct hapd_interfaces *ifaces = hapd->iface->interfaces;
+ 		size_t i;
+ 
+-		for (i = 0; i < ifaces->count; i++) {
++		for (i = 0; ifaces && i < ifaces->count; i++) {
+ 			struct hostapd_iface *iface = ifaces->iface[i];
+ 			size_t j;
+ 
 --- a/src/drivers/driver.h
 +++ b/src/drivers/driver.h
 @@ -7812,8 +7812,8 @@ union wpa_event_data {
@@ -241,6 +252,26 @@ This allows building both hostapd and wpa_supplicant as a single binary
  wpa_supplicant.exe: wpa_supplicant
  	mv -f $< $@
  wpa_cli.exe: wpa_cli
+--- a/wpa_supplicant/ctrl_iface.c
++++ b/wpa_supplicant/ctrl_iface.c
+@@ -14234,7 +14234,7 @@ char * wpa_supplicant_ctrl_iface_process
+ 		if (wpas_ctrl_iface_coloc_intf_report(wpa_s, buf + 18))
+ 			reply_len = -1;
+ #endif /* CONFIG_WNM */
+-#ifdef CONFIG_WNM_AP
++#if defined(CONFIG_AP) && defined(CONFIG_WNM_AP)
+ 	} else if (os_strncmp(buf, "DISASSOC_IMMINENT ", 18) == 0) {
+ 		if (ap_ctrl_iface_disassoc_imminent(wpa_s, buf + 18))
+ 			reply_len = -1;
+@@ -14244,7 +14244,7 @@ char * wpa_supplicant_ctrl_iface_process
+ 	} else if (os_strncmp(buf, "BSS_TM_REQ ", 11) == 0) {
+ 		if (ap_ctrl_iface_bss_tm_req(wpa_s, buf + 11))
+ 			reply_len = -1;
+-#endif /* CONFIG_WNM_AP */
++#endif /* CONFIG_AP && CONFIG_WNM_AP */
+ 	} else if (os_strcmp(buf, "FLUSH") == 0) {
+ 		wpa_supplicant_ctrl_iface_flush(wpa_s);
+ 	} else if (os_strncmp(buf, "RADIO_WORK ", 11) == 0) {
 --- a/wpa_supplicant/eapol_test.c
 +++ b/wpa_supplicant/eapol_test.c
 @@ -31,7 +31,12 @@
