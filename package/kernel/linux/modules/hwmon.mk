@@ -325,6 +325,21 @@ endef
 $(eval $(call KernelPackage,hwmon-lm63))
 
 
+define KernelPackage/hwmon-ctf2302
+  TITLE:=Sensylink CTF2302 fan controller support
+  KCONFIG:=CONFIG_SENSORS_CTF2302
+  FILES:=$(LINUX_DIR)/drivers/hwmon/ctf2302.ko
+  AUTOLOAD:=$(call AutoProbe,ctf2302)
+  $(call AddDepends/hwmon,@LINUX_6_18 +kmod-i2c-core)
+endef
+
+define KernelPackage/hwmon-ctf2302/description
+ Kernel module for the Sensylink CTF2302 fan controller
+endef
+
+$(eval $(call KernelPackage,hwmon-ctf2302))
+
+
 define KernelPackage/hwmon-lm70
   TITLE:=LM70 monitoring support
   KCONFIG:=CONFIG_SENSORS_LM70 \
