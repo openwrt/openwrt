@@ -78,6 +78,18 @@ endef
 $(eval $(call KernelPackage,phy-rockchip-samsung-dcphy))
 
 
+define KernelPackage/phy-rockchip-inno-hdmi
+  SUBMENU:=$(VIDEO_MENU)
+  TITLE:=Rockchip Innosilicon HDMI PHY
+  DEPENDS:=@TARGET_rockchip
+  KCONFIG:=CONFIG_PHY_ROCKCHIP_INNO_HDMI
+  FILES:=$(LINUX_DIR)/drivers/phy/rockchip/phy-rockchip-inno-hdmi.ko
+  AUTOLOAD:=$(call AutoProbe,phy-rockchip-inno-hdmi,1)
+endef
+
+$(eval $(call KernelPackage,phy-rockchip-inno-hdmi))
+
+
 define KernelPackage/phy-rockchip-inno-csidphy
   SUBMENU:=$(VIDEO_MENU)
   TITLE:=Rockchip Innosilicon MIPI CSI DPHY
