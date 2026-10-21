@@ -13,6 +13,11 @@
 # UBI occupies the data region first (no table entry) and is flashed with
 # "ubiformat -o 0x1814 -S <rootfs-size>" into the inactive dual-boot slot.
 #
+# RE700X and RE705X are the same design sold in different regions and share
+# this container and salt. Their stock "nvrammanager" builds differ in the
+# table size (RE700X: 32 slots, RE705X: 40) and the entry type they accept
+# (RE700X: 0, RE705X: 1).
+#
 # The per-model metadata (support-list, soft-version, FwUpTbl size and entry
 # type) is recovered from stock firmware. The soft-version is bumped to 9.9.9
 # so the image always passes the stock anti-downgrade check. No per-device
@@ -32,7 +37,8 @@ ENTRY_SZ = 0x2c
 # Per-model stock metadata. max_ent is the table size nm_readFwUpTbl reads
 # (zero-filled), entry_type the type of the metadata entries. special_ids are
 # the region codes the stock web UI matches against (ASCII of the first two
-# bytes): RE700X EU/UK/JP/AU/AS. cfg_ver is the stock config-version string.
+# bytes): RE700X EU/UK/JP/AU/AS, RE705X US/CA/TW/KR. cfg_ver is the stock
+# config-version string.
 PROFILES = {
     "RE700X": {
         "special_ids": ("00000000", "4A500000", "554B0000",
@@ -40,6 +46,13 @@ PROFILES = {
         "cfg_ver": "RE700Xh1.0.0V1.1.4P1-9CF02F8DEC4552218A6D58A4B9F5D8F1",
         "max_ent": 32,
         "entry_type": 0,
+    },
+    "RE705X": {
+        "special_ids": ("00000000", "43410000", "4B520000",
+                        "54570000", "55530000"),
+        "cfg_ver": "RE705Xh1.0.0V1.1.9P1-71817EBD7250F2E7D77FF2E77B106F9A",
+        "max_ent": 40,
+        "entry_type": 1,
     },
 }
 

@@ -1,0 +1,43 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+/dts-v1/;
+
+#include "ipq5018-re700x.dtsi"
+
+/ {
+	model = "TP-Link RE705X";
+	compatible = "tplink,re705x", "qcom,ipq5018";
+};
+
+/* LED and button GPIOs confirmed on the RE705X by GPIO sweep. */
+&led_power {
+	gpios = <&tlmm 38 GPIO_ACTIVE_HIGH>;
+};
+
+&led_wps_red {
+	gpios = <&tlmm 18 GPIO_ACTIVE_HIGH>;
+};
+
+&led_wlan2g {
+	gpios = <&tlmm 39 GPIO_ACTIVE_HIGH>;
+};
+
+&led_wlan5g {
+	gpios = <&tlmm 13 GPIO_ACTIVE_HIGH>;
+};
+
+&led_pins {
+	pins = "gpio13", "gpio18", "gpio22", "gpio38", "gpio39";
+};
+
+&button_pins {
+	pins = "gpio25", "gpio31";
+};
+
+&{/keys/button-reset} {
+	gpios = <&tlmm 25 GPIO_ACTIVE_LOW>;
+};
+
+&{/keys/button-wps} {
+	gpios = <&tlmm 31 GPIO_ACTIVE_LOW>;
+};

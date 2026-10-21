@@ -397,6 +397,25 @@ define Device/tplink_re700x
 endef
 TARGET_DEVICES += tplink_re700x
 
+define Device/tplink_re705x
+	$(call Device/FitImage)
+	$(call Device/UbiFit)
+	DEVICE_VENDOR := TP-Link
+	DEVICE_MODEL := RE705X
+	DEVICE_VARIANT := v1
+	SOC := ipq5018
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	NAND_SIZE := 128m
+	IMAGE_SIZE := 43008k
+	DEVICE_DTS_CONFIG := config@mp03.3
+	IMAGES += factory-webflash.bin
+	IMAGE/factory-webflash.bin := append-ubi | tplink-re70x-factory RE705X
+	DEVICE_PACKAGES := ath11k-firmware-ipq5018-qcn6122 \
+		ipq-wifi-tplink_re700x kmod-phy-realtek
+endef
+TARGET_DEVICES += tplink_re705x
+
 define Device/wallys_dr5018s
 	$(call Device/FitImage)
 	$(call Device/UbiFit)

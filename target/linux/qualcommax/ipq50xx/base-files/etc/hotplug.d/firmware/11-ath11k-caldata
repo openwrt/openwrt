@@ -80,7 +80,8 @@ case "$FIRMWARE" in
 		ath11k_patch_mac $label_mac 0
 		ath11k_set_macflag
 		;;
-	tplink,re700x)
+	tplink,re700x|\
+	tplink,re705x)
 		caldata_extract "0:art" 0x1000 0x20000
 		label_mac=$(get_mac_binary /tmp/factory_data/default-mac 0)
 		ath11k_patch_mac $(macaddr_add $label_mac 1) 0
@@ -163,7 +164,8 @@ case "$FIRMWARE" in
 		ath11k_set_macflag
 		ath11k_remove_regdomain
 		;;
-	tplink,re700x)
+	tplink,re700x|\
+	tplink,re705x)
 		caldata_extract "0:art" 0x26800 0x20000
 		label_mac=$(get_mac_binary /tmp/factory_data/default-mac 0)
 		ath11k_patch_mac $(macaddr_add $label_mac 2) 0
