@@ -1,0 +1,25 @@
+#!/bin/sh /etc/rc.common
+# SPDX-License-Identifier: GPL-2.0-only
+#
+# UniFi Cloud Gateway Fiber: finish an interrupted OpenWrt upgrade or
+# switch, and tidy up after the stock firmware's tools, at every boot.
+# Never reboots: a repair takes effect at the next restart.
+
+START=15
+
+boot() {
+	case "$(board_name)" in
+	ubnt,ucgfiber) ;;
+	*) return 0 ;;
+	esac
+	# only when booted from the eMMC by the dual-boot /init: it leaves the
+	# root partition mounted (after mount_root under /rom). A RAM boot has
+	# it unmounted and must not write the eMMC.
+	. /lib/upgrade/ucgfiber-dualboot.sh
+	local dev mp
+
+	dev="$(db_find_part root)" || return 0
+	mp="$(awk -v d="$dev" '$1 == d && $3 == "ext4" { print $2; exit }' /proc/mounts)"
+	[ -n "$mp" ] && [ -f "$mp/rootfs.owrt" ] || return 0
+	ucgfiber-bootsel repair 2>&1 | logger -t ucgfiber-dualboot
+}

@@ -1,0 +1,172 @@
+#!/bin/sh
+# SPDX-License-Identifier: GPL-2.0-only
+#
+# Create OpenWrt's settings partition on the UniFi Cloud Gateway Fiber:
+# shrink the stock "overlay" partition (p6) by 1 GiB and append p7
+# "rootfs_data" in the freed space. fstools formats p7 at the next boot.
+# Runs on OpenWrt (installed or RAM-booted), which never mounts p6; never
+# on the stock firmware, where p6 is in use. p1-p6 keep their numbers.
+#
+# usage: ucgfiber-install-data [--dry-run] [--yes]
+#
+# Interrupted? Run it again: each step checks whether it is already done.
+
+. /lib/upgrade/ucgfiber-dualboot.sh
+
+# stock's layout (sectors of 512 bytes), and the new one
+DISK_SECTORS=30535680
+P6_START=10684416
+P6_END=30533631
+P6_NEW_END=28436479
+P7_START=28436480
+P7_END=30533631
+P7_TYPE=0FC63DAF-8483-4772-8E79-3D69D8477DE4	# Linux filesystem, as stock's partitions
+MARGIN_KIB=$((512 * 1024))	# free space p6 must keep after the shrink
+
+DRY=""
+YES=""
+for a in "$@"; do
+	case "$a" in
+	--dry-run) DRY=1 ;;
+	--yes) YES=1 ;;
+	*) sed -n 's/^# usage: /usage: /p' "$0" >&2; exit 2 ;;
+	esac
+done
+
+die() { echo "ucgfiber-install-data: $*" >&2; exit 1; }
+say() { echo "ucgfiber-install-data: $*"; }
+
+sysattr() { # <partition device> <attribute>
+	cat "/sys/class/block/${1#/dev/}/$2"
+}
+
+# a field (start or size) of the table entry named <name>, from the table on disk
+table_field() { # <name> <field>
+	echo "$TABLE" | grep "name=\"$1\"" | sed -n "s/.*[ ,]$2= *\([0-9]*\).*/\1/p"
+}
+
+# p7 holds no file system yet (f2fs magic at 1024, ext4 magic at 1080)
+p7_unformatted() {
+	[ "$(db_hex "$DISK" $((P7_START * 512 + 1024)) 4)" != 1020f5f2 ] &&
+	[ "$(db_hex "$DISK" $((P7_START * 512 + 1080)) 2)" != 53ef ]
+}
+
+# clear the start of p7 so that fstools formats it (old p6 data there could
+# look like a file system or a config backup)
+clear_p7() {
+	dd if=/dev/zero of="$DISK" bs=512 seek=$P7_START count=8 conv=notrunc 2>/dev/null || die "could not clear the start of partition 7"
+	sync
+}
+
+# --- checks (read only) ---------------------------------------------------
+n=1
+for label in kernel recovery root log persistent overlay; do
+	dev="$(db_find_part $label)" || die "no partition named $label: not the stock layout"
+	[ "$(sysattr "$dev" partition)" = $n ] || die "$label is not partition $n: not the stock layout"
+	n=$((n + 1))
+done
+P6="$(db_find_part overlay)"
+DISK="/dev/$(basename "$(readlink -f "/sys/class/block/${P6#/dev/}/..")")"
+[ -b "$DISK" ] || die "cannot find the disk of $P6"
+[ "$(cat "/sys/class/block/${DISK#/dev/}/size")" = $DISK_SECTORS ] || die "$DISK is not $DISK_SECTORS sectors: not the expected eMMC"
+command -v sfdisk >/dev/null || die "missing tool: sfdisk"
+TABLE="$(sfdisk --dump "$DISK")" || die "cannot read the partition table of $DISK"
+
+# p7 already in the table (an earlier run): make it known, clear it if unused
+if echo "$TABLE" | grep -q 'name="rootfs_data"'; then
+	[ "$(table_field rootfs_data start)" = $P7_START ] || die "rootfs_data exists but not at sector $P7_START"
+	partx -a --nr 7 "$DISK" 2>/dev/null
+	p7="$(db_find_part rootfs_data)"
+	if [ -n "$p7" ] && grep -q "^$p7 " /proc/mounts; then
+		say "rootfs_data is in use ($p7); nothing to do"
+	elif p7_unformatted; then
+		[ -n "$DRY" ] && { say "dry run: rootfs_data exists but is not cleared yet; the real run clears it"; exit 0; }
+		clear_p7
+		say "rootfs_data cleared; reboot to start using it"
+	else
+		say "rootfs_data exists and holds a file system; nothing to do"
+	fi
+	exit 0
+fi
+
+start="$(table_field overlay start)"
+size="$(table_field overlay size)"
+[ "$start" = $P6_START ] || die "overlay starts at sector $start, expected $P6_START"
+end=$((start + size - 1))
+case "$end" in
+$P6_END) gpt_done="" ;;
+$P6_NEW_END) gpt_done=p6 ;;	# an earlier run shrank p6 in the table already
+*) die "overlay ends at sector $end, expected $P6_END" ;;
+esac
+grep -q "^$P6 " /proc/mounts && die "$P6 is mounted; this has to run on OpenWrt, not on stock"
+for t in e2fsck resize2fs dumpe2fs partx; do
+	command -v $t >/dev/null || die "missing tool: $t"
+done
+
+# file system of p6, from its superblock (read only). The exact minimum
+# size (resize2fs -P) needs a checked file system, so it comes after
+# e2fsck in the real run; here an estimate: used blocks x 1.5
+sb() { dumpe2fs -h "$P6" 2>/dev/null | sed -n "s/^$1: *//p"; }
+bs="$(sb 'Block size')"
+blocks="$(sb 'Block count')"
+free="$(sb 'Free blocks')"
+[ -n "$bs" ] && [ -n "$blocks" ] && [ -n "$free" ] || die "cannot read the file system on $P6"
+fs_kib=$((blocks * bs / 1024))
+used_kib=$(((blocks - free) * bs / 1024))
+new_kib=$(((P6_NEW_END - P6_START + 1) / 2))
+
+say "disk $DISK, overlay = $P6, sectors $start-$end"
+say "overlay file system: $fs_kib KiB, $used_kib KiB in use"
+say "plan: overlay $P6_START-$P6_NEW_END ($new_kib KiB), new rootfs_data $P7_START-$P7_END ($(((P7_END - P7_START + 1) / 2)) KiB)"
+[ "$fs_kib" -le "$new_kib" ] ||
+	[ $((used_kib * 3 / 2 + MARGIN_KIB)) -le $new_kib ] || die "overlay holds too much data to shrink ($used_kib KiB in use)"
+[ -n "$gpt_done" ] && say "the partition table already has the smaller overlay (earlier run); continuing"
+
+if [ -n "$DRY" ]; then
+	e2fsck -fn "$P6" >/dev/null 2>&1 && say "e2fsck (read only): clean" || say "e2fsck (read only): problems found; the real run repairs them first"
+	say "dry run: no changes made"
+	exit 0
+fi
+
+if [ -z "$YES" ]; then
+	printf "Change the partition table of %s as above? Type yes: " "$DISK"
+	read -r answer
+	[ "$answer" = yes ] || die "not confirmed; nothing changed"
+fi
+
+# --- changes ---------------------------------------------------------------
+# 1. the file system first: a smaller file system in an unchanged partition
+#    is valid for stock too, so an interruption here is harmless
+if [ "$fs_kib" -gt "$new_kib" ]; then
+	say "checking $P6"
+	e2fsck -fp "$P6"
+	[ $? -le 1 ] || die "e2fsck found problems it could not fix; nothing changed"
+	min_blocks="$(resize2fs -P "$P6" 2>/dev/null | sed -n 's/.*: *//p')"
+	[ -n "$min_blocks" ] || die "resize2fs cannot estimate the minimum size of $P6; nothing changed"
+	say "overlay can shrink to $((min_blocks * bs / 1024)) KiB"
+	[ $((min_blocks * bs / 1024 + MARGIN_KIB)) -le $new_kib ] ||
+		die "overlay holds too much data to shrink (needs $((min_blocks * bs / 1024)) KiB + $MARGIN_KIB KiB margin); nothing changed"
+	say "shrinking the overlay file system"
+	resize2fs "$P6" "$((P6_NEW_END - P6_START + 1))s" || die "resize2fs failed"
+	sync
+	e2fsck -fn "$P6" >/dev/null 2>&1 || die "e2fsck after the shrink is not clean; partition table not changed"
+fi
+
+# 2. the partition table: p6 smaller (name, type and GUID stay), then p7
+if [ -z "$gpt_done" ]; then
+	say "shrinking partition 6 in the table"
+	echo "$P6_START,$((P6_NEW_END - P6_START + 1))" | sfdisk --no-reread --no-tell-kernel -q -N 6 "$DISK" ||
+		die "sfdisk failed to change partition 6"
+	sync
+fi
+say "adding partition 7 rootfs_data"
+echo "start=$P7_START, size=$((P7_END - P7_START + 1)), type=$P7_TYPE, name=\"rootfs_data\"" |
+	sfdisk --no-reread --no-tell-kernel -q --append "$DISK" || die "sfdisk failed to add partition 7"
+sync
+sfdisk --verify "$DISK" >/dev/null || die "sfdisk --verify reports a problem"
+
+# 3. tell the kernel, then clear the start of p7
+partx -u --nr 6 "$DISK" 2>/dev/null
+partx -a --nr 7 "$DISK" 2>/dev/null
+clear_p7
+say "done: reboot to start using rootfs_data (OpenWrt formats it at the next boot)"

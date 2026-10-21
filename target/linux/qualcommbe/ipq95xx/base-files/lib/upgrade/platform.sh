@@ -1,7 +1,7 @@
 PART_NAME=firmware
 REQUIRE_IMAGE_METADATA=1
 
-RAMFS_COPY_BIN='fw_printenv fw_setenv head cmp sha256sum tr mktemp'
+RAMFS_COPY_BIN='fw_printenv fw_setenv head cmp sha256sum tr mktemp ln'
 RAMFS_COPY_DATA='/etc/fw_env.config /var/lock/fw_printenv.lock'
 
 platform_check_image() {
@@ -12,6 +12,10 @@ platform_check_image() {
 			return 1
 		}
 		return 0
+		;;
+	ubnt,ucgfiber)
+		ucgfiber_check_image "$1"
+		return $?
 		;;
 	*)
 		return 0
@@ -25,6 +29,9 @@ platform_do_upgrade() {
 		CI_KERNPART="0:HLOS"
 		CI_ROOTPART="rootfs"
 		emmc_do_upgrade "$1"
+		;;
+	ubnt,ucgfiber)
+		ucgfiber_do_upgrade "$1" || return 1
 		;;
 	askey,sbe1v1k)
 		CI_KERNPART="0:HLOS"
@@ -46,6 +53,9 @@ platform_copy_config() {
 	8devices,kiwi-dvk|\
 	askey,sbe1v1k)
 		emmc_copy_config
+		;;
+	ubnt,ucgfiber)
+		ucgfiber_copy_config
 		;;
 	esac
 }
