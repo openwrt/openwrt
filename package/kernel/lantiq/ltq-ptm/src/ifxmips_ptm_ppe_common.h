@@ -30,8 +30,6 @@
 
 #if defined(CONFIG_DANUBE)
   #include "ifxmips_ptm_ppe_danube.h"
-#elif defined(CONFIG_AMAZON_SE)
-  #include "ifxmips_ptm_ppe_amazon_se.h"
 #elif defined(CONFIG_AR9)
   #include "ifxmips_ptm_ppe_ar9.h"
 #elif defined(CONFIG_VR9)
