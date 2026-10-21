@@ -6395,7 +6395,7 @@ index 000000000..cc7e25c6a
 +	return 0;
 +}
 +
-+static bool yt921x_mdio_phyid_valid(u16 id1, u16 id2)
++static bool __maybe_unused yt921x_mdio_phyid_valid(u16 id1, u16 id2)
 +{
 +	/* 0x1140/0x1140 is a known pseudo responder pattern on non-PHY MBUS
 +	 * paths; exclude it from the valid responder mask.
@@ -6755,8 +6755,8 @@ index 000000000..cc7e25c6a
 +	unsigned long cpu_ports_mask;
 +	u64 ctrl64;
 +	u32 ctrl;
-+	u32 allowed_mask;
-+	u32 blocked_mask;
++	u32 allowed_mask __maybe_unused;
++	u32 blocked_mask __maybe_unused;
 +	int port;
 +	int res;
 +#if IS_ENABLED(CONFIG_NET_DSA_YT921X_DEBUG)
@@ -12709,7 +12709,7 @@ index 000000000..afd231e7b
 +	struct dsa_switch *ds = &priv->ds;
 +	struct dsa_port *dp;
 +	u32 blocked_mask;
-+	u32 allowed_mask;
++	u32 allowed_mask __maybe_unused;
 +	int upstream_port;
 +
 +	if (!dsa_is_cpu_port(ds, cpu_port) ||
@@ -13647,7 +13647,7 @@ new file mode 100644
 index 000000000..82fc06e8a
 --- /dev/null
 +++ b/drivers/net/dsa/yt921x_port.c
-@@ -0,0 +1,1076 @@
+@@ -0,0 +1,1075 @@
 +/* SPDX-License-Identifier: GPL-2.0-or-later */
 +/*
 + * Internal split unit for yt921x.c
@@ -14212,7 +14212,6 @@ index 000000000..82fc06e8a
 +		priv->policer_burst[port] = old_burst;
 +	}
 +
-+out_unlock:
 +	mutex_unlock(&priv->reg_lock);
 +	return res;
 +}

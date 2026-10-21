@@ -89,9 +89,11 @@
 			pinctrl-0 = <&switch_reset_pin>;
 			compatible = "motorcomm,yt9215";
 			reg = <29>;
-			reset-gpios = <&tlmm 35 GPIO_ACTIVE_LOW>;
-			reset-delay-us = <20000>;
-			reset-post-delay-us = <200000>;
+			/* The driver pulses this line like the stock firmware
+			 * (25 ms asserted, 100 ms after release); the generic
+			 * reset-delay-us properties are not used.
+			 */
+			reset-gpios = <&tlmm 35 GPIO_ACTIVE_HIGH>;
 			
 			mdio {
 				#address-cells = <1>;
@@ -99,14 +101,17 @@
 				
 				sw_phy0: phy@0 {
 					reg = <0>;
+					motorcomm,auto-sleep-disabled;
 				};
 				
 				sw_phy1: phy@1 {
 					reg = <1>;
+					motorcomm,auto-sleep-disabled;
 				};
 				
 				sw_phy2: phy@2 {
 					reg = <2>;
+					motorcomm,auto-sleep-disabled;
 				};
 			};
 			
@@ -137,11 +142,16 @@
 				
 				ethernet-port@8 {
 					reg = <8>;
-					phy-mode = "2500base-x";
+					/* IPQ5018 UNIPHY runs SGMII at 1G (125 MHz,
+					 * MAC_MODE_SGMII_CHANNEL0); the yt921x driver
+					 * maps "sgmii" to REVSGMII for EXT0. 2500BASE-X
+					 * with SGMII_PLUS does not establish link here.
+					 */
+					phy-mode = "sgmii";
 					ethernet = <&dp2>;
 					
 					fixed-link {
-						speed = <2500>;
+						speed = <1000>;
 						full-duplex;
 					};
 				};
@@ -160,8 +170,25 @@
 
 &switch {
 	status = "okay";
+	/* SGMII 1G on the CPU lane, matching the stock firmware. */
 	switch_mac_mode = <MAC_MODE_SGMII_CHANNEL0>;
-	
+
+	/*
+	 * Keep GCC_UNIPHY_AHB_ARES: SSDK resets the UNIPHY through this line
+	 * before programming SGMII 1G on the forced CPU port. Without it the
+	 * PCS keeps its reset defaults and never gets link.
+	 */
+	resets = <&gcc GCC_GMAC0_BCR>,
+		 <&gcc GCC_GMAC1_BCR>,
+		 <&gcc GCC_UNIPHY_BCR>,
+		 <&gcc GCC_UNIPHY_AHB_ARES>,
+		 <&gcc GCC_UNIPHY_SOFT_RESET>;
+	reset-names = "gmac0_bcr_rst",
+		      "gmac1_bcr_rst",
+		      "uniphy_bcr_rst",
+		      "uniphy1_ahb_rst",
+		      "uniphy1_soft_rst";
+
 	qcom,port_phyinfo {
 		port@0 {
 			port_id = <1>;
@@ -172,7 +199,8 @@
 		port@1 {
 			port_id = <2>;
 			mdiobus = <&mdio_bitbang>;
-			port_mac_sel = "QGMAC_PORT";
+			forced-speed = <1000>;
+			forced-duplex = <1>;
 		};
 	};
 	
@@ -199,6 +227,7 @@
 &dp2 {
 	status = "okay";
 	label = "lan";
+	phy-mode = "sgmii";
 	nvmem-cells = <&macaddr_appsblenv_ethaddr 1>;
 	nvmem-cell-names = "mac-address";
 	
@@ -399,7 +428,7 @@
 		pins = "gpio35";
 		function = "gpio";
 		drive-strength = <8>;
-		bias-pull-up;
+		bias-disable;
 	};
 	
 	mdio1_pins: mdio-state {

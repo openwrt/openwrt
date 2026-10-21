@@ -1,0 +1,109 @@
+--- a/drivers/net/phy/motorcomm.c
++++ b/drivers/net/phy/motorcomm.c
+@@ -17,6 +17,8 @@
+ #define PHY_ID_YT8521		0x0000011a
+ #define PHY_ID_YT8531		0x4f51e91b
+ #define PHY_ID_YT8531S		0x4f51e91a
++/* Live captured from YT921x switch internal MDIO bus */
++#define PHY_ID_INT861X		0x01e04281
+ #define PHY_ID_YT8821		0x4f51ea19
+ /* YT8521/YT8531S/YT8821 Register Overview
+  *	UTP Register space	|	FIBER Register space
+@@ -2333,6 +2335,64 @@
+ }
+ 
+ /**
++ * yt861x_config_init() - initialize the internal PHY
++ * @phydev: a pointer to a &struct phy_device
++ *
++ * Apply the vendor init sequence required by the internal YT861x PHYs on a
++ * YT921x switch. Auto sleep is disabled by default on these PHYs and a BMCR
++ * soft reset does not restore it, so apply the setting from config_init. It
++ * can be disabled with the "motorcomm,auto-sleep-disabled" device property.
++ *
++ * Returns: 0 or negative errno code
++ */
++static int yt861x_config_init(struct phy_device *phydev)
++{
++	static const struct {
++		u16 reg;
++		u16 val;
++	} lan_phys[] = {
++		{ 0x51,  0x14e6 },
++		{ 0x57,  0x2774 },
++		{ 0x12,  0x24c0 },
++	};
++	static const struct {
++		u16 reg;
++		u16 val;
++	} all_phys[] = {
++		{ 0x50,  0x411a },
++		{ 0x400, 0x121a },
++		{ 0x401, 0xc145 },
++		{ 0x00,  0x1c08 },
++	};
++	bool sleep;
++	int i, ret;
++
++	if (phydev->mdio.addr <= 2) {
++		for (i = 0; i < ARRAY_SIZE(lan_phys); i++) {
++			ret = ytphy_write_ext_with_lock(phydev, lan_phys[i].reg,
++							lan_phys[i].val);
++			if (ret)
++				return ret;
++		}
++	}
++
++	for (i = 0; i < ARRAY_SIZE(all_phys); i++) {
++		ret = ytphy_write_ext_with_lock(phydev, all_phys[i].reg,
++						all_phys[i].val);
++		if (ret)
++			return ret;
++	}
++
++	sleep = !device_property_read_bool(&phydev->mdio.dev,
++					   "motorcomm,auto-sleep-disabled");
++
++	return ytphy_modify_ext_with_lock(phydev,
++					 YT8521_EXTREG_SLEEP_CONTROL1_REG,
++					 YT8521_ESC1R_SLEEP_SW,
++					 sleep ? YT8521_ESC1R_SLEEP_SW : 0);
++}
++
++/**
+  * yt8821_get_features - read mmd register to get 2.5G capability
+  * @phydev: target phy_device struct
+  *
+@@ -2971,6 +3031,15 @@
+ 		.resume		= yt8521_resume,
+ 	},
+ 	{
++		PHY_ID_MATCH_EXACT(PHY_ID_INT861X),
++		.name			= "YT861x Internal Gigabit Ethernet",
++		.flags			= PHY_IS_INTERNAL,
++		.config_init		= yt861x_config_init,
++		.soft_reset		= genphy_soft_reset,
++		.suspend		= genphy_suspend,
++		.resume			= genphy_resume,
++	},
++	{
+ 		PHY_ID_MATCH_EXACT(PHY_ID_YT8821),
+ 		.name			= "YT8821 2.5Gbps PHY",
+ 		.get_features		= yt8821_get_features,
+@@ -2991,7 +3060,7 @@
+ 
+ module_phy_driver(motorcomm_phy_drvs);
+ 
+-MODULE_DESCRIPTION("Motorcomm 8511/8521/8531/8531S/8821 PHY driver");
++MODULE_DESCRIPTION("Motorcomm 8511/8521/8531/8531S/861x/8821 PHY driver");
+ MODULE_AUTHOR("Peter Geis");
+ MODULE_AUTHOR("Frank");
+ MODULE_LICENSE("GPL");
+@@ -3001,6 +3070,7 @@
+ 	{ PHY_ID_MATCH_EXACT(PHY_ID_YT8521) },
+ 	{ PHY_ID_MATCH_EXACT(PHY_ID_YT8531) },
+ 	{ PHY_ID_MATCH_EXACT(PHY_ID_YT8531S) },
++	{ PHY_ID_MATCH_EXACT(PHY_ID_INT861X) },
+ 	{ PHY_ID_MATCH_EXACT(PHY_ID_YT8821) },
+ 	{ /* sentinel */ }
+ };

@@ -1,0 +1,37 @@
+From: ppptran <ppptran@localhost>
+Subject: [PATCH] net: dsa: yt921x: latch forced SerDes link on AN edge
+
+Vendor HAL programs the SERDES force value first and raises AN_LINK_EN
+afterwards; the MAC latches the forced link on that 0->1 edge. Mirror
+that order for external ports so PORT_STATUS reports link.
+
+--- a/drivers/net/dsa/yt921x_port.c
++++ b/drivers/net/dsa/yt921x_port.c
+@@ -714,8 +714,12 @@
+ 		ctrl |= YT921X_PORT_TX_PAUSE;
+ 	if (rx_pause)
+ 		ctrl |= YT921X_PORT_RX_PAUSE;
+-	ctrl |= YT921X_PORT_RX_MAC_EN | YT921X_PORT_TX_MAC_EN |
+-		YT921X_PORT_LINK;
++	ctrl |= YT921X_PORT_RX_MAC_EN | YT921X_PORT_TX_MAC_EN;
++	/* External port: vendor HAL forces the SERDES link first, then raises
++	 * AN_LINK_EN. Keep AN off here and latch it after the SERDES write.
++	 */
++	if (!yt921x_is_external_port(priv, port))
++		ctrl |= YT921X_PORT_LINK;
+ 	/* Preserve undocumented / strap-controlled bits in PORTn_CTRL
+ 	 * (e.g. pause-an / half-pause), only touch fields we own.
+ 	 */
+@@ -780,6 +784,12 @@
+ 		res = yt921x_mdio_polling_set(priv, port, true, speed, duplex);
+ 		if (res)
+ 			return res;
++
++		/* Rising edge of AN_LINK_EN latches the forced SERDES link. */
++		res = yt921x_reg_update_bits(priv, YT921X_PORTn_CTRL(port),
++					     YT921X_PORT_LINK, YT921X_PORT_LINK);
++		if (res)
++			return res;
+ 	}
+ 
+ 	return 0;
