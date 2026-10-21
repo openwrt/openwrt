@@ -47,6 +47,9 @@ lantiq_setup_interfaces()
 	avm,fritz7412)
 		ucidef_set_interface_lan "lan"
 		;;
+	draytek,vigor2860)
+		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4 lan5 lan6" "wan"
+		;;
 	*)
 		ucidef_set_interface_lan 'eth0'
 		;;
