@@ -1,0 +1,28 @@
+From 908b345e6fca86eddcc6ec42f7bb89a4f5bda1b5 Mon Sep 17 00:00:00 2001
+From: Francesco Palmarini <palmarini@unive.it>
+Date: Wed, 21 Oct 2026 12:35:05 +0200
+Subject: [PATCH] wifi: mt76: mt7615: release patch semaphore on timeout
+
+If the PATCH_SEM_CONTROL reply gets lost, the rom may still have granted
+the semaphore and every following attempt fails with
+PATCH_NOT_DL_SEM_FAIL. Release it on timeout so the next retry can get
+it again.
+
+Signed-off-by: Francesco Palmarini <palmarini@unive.it>
+---
+ mt7615/mcu.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+--- a/mt7615/mcu.c
++++ b/mt7615/mcu.c
+@@ -1259,6 +1259,10 @@ static int mt7615_load_patch(struct mt76
+ 		goto release_fw;
+ 	case PATCH_NOT_DL_SEM_SUCCESS:
+ 		break;
++	case -ETIMEDOUT:
++		/* rom might have granted the semaphore anyway */
++		mt76_connac_mcu_patch_sem_ctrl(&dev->mt76, false);
++		fallthrough;
+ 	default:
+ 		dev_err(dev->mt76.dev, "Failed to get patch semaphore\n");
+ 		ret = -EAGAIN;
