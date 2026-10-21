@@ -41,7 +41,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  	airoha_qdma_wr(qdma, REG_TX_IRQ_BASE(id), dma_addr);
  	airoha_qdma_rmw(qdma, REG_TX_IRQ_CFG(id), TX_IRQ_DEPTH_MASK,
  			FIELD_PREP(TX_IRQ_DEPTH_MASK, size));
-@@ -1450,8 +1451,12 @@ static void airoha_qdma_cleanup(struct a
+@@ -1441,8 +1442,12 @@ static void airoha_qdma_cleanup(struct a
  		}
  	}
  

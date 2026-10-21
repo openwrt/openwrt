@@ -22,7 +22,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
 
 --- a/drivers/net/ethernet/airoha/airoha_eth.c
 +++ b/drivers/net/ethernet/airoha/airoha_eth.c
-@@ -1723,8 +1723,8 @@ static int airoha_dev_open(struct net_de
+@@ -1715,8 +1715,8 @@ static int airoha_dev_open(struct net_de
  	int err, len = ETH_HLEN + netdev->mtu + ETH_FCS_LEN;
  	struct airoha_gdm_dev *dev = netdev_priv(netdev);
  	struct airoha_gdm_port *port = dev->port;
@@ -32,7 +32,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  
  	netif_tx_start_all_queues(netdev);
  	err = airoha_set_vip_for_gdm_port(dev, true);
-@@ -1738,10 +1738,20 @@ static int airoha_dev_open(struct net_de
+@@ -1730,10 +1730,20 @@ static int airoha_dev_open(struct net_de
  		airoha_fe_clear(qdma->eth, REG_GDM_INGRESS_CFG(port->id),
  				GDM_STAG_EN_MASK);
  
@@ -57,7 +57,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  
  	airoha_qdma_set(qdma, REG_QDMA_GLOBAL_CFG,
  			GLOBAL_CFG_TX_DMA_EN_MASK |
-@@ -1757,6 +1767,30 @@ static int airoha_dev_open(struct net_de
+@@ -1749,6 +1759,30 @@ static int airoha_dev_open(struct net_de
  	return 0;
  }
  
@@ -88,7 +88,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  static int airoha_dev_stop(struct net_device *netdev)
  {
  	struct airoha_gdm_dev *dev = netdev_priv(netdev);
-@@ -1769,8 +1803,12 @@ static int airoha_dev_stop(struct net_de
+@@ -1761,8 +1795,12 @@ static int airoha_dev_stop(struct net_de
  	for (i = 0; i < netdev->num_tx_queues; i++)
  		netdev_tx_reset_subqueue(netdev, i);
  
@@ -103,7 +103,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  
  	if (atomic_dec_and_test(&qdma->users)) {
  		airoha_qdma_clear(qdma, REG_QDMA_GLOBAL_CFG,
-@@ -1925,13 +1963,10 @@ static int airoha_dev_change_mtu(struct
+@@ -1917,13 +1955,10 @@ static int airoha_dev_change_mtu(struct
  {
  	struct airoha_gdm_dev *dev = netdev_priv(netdev);
  	struct airoha_gdm_port *port = dev->port;

@@ -365,7 +365,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  		WRITE_ONCE(desc->ctrl, 0);
  		WRITE_ONCE(desc->addr, 0);
  		WRITE_ONCE(desc->data, 0);
-@@ -1809,6 +2036,37 @@ static void airoha_update_hw_stats(struc
+@@ -1801,6 +2028,37 @@ static void airoha_update_hw_stats(struc
  	spin_unlock(&port->lock);
  }
  
@@ -403,7 +403,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  static int airoha_dev_open(struct net_device *netdev)
  {
  	int err, len = ETH_HLEN + netdev->mtu + ETH_FCS_LEN;
-@@ -1816,6 +2074,18 @@ static int airoha_dev_open(struct net_de
+@@ -1808,6 +2066,18 @@ static int airoha_dev_open(struct net_de
  	struct airoha_gdm_port *port = dev->port;
  	u32 cur_len, pse_port = FE_PSE_PORT_PPE1;
  	struct airoha_qdma *qdma = dev->qdma;
@@ -422,7 +422,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  
  	err = phylink_of_phy_connect(dev->phylink, netdev->dev.of_node, 0);
  	if (err) {
-@@ -1832,13 +2102,13 @@ static int airoha_dev_open(struct net_de
+@@ -1824,13 +2094,13 @@ static int airoha_dev_open(struct net_de
  
  	/* It seems GDM3 and GDM4 needs SPORT enabled to correctly work */
  	if (netdev_uses_dsa(netdev) || port->id > 2)
@@ -439,7 +439,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  				GDM_LONG_LEN_MASK);
  	if (!port->users || len > cur_len) {
  		/* Opening a sibling net_device with a larger MTU updates the
-@@ -1846,7 +2116,7 @@ static int airoha_dev_open(struct net_de
+@@ -1838,7 +2108,7 @@ static int airoha_dev_open(struct net_de
  		 * multiple net_devices with different MTUs to share the same
  		 * GDM port.
  		 */
@@ -448,7 +448,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  			      GDM_SHORT_LEN_MASK | GDM_LONG_LEN_MASK,
  			      FIELD_PREP(GDM_SHORT_LEN_MASK, 60) |
  			      FIELD_PREP(GDM_LONG_LEN_MASK, len));
-@@ -1859,11 +2129,16 @@ static int airoha_dev_open(struct net_de
+@@ -1851,11 +2121,16 @@ static int airoha_dev_open(struct net_de
  	qdma->users++;
  
  	if (!airoha_is_lan_gdm_dev(dev) &&
@@ -467,7 +467,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  	return 0;
  }
  
-@@ -1896,6 +2171,7 @@ static int airoha_dev_stop(struct net_de
+@@ -1888,6 +2163,7 @@ static int airoha_dev_stop(struct net_de
  	struct airoha_gdm_dev *dev = netdev_priv(netdev);
  	struct airoha_gdm_port *port = dev->port;
  	struct airoha_qdma *qdma = dev->qdma;
@@ -475,7 +475,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  	int i;
  
  	netif_tx_disable(netdev);
-@@ -1904,9 +2180,9 @@ static int airoha_dev_stop(struct net_de
+@@ -1896,9 +2172,9 @@ static int airoha_dev_stop(struct net_de
  		netdev_tx_reset_subqueue(netdev, i);
  
  	if (--port->users)
@@ -487,7 +487,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  					    REG_GDM_FWD_CFG(port->id),
  					    FE_PSE_PORT_DROP);
  
-@@ -1923,6 +2199,8 @@ static int airoha_dev_stop(struct net_de
+@@ -1915,6 +2191,8 @@ static int airoha_dev_stop(struct net_de
  		}
  	}
  
@@ -496,7 +496,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  	phylink_stop(dev->phylink);
  	phylink_disconnect_phy(dev->phylink);
  
-@@ -2195,6 +2473,38 @@ int airoha_get_fe_port(struct airoha_gdm
+@@ -2187,6 +2465,38 @@ int airoha_get_fe_port(struct airoha_gdm
  	}
  }
  
@@ -535,7 +535,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  static netdev_tx_t airoha_dev_xmit(struct sk_buff *skb,
  				   struct net_device *netdev)
  {
-@@ -3138,6 +3448,8 @@ static const struct net_device_ops airoh
+@@ -3134,6 +3444,8 @@ static const struct net_device_ops airoh
  	.ndo_stop		= airoha_dev_stop,
  	.ndo_change_mtu		= airoha_dev_change_mtu,
  	.ndo_select_queue	= airoha_dev_select_queue,
@@ -544,7 +544,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  	.ndo_start_xmit		= airoha_dev_xmit,
  	.ndo_get_stats64        = airoha_dev_get_stats64,
  	.ndo_set_mac_address	= airoha_dev_set_macaddr,
-@@ -3375,11 +3687,9 @@ static int airoha_alloc_gdm_device(struc
+@@ -3371,11 +3683,9 @@ static int airoha_alloc_gdm_device(struc
  	netdev->ethtool_ops = &airoha_ethtool_ops;
  	netdev->max_mtu = AIROHA_MAX_MTU;
  	netdev->watchdog_timeo = 5 * HZ;
