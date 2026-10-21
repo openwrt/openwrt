@@ -1,0 +1,120 @@
+From 42fb81310facc8ee48a74b3e9609449a7f86f747 Mon Sep 17 00:00:00 2001
+From: Valentin Berezhnoy <dreyksmail@gmail.com>
+Date: Tue, 20 Oct 2026 23:30:00 +0300
+Subject: [PATCH] net: ethernet: mtk_ppe: fix flow accounting on unbind and
+ rebind
+
+Since "net: ethernet: mediatek: fix ppe flow accounting for L2 flows"
+the per-flow totals are prev_packets/prev_bytes plus the counters
+accumulated for the bound hardware entry, which __mtk_foe_entry_commit()
+resets on every bind. The counters of an entry are not always folded
+into prev_* before they are lost:
+
+- mtk_flow_entry_update() folds them when it finds the flow unbound, but
+  keeps entry->hash, so every following stats poll adds them again;
+- __mtk_ppe_check_skb() rebinds a flow, or drops the hash of a flow that
+  no longer matches, without folding the counters first;
+- when mtk_flow_entry_update() finds the flow unbound, it only folds the
+  software copy of the counters, not what the MIB counter of the entry
+  gathered since the last stats poll. The PPE unbinds an entry by itself
+  e.g. after a TCP FIN, so the last seconds of every connection were lost.
+
+In the second case the total goes backwards. mtk_flow_offload_stats()
+reports "entry->packets - packets" as a u64 delta, and nf_ct_acct_add()
+truncates it to 32 bits, so conntrack (and nlbwmon on top of it) gets
+almost 2^32 phantom packets and bytes added per occurrence.
+
+Fold the counters exactly once, before the hash is dropped or rebound,
+after reading the MIB counter of the entry, and detach the flow from the
+hardware entry (entry->hash = 0xffff), as upstream does on unbind.
+Also never report a decreasing total as a positive delta.
+
+Assisted-by: LLM
+Signed-off-by: Valentin Berezhnoy <dreyksmail@gmail.com>
+---
+--- a/drivers/net/ethernet/mediatek/mtk_ppe.c
++++ b/drivers/net/ethernet/mediatek/mtk_ppe.c
+@@ -559,6 +559,35 @@ static int __mtk_foe_entry_idle_time(str
+ 		return now - timestamp;
+ }
+ 
++/*
++ * Add the counters accumulated for the hardware entry a flow is bound to since
++ * the bind to the flow's totals and detach the flow from that entry. This has
++ * to happen exactly once per bind, and before a new bind of the same hash
++ * resets the counters in __mtk_foe_entry_commit(): otherwise the totals either
++ * count the same packets again or go backwards.
++ *
++ * The MIB counter of the entry is read first: it still holds the traffic since
++ * the last stats poll, e.g. when the PPE unbound the entry by itself after a
++ * TCP FIN. No other flow can have been bound to the hash meanwhile, as that
++ * detaches this flow first.
++ */
++static void
++mtk_flow_entry_save_acct(struct mtk_ppe *ppe, struct mtk_flow_entry *entry)
++{
++	struct mtk_foe_accounting *acct;
++
++	if (entry->hash == 0xffff)
++		return;
++
++	acct = mtk_ppe_mib_entry_read(ppe, entry->hash);
++	if (acct) {
++		entry->prev_packets += acct->packets;
++		entry->prev_bytes += acct->bytes;
++	}
++
++	entry->hash = 0xffff;
++}
++
+ static bool
+ mtk_flow_entry_update(struct mtk_ppe *ppe, struct mtk_flow_entry *entry,
+ 		      u64 *packets, u64 *bytes)
+@@ -580,11 +609,7 @@ mtk_flow_entry_update(struct mtk_ppe *pp
+ 	if (!mtk_flow_entry_match(ppe->eth, entry, &foe, len) ||
+ 	    FIELD_GET(MTK_FOE_IB1_STATE, foe.ib1) != MTK_FOE_STATE_BIND) {
+ 		acct = mtk_ppe_acct_data(ppe, hash);
+-		if (acct) {
+-			entry->prev_packets += acct->packets;
+-			entry->prev_bytes += acct->bytes;
+-		}
+-
++		mtk_flow_entry_save_acct(ppe, entry);
+ 		goto out;
+ 	}
+ 
+@@ -805,11 +830,14 @@ void __mtk_ppe_check_skb(struct mtk_ppe
+ 	hlist_for_each_entry_safe(entry, n, head, list) {
+ 		if (found ||
+ 		    !mtk_flow_entry_match(ppe->eth, entry, &foe, entry_len)) {
+-			if (entry->hash != 0xffff)
++			if (entry->hash != 0xffff) {
++				mtk_flow_entry_save_acct(ppe, entry);
+ 				__mtk_foe_entry_clear(ppe, entry, false);
++			}
+ 			continue;
+ 		}
+ 
++		mtk_flow_entry_save_acct(ppe, entry);
+ 		entry->hash = hash;
+ 		__mtk_foe_entry_commit(ppe, &entry->data, hash);
+ 		found = true;
+--- a/drivers/net/ethernet/mediatek/mtk_ppe_offload.c
++++ b/drivers/net/ethernet/mediatek/mtk_ppe_offload.c
+@@ -552,8 +552,14 @@ mtk_flow_offload_stats(struct mtk_eth *e
+ 	packets = entry->packets;
+ 	bytes = entry->bytes;
+ 	mtk_foe_entry_get_stats(eth->ppe[entry->ppe_index], entry, &idle);
+-	f->stats.pkts += entry->packets - packets;
+-	f->stats.bytes += entry->bytes - bytes;
++	/*
++	 * The totals only grow; never turn a decrease into a huge unsigned delta,
++	 * which nf_ct_acct_add() would truncate to 32 bits and add to conntrack.
++	 */
++	if (entry->packets > packets)
++		f->stats.pkts += entry->packets - packets;
++	if (entry->bytes > bytes)
++		f->stats.bytes += entry->bytes - bytes;
+ 	f->stats.lastused = jiffies - idle * HZ;
+ 
+ 	return 0;
