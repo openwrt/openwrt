@@ -1,0 +1,131 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Alex Rau <alex@retroduction.org>
+Date: Mon, 19 Oct 2026 02:40:00 +0200
+Subject: [PATCH] regulator: qcom_smd: add the MP5496 s4 level regulator
+
+On IPQ9574 boards with the MP5496 PMIC, SMPA4 supplies the MX rail.
+The vendor kernel votes it through the RPM as a level ("corn" key,
+levels 1 to 9) instead of a voltage; its NSS driver holds level 5.
+Mainline cannot vote it at all.
+
+Add the "corn" request key, level ops that send it, and the s4
+regulator to the MP5496 table.
+
+Assisted-by: Claude:claude-opus-5-5
+Signed-off-by: Alex Rau <alex@retroduction.org>
+
+---
+--- a/drivers/regulator/qcom_smd-regulator.c
++++ b/drivers/regulator/qcom_smd-regulator.c
+@@ -27,6 +27,7 @@ struct qcom_rpm_reg {
+ 	unsigned int enabled_updated:1;
+ 	unsigned int uv_updated:1;
+ 	unsigned int load_updated:1;
++	unsigned int corner_updated:1;
+ };
+ 
+ struct rpm_regulator_req {
+@@ -38,10 +39,11 @@ struct rpm_regulator_req {
+ #define RPM_KEY_SWEN	0x6e657773 /* "swen" */
+ #define RPM_KEY_UV	0x00007675 /* "uv" */
+ #define RPM_KEY_MA	0x0000616d /* "ma" */
++#define RPM_KEY_CORNER	0x6e726f63 /* "corn" */
+ 
+ static int rpm_reg_write_active(struct qcom_rpm_reg *vreg)
+ {
+-	struct rpm_regulator_req req[3];
++	struct rpm_regulator_req req[4];
+ 	int reqlen = 0;
+ 	int ret;
+ 
+@@ -59,6 +61,13 @@ static int rpm_reg_write_active(struct q
+ 		reqlen++;
+ 	}
+ 
++	if (vreg->corner_updated && vreg->is_enabled) {
++		req[reqlen].key = cpu_to_le32(RPM_KEY_CORNER);
++		req[reqlen].nbytes = cpu_to_le32(sizeof(u32));
++		req[reqlen].value = cpu_to_le32(vreg->uV);
++		reqlen++;
++	}
++
+ 	if (vreg->load_updated && vreg->is_enabled) {
+ 		req[reqlen].key = cpu_to_le32(RPM_KEY_MA);
+ 		req[reqlen].nbytes = cpu_to_le32(sizeof(u32));
+@@ -76,6 +85,7 @@ static int rpm_reg_write_active(struct q
+ 		vreg->enabled_updated = 0;
+ 		vreg->uv_updated = 0;
+ 		vreg->load_updated = 0;
++		vreg->corner_updated = 0;
+ 	}
+ 
+ 	return ret;
+@@ -144,6 +154,26 @@ static int rpm_reg_set_voltage(struct re
+ 	return ret;
+ }
+ 
++/* Level (corner) regulators: the "voltage" is a level number */
++static int rpm_reg_set_corner(struct regulator_dev *rdev,
++			      int min_uV,
++			      int max_uV,
++			      unsigned *selector)
++{
++	struct qcom_rpm_reg *vreg = rdev_get_drvdata(rdev);
++	int ret;
++	int old_uV = vreg->uV;
++
++	vreg->uV = min_uV;
++	vreg->corner_updated = 1;
++
++	ret = rpm_reg_write_active(vreg);
++	if (ret)
++		vreg->uV = old_uV;
++
++	return ret;
++}
++
+ static int rpm_reg_set_load(struct regulator_dev *rdev, int load_uA)
+ {
+ 	struct qcom_rpm_reg *vreg = rdev_get_drvdata(rdev);
+@@ -207,6 +237,16 @@ static const struct regulator_ops rpm_mp
+ 	.set_voltage = rpm_reg_set_voltage,
+ };
+ 
++static const struct regulator_ops rpm_mp5496_level_ops = {
++	.enable = rpm_reg_enable,
++	.disable = rpm_reg_disable,
++	.is_enabled = rpm_reg_is_enabled,
++	.list_voltage = regulator_list_voltage_linear_range,
++
++	.get_voltage = rpm_reg_get_voltage,
++	.set_voltage = rpm_reg_set_corner,
++};
++
+ static const struct regulator_desc pma8084_hfsmps = {
+ 	.linear_ranges = (struct linear_range[]) {
+ 		REGULATOR_LINEAR_RANGE(375000,  0,  95, 12500),
+@@ -756,6 +796,16 @@ static const struct regulator_desc mp549
+ 	.ops = &rpm_mp5496_ops,
+ };
+ 
++/* MX rail: voted as a level (1-9), as the vendor kernel does */
++static const struct regulator_desc mp5496_smps_level = {
++	.linear_ranges = (struct linear_range[]) {
++		REGULATOR_LINEAR_RANGE(1, 0, 8, 1),
++	},
++	.n_linear_ranges = 1,
++	.n_voltages = 9,
++	.ops = &rpm_mp5496_level_ops,
++};
++
+ static const struct regulator_desc mp5496_ldoa2 = {
+ 	.linear_ranges = (struct linear_range[]) {
+ 		REGULATOR_LINEAR_RANGE(800000, 0, 127, 25000),
+@@ -794,6 +844,7 @@ struct rpm_regulator_data {
+ static const struct rpm_regulator_data rpm_mp5496_regulators[] = {
+ 	{ "s1", QCOM_SMD_RPM_SMPA, 1, &mp5496_smps, "s1" },
+ 	{ "s2", QCOM_SMD_RPM_SMPA, 2, &mp5496_smps, "s2" },
++	{ "s4", QCOM_SMD_RPM_SMPA, 4, &mp5496_smps_level, "s4" },
+ 	{ "l2", QCOM_SMD_RPM_LDOA, 2, &mp5496_ldoa2, "l2" },
+ 	{ "l5", QCOM_SMD_RPM_LDOA, 5, &mp5496_ldoa2, "l5" },
+ 	{}
