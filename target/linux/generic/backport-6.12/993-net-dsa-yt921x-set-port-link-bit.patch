@@ -1,0 +1,23 @@
+--- a/drivers/net/dsa/yt921x_port.c
++++ b/drivers/net/dsa/yt921x_port.c
+@@ -714,13 +714,18 @@
+ 		ctrl |= YT921X_PORT_TX_PAUSE;
+ 	if (rx_pause)
+ 		ctrl |= YT921X_PORT_RX_PAUSE;
+-	ctrl |= YT921X_PORT_RX_MAC_EN | YT921X_PORT_TX_MAC_EN;
++	ctrl |= YT921X_PORT_RX_MAC_EN | YT921X_PORT_TX_MAC_EN |
++		YT921X_PORT_LINK;
+ 	/* Preserve undocumented / strap-controlled bits in PORTn_CTRL
+ 	 * (e.g. pause-an / half-pause), only touch fields we own.
+ 	 */
+ 	mask = YT921X_PORT_SPEED_M | YT921X_PORT_DUPLEX_FULL |
+ 	       YT921X_PORT_RX_PAUSE | YT921X_PORT_TX_PAUSE |
+-	       YT921X_PORT_RX_MAC_EN | YT921X_PORT_TX_MAC_EN;
++	       YT921X_PORT_RX_MAC_EN | YT921X_PORT_TX_MAC_EN |
++	       YT921X_PORT_LINK;
++	/* Forced SerDes port: vendor HAL keeps pause AN off, link forced on. */
++	if (yt921x_is_external_port(priv, port))
++		mask |= YT921X_PORT_CTRL_PAUSE_AN;
+ 	res = yt921x_reg_update_bits(priv, YT921X_PORTn_CTRL(port), mask, ctrl);
+ 	if (res)
+ 		return res;

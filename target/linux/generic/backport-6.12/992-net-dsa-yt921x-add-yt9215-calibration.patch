@@ -1,0 +1,138 @@
+--- a/drivers/net/dsa/yt921x_chip.c
++++ b/drivers/net/dsa/yt921x_chip.c
+@@ -1294,11 +1294,135 @@
+ 	return 0;
+ }
+ 
++static int yt921x_chip_init_yt9215(struct yt921x_priv *priv)
++{
++	static const u32 phy_cfg[] = { 0x71, 0, 0, 0 };
++	u32 val;
++	int i, j, res;
++
++	if (priv->info->major != YT9215_MAJOR)
++		return 0;
++
++	/* Switch calibration copied from the stock yt9215s driver. */
++	for (i = 0; i < 11; i++) {
++		u32 reg = 0x281000 + i * 8;
++
++		res = yt921x_reg_write(priv, reg, 0x8040284b);
++		if (res)
++			return res;
++		res = yt921x_reg_write(priv, reg + 4, 0x00026f1b);
++		if (res)
++			return res;
++	}
++
++	for (i = 0; i < ARRAY_SIZE(phy_cfg); i++) {
++		res = yt921x_reg_write(priv, 0x2801d0 + i * 4, 0x14a);
++		if (res)
++			return res;
++		res = yt921x_reg_write(priv, 0x180904 + i * 4, phy_cfg[i]);
++		if (res)
++			return res;
++	}
++
++	res = yt921x_reg_update_bits(priv, 0x80400, BIT(11), BIT(11));
++	if (res)
++		return res;
++
++	res = yt921x_reg_update_bits(priv, 0x1803f8, BIT(17), BIT(17));
++	if (res)
++		return res;
++
++	res = yt921x_reg_read(priv, 0x80008, &val);
++	if (res)
++		return res;
++
++	res = yt921x_reg_update_bits(priv, 0x80004, BIT(2), BIT(2));
++	if (res)
++		return res;
++	if ((val & 0xffff) == 1) {
++		res = yt921x_reg_update_bits(priv, 0x80004, BIT(3), BIT(3));
++		if (res)
++			return res;
++	}
++
++	res = yt921x_reg_update_bits(priv, 0x80028, 0x43, 0);
++	if (res)
++		return res;
++
++	for (i = 0; i < 11; i++) {
++		for (j = 0; j < 8; j++) {
++			u32 reg = 0x301000 + i * 0x40 + j * 8;
++
++			res = yt921x_reg_write(priv, reg, 0x080c0620);
++			if (res)
++				return res;
++			res = yt921x_reg_write(priv, reg + 4, 0x09000000);
++			if (res)
++				return res;
++		}
++
++		for (j = 0; j < 4; j++) {
++			res = yt921x_reg_write(priv, 0x302000 + i * 0x10 + j * 4,
++					       0x1400060c);
++			if (res)
++				return res;
++		}
++	}
++
++	/* Enable MIB counters. */
++	res = yt921x_reg_update_bits(priv, 0x80004, BIT(1), BIT(1));
++	if (res)
++		return res;
++
++	/* Wake the integral PHYs before phylib probes them. The stock driver
++	 * sets this per internal port in fal_tiger_port_enable_set(); without
++	 * it the PHYs answer on MDIO but never establish copper link.
++	 */
++	res = yt921x_reg_update_bits(priv, 0x8002c, 0xff | GENMASK(12, 8),
++				     0xff | GENMASK(12, 8));
++	if (res)
++		return res;
++
++	/* Vendor command sequences, including the post-MDIO one. */
++	res = yt921x_reg_write(priv, 0xf0004, 0x03de0904);
++	if (res)
++		return res;
++	res = yt921x_reg_write(priv, 0xf0008, 0x56);
++	if (res)
++		return res;
++	res = yt921x_reg_write(priv, 0xf0000, 1);
++	if (res)
++		return res;
++
++	res = yt921x_reg_write(priv, 0xf0004, 0x03df0904);
++	if (res)
++		return res;
++	res = yt921x_reg_write(priv, 0xf0008, 0xc000);
++	if (res)
++		return res;
++	res = yt921x_reg_write(priv, 0xf0000, 1);
++	if (res)
++		return res;
++
++	res = yt921x_reg_write(priv, 0xf0004, 0x03c00904);
++	if (res)
++		return res;
++	res = yt921x_reg_write(priv, 0xf0008, 0x9140);
++	if (res)
++		return res;
++
++	return yt921x_reg_write(priv, 0xf0000, 1);
++}
++
+ int yt921x_chip_setup(struct yt921x_priv *priv)
+ {
+ 	u32 ctrl;
+ 	int res;
+ 
++	res = yt921x_chip_init_yt9215(priv);
++	if (res)
++		return res;
++
+ 	ctrl = YT921X_FUNC_MIB | YT921X_FUNC_ACL | YT921X_FUNC_METER;
+ 	res = yt921x_reg_set_bits(priv, YT921X_FUNC, ctrl);
+ 	if (res)

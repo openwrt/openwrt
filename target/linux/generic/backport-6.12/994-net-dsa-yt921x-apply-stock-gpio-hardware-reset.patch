@@ -1,0 +1,126 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+Subject: [PATCH] net: dsa: yt921x: apply the stock GPIO hardware reset
+
+ The vendor yt9215s driver pulses the board reset pin (GPIO35: 25ms asserted,
+ 100ms after release) before touching any switch register. The DSA driver only
+ sets RST_HW, which does not reset the SERDES lanes: after a warm reboot the
+ chip answers chipid 0xdeaddead and only a power cycle recovers it.
+
+ Request reset-gpios in probe with the line idle (deasserted) and repeat the
+ vendor pulse at the start of yt921x_chip_reset(). The vendor DTB says
+ phy-reset-active = <1>, so the line is active-high and asserting it means
+ driving it high; the board DTS must use GPIO_ACTIVE_HIGH for that to come out
+ of the gpiod layer unchanged. A hardware reset makes the chip boot from
+ scratch, so poll the chip id register until it answers instead of trusting a
+ fixed wait. Boards without the property keep the previous behaviour.
+---
+--- a/drivers/net/dsa/yt921x.h
++++ b/drivers/net/dsa/yt921x.h
+@@ -11,6 +11,7 @@
+ #include <net/dsa.h>
+ 
+ struct dentry;
++struct gpio_desc;
+ struct yt921x_priv;
+ 
+ #define YT921X_NAME			"yt921x"
+@@ -1157,6 +1158,18 @@
+ /* required for a hard reset */
+ #define YT921X_RST_DELAY_US	10000
+ 
++/* Stock yt9215s driver holds the board reset pin asserted for 25ms and waits
++ * 100ms after releasing it before touching any switch register.
++ */
++#define YT921X_GPIO_RST_ASSERT_US	25000
++#define YT921X_GPIO_RST_POST_US		100000
++
++/* MDIO only answers again once the chip finished booting after a hardware
++ * reset; poll the chip id register instead of failing the probe.
++ */
++#define YT921X_CHIP_BOOT_POLL_US	100000
++#define YT921X_CHIP_BOOT_TRIES		40
++
+ #define YT921X_FRAME_SIZE_MAX	0x2400  /* 9216 */
+ 
+ #define YT921X_TAG_LEN	8
+@@ -1321,6 +1334,9 @@
+ 	const struct yt921x_reg_ops *reg_ops;
+ 	void *reg_ctx;
+ 
++	/* optional board reset pin, asserted by the stock driver */
++	struct gpio_desc *reset_gpiod;
++
+ 	/* mdio master bus */
+ 	struct mii_bus *mbus_int;
+ 	struct mii_bus *mbus_ext;
+--- a/drivers/net/dsa/yt921x.c
++++ b/drivers/net/dsa/yt921x.c
+@@ -223,6 +223,18 @@
+ 
+ 	mutex_init(&priv->reg_lock);
+ 
++	/* The stock yt9215s driver resets the chip through a board GPIO before it
++	 * touches any register. Request it here so yt921x_chip_reset() can repeat
++	 * the same pulse; the switch core is left asserted until the first reset.
++	 */
++	priv->reset_gpiod = devm_gpiod_get_optional(dev, "reset", GPIOD_OUT_LOW);
++	if (IS_ERR(priv->reset_gpiod)) {
++		res = PTR_ERR(priv->reset_gpiod);
++		priv->reset_gpiod = NULL;
++		mutex_destroy(&priv->reg_lock);
++		return res;
++	}
++
+ 	res = yt921x_proc_init(priv);
+ 	if (res) {
+ 		mutex_destroy(&priv->reg_lock);
+--- a/drivers/net/dsa/yt921x_chip.c
++++ b/drivers/net/dsa/yt921x_chip.c
+@@ -459,6 +459,37 @@
+ 	u32 val;
+ 	int res;
+ 
++	/* Register-level RST_HW does not bring the SERDES lanes back to a strap
++	 * state; the board reset pin does. Do it before probing the chipid so a
++	 * warm reboot cannot leave us reading 0xdeaddead.
++	 */
++	if (priv->reset_gpiod) {
++		int retry;
++
++		/* Vendor: drive the line active (high) for 25ms, release, wait 100ms. */
++		gpiod_set_value_cansleep(priv->reset_gpiod, 1);
++		fsleep(YT921X_GPIO_RST_ASSERT_US);
++		gpiod_set_value_cansleep(priv->reset_gpiod, 0);
++		fsleep(YT921X_GPIO_RST_POST_US);
++
++		/* The chip reloads its boot ROM, so poll for a valid chipid
++		 * instead of trusting a fixed delay.
++		 */
++		for (retry = 0; retry < YT921X_CHIP_BOOT_TRIES; retry++) {
++			res = yt921x_reg_read(priv, YT921X_CHIP_ID, &val);
++			if (!res && val != 0xffffffff && val != 0xdeaddead && val != 0)
++				break;
++			fsleep(YT921X_CHIP_BOOT_POLL_US);
++		}
++		if (retry == YT921X_CHIP_BOOT_TRIES) {
++			dev_err(dev, "chip did not return from hardware reset\n");
++			return -ENODEV;
++		}
++		if (retry)
++			dev_info(dev, "chip back after %d ms: chipid 0x%08x\n",
++				 (retry + 1) * (YT921X_CHIP_BOOT_POLL_US / 1000), val);
++	}
++
+ 	res = yt921x_chip_detect(priv);
+ 	if (res)
+ 		return res;
+--- a/drivers/net/dsa/yt921x_internal.h
++++ b/drivers/net/dsa/yt921x_internal.h
+@@ -13,6 +13,7 @@
+ #include <linux/debugfs.h>
+ #include <linux/etherdevice.h>
+ #include <linux/fs.h>
++#include <linux/gpio/consumer.h>
+ #include <linux/if_bridge.h>
+ #include <linux/if_hsr.h>
+ #include <linux/if_vlan.h>
