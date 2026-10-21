@@ -54,6 +54,24 @@ after its removal. Register the callback with the first BSS, move it
 with the other contexts, and let it prefer the station entry whose
 interim accounting timer is pending.
 
+The EAP server configuration also holds the eap_server setting of the
+first BSS. The setting is a per-BSS parameter and can differ between
+the links, for example where WPS, which needs the internal EAP server,
+runs on some links only. After the move, the configuration keeps the
+setting of the removed BSS. Where that BSS had eap_server=0 and the new
+first BSS has eap_server=1, eap_sm_Policy_getDecision() picks the
+passthrough mode after the EAP-Response/Identity of a station of the
+new first BSS and of an MLO station. The response goes to the RADIUS
+client, and a WPS Enrollee on the new first link never gets an EAP-WSC
+exchange.
+
+Take the eap_server setting of the new first BSS as well. An MLO
+station, whose one session serves all its links, then follows the mode
+of the new first link, as it followed the mode of the first link before
+the move. Keep the setting where the links share a RADIUS server, since
+radius_server_init() enables the internal EAP server in the shared
+configuration for the sessions of that server.
+
 Signed-off-by: Felix Fietkau <nbd@nbd.name>
 ---
 
@@ -178,19 +196,22 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		return 0;
  	}
  #endif /* CONFIG_IEEE80211BE */
-@@ -503,6 +506,38 @@ int authsrv_init(struct hostapd_data *ha
+@@ -503,6 +506,41 @@ int authsrv_init(struct hostapd_data *ha
  }
  
  
 +#ifdef CONFIG_IEEE80211BE
 +/* The authentication server that the links of an AP MLD share calls back with
-+ * the first BSS and holds its WPS context and message context. */
++ * the first BSS and holds its WPS context, message context and EAP server
++ * mode. radius_server_init() enables that mode for the RADIUS server. */
 +void authsrv_mld_first_bss_moved(struct hostapd_data *old,
 +				 struct hostapd_data *first)
 +{
 +	if (first->eap_cfg && first->eap_cfg == old->eap_cfg) {
 +		first->eap_cfg->wps = first->wps;
 +		first->eap_cfg->msg_ctx = first->msg_ctx;
++		if (!first->radius_srv)
++			first->eap_cfg->eap_server = first->conf->eap_server;
 +	}
 +
 +#ifdef CRYPTO_RSA_OAEP_SHA256
