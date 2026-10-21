@@ -22,15 +22,20 @@ define KernelPackage/drm-rockchip
 	CONFIG_ROCKCHIP_INNO_HDMI=n \
 	CONFIG_ROCKCHIP_LVDS=n \
 	CONFIG_ROCKCHIP_RGB=n \
-	CONFIG_ROCKCHIP_RK3066_HDMI=n
-  FILES:=$(LINUX_DIR)/drivers/gpu/drm/rockchip/rockchipdrm.ko
-  AUTOLOAD:=$(call AutoProbe,rockchipdrm,1)
+	CONFIG_ROCKCHIP_RK3066_HDMI=n \
+	CONFIG_PHY_ROCKCHIP_INNO_HDMI \
+	CONFIG_PHY_ROCKCHIP_SAMSUNG_HDPTX
+  FILES:= \
+	$(LINUX_DIR)/drivers/gpu/drm/rockchip/rockchipdrm.ko \
+	$(LINUX_DIR)/drivers/phy/rockchip/phy-rockchip-inno-hdmi.ko \
+	$(LINUX_DIR)/drivers/phy/rockchip/phy-rockchip-samsung-hdptx.ko
+  AUTOLOAD:=$(call AutoProbe,phy-rockchip-inno-hdmi phy-rockchip-samsung-hdptx rockchipdrm,1)
 endef
 
 define KernelPackage/drm-rockchip/description
   Direct Rendering Manager (DRM) support for the Rockchip VOP and VOP2
   display controllers with their eDP, DP, HDMI, HDMI QP, MIPI DSI and
-  MIPI DSI2 outputs.
+  MIPI DSI2 outputs, and the Innosilicon and Samsung HDPTX HDMI PHYs.
 endef
 
 $(eval $(call KernelPackage,drm-rockchip))
@@ -52,18 +57,6 @@ define KernelPackage/drm-rocket/description
 endef
 
 $(eval $(call KernelPackage,drm-rocket))
-
-
-define KernelPackage/phy-rockchip-samsung-hdptx
-  SUBMENU:=$(VIDEO_MENU)
-  TITLE:=Rockchip Samsung HDMI/eDP combo PHY
-  DEPENDS:=@TARGET_rockchip
-  KCONFIG:=CONFIG_PHY_ROCKCHIP_SAMSUNG_HDPTX
-  FILES:=$(LINUX_DIR)/drivers/phy/rockchip/phy-rockchip-samsung-hdptx.ko
-  AUTOLOAD:=$(call AutoProbe,phy-rockchip-samsung-hdptx,1)
-endef
-
-$(eval $(call KernelPackage,phy-rockchip-samsung-hdptx))
 
 
 define KernelPackage/phy-rockchip-samsung-dcphy
