@@ -1,0 +1,43 @@
+From c18489a7cbba752c3e14bc7b2a5e108f8b182e00 Mon Sep 17 00:00:00 2001
+From: João Silva (vankxr) <jgc3silva@gmail.com>
+Date: Tue, 20 Oct 2026 19:37:36 +0100
+Subject: [PATCH] netfilter: flowtable: do not clear the offload bit twice
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+An expired hardware flow remains in the flowtable until its asynchronous
+hardware deletion completes. Teardown clears IPS_OFFLOAD_BIT, so a packet
+can create a replacement flow referencing the same conntrack entry while
+the old flow is still waiting for deletion.
+
+The next GC pass calls flow_offload_teardown() on the expired old flow
+again, clearing the replacement's offload bit. More packets can then
+create additional flows for the same conntrack entry. A pending hardware
+work item can also delay deletion and expose the same repeated teardown.
+
+Make clearing IPS_OFFLOAD_BIT part of the existing one-time teardown
+transition, alongside the conntrack state fixup. Subsequent teardown calls
+must not alter the offload state now owned by a replacement flow.
+
+Signed-off-by: João Silva <jgc3silva@gmail.com>
+---
+ net/netfilter/nf_flow_table_core.c | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
+
+--- a/net/netfilter/nf_flow_table_core.c
++++ b/net/netfilter/nf_flow_table_core.c
+@@ -395,9 +395,11 @@ static void flow_offload_del(struct nf_f
+ 
+ void flow_offload_teardown(struct flow_offload *flow)
+ {
++	if (test_and_set_bit(NF_FLOW_TEARDOWN, &flow->flags))
++		return;
++
+ 	clear_bit(IPS_OFFLOAD_BIT, &flow->ct->status);
+-	if (!test_and_set_bit(NF_FLOW_TEARDOWN, &flow->flags))
+-		flow_offload_fixup_ct(flow);
++	flow_offload_fixup_ct(flow);
+ }
+ EXPORT_SYMBOL_GPL(flow_offload_teardown);
+ 
