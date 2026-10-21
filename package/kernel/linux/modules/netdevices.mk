@@ -928,6 +928,27 @@ endef
 $(eval $(call KernelPackage,dsa-rtl8366rb))
 
 
+define KernelPackage/rtl8372n-dsa
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=Realtek RTL8372N switch DSA support
+  DEPENDS:=@LINUX_6_18 +kmod-dsa +kmod-regmap-core
+  KCONFIG:= \
+	CONFIG_NET_DSA_REALTEK_RTL8372N \
+	CONFIG_NET_DSA_REALTEK_RTL8372N_DEBUGFS=n \
+	CONFIG_NET_DSA_TAG_MXL_862XX_8021Q=y \
+	CONFIG_NET_DSA_TAG_RTL8_4=y
+  FILES:=$(LINUX_DIR)/drivers/net/dsa/realtek/rtl837x/rtl8372n_dsa.ko
+  AUTOLOAD:=$(call AutoProbe,rtl8372n_dsa)
+endef
+
+define KernelPackage/rtl8372n-dsa/description
+  DSA driver for the Realtek RTL8372N 2.5G switch, as found in the
+  Ubiquiti UniFi Cloud Gateway Fiber.
+endef
+
+$(eval $(call KernelPackage,rtl8372n-dsa))
+
+
 define KernelPackage/dsa-rtl8365mb
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=Realtek RTL8365MB switch DSA support
