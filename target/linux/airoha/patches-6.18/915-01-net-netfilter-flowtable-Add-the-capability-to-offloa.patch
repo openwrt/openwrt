@@ -27,8 +27,8 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  	struct flow_dissector_key_keyid			enc_key_id;
  	union {
  		struct flow_dissector_key_ipv4_addrs	enc_ipv4;
-@@ -138,6 +139,7 @@ struct flow_offload_tuple {
- 					encap_num:2,
+@@ -141,6 +142,7 @@ struct flow_offload_tuple {
+ 					port_vlans:2,
  					in_vlan_ingress:2;
  	u16				mtu;
 +	u8				dscp;
