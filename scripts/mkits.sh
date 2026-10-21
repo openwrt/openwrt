@@ -196,12 +196,62 @@ OVCONFIGS=""
 	"
 done
 
+# Extra configuration aliases for vendor bootloaders which construct a
+# FIT configuration name from machid/soc-version instead of using the
+# default configuration.
+EXTRA_CONFIGS="
+		config@1_1 {
+			description = \"OpenWrt ${DEVICE} alias\";
+			kernel = \"kernel${REFERENCE_CHAR}1\";
+			${FDT_PROP}
+		};
+		config@8040202_1 {
+			description = \"OpenWrt ${DEVICE} alias\";
+			kernel = \"kernel${REFERENCE_CHAR}1\";
+			${FDT_PROP}
+		};
+		config@134480898_1 {
+			description = \"OpenWrt ${DEVICE} alias\";
+			kernel = \"kernel${REFERENCE_CHAR}1\";
+			${FDT_PROP}
+		};
+		config@8040202 {
+			description = \"OpenWrt ${DEVICE} alias\";
+			kernel = \"kernel${REFERENCE_CHAR}1\";
+			${FDT_PROP}
+		};
+		config@134480898 {
+			description = \"OpenWrt ${DEVICE} alias\";
+			kernel = \"kernel${REFERENCE_CHAR}1\";
+			${FDT_PROP}
+		};
+		config@mp03.3 {
+			description = \"OpenWrt ${DEVICE} alias\";
+			kernel = \"kernel${REFERENCE_CHAR}1\";
+			${FDT_PROP}
+		};
+		config@mp03.3-c3 {
+			description = \"OpenWrt ${DEVICE} alias\";
+			kernel = \"kernel${REFERENCE_CHAR}1\";
+			${FDT_PROP}
+		};
+		config@mp03.5-c1 {
+			description = \"OpenWrt ${DEVICE} alias\";
+			kernel = \"kernel${REFERENCE_CHAR}1\";
+			${FDT_PROP}
+		};
+"
+
 # Create a default, fully populated DTS file
 DATA="/dts-v1/;
 
 / {
 	description = \"${ARCH_UPPER} OpenWrt FIT (Flattened Image Tree)\";
 	#address-cells = <1>;
+
+	image-info {
+		type = \"openwrt\";
+	};
 
 	images {
 		kernel${REFERENCE_CHAR}1 {
@@ -237,6 +287,7 @@ ${ROOTFS_NODE}
 			${INITRD_PROP}
 		};
 		${OVCONFIGS}
+		${EXTRA_CONFIGS}
 	};
 };"
 

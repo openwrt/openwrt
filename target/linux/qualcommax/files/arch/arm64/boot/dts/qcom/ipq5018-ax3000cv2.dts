@@ -31,7 +31,7 @@
 	};
 	
 	chosen {
-		bootargs-append = " coherent_pool=2M";
+		bootargs-append = " root=/dev/ubiblock0_1 coherent_pool=2M";
 		stdout-path = "serial0:115200n8";
 	};
 	
@@ -417,7 +417,7 @@
 			
 			partition@d00000 {
 				label = "rootfs";
-				reg = <0xd00000 0xf300000>;
+				reg = <0xd00000 0x5000000>;
 			};
 		};
 	};
