@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=u-boot
 PKG_VERSION:=2013.10
-PKG_RELEASE:=68
+PKG_RELEASE:=69
 
 PKG_HASH:=0d71e62beb952b41ebafb20a7ee4df2f960db64c31b054721ceb79ff14014c55
 
@@ -332,6 +332,12 @@ define U-Boot/vgv7519_ram
   DDR_SETTINGS:=board/arcadyan/vgv7519/ddr_settings.h
 endef
 
+define U-Boot/vigor2860_ram
+  NAME:=DrayTek Vigor 2860 (RAM, chainloaded by DrayBoot)
+  BUILD_SUBTARGET:=xrx200
+  BUILD_DEVICES:=draytek_vigor2860
+endef
+
 UBOOT_TARGETS:= \
 	arv4519pw_ram arv4519pw_nor arv4519pw_brn \
 	arv7506pw11_ram arv7506pw11_nor arv7506pw11_brn \
@@ -349,7 +355,8 @@ UBOOT_TARGETS:= \
 	fb3370_eva fb3370_ram fb3370_sfspl \
 	p2812hnufx_ram p2812hnufx_nandspl \
 	vgv7510kw22_brn vgv7510kw22_nor vgv7510kw22_ram \
-	vgv7519_brn vgv7519_nor vgv7519_ram
+	vgv7519_brn vgv7519_nor vgv7519_ram \
+	vigor2860_ram
 
 define CompressVR9Firmware
 	$(STAGING_DIR_HOST)/bin/lzma e \
