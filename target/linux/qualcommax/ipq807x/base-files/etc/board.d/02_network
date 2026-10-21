@@ -19,9 +19,6 @@ ipq807x_setup_interfaces()
 	zte,mf269)
 		ucidef_set_interfaces_lan_wan "lan" "wan"
 		;;
-	arista,c-360)
-		ucidef_set_interface_lan "lan1 lan2" "dhcp"
-		;;
 	asus,rt-ax89x)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4 lan5 lan6 lan7 lan8 10g-sfp 10g-copper" "wan"
 		;;
@@ -67,6 +64,7 @@ ipq807x_setup_interfaces()
 	netgear,wax620)
 		ucidef_set_interface_lan "lan" "dhcp"
 		;;
+	arista,c-360|\
 	netgear,rbs750|\
 	netgear,wax630)
 		ucidef_set_interface_lan "lan1 lan2" "dhcp"
