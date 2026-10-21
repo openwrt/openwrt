@@ -1,0 +1,30 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Santiago Hormazabal <santiagohssl@gmail.com>
+Date: Tue, 20 Oct 2026 00:00:00 +0000
+Subject: [PATCH] net: dsa: qca8k: clear the SGMII PLL bits on the RB953GS
+
+EN_PLL, EN_RX and EN_TX in SGMII_CTRL are set at reset on the AR8327,
+and the driver only ever sets them.
+
+On the MikroTik RB953GS, port 6 is wired to an SFP cage, and with these
+bits set the SerDes never links up, neither with a copper SFP module in
+SGMII mode nor with a DAC in 1000BASE-X mode. The SGMII_CTRL value used
+for AR8327 SGMII designs on ar71xx (0xc70167d0) has them cleared too.
+
+Clear them on this board.
+
+Signed-off-by: Santiago Hormazabal <santiagohssl@gmail.com>
+---
+--- a/drivers/net/dsa/qca/qca8k-8xxx.c
++++ b/drivers/net/dsa/qca/qca8k-8xxx.c
+@@ -1559,6 +1559,10 @@ static int qca8k_pcs_config(struct phyli
+ 	if (priv->ports_config.sgmii_enable_pll)
+ 		val |= QCA8K_SGMII_EN_PLL | QCA8K_SGMII_EN_RX |
+ 		       QCA8K_SGMII_EN_TX;
++	else if (of_machine_is_compatible("mikrotik,routerboard-953gs-5hnt"))
++		/* The SerDes does not link up with these set */
++		val &= ~(QCA8K_SGMII_EN_PLL | QCA8K_SGMII_EN_RX |
++			 QCA8K_SGMII_EN_TX);
+ 
+ 	if (dsa_is_cpu_port(priv->ds, port)) {
+ 		/* CPU port, we're talking to the CPU MAC, be a PHY */
