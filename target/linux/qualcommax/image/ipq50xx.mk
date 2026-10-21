@@ -53,8 +53,8 @@ define Build/mercusys-fwup
 	mv $@.new $@
 endef
 
-define Build/tplink-re700x-factory
-	$(TOPDIR)/scripts/tplink-re700x-factory.py --rootfs $@ --output $@.factory
+define Build/tplink-re70x-factory
+	$(TOPDIR)/scripts/tplink-re70x-factory.py --model $(1) --rootfs $@ --output $@.factory
 	mv $@.factory $@
 endef
 
@@ -391,7 +391,7 @@ define Device/tplink_re700x
 	IMAGE_SIZE := 43008k
 	DEVICE_DTS_CONFIG := config@mp02.1
 	IMAGES += factory-webflash.bin
-	IMAGE/factory-webflash.bin := append-ubi | tplink-re700x-factory
+	IMAGE/factory-webflash.bin := append-ubi | tplink-re70x-factory RE700X
 	DEVICE_PACKAGES := ath11k-firmware-ipq5018-qcn6122 \
 		ipq-wifi-tplink_re700x kmod-phy-realtek
 endef
