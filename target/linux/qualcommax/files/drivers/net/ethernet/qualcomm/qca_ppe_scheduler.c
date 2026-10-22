@@ -1106,6 +1106,17 @@ static const struct port_l0_params port_l0[] = {
 	{ 240, 16, 296, 1, 60, 144, 7 },
 };
 
+static const struct port_l0_params *ppe_port_l0(int port)
+{
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(port_l0); i++)
+		if (port_l0[i].port == port)
+			return &port_l0[i];
+
+	return NULL;
+}
+
 static void ppe_l0_scheduler_init(struct qca_ppe_priv *priv)
 {
 	int i, j;
@@ -1237,9 +1248,7 @@ void ppe_port_queues_enable(struct qca_ppe_priv *priv, int port, bool en)
 	const struct port_l0_params *p = NULL;
 	int i;
 
-	for (i = 0; i < ARRAY_SIZE(port_l0); i++)
-		if (port_l0[i].port == port)
-			p = &port_l0[i];
+	p = ppe_port_l0(port);
 	if (!p)
 		return;
 
@@ -1309,9 +1318,7 @@ u32 ppe_port_queue_drops(struct qca_ppe_priv *priv, int port)
 	u32 w[PPE_CNT_WORDS], tx = 0;
 	int i, t;
 
-	for (i = 0; i < ARRAY_SIZE(port_l0); i++)
-		if (port_l0[i].port == port)
-			p = &port_l0[i];
+	p = ppe_port_l0(port);
 	if (!p)
 		return 0;
 
@@ -1353,9 +1360,7 @@ int ppe_port_qstats(struct qca_ppe_priv *priv, int port, u8 **names,
 	int bm = PPE_BM_PHY_START + port - 1;
 	int i, c;
 
-	for (i = 0; i < ARRAY_SIZE(port_l0); i++)
-		if (port_l0[i].port == port)
-			p = &port_l0[i];
+	p = ppe_port_l0(port);
 	if (!p)
 		return 0;
 
@@ -1943,9 +1948,7 @@ static void ppe_port_queue_limit_set(struct qca_ppe_priv *priv, int port)
 		return;
 	}
 
-	for (i = 0; i < ARRAY_SIZE(port_l0); i++)
-		if (port_l0[i].port == port)
-			p = &port_l0[i];
+	p = ppe_port_l0(port);
 	if (!p)
 		return;
 
@@ -2232,9 +2235,7 @@ static u32 ppe_port_backlog(struct qca_ppe_priv *priv, int port)
 	u32 val, bufs = 0;
 	int i;
 
-	for (i = 0; i < ARRAY_SIZE(port_l0); i++)
-		if (port_l0[i].port == port)
-			p = &port_l0[i];
+	p = ppe_port_l0(port);
 	if (!p)
 		return 0;
 
@@ -2477,9 +2478,7 @@ int qca_ppe_setup_tc_mqprio(struct qca_ppe_priv *priv, int port,
 	bool floor = false;
 	int i, tc;
 
-	for (i = 0; i < ARRAY_SIZE(port_l0); i++)
-		if (port_l0[i].port == port)
-			p = &port_l0[i];
+	p = ppe_port_l0(port);
 	if (!p)
 		return -EOPNOTSUPP;
 
@@ -2741,15 +2740,12 @@ int qca_ppe_setup_tc_ets(struct qca_ppe_priv *priv, int port,
 	const u32 *quanta = qopt->replace_params.quanta;
 	struct ppe_port_shaper *sh = &priv->shaper[port];
 	const struct port_l0_params *p = NULL;
-	unsigned int i;
 	int ret;
 
 	if (qopt->parent != TC_H_ROOT)
 		return -EOPNOTSUPP;
 
-	for (i = 0; i < ARRAY_SIZE(port_l0); i++)
-		if (port_l0[i].port == port)
-			p = &port_l0[i];
+	p = ppe_port_l0(port);
 
 	switch (qopt->command) {
 	case TC_ETS_REPLACE:
@@ -2848,9 +2844,7 @@ static int ppe_band_tbf(struct qca_ppe_priv *priv, int port,
 	u64 rate = 0;
 	int i, ret;
 
-	for (i = 0; i < ARRAY_SIZE(port_l0); i++)
-		if (port_l0[i].port == port)
-			p = &port_l0[i];
+	p = ppe_port_l0(port);
 	if (!p || ppe_class_node(port, p->ucast_base, offset,
 				 PPE_FLOW_SPREAD_QUEUES, &prog))
 		return -EOPNOTSUPP;
@@ -3035,9 +3029,7 @@ static int qca_ppe_setup_tc_red(struct qca_ppe_priv *priv, int port,
 	int i, scope;
 	u64 bytes;
 
-	for (i = 0; i < ARRAY_SIZE(port_l0); i++)
-		if (port_l0[i].port == port)
-			p = &port_l0[i];
+	p = ppe_port_l0(port);
 	if (!p)
 		return -EOPNOTSUPP;
 
@@ -3216,9 +3208,7 @@ static int qca_ppe_setup_tc_gred(struct qca_ppe_priv *priv, int port,
 	u8 first, count;
 	int i, scope, ret;
 
-	for (i = 0; i < ARRAY_SIZE(port_l0); i++)
-		if (port_l0[i].port == port)
-			p = &port_l0[i];
+	p = ppe_port_l0(port);
 	if (!p)
 		return -EOPNOTSUPP;
 
