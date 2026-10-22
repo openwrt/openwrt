@@ -2499,18 +2499,24 @@ int qca_ppe_setup_tc_mqprio(struct qca_ppe_priv *priv, int port,
 		return -ENODEV;
 
 	/* Which queue a packet leaves on is the internal priority a classifier
-	 * gave it, never the class the transmit queue it came from belongs to,
-	 * so a map that disagrees with the classes' queue ranges describes
-	 * something this hardware will not do.
+	 * gave it, never the class the transmit queue it came from belongs to:
+	 * the priority selects a band and the flow hash a queue in it
+	 * (ppe_qm_init()). A map whose class does not own the whole band its
+	 * priority selects describes something this hardware will not do.
 	 */
 	for (i = 0; q->num_tc && i <= PPE_QOS_MAX_PRI; i++) {
+		u16 first = min(i / PPE_FLOW_SPREAD_QUEUES, 2) *
+			    PPE_FLOW_SPREAD_QUEUES;
+
 		tc = q->prio_tc_map[i];
 
-		if (tc >= q->num_tc || i < q->offset[tc] ||
-		    i >= q->offset[tc] + q->count[tc]) {
+		if (tc >= q->num_tc || first < q->offset[tc] ||
+		    first + PPE_FLOW_SPREAD_QUEUES >
+		    q->offset[tc] + q->count[tc]) {
 			dev_err(priv->ds.dev,
-				"port %d: priority %d is mapped to class %d, which does not own queue %d\n",
-				port, i, tc, i);
+				"port %d: priority %d is mapped to class %d, which does not own queues %u-%u\n",
+				port, i, tc, first,
+				first + PPE_FLOW_SPREAD_QUEUES - 1);
 			return -EINVAL;
 		}
 	}
