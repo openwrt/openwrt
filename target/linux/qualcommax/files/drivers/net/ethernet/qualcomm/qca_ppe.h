@@ -1414,6 +1414,10 @@ struct ppe_port_shaper {
 	u32 base_backlog;
 	u64 base_host_bytes;
 	u64 base_host_pkts;
+	/* Offloaded mqprio qdiscs on the port: two while a replacement is
+	 * installed and the qdisc it replaces not yet gone.
+	 */
+	u8 mqprio_users;
 };
 
 #define PPE_SB_EGRESS_TCS	16
