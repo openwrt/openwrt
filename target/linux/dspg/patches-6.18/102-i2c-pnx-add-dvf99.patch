@@ -1,0 +1,93 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: John Crispin <john@phrozen.org>
+Subject: [PATCH] i2c: pnx: add DSPG DVF99 support
+
+The DVF99 uses the IP3204 block. It adds a data hold register at 0x18,
+which must be programmed for a hold time of about 650 ns.
+
+Also register generic bus recovery, which the I2C core sets up from
+the scl-gpios and sda-gpios properties and the "gpio" pinctrl state, and
+run it when the bus stays busy.
+
+Signed-off-by: John Crispin <john@phrozen.org>
+---
+--- a/drivers/i2c/busses/Kconfig
++++ b/drivers/i2c/busses/Kconfig
+@@ -1012,7 +1012,7 @@ config I2C_PCA_PLATFORM
+ 
+ config I2C_PNX
+ 	tristate "I2C bus support for Philips PNX and NXP LPC targets"
+-	depends on ARCH_LPC32XX || COMPILE_TEST
++	depends on ARCH_LPC32XX || ARCH_DSPG || COMPILE_TEST
+ 	help
+ 	  This driver supports the Philips IP3204 I2C IP block master and/or
+ 	  slave controller
+--- a/drivers/i2c/busses/i2c-pnx.c
++++ b/drivers/i2c/busses/i2c-pnx.c
+@@ -26,6 +26,7 @@
+ #define I2C_PNX_TIMEOUT_DEFAULT		10 /* msec */
+ #define I2C_PNX_SPEED_KHZ_DEFAULT	100
+ #define I2C_PNX_REGION_SIZE		0x100
++#define I2C_PNX_DVF99_HOLD_RATE		1534000
+ 
+ struct i2c_pnx_mif {
+ 	int			ret;		/* Return value */
+@@ -42,6 +43,7 @@ struct i2c_pnx_algo_data {
+ 	int			last;
+ 	struct clk		*clk;
+ 	struct i2c_adapter	adapter;
++	struct i2c_bus_recovery_info rinfo;
+ 	int			irq;
+ 	u32			timeout;
+ };
+@@ -92,6 +94,7 @@ enum {
+ #define I2C_REG_TXB(a)	((a)->ioaddr + 0x24)	/* Num of bytes Tx-ed (RO) */
+ #define I2C_REG_TXS(a)	((a)->ioaddr + 0x28)	/* Tx slave FIFO (RO) */
+ #define I2C_REG_STFL(a)	((a)->ioaddr + 0x2c)	/* Tx slave FIFO level (RO) */
++#define I2C_REG_HDA(a)	((a)->ioaddr + 0x18)
+ 
+ static inline int wait_timeout(struct i2c_pnx_algo_data *data)
+ {
+@@ -144,6 +147,7 @@ static int i2c_pnx_start(unsigned char s
+ 			alg_data->adapter.name, slave_addr,
+ 			ioread32(I2C_REG_CTL(alg_data)),
+ 			ioread32(I2C_REG_STS(alg_data)));
++		i2c_recover_bus(&alg_data->adapter);
+ 		return -EBUSY;
+ 	} else if (ioread32(I2C_REG_STS(alg_data)) & mstatus_afi) {
+ 		/* Sorry, we lost the bus */
+@@ -451,6 +455,7 @@ static inline void bus_reset_if_active(s
+ 		dev_err(&alg_data->adapter.dev,
+ 			"%s: Bus is still active after xfer. Reset it...\n",
+ 			alg_data->adapter.name);
++		i2c_recover_bus(&alg_data->adapter);
+ 		iowrite32(ioread32(I2C_REG_CTL(alg_data)) | mcntrl_reset,
+ 			  I2C_REG_CTL(alg_data));
+ 		wait_reset(alg_data);
+@@ -678,6 +683,9 @@ static int i2c_pnx_probe(struct platform
+ 	iowrite32(tmp, I2C_REG_CKH(alg_data));
+ 	iowrite32(tmp, I2C_REG_CKL(alg_data));
+ 
++	if (of_device_is_compatible(pdev->dev.of_node, "dspg,dvf99-i2c"))
++		iowrite32(freq / I2C_PNX_DVF99_HOLD_RATE, I2C_REG_HDA(alg_data));
++
+ 	iowrite32(mcntrl_reset, I2C_REG_CTL(alg_data));
+ 	if (wait_reset(alg_data)) {
+ 		ret = -ENODEV;
+@@ -695,6 +703,8 @@ static int i2c_pnx_probe(struct platform
+ 	if (ret)
+ 		goto out_clock;
+ 
++	alg_data->adapter.bus_recovery_info = &alg_data->rinfo;
++
+ 	/* Register this adapter with the I2C subsystem */
+ 	ret = i2c_add_numbered_adapter(&alg_data->adapter);
+ 	if (ret < 0)
+@@ -720,6 +730,7 @@ static void i2c_pnx_remove(struct platfo
+ 
+ #ifdef CONFIG_OF
+ static const struct of_device_id i2c_pnx_of_match[] = {
++	{ .compatible = "dspg,dvf99-i2c" },
+ 	{ .compatible = "nxp,pnx-i2c" },
+ 	{ }
+ };

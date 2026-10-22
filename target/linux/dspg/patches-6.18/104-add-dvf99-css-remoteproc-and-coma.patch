@@ -1,0 +1,64 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: John Crispin <john@phrozen.org>
+Subject: [PATCH] add DSPG DVF99 CSS remoteproc and coma rpmsg transport
+
+Add the build hooks for the DVF99 cordless subsystem remoteproc driver
+and the coma rpmsg transport that it uses to talk to the CSS firmware.
+
+Signed-off-by: John Crispin <john@phrozen.org>
+---
+--- a/drivers/remoteproc/Kconfig
++++ b/drivers/remoteproc/Kconfig
+@@ -128,6 +128,18 @@ config DA8XX_REMOTEPROC
+ 	  It's safe to say n here if you're not interested in multimedia
+ 	  offloading.
+ 
++config DVF99_CSS_REMOTEPROC
++	tristate "DSPG DVF99 cordless subsystem remoteproc support"
++	depends on ARCH_DSPG || COMPILE_TEST
++	depends on HAS_DMA
++	depends on MAILBOX
++	select RPMSG_DVF99_COMA
++	help
++	  Say y here to load and start the firmware of the cordless subsystem
++	  (CSS) of the DSP Group DVF99 SoC. The CSS is a second ARM926 that
++	  runs the DECT stack, the voice engine and the audio front end.
++	  The firmware file is not part of this driver.
++
+ config KEYSTONE_REMOTEPROC
+ 	tristate "Keystone Remoteproc support"
+ 	depends on ARCH_KEYSTONE
+--- a/drivers/remoteproc/Makefile
++++ b/drivers/remoteproc/Makefile
+@@ -18,6 +18,7 @@ obj-$(CONFIG_MTK_SCP)			+= mtk_scp.o mtk
+ obj-$(CONFIG_OMAP_REMOTEPROC)		+= omap_remoteproc.o
+ obj-$(CONFIG_WKUP_M3_RPROC)		+= wkup_m3_rproc.o
+ obj-$(CONFIG_DA8XX_REMOTEPROC)		+= da8xx_remoteproc.o
++obj-$(CONFIG_DVF99_CSS_REMOTEPROC)	+= dvf99_css_rproc.o
+ obj-$(CONFIG_KEYSTONE_REMOTEPROC)	+= keystone_remoteproc.o
+ obj-$(CONFIG_MESON_MX_AO_ARC_REMOTEPROC)+= meson_mx_ao_arc.o
+ obj-$(CONFIG_PRU_REMOTEPROC)		+= pru_rproc.o
+--- a/drivers/rpmsg/Kconfig
++++ b/drivers/rpmsg/Kconfig
+@@ -31,6 +31,11 @@ config RPMSG_NS
+ 	  channel that probes the associated RPMsg device on remote endpoint
+ 	  service announcement.
+ 
++config RPMSG_DVF99_COMA
++	tristate
++	depends on MAILBOX
++	select RPMSG
++
+ config RPMSG_MTK_SCP
+ 	tristate "MediaTek SCP"
+ 	depends on MTK_SCP
+--- a/drivers/rpmsg/Makefile
++++ b/drivers/rpmsg/Makefile
+@@ -3,6 +3,7 @@ obj-$(CONFIG_RPMSG)		+= rpmsg_core.o
+ obj-$(CONFIG_RPMSG_CHAR)	+= rpmsg_char.o
+ obj-$(CONFIG_RPMSG_CTRL)	+= rpmsg_ctrl.o
+ obj-$(CONFIG_RPMSG_NS)		+= rpmsg_ns.o
++obj-$(CONFIG_RPMSG_DVF99_COMA)	+= dvf99_coma.o
+ obj-$(CONFIG_RPMSG_MTK_SCP)	+= mtk_rpmsg.o
+ CFLAGS_qcom_glink_native.o	:= -I$(src)
+ qcom_glink-objs			:= qcom_glink_native.o qcom_glink_ssr.o

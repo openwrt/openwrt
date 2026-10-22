@@ -1,0 +1,37 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: John Crispin <john@phrozen.org>
+Subject: [PATCH] watchdog: add DSPG DVF99 watchdog hooks
+
+Wire up the driver for the DSPG DVF99 watchdog.
+
+Signed-off-by: John Crispin <john@phrozen.org>
+---
+--- a/drivers/watchdog/Kconfig
++++ b/drivers/watchdog/Kconfig
+@@ -606,6 +606,16 @@ config DW_WATCHDOG
+ 	  To compile this driver as a module, choose M here: the
+ 	  module will be called dw_wdt.
+ 
++config DVF99_WATCHDOG
++	tristate "DSPG DVF99 watchdog"
++	depends on ARCH_DSPG || COMPILE_TEST
++	select WATCHDOG_CORE
++	help
++	  Say Y here to include support for the watchdog of the DSP Group
++	  DVF99 SoC. The watchdog cannot be stopped once it runs.
++	  To compile this driver as a module, choose M here: the
++	  module will be called dvf99_wdt.
++
+ config EP93XX_WATCHDOG
+ 	tristate "EP93xx Watchdog"
+ 	depends on ARCH_EP93XX || COMPILE_TEST
+--- a/drivers/watchdog/Makefile
++++ b/drivers/watchdog/Makefile
+@@ -55,6 +55,7 @@ obj-$(CONFIG_S3C2410_WATCHDOG) += s3c241
+ obj-$(CONFIG_SA1100_WATCHDOG) += sa1100_wdt.o
+ obj-$(CONFIG_SAMA5D4_WATCHDOG) += sama5d4_wdt.o
+ obj-$(CONFIG_DW_WATCHDOG) += dw_wdt.o
++obj-$(CONFIG_DVF99_WATCHDOG) += dvf99_wdt.o
+ obj-$(CONFIG_EP93XX_WATCHDOG) += ep93xx_wdt.o
+ obj-$(CONFIG_PNX4008_WATCHDOG) += pnx4008_wdt.o
+ obj-$(CONFIG_DAVINCI_WATCHDOG) += davinci_wdt.o

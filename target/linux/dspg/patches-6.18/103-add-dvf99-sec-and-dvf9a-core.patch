@@ -1,0 +1,80 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: John Crispin <john@phrozen.org>
+Subject: [PATCH] add DSPG DVF99 SEC mailbox and DVF9A core
+
+Add the build hooks for the DVF99 semaphore exchange center mailbox and
+the DVF9A core driver. The DVF9A PWM driver becomes a child of the core.
+
+Signed-off-by: John Crispin <john@phrozen.org>
+---
+--- a/drivers/mailbox/Kconfig
++++ b/drivers/mailbox/Kconfig
+@@ -55,6 +55,15 @@ config CV1800_MBOX
+ 	  to raise interrupt to notice another processor, and it is allowed to
+ 	  send data to itself.
+ 
++config DVF99_SEC_MBOX
++	tristate "DSPG DVF99 semaphore exchange center"
++	depends on ARCH_DSPG || COMPILE_TEST
++	help
++	  Mailbox driver for the semaphore exchange center of the DSP Group
++	  DVF99 SoC. It passes 32-bit words and interrupts between the host
++	  CPU and the cordless subsystem CPU. Say Y or M if the cordless
++	  subsystem firmware is used.
++
+ config EXYNOS_MBOX
+ 	tristate "Exynos Mailbox"
+ 	depends on ARCH_EXYNOS || COMPILE_TEST
+--- a/drivers/mailbox/Makefile
++++ b/drivers/mailbox/Makefile
+@@ -15,6 +15,8 @@ obj-$(CONFIG_AST2700_MBOX)	+= ast2700-ma
+ 
+ obj-$(CONFIG_CV1800_MBOX)	+= cv1800-mailbox.o
+ 
++obj-$(CONFIG_DVF99_SEC_MBOX)	+= dvf99-sec.o
++
+ obj-$(CONFIG_EXYNOS_MBOX)	+= exynos-mailbox.o
+ 
+ obj-$(CONFIG_IMX_MBOX)	+= imx-mailbox.o
+--- a/drivers/mfd/Kconfig
++++ b/drivers/mfd/Kconfig
+@@ -516,6 +516,17 @@ config MFD_DLN2
+ 	  etc. must be enabled in order to use the functionality of
+ 	  the device.
+ 
++config MFD_DVF9A
++	tristate "DSPG DVF9A companion block"
++	depends on ARCH_DSPG || COMPILE_TEST
++	depends on HAS_IOMEM
++	select REGMAP
++	help
++	  Core driver for the DSP Group DVF9A analog front end and power
++	  management block of the DVF99 SoC. It provides register access
++	  through the DAIF, shared with the cordless subsystem CPU, to the
++	  PWM and audio drivers.
++
+ config MFD_ENE_KB3930
+ 	tristate "ENE KB3930 Embedded Controller support"
+ 	depends on I2C
+--- a/drivers/mfd/Makefile
++++ b/drivers/mfd/Makefile
+@@ -252,6 +252,7 @@ obj-$(CONFIG_MFD_HI6421_PMIC)	+= hi6421-
+ obj-$(CONFIG_MFD_HI6421_SPMI)	+= hi6421-spmi-pmic.o
+ obj-$(CONFIG_MFD_HI655X_PMIC)   += hi655x-pmic.o
+ obj-$(CONFIG_MFD_DLN2)		+= dln2.o
++obj-$(CONFIG_MFD_DVF9A)		+= dvf9a.o
+ obj-$(CONFIG_MFD_RT4831)	+= rt4831.o
+ obj-$(CONFIG_MFD_RT5033)	+= rt5033.o
+ obj-$(CONFIG_MFD_RT5120)	+= rt5120.o
+--- a/drivers/pwm/Kconfig
++++ b/drivers/pwm/Kconfig
+@@ -241,8 +241,7 @@ config PWM_DWC
+ 
+ config PWM_DVF9A
+ 	tristate "DSPG DVF9A PWM support"
+-	depends on ARCH_DSPG || COMPILE_TEST
+-	depends on HAS_IOMEM
++	depends on MFD_DVF9A
+ 	help
+ 	  Generic PWM framework driver for the two PWM outputs of the DSP
+ 	  Group DVF9A companion block, as found next to the DVF99 SoC.

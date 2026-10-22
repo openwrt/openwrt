@@ -1,0 +1,35 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: John Crispin <john@phrozen.org>
+Subject: [PATCH] spi: add DSPG DVF99 QSPI controller hooks
+
+Wire up the read-only spi-mem driver for the DSPG DVF99 QSPI controller.
+
+Signed-off-by: John Crispin <john@phrozen.org>
+---
+--- a/drivers/spi/Kconfig
++++ b/drivers/spi/Kconfig
+@@ -411,6 +411,14 @@ config SPI_DVF99
+ 	  This enables support for the SPI1 controller of the DSP Group
+ 	  DVF99 SoC.
+ 
++config SPI_DVF99_QSPI
++	tristate "DSPG DVF99 QSPI controller"
++	depends on ARCH_DSPG || COMPILE_TEST
++	depends on SPI_MEM
++	help
++	  This enables read-only support for the QSPI flash controller of
++	  the DSP Group DVF99 SoC.
++
+ config SPI_EP93XX
+ 	tristate "Cirrus Logic EP93xx SPI controller"
+ 	depends on ARCH_EP93XX || COMPILE_TEST
+--- a/drivers/spi/Makefile
++++ b/drivers/spi/Makefile
+@@ -50,6 +50,7 @@ obj-$(CONFIG_SPI_CS42L43)		+= spi-cs42l4
+ obj-$(CONFIG_SPI_DAVINCI)		+= spi-davinci.o
+ obj-$(CONFIG_SPI_DLN2)			+= spi-dln2.o
+ obj-$(CONFIG_SPI_DVF99)			+= spi-dvf99.o
++obj-$(CONFIG_SPI_DVF99_QSPI)		+= spi-dvf99-qspi.o
+ obj-$(CONFIG_SPI_DESIGNWARE)		+= spi-dw.o
+ spi-dw-y				:= spi-dw-core.o
+ spi-dw-$(CONFIG_SPI_DW_DMA)		+= spi-dw-dma.o
