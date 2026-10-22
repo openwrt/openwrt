@@ -382,20 +382,19 @@ static int ppe_fdb_op_wait(struct qca_ppe_priv *priv, u32 rslt_reg,
 	u32 val;
 	int i;
 
+	/* The results queue up, the data registers show the oldest, and reading
+	 * the result register retires it, so the data is read first: once the
+	 * result names this operation, the data read before it is its entry.
+	 */
 	for (i = 0; i < PPE_FDB_OP_RETRIES; i++) {
-		regmap_read(priv->regmap, rslt_reg, &val);
-		if (FIELD_GET(PPE_FDB_RSLT_CMD_ID, val) == cmd_id) {
-			if (data) {
-				regmap_read(priv->regmap,
-					    PPE_FDB_RD_RSLT_DATA0, &data[0]);
-				regmap_read(priv->regmap,
-					    PPE_FDB_RD_RSLT_DATA1, &data[1]);
-				regmap_read(priv->regmap,
-					    PPE_FDB_RD_RSLT_DATA2, &data[2]);
-			}
-
-			return 0;
+		if (data) {
+			regmap_read(priv->regmap, PPE_FDB_RD_RSLT_DATA0, &data[0]);
+			regmap_read(priv->regmap, PPE_FDB_RD_RSLT_DATA1, &data[1]);
+			regmap_read(priv->regmap, PPE_FDB_RD_RSLT_DATA2, &data[2]);
 		}
+		regmap_read(priv->regmap, rslt_reg, &val);
+		if (FIELD_GET(PPE_FDB_RSLT_CMD_ID, val) == cmd_id)
+			return 0;
 		udelay(1);
 	}
 
