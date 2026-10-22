@@ -30,7 +30,7 @@ Additional work may include device bring-up, hardware validation, driver fixes, 
 ## Hardware working status
 
 - [x] Internal IPQ5018 WAN
-- [ ] 3x 1GbE Switch Motorcomm YT9215S
+- [x] 3x 1GbE Switch Motorcomm YT9215S (thanks [@ppptran](https://github.com/ppptran))
 - [x] 2.4GHz Wi-Fi (SoC)
 - [x] 5GHz Wi-Fi (QCN6102)
 - [x] NAND Flash
@@ -39,7 +39,6 @@ Additional work may include device bring-up, hardware validation, driver fixes, 
 
 ### Known issues
 
-- YT9215S recognized using bit-banged MDIO, but no link detected on any port.
 - NSS not working, so no hardware offloading for routing and Wi-Fi.
 
 ## External resources
