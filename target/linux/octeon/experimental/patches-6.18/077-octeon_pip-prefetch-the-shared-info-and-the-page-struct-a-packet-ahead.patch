@@ -1,0 +1,75 @@
+From: Simon Polack <spolack+git@mailbox.org>
+Subject: [PATCH] net: ethernet: cavium: octeon_pip: prefetch the shared info and the page struct a packet ahead
+
+EXPERIMENTAL, showcase only, not for merging: it needs proper testing.
+It changes the octeon_pip driver and depends on its PR (#26060).
+The build does not apply it: it sits in target/linux/octeon/experimental/.
+
+The poll prefetches the next packet's work entry and its first data
+line. The skb build then writes the skb_shared_info at the end of the
+buffer and looks at the page struct, and the stack reads both back: the
+L1 is write-through without allocation on write, so the first read of a
+line written first misses. Prefetch both lines with the data, a packet
+ahead.
+
+Measured on an EdgeRouter 4 (CN7030, 4 cores), octeon3 subtarget (CN63XXP1
+off), octeon_pip driver, one boot per image, 64-byte single-flow floods
+in kpps, on 2026-10-21.
+Target: napi_build_skb() 1.24 -> 0.11 L1 misses per packet (flood1).
+Step oct3B -> P1 (077-080 together): flood1 +3.8 %, fw4 NAT +1.4 %,
+fw4+flowtable +4.1 %, GRE tcp1 +7.9 %.
+This patch, extrapolated from its share of the misses the step removed (1.13 of 2.65):
+flood1 ~+1.6 %, fw4 NAT ~+0.6 %, fw4+flowtable ~+1.7 %, GRE ~+1.5 %.
+These gains are on top of an unpatched octeon3 kernel; the full set and the
+split gain (up to +15 %) are in target/linux/octeon/experimental/README.md.
+
+Signed-off-by: Simon Polack <spolack+git@mailbox.org>
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+---
+--- a/drivers/net/ethernet/cavium/octeon/octeon_pip_rx.c
++++ b/drivers/net/ethernet/cavium/octeon/octeon_pip_rx.c
+@@ -800,6 +800,23 @@ static unsigned int opip_rx_refill(struc
+ 	return n;
+ }
+ 
++/*
++ * The lines the stack touches first, a packet ahead: the packet data (the
++ * headers), the skb_shared_info the skb build writes and the stack reads
++ * back, and the page struct the build and the free look at. The L1 is
++ * write-through without allocation on write: a line written first and
++ * read then misses on the read unless it is in by then.
++ */
++static __always_inline void opip_rx_prefetch_packet(const struct opip_wqe *wqe)
++{
++	void *buffer = opip_virt(opip_buf_start(wqe->packet_ptr));
++
++	prefetch(opip_virt(opip_buf_addr(wqe->packet_ptr)));
++	prefetch(buffer + OPIP_RX_FRAG_SIZE -
++		 SKB_DATA_ALIGN(sizeof(struct skb_shared_info)));
++	prefetch(virt_to_page(buffer));
++}
++
+ static __always_inline int __opip_poll(struct opip_group *group, int budget,
+ 				       const bool xdp_on)
+ {
+@@ -881,7 +898,7 @@ static __always_inline int __opip_poll(s
+ 		}
+ 
+ 		/* The packet data, the stack reads its headers first */
+-		prefetch(opip_virt(opip_buf_addr(wqe->packet_ptr)));
++		opip_rx_prefetch_packet(wqe);
+ 		rx_count++;
+ 
+ 		port = opip_rx_port(wqe, pknd);
+@@ -910,9 +927,9 @@ static __always_inline int __opip_poll(s
+ 		if (!(rx_count & (OPIP_TX_POLL_TICK - 1)))
+ 			opip_tx_poll_tick(&group->tx_poll);
+ 
+-		/* Its line is in by now: have the next packet's data follow */
++		/* Its line is in by now: have the next packet's lines follow */
+ 		if (next)
+-			prefetch(opip_virt(opip_buf_addr(next->packet_ptr)));
++			opip_rx_prefetch_packet(next);
+ 		wqe = next;
+ 	}
+ 	if (idle)
