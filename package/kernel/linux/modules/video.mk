@@ -745,6 +745,38 @@ endef
 
 $(eval $(call KernelPackage,drm-ivpu))
 
+define KernelPackage/drm-exynos
+  SUBMENU:=$(VIDEO_MENU)
+  TITLE:=Samsung Exynos DRM support
+  DEPENDS:=@TARGET_exynos +kmod-drm-kms-helper
+  KCONFIG:=CONFIG_DRM_EXYNOS \
+	CONFIG_DRM_EXYNOS_MIXER=y \
+	CONFIG_DRM_EXYNOS_HDMI=y \
+	CONFIG_DRM_EXYNOS_FIMD=n \
+	CONFIG_DRM_EXYNOS5433_DECON=n \
+	CONFIG_DRM_EXYNOS7_DECON=n \
+	CONFIG_DRM_EXYNOS_VIDI=n \
+	CONFIG_DRM_EXYNOS_DPI=n \
+	CONFIG_DRM_EXYNOS_DSI=n \
+	CONFIG_DRM_EXYNOS_DP=n \
+	CONFIG_DRM_EXYNOS_MIC=n \
+	CONFIG_DRM_EXYNOS_G2D=n \
+	CONFIG_DRM_EXYNOS_FIMC=n \
+	CONFIG_DRM_EXYNOS_ROTATOR=n \
+	CONFIG_DRM_EXYNOS_SCALER=n \
+	CONFIG_DRM_EXYNOS_GSC=n
+  FILES:=$(LINUX_DIR)/drivers/gpu/drm/exynos/exynosdrm.ko
+  AUTOLOAD:=$(call AutoProbe,exynosdrm)
+endef
+
+define KernelPackage/drm-exynos/description
+  Direct Rendering Manager (DRM) support for the HDMI output of
+  Samsung Exynos4 SoCs
+endef
+
+$(eval $(call KernelPackage,drm-exynos))
+
+
 define KernelPackage/drm-imx
   SUBMENU:=$(VIDEO_MENU)
   TITLE:=Freescale i.MX DRM support
