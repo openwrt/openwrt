@@ -23,7 +23,7 @@ Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
 
 --- a/drivers/net/ethernet/qualcomm/ppe/ppe_config.c
 +++ b/drivers/net/ethernet/qualcomm/ppe/ppe_config.c
-@@ -889,6 +889,51 @@ static int ppe_scheduler_l0_queue_map_se
+@@ -1227,6 +1227,51 @@ static int ppe_scheduler_l0_queue_map_se
  				  val);
  }
  
@@ -75,7 +75,7 @@ Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
  /* Set the PPE flow level scheduler configuration. */
  static int ppe_scheduler_l1_queue_map_set(struct ppe_device *ppe_dev,
  					  int node_id, int port,
-@@ -941,6 +986,50 @@ static int ppe_scheduler_l1_queue_map_se
+@@ -1279,6 +1324,50 @@ static int ppe_scheduler_l1_queue_map_se
  	return regmap_update_bits(ppe_dev->regmap, reg, PPE_L1_COMP_CFG_TBL_NODE_METER_LEN, val);
  }
  
@@ -126,7 +126,7 @@ Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
  /**
   * ppe_queue_scheduler_set - Configure scheduler for PPE hardware queue
   * @ppe_dev: PPE device
-@@ -967,6 +1056,58 @@ int ppe_queue_scheduler_set(struct ppe_d
+@@ -1305,6 +1394,58 @@ int ppe_queue_scheduler_set(struct ppe_d
  }
  
  /**
@@ -187,7 +187,7 @@ Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
   * @queue_dst: PPE queue destination configuration
 --- a/drivers/net/ethernet/qualcomm/ppe/ppe_config.h
 +++ b/drivers/net/ethernet/qualcomm/ppe/ppe_config.h
-@@ -291,6 +291,11 @@ int ppe_hw_config(struct ppe_device *ppe
+@@ -295,6 +295,11 @@ int ppe_hw_config(struct ppe_device *ppe
  int ppe_queue_scheduler_set(struct ppe_device *ppe_dev,
  			    int node_id, bool flow_level, int port,
  			    struct ppe_scheduler_cfg scheduler_cfg);
