@@ -25,7 +25,7 @@ full device, e.g. in order to deal with hardware/driver limitations
  	} else if (os_strcmp(buf, "extended_key_id") == 0) {
 --- a/src/ap/ap_config.h
 +++ b/src/ap/ap_config.h
-@@ -1106,6 +1106,8 @@ struct hostapd_config {
+@@ -1107,6 +1107,8 @@ struct hostapd_config {
  	unsigned int track_sta_max_num;
  	unsigned int track_sta_max_age;
  
@@ -47,7 +47,7 @@ full device, e.g. in order to deal with hardware/driver limitations
  			   " since no room for additional STA",
 --- a/src/ap/hostapd.c
 +++ b/src/ap/hostapd.c
-@@ -287,6 +287,29 @@ static int hostapd_remove_hapd_iface(str
+@@ -288,6 +288,29 @@ static int hostapd_remove_hapd_iface(str
  	return 0;
  }
  
@@ -79,9 +79,9 @@ full device, e.g. in order to deal with hardware/driver limitations
  {
 --- a/src/ap/hostapd.h
 +++ b/src/ap/hostapd.h
-@@ -887,6 +887,7 @@ void hostapd_periodic_iface(struct hosta
- int hostapd_owe_trans_get_info(struct hostapd_data *hapd);
- void hostapd_owe_update_trans(struct hostapd_iface *iface);;
+@@ -898,6 +898,7 @@ int hostapd_owe_trans_get_info(struct ho
+ bool hostapd_owe_trans_static(struct hostapd_bss_config *conf);
+ void hostapd_owe_update_trans(struct hostapd_iface *iface);
  void hostapd_ocv_check_csa_sa_query(void *eloop_ctx, void *timeout_ctx);
 +int hostapd_check_max_sta(struct hostapd_data *hapd);
  

@@ -2,6 +2,7 @@
 
 #include <linux/bitfield.h>
 #include <linux/delay.h>
+#include <linux/jiffies.h>
 #include <linux/mdio.h>
 #include <linux/mfd/syscon.h>
 #include <linux/of.h>
@@ -13,9 +14,15 @@
 #include <linux/platform_device.h>
 #include <linux/property.h>
 #include <linux/regmap.h>
+#include <linux/workqueue.h>
 
 #define RTPCS_SDS_CNT				14
 #define RTPCS_MAX_LINKS_PER_SDS			8
+#define RTPCS_RXCAL_POLL_MS			500
+#define RTPCS_RXCAL_MAX_TRIES			3
+#define RTPCS_RXCAL_RETRY_MS			1000
+#define RTPCS_RXCAL_XSG_MAX_ERR_DELTA		100
+#define RTPCS_RXCAL_XSG_ERR_SATURATION		0xffff00
 
 #define RTPCS_SPEED_10				0
 #define RTPCS_SPEED_100				1
@@ -179,6 +186,9 @@ enum rtpcs_page {
 #define SDS_EXT_REG03			0x03
 #define  RTL838X_REG_CML_SEL		BIT(1)
 
+#define SDS_EXT_REG29			0x1d
+#define  RTL930X_XSG_LINK_STS		GENMASK(8, 0)
+
 /* PAGE_FIB_EXT */
 
 #define FIB_EXT_REG19			0x13
@@ -291,6 +301,16 @@ enum rtpcs_page {
 #define  RTL93XX_FRC_SDS_MD_VAL		GENMASK(11, 7)
 #define  RTL93XX_FRC_SDS_MD_ON		BIT(6)
 
+#define WDIG_REG20			0x14
+#define  RTL93XX_RXEQ_COEF_LEQ_GRAY	GENMASK(7, 3)
+#define  RTL93XX_RXEQ_COEF_TAPX		GENMASK(5, 0)
+#define  RTL930X_RXEQ_COEF_DCVS		GENMASK(4, 0)
+#define  RTL930X_RXEQ_COEF_VTHN		GENMASK(5, 3)
+#define  RTL930X_RXEQ_COEF_VTHP		GENMASK(2, 0)
+#define  RTL930X_RXCAL_FGCAL_BIN	GENMASK(5, 0)
+#define  RTL931X_RXEQ_COEF_VTHN		GENMASK(7, 4)
+#define  RTL931X_RXEQ_COEF_VTHP		GENMASK(3, 0)
+
 /* PAGE_ANA_MISC */
 
 #define ANA_MISC_REG00			0x00
@@ -312,6 +332,8 @@ enum rtpcs_page {
 
 #define ANA_COM_REG06			0x06
 #define  RTL930X_RX_DEBUG_SEL		GENMASK(11, 6)
+#define   RTL930X_RX_DEBUG_SEL_LEQ	0x10
+#define   RTL930X_RX_DEBUG_SEL_COEF	0x20
 
 /* PAGE_ANA_SPD - all ANA_SPD_XXXX pages share common layout */
 
@@ -324,17 +346,62 @@ enum rtpcs_page {
 #define  RTL931X_MAIN_AMP		GENMASK(9, 5)
 #define  RTL931X_PRE_AMP		GENMASK(4, 0)
 
+#define ANA_SPD_REG13			0x0d
+#define  RTL931X_RXEQ_LEQ_MANUAL_EN	BIT(7)
+#define  RTL931X_RXEQ_LEQ_INIT		GENMASK(6, 2)
+
+#define ANA_SPD_REG15			0x0f
+#define  RTL930X_LOAD_IN_INIT_ALL	GENMASK(13, 7) /* Includes undocumented bit 12. */
+#define  RTL930X_LOAD_IN_INIT_VTH	BIT(13)
+#define  RTL930X_LOAD_IN_INIT_TAP(t)	BIT((t) + 7)
+#define  RTL931X_LOAD_IN_INIT_ALL	GENMASK(12, 6) /* Includes undocumented bit 11. */
+#define  RTL931X_LOAD_IN_INIT_VTH	BIT(12)
+#define  RTL931X_LOAD_IN_INIT_TAP(t)	BIT((t) + 6)
+
 #define ANA_SPD_REG19			0x13
 #define  RTL930X_VTHP_INIT		GENMASK(5, 3)
 #define  RTL930X_VTHN_INIT		GENMASK(2, 0)
 
+#define ANA_SPD_REG20			0x14
+#define  RTL931X_RX_COEF_SEL		GENMASK(10, 5)
+#define   RTL931X_RX_COEF_SEL_VTH	0x0c
+
 #define ANA_SPD_REG21			0x15
+#define  RTL930X_RXCAL_OFFSET_RANGE	GENMASK(15, 14)
 #define  RTL930X_RX_EN_TEST		BIT(9)
+#define  RTL930X_RX_RUN			BIT(8)
 #define  RTL930X_RX_EN_SELF		BIT(4)
 #define  RTL931X_RX_DEBUG_SEL		GENMASK(11, 10)
+#define   RTL931X_RX_DEBUG_SEL_LEQ	0x01
+#define   RTL931X_RX_DEBUG_SEL_COEF	0x02
+
+#define ANA_SPD_REG22			0x16
+#define  RTL930X_RXEQ_LEQ_INIT_GRAY	GENMASK(14, 10)
+
+#define ANA_SPD_REG23			0x17
+#define  RTL930X_RXEQ_LEQ_HOLD		BIT(7)
+#define  RTL930X_RXEQ_LEQ_OFFSET		GENMASK(6, 2)
+
+#define ANA_SPD_REG24			0x18
+#define  RTL930X_RXEQ_LEQ_MANUAL_EN	BIT(15)
+
+/*
+ * TAP0 in ANA_SPD_REG28, even only
+ * TAP1 in ANA_SPD_REG29
+ * TAP2 in ANA_SPD_REG31
+ * TAP3 in ANA_SPD_EXT_REG00
+ * TAP4 in ANA_SPD_EXT_REG01
+ */
+#define RTL931X_TAPX_INIT_ODD		GENMASK(11, 6)
+#define RTL931X_TAPX_INIT_EVEN		GENMASK(5, 0)
+
+#define ANA_SPD_REG28			0x1c
+#define ANA_SPD_REG29			0x1d
+#define ANA_SPD_REG31			0x1f
 
 /* PAGE_ANA_SPD_EXT */
 
+#define ANA_SPD_EXT_REG00		0x00
 #define ANA_SPD_EXT_REG01		0x01
 #define  RTL930X_TX_PRE_AMP		GENMASK(15, 11)
 
@@ -345,6 +412,17 @@ enum rtpcs_page {
 #define  RTL930X_TX_MAIN_AMP		GENMASK(8, 4)
 #define  RTL930X_TX_POST_AMP_EN		BIT(3)
 #define  RTL930X_TX_PRE_AMP_EN		BIT(0)
+
+#define ANA_SPD_EXT_REG12		0x0c
+#define  RTL930X_RX_COEF_SEL		GENMASK(5, 0)
+#define   RTL930X_RX_COEF_SEL_FGCAL_BIN	0x0e
+#define   RTL930X_RX_COEF_SEL_VTH	0x0c
+#define   RTL930X_RX_COEF_SEL_TAP_ODD(t)	((t) + 5)
+#define   RTL930X_RX_COEF_SEL_TAP_EVEN(t)	(t)
+
+#define ANA_SPD_EXT_REG18		0x12
+#define  RTL931X_VTHN_INIT		GENMASK(11, 8)
+#define  RTL931X_VTHP_INIT		GENMASK(7, 4)
 
 #define ANA_SPD_EXT_REG24		0x18
 #define  RTL930X_TX_IMPEDANCE		GENMASK(15, 12)
@@ -477,6 +555,9 @@ struct rtpcs_serdes {
 	u8 id;
 	u8 num_of_links;
 	bool first_start;
+	struct delayed_work cali_work;
+	bool rxcal_pending;
+	u8 rxcal_tries;
 };
 
 struct rtpcs_ctrl {
@@ -823,11 +904,9 @@ static int rtpcs_generic_sds_set_autoneg(struct rtpcs_serdes *sds, unsigned int 
 	if ((sds->hw_mode == RTPCS_SDS_MODE_1000BASEX) ||
 	    (sds->hw_mode == RTPCS_SDS_MODE_2500BASEX)) {
 		adv = ADVERTISE_1000XFULL;
-		if (linkmode_test_bit(ETHTOOL_LINK_MODE_Pause_BIT,
-				      advertising))
+		if (linkmode_test_bit(ETHTOOL_LINK_MODE_Pause_BIT, advertising))
 			adv |= ADVERTISE_1000XPAUSE;
-		if (linkmode_test_bit(ETHTOOL_LINK_MODE_Asym_Pause_BIT,
-				      advertising))
+		if (linkmode_test_bit(ETHTOOL_LINK_MODE_Asym_Pause_BIT, advertising))
 			adv |= ADVERTISE_1000XPSE_ASYM;
 
 		ret = rtpcs_sds_read(sds, phy_page, MII_ADVERTISE);
@@ -1208,17 +1287,12 @@ static int rtpcs_838x_sds_post_config(struct rtpcs_serdes *sds, enum rtpcs_sds_m
 
 /* RTL839X */
 
-/*
- * RTL839X MAC_SERDES_IF_CTRL mode values.
- * From the vendor SDK; 100BASEX (0x8), 1000BASEX/SGMII (0x7) are documented
- * but not yet exercised here.
- */
 static const s16 rtpcs_839x_sds_hw_mode_vals[RTPCS_SDS_MODE_MAX] = {
 	[0 ... RTPCS_SDS_MODE_MAX - 1]  = -1,
 	[RTPCS_SDS_MODE_OFF]            = 0x0,
-	/* [RTPCS_SDS_MODE_100BASEX]    = 0x8, */
-	/* [RTPCS_SDS_MODE_1000BASEX]   = 0x7, */
-	/* [RTPCS_SDS_MODE_SGMII]       = 0x7, */
+	[RTPCS_SDS_MODE_100BASEX]       = 0x8,
+	[RTPCS_SDS_MODE_1000BASEX]      = 0x7,
+	[RTPCS_SDS_MODE_SGMII]          = 0x7,
 	[RTPCS_SDS_MODE_QSGMII]         = 0x6,
 };
 
@@ -1266,13 +1340,11 @@ static void rtpcs_839x_sds_fill_caps(struct rtpcs_serdes *sds)
 	if (sds->id <= 12)
 		__set_bit(RTPCS_SDS_MODE_QSGMII, sds->supported_modes);
 
-	/* Uncomment this when modes are supported
 	if (sds->id >= 12) {
 		__set_bit(RTPCS_SDS_MODE_SGMII, sds->supported_modes);
 		__set_bit(RTPCS_SDS_MODE_100BASEX, sds->supported_modes);
 		__set_bit(RTPCS_SDS_MODE_1000BASEX, sds->supported_modes);
 	}
-	*/
 }
 
 static int rtpcs_839x_sds_probe(struct rtpcs_serdes *sds)
@@ -1423,13 +1495,13 @@ static int rtpcs_839x_init(struct rtpcs_ctrl *ctrl)
  */
 static int rtpcs_839x_sds_deactivate(struct rtpcs_serdes *sds)
 {
-	return 0;
+	return rtpcs_sds_write_mask(sds, PAGE_FIB, MII_BMCR, BMCR_PDOWN, BMCR_PDOWN);
 }
 
 static int rtpcs_839x_sds_activate(struct rtpcs_serdes *sds)
 {
 	rtpcs_839x_sds_reset(sds);
-	return 0;
+	return rtpcs_sds_write_mask(sds, PAGE_FIB, MII_BMCR, BMCR_PDOWN, 0);
 }
 
 /*
@@ -1438,6 +1510,14 @@ static int rtpcs_839x_sds_activate(struct rtpcs_serdes *sds)
  */
 static int rtpcs_839x_sds_config_hw_mode(struct rtpcs_serdes *sds, enum rtpcs_sds_mode hw_mode)
 {
+	/* TODO: proper setup of 100Base-X, 1000Base-X and SGMII needed */
+	if (hw_mode == RTPCS_SDS_MODE_100BASEX ||
+	    hw_mode == RTPCS_SDS_MODE_1000BASEX ||
+	    hw_mode == RTPCS_SDS_MODE_SGMII)
+		dev_warn(sds->ctrl->dev,
+			 "SerDes %u: mode setup is incomplete; relying on bootloader pre-setup\n",
+			 sds->id);
+
 	return 0;
 }
 
@@ -1962,6 +2042,43 @@ static int rtpcs_930x_sds_get_phys_sds_id(int sds_id, int page)
 	return sds_id;
 }
 
+/* Caller holds ctrl->lock to serialize mode changes and SerDes access. */
+static bool rtpcs_930x_sds_rx_link_up(struct rtpcs_serdes *sds)
+{
+	int phys_sds_id, val, i;
+
+	switch (sds->hw_mode) {
+	case RTPCS_SDS_MODE_10GBASER:
+	case RTPCS_SDS_MODE_USXGMII:
+		return rtpcs_93xx_sds_10gr_link_up(sds);
+
+	case RTPCS_SDS_MODE_XSGMII:
+		if (sds->id != 2 && sds->id != 3)
+			return false;
+
+		phys_sds_id = rtpcs_930x_sds_get_phys_sds_id(sds->id, PAGE_SDS_EXT);
+
+		for (i = 0; i < 2; i++) {
+			val = __rtpcs_sds_read_raw(sds->ctrl, phys_sds_id + i,
+						  PAGE_SDS_EXT, SDS_EXT_REG29, 15, 0);
+			if (val < 0) {
+				dev_err(sds->ctrl->dev,
+					"SerDes %u: RX link-status read failed on backing SerDes %d: %d\n",
+					sds->id, phys_sds_id + i, val);
+				return false;
+			}
+
+			if ((val & RTL930X_XSG_LINK_STS) != RTL930X_XSG_LINK_STS)
+				return false;
+		}
+
+		return true;
+
+	default:
+		return false;
+	}
+}
+
 static int rtpcs_930x_sds_op_read(struct rtpcs_serdes *sds, enum rtpcs_page page, int regnum,
 				  int bithigh, int bitlow)
 {
@@ -2188,7 +2305,8 @@ static int rtpcs_930x_sds_set_mode(struct rtpcs_serdes *sds, enum rtpcs_sds_mode
 	if (ret)
 		return ret;
 
-	if (hw_mode != RTPCS_SDS_MODE_OFF && rtpcs_930x_sds_wait_clock_ready(sds))
+	if (sds->type == RTPCS_SDS_TYPE_10G && hw_mode != RTPCS_SDS_MODE_OFF &&
+	    rtpcs_930x_sds_wait_clock_ready(sds))
 		dev_err(sds->ctrl->dev, "SerDes %d could not sync clock\n", sds->id);
 
 	if (rtpcs_930x_sds_init_state_machine(sds, hw_mode))
@@ -2346,21 +2464,22 @@ static int rtpcs_930x_sds_rxeq_dcvs_get_coef(struct rtpcs_serdes *sds, unsigned 
 	if (dcvs_id > 5)
 		return -EINVAL;
 
-	ret = rtpcs_930x_sds_rxeq_set_debug(sds, 0x20);
+	ret = rtpcs_930x_sds_rxeq_set_debug(sds, RTL930X_RX_DEBUG_SEL_COEF);
 	if (ret < 0)
 		return ret;
 
-	ret = rtpcs_sds_write_bits(sds, PAGE_ANA_10G_EXT, 0x0c, 5, 0, coeff_sel[dcvs_id]);
+	ret = rtpcs_sds_write_mask(sds, PAGE_ANA_10G_EXT, ANA_SPD_EXT_REG12,
+				   RTL930X_RX_COEF_SEL,
+				   FIELD_PREP(RTL930X_RX_COEF_SEL, coeff_sel[dcvs_id]));
 	if (ret < 0)
 		return ret;
 	usleep_range(1000, 2000);
 
-	/* ## DCVSX Read Out */
-	val = rtpcs_sds_read_bits(sds, PAGE_WDIG, 0x14, 4, 0);
+	val = rtpcs_sds_read(sds, PAGE_WDIG, WDIG_REG20);
 	if (val < 0)
 		return val;
 
-	*dcvs_coef = rtpcs_sign_mag_decode(val, 4);
+	*dcvs_coef = rtpcs_sign_mag_decode(FIELD_GET(RTL930X_RXEQ_COEF_DCVS, val), 4);
 	val = rtpcs_sds_read_bits(sds, PAGE_ANA_10G, manual_reg[dcvs_id], manual_bit[dcvs_id],
 				  manual_bit[dcvs_id]);
 	if (val < 0)
@@ -2376,7 +2495,9 @@ static int rtpcs_930x_sds_rxeq_leq_set_adapt(struct rtpcs_serdes *sds, bool enab
 {
 	int ret;
 
-	ret = rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0x18, 15, 15, enable ? 0x0 : 0x1);
+	ret = rtpcs_sds_write_mask(sds, PAGE_ANA_10G, ANA_SPD_REG24,
+				   RTL930X_RXEQ_LEQ_MANUAL_EN,
+				   enable ? 0 : RTL930X_RXEQ_LEQ_MANUAL_EN);
 	if (!ret && enable)
 		msleep(100);
 
@@ -2388,32 +2509,38 @@ static int rtpcs_930x_sds_rxeq_leq_set_coef(struct rtpcs_serdes *sds, unsigned i
 {
 	int ret;
 
-	ret = rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0x17, 6, 2, offset);
+	ret = rtpcs_sds_write_mask(sds, PAGE_ANA_10G, ANA_SPD_REG23,
+				   RTL930X_RXEQ_LEQ_OFFSET,
+				   FIELD_PREP(RTL930X_RXEQ_LEQ_OFFSET, offset));
 	if (ret < 0)
 		return ret;
 
-	return rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0x16, 14, 10, leq_gray);
+	return rtpcs_sds_write_mask(sds, PAGE_ANA_10G, ANA_SPD_REG22,
+				    RTL930X_RXEQ_LEQ_INIT_GRAY,
+				    FIELD_PREP(RTL930X_RXEQ_LEQ_INIT_GRAY, leq_gray));
 }
 
 static int rtpcs_930x_sds_rxeq_leq_get_coef(struct rtpcs_serdes *sds)
 {
 	int bin, gray, manual, ret;
 
-	ret = rtpcs_930x_sds_rxeq_set_debug(sds, 0x10);
+	ret = rtpcs_930x_sds_rxeq_set_debug(sds, RTL930X_RX_DEBUG_SEL_LEQ);
 	if (ret < 0)
 		return ret;
 	usleep_range(1000, 2000);
 
-	/* ##LEQ Read Out */
-	gray = rtpcs_sds_read_bits(sds, PAGE_WDIG, 0x14, 7, 3);
-	if (gray < 0)
-		return gray;
+	ret = rtpcs_sds_read(sds, PAGE_WDIG, WDIG_REG20);
+	if (ret < 0)
+		return ret;
 
+	gray = FIELD_GET(RTL93XX_RXEQ_COEF_LEQ_GRAY, ret);
 	bin = rtpcs_gray_to_binary(gray);
 
-	manual = rtpcs_sds_read_bits(sds, PAGE_ANA_10G, 0x18, 15, 15);
-	if (manual < 0)
-		return manual;
+	ret = rtpcs_sds_read(sds, PAGE_ANA_10G, ANA_SPD_REG24);
+	if (ret < 0)
+		return ret;
+
+	manual = FIELD_GET(RTL930X_RXEQ_LEQ_MANUAL_EN, ret);
 
 	dev_dbg(sds->ctrl->dev, "SerDes %u: LEQ gray: %d, LEQ bin: %d, LEQ manual: %u\n",
 		sds->id, gray, bin, manual);
@@ -2422,7 +2549,8 @@ static int rtpcs_930x_sds_rxeq_leq_get_coef(struct rtpcs_serdes *sds)
 
 static int rtpcs_930x_sds_rxeq_vth_set_adapt(struct rtpcs_serdes *sds, bool enable)
 {
-	return rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0x0f, 13, 13, enable ? 0 : 1);
+	return rtpcs_sds_write_mask(sds, PAGE_ANA_10G, ANA_SPD_REG15, RTL930X_LOAD_IN_INIT_VTH,
+				    enable ? 0 : RTL930X_LOAD_IN_INIT_VTH);
 }
 
 static int rtpcs_930x_sds_rxeq_vth_set_value(struct rtpcs_serdes *sds, unsigned int vth_p,
@@ -2441,23 +2569,29 @@ static int rtpcs_930x_sds_rxeq_vth_get(struct rtpcs_serdes *sds, unsigned int *v
 {
 	int manual, ret, val;
 
-	ret = rtpcs_930x_sds_rxeq_set_debug(sds, 0x20);
+	ret = rtpcs_930x_sds_rxeq_set_debug(sds, RTL930X_RX_DEBUG_SEL_COEF);
 	if (ret < 0)
 		return ret;
 
-	ret = rtpcs_sds_write_bits(sds, PAGE_ANA_10G_EXT, 0x0c, 5, 0, 0xc); /* COEF_SEL */
+	ret = rtpcs_sds_write_mask(sds, PAGE_ANA_10G_EXT, ANA_SPD_EXT_REG12,
+				   RTL930X_RX_COEF_SEL,
+				   FIELD_PREP(RTL930X_RX_COEF_SEL, RTL930X_RX_COEF_SEL_VTH));
 	if (ret < 0)
 		return ret;
 	usleep_range(1000, 2000);
 
-	/* ##VthP & VthN Read Out */
-	val = rtpcs_sds_read_bits(sds, PAGE_WDIG, 0x14, 5, 0);
+	val = rtpcs_sds_read(sds, PAGE_WDIG, WDIG_REG20);
 	if (val < 0)
 		return val;
 
-	*vth_p = FIELD_GET(GENMASK(2, 0), val);
-	*vth_n = FIELD_GET(GENMASK(5, 3), val);
-	manual = rtpcs_sds_read_bits(sds, PAGE_ANA_10G, 0x0f, 13, 13);
+	*vth_p = FIELD_GET(RTL930X_RXEQ_COEF_VTHP, val);
+	*vth_n = FIELD_GET(RTL930X_RXEQ_COEF_VTHN, val);
+
+	val = rtpcs_sds_read(sds, PAGE_ANA_10G, ANA_SPD_REG15);
+	if (val < 0)
+		return val;
+
+	manual = FIELD_GET(RTL930X_LOAD_IN_INIT_VTH, val);
 
 	dev_dbg(sds->ctrl->dev, "SerDes %u: vth_p = %d, vth_n = %d, manual = %d\n",
 		sds->id, *vth_p, *vth_n, manual);
@@ -2470,9 +2604,9 @@ static int rtpcs_930x_sds_rxeq_tap_set_adapt(struct rtpcs_serdes *sds, unsigned 
 	if (tap_id > 4)
 		return -EINVAL;
 
-	/* ##LOAD_IN_INIT[0], [11:7] = TAP0-TAP4 */
-	return rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0xf, tap_id + 7, tap_id + 7,
-				    enable ? 0x0 : 0x1);
+	return rtpcs_sds_write_mask(sds, PAGE_ANA_10G, ANA_SPD_REG15,
+				    RTL930X_LOAD_IN_INIT_TAP(tap_id),
+				    enable ? 0 : RTL930X_LOAD_IN_INIT_TAP(tap_id));
 }
 
 static int rtpcs_930x_sds_rxeq_tap_set_value(struct rtpcs_serdes *sds, unsigned int tap_id,
@@ -2495,7 +2629,7 @@ static int rtpcs_930x_sds_rxeq_tap_set_value(struct rtpcs_serdes *sds, unsigned 
 			ret = rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0x09, 11, 6,
 						   abs(tap_even) & GENMASK(4, 0));
 		if (!ret)
-			ret = rtpcs_sds_write_bits(sds, PAGE_ANA_10G_EXT, 0x12, 5, 0,
+			ret = rtpcs_sds_write_bits(sds, PAGE_ANA_10G_EXT, ANA_SPD_EXT_REG18, 5, 0,
 						   abs(tap_odd) & GENMASK(4, 0));
 		break;
 	case 2:
@@ -2532,40 +2666,46 @@ static int rtpcs_930x_sds_rxeq_tap_get(struct rtpcs_serdes *sds, unsigned int ta
 	struct device *dev = sds->ctrl->dev;
 	int ret, val;
 
-	ret = rtpcs_930x_sds_rxeq_set_debug(sds, 0x20);
+	ret = rtpcs_930x_sds_rxeq_set_debug(sds, RTL930X_RX_DEBUG_SEL_COEF);
 	if (ret < 0)
 		return ret;
 
-	ret = rtpcs_sds_write_bits(sds, PAGE_ANA_10G_EXT, 0x0c, 5, 0, tap_id); /* COEF_SEL */
+	ret = rtpcs_sds_write_mask(sds, PAGE_ANA_10G_EXT, ANA_SPD_EXT_REG12,
+				   RTL930X_RX_COEF_SEL,
+				   FIELD_PREP(RTL930X_RX_COEF_SEL,
+					      RTL930X_RX_COEF_SEL_TAP_EVEN(tap_id)));
 	if (ret < 0)
 		return ret;
 	usleep_range(1000, 2000);
 
-	val = rtpcs_sds_read_bits(sds, PAGE_WDIG, 0x14, 5, 0);
+	val = rtpcs_sds_read(sds, PAGE_WDIG, WDIG_REG20);
 	if (val < 0)
 		return val;
 
-	*tap_even = rtpcs_sign_mag_decode(val, 5);
+	*tap_even = rtpcs_sign_mag_decode(FIELD_GET(RTL93XX_RXEQ_COEF_TAPX, val), 5);
 	dev_dbg(dev, "SerDes %u: tap%d even coefficient = %d\n", sds->id, tap_id, *tap_even);
 
 	if (tap_id > 0) {
-		/* COEF_SEL */
-		ret = rtpcs_sds_write_bits(sds, PAGE_ANA_10G_EXT, 0x0c, 5, 0, (tap_id + 5));
+		ret = rtpcs_sds_write_mask(sds, PAGE_ANA_10G_EXT, ANA_SPD_EXT_REG12,
+					   RTL930X_RX_COEF_SEL,
+					   FIELD_PREP(RTL930X_RX_COEF_SEL,
+						      RTL930X_RX_COEF_SEL_TAP_ODD(tap_id)));
 		if (ret < 0)
 			return ret;
 
-		val = rtpcs_sds_read_bits(sds, PAGE_WDIG, 0x14, 5, 0);
+		val = rtpcs_sds_read(sds, PAGE_WDIG, WDIG_REG20);
 		if (val < 0)
 			return val;
 
-		*tap_odd = rtpcs_sign_mag_decode(val, 5);
+		*tap_odd = rtpcs_sign_mag_decode(FIELD_GET(RTL93XX_RXEQ_COEF_TAPX, val), 5);
 		dev_dbg(dev, "SerDes %u: tap%u odd coefficient = %d\n", sds->id, tap_id, *tap_odd);
 	}
 
-	val = rtpcs_sds_read_bits(sds, PAGE_ANA_10G, 0x0f, tap_id + 7, tap_id + 7);
+	val = rtpcs_sds_read(sds, PAGE_ANA_10G, ANA_SPD_REG15);
 	if (val < 0)
 		return val;
 
+	val = !!(val & RTL930X_LOAD_IN_INIT_TAP(tap_id));
 	dev_dbg(dev, "SerDes %u: tap%u manual = %d\n", sds->id, tap_id, val);
 	return 0;
 }
@@ -2593,7 +2733,7 @@ static void rtpcs_930x_sds_rxcal_init(struct rtpcs_serdes *sds, enum rtpcs_sds_m
 	rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0x04, 7, 6, 0x03);
 
 	/* LEQ (Linear Equalization) */
-	rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0x16, 14, 8, 0x00); /* FILTER_OUT */
+	rtpcs_sds_write_bits(sds, PAGE_ANA_10G, ANA_SPD_REG22, 14, 8, 0x00); /* FILTER_OUT */
 
 	/* DFE (Decision Feedback Equalizer) TAPs */
 	rtpcs_930x_sds_rxeq_tap_set_value(sds, 0, tap0_init_val, 0);
@@ -2607,10 +2747,12 @@ static void rtpcs_930x_sds_rxcal_init(struct rtpcs_serdes *sds, enum rtpcs_sds_m
 	rtpcs_sds_write_bits(sds, PAGE_ANA_10G_EXT, 0x0b, 5, 3, vth_min);
 
 	/* load DFE initial value */
-	rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0x0f, 13, 7, 0x7f); /* load_in_init */
+	rtpcs_sds_write_mask(sds, PAGE_ANA_10G, ANA_SPD_REG15,
+			     RTL930X_LOAD_IN_INIT_ALL, RTL930X_LOAD_IN_INIT_ALL);
 
 	/* disable LEQ training, enable DFE clock */
-	rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0x17,  7,  2, 0x00); /* [7] = EQHOLD, [6:2] = EQOUT */
+	rtpcs_sds_write_mask(sds, PAGE_ANA_10G, ANA_SPD_REG23,
+			     RTL930X_RXEQ_LEQ_HOLD | RTL930X_RXEQ_LEQ_OFFSET, 0);
 	rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0x0c,  8,  8, 0x00); /* MAXHOLD_EN */
 	rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0x0b,  4,  4, 0x01); /* dfe_adapt_eqen */
 	rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0x12, 14, 14, 0x00); /* start_timer_en */
@@ -2625,11 +2767,12 @@ static void rtpcs_930x_sds_rxcal_init(struct rtpcs_serdes *sds, enum rtpcs_sds_m
 	if (hw_mode == RTPCS_SDS_MODE_10GBASER) {
 		rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0x03, 13, 8, 0x1f);
 		rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0x00, 13, 13, 0x01);
-		rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0x16, 14, 8, 0x00); /* FILTER_OUT */
+		/* FILTER_OUT */
+		rtpcs_sds_write_bits(sds, PAGE_ANA_10G, ANA_SPD_REG22, 14, 8, 0x00);
 	}
 
 	/* REG0_LEQ_DC_GAIN, 0x01 for short DACs */
-	rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0x16, 3, 2, 0x02); /* LEQ_DC_GAIN */
+	rtpcs_sds_write_bits(sds, PAGE_ANA_10G, ANA_SPD_REG22, 3, 2, 0x02); /* LEQ_DC_GAIN */
 	rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0x0f, 6, 0, 0x5f); /* dfe_adapt_en */
 	rtpcs_sds_write_bits(sds, PAGE_ANA_10G_EXT, 0x05, 7, 2, 0x1f); /* dfe_adapt_en2 */
 	rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0x19, 9, 5, 0x1f); /* leq_min */
@@ -2639,8 +2782,8 @@ static void rtpcs_930x_sds_rxcal_init(struct rtpcs_serdes *sds, enum rtpcs_sds_m
 
 static void rtpcs_930x_sds_rxcal_fgcal(struct rtpcs_serdes *sds)
 {
-	u32 fgcal_binary, fgcal_gray;
-	u32 offset_range;
+	u32 fgcal_binary, offset_range;
+	int ret;
 
 	rtpcs_930x_sds_rx_reset(sds, RTPCS_SDS_MODE_10GBASER);
 
@@ -2653,38 +2796,52 @@ static void rtpcs_930x_sds_rxcal_fgcal(struct rtpcs_serdes *sds)
 	rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0x01, 14, 14, 0x00);
 
 	/* Force Rx-Run = 0 */
-	rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0x15, 8, 8, 0x0);
+	rtpcs_sds_write_mask(sds, PAGE_ANA_10G, ANA_SPD_REG21, RTL930X_RX_RUN, 0);
 	rtpcs_930x_sds_rx_reset(sds, RTPCS_SDS_MODE_10GBASER);
 
 	/* Foreground Calibration --- */
 
 	for (int run = 0; run < 10; run++) {
-		rtpcs_930x_sds_rxeq_set_debug(sds, 0x20);
-		rtpcs_sds_write_bits(sds, PAGE_ANA_10G_EXT, 0x0c, 5, 0, 0xf); /* COEF_SEL */
-		/* ##FGCAL read gray */
-		fgcal_gray = rtpcs_sds_read_bits(sds, PAGE_WDIG, 0x14, 5, 0);
-		rtpcs_sds_write_bits(sds, PAGE_ANA_10G_EXT, 0x0c, 5, 0, 0xe); /* COEF_SEL */
-		/* ##FGCAL read binary */
-		fgcal_binary = rtpcs_sds_read_bits(sds, PAGE_WDIG, 0x14, 5, 0);
+		ret = rtpcs_930x_sds_rxeq_set_debug(sds, RTL930X_RX_DEBUG_SEL_COEF);
+		if (ret < 0)
+			return;
 
+		ret = rtpcs_sds_write_mask(sds, PAGE_ANA_10G_EXT, ANA_SPD_EXT_REG12,
+					   RTL930X_RX_COEF_SEL,
+					   FIELD_PREP(RTL930X_RX_COEF_SEL,
+						      RTL930X_RX_COEF_SEL_FGCAL_BIN));
+		if (ret < 0)
+			return;
+
+		ret = rtpcs_sds_read(sds, PAGE_WDIG, WDIG_REG20);
+		if (ret < 0)
+			return;
+
+		fgcal_binary = FIELD_GET(RTL930X_RXCAL_FGCAL_BIN, ret);
 		if (fgcal_binary <= 60 && fgcal_binary >= 3)
 			break;
 
-		dev_dbg(sds->ctrl->dev, "SerDes %u: fgcal_gray = %d, fgcal_binary = %d\n",
-			sds->id, fgcal_gray, fgcal_binary);
+		dev_dbg(sds->ctrl->dev, "SerDes %u: fgcal_binary = %d\n",
+			sds->id, fgcal_binary);
 
-		offset_range = rtpcs_sds_read_bits(sds, PAGE_ANA_10G, 0x15, 15, 14);
-		if (offset_range == 3) {
+		ret = rtpcs_sds_read(sds, PAGE_ANA_10G, ANA_SPD_REG21);
+		if (ret < 0)
+			return;
+
+		offset_range = FIELD_GET(RTL930X_RXCAL_OFFSET_RANGE, ret);
+		if (offset_range == FIELD_MAX(RTL930X_RXCAL_OFFSET_RANGE)) {
 			dev_dbg(sds->ctrl->dev,
 				"SerDes %u: Foreground Calibration result marginal!\n", sds->id);
 			break;
 		}
 
 		offset_range++;
-		rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0x15, 15, 14, offset_range);
+		rtpcs_sds_write_mask(sds, PAGE_ANA_10G, ANA_SPD_REG21,
+				     RTL930X_RXCAL_OFFSET_RANGE,
+				     FIELD_PREP(RTL930X_RXCAL_OFFSET_RANGE, offset_range));
 
 		/* Force Rx-Run = 0 */
-		rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0x15, 8, 8, 0x0);
+		rtpcs_sds_write_mask(sds, PAGE_ANA_10G, ANA_SPD_REG21, RTL930X_RX_RUN, 0);
 		rtpcs_930x_sds_rx_reset(sds, RTPCS_SDS_MODE_10GBASER);
 	}
 }
@@ -2708,7 +2865,7 @@ static void rtpcs_930x_sds_rxcal_leq_adapt_lock(struct rtpcs_serdes *sds)
 	/* 1.3.1: release LEQ auto-adapt, let it settle from zero */
 	if (!direct_serdes)
 		rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0xc, 8, 8, 0x0);
-	rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0x17, 7, 7, 0x0);
+	rtpcs_sds_write_mask(sds, PAGE_ANA_10G, ANA_SPD_REG23, RTL930X_RXEQ_LEQ_HOLD, 0);
 	rtpcs_930x_sds_rxeq_leq_set_adapt(sds, true);
 
 	/* 1.3.2: sample the auto-adapted LEQ value 10 times over ~100ms */
@@ -2722,7 +2879,7 @@ static void rtpcs_930x_sds_rxcal_leq_adapt_lock(struct rtpcs_serdes *sds)
 	}
 
 	/* rounded average of where auto-adapt settled */
-	avg10 = (sum10 / 10) + (((sum10 % 10) >= 5) ? 1 : 0);
+	avg10 = DIV_ROUND_CLOSEST(sum10, 10);
 
 	/*
 	 * Empirical correction based on attachment type.
@@ -2748,7 +2905,8 @@ static void rtpcs_930x_sds_rxcal_leq_adapt_lock(struct rtpcs_serdes *sds)
 
 	/* lock LEQ at corrected value for direct SerDes; PHY-attached stays in auto-adapt */
 	if (direct_serdes) {
-		rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0x17, 7, 7, 0x1);
+		rtpcs_sds_write_mask(sds, PAGE_ANA_10G, ANA_SPD_REG23, RTL930X_RXEQ_LEQ_HOLD,
+				     RTL930X_RXEQ_LEQ_HOLD);
 		rtpcs_930x_sds_rxeq_leq_set_adapt(sds, false);
 		rtpcs_930x_sds_rxeq_leq_set_coef(sds, avg10, 0);
 	}
@@ -2785,49 +2943,20 @@ static void rtpcs_930x_sds_rxcal_vth_tap0_adapt_lock(struct rtpcs_serdes *sds)
 static void rtpcs_930x_sds_rxeq_dfe_taps_adapt(struct rtpcs_serdes *sds)
 {
 	/* dfeTap1_4Enable true */
-	rtpcs_930x_sds_rxeq_tap_set_adapt(sds, 1, true);
-	rtpcs_930x_sds_rxeq_tap_set_adapt(sds, 2, true);
-	rtpcs_930x_sds_rxeq_tap_set_adapt(sds, 3, true);
-	rtpcs_930x_sds_rxeq_tap_set_adapt(sds, 4, true);
+	for (int i = 1; i <= 4; i++)
+		rtpcs_930x_sds_rxeq_tap_set_adapt(sds, i, true);
 
 	msleep(30);
 }
 
 static void rtpcs_930x_sds_rxeq_dfe_disable(struct rtpcs_serdes *sds)
 {
-	int tap_even = 0, tap_odd = 0;
-
 	for (int i = 1; i <= 4; i++) {
-		rtpcs_930x_sds_rxeq_tap_set_value(sds, i, tap_even, tap_odd);
+		rtpcs_930x_sds_rxeq_tap_set_value(sds, i, 0, 0);
 		rtpcs_930x_sds_rxeq_tap_set_adapt(sds, i, false);
 	}
 
 	usleep_range(10000, 11000);
-}
-
-static void rtpcs_930x_sds_do_rx_calibration(struct rtpcs_serdes *sds,
-					     enum rtpcs_sds_mode hw_mode)
-{
-	u32 latch_sts;
-
-	rtpcs_930x_sds_rxcal_init(sds, hw_mode);
-	rtpcs_930x_sds_rxcal_fgcal(sds);
-	rtpcs_930x_sds_rxcal_vth_tap0_adapt_lock(sds);
-
-	/* Do this only for 10GR mode */
-	if (hw_mode == RTPCS_SDS_MODE_10GBASER) {
-		rtpcs_930x_sds_rxeq_dfe_taps_adapt(sds);
-		msleep(20);
-
-		latch_sts = rtpcs_sds_read_bits(sds, PAGE_TGR_STD_0, 1, 2, 2);
-		usleep_range(1000, 2000);
-		latch_sts = rtpcs_sds_read_bits(sds, PAGE_TGR_STD_0, 1, 2, 2);
-		if (latch_sts) {
-			rtpcs_930x_sds_rxeq_dfe_disable(sds);
-			rtpcs_930x_sds_rxcal_vth_tap0_adapt_lock(sds);
-			rtpcs_930x_sds_rxeq_dfe_taps_adapt(sds);
-		}
-	}
 }
 
 static int rtpcs_930x_sds_sym_err_reset(struct rtpcs_serdes *sds,
@@ -2921,18 +3050,30 @@ static int rtpcs_930x_sds_check_calibration(struct rtpcs_serdes *sds,
 	usleep_range(1000, 2000);
 	errors2 = rtpcs_930x_sds_sym_err_get(sds, hw_mode);
 
+	dev_dbg(sds->ctrl->dev, "SerDes %u: RX calibration symbol errors %u -> %u\n",
+		sds->id, errors1, errors2);
+
+	if (!rtpcs_930x_sds_rx_link_up(sds)) {
+		dev_dbg(sds->ctrl->dev, "SerDes %u: RX link down after calibration (mode=%u, attempt=%u/%u)\n",
+			sds->id, hw_mode, sds->rxcal_tries, RTPCS_RXCAL_MAX_TRIES);
+		return 1;
+	}
+
 	switch (hw_mode) {
 	case RTPCS_SDS_MODE_XSGMII:
-		if ((errors2 - errors1 > 100) || (errors1 >= 0xffff00) || (errors2 >= 0xffff00)) {
-			dev_err(sds->ctrl->dev, "SerDes %u: XSGMII error rate too high\n",
-				sds->id);
+		if ((errors2 - errors1 > RTPCS_RXCAL_XSG_MAX_ERR_DELTA) ||
+		    (errors1 >= RTPCS_RXCAL_XSG_ERR_SATURATION) ||
+		    (errors2 >= RTPCS_RXCAL_XSG_ERR_SATURATION)) {
+			dev_dbg(sds->ctrl->dev, "SerDes %u: XSGMII errors %u -> %u, delta=%u (max %u), saturation=%#x\n",
+				sds->id, errors1, errors2, errors2 - errors1,
+				RTPCS_RXCAL_XSG_MAX_ERR_DELTA, RTPCS_RXCAL_XSG_ERR_SATURATION);
 			return 1;
 		}
 		break;
 	default:
 		if (errors2 > 0) {
-			dev_err(sds->ctrl->dev, "SerDes %u: symbol error rate too high\n",
-				sds->id);
+			dev_dbg(sds->ctrl->dev, "SerDes %u: symbol errors %u (expected 0)\n",
+				sds->id, errors2);
 			return 1;
 		}
 		break;
@@ -2941,27 +3082,119 @@ static int rtpcs_930x_sds_check_calibration(struct rtpcs_serdes *sds,
 	return 0;
 }
 
-static int rtpcs_930x_sds_10g_idle(struct rtpcs_serdes *sds)
+static void rtpcs_930x_rx_cali_work_handler(struct work_struct *work)
 {
-	struct rtpcs_serdes *even_sds = rtpcs_sds_get_even(sds);
-	ktime_t timeout;
-	int bit, busy;
+	struct rtpcs_serdes *sds, *even_sds;
+	unsigned long lock_start, attempt_start;
+	bool calib_failed, rxcal_ready;
+	int latch_sts, bit, ret;
 
+	sds = container_of(to_delayed_work(work), struct rtpcs_serdes, cali_work);
+
+	lock_start = jiffies;
+	mutex_lock(&sds->ctrl->lock);
+
+	dev_dbg(sds->ctrl->dev,
+		"SerDes %u: RX calibration worker entered, mode=%u pending=%u lock-wait=%u ms\n",
+		sds->id, sds->hw_mode, sds->rxcal_pending,
+		jiffies_to_msecs(jiffies - lock_start));
+
+	if (!sds->rxcal_pending) {
+		dev_dbg(sds->ctrl->dev, "SerDes %u: RX calibration request no longer pending\n",
+			sds->id);
+		goto unlock;
+	}
+
+	/* Select the 10G RX status readback. */
+	even_sds = rtpcs_sds_get_even(sds);
 	bit = (sds == even_sds) ? 0 : 1;
-	timeout = ktime_add_us(ktime_get(), 10000); /* timeout after 10 msecs */
+	ret = rtpcs_sds_write_mask(even_sds, PAGE_WDIG, WDIG_REG02, RTL93XX_DBGO_SEL_0,
+				   RTL930X_DBGO_SEL_0_RX_STATUS);
+	if (ret < 0) {
+		dev_err(sds->ctrl->dev, "SerDes %u: RX calibration status selection failed: %d\n",
+			sds->id, ret);
+		goto terminate;
+	}
 
-	do {
-		rtpcs_sds_write_mask(even_sds, PAGE_WDIG, WDIG_REG02, RTL93XX_DBGO_SEL_0,
-				     RTL930X_DBGO_SEL_0_RX_STATUS);
-		busy = rtpcs_sds_read_bits(even_sds, PAGE_WDIG, 0x14, bit, bit);
-		if (busy <= 0)
-			return busy;
+	ret = rtpcs_sds_read_bits(even_sds, PAGE_WDIG, WDIG_REG20, bit, bit);
+	if (ret < 0) {
+		dev_err(sds->ctrl->dev, "SerDes %u: RX calibration idle-status read failed: %d\n",
+			sds->id, ret);
+		goto terminate;
+	}
 
-		usleep_range(100, 200); /* wait ~100 usecs before retry */
-	} while (ktime_before(ktime_get(), timeout));
+	/* The SDK permits calibration when RX_IDLE is deasserted. */
+	rxcal_ready = !ret;
+	if (!rxcal_ready) {
+		dev_dbg(sds->ctrl->dev, "SerDes %u: RX not ready for calibration, checking again in %u ms\n",
+			sds->id, RTPCS_RXCAL_POLL_MS);
+		schedule_delayed_work(&sds->cali_work, msecs_to_jiffies(RTPCS_RXCAL_POLL_MS));
+		goto unlock;
+	}
 
-	dev_warn(sds->ctrl->dev, "SerDes %u: waiting for RX idle timed out\n", sds->id);
-	return -ETIMEDOUT;
+	attempt_start = jiffies;
+	sds->rxcal_tries++;
+	dev_dbg(sds->ctrl->dev, "SerDes %u: RX calibration attempt %u/%u\n",
+		sds->id, sds->rxcal_tries, RTPCS_RXCAL_MAX_TRIES);
+	rtpcs_930x_sds_rxcal_init(sds, sds->hw_mode);
+	rtpcs_930x_sds_rxcal_fgcal(sds);
+	rtpcs_930x_sds_rxcal_vth_tap0_adapt_lock(sds);
+
+	if (sds->hw_mode == RTPCS_SDS_MODE_10GBASER) {
+		rtpcs_930x_sds_rxeq_dfe_taps_adapt(sds);
+		msleep(20);
+
+		latch_sts = rtpcs_sds_read_bits(sds, PAGE_TGR_STD_0, 1, 2, 2);
+		if (latch_sts >= 0) {
+			usleep_range(1000, 2000);
+			latch_sts = rtpcs_sds_read_bits(sds, PAGE_TGR_STD_0, 1, 2, 2);
+		}
+		if (latch_sts < 0) {
+			dev_err(sds->ctrl->dev, "SerDes %u: RX latch read failed: %d\n",
+				sds->id, latch_sts);
+			goto terminate;
+		}
+		if (latch_sts) {
+			dev_dbg(sds->ctrl->dev, "SerDes %u: RX calibration repeating VTH/TAP0 adaptation\n",
+				sds->id);
+			rtpcs_930x_sds_rxeq_dfe_disable(sds);
+			rtpcs_930x_sds_rxcal_vth_tap0_adapt_lock(sds);
+			rtpcs_930x_sds_rxeq_dfe_taps_adapt(sds);
+		}
+	}
+
+	msleep(50);
+	calib_failed = rtpcs_930x_sds_check_calibration(sds, sds->hw_mode);
+	dev_dbg(sds->ctrl->dev, "SerDes %u: RX calibration attempt %u/%u %s after %u ms\n",
+		sds->id, sds->rxcal_tries, RTPCS_RXCAL_MAX_TRIES,
+		calib_failed ? "failed" : "passed",
+		jiffies_to_msecs(jiffies - attempt_start));
+	if (calib_failed) {
+		if (sds->rxcal_tries < RTPCS_RXCAL_MAX_TRIES) {
+			dev_dbg(sds->ctrl->dev, "SerDes %u: retrying RX calibration in %u ms\n",
+				sds->id, RTPCS_RXCAL_RETRY_MS);
+			schedule_delayed_work(&sds->cali_work,
+					      msecs_to_jiffies(RTPCS_RXCAL_RETRY_MS));
+			goto unlock;
+		}
+		dev_warn(sds->ctrl->dev, "SerDes %u: RX calibration ultimately failed\n", sds->id);
+	}
+
+terminate:
+	sds->rxcal_pending = false;
+unlock:
+	mutex_unlock(&sds->ctrl->lock);
+}
+
+static void rtpcs_sds_cancel_rxcal_work(void *data)
+{
+	struct rtpcs_serdes *sds = data;
+
+	scoped_guard(mutex, &sds->ctrl->lock) {
+		sds->rxcal_pending = false;
+	}
+
+	cancel_delayed_work_sync(&sds->cali_work);
 }
 
 static int rtpcs_930x_sds_config_polarity(struct rtpcs_serdes *sds, unsigned int tx_pol,
@@ -3230,22 +3463,18 @@ static int rtpcs_930x_sds_config_attachment(struct rtpcs_serdes *sds,
 
 static int rtpcs_930x_sds_post_config(struct rtpcs_serdes *sds, enum rtpcs_sds_mode hw_mode)
 {
-	bool calib_failed;
-	int calib_tries = 0;
-
-	if (hw_mode == RTPCS_SDS_MODE_QSGMII)
+	if (hw_mode != RTPCS_SDS_MODE_10GBASER &&
+	    hw_mode != RTPCS_SDS_MODE_XSGMII &&
+	    hw_mode != RTPCS_SDS_MODE_USXGMII)
 		return 0;
 
-	rtpcs_930x_sds_10g_idle(sds);
-	do {
-		rtpcs_930x_sds_do_rx_calibration(sds, hw_mode);
-		calib_tries++;
-		msleep(50);
-		calib_failed = rtpcs_930x_sds_check_calibration(sds, hw_mode);
-	} while (calib_failed && calib_tries < 3);
-	if (calib_failed)
-		dev_warn(sds->ctrl->dev, "SerDes %u: RX calibration failed\n", sds->id);
+	rtpcs_930x_sds_rxcal_init(sds, hw_mode);
 
+	dev_dbg(sds->ctrl->dev, "SerDes %u: arming RX calibration for mode %u\n",
+		sds->id, hw_mode);
+	sds->rxcal_tries = 0;
+	sds->rxcal_pending = true;
+	mod_delayed_work(system_wq, &sds->cali_work, msecs_to_jiffies(1000));
 	return 0;
 }
 
@@ -3277,7 +3506,9 @@ static int rtpcs_930x_sds_probe(struct rtpcs_serdes *sds)
 			return PTR_ERR(sds->swcore_regs.usxgmii_submode);
 	}
 
-	return 0;
+	INIT_DELAYED_WORK(&sds->cali_work, rtpcs_930x_rx_cali_work_handler);
+
+	return devm_add_action_or_reset(dev, rtpcs_sds_cancel_rxcal_work, sds);
 }
 
 /* RTL931X */
@@ -3393,69 +3624,72 @@ static int rtpcs_931x_sds_rxeq_set_debug(struct rtpcs_serdes *sds, unsigned int 
 
 static int rtpcs_931x_sds_rxeq_leq_set_adapt(struct rtpcs_serdes *sds, bool enable)
 {
-	return rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0xd, 7, 7, enable ? 0x0 : 0x1);
+	return rtpcs_sds_write_mask(sds, PAGE_ANA_10G, ANA_SPD_REG13,
+				    RTL931X_RXEQ_LEQ_MANUAL_EN,
+				    enable ? 0 : RTL931X_RXEQ_LEQ_MANUAL_EN);
 }
 
 static int rtpcs_931x_sds_rxeq_leq_set_coef(struct rtpcs_serdes *sds, unsigned int gain)
 {
-	return rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0xd, 6, 2, gain);
+	return rtpcs_sds_write_mask(sds, PAGE_ANA_10G, ANA_SPD_REG13,
+				    RTL931X_RXEQ_LEQ_INIT,
+				    FIELD_PREP(RTL931X_RXEQ_LEQ_INIT, gain));
 }
 
 static int rtpcs_931x_sds_rxeq_leq_get_coef(struct rtpcs_serdes *sds)
 {
 	int ret, gray;
 
-	ret = rtpcs_931x_sds_rxeq_set_debug(sds, 0x1);
+	ret = rtpcs_931x_sds_rxeq_set_debug(sds, RTL931X_RX_DEBUG_SEL_LEQ);
 	if (ret < 0)
 		return ret;
 
-	gray = rtpcs_sds_read_bits(sds, PAGE_WDIG, 0x14, 7, 3);
+	gray = rtpcs_sds_read(sds, PAGE_WDIG, WDIG_REG20);
 	if (gray < 0)
 		return gray;
 
-	return rtpcs_gray_to_binary(gray);
+	return rtpcs_gray_to_binary(FIELD_GET(RTL93XX_RXEQ_COEF_LEQ_GRAY, gray));
 }
 
 static int rtpcs_931x_sds_rxeq_tap_set_value(struct rtpcs_serdes *sds, unsigned int tap_id,
 					     int tap_even, int tap_odd)
 {
-	int ret;
+	u16 even_val, odd_val;
+	enum rtpcs_page page;
+	int reg;
+
+	even_val = FIELD_PREP(RTL931X_TAPX_INIT_EVEN, rtpcs_sign_mag_encode(tap_even, 5));
+
+	if (tap_id == 0)
+		return rtpcs_sds_write_mask(sds, PAGE_ANA_10G, ANA_SPD_REG28,
+					    RTL931X_TAPX_INIT_EVEN, even_val);
 
 	switch (tap_id) {
-	case 0:
-		return rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0x1c, 5, 0,
-					    rtpcs_sign_mag_encode(tap_even, 5));
 	case 1:
-		ret = rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0x1d, 5, 0,
-					   rtpcs_sign_mag_encode(tap_even, 5));
-		if (!ret)
-			ret = rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0x1d, 11, 6,
-						   rtpcs_sign_mag_encode(tap_odd, 5));
-		return ret;
+		page = PAGE_ANA_10G;
+		reg = ANA_SPD_REG29;
+		break;
 	case 2:
-		ret = rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0x1f, 5, 0,
-					   rtpcs_sign_mag_encode(tap_even, 5));
-		if (!ret)
-			ret = rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0x1f, 11, 6,
-						   rtpcs_sign_mag_encode(tap_odd, 5));
-		return ret;
+		page = PAGE_ANA_10G;
+		reg = ANA_SPD_REG31;
+		break;
 	case 3:
-		ret = rtpcs_sds_write_bits(sds, PAGE_ANA_10G_EXT, 0x0, 5, 0,
-					   rtpcs_sign_mag_encode(tap_even, 5));
-		if (!ret)
-			ret = rtpcs_sds_write_bits(sds, PAGE_ANA_10G_EXT, 0x0, 11, 6,
-						   rtpcs_sign_mag_encode(tap_odd, 5));
-		return ret;
+		page = PAGE_ANA_10G_EXT;
+		reg = ANA_SPD_EXT_REG00;
+		break;
 	case 4:
-		ret = rtpcs_sds_write_bits(sds, PAGE_ANA_10G_EXT, 0x1, 5, 0,
-					   rtpcs_sign_mag_encode(tap_even, 5));
-		if (!ret)
-			ret = rtpcs_sds_write_bits(sds, PAGE_ANA_10G_EXT, 0x1, 11, 6,
-						   rtpcs_sign_mag_encode(tap_odd, 5));
-		return ret;
+		page = PAGE_ANA_10G_EXT;
+		reg = ANA_SPD_EXT_REG01;
+		break;
 	default:
 		return -EINVAL;
 	}
+
+	odd_val = FIELD_PREP(RTL931X_TAPX_INIT_ODD, rtpcs_sign_mag_encode(tap_odd, 5));
+
+	return rtpcs_sds_write_mask(sds, page, reg,
+				    RTL931X_TAPX_INIT_ODD | RTL931X_TAPX_INIT_EVEN,
+				    odd_val | even_val);
 }
 
 static int rtpcs_931x_sds_rxeq_tap_set_adapt(struct rtpcs_serdes *sds, unsigned int tap_id,
@@ -3464,22 +3698,26 @@ static int rtpcs_931x_sds_rxeq_tap_set_adapt(struct rtpcs_serdes *sds, unsigned 
 	if (tap_id > 4)
 		return -EINVAL;
 
-	/* manual-mode enable bits, [10:6] = TAP0-TAP4 */
-	return rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0xf, tap_id + 6, tap_id + 6,
-				    enable ? 0x0 : 0x1);
+	return rtpcs_sds_write_mask(sds, PAGE_ANA_10G, ANA_SPD_REG15,
+				    RTL931X_LOAD_IN_INIT_TAP(tap_id),
+				    enable ? 0 : RTL931X_LOAD_IN_INIT_TAP(tap_id));
 }
 
 static int rtpcs_931x_sds_rxeq_vth_set_value(struct rtpcs_serdes *sds, unsigned int vth_p,
 					     unsigned int vth_n)
 {
-	return rtpcs_sds_write_bits(sds, PAGE_ANA_10G_EXT, 0x12, 11, 4,
-				    FIELD_PREP(GENMASK(3, 0), vth_p) |
-				    FIELD_PREP(GENMASK(7, 4), vth_n));
+	u16 val;
+
+	val = FIELD_PREP(RTL931X_VTHP_INIT, vth_p) | FIELD_PREP(RTL931X_VTHN_INIT, vth_n);
+
+	return rtpcs_sds_write_mask(sds, PAGE_ANA_10G_EXT, ANA_SPD_EXT_REG18,
+				    RTL931X_VTHP_INIT | RTL931X_VTHN_INIT, val);
 }
 
 static int rtpcs_931x_sds_rxeq_vth_set_adapt(struct rtpcs_serdes *sds, bool enable)
 {
-	return rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0xf, 12, 12, enable ? 0x0 : 0x1);
+	return rtpcs_sds_write_mask(sds, PAGE_ANA_10G, ANA_SPD_REG15, RTL931X_LOAD_IN_INIT_VTH,
+				    enable ? 0 : RTL931X_LOAD_IN_INIT_VTH);
 }
 
 static int rtpcs_931x_sds_rxeq_vth_get(struct rtpcs_serdes *sds, unsigned int *vth_p,
@@ -3487,22 +3725,22 @@ static int rtpcs_931x_sds_rxeq_vth_get(struct rtpcs_serdes *sds, unsigned int *v
 {
 	int ret, val;
 
-	ret = rtpcs_931x_sds_rxeq_set_debug(sds, 0x2);
+	ret = rtpcs_931x_sds_rxeq_set_debug(sds, RTL931X_RX_DEBUG_SEL_COEF);
 	if (ret < 0)
 		return ret;
 
-	ret = rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0x14, 10, 5, 0x0c); /* COEF_SEL = VTH */
+	ret = rtpcs_sds_write_mask(sds, PAGE_ANA_10G, ANA_SPD_REG20, RTL931X_RX_COEF_SEL,
+				   FIELD_PREP(RTL931X_RX_COEF_SEL, RTL931X_RX_COEF_SEL_VTH));
 	if (ret < 0)
 		return ret;
 	usleep_range(1000, 2000);
 
-	val = rtpcs_sds_read_bits(sds, PAGE_WDIG, 0x14, 7, 0);
+	val = rtpcs_sds_read(sds, PAGE_WDIG, WDIG_REG20);
 	if (val < 0)
 		return val;
 
-	*vth_p = FIELD_GET(GENMASK(3, 0), val);
-	*vth_n = FIELD_GET(GENMASK(7, 4), val);
-
+	*vth_p = FIELD_GET(RTL931X_RXEQ_COEF_VTHP, val);
+	*vth_n = FIELD_GET(RTL931X_RXEQ_COEF_VTHN, val);
 	return 0;
 }
 
@@ -3525,14 +3763,15 @@ static int rtpcs_931x_sds_reset_leq_dfe(struct rtpcs_serdes *sds)
 	rtpcs_931x_sds_rxeq_leq_set_adapt(sds, false);
 	rtpcs_931x_sds_rxeq_leq_set_coef(sds, 0);
 	/* bits [1:0] are undocumented but part of the known-good reset value */
-	rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0xd, 1, 0, 0x0);
+	rtpcs_sds_write_bits(sds, PAGE_ANA_10G, ANA_SPD_REG13, 1, 0, 0x0);
 
 	/*
 	 * Force manual mode before writing values - not after like the vendor
 	 * SDK does - to prevent the adapt engine from overwriting '0' in the
 	 * short timeframe.
 	 */
-	rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0xf, 12, 6, 0x7f);
+	rtpcs_sds_write_mask(sds, PAGE_ANA_10G, ANA_SPD_REG15,
+			     RTL931X_LOAD_IN_INIT_ALL, RTL931X_LOAD_IN_INIT_ALL);
 
 	rtpcs_931x_sds_rxeq_tap_set_value(sds, 0, 0x1e, 0);
 	rtpcs_931x_sds_rxeq_tap_set_value(sds, 1, 0, 0);
@@ -3542,8 +3781,8 @@ static int rtpcs_931x_sds_reset_leq_dfe(struct rtpcs_serdes *sds)
 
 	rtpcs_931x_sds_rxeq_vth_set_value(sds, 0xa, 0xa);
 	/* bits [15:12] and [3:0] are undocumented but part of the known-good reset value */
-	rtpcs_sds_write_bits(sds, PAGE_ANA_10G_EXT, 0x12, 15, 12, 0x0);
-	rtpcs_sds_write_bits(sds, PAGE_ANA_10G_EXT, 0x12, 3, 0, 0xa);
+	rtpcs_sds_write_bits(sds, PAGE_ANA_10G_EXT, ANA_SPD_EXT_REG18, 15, 12, 0x0);
+	rtpcs_sds_write_bits(sds, PAGE_ANA_10G_EXT, ANA_SPD_EXT_REG18, 3, 0, 0xa);
 
 	return 0;
 }
@@ -3555,7 +3794,8 @@ static int rtpcs_931x_sds_reset_leq_dfe(struct rtpcs_serdes *sds)
  */
 static int rtpcs_931x_sds_rxeq_dfe_disable_5g(struct rtpcs_serdes *sds)
 {
-	return rtpcs_sds_write_bits(sds, PAGE_ANA_5G0, 0xf, 12, 6, 0x7f);
+	return rtpcs_sds_write_mask(sds, PAGE_ANA_5G0, ANA_SPD_REG15,
+				    RTL931X_LOAD_IN_INIT_ALL, RTL931X_LOAD_IN_INIT_ALL);
 }
 
 static int rtpcs_931x_sds_power(struct rtpcs_serdes *sds, bool power_on)
@@ -3686,8 +3926,8 @@ static void rtpcs_931x_sds_rxcal_leq_adapt(struct rtpcs_serdes *sds)
 	dev_dbg(sds->ctrl->dev, "SerDes %u PHY-attached RX calibration...\n", sds->id);
 
 	rtpcs_931x_sds_rxeq_leq_set_coef(sds, 0);
-	rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0xd, 1, 0, 0x0);   /* undocumented */
-	rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0xd, 13, 13, 0x0); /* undocumented */
+	rtpcs_sds_write_bits(sds, PAGE_ANA_10G, ANA_SPD_REG13, 1, 0, 0x0);   /* undocumented */
+	rtpcs_sds_write_bits(sds, PAGE_ANA_10G, ANA_SPD_REG13, 13, 13, 0x0); /* undocumented */
 
 	rtpcs_931x_sds_rxeq_dfe_disable_5g(sds);
 
@@ -4360,6 +4600,11 @@ static int rtpcs_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
 	scoped_guard(mutex, &ctrl->lock) {
 		mode_changed = sds->hw_mode != hw_mode || sds->usxgmii_submode != submode;
 		if (mode_changed) {
+			if (sds->rxcal_pending)
+				dev_dbg(ctrl->dev, "SerDes %u: invalidating pending RX calibration for mode change\n",
+					sds->id);
+			sds->rxcal_pending = false;
+
 			ret = rtpcs_sds_config_polarity(sds, interface);
 			if (ret < 0) {
 				dev_err(ctrl->dev, "failed to configure polarity of SerDes %u\n",
@@ -4419,6 +4664,10 @@ static int rtpcs_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
 				 sds->id, phy_modes(interface));
 		}
 	}
+
+	/* Forced SGMII links cannot report PCS changes through MAC link IRQs. */
+	pcs->poll = interface == PHY_INTERFACE_MODE_SGMII &&
+		    neg_mode == PHYLINK_PCS_NEG_INBAND_ENABLED;
 
 	return changed;
 }

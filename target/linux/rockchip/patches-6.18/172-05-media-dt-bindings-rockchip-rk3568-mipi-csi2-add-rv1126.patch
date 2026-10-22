@@ -1,0 +1,24 @@
+From 0baaabe12e96af4a1551364a2b37fef7bb7402e3 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Fri, 9 Oct 2026 14:18:14 +0100
+Subject: [PATCH] media: dt-bindings: rockchip,rk3568-mipi-csi2: add rv1126
+
+The MIPI CSI-2 receiver of the RV1126 has the register layout, error
+interrupts and reset of the RK3568 one, so it falls back to its
+compatible string.
+
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ .../devicetree/bindings/media/rockchip,rk3568-mipi-csi2.yaml     | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/Documentation/devicetree/bindings/media/rockchip,rk3568-mipi-csi2.yaml
++++ b/Documentation/devicetree/bindings/media/rockchip,rk3568-mipi-csi2.yaml
+@@ -23,6 +23,7 @@ properties:
+       - items:
+           - enum:
+               - rockchip,rk3588-mipi-csi2
++              - rockchip,rv1126-mipi-csi2
+           - const: rockchip,rk3568-mipi-csi2
+ 
+   reg:

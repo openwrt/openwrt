@@ -34,7 +34,7 @@ void rtldsa_931x_stp_init(void)
 	sw_w32(0, RTL931X_ST_CTRL);
 }
 
-int rtldsa_838x_stp_get(struct rtl838x_switch_priv *priv, u16 msti, int port)
+int rtldsa_838x_stp_get(struct otto_dsa_priv *priv, u16 msti, int port)
 {
 	int idx = 1 - (port / 16);
 	int bit = 2 * (port % 16);
@@ -48,7 +48,7 @@ int rtldsa_838x_stp_get(struct rtl838x_switch_priv *priv, u16 msti, int port)
 	return state;
 }
 
-void rtl838x_stp_set(struct rtl838x_switch_priv *priv, u16 msti, int port, int state)
+void rtl838x_stp_set(struct otto_dsa_priv *priv, u16 msti, int port, int state)
 {
 	int tbl = otto_table_acquire(RTL8380_TBL_MSTI);
 	int idx = 1 - (port / 16);
@@ -62,7 +62,7 @@ void rtl838x_stp_set(struct rtl838x_switch_priv *priv, u16 msti, int port, int s
 	otto_table_release(tbl);
 }
 
-int rtldsa_839x_stp_get(struct rtl838x_switch_priv *priv, u16 msti, int port)
+int rtldsa_839x_stp_get(struct otto_dsa_priv *priv, u16 msti, int port)
 {
 	int idx = 3 - ((port + 12) / 16);
 	int bit = 2 * ((port + 12) % 16);
@@ -76,7 +76,7 @@ int rtldsa_839x_stp_get(struct rtl838x_switch_priv *priv, u16 msti, int port)
 	return state;
 }
 
-void rtl839x_stp_set(struct rtl838x_switch_priv *priv, u16 msti, int port, int state)
+void rtl839x_stp_set(struct otto_dsa_priv *priv, u16 msti, int port, int state)
 {
 	int tbl = otto_table_acquire(RTL8390_TBL_MSTI);
 	int idx = 3 - ((port + 12) / 16);
@@ -90,7 +90,7 @@ void rtl839x_stp_set(struct rtl838x_switch_priv *priv, u16 msti, int port, int s
 	otto_table_release(tbl);
 }
 
-int rtldsa_930x_stp_get(struct rtl838x_switch_priv *priv, u16 msti, int port)
+int rtldsa_930x_stp_get(struct otto_dsa_priv *priv, u16 msti, int port)
 {
 	int idx = 1 - ((port + 3) / 16);
 	int bit = 2 * ((port + 3) % 16);
@@ -104,7 +104,7 @@ int rtldsa_930x_stp_get(struct rtl838x_switch_priv *priv, u16 msti, int port)
 	return state;
 }
 
-void rtl930x_stp_set(struct rtl838x_switch_priv *priv, u16 msti, int port, int state)
+void rtl930x_stp_set(struct otto_dsa_priv *priv, u16 msti, int port, int state)
 {
 	int tbl = otto_table_acquire(RTL9300_TBL_MSTI);
 	int idx = 1 - ((port + 3) / 16);
@@ -118,7 +118,7 @@ void rtl930x_stp_set(struct rtl838x_switch_priv *priv, u16 msti, int port, int s
 	otto_table_release(tbl);
 }
 
-int rtldsa_931x_stp_get(struct rtl838x_switch_priv *priv, u16 msti, int port)
+int rtldsa_931x_stp_get(struct otto_dsa_priv *priv, u16 msti, int port)
 {
 	int idx = 3 - ((port + 8) / 16);
 	int bit = 2 * ((port + 8) % 16);
@@ -132,7 +132,7 @@ int rtldsa_931x_stp_get(struct rtl838x_switch_priv *priv, u16 msti, int port)
 	return state;
 }
 
-void rtl931x_stp_set(struct rtl838x_switch_priv *priv, u16 msti, int port, int state)
+void rtl931x_stp_set(struct otto_dsa_priv *priv, u16 msti, int port, int state)
 {
 	int tbl = otto_table_acquire(RTL9310_TBL_MSTI);
 	int idx = 3 - ((port + 8) / 16);
@@ -146,7 +146,7 @@ void rtl931x_stp_set(struct rtl838x_switch_priv *priv, u16 msti, int port, int s
 	otto_table_release(tbl);
 }
 
-static void rtldsa_port_xstp_state_set(struct rtl838x_switch_priv *priv, int port,
+static void rtldsa_port_xstp_state_set(struct otto_dsa_priv *priv, int port,
 				       u8 state, u16 mst_slot)
 				       __must_hold(&priv->reg_mutex)
 {
@@ -182,7 +182,7 @@ static void rtldsa_port_xstp_state_set(struct rtl838x_switch_priv *priv, int por
  * @priv: private data of rtldsa switch
  * @mst_slot: MST slot of MSTI
  */
-static void rtldsa_mst_init(struct rtl838x_switch_priv *priv, u16 mst_slot)
+static void rtldsa_mst_init(struct otto_dsa_priv *priv, u16 mst_slot)
 			    __must_hold(&priv->reg_mutex)
 {
 	struct dsa_port *dp;
@@ -208,7 +208,7 @@ static void rtldsa_mst_init(struct rtl838x_switch_priv *priv, u16 mst_slot)
  *
  * Return: found HW slot (unmodified reference count) or negative encoded error value
  */
-static int rtldsa_mst_find(struct rtl838x_switch_priv *priv, u16 msti)
+static int rtldsa_mst_find(struct otto_dsa_priv *priv, u16 msti)
 			   __must_hold(&priv->reg_mutex)
 {
 	unsigned int i;
@@ -238,7 +238,7 @@ static int rtldsa_mst_find(struct rtl838x_switch_priv *priv, u16 msti)
  *
  * Return: allocated slot (with increased reference count) or negative encoded error value
  */
-static int rtldsa_mst_get(struct rtl838x_switch_priv *priv, u16 msti)
+static int rtldsa_mst_get(struct otto_dsa_priv *priv, u16 msti)
 			  __must_hold(&priv->reg_mutex)
 {
 	unsigned int i;
@@ -294,7 +294,7 @@ static int rtldsa_mst_get(struct rtl838x_switch_priv *priv, u16 msti)
  *
  * Return: allocated slot (with increased reference count) or negative encoded error value
  */
-static int rtldsa_mst_recycle_slot(struct rtl838x_switch_priv *priv, u16 msti, u16 old_mst_slot)
+static int rtldsa_mst_recycle_slot(struct otto_dsa_priv *priv, u16 msti, u16 old_mst_slot)
 				   __must_hold(&priv->reg_mutex)
 {
 	u16 index;
@@ -341,7 +341,7 @@ static void rtldsa_mst_release_slot(struct kref *ref)
  * Return: false when MST slot reference counter was only decreased or an invalid @mst_slot was
  * given, true when @mst_slot is now unused
  */
-bool rtldsa_mst_put_slot(struct rtl838x_switch_priv *priv, u16 mst_slot)
+bool rtldsa_mst_put_slot(struct otto_dsa_priv *priv, u16 mst_slot)
 				__must_hold(&priv->reg_mutex)
 {
 	unsigned int index;
@@ -370,7 +370,7 @@ bool rtldsa_mst_put_slot(struct rtl838x_switch_priv *priv, u16 mst_slot)
  *
  * Return: allocated slot (with increased reference count) or negative encoded error value
  */
-int rtldsa_mst_replace(struct rtl838x_switch_priv *priv, u16 msti, u16 old_mst_slot)
+int rtldsa_mst_replace(struct otto_dsa_priv *priv, u16 msti, u16 old_mst_slot)
 			      __must_hold(&priv->reg_mutex)
 {
 	int mst_slot_new;
@@ -389,7 +389,7 @@ int rtldsa_mst_replace(struct rtl838x_switch_priv *priv, u16 msti, u16 old_mst_s
 }
 
 /* Set non-CIST port states while the caller holds reg_mutex. */
-void rtldsa_port_non_cist_states_set(struct rtl838x_switch_priv *priv, int port, u8 state)
+void rtldsa_port_non_cist_states_set(struct otto_dsa_priv *priv, int port, u8 state)
 			      __must_hold(&priv->reg_mutex)
 {
 	unsigned int i;
@@ -398,7 +398,7 @@ void rtldsa_port_non_cist_states_set(struct rtl838x_switch_priv *priv, int port,
 		rtldsa_port_xstp_state_set(priv, port, state, i);
 }
 
-int rtldsa_port_get_stp_state(struct rtl838x_switch_priv *priv, int port)
+int rtldsa_port_get_stp_state(struct otto_dsa_priv *priv, int port)
 {
 	u32 msti = 0;
 	int state;
@@ -415,7 +415,7 @@ int rtldsa_port_get_stp_state(struct rtl838x_switch_priv *priv, int port)
 
 void rtldsa_port_stp_state_set(struct dsa_switch *ds, int port, u8 state)
 {
-	struct rtl838x_switch_priv *priv = ds->priv;
+	struct otto_dsa_priv *priv = ds->priv;
 	struct dsa_port *dp = dsa_to_port(ds, port);
 
 	mutex_lock(&priv->reg_mutex);
@@ -431,7 +431,7 @@ void rtldsa_port_stp_state_set(struct dsa_switch *ds, int port, u8 state)
 int rtldsa_port_mst_state_set(struct dsa_switch *ds, int port,
 			      const struct switchdev_mst_state *st)
 {
-	struct rtl838x_switch_priv *priv = ds->priv;
+	struct otto_dsa_priv *priv = ds->priv;
 	int mst_slot;
 
 	mutex_lock(&priv->reg_mutex);

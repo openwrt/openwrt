@@ -53,7 +53,7 @@ Hotfix-by: Sebastian Gottschall https://github.com/mirror/dd-wrt/commit/0c3001a6
  
 --- a/hostapd/config_file.c
 +++ b/hostapd/config_file.c
-@@ -5255,6 +5255,15 @@ static int hostapd_config_fill(struct ho
+@@ -5263,6 +5263,15 @@ static int hostapd_config_fill(struct ho
  #endif /* CONFIG_IEEE80211BE */
  	} else if (os_strcmp(buf, "i2r_lmr_policy") == 0) {
  		conf->i2r_lmr_policy = atoi(pos);
@@ -71,7 +71,7 @@ Hotfix-by: Sebastian Gottschall https://github.com/mirror/dd-wrt/commit/0c3001a6
  			   "Line %d: unknown configuration item '%s'",
 --- a/src/ap/ap_config.h
 +++ b/src/ap/ap_config.h
-@@ -1024,6 +1024,35 @@ struct hostapd_bss_config {
+@@ -1025,6 +1025,35 @@ struct hostapd_bss_config {
  	unsigned int pmksa_caching_privacy:1;
  	unsigned int eap_using_authentication_frames:1;
  #endif /* CONFIG_ENC_ASSOC  */
@@ -164,7 +164,7 @@ Hotfix-by: Sebastian Gottschall https://github.com/mirror/dd-wrt/commit/0c3001a6
  int hostapd_sta_add(struct hostapd_data *hapd,
 --- /dev/null
 +++ b/src/ap/apup.c
-@@ -0,0 +1,176 @@
+@@ -0,0 +1,199 @@
 +/*
 + * hostapd / APuP Access Point Micro Peering
 + *
@@ -236,12 +236,18 @@ Hotfix-by: Sebastian Gottschall https://github.com/mirror/dd-wrt/commit/0c3001a6
 +	u16 eml_cap = 0;
 +
 +	/* First add the station without more information */
-+	int aRet = hostapd_sta_add(
++	if (hostapd_sta_add(
 +	            hapd, mgmt->bssid, sta_ret->aid, 0,
 +	            NULL, 0, 0, NULL, NULL, NULL, 0, NULL, 0, NULL,
 +	            sta_ret->flags, 0, 0, 0,
 +	            0, // 0 add, 1 set
-+	            mld_link_addr, mld_link_sta, eml_cap, epp_sta);
++	            mld_link_addr, mld_link_sta, eml_cap, epp_sta))
++	{
++		wpa_printf(MSG_INFO,
++		           "apup_process_beacon(...) Failed to add APuP peer station");
++		ap_free_sta(hapd, sta_ret);
++		return;
++	}
 +
 +	sta_ret->flags |= WLAN_STA_AUTH;
 +	wpa_auth_sm_event(sta_ret->wpa_sm, WPA_AUTH);
@@ -301,7 +307,7 @@ Hotfix-by: Sebastian Gottschall https://github.com/mirror/dd-wrt/commit/0c3001a6
 +	sta_ret->flags |= WLAN_STA_AUTH | WLAN_STA_ASSOC;
 +
 +	/* Then set the paramethers */
-+	int sRet = hostapd_sta_add(
++	if (hostapd_sta_add(
 +	            hapd, mgmt->bssid, sta_ret->aid,
 +	            sta_ret->capability,
 +	            sta_ret->supported_rates, sta_ret->supported_rates_len,
@@ -316,7 +322,13 @@ Hotfix-by: Sebastian Gottschall https://github.com/mirror/dd-wrt/commit/0c3001a6
 +	            sta_ret->vht_opmode,
 +	            0, // int supp_p2p_ps
 +	            1, // 0 add, 1 set
-+	            mld_link_addr, mld_link_sta, eml_cap, epp_sta);
++	            mld_link_addr, mld_link_sta, eml_cap, epp_sta))
++	{
++		wpa_printf(MSG_INFO,
++		           "apup_process_beacon(...) Failed to set APuP peer station");
++		ap_free_sta(hapd, sta_ret);
++		return;
++	}
 +
 +	ap_sta_set_authorized(hapd, sta_ret, 1);
 +	hostapd_set_sta_flags(hapd, sta_ret);
@@ -325,8 +337,19 @@ Hotfix-by: Sebastian Gottschall https://github.com/mirror/dd-wrt/commit/0c3001a6
 +	os_memset(mIfname, 0, IFNAMSIZ + 1);
 +
 +	// last param 1 means add 0 means remove
-+	int mRet = hostapd_set_wds_sta(
-+	            hapd, mIfname, mgmt->bssid, sta_ret->aid, 1);
++	if (hostapd_set_wds_sta(
++	            hapd, mIfname, mgmt->bssid, sta_ret->aid, 1))
++	{
++		wpa_printf(MSG_INFO,
++		           "apup_process_beacon(...) Failed to add APuP peer interface %s",
++		           mIfname);
++		/* Only an interface that this call created has ifname_wds */
++		if (sta_ret->ifname_wds)
++			hostapd_set_wds_sta(hapd, NULL, sta_ret->addr,
++			                    sta_ret->aid, 0);
++		ap_free_sta(hapd, sta_ret);
++		return;
++	}
 +
 +	wpa_printf(MSG_INFO,
 +	           "apup_process_beacon(...) Added APuP peer at %s with flags: %d,"
@@ -380,7 +403,7 @@ Hotfix-by: Sebastian Gottschall https://github.com/mirror/dd-wrt/commit/0c3001a6
  
  #ifdef CONFIG_FILS
  static struct wpabuf *
-@@ -5041,8 +5044,8 @@ static u16 check_multi_ap(struct hostapd
+@@ -5035,8 +5038,8 @@ static u16 check_multi_ap(struct hostapd
  }
  
  
@@ -391,7 +414,7 @@ Hotfix-by: Sebastian Gottschall https://github.com/mirror/dd-wrt/commit/0c3001a6
  {
  	/* Supported rates not used in IEEE 802.11ad/DMG */
  	if (hapd->iface->current_mode &&
-@@ -5510,7 +5513,7 @@ static int __check_assoc_ies(struct host
+@@ -5504,7 +5507,7 @@ static int __check_assoc_ies(struct host
  			       elems->ext_capab_len);
  	if (resp != WLAN_STATUS_SUCCESS)
  		goto out;
@@ -400,7 +423,7 @@ Hotfix-by: Sebastian Gottschall https://github.com/mirror/dd-wrt/commit/0c3001a6
  	if (resp != WLAN_STATUS_SUCCESS)
  		goto out;
  
-@@ -8069,6 +8072,11 @@ static void handle_beacon(struct hostapd
+@@ -8153,6 +8156,11 @@ static void handle_beacon(struct hostapd
  				      0);
  
  	ap_list_process_beacon(hapd->iface, mgmt, &elems, fi);
@@ -414,7 +437,7 @@ Hotfix-by: Sebastian Gottschall https://github.com/mirror/dd-wrt/commit/0c3001a6
  
 --- a/src/ap/ieee802_11.h
 +++ b/src/ap/ieee802_11.h
-@@ -146,6 +146,8 @@ int hostapd_process_ml_assoc_req_addr(st
+@@ -148,6 +148,8 @@ int hostapd_process_ml_assoc_req_addr(st
  				      const u8 *basic_mle, size_t basic_mle_len,
  				      u8 *mld_addr);
  int hostapd_get_aid(struct hostapd_data *hapd, struct sta_info *sta);
@@ -425,7 +448,7 @@ Hotfix-by: Sebastian Gottschall https://github.com/mirror/dd-wrt/commit/0c3001a6
  u16 copy_sta_vendor_vht(struct hostapd_data *hapd, struct sta_info *sta,
 --- a/src/drivers/driver.h
 +++ b/src/drivers/driver.h
-@@ -4548,7 +4548,7 @@ struct wpa_driver_ops {
+@@ -4545,7 +4545,7 @@ struct wpa_driver_ops {
  	 * Returns: 0 on success, -1 on failure
  	 */
  	int (*set_wds_sta)(void *priv, const u8 *addr, int aid, int val,
@@ -436,7 +459,7 @@ Hotfix-by: Sebastian Gottschall https://github.com/mirror/dd-wrt/commit/0c3001a6
  	 * send_action - Transmit an Action frame
 --- a/src/drivers/driver_nl80211.c
 +++ b/src/drivers/driver_nl80211.c
-@@ -9371,25 +9371,15 @@ int nl80211_has_ifidx(struct wpa_driver_
+@@ -9374,24 +9374,13 @@ int nl80211_has_ifidx(struct wpa_driver_
  
  
  static int i802_set_wds_sta(void *priv, const u8 *addr, int aid, int val,
@@ -449,8 +472,8 @@ Hotfix-by: Sebastian Gottschall https://github.com/mirror/dd-wrt/commit/0c3001a6
 +	const char *name = ifname_wds; // Kept to reduce changes to the minimum
  	union wpa_event_data event;
  	bool add_br = false;
- 	int ret;
- 
+-	int ret;
+-
 -	ret = os_snprintf(name, sizeof(name), "%s.sta%d", bss->ifname, aid);
 -	if (ret >= (int) sizeof(name))
 -		wpa_printf(MSG_WARNING,
@@ -460,7 +483,6 @@ Hotfix-by: Sebastian Gottschall https://github.com/mirror/dd-wrt/commit/0c3001a6
 -
 -	if (ifname_wds)
 -		os_strlcpy(ifname_wds, name, IFNAMSIZ + 1);
--
+ 
  	wpa_printf(MSG_DEBUG, "nl80211: Set WDS STA addr=" MACSTR
  		   " aid=%d val=%d name=%s", MAC2STR(addr), aid, val, name);
- 	if (val) {

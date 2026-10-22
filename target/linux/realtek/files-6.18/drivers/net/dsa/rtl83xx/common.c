@@ -6,10 +6,10 @@
 #include <net/nexthop.h>
 #include <net/neighbour.h>
 #include <net/netevent.h>
-#include <linux/cleanup.h>
 #include <linux/etherdevice.h>
 #include <linux/if_vlan.h>
 #include <linux/inetdevice.h>
+#include <linux/mfd/syscon.h>
 #include <linux/platform_device.h>
 #include <linux/rhashtable.h>
 #include <linux/of_net.h>
@@ -150,7 +150,7 @@ static int rtldsa_mdio_loaded(void)
 	return 0;
 }
 
-static int rtldsa_ports_probe(struct rtl838x_switch_priv *priv)
+static int rtldsa_ports_probe(struct otto_dsa_priv *priv)
 {
 	struct device_node *dn, *phy_node, *led_node;
 	u32 pn;
@@ -164,6 +164,7 @@ static int rtldsa_ports_probe(struct rtl838x_switch_priv *priv)
 	led_node = of_find_compatible_node(NULL, NULL, "realtek,rtl9300-leds");
 
 	for_each_node_by_name(dn, "port") {
+		const char *managed;
 		u32 led_set;
 		char led_set_str[16] = {0};
 
@@ -196,36 +197,18 @@ static int rtldsa_ports_probe(struct rtl838x_switch_priv *priv)
 		}
 
 		priv->ports[pn].phy = !!phy_node;
+		/* In-band status as phylink reads it */
+		if (!of_property_read_string(dn, "managed", &managed) &&
+		    !strcmp(managed, "in-band-status"))
+			priv->ports[pn].inband = true;
 	}
 
 	return 0;
 }
 
-static int rtl83xx_get_l2aging(struct rtl838x_switch_priv *priv)
-{
-	int t = sw_r32(priv->r->l2_ctrl_1);
-
-	/* RTL838x uses a high-resolution 23-bit AGE_UNIT where one unit is
-	 * 204.8 ms. RTL839x and RTL93xx use a 21-bit AGE_UNIT where one unit
-	 * is 600 ms. An AGE_UNIT value of 0 disables dynamic address aging.
-	 */
-	if (priv->r->high_res_l2_age) {
-		t &= GENMASK(22, 0);
-		t = t * 128 / 625;
-	} else {
-		t &= GENMASK(20, 0);
-		t = t * 3 / 5;
-	}
-
-	pr_debug("L2 AGING time: %d sec\n", t);
-	pr_debug("Dynamic aging for ports: %x\n", sw_r32(priv->r->l2_port_aging_out));
-
-	return t;
-}
-
 // Currently Unused
 // /* Allocate a 64 bit octet counter located in the LOG HW table */
-// static int rtl83xx_octet_cntr_alloc(struct rtl838x_switch_priv *priv)
+// static int rtl83xx_octet_cntr_alloc(struct otto_dsa_priv *priv)
 // {
 // 	int idx;
 
@@ -243,96 +226,7 @@ static int rtl83xx_get_l2aging(struct rtl838x_switch_priv *priv)
 // 	return idx;
 // }
 
-/*
- * Packet counters share hardware memory with octet counters (2 packet counters
- * per 1 octet block). Allocation relies on two complementary bitmaps:
- *
- *   octet_cntr_use_bm:  0 = free block, 1 = used (or split into packet counters)
- *   packet_cntr_use_bm: 1 = free standalone counter, 0 = unavailable
- *
- * Allocation strategy:
- * 1. Look for a free standalone counter from an already split block (bit = 1).
- * 2. If none are free, claim a new octet block 'j', use counter index (2 * j),
- *    and mark counter (2 * j + 1) as available for future allocations.
- */
-
-/**
- * rtldsa_packet_cntr_alloc - Allocate a hardware packet counter.
- * @priv: Switch driver private structure.
- *
- * Return: Counter index (>= 0) on success, or -1 if full.
- */
-int rtldsa_packet_cntr_alloc(struct rtl838x_switch_priv *priv)
-{
-	int idx, j, base = 0;
-
-	/* On SoCs where a PIE rule implicitly logs into the LOG table entry
-	 * with its own rule ID (RTL930x), the tc cls_flower offload consumes
-	 * one LOG counter per PIE rule and does not pass through this
-	 * allocator. Keep that range reserved so a route counter handed out
-	 * here cannot alias a flow's LOG entry.
-	 *
-	 * The offload is ingress-only, so PIE rule IDs currently populate
-	 * only the lower half of that range, and a route counter's LOG entry
-	 * (idx / 2) never dips below the upper half either. If egress PIE
-	 * rules are ever wired up, this reservation needs to grow so their
-	 * LOG entries stay clear of route counters too.
-	 */
-	if (priv->r->pie_rule_id_is_log_counter)
-		base = priv->r->n_pie_blocks * PIE_BLOCK_SIZE;
-
-	scoped_guard(mutex, &priv->reg_mutex) {
-		idx = find_next_bit(priv->packet_cntr_use_bm, priv->r->n_counters * 2, base);
-		if (idx >= priv->r->n_counters * 2) {
-			j = find_next_zero_bit(priv->octet_cntr_use_bm, priv->r->n_counters,
-					       base / 2);
-			if (j >= priv->r->n_counters)
-				return -1;
-
-			__set_bit(j, priv->octet_cntr_use_bm);
-			idx = j * 2;
-			__set_bit(j * 2 + 1, priv->packet_cntr_use_bm);
-		} else {
-			__clear_bit(idx, priv->packet_cntr_use_bm);
-		}
-	}
-
-	return idx;
-}
-
-/**
- * rtldsa_packet_cntr_free - Release a packet counter from rtldsa_packet_cntr_alloc().
- * @priv: Switch driver private structure.
- * @idx: Packet counter index to free; a negative id is ignored.
- *
- * Marks the counter free again and, once both halves of its octet block are
- * free, returns the whole block to the octet counter pool.
- */
-void rtldsa_packet_cntr_free(struct rtl838x_switch_priv *priv, int idx)
-{
-	int j;
-
-	if (idx < 0 || idx >= priv->r->n_counters * 2)
-		return;
-
-	scoped_guard(mutex, &priv->reg_mutex) {
-		/* already free - guard against a double release */
-		if (test_bit(idx, priv->packet_cntr_use_bm))
-			return;
-
-		__set_bit(idx, priv->packet_cntr_use_bm);
-
-		j = idx / 2;
-		if (test_bit(j, priv->octet_cntr_use_bm) &&
-		    test_bit(idx ^ 1, priv->packet_cntr_use_bm)) {
-			__clear_bit(idx, priv->packet_cntr_use_bm);
-			__clear_bit(idx ^ 1, priv->packet_cntr_use_bm);
-			__clear_bit(j, priv->octet_cntr_use_bm);
-		}
-	}
-}
-
-int rtl83xx_port_is_under(const struct net_device *dev, struct rtl838x_switch_priv *priv)
+int rtl83xx_port_is_under(const struct net_device *dev, struct otto_dsa_priv *priv)
 {
 	/* Is the lower network device a DSA user network device of our RTL930X-switch?
 	 * Unfortunately we cannot just follow dev->dsa_prt as this is only set for the
@@ -354,9 +248,33 @@ int rtl83xx_port_is_under(const struct net_device *dev, struct rtl838x_switch_pr
 	return -EINVAL;
 }
 
+/*
+ * A port with a PHY and without in-band status takes its link state from
+ * phylib, which polls the PHY once a second. Reporting a MAC link loss to
+ * phylink would make it take the link down and then straight back up from the
+ * PHY state of the last poll, until the next poll reads the link as down. Let
+ * phylib read the PHY now instead, which also reports a new link without
+ * waiting for the poll.
+ *
+ * With in-band status, phylink takes the link state also from the PCS, and
+ * needs the MAC link change to resolve the link again when the PCS comes up
+ * after the PHY. The SFP ports have no PHY in the device tree, so the PHY of
+ * an SFP module, which goes away with the module, is not used here.
+ */
+static void rtldsa_port_link_change(struct dsa_switch *ds, int port,
+				    const struct rtldsa_port *p, bool up)
+{
+	struct dsa_port *dp = dsa_to_port(ds, port);
+
+	if (p->phy && !p->inband && dp->user && dp->user->phydev)
+		phy_mac_interrupt(dp->user->phydev);
+	else
+		dsa_port_phylink_mac_change(ds, port, up);
+}
+
 static irqreturn_t rtldsa_switch_irq(int irq, void *dev_id)
 {
-	struct rtl838x_switch_priv *priv;
+	struct otto_dsa_priv *priv;
 	struct dsa_switch *ds = dev_id;
 	u64 link, ports;
 
@@ -370,7 +288,8 @@ static irqreturn_t rtldsa_switch_irq(int irq, void *dev_id)
 
 	for (int port = 0; port < priv->r->cpu_port; port++)
 		if (ports & BIT_ULL(port))
-			dsa_port_phylink_mac_change(ds, port, link & BIT_ULL(port));
+			rtldsa_port_link_change(ds, port, &priv->ports[port],
+						link & BIT_ULL(port));
 
 	return IRQ_HANDLED;
 }
@@ -410,7 +329,7 @@ static int rtldsa_ethernet_loaded(struct platform_device *pdev)
 
 static int rtl83xx_sw_probe(struct platform_device *pdev)
 {
-	struct rtl838x_switch_priv *priv;
+	struct otto_dsa_priv *priv;
 	struct device *dev = &pdev->dev;
 	const struct rtldsa_config *r;
 	u64 bpdu_mask;
@@ -439,8 +358,12 @@ static int rtl83xx_sw_probe(struct platform_device *pdev)
 		return -ENOMEM;
 
 	priv->r = r;
-	memset(priv->lag_primary, -1, sizeof(priv->lag_primary));
+	priv->map = syscon_node_to_regmap(dev->of_node);
+	if (IS_ERR(priv->map))
+		return dev_err_probe(dev, PTR_ERR(priv->map),
+				     "no switch register map\n");
 
+	memset(priv->lag_primary, -1, sizeof(priv->lag_primary));
 	priv->l2_uc_map = devm_kcalloc(dev, r->fib_entries, sizeof(*priv->l2_uc_map),
 				       GFP_KERNEL);
 	if (!priv->l2_uc_map)
@@ -519,7 +442,7 @@ static int rtl83xx_sw_probe(struct platform_device *pdev)
 	if (soc_info.family != RTL9310_FAMILY_ID)
 		sw_w32(0x1, priv->r->imr_glb);
 
-	rtl83xx_get_l2aging(priv);
+	otto_l2_get_ageing_time(priv);
 
 	if (priv->r->qos_init)
 		priv->r->qos_init(priv);
@@ -555,6 +478,8 @@ static int rtl83xx_sw_probe(struct platform_device *pdev)
 	if (priv->r->lag_switch_init)
 		priv->r->lag_switch_init(priv);
 
+	otto_stats_dbgfs_init(priv);
+
 	return 0;
 
 err_register_l3:
@@ -568,13 +493,16 @@ err_register_switch:
 
 static void rtl83xx_sw_remove(struct platform_device *pdev)
 {
-	struct rtl838x_switch_priv *priv = platform_get_drvdata(pdev);
+	struct otto_dsa_priv *priv = platform_get_drvdata(pdev);
 
 	if (!priv)
 		return;
 
 	/* TODO: */
 	pr_debug("Removing platform driver for rtl83xx-sw\n");
+
+	/* Stop debugfs readers before tearing down the switch. */
+	otto_stats_dbgfs_remove(priv);
 
 	/* unregister notifiers which will create workqueue entries with
 	 * references to the switch structures. Also stop self-arming delayed

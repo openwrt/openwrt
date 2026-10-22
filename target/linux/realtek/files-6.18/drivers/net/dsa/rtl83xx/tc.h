@@ -8,10 +8,10 @@
 struct dsa_switch;
 struct flow_action_entry;
 struct flow_cls_offload;
-struct rtl838x_switch_priv;
+struct otto_dsa_priv;
 
-int otto_tc_init(struct rtl838x_switch_priv *priv);
-void otto_tc_cleanup(struct rtl838x_switch_priv *priv);
+int otto_tc_init(struct otto_dsa_priv *priv);
+void otto_tc_cleanup(struct otto_dsa_priv *priv);
 
 int otto_tc_cls_flower_add(struct dsa_switch *ds, int port,
 			   struct flow_cls_offload *cls, bool ingress);

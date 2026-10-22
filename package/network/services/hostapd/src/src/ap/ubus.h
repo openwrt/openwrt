@@ -66,6 +66,8 @@ void hostapd_ubus_remove_vlan(struct hostapd_data *hapd, struct hostapd_vlan *vl
 int hostapd_ubus_handle_event(struct hostapd_data *hapd, struct hostapd_ubus_request *req);
 void hostapd_ubus_handle_link_measurement(struct hostapd_data *hapd, const u8 *data, size_t len);
 void hostapd_ubus_notify(struct hostapd_data *hapd, const char *type, const u8 *mac);
+void hostapd_ubus_notify_sta(struct hostapd_data *hapd, const char *type,
+			     struct sta_info *sta);
 void hostapd_ubus_notify_key_mismatch(struct hostapd_data *hapd, const u8 *addr,
 				      enum hostapd_ubus_rsn_error rsn_error,
 				      const u8 *frame, size_t len);
@@ -138,6 +140,12 @@ static inline void hostapd_ubus_handle_link_measurement(struct hostapd_data *hap
 }
 
 static inline void hostapd_ubus_notify(struct hostapd_data *hapd, const char *type, const u8 *mac)
+{
+}
+
+static inline void
+hostapd_ubus_notify_sta(struct hostapd_data *hapd, const char *type,
+			struct sta_info *sta)
 {
 }
 

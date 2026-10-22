@@ -28,8 +28,8 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/src/ap/ieee802_11_eht.c
 +++ b/src/ap/ieee802_11_eht.c
-@@ -1663,9 +1663,6 @@ void hostapd_link_reconf_resp_tx_status(
- 		goto exit;
+@@ -1688,9 +1688,6 @@ void hostapd_link_reconf_resp_tx_status(
+ 					  info->link_id);
  	}
  
 -	if (dl_list_empty(&req_list->del_req))
@@ -38,7 +38,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	dl_list_for_each(info, &req_list->del_req, struct link_reconf_req_info,
  			 list) {
  		if (info->status != WLAN_STATUS_SUCCESS)
-@@ -1751,6 +1748,9 @@ void hostapd_link_reconf_resp_tx_status(
+@@ -1775,6 +1772,9 @@ void hostapd_link_reconf_resp_tx_status(
  		ap_free_link_sta(lhapd, lsta);
  	}
  

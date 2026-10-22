@@ -1,0 +1,86 @@
+From bae0e9091504af09c221d903246a432c4777a8a4 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Fri, 9 Oct 2026 14:31:04 +0100
+Subject: [PATCH] ARM: dts: rockchip: add vpu to rv1126
+
+Add the VPU that provides the JPEG encoder and the MPEG-2 and VP8
+decoders, with its IOMMU, together with the video decoder power domain
+and its QoS registers. The nodes are disabled and left for boards to
+enable.
+
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ arch/arm/boot/dts/rockchip/rv1126.dtsi | 48 ++++++++++++++++++++++++++
+ 1 file changed, 48 insertions(+)
+
+--- a/arch/arm/boot/dts/rockchip/rv1126.dtsi
++++ b/arch/arm/boot/dts/rockchip/rv1126.dtsi
+@@ -264,6 +264,16 @@
+ 		reg = <0xfe890100 0x20>;
+ 	};
+ 
++	qos_vdpu: qos@fe8b0000 {
++		compatible = "rockchip,rv1126-qos", "syscon";
++		reg = <0xfe8b0000 0x20>;
++	};
++
++	qos_jpeg: qos@fe8c0000 {
++		compatible = "rockchip,rv1126-qos", "syscon";
++		reg = <0xfe8c0000 0x20>;
++	};
++
+ 	qos_emmc: qos@fe860000 {
+ 		compatible = "rockchip,rv1126-qos", "syscon";
+ 		reg = <0xfe860000 0x20>;
+@@ -327,6 +337,20 @@
+ 			#address-cells = <1>;
+ 			#size-cells = <0>;
+ 
++			power-domain@RV1126_PD_VDPU {
++				reg = <RV1126_PD_VDPU>;
++				clocks = <&cru ACLK_VDEC>,
++					 <&cru HCLK_VDEC>,
++					 <&cru CLK_VDEC_CORE>,
++					 <&cru CLK_VDEC_CA>,
++					 <&cru CLK_VDEC_HEVC_CA>,
++					 <&cru ACLK_JPEG>,
++					 <&cru HCLK_JPEG>;
++				pm_qos = <&qos_vdpu>,
++					 <&qos_jpeg>;
++				#power-domain-cells = <0>;
++			};
++
+ 			power-domain@RV1126_PD_NVM {
+ 				reg = <RV1126_PD_NVM>;
+ 				clocks = <&cru HCLK_EMMC>,
+@@ -1126,6 +1150,30 @@
+ 		};
+ 	};
+ 
++	vpu: video-codec@ffb90000 {
++		compatible = "rockchip,rv1126-vpu", "rockchip,rk3399-vpu";
++		reg = <0xffb90000 0x800>;
++		interrupts = <GIC_SPI 74 IRQ_TYPE_LEVEL_HIGH>,
++			     <GIC_SPI 73 IRQ_TYPE_LEVEL_HIGH>;
++		interrupt-names = "vepu", "vdpu";
++		clocks = <&cru ACLK_JPEG>, <&cru HCLK_JPEG>;
++		clock-names = "aclk", "hclk";
++		iommus = <&vpu_mmu>;
++		power-domains = <&power RV1126_PD_VDPU>;
++		status = "disabled";
++	};
++
++	vpu_mmu: iommu@ffb90800 {
++		compatible = "rockchip,iommu";
++		reg = <0xffb90800 0x40>;
++		interrupts = <GIC_SPI 75 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&cru ACLK_JPEG>, <&cru HCLK_JPEG>;
++		clock-names = "aclk", "iface";
++		#iommu-cells = <0>;
++		power-domains = <&power RV1126_PD_VDPU>;
++		status = "disabled";
++	};
++
+ 	gmac: ethernet@ffc40000 {
+ 		compatible = "rockchip,rv1126-gmac", "snps,dwmac-4.20a";
+ 		reg = <0xffc40000 0x4000>;

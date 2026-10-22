@@ -1,0 +1,689 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Tue, 20 Oct 2026 14:29:29 +0200
+Subject: [PATCH] AP MLD: Run EAP of a non-MLO station on its own link
+
+Since commit a213fee11da3 ("AP: MLO: Make IEEE 802.1X SM, authserv, and
+RADIUS client singletons"), the links of an AP MLD share the IEEE 802.1X
+authenticator, the EAP server configuration and the RADIUS client of the
+first BSS, and these call back with the first BSS. A non-MLO station has
+an entry only on the link it associated to. For such a station on
+another link:
+- ieee802_1x_sta_entry_alive() does not find the station, so its state
+  machine never starts EAP,
+- EAPOL frames would leave on the link of the first BSS,
+- the EAP user lookup uses the WPS state and AP PIN of the first BSS,
+  EAP-WSC uses its registrar, and the EAP events go to its control
+  interface,
+- RADIUS requests carry the attributes of the first BSS, and
+  ieee802_1x_receive_auth() drops each reply, since it searches only
+  the stations of the first BSS,
+- an EAP-SIM database reply and RADIUS DAS Disconnect and CoA requests
+  search only the same stations and PMKSA cache.
+A WPS Enrollee or an IEEE 802.1X station on a link other than the first
+never completes EAP.
+
+Let the authenticator callbacks act on the link whose entry is the
+station of the state machine, and accept a state machine of any link as
+alive. Callbacks for an MLO station and for a BSS outside an AP MLD keep
+the BSS of the callback.
+
+Search the stations of all links for the request of a RADIUS reply, for
+an EAP-SIM database session and for a RADIUS DAS request, and the PMKSA
+caches of all links for a DAS Disconnect. For DAS, skip the entries of
+an MLO station on links other than its association link, so that one
+MLO station counts as one session. Give each EAP session the WPS
+context and the control interface of the link of the station. The
+RADIUS server gives its sessions those of its EAP server configuration,
+as before.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+
+--- a/src/ap/authsrv.c
++++ b/src/ap/authsrv.c
+@@ -37,10 +37,33 @@ static int hostapd_sim_db_cb_sta(struct
+ }
+ 
+ 
++/* The EAP-SIM DB of an AP MLD is that of its first BSS, while a non-MLO
++ * station has its entry on the link it associated to alone. */
++static int hostapd_sim_db_cb_links(struct hostapd_data *hapd,
++				   void *session_ctx)
++{
++#ifdef CONFIG_IEEE80211BE
++	struct hostapd_data *link;
++
++	if (!hapd->conf->mld_ap || !hapd->mld)
++		return 0;
++
++	for_each_mld_link(link, hapd) {
++		if (link != hapd &&
++		    ap_for_each_sta(link, hostapd_sim_db_cb_sta, session_ctx))
++			return 1;
++	}
++#endif /* CONFIG_IEEE80211BE */
++
++	return 0;
++}
++
++
+ static void hostapd_sim_db_cb(void *ctx, void *session_ctx)
+ {
+ 	struct hostapd_data *hapd = ctx;
+-	if (ap_for_each_sta(hapd, hostapd_sim_db_cb_sta, session_ctx) == 0) {
++	if (ap_for_each_sta(hapd, hostapd_sim_db_cb_sta, session_ctx) == 0 &&
++	    hostapd_sim_db_cb_links(hapd, session_ctx) == 0) {
+ #ifdef RADIUS_SERVER
+ 		radius_server_eap_pending_cb(hapd->radius_srv, session_ctx);
+ #endif /* RADIUS_SERVER */
+--- a/src/ap/hostapd.c
++++ b/src/ap/hostapd.c
+@@ -1572,12 +1572,84 @@ static struct sta_info * hostapd_das_fin
+ }
+ 
+ 
++/* An entry of an MLO station on a link other than its association link */
++static bool hostapd_das_partner_sta(struct hostapd_data *hapd,
++				    struct sta_info *sta)
++{
++#ifdef CONFIG_IEEE80211BE
++	return ap_sta_is_mld(hapd, sta) &&
++		sta->mld_assoc_link_id != hapd->mld_link_id;
++#else /* CONFIG_IEEE80211BE */
++	return false;
++#endif /* CONFIG_IEEE80211BE */
++}
++
++
++/* RADIUS DAS of an AP MLD is that of its first BSS, while a non-MLO station
++ * has its entry on the link it associated to alone. */
++static struct sta_info * hostapd_das_find_mld_sta(struct hostapd_data **hapd,
++						  struct radius_das_attrs *attr,
++						  int *multi)
++{
++	struct hostapd_data *first = *hapd;
++	struct sta_info *sta, *found = NULL;
++#ifdef CONFIG_IEEE80211BE
++	struct hostapd_data *link;
++#endif /* CONFIG_IEEE80211BE */
++
++	sta = hostapd_das_find_sta(first, attr, multi);
++	if (sta && !hostapd_das_partner_sta(first, sta))
++		found = sta;
++
++#ifdef CONFIG_IEEE80211BE
++	if (*multi || !first->conf->mld_ap || !first->mld)
++		return found;
++
++	for_each_mld_link(link, first) {
++		if (link == first)
++			continue;
++		sta = hostapd_das_find_sta(link, attr, multi);
++		if (*multi)
++			return NULL;
++		if (!sta || hostapd_das_partner_sta(link, sta))
++			continue;
++		if (found) {
++			*multi = 1;
++			return NULL;
++		}
++		found = sta;
++		*hapd = link;
++	}
++#endif /* CONFIG_IEEE80211BE */
++
++	return found;
++}
++
++
+ static int hostapd_das_disconnect_pmksa(struct hostapd_data *hapd,
+ 					struct radius_das_attrs *attr)
+ {
+-	if (!hapd->wpa_auth)
++#ifdef CONFIG_IEEE80211BE
++	struct hostapd_data *link;
++#endif /* CONFIG_IEEE80211BE */
++
++	if (hapd->wpa_auth &&
++	    wpa_auth_radius_das_disconnect_pmksa(hapd->wpa_auth, attr) == 0)
++		return 0;
++
++#ifdef CONFIG_IEEE80211BE
++	if (!hapd->conf->mld_ap || !hapd->mld)
+ 		return -1;
+-	return wpa_auth_radius_das_disconnect_pmksa(hapd->wpa_auth, attr);
++
++	for_each_mld_link(link, hapd) {
++		if (link != hapd && link->wpa_auth &&
++		    wpa_auth_radius_das_disconnect_pmksa(link->wpa_auth,
++							 attr) == 0)
++			return 0;
++	}
++#endif /* CONFIG_IEEE80211BE */
++
++	return -1;
+ }
+ 
+ 
+@@ -1591,7 +1663,7 @@ hostapd_das_disconnect(void *ctx, struct
+ 	if (hostapd_das_nas_mismatch(hapd, attr))
+ 		return RADIUS_DAS_NAS_MISMATCH;
+ 
+-	sta = hostapd_das_find_sta(hapd, attr, &multi);
++	sta = hostapd_das_find_mld_sta(&hapd, attr, &multi);
+ 	if (sta == NULL) {
+ 		if (multi) {
+ 			wpa_printf(MSG_DEBUG,
+@@ -1630,7 +1702,7 @@ hostapd_das_coa(void *ctx, struct radius
+ 	if (hostapd_das_nas_mismatch(hapd, attr))
+ 		return RADIUS_DAS_NAS_MISMATCH;
+ 
+-	sta = hostapd_das_find_sta(hapd, attr, &multi);
++	sta = hostapd_das_find_mld_sta(&hapd, attr, &multi);
+ 	if (!sta) {
+ 		if (multi) {
+ 			wpa_printf(MSG_DEBUG,
+--- a/src/ap/ieee802_1x.c
++++ b/src/ap/ieee802_1x.c
+@@ -1067,7 +1067,8 @@ ieee802_1x_alloc_eapol_sm(struct hostapd
+ 	}
+ 	return eapol_auth_alloc(hapd->eapol_auth, sta->addr, flags,
+ 				sta->wps_ie, sta->p2p_ie, sta,
+-				sta->identity, sta->radius_cui);
++				sta->identity, sta->radius_cui, hapd->wps,
++				hapd->msg_ctx);
+ }
+ 
+ 
+@@ -1972,14 +1973,37 @@ static int ieee802_1x_select_radius_iden
+ 
+ 
+ static struct eapol_state_machine *
+-ieee802_1x_search_radius_identifier(struct hostapd_data *hapd, u8 identifier)
++ieee802_1x_search_radius_identifier(struct hostapd_data **hapd, u8 identifier)
+ {
++	struct hostapd_data *first = *hapd;
+ 	struct sta_id_search id_search;
++#ifdef CONFIG_IEEE80211BE
++	struct hostapd_data *link;
++#endif /* CONFIG_IEEE80211BE */
+ 
+ 	id_search.identifier = identifier;
+ 	id_search.sm = NULL;
+-	ap_for_each_sta(hapd, ieee802_1x_select_radius_identifier, &id_search);
+-	return id_search.sm;
++	if (ap_for_each_sta(first, ieee802_1x_select_radius_identifier,
++			    &id_search))
++		return id_search.sm;
++
++#ifdef CONFIG_IEEE80211BE
++	/* The RADIUS client of an AP MLD is that of its first BSS, while a
++	 * non-MLO station has its entry on the link it associated to alone. */
++	if (!first->conf->mld_ap || !first->mld)
++		return NULL;
++
++	for_each_mld_link(link, first) {
++		if (link != first &&
++		    ap_for_each_sta(link, ieee802_1x_select_radius_identifier,
++				    &id_search)) {
++			*hapd = link;
++			return id_search.sm;
++		}
++	}
++#endif /* CONFIG_IEEE80211BE */
++
++	return NULL;
+ }
+ 
+ 
+@@ -2064,7 +2088,7 @@ ieee802_1x_receive_auth(struct radius_ms
+ 	int override_eapReq = 0;
+ 	struct radius_hdr *hdr = radius_msg_get_hdr(msg);
+ 
+-	sm = ieee802_1x_search_radius_identifier(hapd, hdr->identifier);
++	sm = ieee802_1x_search_radius_identifier(&hapd, hdr->identifier);
+ 	if (!sm) {
+ 		wpa_printf(MSG_DEBUG,
+ 			   "IEEE 802.1X: Could not find matching station for this RADIUS message");
+@@ -2334,11 +2358,40 @@ static void ieee802_1x_rekey(void *eloop
+ #endif /* CONFIG_WEP */
+ 
+ 
++/* The links of an AP MLD share the IEEE 802.1X authenticator of the first BSS,
++ * which calls back with that BSS. A non-MLO station has its entry on the link
++ * it associated to alone. */
++static struct hostapd_data * ieee802_1x_sta_bss(struct hostapd_data *hapd,
++						 struct sta_info *sta)
++{
++#ifdef CONFIG_IEEE80211BE
++	struct hostapd_data *link;
++
++	if (!hapd->conf->mld_ap || !hapd->mld || ap_sta_is_mld(hapd, sta))
++		return hapd;
++
++	for_each_mld_link(link, hapd) {
++		if (ap_get_sta(link, sta->addr) == sta)
++			return link;
++	}
++#endif /* CONFIG_IEEE80211BE */
++
++	return hapd;
++}
++
++
++static bool ieee802_1x_sta_has_eapol_sm(struct hostapd_data *hapd,
++					struct sta_info *sta)
++{
++	return sta->eapol_sm;
++}
++
++
+ static void ieee802_1x_eapol_send(void *ctx, void *sta_ctx, u8 type,
+ 				  const u8 *data, size_t datalen)
+ {
+-	struct hostapd_data *hapd = ctx;
+ 	struct sta_info *sta = sta_ctx;
++	struct hostapd_data *hapd = ieee802_1x_sta_bss(ctx, sta);
+ 
+ #ifdef CONFIG_WPS
+ 
+@@ -2380,8 +2433,8 @@ static void ieee802_1x_aaa_send(void *ct
+ 				const u8 *data, size_t datalen)
+ {
+ #ifndef CONFIG_NO_RADIUS
+-	struct hostapd_data *hapd = ctx;
+ 	struct sta_info *sta = sta_ctx;
++	struct hostapd_data *hapd = ieee802_1x_sta_bss(ctx, sta);
+ 
+ 	ieee802_1x_encapsulate_radius(hapd, sta, data, datalen);
+ #endif /* CONFIG_NO_RADIUS */
+@@ -2391,8 +2444,8 @@ static void ieee802_1x_aaa_send(void *ct
+ static bool _ieee802_1x_finished(void *ctx, void *sta_ctx, int success,
+ 				 int preauth, bool logoff)
+ {
+-	struct hostapd_data *hapd = ctx;
+ 	struct sta_info *sta = sta_ctx;
++	struct hostapd_data *hapd = ieee802_1x_sta_bss(ctx, sta);
+ 
+ 	if (preauth) {
+ 		rsn_preauth_finished(hapd, sta, success);
+@@ -2403,11 +2456,11 @@ static bool _ieee802_1x_finished(void *c
+ }
+ 
+ 
+-static int ieee802_1x_get_eap_user(void *ctx, const u8 *identity,
+-				   size_t identity_len, int phase2,
+-				   struct eap_user *user)
++static int ieee802_1x_get_eap_user(void *ctx, void *sta_ctx,
++				   const u8 *identity, size_t identity_len,
++				   int phase2, struct eap_user *user)
+ {
+-	struct hostapd_data *hapd = ctx;
++	struct hostapd_data *hapd = ieee802_1x_sta_bss(ctx, sta_ctx);
+ 	const struct hostapd_eap_user *eap_user;
+ 	int i;
+ 	int rv = -1;
+@@ -2454,12 +2507,9 @@ out:
+ static int ieee802_1x_sta_entry_alive(void *ctx, const u8 *addr)
+ {
+ 	struct hostapd_data *hapd = ctx;
+-	struct sta_info *sta;
+ 
+-	sta = ap_get_sta(hapd, addr);
+-	if (!sta || !sta->eapol_sm)
+-		return 0;
+-	return 1;
++	return !!ap_get_sta_mld_links(&hapd, addr,
++				      ieee802_1x_sta_has_eapol_sm);
+ }
+ 
+ 
+@@ -2492,8 +2542,8 @@ static void ieee802_1x_logger(void *ctx,
+ static void ieee802_1x_set_port_authorized(void *ctx, void *sta_ctx,
+ 					   int authorized)
+ {
+-	struct hostapd_data *hapd = ctx;
+ 	struct sta_info *sta = sta_ctx;
++	struct hostapd_data *hapd = ieee802_1x_sta_bss(ctx, sta);
+ 
+ 	ieee802_1x_set_sta_authorized(hapd, sta, authorized);
+ }
+@@ -2501,8 +2551,8 @@ static void ieee802_1x_set_port_authoriz
+ 
+ static void _ieee802_1x_abort_auth(void *ctx, void *sta_ctx)
+ {
+-	struct hostapd_data *hapd = ctx;
+ 	struct sta_info *sta = sta_ctx;
++	struct hostapd_data *hapd = ieee802_1x_sta_bss(ctx, sta);
+ 
+ 	ieee802_1x_abort_auth(hapd, sta);
+ }
+@@ -2513,8 +2563,8 @@ static void _ieee802_1x_tx_key(void *ctx
+ {
+ #ifndef CONFIG_FIPS
+ #ifndef CONFIG_NO_RC4
+-	struct hostapd_data *hapd = ctx;
+ 	struct sta_info *sta = sta_ctx;
++	struct hostapd_data *hapd = ieee802_1x_sta_bss(ctx, sta);
+ 
+ 	ieee802_1x_tx_key(hapd, sta);
+ #endif /* CONFIG_NO_RC4 */
+--- a/src/ap/sta_info.c
++++ b/src/ap/sta_info.c
+@@ -77,6 +77,50 @@ struct sta_info * ap_get_sta(struct host
+ }
+ 
+ 
++/**
++ * ap_get_sta_mld_links - Find a station entry on a BSS or the links of its MLD
++ * @hapd: BSS to search first; set to the BSS of the returned entry
++ * @addr: Station address
++ * @match: Filter for the entries, or %NULL to accept any entry
++ * Returns: The station entry or %NULL if no entry matches
++ *
++ * The links of an AP MLD share objects whose callbacks name the first BSS,
++ * while a non-MLO station has its entry on the link it associated to alone.
++ */
++struct sta_info * ap_get_sta_mld_links(struct hostapd_data **hapd,
++				       const u8 *addr,
++				       bool (*match)(struct hostapd_data *hapd,
++						     struct sta_info *sta))
++{
++	struct hostapd_data *bss = *hapd;
++	struct sta_info *sta;
++#ifdef CONFIG_IEEE80211BE
++	struct hostapd_data *link;
++#endif /* CONFIG_IEEE80211BE */
++
++	sta = ap_get_sta(bss, addr);
++	if (sta && (!match || match(bss, sta)))
++		return sta;
++
++#ifdef CONFIG_IEEE80211BE
++	if (!bss->conf->mld_ap || !bss->mld)
++		return NULL;
++
++	for_each_mld_link(link, bss) {
++		if (link == bss)
++			continue;
++		sta = ap_get_sta(link, addr);
++		if (sta && (!match || match(link, sta))) {
++			*hapd = link;
++			return sta;
++		}
++	}
++#endif /* CONFIG_IEEE80211BE */
++
++	return NULL;
++}
++
++
+ #ifdef CONFIG_IEEE80211BE
+ struct sta_info * ap_get_link_sta(struct hostapd_data *hapd,
+ 				  const u8 *link_addr)
+--- a/src/ap/sta_info.h
++++ b/src/ap/sta_info.h
+@@ -392,6 +392,10 @@ int ap_for_each_sta(struct hostapd_data
+ 			      void *ctx),
+ 		    void *ctx);
+ struct sta_info * ap_get_sta(struct hostapd_data *hapd, const u8 *sta);
++struct sta_info * ap_get_sta_mld_links(struct hostapd_data **hapd,
++				       const u8 *addr,
++				       bool (*match)(struct hostapd_data *hapd,
++						     struct sta_info *sta));
+ struct sta_info * ap_get_link_sta(struct hostapd_data *hapd,
+ 				  const u8 *link_addr);
+ const u8 * ap_sta_link_addr(struct hostapd_data *hapd, struct sta_info *sta);
+--- a/src/eap_server/eap.h
++++ b/src/eap_server/eap.h
+@@ -272,6 +272,10 @@ struct eap_config {
+ 
+ struct eap_session_data {
+ 	const struct wpabuf *assoc_wps_ie;
++	/* The links of an AP MLD share the EAP server configuration, while
++	 * each link has a WPS context and a control interface of its own. */
++	struct wps_context *wps;
++	void *msg_ctx;
+ 	const struct wpabuf *assoc_p2p_ie;
+ 	const u8 *peer_addr;
+ #ifdef CONFIG_TESTING_OPTIONS
+--- a/src/eap_server/eap_i.h
++++ b/src/eap_server/eap_i.h
+@@ -188,6 +188,8 @@ struct eap_sm {
+ 
+ 	struct wpabuf *assoc_wps_ie;
+ 	struct wpabuf *assoc_p2p_ie;
++	struct wps_context *wps;
++	void *msg_ctx;
+ 
+ 	bool start_reauth;
+ 
+--- a/src/eap_server/eap_server.c
++++ b/src/eap_server/eap_server.c
+@@ -268,7 +268,7 @@ SM_STATE(EAP, INITIALIZE)
+ 	sm->num_rounds_short = 0;
+ 	sm->method_pending = METHOD_PENDING_NONE;
+ 
+-	wpa_msg(sm->cfg->msg_ctx, MSG_INFO, WPA_EVENT_EAP_STARTED
++	wpa_msg(sm->msg_ctx, MSG_INFO, WPA_EVENT_EAP_STARTED
+ 		MACSTR, MAC2STR(sm->peer_addr));
+ }
+ 
+@@ -300,7 +300,7 @@ SM_STATE(EAP, PICK_UP_METHOD)
+ 		}
+ 	}
+ 
+-	wpa_msg(sm->cfg->msg_ctx, MSG_INFO, WPA_EVENT_EAP_PROPOSED_METHOD
++	wpa_msg(sm->msg_ctx, MSG_INFO, WPA_EVENT_EAP_PROPOSED_METHOD
+ 		"method=%u", sm->currentMethod);
+ }
+ 
+@@ -325,7 +325,7 @@ SM_STATE(EAP, RETRANSMIT)
+ 			sm->eap_if.eapReq = true;
+ 	}
+ 
+-	wpa_msg(sm->cfg->msg_ctx, MSG_INFO, WPA_EVENT_EAP_RETRANSMIT MACSTR,
++	wpa_msg(sm->msg_ctx, MSG_INFO, WPA_EVENT_EAP_RETRANSMIT MACSTR,
+ 		MAC2STR(sm->peer_addr));
+ }
+ 
+@@ -586,7 +586,7 @@ try_another_method:
+ 	else
+ 		sm->methodState = METHOD_PROPOSED;
+ 
+-	wpa_msg(sm->cfg->msg_ctx, MSG_INFO, WPA_EVENT_EAP_PROPOSED_METHOD
++	wpa_msg(sm->msg_ctx, MSG_INFO, WPA_EVENT_EAP_PROPOSED_METHOD
+ 		"vendor=%u method=%u", vendor, sm->currentMethod);
+ 	eap_log_msg(sm, "Propose EAP method vendor=%u method=%u",
+ 		    vendor, sm->currentMethod);
+@@ -642,7 +642,7 @@ SM_STATE(EAP, TIMEOUT_FAILURE)
+ 
+ 	sm->eap_if.eapTimeout = true;
+ 
+-	wpa_msg(sm->cfg->msg_ctx, MSG_INFO,
++	wpa_msg(sm->msg_ctx, MSG_INFO,
+ 		WPA_EVENT_EAP_TIMEOUT_FAILURE MACSTR, MAC2STR(sm->peer_addr));
+ }
+ 
+@@ -657,7 +657,7 @@ SM_STATE(EAP, FAILURE)
+ 	sm->lastReqData = NULL;
+ 	sm->eap_if.eapFail = true;
+ 
+-	wpa_msg(sm->cfg->msg_ctx, MSG_INFO, WPA_EVENT_EAP_FAILURE
++	wpa_msg(sm->msg_ctx, MSG_INFO, WPA_EVENT_EAP_FAILURE
+ 		MACSTR, MAC2STR(sm->peer_addr));
+ }
+ 
+@@ -674,7 +674,7 @@ SM_STATE(EAP, SUCCESS)
+ 		sm->eap_if.eapKeyAvailable = true;
+ 	sm->eap_if.eapSuccess = true;
+ 
+-	wpa_msg(sm->cfg->msg_ctx, MSG_INFO, WPA_EVENT_EAP_SUCCESS
++	wpa_msg(sm->msg_ctx, MSG_INFO, WPA_EVENT_EAP_SUCCESS
+ 		MACSTR, MAC2STR(sm->peer_addr));
+ }
+ 
+@@ -761,7 +761,7 @@ static void erp_send_finish_reauth(struc
+ 
+ 	if ((flags & 0x80) || !erp) {
+ 		sm->eap_if.eapFail = true;
+-		wpa_msg(sm->cfg->msg_ctx, MSG_INFO, WPA_EVENT_EAP_FAILURE
++		wpa_msg(sm->msg_ctx, MSG_INFO, WPA_EVENT_EAP_FAILURE
+ 			MACSTR, MAC2STR(sm->peer_addr));
+ 		return;
+ 	}
+@@ -789,7 +789,7 @@ static void erp_send_finish_reauth(struc
+ 			sm->eap_if.eapKeyData, sm->eap_if.eapKeyDataLen);
+ 	sm->eap_if.eapSuccess = true;
+ 
+-	wpa_msg(sm->cfg->msg_ctx, MSG_INFO, WPA_EVENT_EAP_SUCCESS
++	wpa_msg(sm->msg_ctx, MSG_INFO, WPA_EVENT_EAP_SUCCESS
+ 		MACSTR, MAC2STR(sm->peer_addr));
+ }
+ 
+@@ -1024,7 +1024,7 @@ SM_STATE(EAP, RETRANSMIT2)
+ 			sm->eap_if.eapReq = true;
+ 	}
+ 
+-	wpa_msg(sm->cfg->msg_ctx, MSG_INFO, WPA_EVENT_EAP_RETRANSMIT2 MACSTR,
++	wpa_msg(sm->msg_ctx, MSG_INFO, WPA_EVENT_EAP_RETRANSMIT2 MACSTR,
+ 		MAC2STR(sm->peer_addr));
+ }
+ 
+@@ -1117,7 +1117,7 @@ SM_STATE(EAP, TIMEOUT_FAILURE2)
+ 
+ 	sm->eap_if.eapTimeout = true;
+ 
+-	wpa_msg(sm->cfg->msg_ctx, MSG_INFO,
++	wpa_msg(sm->msg_ctx, MSG_INFO,
+ 		WPA_EVENT_EAP_TIMEOUT_FAILURE2 MACSTR, MAC2STR(sm->peer_addr));
+ }
+ 
+@@ -1129,7 +1129,7 @@ SM_STATE(EAP, FAILURE2)
+ 	eap_copy_buf(&sm->eap_if.eapReqData, sm->eap_if.aaaEapReqData);
+ 	sm->eap_if.eapFail = true;
+ 
+-	wpa_msg(sm->cfg->msg_ctx, MSG_INFO, WPA_EVENT_EAP_FAILURE2 MACSTR,
++	wpa_msg(sm->msg_ctx, MSG_INFO, WPA_EVENT_EAP_FAILURE2 MACSTR,
+ 		MAC2STR(sm->peer_addr));
+ }
+ 
+@@ -1158,7 +1158,7 @@ SM_STATE(EAP, SUCCESS2)
+ 	 */
+ 	sm->start_reauth = true;
+ 
+-	wpa_msg(sm->cfg->msg_ctx, MSG_INFO, WPA_EVENT_EAP_SUCCESS2 MACSTR,
++	wpa_msg(sm->msg_ctx, MSG_INFO, WPA_EVENT_EAP_SUCCESS2 MACSTR,
+ 		MAC2STR(sm->peer_addr));
+ }
+ 
+@@ -1868,6 +1868,8 @@ struct eap_sm * eap_server_sm_init(void
+ 		sm->assoc_wps_ie = wpabuf_dup(sess->assoc_wps_ie);
+ 	if (sess->assoc_p2p_ie)
+ 		sm->assoc_p2p_ie = wpabuf_dup(sess->assoc_p2p_ie);
++	sm->wps = sess->wps;
++	sm->msg_ctx = sess->msg_ctx;
+ 	if (sess->peer_addr)
+ 		os_memcpy(sm->peer_addr, sess->peer_addr, ETH_ALEN);
+ #ifdef CONFIG_TESTING_OPTIONS
+--- a/src/eap_server/eap_server_wsc.c
++++ b/src/eap_server/eap_server_wsc.c
+@@ -103,10 +103,10 @@ static void * eap_wsc_init(struct eap_sm
+ 	data->registrar = registrar;
+ 
+ 	os_memset(&cfg, 0, sizeof(cfg));
+-	cfg.wps = sm->cfg->wps;
++	cfg.wps = sm->wps;
+ 	cfg.registrar = registrar;
+ 	if (registrar) {
+-		if (!sm->cfg->wps || !sm->cfg->wps->registrar) {
++		if (!cfg.wps || !cfg.wps->registrar) {
+ 			wpa_printf(MSG_INFO, "EAP-WSC: WPS Registrar not "
+ 				   "initialized");
+ 			os_free(data);
+@@ -132,7 +132,7 @@ static void * eap_wsc_init(struct eap_sm
+ 	cfg.peer_addr = sm->peer_addr;
+ #ifdef CONFIG_P2P
+ 	if (sm->assoc_p2p_ie) {
+-		if (!sm->cfg->wps->use_passphrase) {
++		if (!cfg.wps->use_passphrase) {
+ 			wpa_printf(MSG_DEBUG,
+ 				   "EAP-WSC: Prefer PSK format for non-6 GHz P2P client");
+ 			cfg.use_psk_key = 1;
+--- a/src/eapol_auth/eapol_auth_sm.c
++++ b/src/eapol_auth/eapol_auth_sm.c
+@@ -788,7 +788,8 @@ struct eapol_state_machine *
+ eapol_auth_alloc(struct eapol_authenticator *eapol, const u8 *addr,
+ 		 int flags, const struct wpabuf *assoc_wps_ie,
+ 		 const struct wpabuf *assoc_p2p_ie, void *sta_ctx,
+-		 const char *identity, const char *radius_cui)
++		 const char *identity, const char *radius_cui,
++		 struct wps_context *wps, void *msg_ctx)
+ {
+ 	struct eapol_state_machine *sm;
+ 	struct eap_session_data eap_sess;
+@@ -845,6 +846,8 @@ eapol_auth_alloc(struct eapol_authentica
+ 	eap_sess.assoc_wps_ie = assoc_wps_ie;
+ 	eap_sess.assoc_p2p_ie = assoc_p2p_ie;
+ 	eap_sess.peer_addr = addr;
++	eap_sess.wps = wps;
++	eap_sess.msg_ctx = msg_ctx;
+ 	sm->eap = eap_server_sm_init(sm, &eapol_cb, eapol->conf.eap_cfg,
+ 				     &eap_sess);
+ 	if (sm->eap == NULL) {
+@@ -1029,8 +1032,9 @@ static int eapol_sm_get_eap_user(void *c
+ {
+ 	struct eapol_state_machine *sm = ctx;
+ 
+-	return sm->eapol->cb.get_eap_user(sm->eapol->conf.ctx, identity,
+-					  identity_len, phase2, user);
++	return sm->eapol->cb.get_eap_user(sm->eapol->conf.ctx, sm->sta,
++					  identity, identity_len, phase2,
++					  user);
+ }
+ 
+ 
+--- a/src/eapol_auth/eapol_auth_sm.h
++++ b/src/eapol_auth/eapol_auth_sm.h
+@@ -14,6 +14,8 @@
+ #define EAPOL_SM_USES_WPA BIT(2)
+ #define EAPOL_SM_FROM_PMKSA_CACHE BIT(3)
+ 
++struct wps_context;
++
+ struct eapol_auth_config {
+ 	const struct eap_config *eap_cfg;
+ 	int eap_reauth_period;
+@@ -48,8 +50,9 @@ struct eapol_auth_cb {
+ 			 size_t datalen);
+ 	bool (*finished)(void *ctx, void *sta_ctx, int success, int preauth,
+ 			 bool logoff);
+-	int (*get_eap_user)(void *ctx, const u8 *identity, size_t identity_len,
+-			    int phase2, struct eap_user *user);
++	int (*get_eap_user)(void *ctx, void *sta_ctx, const u8 *identity,
++			    size_t identity_len, int phase2,
++			    struct eap_user *user);
+ 	int (*sta_entry_alive)(void *ctx, const u8 *addr);
+ 	void (*logger)(void *ctx, const u8 *addr, eapol_logger_level level,
+ 		       const char *txt);
+@@ -70,7 +73,8 @@ struct eapol_state_machine *
+ eapol_auth_alloc(struct eapol_authenticator *eapol, const u8 *addr,
+ 		 int flags, const struct wpabuf *assoc_wps_ie,
+ 		 const struct wpabuf *assoc_p2p_ie, void *sta_ctx,
+-		 const char *identity, const char *radius_cui);
++		 const char *identity, const char *radius_cui,
++		 struct wps_context *wps, void *msg_ctx);
+ void eapol_auth_free(struct eapol_state_machine *sm);
+ void eapol_auth_step(struct eapol_state_machine *sm);
+ int eapol_auth_dump_state(struct eapol_state_machine *sm, char *buf,
+--- a/src/radius/radius_server.c
++++ b/src/radius/radius_server.c
+@@ -659,6 +659,8 @@ radius_server_get_new_session(struct rad
+ 	srv_log(sess, "New session created");
+ 
+ 	os_memset(&eap_sess, 0, sizeof(eap_sess));
++	eap_sess.wps = data->eap_cfg->wps;
++	eap_sess.msg_ctx = data->eap_cfg->msg_ctx;
+ 	radius_server_testing_options(sess, &eap_sess);
+ 	sess->eap = eap_server_sm_init(sess, &radius_server_eapol_cb,
+ 				       data->eap_cfg, &eap_sess);

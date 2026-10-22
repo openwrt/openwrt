@@ -378,8 +378,8 @@ define Build/elecom-product-header
 	$(eval fw=$(if $(word 2,$(1)),$(word 2,$(1)),$@))
 
 	-( \
-		echo -n -e "ELECOM\x00\x00$(product)" | dd bs=40 count=1 conv=sync; \
-		echo -n "0.00" | dd bs=16 count=1 conv=sync; \
+		echo -n -e "ELECOM\x00\x00$(product)" | dd bs=40 count=1 conv=sync iflag=fullblock; \
+		echo -n "0.00" | dd bs=16 count=1 conv=sync iflag=fullblock; \
 		dd if=$(fw); \
 	) > $(fw).new \
 	&& mv $(fw).new $(fw) || rm -f $(fw)
@@ -392,7 +392,7 @@ define Build/elecom-wrc-gs-factory
 	$(MKHASH) md5 $(hash_opt) $@ >> $@
 	( \
 		echo -n "ELECOM $(product) v$(version)" | \
-			dd bs=32 count=1 conv=sync; \
+			dd bs=32 count=1 conv=sync iflag=fullblock; \
 		dd if=$@; \
 	) > $@.new
 	mv $@.new $@
@@ -403,14 +403,14 @@ define Build/elx-header
 	$(eval xor_pattern=$(word 2,$(1)))
 	( \
 		echo -ne "\x00\x00\x00\x00\x00\x00\x00\x03" | \
-			dd bs=42 count=1 conv=sync; \
+			dd bs=42 count=1 conv=sync iflag=fullblock; \
 		hw_id="$(hw_id)"; \
 		echo -ne "\x$${hw_id:0:2}\x$${hw_id:2:2}\x$${hw_id:4:2}\x$${hw_id:6:2}" | \
-			dd bs=20 count=1 conv=sync; \
+			dd bs=20 count=1 conv=sync iflag=fullblock; \
 		echo -ne "$$(printf '%08x' $$(stat -c%s $@) | fold -w2 | xargs -I {} echo \\x{} | tr -d '\n')" | \
-			dd bs=8 count=1 conv=sync; \
+			dd bs=8 count=1 conv=sync iflag=fullblock; \
 		echo -ne "$$($(MKHASH) md5 $@ | fold -w2 | xargs -I {} echo \\x{} | tr -d '\n')" | \
-			dd bs=58 count=1 conv=sync; \
+			dd bs=58 count=1 conv=sync iflag=fullblock; \
 	) > $(KDIR)/tmp/$(DEVICE_NAME).header
 	-$(call Build/xor-image,-p $(xor_pattern) -x) \
 	&& cat $(KDIR)/tmp/$(DEVICE_NAME).header $@ > $@.new \
@@ -630,7 +630,7 @@ endef
 
 define Build/netgear-dni
 	$(STAGING_DIR_HOST)/bin/mkdniimg \
-		-B $(NETGEAR_BOARD_ID) -v $(shell cat $(VERSION_DIST)| sed -e 's/[[:space:]]/-/g').$(firstword $(subst -, ,$(REVISION))) \
+		-B $(NETGEAR_BOARD_ID) -v $(subst $(space),-,$(VERSION_DIST)).$(firstword $(subst -, ,$(REVISION))) \
 		$(if $(NETGEAR_HW_ID),-H $(NETGEAR_HW_ID)) \
 		-r "$(1)" \
 		-i $@ -o $@.new
@@ -645,7 +645,7 @@ define Build/netgear-encrypted-factory
 		--region $(NETGEAR_ENC_REGION) \
 		$(if $(NETGEAR_ENC_HW_ID_LIST),--hw-id-list "$(NETGEAR_ENC_HW_ID_LIST)") \
 		$(if $(NETGEAR_ENC_MODEL_LIST),--model-list "$(NETGEAR_ENC_MODEL_LIST)") \
-		--version V1.0.0.0.$(shell cat $(VERSION_DIST)| sed -e 's/[[:space:]]/-/g').$(firstword $(subst -, ,$(REVISION))) \
+		--version V1.0.0.0.$(subst $(space),-,$(VERSION_DIST)).$(firstword $(subst -, ,$(REVISION))) \
 		--encryption-block-size 0x20000 \
 		--openssl-bin "$(STAGING_DIR_HOST)/bin/openssl" \
 		--key 6865392d342b4d212964363d6d7e7765312c7132613364316e26322a5a5e2538 \

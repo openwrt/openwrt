@@ -445,7 +445,7 @@ define Device/edgecore_oap100
 	PAGESIZE := 2048
 	IMAGES := sysupgrade.bin
 	DEVICE_DTS_CONFIG := config@ap.dk07.1-c1
-	DEVICE_PACKAGES := kmod-usb-acm kmod-usb-net kmod-usb-net-cdc-qmi uqmi
+	DEVICE_PACKAGES := kmod-usb-acm kmod-usb-net kmod-usb-net-qmi-wwan uqmi
 endef
 # Missing DSA Setup
 #TARGET_DEVICES += edgecore_oap100

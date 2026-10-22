@@ -146,6 +146,8 @@ struct qca_uniphy {
 	struct clk_bulk_data *clks;
 	int num_clks;
 	struct qca_uniphy_pcs port_pcs[QCA_UNIPHY_CHANNELS];
+	/* USXGMII rate the code word carried at the last read */
+	int usxgmii_speed;
 	struct qca_uniphy_clk rx_clk;
 	struct qca_uniphy_clk tx_clk;
 	struct qca_uniphy_clk ref_clk;

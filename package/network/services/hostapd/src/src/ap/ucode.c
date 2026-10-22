@@ -305,8 +305,7 @@ __uc_hostapd_bss_stop(struct hostapd_data *hapd)
 
 #ifdef CONFIG_IEEE80211BE
 	if (hapd == iface->bss[0] && hapd->conf->mld_ap)
-	        hostapd_if_link_remove(hapd, WPA_IF_AP_BSS, hapd->conf->iface,
-                       hapd->mld_link_id);
+		hostapd_drv_link_remove_keep_bss(hapd);
 #endif
 
 	hostapd_free_hapd_data(hapd);
@@ -346,7 +345,7 @@ uc_hostapd_bss_set_config(uc_vm_t *vm, size_t nargs)
 	uc_value_t *files_only = uc_fn_arg(2);
 	unsigned int i, idx = 0;
 	int ret = -1;
-	bool started;
+	bool started, beaconing;
 
 	if (!hapd || ucv_type(file) != UC_STRING)
 		goto out;
@@ -379,14 +378,15 @@ uc_hostapd_bss_set_config(uc_vm_t *vm, size_t nargs)
 	}
 
 	started = hapd->started;
+	beaconing = started && hapd->beacon_set_done;
 	__uc_hostapd_bss_stop(hapd);
 
 	/*
 	 * start_disabled is only meaningful for the initial apsta bring-up. When
-	 * re-applying config to a BSS that was already started, clear it so the
-	 * restart keeps beaconing instead of silently going quiet.
+	 * re-applying config to a beaconing BSS, clear it so the restart keeps
+	 * beaconing instead of silently going quiet.
 	 */
-	if (started)
+	if (beaconing)
 		conf->bss[idx]->start_disabled = 0;
 
 	old_bss = hapd->conf;
@@ -563,7 +563,8 @@ uc_hostapd_iface_add_bss(uc_vm_t *vm, size_t nargs)
 		goto free_hapd;
 
 	if (iface->state == HAPD_IFACE_ENABLED) {
-		hapd->conf->start_disabled = 0;
+		if (iface->bss[0]->beacon_set_done)
+			hapd->conf->start_disabled = 0;
 		if (hostapd_setup_bss(hapd, false, true))
 			goto deinit_ctrl;
 	}
@@ -675,6 +676,17 @@ uc_hostapd_bss_ctrl(uc_vm_t *vm, size_t nargs)
 		reply_len--;
 
 	return ucv_string_new_length(reply, reply_len);
+}
+
+static uc_value_t *
+uc_hostapd_bss_update_beacon(uc_vm_t *vm, size_t nargs)
+{
+	struct hostapd_data *hapd = uc_fn_thisval("hostapd.bss");
+
+	if (!hapd)
+		return NULL;
+
+	return ucv_boolean_new(!ieee802_11_update_beacon(hapd));
 }
 
 #ifdef CONFIG_IEEE80211BE
@@ -916,6 +928,26 @@ uc_hostapd_iface_csa_in_progress(uc_vm_t *vm, size_t nargs)
 	return ucv_boolean_new(hostapd_csa_in_progress(iface));
 }
 
+/* The channel the interface runs, which a channel switch hostapd made by
+ * itself (a radar) moves away from the one its configuration names. */
+static uc_value_t *
+uc_hostapd_iface_freq_running(uc_vm_t *vm, size_t nargs)
+{
+	struct hostapd_iface *iface = uc_fn_thisval("hostapd.iface");
+	uc_value_t *ret;
+
+	if (!iface || !iface->freq)
+		return NULL;
+
+	ret = ucv_object_new(vm);
+	ucv_object_add(ret, "frequency", ucv_int64_new(iface->freq));
+	ucv_object_add(ret, "sec_channel", ucv_int64_new(iface->conf->secondary_channel));
+	ucv_object_add(ret, "center_seg0_idx",
+		       ucv_int64_new(hostapd_get_oper_centr_freq_seg0_idx(iface->conf)));
+
+	return ret;
+}
+
 static int
 hostapd_ucode_bss_set_iface(struct hostapd_data *hapd, const char *ifname)
 {
@@ -1044,6 +1076,7 @@ int hostapd_ucode_sta_auth(struct hostapd_data *hapd, struct sta_info *sta)
 		next = &sta->psk;
 		hostapd_free_psk_list(*next);
 		*next = NULL;
+		ap_sta_clear_sae_pt(sta);
 
 		for (size_t i = 0; i < len; i++) {
 			uc_value_t *cur_psk;
@@ -1246,6 +1279,7 @@ static uc_value_t *
 uc_hostapd_bss_dpp_send_gas_resp(uc_vm_t *vm, size_t nargs)
 {
 	struct hostapd_data *hapd = uc_fn_thisval("hostapd.bss");
+	struct hostapd_data *hapd_freq;
 	uc_value_t *dst_arg = uc_fn_arg(0);
 	uc_value_t *token_arg = uc_fn_arg(1);
 	uc_value_t *data_arg = uc_fn_arg(2);
@@ -1271,12 +1305,6 @@ uc_hostapd_bss_dpp_send_gas_resp(uc_vm_t *vm, size_t nargs)
 	if (dialog_token == 0)
 		return NULL;
 
-	freq = ucv_int64_get(freq_arg);
-	if (!freq)
-		freq = hapd->iface->freq;
-	else
-		hapd = hostapd_dpp_freq_bss(hapd, freq);
-
 	data_b64 = ucv_string_get(data_arg);
 	data = base64_decode(data_b64, os_strlen(data_b64), &data_len);
 	if (!data)
@@ -1287,7 +1315,20 @@ uc_hostapd_bss_dpp_send_gas_resp(uc_vm_t *vm, size_t nargs)
 	if (!buf)
 		return NULL;
 
-	gas_serv_req_dpp_processing(hapd, dst, dialog_token, 0, buf, freq);
+	hapd_freq = hapd;
+	freq = ucv_int64_get(freq_arg);
+	if (freq)
+		hapd_freq = hostapd_dpp_freq_bss(hapd, freq);
+	else
+		freq = hapd->iface->freq;
+
+	/* The dialog is held by the link that received the request. */
+	if (gas_serv_dpp_resp_fill(hapd, dst, dialog_token, buf) == 0 ||
+	    (hapd_freq != hapd &&
+	     gas_serv_dpp_resp_fill(hapd_freq, dst, dialog_token, buf) == 0))
+		return ucv_boolean_new(true);
+
+	gas_serv_req_dpp_processing(hapd_freq, dst, dialog_token, 0, buf, freq);
 
 	return ucv_boolean_new(true);
 }
@@ -1355,7 +1396,13 @@ struct wpabuf *hostapd_ucode_dpp_gas_req(struct hostapd_data *hapd,
 	os_free(query_b64);
 
 	val = wpa_ucode_call(5);
-	if (ucv_type(val) == UC_STRING) {
+	/*
+	 * true: the response comes later through dpp_send_gas_resp(); the empty
+	 * buffer has gas_serv_req_dpp_processing() hold a dialog for it.
+	 */
+	if (ucv_boolean_get(val)) {
+		ret = wpabuf_alloc(0);
+	} else if (ucv_type(val) == UC_STRING) {
 		const char *resp_b64 = ucv_string_get(val);
 		size_t resp_len;
 		unsigned char *resp_data;
@@ -1437,6 +1484,7 @@ int hostapd_ucode_init(struct hapd_interfaces *ifaces)
 	};
 	static const uc_function_list_t bss_fns[] = {
 		{ "ctrl", uc_hostapd_bss_ctrl },
+		{ "update_beacon", uc_hostapd_bss_update_beacon },
 		{ "set_config", uc_hostapd_bss_set_config },
 		{ "rename", uc_hostapd_bss_rename },
 		{ "delete", uc_hostapd_bss_delete },
@@ -1456,6 +1504,7 @@ int hostapd_ucode_init(struct hapd_interfaces *ifaces)
 		{ "start", uc_hostapd_iface_start },
 		{ "switch_channel", uc_hostapd_iface_switch_channel },
 		{ "csa_in_progress", uc_hostapd_iface_csa_in_progress },
+		{ "freq_running", uc_hostapd_iface_freq_running },
 	};
 
 	interfaces = ifaces;

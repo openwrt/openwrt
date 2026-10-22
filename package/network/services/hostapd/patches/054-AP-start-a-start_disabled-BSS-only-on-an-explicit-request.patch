@@ -1,0 +1,123 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Tue, 20 Oct 2026 15:05:06 +0200
+Subject: [PATCH] AP: Start a start_disabled BSS only on an explicit request
+
+hostapd_start_beacon() skips the Beacon setup of a BSS with
+start_disabled=1, but every other caller of ieee802_11_set_beacon()
+starts the BSS in the driver. A start_disabled BSS thus starts
+beaconing as a side effect of, for example, SET_BW and the other users
+of ieee802_11_set_beacons(), the 20/40 MHz coexistence handling, the
+start of a DFS CAC, or the OWE transition mode update when the open BSS
+of an OWE BSS is enabled.
+
+Hold the Beacon frames of a start_disabled BSS in
+ieee802_11_set_beacon() and __ieee802_11_set_beacon() until
+ieee802_11_start_beacon() releases the BSS. UPDATE_BEACON and a
+configuration reload release it, as they already started such a BSS.
+A BSS whose start_disabled is cleared before it starts is not held, and
+neither is a BSS that beaconed before, so a later interface enable
+restarts it. The check in hostapd_iface_enable() is then no longer
+needed.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+
+--- a/hostapd/ctrl_iface.c
++++ b/hostapd/ctrl_iface.c
+@@ -4271,7 +4271,7 @@ static int hostapd_ctrl_iface_receive_pr
+ 		if (hostapd_ctrl_iface_disable(hapd->iface))
+ 			reply_len = -1;
+ 	} else if (os_strcmp(buf, "UPDATE_BEACON") == 0) {
+-		if (ieee802_11_set_beacon(hapd))
++		if (ieee802_11_start_beacon(hapd))
+ 			reply_len = -1;
+ #ifdef CONFIG_TESTING_OPTIONS
+ 	} else if (os_strncmp(buf, "RADAR ", 6) == 0) {
+--- a/src/ap/beacon.c
++++ b/src/ap/beacon.c
+@@ -2737,6 +2737,18 @@ void ieee802_11_free_ap_params(struct wp
+ }
+ 
+ 
++/* A start_disabled BSS beacons only after ieee802_11_start_beacon() */
++static bool hostapd_beacon_held(struct hostapd_data *hapd)
++{
++	if (!hapd->conf->start_disabled || hapd->beacon_started)
++		return false;
++
++	wpa_printf(MSG_DEBUG, "%s: Beacon frames held for start_disabled BSS",
++		   hapd->conf->iface);
++	return true;
++}
++
++
+ static int __ieee802_11_set_beacon(struct hostapd_data *hapd)
+ {
+ 	struct wpa_driver_ap_params params;
+@@ -2749,6 +2761,9 @@ static int __ieee802_11_set_beacon(struc
+ 	int res, ret = -1, i;
+ 	struct hostapd_hw_modes *mode;
+ 
++	if (hostapd_beacon_held(hapd))
++		return 0;
++
+ 	if (!hapd->drv_priv) {
+ 		wpa_printf(MSG_ERROR, "Interface is disabled");
+ 		return -1;
+@@ -3318,6 +3333,9 @@ int ieee802_11_set_beacon(struct hostapd
+ 	struct hostapd_data *link_bss;
+ #endif /* CONFIG_IEEE80211BE */
+ 
++	if (hostapd_beacon_held(hapd))
++		return 0;
++
+ 	ret = __ieee802_11_set_beacon(hapd);
+ 	if (ret != 0)
+ 		return ret;
+@@ -3371,6 +3389,13 @@ int ieee802_11_set_beacon(struct hostapd
+ }
+ 
+ 
++int ieee802_11_start_beacon(struct hostapd_data *hapd)
++{
++	hapd->beacon_started = 1;
++	return ieee802_11_set_beacon(hapd);
++}
++
++
+ int ieee802_11_set_beacons(struct hostapd_iface *iface)
+ {
+ 	size_t i;
+--- a/src/ap/beacon.h
++++ b/src/ap/beacon.h
+@@ -17,6 +17,7 @@ void handle_probe_req(struct hostapd_dat
+ 		      int ssi_signal);
+ void ieee802_11_set_beacon_per_bss_only(struct hostapd_data *hapd);
+ int ieee802_11_set_beacon(struct hostapd_data *hapd);
++int ieee802_11_start_beacon(struct hostapd_data *hapd);
+ int ieee802_11_set_beacons(struct hostapd_iface *iface);
+ int ieee802_11_update_beacons(struct hostapd_iface *iface);
+ int ieee802_11_build_ap_params(struct hostapd_data *hapd,
+--- a/src/ap/drv_callbacks.c
++++ b/src/ap/drv_callbacks.c
+@@ -2542,8 +2542,7 @@ static void hostapd_iface_enable(struct
+ 		else
+ 			hostapd_reconfig_encryption(hapd);
+ 		hapd->reenable_beacon = 1;
+-		if (!hapd->conf->start_disabled || hapd->beacon_started)
+-			ieee802_11_set_beacon(hapd);
++		ieee802_11_set_beacon(hapd);
+ #ifdef NEED_AP_MLME
+ 	} else if (hapd->disabled && hapd->iface->cac_started) {
+ 		wpa_printf(MSG_DEBUG, "DFS: restarting pending CAC");
+--- a/src/ap/hostapd.c
++++ b/src/ap/hostapd.c
+@@ -191,7 +191,7 @@ static void hostapd_reload_bss(struct ho
+ 			       "Failed to prepare rates table.");
+ 	}
+ 
+-	ieee802_11_set_beacon(hapd);
++	ieee802_11_start_beacon(hapd);
+ 	hostapd_update_wps(hapd);
+ 
+ 	if (hapd->conf->ssid.ssid_set &&

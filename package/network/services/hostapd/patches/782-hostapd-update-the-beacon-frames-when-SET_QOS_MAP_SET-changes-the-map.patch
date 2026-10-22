@@ -1,0 +1,56 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Tue, 20 Oct 2026 14:31:19 +0200
+Subject: [PATCH] hostapd: Update the Beacon frames when SET_QOS_MAP_SET changes the map
+
+The Extended Capabilities element sets the QoS Map bit while the BSS
+has a QoS Map. SET_QOS_MAP_SET changes the map of a running BSS but
+does not update the Beacon frames, so a BSS that gets its first QoS
+Map does not advertise the bit until the next Beacon update, and a BSS
+whose map is cleared keeps advertising it.
+
+Update the Beacon frames when the map is set on a BSS without one or
+cleared. The Probe Response frames that hostapd builds already follow
+the configuration.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+
+--- a/hostapd/ctrl_iface.c
++++ b/hostapd/ctrl_iface.c
+@@ -652,6 +652,18 @@ static int hostapd_ctrl_iface_hs20_deaut
+ 
+ #ifdef CONFIG_INTERWORKING
+ 
++static void hostapd_qos_map_len_set(struct hostapd_data *hapd,
++				    unsigned int len)
++{
++	bool changed = !hapd->conf->qos_map_set_len != !len;
++
++	hapd->conf->qos_map_set_len = len;
++	/* The QoS Map bit of the Extended Capabilities follows the length */
++	if (changed)
++		ieee802_11_update_beacons(hapd->iface);
++}
++
++
+ static int hostapd_ctrl_iface_set_qos_map_set(struct hostapd_data *hapd,
+ 					      const char *cmd)
+ {
+@@ -665,7 +677,7 @@ static int hostapd_ctrl_iface_set_qos_ma
+ 			return -1;
+ 		}
+ 
+-		hapd->conf->qos_map_set_len = 0;
++		hostapd_qos_map_len_set(hapd, 0);
+ 		return 0;
+ 	}
+ 
+@@ -700,7 +712,7 @@ static int hostapd_ctrl_iface_set_qos_ma
+ 	}
+ 
+ 	os_memcpy(hapd->conf->qos_map_set, qos_map_set, count);
+-	hapd->conf->qos_map_set_len = count;
++	hostapd_qos_map_len_set(hapd, count);
+ 
+ 	return 0;
+ }

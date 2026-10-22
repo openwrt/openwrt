@@ -2,6 +2,7 @@
 
 #include <asm/mach-rtl-otto/mach-rtl-otto.h>
 #include <linux/etherdevice.h>
+#include <linux/regmap.h>
 
 #include "lag.h"
 #include "l2.h"
@@ -35,9 +36,6 @@
 #define RTL931X_MAC_FORCE_MODE_CTRL		(0x0DCC)
 
 #define RTL931X_MAC_LINK_STS			(0x0EC0)
-
-#define RTL931X_FORCE_EN			BIT(9)
-#define RTL931X_FORCE_LINK_EN			BIT(0)
 
 #define RTL931X_TRK_HASH_CTRL			(0xBA70)
 #define RTL931X_TRK_CTRL			(0xBA78)
@@ -84,6 +82,11 @@
 #define RTL931X_LED_CLK_SEL_400NS				1
 #define RTL931X_LED_CLK_SEL_200NS				2
 #define RTL931X_LED_CLK_SEL_100NS				3
+
+#define RTL931X_SMI_PHY_ABLTY_GET_SEL(port)	(0x0cac + ((port) / 16) * 4)
+#define RTL931X_SMI_PHY_ABLTY_MDIO		0x0
+#define RTL931X_SMI_PHY_ABLTY_SDS		0x2
+#define RTL931X_SMI_PHY_ABLTY_MASK(port)	(GENMASK(1, 0) << (((port) % 16) * 2))
 
 static inline int rtl931x_mac_force_mode_ctrl(int p)
 {
@@ -257,13 +260,14 @@ static void rtldsa_931x_led_get_forced(const struct device_node *node,
 	}
 }
 
-static void rtldsa_931x_led_init(struct rtl838x_switch_priv *priv)
+static void rtldsa_931x_led_init(struct otto_dsa_priv *priv)
 {
 	u8 forced_leds_per_port[RTL931X_CPU_PORT] = {};
 	u64 pm_copper = 0, pm_fiber = 0;
 	struct device *dev = priv->dev;
 	struct device_node *node;
 	u8 leds_in_set[4] = {};
+	u32 led_mode = 1;
 	u32 clk_freq;
 	int ret;
 
@@ -369,8 +373,13 @@ static void rtldsa_931x_led_init(struct rtl838x_switch_priv *priv)
 		sw_w32_mask(0, set << pos, RTL931X_LED_PORT_FIB_SET_SEL_CTRL(i));
 	}
 
-	/* Set LED mode to serial (0x1) */
-	sw_w32_mask(0x3, 0x1, RTL931X_LED_GLB_CTRL);
+	/* LED interface: 1 = serial (default), 2 = single-colour scan, 3 = bi-colour scan */
+	of_property_read_u32(node, "realtek,led-mode", &led_mode);
+	if (led_mode < 1 || led_mode > 3) {
+		dev_warn(dev, "invalid realtek,led-mode %u, using serial\n", led_mode);
+		led_mode = 1;
+	}
+	sw_w32_mask(0x3, led_mode, RTL931X_LED_GLB_CTRL);
 
 	if (of_property_read_bool(node, "active-low"))
 		sw_w32_mask(RTL931X_LED_GLB_ACTIVE_LOW, 0, RTL931X_LED_GLB_CTRL);
@@ -385,34 +394,26 @@ static void rtldsa_931x_led_init(struct rtl838x_switch_priv *priv)
 		dev_dbg(dev, "%08x: %08x\n", 0xbb000600 + i * 4, sw_r32(0x0600 + i * 4));
 }
 
-static u64 rtldsa_931x_stat_port_table_read(int port, unsigned int mib_size,
-					    unsigned int mib_offset, bool is_pvt)
+static int
+rtldsa_931x_mac_link_state_source_set(struct otto_dsa_priv *priv,
+				      int port,
+				      enum rtldsa_mac_link_state_source source,
+				      phy_interface_t interface)
 {
-	enum otto_table_id id;
-	int field_offset;
-	u32 val[2];
+	u32 mask, src_val;
 
-	if (is_pvt) {
-		id = RTL9310_TBL_STAT_PORT_PRVTE_CNTR;
-		field_offset = 27;
-	} else {
-		id = RTL9310_TBL_STAT_PORT_MIB_CNTR;
-		field_offset = 52;
-	}
+	if (port >= RTL931X_CPU_PORT)
+		return 0;
 
-	/* Counter fields are numbered down from the last data word of the
-	 * entry, so the high half of a 64 bit counter sits at the lower word
-	 * index.
-	 */
-	if (mib_size == 2) {
-		otto_table_offset_read(id, port, &val, field_offset - (mib_offset + 1));
+	mask = RTL931X_SMI_PHY_ABLTY_MASK(port);
+	if (source == RTLDSA_MAC_LINK_STATE_SOURCE_PCS)
+		src_val = RTL931X_SMI_PHY_ABLTY_SDS;
+	else
+		src_val = RTL931X_SMI_PHY_ABLTY_MDIO;
 
-		return (u64)val[0] << 32 | val[1];
-	}
-
-	otto_table_offset_read(id, port, &val[0], field_offset - mib_offset);
-
-	return val[0];
+	return regmap_update_bits(priv->map,
+				  RTL931X_SMI_PHY_ABLTY_GET_SEL(port),
+				  mask, field_prep(mask, src_val));
 }
 
 const struct rtldsa_config rtldsa_931x_cfg = {
@@ -435,11 +436,12 @@ const struct rtldsa_config rtldsa_931x_cfg = {
 	.stat_port_rst = RTL931X_STAT_PORT_RST,
 	.stat_rst = RTL931X_STAT_RST,
 	.stat_port_std_mib = 0,  /* Not defined */
-	.mib_desc = &rtldsa_931x_mib_desc,
-	.stat_port_table_read = rtldsa_931x_stat_port_table_read,
-	.stat_counters_lock = rtldsa_counters_lock_table,
-	.stat_counters_unlock = rtldsa_counters_unlock_table,
-	.stat_counter_poll_interval = RTLDSA_COUNTERS_FAST_POLL_INTERVAL,
+	.mib_desc = &otto_stats_931x_mib_desc,
+	.drop_desc = &otto_stats_931x_drop_desc,
+	.stat_port_table_read = otto_stats_931x_port_table_read,
+	.stat_counters_lock = otto_stats_counters_lock_table,
+	.stat_counters_unlock = otto_stats_counters_unlock_table,
+	.stat_counter_poll_interval = OTTO_STATS_COUNTERS_FAST_POLL_INTERVAL,
 	.traffic_enable = rtl931x_traffic_enable,
 	.traffic_disable = rtl931x_traffic_disable,
 	.traffic_set = rtl931x_traffic_set,
@@ -464,8 +466,19 @@ const struct rtldsa_config rtldsa_931x_cfg = {
 	.vlan_fwd_on_inner = otto_vlan_931x_port_forward_on_inner,
 	.stp_get = rtldsa_931x_stp_get,
 	.stp_set = rtl931x_stp_set,
-	.mac_force_mode_mask = RTL931X_FORCE_EN | RTL931X_FORCE_LINK_EN,
+	.mac_force_mode = {
+		.force_en_mask = RTL931X_FORCE_LINK_EN |
+				 RTL931X_FORCE_DUPLEX_EN |
+				 RTL931X_FORCE_SPEED_EN,
+		.fc_force_en_mask = RTL931X_MAC_FORCE_FC_EN,
+		.link_up_mask = RTL931X_FORCE_LINK,
+		.duplex_mask = RTL931X_DUPLEX_MODE,
+		.speed_mask = RTL931X_SPEED_MASK,
+		.tx_pause_mask = RTL931X_TX_PAUSE_EN,
+		.rx_pause_mask = RTL931X_RX_PAUSE_EN,
+	},
 	.mac_force_mode_ctrl = rtl931x_mac_force_mode_ctrl,
+	.mac_link_state_source_set = rtldsa_931x_mac_link_state_source_set,
 	.mac_link_sts = RTL931X_MAC_LINK_STS,
 	.mac_port_ctrl = rtl931x_mac_port_ctrl,
 	.mac_capabilities = MAC_ASYM_PAUSE | MAC_SYM_PAUSE | MAC_10 | MAC_100 |
@@ -494,10 +507,10 @@ const struct rtldsa_config rtldsa_931x_cfg = {
 	.l2_hash_seed = otto_l2_931x_hash_seed,
 	.read_mcast_pmask = otto_l2_931x_read_mcast_pmask,
 	.write_mcast_pmask = otto_l2_931x_write_mcast_pmask,
-	.pie_init = rtl931x_pie_init,
-	.pie_rule_write = rtl931x_pie_rule_write,
-	.pie_rule_add = rtl931x_pie_rule_add,
-	.pie_rule_rm = rtl931x_pie_rule_rm,
+	.pie_init = otto_pie_931x_init,
+	.pie_rule_write = otto_pie_931x_rule_write,
+	.pie_rule_add = otto_pie_931x_rule_add,
+	.pie_rule_rm = otto_pie_931x_rule_rm,
 	.l2_learning_setup = otto_l2_931x_learning_setup,
 	.led_init = rtldsa_931x_led_init,
 	.enable_learning = otto_l2_931x_enable_learning,
@@ -505,10 +518,10 @@ const struct rtldsa_config rtldsa_931x_cfg = {
 	.enable_flood = otto_l2_931x_enable_flood,
 	.enable_bcast_flood = otto_l2_931x_enable_bcast_flood,
 	.set_receive_management_action = rtldsa_931x_set_receive_management_action,
-	.qos_init = rtldsa_931x_qos_init,
+	.qos_init = otto_qos_931x_init,
 	.trk_ctrl = RTL931X_TRK_CTRL,
 	.trk_hash_ctrl = RTL931X_TRK_HASH_CTRL,
-	.prepare_lag_fdb = rtldsa_93xx_prepare_lag_fdb,
+	.prepare_lag_fdb = otto_lag_93xx_prepare_fdb,
 	.lag_switch_init = otto_lag_93xx_switch_init,
 	.lag_set_port_members = otto_lag_93xx_set_port_members,
 	.lag_set_distribution_algorithm = otto_lag_93xx_set_distribution_algorithm,

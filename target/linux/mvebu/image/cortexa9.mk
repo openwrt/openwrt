@@ -24,10 +24,10 @@ define Build/seil-header
         od -An -tx8 --endian little | tr -d ' \n')"; \
     printf "SEIL2015"; \
     printf "$(call toupper,$(LINUX_KARCH)) $(VERSION_DIST) Linux-$(LINUX_VERSION)" | \
-        dd bs=80 count=1 conv=sync 2>/dev/null; \
+        dd bs=80 count=1 conv=sync iflag=fullblock 2>/dev/null; \
     printf "$$(echo $${data_size_crc:8:8} | sed 's/../\\x&/g')"; \
     printf "\x00\x00\x00\x01\x00\x00\x00\x09\x00\x00\x00\x63"; \
-    printf "$(REVISION)" | dd bs=32 count=1 conv=sync 2>/dev/null; \
+    printf "$(REVISION)" | dd bs=32 count=1 conv=sync iflag=fullblock 2>/dev/null; \
     printf "\x00\x00\x00\x00"; \
     printf "$$(echo $${data_size_crc:0:8} | sed 's/../\\x&/g')"; \
     cat $@; \

@@ -17,6 +17,7 @@ libubus.guard(ex_handler);
 hostapd.data.config = {};
 hostapd.data.pending_config = {};
 hostapd.data.apsta_freq = {};
+hostapd.data.apsta_stopped = {};
 
 hostapd.data.file_fields = {
 	vlan_file: true,
@@ -413,6 +414,7 @@ function iface_restart(phydev, config, old_config)
 	if (pending)
 		pending.abort();
 
+	delete hostapd.data.apsta_stopped[phy];
 	hostapd.remove_iface(phy);
 
 	let prev_bssid = {};
@@ -612,6 +614,167 @@ function bss_find_existing(config, prev_config, prev_hash)
 	}
 
 	return -1;
+}
+
+function bss_ctrl_ok(bss, ifname, cmd)
+{
+	let ret = bss.ctrl(cmd);
+	if (ret == "OK")
+		return true;
+
+	hostapd.printf(`Could not run ${split(cmd, " ")[0]} on bss ${ifname}: ${ret}`);
+	return false;
+}
+
+let qos_map_ctrl;
+
+// SET_QOS_MAP_SET and SEND_QOS_MAP_CONF exist only with CONFIG_INTERWORKING.
+// SEND_QOS_MAP_CONF without an address fails and sends no frame.
+function bss_qos_map_ctrl(bss)
+{
+	qos_map_ctrl ??= bss.ctrl("SEND_QOS_MAP_CONF ") == "FAIL";
+
+	return qos_map_ctrl;
+}
+
+const STA_ADDR_RE = /^([0-9a-f]{2}:){5}[0-9a-f]{2}$/;
+const STA_ASSOC_RE = /^flags=.*\[ASSOC\]/;
+const STA_EXT_CAPAB_RE = /^ext_capab=([0-9a-f]+)/;
+
+// hostapd sends a QoS Map Configure frame only to a station that set the QoS
+// Map bit (bit 32) of its Extended Capabilities.
+function sta_qos_map_capable(reply)
+{
+	let capab = match(reply, STA_EXT_CAPAB_RE)?.[1];
+
+	return !!match(reply, STA_ASSOC_RE) && length(capab) >= 10 &&
+	       !!(hex(substr(capab, 8, 2)) & 1);
+}
+
+function bss_qos_map_stations(bss)
+{
+	let list = [];
+	let reply = bss.ctrl("STA-FIRST");
+
+	while (reply) {
+		let addr = split(reply, "\n")[0];
+		if (!match(addr, STA_ADDR_RE))
+			break;
+
+		if (sta_qos_map_capable(reply))
+			push(list, addr);
+		reply = bss.ctrl(`STA-NEXT ${addr}`);
+	}
+
+	return list;
+}
+
+// An empty SET_QOS_MAP_SET clears the map (patch 781). No frame removes a map
+// from a station, so it keeps the old one until it associates again.
+function bss_qos_map_apply(bss, ifname, value)
+{
+	if (!bss_ctrl_ok(bss, ifname, `SET_QOS_MAP_SET ${value ?? ""}`))
+		return false;
+
+	if (!value)
+		return true;
+
+	for (let addr in bss_qos_map_stations(bss)) {
+		let ret = bss.ctrl(`SEND_QOS_MAP_CONF ${addr}`);
+		if (ret != "OK")
+			hostapd.printf(`Could not send the QoS Map of bss ${ifname} to ${addr}: ${ret}`);
+	}
+
+	return true;
+}
+
+// hostapd reads multi_ap_vlanid only when it builds a (Re)Association
+// Response, so an associated station keeps the old value until it associates
+// again.
+const BSS_INPLACE_FIELDS = {
+	multi_ap_vlanid: {
+		apply: (bss, ifname, value) =>
+			bss_ctrl_ok(bss, ifname, `SET multi_ap_vlanid ${value ?? "0"}`),
+	},
+	qos_map_set: {
+		supported: bss_qos_map_ctrl,
+		apply: bss_qos_map_apply,
+	},
+};
+
+function bss_inplace_field(bss, key)
+{
+	let field = BSS_INPLACE_FIELDS[key];
+
+	return !!field && (!field.supported || field.supported(bss));
+}
+
+function bss_inplace_changes(config, prev, bss, changed)
+{
+	let data = remove_file_fields(config.data);
+	let prev_data = remove_file_fields(prev.data);
+	let changes = {};
+	let inplace = true;
+
+	for (let line in prev_data) {
+		if (index(data, line) >= 0)
+			continue;
+
+		let val = split(line, "=", 2);
+		push(changed, val[0]);
+		if (!bss_inplace_field(bss, val[0]))
+			inplace = false;
+		changes[val[0]] = { value: null };
+	}
+
+	for (let line in data) {
+		if (index(prev_data, line) >= 0)
+			continue;
+
+		let val = split(line, "=", 2);
+		push(changed, val[0]);
+		if (!bss_inplace_field(bss, val[0]))
+			inplace = false;
+		changes[val[0]] = { value: val[1] };
+	}
+
+	return (inplace && length(changes)) ? changes : null;
+}
+
+// A new BSS drops its stations, so the log names what keeps a bss from an
+// update in place. Any bss of the hostapd process answers for `supported`.
+function bss_find_inplace(config, prev_config, prev_hash, bss)
+{
+	for (let i = 0; i < length(prev_config.bss); i++) {
+		let prev = prev_config.bss[i];
+
+		if (!prev_hash[i] || prev.ifname != config.ifname)
+			continue;
+
+		let changed = [];
+		let changes = bss_inplace_changes(config, prev, bss, changed);
+		if (!changes) {
+			let reason = length(changed) ? join(", ", uniq(changed)) :
+				"line order or ifindex of a named interface";
+			hostapd.printf(`bss ${config.ifname} changed in ${reason}, replacing it`);
+			continue;
+		}
+
+		prev_hash[i] = null;
+		return { index: i, changes };
+	}
+
+	return null;
+}
+
+function bss_inplace_apply(bss, ifname, changes)
+{
+	for (let key, change in changes)
+		if (!BSS_INPLACE_FIELDS[key].apply(bss, ifname, change.value))
+			return false;
+
+	hostapd.printf(`Updated ${join(", ", keys(changes))} of bss ${ifname} in place`);
+	return true;
 }
 
 function get_config_bss(name, config, idx)
@@ -844,6 +1007,36 @@ function iface_macaddr_move(phydev, config, old_config, bss_list_cfg)
 	return true;
 }
 
+// A failed start leaves the interface DISABLED until a restart. apsta_state
+// can also leave it DISABLED, while it waits for its station.
+function iface_start_failed(name)
+{
+	let iface = hostapd.interfaces[name];
+
+	return !!iface && iface.state() == "DISABLED" &&
+	       !hostapd.data.apsta_stopped[name];
+}
+
+// Whether the interface runs the channel `config` names already. A channel
+// switch hostapd makes by itself, after a radar, leaves the stored config on
+// the channel it left, so a config that names the channel it moved to is no
+// change of channel.
+function iface_runs_channel(name, config)
+{
+	let iface = hostapd.interfaces[name];
+	if (!iface || iface.state() != "ENABLED" || !config.radio.frequency)
+		return false;
+
+	let running = iface.freq_running();
+	let wanted = iface_freq_info(iface, config, { frequency: config.radio.frequency });
+	if (!running || !wanted)
+		return false;
+
+	return running.frequency == wanted.frequency &&
+	       running.sec_channel == wanted.sec_channel &&
+	       (!wanted.sec_channel || running.center_seg0_idx == wanted.center_seg0_idx);
+}
+
 function iface_reload_config(name, phydev, config, old_config)
 {
 	let phy = phydev.name;
@@ -855,19 +1048,28 @@ function iface_reload_config(name, phydev, config, old_config)
 	case "restart":
 		return false;
 	case "channel":
+		if (iface_runs_channel(name, config))
+			break;
 		if (!iface_channel_switch(name, config))
 			return false;
 		break;
 	}
 
-	// A configuration whose restart failed has no interface. Only a
-	// running or pending one is up to date.
+	// A configuration whose restart failed has no interface, and one whose
+	// start failed has a disabled one. Only a running or pending one is up
+	// to date.
 	let prev_macaddr_bss = bss_list_prev_macaddr(config.bss, old_config.bss);
-	if (is_equal(old_config.bss, prev_macaddr_bss) &&
-	    (hostapd.interfaces[name] || hostapd.data.pending_config[name])) {
-		for (let i = 0; i < length(config.bss); i++)
-			config.bss[i].bssid = prev_macaddr_bss[i].bssid;
-		return true;
+	if (is_equal(old_config.bss, prev_macaddr_bss)) {
+		if (!hostapd.data.pending_config[name] && iface_start_failed(name)) {
+			hostapd.printf(`Interface for phy ${name} failed to start`);
+			return false;
+		}
+
+		if (hostapd.interfaces[name] || hostapd.data.pending_config[name]) {
+			for (let i = 0; i < length(config.bss); i++)
+				config.bss[i].bssid = prev_macaddr_bss[i].bssid;
+			return true;
+		}
 	}
 
 	if (hostapd.data.pending_config[name])
@@ -904,13 +1106,27 @@ function iface_reload_config(name, phydev, config, old_config)
 	}
 
 	// Step 1: find (possibly renamed) interfaces with the same config
-	// and store them in the new order (with gaps)
+	// and store them in the new order (with gaps), then interfaces of the
+	// same name whose changes apply in place (bss_find_inplace())
+	let inplace = [];
+	for (let pass = 0; pass < 2; pass++)
 	for (let i = 0; i < length(config.bss); i++) {
-		let prev;
+		let prev = -1;
+
+		if (bss_list[i])
+			continue;
 
 		// For fullmac devices, the first interface needs to be preserved,
 		// since it's treated as the master
-		if (!i && phy_is_fullmac(phydev.phy)) {
+		let fullmac_first = !i && phy_is_fullmac(phydev.phy);
+		if (pass) {
+			let found = !fullmac_first &&
+				bss_find_inplace(config.bss[i], old_config, prev_bss_hash, first_bss);
+			if (found) {
+				prev = found.index;
+				inplace[i] = found.changes;
+			}
+		} else if (fullmac_first) {
 			prev = 0;
 			prev_bss_hash[0] = null;
 		} else {
@@ -1095,12 +1311,20 @@ function iface_reload_config(name, phydev, config, old_config)
 
 		let ifname = config.bss[i].ifname;
 		let bss = bss_list[i];
+		let prev_cfg = bss_list_cfg[i];
 
-		if (is_equal(config.bss[i], bss_list_cfg[i]))
+		if (inplace[i]) {
+			if (!bss_inplace_apply(bss, ifname, inplace[i]))
+				return false;
+
+			prev_cfg = { ...prev_cfg, data: config.bss[i].data };
+		}
+
+		if (is_equal(config.bss[i], prev_cfg))
 			continue;
 
 		if (is_equal(bss_remove_file_fields(config.bss[i]),
-		             bss_remove_file_fields(bss_list_cfg[i]))) {
+		             bss_remove_file_fields(prev_cfg))) {
 			hostapd.printf(`Update config data files for bss ${ifname}`);
 			if (bss.set_config(config_inline, i, true) < 0) {
 				hostapd.printf(`Could not update config data files for bss ${ifname}`);
@@ -1111,9 +1335,9 @@ function iface_reload_config(name, phydev, config, old_config)
 			}
 		}
 
-		bss_reload_psk(bss, config.bss[i], bss_list_cfg[i]);
-		bss_reload_rxkhs(bss, config.bss[i], bss_list_cfg[i]);
-		if (is_equal(config.bss[i], bss_list_cfg[i]))
+		bss_reload_psk(bss, config.bss[i], prev_cfg);
+		bss_reload_rxkhs(bss, config.bss[i], prev_cfg);
+		if (is_equal(config.bss[i], prev_cfg))
 			continue;
 
 		hostapd.printf(`Reload config for bss '${config.bss[0].ifname}' on phy '${name}'`);
@@ -1207,6 +1431,7 @@ function iface_config_remove(name, old_config)
 		pending.abort();
 
 	delete hostapd.data.apsta_freq[name];
+	delete hostapd.data.apsta_stopped[name];
 	hostapd.remove_iface(name);
 	return iface_remove(old_config);
 }
@@ -1732,7 +1957,7 @@ function dpp_channel_handle_request(channel, req)
 			return libubus.STATUS_NOT_FOUND;
 		let val = data.enable ? "dd04506f9a1e" : "";
 		bss.ctrl("SET vendor_elements " + val);
-		bss.ctrl("UPDATE_BEACON");
+		bss.update_beacon();
 		return 0;
 
 	default:
@@ -1815,6 +2040,7 @@ let main_obj = {
 
 			if (!req.args.up) {
 				delete hostapd.data.apsta_freq[phy];
+				hostapd.data.apsta_stopped[phy] = true;
 				iface.stop();
 				return 0;
 			}
@@ -1830,8 +2056,10 @@ let main_obj = {
 				 */
 				delete hostapd.data.apsta_freq[phy];
 
-				if (iface_channel_switch(phy, config))
+				if (iface_channel_switch(phy, config)) {
+					delete hostapd.data.apsta_stopped[phy];
 					return 0;
+				}
 
 				let phydev = phy_open(config.phy, config.radio_idx);
 				if (phydev)
@@ -1851,6 +2079,8 @@ let main_obj = {
 					let ret = iface.switch_channel(freq_info);
 					if (!ret)
 						return libubus.STATUS_UNKNOWN_ERROR;
+
+					delete hostapd.data.apsta_stopped[phy];
 					return 0;
 				}
 			}
@@ -1859,6 +2089,7 @@ let main_obj = {
 			if (!ret)
 				return libubus.STATUS_UNKNOWN_ERROR;
 
+			delete hostapd.data.apsta_stopped[phy];
 			return 0;
 		}
 	},
@@ -2203,6 +2434,8 @@ return {
 		});
 		if (response && response.response)
 			return response.response;
+		if (response && response.pending)
+			return true;
 		return null;
 	},
 	wps_m7_rx: function(ifname, addr, data) {

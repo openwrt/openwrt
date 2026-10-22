@@ -1,12 +1,17 @@
 # uxc container package-hook helpers, sourced by the install scripts of
 # container-<name> and stack-<app> packages.
 
-UXC_STOP_WAIT=15
+uxc_instance_delete() {
+	local name="$1"
+
+	uxc kill "$name" 2>/dev/null
+	ubus call container delete "{\"name\":\"$name\"}" 2>/dev/null
+}
 
 uxc_preinst() {
 	local name="$1" newvol="$2" newsize="$3"
 	local reg="/tmp/run/uvol/.meta/uxc/$name.json"
-	local oldvol free i
+	local oldvol free
 
 	[ -n "$IPKG_INSTROOT" ] && return 0
 
@@ -22,12 +27,7 @@ uxc_preinst() {
 	[ -z "$oldvol" ] && return 0
 	[ "$oldvol" = "$newvol" ] && return 0
 
-	uxc kill "$name" KILL 2>/dev/null
-	i=0
-	while [ "$i" -lt "$UXC_STOP_WAIT" ] && uxc list 2>/dev/null | grep -qE "^$name[[:space:]].*[[:space:]]running"; do
-		sleep 1
-		i=$((i + 1))
-	done
+	uxc_instance_delete "$name"
 
 	free="$(uvol free 2>/dev/null)"
 	if [ -n "$free" ] && [ -n "$newsize" ] && [ "$free" -lt "$newsize" ]; then
@@ -49,8 +49,7 @@ uxc_prerm() {
 	local name="$1"
 
 	[ -n "$IPKG_INSTROOT" ] && return 0
-	uxc kill "$name" 2>/dev/null
-	ubus call container delete "{\"name\":\"$name\"}" 2>/dev/null
+	uxc_instance_delete "$name"
 
 	return 0
 }
@@ -60,7 +59,8 @@ uxc_postrm() {
 
 	[ -n "$IPKG_INSTROOT" ] && return 0
 
-	rm -rf "/tmp/run/uvol/.meta/uxc/state/$name" "/tmp/run/uvol/.meta/uxc/settings/$name.json"
+	rm -rf "/tmp/run/uvol/.meta/uxc/state/$name" "/tmp/run/uvol/.meta/uxc/settings/$name.json" \
+		"/tmp/run/uxc/$name"
 
 	left="$(uvol list 2>/dev/null | while read -r vn rest; do
 		case "$vn" in "$name"|"$name".*) echo "$vn";; esac

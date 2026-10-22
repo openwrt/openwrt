@@ -1,0 +1,137 @@
+From 5330c3c2a6c3dfe8487ae001a0d79f8faf9dbbf4 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Fri, 9 Oct 2026 14:25:48 +0100
+Subject: [PATCH] ARM: dts: rockchip: add i2c and spi controllers to rv1126
+
+The RV1126 has six I2C controllers and two SPI controllers, of which
+i2c0, i2c2 and i2c3 are described. Add the remaining I2C controllers
+and both SPI controllers, using the first pin group of each function
+as default.
+
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ arch/arm/boot/dts/rockchip/rv1126.dtsi | 74 ++++++++++++++++++++++++++
+ 1 file changed, 74 insertions(+)
+
+--- a/arch/arm/boot/dts/rockchip/rv1126.dtsi
++++ b/arch/arm/boot/dts/rockchip/rv1126.dtsi
+@@ -22,14 +22,19 @@
+ 
+ 	aliases {
+ 		i2c0 = &i2c0;
++		i2c1 = &i2c1;
+ 		i2c2 = &i2c2;
+ 		i2c3 = &i2c3;
++		i2c4 = &i2c4;
++		i2c5 = &i2c5;
+ 		serial0 = &uart0;
+ 		serial1 = &uart1;
+ 		serial2 = &uart2;
+ 		serial3 = &uart3;
+ 		serial4 = &uart4;
+ 		serial5 = &uart5;
++		spi0 = &spi0;
++		spi1 = &spi1;
+ 	};
+ 
+ 	cpus {
+@@ -456,6 +461,21 @@
+ 		status = "disabled";
+ 	};
+ 
++	spi0: spi@ff450000 {
++		compatible = "rockchip,rv1126-spi", "rockchip,rk3066-spi";
++		reg = <0xff450000 0x1000>;
++		interrupts = <GIC_SPI 10 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&pmucru CLK_SPI0>, <&pmucru PCLK_SPI0>;
++		clock-names = "spiclk", "apb_pclk";
++		dmas = <&dmac 1>, <&dmac 0>;
++		dma-names = "tx", "rx";
++		pinctrl-names = "default";
++		pinctrl-0 = <&spi0m0_cs0 &spi0m0_cs1 &spi0m0_pins>;
++		#address-cells = <1>;
++		#size-cells = <0>;
++		status = "disabled";
++	};
++
+ 	pmucru: clock-controller@ff480000 {
+ 		compatible = "rockchip,rv1126-pmucru";
+ 		reg = <0xff480000 0x1000>;
+@@ -549,6 +569,20 @@
+ 		clock-names = "apb_pclk";
+ 	};
+ 
++	i2c1: i2c@ff510000 {
++		compatible = "rockchip,rv1126-i2c", "rockchip,rk3399-i2c";
++		reg = <0xff510000 0x1000>;
++		interrupts = <GIC_SPI 5 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&cru CLK_I2C1>, <&cru PCLK_I2C1>;
++		clock-names = "i2c", "pclk";
++		pinctrl-names = "default";
++		pinctrl-0 = <&i2c1_xfer>;
++		rockchip,grf = <&pmugrf>;
++		#address-cells = <1>;
++		#size-cells = <0>;
++		status = "disabled";
++	};
++
+ 	i2c3: i2c@ff520000 {
+ 		compatible = "rockchip,rv1126-i2c", "rockchip,rk3399-i2c";
+ 		reg = <0xff520000 0x1000>;
+@@ -563,6 +597,34 @@
+ 		status = "disabled";
+ 	};
+ 
++	i2c4: i2c@ff530000 {
++		compatible = "rockchip,rv1126-i2c", "rockchip,rk3399-i2c";
++		reg = <0xff530000 0x1000>;
++		interrupts = <GIC_SPI 8 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&cru CLK_I2C4>, <&cru PCLK_I2C4>;
++		clock-names = "i2c", "pclk";
++		pinctrl-names = "default";
++		pinctrl-0 = <&i2c4m0_xfer>;
++		rockchip,grf = <&pmugrf>;
++		#address-cells = <1>;
++		#size-cells = <0>;
++		status = "disabled";
++	};
++
++	i2c5: i2c@ff540000 {
++		compatible = "rockchip,rv1126-i2c", "rockchip,rk3399-i2c";
++		reg = <0xff540000 0x1000>;
++		interrupts = <GIC_SPI 9 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&cru CLK_I2C5>, <&cru PCLK_I2C5>;
++		clock-names = "i2c", "pclk";
++		pinctrl-names = "default";
++		pinctrl-0 = <&i2c5m0_xfer>;
++		rockchip,grf = <&pmugrf>;
++		#address-cells = <1>;
++		#size-cells = <0>;
++		status = "disabled";
++	};
++
+ 	pwm8: pwm@ff550000 {
+ 		compatible = "rockchip,rv1126-pwm", "rockchip,rk3328-pwm";
+ 		reg = <0xff550000 0x10>;
+@@ -687,6 +749,21 @@
+ 		status = "disabled";
+ 	};
+ 
++	spi1: spi@ff5b0000 {
++		compatible = "rockchip,rv1126-spi", "rockchip,rk3066-spi";
++		reg = <0xff5b0000 0x1000>;
++		interrupts = <GIC_SPI 11 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&cru CLK_SPI1>, <&cru PCLK_SPI1>;
++		clock-names = "spiclk", "apb_pclk";
++		dmas = <&dmac 3>, <&dmac 2>;
++		dma-names = "tx", "rx";
++		pinctrl-names = "default";
++		pinctrl-0 = <&spi1m0_cs0 &spi1m0_cs1 &spi1m0_pins>;
++		#address-cells = <1>;
++		#size-cells = <0>;
++		status = "disabled";
++	};
++
+ 	saradc: adc@ff5e0000 {
+ 		compatible = "rockchip,rv1126-saradc", "rockchip,rk3399-saradc";
+ 		reg = <0xff5e0000 0x100>;

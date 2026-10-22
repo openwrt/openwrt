@@ -166,8 +166,7 @@ define KernelPackage/mlxreg
 	CONFIG_SENSORS_MLXREG_FAN \
 	CONFIG_LEDS_MLXREG
   FILES:= \
-	$(LINUX_DIR)/drivers/platform/x86/mlx-platform.ko@lt6.18 \
-	$(LINUX_DIR)/drivers/platform/mellanox/mlx-platform.ko@ge6.18 \
+	$(LINUX_DIR)/drivers/platform/mellanox/mlx-platform.ko \
 	$(LINUX_DIR)/drivers/platform/mellanox/mlxreg-hotplug.ko \
 	$(LINUX_DIR)/drivers/platform/mellanox/mlxreg-io.ko \
 	$(LINUX_DIR)/drivers/hwmon/mlxreg-fan.ko \
@@ -298,7 +297,6 @@ define KernelPackage/parport-pc
 	CONFIG_PARPORT_PC_PCMCIA=n \
 	CONFIG_PARPORT_PC_SUPERIO=y \
 	CONFIG_PARPORT_SERIAL=n \
-	CONFIG_PARIDE=n \
 	CONFIG_SCSI_IMM=n \
 	CONFIG_SCSI_PPA=n
   FILES:= \
@@ -331,7 +329,6 @@ define KernelPackage/mmc
 	CONFIG_MMC \
 	CONFIG_MMC_BLOCK \
 	CONFIG_MMC_DEBUG=n \
-	CONFIG_MMC_UNSAFE_RESUME=n \
 	CONFIG_MMC_TIFM_SD=n \
 	CONFIG_MMC_WBSD=n \
 	CONFIG_SDIO_UART=n
@@ -421,8 +418,7 @@ define KernelPackage/ssb
 	CONFIG_SSB_PCIHOST=y \
 	CONFIG_SSB_PCIHOST_POSSIBLE=y \
 	CONFIG_SSB_POSSIBLE=y \
-	CONFIG_SSB_SPROM=y \
-	CONFIG_SSB_SILENT=y
+	CONFIG_SSB_SPROM=y
   FILES:=$(LINUX_DIR)/drivers/ssb/ssb.ko
   AUTOLOAD:=$(call AutoLoad,18,ssb,1)
 endef
@@ -636,7 +632,7 @@ define KernelPackage/serial-8250-exar
   KCONFIG:= CONFIG_SERIAL_8250_EXAR
   FILES:=$(LINUX_DIR)/drivers/tty/serial/8250/8250_exar.ko
   AUTOLOAD:=$(call AutoProbe,8250 8250_base 8250_exar)
-  DEPENDS:=@PCI_SUPPORT +kmod-serial-8250 +!LINUX_6_12:kmod-eeprom-93cx6
+  DEPENDS:=@PCI_SUPPORT +kmod-serial-8250 +kmod-eeprom-93cx6
 endef
 
 define KernelPackage/serial-8250-exar/description
@@ -739,7 +735,6 @@ define KernelPackage/zram
   KCONFIG:= \
 	CONFIG_ZSMALLOC \
 	CONFIG_ZRAM \
-	CONFIG_ZRAM_DEBUG=n \
 	CONFIG_ZRAM_WRITEBACK=n \
 	CONFIG_ZSMALLOC_STAT=n
   FILES:= \
@@ -878,8 +873,7 @@ define KernelPackage/ptp-qoriq
   TITLE:=Freescale QorIQ PTP support
   DEPENDS:=@(TARGET_mpc85xx||TARGET_qoriq) +kmod-ptp
   KCONFIG:=CONFIG_PTP_1588_CLOCK_QORIQ
-  FILES:=$(LINUX_DIR)/drivers/ptp/ptp-qoriq.ko@lt6.18 \
-	$(LINUX_DIR)/drivers/ptp/ptp_qoriq.ko@ge6.18
+  FILES:=$(LINUX_DIR)/drivers/ptp/ptp_qoriq.ko
   AUTOLOAD:=$(call AutoProbe,ptp-qoriq)
 endef
 
@@ -932,23 +926,6 @@ define KernelPackage/thermal/description
 endef
 
 $(eval $(call KernelPackage,thermal))
-
-
-define KernelPackage/echo
-  SUBMENU:=$(OTHER_MENU)
-  TITLE:=Line Echo Canceller
-  DEPENDS:=@LINUX_6_12
-  KCONFIG:=CONFIG_ECHO
-  FILES:=$(LINUX_DIR)/drivers/misc/echo/echo.ko
-  AUTOLOAD:=$(call AutoLoad,50,echo)
-endef
-
-define KernelPackage/echo/description
- This driver provides line echo cancelling support for mISDN and
- DAHDI drivers
-endef
-
-$(eval $(call KernelPackage,echo))
 
 
 define KernelPackage/tee
@@ -1093,6 +1070,22 @@ define KernelPackage/tpm/description
 endef
 
 $(eval $(call KernelPackage,tpm))
+
+define KernelPackage/tpm-crb
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=TCG CRB 2.0 TPM Interface
+  DEPENDS:=@(TARGET_x86||TARGET_armsr) +kmod-tpm
+  KCONFIG:=CONFIG_TCG_CRB
+  FILES:=$(LINUX_DIR)/drivers/char/tpm/tpm_crb.ko
+  AUTOLOAD:=$(call AutoLoad,15,tpm_crb,1)
+endef
+
+define KernelPackage/tpm-crb/description
+  This device driver implements the TPM interface as defined in
+  the TCG CRB 2.0 TPM specification.
+endef
+
+$(eval $(call KernelPackage,tpm-crb))
 
 define KernelPackage/tpm-ftpm-tee
   SUBMENU:=$(OTHER_MENU)

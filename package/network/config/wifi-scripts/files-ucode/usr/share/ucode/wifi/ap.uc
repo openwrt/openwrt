@@ -148,7 +148,7 @@ function iface_setup(config) {
 	comment('Setup interface: ' + config.ifname);
 
 	config.bridge = config.network_bridge;
-	config.snoop_iface = config.network_ifname;
+	config.snoop_iface = config.proxy_arp ? config.network_ifname : null;
 	if (!config.wds)
 		config.wds_bridge = null;
 	else

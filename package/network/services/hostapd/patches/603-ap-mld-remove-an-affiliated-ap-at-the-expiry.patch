@@ -3,7 +3,7 @@ From: Felix Fietkau <nbd@nbd.name>
 Date: Tue, 29 Sep 2026 09:48:03 +0200
 Subject: [PATCH] AP MLD: remove an affiliated AP at the expiry of its timer
 
-Depends on 186-ap-mld-announce-the-removal-of-an-affiliated-ap.patch,
+Depends on 602-ap-mld-announce-the-removal-of-an-affiliated-ap.patch,
 which counts the AP Removal Timer and left the BSS running at 0.
 
 The BSS kept beaconing until the caller reconfigured the AP MLD, 1.64 s
@@ -105,7 +105,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/src/ap/beacon.c
 +++ b/src/ap/beacon.c
-@@ -2779,6 +2779,15 @@ static int __ieee802_11_set_beacon(struc
+@@ -2800,6 +2800,15 @@ static int __ieee802_11_set_beacon(struc
  		return -1;
  	}
  
@@ -123,7 +123,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		return -1;
 --- a/src/ap/hostapd.c
 +++ b/src/ap/hostapd.c
-@@ -492,6 +492,240 @@ static void hostapd_link_remove_timeout_
+@@ -497,6 +497,240 @@ static void hostapd_link_remove_timeout_
  }
  
  
@@ -364,7 +364,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  static void hostapd_link_remove_timeout_handler(void *eloop_data,
  						void *user_ctx)
  {
-@@ -505,13 +739,12 @@ static void hostapd_link_remove_timeout_
+@@ -510,13 +744,12 @@ static void hostapd_link_remove_timeout_
  		   hapd->mld_link_id,
  		   hapd->eht_mld_link_removal_count);
  
@@ -380,7 +380,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	hostapd_link_remove_timeout_register(hapd);
  }
  
-@@ -524,9 +757,29 @@ int hostapd_link_remove(struct hostapd_d
+@@ -529,9 +762,29 @@ int hostapd_link_remove(struct hostapd_d
  	    count > 0xffff)
  		return -1;
  
@@ -411,7 +411,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	wpa_printf(MSG_DEBUG,
  		   "MLD: Remove link_id=%u in %u beacons",
  		   hapd->mld_link_id, count);
-@@ -537,10 +790,9 @@ int hostapd_link_remove(struct hostapd_d
+@@ -542,10 +795,9 @@ int hostapd_link_remove(struct hostapd_d
  	if (hapd->eht_mld_bss_param_change == 255)
  		hapd->eht_mld_bss_param_change = 0;
  
@@ -423,7 +423,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	return 0;
  }
  
-@@ -551,7 +803,10 @@ void hostapd_free_hapd_data(struct hosta
+@@ -556,7 +808,10 @@ void hostapd_free_hapd_data(struct hosta
  {
  #ifdef CONFIG_IEEE80211BE
  	eloop_cancel_timeout(hostapd_link_remove_timeout_handler, hapd, NULL);
@@ -436,7 +436,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	os_free(hapd->probereq_cb);
 --- a/src/ap/hostapd.h
 +++ b/src/ap/hostapd.h
-@@ -546,6 +546,8 @@ struct hostapd_data {
+@@ -553,6 +553,8 @@ struct hostapd_data {
  	u16 eht_mld_link_removal_start;
  	u16 eht_mld_link_removal_count;
  	struct os_reltime eht_mld_link_removal_due;
@@ -445,7 +445,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  #endif /* CONFIG_IEEE80211BE */
  
  #ifdef CONFIG_NAN_USD
-@@ -987,6 +989,10 @@ struct hostapd_data * hostapd_mld_get_li
+@@ -998,6 +1000,10 @@ struct hostapd_data * hostapd_mld_get_li
  					       u8 link_id);
  int hostapd_link_remove(struct hostapd_data *hapd, u32 count);
  bool hostapd_link_remove_critical_update(struct hostapd_data *hapd);
@@ -458,7 +458,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  u8 hostapd_get_mld_id(struct hostapd_data *hapd);
 --- a/src/ap/ieee802_11.c
 +++ b/src/ap/ieee802_11.c
-@@ -9122,10 +9122,16 @@ void ieee802_11_mgmt_cb(struct hostapd_d
+@@ -9206,10 +9206,16 @@ void ieee802_11_mgmt_cb(struct hostapd_d
  	case WLAN_FC_STYPE_DEAUTH:
  		wpa_printf(MSG_DEBUG, "mgmt::deauth cb");
  		handle_deauth_cb(hapd, mgmt, len, ok);
@@ -477,10 +477,10 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		wpa_printf(MSG_DEBUG, "mgmt::action cb ok=%d", ok);
 --- a/src/ap/sta_info.h
 +++ b/src/ap/sta_info.h
-@@ -352,6 +352,7 @@ struct sta_info {
- 	 * transaction 1 is the only peer link address available for the reply.
- 	 */
- 	u8 auth_link_addr[ETH_ALEN];
+@@ -347,6 +347,7 @@ struct sta_info {
+ 	struct mld_info mld_info;
+ 	u8 mld_assoc_link_id;
+ 	struct link_reconf_req_list *reconf_req;
 +	bool link_removal_tx;
  #endif /* CONFIG_IEEE80211BE */
  

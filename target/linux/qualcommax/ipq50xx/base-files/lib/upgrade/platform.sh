@@ -6,6 +6,13 @@ REQUIRE_IMAGE_METADATA=1
 RAMFS_COPY_BIN='dumpimage fw_printenv fw_setenv head seq'
 RAMFS_COPY_DATA='/etc/fw_env.config /var/lock/fw_printenv.lock'
 
+fritzbox_remove_oem_ubi_volumes() {
+	remove_oem_ubi_volume avm_filesys_0
+	remove_oem_ubi_volume avm_filesys_1
+	remove_oem_ubi_volume avm_config
+	remove_oem_ubi_volume avm_userdata
+}
+
 xiaomi_initramfs_prepare() {
 	# Wipe UBI if running initramfs
 	[ "$(rootfs_type)" = "tmpfs" ] || return 0
@@ -171,6 +178,9 @@ platform_check_image() {
 
 platform_pre_upgrade() {
 	case "$(board_name)" in
+	avm,fritzbox-4050)
+		fritzbox_remove_oem_ubi_volumes
+		;;
 	xiaomi,ax6000)
 		xiaomi_initramfs_prepare
 		;;
@@ -179,6 +189,14 @@ platform_pre_upgrade() {
 
 platform_do_upgrade() {
 	case "$(board_name)" in
+	avm,fritzbox-4050)
+		sync
+		CI_KERNPART="fit0"
+		nand_do_flash_file "$1" || nand_do_upgrade_failed
+		CI_KERNPART="fit1"
+		nand_do_flash_file "$1" || nand_do_upgrade_failed
+		nand_do_upgrade_success
+		;;
 	cmcc,mr3000d-ci|\
 	cmcc,pz-l8|\
 	cmcc,rax3000q|\
@@ -210,6 +228,7 @@ platform_do_upgrade() {
 		remove_oem_ubi_volume wifi_fw
 		glinet_do_upgrade "$1"
 		;;
+	linksys,mr2000|\
 	linksys,mr5500|\
 	linksys,mx2000|\
 	linksys,mx5500|\
@@ -292,6 +311,14 @@ platform_do_upgrade() {
 		remove_oem_ubi_volume tp_data
 		nand_do_upgrade "$1"
 		;;
+	wallys,dr5018s)
+		CI_UBIPART="rootfs"
+		remove_oem_ubi_volume debug
+		remove_oem_ubi_volume ubi_rootfs
+		remove_oem_ubi_volume bt_fw
+		remove_oem_ubi_volume wifi_fw
+		nand_do_upgrade "$1"
+		;;
 	xiaomi,ax6000|\
 	xiaomi,redmi-ax5400)
 		# Make sure that UART is enabled
@@ -311,6 +338,7 @@ platform_do_upgrade() {
 		CI_DATA_UBIPART="rootfs"
 		nand_do_upgrade "$1"
 		;;
+	xunison,exigo-hub-d50-5g|\
 	yuncore,ax830|\
 	yuncore,ax850|\
 	zyxel,scr50axe)
@@ -318,6 +346,10 @@ platform_do_upgrade() {
 		remove_oem_ubi_volume ubi_rootfs
 		remove_oem_ubi_volume bt_fw
 		remove_oem_ubi_volume wifi_fw
+		nand_do_upgrade "$1"
+		;;
+	zte,t5400)
+		CI_UBIPART="rootfs"
 		nand_do_upgrade "$1"
 		;;
 	*)

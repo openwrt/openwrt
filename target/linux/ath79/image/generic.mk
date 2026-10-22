@@ -113,10 +113,10 @@ define Build/nec-enc
 endef
 
 define Build/nec-fw
-  ( stat -c%s $@ | tr -d "\n" | dd bs=16 count=1 conv=sync; ) >> $@
+  ( stat -c%s $@ | tr -d "\n" | dd bs=16 count=1 conv=sync iflag=fullblock; ) >> $@
   ( \
-    echo -n -e "$(1)" | dd bs=16 count=1 conv=sync; \
-    echo -n "0.0.00" | dd bs=16 count=1 conv=sync; \
+    echo -n -e "$(1)" | dd bs=16 count=1 conv=sync iflag=fullblock; \
+    echo -n "0.0.00" | dd bs=16 count=1 conv=sync iflag=fullblock; \
     dd if=$@; \
   ) > $@.new
   mv $@.new $@

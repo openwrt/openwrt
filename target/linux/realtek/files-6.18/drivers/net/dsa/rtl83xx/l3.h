@@ -7,6 +7,8 @@
 #ifndef _OTTO_L3_H
 #define _OTTO_L3_H
 
+#include <net/inet_dscp.h>
+
 #include "l3_limits.h"
 #include "rtl-otto.h"
 
@@ -15,6 +17,9 @@ struct fib6_info;
 #define MAX_SMACS 64
 #define MAX_DMACS 2048
 #define MAX_ROUTER_MACS 64
+#define MAX_SWITCH_MACS 16
+/* What an unused switch MAC entry holds (Realtek GPL SDK, dal_cypress_l3_init()) */
+#define SWITCH_MAC_FREE 0xfffffffffffeULL
 #define MAX_HOST_ROUTES		1536
 #define MAX_ROUTES		512
 
@@ -97,10 +102,24 @@ struct otto_l3_route {
 	bool srcs_incomplete;		/* a source could not be tracked */
 	struct list_head list;		/* all routes, for every lookup */
 	u32 tb_id;			/* routing table the route came from */
-	u16 switch_mac_id;		/* Index into switch's own MACs, RTL839X only */
+	int switch_mac_id;		/* Switch MAC entry it routes with, RTL839x */
+	u64 switch_mac;			/* MAC of its device, which that entry holds */
+	bool l2_taken;			/* its gateway's L2 entry names another row */
 	struct otto_l3_nexthop nh;
 	struct pie_rule pr;
+	struct fib_info *fi;
+	bool hw_forward;
+	dscp_t dscp;
+	u8 fib_type;
 	struct otto_l3_route_attr attr;
+};
+
+/* What a DMAC entry holds: a gateway's MAC and, on RTL839x, the switch MAC
+ * entry the frames routed to it leave with
+ */
+struct otto_l3_dmac {
+	u64 mac;
+	u16 smac_id;	/* not taken for RTL930x */
 };
 
 struct otto_l3_config {
@@ -110,11 +129,23 @@ struct otto_l3_config {
 	 * need a PIE rule to match the destination and point at the next hop.
 	 */
 	bool use_l3_tables;
+	/* RTL839x: a route holds the source MAC entry of the device it goes
+	 * out of, which its DMAC entry names, and the source MAC entries are
+	 * also the MACs whose frames are routed. RTL930x reaches its source MAC
+	 * through the egress interface of a next hop instead.
+	 */
+	bool smac_per_route;
 	int (*find_slot)(struct otto_l3_ctrl *ctrl, struct otto_l3_route *rt, bool must_exist);
 	void (*get_egress_intf)(struct otto_l3_ctrl *ctrl, int idx, struct otto_l3_intf *intf);
 	void (*set_egress_intf)(struct otto_l3_ctrl *ctrl, int idx, struct otto_l3_intf *intf);
-	u64 (*get_egress_mac)(struct otto_l3_ctrl *ctrl, u32 idx);
-	int (*set_egress_mac)(struct otto_l3_ctrl *ctrl, u32 idx, u64 mac);
+	/* Source MAC entries by their index: on RTL839x those of
+	 * ROUTING_SA_CTRL, on RTL930x the source MAC rows of the egress MAC
+	 * table
+	 */
+	int (*get_smac)(struct otto_l3_ctrl *ctrl, u32 idx, u64 *mac);
+	int (*set_smac)(struct otto_l3_ctrl *ctrl, u32 idx, u64 mac);
+	int (*get_dmac)(struct otto_l3_ctrl *ctrl, u32 idx, struct otto_l3_dmac *dmac);
+	int (*set_dmac)(struct otto_l3_ctrl *ctrl, u32 idx, const struct otto_l3_dmac *dmac);
 	void (*host_route_write)(struct otto_l3_ctrl *ctrl, int idx, struct otto_l3_route *rt);
 	void (*get_router_mac)(struct otto_l3_ctrl *ctrl, u32 idx, struct otto_l3_router_mac *m);
 	void (*set_router_mac)(struct otto_l3_ctrl *ctrl, u32 idx, struct otto_l3_router_mac *m);
@@ -122,8 +153,18 @@ struct otto_l3_config {
 	void (*set_nexthop)(struct otto_l3_ctrl *ctrl, int idx, u16 dmac_id, u16 interface);
 	int (*route_lookup_hw)(struct otto_l3_ctrl *ctrl, struct otto_l3_route *rt);
 	int (*route_rows_move)(struct otto_l3_ctrl *ctrl, int dst, int src, int count);
-	void (*route_read)(struct otto_l3_ctrl *ctrl, int idx, struct otto_l3_route *rt);
-	void (*route_write)(struct otto_l3_ctrl *ctrl, int idx, struct otto_l3_route *rt);
+	/* First prefix table row of the IPv6 entry in a slot, the slots counted
+	 * from the first IPv6 entry downwards, and the slot of an entry's first
+	 * row. Every family that moves prefix rows has them.
+	 */
+	int (*v6_slot_to_row)(struct otto_l3_ctrl *ctrl, int slot);
+	int (*v6_row_to_slot)(struct otto_l3_ctrl *ctrl, int row);
+	/* 1 when a prefix row holds the route, 0 when it holds nothing or
+	 * another one, negative when it could not be read. Every family that
+	 * moves prefix rows has it.
+	 */
+	int (*route_matches)(struct otto_l3_ctrl *ctrl, int row, struct otto_l3_route *rt);
+	int (*route_write)(struct otto_l3_ctrl *ctrl, int idx, struct otto_l3_route *rt);
 	int (*setup)(struct otto_l3_ctrl *ctrl);
 	void (*dbgfs_init)(struct otto_l3_ctrl *ctrl);
 };
@@ -131,7 +172,7 @@ struct otto_l3_config {
 struct otto_l3_ctrl {
 	const struct otto_l3_config *cfg;
 	struct device *dev;
-	struct rtl838x_switch_priv *priv;
+	struct otto_dsa_priv *priv;
 	struct notifier_block fib_nb;
 	struct notifier_block ne_nb;
 	struct notifier_block nd_nb;
@@ -144,8 +185,10 @@ struct otto_l3_ctrl {
 	unsigned long host_route_use_bm[MAX_HOST_ROUTES / 32];
 	struct otto_l3_intf interfaces[MAX_SMACS];
 	unsigned int intf_refs[MAX_SMACS];	/* routes holding each */
-	u64 *dmacs;				/* gateway MAC of each DMAC entry */
+	struct otto_l3_dmac *dmacs;		/* what each DMAC entry holds */
 	unsigned int *dmac_refs;		/* routes holding each */
+	u64 switch_macs[MAX_SWITCH_MACS];	/* MAC of each switch MAC entry */
+	unsigned int switch_mac_refs[MAX_SWITCH_MACS];	/* routes holding each */
 	DECLARE_BITMAP(router_mac_bm, MAX_ROUTER_MACS);	/* entries written here */
 	bool prefix_rows_stale;	/* a move failed, the rows are not where we say */
 	bool v4_fwd_off;	/* policy rules keep IPv4 forwarding in software */
@@ -153,7 +196,7 @@ struct otto_l3_ctrl {
 	struct mutex *lock; /* protect register access */
 };
 
-int otto_l3_probe(struct device *dev, struct rtl838x_switch_priv *priv);
-void otto_l3_remove(struct rtl838x_switch_priv *priv);
+int otto_l3_probe(struct device *dev, struct otto_dsa_priv *priv);
+void otto_l3_remove(struct otto_dsa_priv *priv);
 
 #endif /* _OTTO_L3_H */

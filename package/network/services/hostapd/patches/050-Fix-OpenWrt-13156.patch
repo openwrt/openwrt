@@ -51,13 +51,30 @@ Signed-off-by: Stijn Tintel <stijn@linux-ipv6.be>
  	ap_sta_clear_assoc_timeout(hapd, sta);
 --- a/src/ap/sta_info.c
 +++ b/src/ap/sta_info.c
-@@ -1757,9 +1757,6 @@ bool ap_sta_set_authorized_flag(struct h
- 				mld_assoc_link_id = -2;
- 		}
- #endif /* CONFIG_IEEE80211BE */
+@@ -1746,24 +1746,10 @@ bool ap_sta_set_authorized_flag(struct h
+ 	if (!!authorized == !!(sta->flags & WLAN_STA_AUTHORIZED))
+ 		return false;
+ 
+-	if (authorized) {
+-		int mld_assoc_link_id = -1;
+-
+-#ifdef CONFIG_IEEE80211BE
+-		if (ap_sta_is_mld(hapd, sta)) {
+-			if (sta->mld_assoc_link_id == hapd->mld_link_id)
+-				mld_assoc_link_id = sta->mld_assoc_link_id;
+-			else
+-				mld_assoc_link_id = -2;
+-		}
+-#endif /* CONFIG_IEEE80211BE */
 -		if (mld_assoc_link_id != -2)
 -			hostapd_prune_associations(hapd, sta->addr,
 -						   mld_assoc_link_id);
++	if (authorized)
  		sta->flags |= WLAN_STA_AUTHORIZED;
- 	} else {
+-	} else {
++	else
  		sta->flags &= ~WLAN_STA_AUTHORIZED;
+-	}
+ 
+ 	return true;
+ }

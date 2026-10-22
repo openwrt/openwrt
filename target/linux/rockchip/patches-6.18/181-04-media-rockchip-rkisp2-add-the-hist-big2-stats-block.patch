@@ -1,0 +1,29 @@
+From 416e535d120275dfed7b3068a277f82aa07f0ef7 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Fri, 16 Oct 2026 12:36:54 +0100
+Subject: [PATCH] media: rockchip: rkisp2: Add the HIST_BIG2 stats block
+
+The statistics block table lists HIST_BIG1 twice and leaves the
+HIST_BIG2 entry zero-sized, so the third big histogram is written as a
+block of size zero that the following AWB block overwrites, and user
+space never sees it.
+
+Give HIST_BIG2 its own entry.
+
+Assisted-by: LLM
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ drivers/media/platform/rockchip/rkisp2/rkisp2-stats.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/media/platform/rockchip/rkisp2/rkisp2-stats.c
++++ b/drivers/media/platform/rockchip/rkisp2/rkisp2-stats.c
+@@ -28,7 +28,7 @@ rkisp2_stats_blocks_info[] = {
+ 	RKISP2_STATS_BLOCK_INFO(HIST_LITE, hist),
+ 	RKISP2_STATS_BLOCK_INFO(HIST_BIG0, hist),
+ 	RKISP2_STATS_BLOCK_INFO(HIST_BIG1, hist),
+-	RKISP2_STATS_BLOCK_INFO(HIST_BIG1, hist),
++	RKISP2_STATS_BLOCK_INFO(HIST_BIG2, hist),
+ 	RKISP2_STATS_BLOCK_INFO(AWB, awb),
+ };
+ 

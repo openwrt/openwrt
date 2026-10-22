@@ -11,20 +11,20 @@
 
 #include "pie.h"
 #include "rtl-otto.h"
+#include "stats.h"
 #include "tc.h"
 
 struct rtl83xx_flow {
 	unsigned long cookie;
 	struct rhash_head node;
 	struct rcu_head rcu_head;
-	struct rtl838x_switch_priv *priv;
+	struct otto_dsa_priv *priv;
 	struct pie_rule rule;
 	u32 flags;
 };
 
 #define RTL930X_BANDWIDTH_CTRL_EGRESS(port)	(0x7660 + (port * 16))
 #define RTL930X_BANDWIDTH_CTRL_INGRESS(port)	(0x8068 + (port * 4))
-#define RTL930X_BANDWIDTH_CTRL_MAX_BURST	(64 * 1000)
 #define RTL930X_BANDWIDTH_CTRL_INGRESS_BURST_HIGH_ON(port) \
 						(0x80DC + (port * 8))
 #define RTL930X_BANDWIDTH_CTRL_INGRESS_BURST_HIGH_OFF(port) \
@@ -43,10 +43,11 @@ struct rtl83xx_flow {
 #define RTL930X_INGRESS_FC_CTRL_EN(port)	BIT(port % 29)
 
 /* Parse the flow rule for the matching conditions */
-static int otto_tc_parse_flow_rule(struct rtl838x_switch_priv *priv,
+static int otto_tc_parse_flow_rule(struct otto_dsa_priv *priv,
 				   struct flow_rule *rule, struct rtl83xx_flow *flow)
 {
 	struct flow_dissector *dissector = rule->match.dissector;
+	struct flow_match_control control;
 	u64 supported_keys;
 
 	dev_dbg(priv->dev, "parsing flower match keys\n");
@@ -69,10 +70,6 @@ static int otto_tc_parse_flow_rule(struct rtl838x_switch_priv *priv,
 			dissector->used_keys & ~supported_keys);
 		return -EOPNOTSUPP;
 	}
-
-	if ((dissector->used_keys & BIT_ULL(FLOW_DISSECTOR_KEY_IPV4_ADDRS)) &&
-	    (dissector->used_keys & BIT_ULL(FLOW_DISSECTOR_KEY_IPV6_ADDRS)))
-		return -EOPNOTSUPP;
 
 	if (flow_rule_match_key(rule, FLOW_DISSECTOR_KEY_BASIC)) {
 		struct flow_match_basic match;
@@ -150,7 +147,13 @@ static int otto_tc_parse_flow_rule(struct rtl838x_switch_priv *priv,
 		flow->rule.itag_m = match.mask->vlan_id;
 	}
 
-	if (flow_rule_match_key(rule, FLOW_DISSECTOR_KEY_IPV4_ADDRS)) {
+	/* cls_flower keeps IPv4 and IPv6 addresses in one union, so an IPv4
+	 * rule shows the IPv6 key in use too: the address type tells which
+	 * one the rule holds, the key whether it matches on it at all.
+	 */
+	flow_rule_match_control(rule, &control);
+	if (control.key->addr_type == FLOW_DISSECTOR_KEY_IPV4_ADDRS &&
+	    flow_rule_match_key(rule, FLOW_DISSECTOR_KEY_IPV4_ADDRS)) {
 		struct flow_match_ipv4_addrs match;
 
 		dev_dbg(priv->dev, "match IPV4\n");
@@ -160,7 +163,8 @@ static int otto_tc_parse_flow_rule(struct rtl838x_switch_priv *priv,
 		flow->rule.dip_m = match.mask->dst;
 		flow->rule.sip = match.key->src;
 		flow->rule.sip_m = match.mask->src;
-	} else if (flow_rule_match_key(rule, FLOW_DISSECTOR_KEY_IPV6_ADDRS)) {
+	} else if (control.key->addr_type == FLOW_DISSECTOR_KEY_IPV6_ADDRS &&
+		   flow_rule_match_key(rule, FLOW_DISSECTOR_KEY_IPV6_ADDRS)) {
 		struct flow_match_ipv6_addrs match;
 
 		dev_dbg(priv->dev, "match IPV6\n");
@@ -231,7 +235,7 @@ static int otto_tc_validate_flow_actions(struct flow_rule *rule)
 	return 0;
 }
 
-static int otto_tc_parse_fwd(struct rtl838x_switch_priv *priv,
+static int otto_tc_parse_fwd(struct otto_dsa_priv *priv,
 			     const struct flow_action_entry *act, struct rtl83xx_flow *flow)
 {
 	struct net_device *dev = act->dev;
@@ -251,12 +255,12 @@ static int otto_tc_parse_fwd(struct rtl838x_switch_priv *priv,
 	return 0;
 }
 
-static int otto_tc_add_flow(struct rtl838x_switch_priv *priv, struct flow_cls_offload *f,
+static int otto_tc_add_flow(struct otto_dsa_priv *priv, struct flow_cls_offload *f,
 			    struct rtl83xx_flow *flow)
 {
 	struct flow_rule *rule = flow_cls_offload_flow_rule(f);
 	const struct flow_action_entry *act;
-	int i, err;
+	int i, err, port;
 
 	dev_dbg(priv->dev, "adding flower rule\n");
 
@@ -336,10 +340,30 @@ static int otto_tc_add_flow(struct rtl838x_switch_priv *priv, struct flow_cls_of
 
 		case FLOW_ACTION_MIRRED:
 			dev_dbg(priv->dev, "action MIRRED\n");
-			err = otto_tc_parse_fwd(priv, act, flow);
-			if (err)
+			if (!priv->r->pie_mirror_group) {
+				err = otto_tc_parse_fwd(priv, act, flow);
+				if (err)
+					return err;
+				flow->rule.fwd_act = PIE_ACT_COPY_TO_PORT;
+				break;
+			}
+			port = rtl83xx_port_is_under(act->dev, priv);
+			if (port < 0) {
+				netdev_info(act->dev, "not a DSA port on this switch\n");
+				return -EINVAL;
+			}
+			/* A copy through the forwarding action would take over the
+			 * forwarding decision of the L3 rules in later blocks.
+			 */
+			err = rtldsa_mirror_group_get(priv, port);
+			if (err < 0) {
+				if (err == -ENOSPC)
+					NL_SET_ERR_MSG_MOD(f->common.extack,
+							   "all four mirror groups are in use");
 				return err;
-			flow->rule.fwd_act = PIE_ACT_COPY_TO_PORT;
+			}
+			flow->rule.mir_sel = true;
+			flow->rule.mir_data = err;
 			break;
 
 		default:
@@ -358,7 +382,7 @@ static const struct rhashtable_params tc_ht_params = {
 	.automatic_shrinking = true,
 };
 
-int otto_tc_init(struct rtl838x_switch_priv *priv)
+int otto_tc_init(struct otto_dsa_priv *priv)
 {
 	int err;
 
@@ -375,11 +399,8 @@ int otto_tc_init(struct rtl838x_switch_priv *priv)
 	return 0;
 }
 
-/* Zero a PIE rule's LOG-table packet counter. On RTL930x the counter id is
- * the PIE rule id itself: the rule owns it and pie_rule_rm() releases it,
- * so there is nothing to hand back to an allocator here.
- */
-static void otto_tc_packet_cntr_clear(struct rtl838x_switch_priv *priv, int counter)
+/* Zero a PIE rule's LOG-table packet counter */
+static void otto_tc_packet_cntr_clear(struct otto_dsa_priv *priv, int counter)
 {
 	if (counter < 0 || !priv->r->packet_cntr_clear)
 		return;
@@ -389,13 +410,26 @@ static void otto_tc_packet_cntr_clear(struct rtl838x_switch_priv *priv, int coun
 	mutex_unlock(&priv->reg_mutex);
 }
 
+/* A flow's counter on its way out: zeroed, and handed back to the allocator
+ * where it came from there. On RTL930x the counter id is the PIE rule id
+ * itself: the rule owns it and pie_rule_rm() releases it.
+ */
+static void otto_tc_packet_cntr_put(struct otto_dsa_priv *priv, int counter)
+{
+	otto_tc_packet_cntr_clear(priv, counter);
+	if (!priv->r->pie_rule_id_is_log_counter)
+		otto_stats_packet_cntr_free(priv, counter);
+}
+
 static void otto_tc_flow_free(void *ptr, void *arg)
 {
 	struct rtl83xx_flow *flow = ptr;
-	struct rtl838x_switch_priv *priv = arg;
+	struct otto_dsa_priv *priv = arg;
 
 	priv->r->pie_rule_rm(priv, &flow->rule);
-	otto_tc_packet_cntr_clear(priv, flow->rule.packet_cntr);
+	otto_tc_packet_cntr_put(priv, flow->rule.packet_cntr);
+	if (flow->rule.mir_sel)
+		rtldsa_mirror_group_put(priv, flow->rule.mir_data);
 
 	/* Readers may still hold an RCU-protected reference after the
 	 * object has been removed from the hash table.
@@ -403,7 +437,7 @@ static void otto_tc_flow_free(void *ptr, void *arg)
 	kfree_rcu(flow, rcu_head);
 }
 
-void otto_tc_cleanup(struct rtl838x_switch_priv *priv)
+void otto_tc_cleanup(struct otto_dsa_priv *priv)
 {
 	if (!priv->tc_initialized)
 		return;
@@ -422,7 +456,7 @@ void otto_tc_cleanup(struct rtl838x_switch_priv *priv)
 	mutex_destroy(&priv->tc_flow_lock);
 }
 
-static int otto_tc_configure_flower(struct rtl838x_switch_priv *priv,
+static int otto_tc_configure_flower(struct otto_dsa_priv *priv,
 				    struct flow_cls_offload *f, int ingress_port)
 {
 	struct rtl83xx_flow *flow;
@@ -478,19 +512,28 @@ static int otto_tc_configure_flower(struct rtl838x_switch_priv *priv,
 	flow->rule.spn = ingress_port;
 	flow->rule.spn_m = 0x7f;
 
-	/* The only caller, otto_tc_pie_cls_flower_add(), is RTL930x-only, where
-	 * the PIE rule ID is also the LOG table counter ID: the counter is
-	 * implied by the rule and only known once pie_rule_add() has assigned
-	 * the ID. That range is kept out of rtldsa_packet_cntr_alloc(), so the
-	 * implied LOG entry cannot alias an L3 route PIE rule's counter.
+	/* Where the PIE rule ID is also the LOG table counter ID (RTL930x), the
+	 * counter is implied by the rule and only known once pie_rule_add() has
+	 * assigned the ID. That range is kept out of otto_stats_packet_cntr_alloc(),
+	 * so the implied LOG entry cannot alias an L3 route PIE rule's counter.
+	 * Elsewhere the rule logs into a counter of its own from the allocator.
 	 */
 	flow->rule.log_sel = true;
+	if (!priv->r->pie_rule_id_is_log_counter) {
+		flow->rule.packet_cntr = otto_stats_packet_cntr_alloc(priv);
+		if (flow->rule.packet_cntr < 0) {
+			err = -ENOSPC;
+			goto out_remove;
+		}
+		flow->rule.log_data = flow->rule.packet_cntr;
+	}
 
 	err = priv->r->pie_rule_add(priv, &flow->rule);
 	if (err)
 		goto out_remove;
 
-	flow->rule.packet_cntr = flow->rule.id;
+	if (priv->r->pie_rule_id_is_log_counter)
+		flow->rule.packet_cntr = flow->rule.id;
 	dev_dbg(priv->dev, "using PIE rule counter %d\n", flow->rule.packet_cntr);
 	otto_tc_packet_cntr_clear(priv, flow->rule.packet_cntr);
 
@@ -499,7 +542,9 @@ static int otto_tc_configure_flower(struct rtl838x_switch_priv *priv,
 
 out_remove:
 	rhashtable_remove_fast(&priv->tc_ht, &flow->node, tc_ht_params);
-	otto_tc_packet_cntr_clear(priv, flow->rule.packet_cntr);
+	otto_tc_packet_cntr_put(priv, flow->rule.packet_cntr);
+	if (flow->rule.mir_sel)
+		rtldsa_mirror_group_put(priv, flow->rule.mir_data);
 	/* published in tc_ht above; a concurrent reader may still hold a ref */
 	kfree_rcu(flow, rcu_head);
 	goto out_err;
@@ -513,7 +558,7 @@ out_unlock:
 	return err;
 }
 
-static int otto_tc_delete_flower(struct rtl838x_switch_priv *priv,
+static int otto_tc_delete_flower(struct otto_dsa_priv *priv,
 				 struct flow_cls_offload *cls_flower)
 {
 	struct rtl83xx_flow *flow;
@@ -540,7 +585,9 @@ static int otto_tc_delete_flower(struct rtl838x_switch_priv *priv,
 		goto out_unlock;
 
 	priv->r->pie_rule_rm(priv, &flow->rule);
-	otto_tc_packet_cntr_clear(priv, flow->rule.packet_cntr);
+	otto_tc_packet_cntr_put(priv, flow->rule.packet_cntr);
+	if (flow->rule.mir_sel)
+		rtldsa_mirror_group_put(priv, flow->rule.mir_data);
 
 	kfree_rcu(flow, rcu_head);
 
@@ -550,7 +597,7 @@ out_unlock:
 	return err;
 }
 
-static int otto_tc_stats_flower(struct rtl838x_switch_priv *priv,
+static int otto_tc_stats_flower(struct otto_dsa_priv *priv,
 				struct flow_cls_offload *cls_flower)
 {
 	struct rtl83xx_flow *flow;
@@ -597,28 +644,36 @@ out_unlock:
 	return err;
 }
 
-static int otto_tc_pie_cls_flower_add(struct rtl838x_switch_priv *priv, int port,
+static int otto_tc_pie_cls_flower_add(struct otto_dsa_priv *priv, int port,
 				      struct flow_cls_offload *cls, bool ingress)
 {
-	if (!ingress || !priv->r->pie_rule_id_is_log_counter)
+	if (!ingress || !priv->r->pie_cls_flower)
 		return -EOPNOTSUPP;
+
+	/* No goto chain is offloaded, so in hardware a rule of another chain
+	 * would see frames that never reach it in software.
+	 */
+	if (cls->common.chain_index) {
+		NL_SET_ERR_MSG_MOD(cls->common.extack, "only chain 0 is offloaded");
+		return -EOPNOTSUPP;
+	}
 
 	return otto_tc_configure_flower(priv, cls, port);
 }
 
-static int otto_tc_pie_cls_flower_del(struct rtl838x_switch_priv *priv,
+static int otto_tc_pie_cls_flower_del(struct otto_dsa_priv *priv,
 				      struct flow_cls_offload *cls, bool ingress)
 {
-	if (!ingress || !priv->r->pie_rule_id_is_log_counter)
+	if (!ingress || !priv->r->pie_cls_flower)
 		return -ENOENT;
 
 	return otto_tc_delete_flower(priv, cls);
 }
 
-static int otto_tc_pie_cls_flower_stats(struct rtl838x_switch_priv *priv,
+static int otto_tc_pie_cls_flower_stats(struct otto_dsa_priv *priv,
 					struct flow_cls_offload *cls, bool ingress)
 {
-	if (!ingress || !priv->r->pie_rule_id_is_log_counter)
+	if (!ingress || !priv->r->pie_cls_flower)
 		return -ENOENT;
 
 	return otto_tc_stats_flower(priv, cls);
@@ -646,6 +701,34 @@ otto_tc_rate_policy_extract(struct flow_cls_offload *cls)
 	return &rule->action.entries[0];
 }
 
+static bool otto_tc_flower_matches_all(struct flow_cls_offload *cls)
+{
+	struct flow_rule *rule = flow_cls_offload_flow_rule(cls);
+	struct flow_match_control control;
+	struct flow_match_basic basic;
+
+	if (cls->common.chain_index || cls->common.protocol != htons(ETH_P_ALL))
+		return false;
+
+	if (rule->match.dissector->used_keys &
+	    ~(BIT_ULL(FLOW_DISSECTOR_KEY_CONTROL) | BIT_ULL(FLOW_DISSECTOR_KEY_BASIC)))
+		return false;
+
+	if (flow_rule_match_key(rule, FLOW_DISSECTOR_KEY_BASIC)) {
+		flow_rule_match_basic(rule, &basic);
+		if (basic.mask->n_proto || basic.mask->ip_proto)
+			return false;
+	}
+
+	if (flow_rule_match_key(rule, FLOW_DISSECTOR_KEY_CONTROL)) {
+		flow_rule_match_control(rule, &control);
+		if (control.mask->addr_type || control.mask->flags)
+			return false;
+	}
+
+	return true;
+}
+
 static bool otto_tc_port_rate_police_validate(const struct flow_action_entry *act)
 {
 	if (!act)
@@ -671,6 +754,7 @@ int otto_tc_930x_port_rate_police_add(struct dsa_switch *ds, int port,
 				      const struct flow_action_entry *act,
 				      bool ingress)
 {
+	struct otto_dsa_priv *priv = ds->priv;
 	u32 burst;
 	u64 rate;
 	u32 addr;
@@ -703,7 +787,8 @@ int otto_tc_930x_port_rate_police_add(struct dsa_switch *ds, int port,
 		sw_w32_mask(0, RTL930X_INGRESS_FC_CTRL_EN(port),
 			    RTL930X_INGRESS_FC_CTRL(port));
 	} else {
-		burst = min_t(u32, act->police.burst, RTL930X_BANDWIDTH_CTRL_MAX_BURST);
+		/* the bucket is 16 bit wide and has to hold the burst and one frame */
+		burst = min_t(u32, act->police.burst, U16_MAX - priv->r->max_frame);
 
 		sw_w32(burst, addr + 4);
 	}
@@ -778,16 +863,16 @@ int otto_tc_931x_port_rate_police_del(struct dsa_switch *ds, int port,
 int otto_tc_cls_flower_add(struct dsa_switch *ds, int port,
 			   struct flow_cls_offload *cls, bool ingress)
 {
-	struct rtl838x_switch_priv *priv = ds->priv;
+	struct otto_dsa_priv *priv = ds->priv;
 	struct rtldsa_port *p = &priv->ports[port];
 	const struct flow_action_entry *act;
 	int ret;
 
-	/* a single rate/bandwidth limiter action is handled as port policing */
+	/* a single rate/bandwidth limiter action on all frames is handled as port policing */
 	act = otto_tc_rate_policy_extract(cls);
 
 	/* everything else is offloaded to the PIE engine */
-	if (!otto_tc_port_rate_police_validate(act))
+	if (!otto_tc_port_rate_police_validate(act) || !otto_tc_flower_matches_all(cls))
 		return otto_tc_pie_cls_flower_add(priv, port, cls, ingress);
 
 	if (!priv->r->port_rate_police_add)
@@ -811,9 +896,9 @@ int otto_tc_cls_flower_add(struct dsa_switch *ds, int port,
 		goto unlock;
 
 	if (ingress)
-		p->rate_police_ingress = true;
+		p->rate_police_ingress = cls->cookie;
 	else
-		p->rate_police_egress = true;
+		p->rate_police_egress = cls->cookie;
 
 unlock:
 	mutex_unlock(&priv->reg_mutex);
@@ -824,7 +909,7 @@ unlock:
 int otto_tc_cls_flower_del(struct dsa_switch *ds, int port,
 			   struct flow_cls_offload *cls, bool ingress)
 {
-	struct rtl838x_switch_priv *priv = ds->priv;
+	struct otto_dsa_priv *priv = ds->priv;
 	struct rtldsa_port *p = &priv->ports[port];
 	int ret;
 
@@ -842,14 +927,19 @@ int otto_tc_cls_flower_del(struct dsa_switch *ds, int port,
 
 	mutex_lock(&priv->reg_mutex);
 
+	if ((ingress ? p->rate_police_ingress : p->rate_police_egress) != cls->cookie) {
+		ret = -ENOENT;
+		goto unlock;
+	}
+
 	ret = priv->r->port_rate_police_del(ds, port, cls, ingress);
 	if (ret < 0)
 		goto unlock;
 
 	if (ingress)
-		p->rate_police_ingress = false;
+		p->rate_police_ingress = 0;
 	else
-		p->rate_police_egress = false;
+		p->rate_police_egress = 0;
 
 unlock:
 	mutex_unlock(&priv->reg_mutex);
@@ -860,7 +950,7 @@ unlock:
 int otto_tc_cls_flower_stats(struct dsa_switch *ds, int port,
 			     struct flow_cls_offload *cls, bool ingress)
 {
-	struct rtl838x_switch_priv *priv = ds->priv;
+	struct otto_dsa_priv *priv = ds->priv;
 	int ret;
 
 	/* only PIE flower rules provide per-rule statistics, and only ingress */

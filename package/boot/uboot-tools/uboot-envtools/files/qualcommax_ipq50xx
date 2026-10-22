@@ -17,6 +17,7 @@ glinet,gl-x2000|\
 iodata,wn-dax3000gr|\
 mercusys,mr80x-v2|\
 tplink,re700x|\
+xunison,exigo-hub-d50-5g|\
 zyxel,scr50axe)
 	ubootenv_add_mtd "0:appsblenv" "0x0" "0x40000" "0x20000"
 	;;
@@ -25,6 +26,7 @@ tplink,archer-ax55-v1|\
 tplink,eap650-outdoor-v1)
 	ubootenv_add_mtd "0:APPSBLENV" "0x0" "0x40000" "0x20000"
 	;;
+linksys,mr2000|\
 linksys,mr5500|\
 linksys,mx2000|\
 linksys,mx5500|\
@@ -32,14 +34,15 @@ linksys,mx6200|\
 linksys,spnmx56)
 	ubootenv_add_mtd "u_env" "0x0" "0x40000" "0x20000"
 	;;
+wallys,dr5018s|\
+yuncore,ax830|\
+yuncore,ax850)
+	ubootenv_add_mtd "0:APPSBLENV" "0x0" "0x10000" "0x10000"
+	;;
 xiaomi,ax6000|\
 xiaomi,redmi-ax5400)
 	ubootenv_add_mtd "0:appsblenv" "0x0" "0x10000" "0x20000"
 	ubootenv_add_sys_mtd "bdata" "0x0" "0x10000" "0x20000"
-	;;
-yuncore,ax830|\
-yuncore,ax850)
-	ubootenv_add_mtd "0:APPSBLENV" "0x0" "0x10000" "0x10000"
 	;;
 esac
 

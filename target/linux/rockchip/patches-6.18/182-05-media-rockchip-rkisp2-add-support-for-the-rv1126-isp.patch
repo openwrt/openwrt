@@ -1,0 +1,503 @@
+From 8e262f302c977cc5e603439cdee58d5b83ce6bc9 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Fri, 16 Oct 2026 23:54:05 +0100
+Subject: [PATCH] media: rockchip: rkisp2: Add support for the RV1126 ISP
+
+The RV1126 ISP is version 2.0 of the hardware that this driver supports
+on the RK3588. The register layout is the same for the blocks that the
+driver configures. It has three clocks, a third interrupt line for the
+CSI-2 receiver and memory read status, and 4416x3312 as maximum input
+size.
+
+Add the RV1126 model description and a handler for the third interrupt,
+which counts the receiver errors. The ISP 2.0 differs from the RK3588
+variant in a few places that the model description carries:
+
+ - the image stabiliser is gone, so its output crop is not programmed;
+ - the bus priorities and hurry modes come from the upper bits of the
+   ISP control register;
+ - the memory interface read and raw read clocks are gated by bits 21
+   and 22 of VI_ISP_CLK_CTRL, which have to be set;
+ - a raw readback delivers the last lines of a Bayer to YUV frame only
+   when the readback presents extra lines, which the readback buffer
+   size, the picture size and the ISP window include;
+ - the raw readback samples are not word swapped;
+ - the readback buffer is returned at the ISP frame complete interrupt,
+   when the whole frame has been read;
+ - the soft reset pulse of the ISP does not clear the readback front
+   end, so the stop path asserts the "isp" and "isp-rx-p" resets.
+
+Assisted-by: LLM
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ .../platform/rockchip/rkisp2/rkisp2-capture.c |  2 -
+ .../platform/rockchip/rkisp2/rkisp2-common.h  | 25 +++++++-
+ .../platform/rockchip/rkisp2/rkisp2-dev.c     | 40 +++++++++++-
+ .../platform/rockchip/rkisp2/rkisp2-dmarx.c   | 26 ++++----
+ .../platform/rockchip/rkisp2/rkisp2-isp.c     | 64 ++++++++++++++++++-
+ .../platform/rockchip/rkisp2/rkisp2-resizer.c |  5 +-
+ .../uapi/linux/media/rockchip/rkisp2-config.h |  2 +
+ 7 files changed, 141 insertions(+), 23 deletions(-)
+
+--- a/drivers/media/platform/rockchip/rkisp2/rkisp2-capture.c
++++ b/drivers/media/platform/rockchip/rkisp2/rkisp2-capture.c
+@@ -757,8 +757,6 @@ irqreturn_t rkisp2_capture_isr(int irq,
+ 		wake_up(&cap->done);
+ 	}
+ 
+-	rkisp2_dmarx_isr(rkisp2, status);
+-
+ 	rkisp2_write(rkisp2, RKISP2_CIF_MI_ICR, status);
+ 
+ 	return IRQ_HANDLED;
+--- a/drivers/media/platform/rockchip/rkisp2/rkisp2-common.h
++++ b/drivers/media/platform/rockchip/rkisp2/rkisp2-common.h
+@@ -28,6 +28,7 @@
+ #include "rkisp2-regs.h"
+ 
+ struct dentry;
++struct reset_control;
+ struct regmap;
+ 
+ /*
+@@ -52,6 +53,13 @@ struct regmap;
+ #define RKISP2_RSZ_SRC_MIN_HEIGHT		16
+ 
+ /* the default width and height of all the entities */
++/*
++ * The ISP 2.0 does not finish the last lines of a frame that is read back and
++ * converted from Bayer to YUV unless the readback presents this many lines
++ * more than the frame has.
++ */
++#define RKISP2_ISP20_RDBK_EXTRA_LINES		24
++
+ #define RKISP2_DEFAULT_WIDTH			800
+ #define RKISP2_DEFAULT_HEIGHT			600
+ 
+@@ -114,6 +122,11 @@ enum rkisp2_isp_pad {
+  *
+  * @RKISP2_FEATURE_DUAL_CROP: The ISP has the dual crop block at the resizer input
+  * @RKISP2_FEATURE_ACK_FRM_PRO: SWS_CFG has the frame process acknowledge disable bit
++ * @RKISP2_FEATURE_IS_CROP: The ISP has the output crop of the image stabiliser
++ * @RKISP2_FEATURE_NOC_HURRY: The ISP control register sets the bus priorities
++ * @RKISP2_FEATURE_RAWRD_SWAP: The raw readback swaps the words of unpacked samples
++ * @RKISP2_FEATURE_RAWRD_CLK: The clock control register gates the raw readback
++ * @RKISP2_FEATURE_RAWRD_RESET: The raw readback state is only cleared by the SoC reset
+  *
+  * The ISP features are stored in a bitmask in &rkisp2_info.features and allow
+  * the driver to implement support for features present in some ISP versions
+@@ -122,6 +135,11 @@ enum rkisp2_isp_pad {
+ enum rkisp2_feature {
+ 	RKISP2_FEATURE_DUAL_CROP = BIT(0),
+ 	RKISP2_FEATURE_ACK_FRM_PRO = BIT(1),
++	RKISP2_FEATURE_IS_CROP = BIT(2),
++	RKISP2_FEATURE_NOC_HURRY = BIT(3),
++	RKISP2_FEATURE_RAWRD_SWAP = BIT(4),
++	RKISP2_FEATURE_RAWRD_CLK = BIT(5),
++	RKISP2_FEATURE_RAWRD_RESET = BIT(6),
+ };
+ 
+ #define rkisp2_has_feature(rkisp2, feature) \
+@@ -138,6 +156,7 @@ enum rkisp2_feature {
+  * @features: bitmask of rkisp2_feature features implemented by the ISP
+  * @max_width: maximum input frame width
+  * @max_height: maximum input frame height
++ * @rdbk_extra_lines: lines added to the raw readback frame
+  *
+  * This structure contains information about the ISP specific to a particular
+  * ISP model, version, or integration in a particular SoC.
+@@ -151,6 +170,7 @@ struct rkisp2_info {
+ 	unsigned int features;
+ 	unsigned int max_width;
+ 	unsigned int max_height;
++	unsigned int rdbk_extra_lines;
+ };
+ 
+ /*
+@@ -244,7 +264,6 @@ struct rkisp2_dmarx_fmt {
+ 
+ struct rkisp2_rawrd_cfg {
+ 	const char *name;
+-	u32 ready_mask;
+ 	u32 base_reg;
+ 	u32 length_reg;
+ 	u32 enable_mask;
+@@ -474,6 +493,8 @@ struct rkisp2_device {
+ 	struct device *dev;
+ 	unsigned int clk_size;
+ 	struct clk_bulk_data clks[RKISP2_MAX_BUS_CLK];
++	struct clk *clk_core;
++	struct reset_control *rsts;
+ 	struct regmap *gasket;
+ 	unsigned int gasket_id;
+ 	struct v4l2_device v4l2_dev;
+@@ -589,7 +610,7 @@ const struct rkisp2_mbus_info *rkisp2_mb
+ irqreturn_t rkisp2_isp_isr(int irq, void *ctx);
+ irqreturn_t rkisp2_capture_isr(int irq, void *ctx);
+ irqreturn_t rkisp2_mipi_isr(int irq, void *ctx);
+-void rkisp2_dmarx_isr(struct rkisp2_device *rkisp2, u32 status);
++void rkisp2_dmarx_isr(struct rkisp2_device *rkisp2);
+ void rkisp2_params_isr(struct rkisp2_params *params);
+ irqreturn_t rkisp2_stats_isr_eof(struct rkisp2_stats *stats);
+ 
+--- a/drivers/media/platform/rockchip/rkisp2/rkisp2-dev.c
++++ b/drivers/media/platform/rockchip/rkisp2/rkisp2-dev.c
+@@ -20,6 +20,7 @@
+ #include <linux/platform_device.h>
+ #include <linux/pinctrl/consumer.h>
+ #include <linux/pm_runtime.h>
++#include <linux/reset.h>
+ #include <media/v4l2-fwnode.h>
+ #include <media/v4l2-mc.h>
+ #include <media/videobuf2-dma-contig.h>
+@@ -199,18 +200,44 @@ static const char * const rk3588_isp_clk
+ 	"clk_core_vicap",
+ };
+ 
++static const char * const rv1126_isp_clks[] = {
++	"aclk",
++	"hclk",
++	"clk_core",
++};
++
++static const struct rkisp2_isr_data rv1126_isp_isrs[] = {
++	{ "isp_irq", rkisp2_isp_isr, BIT(RKISP2_IRQ_ISP) },
++	{ "mi_irq", rkisp2_capture_isr, BIT(RKISP2_IRQ_MI) },
++	{ "mipi_irq", rkisp2_mipi_isr, BIT(RKISP2_IRQ_MIPI) },
++};
++
+ static const struct rkisp2_isr_data rk3588_isp_isrs[] = {
+ 	{ "isp_irq", rkisp2_isp_isr, BIT(RKISP2_IRQ_ISP) },
+ 	{ "mi_irq", rkisp2_capture_isr, BIT(RKISP2_IRQ_MI) },
+ };
+ 
++static const struct rkisp2_info rv1126_isp_info = {
++	.clks = rv1126_isp_clks,
++	.clk_size = ARRAY_SIZE(rv1126_isp_clks),
++	.isrs = rv1126_isp_isrs,
++	.isr_size = ARRAY_SIZE(rv1126_isp_isrs),
++	.isp_ver = RKISP2_V0,
++	.features = RKISP2_FEATURE_DUAL_CROP | RKISP2_FEATURE_NOC_HURRY |
++		    RKISP2_FEATURE_RAWRD_CLK | RKISP2_FEATURE_RAWRD_RESET,
++	.max_width = 4416,
++	.max_height = 3312,
++	.rdbk_extra_lines = RKISP2_ISP20_RDBK_EXTRA_LINES,
++};
++
+ static const struct rkisp2_info rk3588_isp_info = {
+ 	.clks = rk3588_isp_clks,
+ 	.clk_size = ARRAY_SIZE(rk3588_isp_clks),
+ 	.isrs = rk3588_isp_isrs,
+ 	.isr_size = ARRAY_SIZE(rk3588_isp_isrs),
+ 	.isp_ver = RKISP3_V0,
+-	.features = RKISP2_FEATURE_DUAL_CROP | RKISP2_FEATURE_ACK_FRM_PRO,
++	.features = RKISP2_FEATURE_DUAL_CROP | RKISP2_FEATURE_ACK_FRM_PRO |
++		    RKISP2_FEATURE_IS_CROP | RKISP2_FEATURE_RAWRD_SWAP,
+ 	.max_width = 4672,
+ 	.max_height = 3504,
+ };
+@@ -220,6 +247,10 @@ static const struct of_device_id rkisp2_
+ 		.compatible = "rockchip,rk3588-isp",
+ 		.data = &rk3588_isp_info,
+ 	},
++	{
++		.compatible = "rockchip,rv1126-isp",
++		.data = &rv1126_isp_info,
++	},
+ 	{},
+ };
+ MODULE_DEVICE_TABLE(of, rkisp2_of_match);
+@@ -287,6 +318,13 @@ static int rkisp2_probe(struct platform_
+ 	if (ret)
+ 		return ret;
+ 	rkisp2->clk_size = info->clk_size;
++	for (i = 0; i < info->clk_size; i++)
++		if (!strcmp(rkisp2->clks[i].id, "clk_core"))
++			rkisp2->clk_core = rkisp2->clks[i].clk;
++
++	rkisp2->rsts = devm_reset_control_array_get_optional_exclusive(dev);
++	if (IS_ERR(rkisp2->rsts))
++		return PTR_ERR(rkisp2->rsts);
+ 
+ 	pm_runtime_enable(&pdev->dev);
+ 
+--- a/drivers/media/platform/rockchip/rkisp2/rkisp2-dmarx.c
++++ b/drivers/media/platform/rockchip/rkisp2/rkisp2-dmarx.c
+@@ -81,7 +81,6 @@ static const struct rkisp2_dmarx_fmt rki
+ static const struct rkisp2_rawrd_cfg rkisp2_rawrd_cfgs[RKISP2_RAWRD_MAX] = {
+ 	[RKISP2_RAWRD0] = {
+ 		.name = RKISP2_RAWRD0_NAME,
+-		.ready_mask = RKISP2_CIF_MI_MP_FE | RKISP2_CIF_MI_SP_FE,
+ 		.base_reg = MI_RAW2_RD_BASE,
+ 		.length_reg = MI_RAW2_RD_LENGTH,
+ 		.enable_mask = SW_CSI_RAW2_RD_EN_ORG,
+@@ -89,7 +88,6 @@ static const struct rkisp2_rawrd_cfg rki
+ 	},
+ 	[RKISP2_RAWRD1] = {
+ 		.name = RKISP2_RAWRD1_NAME,
+-		.ready_mask = RKISP2_CIF_MI_MP_FE | RKISP2_CIF_MI_SP_FE,
+ 		.base_reg = MI_RAW0_RD_BASE,
+ 		.length_reg = MI_RAW0_RD_LENGTH,
+ 		.enable_mask = SW_CSI_RAW0_RD_EN_ORG,
+@@ -97,7 +95,6 @@ static const struct rkisp2_rawrd_cfg rki
+ 	},
+ 	[RKISP2_RAWRD2] = {
+ 		.name = RKISP2_RAWRD2_NAME,
+-		.ready_mask = RKISP2_CIF_MI_MP_FE | RKISP2_CIF_MI_SP_FE,
+ 		.base_reg = MI_RAW1_RD_BASE,
+ 		.length_reg = MI_RAW1_RD_LENGTH,
+ 		.enable_mask = SW_CSI_RAW1_RD_EN_ORG,
+@@ -164,7 +161,8 @@ static void rkisp2_rawrd_set_default_pix
+ 	pix->colorspace = V4L2_COLORSPACE_RAW;
+ 	stride = DIV_ROUND_UP(pix->width * fmt->bpp, 8);
+ 	pix->plane_fmt[0].bytesperline = stride;
+-	pix->plane_fmt[0].sizeimage = stride * pix->height;
++	pix->plane_fmt[0].sizeimage =
++		stride * (pix->height + chan->rkisp2->info->rdbk_extra_lines);
+ 	chan->fmt = fmt;
+ }
+ 
+@@ -174,7 +172,8 @@ static void rkisp2_rawrd_update_stride(s
+ 	u32 stride = DIV_ROUND_UP(pix->width * chan->fmt->bpp, 8);
+ 
+ 	pix->plane_fmt[0].bytesperline = stride;
+-	pix->plane_fmt[0].sizeimage = stride * pix->height;
++	pix->plane_fmt[0].sizeimage =
++		stride * (pix->height + chan->rkisp2->info->rdbk_extra_lines);
+ }
+ 
+ static int rkisp2_rawrd_try_fmt(struct rkisp2_dmarx_chan *chan,
+@@ -202,7 +201,8 @@ static int rkisp2_rawrd_try_fmt(struct r
+ 				chan->rkisp2->info->max_height);
+ 
+ 	pix->plane_fmt[0].bytesperline = DIV_ROUND_UP(pix->width * fmt->bpp, 8);
+-	pix->plane_fmt[0].sizeimage = pix->plane_fmt[0].bytesperline * pix->height;
++	pix->plane_fmt[0].sizeimage = pix->plane_fmt[0].bytesperline *
++				      (pix->height + chan->rkisp2->info->rdbk_extra_lines);
+ 
+ 	return 0;
+ }
+@@ -224,8 +224,9 @@ static void rkisp2_rawrd_select(struct r
+ 
+ 	val |= SW_CSI_RAW_RD_CH_SEL(chan->cfg->channel_sel);
+ 	if (use_uncompress)
+-		val |= RKISP2_CIF_ISP_CSI_RAW_RD_UNCOMPRESS |
+-		       RKISP2_CIF_ISP_CSI_RAW_RD_LE_ALIGN;
++		val |= RKISP2_CIF_ISP_CSI_RAW_RD_UNCOMPRESS;
++	if (use_uncompress && rkisp2_has_feature(rkisp2, RAWRD_SWAP))
++		val |= RKISP2_CIF_ISP_CSI_RAW_RD_LE_ALIGN;
+ 	rkisp2_write(rkisp2, CSI2RX_RAW_RD_CTRL, val);
+ }
+ 
+@@ -245,7 +246,8 @@ static void rkisp2_rawrd_config_mi(struc
+ 	rkisp2_write(rkisp2, CSI2RX_DATA_IDS_1, val);
+ 
+ 	rkisp2_write(rkisp2, CSI2RX_RAW_RD_PIC_SIZE,
+-		     (pix->height << 16) | pix->width);
++		     ((pix->height + rkisp2->info->rdbk_extra_lines) << 16) |
++		     pix->width);
+ 
+ 	if (chan->cfg->length_reg)
+ 		rkisp2_write(rkisp2, chan->cfg->length_reg, stride);
+@@ -296,19 +298,15 @@ static void rkisp2_rawrd_return_all_buff
+ 	spin_unlock_irq(&chan->buf_lock);
+ }
+ 
+-void rkisp2_dmarx_isr(struct rkisp2_device *rkisp2, u32 status)
++void rkisp2_dmarx_isr(struct rkisp2_device *rkisp2)
+ {
+ 	struct rkisp2_dmarx *dmarx = &rkisp2->dmarx;
+ 	unsigned int i;
+ 
+-	dev_dbg(rkisp2->dev, "dmarx isr: status=0x%x\n", status);
+-
+ 	for (i = 0; i < dmarx->num_chans; i++) {
+ 		struct rkisp2_dmarx_chan *chan = &dmarx->chan[i];
+ 		struct rkisp2_buffer *done = NULL;
+ 
+-		if (!(status & chan->cfg->ready_mask))
+-			continue;
+ 		if (!chan->streaming)
+ 			continue;
+ 
+--- a/drivers/media/platform/rockchip/rkisp2/rkisp2-isp.c
++++ b/drivers/media/platform/rockchip/rkisp2/rkisp2-isp.c
+@@ -9,9 +9,11 @@
+  * Copyright (C) 2017 Rockchip Electronics Co., Ltd.
+  */
+ 
++#include <linux/delay.h>
+ #include <linux/iopoll.h>
+ #include <linux/pm_runtime.h>
+ #include <linux/regmap.h>
++#include <linux/reset.h>
+ #include <linux/videodev2.h>
+ #include <linux/vmalloc.h>
+ 
+@@ -24,6 +26,11 @@
+ 
+ #define RKISP2_ISP_DEV_NAME	RKISP2_DRIVER_NAME "_isp"
+ 
++/* Vendor stop path: the ISP clock runs at the safe rate for a reset. */
++#define RKISP2_RESET_CLK_RATE		20000000
++#define RKISP2_RESET_CLK_SETTLE_US	100
++#define RKISP2_RESET_PULSE_US		10
++
+ static u16 rkisp2_isp_get_active_sink_pad(struct rkisp2_isp *isp)
+ {
+ 	struct media_entity *entity = &isp->sd.entity;
+@@ -90,6 +97,7 @@ static int rkisp2_config_isp(struct rkis
+ {
+ 	struct rkisp2_device *rkisp2 = isp->rkisp2;
+ 	u32 isp_ctrl = 0, irq_mask = 0, acq_mult = 0, acq_prop = 0;
++	u32 extra_lines = 0;
+ 	const struct rkisp2_mbus_info *sink_fmt;
+ 	const struct rkisp2_mbus_info *mp_src_fmt;
+ 	const struct v4l2_mbus_framefmt *mp_src_frm;
+@@ -125,6 +133,7 @@ static int rkisp2_config_isp(struct rkis
+ 				isp_ctrl |=
+ 					RKISP2_CIF_ISP_CTRL_ISP_CSM_Y_FULL_ENA |
+ 					RKISP2_CIF_ISP_CTRL_ISP_CSM_C_FULL_ENA;
++			extra_lines = rkisp2->info->rdbk_extra_lines;
+ 		}
+ 	} else if (sink_fmt->pixel_enc == V4L2_PIXEL_ENC_YUV) {
+ 		acq_mult = 2;
+@@ -144,13 +153,15 @@ static int rkisp2_config_isp(struct rkis
+ 	rkisp2_write(rkisp2, RKISP2_CIF_ISP_ACQ_V_OFFS, 0);
+ 	rkisp2_write(rkisp2, RKISP2_CIF_ISP_ACQ_H_SIZE,
+ 		     acq_mult * sink_frm->width);
+-	rkisp2_write(rkisp2, RKISP2_CIF_ISP_ACQ_V_SIZE, sink_frm->height);
++	rkisp2_write(rkisp2, RKISP2_CIF_ISP_ACQ_V_SIZE,
++		     sink_frm->height + extra_lines);
+ 
+ 	/* ISP Out Area */
+ 	rkisp2_write(rkisp2, RKISP2_CIF_ISP_OUT_H_OFFS, 0);
+ 	rkisp2_write(rkisp2, RKISP2_CIF_ISP_OUT_V_OFFS, 0);
+ 	rkisp2_write(rkisp2, RKISP2_CIF_ISP_OUT_H_SIZE, sink_frm->width);
+-	rkisp2_write(rkisp2, RKISP2_CIF_ISP_OUT_V_SIZE, sink_frm->height);
++	rkisp2_write(rkisp2, RKISP2_CIF_ISP_OUT_V_SIZE,
++		     sink_frm->height + extra_lines);
+ 
+ 	irq_mask |= RKISP2_CIF_ISP_FRAME | RKISP2_CIF_ISP_V_START |
+ 		    RKISP2_CIF_ISP_PIC_SIZE_ERROR;
+@@ -186,12 +197,26 @@ static int rkisp2_config_cif(struct rkis
+ 	if (ret)
+ 		return ret;
+ 
+-	rkisp2_config_ism(isp, sd_state);
++	if (rkisp2_has_feature(isp->rkisp2, IS_CROP))
++		rkisp2_config_ism(isp, sd_state);
+ 	rkisp2_config_path(isp);
+ 
+ 	return 0;
+ }
+ 
++static void rkisp2_reset(struct rkisp2_device *rkisp2)
++{
++	unsigned long rate = clk_get_rate(rkisp2->clk_core);
++
++	clk_set_rate(rkisp2->clk_core, RKISP2_RESET_CLK_RATE);
++	udelay(RKISP2_RESET_CLK_SETTLE_US);
++	reset_control_assert(rkisp2->rsts);
++	udelay(RKISP2_RESET_PULSE_US);
++	reset_control_deassert(rkisp2->rsts);
++	udelay(RKISP2_RESET_PULSE_US);
++	clk_set_rate(rkisp2->clk_core, rate);
++}
++
+ static void rkisp2_isp_stop(struct rkisp2_isp *isp)
+ {
+ 	struct rkisp2_device *rkisp2 = isp->rkisp2;
+@@ -248,6 +273,11 @@ static void rkisp2_isp_stop(struct rkisp
+ 	readx_poll_timeout(readl, rkisp2->base_addr + RKISP2_CIF_ISP_RIS,
+ 			   val, val & RKISP2_CIF_ISP_OFF, 20, 100);
+ 	/* No need to reset stats3a, as the ISP soft reset covers it */
++	if (rkisp2_has_feature(rkisp2, RAWRD_RESET)) {
++		rkisp2_reset(rkisp2);
++		return;
++	}
++
+ 	rkisp2_write(rkisp2, RKISP2_CIF_VI_IRCL,
+ 		     RKISP2_CIF_VI_IRCL_MIPI_SW_RST |
+ 		     RKISP2_CIF_VI_IRCL_ISP_SW_RST);
+@@ -267,6 +297,8 @@ static void rkisp2_config_clk(struct rki
+ 	rkisp2_write(rkisp2, RKISP2_CIF_VI_ICCL, val);
+ 
+ 	val = RKISP2_CIF_CLK_CTRL_ISP_3A | RKISP2_CIF_CLK_CTRL_ISP_RAW;
++	if (rkisp2_has_feature(rkisp2, RAWRD_CLK))
++		val |= CLK_CTRL_MI_READ | CLK_CTRL_MI_RAWRD;
+ 	rkisp2_write(rkisp2, RKISP2_CIF_VI_ISP_CLK_CTRL_V12, val);
+ 
+ 	rkisp2_sws_config(rkisp2);
+@@ -286,6 +318,9 @@ static int rkisp2_isp_start(struct rkisp
+ 	val |= RKISP2_CIF_ISP_CTRL_ISP_CFG_UPD |
+ 	       RKISP2_CIF_ISP_CTRL_ISP_ENABLE |
+ 	       RKISP2_CIF_ISP_CTRL_ISP_INFORM_ENABLE | RKISP2_CIF_ISP_CTRL_ISP_CFG_UPD_PERMANENT;
++	if (rkisp2_has_feature(rkisp2, NOC_HURRY))
++		val |= NOC_HURRY_PRIORITY(2) | NOC_HURRY_W_MODE(2) |
++		       NOC_HURRY_R_MODE(1);
+ 	rkisp2_write(rkisp2, RKISP2_CIF_ISP_CTRL, val);
+ 
+ 	rkisp2_params_post_configure(&rkisp2->params);
+@@ -845,6 +880,7 @@ irqreturn_t rkisp2_isp_isr(int irq, void
+ 
+ 	if (status & RKISP2_CIF_ISP_FRAME) {
+ 		rkisp2->debug.complete_frames++;
++		rkisp2_dmarx_isr(rkisp2);
+ 		rkisp2_params_isr(&rkisp2->params);
+ 		rkisp2_stats_isr_eof(&rkisp2->stats);
+ 	}
+@@ -853,3 +889,25 @@ irqreturn_t rkisp2_isp_isr(int irq, void
+ 
+ 	return IRQ_HANDLED;
+ }
++
++irqreturn_t rkisp2_mipi_isr(int irq, void *ctx)
++{
++	struct device *dev = ctx;
++	struct rkisp2_device *rkisp2 = dev_get_drvdata(dev);
++	u32 err;
++
++	if (!rkisp2->irqs_enabled)
++		return IRQ_NONE;
++
++	/* The error status registers are cleared by reading them */
++	err = rkisp2_read(rkisp2, CSI2RX_ERR_STAT) |
++	      rkisp2_read(rkisp2, CSI2RX_ERR_OVERFLOW) |
++	      rkisp2_read(rkisp2, CSI2RX_ERR_PACKET) |
++	      rkisp2_read(rkisp2, CSI2RX_ERR_PHY);
++	if (!err)
++		return IRQ_NONE;
++
++	rkisp2->debug.mipi_error++;
++
++	return IRQ_HANDLED;
++}
+--- a/drivers/media/platform/rockchip/rkisp2/rkisp2-resizer.c
++++ b/drivers/media/platform/rockchip/rkisp2/rkisp2-resizer.c
+@@ -365,7 +365,10 @@ void rkisp2_resizer_configure(struct rki
+ 
+ 	/* Apparently dual crop works on raw (untested) but resizer does not */
+ 	if (rkisp2_has_feature(rsz->rkisp2, DUAL_CROP)) {
+-		if (rkisp2_rect_equals(crop, &rsz->sink_size))
++		/* The extra readback lines are cut off by the dual crop */
++		bool extra_lines = !is_raw && rsz->rkisp2->info->rdbk_extra_lines;
++
++		if (rkisp2_rect_equals(crop, &rsz->sink_size) && !extra_lines)
+ 			rkisp2_resizer_disable_dcrop(rsz);
+ 		else
+ 			rkisp2_resizer_config_dcrop(rsz, is_raw, crop);
+--- a/include/uapi/linux/media/rockchip/rkisp2-config.h
++++ b/include/uapi/linux/media/rockchip/rkisp2-config.h
+@@ -34,9 +34,11 @@
+ /**
+  * enum rkisp2_isp_version - ISP variants
+  *
++ * @RKISP2_V0: Used at least in RV1126
+  * @RKISP3_V0: Used at least in RK3588
+  */
+ enum rkisp2_isp_version {
++	RKISP2_V0 = 20,
+ 	RKISP3_V0 = 30,
+ };
+ 

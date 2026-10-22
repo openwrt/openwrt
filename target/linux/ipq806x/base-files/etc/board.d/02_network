@@ -65,10 +65,10 @@ ipq806x_setup_interfaces()
 		ucidef_set_interfaces_lan_wan "eth0" "eth1"
 		;;
 	qcom,ipq8064-ap161)
-		ucidef_set_interfaces_lan_wan "eth1 eth2 lan1 lan2 lan3 lan4" "wan"
+		ucidef_set_interfaces_lan_wan "eth1 lan1 lan2 lan3 lan4" "wan"
 		;;
 	qcom,ipq8064-db149)
-		ucidef_set_interfaces_lan_wan "eth1 eth2 eth3 lan1 lan2 lan3 lan4" "wan"
+		ucidef_set_interfaces_lan_wan "eth2 eth3 lan1 lan2 lan3 lan4" "wan"
 		;;
 	*)
 		echo "Unsupported hardware. Network interfaces not intialized"

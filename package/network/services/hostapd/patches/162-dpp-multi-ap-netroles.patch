@@ -1,31 +1,25 @@
 From: Felix Fietkau <nbd@nbd.name>
-Date: Sat, 26 Sep 2026 10:00:00 +0200
-Subject: [PATCH] DPP: accept the Multi-AP backhaul netRoles in Network
- Introduction
+Date: Tue, 6 Oct 2026 07:41:03 +0200
+Subject: [PATCH] DPP: Accept the Multi-AP backhaul netRoles in Network Introduction
 
 A Multi-AP Controller signs a Connector with netRole "mapBackhaulSta"
 for a backhaul STA and one with netRole "mapBackhaulBss" for a backhaul
-BSS. The Multi-AP specification (v6.1 section 5.3.3, Table 8) makes the
-two compatible in the connector group comparison of Easy Connect 3.0
-section 6.6.2, and asks for a case insensitive match.
-dpp_compatible_netrole() accepts only "sta" with "ap", so the Peer
-Discovery between a backhaul STA and a backhaul BSS ends with
-STATUS_NO_MATCH and the DPP AKM cannot be used on the backhaul.
+BSS. Wi-Fi EasyMesh v6.1, 5.3.3, Table 8 makes the two compatible in the
+Connector group comparison (Easy Connect 3.0, 6.6.5) and recommends a
+case insensitive match. dpp_compatible_netrole() accepts only "sta" with
+"ap", so Network Introduction between a backhaul STA and a backhaul BSS
+ends with STATUS_NO_MATCH, and the backhaul cannot use the DPP AKM.
 
 Accept the backhaul pair as well. The other pairs of Table 8 (mapAgent
-with mapAgent or mapController) apply to the 1905 layer only and never
-reach this function.
-
-Report the change as the build feature "dpp-map", so that a Multi-AP
-Agent offers the DPP AKM for its backhaul only where this change is in.
-The build_features.h hunk is OpenWrt only and is not for upstream.
+with mapAgent or mapController) apply to the 1905 layer, and hostapd and
+wpa_supplicant run Network Introduction only over Wi-Fi.
 
 Signed-off-by: Felix Fietkau <nbd@nbd.name>
 ---
 
 --- a/src/common/dpp.c
 +++ b/src/common/dpp.c
-@@ -4095,10 +4095,20 @@ fail:
+@@ -4104,10 +4104,20 @@ fail:
  }
  
  
@@ -47,14 +41,3 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  }
  
  
---- a/src/utils/build_features.h
-+++ b/src/utils/build_features.h
-@@ -66,6 +66,8 @@ static inline int has_feature(const char
- #ifdef CONFIG_DPP
- 	if (!strcmp(feat, "dpp"))
- 		return 1;
-+	if (!strcmp(feat, "dpp-map"))
-+		return 1;
- #endif
- 	return 0;
- }

@@ -9,8 +9,7 @@ define KernelPackage/pwm-airoha
   DEPENDS:=@TARGET_airoha_an7581||TARGET_airoha_an7583
   KCONFIG:= \
         CONFIG_PWM=y \
-        CONFIG_PWM_AIROHA=y \
-        CONFIG_PWM_SYSFS=y
+        CONFIG_PWM_AIROHA=y
   FILES:= \
         $(LINUX_DIR)/drivers/pwm/pwm-airoha.ko
   AUTOLOAD:=$(call AutoProbe,pwm-airoha)

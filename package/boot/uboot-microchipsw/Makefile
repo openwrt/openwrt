@@ -1,11 +1,8 @@
 include $(TOPDIR)/rules.mk
 
 PKG_RELEASE:=1
-PKG_SOURCE_PROTO:=git
-PKG_VERSION:=2026.10-rc5
-PKG_SOURCE_URL:=https://git.u-boot-project.org/u-boot/u-boot.git
-PKG_SOURCE_VERSION:=a06e89ab05eaa2b8344d521319399333cd760ae5
-PKG_MIRROR_HASH:=26bd795d7b727d9c71bbf6cfd7d3d1b1465ec706a2a3be2e529a70f396283c6a
+PKG_VERSION:=2026.10
+PKG_HASH:=3f856da3cbbc93af51ff95fde18588a348b4a26723b01d9841e999d988481015
 
 PKG_MAINTAINER:=Robert Marko <robert.marko@sartura.hr>
 

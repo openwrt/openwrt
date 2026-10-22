@@ -64,7 +64,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  };
  
  static void sfp_schedule_poll(struct sfp *sfp)
-@@ -2029,23 +2054,27 @@ static void sfp_sm_link_down(struct sfp
+@@ -2057,23 +2082,27 @@ static void sfp_sm_link_down(struct sfp
  	sfp_link_down(sfp->sfp_bus);
  }
  
@@ -98,7 +98,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  		sfp_sm_next(sfp, SFP_S_WAIT_LOS, 0);
  	else
  		sfp_sm_link_up(sfp);
-@@ -2904,6 +2933,102 @@ static void sfp_sm_main(struct sfp *sfp,
+@@ -2932,6 +2961,102 @@ static void sfp_sm_main(struct sfp *sfp,
  	}
  }
  
@@ -201,7 +201,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  static void __sfp_sm_event(struct sfp *sfp, unsigned int event)
  {
  	dev_dbg(sfp->dev, "SM: enter %s:%s:%s event %s\n",
-@@ -2920,6 +3045,8 @@ static void __sfp_sm_event(struct sfp *s
+@@ -2948,6 +3073,8 @@ static void __sfp_sm_event(struct sfp *s
  		mod_state_to_str(sfp->sm_mod_state),
  		dev_state_to_str(sfp->sm_dev_state),
  		sm_state_to_str(sfp->sm_state));
@@ -210,7 +210,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  }
  
  static void sfp_sm_event(struct sfp *sfp, unsigned int event)
-@@ -3260,6 +3387,10 @@ static int sfp_probe(struct platform_dev
+@@ -3288,6 +3415,10 @@ static int sfp_probe(struct platform_dev
  	dev_info(sfp->dev, "Host maximum power %u.%uW\n",
  		 sfp->max_power_mW / 1000, (sfp->max_power_mW / 100) % 10);
  

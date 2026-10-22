@@ -4,7 +4,7 @@
 define Build/buffalo-tftp-header
 	( \
 		echo -n -e "# Airstation FirmWare\nrun u_fw\nreset\n\n" | \
-			dd bs=512 count=1 conv=sync; \
+			dd bs=512 count=1 conv=sync iflag=fullblock; \
 		dd if=$@; \
 	) > $@.tmp && \
 	$(STAGING_DIR_HOST)/bin/buffalo-tftp -i $@.tmp -o $@.new
@@ -164,8 +164,7 @@ define Device/arcwireless_freestation5
   IMAGE_SIZE := 7872k
   DEVICE_VENDOR := ARC Wireless
   DEVICE_MODEL := FreeStation
-  DEVICE_PACKAGES := kmod-usb-dwc2 kmod-rt2500-usb kmod-rt2800-usb \
-	kmod-rt2x00-usb
+  DEVICE_PACKAGES := kmod-usb-dwc2 kmod-rt2800-usb kmod-rt2x00-usb
   SUPPORTED_DEVICES += freestation5
   DEFAULT := n
 endef

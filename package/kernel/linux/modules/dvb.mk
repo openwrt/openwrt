@@ -23,7 +23,7 @@ define KernelPackage/dvb-core
 	CONFIG_DVB_DEMUX_SECTION_LOSS_LOG=y
   FILES:=$(LINUX_DIR)/drivers/media/dvb-core/dvb-core.ko
   AUTOLOAD:=$(call AutoProbe,dvb-core)
-  DEPENDS:=@!LINUX_6_12 dvb-support +kmod-i2c-core
+  DEPENDS:=dvb-support +kmod-i2c-core
 endef
 
 define KernelPackage/dvb-core/description
@@ -645,7 +645,7 @@ define MediaTuner
 	CONFIG_MEDIA_SUPPORT \
 	CONFIG_MEDIA_DIGITAL_TV_SUPPORT=y \
 	$2
-  DEPENDS:=@!LINUX_6_12 +kmod-i2c-core
+  DEPENDS:=+kmod-i2c-core
   FILES:=$(LINUX_DIR)/drivers/media/tuners/$1.ko
   AUTOLOAD:=$(call AutoProbe,$1)
 endef
@@ -1046,7 +1046,7 @@ define KernelPackage/video-em28xx
 	CONFIG_VIDEO_EM28XX
   FILES:=$(LINUX_DIR)/drivers/media/usb/em28xx/em28xx.ko
   AUTOLOAD:=$(call AutoProbe,em28xx)
-  DEPENDS+=@!LINUX_6_12 +kmod-usb-core +kmod-i2c-core +kmod-tveeprom +kmod-video-core
+  DEPENDS+=+kmod-usb-core +kmod-i2c-core +kmod-tveeprom +kmod-video-core
   SUBMENU:=$(VIDEO_MENU)
 endef
 

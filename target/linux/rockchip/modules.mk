@@ -170,6 +170,54 @@ endef
 $(eval $(call KernelPackage,video-rockchip-cif))
 
 
+define KernelPackage/leds-pwm-flash
+  SUBMENU:=$(LEDS_MENU)
+  TITLE:=PWM driven flash LED support
+  DEPENDS:=@TARGET_rockchip @PWM_SUPPORT +kmod-video-core +kmod-video-async
+  KCONFIG:= \
+	CONFIG_LEDS_CLASS_FLASH \
+	CONFIG_V4L2_FLASH_LED_CLASS \
+	CONFIG_LEDS_PWM_FLASH
+  FILES:= \
+	$(LINUX_DIR)/drivers/leds/led-class-flash.ko \
+	$(LINUX_DIR)/drivers/media/v4l2-core/v4l2-flash-led-class.ko \
+	$(LINUX_DIR)/drivers/leds/flash/leds-pwm-flash.ko
+  AUTOLOAD:=$(call AutoProbe,led-class-flash v4l2-flash-led-class \
+	leds-pwm-flash)
+endef
+
+define KernelPackage/leds-pwm-flash/description
+  Flash LED whose brightness is set by the duty cycle of a PWM channel,
+  exposed as a V4L2 flash subdevice for the camera sensor that refers
+  to it.
+endef
+
+$(eval $(call KernelPackage,leds-pwm-flash))
+
+
+define KernelPackage/crypto-hw-rockchip2
+  TITLE:=Rockchip Crypto V2 hardware crypto engine
+  DEPENDS:=@TARGET_rockchip +kmod-crypto-engine +kmod-crypto-hash \
+	+kmod-crypto-cbc +kmod-crypto-ctr +kmod-crypto-ecb +kmod-crypto-xts \
+	+kmod-crypto-md5 +kmod-crypto-sha1 +kmod-crypto-sha256 \
+	+kmod-crypto-sha512
+  KCONFIG:= \
+	CONFIG_CRYPTO_HW=y \
+	CONFIG_CRYPTO_DEV_ROCKCHIP2
+  FILES:=$(LINUX_DIR)/drivers/crypto/rockchip/rk_crypto2.ko
+  AUTOLOAD:=$(call AutoLoad,90,rk_crypto2)
+  $(call AddDepends/crypto)
+endef
+
+define KernelPackage/crypto-hw-rockchip2/description
+  Hardware crypto engine of the Rockchip RK3568, RK3588 and RV1126. It
+  offloads AES in ECB, CBC, CTR and XTS modes and the MD5, SHA-1, SHA-256
+  and SHA-512 digests.
+endef
+
+$(eval $(call KernelPackage,crypto-hw-rockchip2))
+
+
 define KernelPackage/sound-soc-rockchip-i2s
   TITLE:=Rockchip I2S support
   DEPENDS:=@TARGET_rockchip +kmod-sound-soc-core
@@ -216,3 +264,37 @@ define KernelPackage/rockchip-dfi
 endef
 
 $(eval $(call KernelPackage,rockchip-dfi))
+
+define KernelPackage/video-rockchip-isp2
+  TITLE:=Rockchip rkisp2 Image Signal Processor
+  DEPENDS:=@TARGET_rockchip +kmod-video-v4l2-isp \
+	+kmod-video-dma-contig +kmod-video-fwnode +kmod-video-vmalloc
+  KCONFIG:=CONFIG_VIDEO_ROCKCHIP_ISP2
+  FILES:=$(LINUX_DIR)/drivers/media/platform/rockchip/rkisp2/rockchip-isp2.ko
+  AUTOLOAD:=$(call AutoProbe,rockchip-isp2)
+  $(call AddDepends/video)
+endef
+
+define KernelPackage/video-rockchip-isp2/description
+  Driver for the Image Signal Processor found in the Rockchip RK3588
+  and RV1126 SoCs. Provides demosaicing, 3A statistics and the
+  parameters queue used by libcamera.
+endef
+
+$(eval $(call KernelPackage,video-rockchip-isp2))
+
+define KernelPackage/video-rockchip-rkvenc
+  TITLE:=Rockchip RKVENC H.264/HEVC video encoder
+  DEPENDS:=@TARGET_rockchip +kmod-video-mem2mem +kmod-video-dma-contig
+  KCONFIG:=CONFIG_VIDEO_ROCKCHIP_RKVENC
+  FILES:=$(LINUX_DIR)/drivers/media/platform/rockchip/rkvenc/rockchip-rkvenc.ko
+  AUTOLOAD:=$(call AutoProbe,rockchip-rkvenc)
+  $(call AddDepends/video)
+endef
+
+define KernelPackage/video-rockchip-rkvenc/description
+  Stateful V4L2 memory-to-memory encoder driver for the RKVENC v1 video
+  encoder of the Rockchip RV1126 and RK3568 SoCs (H.264 and HEVC).
+endef
+
+$(eval $(call KernelPackage,video-rockchip-rkvenc))

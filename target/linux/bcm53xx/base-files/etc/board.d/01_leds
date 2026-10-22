@@ -16,6 +16,13 @@ meraki,mx65)
 	ucidef_set_led_netdev "wan1" "WAN Port 1" "green:activity-1" "wan1"
 	ucidef_set_led_netdev "wan2" "WAN Port 2" "green:activity-3" "wan2"
 	;;
+netgear,r6400-v1)
+	ucidef_set_led_netdev "wan" "WAN" "white:wan" "wan" "link"
+	ucidef_set_led_netdev "wlan2g" "WLAN 2.4 GHz" "white:wlan-2ghz" "phy0-ap0"
+	ucidef_set_led_netdev "wlan5g" "WLAN 5 GHz" "white:wlan-5ghz" "phy1-ap0"
+	ucidef_set_led_usbport "usb1" "USB 1" "white:usb-1" "usb1-port1" "usb2-port1" "usb3-port1"
+	ucidef_set_led_usbport "usb2" "USB 2" "white:usb-2" "usb1-port2" "usb2-port2"
+	;;
 netgear,r8000)
 	ucidef_set_led_usbport "usb2" "USB 2.0" "bcm53xx:white:usb2" "usb1-port2" "usb2-port2"
 	ucidef_set_led_usbport "usb3" "USB 3.0" "bcm53xx:white:usb3" "usb1-port1" "usb2-port1" "usb4-port1"

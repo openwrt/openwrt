@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=nilfs-utils
 PKG_VERSION:=2.3.1
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 PKG_URL:=https://nilfs.sourceforge.io
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
@@ -131,9 +131,9 @@ define Package/nilfs-cleanerd/install
 endef
 
 define Package/nilfs-mount/install
-	$(INSTALL_DIR) $(1)/usr/sbin
-	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/mount.nilfs2 $(1)/usr/sbin/
-	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/umount.nilfs2 $(1)/usr/sbin/
+	$(INSTALL_DIR) $(1)/sbin
+	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/mount.nilfs2 $(1)/sbin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/umount.nilfs2 $(1)/sbin/
 endef
 
 define Package/libnilfs/install

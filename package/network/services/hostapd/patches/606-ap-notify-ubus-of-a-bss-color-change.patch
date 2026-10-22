@@ -26,17 +26,18 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 ---
 --- a/src/ap/drv_callbacks.c
 +++ b/src/ap/drv_callbacks.c
-@@ -2561,6 +2561,7 @@ static void hostapd_event_color_change(s
+@@ -2577,6 +2577,8 @@ static void hostapd_event_color_change(s
+ 			hostapd_cleanup_cca_params(bss);
+ 		}
  	}
- 
- 	hostapd_bss_colors_in_use_update(hapd->iface);
++
 +	hostapd_ubus_notify_bss_color(hapd);
  }
  #endif  /* CONFIG_IEEE80211AX */
  
 --- a/src/ap/hostapd.c
 +++ b/src/ap/hostapd.c
-@@ -5441,6 +5441,7 @@ void hostapd_switch_color_timeout_handle
+@@ -5581,10 +5581,12 @@ void hostapd_switch_color_timeout_handle
  		hapd->iface->conf->he_op.he_bss_color = os_random() % 63 + 1;
  		for (b = 0; b < hapd->iface->num_bss; b++)
  			ieee802_11_set_beacon(hapd->iface->bss[b]);
@@ -44,16 +45,12 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		return;
  	}
  
-@@ -5467,6 +5468,8 @@ void hostapd_switch_color_timeout_handle
- 		free_beacon_data(&settings.beacon_after);
- 		os_free(settings.ubpr.unsol_bcast_probe_resp_tmpl);
- 	}
-+
+ 	hostapd_cca_start(hapd->iface, r);
 +	hostapd_ubus_notify_bss_color(hapd);
  }
  
  
-@@ -5527,7 +5530,11 @@ static void hostapd_bss_colors_in_use_ag
+@@ -5657,7 +5659,11 @@ static void hostapd_bss_colors_in_use_ag
  				       hostapd_bss_colors_in_use_timeout,
  				       iface, NULL);
  

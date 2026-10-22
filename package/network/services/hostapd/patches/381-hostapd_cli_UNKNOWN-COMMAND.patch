@@ -1,22 +1,33 @@
 From: Denton Gentry <denny@geekhold.com>
-Date: Wed, 30 May 2018 15:05:42 +0000
-Subject: [PATCH] hostapd: make cli treat UNKNOWN COMMAND as failing
+Date: Tue, 20 Oct 2026 14:44:39 +0200
+Subject: [PATCH] hostapd_cli: Treat UNKNOWN COMMAND as a failure of the STA commands
 
-Avoid infinite loop at 100% CPU when running hostapd_cli
-if CONFIG_CTRL_IFACE_MIB is not defined.
+wpa_ctrl_command_sta() only treats a "FAIL" reply as a failure. Any
+other reply becomes the station address for the next STA-NEXT command.
+wpa_supplicant without CONFIG_AP replies "UNKNOWN COMMAND" to STA-FIRST
+and STA-NEXT, so "hostapd_cli -p /var/run/wpa_supplicant all_sta" (or
+list_sta) loops at 100% CPU and sends "STA-NEXT UNKNOWN COMMAND" for
+ever:
 
-  _newselect(4, [3], NULL, NULL, ...)
   recvfrom(3, "UNKNOWN COMMAND\n", 4095, 0, NULL, NULL) = 16
   sendto(3, "STA-NEXT UNKNOWN COMMAND", 24, 0, NULL, 0) = 24
 
+Treat "UNKNOWN COMMAND" as a failure, like wpa_cli already does in its
+copy of wpa_ctrl_command_sta().
+
+Signed-off-by: Denton Gentry <denny@geekhold.com>
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+
 --- a/hostapd/hostapd_cli.c
 +++ b/hostapd/hostapd_cli.c
-@@ -763,7 +763,7 @@ static int wpa_ctrl_command_sta(struct w
+@@ -763,7 +763,8 @@ static int wpa_ctrl_command_sta(struct w
  	}
  
  	buf[len] = '\0';
 -	if (memcmp(buf, "FAIL", 4) == 0)
-+	if (memcmp(buf, "FAIL", 4) == 0 || memcmp(buf, "UNKNOWN COMMAND", 15) == 0)
++	if (memcmp(buf, "FAIL", 4) == 0 ||
++	    memcmp(buf, "UNKNOWN COMMAND", 15) == 0)
  		return -1;
  	if (print)
  		printf("%s", buf);

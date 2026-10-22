@@ -16,7 +16,19 @@ Subject: [PATCH] Remove some unnecessary control interface functionality
  else
 --- a/hostapd/ctrl_iface.c
 +++ b/hostapd/ctrl_iface.c
-@@ -4089,6 +4089,7 @@ static int hostapd_ctrl_iface_receive_pr
+@@ -4051,7 +4051,10 @@ static int hostapd_ctrl_iface_receive_pr
+ 					      struct sockaddr_storage *from,
+ 					      socklen_t fromlen)
+ {
+-	int reply_len, res;
++	int reply_len;
++#ifdef CONFIG_CTRL_IFACE_MIB
++	int res;
++#endif
+ 
+ 	os_memcpy(reply, "OK\n", 3);
+ 	reply_len = 3;
+@@ -4072,6 +4075,7 @@ static int hostapd_ctrl_iface_receive_pr
  						      reply_size);
  	} else if (os_strcmp(buf, "STATUS-DRIVER") == 0) {
  		reply_len = hostapd_drv_status(hapd, reply, reply_size);
@@ -24,7 +36,7 @@ Subject: [PATCH] Remove some unnecessary control interface functionality
  	} else if (os_strcmp(buf, "MIB") == 0) {
  		reply_len = ieee802_11_get_mib(hapd, reply, reply_size);
  		if (reply_len >= 0) {
-@@ -4130,6 +4131,7 @@ static int hostapd_ctrl_iface_receive_pr
+@@ -4113,6 +4117,7 @@ static int hostapd_ctrl_iface_receive_pr
  	} else if (os_strncmp(buf, "STA-NEXT ", 9) == 0) {
  		reply_len = hostapd_ctrl_iface_sta_next(hapd, buf + 9, reply,
  							reply_size);

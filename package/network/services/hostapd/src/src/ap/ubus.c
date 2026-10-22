@@ -105,6 +105,7 @@ static struct hostapd_ubus_bss *hostapd_ubus_state(struct hostapd_data *hapd)
 struct ubus_banned_client {
 	struct avl_node avl;
 	u8 addr[ETH_ALEN];
+	u16 status;
 };
 
 static void ubus_reconnect_timeout(void *eloop_data, void *user_ctx)
@@ -192,7 +193,8 @@ hostapd_bss_flush_bans(struct hostapd_ubus_bss *ubus)
 }
 
 static void
-hostapd_bss_ban_client(struct hostapd_ubus_bss *ubus, u8 *addr, int time)
+hostapd_bss_ban_client(struct hostapd_ubus_bss *ubus, u8 *addr, int time,
+		       u16 status)
 {
 	struct ubus_banned_client *ban;
 
@@ -216,6 +218,7 @@ hostapd_bss_ban_client(struct hostapd_ubus_bss *ubus, u8 *addr, int time)
 		}
 	}
 
+	ban->status = status;
 	eloop_register_timeout(0, time * 1000, hostapd_bss_del_ban, ban, ubus);
 }
 
@@ -485,6 +488,9 @@ hostapd_bss_get_features(struct ubus_context *ctx, struct ubus_object *obj,
 	blob_buf_init(&b, 0);
 	blobmsg_add_u8(&b, "ht_supported", ht_supported(hapd->iface->hw_features));
 	blobmsg_add_u8(&b, "vht_supported", vht_supported(hapd->iface->hw_features));
+#ifdef CONFIG_WPS
+	blobmsg_add_u8(&b, "wps_link_start", 1);
+#endif /* CONFIG_WPS */
 	ubus_send_reply(ctx, req, b.head);
 
 	return 0;
@@ -717,6 +723,7 @@ enum {
 	DEL_CLIENT_REASON,
 	DEL_CLIENT_DEAUTH,
 	DEL_CLIENT_BAN_TIME,
+	DEL_CLIENT_BAN_STATUS,
 	__DEL_CLIENT_MAX
 };
 
@@ -783,6 +790,7 @@ static const struct blobmsg_policy del_policy[__DEL_CLIENT_MAX] = {
 	[DEL_CLIENT_REASON] = { "reason", BLOBMSG_TYPE_INT32 },
 	[DEL_CLIENT_DEAUTH] = { "deauth", BLOBMSG_TYPE_INT8 },
 	[DEL_CLIENT_BAN_TIME] = { "ban_time", BLOBMSG_TYPE_INT32 },
+	[DEL_CLIENT_BAN_STATUS] = { "ban_status", BLOBMSG_TYPE_INT32 },
 };
 
 static int
@@ -797,6 +805,7 @@ hostapd_bss_del_client(struct ubus_context *ctx, struct ubus_object *obj,
 	struct sta_info *sta;
 	bool deauth = false;
 	int reason = WLAN_REASON_UNSPECIFIED;
+	u32 ban_status = WLAN_STATUS_AP_UNABLE_TO_HANDLE_NEW_STA;
 	u8 addr[ETH_ALEN];
 
 	blobmsg_parse(del_policy, __DEL_CLIENT_MAX, tb, blob_data(msg), blob_len(msg));
@@ -806,6 +815,13 @@ hostapd_bss_del_client(struct ubus_context *ctx, struct ubus_object *obj,
 
 	if (hwaddr_aton(blobmsg_data(tb[DEL_CLIENT_ADDR]), addr))
 		return UBUS_STATUS_INVALID_ARGUMENT;
+
+	/* A ban answers the station with this Status Code, and 0 admits it. */
+	if (tb[DEL_CLIENT_BAN_STATUS]) {
+		ban_status = blobmsg_get_u32(tb[DEL_CLIENT_BAN_STATUS]);
+		if (!ban_status || ban_status > 0xffff)
+			return UBUS_STATUS_INVALID_ARGUMENT;
+	}
 
 	if (tb[DEL_CLIENT_REASON])
 		reason = blobmsg_get_u32(tb[DEL_CLIENT_REASON]);
@@ -830,7 +846,8 @@ hostapd_bss_del_client(struct ubus_context *ctx, struct ubus_object *obj,
 
 	if (tb[DEL_CLIENT_BAN_TIME])
 		hostapd_bss_ban_client(hostapd_ubus_obj_state(obj), addr,
-				       blobmsg_get_u32(tb[DEL_CLIENT_BAN_TIME]));
+				       blobmsg_get_u32(tb[DEL_CLIENT_BAN_TIME]),
+				       ban_status);
 
 	return 0;
 }
@@ -854,13 +871,52 @@ hostapd_bss_list_bans(struct ubus_context *ctx, struct ubus_object *obj,
 }
 
 #ifdef CONFIG_WPS
+enum {
+	WPS_START_LINK_ID,
+	__WPS_START_MAX
+};
+
+static const struct blobmsg_policy wps_start_policy[__WPS_START_MAX] = {
+	[WPS_START_LINK_ID] = { "link_id", BLOBMSG_TYPE_INT32 },
+};
+
+/* Each link of an AP MLD is a BSS of its own, and with wps_independent the
+ * push button reaches the BSS it is pressed on alone. */
+static struct hostapd_data *
+hostapd_ubus_link_hapd(struct ubus_object *obj, int link_id)
+{
+#ifdef CONFIG_IEEE80211BE
+	struct hostapd_ubus_mld *umld;
+	unsigned int i;
+
+	if (!hostapd_ubus_obj_state(obj)->mld)
+		return NULL;
+
+	umld = container_of(hostapd_ubus_obj_state(obj), struct hostapd_ubus_mld, ubus);
+	for (i = 0; i < MAX_NUM_MLD_LINKS; i++)
+		if (umld->links[i] && umld->links[i]->mld_link_id == link_id)
+			return umld->links[i];
+#endif /* CONFIG_IEEE80211BE */
+
+	return NULL;
+}
+
 static int
 hostapd_bss_wps_start(struct ubus_context *ctx, struct ubus_object *obj,
 			struct ubus_request_data *req, const char *method,
 			struct blob_attr *msg)
 {
-	int rc;
+	struct blob_attr *tb[__WPS_START_MAX];
 	struct hostapd_data *hapd = get_hapd_from_object(obj);
+	int rc;
+
+	blobmsg_parse(wps_start_policy, __WPS_START_MAX, tb, blob_data(msg), blob_len(msg));
+
+	if (tb[WPS_START_LINK_ID]) {
+		hapd = hostapd_ubus_link_hapd(obj, blobmsg_get_u32(tb[WPS_START_LINK_ID]));
+		if (!hapd)
+			return UBUS_STATUS_NOT_FOUND;
+	}
 
 	rc = hostapd_wps_button_pushed(hapd, NULL);
 
@@ -938,12 +994,9 @@ hostapd_bss_update_beacon(struct ubus_context *ctx, struct ubus_object *obj,
 			struct ubus_request_data *req, const char *method,
 			struct blob_attr *msg)
 {
-	int rc;
 	struct hostapd_data *hapd = get_hapd_from_object(obj);
 
-	rc = ieee802_11_set_beacon(hapd);
-
-	if (rc != 0)
+	if (ieee802_11_update_beacon(hapd))
 		return UBUS_STATUS_NOT_SUPPORTED;
 
 	return 0;
@@ -2195,7 +2248,7 @@ static const struct ubus_method bss_methods[] = {
 #endif
 	UBUS_METHOD_NOARG("list_bans", hostapd_bss_list_bans),
 #ifdef CONFIG_WPS
-	UBUS_METHOD_NOARG("wps_start", hostapd_bss_wps_start),
+	UBUS_METHOD("wps_start", hostapd_bss_wps_start, wps_start_policy),
 	UBUS_METHOD_NOARG("wps_status", hostapd_bss_wps_status),
 	UBUS_METHOD_NOARG("wps_cancel", hostapd_bss_wps_cancel),
 #endif
@@ -2525,11 +2578,11 @@ int hostapd_ubus_handle_event(struct hostapd_data *hapd, struct hostapd_ubus_req
 
 	ban = avl_find_element(&hostapd_ubus_state(hapd)->banned, addr, ban, avl);
 	if (ban)
-		return WLAN_STATUS_AP_UNABLE_TO_HANDLE_NEW_STA;
+		return ban->status;
 
 	ban = avl_find_element(&hostapd_ubus_state(hapd)->banned, bcast, ban, avl);
 	if (ban)
-		return WLAN_STATUS_AP_UNABLE_TO_HANDLE_NEW_STA;
+		return ban->status;
 
 	if (!obj->has_subscribers)
 		return WLAN_STATUS_SUCCESS;
@@ -2621,6 +2674,17 @@ void hostapd_ubus_notify(struct hostapd_data *hapd, const char *type, const u8 *
 	ubus_notify(ctx, obj, type, b.head, -1);
 }
 
+/* The links of an AP MLD share one object, on which the station of the
+ * association link stands for the non-AP MLD. */
+void hostapd_ubus_notify_sta(struct hostapd_data *hapd, const char *type,
+			     struct sta_info *sta)
+{
+	if (hostapd_sta_is_link_sta(hapd, sta))
+		return;
+
+	hostapd_ubus_notify(hapd, type, sta->addr);
+}
+
 /* `frame`: the body of the frame that rsn_error names */
 void hostapd_ubus_notify_key_mismatch(struct hostapd_data *hapd, const u8 *addr,
 				      enum hostapd_ubus_rsn_error rsn_error,
@@ -2670,7 +2734,7 @@ void hostapd_ubus_notify_authorized(struct hostapd_data *hapd, struct sta_info *
 {
 	struct ubus_object *obj = hostapd_ubus_notify_obj(hapd);
 
-	if (!obj->has_subscribers)
+	if (!obj->has_subscribers || hostapd_sta_is_link_sta(hapd, sta))
 		return;
 
 	blob_buf_init(&b, 0);

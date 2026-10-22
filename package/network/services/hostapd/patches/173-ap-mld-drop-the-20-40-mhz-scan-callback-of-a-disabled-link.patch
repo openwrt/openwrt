@@ -1,0 +1,32 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Tue, 20 Oct 2026 13:15:06 +0200
+Subject: [PATCH] AP MLD: Drop the 20/40 MHz scan callback of a disabled link
+
+For EVENT_SCAN_RESULTS, wpa_supplicant_event() calls the scan callback
+of each partner link that has one. hostapd_stop_setup_timers() cancels
+the retry of the 20/40 MHz coexistence scan, but keeps iface->scan_cb,
+so a link disabled during that scan keeps ieee80211n_check_scan(). When
+the results arrive, the partner loop runs it on the disabled link, whose
+drv_priv is NULL, and hostapd crashes in
+wpa_driver_nl80211_get_scan_results(). Reachable with DISABLE of an AP
+MLD link in HAPD_IFACE_HT_SCAN.
+
+Drop the callback when the setup timers stop.
+
+Fixes: 9b682e72d9d1 ("AP MLD: Find the link that is waiting for scan events")
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+
+--- a/src/ap/hw_features.c
++++ b/src/ap/hw_features.c
+@@ -612,6 +612,10 @@ static void ap_ht40_scan_retry(void *elo
+ void hostapd_stop_setup_timers(struct hostapd_iface *iface)
+ {
+ 	eloop_cancel_timeout(ap_ht40_scan_retry, iface, NULL);
++
++	/* The scan results can still arrive through a partner link */
++	if (iface->scan_cb == ieee80211n_check_scan)
++		iface->scan_cb = NULL;
+ }
+ 
+ 

@@ -1,0 +1,354 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Thu, 15 Oct 2026 14:29:11 +0200
+Subject: [PATCH] uloop: allow a function to prepare the child in process()
+
+A program started by uloop.process() can need preparatory work in the
+child before exec(), for example to redirect a file descriptor.
+
+Accept a function instead of the executable path. The function runs in
+the child after fork(), receives the argument vector and the
+environment, and returns the complete argument vector to execute.
+Changes to the environment object apply to the executed program.
+exit() in the function sets the exit code of the child. If the function
+throws an exception or does not return a non-empty array, the child
+exits with code 255, the same as for a failed exec().
+
+Release the event loop in the child before the function runs, like
+uloop.task() does. The child otherwise shares the signal pipe of the
+parent, so a signal sent to the child runs signal callbacks of the
+parent, and SIGTERM does not end the child.
+
+Flush the output of the parent before fork(), since a flush in the child
+writes the inherited buffer a second time.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+ create mode 100644 tests/custom/06_lib_uloop/13_process_function
+
+--- a/lib/uloop.c
++++ b/lib/uloop.c
+@@ -1184,6 +1184,93 @@ uc_uloop_process_cb(struct uloop_process
+ 	ucv_put(obj);
+ }
+ 
++static char **
++uc_uloop_process_argv(uc_vm_t *vm, uc_value_t *arg0, uc_value_t *list,
++                      size_t first)
++{
++	size_t len = ucv_array_length(list);
++	size_t count = len > first ? len - first : 0;
++	char **argp = calloc(count + 2, sizeof(char *));
++	size_t i;
++
++	if (!argp)
++		return NULL;
++
++	argp[0] = ucv_to_string(vm, arg0);
++
++	for (i = 0; i < count; i++)
++		argp[i + 1] = ucv_to_string(vm, ucv_array_get(list, first + i));
++
++	return argp;
++}
++
++static char **
++uc_uloop_process_envp(uc_vm_t *vm, uc_value_t *env_arg)
++{
++	uc_stringbuf_t *buf;
++	char **envp;
++	size_t i = 0;
++
++	if (!env_arg)
++		return environ;
++
++	envp = calloc(ucv_object_length(env_arg) + 1, sizeof(char *));
++
++	if (!envp)
++		return NULL;
++
++	ucv_object_foreach(env_arg, envk, envv) {
++		buf = xprintbuf_new();
++
++		ucv_stringbuf_printf(buf, "%s=", envk);
++		ucv_to_stringbuf(vm, buf, envv, false);
++
++		envp[i++] = buf->buf;
++
++		free(buf);
++	}
++
++	return envp;
++}
++
++static void
++uc_uloop_process_exec(uc_vm_t *vm, uc_value_t *executable,
++                      uc_value_t *arguments, uc_value_t *env_arg)
++{
++	uc_value_t *argv;
++	char **argp, **envp;
++
++	uloop_done();
++
++	if (ucv_is_callable(executable)) {
++		uc_vm_stack_push(vm, ucv_get(executable));
++		uc_vm_stack_push(vm, ucv_get(arguments));
++		uc_vm_stack_push(vm, ucv_get(env_arg));
++
++		if (!uc_uloop_vm_call(vm, false, 2))
++			_exit(vm->exception.type == EXCEPTION_EXIT ? vm->arg.s32 : -1);
++
++		argv = uc_vm_stack_pop(vm);
++
++		if (ucv_type(argv) != UC_ARRAY || !ucv_array_length(argv))
++			_exit(-1);
++
++		argp = uc_uloop_process_argv(vm, ucv_array_get(argv, 0), argv, 1);
++	}
++	else {
++		argp = uc_uloop_process_argv(vm, executable, arguments, 0);
++	}
++
++	envp = uc_uloop_process_envp(vm, env_arg);
++
++	if (!argp || !envp)
++		_exit(-1);
++
++	execvpe(argp[0], (char * const *)argp, (char * const *)envp);
++
++	_exit(-1);
++}
++
+ /**
+  * Creates a process instance for executing external programs.
+  *
+@@ -1192,14 +1279,29 @@ uc_uloop_process_cb(struct uloop_process
+  * vector, an optional dictionary describing environment variables, and a
+  * callback function to be invoked when the invoked process ends.
+  *
++ * When a function is given instead of the executable path, it is invoked in
++ * the child process after fork(), receiving the argument vector and the
++ * environment dictionary as parameters. It may perform any preparatory work,
++ * such as setting up file descriptors, and must return the complete argument
++ * vector to execute, with the executable path as first element. Changes made
++ * to the environment dictionary by the function apply to the environment of
++ * the executed program; the executable is searched in the `PATH` of the
++ * calling process. If the function calls `exit()`, the child process exits
++ * with the given code. If it throws an exception or does not return a
++ * non-empty array, the child process exits with code 255.
++ *
++ * The function runs outside of the event loop: signals received by the child
++ * process do not invoke the signal callbacks of the event loop.
++ *
+  * @function module:uloop#process
+  *
+- * @param {string} executable
+- * The path to the executable program.
++ * @param {string|Function} executable
++ * The path to the executable program, or a function returning the argument
++ * vector to execute.
+  *
+  * @param {string[]} [args]
+  * Optional. An array of strings representing the arguments passed to the
+- * executable.
++ * executable, or to the function.
+  *
+  * @param {Object<string, *>} [env]
+  * Optional. A dictionary describing environment variables for the process.
+@@ -1211,13 +1313,26 @@ uc_uloop_process_cb(struct uloop_process
+  *
+  * @returns {?module:uloop.process}
+  * Returns a process instance for executing external programs.
+- * Returns `null` on error, e.g. due to `exec()` failure or invalid arguments.
++ * Returns `null` on invalid arguments or `fork()` failure. If the program
++ * cannot be executed, the callback receives the exit code 255.
+  *
+  * @example
+  * // Create a process instance for executing 'ls' command
+  * const myProcess = uloop.process("/bin/ls", ["-l", "/tmp"], null, (code) => {
+  *     printf(`Process exited with code ${code}\n`);
+  * });
++ *
++ * // Redirect stderr in the child process before executing 'ls'
++ * const myProcess = uloop.process((args, env) => {
++ *     const fs = require('fs');
++ *     const errlog = fs.open('/tmp/error.log', 'w');
++ *     fs.dup2(errlog.fileno(), 2);
++ *     errlog.close();
++ *
++ *     return ["/bin/ls", ...args];
++ * }, ["-l", "/tmp"], null, (code) => {
++ *     printf(`Process exited with code ${code}\n`);
++ * });
+  */
+ static uc_value_t *
+ uc_uloop_process(uc_vm_t *vm, size_t nargs)
+@@ -1227,55 +1342,25 @@ uc_uloop_process(uc_vm_t *vm, size_t nar
+ 	uc_value_t *env_arg = uc_fn_arg(2);
+ 	uc_value_t *callback = uc_fn_arg(3);
+ 	uc_uloop_process_t *process;
+-	uc_stringbuf_t *buf;
+-	char **argp, **envp;
+ 	pid_t pid;
+-	size_t i;
+ 
+-	if (ucv_type(executable) != UC_STRING ||
++	if ((ucv_type(executable) != UC_STRING && !ucv_is_callable(executable)) ||
+ 	    (arguments && ucv_type(arguments) != UC_ARRAY) ||
+ 	    (env_arg && ucv_type(env_arg) != UC_OBJECT) ||
+ 	    !ucv_is_callable(callback)) {
+ 		err_return(EINVAL);
+ 	}
+ 
++	/* the child may flush the inherited buffer again */
++	fflush(vm->output);
++
+ 	pid = fork();
+ 
+ 	if (pid == -1)
+ 		err_return(errno);
+ 
+-	if (pid == 0) {
+-		argp = calloc(ucv_array_length(arguments) + 2, sizeof(char *));
+-		envp = environ;
+-
+-		if (env_arg) {
+-			envp = calloc(ucv_object_length(env_arg) + 1, sizeof(char *));
+-			i = 0;
+-			ucv_object_foreach(env_arg, envk, envv) {
+-				buf = xprintbuf_new();
+-
+-				ucv_stringbuf_printf(buf, "%s=", envk);
+-				ucv_to_stringbuf(vm, buf, envv, false);
+-
+-				envp[i++] = buf->buf;
+-
+-				free(buf);
+-			}
+-		}
+-
+-		if (!argp || !envp)
+-			_exit(-1);
+-
+-		argp[0] = ucv_to_string(vm, executable);
+-
+-		for (i = 0; i < ucv_array_length(arguments); i++)
+-			argp[i+1] = ucv_to_string(vm, ucv_array_get(arguments, i));
+-
+-		execvpe((const char *)ucv_string_get(executable),
+-		        (char * const *)argp, (char * const *)envp);
+-
+-		_exit(-1);
+-	}
++	if (pid == 0)
++		uc_uloop_process_exec(vm, executable, arguments, env_arg);
+ 
+ 	process = uc_uloop_alloc(vm, "uloop.process", sizeof(*process), callback);
+ 	process->process.pid = pid;
+--- /dev/null
++++ b/tests/custom/06_lib_uloop/13_process_function
+@@ -0,0 +1,105 @@
++When the first argument of process() is a function, it runs in the child
++process, receives the argument vector and the environment, and returns the
++argument vector to execute. Changes to the environment apply to the executed
++program. exit() in the function sets the exit code of the child. An exception
++or a return value that is not a non-empty array makes the child exit with code
++255. Buffered output of the parent is written once, and signals received by
++the child do not reach the signal callbacks of the parent.
++
++-- Testcase --
++{%
++	import * as uloop from 'uloop';
++	import * as fs from 'fs';
++
++	uloop.init();
++
++	const tmpdir = fs.mkdtemp('/tmp/ucode-uloop-process-XXXXXX');
++	const outfile = tmpdir + '/out';
++
++	function run(label, executable, args, env) {
++		let completed = false;
++		let child = uloop.process(executable, args, env, (status) => {
++			completed = true;
++			printf('%s: %d\n', label, status);
++			uloop.end();
++		});
++
++		if (!child)
++			die('Unable to start child');
++
++		uloop.run();
++
++		if (!completed)
++			die('Missing process callback');
++	}
++
++	run('argv', (args, env) => {
++		let out = fs.open(outfile, 'w');
++		fs.dup2(out.fileno(), 1);
++		out.close();
++
++		env.GREETING = 'changed';
++
++		return ['/bin/sh', '-c', 'echo "$0 $1 $GREETING"; exit 3', ...args];
++	}, ['first', 'second'], { GREETING: 'initial' });
++
++	print(fs.readfile(outfile));
++	fs.unlink(outfile);
++	fs.rmdir(tmpdir);
++
++	run('exception', () => die('setup failed'));
++	run('null', () => null);
++	run('empty', () => []);
++	run('string', () => '/bin/true');
++	run('exit', () => exit(3));
++
++	printf('buffered before fork\n');
++	run('flush', () => {
++		fs.stdout.flush();
++		return ['/bin/true'];
++	});
++
++	let usr1_count = 0;
++	let usr1 = uloop.signal('SIGUSR1', () => usr1_count++);
++
++	function run_signal(signame) {
++		uloop.timer(1, () => {
++			let child = uloop.process(() => {
++				sleep(300);
++				return ['/bin/true'];
++			}, null, null, (status) => {
++				printf('%s: %d, parent callbacks: %d\n', signame, status, usr1_count);
++				uloop.end();
++			});
++
++			uloop.timer(100, () => system(['kill', `-${signame}`, `${child.pid()}`]));
++		});
++
++		uloop.run();
++	}
++
++	run_signal('USR1');
++	run_signal('TERM');
++
++	usr1.delete();
++
++	printf('invalid: %J\n', uloop.process(123, null, null, () => null));
++
++	uloop.done();
++%}
++-- End --
++
++-- Expect stdout --
++argv: 3
++first second changed
++exception: 255
++null: 255
++empty: 255
++string: 255
++exit: 3
++buffered before fork
++flush: 0
++USR1: 0, parent callbacks: 0
++TERM: -15, parent callbacks: 0
++invalid: null
++-- End --
