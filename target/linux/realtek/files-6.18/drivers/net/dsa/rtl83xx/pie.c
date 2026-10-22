@@ -55,7 +55,7 @@
 #define RTL930X_PIE_FLOW_TEMPLATE			5
 #define RTL930X_PIE_FLOW6_HEAD_TEMPLATE		6
 #define RTL930X_PIE_FLOW6_TAIL_TEMPLATE		7
-#define RTL930X_PIE_FLOW_BLOCKS			GENMASK(15, 4)
+#define RTL930X_PIE_FLOW_BLOCKS			GENMASK(15, 2)
 
 #define N_FIXED_FIELDS 12
 #define N_FIXED_FIELDS_RTL931X 14
@@ -2567,9 +2567,10 @@ static void otto_pie_930x_flow_fail(struct otto_dsa_priv *priv)
  * their defined fields, preserving concurrent changes to retained TC blocks.
  */
 struct otto_pie_flow_state {
+	/* 19 shared registers plus two controls for each of 14 flow blocks. */
 	struct {
 		u32 reg, mask, value;
-	} regs[43];
+	} regs[47];
 	unsigned int n_regs;
 };
 
