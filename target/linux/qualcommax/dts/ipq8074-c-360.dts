@@ -33,15 +33,6 @@
 		reg = <0x0 0x40000000 0x0 0x80000000>;
 	};
 
-	reg_usb_vbus: regulator-usb-vbus {
-		compatible = "regulator-fixed";
-		regulator-name = "usb_vbus";
-		regulator-min-microvolt = <5000000>;
-		regulator-max-microvolt = <5000000>;
-		gpios = <&tlmm 29 GPIO_ACTIVE_HIGH>;
-		enable-active-high;
-	};
-
 	gpio-export {
 		compatible = "gpio-export";
 
@@ -484,7 +475,6 @@
 
 &qusb_phy_0 {
 	status = "okay";
-	vdd-supply = <&reg_usb_vbus>;
 };
 
 &ssphy_0 {
@@ -534,6 +524,13 @@
 };
 
 &tlmm {
+	usb-vbus {
+		gpio-hog;
+		gpios = <29 GPIO_ACTIVE_HIGH>;
+		output-high;
+		line-name = "usb-vbus";
+	};
+
 	button_pins: button-state {
 		pins = "gpio42";
 		function = "gpio";
