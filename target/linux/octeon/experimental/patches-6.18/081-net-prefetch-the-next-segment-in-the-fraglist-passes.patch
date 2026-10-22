@@ -1,0 +1,114 @@
+From: Simon Polack <spolack+git@mailbox.org>
+Subject: [PATCH] net: prefetch the next segment in the fraglist passes
+
+EXPERIMENTAL, showcase only, not for merging: it needs proper testing.
+It changes generic kernel code but was only measured with the octeon_pip
+driver of #26060.
+The build does not apply it: it sits in target/linux/octeon/experimental/.
+
+skb_segment_list(), the UDP list checksum fix-up, inet_gso_segment()'s
+tail loop and dev_hard_start_xmit() each walk the whole fraglist: on
+the EdgeRouter 4 (8 L1 sets, 64 segments per list) each pass misses on
+the next segment's skb and header lines. Prefetch the next segment's
+lines while the current one is processed.
+
+Measured on an EdgeRouter 4 (CN7030, 4 cores), octeon3 subtarget (CN63XXP1
+off), octeon_pip driver, one boot per image, 64-byte single-flow floods
+in kpps, on 2026-10-21.
+Target: skb_segment_list(), the UDP list checksum, inet_gso_segment(), dev_hard_start_xmit():
+4.31 -> 1.33 L1 misses per packet (flood1).
+Step P1 -> P2 (this patch; GRE also got the four-chunk 080 in that step).
+This patch, measured: flood1 +3.1 % (352 -> 363 kpps), fw4 NAT +3.8 % (289 -> 300),
+fw4+flowtable +2.8 % (352 -> 362), WireGuard tcp1 +1.2 %, GRE tcp1 ~+0.7 % (extrapolated).
+These gains are on top of an unpatched octeon3 kernel; the full set and the
+split gain (up to +15 %) are in target/linux/octeon/experimental/README.md.
+
+Signed-off-by: Simon Polack <spolack+git@mailbox.org>
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+---
+--- a/net/core/skbuff.c
++++ b/net/core/skbuff.c
+@@ -4669,6 +4669,16 @@ struct sk_buff *skb_segment_list(struct
+ 		nskb = list_skb;
+ 		list_skb = list_skb->next;
+ 
++		/*
++		 * The next segment's skb lines while this one is done, and
++		 * the line of this one's data the headers are copied into
++		 */
++		if (list_skb) {
++			prefetch(list_skb);
++			prefetch(&list_skb->truesize);
++		}
++		prefetchw(nskb->data - tnl_hlen);
++
+ 		DEBUG_NET_WARN_ON_ONCE(nskb->sk);
+ 
+ 		err = 0;
+--- a/net/ipv4/udp_offload.c
++++ b/net/ipv4/udp_offload.c
+@@ -7,6 +7,7 @@
+  */
+ 
+ #include <linux/skbuff.h>
++#include <linux/prefetch.h>
+ #include <net/gro.h>
+ #include <net/gso.h>
+ #include <net/udp.h>
+@@ -396,6 +397,12 @@ static struct sk_buff *__udpv4_gso_segme
+ 		uh2 = udp_hdr(seg);
+ 		iph2 = ip_hdr(seg);
+ 
++		/* The next segment's headers and shared info while this one is done */
++		if (seg->next) {
++			prefetch(seg->next->data);
++			prefetch(skb_shinfo(seg->next));
++		}
++
+ 		__udpv4_gso_segment_csum(seg,
+ 					 &iph2->saddr, &iph->saddr,
+ 					 &uh2->source, &uh->source);
+--- a/net/ipv4/af_inet.c
++++ b/net/ipv4/af_inet.c
+@@ -107,6 +107,7 @@
+ #include <net/udplite.h>
+ #include <net/ping.h>
+ #include <linux/skbuff.h>
++#include <linux/prefetch.h>
+ #include <net/sock.h>
+ #include <net/raw.h>
+ #include <net/icmp.h>
+@@ -1409,6 +1410,11 @@ struct sk_buff *inet_gso_segment(struct
+ 
+ 	skb = segs;
+ 	do {
++		/* The next segment's header line and shared info while this one is done */
++		if (skb->next) {
++			prefetch(skb_mac_header(skb->next) + nhoff);
++			prefetch(skb_shinfo(skb->next));
++		}
+ 		iph = (struct iphdr *)(skb_mac_header(skb) + nhoff);
+ 		if (udpfrag) {
+ 			iph->frag_off = htons(offset >> 3);
+--- a/net/core/dev.c
++++ b/net/core/dev.c
+@@ -94,6 +94,7 @@
+ #include <linux/ethtool.h>
+ #include <linux/ethtool_netlink.h>
+ #include <linux/skbuff.h>
++#include <linux/prefetch.h>
+ #include <linux/kthread.h>
+ #include <linux/bpf.h>
+ #include <linux/bpf_trace.h>
+@@ -3893,6 +3894,11 @@ struct sk_buff *dev_hard_start_xmit(stru
+ 	while (skb) {
+ 		struct sk_buff *next = skb->next;
+ 
++		/* The next one's lines while this one is sent */
++		if (next) {
++			prefetch(next);
++			prefetch(&next->truesize);
++		}
+ 		skb_mark_not_on_list(skb);
+ 		rc = xmit_one(skb, dev, txq, next != NULL);
+ 		if (unlikely(!dev_xmit_complete(rc))) {
