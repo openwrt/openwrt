@@ -44,6 +44,7 @@ ipq60xx_setup_interfaces()
 	netgear,wax214)
 		ucidef_set_interfaces_lan_wan "lan"
 		;;
+	arista,ap-c200|\
 	netgear,wax610|\
 	netgear,wax610y|\
 	tplink,eap610-outdoor|\
@@ -69,6 +70,11 @@ ipq60xx_setup_macs()
 	case $board in
 	alfa-network,ap120c-ax)
 		label_mac=$(mtd_get_mac_binary 0:ART 12)
+		;;
+	arista,ap-c200)
+		# LAN and label MAC at 0:ART offset 0x18
+		label_mac=$(mtd_get_mac_binary 0:ART 24)
+		lan_mac=$label_mac
 		;;
 	qihoo,360v6)
 		lan_mac=$(mtd_get_mac_ascii factory lanMac)

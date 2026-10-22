@@ -67,6 +67,19 @@ define Device/alfa-network_ap120c-ax
 endef
 TARGET_DEVICES += alfa-network_ap120c-ax
 
+define Device/arista_ap-c200
+	$(call Device/FitImage)
+	$(call Device/UbiFit)
+	DEVICE_VENDOR := Arista
+	DEVICE_MODEL := AP-C200
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	SOC := ipq6018
+	# No ipq-wifi package. ath11k-firmware-ipq6018 installs the generic
+	# board-2.bin, which is the board_id 0xff fallback for this device.
+endef
+TARGET_DEVICES += arista_ap-c200
+
 define Device/cambiumnetworks_xe3-4
 	$(call Device/FitImage)
 	$(call Device/UbiFit)
