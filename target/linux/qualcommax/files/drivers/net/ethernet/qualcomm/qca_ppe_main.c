@@ -3052,7 +3052,7 @@ static void ppe_ipq6018_mux_setup(struct qca_ppe_priv *priv)
 
 	of_node_put(ports_np);
 
-	/* FIXME: better investigate this */
+	/* Port 3 reaches channel 4 of PCS0 only through the mux. */
 	if (port3_ch == 4)
 		regmap_update_bits(priv->regmap, PPE_PORT_MUX_CTRL,
 				   CPPE_PORT3_PCS_SEL | CPPE_PCS0_CH4_SEL,

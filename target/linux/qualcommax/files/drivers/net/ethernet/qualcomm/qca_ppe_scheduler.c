@@ -523,13 +523,12 @@ static void ppe_qm_init(struct qca_ppe_priv *priv)
 			 * class for every packet, so a class must be as wide as
 			 * the spread or the smear crosses into the next, and
 			 * the third band is the second scheduler node's queues.
-			 * l0_port0[] and ppe_l0_scheduler_init() have already
-			 * put each band a strict priority above
-			 * the one below, which is what the small-frame
-			 * classifier in the ACL needs to be worth anything:
-			 * without it every priority shares one queue, and a
-			 * frame on its way to a Wi-Fi client waits behind
-			 * whatever bulk that queue is holding.
+			 * l0_port0[] and ppe_l0_scheduler_init() put each band
+			 * a strict priority above the one below, which is what
+			 * the small-frame classifier in the ACL needs to be
+			 * worth anything: without it every priority shares one
+			 * queue, and a frame on its way to a Wi-Fi client waits
+			 * behind whatever bulk that queue is holding.
 			 *
 			 * Priorities eight and up select the third band. No
 			 * classifier resolves there on its own - the DSCP and
@@ -1920,12 +1919,11 @@ static void ppe_port_queue_limit_set(struct qca_ppe_priv *priv, int port)
 					      priv->data->qm_ceiling) :
 			    ppe_ac_uni_default(priv);
 
-	/* The CPU port owns every queue below the first user port's base, and it
-	 * is not in the table below because the driver does not build its
-	 * scheduler. Its admission entries are still ours to size: the band
-	 * cpu_port_rate shapes is a bottleneck the way a shaped port is, and
-	 * without this it keeps the dynamic limit every queue is probed with -
-	 * which the comment above this function explains does not bind.
+	/* The CPU port owns every queue below the first user port's base, laid
+	 * out by l0_port0[] rather than port_l0[]. The band cpu_port_rate
+	 * shapes is a bottleneck the way a shaped port is, and without this it
+	 * keeps the dynamic limit every queue is probed with - which the
+	 * comment above this function explains does not bind.
 	 */
 	if (port == QCA_PPE_CPU_PORT) {
 		u32 def = ppe_ac_uni_default(priv);
@@ -2627,8 +2625,7 @@ int qca_ppe_tc_query_caps(struct tc_query_caps_base *base)
  * a hash spread served round robin rather than a ladder of their own. ETS and
  * prio are how that shape is expressed to tc, which numbers bands from the
  * top, so the top band is band 0. A shape this hardware cannot give is refused
- * rather than quietly flattened into one it can; nothing is programmed either
- * way, an accepted qdisc only gains the port's counters.
+ * rather than quietly flattened into one it can.
  */
 #define PPE_QOS_BANDS		3
 
@@ -3126,11 +3123,6 @@ static int qca_ppe_setup_tc_red(struct qca_ppe_priv *priv, int port,
 	}
 }
 
-/* The port shaper meters everything the port sends, which is a root tbf. The
- * qdisc's overhead, mpu and linklayer are not carried into the hardware, which
- * meters the frame it puts on the wire including preamble, inter-packet gap
- * and CRC.
- */
 /* GRED in WRED mode on the same queues a red takes: the queue manager compares
  * every colour against the one queue depth, with green's limit as the queue's
  * and yellow and red held below it. DP 0, 1 and 2 are green, yellow and red,
@@ -3290,6 +3282,11 @@ static u32 ppe_tbf_limit(struct qca_ppe_priv *priv, int port,
 	       priv->shaper[port].limit : 0;
 }
 
+/* The port shaper meters everything the port sends, which is a root tbf. The
+ * qdisc's overhead, mpu and linklayer are not carried into the hardware, which
+ * meters the frame it puts on the wire including preamble, inter-packet gap
+ * and CRC.
+ */
 int qca_ppe_setup_tc_tbf(struct qca_ppe_priv *priv, int port,
 			 struct tc_tbf_qopt_offload *qopt)
 {

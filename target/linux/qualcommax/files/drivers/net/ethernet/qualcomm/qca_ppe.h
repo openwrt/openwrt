@@ -618,9 +618,8 @@
 #define   PPE_QOS_INFO_DSCP		GENMASK(13, 8)
 #define   PPE_QOS_INFO_DP		GENMASK(15, 14)
 
-/* The highest priority a packet may be given. The port's top four unicast
- * queues share an L0 node and a DRR node with its multicast queues, and the
- * scheduler cannot be told to rotate credit for two queues on one node.
+/* The highest priority a classifier may give a packet. The priorities above
+ * select the sparse list (PPE_QOS_SPARSE_PRI), which only the driver assigns.
  */
 #define PPE_QOS_MAX_PRI			11
 /* The internal priority of a flow the driver has found sparse: the list a
@@ -1396,7 +1395,7 @@ struct ppe_red {
 /* One red per band of an offloaded ets or prio, and one for the whole port. */
 #define PPE_RED_SCOPES			4
 
-/* What a port's offloaded tbf was given, so that a stats read can be a delta and
+/* A port's offloaded qdisc state, kept so that a stats read can be a delta and
  * its queues can be resized without the rate being asked for again.
  */
 struct ppe_port_shaper {
