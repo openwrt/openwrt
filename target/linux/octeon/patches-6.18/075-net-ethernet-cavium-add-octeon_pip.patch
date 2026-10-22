@@ -4,14 +4,17 @@ Subject: [PATCH] net: ethernet: cavium: add octeon_pip
 
 Backport to 6.18 of the octeon_pip series prepared for net-next and not
 posted yet (15 patches, branch octeon-pip-rfc-v1 of
-https://github.com/spolack/linux, de30d0622c6d on net-next
+https://github.com/spolack/linux, 6c34e76095dd on net-next
 98c2ad4f5d80), squashed into one patch: the driver for the Ethernet
 ports behind the PIP/IPD and PKO units of OCTEON, OCTEON+, OCTEON II and
 the CN70XX/CN71XX, with phylink and the SGMII/QSGMII/1000BASE-X PCS,
 the RGMII/GMII/XAUI ports, a receive group per CPU, transmit completions
 in the receive polls, page_pool buffers, XDP (multi-buffer), ethtool and
-debugfs. It replaces the staging driver octeon-ethernet (the two are
-exclusive in Kconfig).
+debugfs. Each SGMII PCS is powered down for 25 ms and up again once at
+probe, which QCA8033 PHYs and QCA833x switches need after a warm reset
+(what 702-qca833x-force-pcs-reset.patch does for the staging driver).
+It replaces the staging driver octeon-ethernet (the two are exclusive in
+Kconfig).
 
 Contents: drivers/net/ethernet/cavium/octeon/octeon_pip*, the
 OCTEON_PIP_ETHERNET Kconfig entry and Makefile lines, the binding
@@ -54,7 +57,7 @@ Signed-off-by: Simon Polack <spolack+git@mailbox.org>
  .../ethernet/cavium/octeon/octeon_pip_ipd.h   |   68 +
  .../ethernet/cavium/octeon/octeon_pip_link.c  |  388 +++
  .../ethernet/cavium/octeon/octeon_pip_main.c  | 2372 +++++++++++++++++
- .../ethernet/cavium/octeon/octeon_pip_pcs.c   |  650 +++++
+ .../ethernet/cavium/octeon/octeon_pip_pcs.c   |  683 +++++
  .../ethernet/cavium/octeon/octeon_pip_pcs.h   |   37 +
  .../ethernet/cavium/octeon/octeon_pip_pko.c   |  592 ++++
  .../ethernet/cavium/octeon/octeon_pip_pko.h   |  128 +
@@ -65,7 +68,7 @@ Signed-off-by: Simon Polack <spolack+git@mailbox.org>
  .../ethernet/cavium/octeon/octeon_pip_rx.h    |   23 +
  .../ethernet/cavium/octeon/octeon_pip_tx.c    | 1357 ++++++++++
  .../ethernet/cavium/octeon/octeon_pip_tx.h    |   42 +
- 29 files changed, 11380 insertions(+), 99 deletions(-)
+ 29 files changed, 11413 insertions(+), 99 deletions(-)
 
 --- /dev/null
 +++ b/Documentation/devicetree/bindings/net/cavium,octeon-3860-pip.yaml
@@ -6459,7 +6462,7 @@ Signed-off-by: Simon Polack <spolack+git@mailbox.org>
 +MODULE_DESCRIPTION("Cavium OCTEON PIP/PKO Ethernet driver");
 --- /dev/null
 +++ b/drivers/net/ethernet/cavium/octeon/octeon_pip_pcs.c
-@@ -0,0 +1,650 @@
+@@ -0,0 +1,683 @@
 +// SPDX-License-Identifier: GPL-2.0
 +/*
 + * The PCS blocks: the SGMII/QSGMII PCS of each port of a GMX, and the
@@ -6470,6 +6473,7 @@ Signed-off-by: Simon Polack <spolack+git@mailbox.org>
 + * Copyright (c) 2003-2018 Cavium, Inc. / Cavium Networks.
 + */
 +
++#include <linux/delay.h>
 +#include <linux/iopoll.h>
 +#include <linux/kernel.h>
 +#include <linux/mutex.h>
@@ -6543,15 +6547,45 @@ Signed-off-by: Simon Polack <spolack+git@mailbox.org>
 +	}
 +}
 +
++/*
++ * Power the PCS of each port down and up again, as the SDK does at every
++ * link setup (cvmx-helper-sgmii.c): QCA8033 PHYs and QCA833x switches
++ * pass no traffic after a warm reset until the PCS at the other end of
++ * the link has been powered down; a reset of the PCS or of the Qualcomm
++ * device does not bring them back. The bootloader may have the PCS set
++ * up already, which opip_pcs_config() then keeps, so this is done here,
++ * once, with the ports disabled. They wait together: 25 ms, 10 ms is too
++ * short (SDK). A PCS with autonegotiation on starts a new one.
++ */
++static void opip_pcs_power_cycle(int iface, int num_ports)
++{
++	int index;
++	u64 ctl;
++
++	for (index = 0; index < num_ports; index++) {
++		ctl = opip_rd(OPIP_PCS_MR_CONTROL(iface, index));
++		opip_wr(OPIP_PCS_MR_CONTROL(iface, index),
++			ctl | OPIP_PCS_MR_CONTROL_PWR_DN);
++	}
++	msleep(25);
++	for (index = 0; index < num_ports; index++) {
++		ctl = opip_rd(OPIP_PCS_MR_CONTROL(iface, index));
++		ctl &= ~OPIP_PCS_MR_CONTROL_PWR_DN;
++		if (ctl & OPIP_PCS_MR_CONTROL_AN_EN)
++			ctl |= OPIP_PCS_MR_CONTROL_RST_AN;
++		opip_wr(OPIP_PCS_MR_CONTROL(iface, index), ctl);
++	}
++}
++
 +/**
 + * opip_sgmii_enable - bring up the SGMII ports of an interface
 + * @iface:     Interface
 + * @num_ports: Ports on it
 + *
-+ * The GMX port counts, the PCS of each port, then the ports enabled. On
-+ * the simulator, which has no link polling, the link is set up here.
-+ * The PCS of a port is set up for in-band autonegotiation later, from
-+ * phylink, see opip_pcs_config().
++ * The GMX port counts, the PCS of each port and its power cycle, then the
++ * ports enabled. On the simulator, which has no link polling, the link
++ * is set up here instead of the power cycle. The PCS of a port is set up
++ * for in-band autonegotiation later, from phylink, see opip_pcs_config().
 + *
 + * Return: 0, or -EINVAL for more ports than a GMX has
 + */
@@ -6571,6 +6605,8 @@ Signed-off-by: Simon Polack <spolack+git@mailbox.org>
 +			opip_pcs_link_set(iface, index, &link);
 +		}
 +	}
++	if (!opip_on_simulator())
++		opip_pcs_power_cycle(iface, num_ports);
 +	for (index = 0; index < num_ports; index++)
 +		opip_gmx_port_enable(iface, index, true,
 +				     opip_port_number(iface, index));
