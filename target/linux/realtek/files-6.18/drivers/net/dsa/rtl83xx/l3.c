@@ -2809,39 +2809,6 @@ static int otto_l3_fib_check_v4(struct otto_l3_ctrl *ctrl,
 	return 0;
 }
 
-static void otto_l3_host_route_trap(struct otto_l3_ctrl *ctrl,
-				    struct fib_entry_notifier_info *info)
-{
-	struct otto_l3_route *route;
-	struct in6_addr gw;
-
-	ipv6_addr_set_v4mapped(0, &gw);
-	route = otto_l3_route_alloc(ctrl, &gw, ROUTE_HOST);
-	if (!route) {
-		otto_l3_fib4_info_failed(info);
-		return;
-	}
-
-	route->dst_ip = info->dst;
-	route->prefix_len = info->dst_len;
-	route->tb_id = info->tb_id;
-	route->attr.valid = true;
-	route->attr.action = ROUTE_ACT_TRAP2CPU;
-	route->attr.type = ROUTE_TYPE_IP4UC;
-	route->fi = info->fi;
-	fib_info_hold(route->fi);
-	route->dscp = info->dscp;
-	route->fib_type = info->type;
-
-	if (otto_l3_route_install(ctrl, route)) {
-		otto_l3_route_free(ctrl, route);
-		otto_l3_fib4_info_failed(info);
-		return;
-	}
-
-	otto_l3_fib4_flags_set(route, false, true, false);
-}
-
 /* A route this driver leaves out still has to keep a shorter prefix in
  * hardware from forwarding its traffic, so it gets an entry that traps: a /32
  * in the host table where there is one, anything else a row of its own. The
@@ -2857,13 +2824,10 @@ static void otto_l3_fib_trap_v4(struct otto_l3_ctrl *ctrl, struct fib_entry_noti
 	if (!info->dst_len)
 		return;
 
-	if (info->dst_len == 32 && ctrl->cfg->host_route_write) {
-		otto_l3_host_route_trap(ctrl, info);
-		return;
-	}
-
 	ipv6_addr_set_v4mapped(0, &gw);
-	route = otto_l3_route_alloc(ctrl, &gw, ROUTE_PREFIX);
+	route = otto_l3_route_alloc(ctrl, &gw,
+				    info->dst_len == 32 && ctrl->cfg->host_route_write ?
+				    ROUTE_HOST : ROUTE_PREFIX);
 	if (!route) {
 		dev_err(ctrl->dev, "no row to trap %pI4/%d\n", &info->dst, info->dst_len);
 		otto_l3_fib4_info_failed(info);
@@ -2881,15 +2845,12 @@ static void otto_l3_fib_trap_v4(struct otto_l3_ctrl *ctrl, struct fib_entry_noti
 	route->dscp = info->dscp;
 	route->fib_type = info->type;
 
-	route->row = otto_l3_route_place(ctrl, route);
-	if (route->row < FIRST_PREFIX_ROW) {
-		dev_err(ctrl->dev, "no row to trap %pI4/%d\n", &info->dst, info->dst_len);
-		otto_l3_route_teardown(ctrl, route);
+	if (otto_l3_route_install(ctrl, route)) {
+		otto_l3_route_free(ctrl, route);
 		otto_l3_fib4_info_failed(info);
 		return;
 	}
 
-	ctrl->cfg->route_write(ctrl, route->row, route);
 	otto_l3_fib4_flags_set(route, false, true, false);
 }
 
