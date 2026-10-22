@@ -2486,6 +2486,12 @@ int qca_ppe_setup_tc_mqprio(struct qca_ppe_priv *priv, int port,
 	 * destroyed, and that removal names no qdisc, so it must not undo the
 	 * replacement.
 	 */
+	if (qopt->preemptible_tcs) {
+		NL_SET_ERR_MSG_MOD(qopt->extack,
+				   "the port has no frame preemption");
+		return -EOPNOTSUPP;
+	}
+
 	if (!q->num_tc && priv->shaper[port].mqprio_users > 1) {
 		priv->shaper[port].mqprio_users--;
 		return 0;
