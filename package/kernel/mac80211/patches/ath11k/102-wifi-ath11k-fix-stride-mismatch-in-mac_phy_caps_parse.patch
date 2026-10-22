@@ -1,0 +1,60 @@
+From 7a246c72132eb943b5844ba79dad597b47429dba Mon Sep 17 00:00:00 2001
+From: Jeff Johnson <jeff.johnson@oss.qualcomm.com>
+Date: Tue, 28 Jul 2026 18:05:29 -0700
+Subject: [PATCH] wifi: ath11k: fix stride mismatch in mac_phy_caps_parse()
+
+Currently, in ath11k_wmi_tlv_mac_phy_caps_parse(), kcalloc() sizes the
+mac_phy_caps buffer as tot_phy_id * len, where len is clamped to
+min(firmware_len, sizeof(struct wmi_mac_phy_capabilities)). The subsequent
+memcpy() destination advances by sizeof(full struct) per slot via C
+pointer arithmetic, not by the clamped len. When firmware sends short
+TLVs, the second and later slots are written past the end of the
+allocation.
+
+The reader in ath11k_pull_mac_phy_cap_svc_ready_ext() also indexes the
+buffer with full-struct pointer arithmetic, so the allocation must match
+that stride.
+
+Fix by using kzalloc_objs(), which derives the element size from the
+pointer type, making allocation size and pointer stride provably
+consistent regardless of what len the firmware provides.
+
+Compile tested only.
+
+Fixes: 5b90fc760db5 ("ath11k: fix wmi service ready ext tlv parsing")
+Assisted-by: Claude:claude-sonnet-4-6
+Reviewed-by: Baochen Qiang <baochen.qiang@oss.qualcomm.com>
+Reviewed-by: Rameshkumar Sundaram <rameshkumar.sundaram@oss.qualcomm.com>
+Link: https://patch.msgid.link/20260728-mac_phy_caps_parse-stride-mismatch-v1-2-27a9c1a3fbd0@oss.qualcomm.com
+Signed-off-by: Jeff Johnson <jeff.johnson@oss.qualcomm.com>
+---
+ drivers/net/wireless/ath/ath11k/wmi.c | 8 +++++---
+ 1 file changed, 5 insertions(+), 3 deletions(-)
+
+diff --git a/drivers/net/wireless/ath/ath11k/wmi.c b/drivers/net/wireless/ath/ath11k/wmi.c
+index d6feaa710f..66547e9ee1 100644
+--- a/drivers/net/wireless/ath/ath11k/wmi.c
++++ b/drivers/net/wireless/ath/ath11k/wmi.c
+@@ -4809,14 +4809,16 @@ static int ath11k_wmi_tlv_mac_phy_caps_parse(struct ath11k_base *soc,
+ 	if (svc_rdy_ext->n_mac_phy_caps >= svc_rdy_ext->tot_phy_id)
+ 		return -ENOBUFS;
+ 
+-	len = min_t(u16, len, sizeof(struct wmi_mac_phy_capabilities));
+ 	if (!svc_rdy_ext->n_mac_phy_caps) {
+-		svc_rdy_ext->mac_phy_caps = kcalloc(svc_rdy_ext->tot_phy_id,
+-						    len, GFP_ATOMIC);
++		svc_rdy_ext->mac_phy_caps =
++			kzalloc_objs(*svc_rdy_ext->mac_phy_caps,
++				     svc_rdy_ext->tot_phy_id,
++				     GFP_ATOMIC);
+ 		if (!svc_rdy_ext->mac_phy_caps)
+ 			return -ENOMEM;
+ 	}
+ 
++	len = min_t(u16, len, sizeof(struct wmi_mac_phy_capabilities));
+ 	memcpy(svc_rdy_ext->mac_phy_caps + svc_rdy_ext->n_mac_phy_caps, ptr, len);
+ 	svc_rdy_ext->n_mac_phy_caps++;
+ 	return 0;
+-- 
+2.47.3
+
