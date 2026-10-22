@@ -27,7 +27,7 @@ enable_module() {
 	config_get_bool force "$1" force 0
 
 	if [ "$enabled" = 0 ]; then
-		[ "$builtin" = 0 ] && return 1
+		[ "$builtin" = 0 ] && return 0
 		echo "Engine $1 is built into the libcrypto library and can't be disabled through UCI."
 		echo "If the engine was not built-in, remove 'config builtin' from /etc/config/openssl."
 	elif [ "$force" = 1 ]; then
