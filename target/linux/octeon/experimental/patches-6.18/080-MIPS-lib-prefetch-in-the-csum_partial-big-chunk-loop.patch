@@ -1,0 +1,44 @@
+From: Simon Polack <spolack+git@mailbox.org>
+Subject: [PATCH] MIPS: lib: prefetch in the csum_partial big-chunk loop
+
+EXPERIMENTAL, showcase only, not for merging: it needs proper testing.
+It changes generic kernel code but was only measured with the octeon_pip
+driver of #26060.
+The build does not apply it: it sits in target/linux/octeon/experimental/.
+
+csum_partial() is the first touch of a received payload on a software
+checksum validation (a GRE tunnel's inner TCP on the EdgeRouter 4: 11 %
+of the decap core's L1 misses, 9 % of its cycles) and every 128-byte
+line misses. Prefetch four chunks ahead in the 128-byte loop (two were
+measured first: the loop iterates in ~25 cycles, the data comes from L2
+or DRAM), as memcpy.S does; nothing changes for the short paths.
+
+Measured on an EdgeRouter 4 (CN7030, 4 cores), octeon3 subtarget (CN63XXP1
+off), octeon_pip driver, one boot per image, 64-byte single-flow floods
+in kpps, on 2026-10-21.
+Target: csum_partial() on the GRE decap core: 9.4 -> 6.2 (two chunks ahead) -> 3.6 (four chunks,
+this version) L1 misses per inner packet.
+Step oct3B -> P1 (077-080 together): flood1 +3.8 %, fw4 NAT +1.4 %,
+fw4+flowtable +4.1 %, GRE tcp1 +7.9 %.
+This patch acts on the GRE path only (software checksum of the inner TCP). Extrapolated:
+GRE tcp1 ~+6 % (two chunks ~+4.3 % of the P1 step's +7.9 %, the move to four chunks ~+1.5 % of
+the P2 step); the floods are unchanged.
+These gains are on top of an unpatched octeon3 kernel; the full set and the
+split gain (up to +15 %) are in target/linux/octeon/experimental/README.md.
+
+Signed-off-by: Simon Polack <spolack+git@mailbox.org>
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+---
+--- a/arch/mips/lib/csum_partial.S
++++ b/arch/mips/lib/csum_partial.S
+@@ -190,6 +190,10 @@ EXPORT_SYMBOL(csum_partial)
+ 	 andi	t2, a1, 0x40
+ 
+ .Lmove_128bytes:
++#ifdef CONFIG_CPU_HAS_PREFETCH
++	/* Four 128-byte chunks ahead: the sum is the first touch of the data */
++	kernel_pref(0, 0x200(src))
++#endif
+ 	CSUM_BIGCHUNK(src, 0x00, sum, t0, t1, t3, t4)
+ 	CSUM_BIGCHUNK(src, 0x20, sum, t0, t1, t3, t4)
+ 	CSUM_BIGCHUNK(src, 0x40, sum, t0, t1, t3, t4)
