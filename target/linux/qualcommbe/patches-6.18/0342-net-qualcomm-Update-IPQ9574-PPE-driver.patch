@@ -1525,7 +1525,7 @@ Signed-off-by: Balsam CHIHI <balsam.chihi@moment.tech>
   * @avail_pkt: Number of available packets to process
 --- a/drivers/net/ethernet/qualcomm/ppe/ppe.c
 +++ b/drivers/net/ethernet/qualcomm/ppe/ppe.c
-@@ -229,11 +229,9 @@ static void qcom_ppe_remove(struct platf
+@@ -316,11 +316,9 @@ static void qcom_ppe_remove(struct platf
  	struct ppe_device *ppe_dev;
  
  	ppe_dev = platform_get_drvdata(pdev);
@@ -1537,7 +1537,7 @@ Signed-off-by: Balsam CHIHI <balsam.chihi@moment.tech>
 -	platform_set_drvdata(pdev, NULL);
  }
  
- static const struct of_device_id qcom_ppe_of_match[] = {
+ static const struct ppe_of_data ipq9574_data = {
 --- a/drivers/net/ethernet/qualcomm/ppe/ppe.h
 +++ b/drivers/net/ethernet/qualcomm/ppe/ppe.h
 @@ -13,6 +13,8 @@ struct device;
@@ -1547,8 +1547,8 @@ Signed-off-by: Balsam CHIHI <balsam.chihi@moment.tech>
 +struct ppe_ports;
 +
  /**
-  * struct ppe_device - PPE device private data.
-  * @dev: PPE device structure.
+  * enum ppe_type - PPE device type.
+  * @IPQ9574_PPE: PPE device of IPQ9574.
 --- /dev/null
 +++ b/drivers/net/ethernet/qualcomm/ppe/ppe_api.c
 @@ -0,0 +1,113 @@
@@ -1713,7 +1713,7 @@ Signed-off-by: Balsam CHIHI <balsam.chihi@moment.tech>
 +#endif
 --- a/drivers/net/ethernet/qualcomm/ppe/ppe_config.c
 +++ b/drivers/net/ethernet/qualcomm/ppe/ppe_config.c
-@@ -889,7 +889,7 @@ static int ppe_scheduler_l0_queue_map_se
+@@ -1227,7 +1227,7 @@ static int ppe_scheduler_l0_queue_map_se
  				  val);
  }
  
@@ -1722,7 +1722,7 @@ Signed-off-by: Balsam CHIHI <balsam.chihi@moment.tech>
  static int ppe_scheduler_l0_queue_map_get(struct ppe_device *ppe_dev,
  					  int node_id, int *port,
  					  struct ppe_scheduler_cfg *scheduler_cfg)
-@@ -986,7 +986,7 @@ static int ppe_scheduler_l1_queue_map_se
+@@ -1324,7 +1324,7 @@ static int ppe_scheduler_l1_queue_map_se
  	return regmap_update_bits(ppe_dev->regmap, reg, PPE_L1_COMP_CFG_TBL_NODE_METER_LEN, val);
  }
  
@@ -1731,7 +1731,7 @@ Signed-off-by: Balsam CHIHI <balsam.chihi@moment.tech>
  static int ppe_scheduler_l1_queue_map_get(struct ppe_device *ppe_dev,
  					  int node_id, int *port,
  					  struct ppe_scheduler_cfg *scheduler_cfg)
-@@ -1056,58 +1056,6 @@ int ppe_queue_scheduler_set(struct ppe_d
+@@ -1394,58 +1394,6 @@ int ppe_queue_scheduler_set(struct ppe_d
  }
  
  /**
@@ -1790,7 +1790,7 @@ Signed-off-by: Balsam CHIHI <balsam.chihi@moment.tech>
   * ppe_queue_ucast_base_set - Set PPE unicast queue base ID and profile ID
   * @ppe_dev: PPE device
   * @queue_dst: PPE queue destination configuration
-@@ -1520,6 +1468,31 @@ int ppe_ring_queue_map_set(struct ppe_de
+@@ -1881,6 +1829,31 @@ int ppe_ring_queue_map_set(struct ppe_de
  				 ARRAY_SIZE(queue_bitmap_val));
  }
  
@@ -1824,7 +1824,7 @@ Signed-off-by: Balsam CHIHI <balsam.chihi@moment.tech>
  {
 --- a/drivers/net/ethernet/qualcomm/ppe/ppe_config.h
 +++ b/drivers/net/ethernet/qualcomm/ppe/ppe_config.h
-@@ -294,8 +294,6 @@ int ppe_queue_scheduler_set(struct ppe_d
+@@ -298,8 +298,6 @@ int ppe_queue_scheduler_set(struct ppe_d
  int ppe_queue_scheduler_get(struct ppe_device *ppe_dev,
  			    int node_id, bool flow_level, int *port,
  			    struct ppe_scheduler_cfg *scheduler_cfg);
@@ -3022,8 +3022,8 @@ Signed-off-by: Balsam CHIHI <balsam.chihi@moment.tech>
  /* PPE scheduler configurations for buffer manager block. */
  #define PPE_BM_SCH_CTRL_ADDR			0xb000
  #define PPE_BM_SCH_CTRL_INC			4
-@@ -47,9 +37,6 @@
- #define PPE_DROP_STAT_TBL_ENTRIES		30
+@@ -55,9 +45,6 @@
+ 					  PPE_DROP_STAT_TBL_IPQ9574_ENTRIES)
  #define PPE_DROP_STAT_TBL_INC			0x10
  
 -#define PPE_EPE_DBG_IN_CNT_ADDR			0x26054
@@ -3032,7 +3032,7 @@ Signed-off-by: Balsam CHIHI <balsam.chihi@moment.tech>
  /* Egress VLAN counters. */
  #define PPE_EG_VSI_COUNTER_TBL_ADDR		0x41000
  #define PPE_EG_VSI_COUNTER_TBL_ENTRIES		64
-@@ -578,6 +565,41 @@
+@@ -631,6 +618,41 @@
  #define PPE_ENQ_OPR_TBL_INC			0x10
  #define PPE_ENQ_OPR_TBL_ENQ_DISABLE		BIT(0)
  
@@ -3074,7 +3074,7 @@ Signed-off-by: Balsam CHIHI <balsam.chihi@moment.tech>
  /* PPE GMAC and XGMAC register base address */
  #define PPE_PORT_GMAC_ADDR(x)			(0x001000 + ((x) - 1) * 0x200)
  #define PPE_PORT_XGMAC_ADDR(x)			(0x500000 + ((x) - 1) * 0x4000)
-@@ -614,7 +636,7 @@
+@@ -667,7 +689,7 @@
  #define GMAC_ADDR_BYTE3				GENMASK(7, 0)
  
  /* GMAC control register */
@@ -3083,7 +3083,7 @@ Signed-off-by: Balsam CHIHI <balsam.chihi@moment.tech>
  #define GMAC_TX_THD_M				GENMASK(27, 24)
  #define GMAC_MAXFRAME_SIZE_M			GENMASK(21, 8)
  #define GMAC_CRS_SEL				BIT(6)
-@@ -623,7 +645,7 @@
+@@ -676,7 +698,7 @@
  	(GMAC_TX_THD_M | GMAC_MAXFRAME_SIZE_M | GMAC_CRS_SEL)
  
  /* GMAC debug control register */
@@ -3092,7 +3092,7 @@ Signed-off-by: Balsam CHIHI <balsam.chihi@moment.tech>
  #define GMAC_HIGH_IPG_M				GENMASK(15, 8)
  
  /* GMAC jumbo size register */
-@@ -778,7 +800,7 @@
+@@ -831,7 +853,7 @@
  #define XGMAC_RXBROAD_G_ADDR			0x918
  #define XGMAC_RXMULTI_G_ADDR			0x920
  #define XGMAC_RXCRC_ERR_ADDR			0x928
@@ -3101,7 +3101,7 @@ Signed-off-by: Balsam CHIHI <balsam.chihi@moment.tech>
  #define XGMAC_RXJABBER_ERR_ADDR			0x934
  #define XGMAC_RXUNDERSIZE_G_ADDR		0x938
  #define XGMAC_RXOVERSIZE_G_ADDR			0x93C
-@@ -892,7 +914,7 @@
+@@ -945,7 +967,7 @@
  #define EDMA_REG_TX_MOD_TIMER(n)	(0x99008 + (0x1000 * (n)))
  #define EDMA_REG_TX_INT_CTRL(n)		(0x9900c + (0x1000 * (n)))
  
@@ -3110,7 +3110,7 @@ Signed-off-by: Balsam CHIHI <balsam.chihi@moment.tech>
  #define EDMA_RX_RING_ID_QUEUE0_MASK	GENMASK(7, 0)
  #define EDMA_RX_RING_ID_QUEUE1_MASK	GENMASK(15, 8)
  #define EDMA_RX_RING_ID_QUEUE2_MASK	GENMASK(23, 16)
-@@ -920,7 +942,7 @@
+@@ -973,7 +995,7 @@
  /* Rx Descriptor ring pre-header base address mask */
  #define EDMA_RXDESC_PREHEADER_BA_MASK		0xffffffff
  
@@ -3119,7 +3119,7 @@ Signed-off-by: Balsam CHIHI <balsam.chihi@moment.tech>
  #define EDMA_TXDESC_PROD_IDX_MASK		0xffff
  
  /* Tx descriptor consumer ring index mask */
-@@ -935,7 +957,7 @@
+@@ -988,7 +1010,7 @@
  #define EDMA_TXDESC_CTRL_TXEN_MASK		BIT(0)
  #define EDMA_TXDESC_CTRL_FC_GRP_ID_MASK		GENMASK(3, 1)
  
@@ -3128,7 +3128,7 @@ Signed-off-by: Balsam CHIHI <balsam.chihi@moment.tech>
  #define EDMA_TXCMPL_PROD_IDX_MASK		0xffff
  
  /* Tx completion ring urgent threshold mask */
-@@ -946,7 +968,7 @@
+@@ -999,7 +1021,7 @@
  #define EDMA_TX_MOD_TIMER_INIT_MASK		0xffff
  #define EDMA_TX_MOD_TIMER_INIT_SHIFT		0
  
@@ -3137,7 +3137,7 @@ Signed-off-by: Balsam CHIHI <balsam.chihi@moment.tech>
  #define EDMA_RXFILL_PROD_IDX_MASK		0xffff
  
  /* Rx fill ring consumer index mask */
-@@ -964,10 +986,10 @@
+@@ -1017,10 +1039,10 @@
  /* Rx fill ring enable bit */
  #define EDMA_RXFILL_RING_EN			0x1
  
@@ -3150,7 +3150,7 @@ Signed-off-by: Balsam CHIHI <balsam.chihi@moment.tech>
  #define EDMA_RXDESC_CONS_IDX_MASK		0xffff
  
  /* Rx descriptor ring size masks */
-@@ -1005,23 +1027,23 @@
+@@ -1058,23 +1080,23 @@
  /* EDMA Ring mask */
  #define EDMA_RING_DMA_MASK			0xffffffff
  
