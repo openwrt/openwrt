@@ -1,0 +1,81 @@
+From 83151fc53f07730c7de3e64a5b9a10d8cf3303d8 Mon Sep 17 00:00:00 2001
+From: Grok Assistant <grok@x.ai>
+Date: Wed, 21 Oct 2026 20:15:26 -0500
+Subject: [PATCH] net: phy: at803x: add qca,skip-soft-reset
+
+genphy_soft_reset() sets BMCR_RESET and waits for the bit to clear.
+On some boards the bit stays set for the whole poll, phy_init_hw()
+fails, and the MAC port is never registered.
+
+Add an opt-in DT property so only those boards skip the soft reset.
+Every other AR8031/AR8033 still uses genphy_soft_reset().
+
+Signed-off-by: Grok Assistant <grok@x.ai>
+---
+ .../devicetree/bindings/net/qca,ar803x.yaml   |  6 ++++++
+ drivers/net/phy/qcom/at803x.c                 | 18 +++++++++++++++++-
+ 2 files changed, 23 insertions(+), 1 deletion(-)
+
+--- a/Documentation/devicetree/bindings/net/qca,ar803x.yaml
++++ b/Documentation/devicetree/bindings/net/qca,ar803x.yaml
+@@ -92,6 +92,12 @@
+       valid clock.
+     type: boolean
+ 
++  qca,skip-soft-reset:
++    description: |
++      Skip the BMCR soft reset. On some boards the reset bit stays set,
++      phy_init_hw() fails, and the MAC port is never registered.
++    type: boolean
++
+   qca,smarteee-tw-us-100m:
+     description: EEE Tw parameter for 100M links.
+     $ref: /schemas/types.yaml#/definitions/uint32
+--- a/drivers/net/phy/qcom/at803x.c
++++ b/drivers/net/phy/qcom/at803x.c
+@@ -109,6 +109,9 @@
+ /* disable hibernation mode */
+ #define AT803X_DISABLE_HIBERNATION_MODE		BIT(2)
+ 
++/* BMCR_RESET stays set and phy_init_hw() fails */
++#define AT803X_SKIP_SOFT_RESET			BIT(3)
++
+ #define IPQ5018_PHY_FIFO_CONTROL		0x19
+ #define IPQ5018_PHY_FIFO_RESET			GENMASK(1, 0)
+ 
+@@ -830,6 +833,9 @@
+ 	if (of_property_read_bool(node, "qca,keep-pll-enabled"))
+ 		priv->flags |= AT803X_KEEP_PLL_ENABLED;
+ 
++	if (of_property_read_bool(node, "qca,skip-soft-reset"))
++		priv->flags |= AT803X_SKIP_SOFT_RESET;
++
+ 	ret = at8031_register_regulators(phydev);
+ 	if (ret < 0)
+ 		return ret;
+@@ -889,6 +895,16 @@
+ 			      AT803X_WOL_EN, 0);
+ }
+ 
++static int at8031_soft_reset(struct phy_device *phydev)
++{
++	struct at803x_priv *priv = phydev->priv;
++
++	if (priv->flags & AT803X_SKIP_SOFT_RESET)
++		return 0;
++
++	return genphy_soft_reset(phydev);
++}
++
+ static int at8031_config_init(struct phy_device *phydev)
+ {
+ 	struct at803x_priv *priv = phydev->priv;
+@@ -1169,7 +1185,7 @@
+ 	.probe			= at8031_probe,
+ 	.config_init		= at8031_config_init,
+ 	.config_aneg		= at803x_config_aneg,
+-	.soft_reset		= genphy_soft_reset,
++	.soft_reset		= at8031_soft_reset,
+ 	.set_wol		= at8031_set_wol,
+ 	.get_wol		= at803x_get_wol,
+ 	.suspend		= at803x_suspend,
