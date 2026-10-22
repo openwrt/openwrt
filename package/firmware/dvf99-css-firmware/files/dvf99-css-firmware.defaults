@@ -1,0 +1,38 @@
+#!/bin/sh
+# SPDX-License-Identifier: GPL-2.0-only
+. /lib/functions.sh
+
+board=$(board_name)
+
+css_fw_set() {
+	uci -q batch <<-EOF
+		set dvf99-css-firmware.main.url='$1'
+		set dvf99-css-firmware.main.sha256='$2'
+		delete dvf99-css-firmware.main.umt
+	EOF
+}
+
+css_umt_add() {
+	uci -q add_list dvf99-css-firmware.main.umt="$1"
+}
+
+case "$board" in
+snom,d735)
+	css_fw_set \
+		"https://downloads.snom.com/fw/10.1.226.16/bin/snomD735-10.1.226.16-SIP-r.bin" \
+		"fa917381ad7f459769ca5b1b4f4689c1b42775bcba0e904f3118b9617279fedb"
+	css_umt_add "1:0xf9e94:278:074b54f765d56642a7e069aade8f340a933cf55bec6f898f4b1131a6830627e3"
+	css_umt_add "2:0xf9740:1874:1827410d436e1790daf27c08dde3005d5c7df0c3ad7f94ade70bf9dd276c3a7d"
+	css_umt_add "3:0xf9fac:2338:729587ae5fc55c015d2cf382e34d743c668fe5416f7a359a6418985e3661a123"
+	css_umt_add "4:0xfa8d0:1494:2360a4372f3ec3dacf0b867230122dd6e35f0eedc8a56c43f60c10854c0beb81"
+	css_umt_add "5:0xfaea8:854:a690df4a47ca5c91911af58139b8962c3fb3f881caf39490094f477c0d08d8df"
+	css_umt_add "6:0xfb23c:242:5f81b997b42c5f36ea8a0df8381b6d2eb9d15eba4f31e234897ca01d62085eee"
+	css_umt_add "7:0xfaea8:854:a690df4a47ca5c91911af58139b8962c3fb3f881caf39490094f477c0d08d8df"
+	css_umt_add "27:0xf96f0:38:9366bc147baff0833119d25876a40aa68b0761c2fe43552c48b81ec072f24369"
+	css_umt_add "28:0xf9718:38:eee0b34b25e840e688726026a0bf72d374b6fe1e8d1eb09bb6c689f599efda0a"
+	;;
+esac
+
+uci -q commit dvf99-css-firmware
+
+exit 0
