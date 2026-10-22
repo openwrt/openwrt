@@ -319,8 +319,8 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
 +	ret = sparx5_psfp_fm_get(sparx5, uidx, &fm->pol.idx);
  	if (ret < 0)
  		return ret;
- 	/* Was already in use, no need to reconfigure */
-@@ -303,7 +303,7 @@ int sparx5_psfp_fm_del(struct sparx5 *sp
+ 
+@@ -304,7 +304,7 @@ int sparx5_psfp_fm_del(struct sparx5 *sp
  	if (ret < 0)
  		return ret;
  

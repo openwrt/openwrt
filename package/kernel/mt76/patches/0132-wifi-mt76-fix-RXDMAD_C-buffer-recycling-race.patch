@@ -1,0 +1,32 @@
+From 7ac05ed3a50e511c93f8506e555709a208dfce0a Mon Sep 17 00:00:00 2001
+From: Felix Fietkau <nbd@nbd.name>
+Date: Wed, 22 Jul 2026 08:26:09 +0000
+Subject: [PATCH 132/170] wifi: mt76: fix RXDMAD_C buffer recycling race
+
+[ Upstream commit e1f97c10a4ec2b9db69a134b757304399ca903ce ]
+
+The RXDMAD_C buffers come from the RRO data queues' page pools, which are
+bound to a different NAPI, so the direct page-pool recycle used here could
+race the owning NAPI; take the non-direct path as is already done for WED
+RX queues.
+
+Fixes: e50d4d710efd ("wifi: mt76: Add mt76_dma_get_rxdmad_c_buf utility routione")
+Link: https://patch.msgid.link/20260722082610.2699628-17-nbd@nbd.name
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+---
+ dma.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+--- a/dma.c
++++ b/dma.c
+@@ -990,7 +990,8 @@ mt76_dma_rx_process(struct mt76_dev *dev
+ 	struct sk_buff *skb;
+ 	unsigned char *data;
+ 	bool check_ddone = false;
+-	bool allow_direct = !mt76_queue_is_wed_rx(q);
++	bool allow_direct = !mt76_queue_is_wed_rx(q) &&
++			    !mt76_queue_is_wed_rro_rxdmad_c(q);
+ 	bool more;
+ 
+ 	if ((q->flags & MT_QFLAG_WED_RRO_EN) ||

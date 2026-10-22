@@ -1,0 +1,99 @@
+From 5183b9f092fc0041618f38f895bd0ad860c26ca9 Mon Sep 17 00:00:00 2001
+From: Peter Chiu <chui-hao.chiu@mediatek.com>
+Date: Wed, 22 Jul 2026 08:25:55 +0000
+Subject: [PATCH 121/170] wifi: mt76: mt7996: fix MLD ID in MAC TXD and HIF TXP
+
+[ Upstream commit ce35ecffc96e6d097d27b6fe30677a2cfe2e0461 ]
+
+Problem:
+MCU command timeout while the firmware state is normal, and the
+firmware keeps showing the error log "ERROR!! NO PAUSE...".
+
+Root cause:
+If the MLD_ID field in the TXD is neither the primary link id nor the
+secondary link id, it may lead to a firmware busy loop when the third
+link is in power saving mode.
+
+Remap frames directed to a third link to the primary link wcid. Since
+TX status events and txfree completions carry the wcid the firmware
+saw, use the remapped wcid for packet id tracking and non-AQL packet
+accounting as well, while the frame keeps its original link context
+for addressing, band and OMAC selection.
+
+Fixes: 85cd5534a3f2 ("wifi: mt76: mt7996: use correct link_id when filling TXD and TXP")
+Signed-off-by: Peter Chiu <chui-hao.chiu@mediatek.com>
+Link: https://patch.msgid.link/20260722082610.2699628-3-nbd@nbd.name
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+---
+ .../net/wireless/mediatek/mt76/mt7996/mac.c   | 29 +++++++++++++++++++
+ .../net/wireless/mediatek/mt76/mt7996/main.c  |  2 +-
+ .../wireless/mediatek/mt76/mt7996/mt7996.h    |  1 +
+ 3 files changed, 31 insertions(+), 1 deletion(-)
+
+--- a/mt7996/mac.c
++++ b/mt7996/mac.c
+@@ -854,6 +854,33 @@ mt7996_mac_write_txwi_80211(struct mt799
+ 		txwi[6] |= cpu_to_le32(MT_TXD6_DIS_MAT);
+ }
+ 
++/* The WLAN_IDX in the TXD and TXP must belong to the primary or secondary
++ * link of an MLD station; any other link id can make the firmware spin when
++ * that link is in powersave. Completion events carry the same index, so the
++ * wcid used for status tracking and accounting must match it
++ */
++struct mt76_wcid *mt7996_get_tx_wcid(struct mt76_wcid *wcid)
++{
++	struct mt7996_sta_link *msta_link;
++	struct mt7996_sta *msta;
++
++	if (!wcid->sta)
++		return wcid;
++
++	msta_link = container_of(wcid, struct mt7996_sta_link, wcid);
++	msta = msta_link->sta;
++
++	if (!msta || wcid->link_id == msta->seclink_id ||
++	    wcid->link_id == msta->deflink_id)
++		return wcid;
++
++	msta_link = mt7996_sta_link(msta, msta->deflink_id);
++	if (msta_link)
++		return &msta_link->wcid;
++
++	return wcid;
++}
++
+ void mt7996_mac_write_txwi(struct mt7996_dev *dev, __le32 *txwi,
+ 			   struct sk_buff *skb, struct mt76_wcid *wcid,
+ 			   struct ieee80211_key_conf *key, int pid,
+@@ -1091,6 +1118,8 @@ int mt7996_tx_prepare_skb(struct mt76_de
+ 					   tx_info->buf[1].len, DMA_TO_DEVICE);
+ 	}
+ 
++	wcid = mt7996_get_tx_wcid(wcid);
++
+ 	pid = mt76_tx_status_skb_add(mdev, wcid, tx_info->skb);
+ 	memset(txwi_ptr, 0, MT_TXD_SIZE);
+ 	/* Transmit non qos data by 802.11 header and need to fill txd by host*/
+--- a/mt7996/main.c
++++ b/mt7996/main.c
+@@ -1498,7 +1498,7 @@ static void mt7996_tx(struct ieee80211_h
+ 		if (msta_link)
+ 			wcid = &msta_link->wcid;
+ 	}
+-	mt76_tx(mphy, control->sta, wcid, skb);
++	mt76_tx(mphy, control->sta, mt7996_get_tx_wcid(wcid), skb);
+ unlock:
+ 	rcu_read_unlock();
+ }
+--- a/mt7996/mt7996.h
++++ b/mt7996/mt7996.h
+@@ -865,6 +865,7 @@ bool mt7996_mac_wtbl_update(struct mt799
+ void mt7996_mac_reset_counters(struct mt7996_phy *phy);
+ void mt7996_mac_cca_stats_reset(struct mt7996_phy *phy);
+ void mt7996_mac_enable_nf(struct mt7996_dev *dev, u8 band);
++struct mt76_wcid *mt7996_get_tx_wcid(struct mt76_wcid *wcid);
+ void mt7996_mac_write_txwi(struct mt7996_dev *dev, __le32 *txwi,
+ 			   struct sk_buff *skb, struct mt76_wcid *wcid,
+ 			   struct ieee80211_key_conf *key, int pid,

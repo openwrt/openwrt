@@ -1,0 +1,56 @@
+From 304470333b7f525b23699ea7a7aed3b40ca37ca9 Mon Sep 17 00:00:00 2001
+From: Devin Wittmayer <lucid_duck@justthetip.ca>
+Date: Sat, 27 Jun 2026 13:29:46 -0700
+Subject: [PATCH 101/170] wifi: mt76: mt7925: cancel mlo_pm_work on stop
+
+commit 81faf578320df2dfc682a96baa6e85851dd68b6f upstream.
+
+mt7925 queues mlo_pm_work with a 5 second delay during multi-link
+power-save setup and never cancels it on the stop path. If the device is
+torn down inside that window, the work outlives the teardown and its timer
+fires afterwards, trying to queue onto the workqueue that is already gone:
+
+  workqueue: cannot queue mt7925_mlo_pm_work [mt7925_common] on wq phy0
+  WARNING: kernel/workqueue.c:2283 at __queue_work+0x59/0xa0, CPU#1: swapper/1/0
+   call_timer_fn+0x2a/0x140
+   __run_timers+0x203/0x330
+   run_timer_softirq+0x86/0xf0
+
+mt7921 already has its own stop callback, so add one for mt7925 that
+cancels the work before calling mt792x_stop(). mt7925_ops backs both the
+PCIe and USB drivers, so this covers both.
+
+Fixes: 276a56883257 ("wifi: mt76: mt7925: update the power-saving flow")
+Cc: stable@vger.kernel.org
+Tested-by: Traockl <281473483+Traockl@users.noreply.github.com>
+Signed-off-by: Devin Wittmayer <lucid_duck@justthetip.ca>
+Link: https://patch.msgid.link/20260627202946.25598-1-lucid_duck@justthetip.ca
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ mt7925/main.c | 11 ++++++++++-
+ 1 file changed, 10 insertions(+), 1 deletion(-)
+
+--- a/mt7925/main.c
++++ b/mt7925/main.c
+@@ -2417,10 +2417,19 @@ static void mt7925_channel_switch_rx_bea
+ 	}
+ }
+ 
++static void mt7925_stop(struct ieee80211_hw *hw, bool suspend)
++{
++	struct mt792x_dev *dev = mt792x_hw_dev(hw);
++
++	cancel_delayed_work_sync(&dev->mlo_pm_work);
++
++	mt792x_stop(hw, suspend);
++}
++
+ const struct ieee80211_ops mt7925_ops = {
+ 	.tx = mt792x_tx,
+ 	.start = mt7925_start,
+-	.stop = mt792x_stop,
++	.stop = mt7925_stop,
+ 	.add_interface = mt7925_add_interface,
+ 	.remove_interface = mt792x_remove_interface,
+ 	.config = mt7925_config,

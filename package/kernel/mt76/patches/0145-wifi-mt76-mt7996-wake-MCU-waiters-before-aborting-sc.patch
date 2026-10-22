@@ -1,0 +1,39 @@
+From f3d8cf8c09e3b7379c606e4fb0fbf15d387ed3de Mon Sep 17 00:00:00 2001
+From: Felix Fietkau <nbd@nbd.name>
+Date: Fri, 24 Jul 2026 12:48:03 +0000
+Subject: [PATCH 145/170] wifi: mt76: mt7996: wake MCU waiters before aborting
+ scan in L1 SER
+
+[ Upstream commit 6f8d8c458010b597bf4114e6fb3162bff7050041 ]
+
+The L1 reset path calls mt76_abort_scan() between setting MT76_MCU_RESET
+and waking mcu.wait. A scan work blocked on an in-flight MCU command
+does not re-evaluate its wait condition until woken, so the
+cancel_delayed_work_sync() inside the abort sleeps out the full MCU
+timeout before recovery can proceed, adding several seconds of SER
+latency. mt7996_mac_full_reset() and the mt7915 counterpart already
+order the wake-up first.
+
+Wake mcu.wait immediately after setting MT76_MCU_RESET so in-flight
+commands bail out before the abort synchronises against them.
+
+Fixes: b36d55610215 ("wifi: mt76: abort scan/roc on hw restart")
+Link: https://patch.msgid.link/20260724124813.3961474-19-nbd@nbd.name
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+---
+ mt7996/mac.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/mt7996/mac.c
++++ b/mt7996/mac.c
+@@ -2593,8 +2593,8 @@ void mt7996_mac_reset_work(struct work_s
+ 
+ 	set_bit(MT76_RESET, &dev->mphy.state);
+ 	set_bit(MT76_MCU_RESET, &dev->mphy.state);
+-	mt76_abort_scan(&dev->mt76);
+ 	wake_up(&dev->mt76.mcu.wait);
++	mt76_abort_scan(&dev->mt76);
+ 
+ 	cancel_work_sync(&dev->wed_rro.work);
+ 	mt7996_for_each_phy(dev, phy) {

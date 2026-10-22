@@ -7,11 +7,12 @@ probe/assoc/auth requests via object subscribe.
 
 --- a/hostapd/Makefile
 +++ b/hostapd/Makefile
-@@ -167,6 +167,12 @@ OBJS += ../src/common/hw_features_common
+@@ -167,6 +167,13 @@ OBJS += ../src/common/hw_features_common
  
  OBJS += ../src/eapol_auth/eapol_auth_sm.o
  
 +ifdef CONFIG_UBUS
++NEED_BASE64=y
 +CFLAGS += -DUBUS_SUPPORT
 +OBJS += ../src/utils/uloop.o
 +OBJS += ../src/ap/ubus.o
@@ -53,7 +54,7 @@ probe/assoc/auth requests via object subscribe.
  	}
 --- a/src/ap/beacon.c
 +++ b/src/ap/beacon.c
-@@ -1439,6 +1439,12 @@ void handle_probe_req(struct hostapd_dat
+@@ -1442,6 +1442,12 @@ void handle_probe_req(struct hostapd_dat
  	int mld_id;
  	u16 links;
  #endif /* CONFIG_IEEE80211BE */
@@ -66,7 +67,7 @@ probe/assoc/auth requests via object subscribe.
  
  	if (hapd->iconf->rssi_ignore_probe_request && ssi_signal &&
  	    ssi_signal < hapd->iconf->rssi_ignore_probe_request)
-@@ -1625,6 +1631,12 @@ void handle_probe_req(struct hostapd_dat
+@@ -1628,6 +1634,12 @@ void handle_probe_req(struct hostapd_dat
  	}
  #endif /* CONFIG_P2P */
  
@@ -81,15 +82,15 @@ probe/assoc/auth requests via object subscribe.
  
 --- a/src/ap/dfs.c
 +++ b/src/ap/dfs.c
-@@ -1243,6 +1243,8 @@ int hostapd_dfs_pre_cac_expired(struct h
+@@ -1474,6 +1474,8 @@ int hostapd_dfs_radar_detected(struct ho
  		"freq=%d ht_enabled=%d chan_offset=%d chan_width=%d cf1=%d cf2=%d",
  		freq, ht_enabled, chan_offset, chan_width, cf1, cf2);
  
 +	hostapd_ubus_notify_radar_detected(iface, freq, chan_width, cf1, cf2);
 +
+ 	iface->radar_detected = true;
+ 
  	/* Proceed only if DFS is not offloaded to the driver */
- 	if (iface->drv_flags & WPA_DRIVER_FLAGS_DFS_OFFLOAD)
- 		return 0;
 --- a/src/ap/drv_callbacks.c
 +++ b/src/ap/drv_callbacks.c
 @@ -331,6 +331,10 @@ int hostapd_notif_assoc(struct hostapd_d
@@ -294,11 +295,10 @@ probe/assoc/auth requests via object subscribe.
  }
  
  
-@@ -406,7 +409,7 @@ void hostapd_handle_radio_measurement(st
- 		hostapd_handle_nei_report_req(hapd, buf, len);
+@@ -407,6 +410,7 @@ void hostapd_handle_radio_measurement(st
  		break;
  	case WLAN_RRM_LINK_MEASUREMENT_REPORT:
--		hostapd_handle_link_mesr_report(hapd, buf, len);
+ 		hostapd_handle_link_mesr_report(hapd, buf, len);
 +		hostapd_ubus_handle_link_measurement(hapd, buf, len);
  		break;
  	default:

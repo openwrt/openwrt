@@ -1,0 +1,21 @@
+From 5c94494f1b8dcf4a73f31d8595220d617aa458e3 Mon Sep 17 00:00:00 2001
+From: Felix Fietkau <nbd@nbd.name>
+Date: Wed, 27 May 2026 11:39:32 +0000
+Subject: [PATCH] dma.h: add missing variable initialization
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+ dma.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/dma.h
++++ b/dma.h
+@@ -74,7 +74,7 @@
+ 
+ #define Q_READ(_q, _field) ({						\
+ 	u32 _offset = offsetof(struct mt76_queue_regs, _field);		\
+-	u32 _val;							\
++	u32 _val = 0;							\
+ 	if ((_q)->flags & MT_QFLAG_NPU) {				\
+ 		struct airoha_npu *npu;					\
+ 									\

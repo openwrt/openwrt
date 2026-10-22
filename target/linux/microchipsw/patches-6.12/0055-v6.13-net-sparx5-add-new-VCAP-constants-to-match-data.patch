@@ -77,7 +77,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  extern const struct vcap_statistics sparx5_vcap_stats;
 --- a/drivers/net/ethernet/microchip/sparx5/sparx5_vcap_impl.c
 +++ b/drivers/net/ethernet/microchip/sparx5/sparx5_vcap_impl.c
-@@ -2053,14 +2053,14 @@ int sparx5_vcap_init(struct sparx5 *spar
+@@ -2052,15 +2052,15 @@ int sparx5_vcap_init(struct sparx5 *spar
  
  	sparx5->vcap_ctrl = ctrl;
  	/* select the sparx5 VCAP model */
@@ -89,6 +89,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  	ctrl->ops = &sparx5_vcap_ops;
  
  	INIT_LIST_HEAD(&ctrl->list);
+ 	mutex_init(&ctrl->lock);
  	for (idx = 0; idx < ARRAY_SIZE(sparx5_vcap_inst_cfg); ++idx) {
 -		cfg = &sparx5_vcap_inst_cfg[idx];
 +		cfg = &consts->vcaps_cfg[idx];

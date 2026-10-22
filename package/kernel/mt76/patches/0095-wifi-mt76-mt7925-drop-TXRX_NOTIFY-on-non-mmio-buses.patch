@@ -1,0 +1,62 @@
+From 9cb72f67e1502aabba51aab9ac04ae7c386ee194 Mon Sep 17 00:00:00 2001
+From: Devin Wittmayer <lucid_duck@justthetip.ca>
+Date: Sat, 27 Jun 2026 12:13:35 -0700
+Subject: [PATCH 095/170] wifi: mt76: mt7925: drop TXRX_NOTIFY on non-mmio
+ buses
+
+commit feeff151c83e7f0ffcdedcad5343852d23d1f6e1 upstream.
+
+PKT_TYPE_TXRX_NOTIFY is an mmio-only event, but mt7925_rx_check() and
+mt7925_queue_rx_skb() dispatch it to mt7925_mac_tx_free() on every bus.
+mt7925_mac_tx_free() cleans the DMA tx queues with
+mt76_queue_tx_cleanup(), which calls queue_ops->tx_cleanup(). Only the
+mmio queue ops implement that callback; on USB it is NULL, so a
+TXRX_NOTIFY there calls a NULL pointer in the RX worker:
+
+  BUG: kernel NULL pointer dereference, address: 0000000000000000
+  RIP: 0010:0x0
+  Call Trace:
+   mt7925_mac_tx_free+0x58/0x350 [mt7925_common]
+   mt7925_rx_check+0xe2/0x130 [mt7925_common]
+   mt76u_rx_worker+0x1b9/0x620 [mt76_usb]
+
+Drop the event on non-mmio buses via mt76_is_mmio(), as in
+commit 5683e1488aa9 ("wifi: mt76: connac: do not check WED status for
+non-mmio devices").
+
+Fixes: c948b5da6bbe ("wifi: mt76: mt7925: add Mediatek Wi-Fi7 driver for mt7925 chips")
+Cc: stable@vger.kernel.org
+Signed-off-by: Devin Wittmayer <lucid_duck@justthetip.ca>
+Link: https://patch.msgid.link/20260627191336.20223-3-lucid_duck@justthetip.ca
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ mt7925/mac.c | 10 +++++++---
+ 1 file changed, 7 insertions(+), 3 deletions(-)
+
+--- a/mt7925/mac.c
++++ b/mt7925/mac.c
+@@ -1194,8 +1194,9 @@ bool mt7925_rx_check(struct mt76_dev *md
+ 
+ 	switch (type) {
+ 	case PKT_TYPE_TXRX_NOTIFY:
+-		/* PKT_TYPE_TXRX_NOTIFY can be received only by mmio devices */
+-		mt7925_mac_tx_free(dev, data, len); /* mmio */
++		if (!mt76_is_mmio(mdev))
++			return false;
++		mt7925_mac_tx_free(dev, data, len);
+ 		return false;
+ 	case PKT_TYPE_TXS:
+ 		for (rxd += 4; rxd + 12 <= end; rxd += 12)
+@@ -1231,7 +1232,10 @@ void mt7925_queue_rx_skb(struct mt76_dev
+ 
+ 	switch (type) {
+ 	case PKT_TYPE_TXRX_NOTIFY:
+-		/* PKT_TYPE_TXRX_NOTIFY can be received only by mmio devices */
++		if (!mt76_is_mmio(mdev)) {
++			napi_consume_skb(skb, 1);
++			break;
++		}
+ 		mt7925_mac_tx_free(dev, skb->data, skb->len);
+ 		napi_consume_skb(skb, 1);
+ 		break;

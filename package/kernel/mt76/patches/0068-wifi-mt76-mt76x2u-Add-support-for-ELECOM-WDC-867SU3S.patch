@@ -1,0 +1,33 @@
+From 7e25b5e22c1f43f0d47ff487360e6aebd55d033a Mon Sep 17 00:00:00 2001
+From: Zenm Chen <zenmchen@gmail.com>
+Date: Tue, 7 Apr 2026 23:44:30 +0800
+Subject: [PATCH 068/170] wifi: mt76: mt76x2u: Add support for ELECOM
+ WDC-867SU3S
+
+commit f4ce0664e9f0387873b181777891741c33e19465 upstream.
+
+Add the ID 056e:400a to the table to support an additional MT7612U
+adapter: ELECOM WDC-867SU3S.
+
+Compile tested only.
+
+Cc: stable@vger.kernel.org # 5.10.x
+Signed-off-by: Zenm Chen <zenmchen@gmail.com>
+Acked-by: Lorenzo Bianconi <lorenzo@kernel.org>
+Link: https://patch.msgid.link/20260407154430.9184-1-zenmchen@gmail.com
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ mt76x2/usb.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/mt76x2/usb.c
++++ b/mt76x2/usb.c
+@@ -16,6 +16,7 @@ static const struct usb_device_id mt76x2
+ 	{ USB_DEVICE(0x0e8d, 0x7612) },	/* Aukey USBAC1200 - Alfa AWUS036ACM */
+ 	{ USB_DEVICE(0x057c, 0x8503) },	/* Avm FRITZ!WLAN AC860 */
+ 	{ USB_DEVICE(0x7392, 0xb711) },	/* Edimax EW 7722 UAC */
++	{ USB_DEVICE(0x056e, 0x400a) },	/* ELECOM WDC-867SU3S */
+ 	{ USB_DEVICE(0x0e8d, 0x7632) },	/* HC-M7662BU1 */
+ 	{ USB_DEVICE(0x0471, 0x2126) }, /* LiteOn WN4516R module, nonstandard USB connector */
+ 	{ USB_DEVICE(0x0471, 0x7600) }, /* LiteOn WN4519R module, nonstandard USB connector */

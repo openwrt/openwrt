@@ -1,0 +1,38 @@
+From 984d412b4f8238e41b114c8ee70dbb91fd39d805 Mon Sep 17 00:00:00 2001
+From: Matt Johnston <matt@ucc.asn.au>
+Date: Mon, 4 May 2026 21:36:41 +0800
+Subject: [PATCH 8/8] scp: fix recursive overwrite check
+
+Non-recursive transfers were incorrectly disallowed to an existing
+destination.
+
+In addition, the destination check logic was wrong.
+
+Fixes: 61bd0e3e6573 ("scp: Disallow -r to an existing directory")
+(cherry picked from commit 16ce059ed8e914e210af67e199041943ec747034)
+---
+ src/scp.c | 13 ++++++++-----
+ 1 file changed, 8 insertions(+), 5 deletions(-)
+
+--- a/src/scp.c
++++ b/src/scp.c
+@@ -585,11 +585,14 @@ tolocal(int argc, char **argv)
+ 		}
+ 
+ 		char *dest = *(argv + argc - 1);
+-		if (!(access(dest, F_OK) == 0 && errno == ENOENT)) {
+-			/* paths sent from the server in recursive mode aren't adequately
+-			 * checked that they match the requested files, so disallow this */
+-			fprintf(stderr, "-r destination \"%s\" must not already exist\n", dest);
+-			exit(1);
++		if (iamrecursive) {
++			/* Destination must not exist */
++			if (!(access(dest, F_OK) == -1 && errno == ENOENT)) {
++				/* paths sent from the server in recursive mode aren't adequately
++				 * checked that they match the requested files, so disallow this */
++				fprintf(stderr, "-r destination \"%s\" must not already exist\n", dest);
++				exit(1);
++			}
+ 		}
+ 
+ 		host = cleanhostname(host);

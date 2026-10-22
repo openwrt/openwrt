@@ -90,7 +90,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  abort_kfree:
  	kfree_skb(skb);
  	return NET_RX_DROP;
-@@ -447,14 +440,11 @@ static int pppoe_rcv(struct sk_buff *skb
+@@ -453,14 +446,11 @@ static int pppoe_rcv(struct sk_buff *skb
  	ph = pppoe_hdr(skb);
  	pn = pppoe_pernet(dev_net(dev));
  
@@ -107,7 +107,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  
  drop:
  	kfree_skb(skb);
-@@ -820,11 +810,12 @@ static int pppoe_ioctl(struct socket *so
+@@ -826,11 +816,12 @@ static int pppoe_ioctl(struct socket *so
  
  		/* Check that the socket referenced by the address
  		   actually exists. */

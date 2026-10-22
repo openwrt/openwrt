@@ -263,8 +263,8 @@ define U-Boot/mt7981_cmcc_rax3000m-emmc-ddr3
   UBOOT_IMAGE:=u-boot.fip
   BL2_BOOTDEV:=emmc
   BL2_SOC:=mt7981
-  BL2_DDRTYPE:=ddr3-1866mhz
-  DEPENDS:=+trusted-firmware-a-mt7981-emmc-ddr3-1866mhz
+  BL2_DDRTYPE:=ddr3-1866
+  DEPENDS:=+trusted-firmware-a-mt7981-emmc-ddr3-1866
 endef
 
 define U-Boot/mt7981_cmcc_rax3000m-emmc-ddr4
@@ -287,8 +287,8 @@ define U-Boot/mt7981_cmcc_rax3000m-nand-ddr3
   UBOOT_IMAGE:=u-boot.fip
   BL2_BOOTDEV:=spim-nand
   BL2_SOC:=mt7981
-  BL2_DDRTYPE:=ddr3-1866mhz
-  DEPENDS:=+trusted-firmware-a-mt7981-spim-nand-ddr3-1866mhz
+  BL2_DDRTYPE:=ddr3-1866
+  DEPENDS:=+trusted-firmware-a-mt7981-spim-nand-ddr3-1866
 endef
 
 define U-Boot/mt7981_cmcc_rax3000m-nand-ddr4
@@ -311,8 +311,44 @@ define U-Boot/mt7981_comfast_cf-wr632ax
   UBOOT_IMAGE:=u-boot.fip
   BL2_BOOTDEV:=spim-nand
   BL2_SOC:=mt7981
+  BL2_DDRTYPE:=ddr3-1866
+  DEPENDS:=+trusted-firmware-a-mt7981-spim-nand-ddr3-1866
+endef
+
+define U-Boot/mt7981_creatlentem_clt-r30b1-ubi
+  NAME:=CreatLentem CLT-R30B1 (UBI)
+  BUILD_SUBTARGET:=filogic
+  BUILD_DEVICES:=creatlentem_clt-r30b1-ubi
+  UBOOT_CONFIG:=mt7981_creatlentem_clt-r30b1-ubi
+  UBOOT_IMAGE:=u-boot.fip
+  BL2_BOOTDEV:=spim-nand-ubi
+  BL2_SOC:=mt7981
+  BL2_DDRTYPE:=ddr3-1866
+  DEPENDS:=+trusted-firmware-a-mt7981-spim-nand-ubi-ddr3-1866
+endef
+
+define U-Boot/mt7981_cudy_m3000-v1
+  NAME:=Cudy M3000 v1/v2
+  BUILD_SUBTARGET:=filogic
+  BUILD_DEVICES:=cudy_m3000-v1-ubootmod
+  UBOOT_CONFIG:=mt7981_cudy_m3000-v1
+  UBOOT_IMAGE:=u-boot.fip
+  BL2_BOOTDEV:=cudy
+  BL2_SOC:=mt7981
   BL2_DDRTYPE:=ddr3
-  DEPENDS:=+trusted-firmware-a-mt7981-spim-nand-ddr3
+  DEPENDS:=+trusted-firmware-a-mt7981-cudy-ddr3
+endef
+
+define U-Boot/mt7981_cudy_m3000-v2-yt8821
+  NAME:=Cudy M3000 v2 with Motorcomm YT8821
+  BUILD_SUBTARGET:=filogic
+  BUILD_DEVICES:=cudy_m3000-v2-yt8821-ubootmod
+  UBOOT_CONFIG:=mt7981_cudy_m3000-v2-yt8821
+  UBOOT_IMAGE:=u-boot.fip
+  BL2_BOOTDEV:=cudy
+  BL2_SOC:=mt7981
+  BL2_DDRTYPE:=ddr3
+  DEPENDS:=+trusted-firmware-a-mt7981-cudy-ddr3
 endef
 
 define U-Boot/mt7981_cudy_tr3000-v1
@@ -421,6 +457,18 @@ define U-Boot/mt7981_glinet_gl-xe3000
   DEPENDS:=+trusted-firmware-a-mt7981-emmc-ddr4
 endef
 
+define U-Boot/mt7981_globitel_bt-r320
+  NAME:=Globitel BT-R320
+  BUILD_SUBTARGET:=filogic
+  BUILD_DEVICES:=globitel_bt-r320
+  UBOOT_CONFIG:=mt7981_globitel_bt-r320
+  UBOOT_IMAGE:=u-boot.fip
+  BL2_BOOTDEV:=emmc
+  BL2_SOC:=mt7981
+  BL2_DDRTYPE:=ddr4
+  DEPENDS:=+trusted-firmware-a-mt7981-emmc-ddr4
+endef
+
 define U-Boot/mt7981_h3c_magic-nx30-pro
   NAME:=H3C Magic NX30 Pro
   BUILD_SUBTARGET:=filogic
@@ -469,8 +517,32 @@ define U-Boot/mt7981_konka_komi-a31
   DEPENDS:=+trusted-firmware-a-mt7981-spim-nand-ddr3
 endef
 
+define U-Boot/mt7981_netis_eap930-v1
+  NAME:=netis EAP930 V1
+  BUILD_SUBTARGET:=filogic
+  BUILD_DEVICES:=netis_eap930-v1
+  UBOOT_CONFIG:=mt7981_netis_eap930-v1
+  UBOOT_IMAGE:=u-boot.fip
+  BL2_BOOTDEV:=spim-nand
+  BL2_SOC:=mt7981
+  BL2_DDRTYPE:=ddr3
+  DEPENDS:=+trusted-firmware-a-mt7981-spim-nand-ddr3
+endef
+
+define U-Boot/mt7981_netis_n6-v2
+  NAME:=netis N6 V2
+  BUILD_SUBTARGET:=filogic
+  BUILD_DEVICES:=netis_n6-v2
+  UBOOT_CONFIG:=mt7981_netis_n6-v2
+  UBOOT_IMAGE:=u-boot.fip
+  BL2_BOOTDEV:=spim-nand
+  BL2_SOC:=mt7981
+  BL2_DDRTYPE:=ddr3-1866
+  DEPENDS:=+trusted-firmware-a-mt7981-spim-nand-ddr3-1866
+endef
+
 define U-Boot/mt7981_netis_nx30v2
-  NAME:=Netis NX30V2
+  NAME:=netis NX30 V2
   BUILD_SUBTARGET:=filogic
   BUILD_DEVICES:=netis_nx30v2
   UBOOT_CONFIG:=mt7981_netis_nx30v2
@@ -635,8 +707,20 @@ define U-Boot/mt7981_qihoo_360t7
   UBOOT_IMAGE:=u-boot.fip
   BL2_BOOTDEV:=spim-nand
   BL2_SOC:=mt7981
-  BL2_DDRTYPE:=ddr3
-  DEPENDS:=+trusted-firmware-a-mt7981-spim-nand-ddr3
+  BL2_DDRTYPE:=ddr3-1866
+  DEPENDS:=+trusted-firmware-a-mt7981-spim-nand-ddr3-1866
+endef
+
+define U-Boot/mt7981_qihoo_360t7-ubi
+  NAME:=Qihoo 360T7 (UBI)
+  BUILD_SUBTARGET:=filogic
+  BUILD_DEVICES:=qihoo_360t7-ubi
+  UBOOT_CONFIG:=mt7981_qihoo-360t7-ubi
+  UBOOT_IMAGE:=u-boot.fip
+  BL2_BOOTDEV:=spim-nand-ubi
+  BL2_SOC:=mt7981
+  BL2_DDRTYPE:=ddr3-1866
+  DEPENDS:=+trusted-firmware-a-mt7981-spim-nand-ubi-ddr3-1866
 endef
 
 define U-Boot/mt7981_snr_snr-cpe-ax2
@@ -644,6 +728,30 @@ define U-Boot/mt7981_snr_snr-cpe-ax2
   BUILD_SUBTARGET:=filogic
   BUILD_DEVICES:=snr_snr-cpe-ax2
   UBOOT_CONFIG:=mt7981_snr_snr-cpe-ax2
+  UBOOT_IMAGE:=u-boot.fip
+  BL2_BOOTDEV:=spim-nand
+  BL2_SOC:=mt7981
+  BL2_DDRTYPE:=ddr3
+  DEPENDS:=+trusted-firmware-a-mt7981-spim-nand-ddr3
+endef
+
+define U-Boot/mt7981_teralink_tl3020-256mb
+  NAME:=Teralink TL3020 256mb
+  BUILD_SUBTARGET:=filogic
+  BUILD_DEVICES:=teralink_tl3020-256mb
+  UBOOT_CONFIG:=mt7981_teralink_tl3020-256mb
+  UBOOT_IMAGE:=u-boot.fip
+  BL2_BOOTDEV:=spim-nand
+  BL2_SOC:=mt7981
+  BL2_DDRTYPE:=ddr3-1866
+  DEPENDS:=+trusted-firmware-a-mt7981-spim-nand-ddr3-1866
+endef
+
+define U-Boot/mt7981_wavlink_wl-wnt100x3
+  NAME:=WAVLINK WL-WNT100X3
+  BUILD_SUBTARGET:=filogic
+  BUILD_DEVICES:=wavlink_wl-wnt100x3-ubootmod
+  UBOOT_CONFIG:=mt7981_wavlink_wl-wnt100x3
   UBOOT_IMAGE:=u-boot.fip
   BL2_BOOTDEV:=spim-nand
   BL2_SOC:=mt7981
@@ -1197,6 +1305,9 @@ UBOOT_TARGETS := \
 	mt7981_cmcc_rax3000m-nand-ddr3 \
 	mt7981_cmcc_rax3000m-nand-ddr4 \
 	mt7981_comfast_cf-wr632ax \
+	mt7981_creatlentem_clt-r30b1-ubi \
+	mt7981_cudy_m3000-v1 \
+	mt7981_cudy_m3000-v2-yt8821 \
 	mt7981_cudy_tr3000-v1 \
 	mt7981_cudy_wbr3000uax-v1 \
 	mt7981_cudy_wr3000e-v1 \
@@ -1207,10 +1318,13 @@ UBOOT_TARGETS := \
 	mt7981_glinet_gl-mt2500 \
 	mt7981_glinet_gl-x3000 \
 	mt7981_glinet_gl-xe3000 \
+	mt7981_globitel_bt-r320 \
 	mt7981_h3c_magic-nx30-pro \
 	mt7981_imou_hx21 \
 	mt7981_jcg_q30-pro \
 	mt7981_konka_komi-a31 \
+	mt7981_netis_eap930-v1 \
+	mt7981_netis_n6-v2 \
 	mt7981_netis_nx30v2 \
 	mt7981_netis_nx31 \
 	mt7981_netis_nx32u \
@@ -1224,7 +1338,10 @@ UBOOT_TARGETS := \
 	mt7981_rfb-snfi \
 	mt7981_routerich_ax3000 \
 	mt7981_qihoo_360t7 \
+	mt7981_qihoo_360t7-ubi \
 	mt7981_snr_snr-cpe-ax2 \
+	mt7981_teralink_tl3020-256mb \
+	mt7981_wavlink_wl-wnt100x3 \
 	mt7981_xiaomi_mi-router-ax3000t \
 	mt7981_xiaomi_mi-router-wr30u \
 	mt7986_acer_predator-w6x \

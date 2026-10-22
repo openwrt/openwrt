@@ -108,7 +108,7 @@ Signed-off-by: John Crispin <john@phrozen.org>
 +			fwnode_handle_put(child);
 +			return ERR_PTR(-EINVAL);
 +		}
-+		led->rst = __of_reset_control_get(np, NULL, 0, 0, 0, true);
++		led->rst = __of_reset_control_get(np, NULL, 0, RESET_CONTROL_EXCLUSIVE);
 +		if (IS_ERR(led->rst))
 +			return ERR_PTR(-EINVAL);
 +

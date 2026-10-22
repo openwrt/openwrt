@@ -1,0 +1,48 @@
+From 5fdaf7016d7684ef756a229fd5d96b4a140eeb40 Mon Sep 17 00:00:00 2001
+From: Bryam Vargas <hexlabsecurity@proton.me>
+Date: Thu, 25 Jun 2026 07:10:26 -0500
+Subject: [PATCH 100/170] wifi: mt76: mt7915: bound the device EEPROM address
+ before the EFUSE copy
+
+commit 44b5adfe49499f53002737f5fe81d608c08122fc upstream.
+
+mt7915_mcu_get_eeprom() copies a fixed EFUSE block into the driver's
+dev->mt76.eeprom.data buffer at the offset reported by the MCU response
+(res->addr, a device-controlled __le32) without checking it against the
+buffer size. A malicious or malfunctioning device can report an arbitrary
+address and drive a 16-byte out-of-bounds write past eeprom.data.
+
+Reject a response whose address would place the copy outside eeprom.data
+before deriving the destination pointer. Devices that echo the requested
+in-bounds offset are unaffected.
+
+Fixes: e57b7901469f ("mt76: add mac80211 driver for MT7915 PCIe-based chipsets")
+Cc: stable@vger.kernel.org
+Signed-off-by: Bryam Vargas <hexlabsecurity@proton.me>
+Link: https://patch.msgid.link/20260625-b4-disp-16f99062-v1-1-aee52ecf61b9@proton.me
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ mt7915/mcu.c | 11 +++++++++--
+ 1 file changed, 9 insertions(+), 2 deletions(-)
+
+--- a/mt7915/mcu.c
++++ b/mt7915/mcu.c
+@@ -2932,8 +2932,15 @@ int mt7915_mcu_get_eeprom(struct mt7915_
+ 		return ret;
+ 
+ 	res = (struct mt7915_mcu_eeprom_info *)skb->data;
+-	if (!buf)
+-		buf = dev->mt76.eeprom.data + le32_to_cpu(res->addr);
++	if (!buf) {
++		u32 addr = le32_to_cpu(res->addr);
++
++		if (addr > dev->mt76.eeprom.size - MT7915_EEPROM_BLOCK_SIZE) {
++			dev_kfree_skb(skb);
++			return -EINVAL;
++		}
++		buf = dev->mt76.eeprom.data + addr;
++	}
+ 	memcpy(buf, res->data, MT7915_EEPROM_BLOCK_SIZE);
+ 
+ 	dev_kfree_skb(skb);

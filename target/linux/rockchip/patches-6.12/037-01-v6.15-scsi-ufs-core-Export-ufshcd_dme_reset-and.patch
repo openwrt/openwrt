@@ -19,7 +19,7 @@ Signed-off-by: Martin K. Petersen <martin.petersen@oracle.com>
 
 --- a/drivers/ufs/core/ufshcd.c
 +++ b/drivers/ufs/core/ufshcd.c
-@@ -4046,7 +4046,7 @@ static int ufshcd_dme_link_startup(struc
+@@ -4044,7 +4044,7 @@ static int ufshcd_dme_link_startup(struc
   *
   * Return: 0 on success, non-zero value on failure.
   */
@@ -28,7 +28,7 @@ Signed-off-by: Martin K. Petersen <martin.petersen@oracle.com>
  {
  	struct uic_command uic_cmd = {
  		.command = UIC_CMD_DME_RESET,
-@@ -4060,6 +4060,7 @@ static int ufshcd_dme_reset(struct ufs_h
+@@ -4058,6 +4058,7 @@ static int ufshcd_dme_reset(struct ufs_h
  
  	return ret;
  }
@@ -36,7 +36,7 @@ Signed-off-by: Martin K. Petersen <martin.petersen@oracle.com>
  
  int ufshcd_dme_configure_adapt(struct ufs_hba *hba,
  			       int agreed_gear,
-@@ -4085,7 +4086,7 @@ EXPORT_SYMBOL_GPL(ufshcd_dme_configure_a
+@@ -4083,7 +4084,7 @@ EXPORT_SYMBOL_GPL(ufshcd_dme_configure_a
   *
   * Return: 0 on success, non-zero value on failure.
   */
@@ -45,7 +45,7 @@ Signed-off-by: Martin K. Petersen <martin.petersen@oracle.com>
  {
  	struct uic_command uic_cmd = {
  		.command = UIC_CMD_DME_ENABLE,
-@@ -4099,6 +4100,7 @@ static int ufshcd_dme_enable(struct ufs_
+@@ -4097,6 +4098,7 @@ static int ufshcd_dme_enable(struct ufs_
  
  	return ret;
  }

@@ -25,7 +25,7 @@ Signed-off-by: Bjorn Andersson <andersson@kernel.org>
 
 --- a/include/linux/err.h
 +++ b/include/linux/err.h
-@@ -41,6 +41,14 @@ static inline void * __must_check ERR_PT
+@@ -41,6 +41,14 @@ static __always_inline void * __must_che
  	return (void *) error;
  }
  

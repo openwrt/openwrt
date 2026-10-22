@@ -1,0 +1,60 @@
+From d0bb2189ade617e624f3c8f444ebb05f59bb2524 Mon Sep 17 00:00:00 2001
+From: Felix Fietkau <nbd@nbd.name>
+Date: Fri, 24 Jul 2026 12:47:46 +0000
+Subject: [PATCH 135/170] wifi: mt76: mt7996: bound TLV walk in
+ mt7996_mcu_get_chip_config
+
+[ Upstream commit 44af52467e72094351a362bf69effd52f1d9c186 ]
+
+The response TLV loop advanced by tlv->len without a minimum, so a
+theoretical firmware response containing a zero-length TLV could spin
+forever, hanging the CPU during device probe.
+The u32 payload was also read without bounds checking.
+Reject a short fixed field, stop on a TLV whose length underruns the
+header or overruns the skb.
+
+Fixes: 5d33053be609 ("wifi: mt76: mt7996: add variants support")
+Link: https://patch.msgid.link/20260724124813.3961474-2-nbd@nbd.name
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+---
+ mt7996/mcu.c | 16 +++++++++++++---
+ 1 file changed, 13 insertions(+), 3 deletions(-)
+
+--- a/mt7996/mcu.c
++++ b/mt7996/mcu.c
+@@ -4368,21 +4368,31 @@ int mt7996_mcu_get_chip_config(struct mt
+ 		return ret;
+ 
+ 	/* fixed field */
++	if (skb->len < 4) {
++		dev_kfree_skb(skb);
++		return -EINVAL;
++	}
+ 	skb_pull(skb, 4);
+ 
+ 	buf = skb->data;
+-	while (buf - skb->data < skb->len) {
++	while (buf - skb->data + sizeof(struct tlv) <= skb->len) {
+ 		struct tlv *tlv = (struct tlv *)buf;
++		u16 tlv_len = le16_to_cpu(tlv->len);
++
++		if (tlv_len < sizeof(*tlv) ||
++		    tlv_len > skb->len - (buf - skb->data))
++			break;
+ 
+ 		switch (le16_to_cpu(tlv->tag)) {
+ 		case UNI_EVENT_CHIP_CONFIG_EFUSE_VERSION:
+-			*cap = le32_to_cpu(*(__le32 *)(buf + sizeof(*tlv)));
++			if (tlv_len >= sizeof(*tlv) + sizeof(__le32))
++				*cap = le32_to_cpu(*(__le32 *)(buf + sizeof(*tlv)));
+ 			break;
+ 		default:
+ 			break;
+ 		}
+ 
+-		buf += le16_to_cpu(tlv->len);
++		buf += tlv_len;
+ 	}
+ 
+ 	dev_kfree_skb(skb);

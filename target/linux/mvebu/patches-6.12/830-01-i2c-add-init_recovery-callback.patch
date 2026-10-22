@@ -147,7 +147,7 @@ Reviewed-by: Linus Walleij <linus.walleij@linaro.org>
 
 --- a/drivers/i2c/i2c-core-base.c
 +++ b/drivers/i2c/i2c-core-base.c
-@@ -427,12 +427,18 @@ static int i2c_init_recovery(struct i2c_
+@@ -428,12 +428,18 @@ static int i2c_init_recovery(struct i2c_
  	struct i2c_bus_recovery_info *bri = adap->bus_recovery_info;
  	bool is_error_level = true;
  	char *err_str;

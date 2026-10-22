@@ -116,7 +116,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  int sparx5_register_notifier_blocks(struct sparx5 *sparx5);
 --- a/drivers/net/ethernet/microchip/sparx5/sparx5_tc_flower.c
 +++ b/drivers/net/ethernet/microchip/sparx5/sparx5_tc_flower.c
-@@ -1284,6 +1284,11 @@ static int sparx5_tc_flower_replace(stru
+@@ -1294,6 +1294,11 @@ static int sparx5_tc_flower_replace(stru
  
  	/* Setup PSFP */
  	if (tc_sg_idx >= 0 || tc_pol_idx >= 0) {

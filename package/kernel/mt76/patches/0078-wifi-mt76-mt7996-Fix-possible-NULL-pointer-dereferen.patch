@@ -1,0 +1,57 @@
+From dfb27e5dd9e4d34fbb74fa834c644dcef0be2be9 Mon Sep 17 00:00:00 2001
+From: Lorenzo Bianconi <lorenzo@kernel.org>
+Date: Sun, 31 May 2026 11:38:57 +0200
+Subject: [PATCH 078/170] wifi: mt76: mt7996: Fix possible NULL pointer
+ dereference in mt7996_mac_write_txwi_80211()
+
+[ Upstream commit 61370e6674b5253de5686813ceeceebc35a7d3e5 ]
+
+For injected frames (e.g. via radiotap), mac80211 can pass
+info->control.vif = NULL, as explicitly noted in struct ieee80211_tx_info.
+Check vif pointer before executing ieee80211_vif_is_mld() in
+mt7996_mac_write_txwi_80211 routine in order to avoid a possible NULL
+pointer dereference.
+
+Fixes: f0b0b239b8f36 ("wifi: mt76: mt7996: rework mt7996_mac_write_txwi() for MLO support")
+Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
+Link: https://patch.msgid.link/20260531-mt7996_mac_write_txwi_80211-null-ptr-deref-v1-1-6dd38e1d3422@kernel.org
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+---
+ mt7996/mac.c | 7 ++++---
+ 1 file changed, 4 insertions(+), 3 deletions(-)
+
+--- a/mt7996/mac.c
++++ b/mt7996/mac.c
+@@ -757,6 +757,7 @@ mt7996_mac_write_txwi_80211(struct mt799
+ 	bool multicast = is_multicast_ether_addr(hdr->addr1);
+ 	u8 tid = skb->priority & IEEE80211_QOS_CTL_TID_MASK;
+ 	__le16 fc = hdr->frame_control, sc = hdr->seq_ctrl;
++	struct ieee80211_vif *vif = info->control.vif;
+ 	u16 seqno = le16_to_cpu(sc);
+ 	bool hw_bigtk = false;
+ 	u8 fc_type, fc_stype;
+@@ -819,7 +820,7 @@ mt7996_mac_write_txwi_80211(struct mt799
+ 		txwi[3] |= cpu_to_le32(MT_TXD3_REM_TX_COUNT);
+ 	}
+ 
+-	if (multicast && ieee80211_vif_is_mld(info->control.vif)) {
++	if (multicast && vif && ieee80211_vif_is_mld(vif)) {
+ 		val = MT_TXD3_SN_VALID |
+ 		      FIELD_PREP(MT_TXD3_SEQ, IEEE80211_SEQ_TO_SN(seqno));
+ 		txwi[3] |= cpu_to_le32(val);
+@@ -839,12 +840,12 @@ mt7996_mac_write_txwi_80211(struct mt799
+ 		txwi[3] &= ~cpu_to_le32(MT_TXD3_HW_AMSDU);
+ 	}
+ 
+-	if (ieee80211_vif_is_mld(info->control.vif) &&
++	if (vif && ieee80211_vif_is_mld(vif) &&
+ 	    (multicast || unlikely(skb->protocol == cpu_to_be16(ETH_P_PAE))))
+ 		txwi[5] |= cpu_to_le32(MT_TXD5_FL);
+ 
+ 	if (ieee80211_is_nullfunc(fc) && ieee80211_has_a4(fc) &&
+-	    ieee80211_vif_is_mld(info->control.vif)) {
++	    vif && ieee80211_vif_is_mld(vif)) {
+ 		txwi[5] |= cpu_to_le32(MT_TXD5_FL);
+ 		txwi[6] |= cpu_to_le32(MT_TXD6_DIS_MAT);
+ 	}

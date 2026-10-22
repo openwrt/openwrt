@@ -1,0 +1,44 @@
+From b4a41a47a67c788e6b0625fa517ec8872e99bb6c Mon Sep 17 00:00:00 2001
+From: Felix Fietkau <nbd@nbd.name>
+Date: Wed, 22 Jul 2026 08:26:00 +0000
+Subject: [PATCH 126/170] wifi: mt76: mt7915: clear wcid mask under mutex after
+ RCU pointer clear
+
+[ Upstream commit 6486e11a6e2f679597af2d5bb48c3b07a2b2a7ba ]
+
+mt7915_remove_interface() cleared the wcid mask bit with no lock held and
+before clearing the RCU wcid pointer. The mask is a non-atomic RMW shared
+with the allocators, which all run under dev->mt76.mutex; on DBDC the two
+wiphys share one mt76_dev, so this raced add_interface/sta_add on the
+other band and could leak or double-hand-out a wcid. Clearing the bit
+before the RCU pointer also let a concurrent allocation reuse the index
+and publish its wcid, which the subsequent NULL assignment then wiped.
+Move the clear into the existing mutex section, after the RCU pointer is
+cleared.
+
+Fixes: f3049b88b2b3 ("wifi: mt76: mt7915: allocate vif wcid in the same range as stations")
+Link: https://patch.msgid.link/20260722082610.2699628-8-nbd@nbd.name
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+---
+ mt7915/main.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/mt7915/main.c
++++ b/mt7915/main.c
+@@ -294,7 +294,6 @@ static void mt7915_remove_interface(stru
+ 
+ 	mt7915_mcu_add_bss_info(phy, vif, false);
+ 	mt7915_mcu_add_sta(dev, vif, NULL, CONN_STATE_DISCONNECT, false);
+-	mt76_wcid_mask_clear(dev->mt76.wcid_mask, mvif->sta.wcid.idx);
+ 
+ 	mutex_lock(&dev->mt76.mutex);
+ 	mt76_testmode_reset(phy->mt76, true);
+@@ -310,6 +309,7 @@ static void mt7915_remove_interface(stru
+ 	mutex_lock(&dev->mt76.mutex);
+ 	dev->mt76.vif_mask &= ~BIT_ULL(mvif->mt76.idx);
+ 	phy->omac_mask &= ~BIT_ULL(mvif->mt76.omac_idx);
++	mt76_wcid_mask_clear(dev->mt76.wcid_mask, mvif->sta.wcid.idx);
+ 	mutex_unlock(&dev->mt76.mutex);
+ 
+ 	spin_lock_bh(&dev->mt76.sta_poll_lock);

@@ -18,8 +18,8 @@ Signed-off-by: Davide Fioravanti <pantanastyle@gmail.com>
 +++ b/drivers/mtd/nand/spi/Makefile
 @@ -1,4 +1,4 @@
  # SPDX-License-Identifier: GPL-2.0
--spinand-objs := core.o alliancememory.o ato.o esmt.o etron.o fmsh.o foresee.o gigadevice.o
-+spinand-objs := core.o alliancememory.o ato.o esmt.o etron.o fidelix.o fmsh.o foresee.o gigadevice.o
+-spinand-objs := core.o alliancememory.o ato.o esmt.o etron.o fmsh.o foresee.o gigadevice.o heyangtek.o
++spinand-objs := core.o alliancememory.o ato.o esmt.o etron.o fidelix.o fmsh.o foresee.o gigadevice.o heyangtek.o
  spinand-objs += macronix.o micron.o paragon.o toshiba.o winbond.o xtx.o
  obj-$(CONFIG_MTD_SPI_NAND) += spinand.o
 --- a/drivers/mtd/nand/spi/core.c
@@ -31,7 +31,7 @@ Signed-off-by: Davide Fioravanti <pantanastyle@gmail.com>
 +	&fidelix_spinand_manufacturer,
  	&foresee_spinand_manufacturer,
  	&gigadevice_spinand_manufacturer,
- 	&macronix_spinand_manufacturer,
+ 	&heyangtek_spinand_manufacturer,
 --- /dev/null
 +++ b/drivers/mtd/nand/spi/fidelix.c
 @@ -0,0 +1,76 @@
@@ -120,4 +120,4 @@ Signed-off-by: Davide Fioravanti <pantanastyle@gmail.com>
 +extern const struct spinand_manufacturer fidelix_spinand_manufacturer;
  extern const struct spinand_manufacturer foresee_spinand_manufacturer;
  extern const struct spinand_manufacturer gigadevice_spinand_manufacturer;
- extern const struct spinand_manufacturer macronix_spinand_manufacturer;
+ extern const struct spinand_manufacturer heyangtek_spinand_manufacturer;

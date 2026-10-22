@@ -1,0 +1,42 @@
+From 3f0ea6d14fa4492d5d25a4e1eb023a6c47ef455f Mon Sep 17 00:00:00 2001
+From: Myeonghun Pak <mhun512@gmail.com>
+Date: Sun, 26 Apr 2026 23:33:36 +0900
+Subject: [PATCH 070/170] wifi: mt76: mt7925: clean up DMA on probe failure
+
+[ Upstream commit 9629f31f505d74e76ac0d7a9492fd06c0316fc5d ]
+
+mt7925_pci_probe() initializes DMA before registering the device. If
+mt7925_register_device() fails, probe returns through err_free_irq without
+tearing down DMA state.
+
+That leaves the TX NAPI instance enabled and skips the DMA queue cleanup
+that the normal remove path performs through mt7925e_unregister_device().
+Add a dedicated unwind label for failures after mt7925_dma_init() succeeds.
+
+Fixes: c948b5da6bbe ("wifi: mt76: mt7925: add Mediatek Wi-Fi7 driver for mt7925 chips")
+Co-developed-by: Ijae Kim <ae878000@gmail.com>
+Signed-off-by: Ijae Kim <ae878000@gmail.com>
+Signed-off-by: Myeonghun Pak <mhun512@gmail.com>
+Link: https://patch.msgid.link/20260426143728.41534-1-pakmyeonghun@bagmyeonghun-ui-MacBookPro.local
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+---
+ mt7925/pci.c | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+--- a/mt7925/pci.c
++++ b/mt7925/pci.c
+@@ -415,10 +415,12 @@ static int mt7925_pci_probe(struct pci_d
+ 
+ 	ret = mt7925_register_device(dev);
+ 	if (ret)
+-		goto err_free_irq;
++		goto err_free_dma;
+ 
+ 	return 0;
+ 
++err_free_dma:
++	mt792x_dma_cleanup(dev);
+ err_free_irq:
+ 	devm_free_irq(&pdev->dev, pdev->irq, dev);
+ err_free_dev:

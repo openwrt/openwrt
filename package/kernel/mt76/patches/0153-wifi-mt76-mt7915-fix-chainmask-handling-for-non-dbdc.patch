@@ -1,0 +1,125 @@
+From 4dee6aca79295de8499f3a22443f391767d1a2da Mon Sep 17 00:00:00 2001
+From: Felix Fietkau <nbd@nbd.name>
+Date: Mon, 27 Jul 2026 15:04:27 +0000
+Subject: [PATCH 153/170] wifi: mt76: mt7915: fix chainmask handling for
+ non-dbdc phys on band 1
+
+[ Upstream commit ea891799eccc9e43ebba0dc157d4b197ad6c1a0e ]
+
+On single-adie mt7986 the only phy is bound to band 1, but its chainmask
+is stored unshifted, because dev->chainshift is still zero while the
+eeprom is parsed for the main phy. mt7915_set_antenna() on the other
+hand shifts by chainshift * band_idx, so the representation of the
+chainmask changed as soon as the antenna configuration was touched.
+Until then, mt7915_mcu_set_chan_info() passed rx_path = 0 to the
+firmware, since shifting the unshifted mask down clears all bits.
+
+Keep the unshifted form for that case and add helpers for the band local
+chainmask, so that only the band 1 phy of a dbdc device uses the shifted
+form.
+
+Fixes: 3eb50cc90534 ("wifi: mt76: mt7915: rely on band_idx of mt76_phy")
+Link: https://patch.msgid.link/20260727150434.1778520-8-nbd@nbd.name
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+---
+ .../net/wireless/mediatek/mt76/mt7915/eeprom.c |  2 +-
+ .../net/wireless/mediatek/mt76/mt7915/main.c   |  6 +++---
+ .../net/wireless/mediatek/mt76/mt7915/mcu.c    |  2 +-
+ .../net/wireless/mediatek/mt76/mt7915/mt7915.h | 18 ++++++++++++++++++
+ .../wireless/mediatek/mt76/mt7915/testmode.c   |  5 +----
+ 5 files changed, 24 insertions(+), 9 deletions(-)
+
+--- a/mt7915/eeprom.c
++++ b/mt7915/eeprom.c
+@@ -257,7 +257,7 @@ void mt7915_eeprom_parse_hw_cap(struct m
+ 	nss = min_t(u8, min_t(u8, nss_max, nss), path);
+ 
+ 	mphy->chainmask = BIT(path) - 1;
+-	if (band)
++	if (band && dev->dbdc_support)
+ 		mphy->chainmask <<= dev->chainshift;
+ 	mphy->antenna_mask = BIT(nss) - 1;
+ 	dev->chainmask |= mphy->chainmask;
+--- a/mt7915/main.c
++++ b/mt7915/main.c
+@@ -1142,7 +1142,7 @@ mt7915_set_antenna(struct ieee80211_hw *
+ 	struct mt7915_dev *dev = mt7915_hw_dev(hw);
+ 	struct mt7915_phy *phy = mt7915_hw_phy(hw);
+ 	int max_nss = hweight8(hw->wiphy->available_antennas_tx);
+-	u8 chainshift = dev->chainshift;
++	u8 shift = mt7915_band_chainshift(phy);
+ 	u8 band = phy->mt76->band_idx;
+ 
+ 	if (!tx_ant || tx_ant != rx_ant || ffs(tx_ant) > max_nss)
+@@ -1155,9 +1155,9 @@ mt7915_set_antenna(struct ieee80211_hw *
+ 	/* handle a variant of mt7916/mt7981 which has 3T3R but nss2 on 5 GHz band */
+ 	if ((is_mt7916(&dev->mt76) || is_mt7981(&dev->mt76)) &&
+ 	    band && hweight8(tx_ant) == max_nss)
+-		phy->mt76->chainmask = (dev->chainmask >> chainshift) << chainshift;
++		phy->mt76->chainmask = (dev->chainmask >> shift) << shift;
+ 	else
+-		phy->mt76->chainmask = tx_ant << (chainshift * band);
++		phy->mt76->chainmask = tx_ant << shift;
+ 
+ 	mt76_set_stream_caps(phy->mt76, true);
+ 	mt7915_set_stream_vht_txbf_caps(phy);
+--- a/mt7915/mcu.c
++++ b/mt7915/mcu.c
+@@ -2819,7 +2819,7 @@ int mt7915_mcu_set_chan_info(struct mt79
+ 		.center_ch = ieee80211_frequency_to_channel(freq1),
+ 		.bw = mt76_connac_chan_bw(chandef),
+ 		.tx_path_num = hweight16(phy->mt76->chainmask),
+-		.rx_path = phy->mt76->chainmask >> (dev->chainshift * band),
++		.rx_path = mt7915_band_chainmask(phy),
+ 		.band_idx = band,
+ 		.channel_band = ch_band[chandef->chan->band],
+ 	};
+--- a/mt7915/mt7915.h
++++ b/mt7915/mt7915.h
+@@ -397,6 +397,24 @@ mt7915_ext_phy(struct mt7915_dev *dev)
+ 	return phy->priv;
+ }
+ 
++/* without dbdc, the chainmask is stored unshifted, even if the phy is
++ * bound to band 1
++ */
++static inline u8 mt7915_band_chainshift(struct mt7915_phy *phy)
++{
++	struct mt7915_dev *dev = phy->dev;
++
++	if (!dev->dbdc_support)
++		return 0;
++
++	return phy->mt76->band_idx * dev->chainshift;
++}
++
++static inline u16 mt7915_band_chainmask(struct mt7915_phy *phy)
++{
++	return phy->mt76->chainmask >> mt7915_band_chainshift(phy);
++}
++
+ static inline u32 mt7915_check_adie(struct mt7915_dev *dev, bool sku)
+ {
+ 	u32 mask = sku ? MT_CONNINFRA_SKU_MASK : MT_ADIE_TYPE_MASK;
+--- a/mt7915/testmode.c
++++ b/mt7915/testmode.c
+@@ -694,9 +694,7 @@ mt7915_tm_set_params(struct mt76_phy *mp
+ {
+ 	struct mt76_testmode_data *td = &mphy->test;
+ 	struct mt7915_phy *phy = mphy->priv;
+-	struct mt7915_dev *dev = phy->dev;
+-	u32 chainmask = mphy->chainmask, changed = 0;
+-	bool ext_phy = phy != &dev->phy;
++	u32 chainmask = mt7915_band_chainmask(phy), changed = 0;
+ 	int i;
+ 
+ 	BUILD_BUG_ON(NUM_TM_CHANGED >= 32);
+@@ -705,7 +703,6 @@ mt7915_tm_set_params(struct mt76_phy *mp
+ 	    td->state == MT76_TM_STATE_OFF)
+ 		return 0;
+ 
+-	chainmask = ext_phy ? chainmask >> dev->chainshift : chainmask;
+ 	if (td->tx_antenna_mask > chainmask)
+ 		return -EINVAL;
+ 

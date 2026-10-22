@@ -18,12 +18,12 @@ Reviewed-by: Simon Horman <horms@kernel.org>
 Message-ID: <20241015-airoha-eth-cdm2-fixes-v1-1-9dc6993286c3@kernel.org>
 Signed-off-by: Andrew Lunn <andrew@lunn.ch>
 ---
- drivers/net/ethernet/mediatek/airoha_eth.c | 3 ++-
+ drivers/net/ethernet/airoha/airoha_eth.c | 3 ++-
  1 file changed, 2 insertions(+), 1 deletion(-)
 
---- a/drivers/net/ethernet/mediatek/airoha_eth.c
-+++ b/drivers/net/ethernet/mediatek/airoha_eth.c
-@@ -1369,7 +1369,8 @@ static int airoha_fe_init(struct airoha_
+--- a/drivers/net/ethernet/airoha/airoha_eth.c
++++ b/drivers/net/ethernet/airoha/airoha_eth.c
+@@ -1412,7 +1412,8 @@ static int airoha_fe_init(struct airoha_
  	airoha_fe_set(eth, REG_GDM_MISC_CFG,
  		      GDM2_RDM_ACK_WAIT_PREF_MASK |
  		      GDM2_CHN_VLD_MODE_MASK);

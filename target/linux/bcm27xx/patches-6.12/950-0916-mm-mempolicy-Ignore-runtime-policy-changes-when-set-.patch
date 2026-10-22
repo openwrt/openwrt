@@ -57,7 +57,7 @@ Signed-off-by: Dom Cobley <popcornmix@gmail.com>
  	if (err)
  		return err;
  
-@@ -3402,6 +3412,7 @@ static int __init setup_numapolicy(char
+@@ -3393,6 +3403,7 @@ static int __init setup_numapolicy(char
  		default_policy = pol;
  		mpol_to_str(buf, sizeof(buf), &pol);
  		pr_info("NUMA default policy overridden to '%s'\n", buf);

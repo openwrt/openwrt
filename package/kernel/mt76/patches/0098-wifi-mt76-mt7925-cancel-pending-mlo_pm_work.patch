@@ -1,0 +1,87 @@
+From 5be6d02837d418bc6c805b5cab1b338de6de9ca7 Mon Sep 17 00:00:00 2001
+From: Wentao Guan <guanwentao@uniontech.com>
+Date: Tue, 30 Jun 2026 17:02:18 +0800
+Subject: [PATCH 098/170] wifi: mt76: mt7925: cancel pending mlo_pm_work
+
+commit 2889e84282dda147f10b10d94cf0efd90a349c53 upstream.
+
+If the device is reset, suspended or unregistered within that window,
+the pending work can still run and access vif/bss data that may already
+be freed, or send MCU commands while the firmware is not available.
+
+Add cancel_delayed_work_sync(&dev->mlo_pm_work) in all relevant teardown
+and suspend paths:
+
+ - mt7925_mac_reset_work()        (chip reset recovery)
+ - mt7925e_unregister_device()    (PCIe unbind)
+ - mt7925_pci_suspend()           (PCIe bus suspend)
+ - mt7925_suspend()               (mac80211 suspend)
+ - mt7925u_suspend()              (USB bus / runtime suspend)
+
+This ensures the work is stopped before the device state becomes
+invalid.
+
+Assisted-by: kimi-cli:kimi-k2.7 code
+Assisted-by: atomcode:glm-5.2 #Reported-by
+
+Fixes: 276a568832577 ("wifi: mt76: mt7925: update the power-saving flow")
+Cc: stable@vger.kernel.org
+Signed-off-by: Wentao Guan <guanwentao@uniontech.com>
+Link: https://patch.msgid.link/20260630090218.3202029-1-guanwentao@uniontech.com
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ mt7925/mac.c  | 1 +
+ mt7925/main.c | 1 +
+ mt7925/pci.c  | 2 ++
+ mt7925/usb.c  | 1 +
+ 4 files changed, 5 insertions(+)
+
+--- a/mt7925/mac.c
++++ b/mt7925/mac.c
+@@ -1314,6 +1314,7 @@ void mt7925_mac_reset_work(struct work_s
+ 
+ 	cancel_delayed_work_sync(&dev->mphy.mac_work);
+ 	cancel_delayed_work_sync(&pm->ps_work);
++	cancel_delayed_work_sync(&dev->mlo_pm_work);
+ 	cancel_work_sync(&pm->wake_work);
+ 
+ 	for (i = 0; i < 10; i++) {
+--- a/mt7925/main.c
++++ b/mt7925/main.c
+@@ -1605,6 +1605,7 @@ static int mt7925_suspend(struct ieee802
+ 	cancel_delayed_work_sync(&phy->mt76->mac_work);
+ 
+ 	cancel_delayed_work_sync(&dev->pm.ps_work);
++	cancel_delayed_work_sync(&dev->mlo_pm_work);
+ 	mt76_connac_free_pending_tx_skbs(&dev->pm, NULL);
+ 
+ 	mt792x_mutex_acquire(dev);
+--- a/mt7925/pci.c
++++ b/mt7925/pci.c
+@@ -42,6 +42,7 @@ static void mt7925e_unregister_device(st
+ 	mt76_for_each_q_rx(&dev->mt76, i)
+ 		napi_disable(&dev->mt76.napi[i]);
+ 	cancel_delayed_work_sync(&pm->ps_work);
++	cancel_delayed_work_sync(&dev->mlo_pm_work);
+ 	cancel_work_sync(&pm->wake_work);
+ 	cancel_work_sync(&dev->reset_work);
+ 
+@@ -455,6 +456,7 @@ static int mt7925_pci_suspend(struct dev
+ 	dev->hif_resumed = false;
+ 	flush_work(&dev->reset_work);
+ 	cancel_delayed_work_sync(&pm->ps_work);
++	cancel_delayed_work_sync(&dev->mlo_pm_work);
+ 	cancel_work_sync(&pm->wake_work);
+ 
+ 	mt7925_roc_abort_sync(dev);
+--- a/mt7925/usb.c
++++ b/mt7925/usb.c
+@@ -251,6 +251,7 @@ static int mt7925u_suspend(struct usb_in
+ 	pm->suspended = true;
+ 	dev->hif_resumed = false;
+ 	flush_work(&dev->reset_work);
++	cancel_delayed_work_sync(&dev->mlo_pm_work);
+ 
+ 	mt76_connac_mcu_set_hif_suspend(&dev->mt76, true, false);
+ 	ret = wait_event_timeout(dev->wait,

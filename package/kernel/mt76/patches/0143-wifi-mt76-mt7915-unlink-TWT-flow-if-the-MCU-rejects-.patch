@@ -1,0 +1,36 @@
+From 6bce0f1280c94af8314f895f404629da09f0788c Mon Sep 17 00:00:00 2001
+From: Felix Fietkau <nbd@nbd.name>
+Date: Fri, 24 Jul 2026 12:48:01 +0000
+Subject: [PATCH 143/170] wifi: mt76: mt7915: unlink TWT flow if the MCU
+ rejects the agreement
+
+[ Upstream commit 16a04441eab0dcd4d7126a6f66b370adbf28f96d ]
+
+The flow is added to dev->twt_list before sending the agreement to the
+firmware, but the error path leaves it linked while flowid_mask is
+never set. The flow slot can then be reused and memset while still on
+the list, corrupting twt_list, and station removal leaves a dangling
+entry behind that mt7915_mac_twt_sched_list_add() later walks.
+
+Fixes: 3782b69d03e7 ("mt76: mt7915: introduce mt7915_mac_add_twt_setup routine")
+Link: https://patch.msgid.link/20260724124813.3961474-17-nbd@nbd.name
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+---
+ mt7915/mac.c | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+--- a/mt7915/mac.c
++++ b/mt7915/mac.c
+@@ -2345,8 +2345,10 @@ void mt7915_mac_add_twt_setup(struct iee
+ 	}
+ 	flow->tsf = le64_to_cpu(twt_agrt->twt);
+ 
+-	if (mt7915_mcu_twt_agrt_update(dev, msta->vif, flow, MCU_TWT_AGRT_ADD))
++	if (mt7915_mcu_twt_agrt_update(dev, msta->vif, flow, MCU_TWT_AGRT_ADD)) {
++		list_del(&flow->list);
+ 		goto unlock;
++	}
+ 
+ 	setup_cmd = TWT_SETUP_CMD_ACCEPT;
+ 	dev->twt.table_mask |= BIT(table_id);

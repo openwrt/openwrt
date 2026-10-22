@@ -1,0 +1,31 @@
+From 522101cbbb3bc2f0af1229f9d5f68a1b043365da Mon Sep 17 00:00:00 2001
+From: Felix Fietkau <nbd@nbd.name>
+Date: Wed, 22 Jul 2026 08:26:02 +0000
+Subject: [PATCH 128/170] wifi: mt76: mt7996: don't report a zero TX bitrate
+
+[ Upstream commit d4d92ccded678c92c390003926097ddbb6516bc7 ]
+
+mt7996_sta_statistics() set NL80211_STA_INFO_TX_BITRATE unconditionally
+after the block that already sets it, so a station with no rate info yet
+was reported to userspace with a valid-but-zero TX rate. Drop the
+redundant unconditional assignments; the in-block ones are sufficient.
+
+Fixes: b34f346b917e ("wifi: mt76: mt7996: drop return in mt7996_sta_statistics")
+Link: https://patch.msgid.link/20260722082610.2699628-10-nbd@nbd.name
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+---
+ mt7996/main.c | 2 --
+ 1 file changed, 2 deletions(-)
+
+--- a/mt7996/main.c
++++ b/mt7996/main.c
+@@ -1802,8 +1802,6 @@ static void mt7996_sta_statistics(struct
+ 		sinfo->txrate.flags = txrate->flags;
+ 		sinfo->filled |= BIT_ULL(NL80211_STA_INFO_TX_BITRATE);
+ 	}
+-	sinfo->txrate.flags = txrate->flags;
+-	sinfo->filled |= BIT_ULL(NL80211_STA_INFO_TX_BITRATE);
+ 
+ 	sinfo->tx_failed = msta_link->wcid.stats.tx_failed;
+ 	sinfo->filled |= BIT_ULL(NL80211_STA_INFO_TX_FAILED);

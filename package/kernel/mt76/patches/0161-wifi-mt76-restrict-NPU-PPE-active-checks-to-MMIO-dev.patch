@@ -1,0 +1,50 @@
+From b0af766d64bc2b9ff8efb8b221d3e94cf31eded4 Mon Sep 17 00:00:00 2001
+From: Devin Wittmayer <lucid_duck@justthetip.ca>
+Date: Mon, 20 Jul 2026 16:27:36 -0700
+Subject: [PATCH 161/170] wifi: mt76: restrict NPU/PPE active checks to MMIO
+ devices
+
+[ Upstream commit 7981aca2bd28a1f7ad7eeab89715442a95b1f72e ]
+
+mt76_npu_device_active() and mt76_ppe_device_active() read dev->mmio.npu
+and dev->mmio.ppe_dev. The mmio, usb and sdio bus structs share a union in
+struct mt76_dev, so on USB and SDIO these read unrelated data from the
+usb/sdio struct, which is non-NULL in practice.
+
+mt76_npu_device_active() then returns true on USB, and
+mt76_rx_poll_complete() takes the offload path and skips
+mt76_rx_aggr_reorder(). RX A-MPDU subframes are delivered out of order and
+the peer's TCP stack treats that as loss: heavy retransmissions and reduced
+throughput in AP mode. Seen on mt7921u, mt7925u, mt76x2u and mt76x0u.
+
+Gate both helpers on mt76_is_mmio() so they only run for the bus type that
+owns the mmio union member.
+
+Fixes: 7fb554b1b623 ("wifi: mt76: Introduce the NPU generic layer")
+Cc: stable@vger.kernel.org
+Tested-by: Nick Morrow <morrownr@gmail.com>
+Signed-off-by: Devin Wittmayer <lucid_duck@justthetip.ca>
+Link: https://patch.msgid.link/20260720232640.41293-1-lucid_duck@justthetip.ca
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+---
+ mt76.h | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/mt76.h
++++ b/mt76.h
+@@ -1747,12 +1747,12 @@ static inline int mt76_npu_send_txrx_add
+ 
+ static inline bool mt76_npu_device_active(struct mt76_dev *dev)
+ {
+-	return !!rcu_access_pointer(dev->mmio.npu);
++	return mt76_is_mmio(dev) && !!rcu_access_pointer(dev->mmio.npu);
+ }
+ 
+ static inline bool mt76_ppe_device_active(struct mt76_dev *dev)
+ {
+-	return !!rcu_access_pointer(dev->mmio.ppe_dev);
++	return mt76_is_mmio(dev) && !!rcu_access_pointer(dev->mmio.ppe_dev);
+ }
+ 
+ static inline int mt76_npu_send_msg(struct airoha_npu *npu, int ifindex,

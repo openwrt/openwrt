@@ -1,0 +1,34 @@
+From ff819590e3d945320faae956343d0a57e3525a02 Mon Sep 17 00:00:00 2001
+From: Matt Johnston <matt@ucc.asn.au>
+Date: Fri, 17 Apr 2026 21:24:08 +0800
+Subject: [PATCH 5/6] server: open authorized_keys files nonblocking
+
+This avoids getting stuck with special files.
+
+(cherry picked from commit 8b579571b5584847caf72345b9073b3b2a0467a7)
+---
+ src/svr-authpubkey.c | 10 +++++++++-
+ 1 file changed, 9 insertions(+), 1 deletion(-)
+
+--- a/src/svr-authpubkey.c
++++ b/src/svr-authpubkey.c
+@@ -482,10 +482,18 @@ static int checkpubkey(const char* keyal
+ 	if (checkpubkeyperms() == DROPBEAR_FAILURE) {
+ 		TRACE(("bad authorized_keys permissions, or file doesn't exist"))
+ 	} else {
++		int fd;
+ 		/* we don't need to check pw and pw_dir for validity, since
+ 		 * its been done in checkpubkeyperms. */
+ 		filename = authorized_keys_filepath();
+-		authfile = fopen(filename, "r");
++		fd = open(filename, O_RDONLY | O_NONBLOCK);
++		if (fd >= 0) {
++			authfile = fdopen(fd, "r");
++			if (!authfile) {
++				/* fdopen could fail with ENOMEM */
++				m_close(fd);
++			}
++		}
+ 		if (!authfile) {
+ 			TRACE(("checkpubkey: failed opening %s: %s", filename, strerror(errno)))
+ 		}

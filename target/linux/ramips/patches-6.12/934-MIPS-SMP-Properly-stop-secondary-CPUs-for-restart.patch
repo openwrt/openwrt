@@ -17,7 +17,7 @@ Signed-off-by: Rany Hany <rany_hany@riseup.net>
 
 --- a/arch/mips/kernel/smp.c
 +++ b/arch/mips/kernel/smp.c
-@@ -32,6 +32,7 @@
+@@ -33,6 +33,7 @@
  #include <asm/processor.h>
  #include <asm/idle.h>
  #include <asm/r4k-timer.h>
@@ -25,7 +25,7 @@ Signed-off-by: Rany Hany <rany_hany@riseup.net>
  #include <asm/mips-cps.h>
  #include <asm/mmu_context.h>
  #include <asm/time.h>
-@@ -402,6 +403,8 @@ asmlinkage void start_secondary(void)
+@@ -403,6 +404,8 @@ asmlinkage void start_secondary(void)
  	cpu_startup_entry(CPUHP_AP_ONLINE_IDLE);
  }
  
@@ -34,10 +34,10 @@ Signed-off-by: Rany Hany <rany_hany@riseup.net>
  static void stop_this_cpu(void *dummy)
  {
  	/*
-@@ -411,13 +414,66 @@ static void stop_this_cpu(void *dummy)
- 	set_cpu_online(smp_processor_id(), false);
+@@ -413,13 +416,66 @@ static void stop_this_cpu(void *dummy)
  	calculate_cpu_foreign_map();
  	local_irq_disable();
+ 	rcutree_report_cpu_dead();
 -	while (1);
 +
 +	if (mips_cm_present() && r4k_blast_dcache) {

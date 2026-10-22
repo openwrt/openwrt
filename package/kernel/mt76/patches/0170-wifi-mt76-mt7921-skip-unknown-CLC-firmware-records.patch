@@ -1,0 +1,53 @@
+From 4400aa20fe93259265f701a4526af93d912ebcdc Mon Sep 17 00:00:00 2001
+From: Laxman Acharya Padhya <acharyalaxman8848@gmail.com>
+Date: Sun, 16 Aug 2026 23:33:40 +0545
+Subject: [PATCH 170/170] wifi: mt76: mt7921: skip unknown CLC firmware records
+
+[ Upstream commit 1a296bfd3e775e515233f746218824fc7dd5ff16 ]
+
+Treat an out-of-range CLC index as newer firmware rather than a
+malformed image. linux-firmware 20260810 ships MT7922 records with
+idx 3, and rejecting them made mt7921e fail to probe.
+
+Keep the record-length checks, and report those as errors so a
+truncated table is visible instead of a silent retry loop.
+
+Fixes: 9417c5818a01 ("wifi: mt76: mt7921: validate CLC firmware records")
+Reported-by: Mikhail Gavrilov <mikhail.v.gavrilov@gmail.com>
+Signed-off-by: Laxman Acharya Padhya <acharyalaxman8848@gmail.com>
+Reviewed-by: Junjie Cao <junjie.cao@intel.com>
+Tested-by: Mikhail Gavrilov <mikhail.v.gavrilov@gmail.com>
+Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+---
+ mt7921/mcu.c | 9 +++++++--
+ 1 file changed, 7 insertions(+), 2 deletions(-)
+
+--- a/mt7921/mcu.c
++++ b/mt7921/mcu.c
+@@ -478,18 +478,23 @@ static int mt7921_load_clc(struct mt792x
+ 
+ 	for (offset = 0; offset < len; offset += clc_len) {
+ 		if (len - offset < sizeof(*clc)) {
++			dev_err(mdev->dev, "Invalid CLC record\n");
+ 			ret = -EINVAL;
+ 			goto out;
+ 		}
+ 
+ 		clc = (const struct mt7921_clc *)(clc_base + offset);
+ 		clc_len = le32_to_cpu(clc->len);
+-		if (clc_len < sizeof(*clc) || clc_len > len - offset ||
+-		    clc->idx >= ARRAY_SIZE(phy->clc)) {
++		if (clc_len < sizeof(*clc) || clc_len > len - offset) {
++			dev_err(mdev->dev, "Invalid CLC record\n");
+ 			ret = -EINVAL;
+ 			goto out;
+ 		}
+ 
++		/* Newer firmware may add records this driver does not use yet */
++		if (clc->idx >= ARRAY_SIZE(phy->clc))
++			continue;
++
+ 		/* do not init buf again if chip reset triggered */
+ 		if (phy->clc[clc->idx])
+ 			continue;

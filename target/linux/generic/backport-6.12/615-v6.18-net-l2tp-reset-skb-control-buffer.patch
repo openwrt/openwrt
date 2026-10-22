@@ -1,0 +1,40 @@
+From 6317095a52e769169ca1bd9a2d9100c0feb5e92b Mon Sep 17 00:00:00 2001
+From: David Bauer <mail@david-bauer.net>
+Date: Mon, 17 Nov 2025 01:46:47 +0100
+Subject: [PATCH] net/l2tp: reset skb control buffer
+
+The L2TP stack did not reset the skb control buffer before handing off
+the package to the lower netdev.
+
+In a setup with an ath10k radio and batman-adv over an L2TP tunnel
+massive fragmentations happen sporadically if the L2TP tunnel is
+established over IPv4.
+
+L2TP might reset some of the fields in the IP control buffer, but L2TP
+assumes the type of the control buffer to be of an IPv4 packet, while
+due to it being Layer 2, this is not a given.
+
+Clear the entire control buffer to avoid such mishaps altogether.
+
+Link: https://github.com/torvalds/linux/commit/d70b592551ff23747e26e74081205babf8dba9b6
+
+Signed-off-by: David Bauer <mail@david-bauer.net>
+---
+ net/l2tp/l2tp_core.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+--- a/net/l2tp/l2tp_core.c
++++ b/net/l2tp/l2tp_core.c
+@@ -1249,9 +1249,9 @@ static int l2tp_xmit_core(struct l2tp_se
+ 	else
+ 		l2tp_build_l2tpv3_header(session, __skb_push(skb, session->hdr_len));
+ 
+-	/* Reset skb netfilter state */
+-	memset(&(IPCB(skb)->opt), 0, sizeof(IPCB(skb)->opt));
+-	IPCB(skb)->flags &= ~(IPSKB_XFRM_TUNNEL_SIZE | IPSKB_XFRM_TRANSFORMED | IPSKB_REROUTED);
++	/* Reset control buffer */
++	memset(skb->cb, 0, sizeof(skb->cb));
++
+ 	nf_reset_ct(skb);
+ 
+ 	/* L2TP uses its own lockdep subclass to avoid lockdep splats caused by

@@ -41,7 +41,7 @@ define Device/enterasys_ws-ap3715i
   KERNEL_NAME := simpleImage.ws-ap3715i
   KERNEL_ENTRY := 0x1500000
   KERNEL_LOADADDR := 0x1500000
-  KERNEL = kernel-bin | lzma | uImage lzma
+  KERNEL = kernel-bin | libdeflate-gzip | uImage gzip
   IMAGES := sysupgrade.bin
   IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | append-metadata
 endef

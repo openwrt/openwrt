@@ -1,0 +1,41 @@
+From 03b81f015dbb29807ce1ec6d45537d658abdac69 Mon Sep 17 00:00:00 2001
+From: Laxman Acharya Padhya <acharyalaxman8848@gmail.com>
+Date: Mon, 13 Jul 2026 17:39:12 +0545
+Subject: [PATCH 103/170] wifi: mt76: mt7996: validate default EEPROM firmware
+ size
+
+commit 653c6e289b13cc6942f3e8f8e3c568e70fa42d1f upstream.
+
+The default EEPROM firmware is parsed and copied as a full EEPROM
+without checking its length. A truncated file can make the driver
+read beyond the firmware buffer during variant validation or the
+fallback copy.
+
+Reject files shorter than MT7996_EEPROM_SIZE before parsing or
+copying the firmware.
+
+Fixes: 98686cd21624 ("wifi: mt76: mt7996: add driver for MediaTek Wi-Fi 7 (802.11be) devices")
+Cc: stable@vger.kernel.org
+Signed-off-by: Laxman Acharya Padhya <acharyalaxman8848@gmail.com>
+Link: https://patch.msgid.link/20260713115412.67095-1-acharyalaxman8848@gmail.com
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ mt7996/eeprom.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+--- a/mt7996/eeprom.c
++++ b/mt7996/eeprom.c
+@@ -150,6 +150,12 @@ mt7996_eeprom_check_or_use_default(struc
+ 		goto out;
+ 	}
+ 
++	if (fw->size < MT7996_EEPROM_SIZE) {
++		dev_err(dev->mt76.dev, "Invalid default bin size\n");
++		ret = -EINVAL;
++		goto out;
++	}
++
+ 	if (!use_default && mt7996_eeprom_variant_valid(dev, fw->data))
+ 		goto out;
+ 

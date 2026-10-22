@@ -1,0 +1,38 @@
+From 2cc7d32b42dab0d7a8fb34f451758a08ec869700 Mon Sep 17 00:00:00 2001
+From: Felix Fietkau <nbd@nbd.name>
+Date: Fri, 24 Jul 2026 12:48:02 +0000
+Subject: [PATCH 144/170] wifi: mt76: mt7996: skip key upload when adding an
+ offchannel link
+
+[ Upstream commit ccb4bda277999959bc852480d8684b13b926e657 ]
+
+No hw keys are ever uploaded for scanning/roc links and the link remove
+path already skips the key iteration for them. The add path still runs
+it, and since mt7996_set_hw_key() resolves the target through
+mvif->link[link_id] rather than the offchannel link, starting a scan on
+another band re-uploads the group keys of the link sharing the same
+link_id, re-sending its BSS cipher info and, for BIGTK with beacon
+protection on an AP link, toggling its beacons off and on.
+
+Skip the key iteration for offchannel links, mirroring the remove path.
+
+Fixes: 69d54ce7491d ("wifi: mt76: mt7996: switch to single multi-radio wiphy")
+Link: https://patch.msgid.link/20260724124813.3961474-18-nbd@nbd.name
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+---
+ mt7996/main.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+--- a/mt7996/main.c
++++ b/mt7996/main.c
+@@ -364,7 +364,8 @@ int mt7996_vif_link_add(struct mt76_phy
+ 				   CONN_STATE_PORT_SECURE, true);
+ 	rcu_assign_pointer(dev->mt76.wcid[idx], &msta_link->wcid);
+ 
+-	ieee80211_iter_keys(mphy->hw, vif, mt7996_key_iter, &it);
++	if (!mlink->wcid->offchannel)
++		ieee80211_iter_keys(mphy->hw, vif, mt7996_key_iter, &it);
+ 
+ 	if (vif->txq && !mlink->wcid->offchannel &&
+ 	    mvif->mt76.deflink_id == IEEE80211_LINK_UNSPECIFIED) {

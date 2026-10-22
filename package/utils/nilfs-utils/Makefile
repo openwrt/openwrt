@@ -8,13 +8,13 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=nilfs-utils
-PKG_VERSION:=2.2.12
+PKG_VERSION:=2.2.17
 PKG_RELEASE:=1
 PKG_URL:=https://nilfs.sourceforge.io
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=https://nilfs.sourceforge.io/download/
-PKG_HASH:=fc9a8520b68928d43fffa465c3b3845cc9b7d4973f4fbde4b3c7ecf25ce52d09
+PKG_HASH:=cc53a2aa7d4f6878d4cdbace5140f2877fb38cf69136d534049534ffb327c51e
 
 PKG_MAINTAINER:=Pavlo Samko <bulldozerbsg@gmail.com>
 PKG_LICENSE:=GPL-2.0
@@ -121,6 +121,7 @@ endef
 # libmount is used and support of the selinux context mount options
 # depends on the libmount that distro provides.
 CONFIGURE_ARGS += \
+	--enable-usrmerge=no \
 	--without-selinux
 
 define Package/nilfs-mkfs/install

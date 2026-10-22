@@ -11,11 +11,11 @@ Signed-off-by: SkyLake.Huang <skylake.huang@mediatek.com>
 Reviewed-by: Simon Horman <horms@kernel.org>
 Signed-off-by: Andrew Lunn <andrew@lunn.ch>
 ---
- drivers/net/phy/mediatek-ge-soc.c | 125 +++++++++++++++++++++---------
+ drivers/net/phy/mediatek/mtk-ge-soc.c | 125 +++++++++++++++++++++---------
  1 file changed, 88 insertions(+), 37 deletions(-)
 
---- a/drivers/net/phy/mediatek-ge-soc.c
-+++ b/drivers/net/phy/mediatek-ge-soc.c
+--- a/drivers/net/phy/mediatek/mtk-ge-soc.c
++++ b/drivers/net/phy/mediatek/mtk-ge-soc.c
 @@ -342,7 +342,8 @@ static int cal_cycle(struct phy_device *
  	ret = phy_read_mmd_poll_timeout(phydev, MDIO_MMD_VEND1,
  					MTK_PHY_RG_AD_CAL_CLK, reg_val,
@@ -229,7 +229,7 @@ Signed-off-by: Andrew Lunn <andrew@lunn.ch>
  	    (blink & (MTK_PHY_LED_BLINK_RX | MTK_PHY_LED_BLINK_TX)))
  		set_bit(bit_netdev, &priv->led_state);
  	else
-@@ -1333,17 +1377,23 @@ static int mt798x_phy_led_hw_control_set
+@@ -1340,17 +1384,23 @@ static int mt798x_phy_led_hw_control_set
  
  	if (rules & BIT(TRIGGER_NETDEV_RX)) {
  		blink |= (on & MTK_PHY_LED_ON_LINK) ?
@@ -259,7 +259,7 @@ Signed-off-by: Andrew Lunn <andrew@lunn.ch>
  			  MTK_PHY_LED_BLINK_TX;
  	}
  
-@@ -1400,7 +1450,8 @@ static int mt7988_phy_fix_leds_polaritie
+@@ -1407,7 +1457,8 @@ static int mt7988_phy_fix_leds_polaritie
  	/* Only now setup pinctrl to avoid bogus blinking */
  	pinctrl = devm_pinctrl_get_select(&phydev->mdio.dev, "gbe-led");
  	if (IS_ERR(pinctrl))

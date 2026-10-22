@@ -16,7 +16,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
 
 --- a/drivers/net/phy/mediatek/mtk-phy-lib.c
 +++ b/drivers/net/phy/mediatek/mtk-phy-lib.c
-@@ -129,29 +129,33 @@ int mtk_phy_led_hw_ctrl_set(struct phy_d
+@@ -136,29 +136,33 @@ int mtk_phy_led_hw_ctrl_set(struct phy_d
  		on |= MTK_PHY_LED_ON_LINK2500;
  
  	if (rules & BIT(TRIGGER_NETDEV_RX)) {

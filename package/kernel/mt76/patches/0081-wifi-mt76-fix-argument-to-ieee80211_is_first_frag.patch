@@ -1,0 +1,32 @@
+From 6356a829a1edcaa6b973f298373db47c34674e2e Mon Sep 17 00:00:00 2001
+From: "Bjoern A. Zeeb" <bz@FreeBSD.org>
+Date: Tue, 31 Mar 2026 22:05:47 +0000
+Subject: [PATCH 081/170] wifi: mt76: fix argument to ieee80211_is_first_frag()
+
+[ Upstream commit 5832743279da8c6ae72f715bad2f7141eca6f4b8 ]
+
+ieee80211_is_first_frag() operates on the seq_ctrl not the frame_control
+header field. Pass the correct one in; otherwise the results may vary.
+
+Sponsored by: The FreeBSD Foundation
+Fixes: 30ce7f4456ae4 ("mt76: validate rx CCMP PN")
+Link: https://cgit.freebsd.org/src/commit/sys/contrib/dev/mediatek/mt76/mac80211.c?id=c67fd35e58c6ee1e19877a7fe5998885683abedc
+Signed-off-by: Bjoern A. Zeeb <bz@FreeBSD.org>
+Link: https://patch.msgid.link/83s4psnr-popo-8789-757o-npr2n9n7rs2o@SerrOFQ.bet
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+---
+ mac80211.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/mac80211.c
++++ b/mac80211.c
+@@ -1323,7 +1323,7 @@ mt76_check_ccmp_pn(struct sk_buff *skb)
+ 		 * All further fragments will be validated by mac80211 only.
+ 		 */
+ 		if (ieee80211_is_frag(hdr) &&
+-		    !ieee80211_is_first_frag(hdr->frame_control))
++		    !ieee80211_is_first_frag(hdr->seq_ctrl))
+ 			return;
+ 	}
+ 

@@ -17,7 +17,7 @@ Signed-off-by: Heiko Stuebner <heiko@sntech.de>
 
 --- a/drivers/clk/rockchip/clk-pll.c
 +++ b/drivers/clk/rockchip/clk-pll.c
-@@ -1025,16 +1025,6 @@ static int rockchip_rk3588_pll_is_enable
+@@ -1032,16 +1032,6 @@ static int rockchip_rk3588_pll_is_enable
  	return !(pllcon & RK3588_PLLCON1_PWRDOWN);
  }
  
@@ -34,7 +34,7 @@ Signed-off-by: Heiko Stuebner <heiko@sntech.de>
  static const struct clk_ops rockchip_rk3588_pll_clk_norate_ops = {
  	.recalc_rate = rockchip_rk3588_pll_recalc_rate,
  	.enable = rockchip_rk3588_pll_enable,
-@@ -1049,7 +1039,6 @@ static const struct clk_ops rockchip_rk3
+@@ -1056,7 +1046,6 @@ static const struct clk_ops rockchip_rk3
  	.enable = rockchip_rk3588_pll_enable,
  	.disable = rockchip_rk3588_pll_disable,
  	.is_enabled = rockchip_rk3588_pll_is_enabled,

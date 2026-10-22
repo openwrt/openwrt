@@ -1,0 +1,47 @@
+From 0c1dedac48c316dd82ae6f79e5fba5eaefd102b3 Mon Sep 17 00:00:00 2001
+From: Lorenzo Bianconi <lorenzo@kernel.org>
+Date: Sat, 7 Mar 2026 14:59:12 +0100
+Subject: [PATCH] wifi: mt76: mt7996: Switch deflink to seclink only if link
+ lookup does not fail
+
+Do not switch default link to the secondary link in
+mt7996_mac_sta_remove_links routine if the lookup for the secondary
+msta_link fails.
+
+Fixes: d7e5444f9eb02 ("wifi: mt76: mt7996: Switch to the secondary link if the default one is removed")
+Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
+Link: https://patch.msgid.link/20260307-mt7996-sta-sec-link-fix-v1-1-d9c4ed7a85d8@kernel.org
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+ mt7996/main.c | 9 +++++----
+ 1 file changed, 5 insertions(+), 4 deletions(-)
+
+--- a/mt7996/main.c
++++ b/mt7996/main.c
+@@ -1156,21 +1156,22 @@ mt7996_mac_sta_remove_links(struct mt799
+ 			phy->mt76->num_sta--;
+ 
+ 		if (msta->deflink_id == link_id) {
+-			if (msta->seclink_id == msta->deflink_id) {
++			msta->deflink_id = IEEE80211_LINK_UNSPECIFIED;
++			if (msta->seclink_id == link_id) {
+ 				/* no secondary link available */
+-				msta->deflink_id = IEEE80211_LINK_UNSPECIFIED;
+ 				msta->seclink_id = msta->deflink_id;
+ 			} else {
+ 				struct mt7996_sta_link *msta_seclink;
+ 
+ 				/* switch to the secondary link */
+-				msta->deflink_id = msta->seclink_id;
+ 				msta_seclink = mt76_dereference(
+ 						msta->link[msta->seclink_id],
+ 						mdev);
+-				if (msta_seclink)
++				if (msta_seclink) {
++					msta->deflink_id = msta->seclink_id;
+ 					mt7996_sta_init_txq_wcid(sta,
+ 						msta_seclink->wcid.idx);
++				}
+ 			}
+ 		} else if (msta->seclink_id == link_id) {
+ 			msta->seclink_id = msta->deflink_id;

@@ -287,6 +287,50 @@ if VERSIONOPT
 			file names
 endif
 
+menuconfig TARGET_BUTTON_CUSTOMIZATION
+	bool "Target button customization" if IMAGEOPT
+	default n
+	help
+		These options allow to customize the behaviour of the buttons defined in
+		the target's /etc/rc.button/* scripts.  This is useful for release builds
+		or custom OpenWrt redistributions where certain default button handling logic
+		may be undesired.
+
+	config TARGET_BUTTON_CUSTOMIZATION_FAILSAFE_DISABLED
+		bool
+		prompt "Disable failsafe button handling" if TARGET_BUTTON_CUSTOMIZATION
+		default n
+		help
+			If set, the failsafe button handling logic in /etc/rc.button/failsafe is disabled.
+
+	config TARGET_BUTTON_CUSTOMIZATION_POWER_DISABLED
+		bool
+		prompt "Disable power button handling" if TARGET_BUTTON_CUSTOMIZATION
+		default n
+		help
+			If set, the power button handling logic in /etc/rc.button/power is disabled.
+
+	config TARGET_BUTTON_CUSTOMIZATION_REBOOT_DISABLED
+		bool
+		prompt "Disable reboot button handling" if TARGET_BUTTON_CUSTOMIZATION
+		default n
+		help
+			If set, the reboot button handling logic in /etc/rc.button/reboot is disabled.
+
+	config TARGET_BUTTON_CUSTOMIZATION_RESET_DISABLED
+		bool
+		prompt "Disable reset button handling" if TARGET_BUTTON_CUSTOMIZATION
+		default n
+		help
+			If set, the reset button handling logic in /etc/rc.button/reset is disabled.
+
+	config TARGET_BUTTON_CUSTOMIZATION_RF_KILL_DISABLED
+		bool
+		prompt "Disable rfkill button handling" if TARGET_BUTTON_CUSTOMIZATION
+		default n
+		help
+			If set, the rfkill button handling logic in /etc/rc.button/rfkill is disabled.
+
 
 menuconfig PER_FEED_REPO
 	bool "Separate feed repositories" if IMAGEOPT

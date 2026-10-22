@@ -1,0 +1,38 @@
+From 486dc391ef439d45db3f7eda2229560fd2b52a78 Mon Sep 17 00:00:00 2001
+From: "Russell King (Oracle)" <rmk+kernel@armlinux.org.uk>
+Date: Wed, 16 Oct 2024 10:58:34 +0100
+Subject: [PATCH] net: phylink: allow mac_select_pcs() to remove a PCS
+
+phylink has historically not permitted a PCS to be removed. An attempt
+to permit this with phylink_set_pcs() resulted in comments indicating
+that there was no need for this. This behaviour has been propagated
+forward to the mac_select_pcs() approach as it was believed from these
+comments that changing this would be NAK'd.
+
+However, with mac_select_pcs(), it takes more code and thus complexity
+to maintain this behaviour, which can - and in this case has - resulted
+in a bug. If mac_select_pcs() returns NULL for a particular interface
+type, but there is already a PCS in-use, then we skip the pcs_validate()
+method, but continue using the old PCS. Also, it wouldn't be expected
+behaviour by implementers of mac_select_pcs().
+
+Allow this by removing this old unnecessary restriction.
+
+Signed-off-by: Russell King (Oracle) <rmk+kernel@armlinux.org.uk>
+Reviewed-by: Vladimir Oltean <olteanv@gmail.com>
+Signed-off-by: Andrew Lunn <andrew@lunn.ch>
+---
+ drivers/net/phy/phylink.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/net/phy/phylink.c
++++ b/drivers/net/phy/phylink.c
+@@ -1375,7 +1375,7 @@ static void phylink_major_config(struct
+ 			return;
+ 		}
+ 
+-		pcs_changed = pcs && pl->pcs != pcs;
++		pcs_changed = pl->pcs != pcs;
+ 	}
+ 
+ 	phylink_pcs_neg_mode(pl, pcs, state->interface, state->advertising);

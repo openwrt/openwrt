@@ -55,7 +55,7 @@ Signed-off-by: George Moussalem <george.moussalem@outlook.com>
  static int ath11k_core_get_rproc(struct ath11k_base *ab)
  {
  	struct ath11k_ahb *ab_ahb = ath11k_ahb_priv(ab);
-@@ -1133,6 +1163,10 @@ static int ath11k_ahb_probe(struct platf
+@@ -1134,6 +1164,10 @@ static int ath11k_ahb_probe(struct platf
  		hif_ops = &ath11k_ahb_hif_ops_wcn6750;
  		pci_ops = &ath11k_ahb_pci_ops_wcn6750;
  		break;

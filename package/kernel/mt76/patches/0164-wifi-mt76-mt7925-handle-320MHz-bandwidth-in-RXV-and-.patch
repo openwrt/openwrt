@@ -1,0 +1,63 @@
+From 26c4e981525b9f2553984b803999c29bf45da219 Mon Sep 17 00:00:00 2001
+From: Javier Tia <floss@jetm.me>
+Date: Sat, 25 Apr 2026 14:49:53 -0500
+Subject: [PATCH 164/170] wifi: mt76: mt7925: handle 320MHz bandwidth in RXV
+ and TXS
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+[ Upstream commit 2237b7b332990f135c1f1550b45ac77b29bcbf7b ]
+
+The RX vector (RXV) and TX status (TXS) parsing in mac.c lack handling
+for 320MHz channel width. When the hardware reports 320MHz in the
+bandwidth field, mt7925_mac_fill_rx_rate() returns -EINVAL and
+mt7925_mac_add_txs_skb() records no bandwidth stats.
+
+Add IEEE80211_STA_RX_BW_320 cases to both functions. The RXV parser
+also handles BW_320+1 since the hardware can report 320MHz in two
+adjacent encoding positions.
+
+Tested-by: Marcin FM <marcin@lgic.pl>
+Tested-by: Cristian-Florin Radoi <radoi.chris@gmail.com>
+Tested-by: George Salukvadze <giosal90@gmail.com>
+Tested-by: Evgeny Kapusta <3193631@gmail.com>
+Tested-by: Samu Toljamo <samu.toljamo@gmail.com>
+Tested-by: Ariel Rosenfeld <ariel.rosenfeld.750@gmail.com>
+Tested-by: Chapuis Dario <chapuisdario4@gmail.com>
+Tested-by: Thibaut François <tibo@humeurlibre.fr>
+Tested-by: 张旭涵 <Loong.0x00@gmail.com>
+Reviewed-by: Sean Wang <sean.wang@mediatek.com>
+Signed-off-by: Javier Tia <floss@jetm.me>
+Link: https://patch.msgid.link/20260425195011.790265-4-sean.wang@kernel.org
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+---
+ mt7925/mac.c | 9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+--- a/mt7925/mac.c
++++ b/mt7925/mac.c
+@@ -339,6 +339,11 @@ mt7925_mac_fill_rx_rate(struct mt792x_de
+ 	case IEEE80211_STA_RX_BW_160:
+ 		status->bw = RATE_INFO_BW_160;
+ 		break;
++	/* RXV can report 320 in two positions */
++	case IEEE80211_STA_RX_BW_320:
++	case IEEE80211_STA_RX_BW_320 + 1:
++		status->bw = RATE_INFO_BW_320;
++		break;
+ 	default:
+ 		return -EINVAL;
+ 	}
+@@ -996,6 +1001,10 @@ mt7925_mac_add_txs_skb(struct mt792x_dev
+ 	stats->tx_mode[mode]++;
+ 
+ 	switch (FIELD_GET(MT_TXS0_BW, txs)) {
++	case IEEE80211_STA_RX_BW_320:
++		rate.bw = RATE_INFO_BW_320;
++		stats->tx_bw[4]++;
++		break;
+ 	case IEEE80211_STA_RX_BW_160:
+ 		rate.bw = RATE_INFO_BW_160;
+ 		stats->tx_bw[3]++;

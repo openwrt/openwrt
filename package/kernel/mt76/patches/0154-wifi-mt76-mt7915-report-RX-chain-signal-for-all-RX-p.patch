@@ -1,0 +1,35 @@
+From 292bc52d8420a1fcfd70710d26a6e6310bd87769 Mon Sep 17 00:00:00 2001
+From: Felix Fietkau <nbd@nbd.name>
+Date: Mon, 27 Jul 2026 15:04:28 +0000
+Subject: [PATCH 154/170] wifi: mt76: mt7915: report RX chain signal for all RX
+ paths
+
+[ Upstream commit b53c44fe65792608f58028c7b0953e610ad652ee ]
+
+status->chains was set from the antenna mask, which is derived from the
+number of spatial streams, while the chain_signal array is filled from
+all RCPI fields. On boards where the number of RX paths exceeds the
+stream count, e.g. the 3T3R mt7916/mt7981 variant with 2 streams on the
+5 GHz band, the RSSI of the extra chains was never reported.
+
+Use the band local RX path chainmask instead.
+
+Fixes: e57b7901469f ("mt76: add mac80211 driver for MT7915 PCIe-based chipsets")
+Link: https://patch.msgid.link/20260727150434.1778520-9-nbd@nbd.name
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+---
+ mt7915/mac.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/mt7915/mac.c
++++ b/mt7915/mac.c
+@@ -437,7 +437,7 @@ mt7915_mac_fill_rx(struct mt7915_dev *de
+ 		if (v0 & MT_PRXV_HT_AD_CODE)
+ 			status->enc_flags |= RX_ENC_FLAG_LDPC;
+ 
+-		status->chains = mphy->antenna_mask;
++		status->chains = mt7915_band_chainmask(phy);
+ 		status->chain_signal[0] = to_rssi(MT_PRXV_RCPI0, v1);
+ 		status->chain_signal[1] = to_rssi(MT_PRXV_RCPI1, v1);
+ 		status->chain_signal[2] = to_rssi(MT_PRXV_RCPI2, v1);

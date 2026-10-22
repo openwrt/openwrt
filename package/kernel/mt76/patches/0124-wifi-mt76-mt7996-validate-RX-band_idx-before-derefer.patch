@@ -1,0 +1,38 @@
+From 0f53ece876e1f3bbb3e18f48afc4af1ee967b16c Mon Sep 17 00:00:00 2001
+From: Felix Fietkau <nbd@nbd.name>
+Date: Wed, 22 Jul 2026 08:25:58 +0000
+Subject: [PATCH 124/170] wifi: mt76: mt7996: validate RX band_idx before
+ dereferencing phys[]
+
+[ Upstream commit 2243778a5fae8329ab5f18e7adcd7e03b911a1b7 ]
+
+band_idx comes from a 2-bit descriptor field (0-3) and was used directly
+to index dev->mt76.phys[] (size __MT_MAX_BAND == 3) and dereference the
+result. A corrupt or reserved descriptor value could index out of bounds
+or hit a NULL phy on parts with fewer bands. Reject invalid band indices,
+mirroring mt7996_rx_get_wcid().
+
+Fixes: 98686cd21624 ("wifi: mt76: mt7996: add driver for MediaTek Wi-Fi 7 (802.11be) devices")
+Link: https://patch.msgid.link/20260722082610.2699628-6-nbd@nbd.name
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+---
+ mt7996/mac.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+--- a/mt7996/mac.c
++++ b/mt7996/mac.c
+@@ -441,7 +441,13 @@ mt7996_mac_fill_rx(struct mt7996_dev *de
+ 	memset(status, 0, sizeof(*status));
+ 
+ 	band_idx = FIELD_GET(MT_RXD1_NORMAL_BAND_IDX, rxd1);
++	if (!mt7996_band_valid(dev, band_idx))
++		return -EINVAL;
++
+ 	mphy = dev->mt76.phys[band_idx];
++	if (!mphy)
++		return -EINVAL;
++
+ 	phy = mphy->priv;
+ 	status->phy_idx = mphy->band_idx;
+ 

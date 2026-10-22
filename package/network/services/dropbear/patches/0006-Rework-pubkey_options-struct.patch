@@ -1,0 +1,537 @@
+From d48f79c851110eb673d9738a69a15696ee972767 Mon Sep 17 00:00:00 2001
+From: Matt Johnston <matt@ucc.asn.au>
+Date: Thu, 26 Mar 2026 23:03:46 +0800
+Subject: [PATCH 6/6] Rework pubkey_options struct
+
+Pubkey info is now included in the restriction struct. A temporary
+pubkey_options is filled then set in the global session after auth.
+
+(cherry picked from commit c60db6408178aaca0a8aacd017ac344a2cfb30c8)
+---
+ fuzz/fuzzer-pubkey.c        |  7 +---
+ src/auth.h                  | 28 ++++++++-----
+ src/fuzz.h                  |  2 +-
+ src/svr-authpubkey.c        | 78 ++++++++++++++++++++----------------
+ src/svr-authpubkeyoptions.c | 80 +++++++++++++++++++------------------
+ src/svr-chansession.c       |  5 ++-
+ src/svr-session.c           |  4 +-
+ src/sysoptions.h            |  4 ++
+ 8 files changed, 114 insertions(+), 94 deletions(-)
+
+--- a/fuzz/fuzzer-pubkey.c
++++ b/fuzz/fuzzer-pubkey.c
+@@ -31,15 +31,10 @@ int LLVMFuzzerTestOneInput(const uint8_t
+ 			dropbear_exit("fuzzer imagined a bogus algorithm");
+ 		}
+ 
+-		int ret = fuzz_checkpubkey_line(line, 5, "/home/me/authorized_keys",
++		fuzz_checkpubkey_line(line, 5, "/home/me/authorized_keys",
+ 			algoname, algolen,
+ 			keyblob->data, keyblob->len);
+ 
+-		if (ret == DROPBEAR_SUCCESS) {
+-			/* fuzz_checkpubkey_line() should have cleaned up for failure */
+-			svr_pubkey_options_cleanup();
+-		}
+-
+ 		buf_free(line);
+ 		buf_free(keyblob);
+ 		m_free(algoname);
+--- a/src/auth.h
++++ b/src/auth.h
+@@ -44,6 +44,7 @@ void svr_switch_user(void);
+ void svr_raise_gid_utmp(void);
+ void svr_restore_gid(void);
+ 
++struct PubKeyOptions;
+ #if DROPBEAR_SVR_PUBKEY_OPTIONS_BUILT
+ int svr_pubkey_allows_agentfwd(void);
+ int svr_pubkey_allows_tcpfwd(void);
+@@ -52,8 +53,9 @@ int svr_pubkey_allows_pty(void);
+ int svr_pubkey_has_forced_command(void);
+ int svr_pubkey_allows_local_tcpfwd(const char *host, unsigned int port);
+ void svr_pubkey_set_forced_command(struct ChanSess *chansess);
+-void svr_pubkey_options_cleanup(void);
+-int svr_add_pubkey_options(buffer *options_buf, int line_num, const char* filename);
++void svr_pubkey_options_cleanup(struct PubKeyOptions *pubkey_options);
++struct PubKeyOptions*
++svr_parse_pubkey_options(buffer *options_buf, int line_num, const char* filename);
+ #else
+ /* no option : success */
+ #define svr_pubkey_allows_agentfwd() 1
+@@ -64,9 +66,14 @@ int svr_add_pubkey_options(buffer *optio
+ static inline int svr_pubkey_allows_local_tcpfwd(const char *host, unsigned int port)
+ 	{ (void)host; (void)port; return 1; }
+ 
+-static inline void svr_pubkey_set_forced_command(struct ChanSess *chansess) { }
+-static inline void svr_pubkey_options_cleanup(void) { }
+-#define svr_add_pubkey_options(x,y,z) DROPBEAR_SUCCESS
++static inline void svr_pubkey_set_forced_command(struct ChanSess *chansess) {
++	(void)chansess;
++}
++static inline void svr_pubkey_options_cleanup(struct PubKeyOptions *pubkey_options) {
++	(void)pubkey_options;
++}
++struct PubKeyOptions*
++svr_parse_pubkey_options(buffer *options_buf, int line_num, const char* filename);
+ #endif
+ 
+ /* Client functions */
+@@ -134,14 +141,10 @@ struct AuthState {
+ 	char *pw_shell;
+ 	char *pw_name;
+ 	char *pw_passwd;
+-#if DROPBEAR_SVR_PUBKEY_OPTIONS_BUILT
+ 	struct PubKeyOptions* pubkey_options;
+-	char *pubkey_info;
+-#endif
+ };
+ 
+ #if DROPBEAR_SVR_PUBKEY_OPTIONS_BUILT
+-struct PubKeyOptions;
+ struct PubKeyOptions {
+ 	/* Flags */
+ 	int no_port_forwarding_flag;
+@@ -157,6 +160,13 @@ struct PubKeyOptions {
+ 	int no_touch_required_flag;
+ 	int verify_required_flag;
+ #endif
++
++	/* String from the end of authorized_keys entry, for SSH_PUBKEYINFO
++	   environment variable. May be omitted (NULL) if
++	   options contain non-shell-safe characters.
++	   This is not involved in pubkey option restrictions, but is
++	   parsed and kept similarly so is stored here. */
++	char * info_env;
+ };
+ 
+ struct PermitTCPFwdEntry {
+--- a/src/fuzz.h
++++ b/src/fuzz.h
+@@ -30,7 +30,7 @@ const void* fuzz_get_algo(const algo_typ
+ 
+ // fuzzer functions that intrude into general code
+ void fuzz_kex_fakealgos(void);
+-int fuzz_checkpubkey_line(buffer* line, int line_num, char* filename,
++void fuzz_checkpubkey_line(buffer* line, int line_num, char* filename,
+         const char* algo, unsigned int algolen,
+         const unsigned char* keyblob, unsigned int keybloblen);
+ extern const char * const * fuzz_signkey_names;
+--- a/src/svr-authpubkey.c
++++ b/src/svr-authpubkey.c
+@@ -73,7 +73,8 @@
+ 
+ static char * authorized_keys_filepath(void);
+ static int checkpubkey(const char* keyalgo, unsigned int keyalgolen,
+-		const unsigned char* keyblob, unsigned int keybloblen);
++		const unsigned char* keyblob, unsigned int keybloblen,
++		struct PubKeyOptions **ret_options);
+ static int checkpubkeyperms(void);
+ static void send_msg_userauth_pk_ok(const char* sigalgo, unsigned int sigalgolen,
+ 		const unsigned char* keyblob, unsigned int keybloblen);
+@@ -96,7 +97,8 @@ void svr_auth_pubkey(int valid_user) {
+ 	char* fp = NULL;
+ 	enum signature_type sigtype;
+ 	enum signkey_type keytype;
+-    int auth_failure = 1;
++	int auth_failure = 1;
++	struct PubKeyOptions *pubkey_options = NULL;
+ 
+ 	TRACE(("enter pubkeyauth"))
+ 
+@@ -149,8 +151,8 @@ void svr_auth_pubkey(int valid_user) {
+                         .pos = 0,
+                         .size = 0
+                     };
+-                    int ret = svr_add_pubkey_options(&temp_buf, 0, "N/A");
+-                    if (ret == DROPBEAR_FAILURE) {
++                    pubkey_options = svr_parse_pubkey_options(&temp_buf, 0, "plugin");
++                    if (pubkey_options == NULL) {
+                         /* Fail immediately as the plugin provided wrong options */
+                         send_msg_userauth_failure(0, 0);
+                         goto out;
+@@ -161,7 +163,8 @@ void svr_auth_pubkey(int valid_user) {
+ #endif
+ 	/* check if the key is valid */
+         if (auth_failure) {
+-            auth_failure = checkpubkey(keyalgo, keyalgolen, keyblob, keybloblen) == DROPBEAR_FAILURE;
++		int status = checkpubkey(keyalgo, keyalgolen, keyblob, keybloblen, &pubkey_options);
++		auth_failure = (status != DROPBEAR_SUCCESS);
+         }
+ 
+         if (auth_failure) {
+@@ -187,13 +190,13 @@ void svr_auth_pubkey(int valid_user) {
+ #if DROPBEAR_SK_ECDSA || DROPBEAR_SK_ED25519
+ 	key->sk_flags_mask = SSH_SK_USER_PRESENCE_REQD;
+ #if DROPBEAR_SVR_PUBKEY_OPTIONS_BUILT
+-	if (ses.authstate.pubkey_options && ses.authstate.pubkey_options->no_touch_required_flag) {
++	if (pubkey_options->no_touch_required_flag) {
+ 		key->sk_flags_mask &= ~SSH_SK_USER_PRESENCE_REQD;
+ 	}
+-	if (ses.authstate.pubkey_options && ses.authstate.pubkey_options->verify_required_flag) {
++	if (pubkey_options->verify_required_flag) {
+ 		key->sk_flags_mask |= SSH_SK_USER_VERIFICATION_REQD;
+ 	}
+-#endif /* DROPBEAR_SVR_PUBKEY_OPTIONS */
++#endif /* DROPBEAR_SVR_PUBKEY_OPTIONS_BUILT */
+ #endif
+ 
+ 	/* create the data which has been signed - this a string containing
+@@ -215,6 +218,10 @@ void svr_auth_pubkey(int valid_user) {
+ 	/* ... and finally verify the signature */
+ 	fp = sign_key_fingerprint(keyblob, keybloblen);
+ 	if (buf_verify(ses.payload, key, sigtype, signbuf) == DROPBEAR_SUCCESS) {
++		if (ses.authstate.pubkey_options == NULL) {
++			ses.authstate.pubkey_options = pubkey_options;
++			pubkey_options = NULL;
++		}
+ 		if (svr_opts.multiauthmethod && (ses.authstate.authtypes & ~AUTH_TYPE_PUBKEY)) {
+ 			/* successful pubkey authentication, but extra auth required */
+ 			dropbear_log(LOG_NOTICE,
+@@ -259,9 +266,9 @@ out:
+ 		sign_key_free(key);
+ 		key = NULL;
+ 	}
+-	/* Retain pubkey options only if auth succeeded */
+-	if (!ses.authstate.authdone) {
+-		svr_pubkey_options_cleanup();
++	if (pubkey_options) {
++		svr_pubkey_options_cleanup(pubkey_options);
++		pubkey_options = NULL;
+ 	}
+ 	TRACE(("leave pubkeyauth"))
+ }
+@@ -284,17 +291,22 @@ static void send_msg_userauth_pk_ok(cons
+ 
+ }
+ 
+-/* Content for SSH_PUBKEYINFO is optionally returned malloced in ret_info (will be
+-   freed if already set */
++/* Key options are optionally returned in ret_options.
++   Should be passed with *ret_options = NULL, will only be populated
++   on success return. */
+ static int checkpubkey_line(buffer* line, int line_num, const char* filename,
+ 		const char* algo, unsigned int algolen,
+ 		const unsigned char* keyblob, unsigned int keybloblen,
+-		char ** ret_info) {
++		struct PubKeyOptions ** ret_options) {
+ 	buffer *options_buf = NULL;
+ 	char *info_str = NULL;
+ 	unsigned int pos, len, infopos, infolen;
+ 	int ret = DROPBEAR_FAILURE;
+ 
++	if (ret_options) {
++		*ret_options = NULL;
++	}
++
+ 	if (line->len < MIN_AUTHKEYS_LINE || line->len > MAX_AUTHKEYS_LINE) {
+ 		TRACE(("checkpubkey_line: bad line length %d", line->len))
+ 		goto out;
+@@ -396,7 +408,7 @@ static int checkpubkey_line(buffer* line
+ 	if (infolen > 0) {
+ 		info_str = m_malloc(infolen + 1);
+ 		buf_setpos(line, infopos);
+-        strncpy(info_str, buf_getptr(line, infolen), infolen);
++		strncpy(info_str, buf_getptr(line, infolen), infolen);
+ 	}
+ 
+ 	/* truncate to base64 data length */
+@@ -408,20 +420,19 @@ static int checkpubkey_line(buffer* line
+ 	ret = cmp_base64_key(keyblob, keybloblen, (const unsigned char *) algo, algolen, line, NULL);
+ 
+ 	/* free pubkey_info if it is filled */
+-	if (ret_info && *ret_info) {
+-		m_free(*ret_info);
+-		*ret_info = NULL;
+-	}
+-
+ 	if (ret == DROPBEAR_SUCCESS) {
+-		if (options_buf) {
+-			ret = svr_add_pubkey_options(options_buf, line_num, filename);
+-		}
+-		if (ret_info) {
++#if DROPBEAR_SVR_PUBKEY_OPTIONS_BUILT
++		if (ret_options) {
++			*ret_options = svr_parse_pubkey_options(options_buf, line_num, filename);
++			if (*ret_options == NULL) {
++				ret = DROPBEAR_FAILURE;
++				goto out;
++			}
+ 			/* take the (optional) public key information */
+-			*ret_info = info_str;
++			(*ret_options)->info_env = info_str;
+ 			info_str = NULL;
+ 		}
++#endif
+ 	}
+ 
+ out:
+@@ -457,7 +468,8 @@ static char *authorized_keys_filepath()
+  * acceptable key for authentication */
+ /* Returns DROPBEAR_SUCCESS if key is ok for auth, DROPBEAR_FAILURE otherwise */
+ static int checkpubkey(const char* keyalgo, unsigned int keyalgolen,
+-		const unsigned char* keyblob, unsigned int keybloblen) {
++		const unsigned char* keyblob, unsigned int keybloblen,
++		struct PubKeyOptions **ret_options) {
+ 
+ 	FILE * authfile = NULL;
+ 	char * filename = NULL;
+@@ -523,13 +535,7 @@ static int checkpubkey(const char* keyal
+ 		line_num++;
+ 
+ 		ret = checkpubkey_line(line, line_num, filename, keyalgo, keyalgolen,
+-			keyblob, keybloblen,
+-#if DROPBEAR_SVR_PUBKEY_OPTIONS_BUILT
+-			&ses.authstate.pubkey_info
+-#else
+-			NULL
+-#endif
+-		);
++			keyblob, keybloblen, ret_options);
+ 		if (ret == DROPBEAR_SUCCESS) {
+ 			break;
+ 		}
+@@ -623,10 +629,12 @@ static int checkfileperm(char * filename
+ }
+ 
+ #if DROPBEAR_FUZZ
+-int fuzz_checkpubkey_line(buffer* line, int line_num, char* filename,
++void fuzz_checkpubkey_line(buffer* line, int line_num, char* filename,
+ 		const char* algo, unsigned int algolen,
+ 		const unsigned char* keyblob, unsigned int keybloblen) {
+-	return checkpubkey_line(line, line_num, filename, algo, algolen, keyblob, keybloblen, NULL);
++	struct PubKeyOptions *options = NULL;
++	checkpubkey_line(line, line_num, filename, algo, algolen, keyblob, keybloblen, &options);
++	svr_pubkey_options_cleanup(options);
+ }
+ #endif
+ 
+--- a/src/svr-authpubkeyoptions.c
++++ b/src/svr-authpubkeyoptions.c
+@@ -138,25 +138,21 @@ void svr_pubkey_set_forced_command(struc
+ }
+ 
+ /* Free potential public key options */
+-void svr_pubkey_options_cleanup() {
+-	if (ses.authstate.pubkey_options) {
+-		if (ses.authstate.pubkey_options->forced_command) {
+-			m_free(ses.authstate.pubkey_options->forced_command);
+-		}
+-		if (ses.authstate.pubkey_options->permit_open_destinations) {
+-			m_list_elem *iter = ses.authstate.pubkey_options->permit_open_destinations->first;
++void svr_pubkey_options_cleanup(struct PubKeyOptions *pubkey_options) {
++	if (pubkey_options) {
++		m_free(pubkey_options->forced_command);
++		if (pubkey_options->permit_open_destinations) {
++			m_list_elem *iter = pubkey_options->permit_open_destinations->first;
+ 			while (iter) {
+ 				struct PermitTCPFwdEntry *entry = (struct PermitTCPFwdEntry*)list_remove(iter);
+ 				m_free(entry->host);
+ 				m_free(entry);
+-				iter = ses.authstate.pubkey_options->permit_open_destinations->first;
++				iter = pubkey_options->permit_open_destinations->first;
+ 			}
+-			m_free(ses.authstate.pubkey_options->permit_open_destinations);
++			m_free(pubkey_options->permit_open_destinations);
+ 		}
+-		m_free(ses.authstate.pubkey_options);
+-	}
+-	if (ses.authstate.pubkey_info) {
+-		m_free(ses.authstate.pubkey_info);
++		m_free(pubkey_options->info_env);
++		m_free(pubkey_options);
+ 	}
+ }
+ 
+@@ -174,58 +170,65 @@ static int match_option(buffer *options_
+ 	return DROPBEAR_FAILURE;
+ }
+ 
+-/* Parse pubkey options and set ses.authstate.pubkey_options accordingly.
+- * Returns DROPBEAR_SUCCESS if key is ok for auth, DROPBEAR_FAILURE otherwise */
+-int svr_add_pubkey_options(buffer *options_buf, int line_num, const char* filename) {
+-	int ret = DROPBEAR_FAILURE;
++/* Parse pubkey options and return a malloced struct.
++ * options_buf may be NULL, treated as empty.
++ * Returns NULL on failure */
++struct PubKeyOptions*
++svr_parse_pubkey_options(buffer *options_buf, int line_num, const char* filename) {
++	struct PubKeyOptions *pubkey_options = NULL;
+ 
+ 	TRACE(("enter addpubkeyoptions"))
+ 
+-	ses.authstate.pubkey_options = (struct PubKeyOptions*)m_malloc(sizeof( struct PubKeyOptions ));
++	pubkey_options = (struct PubKeyOptions*)m_malloc(sizeof( struct PubKeyOptions ));
++
++	if (!options_buf) {
++		TRACE(("leave addpubkeyoptions, null options"))
++		return pubkey_options;
++	}
+ 
+ 	buf_setpos(options_buf, 0);
+ 	while (options_buf->pos < options_buf->len) {
+ 		if (match_option(options_buf, "no-port-forwarding") == DROPBEAR_SUCCESS) {
+ 			dropbear_log(LOG_WARNING, "Port forwarding disabled.");
+-			ses.authstate.pubkey_options->no_port_forwarding_flag = 1;
++			pubkey_options->no_port_forwarding_flag = 1;
+ 			goto next_option;
+ 		}
+ 		if (match_option(options_buf, "no-agent-forwarding") == DROPBEAR_SUCCESS) {
+ #if DROPBEAR_SVR_AGENTFWD
+ 			dropbear_log(LOG_WARNING, "Agent forwarding disabled.");
+-			ses.authstate.pubkey_options->no_agent_forwarding_flag = 1;
++			pubkey_options->no_agent_forwarding_flag = 1;
+ #endif
+ 			goto next_option;
+ 		}
+ 		if (match_option(options_buf, "no-X11-forwarding") == DROPBEAR_SUCCESS) {
+ #if DROPBEAR_X11FWD
+ 			dropbear_log(LOG_WARNING, "X11 forwarding disabled.");
+-			ses.authstate.pubkey_options->no_x11_forwarding_flag = 1;
++			pubkey_options->no_x11_forwarding_flag = 1;
+ #endif
+ 			goto next_option;
+ 		}
+ 		if (match_option(options_buf, "no-pty") == DROPBEAR_SUCCESS) {
+ 			dropbear_log(LOG_WARNING, "Pty allocation disabled.");
+-			ses.authstate.pubkey_options->no_pty_flag = 1;
++			pubkey_options->no_pty_flag = 1;
+ 			goto next_option;
+ 		}
+ 		if (match_option(options_buf, "restrict") == DROPBEAR_SUCCESS) {
+ 			dropbear_log(LOG_WARNING, "Restrict option set");
+-			ses.authstate.pubkey_options->no_port_forwarding_flag = 1;
++			pubkey_options->no_port_forwarding_flag = 1;
+ #if DROPBEAR_SVR_AGENTFWD
+-			ses.authstate.pubkey_options->no_agent_forwarding_flag = 1;
++			pubkey_options->no_agent_forwarding_flag = 1;
+ #endif
+ #if DROPBEAR_X11FWD
+-			ses.authstate.pubkey_options->no_x11_forwarding_flag = 1;
++			pubkey_options->no_x11_forwarding_flag = 1;
+ #endif
+-			ses.authstate.pubkey_options->no_pty_flag = 1;
++			pubkey_options->no_pty_flag = 1;
+ 			goto next_option;
+ 		}
+ 		if (match_option(options_buf, "command=\"") == DROPBEAR_SUCCESS) {
+ 			int escaped = 0;
+ 			const unsigned char* command_start = buf_getptr(options_buf, 0);
+ 
+-			if (ses.authstate.pubkey_options->forced_command) {
++			if (pubkey_options->forced_command) {
+ 				/* multiple command= options */
+ 				goto bad_option;
+ 			}
+@@ -234,10 +237,10 @@ int svr_add_pubkey_options(buffer *optio
+ 				const char c = buf_getbyte(options_buf);
+ 				if (!escaped && c == '"') {
+ 					const int command_len = buf_getptr(options_buf, 0) - command_start;
+-					ses.authstate.pubkey_options->forced_command = m_malloc(command_len);
+-					memcpy(ses.authstate.pubkey_options->forced_command,
++					pubkey_options->forced_command = m_malloc(command_len);
++					memcpy(pubkey_options->forced_command,
+ 							command_start, command_len-1);
+-					ses.authstate.pubkey_options->forced_command[command_len-1] = '\0';
++					pubkey_options->forced_command[command_len-1] = '\0';
+ 					goto next_option;
+ 				}
+ 				escaped = (!escaped && c == '\\');
+@@ -250,8 +253,8 @@ int svr_add_pubkey_options(buffer *optio
+ 			int valid_option = 0;
+ 			const unsigned char* permitopen_start = buf_getptr(options_buf, 0);
+ 
+-			if (!ses.authstate.pubkey_options->permit_open_destinations) {
+-				ses.authstate.pubkey_options->permit_open_destinations = list_new();
++			if (!pubkey_options->permit_open_destinations) {
++				pubkey_options->permit_open_destinations = list_new();
+ 			}
+ 
+ 			while (options_buf->pos < options_buf->len) {
+@@ -263,7 +266,7 @@ int svr_add_pubkey_options(buffer *optio
+ 					struct PermitTCPFwdEntry *entry =
+ 							(struct PermitTCPFwdEntry*)m_malloc(sizeof(struct PermitTCPFwdEntry));
+ 
+-					list_append(ses.authstate.pubkey_options->permit_open_destinations, entry);
++					list_append(pubkey_options->permit_open_destinations, entry);
+ 					spec = m_malloc(permitopen_len);
+ 					memcpy(spec, permitopen_start, permitopen_len - 1);
+ 					spec[permitopen_len - 1] = '\0';
+@@ -297,14 +300,14 @@ int svr_add_pubkey_options(buffer *optio
+ 		if (match_option(options_buf, "no-touch-required") == DROPBEAR_SUCCESS) {
+ #if DROPBEAR_SK_ECDSA || DROPBEAR_SK_ED25519
+ 			dropbear_log(LOG_WARNING, "No user presence check required for U2F/FIDO key.");
+-			ses.authstate.pubkey_options->no_touch_required_flag = 1;
++			pubkey_options->no_touch_required_flag = 1;
+ #endif
+ 			goto next_option;
+ 		}
+ 		if (match_option(options_buf, "verify-required") == DROPBEAR_SUCCESS) {
+ #if DROPBEAR_SK_ECDSA || DROPBEAR_SK_ED25519
+ 			dropbear_log(LOG_WARNING, "User verification required for U2F/FIDO key.");
+-			ses.authstate.pubkey_options->verify_required_flag = 1;
++			pubkey_options->verify_required_flag = 1;
+ #endif
+ 			goto next_option;
+ 		}
+@@ -321,17 +324,16 @@ next_option:
+ 		/* Process the next option. */
+ 	}
+ 	/* parsed all options with no problem */
+-	ret = DROPBEAR_SUCCESS;
+ 	goto end;
+ 
+ bad_option:
+-	ret = DROPBEAR_FAILURE;
+-	svr_pubkey_options_cleanup();
++	svr_pubkey_options_cleanup(pubkey_options);
++	pubkey_options = NULL;
+ 	dropbear_log(LOG_WARNING, "Bad public key options at %s:%d", filename, line_num);
+ 
+ end:
+ 	TRACE(("leave addpubkeyoptions"))
+-	return ret;
++	return pubkey_options;
+ }
+ 
+ #endif
+--- a/src/svr-chansession.c
++++ b/src/svr-chansession.c
+@@ -1026,8 +1026,9 @@ static void execchild(const void *user_d
+ 		addnewvar("SSH_ORIGINAL_COMMAND", chansess->original_command);
+ 	}
+ #if DROPBEAR_SVR_PUBKEY_OPTIONS_BUILT
+-	if (ses.authstate.pubkey_info != NULL) {
+-		addnewvar("SSH_PUBKEYINFO", ses.authstate.pubkey_info);
++	if (ses.authstate.pubkey_options
++		&& ses.authstate.pubkey_options->info_env) {
++		addnewvar("SSH_PUBKEYINFO", ses.authstate.pubkey_options->info_env);
+ 	}
+ #endif
+ 
+--- a/src/svr-session.c
++++ b/src/svr-session.c
+@@ -84,8 +84,8 @@ static const struct ChanType *svr_chanty
+ 
+ static void
+ svr_session_cleanup(void) {
+-	/* free potential public key options */
+-	svr_pubkey_options_cleanup();
++	svr_pubkey_options_cleanup(ses.authstate.pubkey_options);
++	ses.authstate.pubkey_options = NULL;
+ 
+ 	m_free(svr_ses.addrstring);
+ 	m_free(svr_ses.remotehost);
+--- a/src/sysoptions.h
++++ b/src/sysoptions.h
+@@ -347,6 +347,10 @@
+ 	#error "You must define DROPBEAR_SVR_PUBKEY_AUTH in order to use plugins"
+ #endif
+ 
++#if (DROPBEAR_PLUGIN && !DROPBEAR_SVR_PUBKEY_OPTIONS_BUILT)
++	#error "DROPBEAR_PLUGIN requires DROPBEAR_SVR_PUBKEY_OPTIONS"
++#endif
++
+ #if !(DROPBEAR_AES128 || DROPBEAR_3DES || DROPBEAR_AES256 || DROPBEAR_CHACHA20POLY1305)
+ 	#error "At least one encryption algorithm must be enabled. AES128 is recommended."
+ #endif

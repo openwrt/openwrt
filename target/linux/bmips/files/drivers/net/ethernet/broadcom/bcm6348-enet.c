@@ -1565,7 +1565,10 @@ static int bcm6348_emac_probe(struct platform_device *pdev)
 	emac->old_duplex = -1;
 	emac->old_pause = -1;
 
-	of_get_mac_address(node, dev_addr);
+	ret = of_get_mac_address(node, dev_addr);
+	if (ret == -EPROBE_DEFER)
+		return ret;
+
 	if (is_valid_ether_addr(dev_addr)) {
 		dev_addr_set(ndev, dev_addr);
 		dev_info(dev, "mtd mac %pM\n", dev_addr);

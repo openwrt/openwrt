@@ -1,0 +1,56 @@
+From a10e4959a73be5b70f59e1f7678bed78ea720906 Mon Sep 17 00:00:00 2001
+From: Sean Wang <sean.wang@mediatek.com>
+Date: Sat, 25 Apr 2026 10:47:19 -0500
+Subject: [PATCH 074/170] wifi: mt76: mt7925: keep TX BA state in the primary
+ WCID
+
+[ Upstream commit d3c854068bad22a25db6515f12784f64c663fed2 ]
+
+For MLO, the same TID can run over different links. Keeping TX BA state in
+a link WCID makes the state depend on which link starts aggregation first.
+
+Store it in the primary WCID instead, so the BA state stays stable across
+links.
+
+Fixes: 44eb173bdd4f ("wifi: mt76: mt7925: add link handling in mt7925_txwi_free")
+Tested-by: Yao Ting Hsieh <yao-ting.hsieh@mediatek.com>
+Signed-off-by: Sean Wang <sean.wang@mediatek.com>
+Link: https://patch.msgid.link/20260425154721.738101-1-sean.wang@kernel.org
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+---
+ mt7925/mac.c | 15 +++++++--------
+ 1 file changed, 7 insertions(+), 8 deletions(-)
+
+--- a/mt7925/mac.c
++++ b/mt7925/mac.c
+@@ -841,7 +841,6 @@ static void mt7925_tx_check_aggr(struct
+ {
+ 	struct ieee80211_tx_info *info = IEEE80211_SKB_CB(skb);
+ 	struct ieee80211_link_sta *link_sta;
+-	struct mt792x_link_sta *mlink;
+ 	struct mt792x_sta *msta;
+ 	bool is_8023;
+ 	u16 fc, tid;
+@@ -880,14 +879,14 @@ static void mt7925_tx_check_aggr(struct
+ 
+ 	msta = (struct mt792x_sta *)sta->drv_priv;
+ 
+-	if (sta->mlo && msta->deflink_id != IEEE80211_LINK_UNSPECIFIED)
+-		mlink = rcu_dereference(msta->link[msta->deflink_id]);
+-	else
+-		mlink = &msta->deflink;
+-
+-	if (!test_and_set_bit(tid, &mlink->wcid.ampdu_state)) {
++	/* Packets belonging to the same TID can be transmitted over multiple
++	 * links. Keep the TX BA session state in the primary link so all links
++	 * share the same AMPDU bookkeeping.
++	 */
++	if (!test_and_set_bit(tid, &msta->deflink.wcid.ampdu_state)) {
+ 		if (ieee80211_start_tx_ba_session(sta, tid, 0))
+-			clear_bit(tid, &mlink->wcid.ampdu_state);
++			clear_bit(tid, &msta->deflink.wcid.ampdu_state);
++
+ 	}
+ }
+ 

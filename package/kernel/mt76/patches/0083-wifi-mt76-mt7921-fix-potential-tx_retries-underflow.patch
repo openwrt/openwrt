@@ -1,0 +1,37 @@
+From 3b6e6fefa57f4f0afc94bd72a55a91dbca288368 Mon Sep 17 00:00:00 2001
+From: Ryder Lee <ryder.lee@mediatek.com>
+Date: Fri, 5 Jun 2026 04:33:04 -0700
+Subject: [PATCH 083/170] wifi: mt76: mt7921: fix potential tx_retries
+ underflow
+
+[ Upstream commit 3c5671ed81b1fff97fa868dae771690599db94f7 ]
+
+When FIELD_GET returns 0 for the retry count, subtracting 1 causes
+an unsigned integer underflow, resulting in tx_retries becoming a
+very large value (0xFFFFFFFF for u32).
+
+Fix by checking if count is non-zero before subtracting 1.
+
+Fixes: 9aecfa754c7f ("wifi: mt76: mt7921e: report tx retries/failed counts in tx free event")
+Signed-off-by: Ryder Lee <ryder.lee@mediatek.com>
+Link: https://patch.msgid.link/20260605113306.3485554-2-ryder.lee@mediatek.com
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+---
+ mt7921/mac.c | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+--- a/mt7921/mac.c
++++ b/mt7921/mac.c
+@@ -530,8 +530,9 @@ static void mt7921_mac_tx_free(struct mt
+ 		stat = FIELD_GET(MT_TX_FREE_STATUS, info);
+ 
+ 		if (wcid) {
+-			wcid->stats.tx_retries +=
+-				FIELD_GET(MT_TX_FREE_COUNT, info) - 1;
++			u32 count = FIELD_GET(MT_TX_FREE_COUNT, info);
++
++			wcid->stats.tx_retries += count ? count - 1 : 0;
+ 			wcid->stats.tx_failed += !!stat;
+ 		}
+ 

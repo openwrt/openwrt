@@ -153,7 +153,7 @@
  	int (*init)(struct subprocess_info *info, struct cred *new);
 --- a/kernel/umh.c
 +++ b/kernel/umh.c
-@@ -29,6 +29,7 @@
+@@ -28,6 +28,7 @@
  #include <linux/uaccess.h>
  #include <linux/initrd.h>
  #include <linux/freezer.h>
@@ -161,7 +161,7 @@
  
  #include <trace/events/module.h>
  
-@@ -71,6 +72,28 @@ static int call_usermodehelper_exec_asyn
+@@ -70,6 +71,28 @@ static int call_usermodehelper_exec_asyn
  	flush_signal_handlers(current, 1);
  	spin_unlock_irq(&current->sighand->siglock);
  
@@ -190,7 +190,7 @@
  	/*
  	 * Initial kernel threads share ther FS with init, in order to
  	 * get the init root directory. But we've now created a new
-@@ -330,6 +353,20 @@ static void helper_unlock(void)
+@@ -329,6 +352,20 @@ static void helper_unlock(void)
  		wake_up(&running_helpers_waitq);
  }
  

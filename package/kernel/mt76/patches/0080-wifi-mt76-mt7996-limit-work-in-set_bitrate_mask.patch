@@ -1,0 +1,54 @@
+From 42f34c478fcdf7f3c1a9dfcc211abfd3efd86f01 Mon Sep 17 00:00:00 2001
+From: Dylan Eskew <dylan.eskew@candelatech.com>
+Date: Wed, 8 Apr 2026 07:50:58 -0700
+Subject: [PATCH 080/170] wifi: mt76: mt7996: limit work in set_bitrate_mask
+
+[ Upstream commit 5fd3385505600934f5faa9635e5b30fa38e548b9 ]
+
+Calls to mt7996_set_bitrate_mask() would propagate work for all stations
+on the ieee80211_hw regardless of the vif specified in the call. To
+prevent unnecessary work in FW, limit setting the sta_rate to only the
+specified vif in mt7996_sta_rate_ctrl_update().
+
+Fixes: afff4325548f0 ("wifi: mt76: mt7996: Use proper link_id in link_sta_rc_update callback")
+Signed-off-by: Dylan Eskew <dylan.eskew@candelatech.com>
+Acked-by: Lorenzo Bianconi <lorenzo@kernel.org>
+Link: https://patch.msgid.link/20260408145057.2356878-2-dylan.eskew@candelatech.com
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+---
+ mt7996/main.c | 9 ++++++---
+ 1 file changed, 6 insertions(+), 3 deletions(-)
+
+--- a/mt7996/main.c
++++ b/mt7996/main.c
+@@ -1880,7 +1880,11 @@ static void mt7996_sta_rate_ctrl_update(
+ {
+ 	struct mt7996_sta *msta = (struct mt7996_sta *)sta->drv_priv;
+ 	struct mt7996_sta_link *msta_link;
+-	u32 *changed = data;
++	struct mt7996_vif *mvif = data;
++	u32 changed = IEEE80211_RC_SUPP_RATES_CHANGED;
++
++	if (msta->vif != mvif)
++		return;
+ 
+ 	msta_link = mt7996_sta_link(msta, msta->deflink_id);
+ 	if (msta_link)
+@@ -1893,7 +1897,6 @@ mt7996_set_bitrate_mask(struct ieee80211
+ {
+ 	struct mt7996_dev *dev = mt7996_hw_dev(hw);
+ 	struct mt7996_vif *mvif = (struct mt7996_vif *)vif->drv_priv;
+-	u32 changed = IEEE80211_RC_SUPP_RATES_CHANGED;
+ 
+ 	mvif->deflink.bitrate_mask = *mask;
+ 
+@@ -1906,7 +1909,7 @@ mt7996_set_bitrate_mask(struct ieee80211
+ 	 * then multiple MCS setting (MCS 4,5,6) is not supported.
+ 	 */
+ 	ieee80211_iterate_stations_atomic(hw, mt7996_sta_rate_ctrl_update,
+-					  &changed);
++					  mvif);
+ 	ieee80211_queue_work(hw, &dev->rc_work);
+ 
+ 	return 0;

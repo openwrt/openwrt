@@ -1,0 +1,40 @@
+From 06526443a34c06879664eb5ae247c5e93dde7ed9 Mon Sep 17 00:00:00 2001
+From: Marc Zyngier <maz@kernel.org>
+Date: Tue, 13 May 2025 18:28:16 +0100
+Subject: [PATCH] irqchip/msi-lib: Honour the MSI_FLAG_NO_AFFINITY flag
+
+Bad MSI implementations multiplex MSIs onto a single downstream interrupt,
+meaning they have no concept of individual affinity.
+
+The old MSI code did a reasonable job at this by honouring the
+MSI_FLAG_NO_AFFINITY, but the new shiny device MSI code doesn't.
+
+Teach it about the sad reality of existing hardware.
+
+Fixes: ba45c91a8c74 ("PCI: mediatek: Switch to msi_create_parent_irq_domain()")
+Signed-off-by: Marc Zyngier <maz@kernel.org>
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+Link: https://lore.kernel.org/all/20250513172819.2216709-7-maz@kernel.org
+
+[Backport to 6.12: use info->chip directly]
+---
+ drivers/irqchip/irq-msi-lib.c | 7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
+
+--- a/drivers/irqchip/irq-msi-lib.c
++++ b/drivers/irqchip/irq-msi-lib.c
+@@ -104,8 +104,13 @@ bool msi_lib_init_dev_msi_info(struct de
+ 	 * MSI message into the hardware which is the whole purpose of the
+ 	 * device MSI domain aside of mask/unmask which is provided e.g. by
+ 	 * PCI/MSI device domains.
++	 *
++	 * The exception to the rule is when the underlying domain
++	 * tells you that affinity is not a thing -- for example when
++	 * everything is muxed behind a single interrupt.
+ 	 */
+-	info->chip->irq_set_affinity	= msi_domain_set_affinity;
++	if (!info->chip->irq_set_affinity && !(info->flags & MSI_FLAG_NO_AFFINITY))
++		info->chip->irq_set_affinity = msi_domain_set_affinity;
+ 	return true;
+ }
+ EXPORT_SYMBOL_GPL(msi_lib_init_dev_msi_info);

@@ -1,0 +1,324 @@
+From 670b3dc4e3713542a9f002d38fb9d1740b9e342b Mon Sep 17 00:00:00 2001
+From: Eason Lai <Eason.Lai@mediatek.com>
+Date: Wed, 6 May 2026 15:04:58 +0800
+Subject: [PATCH 111/170] wifi: mt76: mt7921: Add PCIe AER handler support to
+ prevent system crash
+
+[ Upstream commit 915672c5ae32deeb72f4572856d123f314791136 ]
+
+When an AER error occurs and the bus is hung, the register reads return
+0xFFFFFFFF, causing the DMA queue state to be corrupted and resulting in
+an invalid memory access when accessing q->desc[] or q->entry[].
+
+Unable to handle kernel paging request at virtual address
+ffffffc01099eac0
+pc : mt76_dma_add_buf+0x124/0x188 [mt76]
+lr : mt76_dma_rx_fill+0x11c/0x1d8 [mt76]
+sp : ffffffc016d9bbf0
+x29: ffffffc016d9bc10 x28: 0000000000000000
+x27: 0000000000000000 x26: ffffffb7855e50b8
+x25: ffffffb80d04f000 x24: 0000000000000000
+x23: 0000000000000ec0 x22: ffffffb796803648
+x21: ffffffb796801f80 x20: ffffffb7968035f8
+x19: 0000000000000ec0 x18: 0000000000000000
+x17: 000000004ec00000 x16: 000000000ec00000
+x15: ffffffc01099eac0 x14: 000000004ec00000
+x13: 00000000ffc5a000 x12: ffffffc016d9bc32
+x11: 00000000ffffffff x10: 0000000000000002
+x9 : 0000000000000000 x8 : 000000000000b4ac
+x7 : 0000000000000a20 x6 : ffffffb6c1806400
+x5 : 0000000000000000 x4 : ffffffb80d04f000
+x3 : 0000000000000000 x2 : 0000000000000001
+x1 : 000000000ec04000 x0 : ffffffb7968035f8
+Call trace:
+ mt76_dma_add_buf+0x124/0x188 [mt76 (HASH:1029 4)]
+ mt76_dma_rx_reset+0xe8/0xfc [mt76 (HASH:1029 4)]
+ mt7921_wpdma_reset+0x188/0x1b0 [mt7921e (HASH:ee48 5)]
+ mt7921e_mac_reset+0x128/0x418 [mt7921e (HASH:ee48 5)]
+ mt7921_mac_reset_work+0xac/0x1a8 [mt7921_common (HASH:f721 6)]
+ process_one_work+0x188/0x514
+ worker_thread+0x12c/0x300
+ kthread+0x140/0x1fc
+ ret_from_fork+0x10/0x30
+
+Fix the invalid memory access by validating the DMA index read from the
+hardware before it is used as a queue index. An out-of-range value, such
+as the 0xFFFFFFFF returned while the bus is hung, is now clamped so it can
+no longer corrupt q->head or q->tail. In addition, check the bus_hung flag
+in mt7921_mac_reset_work() before attempting the reset sequence, reject MCU
+messages while the bus is hung, and install no-op bus operations when an
+unrecoverable AER error is detected, preventing further invalid hardware
+accesses.
+
+Due to hardware limitations - such as the lack of a connected hardware
+reset pin or the absence of host re-probe functionality - affected Wi-Fi
+devices may not fully recover to a normal operational state after
+certain errors, even with AER enabled.
+
+Fixes: 17f1de56df05 ("mt76: add common code shared between multiple chipsets")
+Co-developed-by: Sean Wang <sean.wang@mediatek.com>
+Signed-off-by: Sean Wang <sean.wang@mediatek.com>
+Co-developed-by: Jeff Hsu <jeff.hsu@mediatek.com>
+Signed-off-by: Jeff Hsu <jeff.hsu@mediatek.com>
+Signed-off-by: Eason Lai <Eason.Lai@mediatek.com>
+Co-developed-by: Michael Lo <michael.lo@mediatek.com>
+Link: https://patch.msgid.link/20260506070458.3096180-1-jb.tsai@mediatek.com
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+---
+ dma.c      |  27 +++--
+ mcu.c      |  12 +-
+ .../net/wireless/mediatek/mt76/mt76_connac.h  |   5 +
+ .../net/wireless/mediatek/mt76/mt7921/mac.c   |   3 +
+ .../net/wireless/mediatek/mt76/mt7921/pci.c   | 103 ++++++++++++++++++
+ 5 files changed, 139 insertions(+), 11 deletions(-)
+
+--- a/dma.c
++++ b/dma.c
+@@ -186,6 +186,18 @@ mt76_dma_queue_magic_cnt_init(struct mt7
+ 	}
+ }
+ 
++/* A hung bus (e.g. after a PCIe AER error) reads 0xffffffff from every
++ * register, so clamp an out-of-range index to the fallback to keep it from
++ * corrupting q->head/q->tail.
++ */
++static int
++mt76_dma_read_dma_idx(struct mt76_queue *q, int fallback)
++{
++	u32 idx = Q_READ(q, dma_idx);
++
++	return idx < q->ndesc ? idx : fallback;
++}
++
+ static void
+ mt76_dma_sync_idx(struct mt76_dev *dev, struct mt76_queue *q)
+ {
+@@ -201,7 +213,8 @@ mt76_dma_sync_idx(struct mt76_dev *dev,
+ 	}
+ 
+ 	Q_WRITE(q, desc_base, q->desc_dma);
+-	q->head = Q_READ(q, dma_idx);
++
++	q->head = mt76_dma_read_dma_idx(q, 0);
+ 	q->tail = q->head;
+ }
+ 
+@@ -419,7 +432,7 @@ mt76_dma_tx_cleanup(struct mt76_dev *dev
+ 	if (flush)
+ 		last = -1;
+ 	else
+-		last = Q_READ(q, dma_idx);
++		last = mt76_dma_read_dma_idx(q, -1);
+ 
+ 	while (q->queued > 0 && q->tail != last) {
+ 		mt76_dma_tx_cleanup_idx(dev, q, q->tail, &entry);
+@@ -432,7 +445,7 @@ mt76_dma_tx_cleanup(struct mt76_dev *dev
+ 		}
+ 
+ 		if (!flush && q->tail == last)
+-			last = Q_READ(q, dma_idx);
++			last = mt76_dma_read_dma_idx(q, -1);
+ 	}
+ 	spin_unlock_bh(&q->cleanup_lock);
+ 
+@@ -625,8 +638,8 @@ mt76_dma_tx_queue_skb_raw(struct mt76_de
+ 	buf.len = skb->len;
+ 
+ 	spin_lock_bh(&q->lock);
+-	mt76_dma_add_buf(dev, q, &buf, 1, tx_info, skb, NULL);
+-	mt76_dma_kick_queue(dev, q);
++	if (mt76_dma_add_buf(dev, q, &buf, 1, tx_info, skb, NULL) >= 0)
++		mt76_dma_kick_queue(dev, q);
+ 	spin_unlock_bh(&q->lock);
+ 
+ 	return 0;
+@@ -983,7 +996,7 @@ mt76_dma_rx_process(struct mt76_dev *dev
+ 	if ((q->flags & MT_QFLAG_WED_RRO_EN) ||
+ 	    (IS_ENABLED(CONFIG_NET_MEDIATEK_SOC_WED) &&
+ 	     mt76_queue_is_wed_tx_free(q))) {
+-		dma_idx = Q_READ(q, dma_idx);
++		dma_idx = mt76_dma_read_dma_idx(q, q->tail);
+ 		check_ddone = true;
+ 	}
+ 
+@@ -993,7 +1006,7 @@ mt76_dma_rx_process(struct mt76_dev *dev
+ 
+ 		if (check_ddone) {
+ 			if (q->tail == dma_idx)
+-				dma_idx = Q_READ(q, dma_idx);
++				dma_idx = mt76_dma_read_dma_idx(q, q->tail);
+ 
+ 			if (q->tail == dma_idx)
+ 				break;
+--- a/mcu.c
++++ b/mcu.c
+@@ -78,15 +78,19 @@ int mt76_mcu_skb_send_and_get_msg(struct
+ 	unsigned long expires;
+ 	int ret, seq;
+ 
+-	if (mt76_is_sdio(dev))
+-		if (test_bit(MT76_RESET, &dev->phy.state) && atomic_read(&dev->bus_hung))
+-			return -EIO;
+-
+ 	if (ret_skb)
+ 		*ret_skb = NULL;
+ 
+ 	mutex_lock(&dev->mcu.mutex);
+ 
++	if ((mt76_is_mmio(dev) && atomic_read(&dev->bus_hung)) ||
++	    (mt76_is_sdio(dev) && test_bit(MT76_RESET, &dev->phy.state) &&
++	    atomic_read(&dev->bus_hung))) {
++		orig_skb = skb;
++		ret = -EIO;
++		goto out;
++	}
++
+ 	if (dev->mcu_ops->mcu_skb_prepare_msg) {
+ 		orig_skb = skb;
+ 		ret = dev->mcu_ops->mcu_skb_prepare_msg(dev, skb, cmd, &seq);
+--- a/mt76_connac.h
++++ b/mt76_connac.h
+@@ -48,6 +48,11 @@ enum rx_pkt_type {
+ #define MT_TXD_LEN_MSDU_LAST		BIT(14)
+ #define MT_TXD_LEN_AMSDU_LAST		BIT(15)
+ 
++/* PCIE part */
++#define PCIE_AER_UNC_STATUS_OFFSET  0x204
++#define PCIE_AER_UNC_MASK_OFFSET    0x208
++#define PCIE_AER_CO_STATUS_OFFSET   0x210
++
+ enum {
+ 	CMD_CBW_20MHZ = IEEE80211_STA_RX_BW_20,
+ 	CMD_CBW_40MHZ = IEEE80211_STA_RX_BW_40,
+--- a/mt7921/mac.c
++++ b/mt7921/mac.c
+@@ -673,6 +673,9 @@ void mt7921_mac_reset_work(struct work_s
+ 	cancel_work_sync(&pm->wake_work);
+ 
+ 	for (i = 0; i < 10; i++) {
++		if (atomic_read(&dev->mt76.bus_hung))
++			return;
++
+ 		mutex_lock(&dev->mt76.mutex);
+ 		ret = mt792x_dev_reset(dev);
+ 		mutex_unlock(&dev->mt76.mutex);
+--- a/mt7921/pci.c
++++ b/mt7921/pci.c
+@@ -594,6 +594,108 @@ failed:
+ 	return err;
+ }
+ 
++static u32 mt7921_aer_rr(struct mt76_dev *mdev, u32 offset)
++{
++	return 0;
++}
++
++static void mt7921_aer_wr(struct mt76_dev *mdev, u32 offset, u32 val)
++{
++	;
++}
++
++static u32 mt791_aer_rmw(struct mt76_dev *mdev, u32 offset, u32 mask, u32 val)
++{
++	return 0;
++}
++
++static const struct mt76_bus_ops mt7921_aer_bus_hung_ops = {
++	.rr = mt7921_aer_rr,
++	.wr = mt7921_aer_wr,
++	.rmw = mt791_aer_rmw,
++	.type = MT76_BUS_MMIO
++};
++
++static void mt7921_pci_set_aer_bus_hung_ops(struct mt792x_dev *dev)
++{
++	if (READ_ONCE(dev->mt76.bus) == &mt7921_aer_bus_hung_ops)
++		return;
++
++	atomic_set(&dev->mt76.bus_hung, true);
++	WRITE_ONCE(dev->mt76.bus, &mt7921_aer_bus_hung_ops);
++}
++
++static pci_ers_result_t mt7921_error_detected(struct pci_dev *pdev,
++					      pci_channel_state_t state)
++{
++	struct mt76_dev *mdev = pci_get_drvdata(pdev);
++	struct mt792x_dev *dev = container_of(mdev, struct mt792x_dev, mt76);
++	u32 aer_unc_val = 0, aer_co_val = 0;
++
++	dev_err(mdev->dev, "PCIE error detect state: %d\n", state);
++
++	/* Clear SW IRQ tasklet first */
++	tasklet_kill(&mdev->irq_tasklet);
++
++	if (state == pci_channel_io_perm_failure) {
++		mt7921_pci_set_aer_bus_hung_ops(dev);
++		return PCI_ERS_RESULT_DISCONNECT;
++	}
++
++	pci_read_config_dword(pdev, PCIE_AER_UNC_STATUS_OFFSET, &aer_unc_val);
++	pci_read_config_dword(pdev, PCIE_AER_CO_STATUS_OFFSET, &aer_co_val);
++
++	dev_warn(mdev->dev, "PCIE_AER_UNC_STATUS_OFFSET: 0x%x\n", aer_unc_val);
++	dev_warn(mdev->dev, "PCIE_AER_CO_STATUS_OFFSET: 0x%x\n", aer_co_val);
++
++	/**
++	 * Due to this error is from link error and this AER is un-correctable,
++	 * so can't covered by device
++	 **/
++	if (aer_unc_val != 0) {
++		mt7921_pci_set_aer_bus_hung_ops(dev);
++		return PCI_ERS_RESULT_DISCONNECT;
++	}
++
++	/**
++	 * Try to recover it when state is pci_channel_io_frozen or
++	 * AER is correctable error
++	 **/
++	if (state == pci_channel_io_frozen || aer_co_val != 0) {
++		/* Disable PCIE activity first. */
++		pci_disable_device(pdev);
++		return PCI_ERS_RESULT_NEED_RESET;
++	}
++
++	return PCI_ERS_RESULT_NONE;
++}
++
++static pci_ers_result_t mt7921_slot_reset(struct pci_dev *pdev)
++{
++	struct mt76_dev *mdev = pci_get_drvdata(pdev);
++	int ret = 0;
++
++	ret = pci_enable_device_mem(pdev);
++
++	if (ret) {
++		dev_err(mdev->dev, "pci_enable_device_mem failed: %d\n", ret);
++		return PCI_ERS_RESULT_DISCONNECT;
++	}
++
++	pci_set_master(pdev);
++	pci_restore_state(pdev);
++	pci_save_state(pdev);
++	/* Also try do the vendor reset to let it more clear. */
++	mt792x_reset(mdev);
++
++	return PCI_ERS_RESULT_RECOVERED;
++}
++
++static const struct pci_error_handlers mt7921_err_handler = {
++	.error_detected = mt7921_error_detected,
++	.slot_reset     = mt7921_slot_reset,
++};
++
+ static void mt7921_pci_shutdown(struct pci_dev *pdev)
+ {
+ 	mt7921_pci_remove(pdev);
+@@ -608,6 +710,7 @@ static struct pci_driver mt7921_pci_driv
+ 	.remove		= mt7921_pci_remove,
+ 	.shutdown	= mt7921_pci_shutdown,
+ 	.driver.pm	= pm_sleep_ptr(&mt7921_pm_ops),
++	.err_handler    = &mt7921_err_handler,
+ };
+ 
+ module_pci_driver(mt7921_pci_driver);

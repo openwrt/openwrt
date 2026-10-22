@@ -1,0 +1,37 @@
+From ad12fdaaed16c6e75f2f826c0ea7c2b19c57da63 Mon Sep 17 00:00:00 2001
+From: Ryder Lee <ryder.lee@mediatek.com>
+Date: Fri, 5 Jun 2026 04:33:05 -0700
+Subject: [PATCH 084/170] wifi: mt76: mt7925: fix potential tx_retries
+ underflow
+
+[ Upstream commit 1e1fd84571e62a2961cea44c053340ec5c99b2cb ]
+
+When FIELD_GET returns 0 for the retry count, subtracting 1 causes
+an unsigned integer underflow, resulting in tx_retries becoming a
+very large value (0xFFFFFFFF for u32).
+
+Fix by checking if count is non-zero before subtracting 1.
+
+Fixes: c948b5da6bbe ("wifi: mt76: mt7925: add Mediatek Wi-Fi7 driver for mt7925 chips")
+Signed-off-by: Ryder Lee <ryder.lee@mediatek.com>
+Link: https://patch.msgid.link/20260605113306.3485554-3-ryder.lee@mediatek.com
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+---
+ mt7925/mac.c | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+--- a/mt7925/mac.c
++++ b/mt7925/mac.c
+@@ -1140,8 +1140,9 @@ mt7925_mac_tx_free(struct mt792x_dev *de
+ 
+ 		if (info & MT_TXFREE_INFO_HEADER) {
+ 			if (wcid) {
+-				wcid->stats.tx_retries +=
+-					FIELD_GET(MT_TXFREE_INFO_COUNT, info) - 1;
++				u32 count = FIELD_GET(MT_TXFREE_INFO_COUNT, info);
++
++				wcid->stats.tx_retries += count ? count - 1 : 0;
+ 				wcid->stats.tx_failed +=
+ 					!!FIELD_GET(MT_TXFREE_INFO_STAT, info);
+ 			}

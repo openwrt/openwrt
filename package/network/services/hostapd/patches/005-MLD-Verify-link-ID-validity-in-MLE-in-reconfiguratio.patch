@@ -1,0 +1,37 @@
+From e4bd3442c2223802bf8c4a4d868e3b9443c7caf4 Mon Sep 17 00:00:00 2001
+From: Jouni Malinen <jouni.malinen@oss.qualcomm.com>
+Date: Mon, 18 May 2026 12:13:21 +0300
+Subject: MLD: Verify link ID validity in MLE in reconfiguration cases
+
+Ignore or reject invalid link ID value 15 in ML reconfiguration.
+
+Signed-off-by: Jouni Malinen <jouni.malinen@oss.qualcomm.com>
+---
+ src/ap/ieee802_11_eht.c  | 2 ++
+ wpa_supplicant/bss.c     | 3 ++-
+ wpa_supplicant/wnm_sta.c | 3 ++-
+ 3 files changed, 6 insertions(+), 2 deletions(-)
+
+--- a/src/ap/ieee802_11_eht.c
++++ b/src/ap/ieee802_11_eht.c
+@@ -2157,6 +2157,8 @@ hostapd_parse_link_reconf_req_sta_profil
+ 
+ 	link_id = sta_control & EHT_PER_STA_RECONF_CTRL_LINK_ID_MSK;
+ 	wpa_printf(MSG_DEBUG, "MLD: Per-STA profile for link=%u", link_id);
++	if (link_id >= MAX_NUM_MLD_LINKS)
++		goto out;
+ 
+ 	reconf_type_mask =
+ 		sta_control & EHT_PER_STA_RECONF_CTRL_OP_UPDATE_TYPE_MSK;
+--- a/wpa_supplicant/bss.c
++++ b/wpa_supplicant/bss.c
+@@ -2099,7 +2099,8 @@ u16 wpa_bss_parse_reconf_ml_element(stru
+ 			u8 link_id;
+ 
+ 			link_id = control & EHT_PER_STA_RECONF_CTRL_LINK_ID_MSK;
+-			removed_links |= BIT(link_id);
++			if (link_id < MAX_NUM_MLD_LINKS)
++				removed_links |= BIT(link_id);
+ 		}
+ 
+ 		pos += 2 + sub_elem_len;

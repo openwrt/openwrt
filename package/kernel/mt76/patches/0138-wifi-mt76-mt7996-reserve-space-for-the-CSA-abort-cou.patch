@@ -1,0 +1,34 @@
+From 45d8896e4cffffb2c6554ccbec6efe7a0d53166f Mon Sep 17 00:00:00 2001
+From: Felix Fietkau <nbd@nbd.name>
+Date: Fri, 24 Jul 2026 12:47:52 +0000
+Subject: [PATCH 138/170] wifi: mt76: mt7996: reserve space for the CSA-abort
+ countdown TLV
+
+[ Upstream commit 50c66bab321140c49aa2ed779a3ec9d2f085b458 ]
+
+When a CSA countdown is active, mt7996_mcu_beacon_cntdwn() emits two
+bss_bcn_cntdwn_tlv entries (the CSA countdown and the CCA-abort BCC), but
+MT7996_BEACON_UPDATE_SIZE only reserved one. With MBSSID enabled and a
+near-maximum beacon template the extra 8 bytes could push the offload
+command past MT7996_MAX_BSS_OFFLOAD_SIZE and trigger skb_over_panic().
+Reserve room for both countdown TLVs.
+
+Fixes: 98686cd21624 ("wifi: mt76: mt7996: add driver for MediaTek Wi-Fi 7 (802.11be) devices")
+Link: https://patch.msgid.link/20260724124813.3961474-8-nbd@nbd.name
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+---
+ mt7996/mcu.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/mt7996/mcu.h
++++ b/mt7996/mcu.h
+@@ -883,7 +883,7 @@ enum {
+ #define MT7996_BEACON_UPDATE_SIZE	(sizeof(struct bss_req_hdr) +		\
+ 					 sizeof(struct bss_bcn_content_tlv) +	\
+ 					 4 + MT_TXD_SIZE +			\
+-					 sizeof(struct bss_bcn_cntdwn_tlv) +	\
++					 sizeof(struct bss_bcn_cntdwn_tlv) * 2 +	\
+ 					 sizeof(struct bss_bcn_mbss_tlv))
+ #define MT7996_MAX_BSS_OFFLOAD_SIZE	2048
+ #define MT7996_MAX_BEACON_SIZE		(MT7996_MAX_BSS_OFFLOAD_SIZE - \

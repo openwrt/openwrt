@@ -1,0 +1,48 @@
+From 4506e229b2e468b8c64bcf52c50c41a3bf2e633e Mon Sep 17 00:00:00 2001
+From: Runyu Xiao <runyu.xiao@seu.edu.cn>
+Date: Fri, 12 Jun 2026 12:13:31 +0800
+Subject: [PATCH 099/170] wifi: mt76: mt7615: avoid waiting for mac work under
+ the mt76 mutex
+
+commit bda8324270b1ac91bfba1df8928e0570e29759e8 upstream.
+
+mt7615_suspend() acquired the mt76 mutex and then called
+cancel_delayed_work_sync() on mac_work.  mt7615_mac_work() acquires the
+same mutex via mt7615_mutex_acquire() at the top of the worker, so if
+mac_work is already running and blocked on the mutex, the suspend path
+deadlocks waiting for the work it holds the mutex against.
+
+Flush scan_work and mac_work before taking the mutex, matching the
+suspend paths in mt7921 and mt7925.  scan_work only takes the mt76
+spinlock, but moving it keeps the sequence consistent.  This also keeps
+mac_work from running over an already suspended HIF, which the previous
+split (async cancel under the lock, sync cancel after release) would
+have allowed.
+
+Fixes: c6bf20109a3f ("mt76: mt7615: add WoW support")
+Cc: stable@vger.kernel.org
+Signed-off-by: Runyu Xiao <runyu.xiao@seu.edu.cn>
+Link: https://patch.msgid.link/20260612041331.2596331-1-runyu.xiao@seu.edu.cn
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ mt7615/main.c | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+--- a/mt7615/main.c
++++ b/mt7615/main.c
+@@ -1239,11 +1239,12 @@ static int mt7615_suspend(struct ieee802
+ 	cancel_delayed_work_sync(&dev->pm.ps_work);
+ 	mt76_connac_free_pending_tx_skbs(&dev->pm, NULL);
+ 
++	cancel_delayed_work_sync(&phy->scan_work);
++	cancel_delayed_work_sync(&phy->mt76->mac_work);
++
+ 	mt7615_mutex_acquire(dev);
+ 
+ 	clear_bit(MT76_STATE_RUNNING, &phy->mt76->state);
+-	cancel_delayed_work_sync(&phy->scan_work);
+-	cancel_delayed_work_sync(&phy->mt76->mac_work);
+ 
+ 	set_bit(MT76_STATE_SUSPEND, &phy->mt76->state);
+ 	ieee80211_iterate_active_interfaces(hw,

@@ -111,7 +111,58 @@ Signed-off-by: Pawel Dembicki <paweldembicki@gmail.com>
  
  			partition@0 {
  				/* This location must not be altered  */
-@@ -140,13 +136,43 @@
+@@ -128,11 +124,48 @@
+ 			};
+ 		};
+ 
+-		L2switch@2,0 {
++		ethernet-switch@2,0 {
+ 			#address-cells = <1>;
+ 			#size-cells = <1>;
+-			compatible = "vitesse-7385";
++			compatible = "vitesse,vsc7385";
+ 			reg = <0x2 0x0 0x20000>;
++			reset-gpios = <&gpio0 12 GPIO_ACTIVE_LOW>;
++
++			ethernet-ports {
++				#address-cells = <1>;
++				#size-cells = <0>;
++
++				ethernet-port@1 {
++					reg = <1>;
++					label = "lan1";
++				};
++				ethernet-port@2 {
++					reg = <2>;
++					label = "lan2";
++				};
++				ethernet-port@3 {
++					reg = <3>;
++					label = "lan3";
++				};
++				ethernet-port@4 {
++					reg = <4>;
++					label = "lan4";
++				};
++				ethernet-port@6 {
++					reg = <6>;
++					label = "cpu";
++					ethernet = <&enet0>;
++					phy-mode = "rgmii";
++					rx-internal-delay-ps = <1400>;
++					tx-internal-delay-ps = <2000>;
++
++					fixed-link {
++						speed = <1000>;
++						full-duplex;
++						pause;
++					};
++				};
++			};
+ 		};
+ 
+ 	};
+@@ -140,13 +173,43 @@
  	soc: soc@ffe00000 {
  		ranges = <0x0 0x0 0xffe00000 0x100000>;
  
@@ -155,7 +206,7 @@ Signed-off-by: Pawel Dembicki <paweldembicki@gmail.com>
  		spi@7000 {
  			flash@0 {
  				#address-cells = <1>;
-@@ -200,10 +226,12 @@
+@@ -200,10 +263,12 @@
  			phy0: ethernet-phy@0 {
  				interrupts = <3 1 0 0>;
  				reg = <0x0>;
@@ -168,3 +219,18 @@ Signed-off-by: Pawel Dembicki <paweldembicki@gmail.com>
  			};
  			tbi-phy@2 {
  				device_type = "tbi-phy";
+@@ -232,8 +297,13 @@
+ 		};
+ 
+ 		enet0: ethernet@24000 {
+-			fixed-link = <1 1 1000 0 0>;
+ 			phy-connection-type = "rgmii-id";
++
++			fixed-link {
++				speed = <1000>;
++				full-duplex;
++				pause;
++			};
+ 		};
+ 
+ 		enet1: ethernet@25000 {

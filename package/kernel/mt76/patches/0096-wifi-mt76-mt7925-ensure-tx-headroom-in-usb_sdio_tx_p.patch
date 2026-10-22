@@ -1,0 +1,64 @@
+From 22edb6786127271aeba7abd30f152977c605c6a3 Mon Sep 17 00:00:00 2001
+From: Devin Wittmayer <lucid_duck@justthetip.ca>
+Date: Tue, 14 Jul 2026 19:33:48 -0700
+Subject: [PATCH 096/170] wifi: mt76: mt7925: ensure tx headroom in
+ usb_sdio_tx_prepare_skb
+
+commit ef3e34874d2332d0f63e72c2c35ce5c93568c125 upstream.
+
+mt7925_usb_sdio_tx_prepare_skb() pushes a TX descriptor and a USB
+header onto every skb and assumes the headroom for them is already
+there. That holds for locally generated traffic, where mac80211
+reserves hw->extra_tx_headroom, but forwarded frames are sent through
+ieee80211_8023_xmit(), which does not reserve it. Bridge a wired
+interface to an mt7925u AP and the first forwarded frame that arrives
+short panics the kernel:
+
+ skbuff: skb_under_panic: len:415 put:4 tail:0x19b end:0x640 dev:wlan1
+ kernel BUG at net/core/skbuff.c:212!
+ Call trace:
+  skb_panic+0x58/0x60 (P)
+  skb_push+0x58/0x60
+  mt7925_usb_sdio_tx_prepare_skb+0xf8/0x1b8 [mt7925_common]
+  mt76u_tx_queue_skb+0xa0/0x1f8 [mt76_usb]
+  __mt76_tx_queue_skb+0x54/0xe8 [mt76]
+  mt76_txq_schedule.part.0+0x204/0x478 [mt76]
+  mt76_txq_schedule_all+0x50/0x80 [mt76]
+  mt792x_tx_worker+0x68/0x100 [mt792x_lib]
+  __mt76_worker_fn+0x84/0x150 [mt76]
+
+Whether a given setup hits it depends on how much headroom the ingress
+netdev leaves in its rx skbs. Reproduced on a Raspberry Pi 5 bridging
+onboard ethernet to a Netgear A9000; originally reported on an MT7986
+router running OpenWrt. Nick Morrow's testing on a Pi 4 (bcmgenet),
+which leaves more headroom, helped narrow the trigger to the ingress
+path.
+
+The same bug was fixed on mt7921 by commit 98c4d0abf5c4 ("mt76:
+mt7921: don't assume adequate headroom for SDIO headers"), but mt7925
+was copied from mt7921 without the fix. Add the same guard here.
+
+Fixes: c948b5da6bbe ("wifi: mt76: mt7925: add Mediatek Wi-Fi7 driver for mt7925 chips")
+Cc: stable@vger.kernel.org
+Link: https://github.com/morrownr/mt76/issues/52
+Signed-off-by: Devin Wittmayer <lucid_duck@justthetip.ca>
+Link: https://patch.msgid.link/20260715023348.59506-1-lucid_duck@justthetip.ca
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ mt7925/mac.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+--- a/mt7925/mac.c
++++ b/mt7925/mac.c
+@@ -1425,6 +1425,10 @@ int mt7925_usb_sdio_tx_prepare_skb(struc
+ 	if (!wcid)
+ 		wcid = &dev->mt76.global_wcid;
+ 
++	err = skb_cow_head(skb, MT_SDIO_TXD_SIZE + MT_SDIO_HDR_SIZE);
++	if (err)
++		return err;
++
+ 	if (sta) {
+ 		struct mt792x_sta *msta = (struct mt792x_sta *)sta->drv_priv;
+ 

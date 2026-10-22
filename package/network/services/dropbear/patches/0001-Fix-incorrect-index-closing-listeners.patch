@@ -1,0 +1,25 @@
+From 91f4832c0a90fc2c2236465e2937dfbfea03c86d Mon Sep 17 00:00:00 2001
+From: Matt Johnston <matt@ucc.asn.au>
+Date: Wed, 8 Apr 2026 20:51:47 +0800
+Subject: [PATCH 1/6] Fix incorrect index closing listeners
+
+This could read beyond socks[] and close an arbitrary descriptor.
+The codepath runs when creating TCP listeners for forwarding (client or
+server).
+
+(cherry picked from commit 067fd3846c425d1998c7c94d3feafe1f26b514eb)
+---
+ src/listener.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/src/listener.c
++++ b/src/listener.c
+@@ -95,7 +95,7 @@ struct Listener* new_listener(const int
+ 		if (ses.listensize > MAX_LISTENERS) {
+ 			TRACE(("leave newlistener: too many already"))
+ 			for (j = 0; j < nsocks; j++) {
+-				close(socks[i]);
++				close(socks[j]);
+ 			}
+ 			return NULL;
+ 		}
