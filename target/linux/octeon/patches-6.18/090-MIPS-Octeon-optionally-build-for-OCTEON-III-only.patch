@@ -1,0 +1,49 @@
+From: Simon Polack <spolack+git@mailbox.org>
+Subject: [PATCH] MIPS: Octeon: optionally build for OCTEON III only
+
+Add CAVIUM_OCTEON_MARCH_OCTEON3 to compile the kernel with
+-march=octeon3, for kernels that only run on OCTEON III (CN70XX and
+later). It depends on !CAVIUM_CN63XXP1, since that workaround is only
+needed on OCTEON II.
+
+gas enables the virt ASE for -march=octeon3 and then warns at every .set
+that lowers the ISA below release 2 (stackframe.h, futex.h, genex.S and
+the MIPS_ISA_ARCH_LEVEL users), and the kernel treats the warnings as
+errors. Pass -mno-virt; the .set virt blocks still enable it locally.
+
+Signed-off-by: Simon Polack <spolack+git@mailbox.org>
+---
+--- a/arch/mips/cavium-octeon/Kconfig
++++ b/arch/mips/cavium-octeon/Kconfig
+@@ -11,6 +11,15 @@ config CAVIUM_CN63XXP1
+ 	  non-CN63XXP1 hardware, so it is recommended to select "n"
+ 	  unless it is known the workarounds are needed.
+ 
++config CAVIUM_OCTEON_MARCH_OCTEON3
++	bool "Build for OCTEON III only (-march=octeon3)"
++	depends on !CAVIUM_CN63XXP1
++	help
++	  Compile the kernel with -march=octeon3. The code then uses
++	  OCTEON III instructions (for example the indexed loads ldx,
++	  lwx and lbux) and no longer runs on OCTEON, OCTEON Plus or
++	  OCTEON II. Say "n" for a kernel that must boot on any OCTEON.
++
+ config CAVIUM_OCTEON_CVMSEG_SIZE
+ 	int "Number of L1 cache lines reserved for CVMSEG memory"
+ 	range 0 54
+--- a/arch/mips/Makefile
++++ b/arch/mips/Makefile
+@@ -182,7 +182,13 @@ cflags-$(CONFIG_CPU_SB1)	+= $(call cc-op
+ cflags-$(CONFIG_CPU_SB1)	+= $(call cc-option,-mno-mips3d)
+ cflags-$(CONFIG_CPU_R10000)	+= $(call cc-option,-march=r10000,-march=mips4) \
+ 			-Wa,--trap
++ifdef CONFIG_CAVIUM_OCTEON_MARCH_OCTEON3
++# gas turns the virt ASE on for octeon3 and then warns at every .set that
++# lowers the ISA below release 2; keep it off, .set virt still enables it
++cflags-$(CONFIG_CPU_CAVIUM_OCTEON) += -march=octeon3 -Wa,--trap -Wa,-mno-virt
++else
+ cflags-$(CONFIG_CPU_CAVIUM_OCTEON) += -march=octeon -Wa,--trap
++endif
+ cflags-$(CONFIG_CAVIUM_CN63XXP1) += -Wa,-mfix-cn63xxp1
+ cflags-$(CONFIG_CPU_BMIPS)	+= -march=mips32 -Wa,--trap
+ 
