@@ -12,6 +12,9 @@ bt-pon,bt-g711ax)
 	ucidef_set_led_netdev "lan3" "lan3" "green:lan-3" "lan3"
 	ucidef_set_led_netdev "lan4" "lan4" "green:lan-4" "lan4"
 	;;
+buffalo,wsr-1500ax2s)
+	ucidef_set_led_netdev "internet" "INTERNET" "green:wan-online" "wan" "link"
+	;;
 esac
 
 board_config_flush
