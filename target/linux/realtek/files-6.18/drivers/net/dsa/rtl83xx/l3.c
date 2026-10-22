@@ -87,9 +87,13 @@
 #include <linux/notifier.h>
 #include <linux/of.h>
 #include <linux/seq_file.h>
+#include <linux/vmalloc.h>
+#include <net/addrconf.h>
 #include <net/arp.h>
 #include <net/fib_notifier.h>
 #include <net/ip6_fib.h>
+#include <net/ip6_route.h>
+#include <net/ip_fib.h>
 #include <net/ndisc.h>
 #include <net/netevent.h>
 #include <net/nexthop.h>
@@ -140,44 +144,50 @@
 #define FLOW_CPU_NH (MAX_ROUTES + MAX_HOST_ROUTES - 2)
 #define FLOW_CPU_INTF 127
 
-/* An explicit FIB trap can preempt force-PBR on RTL930x. Keep
- * ordinary unicast lookups on a reserved CPU-action next hop instead, allowing
- * the VACL to substitute a forwarding next hop for an admitted connection.
+/* Explicit FIB traps can preempt force-PBR. CPU-only routing, and traps
+ * while fasttrack is enabled, use the CPU-action next hop instead.
  */
+static bool otto_l3_930x_route_cpu(struct otto_l3_ctrl *ctrl,
+				 const struct otto_l3_route_attr *attr)
+{
+	return (attr->type == ROUTE_TYPE_IP4UC || attr->type == ROUTE_TYPE_IP6UC) &&
+	       (attr->action == ROUTE_ACT_FORWARD || attr->action == ROUTE_ACT_TRAP2CPU) &&
+	       (!ctrl->l3hw || (ctrl->fasttrack && attr->action == ROUTE_ACT_TRAP2CPU));
+}
+
 static u16 otto_l3_930x_route_nexthop(struct otto_l3_ctrl *ctrl,
 				       const struct otto_l3_route *rt)
 {
-	if (ctrl->fasttrack && (rt->attr.type == ROUTE_TYPE_IP4UC ||
-				rt->attr.type == ROUTE_TYPE_IP6UC))
-		return FLOW_CPU_NH;
-	return rt->nh.id;
+	return otto_l3_930x_route_cpu(ctrl, &rt->attr) ? FLOW_CPU_NH : rt->nh.id;
 }
 
 static void otto_l3_930x_route_attrs(struct otto_l3_ctrl *ctrl,
 				    struct otto_l3_route_attr *attr)
 {
-	if (!ctrl->fasttrack)
+	if (!otto_l3_930x_route_cpu(ctrl, attr))
 		return;
-	if (attr->type == ROUTE_TYPE_IP4UC || attr->type == ROUTE_TYPE_IP6UC) {
-		attr->action = ROUTE_ACT_FORWARD;
-		attr->dst_null = false;
-	} else {
-		attr->action = ROUTE_ACT_TRAP2CPU;
-	}
+	attr->action = ROUTE_ACT_FORWARD;
+	attr->dst_null = false;
 	attr->ttl_dec = false;
 	attr->ttl_check = false;
 }
 
+static bool l3hw = true;
+static bool synthesize;
 static bool fasttrack;
 static DEFINE_MUTEX(fasttrack_lock);
 static struct otto_l3_ctrl *fasttrack_ctrl;
-static int otto_l3_fasttrack_set(const char *val, const struct kernel_param *kp);
-static const struct kernel_param_ops fasttrack_ops = {
-	.set = otto_l3_fasttrack_set,
+static int otto_l3_param_set(const char *val, const struct kernel_param *kp);
+static const struct kernel_param_ops l3_param_ops = {
+	.set = otto_l3_param_set,
 	.get = param_get_bool,
 };
-module_param_cb(fasttrack, &fasttrack_ops, &fasttrack, 0644);
-MODULE_PARM_DESC(fasttrack, "RTL930x: route only nftables hardware flowtable connections in hardware");
+module_param_cb(fasttrack, &l3_param_ops, &fasttrack, 0644);
+module_param_cb(l3hw, &l3_param_ops, &l3hw, 0644);
+module_param_cb(synthesize, &l3_param_ops, &synthesize, 0644);
+MODULE_PARM_DESC(l3hw, "RTL930x: enable ordinary L3 hardware routing (default on)");
+MODULE_PARM_DESC(synthesize, "RTL930x: synthesize IPv4/IPv6 host routes for resolved on-link neighbours (requires l3hw)");
+MODULE_PARM_DESC(fasttrack, "RTL930x: enable nftables hardware flowtable offload alongside ordinary routing");
 
 bool otto_l3_fasttrack(struct otto_dsa_priv *priv)
 {
@@ -588,6 +598,7 @@ static int otto_l3_930x_host_route_write(struct otto_l3_ctrl *ctrl, int idx,
 	struct otto_l3_route_attr attr = rt->attr;
 	u32 data[5];
 	u32 v;
+	int err;
 
 	otto_l3_930x_route_attrs(ctrl, &attr);
 
@@ -630,7 +641,10 @@ static int otto_l3_930x_host_route_write(struct otto_l3_ctrl *ctrl, int idx,
 		return -EOPNOTSUPP;
 	}
 
-	return otto_table_write(RTL9300_TBL_L3_HOST_ROUTE_IPUC, idx, &data);
+	err = otto_table_write(RTL9300_TBL_L3_HOST_ROUTE_IPUC, idx, &data);
+	if (!err && rt->parent)
+		rt->synth_slot = (idx / 8) * 6 + idx % 8;
+	return err;
 }
 
 /* Slots one entry occupies, by type: IPv4 unicast, IPv4 multicast, IPv6
@@ -639,50 +653,74 @@ static int otto_l3_930x_host_route_write(struct otto_l3_ctrl *ctrl, int idx,
  */
 static const u8 otto_l3_930x_slot_widths[] = { 1, 2, 3, 6 };
 
+/* The SDK folds the upper 96 address bits into nine-bit XOR chunks.
+ * The low 32 bits use the IPv4 hash, including its end-around-carry variant.
+ */
+static u32 otto_l3_930x_hash6(const struct in6_addr *ip, int algorithm)
+{
+	const u8 *bytes = ip->s6_addr;
+	u32 hash = bytes[0] >> 6;
+	unsigned int bit, byte;
+	u32 word;
+
+	for (bit = 2; bit < 96; bit += 9) {
+		byte = bit / 8;
+		word = bytes[byte] << 8;
+		if (byte + 1 < 12)
+			word |= bytes[byte + 1];
+		hash ^= (word >> (7 - bit % 8)) & 0x1ff;
+	}
+	return hash ^ otto_l3_930x_hash4(be32_to_cpu(ip->s6_addr32[3]), algorithm, false);
+}
+
 static int otto_l3_930x_find_slot(struct otto_l3_ctrl *ctrl, struct otto_l3_route *rt, bool must_exist)
 {
-	int slot_width, algorithm, addr, idx, err;
+	int slot_width, algorithm, addr, idx, err, width;
 	struct otto_l3_route route_entry;
-	u32 hash;
+	u32 hash, occupied, mask;
 
 	slot_width = otto_l3_930x_slot_widths[rt->attr.type & 0x3];
 
 	for (int t = 0; t < 2; t++) {
 		algorithm = (sw_r32(RTL930X_L3_HOST_TBL_CTRL) >> (2 + t)) & 0x1;
-		hash = otto_l3_930x_hash4(rt->dst_ip, algorithm, false);
+		hash = rt->attr.type == ROUTE_TYPE_IP6UC ?
+			otto_l3_930x_hash6(&rt->dst_ip6, algorithm) :
+			otto_l3_930x_hash4(rt->dst_ip, algorithm, false);
+		occupied = 0;
 
-		dev_dbg(ctrl->dev, "table %d, algorithm %d, hash %04x\n", t, algorithm, hash);
-
-		for (int s = 0; s < 6; s += slot_width) {
-			addr = (t << 12) | ((hash & 0x1ff) << 3) | s;
-			dev_dbg(ctrl->dev, "physical address %d\n", addr);
-			idx = ((addr / 8) * 6) + (addr % 8);
-			dev_dbg(ctrl->dev, "logical address %d\n", idx);
-
+		/* Walk entry boundaries, not continuation slots: IPv6 unicast
+		 * occupies slots 0..2 or 3..5, and multicast can also span slots.
+		 * A free starting slot alone does not make the whole group free.
+		 */
+		for (int slot = 0; slot < 6; slot += width) {
+			addr = (t << 12) | ((hash & 0x1ff) << 3) | slot;
+			idx = (addr / 8) * 6 + addr % 8;
 			err = otto_l3_930x_host_route_read(ctrl, idx, &route_entry);
 			if (err)
 				return err;
-			dev_dbg(ctrl->dev, "route valid %d, route dest: %pI4, hit %d\n",
-				rt->attr.valid, &rt->dst_ip, rt->attr.hit);
-			if (!must_exist && !route_entry.attr.valid)
+			width = route_entry.attr.valid ?
+				otto_l3_930x_slot_widths[route_entry.attr.type] : 1;
+			if (!route_entry.attr.valid)
+				continue;
+			occupied |= ((1U << width) - 1) << slot;
+			if (!must_exist || route_entry.attr.type != rt->attr.type)
+				continue;
+			if (rt->attr.type == ROUTE_TYPE_IP4UC && route_entry.dst_ip == rt->dst_ip)
 				return idx;
-			if (must_exist &&
-			    route_entry.attr.valid &&
-			    route_entry.attr.type == rt->attr.type) {
-				switch (rt->attr.type) {
-				case ROUTE_TYPE_IP4UC:
-					if (route_entry.dst_ip == rt->dst_ip)
-						return idx;
-					break;
-				case ROUTE_TYPE_IP6UC:
-					if (ipv6_addr_equal(&route_entry.dst_ip6, &rt->dst_ip6))
-						return idx;
-					break;
-				}
-			}
+			if (rt->attr.type == ROUTE_TYPE_IP6UC &&
+			    ipv6_addr_equal(&route_entry.dst_ip6, &rt->dst_ip6))
+				return idx;
+		}
+		if (must_exist)
+			continue;
+		for (int slot = 0; slot + slot_width <= 6; slot += slot_width) {
+			mask = ((1U << slot_width) - 1) << slot;
+			if (occupied & mask)
+				continue;
+			addr = (t << 12) | ((hash & 0x1ff) << 3) | slot;
+			return (addr / 8) * 6 + addr % 8;
 		}
 	}
-
 	return -1;
 }
 
@@ -874,8 +912,8 @@ static int otto_l3_930x_route_matches(struct otto_l3_ctrl *ctrl, int row,
 	 * own id once its gateway answered, and zero on a row that only
 	 * traps, which the SDK keeps for exactly that. Comparing it with the
 	 * route's own next hop tells two routes for one destination apart,
-	 * whatever their action. In fasttrack mode all unicast rows instead name
-	 * the reserved CPU fallback; compare the encoded next hop in that mode.
+	 * whatever their action. In fasttrack mode trapped unicast rows instead
+	 * name the reserved CPU fallback; compare the encoded next hop.
 	 * A row that is not unicast decodes as none.
 	 */
 	if (!otto_l3_930x_route_decode(data, &entry) || entry.attr.type != rt->attr.type ||
@@ -1362,7 +1400,7 @@ static int otto_l3_930x_set_egress_intf(struct otto_l3_ctrl *ctrl, int idx,
 }
 
 /* A warm boot or an earlier driver can leave routes outside our software
- * lists. They must not admit connections around the flowtable's exact rules.
+ * lists. Clear them before rebuilding the current software routes.
  */
 static int otto_l3_930x_flow_routes_clear(void)
 {
@@ -1462,7 +1500,7 @@ static int otto_l3_930x_setup(struct otto_l3_ctrl *ctrl)
 	struct otto_dsa_priv *priv = ctrl->priv;
 	int uncleared = 0, err;
 
-	if (ctrl->fasttrack) {
+	if (ctrl->fasttrack || !ctrl->l3hw) {
 		err = otto_l3_930x_flow_routes_clear();
 		if (err)
 			return err;
@@ -1827,7 +1865,7 @@ static void otto_l3_fib4_flags_set(struct otto_l3_ctrl *ctrl, struct otto_l3_rou
 		.offload_failed = failed,
 	};
 
-	if ((ctrl->fasttrack || ctrl->mode_barrier) && fri.offload) {
+	if ((!ctrl->l3hw || ctrl->mode_barrier) && fri.offload) {
 		fri.offload = false;
 		fri.trap = true;
 	}
@@ -1894,7 +1932,7 @@ static void otto_l3_host_unshadow(struct otto_l3_ctrl *ctrl, struct otto_l3_rout
 		slot = ctrl->cfg->find_slot(ctrl, q, false);
 		if (slot >= 0) {
 			ctrl->cfg->host_route_write(ctrl, slot, q);
-			q->hw_forward = !ctrl->fasttrack && !ctrl->mode_barrier &&
+			q->hw_forward = ctrl->l3hw && !ctrl->mode_barrier &&
 					q->attr.action == ROUTE_ACT_FORWARD;
 			otto_l3_fib4_flags_set(ctrl, q, q->attr.action == ROUTE_ACT_FORWARD,
 					       q->attr.action != ROUTE_ACT_FORWARD, false);
@@ -2319,7 +2357,7 @@ static void otto_l3_route_update_hw(struct otto_l3_ctrl *ctrl, struct otto_l3_ro
 
 	shadowed = otto_l3_host_shadowed(ctrl, r);
 	otto_l3_fib4_flags_set(ctrl, r, !trap && !shadowed, trap || shadowed, false);
-	r->hw_forward = !ctrl->fasttrack && !ctrl->mode_barrier && !trap && !shadowed;
+	r->hw_forward = ctrl->l3hw && !ctrl->mode_barrier && !trap && !shadowed;
 	return;
 
 undo_sa:
@@ -2376,7 +2414,7 @@ static void otto_l3_fib6_flags_report(struct otto_l3_ctrl *ctrl, struct otto_l3_
 	/* A route takes its row when it is added, so one still without a
 	 * row is one that could not be placed.
 	 */
-	trap = ctrl->fasttrack || ctrl->mode_barrier || r->attr.action == ROUTE_ACT_TRAP2CPU;
+	trap = !ctrl->l3hw || ctrl->mode_barrier || r->attr.action == ROUTE_ACT_TRAP2CPU;
 	if (r->row >= FIRST_PREFIX_ROW)
 		fib6_info_hw_flags_set(&init_net, r->f6i, !trap, trap, false);
 	else
@@ -2488,7 +2526,7 @@ static struct otto_l3_route *otto_l3_route_find(struct otto_l3_ctrl *ctrl, u32 t
 	struct otto_l3_route *r;
 
 	list_for_each_entry(r, &ctrl->routes_list, list) {
-		if (r->tb_id != tb_id || r->attr.type != type ||
+		if (r->parent || r->tb_id != tb_id || r->attr.type != type ||
 		    r->prefix_len != prefix_len)
 			continue;
 
@@ -2871,6 +2909,9 @@ static void otto_l3_egress_sync_request(struct otto_l3_ctrl *ctrl, struct net_de
 	queue_work(ctrl->priv->wq, &ew->work);
 }
 
+static void otto_l3_synth_request(struct otto_l3_ctrl *ctrl);
+static void otto_l3_resync_request(struct otto_l3_ctrl *ctrl);
+
 static int otto_l3_netdev_notifier(struct notifier_block *nb, unsigned long event, void *ptr)
 {
 	struct otto_l3_ctrl *ctrl = container_of(nb, struct otto_l3_ctrl, nd_nb);
@@ -2903,8 +2944,11 @@ static int otto_l3_netdev_notifier(struct notifier_block *nb, unsigned long even
 		break;
 	}
 
+	otto_l3_synth_request(ctrl);
 	return NOTIFY_DONE;
 }
+
+static int otto_l3_synth_purge(struct otto_l3_ctrl *ctrl, struct otto_l3_route *parent);
 
 static void otto_l3_route_free(struct otto_l3_ctrl *ctrl, struct otto_l3_route *r)
 {
@@ -2932,6 +2976,8 @@ static void otto_l3_route_free(struct otto_l3_ctrl *ctrl, struct otto_l3_route *
 		fib_info_put(r->fi);
 	}
 
+	if (r->parent)
+		list_del(&r->synth_list);
 	list_del(&r->list);
 	kfree(r);
 }
@@ -3014,14 +3060,38 @@ static void otto_l3_route_remove(struct otto_l3_ctrl *ctrl, struct otto_l3_route
 	}
 }
 
-static void otto_l3_route_teardown(struct otto_l3_ctrl *ctrl, struct otto_l3_route *r)
+static int otto_l3_route_teardown(struct otto_l3_ctrl *ctrl, struct otto_l3_route *r)
 {
 	struct otto_dsa_priv *priv = ctrl->priv;
+
+	int slot, err;
+
+	if (r->parent) {
+		/* A failed host-table write must not release a live next hop.
+		 * Keep the child and its parent until a later retry can retire it.
+		 */
+		slot = ctrl->cfg->find_slot(ctrl, r, true);
+		if (slot < -1)
+			return slot;
+		if (slot >= 0) {
+			r->attr.valid = false;
+			err = ctrl->cfg->host_route_write(ctrl, slot, r);
+			if (err) {
+				r->attr.valid = true;
+				return err;
+			}
+		}
+	} else {
+		err = otto_l3_synth_purge(ctrl, r);
+		if (err)
+			return err;
+	}
 
 	/* What forwards through the route goes before the next hop it forwards
 	 * to
 	 */
-	otto_l3_route_remove(ctrl, r);
+	if (!r->parent)
+		otto_l3_route_remove(ctrl, r);
 
 	/* Once the rows are not where the list says, after a failed move, a
 	 * lookup that timed out or a row that could not be read, the row of a
@@ -3044,6 +3114,7 @@ static void otto_l3_route_teardown(struct otto_l3_ctrl *ctrl, struct otto_l3_rou
 	}
 
 	otto_l3_route_free(ctrl, r);
+	return 0;
 }
 
 static struct otto_l3_route *otto_l3_route_alloc(struct otto_l3_ctrl *ctrl,
@@ -3091,6 +3162,316 @@ static struct otto_l3_route *otto_l3_route_alloc(struct otto_l3_ctrl *ctrl,
 	mutex_unlock(ctrl->lock);
 
 	return r;
+}
+
+/* Synthetic entries are driver-owned host routes, not kernel FIB entries.
+ * All callers serialize the route lists with resource_lock. The second list
+ * lets a parent retire children without invalidating a walk over FIB routes.
+ */
+static int otto_l3_synth_purge(struct otto_l3_ctrl *ctrl, struct otto_l3_route *parent)
+{
+	struct otto_l3_route *r, *tmp;
+	int err, first_err = 0;
+
+	list_for_each_entry_safe(r, tmp, &ctrl->synth_routes, synth_list) {
+		if (parent && r->parent != parent)
+			continue;
+		err = otto_l3_route_teardown(ctrl, r);
+		if (err && !first_err)
+			first_err = err;
+	}
+	return first_err;
+}
+
+static struct otto_l3_route *otto_l3_synth_parent(struct otto_l3_ctrl *ctrl,
+					       struct net_device *dev, __be32 address)
+{
+	struct flowi4 fl4 = { .daddr = address };
+	struct fib_result res;
+	struct otto_l3_route *parent = NULL, *r;
+	u32 ip = be32_to_cpu(address), mask;
+
+	if (!ctrl->l3hw || !ctrl->synthesize || ctrl->mode_barrier ||
+	    ctrl->prefix_rows_stale || ctrl->v4_fwd_off || !netif_running(dev) ||
+	    !net_eq(dev_net(dev), &init_net) || ipv4_is_zeronet(address) ||
+	    ipv4_is_loopback(address) || ipv4_is_multicast(address) || ipv4_is_lbcast(address))
+		return NULL;
+
+	/* The kernel lookup rules out local/broadcast addresses and more-specific
+	 * routes, including routes the driver could not offload. Never turn a
+	 * neighbour merely covered by an on-link prefix into a forwarding entry.
+	 */
+	rcu_read_lock();
+	if (fib_lookup(&init_net, &fl4, &res, FIB_LOOKUP_NOREF) || res.type != RTN_UNICAST)
+		goto out;
+	list_for_each_entry(r, &ctrl->routes_list, list) {
+		if (r->parent || !r->fi || r->fi != res.fi || r->tb_id != RT_TABLE_MAIN ||
+		    r->attr.type != ROUTE_TYPE_IP4UC || r->fib_type != RTN_UNICAST ||
+		    !r->attr.valid || r->row < FIRST_PREFIX_ROW || r->gw_ip.s6_addr32[3] ||
+		    r->prefix_len <= 0 || r->prefix_len >= 32 || r->prefix_len != res.prefixlen ||
+		    r->gw_ifindex != dev->ifindex || r->nh.if_id < 0 || r->dscp)
+			continue;
+		mask = be32_to_cpu(inet_make_mask(r->prefix_len));
+		if ((ip & mask) != r->dst_ip)
+			continue;
+		if (r->prefix_len < 31 && (ip == r->dst_ip || ip == (r->dst_ip | ~mask)))
+			continue;
+		parent = r;
+		break;
+	}
+out:
+	rcu_read_unlock();
+	return parent;
+}
+
+/* Only ordinary, unscoped IPv6 unicast addresses may become hardware
+ * hosts. Exclude RFC 2526 reserved anycast IIDs and all local addresses,
+ * including tentative/optimistic addresses not yet present in the FIB.
+ */
+static struct otto_l3_route *otto_l3_synth_parent6(struct otto_l3_ctrl *ctrl,
+						   struct net_device *dev,
+						   const struct in6_addr *address)
+{
+	struct otto_l3_route *parent = NULL, *r;
+	struct flowi6 fl6 = { .daddr = *address };
+	struct dst_entry *dst;
+	struct fib6_info *f6i;
+	struct rt6_info *rt;
+
+	if (!IS_REACHABLE(CONFIG_IPV6) || !ctrl->l3hw || !ctrl->synthesize ||
+	    ctrl->mode_barrier || ctrl->prefix_rows_stale || ctrl->v6_fwd_off ||
+	    !netif_running(dev) || !net_eq(dev_net(dev), &init_net) ||
+	    ipv6_addr_type(address) != IPV6_ADDR_UNICAST ||
+	    (address->s6_addr32[2] == cpu_to_be32(0xfdffffff) &&
+	     (address->s6_addr32[3] & cpu_to_be32(0xffffff80)) == cpu_to_be32(0xffffff80)) ||
+	    ipv6_chk_addr_and_flags(&init_net, address, NULL, true, 0, 0))
+		return NULL;
+
+	rcu_read_lock();
+	/* A destination-only hardware row would also win for sources omitted
+	 * from this lookup. Reject every covering source-specific prefix,
+	 * including a more-specific one and an incompletely tracked source set.
+	 */
+	list_for_each_entry(r, &ctrl->routes_list, list)
+		if (!r->parent && r->attr.type == ROUTE_TYPE_IP6UC &&
+		    (r->srcs_incomplete || !list_empty(&r->srcs)) &&
+		    ipv6_prefix_equal(address, &r->dst_ip6, r->prefix_len))
+			goto unlock;
+
+	/* Use an exported lookup API so modular IPv6 builds work as well.
+	 * The selected cached route may carry a redirect: it must still be
+	 * directly connected through the neighbour's actual device.
+	 */
+	dst = ip6_route_lookup(&init_net, &fl6, NULL, 0);
+	if (dst->error || dst->dev != dev)
+		goto put;
+	rt = dst_rt6_info(dst);
+	f6i = rcu_dereference(rt->from);
+	if (!f6i || f6i->nh || f6i->fib6_type != RTN_UNICAST ||
+	    f6i->fib6_src.plen || f6i->fib6_nsiblings || fib6_check_expired(f6i) ||
+	    (f6i->fib6_flags & RTF_REJECT) || (rt->rt6i_flags & RTF_GATEWAY) ||
+	    f6i->fib6_nh->fib_nh_gw_family || f6i->fib6_nh->fib_nh_lws)
+		goto put;
+
+	list_for_each_entry(r, &ctrl->routes_list, list) {
+		if (r->parent || r->f6i != f6i || r->attr.type != ROUTE_TYPE_IP6UC ||
+		    r->tb_id != RT_TABLE_MAIN || !r->attr.valid || r->row < FIRST_PREFIX_ROW ||
+		    !ipv6_addr_any(&r->gw_ip) || r->members != 1 ||
+		    r->prefix_len <= 0 || r->prefix_len >= 128 || r->gw_ifindex != dev->ifindex ||
+		    !ipv6_prefix_equal(address, &r->dst_ip6, r->prefix_len))
+			continue;
+		/* RFC 6164 disables Subnet-Router anycast on /127 links. */
+		if (r->prefix_len < 127 && ipv6_addr_equal(address, &r->dst_ip6))
+			continue;
+		parent = r;
+		break;
+	}
+put:
+	dst_release(dst);
+unlock:
+	rcu_read_unlock();
+	return parent;
+}
+
+static struct neigh_table *otto_l3_synth_table(u8 type)
+{
+	if (type == ROUTE_TYPE_IP4UC)
+		return &arp_tbl;
+	if (IS_REACHABLE(CONFIG_IPV6) && type == ROUTE_TYPE_IP6UC)
+		return &nd_tbl;
+	return NULL;
+}
+
+static struct otto_l3_route *otto_l3_synth_neigh_parent(struct otto_l3_ctrl *ctrl,
+							struct neighbour *n)
+{
+	if (n->tbl == &arp_tbl)
+		return otto_l3_synth_parent(ctrl, n->dev, *(__be32 *)n->primary_key);
+	if (IS_REACHABLE(CONFIG_IPV6) && n->tbl == &nd_tbl)
+		return otto_l3_synth_parent6(ctrl, n->dev, (struct in6_addr *)n->primary_key);
+	return NULL;
+}
+
+/* neigh_for_each() holds a spinlock. Only acquire references there; all
+ * allocation, FIB decisions and hardware writes happen after it returns.
+ */
+struct otto_l3_synth_neighs {
+	struct neighbour **entries;
+	unsigned int count;
+};
+
+static void otto_l3_synth_collect(struct neighbour *n, void *data)
+{
+	struct otto_l3_synth_neighs *snapshot = data;
+
+	if (snapshot->count >= MAX_HOST_ROUTES || !net_eq(dev_net(n->dev), &init_net))
+		return;
+	read_lock_bh(&n->lock);
+	if (!n->dead && (n->nud_state & NUD_VALID) && is_valid_ether_addr(n->ha)) {
+		neigh_hold(n);
+		snapshot->entries[snapshot->count++] = n;
+	}
+	read_unlock_bh(&n->lock);
+}
+
+static void otto_l3_synth_sync(struct otto_l3_ctrl *ctrl)
+{
+	struct otto_l3_synth_neighs snapshot = {};
+	struct otto_l3_route *parent, *r, *tmp;
+	struct net_device *dev;
+	struct neighbour *n;
+	struct neigh_table *table;
+	const void *key;
+	struct in6_addr gw;
+	unsigned int i;
+	u8 type;
+	u64 mac;
+	bool valid;
+
+	ASSERT_RTNL();
+	if (!ctrl->l3hw || !ctrl->synthesize || ctrl->mode_barrier || ctrl->prefix_rows_stale) {
+		otto_l3_synth_purge(ctrl, NULL);
+		return;
+	}
+
+	/* Validate installed hosts independently of the bounded discovery scan.
+	 * Even if ARP/ND contain more entries than the hardware can hold, an invalid
+	 * installed host must still be withdrawn on this pass.
+	 */
+	list_for_each_entry_safe(r, tmp, &ctrl->synth_routes, synth_list) {
+		dev = __dev_get_by_index(&init_net, r->gw_ifindex);
+		table = otto_l3_synth_table(r->attr.type);
+		key = r->attr.type == ROUTE_TYPE_IP4UC ?
+			(const void *)&r->gw_ip.s6_addr32[3] : &r->gw_ip;
+		n = dev && table ? neigh_lookup(table, key, dev) : NULL;
+		valid = false;
+		if (n) {
+			read_lock_bh(&n->lock);
+			valid = !n->dead && (n->nud_state & NUD_VALID) &&
+				is_valid_ether_addr(n->ha);
+			mac = ether_addr_to_u64(n->ha);
+			read_unlock_bh(&n->lock);
+		}
+		if (!valid || otto_l3_synth_neigh_parent(ctrl, n) != r->parent) {
+			otto_l3_route_teardown(ctrl, r);
+		} else {
+			if (!r->hw_forward || r->nh.mac != mac ||
+			    !otto_l2_nexthop_current(ctrl->priv, &r->nh))
+				otto_l3_route_update_hw(ctrl, r, mac);
+			/* Let ARP/ND perform real reachability probes for stale hosts;
+			 * hardware traffic itself does not refresh software NUD state.
+			 */
+			neigh_event_send(n, NULL);
+		}
+		if (n)
+			neigh_release(n);
+	}
+
+	snapshot.entries = kcalloc(MAX_HOST_ROUTES, sizeof(*snapshot.entries), GFP_KERNEL);
+	if (!snapshot.entries)
+		return;
+	/* Separate discovery passes prevent ARP from consuming the ND scan
+	 * budget. The hardware resources themselves remain shared.
+	 */
+	for (type = ROUTE_TYPE_IP4UC; type <= ROUTE_TYPE_IP6UC; type += 2) {
+		table = otto_l3_synth_table(type);
+		if (!table)
+			continue;
+		snapshot.count = 0;
+		neigh_for_each(table, otto_l3_synth_collect, &snapshot);
+		for (i = 0; i < snapshot.count; i++) {
+			n = snapshot.entries[i];
+			dev = n->dev;
+			parent = otto_l3_synth_neigh_parent(ctrl, n);
+			if (!parent)
+				goto release;
+			if (type == ROUTE_TYPE_IP4UC)
+				ipv6_addr_set_v4mapped(*(__be32 *)n->primary_key, &gw);
+			else
+				gw = *(struct in6_addr *)n->primary_key;
+			list_for_each_entry(r, &ctrl->synth_routes, synth_list)
+				if (r->attr.type == type && r->gw_ifindex == dev->ifindex &&
+				    ipv6_addr_equal(&r->gw_ip, &gw))
+					goto release;
+			read_lock_bh(&n->lock);
+			valid = !n->dead && (n->nud_state & NUD_VALID) &&
+				is_valid_ether_addr(n->ha);
+			mac = ether_addr_to_u64(n->ha);
+			read_unlock_bh(&n->lock);
+			if (!valid)
+				goto release;
+			r = otto_l3_route_alloc(ctrl, &gw, ROUTE_HOST);
+			if (!r)
+				goto release;
+			r->parent = parent;
+			r->synth_slot = -1;
+			list_add_tail(&r->synth_list, &ctrl->synth_routes);
+			r->dst_ip = be32_to_cpu(gw.s6_addr32[3]);
+			r->dst_ip6 = gw;
+			r->prefix_len = type == ROUTE_TYPE_IP4UC ? 32 : 128;
+			r->tb_id = RT_TABLE_MAIN;
+			r->fib_type = RTN_UNICAST;
+			r->gw_ifindex = dev->ifindex;
+			r->nh.rvid = parent->nh.rvid;
+			r->attr.type = type;
+			r->attr.action = ROUTE_ACT_TRAP2CPU;
+			r->nh.if_id = otto_l3_alloc_egress_intf(ctrl,
+								ether_addr_to_u64(dev->dev_addr),
+								r->nh.rvid, ROUTE_MTU_ID);
+			if (r->nh.if_id < 0) {
+				otto_l3_route_free(ctrl, r);
+				goto release;
+			}
+			otto_l3_route_update_hw(ctrl, r, mac);
+			if (r->synth_slot < 0)
+				otto_l3_route_teardown(ctrl, r);
+release:
+			neigh_release(n);
+		}
+	}
+	kfree(snapshot.entries);
+}
+
+static void otto_l3_synth_request(struct otto_l3_ctrl *ctrl)
+{
+	if (READ_ONCE(ctrl->synth_running))
+		mod_delayed_work(system_long_wq, &ctrl->synth_work, 0);
+}
+
+static void otto_l3_synth_work_do(struct work_struct *work)
+{
+	struct otto_l3_ctrl *ctrl = container_of(to_delayed_work(work), struct otto_l3_ctrl,
+						 synth_work);
+
+	rtnl_lock();
+	mutex_lock(&ctrl->resource_lock);
+	if (ctrl->synth_running) {
+		otto_l3_synth_sync(ctrl);
+		if (ctrl->synthesize && ctrl->l3hw)
+			queue_delayed_work(system_long_wq, &ctrl->synth_work, 5 * HZ);
+	}
+	mutex_unlock(&ctrl->resource_lock);
+	rtnl_unlock();
 }
 
 static int otto_l3_fib_check_v4(struct otto_l3_ctrl *ctrl,
@@ -3489,6 +3870,17 @@ static int otto_l3_fib_trap_v6(struct otto_l3_ctrl *ctrl, struct fib6_info *rt,
 	route->attr.action = ROUTE_ACT_TRAP2CPU;
 	route->attr.valid = true;
 	route->members = members;
+
+	if (ctrl->cfg->use_l3_tables && ndev && !rt->nh && members == 1 &&
+	    rt->fib6_type == RTN_UNICAST && !rt->fib6_src.plen &&
+	    !rt->fib6_nh->fib_nh_gw_family && !rt->fib6_nh->fib_nh_lws &&
+	    rt->fib6_dst.plen > 0 && rt->fib6_dst.plen < 128 &&
+	    otto_l3_port_dev_lower_find(ndev, ctrl) >= 0) {
+		route->f6i = rt;
+		fib6_info_hold(rt);
+		route->gw_ifindex = ndev->ifindex;
+		route->nh.rvid = is_vlan_dev(ndev) ? vlan_dev_vlan_id(ndev) : 0;
+	}
 
 	/* An address or an on-link prefix on one of our devices holds the
 	 * switch MAC entry of that device, as on IPv4. An IPv6-only device with
@@ -4088,6 +4480,18 @@ static void otto_l3_fib_event_work_do(struct work_struct *work)
 	/* Protect internal structures from changes */
 	rtnl_lock();
 	mutex_lock(&ctrl->resource_lock);
+	err = otto_l3_synth_purge(ctrl, NULL);
+	if (err) {
+		/* Replaying the FIB retries withdrawal before a real /32 can
+		 * take over a slot still owned by a synthesized host.
+		 */
+		otto_l3_resync_request(ctrl);
+		if (fib_work->event == FIB_EVENT_RULE_ADD || fib_work->event == FIB_EVENT_RULE_DEL)
+			fib_rule_put(fib_work->fr_info.rule);
+		else
+			fib_info_put(fib_work->fen_info.fi);
+		goto unlock;
+	}
 	dev_dbg(ctrl->dev, "doing work, event %ld\n", fib_work->event);
 	switch (fib_work->event) {
 	case FIB_EVENT_ENTRY_ADD:
@@ -4115,6 +4519,8 @@ static void otto_l3_fib_event_work_do(struct work_struct *work)
 		fib_rule_put(rule);
 		break;
 	}
+unlock:
+	otto_l3_synth_request(ctrl);
 	mutex_unlock(&ctrl->resource_lock);
 	rtnl_unlock();
 	kfree(fib_work);
@@ -4130,6 +4536,11 @@ static void otto_l3_fib6_event_work_do(struct work_struct *work)
 	/* Protect internal structures from changes */
 	rtnl_lock();
 	mutex_lock(&ctrl->resource_lock);
+	err = otto_l3_synth_purge(ctrl, NULL);
+	if (err) {
+		otto_l3_resync_request(ctrl);
+		goto unlock;
+	}
 	switch (fib_work->event) {
 	case FIB_EVENT_ENTRY_REPLACE:
 	case FIB_EVENT_ENTRY_APPEND:
@@ -4141,6 +4552,8 @@ static void otto_l3_fib6_event_work_do(struct work_struct *work)
 		otto_l3_local_prefix_check(ctrl, &fib_work->fen6_info.info);
 		break;
 	}
+unlock:
+	otto_l3_synth_request(ctrl);
 	if (err)
 		dev_err(ctrl->dev, "FIB6 event %ld failed: %d\n", fib_work->event, err);
 	mutex_unlock(&ctrl->resource_lock);
@@ -4279,6 +4692,7 @@ static void otto_l3_net_event_work_do(struct work_struct *work)
 	mutex_lock(&net_work->ctrl->resource_lock);
 	otto_l3_nexthop_update(net_work->ctrl, net_work->type, net_work->ifindex,
 			       &net_work->gw_addr, net_work->mac, net_work->valid);
+	otto_l3_synth_request(net_work->ctrl);
 	mutex_unlock(&net_work->ctrl->resource_lock);
 
 	kfree(net_work);
@@ -4477,8 +4891,10 @@ static void otto_l3_930x_dump_print(struct seq_file *m, const struct otto_l3_930
 		const struct otto_l3_route *rt = &r->rt;
 
 		snprintf(hit, sizeof(hit), "%d", rt->attr.hit);
-		snprintf(action, sizeof(action), "%s",
-			 otto_l3_930x_dump_action_name[rt->attr.action]);
+		snprintf(action, sizeof(action), "%s%s",
+			 otto_l3_930x_dump_action_name[rt->attr.action],
+			 rt->attr.action == ROUTE_ACT_FORWARD &&
+			 rt->nh.id == FLOW_CPU_NH ? "*" : "");
 		snprintf(nh_id, sizeof(nh_id), "%u", rt->nh.id);
 		snprintf(dst_null, sizeof(dst_null), "%d", rt->attr.dst_null);
 		snprintf(ttl, sizeof(ttl), "%s",
@@ -4504,27 +4920,82 @@ static void otto_l3_930x_dump_print(struct seq_file *m, const struct otto_l3_930
  * because the position no longer identifies it. single_open() renders the
  * whole dump in one pass, the way debugfs.c dumps the larger L2 table.
  */
-static int otto_l3_930x_dump_show(struct seq_file *m, void *v)
+/* A small readback cache avoids nesting the host and prefix table locks,
+ * which share one hardware access register. Index zero terminates each list.
+ */
+struct otto_l3_synth_dump {
+	u32 data[5];
+	u32 addr, dst_ip;
+	struct in6_addr dst_ip6;
+	u8 type;
+	u16 next;
+	bool valid;
+};
+
+static int otto_l3_930x_dump_show_locked(struct seq_file *m, void *v)
 {
 	struct otto_l3_ctrl *ctrl = m->private;
 	struct otto_l3_930x_dump_rec rec;
+	struct otto_l3_synth_dump *children = NULL;
+	struct otto_l3_route *r;
+	u16 *host_map = NULL, *heads = NULL;
+	unsigned int count = 0, child;
+	int err = 0, host_rows;
 	unsigned int mc_seen = 0;
 	u32 prefix_data[20];
 	u32 host_data[11];
-	unsigned int n;
+	unsigned int n, width;
 	int handle;
 	int rows;
 	u32 addr;
 
+	host_rows = otto_table_rows(RTL9300_TBL_L3_HOST_ROUTE_IPMC);
+	if (host_rows < 0)
+		return host_rows;
+	list_for_each_entry(r, &ctrl->synth_routes, synth_list)
+		count++;
+	if (count) {
+		children = kvcalloc(count + 1, sizeof(*children), GFP_KERNEL);
+		host_map = kvcalloc(host_rows + MAX_ROUTES, sizeof(*host_map), GFP_KERNEL);
+		if (!children || !host_map) {
+			err = -ENOMEM;
+			goto out;
+		}
+		heads = host_map + host_rows;
+		child = 0;
+		list_for_each_entry(r, &ctrl->synth_routes, synth_list) {
+			int row = r->parent->row;
+			u32 address;
+
+			if (r->synth_slot < 0 || row < FIRST_PREFIX_ROW || row >= MAX_ROUTES)
+				continue;
+			address = (r->synth_slot / 6) * 8 + r->synth_slot % 6;
+			if (address >= host_rows)
+				continue;
+			child++;
+			children[child].addr = address;
+			children[child].dst_ip = r->dst_ip;
+			children[child].dst_ip6 = r->dst_ip6;
+			children[child].type = r->attr.type;
+			children[child].next = heads[row];
+			heads[row] = child;
+			host_map[address] = child;
+		}
+	}
+
 	seq_puts(m, "TABLE    IDX   ADDR HASH SLOT WIDTH V TYPE   HIT DESTINATION                                      ACTION NH_ID NULL TTL      QOS\n");
 
 	rows = otto_table_rows(RTL9300_TBL_L3_HOST_ROUTE_IPMC);
-	if (rows < 0)
-		return rows;
+	if (rows < 0) {
+		err = rows;
+		goto out;
+	}
 
 	handle = otto_table_acquire(RTL9300_TBL_L3_HOST_ROUTE_IPMC);
-	if (handle < 0)
-		return handle;
+	if (handle < 0) {
+		err = handle;
+		goto out;
+	}
 
 	for (addr = 0, n = 0; addr < rows; n++) {
 		if (!(n % 64))
@@ -4544,19 +5015,32 @@ static int otto_l3_930x_dump_show(struct seq_file *m, void *v)
 		if (!rec.decoded)
 			mc_seen++;
 
-		otto_l3_930x_dump_print(m, &rec);
+		child = host_map ? host_map[addr] : 0;
+		if (child && rec.decoded && rec.rt.attr.type == children[child].type &&
+		    (rec.rt.attr.type == ROUTE_TYPE_IP4UC ?
+		     rec.rt.dst_ip == children[child].dst_ip :
+		     ipv6_addr_equal(&rec.rt.dst_ip6, &children[child].dst_ip6))) {
+			memcpy(children[child].data, host_data, sizeof(children[child].data));
+			children[child].valid = true;
+		} else {
+			otto_l3_930x_dump_print(m, &rec);
+		}
 		addr += rec.width;
 	}
 
 	otto_table_release(handle);
 
 	rows = otto_table_rows(RTL9300_TBL_L3_PREFIX_ROUTE_IPMC);
-	if (rows < 0)
-		return rows;
+	if (rows < 0) {
+		err = rows;
+		goto out;
+	}
 
 	handle = otto_table_acquire(RTL9300_TBL_L3_PREFIX_ROUTE_IPMC);
-	if (handle < 0)
-		return handle;
+	if (handle < 0) {
+		err = handle;
+		goto out;
+	}
 
 	for (addr = 0, n = 0; addr < rows; n++) {
 		if (!(n % 64))
@@ -4571,8 +5055,19 @@ static int otto_l3_930x_dump_show(struct seq_file *m, void *v)
 		if (!rec.decoded)
 			mc_seen++;
 
+		width = rec.width;
 		otto_l3_930x_dump_print(m, &rec);
-		addr += rec.width;
+		if (host_map) {
+			for (child = heads[addr]; child; child = children[child].next) {
+				if (!children[child].valid ||
+				    !otto_l3_930x_dump_decode_host(children[child].data,
+							       children[child].addr, &rec))
+					continue;
+				seq_puts(m, "  ");
+				otto_l3_930x_dump_print(m, &rec);
+			}
+		}
+		addr += width;
 	}
 
 	otto_table_release(handle);
@@ -4586,7 +5081,21 @@ static int otto_l3_930x_dump_show(struct seq_file *m, void *v)
 			   "routes: %u multicast entries printed as type only, field layout not implemented\n",
 			   mc_seen);
 
-	return 0;
+out:
+	kvfree(host_map);
+	kvfree(children);
+	return err;
+}
+
+static int otto_l3_930x_dump_show(struct seq_file *m, void *v)
+{
+	struct otto_l3_ctrl *ctrl = m->private;
+	int err;
+
+	mutex_lock(&ctrl->resource_lock);
+	err = otto_l3_930x_dump_show_locked(m, v);
+	mutex_unlock(&ctrl->resource_lock);
+	return err;
 }
 
 static int otto_l3_930x_route_open(struct inode *inode, struct file *filp)
@@ -5184,7 +5693,7 @@ static void otto_l3_930x_mode_report(struct otto_l3_ctrl *ctrl)
 	list_for_each_entry(r, &ctrl->routes_list, list) {
 		in_hw = r->is_host_route ? !otto_l3_host_shadowed(ctrl, r) &&
 			ctrl->cfg->find_slot(ctrl, r, true) >= 0 : r->row >= FIRST_PREFIX_ROW;
-		r->hw_forward = in_hw && !ctrl->fasttrack && !ctrl->mode_barrier &&
+		r->hw_forward = in_hw && ctrl->l3hw && !ctrl->mode_barrier &&
 				r->attr.action == ROUTE_ACT_FORWARD;
 		if (r->attr.type == ROUTE_TYPE_IP4UC)
 			otto_l3_fib4_flags_set(ctrl, r, r->hw_forward,
@@ -5197,17 +5706,21 @@ static void otto_l3_930x_mode_report(struct otto_l3_ctrl *ctrl)
 /* Called under RTNL, never under resource_lock: the flow controller takes
  * that lock while withdrawing next hops. It opens only after the FIB commit.
  */
-static int otto_l3_930x_mode_set(struct otto_l3_ctrl *ctrl, bool enabled)
+static int otto_l3_930x_mode_set(struct otto_l3_ctrl *ctrl, bool enabled, bool route_hw)
 {
 	bool previous = ctrl->fasttrack;
 	int err;
 
 	ASSERT_RTNL();
-	if (!ctrl->mode_barrier && previous == enabled)
+	if (!ctrl->mode_barrier && previous == enabled && ctrl->l3hw == route_hw)
 		return otto_flow_set_enabled(ctrl->priv, enabled);
 
-	err = enabled ? otto_flow_prepare(ctrl->priv) :
-		otto_flow_set_enabled(ctrl->priv, false);
+	/* A routing-mode change also withdraws active flow rules before tables
+	 * are rebuilt. Reopen admission only after the new routing mode commits.
+	 */
+	err = otto_flow_set_enabled(ctrl->priv, false);
+	if (!err && enabled)
+		err = otto_flow_prepare(ctrl->priv);
 	if (err)
 		return err;
 	mutex_lock(&ctrl->resource_lock);
@@ -5215,7 +5728,7 @@ static int otto_l3_930x_mode_set(struct otto_l3_ctrl *ctrl, bool enabled)
 		err = -EAGAIN;
 		goto unlock;
 	}
-	if (enabled && !ctrl->cpu_nh_reserved &&
+	if ((enabled || !route_hw) && !ctrl->cpu_nh_reserved &&
 	    test_bit(FLOW_CPU_NH - MAX_ROUTES, ctrl->host_route_use_bm)) {
 		err = -EBUSY;
 		goto unlock;
@@ -5228,8 +5741,12 @@ static int otto_l3_930x_mode_set(struct otto_l3_ctrl *ctrl, bool enabled)
 		otto_l3_930x_mode_barrier_leave(ctrl);
 		goto unlock;
 	}
+	err = otto_l3_synth_purge(ctrl, NULL);
+	if (err)
+		goto blocked;
 	WRITE_ONCE(ctrl->fasttrack, enabled);
-	if (enabled) {
+	WRITE_ONCE(ctrl->l3hw, route_hw);
+	if (enabled || !route_hw) {
 		err = otto_l3_930x_flow_fallback_setup(ctrl);
 		if (err)
 			goto blocked;
@@ -5240,7 +5757,7 @@ static int otto_l3_930x_mode_set(struct otto_l3_ctrl *ctrl, bool enabled)
 	err = otto_l3_930x_mode_rebuild(ctrl);
 	if (err)
 		goto blocked;
-	if (!enabled && ctrl->cpu_nh_reserved) {
+	if (!enabled && route_hw && ctrl->cpu_nh_reserved) {
 		clear_bit(FLOW_CPU_NH - MAX_ROUTES, ctrl->host_route_use_bm);
 		ctrl->cpu_nh_reserved = false;
 	}
@@ -5254,17 +5771,18 @@ blocked:
 	 */
 	WRITE_ONCE(ctrl->fasttrack, previous || enabled);
 	otto_l3_930x_mode_report(ctrl);
-	dev_err(ctrl->dev, "fasttrack transition failed (%d), routing remains on CPU\n", err);
+	dev_err(ctrl->dev, "L3 mode transition failed (%d), routing remains on CPU\n", err);
 unlock:
 	mutex_unlock(&ctrl->resource_lock);
 	if (err && enabled)
 		otto_flow_set_enabled(ctrl->priv, false);
 	else if (!err && enabled)
 		err = otto_flow_set_enabled(ctrl->priv, true);
+	otto_l3_synth_request(ctrl);
 	return err;
 }
 
-static int otto_l3_fasttrack_set(const char *val, const struct kernel_param *kp)
+static int otto_l3_param_set(const char *val, const struct kernel_param *kp)
 {
 	bool enabled;
 	struct kernel_param parsed = { .arg = &enabled };
@@ -5287,8 +5805,27 @@ static int otto_l3_fasttrack_set(const char *val, const struct kernel_param *kp)
 	rtnl_lock();
 	mutex_lock(&fasttrack_lock);
 	if (fasttrack_ctrl) {
-		err = otto_l3_930x_mode_set(fasttrack_ctrl, enabled);
-		enabled = fasttrack_ctrl->fasttrack;
+		struct otto_l3_ctrl *ctrl = fasttrack_ctrl;
+
+		if (kp->arg == &synthesize) {
+			mutex_lock(&ctrl->resource_lock);
+			if (!enabled)
+				err = otto_l3_synth_purge(ctrl, NULL);
+			if (!err) {
+				WRITE_ONCE(ctrl->synthesize, enabled);
+				otto_l3_synth_sync(ctrl);
+			}
+			mutex_unlock(&ctrl->resource_lock);
+			otto_l3_synth_request(ctrl);
+		} else {
+			err = otto_l3_930x_mode_set(ctrl,
+					 kp->arg == &fasttrack ? enabled : ctrl->fasttrack,
+					 kp->arg == &l3hw ? enabled : ctrl->l3hw);
+		}
+		WRITE_ONCE(fasttrack, ctrl->fasttrack);
+		WRITE_ONCE(l3hw, ctrl->l3hw);
+		WRITE_ONCE(synthesize, ctrl->synthesize);
+		enabled = *(bool *)kp->arg;
 	}
 	WRITE_ONCE(*(bool *)kp->arg, enabled);
 	mutex_unlock(&fasttrack_lock);
@@ -5314,8 +5851,11 @@ int otto_l3_runtime_register(struct otto_dsa_priv *priv)
 		goto unlock;
 	}
 	fasttrack_ctrl = ctrl;
-	err = otto_l3_930x_mode_set(ctrl, READ_ONCE(fasttrack));
+	err = otto_l3_930x_mode_set(ctrl, READ_ONCE(fasttrack), READ_ONCE(l3hw));
 	WRITE_ONCE(fasttrack, ctrl->fasttrack);
+	WRITE_ONCE(l3hw, ctrl->l3hw);
+	WRITE_ONCE(ctrl->synth_running, true);
+	otto_l3_synth_request(ctrl);
 unlock:
 	mutex_unlock(&fasttrack_lock);
 	rtnl_unlock();
@@ -5328,6 +5868,7 @@ void otto_l3_runtime_unregister(struct otto_dsa_priv *priv)
 	mutex_lock(&fasttrack_lock);
 	if (fasttrack_ctrl == priv->l3_ctrl)
 		fasttrack_ctrl = NULL;
+	WRITE_ONCE(priv->l3_ctrl->synth_running, false);
 	mutex_unlock(&fasttrack_lock);
 	rtnl_unlock();
 }
@@ -5339,6 +5880,9 @@ void otto_l3_remove(struct otto_dsa_priv *priv)
 	struct otto_l3_route *r, *tmp;
 
 	otto_l3_runtime_unregister(priv);
+
+	WRITE_ONCE(ctrl->synth_running, false);
+	cancel_delayed_work_sync(&ctrl->synth_work);
 
 	/* A replay would register the FIB notifier again */
 	disable_delayed_work_sync(&ctrl->resync_work);
@@ -5391,9 +5935,12 @@ static void otto_l3_fib_flush_work_do(struct work_struct *work)
 
 	rtnl_lock();
 	mutex_lock(&ctrl->resource_lock);
+	if (otto_l3_synth_purge(ctrl, NULL))
+		goto unlock;
 	list_for_each_entry_safe(r, tmp, &fw->ctrl->routes_list, list)
 		if (r->tb_id)
 			otto_l3_route_teardown(fw->ctrl, r);
+unlock:
 	mutex_unlock(&ctrl->resource_lock);
 	rtnl_unlock();
 }
@@ -5470,6 +6017,7 @@ int otto_l3_probe(struct device *dev, struct otto_dsa_priv *priv)
 	mutex_init(&ctrl->resource_lock);
 	/* Until the FIB notifier is in place there is nothing to replay */
 	INIT_DELAYED_WORK(&ctrl->resync_work, otto_l3_resync_work_do);
+	INIT_DELAYED_WORK(&ctrl->synth_work, otto_l3_synth_work_do);
 	disable_delayed_work(&ctrl->resync_work);
 
 	match = of_match_node(otto_l3_of_ids, dev->of_node);
@@ -5477,6 +6025,8 @@ int otto_l3_probe(struct device *dev, struct otto_dsa_priv *priv)
 		return dev_err_probe(dev, -EINVAL, "No compatible configuration found\n");
 	ctrl->cfg = match->data;
 	ctrl->fasttrack = READ_ONCE(fasttrack) && ctrl->cfg == &otto_l3_930x_cfg;
+	ctrl->l3hw = ctrl->cfg != &otto_l3_930x_cfg || READ_ONCE(l3hw);
+	ctrl->synthesize = ctrl->cfg == &otto_l3_930x_cfg && READ_ONCE(synthesize);
 
 	if (ctrl->cfg->set_dmac) {
 		ctrl->dmacs = devm_kcalloc(dev, MAX_DMACS, sizeof(*ctrl->dmacs), GFP_KERNEL);
@@ -5493,6 +6043,7 @@ int otto_l3_probe(struct device *dev, struct otto_dsa_priv *priv)
 	}
 
 	INIT_LIST_HEAD(&ctrl->routes_list);
+	INIT_LIST_HEAD(&ctrl->synth_routes);
 	INIT_LIST_HEAD(&ctrl->rmac_devs);
 
 	/* Before the notifiers, so no destination is dropped in the window
@@ -5501,13 +6052,13 @@ int otto_l3_probe(struct device *dev, struct otto_dsa_priv *priv)
 	if (ctrl->cfg->use_l3_tables) {
 		err = otto_l3_add_catch_all(ctrl, ROUTE_TYPE_IP6UC);
 		if (err) {
-			if (ctrl->fasttrack)
+			if (ctrl->fasttrack || !ctrl->l3hw)
 				goto catch_all_failed;
 			dev_err(dev, "no row for the IPv6 catch-all, destinations without one will be dropped\n");
 		}
 		err = otto_l3_add_catch_all(ctrl, ROUTE_TYPE_IP4UC);
 		if (err) {
-			if (ctrl->fasttrack)
+			if (ctrl->fasttrack || !ctrl->l3hw)
 				goto catch_all_failed;
 			dev_err(dev, "no row for the IPv4 catch-all, destinations without one will be dropped\n");
 		}

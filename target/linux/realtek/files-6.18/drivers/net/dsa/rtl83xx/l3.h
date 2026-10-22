@@ -88,6 +88,9 @@ struct otto_l3_nexthop {
 };
 
 struct otto_l3_route {
+	struct otto_l3_route *parent;	/* non-NULL for synthesized hosts */
+	struct list_head synth_list;	/* synthesized hosts, independent of FIB walks */
+	int synth_slot;			/* logical host slot, valid for synthesized hosts */
 	struct fib6_info *f6i;		/* FIB entry to report the offload on */
 	struct in6_addr gw_ip;		/* Gateway of the route, IPv4 v4-mapped */
 	int gw_ifindex;			/* Device the gateway is reached on */
@@ -178,6 +181,9 @@ struct otto_l3_ctrl {
 	struct notifier_block ne_nb;
 	struct notifier_block nd_nb;
 	struct delayed_work resync_work;
+	struct delayed_work synth_work;
+	struct list_head synth_routes;
+	bool synth_running;
 	unsigned int resync_delay;
 	bool resync_wanted;
 	struct list_head routes_list;
@@ -194,7 +200,9 @@ struct otto_l3_ctrl {
 	bool prefix_rows_stale;	/* a move failed, the rows are not where we say */
 	bool v4_fwd_off;	/* policy rules keep IPv4 forwarding in software */
 	bool v6_fwd_off;	/* policy rules keep IPv6 forwarding in software */
-	bool fasttrack;	/* only flowtable rules may forward in hardware */
+	bool l3hw;	/* ordinary route offload, independent of flowtable offload */
+	bool synthesize;	/* derive host entries from resolved on-link neighbours */
+	bool fasttrack;	/* flowtable offload and CPU next hops for unicast traps */
 	bool cpu_nh_reserved;
 	bool mode_barrier;	/* router MACs trap until a mode change completes */
 	u32 mode_router_macs[MAX_ROUTER_MACS][7];
