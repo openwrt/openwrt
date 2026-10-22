@@ -1,0 +1,43 @@
+From a4ba56989e31997314f6446cdc13a043ae2fb3e1 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Fri, 23 Oct 2026 00:03:21 +0100
+Subject: [PATCH] iommu/vsi: use a translated domain for IOMMU masters
+
+The Verisilicon IOMMU sits in front of the RK3588 AV1 decoder so that
+its frame buffers do not have to be physically contiguous. With a
+system-wide passthrough default, which is what IOMMU_DEFAULT_PASSTHROUGH
+gives, the decoder is handed the identity domain instead and every
+buffer has to come from CMA, which a single 1080p AV1 stream exhausts.
+
+Return IOMMU_DOMAIN_DMA from def_domain_type so the decoder gets a
+translated domain whatever the system default is, as rockchip-iommu
+does for the other media masters.
+
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ drivers/iommu/vsi-iommu.c | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+--- a/drivers/iommu/vsi-iommu.c
++++ b/drivers/iommu/vsi-iommu.c
+@@ -640,6 +640,12 @@ static int vsi_iommu_of_xlate(struct dev
+ 	return iommu_fwspec_add_ids(dev, args->args, 1);
+ }
+ 
++/* An identity domain would put the decoder buffers back onto CMA. */
++static int vsi_iommu_def_domain_type(struct device *dev)
++{
++	return IOMMU_DOMAIN_DMA;
++}
++
+ static const struct iommu_ops vsi_iommu_ops = {
+ 	.identity_domain = &vsi_identity_domain,
+ 	.release_domain = &vsi_identity_domain,
+@@ -648,6 +654,7 @@ static const struct iommu_ops vsi_iommu_
+ 	.probe_device = vsi_iommu_probe_device,
+ 	.release_device = vsi_iommu_release_device,
+ 	.device_group = generic_single_device_group,
++	.def_domain_type = vsi_iommu_def_domain_type,
+ 	.owner = THIS_MODULE,
+ 	.default_domain_ops = &(const struct iommu_domain_ops) {
+ 		.attach_dev		= vsi_iommu_attach_device,
