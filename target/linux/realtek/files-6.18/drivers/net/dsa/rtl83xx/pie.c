@@ -2472,6 +2472,30 @@ static int otto_pie_930x_verify_template(struct otto_dsa_priv *priv,
 	return i + PIE_BLOCK_SIZE * block;
 }
 
+void otto_pie_930x_tc_status(struct otto_dsa_priv *priv, struct otto_pie_tc_status *status)
+{
+	u32 phase, lookup;
+
+	guard(mutex)(&priv->pie_mutex);
+	status->flow_reserved = priv->flow_pie_reserved;
+	status->flow_failed = priv->flow_pie_failed;
+	phase = sw_r32(RTL930X_PIE_BLK_PHASE_CTRL);
+	lookup = sw_r32(RTL930X_PIE_BLK_LOOKUP_CTRL);
+	for (int block = 0; block < ARRAY_SIZE(status->blocks); block++) {
+		struct otto_pie_tc_block *b = &status->blocks[block];
+		u32 templates = sw_r32(RTL930X_PIE_BLK_TMPLTE_CTRL(block));
+
+		b->phase = !!(phase & BIT(block));
+		b->lookup = !!(lookup & BIT(block));
+		b->templates[0] = templates & 0xf;
+		b->templates[1] = (templates >> 4) & 0xf;
+		b->reserved = status->flow_reserved && (RTL930X_PIE_FLOW_BLOCKS & BIT(block));
+		b->used = 0;
+		for (int id = block * PIE_BLOCK_SIZE; id < (block + 1) * PIE_BLOCK_SIZE; id++)
+			b->used += test_bit(id, priv->pie_use_bm);
+	}
+}
+
 int otto_pie_930x_rule_add(struct otto_dsa_priv *priv, struct pie_rule *pr)
 {
 	int idx, block, j, t;
@@ -3122,6 +3146,12 @@ void otto_pie_930x_init(struct otto_dsa_priv *priv)
 	template_selectors = 2 | (3 << 4);
 	for (int i = priv->r->n_pie_blocks * 3 / 4; i < priv->r->n_pie_blocks; i++)
 		sw_w32(template_selectors, RTL930X_PIE_BLK_TMPLTE_CTRL(i));
+
+	/* Fasttrack retains only blocks 0..1 for TC. Keep templates 0/1 in
+	 * block 0, and expose 2/3 in block 1 so full IPv6 destination matches
+	 * remain available after blocks 2..15 are reserved for flow rules.
+	 */
+	sw_w32(2 | (3 << 4), RTL930X_PIE_BLK_TMPLTE_CTRL(1));
 }
 
 /* RTL931X */

@@ -570,6 +570,7 @@ struct otto_dsa_priv {
 	unsigned long mc_group_bm[MAX_MC_GROUPS >> 5];
 	struct rhashtable tc_ht;
 	bool tc_initialized;
+	struct dentry *tc_debugfs;
 	struct mutex tc_flow_lock;	/* Serializes tc flower add/del/stats */
 	unsigned long pie_use_bm[MAX_PIE_ENTRIES >> 5];
 	unsigned long octet_cntr_use_bm[MAX_COUNTERS >> 5];

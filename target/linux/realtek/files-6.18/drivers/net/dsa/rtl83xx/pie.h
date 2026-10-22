@@ -33,6 +33,20 @@ struct pie_rule;
 struct otto_dsa_priv;
 struct seq_file;
 
+struct otto_pie_tc_block {
+	u16 used;
+	u8 phase;
+	u8 templates[2];
+	bool lookup;
+	bool reserved;
+};
+
+struct otto_pie_tc_status {
+	struct otto_pie_tc_block blocks[16];
+	bool flow_reserved;
+	bool flow_failed;
+};
+
 void otto_pie_838x_init(struct otto_dsa_priv *priv);
 int otto_pie_838x_rule_read(struct otto_dsa_priv *priv, int idx, struct pie_rule *pr);
 int otto_pie_838x_rule_write(struct otto_dsa_priv *priv, int idx, struct pie_rule *pr);
@@ -53,6 +67,7 @@ int otto_pie_930x_rule_write(struct otto_dsa_priv *priv, int idx, struct pie_rul
 int otto_pie_930x_rule_add(struct otto_dsa_priv *priv, struct pie_rule *pr);
 void otto_pie_930x_rule_rm(struct otto_dsa_priv *priv, struct pie_rule *pr);
 void otto_pie_930x_rule_dump_raw(u32 r[]);
+void otto_pie_930x_tc_status(struct otto_dsa_priv *priv, struct otto_pie_tc_status *status);
 int otto_pie_930x_flow_init(struct otto_dsa_priv *priv);
 int otto_pie_930x_flow_cleanup(struct otto_dsa_priv *priv);
 int otto_pie_930x_flow_dump(struct otto_dsa_priv *priv, struct seq_file *s,
