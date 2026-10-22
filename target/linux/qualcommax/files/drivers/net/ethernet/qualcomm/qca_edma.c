@@ -249,6 +249,14 @@ static void edma_tx_ring_free(struct edma_queue *q, struct edma_ring *ring,
 /* The ring index registers are accessed per frame and per poll, which the
  * register map's checks would cost more than the access itself.
  */
+/* The rings are uncached, so both words of a descriptor, the address and the
+ * status, are read in one access.
+ */
+static u64 edma_desc_read(const void *desc)
+{
+	return le64_to_cpu(READ_ONCE(*(const __le64 *)desc));
+}
+
 static u32 edma_idx_read(struct edma_priv *priv, u32 reg)
 {
 	return readl(priv->base + reg);
@@ -418,7 +426,6 @@ static u32 edma_clean_tx(struct edma_queue *q, int budget, int napi_budget)
 	const struct edma_soc_data *soc = priv->soc;
 	struct platform_device *pdev = priv->pdev;
 	u32 cleaned = 0, pkts = 0, bytes = 0;
-	struct edma_txcmpl *txcmpl;
 	struct sk_buff *skb;
 	u16 prod, cons;
 
@@ -428,11 +435,12 @@ static u32 edma_clean_tx(struct edma_queue *q, int budget, int napi_budget)
 	cons = q->txcmpl_cons;
 
 	while (cons != prod && cleaned < budget) {
-		txcmpl = EDMA_TXCMPL_DESC(txcmpl_ring, cons);
+		u64 desc = edma_desc_read(EDMA_TXCMPL_DESC(txcmpl_ring, cons));
+		u32 status = upper_32_bits(desc);
 
-		if (unlikely(txcmpl->status & EDMA_TXCMPL_ERROR)) {
+		if (unlikely(status & EDMA_TXCMPL_ERROR)) {
 			dev_warn_ratelimited(&pdev->dev, "tx error %#x\n",
-					     txcmpl->status);
+					     status);
 			q->stats.tx_desc_error++;
 			DEV_STATS_INC(priv->netdev, tx_errors);
 		}
@@ -446,13 +454,13 @@ static u32 edma_clean_tx(struct edma_queue *q, int budget, int napi_budget)
 		 */
 		if (!q->txcmpl_run) {
 			q->txcmpl_run = true;
-			q->txcmpl_idx = txcmpl->buffer_addr;
+			q->txcmpl_idx = lower_32_bits(desc);
 			if (q->txcmpl_idx < q->txdesc_ring.count)
 				q->txcmpl_skb =
 					q->txdesc_ring.skb_store[q->txcmpl_idx];
 		}
 
-		if (!(txcmpl->status & EDMA_TXCMPL_MORE)) {
+		if (!(status & EDMA_TXCMPL_MORE)) {
 			skb = q->txcmpl_skb;
 			q->txcmpl_skb = NULL;
 			q->txcmpl_run = false;
@@ -460,7 +468,7 @@ static u32 edma_clean_tx(struct edma_queue *q, int budget, int napi_budget)
 			if (unlikely(!skb)) {
 				dev_warn(&pdev->dev,
 					 "invalid skb: cons:%u prod:%u status %x\n",
-					 cons, prod, txcmpl->status);
+					 cons, prod, status);
 				q->stats.tx_unnamed_frame++;
 			} else {
 				bytes += edma_tx_release(q, q->txcmpl_idx, skb,
@@ -610,11 +618,11 @@ static void edma_rx_vlan(struct net_device *netdev, struct sk_buff *skb,
  */
 static void edma_rx_peek(struct edma_queue *q, u16 idx, u32 *addr, u32 *status)
 {
-	struct edma_rxdesc *rxdesc = EDMA_RXDESC_DESC(&q->rxdesc_ring, idx);
+	u64 desc = edma_desc_read(EDMA_RXDESC_DESC(&q->rxdesc_ring, idx));
 	void *rxph;
 
-	*addr = le32_to_cpu(rxdesc->buffer_addr);
-	*status = le32_to_cpu(rxdesc->status);
+	*addr = lower_32_bits(desc);
+	*status = upper_32_bits(desc);
 	rxph = phys_to_virt(*addr);
 	page_pool_dma_sync_for_cpu(q->page_pool, virt_to_head_page(rxph), 0,
 				   min_t(u32, EDMA_RX_PREHDR_SIZE +
