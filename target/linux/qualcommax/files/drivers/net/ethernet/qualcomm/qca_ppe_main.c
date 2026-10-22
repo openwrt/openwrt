@@ -1297,8 +1297,10 @@ static int qca_ppe_port_mdb_add(struct dsa_switch *ds, int port,
 		return -EOPNOTSUPP;
 
 	ret = ppe_fdb_lookup(priv, mdb->addr, vsi, &portmap);
-	if (ret)
+	if (ret == -ENOENT)
 		portmap = BIT(QCA_PPE_CPU_PORT);
+	else if (ret)
+		return ret;
 
 	portmap |= BIT(port);
 
