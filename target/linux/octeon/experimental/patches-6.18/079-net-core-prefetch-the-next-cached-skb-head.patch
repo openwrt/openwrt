@@ -1,0 +1,40 @@
+From: Simon Polack <spolack+git@mailbox.org>
+Subject: [PATCH] net: core: prefetch the next cached skb head
+
+EXPERIMENTAL, showcase only, not for merging: it needs proper testing.
+It changes generic kernel code but was only measured with the octeon_pip
+driver of #26060.
+The build does not apply it: it sits in target/linux/octeon/experimental/.
+
+napi_build_skb() clears the skb it takes from the per-CPU cache and
+reads it back at once (pfmemalloc, the shared info setup): on a core
+whose L1 does not allocate on write the first read misses. Prefetch the
+next cached head when one is taken; it is in by the next build.
+
+Measured on an EdgeRouter 4 (CN7030, 4 cores), octeon3 subtarget (CN63XXP1
+off), octeon_pip driver, one boot per image, 64-byte single-flow floods
+in kpps, on 2026-10-21.
+Target: the skb line read after the clear (napi_skb_cache_get): 0.45 -> 0.11 L1 misses per
+packet (flood1).
+Step oct3B -> P1 (077-080 together): flood1 +3.8 %, fw4 NAT +1.4 %,
+fw4+flowtable +4.1 %, GRE tcp1 +7.9 %.
+This patch, extrapolated from its share of the misses the step removed (0.34 of 2.65):
+flood1 ~+0.5 %, fw4 NAT ~+0.2 %, fw4+flowtable ~+0.5 %, GRE ~+0.5 %.
+These gains are on top of an unpatched octeon3 kernel; the full set and the
+split gain (up to +15 %) are in target/linux/octeon/experimental/README.md.
+
+Signed-off-by: Simon Polack <spolack+git@mailbox.org>
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+---
+--- a/net/core/skbuff.c
++++ b/net/core/skbuff.c
+@@ -309,6 +309,9 @@ static struct sk_buff *napi_skb_cache_ge
+ 	}
+ 
+ 	skb = nc->skb_cache[--nc->skb_count];
++	/* The next one's first line, for the next build's clear and reads */
++	if (nc->skb_count)
++		prefetch(nc->skb_cache[nc->skb_count - 1]);
+ 	local_unlock_nested_bh(&napi_alloc_cache.bh_lock);
+ 	kasan_mempool_unpoison_object(skb, kmem_cache_size(net_hotdata.skbuff_cache));
+ 
