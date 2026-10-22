@@ -437,15 +437,12 @@ static u32 edma_clean_tx(struct edma_queue *q, int budget, int napi_budget)
 			DEV_STATS_INC(priv->netdev, tx_errors);
 		}
 
-		/* A frame is named by the first completion of its run and
-		 * released on the one that clears the more bit; the opaque of
-		 * the completions in between is not written.
-		 */
-		/* The opaque is only written for the descriptor that carried
-		 * the preheader, so it is read once per run and not again if
-		 * the run turns out to name no frame: a later completion of
-		 * the same run would otherwise hand back whatever its field
-		 * held and name a frame the engine still owns.
+		/* The engine writes the opaque only into the completion of
+		 * the descriptor that carried the preheader, so a run is named
+		 * once, by its first completion, and released on the one that
+		 * clears the more bit. A later completion of the run would hand
+		 * back whatever its field held and name a frame the engine
+		 * still owns.
 		 */
 		if (!q->txcmpl_run) {
 			q->txcmpl_run = true;
@@ -545,8 +542,9 @@ static void edma_rx_csum(struct net_device *netdev, struct sk_buff *skb,
 	    l4_off > skb_headlen(skb) + l2_len)
 		return;
 
-	/* The sum ends with the IP packet, and the stack subtracts the padding
-	 * it trims behind it.
+	/* The engine's sum stops at the end of the IP packet, while the stack
+	 * subtracts any padding it trims from skb->csum, so a padded frame is
+	 * left to software.
 	 */
 	l3 = skb->data + l3_off - l2_len;
 	if (pid & EDMA_RXDESC_PID_IPV6)
