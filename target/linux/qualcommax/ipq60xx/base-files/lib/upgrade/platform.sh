@@ -225,6 +225,11 @@ platform_do_upgrade() {
 	mikrotik,chateau-5g-r17-ax)
 		platform_do_upgrade_mikrotik_nand "$1"
 		;;
+	arista,ap-c200)
+		CI_UBIPART="rootfs"
+		remove_oem_ubi_volume ubi_rootfs
+		nand_do_upgrade "$1"
+		;;
 	alfa-network,ap120c-ax)
 		CI_UBIPART="rootfs_1"
 		alfa_bootconfig_rootfs_rotate "0:BOOTCONFIG" "148"
