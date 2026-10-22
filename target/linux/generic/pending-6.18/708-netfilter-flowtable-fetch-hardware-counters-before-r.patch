@@ -1,0 +1,56 @@
+From 91c576935cf33d225a96456c4ef15c81131fd9f1 Mon Sep 17 00:00:00 2001
+From: Valentin Berezhnoy <dreyksmail@gmail.com>
+Date: Wed, 21 Oct 2026 01:00:00 +0300
+Subject: [PATCH] netfilter: flowtable: fetch hardware counters before removing
+ a flow
+
+flow_offload_work_del() removes hardware entries without fetching their
+counters. Conntrack accounting then misses traffic since the last
+statistics update.
+
+Fetch statistics once more before deleting hardware entries when the
+flowtable enables counters. The delete worker still has references to
+the flow and its conntrack entry until it sets NF_FLOW_HW_DEAD.
+
+Fixes: ef803b3cf96a ("netfilter: flowtable: add counter support in HW offload")
+Link: https://lore.kernel.org/netfilter-devel/20261021175030.4800-1-dreyksmail@gmail.com/
+Signed-off-by: Valentin Berezhnoy <dreyksmail@gmail.com>
+[alex@goodkind.io: shorten the comment and refresh for OpenWrt]
+Signed-off-by: Alexander Goodkind <alex@goodkind.io>
+---
+--- a/net/netfilter/nf_flow_table_offload.c
++++ b/net/netfilter/nf_flow_table_offload.c
+@@ -987,14 +987,6 @@ out:
+ 	nf_flow_offload_destroy(flow_rule);
+ }
+ 
+-static void flow_offload_work_del(struct flow_offload_work *offload)
+-{
+-	clear_bit(IPS_HW_OFFLOAD_BIT, &offload->flow->ct->status);
+-	flow_offload_tuple_del(offload, FLOW_OFFLOAD_DIR_ORIGINAL);
+-	if (test_bit(NF_FLOW_HW_BIDIRECTIONAL, &offload->flow->flags))
+-		flow_offload_tuple_del(offload, FLOW_OFFLOAD_DIR_REPLY);
+-}
+-
+ static void flow_offload_tuple_stats(struct flow_offload_work *offload,
+ 				     enum flow_offload_tuple_dir dir,
+ 				     struct flow_stats *stats)
+@@ -1031,6 +1023,18 @@ static void flow_offload_work_stats(stru
+ 	}
+ }
+ 
++static void flow_offload_work_del(struct flow_offload_work *offload)
++{
++	/* Account for traffic since the last statistics poll. */
++	if (offload->flowtable->flags & NF_FLOWTABLE_COUNTER)
++		flow_offload_work_stats(offload);
++
++	clear_bit(IPS_HW_OFFLOAD_BIT, &offload->flow->ct->status);
++	flow_offload_tuple_del(offload, FLOW_OFFLOAD_DIR_ORIGINAL);
++	if (test_bit(NF_FLOW_HW_BIDIRECTIONAL, &offload->flow->flags))
++		flow_offload_tuple_del(offload, FLOW_OFFLOAD_DIR_REPLY);
++}
++
+ static void flow_offload_work_handler(struct work_struct *work)
+ {
+ 	struct flow_offload_work *offload;
