@@ -2483,6 +2483,15 @@ int qca_ppe_setup_tc_mqprio(struct qca_ppe_priv *priv, int port,
 	if (!p)
 		return -EOPNOTSUPP;
 
+	/* A replacing qdisc programs the port before the one it replaces is
+	 * destroyed, and that removal names no qdisc, so it must not undo the
+	 * replacement.
+	 */
+	if (!q->num_tc && priv->shaper[port].mqprio_users > 1) {
+		priv->shaper[port].mqprio_users--;
+		return 0;
+	}
+
 	/* Nothing below touches the hardware: a request that turns out to be
 	 * unbuildable half way through would otherwise leave the port with its
 	 * shapers already cleared under a qdisc the qdisc layer keeps.
@@ -2560,8 +2569,10 @@ int qca_ppe_setup_tc_mqprio(struct qca_ppe_priv *priv, int port,
 	ppe_port_shapers_clear(priv, p);
 	netdev_reset_tc(dev);
 
-	if (!q->num_tc)
+	if (!q->num_tc) {
+		priv->shaper[port].mqprio_users = 0;
 		return 0;
+	}
 
 	for (tc = 0; tc < q->num_tc; tc++) {
 		if (!floor && !prog[tc].min_bps && !prog[tc].rate_bps)
@@ -2584,6 +2595,7 @@ int qca_ppe_setup_tc_mqprio(struct qca_ppe_priv *priv, int port,
 	netdev_set_num_tc(dev, q->num_tc);
 	for (tc = 0; tc < q->num_tc; tc++)
 		netdev_set_tc_queue(dev, tc, q->count[tc], q->offset[tc]);
+	priv->shaper[port].mqprio_users++;
 
 	return 0;
 }
