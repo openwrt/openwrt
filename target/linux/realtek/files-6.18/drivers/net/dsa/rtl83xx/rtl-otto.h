@@ -81,6 +81,14 @@ struct rtldsa_93xx_lag_entry {
 	u32 num_tx_candi:4;
 };
 
+struct rtldsa_tbf {
+	u32 handle;
+	u64 rate_bytes_ps;
+	u32 burst;
+	bool child;
+	bool offloaded;
+};
+
 struct rtldsa_port {
 	bool enable:1;
 	bool phy:1;
@@ -94,6 +102,8 @@ struct rtldsa_port {
 	u16 ets_children;
 	bool ets_offloadable;
 	u8 ets_weights[MAX_PRIOS];
+	struct rtldsa_tbf tbf;
+	struct rtldsa_tbf queue_tbf[MAX_PRIOS];
 	unsigned long cached_flags;
 	u64 pm;
 	u16 pvid;
@@ -492,6 +502,8 @@ struct rtldsa_config {
 	int (*set_egress_rate)(struct otto_dsa_priv *priv, int port, u32 rate);
 	void (*queue_sched_set)(struct otto_dsa_priv *priv, int port, int queue, u32 weight,
 				bool strict);
+	int (*egress_shaper_set)(struct otto_dsa_priv *priv, int port, int queue,
+				 u64 rate_bytes_ps, u32 burst);
 	void (*qos_init)(struct otto_dsa_priv *priv);
 	int (*trk_mbr_ctr)(int group);
 	void (*lag_switch_init)(struct otto_dsa_priv *priv);
