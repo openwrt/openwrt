@@ -52,11 +52,17 @@ static void ppe_xlt_rule_set(struct qca_ppe_priv *priv, int idx,
 /* Classify into the VLAN's VSI and leave the tag alone: the VSI carries the
  * domain from here on, while the tag still has to reach the CPU for the software
  * bridge and survive to a port that egresses this VLAN tagged. Which ports strip
- * it is EG_VSI_TAG's decision, not this rule's.
+ * it is EG_VSI_TAG's decision, not this rule's. A frame the PVID classifies has
+ * no tag to keep, so it is given the VLAN's: a port that egresses the VLAN
+ * tagged writes the frame's VID, which would otherwise be 0.
  */
-static void ppe_xlt_action_set(struct qca_ppe_priv *priv, int idx, u32 vsi)
+static void ppe_xlt_action_set(struct qca_ppe_priv *priv, int idx, u32 vsi,
+			       u16 pvid)
 {
-	regmap_write(priv->regmap, PPE_XLT_ACTION_TBL(idx), 0);
+	regmap_write(priv->regmap, PPE_XLT_ACTION_TBL(idx),
+		     pvid ? FIELD_PREP(PPE_XLT_CVID_CMD,
+				       PPE_XLT_CVID_ADDORREPLACE) |
+			    FIELD_PREP(PPE_XLT_CVID, pvid) : 0);
 	regmap_write(priv->regmap, PPE_XLT_ACTION_W1(idx),
 		     PPE_XLT_VSI_CMD | FIELD_PREP(PPE_XLT_VSI, vsi));
 }
@@ -327,7 +333,7 @@ int qca_ppe_port_vlan_add(struct dsa_switch *ds, int port,
 	 * first: a rule made live over the action of whichever VLAN held the
 	 * index before would bridge the frame in that VLAN's domain.
 	 */
-	ppe_xlt_action_set(priv, entry->xlt_idx, entry->vsi);
+	ppe_xlt_action_set(priv, entry->xlt_idx, entry->vsi, 0);
 	ppe_xlt_rule_set(priv, entry->xlt_idx, ppe_vlan_ports(priv, entry), vid,
 			 false);
 
@@ -355,7 +361,7 @@ int qca_ppe_port_vlan_add(struct dsa_switch *ds, int port,
 		priv->port_pvid[port] = vid;
 		entry->pvid_ports |= BIT(port);
 
-		ppe_xlt_action_set(priv, entry->xlt_pvid_idx, entry->vsi);
+		ppe_xlt_action_set(priv, entry->xlt_pvid_idx, entry->vsi, vid);
 		ppe_xlt_rule_set(priv, entry->xlt_pvid_idx,
 				 entry->pvid_ports & priv->vlan_filtering,
 				 0, true);
