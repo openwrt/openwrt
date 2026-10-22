@@ -1412,6 +1412,8 @@ struct ppe_port_shaper {
 	u32 base_pkts;
 	u32 base_drops;
 	u32 base_backlog;
+	u64 base_host_bytes;
+	u64 base_host_pkts;
 };
 
 #define PPE_SB_EGRESS_TCS	16
