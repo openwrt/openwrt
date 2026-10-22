@@ -1,0 +1,121 @@
+From d2b8925ca53d956db637cd8af5c887df5a425dd7 Mon Sep 17 00:00:00 2001
+From: Josef Schlehofer <pepe.schlehofer@gmail.com>
+Date: Sun, 18 Oct 2026 13:28:25 +0200
+Subject: [PATCH] ARM: dts: samsung: Add Hardkernel ODROID-U2
+
+ODROID-U2 is a single board computer from Hardkernel based on the
+Samsung Exynos4412 Prime SoC with 2 GB of LPDDR2 RAM. It is the
+predecessor of the ODROID-U3 and shares most of its design:
+- microSD card slot and eMMC module socket
+- SMSC LAN9730 10/100 Ethernet on HSIC0
+- SMSC USB3503A hub on HSIC1 with two USB 2.0 host ports
+- micro-HDMI port with CEC
+- MAX98090 audio codec with a 3.5 mm headphone jack and an on-board
+  digital microphone
+- MAX77686 PMIC
+- 2-pin header for an optional PWM controlled cooling fan
+- blue heartbeat LED
+
+Unlike the ODROID-U3, the micro-USB port has no VBUS supply switch, so
+it can only work in peripheral mode, and there is no expansion header
+with SPI. The 3.5 mm jack is headphone only and the speaker outputs of
+the codec are not connected.
+
+Add a device tree for the board that includes the ODROID-U3 one and
+describes only these differences, as the ODROID-X2 does with the
+ODROID-X, and update the comments in the common dtsi, as the LDO22 and
+BUCK8 constraints are now also used by the ODROID-U2.
+
+Also route "HiFi Capture" to "Mixer DAI RX", as on the ODROID-XU3. The
+odroid sound card driver adds only the playback routes for boards with
+a single CPU DAI, so without it the DPCM capture path to the I2S
+back-end is incomplete and recording from the digital microphone fails
+with "no backend DAIs enabled for Primary".
+
+Link: https://www.hardkernel.com/shop/odroid-u2/
+Link: https://www.hardkernel.com/blog-2/odroid-u2-u-schematics/
+Signed-off-by: Josef Schlehofer <pepe.schlehofer@gmail.com>
+---
+ arch/arm/boot/dts/samsung/Makefile            |  1 +
+ .../dts/samsung/exynos4412-odroid-common.dtsi |  6 +--
+ .../boot/dts/samsung/exynos4412-odroidu2.dts  | 42 +++++++++++++++++++
+ 3 files changed, 46 insertions(+), 3 deletions(-)
+ create mode 100644 arch/arm/boot/dts/samsung/exynos4412-odroidu2.dts
+
+--- a/arch/arm/boot/dts/samsung/Makefile
++++ b/arch/arm/boot/dts/samsung/Makefile
+@@ -16,6 +16,7 @@ dtb-$(CONFIG_ARCH_EXYNOS4) += \
+ 	exynos4412-i9305.dtb \
+ 	exynos4412-itop-elite.dtb \
+ 	exynos4412-n710x.dtb \
++	exynos4412-odroidu2.dtb \
+ 	exynos4412-odroidu3.dtb \
+ 	exynos4412-odroidx.dtb \
+ 	exynos4412-odroidx2.dtb \
+--- a/arch/arm/boot/dts/samsung/exynos4412-odroid-common.dtsi
++++ b/arch/arm/boot/dts/samsung/exynos4412-odroid-common.dtsi
+@@ -414,8 +414,8 @@
+ 
+ 			ldo22_reg: LDO22 {
+ 				/*
+-				 * Only U3 uses it, so let it define the
+-				 * constraints
++				 * Only U2 and U3 use it, so let them define
++				 * the constraints
+ 				 */
+ 				regulator-name = "LDO22";
+ 				regulator-boot-on;
+@@ -486,7 +486,7 @@
+ 			buck8_reg: BUCK8 {
+ 				/*
+ 				 * Constraints set by specific board: X,
+-				 * X2 and U3.
++				 * X2, U2 and U3.
+ 				 */
+ 				regulator-name = "BUCK8_2.8V";
+ 			};
+--- /dev/null
++++ b/arch/arm/boot/dts/samsung/exynos4412-odroidu2.dts
+@@ -0,0 +1,42 @@
++// SPDX-License-Identifier: GPL-2.0
++/*
++ * Hardkernel's Exynos4412 based ODROID-U2 board device tree source
++ *
++ * Copyright (c) 2026 Josef Schlehofer <pepe.schlehofer@gmail.com>
++ *
++ * Device tree source file for Hardkernel's ODROID-U2 board which is based
++ * on Samsung's Exynos4412 SoC. The board is the predecessor of the
++ * ODROID-U3, so only the differences from it are described here.
++ */
++
++#include "exynos4412-odroidu3.dts"
++
++/ {
++	model = "Hardkernel ODROID-U2 board based on Exynos4412";
++	compatible = "hardkernel,odroid-u2", "samsung,exynos4412", "samsung,exynos4";
++};
++
++/* No VBUS supply switch on the micro-USB port */
++/delete-node/ &vbus_otg_reg;
++
++&hsotg {
++	dr_mode = "peripheral";
++	/delete-property/ vbus-supply;
++};
++
++&sound {
++	model = "Odroid-U2";
++	audio-routing = "Headphone Jack", "HPL",
++			"Headphone Jack", "HPR",
++			"DMICL", "DMIC",
++			"DMICR", "DMIC",
++			"Mixer DAI RX", "HiFi Capture";
++	samsung,audio-widgets =
++		"Headphone", "Headphone Jack",
++		"Microphone", "DMIC";
++};
++
++/* No expansion header with SPI */
++&spi_1 {
++	status = "disabled";
++};

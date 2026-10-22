@@ -1,0 +1,18 @@
+#!/bin/sh
+# SPDX-License-Identifier: GPL-2.0-only
+
+. /lib/functions/leds.sh
+. /lib/functions/uci-defaults.sh
+
+board_config_update
+
+case "$(board_name)" in
+hardkernel,odroid-u2|\
+hardkernel,odroid-u3|\
+hardkernel,odroid-x2)
+	ucidef_set_led_default "status" "STATUS" "blue:heartbeat" "1"
+	;;
+esac
+
+board_config_flush
+exit 0
