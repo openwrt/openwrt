@@ -170,6 +170,10 @@
  */
 #define EDMA_RXPH_CTAG_FLAG		BIT(30)
 #define EDMA_RXPH_CTAG_TCI		GENMASK(15, 0)
+/* Why the switch sent the frame to the CPU: zero for a frame it forwarded or
+ * flooded there, the reason for one it trapped or redirected.
+ */
+#define EDMA_RXPH_CPU_CODE		GENMASK(31, 24)
 #define EDMA_RXPH_L3_OFFSET_SHIFT	16
 #define EDMA_RXPH_L3_OFFSET_MASK	0xff
 #define EDMA_RXPH_L4_OFFSET_SHIFT	8
@@ -249,6 +253,7 @@
 #define EDMA_DST_PORT_TYPE			0x20
 #define EDMA_DST_PORT_ID_MASK			0x1f
 #define EDMA_SRC_PORT_MASK			0x0fff
+#define EDMA_PORTS				8
 #define EDMA_PREHDR_DSTINFO_PORTID_IND		0x20
 #define EDMA_RXPH_SRC_INFO_TYPE_GET(rxph)	(((rxph)->src_info >> 8) & 0xf0)
 
@@ -411,6 +416,11 @@ struct edma_priv {
 	u8 rss_indir[EDMA_RSS_QUEUES];
 
 	int misc_irq;
+
+	/* Names the user port of a frame the switch forwarded itself, which
+	 * the bridge then does not forward again.
+	 */
+	struct metadata_dst *port_md[EDMA_PORTS];
 };
 
 #endif /* __QCA_EDMA_H__ */
