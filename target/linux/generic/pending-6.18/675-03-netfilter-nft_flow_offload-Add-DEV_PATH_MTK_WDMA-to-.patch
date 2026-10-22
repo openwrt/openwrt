@@ -1,0 +1,39 @@
+From 6d1de6942e87272e8836c1398a291d4c77faec56 Mon Sep 17 00:00:00 2001
+From: Bohdan Chubuk <chbgdn@gmail.com>
+Date: Sun, 26 Jul 2026 01:20:24 +0300
+Subject: [PATCH 03/14] netfilter: nft_flow_offload: Add DEV_PATH_MTK_WDMA to
+ nft_dev_path_info()
+
+MediaTek uses the path type DEV_PATH_MTK_WDMA in path discovery.
+When this path type is encountered, it should be handled similarly
+to DSA: stop iterating through the device path stack.
+
+Based on commit ad3380141cf7 from ericwoud/bpir-nftflow-nf-next-20260707.
+
+Co-authored-by: Eric Woudstra <ericwouds@gmail.com>
+Signed-off-by: Bohdan Chubuk <chbgdn@gmail.com>
+---
+ net/netfilter/nf_flow_table_path.c | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+--- a/net/netfilter/nf_flow_table_path.c
++++ b/net/netfilter/nf_flow_table_path.c
+@@ -103,6 +103,7 @@ static void nft_dev_path_info(const stru
+ 		switch (path->type) {
+ 		case DEV_PATH_ETHERNET:
+ 		case DEV_PATH_DSA:
++		case DEV_PATH_MTK_WDMA:
+ 		case DEV_PATH_VLAN:
+ 		case DEV_PATH_PPPOE:
+ 			info->indev = path->dev;
+@@ -115,6 +116,10 @@ static void nft_dev_path_info(const stru
+ 				i = stack->num_paths;
+ 				break;
+ 			}
++			if (path->type == DEV_PATH_MTK_WDMA) {
++				i = stack->num_paths;
++				break;
++			}
+ 
+ 			/* DEV_PATH_VLAN and DEV_PATH_PPPOE */
+ 			if (info->num_encaps >= NF_FLOW_TABLE_ENCAP_MAX) {
