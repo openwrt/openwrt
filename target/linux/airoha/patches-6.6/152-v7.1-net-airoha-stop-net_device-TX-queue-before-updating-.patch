@@ -1,0 +1,46 @@
+From 3854de7b38be742cf7558476956d12414cb274f2 Mon Sep 17 00:00:00 2001
+From: Lorenzo Bianconi <lorenzo@kernel.org>
+Date: Tue, 21 Apr 2026 08:43:07 +0200
+Subject: [PATCH] net: airoha: stop net_device TX queue before updating CPU
+ index
+
+Currently, airoha_eth driver updates the CPU index register prior of
+verifying whether the number of free descriptors has fallen below the
+threshold.
+Move net_device TX queue length check before updating the TX CPU index
+in order to update TX CPU index even if there are more packets to be
+transmitted but the net_device TX queue is going to be stopped
+accounting the inflight packets.
+
+Fixes: 1d304174106c ("net: airoha: Implement BQL support")
+Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
+Link: https://patch.msgid.link/20260421-airoha-xmit-stop-condition-v1-1-e670d6a48467@kernel.org
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ drivers/net/ethernet/airoha/airoha_eth.c | 9 ++++-----
+ 1 file changed, 4 insertions(+), 5 deletions(-)
+
+--- a/drivers/net/ethernet/airoha/airoha_eth.c
++++ b/drivers/net/ethernet/airoha/airoha_eth.c
+@@ -2094,17 +2094,16 @@ static netdev_tx_t airoha_dev_xmit(struc
+ 
+ 	skb_tx_timestamp(skb);
+ 	netdev_tx_sent_queue(txq, skb->len);
++	if (q->ndesc - q->queued < q->free_thr) {
++		netif_tx_stop_queue(txq);
++		q->txq_stopped = true;
++	}
+ 
+ 	if (netif_xmit_stopped(txq) || !netdev_xmit_more())
+ 		airoha_qdma_rmw(qdma, REG_TX_CPU_IDX(qid),
+ 				TX_RING_CPU_IDX_MASK,
+ 				FIELD_PREP(TX_RING_CPU_IDX_MASK, index));
+ 
+-	if (q->ndesc - q->queued < q->free_thr) {
+-		netif_tx_stop_queue(txq);
+-		q->txq_stopped = true;
+-	}
+-
+ 	spin_unlock_bh(&q->lock);
+ 
+ 	return NETDEV_TX_OK;
