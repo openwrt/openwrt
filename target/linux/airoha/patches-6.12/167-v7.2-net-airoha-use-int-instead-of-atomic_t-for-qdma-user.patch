@@ -17,7 +17,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
 
 --- a/drivers/net/ethernet/airoha/airoha_eth.c
 +++ b/drivers/net/ethernet/airoha/airoha_eth.c
-@@ -1840,7 +1840,7 @@ static int airoha_dev_open(struct net_de
+@@ -1832,7 +1832,7 @@ static int airoha_dev_open(struct net_de
  	airoha_qdma_set(qdma, REG_QDMA_GLOBAL_CFG,
  			GLOBAL_CFG_TX_DMA_EN_MASK |
  			GLOBAL_CFG_RX_DMA_EN_MASK);
@@ -26,7 +26,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  
  	if (!airoha_is_lan_gdm_dev(dev) &&
  	    airoha_ppe_is_enabled(qdma->eth, 1))
-@@ -1894,7 +1894,7 @@ static int airoha_dev_stop(struct net_de
+@@ -1886,7 +1886,7 @@ static int airoha_dev_stop(struct net_de
  					    REG_GDM_FWD_CFG(port->id),
  					    FE_PSE_PORT_DROP);
  

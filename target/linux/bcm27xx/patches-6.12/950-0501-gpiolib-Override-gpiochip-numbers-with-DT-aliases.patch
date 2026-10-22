@@ -28,9 +28,9 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  	int ret;
 +	int id;
  
- 	gdev = kzalloc(sizeof(*gdev), GFP_KERNEL);
- 	if (!gdev)
-@@ -953,7 +955,16 @@ int gpiochip_add_data_with_key(struct gp
+ 	/* Only allow one set() and one set_multiple(). */
+ 	if ((gc->set && gc->set_rv) ||
+@@ -958,7 +960,16 @@ int gpiochip_add_data_with_key(struct gp
  	gc->gpiodev = gdev;
  	gpiochip_set_data(gc, data);
  

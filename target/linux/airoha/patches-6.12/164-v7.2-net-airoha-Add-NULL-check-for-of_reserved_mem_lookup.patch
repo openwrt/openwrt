@@ -29,7 +29,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
 
 --- a/drivers/net/ethernet/airoha/airoha_eth.c
 +++ b/drivers/net/ethernet/airoha/airoha_eth.c
-@@ -1159,6 +1159,9 @@ static int airoha_qdma_init_hfwd_queues(
+@@ -1151,6 +1151,9 @@ static int airoha_qdma_init_hfwd_queues(
  
  		rmem = of_reserved_mem_lookup(np);
  		of_node_put(np);

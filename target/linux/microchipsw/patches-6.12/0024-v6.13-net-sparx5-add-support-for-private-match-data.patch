@@ -88,7 +88,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  	/* Do switch core reset if available */
  	reset = devm_reset_control_get_optional_shared(&pdev->dev, "switch");
  	if (IS_ERR(reset))
-@@ -936,8 +936,14 @@ static void mchp_sparx5_remove(struct pl
+@@ -937,8 +937,14 @@ static void mchp_sparx5_remove(struct pl
  	destroy_workqueue(sparx5->mact_queue);
  }
  
@@ -125,7 +125,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  struct sparx5 {
  	struct platform_device *pdev;
  	struct device *dev;
-@@ -293,6 +305,7 @@ struct sparx5 {
+@@ -294,6 +306,7 @@ struct sparx5 {
  	struct list_head mall_entries;
  	/* Common root for debugfs */
  	struct dentry *debugfs_root;

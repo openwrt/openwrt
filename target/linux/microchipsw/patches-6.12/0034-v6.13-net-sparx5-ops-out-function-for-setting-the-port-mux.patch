@@ -19,7 +19,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
 
 --- a/drivers/net/ethernet/microchip/sparx5/sparx5_main.c
 +++ b/drivers/net/ethernet/microchip/sparx5/sparx5_main.c
-@@ -991,6 +991,7 @@ static const struct sparx5_ops sparx5_op
+@@ -992,6 +992,7 @@ static const struct sparx5_ops sparx5_op
  	.get_port_dev_bit        = &sparx5_port_dev_mapping,
  	.get_hsch_max_group_rate = &sparx5_get_hsch_max_group_rate,
  	.get_sdlb_group          = &sparx5_get_sdlb_group,
@@ -38,7 +38,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  };
  
  struct sparx5_main_io_resource {
-@@ -485,6 +487,10 @@ int sparx5_pool_get(struct sparx5_pool_e
+@@ -486,6 +488,10 @@ int sparx5_pool_get(struct sparx5_pool_e
  int sparx5_pool_get_with_idx(struct sparx5_pool_entry *pool, int size, u32 idx,
  			     u32 *id);
  

@@ -74,7 +74,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		err = devm_request_threaded_irq(sparx5->dev, sparx5->ptp_irq,
  						NULL, ops->ptp_irq_handler,
  						IRQF_ONESHOT, "sparx5-ptp",
-@@ -914,6 +949,9 @@ static int mchp_sparx5_probe(struct plat
+@@ -915,6 +950,9 @@ static int mchp_sparx5_probe(struct plat
  	sparx5->target_ct = (enum spx5_target_chiptype)
  		GCB_CHIP_ID_PART_ID_GET(sparx5->chip_id);
  
@@ -106,7 +106,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	void __iomem *regs[NUM_TARGETS];
  	int port_count;
  	struct mutex lock; /* MAC reg lock */
-@@ -404,6 +410,7 @@ struct sparx5 {
+@@ -405,6 +411,7 @@ struct sparx5 {
  
  /* sparx5_main.c */
  bool is_sparx5(struct sparx5 *sparx5);

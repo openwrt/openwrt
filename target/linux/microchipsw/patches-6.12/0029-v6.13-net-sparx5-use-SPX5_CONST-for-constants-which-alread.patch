@@ -272,7 +272,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  			 sparx5,
 --- a/drivers/net/ethernet/microchip/sparx5/sparx5_netdev.c
 +++ b/drivers/net/ethernet/microchip/sparx5/sparx5_netdev.c
-@@ -290,7 +290,7 @@ int sparx5_register_netdevs(struct sparx
+@@ -291,7 +291,7 @@ int sparx5_register_netdevs(struct sparx
  	int portno;
  	int err;
  
@@ -281,7 +281,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  		if (sparx5->ports[portno]) {
  			err = register_netdev(sparx5->ports[portno]->ndev);
  			if (err) {
-@@ -309,7 +309,7 @@ void sparx5_destroy_netdevs(struct sparx
+@@ -310,7 +310,7 @@ void sparx5_destroy_netdevs(struct sparx
  	struct sparx5_port *port;
  	int portno;
  
@@ -290,7 +290,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  		port = sparx5->ports[portno];
  		if (port && port->phylink) {
  			/* Disconnect the phy */
-@@ -327,8 +327,7 @@ void sparx5_unregister_netdevs(struct sp
+@@ -328,8 +328,7 @@ void sparx5_unregister_netdevs(struct sp
  {
  	int portno;
  

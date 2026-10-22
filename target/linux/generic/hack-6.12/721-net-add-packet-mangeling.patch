@@ -27,7 +27,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  };
  
  /* Specifies the type of the struct net_device::ml_priv pointer */
-@@ -2176,6 +2177,11 @@ struct net_device {
+@@ -2178,6 +2179,11 @@ struct net_device {
  	const struct tlsdev_ops *tlsdev_ops;
  #endif
  
@@ -39,7 +39,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	unsigned int		operstate;
  	unsigned char		link_mode;
  
-@@ -2245,6 +2251,10 @@ struct net_device {
+@@ -2247,6 +2253,10 @@ struct net_device {
  	struct mctp_dev __rcu	*mctp_ptr;
  #endif
  
@@ -97,7 +97,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	help
 --- a/net/core/dev.c
 +++ b/net/core/dev.c
-@@ -3688,6 +3688,11 @@ static int xmit_one(struct sk_buff *skb,
+@@ -3704,6 +3704,11 @@ static int xmit_one(struct sk_buff *skb,
  	if (dev_nit_active(dev))
  		dev_queue_xmit_nit(skb, dev);
  

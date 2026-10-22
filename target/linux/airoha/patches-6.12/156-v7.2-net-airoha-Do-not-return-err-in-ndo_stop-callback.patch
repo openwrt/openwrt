@@ -18,7 +18,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
 
 --- a/drivers/net/ethernet/airoha/airoha_eth.c
 +++ b/drivers/net/ethernet/airoha/airoha_eth.c
-@@ -1747,13 +1747,10 @@ static int airoha_dev_stop(struct net_de
+@@ -1739,13 +1739,10 @@ static int airoha_dev_stop(struct net_de
  {
  	struct airoha_gdm_port *port = netdev_priv(dev);
  	struct airoha_qdma *qdma = port->qdma;
@@ -31,6 +31,6 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
 -		return err;
 -
 +	airoha_set_vip_for_gdm_port(port, false);
- 	for (i = 0; i < dev->num_tx_queues; i++)
+ 	for (i = 0; i < ARRAY_SIZE(qdma->q_tx); i++)
  		netdev_tx_reset_subqueue(dev, i);
  

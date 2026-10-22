@@ -35,7 +35,7 @@ Signed-off-by: Ulf Hansson <ulf.hansson@linaro.org>
  #define DOMAIN_RK3568(name, pwr, req, wakeup)		\
  	DOMAIN_M(name, pwr, pwr, req, req, req, wakeup)
  
-@@ -1139,6 +1143,14 @@ static const struct rockchip_domain_info
+@@ -1153,6 +1157,14 @@ static const struct rockchip_domain_info
  	[RK3399_PD_SDIOAUDIO]	= DOMAIN_RK3399("sdioaudio", BIT(31), BIT(31), BIT(29), true),
  };
  
@@ -50,7 +50,7 @@ Signed-off-by: Ulf Hansson <ulf.hansson@linaro.org>
  static const struct rockchip_domain_info rk3568_pm_domains[] = {
  	[RK3568_PD_NPU]		= DOMAIN_RK3568("npu",  BIT(1), BIT(2),  false),
  	[RK3568_PD_GPU]		= DOMAIN_RK3568("gpu",  BIT(0), BIT(1),  false),
-@@ -1340,6 +1352,17 @@ static const struct rockchip_pmu_info rk
+@@ -1354,6 +1366,17 @@ static const struct rockchip_pmu_info rk
  	.domain_info = rk3399_pm_domains,
  };
  
@@ -68,7 +68,7 @@ Signed-off-by: Ulf Hansson <ulf.hansson@linaro.org>
  static const struct rockchip_pmu_info rk3568_pmu = {
  	.pwr_offset = 0xa0,
  	.status_offset = 0x98,
-@@ -1439,6 +1462,10 @@ static const struct of_device_id rockchi
+@@ -1453,6 +1476,10 @@ static const struct of_device_id rockchi
  		.data = (void *)&rk3399_pmu,
  	},
  	{

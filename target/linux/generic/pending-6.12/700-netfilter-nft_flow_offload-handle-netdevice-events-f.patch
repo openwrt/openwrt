@@ -10,7 +10,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
 
 --- a/net/netfilter/nf_flow_table_core.c
 +++ b/net/netfilter/nf_flow_table_core.c
-@@ -666,6 +666,23 @@ static struct pernet_operations nf_flow_
+@@ -779,6 +779,23 @@ static struct pernet_operations nf_flow_
  	.exit_batch = nf_flow_table_pernet_exit,
  };
  
@@ -34,7 +34,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  static int __init nf_flow_table_module_init(void)
  {
  	int ret;
-@@ -682,6 +699,10 @@ static int __init nf_flow_table_module_i
+@@ -795,6 +812,10 @@ static int __init nf_flow_table_module_i
  	if (ret)
  		goto out_bpf;
  
@@ -45,7 +45,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  	return 0;
  
  out_bpf:
-@@ -693,6 +714,7 @@ out_offload:
+@@ -806,6 +827,7 @@ out_offload:
  
  static void __exit nf_flow_table_module_exit(void)
  {
@@ -55,7 +55,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  	unregister_pernet_subsys(&nf_flow_table_net_ops);
 --- a/net/netfilter/nft_flow_offload.c
 +++ b/net/netfilter/nft_flow_offload.c
-@@ -493,47 +493,14 @@ static struct nft_expr_type nft_flow_off
+@@ -499,47 +499,14 @@ static struct nft_expr_type nft_flow_off
  	.owner		= THIS_MODULE,
  };
  
