@@ -2202,6 +2202,30 @@ static void ppe_port_tx_counters(struct qca_ppe_priv *priv, int port,
 		ppe_mib_read(priv, port, PPE_MIB_TXMULTI);
 }
 
+/* What the host sent through the port's qdisc, which counts it itself. */
+static void ppe_port_host_tx(struct qca_ppe_priv *priv, int port, u64 *bytes,
+			     u64 *pkts)
+{
+	struct net_device *dev = dsa_to_port(&priv->ds, port)->user;
+	struct rtnl_link_stats64 sw = {};
+
+	if (dev)
+		dev_fetch_sw_netstats(&sw, dev->tstats);
+	*bytes = sw.tx_bytes;
+	*pkts = sw.tx_packets;
+}
+
+static void ppe_port_shaper_base(struct qca_ppe_priv *priv, int port)
+{
+	struct ppe_port_shaper *sh = &priv->shaper[port];
+
+	ppe_port_tx_counters(priv, port, &sh->base_bytes, &sh->base_pkts,
+			     &sh->base_drops);
+	ppe_port_host_tx(priv, port, &sh->base_host_bytes,
+			 &sh->base_host_pkts);
+	sh->base_backlog = 0;
+}
+
 static u32 ppe_port_backlog(struct qca_ppe_priv *priv, int port)
 {
 	const struct port_l0_params *p = NULL;
@@ -2233,10 +2257,11 @@ static void ppe_port_shaper_stats(struct qca_ppe_priv *priv, int port,
 				  struct tc_qopt_offload_stats *stats)
 {
 	struct ppe_port_shaper *sh = &priv->shaper[port];
-	u32 pkts, drops, backlog;
-	u64 bytes;
+	u64 bytes, host_bytes, host_pkts, db, dhb;
+	u32 pkts, drops, backlog, dp, dhp;
 
 	ppe_port_tx_counters(priv, port, &bytes, &pkts, &drops);
+	ppe_port_host_tx(priv, port, &host_bytes, &host_pkts);
 
 	/* The qdisc's backlog is a gauge the software path also moves. */
 	backlog = ppe_port_backlog(priv, port);
@@ -2244,15 +2269,24 @@ static void ppe_port_shaper_stats(struct qca_ppe_priv *priv, int port,
 	sh->base_backlog = backlog;
 
 	/* The packet and drop counters are 32 bits wide and wrap, so their
-	 * deltas are taken in their own width.
+	 * deltas are taken in their own width. The MAC also sends what the
+	 * host put through the qdisc, which the qdisc has counted already; a
+	 * host frame the switch dropped is in the host's count and not the
+	 * MAC's, so the difference is floored at zero.
 	 */
-	_bstats_update(stats->bstats, bytes - sh->base_bytes,
-		       pkts - sh->base_pkts);
+	db = bytes - sh->base_bytes;
+	dp = pkts - sh->base_pkts;
+	dhb = host_bytes - sh->base_host_bytes;
+	dhp = host_pkts - sh->base_host_pkts;
+	_bstats_update(stats->bstats, db > dhb ? db - dhb : 0,
+		       dp > dhp ? dp - dhp : 0);
 	stats->qstats->drops += (u32)(drops - sh->base_drops);
 
 	sh->base_bytes = bytes;
 	sh->base_pkts = pkts;
 	sh->base_drops = drops;
+	sh->base_host_bytes = host_bytes;
+	sh->base_host_pkts = host_pkts;
 }
 
 /* The port scheduler serves the port's queues strictly, so a class that never
@@ -2615,9 +2649,7 @@ static int ppe_qos_bands_set(struct qca_ppe_priv *priv, int port, u32 handle,
 	}
 
 	sh->bands_handle = handle;
-	ppe_port_tx_counters(priv, port, &sh->base_bytes, &sh->base_pkts,
-			     &sh->base_drops);
-	sh->base_backlog = 0;
+	ppe_port_shaper_base(priv, port);
 
 	return 0;
 }
@@ -3272,11 +3304,7 @@ int qca_ppe_setup_tc_tbf(struct qca_ppe_priv *priv, int port,
 		}
 
 		priv->shaper[port].tbf_handle = qopt->handle;
-		ppe_port_tx_counters(priv, port,
-				     &priv->shaper[port].base_bytes,
-				     &priv->shaper[port].base_pkts,
-				     &priv->shaper[port].base_drops);
-		priv->shaper[port].base_backlog = 0;
+		ppe_port_shaper_base(priv, port);
 		return 0;
 	}
 	case TC_TBF_DESTROY:
