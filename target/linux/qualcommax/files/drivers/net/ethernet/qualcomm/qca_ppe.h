@@ -297,6 +297,7 @@
 
 #define PPE_XLT_ACTION_TBL(idx)		(PPE_IVLAN_BASE + 0x4000 + (idx) * 0x10)
 #define   PPE_XLT_CVID_CMD		GENMASK(16, 15)
+#define   PPE_XLT_CVID			GENMASK(28, 17)
 
 #define PPE_XLT_ACTION_W1(idx)		(PPE_IVLAN_BASE + 0x4000 + (idx) * 0x10 + 0x4)
 #define   PPE_XLT_VSI_CMD		BIT(11)
@@ -1233,6 +1234,7 @@
 
 #define PPE_XLT_TBL_NUM			64
 #define PPE_XLT_MISS_DROP		1
+#define PPE_XLT_CVID_ADDORREPLACE	1
 #define PPE_XLT_CVID_DEL		2
 #define PPE_XLT_CKEY_PRIO_TAGGED	2
 #define PPE_XLT_CKEY_TAGGED		4
