@@ -27,7 +27,6 @@
 		led-failsafe = &led_red;
 		led-running = &led_white;
 		led-upgrade = &led_red;
-		mdio-gpio1 = &mdio_bitbang;
 	};
 	
 	chosen {
@@ -75,20 +74,26 @@
 		};
 	};
 	
-	// yt9215s cannot recognize from mdio1 so i used bitbang method instead
-	mdio_bitbang: mdio-gpio {
-		compatible = "virtual,mdio-gpio";
-		#address-cells = <1>;
-		#size-cells = <0>;
-		
-		gpios = <&tlmm 36 GPIO_ACTIVE_HIGH>,
-		<&tlmm 37 GPIO_ACTIVE_HIGH>;
-		
-		yt9215: switch@1d {
+};
+
+/*
+ * step13: use the SoC hardware MDIO1 like the stock firmware
+ * (stock: mdio@90000 with cig_clk_div=0xff). Do not pin
+ * clock-frequency: mdio-ipq4019 requires an exact match against the
+ * AHB rate at probe time and pcnoc is not 100 MHz yet, which made
+ * probe fail with -EINVAL. Let the driver derive the divider from the
+ * real clock, as the other IPQ5018 boards do.
+ */
+&mdio1 {
+	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&mdio1_pins>;
+
+	yt9215: switch@1d {
 			pinctrl-names = "default";
 			pinctrl-0 = <&switch_reset_pin>;
 			compatible = "motorcomm,yt9215";
-			reg = <29>;
+			reg = <0x1d>;
 			/* The driver pulses this line like the stock firmware
 			 * (25 ms asserted, 100 ms after release); the generic
 			 * reset-delay-us properties are not used.
@@ -158,10 +163,21 @@
 			};
 		};
 	};
-};
 
 &xo_clk {
 	clock-frequency = <0x16e3600>;
+};
+
+/*
+ * step14: the board runs xo_clk at 24 MHz, so ref_96mhz_clk is 48 MHz.
+ * Fixed-factor needs an explicit divider to yield the 24 MHz xo_board_clk;
+ * without it the clock fails to register, GCC parent rates stay 0 and MDIO1
+ * gets a bogus divider. Upstream boards use div 4 because their xo_clk is
+ * 48 MHz (ref_96mhz = 96 MHz).
+ */
+&xo_board_clk {
+	clock-div = <2>;
+	clock-mult = <1>;
 };
 
 &sleep_clk {
@@ -198,7 +214,7 @@
 		
 		port@1 {
 			port_id = <2>;
-			mdiobus = <&mdio_bitbang>;
+			mdiobus = <&mdio1>;
 			forced-speed = <1000>;
 			forced-duplex = <1>;
 		};
