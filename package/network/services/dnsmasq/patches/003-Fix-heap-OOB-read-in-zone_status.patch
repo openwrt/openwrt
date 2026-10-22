@@ -1,0 +1,45 @@
+From f90df6c532fdcb3d0f9ed2d60cd53fd85856f2d3 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?=E6=9C=B1=E8=80=80=E8=BE=89?= <zhuyaohui@stu.scu.edu.cn>
+Date: Thu, 1 Oct 2026 15:34:53 +0100
+Subject: [PATCH] Fix heap OOB read in zone_status()
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Credit to Yaohui Zhu (朱耀辉) for finding this.
+
+CNVD-C-2026-590208 applies.
+
+Summary
+
+zone_status() (src/dnssec.c:1867 in the 2.93 release; the same
+construct is in current git master, 2.93-29-gad92083) computes
+&name[name_start-2] in its backtrack loop without checking that
+name_start >= 2. When name_start == 1 the loop starts at name[-1]
+and dereferences it immediately; the guard (p != name) can never
+fire for p < name, so the scan walks backwards through the heap
+until it finds a '.' byte or hits an unmapped page. Under ASAN this
+is a deterministic heap-buffer-overflow READ; on a plain build the
+process dies with SIGSEGV.
+
+A single, ordinary query plus one crafted upstream reply is enough.
+My reproducer starts the ASAN binary with --dnssec and the root
+trust anchor, with a mock upstream; on the first query the mock
+answers with a captured crafted reply (a response carrying RRSIG(46),
+NSEC(47) with an empty/root owner name, and NSEC3(50) records in the
+authority section) and the process crashes on the first query.
+---
+ src/dnssec.c | 2 +-
+ 1 files changed, 1 insertion(+), 1 deletion(-)
+
+--- a/src/dnssec.c
++++ b/src/dnssec.c
+@@ -1927,7 +1927,7 @@ static int zone_status(char *name, int c
+ 	    return STAT_INSECURE;
+ 	}
+ 
+-      if (name_start == 0)
++      if (name_start <= 1)
+ 	break;
+ 
+       for (p = &name[name_start-2]; (*p != '.') && (p != name); p--);
