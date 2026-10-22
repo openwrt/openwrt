@@ -2105,7 +2105,10 @@ static void ppe_mib_work(struct work_struct *work)
 						 mib_work);
 	struct dsa_port *dp;
 
-	dsa_switch_for_each_user_port(dp, &priv->ds) {
+	/* The CPU port has no MIB to fold, but its queue counters wrap like
+	 * any other port's.
+	 */
+	dsa_switch_for_each_available_port(dp, &priv->ds) {
 		spin_lock_bh(&priv->mib_lock);
 		ppe_mib_fold(priv, dp->index);
 		ppe_port_qstats(priv, dp->index, NULL,
