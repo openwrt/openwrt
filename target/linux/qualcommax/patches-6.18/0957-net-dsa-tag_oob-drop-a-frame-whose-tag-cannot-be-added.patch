@@ -1,0 +1,22 @@
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Subject: [PATCH] net: dsa: tag_oob: drop a frame whose tag cannot be added
+
+skb_ext_add() allocates with GFP_ATOMIC and returns NULL when that
+fails, and oob_tag_xmit() then writes the port through the NULL
+pointer. Return NULL instead, so the core drops the frame.
+
+Assisted-by: Claude:claude-opus-5-5
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+---
+--- a/net/dsa/tag_oob.c
++++ b/net/dsa/tag_oob.c
+@@ -16,6 +16,9 @@ static struct sk_buff *oob_tag_xmit(stru
+ 	struct dsa_oob_tag_info *tag_info = skb_ext_add(skb, SKB_EXT_DSA_OOB);
+ 	struct dsa_port *dp = dsa_user_to_port(dev);
+ 
++	if (!tag_info)
++		return NULL;
++
+ 	tag_info->port = dp->index;
+ 
+ 	return skb;
