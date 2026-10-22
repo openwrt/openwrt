@@ -1953,7 +1953,6 @@ static netdev_tx_t edma_ndo_xmit(struct sk_buff *skb, struct net_device *netdev)
 	struct edma_priv *priv = netdev_priv(netdev);
 	struct edma_queue *q = &priv->q[skb_get_queue_mapping(skb)];
 	const struct edma_soc_data *soc = priv->soc;
-	u32 nhead;
 
 	if (skb->len < ETH_HLEN)
 		goto drop;
@@ -1972,10 +1971,10 @@ static netdev_tx_t edma_ndo_xmit(struct sk_buff *skb, struct net_device *netdev)
 		return NETDEV_TX_OK;
 	}
 
-	nhead = netdev->needed_headroom;
-
-	if ((skb_cloned(skb) || skb_headroom(skb) < nhead) &&
-	    pskb_expand_head(skb, nhead, 0, GFP_ATOMIC))
+	/* Only the preheader is written in front of the frame, so a clone whose
+	 * header is released keeps its head.
+	 */
+	if (skb_cow_head(skb, netdev->needed_headroom))
 		goto drop;
 
 	return edma_ring_xmit(q, netdev, skb);
