@@ -22,10 +22,10 @@
 #define RTL839X_PIE_CUTLINE	9
 #define RTL839X_PIE_L3_RULES	(RTL839X_PIE_CUTLINE * PIE_BLOCK_SIZE - RTL839X_PIE_L3_FIRST)
 
-/* Fasttrack uses blocks 4..15 as VACL; blocks 0..3 retain priority for tc.
- * Split its twelve blocks equally between IPv4 rows and IPv6 row pairs.
+/* Fasttrack uses blocks 2..15 as VACL; blocks 0..1 retain priority for tc.
+ * Blocks 2..9 hold IPv4 rows; blocks 10..15 hold IPv6 row pairs.
  */
-#define RTL930X_PIE_FLOW_FIRST	(4 * PIE_BLOCK_SIZE)
+#define RTL930X_PIE_FLOW_FIRST	(2 * PIE_BLOCK_SIZE)
 #define RTL930X_PIE_FLOW6_FIRST	(10 * PIE_BLOCK_SIZE)
 #define RTL930X_PIE_FLOW_END	(16 * PIE_BLOCK_SIZE)
 
