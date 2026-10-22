@@ -91,6 +91,7 @@ tools-$(CONFIG_USE_RUST_TOOLCHAIN) += rust
 tools-$(CONFIG_BUILD_BINDGEN) += bindgen
 tools-$(CONFIG_USE_CBINDGEN) += cbindgen
 tools-$(CONFIG_USE_CORROSION) += corrosion
+tools-$(if $(CONFIG_USE_RUST_TOOLCHAIN),$(CONFIG_RUST_SCCACHE)) += sccache
 
 # builddir dependencies
 $(curdir)/autoconf/compile := $(curdir)/m4/compile
@@ -122,8 +123,8 @@ $(curdir)/lzma-old/compile := $(curdir)/zlib/compile
 $(curdir)/lzop/compile := $(curdir)/cmake/compile $(curdir)/liblzo/compile
 $(curdir)/llvm-bpf/compile := $(curdir)/cmake/compile
 $(curdir)/rust/compile := $(curdir)/cmake/compile $(curdir)/libdeflate/compile $(curdir)/xz/compile
-$(curdir)/bindgen/compile := $(curdir)/rust/compile $(if $(CONFIG_USE_LLVM_BUILD),$(curdir)/llvm-bpf/compile)
-$(curdir)/cbindgen/compile := $(curdir)/rust/compile
+$(curdir)/bindgen/compile := $(curdir)/rust/compile $(if $(CONFIG_USE_LLVM_BUILD),$(curdir)/llvm-bpf/compile) $(if $(CONFIG_RUST_SCCACHE),$(curdir)/sccache/compile)
+$(curdir)/cbindgen/compile := $(curdir)/rust/compile $(if $(CONFIG_RUST_SCCACHE),$(curdir)/sccache/compile)
 $(curdir)/corrosion/compile := $(curdir)/rust/compile $(curdir)/cmake/compile
 $(curdir)/make-ext4fs/compile := $(curdir)/zlib/compile
 $(curdir)/meson/compile := $(curdir)/ninja/compile
@@ -138,6 +139,7 @@ $(curdir)/padjffs2/compile := $(curdir)/findutils/compile
 $(curdir)/patchelf/compile := $(curdir)/libtool/compile
 $(curdir)/pkgconf/compile := $(curdir)/meson/compile
 $(curdir)/quilt/compile := $(curdir)/autoconf/compile $(curdir)/findutils/compile
+$(curdir)/sccache/compile := $(curdir)/rust/compile
 $(curdir)/sdcc/compile := $(curdir)/bison/compile
 $(curdir)/squashfs3-lzma/compile := $(curdir)/lzma-old/compile
 $(curdir)/squashfs4/compile := $(curdir)/xz/compile $(curdir)/zlib/compile

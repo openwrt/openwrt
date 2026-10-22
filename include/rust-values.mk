@@ -40,6 +40,16 @@ else ifdef CONFIG_USE_LLVM_PREBUILT
   RUST_CLANG_PATH:=$(TOPDIR)/llvm-bpf/bin/clang
 endif
 
+ifeq ($(CONFIG_USE_RUST_TOOLCHAIN)$(CONFIG_RUST_SCCACHE),yy)
+  RUST_SCCACHE_DIR:=$(or $(call qstrip,$(CONFIG_RUST_SCCACHE_DIR)),$(TOPDIR)/.sccache)
+  RUST_SCCACHE_VARS = \
+	RUSTC_WRAPPER=$(STAGING_DIR_HOST)/bin/sccache \
+	SCCACHE_DIR=$(RUST_SCCACHE_DIR) \
+	SCCACHE_CONF=$(RUST_SCCACHE_DIR)/config \
+	SCCACHE_CACHED_CONF=$(RUST_SCCACHE_DIR)/cached-config \
+	SCCACHE_SERVER_UDS=$(TMP_DIR)/sccache.sock
+endif
+
 # Rust Environmental Vars
 RUSTC_HOST_SUFFIX:=$(word 4, $(subst -, ,$(GNU_HOST_NAME)))
 RUSTC_HOST_ARCH:=$(HOST_ARCH)-unknown-linux-$(RUSTC_HOST_SUFFIX)
@@ -299,7 +309,8 @@ ifdef CONFIG_USE_RUST_TOOLCHAIN
   RUST_TARGET_WRAPPER_VARS = \
 	RUSTC_WRAPPER=$(SCRIPT_DIR)/rust-target-wrapper.sh \
 	RUST_TARGET_WRAPPER_FLAGS="$(RUST_UNSTABLE_FLAGS)" \
-	RUST_TARGET_WRAPPER_LTO_FLAGS="$(if $(filter 1,$(RUST_LIBSTD_DYNAMIC)),-Zdylib-lto)"
+	RUST_TARGET_WRAPPER_LTO_FLAGS="$(if $(filter 1,$(RUST_LIBSTD_DYNAMIC)),-Zdylib-lto)" \
+	RUST_TARGET_WRAPPER_NEXT=$(if $(RUST_SCCACHE_VARS),$(STAGING_DIR_HOST)/bin/sccache)
 endif
 
 RUST_PKG_DEPENDS = $(RUST_ARCH_DEPENDS) \
@@ -308,6 +319,7 @@ RUST_PKG_DEPENDS = $(RUST_ARCH_DEPENDS) \
 		+RUST_PREFER_DYNAMIC:libstd-rust)
 
 CARGO_HOST_CONFIG_VARS= \
+	$(RUST_SCCACHE_VARS) \
 	RUSTC=$(RUSTC) \
 	CARGO_HOME=$(CARGO_HOME)
 
@@ -317,6 +329,7 @@ CARGO_HOST_PROFILE:=release
 # do, or one inheriting from it. CONFIG_DEBUG gives it the settings of dev;
 # these take precedence over the profile settings of the package.
 CARGO_PKG_CONFIG_VARS= \
+	$(RUST_SCCACHE_VARS) \
 	RUSTC=$(RUSTC) \
 	CARGO_BUILD_TARGET=$(RUSTC_TARGET_ARCH) \
 	CARGO_HOME=$(CARGO_HOME) \
