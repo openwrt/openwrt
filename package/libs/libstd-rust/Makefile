@@ -51,6 +51,7 @@ endef
 
 define Build/Compile
 	+cd $(PKG_BUILD_DIR) && \
+	$(RUST_SCCACHE_VARS) \
 	RUSTC=$(RUSTC) \
 	CARGO_HOME=$(CARGO_HOME) \
 	RUSTC_BOOTSTRAP=1 \

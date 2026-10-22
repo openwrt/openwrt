@@ -144,6 +144,22 @@ menuconfig DEVEL
 		  Store ccache in this directory.
 		  If not set, uses './.ccache'
 
+	config RUST_SCCACHE
+		bool "Use sccache for Rust" if DEVEL
+		depends on USE_RUST_TOOLCHAIN
+		help
+		  Rust compiler cache; see https://github.com/mozilla/sccache
+		  Builds sccache in tools/ and wraps the rustc invocations of
+		  cargo with it.
+
+	config RUST_SCCACHE_DIR
+		string "Set sccache directory" if RUST_SCCACHE
+		depends on RUST_SCCACHE
+		default ""
+		help
+		  Store the sccache cache in this directory.
+		  If not set, uses the sccache default (~/.cache/sccache).
+
 	config KERNEL_CFLAGS
 		string "Kernel extra CFLAGS" if DEVEL
 		default "-falign-functions=32" if TARGET_bcm53xx
