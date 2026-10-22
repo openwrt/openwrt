@@ -1290,8 +1290,7 @@ static int ppe_acl_rule_add(struct qca_ppe_priv *priv, int port,
 	}
 
 	/* The meter index comes out of the same lock the entries do: the
-	 * small-packet parameters reach the table without rtnl, and so does
-	 * ethtool's n-tuple insert.
+	 * small-packet parameters reach the table without rtnl.
 	 */
 	mutex_lock(&priv->acl_lock);
 	ret = ppe_acl_parse_action(priv, rule, extack, family, r);
