@@ -1,12 +1,16 @@
 --- a/drivers/net/ethernet/qualcomm/Kconfig
 +++ b/drivers/net/ethernet/qualcomm/Kconfig
-@@ -75,6 +75,13 @@ config QCOM_PPE
+@@ -75,6 +75,17 @@ config QCOM_PPE
  	  To compile this driver as a module, choose M here. The module
  	  will be called qcom-ppe.
  
 +config QCOM_80211AX_PPE
 +	tristate "Qualcomm 802.11ax PPE switch driver"
++	depends on NET_DSA
++	select NET_DSA_TAG_OOB
++	select PCS_QCA_UNIPHY
 +	select PHYLINK
++	select REGMAP_MMIO
 +	help
 +	  Driver for Qualcomm 802.11ax PPE (Packet Processing Engine) switches.
 +
