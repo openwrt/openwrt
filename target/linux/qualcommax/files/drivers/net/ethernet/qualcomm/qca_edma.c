@@ -870,8 +870,13 @@ static u16 edma_tx_ndesc(const struct sk_buff *skb)
 	const struct sk_buff *seg;
 	u16 n = skb_shinfo(skb)->nr_frags + 1;
 
-	skb_walk_frags(skb, seg)
+	/* Each segment misses twice, on the skb and on its shared info, so
+	 * the next one is fetched meanwhile.
+	 */
+	skb_walk_frags(skb, seg) {
+		prefetch(seg->next);
 		n += !!skb_headlen(seg) + skb_shinfo(seg)->nr_frags;
+	}
 
 	return n;
 }
