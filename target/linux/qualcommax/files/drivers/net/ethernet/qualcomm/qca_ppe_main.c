@@ -2219,7 +2219,7 @@ static void qca_ppe_get_eth_mac_stats(struct dsa_switch *ds, int port,
 	struct qca_ppe_priv *priv = ds_to_priv(ds);
 	struct qca_ppe_mib_stats *stats;
 
-	if (port < 1 || port >= ds->num_ports)
+	if (port < 1)
 		return;
 
 	stats = ppe_port_mib(priv, port);
@@ -2256,7 +2256,7 @@ static void qca_ppe_get_eth_ctrl_stats(struct dsa_switch *ds, int port,
 	struct qca_ppe_priv *priv = ds_to_priv(ds);
 	struct qca_ppe_mib_stats *stats;
 
-	if (port < 1 || port >= ds->num_ports)
+	if (port < 1)
 		return;
 
 	stats = ppe_port_mib(priv, port);
@@ -2293,7 +2293,7 @@ qca_ppe_get_rmon_stats(struct dsa_switch *ds, int port,
 
 	*ranges = qca_ppe_rmon_ranges;
 
-	if (port < 1 || port >= ds->num_ports)
+	if (port < 1)
 		return;
 
 	stats = ppe_port_mib(priv, port);
@@ -2329,7 +2329,7 @@ static void qca_ppe_get_pause_stats(struct dsa_switch *ds, int port,
 	struct qca_ppe_priv *priv = ds_to_priv(ds);
 	struct qca_ppe_mib_stats *stats;
 
-	if (port < 1 || port >= ds->num_ports)
+	if (port < 1)
 		return;
 
 	stats = ppe_port_mib(priv, port);
@@ -3016,6 +3016,13 @@ static void ppe_ctrlpkt_init(struct qca_ppe_priv *priv)
 	regmap_write(priv->regmap, PPE_APP_CTRL(1) + 8, trap);
 }
 
+/* The binding allows either name, as the DSA core does. */
+static struct device_node *ppe_ports_node(struct device_node *np)
+{
+	return of_get_child_by_name(np, "ports") ?:
+	       of_get_child_by_name(np, "ethernet-ports");
+}
+
 static void ppe_ipq6018_mux_setup(struct qca_ppe_priv *priv)
 {
 	struct device_node *ports_np, *port_np;
@@ -3024,7 +3031,7 @@ static void ppe_ipq6018_mux_setup(struct qca_ppe_priv *priv)
 	u32 port;
 	int ret;
 
-	ports_np = of_get_child_by_name(priv->ds.dev->of_node, "ports");
+	ports_np = ppe_ports_node(priv->ds.dev->of_node);
 
 	for_each_available_child_of_node(ports_np, port_np) {
 		ret = of_property_read_u32(port_np, "reg", &port);
@@ -3077,7 +3084,7 @@ static int qca_ppe_probe(struct platform_device *pdev)
 	if (!data)
 		return -ENODEV;
 
-	ports = of_get_child_by_name(pdev->dev.of_node, "ports");
+	ports = ppe_ports_node(pdev->dev.of_node);
 	if (!ports)
 		return -ENODEV;
 	of_node_put(ports);
