@@ -4,6 +4,7 @@
  * Copyright (c) 2023-2024, Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
+#include <linux/bitfield.h>
 #include <linux/clk.h>
 #include <linux/ethtool.h>
 #include <linux/hash.h>
@@ -21,6 +22,7 @@
 #include <linux/regmap.h>
 #include <linux/reset.h>
 #include <net/dsa.h>
+#include <net/dst_metadata.h>
 #include <net/netdev_queues.h>
 
 #include "qca_edma.h"
@@ -720,6 +722,17 @@ static u32 edma_clean_rx(struct edma_queue *q, int budget)
 			     skb->data - frame);
 		edma_rx_hash(netdev, skb, rxph);
 
+		if (src_port < EDMA_PORTS && netdev_uses_dsa(netdev) &&
+		    !FIELD_GET(EDMA_RXPH_CPU_CODE, le32_to_cpu(rxph->rx_pre4))) {
+			skb_dst_set_noref(skb, &priv->port_md[src_port]->dst);
+			dev_sw_netstats_rx_add(priv->netdev, pkt_len);
+			napi_gro_receive(&q->napi, skb);
+			goto next;
+		}
+
+		/* A trapped frame is the bridge's to forward, so it goes
+		 * through the tagger, which leaves it unmarked.
+		 */
 		tag_info = skb_ext_add(skb, SKB_EXT_DSA_OOB);
 		if (unlikely(!tag_info)) {
 			dev_kfree_skb_any(skb);
@@ -2305,6 +2318,37 @@ static int edma_get_mac_address(struct net_device *netdev,
 	return -ENODEV;
 }
 
+static void edma_port_md_free(struct edma_priv *priv)
+{
+	unsigned int i;
+
+	for (i = 0; i < EDMA_PORTS; i++) {
+		if (priv->port_md[i])
+			metadata_dst_free(priv->port_md[i]);
+		priv->port_md[i] = NULL;
+	}
+}
+
+static int edma_port_md_alloc(struct edma_priv *priv)
+{
+	unsigned int i;
+
+	for (i = 0; i < EDMA_PORTS; i++) {
+		struct metadata_dst *md;
+
+		md = metadata_dst_alloc(0, METADATA_HW_PORT_MUX, GFP_KERNEL);
+		if (!md) {
+			edma_port_md_free(priv);
+			return -ENOMEM;
+		}
+
+		md->u.port_info.port_id = i;
+		priv->port_md[i] = md;
+	}
+
+	return 0;
+}
+
 static int edma_probe(struct platform_device *pdev)
 {
 	struct page_pool *pools[EDMA_MAX_QUEUES];
@@ -2427,6 +2471,10 @@ static int edma_probe(struct platform_device *pdev)
 	for (i = 0; i < nq; i++)
 		netif_napi_add(netdev, &priv->q[i].napi, edma_napi);
 
+	ret = edma_port_md_alloc(priv);
+	if (ret)
+		goto err_md;
+
 	ret = edma_irq_init(priv);
 	if (ret)
 		goto err_irq;
@@ -2445,6 +2493,8 @@ static int edma_probe(struct platform_device *pdev)
 	return 0;
 
 err_irq:
+	edma_port_md_free(priv);
+err_md:
 	for (i = 0; i < nq; i++)
 		netif_napi_del(&priv->q[i].napi);
 	edma_hw_stop(priv);
@@ -2470,6 +2520,7 @@ static void edma_remove(struct platform_device *pdev)
 	edma_hw_stop(priv);
 	edma_rings_drain(priv);
 	edma_page_pools_destroy(pools, priv->num_queues);
+	edma_port_md_free(priv);
 }
 
 static const struct edma_soc_data ipq60xx_data = {
