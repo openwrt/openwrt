@@ -13,11 +13,9 @@ Link: https://lists.infradead.org/pipermail/ath11k/2026-January/008113.html
 Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
 Signed-off-by: Satoshi Ikeuchi <satosan.ikm@gmail.com>
 ---
-diff --git a/drivers/net/wireless/ath/ath11k/ahb.c b/drivers/net/wireless/ath/ath11k/ahb.c
-index 8dfe9b40c126..e68bcc6b6069 100644
 --- a/drivers/net/wireless/ath/ath11k/ahb.c
 +++ b/drivers/net/wireless/ath/ath11k/ahb.c
-@@ -25,6 +25,9 @@ static const struct of_device_id ath11k_ahb_of_match[] = {
+@@ -25,6 +25,9 @@ static const struct of_device_id ath11k_
  	/* TODO: Should we change the compatible string to something similar
  	 * to one that ath10k uses?
  	 */
@@ -27,7 +25,7 @@ index 8dfe9b40c126..e68bcc6b6069 100644
  	{ .compatible = "qcom,ipq8074-wifi",
  	  .data = (void *)ATH11K_HW_IPQ8074,
  	},
-@@ -1117,6 +1120,7 @@ static int ath11k_ahb_probe(struct platform_device *pdev)
+@@ -1184,6 +1187,7 @@ static int ath11k_ahb_probe(struct platf
  	hw_rev = (uintptr_t)device_get_match_data(&pdev->dev);
  
  	switch (hw_rev) {
@@ -35,15 +33,12 @@ index 8dfe9b40c126..e68bcc6b6069 100644
  	case ATH11K_HW_IPQ8074:
  	case ATH11K_HW_IPQ6018_HW10:
  	case ATH11K_HW_IPQ5018_HW10:
-diff --git a/drivers/net/wireless/ath/ath11k/core.c b/drivers/net/wireless/ath/ath11k/core.c
-index 812686173ac8..fed888414005 100644
 --- a/drivers/net/wireless/ath/ath11k/core.c
 +++ b/drivers/net/wireless/ath/ath11k/core.c
-@@ -40,6 +40,88 @@ module_param_named(ftm_mode, ath11k_ftm_mode, bool, 0444);
- MODULE_PARM_DESC(ftm_mode, "Boots up in factory test mode");
+@@ -40,6 +40,88 @@ MODULE_PARM_DESC(ftm_mode, "Boots up in
  
  static struct ath11k_hw_params ath11k_hw_params[] = {
-+	{
+ 	{
 +		.hw_rev = ATH11K_HW_IPQ9574,
 +		.name = "ipq9574",
 +		.fw = {
@@ -125,14 +120,13 @@ index 812686173ac8..fed888414005 100644
 +		.support_dual_stations = false,
 +		.pdev_suspend = false,
 +	},
- 	{
++	{
  		.hw_rev = ATH11K_HW_IPQ8074,
  		.name = "ipq8074 hw2.0",
-diff --git a/drivers/net/wireless/ath/ath11k/core.h b/drivers/net/wireless/ath/ath11k/core.h
-index e8780b05ce11..9a4acde3acfa 100644
+ 		.fw = {
 --- a/drivers/net/wireless/ath/ath11k/core.h
 +++ b/drivers/net/wireless/ath/ath11k/core.h
-@@ -142,6 +142,7 @@ struct ath11k_skb_rxcb {
+@@ -146,6 +146,7 @@ struct ath11k_skb_rxcb {
  };
  
  enum ath11k_hw_rev {
@@ -140,11 +134,9 @@ index e8780b05ce11..9a4acde3acfa 100644
  	ATH11K_HW_IPQ8074,
  	ATH11K_HW_QCA6390_HW20,
  	ATH11K_HW_IPQ6018_HW10,
-diff --git a/drivers/net/wireless/ath/ath11k/hw.c b/drivers/net/wireless/ath/ath11k/hw.c
-index caa6dc12a790..6862b718b004 100644
 --- a/drivers/net/wireless/ath/ath11k/hw.c
 +++ b/drivers/net/wireless/ath/ath11k/hw.c
-@@ -34,6 +34,17 @@ static u8 ath11k_hw_ipq6018_mac_from_pdev_id(int pdev_idx)
+@@ -34,6 +34,17 @@ static u8 ath11k_hw_ipq6018_mac_from_pde
  	return pdev_idx;
  }
  
@@ -162,7 +154,7 @@ index caa6dc12a790..6862b718b004 100644
  static void ath11k_hw_ipq8074_tx_mesh_enable(struct ath11k_base *ab,
  					     struct hal_tcl_data_cmd *tcl_cmd)
  {
-@@ -900,6 +911,46 @@ static u32 ath11k_hw_wcn6750_get_tcl_ring_selector(struct sk_buff *skb)
+@@ -900,6 +911,46 @@ static u32 ath11k_hw_wcn6750_get_tcl_rin
  	return skb_get_hash(skb);
  }
  
@@ -209,11 +201,9 @@ index caa6dc12a790..6862b718b004 100644
  const struct ath11k_hw_ops ipq8074_ops = {
  	.get_hw_mac_from_pdev_id = ath11k_hw_ipq8074_mac_from_pdev_id,
  	.wmi_init_config = ath11k_init_wmi_config_ipq8074,
-diff --git a/drivers/net/wireless/ath/ath11k/hw.h b/drivers/net/wireless/ath/ath11k/hw.h
-index 52d9f4c13b13..0ea36c8ebb66 100644
 --- a/drivers/net/wireless/ath/ath11k/hw.h
 +++ b/drivers/net/wireless/ath/ath11k/hw.h
-@@ -273,6 +273,7 @@ struct ath11k_hw_ops {
+@@ -281,6 +281,7 @@ struct ath11k_hw_ops {
  	u32 (*get_ring_selector)(struct sk_buff *skb);
  };
  

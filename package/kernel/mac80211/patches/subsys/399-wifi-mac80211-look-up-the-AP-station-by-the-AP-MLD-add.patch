@@ -1,5 +1,6 @@
+From abb220a1ae0e74e2339ace16b665ee272136066a Mon Sep 17 00:00:00 2001
 From: Felix Fietkau <nbd@nbd.name>
-Date: Mon, 08 Sep 2026 03:40:00 +0000
+Date: Tue, 8 Sep 2026 03:40:00 +0000
 Subject: [PATCH] wifi: mac80211: look up the AP station by the AP MLD address
 
 A station interface stores the station of its AP under
@@ -23,6 +24,11 @@ Look up the station by vif.cfg.ap_addr, which is correct in both cases.
 
 Signed-off-by: Felix Fietkau <nbd@nbd.name>
 ---
+ net/mac80211/cfg.c     | 2 +-
+ net/mac80211/ethtool.c | 2 +-
+ net/mac80211/iface.c   | 2 +-
+ 3 files changed, 3 insertions(+), 3 deletions(-)
+
 --- a/net/mac80211/cfg.c
 +++ b/net/mac80211/cfg.c
 @@ -285,7 +285,7 @@ static int ieee80211_change_iface(struct
@@ -34,17 +40,6 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		if (sta)
  			drv_sta_set_4addr(local, sdata, &sta->sta,
  					  params->use_4addr);
---- a/net/mac80211/iface.c
-+++ b/net/mac80211/iface.c
-@@ -1028,7 +1028,7 @@ static int ieee80211_netdev_fill_forward
- 			}
- 		}
- 
--		sta = sta_info_get(sdata, sdata->deflink.u.mgd.bssid);
-+		sta = sta_info_get(sdata, sdata->vif.cfg.ap_addr);
- 		break;
- 	default:
- 		goto out;
 --- a/net/mac80211/ethtool.c
 +++ b/net/mac80211/ethtool.c
 @@ -109,7 +109,7 @@ static void ieee80211_get_stats(struct n
@@ -56,3 +51,14 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  		if (!(sta && !WARN_ON(sta->sdata->dev != dev)))
  			goto do_survey;
+--- a/net/mac80211/iface.c
++++ b/net/mac80211/iface.c
+@@ -1035,7 +1035,7 @@ static int ieee80211_netdev_fill_forward
+ 			}
+ 		}
+ 
+-		sta = sta_info_get(sdata, sdata->deflink.u.mgd.bssid);
++		sta = sta_info_get(sdata, sdata->vif.cfg.ap_addr);
+ 		break;
+ 	default:
+ 		goto out;
