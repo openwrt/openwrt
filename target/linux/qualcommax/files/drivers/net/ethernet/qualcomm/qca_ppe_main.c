@@ -412,35 +412,25 @@ static u32 ppe_fdb_next_cmd_id(u32 *counter)
 	return *counter;
 }
 
-static void ppe_fdb_encode(const unsigned char *addr, int port, u32 vsi,
-			   bool is_static, u32 *data0, u32 *data1, u32 *data2)
+static void ppe_fdb_mac_words(const unsigned char *addr, u32 *data0,
+			      u32 *data1)
 {
 	*data0 = (addr[2] << 24) | (addr[3] << 16) | (addr[4] << 8) | addr[5];
-
 	*data1 = (addr[0] << 8) | addr[1];
-	*data1 |= PPE_FDB_DATA1_VALID | PPE_FDB_DATA1_LKP_VALID;
-	*data1 |= FIELD_PREP(PPE_FDB_DATA1_VSI, vsi);
-	*data1 |= FIELD_PREP(PPE_FDB_DATA1_DST_LO, port);
-
-	*data2 = FIELD_PREP(PPE_FDB_DATA2_DST_TYPE, PPE_FDB_DST_PORT) |
-		 FIELD_PREP(PPE_FDB_DATA2_HIT_AGE,
-			    is_static ? PPE_FDB_AGE_STATIC : 2);
 }
 
-static int ppe_fdb_op(struct qca_ppe_priv *priv, const unsigned char *addr,
-		      int port, u32 vsi, u32 op_type)
+/* One add or delete through the op engine, of an entry already encoded. */
+static int ppe_fdb_write(struct qca_ppe_priv *priv, const u32 *data,
+			 u32 op_type)
 {
-	u32 data0, data1, data2, cmd_id;
+	u32 cmd_id;
 	int ret;
-
-	ppe_fdb_encode(addr, port, vsi, op_type == PPE_FDB_OP_ADD,
-		       &data0, &data1, &data2);
 
 	spin_lock_bh(&priv->fdb_lock);
 
-	regmap_write(priv->regmap, PPE_FDB_OP_DATA0, data0);
-	regmap_write(priv->regmap, PPE_FDB_OP_DATA1, data1);
-	regmap_write(priv->regmap, PPE_FDB_OP_DATA2, data2);
+	regmap_write(priv->regmap, PPE_FDB_OP_DATA0, data[0]);
+	regmap_write(priv->regmap, PPE_FDB_OP_DATA1, data[1]);
+	regmap_write(priv->regmap, PPE_FDB_OP_DATA2, data[2]);
 
 	cmd_id = ppe_fdb_next_cmd_id(&priv->fdb_cmd_id);
 	regmap_write(priv->regmap, PPE_FDB_OP,
@@ -453,6 +443,30 @@ static int ppe_fdb_op(struct qca_ppe_priv *priv, const unsigned char *addr,
 	spin_unlock_bh(&priv->fdb_lock);
 
 	return ret;
+}
+
+static void ppe_fdb_encode(const unsigned char *addr, int port, u32 vsi,
+			   bool is_static, u32 *data0, u32 *data1, u32 *data2)
+{
+	ppe_fdb_mac_words(addr, data0, data1);
+	*data1 |= PPE_FDB_DATA1_VALID | PPE_FDB_DATA1_LKP_VALID;
+	*data1 |= FIELD_PREP(PPE_FDB_DATA1_VSI, vsi);
+	*data1 |= FIELD_PREP(PPE_FDB_DATA1_DST_LO, port);
+
+	*data2 = FIELD_PREP(PPE_FDB_DATA2_DST_TYPE, PPE_FDB_DST_PORT) |
+		 FIELD_PREP(PPE_FDB_DATA2_HIT_AGE,
+			    is_static ? PPE_FDB_AGE_STATIC : 2);
+}
+
+static int ppe_fdb_op(struct qca_ppe_priv *priv, const unsigned char *addr,
+		      int port, u32 vsi, u32 op_type)
+{
+	u32 data[3];
+
+	ppe_fdb_encode(addr, port, vsi, op_type == PPE_FDB_OP_ADD,
+		       &data[0], &data[1], &data[2]);
+
+	return ppe_fdb_write(priv, data, op_type);
 }
 
 static int ppe_fdb_read_raw(struct qca_ppe_priv *priv, u32 index, u32 *data)
@@ -536,9 +550,7 @@ static int ppe_fdb_flush(struct qca_ppe_priv *priv)
 static void ppe_fdb_encode_mcast(const unsigned char *addr, u32 portmap,
 				 u32 vsi, u32 *data0, u32 *data1, u32 *data2)
 {
-	*data0 = (addr[2] << 24) | (addr[3] << 16) | (addr[4] << 8) | addr[5];
-
-	*data1 = (addr[0] << 8) | addr[1];
+	ppe_fdb_mac_words(addr, data0, data1);
 	*data1 |= PPE_FDB_DATA1_VALID | PPE_FDB_DATA1_LKP_VALID;
 	*data1 |= FIELD_PREP(PPE_FDB_DATA1_VSI, vsi);
 	*data1 |= FIELD_PREP(PPE_FDB_DATA1_DST_LO, portmap);
@@ -556,11 +568,10 @@ static int ppe_fdb_lookup(struct qca_ppe_priv *priv,
 
 	spin_lock_bh(&priv->fdb_lock);
 
-	regmap_write(priv->regmap, PPE_FDB_RD_OP_DATA0,
-		     (addr[2] << 24) | (addr[3] << 16) | (addr[4] << 8) | addr[5]);
+	ppe_fdb_mac_words(addr, &data[0], &data[1]);
+	regmap_write(priv->regmap, PPE_FDB_RD_OP_DATA0, data[0]);
 	regmap_write(priv->regmap, PPE_FDB_RD_OP_DATA1,
-		     ((addr[0] << 8) | addr[1]) |
-		     FIELD_PREP(PPE_FDB_DATA1_VSI, vsi));
+		     data[1] | FIELD_PREP(PPE_FDB_DATA1_VSI, vsi));
 	regmap_write(priv->regmap, PPE_FDB_RD_OP_DATA2, 0);
 
 	cmd_id = ppe_fdb_next_cmd_id(&priv->fdb_rd_cmd_id);
@@ -595,28 +606,11 @@ static int ppe_fdb_mcast_op(struct qca_ppe_priv *priv,
 			    const unsigned char *addr, u32 portmap,
 			    u32 vsi, u32 op_type)
 {
-	u32 data0, data1, data2, cmd_id;
-	int ret;
+	u32 data[3];
 
-	ppe_fdb_encode_mcast(addr, portmap, vsi, &data0, &data1, &data2);
+	ppe_fdb_encode_mcast(addr, portmap, vsi, &data[0], &data[1], &data[2]);
 
-	spin_lock_bh(&priv->fdb_lock);
-
-	regmap_write(priv->regmap, PPE_FDB_OP_DATA0, data0);
-	regmap_write(priv->regmap, PPE_FDB_OP_DATA1, data1);
-	regmap_write(priv->regmap, PPE_FDB_OP_DATA2, data2);
-
-	cmd_id = ppe_fdb_next_cmd_id(&priv->fdb_cmd_id);
-	regmap_write(priv->regmap, PPE_FDB_OP,
-		     FIELD_PREP(PPE_FDB_OP_CMD_ID, cmd_id) |
-		     FIELD_PREP(PPE_FDB_OP_TYPE, op_type) |
-		     FIELD_PREP(PPE_FDB_OP_HASH_BLOCK, 3));
-
-	ret = ppe_fdb_op_wait(priv, PPE_FDB_OP_RSLT, cmd_id, NULL);
-
-	spin_unlock_bh(&priv->fdb_lock);
-
-	return ret;
+	return ppe_fdb_write(priv, data, op_type);
 }
 
 static enum dsa_tag_protocol
@@ -1222,9 +1216,12 @@ static u16 ppe_fdb_vid(struct qca_ppe_priv *priv, u32 vsi)
 	return 0;
 }
 
-static int qca_ppe_port_fdb_add(struct dsa_switch *ds, int port,
-				const unsigned char *addr, u16 vid,
-				struct dsa_db db)
+/* A trunk is named in the destination field of an ordinary entry, so a LAG's
+ * addresses differ from a port's only in the value written there.
+ */
+static int ppe_fdb_set(struct dsa_switch *ds, int dst,
+		       const unsigned char *addr, u16 vid, struct dsa_db db,
+		       u32 op_type)
 {
 	struct qca_ppe_priv *priv = ds_to_priv(ds);
 	u32 vsi;
@@ -1235,23 +1232,21 @@ static int qca_ppe_port_fdb_add(struct dsa_switch *ds, int port,
 	if (vsi == PPE_VSI_INVALID)
 		return -EOPNOTSUPP;
 
-	return ppe_fdb_op(priv, addr, port, vsi, PPE_FDB_OP_ADD);
+	return ppe_fdb_op(priv, addr, dst, vsi, op_type);
+}
+
+static int qca_ppe_port_fdb_add(struct dsa_switch *ds, int port,
+				const unsigned char *addr, u16 vid,
+				struct dsa_db db)
+{
+	return ppe_fdb_set(ds, port, addr, vid, db, PPE_FDB_OP_ADD);
 }
 
 static int qca_ppe_port_fdb_del(struct dsa_switch *ds, int port,
 				const unsigned char *addr, u16 vid,
 				struct dsa_db db)
 {
-	struct qca_ppe_priv *priv = ds_to_priv(ds);
-	u32 vsi;
-
-	guard(mutex)(&priv->vlan_lock);
-
-	vsi = ppe_fdb_vsi(priv, vid, db);
-	if (vsi == PPE_VSI_INVALID)
-		return -EOPNOTSUPP;
-
-	return ppe_fdb_op(priv, addr, port, vsi, PPE_FDB_OP_DEL);
+	return ppe_fdb_set(ds, port, addr, vid, db, PPE_FDB_OP_DEL);
 }
 
 static int qca_ppe_port_fdb_dump(struct dsa_switch *ds, int port,
@@ -2727,43 +2722,20 @@ static int qca_ppe_port_lag_change(struct dsa_switch *ds, int port)
 	return 0;
 }
 
-/* A trunk is named in the destination field of an ordinary entry, so the only
- * difference from a per-port address is the value written there.
- */
 static int qca_ppe_lag_fdb_add(struct dsa_switch *ds, struct dsa_lag lag,
 			       const unsigned char *addr, u16 vid,
 			       struct dsa_db db)
 {
-	struct qca_ppe_priv *priv = ds_to_priv(ds);
-	u32 vsi;
-
-	guard(mutex)(&priv->flow_lock);
-	guard(mutex)(&priv->vlan_lock);
-
-	vsi = ppe_fdb_vsi(priv, vid, db);
-	if (vsi == PPE_VSI_INVALID)
-		return -EOPNOTSUPP;
-
-	return ppe_fdb_op(priv, addr, PPE_FDB_DST_TRUNK(lag.id - 1), vsi,
-			  PPE_FDB_OP_ADD);
+	return ppe_fdb_set(ds, PPE_FDB_DST_TRUNK(lag.id - 1), addr, vid, db,
+			   PPE_FDB_OP_ADD);
 }
 
 static int qca_ppe_lag_fdb_del(struct dsa_switch *ds, struct dsa_lag lag,
 			       const unsigned char *addr, u16 vid,
 			       struct dsa_db db)
 {
-	struct qca_ppe_priv *priv = ds_to_priv(ds);
-	u32 vsi;
-
-	guard(mutex)(&priv->flow_lock);
-	guard(mutex)(&priv->vlan_lock);
-
-	vsi = ppe_fdb_vsi(priv, vid, db);
-	if (vsi == PPE_VSI_INVALID)
-		return -EOPNOTSUPP;
-
-	return ppe_fdb_op(priv, addr, PPE_FDB_DST_TRUNK(lag.id - 1), vsi,
-			  PPE_FDB_OP_DEL);
+	return ppe_fdb_set(ds, PPE_FDB_DST_TRUNK(lag.id - 1), addr, vid, db,
+			   PPE_FDB_OP_DEL);
 }
 
 /* No hardware op deletes by port - the vendor walks the table too - so every
