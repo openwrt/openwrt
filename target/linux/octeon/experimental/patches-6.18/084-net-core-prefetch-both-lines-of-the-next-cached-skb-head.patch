@@ -1,0 +1,46 @@
+From: Simon Polack <spolack+git@mailbox.org>
+Subject: [PATCH] net: core: prefetch both lines of the next cached skb head
+
+EXPERIMENTAL, showcase only, not for merging: it needs proper testing.
+It changes generic kernel code but was only measured with the octeon_pip
+driver of #26060.
+The build does not apply it: it sits in target/linux/octeon/experimental/.
+
+The build clears the head up to tail (two 128-byte lines) and the
+receive path reads the hash and the header fields of the second line
+back (opip_poll_skb: 0.6 L1 misses per packet at that read on the P2
+image). Prefetch the second line of the next cached head too.
+
+Measured on an EdgeRouter 4 (CN7030, 4 cores), octeon3 subtarget (CN63XXP1
+off), octeon_pip driver, one boot per image, 64-byte single-flow floods
+in kpps, on 2026-10-21.
+Target: opip_poll_skb() reading the second skb line: 0.68 -> 0.06 L1 misses per packet (flood1).
+Step P4 -> P5 (083-087 together, with 085, which was dropped): flood1
++3.0 %, fw4 NAT +2.3 %, fw4+flowtable +2.8 %.
+This patch, extrapolated from its share of the misses the step removed (0.62 of 1.68):
+flood1 ~+1.1 %, fw4 NAT ~+0.8 %, fw4+flowtable ~+1.0 %. Depends on 079.
+These gains are on top of an unpatched octeon3 kernel; the full set and the
+split gain (up to +15 %) are in target/linux/octeon/experimental/README.md.
+
+Signed-off-by: Simon Polack <spolack+git@mailbox.org>
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+---
+--- a/net/core/skbuff.c
++++ b/net/core/skbuff.c
+@@ -309,9 +309,13 @@ static struct sk_buff *napi_skb_cache_ge
+ 	}
+ 
+ 	skb = nc->skb_cache[--nc->skb_count];
+-	/* The next one's first line, for the next build's clear and reads */
+-	if (nc->skb_count)
+-		prefetch(nc->skb_cache[nc->skb_count - 1]);
++	/* The next one's lines, for the next build's clear and reads */
++	if (nc->skb_count) {
++		struct sk_buff *next = nc->skb_cache[nc->skb_count - 1];
++
++		prefetch(next);
++		prefetch(&next->truesize);
++	}
+ 	local_unlock_nested_bh(&napi_alloc_cache.bh_lock);
+ 	kasan_mempool_unpoison_object(skb, kmem_cache_size(net_hotdata.skbuff_cache));
+ 
