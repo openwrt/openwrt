@@ -1,11 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-or-later OR MIT
 /* Copyright (c) 2026 Julius Bairaktaris <julius@bairaktaris.de> */
-/* Read-only dumps of the PPE's hardware counters.
- *
- * The driver switches most of these on at probe and reads none of them back,
- * so every question about where a frame stopped has so far been answered with
- * devmem. Nothing here writes hardware, not even the tables the hardware lets
- * a host clear.
+/* Read-only dumps of the PPE's hardware counters, for locating the stage that
+ * stopped a frame. Nothing here writes hardware, not even the tables the
+ * hardware lets a host clear.
  */
 
 #include <linux/bitfield.h>
@@ -58,8 +55,7 @@ DEFINE_SHOW_ATTRIBUTE(ppe_l3_interface);
 
 /* The ingress policer's own view of what it did to a port's traffic. Red is the
  * colour a token-bucket overrun is painted and the packets counted there are
- * the ones it dropped, which until now was inferred from the throughput that
- * came out the other side.
+ * the ones it dropped.
  */
 static int ppe_policer_show(struct seq_file *s, void *data)
 {
@@ -126,8 +122,7 @@ static int ppe_drop_code_show(struct seq_file *s, void *data)
 DEFINE_SHOW_ATTRIBUTE(ppe_drop_code);
 
 /* What each egress queue has transmitted and what it is holding right now.
- * Depth in buffers is the direct readout of standing queue occupancy, which
- * has so far only been inferred from the latency it causes.
+ * Depth in buffers is the standing queue occupancy.
  */
 static int ppe_queues_show(struct seq_file *s, void *data)
 {

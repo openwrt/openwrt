@@ -25,7 +25,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
 
 --- a/drivers/net/ethernet/airoha/airoha_ppe.c
 +++ b/drivers/net/ethernet/airoha/airoha_ppe.c
-@@ -331,7 +331,7 @@ static int airoha_ppe_foe_entry_prepare(
+@@ -336,7 +336,7 @@ static int airoha_ppe_foe_entry_prepare(
  					struct airoha_foe_entry *hwe,
  					struct net_device *netdev, int type,
  					struct airoha_flow_data *data,
@@ -34,7 +34,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  {
  	u32 qdata = FIELD_PREP(AIROHA_FOE_SHAPER_ID, 0x7f), ports_pad, val;
  	int wlan_etype = -EINVAL, dsa_port = airoha_get_dsa_port(&netdev);
-@@ -386,7 +386,9 @@ static int airoha_ppe_foe_entry_prepare(
+@@ -391,7 +391,9 @@ static int airoha_ppe_foe_entry_prepare(
  			 */
  			channel = dsa_port >= 0 ? dsa_port : port->id;
  			channel = channel % AIROHA_NUM_QOS_CHANNELS;
@@ -45,7 +45,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  
  			val |= FIELD_PREP(AIROHA_FOE_IB2_PSE_PORT, pse_port) |
  			       AIROHA_FOE_IB2_PSE_QOS;
-@@ -1079,10 +1081,10 @@ static int airoha_ppe_flow_offload_repla
+@@ -1084,10 +1086,10 @@ static int airoha_ppe_flow_offload_repla
  	struct airoha_flow_data data = {};
  	struct net_device *odev = NULL;
  	struct flow_action_entry *act;
@@ -57,7 +57,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  
  	if (rhashtable_lookup(&eth->flow_table, &f->cookie,
  			      airoha_flow_table_params))
-@@ -1177,7 +1179,7 @@ static int airoha_ppe_flow_offload_repla
+@@ -1183,7 +1185,7 @@ static int airoha_ppe_flow_offload_repla
  		return -EINVAL;
  
  	err = airoha_ppe_foe_entry_prepare(eth, &hwe, odev, offload_type,

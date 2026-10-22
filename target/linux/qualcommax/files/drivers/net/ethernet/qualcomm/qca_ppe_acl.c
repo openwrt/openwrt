@@ -1290,8 +1290,7 @@ static int ppe_acl_rule_add(struct qca_ppe_priv *priv, int port,
 	}
 
 	/* The meter index comes out of the same lock the entries do: the
-	 * small-packet parameters reach the table without rtnl, and so does
-	 * ethtool's n-tuple insert.
+	 * small-packet parameters reach the table without rtnl.
 	 */
 	mutex_lock(&priv->acl_lock);
 	ret = ppe_acl_parse_action(priv, rule, extack, family, r);
@@ -1443,14 +1442,13 @@ int qca_ppe_cls_flower_stats(struct dsa_switch *ds, int port,
  * separates acks, handshakes, DNS, VoIP and game traffic from full-size bulk
  * without any marking on the packet; the deep queue a shaper wants for
  * throughput then costs its latency only to the bulk traffic inside it.
- * The default takes the 200-byte G.711 voice frame, the largest of the
- * common voice codecs on the wire, with room for its tunnelled forms;
- * every bulk protocol's data rides at the MTU.
+ * The default takes acks, DNS, voice, game state and latency probes, and
+ * stays under a full-size segment on any path whose MSS is above 1000.
  *
  * The priority is capped at 7: the slots above sit on the port's second SP
  * beside the multicast queues.
  */
-static ushort ppe_small_pkt_len = 256;
+static ushort ppe_small_pkt_len = 1000;
 static ushort ppe_small_pkt_prio = 5;
 
 /* One PPE per SoC; the parameter store needs the instance back. */
