@@ -378,6 +378,7 @@ define KernelPackage/phy-ax88796b
    DEPENDS:=+kmod-libphy
    FILES:=$(LINUX_DIR)/drivers/net/phy/ax88796b.ko
    AUTOLOAD:=$(call AutoProbe,ax88796b)
+   DEFAULT_VARIANT:=1
 endef
 
 define KernelPackage/phy-ax88796b/description
@@ -386,6 +387,27 @@ define KernelPackage/phy-ax88796b/description
 endef
 
 $(eval $(call KernelPackage,phy-ax88796b))
+
+
+define KernelPackage/phy-ax88796b-rust
+   SUBMENU:=$(NETWORK_DEVICES_MENU)
+   TITLE:=Asix PHY driver written in Rust
+   KCONFIG:= \
+	CONFIG_AX88796B_RUST_PHY \
+	CONFIG_PHYLIB=y \
+	CONFIG_RUST_PHYLIB_ABSTRACTIONS=y
+   DEPENDS:=@KERNEL_RUST
+   PROVIDES:=kmod-phy-ax88796b
+   FILES:=$(LINUX_DIR)/drivers/net/phy/ax88796b_rust.ko
+   AUTOLOAD:=$(call AutoProbe,ax88796b_rust)
+endef
+
+define KernelPackage/phy-ax88796b-rust/description
+   The Rust reference driver for the Asix Electronics PHYs, equivalent to
+   kmod-phy-ax88796b and installable in its place.
+endef
+
+$(eval $(call KernelPackage,phy-ax88796b-rust))
 
 
 define KernelPackage/phy-broadcom
