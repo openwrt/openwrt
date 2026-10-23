@@ -1,0 +1,62 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Sun, 20 Sep 2026 18:40:07 +0100
+Subject: [PATCH 1/2] signal, instance: don't run procd's handlers after fork
+
+Signal dispositions survive fork() and are reset only by exec(), so the
+child that instance_start() creates keeps procd's own handlers until
+execvp() succeeds. A SIGSEGV or SIGBUS in that window reaches
+signal_crash(), which reboots the machine, and a SIGTERM reaches
+signal_shutdown(), which runs the shutdown state in a process that is
+not procd and then execs the service anyway. in->proc.pid is recorded
+the moment fork() returns, so instance_stop() and the service signal
+method can both aim at the child while it is still pre-exec. Restore
+the default dispositions as the child's first act, which is what
+execvp() would do moments later.
+
+Fixes: f1bf99b09f66 ("add signal handler")
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+(cherry picked from commit e2010df98d5ef93f0046f3f78bec0982dfdfbb6d)
+---
+ procd.h            |  1 +
+ service/instance.c |  1 +
+ signal.c           | 11 +++++++++++
+ 3 files changed, 13 insertions(+)
+
+--- a/procd.h
++++ b/procd.h
+@@ -51,6 +51,7 @@ void procd_shutdown(int event);
+ void procd_early(void);
+ void procd_preinit(void);
+ void procd_signal(void);
++void procd_signal_reset(void);
+ void procd_signal_preinit(void);
+ void procd_inittab(void);
+ void procd_inittab_run(const char *action);
+--- a/service/instance.c
++++ b/service/instance.c
+@@ -671,6 +671,7 @@ instance_start(struct service_instance *
+ 		return;
+ 
+ 	if (!pid) {
++		procd_signal_reset();
+ 		uloop_done();
+ 		closefd(opipe[0]);
+ 		closefd(epipe[0]);
+--- a/signal.c
++++ b/signal.c
+@@ -104,3 +104,14 @@ void procd_signal(void)
+ 	reboot(RB_DISABLE_CAD);
+ #endif
+ }
++
++void procd_signal_reset(void)
++{
++	struct sigaction s = { 0 };
++	int i;
++
++	s.sa_handler = SIG_DFL;
++
++	for (i = 1; i < _NSIG; i++)
++		sigaction(i, &s, NULL);
++}
