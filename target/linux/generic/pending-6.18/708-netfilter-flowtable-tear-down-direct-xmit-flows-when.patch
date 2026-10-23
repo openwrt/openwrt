@@ -248,7 +248,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  static void nf_flow_offload_gc_step(struct nf_flowtable *flow_table,
  				    struct flow_offload *flow, void *data)
  {
-@@ -572,6 +610,8 @@ static void nf_flow_offload_gc_step(stru
+@@ -577,6 +615,8 @@ static void nf_flow_offload_gc_step(stru
  
  	if (nf_flow_has_expired(flow) ||
  	    nf_ct_is_dying(flow->ct) ||
@@ -287,7 +287,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  			if (path->type == DEV_PATH_PPPOE)
  				memcpy(info->h_dest, path->encap.h_dest, ETH_ALEN);
  			break;
-@@ -163,6 +168,13 @@ static void nft_dev_path_info(const stru
+@@ -164,6 +169,13 @@ static void nft_dev_path_info(const stru
  			case DEV_PATH_BR_VLAN_KEEP:
  				break;
  			}
@@ -301,7 +301,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  			info->xmit_type = FLOW_OFFLOAD_XMIT_DIRECT;
  			break;
  		default:
-@@ -230,6 +242,9 @@ static void nft_dev_forward_path(struct
+@@ -231,6 +243,9 @@ static void nft_dev_forward_path(struct
  	if (info.xmit_type == FLOW_OFFLOAD_XMIT_DIRECT) {
  		memcpy(route->tuple[dir].out.h_source, info.h_source, ETH_ALEN);
  		memcpy(route->tuple[dir].out.h_dest, info.h_dest, ETH_ALEN);
