@@ -30,17 +30,17 @@ Trong này có thể bao gồm những thành phần như xác thực phần c�
 ## Trạng thái hoạt động phần cứng
 
 - [x] WAN Nội bộ IPQ5018
-- [ ] 3x cổng 1GbE Switch Motorcomm YT9215S
+- [x] 3x cổng 1GbE Switch Motorcomm YT9215S
 - [x] Wi-Fi 2.4GHz (SoC)
 - [x] Wi-Fi 5GHz (QCN6102)
 - [x] NAND Flash
-- [ ] Đèn LED (Đỏ/Trắng) *(trạng thái không xác định)*
+- [x] Đèn LED (Đỏ/Trắng)
 - [x] Các nút bấm (Reset/WPS (hay còn gọi là nút Mesh))
 
 ### Các vấn đề đã biết
 
-- YT9215S được nhận diện bằng cách sử dụng bit-banged MDIO, nhưng không phát hiện liên kết trên bất kỳ cổng nào.
-- Đèn LED vẫn chưa hoạt động.
+- Offload không rõ.
+
 
 ## Tài nguyên bên ngoài
 
@@ -121,7 +121,7 @@ Hiện tại, bạn bắt buộc phải sử dụng U-Boot để flash firmware.
 > Đừng bỏ qua bước này.  
 > Bạn có thể nghĩ nó không cần thiết vì bạn không định quay lại "quá khứ đen tối", nhưng tôi đảm bảo rằng firmware stock vẫn hữu ích để khôi phục các cài đặt, driver bị thiếu và để nghiên cứu thêm.
 
-1. Bật nguồn thiết bị và nhấn liên tục phím **Escape (ESC)** để vào giao diện dòng lệnh U-Boot.
+1. Bật nguồn thiết bị và nhấn liên tục phím **Escape (ESC)** để vào giao diện dòng lệnh U-Boot (`bootdelay=1`, nên bắt đầu nhấn ngay khi cấp điện).
 2. Thiết lập các biến môi trường để U-Boot có thể kết nối với mạng cục bộ và tìm máy chủ TFTP của bạn:
    ```sh
    # Điều chỉnh các giá trị này phù hợp với thiết lập của bạn
@@ -170,35 +170,59 @@ Hiện tại, bạn bắt buộc phải sử dụng U-Boot để flash firmware.
 
 ### 1. Flash firmware
 
-1. Xóa firmware cũ, bắt đầu từ `0xd00000` (~13 MB) với kích thước `0xf300000` (~249 MB):
+Rootfs của OpenWrt phải được ghi vào đúng dải NAND mà lệnh `bootipq` của U-Boot stock sử dụng: offset `0xd00000` (~13 MB), kích thước `0x5000000` (80 MB). Đây là kích thước rootfs mà `bootipq` đọc từ SMEM trên board này, nên không được dùng layout cũ 243 MB (`0xf300000`).
+
+1. Xóa rootfs cũ:
    ```
-   nand scrub 0xd00000 0xf300000
+   nand erase 0xd00000 0x5000000
    ```
-   Nếu được nhắc, hãy nhấn `y` rồi nhấn **Enter**.
 2. Đảm bảo bạn đã tải xuống tệp có đuôi `...-qualcommax-ipq50xx-fpt_ax3000cv2-squashfs-factory.ubi` từ trang [Releases](https://github.com/michioxd/openwrt-wf810df/releases/latest). Đổi tên nó để dễ gõ hơn. Ví dụ: `update.ubi`.
-4. Tải image vào bộ nhớ:
+3. Tải image vào bộ nhớ:
    ```
    tftpboot 0x44000000 update.ubi
    ```
-5. Flash vào NAND
+4. Flash vào NAND:
    ```sh
    nand write 0x44000000 0xd00000 ${filesize}
    ```
-   Đợi một chút để quá trình hoàn tất.
+   `${filesize}` được `tftpboot` tự điền bằng kích thước tệp vừa nạp. Đợi một chút để quá trình hoàn tất.
+5. Khởi động OpenWrt:
+   ```
+   bootipq
+   ```
+   Lần boot đầu tiên sau khi flash, U-Boot có thể in `Volume kernel not found` rồi `Failsafe:: Set offset to 0xD00000` trước khi boot; đây là hành vi bình thường của bootloader stock.
 
-### 2. Thiết lập môi trường khởi động
+### 2. Boot argument và autoboot
 
-Sau khi flash image, bạn cần tạo lệnh boot tùy chỉnh cho U-Boot. Lệnh `bootipq` sử dụng các phân vùng cố định, nên nó không nhận diện được firmware của ta.
+Không cần thay đổi env của U-Boot. Bootloader stock luôn boot bằng `bootcmd=bootipq` và ghi đè mọi `bootcmd` tùy chỉnh khi khởi động, nên **không** đặt `bootcmd=run bootowrt` như hướng dẫn cũ. Những gì giúp OpenWrt boot nằm trong image:
+
+- `bootipq` đọc kích thước rootfs (`0x5000000`, 80 MB) từ SMEM và gắn UBI vào đúng dải đó.
+- `scripts/mkits.sh` thêm các config alias tương thích vendor, để `bootipq` chọn được configuration (image đã test dùng `config@mp03.3-c3`).
+- `bootargs-append` trong DTS nối thêm `root=/dev/ubiblock0_1 coherent_pool=2M` vào sau bootargs của U-Boot, nên kernel mount volume squashfs UBI thay vì `root=mtd:ubi_rootfs`.
+
+Bootargs stock do U-Boot tự tạo; bạn không cần đặt `bootargs`, `bootowrt` hay `preboot` thủ công.
+
+Nếu bạn đã làm theo hướng dẫn cũ và các biến này vẫn còn, xóa chúng một lần:
 
 ```sh
-setenv mtdids nand0=nand0
-setenv bootargs "ubi.mtd=20 root=/dev/ubiblock0_1 rootfstype=squashfs rootwait"
-setenv bootowrt "setenv mtdparts mtdparts=nand0:0xf300000@0xd00000(rootfs); ubi part rootfs; ubi read 0x44000000 kernel; bootm 0x44000000"
-setenv bootcmd "run bootowrt"
+setenv preboot
+setenv bootowrt
+setenv bootcmd bootipq
 saveenv
 ```
 
-Bây giờ bạn có thể dùng `run bootowrt` để khởi động vào firmware mới, hoặc đơn giản là chạy `reset` để khởi động lại :)
+Sau đó chạy `reset` hoặc rút điện cắm lại. Env gốc có `bootdelay=1`, nên nhấn **ESC** ngay sau khi cấp điện để dừng autoboot.
+
+Sau khi OpenWrt boot lên, kiểm tra kernel command line:
+
+```
+cat /proc/cmdline
+```
+
+Rootfs là MTD index 20 (`mtd20`, 80 MiB) và entry `root=` cuối cùng phải là `root=/dev/ubiblock0_1`.
+
+> [!NOTE]
+> Phần NAND còn lại sau rootfs 80 MB sẽ không được dùng. Đây là trade-off bắt buộc vì `bootipq` lấy kích thước rootfs từ SMEM; giữ layout cũ 243 MB sẽ làm UBI attach lỗi với `UBI init error 22`.
 
 </details>
 

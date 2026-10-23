@@ -27,11 +27,10 @@
 		led-failsafe = &led_red;
 		led-running = &led_white;
 		led-upgrade = &led_red;
-		mdio-gpio1 = &mdio_bitbang;
 	};
 	
 	chosen {
-		bootargs-append = " coherent_pool=2M";
+		bootargs-append = " root=/dev/ubiblock0_1 coherent_pool=2M";
 		stdout-path = "serial0:115200n8";
 	};
 	
@@ -75,20 +74,26 @@
 		};
 	};
 	
-	// yt9215s cannot recognize from mdio1 so i used bitbang method instead
-	mdio_bitbang: mdio-gpio {
-		compatible = "virtual,mdio-gpio";
-		#address-cells = <1>;
-		#size-cells = <0>;
-		
-		gpios = <&tlmm 36 GPIO_ACTIVE_HIGH>,
-		<&tlmm 37 GPIO_ACTIVE_HIGH>;
-		
-		yt9215: switch@1d {
+};
+
+/*
+ * step13: use the SoC hardware MDIO1 like the stock firmware
+ * (stock: mdio@90000 with cig_clk_div=0xff). Do not pin
+ * clock-frequency: mdio-ipq4019 requires an exact match against the
+ * AHB rate at probe time and pcnoc is not 100 MHz yet, which made
+ * probe fail with -EINVAL. Let the driver derive the divider from the
+ * real clock, as the other IPQ5018 boards do.
+ */
+&mdio1 {
+	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&mdio1_pins>;
+
+	yt9215: switch@1d {
 			pinctrl-names = "default";
 			pinctrl-0 = <&switch_reset_pin>;
 			compatible = "motorcomm,yt9215";
-			reg = <29>;
+			reg = <0x1d>;
 			/* The driver pulses this line like the stock firmware
 			 * (25 ms asserted, 100 ms after release); the generic
 			 * reset-delay-us properties are not used.
@@ -142,26 +147,37 @@
 				
 				ethernet-port@8 {
 					reg = <8>;
-					/* IPQ5018 UNIPHY runs SGMII at 1G (125 MHz,
-					 * MAC_MODE_SGMII_CHANNEL0); the yt921x driver
-					 * maps "sgmii" to REVSGMII for EXT0. 2500BASE-X
-					 * with SGMII_PLUS does not establish link here.
+					/* CPU lane: IPQ5018 UNIPHY in SGMII+ mode
+					 * (312.5 MHz) to YT9215S SERDES0 in
+					 * 2500BASE-X; the yt921x driver maps
+					 * "2500base-x" to SERDES mode 4.
 					 */
-					phy-mode = "sgmii";
+					phy-mode = "2500base-x";
 					ethernet = <&dp2>;
 					
 					fixed-link {
-						speed = <1000>;
+						speed = <2500>;
 						full-duplex;
 					};
 				};
 			};
 		};
 	};
-};
 
 &xo_clk {
 	clock-frequency = <0x16e3600>;
+};
+
+/*
+ * step14: the board runs xo_clk at 24 MHz, so ref_96mhz_clk is 48 MHz.
+ * Fixed-factor needs an explicit divider to yield the 24 MHz xo_board_clk;
+ * without it the clock fails to register, GCC parent rates stay 0 and MDIO1
+ * gets a bogus divider. Upstream boards use div 4 because their xo_clk is
+ * 48 MHz (ref_96mhz = 96 MHz).
+ */
+&xo_board_clk {
+	clock-div = <2>;
+	clock-mult = <1>;
 };
 
 &sleep_clk {
@@ -170,23 +186,23 @@
 
 &switch {
 	status = "okay";
-	/* SGMII 1G on the CPU lane, matching the stock firmware. */
-	switch_mac_mode = <MAC_MODE_SGMII_CHANNEL0>;
+	/* SGMII+ (312.5 MHz) on the forced CPU port. */
+	switch_mac_mode = <MAC_MODE_SGMII_PLUS>;
 
 	/*
-	 * Keep GCC_UNIPHY_AHB_ARES: SSDK resets the UNIPHY through this line
-	 * before programming SGMII 1G on the forced CPU port. Without it the
-	 * PCS keeps its reset defaults and never gets link.
+	 * uniphy1_ahb_rst is deliberately omitted: the AHB reset
+	 * clears MODE_CTRL/PHY_MODE/CH0_INPUT_OUTPUT_4 on the
+	 * forced CPU port. SSDK's SGMII+ path pulses the SYS/RX/TX
+	 * soft reset (uniphy1_soft_rst) and reprograms PHY_MODE
+	 * instead, which latches the SGMII+ PCS mode.
 	 */
 	resets = <&gcc GCC_GMAC0_BCR>,
 		 <&gcc GCC_GMAC1_BCR>,
 		 <&gcc GCC_UNIPHY_BCR>,
-		 <&gcc GCC_UNIPHY_AHB_ARES>,
 		 <&gcc GCC_UNIPHY_SOFT_RESET>;
 	reset-names = "gmac0_bcr_rst",
 		      "gmac1_bcr_rst",
 		      "uniphy_bcr_rst",
-		      "uniphy1_ahb_rst",
 		      "uniphy1_soft_rst";
 
 	qcom,port_phyinfo {
@@ -198,8 +214,12 @@
 		
 		port@1 {
 			port_id = <2>;
-			mdiobus = <&mdio_bitbang>;
-			forced-speed = <1000>;
+			mdiobus = <&mdio1>;
+			/* 2500 selects the 312.5 MHz GMAC1 clock that the
+			 * SGMII+ UNIPHY parent provides; 1000 would need
+			 * 125 MHz, which this parent cannot divide to.
+			 */
+			forced-speed = <2500>;
 			forced-duplex = <1>;
 		};
 	};
@@ -227,12 +247,12 @@
 &dp2 {
 	status = "okay";
 	label = "lan";
-	phy-mode = "sgmii";
+	phy-mode = "2500base-x";
 	nvmem-cells = <&macaddr_appsblenv_ethaddr 1>;
 	nvmem-cell-names = "mac-address";
 	
 	fixed-link {
-		speed = <1000>;
+		speed = <2500>;
 		full-duplex;
 	};
 };
@@ -417,7 +437,7 @@
 			
 			partition@d00000 {
 				label = "rootfs";
-				reg = <0xd00000 0xf300000>;
+				reg = <0xd00000 0x5000000>;
 			};
 		};
 	};

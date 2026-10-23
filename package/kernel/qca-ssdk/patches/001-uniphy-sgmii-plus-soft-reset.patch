@@ -1,0 +1,29 @@
+--- a/src/adpt/mp/adpt_mp_uniphy.c	2026-10-22 23:46:48.422868200 +0700
++++ b/src/adpt/mp/adpt_mp_uniphy.c	2026-10-22 23:46:48.462868552 +0700
+@@ -364,7 +364,25 @@
+ 	rv = adpt_mp_uniphy_mode_ctrl_set(dev_id, index, mode);
+ 	SW_RTN_ON_ERROR (rv);
+ 
+-	adpt_mp_gcc_uniphy_port_reset(dev_id, SSDK_PHYSICAL_PORT2);
++	if (mode == PORT_WRAPPER_SGMII_PLUS) {
++		/*
++		 * SGMII+ only latches the new PCS mode after a SYS/RX/TX
++		 * soft reset; the AHB reset used for PHY ports clears
++		 * MODE_CTRL instead. MISC2 is cleared by the reset as well,
++		 * so program it again afterwards.
++		 */
++		ssdk_uniphy_reset(dev_id, UNIPHY1_SOFT_RESET_E,
++			SSDK_RESET_ASSERT);
++		msleep(100);
++		ssdk_uniphy_reset(dev_id, UNIPHY1_SOFT_RESET_E,
++			SSDK_RESET_DEASSERT);
++
++		rv = hppe_uniphy_phy_mode_ctrl_set(dev_id, index,
++			&uniphy_misc2_phy_mode);
++		SW_RTN_ON_ERROR (rv);
++	} else {
++		adpt_mp_gcc_uniphy_port_reset(dev_id, SSDK_PHYSICAL_PORT2);
++	}
+ 
+ 	/* wait uniphy calibration done */
+ 	rv = _adpt_mp_uniphy_calibrate(dev_id, index);

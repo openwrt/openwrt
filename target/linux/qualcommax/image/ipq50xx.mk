@@ -264,6 +264,7 @@ define Device/fpt_ax3000cv2
 		ipq-wifi-fpt_ax3000cv2 \
 		kmod-gpio-pwm \
 		kmod-leds-pwm \
-		kmod-mdio-gpio
+		kmod-mdio-gpio \
+		luci-ssl
 endef
 TARGET_DEVICES += fpt_ax3000cv2
