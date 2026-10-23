@@ -50,7 +50,8 @@ ipq50xx_setup_interfaces()
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" "wan"
 		;;
 	tplink,eap650-outdoor-v1|\
-	tplink,re700x)
+	tplink,re700x|\
+	tplink,re705x)
 		ucidef_set_interface_lan "lan" "dhcp"
 		;;
 	zte,t5400)
@@ -89,7 +90,8 @@ ipq50xx_setup_macs()
 		ucidef_set_network_device_mac "eth0" "$label_mac"
 		;;
 	tplink,eap650-outdoor-v1|\
-	tplink,re700x)
+	tplink,re700x|\
+	tplink,re705x)
 		label_mac=$(get_mac_binary /tmp/factory_data/default-mac 0)
 		[ -n "$label_mac" ] || return
 		ucidef_set_interface_macaddr "lan" "$label_mac"
