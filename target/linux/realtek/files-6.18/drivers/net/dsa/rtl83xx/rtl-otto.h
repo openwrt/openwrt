@@ -177,7 +177,7 @@ enum pie_phase {
  */
 struct pie_rule {
 	int id;
-	u8 flow_n_rules;		/* Fasttrack classifier rows: one IPv4, two IPv6 */
+	u8 n_rules;		/* Classifier rows; zero means one on single-row paths */
 	enum pie_phase phase;	/* Phase in which this template is applied */
 	int packet_cntr;	/* ID of a packet counter assigned to this rule */
 	int octet_cntr;		/* ID of a byte counter assigned to this rule */
