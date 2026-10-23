@@ -6,7 +6,7 @@ import * as fs from 'fs';
 
 import {
 	append, append_raw, append_value, append_vars, append_list, append_string_vars, comment, config_mark,
-	config_rewind, push_config, set_default, touch_file
+	config_rewind, open_config, push_config, set_default, touch_file
 } from 'wifi.common';
 import * as netifd from 'wifi.netifd';
 import * as iface from 'wifi.iface';
@@ -482,7 +482,7 @@ function station_file_write(config, option, path, lines) {
 	if (config[option] && user_entries == null)
 		return;
 
-	let file = fs.open(path, 'w');
+	let file = open_config(path);
 	if (length(user_entries))
 		file.write(rtrim(user_entries, '\n') + '\n');
 	for (let line in lines)
