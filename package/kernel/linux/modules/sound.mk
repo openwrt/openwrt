@@ -236,14 +236,26 @@ endef
 $(eval $(call KernelPackage,sound-soc-imx))
 
 
+define KernelPackage/sound-soc-mediatek
+  TITLE:=MediaTek ASoC driver common
+  HIDDEN:=1
+  FILES:= \
+	$(LINUX_DIR)/sound/soc/mediatek/common/snd-soc-mtk-common.ko
+  AUTOLOAD:=$(call AutoProbe,snd-soc-mtk-common)
+  DEPENDS:=+kmod-sound-soc-core
+  $(call AddDepends/sound)
+endef
+
+$(eval $(call KernelPackage,sound-soc-mediatek))
+
+
 define KernelPackage/sound-soc-mt7986
   TITLE:=MediaTek MT7986 Audio support
   KCONFIG:=CONFIG_SND_SOC_MT7986 CONFIG_SND_SOC_MT7986_WM8960
   FILES:= \
-	$(LINUX_DIR)/sound/soc/mediatek/common/snd-soc-mtk-common.ko \
 	$(LINUX_DIR)/sound/soc/mediatek/mt7986/snd-soc-mt7986-afe.ko
-  AUTOLOAD:=$(call AutoLoad,56,snd-soc-mtk-common snd-soc-mt7986-afe)
-  DEPENDS:=@TARGET_mediatek_filogic +kmod-sound-soc-core
+  AUTOLOAD:=$(call AutoLoad,56,snd-soc-mt7986-afe)
+  DEPENDS:=@TARGET_mediatek_filogic +kmod-sound-soc-mediatek
   $(call AddDepends/sound)
 endef
 
