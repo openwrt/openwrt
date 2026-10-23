@@ -1,0 +1,105 @@
+From 3dbc8a1669b254cdee5823c8c154138ef0950b40 Mon Sep 17 00:00:00 2001
+From: Anders Kaseorg <andersk@mit.edu>
+Date: Wed, 21 Oct 2026 22:31:00 +0000
+Subject: don't misparse protected action frames as ADDBA requests
+
+The TX paths look for ADDBA requests, to queue them on the access
+category of their TID, by reading the action frame body right after
+the 802.11 header. In a protected frame, however, that is where
+mac80211 puts the CCMP header: always on the 88W8864, 88W8897 and
+88W8997, which set IEEE80211_KEY_FLAG_GENERATE_IV, and on the 88W8964
+once it sets IEEE80211_KEY_FLAG_GENERATE_IV_MGMT. The header starts
+with the packet number, so a protected frame with PN 3 looks like an
+ADDBA request whose capability bytes give TID 8, and utils_tid_to_ac()
+returns -1. The frame then lands in txq[4], which the TX tasklet never
+services, so of the protected management frames sent to each station,
+the third one is never transmitted. (Once more than txq_limit frames
+have accumulated there, ieee80211_stop_queue() would even be called
+with queue -1.)
+
+Skip protected frames. With PMF, ADDBA requests are protected anyway,
+and mac80211 sends them with ieee80211_tx_skb_tid(), which already
+selects the queue for the TID. Also don't use an invalid TID's -1 as a
+queue index.
+
+Seen on a WRT3200ACM (88W8964) with PMF: of the router's ADDBA requests
+and SA Query requests to each station, the one with PN 3 was never
+sent, and frames accumulated in txq[4].
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Signed-off-by: Anders Kaseorg <andersk@mit.edu>
+---
+ hif/pcie/8864/tx.c     | 8 +++++++-
+ hif/pcie/8964/tx_ndp.c | 8 +++++++-
+ hif/pcie/8997/tx.c     | 8 +++++++-
+ 3 files changed, 21 insertions(+), 3 deletions(-)
+
+--- a/hif/pcie/8864/tx.c
++++ b/hif/pcie/8864/tx.c
+@@ -717,13 +717,19 @@ void pcie_8864_tx_xmit(struct ieee80211_
+ 	if (mgmtframe) {
+ 		u16 capab;
+ 
++		/* The body of a protected frame starts with its CCMP
++		 * header (or is encrypted). mac80211 queues ADDBA requests
++		 * on the right AC anyway.
++		 */
+ 		if (unlikely(ieee80211_is_action(wh->frame_control) &&
++			     !ieee80211_has_protected(wh->frame_control) &&
+ 			     mgmt->u.action.category == WLAN_CATEGORY_BACK &&
+ 			     mgmt->u.action.action_code ==
+ 			     WLAN_ACTION_ADDBA_REQ)) {
+ 			capab = le16_to_cpu(mgmt->u.action.addba_req.capab);
+ 			tid = (capab & IEEE80211_ADDBA_PARAM_TID_MASK) >> 2;
+-			index = utils_tid_to_ac(tid);
++			if (tid < IEEE80211_FIRST_TSPEC_TSID)
++				index = utils_tid_to_ac(tid);
+ 		}
+ 	}
+ 
+--- a/hif/pcie/8964/tx_ndp.c
++++ b/hif/pcie/8964/tx_ndp.c
+@@ -549,13 +549,19 @@ void pcie_tx_xmit_ndp(struct ieee80211_h
+ 	if (mgmtframe) {
+ 		u16 capab;
+ 
++		/* The body of a protected frame starts with its CCMP
++		 * header (or is encrypted). mac80211 queues ADDBA requests
++		 * on the right AC anyway.
++		 */
+ 		if (unlikely(ieee80211_is_action(wh->frame_control) &&
++			     !ieee80211_has_protected(wh->frame_control) &&
+ 			     mgmt->u.action.category == WLAN_CATEGORY_BACK &&
+ 			     mgmt->u.action.action_code ==
+ 			     WLAN_ACTION_ADDBA_REQ)) {
+ 			capab = le16_to_cpu(mgmt->u.action.addba_req.capab);
+ 			tid = (capab & IEEE80211_ADDBA_PARAM_TID_MASK) >> 2;
+-			index = utils_tid_to_ac(tid);
++			if (tid < IEEE80211_FIRST_TSPEC_TSID)
++				index = utils_tid_to_ac(tid);
+ 		}
+ 
+ 		if (ieee80211_is_probe_req(wh->frame_control) ||
+--- a/hif/pcie/8997/tx.c
++++ b/hif/pcie/8997/tx.c
+@@ -669,13 +669,19 @@ void pcie_8997_tx_xmit(struct ieee80211_
+ 	if (mgmtframe) {
+ 		u16 capab;
+ 
++		/* The body of a protected frame starts with its CCMP
++		 * header (or is encrypted). mac80211 queues ADDBA requests
++		 * on the right AC anyway.
++		 */
+ 		if (unlikely(ieee80211_is_action(wh->frame_control) &&
++			     !ieee80211_has_protected(wh->frame_control) &&
+ 			     mgmt->u.action.category == WLAN_CATEGORY_BACK &&
+ 			     mgmt->u.action.action_code ==
+ 			     WLAN_ACTION_ADDBA_REQ)) {
+ 			capab = le16_to_cpu(mgmt->u.action.addba_req.capab);
+ 			tid = (capab & IEEE80211_ADDBA_PARAM_TID_MASK) >> 2;
+-			index = utils_tid_to_ac(tid);
++			if (tid < IEEE80211_FIRST_TSPEC_TSID)
++				index = utils_tid_to_ac(tid);
+ 		}
+ 	}
+ 
