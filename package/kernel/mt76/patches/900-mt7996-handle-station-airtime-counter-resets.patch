@@ -43,9 +43,9 @@ Signed-off-by: David Mestre <dev@davidmestre.net>
 -			tx_time[i] = msta_link->airtime_ac[i] - tx_last;
 -			rx_time[i] = msta_link->airtime_ac[i + 4] - rx_last;
 +			tx_time[i] = mt7996_airtime_delta(msta_link->airtime_ac[i],
-+						     tx_last);
++							  tx_last);
 +			rx_time[i] = mt7996_airtime_delta(msta_link->airtime_ac[i + 4],
-+						     rx_last);
++							  rx_last);
  
  			if ((tx_last | rx_last) & BIT(30))
  				clear = true;
@@ -57,7 +57,7 @@ Signed-off-by: David Mestre <dev@davidmestre.net>
 -			mt7996_mac_wtbl_update(dev, idx,
 -					       MT_WTBL_UPDATE_ADM_COUNT_CLEAR);
 +		if (clear && mt7996_mac_wtbl_update(dev, idx,
-+						     MT_WTBL_UPDATE_ADM_COUNT_CLEAR))
++						    MT_WTBL_UPDATE_ADM_COUNT_CLEAR))
  			memset(msta_link->airtime_ac, 0,
  			       sizeof(msta_link->airtime_ac));
 -		}
