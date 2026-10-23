@@ -160,6 +160,7 @@ $(foreach tool, $(filter-out zstd zlib xz pkgconf patch ninja meson libressl exp
 tools-y += ccache xxhash
 $(curdir)/xxhash/compile := $(curdir)/cmake/compile
 $(curdir)/ccache/compile := $(curdir)/xxhash/compile
+$(curdir)/liblzo/compile := $(curdir)/ccache/compile
 endif
 
 # in case there is no patch tool on the host we need to make patch tool a
