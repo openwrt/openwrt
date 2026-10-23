@@ -11,6 +11,7 @@ case "$(board_name)" in
 	uci set system.@system[0].compat_version="1.2"
 	uci commit system
 	;;
+	buffalo,wsr-3200ax4s|\
 	linksys,e8450-ubi|\
 	xiaomi,redmi-router-ax6s)
 	uci set system.@system[0].compat_version="2.0"
