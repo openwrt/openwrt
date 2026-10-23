@@ -1,0 +1,43 @@
+From: Rosen Penev <rosenp@gmail.com>
+Date: Wed, 14 Oct 2026 18:00:00 -0700
+Subject: [PATCH] ARM: dts: BCM5301X: alamo: describe the second CPU port
+
+AMAC1 is connected to port 7 of the switch. Describe it as a second CPU
+port, with the MAC address of the WAN ports, so that ports can be moved
+to it with their DSA conduit.
+
+Assisted-by: Claude:claude-opus-5-5
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+---
+--- a/arch/arm/boot/dts/broadcom/bcm958625-meraki-alamo.dtsi
++++ b/arch/arm/boot/dts/broadcom/bcm958625-meraki-alamo.dtsi
+@@ -265,6 +265,12 @@
+ 	};
+ };
+ 
++&amac1 {
++	status = "okay";
++	nvmem-cells = <&mac_address 1>;
++	nvmem-cell-names = "mac-address";
++};
++
+ &srab {
+ 	compatible = "brcm,bcm58625-srab", "brcm,nsp-srab";
+ 	status = "okay";
+@@ -302,6 +308,16 @@
+ 			fixed-link {
+ 				speed = <1000>;
+ 				full-duplex;
++			};
++		};
++
++		port@7 {
++			ethernet = <&amac1>;
++			reg = <7>;
++
++			fixed-link {
++				speed = <1000>;
++				full-duplex;
+ 			};
+ 		};
+ 
