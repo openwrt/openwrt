@@ -1,0 +1,28 @@
+From 425af91c58023a8924cc2330384e040d388adc4e Mon Sep 17 00:00:00 2001
+From: Diederik de Haas <didi.debian@cknow.org>
+Date: Fri, 25 Apr 2025 10:44:44 +0200
+Subject: arm64: dts: rockchip: Add vcc-supply to SPI flash on rk3588-rock-5b
+
+The Radxa Rock 5B component placement document identifies the SPI Nor
+Flash chip as 'U4300' which is described on page 25 of the Schematic
+v1.45. There we can see that the VCC connector is connected to the
+VCC_3V3_S3 power source.
+
+This fixes the following warning:
+
+  spi-nor spi5.0: supply vcc not found, using dummy regulator
+
+Signed-off-by: Diederik de Haas <didi.debian@cknow.org>
+Link: https://lore.kernel.org/r/20250425092601.56549-5-didi.debian@cknow.org
+Signed-off-by: Heiko Stuebner <heiko@sntech.de>
+
+--- a/arch/arm64/boot/dts/rockchip/rk3588-rock-5b.dts
++++ b/arch/arm64/boot/dts/rockchip/rk3588-rock-5b.dts
+@@ -562,6 +562,7 @@
+ 		spi-max-frequency = <104000000>;
+ 		spi-rx-bus-width = <4>;
+ 		spi-tx-bus-width = <1>;
++		vcc-supply = <&vcc_3v3_s3>;
+ 	};
+ };
+ 
