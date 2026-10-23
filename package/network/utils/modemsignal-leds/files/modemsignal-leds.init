@@ -236,5 +236,8 @@ start_service() {
 }
 
 service_triggers() {
-	procd_add_reload_trigger modemsignal-leds
+	# network too: autodiscovery reads the interface list, so a modem
+	# interface added after boot has to re-run it. procd compares the
+	# instance parameters, so an unrelated network change is a no-op.
+	procd_add_reload_trigger modemsignal-leds network
 }

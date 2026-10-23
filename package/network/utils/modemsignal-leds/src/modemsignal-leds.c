@@ -42,7 +42,17 @@ struct led {
 	int	 max;		/* ... full at/above max            */
 	int	 maxbright;	/* from <led>/max_brightness        */
 	int	 fd;		/* open <led>/brightness            */
+	int	 lit;		/* hysteresis state, -1 = undecided  */
+	int	 written;	/* last value written, -1 = unknown  */
 };
+
+/*
+ * Quality points a bar has to move past its boundary before it changes state.
+ * The LED windows are a few dB wide (5 points is about 2.5 dB of RSRP), and a
+ * stationary router sees the level wander by more than that, so without this
+ * the topmost lit bar toggles on nearly every poll.
+ */
+#define HYSTERESIS 5
 
 static volatile sig_atomic_t running = 1;
 static void on_signal(int s) { (void)s; running = 0; }
@@ -93,6 +103,9 @@ static int led_open(struct led *l, const char *base)
 	if (l->maxbright <= 0)
 		l->maxbright = 255;
 
+	l->lit = -1;
+	l->written = -1;
+
 	snprintf(path, sizeof(path), "%s/%s/brightness", base, l->name);
 	l->fd = open(path, O_WRONLY);
 	if (l->fd < 0) {
@@ -114,20 +127,53 @@ static void led_set(struct led *l, int value)
 		value = 0;
 	if (value > l->maxbright)
 		value = l->maxbright;
+	if (value == l->written)	/* nothing to say */
+		return;
+	l->written = value;
 	n = snprintf(buf, sizeof(buf), "%d\n", value);
 	if (lseek(l->fd, 0, SEEK_SET) < 0) { /* sysfs, ignore */ }
 	if (write(l->fd, buf, n) < 0) { /* best effort */ }
 }
 
 /* linear map of quality into this LED's [min,max] window -> brightness */
-static int bar_brightness(const struct led *l, int quality)
+static int bar_brightness(struct led *l, int quality)
 {
-	int b;
+	int b, on;
 
-	if (quality < 0 || quality <= l->min)
+	if (quality < 0) {
+		/* Out of service decides nothing: leave the state undecided so
+		 * the first sample after it settles without a margin, or the
+		 * panel would come back a bar short.
+		 */
+		l->lit = -1;
+		return 0;
+	}
+
+	/*
+	 * Decide lit/unlit with hysteresis around the window's lower edge, then
+	 * fill as before. l->lit is -1 until the first sample, which settles it
+	 * without a margin so the panel is right immediately after start.
+	 */
+	if (l->lit < 0)
+		on = quality > l->min;
+	else if (l->lit)
+		on = quality > l->min - HYSTERESIS;
+	else
+		on = quality > l->min + HYSTERESIS;
+	l->lit = on;
+
+	if (!on)
 		return 0;
 	if (quality >= l->max)
 		return l->maxbright;
+	if (quality < l->min)
+		/* Held by hysteresis below its window: keep what the LED already
+		 * shows. Falling through to the partial fill would compute a
+		 * negative fraction and land on the 1-step floor below, which on
+		 * a multi-level LED is visually off - the flicker this is meant
+		 * to stop.
+		 */
+		return l->written > 0 ? l->written : 1;
 
 	/*
 	 * Partial fill. Never round down to off: on a plain on/off LED
@@ -207,8 +253,11 @@ static void parse_led(struct led *l, const char *spec)
 	l->min = 0;
 	l->max = 100;
 	l->fd = -1;
-	if (nlen >= sizeof(l->name))
+	if (nlen >= sizeof(l->name)) {
 		nlen = sizeof(l->name) - 1;
+		fprintf(stderr, "modemsignal-leds: LED name too long, truncated: %.*s\n",
+			(int)nlen, spec);
+	}
 	memcpy(l->name, spec, nlen);	/* name may contain ':' */
 	l->name[nlen] = 0;
 	if (c1) {			/* atoi stops at the next comma */
@@ -223,7 +272,7 @@ static void parse_led(struct led *l, const char *spec)
 
 int main(int argc, char **argv)
 {
-	int interval = 10, opt, i, nleds = 0;
+	int interval = 10, opt, i, nleds = 0, opened;
 	enum mode mode = MODE_BARS;
 	char **specs = NULL;
 	struct led *leds;
@@ -263,9 +312,15 @@ int main(int argc, char **argv)
 	leds = calloc(nleds, sizeof(*leds));
 	if (!leds)
 		return 1;
-	for (i = 0; i < nleds; i++) {
+	for (i = 0, opened = 0; i < nleds; i++) {
 		parse_led(&leds[i], specs[i]);
-		led_open(&leds[i], base);
+		if (!led_open(&leds[i], base))
+			opened++;
+	}
+	if (!opened) {
+		fprintf(stderr,
+			"modemsignal-leds: no LED could be opened, giving up\n");
+		return 1;
 	}
 
 	/* sigaction() without SA_RESTART: signal() would set it and the blocking

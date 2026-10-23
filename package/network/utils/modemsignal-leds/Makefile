@@ -5,7 +5,6 @@ PKG_RELEASE:=1
 
 PKG_MAINTAINER:=Carlo Szelinsky <github@szelinsky.de>
 PKG_LICENSE:=GPL-2.0-or-later
-PKG_LICENSE_FILES:=
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -34,6 +33,8 @@ define Build/Compile
 		$(PKG_BUILD_DIR)/modemsignal-leds.c $(TARGET_LDFLAGS)
 endef
 
+# Board profiles are dropped into /usr/share/modemsignal-leds/profiles;
+# files/profiles.example documents the format and is not shipped.
 define Package/modemsignal-leds/install
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/modemsignal-leds $(1)/usr/sbin/modemsignal-leds
@@ -49,7 +50,6 @@ define Package/modemsignal-leds/install
 	$(INSTALL_DATA) ./files/getcsq.gcom $(1)/usr/share/modemsignal-leds/getcsq.gcom
 	$(INSTALL_DATA) ./files/getqcsq.gcom $(1)/usr/share/modemsignal-leds/getqcsq.gcom
 	$(INSTALL_DIR) $(1)/usr/share/modemsignal-leds/profiles
-	$(INSTALL_DATA) ./files/profiles/* $(1)/usr/share/modemsignal-leds/profiles/
 endef
 
 $(eval $(call BuildPackage,modemsignal-leds))
