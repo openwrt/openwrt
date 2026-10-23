@@ -3,6 +3,11 @@
 /dts-v1/;
 #include "mt7981b-glinet-gl-mt2500.dtsi"
 
+/ {
+	model = "GL.iNet GL-MT2500 (Airoha PHY)";
+	compatible = "glinet,gl-mt2500-airoha", "mediatek,mt7981";
+};
+
 &gmac0 {
 	phy-handle = <&phy13>;
 };
