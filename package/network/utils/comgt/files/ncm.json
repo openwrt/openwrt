@@ -1,4 +1,17 @@
 {
+	"ml352": {
+		"initialize": [
+			"AT+CFUN=1"
+		],
+		"configure": [
+			"AT+CGDCONT=${profile},\\\"${pdptype}\\\"${apn:+,\\\"$apn\\\"}",
+			"AT*CGDFAUTH=1,${auth:-0}${username:+,\\\"$username\\\"}${password:+,\\\"$password\\\"}",
+			"AT*LWIPCTRL=mode,0,1",
+			"AT+CGACT=1,${profile}"
+		],
+		"connect": "AT*NETACT=1,${profile},1",
+		"disconnect": "AT*NETACT=0,${profile},1"
+	},
 	"huawei": {
 		"initialize": [
 			"AT",
