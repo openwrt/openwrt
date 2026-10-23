@@ -79,6 +79,16 @@ define Build/mt798x-gpt
 	rm $@.tmp
 endef
 
+# Keep the environment partition name used by the vendor bootloader.
+define Build/mt7986-u7986-06-gpt
+	ptgen -g -o $@ -a 1 -l 1024 \
+		-t 0x83 -N u-boot-env -r -p 512k@4M \
+		-t 0x83 -N factory -r -p 2M@4608k \
+		-t 0xef -N fip -r -p 4M@6656k \
+		-N recovery -r -p 32M@12M \
+		-t 0x2e -N production -p $(CONFIG_TARGET_ROOTFS_PARTSIZE)M@64M
+endef
+
 # Variation of the normal partition table to account
 # for factory and mfgdata partition
 #
@@ -3961,6 +3971,33 @@ define Device/unielec_u7981-01-nand
   $(call Device/unielec_u7981-01)
 endef
 TARGET_DEVICES += unielec_u7981-01-nand
+
+define Device/unielec_u7986-06
+  DEVICE_VENDOR := Unielec
+  DEVICE_MODEL := U7986-06
+  DEVICE_DTS := mt7986a-unielec-u7986-06
+  DEVICE_DTS_CONFIG := config-mt7986a-unielec-u7986-06
+  DEVICE_DTS_OVERLAY := mt7986a-unielec-u7986-06-nand mt7986a-unielec-u7986-06-emmc
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_DTS_LOADADDR := 0x43f00000
+  DEVICE_DTC_FLAGS := --pad 4096
+  DEVICE_PACKAGES := kmod-mt7915e kmod-mt7986-firmware kmod-phy-airoha-en8811h \
+		     kmod-usb3 e2fsprogs f2fsck mkf2fs mt7986-wo-firmware
+  FILESYSTEMS := squashfs
+  IMAGES := sysupgrade.itb
+  IMAGE_SIZE := 49152k
+  KERNEL_LOADADDR := 0x44000000
+  KERNEL := kernel-bin | gzip
+  KERNEL_INITRAMFS := kernel-bin | lzma | \
+	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd | pad-to 64k | check-size 32768k
+  KERNEL_INITRAMFS_SUFFIX := -recovery.itb
+  IMAGE/sysupgrade.itb := append-kernel | \
+	fit gzip $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb external-static-with-rootfs | \
+	pad-rootfs | check-size | append-metadata
+  ARTIFACTS := emmc-gpt.bin
+  ARTIFACT/emmc-gpt.bin := mt7986-u7986-06-gpt
+endef
+TARGET_DEVICES += unielec_u7986-06
 
 define Device/wavlink_wl-wn536ax6-a
   DEVICE_VENDOR := WAVLINK
