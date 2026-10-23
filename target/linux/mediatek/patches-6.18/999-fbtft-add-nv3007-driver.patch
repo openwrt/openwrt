@@ -1,0 +1,39 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Navas Abubacker <navas@outlook.com>
+Date: Sat, 5 Sep 2026 11:52:06 +0530
+Subject: [PATCH] staging: fbtft: add NV3007 driver Kconfig/Makefile entries
+
+Add Kconfig and Makefile entries for the NewVision NV3007 SPI TFT
+display driver, wiring fb_nv3007.o into the generic fbtft staging
+framework.
+
+Signed-off-by: Navas Abubacker <navas@outlook.com>
+---
+ drivers/staging/fbtft/Kconfig  | 5 +++++
+ drivers/staging/fbtft/Makefile | 1 +
+ 2 files changed, 6 insertions(+)
+
+--- a/drivers/staging/fbtft/Kconfig
++++ b/drivers/staging/fbtft/Kconfig
+@@ -75,6 +75,11 @@ config FB_TFT_ILI9486
+ 	help
+ 	  Generic Framebuffer support for ILI9486
+ 
++config FB_TFT_NV3007
++	tristate "FB driver for the NewVision NV3007 LCD Controller"
++	help
++	  Generic framebuffer support for NewVision NV3007 SPI displays.
++
+ config FB_TFT_PCD8544
+ 	tristate "FB driver for the PCD8544 LCD Controller"
+ 	help
+--- a/drivers/staging/fbtft/Makefile
++++ b/drivers/staging/fbtft/Makefile
+@@ -17,6 +17,7 @@ obj-$(CONFIG_FB_TFT_ILI9340)     += fb_i
+ obj-$(CONFIG_FB_TFT_ILI9341)     += fb_ili9341.o
+ obj-$(CONFIG_FB_TFT_ILI9481)     += fb_ili9481.o
+ obj-$(CONFIG_FB_TFT_ILI9486)     += fb_ili9486.o
++obj-$(CONFIG_FB_TFT_NV3007)      += fb_nv3007.o
+ obj-$(CONFIG_FB_TFT_PCD8544)     += fb_pcd8544.o
+ obj-$(CONFIG_FB_TFT_RA8875)      += fb_ra8875.o
+ obj-$(CONFIG_FB_TFT_S6D02A1)     += fb_s6d02a1.o
