@@ -1,0 +1,154 @@
+From dcf9eb6d33a2b030d96ab935a9e9f06715a951db Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Thu, 10 Apr 2025 18:30:12 +0200
+Subject: [PATCH 4/6] net: dsa: mt7530: move pkt stats and err MIB counter to
+ eth_mac stats API
+
+Drop custom handling of TX/RX packet stats and error MIB counter and handle
+them in the standard .get_eth_mac_stats API
+
+The MIB entry are dropped from the custom MIB table and converted to
+a define providing only the MIB offset.
+
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+Link: https://patch.msgid.link/20250410163022.3695-5-ansuelsmth@gmail.com
+Signed-off-by: Paolo Abeni <pabeni@redhat.com>
+---
+ drivers/net/dsa/mt7530.c | 70 ++++++++++++++++++++++++++++++++--------
+ drivers/net/dsa/mt7530.h | 14 ++++++++
+ 2 files changed, 70 insertions(+), 14 deletions(-)
+
+--- a/drivers/net/dsa/mt7530.c
++++ b/drivers/net/dsa/mt7530.c
+@@ -33,24 +33,10 @@ static struct mt753x_pcs *pcs_to_mt753x_
+ static const struct mt7530_mib_desc mt7530_mib[] = {
+ 	MIB_DESC(1, 0x00, "TxDrop"),
+ 	MIB_DESC(1, 0x04, "TxCrcErr"),
+-	MIB_DESC(1, 0x08, "TxUnicast"),
+-	MIB_DESC(1, 0x0c, "TxMulticast"),
+-	MIB_DESC(1, 0x10, "TxBroadcast"),
+ 	MIB_DESC(1, 0x14, "TxCollision"),
+-	MIB_DESC(1, 0x18, "TxSingleCollision"),
+-	MIB_DESC(1, 0x1c, "TxMultipleCollision"),
+-	MIB_DESC(1, 0x20, "TxDeferred"),
+-	MIB_DESC(1, 0x24, "TxLateCollision"),
+-	MIB_DESC(1, 0x28, "TxExcessiveCollistion"),
+-	MIB_DESC(2, 0x48, "TxBytes"),
+ 	MIB_DESC(1, 0x60, "RxDrop"),
+ 	MIB_DESC(1, 0x64, "RxFiltering"),
+-	MIB_DESC(1, 0x68, "RxUnicast"),
+-	MIB_DESC(1, 0x6c, "RxMulticast"),
+-	MIB_DESC(1, 0x70, "RxBroadcast"),
+-	MIB_DESC(1, 0x74, "RxAlignErr"),
+ 	MIB_DESC(1, 0x78, "RxCrcErr"),
+-	MIB_DESC(2, 0xa8, "RxBytes"),
+ 	MIB_DESC(1, 0xb0, "RxCtrlDrop"),
+ 	MIB_DESC(1, 0xb4, "RxIngressDrop"),
+ 	MIB_DESC(1, 0xb8, "RxArlDrop"),
+@@ -792,6 +778,61 @@ mt7530_get_sset_count(struct dsa_switch
+ 	return ARRAY_SIZE(mt7530_mib);
+ }
+ 
++static void mt7530_get_eth_mac_stats(struct dsa_switch *ds, int port,
++				     struct ethtool_eth_mac_stats *mac_stats)
++{
++	struct mt7530_priv *priv = ds->priv;
++
++	/* MIB counter doesn't provide a FramesTransmittedOK but instead
++	 * provide stats for Unicast, Broadcast and Multicast frames separately.
++	 * To simulate a global frame counter, read Unicast and addition Multicast
++	 * and Broadcast later
++	 */
++	mt7530_read_port_stats(priv, port, MT7530_PORT_MIB_TX_UNICAST, 1,
++			       &mac_stats->FramesTransmittedOK);
++
++	mt7530_read_port_stats(priv, port, MT7530_PORT_MIB_TX_SINGLE_COLLISION, 1,
++			       &mac_stats->SingleCollisionFrames);
++
++	mt7530_read_port_stats(priv, port, MT7530_PORT_MIB_TX_MULTIPLE_COLLISION, 1,
++			       &mac_stats->MultipleCollisionFrames);
++
++	mt7530_read_port_stats(priv, port, MT7530_PORT_MIB_RX_UNICAST, 1,
++			       &mac_stats->FramesReceivedOK);
++
++	mt7530_read_port_stats(priv, port, MT7530_PORT_MIB_TX_BYTES, 2,
++			       &mac_stats->OctetsTransmittedOK);
++
++	mt7530_read_port_stats(priv, port, MT7530_PORT_MIB_RX_ALIGN_ERR, 1,
++			       &mac_stats->AlignmentErrors);
++
++	mt7530_read_port_stats(priv, port, MT7530_PORT_MIB_TX_DEFERRED, 1,
++			       &mac_stats->FramesWithDeferredXmissions);
++
++	mt7530_read_port_stats(priv, port, MT7530_PORT_MIB_TX_LATE_COLLISION, 1,
++			       &mac_stats->LateCollisions);
++
++	mt7530_read_port_stats(priv, port, MT7530_PORT_MIB_TX_EXCESSIVE_COLLISION, 1,
++			       &mac_stats->FramesAbortedDueToXSColls);
++
++	mt7530_read_port_stats(priv, port, MT7530_PORT_MIB_RX_BYTES, 2,
++			       &mac_stats->OctetsReceivedOK);
++
++	mt7530_read_port_stats(priv, port, MT7530_PORT_MIB_TX_MULTICAST, 1,
++			       &mac_stats->MulticastFramesXmittedOK);
++	mac_stats->FramesTransmittedOK += mac_stats->MulticastFramesXmittedOK;
++	mt7530_read_port_stats(priv, port, MT7530_PORT_MIB_TX_BROADCAST, 1,
++			       &mac_stats->BroadcastFramesXmittedOK);
++	mac_stats->FramesTransmittedOK += mac_stats->BroadcastFramesXmittedOK;
++
++	mt7530_read_port_stats(priv, port, MT7530_PORT_MIB_RX_MULTICAST, 1,
++			       &mac_stats->MulticastFramesReceivedOK);
++	mac_stats->FramesReceivedOK += mac_stats->MulticastFramesReceivedOK;
++	mt7530_read_port_stats(priv, port, MT7530_PORT_MIB_RX_BROADCAST, 1,
++			       &mac_stats->BroadcastFramesReceivedOK);
++	mac_stats->FramesReceivedOK += mac_stats->BroadcastFramesReceivedOK;
++}
++
+ static const struct ethtool_rmon_hist_range mt7530_rmon_ranges[] = {
+ 	{ 0, 64 },
+ 	{ 65, 127 },
+@@ -3221,6 +3262,7 @@ const struct dsa_switch_ops mt7530_switc
+ 	.get_strings		= mt7530_get_strings,
+ 	.get_ethtool_stats	= mt7530_get_ethtool_stats,
+ 	.get_sset_count		= mt7530_get_sset_count,
++	.get_eth_mac_stats	= mt7530_get_eth_mac_stats,
+ 	.get_rmon_stats		= mt7530_get_rmon_stats,
+ 	.get_eth_ctrl_stats	= mt7530_get_eth_ctrl_stats,
+ 	.set_ageing_time	= mt7530_set_ageing_time,
+--- a/drivers/net/dsa/mt7530.h
++++ b/drivers/net/dsa/mt7530.h
+@@ -412,6 +412,14 @@ enum mt7530_vlan_port_acc_frm {
+ /* Register for MIB */
+ #define MT7530_PORT_MIB_COUNTER(x)	(0x4000 + (x) * 0x100)
+ /* Each define is an offset of MT7530_PORT_MIB_COUNTER */
++#define   MT7530_PORT_MIB_TX_UNICAST	0x08
++#define   MT7530_PORT_MIB_TX_MULTICAST	0x0c
++#define   MT7530_PORT_MIB_TX_BROADCAST	0x10
++#define   MT7530_PORT_MIB_TX_SINGLE_COLLISION 0x18
++#define   MT7530_PORT_MIB_TX_MULTIPLE_COLLISION 0x1c
++#define   MT7530_PORT_MIB_TX_DEFERRED	0x20
++#define   MT7530_PORT_MIB_TX_LATE_COLLISION 0x24
++#define   MT7530_PORT_MIB_TX_EXCESSIVE_COLLISION 0x28
+ #define   MT7530_PORT_MIB_TX_PAUSE	0x2c
+ #define   MT7530_PORT_MIB_TX_PKT_SZ_64	0x30
+ #define   MT7530_PORT_MIB_TX_PKT_SZ_65_TO_127 0x34
+@@ -419,6 +427,11 @@ enum mt7530_vlan_port_acc_frm {
+ #define   MT7530_PORT_MIB_TX_PKT_SZ_256_TO_511 0x3c
+ #define   MT7530_PORT_MIB_TX_PKT_SZ_512_TO_1023 0x40
+ #define   MT7530_PORT_MIB_TX_PKT_SZ_1024_TO_MAX 0x44
++#define   MT7530_PORT_MIB_TX_BYTES	0x48 /* 64 bytes */
++#define   MT7530_PORT_MIB_RX_UNICAST	0x68
++#define   MT7530_PORT_MIB_RX_MULTICAST	0x6c
++#define   MT7530_PORT_MIB_RX_BROADCAST	0x70
++#define   MT7530_PORT_MIB_RX_ALIGN_ERR	0x74
+ #define   MT7530_PORT_MIB_RX_UNDER_SIZE_ERR 0x7c
+ #define   MT7530_PORT_MIB_RX_FRAG_ERR	0x80
+ #define   MT7530_PORT_MIB_RX_OVER_SZ_ERR 0x84
+@@ -430,6 +443,7 @@ enum mt7530_vlan_port_acc_frm {
+ #define   MT7530_PORT_MIB_RX_PKT_SZ_256_TO_511 0x9c
+ #define   MT7530_PORT_MIB_RX_PKT_SZ_512_TO_1023 0xa0
+ #define   MT7530_PORT_MIB_RX_PKT_SZ_1024_TO_MAX 0xa4
++#define   MT7530_PORT_MIB_RX_BYTES	0xa8 /* 64 bytes */
+ #define MT7530_MIB_CCR			0x4fe0
+ #define  CCR_MIB_ENABLE			BIT(31)
+ #define  CCR_RX_OCT_CNT_GOOD		BIT(7)

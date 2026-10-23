@@ -1,0 +1,82 @@
+From c3b904c6dd814507c70c2c5c24b3ba359ff41d0a Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Thu, 10 Apr 2025 18:30:13 +0200
+Subject: [PATCH 5/6] net: dsa: mt7530: move remaining MIB counter to define
+
+For consistency with the other MIB counter, move also the remaining MIB
+counter to define and update the custom MIB table.
+
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+Link: https://patch.msgid.link/20250410163022.3695-6-ansuelsmth@gmail.com
+Signed-off-by: Paolo Abeni <pabeni@redhat.com>
+---
+ drivers/net/dsa/mt7530.c | 18 +++++++++---------
+ drivers/net/dsa/mt7530.h |  9 +++++++++
+ 2 files changed, 18 insertions(+), 9 deletions(-)
+
+--- a/drivers/net/dsa/mt7530.c
++++ b/drivers/net/dsa/mt7530.c
+@@ -31,15 +31,15 @@ static struct mt753x_pcs *pcs_to_mt753x_
+ 
+ /* String, offset, and register size in bytes if different from 4 bytes */
+ static const struct mt7530_mib_desc mt7530_mib[] = {
+-	MIB_DESC(1, 0x00, "TxDrop"),
+-	MIB_DESC(1, 0x04, "TxCrcErr"),
+-	MIB_DESC(1, 0x14, "TxCollision"),
+-	MIB_DESC(1, 0x60, "RxDrop"),
+-	MIB_DESC(1, 0x64, "RxFiltering"),
+-	MIB_DESC(1, 0x78, "RxCrcErr"),
+-	MIB_DESC(1, 0xb0, "RxCtrlDrop"),
+-	MIB_DESC(1, 0xb4, "RxIngressDrop"),
+-	MIB_DESC(1, 0xb8, "RxArlDrop"),
++	MIB_DESC(1, MT7530_PORT_MIB_TX_DROP, "TxDrop"),
++	MIB_DESC(1, MT7530_PORT_MIB_TX_CRC_ERR, "TxCrcErr"),
++	MIB_DESC(1, MT7530_PORT_MIB_TX_COLLISION, "TxCollision"),
++	MIB_DESC(1, MT7530_PORT_MIB_RX_DROP, "RxDrop"),
++	MIB_DESC(1, MT7530_PORT_MIB_RX_FILTERING, "RxFiltering"),
++	MIB_DESC(1, MT7530_PORT_MIB_RX_CRC_ERR, "RxCrcErr"),
++	MIB_DESC(1, MT7530_PORT_MIB_RX_CTRL_DROP, "RxCtrlDrop"),
++	MIB_DESC(1, MT7530_PORT_MIB_RX_INGRESS_DROP, "RxIngressDrop"),
++	MIB_DESC(1, MT7530_PORT_MIB_RX_ARL_DROP, "RxArlDrop"),
+ };
+ 
+ static void
+--- a/drivers/net/dsa/mt7530.h
++++ b/drivers/net/dsa/mt7530.h
+@@ -412,9 +412,12 @@ enum mt7530_vlan_port_acc_frm {
+ /* Register for MIB */
+ #define MT7530_PORT_MIB_COUNTER(x)	(0x4000 + (x) * 0x100)
+ /* Each define is an offset of MT7530_PORT_MIB_COUNTER */
++#define   MT7530_PORT_MIB_TX_DROP	0x00
++#define   MT7530_PORT_MIB_TX_CRC_ERR	0x04
+ #define   MT7530_PORT_MIB_TX_UNICAST	0x08
+ #define   MT7530_PORT_MIB_TX_MULTICAST	0x0c
+ #define   MT7530_PORT_MIB_TX_BROADCAST	0x10
++#define   MT7530_PORT_MIB_TX_COLLISION	0x14
+ #define   MT7530_PORT_MIB_TX_SINGLE_COLLISION 0x18
+ #define   MT7530_PORT_MIB_TX_MULTIPLE_COLLISION 0x1c
+ #define   MT7530_PORT_MIB_TX_DEFERRED	0x20
+@@ -428,10 +431,13 @@ enum mt7530_vlan_port_acc_frm {
+ #define   MT7530_PORT_MIB_TX_PKT_SZ_512_TO_1023 0x40
+ #define   MT7530_PORT_MIB_TX_PKT_SZ_1024_TO_MAX 0x44
+ #define   MT7530_PORT_MIB_TX_BYTES	0x48 /* 64 bytes */
++#define   MT7530_PORT_MIB_RX_DROP	0x60
++#define   MT7530_PORT_MIB_RX_FILTERING	0x64
+ #define   MT7530_PORT_MIB_RX_UNICAST	0x68
+ #define   MT7530_PORT_MIB_RX_MULTICAST	0x6c
+ #define   MT7530_PORT_MIB_RX_BROADCAST	0x70
+ #define   MT7530_PORT_MIB_RX_ALIGN_ERR	0x74
++#define   MT7530_PORT_MIB_RX_CRC_ERR	0x78
+ #define   MT7530_PORT_MIB_RX_UNDER_SIZE_ERR 0x7c
+ #define   MT7530_PORT_MIB_RX_FRAG_ERR	0x80
+ #define   MT7530_PORT_MIB_RX_OVER_SZ_ERR 0x84
+@@ -444,6 +450,9 @@ enum mt7530_vlan_port_acc_frm {
+ #define   MT7530_PORT_MIB_RX_PKT_SZ_512_TO_1023 0xa0
+ #define   MT7530_PORT_MIB_RX_PKT_SZ_1024_TO_MAX 0xa4
+ #define   MT7530_PORT_MIB_RX_BYTES	0xa8 /* 64 bytes */
++#define   MT7530_PORT_MIB_RX_CTRL_DROP	0xb0
++#define   MT7530_PORT_MIB_RX_INGRESS_DROP 0xb4
++#define   MT7530_PORT_MIB_RX_ARL_DROP	0xb8
+ #define MT7530_MIB_CCR			0x4fe0
+ #define  CCR_MIB_ENABLE			BIT(31)
+ #define  CCR_RX_OCT_CNT_GOOD		BIT(7)
