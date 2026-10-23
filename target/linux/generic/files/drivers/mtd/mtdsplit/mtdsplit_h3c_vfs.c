@@ -140,7 +140,7 @@ static int mtdsplit_h3c_vfs_parse(struct mtd_info *mtd,
 	if (err)
 		return err;
 
-	parts = kzalloc(NR_PARTS * sizeof(*parts), GFP_KERNEL);
+	parts = kcalloc(NR_PARTS, sizeof(*parts), GFP_KERNEL);
 	if (!parts)
 		return -ENOMEM;
 

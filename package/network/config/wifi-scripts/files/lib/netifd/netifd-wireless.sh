@@ -254,7 +254,7 @@ wireless_vif_parse_encryption() {
 	# wpa2/tkip+aes     => WPA2 RADIUS, CCMP+TKIP
 
 	case "$encryption" in
-		wpa2*|wpa3*|*psk2*|psk3*|sae*|owe*)
+		wpa2*|wpa3*|*psk2*|psk3*|sae*|owe*|dpp)
 			wpa=2
 		;;
 		wpa*mixed*|*psk*mixed*)
@@ -273,6 +273,9 @@ wireless_vif_parse_encryption() {
 	case "$encryption" in
 		owe*)
 			auth_type=owe
+		;;
+		dpp)
+			auth_type=dpp
 		;;
 		wpa3-192*)
 			auth_type=eap192
@@ -399,7 +402,8 @@ _wdev_common_vlan_config() {
 }
 
 _wdev_common_station_config() {
-	config_add_string mac key vid iface
+	config_add_string key vid iface
+	config_add_array mac
 }
 
 init_wireless_driver() {

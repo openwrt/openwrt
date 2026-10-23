@@ -81,6 +81,31 @@ ifeq ($(DUMP)$(filter prereq clean refresh update,$(MAKECMDGOALS)),)
   endif
 endif
 
+KERNEL_CONFIG_CHECK:=$(LINUX_DIR)/.configured-check
+KERNEL_CONFIG_DEPENDS:=$(LINUX_KCONFIG_LIST) $(TOPDIR)/.config $(TMP_DIR)/.packageinfo \
+	$(SCRIPT_DIR)/kconfig.pl $(SCRIPT_DIR)/package-metadata.pl $(SCRIPT_DIR)/metadata.pm \
+	$(INCLUDE_DIR)/kernel-defaults.mk $(INCLUDE_DIR)/kernel-build.mk $(CURDIR)
+
+IMAGE_INSTALL_STAMP:=$(KERNEL_BUILD_DIR)/.image_install
+IMAGE_INSTALL_INPUTS:=$(LINUX_DIR) $(STAGING_DIR)/image \
+	$(STAGING_DIR_HOST)/bin $(CURDIR) $(INCLUDE_DIR) $(SCRIPT_DIR) $(TOPDIR)/.config
+IMAGE_INSTALL_PRUNE:=\( -path '$(LINUX_DIR)/.*' ! -path '$(LINUX_DIR)/.config' \)
+image_install_state = ( \
+		cd $(TARGET_DIR) && \
+		find . -printf '%P %y %m %U %G %s %l\n' | LC_ALL=C sort && \
+		find . -type f -print0 | LC_ALL=C sort -z | xargs -0 -r cat; \
+	) | $(MKHASH) sha256; \
+	find $(BIN_DIR) -maxdepth 1 -type f \
+		! -name sha256sums ! -name profiles.json ! -name '*.buildinfo' \
+		-printf '%f %s\n' 2>/dev/null | LC_ALL=C sort; \
+	find $(BUILD_DIR)/json_info_files -maxdepth 1 -type f \
+		-printf '%f %s\n' 2>/dev/null | LC_ALL=C sort
+image_install_newer = \
+	find $(KERNEL_BUILD_DIR) -maxdepth 1 ! -type d \
+		-newer $(IMAGE_INSTALL_STAMP) -print -quit 2>/dev/null; \
+	find $(IMAGE_INSTALL_INPUTS) $(IMAGE_INSTALL_PRUNE) -prune -o \
+		! -type d -newer $(IMAGE_INSTALL_STAMP) -print -quit 2>/dev/null
+
 define BuildKernel
   $(if $(QUILT),$(Build/Quilt))
   $(if $(LINUX_SITE),$(call Download,kernel))
@@ -90,12 +115,15 @@ define BuildKernel
 
   $(Kernel/Autoclean)
   $(STAMP_PREPARED): $(if $(LINUX_SITE),$(DL_DIR)/$(LINUX_SOURCE))
+	$(call BuildTimeLog,begin,prepare)
 	-rm -rf $(KERNEL_BUILD_DIR)
 	-mkdir -p $(KERNEL_BUILD_DIR)
 	$(Kernel/Prepare)
 	touch $$@
+	$(call BuildTimeLog,end,prepare)
 
   $(KERNEL_BUILD_DIR)/symtab.h: FORCE
+	$(call BuildTimeLog,begin,compile)
 	rm -f $(KERNEL_BUILD_DIR)/symtab.h
 	touch $(KERNEL_BUILD_DIR)/symtab.h
 	+$(KERNEL_MAKE) vmlinux
@@ -124,26 +152,41 @@ define BuildKernel
 			awk '{print "*(___ksymtab_gpl+" $$$$1 ") \\" }'; \
 		echo; \
 	) > $$@
+	$(call BuildTimeLog,end,compile)
 
-  $(STAMP_CONFIGURED): $(STAMP_PREPARED) $(LINUX_KCONFIG_LIST) $(TOPDIR)/.config FORCE
+  $(KERNEL_CONFIG_CHECK): $(STAMP_PREPARED) $(LINUX_KCONFIG_LIST) $(TOPDIR)/.config FORCE
+	@mkdir -p $(LINUX_DIR)
+	@[ -f $(STAMP_CONFIGURED) ] && [ -d $(LINUX_DIR)/user_headers ] && \
+		[ -f $(LINUX_DIR)/.config.prev ] && \
+		[ -z "$$$$(find $(KERNEL_CONFIG_DEPENDS) ! -type d \
+			-newer $(STAMP_CONFIGURED) -print -quit 2>/dev/null)" ] || \
+		touch $$@
+
+  $(STAMP_CONFIGURED): $(KERNEL_CONFIG_CHECK)
+	$(call BuildTimeLog,begin,configure)
 	$(Kernel/Configure)
 	touch $$@
+	$(call BuildTimeLog,end,configure)
 
   $(LINUX_DIR)/.modules: export STAGING_PREFIX=$$(STAGING_DIR_HOST)
   $(LINUX_DIR)/.modules: export PKG_CONFIG_PATH=$$(STAGING_DIR_HOST)/lib/pkgconfig
   $(LINUX_DIR)/.modules: export PKG_CONFIG_LIBDIR=$$(STAGING_DIR_HOST)/lib/pkgconfig
   $(LINUX_DIR)/.modules: export FAIL_ON_UNCONFIGURED=1
   $(LINUX_DIR)/.modules: $(STAMP_CONFIGURED) $(LINUX_DIR)/.config FORCE
+	$(call BuildTimeLog,begin,compile)
 	$(Kernel/CompileModules)
 	touch $$@
+	$(call BuildTimeLog,end,compile)
 
   $(LINUX_DIR)/.image: export STAGING_PREFIX=$$(STAGING_DIR_HOST)
   $(LINUX_DIR)/.image: export PKG_CONFIG_PATH=$$(STAGING_DIR_HOST)/lib/pkgconfig
   $(LINUX_DIR)/.image: export PKG_CONFIG_LIBDIR=$$(STAGING_DIR_HOST)/lib/pkgconfig
   $(LINUX_DIR)/.image: $(STAMP_CONFIGURED) $(if $(CONFIG_STRIP_KERNEL_EXPORTS),$(KERNEL_BUILD_DIR)/symtab.h) FORCE
+	$(call BuildTimeLog,begin,compile)
 	$(Kernel/CompileImage)
 	$(Kernel/CollectDebug)
 	touch $$@
+	$(call BuildTimeLog,end,compile)
 	
   mostlyclean: FORCE
 	$(Kernel/Clean)
@@ -174,7 +217,15 @@ define BuildKernel
 	$(call LINUX_RECONF_DIFF,$(LINUX_DIR)/.config) > $(LINUX_RECONFIG_TARGET)
 
   install: $(LINUX_DIR)/.image
-	+$(MAKE) -C image compile install TARGET_BUILD=
+	+{ \
+		state="$$$$( $(image_install_state) )"; \
+		[ "$$$$state" = "$$$$(cat $(IMAGE_INSTALL_STAMP) 2>/dev/null)" ] && \
+		[ -z "$$$$($(image_install_newer))" ] || { \
+			rm -f $(IMAGE_INSTALL_STAMP); \
+			$(MAKE) -C image compile install TARGET_BUILD= && \
+			{ $(image_install_state); } > $(IMAGE_INSTALL_STAMP); \
+		}; \
+	}
 
   clean: FORCE
 	rm -rf $(KERNEL_BUILD_DIR)

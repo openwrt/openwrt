@@ -34,11 +34,9 @@ $(strip \
       $(if $(filter @OPENWRT @APACHE/% @DEBIAN/% @GITHUB/% @GNOME/% @GNU/% @KERNEL/% @SF/% @SAVANNAH/% ftp://% http://% https://% file://%,$(1)),default, \
         $(if $(filter git://%,$(1)),$(call dl_method_git,$(1),$(2)), \
           $(if $(filter svn://%,$(1)),svn, \
-            $(if $(filter cvs://%,$(1)),cvs, \
-              $(if $(filter hg://%,$(1)),hg, \
-                $(if $(filter sftp://%,$(1)),bzr, \
-                  unknown \
-                ) \
+            $(if $(filter hg://%,$(1)),hg, \
+              $(if $(filter sftp://%,$(1)),bzr, \
+                unknown \
               ) \
             ) \
           ) \
@@ -49,7 +47,7 @@ $(strip \
 )
 endef
 
-# code for creating tarballs from cvs/svn/git/bzr/hg/darcs checkouts - useful for mirror support
+# code for creating tarballs from svn/git/bzr/hg/darcs checkouts - useful for mirror support
 dl_pack/bz2=bzip2 -c > $(1)
 dl_pack/gz=gzip -nc > $(1)
 dl_pack/xz=xz -zc -7e > $(1)
@@ -65,6 +63,28 @@ endef
 
 gen_sha256sum = $(shell $(MKHASH) sha256 $(DL_DIR)/$(1))
 
+# $(1): file name, $(2): expected hash
+# Same as gen_sha256sum, but a file that matched the expected hash is only
+# hashed again after it changed. Large archives are otherwise hashed on
+# every parse of every Makefile that uses them.
+DL_VERIFIED_DIR:=$(TMP_DIR)/dl-verified
+define gen_sha256sum_cached
+$(shell \
+	stat_cmd="$(STAGING_DIR_HOST)/bin/stat"; \
+	[ -x "$$stat_cmd" ] || stat_cmd=stat; \
+	meta="$$("$$stat_cmd" -c '%i %s %Y %Z' $(DL_DIR)/$(1) 2>/dev/null)"; \
+	id="$(2) $$meta"; \
+	stamp="$(DL_VERIFIED_DIR)/$(1)"; \
+	if [ -n "$(2)" ] && [ -n "$$meta" ] && [ "$$(cat "$$stamp" 2>/dev/null)" = "$$id" ]; then \
+		echo "$(2)"; \
+	else \
+		hash="$$($(MKHASH) sha256 $(DL_DIR)/$(1))"; \
+		[ "$$hash" != "$(2)" ] || [ -z "$$meta" ] || \
+			{ mkdir -p $(DL_VERIFIED_DIR); echo "$$id" > "$$stamp"; }; \
+		echo "$$hash"; \
+	fi)
+endef
+
 # Used in Build/CoreTargets and HostBuild/Core as an integrity check for
 # downloaded files.  It will add a FORCE rule if the sha256 hash does not
 # match, so that the download can be more thoroughly handled by download.pl.
@@ -73,7 +93,7 @@ define check_download_integrity
   $$(if $$(and $(FILE),$$(wildcard $(DL_DIR)/$(FILE)), \
 	       $$(filter undefined,$$(flavor DownloadChecked/$(FILE)))), \
     $$(eval DownloadChecked/$(FILE):=1) \
-    $$(if $$(filter-out $$(call gen_sha256sum,$(FILE)),$$(expected_hash)), \
+    $$(if $$(filter-out $$(call gen_sha256sum_cached,$(FILE),$$(expected_hash)),$$(expected_hash)), \
       $(DL_DIR)/$(FILE): FORCE) \
   )
 endef
@@ -163,27 +183,12 @@ $(if $(if $(MIRROR), \
 				echo "Hash mismatch for file $(FILE): expected $(MIRROR_HASH), got $$$$file_hash"; \
 				false; \
 			}; \
-		)),
+		)), \
 	$(3)) \
 $(if $(filter check,$(1)), \
 	$(call check_hash,$(FILE),$(MIRROR_HASH),$(2)MIRROR_$(call hash_var,$(MIRROR_MD5SUM))) \
 	$(call check_md5,$(MIRROR_MD5SUM),$(2)MIRROR_MD5SUM,$(2)MIRROR_HASH) \
 )
-endef
-
-define DownloadMethod/cvs
-	$(call wrap_mirror,$(1),$(2), \
-		echo "Checking out files from the cvs repository..."; \
-		mkdir -p $(TMP_DIR)/dl && \
-		cd $(TMP_DIR)/dl && \
-		rm -rf $(SUBDIR) && \
-		[ \! -d $(SUBDIR) ] && \
-		cvs -d $(URL) export $(SOURCE_VERSION) $(SUBDIR) && \
-		echo "Packing checkout..." && \
-		$(call dl_tar_pack,$(TMP_DIR)/dl/$(FILE),$(SUBDIR)) && \
-		mv $(TMP_DIR)/dl/$(FILE) $(DL_DIR)/ && \
-		rm -rf $(SUBDIR); \
-	)
 endef
 
 define DownloadMethod/svn
@@ -305,7 +310,6 @@ define DownloadMethod/darcs
 	)
 endef
 
-Validate/cvs=SOURCE_VERSION SUBDIR
 Validate/svn=SOURCE_VERSION SUBDIR
 Validate/git=SOURCE_VERSION SUBDIR
 Validate/bzr=SOURCE_VERSION SUBDIR

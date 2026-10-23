@@ -56,3 +56,11 @@ config NET_RALINK_GSW_MT7620
 	def_tristate NET_RALINK_SOC
 	depends on NET_RALINK_MT7620
 endif
+
+config NET_DSA_MT7620
+	tristate "MediaTek MT7620 integrated switch DSA support"
+	depends on NET_DSA && NET_RALINK_GSW_MT7620
+	select NET_DSA_TAG_RALINK
+	help
+	  This driver provides DSA support for the seven-port switch
+	  integrated in the MediaTek MT7620 SoC.

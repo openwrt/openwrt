@@ -1,0 +1,42 @@
+. /lib/functions/uci-defaults.sh
+
+board_config_update
+board=$(board_name)
+
+case "$board" in
+dasan,h660gm-a-airtel)
+	# Sockets are numbered in switch port order: LAN1 is port 1.
+	ucidef_set_led_netdev "lan1" "lan1" "mt7530-0:09:green:lan-1" "lan1" "link tx rx"
+	ucidef_set_led_netdev "lan2" "lan2" "mt7530-0:0a:green:lan-2" "lan2" "link tx rx"
+	ucidef_set_led_netdev "lan3" "lan3" "mt7530-0:0b:green:lan-3" "lan3" "link tx rx"
+	ucidef_set_led_netdev "lan4" "lan4" "mt7530-0:0c:green:lan-4" "lan4" "link tx rx"
+	;;
+dasan,h660gm-a-generic)
+	# Sockets are numbered in reverse switch port order: LAN1 is port 4.
+	# Only the green LEDs hang off the GPHY LED pins, the amber ones are
+	# plain GPIOs.
+	ucidef_set_led_netdev "lan1-green" "lan1" "mt7530-0:0c:green:lan-1" "lan1" "link_1000 tx rx"
+	ucidef_set_led_netdev "lan2-green" "lan2" "mt7530-0:0b:green:lan-2" "lan2" "link_1000 tx rx"
+	ucidef_set_led_netdev "lan3-green" "lan3" "mt7530-0:0a:green:lan-3" "lan3" "link_1000 tx rx"
+	ucidef_set_led_netdev "lan4-green" "lan4" "mt7530-0:09:green:lan-4" "lan4" "link_1000 tx rx"
+	ucidef_set_led_netdev "lan1-amber" "lan1" "amber:lan-1" "lan1" "link_10 link_100 tx rx"
+	ucidef_set_led_netdev "lan2-amber" "lan2" "amber:lan-2" "lan2" "link_10 link_100 tx rx"
+	ucidef_set_led_netdev "lan3-amber" "lan3" "amber:lan-3" "lan3" "link_10 link_100 tx rx"
+	ucidef_set_led_netdev "lan4-amber" "lan4" "amber:lan-4" "lan4" "link_10 link_100 tx rx"
+	;;
+jiofiber,jcow407|\
+jiofiber,jcow414)
+	ucidef_set_led_netdev "lan1-amber" "lan1" "mt7530-0:09:amber:lan-1" "lan1" "link"
+	ucidef_set_led_netdev "lan2-amber" "lan2" "mt7530-0:0a:amber:lan-2" "lan2" "link"
+	ucidef_set_led_netdev "lan3-amber" "lan3" "mt7530-0:0b:amber:lan-3" "lan3" "link"
+	ucidef_set_led_netdev "lan4-amber" "lan4" "mt7530-0:0c:amber:lan-4" "lan4" "link"
+	ucidef_set_led_netdev "lan1-green" "lan1" "mt7530-0:09:green:lan-1" "lan1" "tx rx"
+	ucidef_set_led_netdev "lan2-green" "lan2" "mt7530-0:0a:green:lan-2" "lan2" "tx rx"
+	ucidef_set_led_netdev "lan3-green" "lan3" "mt7530-0:0b:green:lan-3" "lan3" "tx rx"
+	ucidef_set_led_netdev "lan4-green" "lan4" "mt7530-0:0c:green:lan-4" "lan4" "tx rx"
+	;;
+esac
+
+board_config_flush
+
+exit 0

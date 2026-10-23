@@ -1,0 +1,95 @@
+# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
+%YAML 1.2
+---
+$id: http://devicetree.org/schemas/net/realtek,rtl8367b.yaml#
+$schema: http://devicetree.org/meta-schemas/core.yaml#
+
+title: Realtek RTL8367B family Ethernet switches
+
+maintainers:
+  - Nickolay Savchenko <n.savchenko@axioma.lv>
+  - Mieczyslaw Nalewaj <namiltd@yahoo.com>
+
+properties:
+  compatible:
+    const: realtek,rtl8367b
+
+  mii-bus:
+    $ref: /schemas/types.yaml#/definitions/phandle
+    description: MDIO bus used to access the switch registers.
+
+  phy-id:
+    $ref: /schemas/types.yaml#/definitions/uint32
+    maximum: 31
+    description: MDIO address used to access the switch registers.
+
+  sda-gpios:
+    maxItems: 1
+    description: GPIO used for the proprietary SMI data signal.
+
+  sck-gpios:
+    maxItems: 1
+    description: GPIO used for the proprietary SMI clock signal.
+
+  resets:
+    maxItems: 1
+
+  reset-names:
+    const: switch
+
+  mdio-bus:
+    $ref: /schemas/net/mdio.yaml#
+    unevaluatedProperties: false
+    description: Optional container for the switch-internal MDIO bus.
+
+  realtek,extif:
+    $ref: /schemas/types.yaml#/definitions/uint32-array
+    minItems: 10
+    maxItems: 10
+    description:
+      External interface configuration. The values select the CPU port,
+      transmit and receive delays, interface mode, forced mode, pause,
+      link, duplex and speed settings, in that order.
+
+  realtek,init-regs:
+    $ref: /schemas/types.yaml#/definitions/uint32-matrix
+    minItems: 1
+    maxItems: 32
+    items:
+      items:
+        - description: Switch register address
+          minimum: 0
+          maximum: 0xffff
+        - description: Value written to the register
+          minimum: 0
+          maximum: 0xffff
+    description:
+      Register/value pairs written after the chip-specific initialization
+      table and before the external interface is configured. This permits
+      board-specific post-initialization without changing other switches.
+
+required:
+  - compatible
+  - realtek,extif
+
+oneOf:
+  - required:
+      - mii-bus
+  - required:
+      - sda-gpios
+      - sck-gpios
+
+additionalProperties: false
+
+examples:
+  - |
+    #include <dt-bindings/gpio/gpio.h>
+
+    switch {
+        compatible = "realtek,rtl8367b";
+        sda-gpios = <&gpio0 1 GPIO_ACTIVE_HIGH>;
+        sck-gpios = <&gpio0 2 GPIO_ACTIVE_HIGH>;
+        realtek,extif = <6 1 2 1 1 1 1 1 1 2>;
+        realtek,init-regs = <0x1301 0x0778>,
+                            <0x1302 0x7777>;
+    };

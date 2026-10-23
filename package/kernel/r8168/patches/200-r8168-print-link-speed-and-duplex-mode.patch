@@ -37,7 +37,7 @@ Signed-off-by: Chukun Pan <amadeus@jmu.edu.cn>
  #include <linux/netdevice.h>
  #include <linux/etherdevice.h>
  #include <linux/delay.h>
-@@ -5396,6 +5397,38 @@ rtl8168_link_down_patch(struct net_devic
+@@ -5527,6 +5528,38 @@ rtl8168_link_down_patch(struct net_devic
  #endif
  }
  
@@ -76,7 +76,7 @@ Signed-off-by: Chukun Pan <amadeus@jmu.edu.cn>
  static void
  rtl8168_check_link_status(struct net_device *dev)
  {
-@@ -5415,11 +5448,18 @@ rtl8168_check_link_status(struct net_dev
+@@ -5546,11 +5579,18 @@ rtl8168_check_link_status(struct net_dev
                  if (link_status_on) {
                          rtl8168_link_on_patch(dev);
  

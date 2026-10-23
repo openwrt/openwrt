@@ -19,6 +19,15 @@ boot() {
 			sleep 1
 			echo "1" > /sys/class/gpio/lte_pwrkey/value
 		;;
+		meraki,z3c)
+			echo "0" > /sys/class/gpio/lte_estop/value
+			sleep 1
+			echo "1" > /sys/class/gpio/lte_en/value
+			sleep 1
+			echo "1" > /sys/class/gpio/lte_rst/value
+			sleep 1
+			echo "0" > /sys/class/gpio/lte_rst/value
+		;;
 	esac
 }
 
@@ -29,6 +38,10 @@ shutdown() {
 			sleep 1
 			echo "1" > /sys/class/gpio/lte_pwrkey/value
 			sleep 10
+		;;
+		meraki,z3c)
+			echo "1" > /sys/class/gpio/lte_estop/value
+			echo "0" > /sys/class/gpio/lte_en/value
 		;;
 	esac
 }

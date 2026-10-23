@@ -1,0 +1,61 @@
+From 52bd8e248c4b4766037f30a5a93a9bcf59abd2c6 Mon Sep 17 00:00:00 2001
+From: Shiji Yang <yangshiji66@outlook.com>
+Date: Fri, 3 Jul 2026 21:56:16 +0800
+Subject: [PATCH] increase max SPL size
+
+The GCC 14.4 generates slightly larger binaries for the Cortex-A5
+platform. This resulted in the build failure on some emmc based
+boards. Fix it by increasing the CONFIG_SPL_MAX_SIZE.
+
+Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
+---
+ include/configs/sama5d27_som1_ek.h   | 2 +-
+ include/configs/sama5d27_wlsom1_ek.h | 2 +-
+ include/configs/sama5d2_icp.h        | 2 +-
+ include/configs/sama5d2_xplained.h   | 2 +-
+ 4 files changed, 4 insertions(+), 4 deletions(-)
+
+--- a/include/configs/sama5d27_som1_ek.h
++++ b/include/configs/sama5d27_som1_ek.h
+@@ -31,7 +31,7 @@
+ #endif
+
+ /* SPL */
+-#define CONFIG_SPL_MAX_SIZE		0x10000
++#define CONFIG_SPL_MAX_SIZE		0x18000
+ #define CONFIG_SPL_BSS_START_ADDR	0x20000000
+ #define CONFIG_SPL_BSS_MAX_SIZE		0x80000
+ #define CONFIG_SYS_SPL_MALLOC_START	0x20080000
+--- a/include/configs/sama5d27_wlsom1_ek.h
++++ b/include/configs/sama5d27_wlsom1_ek.h
+@@ -27,7 +27,7 @@
+ #endif
+
+ /* SPL */
+-#define CONFIG_SPL_MAX_SIZE		0x10000
++#define CONFIG_SPL_MAX_SIZE		0x18000
+ #define CONFIG_SPL_BSS_START_ADDR	0x20000000
+ #define CONFIG_SPL_BSS_MAX_SIZE		0x80000
+ #define CONFIG_SYS_SPL_MALLOC_START	0x20080000
+--- a/include/configs/sama5d2_icp.h
++++ b/include/configs/sama5d2_icp.h
+@@ -43,7 +43,7 @@
+ #endif
+
+ /* SPL */
+-#define CONFIG_SPL_MAX_SIZE		0x10000
++#define CONFIG_SPL_MAX_SIZE		0x18000
+ #define CONFIG_SPL_BSS_START_ADDR	0x20000000
+ #define CONFIG_SPL_BSS_MAX_SIZE		0x80000
+ #define CONFIG_SYS_SPL_MALLOC_START	0x20080000
+--- a/include/configs/sama5d2_xplained.h
++++ b/include/configs/sama5d2_xplained.h
+@@ -52,7 +52,7 @@
+ #endif
+
+ /* SPL */
+-#define CONFIG_SPL_MAX_SIZE		0x10000
++#define CONFIG_SPL_MAX_SIZE		0x18000
+ #define CONFIG_SPL_BSS_START_ADDR	0x20000000
+ #define CONFIG_SPL_BSS_MAX_SIZE		0x80000
+ #define CONFIG_SYS_SPL_MALLOC_START	0x20080000

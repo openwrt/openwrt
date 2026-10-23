@@ -40,7 +40,6 @@
 */
 
 /* Project header */
-#include <linux/version.h>
 #if defined(CONFIG_MODVERSIONS)
 #define MODVERSIONS
 #include <linux/modversions.h>
@@ -190,8 +189,8 @@ MODULE_DEVICE_TABLE(of, ltq_deu_match);
 
 
 static struct platform_driver ltq_deu_driver = {
-	.probe = ltq_deu_probe,
-	.remove_new = ltq_deu_remove,
+	.probe  = ltq_deu_probe,
+	.remove = ltq_deu_remove,
 	.driver = {
 		.name = "deu",
 		.of_match_table = ltq_deu_match,

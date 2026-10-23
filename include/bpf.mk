@@ -74,6 +74,10 @@ BPF_CFLAGS := \
 	-Wno-unused-label \
 	-O2 -emit-llvm -Xclang -disable-llvm-passes
 
+BPF_IREMAP_CFLAGS := \
+	$(call fremap,$(PKG_BUILD_DIR),$(notdir $(PKG_BUILD_DIR))) \
+	$(call remap_staging_dir,fremap)
+
 ifneq ($(CONFIG_HAS_BPF_TOOLCHAIN),)
 ifeq ($(DUMP)$(filter download refresh,$(MAKECMDGOALS)),)
   CLANG_VER:=$(shell $(CLANG) --target=$(BPF_TARGET) -dM -E - < /dev/null | grep __clang_major__ | cut -d' ' -f3)
@@ -85,7 +89,7 @@ endif
 endif
 
 define CompileBPF
-	$(CLANG) -g -target $(BPF_ARCH)-linux-gnu $(BPF_CFLAGS) $(2) \
+	$(CLANG) -g -target $(BPF_ARCH)-linux-gnu $(BPF_CFLAGS) $(BPF_IREMAP_CFLAGS) $(2) \
 		-c $(1) -o $(patsubst %.c,%.bc,$(1))
 	$(LLVM_OPT) -O2 -mtriple=$(BPF_TARGET) < $(patsubst %.c,%.bc,$(1)) > $(patsubst %.c,%.opt,$(1))
 	$(LLVM_DIS) < $(patsubst %.c,%.opt,$(1)) > $(patsubst %.c,%.S,$(1))

@@ -1,0 +1,208 @@
+# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
+%YAML 1.2
+---
+$id: http://devicetree.org/schemas/net/pcs/qualcomm,ipq-uniphy.yaml#
+$schema: http://devicetree.org/meta-schemas/core.yaml#
+
+title: Qualcomm IPQ UNIPHY PCS
+
+maintainers:
+  - John Crispin <john@phrozen.org>
+  - Christian Marangi <ansuelsmth@gmail.com>
+
+description: |
+  The UNIPHY blocks found in Qualcomm IPQ AX and BE SoCs provide SerDes-based
+  Physical Coding Sublayer (PCS) controllers. Each SoC contains one or multiple
+  UNIPHY instances. An instance can operate in PSGMII mode or in single-channel
+  mode (SGMII, 2500BASE-X, USXGMII). The PPE DSA switch driver references
+  UNIPHY instances through pcs-handle phandles.
+
+properties:
+  compatible:
+    enum:
+      - qualcomm,ipq5018-uniphy
+      - qualcomm,ipq6018-uniphy
+      - qualcomm,ipq8074-uniphy
+
+  reg:
+    maxItems: 1
+
+  '#pcs-cells':
+    const: 1
+    description:
+      The single cell specifies the channel index within the UNIPHY instance.
+
+  clocks:
+    minItems: 4
+    maxItems: 12
+    description: |
+      Core clocks (AHB, SYS) are always required. Per-channel RX/TX clock
+      pairs are provided for each port the UNIPHY instance serves. Instances
+      serving a single port have 4 clocks, PSGMII instances serving 5 ports
+      have 12. The CMN PLL CC provides a 50MHz reference clock to the UNIPHY
+      PCS which gates and divides it to pass through either a 25 MHz or 50 MHz
+      clock to an attached Ethernet PHY or a switch.
+    items:
+        - description: ahb clock
+        - description: sys clock
+        - description: port1_rx or port5_rx or port6_rx clock
+        - description: port1_tx or port5_tx or port6_tx clock
+        - description: port2_rx clock
+        - description: port2_tx clock
+        - description: port3_rx clock
+        - description: port3_tx clock
+        - description: port4_rx clock
+        - description: port4_tx clock
+        - description: port5_rx clock
+        - description: port5_tx clock
+        - description: CMN PLL reference clock
+
+  clock-names:
+    minItems: 4
+    maxItems: 12
+    items:
+        - const: ahb
+        - const: sys
+        - enum: [port1_rx, port5_rx, port6_rx]
+        - enum: [port1_tx, port5_tx, port6_tx]
+        - const: port2_rx
+        - const: port2_tx
+        - const: port3_rx
+        - const: port3_tx
+        - const: port4_rx
+        - const: port4_tx
+        - const: port5_rx
+        - const: port5_tx
+        - const: ref
+
+  clock-output-names:
+    description: Name of the uniphy GCC clock for TX and RX.
+    items:
+      - enum:
+          - uniphy0_gcc_tx_clk
+          - uniphy1_gcc_tx_clk
+          - uniphy2_gcc_tx_clk
+      - enum:
+          - uniphy0_gcc_rx_clk
+          - uniphy1_gcc_rx_clk
+          - uniphy2_gcc_rx_clk
+      - const: uniphy0_ref_clk
+
+  '#clock-cells':
+    const: 1
+
+  resets:
+    minItems: 1
+    items:
+      - description: soft reset
+      - description: xpcs reset
+
+  reset-names:
+    minItems: 1
+    items:
+      - const: soft
+      - const: xpcs
+
+required:
+  - compatible
+  - reg
+  - '#pcs-cells'
+  - clocks
+  - clock-names
+  - resets
+  - reset-names
+
+additionalProperties: false
+
+examples:
+  - |
+    #include <dt-bindings/clock/qcom,gcc-ipq8074.h>
+    #include <dt-bindings/net/qca-uniphy.h>
+
+    ethernet-pcs@7a10000 {
+        compatible = "qualcomm,ipq8074-uniphy";
+        reg = <0x7a10000 0x10000>;
+
+        clocks = <&gcc GCC_UNIPHY1_AHB_CLK>,
+                 <&gcc GCC_UNIPHY1_SYS_CLK>,
+                 <&gcc GCC_UNIPHY1_PORT5_RX_CLK>,
+                 <&gcc GCC_UNIPHY1_PORT5_TX_CLK>;
+        clock-names = "ahb", "sys",
+                      "port5_rx", "port5_tx";
+
+        clock-output-names = "uniphy1_gcc_tx_clk",
+                             "uniphy1_gcc_rx_clk";
+
+        resets = <&gcc GCC_UNIPHY1_SOFT_RESET>,
+                 <&gcc GCC_UNIPHY1_XPCS_RESET>;
+        reset-names = "soft", "xpcs";
+
+        #pcs-cells = <1>;
+    };
+
+  - |
+    #include <dt-bindings/clock/qcom,gcc-ipq6018.h>
+    #include <dt-bindings/net/qca-uniphy.h>
+
+    ethernet-pcs@7a00000 {
+        compatible = "qualcomm,ipq6018-uniphy";
+        reg = <0x7a00000 0x10000>;
+        qcom,psgmii;
+
+        clocks = <&gcc GCC_UNIPHY0_AHB_CLK>,
+                 <&gcc GCC_UNIPHY0_SYS_CLK>,
+                 <&gcc GCC_UNIPHY0_PORT1_RX_CLK>,
+                 <&gcc GCC_UNIPHY0_PORT1_TX_CLK>,
+                 <&gcc GCC_UNIPHY0_PORT2_RX_CLK>,
+                 <&gcc GCC_UNIPHY0_PORT2_TX_CLK>,
+                 <&gcc GCC_UNIPHY0_PORT3_RX_CLK>,
+                 <&gcc GCC_UNIPHY0_PORT3_TX_CLK>,
+                 <&gcc GCC_UNIPHY0_PORT4_RX_CLK>,
+                 <&gcc GCC_UNIPHY0_PORT4_TX_CLK>,
+                 <&gcc GCC_UNIPHY0_PORT5_RX_CLK>,
+                 <&gcc GCC_UNIPHY0_PORT5_TX_CLK>;
+        clock-names = "ahb", "sys",
+                      "port1_rx", "port1_tx",
+                      "port2_rx", "port2_tx",
+                      "port3_rx", "port3_tx",
+                      "port4_rx", "port4_tx",
+                      "port5_rx", "port5_tx";
+
+        clock-output-names = "uniphy0_gcc_tx_clk",
+                             "uniphy0_gcc_rx_clk";
+
+        resets = <&gcc GCC_UNIPHY0_SOFT_RESET>,
+                 <&gcc GCC_UNIPHY0_XPCS_RESET>;
+        reset-names = "soft", "xpcs";
+
+        #pcs-cells = <1>;
+    };
+
+  - |
+    #include <dt-bindings/clock/qcom,gcc-ipq5018.h>
+    #include <dt-bindings/net/qca-uniphy.h>
+
+    ethernet-pcs@98000 {
+        compatible = "qualcomm,ipq5018-uniphy";
+        reg = <0x00098000 0x800>;
+        #clock-cells = <1>;
+        clocks = <&gcc GCC_UNIPHY_AHB_CLK>,
+                 <&gcc GCC_UNIPHY_SYS_CLK>,
+                 <&gcc GCC_UNIPHY_RX_CLK>,
+                 <&gcc GCC_UNIPHY_TX_CLK>,
+                 <&cmn_pll IPQ5018_ETH_50MHZ_CLK>;
+        clock-names = "ahb",
+                      "sys",
+                      "port5_rx",
+                      "port5_tx",
+                      "ref";
+        assigned-clocks = <&uniphy0 UNIPHY_CLK_REF>;
+        assigned-clock-rates = <UNIPHY_REFCLK_25MHZ>;
+        clock-output-names = "uniphy0_gcc_rx_clk",
+                             "uniphy0_gcc_tx_clk",
+                             "uniphy0_ref_clk";
+        resets = <&gcc GCC_UNIPHY_SOFT_RESET>;
+        reset-names = "soft";
+
+        #pcs-cells = <0>;
+    };

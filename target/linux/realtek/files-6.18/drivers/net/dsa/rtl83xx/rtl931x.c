@@ -1,0 +1,535 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
+#include <asm/mach-rtl-otto/mach-rtl-otto.h>
+#include <linux/etherdevice.h>
+#include <linux/regmap.h>
+
+#include "lag.h"
+#include "l2.h"
+#include "pie.h"
+#include "qos.h"
+#include "mirror.h"
+#include "rtl-otto.h"
+#include "stats.h"
+#include "tc.h"
+#include "vlan.h"
+#include "stp.h"
+
+#define RTL931X_MAC_L2_PORT_CTRL		(0x6000)
+
+/* MAC maximum packet length (jumbo frame) control.
+ *
+ * The switch MAC drops frames whose L2 length exceeds the configured maximum.
+ * A family holds either one register per user port or a single one for the
+ * whole switch. The length is a direct byte value held in two 14-bit fields
+ * (high-speed links in [13:0], 10/100M links in [27:14]); bit 28 selects
+ * whether VLAN tag bytes count towards the limit.
+ */
+
+/* RTL931x covers ports 0 to 55 only, one word each. The CPU port has no row:
+ * the word that would follow the array is MAC_DBG_SEL_CTRL.
+ */
+#define RTL931X_MAC_L2_PORT_MAX_LEN_CTRL	(0x5554)
+
+#define RTL931X_MAX_FRAME			12288
+
+#define RTL931X_MAC_FORCE_MODE_CTRL		(0x0DCC)
+
+#define RTL931X_MAC_LINK_STS			(0x0EC0)
+
+#define RTL931X_TRK_HASH_CTRL			(0xBA70)
+#define RTL931X_TRK_CTRL			(0xBA78)
+
+#define RTL931X_RMA_BPDU_FLD_PMSK		(0x8950)
+
+/* IMR_GLB does not exit on RTL931X */
+#define RTL931X_IMR_PORT_LINK_STS_CHG		(0x126C)
+#define RTL931X_ISR_GLB_SRC			(0x12B4)
+#define RTL931X_ISR_PORT_LINK_STS_CHG		(0x12B8)
+
+#define RTL931X_LED_GLB_CTRL			(0x0600)
+
+#define RTL931X_RMA_BPDU_CTRL			(0x881C)
+
+#define RTL931X_RMA_PTP_CTRL			(0x8834)
+
+#define RTL931X_RMA_LLDP_CTRL			(0x8918)
+
+#define RTL931X_RMA_EAPOL_CTRL			(0x8930)
+#define RTL931X_TRAP_ARP_GRAT_PORT_ACT		(0x8C04)
+
+#define RTL931X_LED_PORT_NUM_CTRL(p)		(0x0604 + (((p >> 4) << 2)))
+#define RTL931X_LED_SET0_0_CTRL			(0x0630)
+#define RTL931X_LED_PORT_COPR_SET_SEL_CTRL(p)	(0x0634 + (((p >> 4) << 2)))
+#define RTL931X_LED_PORT_FIB_SET_SEL_CTRL(p)	(0x0644 + (((p >> 4) << 2)))
+#define RTL931X_LED_PORT_COPR_MASK_CTRL		(0x0654)
+#define RTL931X_LED_PORT_FIB_MASK_CTRL		(0x065c)
+#define RTL931X_LED_PORT_COMBO_MASK_CTRL	(0x0664)
+
+#define RTL931X_LED_GLB_ACTIVE_LOW BIT(21)
+
+#define RTL931X_LED_SETX_0_CTRL(x) (RTL931X_LED_SET0_0_CTRL - (x * 8))
+#define RTL931X_LED_SETX_1_CTRL(x) (RTL931X_LED_SETX_0_CTRL(x) - 4)
+
+/* get register for given set and led in the set */
+#define RTL931X_LED_SETX_LEDY(x, y) (RTL931X_LED_SETX_0_CTRL(x) - 4 * (y / 2))
+
+/* get shift for given led in any set */
+#define RTL931X_LED_SET_LEDX_SHIFT(x) (16 * (x % 2))
+
+#define RTL931X_LED_CLK_SEL_MASK				GENMASK(16, 15)
+#define RTL931X_LED_CLK_SEL_800NS				0
+#define RTL931X_LED_CLK_SEL_400NS				1
+#define RTL931X_LED_CLK_SEL_200NS				2
+#define RTL931X_LED_CLK_SEL_100NS				3
+
+#define RTL931X_SMI_PHY_ABLTY_GET_SEL(port)	(0x0cac + ((port) / 16) * 4)
+#define RTL931X_SMI_PHY_ABLTY_MDIO		0x0
+#define RTL931X_SMI_PHY_ABLTY_SDS		0x2
+#define RTL931X_SMI_PHY_ABLTY_MASK(port)	(GENMASK(1, 0) << (((port) % 16) * 2))
+
+static inline int rtl931x_mac_force_mode_ctrl(int p)
+{
+	return RTL931X_MAC_FORCE_MODE_CTRL + (p << 2);
+}
+
+static inline int rtl931x_mac_port_ctrl(int p)
+{
+	return RTL931X_MAC_L2_PORT_CTRL + (p << 7);
+}
+
+static inline int rtl931x_mac_max_len_reg(int p)
+{
+	return RTL931X_MAC_L2_PORT_MAX_LEN_CTRL + (p << 2);
+}
+
+void rtldsa_931x_print_matrix(void)
+{
+	int tbl = otto_table_acquire(RTL9310_TBL_PORT_ISO_CTRL);
+	u32 v[2];
+
+	for (int i = 0; i < 64; i++) {
+		__otto_table_read(tbl, i, &v);
+		pr_debug("> %08x %08x\n", v[0], v[1]);
+	}
+	otto_table_release(tbl);
+}
+
+static void rtldsa_931x_set_receive_management_action(int port, rma_ctrl_t type,
+						      action_type_t action)
+{
+	u32 shift;
+	u32 value;
+	u32 reg;
+
+	/* hack for value mapping */
+	if (type == GRATARP && action == COPY2CPU)
+		action = TRAP2MASTERCPU;
+
+	/* PTP doesn't allow to flood to all ports */
+	if (action == FLOODALL &&
+	    (type == PTP || type == PTP_UDP || type == PTP_ETH2)) {
+		pr_warn("%s: Port flooding not supported for PTP\n", __func__);
+		return;
+	}
+
+	switch (action) {
+	case FORWARD:
+		value = 0;
+		break;
+	case DROP:
+		value = 1;
+		break;
+	case TRAP2CPU:
+		value = 2;
+		break;
+	case TRAP2MASTERCPU:
+		value = 3;
+		break;
+	case FLOODALL:
+		value = 4;
+		break;
+	default:
+		return;
+	}
+
+	switch (type) {
+	case BPDU:
+		reg = RTL931X_RMA_BPDU_CTRL + (port / 10) * 4;
+		shift = (port % 10) * 3;
+		sw_w32_mask(GENMASK(shift + 2, shift), value << shift, reg);
+		break;
+	case PTP:
+		reg = RTL931X_RMA_PTP_CTRL + port * 4;
+
+		/* udp */
+		sw_w32_mask(GENMASK(3, 2), value << 2, reg);
+
+		/* eth2 */
+		sw_w32_mask(GENMASK(1, 0), value, reg);
+		break;
+	case PTP_UDP:
+		reg = RTL931X_RMA_PTP_CTRL + port * 4;
+		sw_w32_mask(GENMASK(3, 2), value << 2, reg);
+		break;
+	case PTP_ETH2:
+		reg = RTL931X_RMA_PTP_CTRL + port * 4;
+		sw_w32_mask(GENMASK(1, 0), value, reg);
+		break;
+	case LLDP:
+		reg = RTL931X_RMA_LLDP_CTRL + (port / 10) * 4;
+		shift = (port % 10) * 3;
+		sw_w32_mask(GENMASK(shift + 2, shift), value << shift, reg);
+		break;
+	case EAPOL:
+		reg = RTL931X_RMA_EAPOL_CTRL + (port / 10) * 4;
+		shift = (port % 10) * 3;
+		sw_w32_mask(GENMASK(shift + 2, shift), value << shift, reg);
+		break;
+	case GRATARP:
+		reg = RTL931X_TRAP_ARP_GRAT_PORT_ACT + (port / 16) * 4;
+		shift = (port % 16) * 2;
+		sw_w32_mask(GENMASK(shift + 1, shift), value << shift, reg);
+		break;
+	}
+}
+
+/* Enable traffic between a source port and a destination port matrix */
+static void rtl931x_traffic_set(int source, u64 dest_matrix)
+{
+	u32 buf[2] = { dest_matrix >> (32 - 7), dest_matrix << 7 };
+
+	otto_table_write(RTL9310_TBL_PORT_ISO_CTRL, source, &buf);
+}
+
+/* The ternary below only ever selects word 0 or 1, whatever dest is */
+static void rtl931x_traffic_enable(int source, int dest)
+{
+	int tbl = otto_table_acquire(RTL9310_TBL_PORT_ISO_CTRL);
+	int idx = (dest + 7) / 32 ? 0 : 1;
+	u32 buf[2];
+
+	__otto_table_read(tbl, source, &buf);
+	buf[idx] |= BIT((dest + 7) % 32);
+	__otto_table_write(tbl, source, &buf);
+	otto_table_release(tbl);
+}
+
+static void rtl931x_traffic_disable(int source, int dest)
+{
+	int tbl = otto_table_acquire(RTL9310_TBL_PORT_ISO_CTRL);
+	int idx = (dest + 7) / 32 ? 0 : 1;
+	u32 buf[2];
+
+	__otto_table_read(tbl, source, &buf);
+	buf[idx] &= ~BIT((dest + 7) % 32);
+	__otto_table_write(tbl, source, &buf);
+	otto_table_release(tbl);
+}
+
+static void rtl931x_set_igr_filter(int port, enum igr_filter state)
+{
+	sw_w32_mask(0x3 << ((port & 0xf) << 1), state << ((port & 0xf) << 1),
+		    RTL931X_VLAN_PORT_IGR_FLTR + (((port >> 4) << 2)));
+}
+
+static void rtl931x_set_egr_filter(int port,  enum egr_filter state)
+{
+	sw_w32_mask(0x1 << (port % 0x20), state << (port % 0x20),
+		    RTL931X_VLAN_PORT_EGR_FLTR + (((port >> 5) << 2)));
+}
+
+static void rtldsa_931x_led_get_forced(const struct device_node *node,
+				       const u8 leds_in_set[4],
+				       u8 forced_leds_per_port[RTL931X_CPU_PORT])
+{
+	DECLARE_BITMAP(mask, RTL931X_CPU_PORT);
+	unsigned int port;
+	char set_str[36];
+	u64 pm;
+
+	for (u8 set = 0; set < 4; set++) {
+		snprintf(set_str, sizeof(set_str), "realtek,led-set%d-force-port-mask", set);
+		if (of_property_read_u64(node, set_str, &pm))
+			continue;
+
+		bitmap_from_arr64(mask, &pm, RTL931X_CPU_PORT);
+
+		for_each_set_bit(port, mask, RTL931X_CPU_PORT)
+			forced_leds_per_port[port] = leds_in_set[set];
+	}
+}
+
+static void rtldsa_931x_led_init(struct otto_dsa_priv *priv)
+{
+	u8 forced_leds_per_port[RTL931X_CPU_PORT] = {};
+	u64 pm_copper = 0, pm_fiber = 0;
+	struct device *dev = priv->dev;
+	struct device_node *node;
+	u8 leds_in_set[4] = {};
+	u32 led_mode = 1;
+	u32 clk_freq;
+	int ret;
+
+	node = of_find_compatible_node(NULL, NULL, "realtek,rtl9300-leds");
+	if (!node) {
+		dev_dbg(dev, "No compatible LED node found\n");
+		return;
+	}
+
+	ret = of_property_read_u32(node, "clock-frequency", &clk_freq);
+	if (!ret) {
+		u8 clk_sel;
+
+		switch (clk_freq) {
+		case 10000000:
+			clk_sel = RTL931X_LED_CLK_SEL_100NS;
+			break;
+		case 5000000:
+			clk_sel = RTL931X_LED_CLK_SEL_200NS;
+			break;
+		case 1250000:
+			clk_sel = RTL931X_LED_CLK_SEL_800NS;
+			break;
+		default:
+			dev_warn(dev, "invalid LED clock frequency, falling back to default\n");
+			fallthrough;
+		case 2500000:
+			clk_sel = RTL931X_LED_CLK_SEL_400NS;
+			break;
+		}
+
+		sw_w32_mask(RTL931X_LED_CLK_SEL_MASK,
+			    FIELD_PREP(RTL931X_LED_CLK_SEL_MASK, clk_sel), RTL931X_LED_GLB_CTRL);
+	}
+
+	for (int set = 0; set < 4; set++) {
+		char set_name[16] = {0};
+		u32 set_config[4];
+		int leds_in_this_set = 0;
+
+		/* Reset LED set configuration */
+		sw_w32(0, RTL931X_LED_SETX_0_CTRL(set));
+		sw_w32(0, RTL931X_LED_SETX_1_CTRL(set));
+
+		/* Each LED set has (up to) 4 LEDs, and each LED is configured
+		 * with 16 bits. So each 32 bit register holds configuration for
+		 * 2 LEDs. Therefore, each set requires 2 registers for
+		 * configuring all 4 LEDs.
+		 */
+		snprintf(set_name, sizeof(set_name), "led_set%d", set);
+		leds_in_this_set = of_property_count_u32_elems(node, set_name);
+
+		if (leds_in_this_set <= 0 || leds_in_this_set > ARRAY_SIZE(set_config)) {
+			if (leds_in_this_set != -EINVAL) {
+				dev_err(dev, "%s invalid, skipping this set, leds_in_this_set=%d, should be (0, %d]\n",
+					set_name, leds_in_this_set, ARRAY_SIZE(set_config));
+			}
+
+			continue;
+		}
+
+		dev_info(dev, "%s has %d LEDs configured\n", set_name, leds_in_this_set);
+		leds_in_set[set] = leds_in_this_set;
+
+		if (of_property_read_u32_array(node, set_name, set_config, leds_in_this_set))
+			break;
+
+		/* Write configuration for selected LEDs */
+		for (int i = 0, led = leds_in_this_set - 1; led >= 0; led--, i++) {
+			sw_w32_mask(0xffff << RTL931X_LED_SET_LEDX_SHIFT(led),
+				    (0xffff & set_config[i]) << RTL931X_LED_SET_LEDX_SHIFT(led),
+				    RTL931X_LED_SETX_LEDY(set, led));
+		}
+	}
+
+	rtldsa_931x_led_get_forced(node, leds_in_set, forced_leds_per_port);
+
+	for (int i = 0; i < priv->r->cpu_port; i++) {
+		int pos = (i << 1) % 32;
+		u32 set;
+
+		sw_w32_mask(0x3 << pos, 0, RTL931X_LED_PORT_FIB_SET_SEL_CTRL(i));
+		sw_w32_mask(0x3 << pos, 0, RTL931X_LED_PORT_COPR_SET_SEL_CTRL(i));
+
+		/* Skip port if not present (auto-detect) or not in forced mask */
+		if (!priv->ports[i].phy && !priv->ports[i].has_pcs && !(forced_leds_per_port[i]))
+			continue;
+
+		if (forced_leds_per_port[i] > 0)
+			priv->ports[i].leds_on_this_port = forced_leds_per_port[i];
+
+		/* 0x0 = 1 led, 0x1 = 2 leds, 0x2 = 3 leds, 0x3 = 4 leds per port */
+		sw_w32_mask(0x3 << pos, (priv->ports[i].leds_on_this_port - 1) << pos,
+			    RTL931X_LED_PORT_NUM_CTRL(i));
+
+		if (priv->ports[i].phy)
+			pm_copper |= BIT_ULL(i);
+		else
+			pm_fiber |= BIT_ULL(i);
+
+		set = priv->ports[i].led_set;
+		sw_w32_mask(0, set << pos, RTL931X_LED_PORT_COPR_SET_SEL_CTRL(i));
+		sw_w32_mask(0, set << pos, RTL931X_LED_PORT_FIB_SET_SEL_CTRL(i));
+	}
+
+	/* LED interface: 1 = serial (default), 2 = single-colour scan, 3 = bi-colour scan */
+	of_property_read_u32(node, "realtek,led-mode", &led_mode);
+	if (led_mode < 1 || led_mode > 3) {
+		dev_warn(dev, "invalid realtek,led-mode %u, using serial\n", led_mode);
+		led_mode = 1;
+	}
+	sw_w32_mask(0x3, led_mode, RTL931X_LED_GLB_CTRL);
+
+	if (of_property_read_bool(node, "active-low"))
+		sw_w32_mask(RTL931X_LED_GLB_ACTIVE_LOW, 0, RTL931X_LED_GLB_CTRL);
+	else
+		sw_w32_mask(0, RTL931X_LED_GLB_ACTIVE_LOW, RTL931X_LED_GLB_CTRL);
+
+	rtl839x_set_port_reg_le(pm_copper, RTL931X_LED_PORT_COPR_MASK_CTRL);
+	rtl839x_set_port_reg_le(pm_fiber, RTL931X_LED_PORT_FIB_MASK_CTRL);
+	rtl839x_set_port_reg_le(pm_copper | pm_fiber, RTL931X_LED_PORT_COMBO_MASK_CTRL);
+
+	for (int i = 0; i < 32; i++)
+		dev_dbg(dev, "%08x: %08x\n", 0xbb000600 + i * 4, sw_r32(0x0600 + i * 4));
+}
+
+static int
+rtldsa_931x_mac_link_state_source_set(struct otto_dsa_priv *priv,
+				      int port,
+				      enum rtldsa_mac_link_state_source source,
+				      phy_interface_t interface)
+{
+	u32 mask, src_val;
+
+	if (port >= RTL931X_CPU_PORT)
+		return 0;
+
+	mask = RTL931X_SMI_PHY_ABLTY_MASK(port);
+	if (source == RTLDSA_MAC_LINK_STATE_SOURCE_PCS)
+		src_val = RTL931X_SMI_PHY_ABLTY_SDS;
+	else
+		src_val = RTL931X_SMI_PHY_ABLTY_MDIO;
+
+	return regmap_update_bits(priv->map,
+				  RTL931X_SMI_PHY_ABLTY_GET_SEL(port),
+				  mask, field_prep(mask, src_val));
+}
+
+const struct rtldsa_config rtldsa_931x_cfg = {
+	.switch_ops = &rtldsa_93xx_switch_ops,
+	.phylink_mac_ops = &rtldsa_93xx_phylink_mac_ops,
+	.stp_init = rtldsa_931x_stp_init,
+	.l2_bucket_size = 8,
+	.n_mst = 128,
+	.num_lag_ids = 16,
+	.cpu_port = RTL931X_CPU_PORT,
+	.fib_entries = 16384, /* TODO: has 32K but code cannot handle that */
+	.l2_uc_tbl = RTL9310_TBL_L2_UC,
+	.l2_cam_tbl = RTL9310_TBL_L2_CAM_UC,
+	.mask_port_reg_be = rtl839x_mask_port_reg_be,
+	.set_port_reg_be = rtl839x_set_port_reg_be,
+	.get_port_reg_be = rtl839x_get_port_reg_be,
+	.mask_port_reg_le = rtl839x_mask_port_reg_le,
+	.set_port_reg_le = rtl839x_set_port_reg_le,
+	.get_port_reg_le = rtl839x_get_port_reg_le,
+	.stat_port_rst = RTL931X_STAT_PORT_RST,
+	.stat_rst = RTL931X_STAT_RST,
+	.stat_port_std_mib = 0,  /* Not defined */
+	.mib_desc = &otto_stats_931x_mib_desc,
+	.drop_desc = &otto_stats_931x_drop_desc,
+	.stat_port_table_read = otto_stats_931x_port_table_read,
+	.stat_counters_lock = otto_stats_counters_lock_table,
+	.stat_counters_unlock = otto_stats_counters_unlock_table,
+	.stat_counter_poll_interval = OTTO_STATS_COUNTERS_FAST_POLL_INTERVAL,
+	.traffic_enable = rtl931x_traffic_enable,
+	.traffic_disable = rtl931x_traffic_disable,
+	.traffic_set = rtl931x_traffic_set,
+	.l2_ctrl_0 = RTL931X_L2_CTRL,
+	.l2_ctrl_1 = RTL931X_L2_AGE_CTRL,
+	.l2_port_aging_out = RTL931X_L2_PORT_AGE_CTRL,
+	.set_ageing_time = otto_l2_931x_set_ageing_time,
+	.l2_tbl_flush_ctrl = RTL931X_L2_TBL_FLUSH_CTRL,
+	.isr_glb_src = RTL931X_ISR_GLB_SRC,
+	.isr_port_link_sts_chg = RTL931X_ISR_PORT_LINK_STS_CHG,
+	.imr_port_link_sts_chg = RTL931X_IMR_PORT_LINK_STS_CHG,
+	/* imr_glb does not exist on RTL931X */
+	.n_counters = 2048,
+	.n_pie_blocks = 16,
+	.port_ignore = 0x3f,
+	.vlan_tables_read = otto_vlan_931x_tables_read,
+	.vlan_set_tagged = otto_vlan_931x_set_tagged,
+	.vlan_set_untagged = otto_vlan_931x_set_untagged,
+	.vlan_profile_get = otto_vlan_931x_profile_get,
+	.vlan_profile_dump = otto_vlan_931x_profile_dump,
+	.vlan_profile_setup = otto_vlan_931x_profile_setup,
+	.vlan_fwd_on_inner = otto_vlan_931x_port_forward_on_inner,
+	.stp_get = rtldsa_931x_stp_get,
+	.stp_set = rtl931x_stp_set,
+	.mac_force_mode = {
+		.force_en_mask = RTL931X_FORCE_LINK_EN |
+				 RTL931X_FORCE_DUPLEX_EN |
+				 RTL931X_FORCE_SPEED_EN,
+		.fc_force_en_mask = RTL931X_MAC_FORCE_FC_EN,
+		.link_up_mask = RTL931X_FORCE_LINK,
+		.duplex_mask = RTL931X_DUPLEX_MODE,
+		.speed_mask = RTL931X_SPEED_MASK,
+		.tx_pause_mask = RTL931X_TX_PAUSE_EN,
+		.rx_pause_mask = RTL931X_RX_PAUSE_EN,
+	},
+	.mac_force_mode_ctrl = rtl931x_mac_force_mode_ctrl,
+	.mac_link_state_source_set = rtldsa_931x_mac_link_state_source_set,
+	.mac_link_sts = RTL931X_MAC_LINK_STS,
+	.mac_port_ctrl = rtl931x_mac_port_ctrl,
+	.mac_capabilities = MAC_ASYM_PAUSE | MAC_SYM_PAUSE | MAC_10 | MAC_100 |
+			    MAC_1000FD | MAC_2500FD | MAC_5000FD | MAC_10000FD,
+	.mac_max_len_reg = rtl931x_mac_max_len_reg,
+	.max_frame = RTL931X_MAX_FRAME,
+	.l2_port_new_salrn = otto_l2_931x_port_new_salrn,
+	.l2_port_new_sa_fwd = otto_l2_931x_port_new_sa_fwd,
+	.get_mirror_config = rtldsa_931x_get_mirror_config,
+	.port_rate_police_add = otto_tc_931x_port_rate_police_add,
+	.port_rate_police_del = otto_tc_931x_port_rate_police_del,
+	.print_matrix = rtldsa_931x_print_matrix,
+	.read_l2_entry_using_hash = otto_l2_931x_read_entry_using_hash,
+	.write_l2_entry_using_hash = otto_l2_931x_write_entry_using_hash,
+	.read_cam = otto_l2_931x_read_cam,
+	.write_cam = otto_l2_931x_write_cam,
+	.vlan_port_keep_tag_set = otto_vlan_931x_port_keep_tag_set,
+	.vlan_port_pvidmode_set = otto_vlan_931x_port_pvid_mode_set,
+	.vlan_port_pvid_set = otto_vlan_931x_port_pvid_set,
+	.fast_age = otto_l2_931x_fast_age,
+	.trk_mbr_ctr = otto_lag_931x_trk_mbr_ctr,
+	.rma_bpdu_fld_pmask = RTL931X_RMA_BPDU_FLD_PMSK,
+	.set_vlan_igr_filter = rtl931x_set_igr_filter,
+	.set_vlan_egr_filter = rtl931x_set_egr_filter,
+	.l2_hash_key = otto_l2_931x_hash_key,
+	.l2_hash_seed = otto_l2_931x_hash_seed,
+	.read_mcast_pmask = otto_l2_931x_read_mcast_pmask,
+	.write_mcast_pmask = otto_l2_931x_write_mcast_pmask,
+	.pie_init = otto_pie_931x_init,
+	.pie_rule_write = otto_pie_931x_rule_write,
+	.pie_rule_add = otto_pie_931x_rule_add,
+	.pie_rule_rm = otto_pie_931x_rule_rm,
+	.l2_learning_setup = otto_l2_931x_learning_setup,
+	.led_init = rtldsa_931x_led_init,
+	.enable_learning = otto_l2_931x_enable_learning,
+	.enable_l2_new_sa_fwd = otto_l2_931x_set_port_new_sa_fwd,
+	.enable_flood = otto_l2_931x_enable_flood,
+	.enable_bcast_flood = otto_l2_931x_enable_bcast_flood,
+	.set_receive_management_action = rtldsa_931x_set_receive_management_action,
+	.qos_init = otto_qos_931x_init,
+	.trk_ctrl = RTL931X_TRK_CTRL,
+	.trk_hash_ctrl = RTL931X_TRK_HASH_CTRL,
+	.prepare_lag_fdb = otto_lag_93xx_prepare_fdb,
+	.lag_switch_init = otto_lag_93xx_switch_init,
+	.lag_set_port_members = otto_lag_93xx_set_port_members,
+	.lag_set_distribution_algorithm = otto_lag_93xx_set_distribution_algorithm,
+	.lag_set_local_group_id = otto_lag_931x_set_local_group_id,
+	.lag_write_data = otto_lag_931x_write_data,
+	.lag_fill_data = otto_lag_931x_fill_data,
+	.lag_set_local_port2group = otto_lag_931x_set_local_port2group,
+	.lag_set_port2group = otto_lag_931x_set_port2group,
+	.lag_sync_tables = otto_lag_931x_sync_tables,
+	.lag_table = otto_lag_931x_table,
+};

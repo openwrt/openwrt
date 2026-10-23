@@ -1,0 +1,50 @@
+From: Markus Theil <markus.theil@tu-ilmenau.de>
+Date: Tue, 20 Oct 2026 14:34:10 +0200
+Subject: [PATCH] nl80211: Set HANDLE_DFS for the channel switch of a mesh
+
+nl80211_channel_switch() rejects with -EINVAL a channel switch to a
+channel that requires DFS, unless NL80211_ATTR_HANDLE_DFS is set; only
+AP and P2P GO interfaces are exempt. wpa_supplicant sets the flag for
+the mesh join only. A mesh that wpa_supplicant runs on a DFS channel
+thus cannot switch to another DFS channel, with CHAN_SWITCH or after a
+radar detection.
+
+Set the flag for the channel switch if the mesh join set it, that is if
+wpa_supplicant handles DFS for the mesh. A mesh that joined without it
+does not handle radar events and keeps the rejection, as mac80211 does
+for the channel switch of a mesh peer
+(ieee80211_mesh_process_chnswitch()).
+
+Signed-off-by: Markus Theil <markus.theil@tu-ilmenau.de>
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+
+--- a/src/drivers/driver_nl80211.c
++++ b/src/drivers/driver_nl80211.c
+@@ -12380,6 +12380,8 @@ static int nl80211_switch_channel(void *
+ 	    (ret = nl80211_put_freq_params(msg, &settings->freq_params, bss)) ||
+ 	    (settings->block_tx &&
+ 	     nla_put_flag(msg, NL80211_ATTR_CH_SWITCH_BLOCK_TX)) ||
++	    (drv->nlmode == NL80211_IFTYPE_MESH_POINT && drv->mesh_handle_dfs &&
++	     nla_put_flag(msg, NL80211_ATTR_HANDLE_DFS)) ||
+ 	    (settings->link_id != NL80211_DRV_LINK_ID_NA &&
+ 	     nla_put_u8(msg, NL80211_ATTR_MLO_LINK_ID, settings->link_id)))
+ 		goto error;
+@@ -13174,6 +13176,7 @@ static int nl80211_join_mesh(struct i802
+ 	}
+ 	ret = 0;
+ 	drv->assoc_freq = bss->flink->freq = params->freq.freq;
++	drv->mesh_handle_dfs = params->handle_dfs;
+ 	wpa_printf(MSG_DEBUG, "nl80211: mesh join request sent successfully");
+ 
+ fail:
+--- a/src/drivers/driver_nl80211.h
++++ b/src/drivers/driver_nl80211.h
+@@ -221,6 +221,7 @@ struct wpa_driver_nl80211_data {
+ 	unsigned int qca_ap_allowed_freqs:1;
+ 	unsigned int connect_ext_vendor_cmd_avail:1;
+ 	unsigned int support_ap_scan:1;
++	unsigned int mesh_handle_dfs:1;
+ 
+ 	u8 extra_bss_membership_selectors[8];
+ 

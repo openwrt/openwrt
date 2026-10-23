@@ -1,0 +1,185 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Tue, 6 Oct 2026 07:40:34 +0200
+Subject: [PATCH] AP MLD: Reset the station when association follows a timed out SA Query
+
+A non-AP MLD that lost its association without a Deauthentication frame
+comes back with a new authentication and association. With PMF, the AP
+rejects the association with status code 30, runs an SA Query and
+allows the next association once the query times out. handle_auth()
+keeps the WPA state machine and the station entries of a PMF station,
+so the partner link entries of the earlier association remain.
+ieee80211_ml_process_link() then rejects those links with "MLD: link:
+Station already exists", and the station comes back with the
+association link only.
+
+IEEE Std 802.11be-2024, 11.3.5.3 l) deletes the states of the earlier
+association for a successful association, and p) leaves them unchanged
+for a failed one when PMF was negotiated. Once the SA Query has timed
+out, check the request in handle_assoc() with a new WPA state machine
+and keep the earlier one aside. If the request fails, put the earlier
+state machine back. Otherwise free it and re-add the station, which
+removes the entries of the other links, and keep the authenticated
+state. The earlier state machine must go first, because ap_free_sta()
+of the removed entries deinitialises it or releases their links in it.
+The new state machine stays detached during the re-add, because
+ap_free_sta() of the earlier association link entry clears the state
+machine of all its partner link entries.
+
+Limit this to Open System and SAE authentication, because FT and FILS
+keep keys of the authentication in the state machine. Limit it to
+drivers with full AP client state, as in handle_auth().
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+
+--- a/src/ap/ieee802_11.c
++++ b/src/ap/ieee802_11.c
+@@ -4576,15 +4576,8 @@ static void handle_auth(struct hostapd_d
+ 				  hapd->own_addr, ETH_ALEN);
+ 		}
+ 
+-		if ((!(sta->flags & WLAN_STA_MFP) ||
+-		     !ap_sta_is_authorized(sta)) && sta->wpa_sm) {
+-			struct wpa_state_machine *sm = sta->wpa_sm;
+-
+-			clear_wpa_sm_for_each_partner_link(hapd, sta);
+-			clear_wpa_sm_for_all_sta(hapd, sm);
+-			wpa_auth_sta_deinit(sm);
+-			sta->wpa_sm = NULL;
+-		}
++		if (!(sta->flags & WLAN_STA_MFP) || !ap_sta_is_authorized(sta))
++			ap_sta_free_wpa_sm(hapd, sta);
+ 	}
+ #endif /* CONFIG_IEEE80211BE */
+ 
+@@ -7213,6 +7206,10 @@ static void handle_assoc(struct hostapd_
+ 	int omit_rsnxe = 0;
+ 	bool set_beacon = false;
+ 	bool mld_addrs_not_translated = false;
++#ifdef CONFIG_IEEE80211BE
++	bool reset_prev_assoc = false;
++	struct wpa_state_machine *prev_wpa_sm = NULL;
++#endif /* CONFIG_IEEE80211BE */
+ 
+ 	if (len < IEEE80211_HDRLEN + (reassoc ? sizeof(mgmt->u.reassoc_req) :
+ 				      sizeof(mgmt->u.assoc_req))) {
+@@ -7429,6 +7426,26 @@ static void handle_assoc(struct hostapd_
+ 		goto fail;
+ 	}
+ 
++#ifdef CONFIG_IEEE80211BE
++	/*
++	 * IEEE Std 802.11be-2024, 11.3.5.3 l) and p): the states of the earlier
++	 * association of the non-AP MLD are deleted for a successful
++	 * association and kept otherwise. Validate the request with a new state
++	 * machine and keep the earlier one until hostapd_get_aid() succeeds. FT
++	 * and FILS keep keys of the authentication in the state machine, so
++	 * only Open System and SAE authentication are covered.
++	 */
++	if (hapd->conf->wpa && (sta->flags & WLAN_STA_MFP) &&
++	    sta->sa_query_timed_out && ap_sta_is_mld(hapd, sta) &&
++	    FULL_AP_CLIENT_STATE_SUPP(hapd->iface->drv_flags) &&
++	    (sta->auth_alg == WLAN_AUTH_OPEN ||
++	     sta->auth_alg == WLAN_AUTH_SAE)) {
++		reset_prev_assoc = true;
++		prev_wpa_sm = sta->wpa_sm;
++		sta->wpa_sm = NULL;
++	}
++#endif /* CONFIG_IEEE80211BE */
++
+ 	/*
+ 	 * sta->capability is used in check_assoc_ies() for RRM enabled
+ 	 * capability element.
+@@ -7481,6 +7498,16 @@ static void handle_assoc(struct hostapd_
+ 		goto fail;
+ 	}
+ 
++#ifdef CONFIG_IEEE80211BE
++	if (reset_prev_assoc) {
++		reset_prev_assoc = false;
++		if (ap_sta_reset_prev_assoc(hapd, sta, prev_wpa_sm) < 0) {
++			resp = WLAN_STATUS_AP_UNABLE_TO_HANDLE_NEW_STA;
++			goto fail;
++		}
++	}
++#endif /* CONFIG_IEEE80211BE */
++
+ 	sta->listen_interval = listen_interval;
+ 
+ 	if (hapd->iface->current_mode &&
+@@ -7566,6 +7593,10 @@ static void handle_assoc(struct hostapd_
+ #endif /* CONFIG_FILS */
+ 
+  fail:
++#ifdef CONFIG_IEEE80211BE
++	if (reset_prev_assoc)
++		ap_sta_restore_wpa_sm(hapd, sta, prev_wpa_sm);
++#endif /* CONFIG_IEEE80211BE */
+ 
+ 	/*
+ 	 * In case of a successful response, add the station to the driver.
+--- a/src/ap/sta_info.c
++++ b/src/ap/sta_info.c
+@@ -275,6 +275,48 @@ void clear_wpa_sm_for_all_sta(struct hos
+ 	}
+ }
+ 
++
++void ap_sta_free_wpa_sm(struct hostapd_data *hapd, struct sta_info *sta)
++{
++	struct wpa_state_machine *sm = sta->wpa_sm;
++
++	if (!sm)
++		return;
++
++	clear_wpa_sm_for_each_partner_link(hapd, sta);
++	clear_wpa_sm_for_all_sta(hapd, sm);
++	wpa_auth_sta_deinit(sm);
++	sta->wpa_sm = NULL;
++}
++
++
++void ap_sta_restore_wpa_sm(struct hostapd_data *hapd, struct sta_info *sta,
++			   struct wpa_state_machine *prev_sm)
++{
++	ap_sta_free_wpa_sm(hapd, sta);
++	sta->wpa_sm = prev_sm;
++	set_wpa_sm_for_each_partner_link(hapd, sta, prev_sm);
++}
++
++
++int ap_sta_reset_prev_assoc(struct hostapd_data *hapd, struct sta_info *sta,
++			    struct wpa_state_machine *prev_sm)
++{
++	struct wpa_state_machine *sm = sta->wpa_sm;
++	int res;
++
++	sta->wpa_sm = prev_sm;
++	ap_sta_free_wpa_sm(hapd, sta);
++	/* ap_free_sta() of the earlier association link station clears the
++	 * state machine of all its partner link stations, this one included. */
++	res = ap_sta_re_add(hapd, sta);
++	sta->wpa_sm = sm;
++	if (res < 0)
++		return -1;
++	sta->flags |= WLAN_STA_AUTH;
++	return 0;
++}
++
+ #endif /* CONFIG_IEEE80211BE */
+ 
+ 
+--- a/src/ap/sta_info.h
++++ b/src/ap/sta_info.h
+@@ -484,6 +484,11 @@ void clear_wpa_sm_for_each_partner_link(
+ 					struct sta_info *psta);
+ void clear_wpa_sm_for_all_sta(struct hostapd_data *hapd,
+ 			      struct wpa_state_machine *wpa_sm);
++void ap_sta_free_wpa_sm(struct hostapd_data *hapd, struct sta_info *sta);
++void ap_sta_restore_wpa_sm(struct hostapd_data *hapd, struct sta_info *sta,
++			   struct wpa_state_machine *prev_sm);
++int ap_sta_reset_prev_assoc(struct hostapd_data *hapd, struct sta_info *sta,
++			    struct wpa_state_machine *prev_sm);
+ 
+ static inline bool ap_sta_is_epp(const struct sta_info *sta)
+ {

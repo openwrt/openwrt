@@ -8,7 +8,7 @@ function phy_filename(phy, name) {
 }
 
 function phy_file(phy, name) {
-	return readfile(phy_filename(phy, name));
+	return trim(readfile(phy_filename(phy, name)));
 }
 
 function phy_index(phy) {
@@ -20,20 +20,42 @@ function phy_path_match(phy, path) {
 	return substr(phy_path, -length(path)) == path;
 }
 
-function __find_phy_by_path(phys, path) {
-	if (!path)
+function phy_paths(path) {
+	return type(path) == "array" ? path : [ path ];
+}
+
+function phy_path_match_any(phy, paths) {
+	for (let path in phy_paths(paths)) {
+		if (!path)
+			continue;
+		if (phy_path_match(phy, split(path, "+")[0]))
+			return true;
+	}
+
+	return false;
+}
+
+function __find_phy_by_path(phys, paths) {
+	if (!paths)
 		return null;
 
-	path = split(path, "+");
-	phys = filter(phys, (phy) => phy_path_match(phy, path[0]));
-	phys = sort(phys, (a, b) => phy_index(a) - phy_index(b));
+	for (let path in phy_paths(paths)) {
+		if (!path)
+			continue;
+		path = split(path, "+");
+		let match = filter(phys, (phy) => phy_path_match(phy, path[0]));
+		match = sort(match, (a, b) => phy_index(a) - phy_index(b));
+		match = match[+path[1]];
+		if (match)
+			return match;
+	}
 
-	return phys[+path[1]];
+	return null;
 }
 
 function find_phy_by_macaddr(phys, macaddr) {
 	macaddr = lc(macaddr);
-	return filter(phys, (phy) => phy_file(phy, "macaddr") == macaddr)[0];
+	return filter(phys, (phy) => phy_file(phy, "macaddress") == macaddr)[0];
 }
 
 function rename_phy_by_name(phys, name, rename) {
@@ -57,6 +79,11 @@ function rename_phy_by_name(phys, name, rename) {
 		wiphy: idx,
 		wiphy_name: name
 	});
+
+	let prev_idx = index(phys, prev_name);
+	if (prev_idx >= 0)
+		phys[prev_idx] = name;
+
 	return true;
 }
 
@@ -70,7 +97,7 @@ function find_phy_by_path(phys, path) {
 		return name;
 
 	for (let cur_name, cur_data in data) {
-		if (!phy_path_match(name, cur_data.path))
+		if (!phy_path_match_any(name, cur_data.path))
 			continue;
 
 		let idx = phy_index(name);

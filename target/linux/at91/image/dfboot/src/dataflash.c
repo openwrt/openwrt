@@ -166,7 +166,7 @@ int read_dataflash(unsigned long addr, unsigned long size, char *result)
 	AT91PS_DataFlash pFlash = &DataFlashInst;
 
 	pFlash = AT91F_DataflashSelect (pFlash, &AddrToRead);
-	if (pFlash == 0)
+	if (!pFlash)
 		return -1;
 
 	return (AT91F_DataFlashRead(pFlash, AddrToRead, size, result));

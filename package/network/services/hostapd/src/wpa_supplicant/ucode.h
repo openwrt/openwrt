@@ -26,6 +26,30 @@ void wpas_ucode_ctrl_event(struct wpa_supplicant *wpa_s, const char *str, size_t
 bool wpas_ucode_bss_allowed(struct wpa_supplicant *wpa_s, struct wpa_bss *bss);
 void wpas_ucode_wps_complete(struct wpa_supplicant *wpa_s,
 			     const struct wps_credential *cred);
+int wpas_ucode_wps_m8_rx(struct wpa_supplicant *wpa_s,
+			  const u8 *data, size_t data_len);
+#ifdef CONFIG_DPP
+int wpas_ucode_dpp_rx_action(struct wpa_supplicant *wpa_s, const u8 *src,
+			     u8 frame_type, unsigned int freq,
+			     const u8 *data, size_t data_len);
+int wpas_ucode_dpp_gas_rx(struct wpa_supplicant *wpa_s, const u8 *src,
+			  const u8 *data, size_t data_len, unsigned int freq);
+#else
+static inline int wpas_ucode_dpp_rx_action(struct wpa_supplicant *wpa_s,
+					   const u8 *src, u8 frame_type,
+					   unsigned int freq, const u8 *data,
+					   size_t data_len)
+{
+	return 0;
+}
+
+static inline int wpas_ucode_dpp_gas_rx(struct wpa_supplicant *wpa_s,
+					const u8 *src, const u8 *data,
+					size_t data_len, unsigned int freq)
+{
+	return 0;
+}
+#endif /* CONFIG_DPP */
 #else
 static inline int wpas_ucode_init(struct wpa_global *gl)
 {
@@ -61,6 +85,27 @@ static inline bool wpas_ucode_bss_allowed(struct wpa_supplicant *wpa_s, struct w
 
 static inline void wpas_ucode_wps_complete(struct wpa_supplicant *wpa_s, const struct wps_credential *cred)
 {
+}
+
+static inline int wpas_ucode_wps_m8_rx(struct wpa_supplicant *wpa_s,
+					const u8 *data, size_t data_len)
+{
+	return 0;
+}
+
+static inline int wpas_ucode_dpp_rx_action(struct wpa_supplicant *wpa_s,
+					   const u8 *src, u8 frame_type,
+					   unsigned int freq, const u8 *data,
+					   size_t data_len)
+{
+	return 0;
+}
+
+static inline int wpas_ucode_dpp_gas_rx(struct wpa_supplicant *wpa_s,
+					const u8 *src, const u8 *data,
+					size_t data_len, unsigned int freq)
+{
+	return 0;
 }
 #endif
 

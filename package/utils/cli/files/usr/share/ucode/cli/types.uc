@@ -190,6 +190,15 @@ const types = {
 			return;
 		}
 	},
+	cidr6: {
+		parse: function(ctx, name, val) {
+			let m = split(val, '/', 2);
+			if (m && +m[1] <= 128 && length(iptoarr(m[0])) == 16)
+				return val;
+			ctx.invalid_argument("value for %s is not cidr6 (e.g. 2001:db8::1/64)", name);
+			return;
+		}
+	},
 };
 
 return types;

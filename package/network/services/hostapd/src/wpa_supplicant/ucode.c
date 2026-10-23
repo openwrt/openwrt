@@ -1,14 +1,23 @@
 #include "utils/includes.h"
 #include "utils/common.h"
 #include "utils/ucode.h"
+#include "utils/base64.h"
 #include "drivers/driver.h"
 #include "ap/hostapd.h"
+#include "common/sae.h"
+#include "rsn_supp/wpa.h"
 #include "wpa_supplicant_i.h"
 #include "wps_supplicant.h"
 #include "ctrl_iface.h"
 #include "config.h"
 #include "bss.h"
 #include "ucode.h"
+#include "offchannel.h"
+#ifdef CONFIG_DPP
+#include "common/dpp.h"
+#include "common/wpa_ctrl.h"
+#include "common/gas.h"
+#endif /* CONFIG_DPP */
 
 static struct wpa_global *wpa_global;
 static uc_resource_type_t *global_type, *iface_type;
@@ -130,7 +139,8 @@ void wpas_ucode_event(struct wpa_supplicant *wpa_s, int event, union wpa_event_d
 	const char *state;
 	uc_value_t *val;
 
-	if (event != EVENT_CH_SWITCH_STARTED)
+	if (event != EVENT_CH_SWITCH_STARTED &&
+	    event != EVENT_LINK_CH_SWITCH_STARTED)
 		return;
 
 	val = wpa_ucode_registry_get(iface_registry, wpa_s->ucode.idx);
@@ -146,13 +156,13 @@ void wpas_ucode_event(struct wpa_supplicant *wpa_s, int event, union wpa_event_d
 	val = ucv_object_new(vm);
 	uc_value_push(ucv_get(val));
 
-	if (event == EVENT_CH_SWITCH_STARTED) {
-		ucv_object_add(val, "csa_count", ucv_int64_new(data->ch_switch.count));
-		ucv_object_add(val, "frequency", ucv_int64_new(data->ch_switch.freq));
-		ucv_object_add(val, "sec_chan_offset", ucv_int64_new(data->ch_switch.ch_offset));
-		ucv_object_add(val, "center_freq1", ucv_int64_new(data->ch_switch.cf1));
-		ucv_object_add(val, "center_freq2", ucv_int64_new(data->ch_switch.cf2));
-	}
+	ucv_object_add(val, "csa_count", ucv_int64_new(data->ch_switch.count));
+	ucv_object_add(val, "frequency", ucv_int64_new(data->ch_switch.freq));
+	ucv_object_add(val, "sec_chan_offset", ucv_int64_new(data->ch_switch.ch_offset));
+	ucv_object_add(val, "center_freq1", ucv_int64_new(data->ch_switch.cf1));
+	ucv_object_add(val, "center_freq2", ucv_int64_new(data->ch_switch.cf2));
+	if (event == EVENT_LINK_CH_SWITCH_STARTED)
+		ucv_object_add(val, "link_id", ucv_int64_new(data->ch_switch.link_id));
 
 	ucv_put(wpa_ucode_call(4));
 }
@@ -235,6 +245,294 @@ void wpas_ucode_wps_complete(struct wpa_supplicant *wpa_s,
 	ucv_put(wpa_ucode_call(3));
 #endif /* CONFIG_WPS */
 }
+
+static uc_value_t *
+uc_wpas_iface_wps_set_m7(uc_vm_t *vm, size_t nargs)
+{
+	struct wpa_supplicant *wpa_s = uc_fn_thisval("wpas.iface");
+	uc_value_t *data_arg = uc_fn_arg(0);
+	const char *data_b64;
+	unsigned char *data;
+	size_t data_len;
+
+	if (!wpa_s || !wpa_s->wps)
+		return NULL;
+
+	wpabuf_free(wpa_s->wps->m7_encr_extra);
+	wpa_s->wps->m7_encr_extra = NULL;
+
+	if (ucv_type(data_arg) != UC_STRING)
+		return ucv_boolean_new(true);
+
+	data_b64 = ucv_string_get(data_arg);
+	data = base64_decode(data_b64, os_strlen(data_b64), &data_len);
+	if (!data)
+		return NULL;
+
+	wpa_s->wps->m7_encr_extra = wpabuf_alloc_copy(data, data_len);
+	os_free(data);
+
+	return ucv_boolean_new(wpa_s->wps->m7_encr_extra != NULL);
+}
+
+int wpas_ucode_wps_m8_rx(struct wpa_supplicant *wpa_s,
+			  const u8 *data, size_t data_len)
+{
+	uc_value_t *val;
+	char *data_b64;
+	size_t data_b64_len;
+	int ret = 0;
+
+	if (wpa_ucode_call_prepare("wps_m8_rx"))
+		return 0;
+
+	data_b64 = base64_encode_no_lf(data, data_len, &data_b64_len);
+	if (!data_b64) {
+		ucv_put(wpa_ucode_call(0));
+		return 0;
+	}
+
+	uc_value_push(ucv_string_new(wpa_s->ifname));
+	val = wpa_ucode_registry_get(iface_registry, wpa_s->ucode.idx);
+	uc_value_push(ucv_get(val));
+	uc_value_push(ucv_string_new(data_b64));
+	os_free(data_b64);
+
+	val = wpa_ucode_call(3);
+	ret = ucv_is_truish(val);
+	ucv_put(val);
+
+	return ret;
+}
+
+#ifdef CONFIG_DPP
+int wpas_ucode_dpp_rx_action(struct wpa_supplicant *wpa_s, const u8 *src,
+			     u8 frame_type, unsigned int freq,
+			     const u8 *data, size_t data_len)
+{
+	uc_value_t *val;
+	char addr[18];
+	char *frame_b64;
+	size_t frame_b64_len;
+	int ret = 0;
+
+	if (wpa_ucode_call_prepare("dpp_rx_action"))
+		return 0;
+
+	os_snprintf(addr, sizeof(addr), MACSTR, MAC2STR(src));
+	frame_b64 = base64_encode_no_lf(data, data_len, &frame_b64_len);
+	if (!frame_b64) {
+		ucv_put(wpa_ucode_call(0));
+		return 0;
+	}
+
+	uc_value_push(ucv_string_new(wpa_s->ifname));
+	uc_value_push(ucv_string_new(addr));
+	uc_value_push(ucv_int64_new(frame_type));
+	uc_value_push(ucv_int64_new(freq));
+	uc_value_push(ucv_string_new(frame_b64));
+	os_free(frame_b64);
+
+	val = wpa_ucode_call(5);
+	ret = ucv_is_truish(val);
+	ucv_put(val);
+
+	return ret;
+}
+
+int wpas_ucode_dpp_gas_rx(struct wpa_supplicant *wpa_s, const u8 *src,
+			  const u8 *data, size_t data_len, unsigned int freq)
+{
+	uc_value_t *val;
+	char addr[18];
+	char *gas_b64;
+	size_t gas_b64_len;
+	int ret = 0;
+
+	if (data_len < 2)
+		return 0;
+
+	if (wpa_ucode_call_prepare("dpp_rx_gas"))
+		return 0;
+
+	os_snprintf(addr, sizeof(addr), MACSTR, MAC2STR(src));
+	gas_b64 = base64_encode_no_lf(data, data_len, &gas_b64_len);
+	if (!gas_b64) {
+		ucv_put(wpa_ucode_call(0));
+		return 0;
+	}
+
+	uc_value_push(ucv_string_new(wpa_s->ifname));
+	uc_value_push(ucv_string_new(addr));
+	uc_value_push(ucv_int64_new(freq));
+	uc_value_push(ucv_string_new(gas_b64));
+	os_free(gas_b64);
+
+	val = wpa_ucode_call(4);
+	ret = ucv_is_truish(val);
+	ucv_put(val);
+
+	return ret;
+}
+
+static uc_value_t *
+uc_wpas_iface_dpp_send_action(uc_vm_t *vm, size_t nargs)
+{
+	struct wpa_supplicant *wpa_s = uc_fn_thisval("wpas.iface");
+	uc_value_t *dst_arg = uc_fn_arg(0);
+	uc_value_t *freq_arg = uc_fn_arg(1);
+	uc_value_t *frame_arg = uc_fn_arg(2);
+	struct wpabuf *msg;
+	const char *dst_str, *frame_b64;
+	unsigned char *frame_data;
+	size_t frame_len;
+	u8 dst[ETH_ALEN];
+	unsigned int freq;
+	u8 frame_type;
+	int ret;
+
+	if (!wpa_s || ucv_type(dst_arg) != UC_STRING ||
+	    ucv_type(frame_arg) != UC_STRING)
+		return NULL;
+
+	dst_str = ucv_string_get(dst_arg);
+	if (hwaddr_aton(dst_str, dst))
+		return NULL;
+
+	freq = ucv_int64_get(freq_arg);
+	if (!freq)
+		freq = wpa_s->assoc_freq;
+
+	frame_b64 = ucv_string_get(frame_arg);
+	frame_data = base64_decode(frame_b64, os_strlen(frame_b64), &frame_len);
+	if (!frame_data)
+		return NULL;
+
+	if (frame_len < DPP_HDR_LEN) {
+		os_free(frame_data);
+		return NULL;
+	}
+
+	frame_type = frame_data[5];
+	msg = dpp_alloc_msg(frame_type, frame_len - DPP_HDR_LEN);
+	if (!msg) {
+		os_free(frame_data);
+		return NULL;
+	}
+	wpabuf_put_data(msg, frame_data + DPP_HDR_LEN, frame_len - DPP_HDR_LEN);
+	os_free(frame_data);
+
+	wpa_msg(wpa_s, MSG_INFO, DPP_EVENT_TX "dst=" MACSTR " freq=%u type=%d",
+		MAC2STR(dst), freq, frame_type);
+	ret = offchannel_send_action(wpa_s, freq, dst, wpa_s->own_addr,
+				     broadcast_ether_addr,
+				     wpabuf_head(msg), wpabuf_len(msg),
+				     500, NULL, 0);
+	wpabuf_free(msg);
+
+	return ucv_boolean_new(ret == 0);
+}
+
+static uc_value_t *
+uc_wpas_iface_dpp_send_gas_req(uc_vm_t *vm, size_t nargs)
+{
+	struct wpa_supplicant *wpa_s = uc_fn_thisval("wpas.iface");
+	uc_value_t *dst_arg = uc_fn_arg(0);
+	uc_value_t *freq_arg = uc_fn_arg(1);
+	uc_value_t *data_arg = uc_fn_arg(2);
+	uc_value_t *token_arg = uc_fn_arg(3);
+	const char *dst_str, *data_b64;
+	unsigned char *data;
+	size_t data_len;
+	u8 dst[ETH_ALEN];
+	unsigned int freq;
+	u8 dialog_token;
+	struct wpabuf *buf;
+	int ret;
+
+	if (!wpa_s || ucv_type(dst_arg) != UC_STRING ||
+	    ucv_type(data_arg) != UC_STRING)
+		return NULL;
+
+	dst_str = ucv_string_get(dst_arg);
+	if (hwaddr_aton(dst_str, dst))
+		return NULL;
+
+	freq = ucv_int64_get(freq_arg);
+	if (!freq)
+		freq = wpa_s->assoc_freq;
+
+	dialog_token = ucv_int64_get(token_arg);
+	if (!dialog_token)
+		dialog_token = 1;
+
+	data_b64 = ucv_string_get(data_arg);
+	data = base64_decode(data_b64, os_strlen(data_b64), &data_len);
+	if (!data)
+		return NULL;
+
+	buf = gas_build_initial_req(dialog_token, data_len);
+	if (!buf) {
+		os_free(data);
+		return NULL;
+	}
+	wpabuf_put_data(buf, data, data_len);
+	os_free(data);
+
+	ret = offchannel_send_action(wpa_s, freq, dst, wpa_s->own_addr,
+				     broadcast_ether_addr, wpabuf_head(buf),
+				     wpabuf_len(buf), 500, NULL, 0);
+	wpabuf_free(buf);
+
+	return ucv_boolean_new(ret == 0);
+}
+
+/*
+ * hostapd defers a DPP config response above gas_frag_limit to a GAS comeback
+ * exchange. dpp_send_action() cannot request it, as it rebuilds the frame as a
+ * DPP message instead of a plain public action frame.
+ */
+static uc_value_t *
+uc_wpas_iface_dpp_send_gas_comeback_req(uc_vm_t *vm, size_t nargs)
+{
+	struct wpa_supplicant *wpa_s = uc_fn_thisval("wpas.iface");
+	uc_value_t *dst_arg = uc_fn_arg(0);
+	uc_value_t *freq_arg = uc_fn_arg(1);
+	uc_value_t *token_arg = uc_fn_arg(2);
+	const char *dst_str;
+	u8 dst[ETH_ALEN];
+	unsigned int freq;
+	u8 dialog_token;
+	struct wpabuf *buf;
+	int ret;
+
+	if (!wpa_s || ucv_type(dst_arg) != UC_STRING)
+		return NULL;
+
+	dst_str = ucv_string_get(dst_arg);
+	if (hwaddr_aton(dst_str, dst))
+		return NULL;
+
+	freq = ucv_int64_get(freq_arg);
+	if (!freq)
+		freq = wpa_s->assoc_freq;
+
+	dialog_token = ucv_int64_get(token_arg);
+	if (!dialog_token)
+		return NULL;
+
+	buf = gas_build_comeback_req(dialog_token);
+	if (!buf)
+		return NULL;
+
+	ret = offchannel_send_action(wpa_s, freq, dst, wpa_s->own_addr,
+				     broadcast_ether_addr, wpabuf_head(buf),
+				     wpabuf_len(buf), 500, NULL, 0);
+	wpabuf_free(buf);
+
+	return ucv_boolean_new(ret == 0);
+}
+#endif /* CONFIG_DPP */
 
 static const char *obj_stringval(uc_value_t *obj, const char *name)
 {
@@ -489,6 +787,114 @@ uc_wpas_iface_config(uc_vm_t *vm, size_t nargs)
 	return ret;
 }
 
+#ifdef CONFIG_SAE
+static bool
+uc_wpas_sae_password_equal(struct wpa_ssid *a, struct wpa_ssid *b)
+{
+	const char *pw_a = a->sae_password ? a->sae_password : a->passphrase;
+	const char *pw_b = b->sae_password ? b->sae_password : b->passphrase;
+
+	return pw_a && pw_b && !os_strcmp(pw_a, pw_b);
+}
+#endif /* CONFIG_SAE */
+
+static const char *
+uc_wpas_network_mismatch(struct wpa_supplicant *wpa_s, struct wpa_ssid *ssid)
+{
+	struct wpa_ssid *cur = wpa_s->current_ssid;
+	int pmf = wpas_get_ssid_pmf(wpa_s, ssid);
+	int pmf_used = wpa_sm_pmf_enabled(wpa_s->wpa);
+
+	if (cur->ssid_len != ssid->ssid_len ||
+	    os_memcmp(cur->ssid, ssid->ssid, ssid->ssid_len) != 0)
+		return "SSID";
+	if (!(ssid->key_mgmt & wpa_s->key_mgmt))
+		return "AKM";
+	if (!(ssid->proto & wpa_s->wpa_proto))
+		return "protocol";
+	if (!(ssid->pairwise_cipher & wpa_s->pairwise_cipher) ||
+	    !(ssid->group_cipher & wpa_s->group_cipher))
+		return "cipher";
+	if ((pmf == MGMT_FRAME_PROTECTION_REQUIRED && !pmf_used) ||
+	    (pmf == NO_MGMT_FRAME_PROTECTION && pmf_used))
+		return "PMF";
+	if (cur->ext_psk || ssid->ext_psk)
+		return "external password";
+	if (wpa_key_mgmt_wpa_psk_no_sae(wpa_s->key_mgmt) &&
+	    (!cur->psk_set || !ssid->psk_set ||
+	     os_memcmp(cur->psk, ssid->psk, PMK_LEN) != 0))
+		return "PSK";
+#ifdef CONFIG_SAE
+	if (wpa_key_mgmt_sae(wpa_s->key_mgmt) &&
+	    (!uc_wpas_sae_password_equal(cur, ssid) ||
+	     wpas_get_ssid_sae_pwe(wpa_s, cur) !=
+	     wpas_get_ssid_sae_pwe(wpa_s, ssid)))
+		return "SAE password or PWE";
+#endif /* CONFIG_SAE */
+
+	return NULL;
+}
+
+/*
+ * The PMKSA cache stays: flushing it deauthenticates a station that holds
+ * an SAE PMKSA.
+ */
+static void
+uc_wpas_network_move(struct wpa_ssid *cur, struct wpa_ssid *ssid)
+{
+	str_clear_free(cur->passphrase);
+	cur->passphrase = ssid->passphrase;
+	ssid->passphrase = NULL;
+	str_clear_free(cur->sae_password);
+	cur->sae_password = ssid->sae_password;
+	ssid->sae_password = NULL;
+	os_memcpy(cur->psk, ssid->psk, PMK_LEN);
+	cur->psk_set = ssid->psk_set;
+	cur->key_mgmt = ssid->key_mgmt;
+	cur->ieee80211w = ssid->ieee80211w;
+	cur->sae_pwe = ssid->sae_pwe;
+	cur->proto = ssid->proto;
+	cur->pairwise_cipher = ssid->pairwise_cipher;
+	cur->group_cipher = ssid->group_cipher;
+#ifdef CONFIG_SAE
+	sae_deinit_pt(cur->pt);
+	cur->pt = NULL;
+#endif /* CONFIG_SAE */
+}
+
+static uc_value_t *
+uc_wpas_iface_network_update(uc_vm_t *vm, size_t nargs)
+{
+	struct wpa_supplicant *wpa_s = uc_fn_thisval("wpas.iface");
+	struct wpa_config *conf;
+	const char *mismatch = "configuration";
+
+	if (!wpa_s)
+		return NULL;
+
+	if (!wpa_s->current_ssid || wpa_s->current_ssid != wpa_s->conf->ssid ||
+	    wpa_s->conf->ssid->next || wpa_s->wpa_state != WPA_COMPLETED ||
+	    !wpa_key_mgmt_wpa_psk(wpa_s->key_mgmt) || !wpa_s->confname)
+		return ucv_boolean_new(false);
+
+	conf = wpa_config_read(wpa_s->confname, NULL, false, false);
+	if (!conf)
+		return ucv_boolean_new(false);
+
+	if (conf->ssid && !conf->ssid->next)
+		mismatch = uc_wpas_network_mismatch(wpa_s, conf->ssid);
+
+	if (mismatch)
+		wpa_printf(MSG_INFO, "%s: new network does not fit the association: %s",
+			   wpa_s->ifname, mismatch);
+	else
+		uc_wpas_network_move(wpa_s->current_ssid, conf->ssid);
+
+	wpa_config_free(conf);
+
+	return ucv_boolean_new(!mismatch);
+}
+
 int wpas_ucode_init(struct wpa_global *gl)
 {
 	static const uc_function_list_t global_fns[] = {
@@ -502,6 +908,13 @@ int wpas_ucode_init(struct wpa_global *gl)
 		{ "status", uc_wpas_iface_status },
 		{ "ctrl", uc_wpas_iface_ctrl },
 		{ "config", uc_wpas_iface_config },
+		{ "network_update", uc_wpas_iface_network_update },
+		{ "wps_set_m7", uc_wpas_iface_wps_set_m7 },
+#ifdef CONFIG_DPP
+		{ "dpp_send_action", uc_wpas_iface_dpp_send_action },
+		{ "dpp_send_gas_req", uc_wpas_iface_dpp_send_gas_req },
+		{ "dpp_send_gas_comeback_req", uc_wpas_iface_dpp_send_gas_comeback_req },
+#endif /* CONFIG_DPP */
 	};
 	uc_value_t *data, *proto;
 

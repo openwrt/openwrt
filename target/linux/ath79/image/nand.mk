@@ -5,10 +5,11 @@ define Build/dongwon-header
 	( \
 		header_crc="$$(head -c 68 $@.tmp | gzip -c | \
 			tail -c 8 | od -An -N4 -tx4 --endian little | tr -d ' \n')"; \
-		printf "$$(echo $$header_crc | sed 's/../\\x&/g')" | \
-			dd of=$@.tmp bs=4 count=1 seek=1 conv=notrunc \
-	)
-	mv $@.tmp $@
+		head -c 4 $@.tmp; \
+		printf "$$(echo $$header_crc | sed 's/../\\x&/g')"; \
+		tail -c +9 $@.tmp; \
+	) > $@
+	rm -f $@.tmp
 endef
 
 define Build/meraki-header
@@ -17,6 +18,14 @@ define Build/meraki-header
                 -i $@ \
                 -o $@.new
         @mv $@.new $@
+endef
+
+define Build/meraki-old-nand
+	-$(STAGING_DIR_HOST)/bin/mkmerakifw-old \
+		-B $(1) -s \
+		-i $@ \
+		-o $@.new
+	@mv $@.new $@
 endef
 
 # attention: only zlib compression is allowed for the boot fs
@@ -320,6 +329,25 @@ define Device/meraki_mr18
   SUPPORTED_DEVICES += mr18
 endef
 TARGET_DEVICES += meraki_mr18
+
+define Device/meraki_z1
+  SOC = ar9344
+  DEVICE_VENDOR := Meraki
+  DEVICE_MODEL := Z1
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ledtrig-usbport kmod-owl-loader \
+	kmod-leds-uleds kmod-spi-gpio nu801 -uboot-envtools
+  KERNEL_SIZE := 8064k
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  LOADER_TYPE := bin
+  LZMA_TEXT_START := 0x82800000
+  KERNEL := kernel-bin | append-dtb | lzma | loader-kernel | \
+	    pad-to $$(BLOCKSIZE) | meraki-old-nand z1
+  KERNEL_INITRAMFS := $$(KERNEL)
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  SUPPORTED_DEVICES += z1
+endef
+TARGET_DEVICES += meraki_z1
 
 # fake rootfs is mandatory, pad-offset 129 equals (2 * uimage_header + '\0')
 define Device/netgear_ath79_nand

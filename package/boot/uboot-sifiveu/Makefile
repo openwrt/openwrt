@@ -6,9 +6,9 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
-PKG_RELEASE:=1
-PKG_VERSION:=2023.10
-PKG_HASH:=e00e6c6f014e046101739d08d06f328811cebcf5ae101348f409cbbd55ce6900
+PKG_RELEASE:=2
+PKG_VERSION:=2026.04
+PKG_HASH:=ac7c04b8b7004923b00a4e5d6699c5df4d21233bac9fda690d8cfbc209fff2fd
 
 UBOOT_USE_INTREE_DTC:=1
 
@@ -43,6 +43,10 @@ endef
 UBOOT_TARGETS := \
 	sifive_unleashed \
 	sifive_unmatched
+
+# mkeficapsule host tool is disabled
+# due to a host-side GnuTLS dependency
+UBOOT_CUSTOMIZE_CONFIG := --disable TOOLS_MKEFICAPSULE
 
 UBOOT_MAKE_FLAGS += \
         OPENSBI=$(STAGING_DIR_IMAGE)/fw_dynamic-${OPENSBI}.bin

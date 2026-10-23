@@ -7,13 +7,6 @@
 	leds {
 		pinctrl-names = "default";
 		pinctrl-0 = <&enable_wlan_led_gpio>;
-
-		led-1 {
-			function = LED_FUNCTION_WLAN;
-			color = <LED_COLOR_ID_BLUE>;
-			gpios = <&gpio 19 GPIO_ACTIVE_LOW>;
-			linux,default-trigger = "phy1tpt";
-		};
 	};
 
 	keys {
@@ -29,5 +22,12 @@
 &pinmux {
 	enable_wlan_led_gpio: pinmux_wlan_led_gpio {
 		pinctrl-single,bits = <0x10 0x0 0xff000000>;
+	};
+};
+
+&wmac {
+	led {
+		led-sources = <19>;
+		led-active-low;
 	};
 };

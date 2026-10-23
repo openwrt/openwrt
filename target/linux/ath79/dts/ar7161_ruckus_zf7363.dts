@@ -21,10 +21,11 @@
 
 &eth1 {
 	status = "okay";
-	pll-data = <0x00110000 0x00001099 0x00991099>;
+
+	phy-mode = "rgmii-id";
+
 	nvmem-cells = <&macaddr_bdata_6c>;
 	nvmem-cell-names = "mac-address";
-	phy-mode = "rgmii-id";
 
 	fixed-link {
 		speed = <100>;

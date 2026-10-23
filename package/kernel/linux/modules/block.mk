@@ -225,7 +225,6 @@ define KernelPackage/dm
 	CONFIG_DM_UEVENT=n \
 	CONFIG_DM_DELAY=n \
 	CONFIG_DM_LOG_WRITES=n \
-	CONFIG_DM_MQ_DEFAULT=n \
 	CONFIG_DM_MULTIPATH=n \
 	CONFIG_DM_ZERO=n \
 	CONFIG_DM_SNAPSHOT=n \
@@ -299,8 +298,7 @@ define KernelPackage/md-mod
   KCONFIG:= \
        CONFIG_MD=y \
        CONFIG_BLK_DEV_MD=m \
-       CONFIG_MD_AUTODETECT=y \
-       CONFIG_MD_FAULTY=n
+       CONFIG_MD_AUTODETECT=y
   FILES:=$(LINUX_DIR)/drivers/md/md-mod.ko
   AUTOLOAD:=$(call AutoLoad,27,md-mod)
 endef
@@ -380,7 +378,7 @@ $(eval $(call KernelPackage,md-raid10))
 
 
 define KernelPackage/md-raid456
-$(call KernelPackage/md/Depends,+kmod-lib-raid6 +kmod-lib-xor +kmod-lib-crc32c)
+$(call KernelPackage/md/Depends,+kmod-lib-raid6 +kmod-lib-xor)
   TITLE:=RAID Level 456 Driver
   KCONFIG:= \
        CONFIG_ASYNC_CORE \
@@ -389,8 +387,7 @@ $(call KernelPackage/md/Depends,+kmod-lib-raid6 +kmod-lib-xor +kmod-lib-crc32c)
        CONFIG_ASYNC_PQ \
        CONFIG_ASYNC_RAID6_RECOV \
        CONFIG_ASYNC_RAID6_TEST=n \
-       CONFIG_MD_RAID456 \
-       CONFIG_MULTICORE_RAID456=n
+       CONFIG_MD_RAID456
   FILES:= \
 	$(LINUX_DIR)/crypto/async_tx/async_tx.ko \
 	$(LINUX_DIR)/crypto/async_tx/async_memcpy.ko \
@@ -425,8 +422,7 @@ define KernelPackage/libsas
   KCONFIG:=CONFIG_SCSI_SAS_LIBSAS \
 	CONFIG_SCSI_SAS_ATTRS \
 	CONFIG_SCSI_SAS_ATA=y \
-	CONFIG_SCSI_SAS_HOST_SMP=y \
-	CONFIG_SCSI_SAS_LIBSAS_DEBUG=y
+	CONFIG_SCSI_SAS_HOST_SMP=y
   FILES:= \
 	$(LINUX_DIR)/drivers/scsi/scsi_transport_sas.ko \
 	$(LINUX_DIR)/drivers/scsi/libsas/libsas.ko
@@ -444,8 +440,7 @@ define KernelPackage/loop
   SUBMENU:=$(BLOCK_MENU)
   TITLE:=Loopback device support
   KCONFIG:= \
-	CONFIG_BLK_DEV_LOOP \
-	CONFIG_BLK_DEV_CRYPTOLOOP=n
+	CONFIG_BLK_DEV_LOOP
   FILES:=$(LINUX_DIR)/drivers/block/loop.ko
   AUTOLOAD:=$(call AutoLoad,30,loop,1)
 endef
@@ -559,8 +554,7 @@ define KernelPackage/scsi-cdrom
   TITLE:=Kernel support for CD / DVD drives
   DEPENDS:=+kmod-scsi-core +kmod-cdrom
   KCONFIG:= \
-    CONFIG_BLK_DEV_SR \
-    CONFIG_BLK_DEV_SR_VENDOR=n
+    CONFIG_BLK_DEV_SR
   FILES:=$(LINUX_DIR)/drivers/scsi/sr_mod.ko
   AUTOLOAD:=$(call AutoLoad,45,sr_mod)
 endef

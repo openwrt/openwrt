@@ -8,12 +8,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=jansson
-PKG_VERSION:=2.14.1
+PKG_VERSION:=2.15.1
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_SOURCE_URL:=https://codeload.github.com/akheron/$(PKG_NAME)/tar.gz/v$(PKG_VERSION)?
-PKG_HASH:=979210eaffdffbcf54cfc34d047fccde13f21b529a381df26db871d886f729a4
+PKG_SOURCE_URL:=https://github.com/akheron/$(PKG_NAME)/releases/download/v$(PKG_VERSION)
+PKG_HASH:=0c7114dc0b2d22a670724a1f95922029d7077c19dbf79a584cb8084d2f267f2f
 
 PKG_LICENSE:=MIT
 PKG_LICENSE_FILES:=LICENSE
@@ -35,7 +35,7 @@ define Package/jansson
   SECTION:=libs
   CATEGORY:=Libraries
   TITLE:=Jansson library
-  URL:=http://www.digip.org/jansson/
+  URL:=https://github.com/akheron/jansson
   ABI_VERSION:=4
 endef
 

@@ -21,9 +21,10 @@ endef
 
 
 define Device/meraki_mr24
+  FILESYSTEMS := squashfs
   DEVICE_VENDOR := Cisco Meraki
   DEVICE_MODEL := MR24
-  DEVICE_PACKAGES := kmod-spi-gpio -swconfig
+  DEVICE_PACKAGES := kmod-spi-gpio kmod-phy-at803x
   BOARD_NAME := mr24
   IMAGES := sysupgrade.bin
   DEVICE_DTC_FLAGS := --space 64512
@@ -42,27 +43,31 @@ define Device/meraki_mx60
   DEVICE_ALT0_VENDOR := Cisco Meraki
   DEVICE_ALT0_MODEL := MX60W
   DEVICE_PACKAGES := kmod-spi-gpio kmod-usb-ledtrig-usbport kmod-usb-dwc2 \
-		     kmod-usb-storage block-mount
+		     kmod-usb-storage block-mount kmod-dsa-qca8k
   BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  SUBPAGESIZE := 512
+  MKUBIFS_OPTS := -m $$(PAGESIZE) -e 126KiB -c 8174
   IMAGES := sysupgrade.bin
   DEVICE_DTC_FLAGS := --space 20480
   IMAGE_SIZE := 1021m
   KERNEL := kernel-bin | libdeflate-gzip | MuImage-initramfs gzip
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
   UBINIZE_OPTS := -E 5
-  DEVICE_COMPAT_VERSION := 3.0
-  DEVICE_COMPAT_MESSAGE := uboot's bootcmd has to be updated to support standard multi-image uImages. \
-       Network swconfig configuration cannot be upgraded to DSA. \
-       Upgrade via sysupgrade mechanism is not possible.
+  DEVICE_COMPAT_VERSION := 3.1
+  DEVICE_COMPAT_MESSAGE := meraki_loadaddr of u-boot has to be adjusted before upgrade \
+       to boot properly. Query https://openwrt.org/toh/meraki/mx60#upgrading_to_v2512 \
+       for detail.
 endef
 TARGET_DEVICES += meraki_mx60
 
 define Device/netgear_wndap6x0
   DEVICE_VENDOR := NETGEAR
-  DEVICE_PACKAGES := kmod-eeprom-at24
+  DEVICE_PACKAGES := kmod-eeprom-at24 swconfig
   SUBPAGESIZE := 256
   PAGESIZE := 512
   BLOCKSIZE := 16k
+  MKUBIFS_OPTS := -m $$(PAGESIZE) -e 15872 -c 1332
   DEVICE_DTC_FLAGS := --space 32768
   IMAGE_SIZE := 27392k
   IMAGES := sysupgrade.bin factory.img
@@ -97,11 +102,13 @@ define Device/netgear_wndr4700
 	kmod-dm kmod-fs-ext4 kmod-fs-vfat kmod-usb-ledtrig-usbport \
 	kmod-md-mod kmod-nls-cp437 kmod-nls-iso8859-1 kmod-nls-iso8859-15 \
 	kmod-nls-utf8 kmod-usb-xhci-pci-renesas kmod-usb-dwc2 kmod-usb-storage \
-	partx-utils kmod-ata-dwc
+	partx-utils kmod-ata-dwc kmod-dsa-qca8k \
+	kmod-hwmon-tc654 kmod-hwmon-lm90 kmod-thermal
   BOARD_NAME := wndr4700
   PAGESIZE := 2048
   SUBPAGESIZE := 512
   BLOCKSIZE := 128k
+  MKUBIFS_OPTS := -m $$(PAGESIZE) -e 126KiB -c 928
   DEVICE_DTC_FLAGS := --space 131008
   IMAGE_SIZE := 24960k
   IMAGES := factory.img sysupgrade.bin

@@ -363,8 +363,8 @@ static void b53_srab_remove(struct platform_device *pdev)
 }
 
 static struct platform_driver b53_srab_driver = {
-	.probe = b53_srab_probe,
-	.remove_new = b53_srab_remove,
+	.probe  = b53_srab_probe,
+	.remove = b53_srab_remove,
 	.driver = {
 		.name = "b53-srab-switch",
 	},

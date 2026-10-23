@@ -8,17 +8,32 @@
 	#address-cells = <1>;
 	#size-cells = <1>;
 
-	compatible = "realtek,rtl838x-soc";
+	compatible = "realtek,rtl930x-soc";
 
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
 		frequency = <800000000>;
 
-		cpu@0 {
+		cpu0: cpu@0 {
+			device_type = "cpu";
 			compatible = "mips,mips34Kc";
 			reg = <0>;
+			clocks = <&cpu_clk>;
 		};
+
+		cpu1: cpu@1 {
+			device_type = "cpu";
+			compatible = "mips,mips34Kc";
+			reg = <1>;
+			clocks = <&cpu_clk>;
+		};
+	};
+
+	cpu_clk: cpu-clock {
+		compatible = "fixed-clock";
+		#clock-cells = <0>;
+		clock-frequency = <800000000>;
 	};
 
 	memory@0 {
@@ -69,7 +84,7 @@
 			#interrupt-cells = <2>;
 
 			interrupt-parent = <&cpuintc>;
-			interrupts = <2>, <3>, <4>, <5>, <6>, <7>;
+			interrupts = <2>, <3>, <4>, <5>, <6>;
 		};
 
 		snand: spi@1a400 {
@@ -131,6 +146,9 @@
 			fifo-size = <1>;
 			no-loopback-test;
 
+			pinctrl-0 = <&pinmux_enable_uart1>;
+			pinctrl-names = "default";
+
 			status = "disabled";
 		};
 
@@ -164,11 +182,26 @@
 
 	};
 
-	switchcore@1b000000 {
-		compatible = "syscon", "simple-mfd";
+	switch0: ethernet-switch@1b000000 {
+		compatible = "realtek,rtl9301-switch", "realtek,otto-switch", "syscon", "simple-mfd";
 		reg = <0x1b000000 0x10000>;
+		interrupt-parent = <&intc>;
+		interrupts = <23 2>;
 		#address-cells = <1>;
 		#size-cells = <1>;
+
+		ethernet0: ethernet {
+			compatible = "realtek,rtl9301-eth";
+			interrupt-parent = <&intc>;
+			interrupts = <24 3>;
+			#interrupt-cells = <1>;
+			phy-mode = "internal";
+
+			fixed-link {
+				speed = <1000>;
+				full-duplex;
+			};
+		};
 
 		i2c_mst1: i2c@36c {
 			compatible = "realtek,rtl9301-i2c";
@@ -198,6 +231,21 @@
 				#address-cells = <1>;
 				#size-cells = <0>;
 			};
+			mdio_bus1: mdio-bus@1 {
+				reg = <1>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+			};
+			mdio_bus2: mdio-bus@2 {
+				reg = <2>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+			};
+			mdio_bus3: mdio-bus@3 {
+				reg = <3>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+			};
 		};
 
 		mdio_aux: mdio-aux {
@@ -211,7 +259,7 @@
 		};
 
 		mdio_serdes: mdio-serdes {
-			compatible = "realtek,rtl9301-serdes-mdio", "realtek,otto-serdes-mdio";
+			compatible = "realtek,rtl9301-serdes-mdio";
 		};
 
 		pcs {
@@ -219,42 +267,60 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 
+			mdio-parent-bus = <&mdio_serdes>;
+
 			serdes0: serdes@0 {
 				reg = <0>;
+				#pcs-cells = <1>;
 			};
 			serdes1: serdes@1 {
 				reg = <1>;
+				#pcs-cells = <1>;
 			};
 			serdes2: serdes@2 {
 				reg = <2>;
+				#pcs-cells = <1>;
 			};
 			serdes3: serdes@3 {
 				reg = <3>;
+				#pcs-cells = <1>;
 			};
 			serdes4: serdes@4 {
 				reg = <4>;
+				#pcs-cells = <1>;
 			};
 			serdes5: serdes@5 {
 				reg = <5>;
+				#pcs-cells = <1>;
 			};
 			serdes6: serdes@6 {
 				reg = <6>;
+				#pcs-cells = <1>;
 			};
 			serdes7: serdes@7 {
 				reg = <7>;
+				#pcs-cells = <1>;
 			};
 			serdes8: serdes@8 {
 				reg = <8>;
+				#pcs-cells = <1>;
 			};
 			serdes9: serdes@9 {
 				reg = <9>;
+				#pcs-cells = <1>;
 			};
 			serdes10: serdes@10 {
 				reg = <10>;
+				#pcs-cells = <1>;
 			};
 			serdes11: serdes@11 {
 				reg = <11>;
+				#pcs-cells = <1>;
 			};
+		};
+
+		table {
+			compatible = "realtek,rtl9301-table", "realtek,otto-table";
 		};
 
 		soc_thermal: thermal {
@@ -301,6 +367,45 @@
 		};
 	};
 
+	pinmux@1b000204 {
+		compatible = "pinctrl-single";
+		reg = <0x1b000204 0x4>;
+
+		pinctrl-single,bit-per-mux;
+		pinctrl-single,register-width = <32>;
+		pinctrl-single,function-mask = <0x1>;
+		#pinctrl-cells = <2>;
+
+		pinmux_enable_uart1: enable-uart1 {
+			pinctrl-single,bits = <0x0 0x1 0x3>;
+		};
+	};
+
+	pinmux@1b0003a0 {
+		compatible = "pinctrl-single";
+		reg = <0x1b0003a0 0x4>;
+
+		pinctrl-single,bit-per-mux;
+		pinctrl-single,register-width = <32>;
+		pinctrl-single,function-mask = <0x1>;
+		#pinctrl-cells = <2>;
+
+		/* Enable GPIO 3, 4, 5 */
+		pinmux_disable_spi0: disable-spi0 {
+			pinctrl-single,bits = <0x0 0x0 0x2000>;
+		};
+
+		/* Enable GPIO 6 */
+		pinmux_disable_spi0_cs1: disable-spi-cs1 {
+			pinctrl-single,bits = <0x0 0x0 0x800>;
+		};
+
+		/* Enable GPIO 7 */
+		pinmux_disable_spi0_cs0: disable-spi-cs0 {
+			pinctrl-single,bits = <0x0 0x0 0x400>;
+		};
+	};
+
 	pinmux@1b00c600 {
 		compatible = "pinctrl-single";
 		reg = <0x1b00c600 0x4>;
@@ -328,29 +433,15 @@
 		pinmux_disable_sys_led: disable_sys_led {
 			pinctrl-single,bits = <0x0 0x0 0x1000>;
 		};
-	};
 
-	ethernet0: ethernet@1b00a300 {
-		compatible = "realtek,rtl838x-eth";
-		reg = <0x1b00a300 0x100>;
-
-		interrupt-parent = <&intc>;
-		interrupts = <24 3>;
-
-		phy-mode = "internal";
-
-		fixed-link {
-			speed = <1000>;
-			full-duplex;
+		/*
+		 * Disable the LED stacking modes, freeing GPIO 23. A non-zero
+		 * stacking mode also inserts sync data into the serial LED
+		 * stream, shifting all port LEDs.
+		 */
+		pinmux_disable_led_stack: disable-led-stack {
+			pinctrl-single,bits = <0x0 0x0 0x6000000>;
 		};
-	};
-
-	switch0: switch@1b000000 {
-		compatible = "realtek,rtl83xx-switch";
-		status = "okay";
-
-		interrupt-parent = <&intc>;
-		interrupts = <23 2>;
 	};
 
 	thermal_zones: thermal-zones {

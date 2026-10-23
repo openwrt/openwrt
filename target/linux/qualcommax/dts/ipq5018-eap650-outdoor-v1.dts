@@ -1,0 +1,340 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+/dts-v1/;
+
+#include "ipq5018.dtsi"
+#include "ipq5018-ess.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+
+/ {
+	model = "TP-Link EAP650-Outdoor v1";
+	compatible = "tplink,eap650-outdoor-v1", "qcom,ipq5018";
+
+	aliases {
+		led-boot = &led_system_green;
+		led-failsafe = &led_system_yellow;
+		led-running = &led_system_green;
+		led-upgrade = &led_system_yellow;
+
+		serial0 = &blsp1_uart1;
+	};
+
+	chosen {
+		stdout-path = "serial0:115200n8";
+		bootargs-append = " ubi.block=0,rootfs root=/dev/ubiblock0_1 swiotlb=1 coherent_pool=2M";
+	};
+
+	keys {
+		compatible = "gpio-keys";
+		pinctrl-0 = <&button_pins>;
+		pinctrl-names = "default";
+
+		reset {
+			label = "reset";
+			gpios = <&tlmm 38 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_system_yellow: led-0 {
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_YELLOW>;
+			gpios = <&tlmm 46 GPIO_ACTIVE_HIGH>;
+		};
+
+		led_system_green: led-1 {
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&tlmm 31 GPIO_ACTIVE_HIGH>;
+		};
+	};
+};
+
+&tlmm {
+	button_pins: button-state {
+		button-pins {
+			pins = "gpio38";
+			function = "gpio";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+	};
+
+	serial_0_pins: uart0-state {
+		pins = "gpio20", "gpio21";
+		function = "blsp0_uart0";
+		drive-strength = <8>;
+		bias-disable;
+	};
+
+	mdio1_pins: mdio-state {
+		mdc-pins {
+			pins = "gpio36";
+			function = "mdc";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+
+		mdio-pins {
+			pins = "gpio37";
+			function = "mdio";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+	};
+
+	qpic_pins: qpic-state {
+		clock-pins {
+			pins = "gpio9";
+			function = "qspi_clk";
+			drive-strength = <8>;
+			bias-disable;
+		};
+
+		cs-pins {
+			pins = "gpio8";
+			function = "qspi_cs";
+			drive-strength = <8>;
+			bias-disable;
+		};
+
+		data-pins {
+			pins = "gpio4", "gpio5", "gpio6", "gpio7";
+			function = "qspi_data";
+			drive-strength = <8>;
+			bias-disable;
+		};
+	};
+
+	switch_reset_pins: switch-reset-state {
+		pins = "gpio39";
+		function = "gpio";
+		drive-strength = <8>;
+		bias-pull-down;
+	};
+};
+
+&sleep_clk {
+	clock-frequency = <32000>;
+};
+
+&xo_board_clk {
+	clock-div = <4>;
+	clock-mult = <1>;
+};
+
+&blsp1_uart1 {
+	status = "okay";
+	pinctrl-0 = <&serial_0_pins>;
+	pinctrl-names = "default";
+};
+
+&prng {
+	status = "okay";
+};
+
+&qfprom {
+	status = "okay";
+};
+
+&qpic_bam {
+	status = "okay";
+};
+
+&qpic_nand {
+	status = "okay";
+
+	pinctrl-0 = <&qpic_pins>;
+	pinctrl-names = "default";
+
+	// GigaDevice F50D1G41LB-83YIG2M
+	nand@0 {
+		compatible = "spi-nand";
+		reg = <0>;
+		nand-ecc-engine = <&qpic_nand>;
+
+		nand-ecc-strength = <4>;
+		nand-ecc-step-size = <512>;
+		nand-bus-width = <8>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "0:SBL1";
+				reg = <0x0 0x80000>;
+				read-only;
+			};
+
+			partition@80000 {
+				label = "0:MIBIB";
+				reg = <0x80000 0x80000>;
+				read-only;
+			};
+
+			partition@100000 {
+				label = "0:BOOTCONFIG";
+				reg = <0x100000 0x100000>;
+				read-only;
+			};
+
+			partition@200000 {
+				label = "0:BOOTCONFIG1";
+				reg = <0x200000 0x100000>;
+				read-only;
+			};
+
+			partition@300000 {
+				label = "0:QSEE";
+				reg = <0x300000 0x200000>;
+				read-only;
+			};
+
+			partition@500000 {
+				label = "0:DEVCFG";
+				reg = <0x500000 0x40000>;
+				read-only;
+			};
+
+			partition@540000 {
+				label = "0:CDT";
+				reg = <0x540000 0x80000>;
+				read-only;
+			};
+
+			partition@5c0000 {
+				label = "0:APPSBLENV";
+				reg = <0x5c0000 0x440000>;
+			};
+
+			partition@a00000 {
+				label = "0:APPSBL";
+				reg = <0xa00000 0x300000>;
+				read-only;
+			};
+
+			partition@d00000 {
+				label = "0:APPSBL_1";
+				reg = <0xd00000 0x300000>;
+				read-only;
+			};
+
+			partition@1000000 {
+				label = "oops";
+				reg = <0x1000000 0x100000>;
+				read-only;
+			};
+
+			partition@1100000 {
+				label = "rootfs";
+				reg = <0x1100000 0x2380000>;
+			};
+
+			partition@3480000 {
+				label = "rootfs_1";
+				reg = <0x3480000 0x2380000>;
+			};
+
+			partition@5800000 {
+				label = "factory_data";
+				reg = <0x5800000 0x800000>;
+				read-only;
+			};
+
+			partition@6000000 {
+				label = "runtime_data";
+				reg = <0x6000000 0xc00000>;
+				read-only;
+			};
+
+			partition@6c00000 {
+				label = "backup_data";
+				reg = <0x6c00000 0x800000>;
+				read-only;
+			};
+
+			partition@7400000 {
+				label = "runtime_back";
+				reg = <0x7400000 0x600000>;
+				read-only;
+			};
+		};
+	};
+};
+
+&uniphy0 {
+	status = "okay";
+
+	assigned-clocks = <&uniphy0 UNIPHY_CLK_REF>;
+	assigned-clock-rates = <UNIPHY_REFCLK_25MHZ>;
+};
+
+&gmac1 {
+	status = "okay";
+
+	label = "lan";
+	phy-handle = <&rtl8211f_4>;
+	phy-mode = "sgmii";
+};
+
+&mdio0 {
+	status = "okay";
+};
+
+&mdio1 {
+	status = "okay";
+
+	pinctrl-0 = <&mdio1_pins>, <&switch_reset_pins>;
+	pinctrl-names = "default";
+	reset-gpios = <&tlmm 39 GPIO_ACTIVE_LOW>;
+
+	// RTL8211 Phy0 -> LAN
+	rtl8211f_4: ethernet-phy@4 {
+		reg = <4>;
+		compatible = "ethernet-phy-ieee802.3-c22";
+	};
+};
+
+&pcie0_phy {
+	status = "okay";
+};
+
+&pcie0 {
+	status = "okay";
+
+	perst-gpios = <&tlmm 15 GPIO_ACTIVE_LOW>;
+
+	pcie@0 {
+		wifi@0,0 {
+			status = "okay";
+
+			// QCN6024: ath11k lacks DT compatible for PCI cards
+			compatible = "pci17cb,1104";
+			reg = <0x00010000 0 0 0 0>;
+
+			qcom,ath11k-calibration-variant = "TP-Link-EAP650-Outdoor-v1";
+			qcom,ath11k-fw-memory-mode = <1>;
+		};
+	};
+};
+
+&q6v5_wcss {
+	firmware-name = "ath11k/IPQ5018/hw1.0/q6_fw.mdt",
+			"ath11k/IPQ5018/hw1.0/m3_fw.mdt";
+};
+
+&wifi {
+	status = "okay";
+
+	qcom,rproc = <&q6v5_wcss>;
+	qcom,ath11k-calibration-variant = "TP-Link-EAP650-Outdoor-v1";
+	qcom,ath11k-fw-memory-mode = <1>;
+};

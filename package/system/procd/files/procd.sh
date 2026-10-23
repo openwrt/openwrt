@@ -24,6 +24,7 @@
 #     stdout: boolean whether to redirect commands stdout to syslog (default: 0)
 #     stderr: boolean whether to redirect commands stderr to syslog (default: 0)
 #     facility: syslog facility used when logging to syslog (default: daemon)
+#     vrf: bind all sockets of the service to this VRF device
 #
 #   No space separation is done for arrays/tables - use one function argument per command line argument
 #
@@ -264,7 +265,7 @@ _procd_set_param() {
 			json_add_int "$type" $(kill -l "$1")
 		;;
 		pidfile|user|group|seccomp|capabilities|facility|\
-		extroot|overlaydir|tmpoverlaysize)
+		extroot|overlaydir|tmpoverlaysize|vrf)
 			json_add_string "$type" "$1"
 		;;
 		stdout|stderr|no_new_privs)
@@ -335,7 +336,9 @@ _procd_add_reload_data_trigger() {
 	local name=$(basename ${script:-$initscript})
 
 	_procd_open_trigger
-	_procd_add_data_trigger $1 /etc/init.d/$name reload
+	for t in "$@"; do
+		_procd_add_data_trigger "$t" /etc/init.d/$name reload
+	done
 	_procd_close_trigger
 }
 

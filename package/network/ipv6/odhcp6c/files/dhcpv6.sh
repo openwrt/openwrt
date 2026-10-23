@@ -1,6 +1,7 @@
 #!/bin/sh
 
 . /lib/functions.sh
+. /lib/functions/network.sh
 . ../netifd-proto.sh
 . /lib/config/uci.sh
 init_proto "$@"
@@ -9,14 +10,16 @@ proto_dhcpv6_init_config() {
 	renew_handler=1
 
 	proto_config_add_string 'reqaddress:or("try","force","none")'
-	proto_config_add_string 'reqprefix:or("auto","no",range(0, 64))'
+	proto_config_add_string reqprefix
 	proto_config_add_string clientid
+	proto_config_add_string 'sendclientid:or("auto","global","hardware")'
 	proto_config_add_string 'reqopts:list(uinteger)'
 	proto_config_add_string 'defaultreqopts:bool'
 	proto_config_add_string 'noslaaconly:bool'
 	proto_config_add_string 'forceprefix:bool'
 	proto_config_add_string 'extendprefix:bool'
 	proto_config_add_string 'norelease:bool'
+	proto_config_add_boolean strict_rfc7550
 	proto_config_add_string 'noserverunicast:bool'
 	proto_config_add_string 'noclientfqdn:bool'
 	proto_config_add_string 'noacceptreconfig:bool'
@@ -42,8 +45,20 @@ proto_dhcpv6_init_config() {
 	proto_config_add_boolean sourcefilter
 	proto_config_add_boolean keep_ra_dnslifetime
 	proto_config_add_int "ra_holdoff"
-	proto_config_add_boolean verbose
+	proto_config_add_int 'verbose:range(0, 7)'
 	proto_config_add_boolean dynamic
+}
+
+proto_dhcpv6_get_default_duid() {
+	local duid="$(uci_get network @globals[0] dhcp_default_duid)"
+	[ -n "$duid" ] && {
+		duid="$(hexdump_2hex "$duid")"
+		[ -z "$duid" ] && {
+			logger -p warn -t dhcpv6 "$iface: ignoring invalid dhcp_default_duid value"
+		}
+	}
+	[ -z "$duid" ] && return
+	echo -n $duid
 }
 
 proto_dhcpv6_add_prefix() {
@@ -58,8 +73,8 @@ proto_dhcpv6_setup() {
 	local config="$1"
 	local iface="$2"
 
-	local reqaddress reqprefix clientid reqopts defaultreqopts
-	local noslaaconly forceprefix extendprefix norelease
+	local reqaddress reqprefix clientid sendclientid reqopts defaultreqopts
+	local noslaaconly forceprefix extendprefix norelease strict_rfc7550
 	local noserverunicast noclientfqdn noacceptreconfig iface_dslite
 	local iface_map iface_464xlat ip6ifaceid userclass vendorclass
 	local delegate zone_dslite zone_map zone_464xlat zone encaplimit_dslite
@@ -68,8 +83,8 @@ proto_dhcpv6_setup() {
 
 	local ip6prefix ip6prefixes
 
-	json_get_vars reqaddress reqprefix clientid reqopts defaultreqopts
-	json_get_vars noslaaconly forceprefix extendprefix norelease
+	json_get_vars reqaddress reqprefix clientid sendclientid reqopts defaultreqopts
+	json_get_vars noslaaconly forceprefix extendprefix norelease strict_rfc7550
 	json_get_vars noserverunicast noclientfqdn noacceptreconfig iface_dslite
 	json_get_vars iface_map iface_464xlat ip6ifaceid userclass vendorclass
 	json_get_vars delegate zone_dslite zone_map zone_464xlat zone encaplimit_dslite
@@ -84,9 +99,44 @@ proto_dhcpv6_setup() {
 	[ -n "$reqaddress" ] && append opts "-N$reqaddress"
 
 	[ -z "$reqprefix" -o "$reqprefix" = "auto" ] && reqprefix=0
-	[ "$reqprefix" != "no" ] && append opts "-P$reqprefix"
+	[ "$reqprefix" != "no" ] && {
+		# append interface IAID if none specified
+		local iaid=$(echo -n $reqprefix | sed -nr 's/^.*:([0-9A-Fa-f]{1,8})$/\1/p')
+		[ -z "$iaid" ] && {
+			network_generate_iface_iaid iaid "$iface"
+			reqprefix="$reqprefix:$iaid"
+		}
+		# validate prefix/length hint
+		local hint=${reqprefix%:$iaid}
+		[ "${hint#/}" -le "128" ] 2>/dev/null && {
+			reqprefix=${reqprefix#/}
+		} || {
+			validate_data cidr6 "$hint" 2>/dev/null || {
+				reqprefix="0:$iaid"
+				logger -p warn -t dhcpv6 "$iface: ignoring invalid prefix hint"
+			}
+		}
+		append opts "-P$reqprefix"
+	}
 
-	[ -z "$clientid" ] && clientid="$(uci_get network @globals[0] dhcp_default_duid)"
+	case "$sendclientid" in
+		global)
+			clientid="$(proto_dhcpv6_get_default_duid)"
+			;;
+		hardware)
+			clientid=''
+			;;
+		auto|\
+		*)
+			[ -n "$clientid" ] && {
+				clientid="$(hexdump_2hex "$clientid")"
+				[ -z "$clientid" ] && {
+					logger -p warn -t dhcpv6 "$iface: ignoring invalid clientid value"
+				}
+			}
+			[ -z "$clientid" ] && clientid="$(proto_dhcpv6_get_default_duid)"
+			;;
+	esac
 	[ -n "$clientid" ] && append opts "-c$clientid"
 
 	[ "$defaultreqopts" = "0" ] && append opts "-R"
@@ -96,6 +146,8 @@ proto_dhcpv6_setup() {
 	[ "$forceprefix" = "1" ] && append opts "-F"
 
 	[ "$norelease" = "1" ] && append opts "-k"
+
+	[ "$strict_rfc7550" = "1" ] && append opts "--strict-rfc7550"
 
 	[ "$noserverunicast" = "1" ] && append opts "-U"
 
@@ -116,7 +168,7 @@ proto_dhcpv6_setup() {
 
 	[ -n "$ra_holdoff" ] && append opts "-m$ra_holdoff"
 
-	[ "$verbose" = "1" ] && append opts "-v"
+	[ -n "$verbose" ] && append opts "-l$verbose"
 
 	json_for_each_item proto_dhcpv6_add_sendopts sendopts opts
 
@@ -180,4 +232,3 @@ proto_dhcpv6_teardown() {
 }
 
 add_protocol dhcpv6
-

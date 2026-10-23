@@ -1,0 +1,390 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+/*
+ * Copyright (c) 2026 Wojciech Zwolinski <wojciech.zwolinski0@gmail.com>
+ */
+
+/dts-v1/;
+
+#include "ipq5018.dtsi"
+#include "ipq5018-ess.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+
+/ {
+	model = "ZTE T5400";
+	compatible = "zte,t5400", "qcom,ipq5018";
+
+	aliases {
+		label-mac-device = &swport2;
+		serial0 = &blsp1_uart1;
+		led-boot = &led_red;
+		led-failsafe = &led_red;
+		led-running = &led_white;
+		led-upgrade = &led_red;
+	};
+
+	chosen {
+		bootargs-append = " root=/dev/ubiblock0_1 swiotlb=1 coherent_pool=2M";
+		stdout-path = "serial0:115200n8";
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		pinctrl-0 = <&leds_pins>;
+		pinctrl-names = "default";
+
+		led_white: led-0 {
+			color = <LED_COLOR_ID_WHITE>;
+			function = LED_FUNCTION_STATUS;
+			gpios = <&tlmm 1 GPIO_ACTIVE_HIGH>;
+		};
+
+		led_red: led-1 {
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_STATUS;
+			gpios = <&tlmm 44 GPIO_ACTIVE_HIGH>;
+			default-state = "on";
+		};
+	};
+
+	keys {
+		compatible = "gpio-keys";
+		pinctrl-0 = <&keys_pins>;
+		pinctrl-names = "default";
+
+		button-reset {
+			label = "reset";
+			linux,code = <KEY_RESTART>;
+			gpios = <&tlmm 32 GPIO_ACTIVE_LOW>;
+		};
+
+		button-wps {
+			label = "wps";
+			linux,code = <KEY_WPS_BUTTON>;
+			gpios = <&tlmm 38 GPIO_ACTIVE_LOW>;
+		};
+	};
+};
+
+&qpic_bam {
+	status = "okay";
+};
+
+&qpic_nand {
+	status = "okay";
+
+	pinctrl-0 = <&qpic_pins>;
+	pinctrl-names = "default";
+
+	nand@0 {
+		compatible = "spi-nand";
+		reg = <0>;
+
+		nand-ecc-engine = <&qpic_nand>;
+		nand-ecc-strength = <4>;
+		nand-ecc-step-size = <512>;
+		nand-bus-width = <8>;
+
+		partitions {
+			compatible = "qcom,smem-part";
+
+			partition-mac {
+				label = "mac";
+				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_mac_0: mac-address@0 {
+						compatible = "mac-base";
+						reg = <0x0 0x6>;
+						#nvmem-cell-cells = <1>;
+					};
+				};
+			};
+
+			partition-0-art {
+				label = "0:art";
+				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					caldata_art_1000: calibration@1000 {
+						reg = <0x1000 0x20000>;
+					};
+
+					caldata_art_26800: calibration@26800 {
+						reg = <0x26800 0x20000>;
+					};
+				};
+			};
+		};
+	};
+};
+
+&sleep_clk {
+	clock-frequency = <32000>;
+};
+
+&xo_board_clk {
+	clock-div = <4>;
+	clock-mult = <1>;
+};
+
+&prng {
+	status = "okay";
+};
+
+&mdio0 {
+	status = "okay";
+};
+
+/*
+ * External QCA8337 switch:
+ * MDIO1 manages the switch and its internal PHYs.
+ *
+ * MDIO1 PHY1 -> physical RJ45 port 1
+ * MDIO1 PHY2 -> physical RJ45 port 2
+ * MDIO1 PHY3 -> physical RJ45 port 3
+ *
+ * LAN data path:
+ * GMAC1 -> UNIPHY0 -> SGMII -> QCA8337 CPU port 6
+ *
+ * Physical RJ45 port 4 uses a separate path:
+ * GMAC0 -> internal GEPHY (MDIO0 PHY7)
+ */
+&mdio1 {
+	status = "okay";
+
+	pinctrl-0 = <&mdio1_pins>;
+	pinctrl-names = "default";
+
+	reset-gpios = <&tlmm 39 GPIO_ACTIVE_LOW>;
+
+	qca8337_1: ethernet-phy@1 {
+		reg = <1>;
+	};
+
+	qca8337_2: ethernet-phy@2 {
+		reg = <2>;
+	};
+
+	qca8337_3: ethernet-phy@3 {
+		reg = <3>;
+	};
+
+	switch1: ethernet-switch@11 {
+		compatible = "qca,qca8337";
+		reg = <0x11>;
+
+		ethernet-ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			swport2: ethernet-port@2 {
+				reg = <2>;
+				label = "lan1";
+				phy-handle = <&qca8337_1>;
+
+				nvmem-cells = <&macaddr_mac_0 0>;
+				nvmem-cell-names = "mac-address";
+			};
+
+			swport3: ethernet-port@3 {
+				reg = <3>;
+				label = "lan2";
+				phy-handle = <&qca8337_2>;
+
+				nvmem-cells = <&macaddr_mac_0 0>;
+				nvmem-cell-names = "mac-address";
+			};
+
+			swport4: ethernet-port@4 {
+				reg = <4>;
+				label = "lan3";
+				phy-handle = <&qca8337_3>;
+
+				nvmem-cells = <&macaddr_mac_0 0>;
+				nvmem-cell-names = "mac-address";
+			};
+
+			ethernet-port@6 {
+				reg = <6>;
+				label = "cpu";
+				phy-mode = "sgmii";
+				ethernet = <&gmac1>;
+				qca,sgmii-enable-pll;
+
+				fixed-link {
+					speed = <1000>;
+					full-duplex;
+				};
+			};
+		};
+	};
+};
+
+/*
+ * GMAC0 -> internal GEPHY (MDIO0 PHY7) -> RJ45 port 4.
+ * Stock derives eth0 by decrementing factory MAC byte 3 by 2 modulo 256.
+ */
+&gmac0 {
+	status = "okay";
+
+	nvmem-cells = <&macaddr_mac_0 (-0x20000)>;
+	nvmem-cell-names = "mac-address";
+};
+
+/*
+ * GMAC1 -> UNIPHY0 -> SGMII -> QCA8337 CPU port 6 -> LAN1/LAN2/LAN3.
+ * Stock derives eth1 by decrementing factory MAC byte 3 by 1 modulo 256.
+ */
+&gmac1 {
+	status = "okay";
+
+	phy-mode = "sgmii";
+
+	nvmem-cells = <&macaddr_mac_0 (-0x10000)>;
+	nvmem-cell-names = "mac-address";
+
+	fixed-link {
+		speed = <1000>;
+		full-duplex;
+	};
+};
+
+&uniphy0 {
+	status = "okay";
+
+	assigned-clocks = <&uniphy0 UNIPHY_CLK_REF>;
+	assigned-clock-rates = <UNIPHY_REFCLK_25MHZ>;
+};
+
+&blsp1_uart1 {
+	status = "okay";
+
+	pinctrl-0 = <&serial_0_pins>;
+	pinctrl-names = "default";
+};
+
+&tlmm {
+	qpic_pins: qpic-state {
+		clock-pins {
+			pins = "gpio9";
+			function = "qspi_clk";
+			drive-strength = <8>;
+			bias-disable;
+		};
+
+		cs-pins {
+			pins = "gpio8";
+			function = "qspi_cs";
+			drive-strength = <8>;
+			bias-disable;
+		};
+
+		data-pins {
+			pins = "gpio4", "gpio5", "gpio6", "gpio7";
+			function = "qspi_data";
+			drive-strength = <8>;
+			bias-disable;
+		};
+	};
+
+	mdio1_pins: mdio1-state {
+		mdc-pins {
+			pins = "gpio36";
+			function = "mdc";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+
+		mdio-pins {
+			pins = "gpio37";
+			function = "mdio";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+	};
+
+	keys_pins: keys-state {
+		pins = "gpio32", "gpio38";
+		function = "gpio";
+		drive-strength = <8>;
+		bias-pull-up;
+	};
+
+	leds_pins: leds-state {
+		pins = "gpio1", "gpio44";
+		function = "gpio";
+		drive-strength = <8>;
+		bias-pull-down;
+	};
+
+	serial_0_pins: uart0-state {
+		rx-pins {
+			pins = "gpio20";
+			function = "blsp0_uart0";
+			bias-pull-up;
+		};
+
+		tx-pins {
+			pins = "gpio21";
+			function = "blsp0_uart0";
+			bias-disable;
+		};
+	};
+};
+
+&pcie0_phy {
+	status = "okay";
+};
+
+&pcie0 {
+	status = "okay";
+
+	perst-gpios = <&tlmm 15 GPIO_ACTIVE_LOW>;
+
+	pcie@0 {
+		wifi@0,0 {
+			status = "okay";
+
+			/* QCN9024, exposed to ath11k as PCI device 17cb:1104. */
+			compatible = "pci17cb,1104";
+			reg = <0x00010000 0 0 0 0>;
+
+			qcom,calibration-variant = "ZTE-T5400";
+
+			/*
+			 * Stock derives the primary chip2 WLAN MAC by
+			 * incrementing factory MAC byte 3 by 10 modulo 256.
+			 */
+			nvmem-cells = <&macaddr_mac_0 0x0a0000>, <&caldata_art_26800>;
+			nvmem-cell-names = "mac-address", "calibration";
+		};
+	};
+};
+
+&q6v5_wcss {
+	firmware-name = "ath11k/IPQ5018/hw1.0/q6_fw.mdt",
+			"ath11k/IPQ5018/hw1.0/m3_fw.mdt";
+};
+
+&wifi {
+	status = "okay";
+
+	qcom,rproc = <&q6v5_wcss>;
+	qcom,calibration-variant = "ZTE-T5400";
+	qcom,ath11k-fw-memory-mode = <1>;
+
+	/* Stock uses the factory MAC for the primary chip1 WLAN address. */
+	nvmem-cells = <&macaddr_mac_0 0>, <&caldata_art_1000>;
+	nvmem-cell-names = "mac-address", "calibration";
+};

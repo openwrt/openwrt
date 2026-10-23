@@ -1,4 +1,28 @@
-DEVICE_VARS += BOOT_SCRIPT
+DTS_DIR := $(DTS_DIR)/qcom
+DEVICE_VARS += AVM_CONTAINER_CONFIG BOOT_SCRIPT MERCUSYS_SUPPORT_STRING
+
+define Build/fit-avm
+	$(call Build/fit-its,$(1))
+	$(SED) '/algo = "crc32";/a\value = <0>;' \
+		-e '/hash-2/,+2d' \
+		-e 's/compression = "none";/compression = "lzma";/g' \
+		$@.its
+	$(eval dtb=$(basename $(word 2,$(1))))
+	$(if $(dtb),$(STAGING_DIR_HOST)/bin/lzma e $(dtb) -lc3 -lp0 -pb2 $(dtb).lzma)
+	$(call Build/fit-image,$(1))
+endef
+
+define Build/avm-header
+	$(TOPDIR)/scripts/fit-add-avm-header.sh $@ > $@.new
+	mv $@.new $@
+endef
+
+define Build/avm-container
+	$(TOPDIR)/scripts/mkits-avm-container.sh \
+		$@.its $@ $(AVM_CONTAINER_CONFIG) $(KERNEL_LOADADDR)
+	PATH=$(LINUX_DIR)/scripts/dtc:$(PATH) mkimage -f $@.its $@.new
+	@mv $@.new $@
+endef
 
 define Build/mstc-header
 	$(eval version=$(word 1,$(1)))
@@ -8,15 +32,67 @@ define Build/mstc-header
 		printf "CMOC"; \
 		tail -c+5 $@.crclen; head -c4 $@.crclen; \
 		printf '$(call toupper,$(LINUX_KARCH)) $(VERSION_DIST) Linux-$(LINUX_VERSION)' | \
-			dd bs=64 count=1 conv=sync 2>/dev/null; \
+			dd bs=64 count=1 conv=sync iflag=fullblock 2>/dev/null; \
 		printf "$(version)" | \
-			dd bs=64 count=1 conv=sync 2>/dev/null; \
+			dd bs=64 count=1 conv=sync iflag=fullblock 2>/dev/null; \
 		dd if=/dev/zero bs=$$(($(hdrlen) - 0x8c)) count=1 2>/dev/null; \
 		cat $@; \
 	) > $@.new
 	mv $@.new $@
 	rm -f $@.crclen
 endef
+
+# Wrap the OpenWrt UBI in a Mercusys fwup container the stock web UI accepts.
+# Keyless: the stock loader (nvrammanager) only RSA-checks fw-type "Cloud";
+# any other fw-type falls back to a salt-seeded MD5 integrity check.
+define Build/mercusys-fwup
+	$(TOPDIR)/scripts/mercusys-fwup.py $@ \
+		--fw-type $(if $(1),$(1),MR80X) \
+		--support "$(MERCUSYS_SUPPORT_STRING)" \
+		-o $@.new
+	mv $@.new $@
+endef
+
+define Build/tplink-re700x-factory
+	$(TOPDIR)/scripts/tplink-re700x-factory.py --rootfs $@ --output $@.factory
+	mv $@.factory $@
+endef
+
+define Device/avm_fritzbox-4050
+	$(call Device/FitImageLzma)
+	DEVICE_VENDOR := AVM
+	DEVICE_MODEL := FRITZ!Box 4050
+	DEVICE_DTS_CONFIG := maple_HW287_config_0
+	AVM_CONTAINER_CONFIG := maple_HW287_config_1
+	DEVICE_DTS_LOADADDR := 0x43000000
+	SOC := ipq5018
+	KERNEL = kernel-bin | lzma | fit-avm lzma $$(KDIR)/image-$$(DEVICE_DTS).dtb.lzma | avm-header | \
+		check-size $$(KERNEL_SIZE)
+	KERNEL_INITRAMFS = kernel-bin | lzma | fit-avm lzma $$(KDIR)/image-$$(DEVICE_DTS).dtb.lzma with-initrd | \
+		avm-header | avm-container | avm-header
+	KERNEL_SIZE := 8192k
+	DEVICE_PACKAGES := ath11k-firmware-ipq5018-qcn6122 \
+		ipq-wifi-avm_fritzbox-4050 \
+		fritz-caldata -uboot-envtools \
+		kmod-spi-gpio kmod-gpio-nxp-74hc164
+endef
+TARGET_DEVICES += avm_fritzbox-4050
+
+define Device/cmcc_mr3000d-ci
+	$(call Device/FitImageLzma)
+	$(call Device/UbiFit)
+	DEVICE_VENDOR := CMCC
+	DEVICE_MODEL := MR3000D-CI
+	DEVICE_DTS_CONFIG := config@mp03.3-m1
+	SOC := ipq5018
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	IMAGE_SIZE := 59392k
+	NAND_SIZE := 128m
+	DEVICE_PACKAGES := ath11k-firmware-ipq5018-qcn6122 \
+		ipq-wifi-cmcc_mr3000d-ci
+endef
+TARGET_DEVICES += cmcc_mr3000d-ci
 
 define Device/cmcc_pz-l8
 	$(call Device/FitImageLzma)
@@ -31,6 +107,20 @@ define Device/cmcc_pz-l8
 	NAND_SIZE := 128m
 endef
 TARGET_DEVICES += cmcc_pz-l8
+
+define Device/cmcc_rax3000q
+	$(call Device/FitImage)
+	$(call Device/UbiFit)
+	DEVICE_VENDOR := CMCC
+	DEVICE_MODEL := RAX3000Q
+	DEVICE_DTS_CONFIG := config@mp02.1
+	SOC := ipq5018
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	IMAGE_SIZE := 59392k
+	NAND_SIZE := 128m
+endef
+TARGET_DEVICES += cmcc_rax3000q
 
 define Device/elecom_wrc-x3000gs2
 	$(call Device/FitImageLzma)
@@ -51,6 +141,25 @@ define Device/elecom_wrc-x3000gs2
 endef
 TARGET_DEVICES += elecom_wrc-x3000gs2
 
+define Device/elecom_wrc-x3000gst2
+	$(call Device/FitImageLzma)
+	DEVICE_VENDOR := ELECOM
+	DEVICE_MODEL := WRC-X3000GST2
+	DEVICE_DTS_CONFIG := config@mp03.3
+	SOC := ipq5018
+	KERNEL_IN_UBI := 1
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	IMAGE_SIZE := 52480k
+	NAND_SIZE := 128m
+	IMAGES += factory.bin
+	IMAGE/factory.bin := append-ubi | qsdk-ipq-factory-nand | \
+		mstc-header 4.04(XZP.0)b90 | elecom-product-header WRC-X3000GST2
+	DEVICE_PACKAGES := ath11k-firmware-ipq5018-qcn6122 \
+		ipq-wifi-elecom_wrc-x3000gs2
+endef
+TARGET_DEVICES += elecom_wrc-x3000gst2
+
 define Device/glinet_gl-b3000
 	$(call Device/FitImage)
 	DEVICE_VENDOR := GL.iNet
@@ -62,15 +171,43 @@ define Device/glinet_gl-b3000
 	NAND_SIZE := 128m
 	DEVICE_DTS_CONFIG := config@mp03.5-c1
 	SUPPORTED_DEVICES += b3000
-	BOOT_SCRIPT:= glinet_gl-b3000.bootscript
+	BOOT_SCRIPT := glinet_qsdk.bootscript
 	IMAGES := factory.img sysupgrade.bin
-	IMAGE/factory.img := append-ubi | gl-qsdk-factory | append-metadata
+	IMAGE/factory.img := append-ubi | \
+		gl-qsdk-factory ubi_offset=0x00800000 ubi_size=0x07800000 | \
+		append-metadata
 	DEVICE_PACKAGES := \
 		ath11k-firmware-ipq5018-qcn6122 \
 		ipq-wifi-glinet_gl-b3000 \
 		dumpimage
 endef
 TARGET_DEVICES += glinet_gl-b3000
+
+define Device/glinet_gl-x2000
+	$(call Device/FitImage)
+	DEVICE_VENDOR := GL.iNet
+	DEVICE_MODEL := GL-X2000
+	SOC := ipq5018
+	KERNEL_IN_UBI := 1
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	NAND_SIZE := 128m
+	DEVICE_DTS_CONFIG := config@mp03.5-c1
+	SUPPORTED_DEVICES += x2000
+	BOOT_SCRIPT := glinet_qsdk.bootscript
+	IMAGES := factory.img sysupgrade.bin
+	IMAGE/factory.img := append-ubi | \
+		gl-qsdk-factory ubi_offset=0x00a00000 ubi_size=0x07600000 | \
+		append-metadata
+	DEVICE_PACKAGES := \
+		ath11k-firmware-ipq5018-qcn6122 \
+		ipq-wifi-glinet_gl-x2000 \
+		kmod-hwmon-pwmfan \
+		kmod-usb-net-qmi-wwan \
+		kmod-usb-serial-option \
+		dumpimage
+endef
+TARGET_DEVICES += glinet_gl-x2000
 
 define Device/iodata_wn-dax3000gr
 	$(call Device/FitImageLzma)
@@ -104,6 +241,17 @@ define Device/linksys_ipq50xx_mx_base
 	IMAGE/factory.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi | linksys-image type=$$$$(DEVICE_MODEL)
 endef
 
+define Device/linksys_mr2000
+	$(call Device/linksys_ipq50xx_mx_base)
+	DEVICE_MODEL := MR2000
+	DEVICE_DTS_CONFIG := config@mp03.5-c1
+	DEVICE_PACKAGES := ath11k-firmware-ipq5018-qcn6122 \
+		ipq-wifi-linksys_mr2000 \
+		kmod-usb-storage \
+		kmod-usb-ledtrig-usbport
+endef
+TARGET_DEVICES += linksys_mr2000
+
 define Device/linksys_mr5500
 	$(call Device/linksys_ipq50xx_mx_base)
 	DEVICE_MODEL := MR5500
@@ -136,6 +284,24 @@ define Device/linksys_mx5500
 endef
 TARGET_DEVICES += linksys_mx5500
 
+define Device/linksys_mx6200
+	$(call Device/FitImage)
+	$(call Device/UbiFit)
+	DEVICE_VENDOR := Linksys
+	DEVICE_MODEL := MX6200
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	DEVICE_DTS_CONFIG := config@mp03.5-c1
+	KERNEL_SIZE := 8192k
+	IMAGE_SIZE := 51200k
+	NAND_SIZE := 256m
+	SOC := ipq5018
+	IMAGE/factory.ubi := append-ubi | linksys-image type=$$$$(DEVICE_MODEL)
+	DEVICE_PACKAGES := ath11k-firmware-ipq5018-qcn6122 \
+		ipq-wifi-linksys_mx6200
+endef
+TARGET_DEVICES += linksys_mx6200
+
 define Device/linksys_spnmx56
 	$(call Device/linksys_ipq50xx_mx_base)
 	DEVICE_MODEL := SPNMX56
@@ -147,29 +313,173 @@ define Device/linksys_spnmx56
 endef
 TARGET_DEVICES += linksys_spnmx56
 
-define Device/xiaomi_ax6000
+define Device/mercusys_mr80x-v2
+	$(call Device/FitImageLzma)
+	DEVICE_VENDOR := MERCUSYS
+	DEVICE_MODEL := MR80X
+	DEVICE_VARIANT := v2
+	SOC := ipq5018
+	DEVICE_DTS_CONFIG := config@mp02.1
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	NAND_SIZE := 128m
+	KERNEL_IN_UBI := 1
+	IMAGE_SIZE := 43008k
+	DEVICE_PACKAGES := kmod-dsa-rtl8365mb
+	IMAGES += factory.bin
+	IMAGE/factory.bin := append-ubi | check-size | mercusys-fwup MR80X
+	MERCUSYS_SUPPORT_STRING := SupportList:\n \
+		{product_name:MR80X,product_ver:2.0.0,special_id:45550000}\n \
+		{product_name:MR80X,product_ver:2.0.0,special_id:55530000}\n
+endef
+TARGET_DEVICES += mercusys_mr80x-v2
+
+define Device/tplink_archer-ax55-v1
+	$(call Device/FitImageLzma)
+	$(call Device/UbiFit)
+	DEVICE_VENDOR := TP-Link
+	DEVICE_MODEL := Archer AX55
+	DEVICE_VARIANT := v1
+	DEVICE_DTS_CONFIG := config@mp03.3
+	SOC := ipq5018
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	IMAGE_SIZE := 43008k
+	NAND_SIZE := 128m
+	DEVICE_PACKAGES := ath11k-firmware-ipq5018-qcn6122 \
+		ipq-wifi-tplink_archer-ax55-v1 \
+		kmod-dsa-rtl8365mb \
+		kmod-usb-ledtrig-usbport
+ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
+ifeq ($(IB),)
+	ARTIFACTS := initramfs-factory.ubi
+	ARTIFACT/initramfs-factory.ubi := append-image-stage initramfs-uImage.itb | ubinize-kernel
+endif
+endif
+endef
+TARGET_DEVICES += tplink_archer-ax55-v1
+
+define Device/tplink_eap650-outdoor-v1
+	$(call Device/FitImage)
+	$(call Device/UbiFit)
+	DEVICE_VENDOR := TP-Link
+	DEVICE_MODEL := EAP650-Outdoor
+	DEVICE_VARIANT := v1
+	DEVICE_DTS_CONFIG := config@mp03.1
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	NAND_SIZE := 128m
+	SOC := ipq5018
+	DEVICE_PACKAGES := ath11k-firmware-ipq5018 \
+		kmod-ath11k-pci \
+		ath11k-firmware-qcn9074 \
+		ipq-wifi-tplink_eap650-outdoor-v1 \
+		kmod-phy-realtek
+endef
+TARGET_DEVICES += tplink_eap650-outdoor-v1
+
+define Device/tplink_re700x
+	$(call Device/FitImage)
+	$(call Device/UbiFit)
+	DEVICE_VENDOR := TP-Link
+	DEVICE_MODEL := RE700X
+	DEVICE_VARIANT := v1
+	SOC := ipq5018
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	NAND_SIZE := 128m
+	IMAGE_SIZE := 43008k
+	DEVICE_DTS_CONFIG := config@mp02.1
+	IMAGES += factory-webflash.bin
+	IMAGE/factory-webflash.bin := append-ubi | tplink-re700x-factory
+	DEVICE_PACKAGES := ath11k-firmware-ipq5018-qcn6122 \
+		ipq-wifi-tplink_re700x kmod-phy-realtek
+endef
+TARGET_DEVICES += tplink_re700x
+
+define Device/wallys_dr5018s
+	$(call Device/FitImage)
+	$(call Device/UbiFit)
+	DEVICE_VENDOR := Wallys
+	DEVICE_MODEL := DR5018S
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	IMAGE_SIZE := 59392k
+	NAND_SIZE := 128m
+	SOC := ipq5018
+	DEVICE_DTS_CONFIG := config@mp03.5-c2
+	DEVICE_PACKAGES := ath11k-firmware-ipq5018-qcn6122 \
+		ipq-wifi-wallys_dr5018s
+endef
+TARGET_DEVICES += wallys_dr5018s
+
+define Device/xiaomi_ipq50xx_ax_base
 	$(call Device/FitImage)
 	$(call Device/UbiFit)
 	DEVICE_VENDOR := Xiaomi
-	DEVICE_MODEL := AX6000
 	BLOCKSIZE := 128k
 	PAGESIZE := 2048
-	DEVICE_DTS_CONFIG := config@mp03.1
 	SOC := ipq5018
 	KERNEL_SIZE := 36864k
 	NAND_SIZE := 128m
+ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
+	ARTIFACTS := initramfs-factory.ubi
+	ARTIFACT/initramfs-factory.ubi := append-image-stage initramfs-uImage.itb | ubinize-kernel
+endif
+endef
+
+define Device/xiaomi_ax6000
+	$(call Device/xiaomi_ipq50xx_ax_base)
+	DEVICE_MODEL := AX6000
+	DEVICE_DTS_CONFIG := config@mp03.1
 	DEVICE_PACKAGES := ath11k-firmware-ipq5018 \
 		kmod-ath11k-pci \
 		ath11k-firmware-qcn9074 \
 		kmod-ath10k-ct-smallbuffers \
 		ath10k-firmware-qca9887-ct \
 		ipq-wifi-xiaomi_ax6000
-ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
-	ARTIFACTS := initramfs-factory.ubi
-	ARTIFACT/initramfs-factory.ubi := append-image-stage initramfs-uImage.itb | ubinize-kernel
-endif
 endef
 TARGET_DEVICES += xiaomi_ax6000
+
+define Device/xiaomi_redmi-ax5400
+	$(call Device/xiaomi_ipq50xx_ax_base)
+	DEVICE_MODEL := Redmi AX5400
+	DEVICE_DTS_CONFIG := config@mp03.1
+	DEVICE_PACKAGES := ath11k-firmware-ipq5018 \
+		kmod-ath11k-pci \
+		ath11k-firmware-qcn9074 \
+		ipq-wifi-xiaomi_redmi-ax5400
+endef
+TARGET_DEVICES += xiaomi_redmi-ax5400
+
+define Device/xunison_exigo-hub-d50-5g
+	$(call Device/FitImage)
+	DEVICE_VENDOR := Xunison
+	DEVICE_MODEL := Exigo Hub D50 5G
+	DEVICE_ALT0_VENDOR := Zearts
+	DEVICE_ALT0_MODEL := D50 5G
+	SOC := ipq5018
+	KERNEL_IN_UBI := 1
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	SUBPAGESIZE := 2048
+	VID_HDR_OFFSET := 2048
+	NAND_SIZE := 128m
+	IMAGE_SIZE := 59392k
+	DEVICE_DTS_CONFIG := config@mp03.1
+	IMAGES := factory.img sysupgrade.bin
+	IMAGE/factory.img := append-ubi | check-size
+	DEVICE_PACKAGES := ath11k-firmware-ipq5018 \
+		kmod-ath11k-pci \
+		ath11k-firmware-qcn9074 \
+		ipq-wifi-xunison_exigo-hub-d50-5g \
+		kmod-ledtrig-network \
+		kmod-mhi-pci-generic \
+		kmod-mhi-wwan-ctrl \
+		kmod-mhi-wwan-mbim \
+		umbim
+endef
+TARGET_DEVICES += xunison_exigo-hub-d50-5g
 
 define Device/yuncore_ax830
 	$(call Device/FitImage)
@@ -200,3 +510,36 @@ define Device/yuncore_ax850
 		ipq-wifi-yuncore_ax850
 endef
 TARGET_DEVICES += yuncore_ax850
+
+define Device/zte_t5400
+	$(call Device/FitImageLzma)
+	$(call Device/UbiFit)
+	DEVICE_VENDOR := ZTE
+	DEVICE_MODEL := T5400
+	DEVICE_DTS_CONFIG := config@mp03.1
+	SOC := ipq5018
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	IMAGE_SIZE := 61440k
+	NAND_SIZE := 256m
+	DEVICE_PACKAGES := ath11k-firmware-ipq5018 \
+		kmod-ath11k-pci \
+		ath11k-firmware-qcn9074 \
+		ipq-wifi-zte_t5400
+endef
+TARGET_DEVICES += zte_t5400
+
+define Device/zyxel_scr50axe
+	$(call Device/FitImage)
+	$(call Device/UbiFit)
+	DEVICE_VENDOR := Zyxel
+	DEVICE_MODEL := SCR50AXE
+	SOC := ipq5018
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	NAND_SIZE := 256m
+	DEVICE_DTS_CONFIG := config@mp03.5-c1
+	DEVICE_PACKAGES := ath11k-firmware-ipq5018-qcn6122 \
+		ipq-wifi-zyxel_scr50axe
+endef
+TARGET_DEVICES += zyxel_scr50axe

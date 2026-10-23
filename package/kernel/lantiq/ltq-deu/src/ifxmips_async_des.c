@@ -254,7 +254,7 @@ static int lq_deu_des_core (void *ctx_arg, u8 *out_arg, const u8 *in_arg,
         if (mode > 0) {
                 des->IVHR = DEU_ENDIAN_SWAP(*(u32 *) iv_arg);
                 des->IVLR = DEU_ENDIAN_SWAP(*((u32 *) iv_arg + 1));
-        };
+        }
 
     /* memory alignment issue */
     dword_mem_aligned_in = (u32 *) DEU_DWORD_REORDERING(in_arg, des_buff_in, BUFFER_IN, nbytes);
@@ -268,7 +268,7 @@ static int lq_deu_des_core (void *ctx_arg, u8 *out_arg, const u8 *in_arg,
     dma->controlr.EN = 1;
 
     while (des->controlr.BUS) {
-    };
+    }
 
     wlen = dma_device_write (dma_device, (u8 *) dword_mem_aligned_in, nbytes, NULL);
     if (wlen != nbytes) {
@@ -287,7 +287,7 @@ static int lq_deu_des_core (void *ctx_arg, u8 *out_arg, const u8 *in_arg,
     if (mode > 0) {
         *(u32 *) iv_arg = DEU_ENDIAN_SWAP(des->IVHR);
         *((u32 *) iv_arg + 1) = DEU_ENDIAN_SWAP(des->IVLR);
-    };
+    }
 
     CRTCL_SECT_END;
 
@@ -578,9 +578,7 @@ static int lq_queue_mgr(struct des_ctx *ctx, struct ablkcipher_request *areq,
     u32 remain, inc, nbytes = areq->nbytes;
     u32 chunk_bytes = src->length;
 
-    des_con = (struct des_container *)kmalloc(sizeof(struct des_container),
-                                       GFP_KERNEL);
-
+    des_con = kmalloc(sizeof(struct des_container), GFP_KERNEL);
     if (!(des_con)) {
         printk("Cannot allocate memory for AES container, fn %s, ln %d\n",
                 __func__, __LINE__);
@@ -756,7 +754,7 @@ struct lq_des_alg {
 };
 
 /* DES Supported algo array */
-static struct lq_des_alg des_drivers_alg [] = {
+static const struct lq_des_alg des_drivers_alg [] = {
     {
         .alg = {
             .cra_name        = "des",

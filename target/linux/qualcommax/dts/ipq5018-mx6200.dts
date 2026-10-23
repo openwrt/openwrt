@@ -1,0 +1,116 @@
+/dts-v1/;
+
+#include "ipq5018.dtsi"
+#include "ipq5018-ess.dtsi"
+#include "ipq5018-mx-base.dtsi"
+#include "ipq5018-qcn6122.dtsi"
+
+/ {
+	model = "Linksys MX6200";
+	compatible = "linksys,mx6200", "qcom,ipq5018";
+
+	chosen {
+		bootargs-append = " root=/dev/ubiblock0_1 coherent_pool=2M";
+		stdout-path = "serial0:115200n8";
+	};
+};
+
+/*
+* =================================================================
+*     _______________________             ____________
+*    |        IPQ5018        |           |            |
+*    | +------+   +--------+ |           | +--------+ |
+*    | | MAC0 |---| GE Phy |-+--- MDI ---+ | RJ45   | +
+*    | +------+   +--------+ |           | +--------+ |
+*    |                       |           |____________|
+*    |                       |            _______________________
+*    |                       |           |    MXL GPY115C Phy    |
+*    | +------+   +--------+ |           | +--------+   +------+ |
+*    | | MAC1 |---| Uniphy |-+-- SGMII---+ | Phy    |---| RJ45 | |
+*    | +------+   +--------+ |           | +--------+   +------+ |
+*    |_______________________|           |_______________________|
+*
+* =================================================================
+ */
+
+&uniphy0 {
+	status = "okay";
+
+	assigned-clocks = <&uniphy0 UNIPHY_CLK_REF>;
+	assigned-clock-rates = <UNIPHY_REFCLK_50MHZ>;
+};
+
+&gmac0 {
+	status = "okay";
+
+	label = "lan";
+
+	nvmem-cells = <&hw_mac_addr 1>;
+	nvmem-cell-names = "mac-address";
+};
+
+// MAC1 ---SGMII---> Maxlinear GPY115C
+&gmac1 {
+	status = "okay";
+
+	phy-handle = <&gpy115c>;
+	phy-mode = "sgmii";
+	managed = "in-band-status";
+
+	label = "wan";
+
+	nvmem-cells = <&hw_mac_addr 0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&mdio0 {
+	status = "okay";
+};
+
+&mdio1 {
+	status = "okay";
+
+	pinctrl-0 = <&mdio1_pins>;
+	pinctrl-names = "default";
+	reset-gpios = <&tlmm 24 GPIO_ACTIVE_LOW>;
+
+	// Maxlinear Ethernet GPY115C
+	gpy115c: ethernet-phy@f {
+		compatible = "ethernet-phy-id67c9.df10";
+		reg = <0xf>;
+	};
+};
+
+&q6_region {
+	reg = <0x0 0x4b000000 0x0 0x4d00000>;
+};
+
+&wifi {
+	status = "okay";
+
+	qcom,rproc = <&q6_wcss_pd1>;
+	qcom,ath11k-calibration-variant = "Linksys-MX6200";
+	qcom,ath11k-fw-memory-mode = <1>;
+	qcom,bdf-addr = <0x4c400000>;
+};
+
+&wifi1 {
+	status = "okay";
+
+	qcom,rproc = <&q6_wcss_pd2>;
+	qcom,userpd-subsys-name = "q6v5_wcss_userpd2";
+	qcom,ath11k-calibration-variant = "Linksys-MX6200-5G";
+	qcom,ath11k-fw-memory-mode = <1>;
+	qcom,m3-dump-addr = <0x4df00000>;
+};
+
+&wifi2 {
+	status = "okay";
+
+	qcom,rproc = <&q6_wcss_pd3>;
+	qcom,userpd-subsys-name = "q6v5_wcss_userpd3";
+	qcom,ath11k-calibration-variant = "Linksys-MX6200-6G";
+	qcom,ath11k-fw-memory-mode = <1>;
+	qcom,bdf-addr = <0x4e500000>;
+	qcom,m3-dump-addr = <0x4f200000>;
+};

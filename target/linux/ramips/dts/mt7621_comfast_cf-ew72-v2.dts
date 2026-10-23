@@ -164,8 +164,6 @@
 		reg = <0x0000 0 0 0 0>;
 		nvmem-cells = <&eeprom_factory_0>;
 		nvmem-cell-names = "eeprom";
-		// Wi-Fi device reads it's MAC address from EEPROM (&factory + 4)
-		// adding anything related to mac-address here will cause use random MAC
 	};
 };
 
@@ -175,8 +173,6 @@
 		reg = <0x0000 0 0 0 0>;
 		nvmem-cells = <&eeprom_factory_8000>;
 		nvmem-cell-names = "eeprom";
-		// Wi-Fi device reads it's MAC address from EEPROM, (&factory + 0x8000 + 4)
-		// adding anything related to mac-address here will cause use random MAC.
 	};
 };
 

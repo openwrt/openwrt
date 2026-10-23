@@ -102,7 +102,7 @@ static int mtdsplit_parse_wrgg(struct mtd_info *master,
 	if (err)
 		return err;
 
-	parts = kzalloc(WRGG_NR_PARTS * sizeof(*parts), GFP_KERNEL);
+	parts = kcalloc(WRGG_NR_PARTS, sizeof(*parts), GFP_KERNEL);
 	if (!parts)
 		return -ENOMEM;
 
@@ -132,11 +132,4 @@ static struct mtd_part_parser mtdsplit_wrgg_parser = {
 	.type = MTD_PARSER_TYPE_FIRMWARE,
 };
 
-static int __init mtdsplit_wrgg_init(void)
-{
-	register_mtd_parser(&mtdsplit_wrgg_parser);
-
-	return 0;
-}
-
-subsys_initcall(mtdsplit_wrgg_init);
+module_mtd_part_parser(mtdsplit_wrgg_parser);

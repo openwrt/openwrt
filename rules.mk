@@ -42,8 +42,12 @@ merge=$(subst $(space),,$(1))
 # @brief Get hash sum of variable list.
 #
 # @param 1: List of variable names.
+#
+# The variables are config symbols, which do not change during a make call,
+# so the hash of each list is computed only once.
 ##
-confvar=$(shell echo '$(foreach v,$(1),$(v)=$(subst ','\'',$($(v))))' | $(MKHASH) md5)
+confvar_key=confvar/$(subst $(space),+,$(strip $(1)))
+confvar=$(if $(filter undefined,$(origin $(confvar_key))),$(eval $(confvar_key):=$(shell echo '$(foreach v,$(1),$(v)=$(subst ','\'',$($(v))))' | $(MKHASH) md5)))$($(confvar_key))
 ##@
 # @brief Strip last extension from file name.
 #
@@ -96,7 +100,7 @@ TARGET_SUFFIX=$(call qstrip,$(CONFIG_TARGET_SUFFIX))
 BUILD_SUFFIX:=$(call qstrip,$(CONFIG_BUILD_SUFFIX))
 SUBDIR:=$(patsubst $(TOPDIR)/%,%,${CURDIR})
 BUILD_SUBDIR:=$(patsubst $(TOPDIR)/%,%,${CURDIR})
-NPROC=$(shell sysctl -n hw.ncpu 2>/dev/null || nproc)
+NPROC=$(eval NPROC:=$$(shell sysctl -n hw.ncpu 2>/dev/null || nproc))$(NPROC)
 export SHELL:=/usr/bin/env bash
 
 IS_PACKAGE_BUILD := $(if $(filter package/%,$(BUILD_SUBDIR)),1)
@@ -177,6 +181,23 @@ ifeq ($(or $(CONFIG_EXTERNAL_TOOLCHAIN),$(CONFIG_TARGET_uml)),)
   iremap = -f$(if $(CONFIG_REPRODUCIBLE_DEBUG_INFO),file,macro)-prefix-map=$(1)=$(2)
 endif
 
+# Unlike iremap, always rewrite the paths in the debug information, for output
+# that ships with it, such as the BTF of BPF objects.
+fremap = -ffile-prefix-map=$(1)=$(2)
+
+# A header taken from the staging directory reaches __FILE__ and the debug
+# information with its absolute path, which no other map covers. Keep the
+# staging_dir element, so that the result stays apart from the map of
+# BUILD_DIR, whose last element carries the same name.
+#
+# @param 1: Name of the map helper, iremap or fremap.
+remap_staging_dir = $(call $(1),$(STAGING_DIR),staging_dir/$(notdir $(STAGING_DIR)))
+IREMAP_STAGING_DIR = $(call remap_staging_dir,iremap)
+
+# The compiler's own headers, e.g. larchintrin.h which the LoongArch kernel
+# includes, come with the absolute path of the toolchain directory.
+IREMAP_TOOLCHAIN_DIR = $(call iremap,$(TOOLCHAIN_DIR),staging_dir/$(notdir $(TOOLCHAIN_DIR)))
+
 PACKAGE_DIR?=$(BIN_DIR)/packages
 PACKAGE_DIR_ALL?=$(TOPDIR)/staging_dir/packages/$(BOARD)
 BUILD_DIR:=$(BUILD_DIR_BASE)/$(TARGET_DIR_NAME)
@@ -191,6 +212,43 @@ STAGING_DIR_ROOT:=$(STAGING_DIR)/root-$(BOARD)
 STAGING_DIR_IMAGE:=$(STAGING_DIR)/image
 BUILD_LOG_DIR:=$(if $(call qstrip,$(CONFIG_BUILD_LOG_DIR)),$(call qstrip,$(CONFIG_BUILD_LOG_DIR)),$(TOPDIR)/logs)
 PKG_INFO_DIR := $(STAGING_DIR)/pkginfo
+
+# Set BUILD_TIME_LOG=<file> in the environment to record a begin and an end
+# event for every prepare, configure, compile and install stage. Turn the log
+# into a report with scripts/build-time-report.pl.
+ifneq ($(BUILD_TIME_LOG),)
+  BUILD_TIME_LOG_FILE:=$(if $(filter /%,$(BUILD_TIME_LOG)),$(BUILD_TIME_LOG),$(TOPDIR)/$(BUILD_TIME_LOG))
+  BuildTimeLog = @$(SCRIPT_DIR)/build-time-log.sh $(BUILD_TIME_LOG_FILE) $(1) $(2) "$(if $(BUILD_SUBDIR),$(BUILD_SUBDIR),$(CURDIR))$(if $(BUILD_VARIANT),/$(BUILD_VARIANT))"
+else
+  BuildTimeLog =
+endif
+
+# A package that sets PKG_CONFIGURE_CACHE or HOST_CONFIGURE_CACHE keeps the
+# autoconf result cache of its configure checks, so a package that is cleaned
+# and built again reads the answers instead of running the checks. The cache
+# lives in tmp/, which dirclean removes, so a full reset of the tree starts
+# from cold answers.
+#
+# The path covers everything that changes an answer: the toolchain for a target
+# package, the host compiler for a host package, and a hash of the configure
+# arguments and build flags for both. include/site/cache also starts from a
+# cold cache when the configure script or a precious variable changed.
+#
+# A package must opt in, because a cache is only correct for a configure script
+# that keeps its side effects outside the AC_CACHE_VAL body. ncurses appends
+# -D_XOPEN_SOURCE to CPPFLAGS inside that body, so a cached run restores the
+# value, skips the append and then fails to compile. Read the note above
+# PKG_CONFIGURE_CACHE in package.mk before you opt a package in.
+#
+# Set CONFIGURE_CACHE_DIR to a path of your own to keep the cache elsewhere, or
+# to the empty string to run every check again.
+ifeq ($(origin CONFIGURE_CACHE_DIR),undefined)
+  CONFIGURE_CACHE_DIR:=$(TMP_DIR)/configure-cache
+endif
+ifneq ($(CONFIGURE_CACHE_DIR),)
+  CONFIGURE_CACHE_BASE:=$(if $(filter /%,$(CONFIGURE_CACHE_DIR)),$(CONFIGURE_CACHE_DIR),$(TOPDIR)/$(CONFIGURE_CACHE_DIR))
+  strhash=$(shell printf '%s' '$(subst ','\'',$(1))' | $(MKHASH) md5)
+endif
 
 BUILD_DIR_HOST:=$(if $(IS_PACKAGE_BUILD),$(BUILD_DIR_BASE)/hostpkg,$(BUILD_DIR_BASE)/host)
 STAGING_DIR_HOST:=$(abspath $(STAGING_DIR)/../host)
@@ -305,6 +363,7 @@ TARGET_CC:=$(TARGET_CROSS)gcc
 TARGET_CXX:=$(TARGET_CROSS)g++
 TARGET_LD:=$(TARGET_CROSS)ld.$(TARGET_LINKER)
 KPATCH:=$(SCRIPT_DIR)/patch-kernel.sh
+CACHE_RUN:=$(SCRIPT_DIR)/cache-run.sh
 FILECMD:=$(STAGING_DIR_HOST)/bin/file
 SED:=$(STAGING_DIR_HOST)/bin/sed -i -e
 ESED:=$(STAGING_DIR_HOST)/bin/sed -E -i -e
@@ -344,6 +403,14 @@ export TARGET_CXX_NOCACHE
 export HOSTCC_NOCACHE
 export HOSTCXX_NOCACHE
 
+# A new host compiler behind an unchanged name changes what a configure check
+# answers, and autoconf does not detect that. gcc 14 turned an implicit function
+# declaration into an error, which changed many of those answers. The configure
+# cache of a host package is therefore keyed on the compiler as well. prereq
+# builds mkhash and links the compiler into staging_dir, so both exist by the
+# time a configure recipe asks for this.
+host_cc_id = $(if $(filter undefined,$(origin __host_cc_id)),$(eval __host_cc_id:=$(shell $(HOSTCC_NOCACHE) --version 2>/dev/null | head -1 | $(MKHASH) md5)))$(__host_cc_id)
+
 ifneq ($(CONFIG_CCACHE),)
   TARGET_CC:= ccache $(TARGET_CC)
   TARGET_CXX:= ccache $(TARGET_CXX)
@@ -352,7 +419,6 @@ ifneq ($(CONFIG_CCACHE),)
   export CCACHE_NOCOMPRESS:=true
   export CCACHE_BASEDIR:=$(TOPDIR)
   export CCACHE_DIR:=$(if $(call qstrip,$(CONFIG_CCACHE_DIR)),$(call qstrip,$(CONFIG_CCACHE_DIR)),$(TOPDIR)/.ccache)
-  export CCACHE_COMPILERCHECK:=%compiler% -v -c
 endif
 
 TARGET_CONFIGURE_OPTS = \
@@ -439,12 +505,12 @@ endef
 ##
 define YEAR_2038
 $(shell \
-  mkdir -p $(TMP_DIR); \
-  echo '$(pound) include <time.h>' > $(TMP_DIR)/year2038.c; \
-  echo '$(pound) define LARGE_TIME_T ((time_t) (((time_t) 1 << 30) - 1 + 3 * ((time_t) 1 << 30)))' >> $(TMP_DIR)/year2038.c; \
-  echo 'int verify_time_t_range[(LARGE_TIME_T / 65537 == 65535 && LARGE_TIME_T % 65537 == 0) ? 1 : -1];' >> $(TMP_DIR)/year2038.c; \
-  echo 'int main (void) {return 0;}' >> $(TMP_DIR)/year2038.c; \
-  $(HOSTCC) $(TMP_DIR)/year2038.c -o /dev/null 2>/dev/null && echo y && rm -f $(TMP_DIR)/year2038.c || rm -f $(TMP_DIR)/year2038.c; \
+  { \
+    echo '$(pound) include <time.h>'; \
+    echo '$(pound) define LARGE_TIME_T ((time_t) (((time_t) 1 << 30) - 1 + 3 * ((time_t) 1 << 30)))'; \
+    echo 'int verify_time_t_range[(LARGE_TIME_T / 65537 == 65535 && LARGE_TIME_T % 65537 == 0) ? 1 : -1];'; \
+    echo 'int main (void) {return 0;}'; \
+  } | $(HOSTCC) -x c - -o /dev/null 2>/dev/null && echo y; \
 )
 endef
 
@@ -488,14 +554,28 @@ define file_copy
 endef
 
 ##@
+# @brief Copy a file over another one only when the content differs, so that
+#        the destination keeps its timestamp.
+#
+# @param 1: Source file.
+# @param 2: Destination file.
+##
+define cp_if_changed
+	{ cmp -s $(1) $(2) || cp $(1) $(2); }
+endef
+
+##@
 # @brief Calculate sha256sum of any plain file within a given directory.
 #
 # @param 1: Input directory.
 # @param 2: If set, recurse into subdirectories.
 ##
 define sha256sums
-	(cd $(1); find . $(if $(2),,-maxdepth 1) -type f -not -name 'sha256sums' -printf "%P\n" | sort | \
-		xargs -r $(MKHASH) -n sha256 | sed -ne 's!^\(.*\) \(.*\)$$!\1 *\2!p' > sha256sums)
+	(cd $(1); \
+		[ -f sha256sums ] && [ -z "$$(find . $(if $(2),,-maxdepth 1) \
+			-not -name 'sha256sums' -newer sha256sums -print -quit)" ] || \
+		find . $(if $(2),,-maxdepth 1) -type f -not -name 'sha256sums' -printf "%P\n" | sort | \
+			xargs -r $(MKHASH) -n sha256 | sed -ne 's!^\(.*\) \(.*\)$$!\1 *\2!p' > sha256sums)
 endef
 
 ##@

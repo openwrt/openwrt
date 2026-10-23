@@ -118,6 +118,10 @@ tplink,tl-wpa8630p-v2.0-eu|\
 tplink,tl-wpa8630p-v2.1-eu)
 	ucidef_set_led_switch "lan" "LAN" "green:lan" "switch0" "0x3c"
 	;;
+tplink,tl-wr902ac-v1)
+	ucidef_set_led_netdev "lan" "LAN" "green:lan" "eth0"
+	ucidef_set_led_netdev "internet" "Internet" "green:internet" "eth0"
+	;;
 tplink,tl-wr940n-v3|\
 tplink,tl-wr940n-v4|\
 tplink,tl-wr941nd-v6)

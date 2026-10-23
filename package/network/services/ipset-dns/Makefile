@@ -29,7 +29,7 @@ define Package/ipset-dns
   SECTION:=net
   CATEGORY:=Network
   TITLE:=A lightweight DNS forwarder to populate ipsets
-  URL:=http://git.zx2c4.com/ipset-dns/about/
+  URL:=https://git.zx2c4.com/ipset-dns/about/
   DEPENDS:=+libmnl
 endef
 

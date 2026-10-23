@@ -14,7 +14,7 @@ endef
 
 define Build/buffalo-tftp-header
 	( \
-		echo -n -e "# Airstation Public Fmt1" | dd bs=32 count=1 conv=sync; \
+		echo -n -e "# Airstation Public Fmt1" | dd bs=32 count=1 conv=sync iflag=fullblock; \
 		dd if=$@; \
 	) > $@.new
 	mv $@.new $@

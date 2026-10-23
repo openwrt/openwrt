@@ -86,7 +86,7 @@ tick()
 }
 
 static void
-interrupt()
+interrupt(int sig)
 {
 	if (count) {
 #ifdef OLD_TRUERAND

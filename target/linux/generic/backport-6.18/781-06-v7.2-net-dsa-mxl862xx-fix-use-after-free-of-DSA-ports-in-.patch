@@ -1,0 +1,60 @@
+From 49d72a09ea975a042294e52e93b37fdf9245b937 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Fri, 19 Jun 2026 04:40:14 +0100
+Subject: [PATCH 6/6] net: dsa: mxl862xx: fix use-after-free of DSA ports in
+ crc_err_work
+
+Upon an MDIO CRC error mxl862xx_crc_err_work_fn() walks the DSA ports
+and closes the CPU port conduits:
+
+	dsa_switch_for_each_cpu_port(dp, priv->ds)
+		dev_close(dp->conduit);
+
+mxl862xx_remove() unregisters the switch before cancelling this work:
+
+	set_bit(MXL862XX_FLAG_WORK_STOPPED, &priv->flags);
+	cancel_delayed_work_sync(&priv->stats_work);
+	dsa_unregister_switch(ds);
+	mxl862xx_host_shutdown(priv);
+
+dsa_unregister_switch() frees the dsa_port objects. If a CRC error
+schedules the work during teardown it can run after the ports have been
+freed and dereference freed memory.
+
+Guard the port walk with MXL862XX_FLAG_WORK_STOPPED, which is already set
+before dsa_unregister_switch(). DSA tears the ports down under
+rtnl_lock(), so checking the flag under rtnl_lock() means the work either
+runs before teardown and sees valid ports, or runs afterwards, observes
+the flag and skips the walk. This mirrors the host_flood_work handler,
+which skips torn-down ports under rtnl_lock().
+
+Link: https://sashiko.dev/#/patchset/cover.1780968180.git.daniel%40makrotopia.org?part=2
+Fixes: a319d0c8c8ce ("net: dsa: mxl862xx: add CRC for MDIO communication")
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+Link: https://patch.msgid.link/5e55169926c02f2b914e5ada529d7453b943cda4.1781702256.git.daniel@makrotopia.org
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ drivers/net/dsa/mxl862xx/mxl862xx-host.c | 11 ++++++-----
+ 1 file changed, 6 insertions(+), 5 deletions(-)
+
+--- a/drivers/net/dsa/mxl862xx/mxl862xx-host.c
++++ b/drivers/net/dsa/mxl862xx/mxl862xx-host.c
+@@ -41,12 +41,13 @@ static void mxl862xx_crc_err_work_fn(str
+ 						  crc_err_work);
+ 	struct dsa_port *dp;
+ 
+-	dev_warn(&priv->mdiodev->dev,
+-		 "MDIO CRC error detected, shutting down all ports\n");
+-
+ 	rtnl_lock();
+-	dsa_switch_for_each_cpu_port(dp, priv->ds)
+-		dev_close(dp->conduit);
++	if (!test_bit(MXL862XX_FLAG_WORK_STOPPED, &priv->flags)) {
++		dev_warn(&priv->mdiodev->dev,
++			 "MDIO CRC error detected, shutting down all ports\n");
++		dsa_switch_for_each_cpu_port(dp, priv->ds)
++			dev_close(dp->conduit);
++	}
+ 	rtnl_unlock();
+ 
+ 	clear_bit(MXL862XX_FLAG_CRC_ERR, &priv->flags);

@@ -8,10 +8,10 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
-PKG_VERSION:=2025.10
+PKG_VERSION:=2026.10
 PKG_RELEASE:=1
 
-PKG_HASH:=b4f032848e56cc8f213ad59f9132c084dbbb632bc29176d024e58220e0efdf4a
+PKG_HASH:=3f856da3cbbc93af51ff95fde18588a348b4a26723b01d9841e999d988481015
 
 include $(INCLUDE_DIR)/u-boot.mk
 include $(INCLUDE_DIR)/package.mk
@@ -20,6 +20,13 @@ include $(INCLUDE_DIR)/host-build.mk
 define U-Boot/Default
   BUILD_TARGET:=mvebu
   HIDDEN:=1
+endef
+
+define U-Boot/mox
+  NAME:=CZ.NIC Turris Mox
+  BUILD_DEVICES:=cznic_turris-mox
+  BUILD_SUBTARGET:=cortexa53
+  UBOOT_CONFIG:=turris_mox
 endef
 
 define U-Boot/clearfog
@@ -63,16 +70,25 @@ endef
 define U-Boot/rb5009
   NAME:=MikroTik RB5009
   BUILD_SUBTARGET:=cortexa72
-  BUILD_DEVICES:=mikrotik_rb5009
+  BUILD_DEVICES:=mikrotik_rb5009ug mikrotik_rb5009upr
   UBOOT_CONFIG:=mvebu_rb5009
   UBOOT_IMAGE:=u-boot.elf
 endef
 
+define U-Boot/atlas
+  NAME:=RIPE Atlas Probe v5
+  BUILD_DEVICES:=ripe_atlas-v5
+  BUILD_SUBTARGET:=cortexa53
+  UBOOT_CONFIG:=turris_mox
+endef
+
 UBOOT_TARGETS:= \
+	mox \
 	clearfog \
 	helios4 \
 	omnia \
 	espressobin \
+	atlas \
 	uDPU \
 	eDPU \
 	rb5009

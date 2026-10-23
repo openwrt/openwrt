@@ -248,6 +248,7 @@ sub parse_package_metadata($) {
 		/^Build-Depends: \s*(.+)\s*$/ and $src->{builddepends} = [ split /\s+/, $1 ];
 		/^Build-Depends\/(\w+): \s*(.+)\s*$/ and $src->{"builddepends/$1"} = [ split /\s+/, $2 ];
 		/^Build-Types:\s*(.+)\s*$/ and $src->{buildtypes} = [ split /\s+/, $1 ];
+		/^Parallel-Variants:/ and $src->{parallel_variants} = 1;
 		next unless $pkg;
 		/^Version: \s*(.+)\s*$/ and $pkg->{version} = $1;
 		/^Title: \s*(.+)\s*$/ and $pkg->{title} = $1;
@@ -263,6 +264,9 @@ sub parse_package_metadata($) {
 		/^Default: \s*(.+)\s*$/ and $pkg->{default} = $1;
 		/^Provides: \s*(.+)\s*$/ and do {
 			my @vpkg = split /\s+/, $1;
+			foreach (@vpkg) {
+				s/^@//;
+			}
 			@{$pkg->{provides}} = ($pkg->{name}, @vpkg);
 			foreach my $vpkg (@vpkg) {
 				next if ($vpkg eq $pkg->{name});

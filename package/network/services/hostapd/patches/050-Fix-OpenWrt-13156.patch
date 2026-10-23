@@ -20,7 +20,7 @@ Signed-off-by: Stijn Tintel <stijn@linux-ipv6.be>
 
 --- a/src/ap/hostapd.c
 +++ b/src/ap/hostapd.c
-@@ -4110,6 +4110,8 @@ int hostapd_remove_iface(struct hapd_int
+@@ -4173,6 +4173,8 @@ int hostapd_remove_iface(struct hapd_int
  void hostapd_new_assoc_sta(struct hostapd_data *hapd, struct sta_info *sta,
  			   int reassoc)
  {
@@ -29,7 +29,7 @@ Signed-off-by: Stijn Tintel <stijn@linux-ipv6.be>
  	if (hapd->tkip_countermeasures) {
  		hostapd_drv_sta_deauth(hapd, sta->addr,
  				       WLAN_REASON_MICHAEL_MIC_FAILURE);
-@@ -4117,10 +4119,16 @@ void hostapd_new_assoc_sta(struct hostap
+@@ -4180,10 +4182,16 @@ void hostapd_new_assoc_sta(struct hostap
  	}
  
  #ifdef CONFIG_IEEE80211BE
@@ -51,13 +51,30 @@ Signed-off-by: Stijn Tintel <stijn@linux-ipv6.be>
  	ap_sta_clear_assoc_timeout(hapd, sta);
 --- a/src/ap/sta_info.c
 +++ b/src/ap/sta_info.c
-@@ -1554,9 +1554,6 @@ bool ap_sta_set_authorized_flag(struct h
- 				mld_assoc_link_id = -2;
- 		}
- #endif /* CONFIG_IEEE80211BE */
+@@ -1746,24 +1746,10 @@ bool ap_sta_set_authorized_flag(struct h
+ 	if (!!authorized == !!(sta->flags & WLAN_STA_AUTHORIZED))
+ 		return false;
+ 
+-	if (authorized) {
+-		int mld_assoc_link_id = -1;
+-
+-#ifdef CONFIG_IEEE80211BE
+-		if (ap_sta_is_mld(hapd, sta)) {
+-			if (sta->mld_assoc_link_id == hapd->mld_link_id)
+-				mld_assoc_link_id = sta->mld_assoc_link_id;
+-			else
+-				mld_assoc_link_id = -2;
+-		}
+-#endif /* CONFIG_IEEE80211BE */
 -		if (mld_assoc_link_id != -2)
 -			hostapd_prune_associations(hapd, sta->addr,
 -						   mld_assoc_link_id);
++	if (authorized)
  		sta->flags |= WLAN_STA_AUTHORIZED;
- 	} else {
+-	} else {
++	else
  		sta->flags &= ~WLAN_STA_AUTHORIZED;
+-	}
+ 
+ 	return true;
+ }

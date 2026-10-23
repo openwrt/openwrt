@@ -12,8 +12,7 @@ boot() {
 		fw_setenv fwr_verify 0
 		;;
 	qihoo,c301)
-		local n=$(fw_printenv activeregion | cut -d = -f 2)
-		fw_setenv "image${n}trynum" 0
+		fw_setenv $(printf "image%strynum" $(fw_printenv -n activeregion)) 0
 		;;
 	esac
 }

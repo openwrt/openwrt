@@ -5,7 +5,7 @@ define Build/yuncore-tftp-header-16m
 			"&& saveenv" \
 			"&& erase 0x9f050000 +0xfa0000" \
 			"&& cp.b 0x800600c0 0x9f050000 0xfa0000" |\
-		dd bs=192 count=1 conv=sync; \
+		dd bs=192 count=1 conv=sync iflag=fullblock; \
 		dd if=$@; \
 	) > $@.new
 	mv $@.new $@

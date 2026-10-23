@@ -7,7 +7,7 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=ltq-adsl-mei
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_MAINTAINER:=John Crispin <john@phrozen.org>
 PKG_CHECK_FORMAT_SECURITY:=0
@@ -19,7 +19,6 @@ define KernelPackage/ltq-adsl-mei-template
   CATEGORY:=Kernel modules
   SUBMENU:=Network Devices
   TITLE:=mei driver for $(1)
-  URL:=http://www.lantiq.com/
   VARIANT:=$(1)
   DEPENDS:=@$(2)
   FILES:=$(PKG_BUILD_DIR)/drv_mei_cpe.ko
@@ -36,7 +35,7 @@ endef
 define Build/Compile
 	cd $(LINUX_DIR); \
 		ARCH=mips CROSS_COMPILE="$(KERNEL_CROSS)" \
-		$(MAKE) BUILD_VARIANT=$(BUILD_VARIANT) M=$(PKG_BUILD_DIR)/ V=1 modules
+		$(MAKE) $(KERNEL_MAKE_FLAGS) BUILD_VARIANT=$(BUILD_VARIANT) M=$(PKG_BUILD_DIR)/ V=1 modules
 endef
 
 $(eval $(call KernelPackage,ltq-adsl-danube-mei))

@@ -1,0 +1,134 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Tue, 20 Oct 2026 14:29:28 +0200
+Subject: [PATCH] wpa_supplicant: Scan again after a scan that the driver aborted
+
+Since commit cb5bb816827d ("Do not use aborted scan results for new
+operations"), the results of an aborted scan end the scan radio work and
+trigger nothing else. Before, the network selection on those results
+requested the next scan of a station that is not connected. mac80211
+aborts the scan of a radio for example when another interface of the
+radio prepares a connection (ieee80211_prep_connection()), or on a
+hardware restart. The station then stays in SCANNING until something
+outside wpa_supplicant requests a scan.
+
+Request a new scan after one second when a scan of this interface ends
+aborted and wpa_supplicant did not ask for the abort, while the station
+is not disconnected on request and is not connecting or connected.
+After five such retries in a row, scan again at scan_interval, as after
+a scan that found no suitable network. A completed scan resets the
+count. The incomplete results still trigger no other operation.
+
+wpas_abort_ongoing_scan() marks its abort, since its caller cancels the
+scan on purpose. The next scan trigger of the interface clears the mark,
+not the results event, since wpa_supplicant_event() drops the scan
+results while the interface is disabled. If radio_remove_works() ends
+the scan work first (interface disabled, FLUSH), the next scan can start
+before the event of the old scan arrives; that late event finds the
+mark clear and gives one retry. P2P scan triggers do not clear the
+mark, since their results go to the scan_res_handler, which runs before
+the check for an aborted scan.
+
+Fixes: cb5bb816827d ("Do not use aborted scan results for new operations")
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+
+--- a/wpa_supplicant/events.c
++++ b/wpa_supplicant/events.c
+@@ -1898,6 +1898,32 @@ static void wpa_supplicant_req_new_scan(
+ }
+ 
+ 
++#define SCAN_ABORT_RETRY_MAX 5
++
++/*
++ * The driver aborted a scan that this interface requested and did not ask to
++ * abort, for example to add a channel context on the radio. Nothing else
++ * requests the next scan while the station is not connected.
++ */
++static void wpa_supplicant_scan_abort_retry(struct wpa_supplicant *wpa_s)
++{
++	int timeout_sec = 1;
++
++	if (wpa_s->disconnected || wpa_s->wpa_state >= WPA_AUTHENTICATING)
++		return;
++
++	if (wpa_s->scan_abort_retries < SCAN_ABORT_RETRY_MAX)
++		wpa_s->scan_abort_retries++;
++	else
++		timeout_sec = wpa_s->scan_interval;
++
++	wpa_dbg(wpa_s, MSG_DEBUG,
++		"Scan aborted by the driver - try to scan again in %d s",
++		timeout_sec);
++	wpa_supplicant_req_new_scan(wpa_s, timeout_sec, 0);
++}
++
++
+ static bool ml_link_probe_scan(struct wpa_supplicant *wpa_s)
+ {
+ 	if (!wpa_s->ml_connect_probe_ssid || !wpa_s->ml_connect_probe_bss)
+@@ -2527,6 +2553,11 @@ static int _wpa_supplicant_event_scan_re
+ 		ap = 1;
+ #endif /* CONFIG_AP */
+ 
++	if (own_request &&
++	    !(data && (data->scan_info.external_scan ||
++		       data->scan_info.aborted)))
++		wpa_s->scan_abort_retries = 0;
++
+ 	trigger_6ghz_scan = wpa_s->crossed_6ghz_dom &&
+ 		wpa_s->last_scan_all_chan;
+ 	wpa_s->crossed_6ghz_dom = false;
+@@ -2656,6 +2687,8 @@ static int _wpa_supplicant_event_scan_re
+ 	if (data && data->scan_info.aborted) {
+ 		wpa_dbg(wpa_s, MSG_DEBUG,
+ 			"Scan was aborted - do not use the incomplete scan results to trigger new operations");
++		if (own_request && !wpa_s->own_scan_abort)
++			wpa_supplicant_scan_abort_retry(wpa_s);
+ 		goto scan_work_done;
+ 	}
+ 
+--- a/wpa_supplicant/scan.c
++++ b/wpa_supplicant/scan.c
+@@ -284,6 +284,7 @@ static void wpas_trigger_scan_cb(struct
+ 	wpa_s->scan_runs++;
+ 	wpa_s->normal_scans++;
+ 	wpa_s->own_scan_requested = 1;
++	wpa_s->own_scan_abort = 0;
+ 	wpa_s->clear_driver_scan_cache = 0;
+ 	wpa_s->scan_work = work;
+ }
+@@ -4192,6 +4193,7 @@ int wpas_abort_ongoing_scan(struct wpa_s
+ {
+ 	struct wpa_radio_work *work;
+ 	struct wpa_radio *radio = wpa_s->radio;
++	int ret;
+ 
+ 	dl_list_for_each(work, &radio->work, struct wpa_radio_work, list) {
+ 		if (work->wpa_s != wpa_s || !work->started ||
+@@ -4199,7 +4201,9 @@ int wpas_abort_ongoing_scan(struct wpa_s
+ 		     os_strcmp(work->type, "p2p-scan") != 0))
+ 			continue;
+ 		wpa_dbg(wpa_s, MSG_DEBUG, "Abort an ongoing scan");
+-		return wpa_drv_abort_scan(wpa_s, wpa_s->curr_scan_cookie);
++		ret = wpa_drv_abort_scan(wpa_s, wpa_s->curr_scan_cookie);
++		wpa_s->own_scan_abort = ret == 0;
++		return ret;
+ 	}
+ 
+ 	wpa_dbg(wpa_s, MSG_DEBUG, "No ongoing scan/p2p-scan found to abort");
+--- a/wpa_supplicant/wpa_supplicant_i.h
++++ b/wpa_supplicant/wpa_supplicant_i.h
+@@ -968,10 +968,12 @@ struct wpa_supplicant {
+ 	unsigned int manual_scan_only_new:1;
+ 	unsigned int own_scan_requested:1;
+ 	unsigned int own_scan_running:1;
++	unsigned int own_scan_abort:1;
+ 	unsigned int clear_driver_scan_cache:1;
+ 	unsigned int manual_non_coloc_6ghz:1;
+ 	unsigned int manual_scan_id;
+ 	int scan_interval; /* time in sec between scans to find suitable AP */
++	unsigned int scan_abort_retries;
+ 	int normal_scans; /* normal scans run before sched_scan */
+ 	int scan_for_connection; /* whether the scan request was triggered for
+ 				  * finding a connection */

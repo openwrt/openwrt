@@ -18,10 +18,24 @@ endif
 
 include $(INCLUDE_DIR)/unpack.mk
 include $(INCLUDE_DIR)/depends.mk
+
+# git-src is only honoured for the host build when a package opts in via
+# HOST_USE_GIT_SRC, since by default the host build keeps using the tarball.
+ifdef HOST_USE_GIT_SRC
+  ifneq ($(GIT_SRC_CHECKOUT_DIR),)
+    USE_HOST_GIT_SRC_CHECKOUT:=1
+    HOST_QUILT:=1
+  endif
+  ifneq ($(GIT_TREE_OVERRIDE_DIR),)
+    USE_HOST_GIT_TREE:=1
+    HOST_QUILT:=1
+  endif
+endif
+
 include $(INCLUDE_DIR)/quilt.mk
 
 BUILD_TYPES += host
-HOST_STAMP_PREPARED=$(HOST_BUILD_DIR)/.prepared$(if $(HOST_QUILT)$(DUMP),,$(shell $(call $(if $(CONFIG_AUTOREMOVE),find_md5_reproducible,find_md5),${CURDIR} $(PKG_FILE_DEPENDS),))_$(call confvar,CONFIG_AUTOREMOVE $(HOST_PREPARED_DEPENDS)))
+HOST_STAMP_PREPARED=$(HOST_BUILD_DIR)/.prepared$(if $(HOST_QUILT)$(DUMP),,$(PKG_FILES_MD5)_$(call confvar,CONFIG_AUTOREMOVE $(HOST_PREPARED_DEPENDS)))
 HOST_STAMP_CONFIGURED:=$(HOST_BUILD_DIR)/.configured
 HOST_STAMP_BUILT:=$(HOST_BUILD_DIR)/.built
 HOST_BUILD_PREFIX?=$(if $(IS_PACKAGE_BUILD),$(STAGING_DIR_HOSTPKG),$(STAGING_DIR_HOST))
@@ -40,6 +54,13 @@ define Host/Prepare/Default
 	[ ! -d ./src/ ] || $(CP) ./src/* $(HOST_BUILD_DIR)
 	$(Host/Patch)
 endef
+
+ifdef USE_HOST_GIT_SRC_CHECKOUT
+  Host/Prepare/Default = $(call Prepare/git-src,$(HOST_BUILD_DIR),$(GIT_SRC_CHECKOUT_DIR))
+endif
+ifdef USE_HOST_GIT_TREE
+  Host/Prepare/Default = $(call Prepare/git-src,$(HOST_BUILD_DIR),$(CURDIR)/git-src)
+endif
 
 define Host/Prepare
   $(call Host/Prepare/Default)
@@ -76,9 +97,7 @@ HOST_CONFIGURE_ARGS = \
 	--localstatedir=$(HOST_BUILD_PREFIX)/var \
 	--sbindir=$(HOST_BUILD_PREFIX)/bin
 
-ifneq ($(YEAR_2038),y)
-  HOST_CONFIGURE_ARGS += --disable-year2038
-endif
+HOST_CONFIGURE_ARGS += $(if $(filter y,$(YEAR_2038)),,--disable-year2038)
 
 HOST_MAKE_VARS = \
 	CFLAGS="$(HOST_CFLAGS)" \
@@ -90,9 +109,12 @@ HOST_MAKE_FLAGS =
 
 HOST_CONFIGURE_CMD = $(BASH) ./configure
 
-ifeq ($(HOST_OS),Darwin)
-  HOST_CONFIG_SITE:=$(INCLUDE_DIR)/site/darwin
-endif
+HOST_CONFIG_SITE_BASE:=$(if $(filter Darwin,$(HOST_OS)),$(INCLUDE_DIR)/site/darwin)
+HOST_CONFIG_SITE:=$(INCLUDE_DIR)/site/cache
+# Set HOST_CONFIGURE_CACHE:=1 to keep the autoconf result cache of this host
+# build between builds. Read the note above PKG_CONFIGURE_CACHE in package.mk
+# before you opt a package in.
+HOST_CONFIGURE_CACHE_FILE = $(CONFIGURE_CACHE_BASE)/$(notdir $(BUILD_DIR_HOST))-$(host_cc_id)/$(notdir $(HOST_BUILD_DIR))/$(call strhash,$(HOST_CONFIGURE_ARGS) $(HOST_CONFIGURE_VARS)).cache
 
 define Host/Configure/Default
 	$(if $(HOST_CONFIGURE_PARALLEL),+)(cd $(HOST_BUILD_DIR)/$(3); \
@@ -151,6 +173,7 @@ define Host/Exports/Default
   $(1) : export PKG_CONFIG_LIBDIR=$$(HOST_BUILD_PREFIX)/lib/pkgconfig
   $(1) : export GIT_CEILING_DIRECTORIES=$$(BUILD_DIR_HOST)
   $(if $(HOST_CONFIG_SITE),$(1) : export CONFIG_SITE:=$(HOST_CONFIG_SITE))
+  $(if $(HOST_CONFIG_SITE_BASE),$(1) : export CONFIG_SITE_BASE:=$(HOST_CONFIG_SITE_BASE))
   $(if $(IS_PACKAGE_BUILD),$(1) : export PATH=$$(TARGET_PATH_PKG))
 endef
 Host/Exports=$(Host/Exports/Default)
@@ -163,34 +186,43 @@ ifndef DUMP
   $(if $(DUMP),,$(call HostHost/Autoclean))
 
   $(HOST_STAMP_PREPARED):
+	$(call BuildTimeLog,begin,prepare)
 	@-rm -rf $(HOST_BUILD_DIR)
 	@mkdir -p $(HOST_BUILD_DIR)
 	$(foreach hook,$(Hooks/HostPrepare/Pre),$(call $(hook))$(sep))
 	$(call Host/Prepare)
 	$(foreach hook,$(Hooks/HostPrepare/Post),$(call $(hook))$(sep))
 	touch $$@
+	$(call BuildTimeLog,end,prepare)
 
   $(call Host/Exports,$(HOST_STAMP_CONFIGURED))
+  $(if $(and $(CONFIGURE_CACHE_BASE),$(HOST_CONFIGURE_CACHE)),$(HOST_STAMP_CONFIGURED) : export CONFIGURE_CACHE_FILE:=$(HOST_CONFIGURE_CACHE_FILE))
   $(HOST_STAMP_CONFIGURED): $(HOST_STAMP_PREPARED)
+	$(call BuildTimeLog,begin,configure)
 	$(foreach hook,$(Hooks/HostConfigure/Pre),$(call $(hook))$(sep))
 	$(call Host/Configure)
 	$(foreach hook,$(Hooks/HostConfigure/Post),$(call $(hook))$(sep))
 	touch $$@
+	$(call BuildTimeLog,end,configure)
 
   $(call Host/Exports,$(HOST_STAMP_BUILT))
   $(HOST_STAMP_BUILT): $(HOST_STAMP_CONFIGURED)
+		$(call BuildTimeLog,begin,compile)
 		$(foreach hook,$(Hooks/HostCompile/Pre),$(call $(hook))$(sep))
 		$(call Host/Compile)
 		$(foreach hook,$(Hooks/HostCompile/Post),$(call $(hook))$(sep))
 		touch $$@
+		$(call BuildTimeLog,end,compile)
 
   $(call Host/Exports,$(HOST_STAMP_INSTALLED))
   $(HOST_STAMP_INSTALLED): $(HOST_STAMP_BUILT) $(if $(FORCE_HOST_INSTALL),FORCE)
+		$(call BuildTimeLog,begin,install)
 		$(call Host/Install,$(HOST_BUILD_PREFIX))
 		$(foreach hook,$(Hooks/HostInstall/Post),$(call $(hook))$(sep))
 		mkdir -p $$(shell dirname $$@)
 		touch $(HOST_STAMP_BUILT)
 		touch $$@ $(HOST_STAMP_PROGRAMS)
+		$(call BuildTimeLog,end,install)
 
   $(call DefaultTargets,$(patsubst %,host-%,$(DEFAULT_SUBDIR_TARGETS)))
   ifndef STAMP_BUILT
@@ -226,9 +258,11 @@ endif
 
 define HostBuild
   $(HostBuild/Core)
-  $(if $(if $(PKG_HOST_ONLY),,$(if $(and $(filter host-%,$(MAKECMDGOALS)),$(PKG_SKIP_DOWNLOAD)),,$(STAMP_PREPARED))),,
-	$(if $(and $(CONFIG_AUTOREMOVE), $(wildcard $(HOST_STAMP_INSTALLED), $(wildcard $(HOST_STAMP_BUILT)))),,
-		$(if $(strip $(PKG_SOURCE_URL)),$(call Download,default))
+  $(if $(USE_HOST_GIT_SRC_CHECKOUT)$(USE_HOST_GIT_TREE),,
+	$(if $(if $(PKG_HOST_ONLY),,$(if $(and $(filter host-%,$(MAKECMDGOALS)),$(PKG_SKIP_DOWNLOAD)),,$(STAMP_PREPARED))),,
+		$(if $(and $(CONFIG_AUTOREMOVE), $(wildcard $(HOST_STAMP_INSTALLED), $(wildcard $(HOST_STAMP_BUILT)))),,
+			$(if $(strip $(PKG_SOURCE_URL)),$(call Download,default))
+		)
 	)
   )
 endef

@@ -13,7 +13,7 @@ Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
 
 --- a/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
 +++ b/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
-@@ -3746,6 +3746,7 @@ static void rt2800_config_channel_rf55xx
+@@ -3748,6 +3748,7 @@ static void rt2800_config_channel_rf55xx
  	rt2800_bbp_write(rt2x00dev, 80, (rf->channel <= 14) ? 0x0E : 0x08);
  	rt2800_bbp_write(rt2x00dev, 81, (rf->channel <= 14) ? 0x3A : 0x38);
  	rt2800_bbp_write(rt2x00dev, 82, (rf->channel <= 14) ? 0x62 : 0x92);
@@ -21,7 +21,7 @@ Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
  
  	/* GLRT band configuration */
  	rt2800_bbp_write(rt2x00dev, 195, 128);
-@@ -3758,7 +3759,7 @@ static void rt2800_config_channel_rf55xx
+@@ -3760,7 +3761,7 @@ static void rt2800_config_channel_rf55xx
  	rt2800_bbp_write(rt2x00dev, 196, (rf->channel <= 14) ? 0x32 : 0x20);
  	rt2800_bbp_write(rt2x00dev, 195, 133);
  	rt2800_bbp_write(rt2x00dev, 196, (rf->channel <= 14) ? 0x28 : 0x7F);
@@ -30,7 +30,7 @@ Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
  	rt2800_bbp_write(rt2x00dev, 196, (rf->channel <= 14) ? 0x19 : 0x7F);
  }
  
-@@ -4304,7 +4305,8 @@ static void rt2800_config_channel(struct
+@@ -4306,7 +4307,8 @@ static void rt2800_config_channel(struct
  		rt2800_bbp_write(rt2x00dev, 62, 0x37 - rt2x00dev->lna_gain);
  		rt2800_bbp_write(rt2x00dev, 63, 0x37 - rt2x00dev->lna_gain);
  		rt2800_bbp_write(rt2x00dev, 64, 0x37 - rt2x00dev->lna_gain);
@@ -40,7 +40,7 @@ Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
  			rt2800_bbp_write(rt2x00dev, 86, 0x38);
  		else
  			rt2800_bbp_write(rt2x00dev, 86, 0);
-@@ -4313,6 +4315,7 @@ static void rt2800_config_channel(struct
+@@ -4315,6 +4317,7 @@ static void rt2800_config_channel(struct
  	if (rf->channel <= 14) {
  		if (!rt2x00_rt(rt2x00dev, RT5390) &&
  		    !rt2x00_rt(rt2x00dev, RT5392) &&
@@ -48,7 +48,7 @@ Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
  		    !rt2x00_rt(rt2x00dev, RT6352)) {
  			if (rt2x00_has_cap_external_lna_bg(rt2x00dev)) {
  				rt2800_bbp_write(rt2x00dev, 82, 0x62);
-@@ -4336,17 +4339,20 @@ static void rt2800_config_channel(struct
+@@ -4338,17 +4341,20 @@ static void rt2800_config_channel(struct
  		else if (rt2x00_rt(rt2x00dev, RT3593) ||
  			 rt2x00_rt(rt2x00dev, RT3883))
  			rt2800_bbp_write(rt2x00dev, 82, 0x82);
@@ -74,7 +74,7 @@ Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
  	}
  
  	reg = rt2800_register_read(rt2x00dev, TX_BAND_CFG);
-@@ -5783,12 +5789,10 @@ static inline void rt2800_set_vgc(struct
+@@ -5785,12 +5791,10 @@ static inline void rt2800_set_vgc(struct
  		if (rt2x00_rt(rt2x00dev, RT3572) ||
  		    rt2x00_rt(rt2x00dev, RT3593) ||
  		    rt2x00_rt(rt2x00dev, RT3883) ||
@@ -88,7 +88,7 @@ Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
  		} else {
  			rt2800_bbp_write(rt2x00dev, 66, vgc_level);
  		}
-@@ -7016,7 +7020,6 @@ static void rt2800_init_bbp_5592(struct
+@@ -7018,7 +7022,6 @@ static void rt2800_init_bbp_5592(struct
  	rt2800_bbp_write(rt2x00dev, 88, 0x90);
  	rt2800_bbp_write(rt2x00dev, 91, 0x04);
  	rt2800_bbp_write(rt2x00dev, 92, 0x02);
@@ -96,7 +96,7 @@ Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
  	rt2800_bbp_write(rt2x00dev, 98, 0x12);
  	rt2800_bbp_write(rt2x00dev, 103, 0xC0);
  	rt2800_bbp_write(rt2x00dev, 104, 0x92);
-@@ -7027,6 +7030,7 @@ static void rt2800_init_bbp_5592(struct
+@@ -7029,6 +7032,7 @@ static void rt2800_init_bbp_5592(struct
  	rt2800_bbp_write(rt2x00dev, 134, 0xD0);
  	rt2800_bbp_write(rt2x00dev, 135, 0xF6);
  	rt2800_bbp_write(rt2x00dev, 137, 0x0F);
@@ -104,7 +104,7 @@ Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
  
  	/* Initialize GLRT (Generalized Likehood Radio Test) */
  	rt2800_init_bbp_5592_glrt(rt2x00dev);
-@@ -7051,12 +7055,6 @@ static void rt2800_init_bbp_5592(struct
+@@ -7053,12 +7057,6 @@ static void rt2800_init_bbp_5592(struct
  		rt2x00_set_field8(&value, BBP254_BIT7, 1);
  		rt2800_bbp_write(rt2x00dev, 254, value);
  	}

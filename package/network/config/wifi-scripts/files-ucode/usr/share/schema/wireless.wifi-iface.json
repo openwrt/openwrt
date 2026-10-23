@@ -165,6 +165,14 @@
 		"basic_rate": {
 			"type": "array"
 		},
+		"beacon_prot": {
+			"description": "Management frame protection for Beacon frames",
+			"type": "boolean"
+		},
+		"bridge_isolate": {
+			"description": "Enable bridge port isolation for the wireless interface",
+			"type": "boolean"
+		},
 		"bss_load_update_period": {
 			"description": "BSS Load update period (in BUs)",
 			"type": "number",
@@ -188,6 +196,10 @@
 			"description": "Specifies the path the CA certificate used for authentication",
 			"type": "string"
 		},
+		"ca_cert2": {
+			"description": "Path to the inner-tunnel (phase 2) CA certificate for EAP-TLS",
+			"type": "string"
+		},
 		"ca_cert2_usesystem": {
 			"type": "boolean"
 		},
@@ -205,6 +217,10 @@
 		},
 		"client_cert": {
 			"description": "File path to client certificate file (PEM/DER)",
+			"type": "string"
+		},
+		"client_cert2": {
+			"description": "File path to the inner-tunnel (phase 2) client certificate for EAP-TLS",
 			"type": "string"
 		},
 		"dae_client": {
@@ -253,6 +269,23 @@
 			"description": "Disassociate stations based on excessive transmission failures or other indications of connection loss. This depends on the driver capabilities and may not be available with all drivers.",
 			"type": "boolean",
 			"default": true
+		},
+		"dpp": {
+			"description": "Enable the DPP AKM in addition to the one selected by encryption. Sets ieee80211w to 1 (optional) if it is 0 or not set, also an explicit 0 and sae-compat outside 6 GHz, whose base RSNE then advertises PMF",
+			"type": "boolean",
+			"default": false
+		},
+		"dpp_connector": {
+			"description": "DPP Connector (signedConnector) for DPP Network Introduction",
+			"type": "string"
+		},
+		"dpp_csign": {
+			"description": "DPP C-sign-key of the Configurator, hex-encoded DER",
+			"type": "string"
+		},
+		"dpp_netaccesskey": {
+			"description": "DPP netAccessKey, hex-encoded DER",
+			"type": "string"
 		},
 		"domain_match": {
 			"type": "array",
@@ -343,6 +376,10 @@
 			"description": "DHCP server for FILS HLP. Set to '*' for automatic lookup.",
 			"type": "string"
 		},
+		"ft_iface": {
+			"description": "Inter-AP communication interface for 802.11r",
+			"type": "string"
+		},
 		"ft_over_ds": {
 			"description": "Whether to enable FT-over-DS",
 			"type": "boolean",
@@ -358,6 +395,10 @@
 		},
 		"gas_address3": {
 			"type": "string"
+		},
+		"gcmp256": {
+			"description": "Advertise the GCMP-256 pairwise cipher on HE/EHT BSSes (alongside CCMP for sae/sae-mixed, in the RSNE Override 2 element for sae-compat). Mandatory for EHT (WPA3 Specification v3.5 2.5), recommended otherwise. Off by default, because some clients and chipsets misbehave when GCMP-256 is offered. With an EHT htmode, sae, sae-mixed and sae-compat BSSes offer GCMP-256 in the RSNE Override 2 element unless this option is 0; 1 also offers it in the RSNE. Only advertised when the driver supports the GCMP-256 cipher. The sae and sae-mixed BSSes send no RSNE Override 2 element when the RSNE already offers SAE-EXT-KEY and GCMP-256 (CCMP without driver support for GCMP-256). An AP MLD sends none only when this holds on every link, so a psk2 AP MLD sends it on every link unless sae_ext_key is 0.",
+			"type": "boolean"
 		},
 		"hidden": {
 			"type": "alias",
@@ -416,18 +457,16 @@
 		},
 		"ieee80211k": {
 			"description": "Enables Radio Resource Measurement (802.11k) support",
-			"type": "boolean",
-			"default": true
+			"type": "boolean"
 		},
 		"ieee80211r": {
 			"description": "Enables fast BSS transition (802.11r) support.",
 			"type": "boolean"
 		},
 		"ieee80211w": {
-			"description": "Enables MFP (802.11w) support (0 = disabled, 1 = optional, 2 = required). Requires the 'full' version of wpad/hostapd and support from the Wi-Fi driver",
+			"description": "Enables MFP (802.11w) support (0 = disabled, 1 = optional, 2 = required). Requires the 'full' version of wpad/hostapd and support from the Wi-Fi driver. In the 6 GHz band, an AP with WPA2 or later always uses 2, also with an explicit value, as IEEE 802.11-2024 12.12.2 requires. With an EHT htmode, an AP with WPA2 or later defaults to 1, because IEEE 802.11be-2024 12.12.9 requires beacon protection; sae-compat outside 6 GHz keeps 0 in its base RSNE (WPA3 Specification v3.5 2.4) unless mbo, ocv or dpp needs PMF",
 			"type": "number",
-			"enum": [ 0, 1, 2 ],
-			"default": 0
+			"enum": [ 0, 1, 2 ]
 		},
 		"ieee80211w_max_timeout": {
 			"type": "alias",
@@ -593,15 +632,12 @@
 			"default": "max_num_sta"
 		},
 		"mbo": {
-			"description": "Multiband Operation",
+			"description": "Multiband Operation. On a BSS with WPA2 or later, sets ieee80211w to 1 (optional) if it is 0 or not set, because hostapd requires PMF for MBO with WPA2",
 			"type": "boolean"
 		},
 		"mcast_rate": {
-			"description": "Allowed multicast rates",
-			"type": "array",
-			"items": {
-				"type": "number"
-			}
+			"description": "Allowed multicast rate",
+			"type": "number"
 		},
 		"mesh_auto_open_plinks": {
 			"type": "boolean"
@@ -690,8 +726,15 @@
 			"type": "number"
 		},
 		"mlo": {
-			"description": "Multi-Link Operation",
+			"description": "Multi-Link Operation. On an AP MLD, psk and psk-mixed become psk2, and wpa and wpa-mixed become wpa2; psk2 keeps PSK in the RSNE of the 2.4 and 5 GHz links for single-link stations and offers SAE in the RSNE Override 2 element of every link, which multi-link associations use. The 6 GHz link uses SAE. If the AP MLD has a 6 GHz link, none becomes owe on the other links. On an MLD station with a 6 GHz radio and radios of other bands, psk2 becomes sae-mixed and wpa2 becomes wpa3-mixed",
 			"type": "boolean"
+		},
+		"mlo_bands": {
+			"description": "Bands of all radios of the AP MLD or MLD station, set by netifd",
+			"type": "array",
+			"items": {
+				"type": "string"
+			}
 		},
 		"mobility_domain": {
 			"description": "DID is used to indicate a group of APs between which a STA can use Fast BSS Transition.",
@@ -757,8 +800,19 @@
 			"description": "Network Authentication Type",
 			"type": "string"
 		},
+		"network_vlan": {
+			"description": "Make a wireless interface a tagged member of extra VLANs",
+			"type": "array",
+			"items": {
+				"type": "string"
+			}
+		},
+		"no_probe_resp_if_max_sta": {
+			"description": "Do not answer probe requests if iface_max_num_sta was reached",
+			"type": "boolean"
+		},
 		"ocv": {
-			"description": "Operating Channel Validation",
+			"description": "Operating Channel Validation. Requires PMF: on a BSS with WPA2 or later, sets ieee80211w to 1 (optional) if it is 0 or not set. Ignored on a BSS without WPA2, which cannot use PMF",
 			"type": "number",
 			"minimum": 0,
 			"maximum": 15
@@ -768,7 +822,7 @@
 			"type": "boolean"
 		},
 		"owe_transition": {
-			"description": "Indicate that an OWE BSS shall automatically add an unencrypted transition interface",
+			"description": "Indicate that an OWE BSS shall automatically add an unencrypted transition interface. Ignored in the 6 GHz band, which allows no unencrypted BSS",
 			"type": "boolean"
 		},
 		"owe_transition_bssid": {
@@ -823,17 +877,35 @@
 			"default": true
 		},
 		"priv_key": {
-			"type": "string"
+			"type": "alias",
+			"default": "private_key"
 		},
 		"priv_key_pwd": {
-			"type": "string"
+			"type": "alias",
+			"default": "private_key_passwd"
+		},
+		"priv_key2": {
+			"type": "alias",
+			"default": "private_key2"
+		},
+		"priv_key2_pwd": {
+			"type": "alias",
+			"default": "private_key2_passwd"
 		},
 		"private_key": {
 			"description": "Private key matching with the server certificate for EAP-TLS/PEAP/TTLS",
 			"type": "string"
 		},
+		"private_key2": {
+			"description": "Inner-tunnel (phase 2) private key for EAP-TLS",
+			"type": "string"
+		},
 		"private_key_passwd": {
 			"description": "Passphrase for private key",
+			"type": "string"
+		},
+		"private_key2_passwd": {
+			"description": "Passphrase for the inner-tunnel (phase 2) private key",
 			"type": "string"
 		},
 		"proxy_arp": {
@@ -924,18 +996,15 @@
 		},
 		"rrm_beacon_report": {
 			"description": "Enable beacon report via radio measurements",
-			"type": "boolean",
-			"default": true
+			"type": "boolean"
 		},
 		"rrm_neighbor_report": {
 			"description": "Enable neighbor report via radio measurements",
-			"type": "boolean",
-			"default": true
+			"type": "boolean"
 		},
 		"rnr": {
 			"description": "Enable reduced neighbor reporting",
-			"type": "boolean",
-			"default": true
+			"type": "boolean"
 		},
 		"roaming_consortium": {
 			"description": "Roaming Consortium List",
@@ -944,13 +1013,16 @@
 				"type": "string"
 			}
 		},
+		"rsn_override": {
+			"description": "Station mode with an HE or EHT htmode: use the RSNE Override elements of the AP (RSN overriding, wpa_supplicant rsn_overriding=1)",
+			"type": "boolean"
+		},
 		"rsn_preauth": {
 			"type": "boolean"
 		},
-		"rsn_override": {
-			"type": "number",
-			"description": "Use RSNE override IE WPA3 compatibility (0: disabled, 1: enabled, 2:force WPA2 for older devices)",
-			"default": 1
+		"sae_ext_key": {
+			"description": "Advertise the SAE-EXT-KEY AKM (SAE using a group-dependent hash) alongside plain SAE. Mandatory for EHT (WPA3 Specification v3.5 2.5), recommended otherwise. Off by default in the RSNE, because some clients misbehave when SAE-EXT-KEY is offered there. With an EHT htmode, sae, sae-mixed and sae-compat BSSes offer it in the RSNE Override 2 element unless this option is 0; 1 also offers it in the RSNE (not for sae-compat). The sae and sae-mixed BSSes send no RSNE Override 2 element when the RSNE already offers SAE-EXT-KEY and GCMP-256 (CCMP without driver support for GCMP-256). An AP MLD sends none only when this holds on every link, so a psk2 AP MLD sends it on every link unless sae_ext_key is 0.",
+			"type": "boolean"
 		},
 		"sae_password_file": {
 			"description": "External file containing VLAN SAE MAC address triplets",
@@ -989,6 +1061,10 @@
 			"type": "boolean",
 			"default": false
 		},
+		"spp_amsdu": {
+			"description": "Signaling and Payload Protected A-MSDU",
+			"type": "boolean"
+		},
 		"ssid": {
 			"type": "string"
 		},
@@ -1021,6 +1097,14 @@
 			"description": "Local time zone as specified in 8.3 of IEEE Std 1003.1-2004",
 			"type": "string"
 		},
+		"transition_disable": {
+			"description": "Transition modes the AP signals as disabled per WPA3 v3.5 §13. Entries 'sae', 'sae-pk', 'wpa3', 'owe' are OR'd into the bitmap; 'on' (or '1') derives it from auth_type; 'off' (or '0') suppresses the element. Unset by default.",
+			"type": "array",
+			"items": {
+				"type": "string",
+				"enum": [ "on", "off", "0", "1", "sae", "sae-pk", "wpa3", "owe" ]
+			}
+		},
 		"uapsd": {
 			"type": "alias",
 			"default": "uapsd_advertisement_enabled"
@@ -1033,7 +1117,11 @@
 		"uesa": {
 			"description": "Unauthenticated emergency service accessible",
 			"type": "boolean",
-			"default": false			
+			"default": false
+		},
+		"uuid": {
+			"description": "Device UUID used by WPS",
+			"type": "string"
 		},
 		"utf8_ssid": {
 			"description": "Whether the SSID is to be interpreted using UTF-8 encoding",
@@ -1156,7 +1244,7 @@
 			"default": true
 		},
 		"wps_label": {
-			"description": "Support WPS labels",
+			"description": "Support WPS labels. Ignored in the 6 GHz band, which has no WPS",
 			"type": "boolean"
 		},
 		"wps_manufacturer": {
@@ -1172,7 +1260,7 @@
 			"default": "ap_pin"
 		},
 		"wps_pushbutton": {
-			"description": "Support WPS pushbutton",
+			"description": "Support WPS pushbutton. Ignored in the 6 GHz band, which has no WPS",
 			"type": "boolean"
 		}
 	}

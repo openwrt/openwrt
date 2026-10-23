@@ -1,0 +1,22 @@
+From 49acec149a1f0d1e4aeeb7f49433114f49ef21fb Mon Sep 17 00:00:00 2001
+From: Robert Marko <robert.marko@sartura.hr>
+Date: Fri, 5 Dec 2025 11:23:47 +0100
+Subject: [PATCH 04/17] mmc: atmel: remove duplicate depends on ARCH_AT91
+
+Dependency on ARCH_AT91 is duplicated, so drop the extra one.
+
+Signed-off-by: Robert Marko <robert.marko@sartura.hr>
+---
+ drivers/mmc/Kconfig | 1 -
+ 1 file changed, 1 deletion(-)
+
+--- a/drivers/mmc/Kconfig
++++ b/drivers/mmc/Kconfig
+@@ -566,7 +566,6 @@ config MMC_SDHCI_ASPEED
+ config MMC_SDHCI_ATMEL
+ 	bool "Atmel SDHCI controller support"
+ 	depends on ARCH_AT91
+-	depends on ARCH_AT91
+ 	depends on MMC_SDHCI
+ 	help
+ 	  This enables support for the Atmel SDHCI controller, which supports

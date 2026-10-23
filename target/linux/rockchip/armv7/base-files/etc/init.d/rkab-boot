@@ -1,0 +1,17 @@
+#!/bin/sh /etc/rc.common
+
+START=99
+
+boot() {
+	local slot
+
+	. /lib/functions.sh
+	. /lib/upgrade/rkab.sh
+
+	case "$(board_name)" in
+	herospeed,rv1126-imx415)
+		slot="$(rkab_slot_current)"
+		[ -n "$slot" ] && rkab_mark_successful "$slot"
+		;;
+	esac
+}

@@ -258,10 +258,13 @@
 };
 
 &wifi {
+	status = "okay";
+
+	nvmem-cells = <&eeprom_factory_0>;
+	nvmem-cell-names = "eeprom";
+
 	#address-cells = <1>;
 	#size-cells = <0>;
-	mediatek,mtd-eeprom = <&factory 0x0>;
-	status = "okay";
 
 	wifi_band_0: band@0 {
 		reg = <0>;
@@ -302,7 +305,7 @@
 				reg = <0x40000 0x0010000>;
 			};
 
-			factory: partition@50000 {
+			partition@50000 {
 				label = "Factory";
 				reg = <0x50000 0x00B0000>;
 				read-only;
@@ -311,6 +314,10 @@
 					compatible = "fixed-layout";
 					#address-cells = <1>;
 					#size-cells = <1>;
+
+					eeprom_factory_0: eeprom@0 {
+						reg = <0x0 0x1000>;
+					};
 
 					macaddr_wifi: macaddr@4 {
 						reg = <0x4 0x6>;

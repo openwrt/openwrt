@@ -1,0 +1,97 @@
+From 7c3fc243b9eb1ff5bea421b6d7923007f323b194 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Ionel=20B=C4=83di=C8=99or?= <ionel.badisor@gmail.com>
+Date: Thu, 29 Feb 2024 00:29:38 +0200
+Subject: [PATCH 111/115] digilent: net: Set QSPI read settings via Kconfig
+
+ZYNQ_GEM_MAC_FROM_QSPI:
+    Enable reading MAC address form QSPI flash
+
+ZYNQ_GEM_MAC_IN_OTP:
+    Read MAC address QSPI flash region to OTP if not set read
+    form regular region
+
+    QSPI_IS_SM:
+        Set SPI read operation code for Spansion Micron QSPI flash
+
+    QSPI_IS_WB:
+        Set SPI read operation code for Winbond QSPI flash
+
+ZYNQ_GEM_ETH_MAC_QSPI_OFFSET:
+    Offset in QSPI flash (form bosh regular or OTP region)
+---
+ arch/arm/mach-zynq/Kconfig   |  1 +
+ arch/arm/mach-zynqmp/Kconfig |  1 +
+ board/digilent/Kconfig       | 48 ++++++++++++++++++++++++++++++++++++
+ 3 files changed, 50 insertions(+)
+ create mode 100644 board/digilent/Kconfig
+
+--- a/arch/arm/mach-zynq/Kconfig
++++ b/arch/arm/mach-zynq/Kconfig
+@@ -57,6 +57,7 @@ config ZYNQ_SDHCI_MAX_FREQ
+ 	default 52000000
+ 
+ source "board/xilinx/Kconfig"
++source "board/digilent/Kconfig"
+ source "board/xilinx/zynq/Kconfig"
+ source "board/BuR/zynq/Kconfig"
+ 
+--- a/arch/arm/mach-zynqmp/Kconfig
++++ b/arch/arm/mach-zynqmp/Kconfig
+@@ -213,5 +213,6 @@ config CMD_ZYNQMP
+ 	  BOOT.BIN using Xilinx bootgen tool.
+ 
+ source "board/xilinx/Kconfig"
++source "board/digilent/Kconfig"
+ 
+ endif
+--- /dev/null
++++ b/board/digilent/Kconfig
+@@ -0,0 +1,48 @@
++# SPDX-License-Identifier: GPL-2.0
++#
++# Copyright (c) 2023, Ionel Bădișor <ionel.badisor@digilent.ro>
++
++
++if ARCH_ZYNQ || ARCH_ZYNQMP
++
++config ZYNQ_GEM_MAC_FROM_QSPI
++	bool "Read MAC address form QSPI"
++	help
++		Enable to read MAC address from mac
++
++	if ZYNQ_GEM_MAC_FROM_QSPI
++
++		config ZYNQ_GEM_MAC_IN_OTP
++			bool "Read MAC address form QSPI OTP section"
++			help
++				Specify OTP section of QPSI for reading
++				This requires custom read operation code to be set
++				according to used IC.
++
++		if ZYNQ_GEM_MAC_IN_OTP
++		
++			config QSPI_IS_SM
++				bool "Read MAC address form Spansion Micron QSPI flash "
++				help
++					QSPI IC is Spanssion
++				
++			config QSPI_IS_WB
++				bool "Read MAC address form Winbond QSPI flash"
++				depends on !QPSI_IS_SM
++				help
++					QSPI IC is Winbond
++
++		endif
++
++	config ZYNQ_GEM_ETH_MAC_QSPI_OFFSET
++		hex "Ethernet mac offset in QSPI"
++		#default 0x20 if QSPI_IS_SM
++		#default 0x1000 if QSPI_IS_WB
++		#default 0x1fff000 if genesyszu
++		depends on DM_SPI
++		help
++			Set MAC offset for QSPI (regular or OTP address space)
++
++	endif
++
++endif

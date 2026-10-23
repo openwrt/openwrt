@@ -175,7 +175,6 @@ mstcboot_parse_fixed_parts(struct mtd_info *mtd,
 			   int active, u32 bootnum_dt)
 {
 	struct device_node *np = mtd_get_of_node(mtd);
-	struct device_node *child;
 	struct mtd_partition *parts;
 	int ret, nr_parts, index = 0;
 
@@ -189,7 +188,7 @@ mstcboot_parse_fixed_parts(struct mtd_info *mtd,
 	if (!parts)
 		return -ENOMEM;
 
-	for_each_child_of_node(np, child) {
+	for_each_child_of_node_scoped(np, child) {
 		u32 reg[2];
 		if (of_n_addr_cells(child) != 1 ||
 		    of_n_size_cells(child) != 1)
@@ -219,7 +218,6 @@ mstcboot_parse_fixed_parts(struct mtd_info *mtd,
 		parts[index].size = reg[1];
 		index++;
 	}
-	of_node_put(child);
 
 	if (ret)
 		kfree(parts);

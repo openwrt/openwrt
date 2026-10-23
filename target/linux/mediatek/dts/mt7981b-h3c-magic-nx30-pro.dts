@@ -128,10 +128,20 @@
 				reg = <0x0100000 0x0080000>;
 			};
 
-			factory: partition@180000 {
+			partition@180000 {
 				label = "Factory";
 				reg = <0x0180000 0x0200000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					eeprom_factory_0: eeprom@0 {
+						reg = <0x0 0x1000>;
+					};
+				};
 			};
 
 			partition@380000 {
@@ -247,5 +257,6 @@
 &wifi {
 	status = "okay";
 
-	mediatek,mtd-eeprom = <&factory 0x0>;
+	nvmem-cells = <&eeprom_factory_0>;
+	nvmem-cell-names = "eeprom";
 };

@@ -1,0 +1,105 @@
+From: Pietro Ameruoso <p.ameruoso@live.it>
+Date: Tue, 18 Aug 2026 00:00:00 +0200
+Subject: [PATCH] net: phy: as21xxx: apply a default LED configuration
+
+The driver never programs the VEND1_LED_REG() event field on its own, it
+only reacts to the LED class devices instantiated by of_phy_leds(). Two
+things follow from that and both end up with dark RJ45 LEDs.
+
+Without a "leds" node in the PHY device tree node the event registers keep
+their post firmware-load reset value, which is not a link or activity
+pattern. With a "leds" node the situation is worse: of_phy_leds() runs from
+phy_probe(), long before phy_attach_direct() populates phydev->attached_dev,
+so phy_led_hw_control_get_device() returns NULL, the netdev trigger falls
+back to software mode with no interface bound and the initial brightness
+update writes EVENT_OFF to the PHY.
+
+Program a default from config_init(), which runs on phy_init_hw() and
+therefore after of_phy_leds(). Keep LED0 as link-plus-activity and change
+LED1 to indicate any link speed, matching the expected board behavior where
+yellow is solid when link is up.
+Userspace and the netdev trigger can still override this at any time
+through the LED class devices.
+
+Signed-off-by: Pietro Ameruoso <p.ameruoso@live.it>
+---
+--- a/drivers/net/phy/as21xxx.c
++++ b/drivers/net/phy/as21xxx.c
+@@ -669,8 +669,53 @@ static int as21xxx_probe(struct phy_devi
+ 				VEND1_PTP_CLK_EN);
+ }
+ 
++static int as21xxx_led_set_event(struct phy_device *phydev, u8 index,
++				 enum as21xxx_led_event event)
++{
++	return phy_modify_mmd(phydev, MDIO_MMD_VEND1,
++			      VEND1_LED_REG(index),
++			      VEND1_LED_REG_A_EVENT,
++			      FIELD_PREP(VEND1_LED_REG_A_EVENT, event));
++}
++
++#define AS21XXX_LED_BLINK_RATE_15_6HZ	0x1
++
++/* Default LED setup:
++ *   LED0  On: link detected, blink: Rx/Tx activity
++ *   LED1  On: any link detected
++ *
++ * The firmware leaves the LED event registers unconfigured and registering
++ * the DT LED class devices drives them to EVENT_OFF, so program the defaults
++ * here. config_init() runs after of_phy_leds(), and userspace or the netdev
++ * trigger can still override them later.
++ */
++static int as21xxx_led_config_default(struct phy_device *phydev)
++{
++	int ret;
++
++	ret = phy_modify_mmd(phydev, MDIO_MMD_VEND1, VEND1_LED_CONF,
++			     VEND1_LED_CONFG_BLINK,
++			     FIELD_PREP(VEND1_LED_CONFG_BLINK,
++					AS21XXX_LED_BLINK_RATE_15_6HZ));
++	if (ret)
++		return ret;
++
++	ret = as21xxx_led_set_event(phydev, 0,
++				    VEND1_LED_REG_A_EVENT_ON_LINK_BLINK_ACT);
++	if (ret)
++		return ret;
++
++	return as21xxx_led_set_event(phydev, 1, VEND1_LED_REG_A_EVENT_ON_LINK);
++}
++
+ static int as21xxx_config_init(struct phy_device *phydev)
+ {
++	int ret;
++
++	ret = as21xxx_led_config_default(phydev);
++	if (ret)
++		return ret;
++
+ 	return aeon_dpc_ra_enable(phydev);
+ }
+ 
+@@ -824,10 +869,7 @@ static int as21xxx_led_brightness_set(st
+ 	if (value)
+ 		val = VEND1_LED_REG_A_EVENT_ON;
+ 
+-	return phy_modify_mmd(phydev, MDIO_MMD_VEND1,
+-			      VEND1_LED_REG(index),
+-			      VEND1_LED_REG_A_EVENT,
+-			      FIELD_PREP(VEND1_LED_REG_A_EVENT, val));
++	return as21xxx_led_set_event(phydev, index, val);
+ }
+ 
+ static int as21xxx_led_hw_is_supported(struct phy_device *phydev, u8 index,
+@@ -883,10 +925,7 @@ static int as21xxx_led_hw_control_set(st
+ 			break;
+ 		}
+ 
+-	return phy_modify_mmd(phydev, MDIO_MMD_VEND1,
+-			      VEND1_LED_REG(index),
+-			      VEND1_LED_REG_A_EVENT,
+-			      FIELD_PREP(VEND1_LED_REG_A_EVENT, val));
++	return as21xxx_led_set_event(phydev, index, val);
+ }
+ 
+ static int as21xxx_led_polarity_set(struct phy_device *phydev, int index,

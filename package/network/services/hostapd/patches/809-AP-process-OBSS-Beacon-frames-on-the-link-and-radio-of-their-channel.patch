@@ -1,0 +1,86 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Tue, 20 Oct 2026 14:19:39 +0200
+Subject: [PATCH] AP: Process OBSS Beacon frames on the link and radio of their channel
+
+process_beacon_event() gives each OBSS Beacon frame of a wiphy to every
+driver interface of the wiphy, without the frequency and with link ID 0
+from the zeroed event data. hostapd_mgmt_rx() therefore passes every
+OBSS Beacon frame of an AP MLD to the BSS of link 0, and each radio of a
+wiphy with several radios adds the Beacon frames of all radios to its AP
+list. A legacy AP on the channel of a partner link thus enables no OLBC
+protection on that link.
+
+Report the frequency of the Beacon frame and the link that operates on
+it, and process the Beacon frame only on the interface that operates on
+that frequency. This also covers the AP mode of wpa_supplicant, which
+gives the Beacon frames to ieee802_11_mgmt() directly.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+
+--- a/src/ap/ieee802_11.c
++++ b/src/ap/ieee802_11.c
+@@ -8150,6 +8150,10 @@ static void handle_beacon(struct hostapd
+ 		return;
+ 	}
+ 
++	/* The driver reports the Beacon frames of every channel of the wiphy */
++	if (fi && fi->freq && fi->freq != hapd->iface->freq)
++		return;
++
+ 	(void) ieee802_11_parse_elems(mgmt->u.beacon.variable,
+ 				      len - (IEEE80211_HDRLEN +
+ 					     sizeof(mgmt->u.beacon)), &elems,
+--- a/src/drivers/driver_nl80211.c
++++ b/src/drivers/driver_nl80211.c
+@@ -1090,6 +1090,7 @@ static int process_beacon_event(struct n
+ 	struct genlmsghdr *gnlh = nlmsg_data(nlmsg_hdr(msg));
+ 	struct nlattr *tb[NL80211_ATTR_MAX + 1];
+ 	union wpa_event_data event;
++	unsigned int freq = 0;
+ 
+ 	nla_parse(tb, NL80211_ATTR_MAX, genlmsg_attrdata(gnlh, 0),
+ 		  genlmsg_attrlen(gnlh, 0), NULL);
+@@ -1103,11 +1104,20 @@ static int process_beacon_event(struct n
+ 	if (!tb[NL80211_ATTR_FRAME])
+ 		return NL_SKIP;
+ 
++	if (tb[NL80211_ATTR_WIPHY_FREQ])
++		freq = nla_get_u32(tb[NL80211_ATTR_WIPHY_FREQ]);
++
+ 	dl_list_for_each(drv, &w->drvs, struct wpa_driver_nl80211_data,
+ 			 wiphy_list) {
+ 		os_memset(&event, 0, sizeof(event));
+ 		event.rx_mgmt.frame = nla_data(tb[NL80211_ATTR_FRAME]);
+ 		event.rx_mgmt.frame_len = nla_len(tb[NL80211_ATTR_FRAME]);
++		event.rx_mgmt.freq = freq;
++		event.rx_mgmt.link_id = NL80211_DRV_LINK_ID_NA;
++		if (freq)
++			event.rx_mgmt.link_id =
++				nl80211_get_link_id_by_freq(drv->first_bss,
++							    freq);
+ 		wpa_supplicant_event(drv->ctx, EVENT_RX_MGMT, &event);
+ 	}
+ 
+--- a/src/drivers/driver_nl80211.h
++++ b/src/drivers/driver_nl80211.h
+@@ -401,6 +401,7 @@ const char * nl80211_iftype_str(enum nl8
+ void nl80211_restore_ap_mode(struct i802_bss *bss);
+ struct i802_link * nl80211_get_link(struct i802_bss *bss, s8 link_id);
+ u8 nl80211_get_link_id_from_link(struct i802_bss *bss, struct i802_link *link);
++s8 nl80211_get_link_id_by_freq(struct i802_bss *bss, unsigned int freq);
+ int nl80211_remove_link(struct i802_bss *bss, int link_id);
+ void nl80211_update_active_links(struct i802_bss *bss, int link_id);
+ int nl80211_has_ifidx(struct wpa_driver_nl80211_data *drv, int ifidx,
+--- a/src/drivers/driver_nl80211_event.c
++++ b/src/drivers/driver_nl80211_event.c
+@@ -1830,8 +1830,7 @@ static void mlme_event_link_addition(str
+ }
+ 
+ 
+-static s8
+-nl80211_get_link_id_by_freq(struct i802_bss *bss, unsigned int freq)
++s8 nl80211_get_link_id_by_freq(struct i802_bss *bss, unsigned int freq)
+ {
+ 	unsigned int i;
+ 

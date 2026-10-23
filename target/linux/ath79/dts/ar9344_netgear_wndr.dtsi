@@ -61,12 +61,6 @@
 			default-state = "keep";
 		};
 
-		wlan2g_green {
-			label = "green:wlan2g";
-			gpios = <&gpio 11 GPIO_ACTIVE_LOW>;
-			linux,default-trigger = "phy0tpt";
-		};
-
 		wlan5g_blue {
 			label = "blue:wlan5g";
 			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
@@ -220,9 +214,9 @@
 &mdio0 {
 	status = "okay";
 
-	phy0: ethernet-phy@0 {
-		reg = <0>;
-		phy-mode = "rgmii";
+	ethernet-switch@10 {
+		compatible = "qca,ar8327";
+		reg = <0x10>;
 		qca,mib-poll-interval = <500>;
 
 		qca,ar8327-initvals = <
@@ -249,7 +243,11 @@
 	nvmem-cell-names = "mac-address";
 
 	phy-mode = "rgmii";
-	phy-handle = <&phy0>;
+
+	fixed-link {
+		speed = <1000>;
+		full-duplex;
+	};
 };
 
 &gpio {
@@ -273,6 +271,11 @@
 
 	nvmem-cells = <&macaddr_caldata_0>, <&cal_art_1000>;
 	nvmem-cell-names = "mac-address", "calibration";
+
+	led {
+		led-sources = <11>;
+		led-active-low;
+	};
 };
 
 &pcie {

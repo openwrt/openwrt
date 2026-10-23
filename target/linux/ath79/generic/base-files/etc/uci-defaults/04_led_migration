@@ -11,6 +11,9 @@ dlink,dap-1330-a1)
 		"green:signal1=green:rssimediumhigh" \
 		"green:signal2=green:rssihigh"
 	;;
+dragino,ms14)
+	migrate_leds "red:system=red:status"
+	;;
 engenius,epg5000)
 	migrate_leds ":wlan-2g=:wlan2g" ":wlan-5g=:wlan5g"
 	;;

@@ -28,7 +28,7 @@
  	bool disable_ani;
 --- a/drivers/net/wireless/ath/ath9k/common.c
 +++ b/drivers/net/wireless/ath/ath9k/common.c
-@@ -297,11 +297,13 @@ EXPORT_SYMBOL(ath9k_cmn_get_hw_crypto_ke
+@@ -298,11 +298,13 @@ EXPORT_SYMBOL(ath9k_cmn_get_hw_crypto_ke
  /*
   * Update internal channel flags.
   */
@@ -43,7 +43,7 @@
  
  	ichan->channel = chan->center_freq;
  	ichan->chan = chan;
-@@ -309,7 +311,19 @@ static void ath9k_cmn_update_ichannel(st
+@@ -310,7 +312,19 @@ static void ath9k_cmn_update_ichannel(st
  	if (chan->band == NL80211_BAND_5GHZ)
  		flags |= CHANNEL_5GHZ;
  
@@ -64,7 +64,7 @@
  	case NL80211_CHAN_WIDTH_5:
  		flags |= CHANNEL_QUARTER;
  		break;
-@@ -342,10 +356,11 @@ struct ath9k_channel *ath9k_cmn_get_chan
+@@ -343,10 +357,11 @@ struct ath9k_channel *ath9k_cmn_get_chan
  					    struct cfg80211_chan_def *chandef)
  {
  	struct ieee80211_channel *curchan = chandef->chan;
@@ -79,7 +79,7 @@
  }
 --- a/drivers/net/wireless/ath/ath9k/common-debug.c
 +++ b/drivers/net/wireless/ath/ath9k/common-debug.c
-@@ -315,3 +315,55 @@ void ath9k_cmn_debug_eeprom(struct dentr
+@@ -316,3 +316,55 @@ void ath9k_cmn_debug_eeprom(struct dentr
  			    &fops_eeprom);
  }
  EXPORT_SYMBOL(ath9k_cmn_debug_eeprom);
@@ -115,7 +115,7 @@
 +
 +	common->chan_bw = chan_bw;
 +	if (!test_bit(ATH_OP_INVALID, &common->op_flags))
-+		common->ieee_ops->config(ah->hw, IEEE80211_CONF_CHANGE_CHANNEL);
++		common->ieee_ops->config(ah->hw, -1, IEEE80211_CONF_CHANGE_CHANNEL);
 +
 +	return count;
 +}
@@ -166,7 +166,7 @@
  	common->ops = &ah->reg_ops;
  	common->ps_ops = &ath9k_htc_ps_ops;
  	common->bus_ops = &ath9k_usb_bus_ops;
-@@ -746,9 +747,9 @@ static void ath9k_set_hw_capab(struct at
+@@ -746,9 +747,8 @@ static void ath9k_set_hw_capab(struct at
  
  	hw->wiphy->flags |= WIPHY_FLAG_IBSS_RSN |
  			    WIPHY_FLAG_HAS_REMAIN_ON_CHANNEL |
@@ -174,14 +174,13 @@
 -
 -	hw->wiphy->flags |= WIPHY_FLAG_SUPPORTS_TDLS;
 +			    WIPHY_FLAG_HAS_CHANNEL_SWITCH |
-+			    WIPHY_FLAG_SUPPORTS_5_10_MHZ |
 +			    WIPHY_FLAG_SUPPORTS_TDLS;
  
  	hw->queues = 4;
  	hw->max_listen_interval = 1;
 --- a/drivers/net/wireless/ath/ath9k/init.c
 +++ b/drivers/net/wireless/ath/ath9k/init.c
-@@ -691,6 +691,7 @@ static int ath9k_init_softc(u16 devid, s
+@@ -690,6 +690,7 @@ static int ath9k_init_softc(u16 devid, s
  	if (!ath9k_is_chanctx_enabled())
  		sc->cur_chan->hw_queue_base = 0;
  

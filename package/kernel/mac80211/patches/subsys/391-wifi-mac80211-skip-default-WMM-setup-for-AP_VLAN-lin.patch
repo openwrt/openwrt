@@ -1,0 +1,27 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Tue, 4 Aug 2026 08:26:08 +0000
+Subject: [PATCH] wifi: mac80211: skip default WMM setup for AP_VLAN links
+
+AP_VLAN interfaces are never passed to the driver, so setting default WMM
+parameters on their links trips the check-sdata-in-driver warning in
+drv_conf_tx(), as well as in the BSS_CHANGED_QOS link info notification.
+Skip it, matching the existing AP_VLAN handling in this function.
+
+Fixes: 2259d14499d1 ("wifi: mac80211: set default WMM parameters on all links")
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+Link: https://patch.msgid.link/20260804082608.2011433-1-nbd@nbd.name
+Signed-off-by: Johannes Berg <johannes.berg@intel.com>
+---
+
+--- a/net/mac80211/link.c
++++ b/net/mac80211/link.c
+@@ -360,7 +360,8 @@ static int ieee80211_vif_update_links(st
+ 		link = links[link_id];
+ 		ieee80211_link_init(sdata, link_id, &link->data, &link->conf);
+ 		ieee80211_link_setup(&link->data);
+-		ieee80211_set_wmm_default(&link->data, true, non_sta);
++		if (sdata->vif.type != NL80211_IFTYPE_AP_VLAN)
++			ieee80211_set_wmm_default(&link->data, true, non_sta);
+ 	}
+ 
+ 	if (new_links == 0)

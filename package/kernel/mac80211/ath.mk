@@ -13,6 +13,7 @@ PKG_CONFIG_DEPENDS += \
 	CONFIG_ATH10K_LEDS \
 	CONFIG_ATH10K_THERMAL \
 	CONFIG_ATH11K_THERMAL \
+	CONFIG_ATH12K_THERMAL \
 	CONFIG_ATH_USER_REGD
 
 ifdef CONFIG_PACKAGE_MAC80211_DEBUGFS
@@ -59,6 +60,7 @@ config-$(CONFIG_ATH9K_UBNTHSR) += ATH9K_UBNTHSR
 config-$(CONFIG_ATH10K_LEDS) += ATH10K_LEDS
 config-$(CONFIG_ATH10K_THERMAL) += ATH10K_THERMAL
 config-$(CONFIG_ATH11K_THERMAL) += ATH11K_THERMAL
+config-$(CONFIG_ATH12K_THERMAL) += ATH12K_THERMAL
 
 config-$(call config_package,ath9k-htc) += ATH9K_HTC
 config-$(call config_package,ath10k,regular) += ATH10K ATH10K_PCI
@@ -265,7 +267,7 @@ This module adds support for wireless adapters based on
 Atheros USB AR9271 and AR7010 family of chipsets.
 endef
 
-define KernelPackage/ath10k
+define KernelPackage/ath10k/Default
   $(call KernelPackage/mac80211/Default)
   TITLE:=Atheros 802.11ac wireless cards support
   URL:=https://wireless.wiki.kernel.org/en/users/drivers/ath10k
@@ -276,7 +278,12 @@ define KernelPackage/ath10k
 	$(PKG_BUILD_DIR)/drivers/net/wireless/ath/ath10k/ath10k_pci.ko
   AUTOLOAD:=$(call AutoProbe,ath10k_core ath10k_pci)
   MODPARAMS.ath10k_core:=frame_mode=2
+endef
+
+define KernelPackage/ath10k
+  $(call KernelPackage/ath10k/Default)
   VARIANT:=regular
+  DEFAULT_VARIANT:=1
 endef
 
 define KernelPackage/ath10k/description
@@ -299,9 +306,10 @@ define KernelPackage/ath10k/config
 endef
 
 define KernelPackage/ath10k-smallbuffers
-  $(call KernelPackage/ath10k)
+  $(call KernelPackage/ath10k/Default)
   TITLE+= (small buffers for low-RAM devices)
   VARIANT:=smallbuffers
+  PROVIDES:=@kmod-ath10k-any
 endef
 
 define KernelPackage/ath11k
@@ -332,7 +340,7 @@ define KernelPackage/ath11k-ahb
   $(call KernelPackage/mac80211/Default)
   TITLE:=Qualcomm 802.11ax AHB wireless chipset support
   URL:=https://wireless.wiki.kernel.org/en/users/drivers/ath11k
-  DEPENDS+= @TARGET_qualcommax +kmod-ath11k +kmod-qrtr-smd
+  DEPENDS+= @(TARGET_qualcommax||TARGET_qualcommbe) +kmod-ath11k +kmod-qrtr-smd
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/ath/ath11k/ath11k_ahb.ko
   AUTOLOAD:=$(call AutoProbe,ath11k_ahb)
 endef
@@ -362,14 +370,25 @@ define KernelPackage/ath12k
   URL:=https://wireless.wiki.kernel.org/en/users/drivers/ath12k
   DEPENDS+= @PCI_SUPPORT +kmod-ath +@DRIVER_11AC_SUPPORT +@DRIVER_11AX_SUPPORT \
   +kmod-crypto-michael-mic +kmod-qrtr-mhi \
-  +kmod-qcom-qmi-helpers +@DRIVER_11BE_SUPPORT
-  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/ath/ath12k/ath12k.ko
-  AUTOLOAD:=$(call AutoProbe,ath12k)
+  +kmod-qcom-qmi-helpers +@DRIVER_11BE_SUPPORT \
+  +ATH12K_THERMAL:kmod-hwmon-core +ATH12K_THERMAL:kmod-thermal
+  FILES:= \
+	$(PKG_BUILD_DIR)/drivers/net/wireless/ath/ath12k/ath12k.ko \
+	$(PKG_BUILD_DIR)/drivers/net/wireless/ath/ath12k/wifi7/ath12k_wifi7.ko
+  AUTOLOAD:=$(call AutoProbe,ath12k ath12k_wifi7)
 endef
 
 define KernelPackage/ath12k/description
 This module adds support for Qualcomm Technologies 802.11be family of
 chipsets with PCI bus.
+endef
+
+define KernelPackage/ath12k/config
+
+       config ATH12K_THERMAL
+               bool "Enable ath12k thermal sensor support"
+               depends on PACKAGE_kmod-ath12k
+
 endef
 
 define KernelPackage/carl9170

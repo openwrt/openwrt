@@ -153,6 +153,21 @@
 			"type": "boolean",
 			"default": true
 		},
+		"eht_mu_beamformer": {
+			"description": "EHT multiple user beamformer support",
+			"type": "boolean",
+			"default": true
+		},
+		"eht_su_beamformee": {
+			"description": "EHT single user beamformee support",
+			"type": "boolean",
+			"default": true
+		},
+		"eht_su_beamformer": {
+			"description": "EHT single user beamformer support",
+			"type": "boolean",
+			"default": true
+		},
 		"enable_background_radar": {
 			"description": "This feature allows CAC to be run on dedicated radio RF chains",
 			"type": "boolean"
@@ -319,6 +334,28 @@
 			"type": "number",
 			"default": 3
 		},
+		"he_spr_srg_bss_colors": {
+			"description": "BSS colors (0-63) of the Spatial Reuse Group",
+			"type": "array",
+			"items": {
+				"type": "number"
+			}
+		},
+		"he_spr_srg_obss_pd_max_offset": {
+			"description": "SRG OBSS PD Max Offset",
+			"type": "number"
+		},
+		"he_spr_srg_obss_pd_min_offset": {
+			"description": "SRG OBSS PD Min Offset",
+			"type": "number"
+		},
+		"he_spr_srg_partial_bssid": {
+			"description": "Partial BSSID values (0-63) of the Spatial Reuse Group",
+			"type": "array",
+			"items": {
+				"type": "number"
+			}
+		},
 		"he_su_beamformee": {
 			"description": "",
 			"type": "boolean",
@@ -333,6 +370,11 @@
 			"description": "",
 			"type": "boolean",
 			"default": false
+		},
+		"he_twt_responder": {
+			"description": "Whether TWT (HE) responder is enabled.",
+			"type": "boolean",
+			"default": true
 		},
 		"hostapd_options": {
 			"type": "array",
@@ -533,10 +575,6 @@
 			"description": "The number of MACs that this radio can use",
 			"type": "number",
 			"default": 1
-		},
-		"no_probe_resp_if_max_sta": {
-			"description": "Do not answer probe requests if iface_max_num_sta was reached",
-			"type": "boolean"
 		},
 		"noscan": {
 			"description": "Do not scan for overlapping BSSs in HT40+/- mode.",

@@ -14,7 +14,7 @@ PKG_FLAGS:=hold
 PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/packages
 SUBTARGETS = $(sort $(filter-out feeds,$(notdir $(wildcard $(TOPDIR)/target/linux/* $(TOPDIR)/target/linux/feeds/*))))
 SUBTARGET_MODULES = $(foreach t,$(SUBTARGETS),$(firstword $(wildcard $(TOPDIR)/target/linux/feeds/$(t)/modules.mk $(TOPDIR)/target/linux/$(t)/modules.mk)))
-SCAN_DEPS=modules/*.mk $(SUBTARGET_MODULES) $(TOPDIR)/include/netfilter.mk
+SCAN_DEPS=modules/*.mk $(TOPDIR)/target/linux/*/modules.mk $(TOPDIR)/target/linux/feeds/*/modules.mk $(TOPDIR)/include/netfilter.mk
 
 PKG_LICENSE:=GPL-2.0-only
 PKG_LICENSE_FILES:=COPYING
@@ -53,8 +53,8 @@ define Package/kernel
   CATEGORY:=Kernel
   DEFAULT:=y
   TITLE:=Virtual kernel package
-  VERSION:=$(LINUX_VERSION)~$(LINUX_VERMAGIC)-r$(LINUX_RELEASE)
-  URL:=http://www.kernel.org/
+  VERSION:=$(subst -rc,_rc,$(LINUX_VERSION))~$(LINUX_VERMAGIC)-r$(LINUX_RELEASE)
+  URL:=https://www.kernel.org/
   PKG_FLAGS:=nonshared
 endef
 
@@ -65,7 +65,7 @@ define Package/kernel/install
 	strings $(LINUX_DIR)/modules.builtin.modinfo | \
 		grep -E -v "\.(file$(if CONFIG_MODULE_STRIPPED,|parmtype))=" | \
 		tr '\n' '\0' > $(1)/$(MODULES_SUBDIR)/modules.builtin.modinfo
-	echo $(LINUX_VERSION)~$(LINUX_VERMAGIC)-r$(LINUX_RELEASE) > $(TMP_DIR)/kernel.version
+	echo $(LINUX_VERSION)~$(LINUX_VERMAGIC)-r$(LINUX_RELEASE) > $(STAGING_DIR)/kernel.version
 endef
 
 define Package/kernel/extra_provides

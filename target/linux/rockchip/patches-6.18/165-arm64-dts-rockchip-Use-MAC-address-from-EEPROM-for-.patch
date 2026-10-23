@@ -1,0 +1,52 @@
+From 66f872646878e1f124d39bca3966dc65c2af6eef Mon Sep 17 00:00:00 2001
+From: Chukun Pan <amadeus@jmu.edu.cn>
+Date: Sun, 30 Nov 2025 18:09:03 +0800
+Subject: [PATCH] arm64: dts: rockchip: Use MAC address from EEPROM for
+ Radxa E20C
+
+The EEPROM on the Radxa E20C stores two unique MAC addresses.
+Assigned to network interfaces via device tree.
+
+Signed-off-by: Chukun Pan <amadeus@jmu.edu.cn>
+---
+
+--- a/arch/arm64/boot/dts/rockchip/rk3528-radxa-e20c.dts
++++ b/arch/arm64/boot/dts/rockchip/rk3528-radxa-e20c.dts
+@@ -17,7 +17,6 @@
+ 	compatible = "radxa,e20c", "rockchip,rk3528";
+ 
+ 	aliases {
+-		ethernet0 = &gmac1;
+ 		i2c1 = &i2c1;
+ 		mmc0 = &sdhci;
+ 		mmc1 = &sdmmc;
+@@ -213,6 +212,8 @@
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&rgmii_miim>, <&rgmii_tx_bus2>, <&rgmii_rx_bus2>,
+ 		    <&rgmii_rgmii_clk>, <&rgmii_rgmii_bus>;
++	nvmem-cells = <&eth_mac1>;
++	nvmem-cell-names = "mac-address";
+ 	status = "okay";
+ };
+ 
+@@ -232,6 +233,20 @@
+ 		pagesize = <16>;
+ 		read-only;
+ 		vcc-supply = <&vcc_3v3>;
++
++		nvmem-layout {
++			compatible = "fixed-layout";
++			#address-cells = <1>;
++			#size-cells = <1>;
++
++			eth_mac0: macaddr@9e {
++				reg = <0x9e 0x06>;
++			};
++
++			eth_mac1: macaddr@a4 {
++				reg = <0xa4 0x06>;
++			};
++		};
+ 	};
+ };
+ 

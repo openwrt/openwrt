@@ -81,6 +81,68 @@ set_affinity() {
     done
 }
 
+get_napi_threads() {
+
+  local comm comm_path id pid
+
+  TX_NAPI_ID=
+  TX_PID=
+  RX_NAPI_ID=
+  RX_PID=
+
+  for comm_path in /proc/[0-9]*/comm; do
+    read -r comm < "$comm_path"
+    case "$comm" in
+      napi/eth0-[0-9]*)
+        id="${comm##*-}"
+        pid="${comm_path#/proc/}"
+        pid="${pid%/comm}"
+
+        if [ -z "$TX_NAPI_ID" ] || [ "$id" -lt "$TX_NAPI_ID" ]; then
+          TX_NAPI_ID="$id"
+          TX_PID="$pid"
+        fi
+
+        if [ -z "$RX_NAPI_ID" ] || [ "$id" -gt "$RX_NAPI_ID" ]; then
+          RX_NAPI_ID="$id"
+          RX_PID="$pid"
+        fi
+        ;;
+    esac
+  done
+}
+
+set_thread_affinity() {
+
+  local pid="$1" affinity="$2" bitmask
+
+  [ -n "$pid" ] || return
+  bitmask=$(cpus_to_bitmask "$affinity") &&
+    taskset -p "$bitmask" "$pid" >/dev/null
+}
+
+enable_affinity_edma() {
+
+  local seconds=0
+
+  while [ "$seconds" -lt 60 ]; do
+    get_napi_threads
+    [ -n "$RX_PID" ] && [ -n "$TX_PID" ] &&
+      [ "$RX_PID" != "$TX_PID" ] && break
+
+    seconds=$((seconds + 1))
+    sleep 1
+  done
+
+  [ -n "$RX_PID" ] && [ -n "$TX_PID" ] &&
+    [ "$RX_PID" != "$TX_PID" ] || return
+
+  set_affinity 'edma_rxdesc' 1
+  set_thread_affinity "$RX_PID" 1
+  set_affinity 'edma_txcmpl' 2
+  set_thread_affinity "$TX_PID" 2
+}
+
 enable_affinity_ipq807x() {
 
   # assign 4 rx interrupts to each core
@@ -99,11 +161,6 @@ enable_affinity_ipq807x() {
   set_affinity 'ppdu-end-interrupts-mac2'      2
   set_affinity 'ppdu-end-interrupts-mac3'      3
 
-  # assign 4 lan/wan to core 4
-  set_affinity 'edma_txcmpl'                   3
-  set_affinity 'edma_rxfill'                   3
-  set_affinity 'edma_rxdesc'                   3
-  set_affinity 'edma_misc'                     3
 }
 
 boot() {
@@ -118,5 +175,8 @@ boot() {
   [ "$enable"     -eq 1 ] && enable=true     || enable=false
   [ "$enable_log" -eq 1 ] && enable_log=true || enable_log=false
 
-  $enable && enable_affinity_ipq807x
+  $enable && {
+    enable_affinity_ipq807x
+    enable_affinity_edma &
+  }
 }

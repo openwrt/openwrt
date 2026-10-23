@@ -11,7 +11,7 @@ define KernelPackage/lib-crc-ccitt
   SUBMENU:=$(LIB_MENU)
   TITLE:=CRC-CCITT support
   KCONFIG:=CONFIG_CRC_CCITT
-  FILES:=$(LINUX_DIR)/lib/crc-ccitt.ko
+  FILES:=$(LINUX_DIR)/lib/crc/crc-ccitt.ko
   AUTOLOAD:=$(call AutoProbe,crc-ccitt)
 endef
 
@@ -26,7 +26,7 @@ define KernelPackage/lib-crc-itu-t
   SUBMENU:=$(LIB_MENU)
   TITLE:=CRC ITU-T V.41 support
   KCONFIG:=CONFIG_CRC_ITU_T
-  FILES:=$(LINUX_DIR)/lib/crc-itu-t.ko
+  FILES:=$(LINUX_DIR)/lib/crc/crc-itu-t.ko
   AUTOLOAD:=$(call AutoProbe,crc-itu-t)
 endef
 
@@ -41,7 +41,7 @@ define KernelPackage/lib-crc7
   SUBMENU:=$(LIB_MENU)
   TITLE:=CRC7 support
   KCONFIG:=CONFIG_CRC7
-  FILES:=$(LINUX_DIR)/lib/crc7.ko
+  FILES:=$(LINUX_DIR)/lib/crc/crc7.ko
   AUTOLOAD:=$(call AutoProbe,crc7)
 endef
 
@@ -56,7 +56,7 @@ define KernelPackage/lib-crc8
   SUBMENU:=$(LIB_MENU)
   TITLE:=CRC8 support
   KCONFIG:=CONFIG_CRC8
-  FILES:=$(LINUX_DIR)/lib/crc8.ko
+  FILES:=$(LINUX_DIR)/lib/crc/crc8.ko
   AUTOLOAD:=$(call AutoProbe,crc8)
 endef
 
@@ -71,7 +71,7 @@ define KernelPackage/lib-crc16
   SUBMENU:=$(LIB_MENU)
   TITLE:=CRC16 support
   KCONFIG:=CONFIG_CRC16
-  FILES:=$(LINUX_DIR)/lib/crc16.ko
+  FILES:=$(LINUX_DIR)/lib/crc/crc16.ko
   AUTOLOAD:=$(call AutoLoad,20,crc16,1)
 endef
 
@@ -80,22 +80,6 @@ define KernelPackage/lib-crc16/description
 endef
 
 $(eval $(call KernelPackage,lib-crc16))
-
-
-define KernelPackage/lib-crc32c
-  SUBMENU:=$(LIB_MENU)
-  TITLE:=CRC32 support
-  KCONFIG:=CONFIG_LIBCRC32C
-  DEPENDS:=+kmod-crypto-crc32c
-  FILES:=$(LINUX_DIR)/lib/libcrc32c.ko
-  AUTOLOAD:=$(call AutoProbe,libcrc32c)
-endef
-
-define KernelPackage/lib-crc32c/description
- Kernel module for CRC32 support
-endef
-
-$(eval $(call KernelPackage,lib-crc32c))
 
 
 define KernelPackage/lib-lzo
@@ -323,6 +307,22 @@ define KernelPackage/lib-cordic/description
 endef
 
 $(eval $(call KernelPackage,lib-cordic))
+
+
+define KernelPackage/lib-rational
+  SUBMENU:=$(LIB_MENU)
+  TITLE:=Rational fraction approximation
+  HIDDEN:=1
+  KCONFIG:=CONFIG_RATIONAL
+  FILES:=$(LINUX_DIR)/lib/math/rational.ko
+  AUTOLOAD:=$(call AutoProbe,rational)
+endef
+
+define KernelPackage/lib-rational/description
+ Kernel module for the best rational approximation helper
+endef
+
+$(eval $(call KernelPackage,lib-rational))
 
 
 define KernelPackage/asn1-decoder

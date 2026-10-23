@@ -14,9 +14,6 @@ config-$(call config_package,rt2x00-usb) += RT2X00_LIB_USB
 config-$(CONFIG_PACKAGE_RT2X00_LIB_DEBUGFS) += RT2X00_LIB_DEBUGFS
 config-$(CONFIG_PACKAGE_RT2X00_DEBUG) += RT2X00_DEBUG
 
-config-$(call config_package,rt2400-pci) += RT2400PCI
-config-$(call config_package,rt2500-pci) += RT2500PCI
-config-$(call config_package,rt2500-usb) += RT2500USB
 config-$(call config_package,rt61-pci) += RT61PCI
 config-$(call config_package,rt73-usb) += RT73USB
 
@@ -107,9 +104,7 @@ define KernelPackage/rt2800-soc
 $(call KernelPackage/rt2x00/Default)
   DEPENDS += @(TARGET_ramips_rt288x||TARGET_ramips_rt305x||TARGET_ramips_rt3883||TARGET_ramips_mt7620) +kmod-rt2800-mmio +kmod-rt2800-lib
   TITLE += (RT28xx/RT3xxx SoC)
-  FILES := \
-	$(PKG_BUILD_DIR)/drivers/net/wireless/ralink/rt2x00/rt2x00soc.ko \
-	$(PKG_BUILD_DIR)/drivers/net/wireless/ralink/rt2x00/rt2800soc.ko
+  FILES := $(PKG_BUILD_DIR)/drivers/net/wireless/ralink/rt2x00/rt2800soc.ko
   AUTOLOAD:=$(call AutoProbe,rt2800soc)
 endef
 

@@ -1,4 +1,4 @@
-
+DTS_DIR := $(DTS_DIR)/qcom
 DEVICE_VARS += NETGEAR_BOARD_ID NETGEAR_HW_ID
 DEVICE_VARS += RAS_BOARD RAS_ROOTFS_SIZE RAS_VERSION
 DEVICE_VARS += WRGG_DEVNAME WRGG_SIGNATURE
@@ -77,10 +77,11 @@ endef
 define Build/wac5xx-netgear-tar
 	mkdir $@.tmp
 	mv $@ $@.tmp/wac5xx-ubifs-root.img
-	md5sum $@.tmp/wac5xx-ubifs-root.img > $@.tmp/wac5xx-ubifs-root.md5sum
+	(cd $@.tmp && md5sum wac5xx-ubifs-root.img) > $@.tmp/wac5xx-ubifs-root.md5sum
 	echo "WAC505 WAC510" > $@.tmp/metadata.txt
 	echo "WAC505_V9.9.9.9" > $@.tmp/version
-	tar -C $@.tmp/ -cf $@ .
+	$(TAR) -C $@.tmp/ -cf $@ --sort=name --numeric-owner --owner=0 --group=0 --mode=go-w \
+		$(if $(SOURCE_DATE_EPOCH),--mtime="@$(SOURCE_DATE_EPOCH)") .
 	rm -rf $@.tmp
 endef
 
@@ -194,7 +195,7 @@ define Device/asus_map-ac1300
 	DEVICE_VENDOR := ASUS
 	DEVICE_MODEL := Lyra Mini (MAP-AC1300)
 	SOC := qcom-ipq4018
-	DEVICE_PACKAGES := kmod-ath3k
+	DEVICE_PACKAGES := kmod-ath3k kmod-leds-lp5523
 endef
 TARGET_DEVICES += asus_map-ac1300
 
@@ -203,7 +204,7 @@ define Device/asus_map-ac2200
 	DEVICE_VENDOR := ASUS
 	DEVICE_MODEL := Lyra (MAP-AC2200)
 	SOC := qcom-ipq4019
-	DEVICE_PACKAGES := ath10k-firmware-qca9888-ct kmod-ath3k
+	DEVICE_PACKAGES := ath10k-firmware-qca9888-ct kmod-ath3k kmod-leds-lp5523
 endef
 TARGET_DEVICES += asus_map-ac2200
 
@@ -333,7 +334,7 @@ define Device/cellc_rtl30vw
 	IMAGE_SIZE := 57344k
 	BLOCKSIZE := 128k
 	PAGESIZE := 2048
-	DEVICE_PACKAGES := kmod-usb-net-qmi-wwan kmod-usb-serial-option uqmi
+	DEVICE_PACKAGES := kmod-gpio-nxp-74hc164 kmod-spi-gpio kmod-usb-net-qmi-wwan kmod-usb-serial-option uqmi
 endef
 TARGET_DEVICES += cellc_rtl30vw
 
@@ -343,8 +344,7 @@ define Device/cilab_meshpoint-one
 	DEVICE_MODEL := MeshPoint.One
 	DEVICE_PACKAGES += kmod-i2c-gpio kmod-iio-bmp280-i2c kmod-hwmon-ina2xx kmod-rtc-pcf2127
 endef
-# Missing DSA Setup
-#TARGET_DEVICES += cilab_meshpoint-one
+TARGET_DEVICES += cilab_meshpoint-one
 
 define Device/compex_wpj419
 	$(call Device/FitImage)
@@ -393,7 +393,6 @@ define Device/devolo_magic-2-wifi-next
 	IMAGE_SIZE := 26624k
 	IMAGES := sysupgrade.bin
 	IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | append-metadata
-	DEFAULT := n
 endef
 TARGET_DEVICES += devolo_magic-2-wifi-next
 
@@ -446,7 +445,7 @@ define Device/edgecore_oap100
 	PAGESIZE := 2048
 	IMAGES := sysupgrade.bin
 	DEVICE_DTS_CONFIG := config@ap.dk07.1-c1
-	DEVICE_PACKAGES := kmod-usb-acm kmod-usb-net kmod-usb-net-cdc-qmi uqmi
+	DEVICE_PACKAGES := kmod-usb-acm kmod-usb-net kmod-usb-net-qmi-wwan uqmi
 endef
 # Missing DSA Setup
 #TARGET_DEVICES += edgecore_oap100
@@ -460,9 +459,8 @@ define Device/engenius_eap1300
 	DEVICE_DTS_CONFIG := config@4
 	BOARD_NAME := eap1300
 	SOC := qcom-ipq4018
-	KERNEL_SIZE := 5120k
-	IMAGE_SIZE := 25344k
-	IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | append-metadata
+	IMAGE_SIZE := 30464k
+	IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | check-size | append-metadata
 	DEFAULT := n
 endef
 TARGET_DEVICES += engenius_eap1300
@@ -646,6 +644,18 @@ define Device/glinet_gl-s1300
 endef
 TARGET_DEVICES += glinet_gl-s1300
 
+define Device/huawei_ap4050dn
+	$(call Device/FitImageLzma)
+	DEVICE_VENDOR := Huawei
+	DEVICE_MODEL := AP4050DN
+	SOC := qcom-ipq4018
+	IMAGE_SIZE := 51200k
+	DEVICE_PACKAGES := ipq-wifi-huawei_ap4050dn
+	KERNEL = kernel-bin | lzma | fit lzma $$(KDIR)/image-$$(DEVICE_DTS).dtb
+	IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | check-size | append-metadata
+endef
+TARGET_DEVICES += huawei_ap4050dn
+
 define Device/kernel-size-6350-8300
 	DEVICE_COMPAT_VERSION := 2.0
 	DEVICE_COMPAT_MESSAGE := Kernel partition size must be increased for \
@@ -726,7 +736,7 @@ define Device/linksys_mr6350
 	PAGESIZE := 2048
 	UBINIZE_OPTS := -E 5    # EOD marks to "hide" factory sig at EOF
 	IMAGES += factory.bin
-	IMAGE/factory.bin  := append-kernel | pad-to $$(KERNEL_SIZE) | append-ubi | linksys-image type=MR6350
+	IMAGE/factory.bin  := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi | linksys-image type=MR6350
 	DEVICE_PACKAGES := ipq-wifi-linksys_mr6350 kmod-usb-ledtrig-usbport
 endef
 TARGET_DEVICES += linksys_mr6350
@@ -748,6 +758,24 @@ define Device/linksys_mr8300
 	DEVICE_PACKAGES := ath10k-firmware-qca9888-ct kmod-usb-ledtrig-usbport
 endef
 TARGET_DEVICES += linksys_mr8300
+
+define Device/linksys_mr9000
+	$(call Device/FitzImage)
+	$(call Device/kernel-size-6350-8300)
+	DEVICE_VENDOR := Linksys
+	DEVICE_MODEL := MR9000
+	SOC := qcom-ipq4019
+	KERNEL_SIZE := 5120k
+	IMAGE_SIZE := 84992k
+	NAND_SIZE := 256m
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	UBINIZE_OPTS := -E 5    # EOD marks to "hide" factory sig at EOF
+	IMAGES += factory.bin
+	IMAGE/factory.bin  := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi | linksys-image type=MR9000
+	DEVICE_PACKAGES := ath10k-firmware-qca9984-ct ipq-wifi-linksys_mr9000 kmod-usb-ledtrig-usbport
+endef
+TARGET_DEVICES += linksys_mr9000
 
 define Device/linksys_whw01
 	$(call Device/FitzImage)
@@ -819,8 +847,16 @@ define Device/meraki_common
 	BLOCKSIZE := 128k
 	PAGESIZE := 2048
 	DEVICE_DTS_LOADADDR := 0x89000000
-	DEVICE_PACKAGES := ath10k-firmware-qca9887-ct
+	DEVICE_PACKAGES := ath10k-firmware-qca9887-ct kmod-eeprom-at24 kmod-leds-lp5562
 endef
+
+define Device/meraki_mr20
+	$(call Device/meraki_common)
+	DEVICE_MODEL := MR20
+	DEVICE_DTS_CONFIG := config@4
+	DEVICE_PACKAGES += -ath10k-firmware-qca9887-ct -kmod-leds-lp5562 ipq-wifi-meraki_underdog
+endef
+TARGET_DEVICES += meraki_mr20
 
 define Device/meraki_mr30h
 	$(call Device/meraki_common)
@@ -836,6 +872,14 @@ define Device/meraki_mr33
 endef
 TARGET_DEVICES += meraki_mr33
 
+define Device/meraki_mr70
+	$(call Device/meraki_common)
+	DEVICE_MODEL := MR70
+	DEVICE_DTS_CONFIG := config@5
+	DEVICE_PACKAGES += -ath10k-firmware-qca9887-ct -kmod-leds-lp5562 ipq-wifi-meraki_underdog
+endef
+TARGET_DEVICES += meraki_mr70
+
 define Device/meraki_mr74
 	$(call Device/meraki_common)
 	DEVICE_MODEL := MR74
@@ -847,7 +891,7 @@ define Device/meraki_z3
 	$(call Device/meraki_common)
 	DEVICE_MODEL := Z3
 	DEVICE_DTS_CONFIG := config@1
-	DEVICE_PACKAGES := -ath10k-firmware-qca9887-ct ipq-wifi-meraki_z3
+	DEVICE_PACKAGES += -ath10k-firmware-qca9887-ct ipq-wifi-meraki_z3
 endef
 TARGET_DEVICES += meraki_z3
 
@@ -855,9 +899,17 @@ define Device/meraki_gx20
 	$(call Device/meraki_common)
 	DEVICE_MODEL := GX20
 	DEVICE_DTS_CONFIG := config@2
-	DEVICE_PACKAGES := -ath10k-board-qca4019 -ath10k-firmware-qca9887-ct
+	DEVICE_PACKAGES += -ath10k-board-qca4019 -ath10k-firmware-qca9887-ct
 endef
 TARGET_DEVICES += meraki_gx20
+
+define Device/meraki_z3c
+	$(call Device/meraki_common)
+	DEVICE_MODEL := Z3C
+	DEVICE_DTS_CONFIG := config@3
+	DEVICE_PACKAGES += kmod-usb-acm kmod-usb-net kmod-usb-net-cdc-ether -ath10k-firmware-qca9887-ct
+endef
+TARGET_DEVICES += meraki_z3c
 
 define Device/mobipromo_cm520-79f
 	$(call Device/FitzImage)
@@ -867,7 +919,7 @@ define Device/mobipromo_cm520-79f
 	SOC := qcom-ipq4019
 	BLOCKSIZE := 128k
 	PAGESIZE := 2048
-	DEVICE_PACKAGES := kmod-usb-ledtrig-usbport
+	DEVICE_PACKAGES := kmod-gpio-nxp-74hc164 kmod-spi-gpio kmod-usb-ledtrig-usbport
 endef
 TARGET_DEVICES += mobipromo_cm520-79f
 
@@ -879,6 +931,7 @@ define Device/netgear_ex61x0v2
 	NETGEAR_HW_ID := 29765285+16+0+128+2x2
 	IMAGE_SIZE := 14400k
 	SOC := qcom-ipq4018
+	DEVICE_PACKAGES := kmod-gpio-nxp-74hc164 kmod-spi-gpio
 endef
 
 define Device/netgear_ex6100v2
@@ -904,7 +957,7 @@ define Device/netgear_orbi
 		append-rootfs | pad-rootfs | netgear-dni
 	IMAGE/sysupgrade.bin/squashfs := append-rootfs | pad-to 64k | \
 		sysupgrade-tar rootfs=$$$$@ | append-metadata
-	DEVICE_PACKAGES := ath10k-firmware-qca9984-ct e2fsprogs kmod-fs-ext4 losetup
+	DEVICE_PACKAGES := e2fsprogs kmod-fs-ext4 losetup kmod-leds-tlc591xx
 endef
 
 define Device/netgear_lbr20
@@ -924,7 +977,7 @@ define Device/netgear_lbr20
 	IMAGE/sysupgrade.bin := append-kernel | pad-offset $$$$(BLOCKSIZE) 64 | \
 		append-uImage-fakehdr filesystem | sysupgrade-tar kernel=$$$$@ | \
 		append-metadata
-	DEVICE_PACKAGES := ipq-wifi-netgear_lbr20 ath10k-firmware-qca9888-ct kmod-usb-net-qmi-wwan kmod-usb-serial-option uqmi
+	DEVICE_PACKAGES := ipq-wifi-netgear_lbr20 ath10k-firmware-qca9888-ct kmod-leds-tlc591xx kmod-usb-net-qmi-wwan kmod-usb-serial-option uqmi
 endef
 TARGET_DEVICES += netgear_lbr20
 
@@ -942,7 +995,7 @@ define Device/netgear_rbx20
 	IMAGE/sysupgrade.bin := append-kernel | pad-offset $$$$(BLOCKSIZE) 64 | \
 		append-uImage-fakehdr filesystem | sysupgrade-tar kernel=$$$$@ | \
 		append-metadata
-	DEVICE_PACKAGES := ipq-wifi-netgear_rbk20 ath10k-firmware-qca9888-ct
+	DEVICE_PACKAGES := ipq-wifi-netgear_rbk20 ath10k-firmware-qca9888-ct kmod-leds-tlc591xx
 endef
 
 define Device/netgear_rbr20
@@ -967,6 +1020,7 @@ define Device/netgear_rbx40
 	KERNEL_SIZE := 3932160
 	ROOTFS_SIZE := 32243712
 	IMAGE_SIZE := 36175872
+	DEVICE_PACKAGES += ipq-wifi-netgear_rbk40 ath10k-firmware-qca9888-ct
 endef
 
 define Device/netgear_rbr40
@@ -991,6 +1045,7 @@ define Device/netgear_rbx50
 	KERNEL_SIZE := 3932160
 	ROOTFS_SIZE := 32243712
 	IMAGE_SIZE := 36175872
+	DEVICE_PACKAGES += ath10k-firmware-qca9984-ct
 endef
 
 define Device/netgear_rbr50
@@ -1015,6 +1070,7 @@ define Device/netgear_srx60
 	KERNEL_SIZE := 3932160
 	ROOTFS_SIZE := 32243712
 	IMAGE_SIZE := 36175872
+	DEVICE_PACKAGES += ath10k-firmware-qca9984-ct
 endef
 
 define Device/netgear_srr60
@@ -1042,7 +1098,7 @@ define Device/netgear_wac510
 	PAGESIZE := 2048
 	IMAGES += factory.tar
 	IMAGE/factory.tar := append-ubi | wac5xx-netgear-tar
-	DEVICE_PACKAGES := uboot-envtools
+	DEVICE_PACKAGES := kmod-gpio-nxp-74hc164 kmod-spi-gpio uboot-envtools
 endef
 TARGET_DEVICES += netgear_wac510
 
@@ -1191,9 +1247,25 @@ define Device/sony_ncp-hg100-cellular
 	SOC := qcom-ipq4019
 	KERNEL_SIZE := 8192k
 	IMAGE_SIZE := 128m
-	DEVICE_PACKAGES := e2fsprogs kmod-fs-ext4 uqmi
+	DEVICE_PACKAGES := e2fsprogs kmod-fs-ext4 kmod-leds-lp5523 uqmi
 endef
 TARGET_DEVICES += sony_ncp-hg100-cellular
+
+define Device/sophos_apx120
+	$(call Device/FitImage)
+	$(call Device/UbiFit)
+	DEVICE_VENDOR := Sophos
+	DEVICE_MODEL := APX 120
+	SOC := qcom-ipq4019
+	DEVICE_DTS_CONFIG := config@ap.dk01.1-c2
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	IMAGES := sysupgrade.bin
+	DEVICE_PACKAGES := kmod-tpm-i2c-atmel
+	# Stock U-Boot rejects UBI layout changes from sysupgrade-tar
+	IMAGE/sysupgrade.bin := append-ubi | append-metadata
+endef
+TARGET_DEVICES += sophos_apx120
 
 define Device/teltonika_rutx10
 	$(call Device/FitImage)
@@ -1226,7 +1298,7 @@ define Device/teltonika_rutx50
 	PAGESIZE := 2048
 	FILESYSTEMS := squashfs
 	IMAGE/factory.ubi := append-ubi
-	DEVICE_PACKAGES := kmod-usb-net-qmi-wwan kmod-usb-serial-option uqmi
+	DEVICE_PACKAGES := kmod-gpio-nxp-74hc164 kmod-spi-gpio kmod-usb-net-qmi-wwan kmod-usb-serial-option uqmi
 endef
 TARGET_DEVICES += teltonika_rutx50
 
@@ -1243,6 +1315,21 @@ define Device/tel_x1pro
 endef
 # Missing DSA Setup
 #TARGET_DEVICES += tel_x1pro
+
+define Device/ubnt_utr
+	$(call Device/FitImageLzma)
+	$(call Device/UbiFit)
+	DEVICE_VENDOR := Ubiquiti
+	DEVICE_MODEL := UniFi Travel Router
+	SOC := qcom-ipq4018
+	DEVICE_DTS_CONFIG := config@ea06
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	KERNEL_IN_UBI :=
+	UBINIZE_PARTS = vol=$$(KDIR_KERNEL_IMAGE)
+	DEVICE_PACKAGES := ipq-wifi-ubnt_utr kmod-i2c-gpio kmod-iio-st_accel-i2c kmod-backlight-pwm kmod-gpio-pwm kmod-btusb mipi-dbi-ubnt-utr video-support
+endef
+TARGET_DEVICES += ubnt_utr
 
 define Device/unielec_u4019-32m
 	$(call Device/FitImage)

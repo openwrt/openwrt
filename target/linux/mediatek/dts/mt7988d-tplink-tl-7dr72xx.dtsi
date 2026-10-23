@@ -1,0 +1,51 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "mt7988-tplink-tl-common.dtsi"
+
+/ {
+	chosen {
+		bootargs = "root=/dev/fit0 rootwait";
+		rootdisk = <&ubi_rootdisk>;
+	};
+
+	cpus {
+		/delete-node/ cpu@3;
+	};
+};
+
+&gmac1 {
+	phy-handle = <&int_2p5g_phy>;
+	phy-mode = "internal";
+	status = "okay";
+};
+
+&i2p5gbe_led0 {
+	status = "okay";
+};
+
+&int_2p5g_phy {
+	pinctrl-names = "i2p5gbe-led";
+	pinctrl-0 = <&i2p5gbe_led0_pins>;
+};
+
+&partitions {
+	partition@780000 {
+		label = "ubi";
+		reg = <0x780000 0x7080000>;
+
+		volumes {
+			ubi_rootdisk: ubi-volume-fit {
+				volname = "fit";
+			};
+		};
+	};
+};
+
+&pio {
+	i2p5gbe_led0_pins: 2p5gbe-led0-pins {
+		mux {
+			function = "led";
+			groups = "2p5gbe_led0";
+		};
+	};
+};

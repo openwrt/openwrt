@@ -144,15 +144,15 @@ UBNT_LEDBAR_CONTROL_RGBS(green);
 UBNT_LEDBAR_CONTROL_RGBS(blue);
 
 
-static int ubnt_ledbar_init_led(struct device_node *np, struct ubnt_ledbar *ledbar,
+static int ubnt_ledbar_init_led(struct fwnode_handle *fw, struct ubnt_ledbar *ledbar,
 				struct led_classdev *led_cdev)
 {
 	struct led_init_data init_data = {};
 
-	if (!np)
+	if (!fw)
 		return 0;
 
-	init_data.fwnode = of_fwnode_handle(np);
+	init_data.fwnode = fw;
 
 	led_cdev->max_brightness = UBNT_LEDBAR_MAX_BRIGHTNESS;
 
@@ -161,26 +161,24 @@ static int ubnt_ledbar_init_led(struct device_node *np, struct ubnt_ledbar *ledb
 
 static int ubnt_ledbar_probe(struct i2c_client *client)
 {
-	struct device_node *np = client->dev.of_node;
+	struct device *dev = &client->dev;
 	struct ubnt_ledbar *ledbar;
 	int err;
 
-	ledbar = devm_kzalloc(&client->dev, sizeof(*ledbar), GFP_KERNEL);
+	ledbar = devm_kzalloc(dev, sizeof(*ledbar), GFP_KERNEL);
 	if (!ledbar)
 		return -ENOMEM;
 
-	ledbar->enable_gpio = devm_gpiod_get(&client->dev, "enable", GPIOD_OUT_LOW);
-
+	ledbar->enable_gpio = devm_gpiod_get(dev, "enable", GPIOD_OUT_LOW);
 	if (IS_ERR(ledbar->enable_gpio))
-		return dev_err_probe(&client->dev, PTR_ERR(ledbar->enable_gpio), "Failed to get enable gpio");
+		return dev_err_probe(dev, PTR_ERR(ledbar->enable_gpio), "Failed to get enable gpio");
 
-	ledbar->reset_gpio = devm_gpiod_get_optional(&client->dev, "reset", GPIOD_OUT_LOW);
-
+	ledbar->reset_gpio = devm_gpiod_get_optional(dev, "reset", GPIOD_OUT_LOW);
 	if (IS_ERR(ledbar->reset_gpio))
-		return dev_err_probe(&client->dev, PTR_ERR(ledbar->reset_gpio), "Failed to get reset gpio");
+		return dev_err_probe(dev, PTR_ERR(ledbar->reset_gpio), "Failed to get reset gpio");
 
 	ledbar->led_count = 1;
-	of_property_read_u32(np, "led-count", &ledbar->led_count);
+	device_property_read_u32(dev, "led-count", &ledbar->led_count);
 
 	ledbar->client = client;
 
@@ -194,13 +192,13 @@ static int ubnt_ledbar_probe(struct i2c_client *client)
 	ubnt_ledbar_reset(ledbar);
 
 	ledbar->led_red.brightness_set_blocking = ubnt_ledbar_set_red_brightness;
-	ubnt_ledbar_init_led(of_get_child_by_name(np, "red"), ledbar, &ledbar->led_red);
+	ubnt_ledbar_init_led(device_get_named_child_node(dev, "red"), ledbar, &ledbar->led_red);
 
 	ledbar->led_green.brightness_set_blocking = ubnt_ledbar_set_green_brightness;
-	ubnt_ledbar_init_led(of_get_child_by_name(np, "green"), ledbar, &ledbar->led_green);
+	ubnt_ledbar_init_led(device_get_named_child_node(dev, "green"), ledbar, &ledbar->led_green);
 
 	ledbar->led_blue.brightness_set_blocking = ubnt_ledbar_set_blue_brightness;
-	ubnt_ledbar_init_led(of_get_child_by_name(np, "blue"), ledbar, &ledbar->led_blue);
+	ubnt_ledbar_init_led(device_get_named_child_node(dev, "blue"), ledbar, &ledbar->led_blue);
 
 	return ubnt_ledbar_apply_state(ledbar);
 }

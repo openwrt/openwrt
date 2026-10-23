@@ -1,0 +1,11 @@
+[
+	[ "if",
+		[ "and",
+			[ "eq", "ACTION", "add" ],
+			[ "eq", "SUBSYSTEM", "net" ]
+		],
+		[
+			[ "exec", "/sbin/preinit-netdev" ]
+		]
+	]
+]

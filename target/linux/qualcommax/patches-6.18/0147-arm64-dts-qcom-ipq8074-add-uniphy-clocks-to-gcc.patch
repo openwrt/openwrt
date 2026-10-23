@@ -1,0 +1,50 @@
+From 1222396401a9bcff1ab06fc8025558aaf38e5528 Mon Sep 17 00:00:00 2001
+From: Robert Marko <robimarko@gmail.com>
+Date: Wed, 16 Sep 2026 22:19:20 +0200
+Subject: [PATCH] arm64: dts: qcom: ipq8074: add UNIPHY clocks to GCC
+
+The UNIPHY RX and TX clocks are currently made available to GCC through
+global clock-name matching. Pass them directly to GCC instead, allowing
+its RCGs to use them as clock parents without a global clock lookup.
+
+Signed-off-by: Robert Marko <robimarko@gmail.com>
+---
+ arch/arm64/boot/dts/qcom/ipq8074.dtsi | 17 +++++++++++++++--
+ 1 file changed, 15 insertions(+), 2 deletions(-)
+
+--- a/arch/arm64/boot/dts/qcom/ipq8074.dtsi
++++ b/arch/arm64/boot/dts/qcom/ipq8074.dtsi
+@@ -6,6 +6,7 @@
+ #include <dt-bindings/interrupt-controller/arm-gic.h>
+ #include <dt-bindings/clock/qcom,gcc-ipq8074.h>
+ #include <dt-bindings/clock/qcom,apss-ipq.h>
++#include <dt-bindings/net/qca-uniphy.h>
+ 
+ / {
+ 	#address-cells = <2>;
+@@ -585,11 +586,23 @@
+ 			clocks = <&xo>,
+ 				 <&sleep_clk>,
+ 				 <&pcie_qmp0>,
+-				 <&pcie_qmp1>;
++				 <&pcie_qmp1>,
++				 <&uniphy0 UNIPHY_CLK_RX>,
++				 <&uniphy0 UNIPHY_CLK_TX>,
++				 <&uniphy1 UNIPHY_CLK_RX>,
++				 <&uniphy1 UNIPHY_CLK_TX>,
++				 <&uniphy2 UNIPHY_CLK_RX>,
++				 <&uniphy2 UNIPHY_CLK_TX>;
+ 			clock-names = "xo",
+ 				      "sleep_clk",
+ 				      "pcie0_pipe",
+-				      "pcie1_pipe";
++				      "pcie1_pipe",
++				      "uniphy0_gcc_rx_clk",
++				      "uniphy0_gcc_tx_clk",
++				      "uniphy1_gcc_rx_clk",
++				      "uniphy1_gcc_tx_clk",
++				      "uniphy2_gcc_rx_clk",
++				      "uniphy2_gcc_tx_clk";
+ 			#clock-cells = <1>;
+ 			#power-domain-cells = <1>;
+ 			#reset-cells = <1>;

@@ -15,7 +15,7 @@ Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
 
 --- a/dcdp/atm_tc.c
 +++ b/dcdp/atm_tc.c
-@@ -279,7 +279,7 @@ unsigned int find_vpi(unsigned int vpi)
+@@ -277,7 +277,7 @@ unsigned int find_vpi(unsigned int vpi)
   *    success: 0
   *    failed: -1
   */
@@ -46,7 +46,7 @@ Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
  #include "../inc/tc_common.h"
 --- a/dcdp/tc_proc.c
 +++ b/dcdp/tc_proc.c
-@@ -1945,7 +1945,7 @@ static void fwdbg_help(struct tc_comm *p
+@@ -1943,7 +1943,7 @@ static void fwdbg_help(struct tc_comm *p
  	if (!cmds[i].cmd)
  		fwdbg_help(priv, NULL, 0, result);
  }
@@ -55,7 +55,7 @@ Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
  	char *commands[], int num, char *result)
  {
  	int i;
-@@ -1964,7 +1964,7 @@ int fw_dbg_start(struct tc_comm *priv,
+@@ -1962,7 +1962,7 @@ int fw_dbg_start(struct tc_comm *priv,
  	return 0;
  }
  

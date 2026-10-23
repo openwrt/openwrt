@@ -107,7 +107,7 @@ static void md5_transform(struct md5_ctx *mctx, u32 *hash, u32 const *in)
     for (i = 0; i < 16; i++) {
         hashs->MR = in[i];
 //      printk("in[%d]: %08x\n", i, in[i]);
-    };
+    }
 
     //wait for processing
     while (hashs->controlr.BSY) {

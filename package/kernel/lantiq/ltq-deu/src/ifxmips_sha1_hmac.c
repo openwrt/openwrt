@@ -44,12 +44,7 @@
 #include <linux/mm.h>
 #include <linux/crypto.h>
 #include <crypto/internal/hash.h>
-#include <linux/version.h>
-#if LINUX_VERSION_CODE < KERNEL_VERSION(5,11,0)
-#include <crypto/sha.h>
-#else
 #include <crypto/sha1.h>
-#endif
 #include <linux/types.h>
 #include <linux/scatterlist.h>
 #include <asm/byteorder.h>
@@ -325,7 +320,7 @@ static int sha1_hmac_final_impl(struct shash_desc *desc, u8 *out, bool hash_fina
     {
         for (i = 0; i < 16; i++) {
             hashs->MR = in[i];
-        };
+        }
 
         hashs->controlr.GO = 1;
         asm("sync");
@@ -376,9 +371,9 @@ static int sha1_hmac_init_tfm(struct crypto_tfm *tfm)
 {
     struct sha1_hmac_ctx *sctx = crypto_tfm_ctx(tfm);
     sctx->temp = kzalloc(4 * SHA1_HMAC_DBN_TEMP_SIZE, GFP_KERNEL);
-    if (IS_ERR(sctx->temp)) return PTR_ERR(sctx->temp);
+    if (!sctx->temp) return -ENOMEM;
     sctx->desc = kzalloc(sizeof(struct shash_desc), GFP_KERNEL);
-    if (IS_ERR(sctx->desc)) return PTR_ERR(sctx->desc);
+    if (!sctx->desc) return -ENOMEM;
 
     return 0;
 }

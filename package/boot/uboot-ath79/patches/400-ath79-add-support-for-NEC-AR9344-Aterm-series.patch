@@ -5,19 +5,21 @@ Subject: [PATCH] ath79: add support for NEC AR9344 Aterm series
 
 ---
  arch/mips/dts/Makefile                |  1 +
- arch/mips/dts/nec,ar9344-aterm.dts    | 35 +++++++++++++++
- arch/mips/mach-ath79/Kconfig          |  5 +++
- board/nec/ar9344_aterm/Kconfig        | 30 +++++++++++++
+ arch/mips/dts/nec,ar9344-aterm.dts    | 35 ++++++++++++++
+ arch/mips/mach-ath79/Kconfig          |  5 ++
+ board/nec/ar9344_aterm/Kconfig        | 33 +++++++++++++
  board/nec/ar9344_aterm/Makefile       |  3 ++
- board/nec/ar9344_aterm/ar9344_aterm.c | 59 ++++++++++++++++++++++++++
- configs/nec_ar9344_aterm_defconfig    | 61 +++++++++++++++++++++++++++
- include/configs/nec_ar9344_aterm.h    | 28 ++++++++++++
- 8 files changed, 222 insertions(+)
+ board/nec/ar9344_aterm/ar9344_aterm.c | 70 +++++++++++++++++++++++++++
+ configs/nec_ar9344_aterm_defconfig    | 61 +++++++++++++++++++++++
+ configs/nec_ar9344_aterm_fe_defconfig | 62 ++++++++++++++++++++++++
+ include/configs/nec_ar9344_aterm.h    | 28 +++++++++++
+ 9 files changed, 298 insertions(+)
  create mode 100644 arch/mips/dts/nec,ar9344-aterm.dts
  create mode 100644 board/nec/ar9344_aterm/Kconfig
  create mode 100644 board/nec/ar9344_aterm/Makefile
  create mode 100644 board/nec/ar9344_aterm/ar9344_aterm.c
  create mode 100644 configs/nec_ar9344_aterm_defconfig
+ create mode 100644 configs/nec_ar9344_aterm_fe_defconfig
  create mode 100644 include/configs/nec_ar9344_aterm.h
 
 --- a/arch/mips/dts/Makefile
@@ -91,7 +93,7 @@ Subject: [PATCH] ath79: add support for NEC AR9344 Aterm series
  endmenu
 --- /dev/null
 +++ b/board/nec/ar9344_aterm/Kconfig
-@@ -0,0 +1,30 @@
+@@ -0,0 +1,33 @@
 +if BOARD_NEC_AR9344_ATERM
 +
 +config SYS_VENDOR
@@ -121,6 +123,9 @@ Subject: [PATCH] ath79: add support for NEC AR9344 Aterm series
 +config SYS_ICACHE_LINE_SIZE
 +	default 32
 +
++config BOARD_NEC_AR9344_ATERM_FE
++	bool "Aterm devices based on AR9344 with FE ports"
++
 +endif
 --- /dev/null
 +++ b/board/nec/ar9344_aterm/Makefile
@@ -130,7 +135,7 @@ Subject: [PATCH] ath79: add support for NEC AR9344 Aterm series
 +obj-y	= ar9344_aterm.o
 --- /dev/null
 +++ b/board/nec/ar9344_aterm/ar9344_aterm.c
-@@ -0,0 +1,59 @@
+@@ -0,0 +1,70 @@
 +// SPDX-License-Identifier: GPL-2.0+
 +/*
 + * Copyright (C) 2024 INAGAKI Hiroshi <musashino.open@gmail.com>
@@ -156,16 +161,27 @@ Subject: [PATCH] ath79: add support for NEC AR9344 Aterm series
 +	writel(0x2, regs + AR934X_GPIO_REG_FUNC);
 +
 +	/* Configure default GPIO OE/SET regs */
++#if defined(CONFIG_BOARD_NEC_AR9344_ATERM_FE)
++	writel(0x39b1f, regs + AR71XX_GPIO_REG_OE);
++	writel(0x040000, regs + AR71XX_GPIO_REG_SET);
++#else
 +	writel(0x3db1f, regs + AR71XX_GPIO_REG_OE);
 +	writel(0x142000, regs + AR71XX_GPIO_REG_SET);
++#endif
 +
 +	/* Configure pin multiplexing */
 +	writel(0x00000000, regs + AR934X_GPIO_REG_OUT_FUNC0);
 +	writel(0x0b0a0900, regs + AR934X_GPIO_REG_OUT_FUNC1);
 +	writel(0x00180000, regs + AR934X_GPIO_REG_OUT_FUNC2);
-+	writel(0x00000000, regs + AR934X_GPIO_REG_OUT_FUNC3);
 +	writel(0x2f2e0000, regs + AR934X_GPIO_REG_OUT_FUNC4);
++
++#if defined(CONFIG_BOARD_NEC_AR9344_ATERM_FE)
++	writel(0x002b2a00, regs + AR934X_GPIO_REG_OUT_FUNC3);
++	writel(0x002c2d00, regs + AR934X_GPIO_REG_OUT_FUNC5);
++#else
++	writel(0x00000000, regs + AR934X_GPIO_REG_OUT_FUNC3);
 +	writel(0x00000000, regs + AR934X_GPIO_REG_OUT_FUNC5);
++#endif
 +}
 +
 +#ifdef CONFIG_DEBUG_UART_BOARD_INIT
@@ -202,6 +218,71 @@ Subject: [PATCH] ath79: add support for NEC AR9344 Aterm series
 +CONFIG_SYS_LOAD_ADDR=0x83000000
 +CONFIG_ARCH_ATH79=y
 +CONFIG_BOARD_NEC_AR9344_ATERM=y
++CONFIG_SYS_MIPS_TIMER_FREQ=280000000
++CONFIG_MIPS_RELOCATION_TABLE_SIZE=0x4000
++# CONFIG_LOCALVERSION_AUTO is not set
++CONFIG_TIMESTAMP=y
++CONFIG_BOOTDELAY=3
++# CONFIG_ARCH_FIXUP_FDT_MEMORY is not set
++CONFIG_USE_BOOTARGS=y
++CONFIG_BOOTARGS="console=ttyS0,115200"
++CONFIG_USE_BOOTCOMMAND=y
++CONFIG_BOOTCOMMAND="bootm 0x9f040000"
++# CONFIG_DISPLAY_BOARDINFO is not set
++CONFIG_BOARD_EARLY_INIT_F=y
++CONFIG_SYS_MALLOC_BOOTPARAMS=y
++# CONFIG_CMDLINE_EDITING is not set
++# CONFIG_AUTO_COMPLETE is not set
++# CONFIG_SYS_LONGHELP is not set
++CONFIG_SYS_MAXARGS=32
++# CONFIG_SYS_XTRACE is not set
++# CONFIG_CMD_BDI is not set
++# CONFIG_CMD_CONSOLE is not set
++# CONFIG_BOOTM_PLAN9 is not set
++# CONFIG_BOOTM_RTEMS is not set
++# CONFIG_BOOTM_VXWORKS is not set
++# CONFIG_CMD_ELF is not set
++# CONFIG_CMD_FDT is not set
++# CONFIG_CMD_RUN is not set
++# CONFIG_CMD_XIMG is not set
++# CONFIG_CMD_EXPORTENV is not set
++# CONFIG_CMD_IMPORTENV is not set
++# CONFIG_CMD_EDITENV is not set
++# CONFIG_CMD_SAVEENV is not set
++# CONFIG_CMD_ENV_EXISTS is not set
++# CONFIG_CMD_CRC32 is not set
++# CONFIG_CMD_DM is not set
++# CONFIG_CMD_LOADS is not set
++# CONFIG_CMD_ECHO is not set
++# CONFIG_CMD_ITEST is not set
++# CONFIG_CMD_SOURCE is not set
++# CONFIG_CMD_SETEXPR is not set
++# CONFIG_CMD_SLEEP is not set
++# CONFIG_ISO_PARTITION is not set
++# CONFIG_OF_TAG_MIGRATE is not set
++CONFIG_SYS_RELOC_GD_ENV_ADDR=y
++CONFIG_NO_NET=y
++CONFIG_CLK=y
++# CONFIG_GPIO is not set
++# CONFIG_I2C is not set
++# CONFIG_INPUT is not set
++# CONFIG_POWER is not set
++CONFIG_DM_SERIAL=y
++CONFIG_SYS_NS16550=y
++# CONFIG_GZIP is not set
+--- /dev/null
++++ b/configs/nec_ar9344_aterm_fe_defconfig
+@@ -0,0 +1,62 @@
++CONFIG_MIPS=y
++CONFIG_SYS_MALLOC_LEN=0x40000
++CONFIG_HAS_CUSTOM_SYS_INIT_SP_ADDR=y
++CONFIG_CUSTOM_SYS_INIT_SP_ADDR=0xbd007fff
++CONFIG_ENV_SIZE=0x1000
++CONFIG_DEFAULT_DEVICE_TREE="nec,ar9344-aterm"
++CONFIG_SYS_LOAD_ADDR=0x83000000
++CONFIG_ARCH_ATH79=y
++CONFIG_BOARD_NEC_AR9344_ATERM=y
++CONFIG_BOARD_NEC_AR9344_ATERM_FE=y
 +CONFIG_SYS_MIPS_TIMER_FREQ=280000000
 +CONFIG_MIPS_RELOCATION_TABLE_SIZE=0x4000
 +# CONFIG_LOCALVERSION_AUTO is not set

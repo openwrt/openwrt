@@ -16,20 +16,14 @@ case "$FIRMWARE" in
 		ath11k_patch_mac $(macaddr_add $addr 8) 1
 		ath11k_set_macflag
 		;;
-	asus,rt-ax89x)
-		CI_UBIPART="UBI_DEV"
-		caldata_extract_ubi "Factory" 0x1000 0x20000
-		;;
 	arcadyan,aw1000|\
 	buffalo,wxr-5950ax12|\
 	cmcc,rm2-6|\
 	compex,wpq873|\
-	dynalink,dl-wrx36|\
 	edgecore,eap102|\
 	edimax,cax1800|\
 	linksys,mx5300|\
 	netgear,wax218|\
-	qnap,301w|\
 	redmi,ax6|\
 	xiaomi,ax3600|\
 	xiaomi,ax9000|\
@@ -67,6 +61,24 @@ case "$FIRMWARE" in
 		ath11k_patch_mac $(mtd_get_mac_binary boarddata1 0x6) 2
 		ath11k_set_macflag
 		;;
+	netgear,rbr750|\
+	netgear,rbs750|\
+	netgear,rbr850)
+		caldata_extract "0:art" 0x1000 0x20000
+		label_mac=$(get_mac_label_dt)
+		ath11k_patch_mac $(macaddr_add $label_mac 3) 0
+		ath11k_patch_mac $(macaddr_add $label_mac 2) 1
+		ath11k_patch_mac $(macaddr_add $label_mac 4) 2
+		ath11k_set_macflag
+		;;
+	netgear,rbs850)
+		caldata_extract "0:art" 0x1000 0x20000
+		label_mac=$(get_mac_label_dt)
+		ath11k_patch_mac $(macaddr_add $label_mac 2) 0
+		ath11k_patch_mac $(macaddr_add $label_mac 1) 1
+		ath11k_patch_mac $(macaddr_add $label_mac 3) 2
+		ath11k_set_macflag
+		;;
 	netgear,sxr80|\
 	netgear,sxs80)
 		caldata_extract "0:art" 0x1000 0x20000
@@ -96,6 +108,12 @@ case "$FIRMWARE" in
 	spectrum,sax1v1k)
 		caldata_extract_mmc "0:ART" 0x1000 0x20000
 		;;
+	tcl,linkhub-hh500v)
+		caldata_extract "0:ART" 0x1000 0x20000
+		ath11k_patch_mac $(mtd_get_mac_binary "0:ART" 0x5e29c) 0
+		ath11k_patch_mac $(mtd_get_mac_binary "0:ART" 0x5e2a2) 1
+		ath11k_set_macflag
+		;;
 	tplink,deco-x80-5g)
 		caldata_extract "0:art" 0x1000 0x20000
 		label_mac=$(get_mac_binary /tmp/factory_data/default-mac 0)
@@ -124,6 +142,20 @@ case "$FIRMWARE" in
 		ath11k_patch_mac $(macaddr_add $label_mac 3) 0
 		ath11k_patch_mac $(macaddr_add $label_mac 2) 1
 		ath11k_patch_mac $(macaddr_add $label_mac 4) 2
+		ath11k_set_macflag
+		;;
+	zyxel,nwa110ax)
+		caldata_extract "0:art" 0x1000 0x20000
+		label_mac=$(get_mac_label)
+		ath11k_patch_mac $(macaddr_add $label_mac 2) 0
+		ath11k_patch_mac $(macaddr_add $label_mac 1) 1
+		ath11k_set_macflag
+		;;
+	zyxel,nwa210ax)
+		caldata_extract "0:art" 0x1000 0x20000
+		label_mac=$(get_mac_label)
+		ath11k_patch_mac $(macaddr_add $label_mac 3) 0
+		ath11k_patch_mac $(macaddr_add $label_mac 2) 1
 		ath11k_set_macflag
 		;;
 	esac

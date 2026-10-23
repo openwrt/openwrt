@@ -1,0 +1,32 @@
+From 8c3dbdd7a8bf171874741e30ff1ad9abffd20bd6 Mon Sep 17 00:00:00 2001
+From: Robert Marko <robert.marko@sartura.hr>
+Date: Thu, 1 Oct 2026 13:39:43 +0200
+Subject: [PATCH] mux: make multiplexer core config visible
+
+All of the mux kmods depend on CONFIG_MULTIPLEXER being set, however its
+currently tristate but with no user visible name so its not selectable by
+passing it .config.
+
+It can only be selected by other symbols, so when you select for example
+GPIO mux kmod in reality nothing is built unless your target already
+selects CONFIG_MULTIPLEXER by accident or ALL_KMODS is used.
+
+So, as a workaround since it still works fine as tristate, simply add a
+prompt that makes it visible and thus user selectable.
+
+Signed-off-by: Robert Marko <robert.marko@sartura.hr>
+---
+ drivers/mux/Kconfig | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/mux/Kconfig
++++ b/drivers/mux/Kconfig
+@@ -4,7 +4,7 @@
+ #
+ 
+ config MULTIPLEXER
+-	tristate
++	tristate "Multiplexer core"
+ 
+ menu "Multiplexer drivers"
+ 	depends on MULTIPLEXER

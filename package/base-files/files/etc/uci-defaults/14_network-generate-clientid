@@ -1,9 +1,0 @@
-[ "$(uci -q get network.globals.dhcp_default_duid)" != "auto" ] && exit 0
-
-uci -q batch <<-EOF >/dev/null
-	# DUID-UUID - RFC6355
-	set network.globals.dhcp_default_duid="$(printf '%s%s' '0004' $(cat /proc/sys/kernel/random/uuid | sed -e 's/-//g'))"
-	commit network
-EOF
-
-exit 0

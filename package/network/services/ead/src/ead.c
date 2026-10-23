@@ -428,10 +428,13 @@ handle_send_a(struct ead_packet *pkt, int len, int *nstate)
 {
 	struct ead_msg *msg = &pkt->msg;
 	struct ead_msg_number *number = EAD_DATA(msg, number);
-	len = ntohl(msg->len) - sizeof(struct ead_msg_number);
+	uint32_t msg_len = ntohl(msg->len);
 
-	if (len > MAXPARAMLEN + 1)
+	if (msg_len < sizeof(struct ead_msg_number) ||
+	    msg_len - sizeof(struct ead_msg_number) > MAXPARAMLEN + 1)
 		return false;
+
+	len = msg_len - sizeof(struct ead_msg_number);
 
 	A.len = len;
 	A.data = abuf;

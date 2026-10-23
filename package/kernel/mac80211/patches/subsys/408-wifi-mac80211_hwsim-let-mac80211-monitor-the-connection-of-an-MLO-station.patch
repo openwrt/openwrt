@@ -1,0 +1,24 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Sun, 27 Sep 2026 23:55:00 +0200
+Subject: [PATCH] wifi: mac80211_hwsim: let mac80211 monitor the connection of an MLO station
+
+An MLO radio declares CONNECTION_MONITOR, which stops mac80211's beacon
+monitor and connection monitor, but hwsim reports neither a beacon loss
+nor a connection loss itself. A station whose AP went away without a
+deauthentication it accepts therefore stayed associated for good.
+
+mac80211 monitors the active links of an MLD station, so leave the flag
+out and let it.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/drivers/net/wireless/virtual/mac80211_hwsim_main.c
++++ b/drivers/net/wireless/virtual/mac80211_hwsim_main.c
+@@ -6076,7 +6076,6 @@ static int mac80211_hwsim_new_radio(stru
+ 		hw->wiphy->flags |= WIPHY_FLAG_SUPPORTS_MLO;
+ 		ieee80211_hw_set(hw, HAS_RATE_CONTROL);
+ 		ieee80211_hw_set(hw, SUPPORTS_DYNAMIC_PS);
+-		ieee80211_hw_set(hw, CONNECTION_MONITOR);
+ 		ieee80211_hw_set(hw, AP_LINK_PS);
+ 
+ 		hw->wiphy->iftype_ext_capab = mac80211_hwsim_iftypes_ext_capa;

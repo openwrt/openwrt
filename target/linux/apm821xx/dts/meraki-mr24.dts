@@ -66,11 +66,6 @@
 				 */
 				label = "u-boot-env";
 				reg = <0x00150000 0x00010000>;
-				read-only;
-
-				nvmem-layout {
-					compatible = "u-boot,env";
-				};
 			};
 
 			partition@160000 {
@@ -81,7 +76,6 @@
 				 */
 				label = "u-boot-env-redundant";
 				reg = <0x00160000 0x00010000>;
-				read-only;
 			};
 
 			partition@170000 {
@@ -143,7 +137,7 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 
-		phy: phy@1 {
+		phy: ethernet-phy@1 {
 			compatible = "ethernet-phy-ieee802.3-c22";
 			reg = <1>;
 		};

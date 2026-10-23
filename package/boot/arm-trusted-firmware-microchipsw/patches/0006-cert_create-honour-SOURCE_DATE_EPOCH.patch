@@ -1,0 +1,173 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Robert Marko <robert.marko@sartura.hr>
+Date: Mon, 12 Oct 2026 19:21:27 +0200
+Subject: [PATCH] cert_create: honour SOURCE_DATE_EPOCH for metadata
+
+Use SOURCE_DATE_EPOCH for certificate validity and derive serial numbers
+from stable certificate fields. Changes to authenticated payload hashes
+then change the serial, while repeated builds keep it stable.
+
+Keep the existing behaviour when SOURCE_DATE_EPOCH is not set and reject
+malformed values.
+
+Signed-off-by: Robert Marko <robert.marko@sartura.hr>
+---
+--- a/tools/cert_create/src/cert.c
++++ b/tools/cert_create/src/cert.c
+@@ -4,9 +4,11 @@
+  * SPDX-License-Identifier: BSD-3-Clause
+  */
+ 
++#include <errno.h>
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <string.h>
++#include <time.h>
+ 
+ #include <openssl/conf.h>
+ #include <openssl/err.h>
+@@ -66,6 +68,84 @@ error:
+ 
+ 	return ret;
+ }
++
++/* Return 0 when unset, 1 for a valid epoch, and -1 for an invalid value. */
++static int source_date_epoch(time_t *epoch)
++{
++	const char *value = getenv("SOURCE_DATE_EPOCH");
++	char *end;
++	long long seconds;
++
++	if (value == NULL) {
++		return 0;
++	}
++	errno = 0;
++	seconds = strtoll(value, &end, 10);
++	if (value == end || *end != '\0' || errno != 0 || seconds < 0 ||
++	    (long long)(time_t)seconds != seconds) {
++		ERROR("Invalid SOURCE_DATE_EPOCH: %s\n", value);
++		return -1;
++	}
++	*epoch = (time_t)seconds;
++	return 1;
++}
++
++/* Feed one DER-encoded field into the serial digest and release its buffer. */
++static int digest_der(EVP_MD_CTX *ctx, int len, unsigned char **der)
++{
++	int ok = len > 0 && *der != NULL && EVP_DigestUpdate(ctx, *der, len);
++
++	OPENSSL_free(*der);
++	*der = NULL;
++	return ok;
++}
++
++/* Hash the unsigned certificate fields to derive a positive serial. */
++static int deterministic_serial(X509 *x, EVP_PKEY *pkey)
++{
++	EVP_MD_CTX *ctx = NULL;
++	unsigned char digest[EVP_MAX_MD_SIZE];
++	unsigned char *der = NULL;
++	unsigned int digest_len;
++	BIGNUM *bn = NULL;
++	ASN1_INTEGER *serial = NULL;
++	int ok = 0;
++
++	ctx = EVP_MD_CTX_create();
++	if (ctx == NULL || !EVP_DigestInit_ex(ctx, EVP_sha256(), NULL)) {
++		goto out;
++	}
++	if (!digest_der(ctx, i2d_X509_NAME(X509_get_issuer_name(x), &der), &der) ||
++	    !digest_der(ctx, i2d_X509_NAME(X509_get_subject_name(x), &der), &der) ||
++	    !digest_der(ctx, i2d_ASN1_TIME(X509_get_notBefore(x), &der), &der) ||
++	    !digest_der(ctx, i2d_ASN1_TIME(X509_get_notAfter(x), &der), &der) ||
++	    !digest_der(ctx, i2d_PUBKEY(pkey, &der), &der) ||
++	    !digest_der(ctx, i2d_X509_EXTENSIONS(
++		(X509_EXTENSIONS *)X509_get0_extensions(x), &der), &der) ||
++	    !EVP_DigestFinal_ex(ctx, digest, &digest_len) ||
++	    digest_len < 20) {
++		goto out;
++	}
++
++	/* RFC 5280 requires a positive serial of at most 20 octets. */
++	digest[0] = (digest[0] & 0x7f) | 0x01;
++	bn = BN_bin2bn(digest, 20, NULL);
++	if (bn == NULL) {
++		goto out;
++	}
++	serial = BN_to_ASN1_INTEGER(bn, NULL);
++	if (serial == NULL || !X509_set_serialNumber(x, serial)) {
++		goto out;
++	}
++	ok = 1;
++out:
++	OPENSSL_free(der);
++	ASN1_INTEGER_free(serial);
++	BN_free(bn);
++	EVP_MD_CTX_destroy(ctx);
++	return ok;
++}
++
+ const EVP_MD *get_digest(int alg)
+ {
+ 	switch (alg) {
+@@ -215,7 +295,8 @@ int cert_new(
+ 	X509_NAME *name;
+ 	ASN1_INTEGER *sno;
+ 	int i, num, rc = 0;
+-	int fb, attempt;
++	int fb, attempt, epoch_set;
++	time_t epoch;
+ 
+ 	/* Create the certificate structure */
+ 	x = X509_new();
+@@ -242,14 +323,19 @@ int cert_new(
+ 	/* x509.v3 */
+ 	X509_set_version(x, 2);
+ 
+-	/* Random serial number */
+-	sno = ASN1_INTEGER_new();
+-	rand_serial(NULL, sno);
+-	X509_set_serialNumber(x, sno);
+-	ASN1_INTEGER_free(sno);
+-
+-	X509_gmtime_adj(X509_get_notBefore(x), 0);
+-	X509_gmtime_adj(X509_get_notAfter(x), (long)60*60*24*days);
++	epoch_set = source_date_epoch(&epoch);
++	if (epoch_set < 0) {
++		goto END;
++	}
++	if (epoch_set) {
++		if (ASN1_TIME_adj(X509_get_notBefore(x), epoch, 0, 0) == NULL ||
++		    ASN1_TIME_adj(X509_get_notAfter(x), epoch, days, 0) == NULL) {
++			goto END;
++		}
++	} else {
++		X509_gmtime_adj(X509_get_notBefore(x), 0);
++		X509_gmtime_adj(X509_get_notAfter(x), (long)60*60*24*days);
++	}
+ 	X509_set_pubkey(x, pkey);
+ 
+ 	/* Subject name */
+@@ -283,6 +369,21 @@ int cert_new(
+ 		}
+ 	}
+ 
++	if (epoch_set) {
++		if (!deterministic_serial(x, pkey)) {
++			ERROR("Failed to set deterministic serial for %s\n", cert->cn);
++			goto END;
++		}
++	} else {
++		sno = ASN1_INTEGER_new();
++		if (sno == NULL || !rand_serial(NULL, sno) ||
++		    !X509_set_serialNumber(x, sno)) {
++			ASN1_INTEGER_free(sno);
++			goto END;
++		}
++		ASN1_INTEGER_free(sno);
++	}
++
+ 	/*
+ 	 * Sign the certificate with the issuer key. For ECDSA, re-sign until
+ 	 * neither signature scalar (r, s) has a leading zero byte, which the

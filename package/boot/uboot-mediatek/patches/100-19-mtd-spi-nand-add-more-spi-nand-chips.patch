@@ -11,29 +11,28 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
  drivers/mtd/nand/spi/core.c       |   1 +
  drivers/mtd/nand/spi/etron.c      | 181 ++++++++++++++++++++++++++++++
  drivers/mtd/nand/spi/gigadevice.c |  38 +++++++
- drivers/mtd/nand/spi/winbond.c    |   9 ++
  include/linux/mtd/spinand.h       |   1 +
  6 files changed, 231 insertions(+)
  create mode 100644 drivers/mtd/nand/spi/etron.c
 
 --- a/drivers/mtd/nand/spi/Makefile
 +++ b/drivers/mtd/nand/spi/Makefile
-@@ -2,4 +2,5 @@
- 
- spinand-objs := core.o esmt.o gigadevice.o macronix.o micron.o paragon.o
- spinand-objs += toshiba.o winbond.o xtx.o
+@@ -3,4 +3,5 @@
+ spinand-objs := core.o otp.o
+ spinand-objs += alliancememory.o ato.o esmt.o fmsh.o foresee.o gigadevice.o macronix.o
+ spinand-objs += micron.o paragon.o skyhigh.o toshiba.o winbond.o xtx.o
 +spinand-objs += etron.o
  obj-$(CONFIG_MTD_SPI_NAND) += spinand.o
 --- a/drivers/mtd/nand/spi/core.c
 +++ b/drivers/mtd/nand/spi/core.c
-@@ -826,6 +826,7 @@ static const struct nand_ops spinand_ops
- };
- 
- static const struct spinand_manufacturer *spinand_manufacturers[] = {
+@@ -1227,6 +1227,7 @@ static const struct spinand_manufacturer
+ 	&alliancememory_spinand_manufacturer,
+ 	&ato_spinand_manufacturer,
+ 	&esmt_c8_spinand_manufacturer,
 +	&etron_spinand_manufacturer,
+ 	&fmsh_spinand_manufacturer,
+ 	&foresee_spinand_manufacturer,
  	&gigadevice_spinand_manufacturer,
- 	&macronix_spinand_manufacturer,
- 	&micron_spinand_manufacturer,
 --- /dev/null
 +++ b/drivers/mtd/nand/spi/etron.c
 @@ -0,0 +1,181 @@
@@ -55,20 +54,20 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
 +#define STATUS_ECC_LIMIT_BITFLIPS (3 << 4)
 +
 +static SPINAND_OP_VARIANTS(read_cache_variants,
-+		SPINAND_PAGE_READ_FROM_CACHE_QUADIO_OP(0, 1, NULL, 0),
-+		SPINAND_PAGE_READ_FROM_CACHE_X4_OP(0, 1, NULL, 0),
-+		SPINAND_PAGE_READ_FROM_CACHE_DUALIO_OP(0, 1, NULL, 0),
-+		SPINAND_PAGE_READ_FROM_CACHE_X2_OP(0, 1, NULL, 0),
-+		SPINAND_PAGE_READ_FROM_CACHE_OP(true, 0, 1, NULL, 0),
-+		SPINAND_PAGE_READ_FROM_CACHE_OP(false, 0, 1, NULL, 0));
++		SPINAND_PAGE_READ_FROM_CACHE_1S_4S_4S_OP(0, 1, NULL, 0, 0),
++		SPINAND_PAGE_READ_FROM_CACHE_1S_1S_4S_OP(0, 1, NULL, 0, 0),
++		SPINAND_PAGE_READ_FROM_CACHE_1S_2S_2S_OP(0, 1, NULL, 0, 0),
++		SPINAND_PAGE_READ_FROM_CACHE_1S_1S_2S_OP(0, 1, NULL, 0, 0),
++		SPINAND_PAGE_READ_FROM_CACHE_FAST_1S_1S_1S_OP(0, 1, NULL, 0, 0),
++		SPINAND_PAGE_READ_FROM_CACHE_1S_1S_1S_OP(0, 1, NULL, 0, 0));
 +
 +static SPINAND_OP_VARIANTS(write_cache_variants,
-+		SPINAND_PROG_LOAD_X4(true, 0, NULL, 0),
-+		SPINAND_PROG_LOAD(true, 0, NULL, 0));
++		SPINAND_PROG_LOAD_1S_1S_4S_OP(true, 0, NULL, 0),
++		SPINAND_PROG_LOAD_1S_1S_1S_OP(true, 0, NULL, 0));
 +
 +static SPINAND_OP_VARIANTS(update_cache_variants,
-+		SPINAND_PROG_LOAD_X4(false, 0, NULL, 0),
-+		SPINAND_PROG_LOAD(false, 0, NULL, 0));
++		SPINAND_PROG_LOAD_1S_1S_4S_OP(false, 0, NULL, 0),
++		SPINAND_PROG_LOAD_1S_1S_1S_OP(false, 0, NULL, 0));
 +
 +static int etron_ooblayout_ecc(struct mtd_info *mtd, int section,
 +				  struct mtd_oob_region *region)
@@ -220,7 +219,7 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
 +};
 --- a/drivers/mtd/nand/spi/gigadevice.c
 +++ b/drivers/mtd/nand/spi/gigadevice.c
-@@ -284,7 +284,45 @@ static int gd5fxgq4ufxxg_ecc_get_status(
+@@ -286,7 +286,45 @@ static int gd5fxgq4ufxxg_ecc_get_status(
  	return -EINVAL;
  }
  
@@ -266,31 +265,13 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
  	SPINAND_INFO("GD5F1GQ4xA",
  		     SPINAND_ID(SPINAND_READID_METHOD_OPCODE_ADDR, 0xf1),
  		     NAND_MEMORG(1, 2048, 64, 64, 1024, 20, 1, 1, 1),
---- a/drivers/mtd/nand/spi/winbond.c
-+++ b/drivers/mtd/nand/spi/winbond.c
-@@ -167,6 +167,15 @@ static const struct spinand_info winbond
- 					      &update_cache_variants),
- 		     0,
- 		     SPINAND_ECCINFO(&w25m02gv_ooblayout, NULL)),
-+	SPINAND_INFO("W25N01KV",
-+		     SPINAND_ID(SPINAND_READID_METHOD_OPCODE_DUMMY, 0xae, 0x21),
-+		     NAND_MEMORG(1, 2048, 64, 64, 1024, 20, 1, 1, 1),
-+		     NAND_ECCREQ(4, 512),
-+		     SPINAND_INFO_OP_VARIANTS(&read_cache_variants,
-+					      &write_cache_variants,
-+					      &update_cache_variants),
-+		     0,
-+		     SPINAND_ECCINFO(&w25n02kv_ooblayout, w25n02kv_ecc_get_status)),
- 	SPINAND_INFO("W25N02KV",
- 		     SPINAND_ID(SPINAND_READID_METHOD_OPCODE_DUMMY, 0xaa, 0x22),
- 		     NAND_MEMORG(1, 2048, 128, 64, 2048, 40, 1, 1, 1),
 --- a/include/linux/mtd/spinand.h
 +++ b/include/linux/mtd/spinand.h
-@@ -244,6 +244,7 @@ struct spinand_manufacturer {
- };
- 
- /* SPI NAND manufacturers */
+@@ -361,6 +361,7 @@ struct spinand_manufacturer {
+ extern const struct spinand_manufacturer alliancememory_spinand_manufacturer;
+ extern const struct spinand_manufacturer ato_spinand_manufacturer;
+ extern const struct spinand_manufacturer esmt_c8_spinand_manufacturer;
 +extern const struct spinand_manufacturer etron_spinand_manufacturer;
+ extern const struct spinand_manufacturer fmsh_spinand_manufacturer;
+ extern const struct spinand_manufacturer foresee_spinand_manufacturer;
  extern const struct spinand_manufacturer gigadevice_spinand_manufacturer;
- extern const struct spinand_manufacturer macronix_spinand_manufacturer;
- extern const struct spinand_manufacturer micron_spinand_manufacturer;

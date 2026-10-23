@@ -1,0 +1,24 @@
+// SPDX-License-Identifier: (GPL-2.0 OR MIT)
+/*
+ * Copyright (C) 2025 SmartRG Inc.
+ * Author: Chad Monroe <chad.monroe@smartrg.com>
+ */
+
+#include "mt7987a-smartrg-mt-rainier.dtsi"
+#include "mt798x-smartrg-factory.dtsi"
+
+/ {
+	model = "SmartRG SDG-8732";
+	compatible = "smartrg,sdg-8732", "mediatek,mt7987a";
+};
+
+&radio0 {
+	ieee80211-freq-limit = <2400000 2500000>, <5170000 5835000>, <5945000 7125000>;
+
+	band@2 {
+		/* 6 GHz */
+		reg = <2>;
+		nvmem-cells = <&macaddr 0x6>;
+		nvmem-cell-names = "mac-address";
+	};
+};

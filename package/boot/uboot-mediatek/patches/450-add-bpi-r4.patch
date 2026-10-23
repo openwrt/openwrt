@@ -1,7 +1,8 @@
 --- /dev/null
 +++ b/configs/mt7988a_bananapi_bpi-r4-emmc_defconfig
-@@ -0,0 +1,139 @@
+@@ -0,0 +1,145 @@
 +CONFIG_ARM=y
++CONFIG_ARM_SMCCC=y
 +CONFIG_SYS_HAS_NONCACHED_MEMORY=y
 +CONFIG_POSITION_INDEPENDENT=y
 +CONFIG_ARCH_MEDIATEK=y
@@ -43,6 +44,9 @@
 +CONFIG_CMD_ASKENV=y
 +CONFIG_CMD_ERASEENV=y
 +CONFIG_CMD_ENV_FLAGS=y
++CONFIG_CMD_MEMINFO=y
++CONFIG_CMD_MEMSIZE=y
++CONFIG_CMD_RNG=y
 +CONFIG_CMD_STRINGS=y
 +CONFIG_CMD_DM=y
 +CONFIG_CMD_GPIO=y
@@ -127,6 +131,8 @@
 +CONFIG_DM_PWM=y
 +CONFIG_PWM_MTK=y
 +CONFIG_RAM=y
++CONFIG_DM_RNG=y
++CONFIG_RNG_MTK_V2=y
 +CONFIG_SCSI=y
 +CONFIG_DM_SERIAL=y
 +CONFIG_SERIAL_RX_BUFFER=y
@@ -142,8 +148,9 @@
 +CONFIG_HEXDUMP=y
 --- /dev/null
 +++ b/configs/mt7988a_bananapi_bpi-r4-sdmmc_defconfig
-@@ -0,0 +1,139 @@
+@@ -0,0 +1,143 @@
 +CONFIG_ARM=y
++CONFIG_ARM_SMCCC=y
 +CONFIG_SYS_HAS_NONCACHED_MEMORY=y
 +CONFIG_POSITION_INDEPENDENT=y
 +CONFIG_ARCH_MEDIATEK=y
@@ -185,6 +192,7 @@
 +CONFIG_CMD_ASKENV=y
 +CONFIG_CMD_ERASEENV=y
 +CONFIG_CMD_ENV_FLAGS=y
++CONFIG_CMD_RNG=y
 +CONFIG_CMD_STRINGS=y
 +CONFIG_CMD_DM=y
 +CONFIG_CMD_GPIO=y
@@ -269,6 +277,8 @@
 +CONFIG_DM_PWM=y
 +CONFIG_PWM_MTK=y
 +CONFIG_RAM=y
++CONFIG_DM_RNG=y
++CONFIG_RNG_MTK_V2=y
 +CONFIG_SCSI=y
 +CONFIG_DM_SERIAL=y
 +CONFIG_SERIAL_RX_BUFFER=y
@@ -284,8 +294,9 @@
 +CONFIG_HEXDUMP=y
 --- /dev/null
 +++ b/configs/mt7988a_bananapi_bpi-r4-snand_defconfig
-@@ -0,0 +1,139 @@
+@@ -0,0 +1,145 @@
 +CONFIG_ARM=y
++CONFIG_ARM_SMCCC=y
 +CONFIG_SYS_HAS_NONCACHED_MEMORY=y
 +CONFIG_POSITION_INDEPENDENT=y
 +CONFIG_ARCH_MEDIATEK=y
@@ -324,6 +335,9 @@
 +CONFIG_CMD_ASKENV=y
 +CONFIG_CMD_ERASEENV=y
 +CONFIG_CMD_ENV_FLAGS=y
++CONFIG_CMD_MEMINFO=y
++CONFIG_CMD_MEMSIZE=y
++CONFIG_CMD_RNG=y
 +CONFIG_CMD_STRINGS=y
 +CONFIG_CMD_DM=y
 +CONFIG_CMD_GPIO=y
@@ -411,6 +425,8 @@
 +CONFIG_DM_PWM=y
 +CONFIG_PWM_MTK=y
 +CONFIG_RAM=y
++CONFIG_DM_RNG=y
++CONFIG_RNG_MTK_V2=y
 +CONFIG_SCSI=y
 +CONFIG_DM_SERIAL=y
 +CONFIG_SERIAL_RX_BUFFER=y
@@ -495,7 +511,7 @@
 +_bootmenu_update_title=setenv _bootmenu_update_title ; setenv bootmenu_title "$bootmenu_title       [33m$ver[0m"
 --- /dev/null
 +++ b/defenvs/bananapi_bpi-r4_snand_env
-@@ -0,0 +1,67 @@
+@@ -0,0 +1,68 @@
 +ipaddr=192.168.1.1
 +serverip=192.168.1.254
 +loadaddr=0x50000000
@@ -560,12 +576,13 @@
 +emmc_write_production=part start mmc 0 $part_default part_addr && part size mmc 0 $part_default part_size && run mmc_write_vol
 +emmc_write_recovery=part start mmc 0 $part_recovery part_addr && part size mmc 0 $part_recovery part_size && run mmc_write_vol
 +_init_env=setenv _init_env ; run ubi_create_env ; saveenv ; saveenv
-+_firstboot=setenv _firstboot ; run _switch_to_menu ; run _init_env ; run boot_first
++_firstboot=setenv _firstboot ; run _select_bl2 ; run _switch_to_menu ; run _init_env ; run boot_first
++_select_bl2=setenv _select_bl2 ; memsize ramsize; if test ${ramsize} = 8192; then setenv bootfile_bl2 openwrt-mediatek-filogic-bananapi_bpi-r4-snand-preloader-8g.bin;fi
 +_switch_to_menu=setenv _switch_to_menu ; setenv bootdelay 3 ; setenv bootmenu_delay 3 ; setenv bootmenu_0 $bootmenu_0d ; setenv bootmenu_0d ; run _bootmenu_update_title
 +_bootmenu_update_title=setenv _bootmenu_update_title ; setenv bootmenu_title "$bootmenu_title       [33m$ver[0m"
 --- /dev/null
 +++ b/defenvs/bananapi_bpi-r4_emmc_env
-@@ -0,0 +1,57 @@
+@@ -0,0 +1,58 @@
 +ipaddr=192.168.1.1
 +serverip=192.168.1.254
 +loadaddr=0x50000000
@@ -620,7 +637,8 @@
 +emmc_write_production=part start mmc 0 $part_default part_addr && part size mmc 0 $part_default part_size && run mmc_write_vol
 +emmc_write_recovery=part start mmc 0 $part_recovery part_addr && part size mmc 0 $part_recovery part_size && run mmc_write_vol
 +_init_env=setenv _init_env ; setenv _create_env ; saveenv ; saveenv
-+_firstboot=setenv _firstboot ; run _switch_to_menu ; run _init_env ; run boot_first
++_firstboot=setenv _firstboot ; run _select_bl2 ; run _switch_to_menu ; run _init_env ; run boot_first
++_select_bl2=setenv _select_bl2 ; memsize ramsize; if test ${ramsize} = 8192; then setenv bootfile_bl2 openwrt-mediatek-filogic-bananapi_bpi-r4-emmc-preloader-8g.bin;fi
 +_switch_to_menu=setenv _switch_to_menu ; setenv bootdelay 3 ; setenv bootmenu_delay 3 ; setenv bootmenu_0 $bootmenu_0d ; setenv bootmenu_0d ; run _bootmenu_update_title
 +_bootmenu_update_title=setenv _bootmenu_update_title ; setenv bootmenu_title "$bootmenu_title       [33m$ver[0m"
 --- /dev/null
@@ -873,8 +891,9 @@
 +};
 --- /dev/null
 +++ b/configs/mt7988a_bananapi_bpi-r4-poe-emmc_defconfig
-@@ -0,0 +1,139 @@
+@@ -0,0 +1,145 @@
 +CONFIG_ARM=y
++CONFIG_ARM_SMCCC=y
 +CONFIG_SYS_HAS_NONCACHED_MEMORY=y
 +CONFIG_POSITION_INDEPENDENT=y
 +CONFIG_ARCH_MEDIATEK=y
@@ -916,6 +935,9 @@
 +CONFIG_CMD_ASKENV=y
 +CONFIG_CMD_ERASEENV=y
 +CONFIG_CMD_ENV_FLAGS=y
++CONFIG_CMD_MEMINFO=y
++CONFIG_CMD_MEMSIZE=y
++CONFIG_CMD_RNG=y
 +CONFIG_CMD_STRINGS=y
 +CONFIG_CMD_DM=y
 +CONFIG_CMD_GPIO=y
@@ -1000,6 +1022,8 @@
 +CONFIG_DM_PWM=y
 +CONFIG_PWM_MTK=y
 +CONFIG_RAM=y
++CONFIG_DM_RNG=y
++CONFIG_RNG_MTK_V2=y
 +CONFIG_SCSI=y
 +CONFIG_DM_SERIAL=y
 +CONFIG_SERIAL_RX_BUFFER=y
@@ -1015,8 +1039,9 @@
 +CONFIG_HEXDUMP=y
 --- /dev/null
 +++ b/configs/mt7988a_bananapi_bpi-r4-poe-sdmmc_defconfig
-@@ -0,0 +1,139 @@
+@@ -0,0 +1,143 @@
 +CONFIG_ARM=y
++CONFIG_ARM_SMCCC=y
 +CONFIG_SYS_HAS_NONCACHED_MEMORY=y
 +CONFIG_POSITION_INDEPENDENT=y
 +CONFIG_ARCH_MEDIATEK=y
@@ -1058,6 +1083,7 @@
 +CONFIG_CMD_ASKENV=y
 +CONFIG_CMD_ERASEENV=y
 +CONFIG_CMD_ENV_FLAGS=y
++CONFIG_CMD_RNG=y
 +CONFIG_CMD_STRINGS=y
 +CONFIG_CMD_DM=y
 +CONFIG_CMD_GPIO=y
@@ -1142,6 +1168,8 @@
 +CONFIG_DM_PWM=y
 +CONFIG_PWM_MTK=y
 +CONFIG_RAM=y
++CONFIG_DM_RNG=y
++CONFIG_RNG_MTK_V2=y
 +CONFIG_SCSI=y
 +CONFIG_DM_SERIAL=y
 +CONFIG_SERIAL_RX_BUFFER=y
@@ -1157,8 +1185,9 @@
 +CONFIG_HEXDUMP=y
 --- /dev/null
 +++ b/configs/mt7988a_bananapi_bpi-r4-poe-snand_defconfig
-@@ -0,0 +1,139 @@
+@@ -0,0 +1,145 @@
 +CONFIG_ARM=y
++CONFIG_ARM_SMCCC=y
 +CONFIG_SYS_HAS_NONCACHED_MEMORY=y
 +CONFIG_POSITION_INDEPENDENT=y
 +CONFIG_ARCH_MEDIATEK=y
@@ -1197,6 +1226,9 @@
 +CONFIG_CMD_ASKENV=y
 +CONFIG_CMD_ERASEENV=y
 +CONFIG_CMD_ENV_FLAGS=y
++CONFIG_CMD_MEMINFO=y
++CONFIG_CMD_MEMSIZE=y
++CONFIG_CMD_RNG=y
 +CONFIG_CMD_STRINGS=y
 +CONFIG_CMD_DM=y
 +CONFIG_CMD_GPIO=y
@@ -1284,6 +1316,8 @@
 +CONFIG_DM_PWM=y
 +CONFIG_PWM_MTK=y
 +CONFIG_RAM=y
++CONFIG_DM_RNG=y
++CONFIG_RNG_MTK_V2=y
 +CONFIG_SCSI=y
 +CONFIG_DM_SERIAL=y
 +CONFIG_SERIAL_RX_BUFFER=y
@@ -1299,7 +1333,7 @@
 +CONFIG_HEXDUMP=y
 --- /dev/null
 +++ b/defenvs/bananapi_bpi-r4-poe_emmc_env
-@@ -0,0 +1,57 @@
+@@ -0,0 +1,58 @@
 +ipaddr=192.168.1.1
 +serverip=192.168.1.254
 +loadaddr=0x50000000
@@ -1354,7 +1388,8 @@
 +emmc_write_production=part start mmc 0 $part_default part_addr && part size mmc 0 $part_default part_size && run mmc_write_vol
 +emmc_write_recovery=part start mmc 0 $part_recovery part_addr && part size mmc 0 $part_recovery part_size && run mmc_write_vol
 +_init_env=setenv _init_env ; setenv _create_env ; saveenv ; saveenv
-+_firstboot=setenv _firstboot ; run _switch_to_menu ; run _init_env ; run boot_first
++_firstboot=setenv _firstboot ; run _select_bl2 ; run _switch_to_menu ; run _init_env ; run boot_first
++_select_bl2=setenv _select_bl2 ; memsize ramsize ; if test ${ramsize} = 8192 ; then setenv bootfile_bl2 openwrt-mediatek-filogic-bananapi_bpi-r4-poe-emmc-preloader-8g.bin ; fi
 +_switch_to_menu=setenv _switch_to_menu ; setenv bootdelay 3 ; setenv bootmenu_delay 3 ; setenv bootmenu_0 $bootmenu_0d ; setenv bootmenu_0d ; run _bootmenu_update_title
 +_bootmenu_update_title=setenv _bootmenu_update_title ; setenv bootmenu_title "$bootmenu_title       [33m$ver[0m"
 --- /dev/null
@@ -1428,7 +1463,7 @@
 +_bootmenu_update_title=setenv _bootmenu_update_title ; setenv bootmenu_title "$bootmenu_title       [33m$ver[0m"
 --- /dev/null
 +++ b/defenvs/bananapi_bpi-r4-poe_snand_env
-@@ -0,0 +1,67 @@
+@@ -0,0 +1,68 @@
 +ipaddr=192.168.1.1
 +serverip=192.168.1.254
 +loadaddr=0x50000000
@@ -1493,6 +1528,7 @@
 +emmc_write_production=part start mmc 0 $part_default part_addr && part size mmc 0 $part_default part_size && run mmc_write_vol
 +emmc_write_recovery=part start mmc 0 $part_recovery part_addr && part size mmc 0 $part_recovery part_size && run mmc_write_vol
 +_init_env=setenv _init_env ; run ubi_create_env ; saveenv ; saveenv
-+_firstboot=setenv _firstboot ; run _switch_to_menu ; run _init_env ; run boot_first
++_firstboot=setenv _firstboot ; run _select_bl2 ; run _switch_to_menu ; run _init_env ; run boot_first
++_select_bl2=setenv _select_bl2 ; memsize ramsize; if test ${ramsize} = 8192; then setenv bootfile_bl2 openwrt-mediatek-filogic-bananapi_bpi-r4-poe-snand-preloader-8g.bin ; fi
 +_switch_to_menu=setenv _switch_to_menu ; setenv bootdelay 3 ; setenv bootmenu_delay 3 ; setenv bootmenu_0 $bootmenu_0d ; setenv bootmenu_0d ; run _bootmenu_update_title
 +_bootmenu_update_title=setenv _bootmenu_update_title ; setenv bootmenu_title "$bootmenu_title       [33m$ver[0m"

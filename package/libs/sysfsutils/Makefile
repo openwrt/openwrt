@@ -31,7 +31,7 @@ define Package/libsysfs
   CATEGORY:=Libraries
   SUBMENU:=Filesystem
   TITLE:=Sysfs library
-  URL:=http://linux-diag.sourceforge.net/Sysfsutils.html
+  URL:=https://github.com/linux-ras/sysfsutils
   ABI_VERSION:=2
 endef
 
@@ -41,7 +41,7 @@ define Package/sysfsutils
   SUBMENU:=Filesystem
   DEPENDS:=+libsysfs
   TITLE:=System Utilities Based on Sysfs
-  URL:=http://linux-diag.sourceforge.net/Sysfsutils.html
+  URL:=https://github.com/linux-ras/sysfsutils
 endef
 
 define Package/libsysfs/description

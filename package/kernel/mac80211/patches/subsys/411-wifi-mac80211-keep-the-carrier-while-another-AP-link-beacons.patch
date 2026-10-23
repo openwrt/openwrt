@@ -1,0 +1,65 @@
+From 73a2d8189877717fc31ce69167a38cc02197a1d0 Mon Sep 17 00:00:00 2001
+From: Felix Fietkau <nbd@nbd.name>
+Date: Tue, 29 Sep 2026 07:42:07 +0200
+Subject: [PATCH] wifi: mac80211: keep the carrier while another AP link
+ beacons
+
+Since stop_ap works per link, ieee80211_stop_ap() stops one link of an
+AP MLD, but turns off the carrier of every AP_VLAN of the interface and
+clears interface state: the SSID, the S1G flag and the beacon rate
+flag. A 4-address station on another link loses the carrier of its
+AP_VLAN, and with it its bridge port, whenever any link stops.
+
+Turn off the AP_VLAN carriers and clear the interface state only with
+the last link that beacons, as commit 5fcc7c51f9e7 ("wifi: mac80211:
+handle netif carrier up/down with link AP during MLO") already does for
+the carrier of the interface itself.
+
+Fixes: 7b0a0e3c3a88 ("wifi: cfg80211: do some rework towards MLO link APIs")
+Fixes: d9f83f22a791 ("wifi: mac80211: use link in start/stop ap")
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+ net/mac80211/cfg.c | 20 +++++++++++++-------
+ 1 file changed, 13 insertions(+), 7 deletions(-)
+
+--- a/net/mac80211/cfg.c
++++ b/net/mac80211/cfg.c
+@@ -2025,6 +2025,7 @@ static int ieee80211_stop_ap(struct wiph
+ 	struct ieee80211_bss_conf *link_conf = link->conf;
+ 	u64 changes = BSS_CHANGED_BEACON_ENABLED;
+ 	LIST_HEAD(keys);
++	bool last;
+ 
+ 	lockdep_assert_wiphy(local->hw.wiphy);
+ 
+@@ -2048,11 +2049,11 @@ static int ieee80211_stop_ap(struct wiph
+ 
+ 	ieee80211_free_next_beacon(link);
+ 
+-	/* turn off carrier for this interface and dependent VLANs */
+-	list_for_each_entry(vlan, &sdata->u.ap.vlans, u.vlan.list)
+-		netif_carrier_off(vlan->dev);
++	last = ieee80211_num_beaconing_links(sdata) <= 1;
++	if (last) {
++		list_for_each_entry(vlan, &sdata->u.ap.vlans, u.vlan.list)
++			netif_carrier_off(vlan->dev);
+ 
+-	if (ieee80211_num_beaconing_links(sdata) <= 1) {
+ 		netif_carrier_off(dev);
+ 		sdata->u.ap.active = false;
+ 	}
+@@ -2095,9 +2096,11 @@ static int ieee80211_stop_ap(struct wiph
+ 	RCU_INIT_POINTER(link_conf->tx_bss_conf, NULL);
+ 
+ 	link_conf->enable_beacon = false;
+-	sdata->beacon_rate_set = false;
+-	sdata->vif.cfg.ssid_len = 0;
+-	sdata->vif.cfg.s1g = false;
++	if (last) {
++		sdata->beacon_rate_set = false;
++		sdata->vif.cfg.ssid_len = 0;
++		sdata->vif.cfg.s1g = false;
++	}
+ 	clear_bit(SDATA_STATE_OFFCHANNEL_BEACON_STOPPED, &sdata->state);
+ 	ieee80211_link_info_change_notify(sdata, link, changes);
+ 

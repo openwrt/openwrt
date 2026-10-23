@@ -9,6 +9,10 @@
 	model = "ZTE MF281";
 	compatible = "zte,mf281", "qca,qca9563";
 
+	aliases {
+		label-mac-device = &eth0;
+	};
+
 	leds {
 		pinctrl-names = "default";
 		pinctrl-0 = <&enable_wlan_led_gpio>;

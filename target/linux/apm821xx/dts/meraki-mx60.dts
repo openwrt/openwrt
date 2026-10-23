@@ -62,12 +62,30 @@
 			};
 
 			partition@100000 {
-				label = "u-boot-env";
+				compatible = "fixed-partitions";
 				reg = <0x00100000 0x00100000>;
-				read-only;
+				label = "u-boot-env";
+				#address-cells = <1>;
+				#size-cells = <1>;
 
-				nvmem-layout {
-					compatible = "u-boot,env";
+				partition@0 {
+					reg = <0x0 0x20000>;
+					label = "u-boot-env-main";
+					status = "disabled";
+
+					nvmem-layout {
+						compatible = "u-boot,env-redundant-count";
+					};
+				};
+
+				partition@80000 {
+					reg = <0x80000 0x20000>;
+					label= "u-boot-env-redundant";
+					status = "disabled";
+
+					nvmem-layout {
+						compatible = "u-boot,env-redundant-count";
+					};
 				};
 			};
 
@@ -130,40 +148,40 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 
-		phy_port1: phy@0 {
+		phy_port1: ethernet-phy@0 {
 			compatible = "ethernet-phy-id004d.d034";
 			reg = <0>;
 		};
 
-		phy_port2: phy@1 {
+		phy_port2: ethernet-phy@1 {
 			compatible = "ethernet-phy-id004d.d034";
 			reg = <1>;
 		};
 
-		phy_port3: phy@2 {
+		phy_port3: ethernet-phy@2 {
 			compatible = "ethernet-phy-id004d.d034";
 			reg = <2>;
 		};
 
-		phy_port4: phy@3 {
+		phy_port4: ethernet-phy@3 {
 			compatible = "ethernet-phy-id004d.d034";
 			reg = <3>;
 		};
 
-		phy_port5: phy@4 {
+		phy_port5: ethernet-phy@4 {
 			compatible = "ethernet-phy-id004d.d034";
 			reg = <4>;
 		};
 
-		switch0@10 {
+		ethernet-switch@10 {
 			compatible = "qca,qca8327";
 			reg = <0x10>;
 
-			ports {
+			ethernet-ports {
 				#address-cells = <1>;
 				#size-cells = <0>;
 
-				port@0 {
+				ethernet-port@0 {
 					reg = <0>;
 					ethernet = <&EMAC0>;
 					phy-mode = "rgmii-id";
@@ -175,10 +193,9 @@
 					};
 				};
 
-				port@1 {
+				ethernet-port@1 {
 					reg = <1>;
 					label = "lan4";
-					phy-mode = "internal";
 					phy-handle = <&phy_port1>;
 
 					leds {
@@ -211,10 +228,9 @@
 					};
 				};
 
-				port@2 {
+				ethernet-port@2 {
 					reg = <2>;
 					label = "lan3";
-					phy-mode = "internal";
 					phy-handle = <&phy_port2>;
 
 					leds {
@@ -247,10 +263,9 @@
 					};
 				};
 
-				port@3 {
+				ethernet-port@3 {
 					reg = <3>;
 					label = "lan2";
-					phy-mode = "internal";
 					phy-handle = <&phy_port3>;
 
 					leds {
@@ -283,10 +298,9 @@
 					};
 				};
 
-				port@4 {
+				ethernet-port@4 {
 					reg = <4>;
 					label = "lan1";
-					phy-mode = "internal";
 					phy-handle = <&phy_port4>;
 
 					leds {
@@ -319,10 +333,9 @@
 					};
 				};
 
-				port@5 {
+				ethernet-port@5 {
 					reg = <5>;
 					label = "wan";
-					phy-mode = "internal";
 					phy-handle = <&phy_port5>;
 					nvmem-cells = <&macaddr_board_66 1>;
 					nvmem-cell-names = "mac-address";

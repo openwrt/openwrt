@@ -7,7 +7,7 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=ltq-deu
-PKG_RELEASE:=45
+PKG_RELEASE:=46
 
 PKG_MAINTAINER:=John Crispin <john@phrozen.org>
 PKG_LICENSE:=GPL-2.0+
@@ -19,7 +19,6 @@ define KernelPackage/ltq-deu-template
   CATEGORY:=Kernel modules
   SUBMENU:=Cryptographic API modules
   TITLE:=deu driver for $(1)
-  URL:=http://www.lantiq.com/
   VARIANT:=$(1)
   DEPENDS:=@$(2) +kmod-crypto-manager +kmod-crypto-des
   FILES:=$(PKG_BUILD_DIR)/ltq_deu_$(1).ko
@@ -36,7 +35,7 @@ endef
 define Build/Compile
 	cd $(LINUX_DIR); \
 		ARCH=mips CROSS_COMPILE="$(KERNEL_CROSS)" \
-		$(MAKE) BUILD_VARIANT=$(BUILD_VARIANT) M=$(PKG_BUILD_DIR) V=1 modules
+		$(MAKE) $(KERNEL_MAKE_FLAGS) BUILD_VARIANT=$(BUILD_VARIANT) M=$(PKG_BUILD_DIR) V=1 modules
 endef
 
 $(eval $(call KernelPackage,ltq-deu-danube))

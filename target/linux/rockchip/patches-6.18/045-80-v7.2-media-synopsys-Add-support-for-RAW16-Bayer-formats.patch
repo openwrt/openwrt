@@ -1,0 +1,44 @@
+From 4a7004c03d2227643c2ef2e546ad173b2b1480b7 Mon Sep 17 00:00:00 2001
+From: Guoniu Zhou <guoniu.zhou@oss.nxp.com>
+Date: Tue, 19 May 2026 10:07:39 +0800
+Subject: [PATCH] media: synopsys: Add support for RAW16 Bayer formats
+
+Add higher bit-depth raw image data support for the sensors, which supports
+16-bit output.
+
+Reviewed-by: Frank Li <Frank.Li@nxp.com>
+Signed-off-by: Guoniu Zhou <guoniu.zhou@oss.nxp.com>
+Signed-off-by: Sakari Ailus <sakari.ailus@linux.intel.com>
+---
+ .../media/platform/synopsys/dw-mipi-csi2rx.c  | 20 +++++++++++++++++++
+ 1 file changed, 20 insertions(+)
+
+--- a/drivers/media/platform/synopsys/dw-mipi-csi2rx.c
++++ b/drivers/media/platform/synopsys/dw-mipi-csi2rx.c
+@@ -252,6 +252,26 @@ static const struct dw_mipi_csi2rx_forma
+ 		.depth = 12,
+ 		.csi_dt = MIPI_CSI2_DT_RAW12,
+ 	},
++	{
++		.code = MEDIA_BUS_FMT_SBGGR16_1X16,
++		.depth = 16,
++		.csi_dt = MIPI_CSI2_DT_RAW16,
++	},
++	{
++		.code = MEDIA_BUS_FMT_SGBRG16_1X16,
++		.depth = 16,
++		.csi_dt = MIPI_CSI2_DT_RAW16,
++	},
++	{
++		.code = MEDIA_BUS_FMT_SGRBG16_1X16,
++		.depth = 16,
++		.csi_dt = MIPI_CSI2_DT_RAW16,
++	},
++	{
++		.code = MEDIA_BUS_FMT_SRGGB16_1X16,
++		.depth = 16,
++		.csi_dt = MIPI_CSI2_DT_RAW16,
++	},
+ };
+ 
+ static inline struct dw_mipi_csi2rx_device *to_csi2(struct v4l2_subdev *sd)

@@ -267,6 +267,11 @@ config BUSYBOX_CONFIG_FEATURE_UPTIME_UTMP_SUPPORT
 	depends on BUSYBOX_CONFIG_UPTIME && BUSYBOX_CONFIG_FEATURE_UTMP
 	help
 	Display the number of users currently logged on.
+config BUSYBOX_CONFIG_VMSTAT
+	bool "vmstat (2 kb)"
+	default BUSYBOX_DEFAULT_VMSTAT
+	help
+	Report virtual memory statistics
 config BUSYBOX_CONFIG_WATCH
 	bool "watch (5.2 kb)"
 	default BUSYBOX_DEFAULT_WATCH

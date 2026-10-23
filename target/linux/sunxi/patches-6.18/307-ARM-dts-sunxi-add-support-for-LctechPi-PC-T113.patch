@@ -1,0 +1,98 @@
+From dbece70e4d86e39e4e384f553eae13d50819dd4b Mon Sep 17 00:00:00 2001
+From: Maksim Kiselev <bigunclemax@gmail.com>
+Date: Fri, 26 Jan 2024 15:36:21 +0300
+Subject: [PATCH] ARM: dts: sunxi: add support for LctechPi PC-T113
+
+Signed-off-by: Maksim Kiselev <bigunclemax@gmail.com>
+---
+ .../sun8i-t113s-lctechpi-pc-t113.dts          | 74 +++++++++++++++++++
+ 1 file changed, 74 insertions(+)
+ create mode 100644 arch/arm/boot/dts/allwinner/sun8i-t113s-lctechpi-pc-t113.dts
+
+--- /dev/null
++++ b/arch/arm/boot/dts/allwinner/sun8i-t113s-lctechpi-pc-t113.dts
+@@ -0,0 +1,74 @@
++// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
++// Copyright (C) 2024 Maksim Kiselev <bigunclemax@gmail.com>.
++
++/dts-v1/;
++
++#include "sun8i-t113s-mangopi-mq-r-t113.dts"
++
++/ {
++	model = "LctechPi PC-T113";
++	compatible = "lctechpi,pc-t113", "allwinner,sun8i-t113s";
++
++	aliases {
++		serial1 = &uart1;
++	};
++
++	chosen {
++		stdout-path = "serial1:115200n8";
++	};
++
++	thermal-zones {
++		cpu_thermal: cpu-thermal {
++			polling-delay-passive = <0>;
++			polling-delay = <0>;
++			thermal-sensors = <&ths 0>;
++
++			trips {
++				cpu_hot_trip: cpu-hot {
++					temperature = <80000>;
++					hysteresis = <2000>;
++					type = "passive";
++				};
++
++				cpu_very_hot_trip: cpu-very-hot {
++					temperature = <115000>;
++					hysteresis = <0>;
++					type = "critical";
++				};
++			};
++		};
++	};
++};
++
++&uart1 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&uart1_pg6_pins>;
++	status = "okay";
++};
++
++&wdt {
++	status = "okay";
++};
++
++&spi0 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&spi0_pins>;
++	status = "okay";
++
++	flash@0 { /* W25Q128JVEI */
++		compatible = "jedec,spi-nor";
++		reg = <0>;
++		spi-max-frequency = <100000000>; /* Up to 133 MHz */
++		spi-tx-bus-width = <1>;
++		spi-rx-bus-width = <1>;
++	};
++
++};
++
++&ths {
++	status = "okay";
++};
++
++&can1 {
++	status = "okay";
++};
+--- a/arch/arm/boot/dts/allwinner/Makefile
++++ b/arch/arm/boot/dts/allwinner/Makefile
+@@ -266,6 +266,7 @@ dtb-$(CONFIG_MACH_SUN8I) += \
+ 	sun8i-t113s-myd-yt113x-emmc.dtb \
+ 	sun8i-t113s-myd-yt113x-spi.dtb \
+ 	sun8i-t113s-rp-t113.dtb \
++	sun8i-t113s-lctechpi-pc-t113.dtb \
+ 	sun8i-t113s-netcube-nagami-basic-carrier.dtb \
+ 	sun8i-t113s-netcube-nagami-keypad-carrier.dtb \
+ 	sun8i-t3-cqa3t-bv3.dtb \

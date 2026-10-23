@@ -67,6 +67,7 @@
 				partition@80000 {
 					reg = <0x80000 0x27c0000>;
 					label = "rootfs";
+					linux,rootfs;
 				};
 
 				partition@2840000 {
@@ -134,36 +135,36 @@
 
 		mdio@24000 {
 
-			phy_port1: phy@0 {
+			phy_port1: ethernet-phy@0 {
 				reg = <0>;
 			};
 
-			phy_port2: phy@1 {
+			phy_port2: ethernet-phy@1 {
 				reg = <1>;
 			};
 
-			phy_port3: phy@2 {
+			phy_port3: ethernet-phy@2 {
 				reg = <2>;
 			};
 
-			phy_port4: phy@3 {
+			phy_port4: ethernet-phy@3 {
 				reg = <3>;
 			};
 
-			phy_port5: phy@4 {
+			phy_port5: ethernet-phy@4 {
 				reg = <4>;
 			};
 
-			switch@10 {
+			ethernet-switch@10 {
 				compatible = "qca,qca8327";
 				reg = <0x10>;
 				reset-gpios = <&gpio0 6 GPIO_ACTIVE_LOW>;
 
-				ports {
+				ethernet-ports {
 					#address-cells = <1>;
 					#size-cells = <0>;
 
-					port@1 {
+					ethernet-port@1 {
 						reg = <1>;
 						label = "lan1";
 						phy-handle = <&phy_port1>;
@@ -171,7 +172,7 @@
 						nvmem-cell-names = "mac-address";
 					};
 
-					port@2 {
+					ethernet-port@2 {
 						reg = <2>;
 						label = "lan2";
 						phy-handle = <&phy_port2>;
@@ -179,7 +180,7 @@
 						nvmem-cell-names = "mac-address";
 					};
 
-					port@3 {
+					ethernet-port@3 {
 						reg = <3>;
 						label = "lan3";
 						phy-handle = <&phy_port3>;
@@ -187,7 +188,7 @@
 						nvmem-cell-names = "mac-address";
 					};
 
-					port@4 {
+					ethernet-port@4 {
 						reg = <4>;
 						label = "lan4";
 						phy-handle = <&phy_port4>;
@@ -195,7 +196,7 @@
 						nvmem-cell-names = "mac-address";
 					};
 
-					port@5 {
+					ethernet-port@5 {
 						reg = <5>;
 						label = "wan";
 						phy-handle = <&phy_port5>;
@@ -203,7 +204,7 @@
 						nvmem-cell-names = "mac-address";
 					};
 
-					port@6 {
+					ethernet-port@6 {
 						reg = <6>;
 						ethernet = <&enet0>;
 						phy-mode = "rgmii-id";
@@ -226,7 +227,6 @@
 		};
 
 		enet0: ethernet@b0000 {
-			status = "okay";
 			phy-connection-type = "rgmii-id";
 			nvmem-cells = <&macaddr_hwinfo_0 0>;
 			nvmem-cell-names = "mac-address";
@@ -259,22 +259,34 @@
 	};
 
 	pci0: pcie@ffe09000 {
+		reg = <0 0xffe09000 0 0x1000>;
+		ranges = <0x2000000 0x0 0xa0000000 0 0xa0000000 0x0 0x20000000>,
+			  <0x1000000 0x0 0x00000000 0 0xffc10000 0x0 0x10000>;
+
 		status = "disabled";
+
+		pcie@0 {
+			ranges = <0x2000000 0x0 0xa0000000
+				  0x2000000 0x0 0xa0000000
+				  0x0 0x20000000>,
+				 <0x1000000 0x0 0x0
+				  0x1000000 0x0 0x0
+				  0x0 0x100000>;
+		};
 	};
 
 	pci1: pcie@ffe0a000 {
 		reg = <0x0 0xffe0a000 0x0 0x1000>;
-		ranges = <0x2000000 0x0 0xc0000000 0x0 0xc0000000 0x0 0x20000000
-				  0x1000000 0x0 0x00000000 0x0 0xffc20000 0x0 0x10000>;
+		ranges = <0x2000000 0x0 0xc0000000 0x0 0xc0000000 0x0 0x20000000>,
+			  <0x1000000 0x0 0x00000000 0x0 0xffc20000 0x0 0x10000>;
 
 		reset-gpios = <&gpio0 15 GPIO_ACTIVE_LOW>;
 
 		pcie@0 {
 			ranges = <0x2000000 0x0 0xc0000000
 				  0x2000000 0x0 0xc0000000
-				  0x0 0x20000000
-
-				  0x1000000 0x0 0x0
+				  0x0 0x20000000>,
+				 <0x1000000 0x0 0x0
 				  0x1000000 0x0 0x0
 				  0x0 0x100000>;
 

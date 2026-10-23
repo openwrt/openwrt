@@ -1,0 +1,11 @@
+--- a/src/Makefile
++++ b/src/Makefile
+@@ -3,7 +3,7 @@ CFLAGS:=-I.
+ OUTDIR:=./
+ 
+ main: main.c
+-	$(CC) -o $(OUTDIR)/ravpower-mcu main.c
++	$(CC) $(CFLAGS) $(CPPFLAGS) $(LDFLAGS) -o $(OUTDIR)/ravpower-mcu main.c
+ 
+ clean:
+ 	rm ravpower-pmic

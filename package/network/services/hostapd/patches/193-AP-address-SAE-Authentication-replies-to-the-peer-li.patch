@@ -1,0 +1,91 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Tue, 4 Aug 2026 19:08:03 +0200
+Subject: [PATCH] AP MLD: Address SAE Authentication frames to the peer link address
+
+The SAE senders address their frames to sta->addr, which for a non-AP
+MLD is the MLD MAC address. Like the Open System reply, the frames then
+go to the old link address of the peer if the driver entry has one, and
+the authentication does not complete.
+
+auth_sae_send_commit() and auth_sae_send_confirm() get no received
+frame, and once the station is added to the driver, the driver
+translates the source address of the peer frames to the MLD MAC
+address. Use the link address that handle_auth() records in
+mld_info.links[].peer_addr for transaction 1, as IEEE Std
+802.11be-2024, 11.3.4.3 requires:
+
+  For a destination MLD, an Authentication frame that is constructed
+  using the appropriate procedure to complete the authentication
+  procedure shall have the Address 1 field equal to the MAC address of
+  the STA affiliated with the originating MLD that sends the
+  Authentication frame with authentication transaction sequence number
+  equal to 1.
+
+handle_auth_cb() finds the station by the same address.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+
+--- a/src/ap/ieee802_11.c
++++ b/src/ap/ieee802_11.c
+@@ -1092,7 +1092,7 @@ static int auth_sae_send_commit(struct h
+ 		status = hapd->conf->sae_commit_status;
+ 	}
+ #endif /* CONFIG_TESTING_OPTIONS */
+-	reply_res = send_auth_reply(hapd, sta, sta->addr,
++	reply_res = send_auth_reply(hapd, sta, ap_sta_link_addr(hapd, sta),
+ 				    WLAN_AUTH_SAE, 1,
+ 				    status, wpabuf_head(data),
+ 				    wpabuf_len(data), "sae-send-commit");
+@@ -1113,7 +1113,7 @@ static int auth_sae_send_confirm(struct
+ 	if (data == NULL)
+ 		return WLAN_STATUS_UNSPECIFIED_FAILURE;
+ 
+-	reply_res = send_auth_reply(hapd, sta, sta->addr,
++	reply_res = send_auth_reply(hapd, sta, ap_sta_link_addr(hapd, sta),
+ 				    WLAN_AUTH_SAE, 2,
+ 				    WLAN_STATUS_SUCCESS, wpabuf_head(data),
+ 				    wpabuf_len(data), "sae-send-confirm");
+@@ -2068,7 +2068,7 @@ reply:
+ 		    !data && end - pos >= 2)
+ 			data = wpabuf_alloc_copy(pos, 2);
+ 
+-		send_auth_reply(hapd, sta, sta->addr,
++		send_auth_reply(hapd, sta, ap_sta_link_addr(hapd, sta),
+ 				WLAN_AUTH_SAE,
+ 				auth_transaction, resp,
+ 				data ? wpabuf_head(data) : (u8 *) "",
+--- a/src/ap/sta_info.c
++++ b/src/ap/sta_info.c
+@@ -95,6 +95,21 @@ struct sta_info * ap_get_link_sta(struct
+ #endif /* CONFIG_IEEE80211BE */
+ 
+ 
++/* The Authentication frames to a non-AP MLD go to the address of its STA on the
++ * link (IEEE Std 802.11be-2024, 11.3.4.3), not to the MLD MAC address. */
++const u8 * ap_sta_link_addr(struct hostapd_data *hapd, struct sta_info *sta)
++{
++#ifdef CONFIG_IEEE80211BE
++	const u8 *link_addr = sta->mld_info.links[hapd->mld_link_id].peer_addr;
++
++	if (ap_sta_is_mld(hapd, sta) && !is_zero_ether_addr(link_addr))
++		return link_addr;
++#endif /* CONFIG_IEEE80211BE */
++
++	return sta->addr;
++}
++
++
+ #ifdef CONFIG_P2P
+ struct sta_info * ap_get_sta_p2p(struct hostapd_data *hapd, const u8 *addr)
+ {
+--- a/src/ap/sta_info.h
++++ b/src/ap/sta_info.h
+@@ -391,6 +391,7 @@ int ap_for_each_sta(struct hostapd_data
+ struct sta_info * ap_get_sta(struct hostapd_data *hapd, const u8 *sta);
+ struct sta_info * ap_get_link_sta(struct hostapd_data *hapd,
+ 				  const u8 *link_addr);
++const u8 * ap_sta_link_addr(struct hostapd_data *hapd, struct sta_info *sta);
+ struct sta_info * ap_get_sta_p2p(struct hostapd_data *hapd, const u8 *addr);
+ void ap_sta_hash_add(struct hostapd_data *hapd, struct sta_info *sta);
+ void ap_free_sta(struct hostapd_data *hapd, struct sta_info *sta);

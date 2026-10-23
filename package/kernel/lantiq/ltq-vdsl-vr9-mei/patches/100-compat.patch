@@ -10,7 +10,7 @@
  
 --- a/src/drv_mei_cpe_linux.h
 +++ b/src/drv_mei_cpe_linux.h
-@@ -60,12 +60,6 @@
+@@ -58,12 +58,6 @@
  #include <linux/poll.h>
  #include <linux/types.h>
  
@@ -54,19 +54,16 @@
  
     return (ret < 0) ? -1 : 0;
  }
-@@ -1479,7 +1485,11 @@ struct proc_entry {
+@@ -1479,7 +1485,7 @@ struct proc_entry {
     char name[32];
     proc_rd_callback_t rd;
     proc_wr_callback_t wr;
-+#if (LINUX_VERSION_CODE < KERNEL_VERSION(5,6,0))
-    struct file_operations ops;
-+#else
+-   struct file_operations ops;
 +   struct proc_ops ops;
-+#endif
     int entity;
  };
  
-@@ -1869,6 +1879,7 @@ static int mei_proc_single_open(struct i
+@@ -1869,6 +1875,7 @@ static int mei_proc_single_open(struct i
  static void mei_proc_entry_create(struct proc_dir_entry *parent_node,
                                    struct proc_entry *proc_entry)
  {
@@ -74,7 +71,7 @@
     memset(&proc_entry->ops, 0, sizeof(struct file_operations));
     proc_entry->ops.owner = THIS_MODULE;
  
-@@ -1879,6 +1890,17 @@ static void mei_proc_entry_create(struct
+@@ -1879,6 +1886,17 @@ static void mei_proc_entry_create(struct
     proc_entry->ops.llseek = seq_lseek;
     if (proc_entry->wr)
        proc_entry->ops.write = proc_entry->wr;
@@ -92,7 +89,7 @@
  
     proc_create_data(proc_entry->name,
                       (S_IFREG | S_IRUGO),
-@@ -2174,9 +2196,11 @@ static int MEI_module_init (void)
+@@ -2174,9 +2192,11 @@ static int MEI_module_init (void)
        return (result);
     }
  
@@ -104,7 +101,7 @@
  
     return 0;
  }
-@@ -2304,6 +2328,10 @@ static void MEI_module_exit (void)
+@@ -2304,6 +2324,10 @@ static void MEI_module_exit (void)
  
  #else
     unregister_chrdev ( major_number , DRV_MEI_NAME );
@@ -115,7 +112,7 @@
  #endif
  
  #if CONFIG_PROC_FS
-@@ -2388,9 +2416,11 @@ static void MEI_module_exit (void)
+@@ -2388,9 +2412,11 @@ static void MEI_module_exit (void)
              ("MEI_DRV: Chipset Basic Exit failed" MEI_DRV_CRLF));
     }
  
@@ -127,18 +124,18 @@
  
  #if (MEI_SUPPORT_DEBUG_LOGGER == 1)
     if (nl_debug_sock)
-@@ -2514,6 +2544,10 @@ static int MEI_InitModuleRegCharDev(cons
+@@ -2514,6 +2540,10 @@ static int MEI_InitModuleRegCharDev(cons
              ("Using major number %d" MEI_DRV_CRLF, major_number));
     }
  
-+   mei_class = class_create(THIS_MODULE, devName);
++   mei_class = class_create(devName);
 +   mei_devt = MKDEV(major_number, 0);
 +   device_create(mei_class, NULL, mei_devt, NULL, "%s/%i", devName, 0);
 +
     return 0;
  #endif      /* CONFIG_DEVFS_FS */
  }
-@@ -2563,21 +2597,32 @@ static int MEI_InitModuleBasics(void)
+@@ -2563,21 +2593,32 @@ static int MEI_InitModuleBasics(void)
  }
  
  #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,10,0))
@@ -171,7 +168,7 @@
  
     return 0;
  }
-@@ -2905,11 +2950,15 @@ IFX_int32_t MEI_IoctlInitDevice(
+@@ -2905,11 +2946,15 @@ IFX_int32_t MEI_IoctlInitDevice(
              pMeiDev->eModePoll = e_MEI_DEV_ACCESS_MODE_IRQ;
              pMeiDev->intMask   = ME_ARC2ME_INTERRUPT_UNMASK_ALL;
  
@@ -187,7 +184,7 @@
  
              pTmpXCntrl = MEI_VrxXDevToIrqListAdd(
                                            MEI_DRV_LINENUM_GET(pMeiDev),
-@@ -3249,9 +3298,11 @@ static int MEI_IoctlMeiDbgAccessWr_Wrap(
+@@ -3249,9 +3294,11 @@ static int MEI_IoctlMeiDbgAccessWr_Wrap(
     ret =  MEI_IoctlMeiDbgAccessWr( pMeiDynCntrl, pLocalArgument);
  
     /* return arguments - count */
@@ -202,7 +199,7 @@
  
     return ret;
  }
-@@ -3278,16 +3329,18 @@ static int MEI_IoctlMeiDbgAccessRd_Wrap(
+@@ -3278,16 +3325,18 @@ static int MEI_IoctlMeiDbgAccessRd_Wrap(
     if ( pLocalArgument->count )
     {
        /* return the buffer */

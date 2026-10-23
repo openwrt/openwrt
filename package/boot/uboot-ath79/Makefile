@@ -1,8 +1,8 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
-PKG_VERSION:=2025.10
-PKG_HASH:=b4f032848e56cc8f213ad59f9132c084dbbb632bc29176d024e58220e0efdf4a
+PKG_VERSION:=2026.04
+PKG_HASH:=ac7c04b8b7004923b00a4e5d6699c5df4d21233bac9fda690d8cfbc209fff2fd
 
 UBOOT_USE_INTREE_DTC:=1
 
@@ -19,10 +19,17 @@ define U-Boot/Default
 endef
 
 define U-Boot/ar9344_nec_aterm
-  NAME:=NEC Aterm series (AR9344)
+  NAME:=NEC Aterm series (AR9344, GbE)
   BUILD_SUBTARGET:= tiny
   BUILD_DEVICES:=nec_wg600hp nec_wr8750n nec_wr9500n
   UBOOT_CONFIG:=nec_ar9344_aterm
+endef
+
+define U-Boot/ar9344_nec_aterm_fe
+  NAME:=NEC Aterm series (AR9344, FE)
+  BUILD_SUBTARGET:= tiny
+  BUILD_DEVICES:=nec_wf1200hp nec_wf1200hp2
+  UBOOT_CONFIG:=nec_ar9344_aterm_fe
 endef
 
 define U-Boot/qca9558_nec_aterm
@@ -32,7 +39,7 @@ define U-Boot/qca9558_nec_aterm
   UBOOT_CONFIG:=nec_qca9558_aterm
 endef
 
-UBOOT_TARGETS := ar9344_nec_aterm qca9558_nec_aterm
+UBOOT_TARGETS := ar9344_nec_aterm ar9344_nec_aterm_fe qca9558_nec_aterm
 
 # don't stage files to bindir, let target/linux/ath79/image/*.mk do that
 define Package/u-boot/install

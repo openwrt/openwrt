@@ -55,6 +55,7 @@
 			color = <LED_COLOR_ID_BLUE>;
 			function = LED_FUNCTION_WLAN;
 			gpios = <&pio 7 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "network";
 		};
 	};
 };
@@ -100,8 +101,8 @@
 		reg = <0>;
 
 		spi-max-frequency = <52000000>;
-		spi-tx-buswidth = <4>;
-		spi-rx-buswidth = <4>;
+		spi-tx-bus-width = <4>;
+		spi-rx-bus-width = <4>;
 
 		spi-cal-enable;
 		spi-cal-mode = "read-data";

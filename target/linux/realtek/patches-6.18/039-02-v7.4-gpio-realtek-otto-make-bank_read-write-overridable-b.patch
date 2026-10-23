@@ -1,0 +1,46 @@
+From 785ec26c37e56ee5f142b6684f7c15c7ca7430a3 Mon Sep 17 00:00:00 2001
+From: Rustam Adilov <adilov@disroot.org>
+Date: Sat, 15 Aug 2026 14:44:51 +0500
+Subject: gpio: realtek-otto: make bank_read/write overridable by endian
+ property
+
+In order to have a working gpio controller with SWAP_IO_SPACE,
+the bank_read/bank_write functions and the gen_gc_flag used for
+gpio_generic_chip_config must be able to be changed to their
+respective counterparts.
+
+To do that, introduce checks for the presence of endian property
+under the device tree node and if so, override what has been
+set by GPIO_PORTS_REVERSED quirk flag. This way, existing device
+trees are kept working as they were originally.
+
+Both big-endian and little-endian properties must be checked
+because there are devices that have GPIO_PORTS_REVERSED flag
+and the others that don't.
+
+Signed-off-by: Rustam Adilov <adilov@disroot.org>
+Link: https://patch.msgid.link/20260815094451.31792-3-adilov@disroot.org
+Signed-off-by: Bartosz Golaszewski <bartosz.golaszewski@oss.qualcomm.com>
+---
+ drivers/gpio/gpio-realtek-otto.c | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
+
+--- a/drivers/gpio/gpio-realtek-otto.c
++++ b/drivers/gpio/gpio-realtek-otto.c
+@@ -405,6 +405,16 @@ static int realtek_gpio_probe(struct pla
+ 		ctrl->line_imr_pos = realtek_gpio_line_imr_pos_swapped;
+ 	}
+ 
++	if (device_property_read_bool(dev, "little-endian")) {
++		gen_gc_flags = 0;
++		ctrl->bank_read = realtek_gpio_bank_read;
++		ctrl->bank_write = realtek_gpio_bank_write;
++	} else if (device_is_big_endian(dev)) {
++		gen_gc_flags = GPIO_GENERIC_BIG_ENDIAN_BYTE_ORDER;
++		ctrl->bank_read = realtek_gpio_bank_read_swapped;
++		ctrl->bank_write = realtek_gpio_bank_write_swapped;
++	}
++
+ 	config = (struct gpio_generic_chip_config) {
+ 		.dev = dev,
+ 		.sz = 4,

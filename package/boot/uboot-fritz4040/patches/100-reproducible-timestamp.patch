@@ -1,0 +1,31 @@
+From: Robert Marko <robimarko@gmail.com>
+Subject: [PATCH] Make U-Boot timestamp reproducible
+
+Use SOURCE_DATE_EPOCH when it is set to avoid embedding the current date
+and time in the generated U-Boot binary.
+
+Signed-off-by: Robert Marko <robimarko@gmail.com>
+---
+ Makefile | 9 +++++++--
+ 1 file changed, 7 insertions(+), 2 deletions(-)
+
+--- a/Makefile
++++ b/Makefile
+@@ -684,10 +684,15 @@ $(VERSION_FILE):
+ 		 '$(shell $(LD) -v | head -n 1)' )>>  $@.tmp
+ 		@cmp -s $@ $@.tmp && rm -f $@.tmp || mv -f $@.tmp $@
+ 
++TIMESTAMP_DATE = date
++ifneq ($(SOURCE_DATE_EPOCH),)
++TIMESTAMP_DATE = date -u -d "@$(SOURCE_DATE_EPOCH)"
++endif
++
+ $(TIMESTAMP_FILE):
+ 		@mkdir -p $(dir $(TIMESTAMP_FILE))
+-		@LC_ALL=C date +'#define U_BOOT_DATE "%b %d %C%y"' > $@.tmp
+-		@LC_ALL=C date +'#define U_BOOT_TIME "%T"' >> $@.tmp
++		@LC_ALL=C $(TIMESTAMP_DATE) +'#define U_BOOT_DATE "%b %d %C%y"' > $@.tmp
++		@LC_ALL=C $(TIMESTAMP_DATE) +'#define U_BOOT_TIME "%T"' >> $@.tmp
+ 		@cmp -s $@ $@.tmp && rm -f $@.tmp || mv -f $@.tmp $@
+ 
+ easylogo env gdb:

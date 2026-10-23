@@ -9,7 +9,6 @@
 	model = "Zyxel NBG6716";
 
 	aliases {
-		label-mac-device = &wmac;
 		led-boot = &led_power;
 		led-failsafe = &led_power;
 		led-running = &led_power;
@@ -42,12 +41,6 @@
 			gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
 			linux,default-trigger = "usbport";
 			trigger-sources = <&hub_port0>;
-		};
-
-		wifi2g {
-			label = "white:wifi2g";
-			gpios = <&gpio 19 GPIO_ACTIVE_LOW>;
-			linux,default-trigger = "phy1tpt";
 		};
 
 		wifi5g {
@@ -197,5 +190,12 @@
 		nvmem-cells = <&cal_art_5000>, <&macaddr_uboot_ethaddr 1>;
 		nvmem-cell-names = "calibration", "mac-address";
 		qcom,ath10k-calibration-variant = "ZyXEL-NBG6716";
+	};
+};
+
+&wmac {
+	led {
+		led-sources = <19>;
+		led-active-low;
 	};
 };

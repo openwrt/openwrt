@@ -19,7 +19,6 @@ case "$(board_name)" in
 	nec,wg2600hp|\
 	nec,wg2600hp3|\
 	netgear,d7800|\
-	netgear,r7500|\
 	netgear,r7500v2|\
 	netgear,r7800|\
 	netgear,xr450|\
@@ -34,6 +33,9 @@ case "$(board_name)" in
 	tplink,vr2600v|\
 	zyxel,nbg6817)
 		ucidef_set_compat_version "1.1"
+		;;
+	netgear,r7500)
+		ucidef_set_compat_version "2.0"
 		;;
 	linksys,ea7500-v1|\
 	linksys,ea8500)

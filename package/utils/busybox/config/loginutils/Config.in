@@ -92,6 +92,17 @@ config BUSYBOX_CONFIG_USE_BB_CRYPT_SHA
 	With this option off, login will fail password check for any
 	user which has password encrypted with these algorithms.
 
+config BUSYBOX_CONFIG_USE_BB_CRYPT_YES
+	bool "Enable yescrypt functions"
+	default BUSYBOX_DEFAULT_USE_BB_CRYPT_YES
+	depends on BUSYBOX_CONFIG_USE_BB_CRYPT
+	help
+	Enable this if you have passwords starting with "$y$" or
+	in your /etc/passwd or /etc/shadow files. These passwords
+	are hashed using yescrypt algorithms.
+	With this option off, login will fail password check for any
+	user which has password encrypted with these algorithms.
+
 config BUSYBOX_CONFIG_ADD_SHELL
 	bool "add-shell (3.3 kb)"
 	default BUSYBOX_DEFAULT_ADD_SHELL if BUSYBOX_CONFIG_DESKTOP
@@ -171,7 +182,7 @@ config BUSYBOX_CONFIG_FEATURE_DEFAULT_PASSWD_ALGO
 	default BUSYBOX_DEFAULT_FEATURE_DEFAULT_PASSWD_ALGO
 	depends on BUSYBOX_CONFIG_PASSWD || BUSYBOX_CONFIG_CRYPTPW || BUSYBOX_CONFIG_CHPASSWD
 	help
-	Possible choices are "d[es]", "m[d5]", "s[ha256]" or "sha512".
+	Possible choices: "d[es]", "m[d5]", "s[ha256]", "sha512", "yescrypt"
 config BUSYBOX_CONFIG_CRYPTPW
 	bool "cryptpw (15 kb)"
 	default BUSYBOX_DEFAULT_CRYPTPW

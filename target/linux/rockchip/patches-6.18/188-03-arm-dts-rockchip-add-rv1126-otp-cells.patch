@@ -1,0 +1,97 @@
+From b2afe83ad45db8de534bca7d9383df2b0b9209b4 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Mon, 19 Oct 2026 20:50:24 +0100
+Subject: [PATCH 3/3] ARM: dts: rockchip: Add RV1126 OTP cells
+
+Describe the RV1126 OTP controller and its fixed layout. Label the
+identity, leakage, performance-bin and temperature-trim cells at the
+offsets used by the vendor device tree.
+
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ arch/arm/boot/dts/rockchip/rv1126.dtsi | 74 ++++++++++++++++++++++++++
+ 1 file changed, 74 insertions(+)
+
+--- a/arch/arm/boot/dts/rockchip/rv1126.dtsi
++++ b/arch/arm/boot/dts/rockchip/rv1126.dtsi
+@@ -1002,6 +1002,80 @@
+ 		status = "disabled";
+ 	};
+ 
++	otp: otp@ff5c0000 {
++		compatible = "rockchip,rv1126-otp";
++		reg = <0xff5c0000 0x1000>;
++		clocks = <&cru CLK_OTP>, <&cru PCLK_OTP>;
++		clock-names = "otp", "apb_pclk";
++
++		nvmem-layout {
++			compatible = "fixed-layout";
++			#address-cells = <1>;
++			#size-cells = <1>;
++
++			otp_cpu_code: cpu-code@2 {
++				reg = <0x02 0x2>;
++			};
++
++			otp_id: id@7 {
++				reg = <0x07 0x10>;
++			};
++
++			cpu_leakage: cpu-leakage@17 {
++				reg = <0x17 0x1>;
++			};
++
++			logic_leakage: logic-leakage@18 {
++				reg = <0x18 0x1>;
++			};
++
++			npu_leakage: npu-leakage@19 {
++				reg = <0x19 0x1>;
++			};
++
++			venc_leakage: venc-leakage@1a {
++				reg = <0x1a 0x1>;
++			};
++
++			cpu_performance: cpu-performance@1e {
++				reg = <0x1e 0x1>;
++				bits = <4 3>;
++			};
++
++			npu_performance: npu-performance@1f,0 {
++				reg = <0x1f 0x1>;
++				bits = <0 2>;
++			};
++
++			venc_performance: venc-performance@1f,2 {
++				reg = <0x1f 0x1>;
++				bits = <2 2>;
++			};
++
++			cpu_tsadc_trim_l: cpu-tsadc-trim-l@23 {
++				reg = <0x23 0x1>;
++			};
++
++			cpu_tsadc_trim_h: cpu-tsadc-trim-h@24 {
++				reg = <0x24 0x1>;
++				bits = <0 4>;
++			};
++
++			npu_tsadc_trim_l: npu-tsadc-trim-l@25 {
++				reg = <0x25 0x1>;
++			};
++
++			npu_tsadc_trim_h: npu-tsadc-trim-h@26 {
++				reg = <0x26 0x1>;
++				bits = <0 4>;
++			};
++
++			tsadc_trim_base: tsadc-trim-base@27 {
++				reg = <0x27 0x1>;
++			};
++		};
++	};
++
+ 	saradc: adc@ff5e0000 {
+ 		compatible = "rockchip,rv1126-saradc", "rockchip,rk3399-saradc";
+ 		reg = <0xff5e0000 0x100>;

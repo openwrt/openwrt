@@ -1,0 +1,99 @@
+From 0572555dab1d1e10b5f7351a005ec588cab41e25 Mon Sep 17 00:00:00 2001
+From: Rich Felker <dalias@aerifal.cx>
+Date: Sun, 22 Mar 2026 21:32:35 -0400
+Subject: [PATCH] fix incorrect access to tzname[] by strptime %Z conversion
+ specifier
+
+there are three issues here:
+
+1. if tzset has not been called (explicitly or implicitly), the
+tzname[] array will contain null pointers, and the dereference to
+compare against them has undefined behavior (and will fault).
+
+2. access to tzname[] was performed without the timezone lock held.
+this resulted in a data race if the timezone is concurrently changed
+from another thread.
+
+3. due to unintended signedness of the types, the open-coded isalpha
+in the non-matching case was wrong and would continue past null
+termination.
+
+to fix the first two issues, the body of the %Z conversion is moved to
+__tz.c where it has access to locking, and null checks are added.
+
+there is probably an argument to be made that the equivalent of tzset
+should happen here, but POSIX does not specify that to happen, so in
+the absence of an interpretation adding such an allowance or
+requirement, it is not done.
+
+the third issue is fixed just by using the existing isalpha macro.
+---
+ src/time/__tz.c      | 19 +++++++++++++++++++
+ src/time/strptime.c  | 13 +++----------
+ src/time/time_impl.h |  1 +
+ 3 files changed, 23 insertions(+), 10 deletions(-)
+
+--- a/src/time/__tz.c
++++ b/src/time/__tz.c
+@@ -436,3 +436,22 @@ const char *__tm_to_tzname(const struct
+ 	UNLOCK(lock);
+ 	return p;
+ }
++
++int __tzname_to_isdst(const char *restrict *s)
++{
++	size_t len;
++	int isdst = -1;
++	LOCK(lock);
++	if (tzname[0] && !strncmp(*s, tzname[0], len = strlen(tzname[0]))) {
++		isdst = 0;
++		*s += len;
++	} else if (tzname[1] && !strncmp(*s, tzname[1], len=strlen(tzname[1]))) {
++		isdst = 1;
++		*s += len;
++	} else {
++		/* FIXME: is this supposed to be an error? */
++		while (isalpha(**s)) ++*s;
++	}
++	UNLOCK(lock);
++	return isdst;
++}
+--- a/src/time/strptime.c
++++ b/src/time/strptime.c
+@@ -5,6 +5,7 @@
+ #include <stddef.h>
+ #include <string.h>
+ #include <strings.h>
++#include "time_impl.h"
+ 
+ char *strptime(const char *restrict s, const char *restrict f, struct tm *restrict tm)
+ {
+@@ -207,16 +208,8 @@ char *strptime(const char *restrict s, c
+ 			s += 5;
+ 			break;
+ 		case 'Z':
+-			if (!strncmp(s, tzname[0], len = strlen(tzname[0]))) {
+-				tm->tm_isdst = 0;
+-				s += len;
+-			} else if (!strncmp(s, tzname[1], len=strlen(tzname[1]))) {
+-				tm->tm_isdst = 1;
+-				s += len;
+-			} else {
+-				/* FIXME: is this supposed to be an error? */
+-				while ((*s|32)-'a' <= 'z'-'a') s++;
+-			}
++			i = __tzname_to_isdst(&s);
++			if (i>=0) tm->tm_isdst = i;
+ 			break;
+ 		case '%':
+ 			if (*s++ != '%') return 0;
+--- a/src/time/time_impl.h
++++ b/src/time/time_impl.h
+@@ -5,6 +5,7 @@ hidden int __month_to_secs(int, int);
+ hidden long long __year_to_secs(long long, int *);
+ hidden long long __tm_to_secs(const struct tm *);
+ hidden const char *__tm_to_tzname(const struct tm *);
++hidden int __tzname_to_isdst(const char *restrict *);
+ hidden int __secs_to_tm(long long, struct tm *);
+ hidden void __secs_to_zone(long long, int, int *, long *, long *, const char **);
+ hidden const char *__strftime_fmt_1(char (*)[100], size_t *, int, const struct tm *, locale_t, int);

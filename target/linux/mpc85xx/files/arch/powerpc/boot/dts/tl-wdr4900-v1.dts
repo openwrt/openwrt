@@ -119,6 +119,8 @@
 			phy_type = "utmi";
 			dr_mode = "host";
 
+			vbus-supply = <&reg_power_usb>;
+
 			port@1 {
 				#address-cells = <1>;
 				#size-cells = <0>;
@@ -139,35 +141,35 @@
 
 		mdio@24000 {
 
-			phy_port1: phy@0 {
+			phy_port1: ethernet-phy@0 {
 				reg = <0>;
 			};
 
-			phy_port2: phy@1 {
+			phy_port2: ethernet-phy@1 {
 				reg = <1>;
 			};
 
-			phy_port3: phy@2 {
+			phy_port3: ethernet-phy@2 {
 				reg = <2>;
 			};
 
-			phy_port4: phy@3 {
+			phy_port4: ethernet-phy@3 {
 				reg = <3>;
 			};
 
-			phy_port5: phy@4 {
+			phy_port5: ethernet-phy@4 {
 				reg = <4>;
 			};
 
-			switch@10 {
+			ethernet-switch@10 {
 				compatible = "qca,qca8327";
 				reg = <0x10>;
 
-				ports {
+				ethernet-ports {
 					#address-cells = <1>;
 					#size-cells = <0>;
 
-					port@0 {
+					ethernet-port@0 {
 						reg = <0>;
 						ethernet = <&enet0>;
 						phy-mode = "rgmii-id";
@@ -178,7 +180,7 @@
 						};
 					};
 
-					port@1 {
+					ethernet-port@1 {
 						reg = <1>;
 						label = "wan";
 						phy-handle = <&phy_port1>;
@@ -199,7 +201,7 @@
 						};
 					};
 
-					port@2 {
+					ethernet-port@2 {
 						reg = <2>;
 						label = "lan1";
 						phy-handle = <&phy_port2>;
@@ -217,7 +219,7 @@
 						};
 					};
 
-					port@3 {
+					ethernet-port@3 {
 						reg = <3>;
 						label = "lan2";
 						phy-handle = <&phy_port3>;
@@ -235,7 +237,7 @@
 						};
 					};
 
-					port@4 {
+					ethernet-port@4 {
 						reg = <4>;
 						label = "lan3";
 						phy-handle = <&phy_port4>;
@@ -253,7 +255,7 @@
 						};
 					};
 
-					port@5 {
+					ethernet-port@5 {
 						reg = <5>;
 						label = "lan4";
 						phy-handle = <&phy_port5>;
@@ -333,14 +335,13 @@
 
 	pci0: pcie@ffe09000 {
 		reg = <0 0xffe09000 0 0x1000>;
-		ranges = <0x2000000 0x0 0xa0000000 0 0xa0000000 0x0 0x20000000
-			  0x1000000 0x0 0x00000000 0 0xffc10000 0x0 0x10000>;
+		ranges = <0x2000000 0x0 0xa0000000 0 0xa0000000 0x0 0x20000000>,
+			  <0x1000000 0x0 0x00000000 0 0xffc10000 0x0 0x10000>;
 		pcie@0 {
 			ranges = <0x2000000 0x0 0xa0000000
 				  0x2000000 0x0 0xa0000000
-				  0x0 0x20000000
-
-				  0x1000000 0x0 0x0
+				  0x0 0x20000000>,
+				 <0x1000000 0x0 0x0
 				  0x1000000 0x0 0x0
 				  0x0 0x100000>;
 
@@ -357,14 +358,13 @@
 
 	pci1: pcie@ffe0a000 {
 		reg = <0 0xffe0a000 0 0x1000>;
-		ranges = <0x2000000 0x0 0x80000000 0 0x80000000 0x0 0x20000000
-			  0x1000000 0x0 0x00000000 0 0xffc00000 0x0 0x10000>;
+		ranges = <0x2000000 0x0 0x80000000 0 0x80000000 0x0 0x20000000>,
+			  <0x1000000 0x0 0x00000000 0 0xffc00000 0x0 0x10000>;
 		pcie@0 {
 			ranges = <0x2000000 0x0 0x80000000
 				  0x2000000 0x0 0x80000000
-				  0x0 0x20000000
-
-				  0x1000000 0x0 0x0
+				  0x0 0x20000000>,
+				 <0x1000000 0x0 0x0
 				  0x1000000 0x0 0x0
 				  0x0 0x100000>;
 
@@ -391,6 +391,8 @@
 	};
 
 	ifc: ifc@ffe1e000 {
+		reg = <0x0 0xffe1e000 0 0x2000>;
+
 		status = "disabled";
 	};
 
@@ -435,15 +437,15 @@
 		};
 	};
 
-	gpio_export {
-			compatible = "gpio-export";
-
-			usb-pwr {
-				gpio-export,name = "usb_pwr";
-				gpio-export,output = <1>;
-				gpios = <&gpio0 10 GPIO_ACTIVE_LOW>;
-			};
-		};
+	reg_power_usb: regulator {
+		compatible = "regulator-fixed";
+		regulator-name = "power_usb";
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		gpios = <&gpio0 10 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+		regulator-boot-on;
+	};
 
 	buttons {
 		compatible = "gpio-keys";
@@ -458,6 +460,8 @@
 			label = "RFKILL switch";
 			gpios = <&gpio0 11 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RFKILL>;
+			linux,input-type = <EV_SW>;
+			debounce-interval = <60>;
 		};
 	};
 };

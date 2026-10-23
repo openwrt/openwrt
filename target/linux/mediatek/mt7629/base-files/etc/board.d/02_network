@@ -29,11 +29,6 @@ mediatek_setup_macs()
 	local board="$1"
 
 	case $board in
-	linksys,ea7500-v3)
-		lan_mac=$(mtd_get_mac_ascii devinfo hw_mac_addr)
-		wan_mac=$lan_mac
-		label_mac=$lan_mac
-		;;
 	netgear,ex6250-v2)
 		lan_mac=$(mtd_get_mac_ascii Config mac)
 		label_mac=$lan_mac

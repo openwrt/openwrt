@@ -7,12 +7,12 @@ include $(TOPDIR)/rules.mk
 ARCH:=arm
 BOARD:=omap
 BOARDNAME:=TI OMAP3/4/AM33xx
-FEATURES:=usb usbgadget ext4 targz fpu audio display nand rootfs-part squashfs
+FEATURES:=usb usbgadget ext4 legacy-sdcard targz fpu nand rootfs-part squashfs
 CPU_TYPE:=cortex-a8
 CPU_SUBTYPE:=vfpv3
 SUBTARGETS:=generic
 
-KERNEL_PATCHVER:=6.12
+KERNEL_PATCHVER:=6.18
 
 KERNELNAME:=zImage dtbs
 
@@ -22,6 +22,6 @@ endef
 
 include $(INCLUDE_DIR)/target.mk
 
-DEFAULT_PACKAGES += partx-utils mkf2fs e2fsprogs
+DEFAULT_PACKAGES += mkf2fs e2fsprogs
 
 $(eval $(call BuildTarget))

@@ -16,4 +16,10 @@ case "$board" in
 		[ "$PHYNBR" -eq 0 ] && \
 			mtd_get_mac_ascii "nvram" "lan_mac" > /sys${DEVPATH}/macaddress
 		;;
+	sitecom,wlr-7100)
+		[ "$PHYNBR" -eq 0 ] && \
+			macaddr_add "$(mtd_get_mac_ascii u-boot-env ethaddr)" 1 > /sys${DEVPATH}/macaddress
+		[ "$PHYNBR" -eq 1 ] && \
+			macaddr_add "$(mtd_get_mac_ascii u-boot-env ethaddr)" > /sys${DEVPATH}/macaddress
+		;;
 esac

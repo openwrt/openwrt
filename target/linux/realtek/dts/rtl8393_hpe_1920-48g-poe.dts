@@ -90,20 +90,40 @@
 	};
 };
 
-&mdio_bus0 {
-	EXTERNAL_SFP_PHY_FULL(48, 0)
-	EXTERNAL_SFP_PHY_FULL(49, 1)
-	EXTERNAL_SFP_PHY_FULL(50, 2)
-	EXTERNAL_SFP_PHY_FULL(51, 3)
+&mdio_bus1 {
+	PHY_C22_SFP(48, 24, 0)
+	PHY_C22_SFP(49, 25, 1)
+	PHY_C22_SFP(50, 26, 2)
+	PHY_C22_SFP(51, 27, 3)
 };
 
 &switch0 {
-	ports {
-		SWITCH_PORT(48, 49, qsgmii)
-		SWITCH_PORT(49, 50, qsgmii)
-		SWITCH_PORT(50, 51, qsgmii)
-		SWITCH_PORT(51, 52, qsgmii)
+	ethernet-ports {
+		SWITCH_PORT_SDS(48, 49, 12, 0, qsgmii)
+		SWITCH_PORT_SDS(49, 50, 12, 1, qsgmii)
+		SWITCH_PORT_SDS(50, 51, 12, 2, qsgmii)
+		SWITCH_PORT_SDS(51, 52, 12, 3, qsgmii)
 	};
+};
+
+&port48 {
+	nvmem-cells = <&macaddr_factory 50>;
+	nvmem-cell-names = "mac-address";
+};
+
+&port49 {
+	nvmem-cells = <&macaddr_factory 51>;
+	nvmem-cell-names = "mac-address";
+};
+
+&port50 {
+	nvmem-cells = <&macaddr_factory 52>;
+	nvmem-cell-names = "mac-address";
+};
+
+&port51 {
+	nvmem-cells = <&macaddr_factory 53>;
+	nvmem-cell-names = "mac-address";
 };
 
 &uart1 {

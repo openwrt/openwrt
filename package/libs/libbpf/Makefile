@@ -8,11 +8,11 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=libbpf
-PKG_VERSION:=1.6.2
+PKG_VERSION:=1.8.0
 PKG_RELEASE:=1
 
 PKG_SOURCE_URL:=https://github.com/libbpf/libbpf
-PKG_MIRROR_HASH:=9620f45b4fc0ee5e0f43502634fe48fbcb34ab49d2553b7275fa92f7e02d3dc7
+PKG_MIRROR_HASH:=35da9d3914234b82f80dd4da55325631ac9f3243b726b3a1c3e9437e716a33f0
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_VERSION:=v$(PKG_VERSION)
 PKG_ABI_VERSION:=$(firstword $(subst .,$(space),$(PKG_VERSION)))
@@ -33,7 +33,7 @@ define Package/libbpf
   TITLE:=libbpf - eBPF helper library
   LICENSE:=LGPL-2.1 OR BSD-2-Clause
   ABI_VERSION:=$(PKG_ABI_VERSION)
-  URL:=http://www.kernel.org
+  URL:=https://www.kernel.org
   DEPENDS:=+libelf
 endef
 

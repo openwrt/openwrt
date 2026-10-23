@@ -1,0 +1,120 @@
+From e309fa232d12b969afac43a4b7d83dee025cfe63 Mon Sep 17 00:00:00 2001
+From: Frank Wunderlich <frank-w@public-files.de>
+Date: Sun, 12 Apr 2026 11:23:32 +0200
+Subject: arm64: dts: mediatek: mt7988a-bpi-r4pro: rework pcie gpio-hog
+ handling
+
+The active-high property in base-dt cannot be overwritten and must be
+set in separate overlay.
+
+Fixes: f397471a6a8c ("arm64: dts: mediatek: mt7988: Add devicetree for BananaPi R4 Pro")
+Signed-off-by: Frank Wunderlich <frank-w@public-files.de>
+Signed-off-by: AngeloGioacchino Del Regno <angelogioacchino.delregno@collabora.com>
+---
+ arch/arm64/boot/dts/mediatek/Makefile                |  8 ++++++++
+ .../mediatek/mt7988a-bananapi-bpi-r4-pro-cn13.dtso   | 20 ++++++++++++++++++++
+ .../mediatek/mt7988a-bananapi-bpi-r4-pro-cn14.dtso   | 20 ++++++++++++++++++++
+ .../dts/mediatek/mt7988a-bananapi-bpi-r4-pro.dtsi    |  2 --
+ 4 files changed, 48 insertions(+), 2 deletions(-)
+ create mode 100644 arch/arm64/boot/dts/mediatek/mt7988a-bananapi-bpi-r4-pro-cn13.dtso
+ create mode 100644 arch/arm64/boot/dts/mediatek/mt7988a-bananapi-bpi-r4-pro-cn14.dtso
+
+--- a/arch/arm64/boot/dts/mediatek/Makefile
++++ b/arch/arm64/boot/dts/mediatek/Makefile
+@@ -26,6 +26,8 @@ dtb-$(CONFIG_ARCH_MEDIATEK) += mt7988a-b
+ dtb-$(CONFIG_ARCH_MEDIATEK) += mt7988a-bananapi-bpi-r4-emmc.dtbo
+ dtb-$(CONFIG_ARCH_MEDIATEK) += mt7988a-bananapi-bpi-r4-pro-4e.dtb
+ dtb-$(CONFIG_ARCH_MEDIATEK) += mt7988a-bananapi-bpi-r4-pro-8x.dtb
++dtb-$(CONFIG_ARCH_MEDIATEK) += mt7988a-bananapi-bpi-r4-pro-cn13.dtbo
++dtb-$(CONFIG_ARCH_MEDIATEK) += mt7988a-bananapi-bpi-r4-pro-cn14.dtbo
+ dtb-$(CONFIG_ARCH_MEDIATEK) += mt7988a-bananapi-bpi-r4-pro-cn15.dtbo
+ dtb-$(CONFIG_ARCH_MEDIATEK) += mt7988a-bananapi-bpi-r4-pro-cn18.dtbo
+ dtb-$(CONFIG_ARCH_MEDIATEK) += mt7988a-bananapi-bpi-r4-pro-emmc.dtbo
+@@ -49,18 +51,24 @@ mt7988a-bananapi-bpi-r4-2g5-sd-dtbs := \
+ dtb-$(CONFIG_ARCH_MEDIATEK) += mt7988a-bananapi-bpi-r4-2g5-sd.dtb
+ mt7988a-bananapi-bpi-r4-pro-8x-emmc-dtbs := \
+ 	mt7988a-bananapi-bpi-r4-pro-8x.dtb \
++	mt7988a-bananapi-bpi-r4-pro-cn13.dtbo \
++	mt7988a-bananapi-bpi-r4-pro-cn14.dtbo \
+ 	mt7988a-bananapi-bpi-r4-pro-emmc.dtbo
+ dtb-$(CONFIG_ARCH_MEDIATEK) += mt7988a-bananapi-bpi-r4-pro-8x-emmc.dtb
+ mt7988a-bananapi-bpi-r4-pro-8x-sd-dtbs := \
+ 	mt7988a-bananapi-bpi-r4-pro-8x.dtb \
++	mt7988a-bananapi-bpi-r4-pro-cn13.dtbo \
++	mt7988a-bananapi-bpi-r4-pro-cn14.dtbo \
+ 	mt7988a-bananapi-bpi-r4-pro-sd.dtbo
+ dtb-$(CONFIG_ARCH_MEDIATEK) += mt7988a-bananapi-bpi-r4-pro-8x-sd.dtb
+ mt7988a-bananapi-bpi-r4-pro-8x-sd-cn15-dtbs := \
+ 	mt7988a-bananapi-bpi-r4-pro-8x-sd.dtb \
++	mt7988a-bananapi-bpi-r4-pro-cn14.dtbo \
+ 	mt7988a-bananapi-bpi-r4-pro-cn15.dtbo
+ dtb-$(CONFIG_ARCH_MEDIATEK) += mt7988a-bananapi-bpi-r4-pro-8x-sd-cn15.dtb
+ mt7988a-bananapi-bpi-r4-pro-8x-sd-cn18-dtbs := \
+ 	mt7988a-bananapi-bpi-r4-pro-8x-sd.dtb \
++	mt7988a-bananapi-bpi-r4-pro-cn13.dtbo \
+ 	mt7988a-bananapi-bpi-r4-pro-cn18.dtbo
+ dtb-$(CONFIG_ARCH_MEDIATEK) += mt7988a-bananapi-bpi-r4-pro-8x-sd-cn18.dtb
+ dtb-$(CONFIG_ARCH_MEDIATEK) += mt8167-pumpkin.dtb
+--- /dev/null
++++ b/arch/arm64/boot/dts/mediatek/mt7988a-bananapi-bpi-r4-pro-cn13.dtso
+@@ -0,0 +1,20 @@
++// SPDX-License-Identifier: (GPL-2.0 OR MIT)
++/*
++ * Copyright (C) 2025 MediaTek Inc.
++ * Author: Frank Wunderlich <frank-w@public-files.de>
++ */
++
++/* This enables key-m slot CN13 on pcie2(11280000 1L0) on BPI-R4-Pro */
++
++/dts-v1/;
++/plugin/;
++
++#include <dt-bindings/gpio/gpio.h>
++
++/ {
++	compatible = "bananapi,bpi-r4-pro", "mediatek,mt7988a";
++};
++
++&{/soc/pinctrl@1001f000/pcie-2-hog} {
++	output-high;
++};
+--- /dev/null
++++ b/arch/arm64/boot/dts/mediatek/mt7988a-bananapi-bpi-r4-pro-cn14.dtso
+@@ -0,0 +1,20 @@
++// SPDX-License-Identifier: (GPL-2.0 OR MIT)
++/*
++ * Copyright (C) 2025 MediaTek Inc.
++ * Author: Frank Wunderlich <frank-w@public-files.de>
++ */
++
++/* This enables key-m slot CN14 on pcie3(11290000 1L1) on BPI-R4-Pro */
++
++/dts-v1/;
++/plugin/;
++
++#include <dt-bindings/gpio/gpio.h>
++
++/ {
++	compatible = "bananapi,bpi-r4-pro", "mediatek,mt7988a";
++};
++
++&{/soc/pinctrl@1001f000/pcie-3-hog} {
++	output-high;
++};
+--- a/arch/arm64/boot/dts/mediatek/mt7988a-bananapi-bpi-r4-pro.dtsi
++++ b/arch/arm64/boot/dts/mediatek/mt7988a-bananapi-bpi-r4-pro.dtsi
+@@ -430,14 +430,12 @@
+ 	pcie-2-hog {
+ 		gpio-hog;
+ 		gpios = <79 GPIO_ACTIVE_HIGH>;
+-		output-high;
+ 	};
+ 
+ 	/* 1L1 0=key-b (CN18), 1=key-m (CN14) */
+ 	pcie-3-hog {
+ 		gpio-hog;
+ 		gpios = <63 GPIO_ACTIVE_HIGH>;
+-		output-high;
+ 	};
+ 
+ 	pwm0_pins: pwm0-pins {

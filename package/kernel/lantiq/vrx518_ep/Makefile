@@ -10,7 +10,7 @@ include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=vrx518_ep
 PKG_VERSION:=2.1.0
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 PKG_LICENSE:=GPL-2.0
 
 include $(INCLUDE_DIR)/package.mk
@@ -47,7 +47,7 @@ EXTRA_CFLAGS:= \
 define Build/Compile
 	$(KERNEL_MAKE) \
 		M="$(PKG_BUILD_DIR)" \
-		EXTRA_CFLAGS="$(EXTRA_CFLAGS)" \
+		ccflags-y="$(EXTRA_CFLAGS)" \
 		$(EXTRA_KCONFIG) \
 		modules
 endef

@@ -12,7 +12,7 @@ PKG_VERSION:=1.3
 PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_SOURCE_URL:=http://www.lysator.liu.se/~nisse/misc/
+PKG_SOURCE_URL:=https://www.lysator.liu.se/~nisse/misc/
 PKG_HASH:=dec79694da1319acd2238ce95df57f3680fea2482096e483323fddf3d818d8be
 PKG_MAINTAINER:=Ted Hess <thess@kitschensync.net>
 
@@ -28,7 +28,7 @@ define Package/argp-standalone
   SECTION:=libs
   CATEGORY:=Libraries
   TITLE:=Hierarchial argument parsing broken out from glibc
-  URL:=http://www.lysator.liu.se/~nisse/misc/
+  URL:=https://www.lysator.liu.se/~nisse/misc/
 endef
 
 define Package/argp-standalone/description

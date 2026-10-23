@@ -94,7 +94,7 @@
 
 &eth {
 	pinctrl-names = "default";
-	pinctrl-0 = <&mdio_pins &gbe_led0_pins>;
+	pinctrl-0 = <&mdio_pins>;
 
 	status = "okay";
 
@@ -205,7 +205,7 @@
 				reg = <0x100000 0x80000>;
 			};
 
-			factory: partition@180000 {
+			partition@180000 {
 				label = "Factory";
 				reg = <0x180000 0x200000>;
 				read-only;
@@ -253,6 +253,8 @@
 	status = "okay";
 	nvmem-cell-names = "eeprom";
 	nvmem-cells = <&eeprom_factory_0>;
+	#address-cells = <1>;
+	#size-cells = <0>;
 
 	band@0 {
 		reg = <0>;

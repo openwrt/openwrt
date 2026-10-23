@@ -1,0 +1,24 @@
+From 84fc59c0d5285a0a0fe50e3cb2a85f6224362c55 Mon Sep 17 00:00:00 2001
+From: Jonas Jelonek <jelonek.jonas@gmail.com>
+Date: Sun, 10 Nov 2024 00:43:23 +0000
+Subject: [PATCH] mediatek: filogic: bpi-r3: set netdev-name for sfp1 port
+
+Sets openwrt,netdev-name for the gmac1 node in the dts of BPI-R3, which
+corresponds to the sfp1 slot, to have a proper naming and match the
+label on the official BPI-R3 metal case. This renames the port from eth1
+to sfp1.
+The COMPAT_VERSION is increased to denote that configuration has to be
+adjusted manually.
+
+Signed-off-by: Jonas Jelonek <jelonek.jonas@gmail.com>
+---
+--- a/arch/arm64/boot/dts/mediatek/mt7986a-bananapi-bpi-r3.dts
++++ b/arch/arm64/boot/dts/mediatek/mt7986a-bananapi-bpi-r3.dts
+@@ -191,6 +191,7 @@
+ 		phy-mode = "2500base-x";
+ 		sfp = <&sfp1>;
+ 		managed = "in-band-status";
++		openwrt,netdev-name = "sfp1";
+ 	};
+ 
+ 	mdio: mdio-bus {

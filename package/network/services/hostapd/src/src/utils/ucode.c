@@ -79,7 +79,7 @@ uc_value_t *uc_wpa_printf(uc_vm_t *vm, size_t nargs)
 	int i, start = 0;
 
 	_sprintf = uc_stdlib_function("sprintf");
-	if (!sprintf)
+	if (!_sprintf)
 		return NULL;
 
 	if (ucv_type(level) == UC_INTEGER) {
@@ -138,6 +138,9 @@ uc_value_t *uc_wpa_freq_info(uc_vm_t *vm, size_t nargs)
 		break;
 	case 2:
 		chanwidth = CONF_OPER_CHWIDTH_160MHZ;
+		break;
+	case 3:
+		chanwidth = CONF_OPER_CHWIDTH_320MHZ;
 		break;
 	default:
 		return NULL;

@@ -110,7 +110,7 @@ send_packet(int type, bool (*handler)(void), unsigned int max)
 		if (len < sizeof(struct ead_msg))
 			continue;
 
-		if (len < sizeof(struct ead_msg) + ntohl(msg->len))
+		if (ntohl(msg->len) > len - sizeof(struct ead_msg))
 			continue;
 
 		if (msg->magic != htonl(EAD_MAGIC))
@@ -151,7 +151,8 @@ handle_pong(void)
 	struct ead_msg_pong *pong = EAD_DATA(msg, pong);
 	int len = ntohl(msg->len) - sizeof(struct ead_msg_pong);
 
-	if (len <= 0)
+	if (len <= 0 ||
+	    len >= sizeof(msgbuf) - sizeof(struct ead_msg) - sizeof(struct ead_msg_pong))
 		return false;
 
 	pong->name[len] = 0;
@@ -166,6 +167,12 @@ static bool
 handle_prime(void)
 {
 	struct ead_msg_salt *sb = EAD_DATA(msg, salt);
+
+	if (ntohl(msg->len) < sizeof(struct ead_msg_salt))
+		return false;
+
+	if (sb->len > MAXSALTLEN || sb->prime >= t_getprecount())
+		return false;
 
 	salt.len = sb->len;
 	memcpy(salt.data, sb->salt, salt.len);
@@ -189,7 +196,14 @@ static bool
 handle_b(void)
 {
 	struct ead_msg_number *num = EAD_DATA(msg, number);
-	int len = ntohl(msg->len) - sizeof(struct ead_msg_number);
+	uint32_t msg_len = ntohl(msg->len);
+	int len;
+
+	if (msg_len < sizeof(struct ead_msg_number) ||
+	    msg_len - sizeof(struct ead_msg_number) > MAXPARAMLEN)
+		return false;
+
+	len = msg_len - sizeof(struct ead_msg_number);
 
 	B.data = bbuf;
 	B.len = len;

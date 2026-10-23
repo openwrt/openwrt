@@ -1,0 +1,44 @@
+From dc40636972d8f0c7cbe34c9967ff5c43ab2244df Mon Sep 17 00:00:00 2001
+From: Paul Spooren <mail@aparcar.org>
+Date: Tue, 6 Oct 2026 20:14:17 +0200
+Subject: [PATCH] tools/nxp: byte_swap: pad with zeros
+
+do_byteswap() pads the image to a multiple of 8 bytes with up to 8 bytes
+taken from a 4 byte variable, so fwrite() reads up to 4 bytes past it
+from the stack. append_bytes is never 0, so an image which is already
+aligned always gets 8 bytes appended, 4 of them random. This makes the
+PBL of every build different:
+
+  -00009e80: 019f 1e98 0000 0000 0000 0000 0000 0000
+  +00009e80: e10f e4a8 0000 0000 0000 0000 0000 0000
+
+Use an 8 byte buffer of zeros. The length and the layout of the output
+stay the same.
+
+Signed-off-by: Paul Spooren <mail@aparcar.org>
+---
+ tools/nxp/create_pbl/byte_swap.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/tools/nxp/create_pbl/byte_swap.c b/tools/nxp/create_pbl/byte_swap.c
+index 1d0bfce..b862e33 100644
+--- a/tools/nxp/create_pbl/byte_swap.c
++++ b/tools/nxp/create_pbl/byte_swap.c
+@@ -36,7 +36,7 @@ int do_byteswap(FILE *fp)
+ 	int bytes = 0;
+ 	uint32_t  upper_byte;
+ 	uint32_t  lower_byte;
+-	uint32_t  pad = 0U;
++	uint8_t  pad[EIGHT_BYTE_ALIGN] = { 0 };
+ 	/* Carries number of Padding bytes to be appended to
+ 	 * make file size 8 byte aligned.
+ 	 */
+@@ -48,7 +48,7 @@ int do_byteswap(FILE *fp)
+ 
+ 	append_bytes = EIGHT_BYTE_ALIGN - (bytes % EIGHT_BYTE_ALIGN);
+ 	if (append_bytes != 0) {
+-		if (fwrite(&pad, append_bytes, NUM_MEM_BLOCK, fp)
++		if (fwrite(pad, append_bytes, NUM_MEM_BLOCK, fp)
+ 			!= NUM_MEM_BLOCK) {
+ 			printf("%s: Error in appending padding bytes.\n",
+ 				__func__);

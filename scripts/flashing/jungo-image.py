@@ -97,21 +97,21 @@ def image_dump(tn, dumpfile):
         buf = tn.read_until("Returned 0",2)
         i = buf.find("Platform:")
         if i < 0:
-	    platform="jungo"
-	else:
-	    line=buf[i+9:]
-	    i=line.find('\n')
-	    platform=line[:i].split()[-1]
+            platform="jungo"
+        else:
+            line=buf[i+9:]
+            i=line.find('\n')
+            platform=line[:i].split()[-1]
 
         tn.write("rg_conf_print /dev/%s/mac\n" % device);
         buf = tn.read_until("Returned 0",3)
 
-	i = buf.find("mac(")
-	if i > 0:
-	    i += 4
-	else:
-	    print("No MAC address found! (use -f option)")
-	    sys.exit(1)
+        i = buf.find("mac(")
+        if i > 0:
+            i += 4
+        else:
+            print("No MAC address found! (use -f option)")
+            sys.exit(1)
         dumpfile = "%s-%s.bin" % (platform, buf[i:i+17].replace(':',''))
     else:
         tn.write("\n")
@@ -121,31 +121,31 @@ def image_dump(tn, dumpfile):
 
     t=flashsize/dumplen
     for addr in range(t):
-	if verbose:
-	    sys.stdout.write('\r%d%%'%(100*addr/t))
-	    sys.stdout.flush()
+        if verbose:
+            sys.stdout.write('\r%d%%'%(100*addr/t))
+            sys.stdout.flush()
 
         tn.write("flash_dump -r 0x%x -l %d -4\n" % (addr*dumplen, dumplen))
-	tn.read_until("\n")
+        tn.read_until("\n")
 
-	count = addr*dumplen
+        count = addr*dumplen
         while 1:
             buf = tn.read_until("\n")
             if buf.strip() == "Returned 0":
                 break
             s = buf.split()
             if s and s[0][-1] == ':':
-		a=int(s[0][:-1],16)
-		if a != count:
-		    print("Format error: %x != %x"%(a,count))
-		    sys.exit(2)
-	    	count += 16
-		f.write(binascii.a2b_hex(string.join(s[1:],'')))
-	tn.read_until(">",1)
+                a=int(s[0][:-1],16)
+                if a != count:
+                    print("Format error: %x != %x"%(a,count))
+                    sys.exit(2)
+                count += 16
+                f.write(binascii.a2b_hex(string.join(s[1:],'')))
+        tn.read_until(">",1)
 
     f.close()
     if verbose:
-	print("")
+        print("")
 
 def telnet_option(sock,cmd,option):
     #print "Option: %d %d" % (ord(cmd), ord(option))
@@ -175,27 +175,27 @@ except getopt.GetoptError:
 
 for o, a in opts:
     if o in ("-h", "--help"):
-	usage()
-	sys.exit(1)
+        usage()
+        sys.exit(1)
     elif o in ("-V", "--version"):
-	print("%s: 0.11" % sys.argv[0])
-	sys.exit(1)
+        print("%s: 0.11" % sys.argv[0])
+        sys.exit(1)
     elif o in ("-d", "--no-dump"):
-	do_dump = 1
+        do_dump = 1
     elif o in ("-f", "--file"):
-	dumpfile = a
+        dumpfile = a
     elif o in ("-u", "--user"):
-	user = a
+        user = a
     elif o in ("-p", "--pass"):
-	password = a
+        password = a
     elif o == "--port":
-	PORT = int(a)
+        PORT = int(a)
     elif o in ("-q", "--quiet"):
-	verbose = 0
+        verbose = 0
     elif o in ("-r", "--reboot"):
-	reboot = 1
+        reboot = 1
     elif o in ("-v", "--verbose"):
-	verbose = 1
+        verbose = 1
 
 # make sure we have enough arguments
 if len(args) > 0:
@@ -260,12 +260,12 @@ if imagefile or url:
         start_server(server)
 
     if verbose:
-	print("Unlocking flash...")
+        print("Unlocking flash...")
     tn.write("unlock 0 0x%x\n" % flashsize)
     buf = tn.read_until("Returned 0",5)
 
     if verbose:
-	print("Writing new image...")
+        print("Writing new image...")
     print(cmd, end=' ')
     tn.write(cmd)
     buf = tn.read_until("Returned 0",10)
@@ -273,7 +273,7 @@ if imagefile or url:
     # wait till the transfer completed
     buf = tn.read_until("Download completed successfully",20)
     if buf:
-	print("Flash update complete!")
+        print("Flash update complete!")
         if reboot:
             tn.write("reboot\n")
             print("Rebooting...")

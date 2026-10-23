@@ -32,7 +32,9 @@ struct uc_bpf_fd {
 
 struct uc_bpf_map {
 	struct uc_bpf_fd fd; /* must be first */
+	unsigned int type;
 	unsigned int key_size, val_size;
+	unsigned int max_entries;
 };
 
 struct uc_bpf_map_iter {
@@ -129,7 +131,7 @@ uc_bpf_module_set_opts(struct bpf_object *obj, uc_value_t *opts)
 		}
 
 		if (!map)
-			err_return_int(errno, "rodata map");
+			err_return_int(ENOENT, "rodata map");
 
 		if (bpf_map__set_initial_value(map, ucv_string_get(val),
 					       ucv_string_length(val)))
@@ -187,8 +189,9 @@ uc_bpf_open_module(uc_vm_t *vm, size_t nargs)
 }
 
 static uc_value_t *
-uc_bpf_map_create(uc_vm_t *vm, uc_value_t *mod, int fd, unsigned int key_size,
-		  unsigned int val_size, bool close)
+uc_bpf_map_create(uc_vm_t *vm, uc_value_t *mod, int fd, unsigned int type,
+		  unsigned int key_size, unsigned int val_size,
+		  unsigned int max_entries, bool close)
 {
 	struct uc_bpf_map *uc_map;
 	uc_value_t *res;
@@ -196,8 +199,10 @@ uc_bpf_map_create(uc_vm_t *vm, uc_value_t *mod, int fd, unsigned int key_size,
 	res = ucv_resource_create_ex(vm, "bpf.map", (void **)&uc_map, 1, sizeof(*uc_map));
 	ucv_resource_value_set(res, 0, ucv_get(mod));
 	uc_map->fd.fd = fd;
+	uc_map->type = type;
 	uc_map->key_size = key_size;
 	uc_map->val_size = val_size;
+	uc_map->max_entries = max_entries;
 	uc_map->fd.close = close;
 
 	return res;
@@ -218,12 +223,26 @@ uc_bpf_prog_create(uc_vm_t *vm, uc_value_t *mod, int fd, bool close)
 }
 
 static uc_value_t *
-uc_bpf_open_map(uc_vm_t *vm, size_t nargs)
+uc_bpf_open_map_fd(uc_vm_t *vm, int fd)
 {
 	struct bpf_map_info info;
-	uc_value_t *path = uc_fn_arg(0);
 	__u32 len = sizeof(info);
 	int err;
+
+	err = bpf_obj_get_info_by_fd(fd, &info, &len);
+	if (err) {
+		close(fd);
+		err_return(errno, NULL);
+	}
+
+	return uc_bpf_map_create(vm, NULL, fd, info.type, info.key_size,
+				 info.value_size, info.max_entries, true);
+}
+
+static uc_value_t *
+uc_bpf_open_map(uc_vm_t *vm, size_t nargs)
+{
+	uc_value_t *path = uc_fn_arg(0);
 	int fd;
 
 	if (ucv_type(path) != UC_STRING)
@@ -233,13 +252,23 @@ uc_bpf_open_map(uc_vm_t *vm, size_t nargs)
 	if (fd < 0)
 		err_return(errno, NULL);
 
-	err = bpf_obj_get_info_by_fd(fd, &info, &len);
-	if (err) {
-		close(fd);
-		err_return(errno, NULL);
-	}
+	return uc_bpf_open_map_fd(vm, fd);
+}
 
-	return uc_bpf_map_create(vm, NULL, fd, info.key_size, info.value_size, true);
+static uc_value_t *
+uc_bpf_open_map_id(uc_vm_t *vm, size_t nargs)
+{
+	uc_value_t *id = uc_fn_arg(0);
+	int fd;
+
+	if (ucv_type(id) != UC_INTEGER)
+		err_return(EINVAL, "map id");
+
+	fd = bpf_map_get_fd_by_id(ucv_int64_get(id));
+	if (fd < 0)
+		err_return(errno, NULL);
+
+	return uc_bpf_open_map_fd(vm, fd);
 }
 
 static uc_value_t *
@@ -252,6 +281,22 @@ uc_bpf_open_program(uc_vm_t *vm, size_t nargs)
 		err_return(EINVAL, "module path");
 
 	fd = bpf_obj_get(ucv_string_get(path));
+	if (fd < 0)
+		err_return(errno, NULL);
+
+	return uc_bpf_prog_create(vm, NULL, fd, true);
+}
+
+static uc_value_t *
+uc_bpf_open_program_id(uc_vm_t *vm, size_t nargs)
+{
+	uc_value_t *id = uc_fn_arg(0);
+	int fd;
+
+	if (ucv_type(id) != UC_INTEGER)
+		err_return(EINVAL, "program id");
+
+	fd = bpf_prog_get_fd_by_id(ucv_int64_get(id));
 	if (fd < 0)
 		err_return(errno, NULL);
 
@@ -295,7 +340,9 @@ uc_bpf_module_get_map(uc_vm_t *vm, size_t nargs)
 	if (fd < 0)
 		err_return(EINVAL, NULL);
 
-	return uc_bpf_map_create(vm, _uc_fn_this_res(vm), fd, bpf_map__key_size(map), bpf_map__value_size(map), false);
+	return uc_bpf_map_create(vm, _uc_fn_this_res(vm), fd, bpf_map__type(map),
+				 bpf_map__key_size(map), bpf_map__value_size(map),
+				 bpf_map__max_entries(map), false);
 }
 
 static uc_value_t *
@@ -339,28 +386,40 @@ uc_bpf_module_get_program(uc_vm_t *vm, size_t nargs)
 }
 
 static void *
-uc_bpf_map_arg(uc_value_t *val, const char *kind, unsigned int size)
+uc_bpf_map_arg(uc_value_t *val, const char *kind, unsigned int size,
+	       uint64_t *val_int)
 {
-	static union {
-		uint32_t u32;
-		uint64_t u64;
-	} val_int;
-
 	switch (ucv_type(val)) {
 	case UC_INTEGER:
 		if (size == 4)
-			val_int.u32 = ucv_int64_get(val);
+			*(uint32_t *)val_int = ucv_int64_get(val);
 		else if (size == 8)
-			val_int.u64 = ucv_int64_get(val);
+			*val_int = ucv_int64_get(val);
 		else
 			break;
 
-		return &val_int;
+		return val_int;
 	case UC_STRING:
 		if (size != ucv_string_length(val))
 			break;
 
 		return ucv_string_get(val);
+	case UC_RESOURCE: {
+		struct uc_bpf_fd *f;
+
+		f = ucv_resource_data(val, "bpf.map");
+		if (!f)
+			f = ucv_resource_data(val, "bpf.program");
+		if (!f)
+			err_return(EINVAL, "%s type", kind);
+
+		if (size != 4)
+			break;
+
+		*(uint32_t *)val_int = f->fd;
+
+		return val_int;
+	}
 	default:
 		err_return(EINVAL, "%s type", kind);
 	}
@@ -368,25 +427,174 @@ uc_bpf_map_arg(uc_value_t *val, const char *kind, unsigned int size)
 	err_return(EINVAL, "%s size mismatch (expected: %d)", kind, size);
 }
 
+static bool
+uc_bpf_map_key_arg(struct uc_bpf_map *map, uc_value_t *a_key, uint64_t *buf,
+		   void **key)
+{
+	if (!map->key_size) {
+		if (a_key) {
+			set_error(EINVAL, "map has no key");
+			return false;
+		}
+
+		*key = NULL;
+
+		return true;
+	}
+
+	*key = uc_bpf_map_arg(a_key, "key", map->key_size, buf);
+
+	return *key != NULL;
+}
+
+static bool
+uc_bpf_map_is_percpu(struct uc_bpf_map *map)
+{
+	switch (map->type) {
+	case BPF_MAP_TYPE_PERCPU_HASH:
+	case BPF_MAP_TYPE_PERCPU_ARRAY:
+	case BPF_MAP_TYPE_LRU_PERCPU_HASH:
+	case BPF_MAP_TYPE_PERCPU_CGROUP_STORAGE:
+		return true;
+	default:
+		return false;
+	}
+}
+
+static unsigned int
+uc_bpf_map_val_stride(struct uc_bpf_map *map)
+{
+	return (map->val_size + 7) & ~7U;
+}
+
+static bool
+uc_bpf_map_val_len(struct uc_bpf_map *map, unsigned int *len, int *num_cpus)
+{
+	*len = map->val_size;
+	*num_cpus = 1;
+
+	if (!uc_bpf_map_is_percpu(map))
+		return true;
+
+	*num_cpus = libbpf_num_possible_cpus();
+	if (*num_cpus <= 0) {
+		set_error(errno, "number of CPUs");
+		return false;
+	}
+
+	*len = uc_bpf_map_val_stride(map) * *num_cpus;
+
+	return true;
+}
+
+static uc_value_t *
+uc_bpf_map_val_read(uc_vm_t *vm, struct uc_bpf_map *map, void *val,
+		    int num_cpus)
+{
+	unsigned int stride = uc_bpf_map_val_stride(map);
+	uc_value_t *rv;
+	int i;
+
+	if (!uc_bpf_map_is_percpu(map))
+		return ucv_string_new_length(val, map->val_size);
+
+	rv = ucv_array_new(vm);
+	for (i = 0; i < num_cpus; i++)
+		ucv_array_set(rv, i, ucv_string_new_length((char *)val + i * stride,
+							   map->val_size));
+
+	return rv;
+}
+
+static bool
+uc_bpf_map_val_copy(struct uc_bpf_map *map, uc_value_t *a_val, void *dest)
+{
+	uint64_t val_int;
+	void *val;
+
+	val = uc_bpf_map_arg(a_val, "value", map->val_size, &val_int);
+	if (!val)
+		return false;
+
+	memcpy(dest, val, map->val_size);
+
+	return true;
+}
+
+static void *
+uc_bpf_map_val_arg(struct uc_bpf_map *map, uc_value_t *a_val, void *buf,
+		   int num_cpus)
+{
+	unsigned int stride = uc_bpf_map_val_stride(map);
+	int i;
+
+	if (!uc_bpf_map_is_percpu(map))
+		return uc_bpf_map_arg(a_val, "value", map->val_size, buf);
+
+	memset(buf, 0, stride * num_cpus);
+	if (ucv_type(a_val) != UC_ARRAY) {
+		if (!uc_bpf_map_val_copy(map, a_val, buf))
+			return NULL;
+
+		for (i = 1; i < num_cpus; i++)
+			memcpy((char *)buf + i * stride, buf, map->val_size);
+
+		return buf;
+	}
+
+	if (ucv_array_length(a_val) != (size_t)num_cpus)
+		err_return(EINVAL, "value count mismatch (expected: %d)", num_cpus);
+
+	for (i = 0; i < num_cpus; i++)
+		if (!uc_bpf_map_val_copy(map, ucv_array_get(a_val, i),
+					 (char *)buf + i * stride))
+			return NULL;
+
+	return buf;
+}
+
+static uc_value_t *
+uc_bpf_map_info(uc_vm_t *vm, size_t nargs)
+{
+	struct uc_bpf_map *map = uc_fn_thisval("bpf.map");
+	uc_value_t *rv;
+
+	if (!map)
+		err_return(EINVAL, NULL);
+
+	rv = ucv_object_new(vm);
+	ucv_object_add(rv, "type", ucv_int64_new(map->type));
+	ucv_object_add(rv, "key_size", ucv_int64_new(map->key_size));
+	ucv_object_add(rv, "value_size", ucv_int64_new(map->val_size));
+	ucv_object_add(rv, "max_entries", ucv_int64_new(map->max_entries));
+
+	return rv;
+}
+
 static uc_value_t *
 uc_bpf_map_get(uc_vm_t *vm, size_t nargs)
 {
 	struct uc_bpf_map *map = uc_fn_thisval("bpf.map");
 	uc_value_t *a_key = uc_fn_arg(0);
+	unsigned int val_len;
+	uint64_t key_int;
 	void *key, *val;
+	int num_cpus;
 
 	if (!map)
 		err_return(EINVAL, NULL);
 
-	key = uc_bpf_map_arg(a_key, "key", map->key_size);
-	if (!key)
+	if (!uc_bpf_map_key_arg(map, a_key, &key_int, &key))
 		return NULL;
 
-	val = alloca(map->val_size);
+	if (!uc_bpf_map_val_len(map, &val_len, &num_cpus))
+		return NULL;
+
+	val = alloca(val_len);
 	if (bpf_map_lookup_elem(map->fd.fd, key, val))
 		return NULL;
 
-	return ucv_string_new_length(val, map->val_size);
+	return uc_bpf_map_val_read(vm, map, val, num_cpus);
 }
 
 static uc_value_t *
@@ -396,17 +604,23 @@ uc_bpf_map_set(uc_vm_t *vm, size_t nargs)
 	uc_value_t *a_key = uc_fn_arg(0);
 	uc_value_t *a_val = uc_fn_arg(1);
 	uc_value_t *a_flags = uc_fn_arg(2);
+	unsigned int val_len;
+	uint64_t key_int;
 	uint64_t flags;
 	void *key, *val;
+	int num_cpus;
 
 	if (!map)
 		err_return(EINVAL, NULL);
 
-	key = uc_bpf_map_arg(a_key, "key", map->key_size);
-	if (!key)
+	if (!uc_bpf_map_key_arg(map, a_key, &key_int, &key))
 		return NULL;
 
-	val = uc_bpf_map_arg(a_val, "value", map->val_size);
+	if (!uc_bpf_map_val_len(map, &val_len, &num_cpus))
+		return NULL;
+
+	val = alloca(val_len);
+	val = uc_bpf_map_val_arg(map, a_val, val, num_cpus);
 	if (!val)
 		return NULL;
 
@@ -420,7 +634,7 @@ uc_bpf_map_set(uc_vm_t *vm, size_t nargs)
 	if (bpf_map_update_elem(map->fd.fd, key, val, flags))
 		return NULL;
 
-	return ucv_string_new_length(val, map->val_size);
+	return uc_bpf_map_val_read(vm, map, val, num_cpus);
 }
 
 static uc_value_t *
@@ -429,14 +643,16 @@ uc_bpf_map_delete(uc_vm_t *vm, size_t nargs)
 	struct uc_bpf_map *map = uc_fn_thisval("bpf.map");
 	uc_value_t *a_key = uc_fn_arg(0);
 	uc_value_t *a_return = uc_fn_arg(1);
+	unsigned int val_len;
 	void *key, *val = NULL;
+	uint64_t key_int;
+	int num_cpus;
 	int ret;
 
 	if (!map)
 		err_return(EINVAL, NULL);
 
-	key = uc_bpf_map_arg(a_key, "key", map->key_size);
-	if (!key)
+	if (!uc_bpf_map_key_arg(map, a_key, &key_int, &key))
 		return NULL;
 
 	if (!ucv_is_truish(a_return)) {
@@ -445,11 +661,14 @@ uc_bpf_map_delete(uc_vm_t *vm, size_t nargs)
 		return ucv_boolean_new(ret == 0);
 	}
 
-	val = alloca(map->val_size);
+	if (!uc_bpf_map_val_len(map, &val_len, &num_cpus))
+		return NULL;
+
+	val = alloca(val_len);
 	if (bpf_map_lookup_and_delete_elem(map->fd.fd, key, val))
 		return NULL;
 
-	return ucv_string_new_length(val, map->val_size);
+	return uc_bpf_map_val_read(vm, map, val, num_cpus);
 }
 
 static uc_value_t *
@@ -520,6 +739,9 @@ uc_bpf_map_iter_next(uc_vm_t *vm, size_t nargs)
 	struct uc_bpf_map_iter *iter = uc_fn_thisval("bpf.map_iter");
 	uc_value_t *rv;
 
+	if (!iter)
+		err_return(EINVAL, NULL);
+
 	if (!iter->has_next)
 		return NULL;
 
@@ -536,15 +758,22 @@ uc_bpf_map_iter_next_int(uc_vm_t *vm, size_t nargs)
 	uint64_t intval;
 	uc_value_t *rv;
 
+	if (!iter)
+		err_return(EINVAL, NULL);
+
 	if (!iter->has_next)
 		return NULL;
 
-	if (iter->key_size == 4)
-		intval = *(uint32_t *)iter->key;
-	else if (iter->key_size == 8)
-		intval = *(uint64_t *)iter->key;
-	else
+	if (iter->key_size == 4) {
+		uint32_t val32;
+
+		memcpy(&val32, iter->key, sizeof(val32));
+		intval = val32;
+	} else if (iter->key_size == 8) {
+		memcpy(&intval, iter->key, sizeof(intval));
+	} else {
 		return NULL;
+	}
 
 	rv = ucv_int64_new(intval);
 	iter->has_next = !bpf_map_get_next_key(iter->fd, &iter->key, &iter->key);
@@ -560,6 +789,9 @@ uc_bpf_map_foreach(uc_vm_t *vm, size_t nargs)
 	bool has_next;
 	void *key, *next;
 	bool ret = false;
+
+	if (!map)
+		err_return(EINVAL, NULL);
 
 	key = alloca(map->key_size);
 	next = alloca(map->key_size);
@@ -591,11 +823,249 @@ uc_bpf_map_foreach(uc_vm_t *vm, size_t nargs)
 	return ucv_boolean_new(ret);
 }
 
+enum {
+	UC_BPF_BUF_CB,
+	UC_BPF_BUF_LOST_CB,
+	UC_BPF_BUF_MAP,
+	__UC_BPF_BUF_MAX
+};
+
+struct uc_bpf_buffer {
+	uc_vm_t *vm;
+	uc_value_t *res;
+	bool perf;
+	bool exception;
+	union {
+		struct ring_buffer *rb;
+		struct perf_buffer *pb;
+	};
+};
+
+static uc_value_t *
+uc_bpf_buffer_call(struct uc_bpf_buffer *buf, size_t slot, uc_value_t *arg,
+		   int cpu)
+{
+	uc_vm_t *vm = buf->vm;
+	size_t fn_nargs = 1;
+
+	uc_vm_stack_push(vm, ucv_get(ucv_resource_value_get(buf->res, slot)));
+	uc_vm_stack_push(vm, arg);
+	if (cpu >= 0) {
+		uc_vm_stack_push(vm, ucv_int64_new(cpu));
+		fn_nargs++;
+	}
+
+	if (uc_vm_call(vm, false, fn_nargs) != EXCEPTION_NONE) {
+		buf->exception = true;
+		return NULL;
+	}
+
+	return uc_vm_stack_pop(vm);
+}
+
+static int
+uc_bpf_ringbuf_sample(void *ctx, void *data, size_t size)
+{
+	struct uc_bpf_buffer *buf = ctx;
+	uc_value_t *rv;
+	int ret = 0;
+
+	if (buf->exception)
+		return -1;
+
+	rv = uc_bpf_buffer_call(buf, UC_BPF_BUF_CB,
+				ucv_string_new_length(data, size), -1);
+	if (buf->exception)
+		return -1;
+
+	if (ucv_type(rv) == UC_INTEGER)
+		ret = ucv_int64_get(rv);
+	ucv_put(rv);
+
+	return ret;
+}
+
+static void
+uc_bpf_perf_sample(void *ctx, int cpu, void *data, __u32 size)
+{
+	struct uc_bpf_buffer *buf = ctx;
+
+	if (buf->exception)
+		return;
+
+	ucv_put(uc_bpf_buffer_call(buf, UC_BPF_BUF_CB,
+				   ucv_string_new_length(data, size), cpu));
+}
+
+static void
+uc_bpf_perf_lost(void *ctx, int cpu, __u64 cnt)
+{
+	struct uc_bpf_buffer *buf = ctx;
+
+	if (buf->exception || !ucv_resource_value_get(buf->res, UC_BPF_BUF_LOST_CB))
+		return;
+
+	ucv_put(uc_bpf_buffer_call(buf, UC_BPF_BUF_LOST_CB, ucv_int64_new(cnt),
+				   cpu));
+}
+
+static uc_value_t *
+uc_bpf_map_buffer_create(uc_vm_t *vm, struct uc_bpf_map *map, bool perf,
+			 size_t pages, uc_value_t *cb, uc_value_t *lost_cb)
+{
+	struct uc_bpf_buffer *buf;
+	uc_value_t *res;
+
+	res = ucv_resource_create_ex(vm, "bpf.buffer", (void **)&buf,
+				     __UC_BPF_BUF_MAX, sizeof(*buf));
+	buf->vm = vm;
+	buf->res = res;
+	buf->perf = perf;
+	if (perf)
+		buf->pb = perf_buffer__new(map->fd.fd, pages, uc_bpf_perf_sample,
+					   uc_bpf_perf_lost, buf, NULL);
+	else
+		buf->rb = ring_buffer__new(map->fd.fd, uc_bpf_ringbuf_sample,
+					   buf, NULL);
+	if (!buf->rb) {
+		ucv_put(res);
+		err_return(errno, NULL);
+	}
+
+	ucv_resource_value_set(res, UC_BPF_BUF_CB, ucv_get(cb));
+	ucv_resource_value_set(res, UC_BPF_BUF_LOST_CB, ucv_get(lost_cb));
+	ucv_resource_value_set(res, UC_BPF_BUF_MAP, ucv_get(_uc_fn_this_res(vm)));
+
+	return res;
+}
+
+static uc_value_t *
+uc_bpf_map_ringbuf(uc_vm_t *vm, size_t nargs)
+{
+	struct uc_bpf_map *map = uc_fn_thisval("bpf.map");
+	uc_value_t *cb = uc_fn_arg(0);
+
+	if (!map)
+		err_return(EINVAL, NULL);
+
+	if (map->type != BPF_MAP_TYPE_RINGBUF)
+		err_return(EINVAL, "map type");
+
+	if (!ucv_is_callable(cb))
+		err_return(EINVAL, "callback");
+
+	return uc_bpf_map_buffer_create(vm, map, false, 0, cb, NULL);
+}
+
+static uc_value_t *
+uc_bpf_map_perf_buffer(uc_vm_t *vm, size_t nargs)
+{
+	struct uc_bpf_map *map = uc_fn_thisval("bpf.map");
+	uc_value_t *cb = uc_fn_arg(0);
+	uc_value_t *a_pages = uc_fn_arg(1);
+	uc_value_t *lost_cb = uc_fn_arg(2);
+	size_t pages = 8;
+
+	if (!map)
+		err_return(EINVAL, NULL);
+
+	if (map->type != BPF_MAP_TYPE_PERF_EVENT_ARRAY)
+		err_return(EINVAL, "map type");
+
+	if (!ucv_is_callable(cb))
+		err_return(EINVAL, "callback");
+
+	if (a_pages) {
+		if (ucv_type(a_pages) != UC_INTEGER || ucv_int64_get(a_pages) <= 0)
+			err_return(EINVAL, "page count");
+
+		pages = ucv_int64_get(a_pages);
+	}
+
+	if (lost_cb && !ucv_is_callable(lost_cb))
+		err_return(EINVAL, "lost callback");
+
+	return uc_bpf_map_buffer_create(vm, map, true, pages, cb, lost_cb);
+}
+
+static uc_value_t *
+uc_bpf_buffer_fileno(uc_vm_t *vm, size_t nargs)
+{
+	struct uc_bpf_buffer *buf = uc_fn_thisval("bpf.buffer");
+	int fd;
+
+	if (!buf)
+		err_return(EINVAL, NULL);
+
+	fd = buf->perf ? perf_buffer__epoll_fd(buf->pb) :
+			 ring_buffer__epoll_fd(buf->rb);
+	if (fd < 0)
+		err_return(errno, NULL);
+
+	return ucv_int64_new(fd);
+}
+
+static uc_value_t *
+uc_bpf_buffer_result(uc_vm_t *vm, struct uc_bpf_buffer *buf, int ret)
+{
+	if (buf->exception) {
+		buf->exception = false;
+		return NULL;
+	}
+
+	if (ret < 0)
+		err_return(errno, NULL);
+
+	return ucv_int64_new(ret);
+}
+
+static uc_value_t *
+uc_bpf_buffer_poll(uc_vm_t *vm, size_t nargs)
+{
+	struct uc_bpf_buffer *buf = uc_fn_thisval("bpf.buffer");
+	uc_value_t *a_timeout = uc_fn_arg(0);
+	int timeout = 0;
+	int ret;
+
+	if (!buf)
+		err_return(EINVAL, NULL);
+
+	if (a_timeout) {
+		if (ucv_type(a_timeout) != UC_INTEGER)
+			err_return(EINVAL, "timeout");
+
+		timeout = ucv_int64_get(a_timeout);
+	}
+
+	ret = buf->perf ? perf_buffer__poll(buf->pb, timeout) :
+			  ring_buffer__poll(buf->rb, timeout);
+
+	return uc_bpf_buffer_result(vm, buf, ret);
+}
+
+static uc_value_t *
+uc_bpf_buffer_consume(uc_vm_t *vm, size_t nargs)
+{
+	struct uc_bpf_buffer *buf = uc_fn_thisval("bpf.buffer");
+	int ret;
+
+	if (!buf)
+		err_return(EINVAL, NULL);
+
+	ret = buf->perf ? perf_buffer__consume(buf->pb) :
+			  ring_buffer__consume(buf->rb);
+
+	return uc_bpf_buffer_result(vm, buf, ret);
+}
+
 static uc_value_t *
 uc_bpf_obj_pin(uc_vm_t *vm, size_t nargs, const char *type)
 {
 	struct uc_bpf_fd *f = uc_fn_thisval(type);
 	uc_value_t *path = uc_fn_arg(0);
+
+	if (!f)
+		err_return(EINVAL, NULL);
 
 	if (ucv_type(path) != UC_STRING)
 		err_return(EINVAL, NULL);
@@ -665,9 +1135,7 @@ out:
 	return TRUE;
 
 error:
-	if (fd >= 0)
-		err_return(ENOENT, NULL);
-	return NULL;
+	err_return(errno, NULL);
 }
 
 static uc_value_t *
@@ -752,6 +1220,23 @@ register_constants(uc_vm_t *vm, uc_value_t *scope)
 	ADD_CONST(BPF_PROG_TYPE_SCHED_CLS);
 	ADD_CONST(BPF_PROG_TYPE_SCHED_ACT);
 
+	ADD_CONST(BPF_MAP_TYPE_HASH);
+	ADD_CONST(BPF_MAP_TYPE_ARRAY);
+	ADD_CONST(BPF_MAP_TYPE_PROG_ARRAY);
+	ADD_CONST(BPF_MAP_TYPE_PERF_EVENT_ARRAY);
+	ADD_CONST(BPF_MAP_TYPE_PERCPU_HASH);
+	ADD_CONST(BPF_MAP_TYPE_PERCPU_ARRAY);
+	ADD_CONST(BPF_MAP_TYPE_LRU_HASH);
+	ADD_CONST(BPF_MAP_TYPE_LRU_PERCPU_HASH);
+	ADD_CONST(BPF_MAP_TYPE_LPM_TRIE);
+	ADD_CONST(BPF_MAP_TYPE_ARRAY_OF_MAPS);
+	ADD_CONST(BPF_MAP_TYPE_HASH_OF_MAPS);
+	ADD_CONST(BPF_MAP_TYPE_DEVMAP);
+	ADD_CONST(BPF_MAP_TYPE_SOCKMAP);
+	ADD_CONST(BPF_MAP_TYPE_QUEUE);
+	ADD_CONST(BPF_MAP_TYPE_STACK);
+	ADD_CONST(BPF_MAP_TYPE_RINGBUF);
+
 	ADD_CONST(BPF_ANY);
 	ADD_CONST(BPF_NOEXIST);
 	ADD_CONST(BPF_EXIST);
@@ -774,12 +1259,31 @@ static void module_free(void *ptr)
 
 static const uc_function_list_t map_fns[] = {
 	{ "pin",			uc_bpf_map_pin },
+	{ "info",			uc_bpf_map_info },
 	{ "get",			uc_bpf_map_get },
 	{ "set",			uc_bpf_map_set },
 	{ "delete",			uc_bpf_map_delete },
 	{ "delete_all",			uc_bpf_map_delete_all },
 	{ "foreach",			uc_bpf_map_foreach },
 	{ "iterator",			uc_bpf_map_iterator },
+	{ "ringbuf",			uc_bpf_map_ringbuf },
+	{ "perf_buffer",		uc_bpf_map_perf_buffer },
+};
+
+static void uc_bpf_buffer_free(void *ptr)
+{
+	struct uc_bpf_buffer *buf = ptr;
+
+	if (buf->perf)
+		perf_buffer__free(buf->pb);
+	else
+		ring_buffer__free(buf->rb);
+}
+
+static const uc_function_list_t buffer_fns[] = {
+	{ "fileno",			uc_bpf_buffer_fileno },
+	{ "poll",			uc_bpf_buffer_poll },
+	{ "consume",			uc_bpf_buffer_consume },
 };
 
 static void uc_bpf_fd_free(void *ptr)
@@ -805,7 +1309,9 @@ static const uc_function_list_t global_fns[] = {
 	{ "set_debug_handler",		uc_bpf_set_debug_handler },
 	{ "open_module",		uc_bpf_open_module },
 	{ "open_map",			uc_bpf_open_map },
+	{ "open_map_id",		uc_bpf_open_map_id },
 	{ "open_program",		uc_bpf_open_program },
+	{ "open_program_id",		uc_bpf_open_program_id },
 	{ "tc_detach",			uc_bpf_tc_detach },
 };
 
@@ -820,5 +1326,6 @@ void uc_module_init(uc_vm_t *vm, uc_value_t *scope)
 	uc_type_declare(vm, "bpf.module", module_fns, module_free);
 	uc_type_declare(vm, "bpf.map", map_fns, uc_bpf_fd_free);
 	uc_type_declare(vm, "bpf.map_iter", map_iter_fns, NULL);
+	uc_type_declare(vm, "bpf.buffer", buffer_fns, uc_bpf_buffer_free);
 	uc_type_declare(vm, "bpf.program", prog_fns, uc_bpf_fd_free);
 }

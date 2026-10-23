@@ -1,0 +1,29 @@
+#!/bin/sh
+
+. /lib/functions.sh
+
+CRON_FILE="/etc/crontabs/root"
+LINE1="# dlink fan script runs every 5 minutes"
+LINE2="*/5 * * * * /sbin/fan_ctrl.sh"
+
+case "$(board_name)" in
+d-link,dgs-1210-28p-f|d-link,dgs-1210-28mp-f)
+	[ -f "$CRON_FILE" ] || exit 0
+
+	# Remove legacy user-space fan_ctrl script from crontab
+	if grep -x -F -q "$LINE1" "$CRON_FILE" && grep -x -F -q "$LINE2" "$CRON_FILE"; then
+		grep -v -x -F "$LINE1" "$CRON_FILE" | grep -v -x -F "$LINE2" > "${CRON_FILE}.tmp"
+		mv "${CRON_FILE}.tmp" "$CRON_FILE"
+		[ -s "$CRON_FILE" ] || rm -f "$CRON_FILE"
+
+		/etc/init.d/cron restart 2>/dev/null
+
+	# if the user changed it, just warn (fan_ctrl.sh is gone anyway).
+	elif grep -E -q '^[[:space:]]*[^#].*fan_ctrl\.sh' "$CRON_FILE"; then
+		logger -t dlinkfan_migration -p user.err "Custom fan_ctrl.sh entry found in $CRON_FILE. Leaving file untouched!"
+		exit 1
+	fi
+	;;
+esac
+
+exit 0

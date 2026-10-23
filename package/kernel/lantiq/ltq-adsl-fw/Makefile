@@ -29,7 +29,6 @@ define Package/kmod-ltq-adsl-fw-template
   VARIANT:= $(2)-fw-$(1)
   SOC:=$(2)
   ANNEX:=$(1)
-  URL:=http://www.lantiq.com/
   DEPENDS:=@$(3) +kmod-ltq-adsl-$(2)
 endef
 

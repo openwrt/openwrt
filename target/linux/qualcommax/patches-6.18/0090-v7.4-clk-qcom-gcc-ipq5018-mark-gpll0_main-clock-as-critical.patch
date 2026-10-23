@@ -1,0 +1,57 @@
+From 33f9cb56cc28d002511e471be74f8ff241984178 Mon Sep 17 00:00:00 2001
+From: Gabor Juhos <j4g8y7@gmail.com>
+Date: Fri, 18 Sep 2026 11:27:49 +0200
+Subject: clk: qcom: gcc-ipq5018: mark 'gpll0_main' clock as critical
+
+On IPQ5018, the APCS core clock feeds the CPUs. It can use
+different clocks as its parent, but during system boot it
+utilizes GPLL0.
+
+Under some cicumstances, the 'gpll0_main' clock is getting
+disabled during kernel start which results in a system hang
+then the hardware watchdog restarts the board after a while.
+
+This can happen when a driver gets a clock in its probe function,
+then releases it either directly or by devres cleanup on probe
+failure.
+
+For example, since v6.18 the kernel often fails to boot on the
+TP-Link Archer AX55 v1 board by using the in-tree dts. In the
+failing configuration, the 'ipq-cmn-pll' driver is built into
+the kernel and the problem is caused by the pm_runtim_put()
+call in the ipq_cmn_pll_clk_probe() function. Due to this call,
+runtime pm disables the 'gcc_cmn_blk_ahb_clk' clock asynchronously
+which results in disabling 'gpll0_main' as well.
+
+Mark the clock as critical in order to avoid such hangs.
+
+Cc: stable@vger.kernel.org
+Fixes: e3fdbef1bab8 ("clk: qcom: Add Global Clock controller (GCC) driver for IPQ5018")
+Signed-off-by: Gabor Juhos <j4g8y7@gmail.com>
+Reviewed-by: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
+Reviewed-by: Mieczyslaw Nalewaj <namiltd@yahoo.com>
+Tested-by: Stanislaw Pal <kuncy7@gmail.com>
+Link: https://lore.kernel.org/r/20260918-ipq5018-mark-gpll0_main-critical-v1-1-fbe8f27a0106@gmail.com
+Signed-off-by: Bjorn Andersson <andersson@kernel.org>
+---
+ drivers/clk/qcom/gcc-ipq5018.c | 9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+--- a/drivers/clk/qcom/gcc-ipq5018.c
++++ b/drivers/clk/qcom/gcc-ipq5018.c
+@@ -69,6 +69,15 @@ static struct clk_alpha_pll gpll0_main =
+ 			.parent_data = gcc_xo_data,
+ 			.num_parents = ARRAY_SIZE(gcc_xo_data),
+ 			.ops = &clk_alpha_pll_stromer_ops,
++			/*
++			 * During system boot, this PLL feeds the CPUs.
++			 * Mark it as critical to ensure that CCF does
++			 * not disable it, even if there are no active
++			 * consumers. This is needed to avoid a system
++			 * hang caused by turning off the clock driving
++			 * the CPUs.
++			 */
++			.flags = CLK_IS_CRITICAL,
+ 		},
+ 	},
+ };

@@ -64,13 +64,6 @@
 			linux,default-trigger = "phy1assoc";
 		};
 
-		led-5 {
-			color = <LED_COLOR_ID_YELLOW>;
-			function = LED_FUNCTION_WLAN_2GHZ;
-			gpios = <&gpio 2 GPIO_ACTIVE_LOW>;
-			linux,default-trigger = "phy1tpt";
-		};
-
 		led-6 {
 			color = <LED_COLOR_ID_GREEN>;
 			function = LED_FUNCTION_WLAN_5GHZ;
@@ -225,8 +218,9 @@
 &mdio0 {
 	status = "okay";
 
-	phy0: ethernet-phy@0 {
-		reg = <0>;
+	ethernet-switch@10 {
+		compatible = "qca,ar8327";
+		reg = <0x10>;
 
 		qca,ar8327-initvals = <
 		    0x04 0x00080080 /* PORT0 PAD MODE CTRL */
@@ -244,7 +238,10 @@
 	nvmem-cell-names = "mac-address";
 	pll-data = <0x96000000 0x00000101 0x00001616>;
 
-	phy-handle = <&phy0>;
+	fixed-link {
+		speed = <1000>;
+		full-duplex;
+	};
 };
 
 &eth1 {
@@ -279,6 +276,11 @@
 
 	nvmem-cells = <&macaddr_board_data_60>, <&cal_board_data_41000>;
 	nvmem-cell-names = "mac-address", "calibration";
+
+	led {
+		led-sources = <2>;
+		led-active-low;
+	};
 };
 
 &usb_phy0 {

@@ -15,17 +15,18 @@
 #include <linux/init.h>
 #include <linux/device.h>
 #include <linux/of.h>
-#include <linux/of_platform.h>
+#include <linux/platform_device.h>
 #include <linux/delay.h>
 #include <linux/skbuff.h>
-#include <linux/rtl8367.h>
 
+#include "rtl8367.h"
 #include "rtl8366_smi.h"
 
 #define RTL8367B_RESET_DELAY	1000	/* msecs*/
 
 #define RTL8367B_PHY_ADDR_MAX	8
 #define RTL8367B_PHY_REG_MAX	31
+#define RTL8367B_MAX_INIT_REGS	32
 
 #define RTL8367B_VID_MASK	0x3fff
 #define RTL8367B_FID_MASK	0xf
@@ -565,7 +566,11 @@ static int rtl8367b_init_regs(struct rtl8366_smi *smi)
 		count = ARRAY_SIZE(rtl8367c_initvals);
 		if ((smi->rtl8367b_chip == RTL8367B_CHIP_RTL8367S_VB) && (smi->emu_vlanmc == NULL)) {
 			smi->emu_vlanmc = kzalloc(sizeof(struct rtl8366_vlan_mc) * smi->num_vlan_mc, GFP_KERNEL);
-			dev_info(smi->parent, "alloc vlan mc emulator");
+			if (!smi->emu_vlanmc) {
+				dev_err(smi->parent, "failed to allocate vlan mc emulator\n");
+				return -ENOMEM;
+			}
+			dev_info(smi->parent, "alloc vlan mc emulator\n");
 		}
 		break;
 	default:
@@ -573,6 +578,46 @@ static int rtl8367b_init_regs(struct rtl8366_smi *smi)
 	}
 
 	return rtl8367b_write_initvals(smi, initvals, count);
+}
+
+static int rtl8367b_init_post(struct rtl8366_smi *smi)
+{
+	struct device_node *np = smi->parent->of_node;
+	const __be32 *prop;
+	u32 reg, val;
+	int count, i, err;
+
+	prop = of_get_property(np, "realtek,init-regs", &count);
+	if (!prop)
+		return 0;
+
+	if (!count || count % (2 * sizeof(*prop))) {
+		dev_err(smi->parent,
+			"realtek,init-regs must contain register/value pairs\n");
+		return -EINVAL;
+	}
+
+	count /= sizeof(*prop);
+	if (count > RTL8367B_MAX_INIT_REGS * 2) {
+		dev_err(smi->parent,
+			"realtek,init-regs has too many pairs: %d\n", count / 2);
+		return -E2BIG;
+	}
+
+	for (i = 0; i < count; i += 2) {
+		reg = be32_to_cpup(prop++);
+		val = be32_to_cpup(prop++);
+		if (reg > U16_MAX || val > U16_MAX) {
+			dev_err(smi->parent,
+				"invalid init register/value pair: %#x/%#x\n",
+				reg, val);
+			return -ERANGE;
+		}
+
+		REG_WR(smi, reg, val);
+	}
+
+	return 0;
 }
 
 static int rtl8367b_reset_chip(struct rtl8366_smi *smi)
@@ -765,7 +810,6 @@ static int rtl8367b_extif_init(struct rtl8366_smi *smi, int id,
 	return 0;
 }
 
-#ifdef CONFIG_OF
 static int rtl8367b_extif_init_of(struct rtl8366_smi *smi,
 				  const char *name)
 {
@@ -842,40 +886,24 @@ err_init:
 
 	return err;
 }
-#else
-static int rtl8367b_extif_init_of(struct rtl8366_smi *smi,
-				  const char *name)
-{
-	return -EINVAL;
-}
-#endif
 
 static int rtl8367b_setup(struct rtl8366_smi *smi)
 {
-	struct rtl8367_platform_data *pdata;
 	int err;
 	int i;
-
-	pdata = smi->parent->platform_data;
 
 	err = rtl8367b_init_regs(smi);
 	if (err)
 		return err;
 
-	/* initialize external interfaces */
-	if (smi->parent->of_node) {
-		err = rtl8367b_extif_init_of(smi, "realtek,extif");
-		if (err)
-			return err;
-	} else {
-		err = rtl8367b_extif_init(smi, 0, pdata->extif0_cfg);
-		if (err)
-			return err;
+	err = rtl8367b_init_post(smi);
+	if (err)
+		return err;
 
-		err = rtl8367b_extif_init(smi, 1, pdata->extif1_cfg);
-		if (err)
-			return err;
-	}
+	/* initialize external interfaces */
+	err = rtl8367b_extif_init_of(smi, "realtek,extif");
+	if (err)
+		return err;
 
 	/* set maximum packet length to 1536 bytes */
 	REG_RMW(smi, RTL8367B_SWC0_REG, RTL8367B_SWC0_MAX_LENGTH_MASK,
@@ -1521,6 +1549,12 @@ static int rtl8367b_detect(struct rtl8366_smi *smi)
 		chip_name = "8367RB";
 		smi->rtl8367b_chip = RTL8367B_CHIP_RTL8367RB;
 		break;
+	case 0x2000:
+		if (chip_num == 0x6000) {
+			chip_name = "8367RB";
+			smi->rtl8367b_chip = RTL8367B_CHIP_RTL8367RB;
+		}
+		break;
 	case 0x1010:
 		chip_name = "8367R-VB";
 		smi->rtl8367b_chip = RTL8367B_CHIP_RTL8367R_VB;
@@ -1594,8 +1628,7 @@ static int  rtl8367b_probe(struct platform_device *pdev)
 	platform_set_drvdata(pdev, NULL);
 	rtl8366_smi_cleanup(smi);
  err_free_smi:
-	if (smi->emu_vlanmc)
-		kfree(smi->emu_vlanmc);
+	kfree(smi->emu_vlanmc);
 	kfree(smi);
 	return err;
 }
@@ -1608,6 +1641,7 @@ static void rtl8367b_remove(struct platform_device *pdev)
 		rtl8367b_switch_cleanup(smi);
 		platform_set_drvdata(pdev, NULL);
 		rtl8366_smi_cleanup(smi);
+		kfree(smi->emu_vlanmc);
 		kfree(smi);
 	}
 }
@@ -1620,24 +1654,20 @@ static void rtl8367b_shutdown(struct platform_device *pdev)
 		rtl8367b_reset_chip(smi);
 }
 
-#ifdef CONFIG_OF
 static const struct of_device_id rtl8367b_match[] = {
 	{ .compatible = "realtek,rtl8367b" },
 	{},
 };
 MODULE_DEVICE_TABLE(of, rtl8367b_match);
-#endif
 
 static struct platform_driver rtl8367b_driver = {
 	.driver = {
 		.name		= RTL8367B_DRIVER_NAME,
-#ifdef CONFIG_OF
-		.of_match_table = of_match_ptr(rtl8367b_match),
-#endif
+		.of_match_table = rtl8367b_match,
 	},
-	.probe		= rtl8367b_probe,
-	.remove_new	= rtl8367b_remove,
-	.shutdown	= rtl8367b_shutdown,
+	.probe	  = rtl8367b_probe,
+	.remove	  = rtl8367b_remove,
+	.shutdown = rtl8367b_shutdown,
 };
 
 module_platform_driver(rtl8367b_driver);
@@ -1646,4 +1676,3 @@ MODULE_DESCRIPTION("Realtek RTL8367B ethernet switch driver");
 MODULE_AUTHOR("Gabor Juhos <juhosg@openwrt.org>");
 MODULE_LICENSE("GPL v2");
 MODULE_ALIAS("platform:" RTL8367B_DRIVER_NAME);
-

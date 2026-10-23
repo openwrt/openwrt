@@ -16,6 +16,13 @@ NO_EXPORT=1
 LOAD_STATE=1
 LIST_SEP=" "
 
+# check for valid hexdump and strip common separators and leading/trailing blanks
+# input can be single- or multi-line, separators can be none, dash, colon or one or more spaces/tabs
+hexdump_2hex() {
+	[ -z "$1" ] && return
+	echo -n "$1" | tr '\nA-F' ' a-f' | sed -nr '/^\s*[0-9a-f]{2}((\s+|[:-]?)[0-9a-f]{2})*\s*$/s/[[:space:]:-]*//pg'
+}
+
 # xor multiple hex values of the same length
 xor() {
 	local val
@@ -382,7 +389,7 @@ default_postinst() {
 			uci commit
 		fi
 
-		rm -f /tmp/luci-indexcache
+		rm -f /tmp/luci-indexcache.*
 	fi
 
 	if [ -f "$root/usr/lib/opkg/info/${pkgname}.postinst-pkg" ]; then

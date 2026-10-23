@@ -1,0 +1,56 @@
+From e8d97c270cb46a2a88739019d0f8547adc7d97da Mon Sep 17 00:00:00 2001
+From: Ming Qian <ming.qian@oss.nxp.com>
+Date: Fri, 6 Mar 2026 11:10:57 +0800
+Subject: [PATCH] media: verisilicon: Fix kernel panic due to __initconst
+ misuse
+
+Fix a kernel panic when probing the driver as a module:
+
+  Unable to handle kernel paging request at virtual address
+  ffffd9c18eb05000
+  of_find_matching_node_and_match+0x5c/0x1a0
+  hantro_probe+0x2f4/0x7d0 [hantro_vpu]
+
+The imx8mq_vpu_shared_resources array is referenced by variant
+structures through their shared_devices field. When built as a
+module, __initconst causes this data to be freed after module
+init, but it's later accessed during probe, causing a page fault.
+
+The imx8mq_vpu_shared_resources is referenced from non-init code,
+so keeping __initconst or __initconst_or_module here is wrong.
+
+Drop the __initconst annotation and let it live in the normal .rodata
+section.
+
+A bug of __initconst called from regular non-init probe code
+leading to bugs during probe deferrals or during unbind-bind cycles.
+
+Reported-by: Krzysztof Kozlowski <krzysztof.kozlowski@oss.qualcomm.com>
+Closes: https://lore.kernel.org/all/68ef934f-baa0-4bf6-93d8-834bbc441e66@kernel.org/
+Reported-by: Franz Schnyder <franz.schnyder@toradex.com>
+Closes: https://lore.kernel.org/all/n3qmcb62tepxltoskpf7ws6yiirc2so62ia23b42rj3wlmpl67@rvkbuirx7kkp/
+Fixes: e0203ddf9af7 ("media: verisilicon: Avoid G2 bus error while decoding H.264 and HEVC")
+Suggested-by: Krzysztof Kozlowski <krzysztof.kozlowski@oss.qualcomm.com>
+Suggested-by: Marco Felsch <m.felsch@pengutronix.de>
+Reviewed-by: Marco Felsch <m.felsch@pengutronix.de>
+Signed-off-by: Ming Qian <ming.qian@oss.nxp.com>
+Reviewed-by: Frank Li <Frank.Li@nxp.com>
+Reviewed-by: Krzysztof Kozlowski <krzysztof.kozlowski@oss.qualcomm.com>
+Cc: stable@kernel.org
+Signed-off-by: Nicolas Dufresne <nicolas.dufresne@collabora.com>
+Signed-off-by: Hans Verkuil <hverkuil+cisco@kernel.org>
+---
+ drivers/media/platform/verisilicon/imx8m_vpu_hw.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/media/platform/verisilicon/imx8m_vpu_hw.c
++++ b/drivers/media/platform/verisilicon/imx8m_vpu_hw.c
+@@ -343,7 +343,7 @@ const struct hantro_variant imx8mq_vpu_v
+ 	.num_regs = ARRAY_SIZE(imx8mq_reg_names)
+ };
+ 
+-static const struct of_device_id imx8mq_vpu_shared_resources[] __initconst = {
++static const struct of_device_id imx8mq_vpu_shared_resources[] = {
+ 	{ .compatible = "nxp,imx8mq-vpu-g1", },
+ 	{ .compatible = "nxp,imx8mq-vpu-g2", },
+ 	{ /* sentinel */ }

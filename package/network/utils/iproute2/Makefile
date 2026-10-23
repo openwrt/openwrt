@@ -8,12 +8,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=iproute2
-PKG_VERSION:=6.17.0
-PKG_RELEASE:=1
+PKG_VERSION:=6.18.0
+PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
 PKG_SOURCE_URL:=@KERNEL/linux/utils/net/iproute2
-PKG_HASH:=9781e59410ab7dea8e9f79bb10ff1488e63d10fcbb70503b94426ba27a8e2dec
+PKG_HASH:=6ba520e1975e4c50dc931eeae91ea37c198b8a173744885f8895b84325f9d456
 PKG_BUILD_PARALLEL:=1
 PKG_BUILD_DEPENDS:=iptables
 PKG_LICENSE:=GPL-2.0
@@ -28,7 +28,7 @@ include $(INCLUDE_DIR)/nls.mk
 define Package/iproute2/Default
   SECTION:=net
   CATEGORY:=Network
-  URL:=http://www.linuxfoundation.org/collaborate/workgroups/networking/iproute2
+  URL:=https://wiki.linuxfoundation.org/networking/iproute2
   SUBMENU:=Routing and Redirection
   MAINTAINER:=Russell Senior <russell@personaltelco.net>
 endef
@@ -40,7 +40,7 @@ $(call Package/iproute2/Default)
   DEFAULT_VARIANT:=1
   PROVIDES:=ip
   ALTERNATIVES:=200:/sbin/ip:/usr/libexec/ip-tiny
-  DEPENDS:=+libnl-tiny +(PACKAGE_devlink||PACKAGE_rdma):libmnl
+  DEPENDS:=+libnl-tiny +(PACKAGE_devlink||PACKAGE_rdma||PACKAGE_dcb):libmnl
 endef
 
 define Package/ip-full
@@ -49,7 +49,7 @@ $(call Package/iproute2/Default)
   VARIANT:=ipfull
   PROVIDES:=ip
   ALTERNATIVES:=300:/sbin/ip:/usr/libexec/ip-full
-  DEPENDS:=+libnl-tiny +libbpf +(PACKAGE_devlink||PACKAGE_rdma):libmnl
+  DEPENDS:=+libnl-tiny +libbpf +(PACKAGE_devlink||PACKAGE_rdma||PACKAGE_dcb):libmnl
 endef
 
 define Package/tc-tiny
@@ -59,7 +59,7 @@ $(call Package/iproute2/Default)
   DEFAULT_VARIANT:=1
   PROVIDES:=tc
   ALTERNATIVES:=200:/sbin/tc:/usr/libexec/tc-tiny
-  DEPENDS:=+kmod-sched-core +(PACKAGE_devlink||PACKAGE_rdma):libmnl
+  DEPENDS:=+kmod-sched-core +(PACKAGE_devlink||PACKAGE_rdma||PACKAGE_dcb):libmnl
 endef
 
 define Package/tc-bpf
@@ -68,7 +68,7 @@ $(call Package/iproute2/Default)
   VARIANT:=tcbpf
   PROVIDES:=tc
   ALTERNATIVES:=300:/sbin/tc:/usr/libexec/tc-bpf
-  DEPENDS:=+kmod-sched-core +(PACKAGE_devlink||PACKAGE_rdma):libmnl +libbpf
+  DEPENDS:=+kmod-sched-core +(PACKAGE_devlink||PACKAGE_rdma||PACKAGE_dcb):libmnl +libbpf
 endef
 
 define Package/tc-full
@@ -77,31 +77,31 @@ $(call Package/iproute2/Default)
   VARIANT:=tcfull
   PROVIDES:=tc
   ALTERNATIVES:=400:/sbin/tc:/usr/libexec/tc-full
-  DEPENDS:=+kmod-sched-core +(PACKAGE_devlink||PACKAGE_rdma):libmnl +libbpf +libxtables
+  DEPENDS:=+kmod-sched-core +(PACKAGE_devlink||PACKAGE_rdma||PACKAGE_dcb):libmnl +libbpf +libxtables
 endef
 
 define Package/genl
 $(call Package/iproute2/Default)
   TITLE:=General netlink utility frontend
-  DEPENDS:=+libnl-tiny +(PACKAGE_devlink||PACKAGE_rdma):libmnl
+  DEPENDS:=+libnl-tiny +(PACKAGE_devlink||PACKAGE_rdma||PACKAGE_dcb):libmnl
 endef
 
 define Package/ip-bridge
 $(call Package/iproute2/Default)
   TITLE:=Bridge configuration utility from iproute2
-  DEPENDS:=+libnl-tiny +(PACKAGE_devlink||PACKAGE_rdma):libmnl
+  DEPENDS:=+libnl-tiny +(PACKAGE_devlink||PACKAGE_rdma||PACKAGE_dcb):libmnl
 endef
 
 define Package/ss
 $(call Package/iproute2/Default)
   TITLE:=Socket statistics utility
-  DEPENDS:=+libnl-tiny +(PACKAGE_devlink||PACKAGE_rdma):libmnl +libbpf +kmod-netlink-diag
+  DEPENDS:=+libnl-tiny +(PACKAGE_devlink||PACKAGE_rdma||PACKAGE_dcb):libmnl +libbpf +kmod-netlink-diag
 endef
 
 define Package/nstat
 $(call Package/iproute2/Default)
   TITLE:=Network statistics utility
-  DEPENDS:=+libnl-tiny +(PACKAGE_devlink||PACKAGE_rdma):libmnl
+  DEPENDS:=+libnl-tiny +(PACKAGE_devlink||PACKAGE_rdma||PACKAGE_dcb):libmnl
 endef
 
 define Package/devlink
@@ -113,6 +113,12 @@ endef
 define Package/rdma
 $(call Package/iproute2/Default)
   TITLE:=Network rdma utility
+  DEPENDS:=+libmnl
+endef
+
+define Package/dcb
+$(call Package/iproute2/Default)
+  TITLE:=Network DCB (Data Center Bridging) utility
   DEPENDS:=+libmnl
 endef
 
@@ -158,6 +164,10 @@ ifdef CONFIG_PACKAGE_devlink
 endif
 
 ifdef CONFIG_PACKAGE_rdma
+  HAVE_MNL:=y
+endif
+
+ifdef CONFIG_PACKAGE_dcb
   HAVE_MNL:=y
 endif
 
@@ -255,6 +265,11 @@ define Package/rdma/install
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/rdma/rdma $(1)/usr/sbin/
 endef
 
+define Package/dcb/install
+	$(INSTALL_DIR) $(1)/usr/sbin
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/dcb/dcb $(1)/usr/sbin/
+endef
+
 $(eval $(call BuildPackage,ip-tiny))
 $(eval $(call BuildPackage,ip-full))
 $(eval $(call BuildPackage,tc-tiny))
@@ -266,3 +281,4 @@ $(eval $(call BuildPackage,ss))
 $(eval $(call BuildPackage,nstat))
 $(eval $(call BuildPackage,devlink))
 $(eval $(call BuildPackage,rdma))
+$(eval $(call BuildPackage,dcb))

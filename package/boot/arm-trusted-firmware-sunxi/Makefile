@@ -7,10 +7,10 @@
 
 include $(TOPDIR)/rules.mk
 
-PKG_VERSION:=2.10
+PKG_VERSION:=2.14
 PKG_RELEASE:=1
 
-PKG_HASH:=88215a62291b9ba87da8e50b077741103cdc08fb6c9e1ebd34dfaace746d3201
+PKG_HASH:=14fb6101f2ef424ec84c0296c3cbdeb7f79b22f5fbb46529bea0e362d0fab0d5
 
 PKG_LICENSE:=BSD-3-Clause
 PKG_LICENSE_FILES:=license.md
@@ -45,9 +45,6 @@ TFA_TARGETS:= \
 	sunxi-a64 \
 	sunxi-h6 \
 	sunxi-h616
-
-TFA_MAKE_FLAGS+= \
-	$(if $(CONFIG_BINUTILS_VERSION_2_37)$(CONFIG_BINUTILS_VERSION_2_38),,LDFLAGS="-no-warn-rwx-segments")
 
 define Package/trusted-firmware-a/install
 	$(INSTALL_DIR) $(STAGING_DIR_IMAGE)

@@ -20,12 +20,6 @@
 	leds {
 		compatible = "gpio-leds";
 
-		wlan2g {
-			label = "red:wlan2g";
-			gpios = <&gpio 1 GPIO_ACTIVE_LOW>;
-			linux,default-trigger = "phy1tpt";
-		};
-
 		led_power: power {
 			function = LED_FUNCTION_POWER;
 			color = <LED_COLOR_ID_GREEN>;
@@ -67,9 +61,9 @@
 &mdio0 {
 	status = "okay";
 
-	phy0: ethernet-phy@0 {
-		reg = <0>;
-		phy-mode = "sgmii";
+	ethernet-switch@10 {
+		compatible = "qca,ar8327";
+		reg = <0x10>;
 		qca,mib-poll-interval = <500>;
 
 		qca,ar8327-initvals = <
@@ -155,10 +149,14 @@
 	status = "okay";
 
 	phy-mode = "sgmii";
-	phy-handle = <&phy0>;
 
 	nvmem-cells = <&macaddr_config_8 0>;
 	nvmem-cell-names = "mac-address";
+
+	fixed-link {
+		speed = <1000>;
+		full-duplex;
+	};
 };
 
 &wmac {

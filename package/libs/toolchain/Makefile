@@ -26,7 +26,7 @@ endif
 define Package/gcc/Default
   SECTION:=libs
   CATEGORY:=Base system
-  URL:=http://gcc.gnu.org/
+  URL:=https://gcc.gnu.org/
   VERSION:=$(LIBGCC_VERSION)-r$(PKG_RELEASE)
 endef
 
@@ -142,7 +142,7 @@ define Package/libasan
 $(call Package/gcc/Default)
   NAME:=libasan
   TITLE:=Runtime library for AddressSanitizer in GCC
-  DEPENDS:=@USE_GLIBC +librt +libstdcpp @!mips64 @!mips64el @!arc
+  DEPENDS:=@USE_GLIBC +librt +libstdcpp @!mips64 @!mips64el
   ABI_VERSION:=5
 endef
 
@@ -171,7 +171,7 @@ define Package/libtsan
 $(call Package/gcc/Default)
   NAME:=libtsan
   TITLE:=Runtime library for ThreadSanitizer in GCC
-  DEPENDS:=@USE_GLIBC +librt +libstdcpp @!loongarch64 @!mips @!mipsel @!mips64 @!mips64el @!arc
+  DEPENDS:=@USE_GLIBC +librt +libstdcpp @!loongarch64 @!mips @!mipsel @!mips64 @!mips64el
   ABI_VERSION:=0
 endef
 
@@ -200,7 +200,7 @@ define Package/liblsan
 $(call Package/gcc/Default)
   NAME:=liblsan
   TITLE:=Runtime library for LeakSanitizer in GCC
-  DEPENDS:=@USE_GLIBC +librt +libstdcpp @!loongarch64 @!mips @!mipsel @!mips64 @!mips64el @!arc
+  DEPENDS:=@USE_GLIBC +librt +libstdcpp @!loongarch64 @!mips @!mipsel @!mips64 @!mips64el
   ABI_VERSION:=0
 endef
 
@@ -229,7 +229,7 @@ define Package/libubsan
 $(call Package/gcc/Default)
   NAME:=libubsan
   TITLE:=Runtime library for UndefinedBehaviorSanitizer in GCC
-  DEPENDS:=@USE_GLIBC +librt +libstdcpp @!mips64 @!mips64el @!arc
+  DEPENDS:=@USE_GLIBC +librt +libstdcpp @!mips64 @!mips64el
   ABI_VERSION:=1
 endef
 
@@ -578,7 +578,7 @@ ifeq ($(CONFIG_EXTERNAL_TOOLCHAIN),)
   endef
 
   define Package/libc/install
-    echo $(LIBC_VERSION)-r$(PKG_RELEASE) > $(TMP_DIR)/libc.version; \
+    echo $(LIBC_VERSION)-r$(PKG_RELEASE) > $(STAGING_DIR)/libc.version; \
     $(call Package/$(LIBC)/install,$1)
   endef
 
@@ -698,7 +698,7 @@ else
   endef
 
   define Package/libc/install
-	echo $(LIBC_VERSION)-r$(PKG_RELEASE) > $(TMP_DIR)/libc.version; \
+	echo $(LIBC_VERSION)-r$(PKG_RELEASE) > $(STAGING_DIR)/libc.version; \
 	for file in $(call qstrip,$(CONFIG_LIBC_FILE_SPEC)); do \
 		if [ '$(CONFIG_USE_GLIBC)' != '' ] ; then \
 			case "$${file}" in \
@@ -781,8 +781,9 @@ else
 
 endif
 
-$(eval $(call BuildPackage,libc))
 $(eval $(call BuildPackage,libgcc))
+# libc depends on knowing libgcc's ABI, so it needs to be evaluated first
+$(eval $(call BuildPackage,libc))
 $(eval $(call BuildPackage,libatomic))
 $(eval $(call BuildPackage,libquadmath))
 $(eval $(call BuildPackage,libstdcpp))

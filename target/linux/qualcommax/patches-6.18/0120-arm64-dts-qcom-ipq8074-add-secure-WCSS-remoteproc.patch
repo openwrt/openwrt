@@ -1,0 +1,95 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Robert Marko <robimarko@gmail.com>
+Date: Wed, 16 Sep 2026 14:20:44 +0200
+Subject: [PATCH] arm64: dts: qcom: ipq8074: add secure WCSS remoteproc
+
+Describe the IPQ8074 WCSS remote processor using the secure PIL
+compatible. Add the SMP2P state and interrupt channels needed for
+startup, shutdown and crash handling, and the GLINK edge used by the
+firmware.
+
+Signed-off-by: Robert Marko <robimarko@gmail.com>
+---
+ arch/arm64/boot/dts/qcom/ipq8074.dtsi | 72 ++++++++++++++++++++++++++++
+ 1 file changed, 72 insertions(+)
+
+--- a/arch/arm64/boot/dts/qcom/ipq8074.dtsi
++++ b/arch/arm64/boot/dts/qcom/ipq8074.dtsi
+@@ -142,6 +142,32 @@
+ 		};
+ 	};
+ 
++	wcss: smp2p-wcss {
++		compatible = "qcom,smp2p";
++		qcom,smem = <435>, <428>;
++
++		interrupt-parent = <&intc>;
++		interrupts = <GIC_SPI 322 IRQ_TYPE_EDGE_RISING>;
++
++		mboxes = <&apcs_glb 9>;
++
++		qcom,local-pid = <0>;
++		qcom,remote-pid = <1>;
++
++		wcss_smp2p_out: master-kernel {
++			qcom,entry-name = "master-kernel";
++			qcom,smp2p-feature-ssr-ack;
++			#qcom,smem-state-cells = <1>;
++		};
++
++		wcss_smp2p_in: slave-kernel {
++			qcom,entry-name = "slave-kernel";
++
++			interrupt-controller;
++			#interrupt-cells = <2>;
++		};
++	};
++
+ 	soc: soc@0 {
+ 		#address-cells = <1>;
+ 		#size-cells = <1>;
+@@ -1028,6 +1054,44 @@
+ 				ranges;
+ 			};
+ 		};
++
++		q6v5_wcss: remoteproc@cd00000 {
++			compatible = "qcom,ipq8074-wcss-sec-pil";
++			reg = <0x0cd00000 0x4040>, <0x004ab000 0x20>;
++			reg-names = "qdsp6", "rmb";
++			firmware-name = "IPQ8074/q6_fw.mdt", "IPQ8074/m3_fw.mdt";
++
++			interrupts-extended = <&intc GIC_SPI 325 IRQ_TYPE_EDGE_RISING>,
++					      <&wcss_smp2p_in 0 IRQ_TYPE_NONE>,
++					      <&wcss_smp2p_in 1 IRQ_TYPE_NONE>,
++					      <&wcss_smp2p_in 2 IRQ_TYPE_NONE>,
++					      <&wcss_smp2p_in 3 IRQ_TYPE_NONE>;
++			interrupt-names = "wdog",
++					  "fatal",
++					  "ready",
++					  "handover",
++					  "stop-ack";
++
++			clocks = <&gcc GCC_PRNG_AHB_CLK>;
++			clock-names = "prng";
++
++			qcom,smem-states = <&wcss_smp2p_out 0>,
++					   <&wcss_smp2p_out 1>;
++			qcom,smem-state-names = "shutdown",
++						"stop";
++
++			memory-region = <&q6_region>;
++
++			glink-edge {
++				interrupts = <GIC_SPI 321 IRQ_TYPE_EDGE_RISING>;
++				qcom,remote-pid = <1>;
++				mboxes = <&apcs_glb 8>;
++
++				rpm_requests {
++					qcom,glink-channels = "IPCRTR";
++				};
++			};
++		};
+ 	};
+ 
+ 	timer {

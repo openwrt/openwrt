@@ -6,6 +6,7 @@ use metadata;
 use Getopt::Long;
 use Time::Piece;
 use JSON::PP;
+use Digest::MD5 qw(md5_hex);
 
 my %board;
 
@@ -180,6 +181,8 @@ sub mconf_depends {
 		}
 		if ($flags =~ /\+/) {
 			my $vdep = $vpackage{$depend};
+			my $rank;
+			my $negation;
 			if ($vdep) {
 				my @vdeps;
 
@@ -195,22 +198,33 @@ sub mconf_depends {
 				$depend = shift @vdeps;
 
 				if (@vdeps > 1) {
-					$condition = ($condition ? "$condition && " : '') . join("&&", map { "PACKAGE_$_<PACKAGE_$pkgname" } @vdeps);
+					$rank = join("&&", map { "PACKAGE_$_<PACKAGE_$pkgname" } @vdeps);
+					$negation = '!('.join("||", map { "PACKAGE_$_" } @vdeps).')';
 				} elsif (@vdeps > 0) {
-					$condition = ($condition ? "$condition && " : '') . "PACKAGE_${vdeps[0]}<PACKAGE_$pkgname";
+					$rank = "PACKAGE_${vdeps[0]}<PACKAGE_$pkgname";
+					$negation = '!PACKAGE_'.$vdeps[0];
 				}
 			}
 
 			# Menuconfig will not treat 'select FOO' as a real dependency
 			# thus if FOO depends on other config options, these dependencies
 			# will not be checked. To fix this, we simply emit all of FOO's
-			# depends here as well.
-			$package{$depend} and push @t_depends, [ $package{$depend}->{depends}, $condition ];
+			# depends here as well. Re-emitted deps carry the pre-rank
+			# negation instead of the rank, as before 1fd50531.
+			my $reemit = $condition;
+			$reemit = ($reemit ? "$reemit && " : '') . $negation if defined $negation;
+			$package{$depend} and push @t_depends, [ $package{$depend}->{depends}, $reemit ];
 
 			$m = "select";
 			next if $only_dep;
 
 			$flags =~ /@/ or $depend = "PACKAGE_$depend";
+
+			# arbitration gate for select emission only (1fd50531's charter);
+			# re-emission above carries the negation instead of the rank
+			if (defined $rank) {
+				$condition = ($condition ? "$condition && " : '') . $rank;
+			}
 		} else {
 			my $vdep = $vpackage{$depend};
 			if ($vdep && @$vdep > 0) {
@@ -253,6 +267,52 @@ sub mconf_conflicts {
 		$res .= "\t\tdepends on m || (PACKAGE_$depend != y)\n";
 	}
 	return $res;
+}
+
+sub add_implicit_provides_conflicts {
+	foreach my $provide (keys %vpackage) {
+		next if $provide =~ /-any$/;
+
+		my $providers = $vpackage{$provide};
+		next unless $providers && @$providers > 1;
+
+		my $default_pkg;
+		my @non_defaults;
+
+		foreach my $pkg (@$providers) {
+			next if $pkg->{buildonly};
+			if ($pkg->{variant_default}) {
+				$default_pkg = $pkg;
+			} else {
+				push @non_defaults, $pkg;
+			}
+		}
+
+		next unless $default_pkg && @non_defaults;
+
+		my %existing_conflicts;
+		if ($default_pkg->{conflicts}) {
+			%existing_conflicts = map { $_ => 1 } @{$default_pkg->{conflicts}};
+		}
+
+		foreach my $non_default (@non_defaults) {
+			next if $existing_conflicts{$non_default->{name}};
+
+			my $already_conflicts = 0;
+			if ($non_default->{conflicts}) {
+				foreach my $c (@{$non_default->{conflicts}}) {
+					if ($c eq $default_pkg->{name}) {
+						$already_conflicts = 1;
+						last;
+					}
+				}
+			}
+			next if $already_conflicts;
+
+			$default_pkg->{conflicts} ||= [];
+			push @{$default_pkg->{conflicts}}, $non_default->{name};
+		}
+	}
 }
 
 sub print_package_config_category($) {
@@ -350,11 +410,13 @@ sub print_package_overrides() {
 
 sub gen_package_config() {
 	parse_package_metadata($ARGV[0]) or exit 1;
+	add_implicit_provides_conflicts();
 	print "menuconfig IMAGEOPT\n\tbool \"Image configuration\"\n\tdefault n\n";
 	print "source \"package/*/image-config.in\"\n";
 	if (scalar glob "package/feeds/*/*/image-config.in") {
 	    print "source \"package/feeds/*/*/image-config.in\"\n";
 	}
+	print_package_config_category 'Hardware support';
 	print_package_config_category 'Base system';
 	foreach my $cat (sort {uc($a) cmp uc($b)} keys %category) {
 		print_package_config_category $cat;
@@ -399,6 +461,8 @@ sub gen_package_mk() {
 	foreach my $srcname (sort {uc($a) cmp uc($b)} keys %srcpackage) {
 		my $src = $srcpackage{$srcname};
 		my $variant_default;
+		my @variants;
+		my %variant_config;
 		my %deplines = ('' => {});
 
 		foreach my $pkg (@{$src->{packages}}) {
@@ -448,12 +512,21 @@ sub gen_package_mk() {
 				if (!defined($variant_default) or $pkg->{variant_default}) {
 					$variant_default = $pkg->{variant};
 				}
-				printf "\$(curdir)/%s/variants += \$(if %s,%s)\n", $src->{path}, $config, $pkg->{variant};
+				push @variants, $pkg->{variant} unless defined $variant_config{$pkg->{variant}};
+				$variant_config{$pkg->{variant}} .= $config;
 			}
+		}
+
+		foreach my $variant (@variants) {
+			printf "\$(curdir)/%s/variants += \$(if %s,%s)\n", $src->{path}, $variant_config{$variant}, $variant;
 		}
 
 		if (defined($variant_default)) {
 			printf "\$(curdir)/%s/default-variant := %s\n", $src->{path}, $variant_default;
+		}
+
+		if ($src->{parallel_variants}) {
+			printf "\$(curdir)/%s/parallel-variants := 1\n", $src->{path};
 		}
 
 		unless (grep {!$_->{buildonly}} @{$src->{packages}}) {
@@ -538,13 +611,15 @@ sub gen_package_auxiliary() {
 		}
 		my %depends;
 		foreach my $dep (@{$pkg->{depends} || []}) {
-			if ($dep =~ m!^\+?(?:[^:]+:)?([^@]+)$!) {
-				$depends{$1}++;
-			}
+			next unless $dep =~ m!^\+?(?:([^:]+):)?([^@]+)$!;
+			my ($condition, $depname) = ($1, $2);
+			$depends{get_conditional_dep($condition, $depname)}++;
 		}
 		my @depends = sort keys %depends;
 		if (@depends > 0) {
 			foreach my $n (@{$pkg->{provides}}) {
+				# A real package of that name keeps its own dependencies
+				next if $n ne $name && $package{$n};
 				print "Package/$n/depends = @depends\n";
 			}
 		}
@@ -641,12 +716,24 @@ sub image_manifest_packages($)
 sub dump_cyclonedxsbom_json {
 	my (@components) = @_;
 
+	my $json = JSON::PP->new->canonical(1);
+	my $epoch = $ENV{SOURCE_DATE_EPOCH};
+	my $timestamp;
+
+	if (defined($epoch) && $epoch ne '') {
+		$epoch =~ /^\d+$/ or die "SOURCE_DATE_EPOCH is not a number\n";
+		$timestamp = gmtime($epoch)->datetime . 'Z';
+	} else {
+		$timestamp = gmtime->datetime . 'Z';
+	}
+
+	my $digest = md5_hex($timestamp . $json->encode([@components]));
 	my $uuid = sprintf(
-	    "%04x%04x-%04x-%04x-%04x-%04x%04x%04x",
-	    rand(0xffff), rand(0xffff), rand(0xffff),
-	    rand(0x0fff) | 0x4000,
-	    rand(0x3fff) | 0x8000,
-	    rand(0xffff), rand(0xffff), rand(0xffff)
+	    "%s-%s-3%s-%x%s-%s",
+	    substr($digest, 0, 8), substr($digest, 8, 4),
+	    substr($digest, 13, 3),
+	    (hex(substr($digest, 16, 1)) & 0x3) | 0x8, substr($digest, 17, 3),
+	    substr($digest, 20, 12)
 	);
 
 	my $cyclonedx = {
@@ -655,12 +742,12 @@ sub dump_cyclonedxsbom_json {
 		serialNumber => "urn:uuid:$uuid",
 		version => 1,
 		metadata => {
-			timestamp => gmtime->datetime . 'Z',
+			timestamp => $timestamp,
 		},
 		"components" => [@components],
 	};
 
-	return encode_json($cyclonedx);
+	return $json->encode($cyclonedx);
 }
 
 sub gen_image_cyclonedxsbom() {

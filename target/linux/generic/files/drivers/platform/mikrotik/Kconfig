@@ -9,7 +9,7 @@ if MIKROTIK
 
 config MIKROTIK_RB_SYSFS
 	tristate "RouterBoot sysfs support"
-	depends on MTD
+	depends on MTD && NET
 	select LZO_DECOMPRESS
 	select CRC32
 	help

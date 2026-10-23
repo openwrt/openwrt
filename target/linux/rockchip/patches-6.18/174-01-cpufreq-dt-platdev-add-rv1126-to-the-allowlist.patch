@@ -1,0 +1,24 @@
+From 61e9dfe17fb48452c5c3e9bbb2f868b4d3774d70 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Fri, 9 Oct 2026 14:26:34 +0100
+Subject: [PATCH] cpufreq: dt-platdev: Add RV1126 to the allowlist
+
+The four Cortex-A7 cores of the RV1126 share one clock and scale with
+the generic DT-based cpufreq driver once the device tree provides an
+operating points table. Create the cpufreq-dt device for the SoC.
+
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ drivers/cpufreq/cpufreq-dt-platdev.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/drivers/cpufreq/cpufreq-dt-platdev.c
++++ b/drivers/cpufreq/cpufreq-dt-platdev.c
+@@ -80,6 +80,7 @@ static const struct of_device_id allowli
+ 	  .data = &(struct cpufreq_dt_platform_data)
+ 		{ .have_governor_per_policy = true, },
+ 	},
++	{ .compatible = "rockchip,rv1126", },
+ 
+ 	{ .compatible = "st-ericsson,u8500", },
+ 	{ .compatible = "st-ericsson,u8540", },

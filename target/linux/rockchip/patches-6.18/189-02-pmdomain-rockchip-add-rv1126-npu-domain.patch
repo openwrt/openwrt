@@ -1,0 +1,25 @@
+From 96ee068f4b66a4387b5f71d0e42fabb2b191ae1d Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Mon, 19 Oct 2026 23:19:37 +0100
+Subject: [PATCH 2/3] pmdomain: rockchip: Add the RV1126 NPU domain
+
+Describe the NPU power bit and its bus-idle request in the second PMU
+request register. Reuse the existing offset-aware domain operations
+to manage NPU isolation and power transitions.
+
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ drivers/pmdomain/rockchip/pm-domains.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+--- a/drivers/pmdomain/rockchip/pm-domains.c
++++ b/drivers/pmdomain/rockchip/pm-domains.c
+@@ -1104,6 +1104,8 @@ static const struct rockchip_domain_info
+ };
+ 
+ static const struct rockchip_domain_info rv1126_pm_domains[] = {
++	[RV1126_PD_NPU]		= DOMAIN_M_O_R("npu", 0, BIT(0), BIT(0), 0, 0, 0, 0x4,
++					     BIT(2), BIT(18), BIT(18), false, false),
+ 	[RV1126_PD_VEPU]	= DOMAIN_RV1126("vepu", BIT(2),  BIT(9),  BIT(9), false),
+ 	[RV1126_PD_VI]		= DOMAIN_RV1126("vi", BIT(4),  BIT(6),  BIT(6),  false),
+ 	[RV1126_PD_VO]		= DOMAIN_RV1126("vo", BIT(5),  BIT(7),  BIT(7),  false),

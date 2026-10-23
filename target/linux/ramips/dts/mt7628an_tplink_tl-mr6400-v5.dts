@@ -100,16 +100,10 @@
 	nvmem-cell-names = "mac-address";
 };
 
-&factory {
-	nvmem-layout {
-		compatible = "fixed-layout";
-		#address-cells = <1>;
-		#size-cells = <1>;
-
-		macaddr_factory_1f100: macaddr@1f100 {
-			compatible = "mac-base";
-			reg = <0x1f100 0x6>;
-			#nvmem-cell-cells = <1>;
-		};
+&nvmem {
+	macaddr_factory_1f100: macaddr@1f100 {
+		compatible = "mac-base";
+		reg = <0x1f100 0x6>;
+		#nvmem-cell-cells = <1>;
 	};
 };

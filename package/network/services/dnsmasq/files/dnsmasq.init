@@ -364,7 +364,7 @@ dhcp_host_add() {
 
 	config_get_bool dns "$cfg" dns 0
 	[ "$dns" = "1" ] && [ -n "$ip" ] && [ -n "$name" ] && {
-		echo "$ip $name${DOMAIN:+.$DOMAIN}" >> "$HOSTFILE_TMP"
+		echo "$ip $name${DOMAIN:+.$DOMAIN $name}" >> "$HOSTFILE_TMP"
 	}
 
 	config_get mac "$cfg" mac
@@ -575,8 +575,8 @@ dhcp_add() {
 	config_get_bool dynamicdhcpv4 "$cfg" dynamicdhcpv4 $dynamicdhcp
 	config_get_bool dynamicdhcpv6 "$cfg" dynamicdhcpv6 $dynamicdhcp
 
-	config_get dhcpv4 "$cfg" dhcpv4
-	config_get dhcpv6 "$cfg" dhcpv6
+	config_get dhcpv4 "$cfg" dhcpv4 disabled
+	config_get dhcpv6 "$cfg" dhcpv6 disabled
 
 	config_get ra "$cfg" ra
 	config_get ra_management "$cfg" ra_management
@@ -905,11 +905,17 @@ dnsmasq_ipset_add() {
 dnsmasq_start()
 {
 	local cfg="$1"
-	local disabled user_dhcpscript logfacility
+	local disabled user_dhcpscript logfacility vrf
 	local resolvfile resolvdir localuse=1
 
 	config_get_bool disabled "$cfg" disabled 0
 	[ "$disabled" -gt 0 ] && return 0
+
+	# The VRF and the interfaces of the instance are not known at boot, and
+	# without them it would collide with the other instances. The interface
+	# triggers start it later.
+	config_get vrf "$cfg" vrf
+	[ -n "$BOOT" ] && [ -n "$vrf" ] && return 0
 
 	# reset list of DOMAINS, DNS servers and EXTRA mounts (for each dnsmasq instance)
 	DNS_SERVERS=""
@@ -1269,6 +1275,8 @@ dnsmasq_start()
 	[ -n "$user_dhcpscript" ] && procd_set_param env USER_DHCPSCRIPT="$user_dhcpscript"
 	procd_set_param respawn
 
+	[ -n "$vrf" ] && procd_set_param vrf "$vrf"
+
 	local instance_ifc instance_netdev
 	config_get instance_ifc "$cfg" interface
 	[ -n "$instance_ifc" ] && network_get_device instance_netdev "$instance_ifc" &&
@@ -1312,16 +1320,40 @@ add_interface_trigger()
 	config_get_bool ignore "$1" ignore 0
 	network_get_device ifname "$interface" || ignore=0
 
-	[ -n "$interface" ] && [ $ignore -eq 0 ] && procd_add_interface_trigger "interface.*" "$interface" /etc/init.d/dnsmasq reload
+	[ -n "$interface" ] && [ $ignore -eq 0 ] && trigger_interfaces="$trigger_interfaces $interface"
+}
+
+add_vrf_trigger()
+{
+	local vrf interface
+
+	config_get vrf "$1" vrf
+	[ -n "$vrf" ] || return 0
+
+	# The instance is not started at boot. Its interfaces may have no
+	# dhcp section, and without interfaces any interface has to start it.
+	config_get interface "$1" interface
+	[ -n "$interface" ] || vrf_trigger=1
+	trigger_interfaces="$trigger_interfaces $interface"
 }
 
 service_triggers()
 {
+	local trigger_interfaces vrf_trigger interface
+
 	procd_add_reload_trigger "dhcp" "system"
 
 	config_load dhcp
 	config_foreach add_interface_trigger dhcp
 	config_foreach add_interface_trigger relay
+	config_foreach add_vrf_trigger dnsmasq
+
+	for interface in $(printf '%s\n' $trigger_interfaces | sort -u); do
+		procd_add_interface_trigger "interface.*" "$interface" /etc/init.d/dnsmasq reload
+	done
+
+	[ -n "$vrf_trigger" ] &&
+		procd_add_raw_trigger "interface.*.up" 2000 /etc/init.d/dnsmasq reload
 }
 
 boot()

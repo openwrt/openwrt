@@ -1,3 +1,5 @@
+DTS_DIR := $(DTS_DIR)/qcom
+
 define Device/dsa-migration
   DEVICE_COMPAT_VERSION := 1.1
   DEVICE_COMPAT_MESSAGE := Config cannot be migrated from swconfig to DSA
@@ -47,7 +49,7 @@ define Device/OnhubImage
 			   partx-utils mkf2fs kmod-fs-f2fs \
 			   ucode kmod-google-firmware kmod-tpm-i2c-infineon \
 			   kmod-sound-soc-ipq8064-storm kmod-usb-storage \
-			   kmod-ramoops
+			   kmod-ramoops audio-support
 endef
 
 define Device/asus_onhub

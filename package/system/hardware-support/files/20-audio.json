@@ -1,0 +1,25 @@
+[
+	[ "if",
+		[ "eq", "SUBSYSTEM", "sound" ],
+		[
+			[ "if",
+				[ "regex", "DEVNAME", "^snd/pcm.*c$" ],
+				[
+					[ "makedev", "/dev/%DEVNAME%", "0660", "audio-capture" ],
+					[ "return" ]
+				]
+			],
+			[ "if",
+				[ "regex", "DEVNAME", "^snd/(seq|midi)" ],
+				[
+					[ "makedev", "/dev/%DEVNAME%", "0660", "midi" ],
+					[ "return" ]
+				]
+			],
+			[ "if",
+				[ "regex", "DEVNAME", "^snd/" ],
+				[ "makedev", "/dev/%DEVNAME%", "0660", "audio" ]
+			]
+		]
+	]
+]

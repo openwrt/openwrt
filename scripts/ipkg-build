@@ -15,9 +15,7 @@ FIND="${FIND:-$(command -v gfind)}"
 TAR="${TAR:-$(command -v tar)}"
 
 # try to use fixed source epoch
-if [ -n "$PKG_SOURCE_DATE_EPOCH" ]; then
-	TIMESTAMP=$(date --date="@$PKG_SOURCE_DATE_EPOCH")
-elif [ -n "$SOURCE_DATE_EPOCH" ]; then
+if [ -n "$SOURCE_DATE_EPOCH" ]; then
 	TIMESTAMP=$(date --date="@$SOURCE_DATE_EPOCH")
 else
 	TIMESTAMP=$(date)
@@ -45,7 +43,7 @@ pkg_appears_sane() {
 	arch="$(required_field Architecture)"
 
 	if echo "$pkg" | grep '[^a-zA-Z0-9_.+-]'; then
-		echo "*** Error: Package name $name contains illegal characters, (other than [a-z0-9.+-])" >&2
+		echo "*** Error: Package name '$pkg' contains illegal characters, (other than [a-z0-9.+-])" >&2
 		PKG_ERROR=1;
 	fi
 

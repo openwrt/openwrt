@@ -4,33 +4,34 @@
 #include "rtl9302_zyxel_xgs1250-12-common.dtsi"
 
 / {
-	compatible = "zyxel,xgs1250-12-b1", "realtek,rtl838x-soc";
+	compatible = "zyxel,xgs1250-12-b1", "realtek,rtl9302-soc";
 	model = "Zyxel XGS1250-12 B1 Switch";
 };
 
-&mdio_bus0 {
-	phy24: ethernet-phy@24 {
-		reg = <24>;
+&mdio_bus1 {
+	phy24: ethernet-phy@0 {
+		reg = <0>;
 		compatible = "ethernet-phy-ieee802.3-c45";
-		rtl9300,smi-address = <1 0>;
 		// Disabled because we do not know how to bring up again
 		// reset-gpios = <&gpio0 21 GPIO_ACTIVE_LOW>;
 		#thermal-sensor-cells = <0>;
 	};
+};
 
-	phy25: ethernet-phy@25 {
-		reg = <25>;
+&mdio_bus2 {
+	phy25: ethernet-phy@1 {
+		reg = <1>;
 		compatible = "ethernet-phy-ieee802.3-c45";
-		rtl9300,smi-address = <2 1>;
 		// Disabled because we do not know how to bring up again
 		// reset-gpios = <&gpio0 21 GPIO_ACTIVE_LOW>;
 		#thermal-sensor-cells = <0>;
 	};
+};
 
-	phy26: ethernet-phy@26 {
-		reg = <26>;
+&mdio_bus3 {
+	phy26: ethernet-phy@2 {
+		reg = <2>;
 		compatible = "ethernet-phy-ieee802.3-c45";
-		rtl9300,smi-address = <3 2>;
 		// Disabled because we do not know how to bring up again
 		// reset-gpios = <&gpio0 21 GPIO_ACTIVE_LOW>;
 		#thermal-sensor-cells = <0>;

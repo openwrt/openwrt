@@ -73,11 +73,11 @@ static nvram_tuple_t * _nvram_realloc( nvram_handle_t *h, nvram_tuple_t *t,
 		return NULL;
 
 	if (!t) {
-		if (!(t = malloc(sizeof(nvram_tuple_t) + strlen(name) + 1)))
+		t = malloc(sizeof(nvram_tuple_t) + strlen(name) + 1);
+		if (!t)
 			return NULL;
 
 		/* Copy name */
-		t->name = (char *) &t[1];
 		strcpy(t->name, name);
 
 		t->value = NULL;
@@ -86,7 +86,8 @@ static nvram_tuple_t * _nvram_realloc( nvram_handle_t *h, nvram_tuple_t *t,
 	/* Copy value */
 	if (!t->value || strcmp(t->value, value))
 	{
-		if(!(t->value = (char *) realloc(t->value, strlen(value)+1)))
+		t->value = realloc(t->value, strlen(value) + 1);
+		if(!t->value)
 			return NULL;
 
 		strcpy(t->value, value);
@@ -100,7 +101,7 @@ static nvram_tuple_t * _nvram_realloc( nvram_handle_t *h, nvram_tuple_t *t,
 static int _nvram_rehash(nvram_handle_t *h)
 {
 	nvram_header_t *header = nvram_header(h);
-	char buf[] = "0xXXXXXXXX", *name, *value, *eq;
+	char buf[] = "0xXXXXXXXX", *name, *value, *eq, *nul, *end;
 
 	/* (Re)initialize hash table */
 	_nvram_free(h);
@@ -108,13 +109,33 @@ static int _nvram_rehash(nvram_handle_t *h)
 	/* Parse and set "name=value\0 ... \0\0" */
 	name = (char *) &header[1];
 
-	for (; *name; name = value + strlen(value) + 1) {
-		if (!(eq = strchr(name, '=')))
+	/*
+	 * Stop at the end of the used area, but never look beyond the mapped
+	 * partition. A length which does not fit the partition is ignored to
+	 * still read the variables of a broken nvram.
+	 */
+	end = h->mmap + h->length;
+	if (header->len >= sizeof(nvram_header_t) &&
+	    header->len <= h->length - h->offset)
+		end = (char *) header + header->len;
+
+	while (name < end && *name) {
+		eq = memchr(name, '=', end - name);
+		if (!eq)
 			break;
-		*eq = '\0';
+
 		value = eq + 1;
+
+		/* The value has to be terminated within this area */
+		nul = memchr(value, '\0', end - value);
+		if (!nul)
+			break;
+
+		*eq = '\0';
 		nvram_set(h, name, value);
 		*eq = '=';
+
+		name = nul + 1;
 	}
 
 	/* Set special SDRAM parameters */
@@ -185,7 +206,8 @@ int nvram_set(nvram_handle_t *h, const char *name, const char *value)
 		 t && strcmp(t->name, name); prev = &t->next, t = *prev);
 
 	/* (Re)allocate tuple */
-	if (!(u = _nvram_realloc(h, t, name, value)))
+	u = _nvram_realloc(h, t, name, value);
+	if (!u)
 		return -12; /* -ENOMEM */
 
 	/* Value reallocated */
@@ -242,17 +264,13 @@ nvram_tuple_t * nvram_getall(nvram_handle_t *h)
 
 	for (i = 0; i < NVRAM_ARRAYSIZE(h->nvram_hash); i++) {
 		for (t = h->nvram_hash[i]; t; t = t->next) {
-			if( (x = (nvram_tuple_t *) malloc(sizeof(nvram_tuple_t))) != NULL )
-			{
-				x->name  = t->name;
-				x->value = t->value;
-				x->next  = l;
-				l = x;
-			}
-			else
-			{
+			x = malloc(sizeof(*x) + strlen(t->name) + 1);
+			if(!x)
 				break;
-			}
+			strcpy(x->name, t->name);
+			x->value = t->value;
+			x->next  = l;
+			l = x;
 		}
 	}
 
@@ -288,13 +306,13 @@ int nvram_commit(nvram_handle_t *h)
 		header->config_ncdl = strtoul(ncdl, NULL, 0);
 	}
 
-	/* Clear data area */
+	/* Clear data area, only the mapped part belongs to this handle */
 	ptr = (char *) header + sizeof(nvram_header_t);
-	memset(ptr, 0xFF, nvram_part_size - h->offset - sizeof(nvram_header_t));
+	memset(ptr, 0xFF, h->length - h->offset - sizeof(nvram_header_t));
 	memset(&tmp, 0, sizeof(nvram_header_t));
 
 	/* Leave space for a double NUL at the end */
-	end = (char *) header + nvram_part_size - h->offset - 2;
+	end = (char *) header + h->length - h->offset - 2;
 
 	/* Write out all tuples */
 	for (i = 0; i < NVRAM_ARRAYSIZE(h->nvram_hash); i++) {
@@ -347,6 +365,8 @@ nvram_handle_t * nvram_open(const char *file, int rdonly)
 	char *mtd = NULL;
 	nvram_handle_t *h;
 	nvram_header_t *header;
+	struct stat s;
+	size_t length, last;
 	int offset = -1;
 
 	/* If erase size or file are undefined then try to define them */
@@ -362,8 +382,31 @@ nvram_handle_t * nvram_open(const char *file, int rdonly)
 
 	if( (fd = open(file ? file : mtd, O_RDWR)) > -1 )
 	{
-		char *mmap_area = (char *) mmap(
-			NULL, nvram_part_size, PROT_READ | PROT_WRITE,
+		char *mmap_area;
+
+		/*
+		 * A regular file, like the staging file, can be shorter than
+		 * the nvram partition. Accessing the pages behind its end
+		 * would raise SIGBUS, only map what the file provides. The
+		 * size of a block device is not reported here, use the
+		 * partition size for it. nvram_commit() pads the data to
+		 * 4 bytes, keep the length a multiple of 4 for it.
+		 */
+		length = nvram_part_size;
+		if( fstat(fd, &s) > -1 && S_ISREG(s.st_mode) &&
+		    s.st_size < (off_t) length )
+			length = (size_t) s.st_size & ~(size_t) 3;
+
+		/* The header and the double NUL have to fit in */
+		if( length < sizeof(nvram_header_t) + 4 )
+		{
+			free(mtd);
+			close(fd);
+			return NULL;
+		}
+
+		mmap_area = (char *) mmap(
+			NULL, length, PROT_READ | PROT_WRITE,
 			(( rdonly == NVRAM_RO ) ? MAP_PRIVATE : MAP_SHARED) | MAP_LOCKED, fd, 0);
 
 		if( mmap_area != MAP_FAILED )
@@ -371,9 +414,16 @@ nvram_handle_t * nvram_open(const char *file, int rdonly)
 			/*
 			 * Start looking for NVRAM_MAGIC at beginning of MTD
 			 * partition. Stop if there is less than NVRAM_MIN_SPACE
-			 * to check, that was the lowest used size.
+			 * to check, that was the lowest used size. A smaller
+			 * partition, like the one bcm47xxpart creates on a
+			 * flash with 4 KiB erase blocks, can only have the
+			 * NVRAM at its start.
 			 */
-			for( i = 0; i <= ((nvram_part_size - NVRAM_MIN_SPACE) / sizeof(uint32_t)); i++ )
+			last = 0;
+			if( length >= NVRAM_MIN_SPACE )
+				last = (length - NVRAM_MIN_SPACE) / sizeof(uint32_t);
+
+			for( i = 0; i <= last; i++ )
 			{
 				if( ((uint32_t *)mmap_area)[i] == NVRAM_MAGIC )
 				{
@@ -384,18 +434,17 @@ nvram_handle_t * nvram_open(const char *file, int rdonly)
 
 			if( offset < 0 )
 			{
-				munmap(mmap_area, nvram_part_size);
+				munmap(mmap_area, length);
 				free(mtd);
 				close(fd);
 				return NULL;
 			}
-			else if( (h = malloc(sizeof(nvram_handle_t))) != NULL )
+			h = calloc(1, sizeof(nvram_handle_t));
+			if(h)
 			{
-				memset(h, 0, sizeof(nvram_handle_t));
-
 				h->fd     = fd;
 				h->mmap   = mmap_area;
-				h->length = nvram_part_size;
+				h->length = length;
 				h->offset = offset;
 
 				header = nvram_header(h);
@@ -451,11 +500,9 @@ char * nvram_find_mtd(void)
 				sprintf(dev, "/dev/mtdblock%d", i);
 				if( stat(dev, &s) > -1 && (s.st_mode & S_IFBLK) )
 				{
-					if( (path = (char *) malloc(strlen(dev)+1)) != NULL )
-					{
-						strncpy(path, dev, strlen(dev)+1);
+					path = strdup(dev);
+					if (path)
 						break;
-					}
 				}
 			}
 		}

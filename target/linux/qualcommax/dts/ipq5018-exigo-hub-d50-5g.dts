@@ -1,0 +1,457 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+/dts-v1/;
+
+#include "ipq5018.dtsi"
+#include "ipq5018-ess.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+
+/ {
+	model = "Xunison Exigo Hub D50 5G";
+	compatible = "xunison,exigo-hub-d50-5g", "qcom,ipq5018";
+
+	aliases {
+		led-boot = &led_mesh_green;
+		led-failsafe = &led_mesh_red;
+		led-running = &led_mesh_green;
+		led-upgrade = &led_mesh_red;
+		serial0 = &blsp1_uart1;
+	};
+
+	chosen {
+		bootargs-append = " root=/dev/ubiblock0_1 swiotlb=1 coherent_pool=2M";
+		stdout-path = "serial0:115200n8";
+	};
+
+	keys {
+		compatible = "gpio-keys";
+		pinctrl-0 = <&button_pins>;
+		pinctrl-names = "default";
+
+		button-reset {
+			label = "reset";
+			gpios = <&tlmm 22 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+
+		button-wps {
+			label = "wps";
+			gpios = <&tlmm 38 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_WPS_BUTTON>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		pinctrl-0 = <&leds_pins>;
+		pinctrl-names = "default";
+
+		/* MESH and 5G are bi-colour: green + red together show amber */
+		led_mesh_green: led-0 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = "mesh";
+			gpios = <&tlmm 27 GPIO_ACTIVE_HIGH>;
+		};
+
+		led_mesh_red: led-1 {
+			color = <LED_COLOR_ID_RED>;
+			function = "mesh";
+			gpios = <&tlmm 28 GPIO_ACTIVE_HIGH>;
+		};
+
+		led-2 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = "5g";
+			gpios = <&tlmm 33 GPIO_ACTIVE_HIGH>;
+		};
+
+		led-3 {
+			color = <LED_COLOR_ID_RED>;
+			function = "5g";
+			gpios = <&tlmm 34 GPIO_ACTIVE_HIGH>;
+		};
+
+		led-4 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = "4g";
+			gpios = <&tlmm 35 GPIO_ACTIVE_HIGH>;
+		};
+
+		led-5 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WLAN;
+			gpios = <&tlmm 30 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "network";
+			mode = "link";
+		};
+
+		led-6 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WAN_ONLINE;
+			gpios = <&tlmm 1 GPIO_ACTIVE_HIGH>;
+		};
+
+		/* single LED inside the rear WAN RJ45 socket */
+		led-7 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WAN;
+			gpios = <&tlmm 46 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	regulator_fixed_5p0: regulator-s0500 {
+		compatible = "regulator-fixed";
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		regulator-name = "fixed_5p0";
+		gpios = <&tlmm 24 GPIO_ACTIVE_LOW>;
+	};
+};
+
+&uniphy0 {
+	status = "okay";
+
+	assigned-clocks = <&uniphy0 UNIPHY_CLK_REF>;
+	assigned-clock-rates = <UNIPHY_REFCLK_25MHZ>;
+};
+
+// MAC0 -> GE Phy -> WAN
+&gmac0 {
+	status = "okay";
+
+	label = "wan";
+
+	nvmem-cells = <&macaddr_gmac0 0>;
+	nvmem-cell-names = "mac-address";
+};
+
+// MAC1 ---SGMII---> QCA8337 SerDes
+&gmac1 {
+	status = "okay";
+
+	phy-mode = "sgmii";
+
+	nvmem-cells = <&macaddr_gmac1 0>;
+	nvmem-cell-names = "mac-address";
+
+	fixed-link {
+		speed = <1000>;
+		full-duplex;
+	};
+};
+
+&mdio0 {
+	status = "okay";
+};
+
+&mdio1 {
+	status = "okay";
+
+	pinctrl-0 = <&mdio1_pins>;
+	pinctrl-names = "default";
+	reset-gpios = <&tlmm 39 GPIO_ACTIVE_LOW>;
+
+	// QCA8337 Phy0 -> LAN3
+	qca8337_0: ethernet-phy@0 {
+		reg = <0>;
+	};
+
+	// QCA8337 Phy1 -> LAN2
+	qca8337_1: ethernet-phy@1 {
+		reg = <1>;
+	};
+
+	// QCA8337 Phy2 -> LAN1
+	qca8337_2: ethernet-phy@2 {
+		reg = <2>;
+	};
+
+	// QCA8337 switch
+	switch0: ethernet-switch@11 {
+		compatible = "qca,qca8337";
+		reg = <0x11>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		ethernet-ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			switch0cpu: ethernet-port@0 {
+				reg = <0>;
+				label = "cpu";
+				phy-mode = "sgmii";
+				ethernet = <&gmac1>;
+				qca,sgmii-enable-pll;
+
+				fixed-link {
+					speed = <1000>;
+					full-duplex;
+				};
+			};
+
+			ethernet-port@1 {
+				reg = <1>;
+				label = "lan3";
+				phy-handle = <&qca8337_0>;
+			};
+
+			ethernet-port@2 {
+				reg = <2>;
+				label = "lan2";
+				phy-handle = <&qca8337_1>;
+			};
+
+			ethernet-port@3 {
+				reg = <3>;
+				label = "lan1";
+				phy-handle = <&qca8337_2>;
+			};
+		};
+	};
+};
+
+&sleep_clk {
+	clock-frequency = <32000>;
+};
+
+&xo_board_clk {
+	clock-div = <4>;
+	clock-mult = <1>;
+};
+
+&blsp1_uart1 {
+	pinctrl-0 = <&serial_0_pins>;
+	pinctrl-names = "default";
+
+	status = "okay";
+};
+
+&prng {
+	status = "okay";
+};
+
+&qfprom {
+	status = "okay";
+};
+
+&qpic_bam {
+	status = "okay";
+};
+
+&qpic_nand {
+	pinctrl-0 = <&qpic_pins>;
+	pinctrl-names = "default";
+
+	status = "okay";
+
+	nand@0 {
+		compatible = "spi-nand";
+		reg = <0>;
+
+		nand-ecc-engine = <&qpic_nand>;
+		nand-ecc-strength = <4>;
+		nand-ecc-step-size = <512>;
+		nand-bus-width = <8>;
+
+		partitions {
+			compatible = "qcom,smem-part";
+
+			partition-0-art {
+				label = "0:art";
+				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					/* stock firmware: LAN uses 0x0, WAN uses 0x6 */
+					macaddr_gmac1: macaddr@0 {
+						compatible = "mac-base";
+						#nvmem-cell-cells = <1>;
+						reg = <0x0 0x6>;
+					};
+
+					macaddr_gmac0: macaddr@6 {
+						compatible = "mac-base";
+						#nvmem-cell-cells = <1>;
+						reg = <0x6 0x6>;
+					};
+
+					caldata_ipq5018: calibration@1000 {
+						reg = <0x1000 0x20000>;
+					};
+
+					caldata_qcn9074: calibration@26800 {
+						reg = <0x26800 0x20000>;
+					};
+				};
+			};
+		};
+	};
+};
+
+&tlmm {
+	mdio1_pins: mdio-state {
+		mdc-pins {
+			pins = "gpio36";
+			function = "mdc";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+
+		mdio-pins {
+			pins = "gpio37";
+			function = "mdio";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+	};
+
+	leds_pins: leds-pins {
+		pins = "gpio1", "gpio27", "gpio28", "gpio30",
+		       "gpio33", "gpio34", "gpio35", "gpio46";
+		function = "gpio";
+		drive-strength = <8>;
+		bias-pull-down;
+	};
+
+	button_pins: button-pins {
+		pins = "gpio22", "gpio38";
+		function = "gpio";
+		drive-strength = <8>;
+		bias-pull-up;
+	};
+
+	qpic_pins: qpic-state {
+		clock-pins {
+			pins = "gpio9";
+			function = "qspi_clk";
+			drive-strength = <8>;
+			bias-disable;
+		};
+
+		cs-pins {
+			pins = "gpio8";
+			function = "qspi_cs";
+			drive-strength = <8>;
+			bias-disable;
+		};
+
+		data-pins {
+			pins = "gpio4", "gpio5", "gpio6", "gpio7";
+			function = "qspi_data";
+			drive-strength = <8>;
+			bias-disable;
+		};
+	};
+
+	/*
+	 * Pull RX up: with nothing on the console header it floats, which
+	 * causes an interrupt storm and on some units a hang at boot.
+	 */
+	serial_0_pins: uart0-state {
+		rx-pins {
+			pins = "gpio20";
+			function = "blsp0_uart0";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+
+		tx-pins {
+			pins = "gpio21";
+			function = "blsp0_uart0";
+			drive-strength = <8>;
+			bias-disable;
+		};
+	};
+
+	/* Nothing consumes the modem power line, keep the modem powered */
+	modem-power-hog {
+		gpio-hog;
+		gpios = <31 GPIO_ACTIVE_HIGH>;
+		output-high;
+		line-name = "modem-power";
+	};
+};
+
+&usbphy0 {
+	status = "okay";
+
+	vdd-supply = <&regulator_fixed_5p0>;
+};
+
+/* USB 2.0 only: no USB3 PHY, so clock the pipe from UTMI */
+&usb {
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	phys = <&usbphy0>;
+	phy-names = "usb2-phy";
+	dr_mode = "host";
+	qcom,select-utmi-as-pipe-clk;
+
+	status = "okay";
+
+	usb_port1: port@1 {
+		reg = <1>;
+		#trigger-source-cells = <0>;
+	};
+};
+
+&pcie0_phy {
+	status = "okay";
+};
+
+&pcie0 {
+	status = "okay";
+
+	perst-gpios = <&tlmm 15 GPIO_ACTIVE_LOW>;
+
+	pcie@0 {
+		wifi@0,0 {
+			status = "okay";
+
+			/* QCN9074: ath11k lacks DT compatible for PCI cards */
+			compatible = "pci17cb,1104";
+			reg = <0x00010000 0 0 0 0>;
+
+			qcom,ath11k-calibration-variant = "Xunison-Exigo-Hub-D50-5G";
+
+			nvmem-cells = <&caldata_qcn9074>, <&macaddr_gmac1 3>;
+			nvmem-cell-names = "calibration", "mac-address";
+		};
+	};
+};
+
+&pcie1_phy {
+	status = "okay";
+};
+
+/* Quectel RM500Q-AE, driven over PCIe (MHI) */
+&pcie1 {
+	status = "okay";
+
+	perst-gpios = <&tlmm 18 GPIO_ACTIVE_LOW>;
+	wake-gpios = <&tlmm 19 GPIO_ACTIVE_HIGH>;
+};
+
+&q6v5_wcss {
+	firmware-name = "ath11k/IPQ5018/hw1.0/q6_fw.mdt",
+			"ath11k/IPQ5018/hw1.0/m3_fw.mdt";
+};
+
+&wifi {
+	status = "okay";
+
+	qcom,rproc = <&q6v5_wcss>;
+	qcom,ath11k-calibration-variant = "Xunison-Exigo-Hub-D50-5G";
+	qcom,ath11k-fw-memory-mode = <1>;
+
+	nvmem-cells = <&caldata_ipq5018>, <&macaddr_gmac1 2>;
+	nvmem-cell-names = "calibration", "mac-address";
+};

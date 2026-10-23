@@ -1,0 +1,40 @@
+From fd7924c3ab70ec7ac2a7bfd808d505c118e7e3b4 Mon Sep 17 00:00:00 2001
+From: Goodwill <646689853@qq.com>
+Date: Thu, 27 Aug 2026 01:24:45 +0800
+Subject: [PATCH] ARM: dts: overlays: waveshare-dsi: Add auto_detect panel
+ option
+
+Add the auto_detect overlay parameter to select the automatic detection
+panel compatible string (waveshare,automatic-detection-panel). This
+enables runtime panel detection via I2C for Waveshare DSI displays
+that support automatic identification.
+
+Signed-off-by: Goodwill <646689853@qq.com>
+---
+ arch/arm/boot/dts/overlays/README                              | 2 ++
+ .../boot/dts/overlays/vc4-kms-dsi-waveshare-panel-overlay.dts  | 3 +++
+ 2 files changed, 5 insertions(+)
+
+--- a/arch/arm/boot/dts/overlays/README
++++ b/arch/arm/boot/dts/overlays/README
+@@ -6195,6 +6195,8 @@ Params: 2_8_inch                2.8" 480
+         11_9_inch               11.9" 320x1480
+         13_3_inch_4lane         13.3" 1920x1080 4lane
+         13_3_inch_2lane         13.3" 1920x1080 2lane
++        auto_detect             Automatic panel detection (1200x1920 or
++                                1920x1200 at 30fps/60fps)
+         i2c1                    Use i2c-1 with jumper wires from GPIOs 2&3
+         disable_touch           Disable the touch controller
+         rotation                Set the panel orientation property
+--- a/arch/arm/boot/dts/overlays/vc4-kms-dsi-waveshare-panel-overlay.dts
++++ b/arch/arm/boot/dts/overlays/vc4-kms-dsi-waveshare-panel-overlay.dts
+@@ -136,6 +136,9 @@
+ 		7_0_inchH = <&panel>, "compatible=waveshare,7.0inch-h-panel",
+ 				  <&touch>, "touchscreen-swapped-x-y?",
+ 				  <&touch>, "touchscreen-inverted-x?";
++		auto_detect = <&panel>, "compatible=waveshare,automatic-detection-panel",
++				  <&touch>, "touchscreen-swapped-x-y?",
++				  <&touch>, "touchscreen-inverted-x?";
+ 		i2c1 = <&i2c_frag>, "target:0=",<&i2c1>,
+ 		       <0>, "-3-4+5";
+ 		disable_touch = <&touch>, "status=disabled";

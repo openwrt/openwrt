@@ -7,11 +7,11 @@ include $(TOPDIR)/rules.mk
 ARCH:=riscv64
 BOARD:=sifiveu
 BOARDNAME:=SiFive U-based RISC-V boards
-FEATURES:=ext4
+FEATURES:=ext4 legacy-sdcard
 KERNELNAME:=Image dtbs
 SUBTARGETS:=generic
 
-KERNEL_PATCHVER:=6.12
+KERNEL_PATCHVER:=6.18
 
 include $(INCLUDE_DIR)/target.mk
 

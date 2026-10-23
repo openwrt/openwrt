@@ -1,0 +1,33 @@
+From 96ce5342eed5061161f8cbc4989bdcdc03847975 Mon Sep 17 00:00:00 2001
+From: Nathan Moin Vaziri <nathan@nathanm.com>
+Date: Fri, 3 Apr 2026 21:59:04 -0700
+Subject: [PATCH] zlib 1.3.2.
+
+Upstream: https://github.com/madler/zlib/commit/9e355670
+
+[zlib.map.in part only, from https://github.com/zlib-ng/zlib-ng/pull/2403:
+ export deflateUsed under ZLIB_1.3.1.2 as zlib 1.3.2 does]
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+---
+ zlib.map.in | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+
+--- a/zlib.map.in
++++ b/zlib.map.in
+@@ -97,6 +97,10 @@ ZLIB_1.2.12 {
+     @ZLIB_SYMBOL_PREFIX@crc32_combine_op;
+ } ZLIB_1.2.9;
+ 
++ZLIB_1.3.1.2 {
++    @ZLIB_SYMBOL_PREFIX@deflateUsed;
++} ZLIB_1.2.12;
++
+ ZLIB_1.3.2 {
+     @ZLIB_SYMBOL_PREFIX@compress_z;
+     @ZLIB_SYMBOL_PREFIX@compress2_z;
+@@ -104,4 +108,4 @@ ZLIB_1.3.2 {
+     @ZLIB_SYMBOL_PREFIX@deflateBound_z;
+     @ZLIB_SYMBOL_PREFIX@uncompress_z;
+     @ZLIB_SYMBOL_PREFIX@uncompress2_z;
+-} ZLIB_1.2.12;
++} ZLIB_1.3.1.2;

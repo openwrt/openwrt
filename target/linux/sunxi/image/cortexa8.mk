@@ -19,7 +19,7 @@ define Device/haoyu_a10-marsboard
   DEVICE_VENDOR := HAOYU Electronics
   DEVICE_MODEL := MarsBoard A10
   DEVICE_PACKAGES:=kmod-ata-core kmod-ata-sunxi kmod-sun4i-emac \
-	kmod-rtc-sunxi kmod-sound-core kmod-sound-soc-sunxi
+	kmod-rtc-sunxi kmod-sound-core kmod-sound-soc-sunxi audio-support
   SUPPORTED_DEVICES += marsboard,a10-marsboard
   SOC := sun4i
 endef
@@ -43,21 +43,12 @@ define Device/olimex_a10-olinuxino-lime
 endef
 TARGET_DEVICES += olimex_a10-olinuxino-lime
 
-define Device/olimex_a13-olimex-som
-  $(call Device/FitImageGzip)
-  DEVICE_VENDOR := Olimex
-  DEVICE_MODEL := A13-SOM
-  DEVICE_PACKAGES:=kmod-rtl8192cu
-  SUPPORTED_DEVICES:=olimex,a13-olinuxino
-  SOC := sun5i-a13
-  SUNXI_DTS := $$(SUNXI_DTS_DIR)sun5i-a13-olinuxino
-endef
-TARGET_DEVICES += olimex_a13-olimex-som
-
 define Device/olimex_a13-olinuxino
   $(call Device/FitImageGzip)
   DEVICE_VENDOR := Olimex
   DEVICE_MODEL := A13-OLinuXino
+  DEVICE_ALT0_VENDOR := Olimex
+  DEVICE_ALT0_MODEL := A13-SOM
   DEVICE_PACKAGES:=kmod-rtl8192cu
   SOC := sun5i
 endef

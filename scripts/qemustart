@@ -75,10 +75,35 @@ check_setup_() {
 
 check_setup() {
 	[ -n "$o_network" ] || return 0
+	[ -z "$o_user" ] || return 0
 	check_setup_ || {
 		__errmsg "please check the script content to see the environment requirement"
 		return 1
 	}
+}
+
+# Append user-mode networking args to o_qemu_extra.  $1 is the qemu NIC device
+# (e.g. virtio-net-pci, e1000).  The LAN netdev shares OpenWrt's default LAN
+# subnet so the guest's static 192.168.1.1 is reachable through SLIRP; the WAN
+# netdev uses SLIRP defaults (10.0.2.0/24) to provide internet via the host.
+add_user_netdev() {
+	local nic="$1"
+	local ssh="${o_ssh_port:-2222}"
+	local http="${o_http_port:-8080}"
+	local https="${o_https_port:-8443}"
+	__errmsg "user-mode networking: ssh on 127.0.0.1:$ssh, http on 127.0.0.1:$http, https on 127.0.0.1:$https"
+
+	local lan="user,id=lan,net=192.168.1.0/24,host=192.168.1.2"
+	lan+=",hostfwd=tcp:127.0.0.1:$ssh-192.168.1.1:22"
+	lan+=",hostfwd=tcp:127.0.0.1:$http-192.168.1.1:80"
+	lan+=",hostfwd=tcp:127.0.0.1:$https-192.168.1.1:443"
+
+	o_qemu_extra+=(
+		-netdev "$lan"
+		-device "$nic,id=devlan,netdev=lan,mac=$MAC_LAN"
+		-netdev "user,id=wan"
+		-device "$nic,id=devwan,netdev=wan,mac=$MAC_WAN"
+	)
 }
 #do_setup; check_setup; exit $?
 
@@ -91,6 +116,7 @@ Usage: $SELF [-h|--help]
          [--rootfs <rootfs>]
          [--machine <machine>]
          [-n|--network]
+         [-u|--user-network [--ssh-port <port>] [--http-port <port>] [--https-port <port>]]
 
 <subtarget> will default to "generic" and must be specified if
 <extra-qemu-options> are present
@@ -100,15 +126,31 @@ e.g. <subtarget> for malta can be le, be, le64, be64, le-glibc, le64-glibc, etc
 <kernel>, <rootfs> can be required or optional arguments to qemu depending on
 the actual <target> in use.  They will default to files under bin/targets/
 
+Networking modes:
+  -n / --network        use bridges \$BR_LAN and \$BR_WAN (needs sudo + helper
+                        setup)
+  -u / --user-network   use rootless qemu user-mode networking; the guest LAN
+                        interface (static 192.168.1.1) is reachable from the
+                        host via 127.0.0.1:<ssh-port> (default 2222),
+                        127.0.0.1:<http-port> (default 8080) and
+                        127.0.0.1:<https-port> (default 8443); the guest WAN
+                        gets internet via SLIRP
+  --ssh-port <p>        override host-side ssh forward port (default 2222)
+  --http-port <p>       override host-side http forward port (default 8080)
+  --https-port <p>      override host-side https forward port (default 8443)
+
 Examples
 
   $SELF x86 64
+  $SELF x86 64 --user-network
+  $SELF x86 64 --user-network --ssh-port 2200 --http-port 8000 --https-port 8001
   $SELF x86 64 --machine q35,accel=kvm -device virtio-balloon-pci
   $SELF x86 64 -incoming tcp:0:4444
   $SELF x86 64-glibc
   $SELF malta be -m 64
   $SELF malta le64
   $SELF malta be-glibc
+  $SELF armsr armv8 --user-network
   $SELF armsr armv7 \\
                 --machine virt,highmem=off \\
                 --kernel bin/targets/armsr/armv7/openwrt-armsr-armv7-generic-kernel.bin \\
@@ -122,6 +164,7 @@ rand_mac() {
 
 parse_args() {
 	o_network=
+	o_user=
 	o_qemu_extra=()
 	while [ "$#" -gt 0 ]; do
 		# Cmdline options for the script itself SHOULD try to be
@@ -134,6 +177,10 @@ parse_args() {
 			--rootfs) o_rootfs="$2"; shift 2 ;;
 			--machine|-machine|-M) o_mach="$2"; shift 2 ;;
 			--network|-n) o_network=1; shift ;;
+			--user-network|-u) o_user=1; o_network=1; shift ;;
+			--ssh-port) o_ssh_port="$2"; shift 2 ;;
+			--http-port) o_http_port="$2"; shift 2 ;;
+			--https-port) o_https_port="$2"; shift 2 ;;
 			--help|-h)
 				usage
 				exit 0
@@ -196,12 +243,16 @@ start_qemu_armsr() {
 	}
 
 	[ -z "$o_network" ] || {
-		o_qemu_extra+=( \
-			"-netdev" "bridge,id=lan,br=$BR_LAN,helper=$HELPER" \
-			    "-device" "virtio-net-pci,id=devlan,netdev=lan,mac=$MAC_LAN" \
-			"-netdev" "bridge,id=wan,br=$BR_WAN,helper=$HELPER" "-device" \
-			    "virtio-net-pci,id=devwan,netdev=wan,mac=$MAC_WAN" \
-		)
+		if [ -n "$o_user" ]; then
+			add_user_netdev virtio-net-pci
+		else
+			o_qemu_extra+=( \
+				"-netdev" "bridge,id=lan,br=$BR_LAN,helper=$HELPER" \
+				    "-device" "virtio-net-pci,id=devlan,netdev=lan,mac=$MAC_LAN" \
+				"-netdev" "bridge,id=wan,br=$BR_WAN,helper=$HELPER" "-device" \
+				    "virtio-net-pci,id=devwan,netdev=wan,mac=$MAC_WAN" \
+			)
+		fi
 	}
 
 	"$qemu_exe" -machine "$mach" -cpu "$cpu" -nographic \
@@ -224,7 +275,7 @@ start_qemu_malta() {
 	qemu_exe="qemu-system-mips$is64$isel"
 	[ -n "$is64" ] && cpu="MIPS64R2-generic" || cpu="24Kc"
 
-	[ -n "$kernel" ] || kernel="$o_bindir/openwrt-malta-${o_subtarget%-*}-vmlinux-initramfs.elf"
+	[ -n "$kernel" ] || kernel="$o_bindir/openwrt-malta-${o_subtarget%-*}-generic-initramfs-kernel.bin"
 
 	[ -z "$rootfs" ] || {
 		if [ ! -f "$rootfs" -a -s "$rootfs.gz" ]; then
@@ -236,14 +287,18 @@ start_qemu_malta() {
 		)
 	}
 
-	# NOTE: order of wan, lan -device arguments matters as it will affect which
-	# one will be actually used as the wan, lan network interface inside the
-	# guest machine
+	# NOTE: order of -device arguments matters: the first -device becomes eth0
+	# in the guest, which OpenWrt's 99-default_network assigns as LAN; the
+	# second becomes eth1 / WAN.  Keep LAN first to match that mapping.
 	[ -z "$o_network" ] || {
-		o_qemu_extra+=(
-			-netdev bridge,id=wan,br="$BR_WAN,helper=$HELPER" -device pcnet,netdev=wan,mac="$MAC_WAN"
-			-netdev bridge,id=lan,br="$BR_LAN,helper=$HELPER" -device pcnet,netdev=lan,mac="$MAC_LAN"
-		)
+		if [ -n "$o_user" ]; then
+			add_user_netdev pcnet
+		else
+			o_qemu_extra+=(
+				-netdev bridge,id=lan,br="$BR_LAN,helper=$HELPER" -device pcnet,netdev=lan,mac="$MAC_LAN"
+				-netdev bridge,id=wan,br="$BR_WAN,helper=$HELPER" -device pcnet,netdev=wan,mac="$MAC_WAN"
+			)
+		fi
 	}
 
 	"$qemu_exe" -machine "$mach" -cpu "$cpu" -nographic \
@@ -287,16 +342,24 @@ start_qemu_x86() {
 	[ -z "$o_network" ] || {
 		case "${o_subtarget%-*}" in
 			legacy)
-				o_qemu_extra+=(
-					-netdev "bridge,id=lan,br=$BR_LAN,helper=$HELPER" -device "e1000,id=devlan,netdev=lan,mac=$MAC_LAN"
-					-netdev "bridge,id=wan,br=$BR_WAN,helper=$HELPER" -device "e1000,id=devwan,netdev=wan,mac=$MAC_WAN"
-				)
+				if [ -n "$o_user" ]; then
+					add_user_netdev e1000
+				else
+					o_qemu_extra+=(
+						-netdev "bridge,id=lan,br=$BR_LAN,helper=$HELPER" -device "e1000,id=devlan,netdev=lan,mac=$MAC_LAN"
+						-netdev "bridge,id=wan,br=$BR_WAN,helper=$HELPER" -device "e1000,id=devwan,netdev=wan,mac=$MAC_WAN"
+					)
+				fi
 				;;
 			generic|64)
-				o_qemu_extra+=(
-					-netdev "bridge,id=lan,br=$BR_LAN,helper=$HELPER" -device "virtio-net-pci,id=devlan,netdev=lan,mac=$MAC_LAN"
-					-netdev "bridge,id=wan,br=$BR_WAN,helper=$HELPER" -device "virtio-net-pci,id=devwan,netdev=wan,mac=$MAC_WAN"
-				)
+				if [ -n "$o_user" ]; then
+					add_user_netdev virtio-net-pci
+				else
+					o_qemu_extra+=(
+						-netdev "bridge,id=lan,br=$BR_LAN,helper=$HELPER" -device "virtio-net-pci,id=devlan,netdev=lan,mac=$MAC_LAN"
+						-netdev "bridge,id=wan,br=$BR_WAN,helper=$HELPER" -device "virtio-net-pci,id=devwan,netdev=wan,mac=$MAC_WAN"
+					)
+				fi
 				;;
 		esac
 	}

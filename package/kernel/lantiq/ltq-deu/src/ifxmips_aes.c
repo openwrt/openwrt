@@ -45,7 +45,6 @@
 #include <linux/modeversions>
 #endif
 
-#include <linux/version.h>
 #include <linux/module.h>
 #include <linux/init.h>
 #include <linux/proc_fs.h>
@@ -276,7 +275,7 @@ void ifx_deu_aes (void *ctx_arg, u8 *out_arg, const u8 *in_arg,
         aes->IV2R = DEU_ENDIAN_SWAP(*((u32 *) iv_arg + 1));
         aes->IV1R = DEU_ENDIAN_SWAP(*((u32 *) iv_arg + 2));
         aes->IV0R = DEU_ENDIAN_SWAP(*((u32 *) iv_arg + 3));
-    };
+    }
 
 
     i = 0;
@@ -1529,7 +1528,7 @@ static int aes_cbcmac_init_tfm(struct crypto_tfm *tfm)
 {
     struct aes_ctx *mctx = crypto_tfm_ctx(tfm);
     mctx->temp = kzalloc(AES_BLOCK_SIZE * AES_CBCMAC_DBN_TEMP_SIZE, GFP_KERNEL);
-    if (IS_ERR(mctx->temp)) return PTR_ERR(mctx->temp);
+    if (!mctx->temp) return -ENOMEM;
 
     return 0;
 }
@@ -1798,7 +1797,7 @@ static int gcm_aes_decrypt(struct aead_request *req)
 
     //crypt and hash
     while ((nbytes = dec_bytes = walk.nbytes) && (walk.nbytes >= AES_BLOCK_SIZE)) {
-        u8 *temp;
+        const u8 *temp;
         dec_bytes -= (nbytes % AES_BLOCK_SIZE);
         temp = walk.src.virt.addr;
         while (dec_bytes) {

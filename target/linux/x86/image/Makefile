@@ -79,6 +79,33 @@ define Build/grub-install
 		$@
 endef
 
+define Build/onie-installer
+	rm -rf $@.onie
+	mkdir -p $@.onie/payload
+	$(TAR) --numeric-owner --owner=0 --group=0 --sort=name \
+		$(if $(SOURCE_DATE_EPOCH),--mtime=@$(SOURCE_DATE_EPOCH)) \
+		-C $(TARGET_DIR)/ -cf - . | $(STAGING_DIR_HOST)/bin/libdeflate-gzip \
+		-12 -c > $@.onie/payload/rootfs.tar.gz
+	$(CP) $(KDIR)/$(KERNEL_NAME) $@.onie/payload/vmlinuz
+	$(TAR) --numeric-owner --owner=0 --group=0 --sort=name \
+		$(if $(SOURCE_DATE_EPOCH),--mtime=@$(SOURCE_DATE_EPOCH)) \
+		-C $@.onie/payload -cf $@.onie/payload.tar .
+	sed \
+		-e 's#@SERIAL_CONFIG@#$(strip $(GRUB_SERIAL_CONFIG))#g' \
+		-e 's#@TERMINAL_CONFIG@#$(strip $(GRUB_TERMINAL_CONFIG))#g' \
+		-e 's#@CMDLINE@#$(strip $(BOOTOPTS) $(GRUB_CONSOLE_CMDLINE))#g' \
+		-e 's#@TITLE@#$(GRUB_TITLE)#g' \
+		-e 's#@TIMEOUT@#$(GRUB_TIMEOUT)#g' \
+		./onie-install.sh.in > $@.onie/installer.sh
+	script_len=$$(wc -c < $@.onie/installer.sh | tr -d ' '); \
+	payload_len=$$(wc -c < $@.onie/payload.tar | tr -d ' '); \
+	total_len=$$(( script_len + payload_len )); \
+	sed -i "s/__PYLOAD__/$$(printf '%010d' $$script_len)/" $@.onie/installer.sh; \
+	sed -i "s/__TOTLEN__/$$(printf '%010d' $$total_len)/" $@.onie/installer.sh
+	cat $@.onie/installer.sh $@.onie/payload.tar > $@
+	chmod +x $@
+endef
+
 define Build/iso
 	$(CP) $(KDIR)/$(KERNEL_NAME) $@.boot/boot/vmlinuz
 	cat \
@@ -102,18 +129,19 @@ DEVICE_VARS += GRUB2_VARIANT
 define Device/Default
   ARTIFACT/image.iso := grub-config iso | iso
   IMAGE/combined.img := grub-config pc | combined | grub-install | append-metadata
-  IMAGE/combined.img.gz := grub-config pc | combined | grub-install | gzip | append-metadata
+  IMAGE/combined.img.gz := grub-config pc | combined | grub-install | libdeflate-gzip | append-metadata
   IMAGE/combined.vdi := grub-config pc | combined | grub-install | qemu-image vdi
   IMAGE/combined.vmdk := grub-config pc | combined | grub-install | qemu-image vmdk
   IMAGE/combined.vhdx := grub-config pc | combined | grub-install | qemu-image vhdx -o subformat=dynamic
   IMAGE/rootfs.img := append-rootfs | pad-to $(ROOTFS_PARTSIZE)
-  IMAGE/rootfs.img.gz := append-rootfs | pad-to $(ROOTFS_PARTSIZE) | gzip
+  IMAGE/rootfs.img.gz := append-rootfs | pad-to $(ROOTFS_PARTSIZE) | libdeflate-gzip
   ARTIFACT/image-efi.iso := grub-config iso | iso efi
   IMAGE/combined-efi.img := grub-config efi | combined efi | grub-install efi | append-metadata
-  IMAGE/combined-efi.img.gz := grub-config efi | combined efi | grub-install efi | gzip | append-metadata
+  IMAGE/combined-efi.img.gz := grub-config efi | combined efi | grub-install efi | libdeflate-gzip | append-metadata
   IMAGE/combined-efi.vdi := grub-config efi | combined efi | grub-install efi | qemu-image vdi
   IMAGE/combined-efi.vmdk := grub-config efi | combined efi | grub-install efi | qemu-image vmdk
   IMAGE/combined-efi.vhdx := grub-config efi | combined efi | grub-install efi | qemu-image vhdx -o subformat=dynamic
+  ARTIFACT/onie-installer.bin := onie-installer
   ifeq ($(CONFIG_TARGET_IMAGES_GZIP),y)
     IMAGES-y := rootfs.img.gz
     IMAGES-$$(CONFIG_GRUB_IMAGES) += combined.img.gz
@@ -130,6 +158,7 @@ define Device/Default
     ARTIFACTS-$$(CONFIG_GRUB_IMAGES) += image.iso
     ARTIFACTS-$$(CONFIG_GRUB_EFI_IMAGES) += image-efi.iso
   endif
+  ARTIFACTS-$$(CONFIG_ONIE_INSTALLER_IMAGES) += onie-installer.bin
   ifeq ($(CONFIG_VDI_IMAGES),y)
     IMAGES-$$(CONFIG_GRUB_IMAGES) += combined.vdi
     IMAGES-$$(CONFIG_GRUB_EFI_IMAGES) += combined-efi.vdi

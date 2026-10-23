@@ -122,7 +122,8 @@ define Build/dwl8610ap-image
 	cp $@ $@.tmptar/rootfs.bin
 	# Hash the rootfs.bin
 	cat $@.tmptar/rootfs.bin | md5sum > $@.tmptar/rootfs.md5
-	cd $@.tmptar && tar -c -f $@.new *
+	cd $@.tmptar && $(TAR) -c -f $@.new --sort=name --numeric-owner --owner=0 --group=0 --mode=go-w \
+		$(if $(SOURCE_DATE_EPOCH),--mtime="@$(SOURCE_DATE_EPOCH)") *
 	rm -rf $@.tmptar
 	mv $@.new $@
 endef
@@ -175,6 +176,22 @@ define Device/asus_rt-ac3100
   ASUS_PRODUCTID := RT-AC3100
 endef
 TARGET_DEVICES += asus_rt-ac3100
+
+define Device/asus_rt-ac3200
+  $(call Device/asus)
+  DEVICE_MODEL := RT-AC3200
+  DEVICE_PACKAGES := $(BRCMFMAC_43602A1) $(USB3_PACKAGES)
+  ASUS_PRODUCTID := RT-AC3200
+endef
+TARGET_DEVICES += asus_rt-ac3200
+
+define Device/asus_rt-ac5300
+  $(call Device/asus)
+  DEVICE_MODEL := RT-AC5300
+  DEVICE_PACKAGES := $(BRCMFMAC_4366C0) $(USB3_PACKAGES)
+  ASUS_PRODUCTID := RT-AC5300
+endef
+TARGET_DEVICES += asus_rt-ac5300
 
 define Device/asus_rt-ac56u
   $(call Device/asus)
@@ -327,7 +344,7 @@ define Device/linksys_ea9200
   DEVICE_VENDOR := Linksys
   DEVICE_MODEL := EA9200
   DEVICE_VARIANT := v1
-  DEVICE_PACKAGES := $(BRCMFMAC_43602A1) $(USB3_PACKAGES)
+  DEVICE_PACKAGES := $(BRCMFMAC_43602A1) $(USB3_PACKAGES) kmod-ledtrig-network
 endef
 TARGET_DEVICES += linksys_ea9200
 
@@ -345,39 +362,41 @@ define Device/luxul
   IMAGE/lxl := append-ubi | trx-nand | luxul-lxl
 endef
 
-define Device/luxul_abr-4500
+define Device/luxul_abr-4500-v1
   $(Device/luxul)
   DEVICE_MODEL := ABR-4500
   DEVICE_PACKAGES := $(USB3_PACKAGES)
+  DEVICE_DTS := bcm47094-luxul-abr-4500
   LUXUL_BOARD := ABR-4500
 endef
-TARGET_DEVICES += luxul_abr-4500
+TARGET_DEVICES += luxul_abr-4500-v1
 
-define Device/luxul_xap-1610
+define Device/luxul_xap-1610-v1
   $(Device/luxul)
   DEVICE_MODEL := XAP-1610
   DEVICE_PACKAGES := $(BRCMFMAC_4366C0)
+  DEVICE_DTS := bcm47094-luxul-xap-1610
   IMAGE/lxl := append-rootfs | trx-serial | luxul-lxl
   LUXUL_BOARD := XAP-1610
 endef
-TARGET_DEVICES += luxul_xap-1610
+TARGET_DEVICES += luxul_xap-1610-v1
 
-define Device/luxul_xbr-4500
+define Device/luxul_xbr-4500-v1
   $(Device/luxul)
   DEVICE_MODEL := XBR-4500
   DEVICE_PACKAGES := $(USB3_PACKAGES)
+  DEVICE_DTS := bcm47094-luxul-xbr-4500
   LUXUL_BOARD := XBR-4500
 endef
-TARGET_DEVICES += luxul_xbr-4500
+TARGET_DEVICES += luxul_xbr-4500-v1
 
-define Device/luxul_xwr-3150
+define Device/luxul_xwr-3150-v1
   $(Device/luxul)
   DEVICE_MODEL := XWR-3150
   DEVICE_PACKAGES := $(BRCMFMAC_4366C0) $(USB3_PACKAGES)
-  DEVICE_DTS := bcm47094-luxul-xwr-3150-v1
   LUXUL_BOARD := XWR-3150
 endef
-TARGET_DEVICES += luxul_xwr-3150
+TARGET_DEVICES += luxul_xwr-3150-v1
 
 define Device/meraki_mr26
   DEVICE_VENDOR := Meraki
@@ -387,9 +406,9 @@ define Device/meraki_mr26
 # resize the initramfs to fit the size of the existing part.safe.
   KERNEL_LOADADDR := 0x00008000
   KERNEL_INITRAMFS_SUFFIX := .bin
-  KERNEL_INITRAMFS := kernel-bin | append-dtb | gzip | uImage gzip | pad-to 9310208
+  KERNEL_INITRAMFS := kernel-bin | append-dtb | libdeflate-gzip | uImage gzip | pad-to 9310208
 # LZMA is not supported by the uboot
-  KERNEL := kernel-bin | append-dtb | gzip | uImage gzip
+  KERNEL := kernel-bin | append-dtb | libdeflate-gzip | uImage gzip
   IMAGES += sysupgrade.bin
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
 endef
@@ -426,8 +445,8 @@ define Device/meraki_mx6x
   DEVICE_PACKAGES := -oseama kmod-leds-pwm kmod-usb-ehci \
 	kmod-usb-ohci kmod-usb2
   DEVICE_VENDOR := Cisco Meraki
-  KERNEL = kernel-bin | gzip | fit gzip $$(DTS_DIR)/$$(DEVICE_DTS).dtb
-  KERNEL_INITRAMFS := kernel-bin | gzip | fit gzip $$(DTS_DIR)/$$(DEVICE_DTS).dtb
+  KERNEL = kernel-bin | libdeflate-gzip | fit gzip $$(DTS_DIR)/$$(DEVICE_DTS).dtb
+  KERNEL_INITRAMFS := kernel-bin | libdeflate-gzip | fit gzip $$(DTS_DIR)/$$(DEVICE_DTS).dtb
   KERNEL_INITRAMFS_SUFFIX := .bin
   IMAGES := sysupgrade.bin
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
@@ -441,17 +460,18 @@ define Device/meraki_mx64
 endef
 TARGET_DEVICES += meraki_mx64
 
-define Device/meraki_mx64_a0
+define Device/meraki_mx64-a0
   $(call Device/meraki_mx64)
   DEVICE_VARIANT := A0
   DEVICE_DTS_CONFIG := config@2
   DEVICE_DTS := bcm958625-meraki-mx64-a0
 endef
-TARGET_DEVICES += meraki_mx64_a0
+TARGET_DEVICES += meraki_mx64-a0
 
 define Device/meraki_mx65
   $(call Device/meraki_mx6x)
   DEVICE_MODEL := MX65
+  DEVICE_PACKAGES += kmod-dsa-qca8k
   DEVICE_DTS_CONFIG := config@3
   DEVICE_DTS := bcm958625-meraki-mx65
 endef
@@ -464,13 +484,14 @@ define Device/netgear
   NETGEAR_REGION := 1
 endef
 
-define Device/netgear_r6250
+define Device/netgear_r6250-v1
   DEVICE_MODEL := R6250
   DEVICE_PACKAGES := $(B43) $(USB3_PACKAGES)
+  DEVICE_DTS := bcm4708-netgear-r6250
   $(Device/netgear)
   NETGEAR_BOARD_ID := U12H245T00_NETGEAR
 endef
-TARGET_DEVICES += netgear_r6250
+TARGET_DEVICES += netgear_r6250-v1
 
 define Device/netgear_r6300-v2
   DEVICE_MODEL := R6300
@@ -480,6 +501,15 @@ define Device/netgear_r6300-v2
   NETGEAR_BOARD_ID := U12H240T00_NETGEAR
 endef
 TARGET_DEVICES += netgear_r6300-v2
+
+define Device/netgear_r6400-v1
+  DEVICE_MODEL := R6400
+  DEVICE_VARIANT := v1
+  DEVICE_PACKAGES := $(B43) $(USB3_PACKAGES)
+  $(Device/netgear)
+  NETGEAR_BOARD_ID := U12H332T00_NETGEAR
+endef
+TARGET_DEVICES += netgear_r6400-v1
 
 define Device/netgear_r7000
   DEVICE_MODEL := R7000

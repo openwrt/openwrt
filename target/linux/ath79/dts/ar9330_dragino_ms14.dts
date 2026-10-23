@@ -1,0 +1,42 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "ar9330_dragino_dragino2.dtsi"
+
+/ {
+	model = "Dragino MS14";
+	compatible = "dragino,ms14", "qca,ar9330";
+};
+
+&gpio_leds {
+	lan {
+		function = LED_FUNCTION_LAN;
+		color = <LED_COLOR_ID_RED>;
+		gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
+	};
+
+	wan {
+		function = LED_FUNCTION_WAN;
+		color = <LED_COLOR_ID_RED>;
+		gpios = <&gpio 17 GPIO_ACTIVE_LOW>;
+	};
+};
+
+&gpio_keys {
+	jumpstart {
+		label = "jumpstart";
+		linux,code = <BTN_0>;
+		gpios = <&gpio 11 GPIO_ACTIVE_LOW>;
+	};
+
+	reset {
+		label = "reset";
+		linux,code = <KEY_RESTART>;
+		gpios = <&gpio 12 GPIO_ACTIVE_LOW>;
+	};
+};
+
+&wmac {
+	led {
+		led-sources = <0>;
+	};
+};

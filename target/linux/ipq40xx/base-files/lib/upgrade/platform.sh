@@ -167,10 +167,21 @@ platform_do_upgrade() {
 		CI_ROOTPART="rootfs"
 		emmc_do_upgrade "$1"
 		;;
+	huawei,ap4050dn)
+		# Store beginning address of the "uboot" partition
+		# as KernelA address and KernelB address, each to ResultA & ResultB
+		# This is the address from which the bootloader will try to load the u-boot that we use as loader.
+		HUAWEI_AP4050DN_LOADADDR="\x00\x00\x70\x00\x00\x00\x70\x00"
+		echo -n -e $HUAWEI_AP4050DN_LOADADDR | dd of=$(find_mtd_part ResultA) bs=1 seek=$((0x4264)) conv=notrunc
+		echo -n -e $HUAWEI_AP4050DN_LOADADDR | dd of=$(find_mtd_part ResultA) bs=1 seek=$((0x40264)) conv=notrunc
+		echo -n -e $HUAWEI_AP4050DN_LOADADDR | dd of=$(find_mtd_part ResultB) bs=1 seek=$((0x4264)) conv=notrunc
+		default_do_upgrade "$1"
+		;;
 	linksys,ea6350v3|\
 	linksys,ea8300|\
 	linksys,mr6350|\
 	linksys,mr8300|\
+	linksys,mr9000|\
 	linksys,whw01|\
 	linksys,whw03v2)
 		platform_do_upgrade_linksys "$1"
@@ -178,8 +189,11 @@ platform_do_upgrade() {
 	linksys,whw03)
 		platform_do_upgrade_linksys_emmc "$1"
 		;;
+	meraki,mr20|\
+	meraki,mr70|\
 	meraki,gx20|\
-	meraki,z3)
+	meraki,z3|\
+	meraki,z3c)
 		# DO NOT set CI_KERNPART to part.safe,
 		# that is used for chain-loading an unlocked u-boot
 		# if part.safe is overwritten, then u-boot is lost!
@@ -224,6 +238,12 @@ platform_do_upgrade() {
 	sony,ncp-hg100-cellular)
 		sony_emmc_do_upgrade "$1"
 		;;
+	sophos,apx120)
+		CI_UBIPART="rootfs"
+		# Strip fwtool trailer for eraseblock alignment before ubiformat.
+		fwtool -q -t -i /dev/null "$1" || true
+		nand_do_upgrade "$1"
+		;;
 	teltonika,rutx10|\
 	teltonika,rutx50|\
 	zte,mf18a|\
@@ -234,6 +254,11 @@ platform_do_upgrade() {
 	zte,mf287pro|\
 	zte,mf289f)
 		CI_UBIPART="rootfs"
+		nand_do_upgrade "$1"
+		;;
+	ubnt,utr)
+		CI_UBIPART="kernel1"
+		CI_KERNPART="vol"
 		nand_do_upgrade "$1"
 		;;
 	zyxel,nbg6617)

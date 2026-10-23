@@ -10,7 +10,7 @@ include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=vrx518_tc
 PKG_VERSION:=1.5.12.4
-PKG_RELEASE:=4
+PKG_RELEASE:=5
 PKG_BASE_NAME:=vrx518_tc_drv
 
 UGW_VERSION=8.5.2.10
@@ -64,7 +64,7 @@ EXTRA_CFLAGS:= \
 define Build/Compile
 	$(KERNEL_MAKE) \
 		M="$(PKG_BUILD_DIR)/$(PLAT_DIR)" \
-		EXTRA_CFLAGS="$(EXTRA_CFLAGS)" \
+		ccflags-y="$(EXTRA_CFLAGS)" \
 		FEATURE_VRX518_CPU=y \
 		modules
 endef

@@ -1,0 +1,6 @@
+zonename="$(uci -q get system.@system[0].zonename)"
+case "$zonename" in
+        *[[:space:]]*) uci set system.@system[0].zonename="${zonename// /_}" ;;
+esac
+
+exit 0

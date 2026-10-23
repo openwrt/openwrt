@@ -1,0 +1,341 @@
+// SPDX-License-Identifier: (GPL-2.0 OR MIT)
+/*
+ * Copyright (C) 2025 SmartRG Inc.
+ * Author: Chad Monroe <chad.monroe@smartrg.com>
+ */
+
+/dts-v1/;
+#include "mt7987a.dtsi"
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+
+/ {
+	aliases {
+		serial0 = &uart0;
+		label-mac-device = &gmac2;
+		led-boot = &led_sys_green;
+		led-failsafe = &led_sys_blue;
+		led-running = &led_sys_white;
+		led-upgrade = &led_sys_red;
+	};
+
+	chosen {
+		bootargs = "console=ttyS0,115200n1 root=PARTLABEL=rootfs";
+		stdout-path = "serial0:115200n8";
+	};
+
+	memory@40000000 {
+		reg = <0x0 0x40000000 0x0 0x40000000>;
+		device_type = "memory";
+	};
+
+	reserved-memory {
+		#address-cells = <2>;
+		#size-cells = <2>;
+		ranges;
+
+		bootdata@45000000 {
+			no-map;
+			reg = <0x0 0x45000000 0x0 0x00001000>;
+		};
+
+		ramoops@45001000 {
+			no-map;
+			compatible = "ramoops";
+			reg = <0x0 0x45001000 0x0 0x00140000>;
+			ftrace-size = <0x20000>;
+			record-size = <0x20000>;
+			console-size = <0x20000>;
+			pmsg-size = <0x80000>;
+		};
+	};
+
+	reg_3p3v: regulator-3p3v {
+		compatible = "regulator-fixed";
+		regulator-name = "fixed-3.3V";
+		regulator-min-microvolt = <3300000>;
+		regulator-max-microvolt = <3300000>;
+		regulator-boot-on;
+		regulator-always-on;
+	};
+
+	gpio-keys {
+		compatible = "gpio-keys";
+		pinctrl-names = "default";
+		pinctrl-0 = <&button_pins>;
+
+		button-reset {
+			label = "reset";
+			linux,code = <KEY_RESTART>;
+			gpios = <&pio 1 GPIO_ACTIVE_LOW>;
+		};
+
+		button-sync {
+			label = "sync";
+			linux,code = <KEY_WPS_BUTTON>;
+			gpios = <&pio 0 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	leds: gpio-leds {
+		compatible = "gpio-leds";
+
+		led-0 {
+			color = <LED_COLOR_ID_WHITE>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <2>;
+			gpios = <&pio 29 GPIO_ACTIVE_HIGH>;
+		};
+	};
+};
+
+&eth {
+	status = "okay";
+};
+
+&gmac0 {
+	nvmem-cells = <&macaddr 0x1>;
+	nvmem-cell-names = "mac-address";
+	label = "lan1";
+	phy-mode = "2500base-x";
+	phy-handle = <&phy5>;
+
+	status = "okay";
+};
+
+&gmac1 {
+	nvmem-cells = <&macaddr 0x1>;
+	nvmem-cell-names = "mac-address";
+	label = "lan2";
+	phy-mode = "internal";
+	phy-handle = <&phy15>;
+
+	status = "okay";
+};
+
+&gmac2 {
+	nvmem-cells = <&macaddr 0x0>;
+	nvmem-cell-names = "mac-address";
+	label = "wan";
+	phy-mode = "2500base-x";
+	phy-handle = <&phy4>;
+
+	status = "okay";
+};
+
+&i2c0 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&i2c0_pins>;
+	status = "okay";
+
+	system-leds@30 {
+		compatible = "srg,sysled";
+		reg = <0x30>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		led_sys_red: led@1 {
+			label = "red";
+			reg = <1>;
+		};
+
+		led_sys_green: led@2 {
+			label = "green";
+			reg = <2>;
+		};
+
+		led_sys_blue: led@3 {
+			label = "blue";
+			reg = <3>;
+		};
+
+		led_sys_white: led@4 {
+			label = "white";
+			reg = <4>;
+		};
+	};
+};
+
+&mdio {
+	phy4: ethernet-phy@4 {
+		/* MXL86211C - WAN */
+		compatible = "ethernet-phy-ieee802.3-c45";
+		reg = <4>;
+
+		leds {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			led@0 {
+				reg = <0>;
+				color = <LED_COLOR_ID_GREEN>;
+				function = LED_FUNCTION_WAN;
+				active-high;
+			};
+
+			led@1 {
+				reg = <1>;
+				color = <LED_COLOR_ID_AMBER>;
+				function = LED_FUNCTION_WAN;
+				active-high;
+			};
+
+			led@2 {
+				reg = <2>;
+				color = <LED_COLOR_ID_WHITE>;
+				function = LED_FUNCTION_WAN;
+				active-high;
+			};
+		};
+	};
+
+	phy5: ethernet-phy@5 {
+		/* MXL86211C - LAN1 */
+		compatible = "ethernet-phy-ieee802.3-c45";
+		reg = <5>;
+
+		leds {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			led@0 {
+				reg = <0>;
+				color = <LED_COLOR_ID_GREEN>;
+				function = LED_FUNCTION_LAN;
+				function-enumerator = <1>;
+				active-high;
+			};
+
+			led@1 {
+				reg = <1>;
+				color = <LED_COLOR_ID_AMBER>;
+				function = LED_FUNCTION_LAN;
+				function-enumerator = <1>;
+				active-high;
+			};
+
+			led@2 {
+				reg = <2>;
+				color = <LED_COLOR_ID_WHITE>;
+				function = LED_FUNCTION_LAN;
+				function-enumerator = <1>;
+				active-high;
+			};
+		};
+	};
+
+	phy15: ethernet-phy@f {
+		/* MT7987 - LAN2 */
+		pinctrl-names = "i2p5gbe-led";
+		pinctrl-0 = <&i2p5gbe_led0_pins>, <&i2p5gbe_led1_1_pins>;
+		compatible = "ethernet-phy-ieee802.3-c45";
+		reg = <15>;
+
+		leds {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			led@0 {
+				reg = <0>;
+				color = <LED_COLOR_ID_GREEN>;
+				function = LED_FUNCTION_LAN;
+				function-enumerator = <2>;
+			};
+
+			led@1 {
+				reg = <1>;
+				color = <LED_COLOR_ID_AMBER>;
+				function = LED_FUNCTION_LAN;
+				function-enumerator = <2>;
+			};
+		};
+	};
+};
+
+&mmc0 {
+	pinctrl-names = "default", "state_uhs";
+	pinctrl-0 = <&mmc_pins_default>;
+	pinctrl-1 = <&mmc_pins_uhs>;
+	bus-width = <8>;
+	max-frequency = <48000000>;
+	cap-mmc-highspeed;
+	vmmc-supply = <&reg_3p3v>;
+	non-removable;
+	no-sd;
+	no-sdio;
+	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	card@0 {
+		compatible = "mmc-card";
+		reg = <0>;
+
+		emmc_block: block {
+			compatible = "block-device";
+		};
+	};
+};
+
+&pcie0 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pcie0_1_pins>;
+	wifi-reset-gpios = <&pio 38 GPIO_ACTIVE_LOW>;
+	wifi-reset-msleep = <100>;
+	status = "okay";
+
+	pcie@0,0 {
+		#address-cells = <3>;
+		#size-cells = <2>;
+		reg = <0x0000 0 0 0 0>;
+
+		radio0: wifi@0,0 {
+			compatible = "mediatek,mt76";
+			reg = <0x0000 0 0 0 0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			nvmem-cells = <&eeprom_factory_0>;
+			nvmem-cell-names = "eeprom";
+			ieee80211-freq-limit = <2400000 2500000>, <5170000 5835000>;
+
+			band@0 {
+				/* 2.4 GHz */
+				reg = <0>;
+				nvmem-cells = <&macaddr 0x4>;
+				nvmem-cell-names = "mac-address";
+			};
+
+			band@1 {
+				/* 5 GHz */
+				reg = <1>;
+				nvmem-cells = <&macaddr 0xa>;
+				nvmem-cell-names = "mac-address";
+			};
+		};
+	};
+};
+
+&pio {
+	button_pins: button-pins {
+		pins = "GPIO_RESET", "GPIO_WPS";
+		bias-disable;
+	};
+
+	pcie0_1_pins: pcie0-pins-g1 {
+		mux {
+			function = "pcie";
+			groups = "pcie0_pereset", "pcie0_clkreq";
+		};
+	};
+};
+
+&ssusb {
+	status = "okay";
+};
+
+&uart0 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&uart0_pins>;
+	status = "okay";
+};

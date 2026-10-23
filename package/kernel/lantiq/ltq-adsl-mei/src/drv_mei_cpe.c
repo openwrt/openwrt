@@ -29,7 +29,6 @@
 #include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/mod_devicetable.h>
-#include <linux/version.h>
 #include <generated/utsrelease.h>
 #include <linux/types.h>
 #include <linux/fs.h>
@@ -1286,8 +1285,7 @@ IFX_MEI_RunAdslModem (DSL_DEV_Device_t *pDev)
 //	DSL_DEV_WinHost_Message_t m;
 
 	if (mei_arc_swap_buff == NULL) {
-		mei_arc_swap_buff =
-			(u32 *) kmalloc (MAXSWAPSIZE * 4, GFP_KERNEL);
+		mei_arc_swap_buff = kmalloc (MAXSWAPSIZE * 4, GFP_KERNEL);
 		if (mei_arc_swap_buff == NULL) {
 			IFX_MEI_EMSG (">>> malloc fail for codeswap buff!!! <<<\n");
 			return DSL_DEV_MEI_ERR_FAILURE;
@@ -2778,11 +2776,7 @@ static int ltq_mei_probe(struct platform_device *pdev)
 	IFX_MEI_DMSG("Start loopback test...\n");
 	DFE_Loopback_Test ();
 #endif
-#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 4, 0)
-	dsl_class = class_create(THIS_MODULE, "ifx_mei");
-#else
 	dsl_class = class_create("ifx_mei");
-#endif
 	device_create(dsl_class, NULL, MKDEV(MEI_MAJOR, 0), NULL, "ifx_mei");
 	return 0;
 }
@@ -2809,8 +2803,8 @@ static const struct of_device_id ltq_mei_match[] = {
 };
 
 static struct platform_driver ltq_mei_driver = {
-	.probe = ltq_mei_probe,
-	.remove_new = ltq_mei_remove,
+	.probe  = ltq_mei_probe,
+	.remove = ltq_mei_remove,
 	.driver = {
 		.name = "lantiq,mei-xway",
 		.of_match_table = ltq_mei_match,

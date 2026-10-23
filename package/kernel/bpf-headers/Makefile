@@ -13,7 +13,7 @@ include $(INCLUDE_DIR)/kernel.mk
 
 
 PKG_NAME:=linux
-PKG_PATCHVER:=6.12
+PKG_PATCHVER:=6.18
 
 # Manually include kernel version and hash from kernel details file
 GENERIC_PLATFORM_DIR := $(CURDIR)/../../../target/linux/generic
@@ -88,6 +88,9 @@ define Build/Configure
 		cut -d= -f2 | \
 		bc -q $(LINUX_DIR)/kernel/time/timeconst.bc \
 		> $(LINUX_DIR)/include/generated/timeconst.h
+	printf '%s\n' '#ifndef __RQ_OFFSETS_H__' '#define __RQ_OFFSETS_H__' \
+		'#define RQ_nr_pinned 0' '#endif' \
+		> $(LINUX_DIR)/include/generated/rq-offsets.h
 	$(BPF_DOC) --header \
 		--file $(LINUX_DIR)/tools/include/uapi/linux/bpf.h \
 		> $(PKG_BUILD_DIR)/tools/lib/bpf/bpf_helper_defs.h

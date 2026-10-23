@@ -1,6 +1,6 @@
 config IB
 	bool "Build the OpenWrt Image Builder"
-	depends on !EXTERNAL_TOOLCHAIN
+	depends on !EXTERNAL_TOOLCHAIN || EXTERNAL_TOOLCHAIN_IB
 	default BUILDBOT
 	help
 	  This is essentially a stripped-down version of the buildroot

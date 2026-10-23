@@ -1,0 +1,176 @@
+From 04c99fb3cee6dabf1b84a80f7bd5d81b485b599a Mon Sep 17 00:00:00 2001
+From: Linus Walleij <linusw@kernel.org>
+Date: Thu, 3 Sep 2026 23:17:40 +0200
+Subject: [PATCH 3/6] usb: ehci: add port speed hook
+
+Some EHCI implementations report device speed in
+implementation-defined registers.
+
+Add an optional hook for port speed reporting. Move the common
+integrated-TT speed decoding into the hub code, preserving the PORTSC
+and HOSTPC paths when no hook is supplied.
+
+Gate the callback behind the hidden USB_EHCI_PORT_SPEED_HOOK option so
+controllers using standard speed reporting incur no extra state or
+runtime checks.
+
+The hook is only meaningful for controllers with an integrated root
+hub transaction translator, so make the option depend on
+USB_EHCI_ROOT_HUB_TT.
+
+Suggested-by: Alan Stern <stern@rowland.harvard.edu>
+Suggested-by: Daniel Palmer <daniel@thingy.jp>
+Assisted-by: LLM
+Signed-off-by: Linus Walleij <linusw@kernel.org>
+Link: https://patch.msgid.link/20260903-gemini-usb-fotg2-v3-3-dd92ecf5675b@kernel.org
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ drivers/usb/host/Kconfig    |  5 ++++
+ drivers/usb/host/ehci-hub.c | 53 ++++++++++++++++++++++++++++++++-----
+ drivers/usb/host/ehci.h     | 30 +++------------------
+ 3 files changed, 56 insertions(+), 32 deletions(-)
+
+--- a/drivers/usb/host/Kconfig
++++ b/drivers/usb/host/Kconfig
+@@ -213,6 +213,11 @@ config USB_EHCI_PORT_RESET_HOOKS
+ 	bool
+ 	# Used for hosts with controller-specific port reset sequencing
+ 
++config USB_EHCI_PORT_SPEED_HOOK
++	bool
++	depends on USB_EHCI_ROOT_HUB_TT
++	# Used for hosts with controller-specific port speed reporting
++
+ config XPS_USB_HCD_XILINX
+ 	bool "Use Xilinx usb host EHCI controller core"
+ 	depends on (PPC32 || MICROBLAZE)
+--- a/drivers/usb/host/ehci-hub.c
++++ b/drivers/usb/host/ehci-hub.c
+@@ -15,6 +15,44 @@
+ 
+ /*-------------------------------------------------------------------------*/
+ 
++/*
++ * Some EHCI controllers have a Transaction Translator built into the
++ * root hub. This is a non-standard feature.  Each controller will need
++ * to add code to the following function, and call it as needed.
++ */
++
++/*
++ * In a bunch of EHCI implementations with transaction translators,
++ * the port speed can be found in the reserved bits in position 26 and
++ * 27. Implementations with the HOSTPC register will have this in
++ * bits 25 and 26 of the HOSTPC registers.
++ */
++#define PORTSC_SPEED_BITS(a)	(((a) >> 26) & 3)
++#define HOSTPC_SPEED_BITS(a)	(((a) >> 25) & 3)
++
++/* Returns the speed of a device attached to a port on the root hub. */
++static unsigned int ehci_port_speed(struct ehci_hcd *ehci,
++				    unsigned int port, unsigned int speed)
++{
++#ifdef CONFIG_USB_EHCI_PORT_SPEED_HOOK
++	if (ehci->get_port_speed)
++		return ehci->get_port_speed(ehci, port);
++#endif
++
++	if (!IS_ENABLED(CONFIG_USB_EHCI_ROOT_HUB_TT) || !ehci_is_TDI(ehci))
++		return USB_PORT_STAT_HIGH_SPEED;
++
++	switch (speed) {
++	case 0:
++		return 0;
++	case 1:
++		return USB_PORT_STAT_LOW_SPEED;
++	case 2:
++	default:
++		return USB_PORT_STAT_HIGH_SPEED;
++	}
++}
++
+ #define	PORT_WAKE_BITS	(PORT_WKOC_E|PORT_WKDISC_E|PORT_WKCONN_E)
+ 
+ #ifdef	CONFIG_PM
+@@ -287,8 +325,9 @@ static int ehci_bus_suspend (struct usb_
+ 			 * sake, add a delay if we need one.
+ 			 */
+ 			if ((t2 & PORT_WKDISC_E) &&
+-					ehci_port_speed(ehci, t2) ==
+-						USB_PORT_STAT_HIGH_SPEED)
++			    ehci_port_speed(ehci, port,
++					    PORTSC_SPEED_BITS(t2)) ==
++					    USB_PORT_STAT_HIGH_SPEED)
+ 				fs_idle_delay = true;
+ 			ehci_writel(ehci, t2, reg);
+ 			changed = 1;
+@@ -990,12 +1029,14 @@ int ehci_hub_control(
+ 
+ 		if (temp & PORT_CONNECT) {
+ 			status |= USB_PORT_STAT_CONNECTION;
+-			// status may be from integrated TT
+ 			if (ehci->has_hostpc) {
+ 				temp1 = ehci_readl(ehci, hostpc_reg);
+-				status |= ehci_port_speed(ehci, temp1);
+-			} else
+-				status |= ehci_port_speed(ehci, temp);
++				status |= ehci_port_speed(ehci, wIndex,
++							  HOSTPC_SPEED_BITS(temp1));
++			} else {
++				status |= ehci_port_speed(ehci, wIndex,
++							  PORTSC_SPEED_BITS(temp));
++			}
+ 		}
+ 		if (temp & PORT_PE)
+ 			status |= USB_PORT_STAT_ENABLE;
+--- a/drivers/usb/host/ehci.h
++++ b/drivers/usb/host/ehci.h
+@@ -126,6 +126,10 @@ struct ehci_hcd {			/* one per controlle
+ #ifdef CONFIG_USB_EHCI_DEVIANT_PORT_STATUS_REG
+ 	u32 __iomem		*port_status;
+ #endif
++#ifdef CONFIG_USB_EHCI_PORT_SPEED_HOOK
++	unsigned int		(*get_port_speed)(struct ehci_hcd *ehci,
++						  unsigned int port);
++#endif
+ #ifdef CONFIG_USB_EHCI_PORT_RESET_HOOKS
+ 	int			(*pre_port_reset)(struct ehci_hcd *ehci,
+ 						  unsigned int port);
+@@ -673,38 +677,12 @@ struct ehci_tt {
+ 
+ #ifdef CONFIG_USB_EHCI_ROOT_HUB_TT
+ 
+-/*
+- * Some EHCI controllers have a Transaction Translator built into the
+- * root hub. This is a non-standard feature.  Each controller will need
+- * to add code to the following inline functions, and call them as
+- * needed (mostly in root hub code).
+- */
+-
+ #define	ehci_is_TDI(e)			(ehci_to_hcd(e)->has_tt)
+ 
+-/* Returns the speed of a device attached to a port on the root hub. */
+-static inline unsigned int
+-ehci_port_speed(struct ehci_hcd *ehci, unsigned int portsc)
+-{
+-	if (ehci_is_TDI(ehci)) {
+-		switch ((portsc >> (ehci->has_hostpc ? 25 : 26)) & 3) {
+-		case 0:
+-			return 0;
+-		case 1:
+-			return USB_PORT_STAT_LOW_SPEED;
+-		case 2:
+-		default:
+-			return USB_PORT_STAT_HIGH_SPEED;
+-		}
+-	}
+-	return USB_PORT_STAT_HIGH_SPEED;
+-}
+-
+ #else
+ 
+ #define	ehci_is_TDI(e)			(0)
+ 
+-#define	ehci_port_speed(ehci, portsc)	USB_PORT_STAT_HIGH_SPEED
+ #endif
+ 
+ /*-------------------------------------------------------------------------*/

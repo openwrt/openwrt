@@ -30,6 +30,9 @@ endef
 define Build/package-kernel-ubifs
 	mkdir $@.kernelubifs
 	cp $@ $@.kernelubifs/kernel
+	$(if $(SOURCE_DATE_EPOCH), \
+		touch -hcd "@$(SOURCE_DATE_EPOCH)" \
+		$@.kernelubifs $@.kernelubifs/kernel)
 	$(STAGING_DIR_HOST)/bin/mkfs.ubifs \
 		$(KERNEL_UBIFS_OPTS) \
 		-r $@.kernelubifs $@
@@ -91,12 +94,12 @@ metadata_json = \
 define Build/append-metadata
 	$(if $(SUPPORTED_DEVICES),-echo $(call metadata_json) | fwtool -I - $@)
 	sha256sum "$@" | cut -d" " -f1 > "$@.sha256sum"
-	[ ! -s "$(BUILD_KEY)" -o ! -s "$(BUILD_KEY).ucert" -o ! -s "$@" ] || { \
+	$(if $(CONFIG_SIGN_FIRMWARE),[ ! -s "$(BUILD_KEY)" -o ! -s "$(BUILD_KEY).ucert" -o ! -s "$@" ] || { \
 		cp "$(BUILD_KEY).ucert" "$@.ucert" ;\
 		usign -S -m "$@" -s "$(BUILD_KEY)" -x "$@.sig" ;\
 		ucert -A -c "$@.ucert" -x "$@.sig" ;\
 		fwtool -S "$@.ucert" "$@" ;\
-	}
+	})
 endef
 
 metadata_gl_json = \
@@ -110,7 +113,7 @@ metadata_gl_json = \
 		$(if $(filter 1.0,$(compat_version)),"supported_devices":[$(call metadata_devices,$(SUPPORTED_DEVICES))]$(comma)) \
 		"version": { \
 			"release": "$(call json_quote,$(VERSION_NUMBER))", \
-			"date": "$(shell TZ='Asia/Chongqing' date '+%Y%m%d%H%M%S')", \
+			"date": "$(shell TZ='Asia/Chongqing' date $(if $(SOURCE_DATE_EPOCH),-d@$(SOURCE_DATE_EPOCH)) '+%Y%m%d%H%M%S')", \
 			"dist": "$(call json_quote,$(VERSION_DIST))", \
 			"version": "$(call json_quote,$(VERSION_NUMBER))", \
 			"revision": "$(call json_quote,$(REVISION))", \
@@ -122,12 +125,12 @@ metadata_gl_json = \
 define Build/append-gl-metadata
 	$(if $(SUPPORTED_DEVICES),-echo $(call metadata_gl_json,$(SUPPORTED_DEVICES)) | fwtool -I - $@)
 	sha256sum "$@" | cut -d" " -f1 > "$@.sha256sum"
-	[ ! -s "$(BUILD_KEY)" -o ! -s "$(BUILD_KEY).ucert" -o ! -s "$@" ] || { \
+	$(if $(CONFIG_SIGN_FIRMWARE),[ ! -s "$(BUILD_KEY)" -o ! -s "$(BUILD_KEY).ucert" -o ! -s "$@" ] || { \
 		cp "$(BUILD_KEY).ucert" "$@.ucert" ;\
 		usign -S -m "$@" -s "$(BUILD_KEY)" -x "$@.sig" ;\
 		ucert -A -c "$@.ucert" -x "$@.sig" ;\
 		fwtool -S "$@.ucert" "$@" ;\
-	}
+	})
 endef
 
 define Build/append-teltonika-metadata
@@ -324,7 +327,7 @@ define Build/copy-file
 endef
 
 # Create a header for a D-Link AI series recovery image and add it at the beginning of the image
-# Currently supported: AQUILA M30, EAGLE M32 and R32
+# Currently supported: AQUILA E30 and M30, EAGLE M32 and R32
 # Arguments:
 # 1: Start string of the header
 # 2: Firmware version
@@ -375,8 +378,8 @@ define Build/elecom-product-header
 	$(eval fw=$(if $(word 2,$(1)),$(word 2,$(1)),$@))
 
 	-( \
-		echo -n -e "ELECOM\x00\x00$(product)" | dd bs=40 count=1 conv=sync; \
-		echo -n "0.00" | dd bs=16 count=1 conv=sync; \
+		echo -n -e "ELECOM\x00\x00$(product)" | dd bs=40 count=1 conv=sync iflag=fullblock; \
+		echo -n "0.00" | dd bs=16 count=1 conv=sync iflag=fullblock; \
 		dd if=$(fw); \
 	) > $(fw).new \
 	&& mv $(fw).new $(fw) || rm -f $(fw)
@@ -389,7 +392,7 @@ define Build/elecom-wrc-gs-factory
 	$(MKHASH) md5 $(hash_opt) $@ >> $@
 	( \
 		echo -n "ELECOM $(product) v$(version)" | \
-			dd bs=32 count=1 conv=sync; \
+			dd bs=32 count=1 conv=sync iflag=fullblock; \
 		dd if=$@; \
 	) > $@.new
 	mv $@.new $@
@@ -400,14 +403,14 @@ define Build/elx-header
 	$(eval xor_pattern=$(word 2,$(1)))
 	( \
 		echo -ne "\x00\x00\x00\x00\x00\x00\x00\x03" | \
-			dd bs=42 count=1 conv=sync; \
+			dd bs=42 count=1 conv=sync iflag=fullblock; \
 		hw_id="$(hw_id)"; \
 		echo -ne "\x$${hw_id:0:2}\x$${hw_id:2:2}\x$${hw_id:4:2}\x$${hw_id:6:2}" | \
-			dd bs=20 count=1 conv=sync; \
-		echo -ne "$$(printf '%08x' $$(stat -c%s $@) | fold -s2 | xargs -I {} echo \\x{} | tr -d '\n')" | \
-			dd bs=8 count=1 conv=sync; \
-		echo -ne "$$($(MKHASH) md5 $@ | fold -s2 | xargs -I {} echo \\x{} | tr -d '\n')" | \
-			dd bs=58 count=1 conv=sync; \
+			dd bs=20 count=1 conv=sync iflag=fullblock; \
+		echo -ne "$$(printf '%08x' $$(stat -c%s $@) | fold -w2 | xargs -I {} echo \\x{} | tr -d '\n')" | \
+			dd bs=8 count=1 conv=sync iflag=fullblock; \
+		echo -ne "$$($(MKHASH) md5 $@ | fold -w2 | xargs -I {} echo \\x{} | tr -d '\n')" | \
+			dd bs=58 count=1 conv=sync iflag=fullblock; \
 	) > $(KDIR)/tmp/$(DEVICE_NAME).header
 	-$(call Build/xor-image,-p $(xor_pattern) -x) \
 	&& cat $(KDIR)/tmp/$(DEVICE_NAME).header $@ > $@.new \
@@ -466,8 +469,13 @@ define Build/fit
 	$(call Build/fit-image,$(1))
 endef
 
+# A slot name from the basename alone collides between two targets that share
+# it in different directories below $(KDIR).
+cache_slot = $(KDIR)/cache/$(subst /,_,$(patsubst $(KDIR)/%,%,$(1)))
+
 define Build/libdeflate-gzip
-	$(STAGING_DIR_HOST)/bin/libdeflate-gzip -f -12 -c $@ $(1) > $@.new
+	$(CACHE_RUN) $(call cache_slot,$@).gz $@ $@.new \
+		$(STAGING_DIR_HOST)/bin/libdeflate-gzip -f -12 -k -S .new $(1) $@
 	@mv $@.new $@
 endef
 
@@ -546,16 +554,20 @@ define Build/gl-qsdk-factory
 	$(eval GL_IMGK := $(KDIR_TMP)/$(DEVICE_IMG_PREFIX)-squashfs-factory.img)
 	$(eval GL_ITS := $(KDIR_TMP)/$(GL_NAME).its)
 	$(eval GL_UBI := "ubi")
+	$(eval GL_SCRIPT := $(GL_NAME).bootscript)
 
-	$(CP) $(BOOT_SCRIPT) $(KDIR_TMP)/
+	$(CP) $(BOOT_SCRIPT) $(KDIR_TMP)/$(GL_SCRIPT)
 	$(shell mv $(GL_IMGK) $(GL_IMGK).tmp)
 
-	sed -i "s/rootfs_size/`wc -c $(GL_IMGK) | \
-	cut -d " " -f 1 | xargs printf "0x%x"`/g" $(KDIR_TMP)/$(BOOT_SCRIPT);
+	sed -i -e "s/@ROOTFS_SIZE@/`wc -c $(GL_IMGK) | \
+	cut -d " " -f 1 | xargs printf "0x%x"`/g" \
+		-e "s/@UBI_OFFSET@/$(call param_get,ubi_offset,$(1))/g" \
+		-e "s/@UBI_SIZE@/$(call param_get,ubi_size,$(1))/g" \
+		$(KDIR_TMP)/$(GL_SCRIPT);
 
 	$(TOPDIR)/scripts/mkits-qsdk-ipq-image.sh \
 		$(GL_ITS) \
-		$(BOOT_SCRIPT) \
+		$(GL_SCRIPT) \
 		$(GL_UBI) \
 		$(GL_IMGK)
 
@@ -566,7 +578,7 @@ define Build/gl-qsdk-factory
 	$(RM) \
 		$(GL_ITS) \
 		$(GL_IMGK).tmp \
-		$(KDIR_TMP)/$(notdir $(BOOT_SCRIPT))
+		$(KDIR_TMP)/$(GL_SCRIPT)
 endef
 
 define Build/kernel-pack-npk
@@ -593,7 +605,8 @@ define Build/lzma
 endef
 
 define Build/lzma-no-dict
-	$(STAGING_DIR_HOST)/bin/lzma e $@ $(1) $@.new
+	$(CACHE_RUN) $(call cache_slot,$@).lzma $@ $@.new \
+		$(STAGING_DIR_HOST)/bin/lzma e $@ $(1) $@.new
 	@mv $@.new $@
 endef
 
@@ -617,7 +630,7 @@ endef
 
 define Build/netgear-dni
 	$(STAGING_DIR_HOST)/bin/mkdniimg \
-		-B $(NETGEAR_BOARD_ID) -v $(shell cat $(VERSION_DIST)| sed -e 's/[[:space:]]/-/g').$(firstword $(subst -, ,$(REVISION))) \
+		-B $(NETGEAR_BOARD_ID) -v $(subst $(space),-,$(VERSION_DIST)).$(firstword $(subst -, ,$(REVISION))) \
 		$(if $(NETGEAR_HW_ID),-H $(NETGEAR_HW_ID)) \
 		-r "$(1)" \
 		-i $@ -o $@.new
@@ -632,7 +645,7 @@ define Build/netgear-encrypted-factory
 		--region $(NETGEAR_ENC_REGION) \
 		$(if $(NETGEAR_ENC_HW_ID_LIST),--hw-id-list "$(NETGEAR_ENC_HW_ID_LIST)") \
 		$(if $(NETGEAR_ENC_MODEL_LIST),--model-list "$(NETGEAR_ENC_MODEL_LIST)") \
-		--version V1.0.0.0.$(shell cat $(VERSION_DIST)| sed -e 's/[[:space:]]/-/g').$(firstword $(subst -, ,$(REVISION))) \
+		--version V1.0.0.0.$(subst $(space),-,$(VERSION_DIST)).$(firstword $(subst -, ,$(REVISION))) \
 		--encryption-block-size 0x20000 \
 		--openssl-bin "$(STAGING_DIR_HOST)/bin/openssl" \
 		--key 6865392d342b4d212964363d6d7e7765312c7132613364316e26322a5a5e2538 \
