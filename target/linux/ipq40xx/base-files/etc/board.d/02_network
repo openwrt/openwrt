@@ -57,7 +57,7 @@ ipq40xx_setup_interfaces()
 		ucidef_set_interfaces_lan_wan "lan" "wan"
 		;;
 	arista,w-118)
-		ucidef_set_interface_lan "uplink lan1 lan2 lan3" "dhcp"
+		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" "uplink"
 		;;
 	aruba,ap-303|\
 	aruba,ap-365|\

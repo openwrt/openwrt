@@ -113,17 +113,10 @@
 	};
 
 	/*
-	 * PoE output on lan3, off at boot:
-	 *
-	 *            GPIO 43                 GPIO 29
-	 *       ______|______           ______|______
-	 *      |             |         |             |
-	 *  HIGH = DC    LOW = PoE in   HIGH = 802.3af  LOW = 802.3at
-	 *
-	 *  GPIO 28 HIGH = PoE output on lan3
-	 *
-	 * An 802.3af supply leaves no power to share, so the boot script
-	 * turns the output on only from 802.3at or DC.
+	 * PoE output on lan3 (GPIO 28, high = on), off at boot. GPIO 43 is
+	 * high on DC and low on PoE in; GPIO 29 is high on 802.3af and low on
+	 * 802.3at. An 802.3af supply leaves no power to share, so the boot
+	 * script turns the output on only from 802.3at or DC.
 	 */
 	output-poe {
 		compatible = "regulator-output";
