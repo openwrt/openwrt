@@ -1,0 +1,136 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Ross Cawston <ross@r-sc.ca>
+Date: Sat, 17 Oct 2026 21:39:07 +0000
+Subject: [PATCH 1/2] dt-bindings: net: pse-pd: add Realtek RTL8239
+
+Add a binding for the Realtek RTL8239 PSE controller: an 8-channel
+802.3af/at/bt controller driven directly over I2C, one address per
+4-channel half, with the delivery channels and the PSE PIs that use
+them described in the device tree, and an optional firmware name.
+
+Signed-off-by: Ross Cawston <ross@r-sc.ca>
+---
+--- /dev/null
++++ b/Documentation/devicetree/bindings/net/pse-pd/realtek,rtl8239.yaml
+@@ -0,0 +1,121 @@
++# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
++%YAML 1.2
++---
++$id: http://devicetree.org/schemas/net/pse-pd/realtek,rtl8239.yaml#
++$schema: http://devicetree.org/meta-schemas/core.yaml#
++
++title: Realtek RTL8239 Power Sourcing Equipment controller
++
++maintainers:
++  - Ross Cawston <ross@r-sc.ca>
++
++description: |
++  The RTL8239 is an 8-channel IEEE 802.3af/at/bt PSE controller driven
++  directly over I2C, without a PSE microcontroller. Each 4-channel half
++  answers on its own address: channels 0-3 on the first, 4-7 on the second
++  (by default the first plus one). The chip runs Realtek firmware that the
++  host loads at power-up through a broadcast address shared by all RTL8239s
++  on the bus.
++
++allOf:
++  - $ref: pse-controller.yaml#
++
++properties:
++  compatible:
++    const: realtek,rtl8239
++
++  reg:
++    minItems: 1
++    items:
++      - description: Address of channels 0-3
++      - description: Address of channels 4-7
++
++  reg-names:
++    minItems: 1
++    items:
++      - const: quad0
++      - const: quad1
++
++  firmware-name:
++    description: Firmware image to load, relative to the firmware search
++      path. Defaults to realtek/rtl8239-bt.bin (RTL8239, RTL8239-VB) or
++      realtek/rtl8239c-bt.bin (RTL8239C). Without it the chip is used as
++      it is.
++    maxItems: 1
++
++  poll-interval-ms: true
++
++  channels:
++    description: |
++      The delivery channels wired to ports. PSE PIs reference them through
++      "pairsets"; a 4-pair PI uses two consecutive channels, 0+1, 2+3, 4+5
++      or 6+7.
++    type: object
++    additionalProperties: false
++
++    properties:
++      "#address-cells":
++        const: 1
++
++      "#size-cells":
++        const: 0
++
++    patternProperties:
++      '^channel@[0-7]$':
++        type: object
++        additionalProperties: false
++
++        properties:
++          reg:
++            maxItems: 1
++
++        required:
++          - reg
++
++    required:
++      - "#address-cells"
++      - "#size-cells"
++
++unevaluatedProperties: false
++
++required:
++  - compatible
++  - reg
++
++examples:
++  - |
++    i2c {
++      #address-cells = <1>;
++      #size-cells = <0>;
++
++      ethernet-pse@20 {
++        compatible = "realtek,rtl8239";
++        reg = <0x20>;
++
++        channels {
++          #address-cells = <1>;
++          #size-cells = <0>;
++
++          chan0: channel@0 {
++            reg = <0>;
++          };
++
++          chan1: channel@1 {
++            reg = <1>;
++          };
++        };
++
++        pse-pis {
++          #address-cells = <1>;
++          #size-cells = <0>;
++
++          pse_pi0: pse-pi@0 {
++            reg = <0>;
++            #pse-cells = <0>;
++            pairset-names = "alternative-a", "alternative-b";
++            pairsets = <&chan0>, <&chan1>;
++            vpwr-supply = <&poe_supply>;
++          };
++        };
++      };
++    };

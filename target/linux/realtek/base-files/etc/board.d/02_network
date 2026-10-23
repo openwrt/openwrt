@@ -126,6 +126,7 @@ realtek_setup_macs()
 	hasivo,s1300wp-8xgt-4s-plus|\
 	hasivo,s600wp-5gt-2s-plus|\
 	mokerlink,10gt080m|\
+	mokerlink,poe-10g07110gsm|\
 	tplink,tl-st1008f-v2|\
 	xikestor,sks8300-12x-v2|\
 	zyxel,xgs1010-12-a1|\
@@ -243,6 +244,13 @@ realtek_setup_poe()
 		ucidef_set_poe 370 "lan8 lan7 lan6 lan5 lan4 lan3 lan2 lan1 lan16 lan15 lan14 lan13 lan12 lan11 lan10 lan9 lan24 lan23
 				lan22 lan21 lan20 lan19 lan18 lan17 lan32 lan31 lan30 lan29 lan28 lan27 lan26 lan25 lan40 lan39 lan38 lan37
 				lan36 lan35 lan34 lan33 lan48 lan47 lan46 lan45 lan44 lan43 lan42 lan41"
+		;;
+	mokerlink,poe-10g07110gsm)
+		# The PSE driver keeps a power budget, and its ports wait
+		# switched off until netifd switches them on
+		for port in lan1 lan2 lan3 lan4 lan5 lan6 lan7; do
+			ucidef_set_network_device_pse "$port" 1
+		done
 		;;
 	netgear,gs110tup-v1)
 		ucidef_set_poe 240 "$(filter_port_list "$lan_list" "lan9 lan10")"
