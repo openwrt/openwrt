@@ -952,8 +952,11 @@ define Device/netgear_orbi
 	$(call Device/DniImage)
 	SOC := qcom-ipq4019
 	DEVICE_VENDOR := NETGEAR
-	IMAGE/factory.img := append-kernel | pad-offset 128k 64 | \
-		append-uImage-fakehdr filesystem | pad-to $$$$(KERNEL_SIZE) | \
+	KERNEL = kernel-bin | fit none $$(KDIR)/image-$$(DEVICE_DTS).dtb | \
+		pad-offset 128k 64 | append-uImage-fakehdr filesystem | \
+		check-size $$(KERNEL_SIZE)
+	KERNEL_INITRAMFS = kernel-bin | fit none $$(KDIR)/image-$$(DEVICE_DTS).dtb
+	IMAGE/factory.img := append-kernel | pad-to $$$$(KERNEL_SIZE) | \
 		append-rootfs | pad-rootfs | netgear-dni
 	IMAGE/sysupgrade.bin/squashfs := append-rootfs | pad-to 64k | \
 		sysupgrade-tar rootfs=$$$$@ | append-metadata
