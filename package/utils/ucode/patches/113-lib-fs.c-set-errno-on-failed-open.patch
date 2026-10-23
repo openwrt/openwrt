@@ -1,0 +1,26 @@
+From ea4c65b3c2553aeb3fc1c88cf34f9652cd1f9db5 Mon Sep 17 00:00:00 2001
+From: Jo-Philipp Wich <jo@mein.io>
+Date: Thu, 17 Sep 2026 00:12:25 +0200
+Subject: [PATCH] lib/fs.c: set errno on failed open()
+
+When open(2) fails in uc_fs_open(), set the module errno via
+err_return() instead of returning NULL, so callers can inspect
+fs.error(). This mirrors the pattern already used for the fdopen()
+failure path immediately below.
+
+Signed-off-by: Jo-Philipp Wich <jo@mein.io>
+---
+ lib/fs.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/lib/fs.c
++++ b/lib/fs.c
+@@ -1252,7 +1252,7 @@ uc_fs_open(uc_vm_t *vm, size_t nargs)
+ 	fd = open(ucv_string_get(path), open_flags, open_perm);
+ 
+ 	if (fd < 0)
+-		return NULL;
++		err_return(errno);
+ 
+ 	fp = fdopen(fd, m);
+ 
