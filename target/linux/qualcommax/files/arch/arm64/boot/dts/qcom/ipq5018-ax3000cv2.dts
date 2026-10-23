@@ -147,16 +147,16 @@
 				
 				ethernet-port@8 {
 					reg = <8>;
-					/* IPQ5018 UNIPHY runs SGMII at 1G (125 MHz,
-					 * MAC_MODE_SGMII_CHANNEL0); the yt921x driver
-					 * maps "sgmii" to REVSGMII for EXT0. 2500BASE-X
-					 * with SGMII_PLUS does not establish link here.
+					/* CPU lane: IPQ5018 UNIPHY in SGMII+ mode
+					 * (312.5 MHz) to YT9215S SERDES0 in
+					 * 2500BASE-X; the yt921x driver maps
+					 * "2500base-x" to SERDES mode 4.
 					 */
-					phy-mode = "sgmii";
+					phy-mode = "2500base-x";
 					ethernet = <&dp2>;
 					
 					fixed-link {
-						speed = <1000>;
+						speed = <2500>;
 						full-duplex;
 					};
 				};
@@ -186,23 +186,23 @@
 
 &switch {
 	status = "okay";
-	/* SGMII 1G on the CPU lane, matching the stock firmware. */
-	switch_mac_mode = <MAC_MODE_SGMII_CHANNEL0>;
+	/* SGMII+ (312.5 MHz) on the forced CPU port. */
+	switch_mac_mode = <MAC_MODE_SGMII_PLUS>;
 
 	/*
-	 * Keep GCC_UNIPHY_AHB_ARES: SSDK resets the UNIPHY through this line
-	 * before programming SGMII 1G on the forced CPU port. Without it the
-	 * PCS keeps its reset defaults and never gets link.
+	 * uniphy1_ahb_rst is deliberately omitted: the AHB reset
+	 * clears MODE_CTRL/PHY_MODE/CH0_INPUT_OUTPUT_4 on the
+	 * forced CPU port. SSDK's SGMII+ path pulses the SYS/RX/TX
+	 * soft reset (uniphy1_soft_rst) and reprograms PHY_MODE
+	 * instead, which latches the SGMII+ PCS mode.
 	 */
 	resets = <&gcc GCC_GMAC0_BCR>,
 		 <&gcc GCC_GMAC1_BCR>,
 		 <&gcc GCC_UNIPHY_BCR>,
-		 <&gcc GCC_UNIPHY_AHB_ARES>,
 		 <&gcc GCC_UNIPHY_SOFT_RESET>;
 	reset-names = "gmac0_bcr_rst",
 		      "gmac1_bcr_rst",
 		      "uniphy_bcr_rst",
-		      "uniphy1_ahb_rst",
 		      "uniphy1_soft_rst";
 
 	qcom,port_phyinfo {
@@ -215,7 +215,11 @@
 		port@1 {
 			port_id = <2>;
 			mdiobus = <&mdio1>;
-			forced-speed = <1000>;
+			/* 2500 selects the 312.5 MHz GMAC1 clock that the
+			 * SGMII+ UNIPHY parent provides; 1000 would need
+			 * 125 MHz, which this parent cannot divide to.
+			 */
+			forced-speed = <2500>;
 			forced-duplex = <1>;
 		};
 	};
@@ -243,12 +247,12 @@
 &dp2 {
 	status = "okay";
 	label = "lan";
-	phy-mode = "sgmii";
+	phy-mode = "2500base-x";
 	nvmem-cells = <&macaddr_appsblenv_ethaddr 1>;
 	nvmem-cell-names = "mac-address";
 	
 	fixed-link {
-		speed = <1000>;
+		speed = <2500>;
 		full-duplex;
 	};
 };
