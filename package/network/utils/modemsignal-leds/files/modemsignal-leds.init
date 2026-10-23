@@ -58,6 +58,24 @@ start_modem() {
 	config_get mode      "$s" mode      bars
 	config_get refresh   "$s" refresh   10
 
+	# the daemon rejects these too, but it would then be respawned in a
+	# loop by procd: catch a typo here and keep the default
+	case "$refresh" in
+	''|*[!0-9]*|0)
+		refresh="" ;;
+	esac
+	[ -n "$refresh" ] && [ "$refresh" -le 86400 ] || {
+		logger -t modemsignal-leds "modem '$s': bad refresh, using 10"
+		refresh=10
+	}
+	case "$mode" in
+	bars|status) ;;
+	*)
+		logger -t modemsignal-leds "modem '$s': bad mode '$mode', using bars"
+		mode=bars
+		;;
+	esac
+
 	MLEDS=""
 	config_foreach collect_led led "$s"
 	n=$(printf '%s' "$MLEDS" | grep -c .)
@@ -89,10 +107,10 @@ start_modem() {
 # Cellular network interfaces, one per line.
 find_wwan_ifaces() {
 	local i proto
-	for i in $(uci -q show network | sed -n 's/^network\.\([^.]*\)\.proto=.*/\1/p'); do
+	for i in $(uci -q show network | sed -n 's/^network\.\([^.@]*\)\.proto=.*/\1/p'); do
 		proto=$(uci -q get "network.$i.proto")
 		case "$proto" in
-			ncm|qmi|mbim|3g|wwan) echo "$i" ;;
+			ncm|qmi|mbim|modemmanager|3g|wwan) echo "$i" ;;
 		esac
 	done
 }

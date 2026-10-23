@@ -21,7 +21,7 @@ endef
 
 define Package/modemsignal-leds/description
   Lights cellular signal-strength LEDs from a modem's reported signal,
-  via AT, QMI or MBIM.
+  via AT, QMI, MBIM or ModemManager.
 endef
 
 define Package/modemsignal-leds/conffiles

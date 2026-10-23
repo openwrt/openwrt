@@ -6,6 +6,7 @@
 #   backend at   <ttydev> [<iface>]  # AT+CSQ via gcom
 #   backend qmi  <cdc-wdm> [<iface>] # uqmi --get-signal-info
 #   backend mbim <cdc-wdm> [<iface>] # umbim signal
+#   backend mm   <syspath> [<iface>] # mmcli signal quality (ModemManager)
 #   backend auto <iface>             # derive channel+device from a netif
 #   backend mock <value>             # print <value> (test / bring-up)
 
@@ -33,7 +34,9 @@ dbm_to_q() {
 	case "$n" in
 	''|*[!0-9]*) echo -1; return ;;
 	esac
-	q=$(( ($1 + 110) * 100 / 60 ))
+	# cellular levels are negative: use the magnitude, so a modem that
+	# reports "75" for -75 dBm does not clamp straight to full scale
+	q=$(( (110 - n) * 100 / 60 ))
 	[ "$q" -lt 0 ] && q=0
 	[ "$q" -gt 100 ] && q=100
 	echo "$q"
@@ -63,14 +66,14 @@ iface_up() {
 # the sample while netifd is setting it up or tearing it down (see iface_up).
 b_at() {
 	have gcom || { echo -1; return; }
-	local resp n q
+	local resp n q mode
 	[ -z "$2" ] || iface_up "$2" || { echo -1; return; }
 	# Standard 3GPP AT+CSQ (0..31), understood by virtually every modem. We
 	# ship our own gcom script because comgt's getstrength.gcom starts with
 	# "flash 0.1", a DTR pulse that hangs up the data call on a modem set to
 	# AT&D2 - not something a read-only poller should do.
 	resp=$(at_gcom "$1" "$DATADIR/getcsq.gcom")
-	n=$(echo "$resp" | sed -n 's/.*+CSQ:[[:space:]]*\([0-9]\{1,\}\).*/\1/p' | head -1)
+	n=$(printf '%s\n' "$resp" | sed -n 's/.*+CSQ:[[:space:]]*\([0-9]\{1,\}\).*/\1/p' | head -1)
 	q=$(csq_to_q "$n")
 	[ "$q" -ge 0 ] && { echo "$q"; return; }
 	# Some Quectel modems report +CSQ: 99 ("unknown") in NCM/RmNet mode even
@@ -78,8 +81,17 @@ b_at() {
 	# not implement +QCSQ (the EG060W among them) answer ERROR, nothing
 	# matches and we return -1 as before.
 	resp=$(at_gcom "$1" "$DATADIR/getqcsq.gcom")
-	n=$(echo "$resp" | sed -n 's/.*+QCSQ:[[:space:]]*"[^"]*",[[:space:]]*\(-\{0,1\}[0-9]\{1,\}\).*/\1/p' | head -1)
-	dbm_to_q "$n"
+	# The fields after the mode differ per radio: "GSM",<rssi> and
+	# "WCDMA",<rssi>,<ecio>,<rscp> have no RSRP, while
+	# "LTE",<rssi>,<rsrp>,<sinr>,<rsrq> does. Prefer it there: RSSI is
+	# wideband power and moves with bandwidth and load, RSRP does not.
+	# Splitting on quotes and commas gives mode, rssi and rsrp in one pass.
+	set -- $(printf '%s\n' "$resp" |
+		awk -F'[",]' '/\+QCSQ:/ { print $2, $4, $5; exit }')
+	case "$1" in
+	LTE*|NR5G*)	rsrp_to_q "$3" ;;
+	*)		dbm_to_q  "$2" ;;
+	esac
 }
 
 # RSRP dBm (-125..-75) -> 0..100. 5G NR and LTE report RSRP on a different
@@ -90,10 +102,16 @@ rsrp_to_q() {
 	case "$n" in
 	''|*[!0-9]*) echo -1; return ;;
 	esac
-	q=$(( ($1 + 125) * 100 / 50 ))
+	q=$(( (125 - n) * 100 / 50 ))
 	[ "$q" -lt 0 ] && q=0
 	[ "$q" -gt 100 ] && q=100
 	echo "$q"
+}
+
+# uqmi reports one object per radio, but an array of them when LTE and 5G NR
+# are connected at once (EN-DC), so look for the field at both depths.
+qmi_field() {
+	printf '%s\n' "$1" | jsonfilter -e "@.$2" -e "@[*].$2" 2>/dev/null | head -1
 }
 
 b_qmi() {
@@ -101,12 +119,14 @@ b_qmi() {
 	local out v
 	[ -z "$2" ] || iface_up "$2" || { echo -1; return; }
 	out=$(uqmi -d "$1" --get-signal-info 2>/dev/null)
-	# uqmi names the field per radio type: lte/wcdma/cdma/hdr report "rssi",
-	# gsm/tdma call it "signal", and 5gnr reports neither - only "rsrp".
-	v=$(echo "$out" | jsonfilter -e '@.rssi' 2>/dev/null)
-	[ -n "$v" ] || v=$(echo "$out" | jsonfilter -e '@.signal' 2>/dev/null)
-	[ -n "$v" ] && { dbm_to_q "$v"; return; }
-	rsrp_to_q "$(echo "$out" | jsonfilter -e '@.rsrp' 2>/dev/null)"
+	# lte and 5gnr report "rsrp", the per-resource-element level, which is
+	# what a bar graph wants. In EN-DC only the lte entry also has "rssi".
+	v=$(qmi_field "$out" rsrp)
+	[ -n "$v" ] && { rsrp_to_q "$v"; return; }
+	# Older radios: lte/wcdma/cdma/hdr report "rssi", gsm/tdma "signal".
+	v=$(qmi_field "$out" rssi)
+	[ -n "$v" ] || v=$(qmi_field "$out" signal)
+	dbm_to_q "$v"
 }
 
 b_mbim() {
@@ -114,8 +134,29 @@ b_mbim() {
 	local out n
 	[ -z "$2" ] || iface_up "$2" || { echo -1; return; }
 	out=$(umbim -n -d "$1" signal 2>/dev/null)
-	n=$(echo "$out" | sed -n 's/^rssi:[[:space:]]*\([0-9]\{1,\}\).*/\1/p' | head -1)
+	n=$(printf '%s\n' "$out" | sed -n 's/^rssi:[[:space:]]*\([0-9]\{1,\}\).*/\1/p' | head -1)
 	csq_to_q "$n"
+}
+
+# ModemManager keeps the modem to itself, so ask it rather than the port.
+# "device" of a proto modemmanager interface is the sysfs path mmcli takes,
+# and signal-quality is already a percentage.
+b_mm() {
+	have mmcli || { echo -1; return; }
+	local out v
+	[ -z "$2" ] || iface_up "$2" || { echo -1; return; }
+	out=$(mmcli --modem="$1" --output-keyvalue 2>/dev/null)
+	# "recent: no" means the value is a stale cache rather than a reading.
+	# Only an explicit no counts: not every mmcli prints the field.
+	printf '%s\n' "$out" | grep -q '^modem\.generic\.signal-quality\.recent *: *no' &&
+		{ echo -1; return; }
+	v=$(printf '%s\n' "$out" |
+		sed -n 's/^modem\.generic\.signal-quality\.value[[:space:]]*:[[:space:]]*\([0-9]\{1,\}\).*/\1/p' |
+		head -1)
+	case "$v" in
+	''|*[!0-9]*)	echo -1 ;;
+	*)		[ "$v" -gt 100 ] && v=100; echo "$v" ;;
+	esac
 }
 
 b_auto() {
@@ -126,6 +167,7 @@ b_auto() {
 	case "$proto" in
 	qmi)		b_qmi  "$dev" ;;
 	mbim)		b_mbim "$dev" ;;
+	modemmanager)	b_mm   "$dev" ;;
 	ncm|3g|wwan)	b_at   "$dev" ;;
 	# Anything else has no control channel we can query - on a plain
 	# cdc-ether modem on proto dhcp, "device" is a netdev, not a tty.
@@ -137,6 +179,7 @@ case "$1" in
 at)	b_at   "$2" "$3" ;;
 qmi)	b_qmi  "$2" "$3" ;;
 mbim)	b_mbim "$2" "$3" ;;
+mm)	b_mm   "$2" "$3" ;;
 auto)	b_auto "$2" ;;
 mock)	echo "${2:--1}" ;;
 *)	echo -1 ;;
