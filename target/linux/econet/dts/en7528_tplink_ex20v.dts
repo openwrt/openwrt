@@ -1,0 +1,290 @@
+// SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
+/dts-v1/;
+
+#include "en7528.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+
+/ {
+	model = "TP-Link EX20v";
+	compatible = "tplink,ex20v", "econet,en7528";
+
+	aliases {
+		serial0 = &uart;
+		led-boot = &led_power;
+		led-failsafe = &led_power;
+		led-running = &led_power;
+		led-upgrade = &led_power;
+	};
+
+	memory@0 {
+		device_type = "memory";
+		/*
+		 * The board has 512 MB DRAM, but the low-memory window only
+		 * exposes 432 MB (0x1b000000) before the SoC I/O registers at
+		 * 0x1f600000+. Declaring more overlaps the MMIO and makes every
+		 * driver fail with -EBUSY. Matches the stock kernel's
+		 * "memory: 1affe000 @ 00002000".
+		 */
+		reg = <0x00000000 0x1b000000>;
+	};
+
+	chosen {
+		stdout-path = "serial0:115200n8";
+		/* Low 0x20000 is reserved for the bootloader/exception vectors. */
+		linux,usable-memory-range = <0x00020000 0x1afe0000>;
+		/* squashfs rootfs + ubifs overlay live on the "ubi" MTD. */
+		bootargs = "ubi.mtd=ubi";
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		/*
+		 * GPIO map verified on hardware with a GPIO-probe script
+		 * (toggle each line, observe the front panel). All lines are
+		 * assumed active-low (TP-Link's usual convention; the power
+		 * pin idles at 0 while the LED is lit when the device is on,
+		 * confirming active-low). If any line lights up inverted
+		 * after flashing, switch it to GPIO_ACTIVE_HIGH.
+		 * There is no 2.4/5 GHz Wi-Fi LED node here: those are driven
+		 * by the mt76 Wi-Fi chip itself.
+		 */
+		led_power: power {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_POWER;
+			gpios = <&gpio0 26 GPIO_ACTIVE_LOW>;
+		};
+
+		/* Two-color internet LED, one physical LED: green when
+		 * online, red when not. The color switch is driven from
+		 * userspace (a led-status daemon that finds the online LED
+		 * by name; green:wan-online on this board). */
+		led_internet_green: internet-green {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WAN_ONLINE;
+			gpios = <&gpio0 27 GPIO_ACTIVE_LOW>;
+		};
+
+		led_internet_red: internet-red {
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_WAN;
+			gpios = <&gpio0 24 GPIO_ACTIVE_LOW>;
+		};
+
+		led_wps: wps {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WPS;
+			gpios = <&gpio0 25 GPIO_ACTIVE_LOW>;
+		};
+
+		led_usb: usb {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_USB;
+			gpios = <&gpio0 23 GPIO_ACTIVE_LOW>;
+			/* An "usbport" trigger can be added via uci after flashing. */
+		};
+
+		led_phone: phone {
+			color = <LED_COLOR_ID_GREEN>;
+			function = "phone";
+			gpios = <&gpio0 5 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	keys {
+		compatible = "gpio-keys-polled";
+		poll-interval = <20>;
+
+		/*
+		 * Button GPIO and polarity verified on hardware: reset =
+		 * gpio0 22, active-low (idle high, low when pressed). EcoNet
+		 * GPIOs have no IRQ support here, hence polled. No separate
+		 * WPS/Wi-Fi button was found wired to a GPIO on this board.
+		 */
+		key-reset {
+			label = "reset";
+			gpios = <&gpio0 22 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+	};
+};
+
+/*
+ * The Wi-Fi is a single MT7915 DBDC chip (0x7915 on pcie1) that serves BOTH
+ * the 2.4 GHz and 5 GHz bands by itself (phy0 + phy1). The 0x7916 endpoint on
+ * pcie0 is that chip's HIF2 -- a second PCIe path that only offloads band DMA
+ * for extra throughput, not a separate radio/band. mt7915e unconditionally
+ * pairs any 0x7916 as a cross-device HIF2 and hangs doing so across these two
+ * independent PCIe root complexes, so pcie0 is left disabled. Both bands work
+ * fully without it; enabling it would need driver work for the cross-RC HIF2.
+ */
+&pcie0 {
+	status = "disabled";
+};
+
+&pcie1 {
+	status = "okay";
+};
+
+&slot1 {
+	status = "okay";
+
+	wifi@0,0 {
+		compatible = "mediatek,mt76";
+		reg = <0x0000 0 0 0 0>;
+		/*
+		 * MT7915 DBDC: EEPROM/cal from the flash "radio" partition, MAC
+		 * from the romfile base. Exposes phy0 (2.4 GHz) and phy1 (5 GHz).
+		 */
+		nvmem-cells = <&eeprom_radio>, <&macaddr_romfile 1>;
+		nvmem-cell-names = "eeprom", "mac-address";
+	};
+};
+
+&usb {
+	status = "okay";
+
+	/*
+	 * The EX20v exposes a single USB 2.0 port. The EN7528 xHCI IP is
+	 * SuperSpeed-capable in silicon (2x U2 + 1x U3 root ports), but the
+	 * board wires no USB 3.0 connector, so mask the phantom U3 port: it
+	 * stays powered down instead of advertising a dead SuperSpeed link
+	 * (no U3 LTSSM link training on unconnected pins, small power saving).
+	 * The U2 ports are left untouched so the real USB2 port keeps working
+	 * (the second, unwired U2 port is harmless -- it just stays empty).
+	 */
+	mediatek,u3p-dis-msk = <0x1>;
+};
+
+&gmac0 {
+	status = "okay";
+	nvmem-cells = <&macaddr_romfile 0>;
+	nvmem-cell-names = "mac-address";
+};
+
+/*
+ * EX20v has no external MT7530: the physical LAN/WAN ports sit on the
+ * SoC-internal GSW itself, at the same register layout the external MT7530
+ * chip uses elsewhere in this target. Port map confirmed on hardware by PMSR
+ * link probing (plugging/unplugging each labeled port and watching which
+ * switch port number showed link): LAN1=3, LAN2=2, LAN3=1, WAN=4, CPU=6.
+ */
+&ethernet {
+	econet,int-gsw-vlan-split;
+	econet,int-gsw-cpu-port = <6>;
+	econet,int-gsw-lan-ports = <1 2 3>;
+	econet,int-gsw-wan-port = <4>;
+	econet,int-gsw-wan-vid = <35>;
+};
+
+&nand {
+	status = "okay";
+	econet,bmt;
+	econet,bbt-table-size = <163>;	/* "bmt pool size: 163" from stock bootlog */
+
+	partitions: partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/*
+		 * The free bootbase has TWO hardcoded kernel-tag slots and picks one
+		 * from an external "boot flag" (verified on hardware from the stock
+		 * bootlog: "boot flag = 1  g_kernel_tag_start = 0x2980000"): flag 0 ->
+		 * master 0x380000, flag 1 -> slave 0x2980000. The flag lives outside the
+		 * tag (the stock master/slave tags are byte-identical in every
+		 * version/priority field) and is stable -- it never flipped across
+		 * repeated failed boots and nothing in OpenWrt writes it. This board
+		 * ships and stays on flag 1, so the "kernel" partition IS the slave slot
+		 * at 0x2980000, and UBI starts immediately after it at 0x2f80000. That
+		 * keeps the slot the bootbase actually reads exactly where sysupgrade
+		 * (CI_KERNPART=kernel) writes it, and keeps the UBI partition clear of
+		 * the kernel slot so wear-leveling can never scribble over the running
+		 * kernel (the earlier "kernel@0x380000 + ubi@0x980000" layout booted by
+		 * luck but let UBI overlap the live slave kernel).
+		 *
+		 * The stock master slot (0x380000-0x2980000, 38 MB) is left
+		 * unpartitioned; the flag never selects it. UBI has no econet,enable-remap
+		 * so it does its own bad-block management; econet,bmt only applies the
+		 * existing factory bad-block map. Top 64 MB (0x1c000000+) is the BMT pool.
+		 *
+		 *   0x000000  -0x040000    boot     (256 KB, ro)
+		 *   0x040000  -0x140000    romfile  (1 MB, ro)   base MAC @0x2000
+		 *   0x140000  -0x340000    config   (2 MB)
+		 *   0x340000  -0x380000    radio    (256 KB, ro) Wi-Fi EEPROM @0x0
+		 *   0x380000  -0x2980000   (unpartitioned, stock master slot, unused)
+		 *   0x2980000 -0x2f80000   kernel   (6 MB, slave slot, raw tag + LZMA)
+		 *   0x2f80000 -0x1c000000  ubi      (~402 MB)
+		 *   0x1c000000-0x20000000  (unpartitioned, BMT pool)
+		 */
+		partition@0 {
+			label = "boot";
+			reg = <0x0 0x40000>;
+			read-only;
+		};
+
+		partition@40000 {
+			label = "romfile";
+			reg = <0x40000 0x100000>;
+			read-only;
+
+			nvmem-layout {
+				compatible = "fixed-layout";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				/*
+				 * Base MAC 98:25:4A:19:FE:56, binary, confirmed in the
+				 * stock romfile dump. eth0 = base+0, label = base+2.
+				 */
+				macaddr_romfile: macaddr@2000 {
+					compatible = "mac-base";
+					reg = <0x2000 0x6>;
+					#nvmem-cell-cells = <1>;
+				};
+			};
+		};
+
+		partition@140000 {
+			label = "config";
+			reg = <0x140000 0x200000>;
+		};
+
+		radio: partition@340000 {
+			label = "radio";
+			reg = <0x340000 0x40000>;
+			read-only;
+
+			nvmem-layout {
+				compatible = "fixed-layout";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				/*
+				 * MT7915 DBDC EEPROM: chip id 0x7915 at offset 0,
+				 * 0xe00 (3584) bytes, matching mt7915_eeprom_dbdc.bin.
+				 * Efuse is blank on this board, so cal reads from here.
+				 */
+				eeprom_radio: eeprom@0 {
+					reg = <0x0 0xe00>;
+				};
+			};
+		};
+
+		/* Active boot slot (slave, flag=1): raw 55aa tag + LZMA, read by the bootbase. */
+		partition@2980000 {
+			label = "kernel";
+			reg = <0x2980000 0x600000>;
+			econet,enable-remap;
+		};
+
+		/* squashfs rootfs + ubifs overlay, immediately after the kernel slot. */
+		partition@2f80000 {
+			label = "ubi";
+			reg = <0x2f80000 0x19080000>;
+		};
+	};
+};
