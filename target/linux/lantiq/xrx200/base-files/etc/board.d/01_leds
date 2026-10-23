@@ -66,6 +66,12 @@ buffalo,wbmr-300hpd)
 	ucidef_set_led_switch "lan3" "LAN3" "green:lan3" "switch0" "0x20"
 	ucidef_set_led_default "router" "router" "green:router" "1"
 	;;
+huawei,b2268s)
+	ucidef_set_led_netdev "lan1_green" "lan1" "green:lan-1" "lan1" "link"
+	ucidef_set_led_netdev "lan1_orange" "lan1" "orange:lan-1" "lan1" "rx tx"
+	ucidef_set_led_netdev "lan2_green" "lan2" "green:lan-2" "lan2" "link"
+	ucidef_set_led_netdev "lan2_orange" "lan2" "orange:lan-2" "lan2" "rx tx"
+	;;
 esac
 
 board_config_flush
