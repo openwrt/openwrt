@@ -269,8 +269,8 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	enum flow_offload_xmit_type xmit_type;
  };
  
-@@ -100,7 +103,7 @@ static void nft_dev_path_info(const stru
- 			      unsigned char *ha, struct nf_flowtable *flowtable)
+@@ -100,7 +103,7 @@ static int nft_dev_path_info(const struc
+ 			     unsigned char *ha, struct nf_flowtable *flowtable)
  {
  	const struct net_device_path *path;
 -	int i;
@@ -278,7 +278,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  
  	memcpy(info->h_dest, ha, ETH_ALEN);
  
-@@ -134,6 +137,8 @@ static void nft_dev_path_info(const stru
+@@ -133,6 +136,8 @@ static int nft_dev_path_info(const struc
  			info->encap[info->num_encaps].id = path->encap.id;
  			info->encap[info->num_encaps].proto = path->encap.proto;
  			info->num_encaps++;
@@ -287,7 +287,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  			if (path->type == DEV_PATH_PPPOE)
  				memcpy(info->h_dest, path->encap.h_dest, ETH_ALEN);
  			break;
-@@ -163,6 +168,13 @@ static void nft_dev_path_info(const stru
+@@ -163,6 +168,13 @@ static int nft_dev_path_info(const struc
  			case DEV_PATH_BR_VLAN_KEEP:
  				break;
  			}
@@ -301,7 +301,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  			info->xmit_type = FLOW_OFFLOAD_XMIT_DIRECT;
  			break;
  		default:
-@@ -230,6 +242,9 @@ static void nft_dev_forward_path(struct
+@@ -230,6 +242,9 @@ static int nft_dev_forward_path(struct n
  	if (info.xmit_type == FLOW_OFFLOAD_XMIT_DIRECT) {
  		memcpy(route->tuple[dir].out.h_source, info.h_source, ETH_ALEN);
  		memcpy(route->tuple[dir].out.h_dest, info.h_dest, ETH_ALEN);
