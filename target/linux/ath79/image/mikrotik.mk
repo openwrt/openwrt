@@ -132,6 +132,17 @@ define Device/mikrotik_routerboard-952ui-5ac2nd
 endef
 TARGET_DEVICES += mikrotik_routerboard-952ui-5ac2nd
 
+define Device/mikrotik_routerboard-953gs-5hnt
+  $(Device/mikrotik_nand)
+  SOC := qca9558
+  DEVICE_MODEL := RouterBOARD 953GS-5HnT
+  DEVICE_PACKAGES += kmod-usb2 kmod-i2c-gpio kmod-i2c-mux-gpio kmod-sfp \
+	kmod-dsa-qca8k kmod-gpio-ssr-mikrotik kmod-gpio-tone-beeper \
+	kmod-hwmon-mikrotik-555 kmod-nvmem-layout-mikrotik input-support \
+	kmod-input-evdev -swconfig -kmod-switch-ar8xxx
+endef
+TARGET_DEVICES += mikrotik_routerboard-953gs-5hnt
+
 define Device/mikrotik_routerboard-960pgs
   $(Device/mikrotik_nor)
   SOC := qca9557
