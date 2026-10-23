@@ -21,6 +21,30 @@ function find_phy(wiphy) {
 	return null;
 }
 
+export function phy_by_name(name) {
+	for (let k, phy in phys)
+		if (phy && phy.wiphy_name == name)
+			return phy;
+	return null;
+};
+
+function phy_max_power(phy) {
+	let max = 0;
+	for (let k, band in phy.wiphy_bands)
+		if (band)
+			for (let freq in band.freqs)
+				if (freq.max_tx_power > max)
+					max = freq.max_tx_power;
+	return max;
+}
+
+function phy_country(phy) {
+	let reg = nl80211.request(nl80211.const.NL80211_CMD_GET_REG, 0, { wiphy: phy.wiphy });
+	if (!reg)
+		reg = nl80211.request(nl80211.const.NL80211_CMD_GET_REG, 0, {});
+	return reg?.reg_alpha2 ?? '';
+}
+
 function get_survey(iface) {
 	let channels = nl80211.request(nl80211.const.NL80211_CMD_GET_SURVEY, nl80211.const.NLM_F_DUMP, { dev: iface.ifname });
 	for (let channel in channels)
@@ -393,7 +417,9 @@ export function freqlist(name) {
 	};
 
 	let iface = ifaces[name];
-	let phy = find_phy(iface.wiphy);
+	let phy = iface ? find_phy(iface.wiphy) : phy_by_name(name);
+	if (!phy)
+		return [];
 	let channels = [];
 
 	for (let k, band in phy.wiphy_bands) {
@@ -410,7 +436,7 @@ export function freqlist(name) {
 				band: band_name,
 				channel: format_channel(freq.freq),
 				flags: [],
-				active: iface.wiphy_freq == freq.freq,
+				active: iface ? (iface.wiphy_freq == freq.freq) : false,
 			};
 	
 			for (let k, v in freq_flags)
@@ -493,17 +519,29 @@ export function info(name) {
 
 export function htmodelist(name) {
 	let iface = ifaces[name];
-	let phy = board_data.wlan?.['phy' + iface.wiphy];
-	if (!phy || !iface.radio.band)
+	let wiphy_name = iface ? ('phy' + iface.wiphy) : (phy_by_name(name) ? name : null);
+	let phy = wiphy_name ? board_data.wlan?.[wiphy_name] : null;
+	if (!phy)
 		return [];
 
-	return filter(phy.info.bands[uc(iface.radio.band)].modes, (v) => v != 'NOHT');
+	let band = iface?.radio?.band;
+	if (band)
+		return filter(phy.info.bands[uc(band)].modes, (v) => v != 'NOHT');
+
+	// A phy-name query has no single band; merge all bands' modes to match
+	// legacy C iwinfo, which unioned the phy's bands (callers pick the band).
+	let modes = [];
+	for (let k, b in phy.info.bands)
+		modes = [ ...modes, ...filter(b.modes, (v) => v != 'NOHT') ];
+
+	return uniq(modes);
 };
 
 export function txpowerlist(name) {
 	let iface = ifaces[name];
-	let max_power = iface.max_power / 100;
-	let match = iface.wiphy_tx_power_level / 100;
+	let phy = iface ? null : phy_by_name(name);
+	let max_power = (iface ? iface.max_power : (phy ? phy_max_power(phy) : 0)) / 100;
+	let match = iface ? (iface.wiphy_tx_power_level / 100) : -1;
 	let list = [];
 
 	for (let power = 0; power <= max_power; power++) {
@@ -520,10 +558,11 @@ export function txpowerlist(name) {
 
 export function countrylist(dev) {
 	let iface = ifaces[dev];
+	let phy = iface ? null : phy_by_name(dev);
 
 	let list = {
-		active: iface.country,
-		countries, 
+		active: iface ? iface.country : (phy ? phy_country(phy) : ''),
+		countries,
 	};
 
 	return list;
