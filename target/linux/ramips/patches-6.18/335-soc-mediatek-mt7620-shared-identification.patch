@@ -1,0 +1,67 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Gleb Pesin <dormancygrace@gmail.com>
+Date: Mon, 3 Aug 2026 12:30:36 +0000
+Subject: [PATCH] soc: mediatek: supply shared MT7620 identification
+
+Backport the MT7620 model and decimal version.ECO SoC bus provider from
+the Linux integration preparation. Share the existing syscon regmap and
+register at subsys_initcall before Ethernet and PHY consumers. Skip the
+old arch registration only for MT7620A/N; retain MT7628/MT7688
+registration.
+
+Use the Linux 6.18 allocation interface instead of kzalloc_obj().
+
+Assisted-by: Codex (OpenAI GPT-6)
+Signed-off-by: Gleb Pesin <dormancygrace@gmail.com>
+---
+
+--- a/arch/mips/ralink/Kconfig
++++ b/arch/mips/ralink/Kconfig
+@@ -37,6 +37,7 @@ choice
+ 		bool "MT7620/8"
+ 		select CPU_MIPSR2_IRQ_VI
+ 		select HAVE_PCI
++		select MT7620_SOCINFO
+ 		select SOC_BUS
+ 
+ 	config SOC_MT7621
+--- a/arch/mips/ralink/mt7620.c
++++ b/arch/mips/ralink/mt7620.c
+@@ -202,6 +202,10 @@ static int __init mt7620_soc_dev_init(vo
+ 	struct soc_device *soc_dev;
+ 	struct soc_device_attribute *soc_dev_attr;
+ 
++	/* MT7620A/N identification is registered by mt7620-socinfo. */
++	if (!is_mt76x8())
++		return 0;
++
+ 	soc_dev_attr = kzalloc(sizeof(*soc_dev_attr), GFP_KERNEL);
+ 	if (!soc_dev_attr)
+ 		return -ENOMEM;
+--- a/drivers/soc/mediatek/Kconfig
++++ b/drivers/soc/mediatek/Kconfig
+@@ -2,6 +2,17 @@
+ #
+ # MediaTek SoC drivers
+ #
++config MT7620_SOCINFO
++	bool "MediaTek MT7620 SoC information" if COMPILE_TEST
++	depends on OF && HAS_IOMEM
++	select MFD_SYSCON
++	select SOC_BUS
++	help
++	  Register the MT7620 model and silicon revision on the SoC bus.
++	  Drivers can use soc_device_match() to select package-specific
++	  settings and revision-dependent features. This is built in so
++	  the information is available before device drivers are probed.
++
+ menu "MediaTek SoC drivers"
+ 	depends on ARCH_MEDIATEK || COMPILE_TEST
+ 
+--- a/drivers/soc/mediatek/Makefile
++++ b/drivers/soc/mediatek/Makefile
+@@ -9,3 +9,4 @@ obj-$(CONFIG_MTK_MMSYS) += mtk-mmsys.o
+ obj-$(CONFIG_MTK_MMSYS) += mtk-mutex.o
+ obj-$(CONFIG_MTK_SVS) += mtk-svs.o
+ obj-$(CONFIG_MTK_SOCINFO) += mtk-socinfo.o
++obj-$(CONFIG_MT7620_SOCINFO) += mt7620-socinfo.o
