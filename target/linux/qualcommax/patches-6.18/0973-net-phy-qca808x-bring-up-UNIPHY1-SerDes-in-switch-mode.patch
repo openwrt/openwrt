@@ -1,0 +1,195 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Luca C <clubdog123@gmail.com>
+Date: Tue, 14 Oct 2026 12:00:00 +0100
+Subject: [PATCH] net: phy: qca808x: bring up UNIPHY1 SerDes in switch mode
+
+In switch mode the QCA8084 package drives its CPU-facing uplink through
+UNIPHY1 as SGMII+ at 2.5G. The existing package init covers the PHY and
+QXGMII modes only, so the SerDes is never calibrated or taken out of reset
+and no traffic crosses the SoC-to-switch link.
+
+Bring UNIPHY1 up for switch mode: calibrate, release the XPCS reset and
+run the function reset the vendor sequence requires.
+
+Signed-off-by: Luca C <clubdog123@gmail.com>
+---
+--- a/drivers/net/phy/qcom/qca8084_serdes.h
++++ b/drivers/net/phy/qcom/qca8084_serdes.h
+@@ -9,12 +9,15 @@
+ #define _QCA8084_SERDES_H_
+ 
+ #include <linux/mdio.h>
++#include <linux/phy.h>
+ #include <linux/of.h>
+ 
+ struct mdio_device *qca8084_package_pcs_probe(struct device_node *pcs_np);
+ struct mdio_device *qca8084_package_xpcs_probe(struct device_node *xpcs_np);
+ void qca8084_package_xpcs_and_pcs_remove(struct mdio_device *xpcs_mdiodev,
+ 					 struct mdio_device *pcs_mdiodev);
++int qca8084_sgmii_set_mode(struct mdio_device *pcs_mdiodev,
++			   phy_interface_t interface);
+ int qca8084_qxgmii_set_mode(struct mdio_device *xpcs_mdiodev,
+ 			    struct mdio_device *pcs_mdiodev);
+ void qca8084_qxgmii_set_speed(struct mdio_device *xpcs_mdiodev,
+--- a/drivers/net/phy/qcom/qca8084_serdes.c
++++ b/drivers/net/phy/qcom/qca8084_serdes.c
+@@ -48,6 +48,13 @@
+ #define MODE_CONTROL_SGMII_PHY			1
+ #define MODE_CONTROL_SGMII_MAC			2
+ 
++/* Channel 0 config: force speed / adapt reset (vendor MHT_UNIPHY_MMD1_CHANNEL0_CFG) */
++#define CHANNEL0_CFG				0x120
++#define CH0_FORCE_SPEED_MASK			GENMASK(3, 1)
++#define CH0_FORCE_ENABLE			BIT(3)
++#define CH0_FORCE_SPEED_1G			BIT(2)
++#define CH0_ADPT_RESET				BIT(11)
++
+ #define QP_USXG_OPTION1				0x180
+ #define QP_USXG_OPTION1_DATAPASS		BIT(0)
+ #define QP_USXG_OPTION1_DATAPASS_SGMII		0
+@@ -617,6 +624,105 @@ static int qca8084_xpcs_clock_parent_set
+ 	return 0;
+ }
+ 
++/* Defined further down; needed by qca8084_sgmii_set_mode() below. */
++static int qca8084_pcs_ipg_tune_reset(struct mdio_device *mdio_dev,
++				      int reset_function);
++
++/* Bring up PCS1 (UNIPHY1) for SGMII/SGMII+ towards the switch MAC.
++ *
++ * Previously only qca8084_qxgmii_set_mode() ever touched UNIPHY1, and it is
++ * gated on 10G-QXGMII. In switch mode (package-mode 1) nothing enabled
++ * SRDS1_SYS, deasserted the PCS reset or ran calibration: PCS1 stayed in reset,
++ * its PLL never locked, so UNIPHY1_TX312P5M did not physically exist and the
++ * later re-parent of nss_cc_switch_core_clk_src onto it could not complete (the
++ * RCG CMD_UPDATE poll times out against a dead source, and the error is
++ * discarded by clk_change_rate(), so it fails silently).
++ *
++ * Mirrors the vendor ordering in qca_mht_hw_init(): interface/SerDes init runs
++ * before the GCC clock init.
++ */
++int qca8084_sgmii_set_mode(struct mdio_device *pcs_mdiodev,
++			   phy_interface_t interface)
++{
++	struct qca8084_pcs_data *pcs_data = mdiodev_get_drvdata(pcs_mdiodev);
++	int ret;
++
++	ret = clk_prepare_enable(pcs_data->clks[PCS_CLK]);
++	if (ret)
++		return ret;
++
++	ret = reset_control_deassert(pcs_data->rstc);
++	if (ret)
++		goto err_clk;
++
++	/* IPG tunning selection for RX, TX and XGMII of all channels. */
++	ret = mdiodev_c45_modify(pcs_mdiodev, MDIO_MMD_PMAPMD,
++				 BYPASS_TUNNING_IPG, BYPASS_TUNNING_IPG_MASK, 0);
++	if (ret)
++		goto err_reset;
++
++	/* PLL IBSEL, MODE_CONTROL select (SGMII+) and datapass = SGMII. */
++	ret = qca8084_pcs_set_interface_mode(pcs_mdiodev, interface);
++	if (ret)
++		goto err_reset;
++
++	/* The switch is the MAC side of this link. set_interface_mode() only
++	 * writes MODE_CONTROL_SEL_MASK and leaves this subfield alone.
++	 */
++	ret = mdiodev_c45_modify(pcs_mdiodev, MDIO_MMD_PMAPMD, MODE_CONTROL,
++				 MODE_CONTROL_SGMII_SEL_MASK,
++				 FIELD_PREP(MODE_CONTROL_SGMII_SEL_MASK,
++					    MODE_CONTROL_SGMII_MAC));
++	if (ret)
++		goto err_reset;
++
++	/* The CPU port is a fixed link: force channel 0, no in-band AN. The
++	 * vendor uses FORCE_SPEED_1G for both 1G and 2.5G - SGMII+ scales the
++	 * symbol rate.
++	 */
++	ret = mdiodev_c45_modify(pcs_mdiodev, MDIO_MMD_PMAPMD, CHANNEL0_CFG,
++				 CH0_FORCE_SPEED_MASK,
++				 CH0_FORCE_ENABLE | CH0_FORCE_SPEED_1G);
++	if (ret)
++		goto err_reset;
++
++	/* Analog soft reset/release + calibration: only after this does UNIPHY1
++	 * actually produce TX312P5M / RX312P5M.
++	 */
++	ret = qca8084_do_calibration(pcs_mdiodev);
++	if (ret) {
++		dev_err(&pcs_mdiodev->dev, "PCS calibration timeout!\n");
++		goto err_reset;
++	}
++
++	/* Channel 0 adapt reset, then the SGMII function reset. */
++	ret = mdiodev_c45_modify(pcs_mdiodev, MDIO_MMD_PMAPMD, CHANNEL0_CFG,
++				 CH0_ADPT_RESET, 0);
++	if (ret)
++		goto err_reset;
++
++	usleep_range(1000, 1100);
++
++	ret = mdiodev_c45_modify(pcs_mdiodev, MDIO_MMD_PMAPMD, CHANNEL0_CFG,
++				 CH0_ADPT_RESET, CH0_ADPT_RESET);
++	if (ret)
++		goto err_reset;
++
++	ret = qca8084_pcs_ipg_tune_reset(pcs_mdiodev, QP_USXG_SGMII_FUNC_RESET);
++	if (ret)
++		goto err_reset;
++
++	return 0;
++
++err_reset:
++	reset_control_assert(pcs_data->rstc);
++err_clk:
++	clk_disable_unprepare(pcs_data->clks[PCS_CLK]);
++
++	return ret;
++}
++EXPORT_SYMBOL_GPL(qca8084_sgmii_set_mode);
++
+ int qca8084_qxgmii_set_mode(struct mdio_device *xpcs_mdiodev,
+ 			    struct mdio_device *pcs_mdiodev)
+ {
+--- a/drivers/net/phy/qcom/qca808x.c
++++ b/drivers/net/phy/qcom/qca808x.c
+@@ -947,12 +947,33 @@ static int qca8084_phy_package_config_in
+ 
+ 	usleep_range(10000, 11000);
+ 
+-	/* Configure PCS working on 10G-QXGMII mode */
+-	if (phydev->interface == PHY_INTERFACE_MODE_10G_QXGMII) {
+-		ret = qca8084_qxgmii_set_mode(shared_priv->mdiodev[1],
+-					      shared_priv->mdiodev[0]);
++	/* Bring up PCS1/UNIPHY1 for the configured package mode. This MUST happen
++	 * before qca8084_package_clock_init() below, because switch_core and ahb
++	 * get re-parented onto UNIPHY1_TX312P5M and an RCG cannot complete a
++	 * source switch while that source is still dead. Vendor does the same:
++	 * qca_mht_interface_mode_init() precedes ssdk_mht_gcc_clock_init().
++	 */
++	switch (shared_priv->package_mode) {
++	case QCA808X_PCS1_SGMII_MAC_PCS0_SGMII_MAC:
++	case QCA808X_PCS1_SGMII_MAC_PCS0_SGMII_PHY:
++		/* Switch mode: PCS1 runs SGMII+ towards the switch MAC0. There
++		 * is no xpcs node in this mode, so mdiodev[1] is NULL - do not
++		 * touch it here.
++		 */
++		ret = qca8084_sgmii_set_mode(shared_priv->mdiodev[0],
++					     PHY_INTERFACE_MODE_2500BASEX);
+ 		if (ret)
+ 			return ret;
++		break;
++	default:
++		/* Configure PCS working on 10G-QXGMII mode */
++		if (phydev->interface == PHY_INTERFACE_MODE_10G_QXGMII) {
++			ret = qca8084_qxgmii_set_mode(shared_priv->mdiodev[1],
++						      shared_priv->mdiodev[0]);
++			if (ret)
++				return ret;
++		}
++		break;
+ 	}
+ 
+ 	/* Initialize the PHY package clock and reset, which is the

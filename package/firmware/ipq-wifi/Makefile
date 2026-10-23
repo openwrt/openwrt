@@ -68,6 +68,7 @@ ALLWIFIBOARDS:= \
 	linksys_mx6200 \
 	linksys_mx8500 \
 	linksys_spnmx56 \
+	linksys_spnmx57 \
 	linksys_whw03 \
 	meraki_mr30h \
 	meraki_underdog \
@@ -281,6 +282,7 @@ $(eval $(call generate-ipq-wifi-package,linksys_mx5500,Linksys MX5500))
 $(eval $(call generate-ipq-wifi-package,linksys_mx6200,Linksys MX6200))
 $(eval $(call generate-ipq-wifi-package,linksys_mx8500,Linksys MX8500))
 $(eval $(call generate-ipq-wifi-package,linksys_spnmx56,Linksys SPNMX56))
+$(eval $(call generate-ipq-wifi-package,linksys_spnmx57,Linksys SPNMX57))
 $(eval $(call generate-ipq-wifi-package,linksys_whw03,Linksys WHW03))
 $(eval $(call generate-ipq-wifi-package,meraki_mr30h,Meraki MR30H))
 $(eval $(call generate-ipq-wifi-package,meraki_underdog,Meraki underdog))
