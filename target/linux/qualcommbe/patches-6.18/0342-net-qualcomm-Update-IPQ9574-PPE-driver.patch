@@ -125,7 +125,7 @@ Signed-off-by: Balsam CHIHI <balsam.chihi@moment.tech>
 -	count = of_property_count_strings(edma_np, "reset-names");
 -	if (count < 0) {
 -		dev_err(dev, "EDMA reset entry not found\n");
-+	edma_hw_rst = of_reset_control_get_exclusive(edma_np, NULL);
++	edma_hw_rst = of_reset_control_array_get_exclusive(edma_np);
 +	if (IS_ERR(edma_hw_rst)) {
  		of_node_put(edma_np);
 -		return -EINVAL;
