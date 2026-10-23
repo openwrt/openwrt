@@ -151,3 +151,9 @@
 &usb_phy {
 	status = "okay";
 };
+
+&spi_nand {
+	mediatek,nmbm;
+	mediatek,bmt-max-ratio = <1>;
+	mediatek,bmt-max-reserved-blocks = <64>;
+};
