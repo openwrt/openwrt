@@ -3962,6 +3962,22 @@ define Device/unielec_u7981-01-nand
 endef
 TARGET_DEVICES += unielec_u7981-01-nand
 
+define Device/unielec_u7987-01-nand
+  DEVICE_VENDOR := Unielec
+  DEVICE_MODEL := U7987-01
+  DEVICE_VARIANT := NAND
+  DEVICE_DTS := mt7987b-unielec-u7987-01-nand
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_PACKAGES := mt7987-2p5g-phy-firmware kmod-mt7990-firmware kmod-usb3
+  KERNEL_LOADADDR := 0x40000000
+  KERNEL_INITRAMFS_SUFFIX := .itb
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  KERNEL_IN_UBI := 1
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+endef
+TARGET_DEVICES += unielec_u7987-01-nand
+
 define Device/wavlink_wl-wn536ax6-a
   DEVICE_VENDOR := WAVLINK
   DEVICE_MODEL := WL-WN536AX6
