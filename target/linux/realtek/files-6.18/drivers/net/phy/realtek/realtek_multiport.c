@@ -467,47 +467,161 @@ static int rtl821x_config_init(struct phy_device *phydev)
 	return 0;
 }
 
-static int rtl8218e_config_init(struct phy_device *phydev)
+struct rtl8218e_shared_priv {
+	/* Protected by the MDIO bus lock. */
+	bool initialized;
+};
+
+static int rtl8218e_phy_probe(struct phy_device *phydev)
 {
-	int oldpage, oldxpage;
-	bool is_xsgmii;
+	struct device *dev = &phydev->mdio.dev;
+	u32 base_addr = phydev->mdio.addr & ~7;
+	struct device_node *np;
+	int ret;
 
-	rtl821x_config_init(phydev);
+	np = of_get_parent(dev->of_node);
+	if (of_node_name_eq(np, "ethernet-phy-package")) {
+		ret = of_property_read_u32(np, "reg", &base_addr);
+		of_node_put(np);
+		if (ret)
+			return dev_err_probe(dev, ret,
+					     "Missing or invalid PHY package reg\n");
 
-	if (phydev->mdio.addr % 8)
-		return 0;
+		if (base_addr > PHY_MAX_ADDR - 8 ||
+		    phydev->mdio.addr < base_addr ||
+		    phydev->mdio.addr - base_addr >= 8)
+			return dev_err_probe(dev, -EINVAL,
+					     "Invalid RTL8218E package address range\n");
 
-	oldpage = phy_read(phydev, RTL821x_PAGE_SELECT);
-	oldxpage = phy_read(phydev, RTL821x_EXT_PAGE_SELECT);
-
-	phy_write(phydev, RTL821x_EXT_PAGE_SELECT, 0x8);
-	is_xsgmii = (phy_read_paged(phydev, 0x260, 0x12) & 0xf0) == 0xb0;
-
-	/* QSGMII configuration is not currently supported. */
-	if (!is_xsgmii)
-		goto restore;
-
-	/* Apply the minimal vendor XSGMII configuration, undocumented magic. */
-	phy_write_paged(phydev, 0x4b8, 0x10, 0x8714);
-	phy_write_paged(phydev, 0x4b8, 0x12, 0x7230);
-	phy_write_paged(phydev, 0x4be, 0x16, 0x1000);
-	phy_write_paged(phydev, 0x4bf, 0x11, 0x7000);
-	phy_write_paged(phydev, 0x4bf, 0x16, 0x0042);
-	phy_write_paged(phydev, 0x4ba, 0x14, 0x9d04);
-
-	/* Reset SerDes 0. */
-	phy_write_paged(phydev, 0x400, 0x10, 0x1700);
-	phy_write_paged(phydev, 0x400, 0x10, 0x1703);
-
-	/* Disable XSGMII autonegotiation on both MAC-side channel groups. */
-	phy_modify_paged(phydev, 0x400, 0x12, GENMASK(9, 8), BIT(8));
-	phy_modify_paged(phydev, 0x500, 0x12, GENMASK(9, 8), BIT(8));
-
-restore:
-	phy_write(phydev, RTL821x_EXT_PAGE_SELECT, oldxpage);
-	phy_write(phydev, RTL821x_PAGE_SELECT, oldpage);
+		ret = devm_of_phy_package_join(dev, phydev, sizeof(struct rtl8218e_shared_priv));
+	} else {
+		of_node_put(np);
+		/* Without a package node, assume eight aligned PHY addresses. */
+		ret = devm_phy_package_join(dev, phydev, base_addr,
+					    sizeof(struct rtl8218e_shared_priv));
+	}
+	if (ret)
+		return dev_err_probe(dev, ret, "Failed to join PHY package\n");
 
 	return 0;
+}
+
+/*
+ * Caller holds the MDIO bus lock. All accesses target the physical first
+ * port, even if no phy_device exists for that address. Restore both selectors
+ * before dropping the lock; the package helpers do not select pages for us.
+ */
+static int __rtl8218e_package_config_init(struct phy_device *phydev)
+{
+	static const struct {
+		u16 page;
+		u16 reg;
+		u16 val;
+	} xsgmii_init[] = {
+		/* Minimal vendor XSGMII configuration, undocumented magic. */
+		{ 0x4b8, 0x10, 0x8714 },
+		{ 0x4b8, 0x12, 0x7230 },
+		{ 0x4be, 0x16, 0x1000 },
+		{ 0x4bf, 0x11, 0x7000 },
+		{ 0x4bf, 0x16, 0x0042 },
+		{ 0x4ba, 0x14, 0x9d04 },
+		/* Reset SerDes 0. */
+		{ 0x400, 0x10, 0x1700 },
+		{ 0x400, 0x10, 0x1703 },
+	};
+	int oldpage, oldxpage, ret, restore_ret, val;
+	unsigned int i;
+
+	oldpage = __phy_package_read(phydev, 0, RTL821x_PAGE_SELECT);
+	if (oldpage < 0)
+		return oldpage;
+
+	oldxpage = __phy_package_read(phydev, 0, RTL821x_EXT_PAGE_SELECT);
+	if (oldxpage < 0)
+		return oldxpage;
+
+	ret = __phy_package_write(phydev, 0, RTL821x_EXT_PAGE_SELECT, 0x8);
+	if (ret)
+		goto restore;
+
+	ret = __phy_package_write(phydev, 0, RTL821x_PAGE_SELECT, 0x260);
+	if (ret)
+		goto restore;
+
+	val = __phy_package_read(phydev, 0, 0x12);
+	if (val < 0) {
+		ret = val;
+		goto restore;
+	}
+
+	/* QSGMII configuration is not currently supported. */
+	if ((val & 0xf0) != 0xb0)
+		goto restore;
+
+	for (i = 0; i < ARRAY_SIZE(xsgmii_init); i++) {
+		ret = __phy_package_write(phydev, 0, RTL821x_PAGE_SELECT,
+					  xsgmii_init[i].page);
+		if (ret)
+			goto restore;
+
+		ret = __phy_package_write(phydev, 0, xsgmii_init[i].reg,
+					  xsgmii_init[i].val);
+		if (ret)
+			goto restore;
+	}
+
+	/* Disable XSGMII autonegotiation on both MAC-side channel groups. */
+	for (i = 0; i < 2; i++) {
+		ret = __phy_package_write(phydev, 0, RTL821x_PAGE_SELECT,
+					  0x400 + i * 0x100);
+		if (ret)
+			goto restore;
+
+		val = __phy_package_read(phydev, 0, 0x12);
+		if (val < 0) {
+			ret = val;
+			goto restore;
+		}
+
+		val = (val & ~GENMASK(9, 8)) | BIT(8);
+		ret = __phy_package_write(phydev, 0, 0x12, val);
+		if (ret)
+			goto restore;
+	}
+
+restore:
+	/* Attempt both restores and preserve the first error. */
+	restore_ret = __phy_package_write(phydev, 0, RTL821x_EXT_PAGE_SELECT, oldxpage);
+	if (!ret)
+		ret = restore_ret;
+	restore_ret = __phy_package_write(phydev, 0, RTL821x_PAGE_SELECT, oldpage);
+	if (!ret)
+		ret = restore_ret;
+
+	return ret;
+}
+
+static int rtl8218e_config_init(struct phy_device *phydev)
+{
+	struct rtl8218e_shared_priv *priv = phy_package_get_priv(phydev);
+	int ret;
+
+	/* Disable PHY-mode EEE on this port so LPI is passed to the MAC. */
+	ret = phy_modify_paged(phydev, RTL821X_PAGE_MAC, RTL821X_PHYCR2,
+			       RTL821X_PHYCR2_PHY_EEE_ENABLE, 0);
+	if (ret)
+		return ret;
+
+	/* Serialize the once check, setup and page restoration across ports. */
+	phy_lock_mdio_bus(phydev);
+	if (!priv->initialized) {
+		ret = __rtl8218e_package_config_init(phydev);
+		if (!ret)
+			priv->initialized = true;
+	}
+	phy_unlock_mdio_bus(phydev);
+
+	return ret;
 }
 
 static int rtl8218d_config_init(struct phy_device *phydev)
@@ -744,7 +858,7 @@ static struct phy_driver rtl83xx_phy_driver[] = {
 		.name		= "REALTEK RTL8218E",
 		.config_init	= rtl8218e_config_init,
 		.features	= PHY_GBIT_FEATURES,
-		.probe		= rtl8218x_phy_probe,
+		.probe		= rtl8218e_phy_probe,
 		.read_mmd	= rtl821x_read_mmd,
 		.read_page	= rtl821x_read_page,
 		.resume		= genphy_resume,
