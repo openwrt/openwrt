@@ -109,6 +109,17 @@ define Device/asus_rt-ac51u
 endef
 TARGET_DEVICES += asus_rt-ac51u
 
+define Device/asus_rt-ac52u-b1
+  SOC := mt7620a
+  IMAGE_SIZE := 16064k
+  DEVICE_VENDOR := ASUS
+  DEVICE_MODEL := RT-AC52U
+  DEVICE_VARIANT := B1
+  DEVICE_PACKAGES := kmod-mt76x0e kmod-usb2 kmod-usb-ohci \
+	kmod-usb-ledtrig-usbport kmod-switch-rtl8367b
+endef
+TARGET_DEVICES += asus_rt-ac52u-b1
+
 define Device/asus_rt-ac54u
   SOC := mt7620a
   IMAGE_SIZE := 16064k
