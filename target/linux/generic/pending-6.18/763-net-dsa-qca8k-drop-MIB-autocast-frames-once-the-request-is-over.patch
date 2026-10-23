@@ -1,0 +1,101 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+Date: Thu, 22 Oct 2026 20:11:32 +0200
+From: Stanislaw Pal <kuncy7@gmail.com>
+Subject: [PATCH net 2/3] net: dsa: qca8k: drop MIB autocast frames once the
+ request is over
+
+qca8k_get_ethtool_stats_eth() points mib_eth_data at the caller's
+ethtool buffer, asks the switch for an autocast and waits 5 ms for the
+frames. On a timeout it returns with the request still published, and
+the caller falls back to register reads; ethtool_get_stats() then frees
+the buffer. The autocast handler runs from the conduit's receive path
+without the request's mutex, so a frame that arrives late still writes
+the requested port's counters through mib_eth_data->data into freed
+memory, and frames beyond the seven expected ones underflow port_parsed.
+ETHTOOL_GSTATS does not need CAP_NET_ADMIN.
+
+Protect the request with a spinlock that the handler takes, retire it
+on the way out, and let the handler retire it when the last frame
+completes it, so that frames arriving after that are dropped without
+touching data or port_parsed.
+
+Fixes: 5c957c7ca78c ("net: dsa: qca8k: add support for mib autocast in Ethernet packet")
+Assisted-by: Claude:claude-opus-5-5
+Signed-off-by: Stanislaw Pal <kuncy7@gmail.com>
+--- a/drivers/net/dsa/qca/qca8k-8xxx.c
++++ b/drivers/net/dsa/qca/qca8k-8xxx.c
+@@ -1647,6 +1647,12 @@ static void qca8k_mib_autocast_handler(s
+ 	mib_ethhdr = (struct mib_ethhdr *)skb_mac_header(skb);
+ 	mib_eth_data = &priv->mib_eth_data;
+ 
++	spin_lock(&mib_eth_data->lock);
++
++	/* A late frame of a request that has already returned */
++	if (!mib_eth_data->data)
++		goto unlock;
++
+ 	/* The switch autocast every port. Ignore other packet and
+ 	 * parse only the requested one.
+ 	 */
+@@ -1676,8 +1682,12 @@ static void qca8k_mib_autocast_handler(s
+ 
+ exit:
+ 	/* Complete on receiving all the mib packet */
+-	if (refcount_dec_and_test(&mib_eth_data->port_parsed))
++	if (refcount_dec_and_test(&mib_eth_data->port_parsed)) {
++		mib_eth_data->data = NULL;
+ 		complete(&mib_eth_data->rw_done);
++	}
++unlock:
++	spin_unlock(&mib_eth_data->lock);
+ }
+ 
+ static int
+@@ -1694,9 +1704,11 @@ qca8k_get_ethtool_stats_eth(struct dsa_s
+ 
+ 	reinit_completion(&mib_eth_data->rw_done);
+ 
++	spin_lock_bh(&mib_eth_data->lock);
+ 	mib_eth_data->req_port = dp->index;
+ 	mib_eth_data->data = data;
+ 	refcount_set(&mib_eth_data->port_parsed, QCA8K_NUM_PORTS);
++	spin_unlock_bh(&mib_eth_data->lock);
+ 
+ 	mutex_lock(&priv->reg_mutex);
+ 
+@@ -1714,6 +1726,13 @@ qca8k_get_ethtool_stats_eth(struct dsa_s
+ 	ret = wait_for_completion_timeout(&mib_eth_data->rw_done, QCA8K_ETHERNET_TIMEOUT);
+ 
+ exit:
++	/* On a timeout the frames can still arrive after the caller has
++	 * freed data: retire the request so that the handler drops them.
++	 */
++	spin_lock_bh(&mib_eth_data->lock);
++	mib_eth_data->data = NULL;
++	spin_unlock_bh(&mib_eth_data->lock);
++
+ 	mutex_unlock(&mib_eth_data->mutex);
+ 
+ 	return ret;
+@@ -2216,6 +2235,7 @@ qca8k_sw_probe(struct mdio_device *mdiod
+ 	init_completion(&priv->mgmt_eth_data.rw_done);
+ 
+ 	mutex_init(&priv->mib_eth_data.mutex);
++	spin_lock_init(&priv->mib_eth_data.lock);
+ 	init_completion(&priv->mib_eth_data.rw_done);
+ 
+ 	priv->ds->dev = &mdiodev->dev;
+--- a/drivers/net/dsa/qca/qca8k.h
++++ b/drivers/net/dsa/qca/qca8k.h
+@@ -402,9 +402,10 @@ struct qca8k_mgmt_eth_data {
+ struct qca8k_mib_eth_data {
+ 	struct completion rw_done;
+ 	struct mutex mutex; /* Process one command at time */
++	spinlock_t lock; /* Protects the request against the rx handler */
+ 	refcount_t port_parsed; /* Counter to track parsed port */
+ 	u8 req_port;
+-	u64 *data; /* pointer to ethtool data */
++	u64 *data; /* pointer to ethtool data, NULL with no request pending */
+ };
+ 
+ struct qca8k_ports_config {
