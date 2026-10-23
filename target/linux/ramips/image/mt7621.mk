@@ -1938,7 +1938,7 @@ define Device/iptime_a3008-mu
   UIMAGE_NAME := a3008
   DEVICE_VENDOR := ipTIME
   DEVICE_MODEL := A3008-MU
-  DEVICE_PACKAGES := kmod-mt7615-firmware kmod-mt7615e -ppp -ppp-mod-pppoe -uboot-envtools
+  DEVICE_PACKAGES := kmod-mt7615-firmware -ppp -ppp-mod-pppoe -uboot-envtools
   KERNEL_INITRAMFS := $(KERNEL_DTB) | uImage lzma | iptime-a3008-fixup
   KERNEL := $(KERNEL_DTB) | uImage lzma | iptime-a3008-fixup
 endef
