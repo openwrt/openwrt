@@ -330,12 +330,24 @@ static void rtldsa_93xx_phylink_mac_config(struct phylink_config *config,
 	const struct rtldsa_mac_force_mode_cfg *cfg;
 	bool force_dynamic_phy;
 	int port = dp->index;
+	u32 eee = 0;
 
 	/* Nothing to be done for the CPU-port */
 	if (port == priv->r->cpu_port)
 		return;
 
 	cfg = &priv->r->mac_force_mode;
+
+	/*
+	 * Keep independently configured per-port EEE capability while the
+	 * forced link state is dropped. Families that hold those controls in
+	 * the same register describe them in mac_force_mode_eee_mask, so that
+	 * a phylink reconfiguration does not silently undo an ethtool EEE
+	 * request.
+	 */
+	if (READ_ONCE(priv->ports[port].eee_enabled))
+		eee = priv->r->mac_force_mode_eee_mask;
+
 	force_dynamic_phy = !priv->ports[port].phy &&
 		(mode == MLO_AN_PHY || state->interface == PHY_INTERFACE_MODE_SGMII);
 
@@ -349,14 +361,14 @@ static void rtldsa_93xx_phylink_mac_config(struct phylink_config *config,
 	if (mode == MLO_AN_FIXED || force_dynamic_phy) {
 		/* Keep links that require force mode forced down. */
 		regmap_write(priv->map, priv->r->mac_force_mode_ctrl(port),
-			     cfg->force_en_mask | cfg->fc_force_en_mask);
+			     cfg->force_en_mask | cfg->fc_force_en_mask | eee);
 		if (force_dynamic_phy)
 			rtldsa_mac_link_state_source_set(priv, port,
 						 RTLDSA_MAC_LINK_STATE_SOURCE_PHY,
 						 state->interface);
 	} else {
-		/* Disable MAC completely */
-		regmap_write(priv->map, priv->r->mac_force_mode_ctrl(port), 0);
+		/* Disable MAC completely, retaining EEE enables */
+		regmap_write(priv->map, priv->r->mac_force_mode_ctrl(port), eee);
 	}
 }
 
