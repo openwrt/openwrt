@@ -1,0 +1,53 @@
+From 4d9178f2663ee3a9c473e67dff0d6a880c379318 Mon Sep 17 00:00:00 2001
+From: Til Kaiser <mail@tk154.de>
+Date: Wed, 30 Sep 2026 21:39:53 +0200
+Subject: [PATCH] docs: networking: Document IPQ5332 as a supported SoC
+
+List IPQ5332 among the supported PPE SoCs and describe its hardware
+layout. The PPE runs at 200 MHz and has two front panel ports, two MACs,
+two UNIPHY instances and the EDMA FIFO for host CPU communication.
+
+Signed-off-by: Til Kaiser <mail@tk154.de>
+
+--- a/Documentation/networking/device_drivers/ethernet/qualcomm/ppe/ppe.rst
++++ b/Documentation/networking/device_drivers/ethernet/qualcomm/ppe/ppe.rst
+@@ -96,6 +96,10 @@ The port wrapper provides connections fr
+ various modes such as SGMII/QSGMII/PSGMII/USXGMII/10G-BASER. There are 3 UNIPHY (PCS)
+ instances supported on the IPQ9574.
+ 
++IPQ5332 uses the same PPE architecture with two front panel ports and two UNIPHY
++(PCS) instances. Its Ethernet datapath has a CPU port (port0) and two GMAC/XGMAC
++ports (port1 and port2).
++
+ Ethernet DMA is used to transmit and receive packets between the Ethernet subsystem
+ and ARM host CPU.
+ 
+@@ -118,6 +122,8 @@ PPE driver:
+     through the UNIPHY PCS block. Each MAC block includes the GMAC and XGMAC blocks and
+     the switch port can select to use GMAC or XMAC through a MUX selection according to
+     the external PHY's capability.
++    IPQ5332 has two MACs (MAC0 and MAC1), connected to switch ports port1 and
++    port2 through two UNIPHY instances.
+ - EDMA (Ethernet DMA)
+     The Ethernet DMA is used to transmit and receive Ethernet packets between the PPE
+     ports and the ARM cores.
+@@ -164,7 +170,7 @@ CPU code counters and queue counters.
+ PPE Driver Supported SoCs
+ =========================
+ 
+-The PPE driver supports the following IPQ SoC:
++The PPE driver supports the following IPQ SoCs:
+ 
+ - IPQ9574
+     The PPE runs at a clock rate of 353 MHz. The switch core has 6 front panel
+@@ -175,6 +181,10 @@ The PPE driver supports the following IP
+     375 MHz. It supports 3 front panel ports (port1 to port3) with MAC0 to MAC2,
+     and only the EDMA FIFO interface (port0) for the host CPU communication. The
+     EIP FIFO and port4 to port6 are not available.
++- IPQ5332
++    The PPE runs at a clock rate of 200 MHz. It supports 2 front panel ports
++    (port1 and port2) with MAC0 and MAC1, and the EDMA FIFO interface (port0)
++    for the host CPU communication.
+ 
+ 
+ Enabling the Driver
