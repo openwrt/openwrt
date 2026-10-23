@@ -186,8 +186,11 @@ module_param_cb(fasttrack, &l3_param_ops, &fasttrack, 0644);
 module_param_cb(l3hw, &l3_param_ops, &l3hw, 0644);
 module_param_cb(synthesize, &l3_param_ops, &synthesize, 0644);
 MODULE_PARM_DESC(l3hw, "RTL930x: enable ordinary L3 hardware routing (default on)");
-MODULE_PARM_DESC(synthesize, "RTL930x: synthesize IPv4/IPv6 host routes for resolved on-link neighbours (requires l3hw)");
-MODULE_PARM_DESC(fasttrack, "RTL930x: enable nftables hardware flowtable offload alongside ordinary routing");
+MODULE_PARM_DESC(synthesize, "RTL930x: synthesize IPv4/IPv6 host routes for resolved on-link neighbours (requires l3hw, default off)");
+MODULE_PARM_DESC(fasttrack,
+		 "RTL930x: enable nftables hardware flowtable offload (default off); "
+		 "l3hw=1 retains ordinary forwarding hardware routes that can bypass the CPU firewall; "
+		 "use l3hw=0 to ensure full firewall-gated offload");
 
 bool otto_l3_fasttrack(struct otto_dsa_priv *priv)
 {
