@@ -15,7 +15,7 @@ define Package/modemsignal-leds
   CATEGORY:=Network
   SUBMENU:=WWAN
   TITLE:=Drive cellular signal-strength LEDs from modem RSSI
-  DEPENDS:=+jsonfilter +ubus
+  DEPENDS:=+jsonfilter +ubus +libubox
 endef
 
 define Package/modemsignal-leds/description
@@ -30,7 +30,7 @@ endef
 define Build/Compile
 	$(TARGET_CC) $(TARGET_CFLAGS) $(TARGET_CPPFLAGS) -Wall \
 		-o $(PKG_BUILD_DIR)/modemsignal-leds \
-		$(PKG_BUILD_DIR)/modemsignal-leds.c $(TARGET_LDFLAGS)
+		$(PKG_BUILD_DIR)/modemsignal-leds.c $(TARGET_LDFLAGS) -lubox
 endef
 
 # Board profiles are dropped into /usr/share/modemsignal-leds/profiles;
