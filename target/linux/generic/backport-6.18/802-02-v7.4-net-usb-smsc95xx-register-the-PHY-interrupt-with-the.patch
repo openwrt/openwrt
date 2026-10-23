@@ -1,0 +1,39 @@
+From 2c583f49e8f080791925288797dd2ac541191fdc Mon Sep 17 00:00:00 2001
+From: Aleksei Sviridkin <f@lex.la>
+Date: Thu, 1 Oct 2026 16:02:34 +0300
+Subject: [PATCH] net: usb: smsc95xx: register the PHY interrupt with the MDIO
+ bus
+
+The interrupt this driver maps for its PHY is written only into
+phydev->irq, while the bus table mdiobus->irq[] keeps reading PHY_POLL
+for the same address. That table is where phylib records what the bus
+described - phy_device_create() seeds phydev->irq from it - so the
+number lives only as long as nothing else writes that one field.
+
+Copy the number into the table entry of the PHY this driver found, and
+into no other. With an external PHY phy_mask is 0, so other PHYs on the
+bus keep polling. The address is known only after the scan, so the
+write to phydev->irq stays.
+
+Found going through the drivers that keep a PHY interrupt outside the
+bus table, so that the restore on detach later in this series has a
+number to hand back here as well.
+
+Signed-off-by: Aleksei Sviridkin <f@lex.la>
+Reviewed-by: Andrew Lunn <andrew@lunn.ch>
+Link: https://patch.msgid.link/20261001130236.106059-3-f@lex.la
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ drivers/net/usb/smsc95xx.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/drivers/net/usb/smsc95xx.c
++++ b/drivers/net/usb/smsc95xx.c
+@@ -1263,6 +1263,7 @@ static int smsc95xx_bind(struct usbnet *
+ 		goto unregister_mdio;
+ 	}
+ 
++	pdata->mdiobus->irq[pdata->phydev->mdio.addr] = phy_irq;
+ 	pdata->phydev->irq = phy_irq;
+ 	pdata->phydev->is_internal = pdata->is_internal_phy;
+ 
