@@ -1406,9 +1406,43 @@ start_service() {
 	fi
 }
 
+# What procd restarts a dnsmasq instance for when start_service sends it
+# again: the instance's definition (command, env, netdev, jail mounts and
+# the rest; its running state left out) and the generated config file it
+# watches.
+dnsmasq_instance_state() {
+	ubus call service list '{"name":"dnsmasq","verbose":true}' 2>/dev/null |
+		jsonfilter -e "@.dnsmasq.instances[\"$1\"]" |
+		sed -E 's/"(running|pid|incarnation|exit_code)": [^,}]+(, )?//g'
+	md5sum "$BASECONFIGFILE.$1" 2>/dev/null
+}
+
 reload_service() {
+	local instances="$1" cfg state
+
+	[ -n "$instances" ] || {
+		config_load dhcp
+		instances="$(config_foreach echo dnsmasq)"
+	}
+
+	for cfg in $instances; do
+		state="$(dnsmasq_instance_state "$cfg")"
+		eval "dnsmasq_before_$cfg=\"\$state\""
+	done
+
 	rc_procd start_service "$@"
-	procd_send_signal dnsmasq "$@"
+
+	# An instance whose state changed is being restarted by procd, and the
+	# new one reads everything anyway. A SIGHUP right behind that restart
+	# reaches the new ujail before it has installed its signal handlers and
+	# kills it; procd counts that as a crash and, after five, leaves DHCP
+	# and DNS down (openwrt/openwrt#25409). Signal each instance that kept
+	# running, and only those.
+	for cfg in $instances; do
+		state="$(dnsmasq_instance_state "$cfg")"
+		eval "[ -n \"\$dnsmasq_before_$cfg\" ] && [ \"\$state\" = \"\$dnsmasq_before_$cfg\" ]" &&
+			procd_send_signal dnsmasq "$cfg"
+	done
 }
 
 stop_service() {
