@@ -1,0 +1,61 @@
+From 7d0692e7f0508d499f6a237a746145060127cf94 Mon Sep 17 00:00:00 2001
+From: Luo Jie <jie.luo@oss.qualcomm.com>
+Date: Sun, 11 Oct 2026 06:02:07 -0700
+Subject: [PATCH] dt-bindings: net: qcom,ipq9574-ppe: Split EDMA reset into sys
+ and apb
+
+The EDMA reset is described in the binding as a single reset, but the
+hardware has two separate EDMA resets, the system reset and the APB reset.
+The reset used in the example is a combined reset that covers both of them.
+
+Describe the EDMA resets as two separate entries named "sys" and "apb", in
+the same way as the EDMA clocks, and update the example accordingly.
+
+The EDMA driver has not been merged upstream yet, and no in-tree device
+tree uses the ethernet-dma node, so there is no existing user of this
+binding and it is safe to update it without breaking the ABI.
+
+Reviewed-by: Rob Herring (Arm) <robh@kernel.org>
+Signed-off-by: Luo Jie <jie.luo@oss.qualcomm.com>
+Link: https://patch.msgid.link/20261011-qcom_ipq5424_ppe-v2-1-8c7b057e2c43@oss.qualcomm.com
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+
+--- a/Documentation/devicetree/bindings/net/qcom,ipq9574-ppe.yaml
++++ b/Documentation/devicetree/bindings/net/qcom,ipq9574-ppe.yaml
+@@ -144,8 +144,14 @@ properties:
+           - const: apb
+ 
+       resets:
+-        maxItems: 1
+-        description: EDMA reset
++        items:
++          - description: EDMA system reset
++          - description: EDMA APB reset
++
++      reset-names:
++        items:
++          - const: sys
++          - const: apb
+ 
+       interrupts:
+         minItems: 65
+@@ -170,6 +176,7 @@ properties:
+       - clocks
+       - clock-names
+       - resets
++      - reset-names
+       - interrupts
+       - interrupt-names
+ 
+@@ -273,7 +280,10 @@ examples:
+                      <&nsscc NSS_CC_PPE_EDMA_CFG_CLK>;
+             clock-names = "sys",
+                           "apb";
+-            resets = <&nsscc EDMA_HW_RESET>;
++            resets = <&nsscc PPE_EDMA_ARES>,
++                     <&nsscc PPE_EDMA_CFG_ARES>;
++            reset-names = "sys",
++                          "apb";
+             interrupts = <GIC_SPI 363 IRQ_TYPE_LEVEL_HIGH>,
+                          <GIC_SPI 364 IRQ_TYPE_LEVEL_HIGH>,
+                          <GIC_SPI 365 IRQ_TYPE_LEVEL_HIGH>,
