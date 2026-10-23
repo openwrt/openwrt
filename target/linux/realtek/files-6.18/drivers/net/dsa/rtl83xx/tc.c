@@ -457,7 +457,8 @@ static int otto_tc_debug_snapshot(struct otto_dsa_priv *priv,
 			}
 			if (flow->rule.id < 0 ||
 			    flow->rule.id >= ARRAY_SIZE(snapshot->pie.blocks) * PIE_BLOCK_SIZE ||
-			    flow->rule.tid > 1) {
+			    flow->rule.tid > 1 || flow->rule.n_rules > 2 ||
+			    (flow->rule.n_rules == 2 && (flow->rule.id & 1))) {
 				err = -EIO;
 				break;
 			}
@@ -621,6 +622,9 @@ static int otto_tc_flows_show(struct seq_file *s, void *unused)
 			seq_printf(s, " smac=%pM/%pM", r->smac, r->smac_m);
 		if (!is_zero_ether_addr(r->dmac_m))
 			seq_printf(s, " dmac=%pM/%pM", r->dmac, r->dmac_m);
+		if (r->n_rules == 2)
+			seq_printf(s, " rows=2 companion=%d companion_template=%u", r->id + 1,
+				   snapshot->pie.blocks[block].templates[r->tid ^ 1]);
 		seq_putc(s, '\n');
 	}
 	return 0;

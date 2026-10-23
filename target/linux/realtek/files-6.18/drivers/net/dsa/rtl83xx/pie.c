@@ -54,13 +54,16 @@
 #define RTL930X_PIE_BLK_PHASE_CTRL		(0xA5A4)
 #define RTL931X_PIE_BLK_PHASE_CTRL		(0x4184)
 
-#define RTL930X_PIE_TMPLTE_CTRL(t, word)		(0xa5a8 + ((t) - 5) * 12 + (word) * 4)
+#define RTL930X_PIE_CUSTOM_TEMPLATE_FIRST		5
+#define RTL930X_PIE_TMPLTE_CTRL(t, word) \
+	(0xa5a8 + ((t) - RTL930X_PIE_CUSTOM_TEMPLATE_FIRST) * 12 + (word) * 4)
 #define RTL930X_PARSER_FIELD_SELECTOR0		0xd6f4
 #define RTL930X_PARSER_FIELD_SELECTOR1		0xd6f8
-#define RTL930X_PIE_FLOW_TEMPLATE			5
-#define RTL930X_PIE_FLOW6_HEAD_TEMPLATE		6
-#define RTL930X_PIE_FLOW6_TAIL_TEMPLATE		7
-#define RTL930X_PIE_FLOW_BLOCKS			GENMASK(15, 2)
+#define RTL930X_PIE_TC6_TEMPLATE			5
+#define RTL930X_PIE_FLOW_TEMPLATE			6
+#define RTL930X_PIE_FLOW6_HEAD_TEMPLATE		7
+#define RTL930X_PIE_FLOW6_TAIL_TEMPLATE		8
+#define RTL930X_PIE_FLOW_BLOCKS			GENMASK(15, 3)
 
 #define N_FIXED_FIELDS 12
 #define N_FIXED_FIELDS_RTL931X 14
@@ -2031,8 +2034,8 @@ enum rtl930x_template_field_id {
  */
 #define RTL930X_TEMPLATE_FIELD_VLAN RTL930X_TEMPLATE_FIELD_ITAG
 
-/* Five hardware templates and three configurable fasttrack templates. */
-#define RTL930X_N_TEMPLATES 8
+/* Five fixed templates, one IPv6 source/ports template and three fasttrack templates. */
+#define RTL930X_N_TEMPLATES 9
 static enum rtl930x_template_field_id
 rtl930x_fixed_templates[RTL930X_N_TEMPLATES][N_FIXED_FIELDS] = {
 	{
@@ -2063,6 +2066,14 @@ rtl930x_fixed_templates[RTL930X_N_TEMPLATES][N_FIXED_FIELDS] = {
 	},
 	{
 	  RTL930X_TEMPLATE_FIELD_SIP0, RTL930X_TEMPLATE_FIELD_SIP1,
+	  RTL930X_TEMPLATE_FIELD_SIP2, RTL930X_TEMPLATE_FIELD_SIP3,
+	  RTL930X_TEMPLATE_FIELD_SIP4, RTL930X_TEMPLATE_FIELD_SIP5,
+	  RTL930X_TEMPLATE_FIELD_SIP6, RTL930X_TEMPLATE_FIELD_SIP7,
+	  RTL930X_TEMPLATE_FIELD_IP_TOS_PROTO, RTL930X_TEMPLATE_FIELD_TCP_INFO,
+	  RTL930X_TEMPLATE_FIELD_L4_SPORT, RTL930X_TEMPLATE_FIELD_L4_DPORT
+	},
+	{
+	  RTL930X_TEMPLATE_FIELD_SIP0, RTL930X_TEMPLATE_FIELD_SIP1,
 	  RTL930X_TEMPLATE_FIELD_DIP0, RTL930X_TEMPLATE_FIELD_DIP1,
 	  RTL930X_TEMPLATE_FIELD_IP_TOS_PROTO, RTL930X_TEMPLATE_FIELD_TCP_INFO,
 	  RTL930X_TEMPLATE_FIELD_L4_SPORT, RTL930X_TEMPLATE_FIELD_L4_DPORT,
@@ -2086,6 +2097,56 @@ rtl930x_fixed_templates[RTL930X_N_TEMPLATES][N_FIXED_FIELDS] = {
 	  RTL930X_TEMPLATE_FIELD_L4_SPORT, RTL930X_TEMPLATE_FIELD_L4_DPORT
 	},
 };
+
+static const u32 rtl930x_template_masks[] = { GENMASK(29, 0), GENMASK(29, 0), GENMASK(11, 0) };
+
+static void otto_pie_930x_template_image(unsigned int template, u32 words[3])
+{
+	memset(words, 0, 3 * sizeof(*words));
+	for (int i = 0; i < N_FIXED_FIELDS; i++)
+		words[i / 5] |= (u32)rtl930x_fixed_templates[template][i] << ((i % 5) * 6);
+}
+
+static int otto_pie_930x_template_check(unsigned int template)
+{
+	u32 words[3];
+
+	otto_pie_930x_template_image(template, words);
+	for (int i = 0; i < ARRAY_SIZE(words); i++)
+		if ((sw_r32(RTL930X_PIE_TMPLTE_CTRL(template, i)) & rtl930x_template_masks[i]) !=
+		    words[i])
+			return -EIO;
+	return 0;
+}
+
+static int otto_pie_930x_template_program(unsigned int template)
+{
+	u32 words[3];
+
+	otto_pie_930x_template_image(template, words);
+	for (int i = 0; i < ARRAY_SIZE(words); i++)
+		sw_w32_mask(rtl930x_template_masks[i], words[i],
+			    RTL930X_PIE_TMPLTE_CTRL(template, i));
+	return otto_pie_930x_template_check(template);
+}
+
+/* SIP2..7 alias parser selectors 6..11. Both TC and Fasttrack require the
+ * same IPv6 source words; a check-only call protects live TC rules before a
+ * Fasttrack transition. TC initializes them even when Fasttrack is disabled.
+ */
+static int otto_pie_930x_sip_selectors(bool program)
+{
+	for (int i = 6; i < 12; i++) {
+		u32 reg = RTL930X_PARSER_FIELD_SELECTOR0 + i * 4;
+		u32 value = 4 | ((15 - i) << 3);
+
+		if (program)
+			sw_w32_mask(GENMASK(9, 0), value, reg);
+		if ((sw_r32(reg) & GENMASK(9, 0)) != value)
+			return -EIO;
+	}
+	return 0;
+}
 
 static int otto_pie_930x_lookup_enable(struct otto_dsa_priv *priv, int index)
 {
@@ -2470,14 +2531,20 @@ int otto_pie_930x_rule_write(struct otto_dsa_priv *priv, int idx, struct pie_rul
 static void otto_pie_930x_rule_rollback(struct otto_dsa_priv *priv, struct pie_rule *pr)
 {
 	int block = pr->id / PIE_BLOCK_SIZE;
-	int err;
+	int rows = pr->n_rules == 2 ? 2 : 1;
+	int err = 0;
 	u32 lookup;
 
 	lockdep_assert_held(&priv->pie_mutex);
 	pr->valid = false;
-	err = otto_pie_930x_rule_write(priv, pr->id, pr);
+	for (int i = 0; i < rows; i++) {
+		err = otto_pie_930x_rule_write(priv, pr->id + i, pr);
+		if (err)
+			break;
+	}
 	if (!err) {
-		clear_bit(pr->id, priv->pie_use_bm);
+		for (int i = 0; i < rows; i++)
+			clear_bit(pr->id + i, priv->pie_use_bm);
 		return;
 	}
 
@@ -2595,6 +2662,102 @@ void otto_pie_930x_tc_status(struct otto_dsa_priv *priv, struct otto_pie_tc_stat
 	}
 }
 
+/* AND1 joins an even head with the following odd row in the same block.
+ * Keep actions and accounting on the head, and the companion action-free.
+ * The software rule retains the full match for TC statistics and debugfs.
+ */
+static int otto_pie_930x_tc_pair_add(struct otto_dsa_priv *priv, struct pie_rule *pr,
+				     int min_block, int max_block)
+{
+	struct pie_rule head = *pr, tail = {};
+	int block, idx, tid, err;
+
+	memset(&head.dip6, 0, sizeof(head.dip6));
+	memset(&head.dip6_m, 0, sizeof(head.dip6_m));
+	head.sport = 0;
+	head.sport_m = 0;
+	head.dport = 0;
+	head.dport_m = 0;
+	head.tos_proto = 0;
+	head.tos_proto_m = 0;
+	head.tcp_info = 0;
+	head.tcp_info_m = 0;
+	tail.is_ipv6 = true;
+	tail.phase = pr->phase;
+	tail.spn = pr->spn;
+	tail.spn_m = pr->spn_m;
+	tail.frame_type = pr->frame_type;
+	tail.frame_type_m = pr->frame_type_m;
+	tail.frame_type_l4 = pr->frame_type_l4;
+	tail.frame_type_l4_m = pr->frame_type_l4_m;
+	tail.dip6 = pr->dip6;
+	tail.dip6_m = pr->dip6_m;
+	tail.sport = pr->sport;
+	tail.sport_m = pr->sport_m;
+	tail.dport = pr->dport;
+	tail.dport_m = pr->dport_m;
+	tail.tos_proto = pr->tos_proto;
+	tail.tos_proto_m = pr->tos_proto_m;
+	tail.tcp_info = pr->tcp_info;
+	tail.tcp_info_m = pr->tcp_info_m;
+
+	for (block = min_block; block < max_block; block++) {
+		u32 templates;
+
+		if (priv->pie_failed_blocks & BIT(block))
+			continue;
+		err = regmap_read(priv->map, RTL930X_PIE_BLK_TMPLTE_CTRL(block), &templates);
+		if (err)
+			return err;
+		if (READ_ONCE(priv->flow_pie_reserved) && (RTL930X_PIE_FLOW_BLOCKS & BIT(block)))
+			continue;
+		for (tid = 0; tid < 2; tid++) {
+			int ht = (templates >> (tid * 4)) & 0xf;
+			int tt = (templates >> ((tid ^ 1) * 4)) & 0xf;
+
+			if (otto_pie_930x_verify_template(priv, &head, ht, block) < 0 ||
+			    otto_pie_930x_verify_template(priv, &tail, tt, block) < 0)
+				continue;
+			for (idx = block * PIE_BLOCK_SIZE; idx < (block + 1) * PIE_BLOCK_SIZE;
+			     idx += 2)
+				if (!test_bit(idx, priv->pie_use_bm) &&
+				    !test_bit(idx + 1, priv->pie_use_bm))
+					goto found;
+		}
+	}
+	return -EOPNOTSUPP;
+
+found:
+	set_bit(idx, priv->pie_use_bm);
+	set_bit(idx + 1, priv->pie_use_bm);
+	pr->id = idx;
+	pr->tid = tid;
+	pr->tid_m = 1;
+	pr->n_rules = 2;
+	pr->cond_and1 = true;
+	pr->cond_and2 = false;
+	pr->valid = true;
+	head.id = idx;
+	head.tid = tid;
+	head.tid_m = 1;
+	head.cond_and1 = true;
+	head.cond_and2 = false;
+	head.valid = true;
+	tail.tid = tid ^ 1;
+	tail.tid_m = 1;
+	tail.valid = true;
+
+	/* Publish the inert companion first: no partial match can act alone. */
+	err = otto_pie_930x_rule_write(priv, idx + 1, &tail);
+	if (!err)
+		err = otto_pie_930x_rule_write(priv, idx, &head);
+	if (!err)
+		err = otto_pie_930x_lookup_enable(priv, idx);
+	if (err)
+		otto_pie_930x_rule_rollback(priv, pr);
+	return err;
+}
+
 int otto_pie_930x_rule_add(struct otto_dsa_priv *priv, struct pie_rule *pr)
 {
 	u32 t_select;
@@ -2609,6 +2772,12 @@ int otto_pie_930x_rule_add(struct otto_dsa_priv *priv, struct pie_rule *pr)
 	pr_debug("In %s\n", __func__);
 
 	mutex_lock(&priv->pie_mutex);
+
+	if (pr->is_ipv6 && memchr_inv(&pr->sip6_m, 0, sizeof(pr->sip6_m)) &&
+	    memchr_inv(&pr->dip6_m, 0, sizeof(pr->dip6_m))) {
+		err = otto_pie_930x_tc_pair_add(priv, pr, min_block, max_block);
+		goto out_unlock;
+	}
 
 	for (block = min_block; block < max_block; block++) {
 		if (READ_ONCE(priv->flow_pie_reserved) &&
@@ -2641,6 +2810,7 @@ int otto_pie_930x_rule_add(struct otto_dsa_priv *priv, struct pie_rule *pr)
 	pr_debug("Using block: %d, index %d, template-id %d\n", block, idx, j);
 	set_bit(idx, priv->pie_use_bm);
 
+	pr->n_rules = 1;
 	pr->valid = true;
 	pr->tid = j;  /* Mapped to template number */
 	pr->tid_m = 0x1;
@@ -2703,10 +2873,10 @@ static void otto_pie_930x_flow_fail(struct otto_dsa_priv *priv)
  * their defined fields, preserving concurrent changes to retained TC blocks.
  */
 struct otto_pie_flow_state {
-	/* 19 shared registers plus two controls for each of 14 flow blocks. */
+	/* 19 shared registers plus two controls for each of 13 flow blocks. */
 	struct {
 		u32 reg, mask, value;
-	} regs[47];
+	} regs[45];
 	unsigned int n_regs;
 };
 
@@ -2729,7 +2899,6 @@ static int otto_pie_930x_flow_restore(struct otto_pie_flow_state *state, unsigne
 
 int otto_pie_930x_flow_init(struct otto_dsa_priv *priv)
 {
-	const u32 template_masks[] = { GENMASK(29, 0), GENMASK(29, 0), GENMASK(11, 0) };
 	struct otto_pie_flow_state *state = NULL;
 	struct pie_rule empty = {};
 	int idx, err = 0;
@@ -2755,9 +2924,9 @@ int otto_pie_930x_flow_init(struct otto_dsa_priv *priv)
 		err = -EBUSY;
 		goto out_free;
 	}
-	/* Configurable templates can use any global selector. Do not change a
-	 * retained block that has selected one. The predefined TC templates
-	 * use no selectors except the equivalent IPv6 source-address fields.
+	/* TC template 5 and fixed template 4 use the same source selectors as
+	 * Fasttrack. Verify their baseline before touching shared selectors.
+	 * Other configurable templates may use selectors with another meaning.
 	 */
 	for (int block = 0; block < RTL930X_PIE_FLOW_FIRST / PIE_BLOCK_SIZE; block++) {
 		u32 templates = sw_r32(RTL930X_PIE_BLK_TMPLTE_CTRL(block));
@@ -2765,7 +2934,10 @@ int otto_pie_930x_flow_init(struct otto_dsa_priv *priv)
 		for (int i = 0; i < 2; i++) {
 			u32 t = (templates >> (i * 4)) & 0xf;
 
-			if (t >= RTL930X_PIE_FLOW_TEMPLATE && t <= 9) {
+			if ((t >= RTL930X_PIE_FLOW_TEMPLATE && t <= 9) ||
+			    ((t == 4 || t == RTL930X_PIE_TC6_TEMPLATE) &&
+			     otto_pie_930x_sip_selectors(false)) ||
+			    (t == RTL930X_PIE_TC6_TEMPLATE && otto_pie_930x_template_check(t))) {
 				err = -EBUSY;
 				goto out_free;
 			}
@@ -2791,9 +2963,9 @@ int otto_pie_930x_flow_init(struct otto_dsa_priv *priv)
 	otto_pie_930x_flow_save(state, RTL930X_PIE_BLK_LOOKUP_CTRL, RTL930X_PIE_FLOW_BLOCKS);
 	otto_pie_930x_flow_save(state, RTL930X_PIE_BLK_PHASE_CTRL, RTL930X_PIE_FLOW_BLOCKS);
 	for (int t = RTL930X_PIE_FLOW_TEMPLATE; t <= RTL930X_PIE_FLOW6_TAIL_TEMPLATE; t++)
-		for (int i = 0; i < ARRAY_SIZE(template_masks); i++)
+		for (int i = 0; i < ARRAY_SIZE(rtl930x_template_masks); i++)
 			otto_pie_930x_flow_save(state, RTL930X_PIE_TMPLTE_CTRL(t, i),
-					      template_masks[i]);
+					      rtl930x_template_masks[i]);
 	otto_pie_930x_flow_save(state, RTL930X_PARSER_FIELD_SELECTOR0, GENMASK(9, 0));
 	otto_pie_930x_flow_save(state, RTL930X_PARSER_FIELD_SELECTOR1, GENMASK(9, 0));
 	for (int i = 6; i < 12; i++)
@@ -2820,18 +2992,9 @@ int otto_pie_930x_flow_init(struct otto_dsa_priv *priv)
 	 * register, three registers for each configurable template (IDs 5..9).
 	 */
 	for (int t = RTL930X_PIE_FLOW_TEMPLATE; t <= RTL930X_PIE_FLOW6_TAIL_TEMPLATE; t++) {
-		u32 words[3] = {};
-
-		for (int i = 0; i < N_FIXED_FIELDS; i++)
-			words[i / 5] |= (u32)rtl930x_fixed_templates[t][i] << ((i % 5) * 6);
-		for (int i = 0; i < ARRAY_SIZE(words); i++) {
-			sw_w32_mask(template_masks[i], words[i], RTL930X_PIE_TMPLTE_CTRL(t, i));
-			if ((sw_r32(RTL930X_PIE_TMPLTE_CTRL(t, i)) & template_masks[i]) !=
-			    words[i]) {
-				err = -EIO;
-				goto out_fail;
-			}
-		}
+		err = otto_pie_930x_template_program(t);
+		if (err)
+			goto out_fail;
 	}
 
 	/* Format 4 starts at the IP header; offset zero yields version/IHL and
@@ -2858,16 +3021,9 @@ int otto_pie_930x_flow_init(struct otto_dsa_priv *priv)
 	 * depending on parser reset/bootloader state. IPv6 SIP2 is header bytes
 	 * 18..19, through SIP7 at bytes 8..9: word offsets 9 down to 4.
 	 */
-	for (int i = 6; i < 12; i++) {
-		u32 reg = RTL930X_PARSER_FIELD_SELECTOR0 + i * 4;
-		u32 value = 4 | ((15 - i) << 3);
-
-		sw_w32_mask(GENMASK(9, 0), value, reg);
-		if ((sw_r32(reg) & GENMASK(9, 0)) != value) {
-			err = -EIO;
-			goto out_fail;
-		}
-	}
+	err = otto_pie_930x_sip_selectors(true);
+	if (err)
+		goto out_fail;
 	/* Longan permits any block to select VACL, including blocks 8..15
 	 * that the default driver setup assigns to IACL. Force-routing action
 	 * 6 is a VACL action. Leave the earlier tc blocks and their templates
@@ -2977,7 +3133,7 @@ int otto_pie_930x_flow_dump(struct otto_dsa_priv *priv, struct seq_file *s,
 			  const struct pie_rule *pr)
 {
 	u32 entry[19], counter[2];
-	int rows = pr && pr->flow_n_rules == 2 ? 2 : 1;
+	int rows = pr && pr->n_rules == 2 ? 2 : 1;
 	int err = 0;
 
 	if (priv->r->n_pie_blocks != 16)
@@ -3092,7 +3248,7 @@ int otto_pie_930x_flow_rule_add(struct otto_dsa_priv *priv, struct pie_rule *pr)
 	pr->phase = PHASE_VACL;
 	pr->is_egress = false;
 	pr->id = idx;
-	pr->flow_n_rules = pr->is_ipv6 ? 2 : 1;
+	pr->n_rules = pr->is_ipv6 ? 2 : 1;
 	pr->tid = 0;
 	pr->tid_m = 1;
 	pr->frame_type = pr->is_ipv6 ? 3 : 2;
@@ -3131,7 +3287,7 @@ int otto_pie_930x_flow_rule_add(struct otto_dsa_priv *priv, struct pie_rule *pr)
 	/* RTL930x logs one complete LOG entry per rule ID. Clear it before
 	 * publishing the classifier so recycled IDs never inherit traffic.
 	 */
-	err = otto_pie_930x_flow_counters_clear(priv, idx, pr->flow_n_rules);
+	err = otto_pie_930x_flow_counters_clear(priv, idx, pr->n_rules);
 	if (err)
 		goto out_fail;
 
@@ -3168,7 +3324,7 @@ int otto_pie_930x_flow_rule_add(struct otto_dsa_priv *priv, struct pie_rule *pr)
 	err = otto_pie_930x_rule_write(priv, idx, pr);
 	if (err)
 		goto out_fail;
-	for (int i = 0; i < pr->flow_n_rules; i++)
+	for (int i = 0; i < pr->n_rules; i++)
 		set_bit(idx + i, priv->pie_use_bm);
 	err = otto_pie_930x_lookup_enable(priv, idx);
 	if (err)
@@ -3185,7 +3341,7 @@ out_unlock:
 void otto_pie_930x_flow_rule_rm(struct otto_dsa_priv *priv, struct pie_rule *pr)
 {
 	struct pie_rule empty = {};
-	int rows = pr->flow_n_rules == 2 ? 2 : 1;
+	int rows = pr->n_rules == 2 ? 2 : 1;
 	int err = 0;
 
 	if (pr->id < RTL930X_PIE_FLOW_FIRST || pr->id + rows > RTL930X_PIE_FLOW_END)
@@ -3212,20 +3368,32 @@ void otto_pie_930x_flow_rule_rm(struct otto_dsa_priv *priv, struct pie_rule *pr)
 
 void otto_pie_930x_rule_rm(struct otto_dsa_priv *priv, struct pie_rule *pr)
 {
+	int rows = pr->n_rules == 2 ? 2 : 1;
 	int idx = pr->id;
+	int err;
 
-	if (idx < 0 || idx >= priv->r->n_pie_blocks * PIE_BLOCK_SIZE)
+	if (idx < 0 || idx + rows > priv->r->n_pie_blocks * PIE_BLOCK_SIZE)
 		return;
 
 	guard(mutex)(&priv->pie_mutex);
 
-	if (!otto_pie_930x_rule_del(priv, idx, idx))
-		clear_bit(idx, priv->pie_use_bm);
+	pr->valid = false;
+	/* Withdraw the action-bearing head before its inert companion. */
+	err = otto_pie_930x_rule_del(priv, idx, idx);
+	if (!err && rows == 2)
+		err = otto_pie_930x_rule_del(priv, idx + 1, idx + 1);
+	if (!err) {
+		for (int i = 0; i < rows; i++)
+			clear_bit(idx + i, priv->pie_use_bm);
+	} else {
+		dev_err(priv->dev, "TC rule deletion failed, retaining hardware reservation\n");
+	}
 }
 
 void otto_pie_930x_init(struct otto_dsa_priv *priv)
 {
 	u32 template_selectors;
+	int err;
 
 	mutex_init(&priv->pie_mutex);
 
@@ -3266,11 +3434,22 @@ void otto_pie_930x_init(struct otto_dsa_priv *priv)
 	for (int i = priv->r->n_pie_blocks * 3 / 4; i < priv->r->n_pie_blocks; i++)
 		regmap_write(priv->map, RTL930X_PIE_BLK_TMPLTE_CTRL(i), template_selectors);
 
-	/* Fasttrack retains only blocks 0..1 for TC. Keep templates 0/1 in
-	 * block 0, and expose 2/3 in block 1 so full IPv6 destination matches
-	 * remain available after blocks 2..15 are reserved for flow rules.
+	/* Retain templates 0/1, 2/4 and 3/5 in TC blocks 0, 1 and 2.
+	 * Templates 3/5 share a block so IPv6 source/destination rules can
+	 * join adjacent rows with AND1, including transport-port matches.
+	 * Program the configurable source/ports template and its shared parser
+	 * selectors before selecting it, independently of Fasttrack lifetime.
 	 */
-	regmap_write(priv->map, RTL930X_PIE_BLK_TMPLTE_CTRL(1), 2 | (3 << 4));
+	err = otto_pie_930x_template_program(RTL930X_PIE_TC6_TEMPLATE);
+	if (!err)
+		err = otto_pie_930x_sip_selectors(true);
+	if (err) {
+		dev_err(priv->dev, "TC IPv6 source template setup failed (%d)\n", err);
+		return;
+	}
+	regmap_write(priv->map, RTL930X_PIE_BLK_TMPLTE_CTRL(1), 2 | (4 << 4));
+	regmap_write(priv->map, RTL930X_PIE_BLK_TMPLTE_CTRL(2),
+		     3 | (RTL930X_PIE_TC6_TEMPLATE << 4));
 }
 
 /* RTL931X */
