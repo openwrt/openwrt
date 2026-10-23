@@ -1,0 +1,138 @@
+From de233448a1e7073ef74b097bdacf7e1000901d7d Mon Sep 17 00:00:00 2001
+From: Mieczyslaw Nalewaj <namiltd@yahoo.com>
+Date: Fri, 24 Jul 2026 04:38:53 +0200
+Subject: [PATCH net-next v6 4/9] net: dsa: realtek: rtl8365mb: set RGMII mode
+ for family D
+
+On family D, RGMII on extension interface 1 needs two things that the
+other families do not: the EXT1 RGMII TX clock delay field in
+EXT_TXC_DLY (0x13f9, bits [5:3]) must be cleared, and the pin mux in
+the top-level configuration register must be set up.
+
+The vendor RGMII setup for EXT1 clears the RGMII field of EXT_TXC_DLY
+(0x13f9, bits [5:3]) in addition to programming TXDELAY in RGMXF.
+Do the same. The init jam table writes 0x0090 to this register, which
+leaves the field at 2, so without the clear an extra TX delay would be
+applied on top of tx-internal-delay-ps. Clearing it makes
+tx-internal-delay-ps the only source of TX delay.
+
+If the internal MAC4 block occupies extension 1, do not advertise RGMII
+for port 7 in phylink_get_caps(), so the configuration is refused before
+any EXT1 register is touched. This mirrors the vendor RTL8367D API, which
+returns an error for RGMII on port 7 when UTP port 4 uses the RGMII
+interface. Otherwise bind the RGMII/MII pins to MAC7. SerDes 1, which
+shares the pins, is always disabled.
+
+The family D branch is not reachable until the chip table entry is
+added in the last patch.
+
+Signed-off-by: Mieczyslaw Nalewaj <namiltd@yahoo.com>
+---
+ drivers/net/dsa/realtek/rtl8365mb_main.c | 68 +++++++++++++++++++++++-
+ 1 file changed, 66 insertions(+), 2 deletions(-)
+
+--- a/drivers/net/dsa/realtek/rtl8365mb_main.c
++++ b/drivers/net/dsa/realtek/rtl8365mb_main.c
+@@ -319,6 +319,12 @@
+ #define   RTL8365MB_SDS_OPTION_ARM_KEY		0x0249
+ #define RTL8365MB_SDS_OPTION_REG		0x13C1
+ 
++#define RTL8365MB_D_SDS_MISC_MODE_FIELD_MASK		GENMASK(4, 0)
++/* Shared "disable" encoding for both SDS_MISC's and SDS1_MISC0's
++ * 5-bit mode fields.
++ */
++#define RTL8365MB_D_PORT_SDS_MODE_DISABLE		0x1f
++
+ /* Embedded DW8051 microcontroller control registers. The microcontroller
+  * can run firmware to manage the SerDes link, but this driver keeps it in
+  * reset and disabled: phylink already performs the link management that
+@@ -452,6 +458,20 @@
+ #define   RTL8365MB_PORT_MISC_CFG_VLAN_EGRESS_MODE_MASK		GENMASK(5, 4)
+ #define   RTL8365MB_PORT_MISC_CFG_CONGESTION_SUSTAIN_TIME_MASK	GENMASK(3, 0)
+ 
++/* EXT_TXC_DLY holds a 3-bit TX clock delay per external interface, for
++ * RGMII ([2:0] EXT0, [5:3] EXT1, [8:6] EXT2) and separately for GMII.
++ * Only the EXT1 RGMII field is used here, and it is cleared in RGMII
++ * mode so that tx-internal-delay-ps is the only TX delay applied.
++ */
++#define RTL8365MB_D_REG_EXT_TXC_DLY				0x13f9
++#define   RTL8365MB_D_EXT1_RGMII_TX_DLY_MASK			GENMASK(5, 3)
++
++#define RTL8365MB_D_REG_TOP_CON0				0x1d70
++#define   RTL8365MB_D_MAC7_SEL_EXT1_MASK			BIT(13)
++#define   RTL8365MB_D_MAC4_SEL_EXT1_MASK			BIT(12)
++
++#define RTL8365MB_D_REG_SDS1_MISC0				0x1d78
++
+ /**
+  * enum rtl8365mb_vlan_egress_mode - port VLAN egress mode
+  * @RTL8365MB_VLAN_EGRESS_MODE_ORIGINAL: follow untag mask in VLAN4k table entry
+@@ -1195,6 +1215,33 @@ static int rtl8365mb_ext_config_rgmii(st
+ 	if (ret)
+ 		return ret;
+ 
++	if (rtl8365mb_get_family(priv) == RTL8365MB_FAMILY_D &&
++	    extint->id == 1) {
++		ret = regmap_update_bits(priv->map,
++					 RTL8365MB_D_REG_EXT_TXC_DLY,
++					 RTL8365MB_D_EXT1_RGMII_TX_DLY_MASK, 0);
++		if (ret)
++			return ret;
++
++		/* Bind the RGMII/MII pins to MAC7. MAC4 does not own them:
++		 * RGMII is not advertised otherwise, see
++		 * rtl8365mb_phylink_get_caps().
++		 */
++		ret = regmap_update_bits(priv->map,
++					 RTL8365MB_D_REG_TOP_CON0,
++					 RTL8365MB_D_MAC7_SEL_EXT1_MASK,
++					 RTL8365MB_D_MAC7_SEL_EXT1_MASK);
++		if (ret)
++			return ret;
++
++		ret = regmap_update_bits(priv->map,
++					 RTL8365MB_D_REG_SDS1_MISC0,
++					 RTL8365MB_D_SDS_MISC_MODE_FIELD_MASK,
++					 RTL8365MB_D_PORT_SDS_MODE_DISABLE);
++		if (ret)
++			return ret;
++	}
++
+ 	return 0;
+ }
+ 
+@@ -1698,6 +1745,8 @@ static void rtl8365mb_phylink_get_caps(s
+ 		rtl8365mb_get_port_extint(ds->priv, port);
+ 	struct realtek_priv *priv = ds->priv;
+ 	struct rtl8365mb *mb = priv->chip_data;
++	u32 data;
++	int ret;
+ 
+ 	config->mac_capabilities = MAC_SYM_PAUSE | MAC_ASYM_PAUSE |
+ 				   MAC_10 | MAC_100 | MAC_1000FD;
+@@ -1719,8 +1768,23 @@ static void rtl8365mb_phylink_get_caps(s
+ 	 * which remain unimplemented.
+ 	 */
+ 
+-	if (extint->supported_interfaces & RTL8365MB_PHY_INTERFACE_MODE_RGMII)
+-		phy_interface_set_rgmii(config->supported_interfaces);
++	if (extint->supported_interfaces & RTL8365MB_PHY_INTERFACE_MODE_RGMII) {
++		/* On family D the EXT1 pins are shared with MAC4 (UTP port 4).
++		 * If MAC4 owns them, RGMII on this port cannot work.
++		 */
++		if (rtl8365mb_get_family(priv) == RTL8365MB_FAMILY_D &&
++		    extint->id == 1) {
++			ret = regmap_read(priv->map, RTL8365MB_D_REG_TOP_CON0, &data);
++			if (ret)
++				dev_warn(priv->dev,
++					 "failed to read TOP_CON0, RGMII on port %d disabled: %pe\n",
++					 port, ERR_PTR(ret));
++			else if (!(data & RTL8365MB_D_MAC4_SEL_EXT1_MASK))
++				phy_interface_set_rgmii(config->supported_interfaces);
++		} else {
++			phy_interface_set_rgmii(config->supported_interfaces);
++		}
++	}
+ 
+ 	if (extint->supported_interfaces & RTL8365MB_PHY_INTERFACE_MODE_SGMII &&
+ 	    mb->sds_supported)
