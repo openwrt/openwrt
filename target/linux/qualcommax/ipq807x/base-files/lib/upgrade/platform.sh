@@ -175,6 +175,7 @@ platform_do_upgrade() {
 		nand_do_upgrade "$1"
 		;;
 	arcadyan,aw1000|\
+	arista,c-360|\
 	cmcc,rm2-6|\
 	compex,wpq873|\
 	dynalink,dl-wrx36|\
@@ -191,10 +192,6 @@ platform_do_upgrade() {
 	netgear,wax630|\
 	zyxel,nwa110ax|\
 	zyxel,nwa210ax)
-		nand_do_upgrade "$1"
-		;;
-	arista,c-360)
-		CI_UBIPART="rootfs"
 		nand_do_upgrade "$1"
 		;;
 	asus,rt-ax89x)
