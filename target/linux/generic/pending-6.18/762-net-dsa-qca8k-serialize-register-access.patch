@@ -1,0 +1,75 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+Date: Mon, 19 Oct 2026 20:11:44 +0200
+From: Stanislaw Pal <kuncy7@gmail.com>
+Subject: [PATCH] net: dsa: qca8k: serialize register access
+
+The regmap is created with .disable_locking, on the ground that
+qca8k's read and write callbacks do their own locking. They only lock
+the bus transaction, though: regmap formats the register and parses
+the value in the map's shared work_buf, outside of them, so two
+concurrent users can swap or corrupt each other's register and value.
+Most register access runs under rtnl, but not all of it - phylink's
+resolve work (mac_link_up/down) and the LED class callbacks do not -
+and the next change adds a delayed work that reads the MIB. Let regmap
+take its own lock; every user sleeps already, on the MDIO bus or on
+the management frame round trip.
+
+An autocast MIB read holds the MIB mutex while its register write
+takes the management mutex, and qca8k_conduit_change() takes the two
+the other way round. Both run under rtnl today; with a reader outside
+rtnl that would be an ABBA deadlock. Take the MIB mutex first there
+too.
+
+OpenWrt only: qca8k_change_tag_protocol() (761) clears mgmt_conduit
+under both mutexes as well and takes them in the same order (found by
+lockdep on a GL-B3000).
+
+Signed-off-by: Stanislaw Pal <kuncy7@gmail.com>
+---
+--- a/drivers/net/dsa/qca/qca8k-8xxx.c
++++ b/drivers/net/dsa/qca/qca8k-8xxx.c
+@@ -575,7 +575,6 @@ static const struct regmap_config qca8k_
+ 	.write = qca8k_bulk_write,
+ 	.reg_update_bits = qca8k_regmap_update_bits,
+ 	.rd_table = &qca8k_readable_table,
+-	.disable_locking = true, /* Locking is handled by qca8k read/write */
+ 	.cache_type = REGCACHE_NONE, /* Explicitly disable CACHE */
+ 	.max_raw_read = 32, /* mgmt eth can read up to 8 registers at time */
+ 	/* ATU regs suffer from a bug where some data are not correctly
+@@ -1878,8 +1877,11 @@ qca8k_conduit_change(struct dsa_switch *
+ 	if (dp->index != 0)
+ 		return;
+ 
+-	mutex_lock(&priv->mgmt_eth_data.mutex);
++	/* Same order as an autocast, which holds the MIB mutex while its
++	 * register write takes the management one.
++	 */
+ 	mutex_lock(&priv->mib_eth_data.mutex);
++	mutex_lock(&priv->mgmt_eth_data.mutex);
+ 
+ 	/* Management over Ethernet rides on the Atheros header, which
+ 	 * tag_8021q has turned off in the switch; MDIO does the job then.
+@@ -1887,8 +1889,8 @@ qca8k_conduit_change(struct dsa_switch *
+ 	priv->mgmt_conduit = operational && priv->tag_proto == DSA_TAG_PROTO_QCA ?
+ 			     (struct net_device *)conduit : NULL;
+ 
+-	mutex_unlock(&priv->mib_eth_data.mutex);
+ 	mutex_unlock(&priv->mgmt_eth_data.mutex);
++	mutex_unlock(&priv->mib_eth_data.mutex);
+ }
+ 
+ static int qca8k_connect_tag_protocol(struct dsa_switch *ds,
+@@ -2038,11 +2040,11 @@ static int qca8k_change_tag_protocol(str
+ 		/* Management frames need the Atheros header; from here on
+ 		 * every register access goes over MDIO.
+ 		 */
+-		mutex_lock(&priv->mgmt_eth_data.mutex);
+ 		mutex_lock(&priv->mib_eth_data.mutex);
++		mutex_lock(&priv->mgmt_eth_data.mutex);
+ 		priv->mgmt_conduit = NULL;
+-		mutex_unlock(&priv->mib_eth_data.mutex);
+ 		mutex_unlock(&priv->mgmt_eth_data.mutex);
++		mutex_unlock(&priv->mib_eth_data.mutex);
+ 
+ 		ret = qca8k_set_hdr_mode(priv, QCA8K_PORT_HDR_CTRL_NONE);
+ 		if (ret)
