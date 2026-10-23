@@ -1,0 +1,95 @@
+From 8fd9bcf48bef6eb6dd361b86a3e6fb79ad98e702 Mon Sep 17 00:00:00 2001
+From: François Guerraz <kubrick@fgv6.net>
+Date: Mon, 5 Oct 2026 12:00:00 +0200
+Subject: [PATCH] netfilter: flowtable: use the route device for neighbour xmit
+
+Since 6.18.45, which backported commit b5964aac51e0 ("netfilter: flowtable:
+consolidate xmit path") and commit 2bdc536c9da7 ("netfilter: always set
+route tuple out ifindex"), FLOW_OFFLOAD_XMIT_NEIGH flows are transmitted on
+the device whose index is stored in the tuple instead of the route device.
+
+When the flowtable lists a bridge but not its ports, forward path
+discovery towards a host behind a plain Ethernet or DSA bridge port
+records the port the FDB points to as the output device.
+nft_dev_forward_path() stores its ifindex before it checks whether the
+discovered ingress device is part of the flowtable. That check fails, so
+the flow remains a neighbour flow, but it is now transmitted directly on
+that port:
+
+- The flow does not follow FDB changes. Packets in either direction
+  refresh it, so when the host moves to another port of the bridge (a
+  bond failover, a moved cable, or from Ethernet to Wi-Fi for a flow set
+  up while the host was on Ethernet), the router keeps sending to the old
+  port and the connection stalls.
+- Transmission skips the bridge device's qdisc, the bridge output and
+  postrouting hooks, and bridge VLAN egress processing. With taggers such
+  as vsc73xx-8021q, frames without the bridge forwarding mark also get
+  the port's standalone VLAN, which the switch drops once bridge join has
+  removed it.
+
+Before 6.18.45 neighbour flows were transmitted on the route device, the
+bridge, which picks the port for each packet. Do that again. The
+neighbour lookup already uses the route device, and nothing else reads
+the output ifindex of a neighbour flow. The NULL check of the looked-up
+device goes away with the lookup: the device of a cached route is never
+NULL (dst_dev_put() replaces it with blackhole_netdev), and the
+neighbour lookup that follows already uses it unchecked. Direct xmit
+flows are unchanged. VLAN and PPPoE uppers were already recorded as the
+output device, so flows through them keep their output device.
+
+This also covers the failed path discovery case handled by OpenWrt patch
+699: neighbour transmission no longer uses its fallback output ifindex.
+
+Mainline with commit 871df5007eda ("netfilter: flowtable: bail out if
+forward path cannot be discovered") does not offload a flow when
+discovery fails or the discovered device is not in the flowtable, which
+avoids this case. That commit is not in 6.18.55 and does not apply to its
+older path discovery code.
+
+Tested with 6.18.55 and 699 in a QEMU VM, with a routed TCP download to a
+host that has an active-backup bond over two ports of a bridge, the
+bridge and the server side interface in a software flowtable, and a
+failover after about 4.5 s. Without this change, IPv4 and IPv6 downloads
+reported 0 bit/s for the rest of the 14 s run. With it, both continued
+without a visible interruption. In both kernels the forward chain
+counter stayed at 10 packets for transfers of tens of gigabytes. The
+bridge output counter stayed at 14-18 packets without the change and
+grew with the transfer with it. Also in use on a GL.iNet GL-BE9300
+(qualcommbe).
+
+Fixes: b5964aac51e0 ("netfilter: flowtable: consolidate xmit path")
+Fixes: 2bdc536c9da7 ("netfilter: always set route tuple out ifindex")
+Assisted-by: LLM
+Signed-off-by: François Guerraz <kubrick@fgv6.net>
+---
+ net/netfilter/nf_flow_table_ip.c | 12 ++----------
+ 1 file changed, 2 insertions(+), 10 deletions(-)
+
+--- a/net/netfilter/nf_flow_table_ip.c
++++ b/net/netfilter/nf_flow_table_ip.c
+@@ -463,11 +463,7 @@ nf_flow_offload_ip_hook(void *priv, stru
+ 	switch (tuplehash->tuple.xmit_type) {
+ 	case FLOW_OFFLOAD_XMIT_NEIGH:
+ 		rt = dst_rtable(tuplehash->tuple.dst_cache);
+-		xmit.outdev = dev_get_by_index_rcu(state->net, tuplehash->tuple.ifidx);
+-		if (!xmit.outdev) {
+-			flow_offload_teardown(flow);
+-			return NF_DROP;
+-		}
++		xmit.outdev = rt->dst.dev;
+ 		neigh = ip_neigh_gw4(rt->dst.dev, rt_nexthop(rt, flow->tuplehash[!dir].tuple.src_v4.s_addr));
+ 		if (IS_ERR(neigh)) {
+ 			flow_offload_teardown(flow);
+@@ -768,11 +764,7 @@ nf_flow_offload_ipv6_hook(void *priv, st
+ 	switch (tuplehash->tuple.xmit_type) {
+ 	case FLOW_OFFLOAD_XMIT_NEIGH:
+ 		rt = dst_rt6_info(tuplehash->tuple.dst_cache);
+-		xmit.outdev = dev_get_by_index_rcu(state->net, tuplehash->tuple.ifidx);
+-		if (!xmit.outdev) {
+-			flow_offload_teardown(flow);
+-			return NF_DROP;
+-		}
++		xmit.outdev = rt->dst.dev;
+ 		neigh = ip_neigh_gw6(rt->dst.dev, rt6_nexthop(rt, &flow->tuplehash[!dir].tuple.src_v6));
+ 		if (IS_ERR(neigh)) {
+ 			flow_offload_teardown(flow);
