@@ -194,6 +194,10 @@ platform_do_upgrade() {
 	zyxel,nwa210ax)
 		nand_do_upgrade "$1"
 		;;
+	arista,c-230)
+		CI_UBIPART="rootfs"
+		nand_do_upgrade "$1"
+		;;
 	asus,rt-ax89x-b1|\
 	asus,rt-ax89x-b2)
 		CI_UBIPART="UBI_DEV"
