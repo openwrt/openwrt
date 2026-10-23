@@ -1,0 +1,292 @@
+From: Rosen Penev <rosenp@gmail.com>
+Subject: [PATCH] wifi: b43: limit the airtime queued per station
+
+b43 queues up to 64 frames per access category in tx_queue and 128 more
+on the DMA ring, one FIFO for all stations. A station on a slow rate
+fills it, the frames of all others wait behind its frames, and the
+airtime scheduler of mac80211 has nothing left to decide.
+
+Enable the airtime queue limits (AQL), so that mac80211 only hands out
+the frames of a station while the airtime estimated for its frames in
+the driver is below the limit. mac80211 does not offer those frames
+again once the airtime of the station went down, so have the interrupt
+thread, which holds wl->mutex like the TX work, take the frames of that
+AC from the mac80211 TXQs after its TX status and send them. A
+wake_tx_queue of its own serializes this with the calls from mac80211,
+as ieee80211_next_txq() must not run concurrently for one AC.
+
+On an Asus RT-N16 (BCM4716) sending 30 Mbit/s of UDP to each of two
+clients, one at HT MCS 15 (20.6 Mbit/s on its own, CPU bound) and one
+at 6 Mbit/s legacy (4.3 Mbit/s on its own):
+
+          fast client   slow client   sum
+  before  5.1-5.5       3.6-3.9       8.7-9.4   Mbit/s
+  after   20.4-21.9     3.0-3.1       23.5-24.9 Mbit/s
+
+An MT7612U as the fast client gives 4.7-5.2 and 3.9-4.0 Mbit/s before,
+21.1-21.9 and 3.0-3.1 Mbit/s after. With both fast clients and the slow
+one at once, they get 4.5-6.6, 4.7 and 3.6-3.7 Mbit/s before, and
+13.0-14.1, 13.0-14.6 and 2.3-2.5 Mbit/s after.
+
+TCP throughput of a single client is unchanged within the noise (52.8
+vs 53.3 Mbit/s to the BCM4331, 55.2 vs 53.2 Mbit/s to the MT7612U, mean
+of 3 runs). Sending to one client at a fixed rate takes about 300 more
+instructions per frame (1%), the cycles are within the noise.
+
+Assisted-by: LLM
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+---
+--- a/drivers/net/wireless/broadcom/b43/b43.h
++++ b/drivers/net/wireless/broadcom/b43/b43.h
+@@ -1031,6 +1031,10 @@ struct b43_wl {
+ 	bool tx_queue_stopped[B43_QOS_QUEUE_NUM];
+ 	/* The mac80211 queue is stopped as tx_queue is full */
+ 	bool tx_queue_full[B43_QOS_QUEUE_NUM];
++	/* Serializes taking frames from the mac80211 TXQs of an AC */
++	spinlock_t txq_lock;
++	/* ACs with a TX status since b43_do_tx_work() last took their frames */
++	unsigned long txq_pull;
+ 
+ 	/* firmware loading work */
+ 	struct work_struct firmware_load;
+--- a/drivers/net/wireless/broadcom/b43/dma.c
++++ b/drivers/net/wireless/broadcom/b43/dma.c
+@@ -2137,8 +2137,8 @@ out_wake:
+ 			b43dbg(dev->wl, "Woke up TX ring %d\n", ring->index);
+ 		}
+ 	}
+-	/* Add work to the queue. */
+-	ieee80211_queue_work(dev->wl->hw, &dev->wl->tx_work);
++	/* Have the TX status handler send more */
++	b43_txq_pull_later(dev, ring->queue_prio);
+ }
+ 
+ static void dma_rx(struct b43_dmaring *ring, int *slot)
+--- a/drivers/net/wireless/broadcom/b43/main.c
++++ b/drivers/net/wireless/broadcom/b43/main.c
+@@ -2097,6 +2097,8 @@ out:
+ 			B43_DEBUGIRQ_REASON_REG, B43_DEBUGIRQ_ACK);
+ }
+ 
++static void b43_do_tx_work(struct b43_wldev *dev);
++
+ static void b43_do_interrupt_thread(struct b43_wldev *dev)
+ {
+ 	u32 reason;
+@@ -2184,6 +2186,13 @@ static void b43_do_interrupt_thread(stru
+ 	/* Re-enable interrupts on the device by restoring the current interrupt mask. */
+ 	b43_write32(dev, B43_MMIO_GEN_IRQ_MASK, dev->irq_mask);
+ 
++	/*
++	 * Send the frames the TX status made room for here, instead of
++	 * waking the TX work for it.
++	 */
++	if (READ_ONCE(dev->wl->txq_pull))
++		b43_do_tx_work(dev);
++
+ #if B43_DEBUG
+ 	if (b43_debug(dev, B43_DBG_VERBOSESTATS)) {
+ 		dev->irq_count++;
+@@ -3914,20 +3923,77 @@ static int b43_tx_ampdu(struct b43_wldev
+ #define B43_TX_QUEUE_MAX	(2 * B43_AMPDU_MAX_FRAMES)
+ #define B43_TX_QUEUE_WAKE	(B43_TX_QUEUE_MAX / 2)
+ 
+-static void b43_tx_work(struct work_struct *work)
++static bool b43_tx_enqueue(struct b43_wl *wl,
++			   struct ieee80211_tx_control *control,
++			   struct sk_buff *skb);
++
++/*
++ * Take the frames of @ac from the mac80211 TXQs, in the order its airtime
++ * scheduler picks the stations, until tx_queue is full. Returns whether
++ * the TX work has to send them.
++ */
++static bool b43_pull_txqs(struct b43_wl *wl, u8 ac)
+ {
+-	struct b43_wl *wl = container_of(work, struct b43_wl, tx_work);
+-	struct b43_wldev *dev;
++	struct ieee80211_hw *hw = wl->hw;
++	struct ieee80211_txq *txq;
++	struct sk_buff *skb;
++	bool send = false;
++
++	spin_lock_bh(&wl->txq_lock);
++	ieee80211_txq_schedule_start(hw, ac);
++	while ((txq = ieee80211_next_txq(hw, ac))) {
++		struct ieee80211_tx_control control = {
++			.sta = txq->sta,
++		};
++
++		while ((skb = ieee80211_tx_dequeue(hw, txq)))
++			send |= b43_tx_enqueue(wl, &control, skb);
++		ieee80211_return_txq(hw, txq, false);
++	}
++	ieee80211_txq_schedule_end(hw, ac);
++	spin_unlock_bh(&wl->txq_lock);
++
++	return send;
++}
++
++static void b43_op_wake_tx_queue(struct ieee80211_hw *hw,
++				 struct ieee80211_txq *txq)
++{
++	struct b43_wl *wl = hw_to_b43_wl(hw);
++
++	if (b43_pull_txqs(wl, txq->ac))
++		ieee80211_queue_work(hw, &wl->tx_work);
++}
++
++/*
++ * mac80211 holds back the frames of stations over their airtime queue
++ * limit, and does not offer them again once their frames went out. Have
++ * b43_do_tx_work() take the frames of @ac after its TX status.
++ */
++void b43_txq_pull_later(struct b43_wldev *dev, u8 ac)
++{
++	set_bit(ac, &dev->wl->txq_pull);
++}
++
++/* Send the frames in tx_queue. Must be called with wl->mutex held. */
++static void b43_do_tx_work(struct b43_wldev *dev)
++{
++	struct b43_wl *wl = dev->wl;
+ 	struct sk_buff *skb;
+ 	bool ofdm_seen = false;
++	unsigned long pull;
+ 	int queue_num;
+ 	int err = 0;
+ 
+-	mutex_lock(&wl->mutex);
+-	dev = wl->current_dev;
+-	if (unlikely(!dev || b43_status(dev) < B43_STAT_STARTED)) {
+-		mutex_unlock(&wl->mutex);
+-		return;
++	/* Without hardware QoS, the frames of all ACs share queue 0 */
++	pull = xchg(&wl->txq_pull, 0);
++	if (pull && !dev->qos_enabled)
++		pull = BIT(IEEE80211_NUM_ACS) - 1;
++	for (queue_num = 0; queue_num < IEEE80211_NUM_ACS; queue_num++) {
++		/* mac80211 offers them itself once the full queue wakes */
++		if ((pull & BIT(queue_num)) &&
++		    !wl->tx_queue_full[dev->qos_enabled ? queue_num : 0])
++			b43_pull_txqs(wl, queue_num);
+ 	}
+ 
+ 	for (queue_num = 0; queue_num < B43_QOS_QUEUE_NUM; queue_num++) {
+@@ -3988,21 +4054,33 @@ static void b43_tx_work(struct work_stru
+ #if B43_DEBUG
+ 	dev->tx_count++;
+ #endif
++}
++
++static void b43_tx_work(struct work_struct *work)
++{
++	struct b43_wl *wl = container_of(work, struct b43_wl, tx_work);
++	struct b43_wldev *dev;
++
++	mutex_lock(&wl->mutex);
++	dev = wl->current_dev;
++	if (likely(dev && b43_status(dev) >= B43_STAT_STARTED))
++		b43_do_tx_work(dev);
+ 	mutex_unlock(&wl->mutex);
+ }
+ 
+-static void b43_op_tx(struct ieee80211_hw *hw,
+-		      struct ieee80211_tx_control *control,
+-		      struct sk_buff *skb)
++/* Queue @skb in tx_queue. Returns whether the TX work has to send it. */
++static bool b43_tx_enqueue(struct b43_wl *wl,
++			   struct ieee80211_tx_control *control,
++			   struct sk_buff *skb)
+ {
+-	struct b43_wl *wl = hw_to_b43_wl(hw);
++	struct ieee80211_hw *hw = wl->hw;
+ 	struct ieee80211_hdr *hdr;
+ 	u16 skb_queue_mapping;
+ 
+ 	if (unlikely(skb->len < 2 + 2 + 6)) {
+ 		/* Too short, this can't be a valid frame. */
+ 		ieee80211_free_txskb(hw, skb);
+-		return;
++		return false;
+ 	}
+ 	B43_WARN_ON(skb_shinfo(skb)->nr_frags);
+ 
+@@ -4011,7 +4089,7 @@ static void b43_op_tx(struct ieee80211_h
+ 	    control->sta && wl->ampdu_tx &&
+ 	    !b43_dma_ampdu_bar_valid(control->sta, skb)) {
+ 		ieee80211_free_txskb(hw, skb);
+-		return;
++		return false;
+ 	}
+ 
+ 	/* Without hardware QoS, all frames go through the first queue */
+@@ -4025,9 +4103,20 @@ static void b43_op_tx(struct ieee80211_h
+ 		b43_stop_queue(wl->current_dev, skb_queue_mapping);
+ 	}
+ 	if (!wl->tx_queue_stopped[skb_queue_mapping])
+-		ieee80211_queue_work(wl->hw, &wl->tx_work);
+-	else
+-		b43_stop_queue(wl->current_dev, skb_queue_mapping);
++		return true;
++
++	b43_stop_queue(wl->current_dev, skb_queue_mapping);
++	return false;
++}
++
++static void b43_op_tx(struct ieee80211_hw *hw,
++		      struct ieee80211_tx_control *control,
++		      struct sk_buff *skb)
++{
++	struct b43_wl *wl = hw_to_b43_wl(hw);
++
++	if (b43_tx_enqueue(wl, control, skb))
++		ieee80211_queue_work(hw, &wl->tx_work);
+ }
+ 
+ static void b43_qos_params_upload(struct b43_wldev *dev,
+@@ -5684,7 +5773,7 @@ static const struct ieee80211_ops b43_hw
+ 	.change_chanctx = ieee80211_emulate_change_chanctx,
+ 	.switch_vif_chanctx = ieee80211_emulate_switch_vif_chanctx,
+ 	.tx			= b43_op_tx,
+-	.wake_tx_queue		= ieee80211_handle_wake_tx_queue,
++	.wake_tx_queue		= b43_op_wake_tx_queue,
+ 	.conf_tx		= b43_op_conf_tx,
+ 	.add_interface		= b43_op_add_interface,
+ 	.remove_interface	= b43_op_remove_interface,
+@@ -6149,6 +6238,7 @@ static struct b43_wl *b43_wireless_init(
+ 
+ 	wiphy_ext_feature_set(hw->wiphy, NL80211_EXT_FEATURE_CQM_RSSI_LIST);
+ 	wiphy_ext_feature_set(hw->wiphy, NL80211_EXT_FEATURE_AIRTIME_FAIRNESS);
++	wiphy_ext_feature_set(hw->wiphy, NL80211_EXT_FEATURE_AQL);
+ 
+ 	hw->wiphy->available_antennas_rx = 0x3;
+ 	hw->wiphy->available_antennas_tx = 0x3;
+@@ -6169,6 +6259,7 @@ static struct b43_wl *b43_wireless_init(
+ 	INIT_WORK(&wl->beacon_update_trigger, b43_beacon_update_trigger_work);
+ 	INIT_WORK(&wl->txpower_adjust_work, b43_phy_txpower_adjust_work);
+ 	INIT_WORK(&wl->tx_work, b43_tx_work);
++	spin_lock_init(&wl->txq_lock);
+ 
+ 	/* Initialize queues and flags. */
+ 	for (queue_num = 0; queue_num < B43_QOS_QUEUE_NUM; queue_num++) {
+--- a/drivers/net/wireless/broadcom/b43/main.h
++++ b/drivers/net/wireless/broadcom/b43/main.h
+@@ -76,6 +76,7 @@ void b43_dummy_transmission(struct b43_w
+ void b43_wireless_core_reset(struct b43_wldev *dev, bool gmode);
+ 
+ void b43_controller_restart(struct b43_wldev *dev, const char *reason);
++void b43_txq_pull_later(struct b43_wldev *dev, u8 ac);
+ 
+ #define B43_PS_ENABLED	(1 << 0)	/* Force enable hardware power saving */
+ #define B43_PS_DISABLED	(1 << 1)	/* Force disable hardware power saving */
+--- a/drivers/net/wireless/broadcom/b43/pio.c
++++ b/drivers/net/wireless/broadcom/b43/pio.c
+@@ -586,6 +586,7 @@ void b43_pio_handle_txstatus(struct b43_
+ 	ieee80211_tx_status_skb(dev->wl->hw, pack->skb);
+ 	pack->skb = NULL;
+ 	list_add(&pack->list, &q->packets_list);
++	b43_txq_pull_later(dev, q->queue_prio);
+ 
+ 	if (q->stopped) {
+ 		/* b43_tx_work() wakes it once tx_queue has room */

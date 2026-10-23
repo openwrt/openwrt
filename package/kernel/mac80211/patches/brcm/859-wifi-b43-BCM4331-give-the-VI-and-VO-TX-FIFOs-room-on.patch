@@ -1,0 +1,158 @@
+From: Erik Conijn <egc112@msn.com>
+Subject: [PATCH] wifi: b43: BCM4331: give the VI and VO TX FIFOs room, one FIFO per AC
+
+The BCM4331 initvals give the VI and VO TX FIFOs 11 and 9 blocks of 256
+bytes. Frames queued on them are never sent: the DMA engine moves one
+frame into the FIFO and the ucode leaves it there. That is why commit
+09795bded2e7 ("wifi: b43: Disable QoS for bcm4331") sends all traffic
+through the BE FIFO on this chip, which leaves the four access
+categories without priority over each other.
+
+The size is what matters: moved elsewhere with the same sizes, VI and VO
+still stall; VI enlarged in place works. Program the VI and VO FIFOs
+after the initvals, in FIFO memory the initvals leave unused: VI blocks
+66-195 and VO 196-255. The other FIFOs keep the initvals' layout (BK
+6-15, BCMC 50-63, ATIM 64-65, BE 256-511). The sequence is the one of
+brcmsmac's brcms_b_corerev_fifofixup() that the core rev 17 fixup
+already uses, so split it out of that.
+
+With room in all four FIFOs, use hardware QoS on the BCM4331 again.
+Background and voice stay without TX block ack sessions there, as in
+brcmsmac: the BK FIFO keeps its 10 blocks.
+
+On an R6400 AP, TCP to an 802.11n client: video 10 -> 56 Mbit/s, voice
+34 Mbit/s, best effort and background unchanged (53-54 Mbit/s). With a
+best effort and a voice download at the same time, voice now gets 32.5
+and best effort 2.4 Mbit/s, instead of 5.5 and 41.5.
+
+Assisted-by: Claude:claude-opus-5-5
+Signed-off-by: Erik Conijn <egc112@msn.com>
+[rosenp: on top of the core rev 17 fixup and the A-MPDU series, without
+ the ht_qos_fifos parameter: the qos parameter still turns QoS off]
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+---
+--- a/drivers/net/wireless/broadcom/b43/main.c
++++ b/drivers/net/wireless/broadcom/b43/main.c
+@@ -2797,10 +2797,7 @@ static void b43_request_firmware(struct
+ 	goto out;
+ 
+ start_ieee80211:
+-	/*
+-	 * mac80211 needs four queues for HT. On the BCM4331 only the best
+-	 * effort FIFO works, so it gets them without hardware QoS.
+-	 */
++	/* mac80211 needs four queues for HT */
+ 	wl->hw->queues = B43_QOS_QUEUE_NUM;
+ 	if (!modparam_qos || dev->fw.opensource)
+ 		wl->hw->queues = 1;
+@@ -2912,8 +2909,7 @@ static int b43_upload_microcode(struct b
+ 	if (b43_ht_supported(dev) && dev->fw.hdr_format != B43_FW_HDR_598)
+ 		b43warn(dev->wl, "HT needs firmware 598 or newer, sending legacy rates only\n");
+ 
+-	dev->qos_enabled = dev->wl->hw->queues > 1 &&
+-			   dev->dev->chip_id != BCMA_CHIP_ID_BCM4331;
++	dev->qos_enabled = dev->wl->hw->queues > 1;
+ 	/* Default to firmware/hardware crypto acceleration. */
+ 	dev->hwcrypto_enabled = true;
+ 
+@@ -3459,6 +3455,20 @@ static void b43_chip_exit(struct b43_wld
+ 	/* firmware is released later */
+ }
+ 
++/* Reset TX FIFO @fifo, give it blocks @start to @end, and reset it again */
++static void b43_fifo_set(struct b43_wldev *dev, unsigned int fifo,
++			 unsigned int start, unsigned int end)
++{
++	u16 cmd = B43_TXFIFOCMD_RESET | (fifo << B43_TXFIFOCMD_FIFOSEL_SHIFT);
++
++	b43_write16(dev, B43_MMIO_XMTFIFOCMD, cmd);
++	b43_write16(dev, B43_MMIO_XMTFIFODEF,
++		    (start & 0xff) | ((end & 0xff) << 8));
++	b43_write16(dev, B43_MMIO_XMTFIFODEF1,
++		    ((start >> 8) & 1) | (((end >> 8) & 1) << 8));
++	b43_write16(dev, B43_MMIO_XMTFIFOCMD, cmd);
++}
++
+ /*
+  * The initvals of core rev 17 split 60 blocks of 256 bytes about evenly
+  * between the six TX FIFOs, which leaves 3.5 KiB for best effort. That is
+@@ -3467,28 +3477,14 @@ static void b43_chip_exit(struct b43_wld
+  * same space to best effort instead, and tell the firmware. Without HT,
+  * b43 sends no A-MPDUs and the initvals layout is enough.
+  */
+-static void b43_fifo_fixup(struct b43_wldev *dev)
++static void b43_fifo_fixup_rev17(struct b43_wldev *dev)
+ {
+ 	/* BK, BE, VI, VO, broadcast/multicast, ATIM */
+ 	static const u8 sizes[] = { 6, 30, 10, 8, 4, 2 };
+-	unsigned int start = B43_TXFIFO_START_BLK, end, i;
+-	u16 cmd;
+-
+-	if (!b43_ht_supported(dev) || dev->dev->core_rev != 17)
+-		return;
++	unsigned int start = B43_TXFIFO_START_BLK, i;
+ 
+ 	for (i = 0; i < ARRAY_SIZE(sizes); i++) {
+-		end = start + sizes[i] - 1;
+-		cmd = B43_TXFIFOCMD_RESET | (i << B43_TXFIFOCMD_FIFOSEL_SHIFT);
+-
+-		/* Reset the FIFO, resize it, and reset it again */
+-		b43_write16(dev, B43_MMIO_XMTFIFOCMD, cmd);
+-		b43_write16(dev, B43_MMIO_XMTFIFODEF,
+-			    (start & 0xff) | ((end & 0xff) << 8));
+-		b43_write16(dev, B43_MMIO_XMTFIFODEF1,
+-			    ((start >> 8) & 1) | (((end >> 8) & 1) << 8));
+-		b43_write16(dev, B43_MMIO_XMTFIFOCMD, cmd);
+-
++		b43_fifo_set(dev, i, start, start + sizes[i] - 1);
+ 		start += sizes[i];
+ 	}
+ 
+@@ -3500,6 +3496,30 @@ static void b43_fifo_fixup(struct b43_wl
+ 			sizes[4] | (sizes[5] << 8));
+ }
+ 
++/*
++ * The initvals of the BCM4331 give the VI and VO FIFOs 11 and 9 blocks.
++ * The DMA engine moves a frame into them, but the firmware never sends
++ * it, so b43 sent everything through the best effort FIFO. The size is
++ * what matters: moved with the same sizes they still stall, VI enlarged
++ * in place works. Move them to the FIFO memory the initvals leave
++ * unused, VI to blocks 66-195 and VO to 196-255, and keep the layout of
++ * the others (BK 6-15, broadcast/multicast 50-63, ATIM 64-65, BE
++ * 256-511).
++ */
++static void b43_fifo_fixup_bcm4331(struct b43_wldev *dev)
++{
++	b43_fifo_set(dev, 2, 66, 195);
++	b43_fifo_set(dev, 3, 196, 255);
++}
++
++static void b43_fifo_fixup(struct b43_wldev *dev)
++{
++	if (dev->dev->chip_id == BCMA_CHIP_ID_BCM4331)
++		b43_fifo_fixup_bcm4331(dev);
++	else if (b43_ht_supported(dev) && dev->dev->core_rev == 17)
++		b43_fifo_fixup_rev17(dev);
++}
++
+ /* Initialize the chip
+  * https://bcm-specs.sipsolutions.net/ChipInit
+  */
+@@ -6144,6 +6164,16 @@ static int b43_op_ampdu_action(struct ie
+ 
+ 		if (!wl->ampdu_tx || !b43_ht_fw_loaded(wl))
+ 			return -EOPNOTSUPP;
++		/*
++		 * The BK FIFO of the BCM4331 keeps the 10 blocks of the
++		 * initvals, too little for A-MPDUs. Like brcmsmac, send
++		 * background and voice traffic without them there.
++		 */
++		if (wl->current_dev &&
++		    wl->current_dev->dev->chip_id == BCMA_CHIP_ID_BCM4331 &&
++		    /* TIDs 1 and 2 are background, 6 and 7 voice */
++		    (params->tid == 1 || params->tid == 2 || params->tid >= 6))
++			return -EINVAL;
+ 		/* The window starts at the first MPDU of the session */
+ 		bsta->ampdu_seq[params->tid] =
+ 			ieee80211_sn_sub(params->ssn, 1);

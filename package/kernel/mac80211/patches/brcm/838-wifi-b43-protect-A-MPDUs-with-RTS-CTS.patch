@@ -1,0 +1,226 @@
+From 2dc9b5cf49a754ccccae37c2388dc65dc70a6016 Mon Sep 17 00:00:00 2001
+From: Rosen Penev <rosenp@gmail.com>
+Date: Thu, 15 Oct 2026 21:23:09 -0700
+Subject: [PATCH 838/846] wifi: b43: protect A-MPDUs with RTS/CTS
+
+An A-MPDU takes up to a few ms of airtime, and a collision at its start
+loses all of it. On an ASUS RT-N16 sending TCP to an Intel 3168 client
+at MCS 7, about one A-MPDU in seven got no block ack, so 14-19% of the
+MPDUs had to be sent again. They were lost on the air: the client saw
+no duplicates, and the MPDUs of the A-MPDUs it did answer failed at no
+position more than another, so it was not a TX FIFO underflow.
+
+Send an RTS in front of A-MPDUs of more than one MPDU, so that a
+collision only costs the RTS. mac80211 sends the RTS at the lowest
+rate, 1 Mbit/s, for frames at an MCS, which takes more airtime than
+the protection saves. Like brcmsmac, use the fastest basic rate that
+is not faster than the MCS, of the OFDM rates, or the fastest
+mandatory OFDM rate below it if none of them is basic. If the BSS
+protects OFDM from 802.11b stations, leave the CCK rate mac80211 chose.
+Set the duration of the RTS to cover the CTS, the whole A-MPDU and the
+block ack, not only the first MPDU as mac80211 computes it. When a
+frame of the A-MPDU cannot be queued, the duration follows the shorter
+A-MPDU. The CTS-to-self that replaces the RTS when the BSS protects
+OFDM frames covers the A-MPDU and the block ack the same way.
+
+Without block ack, now 2% of the MPDUs are sent again. TCP from the
+router goes from 38-40 to 44-46 Mbit/s, open and with WPA2, and the
+TCP retransmissions per 15 s run go from about 70 to about 20.
+
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+---
+ drivers/net/wireless/broadcom/b43/main.c |   7 ++
+ drivers/net/wireless/broadcom/b43/xmit.c | 115 ++++++++++++++++++++++-
+ 2 files changed, 119 insertions(+), 3 deletions(-)
+
+--- a/drivers/net/wireless/broadcom/b43/main.c
++++ b/drivers/net/wireless/broadcom/b43/main.c
+@@ -3847,6 +3847,13 @@ static int b43_tx_ampdu(struct b43_wldev
+ 		skbs[n++] = skb_dequeue(queue);
+ 	}
+ 
++	/*
++	 * A collision destroys a whole A-MPDU, a few ms of airtime, and
++	 * without RTS/CTS about one in six went unanswered with a single
++	 * station sending TCP acks. Protect A-MPDUs of more than one MPDU.
++	 */
++	if (n > 1)
++		info->control.rates[0].flags |= IEEE80211_TX_RC_USE_RTS_CTS;
+ 	err = b43_dma_tx_ampdu(dev, skbs, n, len);
+ 	if (err == -ENOSPC) {
+ 		for (i = n; i > 0; i--)
+--- a/drivers/net/wireless/broadcom/b43/xmit.c
++++ b/drivers/net/wireless/broadcom/b43/xmit.c
+@@ -270,6 +270,84 @@ unsigned int b43_ht_max_ampdu_len(u8 mcs
+ 	return b43_ht_rate_kbps[mcs] / 2;
+ }
+ 
++/*
++ * The rate of the RTS in front of an A-MPDU. mac80211 picks the lowest
++ * rate for frames sent at an MCS, 1 Mbit/s, and the RTS and CTS then
++ * take a large part of the airtime. Like brcmsmac, take the fastest basic
++ * rate that is not faster than the MCS, here of the OFDM rates, or the
++ * fastest mandatory OFDM rate below it if no OFDM rate is basic. When
++ * the BSS protects OFDM frames from 802.11b stations, keep the rate of
++ * mac80211, which then is a CCK rate.
++ */
++static u8 b43_ht_rts_rate(struct b43_wldev *dev,
++			  const struct ieee80211_tx_info *info, u8 mcs,
++			  u8 rts_rate)
++{
++	struct ieee80211_vif *vif = info->control.vif;
++	struct ieee80211_supported_band *sband;
++	u8 max = b43_ht_legacy_rate[mcs], rate = 0;
++	unsigned long basic;
++	int i;
++
++	if (!vif || vif->bss_conf.use_cts_prot)
++		return rts_rate;
++
++	sband = dev->wl->hw->wiphy->bands[info->band];
++	basic = vif->bss_conf.basic_rates;
++	for_each_set_bit(i, &basic, sband->n_bitrates) {
++		u8 r = sband->bitrates[i].hw_value;
++
++		if (b43_is_ofdm_rate(r) && r <= max && r > rate)
++			rate = r;
++	}
++	if (rate)
++		return rate;
++
++	if (max >= B43_OFDM_RATE_24MB)
++		return B43_OFDM_RATE_24MB;
++	if (max >= B43_OFDM_RATE_12MB)
++		return B43_OFDM_RATE_12MB;
++	return B43_OFDM_RATE_6MB;
++}
++
++/* Airtime of a legacy frame of @bytes at @rate, in microseconds */
++static unsigned int b43_legacy_airtime(u8 rate, unsigned int bytes)
++{
++	unsigned int kbps = rate * 500;
++
++	/*
++	 * OFDM: preamble and SIGNAL, 16 service and 6 tail bits in 4 us
++	 * symbols, and the 2.4 GHz signal extension. CCK: long preamble.
++	 */
++	if (b43_is_ofdm_rate(rate))
++		return 20 + 4 * DIV_ROUND_UP((22 + 8 * bytes) * 1000,
++					     kbps * 4) + 6;
++	return 192 + DIV_ROUND_UP(8 * bytes * 1000, kbps);
++}
++
++/* Airtime of an HT PPDU from its L-SIG length, in microseconds */
++static unsigned int b43_ht_airtime(u16 lsig_len)
++{
++	/* The L-SIG length counts 4 us symbols after the legacy preamble */
++	return 20 + 4 * ((lsig_len + 3) / 3) + 6;
++}
++
++/*
++ * The duration of the RTS or the CTS-to-self in front of an A-MPDU: the
++ * CTS after an RTS, the A-MPDU and the block ack, with a SIFS before
++ * each. The duration mac80211 computes only covers the first MPDU.
++ */
++static u16 b43_ampdu_prot_duration(u8 rts_rate, u16 lsig_len, bool rts)
++{
++	unsigned int dur = 2 * 10 + b43_ht_airtime(lsig_len) +
++			   b43_legacy_airtime(rts_rate, 32);
++
++	if (rts)
++		dur += 10 + b43_legacy_airtime(rts_rate, 14);
++
++	return dur;
++}
++
+ /* Length of an MPDU on the air */
+ unsigned int b43_tx_mpdu_len(struct sk_buff *skb)
+ {
+@@ -287,12 +365,18 @@ unsigned int b43_tx_mpdu_len(struct sk_b
+  * in the HT-SIG, and in the L-SIG of the main and the fallback rate. The
+  * fallback PLCP header keeps the length of the MPDU itself, as the
+  * hardware takes the MPDU length for the delimiters from it. MPDUs of an
+- * A-MPDU always have an HT fallback rate.
++ * A-MPDU always have an HT fallback rate. If the header already sends an
++ * RTS or a CTS-to-self, its duration follows the airtime of the A-MPDU.
+  */
+ void b43_ampdu_txhdr_set_len(struct b43_txhdr *txhdr, u16 len)
+ {
+ 	struct b43_plcp_hdr6 *plcp = &txhdr->format_598.plcp;
+ 	const struct b43_plcp_hdr6 *plcp_fb = &txhdr->plcp_fb;
++	/* RTS or CTS-to-self, both have the duration at the same place */
++	struct ieee80211_hdr *prot =
++		(struct ieee80211_hdr *)txhdr->format_598.rts_frame;
++	u16 old_lsig_len = le16_to_cpu(txhdr->mimo_modelen);
++	u16 dur;
+ 
+ 	plcp->raw[1] = len & 0xff;
+ 	plcp->raw[2] = (len >> 8) & 0xff;
+@@ -303,11 +387,21 @@ void b43_ampdu_txhdr_set_len(struct b43_
+ 		cpu_to_le16(b43_ht_lsig_len(plcp_fb->raw[0],
+ 					    plcp_fb->raw[3] & 0x80,
+ 					    plcp_fb->raw[3] & 0x10, len));
++
++	if (le32_to_cpu(txhdr->mac_ctl) &
++	    (B43_TXH_MAC_SENDRTS | B43_TXH_MAC_SENDCTS)) {
++		dur = le16_to_cpu(prot->duration_id) -
++		      b43_ht_airtime(old_lsig_len) +
++		      b43_ht_airtime(le16_to_cpu(txhdr->mimo_modelen));
++		prot->duration_id = cpu_to_le16(dur);
++		txhdr->rts_dur_fb = prot->duration_id;
++	}
+ }
+ 
+ /* Mark a frame's position in the A-MPDU being queued */
+ static void b43_generate_ampdu_txhdr(struct b43_wldev *dev,
+-				     struct b43_txhdr *txhdr, u32 *mac_ctl)
++				     struct b43_txhdr *txhdr, u32 *mac_ctl,
++				     u8 rts_rate)
+ {
+ 	const struct b43_ampdu_tx_ctx *ampdu = &dev->ampdu_tx;
+ 	struct b43_plcp_hdr6 *plcp = &txhdr->format_598.plcp;
+@@ -330,6 +424,17 @@ static void b43_generate_ampdu_txhdr(str
+ 	/* The first MPDU starts the A-MPDU and announces its length */
+ 	plcp->raw[3] |= 0x08;
+ 	b43_ampdu_txhdr_set_len(txhdr, ampdu->len);
++	if (*mac_ctl & (B43_TXH_MAC_SENDRTS | B43_TXH_MAC_SENDCTS)) {
++		struct ieee80211_hdr *prot = (struct ieee80211_hdr *)
++			txhdr->format_598.rts_frame;
++		u16 dur;
++
++		dur = b43_ampdu_prot_duration(rts_rate,
++					      le16_to_cpu(txhdr->mimo_modelen),
++					      *mac_ctl & B43_TXH_MAC_SENDRTS);
++		prot->duration_id = cpu_to_le16(dur);
++		txhdr->rts_dur_fb = prot->duration_id;
++	}
+ }
+ 
+ static u8 b43_calc_fallback_rate(u8 bitrate, int gmode)
+@@ -402,6 +507,7 @@ int b43_generate_txhdr(struct b43_wldev
+ 	/* Only the 598 TX header has room for an HT-SIG */
+ 	bool ht_fw = dev->fw.hdr_format == B43_FW_HDR_598;
+ 	bool ht, ht_fb, sgi, sgi_fb, stbc;
++	u8 ampdu_rts_rate = 0;
+ 	u8 mcs = 0, mcs_fb = 0;
+ 
+ 	memset(txhdr, 0, sizeof(*txhdr));
+@@ -635,6 +741,9 @@ int b43_generate_txhdr(struct b43_wldev
+ 		rts_cts_rate = ieee80211_get_rts_cts_rate(dev->wl->hw, info);
+ 
+ 		rts_rate = rts_cts_rate ? rts_cts_rate->hw_value : B43_CCK_RATE_1MB;
++		if (ht && dev->ampdu_tx.active)
++			rts_rate = b43_ht_rts_rate(dev, info, mcs, rts_rate);
++		ampdu_rts_rate = rts_rate;
+ 		rts_rate_ofdm = b43_is_ofdm_rate(rts_rate);
+ 		rts_rate_fb = b43_calc_fallback_rate(rts_rate, phy->gmode);
+ 		rts_rate_fb_ofdm = b43_is_ofdm_rate(rts_rate_fb);
+@@ -782,7 +891,7 @@ int b43_generate_txhdr(struct b43_wldev
+ 	}
+ 
+ 	if (ht && dev->ampdu_tx.active)
+-		b43_generate_ampdu_txhdr(dev, txhdr, &mac_ctl);
++		b43_generate_ampdu_txhdr(dev, txhdr, &mac_ctl, ampdu_rts_rate);
+ 
+ 	/* Apply the bitfields */
+ 	txhdr->mac_ctl = cpu_to_le32(mac_ctl);

@@ -1,0 +1,45 @@
+From eea202de990efaa177f2aaea9c53972ce8499685 Mon Sep 17 00:00:00 2001
+From: Rosen Penev <rosenp@gmail.com>
+Date: Thu, 15 Oct 2026 21:53:54 -0700
+Subject: [PATCH 826/846] wifi: b43: don't read the LPF bandwidth on N-PHY rev
+ 3-6 for TX calibration
+
+b43_nphy_tx_cal_phy_setup() reads the LPF bandwidth control from the RF
+sequence table on all N-PHY revisions from 3 on, but only uses it on
+rev 7 and later, as brcmsmac only reads it there. On a BCM4716 with an
+N-PHY rev 5 (ASUS RT-N16), the read causes a data bus error, so the
+TX IQ/LO calibration oopses there.
+
+b43 does not run that calibration on these revisions yet, as
+nphy->perical is 2, so this only shows when it is called. Read the LPF
+bandwidth control only where it is used. With this, the calibration
+runs and returns success on the RT-N16.
+
+Fixes: 40c68f20e63c ("b43; N-PHY: write most of the missing code for revs 7+")
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+---
+ drivers/net/wireless/broadcom/b43/phy_n.c | 9 ++++++---
+ 1 file changed, 6 insertions(+), 3 deletions(-)
+
+--- a/drivers/net/wireless/broadcom/b43/phy_n.c
++++ b/drivers/net/wireless/broadcom/b43/phy_n.c
+@@ -5127,13 +5127,16 @@ static void b43_nphy_tx_cal_phy_setup(st
+ 		b43_phy_mask(dev, B43_NPHY_PAPD_EN0, ~0x0001);
+ 		b43_phy_mask(dev, B43_NPHY_PAPD_EN1, ~0x0001);
+ 
+-		tmp = b43_nphy_read_lpf_ctl(dev, 0);
+-		if (phy->rev >= 19)
++		/* The RF sequence table of older revisions is shorter */
++		if (phy->rev >= 19) {
++			tmp = b43_nphy_read_lpf_ctl(dev, 0);
+ 			b43_nphy_rf_ctl_override_rev19(dev, 0x80, tmp, 0, false,
+ 						       1);
+-		else if (phy->rev >= 7)
++		} else if (phy->rev >= 7) {
++			tmp = b43_nphy_read_lpf_ctl(dev, 0);
+ 			b43_nphy_rf_ctl_override_rev7(dev, 0x80, tmp, 0, false,
+ 						      1);
++		}
+ 
+ 		if (nphy->use_int_tx_iq_lo_cal && true /* FIXME */) {
+ 			if (phy->rev >= 19) {
