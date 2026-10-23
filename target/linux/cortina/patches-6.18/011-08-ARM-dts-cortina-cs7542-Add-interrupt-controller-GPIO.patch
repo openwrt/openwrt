@@ -1,0 +1,106 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Fil Dunsky <filipp.dunsky@gmail.com>
+Date: Wed, 30 Sep 2026 08:16:06 +0300
+Subject: [PATCH] ARM: dts: cortina: cs7542: Add interrupt controller, GPIO and
+ I2C
+
+Describe the peripheral interrupt controller, the five GPIO banks and
+the I2C controller of the CS7542.
+
+Signed-off-by: Fil Dunsky <filipp.dunsky@gmail.com>
+Link: https://lore.kernel.org/r/20261013-b4-cs75xx-s2-v3-8-181bb0d23f4c@gmail.com
+---
+ arch/arm/boot/dts/cortina/cs7542.dtsi | 75 +++++++++++++++++++++++++++
+ 1 file changed, 75 insertions(+)
+
+--- a/arch/arm/boot/dts/cortina/cs7542.dtsi
++++ b/arch/arm/boot/dts/cortina/cs7542.dtsi
+@@ -44,6 +44,26 @@
+ 		#address-cells = <1>;
+ 		#size-cells = <1>;
+ 
++		intc: interrupt-controller@f0070004 {
++			compatible = "cortina,cs7542-intc";
++			reg = <0xf0070004 0x8>;
++			interrupts = <GIC_SPI 3 IRQ_TYPE_LEVEL_HIGH>;
++			interrupt-controller;
++			#interrupt-cells = <1>;
++		};
++
++		i2c: i2c@f00700e8 {
++			compatible = "cortina,cs7542-i2c";
++			reg = <0xf00700e8 0x28>;
++			interrupt-parent = <&intc>;
++			interrupts = <11>;
++			clocks = <&apb_clk>;
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			status = "disabled";
++		};
++
+ 		uart0: serial@f0070110 {
+ 			compatible = "cortina,cs7542-uart";
+ 			reg = <0xf0070110 0x30>;
+@@ -80,6 +100,61 @@
+ 			status = "disabled";
+ 		};
+ 
++		gpio0: gpio@f00701d0 {
++			compatible = "cortina,cs7542-gpio";
++			reg = <0xf00701d0 0x20>, <0xf000001c 0x4>;
++			interrupt-parent = <&intc>;
++			interrupts = <6>;
++			gpio-controller;
++			#gpio-cells = <2>;
++			interrupt-controller;
++			#interrupt-cells = <2>;
++		};
++
++		gpio1: gpio@f00701f0 {
++			compatible = "cortina,cs7542-gpio";
++			reg = <0xf00701f0 0x20>, <0xf0000020 0x4>;
++			interrupt-parent = <&intc>;
++			interrupts = <7>;
++			gpio-controller;
++			#gpio-cells = <2>;
++			interrupt-controller;
++			#interrupt-cells = <2>;
++		};
++
++		gpio2: gpio@f0070210 {
++			compatible = "cortina,cs7542-gpio";
++			reg = <0xf0070210 0x20>, <0xf0000024 0x4>;
++			interrupt-parent = <&intc>;
++			interrupts = <8>;
++			gpio-controller;
++			#gpio-cells = <2>;
++			interrupt-controller;
++			#interrupt-cells = <2>;
++		};
++
++		gpio3: gpio@f0070230 {
++			compatible = "cortina,cs7542-gpio";
++			reg = <0xf0070230 0x20>, <0xf0000028 0x4>;
++			interrupt-parent = <&intc>;
++			interrupts = <9>;
++			gpio-controller;
++			#gpio-cells = <2>;
++			interrupt-controller;
++			#interrupt-cells = <2>;
++		};
++
++		gpio4: gpio@f0070250 {
++			compatible = "cortina,cs7542-gpio";
++			reg = <0xf0070250 0x20>, <0xf000002c 0x4>;
++			interrupt-parent = <&intc>;
++			interrupts = <10>;
++			gpio-controller;
++			#gpio-cells = <2>;
++			interrupt-controller;
++			#interrupt-cells = <2>;
++		};
++
+ 		l2: cache-controller@f5010000 {
+ 			compatible = "arm,pl310-cache";
+ 			reg = <0xf5010000 0x1000>;
