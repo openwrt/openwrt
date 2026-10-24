@@ -1,0 +1,969 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Simon Polack <spolack+git@mailbox.org>
+Subject: [PATCH] net: phy: an SFP cage on the fiber media of a PHY, and the module's PHY behind it
+
+Squashed backport of two patches:
+  net: phy: mscc: support an SFP cage on the fiber media of the VSC8574 family
+  net: phy: configure the PHY of an SFP module behind a PHY
+
+Signed-off-by: Simon Polack <spolack+git@mailbox.org>
+
+--- a/drivers/net/phy/mscc/mscc.h
++++ b/drivers/net/phy/mscc/mscc.h
+@@ -201,6 +201,10 @@ enum rgmii_clock_delay {
+ 
+ #define MSCC_PHY_SERDES_TX_VALID_CNT	  21
+ #define MSCC_PHY_SERDES_TX_CRC_ERR_CNT	  22
++/* Clause 37 word received on the SerDes media: the 1000BASE-X abilities of
++ * the partner, or the SGMII word (LPA_SGMII_*) of the PHY in a copper SFP.
++ */
++#define MSCC_PHY_SERDES_MEDIA_LPA	  26
+ #define MSCC_PHY_SERDES_RX_VALID_CNT	  28
+ #define MSCC_PHY_SERDES_RX_CRC_ERR_CNT	  29
+ 
+@@ -382,6 +386,18 @@ struct vsc8531_private {
+ 	int nstats;
+ 	/* PHY address within the package. */
+ 	u8 addr;
++	/* MEDIA_OP_MODE_* of the port, not copper when an SFP module is in
++	 * the cage the PHY's SerDes media interface is wired to.
++	 */
++	u8 media_op_mode;
++	/* The module in the cage is a copper one that asked for SGMII */
++	bool sfp_sgmii;
++	/* VSC8574_SFP_REQ_*: what the SFP cage asked for and the PHY has not
++	 * done yet. The SFP code calls with its locks held, which phy_start()
++	 * and phy_stop() take inside the lock of the PHY, so the request is
++	 * left here for whoever holds the lock of the PHY next.
++	 */
++	atomic_t sfp_req;
+ 	/* For multiple port PHYs; the MDIO address of the base PHY in the
+ 	 * package.
+ 	 */
+--- a/drivers/net/phy/mscc/mscc_main.c
++++ b/drivers/net/phy/mscc/mscc_main.c
+@@ -14,6 +14,7 @@
+ #include <linux/mdio.h>
+ #include <linux/mii.h>
+ #include <linux/phy.h>
++#include <linux/sfp.h>
+ #include <linux/of.h>
+ #include <linux/netdevice.h>
+ #include <dt-bindings/net/mscc-phy-vsc8531.h>
+@@ -1700,6 +1701,71 @@ static int vsc8574_config_host_serdes(st
+ 			   PROC_CMD_RST_CONF_PORT | PROC_CMD_FIBER_1000BASE_X);
+ }
+ 
++/* Enable or disable the fiber media SerDes of this port for the current
++ * media_op_mode. vsc8574_config_host_serdes() disables it during package
++ * initialisation.
++ *
++ * bus->mdio_lock should be locked when using this function.
++ */
++static int vsc8574_config_fiber_serdes(struct phy_device *phydev)
++{
++	struct vsc8531_private *vsc8531 = phydev->priv;
++	u16 cmd = PROC_CMD_FIBER_MEDIA_CONF |
++		  PROC_CMD_FIBER_PORT(vsc8531->addr) |
++		  PROC_CMD_READ_MOD_WRITE_PORT | PROC_CMD_RST_CONF_PORT;
++	int ret;
++
++	/* SGMII to a copper SFP runs at the 1000BASE-X line rate */
++	if (vsc8531->media_op_mode != MEDIA_OP_MODE_COPPER)
++		return vsc8584_cmd(phydev, cmd | PROC_CMD_FIBER_1000BASE_X);
++
++	ret = vsc8584_cmd(phydev, cmd | PROC_CMD_FIBER_DISABLE |
++			  PROC_CMD_FIBER_100BASE_FX);
++	if (ret)
++		return ret;
++
++	return vsc8584_cmd(phydev, cmd | PROC_CMD_FIBER_DISABLE |
++			   PROC_CMD_FIBER_1000BASE_X);
++}
++
++#define VSC8574_SFP_REQ_NONE		0
++#define VSC8574_SFP_REQ_COPPER		1	/* module removed */
++#define VSC8574_SFP_REQ_1000BASEX	2
++#define VSC8574_SFP_REQ_SGMII		3
++
++static void vsc8574_set_fiber_linkmodes(unsigned long *modes, bool fiber)
++{
++	linkmode_mod_bit(ETHTOOL_LINK_MODE_1000baseX_Full_BIT, modes, fiber);
++	linkmode_mod_bit(ETHTOOL_LINK_MODE_FIBRE_BIT, modes, fiber);
++}
++
++/* Take over what the SFP cage asked for, see vsc8531_private.sfp_req. Returns
++ * true when there was a request; the media mode is then the one to apply.
++ */
++static bool vsc8574_sfp_take_request(struct phy_device *phydev)
++{
++	struct vsc8531_private *vsc8531 = phydev->priv;
++	int req = atomic_xchg(&vsc8531->sfp_req, VSC8574_SFP_REQ_NONE);
++	bool fiber = req != VSC8574_SFP_REQ_COPPER;
++
++	if (req == VSC8574_SFP_REQ_NONE)
++		return false;
++
++	/* A copper module with its own PHY asks for SGMII. Until that PHY is
++	 * set up for SGMII it talks 1000BASE-X to the host as a rule, and
++	 * without a driver for it that never happens: start on the 1000BASE-X
++	 * media, read_status() changes to protocol transfer when it sees
++	 * SGMII.
++	 */
++	vsc8531->sfp_sgmii = req == VSC8574_SFP_REQ_SGMII;
++	vsc8531->media_op_mode = fiber ? MEDIA_OP_MODE_1000BASEX :
++					 MEDIA_OP_MODE_COPPER;
++	vsc8574_set_fiber_linkmodes(phydev->supported, fiber);
++	vsc8574_set_fiber_linkmodes(phydev->advertising, fiber);
++
++	return true;
++}
++
+ static int vsc8584_config_init(struct phy_device *phydev)
+ {
+ 	struct vsc8531_private *vsc8531 = phydev->priv;
+@@ -1708,6 +1774,9 @@ static int vsc8584_config_init(struct ph
+ 
+ 	phydev->mdix_ctrl = ETH_TP_MDI_AUTO;
+ 
++	/* a module inserted before the PHY was started */
++	vsc8574_sfp_take_request(phydev);
++
+ 	phy_lock_mdio_bus(phydev);
+ 
+ 	/* Some parts of the init sequence are identical for every PHY in the
+@@ -1757,6 +1826,13 @@ static int vsc8584_config_init(struct ph
+ 			goto err;
+ 	}
+ 
++	/* The package initialisation above disables the fiber SerDes */
++	if (vsc8531->media_op_mode != MEDIA_OP_MODE_COPPER) {
++		ret = vsc8574_config_fiber_serdes(phydev);
++		if (ret)
++			goto err;
++	}
++
+ 	phy_unlock_mdio_bus(phydev);
+ 
+ 	ret = vsc8584_macsec_init(phydev);
+@@ -1769,7 +1845,7 @@ static int vsc8584_config_init(struct ph
+ 
+ 	val = phy_read(phydev, MSCC_PHY_EXT_PHY_CNTL_1);
+ 	val &= ~(MEDIA_OP_MODE_MASK | VSC8584_MAC_IF_SELECTION_MASK);
+-	val |= (MEDIA_OP_MODE_COPPER << MEDIA_OP_MODE_POS) |
++	val |= (vsc8531->media_op_mode << MEDIA_OP_MODE_POS) |
+ 	       (VSC8584_MAC_IF_SELECTION_SGMII << VSC8584_MAC_IF_SELECTION_POS);
+ 	ret = phy_write(phydev, MSCC_PHY_EXT_PHY_CNTL_1, val);
+ 	if (ret)
+@@ -2196,6 +2272,239 @@ static int vsc85xx_read_status(struct ph
+ 	return genphy_read_status(phydev);
+ }
+ 
++/* VSC8504/VSC8574: the copper or the SerDes media, depending on the module in
++ * the SFP cage wired to the PHY's SerDes media interface.
++ */
++static int vsc8574_config_aneg(struct phy_device *phydev)
++{
++	struct vsc8531_private *vsc8531 = phydev->priv;
++
++	switch (vsc8531->media_op_mode) {
++	case MEDIA_OP_MODE_1000BASEX:
++		/* The link settings of a copper module are for its PHY, not
++		 * for the 1000BASE-X link to the module.
++		 */
++		if (vsc8531->sfp_sgmii) {
++			int ret = phy_write(phydev, MII_ADVERTISE,
++					    ADVERTISE_1000XFULL);
++
++			return ret ? ret : genphy_restart_aneg(phydev);
++		}
++		return genphy_c37_config_aneg(phydev);
++	case MEDIA_OP_MODE_SERDES:
++		/* Protocol transfer: the PHY in the module negotiates on the
++		 * copper and tells the result in its SGMII word, there is
++		 * nothing to advertise from here. The clause 37 exchange has
++		 * to be enabled for the word to be passed on.
++		 */
++		return genphy_restart_aneg(phydev);
++	default:
++		return vsc85xx_config_aneg(phydev);
++	}
++}
++
++/* Protocol transfer mode: the link is the one of the SerDes to the module,
++ * and with a module that speaks SGMII also the one its PHY reports for the
++ * copper side, together with speed and duplex. A module that speaks
++ * 1000BASE-X to the host, as most 1000BASE-T modules do until their PHY is
++ * reconfigured, sends no SGMII word and takes the SerDes link down with the
++ * copper link.
++ */
++static int vsc8574_read_status_sgmii(struct phy_device *phydev)
++{
++	int bmsr, lpa;
++
++	/* the link bit latches low */
++	bmsr = phy_read(phydev, MII_BMSR);
++	if (bmsr >= 0 && !(bmsr & BMSR_LSTATUS))
++		bmsr = phy_read(phydev, MII_BMSR);
++	if (bmsr < 0)
++		return bmsr;
++
++	phydev->link = !!(bmsr & BMSR_LSTATUS);
++	phydev->autoneg_complete = !!(bmsr & BMSR_ANEGCOMPLETE);
++	phydev->pause = 0;
++	phydev->asym_pause = 0;
++	/* forced settings are kept, they are what the module's PHY is given */
++	if (phydev->autoneg == AUTONEG_ENABLE) {
++		phydev->speed = SPEED_UNKNOWN;
++		phydev->duplex = DUPLEX_UNKNOWN;
++	}
++
++	if (!phydev->link)
++		return 0;
++
++	lpa = phy_read_paged(phydev, MSCC_PHY_PAGE_EXTENDED_3,
++			     MSCC_PHY_SERDES_MEDIA_LPA);
++	if (lpa < 0)
++		return lpa;
++
++	if (!phydev->autoneg_complete || !(lpa & LPA_SGMII)) {
++		phydev->speed = SPEED_1000;
++		phydev->duplex = DUPLEX_FULL;
++		return 0;
++	}
++
++	if (!(lpa & LPA_SGMII_LINK)) {
++		phydev->link = 0;
++		return 0;
++	}
++
++	switch (lpa & LPA_SGMII_SPD_MASK) {
++	case LPA_SGMII_1000:
++		phydev->speed = SPEED_1000;
++		break;
++	case LPA_SGMII_100:
++		phydev->speed = SPEED_100;
++		break;
++	case LPA_SGMII_10:
++		phydev->speed = SPEED_10;
++		break;
++	default:
++		phydev->link = 0;
++		return 0;
++	}
++	phydev->duplex = lpa & LPA_SGMII_FULL_DUPLEX ? DUPLEX_FULL : DUPLEX_HALF;
++
++	return 0;
++}
++
++/* Switch the media of the port. phydev->lock must be held. */
++static int vsc8574_set_media_mode(struct phy_device *phydev, u8 mode)
++{
++	struct vsc8531_private *vsc8531 = phydev->priv;
++	bool fiber = mode == MEDIA_OP_MODE_1000BASEX;
++	int ret;
++
++	vsc8531->media_op_mode = mode;
++	vsc8574_set_fiber_linkmodes(phydev->supported, fiber);
++	vsc8574_set_fiber_linkmodes(phydev->advertising, fiber);
++
++	phy_lock_mdio_bus(phydev);
++	ret = vsc8574_config_fiber_serdes(phydev);
++	phy_unlock_mdio_bus(phydev);
++	if (ret)
++		return ret;
++
++	ret = phy_modify(phydev, MSCC_PHY_EXT_PHY_CNTL_1, MEDIA_OP_MODE_MASK,
++			 mode << MEDIA_OP_MODE_POS);
++	if (ret)
++		return ret;
++
++	/* the media mode takes effect with a software reset */
++	return genphy_soft_reset(phydev);
++}
++
++static int vsc8574_read_status(struct phy_device *phydev)
++{
++	struct vsc8531_private *vsc8531 = phydev->priv;
++	bool changed;
++	int ret;
++
++	/* a module was inserted or removed */
++	if (vsc8574_sfp_take_request(phydev)) {
++		ret = vsc8574_set_media_mode(phydev, vsc8531->media_op_mode);
++		if (ret)
++			return ret;
++
++		phydev->link = 0;
++		return vsc8574_config_aneg(phydev);
++	}
++
++	if (vsc8531->media_op_mode == MEDIA_OP_MODE_SERDES)
++		return vsc8574_read_status_sgmii(phydev);
++
++	if (vsc8531->media_op_mode != MEDIA_OP_MODE_1000BASEX)
++		return vsc85xx_read_status(phydev);
++
++	/* A copper module starts out on the 1000BASE-X media, see
++	 * vsc8574_config_fiber_serdes(). Once its PHY sends an SGMII word, which
++	 * has a bit set that is reserved in 1000BASE-X, it has been switched
++	 * to SGMII and needs the protocol transfer mode.
++	 */
++	if (vsc8531->sfp_sgmii) {
++		ret = phy_read_paged(phydev, MSCC_PHY_PAGE_EXTENDED_3,
++				     MSCC_PHY_SERDES_MEDIA_LPA);
++		if (ret < 0)
++			return ret;
++
++		if (ret & LPA_SGMII) {
++			ret = vsc8574_set_media_mode(phydev,
++						     MEDIA_OP_MODE_SERDES);
++			if (ret)
++				return ret;
++
++			phydev->link = 0;
++			return genphy_restart_aneg(phydev);
++		}
++	}
++
++	ret = genphy_c37_read_status(phydev, &changed);
++	if (ret)
++		return ret;
++
++	/* 1000BASE-X runs at one speed. Without a common mode in the clause 37
++	 * negotiation, e.g. when the partner does not negotiate, speed and
++	 * duplex would stay unknown, and MACs like OCTEON's program them from
++	 * the PHY.
++	 */
++	if (phydev->link) {
++		phydev->speed = SPEED_1000;
++		phydev->duplex = DUPLEX_FULL;
++	}
++
++	return 0;
++}
++
++/* Called by the SFP code with its locks held: only leave the request, the
++ * state machine of the PHY acts on it in read_status(), or config_init() when
++ * the PHY is not started yet.
++ */
++static void vsc8574_sfp_request(struct phy_device *phydev, int req)
++{
++	struct vsc8531_private *vsc8531 = phydev->priv;
++
++	atomic_set(&vsc8531->sfp_req, req);
++	phy_trigger_machine(phydev);
++}
++
++static int vsc8574_sfp_insert(void *upstream, const struct sfp_eeprom_id *id)
++{
++	struct phy_device *phydev = upstream;
++	const struct sfp_module_caps *caps;
++	phy_interface_t interface;
++
++	caps = sfp_get_module_caps(phydev->sfp_bus);
++	interface = sfp_select_interface(phydev->sfp_bus, caps->link_modes);
++
++	switch (interface) {
++	case PHY_INTERFACE_MODE_SGMII:
++		vsc8574_sfp_request(phydev, VSC8574_SFP_REQ_SGMII);
++		return 0;
++	case PHY_INTERFACE_MODE_1000BASEX:
++		vsc8574_sfp_request(phydev, VSC8574_SFP_REQ_1000BASEX);
++		return 0;
++	default:
++		phydev_err(phydev, "SFP module needs %s, only 1000base-x and sgmii are supported\n",
++			   phy_modes(interface));
++		return -EINVAL;
++	}
++}
++
++static void vsc8574_sfp_remove(void *upstream)
++{
++	vsc8574_sfp_request(upstream, VSC8574_SFP_REQ_COPPER);
++}
++
++static const struct sfp_upstream_ops vsc8574_sfp_ops = {
++	.attach = phy_sfp_attach,
++	.detach = phy_sfp_detach,
++	.module_insert = vsc8574_sfp_insert,
++	.module_remove = vsc8574_sfp_remove,
++	.connect_phy = phy_sfp_connect_phy,
++	.disconnect_phy = phy_sfp_disconnect_phy,
++};
++
+ static unsigned int vsc85xx_inband_caps(struct phy_device *phydev,
+ 					phy_interface_t interface)
+ {
+@@ -2250,6 +2559,7 @@ static int vsc8514_probe(struct phy_devi
+ static int vsc8574_probe(struct phy_device *phydev)
+ {
+ 	struct vsc8531_private *vsc8531;
++	int ret;
+ 	u32 default_mode[4] = {VSC8531_LINK_1000_ACTIVITY,
+ 	   VSC8531_LINK_100_ACTIVITY, VSC8531_LINK_ACTIVITY,
+ 	   VSC8531_DUPLEX_COLLISION};
+@@ -2273,6 +2583,11 @@ static int vsc8574_probe(struct phy_devi
+ 	if (!vsc8531->stats)
+ 		return -ENOMEM;
+ 
++	/* The fiber media may carry an SFP cage, see vsc8574_config_fiber_serdes() */
++	ret = phy_sfp_probe(phydev, &vsc8574_sfp_ops);
++	if (ret)
++		return ret;
++
+ 	return vsc85xx_dt_led_modes_get(phydev, default_mode);
+ }
+ 
+@@ -2408,9 +2723,9 @@ static struct phy_driver vsc85xx_driver[
+ 	/* PHY_GBIT_FEATURES */
+ 	.soft_reset	= &genphy_soft_reset,
+ 	.config_init    = &vsc8584_config_init,
+-	.config_aneg    = &vsc85xx_config_aneg,
++	.config_aneg    = &vsc8574_config_aneg,
+ 	.aneg_done	= &genphy_aneg_done,
+-	.read_status	= &vsc85xx_read_status,
++	.read_status	= &vsc8574_read_status,
+ 	.handle_interrupt = vsc85xx_handle_interrupt,
+ 	.config_intr    = &vsc85xx_config_intr,
+ 	.suspend	= &genphy_suspend,
+@@ -2633,9 +2948,9 @@ static struct phy_driver vsc85xx_driver[
+ 	/* PHY_GBIT_FEATURES */
+ 	.soft_reset	= &genphy_soft_reset,
+ 	.config_init    = &vsc8584_config_init,
+-	.config_aneg    = &vsc85xx_config_aneg,
++	.config_aneg    = &vsc8574_config_aneg,
+ 	.aneg_done	= &genphy_aneg_done,
+-	.read_status	= &vsc85xx_read_status,
++	.read_status	= &vsc8574_read_status,
+ 	.handle_interrupt = vsc8584_handle_interrupt,
+ 	.config_intr    = &vsc85xx_config_intr,
+ 	.suspend	= &genphy_suspend,
+--- a/drivers/net/phy/phy.c
++++ b/drivers/net/phy/phy.c
+@@ -534,6 +534,45 @@ static void phy_abort_cable_test(struct
+ 		phydev_err(phydev, "Error while aborting cable test");
+ }
+ 
++/* The statistics of a PHY are followed by those of the PHY of an SFP module
++ * behind it, named with "sfp_" in front.
++ */
++static bool phy_has_stats(struct phy_device *phydev)
++{
++	return phydev->drv && phydev->drv->get_sset_count &&
++	       phydev->drv->get_strings && phydev->drv->get_stats;
++}
++
++static int phy_own_stats_count(struct phy_device *phydev)
++{
++	int ret;
++
++	if (!phy_has_stats(phydev))
++		return 0;
++
++	mutex_lock(&phydev->lock);
++	ret = phydev->drv->get_sset_count(phydev);
++	mutex_unlock(&phydev->lock);
++
++	return max(ret, 0);
++}
++
++/* sfp_phy_lock of the upstream PHY must be held */
++static int phy_sfp_phy_stats_count(struct phy_device *phydev)
++{
++	struct phy_device *phy = phydev->sfp_phy;
++	int ret;
++
++	if (!phy || !phy_has_stats(phy))
++		return 0;
++
++	mutex_lock_nested(&phy->lock, SINGLE_DEPTH_NESTING);
++	ret = phy->drv->get_sset_count(phy);
++	mutex_unlock(&phy->lock);
++
++	return max(ret, 0);
++}
++
+ /**
+  * phy_ethtool_get_strings - Get the statistic counter names
+  *
+@@ -542,12 +581,35 @@ static void phy_abort_cable_test(struct
+  */
+ int phy_ethtool_get_strings(struct phy_device *phydev, u8 *data)
+ {
++	int count, i;
++
+ 	if (!phydev->drv)
+ 		return -EIO;
+ 
+-	mutex_lock(&phydev->lock);
+-	phydev->drv->get_strings(phydev, data);
+-	mutex_unlock(&phydev->lock);
++	count = phy_own_stats_count(phydev);
++	if (count) {
++		mutex_lock(&phydev->lock);
++		phydev->drv->get_strings(phydev, data);
++		mutex_unlock(&phydev->lock);
++		data += count * ETH_GSTRING_LEN;
++	}
++
++	mutex_lock(&phydev->sfp_phy_lock);
++	count = phy_sfp_phy_stats_count(phydev);
++	if (count) {
++		struct phy_device *phy = phydev->sfp_phy;
++
++		mutex_lock_nested(&phy->lock, SINGLE_DEPTH_NESTING);
++		phy->drv->get_strings(phy, data);
++		mutex_unlock(&phy->lock);
++
++		for (i = 0; i < count; i++, data += ETH_GSTRING_LEN) {
++			memmove(data + 4, data, ETH_GSTRING_LEN - 5);
++			memcpy(data, "sfp_", 4);
++			data[ETH_GSTRING_LEN - 1] = 0;
++		}
++	}
++	mutex_unlock(&phydev->sfp_phy_lock);
+ 
+ 	return 0;
+ }
+@@ -560,22 +622,21 @@ EXPORT_SYMBOL(phy_ethtool_get_strings);
+  */
+ int phy_ethtool_get_sset_count(struct phy_device *phydev)
+ {
+-	int ret;
++	int count;
+ 
+ 	if (!phydev->drv)
+ 		return -EIO;
+ 
+-	if (phydev->drv->get_sset_count &&
+-	    phydev->drv->get_strings &&
+-	    phydev->drv->get_stats) {
+-		mutex_lock(&phydev->lock);
+-		ret = phydev->drv->get_sset_count(phydev);
+-		mutex_unlock(&phydev->lock);
++	count = phy_own_stats_count(phydev);
+ 
+-		return ret;
+-	}
++	mutex_lock(&phydev->sfp_phy_lock);
++	count += phy_sfp_phy_stats_count(phydev);
++	mutex_unlock(&phydev->sfp_phy_lock);
+ 
+-	return -EOPNOTSUPP;
++	if (!count && !phy_has_stats(phydev))
++		return -EOPNOTSUPP;
++
++	return count;
+ }
+ EXPORT_SYMBOL(phy_ethtool_get_sset_count);
+ 
+@@ -589,12 +650,28 @@ EXPORT_SYMBOL(phy_ethtool_get_sset_count
+ int phy_ethtool_get_stats(struct phy_device *phydev,
+ 			  struct ethtool_stats *stats, u64 *data)
+ {
++	int count;
++
+ 	if (!phydev->drv)
+ 		return -EIO;
+ 
+-	mutex_lock(&phydev->lock);
+-	phydev->drv->get_stats(phydev, stats, data);
+-	mutex_unlock(&phydev->lock);
++	count = phy_own_stats_count(phydev);
++	if (count) {
++		mutex_lock(&phydev->lock);
++		phydev->drv->get_stats(phydev, stats, data);
++		mutex_unlock(&phydev->lock);
++		data += count;
++	}
++
++	mutex_lock(&phydev->sfp_phy_lock);
++	if (phy_sfp_phy_stats_count(phydev)) {
++		struct phy_device *phy = phydev->sfp_phy;
++
++		mutex_lock_nested(&phy->lock, SINGLE_DEPTH_NESTING);
++		phy->drv->get_stats(phy, stats, data);
++		mutex_unlock(&phy->lock);
++	}
++	mutex_unlock(&phydev->sfp_phy_lock);
+ 
+ 	return 0;
+ }
+@@ -836,6 +913,142 @@ out:
+ }
+ 
+ /**
++ * phy_sfp_phy_apply_settings - pass the link settings on to the SFP module
++ * @phydev: the upstream PHY, with its sfp_phy_lock held
++ *
++ * The PHY of an SFP module behind @phydev has the copper side of the link:
++ * advertisement, forced speed and duplex, MDI-X and master/slave are its to
++ * apply. @phydev configures its own side, the link to the module.
++ */
++void phy_sfp_phy_apply_settings(struct phy_device *phydev)
++{
++	struct phy_device *phy = phydev->sfp_phy;
++	int ret;
++
++	if (!phy)
++		return;
++
++	mutex_lock_nested(&phy->lock, SINGLE_DEPTH_NESTING);
++	linkmode_and(phy->advertising, phydev->advertising, phy->supported);
++	/* flow control is the MAC's to offer, the PHY only advertises it */
++	linkmode_mod_bit(ETHTOOL_LINK_MODE_Pause_BIT, phy->advertising,
++			 linkmode_test_bit(ETHTOOL_LINK_MODE_Pause_BIT,
++					   phydev->advertising));
++	linkmode_mod_bit(ETHTOOL_LINK_MODE_Asym_Pause_BIT, phy->advertising,
++			 linkmode_test_bit(ETHTOOL_LINK_MODE_Asym_Pause_BIT,
++					   phydev->advertising));
++	phy->autoneg = phydev->autoneg;
++	phy->speed = phydev->speed;
++	phy->duplex = phydev->duplex;
++	phy->mdix_ctrl = phydev->mdix_ctrl;
++	phy->master_slave_set = phydev->master_slave_set;
++	ret = phy_config_aneg(phy);
++	mutex_unlock(&phy->lock);
++
++	if (ret)
++		phydev_warn(phydev, "SFP module PHY not configured: %pe\n",
++			    ERR_PTR(ret));
++}
++
++/**
++ * phy_sfp_phy_read_status - take the copper side status from the SFP module
++ * @phydev: the upstream PHY, with its lock held and its own status read
++ *
++ * Link, speed and duplex stay what @phydev found out about its link to the
++ * module. What only the PHY in the module can know is copied from it: the
++ * abilities of the link partner, pause, MDI-X, master/slave.
++ */
++void phy_sfp_phy_read_status(struct phy_device *phydev)
++{
++	struct phy_device *phy;
++
++	mutex_lock(&phydev->sfp_phy_lock);
++	phy = phydev->sfp_phy;
++	if (!phy)
++		goto out;
++
++	mutex_lock_nested(&phy->lock, SINGLE_DEPTH_NESTING);
++	if (phydev->link && !phy_read_status(phy)) {
++		linkmode_copy(phydev->lp_advertising, phy->lp_advertising);
++		phydev->pause = phy->pause;
++		phydev->asym_pause = phy->asym_pause;
++		phydev->mdix = phy->mdix;
++		phydev->master_slave_get = phy->master_slave_get;
++		phydev->master_slave_state = phy->master_slave_state;
++	} else {
++		linkmode_zero(phydev->lp_advertising);
++		phydev->mdix = ETH_TP_MDI_INVALID;
++	}
++	mutex_unlock(&phy->lock);
++out:
++	mutex_unlock(&phydev->sfp_phy_lock);
++}
++EXPORT_SYMBOL_GPL(phy_sfp_phy_read_status);
++
++/* The cable is on the PHY of the SFP module, if there is one. Called with
++ * the lock of @phydev held. With @finished the status is asked for, without
++ * the test is started.
++ */
++static int phy_cable_test_op(struct phy_device *phydev, bool *finished)
++{
++	const struct phy_driver *drv = phydev->drv;
++	struct phy_device *phy;
++	int err = -EOPNOTSUPP;
++
++	mutex_lock(&phydev->sfp_phy_lock);
++	phy = phydev->sfp_phy;
++	if (!phy) {
++		if (drv->cable_test_start && drv->cable_test_get_status)
++			err = finished ?
++			      drv->cable_test_get_status(phydev, finished) :
++			      drv->cable_test_start(phydev);
++		goto out;
++	}
++
++	drv = phy->drv;
++	if (!drv || !drv->cable_test_start || !drv->cable_test_get_status)
++		goto out;
++
++	mutex_lock_nested(&phy->lock, SINGLE_DEPTH_NESTING);
++	if (finished) {
++		/* the results go into the message of the PHY the test was
++		 * started on
++		 */
++		phy->skb = phydev->skb;
++		phy->ehdr = phydev->ehdr;
++		phy->nest = phydev->nest;
++		err = drv->cable_test_get_status(phy, finished);
++		phy->skb = NULL;
++		phy->ehdr = NULL;
++		phy->nest = NULL;
++	} else {
++		err = drv->cable_test_start(phy);
++	}
++	mutex_unlock(&phy->lock);
++out:
++	mutex_unlock(&phydev->sfp_phy_lock);
++
++	return err;
++}
++
++static bool phy_cable_test_supported(struct phy_device *phydev)
++{
++	const struct phy_driver *drv = phydev->drv;
++	bool ret;
++
++	if (!drv)
++		return false;
++
++	mutex_lock(&phydev->sfp_phy_lock);
++	if (phydev->sfp_phy)
++		drv = phydev->sfp_phy->drv;
++	ret = drv && drv->cable_test_start && drv->cable_test_get_status;
++	mutex_unlock(&phydev->sfp_phy_lock);
++
++	return ret;
++}
++
++/**
+  * phy_start_cable_test - Start a cable test
+  *
+  * @phydev: the phy_device struct
+@@ -847,9 +1060,7 @@ int phy_start_cable_test(struct phy_devi
+ 	struct net_device *dev = phydev->attached_dev;
+ 	int err = -ENOMEM;
+ 
+-	if (!(phydev->drv &&
+-	      phydev->drv->cable_test_start &&
+-	      phydev->drv->cable_test_get_status)) {
++	if (!phy_cable_test_supported(phydev)) {
+ 		NL_SET_ERR_MSG(extack,
+ 			       "PHY driver does not support cable testing");
+ 		return -EOPNOTSUPP;
+@@ -879,7 +1090,7 @@ int phy_start_cable_test(struct phy_devi
+ 	phy_link_down(phydev);
+ 
+ 	netif_testing_on(dev);
+-	err = phydev->drv->cable_test_start(phydev);
++	err = phy_cable_test_op(phydev, NULL);
+ 	if (err) {
+ 		netif_testing_off(dev);
+ 		phy_link_up(phydev);
+@@ -977,6 +1188,12 @@ EXPORT_SYMBOL(phy_start_cable_test_tdr);
+ 
+ int phy_config_aneg(struct phy_device *phydev)
+ {
++	if (READ_ONCE(phydev->sfp_phy)) {
++		mutex_lock(&phydev->sfp_phy_lock);
++		phy_sfp_phy_apply_settings(phydev);
++		mutex_unlock(&phydev->sfp_phy_lock);
++	}
++
+ 	if (phydev->drv->config_aneg)
+ 		return phydev->drv->config_aneg(phydev);
+ 
+@@ -1531,7 +1748,7 @@ static enum phy_state_work _phy_state_ma
+ 			err = phy_update_stats(phydev);
+ 		break;
+ 	case PHY_CABLETEST:
+-		err = phydev->drv->cable_test_get_status(phydev, &finished);
++		err = phy_cable_test_op(phydev, &finished);
+ 		if (err) {
+ 			phy_abort_cable_test(phydev);
+ 			netif_testing_off(dev);
+--- a/drivers/net/phy/phy_device.c
++++ b/drivers/net/phy/phy_device.c
+@@ -848,6 +848,7 @@ struct phy_device *phy_device_create(str
+ 	INIT_LIST_HEAD(&dev->leds);
+ 
+ 	mutex_init(&dev->lock);
++	mutex_init(&dev->sfp_phy_lock);
+ 	INIT_DELAYED_WORK(&dev->state_queue, phy_state_machine);
+ 
+ 	/* Request the appropriate module unconditionally; don't
+@@ -1628,13 +1629,59 @@ phy_standalone_show(struct device *dev,
+ }
+ static DEVICE_ATTR_RO(phy_standalone);
+ 
++/* Have the driver of the SFP module's PHY set it up for the interface the
++ * module is used with. The module PHY is not attached to a network device and
++ * its state machine does not run: the upstream PHY knows the state of the
++ * link to the module, phy_config_aneg() and phy_read_status() of the upstream
++ * PHY pass the settings on and fetch the rest of the status.
++ */
++static int phy_sfp_phy_setup(struct phy_device *phydev, struct phy_device *phy)
++{
++	const struct sfp_module_caps *caps;
++	phy_interface_t iface;
++	int ret;
++
++	caps = sfp_get_module_caps(phydev->sfp_bus);
++	iface = sfp_select_interface(phydev->sfp_bus, caps->link_modes);
++	if (iface == PHY_INTERFACE_MODE_NA)
++		return -EINVAL;
++
++	phy->interface = iface;
++	ret = phy_init_hw(phy);
++	if (ret)
++		return ret;
++
++	/* The abilities read at probe time were those of the mode the module
++	 * powered up in, often 1000BASE-X to the host and 1000BASE-T only.
++	 */
++	mutex_lock(&phy->lock);
++	if (phy->drv->get_features)
++		ret = phy->drv->get_features(phy);
++	else if (!phy->is_c45)
++		ret = genphy_read_abilities(phy);
++	mutex_unlock(&phy->lock);
++
++	return ret;
++}
++
+ /**
+  * phy_sfp_connect_phy - Connect the SFP module's PHY to the upstream PHY
+  * @upstream: pointer to the upstream phy device
+  * @phy: pointer to the SFP module's phy device
+  *
+  * This helper allows keeping track of PHY devices on the link. It adds the
+- * SFP module's phy to the phy namespace of the upstream phy
++ * SFP module's phy to the phy namespace of the upstream phy.
++ *
++ * When the module's PHY has a driver of its own, that driver sets the PHY up
++ * for the interface the module is used with, and the upstream PHY takes over
++ * its link modes: from then on the link settings of the upstream PHY are
++ * applied to the module's PHY, see phy_config_aneg(). With the generic driver
++ * the module stays in the mode it powers up in.
++ *
++ * The SFP code calls this and phy_sfp_disconnect_phy() with its own locks
++ * held, and takes those with the lock of the upstream PHY held in
++ * phy_start() and phy_stop(): the lock of the upstream PHY cannot be taken
++ * here.
+  *
+  * Return: 0 on success, otherwise a negative error code.
+  */
+@@ -1642,9 +1689,35 @@ int phy_sfp_connect_phy(void *upstream,
+ {
+ 	struct phy_device *phydev = upstream;
+ 	struct net_device *dev = phydev->attached_dev;
++	int ret;
+ 
+-	if (dev)
+-		return phy_link_topo_add_phy(dev, phy, PHY_UPSTREAM_PHY, phydev);
++	if (dev) {
++		ret = phy_link_topo_add_phy(dev, phy, PHY_UPSTREAM_PHY, phydev);
++		if (ret)
++			return ret;
++	}
++
++	if (!phy->drv || phy_driver_is_genphy(phy))
++		return 0;
++
++	ret = phy_sfp_phy_setup(phydev, phy);
++	if (ret) {
++		phydev_warn(phydev, "SFP module PHY not set up: %pe\n",
++			    ERR_PTR(ret));
++		return 0;
++	}
++
++	mutex_lock(&phydev->sfp_phy_lock);
++	linkmode_andnot(phydev->sfp_phy_modes, phy->supported,
++			phydev->supported);
++	linkmode_or(phydev->supported, phydev->supported,
++		    phydev->sfp_phy_modes);
++	linkmode_or(phydev->advertising, phydev->advertising,
++		    phydev->sfp_phy_modes);
++	phydev->sfp_phy_poll_cable_test = phy->drv->flags & PHY_POLL_CABLE_TEST;
++	WRITE_ONCE(phydev->sfp_phy, phy);
++	phy_sfp_phy_apply_settings(phydev);
++	mutex_unlock(&phydev->sfp_phy_lock);
+ 
+ 	return 0;
+ }
+@@ -1665,6 +1738,18 @@ void phy_sfp_disconnect_phy(void *upstre
+ 	struct phy_device *phydev = upstream;
+ 	struct net_device *dev = phydev->attached_dev;
+ 
++	mutex_lock(&phydev->sfp_phy_lock);
++	if (phydev->sfp_phy == phy) {
++		WRITE_ONCE(phydev->sfp_phy, NULL);
++		phydev->sfp_phy_poll_cable_test = false;
++		linkmode_andnot(phydev->supported, phydev->supported,
++				phydev->sfp_phy_modes);
++		linkmode_andnot(phydev->advertising, phydev->advertising,
++				phydev->sfp_phy_modes);
++		linkmode_zero(phydev->sfp_phy_modes);
++	}
++	mutex_unlock(&phydev->sfp_phy_lock);
++
+ 	if (dev)
+ 		phy_link_topo_del_phy(dev, phy);
+ }
+--- a/include/linux/phy.h
++++ b/include/linux/phy.h
+@@ -588,6 +588,12 @@ struct macsec_ops;
+  * @phylink: Pointer to phylink instance for this PHY
+  * @sfp_bus_attached: Flag indicating whether the SFP bus has been attached
+  * @sfp_bus: SFP bus attached to this PHY's fiber port
++ * @sfp_phy_lock: Protects @sfp_phy. Taken inside @lock, and inside the locks
++ *		  of the SFP code, which calls in with or without @lock held.
++ * @sfp_phy: PHY of the module in the SFP cage behind this PHY, when its driver
++ *	     has been set up to run the copper side of the link
++ * @sfp_phy_modes: Link modes of @sfp_phy that were added to @supported
++ * @sfp_phy_poll_cable_test: @sfp_phy has PHY_POLL_CABLE_TEST
+  * @attached_dev: The attached enet driver's device instance ptr
+  * @adjust_link: Callback for the enet controller to respond to changes: in the
+  *               link state.
+@@ -772,6 +778,10 @@ struct phy_device {
+ 	/* This may be modified under the rtnl lock */
+ 	bool sfp_bus_attached;
+ 	struct sfp_bus *sfp_bus;
++	struct mutex sfp_phy_lock;
++	struct phy_device *sfp_phy;
++	__ETHTOOL_DECLARE_LINK_MODE_MASK(sfp_phy_modes);
++	bool sfp_phy_poll_cable_test;
+ 	struct phylink *phylink;
+ 	struct net_device *attached_dev;
+ 	struct mii_timestamper *mii_ts;
+@@ -1698,7 +1708,8 @@ static inline bool phy_interrupt_is_vali
+ static inline bool phy_polling_mode(struct phy_device *phydev)
+ {
+ 	if (phydev->state == PHY_CABLETEST)
+-		if (phydev->drv->flags & PHY_POLL_CABLE_TEST)
++		if (phydev->drv->flags & PHY_POLL_CABLE_TEST ||
++		    phydev->sfp_phy_poll_cable_test)
+ 			return true;
+ 
+ 	if (phydev->drv->update_stats)
+@@ -2053,15 +2064,25 @@ int mmd_phy_read(struct mii_bus *bus, in
+ int mmd_phy_write(struct mii_bus *bus, int phy_addr, bool is_c45,
+ 		  int devad, u32 regnum, u16 val);
+ 
++void phy_sfp_phy_apply_settings(struct phy_device *phydev);
++void phy_sfp_phy_read_status(struct phy_device *phydev);
++
+ static inline int phy_read_status(struct phy_device *phydev)
+ {
++	int ret;
++
+ 	if (!phydev->drv)
+ 		return -EIO;
+ 
+ 	if (phydev->drv->read_status)
+-		return phydev->drv->read_status(phydev);
++		ret = phydev->drv->read_status(phydev);
+ 	else
+-		return genphy_read_status(phydev);
++		ret = genphy_read_status(phydev);
++
++	if (!ret && READ_ONCE(phydev->sfp_phy))
++		phy_sfp_phy_read_status(phydev);
++
++	return ret;
+ }
+ 
+ void phy_drivers_unregister(struct phy_driver *drv, int n);

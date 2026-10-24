@@ -1,0 +1,37 @@
+. /lib/functions.sh
+
+# The EdgeRouter 8 (UBNT_E200) has always had the ports of interface 1
+# as eth0-eth3 and those of interface 0 as eth4-eth7: the staging driver
+# probed its interfaces in reverse on this board. octeon_pip registers
+# them in hardware order; restore the old names from each port's device
+# tree node. The ports go through temporary names, so that eth0 and eth4
+# cannot collide.
+set_er_netdev_order() {
+	local dir
+	local netdev
+	local node
+	local iface
+	local port
+
+	[ "$(board_name)" = "er" ] || return 0
+
+	for dir in /sys/class/net/eth*; do
+		node="$(readlink -f "$dir/of_node" 2>/dev/null)" || continue
+		case "$node" in
+		*/pip@*/interface@[01]/ethernet@[0-3]) ;;
+		*) continue ;;
+		esac
+		iface="${node##*/interface@}"
+		iface="${iface%%/*}"
+		port="${node##*/ethernet@}"
+		ip link set "${dir##*/}" name "tmp_eth$(( (1 - iface) * 4 + port ))"
+	done
+
+	for dir in /sys/class/net/tmp_eth*; do
+		[ -e "$dir" ] || continue
+		netdev="${dir##*/}"
+		ip link set "$netdev" name "eth${netdev#tmp_eth}"
+	done
+}
+
+boot_hook_add preinit_main set_er_netdev_order
