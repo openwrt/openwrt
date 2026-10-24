@@ -8,10 +8,10 @@ PKG_LICENSE_FILES:=LICENSE.qca_firmware
 PKG_RELEASE:=1
 
 PKG_SOURCE_PROTO:=git
-PKG_SOURCE_URL:=git@github.com:sidhantgoel/firmware_qca-wireless.git
-PKG_SOURCE_DATE:=2026-03-03
-PKG_SOURCE_VERSION:=c7b7a979b30e9fbaf2c41b4ad96a4c4d67846927
-PKG_MIRROR_HASH:=446cd7b9892f531bc665b618f11e3abfc907271cdc407fafe794891520c0affd
+PKG_SOURCE_URL:=https://github.com/virzak/firmware_qca-wireless.git
+PKG_SOURCE_DATE:=2026-10-24
+PKG_SOURCE_VERSION:=b976fa70fd65b475e758901a90b64c1c896b54ef
+PKG_MIRROR_HASH:=e555dc492e15d22b3dafbe7a85a61ee1e8177634de5e695412e3a928ab8d8c2e
 PKG_FLAGS:=nonshared
 
 include $(INCLUDE_DIR)/package.mk
@@ -20,7 +20,8 @@ define Build/Compile
 endef
 
 ALLATH12KFIRMWARES := \
-	tplink_archer-be800
+	tplink_archer-be800 \
+	tplink_archer-ge800
 
 ALLATH12KFIRMWAREPACKAGES:=$(foreach BOARD,$(ALLATH12KFIRMWARES),ath12k-firmware-$(BOARD))
 
@@ -98,5 +99,6 @@ endef
 #   firmware-<devicename>.QCN9274
 
 $(eval $(call generate-ath12k-firmware-package,tplink_archer-be800,TP-Link Archer BE800))
+$(eval $(call generate-ath12k-firmware-package,tplink_archer-ge800,TP-Link Archer GE800))
 
 $(foreach PACKAGE,$(ALLATH12KFIRMWAREPACKAGES),$(eval $(call BuildPackage,$(PACKAGE))))
