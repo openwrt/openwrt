@@ -1,0 +1,338 @@
+From: Rosen Penev <rosenp@gmail.com>
+Subject: [PATCH] net: ag71xx: verify received checksums with the checksum engine
+
+AR934x and QCA955x have a "segmentation/desegmentation/checksum
+accelerator", a DMA engine that sums up buffers in memory and reports
+the 16 bit ones' complement result in its descriptors.
+
+Without receive checksum offload, GRO has to checksum every payload in
+software, which on these MIPS cores with small caches and non-coherent
+DMA makes GRO slow down routing. Queue everything after the Ethernet
+header of each received frame to the engine while the rest of the NAPI
+batch is processed and report the result as CHECKSUM_COMPLETE. As the
+sum covers the whole frame, IPv6, VLANs and DSA tags work without any
+parsing in the driver.
+
+Each MAC uses its own engine channel. The engine is referenced through
+a "qca,checksum-engine" phandle. If it does not respond, the frames
+fall back to CHECKSUM_NONE.
+
+Only GRO and locally terminated traffic need the sum. Forwarding and
+flow offloading without GRO never verify L4 checksums, and waiting for
+the engine cut flow offloading without GRO from 935 to 670 Mbit/s on an
+AR9344. Skip the engine when GRO is disabled. Each kick of the engine is
+an MMIO write behind a full sync, so only kick it for the first frame of
+a NAPI batch and then every 8 frames.
+
+TP-Link Archer C7 v2 (QCA9558, qca8k DSA), single TCP stream routed and
+NATed between WAN and LAN, GRO enabled, Mbit/s:
+
+                   before   after
+  up                  545     692
+  down                481     600
+  up, flow offload    678     916
+  down, flow offload  676     916
+
+Receive checksums of about a million frames were compared against
+software checksums without a mismatch.
+
+Assisted-by: Claude:claude-opus-5-5
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+---
+--- a/drivers/net/ethernet/atheros/ag71xx.c
++++ b/drivers/net/ethernet/atheros/ag71xx.c
+@@ -30,6 +30,7 @@
+ #include <linux/if_vlan.h>
+ #include <linux/mfd/syscon.h>
+ #include <linux/of.h>
++#include <linux/of_address.h>
+ #include <linux/of_mdio.h>
+ #include <linux/of_net.h>
+ #include <linux/platform_device.h>
+@@ -57,6 +58,26 @@
+ #define AG71XX_TX_RING_SIZE_DEFAULT	128
+ #define AG71XX_RX_RING_SIZE_DEFAULT	256
+ 
++/* Segmentation/desegmentation/checksum accelerator, present on AR934x and
++ * QCA955x. Each of its four transmit channels computes the checksum of the
++ * buffers queued to it.
++ */
++#define AG71XX_CSUM_REG_TX_CTRL(c)	(0x00 + (c) * 4)
++#define AG71XX_CSUM_TXEN		BIT(0)
++#define AG71XX_CSUM_REG_TX_DESC(c)	(0x10 + (c) * 4)
++
++#define AG71XX_CSUM_DESC_PKTV		BIT(31)
++#define AG71XX_CSUM_DESC_LEN		GENMASK(18, 0)
++#define AG71XX_CSUM_DESC_SUM		GENMASK(15, 0)
++
++#define AG71XX_CSUM_RING_SIZE		128
++#define AG71XX_CSUM_TIMEOUT		10000
++
++/* Each kick is an MMIO write behind a full sync, so only kick the engine
++ * for the first frame of a NAPI batch and then every few frames.
++ */
++#define AG71XX_CSUM_KICK_BATCH		8
++
+ #define AG71XX_MDIO_RETRY	1000
+ #define AG71XX_MDIO_DELAY	5
+ #define AG71XX_MDIO_MAX_CLK	5000000
+@@ -309,6 +330,22 @@ struct ag71xx_buf {
+ 	};
+ };
+ 
++struct ag71xx_csum_desc {
++	u32 data;
++	u32 ctrl;
++	u32 next;
++	u32 hwlen;
++} __aligned(4);
++
++struct ag71xx_csum_ring {
++	struct ag71xx_csum_desc *descs;
++	unsigned int curr;
++	unsigned int dirty;
++	dma_addr_t descs_dma;
++	u8 chan;
++	bool failed;
++};
++
+ struct ag71xx_ring {
+ 	/* "Hot" fields in the data path. */
+ 	unsigned int curr;
+@@ -350,6 +387,9 @@ struct ag71xx {
+ 	u16 rx_buf_size;
+ 	u8 rx_buf_offset;
+ 
++	void __iomem *csum_base;
++	struct ag71xx_csum_ring csum_rx;
++
+ 	struct net_device *ndev;
+ 	struct platform_device *pdev;
+ 	struct napi_struct napi;
+@@ -1368,6 +1408,81 @@ static void ag71xx_hw_init(struct ag71xx
+ 	ag71xx_dma_reset(ag);
+ }
+ 
++static void ag71xx_csum_ring_init(struct ag71xx *ag,
++				  struct ag71xx_csum_ring *ring)
++{
++	int i;
++
++	for (i = 0; i < AG71XX_CSUM_RING_SIZE; i++) {
++		struct ag71xx_csum_desc *cd = &ring->descs[i];
++
++		cd->data = 0;
++		cd->ctrl = AG71XX_CSUM_DESC_PKTV;
++		cd->hwlen = 0;
++		cd->next = ring->descs_dma +
++			   ((i + 1) % AG71XX_CSUM_RING_SIZE) * sizeof(*cd);
++	}
++
++	ring->curr = 0;
++	ring->dirty = 0;
++	ring->failed = false;
++
++	/* flush descriptors */
++	wmb();
++
++	iowrite32(0, ag->csum_base + AG71XX_CSUM_REG_TX_CTRL(ring->chan));
++	iowrite32(ring->descs_dma,
++		  ag->csum_base + AG71XX_CSUM_REG_TX_DESC(ring->chan));
++}
++
++/* Hand a buffer to the engine. The engine follows the descriptor chain
++ * until it reaches one it already completed, so a buffer queued while it
++ * is running gets picked up without another kick.
++ */
++static void ag71xx_csum_queue(struct ag71xx_csum_ring *ring, u32 addr,
++			      u32 len)
++{
++	struct ag71xx_csum_desc *cd;
++
++	cd = &ring->descs[ring->curr++ % AG71XX_CSUM_RING_SIZE];
++	WRITE_ONCE(cd->data, addr);
++	/* the engine may be running, publish the address before ctrl */
++	wmb();
++	WRITE_ONCE(cd->ctrl, len & AG71XX_CSUM_DESC_LEN);
++}
++
++static void ag71xx_csum_kick(struct ag71xx *ag, struct ag71xx_csum_ring *ring)
++{
++	/* descriptors are uncached, iowrite32() orders the stores */
++	iowrite32(AG71XX_CSUM_TXEN,
++		  ag->csum_base + AG71XX_CSUM_REG_TX_CTRL(ring->chan));
++}
++
++/* Wait for the oldest submitted buffer and return its 16 bit sum */
++static int ag71xx_csum_wait(struct ag71xx *ag, struct ag71xx_csum_ring *ring,
++			    __wsum *sum)
++{
++	unsigned int timeout = AG71XX_CSUM_TIMEOUT;
++	struct ag71xx_csum_desc *cd;
++	u32 ctrl;
++
++	cd = &ring->descs[ring->dirty++ % AG71XX_CSUM_RING_SIZE];
++
++	while (!((ctrl = READ_ONCE(cd->ctrl)) & AG71XX_CSUM_DESC_PKTV)) {
++		if (!--timeout) {
++			net_warn_ratelimited("%s: checksum engine channel %u timed out, disabling it\n",
++					     ag->ndev->name, ring->chan);
++			return -ETIMEDOUT;
++		}
++		cpu_relax();
++	}
++
++	/* the engine reports the folded sum inverted and byte swapped */
++	*sum = (__force __wsum)(u16)~swab16(ctrl & AG71XX_CSUM_DESC_SUM);
++
++	return 0;
++}
++
+ static int ag71xx_hw_enable(struct ag71xx *ag)
+ {
+ 	int ret;
+@@ -1376,6 +1491,9 @@ static int ag71xx_hw_enable(struct ag71x
+ 	if (ret)
+ 		return ret;
+ 
++	if (ag->csum_base)
++		ag71xx_csum_ring_init(ag, &ag->csum_rx);
++
+ 	napi_enable(&ag->napi);
+ 	ag71xx_wr(ag, AG71XX_REG_TX_DESC, ag->tx_ring.descs_dma);
+ 	ag71xx_wr(ag, AG71XX_REG_RX_DESC, ag->rx_ring.descs_dma);
+@@ -1603,9 +1721,21 @@ static int ag71xx_rx_packets(struct ag71
+ 	int ring_mask, ring_size, done = 0;
+ 	unsigned int pktlen_mask, offset;
+ 	struct ag71xx_ring *ring;
++	bool use_csum, csum_err = false;
++	unsigned int nqueued = 0;
+ 	struct sk_buff *skb;
+ 	LIST_HEAD(rx_list);
+ 
++	/* Only GRO and locally terminated traffic need the sum. Forwarding
++	 * and flow offloading without GRO never verify L4 checksums, so
++	 * waiting for the engine would only slow them down.
++	 */
++	use_csum = ag->csum_base && !ag->csum_rx.failed &&
++		   (ndev->features & NETIF_F_RXCSUM) &&
++		   (ndev->features & NETIF_F_GRO);
++	if (use_csum)
++		limit = min(limit, AG71XX_CSUM_RING_SIZE - 1);
++
+ 	ring = &ag->rx_ring;
+ 	pktlen_mask = ag->dcfg->desc_pktlen_mask;
+ 	offset = ag->rx_buf_offset;
+@@ -1652,6 +1782,20 @@ static int ag71xx_rx_packets(struct ag71
+ 		skb->dev = ndev;
+ 		skb->ip_summed = CHECKSUM_NONE;
+ 		skb->protocol = eth_type_trans(skb, ndev);
++
++		/* Let the engine sum up everything after the Ethernet header
++		 * for CHECKSUM_COMPLETE while the rest of the batch is
++		 * processed.
++		 */
++		if (use_csum) {
++			ag71xx_csum_queue(&ag->csum_rx,
++					  ring->buf[i].rx.dma_addr + offset +
++					  ETH_HLEN, skb->len);
++			if (!(nqueued++ % AG71XX_CSUM_KICK_BATCH))
++				ag71xx_csum_kick(ag, &ag->csum_rx);
++			skb->ip_summed = CHECKSUM_COMPLETE;
++		}
++
+ 		list_add_tail(&skb->list, &rx_list);
+ 
+ next:
+@@ -1661,6 +1805,28 @@ next:
+ 		ring->curr++;
+ 	}
+ 
++	if (use_csum) {
++		/* the engine may have stopped before the last frames were
++		 * queued
++		 */
++		if (nqueued && nqueued % AG71XX_CSUM_KICK_BATCH != 1)
++			ag71xx_csum_kick(ag, &ag->csum_rx);
++
++		list_for_each_entry(skb, &rx_list, list) {
++			if (csum_err ||
++			    ag71xx_csum_wait(ag, &ag->csum_rx, &skb->csum)) {
++				skb->ip_summed = CHECKSUM_NONE;
++				csum_err = true;
++			}
++		}
++
++		/* Buffers may still be queued to the engine, do not reuse the
++		 * channel until the next reset.
++		 */
++		if (unlikely(csum_err))
++			ag->csum_rx.failed = true;
++	}
++
+ 	ag71xx_ring_rx_refill(ag);
+ 
+ 	netif_receive_skb_list(&rx_list);
+@@ -1786,6 +1952,45 @@ static const u32 ar71xx_addr_ar7100[] =
+ 	0x19000000, 0x1a000000,
+ };
+ 
++static int ag71xx_csum_ring_alloc(struct ag71xx *ag,
++				  struct ag71xx_csum_ring *ring, u8 chan)
++{
++	ring->descs = dmam_alloc_coherent(&ag->pdev->dev,
++					  AG71XX_CSUM_RING_SIZE *
++					  sizeof(*ring->descs),
++					  &ring->descs_dma, GFP_KERNEL);
++	if (!ring->descs)
++		return -ENOMEM;
++
++	ring->chan = chan;
++
++	return 0;
++}
++
++static int ag71xx_csum_probe(struct ag71xx *ag)
++{
++	struct device *dev = &ag->pdev->dev;
++	struct device_node *np;
++	struct resource res;
++	int err;
++
++	np = of_parse_phandle(dev->of_node, "qca,checksum-engine", 0);
++	if (!np)
++		return 0;
++
++	err = of_address_to_resource(np, 0, &res);
++	of_node_put(np);
++	if (err)
++		return err;
++
++	/* shared by both MACs, each one uses its own channels */
++	ag->csum_base = devm_ioremap(dev, res.start, resource_size(&res));
++	if (!ag->csum_base)
++		return -ENOMEM;
++
++	return ag71xx_csum_ring_alloc(ag, &ag->csum_rx, ag->mac_idx);
++}
++
+ static int ag71xx_probe(struct platform_device *pdev)
+ {
+ 	struct device_node *np = pdev->dev.of_node;
+@@ -1909,6 +2114,16 @@ static int ag71xx_probe(struct platform_
+ 		return err;
+ 	}
+ 
++	err = ag71xx_csum_probe(ag);
++	if (err)
++		return dev_err_probe(&pdev->dev, err,
++				     "failed to setup checksum engine\n");
++
++	if (ag->csum_base) {
++		ndev->hw_features |= NETIF_F_RXCSUM;
++		ndev->features |= NETIF_F_RXCSUM;
++	}
++
+ 	netif_napi_add(ndev, &ag->napi, ag71xx_poll);
+ 
+ 	ag71xx_wr(ag, AG71XX_REG_MAC_CFG1, 0);

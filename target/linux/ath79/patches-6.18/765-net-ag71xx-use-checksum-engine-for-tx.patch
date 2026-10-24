@@ -1,0 +1,160 @@
+From: Rosen Penev <rosenp@gmail.com>
+Subject: [PATCH] net: ag71xx: compute transmit checksums with the checksum engine
+
+Use another channel of the checksum engine to compute the checksum of
+CHECKSUM_PARTIAL frames instead of walking the payload with the CPU.
+The buffers are already mapped at that point, so the engine includes
+the pseudo header sum the stack placed in the checksum field. The
+result is written into the header and that cache line is written back.
+
+TP-Link Archer C7 v2, TCP sent by the router, median of 3 runs: 402 ->
+448 Mbit/s.
+
+Assisted-by: Claude:claude-opus-5-5
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+---
+--- a/drivers/net/ethernet/atheros/ag71xx.c
++++ b/drivers/net/ethernet/atheros/ag71xx.c
+@@ -393,6 +393,7 @@ struct ag71xx {
+ 
+ 	void __iomem *csum_base;
+ 	struct ag71xx_csum_ring csum_rx;
++	struct ag71xx_csum_ring csum_tx;
+ 
+ 	struct net_device *ndev;
+ 	struct platform_device *pdev;
+@@ -1516,8 +1517,10 @@ static int ag71xx_hw_enable(struct ag71x
+ 	if (ret)
+ 		return ret;
+ 
+-	if (ag->csum_base)
++	if (ag->csum_base) {
+ 		ag71xx_csum_ring_init(ag, &ag->csum_rx);
++		ag71xx_csum_ring_init(ag, &ag->csum_tx);
++	}
+ 
+ 	napi_enable(&ag->napi);
+ 	ag71xx_wr(ag, AG71XX_REG_TX_DESC, ag->tx_ring.descs_dma);
+@@ -1655,6 +1658,41 @@ static int ag71xx_fill_dma_desc(struct a
+ 	return ndesc;
+ }
+ 
++/* Compute the checksum of a CHECKSUM_PARTIAL frame on the engine. The buffers
++ * are already mapped, so the engine sees the pseudo header sum the stack put
++ * into the checksum field.
++ */
++static void ag71xx_tx_csum(struct ag71xx *ag, struct sk_buff *skb,
++			   const dma_addr_t *dma, const unsigned int *len,
++			   int nbufs, dma_addr_t head_dma)
++{
++	unsigned int off = skb_checksum_start_offset(skb);
++	unsigned int field = off + skb->csum_offset;
++	struct ag71xx_csum_ring *ring = &ag->csum_tx;
++	unsigned int pos = 0;
++	__wsum sum = 0, part;
++	int i;
++
++	for (i = 0; i < nbufs; i++)
++		ag71xx_csum_queue(ring, dma[i], len[i]);
++	ag71xx_csum_kick(ag, ring);
++
++	for (i = 0; i < nbufs; i++) {
++		if (ag71xx_csum_wait(ag, ring, &part)) {
++			ring->failed = true;
++			sum = skb_checksum(skb, off, skb->len - off, 0);
++			break;
++		}
++
++		sum = csum_block_add(sum, part, pos);
++		pos += len[i];
++	}
++
++	*(__sum16 *)(skb->data + field) = csum_fold(sum) ?: CSUM_MANGLED_0;
++	dma_sync_single_for_device(&ag->pdev->dev, head_dma + field,
++				   sizeof(__sum16), DMA_TO_DEVICE);
++}
++
+ /* All buffers of a multi descriptor frame but the last one must be a multiple
+  * of 4 bytes long, otherwise the transmit DMA stalls. No buffer may be 4 bytes
+  * or shorter either.
+@@ -1688,10 +1726,12 @@ static netdev_tx_t ag71xx_hard_start_xmi
+ {
+ 	int i, n, ret, nfrags, ring_min, ring_mask, ring_size;
+ 	struct ag71xx *ag = netdev_priv(ndev);
++	dma_addr_t csum_dma[MAX_SKB_FRAGS + 1], dma_addr, head_dma = 0;
++	unsigned int csum_len[MAX_SKB_FRAGS + 1], headlen;
+ 	struct ag71xx_ring *ring;
+ 	struct ag71xx_desc *desc;
+-	unsigned int headlen;
+-	dma_addr_t dma_addr;
++	bool hw_csum = false;
++	int ncsum = 0;
+ 
+ 	ring = &ag->tx_ring;
+ 	ring_mask = BIT(ring->order) - 1;
+@@ -1705,8 +1745,18 @@ static netdev_tx_t ag71xx_hard_start_xmi
+ 	if (!ag71xx_tx_frags_ok(skb) && skb_linearize(skb))
+ 		goto err_drop;
+ 
+-	if (skb->ip_summed == CHECKSUM_PARTIAL && skb_checksum_help(skb))
+-		goto err_drop;
++	if (skb->ip_summed == CHECKSUM_PARTIAL) {
++		unsigned int field = skb_checksum_start_offset(skb) +
++				     skb->csum_offset + sizeof(__sum16);
++
++		/* the checksum field has to be in the linear part */
++		if (ag->csum_base && !ag->csum_tx.failed &&
++		    field <= skb_headlen(skb) &&
++		    !skb_ensure_writable(skb, field))
++			hw_csum = true;
++		else if (skb_checksum_help(skb))
++			goto err_drop;
++	}
+ 
+ 	nfrags = skb_shinfo(skb)->nr_frags;
+ 	headlen = skb_headlen(skb);
+@@ -1720,6 +1770,14 @@ static netdev_tx_t ag71xx_hard_start_xmi
+ 			goto err_drop;
+ 		}
+ 
++		head_dma = dma_addr;
++		if (hw_csum) {
++			unsigned int off = skb_checksum_start_offset(skb);
++
++			csum_dma[ncsum] = dma_addr + off;
++			csum_len[ncsum++] = headlen - off;
++		}
++
+ 		/* setup descriptor fields */
+ 		ret = ag71xx_fill_dma_desc(ring, n, (u32)dma_addr,
+ 					   headlen & ag->dcfg->desc_pktlen_mask,
+@@ -1745,8 +1803,16 @@ static netdev_tx_t ag71xx_hard_start_xmi
+ 		if (ret < 0)
+ 			goto err_reset;
+ 		n += ret;
++
++		if (hw_csum) {
++			csum_dma[ncsum] = dma_addr;
++			csum_len[ncsum++] = len;
++		}
+ 	}
+ 
++	if (hw_csum)
++		ag71xx_tx_csum(ag, skb, csum_dma, csum_len, ncsum, head_dma);
++
+ 	desc = ag71xx_ring_desc(ring, ring->curr & ring_mask);
+ 
+ 	i = (ring->curr + n - 1) & ring_mask;
+@@ -2104,7 +2170,11 @@ static int ag71xx_csum_probe(struct ag71
+ 	if (!ag->csum_base)
+ 		return -ENOMEM;
+ 
+-	return ag71xx_csum_ring_alloc(ag, &ag->csum_rx, ag->mac_idx);
++	err = ag71xx_csum_ring_alloc(ag, &ag->csum_rx, ag->mac_idx);
++	if (err)
++		return err;
++
++	return ag71xx_csum_ring_alloc(ag, &ag->csum_tx, 2 + ag->mac_idx);
+ }
+ 
+ static int ag71xx_probe(struct platform_device *pdev)
