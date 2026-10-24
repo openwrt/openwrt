@@ -1,0 +1,788 @@
+// SPDX-License-Identifier: (GPL-2.0+ OR BSD-3-Clause)
+/* UniFi Fiber Gateway
+ *
+ * Copyright (c) 2020-2021 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ */
+
+/dts-v1/;
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+#include "ipq9574.dtsi"
+
+/ {
+	model = "Ubiquiti UniFi Cloud Gateway Fiber";
+	compatible = "ubnt,ucgfiber", "qcom,ipq9574-ap-al02-c18", "qcom,ipq9574-al02", "qcom,ipq9574";
+
+	aliases {
+		serial0 = &blsp1_uart2;
+	};
+
+	chosen {
+		stdout-path = "serial0:115200n8";
+	};
+
+	/* stock: 200 Hz, inverted levels (the pwm-ipq driver has no polarity) */
+	backlight: backlight {
+		compatible = "pwm-backlight";
+		pwms = <&pwm 0 5000000 0>;
+		brightness-levels = <15 14 13 12 11 10 9 8 7 6 5 4 3 2 1 0>;
+		default-brightness-level = <12>;
+	};
+
+	regulator_fixed_3p3: s3300 {
+		compatible = "regulator-fixed";
+		regulator-min-microvolt = <3300000>;
+		regulator-max-microvolt = <3300000>;
+		regulator-boot-on;
+		regulator-always-on;
+		regulator-name = "fixed_3p3";
+	};
+
+	regulator_fixed_0p925: s0925 {
+		compatible = "regulator-fixed";
+		regulator-min-microvolt = <925000>;
+		regulator-max-microvolt = <925000>;
+		regulator-boot-on;
+		regulator-always-on;
+		regulator-name = "fixed_0p925";
+	};
+
+	gpio-keys {
+		compatible = "gpio-keys";
+		pinctrl-0 = <&gpio_keys_default>;
+		pinctrl-names = "default";
+
+		button-reset {
+			label = "reset";
+			linux,code = <KEY_RESTART>;
+			gpios = <&tlmm 52 GPIO_ACTIVE_LOW>;
+			debounce-interval = <60>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		pinctrl-0 = <&gpio_leds_default>;
+		pinctrl-names = "default";
+
+		led-0 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = "sfp";
+			function-enumerator = <7>;
+			gpios = <&tlmm 44 GPIO_ACTIVE_HIGH>;
+		};
+
+		led-1 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = "sfp";
+			function-enumerator = <6>;
+			gpios = <&tlmm 45 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	sfp6: sfp6 {
+		/* LAN cage "sfp2", connected to PPE port 6 */
+		compatible = "sff,sfp";
+		i2c-bus = <&blsp1_i2c4>;
+		mod-def0-gpios = <&tlmm 41 GPIO_ACTIVE_LOW>;
+		los-gpios = <&gpio_ext 6 GPIO_ACTIVE_HIGH>;
+		tx-disable-gpios = <&gpio_ext 5 GPIO_ACTIVE_HIGH>;
+		maximum-power-milliwatt = <3000>;
+	};
+
+	sfp7: sfp7 {
+		/* WAN cage "sfp1", connected to PPE port 5 */
+		compatible = "sff,sfp";
+		i2c-bus = <&blsp1_i2c3>;
+		mod-def0-gpios = <&tlmm 40 GPIO_ACTIVE_LOW>;
+		los-gpios = <&gpio_ext 2 GPIO_ACTIVE_HIGH>;
+		tx-disable-gpios = <&gpio_ext 1 GPIO_ACTIVE_HIGH>;
+		maximum-power-milliwatt = <3000>;
+	};
+};
+
+&blsp1_spi0 {
+	pinctrl-0 = <&spi_0_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		spi-max-frequency = <50000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				reg = <0x00 0xc0000>;
+				label = "SBL1";
+			};
+
+			partition@c0000 {
+				reg = <0xc0000 0x10000>;
+				label = "MIBIB";
+			};
+
+			partition@d0000 {
+				reg = <0xd0000 0x20000>;
+				label = "BOOTCONFIG";
+			};
+
+			partition@f0000 {
+				reg = <0xf0000 0x180000>;
+				label = "QSEE";
+			};
+
+			partition@270000 {
+				reg = <0x270000 0x10000>;
+				label = "DEVCFG";
+			};
+
+			partition@280000 {
+				reg = <0x280000 0x10000>;
+				label = "APDP";
+			};
+
+			partition@290000 {
+				reg = <0x290000 0x40000>;
+				label = "TME";
+			};
+
+			partition@2d0000 {
+				reg = <0x2d0000 0x20000>;
+				label = "RPM";
+			};
+
+			partition@2f0000 {
+				reg = <0x2f0000 0x10000>;
+				label = "CDT";
+			};
+
+			partition@300000 {
+				reg = <0x300000 0x10000>;
+				label = "u-boot-env";
+			};
+
+			partition@310000 {
+				reg = <0x310000 0xc0000>;
+				label = "u-boot";
+			};
+
+			partition@3d0000 {
+				reg = <0x3d0000 0x100000>;
+				label = "ART";
+			};
+
+			partition@4d0000 {
+				reg = <0x4d0000 0x10000>;
+				label = "EEPROM";
+				read-only;
+
+				/*
+				 * Offset 0 is the label MAC (base), offset 6 the same
+				 * address with the locally administered bit set. The
+				 * stock firmware gives each port its own address:
+				 * 10G copper +0, LAN 1-4 +1..+4, SFP+ (PPE port 6) +5,
+				 * SFP+ (PPE port 5) +6, and the switch CPU link the
+				 * locally administered address +1.
+				 */
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_eeprom_0: macaddr@0 {
+						compatible = "mac-base";
+						reg = <0x0 0x6>;
+						#nvmem-cell-cells = <1>;
+					};
+
+					macaddr_eeprom_6: macaddr@6 {
+						compatible = "mac-base";
+						reg = <0x6 0x6>;
+						#nvmem-cell-cells = <1>;
+					};
+				};
+			};
+
+			partition@4e0000 {
+				reg = <0x4e0000 0x10000>;
+				label = "Factory";
+				read-only;
+			};
+
+			partition@4f0000 {
+				reg = <0x4f0000 0x100000>;
+				label = "config";
+			};
+		};
+	};
+};
+
+&blsp1_uart2 {
+	pinctrl-0 = <&uart2_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&rpm_requests {
+	regulators {
+		compatible = "qcom,rpm-mp5496-regulators";
+
+		ipq9574_s1: s1 {
+			/*
+			 * 725 mV as on the reference board: the CPU OPPs from 936 MHz
+			 * to 1.416 GHz need 725-862.5 mV and are dropped by cpufreq
+			 * with a higher floor (stock runs this rail under CPR).
+			 */
+			regulator-min-microvolt = <725000>;
+			regulator-max-microvolt = <1075000>;
+		};
+
+		/*
+		 * s2: NSS/NPU rail. The stock kernel votes it to 875 mV through its NPU
+		 * CPR (range 700 mV to 1.0 V, always on). There is no l5 on this board:
+		 * the RPM rejects it with -ENXIO, and the regulator probe then aborts and
+		 * drops s1 as well (so cpufreq-dt never probes). l5 was copied from
+		 * the reference board, where it feeds the USB/PCIe PHY PLLs.
+		 */
+		mp5496_s2: s2 {
+			regulator-min-microvolt = <875000>;
+			regulator-max-microvolt = <875000>;
+			regulator-always-on;
+			regulator-boot-on;
+		};
+
+		/*
+		 * s4: MX rail, an RPM level (corner) regulator, not a voltage
+		 * (values are level numbers). The stock kernel holds level 5
+		 * through its NSS driver (mx-supply); nothing else votes it.
+		 */
+		mp5496_s4: s4 {
+			regulator-min-microvolt = <5>;
+			regulator-max-microvolt = <5>;
+			regulator-always-on;
+			regulator-boot-on;
+		};
+
+		/*
+		 * No l2: the stock firmware never declares it (s1, s2 and s4 only,
+		 * on every board of this family). Voting it to 1.8 V, as on the
+		 * reference board, breaks every 10G SerDes of the SoC within
+		 * milliseconds (CPU link and SFP+ ports: high bit error rate).
+		 */
+	};
+};
+
+&sleep_clk {
+	clock-frequency = <32000>;
+};
+
+&tlmm {
+	/*
+	 * The stock firmware pulses two active-low resets for the devices on
+	 * mdio@90000 (RTL8372N switch, RTL8261N PHY), GPIO 36 first, then
+	 * GPIO 57. The MDIO bus takes a single reset-gpios, so GPIO 57 is the
+	 * bus reset and GPIO 36 is released here, before the bus is scanned.
+	 * Which line resets which chip is not known.
+	 */
+	mdio_reset_hog {
+		gpio-hog;
+		gpios = <36 GPIO_ACTIVE_HIGH>;
+		output-high;
+		line-name = "mdio-reset1-n";
+	};
+
+	spi_0_pins: spi-0-state {
+		pins = "gpio11", "gpio12", "gpio13", "gpio14";
+		function = "blsp0_spi";
+		drive-strength = <8>;
+		bias-disable;
+	};
+
+	gpio_keys_default: gpio-keys-default-state {
+		pins = "gpio52";
+		function = "gpio";
+		drive-strength = <8>;
+		bias-pull-up;
+	};
+
+	pwm_pins: pwm-state {
+		pins = "gpio54";
+		function = "pwm";
+		drive-strength = <8>;
+		bias-disable;
+	};
+
+	gpio_leds_default: gpio-leds-default-state {
+		pins = "gpio44", "gpio45";
+		function = "gpio";
+		drive-strength = <8>;
+		output-low;
+		bias-pull-up;
+	};
+
+	pcie2_default: pcie2-default-state {
+		perst-n-pins {
+			pins = "gpio28";
+			function = "gpio";
+			drive-strength = <8>;
+			bias-pull-down;
+			output-low;
+		};
+	};
+
+	i2c3_pins: i2c3-pins {
+		pins = "gpio15", "gpio16";
+		function = "blsp3_i2c";
+		drive-strength = <8>;
+		bias-disable;
+	};
+
+	i2c4_pins: i2c4-pins {
+		pins = "gpio50", "gpio51";
+		function = "blsp4_i2c";
+		drive-strength = <8>;
+		bias-disable;
+	};
+
+	spi1_pins: spi1-pins {
+		mux_0 {
+			pins = "gpio61", "gpio62", "gpio64";
+			function = "blsp1_spi";
+			drive-strength = <8>;
+			bias-disable;
+		};
+
+		mux_1 {
+			pins = "gpio60", "gpio63";
+			function = "gpio";
+			drive-strength = <8>;
+			bias-disable;
+		};
+	};
+
+	sdc_default_state: sdc-default-state {
+		clk-pins {
+			pins = "gpio5";
+			function = "sdc_clk";
+			drive-strength = <8>;
+			bias-disable;
+		};
+
+		cmd-pins {
+			pins = "gpio4";
+			function = "sdc_cmd";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+
+		data-pins {
+			pins = "gpio0", "gpio1", "gpio2",
+			       "gpio3", "gpio6", "gpio7",
+			       "gpio8", "gpio9";
+			function = "sdc_data";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+
+		rclk-pins {
+			pins = "gpio10";
+			function = "sdc_rclk";
+			drive-strength = <8>;
+			bias-pull-down;
+		};
+	};
+};
+
+&qpic_bam {
+	status = "okay";
+};
+
+&ref_48mhz_clk {
+	clock-div = <1>;
+	clock-mult = <1>;
+};
+
+&xo_board_clk {
+	clock-div = <2>;
+	clock-mult = <1>;
+};
+
+&xo_clk {
+	clock-frequency = <48000000>;
+};
+
+/*
+ * eMMC as stock runs it: HS200 at up to 192 MHz, no command queueing.
+ * In HS400 Enhanced Strobe with CQE at 384 MHz (as on the reference
+ * boards) bulk reads on this board end in CQE recovery and I/O errors.
+ */
+&sdhc_1 {
+	pinctrl-0 = <&sdc_default_state>;
+	pinctrl-names = "default";
+	mmc-ddr-1_8v;
+	mmc-hs200-1_8v;
+	max-frequency = <192000000>;
+	bus-width = <8>;
+	/delete-property/ supports-cqe;
+	status = "okay";
+};
+
+&pcie2_phy {
+	status = "okay";
+};
+
+&pcie2 {
+	pinctrl-0 = <&pcie2_default>;
+	pinctrl-names = "default";
+
+	perst-gpios = <&tlmm 28 GPIO_ACTIVE_LOW>;
+	status = "okay";
+};
+
+&mdio {
+	reset-gpios = <&tlmm 57 GPIO_ACTIVE_LOW>;
+	reset-delay-us = <100000>;
+	reset-post-delay-us = <100000>;
+	status = "okay";
+
+	/*
+	 * RTL8372N switch (stock: "realtek,rtl8372", phy-id 0x1d). It is reset
+	 * by the MDIO bus reset above and the GPIO 36 hog, not by a GPIO of
+	 * its own.
+	 *
+	 * Port 8 (SerDes 1, "10gbase-r" in the stock DT) is taken to be the CPU
+	 * link to ppe_port1; ports 4 to 7 are the four 2.5G LAN ports with
+	 * internal PHYs. Port 3 (SerDes 0, "usxgmii") is the 10G copper port:
+	 * the RTL8261N PHY at SMI address 1, reached through the switch's own
+	 * MDIO bus. The stock firmware also marks port 3 as having an external
+	 * PHY (rtk_port_extphyid_set); the driver does not, so link polling for
+	 * that port is unverified, and the driver's author is unsure that its
+	 * USXGMII mode works. Not known from the stock firmware and left at
+	 * their defaults: the SerDes lane swaps and PHY polarity bits
+	 * (sds*-rx/tx-swap, phy-mdi-reverse, phy-tx-polarity-swap), and which
+	 * front panel socket is which port. The driver has no LED support, so
+	 * the per-port LED settings of the stock DT are not carried over.
+	 */
+	switch@1d {
+		compatible = "realtek,rtl8372n";
+		reg = <29>;
+
+		/*
+		 * LED and LED-pin setup of the stock firmware, as read from the
+		 * running stock firmware (the driver has no LED code): LAN ports
+		 * 4-7 on LED set 3, the set behaviour, pin output enable and pin
+		 * mux. This board has no LEDs at the RJ45 ports; the values are
+		 * kept so that the switch's LED pins are set up as on stock.
+		 * <register mask value>
+		 */
+		extra-init = <0x6524 0xffffffff 0xf5001400>,	/* LED3_0_SET3_2_CTRL1 */
+			     <0x6528 0xffffffff 0x00000005>,	/* LED3_0_SET1_0_CTRL1 */
+			     <0x652c 0xffffffff 0x007f017d>,	/* LED3_2_SET3_CTRL0 */
+			     <0x6548 0xffffffff 0x0154017d>,	/* LED1_0_SET0_CTRL0 */
+			     <0x654c 0xffffffff 0x0000ff00>,	/* LED_PORT_SET_SEL */
+			     <0x65e0 0xffffffff 0x3fffffe0>,	/* LED_GLB_MUX_1 */
+			     <0x65e4 0xffffffff 0x0c6bffde>,	/* LED_GLB_MUX_2 */
+			     <0x65dc 0xffffffff 0x5fffff21>;	/* LED_GLB_IO_EN */
+
+		ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			port@3 {
+				reg = <3>;
+				label = "wan";
+				nvmem-cells = <&macaddr_eeprom_0 0>;
+				nvmem-cell-names = "mac-address";
+				phy-mode = "usxgmii";
+				/* the switch's USXGMII PCS needs in-band signalling,
+				 * as the stock SDK runs it (auto-negotiation on)
+				 */
+				managed = "in-band-status";
+				phy-handle = <&switch_phy1>;
+			};
+
+			port@4 {
+				reg = <4>;
+				label = "lan1";
+				nvmem-cells = <&macaddr_eeprom_0 1>;
+				nvmem-cell-names = "mac-address";
+				phy-mode = "internal";
+				phy-handle = <&switch_phy4>;
+			};
+
+			port@5 {
+				reg = <5>;
+				label = "lan2";
+				nvmem-cells = <&macaddr_eeprom_0 2>;
+				nvmem-cell-names = "mac-address";
+				phy-mode = "internal";
+				phy-handle = <&switch_phy5>;
+			};
+
+			port@6 {
+				reg = <6>;
+				label = "lan3";
+				nvmem-cells = <&macaddr_eeprom_0 3>;
+				nvmem-cell-names = "mac-address";
+				phy-mode = "internal";
+				phy-handle = <&switch_phy6>;
+			};
+
+			port@7 {
+				reg = <7>;
+				label = "lan4";
+				nvmem-cells = <&macaddr_eeprom_0 4>;
+				nvmem-cell-names = "mac-address";
+				phy-mode = "internal";
+				phy-handle = <&switch_phy7>;
+			};
+
+			port@8 {
+				reg = <8>;
+				label = "cpu";
+				ethernet = <&ppe_port1>;
+				phy-mode = "10gbase-r";
+
+				fixed-link {
+					speed = <10000>;
+					full-duplex;
+					pause;
+					asym-pause;
+				};
+			};
+		};
+
+		mdio {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			switch_phy1: ethernet-phy@1 {
+				compatible = "ethernet-phy-ieee802.3-c45";
+				reg = <1>;
+			};
+
+			switch_phy4: ethernet-phy@4 {
+				compatible = "ethernet-phy-ieee802.3-c45";
+				reg = <4>;
+			};
+
+			switch_phy5: ethernet-phy@5 {
+				compatible = "ethernet-phy-ieee802.3-c45";
+				reg = <5>;
+			};
+
+			switch_phy6: ethernet-phy@6 {
+				compatible = "ethernet-phy-ieee802.3-c45";
+				reg = <6>;
+			};
+
+			switch_phy7: ethernet-phy@7 {
+				compatible = "ethernet-phy-ieee802.3-c45";
+				reg = <7>;
+			};
+		};
+	};
+};
+
+&qcom_ppe {
+	status = "okay";
+
+	ethernet-ports {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		ppe_port1: port@1 {
+			reg = <1>;
+			nvmem-cells = <&macaddr_eeprom_6 1>;
+			nvmem-cell-names = "mac-address";
+			/*
+			 * 10GBASE-R, not USXGMII: the stock firmware runs this link with the
+			 * XPCS in plain 10GBASE-R (DIG_CTRL1 0x2000, no USXG_EN, MII AN off)
+			 * although its DT labels dp1 "usxgmii"; the switch side (port 8) is
+			 * 10gbase-r too.
+			 */
+			phy-mode = "10gbase-r";
+			pcs-handle = <&pcs0_ch0>;
+			clocks = <&nsscc NSS_CC_PORT1_MAC_CLK>,
+				 <&nsscc NSS_CC_PORT1_RX_CLK>,
+				 <&nsscc NSS_CC_PORT1_TX_CLK>;
+			clock-names = "mac",
+				      "rx",
+				      "tx";
+			resets = <&nsscc PORT1_MAC_ARES>,
+				 <&nsscc PORT1_RX_ARES>,
+				 <&nsscc PORT1_TX_ARES>;
+			reset-names = "mac",
+				      "rx",
+				      "tx";
+
+			/*
+			 * Link to the RTL8372N switch (its port 8). The RTL8261N
+			 * 10G PHY is behind that switch, on its port 3.
+			 */
+			fixed-link {
+				speed = <10000>;
+				full-duplex;
+				pause;
+			};
+		};
+
+		ppe_port5: port@5 {
+			reg = <5>;
+			label = "sfp1";
+			nvmem-cells = <&macaddr_eeprom_0 6>;
+			nvmem-cell-names = "mac-address";
+			phy-mode = "usxgmii";
+			managed = "in-band-status";
+			pcs-handle = <&pcs1_ch0>;
+			sfp = <&sfp7>;
+			clocks = <&nsscc NSS_CC_PORT5_MAC_CLK>,
+				 <&nsscc NSS_CC_PORT5_RX_CLK>,
+				 <&nsscc NSS_CC_PORT5_TX_CLK>;
+			clock-names = "mac",
+				      "rx",
+				      "tx";
+			resets = <&nsscc PORT5_MAC_ARES>,
+				 <&nsscc PORT5_RX_ARES>,
+				 <&nsscc PORT5_TX_ARES>;
+			reset-names = "mac",
+				      "rx",
+				      "tx";
+		};
+
+		ppe_port6: port@6 {
+			reg = <6>;
+			label = "sfp2";
+			nvmem-cells = <&macaddr_eeprom_0 5>;
+			nvmem-cell-names = "mac-address";
+			phy-mode = "usxgmii";
+			managed = "in-band-status";
+			pcs-handle = <&pcs2_ch0>;
+			sfp = <&sfp6>;
+			clocks = <&nsscc NSS_CC_PORT6_MAC_CLK>,
+				 <&nsscc NSS_CC_PORT6_RX_CLK>,
+				 <&nsscc NSS_CC_PORT6_TX_CLK>;
+			clock-names = "mac",
+				      "rx",
+				      "tx";
+			resets = <&nsscc PORT6_MAC_ARES>,
+				 <&nsscc PORT6_RX_ARES>,
+				 <&nsscc PORT6_TX_ARES>;
+			reset-names = "mac",
+				      "rx",
+				      "tx";
+		};
+	};
+};
+
+/*
+ * SerDes analog tuning of the two SFP+ uniphys, from the stock DT
+ * (ess-uniphy "de-emphasis"). The CPU link (uniphy0) has none.
+ */
+&pcs1 {
+	qcom,serdes-tuning = <0x7c4 0x1f4f>, <0x21c 0x288a>, <0x19c 0xbe20>;
+};
+
+&pcs2 {
+	qcom,serdes-tuning = <0x7c4 0x1e65>, <0x21c 0x288a>, <0x19c 0xbe00>;
+};
+
+&blsp1_i2c3 {
+	pinctrl-0 = <&i2c3_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	/*
+	 * Not described: Realtek RTL8238B PoE controller at I2C address 0x20
+	 * (reset TLMM 25, interrupt TLMM 42, 51 W power budget, one PoE port
+	 * with its LED on PCA9575 pin 11). No upstream driver or binding exists
+	 * yet.
+	 */
+
+	gpio_ext: pca9575@22 {
+		compatible = "nxp,pca9575";
+		reg = <0x22>;
+		gpio-controller;
+		pupd-val = [ff 00];
+		#gpio-cells = <0x02>;
+		reset-gpios = <&tlmm 24 GPIO_ACTIVE_LOW>;
+	};
+
+	s35390a@30 {
+		compatible = "sii,s35390a";
+		reg = <0x30>;
+	};
+};
+
+&blsp1_i2c4 {
+	pinctrl-0 = <&i2c4_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	lis2dw12@19 {
+		compatible = "st,lis2dw12";
+		reg = <0x19>;
+		interrupts-extended = <&tlmm 33 IRQ_TYPE_EDGE_FALLING>;
+	};
+
+	ctf2302@32 {
+		compatible = "sensylink,ctf2302";
+		reg = <0x32>;
+		ch-dis = <0x2000>;
+	};
+
+	/*
+	 * No LM63: the stock DT declares lm63@4c, but nothing answers at 0x4c
+	 * on this board (i2cdetect on stock); the fan is driven by the CTF2302.
+	 */
+};
+
+&blsp1_spi1 {
+	status = "okay";
+	pinctrl-0 = <&spi1_pins>;
+	pinctrl-names = "default";
+
+	/*
+	 * ST7735S, 160x80 landscape. The stock st7735fb driver uses MADCTL 0xa8
+	 * and places the 80 rows at row 24 of the controller RAM.
+	 */
+	display@0 {
+		compatible = "ubnt,ucgfiber-lcd", "panel-mipi-dbi-spi";
+		reg = <0>;
+		spi-max-frequency = <15000000>;
+		dc-gpios = <&tlmm 63 GPIO_ACTIVE_HIGH>;
+		reset-gpios = <&tlmm 60 GPIO_ACTIVE_HIGH>;
+		backlight = <&backlight>;
+		write-only;
+		width-mm = <22>;
+		height-mm = <11>;
+
+		panel-timing {
+			hactive = <160>;
+			vactive = <80>;
+			hback-porch = <0>;
+			vback-porch = <24>;
+			clock-frequency = <0>;
+			hfront-porch = <0>;
+			hsync-len = <0>;
+			vfront-porch = <0>;
+			vsync-len = <0>;
+		};
+	};
+};
+
+&pwm {
+	pinctrl-0 = <&pwm_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+};

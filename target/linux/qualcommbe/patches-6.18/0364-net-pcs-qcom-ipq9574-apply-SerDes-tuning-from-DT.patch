@@ -1,0 +1,150 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Alex Rau <alex@retroduction.org>
+Date: Mon, 19 Oct 2026 01:30:00 +0200
+Subject: [PATCH] net: pcs: qcom-ipq9574: apply SerDes tuning from DT
+
+Boards may need SerDes analog tuning (TX de-emphasis and related
+settings) in the uniphy register page. The vendor SSDK takes it from
+the "de-emphasis" property of its ess-uniphy node; the Ubiquiti
+UCG-Fiber sets three registers on each SFP+ uniphy there.
+
+Add an optional "qcom,serdes-tuning" property: a list of
+<offset value> pairs in the directly accessed uniphy page. The pairs
+are written right after the uniphy resets are released, so that they
+are in place for the calibration, and once more after calibration,
+which is where the SSDK writes them.
+
+Assisted-by: Claude:claude-opus-5-5
+Signed-off-by: Alex Rau <alex@retroduction.org>
+
+---
+--- a/drivers/net/pcs/pcs-qcom-ipq9574.c
++++ b/drivers/net/pcs/pcs-qcom-ipq9574.c
+@@ -23,6 +23,9 @@
+ #define PCS_CALIBRATION			0x1e0
+ #define PCS_CALIBRATION_DONE		BIT(7)
+ 
++/* SerDes analog tuning registers are in the directly accessed uniphy page */
++#define PCS_TUNING_REG_MAX		0x800
++
+ /* 25MHz reference clock output to an external PHY */
+ #define PCS_CLKOUT_50M_CTRL		0x610
+ #define PCS_CLKOUT_50M_25M_EN		BIT(0)
+@@ -167,6 +170,10 @@ struct ipq_pcs {
+ 	struct reset_control *xpcs_rstc;
+ 	struct reset_control *sys_rstc;
+ 	struct reset_control *soft_rstc;
++
++	/* Board specific SerDes analog tuning, <offset value> pairs */
++	u32 *tuning;
++	int tuning_nr;
+ };
+ 
+ #define phylink_pcs_to_qpcs_mii(_pcs)	\
+@@ -330,6 +337,20 @@ static int ipq_pcs_restore_port_clks(str
+ 	return clk_prepare_enable(qpcs->qpcs_mii[0]->tx_clk);
+ }
+ 
++static int ipq_pcs_apply_tuning(struct ipq_pcs *qpcs)
++{
++	int i, ret;
++
++	for (i = 0; i < qpcs->tuning_nr; i++) {
++		ret = regmap_write(qpcs->regmap, qpcs->tuning[2 * i],
++				   qpcs->tuning[2 * i + 1]);
++		if (ret)
++			return ret;
++	}
++
++	return 0;
++}
++
+ static int ipq_pcs_config_mode(struct ipq_pcs *qpcs,
+ 			       phy_interface_t interface)
+ {
+@@ -427,9 +448,18 @@ static int ipq_pcs_config_mode(struct ip
+ 		msleep(100);
+ 		reset_control_deassert(qpcs->sys_rstc);
+ 		reset_control_deassert(qpcs->soft_rstc);
+-		msleep(100);
+ 	}
+ 
++	/* The resets above clear the analog tuning; restore it before the
++	 * calibration that starts on their release.
++	 */
++	ret = ipq_pcs_apply_tuning(qpcs);
++	if (ret)
++		goto err_clk;
++
++	if (qpcs->sys_rstc || qpcs->soft_rstc)
++		msleep(100);
++
+ 	/* PCS PLL reset */
+ 	if (interface == PHY_INTERFACE_MODE_USXGMII) {
+ 		/* Program the whole register: the analog enables must not
+@@ -470,6 +500,13 @@ static int ipq_pcs_config_mode(struct ip
+ 		goto err_clk;
+ 	}
+ 
++	/* The vendor SSDK writes the tuning after its uniphy setup: write it
++	 * again so it is in place regardless of what calibration changed.
++	 */
++	ret = ipq_pcs_apply_tuning(qpcs);
++	if (ret)
++		goto err_clk;
++
+ 	/* Re-enable the port clocks disabled at entry */
+ 	ret = ipq_pcs_restore_port_clks(qpcs, interface);
+ 	if (ret)
+@@ -1148,6 +1185,40 @@ static const struct regmap_config ipq_pc
+ 	.fast_io = true,
+ };
+ 
++static int ipq_pcs_parse_tuning(struct ipq_pcs *qpcs)
++{
++	struct device_node *np = qpcs->dev->of_node;
++	int i, n, ret;
++
++	n = of_property_count_u32_elems(np, "qcom,serdes-tuning");
++	if (n == -EINVAL)
++		return 0;
++	if (n <= 0 || n % 2)
++		return dev_err_probe(qpcs->dev, -EINVAL,
++				     "Invalid qcom,serdes-tuning\n");
++
++	qpcs->tuning = devm_kcalloc(qpcs->dev, n, sizeof(u32), GFP_KERNEL);
++	if (!qpcs->tuning)
++		return -ENOMEM;
++
++	ret = of_property_read_u32_array(np, "qcom,serdes-tuning",
++					 qpcs->tuning, n);
++	if (ret)
++		return ret;
++
++	for (i = 0; i < n; i += 2) {
++		if (qpcs->tuning[i] >= PCS_TUNING_REG_MAX ||
++		    qpcs->tuning[i] & 0x3)
++			return dev_err_probe(qpcs->dev, -EINVAL,
++					     "Invalid tuning register 0x%x\n",
++					     qpcs->tuning[i]);
++	}
++
++	qpcs->tuning_nr = n / 2;
++
++	return 0;
++}
++
+ static int ipq9574_pcs_probe(struct platform_device *pdev)
+ {
+ 	struct device *dev = &pdev->dev;
+@@ -1196,6 +1267,10 @@ static int ipq9574_pcs_probe(struct plat
+ 		return dev_err_probe(dev, PTR_ERR(qpcs->soft_rstc),
+ 				     "Failed to get uniphy soft reset\n");
+ 
++	ret = ipq_pcs_parse_tuning(qpcs);
++	if (ret)
++		return ret;
++
+ 	ret = ipq_pcs_clk_register(qpcs);
+ 	if (ret)
+ 		return ret;

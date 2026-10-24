@@ -1,0 +1,196 @@
+#!/bin/sh
+# SPDX-License-Identifier: GPL-2.0-only
+#
+# Choose which system the UniFi Cloud Gateway Fiber boots (stock or
+# OpenWrt), and install OpenWrt's kernel and system next to stock.
+# Runs on OpenWrt and, copied together with ucgfiber-dualboot.sh, on the
+# stock firmware. Never reboots; changes take effect at the next boot.
+#
+# usage: ucgfiber-bootsel status
+#        ucgfiber-bootsel stock | openwrt
+#        ucgfiber-bootsel repair
+#        ucgfiber-bootsel install [--dry-run] <kernel> <rootfs>
+#
+# install adds uImage.owrt and rootfs.owrt (from a sysupgrade image:
+# sysupgrade-ubnt_ucgfiber/kernel and .../root) with their hashes; stock's
+# files are not touched. Follow it with "openwrt" to boot OpenWrt.
+
+LIB=/lib/upgrade/ucgfiber-dualboot.sh
+[ -f "$LIB" ] || LIB="$(dirname "$0")/ucgfiber-dualboot.sh"
+[ -f "$LIB" ] || { echo "ucgfiber-bootsel: $LIB not found" >&2; exit 1; }
+. "$LIB"
+
+TMPMNT=/tmp/ucgfiber-bootsel.$$
+LOCK=/tmp/ucgfiber-bootsel.lock
+MOUNTED=""
+REMOUNTED=""
+LOCKED=""
+
+usage() {
+	sed -n 's/^# usage: /usage: /p; s/^#        /       /p' "$0" >&2
+	exit 2
+}
+
+# set <var> to a mount point of <dev>. rw: an existing read-write mount,
+# an existing read-only one remounted read-write (until the end), or a new
+# mount under /tmp. ro (status, dry run; writes nothing): any existing
+# mount, or a new read-only one without journal replay. Not to be called in
+# a subshell: cleanup needs MOUNTED and REMOUNTED.
+part_mount() { # <dev> <name> <ro|rw> <var>
+	local d mp t opts r
+
+	while read -r d mp t opts r; do
+		[ "$d" = "$1" ] || continue
+		case ",$opts," in
+		*,rw,*) eval "$4=\$mp"; return 0 ;;
+		esac
+		[ "$3" = ro ] && { eval "$4=\$mp"; return 0; }
+		mount -o remount,rw "$mp" || { echo "ucgfiber-bootsel: cannot remount $mp read-write" >&2; return 1; }
+		REMOUNTED="$REMOUNTED $mp"
+		eval "$4=\$mp"
+		return 0
+	done </proc/mounts
+	if [ "$3" = ro ]; then
+		mkdir -p "$TMPMNT/$2" && mount -t ext4 -o ro,noload "$1" "$TMPMNT/$2" || return 1
+	else
+		mkdir -p "$TMPMNT/$2" && mount -t ext4 -o rw,noatime "$1" "$TMPMNT/$2" || return 1
+	fi
+	MOUNTED="$MOUNTED $TMPMNT/$2"
+	eval "$4=\$TMPMNT/\$2"
+}
+
+# how <dev> is mounted now (for status)
+mount_info() { # <dev>
+	local d mp t opts r found=""
+
+	while read -r d mp t opts r; do
+		[ "$d" = "$1" ] && found="$found $mp(${opts%%,*})"
+	done </proc/mounts
+	echo "${found:- not mounted}"
+}
+
+cleanup() {
+	local m
+
+	sync
+	for m in $MOUNTED; do umount "$m"; done
+	for m in $REMOUNTED; do mount -o remount,ro "$m"; done
+	rm -rf "$TMPMNT"
+	[ -n "$LOCKED" ] && rm -rf "$LOCK"
+}
+
+# one run at a time (the boot-time repair may run while a user calls this);
+# a lock left by a process that no longer exists is taken over
+take_lock() {
+	local n=0 pid
+
+	while ! mkdir "$LOCK" 2>/dev/null; do
+		pid="$(cat "$LOCK/pid" 2>/dev/null)"
+		if [ -n "$pid" ] && ! kill -0 "$pid" 2>/dev/null; then
+			rm -rf "$LOCK"
+			continue
+		fi
+		n=$((n + 1))
+		[ "$n" -lt 120 ] || { echo "ucgfiber-bootsel: another run holds $LOCK" >&2; exit 1; }
+		sleep 1
+	done
+	echo $$ >"$LOCK/pid"
+	LOCKED=1
+}
+
+free_kib() { # <dir>
+	df -kP "$1" | awk 'NR == 2 { print $4 }'
+}
+
+describe() { # <K>
+	local k="$1"
+
+	case "$(db_state "$k")" in
+	stock) echo "active: stock" ;;
+	openwrt) echo "active: OpenWrt" ;;
+	*) echo "active: none (no bootable uImage)" ;;
+	esac
+	db_good_kernel "$k/uImage.owrt" owrt && echo "OpenWrt kernel: good" || echo "OpenWrt kernel: missing or damaged"
+	db_good_kernel "$k/uImage.owrt.bkp" owrt && echo "OpenWrt backup kernel: good" || echo "OpenWrt backup kernel: missing or damaged"
+	if [ "$(db_state "$k")" = openwrt ]; then
+		db_good_kernel "$k/uImage.stock" stock && echo "stock kernel: good" || echo "stock kernel: missing or damaged"
+	fi
+	[ -f "$k/$DB_MARKER" ] && echo "unfinished OpenWrt upgrade: yes (run repair)"
+	return 0
+}
+
+# checks before an install; prints what it found, fails on a problem
+install_checks() { # <K> <kernel> <rootfs> [R]
+	local k="$1" kern="$2" root="$3" r="$4" need ok=0
+
+	if [ "$(db_kind "$kern")" = owrt ]; then echo "kernel: OpenWrt FIT, $(db_size "$kern") bytes"; else echo "kernel: $kern is not an intact OpenWrt FIT"; ok=1; fi
+	if db_is_squashfs "$root"; then echo "system: squashfs, $(db_size "$root") bytes"; else echo "system: $root is not a squashfs"; ok=1; fi
+	describe "$k"
+	need=$(( $(db_size "$kern" 2>/dev/null || echo 0) / 1024 + 1024 ))
+	echo "kernel partition: $(free_kib "$k") KiB free, $need KiB needed"
+	[ "$(free_kib "$k")" -ge "$need" ] || ok=1
+	if [ -n "$r" ]; then
+		need=$(( $(db_size "$root" 2>/dev/null || echo 0) / 1024 + 1024 ))
+		echo "root partition: $(free_kib "$r") KiB free, $need KiB needed"
+		[ "$(free_kib "$r")" -ge "$need" ] || ok=1
+	fi
+	for t in sha256sum cp mv ln rm sync grep sed cut tr wc head cat df awk; do
+		command -v "$t" >/dev/null 2>&1 || { echo "missing tool: $t"; ok=1; }
+	done
+	command -v od >/dev/null 2>&1 || command -v hexdump >/dev/null 2>&1 || { echo "missing tool: od or hexdump"; ok=1; }
+	return $ok
+}
+
+cmd="$1"
+[ -n "$cmd" ] || usage
+shift
+dry=""
+if [ "$cmd" = install ] && [ "$1" = --dry-run ]; then dry=1; shift; fi
+case "$cmd" in
+status|stock|openwrt|repair) [ $# = 0 ] || usage ;;
+install) [ $# = 2 ] || usage ;;
+*) usage ;;
+esac
+
+kdev="$(db_find_part kernel)" && rdev="$(db_find_part root)" && db_find_part recovery >/dev/null || {
+	echo "ucgfiber-bootsel: this is not a UCG-Fiber eMMC layout (kernel/recovery/root partitions)" >&2
+	exit 1
+}
+
+if [ "$cmd" = status ] || [ -n "$dry" ]; then
+	echo "kernel partition $kdev:$(mount_info "$kdev")"
+	echo "root partition $rdev:$(mount_info "$rdev")"
+	if p="$(db_find_part rootfs_data)"; then echo "data partition $p:$(mount_info "$p")"; else echo "data partition: none yet (ucgfiber-install-data)"; fi
+fi
+
+mode=rw
+[ "$cmd" = status ] || [ -n "$dry" ] && mode=ro
+trap cleanup EXIT
+take_lock
+part_mount "$kdev" kernel $mode K || exit 1
+
+case "$cmd" in
+status)
+	describe "$K"
+	;;
+stock)
+	db_switch_stock "$K" && echo "stock boots at the next restart"
+	;;
+openwrt)
+	db_switch_openwrt "$K" && echo "OpenWrt boots at the next restart"
+	;;
+repair)
+	R=""
+	part_mount "$rdev" root rw R || R=""
+	db_repair "$K" "$R" && describe "$K"
+	;;
+install)
+	part_mount "$rdev" root $mode R || exit 1
+	if [ -n "$dry" ]; then
+		install_checks "$K" "$1" "$2" "$R" && echo "dry run: install would proceed" || { echo "dry run: install would fail"; exit 1; }
+	else
+		install_checks "$K" "$1" "$2" "$R" >/dev/null || { install_checks "$K" "$1" "$2" "$R"; exit 1; }
+		db_install_owrt "$K" "$R" "$1" "$2" && echo "OpenWrt installed; \"$0 openwrt\" makes it boot next"
+	fi
+	;;
+esac

@@ -1,0 +1,59 @@
+#!/bin/sh
+# OpenWrt's system on the UniFi Cloud Gateway Fiber is the squashfs file
+# rootfs.owrt in the ext4 GPT partition named "root", next to the stock
+# firmware's own files (dual boot, see ucgfiber-dualboot.sh). Mount that
+# partition, loop-mount rootfs.owrt (or rootfs.owrt.bkp if rootfs.owrt is
+# damaged) and switch to it. Its settings partition (rootfs_data) is found
+# later by fstools.
+export PATH=/bin:/sbin
+mount -t proc proc /proc
+mount -t sysfs sys /sys
+mount -t tmpfs tmpfs /dev
+mknod /dev/console c 5 1
+mknod /dev/null c 1 3
+for n in 0 1 2 3; do mknod /dev/loop$n b 7 $n; done
+
+# the block device of the GPT partition named <label>, node created in /dev
+find_part() {
+	local u name maj min
+
+	for u in /sys/class/block/*/uevent; do
+		grep -qx "PARTNAME=$1" "$u" 2>/dev/null || continue
+		name="$(sed -n 's/^DEVNAME=//p' "$u")"
+		IFS=: read maj min <"${u%/uevent}/dev"
+		[ -e "/dev/$name" ] || mknod "/dev/$name" b "$maj" "$min"
+		echo "/dev/$name"
+		return 0
+	done
+	return 1
+}
+
+# the image's stored hash matches (or none is stored)
+hash_ok() {
+	[ -f "$1.sha256" ] || return 0
+	[ "$(sha256sum <"$1" | cut -c1-64)" = "$(cat "$1.sha256")" ]
+}
+
+i=0
+while ! dev="$(find_part root)"; do
+	i=$((i + 1))
+	[ $i -lt 20 ] || { echo "ucgfiber: no partition named root"; exec sh; }
+	sleep 1
+done
+
+# read-write: the running system keeps it mounted, and sysupgrade and the
+# boot-time repair write OpenWrt's files on it (never stock's)
+mkdir -p /mnt/root /mnt/sq
+mount -t ext4 -o rw,noatime "$dev" /mnt/root || { echo "ucgfiber: root partition mount failed"; exec sh; }
+for img in rootfs.owrt rootfs.owrt.bkp; do
+	[ -f "/mnt/root/$img" ] || continue
+	hash_ok "/mnt/root/$img" || { echo "ucgfiber: $img is damaged"; continue; }
+	if mount -t squashfs -o ro,loop "/mnt/root/$img" /mnt/sq; then
+		echo "ucgfiber: using $img"
+		# rootfs is a file on this partition: keep it mounted inside the new root so sysupgrade can reach it
+		mount -o move /mnt/root /mnt/sq/mnt || echo "ucgfiber: could not move the root partition mount"
+		exec switch_root /mnt/sq /sbin/init
+	fi
+done
+echo "ucgfiber: no usable rootfs.owrt"
+exec sh
