@@ -14,6 +14,9 @@ ipq95xx_setup_interfaces()
 	8devices,kiwi-dvk)
 		ucidef_set_interfaces_lan_wan "lan1 lan2" "wan"
 		;;
+	alta,route10)
+		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "wan1 wan2"
+		;;
 	askey,sbe1v1k)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" "wan"
 		;;
