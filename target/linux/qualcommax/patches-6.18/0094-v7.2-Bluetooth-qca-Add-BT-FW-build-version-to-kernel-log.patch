@@ -1,0 +1,29 @@
+From bdea21b3be4350592965bec213837e7b4f9fe75f Mon Sep 17 00:00:00 2001
+From: Xiuzhuo Shang <xiuzhuo.shang@oss.qualcomm.com>
+Date: Wed, 10 Jun 2026 14:42:32 +0800
+Subject: [PATCH] Bluetooth: qca: Add BT FW build version to kernel log
+
+Firmware version is critical for bug triage. Users reporting issues
+typically share dmesg output rather than debugfs contents, requiring
+extra communication rounds to collect this information. Log the FW
+build version directly to the kernel log so it is immediately
+available in bug reports.
+
+Acked-by: Bartosz Golaszewski <bartosz.golaszewski@oss.qualcomm.com>
+Signed-off-by: Xiuzhuo Shang <xiuzhuo.shang@oss.qualcomm.com>
+Signed-off-by: Luiz Augusto von Dentz <luiz.von.dentz@intel.com>
+---
+ drivers/bluetooth/btqca.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+--- a/drivers/bluetooth/btqca.c
++++ b/drivers/bluetooth/btqca.c
+@@ -143,6 +143,8 @@ static int qca_read_fw_build_info(struct
+ 
+ 	hci_set_fw_info(hdev, "%s", build_label);
+ 
++	bt_dev_info(hdev, "QCA FW build version: %s", build_label);
++
+ 	kfree(build_label);
+ out:
+ 	kfree_skb(skb);
