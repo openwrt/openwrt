@@ -1,0 +1,86 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Adriel Santos <adriel@adriel.eu>
+Date: Fri, 3 Oct 2026 19:55:31 -0300
+Subject: [PATCH] net: dsa: retain VLAN upper filtering for VLAN taggers
+
+VLAN taggers need upper membership even while a port is in a VLAN-unaware
+bridge or has just left a VLAN-aware bridge. Add an opt-in capability,
+which the driver sets when it switches to such a tagger, to retain upper
+filtering across those transitions. Do not replay existing upper
+memberships and inflate their CPU references. For a driver that opts in,
+and so keeps uppers apart from bridge VLANs, also remove the user port's
+upper membership when the subsequent CPU VLAN add fails.
+
+Restrict the opt-in C-tag mode to 802.1Q bridge protocol on runtime
+changes.
+
+Signed-off-by: Adriel Santos <adriel@adriel.eu>
+Assisted-by: Claude
+---
+--- a/include/net/dsa.h
++++ b/include/net/dsa.h
+@@ -399,6 +399,9 @@ struct dsa_switch {
+ 	/* Keep VLAN filtering enabled on ports not offloading any upper */
+ 	u32			needs_standalone_vlan_filtering:1;
+ 
++	/* Keep VLAN-upper RX filtering across bridge VLAN-awareness changes. */
++	u32			vlan_upper_filtering_always:1;
++
+ 	/* Pass .port_vlan_add and .port_vlan_del to drivers even for bridges
+ 	 * that have vlan_filtering=0. All drivers should ideally set this (and
+ 	 * then the option would get removed), but it is unknown whether this
+--- a/net/dsa/user.c
++++ b/net/dsa/user.c
+@@ -612,6 +612,16 @@ static int dsa_user_port_attr_set(struct
+ 		ret = dsa_port_vlan_filtering(dp, attr->u.vlan_filtering,
+ 					      extack);
+ 		break;
++	case SWITCHDEV_ATTR_ID_BRIDGE_VLAN_PROTOCOL:
++		if (!dp->ds->vlan_upper_filtering_always ||
++		    !dsa_port_offloads_bridge_dev(dp, attr->orig_dev))
++			return -EOPNOTSUPP;
++		if (attr->u.vlan_protocol != ETH_P_8021Q) {
++			NL_SET_ERR_MSG_MOD(extack, "VLAN tagger requires an 802.1Q bridge");
++			return -EINVAL;
++		}
++		ret = 0;
++		break;
+ 	case SWITCHDEV_ATTR_ID_BRIDGE_AGEING_TIME:
+ 		if (!dsa_port_offloads_bridge_dev(dp, attr->orig_dev))
+ 			return -EOPNOTSUPP;
+@@ -1816,6 +1826,9 @@ static int dsa_user_vlan_rx_add_vid(stru
+ 		if (extack._msg)
+ 			netdev_err(dev, "CPU port %d: %s\n", dp->cpu_dp->index,
+ 				   extack._msg);
++		/* Only such a driver keeps uppers apart from bridge VLANs */
++		if (ds->vlan_upper_filtering_always)
++			dsa_port_vlan_del(dp, &vlan);
+ 		return ret;
+ 	}
+ 
+@@ -1967,8 +1980,16 @@ static int dsa_user_clear_vlan(struct ne
+ int dsa_user_manage_vlan_filtering(struct net_device *user,
+ 				   bool vlan_filtering)
+ {
++	struct dsa_switch *ds = dsa_user_to_port(user)->ds;
+ 	int err;
+ 
++	if (ds->vlan_upper_filtering_always) {
++		/* Already installed uppers must not be replayed/refcounted twice. */
++		if (user->features & NETIF_F_HW_VLAN_CTAG_FILTER)
++			return 0;
++		vlan_filtering = true;
++	}
++
+ 	if (vlan_filtering) {
+ 		user->features |= NETIF_F_HW_VLAN_CTAG_FILTER;
+ 
+@@ -2718,7 +2739,7 @@ void dsa_user_setup_tagger(struct net_de
+ 	user->hw_features |= NETIF_F_HW_TC;
+ 	if (user->needed_tailroom)
+ 		user->features &= ~(NETIF_F_SG | NETIF_F_FRAGLIST);
+-	if (ds->needs_standalone_vlan_filtering)
++	if (ds->needs_standalone_vlan_filtering || ds->vlan_upper_filtering_always)
+ 		user->features |= NETIF_F_HW_VLAN_CTAG_FILTER;
+ 
+ 	user->lltx = true;

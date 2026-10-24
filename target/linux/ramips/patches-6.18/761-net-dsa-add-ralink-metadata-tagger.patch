@@ -33,22 +33,22 @@ Signed-off-by: Gleb Pesin <dormancygrace@gmail.com>
  #define DSA_TAG_PROTO_MXL862_VALUE		30
  #define DSA_TAG_PROTO_MXL862_8021Q_VALUE	31
 +#define DSA_TAG_PROTO_RALINK_VALUE		32
+ #define DSA_TAG_PROTO_QCA_8021Q_VALUE		34
  
  enum dsa_tag_protocol {
- 	DSA_TAG_PROTO_NONE		= DSA_TAG_PROTO_NONE_VALUE,
-@@ -91,6 +92,7 @@ enum dsa_tag_protocol {
+@@ -92,6 +93,7 @@ enum dsa_tag_protocol {
  	DSA_TAG_PROTO_VSC73XX_8021Q	= DSA_TAG_PROTO_VSC73XX_8021Q_VALUE,
  	DSA_TAG_PROTO_MXL862		= DSA_TAG_PROTO_MXL862_VALUE,
  	DSA_TAG_PROTO_MXL862_8021Q	= DSA_TAG_PROTO_MXL862_8021Q_VALUE,
 +	DSA_TAG_PROTO_RALINK		= DSA_TAG_PROTO_RALINK_VALUE,
+ 	DSA_TAG_PROTO_QCA_8021Q		= DSA_TAG_PROTO_QCA_8021Q_VALUE,
  };
  
- struct dsa_switch;
 --- a/net/dsa/Kconfig
 +++ b/net/dsa/Kconfig
-@@ -151,6 +151,16 @@ config NET_DSA_TAG_QCA
- 	  Say Y or M if you want to enable support for tagging frames for
- 	  the Qualcomm Atheros QCA8K switches.
+@@ -159,6 +159,16 @@ config NET_DSA_TAG_QCA_8021Q
+ 	  of the 2-byte Atheros header. The conduit then sees plain VLAN
+ 	  frames, which anything in front of the CPU can parse.
  
 +config NET_DSA_TAG_RALINK
 +	tristate "Tag driver for Ralink embedded switches"
@@ -65,10 +65,10 @@ Signed-off-by: Gleb Pesin <dormancygrace@gmail.com>
  	help
 --- a/net/dsa/Makefile
 +++ b/net/dsa/Makefile
-@@ -34,6 +34,7 @@ obj-$(CONFIG_NET_DSA_TAG_NONE) += tag_no
- obj-$(CONFIG_NET_DSA_TAG_OCELOT) += tag_ocelot.o
+@@ -35,6 +35,7 @@ obj-$(CONFIG_NET_DSA_TAG_OCELOT) += tag_
  obj-$(CONFIG_NET_DSA_TAG_OCELOT_8021Q) += tag_ocelot_8021q.o
  obj-$(CONFIG_NET_DSA_TAG_QCA) += tag_qca.o
+ obj-$(CONFIG_NET_DSA_TAG_QCA_8021Q) += tag_qca_8021q.o
 +obj-$(CONFIG_NET_DSA_TAG_RALINK) += tag_ralink.o
  obj-$(CONFIG_NET_DSA_TAG_RTL4_A) += tag_rtl4_a.o
  obj-$(CONFIG_NET_DSA_TAG_RTL8_4) += tag_rtl8_4.o

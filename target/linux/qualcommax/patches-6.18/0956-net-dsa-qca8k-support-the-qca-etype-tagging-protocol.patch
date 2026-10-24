@@ -8,11 +8,15 @@ the header type in HEADER_CTRL to match. Register access and MIB
 autocast frames carry the type as well: build them with it, and let the
 tagger drop it on receive so the handlers keep their layout.
 
+[Stanislaw Pal: on top of the qca-8021q tagger (generic 761), which
+ brings qca8k_change_tag_protocol already. qca-etype becomes a case of
+ that function, the HEADER_CTRL write is kept as qca8k_set_hdr_etype(),
+ and Ethernet management runs in both header modes, not in qca alone]
 Assisted-by: Claude:claude-opus-5-5
 Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
 --- a/drivers/net/dsa/qca/qca8k-8xxx.c
 +++ b/drivers/net/dsa/qca/qca8k-8xxx.c
-@@ -216,7 +216,8 @@ static void qca8k_rw_reg_ack_handler(str
+@@ -217,7 +217,8 @@ static void qca8k_rw_reg_ack_handler(str
  }
  
  static struct sk_buff *qca8k_alloc_mdio_header(enum mdio_cmd cmd, u32 reg, u32 *val,
@@ -22,7 +26,7 @@ Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
  {
  	struct qca_mgmt_ethhdr *mgmt_ethhdr;
  	unsigned int real_len;
-@@ -261,7 +262,8 @@ static struct sk_buff *qca8k_alloc_mdio_
+@@ -262,7 +263,8 @@ static struct sk_buff *qca8k_alloc_mdio_
  	skb_reset_mac_header(skb);
  	skb_set_network_header(skb, skb->len);
  
@@ -32,7 +36,7 @@ Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
  
  	hdr = FIELD_PREP(QCA_HDR_XMIT_VERSION, QCA_HDR_VERSION);
  	hdr |= FIELD_PREP(QCA_HDR_XMIT_PRIORITY, priority);
-@@ -280,7 +282,12 @@ static struct sk_buff *qca8k_alloc_mdio_
+@@ -281,7 +283,12 @@ static struct sk_buff *qca8k_alloc_mdio_
  	if (cmd == MDIO_WRITE)
  		put_unaligned_le32(*val, &mgmt_ethhdr->mdio_data);
  
@@ -46,7 +50,7 @@ Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
  
  	data2 = skb_put_zero(skb, QCA_HDR_MGMT_DATA2_LEN + QCA_HDR_MGMT_PADDING_LEN);
  	if (cmd == MDIO_WRITE && len > QCA_HDR_MGMT_DATA1_LEN) {
-@@ -317,7 +324,8 @@ static int qca8k_read_eth(struct qca8k_p
+@@ -318,7 +325,8 @@ static int qca8k_read_eth(struct qca8k_p
  	int ret;
  
  	skb = qca8k_alloc_mdio_header(MDIO_READ, reg, NULL,
@@ -56,7 +60,7 @@ Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
  	if (!skb)
  		return -ENOMEM;
  
-@@ -369,7 +377,8 @@ static int qca8k_write_eth(struct qca8k_
+@@ -370,7 +378,8 @@ static int qca8k_write_eth(struct qca8k_
  	int ret;
  
  	skb = qca8k_alloc_mdio_header(MDIO_WRITE, reg, val,
@@ -92,35 +96,29 @@ Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
  	if (!read_skb) {
  		ret = -ENOMEM;
  		goto err_read_skb;
-@@ -1743,6 +1755,35 @@ qca8k_get_tag_protocol(struct dsa_switch
+@@ -1786,6 +1798,29 @@ qca8k_get_tag_protocol(struct dsa_switch
  	return DSA_TAG_PROTO_QCA;
  }
  
-+static int qca8k_change_tag_protocol(struct dsa_switch *ds,
-+				     enum dsa_tag_protocol proto)
++/* Where the switch puts the Atheros header: right after the MAC addresses
++ * (qca), or behind an ethertype (qca-etype). The qca-8021q mode sends no
++ * header at all and leaves this register alone.
++ */
++static int qca8k_set_hdr_etype(struct qca8k_priv *priv, bool etype)
 +{
-+	struct qca8k_priv *priv = ds->priv;
-+	u32 val;
++	u32 val = 0;
 +	int ret;
 +
-+	switch (proto) {
-+	case DSA_TAG_PROTO_QCA:
-+		val = 0;
-+		break;
-+	case DSA_TAG_PROTO_QCA_ETYPE:
++	if (etype)
 +		val = QCA8K_HEADER_CTRL_TYPE_LEN |
 +		      FIELD_PREP(QCA8K_HEADER_CTRL_TYPE_VAL, QCA_HDR_ETYPE);
-+		break;
-+	default:
-+		return -EPROTONOSUPPORT;
-+	}
 +
 +	/* Written in the format the switch still expects */
 +	ret = qca8k_write(priv, QCA8K_REG_HEADER_CTRL, val);
 +	if (ret)
 +		return ret;
 +
-+	priv->etype_hdr = proto == DSA_TAG_PROTO_QCA_ETYPE;
++	priv->etype_hdr = etype;
 +
 +	return 0;
 +}
@@ -128,25 +126,86 @@ Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
  static struct dsa_port *
  qca8k_preferred_default_local_cpu_port(struct dsa_switch *ds)
  {
-@@ -1893,6 +1934,7 @@ static int qca8k_connect_tag_protocol(st
+@@ -1929,7 +1964,8 @@ qca8k_conduit_change(struct dsa_switch *
+ 	/* Management over Ethernet rides on the Atheros header, which
+ 	 * tag_8021q has turned off in the switch; MDIO does the job then.
+ 	 */
+-	priv->mgmt_conduit = operational && priv->tag_proto == DSA_TAG_PROTO_QCA ?
++	priv->mgmt_conduit = operational &&
++			     priv->tag_proto != DSA_TAG_PROTO_QCA_8021Q ?
+ 			     (struct net_device *)conduit : NULL;
  
- 	switch (proto) {
+ 	mutex_unlock(&priv->mgmt_eth_data.mutex);
+@@ -1946,6 +1982,7 @@ static int qca8k_connect_tag_protocol(st
+ 		/* Nothing to connect: the tagger carries no management. */
+ 		break;
  	case DSA_TAG_PROTO_QCA:
 +	case DSA_TAG_PROTO_QCA_ETYPE:
  		tagger_data = ds->tagger_data;
  
  		tagger_data->rw_reg_ack_handler = qca8k_rw_reg_ack_handler;
-@@ -2122,6 +2164,7 @@ static const struct phylink_mac_ops qca8
+@@ -2038,12 +2075,28 @@ static int qca8k_change_tag_protocol(str
+ 				     enum dsa_tag_protocol proto)
+ {
+ 	struct qca8k_priv *priv = ds->priv;
++	enum dsa_tag_protocol old = priv->tag_proto;
+ 	struct dsa_port *dp;
+ 	int ret;
  
- static const struct dsa_switch_ops qca8k_switch_ops = {
- 	.get_tag_protocol	= qca8k_get_tag_protocol,
-+	.change_tag_protocol	= qca8k_change_tag_protocol,
- 	.setup			= qca8k_setup,
- 	.get_strings		= qca8k_get_strings,
- 	.get_ethtool_stats	= qca8k_get_ethtool_stats,
+-	if (proto == priv->tag_proto)
++	if (proto == old)
+ 		return 0;
+ 
++	/* Between qca and qca-etype only the place of the header changes */
++	if (proto != DSA_TAG_PROTO_QCA_8021Q && old != DSA_TAG_PROTO_QCA_8021Q) {
++		if (proto != DSA_TAG_PROTO_QCA &&
++		    proto != DSA_TAG_PROTO_QCA_ETYPE)
++			return -EPROTONOSUPPORT;
++
++		ret = qca8k_set_hdr_etype(priv,
++					  proto == DSA_TAG_PROTO_QCA_ETYPE);
++		if (ret)
++			return ret;
++
++		priv->tag_proto = proto;
++		return 0;
++	}
++
+ 	/* A port in a bridge cannot change over. tag_8021q keeps a VLAN for
+ 	 * each bridge and a PVID for each port, and neither its teardown nor
+ 	 * its setup brings back what the other mode had: the PVID and the
+@@ -2066,6 +2119,7 @@ static int qca8k_change_tag_protocol(str
+ 
+ 	switch (proto) {
+ 	case DSA_TAG_PROTO_QCA:
++	case DSA_TAG_PROTO_QCA_ETYPE:
+ 		dsa_tag_8021q_unregister(ds);
+ 		qca8k_user_vlan_filter_feature(ds, false);
+ 		ds->vlan_upper_filtering_always = false;
+@@ -2083,6 +2137,11 @@ static int qca8k_change_tag_protocol(str
+ 				return ret;
+ 		}
+ 
++		ret = qca8k_set_hdr_etype(priv,
++					  proto == DSA_TAG_PROTO_QCA_ETYPE);
++		if (ret)
++			return ret;
++
+ 		return qca8k_set_hdr_mode(priv, QCA8K_PORT_HDR_CTRL_ALL);
+ 	case DSA_TAG_PROTO_QCA_8021Q:
+ 		/* Management frames need the Atheros header; from here on
+@@ -2119,7 +2178,7 @@ static int qca8k_change_tag_protocol(str
+ 	}
+ 
+ restore_vlan:
+-	priv->tag_proto = DSA_TAG_PROTO_QCA;
++	priv->tag_proto = old;
+ 	qca8k_set_tag_8021q_vlan_mode(priv, false);
+ restore_hdr:
+ 	qca8k_set_hdr_mode(priv, QCA8K_PORT_HDR_CTRL_ALL);
 --- a/drivers/net/dsa/qca/qca8k.h
 +++ b/drivers/net/dsa/qca/qca8k.h
-@@ -149,6 +149,9 @@
+@@ -153,6 +153,9 @@
  #define   QCA8K_PORT_STATUS_LINK_AUTO			BIT(9)
  #define   QCA8K_PORT_STATUS_LINK_PAUSE			BIT(10)
  #define   QCA8K_PORT_STATUS_FLOW_AUTO			BIT(12)
@@ -156,7 +215,7 @@ Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
  #define QCA8K_REG_PORT_HDR_CTRL(_i)			(0x9c + (_i * 4))
  #define   QCA8K_PORT_HDR_CTRL_RX_MASK			GENMASK(3, 2)
  #define   QCA8K_PORT_HDR_CTRL_TX_MASK			GENMASK(1, 0)
-@@ -462,6 +465,7 @@ struct qca8k_priv {
+@@ -542,6 +545,7 @@ struct qca8k_priv {
  	struct device *dev;
  	struct gpio_desc *reset_gpio;
  	struct net_device *mgmt_conduit; /* Track if mdio/mib Ethernet is available */

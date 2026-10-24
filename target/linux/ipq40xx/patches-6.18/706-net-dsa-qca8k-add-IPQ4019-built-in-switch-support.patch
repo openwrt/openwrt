@@ -58,7 +58,7 @@ Signed-off-by: Robert Marko <robert.marko@sartura.hr>
 +obj-$(CONFIG_NET_DSA_QCA8K_IPQ4019)	+= qca8k-ipq4019.o qca8k-common.o
 --- a/drivers/net/dsa/qca/qca8k-common.c
 +++ b/drivers/net/dsa/qca/qca8k-common.c
-@@ -442,7 +442,7 @@ static int qca8k_vlan_del(struct qca8k_p
+@@ -446,7 +446,7 @@ static int qca8k_vlan_del(struct qca8k_p
  
  	/* Check if we're the last member to be removed */
  	del = true;
@@ -67,7 +67,7 @@ Signed-off-by: Robert Marko <robert.marko@sartura.hr>
  		mask = QCA8K_VTU_FUNC0_EG_MODE_PORT_NOT(i);
  
  		if ((reg & mask) != mask) {
-@@ -646,7 +646,7 @@ static int qca8k_update_port_member(stru
+@@ -675,7 +675,7 @@ static int qca8k_update_port_member(stru
  	u32 port_mask = BIT(dp->cpu_dp->index);
  	int i, ret;
  
@@ -1042,7 +1042,7 @@ Signed-off-by: Robert Marko <robert.marko@sartura.hr>
 +MODULE_LICENSE("GPL");
 --- a/drivers/net/dsa/qca/qca8k.h
 +++ b/drivers/net/dsa/qca/qca8k.h
-@@ -19,7 +19,10 @@
+@@ -20,7 +20,10 @@
  #define QCA8K_ETHERNET_TIMEOUT				msecs_to_jiffies(5)
  
  #define QCA8K_NUM_PORTS					7
@@ -1053,7 +1053,7 @@ Signed-off-by: Robert Marko <robert.marko@sartura.hr>
  #define QCA8K_MAX_MTU					9000
  #define QCA8K_NUM_LAGS					4
  #define QCA8K_NUM_PORTS_FOR_LAG				4
-@@ -28,6 +31,7 @@
+@@ -29,6 +32,7 @@
  #define QCA8K_ID_QCA8327				0x12
  #define PHY_ID_QCA8337					0x004dd036
  #define QCA8K_ID_QCA8337				0x13
@@ -1061,7 +1061,7 @@ Signed-off-by: Robert Marko <robert.marko@sartura.hr>
  
  #define QCA8K_QCA832X_MIB_COUNT				39
  #define QCA8K_QCA833X_MIB_COUNT				41
-@@ -266,6 +270,7 @@
+@@ -276,6 +280,7 @@
  #define   QCA8K_PORT_LOOKUP_STATE_LEARNING		QCA8K_PORT_LOOKUP_STATE(0x3)
  #define   QCA8K_PORT_LOOKUP_STATE_FORWARD		QCA8K_PORT_LOOKUP_STATE(0x4)
  #define   QCA8K_PORT_LOOKUP_LEARN			BIT(20)
@@ -1069,7 +1069,7 @@ Signed-off-by: Robert Marko <robert.marko@sartura.hr>
  #define   QCA8K_PORT_LOOKUP_ING_MIRROR_EN		BIT(25)
  
  #define QCA8K_REG_GOL_TRUNK_CTRL0			0x700
-@@ -342,6 +347,53 @@
+@@ -352,6 +357,53 @@
  #define MII_ATH_MMD_ADDR				0x0d
  #define MII_ATH_MMD_DATA				0x0e
  
@@ -1123,10 +1123,10 @@ Signed-off-by: Robert Marko <robert.marko@sartura.hr>
  enum {
  	QCA8K_PORT_SPEED_10M = 0,
  	QCA8K_PORT_SPEED_100M = 1,
-@@ -469,6 +521,10 @@ struct qca8k_priv {
- 	struct qca8k_pcs pcs_port_6;
- 	const struct qca8k_match_data *info;
- 	struct qca8k_led ports_led[QCA8K_LED_COUNT];
+@@ -570,6 +622,10 @@ struct qca8k_priv {
+ 	unsigned long bridge_vlans[QCA8K_NUM_PORTS][BITS_TO_LONGS(VLAN_N_VID)];
+ 	unsigned long upper_vlans[QCA8K_NUM_PORTS][BITS_TO_LONGS(VLAN_N_VID)];
+ 	struct qca8k_mib_stats mib_stats;
 +	/* IPQ4019 specific */
 +	struct regmap *psgmii;
 +	struct phy_device *psgmii_ethphy;
