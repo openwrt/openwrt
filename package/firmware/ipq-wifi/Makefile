@@ -6,9 +6,9 @@ PKG_RELEASE:=1
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL=$(PROJECT_GIT)/project/firmware/qca-wireless.git
-PKG_SOURCE_DATE:=2026-10-18
-PKG_SOURCE_VERSION:=0f8eb5d74be32befb4d8bfc8e48cb98080cc86f1
-PKG_MIRROR_HASH:=4ad228d157e14c680b3300a350d22c982b7698cb2c2f692be8834bdf246af819
+PKG_SOURCE_DATE:=2026-10-19
+PKG_SOURCE_VERSION:=a4bb9873649cfc5569ce7da4888cdb9b1296127d
+PKG_MIRROR_HASH:=c44f7f3247dde126869ccc35bd59b9d4a24b9f30685767f452967d3558deb649
 PKG_FLAGS:=nonshared
 
 include $(INCLUDE_DIR)/package.mk
@@ -55,6 +55,7 @@ ALLWIFIBOARDS:= \
 	jdcloud_re-ss-01 \
 	link_nn6000 \
 	linksys_homewrk \
+	linksys_ln6001 \
 	linksys_mr2000 \
 	linksys_mr5500 \
 	linksys_mr6350 \
@@ -268,6 +269,7 @@ $(eval $(call generate-ipq-wifi-package,jdcloud_re-cs-02,JDCloud RE-CS-02))
 $(eval $(call generate-ipq-wifi-package,jdcloud_re-ss-01,JDCloud RE-SS-01))
 $(eval $(call generate-ipq-wifi-package,link_nn6000,Link NN6000))
 $(eval $(call generate-ipq-wifi-package,linksys_homewrk,Linksys HomeWRK))
+$(eval $(call generate-ipq-wifi-package,linksys_ln6001,Linksys Velop WRT Pro 7 (LN6001/MBE70)))
 $(eval $(call generate-ipq-wifi-package,linksys_mr2000,Linksys MR2000))
 $(eval $(call generate-ipq-wifi-package,linksys_mr5500,Linksys MR5500))
 $(eval $(call generate-ipq-wifi-package,linksys_mr6350,Linksys MR6350))
