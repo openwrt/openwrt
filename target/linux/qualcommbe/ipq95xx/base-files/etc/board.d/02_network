@@ -23,7 +23,8 @@ ipq95xx_setup_interfaces()
 	qcom,ipq9574-ap-al02-c7)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4 lan5" "wan"
 		;;
-	tplink,archer-be800|tplink,archer-be800-sfp)
+	tplink,archer-be800|tplink,archer-be800-sfp|\
+	tplink,archer-ge800|tplink,archer-ge800-sfp)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4 lan5" "wan"
 		;;
 	*)
@@ -42,7 +43,8 @@ ipq95xx_setup_wlan()
 
 	case "$board" in
 	askey,sbe1v1k|\
-	tplink,archer-be800|tplink,archer-be800-sfp)
+	tplink,archer-be800|tplink,archer-be800-sfp|\
+	tplink,archer-ge800|tplink,archer-ge800-sfp)
 		ucidef_add_wlan "$DEV_PATH_PCIE0" "$DEV_PATH_PCIE1" "$DEV_PATH_PCIE2"
 		;;
 	esac
@@ -56,7 +58,8 @@ ipq95xx_setup_macs()
 	local label_mac=""
 
 	case "$board" in
-	tplink,archer-be800|tplink,archer-be800-sfp)
+	tplink,archer-be800|tplink,archer-be800-sfp|\
+	tplink,archer-ge800|tplink,archer-ge800-sfp)
 		label_mac=$(get_mac_binary /tmp/tp_data/default-mac 0)
 		lan_mac=$(macaddr_add $label_mac 1)
 		wan_mac=$label_mac

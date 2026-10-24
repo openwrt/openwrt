@@ -1,0 +1,129 @@
+// SPDX-License-Identifier: (GPL-2.0+ OR BSD-3-Clause)
+/*
+ * TP-Link Archer GE800 common: what differs from the BE800
+ */
+
+#include "ipq9574-archer-be800-common.dtsi"
+
+/ {
+	aliases {
+		i2c0 = &blsp1_i2c3;
+		i2c1 = &blsp1_i2c4;
+	};
+
+	/delete-node/ gpio-keys;
+
+	gpio-keys {
+		compatible = "gpio-keys";
+		pinctrl-0 = <&gpio_keys_default>;
+		pinctrl-names = "default";
+
+		button-reset {
+			label = "reset";
+			linux,code = <KEY_RESTART>;
+			gpios = <&tlmm 37 GPIO_ACTIVE_LOW>;
+			debounce-interval = <60>;
+		};
+
+		button-wps {
+			label = "wps";
+			linux,code = <KEY_WPS_BUTTON>;
+			gpios = <&tlmm 57 GPIO_ACTIVE_LOW>;
+			debounce-interval = <60>;
+		};
+
+		button-wifi {
+			label = "wifi";
+			linux,code = <KEY_RFKILL>;
+			gpios = <&tlmm 56 GPIO_ACTIVE_LOW>;
+			debounce-interval = <60>;
+		};
+
+		button-led {
+			label = "ledswitch";
+			linux,code = <KEY_LIGHTS_TOGGLE>;
+			gpios = <&tlmm 64 GPIO_ACTIVE_LOW>;
+			debounce-interval = <60>;
+		};
+
+		button-speedup {
+			label = "speedup";
+			linux,code = <BTN_0>;
+			gpios = <&tlmm 43 GPIO_ACTIVE_LOW>;
+			debounce-interval = <60>;
+		};
+	};
+
+	leds {
+		/delete-property/ pinctrl-0;
+		/delete-property/ pinctrl-names;
+
+		/* Combo port medium select: off = RJ45, on = SFP+. */
+		sfp-medium {
+			gpios = <&tlmm 52 GPIO_ACTIVE_HIGH>;
+			/delete-property/ default-state;
+		};
+	};
+};
+
+&blsp1_i2c3 {
+	clock-frequency = <400000>;
+};
+
+/delete-node/ &gpio_leds_default;
+
+&tlmm {
+	/* Stock firmware keeps all three fan voltage controls on. */
+	fan-vctl1-hog {
+		gpio-hog;
+		gpios = <18 GPIO_ACTIVE_HIGH>;
+		output-high;
+		line-name = "fan-vctl1";
+	};
+
+	fan-vctl2-hog {
+		gpio-hog;
+		gpios = <21 GPIO_ACTIVE_HIGH>;
+		output-high;
+		line-name = "fan-vctl2";
+	};
+
+	fan-vctl3-hog {
+		gpio-hog;
+		gpios = <58 GPIO_ACTIVE_HIGH>;
+		output-high;
+		line-name = "fan-vctl3";
+	};
+};
+
+&gpio_keys_default {
+	pins = "gpio37", "gpio43", "gpio56", "gpio57", "gpio64";
+};
+
+&wifi1 {
+	qcom,calibration-variant = "TPLink_Archer_GE800_1";
+};
+
+&wifi2 {
+	qcom,calibration-variant = "TPLink_Archer_GE800_4";
+};
+
+&wifi3 {
+	qcom,calibration-variant = "TPLink_Archer_GE800_2";
+};
+
+&port1 {
+	label = "lan2";
+};
+
+&port2 {
+	label = "lan1";
+};
+
+&port3 {
+	label = "lan4";
+};
+
+&port4 {
+	label = "lan3";
+};
