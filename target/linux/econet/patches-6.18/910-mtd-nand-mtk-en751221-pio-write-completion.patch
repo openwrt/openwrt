@@ -1,0 +1,147 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Sergey Lebedev <sergey@lebedev.mobi>
+Date: Mon, 10 Aug 2026 00:25:16 +0300
+Subject: [PATCH] mtd: nand: mtk: EN751221 -- wait for the PIO write burst to
+ drain, and stop reporting zero free OOB bytes
+
+Two independent fixes, both gating a persistent writable overlay on this
+board.
+
+1. PIO page writes lost trailing bytes.
+
+The PIO conversion of mtk_nfc_do_write_page() pushes every byte and then
+immediately clears NFI_CON, tearing down CON_BWR, before PAGEPROG. The
+only per-byte gate, mtk_nfc_wait_ioready(), polls NFI_PIO_DIRDY, which
+reports FIFO *input* space for the next byte, not that the FIFO has been
+serialised out to the NAND page register -- whatever is still queued at
+teardown is dropped silently. nandtest reads back a handful of bytes per
+page as 0xff, always at the end of the burst, count and victim pages
+varying run-to-run -- not a fixed physical defect.
+
+The raw-PIO read-path conversion this write path mirrors dropped
+mainline's ADDRCNTR completion poll on the grounds that it's a DMA-only
+counter here -- true for reads (where it wedges at 1), but never tested
+for writes, where the counter is advanced by the PIO stores themselves.
+NFI_FIFOSTA's WR_REMAIN field is 5 bits, so a partially-drained FIFO is
+at most 31 bytes -- every observed drop is inside that.
+
+Confirmed against the vendor's own kernel (mt6573_nand_exec_write_page):
+push bytes -> poll ADDRCNTR_CNTR >= len>>9 -> clear CON_BWR -> PAGEPROG
+-> wait not-busy. The middle step is what the PIO conversion dropped;
+restored here, in the vendor's order.
+
+2. jffs2 was refused outright: mtd->oobavail == 0.
+
+Every boot logged "jffs2: inconsistent device description", emitted by
+jffs2_nand_flash_setup() for exactly one reason: a NAND device
+advertising zero free OOB bytes. This driver sets fdm->ecc_size =
+fdm->reg_size (both 8) to match what the vendor/bootloader wrote, and
+mtk_nfc_ooblayout_free() derives the free region as reg_size - ecc_size
+=> 0. fdm->ecc_size still feeds NFI_PAGEFMT's FDM_ECC field and must
+keep its value; only the free-region calculation is wrong to derive from
+it. Reserve FDM byte 0 per sector (the BBM lane) and expose the other 7
+-- 28 bytes, above jffs2's 12-byte cleanmarker.
+
+Note the OOB read path on this driver has not been shown to round-trip:
+reading OOB back returns a constant 32 bytes in the ECC region regardless
+of partition, including erased ones. Test that before trusting jffs2's
+OOB cleanmarkers; if it fails, UBI is the fallback since it keeps its
+headers in the main page area.
+
+Signed-off-by: Sergey Lebedev <sergey@lebedev.mobi>
+---
+--- a/drivers/mtd/nand/raw/mtk_nand.c
++++ b/drivers/mtd/nand/raw/mtk_nand.c
+@@ -73,6 +73,9 @@
+ #define		STA_EMP_PAGE		BIT(12)
+ #define		NFI_FSM_CUSTDATA	(0xe << 16)
+ #define		NFI_FSM_MASK		(0xf << 16)
++#define NFI_FIFOSTA		(0x64)	/* old NFI, per the vendor's mt6573v2 register header */
++#define		FIFO_WR_REMAIN(x)	(((x) & GENMASK(12, 8)) >> 8)
++#define		FIFO_WR_EMPTY		BIT(14)
+ #define NFI_ADDRCNTR		(0x70)
+ #define		CNTR_MASK		GENMASK(16, 12)
+ #define		ADDRCNTR_SEC_SHIFT	(12)
+@@ -877,8 +880,12 @@ static int mtk_nfc_do_write_page(struct
+ 	 * + wait for the AHB-done IRQ) times out on every page ("program ahb
+ 	 * done timeout", confirmed on real hardware). PIO instead, mirroring
+ 	 * the already-proven raw PIO read path: trigger CON_BWR then push
+-	 * every byte through the DATAW port. Pushing all bytes IS the
+-	 * completion, same as the read side.
++	 * every byte through the DATAW port.
++	 *
++	 * Unlike the read side, pushing all the bytes is NOT the completion:
++	 * there the CPU is the consumer, so draining the FIFO really does mean
++	 * the transfer is done, but here the CPU is the producer and the NAND
++	 * is the consumer. See the ADDRCNTR poll below.
+ 	 */
+ 	reg = nfi_readw(nfc, NFI_CNFG);
+ 	reg = (reg & ~CNFG_OP_MODE_MASK) | CNFG_OP_PRGM | CNFG_BYTE_RW;
+@@ -897,6 +904,40 @@ static int mtk_nfc_do_write_page(struct
+ 		mtk_nfc_pio_write_byte(nfc, buf[i]);
+ 	}
+ 
++	/*
++	 * Wait for the NFI to serialise the write FIFO out to the NAND page
++	 * register BEFORE tearing the burst down. mtk_nfc_wait_ioready() polls
++	 * PIO_DIRDY, which only reports FIFO *input* space for the next byte --
++	 * it says nothing about how much is still queued. Clearing CON_BWR with
++	 * bytes in flight drops them silently, which is exactly the trailing-
++	 * byte corruption seen on real hardware (a handful of bytes per page
++	 * reading back 0xff, count and victim pages varying run-to-run;
++	 * FIFO_WR_REMAIN is 5 bits, so a partial drain is <= 31 bytes, matching
++	 * the observed 2-7).
++	 *
++	 * The vendor (mt6573_nand_exec_write_page(), disassembled from the
++	 * vendor kernel) polls ADDRCNTR's sector counter and only then clears
++	 * CON_BWR, after the same push-bytes step this PIO path already does.
++	 * ADDRCNTR is DMA-only on this SoC's READ path (it wedges at 1 there,
++	 * which is why the read conversion must not poll it), but the write
++	 * path is driven by the PIO stores themselves and it does advance.
++	 */
++	if (!ret) {
++		int poll;
++
++		poll = readl_poll_timeout_atomic(nfc->regs + NFI_ADDRCNTR, reg,
++						 ADDRCNTR_SEC(reg) >=
++							chip->ecc.steps,
++						 10, MTK_TIMEOUT);
++
++		if (poll) {
++			dev_err(dev,
++				"pio write completion timeout (ADDRCNTR=%08x)\n",
++				reg);
++			ret = poll;
++		}
++	}
++
+ 	nfi_writel(nfc, 0, NFI_CON);
+ 
+ 	return ret;
+@@ -1130,8 +1171,24 @@ static int mtk_nfc_ooblayout_free(struct
+ 	if (section >= eccsteps)
+ 		return -ERANGE;
+ 
+-	oob_region->length = fdm->reg_size - fdm->ecc_size;
+-	oob_region->offset = section * fdm->reg_size + fdm->ecc_size;
++	/*
++	 * EN751221: fdm->ecc_size is reg_size here (the vendor ECC-covers all 8
++	 * FDM bytes, and NFI_PAGEFMT's FDM_ECC field plus ecc_cfg.len are
++	 * derived from it, so it must stay that way to match bootloader-written
++	 * partitions). Deriving the *free* region from it too would leave zero
++	 * free OOB bytes -- and jffs2 refuses any NAND device with
++	 * mtd->oobavail == 0 outright ("inconsistent device description",
++	 * fs/jffs2/wbuf.c), which is what kept mount_root falling back to a
++	 * tmpfs overlay. Confirmed on hardware: /sys/class/mtd/mtd4/oobavail
++	 * read 0 with oobsize 64.
++	 *
++	 * Decouple the two: reserve FDM byte 0 of each sector (the bad-block
++	 * marker lane, same as mainline's ecc_size = 1 layout) and expose the
++	 * remaining 7 per sector -- 28 bytes total, comfortably above jffs2's
++	 * 12-byte cleanmarker. Nothing here feeds the ECC geometry.
++	 */
++	oob_region->length = fdm->reg_size - 1;
++	oob_region->offset = section * fdm->reg_size + 1;
+ 
+ 	return 0;
+ }

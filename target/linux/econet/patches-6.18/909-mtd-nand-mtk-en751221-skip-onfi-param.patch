@@ -1,0 +1,47 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Sergey Lebedev <sergey@lebedev.mobi>
+Date: Thu, 16 Jul 2026 18:13:01 +0300
+Subject: [PATCH] mtd: nand: mtk: fail READ PARAMETER PAGE fast on EN751221
+
+READ PARAMETER PAGE (command 0xEC) never completes on this SoC's old
+MT6573-gen NFI: mtk_nfc_exec_op() routes it through the same generic
+DATA_IN path as READID (CNFG_OP_SRD + mtk_nfc_read_buf()), but unlike
+READID the hardware never asserts PIO_DIRDY for this specific command,
+so every 7-byte SRD chunk mtk_nfc_read_buf() triggers genuinely times
+out. mtk_nfc_wait_ioready() is not return-checked in that loop (unlike
+the specialized page-read path), so nand_onfi_detect()'s
+3 redundant ONFI-parameter-page copies each burn real MTK_TIMEOUT
+(500 ms) stalls, ~15-17s of dead time on every single boot (RAM-boot
+and flashed boot alike), before "ONFI parameter recovery failed,
+aborting" and falling back to the legacy ID table anyway.
+
+That ID-table fallback is not a wrong/generic default: keyed off the
+real Manufacturer/Chip ID (0xc2/0xf1) it lands on OOB 64 / page 2048 /
+128 MiB, independently confirmed correct against real silicon.
+Reproduced identically on every boot, so fail the op immediately
+instead of attempting a transaction we already know will stall, and let
+nand core move straight to the correct ID-table match.
+
+Signed-off-by: Sergey Lebedev <sergey@lebedev.mobi>
+---
+--- a/drivers/mtd/nand/raw/mtk_nand.c
++++ b/drivers/mtd/nand/raw/mtk_nand.c
+@@ -582,6 +582,18 @@ static int mtk_nfc_exec_op(struct nand_c
+ 	if (check_only)
+ 		return 0;
+ 
++	/*
++	 * READ PARAMETER PAGE (0xEC) never completes on this old MT6573-gen
++	 * NFI: DATA_IN never asserts PIO_DIRDY, so each of the 3 redundant
++	 * ONFI copies burns a full MTK_TIMEOUT per stalled poll (~15-17s
++	 * total) before nand_onfi_detect() gives up. Fail fast instead --
++	 * the ID-table fallback this forces is confirmed correct for our
++	 * chip (OOB 64, page 2048, 128 MiB), keyed off Manufacturer/Chip ID.
++	 */
++	if (op->ninstrs && op->instrs[0].type == NAND_OP_CMD_INSTR &&
++	    op->instrs[0].ctx.cmd.opcode == NAND_CMD_PARAM)
++		return -EIO;
++
+ 	mtk_nfc_hw_reset(nfc);
+ 	{
+ 		u16 cnfg = CNFG_OP_CUST;
