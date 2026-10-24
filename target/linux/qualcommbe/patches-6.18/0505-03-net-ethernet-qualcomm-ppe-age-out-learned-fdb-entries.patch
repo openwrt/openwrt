@@ -1,0 +1,275 @@
+From: Kenneth Kasilag <kenneth@kasilag.me>
+Date: Sat, 04 Jul 2026 00:00:00 +0000
+Subject: [PATCH] net: ethernet: qualcomm: ppe: age out learned FDB entries
+
+The FDB synchronization reports hardware-learned entries to the bridge
+as offloaded, which excludes them from the aging of the bridge, and
+the hardware aging engine does not run: its timer is zero out of reset
+and the vendor driver never programs it either, deleting hardware
+entries when the software bridge ages them instead. A learned entry of
+a station that went away would therefore live forever, black-holing
+unicast to its address until the station transmits again.
+
+Age the dynamic entries from the synchronization walk. The hardware
+learns entries with the age value 2 and refreshes them back to 2 on a
+source address hit (3 marks an entry static, exempt from aging, so 2
+is the ceiling of a dynamic entry). The walk knocks fresh entries down
+to 1 by re-adding them in place, which does not disturb forwarding,
+and records the time. An entry which stays at 1 past the ageing time
+of its bridge has had no hits and is deleted from the hardware and
+reported to the bridge as gone.
+
+The ageing time follows SWITCHDEV_ATTR_ID_BRIDGE_AGEING_TIME, applied
+to every VSI of the bridge, and defaults to the 300 seconds default of
+the software bridge. The 5 second synchronization interval is the
+effective granularity and lower bound.
+
+Signed-off-by: Kenneth Kasilag <kenneth@kasilag.me>
+---
+--- a/drivers/net/ethernet/qualcomm/ppe/ppe_bridge.c
++++ b/drivers/net/ethernet/qualcomm/ppe/ppe_bridge.c
+@@ -5,8 +5,9 @@
+ /* switchdev based offload of software bridges to the PPE L2 bridge.
+  *
+  * Offloaded software bridges are backed by VSIs (virtual switch
+- * instances) of the PPE, within which the hardware learns, ages and
+- * forwards autonomously. PPE ports joined to a VLAN-unaware bridge
++ * instances) of the PPE, within which the hardware learns and forwards
++ * autonomously, with the aging of the learned entries driven by the
++ * FDB synchronization work. PPE ports joined to a VLAN-unaware bridge
+  * are bound directly to its single VSI. On a VLAN-aware bridge each
+  * VLAN is backed by its own VSI, and ingress VLAN translation rules
+  * assign the packets of the member ports to it, with the egress tag
+@@ -19,6 +20,7 @@
+ #include <linux/etherdevice.h>
+ #include <linux/hashtable.h>
+ #include <linux/if_bridge.h>
++#include <linux/jiffies.h>
+ #include <linux/netdevice.h>
+ #include <linux/notifier.h>
+ #include <linux/rtnetlink.h>
+@@ -47,6 +49,8 @@
+  * @xlt_pvid: Ingress translation rule index matching untagged and
+  * priority-tagged packets on the PVID ports, negative when not
+  * allocated.
++ * @ageing_time: Ageing time of the bridge in jiffies, applied to the
++ * dynamic hardware FDB entries of the VSI.
+  * @poisoned: Hardware teardown failed; never allocate this slot again.
+  */
+ struct ppe_bridge_vsi {
+@@ -57,6 +61,7 @@ struct ppe_bridge_vsi {
+ 	unsigned int pvids;
+ 	int xlt_tagged;
+ 	int xlt_pvid;
++	unsigned long ageing_time;
+ 	bool poisoned;
+ };
+ 
+@@ -93,7 +98,8 @@ struct ppe_bridge_port {
+  * @switchdev_blocking_nb: Notifier for blocking switchdev events.
+  * @fdb_wq: Ordered workqueue processing the deferred FDB events.
+  * @fdb_sync: Delayed work synchronizing hardware-learned FDB entries
+- * to the bridge, running while any port is offloaded.
++ * to the bridge and aging them out, running while any port is
++ * offloaded.
+  * @fdb_ht: Shadow of the dynamic hardware FDB entries reported to the
+  * bridge, to tell new and aged-out entries apart while walking the
+  * hardware table.
+@@ -123,11 +129,17 @@ struct ppe_bridge {
+ };
+ 
+ /* Interval of the synchronization of hardware-learned FDB entries to
+- * the bridge. It bounds only the staleness of the FDB listing of the
+- * bridge, the hardware forwards learned traffic on its own.
++ * the bridge. It bounds the staleness of the FDB listing of the bridge
++ * and the granularity of the aging of the hardware entries, the
++ * hardware forwards learned traffic on its own.
+  */
+ #define PPE_BRIDGE_FDB_SYNC_INTERVAL	msecs_to_jiffies(5000)
+ 
++/* Ageing time of the dynamic hardware FDB entries until the bridge
++ * reports its own, matching the default of the software bridge.
++ */
++#define PPE_BRIDGE_DEFAULT_AGEING_TIME	(300 * HZ)
++
+ /**
+  * struct ppe_bridge_fdb - Shadow of a dynamic hardware FDB entry.
+  * @node: Hash table node, hashed by MAC address and VSI.
+@@ -135,6 +147,8 @@ struct ppe_bridge {
+  * @vsi: VSI of the entry.
+  * @port: Destination PPE port of the entry.
+  * @seen: Entry was found in the current hardware table walk.
++ * @last_used: Time the entry was last seen with a fresh hardware age
++ * value, aged out once it stays stale past the bridge ageing time.
+  */
+ struct ppe_bridge_fdb {
+ 	struct hlist_node node;
+@@ -142,6 +156,7 @@ struct ppe_bridge_fdb {
+ 	u8 vsi;
+ 	u8 port;
+ 	bool seen;
++	unsigned long last_used;
+ };
+ 
+ /**
+@@ -211,6 +226,7 @@ static int ppe_bridge_vsi_get(struct ppe
+ 		pb->vsis[i].pvids = 0;
+ 		pb->vsis[i].xlt_tagged = -1;
+ 		pb->vsis[i].xlt_pvid = -1;
++		pb->vsis[i].ageing_time = PPE_BRIDGE_DEFAULT_AGEING_TIME;
+ 
+ 		return i;
+ 	}
+@@ -467,10 +483,14 @@ static int ppe_bridge_vsi_release(struct
+ 	return err;
+ }
+ 
+-/* Synchronize the dynamic entries the hardware has learned and aged to
+- * the bridge, so they show up in the bridge FDB and station moves reach
+- * the software ports. The entries are reported as offloaded, which
+- * leaves their aging to the hardware.
++/* Synchronize the dynamic entries the hardware has learned to the
++ * bridge, so they show up in the bridge FDB and station moves reach the
++ * software ports, and age them out. The entries are reported as
++ * offloaded, which excludes them from the aging of the bridge, and the
++ * hardware aging engine is not running (its timer is zero out of reset),
++ * so aging is up to this walk: an entry seen with a fresh age value has
++ * had a source address hit and is knocked down to the stale value, an
++ * entry which stays stale past the ageing time of its bridge is deleted.
+  */
+ static void ppe_bridge_fdb_sync_work(struct work_struct *work)
+ {
+@@ -517,6 +537,7 @@ static void ppe_bridge_fdb_sync_work(str
+ 			ether_addr_copy(fdb->addr, entry.addr);
+ 			fdb->vsi = entry.vsi;
+ 			fdb->port = entry.port;
++			fdb->last_used = jiffies;
+ 			hash_add(pb->fdb_ht, &fdb->node,
+ 				 ppe_bridge_fdb_key(fdb->addr, fdb->vsi));
+ 			ppe_bridge_fdb_notify(pb, SWITCHDEV_FDB_ADD_TO_BRIDGE,
+@@ -531,6 +552,30 @@ static void ppe_bridge_fdb_sync_work(str
+ 		}
+ 
+ 		fdb->seen = true;
++
++		if (entry.age >= PPE_FDB_HIT_AGE_FRESH) {
++			fdb->last_used = jiffies;
++
++			/* Adding an existing address overwrites its entry
++			 * in place, the aging probe does not disturb the
++			 * forwarding. A station move racing the write is
++			 * healed by the next learned packet. Failure only
++			 * delays the aging.
++			 */
++			entry.age = PPE_FDB_HIT_AGE_STALE;
++			ppe_fdb_entry_add(pb->ppe_dev, &entry);
++		} else if (time_is_before_jiffies(fdb->last_used +
++						  pb->vsis[entry.vsi].ageing_time)) {
++			ret = ppe_fdb_entry_del(pb->ppe_dev, &entry);
++			if (ret && ret != -ENOENT)
++				continue;
++
++			ppe_bridge_fdb_notify(pb, SWITCHDEV_FDB_DEL_TO_BRIDGE,
++					      fdb->addr, fdb->port,
++					      pb->vsis[fdb->vsi].vid);
++			hash_del(&fdb->node);
++			kfree(fdb);
++		}
+ 	}
+ 
+ 	hash_for_each_safe(pb->fdb_ht, bkt, tmp, fdb, node) {
+@@ -994,6 +1039,26 @@ rollback:
+ 	return ret;
+ }
+ 
++/* Apply the ageing time of the bridge to all its VSIs. Any value is
++ * honored, with the FDB synchronization interval as the effective
++ * granularity and lower bound.
++ */
++static int ppe_bridge_ageing_time_set(struct ppe_bridge *pb,
++				      struct net_device *dev,
++				      clock_t ageing_time)
++{
++	int port = ppe_bridge_port_id(dev);
++	struct net_device *br = pb->ports[port].bridge;
++	int i;
++
++	for (i = 0; i < ARRAY_SIZE(pb->vsis); i++)
++		if (pb->vsis[i].br == br)
++			pb->vsis[i].ageing_time =
++				clock_t_to_jiffies(ageing_time);
++
++	return 0;
++}
++
+ static int ppe_bridge_attr_set(struct net_device *dev, const void *ctx,
+ 			       const struct switchdev_attr *attr,
+ 			       struct netlink_ext_ack *extack)
+@@ -1014,6 +1079,9 @@ static int ppe_bridge_attr_set(struct ne
+ 		return 0;
+ 	case SWITCHDEV_ATTR_ID_PORT_BRIDGE_FLAGS:
+ 		return ppe_bridge_flags_set(pb, dev, attr->u.brport_flags);
++	case SWITCHDEV_ATTR_ID_BRIDGE_AGEING_TIME:
++		return ppe_bridge_ageing_time_set(pb, dev,
++						  attr->u.ageing_time);
+ 	case SWITCHDEV_ATTR_ID_BRIDGE_VLAN_FILTERING:
+ 		/* The bridge is offloaded in the mode it had when its
+ 		 * first port joined, refuse changing it mid-flight.
+--- a/drivers/net/ethernet/qualcomm/ppe/ppe_config.c
++++ b/drivers/net/ethernet/qualcomm/ppe/ppe_config.c
+@@ -1872,7 +1872,8 @@ static void ppe_fdb_entry_pack(const str
+ 	val[2] |= FIELD_PREP(PPE_FDB_W2_SA_CMD, PPE_ACTION_FORWARD);
+ 	val[2] |= FIELD_PREP(PPE_FDB_W2_DA_CMD, PPE_ACTION_FORWARD);
+ 	val[2] |= FIELD_PREP(PPE_FDB_W2_HIT_AGE,
+-			     entry->is_static ? PPE_FDB_HIT_AGE_STATIC : 2);
++			     entry->is_static ? PPE_FDB_HIT_AGE_STATIC :
++			     entry->age);
+ }
+ 
+ /* Unpack the 3-word layout of the FDB table and the FDB operation result
+@@ -1908,8 +1909,8 @@ static void ppe_fdb_entry_unpack(const u
+ 	else
+ 		entry->port = PPE_FDB_PORT_NONE;
+ 
+-	entry->is_static = FIELD_GET(PPE_FDB_W2_HIT_AGE, val[2]) ==
+-			   PPE_FDB_HIT_AGE_STATIC;
++	entry->age = FIELD_GET(PPE_FDB_W2_HIT_AGE, val[2]);
++	entry->is_static = entry->age == PPE_FDB_HIT_AGE_STATIC;
+ }
+ 
+ /* Issue a command to the FDB operation registers and wait for its result.
+--- a/drivers/net/ethernet/qualcomm/ppe/ppe_config.h
++++ b/drivers/net/ethernet/qualcomm/ppe/ppe_config.h
+@@ -313,12 +313,14 @@ enum ppe_stp_state {
+  * @vsi: VSI (bridge domain) the MAC address belongs to.
+  * @port: Destination PPE port of the MAC address.
+  * @is_static: Entry is excluded from hardware aging.
++ * @age: Age value of a dynamic entry (PPE_FDB_HIT_AGE_*).
+  */
+ struct ppe_fdb_entry {
+ 	u8 addr[ETH_ALEN];
+ 	u8 vsi;
+ 	u8 port;
+ 	bool is_static;
++	u8 age;
+ };
+ 
+ int ppe_hw_config(struct ppe_device *ppe_dev);
+--- a/drivers/net/ethernet/qualcomm/ppe/ppe_regs.h
++++ b/drivers/net/ethernet/qualcomm/ppe/ppe_regs.h
+@@ -444,9 +444,14 @@
+ #define PPE_FDB_DST_INFO_VALUE			GENMASK(11, 0)
+ 
+ /* A static FDB entry has the maximum age value, which the aging process
+- * never decrements.
++ * never decrements. Dynamic entries are learned with PPE_FDB_HIT_AGE_FRESH,
++ * to which a source address hit also refreshes them, so knocking an entry
++ * down to PPE_FDB_HIT_AGE_STALE and later checking whether it bounced back
++ * tells whether the station is still active.
+  */
+ #define PPE_FDB_HIT_AGE_STATIC			3
++#define PPE_FDB_HIT_AGE_FRESH			2
++#define PPE_FDB_HIT_AGE_STALE			1
+ 
+ /* L2 Port configurations */
+ #define PPE_L2_VP_PORT_TBL_ADDR			0x98000

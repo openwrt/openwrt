@@ -1,0 +1,326 @@
+From: Kenneth Kasilag <kenneth@kasilag.me>
+Date: Fri, 03 Jul 2026 00:00:00 +0000
+Subject: [PATCH] Documentation: networking: document Qualcomm PPE offload
+
+Add a networking design document for the PPE offload series: the
+architecture of the L2 switchdev bridge offload, VLAN-aware bridging,
+multicast and the netfilter flowtable offload, the datapath invariants
+the implementation relies on, the sources the hardware programming was
+derived from, and what remains unimplemented or unverified on
+hardware.
+
+Signed-off-by: Kenneth Kasilag <kenneth@kasilag.me>
+---
+--- /dev/null
++++ b/Documentation/networking/qualcomm-ppe-offload.rst
+@@ -0,0 +1,310 @@
++.. SPDX-License-Identifier: GPL-2.0-only
++
++Qualcomm PPE hardware offload
++=============================
++
++The PPE (packet processing engine) is the switch-and-offload block of
++the Qualcomm IPQ network SoCs. This series adds hardware bridging,
++routing and NAT to its mainline driver through the standard Linux
++offload interfaces - switchdev for L2 bridging, netfilter flowtables
++for L3 flows - with no vendor frameworks and no new UAPI. Everything a
++patch offloads keeps working through the ordinary software path when
++the hardware cannot express it.
++
++The PPE register layer is shared across two silicon generations, HPPE
++(IPQ807x) and APPE (IPQ9574): the vendor SSDK drives both with one set
++of L2, L3 and flow accessors. The offload is therefore written against
++a per-SoC variant rather than a single chip. IPQ9574 is the generation
++it is wired up and described for here; an HPPE part reuses the same
++table and flow programming and supplies only its own EDMA glue, as the
++variant section spells out.
++
++Starting point
++--------------
++
++Mainline ships the PPE core as infrastructure only: clocks and resets,
++buffer and queue management, the scheduler, service codes and the port
++MACs. L2 forwarding is deliberately parked - every port punts to the
++CPU through the invalid-VSI redirect, all 64 VSIs (virtual switch
++instances, the hardware bridge domains) flood to the CPU port only,
++and ppe_bridge_init() notes that forwarding begins "only after
++switchdev is supported later". The preceding EDMA patches of this
++target add the per-port net devices and DMA, which makes the PPE a
++multi-port NIC with all forwarding in software. This series is the
++switchdev consumer the mainline driver anticipates.
++
++The offload is plain switchdev, not DSA: the EDMA is per-port DMA into
++the SoC, there is no conduit interface and no tagging protocol, so the
++DSA model does not fit (compare the realtek target, which bridges
++switch ports the same way).
++
++Supported hardware and the SoC variant
++--------------------------------------
++
++struct ppe_variant, attached to the compatible as match data and read
++at probe, holds the parameters that differ between the generations:
++the PPPoE session table depth (64 entries on APPE, 16 on HPPE), the
++port shaper token clock (353 against 300 MHz), and whether the on-die
++tunnel engine and the virtual ports (PPE port numbers 64..255 that
++bind IEEE 802.11 Ethernet interfaces) are present - both APPE only. The shared
++table geometry (flow, host, VSI, translation, router MAC, public IP
++and next hop) is identical between the generations and stays in the
++compile-time PPE_*_ENTRIES macros; only what actually diverges lives
++in the variant.
++
++                                  APPE (IPQ9574)     HPPE (IPQ807x)
++  switchdev bridge, VLAN, MDB     yes                register-portable
++  FDB with software ageing        yes                register-portable
++  L3 flows (IPv4 NAT, IPv6)       yes                register-portable
++  PPPoE offload                   yes, 64 sessions   portable, 16
++  VLAN uplinks                    yes                register-portable
++  single-copy flood               yes                needs EDMA support
++  TBF port shaper                 yes                register-portable
++  on-die tunnel engine seam       present            absent
++  virtual ports (wireless)        present            absent
++
++"Register-portable" means the table and flow programming applies
++unchanged; what an HPPE port supplies is the EDMA glue, not new PPE
++code. Bringing one up needs an EDMA driver for that generation's
++descriptors (the IPQ807x EDMA/UNIPHY rework in the qualcommax target
++grows one) meeting the CPU-port contract below, and a variant instance
++with the PPPoE table relocated to its HPPE address. The virtual-port
++work does not carry over - HPPE offloads wireless through its NSS
++firmware cores, which OpenWrt leaves idle - so wireless there stays on
++the CPU.
++
++L2 bridge offload
++-----------------
++
++A VLAN-unaware software bridge is backed by one VSI; joining binds the
++port to the VSI and enables its bridge TX MAC, leaving reverts to the
++parked state, so failure at any point falls back to a software bridge.
++The CPU port is a member of every VSI: packets without an FDB hit
++flood to the CPU and reach the software ports of the bridge (wireless
++interfaces). Received packets carry skb->offload_fwd_mark and all
++ports share one parent switch ID, so the bridge does not repeat
++forwarding the hardware already did. In the other direction,
++VLAN-unaware bridges hand over a single copy of flooded packets (TX
++forwarding offload), which the EDMA replicates through a bitmap
++destination in the transmit descriptor; the bitmaps mirror the flood
++flags, the offloaded groups and the spanning tree states, since an
++explicit destination bypasses those checks in hardware.
++
++ - FDB, downwards: user-added and bridge-local entries are written
++   through the FDB operation registers as static entries. Entries the
++   bridge learns on foreign ports (wireless) are installed towards the
++   CPU port - assisted learning - since CPU-port learning is off and
++   known unicast to such stations would otherwise flood the VSI
++   forever.
++
++ - FDB, upwards: a poller walks the 2048-entry hardware FDB, reports
++   newly learned entries to the bridge and ages them. The hardware
++   refreshes the two-bit hit_age of an entry on a source address hit;
++   the poller knocks active entries down one step and deletes entries
++   that stay knocked down past the bridge ageing time. The hardware's
++   own aging timer is zero out of reset and stays unused (References).
++
++ - Spanning tree: bridge port states map to the per-port CST state;
++   BPDUs are trapped to the CPU through an RFDB/APP_CTRL rule with
++   ingress STP bypass, otherwise a blocking port would never receive
++   them and no loop could ever break.
++
++ - Bridge port flags: BR_LEARNING gates hardware learning,
++   BR_FLOOD/BR_MCAST_FLOOD/BR_BCAST_FLOOD gate membership in the
++   per-VSI flood bitmaps.
++
++VLAN-aware bridging backs each VLAN of a bridge with its own VSI.
++Ingress VLAN translation rules, matching by port bitmap so they scale
++with VLANs rather than ports times VLANs, assign tagged and
++PVID-untagged packets to the VSI; per-VSI egress tag modes provide
++tagged or untagged egress per port; translation misses drop, which is
++the ingress side of VLAN filtering. Resource exhaustion (64 VSIs, 128
++rules) fails only the VLAN object at hand.
++
++Multicast without snooping floods to the members with BR_MCAST_FLOOD,
++exactly as the software bridge treats groups outside its MDB. With
++snooping, the MDB is offloaded as FDB entries with port-bitmap
++destinations. Every group entry includes the CPU port, so membership
++reports keep reaching the snooping bridge, software ports receive the
++group through it, and host joins need no extra handling.
++
++L3 flow offload
++---------------
++
++PPE port net devices accept flow block bindings through
++ndo_setup_tc(TC_SETUP_FT), the same glue mtk_eth_soc uses, so
++nf_flowtable rules land in the hardware flow table. Packets addressed
++to a MAC in the router MAC table take the route path; a flow hit
++forwards through a next hop entry carrying the egress port, the MAC
++rewrites, the egress VLAN and the NAT addresses. The router MAC and
++egress L3 interface tables are maintained from the source-MAC rewrite
++of the rules: the egress source MAC of one direction is the MAC the
++reverse direction ingresses on. IPv4 flows support one NAT direction
++each - SNAT source addresses come from the 16-entry public IP table -
++which matches netfilter offloading each direction as its own rule;
++IPv6 flows are routed, never translated. A root TBF qdisc on a port
++offloads to its egress token bucket shaper, replacing the CPU cost of
++software shaping.
++
++Two WAN encapsulations ride on the same flow path. PPP channel
++connect and disconnect events own a persistent hardware session recovered
++through the generic netdevice forward path. A flow leaving through that PPPoE WAN
++references its session-owned L3 interface carrying the session ID, and the
++PPPoE session table terminates the reverse direction, whose rule arrives as
++a plain flow of the inner tuple. The session is keyed by session ID and peer
++MAC and matches the vendor row: all physical ports, unicast and multicast
++valid, and peer source-MAC valid. Flow expiry cannot remove the lifecycle
++reference.
++
++VLAN uplinks (a tagged WAN, or a routed VLAN over a port) own an ingress
++translation rule, a reserved VSI and an L3 interface bound through the
++L3_VSI table. The routed translation assigns the VSI and strips the C-tag;
++bridge translations preserve it. The independent egress VLAN push remains
++in the next hop. For PPPoE over VLAN, channel connect constructs and retains
++the VLAN slot and physical port below the session, forming the vendor's
++PPPoE -> VLAN -> physical hierarchy before either directional flow arrives.
++Reverse VLAN dissector rules take their own reference to the same slot.
++
++A flow whose egress device is not a PPE port - a wireless VAP -
++offloads through a virtual port: a PPE port number bound to the
++device, forwarded to like any egress port but backed by the CPU, so
++the packet lands on an EDMA ring already NAT'd and rewritten and the
++receive path transmits it out the device. The wireless-to-wired direction
++is injected through an ingress hook with the virtual port as its source,
++so the PPE runs the same route/NAT lookup; a miss is punted back to that
++device's software receive path. The binding carries no bridging - a
++wireless port bridged in hardware is not the target, only routed and
++NAT'd traffic - and the egress source MAC rewrite sits on an L3 interface
++the virtual port reserves past the PPPoE and VLAN-uplink ones. Virtual
++ports are an APPE feature.
++
++Flow misses and rejected rules take the ordinary software path, and
++per-flow hit counters feed the flowtable statistics. Flows egressing a
++link-down port stop reporting activity so the flowtable expires and
++re-offloads them: hardware-forwarded packets never revalidate the
++route in software, and the hit counters count at ingress lookup
++whether or not egress delivery works. A route or neighbor that changes
++on the far side of a link that stays up is the remaining blind spot -
++such a flow keeps forwarding to the stale destination until its
++conntrack entry dies (the hardware flow aging engine, deliberately
++unused, could serve as a periodic revalidation net; see below).
++
++Datapath invariants worth knowing:
++
++ - CPU-transmitted packets bypass the MY_MAC check, flow lookup and
++   flow action (the EDMA service code masks them at init), so
++   software-forwarded traffic cannot be NATed twice.
++
++ - Flow installation follows the working QWRT transaction: insert the
++   directional source in the host table, put the returned host index into a
++   disabled flow entry with HOST_INDEX_TYPE clear, and keep the destination
++   inline. The valid bit is the commit point. The commit reads and rewrites
++   the complete six-word flow-table row, matching the vendor setter; an
++   isolated word-zero write is discarded by the hardware. The driver leaves
++   both unicast FLOW_CTRL1 rows untouched; QWRT's base SSDK initialization
++   changes only the multicast miss actions.
++
++ - The host entry is keyed by the directional source address alone, so flows
++   from that source share one entry. The driver refcounts source hosts,
++   deletes flows by their returned index, and removes a host by its returned
++   index only after the last referencing flow is gone. A failed flow deletion
++   retains all of its dependencies.
++
++ - The hardware FDB flush command is global and includes static
++   entries; all selective flushes are software walks.
++
++The ``pipeline_state`` debugfs view reports all three FLOW_CTRL1 rows. The
++``reason_counters`` view reads the three-word CPU/drop counter rows, prints all
++nonzero reasons, and always includes CPU codes 148/162/163/167 and per-port
++drop codes 73/74/77/78/80 so two snapshots can be compared directly.
++
++CPU-port driver contract
++------------------------
++
++The offload leans on the CPU-port net device driver (the EDMA here)
++for a few things. This is the seam another generation's driver
++implements, and the whole of what an HPPE EDMA driver has to provide:
++
++ - dispatch ndo_setup_tc(TC_SETUP_FT) to the flowtable offload and
++   TC_SETUP_QDISC_TBF to the port shaper;
++ - report the carrier of each PPE port to
++   ppe_flowtable_port_carrier(), which records state even before the
++   flowtable is ready and gates stale-flow expiry;
++ - transmit one copy of a flooded packet through the port-bitmap
++   destination of the transmit descriptor, driven by the per-VSI flood
++   bitmaps;
++ - for the virtual-port work, deliver a receive descriptor whose
++   destination is a virtual port to its bound net device, and inject an
++   uplink frame with that virtual port as source only while its exact
++   original tuple has an installed hardware flow. An unexpected source-VP
++   miss disables further injection for that VP before the packet returns to
++   its bound device's software receive path.
++
++References
++----------
++
++Register and table layouts, operation protocols and reset defaults
++come from the public SSDK source (qca-ssdk NHSS.QSDK.14.0, the
++adpt_hppe_* and hppe_*_reg.h files), which is accurate for the L2,
++VLAN and L3 blocks of this SoC. The driver's own register writes were
++cross-checked against it, including the MAC byte order of the router
++MAC, next hop and egress L3 interface tables (the SSDK's mac_0/mac_1
++and mac_da_0/mac_da_1 packings) and the base index of a double-width
++IPv6 flow's hit counter.
++
++Where behavior could not be derived from source, the stock QWRT
++firmware's binaries were disassembled (Ghidra). The vendor driver
++never programs the FDB AGE_TIMER - its ageing-time setter has no
++callers - and instead deletes hardware entries when the software
++bridge ages them, which is why this series ages from the poller; its
++control-packet init programs the same BPDU trap rule used here; and
++the per-VSI egress tag field is two bits per port of
++tag/untag/unmodified modes, not a bitmap. The same disassembly settled
++the virtual-port programming: a wireless virtual port forwards on an
++invalid VSI (it is routed, not bridged), accepts any address, is
++backed by the CPU port and marked active, with learning off
++(ppe_drv_port_alloc); a packet reaches it on receive through the
++destination info of the descriptor (edma_rx_napi_poll); and the vendor
++refcounts host entries by address (ppe_drv_host_ref/deref), which is
++why this series does too.
++
++Structural models from mainline: mtk_ppe_offload.c for the flowtable
++glue, the DSA drivers for assisted learning and switchdev conventions.
++
++Remaining work
++--------------
++
++Not yet implemented, in rough order of usefulness:
++
++ - Wireless direct switching (the vendor's PPE-DS): the downlink to a
++   wireless client is offloaded through a virtual port, but it still
++   crosses the CPU once. Direct switching hands the flow between the
++   PPE and the Wi-Fi hardware with no CPU touch, which needs Wi-Fi
++   driver ring support the mainline ath12k does not have. The current
++   virtual-port downlink and source-tagged uplink both cross EDMA.
++ - Tunnels: the SoC has an on-die tunnel engine (the tunnel lookup
++   block, whose PPPoE session table this series already uses, plus the
++   tunnel fields of the egress L3 interfaces) able to terminate and
++   generate IPIP6, VXLAN, GENEVE and MAP-T traffic without an external
++   accelerator. QWRT uses one IPIP6 lifecycle for DS-Lite and MAP-E,
++   with FMRs distinguishing MAP-E; MAP-T instead pairs IPv4 and IPv6
++   connections through hardware translation maps. Its generated outer
++   L2 header can carry two VLAN tags and optional PPPoE. The current
++   flowtable recognizes lightweight-route tunnel metadata and IPIP6
++   redirect devices, but dispatches both only to a rejecting stub; none
++   of those tunnel lifecycles is implemented. IPsec remains separate: it
++   needs the EIP-197 crypto engine, a separate
++   device with its own firmware, and is out of scope.
++ - QoS beyond the root TBF offload and the mainline scheduler defaults
++   (the hardware also has per-queue and flow shapers and a full
++   scheduler hierarchy), and NAT66.
++ - MSTP cannot be offloaded at all: the CST state is per port, not per
++   VSI, so only a single spanning tree maps to hardware.
++
++Hardware behaviors assumed from documentation and vendor code but
++still to be confirmed on a board: that a source-address hit refreshes
++hit_age while the aging engine is off (otherwise idle-looking active
++stations are aged and immediately re-learned, a transient flood); that
++the unmodified egress tag mode preserves tags end to end on
++VLAN-unaware bridges; and whether a long hardware flow aging timer is
++usable as a revalidation net for the stale-route blind spot above.
