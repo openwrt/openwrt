@@ -1,0 +1,76 @@
+From e6c0725a726ebce2fce98e90f6f05575b6a78185 Mon Sep 17 00:00:00 2001
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Date: Mon, 24 Aug 2026 12:45:31 +0200
+Subject: [PATCH 955/957] wifi: ath11k: keep the radios when a firmware
+ recovery fails
+
+ath11k_core_qmi_firmware_ready() serves both the cold boot and the
+firmware crash recovery path. ath11k_mac_allocate() returns early once
+ATH11K_FLAG_REGISTERED is set, so on a recovery the radios are the ones
+mac80211 has held since the cold boot and no allocation takes place.
+
+The error unwind makes no such distinction. ath11k_core_start() and
+ath11k_core_qmi_firmware_ready() both call ath11k_mac_destroy()
+unconditionally, so a recovery that fails hands ieee80211_free_hw() an
+ieee80211_hw that mac80211 and its users still reference, and leaves
+ab->pdevs[i].ar NULL behind:
+
+  ath11k c000000.wifi: failed to receive wmi unified ready event: -110
+  Have pending ack frames!
+  WARNING: CPU: 2 PID: 71 at net/mac80211/main.c:1696
+  Workqueue: ath11k_wq ath11k_core_restart
+  Call trace:
+   ieee80211_free_ack_frame+0x58/0x60 [mac80211] (P)
+   idr_for_each+0x54/0xc0
+   ieee80211_free_hw+0x30/0x470 [mac80211]
+   ath11k_mac_destroy+0x50/0x84 [ath11k]
+   ath11k_core_qmi_firmware_ready+0x504/0x584 [ath11k]
+   ath11k_core_restart+0xf8/0x194 [ath11k]
+
+The next crash then carries that NULL ar into ath11k_dp_pdev_free(),
+
+  Unable to handle kernel read from unreadable memory at virtual address 0
+  Call trace:
+   ath11k_dp_rx_pdev_free+0x34/0x13c [ath11k] (P)
+   ath11k_dp_pdev_free+0x4c/0x84 [ath11k]
+   ath11k_core_restart+0x80/0x194 [ath11k]
+
+and a station lookup from hostapd follows the freed hw into
+sta_info_hash_lookup().
+
+Destroy the radios only when this call allocated them, which is the
+condition ath11k_mac_allocate() already uses to decide whether to
+allocate.
+
+Tested-on: IPQ8074 hw2.0 AHB WLAN.HK.2.9.0.1-02146-QCAHKSWPL_SILICONZ-1
+
+Fixes: 0366f42640a4 ("ath11k: Move mac80211 hw allocation before wmi_init command")
+Link: https://lore.kernel.org/all/20261018210153.1925962-3-julius@bairaktaris.de/
+Assisted-by: Claude:claude-opus-5
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+---
+ drivers/net/wireless/ath/ath11k/core.c | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
+
+--- a/drivers/net/wireless/ath/ath11k/core.c
++++ b/drivers/net/wireless/ath/ath11k/core.c
+@@ -2376,7 +2376,8 @@ static int ath11k_core_start(struct ath1
+ err_reo_cleanup:
+ 	ath11k_dp_pdev_reo_cleanup(ab);
+ err_mac_destroy:
+-	ath11k_mac_destroy(ab);
++	if (!test_bit(ATH11K_FLAG_REGISTERED, &ab->dev_flags))
++		ath11k_mac_destroy(ab);
+ err_hif_stop:
+ 	ath11k_hif_stop(ab);
+ err_wmi_detach:
+@@ -2460,7 +2461,8 @@ int ath11k_core_qmi_firmware_ready(struc
+ 
+ err_core_stop:
+ 	ath11k_core_stop(ab);
+-	ath11k_mac_destroy(ab);
++	if (!test_bit(ATH11K_FLAG_REGISTERED, &ab->dev_flags))
++		ath11k_mac_destroy(ab);
+ err_dp_free:
+ 	ath11k_dp_free(ab);
+ 	mutex_unlock(&ab->core_lock);
