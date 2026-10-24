@@ -1,0 +1,32 @@
+From af0ce879f4149002117a4a2fe0bfda217ed1a6a6 Mon Sep 17 00:00:00 2001
+From: Luo Jie <jie.luo@oss.qualcomm.com>
+Date: Wed, 2 Sep 2026 03:22:49 -0700
+Subject: arm64: dts: qcom: ipq5018: Enable mdio0 for SoC-integrated EPHY
+
+mdio0 is the internal MDIO bus used to access the SoC-integrated
+EPHY (ge_phy), which is present on every IPQ5018 RDP board. Enable
+mdio0 with a 6.25MHz MDIO clock in the SoC dtsi so all boards can
+reach the EPHY, instead of enabling it per board.
+
+Signed-off-by: Luo Jie <jie.luo@oss.qualcomm.com>
+Reviewed-by: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
+Link: https://lore.kernel.org/r/20260902-qcom_ipq5018_mdio_pinctrl-v3-2-629c7bb05c44@oss.qualcomm.com
+Signed-off-by: Bjorn Andersson <andersson@kernel.org>
+---
+ arch/arm64/boot/dts/qcom/ipq5018.dtsi | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+(limited to 'arch/arm64/boot/dts/qcom/ipq5018.dtsi')
+
+--- a/arch/arm64/boot/dts/qcom/ipq5018.dtsi
++++ b/arch/arm64/boot/dts/qcom/ipq5018.dtsi
+@@ -222,8 +222,7 @@
+ 
+ 			clocks = <&gcc GCC_MDIO0_AHB_CLK>;
+ 			clock-names = "gcc_mdio_ahb_clk";
+-
+-			status = "disabled";
++			clock-frequency = <6250000>;
+ 
+ 			ge_phy: ethernet-phy@7 {
+ 				compatible = "ethernet-phy-id004d.d0c0";
