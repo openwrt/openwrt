@@ -30,6 +30,9 @@ sophos,apx120|\
 ubnt,utr)
 	ubootenv_add_uci_config "/dev/mtd5" "0x0" "0x10000" "0x10000"
 	;;
+arista,w-118)
+	ubootenv_add_mtd "0:APPSBLENV" "0x0" "0x10000" "0x10000"
+	;;
 aruba,ap-303)
 	ubootenv_add_uci_config "/dev/mtd13" "0x0" "0x10000" "0x10000"
 	;;
