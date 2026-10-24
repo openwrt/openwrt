@@ -1,0 +1,30 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Victor Irzak <victor.irzak@zomp.com>
+Date: Sat, 24 Oct 2026 05:18:00 -0400
+Subject: [PATCH] wifi: ath12k: allocate QSDK memory type 0xa
+
+TP-Link QCN9224 firmware requests memory type 0xa
+and crashes when it gets paddr 0.
+
+Signed-off-by: Victor Irzak <victor.irzak@zomp.com>
+---
+--- a/drivers/net/wireless/ath/ath12k/qmi.c
++++ b/drivers/net/wireless/ath/ath12k/qmi.c
+@@ -2651,6 +2651,7 @@ static int ath12k_qmi_alloc_target_mem_c
+ 		case PAGEABLE_MEM_REGION_TYPE:
+ 		case CALDB_MEM_REGION_TYPE:
+ 		case LPASS_SHARED_V01_REGION_TYPE:
++		case QSDK_MEM_REGION_TYPE_0XA:
+ 			ret = ath12k_qmi_alloc_chunk(ab, chunk);
+ 			if (ret)
+ 				goto err;
+--- a/drivers/net/wireless/ath/ath12k/qmi.h
++++ b/drivers/net/wireless/ath/ath12k/qmi.h
+@@ -178,6 +178,7 @@ enum ath12k_qmi_target_mem {
+ 	CALDB_MEM_REGION_TYPE = 0x4,
+ 	MLO_GLOBAL_MEM_REGION_TYPE = 0x8,
+ 	PAGEABLE_MEM_REGION_TYPE = 0x9,
++	QSDK_MEM_REGION_TYPE_0XA = 0xa,
+ 	LPASS_SHARED_V01_REGION_TYPE = 0xb,
+ };
+ 
