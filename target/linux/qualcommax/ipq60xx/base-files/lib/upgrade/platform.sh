@@ -230,6 +230,18 @@ platform_do_upgrade() {
 		alfa_bootconfig_rootfs_rotate "0:BOOTCONFIG" "148"
 		nand_do_upgrade "$1"
 		;;
+	arista,w-318)
+		# kernel in NOR 0:HLOS (by its /dev/mtdN path: mtd reads "0:HLOS"
+		# as two devices), root in the eMMC partition "rootfs", settings in
+		# "rootfs_data"; the kernel is erased first and written last
+		CI_ROOTPART="rootfs"
+		CI_DATAPART="rootfs_data"
+		local dir=$(tar tf "$1" | grep -m 1 '^sysupgrade-.*/$')
+		local hlos=/dev/mtd$(find_mtd_index 0:HLOS)
+		[ -c "$hlos" ] && mtd erase "$hlos" || return 1
+		emmc_do_upgrade "$1"
+		tar xf "$1" "${dir}kernel" -O | mtd write - "$hlos"
+		;;
 	cambiumnetworks,xe3-4)
 		fw_setenv bootcount 0
 		nand_do_upgrade "$1"
@@ -297,6 +309,14 @@ platform_do_upgrade() {
 		;;
 	*)
 		default_do_upgrade "$1"
+		;;
+	esac
+}
+
+platform_copy_config() {
+	case "$(board_name)" in
+	arista,w-318)
+		emmc_copy_config
 		;;
 	esac
 }

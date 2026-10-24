@@ -67,6 +67,18 @@ define Device/alfa-network_ap120c-ax
 endef
 TARGET_DEVICES += alfa-network_ap120c-ax
 
+define Device/arista_w-318
+	$(call Device/FitImage)
+	DEVICE_VENDOR := Arista
+	DEVICE_MODEL := W-318
+	DEVICE_DTS_CONFIG := config@cp01-c3
+	SOC := ipq6010
+	KERNEL_SIZE := 8192k
+	DEVICE_PACKAGES := ipq-wifi-arista_w-318 kmod-ath11k-pci kmod-tpm-tis-spi \
+		kmod-fs-f2fs f2fs-tools bluetooth-uart squashfs-tools-unsquashfs
+endef
+TARGET_DEVICES += arista_w-318
+
 define Device/cambiumnetworks_xe3-4
 	$(call Device/FitImage)
 	$(call Device/UbiFit)
