@@ -1,0 +1,61 @@
+From a6c6a2fd5bdd71fa6eedaf79ed6c55921741c9c9 Mon Sep 17 00:00:00 2001
+From: Jonas Karlman <jonas@kwiboo.se>
+Date: Fri, 10 Jul 2026 10:05:18 +0000
+Subject: [PATCH] arm64: dts: rockchip: Enable USB 2.0 ports on NanoPi Zero2
+
+The NanoPi Zero2 has one USB 2.0 Type-A HOST port and one USB 2.0 Type-C
+OTG port.
+
+Add support for using the USB 2.0 ports on NanoPi Zero2.
+
+Signed-off-by: Jonas Karlman <jonas@kwiboo.se>
+Signed-off-by: Heiko Stuebner <heiko@sntech.de>
+Link: https://patch.msgid.link/20260529190355.4148175-6-heiko@sntech.de
+
+[ upstream commit: ff660109f4129a13bbdc31bc14ca233ebf0c9450 ]
+
+(cherry picked from commit 2f28b83dd0d59cddb15927dbf30eb6960fbf772d)
+
+Signed-off-by: Jonas Karlman <jonas@kwiboo.se>
+Reviewed-by: Quentin Schulz <quentin.schulz@cherry.de>
+Link: https://patch.msgid.link/20260710100521.3677247-7-jonas@kwiboo.se
+Signed-off-by: Quentin Schulz <u-boot@0leil.net>
+---
+ .../arm64/rockchip/rk3528-nanopi-zero2.dts    | 29 +++++++++++++++++++
+ 1 file changed, 29 insertions(+)
+
+--- a/dts/upstream/src/arm64/rockchip/rk3528-nanopi-zero2.dts
++++ b/dts/upstream/src/arm64/rockchip/rk3528-nanopi-zero2.dts
+@@ -338,3 +338,32 @@
+ 	pinctrl-0 = <&uart0m0_xfer>;
+ 	status = "okay";
+ };
++
++&usb_host0_ehci {
++	status = "okay";
++};
++
++&usb_host0_ohci {
++	status = "okay";
++};
++
++&usb_host0_xhci {
++	extcon = <&usb2phy>;
++	maximum-speed = "high-speed";
++	phys = <&usb2phy_otg>;
++	phy-names = "usb2-phy";
++	status = "okay";
++};
++
++&usb2phy {
++	status = "okay";
++};
++
++&usb2phy_host {
++	phy-supply = <&usb2_host_5v>;
++	status = "okay";
++};
++
++&usb2phy_otg {
++	status = "okay";
++};
