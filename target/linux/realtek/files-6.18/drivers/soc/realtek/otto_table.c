@@ -257,6 +257,18 @@ static const struct otto_table_map otto_table_maps[OTTO_TBL_COUNT] = {
 	TBL_MAP(RTL9310_TBL_LAG, OTTO_REG_9310_2, 0, 3, 128, 0),
 	TBL_MAP(RTL9310_TBL_PORT_ISO_CTRL, OTTO_REG_9310_2, 1, 2, 1024, 0),
 
+	/* The L3 tables share this access register with the two above. Their
+	 * row counts are address spaces: the host and prefix route tables
+	 * overlay the flow table, whose RTL9310_TBL_FT_L3_* views carry the
+	 * same type and width (Realtek GPL SDK, rtk_mango_table_list).
+	 */
+	TBL_MAP(RTL9310_TBL_L3_ROUTER_MAC, OTTO_REG_9310_2, 2, 5, 1024, 0),
+	TBL_MAP(RTL9310_TBL_L3_HOST_ROUTE_IPUC, OTTO_REG_9310_2, 3, 4, 12288, 0),
+	TBL_MAP(RTL9310_TBL_L3_PREFIX_ROUTE_IPUC, OTTO_REG_9310_2, 4, 6, 12288, 0),
+	TBL_MAP(RTL9310_TBL_L3_NEXTHOP, OTTO_REG_9310_2, 6, 1, 8192, 0),
+	TBL_MAP(RTL9310_TBL_L3_IGR_INTF, OTTO_REG_9310_2, 7, 2, 1024, 0),
+	TBL_MAP(RTL9310_TBL_L3_EGR_INTF, OTTO_REG_9310_2, 8, 4, 1024, 0),
+
 	TBL_MAP(RTL9310_TBL_VLAN_UNTAG, OTTO_REG_9310_3, 0, 2, 4096, 0),
 
 	TBL_MAP(RTL9310_TBL_STAT_PORT_MIB_CNTR, OTTO_REG_9310_5, 0, 53, 57, 0),
