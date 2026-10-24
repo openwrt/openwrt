@@ -42,8 +42,8 @@
  #define RTL8221B_PHYCR1				0xa430
  #define RTL8221B_PHYCR1_ALDPS_EN		BIT(2)
  #define RTL8221B_PHYCR1_ALDPS_XTAL_OFF_EN	BIT(12)
-@@ -2980,6 +3015,147 @@ exit:
- 	return ret;
+@@ -3006,6 +3041,147 @@ static int rtl8224_get_base_addr(struct
+ 	return 0;
  }
  
 +static int rtl8224_sds_read(struct phy_device *phydev, int page, u32 reg)
@@ -106,9 +106,9 @@
 +	return 0;
 +}
 +
-+static int rtl8224_serdes_config(struct phy_device *phydev)
++static int rtl8224_serdes_config(struct phy_device *phydev, u8 port_offset)
 +{
-+	if ((phydev->mdio.addr & 3) != 0)
++	if (port_offset != 0)
 +		return 0;
 +
 +	/* Turn SerDes OFF */
@@ -187,17 +187,17 @@
 +	return 0;
 +}
 +
- static int rtl8224_mdi_config_order(struct phy_device *phydev)
+ static int rtl8224_mdi_config_order(struct phy_device *phydev, u8 port_offset)
  {
  	struct device_node *np = phydev->mdio.dev.of_node;
-@@ -3034,6 +3210,10 @@ static int rtl8224_config_init(struct ph
- {
- 	int ret;
+@@ -3066,6 +3242,10 @@ static int rtl8224_config_init(struct ph
+ 		return ret;
  
-+	ret = rtl8224_serdes_config(phydev);
+ 	port_offset = phydev->mdio.addr - base_addr;
++	ret = rtl8224_serdes_config(phydev, port_offset);
 +	if (ret)
 +		return ret;
 +
- 	ret = rtl8224_mdi_config_order(phydev);
+ 	ret = rtl8224_mdi_config_order(phydev, port_offset);
  	if (ret)
  		return ret;

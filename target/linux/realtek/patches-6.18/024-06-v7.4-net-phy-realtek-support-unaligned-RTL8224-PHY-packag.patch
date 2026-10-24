@@ -1,0 +1,133 @@
+From 8f3a933fa1a7f92a18a56d6e612955d033406efc Mon Sep 17 00:00:00 2001
+From: Manuel Stocker <mensi@mensi.ch>
+Date: Tue, 13 Oct 2026 21:56:35 +0300
+Subject: net: phy: realtek: support unaligned RTL8224 PHY packages
+
+The RTL8224 driver groups its four ports by rounding each PHY address
+down to a multiple of four and uses the low two address bits as the
+port index. This assumes that the first port's MDIO address is aligned
+to a multiple of four.
+
+The Hasivo S1100WP-8GT-2S+ uses two RTL8224 packages at MDIO addresses
+1-4 and 5-8. Extend the driver to support such configurations by using
+the base address from an ethernet-phy-package node when present and
+calculating each port's offset relative to that address.
+
+Use the package-relative port index to select the MDI pair order and
+polarity fields. Reject PHY addresses outside the four-port package
+and propagate explicit package errors rather than falling back to
+another base address.
+
+Share base-address parsing between probe and MDI configuration, and
+calculate the port offset when configuring MDI rather than caching it
+in an additional per-PHY private allocation.
+
+Join both DT-described and legacy packages with devm_phy_package_join(),
+as only the base address is needed, not a shared package node. This
+avoids mixing OF and non-OF joins, which can unbalance package-node
+references when members select the same base address.
+
+Keep the existing aligned-address assumption when no package node
+is present.
+
+Signed-off-by: Manuel Stocker <mensi@mensi.ch>
+[Oskari: rebased on net-next and reworked package handling]
+Signed-off-by: Oskari Lemmela <oskari@lemmela.net>
+Link: https://patch.msgid.link/20261013185635.1412452-3-oskari@lemmela.net
+Signed-off-by: Paolo Abeni <pabeni@redhat.com>
+---
+ drivers/net/phy/realtek/realtek_main.c | 56 ++++++++++++++++++++++++++++------
+ 1 file changed, 47 insertions(+), 9 deletions(-)
+
+--- a/drivers/net/phy/realtek/realtek_main.c
++++ b/drivers/net/phy/realtek/realtek_main.c
+@@ -2827,10 +2827,35 @@ exit:
+ 	return ret;
+ }
+ 
+-static int rtl8224_mdi_config_order(struct phy_device *phydev)
++static int rtl8224_get_base_addr(struct phy_device *phydev, u32 *base_addr)
++{
++	struct device *dev = &phydev->mdio.dev;
++	struct device_node *np;
++	int ret;
++
++	*base_addr = phydev->mdio.addr & ~3;
++	np = of_get_parent(dev->of_node);
++	if (of_node_name_eq(np, "ethernet-phy-package")) {
++		ret = of_property_read_u32(np, "reg", base_addr);
++		of_node_put(np);
++		if (ret)
++			return dev_err_probe(dev, ret,
++					     "Missing or invalid PHY package reg\n");
++
++		if (phydev->mdio.addr < *base_addr ||
++		    phydev->mdio.addr - *base_addr >= 4)
++			return dev_err_probe(dev, -EINVAL,
++					     "PHY address outside RTL8224 package\n");
++	} else {
++		of_node_put(np);
++	}
++
++	return 0;
++}
++
++static int rtl8224_mdi_config_order(struct phy_device *phydev, u8 port_offset)
+ {
+ 	struct device_node *np = phydev->mdio.dev.of_node;
+-	u8 port_offset = phydev->mdio.addr & 3;
+ 	u32 order = 0;
+ 	int ret;
+ 
+@@ -2852,10 +2877,10 @@ static int rtl8224_mdi_config_order(stru
+ 					  order ? BIT(port_offset) : 0);
+ }
+ 
+-static int rtl8224_mdi_config_polarity(struct phy_device *phydev)
++static int rtl8224_mdi_config_polarity(struct phy_device *phydev, u8 port_offset)
+ {
+ 	struct device_node *np = phydev->mdio.dev.of_node;
+-	u8 offset = (phydev->mdio.addr & 3) * 4;
++	u8 offset = port_offset * 4;
+ 	u32 polarity = 0;
+ 	int ret;
+ 
+@@ -2879,20 +2904,33 @@ static int rtl8224_mdi_config_polarity(s
+ 
+ static int rtl8224_config_init(struct phy_device *phydev)
+ {
++	u32 base_addr;
++	u8 port_offset;
+ 	int ret;
+ 
+-	ret = rtl8224_mdi_config_order(phydev);
++	ret = rtl8224_get_base_addr(phydev, &base_addr);
++	if (ret)
++		return ret;
++
++	port_offset = phydev->mdio.addr - base_addr;
++	ret = rtl8224_mdi_config_order(phydev, port_offset);
+ 	if (ret)
+ 		return ret;
+ 
+-	return rtl8224_mdi_config_polarity(phydev);
++	return rtl8224_mdi_config_polarity(phydev, port_offset);
+ }
+ 
+ static int rtl8224_probe(struct phy_device *phydev)
+ {
+-	/* Chip exposes 4 ports, join all of them in the same package */
+-	return devm_phy_package_join(&phydev->mdio.dev, phydev,
+-				     phydev->mdio.addr & ~3, 0);
++	struct device *dev = &phydev->mdio.dev;
++	u32 base_addr;
++	int ret;
++
++	ret = rtl8224_get_base_addr(phydev, &base_addr);
++	if (ret)
++		return ret;
++
++	return devm_phy_package_join(dev, phydev, base_addr, 0);
+ }
+ 
+ static bool rtlgen_supports_2_5gbps(struct phy_device *phydev)
