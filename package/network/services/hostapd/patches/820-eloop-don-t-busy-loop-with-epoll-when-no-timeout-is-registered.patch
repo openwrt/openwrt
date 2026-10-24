@@ -1,0 +1,28 @@
+From: Daniil Gentili <daniil@daniil.it>
+Date: Sat, 24 Oct 2026 17:41:59 +0000
+Subject: [PATCH] eloop: don't busy-loop with epoll when no timeout is registered
+
+With CONFIG_ELOOP_EPOLL, eloop_run() initializes timeout_ms to -1 once
+and then only updates it while a timeout is registered. Once the last
+timeout fires, timeout_ms keeps its last value, usually 0 (the timeout
+was due, or less than 1 ms away), and epoll_wait() returns immediately
+on every iteration until a new timeout gets registered.
+
+hostapd's RADIUS server hits this as soon as its last session expires:
+it then burns a full CPU core while idle. Pass -1 when there is no
+timeout, as the poll() path already does.
+
+Signed-off-by: Daniil Gentili <daniil@daniil.it>
+---
+
+--- a/src/utils/eloop.c
++++ b/src/utils/eloop.c
+@@ -1163,7 +1163,7 @@ void eloop_run(void)
+ 			res = 0;
+ 		} else {
+ 			res = epoll_wait(eloop.epollfd, eloop.epoll_events,
+-					 eloop.count, timeout_ms);
++					 eloop.count, timeout ? timeout_ms : -1);
+ 		}
+ #endif /* CONFIG_ELOOP_EPOLL */
+ #ifdef CONFIG_ELOOP_KQUEUE
