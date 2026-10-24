@@ -42,10 +42,18 @@ ipq95xx_setup_wlan()
 	local board="$1"
 
 	case "$board" in
-	askey,sbe1v1k|\
+	askey,sbe1v1k)
+		ucidef_add_wlan "$DEV_PATH_PCIE0" "$DEV_PATH_PCIE1" "$DEV_PATH_PCIE2"
+		;;
 	tplink,archer-be800|tplink,archer-be800-sfp|\
 	tplink,archer-ge800|tplink,archer-ge800-sfp)
 		ucidef_add_wlan "$DEV_PATH_PCIE0" "$DEV_PATH_PCIE1" "$DEV_PATH_PCIE2"
+		# no AP starts on 6 GHz without a country; "EU" is not one
+		local country=$(sed -n "s/^country://p" /tmp/tp_data/product-info 2>/dev/null)
+		case "$country" in
+		EU) ;;
+		[A-Z][A-Z]) ucidef_set_country "$country" ;;
+		esac
 		;;
 	esac
 }
