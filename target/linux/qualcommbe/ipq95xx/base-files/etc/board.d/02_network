@@ -23,6 +23,9 @@ ipq95xx_setup_interfaces()
 	qcom,ipq9574-ap-al02-c7)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4 lan5" "wan"
 		;;
+	tplink,archer-be550-v1)
+		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "wan"
+		;;
 	*)
 		echo "Unsupported hardware. Network interfaces not initialized"
 		;;
@@ -44,10 +47,29 @@ ipq95xx_setup_wlan()
 	esac
 }
 
+ipq95xx_setup_macs()
+{
+	local board="$1"
+	local label_mac=""
+
+	case "$board" in
+	tplink,archer-be550-v1)
+		# factory MAC is 6 raw bytes in tp_data/default-mac, mounted
+		# read-only during preinit (see lib/preinit/09_mount_tp_data)
+		label_mac=$(get_mac_binary "/tmp/tp_data/default-mac" 0)
+		[ -n "$label_mac" ] || return
+		ucidef_set_interface_macaddr "lan" "$label_mac"
+		ucidef_set_interface_macaddr "wan" "$(macaddr_add "$label_mac" 1)"
+		ucidef_set_label_macaddr "$label_mac"
+		;;
+	esac
+}
+
 board_config_update
 board=$(board_name)
 ipq95xx_setup_interfaces $board
 ipq95xx_setup_wlan $board
+ipq95xx_setup_macs $board
 board_config_flush
 
 exit 0
