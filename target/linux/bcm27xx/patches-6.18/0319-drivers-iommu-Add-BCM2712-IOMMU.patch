@@ -185,7 +185,7 @@ Signed-off-by: Nick Hollinghurst <nick.hollinghurst@raspberrypi.com>
 +builtin_platform_driver(bcm2712_iommu_cache_driver);
 --- /dev/null
 +++ b/drivers/iommu/bcm2712-iommu.c
-@@ -0,0 +1,763 @@
+@@ -0,0 +1,764 @@
 +// SPDX-License-Identifier: GPL-2.0-only
 +/*
 + * IOMMU driver for BCM2712
@@ -422,7 +422,8 @@ Signed-off-by: Nick Hollinghurst <nick.hollinghurst@raspberrypi.com>
 +	return 0;
 +}
 +
-+static int bcm2712_iommu_attach_dev(struct iommu_domain *domain, struct device *dev)
++static int bcm2712_iommu_attach_dev(struct iommu_domain *domain, struct device *dev,
++				    struct iommu_domain *old)
 +{
 +	struct bcm2712_iommu *mmu = dev ? dev_iommu_priv_get(dev) : 0;
 +	struct bcm2712_iommu_domain *mydomain =
