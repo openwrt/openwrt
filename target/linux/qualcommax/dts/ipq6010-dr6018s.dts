@@ -1,0 +1,424 @@
+// SPDX-License-Identifier: (GPL-2.0+)
+
+/dts-v1/;
+
+#include "ipq6018.dtsi"
+#include "ipq6018-ess.dtsi"
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+
+/ {
+	model = "Wallys DR6018S";
+	compatible = "wallys,dr6018s", "qcom,ipq6018-cp01", "qcom,ipq6018";
+
+	aliases {
+		serial0 = &blsp1_uart3;
+		ethernet0 = &swport1;
+		ethernet1 = &swport2;
+		label-mac-device = &swport2;
+
+		led-boot = &led_sig1;
+		led-failsafe = &led_sig1;
+		led-running = &led_sig1;
+		led-upgrade = &led_sig1;
+	};
+
+	chosen {
+		stdout-path = "serial0:115200n8";
+		bootargs-append = " root=/dev/ubiblock0_1";
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "reset";
+			gpios = <&tlmm 19 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		pinctrl-0 = <&led_pins>;
+		pinctrl-names = "default";
+
+		led_sig1: sig1 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_STATUS;
+			gpios = <&tlmm 37 GPIO_ACTIVE_LOW>;
+		};
+
+		sig2 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WLAN;
+			function-enumerator = <0>;
+			gpios = <&tlmm 35 GPIO_ACTIVE_LOW>;
+		};
+
+		sig3 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WLAN;
+			function-enumerator = <1>;
+			gpios = <&tlmm 61 GPIO_ACTIVE_LOW>;
+		};
+
+		sig4 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_LAN;
+			gpios = <&tlmm 73 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	reg_sd_vmmc: regulator-sdcard-vmmc {
+		compatible = "regulator-fixed";
+		regulator-name = "sdcard-vmmc";
+		regulator-min-microvolt = <2950000>;
+		regulator-max-microvolt = <2950000>;
+		startup-delay-us = <200>;
+		gpios = <&tlmm 66 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+		pinctrl-names = "default";
+		pinctrl-0 = <&sd_vmmc_en_default>;
+	};
+};
+
+&blsp1_uart3 {
+	pinctrl-0 = <&serial_3_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&blsp1_i2c3 {
+	pinctrl-0 = <&i2c_1_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&rpm {
+	status = "disabled";
+};
+
+&tlmm {
+	/* TZ has exclusive control over GPIO20. */
+	gpio-reserved-ranges = <20 1>;
+
+	mdio_pins: mdio-pins {
+		mdc {
+			pins = "gpio64";
+			function = "mdc";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+
+		mdio {
+			pins = "gpio65";
+			function = "mdio";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+	};
+
+	i2c_1_pins: i2c-1-state {
+		pins = "gpio42", "gpio43";
+		function = "blsp2_i2c";
+		drive-strength = <8>;
+	};
+
+	spi_0_pins: spi-0-state {
+		pins = "gpio38", "gpio39", "gpio40", "gpio41";
+		function = "blsp0_spi";
+		drive-strength = <8>;
+		bias-pull-down;
+	};
+
+	led_pins: led-pins {
+		pins = "gpio35", "gpio37", "gpio61", "gpio73";
+		function = "gpio";
+		drive-strength = <8>;
+		bias-pull-down;
+	};
+
+	sd_vmmc_en_default: sd-vmmc-en-default-state {
+		pins = "gpio66";
+		function = "gpio";
+		drive-strength = <8>;
+		bias-pull-down;
+	};
+
+	sd_pins: sd-state {
+		pins = "gpio62";
+		function = "gpio";
+		drive-strength = <8>;
+		bias-pull-up;
+	};
+};
+
+&edma {
+	status = "okay";
+};
+
+&sdhc {
+	pinctrl-0 = <&sd_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	cd-gpios = <&tlmm 62 GPIO_ACTIVE_LOW>;
+	vqmmc-supply = <&reg_sd_vmmc>;
+	bus-width = <4>;
+};
+
+&uniphy0 {
+	status = "okay";
+};
+
+&switch {
+	status = "okay";
+
+	ports {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		port@0 {
+			reg = <0>;
+			ethernet = <&edma>;
+			phy-mode = "internal";
+
+			fixed-link {
+				speed = <1000>;
+				full-duplex;
+			};
+		};
+
+		swport1: port@1 {
+			reg = <1>;
+			label = "wan";
+			phy-handle = <&qca8075_0>;
+			phy-mode = "psgmii";
+			pcs-handle = <&uniphy0 0>;
+			nvmem-cell-names = "mac-address";
+			nvmem-cells = <&ethaddr 0>;
+		};
+
+		swport2: port@2 {
+			reg = <2>;
+			label = "lan";
+			phy-handle = <&qca8075_1>;
+			phy-mode = "psgmii";
+			pcs-handle = <&uniphy0 1>;
+			nvmem-cell-names = "mac-address";
+			nvmem-cells = <&eth1addr 0>;
+		};
+	};
+};
+
+&mdio {
+	status = "okay";
+	pinctrl-0 = <&mdio_pins>;
+	pinctrl-names = "default";
+	reset-gpios = <&tlmm 75 GPIO_ACTIVE_LOW>;
+	reset-delay-us = <10000>;
+	reset-post-delay-us = <50000>;
+
+	ethernet-phy-package@0 {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		compatible = "qcom,qca8075-package";
+		reg = <0>;
+
+		qcom,package-mode = "psgmii";
+
+		qca8075_0: ethernet-phy@0 {
+			compatible = "ethernet-phy-ieee802.3-c22";
+			reg = <0>;
+		};
+
+		qca8075_1: ethernet-phy@1 {
+			compatible = "ethernet-phy-ieee802.3-c22";
+			reg = <1>;
+		};
+	};
+};
+
+&blsp1_spi1 {
+	pinctrl-0 = <&spi_0_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	flash@0 {
+		reg = <0>;
+		linux,modalias = "m25p80", "mx30uf2g18ac", "n25q128a11";
+		compatible = "micron,n25q128a11", "jedec,spi-nor";
+		spi-max-frequency = <50000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "0:SBL1";
+				reg = <0x0 0xc0000>;
+				read-only;
+			};
+
+			partition@c0000 {
+				label = "0:MIBIB";
+				reg = <0xc0000 0x10000>;
+				read-only;
+			};
+
+			partition@d0000 {
+				label = "0:BOOTCONFIG";
+				reg = <0xd0000 0x20000>;
+				read-only;
+			};
+
+			partition@f0000 {
+				label = "0:BOOTCONFIG1";
+				reg = <0xf0000 0x20000>;
+				read-only;
+			};
+
+			partition@110000 {
+				label = "0:QSEE";
+				reg = <0x110000 0x1a0000>;
+				read-only;
+			};
+
+			partition@2b0000 {
+				label = "0:QSEE_1";
+				reg = <0x2b0000 0x1a0000>;
+				read-only;
+			};
+
+			partition@450000 {
+				label = "0:DEVCFG";
+				reg = <0x450000 0x10000>;
+				read-only;
+			};
+
+			partition@460000 {
+				label = "mfginfo";
+				reg = <0x460000 0x10000>;
+				read-only;
+			};
+
+			partition@470000 {
+				label = "0:RPM";
+				reg = <0x470000 0x40000>;
+				read-only;
+			};
+
+			partition@4b0000 {
+				label = "0:RPM_1";
+				reg = <0x4b0000 0x40000>;
+				read-only;
+			};
+
+			partition@4f0000 {
+				label = "0:CDT";
+				reg = <0x4f0000 0x10000>;
+				read-only;
+			};
+
+			partition@500000 {
+				label = "0:CDT_1";
+				reg = <0x500000 0x10000>;
+				read-only;
+			};
+
+			partition@510000 {
+				label = "0:APPSBLENV";
+				reg = <0x510000 0x10000>;
+
+				nvmem-layout {
+					compatible = "u-boot,env";
+
+					ethaddr: ethaddr {
+						#nvmem-cell-cells = <0>;
+					};
+
+					eth1addr: eth1addr {
+						#nvmem-cell-cells = <0>;
+					};
+				};
+			};
+
+			partition@520000 {
+				label = "0:APPSBL";
+				reg = <0x520000 0xa0000>;
+				read-only;
+			};
+
+			partition@5c0000 {
+				label = "0:APPSBL_1";
+				reg = <0x5c0000 0xa0000>;
+				read-only;
+			};
+
+			partition@660000 {
+				label = "0:ART";
+				reg = <0x660000 0x80000>;
+				read-only;
+			};
+		};
+	};
+};
+
+&qpic_bam {
+	status = "okay";
+};
+
+&qpic_nand {
+	status = "okay";
+
+	nand@0 {
+		reg = <0>;
+
+		nand-ecc-strength = <8>;
+		nand-ecc-step-size = <512>;
+		nand-bus-width = <8>;
+
+		partitions {
+			compatible = "qcom,smem-part";
+		};
+	};
+};
+
+&wifi {
+	status = "okay";
+	qcom,ath11k-calibration-variant = "Wallys-DR6018S";
+	qcom,ath11k-fw-memory-mode = <1>;
+};
+
+&qusb_phy_0 {
+	status = "okay";
+};
+
+&qusb_phy_1 {
+	status = "okay";
+};
+
+&ssphy_0 {
+	status = "okay";
+};
+
+&usb3 {
+	dr_mode = "host";
+	status = "okay";
+};
+
+&usb2 {
+	dr_mode = "host";
+	status = "okay";
+};
+
+&pcie_phy {
+	status = "okay";
+};
+
+&pcie0 {
+	status = "okay";
+};
