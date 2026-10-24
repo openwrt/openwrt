@@ -1,0 +1,76 @@
+From 529dd7ba1395f17c0b328ab2a597769809cbe720 Mon Sep 17 00:00:00 2001
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Date: Sun, 11 Oct 2026 17:09:05 +0200
+Subject: [PATCH] ipmr: set up GSO state for tunnel vifs
+
+ip_encap() pushes the outer IPv4 header but does not set SKB_GSO_IPXIP4,
+skb->encapsulation or the inner headers. A GSO packet forwarded to a
+VIFF_TUNNEL vif is then rejected by ipip_gso_segment() and dropped in
+validate_xmit_skb(), after being counted as sent. A device with UDP
+segmentation offload is handed a GSO packet whose transport header
+points at the inner IP header.
+
+Call iptunnel_handle_offloads() and skb_set_inner_ipproto() as
+ipip_tunnel_xmit() does, reserve one outer IP ID per segment as
+iptunnel_xmit() does, and set the outer length with iph_set_totlen(),
+since a GSO packet plus the outer header can exceed 64 KB. A GSO packet
+that GRE or UDP tunnel GRO marked as encapsulated already uses the inner
+headers for its own tunnel; drop it, as segmentation did before.
+
+Fixes: 9fd1ff5d2ac7 ("udp: Support UDP fraglist GRO/GSO.")
+Link: https://lore.kernel.org/netdev/cover.1792838740.git.julius@bairaktaris.de/
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+---
+--- a/net/ipv4/ipmr.c
++++ b/net/ipv4/ipmr.c
+@@ -1818,12 +1818,21 @@ static struct notifier_block ip_mr_notif
+  * This avoids tunnel drivers and other mess and gives us the speed so
+  * important for multicast video.
+  */
+-static void ip_encap(struct net *net, struct sk_buff *skb,
+-		     __be32 saddr, __be32 daddr)
++static int ip_encap(struct net *net, struct sk_buff *skb,
++		    __be32 saddr, __be32 daddr)
+ {
++	const struct iphdr *old_iph;
+ 	struct iphdr *iph;
+-	const struct iphdr *old_iph = ip_hdr(skb);
+ 
++	/* The inner headers can describe one tunnel only */
++	if (skb_is_gso(skb) && skb->encapsulation)
++		return -1;
++
++	if (iptunnel_handle_offloads(skb, SKB_GSO_IPXIP4))
++		return -1;
++	skb_set_inner_ipproto(skb, IPPROTO_IPIP);
++
++	old_iph = ip_hdr(skb);
+ 	skb_push(skb, sizeof(struct iphdr));
+ 	skb->transport_header = skb->network_header;
+ 	skb_reset_network_header(skb);
+@@ -1837,12 +1846,13 @@ static void ip_encap(struct net *net, st
+ 	iph->saddr	=	saddr;
+ 	iph->protocol	=	IPPROTO_IPIP;
+ 	iph->ihl	=	5;
+-	iph->tot_len	=	htons(skb->len);
+-	ip_select_ident(net, skb, NULL);
++	iph_set_totlen(iph, skb->len);
++	ip_select_ident_segs(net, skb, NULL, skb_shinfo(skb)->gso_segs ?: 1);
+ 	ip_send_check(iph);
+ 
+ 	memset(&(IPCB(skb)->opt), 0, sizeof(IPCB(skb)->opt));
+ 	nf_reset_ct(skb);
++	return 0;
+ }
+ 
+ static inline int ipmr_forward_finish(struct net *net, struct sock *sk,
+@@ -1951,7 +1961,8 @@ static int ipmr_prepare_xmit(struct net
+ 	 * What do we do with netfilter? -- RR
+ 	 */
+ 	if (vif->flags & VIFF_TUNNEL) {
+-		ip_encap(net, skb, vif->local, vif->remote);
++		if (ip_encap(net, skb, vif->local, vif->remote))
++			return -1;
+ 		/* FIXME: extra output firewall step used to be here. --RR */
+ 		DEV_STATS_INC(vif_dev, tx_packets);
+ 		DEV_STATS_ADD(vif_dev, tx_bytes, skb->len);
