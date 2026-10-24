@@ -50,8 +50,9 @@
 	status = "okay";
 	pinctrl-0 = <&mdio_pins>;
 	pinctrl-names = "default";
-
-	phy-reset-gpios = <&tlmm 19 GPIO_ACTIVE_LOW>;
+	reset-gpios = <&tlmm 19 GPIO_ACTIVE_LOW>;
+	reset-delay-us = <2000>;
+	reset-post-delay-us = <5000>;
 };
 
 &ethphy3 {
