@@ -1,0 +1,78 @@
+From 81ab7af68a01677d1e9fb42f79c031dba7b48dad Mon Sep 17 00:00:00 2001
+From: Jonatan Hazell <jonatanh@hotmail.com>
+Date: Tue, 4 Aug 2026 15:32:34 +0200
+Subject: [PATCH] riscv: dts: spacemit: orangepi-r2s: Add cpu scaling for K1
+ SoC
+
+Enable CPU DVFS on OrangePi R2S by including the shared K1 OPP tables
+and wiring the CPU cores to the P1 PMIC's buck1 rail.
+
+This mirrors the existing cpu-scaling support for the Banana Pi BPI-F3
+and OrangePi RV2. Tested on the R2S hardware.
+
+Signed-off-by: Jonatan Hazell <jonatanh@hotmail.com>
+Link: https://patch.msgid.link/20260804133236.205668-4-a.heider@gmail.com
+Signed-off-by: Yixun Lan <dlan@kernel.org>
+(cherry picked from commit 4947ee60bf48caddf5caefc08dbbc84d09fbbc6b)
+---
+ .../boot/dts/spacemit/k1-orangepi-r2s.dts     | 35 ++++++++++++++++++-
+ 1 file changed, 34 insertions(+), 1 deletion(-)
+
+--- a/arch/riscv/boot/dts/spacemit/k1-orangepi-r2s.dts
++++ b/arch/riscv/boot/dts/spacemit/k1-orangepi-r2s.dts
+@@ -6,6 +6,7 @@
+ /dts-v1/;
+ 
+ #include "k1.dtsi"
++#include "k1-opp.dtsi"
+ #include "k1-pinctrl.dtsi"
+ 
+ / {
+@@ -51,6 +52,38 @@
+ 	};
+ };
+ 
++&cpu_0 {
++	cpu-supply = <&buck1_0v9>;
++};
++
++&cpu_1 {
++	cpu-supply = <&buck1_0v9>;
++};
++
++&cpu_2 {
++	cpu-supply = <&buck1_0v9>;
++};
++
++&cpu_3 {
++	cpu-supply = <&buck1_0v9>;
++};
++
++&cpu_4 {
++	cpu-supply = <&buck1_0v9>;
++};
++
++&cpu_5 {
++	cpu-supply = <&buck1_0v9>;
++};
++
++&cpu_6 {
++	cpu-supply = <&buck1_0v9>;
++};
++
++&cpu_7 {
++	cpu-supply = <&buck1_0v9>;
++};
++
+ &combo_phy {
+ 	status = "okay";
+ };
+@@ -162,7 +195,7 @@
+ 		dldoin2-supply = <&buck5>;
+ 
+ 		regulators {
+-			buck1 {
++			buck1_0v9: buck1 {
+ 				regulator-min-microvolt = <500000>;
+ 				regulator-max-microvolt = <1050000>;
+ 				regulator-ramp-delay = <5000>;

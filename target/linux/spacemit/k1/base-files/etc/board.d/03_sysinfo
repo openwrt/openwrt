@@ -1,0 +1,23 @@
+#!/bin/sh
+
+# Extract the MBR signature of the bootdevice to determine which image was
+# initially written, see target/linux/spacemit/image/k1.mk for the counterpart
+
+. /lib/functions.sh
+. /lib/upgrade/common.sh
+
+diskdev=""
+image_type=""
+
+export_bootdevice && export_partdevice diskdev 0 || exit 1
+
+sig=$(dd if=/dev/$diskdev bs=1 skip=440 count=4 2>/dev/null | hexdump -v -e '1/1 "%02x"')
+case "$sig" in
+	53444344) image_type=sdcard ;;
+	454d4d43) image_type=emmc ;;
+	4f544852) image_type=other ;;
+esac
+test -n "$image_type" || exit 2
+
+echo "$image_type" > /tmp/sysinfo/image_type
+exit 0

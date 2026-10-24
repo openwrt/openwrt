@@ -1,0 +1,266 @@
+From f7fce82fc39b46e734180ef10a0551d28f6ec097 Mon Sep 17 00:00:00 2001
+From: Andre Heider <a.heider@gmail.com>
+Date: Thu, 1 Oct 2026 17:44:34 +0200
+Subject: [PATCH] riscv: dts: spacemit: k1: Split gmac_clk_ref into independent
+ pinctrl groups
+
+Prepare for BPI-CM6 IO in the same way the mainline kernel did:
+https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id=8270311d70fdf36bc8aab1e52b554e654a8839ff
+---
+ arch/riscv/dts/k1-x_FusionOne.dts     |  2 +-
+ arch/riscv/dts/k1-x_InnoBoard-Pi.dts  |  2 +-
+ arch/riscv/dts/k1-x_LX-V10.dts        |  2 +-
+ arch/riscv/dts/k1-x_MINI-PC.dts       |  2 +-
+ arch/riscv/dts/k1-x_MUSE-Card.dts     |  2 +-
+ arch/riscv/dts/k1-x_MUSE-N1.dts       |  2 +-
+ arch/riscv/dts/k1-x_MUSE-Pi-Pro.dts   |  2 +-
+ arch/riscv/dts/k1-x_MUSE-Pi.dts       |  2 +-
+ arch/riscv/dts/k1-x_baton-camera.dts  |  2 +-
+ arch/riscv/dts/k1-x_deb1.dts          |  2 +-
+ arch/riscv/dts/k1-x_deb2.dts          |  2 +-
+ arch/riscv/dts/k1-x_evb.dts           |  2 +-
+ arch/riscv/dts/k1-x_lpi3a.dts         |  2 +-
+ arch/riscv/dts/k1-x_milkv-jupiter.dts |  2 +-
+ arch/riscv/dts/k1-x_pinctrl.dtsi      | 10 ++++++++++
+ arch/riscv/dts/k1-x_som.dts           |  2 +-
+ arch/riscv/dts/k1-x_uav.dts           |  2 +-
+ arch/riscv/dts/m1-x_milkv-jupiter.dts |  2 +-
+ arch/riscv/dts/x1_orangepi-r2s.dts    |  2 +-
+ arch/riscv/dts/x1_orangepi-rv2.dts    |  2 +-
+ 20 files changed, 29 insertions(+), 19 deletions(-)
+
+--- a/arch/riscv/dts/k1-x_FusionOne.dts
++++ b/arch/riscv/dts/k1-x_FusionOne.dts
+@@ -149,7 +149,7 @@
+ &eth0 {
+ 	status = "okay";
+ 	pinctrl-names = "default";
+-	pinctrl-0 = <&pinctrl_gmac0>;
++	pinctrl-0 = <&pinctrl_gmac0>, <&pinctrl_gmac0_clk_ref>;
+ 
+ 	phy-reset-pin = <110>;
+ 
+--- a/arch/riscv/dts/k1-x_InnoBoard-Pi.dts
++++ b/arch/riscv/dts/k1-x_InnoBoard-Pi.dts
+@@ -212,7 +212,7 @@
+ &eth0 {
+ 	status = "okay";
+ 	pinctrl-names = "default";
+-	pinctrl-0 = <&pinctrl_gmac0>;
++	pinctrl-0 = <&pinctrl_gmac0>, <&pinctrl_gmac0_clk_ref>;
+ 
+ 	phy-reset-pin = <110>;
+ 
+--- a/arch/riscv/dts/k1-x_LX-V10.dts
++++ b/arch/riscv/dts/k1-x_LX-V10.dts
+@@ -169,7 +169,7 @@
+ &eth0 {
+ 	status = "okay";
+ 	pinctrl-names = "default";
+-	pinctrl-0 = <&pinctrl_gmac0>;
++	pinctrl-0 = <&pinctrl_gmac0>, <&pinctrl_gmac0_clk_ref>;
+ 
+ 	phy-reset-pin = <81>;
+ 
+--- a/arch/riscv/dts/k1-x_MINI-PC.dts
++++ b/arch/riscv/dts/k1-x_MINI-PC.dts
+@@ -174,7 +174,7 @@
+ &eth0 {
+ 	status = "okay";
+ 	pinctrl-names = "default";
+-	pinctrl-0 = <&pinctrl_gmac0>;
++	pinctrl-0 = <&pinctrl_gmac0>, <&pinctrl_gmac0_clk_ref>;
+ 
+ 	phy-reset-pin = <110>;
+ 
+--- a/arch/riscv/dts/k1-x_MUSE-Card.dts
++++ b/arch/riscv/dts/k1-x_MUSE-Card.dts
+@@ -196,7 +196,7 @@
+ &eth0 {
+ 	status = "okay";
+ 	pinctrl-names = "default";
+-	pinctrl-0 = <&pinctrl_gmac0>;
++	pinctrl-0 = <&pinctrl_gmac0>, <&pinctrl_gmac0_clk_ref>;
+ 
+ 	phy-reset-pin = <110>;
+ 
+--- a/arch/riscv/dts/k1-x_MUSE-N1.dts
++++ b/arch/riscv/dts/k1-x_MUSE-N1.dts
+@@ -152,7 +152,7 @@
+ &eth0 {
+ 	status = "okay";
+ 	pinctrl-names = "default";
+-	pinctrl-0 = <&pinctrl_gmac0>;
++	pinctrl-0 = <&pinctrl_gmac0>, <&pinctrl_gmac0_clk_ref>;
+ 
+ 	phy-reset-pin = <110>;
+ 
+--- a/arch/riscv/dts/k1-x_MUSE-Pi-Pro.dts
++++ b/arch/riscv/dts/k1-x_MUSE-Pi-Pro.dts
+@@ -219,7 +219,7 @@
+ &eth0 {
+ 	status = "okay";
+ 	pinctrl-names = "default";
+-	pinctrl-0 = <&pinctrl_gmac0>;
++	pinctrl-0 = <&pinctrl_gmac0>, <&pinctrl_gmac0_clk_ref>;
+ 
+ 	phy-reset-pin = <110>;
+ 
+--- a/arch/riscv/dts/k1-x_MUSE-Pi.dts
++++ b/arch/riscv/dts/k1-x_MUSE-Pi.dts
+@@ -211,7 +211,7 @@
+ &eth0 {
+ 	status = "okay";
+ 	pinctrl-names = "default";
+-	pinctrl-0 = <&pinctrl_gmac0>;
++	pinctrl-0 = <&pinctrl_gmac0>, <&pinctrl_gmac0_clk_ref>;
+ 
+ 	phy-reset-pin = <110>;
+ 
+--- a/arch/riscv/dts/k1-x_baton-camera.dts
++++ b/arch/riscv/dts/k1-x_baton-camera.dts
+@@ -205,7 +205,7 @@
+ &eth0 {
+ 	status = "okay";
+ 	pinctrl-names = "default";
+-	pinctrl-0 = <&pinctrl_gmac0>;
++	pinctrl-0 = <&pinctrl_gmac0>, <&pinctrl_gmac0_clk_ref>;
+ 
+ 	phy-reset-pin = <110>;
+ 
+--- a/arch/riscv/dts/k1-x_deb1.dts
++++ b/arch/riscv/dts/k1-x_deb1.dts
+@@ -198,7 +198,7 @@
+ &eth0 {
+ 	status = "okay";
+ 	pinctrl-names = "default";
+-	pinctrl-0 = <&pinctrl_gmac0>;
++	pinctrl-0 = <&pinctrl_gmac0>, <&pinctrl_gmac0_clk_ref>;
+ 
+ 	phy-reset-pin = <110>;
+ 
+--- a/arch/riscv/dts/k1-x_deb2.dts
++++ b/arch/riscv/dts/k1-x_deb2.dts
+@@ -194,7 +194,7 @@
+ &eth0 {
+ 	status = "okay";
+ 	pinctrl-names = "default";
+-	pinctrl-0 = <&pinctrl_gmac0>;
++	pinctrl-0 = <&pinctrl_gmac0>, <&pinctrl_gmac0_clk_ref>;
+ 
+ 	phy-reset-pin = <110>;
+ 
+--- a/arch/riscv/dts/k1-x_evb.dts
++++ b/arch/riscv/dts/k1-x_evb.dts
+@@ -148,7 +148,7 @@
+ &eth0 {
+ 	status = "okay";
+ 	pinctrl-names = "default";
+-	pinctrl-0 = <&pinctrl_gmac0>;
++	pinctrl-0 = <&pinctrl_gmac0>, <&pinctrl_gmac0_clk_ref>;
+ 
+ 	phy-reset-pin = <44>;
+ 
+--- a/arch/riscv/dts/k1-x_lpi3a.dts
++++ b/arch/riscv/dts/k1-x_lpi3a.dts
+@@ -197,7 +197,7 @@
+ &eth0 {
+ 	status = "okay";
+ 	pinctrl-names = "default";
+-	pinctrl-0 = <&pinctrl_gmac0>;
++	pinctrl-0 = <&pinctrl_gmac0>, <&pinctrl_gmac0_clk_ref>;
+ 
+ 	phy-reset-pin = <110>;
+ 
+--- a/arch/riscv/dts/k1-x_milkv-jupiter.dts
++++ b/arch/riscv/dts/k1-x_milkv-jupiter.dts
+@@ -198,7 +198,7 @@
+ &eth0 {
+ 	status = "okay";
+ 	pinctrl-names = "default";
+-	pinctrl-0 = <&pinctrl_gmac0>;
++	pinctrl-0 = <&pinctrl_gmac0>, <&pinctrl_gmac0_clk_ref>;
+ 
+ 	phy-reset-pin = <110>;
+ 
+--- a/arch/riscv/dts/k1-x_pinctrl.dtsi
++++ b/arch/riscv/dts/k1-x_pinctrl.dtsi
+@@ -939,6 +939,11 @@
+             K1X_PADCONF(GPIO_12,    MUX_MODE1, (EDGE_NONE | PULL_DIS | PAD_1V8_DS2))  /* gmac0_mdc */
+             K1X_PADCONF(GPIO_13,    MUX_MODE1, (EDGE_NONE | PULL_DIS | PAD_1V8_DS2))  /* gmac0_mdio */
+             K1X_PADCONF(GPIO_14,    MUX_MODE1, (EDGE_NONE | PULL_DIS | PAD_1V8_DS2))  /* gmac0_int_n */
++        >;
++    };
++
++    pinctrl_gmac0_clk_ref: gmac0_clk_ref_grp {
++        pinctrl-single,pins =<
+             K1X_PADCONF(GPIO_45,    MUX_MODE1, (EDGE_NONE | PULL_DIS | PAD_1V8_DS2))  /* gmac0_clk_ref */
+         >;
+     };
+@@ -960,6 +965,11 @@
+             K1X_PADCONF(GPIO_41,    MUX_MODE1, (EDGE_NONE | PULL_DIS | PAD_1V8_DS2))  /* gmac1_mdc */
+             K1X_PADCONF(GPIO_42,    MUX_MODE1, (EDGE_NONE | PULL_DIS | PAD_1V8_DS2))  /* gmac1_mdio */
+             K1X_PADCONF(GPIO_43,    MUX_MODE1, (EDGE_NONE | PULL_DIS | PAD_1V8_DS2))  /* gmac1_int_n */
++        >;
++    };
++
++    pinctrl_gmac1_clk_ref: gmac1_clk_ref_grp {
++        pinctrl-single,pins =<
+             K1X_PADCONF(GPIO_46,    MUX_MODE1, (EDGE_NONE | PULL_DIS | PAD_1V8_DS2))  /* gmac1_clk_ref */
+         >;
+     };
+--- a/arch/riscv/dts/k1-x_som.dts
++++ b/arch/riscv/dts/k1-x_som.dts
+@@ -182,7 +182,7 @@
+ &eth0 {
+ 	status = "okay";
+ 	pinctrl-names = "default";
+-	pinctrl-0 = <&pinctrl_gmac0>;
++	pinctrl-0 = <&pinctrl_gmac0>, <&pinctrl_gmac0_clk_ref>;
+ 
+ 	phy-reset-pin = <110>;
+ 
+--- a/arch/riscv/dts/k1-x_uav.dts
++++ b/arch/riscv/dts/k1-x_uav.dts
+@@ -197,7 +197,7 @@
+ &eth0 {
+ 	status = "okay";
+ 	pinctrl-names = "default";
+-	pinctrl-0 = <&pinctrl_gmac0>;
++	pinctrl-0 = <&pinctrl_gmac0>, <&pinctrl_gmac0_clk_ref>;
+ 
+ 	phy-reset-pin = <110>;
+ 
+--- a/arch/riscv/dts/m1-x_milkv-jupiter.dts
++++ b/arch/riscv/dts/m1-x_milkv-jupiter.dts
+@@ -197,7 +197,7 @@
+ &eth0 {
+ 	status = "okay";
+ 	pinctrl-names = "default";
+-	pinctrl-0 = <&pinctrl_gmac0>;
++	pinctrl-0 = <&pinctrl_gmac0>, <&pinctrl_gmac0_clk_ref>;
+ 
+ 	phy-reset-pin = <110>;
+ 
+--- a/arch/riscv/dts/x1_orangepi-r2s.dts
++++ b/arch/riscv/dts/x1_orangepi-r2s.dts
+@@ -246,7 +246,7 @@
+ &eth0 {
+ 	status = "okay";
+ 	pinctrl-names = "default";
+-	pinctrl-0 = <&pinctrl_gmac0>;
++	pinctrl-0 = <&pinctrl_gmac0>, <&pinctrl_gmac0_clk_ref>;
+ 
+ 	phy-reset-pin = <110>;
+ 
+--- a/arch/riscv/dts/x1_orangepi-rv2.dts
++++ b/arch/riscv/dts/x1_orangepi-rv2.dts
+@@ -246,7 +246,7 @@
+ &eth0 {
+ 	status = "okay";
+ 	pinctrl-names = "default";
+-	pinctrl-0 = <&pinctrl_gmac0>;
++	pinctrl-0 = <&pinctrl_gmac0>, <&pinctrl_gmac0_clk_ref>;
+ 
+ 	phy-reset-pin = <110>;
+ 
