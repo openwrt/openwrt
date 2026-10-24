@@ -611,7 +611,7 @@ void rtldsa_838x_print_matrix(void);
 
 /* RTL839x-specific */
 u32 rtl839x_hash(struct otto_dsa_priv *priv, u64 seed);
-void rtl839x_exec_tbl2_cmd(u32 cmd);
+void rtl839x_exec_tbl2_cmd(struct otto_dsa_priv *priv, u32 cmd);
 void rtldsa_839x_print_matrix(void);
 
 /* RTL930x-specific */
