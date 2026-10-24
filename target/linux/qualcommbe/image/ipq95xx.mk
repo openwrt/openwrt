@@ -1,5 +1,5 @@
 DTS_DIR := $(DTS_DIR)/qcom
-DEVICE_VARS += TPLINK_SUPPORT_STRING
+DEVICE_VARS += TPLINK_SUPPORT_STRING TPLINK_SOFT_VERSION
 
 define Device/8devices_kiwi-dvk
 	$(call Device/FitImage)
