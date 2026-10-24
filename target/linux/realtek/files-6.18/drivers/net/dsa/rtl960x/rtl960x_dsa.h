@@ -34,6 +34,25 @@
 #define RTL960X_BRIDGE_VID(num)	(RTL960X_NUM_VLANS - 1 - (num))
 #define RTL960X_BRIDGE_VID_MIN	RTL960X_BRIDGE_VID(RTL960X_NUM_BRIDGE_VIDS)
 
+struct rtl960x_dsa;
+
+/**
+ * struct rtl960x_port - private per-port data
+ * @priv: pointer to parent rtl960x_dsa data
+ * @index: DSA port index, same as dsa_port::index
+ * @stats: link statistics populated by rtl960x_stats_poll, ready for atomic
+ *         access via rtl960x_get_stats64
+ * @stats_lock: protect the stats structure during read/update
+ * @mib_work: delayed work for polling MIB counters
+ */
+struct rtl960x_port {
+	struct rtl960x_dsa *priv;
+	unsigned int index;
+	struct rtnl_link_stats64 stats;
+	spinlock_t stats_lock;
+	struct delayed_work mib_work;
+};
+
 struct rtl960x_dsa {
 	struct dsa_switch *ds;
 	struct device *dev;
@@ -57,6 +76,8 @@ struct rtl960x_dsa {
 	u16 vlan_member[RTL960X_BRIDGE_VID_MIN];
 	u16 vlan_untag[RTL960X_BRIDGE_VID_MIN];
 	u16 transparent;
+	struct mutex mib_lock;
+	struct rtl960x_port ports[RTL960X_NUM_PORTS];
 };
 
 #endif /* __RTL960X_DSA_H */
