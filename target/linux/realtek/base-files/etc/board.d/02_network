@@ -25,8 +25,7 @@ realtek_setup_interfaces()
 
 	case $board in
 	bt-pon,bt-g711ax)
-		# No DSA switch driver yet.
-		ucidef_set_interface_lan "eth0"
+		ucidef_set_interface_lan "$lan_list"
 		;;
 	*)
 		ucidef_set_bridge_device switch
