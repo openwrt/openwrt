@@ -186,6 +186,7 @@
 
 			device_type = "pci";
 
+			clocks = <&pll ATH79_CLK_PCIE>;
 			resets = <&rst 6>, <&rst 7>;
 			reset-names = "hc", "phy";
 
@@ -219,6 +220,7 @@
 
 			device_type = "pci";
 
+			clocks = <&pll ATH79_CLK_PCIE>;
 			resets = <&rst2 6>, <&rst2 7>;
 			reset-names = "hc", "phy";
 

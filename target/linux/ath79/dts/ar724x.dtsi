@@ -131,6 +131,7 @@
 				interrupt-parent = <&cpuintc>;
 				interrupts = <2>;
 
+				clocks = <&pll ATH79_CLK_PCIE>;
 				resets = <&rst 6>, <&rst 7>;
 				reset-names = "hc", "phy";
 

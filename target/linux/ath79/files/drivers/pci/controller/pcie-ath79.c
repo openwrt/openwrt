@@ -6,6 +6,7 @@
  *  Copyright (C) 2009-2011 Gabor Juhos <juhosg@openwrt.org>
  */
 
+#include <linux/clk.h>
 #include <linux/delay.h>
 #include <linux/init.h>
 #include <linux/interrupt.h>
@@ -18,7 +19,6 @@
 #include <linux/platform_device.h>
 #include <linux/reset.h>
 
-#include <asm/mach-ath79/ar71xx_regs.h>
 #include <asm/mach-ath79/ath79.h>
 
 #include "../pci.h"
@@ -47,11 +47,6 @@
 				 PCI_COMMAND_MASTER |		\
 				 PCI_COMMAND_PARITY |		\
 				 PCI_COMMAND_SERR)
-
-#define ATH79_PLL_PCIE_CONFIG_PLL_BYPASS	BIT(16)
-#define ATH79_PLL_PCIE_CONFIG_PLL_PWD		BIT(30)
-
-#define QCA955X_PLL_PCIE_CONFIG_REG		0x0c
 
 struct ath79_pcie_controller {
 	void __iomem *devcfg_base;
@@ -335,32 +330,6 @@ static int ath79_pcie_power_on(struct ath79_pcie_controller *apc)
 	return 0;
 }
 
-static int ath79_pcie_init_phy(struct ath79_pcie_controller *apc, bool qca)
-{
-	u32 ppl;
-
-	if (qca) {
-		ppl = ath79_pll_rr(QCA955X_PLL_PCIE_CONFIG_REG);
-		ppl &= ~ATH79_PLL_PCIE_CONFIG_PLL_PWD;
-		ath79_pll_wr(QCA955X_PLL_PCIE_CONFIG_REG, ppl);
-
-		ppl = ath79_pll_rr(QCA955X_PLL_PCIE_CONFIG_REG);
-		ppl &= ~ATH79_PLL_PCIE_CONFIG_PLL_BYPASS;
-		ath79_pll_wr(QCA955X_PLL_PCIE_CONFIG_REG, ppl);
-	} else {
-		ppl = ath79_pll_rr(AR724X_PLL_REG_PCIE_CONFIG);
-		ppl &= ~(ATH79_PLL_PCIE_CONFIG_PLL_PWD |
-			 AR724X_PLL_REG_PCIE_CONFIG_PPL_RESET);
-		ath79_pll_wr(AR724X_PLL_REG_PCIE_CONFIG, ppl);
-
-		ppl = ath79_pll_rr(AR724X_PLL_REG_PCIE_CONFIG);
-		ppl &= ~ATH79_PLL_PCIE_CONFIG_PLL_BYPASS;
-		ath79_pll_wr(AR724X_PLL_REG_PCIE_CONFIG, ppl);
-	}
-
-	return 0;
-}
-
 static int ath79_pcie_start_link(struct ath79_pcie_controller *apc)
 {
 	u32 rst, app;
@@ -395,7 +364,7 @@ static int ath79_pcie_probe(struct platform_device *pdev)
 	struct reset_control *hc_reset;
 	struct pci_host_bridge *bridge;
 	struct device *dev;
-	bool qca;
+	struct clk *pll;
 	int ret;
 
 	dev = &pdev->dev;
@@ -437,17 +406,21 @@ static int ath79_pcie_probe(struct platform_device *pdev)
 		return apc->irq;
 
 	/*
+	 * Only take the PLL once nothing can defer the probe any more: when
+	 * the clock is released, the PLL stops and takes the link that the
+	 * bootloader trained with it.
+	 */
+	pll = devm_clk_get_enabled(dev, NULL);
+	if (IS_ERR(pll))
+		return dev_err_probe(dev, PTR_ERR(pll),
+				     "failed to enable the PCIe PLL\n");
+
+	/*
 	 * Do the full PCIE Root Complex Initialization Sequence if the PCIe
 	 * host controller is in reset.
 	 */
 	if (reset_control_status(apc->hc_reset)) {
-		qca = device_is_compatible(dev, "qcom,qca9550-pci");
-
 		ret = ath79_pcie_power_on(apc);
-		if (ret)
-			return ret;
-
-		ret = ath79_pcie_init_phy(apc, qca);
 		if (ret)
 			return ret;
 
