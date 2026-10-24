@@ -1,0 +1,49 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR BSD-2-Clause
+
+/dts-v1/;
+
+#include "ipq8072-eap660hd.dtsi"
+
+/ {
+	model = "TP-Link EAP660 HD v2";
+	compatible = "tplink,eap660hd-v2", "qcom,ipq8074";
+};
+
+&tlmm {
+	i2c_pins: i2c-pins {
+		pins = "gpio21", "gpio22";
+		function = "blsp4_i2c1";
+		drive-strength = <8>;
+		bias-disable;
+	};
+};
+
+&blsp1_i2c5 {
+	pinctrl-0 = <&i2c_pins>;
+	pinctrl-names = "default";
+	clock-frequency = <100000>;
+	status = "okay";
+
+	gpio-expander@20 {
+		compatible = "nxp,pca9555";
+		reg = <0x20>;
+		gpio-controller;
+		#gpio-cells = <2>;
+
+		/*
+		 * The Wi-Fi front-end modules are powered from these lines;
+		 * without them both radios lose ~40 dB on TX and RX.
+		 */
+		fem-enable-hog {
+			gpio-hog;
+			gpios = <0 GPIO_ACTIVE_HIGH>, <1 GPIO_ACTIVE_HIGH>,
+				<2 GPIO_ACTIVE_HIGH>, <3 GPIO_ACTIVE_HIGH>;
+			output-high;
+			line-name = "fem-enable";
+		};
+	};
+};
+
+&wifi {
+	qcom,ath11k-calibration-variant = "TP-Link-EAP660-HD-v2";
+};
