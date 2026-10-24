@@ -1,0 +1,35 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Stijn Tintel <stijn@linux-ipv6.be>
+Date: Sun, 23 Aug 2026 21:07:00 +0300
+Subject: [PATCH] watchdog: realtek-otto: avoid synchronous IRQ disable
+
+Restart handlers run from an atomic notifier chain and are expected to
+restart the machine immediately. Calling disable_irq() from the Realtek
+Otto restart handler violates that contract because it may sleep while
+waiting for an active IRQ handler to finish.
+
+This can deadlock reboot on MIPS. The architecture stops secondary CPUs
+before invoking restart handlers, so a phase 1 handler which was active
+on a stopped CPU can never finish. The watchdog reset is never armed and
+the remaining CPU eventually reports RCU stalls.
+
+Use disable_irq_nosync() instead. There is no need to wait for an old
+phase 1 handler when the watchdog is immediately reprogrammed to reset
+the SoC.
+
+Signed-off-by: Stijn Tintel <stijn@linux-ipv6.be>
+---
+ drivers/watchdog/realtek_otto_wdt.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/watchdog/realtek_otto_wdt.c
++++ b/drivers/watchdog/realtek_otto_wdt.c
+@@ -177,7 +177,7 @@ static int otto_wdt_restart(struct watch
+ 	u32 reset_mode;
+ 	u32 v;
+ 
+-	disable_irq(ctrl->irq_phase1);
++	disable_irq_nosync(ctrl->irq_phase1);
+ 
+ 	switch (reboot_mode) {
+ 	case REBOOT_SOFT:
