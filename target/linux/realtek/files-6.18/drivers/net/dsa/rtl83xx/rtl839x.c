@@ -2,6 +2,7 @@
 
 #include <asm/mach-rtl-otto/mach-rtl-otto.h>
 #include <linux/etherdevice.h>
+#include <linux/regmap.h>
 
 #include "lag.h"
 #include "l2.h"
@@ -80,10 +81,15 @@ static inline int rtl839x_port_iso_ctrl(int p)
 	return RTL839X_PORT_ISO_CTRL(p);
 }
 
-inline void rtl839x_exec_tbl2_cmd(u32 cmd)
+void rtl839x_exec_tbl2_cmd(struct otto_dsa_priv *priv, u32 cmd)
 {
-	sw_w32(cmd, RTL839X_TBL_ACCESS_CTRL_2);
-	do { } while (sw_r32(RTL839X_TBL_ACCESS_CTRL_2) & (1 << 9));
+	u32 val;
+
+	if (regmap_write(priv->map, RTL839X_TBL_ACCESS_CTRL_2, cmd))
+		return;
+
+	regmap_read_poll_timeout(priv->map, RTL839X_TBL_ACCESS_CTRL_2,
+				val, !(val & BIT(9)), 0, 0);
 }
 
 static inline int rtl839x_mac_force_mode_ctrl(int p)
