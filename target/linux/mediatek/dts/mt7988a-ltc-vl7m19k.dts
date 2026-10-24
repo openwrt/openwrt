@@ -425,17 +425,11 @@
 &mdio_bus {
 	phy6: ethernet-phy@6 {
 		reg = <6>;
-		reset-gpios = <&pio 77 GPIO_ACTIVE_LOW>;
-		reset-assert-us = <100000>;
-		reset-deassert-us = <221000>;
 		compatible = "ethernet-phy-ieee802.3-c45";
 	};
 
 	phy7: ethernet-phy@7 {
 		reg = <7>;
-		reset-gpios = <&pio 10 GPIO_ACTIVE_LOW>;
-		reset-assert-us = <100000>;
-		reset-deassert-us = <221000>;
 		compatible = "ethernet-phy-ieee802.3-c45";
 	};
 };
