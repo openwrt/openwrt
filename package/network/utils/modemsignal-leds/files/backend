@@ -73,6 +73,14 @@ b_at() {
 	# "flash 0.1", a DTR pulse that hangs up the data call on a modem set to
 	# AT&D2 - not something a read-only poller should do.
 	resp=$(at_gcom "$1" "$DATADIR/getcsq.gcom")
+	# Nothing at all means the transaction did not happen: the modem is not
+	# answering, or another instance holds the lock. Asking a second time
+	# right away only adds traffic, and the daemon's deadline is one poll
+	# interval for both queries together.
+	case "$resp" in
+	*+CSQ:*|*OK*|*ERROR*)	;;
+	*)			echo -1; return ;;
+	esac
 	n=$(printf '%s\n' "$resp" | sed -n 's/.*+CSQ:[[:space:]]*\([0-9]\{1,\}\).*/\1/p' | head -1)
 	q=$(csq_to_q "$n")
 	[ "$q" -ge 0 ] && { echo "$q"; return; }
@@ -89,20 +97,29 @@ b_at() {
 	set -- $(printf '%s\n' "$resp" |
 		awk -F'[",]' '/\+QCSQ:/ { print $2, $4, $5; exit }')
 	case "$1" in
-	LTE*|NR5G*)	rsrp_to_q "$3" ;;
-	*)		dbm_to_q  "$2" ;;
+	NR5G*)	rsrp_to_q "$3" nr ;;
+	LTE*)	rsrp_to_q "$3" lte ;;
+	*)	dbm_to_q  "$2" ;;
 	esac
 }
 
-# RSRP dBm (-125..-75) -> 0..100. 5G NR and LTE report RSRP on a different
-# scale than RSSI, so it gets its own window.
+# RSRP dBm -> 0..100, with the window picked per radio so the bars land where
+# a handset's would: a phone shows its first bar at about -115 dBm on LTE and
+# fills at -85, which is also what Android ships as its default thresholds.
+# NR reports RSRP over a different range (3GPP TS 38.133) and a good NR cell
+# sits higher, so it gets its own window.
+#
+#   $1 = dBm (sign optional), $2 = lte (default) | nr
 rsrp_to_q() {
-	local n="$1" q
+	local n="$1" lo=115 hi=85 q
 	case "$n" in -*) n="${n#-}" ;; esac
 	case "$n" in
 	''|*[!0-9]*) echo -1; return ;;
 	esac
-	q=$(( (125 - n) * 100 / 50 ))
+	case "$2" in
+	nr)	lo=110; hi=65 ;;
+	esac
+	q=$(( (lo - n) * 100 / (lo - hi) ))
 	[ "$q" -lt 0 ] && q=0
 	[ "$q" -gt 100 ] && q=100
 	echo "$q"
@@ -122,7 +139,14 @@ b_qmi() {
 	# lte and 5gnr report "rsrp", the per-resource-element level, which is
 	# what a bar graph wants. In EN-DC only the lte entry also has "rssi".
 	v=$(qmi_field "$out" rsrp)
-	[ -n "$v" ] && { rsrp_to_q "$v"; return; }
+	if [ -n "$v" ]; then
+		# in EN-DC the first entry is the lte one, and so is its rsrp
+		case "$(qmi_field "$out" type)" in
+		5gnr)	rsrp_to_q "$v" nr ;;
+		*)	rsrp_to_q "$v" lte ;;
+		esac
+		return
+	fi
 	# Older radios: lte/wcdma/cdma/hdr report "rssi", gsm/tdma "signal".
 	v=$(qmi_field "$out" rssi)
 	[ -n "$v" ] || v=$(qmi_field "$out" signal)
