@@ -105,3 +105,48 @@ define Device/tplink_archer-be800-sfp
 	SUPPORTED_DEVICES += tplink,archer-be800
 endef
 TARGET_DEVICES += tplink_archer-be800-sfp
+
+define Device/tplink_archer-ge800-common
+	$(call Device/FitImageLzma)
+	$(call Device/UbiFit)
+	DEVICE_VENDOR := TP-Link
+	DEVICE_MODEL := Archer GE800
+	DEVICE_DTS_CONFIG := config@al02-c4
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	IMAGE_SIZE := 97280k
+	UBINIZE_OPTS := -E 5
+	KERNEL_INSTALL := 1
+	KERNEL_SIZE := 8192k
+	KERNEL_LOADADDR := 0x42200000
+	SOC := ipq9574
+	DEVICE_PACKAGES := kmod-ath12k kmod-phy-aquantia ipq-wifi-tplink_archer-ge800 \
+		ath12k-firmware-tplink_archer-ge800 kmod-sfp
+	IMAGES += web-ui-factory.bin
+	IMAGE/web-ui-factory.bin := append-ubi | tplink-image-2023
+	TPLINK_SOFT_VERSION := soft_ver:1.4.1 Build 20260728 rel.24732\n
+	TPLINK_SUPPORT_STRING := SupportList:\r\n$\
+		{product_name:Archer GE800,product_ver:1.0.0,special_id:55530000}\r\n$\
+		{product_name:Archer GE800,product_ver:1.0.0,special_id:45550000}\r\n$\
+		{product_name:Archer GE800,product_ver:1.0.0,special_id:43410000}\r\n$\
+		{product_name:Archer GE800,product_ver:1.0.0,special_id:41530000}\r\n$\
+		{product_name:Archer GE800,product_ver:1.0.0,special_id:41550000}\r\n$\
+		{product_name:Archer GE800,product_ver:1.0.0,special_id:53470000}\r\n$\
+		{product_name:Archer GE800,product_ver:1.0.0,special_id:4A500000}\r\n$\
+		{product_name:Archer GE800,product_ver:1.0.0,special_id:4B520000}\r\n$\
+		{product_name:Archer GE800,product_ver:1.0.0,special_id:494E0000}\r\n
+endef
+
+define Device/tplink_archer-ge800
+	$(call Device/tplink_archer-ge800-common)
+	DEVICE_VARIANT := RJ45
+	SUPPORTED_DEVICES += tplink,archer-ge800-sfp
+endef
+TARGET_DEVICES += tplink_archer-ge800
+
+define Device/tplink_archer-ge800-sfp
+	$(call Device/tplink_archer-ge800-common)
+	DEVICE_VARIANT := SFP
+	SUPPORTED_DEVICES += tplink,archer-ge800
+endef
+TARGET_DEVICES += tplink_archer-ge800-sfp

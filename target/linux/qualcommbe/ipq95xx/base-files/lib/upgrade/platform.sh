@@ -13,7 +13,8 @@ platform_check_image() {
 		}
 		return 0
 		;;
-	tplink,archer-be800|tplink,archer-be800-sfp)
+	tplink,archer-be800|tplink,archer-be800-sfp|\
+	tplink,archer-ge800|tplink,archer-ge800-sfp)
 		# sysupgrade must be able to switch the u-boot boot slot; an
 		# unreadable environment would leave the new image stranded on
 		# the inactive partition with the router still booting the old
@@ -147,7 +148,8 @@ platform_do_upgrade() {
 	linksys,ln6001)
 		ln6001_do_upgrade "$1" || return 1
 		;;
-	tplink,archer-be800|tplink,archer-be800-sfp)
+	tplink,archer-be800|tplink,archer-be800-sfp|\
+	tplink,archer-ge800|tplink,archer-ge800-sfp)
 		tplink_do_upgrade "$1"
 		;;
 	*)
