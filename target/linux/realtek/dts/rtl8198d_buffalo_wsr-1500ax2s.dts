@@ -1,0 +1,212 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+/dts-v1/;
+
+#include "rtl960x.dtsi"
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+
+/ {
+	compatible = "buffalo,wsr-1500ax2s", "realtek,rtl8198d-soc", "realtek,rtl960x-soc";
+	model = "Buffalo WSR-1500AX2S";
+
+	chosen {
+		/*
+		 * The bootloader verifies the kernel and root filesystem by
+		 * volume name (ubi_k0, ubi_r0) and CRC, so OpenWrt keeps the
+		 * vendor volume names; sysupgrade keeps the volume IDs.
+		 */
+		bootargs = "earlycon ubi.block=0,ubi_r0 root=/dev/ubiblock0_2";
+	};
+
+	aliases {
+		led-boot = &led_power;
+		led-failsafe = &led_power_amber;
+		led-running = &led_power;
+		led-upgrade = &led_power_amber;
+	};
+
+	keys {
+		compatible = "gpio-keys-polled";
+		pinctrl-names = "default";
+		pinctrl-0 = <&pinmux_switch>;
+		poll-interval = <20>;
+
+		key-reset {
+			label = "reset";
+			gpios = <&gpio0 28 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+
+		key-aoss {
+			label = "wps";
+			gpios = <&gpio1 2 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_WPS_BUTTON>;
+		};
+
+		/*
+		 * 3-position mode switch: ROUTER and AP assert one input
+		 * each, WB asserts neither.
+		 */
+		key-ap {
+			label = "ap";
+			gpios = <&gpio0 0 GPIO_ACTIVE_LOW>;
+			linux,code = <BTN_0>;
+			linux,input-type = <EV_SW>;
+		};
+
+		key-router {
+			label = "router";
+			gpios = <&gpio0 5 GPIO_ACTIVE_LOW>;
+			linux,code = <BTN_1>;
+			linux,input-type = <EV_SW>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_power: led-power {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_POWER;
+			gpios = <&gpio0 12 GPIO_ACTIVE_LOW>;
+		};
+
+		led_power_amber: led-power-amber {
+			color = <LED_COLOR_ID_AMBER>;
+			function = LED_FUNCTION_POWER;
+			gpios = <&gpio1 3 GPIO_ACTIVE_LOW>;
+		};
+
+		led-wlan-green {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WLAN;
+			gpios = <&gpio0 9 GPIO_ACTIVE_LOW>;
+		};
+
+		led-wlan-amber {
+			color = <LED_COLOR_ID_AMBER>;
+			function = LED_FUNCTION_WLAN;
+			gpios = <&gpio0 8 GPIO_ACTIVE_LOW>;
+		};
+
+		led-internet-green {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WAN;
+			gpios = <&gpio1 1 GPIO_ACTIVE_LOW>;
+		};
+
+		led-router-green {
+			color = <LED_COLOR_ID_GREEN>;
+			function = "router";
+			gpios = <&gpio1 6 GPIO_ACTIVE_LOW>;
+		};
+	};
+};
+
+&mdio_ctrl {
+	PHY_C22(0, 0)
+	PHY_C22(1, 1)
+	PHY_C22(2, 2)
+	PHY_C22(3, 3)
+};
+
+&switch0 {
+	ethernet-ports {
+		SWITCH_PORT(0, 1, internal)
+		SWITCH_PORT(1, 2, internal)
+		SWITCH_PORT(2, 3, internal)
+
+		/* Port 3 is the WAN jack on this board. */
+		port@3 {
+			reg = <3>;
+			label = "wan";
+			phy-mode = "internal";
+			phy-handle = <&phy3>;
+		};
+	};
+};
+
+&pinmux {
+	/*
+	 * Mux bit of GPIO 5, the ROUTER position of the mode switch;
+	 * without it the input toggles continuously.
+	 */
+	pinmux_switch: switch {
+		pinctrl-single,bits = <0x0 0x20 0x20>;
+	};
+};
+
+&ecc0 {
+	status = "okay";
+};
+
+&gmac0 {
+	status = "okay";
+};
+
+&snand {
+	status = "okay";
+
+	flash@0 {
+		compatible = "spi-nand";
+		reg = <0>;
+
+		nand-ecc-engine = <&ecc0>;
+		nand-ecc-strength = <6>;
+		nand-ecc-step-size = <512>;
+		nand-ecc-algo = "bch";
+		nand-ecc-placement = "oob";
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "u-boot";
+				reg = <0x0 0xc0000>;
+				read-only;
+			};
+
+			partition@c0000 {
+				compatible = "u-boot,env-redundant-count";
+				label = "u-boot-env";
+				reg = <0xc0000 0x20000>;
+			};
+
+			partition@e0000 {
+				compatible = "u-boot,env-redundant-count";
+				label = "u-boot-env2";
+				reg = <0xe0000 0x20000>;
+			};
+
+			partition@100000 {
+				label = "ubi";
+				reg = <0x100000 0x7c80000>;
+			};
+		};
+	};
+};
+
+/*
+ * This board has a rev A RTL9607C, so the PCIe PHYs need the rev A
+ * parameters instead of the rev B defaults from rtl960x.dtsi. The
+ * wireless cards behind the ports are not supported yet.
+ */
+&pcie0_phy {
+	compatible = "realtek,rtl9607c-revA-gen2x1-pcie-phy";
+};
+
+&pcie1_phy {
+	compatible = "realtek,rtl9607c-revA-gen1x1-pcie-phy";
+};
+
+&pcie0 {
+	status = "okay";
+};
+
+&pcie1 {
+	status = "okay";
+};

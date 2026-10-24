@@ -28,6 +28,9 @@ realtek_setup_interfaces()
 		# No DSA switch driver yet.
 		ucidef_set_interface_lan "eth0"
 		;;
+	buffalo,wsr-1500ax2s)
+		ucidef_set_interfaces_lan_wan "$lan_list" "wan"
+		;;
 	*)
 		ucidef_set_bridge_device switch
 		ucidef_set_interface_lan "$lan_list"
@@ -45,6 +48,40 @@ realtek_setup_macs_lan()
 		[ -z "$lan_mac_end" ] || [ "$lan_mac_start" == "$lan_mac_end" ] && lan_mac_start=$(macaddr_setbit_la $lan_mac_start)
 		lan_mac_start=$(macaddr_add $lan_mac_start 1)
 	done
+}
+
+# Read a MAC stored as <Value Name="..." Value="001122334455"/> in an XML
+# file on a UBIFS volume, where the Realtek SDK keeps its hardware settings.
+realtek_get_mac_ubifs_xml()
+{
+	local mtdname="$1"
+	local volname="$2"
+	local file="$3"
+	local name="$4"
+	local ubidev vol dir mac
+
+	. /lib/upgrade/nand.sh
+
+	ubidev=$(nand_find_ubi "$mtdname")
+	vol=$(nand_find_volume "$ubidev" "$volname")
+	[ -n "$vol" ] || return
+
+	dir=$(mktemp -d) || return
+	if ! mount -t ubifs -o ro "/dev/$vol" "$dir" 2>/dev/null; then
+		rmdir "$dir"
+		return
+	fi
+	mac=$(sed -n 's/.*Name="'"$name"'" Value="\([0-9A-Fa-f]*\)".*/\1/p' \
+		"$dir/$file" 2>/dev/null | head -n1)
+	umount "$dir" && rmdir "$dir"
+
+	mac=$(macaddr_canonicalize "$mac")
+	case "$mac" in
+	""|00:00:00:00:00:00) return ;;
+	esac
+	[ $((0x${mac%%:*} & 1)) -eq 0 ] || return
+
+	echo "$mac"
 }
 
 realtek_setup_macs()
@@ -135,6 +172,20 @@ realtek_setup_macs()
 		[ -z "$lan_mac" ] || [ "$mac_prefix" = "00:e0:4c:00:00" ] && lan_mac=$(macaddr_random)
 		lan_mac_start=$lan_mac
 		eth0_mac=$lan_mac
+		;;
+	buffalo,wsr-1500ax2s)
+		# The u-boot env ethaddr is a Realtek default; the label MAC is in
+		# the SDK's hardware settings on the ubi_Config volume. The stock
+		# firmware puts it on every interface.
+		lan_mac=$(realtek_get_mac_ubifs_xml ubi ubi_Config \
+			config_hs.xml ELAN_MAC_ADDR)
+		[ -n "$lan_mac" ] || \
+			logger -t 02_network "$board: label MAC not found in ubi_Config"
+		eth0_mac=$lan_mac
+		label_mac=$lan_mac
+		for port in $lan_list wan; do
+			[ -n "$lan_mac" ] && ucidef_set_network_device_mac $port $lan_mac
+		done
 		;;
 	xikestor,sks8300-8x)
 		lan_mac=$(mtd_get_mac_binary board-info 0x1f1)

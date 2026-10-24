@@ -6,6 +6,9 @@ board=$(board_name)
 board_config_update
 
 case $board in
+buffalo,wsr-1500ax2s)
+	ucidef_set_led_netdev "wan" "WAN" "green:wan" "wan"
+	;;
 esac
 
 board_config_flush
