@@ -80,7 +80,7 @@ define Device/arcadyan_aw1000
 endef
 TARGET_DEVICES += arcadyan_aw1000
 
-define Device/asus_rt-ax89x
+define Device/asus_rt-ax89x-common
 	DEVICE_VENDOR := Asus
 	DEVICE_MODEL := RT-AX89X
 	BLOCKSIZE := 128k
@@ -108,7 +108,19 @@ ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
 endif
 endif
 endef
-TARGET_DEVICES += asus_rt-ax89x
+
+define Device/asus_rt-ax89x-b1
+	$(call Device/asus_rt-ax89x-common)
+	DEVICE_VARIANT := B1
+endef
+TARGET_DEVICES += asus_rt-ax89x-b1
+
+define Device/asus_rt-ax89x-b2
+	$(call Device/asus_rt-ax89x-common)
+	DEVICE_VARIANT := B2
+	SUPPORTED_DEVICES += asus,rt-ax89x
+endef
+TARGET_DEVICES += asus_rt-ax89x-b2
 
 define Device/buffalo_wxr-5950ax12
 	$(call Device/FitImage)
