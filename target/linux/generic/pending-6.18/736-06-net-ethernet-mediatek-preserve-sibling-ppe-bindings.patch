@@ -1,0 +1,38 @@
+From f3fa889cb32fd5fb6f0e38292ad96ee2c710ba4e Mon Sep 17 00:00:00 2001
+From: Alexander Goodkind <alex@goodkind.io>
+Date: Thu, 22 Oct 2026 06:44:38 -0700
+Subject: [PATCH] net: ethernet: mediatek: preserve sibling PPE bindings
+
+__mtk_ppe_check_skb() clears entry->hash for flows bound to other
+hardware slots in the same software hash bucket. This makes
+mtk_flow_offload_stats() skip their hardware counter updates.
+
+Restrict __mtk_ppe_check_skb() cleanup to entries assigned to the slot
+being checked.
+
+Clear expired or mismatched slot associations after saving their cached
+counters. Later statistics requests must not add those counters again.
+
+Fixes: c4f033d9e03e ("net: ethernet: mtk_eth_soc: rework hardware flow table management")
+Link: https://github.com/openwrt/openwrt/pull/26107
+Signed-off-by: Alexander Goodkind <alex@goodkind.io>
+---
+--- a/drivers/net/ethernet/mediatek/mtk_ppe.c
++++ b/drivers/net/ethernet/mediatek/mtk_ppe.c
+@@ -585,6 +585,7 @@ mtk_flow_entry_update(struct mtk_ppe *pp
+ 			entry->prev_bytes += acct->bytes;
+ 		}
+ 
++		entry->hash = 0xffff;
+ 		goto out;
+ 	}
+ 
+@@ -805,7 +806,7 @@ void __mtk_ppe_check_skb(struct mtk_ppe
+ 	hlist_for_each_entry_safe(entry, n, head, list) {
+ 		if (found ||
+ 		    !mtk_flow_entry_match(ppe->eth, entry, &foe, entry_len)) {
+-			if (entry->hash != 0xffff)
++			if (entry->hash == hash)
+ 				__mtk_foe_entry_clear(ppe, entry, false);
+ 			continue;
+ 		}
