@@ -60,16 +60,7 @@ define Device/sirivision_sr-st3808f
 endef
 TARGET_DEVICES += sirivision_sr-st3808f
 
-define Device/hasivo_f1100w-4sx-4xgt-common
-  SOC := rtl9303
-  DEVICE_VENDOR := Hasivo
-  DEVICE_MODEL := F1100W-4SX-4XGT
-  DEVICE_ALT0_VENDOR := Hasivo
-  DEVICE_ALT0_MODEL := F1100W-4SX-4XGT-SE
-  DEVICE_PACKAGES := \
-    kmod-phy-realtek rtl826x-firmware uboot-envtools
-  IMAGE_SIZE := 29696k
-  $(Device/kernel-lzma)
+define Device/hasivo-stock-patch-installer
   # Stock download patch requires a filename starting with patch, ending in .tar.gz, and no longer than 64 bytes.
   DEVICE_IMG_NAME = $$(if $$(filter factory.patch.tar.gz,$$(2)),patch-openwrt-$$(DEVICE_NAME).tar.gz,$$(DEVICE_IMG_PREFIX)-$$(1)-$$(2))
   # ImageBuilder and AUTOREMOVE lack prepared BusyBox sources and U-Boot objects.
@@ -81,6 +72,19 @@ define Device/hasivo_f1100w-4sx-4xgt-common
 	pad-rootfs | \
 	check-size | \
 	hasivo-stock-patch
+endef
+
+define Device/hasivo_f1100w-4sx-4xgt-common
+  SOC := rtl9303
+  DEVICE_VENDOR := Hasivo
+  DEVICE_MODEL := F1100W-4SX-4XGT
+  DEVICE_ALT0_VENDOR := Hasivo
+  DEVICE_ALT0_MODEL := F1100W-4SX-4XGT-SE
+  DEVICE_PACKAGES := \
+    kmod-phy-realtek rtl826x-firmware uboot-envtools
+  IMAGE_SIZE := 29696k
+  $(Device/kernel-lzma)
+  $(Device/hasivo-stock-patch-installer)
 endef
 
 define Device/hasivo_f1100w-4sx-4xgt
@@ -129,6 +133,18 @@ define Device/hasivo_s1100w-8xgt-se
   $(Device/kernel-lzma)
 endef
 TARGET_DEVICES += hasivo_s1100w-8xgt-se
+
+define Device/hasivo_s1100wp-8gt-2s-plus
+  SOC := rtl9302
+  DEVICE_VENDOR := Hasivo
+  DEVICE_MODEL := S1100WP-8GT-2S+
+  DEVICE_PACKAGES := kmod-pse-hasivo-hs104 kmod-mfd-hasivo-stc8 \
+    kmod-hasivo-mcu-wdt kmod-rtc-pcf8563 uboot-envtools
+  IMAGE_SIZE := 29696k
+  $(Device/kernel-lzma)
+  $(Device/hasivo-stock-patch-installer)
+endef
+TARGET_DEVICES += hasivo_s1100wp-8gt-2s-plus
 
 define Device/hasivo_s1100wp-8gt-se
   SOC := rtl9303
