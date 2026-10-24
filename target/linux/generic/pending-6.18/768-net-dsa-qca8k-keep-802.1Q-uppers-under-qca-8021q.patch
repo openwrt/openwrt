@@ -1,0 +1,46 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Stanislaw Pal <kuncy7@gmail.com>
+Date: Sat, 24 Oct 2026 13:00:00 +0200
+Subject: [PATCH] net: dsa: qca8k: keep 802.1Q uppers under qca-8021q
+
+When a port leaves a VLAN-aware bridge, or its bridge turns VLAN
+filtering off, the DSA core takes the port's 802.1Q uppers out of the
+switch and clears NETIF_F_HW_VLAN_CTAG_FILTER. Under qca-8021q an
+upper's VLAN is the only way its frames reach the CPU, so lan2.35
+stopped passing traffic, and an upper created afterwards was never
+installed at all, until the port joined a VLAN-aware bridge again.
+
+Opt in to ds->vlan_upper_filtering_always, added by the previous patch,
+while the tagger is qca-8021q.
+
+On a GL-B3000, lan2.35 pinging a peer on lan2, each step three times:
+lan2 leaving a VLAN-aware bridge, an upper created on the standalone
+port afterwards, a bridge turning VLAN filtering off and lan2 leaving
+that bridge each went from 0/5 to 5/5. With lan2 in a VLAN-aware bridge
+it was 5/5 before and after.
+
+Signed-off-by: Stanislaw Pal <kuncy7@gmail.com>
+---
+--- a/drivers/net/dsa/qca/qca8k-8xxx.c
++++ b/drivers/net/dsa/qca/qca8k-8xxx.c
+@@ -2068,6 +2068,7 @@ static int qca8k_change_tag_protocol(str
+ 	case DSA_TAG_PROTO_QCA:
+ 		dsa_tag_8021q_unregister(ds);
+ 		qca8k_user_vlan_filter_feature(ds, false);
++		ds->vlan_upper_filtering_always = false;
+ 		priv->tag_proto = proto;
+ 
+ 		ret = qca8k_set_tag_8021q_vlan_mode(priv, false);
+@@ -2106,6 +2107,12 @@ static int qca8k_change_tag_protocol(str
+ 		if (ret)
+ 			goto restore_vlan;
+ 		qca8k_user_vlan_filter_feature(ds, true);
++		/* Leaving a VLAN-aware bridge, or the bridge turning VLAN
++		 * filtering off, must not take the port's 802.1Q uppers out of
++		 * the switch: under tag_8021q an upper's VLAN is how its frames
++		 * reach the CPU at all.
++		 */
++		ds->vlan_upper_filtering_always = true;
+ 		return 0;
+ 	default:
+ 		return -EPROTONOSUPPORT;

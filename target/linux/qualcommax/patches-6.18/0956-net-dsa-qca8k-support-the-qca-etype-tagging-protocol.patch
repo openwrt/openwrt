@@ -181,8 +181,8 @@ Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
 +	case DSA_TAG_PROTO_QCA_ETYPE:
  		dsa_tag_8021q_unregister(ds);
  		qca8k_user_vlan_filter_feature(ds, false);
- 		priv->tag_proto = proto;
-@@ -2082,6 +2136,11 @@ static int qca8k_change_tag_protocol(str
+ 		ds->vlan_upper_filtering_always = false;
+@@ -2083,6 +2137,11 @@ static int qca8k_change_tag_protocol(str
  				return ret;
  		}
  
@@ -194,7 +194,7 @@ Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
  		return qca8k_set_hdr_mode(priv, QCA8K_PORT_HDR_CTRL_ALL);
  	case DSA_TAG_PROTO_QCA_8021Q:
  		/* Management frames need the Atheros header; from here on
-@@ -2112,7 +2171,7 @@ static int qca8k_change_tag_protocol(str
+@@ -2119,7 +2178,7 @@ static int qca8k_change_tag_protocol(str
  	}
  
  restore_vlan:
