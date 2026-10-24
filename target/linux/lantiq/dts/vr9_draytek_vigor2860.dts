@@ -1,0 +1,493 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+/dts-v1/;
+
+#include "vr9.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/mips/lantiq_rcu_gphy.h>
+#include <dt-bindings/leds/common.h>
+
+/ {
+	compatible = "draytek,vigor2860", "lantiq,xway", "lantiq,vr9";
+	model = "DrayTek Vigor 2860";
+
+	chosen {
+		bootargs = "console=ttyLTQ0,115200";
+	};
+
+	aliases {
+		led-boot = &led_act;
+		led-failsafe = &led_act;
+		led-running = &led_act;
+		led-upgrade = &led_act;
+		led-dsl = &led_dsl;
+	};
+
+	keys {
+		compatible = "gpio-keys-polled";
+		poll-interval = <100>;
+
+		reset {
+			label = "reset";
+			gpios = <&gpio 7 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+			debounce-interval = <60>;
+		};
+
+		wps {
+			label = "wps";
+			gpios = <&gpio 39 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_WPS_BUTTON>;
+			debounce-interval = <600>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_act: led-act {
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&stp 15 GPIO_ACTIVE_HIGH>;
+		};
+
+		led-usb {
+			function = LED_FUNCTION_USB;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&stp 14 GPIO_ACTIVE_HIGH>;
+		};
+
+		led_dsl: led-dsl {
+			function = "dsl";
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&stp 0 GPIO_ACTIVE_LOW>;
+		};
+
+		led-wan2-online {
+			function = LED_FUNCTION_WAN_ONLINE;
+			function-enumerator = <2>;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&stp 12 GPIO_ACTIVE_HIGH>;
+		};
+
+		led-wan2-link {
+			function = LED_FUNCTION_WAN;
+			function-enumerator = <2>;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&stp 3 GPIO_ACTIVE_HIGH>;
+		};
+
+		led-wan2-act {
+			function = LED_FUNCTION_ACTIVITY;
+			function-enumerator = <2>;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&stp 2 GPIO_ACTIVE_HIGH>;
+		};
+
+		led-lan1-link {
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <1>;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&stp 6 GPIO_ACTIVE_HIGH>;
+		};
+
+		led-lan1-act {
+			function = LED_FUNCTION_ACTIVITY;
+			function-enumerator = <1>;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&stp 5 GPIO_ACTIVE_HIGH>;
+		};
+
+		led-wlan2g {
+			function = LED_FUNCTION_WLAN_2GHZ;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&stp 13 GPIO_ACTIVE_HIGH>;
+		};
+
+		led-wlan5g {
+			function = LED_FUNCTION_WLAN_5GHZ;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&stp 11 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	memory@0 {
+		device_type = "memory";
+		/* top 1 MiB is used by the vendor firmware, keep it untouched */
+		reg = <0x0 0x7f00000>;
+	};
+
+	usb_vbus: regulator-usb-vbus {
+		compatible = "regulator-fixed";
+		regulator-name = "USB_VBUS";
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		gpio = <&gpio 33 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+	};
+};
+
+&eth0 {
+	nvmem-cells = <&macaddr_drayboot_3fff8 0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&gpio {
+	pinctrl-names = "default";
+	pinctrl-0 = <&state_default>;
+
+	state_default: pinmux {
+		pcie-rst {
+			lantiq,pins = "io38";
+			lantiq,pull = <0>;
+			lantiq,output = <1>;
+		};
+	};
+};
+
+&gphy0 {
+	lantiq,gphy-mode = <GPHY_MODE_GE>;
+};
+
+&gphy1 {
+	lantiq,gphy-mode = <GPHY_MODE_GE>;
+};
+
+&gswip {
+	pinctrl-0 = <&mdio_pins>;
+	pinctrl-names = "default";
+};
+
+&gswip_mdio {
+	phy1c: ethernet-phy@1c {
+		reg = <0x1c>;
+	};
+
+	phy1e: ethernet-phy@1e {
+		reg = <0x1e>;
+	};
+
+	ethernet-switch@10 {
+		compatible = "qca,qca8337";
+		reg = <0x10>;
+
+		dsa,member = <1 0>;
+
+		ethernet-ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			ethernet-port@0 {
+				reg = <0>;
+				ethernet = <&rgmii0>;
+				phy-mode = "rgmii-id";
+				tx-internal-delay-ps = <1000>;
+				rx-internal-delay-ps = <2000>;
+
+				fixed-link {
+					speed = <1000>;
+					full-duplex;
+				};
+			};
+
+			ethernet-port@1 {
+				reg = <1>;
+				label = "lan2";
+				phy-mode = "internal";
+				phy-handle = <&qca_phy0>;
+
+				leds {
+					#address-cells = <1>;
+					#size-cells = <0>;
+
+					led@0 {
+						reg = <0>;
+						color = <LED_COLOR_ID_GREEN>;
+						function = LED_FUNCTION_ACTIVITY;
+						function-enumerator = <2>;
+					};
+
+					led@1 {
+						reg = <1>;
+						color = <LED_COLOR_ID_GREEN>;
+						function = LED_FUNCTION_LAN;
+						function-enumerator = <2>;
+					};
+				};
+			};
+
+			ethernet-port@2 {
+				reg = <2>;
+				label = "lan3";
+				phy-mode = "internal";
+				phy-handle = <&qca_phy1>;
+
+				leds {
+					#address-cells = <1>;
+					#size-cells = <0>;
+
+					led@0 {
+						reg = <0>;
+						color = <LED_COLOR_ID_GREEN>;
+						function = LED_FUNCTION_ACTIVITY;
+						function-enumerator = <3>;
+					};
+
+					led@1 {
+						reg = <1>;
+						color = <LED_COLOR_ID_GREEN>;
+						function = LED_FUNCTION_LAN;
+						function-enumerator = <3>;
+					};
+				};
+			};
+
+			ethernet-port@3 {
+				reg = <3>;
+				label = "lan4";
+				phy-mode = "internal";
+				phy-handle = <&qca_phy2>;
+
+				leds {
+					#address-cells = <1>;
+					#size-cells = <0>;
+
+					led@0 {
+						reg = <0>;
+						color = <LED_COLOR_ID_GREEN>;
+						function = LED_FUNCTION_ACTIVITY;
+						function-enumerator = <4>;
+					};
+
+					led@1 {
+						reg = <1>;
+						color = <LED_COLOR_ID_GREEN>;
+						function = LED_FUNCTION_LAN;
+						function-enumerator = <4>;
+					};
+				};
+			};
+
+			ethernet-port@4 {
+				reg = <4>;
+				label = "lan5";
+				phy-mode = "internal";
+				phy-handle = <&qca_phy3>;
+
+				leds {
+					#address-cells = <1>;
+					#size-cells = <0>;
+
+					led@0 {
+						reg = <0>;
+						color = <LED_COLOR_ID_GREEN>;
+						function = LED_FUNCTION_ACTIVITY;
+						function-enumerator = <5>;
+					};
+
+					led@1 {
+						reg = <1>;
+						color = <LED_COLOR_ID_GREEN>;
+						function = LED_FUNCTION_LAN;
+						function-enumerator = <5>;
+					};
+				};
+			};
+
+			ethernet-port@5 {
+				reg = <5>;
+				label = "lan6";
+				phy-mode = "internal";
+				phy-handle = <&qca_phy4>;
+
+				leds {
+					#address-cells = <1>;
+					#size-cells = <0>;
+
+					led@0 {
+						reg = <0>;
+						color = <LED_COLOR_ID_GREEN>;
+						function = LED_FUNCTION_ACTIVITY;
+						function-enumerator = <6>;
+					};
+
+					led@1 {
+						reg = <1>;
+						color = <LED_COLOR_ID_GREEN>;
+						function = LED_FUNCTION_LAN;
+						function-enumerator = <6>;
+					};
+				};
+			};
+		};
+
+		mdio {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			qca_phy0: ethernet-phy@0 {
+				reg = <0>;
+			};
+
+			qca_phy1: ethernet-phy@1 {
+				reg = <1>;
+			};
+
+			qca_phy2: ethernet-phy@2 {
+				reg = <2>;
+			};
+
+			qca_phy3: ethernet-phy@3 {
+				reg = <3>;
+			};
+
+			qca_phy4: ethernet-phy@4 {
+				reg = <4>;
+			};
+		};
+	};
+};
+
+&gswip_ports {
+	rgmii0: port@1 {
+		reg = <1>;
+		label = "sw0";
+		phy-mode = "rgmii";
+
+		fixed-link {
+			speed = <1000>;
+			full-duplex;
+		};
+	};
+
+	port@2 {
+		reg = <2>;
+		label = "lan1";
+		phy-mode = "internal";
+		phy-handle = <&phy1c>;
+	};
+
+	port@4 {
+		reg = <4>;
+		label = "wan";
+		phy-mode = "internal";
+		phy-handle = <&phy1e>;
+		nvmem-cells = <&macaddr_drayboot_3fff8 2>;
+		nvmem-cell-names = "mac-address";
+	};
+};
+
+&localbus {
+	flash@1 {
+		compatible = "lantiq,nand-xway";
+		lantiq,cs = <1>;
+		bank-width = <2>;
+		reg = <1 0x0 0x2000000>;
+
+		pinctrl-0 = <&nand_pins>, <&nand_cs1_pins>;
+		pinctrl-names = "default";
+
+		nand-use-soft-ecc-engine;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "drayboot-vendor";
+				reg = <0x0 0x1380000>;
+				read-only;
+			};
+
+			/* DrayBoot primary firmware slot, holds U-Boot */
+			partition@1380000 {
+				label = "u-boot";
+				reg = <0x1380000 0x100000>;
+				read-only;
+			};
+
+			partition@1480000 {
+				label = "kernel";
+				reg = <0x1480000 0x400000>;
+			};
+
+			/* ends at the DrayBoot backup slot, kept for recovery */
+			partition@1880000 {
+				label = "ubi";
+				reg = <0x1880000 0x1b00000>;
+			};
+		};
+	};
+};
+
+&pcie0 {
+	status = "okay";
+	reset-gpios = <&gpio 38 GPIO_ACTIVE_LOW>;
+};
+
+&ppe {
+	nvmem-cells = <&macaddr_drayboot_3fff8 2>;
+	nvmem-cell-names = "mac-address";
+};
+
+&spi {
+	status = "okay";
+
+	flash@4 {
+		compatible = "jedec,spi-nor";
+		reg = <4>;
+		spi-max-frequency = <10000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "drayboot-spi";
+				reg = <0x0 0x40000>;
+				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_drayboot_3fff8: macaddr@3fff8 {
+						compatible = "mac-base";
+						reg = <0x3fff8 0x6>;
+						#nvmem-cell-cells = <1>;
+					};
+				};
+			};
+		};
+	};
+};
+
+&stp {
+	status = "okay";
+	lantiq,shadow = <0x000001>;
+	lantiq,groups = <0x7>;
+};
+
+&usb0 {
+	status = "okay";
+	vbus-supply = <&usb_vbus>;
+};
+
+&usb1 {
+	status = "okay";
+	vbus-supply = <&usb_vbus>;
+};
+
+&usb_phy0 {
+	status = "okay";
+};
+
+&usb_phy1 {
+	status = "okay";
+};
+

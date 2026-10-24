@@ -66,6 +66,21 @@ buffalo,wbmr-300hpd)
 	ucidef_set_led_switch "lan3" "LAN3" "green:lan3" "switch0" "0x20"
 	ucidef_set_led_default "router" "router" "green:router" "1"
 	;;
+draytek,vigor2860)
+	ucidef_set_led_usbport "usb" "USB" "green:usb" "usb1-port1" "usb2-port1"
+	ucidef_set_led_wlan "wlan2g" "WLAN 2.4G" "green:wlan-2ghz" "phy1tpt"
+	ucidef_set_led_wlan "wlan5g" "WLAN 5G" "green:wlan-5ghz" "phy0tpt"
+	ucidef_set_led_netdev "wan2" "WAN2" "green:wan-online-2" "wan" "link tx rx"
+	ucidef_set_led_netdev "wan2_link" "WAN2 link" "green:wan-2" "wan" "link"
+	ucidef_set_led_netdev "wan2_act" "WAN2 act" "green:activity-2" "wan" "tx rx"
+	ucidef_set_led_netdev "lan1_link" "LAN1 link" "green:lan-1" "lan1" "link"
+	ucidef_set_led_netdev "lan1_act" "LAN1 act" "green:activity-1" "lan1" "tx rx"
+	for i in 2 3 4 5 6; do
+		p="qca8k-1.0:0$((i - 2))"
+		ucidef_set_led_netdev "lan${i}_link" "LAN$i link" "$p:green:lan-$i" "lan$i" "link"
+		ucidef_set_led_netdev "lan${i}_act" "LAN$i act" "$p:green:activity-$i" "lan$i" "tx rx"
+	done
+	;;
 esac
 
 board_config_flush
