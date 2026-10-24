@@ -1,0 +1,591 @@
+From 4bae72abf63cf08871607b96877eced5385033cc Mon Sep 17 00:00:00 2001
+From: Kosuke Shibuya <kakiringopcneko@gmail.com>
+Date: Thu, 22 Oct 2026 15:13:46 +0900
+Subject: [PATCH] arm: mvebu: add Yamaha RTX830 inherited-DDR chainloading
+
+DDR and board initialization are supplied by the vendor loader.
+Only the SD autoboot variant is included.
+
+Signed-off-by: Kosuke Shibuya <kakiringopcneko@gmail.com>
+---
+ arch/arm/dts/Makefile                         |   2 +
+ .../dts/armada-385-rtx830-sdboot-u-boot.dtsi  |   2 +
+ arch/arm/dts/armada-385-rtx830-sdboot.dts     |  30 ++++
+ arch/arm/mach-mvebu/Kconfig                   |  12 +-
+ arch/arm/mach-mvebu/Makefile                  |   2 +
+ arch/arm/mach-mvebu/mbus.c                    |   6 +
+ board/yamaha/rtx830/Makefile                  |   3 +
+ board/yamaha/rtx830/rtx830.c                  |  50 ++++++
+ board/yamaha/rtx830/rtx830.h                  |   8 +
+ board/yamaha/rtx830/sdboot.c                  |  72 +++++++++
+ board/yamaha/rtx830/storage_power.c           | 150 ++++++++++++++++++
+ configs/rtx830_sdboot_defconfig               |  84 ++++++++++
+ include/configs/rtx830.h                      |  33 ++++
+ include/linux/mbus.h                          |   1 +
+ 14 files changed, 454 insertions(+), 1 deletion(-)
+ create mode 100644 arch/arm/dts/armada-385-rtx830-sdboot-u-boot.dtsi
+ create mode 100644 arch/arm/dts/armada-385-rtx830-sdboot.dts
+ create mode 100644 board/yamaha/rtx830/Makefile
+ create mode 100644 board/yamaha/rtx830/rtx830.c
+ create mode 100644 board/yamaha/rtx830/rtx830.h
+ create mode 100644 board/yamaha/rtx830/sdboot.c
+ create mode 100644 board/yamaha/rtx830/storage_power.c
+ create mode 100644 configs/rtx830_sdboot_defconfig
+ create mode 100644 include/configs/rtx830.h
+
+--- a/arch/arm/dts/Makefile
++++ b/arch/arm/dts/Makefile
+@@ -118,6 +118,8 @@ dtb-$(CONFIG_ARCH_TEGRA) += \
+ 	tegra210-p3450-0000.dtb
+ 
+ ifdef CONFIG_ARMADA_32BIT
++dtb-$(CONFIG_TARGET_RTX830) += armada-385-rtx830-sdboot.dtb
++
+ ifdef CONFIG_ARMADA_375
+ dtb-$(CONFIG_ARCH_MVEBU) +=			\
+ 	armada-375-db.dtb
+--- /dev/null
++++ b/arch/arm/dts/armada-385-rtx830-sdboot-u-boot.dtsi
+@@ -0,0 +1,2 @@
++// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
++/* Flat CANZ chainload tree: clocks, DDR and pinmux are inherited. */
+--- /dev/null
++++ b/arch/arm/dts/armada-385-rtx830-sdboot.dts
+@@ -0,0 +1,30 @@
++// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
++/dts-v1/;
++/ {
++	model = "Yamaha RTX830 CANZ SD boot";
++	compatible = "yamaha,rtx830", "marvell,armada385";
++	#address-cells = <1>;
++	#size-cells = <1>;
++	aliases { serial0 = &uart0; };
++	chosen { stdout-path = "serial0:9600n8"; };
++	memory@0 { device_type = "memory"; reg = <0 0x10000000>; };
++	uart0: serial@f1012000 {
++		compatible = "ns16550a";
++		reg = <0xf1012000 0x100>;
++		reg-shift = <2>;
++		reg-io-width = <1>;
++		clock-frequency = <250000000>;
++		bootph-all;
++	};
++	/* USB2, not SDHCI: GL852G hub -> GL834L USB card reader. */
++	usb@f1058000 {
++		compatible = "marvell,orion-ehci";
++		reg = <0xf1058000 0x500>;
++		status = "okay";
++	};
++	timer@f1020300 {
++		compatible = "marvell,armada-xp-timer";
++		reg = <0xf1020300 0x30>;
++		bootph-all;
++	};
++};
+--- a/arch/arm/mach-mvebu/Kconfig
++++ b/arch/arm/mach-mvebu/Kconfig
+@@ -17,7 +17,7 @@ config ARMADA_32BIT
+ 	select TRANSLATION_OFFSET
+ 	select TOOLS_KWBIMAGE if SPL
+ 	select SPL_SYS_NO_VECTOR_TABLE if SPL
+-	select ARCH_VERY_EARLY_INIT
++	select ARCH_VERY_EARLY_INIT if !TARGET_RTX830
+ 	select ARMADA_32BIT_SYSCON_RESET if DM_RESET && PCI_MVEBU
+ 	select ARMADA_32BIT_SYSCON_SYSRESET if SYSRESET
+ 
+@@ -190,6 +190,13 @@ config TARGET_DB_MV784MP_GP
+ 	select BOARD_ECC_SUPPORT
+ 	select MV78460
+ 
++config TARGET_RTX830
++	bool "Yamaha RTX830 CANZ chainload"
++	select 88F6820
++	help
++	  Chainload U-Boot from the vendor CANZ loader on Yamaha RTX830.
++	  DDR and CPU address windows must already be initialized.
++
+ config TARGET_DS116
+ 	bool "Support Synology DS116"
+ 	select 88F6820
+@@ -307,6 +314,7 @@ config BOARD_ECC_SUPPORT
+ 	bool
+ 
+ config SYS_BOARD
++	default "rtx830" if TARGET_RTX830
+ 	default "clearfog" if TARGET_CLEARFOG
+ 	default "helios4" if TARGET_HELIOS4
+ 	default "mvebu_armada-37xx" if TARGET_MVEBU_ARMADA_37XX
+@@ -334,6 +342,7 @@ config SYS_BOARD
+ 	default "mvebu_alleycat-5" if TARGET_MVEBU_ALLEYCAT5
+ 
+ config SYS_CONFIG_NAME
++	default "rtx830" if TARGET_RTX830
+ 	default "clearfog" if TARGET_CLEARFOG
+ 	default "helios4" if TARGET_HELIOS4
+ 	default "mvebu_armada-37xx" if TARGET_MVEBU_ARMADA_37XX
+@@ -361,6 +370,7 @@ config SYS_CONFIG_NAME
+ 	default "mvebu_alleycat-5" if TARGET_MVEBU_ALLEYCAT5
+ 
+ config SYS_VENDOR
++	default "yamaha" if TARGET_RTX830
+ 	default "Marvell" if TARGET_DB_MV784MP_GP
+ 	default "Marvell" if TARGET_MVEBU_ARMADA_37XX
+ 	default "Marvell" if TARGET_DB_88F6720
+--- a/arch/arm/mach-mvebu/Makefile
++++ b/arch/arm/mach-mvebu/Makefile
+@@ -20,7 +20,9 @@ obj-y	+= mbus.o
+ else # CONFIG_ARCH_KIRKWOOD
+ 
+ obj-y	= cpu.o
++ifneq ($(CONFIG_TARGET_RTX830),y)
+ obj-y	+= dram.o
++endif
+ obj-y	+= lowlevel.o
+ ifndef CONFIG_XPL_BUILD
+ obj-$(CONFIG_ARMADA_375) += ../../../drivers/ddr/marvell/axp/xor.o
+--- a/arch/arm/mach-mvebu/mbus.c
++++ b/arch/arm/mach-mvebu/mbus.c
+@@ -352,6 +352,12 @@ static void mvebu_mbus_default_setup_cpu
+ /*
+  * Public API of the driver
+  */
++/* Inherit an already-initialized Armada 38x CPU map for chainloading. */
++void mvebu_mbus_read_dram_info(void)
++{
++	mvebu_mbus_default_setup_cpu_target();
++}
++
+ const struct mbus_dram_target_info *mvebu_mbus_dram_info(void)
+ {
+ 	return &mbus_dram_info;
+--- /dev/null
++++ b/board/yamaha/rtx830/Makefile
+@@ -0,0 +1,3 @@
++# SPDX-License-Identifier: GPL-2.0+
++obj-y += rtx830.o
++obj-$(CONFIG_USB_EHCI_MARVELL) += storage_power.o sdboot.o
+--- /dev/null
++++ b/board/yamaha/rtx830/rtx830.c
+@@ -0,0 +1,50 @@
++// SPDX-License-Identifier: GPL-2.0+
++/* RTX830 CANZ chainload: DDR, pinmux and peripherals are inherited. */
++#include <init.h>
++#include <stdio.h>
++#include <asm/global_data.h>
++#include <linux/sizes.h>
++#include <linux/mbus.h>
++#include "rtx830.h"
++DECLARE_GLOBAL_DATA_PTR;
++
++int board_early_init_f(void)
++{
++	return 0;
++}
++
++int board_init(void)
++{
++	gd->bd->bi_boot_params = 0x100;
++	if (IS_ENABLED(CONFIG_USB_EHCI_MARVELL)) {
++		/* Inherit CPU windows, including the BootROM SMP aperture. */
++		mvebu_mbus_read_dram_info();
++		if (rtx830_storage_power_enable())
++			printf("RTX830 storage power initialization failed; UART diagnostics remain available.\n");
++		else if (rtx830_status_boot_on())
++			printf("RTX830 STATUS initialization failed; UART diagnostics remain available.\n");
++	}
++	return 0;
++}
++
++int dram_init(void)
++{
++	gd->ram_size = SZ_256M;
++	return 0;
++}
++
++int dram_init_banksize(void)
++{
++	gd->dram[0].start = 0;
++	gd->dram[0].size = SZ_256M;
++	return 0;
++}
++
++int checkboard(void)
++{
++	if (IS_ENABLED(CONFIG_USB_EHCI_MARVELL))
++		puts("Board: RTX830 CANZ SD boot (no persistent environment)\n");
++	else
++		puts("Board: RTX830 CANZ UART experiment (no persistent environment)\n");
++	return 0;
++}
+--- /dev/null
++++ b/board/yamaha/rtx830/rtx830.h
+@@ -0,0 +1,8 @@
++/* SPDX-License-Identifier: GPL-2.0+ */
++#ifndef _BOARD_YAMAHA_RTX830_H
++#define _BOARD_YAMAHA_RTX830_H
++
++int rtx830_storage_power_enable(void);
++int rtx830_status_boot_on(void);
++
++#endif
+--- /dev/null
++++ b/board/yamaha/rtx830/sdboot.c
+@@ -0,0 +1,72 @@
++// SPDX-License-Identifier: GPL-2.0+
++/* Select the soldered GL834L reader without depending on USB disk numbering. */
++#include <blk.h>
++#include <command.h>
++#include <dm.h>
++#include <dm/device-internal.h>
++#include <dm/read.h>
++#include <dm/uclass.h>
++#include <env.h>
++#include <usb.h>
++
++static bool rtx830_internal_reader(struct udevice *storage)
++{
++	struct udevice *hub = dev_get_parent(storage);
++	struct udevice *root, *bus;
++	struct usb_device *reader, *hub_usb;
++
++	if (device_get_uclass_id(storage) != UCLASS_MASS_STORAGE ||
++	    !hub || device_get_uclass_id(hub) != UCLASS_USB_HUB)
++		return false;
++	reader = dev_get_parent_priv(storage);
++	hub_usb = dev_get_parent_priv(hub);
++	if (!reader || !hub_usb || reader->descriptor.idVendor != 0x05e3 ||
++	    reader->descriptor.idProduct != 0x0745 || reader->portnr != 2 ||
++	    hub_usb->descriptor.idVendor != 0x05e3 || hub_usb->portnr != 1)
++		return false;
++
++	/* EHCI root -> on-board Genesys hub port 2 -> GL834L. */
++	root = dev_get_parent(hub);
++	if (!root || device_get_uclass_id(root) != UCLASS_USB_HUB)
++		return false;
++	bus = dev_get_parent(root);
++	return bus && device_get_uclass_id(bus) == UCLASS_USB &&
++		dev_read_addr(bus) == 0xf1058000;
++}
++
++static int do_rtx830_sddev(struct cmd_tbl *cmdtp, int flag, int argc,
++			   char *const argv[])
++{
++	struct udevice *dev;
++	struct uclass *uc;
++	int found = -1;
++
++	/* Never leave a stale/manual selection after a failed automatic scan. */
++	if (env_set("sddev", NULL) || uclass_get(UCLASS_BLK, &uc))
++		return CMD_RET_FAILURE;
++	uclass_foreach_dev(dev, uc) {
++		struct blk_desc *desc = dev_get_uclass_plat(dev);
++
++		if (desc->uclass_id != UCLASS_USB ||
++		    !rtx830_internal_reader(dev_get_parent(dev)))
++			continue;
++		if (device_probe(dev) || !desc->lba)
++			continue;
++		if (found >= 0) {
++			puts("Ambiguous internal microSD devices; not booting\n");
++			return CMD_RET_FAILURE;
++		}
++		found = desc->devnum;
++	}
++	if (found < 0) {
++		puts("Internal microSD not found; use usb tree for diagnosis\n");
++		return CMD_RET_FAILURE;
++	}
++	if (env_set_ulong("sddev", found))
++		return CMD_RET_FAILURE;
++	printf("Internal microSD selected: usb %d\n", found);
++	return CMD_RET_SUCCESS;
++}
++
++U_BOOT_CMD(rtx830_sddev, 1, 0, do_rtx830_sddev,
++	   "select the RTX830 internal microSD USB block device", "");
+--- /dev/null
++++ b/board/yamaha/rtx830/storage_power.c
+@@ -0,0 +1,150 @@
++// SPDX-License-Identifier: GPL-2.0+
++/* Independently implemented from the supplied RTX830 SPI0 power specification. */
++#include <stdio.h>
++#include <asm/io.h>
++#include <linux/delay.h>
++#include <linux/errno.h>
++#include <linux/types.h>
++#include "rtx830.h"
++
++#define SPI0_BASE       0xf1010600UL
++#define SPI_CTRL        ((void __iomem *)(SPI0_BASE + 0x00))
++#define SPI_CFG         ((void __iomem *)(SPI0_BASE + 0x04))
++#define SPI_DOUT        ((void __iomem *)(SPI0_BASE + 0x08))
++#define SPI_DIN         ((void __iomem *)(SPI0_BASE + 0x0c))
++#define MPP_REG(offset) ((void __iomem *)(0xf1018000UL + (offset)))
++#define SPI_CS_ACTIVE   0x01
++#define SPI_READY       0x02
++#define SPI_CS_MASK     0x1c
++#define SPI_CS2         0x08
++
++static int storage_byte(u8 value)
++{
++	unsigned int i;
++
++	writel(value, SPI_DOUT);
++	udelay(2);
++	for (i = 0; i < 2000; i++) {
++		if (readl(SPI_CTRL) & SPI_READY)
++			return 0;
++		udelay(1);
++	}
++	return -ETIMEDOUT;
++}
++
++/* Only storage power (2) and LED output (4) are addressable. */
++static int board_reg(u8 reg, int write, u8 *value)
++{
++	u32 saved = readl(SPI_CTRL);
++	u32 selected;
++	int ret;
++
++	if (reg != 2 && reg != 4)
++		return -EINVAL;
++	if (saved & SPI_CS_ACTIVE)
++		return -EBUSY;
++	selected = (saved & ~SPI_CS_MASK) | SPI_CS2;
++	writel(selected, SPI_CTRL);
++	writel(selected | SPI_CS_ACTIVE, SPI_CTRL);
++	ret = storage_byte((reg << 2) | (write ? 0 : 0x80));
++	if (!ret)
++		ret = storage_byte(write ? *value : 0xff);
++	if (!ret && !write)
++		*value = readl(SPI_DIN) & 0xff;
++	/* Deassert CS2 even on timeout, then restore the inherited idle value. */
++	writel(selected, SPI_CTRL);
++	writel(saved, SPI_CTRL);
++	return ret;
++}
++
++int rtx830_storage_power_enable(void)
++{
++	u8 before, confirm, after, target, rollback;
++	int ret, rollback_write, rollback_read;
++
++	if (readl(SPI_CFG) != 0x1818 ||
++	    (readl(MPP_REG(8)) & 0xff000000) != 0x11000000 ||
++	    (readl(MPP_REG(12)) & 0x00000f0f) != 0x00000101 ||
++	    (readl(SPI_CTRL) & SPI_CS_ACTIVE)) {
++		printf("RTX830 storage power: inherited SPI0/MPP state rejected\n");
++		return -EINVAL;
++	}
++	ret = board_reg(2, 0, &before);
++	if (ret)
++		return ret;
++	ret = board_reg(2, 0, &confirm);
++	if (ret)
++		return ret;
++	if (before != confirm || before == 0xff) {
++		printf("RTX830 storage power: invalid register 2 reads %02x/%02x\n",
++		       before, confirm);
++		return -EIO;
++	}
++	target = before | 0x03;
++	if (target == before) {
++		printf("RTX830 storage power: register 2 %02x -> %02x (already enabled)\n",
++		       before, before);
++		return 0;
++	}
++	ret = board_reg(2, 1, &target);
++	if (!ret) {
++		ret = board_reg(2, 0, &after);
++		if (!ret && after != target)
++			ret = -EIO;
++	}
++	if (!ret) {
++		printf("RTX830 storage power: register 2 %02x -> %02x\n",
++		       before, after);
++		return 0;
++	}
++
++	/* A failed write may have taken effect: try exactly one rollback. */
++	rollback = before;
++	rollback_write = board_reg(2, 1, &rollback);
++	rollback_read = board_reg(2, 0, &rollback);
++	if (!rollback_write && !rollback_read && rollback == before)
++		printf("RTX830 storage power: enable failed (%d), rollback verified %02x\n",
++		       ret, before);
++	else if (!rollback_read)
++		printf("RTX830 storage power: enable failed (%d), rollback write=%d read=%02x expected=%02x\n",
++		       ret, rollback_write, rollback, before);
++	else
++		printf("RTX830 storage power: enable failed (%d), rollback write=%d read=%d\n",
++		       ret, rollback_write, rollback_read);
++	return ret;
++}
++
++/* Called only after storage power validated the inherited SPI/MPP state. */
++int rtx830_status_boot_on(void)
++{
++	u8 before, confirm, after, target, rollback;
++	int ret, wr, rd;
++
++	ret = board_reg(4, 0, &before);
++	if (ret)
++		return ret;
++	ret = board_reg(4, 0, &confirm);
++	if (ret)
++		return ret;
++	if (before != confirm || before == 0xff)
++		return -EIO;
++	target = before | 1;
++	if (target == before)
++		return 0;
++	ret = board_reg(4, 1, &target);
++	if (!ret) {
++		ret = board_reg(4, 0, &after);
++		if (!ret && after != target)
++			ret = -EIO;
++	}
++	if (!ret) {
++		printf("RTX830 STATUS: on during boot\n");
++		return 0;
++	}
++	rollback = before;
++	wr = board_reg(4, 1, &rollback);
++	rd = board_reg(4, 0, &rollback);
++	if (wr || rd || rollback != before)
++		printf("RTX830 STATUS: rollback could not be verified\n");
++	return ret;
++}
+--- /dev/null
++++ b/configs/rtx830_sdboot_defconfig
+@@ -0,0 +1,84 @@
++CONFIG_ARM=y
++CONFIG_ARCH_MVEBU=y
++CONFIG_TARGET_RTX830=y
++CONFIG_TEXT_BASE=0x02000000
++CONFIG_HAS_CUSTOM_SYS_INIT_SP_ADDR=y
++CONFIG_CUSTOM_SYS_INIT_SP_ADDR=0x01f00000
++CONFIG_NR_DRAM_BANKS=1
++CONFIG_SYS_LOAD_ADDR=0x04000000
++CONFIG_SYS_MALLOC_LEN=0x400000
++CONFIG_SYS_MALLOC_F_LEN=0x2000
++CONFIG_SKIP_LOWLEVEL_INIT=y
++# CONFIG_ARCH_CPU_INIT is not set
++# CONFIG_SPL is not set
++CONFIG_SYS_ICACHE_OFF=y
++CONFIG_SYS_DCACHE_OFF=y
++CONFIG_SYS_L2CACHE_OFF=y
++CONFIG_DEFAULT_DEVICE_TREE="armada-385-rtx830-sdboot"
++# CONFIG_OF_UPSTREAM is not set
++CONFIG_OF_SEPARATE=y
++CONFIG_BAUDRATE=9600
++CONFIG_SYS_NS16550=y
++CONFIG_DEBUG_UART=y
++CONFIG_DEBUG_UART_NS16550=y
++CONFIG_DEBUG_UART_BASE=0xf1012000
++CONFIG_DEBUG_UART_CLOCK=250000000
++CONFIG_DEBUG_UART_SHIFT=2
++CONFIG_DEBUG_UART_SKIP_INIT=y
++CONFIG_ENV_IS_NOWHERE=y
++CONFIG_ENV_SIZE=0x2000
++CONFIG_BOOTDELAY=3
++CONFIG_USE_BOOTCOMMAND=y
++CONFIG_BOOTCOMMAND="run bootcmd_auto"
++CONFIG_SYS_PROMPT="RTX830-U-Boot> "
++CONFIG_HUSH_PARSER=y
++CONFIG_CMD_BDI=y
++CONFIG_CMD_MEMORY=y
++CONFIG_CMD_MEMINFO=y
++CONFIG_CMD_CRC32=y
++CONFIG_CMD_DM=y
++# CONFIG_CMD_SAVEENV is not set
++# CONFIG_CMD_SF is not set
++# CONFIG_CMD_SPI is not set
++# CONFIG_CMD_FLASH is not set
++# CONFIG_CMD_NET is not set
++# CONFIG_NET is not set
++# CONFIG_PCI is not set
++CONFIG_USB=y
++# CONFIG_MMC is not set
++# CONFIG_SATA is not set
++# CONFIG_SCSI is not set
++# CONFIG_WDT is not set
++# CONFIG_WATCHDOG is not set
++# CONFIG_DISPLAY_CPUINFO is not set
++CONFIG_DISPLAY_BOARDINFO=y
++CONFIG_IDENT_STRING=" RTX830 SD boot"
++# CONFIG_CMD_MVEBU_BUBT is not set
++# CONFIG_CMD_MVEBU_COMPHY_RX_TRAINING is not set
++# CONFIG_CMD_BOOTD is not set
++# CONFIG_CMD_BOOTM is not set
++# CONFIG_CMD_ELF is not set
++# CONFIG_CMD_GO is not set
++# CONFIG_CMD_SOURCE is not set
++# CONFIG_CMD_LOADS is not set
++CONFIG_USB_EHCI_HCD=y
++CONFIG_USB_EHCI_MARVELL=y
++CONFIG_USB_STORAGE=y
++CONFIG_CMD_USB=y
++CONFIG_CMD_FAT=y
++CONFIG_CMD_EXT4=y
++CONFIG_CMD_FS_GENERIC=y
++CONFIG_CMD_PART=y
++CONFIG_DOS_PARTITION=y
++CONFIG_EFI_PARTITION=y
++CONFIG_PARTITION_UUIDS=y
++CONFIG_CMD_BOOTZ=y
++CONFIG_BOOTM_LINUX=y
++CONFIG_OF_LIBFDT=y
++CONFIG_SUPPORT_RAW_INITRD=y
++# CONFIG_EFI_LOADER is not set
++# CONFIG_TOOLS_MKEFICAPSULE is not set
++
++# CONFIG_FAT_WRITE is not set
++# CONFIG_FAT_RENAME is not set
++# CONFIG_CMD_EXT4_WRITE is not set
+--- /dev/null
++++ b/include/configs/rtx830.h
+@@ -0,0 +1,33 @@
++/* SPDX-License-Identifier: GPL-2.0+ */
++#ifndef _CONFIG_RTX830_H
++#define _CONFIG_RTX830_H
++#include "mv-common.h"
++#if defined(CONFIG_USB_EHCI_MARVELL)
++/* Automatic selection follows the internal USB reader, never a USB disk index. */
++#define CFG_EXTRA_ENV_SETTINGS \
++	"kernel_addr_r=0x04000000\0" \
++	"fdt_addr_r=0x03000000\0" \
++	"ramdisk_addr_r=0x06000000\0" \
++	"bootpart=1\0" \
++	"rootpart=2\0" \
++	"kernel_file=zImage\0" \
++	"fdt_file=rtx830.dtb\0" \
++	"bootcmd_auto=if usb start && rtx830_sddev; then run bootcmd_sd; " \
++		"else echo Internal microSD unavailable; fi\0" \
++	"bootcmd_sd=" \
++		"if test -n \"${sddev}\"; then " \
++			"if usb start && " \
++			"fatload usb ${sddev}:${bootpart} ${kernel_addr_r} ${kernel_file} && " \
++			"fatload usb ${sddev}:${bootpart} ${fdt_addr_r} ${fdt_file} && " \
++			"part uuid usb ${sddev}:${rootpart} rootuuid; then " \
++				"setenv bootargs console=ttyS0,9600n8 " \
++				"earlycon=uart8250,mmio32,0xf1012000 " \
++				"root=PARTUUID=${rootuuid} rootwait rootfstype=ext4 rw " \
++				"usbcore.autosuspend=-1; " \
++				"bootz ${kernel_addr_r} - ${fdt_addr_r}; " \
++			"else echo SD boot files or root partition unavailable; fi; " \
++		"else echo Select the microSD with: setenv sddev N; fi\0"
++#else
++#define CFG_EXTRA_ENV_SETTINGS "bootcmd=echo UART experiment: automatic boot disabled\0"
++#endif
++#endif
+--- a/include/linux/mbus.h
++++ b/include/linux/mbus.h
+@@ -47,6 +47,7 @@ struct mbus_dram_target_info {
+ /* Maximum size of a mbus window name */
+ #define MVEBU_MBUS_MAX_WINNAME_SZ 32
+ 
++void mvebu_mbus_read_dram_info(void);
+ const struct mbus_dram_target_info *mvebu_mbus_dram_info(void);
+ void mvebu_mbus_get_pcie_mem_aperture(struct resource *res);
+ void mvebu_mbus_get_pcie_io_aperture(struct resource *res);

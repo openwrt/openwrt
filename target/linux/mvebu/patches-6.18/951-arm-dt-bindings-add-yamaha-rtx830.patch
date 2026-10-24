@@ -1,0 +1,26 @@
+From d68e6949e83d641795ee9af77c92ca94dcbe7f62 Mon Sep 17 00:00:00 2001
+From: Kosuke Shibuya <kakiringopcneko@gmail.com>
+Date: Thu, 22 Oct 2026 15:13:46 +0900
+Subject: [PATCH] dt-bindings: arm: marvell: add Yamaha RTX830
+
+Describe the Yamaha RTX830 router based on the Marvell Armada 385.
+
+Signed-off-by: Kosuke Shibuya <kakiringopcneko@gmail.com>
+---
+ .../devicetree/bindings/arm/marvell/armada-38x.yaml        | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+--- a/Documentation/devicetree/bindings/arm/marvell/armada-38x.yaml
++++ b/Documentation/devicetree/bindings/arm/marvell/armada-38x.yaml
+@@ -67,4 +67,11 @@ properties:
+           - const: marvell,armada385
+           - const: marvell,armada380
+ 
++      - description:
++          Yamaha RTX830 router.
++        items:
++          - const: yamaha,rtx830
++          - const: marvell,armada385
++          - const: marvell,armada380
++
+ additionalProperties: true
