@@ -1,0 +1,229 @@
+From: Rosen Penev <rosenp@gmail.com>
+Subject: [PATCH] clk: ath79: add a PCIe PLL clock
+
+The PCIe host controller drivers powered the PCIe PLL up by poking
+PCIE_PLL_CONFIG through ath79_pll_base. That ties them to the arch
+code, and the offset was wrong for QCA956x: there 0x10 is
+CPU_DDR_CLOCK_CONTROL, and PCIE_PLL_CONFIG is at 0x14 (QCA9563
+datasheet 8.6.6). On QCA955x it is at 0x0c and on AR724x, AR934x and
+QCA953x at 0x10.
+
+Register the PLL as a clock, so the PCIe drivers can use the clk API.
+Prepare powers it up and takes it out of bypass, waiting for UPDATING
+to clear after each step. Every write to the register freezes the high
+speed clocks for about 60 us (AR7242 datasheet 4.4.4), so a PLL the
+bootloader already started is left alone. AR724x holds the PLL in
+reset instead of powering it down and has UPDATING at bit 17. The
+clock is CLK_IGNORE_UNUSED, so boards that do not describe PCIe keep
+the PLL as the bootloader left it.
+
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+Assisted-by: LLM
+---
+--- a/drivers/clk/clk-ath79.c
++++ b/drivers/clk/clk-ath79.c
+@@ -11,12 +11,14 @@
+ #include <linux/kernel.h>
+ #include <linux/init.h>
+ #include <linux/io.h>
++#include <linux/iopoll.h>
+ #include <linux/err.h>
+ #include <linux/clk.h>
+ #include <linux/clkdev.h>
+ #include <linux/clk-provider.h>
+ #include <linux/of.h>
+ #include <linux/of_address.h>
++#include <linux/slab.h>
+ #include <dt-bindings/clock/ath79-clk.h>
+ 
+ #include <asm/div64.h>
+@@ -35,6 +37,10 @@
+ #define AR71XX_AHB_DIV_SHIFT		20
+ #define AR71XX_AHB_DIV_MASK		0x7
+ #define AR724X_PLL_REG_CPU_CONFIG	0x00
++#define AR724X_PLL_REG_PCIE_CONFIG	0x10
++#define AR724X_PLL_REG_PCIE_CONFIG_PPL_BYPASS	BIT(16)
++#define AR724X_PLL_REG_PCIE_CONFIG_UPDATING	BIT(17)
++#define AR724X_PLL_REG_PCIE_CONFIG_PPL_RESET	BIT(25)
+ #define AR724X_PLL_FB_SHIFT		0
+ #define AR724X_PLL_FB_MASK		0x3ff
+ #define AR724X_PLL_REF_DIV_SHIFT	10
+@@ -61,7 +67,11 @@
+ #define AR934X_PLL_CPU_CONFIG_REG		0x00
+ #define AR934X_PLL_DDR_CONFIG_REG		0x04
+ #define AR934X_PLL_CPU_DDR_CLK_CTRL_REG		0x08
++#define AR934X_PLL_PCIE_CONFIG_REG		0x10
+ #define AR934X_PLL_SWITCH_CLOCK_CONTROL_REG	0x24
++#define AR934X_PLL_PCIE_CONFIG_PLL_BYPASS	BIT(16)
++#define AR934X_PLL_PCIE_CONFIG_PLL_PWD		BIT(30)
++#define AR934X_PLL_PCIE_CONFIG_UPDATING		BIT(31)
+ #define AR934X_PLL_CPU_CONFIG_NFRAC_SHIFT	0
+ #define AR934X_PLL_CPU_CONFIG_NFRAC_MASK	0x3f
+ #define AR934X_PLL_CPU_CONFIG_NINT_SHIFT	6
+@@ -126,6 +136,7 @@
+ #define QCA955X_PLL_CPU_CONFIG_REG		0x00
+ #define QCA955X_PLL_DDR_CONFIG_REG		0x04
+ #define QCA955X_PLL_CLK_CTRL_REG		0x08
++#define QCA955X_PLL_PCIE_CONFIG_REG		0x0c
+ #define QCA955X_PLL_CPU_CONFIG_NFRAC_SHIFT	0
+ #define QCA955X_PLL_CPU_CONFIG_NFRAC_MASK	0x3f
+ #define QCA955X_PLL_CPU_CONFIG_NINT_SHIFT	6
+@@ -159,6 +170,7 @@
+ #define QCA956X_PLL_DDR_CONFIG_REG			0x08
+ #define QCA956X_PLL_DDR_CONFIG1_REG			0x0c
+ #define QCA956X_PLL_CLK_CTRL_REG			0x10
++#define QCA956X_PLL_PCIE_CONFIG_REG			0x14
+ #define QCA956X_PLL_CPU_CONFIG_REFDIV_SHIFT		12
+ #define QCA956X_PLL_CPU_CONFIG_REFDIV_MASK		0x1f
+ #define QCA956X_PLL_CPU_CONFIG_OUTDIV_SHIFT		19
+@@ -217,6 +229,7 @@ static const char * const clk_names[ATH7
+ 	[ATH79_CLK_REF] = "ref",
+ 	[ATH79_CLK_MDIO] = "mdio",
+ 	[ATH79_CLK_UART1] = "uart1",
++	[ATH79_CLK_PCIE] = "pcie",
+ };
+ 
+ static const char * __init ath79_clk_name(int type)
+@@ -745,8 +758,104 @@ static void __init qca956x_clocks_init(v
+ 	ath79_set_clk(ATH79_CLK_AHB, ahb_rate);
+ }
+ 
++struct ath79_pcie_pll {
++	struct clk_hw hw;
++	void __iomem *reg;
++	u32 pwd;	/* powers the PLL down or holds it in reset */
++	u32 bypass;
++	u32 updating;	/* set while a new setting is being applied */
++};
++
++#define to_ath79_pcie_pll(_hw) container_of(_hw, struct ath79_pcie_pll, hw)
++
++static int ath79_pcie_pll_wait(struct ath79_pcie_pll *pll)
++{
++	u32 t;
++
++	return readl_poll_timeout(pll->reg, t, !(t & pll->updating), 10, 1000);
++}
++
++static int ath79_pcie_pll_is_prepared(struct clk_hw *hw)
++{
++	struct ath79_pcie_pll *pll = to_ath79_pcie_pll(hw);
++
++	return !(readl(pll->reg) & (pll->pwd | pll->bypass));
++}
++
++static int ath79_pcie_pll_prepare(struct clk_hw *hw)
++{
++	struct ath79_pcie_pll *pll = to_ath79_pcie_pll(hw);
++	u32 t;
++	int ret;
++
++	/*
++	 * Every write freezes the high speed clocks for about 60 us, so
++	 * leave a PLL that the bootloader already started alone.
++	 */
++	if (ath79_pcie_pll_is_prepared(hw))
++		return 0;
++
++	t = readl(pll->reg) & ~pll->pwd;
++	writel(t, pll->reg);
++	ret = ath79_pcie_pll_wait(pll);
++	if (ret)
++		return ret;
++
++	writel(t & ~pll->bypass, pll->reg);
++	return ath79_pcie_pll_wait(pll);
++}
++
++static void ath79_pcie_pll_unprepare(struct clk_hw *hw)
++{
++	struct ath79_pcie_pll *pll = to_ath79_pcie_pll(hw);
++	u32 t;
++
++	t = readl(pll->reg) | pll->bypass;
++	writel(t, pll->reg);
++	writel(t | pll->pwd, pll->reg);
++}
++
++static const struct clk_ops ath79_pcie_pll_ops = {
++	.prepare = ath79_pcie_pll_prepare,
++	.unprepare = ath79_pcie_pll_unprepare,
++	.is_prepared = ath79_pcie_pll_is_prepared,
++};
++
++static void __init ath79_pcie_pll_init(void __iomem *pll_base, unsigned int reg,
++				       u32 pwd, u32 bypass, u32 updating)
++{
++	struct clk_init_data init = {
++		.name = ath79_clk_name(ATH79_CLK_PCIE),
++		.ops = &ath79_pcie_pll_ops,
++		/* keep a PLL that no driver claims running, as before */
++		.flags = CLK_IGNORE_UNUSED,
++	};
++	struct ath79_pcie_pll *pll;
++	int ret;
++
++	pll = kzalloc(sizeof(*pll), GFP_KERNEL);
++	if (!pll)
++		return;
++
++	pll->reg = pll_base + reg;
++	pll->pwd = pwd;
++	pll->bypass = bypass;
++	pll->updating = updating;
++	pll->hw.init = &init;
++
++	ret = clk_hw_register(NULL, &pll->hw);
++	if (ret) {
++		pr_err("failed to register the PCIe PLL: %d\n", ret);
++		kfree(pll);
++		return;
++	}
++
++	clks[ATH79_CLK_PCIE] = pll->hw.clk;
++}
++
+ static void __init ath79_clocks_init_dt(struct device_node *np)
+ {
++	unsigned int pcie_reg = 0;
+ 	struct clk *ref_clk;
+ 	void __iomem *pll_base;
+ 
+@@ -782,6 +891,25 @@ static void __init ath79_clocks_init_dt(
+ 	else if (of_device_is_compatible(np, "qca,qca9560-pll"))
+ 		qca956x_clocks_init(pll_base);
+ 
++	if (of_device_is_compatible(np, "qca,ar7240-pll"))
++		ath79_pcie_pll_init(pll_base, AR724X_PLL_REG_PCIE_CONFIG,
++				    AR724X_PLL_REG_PCIE_CONFIG_PPL_RESET,
++				    AR724X_PLL_REG_PCIE_CONFIG_PPL_BYPASS,
++				    AR724X_PLL_REG_PCIE_CONFIG_UPDATING);
++	else if (of_device_is_compatible(np, "qca,ar9340-pll") ||
++		 of_device_is_compatible(np, "qca,qca9530-pll"))
++		pcie_reg = AR934X_PLL_PCIE_CONFIG_REG;
++	else if (of_device_is_compatible(np, "qca,qca9550-pll"))
++		pcie_reg = QCA955X_PLL_PCIE_CONFIG_REG;
++	else if (of_device_is_compatible(np, "qca,qca9560-pll"))
++		pcie_reg = QCA956X_PLL_PCIE_CONFIG_REG;
++
++	if (pcie_reg)
++		ath79_pcie_pll_init(pll_base, pcie_reg,
++				    AR934X_PLL_PCIE_CONFIG_PLL_PWD,
++				    AR934X_PLL_PCIE_CONFIG_PLL_BYPASS,
++				    AR934X_PLL_PCIE_CONFIG_UPDATING);
++
+ 	if (!clks[ATH79_CLK_MDIO])
+ 		clks[ATH79_CLK_MDIO] = clks[ATH79_CLK_REF];
+ 
+--- a/include/dt-bindings/clock/ath79-clk.h
++++ b/include/dt-bindings/clock/ath79-clk.h
+@@ -12,7 +12,8 @@
+ #define ATH79_CLK_REF		3
+ #define ATH79_CLK_MDIO		4
+ #define ATH79_CLK_UART1		5
++#define ATH79_CLK_PCIE		6
+ 
+-#define ATH79_CLK_END		6
++#define ATH79_CLK_END		7
+ 
+ #endif /* __DT_BINDINGS_ATH79_CLK_H */
