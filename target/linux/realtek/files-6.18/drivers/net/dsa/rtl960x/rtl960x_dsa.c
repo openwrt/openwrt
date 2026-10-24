@@ -64,6 +64,93 @@
 #define   RTL960X_LUT_LEARN_OVER_ACT_MASK(_port)	(0x3 << ((_port) * 2))
 #define   RTL960X_LUT_LEARN_OVER_ACT_FORWARD	0	/* forward, do not learn */
 
+/* Per port MIB statistics */
+#define RTL960X_STAT_PORT_MIB_BASE		(0x32000)
+#define RTL960X_STAT_PORT_MIB(x)		(RTL960X_STAT_PORT_MIB_BASE + (x) * 0x80)
+/* Each define is an offset of RTL960X_STAT_PORT_MIB */
+#define   RTL960X_IF_OUT_BROADCAST_PKTS		(0x64)
+#define   RTL960X_IF_OUT_MULTICAST_PKTS		(0x60)
+#define   RTL960X_IF_OUT_UCAST_PKTS		(0x5c)
+#define   RTL960X_DOT1D_TP_PORT_IN_DISCARDS	(0x58)
+#define   RTL960X_ETHER_STATS_TX_PKTS_1519_TO_MAX_OCTETS	(0x50)
+#define   RTL960X_IF_OUT_DISCARDS		(0x4c)
+#define   RTL960X_DOT3_OUT_PAUSE_FRAMES		(0x48)
+#define   RTL960X_DOT3_STATS_EXCESSIVE_COLLISIONS	(0x44)
+#define   RTL960X_ETHER_STATS_COLLISIONS	(0x40)
+#define   RTL960X_DOT3_STATS_LATE_COLLISIONS	(0x3c)
+#define   RTL960X_DOT3_STATS_DEFERRED_TRANSMISSIONS	(0x38)
+#define   RTL960X_DOT3_STATS_MULTIPLE_COLLISION_FRAMES	(0x34)
+#define   RTL960X_DOT3_STATS_SINGLE_COLLISION_FRAMES	(0x30)
+#define   RTL960X_IF_OUT_OCTETS			(0x28) /* 64 bits */
+#define   RTL960X_ETHER_STATS_TX_PKTS_1024_TO_1518_OCTETS	(0x24)
+#define   RTL960X_ETHER_STATS_TX_PKTS_512_TO_1023_OCTETS	(0x20)
+#define   RTL960X_ETHER_STATS_TX_PKTS_256_TO_511_OCTETS	(0x1c)
+#define   RTL960X_ETHER_STATS_TX_PKTS_128_TO_255_OCTETS	(0x18)
+#define   RTL960X_ETHER_STATS_TX_PKTS_65_TO_127_OCTETS	(0x14)
+#define   RTL960X_ETHER_STATS_TX_PKTS_64_OCTETS	(0x10)
+#define   RTL960X_ETHER_STATS_TX_OVERSIZE_PKTS	(0xc)
+#define   RTL960X_ETHER_STATS_TX_UNDERSIZE_PKTS	(0x8)
+#define   RTL960X_ETHER_STATS_TX_BROADCAST_PKTS	(0x4)
+#define   RTL960X_ETHER_STATS_TX_MULTICAST_PKTS	(0x0)
+#define STAT_RX_OFFSET	(0x600)
+#define   RTL960X_ETHER_STATS_RX_PKTS_1024_TO_1518_OCTETS	(STAT_RX_OFFSET + 0x54)
+#define   RTL960X_ETHER_STATS_RX_PKTS_512_TO_1023_OCTETS	(STAT_RX_OFFSET + 0x50)
+#define   RTL960X_ETHER_STATS_RX_PKTS_256_TO_511_OCTETS	(STAT_RX_OFFSET + 0x4c)
+#define   RTL960X_ETHER_STATS_RX_PKTS_128_TO_255_OCTETS	(STAT_RX_OFFSET + 0x48)
+#define   RTL960X_ETHER_STATS_RX_PKTS_65_TO_127_OCTETS	(STAT_RX_OFFSET + 0x44)
+#define   RTL960X_ETHER_STATS_RX_PKTS_64_OCTETS	(STAT_RX_OFFSET + 0x40)
+#define   RTL960X_ETHER_STATS_RX_OVERSIZE_PKTS	(STAT_RX_OFFSET + 0x3c)
+#define   RTL960X_ETHER_STATS_RX_UNDERSIZE_PKTS	(STAT_RX_OFFSET + 0x38)
+#define   RTL960X_ETHER_STATS_RX_PKTS_1519_TO_MAX_OCTETS	(STAT_RX_OFFSET + 0x30)
+#define   RTL960X_IF_IN_BROADCAST_PKTS		(STAT_RX_OFFSET + 0x2c)
+#define   RTL960X_IF_IN_MULTICAST_PKTS		(STAT_RX_OFFSET + 0x28)
+#define   RTL960X_ETHER_STATS_DROP_EVENTS	(STAT_RX_OFFSET + 0x24)
+#define   RTL960X_IF_IN_UCAST_PKTS		(STAT_RX_OFFSET + 0x20)
+#define   RTL960X_ETHER_STATS_JABBERS		(STAT_RX_OFFSET + 0x1c)
+#define   RTL960X_ETHER_STATS_FRAGMENTS		(STAT_RX_OFFSET + 0x18)
+#define   RTL960X_DOT3_CONTROL_IN_UNKNOWN_OPCODES	(STAT_RX_OFFSET + 0x14)
+#define   RTL960X_DOT3_IN_PAUSE_FRAMES		(STAT_RX_OFFSET + 0x10)
+#define   RTL960X_DOT3_STATS_SYMBOL_ERRORS	(STAT_RX_OFFSET + 0xc)
+#define   RTL960X_ETHER_STATS_CRC_ALIGN_ERRORS	(STAT_RX_OFFSET + 0x8)
+#define   RTL960X_IF_IN_OCTETS			(STAT_RX_OFFSET + 0x0) /* 64 bits */
+#define RTL960X_STAT_PORT_OAM_MIB(x)		(RTL960X_STAT_PORT_MIB_BASE + (x) * 0x8)
+#define STAT_OAM_OFFSET	(0xc00)
+#define   RTL960X_OUT_OAM_PDU_PKTS	(STAT_OAM_OFFSET + 0x0)
+#define   RTL960X_IN_OAM_PDU_PKTS	(STAT_OAM_OFFSET + 0x4)
+
+#define RTL960X_STAT_CTRL		0x34000
+#define RTL960X_STAT_PORT_RESET		0x34014
+#define RTL960X_STAT_RESET		0x34018
+#define   STAT_RESET_STATUS		BIT(3)
+#define RTL960X_STAT_RESET_CONFIG	0x3401c
+#define   STAT_RESET_CMD		BIT(5)
+
+#define RTL960X_MAX_PACKET_LENGTH	0x3fff
+
+struct rtl960x_mib_counter {
+	u32 offset;
+	u32 length;
+	const char *name;
+};
+
+#define MIB_DESC(_o, _l, _n)	\
+	{			\
+		.offset = (_o),	\
+		.length = (_l),	\
+		.name = (_n),	\
+	}
+
+static const struct rtl960x_mib_counter rtl960x_mib_counters[] = {
+	MIB_DESC(RTL960X_ETHER_STATS_TX_MULTICAST_PKTS, 1, "etherStatsTxMulticastPkts"),
+	MIB_DESC(RTL960X_ETHER_STATS_TX_BROADCAST_PKTS, 1, "etherStatsTxBroadcastPkts"),
+	MIB_DESC(RTL960X_ETHER_STATS_TX_UNDERSIZE_PKTS, 1, "etherStatsTxUndersizePkts"),
+	MIB_DESC(RTL960X_ETHER_STATS_TX_OVERSIZE_PKTS, 1, "etherStatsTxOversizePkts"),
+	MIB_DESC(RTL960X_ETHER_STATS_COLLISIONS, 1, "etherStatsCollisions"),
+	MIB_DESC(RTL960X_IF_OUT_DISCARDS, 1, "ifOutDiscards"),
+	MIB_DESC(RTL960X_DOT1D_TP_PORT_IN_DISCARDS, 1, "dot1dTpPortInDiscards"),
+	MIB_DESC(RTL960X_ETHER_STATS_DROP_EVENTS, 1, "etherStatsDropEvents"),
+};
+
 enum rtl960x_stp_state {
 	RTL960X_STP_STATE_DISABLED = 0,
 	RTL960X_STP_STATE_BLOCKING = 1,
@@ -107,6 +194,310 @@ static int rtl960x_port_remove_isolation(struct rtl960x_dsa *priv, int port,
 {
 	return regmap_clear_bits(priv->map, RTL960X_PORT_ISOLATION_REG(port),
 				 mask);
+}
+
+static int rtl960x_port_mib_reset(struct rtl960x_dsa *priv, u32 pmask)
+{
+	u32 val;
+	int ret;
+
+	ret = regmap_set_bits(priv->map, RTL960X_STAT_PORT_RESET, pmask);
+	if (ret)
+		return ret;
+
+	ret = regmap_set_bits(priv->map, RTL960X_STAT_RESET_CONFIG, STAT_RESET_CMD);
+	if (ret)
+		return ret;
+
+	return regmap_read_poll_timeout(priv->map, RTL960X_STAT_RESET, val,
+					!FIELD_GET(STAT_RESET_STATUS, val),
+					10, 10000);
+}
+
+static void rtl960x_mib_counter_read(struct rtl960x_dsa *priv, int port, u32 offset,
+				     u32 length, u64 *mibvalue)
+{
+	u32 low, high, reg = RTL960X_STAT_PORT_MIB(port) + offset;
+
+	regmap_read(priv->map, reg, &low);
+	*mibvalue = low;
+
+	if (length == 2) {
+		regmap_read(priv->map, reg + 4, &high);
+		*mibvalue |= (u64)high << 32;
+
+		regmap_read(priv->map, reg + 4, &high);
+		if (*mibvalue >> 32 != high) {
+			regmap_read(priv->map, reg, &low);
+			*mibvalue = (u64)high << 32 | low;
+		}
+	}
+}
+
+static void rtl960x_get_ethtool_stats(struct dsa_switch *ds, int port, u64 *data)
+{
+	struct rtl960x_dsa *priv = ds->priv;
+	const struct rtl960x_mib_counter *mib;
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(rtl960x_mib_counters); i++) {
+		mib = &rtl960x_mib_counters[i];
+
+		rtl960x_mib_counter_read(priv, port, mib->offset, mib->length, data + i);
+	}
+}
+
+static void rtl960x_get_strings(struct dsa_switch *ds, int port, u32 stringset, u8 *data)
+{
+	if (stringset != ETH_SS_STATS)
+		return;
+
+	for (int i = 0; i < ARRAY_SIZE(rtl960x_mib_counters); i++)
+		ethtool_puts(&data, rtl960x_mib_counters[i].name);
+}
+
+static int rtl960x_get_sset_count(struct dsa_switch *ds, int port, int sset)
+{
+	if (sset != ETH_SS_STATS)
+		return -EOPNOTSUPP;
+
+	return ARRAY_SIZE(rtl960x_mib_counters);
+}
+
+static void rtl960x_get_phy_stats(struct dsa_switch *ds, int port,
+				  struct ethtool_eth_phy_stats *phy_stats)
+{
+	struct rtl960x_dsa *priv = ds->priv;
+
+	rtl960x_mib_counter_read(priv, port, RTL960X_DOT3_STATS_SYMBOL_ERRORS, 1,
+				 &phy_stats->SymbolErrorDuringCarrier);
+}
+
+static void rtl960x_get_mac_stats(struct dsa_switch *ds, int port,
+				  struct ethtool_eth_mac_stats *mac_stats)
+{
+	struct rtl960x_dsa *priv = ds->priv;
+	u64 data;
+
+	/* The RTL960X exposes MIB objects, which we have to translate into
+	 * IEEE 802.3 Managed Objects. This is not always completely faithful,
+	 * but we try out best. See RFC 3635 for a detailed treatment of the
+	 * subject.
+	 */
+
+	rtl960x_mib_counter_read(priv, port, RTL960X_IF_OUT_UCAST_PKTS, 1,
+				 &mac_stats->FramesTransmittedOK);
+
+	rtl960x_mib_counter_read(priv, port, RTL960X_DOT3_STATS_SINGLE_COLLISION_FRAMES, 1,
+				 &mac_stats->SingleCollisionFrames);
+
+	rtl960x_mib_counter_read(priv, port, RTL960X_DOT3_STATS_MULTIPLE_COLLISION_FRAMES, 1,
+				 &mac_stats->MultipleCollisionFrames);
+
+	rtl960x_mib_counter_read(priv, port, RTL960X_IF_IN_UCAST_PKTS, 1,
+				 &mac_stats->FramesReceivedOK);
+
+	rtl960x_mib_counter_read(priv, port, RTL960X_IF_OUT_OCTETS, 2,
+				 &mac_stats->OctetsTransmittedOK);
+
+	rtl960x_mib_counter_read(priv, port, RTL960X_ETHER_STATS_CRC_ALIGN_ERRORS, 1,
+				 &mac_stats->AlignmentErrors);
+
+	rtl960x_mib_counter_read(priv, port, RTL960X_DOT3_STATS_DEFERRED_TRANSMISSIONS, 1,
+				 &mac_stats->FramesWithDeferredXmissions);
+
+	rtl960x_mib_counter_read(priv, port, RTL960X_DOT3_STATS_LATE_COLLISIONS, 1,
+				 &mac_stats->LateCollisions);
+
+	rtl960x_mib_counter_read(priv, port, RTL960X_DOT3_STATS_EXCESSIVE_COLLISIONS, 1,
+				 &mac_stats->FramesAbortedDueToXSColls);
+
+	rtl960x_mib_counter_read(priv, port, RTL960X_IF_IN_OCTETS, 2,
+				 &mac_stats->OctetsReceivedOK);
+
+	rtl960x_mib_counter_read(priv, port, RTL960X_IF_OUT_MULTICAST_PKTS, 1,
+				 &mac_stats->MulticastFramesXmittedOK);
+	mac_stats->FramesTransmittedOK += mac_stats->MulticastFramesXmittedOK;
+
+	rtl960x_mib_counter_read(priv, port, RTL960X_IF_OUT_BROADCAST_PKTS, 1,
+				 &mac_stats->BroadcastFramesXmittedOK);
+	mac_stats->FramesTransmittedOK += mac_stats->BroadcastFramesXmittedOK;
+
+	rtl960x_mib_counter_read(priv, port, RTL960X_DOT3_OUT_PAUSE_FRAMES, 1,
+				 &data);
+	mac_stats->FramesTransmittedOK += data;
+
+	rtl960x_mib_counter_read(priv, port, RTL960X_IF_OUT_DISCARDS, 1, &data);
+	mac_stats->FramesTransmittedOK -= data;
+
+	mac_stats->OctetsTransmittedOK -= 18 * mac_stats->FramesTransmittedOK;
+
+	rtl960x_mib_counter_read(priv, port, RTL960X_IF_IN_MULTICAST_PKTS, 1,
+				 &mac_stats->MulticastFramesReceivedOK);
+	mac_stats->FramesReceivedOK += mac_stats->MulticastFramesReceivedOK;
+
+	rtl960x_mib_counter_read(priv, port, RTL960X_IF_IN_BROADCAST_PKTS, 1,
+				 &mac_stats->BroadcastFramesReceivedOK);
+	mac_stats->FramesReceivedOK += mac_stats->BroadcastFramesReceivedOK;
+
+	rtl960x_mib_counter_read(priv, port, RTL960X_DOT3_IN_PAUSE_FRAMES, 1,
+				 &data);
+	mac_stats->FramesReceivedOK += data;
+
+	mac_stats->OctetsReceivedOK -= 18 * mac_stats->FramesReceivedOK;
+}
+
+static void rtl960x_get_ctrl_stats(struct dsa_switch *ds, int port,
+				   struct ethtool_eth_ctrl_stats *ctrl_stats)
+{
+	struct rtl960x_dsa *priv = ds->priv;
+
+	rtl960x_mib_counter_read(priv, port, RTL960X_DOT3_CONTROL_IN_UNKNOWN_OPCODES, 1,
+				   &ctrl_stats->UnsupportedOpcodesReceived);
+
+	rtl960x_mib_counter_read(priv, port, RTL960X_DOT3_OUT_PAUSE_FRAMES, 1,
+				   &ctrl_stats->MACControlFramesTransmitted);
+
+	rtl960x_mib_counter_read(priv, port, RTL960X_DOT3_IN_PAUSE_FRAMES, 1,
+				   &ctrl_stats->MACControlFramesReceived);
+}
+
+static const struct ethtool_rmon_hist_range rtl960x_rmon_ranges[] = {
+	{ 0, 64 },
+	{ 65, 127 },
+	{ 128, 255 },
+	{ 256, 511 },
+	{ 512, 1023 },
+	{ 1024, 1518 },
+	{ 1519, RTL960X_MAX_PACKET_LENGTH },
+	{ }
+};
+
+static void rtl960x_get_rmon_stats(struct dsa_switch *ds, int port,
+				   struct ethtool_rmon_stats *rmon_stats,
+				   const struct ethtool_rmon_hist_range **ranges)
+{
+	struct rtl960x_dsa *priv = ds->priv;
+
+	rtl960x_mib_counter_read(priv, port, RTL960X_ETHER_STATS_RX_UNDERSIZE_PKTS, 1,
+				 &rmon_stats->undersize_pkts);
+	rtl960x_mib_counter_read(priv, port, RTL960X_ETHER_STATS_RX_OVERSIZE_PKTS, 1,
+				 &rmon_stats->oversize_pkts);
+	rtl960x_mib_counter_read(priv, port, RTL960X_ETHER_STATS_FRAGMENTS, 1,
+				 &rmon_stats->fragments);
+	rtl960x_mib_counter_read(priv, port, RTL960X_ETHER_STATS_JABBERS, 1,
+				 &rmon_stats->jabbers);
+
+	rtl960x_mib_counter_read(priv, port, RTL960X_ETHER_STATS_RX_PKTS_64_OCTETS, 1,
+				 &rmon_stats->hist[0]);
+	rtl960x_mib_counter_read(priv, port, RTL960X_ETHER_STATS_RX_PKTS_65_TO_127_OCTETS, 1,
+				 &rmon_stats->hist[1]);
+	rtl960x_mib_counter_read(priv, port, RTL960X_ETHER_STATS_RX_PKTS_128_TO_255_OCTETS, 1,
+				 &rmon_stats->hist[2]);
+	rtl960x_mib_counter_read(priv, port, RTL960X_ETHER_STATS_RX_PKTS_256_TO_511_OCTETS, 1,
+				 &rmon_stats->hist[3]);
+	rtl960x_mib_counter_read(priv, port, RTL960X_ETHER_STATS_RX_PKTS_512_TO_1023_OCTETS, 1,
+				 &rmon_stats->hist[4]);
+	rtl960x_mib_counter_read(priv, port, RTL960X_ETHER_STATS_RX_PKTS_1024_TO_1518_OCTETS, 1,
+				 &rmon_stats->hist[5]);
+	rtl960x_mib_counter_read(priv, port, RTL960X_ETHER_STATS_RX_PKTS_1519_TO_MAX_OCTETS, 1,
+				 &rmon_stats->hist[6]);
+
+	rtl960x_mib_counter_read(priv, port, RTL960X_ETHER_STATS_TX_PKTS_64_OCTETS, 1,
+				 &rmon_stats->hist_tx[0]);
+	rtl960x_mib_counter_read(priv, port, RTL960X_ETHER_STATS_TX_PKTS_65_TO_127_OCTETS, 1,
+				 &rmon_stats->hist_tx[1]);
+	rtl960x_mib_counter_read(priv, port, RTL960X_ETHER_STATS_TX_PKTS_128_TO_255_OCTETS, 1,
+				 &rmon_stats->hist_tx[2]);
+	rtl960x_mib_counter_read(priv, port, RTL960X_ETHER_STATS_TX_PKTS_256_TO_511_OCTETS, 1,
+				 &rmon_stats->hist_tx[3]);
+	rtl960x_mib_counter_read(priv, port, RTL960X_ETHER_STATS_TX_PKTS_512_TO_1023_OCTETS, 1,
+				 &rmon_stats->hist_tx[4]);
+	rtl960x_mib_counter_read(priv, port, RTL960X_ETHER_STATS_TX_PKTS_1024_TO_1518_OCTETS, 1,
+				 &rmon_stats->hist_tx[5]);
+	rtl960x_mib_counter_read(priv, port, RTL960X_ETHER_STATS_TX_PKTS_1519_TO_MAX_OCTETS, 1,
+				 &rmon_stats->hist_tx[6]);
+
+	*ranges = rtl960x_rmon_ranges;
+}
+
+static void rtl960x_get_pause_stats(struct dsa_switch *ds, int port,
+				    struct ethtool_pause_stats *pause_stats)
+{
+	struct rtl960x_dsa *priv = ds->priv;
+
+	rtl960x_mib_counter_read(priv, port, RTL960X_DOT3_OUT_PAUSE_FRAMES, 1,
+				       &pause_stats->tx_pause_frames);
+
+	rtl960x_mib_counter_read(priv, port, RTL960X_DOT3_IN_PAUSE_FRAMES, 1,
+				       &pause_stats->rx_pause_frames);
+}
+
+static void rtl960x_get_stats64(struct dsa_switch *ds, int port,
+				struct rtnl_link_stats64 *s)
+{
+
+	struct rtl960x_dsa *priv = ds->priv;
+	u64 data;
+
+	/* MIB counter doesn't provide a FramesTransmittedOK but instead
+	 * provide stats for Unicast, Broadcast and Multicast frames separately.
+	 * To simulate a global frame counter, read Unicast and addition Multicast
+	 * and Broadcast later
+	 */
+
+	rtl960x_mib_counter_read(priv, port, RTL960X_IF_IN_UCAST_PKTS, 1,
+				 &s->rx_packets);
+	rtl960x_mib_counter_read(priv, port, RTL960X_IF_IN_MULTICAST_PKTS, 1,
+				 &s->multicast);
+	s->rx_packets += s->multicast;
+	rtl960x_mib_counter_read(priv, port, RTL960X_IF_IN_BROADCAST_PKTS, 1,
+				 &data);
+	s->rx_packets += data;
+
+	rtl960x_mib_counter_read(priv, port, RTL960X_IF_OUT_UCAST_PKTS, 1,
+				 &s->tx_packets);
+	rtl960x_mib_counter_read(priv, port, RTL960X_IF_OUT_MULTICAST_PKTS, 1,
+				 &data);
+	s->tx_packets += data;
+	rtl960x_mib_counter_read(priv, port, RTL960X_IF_OUT_BROADCAST_PKTS, 1,
+				 &data);
+	s->tx_packets += data;
+
+	rtl960x_mib_counter_read(priv, port, RTL960X_IF_IN_OCTETS, 2,
+				 &s->rx_bytes);
+	rtl960x_mib_counter_read(priv, port, RTL960X_IF_OUT_OCTETS, 2,
+				 &s->tx_bytes);
+
+	/* if{In,Out}Octets includes FCS - remove it */
+	s->rx_bytes -= 4 * s->rx_packets;
+	s->tx_bytes -= 4 * s->tx_packets;
+	rtl960x_mib_counter_read(priv, port, RTL960X_ETHER_STATS_DROP_EVENTS, 1,
+				 &s->rx_dropped);
+
+	rtl960x_mib_counter_read(priv, port, RTL960X_IF_OUT_DISCARDS, 1,
+				 &s->tx_dropped);
+
+	rtl960x_mib_counter_read(priv, port, RTL960X_ETHER_STATS_COLLISIONS, 1,
+				 &s->collisions);
+
+	rtl960x_mib_counter_read(priv, port, RTL960X_ETHER_STATS_FRAGMENTS, 1,
+				 &s->rx_length_errors);
+	rtl960x_mib_counter_read(priv, port, RTL960X_ETHER_STATS_JABBERS, 1,
+				 &data);
+	s->rx_length_errors += data;
+
+	rtl960x_mib_counter_read(priv, port, RTL960X_ETHER_STATS_CRC_ALIGN_ERRORS, 1,
+				 &s->rx_crc_errors);
+
+	s->rx_errors = s->rx_length_errors + s->rx_crc_errors;
+
+	rtl960x_mib_counter_read(priv, port, RTL960X_IF_OUT_DISCARDS, 1,
+				 &s->tx_aborted_errors);
+	rtl960x_mib_counter_read(priv, port, RTL960X_DOT3_STATS_LATE_COLLISIONS, 1,
+				 &s->tx_window_errors);
+
+	s->tx_errors = s->tx_aborted_errors + s->tx_window_errors;
 }
 
 /*
@@ -238,6 +629,10 @@ static int rtl960x_dsa_setup(struct dsa_switch *ds)
 	ds->max_num_bridges = RTL960X_NUM_BRIDGE_VIDS;
 
 	ds->assisted_learning_on_cpu_port = true;
+
+	ret = rtl960x_port_mib_reset(priv, user_ports | cpu_ports);
+	if (ret)
+		return ret;
 
 	/* Every user port starts standalone (see rtl960x_vlan_setup). */
 	return rtl960x_vlan_setup(ds);
@@ -484,6 +879,15 @@ static const struct dsa_switch_ops rtl960x_dsa_ops = {
 	.port_fdb_add		= rtl960x_port_fdb_add,
 	.port_fdb_del		= rtl960x_port_fdb_del,
 	.port_fdb_dump		= rtl960x_port_fdb_dump,
+	.get_strings		= rtl960x_get_strings,
+	.get_ethtool_stats	= rtl960x_get_ethtool_stats,
+	.get_sset_count		= rtl960x_get_sset_count,
+	.get_eth_phy_stats	= rtl960x_get_phy_stats,
+	.get_eth_mac_stats	= rtl960x_get_mac_stats,
+	.get_eth_ctrl_stats	= rtl960x_get_ctrl_stats,
+	.get_rmon_stats		= rtl960x_get_rmon_stats,
+	.get_stats64		= rtl960x_get_stats64,
+	.get_pause_stats	= rtl960x_get_pause_stats,
 };
 
 static int rtl960x_dsa_probe(struct platform_device *pdev)
