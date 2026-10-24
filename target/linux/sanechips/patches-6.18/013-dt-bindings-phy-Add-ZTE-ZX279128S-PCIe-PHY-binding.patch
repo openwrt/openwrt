@@ -1,0 +1,54 @@
+From 10b8b47dbdaf8d85930b5060e90573a8dc818bf4 Mon Sep 17 00:00:00 2001
+From: Navid Ghahremani <ghahramani.navid@gmail.com>
+Date: Mon, 12 Oct 2026 07:47:55 +0100
+Subject: [PATCH 10/24] dt-bindings: phy: Add ZTE ZX279128S PCIe PHY binding
+
+Add Device Tree binding for the PCIe SerDes PHY found inside the
+topcrm block of the ZTE ZX279128S SoC.
+
+Signed-off-by: Navid Ghahremani <ghahramani.navid@gmail.com>
+---
+
+--- /dev/null
++++ b/Documentation/devicetree/bindings/phy/zte,zx279128s-pcie-phy.yaml
+@@ -0,0 +1,40 @@
++# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
++%YAML 1.2
++---
++$id: http://devicetree.org/schemas/phy/zte,zx279128s-pcie-phy.yaml#
++$schema: http://devicetree.org/meta-schemas/core.yaml#
++
++title: ZTE ZX279128S PCIe PHY
++
++maintainers:
++  - Navid Ghahremani <ghahramani.navid@gmail.com>
++
++description:
++  PCIe PHY block inside the ZTE ZX279128S Top CRM.
++
++properties:
++  compatible:
++    const: zte,zx279128s-pcie-phy
++
++  reg:
++    description: Port index (0 or 1)
++    items:
++      - enum: [0, 1]
++
++  "#phy-cells":
++    const: 0
++
++required:
++  - compatible
++  - reg
++  - "#phy-cells"
++
++additionalProperties: false
++
++examples:
++  - |
++    phy@0 {
++        compatible = "zte,zx279128s-pcie-phy";
++        reg = <0>;
++        #phy-cells = <0>;
++    };
