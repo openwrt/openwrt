@@ -141,6 +141,13 @@ comfast,cf-e393ax|\
 iptime,ax3000m)
 	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x20000" "0x80000"
 	;;
+cudy,tr3600-v1|\
+ltc,vl7m19k)
+	. /lib/upgrade/nand.sh
+	envubi=$(nand_find_ubi ubi)
+	envdev=/dev/$(nand_find_volume "$envubi" u-boot-env)
+	ubootenv_add_uci_config "$envdev" "0x0" "0x80000" "0x80000" "1"
+	;;
 dlink,aquila-pro-ai-e30-a1|\
 dlink,aquila-pro-ai-m30-a1|\
 dlink,aquila-pro-ai-m60-a1)
@@ -158,12 +165,6 @@ jiorouter,ax6000-jidu6j01)
 	envubi=$(nand_find_ubi ubi)
 	envdev=/dev/$(nand_find_volume "$envubi" u-boot-env)
 	ubootenv_add_uci_config "$envdev" "0x0" "0x80000" "0x1f000" "5"
-	;;
-ltc,vl7m19k)
-	. /lib/upgrade/nand.sh
-	envubi=$(nand_find_ubi ubi)
-	envdev=/dev/$(nand_find_volume "$envubi" u-boot-env)
-	ubootenv_add_uci_config "$envdev" "0x0" "0x80000" "0x80000" "1"
 	;;
 openembed,som7981)
 	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x80000" "0x80000"
