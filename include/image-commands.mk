@@ -770,7 +770,8 @@ define Build/tplink-image-2023
 	$(TOPDIR)/scripts/tplink-mkimage-2023.py  \
 		--create $@.new \
 		--rootfs $@ \
-		--support "$(TPLINK_SUPPORT_STRING)"
+		--support "$(TPLINK_SUPPORT_STRING)" \
+		$(if $(TPLINK_SOFT_VERSION),--soft-version "$(TPLINK_SOFT_VERSION)")
 	@mv $@.new $@
 endef
 
