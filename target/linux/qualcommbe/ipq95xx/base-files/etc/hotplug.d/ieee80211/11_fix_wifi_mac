@@ -1,0 +1,43 @@
+#!/bin/sh
+
+# The calibration data holds only placeholder addresses, so give each radio
+# the stock per-band address. Runs after 10-wifi-detect has created them.
+[ "$ACTION" = "add" ] || exit 0
+
+. /lib/functions.sh
+. /lib/functions/system.sh
+
+case "$(board_name)" in
+tplink,archer-be800|tplink,archer-be800-sfp|\
+tplink,archer-ge800|tplink,archer-ge800-sfp)
+	label_mac=$(get_mac_binary /tmp/tp_data/default-mac 0)
+	;;
+*)
+	exit 0
+	;;
+esac
+
+[ -n "$label_mac" ] || exit 0
+
+changed=
+set_radio_mac() {
+	local band base offset
+
+	config_get base "$1" macaddr_base
+	[ -n "$base" ] && return
+	config_get band "$1" band
+	case "$band" in
+	2g) offset=2 ;;
+	5g) offset=3 ;;
+	6g) offset=4 ;;
+	*) return ;;
+	esac
+	uci set "wireless.$1.macaddr_base=$(macaddr_add "$label_mac" $offset)"
+	changed=1
+}
+
+config_load wireless
+config_foreach set_radio_mac wifi-device
+[ -n "$changed" ] || exit 0
+uci commit wireless
+ubus call network reload
