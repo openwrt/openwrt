@@ -75,8 +75,7 @@ define Device/arista_ap-c200
 	BLOCKSIZE := 128k
 	PAGESIZE := 2048
 	SOC := ipq6018
-	# No ipq-wifi package. ath11k-firmware-ipq6018 installs the generic
-	# board-2.bin, which is the board_id 0xff fallback for this device.
+	DEVICE_PACKAGES := ipq-wifi-arista_ap-c200
 endef
 TARGET_DEVICES += arista_ap-c200
 
