@@ -114,22 +114,6 @@
 				reg = <0x1806001c 0x4>;
 
 				#reset-cells = <1>;
-				interrupt-parent = <&cpuintc>;
-
-				intc3: interrupt-controller {
-					compatible = "qca,ar9340-intc";
-
-					interrupt-parent = <&cpuintc>;
-					interrupts = <3>;
-
-					interrupt-controller;
-					#interrupt-cells = <1>;
-
-					qca,int-status-addr = <0xac>;
-					qca,pending-bits = <0x1f000>,		/* pcie rc */
-							    <0x1000000>,	/* usb1 */
-							    <0x10000000>;	/* usb2 */
-				};
 			};
 
 			rst2: reset-controller@180600c0 {
@@ -166,8 +150,8 @@
 			      <0x16000000 0x1000>; /* CFG */
 			reg-names = "crp_base", "ctrl_base", "cfg_base";
 			ranges = <0x2000000 0 0x12000000 0x12000000 0 0x02000000>;	/* pci memory */
-			interrupt-parent = <&intc3>;
-			interrupts = <0>;
+			interrupt-parent = <&cpuintc>;
+			interrupts = <3>;
 
 			device_type = "pci";
 
@@ -184,8 +168,8 @@
 			compatible = "generic-ehci";
 			reg = <0x1b000000 0x1d8>;
 
-			interrupt-parent = <&intc3>;
-			interrupts = <1>;
+			interrupt-parent = <&cpuintc>;
+			interrupts = <3>;
 
 			resets = <&rst 5>;
 
@@ -210,8 +194,8 @@
 			compatible = "generic-ehci";
 			reg = <0x1b400000 0x1d8>;
 
-			interrupt-parent = <&intc3>;
-			interrupts = <2>;
+			interrupt-parent = <&cpuintc>;
+			interrupts = <3>;
 
 			resets = <&rst2 5>;
 
