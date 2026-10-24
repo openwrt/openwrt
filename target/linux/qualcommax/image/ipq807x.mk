@@ -80,6 +80,21 @@ define Device/arcadyan_aw1000
 endef
 TARGET_DEVICES += arcadyan_aw1000
 
+define Device/arista_c-360
+	$(call Device/FitImage)
+	$(call Device/UbiFit)
+	DEVICE_VENDOR := Arista
+	DEVICE_MODEL := C-360
+	BLOCKSIZE := 256k
+	PAGESIZE := 4096
+	DEVICE_DTS_CONFIG := config@hk09
+	SOC := ipq8074
+	DEVICE_PACKAGES := ipq-wifi-arista_c-360 kmod-ath11k-pci \
+		kmod-spi-gpio kmod-gpio-nxp-74hc164 kmod-tpm-tis-spi bluetooth-uart \
+		ubi-utils squashfs-tools-unsquashfs
+endef
+TARGET_DEVICES += arista_c-360
+
 define Device/asus_rt-ax89x
 	DEVICE_VENDOR := Asus
 	DEVICE_MODEL := RT-AX89X
