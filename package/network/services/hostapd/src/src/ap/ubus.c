@@ -438,9 +438,9 @@ hostapd_bss_clients_add(struct hostapd_data *hapd)
 			blobmsg_add_u32(&b, "tx", sta_driver_data.tx_packets);
 			blobmsg_close_table(&b, r);
 			r = blobmsg_open_table(&b, "rate");
-			/* Rate in kbits */
-			blobmsg_add_u32(&b, "rx", sta_driver_data.current_rx_rate * 100);
-			blobmsg_add_u32(&b, "tx", sta_driver_data.current_tx_rate * 100);
+			/* Driver rates are already in kbit/s. */
+			blobmsg_add_u32(&b, "rx", sta_driver_data.current_rx_rate);
+			blobmsg_add_u32(&b, "tx", sta_driver_data.current_tx_rate);
 			blobmsg_close_table(&b, r);
 			blobmsg_add_u32(&b, "signal", sta_driver_data.signal);
 		}
