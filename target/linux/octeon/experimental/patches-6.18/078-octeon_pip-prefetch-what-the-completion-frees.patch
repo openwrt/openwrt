@@ -1,0 +1,93 @@
+From: Simon Polack <spolack+git@mailbox.org>
+Subject: [PATCH] net: ethernet: cavium: octeon_pip: prefetch what the completion frees
+
+EXPERIMENTAL, showcase only, not for merging: it needs proper testing.
+It changes the octeon_pip driver and depends on its PR (#26060).
+The build does not apply it: it sits in target/linux/octeon/experimental/.
+
+The completion prefetched the first line of the next completed skb. The
+free reads its second line (head, truesize), the shared info (dataref,
+the page pool flag) and the page struct (pp magic, refcount): all gone
+from the L1 since the packet was received. Prefetch the two skb lines
+two entries ahead and, from them, the shared info and the page struct
+one entry ahead.
+
+Measured on an EdgeRouter 4 (CN7030, 4 cores), octeon3 subtarget (CN63XXP1
+off), octeon_pip driver, one boot per image, 64-byte single-flow floods
+in kpps, on 2026-10-21.
+Target: skb_release_data(), napi_pp_put_page(), the completion: 2.04 -> 0.86 L1 misses per
+packet (flood1).
+Step oct3B -> P1 (077-080 together): flood1 +3.8 %, fw4 NAT +1.4 %,
+fw4+flowtable +4.1 %, GRE tcp1 +7.9 %.
+This patch, extrapolated from its share of the misses the step removed (1.18 of 2.65):
+flood1 ~+1.7 %, fw4 NAT ~+0.6 %, fw4+flowtable ~+1.8 %, GRE ~+1.6 %.
+These gains are on top of an unpatched octeon3 kernel; the full set and the
+split gain (up to +15 %) are in target/linux/octeon/experimental/README.md.
+
+Signed-off-by: Simon Polack <spolack+git@mailbox.org>
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+---
+--- a/drivers/net/ethernet/cavium/octeon/octeon_pip_tx.c
++++ b/drivers/net/ethernet/cavium/octeon/octeon_pip_tx.c
+@@ -231,6 +231,29 @@ static void opip_tx_doorbell(struct opip
+  *
+  * Return: the number of packets completed
+  */
++/* The two lines of a completed entry's skb (or XDP frame) */
++static __always_inline void opip_tx_prefetch_entry(unsigned long entry)
++{
++	void *p = (void *)(entry & ~OPIP_TX_FLAGS);
++
++	prefetch(p);
++	prefetch(p + 128);
++}
++
++/*
++ * What the free of an skb reads beyond its own lines: the shared info and
++ * the page struct of its head. Its lines are in: prefetched a round ago.
++ */
++static __always_inline void opip_tx_prefetch_free(unsigned long entry)
++{
++	struct sk_buff *skb = opip_tx_entry_skb(entry);
++
++	if (skb) {
++		prefetch(skb_shinfo(skb));
++		prefetch(virt_to_page(skb->head));
++	}
++}
++
+ static unsigned int opip_tx_complete(struct net_device *dev, unsigned int qid,
+ 				     struct opip_txq *q, int budget)
+ {
+@@ -256,6 +279,10 @@ static unsigned int opip_tx_complete(str
+ 
+ 	xdp_frame_bulk_init(&bq);
+ 	rcu_read_lock();
++	/* The first two entries: no round before them */
++	opip_tx_prefetch_entry(q->ring[head & (OPIP_TXQ_RING - 1)]);
++	if (n > 1)
++		opip_tx_prefetch_entry(q->ring[(head + 1) & (OPIP_TXQ_RING - 1)]);
+ 	while (n--) {
+ 		unsigned long entry = q->ring[head++ & (OPIP_TXQ_RING - 1)];
+ 		struct sk_buff *skb = opip_tx_entry_skb(entry);
+@@ -263,10 +290,17 @@ static unsigned int opip_tx_complete(str
+ 
+ 		xdpf = opip_tx_entry_xdpf(entry);
+ 
+-		/* The next one was sent long ago, its lines have gone */
++		/*
++		 * The next ones were sent long ago, their lines have gone:
++		 * the one after the next gets its own lines, the next what
++		 * its free reads
++		 */
++		if (n > 1)
++			opip_tx_prefetch_entry(q->ring[(head + 1) &
++						       (OPIP_TXQ_RING - 1)]);
+ 		if (n)
+-			prefetch((void *)(q->ring[head & (OPIP_TXQ_RING - 1)] &
+-					  ~OPIP_TX_FLAGS));
++			opip_tx_prefetch_free(q->ring[head &
++						      (OPIP_TXQ_RING - 1)]);
+ 		if (skb) {
+ 			if (entry & OPIP_TX_GATHER)
+ 				opip_fpa_free_nosync(*opip_tx_skb_list(skb),

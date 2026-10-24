@@ -1,0 +1,44 @@
+From: Simon Polack <spolack+git@mailbox.org>
+Subject: [PATCH] net: ethernet: cavium: octeon_pip: prefetch the next page struct in the pool refill
+
+EXPERIMENTAL, showcase only, not for merging: it needs proper testing.
+It changes the octeon_pip driver and depends on its PR (#26060).
+The build does not apply it: it sits in target/linux/octeon/experimental/.
+
+page_to_pfn() reads page->flags on SPARSEMEM: the refill's first touch
+of each recycled page struct (0.4-0.6 L1 misses per packet). Prefetch
+the next page of the batch while one is freed to the FPA.
+
+Measured on an EdgeRouter 4 (CN7030, 4 cores), octeon3 subtarget (CN63XXP1
+off), octeon_pip driver, one boot per image, 64-byte single-flow floods
+in kpps, on 2026-10-21.
+Target: the pool refill's page struct read: 0.39 -> 0.01 L1 misses per packet (flood1).
+Step P4 -> P5 (083-087 together, with 085, which was dropped): flood1
++3.0 %, fw4 NAT +2.3 %, fw4+flowtable +2.8 %.
+This patch, extrapolated from its share of the misses the step removed (0.38 of 1.68):
+flood1 ~+0.7 %, fw4 NAT ~+0.5 %, fw4+flowtable ~+0.6 %.
+These gains are on top of an unpatched octeon3 kernel; the full set and the
+split gain (up to +15 %) are in target/linux/octeon/experimental/README.md.
+
+Signed-off-by: Simon Polack <spolack+git@mailbox.org>
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+---
+--- a/drivers/net/ethernet/cavium/octeon/octeon_pip_fpa.c
++++ b/drivers/net/ethernet/cavium/octeon/octeon_pip_fpa.c
+@@ -147,11 +147,15 @@ unsigned int opip_fpa_fill_packet_pool(s
+ 		}
+ 		/* The batch's writes out before the IPD may fill the pages */
+ 		wmb();
+-		for (i = 0; i < got; i++)
++		for (i = 0; i < got; i++) {
++			/* page_to_pfn() reads the next page struct: a packet ago */
++			if (i + 1 < got)
++				prefetch(pages[i + 1]);
+ 			opip_fpa_free_nosync(page_address(pages[i]) +
+ 					     (OPIP_RX_SPLIT ? offsets[i] : 0),
+ 					     OPIP_POOL_PACKET,
+ 					     OPIP_POOL_PACKET_SIZE / 128);
++		}
+ 		n += got;
+ 		if (got < want)
+ 			break;
