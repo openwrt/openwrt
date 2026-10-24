@@ -18,7 +18,8 @@ preinit_mount_factory_data() {
 preinit_mount_factory_partitions() {
 
 	case $(board_name) in
-	tplink,archer-be800|tplink,archer-be800-sfp)
+	tplink,archer-be800|tplink,archer-be800-sfp|\
+	tplink,archer-ge800|tplink,archer-ge800-sfp)
 		preinit_mount_factory_data "tp_data"
 		;;
 	esac
