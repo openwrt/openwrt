@@ -1,0 +1,55 @@
+From ca494a1fc657acdaf4945e4a7dde7adf1e7ac535 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Wed, 21 Oct 2026 01:24:00 +0000
+Subject: [PATCH] arm: lay out the arguments behind the hidden struct return
+ pointer
+
+A function that returns a struct or complex value of more than 4 bytes
+takes the address of the return value in r0, ahead of its arguments.
+ffi_prep_cif_machdep() accounts for that by adding 4 bytes to the
+argument size computed by ffi_prep_cif_core(), but that size was
+computed without the pointer.  Moving the arguments up by 4 bytes can
+add up to 4 bytes of padding in front of the first 8-byte aligned one,
+which ffi_prep_args_SYSV() then writes past the end of the argument
+area, into the call frame that follows it.
+
+Compute the size again with the pointer in front of the arguments,
+using the same alignment as ffi_prep_args_SYSV().
+
+With soft float, a call returning float _Complex after seven doubles
+and before an int (complex_regs_float) passed garbage for the int and
+returned garbage on mxs (arm926ej-s) and ixp4xx (xscale, big-endian)
+under qemu-user.  The same happens for any struct returned in memory
+whenever the pointer adds such padding.
+
+Fixes: 6fa617dabc3d ("arm: Add argument space for the hidden struct return pointer")
+Assisted-by: LLM
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ src/arm/ffi.c | 14 +++++++++++++-
+ 1 file changed, 13 insertions(+), 1 deletion(-)
+
+--- a/src/arm/ffi.c
++++ b/src/arm/ffi.c
+@@ -309,8 +309,20 @@ ffi_prep_cif_machdep (ffi_cif *cif)
+ 	flags = ARM_TYPE_INT;
+       else
+ 	{
++	  /* The address of the return value goes in r0, ahead of the
++	     arguments, which can then need more padding than cif->bytes
++	     includes.  Lay them out again behind it.  */
++	  unsigned i;
++
+ 	  flags = ARM_TYPE_STRUCT;
+-	  bytes += 4;
++	  bytes = 4;
++	  for (i = 0; i < cif->nargs; i++)
++	    {
++	      ffi_type *ty = cif->arg_types[i];
++
++	      bytes = (size_t) ffi_align (ty, (void *) bytes);
++	      bytes += FFI_ALIGN (ty->size, 4);
++	    }
+ 	}
+       break;
+ 

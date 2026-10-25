@@ -1,0 +1,111 @@
+From 53b49e1bb8302fa8e5eb9ccdbe4e0e9823a104ff Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Tue, 20 Oct 2026 22:57:49 +0000
+Subject: [PATCH] riscv: add support for complex types
+
+The RISC-V psABI passes a complex floating-point number, and a struct
+containing just one, as though it were a struct of two floating-point
+reals.  That is exactly the rule libffi already implements for structs
+in struct_passed_as_elements(): two floats go in two FPRs if two are
+free, otherwise the value follows the integer convention, in up to two
+GPRs or by reference if larger than 2*XLEN.
+
+Flatten an FFI_TYPE_COMPLEX into two elements of its base type, let the
+float struct handling in marshal(), unmarshal() and passed_by_ref()
+accept complex types, and define FFI_TARGET_HAS_COMPLEX_TYPE.  Everything
+else follows from the existing struct code:
+
+  - float and double _Complex use fa0/fa1 when two FPRs are left, and
+    one or two GPRs otherwise, never one FPR and one GPR;
+  - variadic complex arguments use the integer convention;
+  - long double _Complex (32 bytes) is passed by reference and returned
+    through a hidden pointer;
+  - integer complex types are packed into GPRs like a small struct;
+  - a struct holding a single complex value flattens to the same two
+    reals and is passed the same way.
+
+This matches GCC's code generation for lp64d.  On FLEN=32 and soft-float
+ABIs the double and soft-float parts are not IS_FLOAT and fall back to the
+integer convention, again as the psABI requires.
+Assisted-by: LLM
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ src/riscv/ffi.c       | 21 ++++++++++++++-------
+ src/riscv/ffitarget.h |  1 +
+ 2 files changed, 15 insertions(+), 7 deletions(-)
+
+--- a/src/riscv/ffi.c
++++ b/src/riscv/ffi.c
+@@ -84,6 +84,8 @@ typedef struct {
+     char as_elements, type1, offset2, type2;
+ } float_struct_info;
+ 
++#define IS_AGGREGATE(type) ((type) == FFI_TYPE_STRUCT || (type) == FFI_TYPE_COMPLEX)
++
+ #if ABI_FLEN >= 64
+ #define IS_FLOAT(type) ((type) >= FFI_TYPE_FLOAT && (type) <= FFI_TYPE_DOUBLE)
+ #else
+@@ -93,7 +95,12 @@ typedef struct {
+ static ffi_type **flatten_struct(ffi_type *in, ffi_type **out, ffi_type **out_end) {
+     int i;
+     if (out == out_end) return out;
+-    if (in->type != FFI_TYPE_STRUCT) {
++    if (in->type == FFI_TYPE_COMPLEX) {
++        /* the psABI passes a complex number like a struct of two reals */
++        *(out++) = in->elements[0];
++        if (out == out_end) return out;
++        *(out++) = in->elements[0];
++    } else if (in->type != FFI_TYPE_STRUCT) {
+         *(out++) = in;
+     } else {
+         for (i = 0; in->elements[i]; i++)
+@@ -102,9 +109,9 @@ static ffi_type **flatten_struct(ffi_typ
+     return out;
+ }
+ 
+-/* Structs with at most two fields after flattening, one of which is of
+-   floating point type, are passed in multiple registers if sufficient
+-   registers are available. */
++/* Structs and complex numbers with at most two fields after flattening,
++   one of which is of floating point type, are passed in multiple registers
++   if sufficient registers are available. */
+ static float_struct_info struct_passed_as_elements(call_builder *cb, ffi_type *top) {
+     float_struct_info ret = {0, 0, 0, 0};
+     ffi_type *fields[3];
+@@ -247,7 +254,7 @@ static void marshal(call_builder *cb, ff
+     size_t realign[2];
+ 
+ #if ABI_FLEN
+-    if (!var && type->type == FFI_TYPE_STRUCT) {
++    if (!var && IS_AGGREGATE(type->type)) {
+         float_struct_info fsi = struct_passed_as_elements(cb, type);
+         if (fsi.as_elements) {
+             marshal_atom(cb, fsi.type1, data);
+@@ -295,7 +302,7 @@ static void *unmarshal(call_builder *cb,
+     void *pointer;
+ 
+ #if ABI_FLEN
+-    if (!var && type->type == FFI_TYPE_STRUCT) {
++    if (!var && IS_AGGREGATE(type->type)) {
+         float_struct_info fsi = struct_passed_as_elements(cb, type);
+         if (fsi.as_elements) {
+             unmarshal_atom(cb, fsi.type1, data);
+@@ -340,7 +347,7 @@ static void *unmarshal(call_builder *cb,
+ 
+ static int passed_by_ref(call_builder *cb, ffi_type *type, int var) {
+ #if ABI_FLEN
+-    if (!var && type->type == FFI_TYPE_STRUCT) {
++    if (!var && IS_AGGREGATE(type->type)) {
+         float_struct_info fsi = struct_passed_as_elements(cb, type);
+         if (fsi.as_elements) return 0;
+     }
+--- a/src/riscv/ffitarget.h
++++ b/src/riscv/ffitarget.h
+@@ -65,6 +65,7 @@ typedef enum ffi_abi {
+ #define FFI_EXTRA_CIF_FIELDS unsigned riscv_nfixedargs; unsigned riscv_unused
+ #define FFI_TARGET_SPECIFIC_VARIADIC
+ #define FFI_TARGET_HAS_INT128
++#define FFI_TARGET_HAS_COMPLEX_TYPE
+ 
+ #endif
+ 
