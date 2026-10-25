@@ -277,6 +277,16 @@ wifi_small_pkt() {
 	# from growing the block.
 	wifi_clear "$dev"
 
+	# A short TCP segment with PSH ends a write of a flow whose other
+	# segments are full size; in a higher access category it would overtake
+	# them and reorder the flow on every write, so it leaves before the stamp.
+	# Fixed offsets: IPv4 without options, IPv6 without extension headers.
+	tc filter add dev "$dev" egress pref $((PREF_BASE - 2)) protocol ip u32 \
+		match u8 0x45 0xff at 0 match u8 0x06 0xff at 9 \
+		match u8 0x08 0x08 at 33 action ok 2>/dev/null
+	tc filter add dev "$dev" egress pref $((PREF_BASE - 1)) \
+		protocol ipv6 u32 match u8 0x06 0xff at 6 \
+		match u8 0x08 0x08 at 53 action ok 2>/dev/null
 	tc filter add dev "$dev" egress pref $PREF_BASE protocol ip u32 \
 		match u16 0x0000 0xff00 at 2 \
 		action skbedit priority $(printf '%x' $((256 + prio))) 2>/dev/null
@@ -286,6 +296,8 @@ wifi_small_pkt() {
 }
 
 wifi_clear() {
+	tc filter del dev "$1" egress pref $((PREF_BASE - 2)) >/dev/null 2>&1
+	tc filter del dev "$1" egress pref $((PREF_BASE - 1)) >/dev/null 2>&1
 	tc filter del dev "$1" egress pref $PREF_BASE >/dev/null 2>&1
 	tc filter del dev "$1" egress pref $((PREF_BASE + 1)) >/dev/null 2>&1
 }
