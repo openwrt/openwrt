@@ -135,7 +135,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 -			cur->hash = 0xffff;
 -			__mtk_foe_entry_clear(ppe, cur);
 +		if (!mtk_flow_entry_update(ppe, cur)) {
-+			__mtk_foe_entry_clear(ppe, entry, false);
++			__mtk_foe_entry_clear(ppe, cur, false);
  			continue;
  		}
  
