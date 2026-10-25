@@ -3765,8 +3765,15 @@ static void otto_l3_fib_event_work_do(struct work_struct *work)
 	case FIB_EVENT_ENTRY_REPLACE:
 	case FIB_EVENT_ENTRY_APPEND:
 		err = otto_l3_fib_add_v4(ctrl, &fib_work->fen_info);
-		if (err)
-			dev_err(ctrl->dev, "fib_add() failed\n");
+		/* A route the driver will not take is not a failure, and it
+		 * says so with -ENODEV or -EOPNOTSUPP: the destination gets a
+		 * row that traps and the CPU routes it. Anything else means
+		 * the hardware would not take what the driver did want.
+		 */
+		if (err && err != -ENODEV && err != -EOPNOTSUPP)
+			dev_err(ctrl->dev, "fib_add() failed: %d\n", err);
+		else if (err)
+			dev_dbg(ctrl->dev, "route left to the CPU: %d\n", err);
 
 		otto_l3_local_prefix_check(ctrl, &fib_work->fen_info.info);
 		fib_info_put(fib_work->fen_info.fi);
