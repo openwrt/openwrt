@@ -19,11 +19,12 @@ PARAM_DIR=/sys/module/qca_ppe/parameters
 # shared ingress block and leaves anything else alone. The switch ranks a rule
 # by the preference it was given and holds nine bits of it, so the range sits
 # inside that and high, where a rule this script installs by default yields to
-# anything the user placed deliberately. It stops one short of the last
-# preference the switch holds, so a rule placed there - a download mark from
-# whatever owns the shaper - outranks every rule here.
+# anything the user placed deliberately: the driver ranks a lower preference
+# higher. It stops at 509, below the small-packet rule's rank and the 511 that
+# hw_ppe.qos marks its download band with, which therefore ranks below every
+# rule here.
 PREF_BASE=256
-PREF_MAX=510
+PREF_MAX=509
 
 # The classifier holds 512 entries for the whole switch. A rule's address and
 # port lists become a filter per combination, so the product of four lists can
@@ -249,7 +250,8 @@ flush_filters() {
 	for p in $(switch_ports); do
 		for n in $(tc filter show dev "$p" parent ffff: 2>/dev/null |
 			   sed -n 's/.* pref \([0-9]*\) .*/\1/p' | sort -u); do
-			[ "$n" -ge $PREF_BASE ] && [ "$n" -le $PREF_MAX ] &&
+			# 510 too: an earlier version installed up to it.
+			[ "$n" -ge $PREF_BASE ] && [ "$n" -le 510 ] &&
 				tc filter del dev "$p" parent ffff: pref "$n" \
 					>/dev/null 2>&1
 		done
