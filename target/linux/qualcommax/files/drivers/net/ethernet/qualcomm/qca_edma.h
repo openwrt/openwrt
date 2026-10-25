@@ -6,7 +6,8 @@
 #ifndef __QCA_EDMA_H__
 #define __QCA_EDMA_H__
 
-#include <linux/dsa/oob.h>
+#include <linux/dsa/tag_qca.h>
+#include <linux/qca_edma.h>
 #include <linux/etherdevice.h>
 #include <linux/if_vlan.h>
 #include <linux/netdevice.h>
@@ -423,6 +424,11 @@ struct edma_priv {
 	 * the bridge then does not forward again.
 	 */
 	struct metadata_dst *port_md[EDMA_PORTS];
+	/* The switch behind the conduit and what it provides, set while it
+	 * is bound; read locklessly on the receive path.
+	 */
+	struct dsa_switch *sw_ds;
+	const struct qca_edma_switch_ops *sw_ops;
 };
 
 #endif /* __QCA_EDMA_H__ */

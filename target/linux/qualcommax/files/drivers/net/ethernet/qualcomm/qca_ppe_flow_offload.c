@@ -17,7 +17,7 @@
  */
 
 #include <linux/bitfield.h>
-#include <linux/dsa/oob.h>
+#include <linux/qca_edma.h>
 #include <linux/hash.h>
 #include <linux/if_pppox.h>
 #include <linux/if_vlan.h>
@@ -1305,16 +1305,6 @@ static void ppe_flow_slot_clear(struct qca_ppe_priv *priv, u32 index)
  * the qdisc lets it go, with no other device or qdisc on its way; one for a
  * device outside the switch, such as Wi-Fi, to that device.
  */
-static bool ppe_shaper_direct = true;
-module_param_named(shaper_direct, ppe_shaper_direct, bool, 0644);
-MODULE_PARM_DESC(shaper_direct,
-		 "Send frames the PPE built for a switch port from the shaper device straight to the conduit");
-
-static bool ppe_shaper_push = true;
-module_param_named(shaper_push, ppe_shaper_push, bool, 0644);
-MODULE_PARM_DESC(shaper_push,
-		 "Have the PPE build an upload frame's PPPoE and VLAN headers when it is handed to the shaper device (flows rebuilt on the next shaper change)");
-
 struct ppe_shaper {
 	struct qca_ppe_priv *priv;
 	struct net_device *conduit;
@@ -1336,18 +1326,20 @@ static bool ppe_flow_ul_push(struct qca_ppe_priv *priv)
 
 	lockdep_assert_held(&priv->flow_lock);
 
-	return ppe_shaper_push && sh && priv->ul_shaper == sh->ifindex;
+	return sh && priv->ul_shaper == sh->ifindex;
 }
 
-/* Into the conduit's ring as edma_ndo_xmit() would be called from its qdisc,
- * on the queue of the ring the frame arrived on. A full ring leaves the frame
- * in the shaper's qdisc, which offers it again.
+/* Into the conduit's ring for switch port @port, as the conduit's own
+ * transmit would be called from its qdisc, on the queue of the ring the
+ * frame arrived on. A full ring leaves the frame in the shaper's qdisc,
+ * which offers it again.
  */
 static netdev_tx_t ppe_shaper_conduit_xmit(struct sk_buff *skb,
 					   struct net_device *dev,
-					   struct net_device *conduit)
+					   unsigned int port)
 {
 	struct ppe_shaper *sh = netdev_priv(dev);
+	struct net_device *conduit = sh->conduit;
 	struct netdev_queue *txq;
 	unsigned int len = skb->len;
 	netdev_tx_t rc;
@@ -1363,7 +1355,7 @@ static netdev_tx_t ppe_shaper_conduit_xmit(struct sk_buff *skb,
 	if (unlikely(netif_xmit_frozen_or_stopped(txq)))
 		rc = NETDEV_TX_BUSY;
 	else
-		rc = netdev_start_xmit(skb, conduit, txq, false);
+		rc = qca_edma_port_xmit(skb, conduit, port);
 	__netif_tx_unlock(txq);
 
 	if (unlikely(rc == NETDEV_TX_BUSY)) {
@@ -1376,61 +1368,39 @@ static netdev_tx_t ppe_shaper_conduit_xmit(struct sk_buff *skb,
 	return NETDEV_TX_OK;
 }
 
-/* For the conduit: the switch port the frame leaves by, as the tagger
- * would set it.
- */
-static bool ppe_flow_tag(struct sk_buff *skb, u8 xport)
-{
-	struct dsa_oob_tag_info *ti = skb_ext_add(skb, SKB_EXT_DSA_OOB);
-
-	if (unlikely(!ti))
-		return false;
-	ti->port = xport - 1;
-
-	return true;
-}
-
-static bool ppe_shaper_ul_build = true;
-module_param_named(shaper_ul_build, ppe_shaper_ul_build, bool, 0644);
-MODULE_PARM_DESC(shaper_ul_build,
-		 "Have the upload shaper device build the PPPoE and VLAN headers of what the host routes to the uplink and send it to the conduit");
-
 /* What the host routed to a PPPoE uplink, redirected here from its egress:
  * built the way the switch builds an offloaded upload frame, with the
  * session, the VLAN tag and the port the uplink's own path resolves to, so
  * that it too goes straight to the conduit rather than through the PPP,
  * PPPoE, VLAN and switch port devices. Anything else goes the ifb way.
  */
-static struct net_device *ppe_shaper_ul_frame(struct qca_ppe_priv *priv,
-					      struct sk_buff *skb,
-					      struct net_device *to)
+static int ppe_shaper_ul_frame(struct qca_ppe_priv *priv, struct sk_buff *skb,
+			       struct net_device *to, struct net_device *conduit)
 {
 	int port = READ_ONCE(priv->ul_port);
 	u16 sid = READ_ONCE(priv->ul_sid), vid = READ_ONCE(priv->ul_vid);
-	struct net_device *conduit;
 	struct pppoe_hdr *ph;
 	struct ethhdr *eth;
 	__be16 proto;
 	int len;
 
-	if (!ppe_shaper_ul_build || to->ifindex != READ_ONCE(priv->uplink_dev) ||
+	if (to->ifindex != READ_ONCE(priv->uplink_dev) ||
 	    to->type != ARPHRD_PPP || port < 0 || !sid || skb_is_gso(skb) ||
 	    skb->from_ingress || skb_network_offset(skb))
-		return NULL;
+		return -1;
 
 	if (skb->protocol == htons(ETH_P_IP))
 		proto = htons(PPP_IP);
 	else if (skb->protocol == htons(ETH_P_IPV6))
 		proto = htons(PPP_IPV6);
 	else
-		return NULL;
+		return -1;
 
-	conduit = ((struct ppe_shaper *)netdev_priv(priv->shaper_dev[1]))->conduit;
 	if (skb->ip_summed == CHECKSUM_PARTIAL && skb_checksum_help(skb))
-		return NULL;
+		return -1;
 	if (skb_cow_head(skb, ETH_HLEN + PPPOE_SES_HLEN +
 			 conduit->needed_headroom))
-		return NULL;
+		return -1;
 
 	len = skb->len;
 	*(__be16 *)__skb_push(skb, sizeof(proto)) = proto;
@@ -1448,16 +1418,22 @@ static struct net_device *ppe_shaper_ul_frame(struct qca_ppe_priv *priv,
 	skb->protocol = htons(ETH_P_PPP_SES);
 	if (vid)
 		__vlan_hwaccel_put_tag(skb, htons(ETH_P_8021Q), vid);
-	if (!ppe_flow_tag(skb, port + 1))
-		return NULL;
 
-	return conduit;
+	return port;
 }
 
+/* A frame ppe_flow_xmit() built for a switch port is not marked redirected
+ * and carries one more than that port in skb_iif; everything else names the
+ * device to hand it on to there, as for an ifb.
+ */
 static netdev_tx_t ppe_shaper_xmit(struct sk_buff *skb, struct net_device *dev)
 {
 	struct ppe_shaper *sh = netdev_priv(dev);
-	struct net_device *to, *conduit;
+	struct net_device *to;
+	int port;
+
+	if (!skb->redirected)
+		return ppe_shaper_conduit_xmit(skb, dev, skb->skb_iif - 1);
 
 	to = dev_get_by_index_rcu(dev_net(dev), skb->skb_iif);
 	if (unlikely(!to)) {
@@ -1466,15 +1442,10 @@ static netdev_tx_t ppe_shaper_xmit(struct sk_buff *skb, struct net_device *dev)
 		return NETDEV_TX_OK;
 	}
 
-	if (!skb->redirected && netdev_uses_dsa(to))
-		return ppe_shaper_conduit_xmit(skb, dev, to);
-
-	if (skb->redirected && dev == READ_ONCE(sh->priv->shaper_dev[1])) {
-		conduit = ppe_shaper_ul_frame(sh->priv, skb, to);
-		if (conduit) {
-			skb->redirected = 0;
-			return ppe_shaper_conduit_xmit(skb, dev, conduit);
-		}
+	if (dev == READ_ONCE(sh->priv->shaper_dev[1])) {
+		port = ppe_shaper_ul_frame(sh->priv, skb, to, sh->conduit);
+		if (port >= 0)
+			return ppe_shaper_conduit_xmit(skb, dev, port);
 	}
 
 	/* As an ifb hands a frame on: tc and netfilter are skipped on the
@@ -1599,7 +1570,6 @@ static bool ppe_flow_push_parse(struct sk_buff *skb, u16 vid)
 	return true;
 }
 
-
 /* A frame the PPE routed to the CPU port for a flow whose egress is a
  * device outside the switch, or behind a software shaper. It arrives
  * finished, so it goes straight out.
@@ -1607,7 +1577,6 @@ static bool ppe_flow_push_parse(struct sk_buff *skb, u16 vid)
 bool ppe_flow_xmit(struct dsa_switch *ds, struct sk_buff *skb, u32 flow)
 {
 	struct qca_ppe_priv *priv = ds_to_priv(ds);
-	struct net_device *conduit = skb->dev;
 	struct net_device *dev, *shaper, *uplink;
 	int xdev, up;
 	u8 dscp, xport;
@@ -1680,15 +1649,11 @@ bool ppe_flow_xmit(struct dsa_switch *ds, struct sk_buff *skb, u32 flow)
 				__vlan_hwaccel_put_tag(skb, htons(ETH_P_8021Q),
 						       vid);
 			skb->dev = shaper;
-			if (!ppe_shaper_is(shaper)) {
-				skb->skb_iif = dev->ifindex;
-				skb_set_redirected(skb, false);
-			} else if (xport && ppe_shaper_direct) {
-				if (unlikely(!ppe_flow_tag(skb, xport)))
-					goto drop;
-				skb->skb_iif = conduit->ifindex;
+			if (xport && ppe_shaper_is(shaper)) {
+				skb->skb_iif = xport;
 			} else {
 				skb->skb_iif = dev->ifindex;
+				skb_set_redirected(skb, false);
 			}
 		} else {
 			atomic_inc(&priv->flow_shaper_miss);
@@ -1696,9 +1661,9 @@ bool ppe_flow_xmit(struct dsa_switch *ds, struct sk_buff *skb, u32 flow)
 	} else if (xdev & PPE_XDEV_UL) {
 		ppe_flow_ct_attach(priv, skb, flow);
 		if (xdev & PPE_XDEV_PUSH) {
-			if (unlikely(!xport || !ppe_flow_tag(skb, xport)))
+			if (unlikely(!xport))
 				goto drop;
-			skb->skb_iif = conduit->ifindex;
+			skb->skb_iif = xport;
 		} else if (uplink != dev) {
 			skb->skb_iif = uplink->ifindex;
 			skb_set_redirected(skb, false);

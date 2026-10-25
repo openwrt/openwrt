@@ -6,8 +6,8 @@
  
 +config QCOM_80211AX_PPE
 +	tristate "Qualcomm 802.11ax PPE switch driver"
-+	depends on NET_DSA
-+	select NET_DSA_TAG_OOB
++	depends on NET_DSA && QCOM_EDMA
++	select NET_DSA_TAG_QCA
 +	select PCS_QCA_UNIPHY
 +	select PHYLINK
 +	select REGMAP_MMIO

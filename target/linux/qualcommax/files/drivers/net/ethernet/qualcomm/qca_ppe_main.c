@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later OR MIT
 
 #include <linux/delay.h>
-#include <linux/dsa/oob.h>
+#include <linux/qca_edma.h>
 #include <linux/clk.h>
 #include <linux/module.h>
 #include <linux/of_device.h>
@@ -617,7 +617,7 @@ static enum dsa_tag_protocol
 qca_ppe_get_tag_protocol(struct dsa_switch *ds, int port,
 			 enum dsa_tag_protocol mprot)
 {
-	return DSA_TAG_PROTO_OOB;
+	return DSA_TAG_PROTO_QCA;
 }
 
 /* The hardware counts none of its table entries, so occupancy is the driver's
@@ -2359,6 +2359,10 @@ static void qca_ppe_teardown(struct dsa_switch *ds)
 {
 	struct qca_ppe_priv *priv = ds_to_priv(ds);
 
+	struct dsa_port *cpu_dp;
+
+	dsa_switch_for_each_cpu_port(cpu_dp, ds)
+		qca_edma_switch_unregister(cpu_dp->conduit);
 	cancel_delayed_work_sync(&priv->mib_work);
 	ppe_devlink_teardown(ds);
 }
@@ -2871,17 +2875,27 @@ void qca_ppe_port_mirror_del(struct dsa_switch *ds, int port,
 	ppe_mirror_put(priv, BIT(mirror->ingress));
 }
 
+static const struct qca_edma_switch_ops qca_ppe_edma_ops = {
+	.flow_xmit = ppe_flow_xmit,
+};
+
+/* The QCA tag is what DSA and the conduit pass a port by; a frame the switch
+ * routed for a flow reaches this driver through the conduit, which it is
+ * registered with.
+ */
 static int qca_ppe_connect_tag_protocol(struct dsa_switch *ds,
 					enum dsa_tag_protocol proto)
 {
-	struct dsa_oob_tagger_data *data = ds->tagger_data;
+	struct dsa_port *cpu_dp;
 
-	if (proto != DSA_TAG_PROTO_OOB)
+	if (proto != DSA_TAG_PROTO_QCA)
 		return -EPROTONOSUPPORT;
 
-	data->flow_xmit = ppe_flow_xmit;
+	dsa_switch_for_each_cpu_port(cpu_dp, ds)
+		return qca_edma_switch_register(cpu_dp->conduit, ds,
+						&qca_ppe_edma_ops);
 
-	return 0;
+	return -ENODEV;
 }
 
 static const struct dsa_switch_ops qca_ppe_ops = {
