@@ -1,0 +1,32 @@
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Date: Wed, 21 Oct 2026 18:09:05 +0200
+Subject: [PATCH] wifi: ath12k: apply the 160 MHz NSS ratio to the radio for
+ VHT
+
+The firmware reports the NSS a radio supports at 160 MHz as a ratio of
+its 80 MHz NSS. VHT peer assoc applies that ratio to the peer's NSS, so
+on a radio with a 1:2 ratio a two-stream VHT peer is sent one stream at
+160 MHz. Commit a82ce08775bc ("wifi: ath12k: add extended NSS bandwidth
+support for 160 MHz") fixed the HE path; take the VHT 160 MHz NSS from
+the radio's TX chains the same way.
+
+Compile tested only.
+
+Fixes: 18ab9d038fad ("wifi: ath12k: add support for 160 MHz bandwidth")
+Link: https://lore.kernel.org/all/20261021165138.388593-3-julius@bairaktaris.de/
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+---
+ drivers/net/wireless/ath/ath12k/mac.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/net/wireless/ath/ath12k/mac.c
++++ b/drivers/net/wireless/ath/ath12k/mac.c
+@@ -2503,7 +2503,7 @@ static void ath12k_peer_assoc_h_vht(stru
+ 	arg->tx_max_mcs_nss = 0xFF;
+ 
+ 	if (arg->peer_phymode == MODE_11AC_VHT160) {
+-		tx_nss = ath12k_get_nss_160mhz(ar, max_nss);
++		tx_nss = ath12k_get_nss_160mhz(ar, ar->num_tx_chains);
+ 		rx_nss = min(arg->peer_nss, tx_nss);
+ 		arg->peer_bw_rxnss_override = ATH12K_BW_NSS_MAP_ENABLE;
+ 
