@@ -89,7 +89,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  struct net_device *dev_get_by_name_rcu(struct net *net, const char *name);
 --- a/net/core/dev.c
 +++ b/net/core/dev.c
-@@ -744,41 +744,37 @@ static struct net_device_path *dev_fwd_p
+@@ -750,41 +750,37 @@ static struct net_device_path *dev_fwd_p
  	return &stack->path[k];
  }
  

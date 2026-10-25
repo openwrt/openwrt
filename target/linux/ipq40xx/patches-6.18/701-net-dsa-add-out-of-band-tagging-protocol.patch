@@ -93,7 +93,7 @@ Signed-off-by: Maxime Chevallier <maxime.chevallier@bootlin.com>
 +#endif
 --- a/include/linux/skbuff.h
 +++ b/include/linux/skbuff.h
-@@ -4935,6 +4935,9 @@ enum skb_ext_id {
+@@ -4937,6 +4937,9 @@ enum skb_ext_id {
  #if IS_ENABLED(CONFIG_INET_PSP)
  	SKB_EXT_PSP,
  #endif
@@ -136,7 +136,7 @@ Signed-off-by: Maxime Chevallier <maxime.chevallier@bootlin.com>
  #include <net/dst.h>
  #include <net/sock.h>
  #include <net/checksum.h>
-@@ -5120,6 +5124,9 @@ static const u8 skb_ext_type_len[] = {
+@@ -5124,6 +5128,9 @@ static const u8 skb_ext_type_len[] = {
  #if IS_ENABLED(CONFIG_INET_PSP)
  	[SKB_EXT_PSP] = SKB_EXT_CHUNKSIZEOF(struct psp_skb_ext),
  #endif
