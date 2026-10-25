@@ -3468,14 +3468,111 @@ static int ppe_cpu_port_rate_set(struct devlink *dl, u32 id,
 
 enum {
 	PPE_DEVLINK_PARAM_CPU_PORT_RATE = DEVLINK_PARAM_GENERIC_ID_MAX + 1,
+	PPE_DEVLINK_PARAM_DL_SHAPER,
+	PPE_DEVLINK_PARAM_UL_SHAPER,
+	PPE_DEVLINK_PARAM_CT_DSCP,
+	PPE_DEVLINK_PARAM_UPLINK,
 };
 
-/* kbit/s, 0 disables */
+static int ppe_uplink_param_get(struct devlink *dl, u32 id,
+				struct devlink_param_gset_ctx *ctx)
+{
+	struct qca_ppe_priv *priv = ds_to_priv(dsa_devlink_to_ds(dl));
+
+	ppe_flow_uplink_get(priv, ctx->val.vstr);
+	return 0;
+}
+
+static int ppe_uplink_param_set(struct devlink *dl, u32 id,
+				struct devlink_param_gset_ctx *ctx,
+				struct netlink_ext_ack *extack)
+{
+	struct qca_ppe_priv *priv = ds_to_priv(dsa_devlink_to_ds(dl));
+
+	return ppe_flow_uplink_set(priv, ctx->val.vstr);
+}
+
+static int ppe_ct_dscp_get(struct devlink *dl, u32 id,
+			   struct devlink_param_gset_ctx *ctx)
+{
+	struct qca_ppe_priv *priv = ds_to_priv(dsa_devlink_to_ds(dl));
+
+	ctx->val.vbool = READ_ONCE(priv->ct_dscp);
+	return 0;
+}
+
+static int ppe_ct_dscp_set(struct devlink *dl, u32 id,
+			   struct devlink_param_gset_ctx *ctx,
+			   struct netlink_ext_ack *extack)
+{
+	struct qca_ppe_priv *priv = ds_to_priv(dsa_devlink_to_ds(dl));
+
+	ppe_flow_ct_dscp_set(priv, ctx->val.vbool);
+	return 0;
+}
+
+static int ppe_shaper_get(struct devlink *dl, u32 id,
+			  struct devlink_param_gset_ctx *ctx)
+{
+	struct qca_ppe_priv *priv = ds_to_priv(dsa_devlink_to_ds(dl));
+
+	ppe_flow_shaper_get(priv, id == PPE_DEVLINK_PARAM_UL_SHAPER,
+			    ctx->val.vstr);
+	return 0;
+}
+
+static int ppe_shaper_set(struct devlink *dl, u32 id,
+			  struct devlink_param_gset_ctx *ctx,
+			  struct netlink_ext_ack *extack)
+{
+	struct qca_ppe_priv *priv = ds_to_priv(dsa_devlink_to_ds(dl));
+
+	return ppe_flow_shaper_set(priv, id == PPE_DEVLINK_PARAM_UL_SHAPER,
+				   ctx->val.vstr);
+}
+
+static int ppe_shaper_validate(struct devlink *dl, u32 id,
+			       union devlink_param_value val,
+			       struct netlink_ext_ack *extack)
+{
+	if (strnlen(val.vstr, sizeof(val.vstr)) >= IFNAMSIZ) {
+		NL_SET_ERR_MSG_MOD(extack, "not a device name");
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+/* cpu_port_rate in kbit/s, 0 disables. dl_shaper and ul_shaper name the
+ * devices whose qdiscs shape offloaded flows (ppe_flow_shape()), empty for
+ * none. ct_dscp gives the frames handed to them the DSCP stamped into their
+ * conntrack mark (ppe_flow_ct_dscp()). uplink names the WAN's L3 device,
+ * which tells the shaped flows from the rest (ppe_flow_on_uplink()).
+ */
 static const struct devlink_param ppe_params[] = {
 	DEVLINK_PARAM_DRIVER(PPE_DEVLINK_PARAM_CPU_PORT_RATE, "cpu_port_rate",
 			     DEVLINK_PARAM_TYPE_U32,
 			     BIT(DEVLINK_PARAM_CMODE_RUNTIME),
 			     ppe_cpu_port_rate_get, ppe_cpu_port_rate_set, NULL),
+	DEVLINK_PARAM_DRIVER(PPE_DEVLINK_PARAM_DL_SHAPER, "dl_shaper",
+			     DEVLINK_PARAM_TYPE_STRING,
+			     BIT(DEVLINK_PARAM_CMODE_RUNTIME),
+			     ppe_shaper_get, ppe_shaper_set,
+			     ppe_shaper_validate),
+	DEVLINK_PARAM_DRIVER(PPE_DEVLINK_PARAM_UL_SHAPER, "ul_shaper",
+			     DEVLINK_PARAM_TYPE_STRING,
+			     BIT(DEVLINK_PARAM_CMODE_RUNTIME),
+			     ppe_shaper_get, ppe_shaper_set,
+			     ppe_shaper_validate),
+	DEVLINK_PARAM_DRIVER(PPE_DEVLINK_PARAM_CT_DSCP, "ct_dscp",
+			     DEVLINK_PARAM_TYPE_BOOL,
+			     BIT(DEVLINK_PARAM_CMODE_RUNTIME),
+			     ppe_ct_dscp_get, ppe_ct_dscp_set, NULL),
+	DEVLINK_PARAM_DRIVER(PPE_DEVLINK_PARAM_UPLINK, "uplink",
+			     DEVLINK_PARAM_TYPE_STRING,
+			     BIT(DEVLINK_PARAM_CMODE_RUNTIME),
+			     ppe_uplink_param_get, ppe_uplink_param_set,
+			     ppe_shaper_validate),
 };
 
 void ppe_scheduler_unready(struct qca_ppe_priv *priv)
