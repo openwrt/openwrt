@@ -349,6 +349,26 @@ define Device/netgear_rbs850
 endef
 TARGET_DEVICES += netgear_rbs850
 
+define Device/netgear_rbx860
+	$(call Device/netgear_rbx750_850)
+	DEVICE_PACKAGES += ipq-wifi-netgear_rbk860
+	DEVICE_DTS_CONFIG := config@hk01
+endef
+
+define Device/netgear_rbr860
+	$(call Device/netgear_rbx860)
+	DEVICE_MODEL := RBR860
+	NETGEAR_BOARD_ID := U12H479T00_NETGEAR
+endef
+TARGET_DEVICES += netgear_rbr860
+
+define Device/netgear_rbs860
+	$(call Device/netgear_rbx860)
+	DEVICE_MODEL := RBS860
+	NETGEAR_BOARD_ID := U12H480T00_NETGEAR
+endef
+TARGET_DEVICES += netgear_rbs860
+
 define Device/netgear_sxk80
 	$(call Device/FitImage)
 	$(call Device/UbiFit)
