@@ -3139,6 +3139,8 @@ int qca_ppe_setup_tc(struct dsa_switch *ds, int port, enum tc_setup_type type,
 		return qca_ppe_setup_tc_gred(priv, port, type_data);
 	case TC_QUERY_CAPS:
 		return qca_ppe_tc_query_caps(type_data);
+	case TC_SETUP_FT:
+		return qca_ppe_setup_ft(priv, port, type_data);
 	default:
 		return -EOPNOTSUPP;
 	}

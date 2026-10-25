@@ -20,6 +20,7 @@
 #include <linux/property.h>
 #include <linux/regmap.h>
 #include <linux/reset.h>
+#include <net/dsa.h>
 #include <net/netdev_queues.h>
 
 #include "qca_edma.h"
@@ -1909,6 +1910,26 @@ drop:
 	return NETDEV_TX_OK;
 }
 
+/* DSA binds a flowtable's block to the conduit. The PPE behind it is what
+ * forwards the offloaded flows, so the block goes back to the switch on the
+ * CPU port this conduit serves.
+ */
+static int edma_ndo_setup_tc(struct net_device *netdev,
+			     enum tc_setup_type type, void *type_data)
+{
+	struct dsa_port *cpu_dp = netdev->dsa_ptr;
+	struct dsa_switch *ds;
+
+	if (type != TC_SETUP_FT || !netdev_uses_dsa(netdev))
+		return -EOPNOTSUPP;
+
+	ds = cpu_dp->ds;
+	if (!ds->ops->port_setup_tc)
+		return -EOPNOTSUPP;
+
+	return ds->ops->port_setup_tc(ds, cpu_dp->index, type, type_data);
+}
+
 static const struct net_device_ops edma_netdev_ops = {
 	.ndo_open = edma_ndo_open,
 	.ndo_stop = edma_ndo_stop,
@@ -1919,6 +1940,7 @@ static const struct net_device_ops edma_netdev_ops = {
 	.ndo_set_mac_address = eth_mac_addr,
 	.ndo_validate_addr = eth_validate_addr,
 	.ndo_get_stats64 = dev_get_tstats64,
+	.ndo_setup_tc = edma_ndo_setup_tc,
 };
 
 /* The first ring set's three interrupts come before the misc one, and every

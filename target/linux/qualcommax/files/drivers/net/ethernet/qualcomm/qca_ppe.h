@@ -584,8 +584,119 @@
 #define PPE_L3_BASE			0x200000
 
 #define PPE_L3_VP_PORT_TBL(port)	(PPE_L3_BASE + 0x1000 + (port) * 0x10)
+#define   PPE_L3_VP_L3_IF_VALID		BIT(0)		/* w0 */
+#define   PPE_L3_VP_L3_IF		GENMASK(8, 1)	/* w0 */
 #define   PPE_L3_VP_VSI_VALID		BIT(9)
 #define   PPE_L3_VP_VSI			GENMASK(14, 10)
+#define   PPE_L3_VP_WORDS		3
+
+/* Router MACs: a frame addressed to one of them enters the L3 stage on the
+ * L3 interface its port names, if that interface's MAC bitmap holds the entry.
+ */
+#define PPE_MY_MAC_TBL(i)		(PPE_L3_BASE + (i) * 0x8)
+#define   PPE_MY_MAC_ENTRIES		8
+#define   PPE_MY_MAC_WORDS		2
+#define   PPE_MY_MAC_OFF		0	/* 48 bits */
+#define   PPE_MY_MAC_VALID_OFF		48
+
+#define PPE_FLOW_CTRL0			(PPE_L3_BASE + 0x368)
+#define   PPE_FLOW_CTRL0_EN		BIT(0)
+/* Per packet type (0 L3 unicast); six bits per direction: LAN-LAN, LAN-WAN,
+ * WAN-LAN, WAN-WAN, unknown. key_sel names the address the host table is
+ * searched with, so 1 matches entries that store the source address.
+ */
+#define PPE_FLOW_CTRL1(type)		(PPE_L3_BASE + 0x36c + (type) * 4)
+#define   PPE_FLOW_CTRL1_DIRS		5
+#define   PPE_FLOW_CTRL1_MISS		GENMASK(1, 0)
+#define   PPE_FLOW_CTRL1_FRAG_BYPASS	BIT(2)
+#define   PPE_FLOW_CTRL1_TCP_SPECIAL	BIT(3)
+#define   PPE_FLOW_CTRL1_KEY_SEL	BIT(5)
+#define   PPE_FLOW_CTRL1_DIR_SHIFT	6
+
+#define PPE_IN_PUB_IP_TBL(i)		(PPE_L3_BASE + 0x378 + (i) * 4)
+#define   PPE_IN_PUB_IP_ENTRIES		16
+
+/* The flow table operation engine. A host entry staged in the host data
+ * registers is added along with the flow when the operation sets HOST_EN,
+ * and the hash the hardware computes picks both indexes.
+ */
+#define PPE_IN_FLOW_OP			(PPE_L3_BASE + 0x3b8)
+#define   PPE_IN_FLOW_OP_CMD_ID		GENMASK(3, 0)
+#define   PPE_IN_FLOW_OP_TYPE		GENMASK(7, 5)	/* 0 add, 1 delete */
+#define   PPE_IN_FLOW_OP_HASH_BLOCK	GENMASK(9, 8)
+#define   PPE_IN_FLOW_OP_MODE		BIT(10)		/* 0 key, 1 index */
+#define   PPE_IN_FLOW_OP_HOST_EN	BIT(11)
+#define   PPE_IN_FLOW_OP_INDEX		GENMASK(23, 12)
+#define PPE_IN_FLOW_HOST_OP		(PPE_L3_BASE + 0x3bc)
+#define   PPE_IN_FLOW_HOST_OP_HASH_BLOCK GENMASK(1, 0)
+#define PPE_IN_FLOW_OP_DATA(i)		(PPE_L3_BASE + 0x3c0 + (i) * 4)
+#define PPE_FLOW_HOST_OP_DATA(i)	(PPE_L3_BASE + 0x3e4 + (i) * 4)
+#define PPE_IN_FLOW_OP_RSLT		(PPE_L3_BASE + 0x40c)
+#define   PPE_IN_FLOW_RSLT_CMD_ID	GENMASK(3, 0)
+#define   PPE_IN_FLOW_RSLT_FAIL		BIT(4)
+#define   PPE_IN_FLOW_RSLT_INDEX	GENMASK(16, 5)
+#define PPE_FLOW_HOST_OP_RSLT		(PPE_L3_BASE + 0x410)
+#define   PPE_FLOW_HOST_RSLT_INDEX	GENMASK(12, 0)
+
+#define PPE_HOST_TBL_OP			(PPE_L3_BASE + 0x4bc)
+#define   PPE_HOST_TBL_OP_CMD_ID	GENMASK(3, 0)
+#define   PPE_HOST_TBL_OP_TYPE		GENMASK(7, 5)
+#define   PPE_HOST_TBL_OP_HASH_BLOCK	GENMASK(9, 8)
+#define   PPE_HOST_TBL_OP_MODE		BIT(10)
+#define   PPE_HOST_TBL_OP_INDEX		GENMASK(23, 11)
+#define PPE_HOST_TBL_OP_RSLT		(PPE_L3_BASE + 0x4e8)
+#define   PPE_HOST_TBL_RSLT_CMD_ID	GENMASK(3, 0)
+#define   PPE_HOST_TBL_RSLT_FAIL	BIT(4)
+
+#define PPE_IN_L3_IF_TBL(i)		(PPE_L3_BASE + 0x2000 + (i) * 0x8)
+#define   PPE_IN_L3_IF_WORDS		2
+#define   PPE_IN_L3_IF_MRU_OFF		0	/* 14 bits */
+#define   PPE_IN_L3_IF_MTU_OFF		14	/* 14 bits */
+#define   PPE_IN_L3_IF_V4_ROUTE_OFF	29
+#define   PPE_IN_L3_IF_TTL_CMD_OFF	32	/* 2 bits */
+#define   PPE_IN_L3_IF_MAC_BITMAP_OFF	35	/* 8 bits */
+
+/* IPv4 host entry: one address, and what to do with frames routed to it. */
+#define PPE_HOST_TBL(i)			(PPE_L3_BASE + 0x20000 + (i) * 0x10)
+#define   PPE_HOST_ENTRIES		6144
+#define   PPE_HOST_V4_WORDS		3
+#define   PPE_HOST_VALID_OFF		0
+#define   PPE_HOST_FWD_CMD_OFF		3	/* 2 bits */
+#define   PPE_HOST_LAN_WAN_OFF		20
+#define   PPE_HOST_IP_OFF		32
+
+/* IPv4 5-tuple flow entry. */
+#define PPE_IN_FLOW_TBL(i)		(PPE_L3_BASE + 0x40000 + (i) * 0x20)
+#define   PPE_IN_FLOW_ENTRIES		4096
+#define   PPE_IN_FLOW_V4_WORDS		5
+#define   PPE_IN_FLOW_VALID_OFF		0
+#define   PPE_IN_FLOW_HOST_TYPE_OFF	2	/* host index is: 0 src, 1 dst */
+#define   PPE_IN_FLOW_PROTO_OFF		16	/* 2 bits: 1 TCP, 2 UDP */
+#define   PPE_IN_FLOW_AGE_OFF		18	/* 2 bits */
+#define   PPE_IN_FLOW_FWD_TYPE_OFF	29	/* 3 bits */
+#define   PPE_IN_FLOW_NEXTHOP_OFF	32	/* 12 bits */
+#define   PPE_IN_FLOW_NAT_PORT_OFF	44	/* 16 bits, SNAT and DNAT */
+#define   PPE_IN_FLOW_IP_OFF		76
+#define   PPE_IN_FLOW_SPORT_OFF		108
+#define   PPE_IN_FLOW_DPORT_OFF		124
+#define   PPE_FLOW_FWD_SNAT		1
+#define   PPE_FLOW_FWD_DNAT		2
+#define   PPE_FLOW_FWD_ROUTE		3
+
+/* A next hop is type 1, a port; type 0 makes the same bits a VSI. */
+#define PPE_IN_NEXTHOP_TBL(i)		(PPE_L3_BASE + 0x60000 + (i) * 0x10)
+#define   PPE_IN_NEXTHOP_ENTRIES	2560
+#define   PPE_IN_NEXTHOP_WORDS		4
+#define   PPE_NEXTHOP_TYPE_OFF		0
+#define   PPE_NEXTHOP_PORT_OFF		1	/* 8 bits */
+#define   PPE_NEXTHOP_L3_IF_OFF		9	/* 8 bits, egress L3 interface */
+#define   PPE_NEXTHOP_PUB_IP_OFF	44	/* 4 bits */
+#define   PPE_NEXTHOP_MAC_OFF		48	/* 48 bits */
+#define   PPE_NEXTHOP_DNAT_IP_OFF	96
+
+/* The source MAC a routed frame leaves with. */
+#define PPE_EG_L3_IF_TBL(i)		(PPE_PTX_BASE + 0xe000 + (i) * 0x10)
+#define   PPE_EG_L3_IF_WORDS		3
 
 /* --- Ingress policer (base 0x100000) --- */
 #define PPE_POLICER_BASE		0x100000
@@ -595,6 +706,9 @@
  */
 #define PPE_CNT_DROP_WORDS		5
 #define PPE_CNT_DROP_OFF		72
+
+#define PPE_IN_FLOW_CNT_TBL(i)		(PPE_POLICER_BASE + 0x20000 + (i) * 0x10)
+#define   PPE_IN_FLOW_CNT_WORDS		3
 
 #define PPE_RT_IF_CNT_TBL(i)		(PPE_POLICER_BASE + 0x40000 + (i) * 0x20)
 #define   PPE_RT_IF_CNT_ENTRIES		512
@@ -1090,6 +1204,8 @@ struct ppe_sb_occ {
 	u32 max;
 };
 
+struct ppe_ft;
+
 struct qca_ppe_priv {
 	struct dsa_switch ds;
 	struct regmap *regmap;
@@ -1133,6 +1249,8 @@ struct qca_ppe_priv {
 	u16 gred_gap[PPE_L0_UCAST_QUEUES][4];
 	DECLARE_BITMAP(gred_queues, PPE_L0_UCAST_QUEUES);
 	struct dentry *debugfs;
+	/* L3 flowtable offload state; see qca_ppe_flow.c. */
+	struct ppe_ft *ft;
 	struct devlink_region *regions[3];
 	DECLARE_BITMAP(vsi_bitmap, PPE_VSI_MAX);
 	DECLARE_BITMAP(xlt_bitmap, PPE_XLT_TBL_NUM);
@@ -1321,6 +1439,9 @@ int qca_ppe_port_vlan_del(struct dsa_switch *ds, int port,
 
 unsigned long ppe_clk_rate(struct qca_ppe_priv *priv);
 void ppe_debugfs_init(struct qca_ppe_priv *priv);
+int ppe_ft_init(struct qca_ppe_priv *priv);
+void ppe_ft_exit(struct qca_ppe_priv *priv);
+int qca_ppe_setup_ft(struct qca_ppe_priv *priv, int port, void *type_data);
 void ppe_debugfs_exit(struct qca_ppe_priv *priv);
 
 void ppe_acl_init(struct qca_ppe_priv *priv);

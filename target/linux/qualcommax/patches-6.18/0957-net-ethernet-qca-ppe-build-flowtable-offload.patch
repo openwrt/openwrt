@@ -1,0 +1,15 @@
+From: John Macias <dencity7@gmail.com>
+Subject: [PATCH] net: ethernet: qca: ppe: build the flowtable offload
+
+Add qca_ppe_flow.o to the PPE driver.
+
+--- a/drivers/net/ethernet/qualcomm/Makefile
++++ b/drivers/net/ethernet/qualcomm/Makefile
+@@ -10,6 +10,7 @@
+ qcauart-objs := qca_uart.o
+ obj-$(CONFIG_QCOM_80211AX_PPE) += qca_ppe.o
+ qca_ppe-objs := qca_ppe_main.o qca_ppe_vlan.o qca_ppe_scheduler.o qca_ppe_debugfs.o qca_ppe_acl.o
++qca_ppe-objs += qca_ppe_flow.o
+ obj-$(CONFIG_QCOM_EDMA) += qca_edma.o
+ 
+ obj-y += emac/

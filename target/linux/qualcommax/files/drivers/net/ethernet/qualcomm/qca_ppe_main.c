@@ -3160,14 +3160,18 @@ static int qca_ppe_probe(struct platform_device *pdev)
 	if (data->type == PPE_TYPE_IPQ6018)
 		ppe_ipq6018_mux_setup(priv);
 
-	ret = dsa_register_switch(ds);
+	ret = ppe_ft_init(priv);
 	if (ret)
 		goto err_acl;
+
+	ret = dsa_register_switch(ds);
+	if (ret)
+		goto err_ft;
 
 	ret = ppe_scheduler_ready(priv);
 	if (ret) {
 		dsa_unregister_switch(ds);
-		goto err_acl;
+		goto err_ft;
 	}
 	ppe_debugfs_init(priv);
 
@@ -3175,6 +3179,8 @@ static int qca_ppe_probe(struct platform_device *pdev)
 
 	return 0;
 
+err_ft:
+	ppe_ft_exit(priv);
 err_acl:
 	ppe_acl_exit(priv);
 	ppe_scheduler_exit(priv);
@@ -3188,6 +3194,7 @@ static void qca_ppe_remove(struct platform_device *pdev)
 	ppe_debugfs_exit(priv);
 	ppe_scheduler_unready(priv);
 	dsa_unregister_switch(&priv->ds);
+	ppe_ft_exit(priv);
 	ppe_acl_exit(priv);
 	ppe_scheduler_exit(priv);
 }
