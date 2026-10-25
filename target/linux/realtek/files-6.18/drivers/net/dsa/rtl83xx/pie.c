@@ -3,12 +3,16 @@
 #include <asm/mach-rtl-otto/mach-rtl-otto.h>
 #include <linux/etherdevice.h>
 #include <linux/iopoll.h>
+#include <linux/lockdep.h>
 #include <linux/regmap.h>
 
 #include "pie.h"
 #include "rtl-otto.h"
 
-/* Packet Inspection Engine */
+/* Packet Inspection Engine
+ * pie_mutex serializes rule allocation, deletion and block configuration.
+ * Keep it held until both the hardware operation and bitmap update finish.
+ */
 #define RTL838X_METER_GLB_CTRL			(0x4B08)
 #define RTL839X_METER_GLB_CTRL			(0x1300)
 #define RTL930X_METER_GLB_CTRL			(0xa0a0)
@@ -158,7 +162,7 @@ static void otto_pie_838x_rule_del(struct otto_dsa_priv *priv, int index_from, i
 	u32 block_state;
 
 	pr_debug("%s: from %d to %d\n", __func__, index_from, index_to);
-	mutex_lock(&priv->reg_mutex);
+	lockdep_assert_held(&priv->pie_mutex);
 
 	/* Remember currently active blocks */
 	regmap_read(priv->map, RTL838X_ACL_BLK_LOOKUP_CTRL, &block_state);
@@ -182,8 +186,6 @@ static void otto_pie_838x_rule_del(struct otto_dsa_priv *priv, int index_from, i
 		if (block_state & BIT(block))
 			regmap_write(priv->map, RTL838X_ACL_BLK_LOOKUP_CTRL, block_state | BIT(block));
 	}
-
-	mutex_unlock(&priv->reg_mutex);
 }
 
 /* Reads the intermediate representation of the templated match-fields of the
@@ -978,6 +980,8 @@ void otto_pie_838x_rule_rm(struct otto_dsa_priv *priv, struct pie_rule *pr)
 {
 	int idx = pr->id;
 
+	guard(mutex)(&priv->pie_mutex);
+
 	otto_pie_838x_rule_del(priv, idx, idx);
 	clear_bit(idx, priv->pie_use_bm);
 }
@@ -991,6 +995,8 @@ void otto_pie_838x_init(struct otto_dsa_priv *priv)
 	u32 template_selectors;
 
 	mutex_init(&priv->pie_mutex);
+
+	guard(mutex)(&priv->pie_mutex);
 
 	/* Enable ACL lookup on all ports, including CPU_PORT */
 	for (int i = 0; i <= priv->r->cpu_port; i++)
@@ -1135,7 +1141,7 @@ static int otto_pie_839x_rule_del(struct otto_dsa_priv *priv, int index_from, in
 	u32 v = (index_from << 1) | (index_to << 13) | BIT(0);
 
 	pr_debug("%s: from %d to %d\n", __func__, index_from, index_to);
-	mutex_lock(&priv->reg_mutex);
+	lockdep_assert_held(&priv->pie_mutex);
 
 	/* Write from-to and execute bit into control register */
 	regmap_write(priv->map, RTL839X_ACL_CLR_CTRL, v);
@@ -1144,8 +1150,6 @@ static int otto_pie_839x_rule_del(struct otto_dsa_priv *priv, int index_from, in
 	do {
 		regmap_read(priv->map, RTL839X_ACL_CLR_CTRL, &v);
 	} while (v & BIT(0));
-
-	mutex_unlock(&priv->reg_mutex);
 
 	return 0;
 }
@@ -1813,6 +1817,8 @@ void otto_pie_839x_rule_rm(struct otto_dsa_priv *priv, struct pie_rule *pr)
 {
 	int idx = pr->id;
 
+	guard(mutex)(&priv->pie_mutex);
+
 	otto_pie_839x_rule_del(priv, idx, idx);
 	clear_bit(idx, priv->pie_use_bm);
 }
@@ -1869,6 +1875,8 @@ void otto_pie_839x_init(struct otto_dsa_priv *priv)
 	u32 template_selectors;
 
 	mutex_init(&priv->pie_mutex);
+
+	guard(mutex)(&priv->pie_mutex);
 
 	/* Power on all PIE blocks */
 	for (int i = 0; i < priv->r->n_pie_blocks; i++)
@@ -2482,7 +2490,7 @@ static int otto_pie_930x_rule_del(struct otto_dsa_priv *priv, int index_from, in
 	u32 v = (index_from << 1) | (index_to << 12) | BIT(0);
 
 	pr_debug("%s: from %d to %d\n", __func__, index_from, index_to);
-	mutex_lock(&priv->reg_mutex);
+	lockdep_assert_held(&priv->pie_mutex);
 
 	/* Write from-to and execute bit into control register */
 	regmap_write(priv->map, RTL930X_PIE_CLR_CTRL, v);
@@ -2492,13 +2500,14 @@ static int otto_pie_930x_rule_del(struct otto_dsa_priv *priv, int index_from, in
 		regmap_read(priv->map, RTL930X_PIE_CLR_CTRL, &v);
 	} while (v & BIT(0));
 
-	mutex_unlock(&priv->reg_mutex);
 	return 0;
 }
 
 void otto_pie_930x_rule_rm(struct otto_dsa_priv *priv, struct pie_rule *pr)
 {
 	int idx = pr->id;
+
+	guard(mutex)(&priv->pie_mutex);
 
 	otto_pie_930x_rule_del(priv, idx, idx);
 	clear_bit(idx, priv->pie_use_bm);
@@ -2509,6 +2518,8 @@ void otto_pie_930x_init(struct otto_dsa_priv *priv)
 	u32 template_selectors;
 
 	mutex_init(&priv->pie_mutex);
+
+	guard(mutex)(&priv->pie_mutex);
 
 	pr_debug("%s\n", __func__);
 	/* Enable ACL lookup on all ports, including CPU_PORT */
@@ -3126,7 +3137,7 @@ static int otto_pie_931x_rule_del(struct otto_dsa_priv *priv, int index_from, in
 	u32 v = (index_from << 1) | (index_to << 13) | BIT(0);
 
 	pr_debug("%s: from %d to %d\n", __func__, index_from, index_to);
-	mutex_lock(&priv->reg_mutex);
+	lockdep_assert_held(&priv->pie_mutex);
 
 	/* Write from-to and execute bit into control register */
 	regmap_write(priv->map, RTL931X_PIE_CLR_CTRL, v);
@@ -3136,14 +3147,14 @@ static int otto_pie_931x_rule_del(struct otto_dsa_priv *priv, int index_from, in
 		regmap_read(priv->map, RTL931X_PIE_CLR_CTRL, &v);
 	} while (v & BIT(0));
 
-	mutex_unlock(&priv->reg_mutex);
-
 	return 0;
 }
 
 void otto_pie_931x_rule_rm(struct otto_dsa_priv *priv, struct pie_rule *pr)
 {
 	int idx = pr->id;
+
+	guard(mutex)(&priv->pie_mutex);
 
 	otto_pie_931x_rule_del(priv, idx, idx);
 	clear_bit(idx, priv->pie_use_bm);
@@ -3154,6 +3165,8 @@ void otto_pie_931x_init(struct otto_dsa_priv *priv)
 	u32 template_selectors;
 
 	mutex_init(&priv->pie_mutex);
+
+	guard(mutex)(&priv->pie_mutex);
 
 	pr_debug("%s\n", __func__);
 	/* Enable ACL lookup on all ports, including CPU_PORT */
