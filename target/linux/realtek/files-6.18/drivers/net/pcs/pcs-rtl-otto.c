@@ -18,7 +18,8 @@
 
 #define RTPCS_SDS_CNT				14
 #define RTPCS_MAX_LINKS_PER_SDS			8
-#define RTPCS_RXCAL_START_MS			1000
+#define RTPCS_930X_RXCAL_START_MS			200
+#define RTPCS_931X_RXCAL_START_MS			50
 #define RTPCS_RXCAL_POLL_MS			500
 #define RTPCS_RXCAL_MAX_TRIES			3
 #define RTPCS_RXCAL_RETRY_MS			1000
@@ -3531,7 +3532,7 @@ static int rtpcs_930x_sds_post_config(struct rtpcs_serdes *sds, enum rtpcs_sds_m
 		sds->id, hw_mode);
 	sds->rxcal_tries = 0;
 	sds->rxcal_pending = true;
-	mod_delayed_work(system_wq, &sds->cali_work, msecs_to_jiffies(RTPCS_RXCAL_START_MS));
+	mod_delayed_work(system_wq, &sds->cali_work, msecs_to_jiffies(RTPCS_930X_RXCAL_START_MS));
 	return 0;
 }
 
@@ -4571,7 +4572,7 @@ static int rtpcs_931x_sds_post_config(struct rtpcs_serdes *sds, enum rtpcs_sds_m
 
 	sds->rxcal_tries = 0;
 	sds->rxcal_pending = true;
-	mod_delayed_work(system_wq, &sds->cali_work, msecs_to_jiffies(RTPCS_RXCAL_START_MS));
+	mod_delayed_work(system_wq, &sds->cali_work, msecs_to_jiffies(RTPCS_931X_RXCAL_START_MS));
 
 	return 0;
 }
