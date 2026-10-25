@@ -17,7 +17,7 @@ Signed-off-by: Jonas Köppeler <j.koeppeler@tu-berlin.de>
 
 --- a/net/sched/sch_cake.c
 +++ b/net/sched/sch_cake.c
-@@ -71,6 +71,7 @@
+@@ -72,6 +72,7 @@
  #include <net/pkt_cls.h>
  #include <net/tcp.h>
  #include <net/flow_dissector.h>
@@ -25,7 +25,7 @@ Signed-off-by: Jonas Köppeler <j.koeppeler@tu-berlin.de>
  
  #if IS_ENABLED(CONFIG_NF_CONNTRACK)
  #include <net/netfilter/nf_conntrack_core.h>
-@@ -81,6 +82,8 @@
+@@ -82,6 +83,8 @@
  #define CAKE_QUEUES (1024)
  #define CAKE_FLOW_MASK 63
  #define CAKE_FLOW_NAT_FLAG 64
@@ -34,7 +34,7 @@ Signed-off-by: Jonas Köppeler <j.koeppeler@tu-berlin.de>
  
  /* struct cobalt_params - contains codel and blue parameters
   * @interval:	codel initial drop rate
-@@ -2222,7 +2225,7 @@ static struct sk_buff *cake_dequeue(stru
+@@ -2225,7 +2228,7 @@ static struct sk_buff *cake_dequeue(stru
  	u32 len;
  
  	if (q->config->is_shared && q->rate_ns &&
@@ -43,7 +43,7 @@ Signed-off-by: Jonas Köppeler <j.koeppeler@tu-berlin.de>
  		struct net_device *dev = qdisc_dev(sch);
  		struct cake_sched_data *other_priv;
  		u64 new_rate = q->config->rate_bps;
-@@ -3687,8 +3690,12 @@ static int __init cake_module_init(void)
+@@ -3691,8 +3694,12 @@ static int __init cake_module_init(void)
  		return ret;
  
  	ret = register_qdisc(&cake_mq_qdisc_ops);
@@ -57,7 +57,7 @@ Signed-off-by: Jonas Köppeler <j.koeppeler@tu-berlin.de>
  
  	return ret;
  }
-@@ -3697,6 +3704,7 @@ static void __exit cake_module_exit(void
+@@ -3701,6 +3708,7 @@ static void __exit cake_module_exit(void
  {
  	unregister_qdisc(&cake_qdisc_ops);
  	unregister_qdisc(&cake_mq_qdisc_ops);
