@@ -76,8 +76,9 @@ platform_check_image() {
 	local board=$(board_name)
 
 	case "$board" in
-	draytek,g2282x)
-		draytek_g2282x_set_part_name || return 1
+	draytek,g2282x|\
+	draytek,g2540xs)
+		draytek_set_part_name || return 1
 		;;
 	esac
 
@@ -87,7 +88,7 @@ platform_check_image() {
 # Active slot is a "bootpartition" variable in the SYSINFO mtd
 # partition, not standard U-Boot env. Self-upgrades the active slot
 # instead of flipping it.
-draytek_g2282x_set_part_name() {
+draytek_set_part_name() {
 	local bootpart sysinfo
 	sysinfo=$(find_mtd_part SYSINFO)
 	bootpart=$(sed -n 's/.*bootpartition=\([01]\).*/\1/p' "${sysinfo:-/dev/null}")
@@ -95,7 +96,7 @@ draytek_g2282x_set_part_name() {
 	0) PART_NAME="Kernel" ;;
 	1) PART_NAME="Kernel2" ;;
 	*)
-		echo "draytek,g2282x: could not read bootpartition from SYSINFO" >&2
+		echo "$(board_name): could not read bootpartition from SYSINFO" >&2
 		return 1
 		;;
 	esac
@@ -108,8 +109,9 @@ platform_do_upgrade() {
 	buffalo,wsr-1500ax2s)
 		buffalo_wsr1500ax2s_do_upgrade "$1"
 		;;
-	draytek,g2282x)
-		draytek_g2282x_set_part_name || return 1
+	draytek,g2282x|\
+	draytek,g2540xs)
+		draytek_set_part_name || return 1
 		default_do_upgrade "$1"
 		;;
 	linksys,lgs328c|\

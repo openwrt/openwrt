@@ -210,6 +210,11 @@ boot() {
 	d-link,dgs-1250-28x)
 		dlink_dgs_1250
 		;;
+	draytek,g2540xs)
+		# The fans are on pwm2 and keep spinning at zero duty. Minimum
+		# speed below 55 C, half duty from 55 C, full speed at 65 C.
+		adt747x_fancontrol 2 127 55000 65000 85000 80000 0
+		;;
 	horaco,zx-swtgw2c48ns)
 		# Duty 40 (the stock idle speed) from 45 C, full speed at 71.67 C;
 		# the fan is not stable at lower duty.
