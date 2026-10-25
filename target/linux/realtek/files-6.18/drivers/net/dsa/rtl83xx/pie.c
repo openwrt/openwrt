@@ -154,38 +154,59 @@ static void otto_pie_838x_lookup_enable(struct otto_dsa_priv *priv, int index)
 		regmap_write(priv->map, RTL838X_ACL_BLK_LOOKUP_CTRL, block_state | BIT(block));
 }
 
-static void otto_pie_838x_rule_del(struct otto_dsa_priv *priv, int index_from, int index_to)
+static int otto_pie_838x_rule_del(struct otto_dsa_priv *priv, int index_from, int index_to)
 {
 	int block_from = index_from / PIE_BLOCK_SIZE;
 	int block_to = index_to / PIE_BLOCK_SIZE;
 	u32 v = (index_from << 1) | (index_to << 12) | BIT(0);
 	u32 block_state;
+	int err;
 
 	pr_debug("%s: from %d to %d\n", __func__, index_from, index_to);
 	lockdep_assert_held(&priv->pie_mutex);
 
 	/* Remember currently active blocks */
-	regmap_read(priv->map, RTL838X_ACL_BLK_LOOKUP_CTRL, &block_state);
+	err = regmap_read(priv->map, RTL838X_ACL_BLK_LOOKUP_CTRL, &block_state);
+	if (err)
+		goto out;
 
 	/* Make sure rule-lookup is disabled in the relevant blocks */
 	for (int block = block_from; block <= block_to; block++) {
-		if (block_state & BIT(block))
-			regmap_write(priv->map, RTL838X_ACL_BLK_LOOKUP_CTRL, block_state & (~BIT(block)));
+		if (block_state & BIT(block)) {
+			err = regmap_write(priv->map, RTL838X_ACL_BLK_LOOKUP_CTRL,
+					   block_state & (~BIT(block)));
+			if (err)
+				goto out;
+		}
 	}
 
 	/* Write from-to and execute bit into control register */
-	regmap_write(priv->map, RTL838X_ACL_CLR_CTRL, v);
+	err = regmap_write(priv->map, RTL838X_ACL_CLR_CTRL, v);
+	if (err)
+		goto out;
 
-	/* Wait until command has completed */
-	do {
-		regmap_read(priv->map, RTL838X_ACL_CLR_CTRL, &v);
-	} while (v & BIT(0));
+	err = regmap_read_poll_timeout(priv->map, RTL838X_ACL_CLR_CTRL, v,
+				       !(v & BIT(0)), 10, 100000);
+	if (err)
+		goto out;
 
 	/* Re-enable rule lookup */
 	for (int block = block_from; block <= block_to; block++) {
-		if (block_state & BIT(block))
-			regmap_write(priv->map, RTL838X_ACL_BLK_LOOKUP_CTRL, block_state | BIT(block));
+		if (block_state & BIT(block)) {
+			err = regmap_write(priv->map, RTL838X_ACL_BLK_LOOKUP_CTRL,
+					   block_state | BIT(block));
+			if (err)
+				goto out;
+		}
 	}
+
+out:
+	if (err) {
+		/* The command may still be pending: do not reuse any affected ID. */
+		bitmap_set(priv->pie_use_bm, index_from, index_to - index_from + 1);
+		dev_err(priv->dev, "PIE rule deletion failed: %d\n", err);
+	}
+	return err;
 }
 
 /* Reads the intermediate representation of the templated match-fields of the
@@ -982,8 +1003,8 @@ void otto_pie_838x_rule_rm(struct otto_dsa_priv *priv, struct pie_rule *pr)
 
 	guard(mutex)(&priv->pie_mutex);
 
-	otto_pie_838x_rule_del(priv, idx, idx);
-	clear_bit(idx, priv->pie_use_bm);
+	if (!otto_pie_838x_rule_del(priv, idx, idx))
+		clear_bit(idx, priv->pie_use_bm);
 }
 
 /* Initializes the Packet Inspection Engine:
@@ -1010,7 +1031,8 @@ void otto_pie_838x_init(struct otto_dsa_priv *priv)
 	regmap_write(priv->map, RTL838X_METER_GLB_CTRL, 1);
 
 	/* Delete all present rules */
-	otto_pie_838x_rule_del(priv, 0, priv->r->n_pie_blocks * PIE_BLOCK_SIZE - 1);
+	if (otto_pie_838x_rule_del(priv, 0, priv->r->n_pie_blocks * PIE_BLOCK_SIZE - 1))
+		return;
 
 	/* Routing bypasses source port filter */
 	regmap_write_bits(priv->map, RTL838X_DMY_REG27, 1, 1);
@@ -1139,19 +1161,27 @@ static void otto_pie_839x_lookup_enable(struct otto_dsa_priv *priv, int index)
 static int otto_pie_839x_rule_del(struct otto_dsa_priv *priv, int index_from, int index_to)
 {
 	u32 v = (index_from << 1) | (index_to << 13) | BIT(0);
+	int err;
 
 	pr_debug("%s: from %d to %d\n", __func__, index_from, index_to);
 	lockdep_assert_held(&priv->pie_mutex);
 
 	/* Write from-to and execute bit into control register */
-	regmap_write(priv->map, RTL839X_ACL_CLR_CTRL, v);
+	err = regmap_write(priv->map, RTL839X_ACL_CLR_CTRL, v);
+	if (err)
+		goto out;
 
-	/* Wait until command has completed */
-	do {
-		regmap_read(priv->map, RTL839X_ACL_CLR_CTRL, &v);
-	} while (v & BIT(0));
+	err = regmap_read_poll_timeout(priv->map, RTL839X_ACL_CLR_CTRL, v,
+				       !(v & BIT(0)), 10, 100000);
 
-	return 0;
+out:
+	if (err) {
+		/* The command may still be pending: do not reuse any affected ID. */
+		bitmap_set(priv->pie_use_bm, index_from, index_to - index_from + 1);
+		dev_err(priv->dev, "PIE rule deletion failed: %d\n", err);
+	}
+
+	return err;
 }
 
 /* Reads the intermediate representation of the templated match-fields of the
@@ -1819,8 +1849,8 @@ void otto_pie_839x_rule_rm(struct otto_dsa_priv *priv, struct pie_rule *pr)
 
 	guard(mutex)(&priv->pie_mutex);
 
-	otto_pie_839x_rule_del(priv, idx, idx);
-	clear_bit(idx, priv->pie_use_bm);
+	if (!otto_pie_839x_rule_del(priv, idx, idx))
+		clear_bit(idx, priv->pie_use_bm);
 }
 
 int otto_pie_839x_l3_rule_read(struct otto_dsa_priv *priv, int idx, struct pie_rule *pr)
@@ -1889,7 +1919,8 @@ void otto_pie_839x_init(struct otto_dsa_priv *priv)
 	regmap_write(priv->map, RTL839X_METER_GLB_CTRL, 1);
 
 	/* Delete all present rules */
-	otto_pie_839x_rule_del(priv, 0, priv->r->n_pie_blocks * PIE_BLOCK_SIZE - 1);
+	if (otto_pie_839x_rule_del(priv, 0, priv->r->n_pie_blocks * PIE_BLOCK_SIZE - 1))
+		return;
 
 	/* Never hand out L3's rules, see otto_pie_839x_l3_rule_write() */
 	bitmap_set(priv->pie_use_bm, RTL839X_PIE_L3_FIRST, RTL839X_PIE_L3_RULES);
@@ -2488,19 +2519,26 @@ int otto_pie_930x_rule_add(struct otto_dsa_priv *priv, struct pie_rule *pr)
 static int otto_pie_930x_rule_del(struct otto_dsa_priv *priv, int index_from, int index_to)
 {
 	u32 v = (index_from << 1) | (index_to << 12) | BIT(0);
+	int err;
 
 	pr_debug("%s: from %d to %d\n", __func__, index_from, index_to);
 	lockdep_assert_held(&priv->pie_mutex);
 
 	/* Write from-to and execute bit into control register */
-	regmap_write(priv->map, RTL930X_PIE_CLR_CTRL, v);
+	err = regmap_write(priv->map, RTL930X_PIE_CLR_CTRL, v);
+	if (err)
+		goto out;
 
-	/* Wait until command has completed */
-	do {
-		regmap_read(priv->map, RTL930X_PIE_CLR_CTRL, &v);
-	} while (v & BIT(0));
+	err = regmap_read_poll_timeout(priv->map, RTL930X_PIE_CLR_CTRL, v,
+				       !(v & BIT(0)), 10, 100000);
 
-	return 0;
+out:
+	if (err) {
+		/* The command may still be pending: do not reuse any affected ID. */
+		bitmap_set(priv->pie_use_bm, index_from, index_to - index_from + 1);
+		dev_err(priv->dev, "PIE rule deletion failed: %d\n", err);
+	}
+	return err;
 }
 
 void otto_pie_930x_rule_rm(struct otto_dsa_priv *priv, struct pie_rule *pr)
@@ -2509,8 +2547,8 @@ void otto_pie_930x_rule_rm(struct otto_dsa_priv *priv, struct pie_rule *pr)
 
 	guard(mutex)(&priv->pie_mutex);
 
-	otto_pie_930x_rule_del(priv, idx, idx);
-	clear_bit(idx, priv->pie_use_bm);
+	if (!otto_pie_930x_rule_del(priv, idx, idx))
+		clear_bit(idx, priv->pie_use_bm);
 }
 
 void otto_pie_930x_init(struct otto_dsa_priv *priv)
@@ -2530,7 +2568,8 @@ void otto_pie_930x_init(struct otto_dsa_priv *priv)
 	regmap_write_bits(priv->map, RTL930X_METER_GLB_CTRL, 1, 1);
 
 	/* Delete all present rules, block size is 128 on all SoC families */
-	otto_pie_930x_rule_del(priv, 0, priv->r->n_pie_blocks * 128 - 1);
+	if (otto_pie_930x_rule_del(priv, 0, priv->r->n_pie_blocks * 128 - 1))
+		return;
 
 	/* Assign blocks 0-7 to VACL phase (bit = 0), blocks 8-15 to IACL (bit = 1) */
 	regmap_write(priv->map, RTL930X_PIE_BLK_PHASE_CTRL, 0xff00);
@@ -3135,19 +3174,27 @@ int otto_pie_931x_rule_add(struct otto_dsa_priv *priv, struct pie_rule *pr)
 static int otto_pie_931x_rule_del(struct otto_dsa_priv *priv, int index_from, int index_to)
 {
 	u32 v = (index_from << 1) | (index_to << 13) | BIT(0);
+	int err;
 
 	pr_debug("%s: from %d to %d\n", __func__, index_from, index_to);
 	lockdep_assert_held(&priv->pie_mutex);
 
 	/* Write from-to and execute bit into control register */
-	regmap_write(priv->map, RTL931X_PIE_CLR_CTRL, v);
+	err = regmap_write(priv->map, RTL931X_PIE_CLR_CTRL, v);
+	if (err)
+		goto out;
 
-	/* Wait until command has completed */
-	do {
-		regmap_read(priv->map, RTL931X_PIE_CLR_CTRL, &v);
-	} while (v & BIT(0));
+	err = regmap_read_poll_timeout(priv->map, RTL931X_PIE_CLR_CTRL, v,
+				       !(v & BIT(0)), 10, 100000);
 
-	return 0;
+out:
+	if (err) {
+		/* The command may still be pending: do not reuse any affected ID. */
+		bitmap_set(priv->pie_use_bm, index_from, index_to - index_from + 1);
+		dev_err(priv->dev, "PIE rule deletion failed: %d\n", err);
+	}
+
+	return err;
 }
 
 void otto_pie_931x_rule_rm(struct otto_dsa_priv *priv, struct pie_rule *pr)
@@ -3156,8 +3203,8 @@ void otto_pie_931x_rule_rm(struct otto_dsa_priv *priv, struct pie_rule *pr)
 
 	guard(mutex)(&priv->pie_mutex);
 
-	otto_pie_931x_rule_del(priv, idx, idx);
-	clear_bit(idx, priv->pie_use_bm);
+	if (!otto_pie_931x_rule_del(priv, idx, idx))
+		clear_bit(idx, priv->pie_use_bm);
 }
 
 void otto_pie_931x_init(struct otto_dsa_priv *priv)
@@ -3177,7 +3224,8 @@ void otto_pie_931x_init(struct otto_dsa_priv *priv)
 	regmap_write_bits(priv->map, RTL931X_METER_GLB_CTRL, 1, 1);
 
 	/* Delete all present rules, block size is 128 on all SoC families */
-	otto_pie_931x_rule_del(priv, 0, priv->r->n_pie_blocks * 128 - 1);
+	if (otto_pie_931x_rule_del(priv, 0, priv->r->n_pie_blocks * 128 - 1))
+		return;
 
 	/* Assign first half blocks 0-7 to VACL phase, second half to IACL */
 	/* 3 bits are used for each block, values for PIE blocks are */
