@@ -1,0 +1,120 @@
+From d7dca77219fa6fe1776d6e7cac2547a012a7b6a6 Mon Sep 17 00:00:00 2001
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Date: Sun, 4 Oct 2026 17:02:47 +0200
+Subject: [PATCH] net: bridge: switchdev: add br_switchdev_fdb_find_port()
+
+Add an RCU lookup that returns the port of a non-local FDB entry that
+switchdev is notified of: not locked, not added by the user as a
+dynamic entry, and not learned by a switchdev driver.
+
+A switchdev driver that handles FDB events from a workqueue cannot take
+RTNL for br_fdb_find_port(), and has to ignore the entries whose
+deletion it will not be notified of.
+
+[ 6.18 has no br_fdb_dst_port(); read f->dst with READ_ONCE() as
+  br_fdb_find_port() does ]
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+---
+--- a/include/linux/if_bridge.h
++++ b/include/linux/if_bridge.h
+@@ -172,6 +172,19 @@ static inline int br_mst_get_state(const
+ }
+ #endif
+ 
++#if IS_ENABLED(CONFIG_BRIDGE) && IS_ENABLED(CONFIG_NET_SWITCHDEV)
++struct net_device *br_switchdev_fdb_find_port(const struct net_device *br_dev,
++					      const unsigned char *addr,
++					      u16 vid);
++#else
++static inline struct net_device *
++br_switchdev_fdb_find_port(const struct net_device *br_dev,
++			   const unsigned char *addr, u16 vid)
++{
++	return NULL;
++}
++#endif
++
+ #if IS_ENABLED(CONFIG_BRIDGE)
+ struct net_device *br_fdb_find_port(const struct net_device *br_dev,
+ 				    const unsigned char *addr,
+--- a/net/bridge/br_switchdev.c
++++ b/net/bridge/br_switchdev.c
+@@ -141,14 +141,10 @@ static void br_switchdev_fdb_populate(st
+ 	item->info.ctx = ctx;
+ }
+ 
+-void
+-br_switchdev_fdb_notify(struct net_bridge *br,
+-			const struct net_bridge_fdb_entry *fdb, int type)
++static bool br_switchdev_fdb_notifies(const struct net_bridge_fdb_entry *fdb)
+ {
+-	struct switchdev_notifier_fdb_info item;
+-
+ 	if (test_bit(BR_FDB_LOCKED, &fdb->flags))
+-		return;
++		return false;
+ 
+ 	/* Entries with these flags were created using ndm_state == NUD_REACHABLE,
+ 	 * ndm_flags == NTF_MASTER( | NTF_STICKY), ext_flags == 0 by something
+@@ -156,9 +152,58 @@ br_switchdev_fdb_notify(struct net_bridg
+ 	 * Drivers don't know how to deal with these, so don't notify them to
+ 	 * avoid confusing them.
+ 	 */
+-	if (test_bit(BR_FDB_ADDED_BY_USER, &fdb->flags) &&
+-	    !test_bit(BR_FDB_STATIC, &fdb->flags) &&
+-	    !test_bit(BR_FDB_ADDED_BY_EXT_LEARN, &fdb->flags))
++	return !test_bit(BR_FDB_ADDED_BY_USER, &fdb->flags) ||
++	       test_bit(BR_FDB_STATIC, &fdb->flags) ||
++	       test_bit(BR_FDB_ADDED_BY_EXT_LEARN, &fdb->flags);
++}
++
++/**
++ * br_switchdev_fdb_find_port - find the port of an entry switchdev knows of
++ * @br_dev: the bridge device
++ * @addr: the MAC address of the entry
++ * @vid: the VLAN of the entry
++ *
++ * Must be called under RCU; the device is valid until the read-side critical
++ * section ends.
++ *
++ * Return: the port of the non-local entry for @addr and @vid, or NULL if
++ * there is none or switchdev is not notified of it.
++ */
++struct net_device *br_switchdev_fdb_find_port(const struct net_device *br_dev,
++					      const unsigned char *addr,
++					      u16 vid)
++{
++	const struct net_bridge_port *p;
++	struct net_bridge_fdb_entry *f;
++
++	RCU_LOCKDEP_WARN(!rcu_read_lock_held(), "suspicious use outside RCU");
++
++	if (!netif_is_bridge_master(br_dev))
++		return NULL;
++
++	f = br_fdb_find_rcu(netdev_priv(br_dev), addr, vid);
++	if (!f || test_bit(BR_FDB_LOCAL, &f->flags) ||
++	    !br_switchdev_fdb_notifies(f))
++		return NULL;
++
++	/* learned by a switchdev driver, which is not notified back */
++	if (test_bit(BR_FDB_ADDED_BY_EXT_LEARN, &f->flags) &&
++	    !test_bit(BR_FDB_ADDED_BY_USER, &f->flags))
++		return NULL;
++
++	p = READ_ONCE(f->dst);
++
++	return p ? p->dev : NULL;
++}
++EXPORT_SYMBOL_GPL(br_switchdev_fdb_find_port);
++
++void
++br_switchdev_fdb_notify(struct net_bridge *br,
++			const struct net_bridge_fdb_entry *fdb, int type)
++{
++	struct switchdev_notifier_fdb_info item;
++
++	if (!br_switchdev_fdb_notifies(fdb))
+ 		return;
+ 
+ 	br_switchdev_fdb_populate(br, &item, fdb, NULL);
