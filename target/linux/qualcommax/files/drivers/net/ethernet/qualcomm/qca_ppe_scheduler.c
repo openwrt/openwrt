@@ -1,7 +1,10 @@
 // SPDX-License-Identifier: GPL-2.0-or-later OR MIT
 
 #include <linux/clk.h>
+#include <linux/delay.h>
+#include <linux/kthread.h>
 #include <linux/math64.h>
+#include <linux/seq_file.h>
 #include <linux/string.h>
 #include <net/dcbnl.h>
 #include <net/flow_offload.h>
@@ -494,6 +497,13 @@ static void ppe_ac_uni_write(struct qca_ppe_priv *priv, u32 queue, u32 w0)
 		     FIELD_PREP(PPE_AC_GRN_RESUME_OFF, 36));
 }
 
+/* The configuration a queue keeps, as opposed to the AQM's squeeze of it. */
+static void ppe_ac_uni_set(struct qca_ppe_priv *priv, u32 queue, u32 w0)
+{
+	priv->ac_w0[queue] = w0;
+	ppe_ac_uni_write(priv, queue, w0);
+}
+
 static u32 ppe_ac_uni_default(struct qca_ppe_priv *priv)
 {
 	return PPE_AC_EN | PPE_AC_SHARED_DYNAMIC |
@@ -609,7 +619,7 @@ static void ppe_qm_init(struct qca_ppe_priv *priv)
 		ppe_qm_map_set(priv, QM_VP_PORT_OFFSET + (1 << 8) + i, 0, 0);
 
 	for (i = 0; i < PPE_L0_UCAST_QUEUES; i++)
-		ppe_ac_uni_write(priv, i, ppe_ac_uni_default(priv));
+		ppe_ac_uni_set(priv, i, ppe_ac_uni_default(priv));
 
 	/* A multicast queue's limit is a static threshold, not the unicast
 	 * queues' dynamic share, so its ceiling field carries the green
@@ -1768,7 +1778,8 @@ int ppe_police_rate(const struct flow_action_police *p, u64 *rate_bps,
  */
 static u32 ppe_port_frame_len(struct qca_ppe_priv *priv, int port)
 {
-	struct net_device *dev = dsa_to_port(&priv->ds, port)->user;
+	struct dsa_port *dp = priv->ds.dst ? dsa_to_port(&priv->ds, port) : NULL;
+	struct net_device *dev = dp ? dp->user : NULL;
 
 	return (dev ? dev->mtu : ETH_DATA_LEN) + ETH_HLEN + ETH_FCS_LEN;
 }
@@ -1905,7 +1916,7 @@ static u32 ppe_ac_uni_shared(struct qca_ppe_priv *priv, u8 grp, u32 bufs)
  * bind, and the depth to bind at is the one tbf carries in its limit, falling
  * back to one millisecond of the rate.
  */
-static void ppe_port_queue_limit_set(struct qca_ppe_priv *priv, int port)
+static void __ppe_port_queue_limit_set(struct qca_ppe_priv *priv, int port)
 {
 	struct ppe_port_shaper *sh = &priv->shaper[port];
 	u32 qbufs[PPE_QOS_MAX_PRI + 1] = {}, rate_bufs = 0, port_bufs = 0;
@@ -1938,10 +1949,10 @@ static void ppe_port_queue_limit_set(struct qca_ppe_priv *priv, int port)
 					       priv->data->qm_ceiling);
 
 		for (i = 0; i < port_l0[0].ucast_base; i++)
-			ppe_ac_uni_write(priv, i,
-					 i >= PPE_CPU_PORT_DL_QUEUE &&
-					 i < PPE_CPU_PORT_DL_QUEUE +
-					 PPE_FLOW_SPREAD_QUEUES ? w0 : def);
+			ppe_ac_uni_set(priv, i,
+				       i >= PPE_CPU_PORT_DL_QUEUE &&
+				       i < PPE_CPU_PORT_DL_QUEUE +
+				       PPE_FLOW_SPREAD_QUEUES ? w0 : def);
 		ppe_pause_update(priv);
 		return;
 	}
@@ -1992,7 +2003,7 @@ static void ppe_port_queue_limit_set(struct qca_ppe_priv *priv, int port)
 				       ppe_ac_uni_bufs(DIV_ROUND_UP(port_bufs,
 								    nport));
 
-		ppe_ac_uni_write(priv, p->ucast_base + i, w);
+		ppe_ac_uni_set(priv, p->ucast_base + i, w);
 	}
 
 	ppe_pause_update(priv);
@@ -2026,6 +2037,334 @@ void ppe_pause_update(struct qca_ppe_priv *priv)
 				     priv->port_tx_pause[port] && !shaped ?
 				     PPE_BM_FC_EN : 0);
 	}
+}
+
+/* The queue manager drops a frame only on arrival, against a limit in
+ * buffers, so it can bound a queue but cannot tell a standing queue from a
+ * burst: a limit deep enough for one flow over a long path is a standing
+ * queue of that depth for every flow that fills it. CoDel tells them apart by
+ * how long the queue has stayed above its target delay, and a shaped queue's
+ * delay is its backlog over the rate it drains at, both of which the host
+ * knows. So the host runs CoDel's control law on the counters and acts the
+ * one way the hardware allows: when the law calls for a drop, each busy queue
+ * of the bottleneck has its limit lowered to one frame under its depth for a
+ * tick, which drops what arrives until the queue has sent that frame, and is
+ * put back on the next. No packet reaches the host; a tick reads one register
+ * per watched queue.
+ *
+ * The law runs once per bottleneck, on the backlog of all the queues that
+ * share its shaper: that is the delay a frame entering any of them sees, and
+ * one hashed queue's own depth swings too far between ticks to hold a state.
+ * Every busy queue is squeezed at once because each holds different flows,
+ * and a drop has to reach the flows that are filling the bottleneck.
+ *
+ * Ticks run only while a watched queue holds a full frame, and every
+ * PPE_AQM_IDLE_MS otherwise.
+ */
+#define PPE_AQM_IDLE_MS		20
+
+static uint ppe_aqm_tick_us = 2000;
+module_param_named(aqm_tick_us, ppe_aqm_tick_us, uint, 0644);
+MODULE_PARM_DESC(aqm_tick_us,
+		 "Period of the queue AQM while a shaped queue is backlogged, 0 disables it");
+
+static uint ppe_aqm_target_us = 5000;
+module_param_named(aqm_target_us, ppe_aqm_target_us, uint, 0644);
+MODULE_PARM_DESC(aqm_target_us, "Queue delay the AQM holds a shaped queue to");
+
+static uint ppe_aqm_interval_us = 100000;
+module_param_named(aqm_interval_us, ppe_aqm_interval_us, uint, 0644);
+MODULE_PARM_DESC(aqm_interval_us,
+		 "How long a shaped queue may stay above the target before the AQM drops");
+
+static void ppe_aqm_add(struct ppe_aqm *a, u16 queue, u8 group, u64 rate_bps,
+			u32 frame_len)
+{
+	struct ppe_aqm_queue *q;
+
+	if (a->nqueues == PPE_AQM_QUEUES || group >= PPE_AQM_GROUPS)
+		return;
+
+	q = &a->q[a->nqueues++];
+	*q = (struct ppe_aqm_queue){
+		.queue = queue,
+		.group = group,
+		.frame_bufs = DIV_ROUND_UP(frame_len, PPE_BM_BUF_SIZE),
+	};
+
+	if (group >= a->ngroups) {
+		a->g[group] = (struct ppe_aqm_group){
+			.rate_bps = rate_bps,
+		};
+		a->ngroups = group + 1;
+	}
+}
+
+/* Put every squeezed queue back to its configured limit. */
+static void ppe_aqm_release(struct qca_ppe_priv *priv)
+{
+	struct ppe_aqm *a = &priv->aqm;
+	int i;
+
+	for (i = 0; i < a->nqueues; i++) {
+		if (!a->q[i].squeezed)
+			continue;
+		ppe_ac_uni_write(priv, a->q[i].queue,
+				 priv->ac_w0[a->q[i].queue]);
+		a->q[i].squeezed = false;
+	}
+}
+
+/* Which queues are bottlenecks follows from the shapers, so the list is
+ * rebuilt whenever a queue's limit is. A queue with a red of its own is the
+ * red's, and the sparse list never builds a standing queue.
+ */
+static void ppe_aqm_rebuild(struct qca_ppe_priv *priv)
+{
+	struct ppe_aqm *a = &priv->aqm;
+	struct dsa_port *dp;
+	u8 group = 0;
+	int i, j;
+
+	lockdep_assert_held(&a->lock);
+
+	ppe_aqm_release(priv);
+	a->nqueues = 0;
+	a->ngroups = 0;
+
+	if (priv->shaper[QCA_PPE_CPU_PORT].rate_bps) {
+		for (i = 0; i < PPE_FLOW_SPREAD_QUEUES; i++)
+			ppe_aqm_add(a, PPE_CPU_PORT_DL_QUEUE + i, group,
+				    priv->shaper[QCA_PPE_CPU_PORT].rate_bps,
+				    ppe_port_frame_len(priv, QCA_PPE_CPU_PORT));
+		group++;
+	}
+
+	/* Before the switch registers and after it goes, there is no tree. */
+	if (!priv->ds.dst)
+		goto out;
+
+	dsa_switch_for_each_user_port(dp, &priv->ds) {
+		int port = dp->index, port_group = -1;
+		struct ppe_port_shaper *sh = &priv->shaper[port];
+		const struct port_l0_params *p = ppe_port_l0(port);
+		u32 frame = ppe_port_frame_len(priv, port);
+
+		if (!p)
+			continue;
+
+		/* A band's queues drain through its class's node when it has
+		 * a rate, and through the port's shaper otherwise.
+		 */
+		for (j = 0; j < 3; j++) {
+			u16 first = j * PPE_FLOW_SPREAD_QUEUES;
+			u64 rate = sh->queue_rate[first];
+			u8 g;
+
+			if (rate) {
+				g = group++;
+			} else if (sh->rate_bps) {
+				rate = sh->rate_bps;
+				if (port_group < 0)
+					port_group = group++;
+				g = port_group;
+			} else {
+				continue;
+			}
+
+			for (i = first; i < first + PPE_FLOW_SPREAD_QUEUES &&
+			     i < p->ucast_count; i++)
+				if (!priv->red_max[p->ucast_base + i])
+					ppe_aqm_add(a, p->ucast_base + i, g,
+						    rate, frame);
+		}
+	}
+
+out:
+	wake_up(&a->wait);
+}
+
+static void ppe_port_queue_limit_set(struct qca_ppe_priv *priv, int port)
+{
+	guard(mutex)(&priv->aqm.lock);
+
+	__ppe_port_queue_limit_set(priv, port);
+	ppe_aqm_rebuild(priv);
+}
+
+static u64 ppe_aqm_control_law(u64 t, u32 count)
+{
+	/* interval / sqrt(count), with eight fractional bits in the root */
+	return t + div_u64((u64)ppe_aqm_interval_us * NSEC_PER_USEC * 256,
+			   int_sqrt((unsigned long)count << 16));
+}
+
+/* Drop what arrives at each busy queue of group @g until it has sent one
+ * frame. CoDel leaves a queue of one frame alone, and so does a limit that
+ * could not drop without emptying it.
+ */
+static void ppe_aqm_squeeze(struct qca_ppe_priv *priv, u8 g, const u32 *depth)
+{
+	struct ppe_aqm *a = &priv->aqm;
+	int i;
+
+	for (i = 0; i < a->nqueues; i++) {
+		struct ppe_aqm_queue *q = &a->q[i];
+
+		if (q->group != g || depth[i] <= 2 * q->frame_bufs)
+			continue;
+
+		ppe_ac_uni_write(priv, q->queue,
+				 ppe_ac_uni_bufs(depth[i] - q->frame_bufs));
+		q->squeezed = true;
+		q->squeezes++;
+		a->squeezes++;
+	}
+	a->g[g].drops++;
+}
+
+static bool ppe_aqm_tick(struct qca_ppe_priv *priv, u64 now)
+{
+	u32 gsum[PPE_AQM_GROUPS] = {}, depth[PPE_AQM_QUEUES], val;
+	u32 gframe[PPE_AQM_GROUPS] = {};
+	struct ppe_aqm *a = &priv->aqm;
+	u64 target = (u64)ppe_aqm_target_us * NSEC_PER_USEC;
+	u64 interval = (u64)ppe_aqm_interval_us * NSEC_PER_USEC;
+	bool busy = false;
+	int i;
+
+	for (i = 0; i < a->nqueues; i++) {
+		struct ppe_aqm_queue *q = &a->q[i];
+
+		regmap_read(priv->regmap, PPE_QM_AC_UNI_CNT(q->queue), &val);
+		depth[i] = FIELD_GET(PPE_AC_UNI_PEND_CNT, val);
+		gsum[q->group] += depth[i];
+		gframe[q->group] = q->frame_bufs;
+		busy |= depth[i] >= q->frame_bufs;
+
+		if (q->squeezed) {
+			ppe_ac_uni_write(priv, q->queue, priv->ac_w0[q->queue]);
+			q->squeezed = false;
+		}
+	}
+
+	for (i = 0; i < a->ngroups; i++) {
+		struct ppe_aqm_group *g = &a->g[i];
+		u64 delay;
+		bool ok;
+
+		delay = div64_u64((u64)gsum[i] * PPE_BM_BUF_SIZE * BITS_PER_BYTE *
+				  NSEC_PER_SEC, g->rate_bps);
+
+		if (delay < target || gsum[i] <= gframe[i]) {
+			g->first_above = 0;
+			g->dropping = false;
+			continue;
+		}
+
+		if (!g->first_above) {
+			g->first_above = now + interval;
+			continue;
+		}
+		ok = now >= g->first_above;
+
+		if (g->dropping) {
+			if (!ok) {
+				g->dropping = false;
+			} else if (now >= g->drop_next) {
+				ppe_aqm_squeeze(priv, i, depth);
+				g->count++;
+				g->drop_next = ppe_aqm_control_law(g->drop_next,
+								   g->count);
+			}
+		} else if (ok) {
+			u32 delta = g->count - g->lastcount;
+
+			ppe_aqm_squeeze(priv, i, depth);
+			g->dropping = true;
+			/* Resume near the rate that last held the queue, as
+			 * CoDel does when it re-enters the dropping state soon.
+			 */
+			g->count = delta > 1 &&
+				   now - g->drop_next < 16 * interval ?
+				   delta : 1;
+			g->lastcount = g->count;
+			g->drop_next = ppe_aqm_control_law(now, g->count);
+		}
+	}
+
+	return busy;
+}
+
+static int ppe_aqm_thread(void *data)
+{
+	struct qca_ppe_priv *priv = data;
+	struct ppe_aqm *a = &priv->aqm;
+
+	while (!kthread_should_stop()) {
+		bool busy = false;
+		u64 now;
+
+		/* The period is a module parameter nothing announces a change
+		 * of, so an idle wait looks again every second.
+		 */
+		if (!READ_ONCE(a->nqueues) || !READ_ONCE(ppe_aqm_tick_us)) {
+			scoped_guard(mutex, &a->lock)
+				ppe_aqm_release(priv);
+			wait_event_interruptible_timeout(a->wait,
+							 kthread_should_stop() ||
+							 (READ_ONCE(a->nqueues) &&
+							  READ_ONCE(ppe_aqm_tick_us)), HZ);
+			continue;
+		}
+
+		scoped_guard(mutex, &a->lock) {
+			now = ktime_get_ns();
+			busy = ppe_aqm_tick(priv, now);
+			a->ticks++;
+			a->busy_ns += ktime_get_ns() - now;
+		}
+
+		if (busy)
+			usleep_range(ppe_aqm_tick_us,
+				     ppe_aqm_tick_us + ppe_aqm_tick_us / 8);
+		else
+			msleep(PPE_AQM_IDLE_MS);
+	}
+
+	guard(mutex)(&a->lock);
+	ppe_aqm_release(priv);
+	a->nqueues = 0;
+
+	return 0;
+}
+
+int ppe_aqm_show(struct seq_file *s, void *unused)
+{
+	struct qca_ppe_priv *priv = s->private;
+	struct ppe_aqm *a = &priv->aqm;
+	int i;
+
+	guard(mutex)(&a->lock);
+
+	seq_printf(s, "ticks %llu squeezes %llu busy_ns %llu target_us %u interval_us %u tick_us %u\n",
+		   a->ticks, a->squeezes, a->busy_ns, ppe_aqm_target_us,
+		   ppe_aqm_interval_us, ppe_aqm_tick_us);
+	for (i = 0; i < a->ngroups; i++) {
+		const struct ppe_aqm_group *g = &a->g[i];
+
+		seq_printf(s, "group %2u rate %llu drops %llu count %u%s\n", i,
+			   g->rate_bps, g->drops, g->count,
+			   g->dropping ? " dropping" : "");
+	}
+	for (i = 0; i < a->nqueues; i++) {
+		const struct ppe_aqm_queue *q = &a->q[i];
+
+		seq_printf(s, "queue %3u group %2u squeezes %llu\n", q->queue,
+			   q->group, q->squeezes);
+	}
+
+	return 0;
 }
 
 /* A rate of zero takes the shaper down. Its credit goes with it: a bucket left
@@ -3584,11 +3923,15 @@ void ppe_scheduler_unready(struct qca_ppe_priv *priv)
 /* The shaper goes with the driver, so the switch is left the way it was found. */
 void ppe_scheduler_exit(struct qca_ppe_priv *priv)
 {
+	if (!IS_ERR_OR_NULL(priv->aqm.task))
+		kthread_stop(priv->aqm.task);
 	ppe_cpu_port_dl_set(priv, 0);
 }
 
 void ppe_scheduler_init(struct qca_ppe_priv *priv)
 {
+	mutex_init(&priv->aqm.lock);
+	init_waitqueue_head(&priv->aqm.wait);
 	ppe_tdm_init(priv);
 	ppe_bm_init(priv);
 	ppe_qm_init(priv);
@@ -3598,6 +3941,10 @@ void ppe_scheduler_init(struct qca_ppe_priv *priv)
 	ppe_qos_init(priv);
 	ppe_rss_hash_init(priv);
 	ppe_rate_limit_init(priv);
+
+	priv->aqm.task = kthread_run(ppe_aqm_thread, priv, "ppe_aqm");
+	if (IS_ERR(priv->aqm.task))
+		dev_err(priv->ds.dev, "no AQM thread: %pe\n", priv->aqm.task);
 }
 
 int ppe_scheduler_ready(struct qca_ppe_priv *priv)

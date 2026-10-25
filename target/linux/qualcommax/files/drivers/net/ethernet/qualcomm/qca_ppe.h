@@ -13,6 +13,7 @@
 #include <linux/spinlock.h>
 #include <linux/workqueue.h>
 #include <linux/types.h>
+#include <linux/wait.h>
 #include <linux/io.h>
 #include <net/dsa.h>
 
@@ -1423,6 +1424,51 @@ struct ppe_port_shaper {
 
 #define PPE_SB_EGRESS_TCS	16
 
+/* The queues the AQM watches: every hashed queue of a shaped user port and the
+ * CPU port's download band.
+ */
+#define PPE_AQM_QUEUES		128
+/* a port's own shaper and one per band, and the CPU port's band */
+#define PPE_AQM_GROUPS		(3 * PPE_NUM_PORTS + 1)
+
+/* One queue under the AQM and the bottleneck group it drains through. */
+struct ppe_aqm_queue {
+	u16 queue;
+	u8 group;
+	u8 frame_bufs;
+	u64 squeezes;
+	bool squeezed;
+};
+
+/* A bottleneck: the queues that share one shaper, its rate, and CoDel's
+ * state for the delay a frame entering any of them sees, in nanoseconds.
+ */
+struct ppe_aqm_group {
+	u64 rate_bps;
+	u64 first_above;
+	u64 drop_next;
+	u32 count;
+	u32 lastcount;
+	u64 drops;
+	bool dropping;
+};
+
+struct ppe_aqm {
+	struct task_struct *task;
+	wait_queue_head_t wait;
+	/* Guards the queue list and every write of a unicast queue's
+	 * admission control, which the AQM shares with the qdisc offloads.
+	 */
+	struct mutex lock;
+	u16 nqueues;
+	u8 ngroups;
+	struct ppe_aqm_queue q[PPE_AQM_QUEUES];
+	struct ppe_aqm_group g[PPE_AQM_GROUPS];
+	u64 ticks;
+	u64 squeezes;
+	u64 busy_ns;
+};
+
 struct ppe_sb_occ {
 	u32 cur;
 	u32 max;
@@ -1555,6 +1601,11 @@ struct qca_ppe_priv {
 	/* GRED: yellow max/min and red max/min gaps; zero for a colour-blind red. */
 	u16 gred_gap[PPE_L0_UCAST_QUEUES][4];
 	DECLARE_BITMAP(gred_queues, PPE_L0_UCAST_QUEUES);
+	/* Each unicast queue's admission control word 0 as configured, which a
+	 * queue the AQM squeezed returns to.
+	 */
+	u32 ac_w0[PPE_L0_UCAST_QUEUES];
+	struct ppe_aqm aqm;
 	struct dentry *debugfs;
 	struct devlink_region *regions[3];
 	DECLARE_BITMAP(vsi_bitmap, PPE_VSI_MAX);
@@ -1666,6 +1717,8 @@ void ppe_scheduler_exit(struct qca_ppe_priv *priv);
 void ppe_port_queues_enable(struct qca_ppe_priv *priv, int port, bool en);
 void ppe_pause_update(struct qca_ppe_priv *priv);
 u32 ppe_port_queue_drops(struct qca_ppe_priv *priv, int port);
+struct seq_file;
+int ppe_aqm_show(struct seq_file *s, void *unused);
 int ppe_port_qstats(struct qca_ppe_priv *priv, int port, u8 **names,
 		    struct qca_ppe_mib_stats *st);
 int qca_ppe_setup_tc(struct dsa_switch *ds, int port, enum tc_setup_type type,
