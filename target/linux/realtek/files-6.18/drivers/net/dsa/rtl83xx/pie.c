@@ -221,6 +221,7 @@ static void otto_pie_838x_write_templated(u32 r[], struct pie_rule *pr, enum rtl
 	for (int i = 0; i < N_FIXED_FIELDS; i++) {
 		enum rtl838x_template_field_id field_type = t[i];
 		u16 data = 0, data_m = 0;
+		int word;
 
 		switch (field_type) {
 		case RTL838X_TEMPLATE_FIELD_SPM0:
@@ -285,8 +286,8 @@ static void otto_pie_838x_write_templated(u32 r[], struct pie_rule *pr, enum rtl
 			break;
 		case RTL838X_TEMPLATE_FIELD_SIP0:
 			if (pr->is_ipv6) {
-				data = pr->sip6.s6_addr16[7];
-				data_m = pr->sip6_m.s6_addr16[7];
+				data = ntohs(pr->sip6.s6_addr16[7]);
+				data_m = ntohs(pr->sip6_m.s6_addr16[7]);
 			} else {
 				data = pr->sip;
 				data_m = pr->sip_m;
@@ -294,8 +295,8 @@ static void otto_pie_838x_write_templated(u32 r[], struct pie_rule *pr, enum rtl
 			break;
 		case RTL838X_TEMPLATE_FIELD_SIP1:
 			if (pr->is_ipv6) {
-				data = pr->sip6.s6_addr16[6];
-				data_m = pr->sip6_m.s6_addr16[6];
+				data = ntohs(pr->sip6.s6_addr16[6]);
+				data_m = ntohs(pr->sip6_m.s6_addr16[6]);
 			} else {
 				data = pr->sip >> 16;
 				data_m = pr->sip_m >> 16;
@@ -307,13 +308,14 @@ static void otto_pie_838x_write_templated(u32 r[], struct pie_rule *pr, enum rtl
 		case RTL838X_TEMPLATE_FIELD_SIP5:
 		case RTL838X_TEMPLATE_FIELD_SIP6:
 		case RTL838X_TEMPLATE_FIELD_SIP7:
-			data = pr->sip6.s6_addr16[5 - (field_type - RTL838X_TEMPLATE_FIELD_SIP2)];
-			data_m = pr->sip6_m.s6_addr16[5 - (field_type - RTL838X_TEMPLATE_FIELD_SIP2)];
+			word = 5 - (field_type - RTL838X_TEMPLATE_FIELD_SIP2);
+			data = ntohs(pr->sip6.s6_addr16[word]);
+			data_m = ntohs(pr->sip6_m.s6_addr16[word]);
 			break;
 		case RTL838X_TEMPLATE_FIELD_DIP0:
 			if (pr->is_ipv6) {
-				data = pr->dip6.s6_addr16[7];
-				data_m = pr->dip6_m.s6_addr16[7];
+				data = ntohs(pr->dip6.s6_addr16[7]);
+				data_m = ntohs(pr->dip6_m.s6_addr16[7]);
 			} else {
 				data = pr->dip;
 				data_m = pr->dip_m;
@@ -321,8 +323,8 @@ static void otto_pie_838x_write_templated(u32 r[], struct pie_rule *pr, enum rtl
 			break;
 		case RTL838X_TEMPLATE_FIELD_DIP1:
 			if (pr->is_ipv6) {
-				data = pr->dip6.s6_addr16[6];
-				data_m = pr->dip6_m.s6_addr16[6];
+				data = ntohs(pr->dip6.s6_addr16[6]);
+				data_m = ntohs(pr->dip6_m.s6_addr16[6]);
 			} else {
 				data = pr->dip >> 16;
 				data_m = pr->dip_m >> 16;
@@ -334,8 +336,9 @@ static void otto_pie_838x_write_templated(u32 r[], struct pie_rule *pr, enum rtl
 		case RTL838X_TEMPLATE_FIELD_DIP5:
 		case RTL838X_TEMPLATE_FIELD_DIP6:
 		case RTL838X_TEMPLATE_FIELD_DIP7:
-			data = pr->dip6.s6_addr16[5 - (field_type - RTL838X_TEMPLATE_FIELD_DIP2)];
-			data_m = pr->dip6_m.s6_addr16[5 - (field_type - RTL838X_TEMPLATE_FIELD_DIP2)];
+			word = 5 - (field_type - RTL838X_TEMPLATE_FIELD_DIP2);
+			data = ntohs(pr->dip6.s6_addr16[word]);
+			data_m = ntohs(pr->dip6_m.s6_addr16[word]);
 			break;
 		case RTL838X_TEMPLATE_FIELD_IP_TOS_PROTO:
 			data = pr->tos_proto;
@@ -1197,6 +1200,7 @@ static void otto_pie_839x_write_templated(u32 r[], struct pie_rule *pr, enum rtl
 	for (int i = 0; i < N_FIXED_FIELDS; i++) {
 		enum rtl839x_template_field_id field_type = t[i];
 		u16 data = 0, data_m = 0;
+		int word;
 
 		switch (field_type) {
 		case RTL839X_TEMPLATE_FIELD_SPM0:
@@ -1265,8 +1269,8 @@ static void otto_pie_839x_write_templated(u32 r[], struct pie_rule *pr, enum rtl
 			break;
 		case RTL839X_TEMPLATE_FIELD_SIP0:
 			if (pr->is_ipv6) {
-				data = pr->sip6.s6_addr16[7];
-				data_m = pr->sip6_m.s6_addr16[7];
+				data = ntohs(pr->sip6.s6_addr16[7]);
+				data_m = ntohs(pr->sip6_m.s6_addr16[7]);
 			} else {
 				data = pr->sip;
 				data_m = pr->sip_m;
@@ -1274,8 +1278,8 @@ static void otto_pie_839x_write_templated(u32 r[], struct pie_rule *pr, enum rtl
 			break;
 		case RTL839X_TEMPLATE_FIELD_SIP1:
 			if (pr->is_ipv6) {
-				data = pr->sip6.s6_addr16[6];
-				data_m = pr->sip6_m.s6_addr16[6];
+				data = ntohs(pr->sip6.s6_addr16[6]);
+				data_m = ntohs(pr->sip6_m.s6_addr16[6]);
 			} else {
 				data = pr->sip >> 16;
 				data_m = pr->sip_m >> 16;
@@ -1287,13 +1291,14 @@ static void otto_pie_839x_write_templated(u32 r[], struct pie_rule *pr, enum rtl
 		case RTL839X_TEMPLATE_FIELD_SIP5:
 		case RTL839X_TEMPLATE_FIELD_SIP6:
 		case RTL839X_TEMPLATE_FIELD_SIP7:
-			data = pr->sip6.s6_addr16[5 - (field_type - RTL839X_TEMPLATE_FIELD_SIP2)];
-			data_m = pr->sip6_m.s6_addr16[5 - (field_type - RTL839X_TEMPLATE_FIELD_SIP2)];
+			word = 5 - (field_type - RTL839X_TEMPLATE_FIELD_SIP2);
+			data = ntohs(pr->sip6.s6_addr16[word]);
+			data_m = ntohs(pr->sip6_m.s6_addr16[word]);
 			break;
 		case RTL839X_TEMPLATE_FIELD_DIP0:
 			if (pr->is_ipv6) {
-				data = pr->dip6.s6_addr16[7];
-				data_m = pr->dip6_m.s6_addr16[7];
+				data = ntohs(pr->dip6.s6_addr16[7]);
+				data_m = ntohs(pr->dip6_m.s6_addr16[7]);
 			} else {
 				data = pr->dip;
 				data_m = pr->dip_m;
@@ -1301,8 +1306,8 @@ static void otto_pie_839x_write_templated(u32 r[], struct pie_rule *pr, enum rtl
 			break;
 		case RTL839X_TEMPLATE_FIELD_DIP1:
 			if (pr->is_ipv6) {
-				data = pr->dip6.s6_addr16[6];
-				data_m = pr->dip6_m.s6_addr16[6];
+				data = ntohs(pr->dip6.s6_addr16[6]);
+				data_m = ntohs(pr->dip6_m.s6_addr16[6]);
 			} else {
 				data = pr->dip >> 16;
 				data_m = pr->dip_m >> 16;
@@ -1314,8 +1319,9 @@ static void otto_pie_839x_write_templated(u32 r[], struct pie_rule *pr, enum rtl
 		case RTL839X_TEMPLATE_FIELD_DIP5:
 		case RTL839X_TEMPLATE_FIELD_DIP6:
 		case RTL839X_TEMPLATE_FIELD_DIP7:
-			data = pr->dip6.s6_addr16[5 - (field_type - RTL839X_TEMPLATE_FIELD_DIP2)];
-			data_m = pr->dip6_m.s6_addr16[5 - (field_type - RTL839X_TEMPLATE_FIELD_DIP2)];
+			word = 5 - (field_type - RTL839X_TEMPLATE_FIELD_DIP2);
+			data = ntohs(pr->dip6.s6_addr16[word]);
+			data_m = ntohs(pr->dip6_m.s6_addr16[word]);
 			break;
 		case RTL839X_TEMPLATE_FIELD_IP_TOS_PROTO:
 			data = pr->tos_proto;
@@ -1452,15 +1458,15 @@ static void otto_pie_839x_read_templated(u32 r[], struct pie_rule *pr, enum rtl8
 		case RTL839X_TEMPLATE_FIELD_DIP0:
 			pr->dip = (pr->dip & 0xffff0000) | data;
 			pr->dip_m = (pr->dip_m & 0xffff0000) | data_m;
-			pr->dip6.s6_addr16[7] = data;
-			pr->dip6_m.s6_addr16[7] = data_m;
+			pr->dip6.s6_addr16[7] = htons(data);
+			pr->dip6_m.s6_addr16[7] = htons(data_m);
 			break;
 
 		case RTL839X_TEMPLATE_FIELD_DIP1:
 			pr->dip = (pr->dip & 0xffff) | ((u32)data << 16);
 			pr->dip_m = (pr->dip_m & 0xffff) | ((u32)data_m << 16);
-			pr->dip6.s6_addr16[6] = data;
-			pr->dip6_m.s6_addr16[6] = data_m;
+			pr->dip6.s6_addr16[6] = htons(data);
+			pr->dip6_m.s6_addr16[6] = htons(data_m);
 			break;
 
 		case RTL839X_TEMPLATE_FIELD_DIP2:
@@ -1472,8 +1478,8 @@ static void otto_pie_839x_read_templated(u32 r[], struct pie_rule *pr, enum rtl8
 			int w = 5 - (field_type - RTL839X_TEMPLATE_FIELD_DIP2);
 
 			pr->is_ipv6 = true;
-			pr->dip6.s6_addr16[w] = data;
-			pr->dip6_m.s6_addr16[w] = data_m;
+			pr->dip6.s6_addr16[w] = htons(data);
+			pr->dip6_m.s6_addr16[w] = htons(data_m);
 			break;
 		}
 		case RTL839X_TEMPLATE_FIELD_IP_TOS_PROTO:
@@ -2064,6 +2070,7 @@ static void otto_pie_930x_write_templated(u32 r[], struct pie_rule *pr, enum rtl
 	for (int i = 0; i < N_FIXED_FIELDS; i++) {
 		enum rtl930x_template_field_id field_type = t[i];
 		u16 data = 0, data_m = 0;
+		int word;
 
 		switch (field_type) {
 		case RTL930X_TEMPLATE_FIELD_SPM0:
@@ -2124,8 +2131,8 @@ static void otto_pie_930x_write_templated(u32 r[], struct pie_rule *pr, enum rtl
 			break;
 		case RTL930X_TEMPLATE_FIELD_SIP0:
 			if (pr->is_ipv6) {
-				data = pr->sip6.s6_addr16[7];
-				data_m = pr->sip6_m.s6_addr16[7];
+				data = ntohs(pr->sip6.s6_addr16[7]);
+				data_m = ntohs(pr->sip6_m.s6_addr16[7]);
 			} else {
 				data = pr->sip;
 				data_m = pr->sip_m;
@@ -2133,8 +2140,8 @@ static void otto_pie_930x_write_templated(u32 r[], struct pie_rule *pr, enum rtl
 			break;
 		case RTL930X_TEMPLATE_FIELD_SIP1:
 			if (pr->is_ipv6) {
-				data = pr->sip6.s6_addr16[6];
-				data_m = pr->sip6_m.s6_addr16[6];
+				data = ntohs(pr->sip6.s6_addr16[6]);
+				data_m = ntohs(pr->sip6_m.s6_addr16[6]);
 			} else {
 				data = pr->sip >> 16;
 				data_m = pr->sip_m >> 16;
@@ -2146,13 +2153,14 @@ static void otto_pie_930x_write_templated(u32 r[], struct pie_rule *pr, enum rtl
 		case RTL930X_TEMPLATE_FIELD_SIP5:
 		case RTL930X_TEMPLATE_FIELD_SIP6:
 		case RTL930X_TEMPLATE_FIELD_SIP7:
-			data = pr->sip6.s6_addr16[5 - (field_type - RTL930X_TEMPLATE_FIELD_SIP2)];
-			data_m = pr->sip6_m.s6_addr16[5 - (field_type - RTL930X_TEMPLATE_FIELD_SIP2)];
+			word = 5 - (field_type - RTL930X_TEMPLATE_FIELD_SIP2);
+			data = ntohs(pr->sip6.s6_addr16[word]);
+			data_m = ntohs(pr->sip6_m.s6_addr16[word]);
 			break;
 		case RTL930X_TEMPLATE_FIELD_DIP0:
 			if (pr->is_ipv6) {
-				data = pr->dip6.s6_addr16[7];
-				data_m = pr->dip6_m.s6_addr16[7];
+				data = ntohs(pr->dip6.s6_addr16[7]);
+				data_m = ntohs(pr->dip6_m.s6_addr16[7]);
 			} else {
 				data = pr->dip;
 				data_m = pr->dip_m;
@@ -2160,8 +2168,8 @@ static void otto_pie_930x_write_templated(u32 r[], struct pie_rule *pr, enum rtl
 			break;
 		case RTL930X_TEMPLATE_FIELD_DIP1:
 			if (pr->is_ipv6) {
-				data = pr->dip6.s6_addr16[6];
-				data_m = pr->dip6_m.s6_addr16[6];
+				data = ntohs(pr->dip6.s6_addr16[6]);
+				data_m = ntohs(pr->dip6_m.s6_addr16[6]);
 			} else {
 				data = pr->dip >> 16;
 				data_m = pr->dip_m >> 16;
@@ -2173,8 +2181,9 @@ static void otto_pie_930x_write_templated(u32 r[], struct pie_rule *pr, enum rtl
 		case RTL930X_TEMPLATE_FIELD_DIP5:
 		case RTL930X_TEMPLATE_FIELD_DIP6:
 		case RTL930X_TEMPLATE_FIELD_DIP7:
-			data = pr->dip6.s6_addr16[5 - (field_type - RTL930X_TEMPLATE_FIELD_DIP2)];
-			data_m = pr->dip6_m.s6_addr16[5 - (field_type - RTL930X_TEMPLATE_FIELD_DIP2)];
+			word = 5 - (field_type - RTL930X_TEMPLATE_FIELD_DIP2);
+			data = ntohs(pr->dip6.s6_addr16[word]);
+			data_m = ntohs(pr->dip6_m.s6_addr16[word]);
 			break;
 		case RTL930X_TEMPLATE_FIELD_IP_TOS_PROTO:
 			data = pr->tos_proto;
@@ -2705,6 +2714,8 @@ static void otto_pie_931x_lookup_enable(struct otto_dsa_priv *priv, int index)
  */
 static int otto_pie_931x_data_fill(enum rtl931x_template_field_id field_type, struct pie_rule *pr, u16 *data, u16 *data_m)
 {
+	int word;
+
 	*data = *data_m = 0;
 
 	switch (field_type) {
@@ -2766,8 +2777,8 @@ static int otto_pie_931x_data_fill(enum rtl931x_template_field_id field_type, st
 		break;
 	case RTL931X_TEMPLATE_FIELD_SIP0:
 		if (pr->is_ipv6) {
-			*data = pr->sip6.s6_addr16[7];
-			*data_m = pr->sip6_m.s6_addr16[7];
+			*data = ntohs(pr->sip6.s6_addr16[7]);
+			*data_m = ntohs(pr->sip6_m.s6_addr16[7]);
 		} else {
 			*data = pr->sip;
 			*data_m = pr->sip_m;
@@ -2775,8 +2786,8 @@ static int otto_pie_931x_data_fill(enum rtl931x_template_field_id field_type, st
 		break;
 	case RTL931X_TEMPLATE_FIELD_SIP1:
 		if (pr->is_ipv6) {
-			*data = pr->sip6.s6_addr16[6];
-			*data_m = pr->sip6_m.s6_addr16[6];
+			*data = ntohs(pr->sip6.s6_addr16[6]);
+			*data_m = ntohs(pr->sip6_m.s6_addr16[6]);
 		} else {
 			*data = pr->sip >> 16;
 			*data_m = pr->sip_m >> 16;
@@ -2788,13 +2799,14 @@ static int otto_pie_931x_data_fill(enum rtl931x_template_field_id field_type, st
 	case RTL931X_TEMPLATE_FIELD_SIP5:
 	case RTL931X_TEMPLATE_FIELD_SIP6:
 	case RTL931X_TEMPLATE_FIELD_SIP7:
-		*data = pr->sip6.s6_addr16[5 - (field_type - RTL931X_TEMPLATE_FIELD_SIP2)];
-		*data_m = pr->sip6_m.s6_addr16[5 - (field_type - RTL931X_TEMPLATE_FIELD_SIP2)];
+		word = 5 - (field_type - RTL931X_TEMPLATE_FIELD_SIP2);
+		*data = ntohs(pr->sip6.s6_addr16[word]);
+		*data_m = ntohs(pr->sip6_m.s6_addr16[word]);
 		break;
 	case RTL931X_TEMPLATE_FIELD_DIP0:
 		if (pr->is_ipv6) {
-			*data = pr->dip6.s6_addr16[7];
-			*data_m = pr->dip6_m.s6_addr16[7];
+			*data = ntohs(pr->dip6.s6_addr16[7]);
+			*data_m = ntohs(pr->dip6_m.s6_addr16[7]);
 		} else {
 			*data = pr->dip;
 			*data_m = pr->dip_m;
@@ -2802,8 +2814,8 @@ static int otto_pie_931x_data_fill(enum rtl931x_template_field_id field_type, st
 		break;
 	case RTL931X_TEMPLATE_FIELD_DIP1:
 		if (pr->is_ipv6) {
-			*data = pr->dip6.s6_addr16[6];
-			*data_m = pr->dip6_m.s6_addr16[6];
+			*data = ntohs(pr->dip6.s6_addr16[6]);
+			*data_m = ntohs(pr->dip6_m.s6_addr16[6]);
 		} else {
 			*data = pr->dip >> 16;
 			*data_m = pr->dip_m >> 16;
@@ -2815,8 +2827,9 @@ static int otto_pie_931x_data_fill(enum rtl931x_template_field_id field_type, st
 	case RTL931X_TEMPLATE_FIELD_DIP5:
 	case RTL931X_TEMPLATE_FIELD_DIP6:
 	case RTL931X_TEMPLATE_FIELD_DIP7:
-		*data = pr->dip6.s6_addr16[5 - (field_type - RTL931X_TEMPLATE_FIELD_DIP2)];
-		*data_m = pr->dip6_m.s6_addr16[5 - (field_type - RTL931X_TEMPLATE_FIELD_DIP2)];
+		word = 5 - (field_type - RTL931X_TEMPLATE_FIELD_DIP2);
+		*data = ntohs(pr->dip6.s6_addr16[word]);
+		*data_m = ntohs(pr->dip6_m.s6_addr16[word]);
 		break;
 	case RTL931X_TEMPLATE_FIELD_IP_TOS_PROTO:
 		*data = pr->tos_proto;
