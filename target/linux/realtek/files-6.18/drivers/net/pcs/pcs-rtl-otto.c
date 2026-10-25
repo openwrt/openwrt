@@ -18,7 +18,8 @@
 
 #define RTPCS_SDS_CNT				14
 #define RTPCS_MAX_LINKS_PER_SDS			8
-#define RTPCS_RXCAL_START_MS			1000
+#define RTPCS_930X_RXCAL_START_MS		200
+#define RTPCS_931X_RXCAL_START_MS		50
 #define RTPCS_RXCAL_POLL_MS			500
 #define RTPCS_RXCAL_MAX_TRIES			3
 #define RTPCS_RXCAL_RETRY_MS			1000
@@ -2055,13 +2056,13 @@ static int rtpcs_93xx_sds_get_cmu_page(enum rtpcs_sds_mode hw_mode)
 	}
 }
 
-static void rtpcs_93xx_sds_arm_rxcal(struct rtpcs_serdes *sds)
+static void rtpcs_93xx_sds_arm_rxcal(struct rtpcs_serdes *sds, unsigned int delay_ms)
 {
 	lockdep_assert_held(&sds->ctrl->lock);
 
 	sds->rxcal_tries = 0;
 	sds->rx_phase = RTPCS_RX_PHASE_CALIBRATION;
-	mod_delayed_work(system_wq, &sds->cali_work, msecs_to_jiffies(RTPCS_RXCAL_START_MS));
+	mod_delayed_work(system_wq, &sds->cali_work, msecs_to_jiffies(delay_ms));
 }
 
 static void rtpcs_93xx_sds_arm_linkmon(struct rtpcs_serdes *sds)
@@ -3590,7 +3591,7 @@ static int rtpcs_930x_sds_post_config(struct rtpcs_serdes *sds, enum rtpcs_sds_m
 
 	dev_dbg(sds->ctrl->dev, "SerDes %u: arming RX calibration for mode %u\n",
 		sds->id, hw_mode);
-	rtpcs_93xx_sds_arm_rxcal(sds);
+	rtpcs_93xx_sds_arm_rxcal(sds, RTPCS_930X_RXCAL_START_MS);
 	return 0;
 }
 
@@ -4447,7 +4448,7 @@ static int rtpcs_931x_sds_post_config(struct rtpcs_serdes *sds, enum rtpcs_sds_m
 	if (sds->attachment != RTPCS_SDS_ATTACH_PHY && hw_mode != RTPCS_SDS_MODE_10GBASER)
 		return 0;
 
-	rtpcs_93xx_sds_arm_rxcal(sds);
+	rtpcs_93xx_sds_arm_rxcal(sds, RTPCS_931X_RXCAL_START_MS);
 
 	return 0;
 }
