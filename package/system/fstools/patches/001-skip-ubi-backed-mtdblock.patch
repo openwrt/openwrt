@@ -1,0 +1,82 @@
+From 2e5d62773cde5c5ce512e63ad2c391a44f84c402 Mon Sep 17 00:00:00 2001
+From: Piotr Kołtun <pkoltun@op.pl>
+Date: Tue, 27 Oct 2026 19:52:33 +0100
+Subject: [PATCH] fstools: skip probing UBI-backed NAND via mtdblock
+
+Skip raw mtdblock probing for NAND MTD devices already attached to UBI.
+This avoids unnecessary probing and the kernel warning about using
+mtdblock on NAND.
+
+---
+--- a/block.c
++++ b/block.c
+@@ -582,6 +582,58 @@ static int config_load(char *cfg)
+ 	return 0;
+ }
+ 
++static bool mtd_is_attached_to_ubi(const char *mtdnum)
++{
++	DIR *dir;
++	struct dirent *entry;
++	char path[128];
++	char buf[32];
++	FILE *fp;
++	size_t i;
++	bool attached = false;
++
++	dir = opendir("/sys/class/ubi");
++	if (!dir)
++		return false;
++
++	while ((entry = readdir(dir)) != NULL) {
++		if (strncmp(entry->d_name, "ubi", 3) ||
++		    !entry->d_name[3])
++			continue;
++
++		/* Accept ubiN device entries, but not ubiN_M volume entries. */
++		for (i = 3; entry->d_name[i]; i++) {
++			if (entry->d_name[i] < '0' ||
++			    entry->d_name[i] > '9')
++				break;
++		}
++		if (entry->d_name[i])
++			continue;
++
++		if (snprintf(path, sizeof(path),
++			     "/sys/class/ubi/%s/mtd_num",
++			     entry->d_name) >= sizeof(path))
++			continue;
++
++		fp = fopen(path, "r");
++		if (!fp)
++			continue;
++
++		if (fgets(buf, sizeof(buf), fp)) {
++			buf[strcspn(buf, "\r\n")] = '\0';
++			if (!strcmp(buf, mtdnum))
++				attached = true;
++		}
++		fclose(fp);
++
++		if (attached)
++			break;
++	}
++
++	closedir(dir);
++	return attached;
++}
++
+ static bool mtdblock_is_nand(char *mtdnum)
+ {
+ 	char tmppath[64];
+@@ -604,6 +656,10 @@ static bool mtdblock_is_nand(char *mtdnu
+ 	if (strcmp(buf, "nand"))
+ 		return false;
+ 
++	/* UBI-backed NAND must not be probed through its raw mtdblock device. */
++	if (mtd_is_attached_to_ubi(mtdnum))
++		return true;
++
+ 	/*
+ 	 * --- CUT HERE ---
+ 	 * Keep probing rootfs and rootfs_data in the meantime to not break
