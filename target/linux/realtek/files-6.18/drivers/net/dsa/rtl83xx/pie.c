@@ -3,6 +3,7 @@
 #include <asm/mach-rtl-otto/mach-rtl-otto.h>
 #include <linux/etherdevice.h>
 #include <linux/iopoll.h>
+#include <linux/regmap.h>
 
 #include "pie.h"
 #include "rtl-otto.h"
@@ -140,11 +141,13 @@ static enum rtl838x_template_field_id rtl838x_fixed_templates[RTL838X_N_FIXED_TE
 static void otto_pie_838x_lookup_enable(struct otto_dsa_priv *priv, int index)
 {
 	int block = index / PIE_BLOCK_SIZE;
-	u32 block_state = sw_r32(RTL838X_ACL_BLK_LOOKUP_CTRL);
+	u32 block_state;
+
+	regmap_read(priv->map, RTL838X_ACL_BLK_LOOKUP_CTRL, &block_state);
 
 	/* Make sure rule-lookup is enabled in the block */
 	if (!(block_state & BIT(block)))
-		sw_w32(block_state | BIT(block), RTL838X_ACL_BLK_LOOKUP_CTRL);
+		regmap_write(priv->map, RTL838X_ACL_BLK_LOOKUP_CTRL, block_state | BIT(block));
 }
 
 static void otto_pie_838x_rule_del(struct otto_dsa_priv *priv, int index_from, int index_to)
@@ -158,25 +161,26 @@ static void otto_pie_838x_rule_del(struct otto_dsa_priv *priv, int index_from, i
 	mutex_lock(&priv->reg_mutex);
 
 	/* Remember currently active blocks */
-	block_state = sw_r32(RTL838X_ACL_BLK_LOOKUP_CTRL);
+	regmap_read(priv->map, RTL838X_ACL_BLK_LOOKUP_CTRL, &block_state);
 
 	/* Make sure rule-lookup is disabled in the relevant blocks */
 	for (int block = block_from; block <= block_to; block++) {
 		if (block_state & BIT(block))
-			sw_w32(block_state & (~BIT(block)), RTL838X_ACL_BLK_LOOKUP_CTRL);
+			regmap_write(priv->map, RTL838X_ACL_BLK_LOOKUP_CTRL, block_state & (~BIT(block)));
 	}
 
 	/* Write from-to and execute bit into control register */
-	sw_w32(v, RTL838X_ACL_CLR_CTRL);
+	regmap_write(priv->map, RTL838X_ACL_CLR_CTRL, v);
 
 	/* Wait until command has completed */
 	do {
-	} while (sw_r32(RTL838X_ACL_CLR_CTRL) & BIT(0));
+		regmap_read(priv->map, RTL838X_ACL_CLR_CTRL, &v);
+	} while (v & BIT(0));
 
 	/* Re-enable rule lookup */
 	for (int block = block_from; block <= block_to; block++) {
 		if (block_state & BIT(block))
-			sw_w32(block_state | BIT(block), RTL838X_ACL_BLK_LOOKUP_CTRL);
+			regmap_write(priv->map, RTL838X_ACL_BLK_LOOKUP_CTRL, block_state | BIT(block));
 	}
 
 	mutex_unlock(&priv->reg_mutex);
@@ -786,7 +790,9 @@ int otto_pie_838x_rule_read(struct otto_dsa_priv *priv, int idx, struct  pie_rul
 	int tbl = otto_table_acquire(RTL8380_TBL_IACL);
 	u32 r[18];
 	int block = idx / PIE_BLOCK_SIZE;
-	u32 t_select = sw_r32(RTL838X_ACL_BLK_TMPLTE_CTRL(block));
+	u32 t_select;
+
+	regmap_read(priv->map, RTL838X_ACL_BLK_TMPLTE_CTRL(block), &t_select);
 
 	memset(pr, 0, sizeof(*pr));
 	__otto_table_read(tbl, idx, &r);
@@ -813,7 +819,9 @@ int otto_pie_838x_rule_write(struct otto_dsa_priv *priv, int idx, struct pie_rul
 	u32 r[18];
 	int err;
 	int block = idx / PIE_BLOCK_SIZE;
-	u32 t_select = sw_r32(RTL838X_ACL_BLK_TMPLTE_CTRL(block));
+	u32 t_select;
+
+	regmap_read(priv->map, RTL838X_ACL_BLK_TMPLTE_CTRL(block), &t_select);
 
 	pr_debug("%s: %d, t_select: %08x\n", __func__, idx, t_select);
 
@@ -922,6 +930,7 @@ static int otto_pie_838x_verify_template(struct otto_dsa_priv *priv,
 
 int otto_pie_838x_rule_add(struct otto_dsa_priv *priv, struct pie_rule *pr)
 {
+	u32 t_select;
 	int idx, block, j;
 
 	pr_debug("In %s\n", __func__);
@@ -930,7 +939,10 @@ int otto_pie_838x_rule_add(struct otto_dsa_priv *priv, struct pie_rule *pr)
 
 	for (block = 0; block < priv->r->n_pie_blocks; block++) {
 		for (j = 0; j < 3; j++) {
-			int t = (sw_r32(RTL838X_ACL_BLK_TMPLTE_CTRL(block)) >> (j * 3)) & 0x7;
+			int t;
+
+			regmap_read(priv->map, RTL838X_ACL_BLK_TMPLTE_CTRL(block), &t_select);
+			t = (t_select >> (j * 3)) & 0x7;
 
 			pr_debug("Testing block %d, template %d, template id %d\n", block, j, t);
 			idx = otto_pie_838x_verify_template(priv, pr, t, block);
@@ -982,33 +994,33 @@ void otto_pie_838x_init(struct otto_dsa_priv *priv)
 
 	/* Enable ACL lookup on all ports, including CPU_PORT */
 	for (int i = 0; i <= priv->r->cpu_port; i++)
-		sw_w32(1, RTL838X_ACL_PORT_LOOKUP_CTRL(i));
+		regmap_write(priv->map, RTL838X_ACL_PORT_LOOKUP_CTRL(i), 1);
 
 	/* Power on all PIE blocks */
 	for (int i = 0; i < priv->r->n_pie_blocks; i++)
-		sw_w32_mask(0, BIT(i), RTL838X_ACL_BLK_PWR_CTRL);
+		regmap_write_bits(priv->map, RTL838X_ACL_BLK_PWR_CTRL, BIT(i), BIT(i));
 
 	/* Include IPG in metering */
-	sw_w32(1, RTL838X_METER_GLB_CTRL);
+	regmap_write(priv->map, RTL838X_METER_GLB_CTRL, 1);
 
 	/* Delete all present rules */
 	otto_pie_838x_rule_del(priv, 0, priv->r->n_pie_blocks * PIE_BLOCK_SIZE - 1);
 
 	/* Routing bypasses source port filter */
-	sw_w32_mask(0, 1, RTL838X_DMY_REG27);
+	regmap_write_bits(priv->map, RTL838X_DMY_REG27, 1, 1);
 
 	/* Enable predefined templates 0, 1 and 2 for even blocks */
 	template_selectors = 0 | (1 << 3) | (2 << 6);
 	for (int i = 0; i < 6; i += 2)
-		sw_w32(template_selectors, RTL838X_ACL_BLK_TMPLTE_CTRL(i));
+		regmap_write(priv->map, RTL838X_ACL_BLK_TMPLTE_CTRL(i), template_selectors);
 
 	/* Enable predefined templates 0, 3 and 4 (IPv6 support) for odd blocks */
 	template_selectors = 0 | (3 << 3) | (4 << 6);
 	for (int i = 1; i < priv->r->n_pie_blocks; i += 2)
-		sw_w32(template_selectors, RTL838X_ACL_BLK_TMPLTE_CTRL(i));
+		regmap_write(priv->map, RTL838X_ACL_BLK_TMPLTE_CTRL(i), template_selectors);
 
 	/* Group each pair of physical blocks together to a logical block */
-	sw_w32(0b10101010101, RTL838X_ACL_BLK_GROUP_CTRL);
+	regmap_write(priv->map, RTL838X_ACL_BLK_GROUP_CTRL, 0b10101010101);
 }
 
 /* RTL839X */
@@ -1114,7 +1126,7 @@ static void otto_pie_839x_lookup_enable(struct otto_dsa_priv *priv, int index)
 {
 	int block = index / PIE_BLOCK_SIZE;
 
-	sw_w32_mask(0, BIT(block), RTL839X_ACL_BLK_LOOKUP_CTRL);
+	regmap_write_bits(priv->map, RTL839X_ACL_BLK_LOOKUP_CTRL, BIT(block), BIT(block));
 }
 
 /* Delete a range of Packet Inspection Engine rules */
@@ -1126,11 +1138,12 @@ static int otto_pie_839x_rule_del(struct otto_dsa_priv *priv, int index_from, in
 	mutex_lock(&priv->reg_mutex);
 
 	/* Write from-to and execute bit into control register */
-	sw_w32(v, RTL839X_ACL_CLR_CTRL);
+	regmap_write(priv->map, RTL839X_ACL_CLR_CTRL, v);
 
 	/* Wait until command has completed */
 	do {
-	} while (sw_r32(RTL839X_ACL_CLR_CTRL) & BIT(0));
+		regmap_read(priv->map, RTL839X_ACL_CLR_CTRL, &v);
+	} while (v & BIT(0));
 
 	mutex_unlock(&priv->reg_mutex);
 
@@ -1621,8 +1634,10 @@ int otto_pie_839x_rule_read(struct otto_dsa_priv *priv, int idx, struct  pie_rul
 	int tbl = otto_table_acquire(RTL8390_TBL_IACL);
 	u32 r[17];
 	int block = idx / PIE_BLOCK_SIZE;
-	u32 t_select = sw_r32(RTL839X_ACL_BLK_TMPLTE_CTRL(block));
+	u32 t_select;
 	int err;
+
+	regmap_read(priv->map, RTL839X_ACL_BLK_TMPLTE_CTRL(block), &t_select);
 
 	memset(pr, 0, sizeof(*pr));
 	if (tbl < 0)
@@ -1652,8 +1667,10 @@ int otto_pie_839x_rule_write(struct otto_dsa_priv *priv, int idx, struct pie_rul
 	int tbl = otto_table_acquire(RTL8390_TBL_IACL);
 	u32 r[17];
 	int block = idx / PIE_BLOCK_SIZE;
-	u32 t_select = sw_r32(RTL839X_ACL_BLK_TMPLTE_CTRL(block));
+	u32 t_select;
 	int err;
+
+	regmap_read(priv->map, RTL839X_ACL_BLK_TMPLTE_CTRL(block), &t_select);
 
 	if (tbl < 0)
 		return tbl;
@@ -1748,6 +1765,7 @@ static int otto_pie_839x_verify_template(struct otto_dsa_priv *priv,
 
 int otto_pie_839x_rule_add(struct otto_dsa_priv *priv, struct pie_rule *pr)
 {
+	u32 t_select;
 	int idx, block, j, t;
 	int min_block = 0;
 	int max_block = priv->r->n_pie_blocks / 2;
@@ -1761,7 +1779,8 @@ int otto_pie_839x_rule_add(struct otto_dsa_priv *priv, struct pie_rule *pr)
 
 	for (block = min_block; block < max_block; block++) {
 		for (j = 0; j < 2; j++) {
-			t = (sw_r32(RTL839X_ACL_BLK_TMPLTE_CTRL(block)) >> (j * 3)) & 0x7;
+			regmap_read(priv->map, RTL839X_ACL_BLK_TMPLTE_CTRL(block), &t_select);
+			t = (t_select >> (j * 3)) & 0x7;
 			idx = otto_pie_839x_verify_template(priv, pr, t, block);
 			if (idx >= 0)
 				break;
@@ -1813,6 +1832,7 @@ int otto_pie_839x_l3_rule_read(struct otto_dsa_priv *priv, int idx, struct pie_r
  */
 int otto_pie_839x_l3_rule_write(struct otto_dsa_priv *priv, int idx, struct pie_rule *pr)
 {
+	u32 t_select;
 	enum rtl839x_template_field_id dip = pr->is_ipv6 ? RTL839X_TEMPLATE_FIELD_DIP2 :
 							     RTL839X_TEMPLATE_FIELD_DIP0;
 	int block, j, t, err;
@@ -1824,7 +1844,8 @@ int otto_pie_839x_l3_rule_write(struct otto_dsa_priv *priv, int idx, struct pie_
 	block = idx / PIE_BLOCK_SIZE;
 
 	for (j = 0; j < 2; j++) {
-		t = (sw_r32(RTL839X_ACL_BLK_TMPLTE_CTRL(block)) >> (j * 3)) & 0x7;
+		regmap_read(priv->map, RTL839X_ACL_BLK_TMPLTE_CTRL(block), &t_select);
+		t = (t_select >> (j * 3)) & 0x7;
 		if (otto_pie_839x_templ_has(t, dip))
 			break;
 	}
@@ -1851,13 +1872,13 @@ void otto_pie_839x_init(struct otto_dsa_priv *priv)
 
 	/* Power on all PIE blocks */
 	for (int i = 0; i < priv->r->n_pie_blocks; i++)
-		sw_w32_mask(0, BIT(i), RTL839X_PS_ACL_PWR_CTRL);
+		regmap_write_bits(priv->map, RTL839X_PS_ACL_PWR_CTRL, BIT(i), BIT(i));
 
 	/* Set ingress and egress ACL blocks to 50/50: first Egress block is 9 */
-	sw_w32_mask(0x1f, RTL839X_PIE_CUTLINE, RTL839X_ACL_CTRL);
+	regmap_write_bits(priv->map, RTL839X_ACL_CTRL, 0x1f, RTL839X_PIE_CUTLINE);
 
 	/* Include IPG in metering */
-	sw_w32(1, RTL839X_METER_GLB_CTRL);
+	regmap_write(priv->map, RTL839X_METER_GLB_CTRL, 1);
 
 	/* Delete all present rules */
 	otto_pie_839x_rule_del(priv, 0, priv->r->n_pie_blocks * PIE_BLOCK_SIZE - 1);
@@ -1868,27 +1889,27 @@ void otto_pie_839x_init(struct otto_dsa_priv *priv)
 	/* Ingress ACL blocks: predefined templates 2, 3 */
 	template_selectors = 2 | (3 << 3);
 	for (int i = 0; i < RTL839X_PIE_L3_FIRST / PIE_BLOCK_SIZE; i++)
-		sw_w32(template_selectors, RTL839X_ACL_BLK_TMPLTE_CTRL(i));
+		regmap_write(priv->map, RTL839X_ACL_BLK_TMPLTE_CTRL(i), template_selectors);
 
 	/* L3's blocks: template 1 for its IPv4 rules, 3 for its IPv6 ones */
 	template_selectors = 1 | (3 << 3);
 	for (int i = RTL839X_PIE_L3_FIRST / PIE_BLOCK_SIZE; i < RTL839X_PIE_CUTLINE; i++)
-		sw_w32(template_selectors, RTL839X_ACL_BLK_TMPLTE_CTRL(i));
+		regmap_write(priv->map, RTL839X_ACL_BLK_TMPLTE_CTRL(i), template_selectors);
 
 	/* Enable predefined templates 0, 1 for blocks 9-11 */
 	template_selectors = 0 | (1 << 3);
 	for (int i = 9; i < 12; i++)
-		sw_w32(template_selectors, RTL839X_ACL_BLK_TMPLTE_CTRL(i));
+		regmap_write(priv->map, RTL839X_ACL_BLK_TMPLTE_CTRL(i), template_selectors);
 
 	/* Enable predefined templates 2, 3 for blocks 12-14 */
 	template_selectors = 2 | (3 << 3);
 	for (int i = 12; i < 15; i++)
-		sw_w32(template_selectors, RTL839X_ACL_BLK_TMPLTE_CTRL(i));
+		regmap_write(priv->map, RTL839X_ACL_BLK_TMPLTE_CTRL(i), template_selectors);
 
 	/* Enable predefined templates 1, 4 for blocks 15-17 */
 	template_selectors = 2 | (3 << 3);
 	for (int i = 15; i < 18; i++)
-		sw_w32(template_selectors, RTL839X_ACL_BLK_TMPLTE_CTRL(i));
+		regmap_write(priv->map, RTL839X_ACL_BLK_TMPLTE_CTRL(i), template_selectors);
 }
 
 /* RTL930X */
@@ -1988,7 +2009,7 @@ static void otto_pie_930x_lookup_enable(struct otto_dsa_priv *priv, int index)
 {
 	int block = index / PIE_BLOCK_SIZE;
 
-	sw_w32_mask(0, BIT(block), RTL930X_PIE_BLK_LOOKUP_CTRL);
+	regmap_write_bits(priv->map, RTL930X_PIE_BLK_LOOKUP_CTRL, BIT(block), BIT(block));
 }
 
 /* Reads the intermediate representation of the templated match-fields of the
@@ -2306,7 +2327,9 @@ int otto_pie_930x_rule_write(struct otto_dsa_priv *priv, int idx, struct pie_rul
 	int tbl = otto_table_acquire(RTL9300_TBL_IACL);
 	u32 r[19];
 	int block = idx / PIE_BLOCK_SIZE;
-	u32 t_select = sw_r32(RTL930X_PIE_BLK_TMPLTE_CTRL(block));
+	u32 t_select;
+
+	regmap_read(priv->map, RTL930X_PIE_BLK_TMPLTE_CTRL(block), &t_select);
 
 	pr_debug("%s: %d, t_select: %08x\n", __func__, idx, t_select);
 
@@ -2405,6 +2428,7 @@ static int otto_pie_930x_verify_template(struct otto_dsa_priv *priv,
 
 int otto_pie_930x_rule_add(struct otto_dsa_priv *priv, struct pie_rule *pr)
 {
+	u32 t_select;
 	int idx, block, j, t;
 	int min_block = 0;
 	int max_block = priv->r->n_pie_blocks / 2;
@@ -2419,10 +2443,11 @@ int otto_pie_930x_rule_add(struct otto_dsa_priv *priv, struct pie_rule *pr)
 
 	for (block = min_block; block < max_block; block++) {
 		for (j = 0; j < 2; j++) {
-			t = (sw_r32(RTL930X_PIE_BLK_TMPLTE_CTRL(block)) >> (j * 4)) & 0xf;
+			regmap_read(priv->map, RTL930X_PIE_BLK_TMPLTE_CTRL(block), &t_select);
+			t = (t_select >> (j * 4)) & 0xf;
 			pr_debug("Testing block %d, template %d, template id %d\n", block, j, t);
 			pr_debug("%s: %08x\n",
-				 __func__, sw_r32(RTL930X_PIE_BLK_TMPLTE_CTRL(block)));
+				 __func__, t_select);
 			idx = otto_pie_930x_verify_template(priv, pr, t, block);
 			if (idx >= 0)
 				break;
@@ -2460,11 +2485,12 @@ static int otto_pie_930x_rule_del(struct otto_dsa_priv *priv, int index_from, in
 	mutex_lock(&priv->reg_mutex);
 
 	/* Write from-to and execute bit into control register */
-	sw_w32(v, RTL930X_PIE_CLR_CTRL);
+	regmap_write(priv->map, RTL930X_PIE_CLR_CTRL, v);
 
 	/* Wait until command has completed */
 	do {
-	} while (sw_r32(RTL930X_PIE_CLR_CTRL) & BIT(0));
+		regmap_read(priv->map, RTL930X_PIE_CLR_CTRL, &v);
+	} while (v & BIT(0));
 
 	mutex_unlock(&priv->reg_mutex);
 	return 0;
@@ -2487,36 +2513,36 @@ void otto_pie_930x_init(struct otto_dsa_priv *priv)
 	pr_debug("%s\n", __func__);
 	/* Enable ACL lookup on all ports, including CPU_PORT */
 	for (int i = 0; i <= priv->r->cpu_port; i++)
-		sw_w32(1, RTL930X_ACL_PORT_LOOKUP_CTRL(i));
+		regmap_write(priv->map, RTL930X_ACL_PORT_LOOKUP_CTRL(i), 1);
 
 	/* Include IPG in metering */
-	sw_w32_mask(0, 1, RTL930X_METER_GLB_CTRL);
+	regmap_write_bits(priv->map, RTL930X_METER_GLB_CTRL, 1, 1);
 
 	/* Delete all present rules, block size is 128 on all SoC families */
 	otto_pie_930x_rule_del(priv, 0, priv->r->n_pie_blocks * 128 - 1);
 
 	/* Assign blocks 0-7 to VACL phase (bit = 0), blocks 8-15 to IACL (bit = 1) */
-	sw_w32(0xff00, RTL930X_PIE_BLK_PHASE_CTRL);
+	regmap_write(priv->map, RTL930X_PIE_BLK_PHASE_CTRL, 0xff00);
 
 	/* Enable predefined templates 0, 1 for first quarter of all blocks */
 	template_selectors = 0 | (1 << 4);
 	for (int i = 0; i < priv->r->n_pie_blocks / 4; i++)
-		sw_w32(template_selectors, RTL930X_PIE_BLK_TMPLTE_CTRL(i));
+		regmap_write(priv->map, RTL930X_PIE_BLK_TMPLTE_CTRL(i), template_selectors);
 
 	/* Enable predefined templates 2, 3 for second quarter of all blocks */
 	template_selectors = 2 | (3 << 4);
 	for (int i = priv->r->n_pie_blocks / 4; i < priv->r->n_pie_blocks / 2; i++)
-		sw_w32(template_selectors, RTL930X_PIE_BLK_TMPLTE_CTRL(i));
+		regmap_write(priv->map, RTL930X_PIE_BLK_TMPLTE_CTRL(i), template_selectors);
 
 	/* Enable predefined templates 0, 1 for third half of all blocks */
 	template_selectors = 0 | (1 << 4);
 	for (int i = priv->r->n_pie_blocks / 2; i < priv->r->n_pie_blocks * 3 / 4; i++)
-		sw_w32(template_selectors, RTL930X_PIE_BLK_TMPLTE_CTRL(i));
+		regmap_write(priv->map, RTL930X_PIE_BLK_TMPLTE_CTRL(i), template_selectors);
 
 	/* Enable predefined templates 2, 3 for fourth quater of all blocks */
 	template_selectors = 2 | (3 << 4);
 	for (int i = priv->r->n_pie_blocks * 3 / 4; i < priv->r->n_pie_blocks; i++)
-		sw_w32(template_selectors, RTL930X_PIE_BLK_TMPLTE_CTRL(i));
+		regmap_write(priv->map, RTL930X_PIE_BLK_TMPLTE_CTRL(i), template_selectors);
 }
 
 /* RTL931X */
@@ -2615,7 +2641,7 @@ static void otto_pie_931x_lookup_enable(struct otto_dsa_priv *priv, int index)
 {
 	int block = index / PIE_BLOCK_SIZE;
 
-	sw_w32_mask(0, BIT(block), RTL931X_PIE_BLK_LOOKUP_CTRL);
+	regmap_write_bits(priv->map, RTL931X_PIE_BLK_LOOKUP_CTRL, BIT(block), BIT(block));
 }
 
 /* Fills the data in the intermediate representation in the pie_rule structure
@@ -2944,7 +2970,9 @@ int otto_pie_931x_rule_write(struct otto_dsa_priv *priv, int idx, struct pie_rul
 	int tbl = otto_table_acquire(RTL9310_TBL_IACL);
 	u32 r[22];
 	int block = idx / PIE_BLOCK_SIZE;
-	u32 t_select = sw_r32(RTL931X_PIE_BLK_TMPLTE_CTRL(block));
+	u32 t_select;
+
+	regmap_read(priv->map, RTL931X_PIE_BLK_TMPLTE_CTRL(block), &t_select);
 
 	pr_debug("%s: %d, t_select: %08x\n", __func__, idx, t_select);
 
@@ -3040,6 +3068,7 @@ static int otto_pie_931x_verify_template(struct otto_dsa_priv *priv,
 
 int otto_pie_931x_rule_add(struct otto_dsa_priv *priv, struct pie_rule *pr)
 {
+	u32 t_select;
 	int idx, block, j;
 	int min_block = 0;
 	int max_block = priv->r->n_pie_blocks / 2;
@@ -3054,11 +3083,14 @@ int otto_pie_931x_rule_add(struct otto_dsa_priv *priv, struct pie_rule *pr)
 
 	for (block = min_block; block < max_block; block++) {
 		for (j = 0; j < 2; j++) {
-			int t = (sw_r32(RTL931X_PIE_BLK_TMPLTE_CTRL(block)) >> (j * 4)) & 0xf;
+			int t;
+
+			regmap_read(priv->map, RTL931X_PIE_BLK_TMPLTE_CTRL(block), &t_select);
+			t = (t_select >> (j * 4)) & 0xf;
 
 			pr_debug("Testing block %d, template %d, template id %d\n", block, j, t);
 			pr_debug("%s: %08x\n",
-				 __func__, sw_r32(RTL931X_PIE_BLK_TMPLTE_CTRL(block)));
+				 __func__, t_select);
 			idx = otto_pie_931x_verify_template(priv, pr, t, block);
 			if (idx >= 0)
 				break;
@@ -3097,11 +3129,12 @@ static int otto_pie_931x_rule_del(struct otto_dsa_priv *priv, int index_from, in
 	mutex_lock(&priv->reg_mutex);
 
 	/* Write from-to and execute bit into control register */
-	sw_w32(v, RTL931X_PIE_CLR_CTRL);
+	regmap_write(priv->map, RTL931X_PIE_CLR_CTRL, v);
 
 	/* Wait until command has completed */
 	do {
-	} while (sw_r32(RTL931X_PIE_CLR_CTRL) & BIT(0));
+		regmap_read(priv->map, RTL931X_PIE_CLR_CTRL, &v);
+	} while (v & BIT(0));
 
 	mutex_unlock(&priv->reg_mutex);
 
@@ -3125,10 +3158,10 @@ void otto_pie_931x_init(struct otto_dsa_priv *priv)
 	pr_debug("%s\n", __func__);
 	/* Enable ACL lookup on all ports, including CPU_PORT */
 	for (int i = 0; i <= priv->r->cpu_port; i++)
-		sw_w32(1, RTL931X_ACL_PORT_LOOKUP_CTRL(i));
+		regmap_write(priv->map, RTL931X_ACL_PORT_LOOKUP_CTRL(i), 1);
 
 	/* Include IPG in metering */
-	sw_w32_mask(0, 1, RTL931X_METER_GLB_CTRL);
+	regmap_write_bits(priv->map, RTL931X_METER_GLB_CTRL, 1, 1);
 
 	/* Delete all present rules, block size is 128 on all SoC families */
 	otto_pie_931x_rule_del(priv, 0, priv->r->n_pie_blocks * 128 - 1);
@@ -3143,28 +3176,28 @@ void otto_pie_931x_init(struct otto_dsa_priv *priv)
 		u32 r = RTL931X_PIE_BLK_PHASE_CTRL + 4 * (i / 10);
 
 		if (i < priv->r->n_pie_blocks / 2)
-			sw_w32_mask(0x7 << pos, 0, r);
+			regmap_write_bits(priv->map, r, 0x7 << pos, 0);
 		else
-			sw_w32_mask(0x7 << pos, 1 << pos, r);
+			regmap_write_bits(priv->map, r, 0x7 << pos, 1 << pos);
 	}
 
 	/* Enable predefined templates 0, 1 for first quarter of all blocks */
 	template_selectors = 0 | (1 << 4);
 	for (int i = 0; i < priv->r->n_pie_blocks / 4; i++)
-		sw_w32(template_selectors, RTL931X_PIE_BLK_TMPLTE_CTRL(i));
+		regmap_write(priv->map, RTL931X_PIE_BLK_TMPLTE_CTRL(i), template_selectors);
 
 	/* Enable predefined templates 2, 3 for second quarter of all blocks */
 	template_selectors = 2 | (3 << 4);
 	for (int i = priv->r->n_pie_blocks / 4; i < priv->r->n_pie_blocks / 2; i++)
-		sw_w32(template_selectors, RTL931X_PIE_BLK_TMPLTE_CTRL(i));
+		regmap_write(priv->map, RTL931X_PIE_BLK_TMPLTE_CTRL(i), template_selectors);
 
 	/* Enable predefined templates 0, 1 for third quater of all blocks */
 	template_selectors = 0 | (1 << 4);
 	for (int i = priv->r->n_pie_blocks / 2; i < priv->r->n_pie_blocks * 3 / 4; i++)
-		sw_w32(template_selectors, RTL931X_PIE_BLK_TMPLTE_CTRL(i));
+		regmap_write(priv->map, RTL931X_PIE_BLK_TMPLTE_CTRL(i), template_selectors);
 
 	/* Enable predefined templates 2, 3 for fourth quater of all blocks */
 	template_selectors = 2 | (3 << 4);
 	for (int i = priv->r->n_pie_blocks * 3 / 4; i < priv->r->n_pie_blocks; i++)
-		sw_w32(template_selectors, RTL931X_PIE_BLK_TMPLTE_CTRL(i));
+		regmap_write(priv->map, RTL931X_PIE_BLK_TMPLTE_CTRL(i), template_selectors);
 }
