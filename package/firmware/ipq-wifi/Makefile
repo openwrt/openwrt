@@ -6,9 +6,9 @@ PKG_RELEASE:=1
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL=$(PROJECT_GIT)/project/firmware/qca-wireless.git
-PKG_SOURCE_DATE:=2026-10-25
-PKG_SOURCE_VERSION:=49ce14c099b16044b7062df54bdabeb495b804ad
-PKG_MIRROR_HASH:=b9c6723021af9267035b7e25762b80c06887a5ea9c524b2649b0b27ea58b121c
+PKG_SOURCE_DATE:=2026-10-29
+PKG_SOURCE_VERSION:=9157db7cf0814d91adf552ebfd13bbdef0b1c00a
+PKG_MIRROR_HASH:=7216efef75945f16e6bb462fe91de0cddf7cca1863673171b775ad705dc005fd
 PKG_FLAGS:=nonshared
 
 include $(INCLUDE_DIR)/package.mk
@@ -48,6 +48,7 @@ ALLWIFIBOARDS:= \
 	glinet_gl-axt1800 \
 	glinet_gl-b3000 \
 	glinet_gl-x2000 \
+	gryphon_guardian \
 	huawei_ap4050dn \
 	ignitenet_ss-w2-ac2600 \
 	iodata_wn-dax3000gr \
@@ -262,6 +263,7 @@ $(eval $(call generate-ipq-wifi-package,glinet_gl-ax1800,GL.iNet GL-AX1800))
 $(eval $(call generate-ipq-wifi-package,glinet_gl-axt1800,GL.iNet GL-AXT1800))
 $(eval $(call generate-ipq-wifi-package,glinet_gl-b3000,GL.iNet GL-B3000))
 $(eval $(call generate-ipq-wifi-package,glinet_gl-x2000,GL.iNet GL-X2000))
+$(eval $(call generate-ipq-wifi-package,gryphon_guardian,Gryphon Guardian))
 $(eval $(call generate-ipq-wifi-package,huawei_ap4050dn,Huawei AP4050DN))
 $(eval $(call generate-ipq-wifi-package,ignitenet_ss-w2-ac2600,Ignitenet SS-W2-AC2600))
 $(eval $(call generate-ipq-wifi-package,iodata_wn-dax3000gr,I-O DATA WN-DAX3000GR))

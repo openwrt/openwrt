@@ -644,6 +644,19 @@ define Device/glinet_gl-s1300
 endef
 TARGET_DEVICES += glinet_gl-s1300
 
+define Device/gryphon_guardian
+	$(call Device/FitImage)
+	$(call Device/UbiFit)
+	DEVICE_VENDOR := Gryphon
+	DEVICE_MODEL := Guardian
+	SOC := qcom-ipq4019
+	DEVICE_DTS_CONFIG := config@ap.dk04.1-c1
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	DEVICE_PACKAGES := ipq-wifi-gryphon_guardian
+endef
+TARGET_DEVICES += gryphon_guardian
+
 define Device/huawei_ap4050dn
 	$(call Device/FitImageLzma)
 	DEVICE_VENDOR := Huawei
