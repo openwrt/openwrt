@@ -138,8 +138,8 @@
 #define EDMA_REG_RX_INT_CTRL(n)		(0x4900c + (0x1000 * (n)))
 
 #define EDMA_RXDESC_INT_MASK_PKT_INT	0x1
-/* Default moderation: an interrupt per 16 frames, or after 25 us on RX. */
-#define EDMA_RX_COAL_US			25
+/* Default moderation: an interrupt per 16 frames, or after 100 us on RX. */
+#define EDMA_RX_COAL_US			100
 #define EDMA_COAL_FRAMES		16
 
 /* A moderation timer counts 128 cycles of the EDMA clock. */
