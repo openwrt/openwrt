@@ -747,6 +747,10 @@ static u32 edma_clean_rx(struct edma_queue *q, int budget)
 		skb_reserve(skb, NET_SKB_PAD + EDMA_RX_PREHDR_SIZE);
 		skb_put(skb, pkt_len);
 
+		/* A frame handed to a multiqueue shaper picks its queue by
+		 * the ring, so each ring's CPU feeds a queue of its own.
+		 */
+		skb_record_rx_queue(skb, q->idx);
 		if (edma_rx_flow(netdev, skb, rxph)) {
 			dev_sw_netstats_rx_add(netdev, pkt_len);
 			goto next;
@@ -754,7 +758,6 @@ static u32 edma_clean_rx(struct edma_queue *q, int budget)
 
 		edma_rx_vlan(netdev, skb, rxph);
 		frame = skb->data;
-		skb_record_rx_queue(skb, q->idx);
 		skb->protocol = eth_type_trans(skb, priv->netdev);
 		edma_rx_csum(netdev, skb, rxph, desc_status,
 			     skb->data - frame);
