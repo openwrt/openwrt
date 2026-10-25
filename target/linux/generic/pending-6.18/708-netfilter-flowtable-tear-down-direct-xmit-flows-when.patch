@@ -1,6 +1,6 @@
 From a9f96c7117dabb72b1b8282586e56bcb103972f6 Mon Sep 17 00:00:00 2001
-From: Julius Bairaktaris <julius@bairaktaris.de>
-Date: Sun, 18 Oct 2026 01:58:47 +0200
+From: Pablo Neira Ayuso <pablo@netfilter.org>
+Date: Wed, 14 Oct 2026 23:02:56 +0200
 Subject: [PATCH] netfilter: flowtable: tear down direct xmit flows when
  the fdb entry moves
 
@@ -20,9 +20,12 @@ vlan_filtering bridge.
 
 Reported-by: Eric Woudstra <ericwouds@gmail.com>
 Link: https://lore.kernel.org/netfilter-devel/20250925182623.114045-1-ericwouds@gmail.com/
-Co-developed-by: Pablo Neira Ayuso <pablo@netfilter.org>
 Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
-Assisted-by: Claude:claude-opus-5-5
+[julius@bairaktaris.de: find the bridge port below the vlan devices of the
+ path, take the vid from a bridge vlan or the port pvid, keep a flow whose
+ entry aged out, check the bridge the flow transmits on, follow struct
+ net_bridge_dst, build br_nf_utils.o only with the flowtable]
+Link: https://lore.kernel.org/netfilter-devel/20261014210256.1573072-1-pablo@netfilter.org/
 Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
 Link: https://lore.kernel.org/netfilter-devel/20261017235849.1066624-2-julius@bairaktaris.de/
 [adapted to 6.18: the tuple, route and forward info carry no
@@ -287,11 +290,12 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  			if (path->type == DEV_PATH_PPPOE)
  				memcpy(info->h_dest, path->encap.h_dest, ETH_ALEN);
  			break;
-@@ -163,6 +168,13 @@ static int nft_dev_path_info(const struc
+@@ -163,6 +168,14 @@ static int nft_dev_path_info(const struc
  			case DEV_PATH_BR_VLAN_KEEP:
  				break;
  			}
 +			info->bridge_path = 1;
++			info->port_vlans = 0;
 +			n = info->num_encaps;
 +			info->bridge_vlan = path->bridge.vlan_id && n &&
 +					    info->encap[n - 1].id ==
@@ -301,7 +305,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  			info->xmit_type = FLOW_OFFLOAD_XMIT_DIRECT;
  			break;
  		default:
-@@ -230,6 +242,9 @@ static int nft_dev_forward_path(struct n
+@@ -230,6 +243,9 @@ static int nft_dev_forward_path(struct n
  	if (info.xmit_type == FLOW_OFFLOAD_XMIT_DIRECT) {
  		memcpy(route->tuple[dir].out.h_source, info.h_source, ETH_ALEN);
  		memcpy(route->tuple[dir].out.h_dest, info.h_dest, ETH_ALEN);
