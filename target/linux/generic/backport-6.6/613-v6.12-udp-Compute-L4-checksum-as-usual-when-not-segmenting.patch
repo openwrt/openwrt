@@ -1,0 +1,59 @@
+From d96016a764f6aa5c7528c3d3f9cb472ef7266951 Mon Sep 17 00:00:00 2001
+From: Jakub Sitnicki <jakub@cloudflare.com>
+Date: Fri, 11 Oct 2024 14:17:30 +0200
+Subject: [PATCH] udp: Compute L4 checksum as usual when not segmenting the skb
+
+If:
+
+  1) the user requested USO, but
+  2) there is not enough payload for GSO to kick in, and
+  3) the egress device doesn't offer checksum offload, then
+
+we want to compute the L4 checksum in software early on.
+
+In the case when we are not taking the GSO path, but it has been requested,
+the software checksum fallback in skb_segment doesn't get a chance to
+compute the full checksum, if the egress device can't do it. As a result we
+end up sending UDP datagrams with only a partial checksum filled in, which
+the peer will discard.
+
+Fixes: 10154dbded6d ("udp: Allow GSO transmit from devices with no checksum offload")
+Reported-by: Ivan Babrou <ivan@cloudflare.com>
+Signed-off-by: Jakub Sitnicki <jakub@cloudflare.com>
+Acked-by: Willem de Bruijn <willemdebruijn.kernel@gmail.com>
+Cc: stable@vger.kernel.org
+Link: https://patch.msgid.link/20241011-uso-swcsum-fixup-v2-1-6e1ddc199af9@cloudflare.com
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ net/ipv4/udp.c | 4 +++-
+ net/ipv6/udp.c | 4 +++-
+ 2 files changed, 6 insertions(+), 2 deletions(-)
+
+--- a/net/ipv4/udp.c
++++ b/net/ipv4/udp.c
+@@ -952,8 +952,10 @@ static int udp_send_skb(struct sk_buff *
+ 			skb_shinfo(skb)->gso_type = SKB_GSO_UDP_L4;
+ 			skb_shinfo(skb)->gso_segs = DIV_ROUND_UP(datalen,
+ 								 cork->gso_size);
++
++			/* Don't checksum the payload, skb will get segmented */
++			goto csum_partial;
+ 		}
+-		goto csum_partial;
+ 	}
+ 
+ 	if (is_udplite)  				 /*     UDP-Lite      */
+--- a/net/ipv6/udp.c
++++ b/net/ipv6/udp.c
+@@ -1268,8 +1268,10 @@ static int udp_v6_send_skb(struct sk_buf
+ 			skb_shinfo(skb)->gso_type = SKB_GSO_UDP_L4;
+ 			skb_shinfo(skb)->gso_segs = DIV_ROUND_UP(datalen,
+ 								 cork->gso_size);
++
++			/* Don't checksum the payload, skb will get segmented */
++			goto csum_partial;
+ 		}
+-		goto csum_partial;
+ 	}
+ 
+ 	if (is_udplite)
