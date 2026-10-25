@@ -310,3 +310,21 @@ define KernelPackage/video-rockchip-rkvenc/description
 endef
 
 $(eval $(call KernelPackage,video-rockchip-rkvenc))
+
+
+define KernelPackage/iommu-vsi
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=Verisilicon IOMMU support
+  DEPENDS:=@TARGET_rockchip_armv8
+  KCONFIG:=CONFIG_VSI_IOMMU
+  FILES:=$(LINUX_DIR)/drivers/iommu/vsi-iommu.ko
+  AUTOLOAD:=$(call AutoProbe,vsi-iommu)
+endef
+
+define KernelPackage/iommu-vsi/description
+  Driver for the Verisilicon IOMMU in front of the RK3588 AV1 video
+  decoder, which lets the decoder use frame buffers that are not
+  physically contiguous.
+endef
+
+$(eval $(call KernelPackage,iommu-vsi))

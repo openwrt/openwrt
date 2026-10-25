@@ -1,0 +1,36 @@
+From 51ce6677ad73cb348bbb44310450e48653d53531 Mon Sep 17 00:00:00 2001
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Tue, 19 May 2026 22:36:51 +0200
+Subject: [PATCH 2/4] iommu: vsi: avoid -Wformat-security warning
+
+When -Wformat-security is enabled, it catches a call to
+iommu_device_sysfs_add() that passes a string variable in
+place of a format:
+
+drivers/iommu/vsi-iommu.c: In function 'vsi_iommu_probe':
+drivers/iommu/vsi-iommu.c:717:9: error: format not a string literal and no format arguments [-Werror=format-security]
+  717 |         err = iommu_device_sysfs_add(&iommu->iommu, dev, NULL, dev_name(dev));
+      |         ^~~
+
+Pass this indirectly using "%s" as the format instead.
+
+Fixes: 917ace84b770 ("iommu: Add verisilicon IOMMU driver")
+Signed-off-by: Arnd Bergmann <arnd@arndb.de>
+Reviewed-by: Benjamin Gaignard <benjamin.gaignard@collabora.com>
+Signed-off-by: Joerg Roedel <joerg.roedel@amd.com>
+---
+ drivers/iommu/vsi-iommu.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+--- a/drivers/iommu/vsi-iommu.c
++++ b/drivers/iommu/vsi-iommu.c
+@@ -714,7 +714,8 @@ static int vsi_iommu_probe(struct platfo
+ 	pm_runtime_use_autosuspend(dev);
+ 	pm_runtime_enable(dev);
+ 
+-	err = iommu_device_sysfs_add(&iommu->iommu, dev, NULL, dev_name(dev));
++	err = iommu_device_sysfs_add(&iommu->iommu, dev, NULL, "%s",
++				     dev_name(dev));
+ 	if (err)
+ 		goto err_runtime_disable;
+ 
