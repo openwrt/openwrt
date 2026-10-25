@@ -1509,13 +1509,9 @@ static int ppe_flow_offload_replace(struct ppe_flow_block *fb,
 			 */
 			break;
 		case FLOW_ACTION_PRIORITY:
-			/* A priority the profiles cannot hold, such as the
-			 * 802.1d tags of 256 and up that Wi-Fi stamps take,
-			 * leaves the flow to DSCP: refusing it would send the
-			 * whole flow to the CPU for the sake of its queue.
-			 */
-			if (act->priority <= PPE_QOS_MAX_PRI)
-				data.priority = act->priority;
+			if (act->priority > PPE_QOS_MAX_PRI)
+				return ppe_flow_reject(priv, PPE_REJECT_ACTION);
+			data.priority = act->priority;
 			break;
 		case FLOW_ACTION_PPPOE_PUSH:
 			if (data.pppoe_valid)

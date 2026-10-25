@@ -19,6 +19,7 @@
 #include <linux/tc_act/tc_csum.h>
 #include <net/flow_offload.h>
 #include <net/ipv6.h>
+#include <net/tcp.h>
 
 #include "qca_ppe.h"
 
@@ -1445,6 +1446,12 @@ int qca_ppe_cls_flower_stats(struct dsa_switch *ds, int port,
  * The default takes acks, DNS, voice, game state and latency probes, and
  * stays under a full-size segment on any path whose MSS is above 1000.
  *
+ * A short TCP segment that carries PSH ends a write of a flow whose other
+ * segments are full size: promoted, it would overtake them, which reorders
+ * the flow on every write. The rule takes only frames without PSH, which
+ * keeps acks and handshakes and every other protocol, whose frames carry no
+ * TCP flags at all.
+ *
  * The priority is capped at 7: the slots above sit on the port's second SP
  * beside the multicast queues.
  */
@@ -1598,7 +1605,7 @@ static void ppe_acl_small_pkt_apply(struct qca_ppe_priv *priv)
 	s.range = true;
 	/* Range compare: minimum in the rule, maximum in the mask slot. */
 	s.mask[0] = FIELD_PREP(PPE_ACL_L3_LEN, ppe_small_pkt_len);
-	s.mask[1] = PPE_ACL_IS_IPV6;
+	s.mask[1] = PPE_ACL_IS_IPV6 | FIELD_PREP(PPE_ACL_TCP_FLAGS, TCPHDR_PSH);
 
 	/* Length 0 disarms by handing the rule an empty source bitmap, which
 	 * keeps its entry so the parameter can be turned back on.
