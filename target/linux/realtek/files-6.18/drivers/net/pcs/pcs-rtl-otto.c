@@ -198,6 +198,11 @@ enum rtpcs_page {
 #define FIB_EXT_REG19			0x13
 #define  RTL931X_CFG_TX_MODE		GENMASK(15, 14)
 
+/* PAGE_TGR_STD_0 */
+
+#define TGR_STD_0_REG01			0x01
+#define  RTL93XX_RX_LINK_LATCH		BIT(2)
+
 /* PAGE_TGR_STD_1 */
 
 #define TGR_STD_1_REG00			0x00
@@ -1587,18 +1592,21 @@ static int rtpcs_93xx_sds_rxcal_ready(struct rtpcs_serdes *sds)
 	return !ret;
 }
 
-static int rtpcs_93xx_sds_10gr_link_status(struct rtpcs_serdes *sds)
+static int rtpcs_93xx_sds_10gr_link_status(struct rtpcs_serdes *sds, bool *latch_sts)
 {
-	int link;
-
-	/* Link status may be latched low; the second read is current state. */
-	link = rtpcs_sds_read(sds, PAGE_TGR_STD_1, TGR_STD_1_REG00);
-	if (link < 0)
-		return link;
+	int latch, link;
 
 	link = rtpcs_sds_read(sds, PAGE_TGR_STD_1, TGR_STD_1_REG00);
 	if (link < 0)
 		return link;
+
+	/* Reading latched status clears any recorded link loss. */
+	latch = rtpcs_sds_read(sds, PAGE_TGR_STD_0, TGR_STD_0_REG01);
+	if (latch < 0)
+		return latch;
+
+	if (latch_sts)
+		*latch_sts = !!(latch & RTL93XX_RX_LINK_LATCH);
 
 	return (link & RTL93XX_10GBASE_R_T_RX_LINK) == RTL93XX_10GBASE_R_T_RX_LINK;
 }
@@ -2093,7 +2101,7 @@ static bool rtpcs_930x_sds_rx_link_up(struct rtpcs_serdes *sds)
 	switch (sds->hw_mode) {
 	case RTPCS_SDS_MODE_10GBASER:
 	case RTPCS_SDS_MODE_USXGMII:
-		val = rtpcs_93xx_sds_10gr_link_status(sds);
+		val = rtpcs_93xx_sds_10gr_link_status(sds, NULL);
 		if (val < 0) {
 			dev_err(sds->ctrl->dev, "SerDes %u: RX link-status read failed: %d\n",
 				sds->id, val);
@@ -2324,7 +2332,7 @@ static int rtpcs_930x_sds_init_state_machine(struct rtpcs_serdes *sds,
 	while (cnt-- && ret) {
 		rtpcs_930x_sds_reset_state_machine(sds);
 
-		link = rtpcs_93xx_sds_10gr_link_status(sds);
+		link = rtpcs_93xx_sds_10gr_link_status(sds, NULL);
 		if (link < 0) {
 			ret = link;
 			break;
@@ -3139,9 +3147,9 @@ static int rtpcs_930x_sds_check_calibration(struct rtpcs_serdes *sds,
 static void rtpcs_930x_rx_cali_work_handler(struct work_struct *work)
 {
 	unsigned long lock_start, attempt_start;
+	bool calib_failed, latch_sts;
 	struct rtpcs_serdes *sds;
-	int latch_sts, ret;
-	bool calib_failed;
+	int ret;
 
 	sds = container_of(to_delayed_work(work), struct rtpcs_serdes, cali_work);
 
@@ -3185,14 +3193,14 @@ static void rtpcs_930x_rx_cali_work_handler(struct work_struct *work)
 		rtpcs_930x_sds_rxeq_dfe_taps_adapt(sds);
 		msleep(20);
 
-		latch_sts = rtpcs_sds_read_bits(sds, PAGE_TGR_STD_0, 1, 2, 2);
-		if (latch_sts >= 0) {
+		ret = rtpcs_93xx_sds_10gr_link_status(sds, &latch_sts);
+		if (ret >= 0) {
 			usleep_range(1000, 2000);
-			latch_sts = rtpcs_sds_read_bits(sds, PAGE_TGR_STD_0, 1, 2, 2);
+			ret = rtpcs_93xx_sds_10gr_link_status(sds, &latch_sts);
 		}
-		if (latch_sts < 0) {
-			dev_err(sds->ctrl->dev, "SerDes %u: RX latch read failed: %d\n",
-				sds->id, latch_sts);
+		if (ret < 0) {
+			dev_err(sds->ctrl->dev, "SerDes %u: RX link-status read failed: %d\n",
+				sds->id, ret);
 			goto terminate;
 		}
 		if (latch_sts) {
@@ -4064,7 +4072,7 @@ static int rtpcs_931x_sds_rxcal_fiber_adapt(struct rtpcs_serdes *sds)
 				sds->id, symerr);
 			return symerr;
 		}
-		link = rtpcs_93xx_sds_10gr_link_status(sds);
+		link = rtpcs_93xx_sds_10gr_link_status(sds, NULL);
 		if (link < 0) {
 			dev_err(dev, "SerDes %u: RX calibration link-status read failed: %d\n",
 				sds->id, link);
@@ -4421,7 +4429,7 @@ static void rtpcs_931x_rx_linkmon_work_handler(struct work_struct *work)
 	    sds->hw_mode != RTPCS_SDS_MODE_10GBASER)
 		goto unlock;
 
-	link = rtpcs_93xx_sds_10gr_link_status(sds);
+	link = rtpcs_93xx_sds_10gr_link_status(sds, NULL);
 	if (link < 0) {
 		sds->rxmon_down = 0;
 		dev_err_ratelimited(sds->ctrl->dev, "SerDes %u: RX link monitor read failed: %d\n",
