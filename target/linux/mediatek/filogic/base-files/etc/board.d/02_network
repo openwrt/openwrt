@@ -387,6 +387,9 @@ mediatek_setup_macs()
 	smartrg,sdg-9000)
 		lan_mac=$(macaddr_add "$(mmc_get_mac_ascii mfginfo MFG_MAC)" 1)
 		;;
+	totolink,x30)
+		label_mac=$(mtd_get_mac_binary "factory" 0x4)
+		;;
 	tplink,eap683-lr|\
 	tplink,f65-v1)
 		label_mac=$(get_mac_binary "/tmp/factory/default-mac" 0)
