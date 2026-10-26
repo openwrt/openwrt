@@ -6066,6 +6066,210 @@ static int otto_l3_931x_v6_row_to_slot(struct otto_l3_ctrl *ctrl, int row)
 	       (row % RTL931X_V6_ROWS_PER_GROUP ? 0 : 1);
 }
 
+/* L3_HOST_ROUTE_IPUC, 4 words. The exact match half of the routing lookup: a
+ * hash table rather than a TCAM, so there are no mask fields and a row is an
+ * ordinary read-modify-write. Its tail is the same sub-structure as the prefix
+ * table's, which is what pins the meanings - in the vendor's internal entry the
+ * two sit 0x60 apart, host +0x5c..+0x7c against prefix +0xbc..+0xdc.
+ *
+ * Against the RTL930x host entry: the VRF and the format selector are part of
+ * the key here, the destination is not at the bottom of the row, the action is
+ * three bits rather than two and the next hop thirteen rather than eleven,
+ * there is an ECMP select bit between them, and the hit bit sits far below
+ * everything else because the row shares it with the other formats it can hold.
+ */
+#define RTL931X_HR_VALID		127, 1
+#define RTL931X_HR_FORMAT		126, 1
+#define RTL931X_HR_TYPE			124, 2
+#define RTL931X_HR_VRF			116, 8
+#define RTL931X_HR_DIP			84, 32
+#define RTL931X_HR_DST_NULL		74, 1
+#define RTL931X_HR_ACTION		71, 3
+#define RTL931X_HR_ECMP			70, 1
+#define RTL931X_HR_NEXTHOP		57, 13
+#define RTL931X_HR_TTL_DEC		56, 1
+#define RTL931X_HR_TTL_CHECK		55, 1
+#define RTL931X_HR_QOS_AS		54, 1
+#define RTL931X_HR_QOS_PRIO		51, 3
+#define RTL931X_HR_HIT			15, 1
+
+/* Buckets in one of the two hash tables, and rows in one bucket. The SDK's
+ * 12288 entries are 2 * 1024 * 6, which is what says the hash is ten bits wide
+ * here where the RTL930x uses nine. The table descriptor counts the addresses
+ * those entries sit at, six of every eight, so it reads 16384.
+ */
+#define RTL931X_HOST_BUCKETS		1024
+#define RTL931X_HOST_SLOTS		6
+
+/* Logical row of a slot, the index _dal_mango_l3_hostEntry_alloc() hands back:
+ * physical is (table << 13 | bucket << 3 | slot) and the table implements six
+ * of every eight addresses, so the logical index collapses to this.
+ */
+#define RTL931X_HOST_ROW(tbl, bucket, slot) \
+	((((tbl) * RTL931X_HOST_BUCKETS) + (bucket)) * RTL931X_HOST_SLOTS + (slot))
+
+/* One row of the exact match table. @idx is a logical row, the index the
+ * vendor allocator hands back; the table implements six addresses in every
+ * eight like the prefix table, so it goes through the same mapping.
+ *
+ * Not a TCAM, so unlike a route row this one carries no masks and could be
+ * written a field at a time. It is still written whole, because a host entry
+ * is only ever placed in a free slot or cleared out of its own.
+ */
+static int otto_l3_931x_host_row_write(struct otto_l3_ctrl *ctrl, int idx,
+				       struct otto_l3_route *rt)
+{
+	u32 data[4] = {};
+
+	if (rt->attr.type != ROUTE_TYPE_IP4UC) {
+		dev_dbg(ctrl->dev, "host route type %d not offloaded on this chip\n",
+			rt->attr.type);
+		return -EOPNOTSUPP;
+	}
+
+	otto_l3_931x_fset(data, 4, RTL931X_HR_VALID, rt->attr.valid);
+
+	/* The three the lookup compares besides the destination: entry format
+	 * 0, entry type, and the single VRF. All three are part of the key
+	 * here, so all three are part of what the hash is taken over.
+	 */
+	otto_l3_931x_fset(data, 4, RTL931X_HR_FORMAT, 0);
+	otto_l3_931x_fset(data, 4, RTL931X_HR_TYPE, rt->attr.type);
+	otto_l3_931x_fset(data, 4, RTL931X_HR_VRF, RTL931X_L3_VRF);
+	otto_l3_931x_fset(data, 4, RTL931X_HR_DIP, rt->dst_ip);
+
+	otto_l3_931x_fset(data, 4, RTL931X_HR_DST_NULL, rt->attr.dst_null);
+	otto_l3_931x_fset(data, 4, RTL931X_HR_ACTION, rt->attr.action);
+	otto_l3_931x_fset(data, 4, RTL931X_HR_ECMP, 0);
+	otto_l3_931x_fset(data, 4, RTL931X_HR_NEXTHOP, rt->nh.id);
+	otto_l3_931x_fset(data, 4, RTL931X_HR_TTL_DEC, rt->attr.ttl_dec);
+	otto_l3_931x_fset(data, 4, RTL931X_HR_TTL_CHECK, rt->attr.ttl_check);
+	otto_l3_931x_fset(data, 4, RTL931X_HR_QOS_AS, rt->attr.qos_as);
+	otto_l3_931x_fset(data, 4, RTL931X_HR_QOS_PRIO, rt->attr.qos_prio);
+	otto_l3_931x_fset(data, 4, RTL931X_HR_HIT, rt->attr.hit);
+
+	return otto_table_write(RTL9310_TBL_L3_HOST_ROUTE_IPUC,
+				RTL931X_L3_ROUTE_ROW(idx), &data);
+}
+
+/* What one row of the exact match table holds */
+struct otto_l3_931x_host_row {
+	bool valid;
+	u8 type;
+	u32 dip;
+	bool hit;
+};
+
+static int otto_l3_931x_host_row_read(struct otto_l3_ctrl *ctrl, int idx,
+				      struct otto_l3_931x_host_row *h)
+{
+	u32 data[4];
+	int err;
+
+	err = otto_table_read(RTL9310_TBL_L3_HOST_ROUTE_IPUC,
+			      RTL931X_L3_ROUTE_ROW(idx), &data);
+	if (err)
+		return err;
+
+	h->valid = otto_l3_931x_fget(data, 4, RTL931X_HR_VALID);
+	h->type = otto_l3_931x_fget(data, 4, RTL931X_HR_TYPE);
+	h->dip = otto_l3_931x_fget(data, 4, RTL931X_HR_DIP);
+	h->hit = otto_l3_931x_fget(data, 4, RTL931X_HR_HIT);
+
+	return 0;
+}
+
+/* The bucket the hardware picks for a destination: the address folded into ten
+ * bit groups from the bottom and XORed together, which is the RTL930x's hash
+ * widened from nine bits to ten. The VRF plays no part at VRF 0, the only one
+ * this driver uses.
+ *
+ * Measured on an S1300WP rather than read off the vendor code, which folds four
+ * words of its own host structure and chops two of them at different bit
+ * offsets - one bitstream in ten bit groups, not something to take apart field
+ * by field. Instead one destination is written into slot 0 of all 1024 buckets
+ * of table 0, so that whichever bucket the lookup picks it finds the entry
+ * there and latches that row's hit bit, and the bucket is read back. Filling
+ * every bucket is what takes the hash out of the experiment: the only thing the
+ * answer can depend on is which bucket was chosen.
+ *
+ * Against a base of 10.88.88.5, which hashes to 694, flipping one address bit
+ * gives that bit's contribution to the hash. All 32 were measured and every one
+ * came back as 1 << (bit % 10), which is this fold and no other.
+ */
+static u32 otto_l3_931x_host_hash4(u32 dip)
+{
+	return (dip & 0x3ff) ^ ((dip >> 10) & 0x3ff) ^ ((dip >> 20) & 0x3ff) ^
+	       (dip >> 30);
+}
+
+/* The row a host route belongs in: the one already holding it when @must_exist,
+ * otherwise a free one in its bucket. Negative when the bucket is full, which
+ * leaves the route to the prefix table or to the CPU.
+ *
+ * Table 0 only. There are two, and the vendor gives them different hash
+ * algorithms - L3_HOST_TBL_CTRL bit 2 clear for this one, bit 3 set for the
+ * other - so that a key colliding in one need not collide in the other. Only
+ * the algorithm this table uses has been measured, and a wrong bucket in the
+ * other table would be worse than not having it: the row would be written
+ * somewhere the lookup never reads, and the route would silently never match.
+ * Table 0 alone is 1024 buckets of six, well past the 512 rows the prefix
+ * table has to share for everything else.
+ */
+static int otto_l3_931x_find_slot(struct otto_l3_ctrl *ctrl,
+				  struct otto_l3_route *rt, bool must_exist)
+{
+	u32 bucket;
+	int err;
+
+	if (rt->attr.type != ROUTE_TYPE_IP4UC)
+		return -EOPNOTSUPP;
+
+	bucket = otto_l3_931x_host_hash4(rt->dst_ip);
+
+	for (int slot = 0; slot < RTL931X_HOST_SLOTS; slot++) {
+		struct otto_l3_931x_host_row h;
+		int row = RTL931X_HOST_ROW(0, bucket, slot);
+
+		/* A row that could not be read is an error, not a bucket that
+		 * is full or an entry that is missing: the caller must not go
+		 * on to take a prefix row for a route that may well be here.
+		 */
+		err = otto_l3_931x_host_row_read(ctrl, row, &h);
+		if (err)
+			return err;
+
+		if (must_exist) {
+			if (h.valid && h.type == ROUTE_TYPE_IP4UC &&
+			    h.dip == rt->dst_ip)
+				return row;
+		} else if (!h.valid) {
+			return row;
+		}
+	}
+
+	/* The two answers the generic layer tells apart: the entry is not
+	 * here, or there is no room for it
+	 */
+	return must_exist ? -ENOENT : -ENOSPC;
+}
+
+static int otto_l3_931x_host_route_write(struct otto_l3_ctrl *ctrl, int idx,
+					 struct otto_l3_route *rt)
+{
+	int err = otto_l3_931x_host_row_write(ctrl, idx, rt);
+
+	/* Returned, so the route is marked as failed rather than believed to
+	 * be in hardware, and said here too: the callers turn the return into
+	 * FIB flags and log nothing themselves.
+	 */
+	if (err)
+		dev_err(ctrl->dev, "host route row %d not written for %pI4: %d\n",
+			idx, &rt->dst_ip, err);
+
+	return err;
+}
+
 const struct otto_l3_config otto_l3_931x_cfg = {
 	.get_egress_intf = otto_l3_931x_get_egress_intf,
 	.set_egress_intf = otto_l3_931x_set_egress_intf,
@@ -6082,6 +6286,8 @@ const struct otto_l3_config otto_l3_931x_cfg = {
 	.v6_row_to_slot = otto_l3_931x_v6_row_to_slot,
 	.route_matches = otto_l3_931x_route_matches,
 	.route_write = otto_l3_931x_route_write,
+	.find_slot = otto_l3_931x_find_slot,
+	.host_route_write = otto_l3_931x_host_route_write,
 };
 
 static const struct of_device_id otto_l3_of_ids[] = {
