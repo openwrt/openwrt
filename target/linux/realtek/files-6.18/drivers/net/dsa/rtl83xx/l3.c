@@ -2964,11 +2964,16 @@ static int otto_l3_fib_add_v4(struct otto_l3_ctrl *ctrl, struct fib_entry_notifi
 	}
 
 	/* A route through a device outside the switch is the CPU's, and so is
-	 * an address of the box on such a device
+	 * an address of the box on such a device. Neither is a failure:
+	 * otto_l3_fib_trap_v4() gives the destination a row that traps, so the
+	 * CPU gets the traffic. An address put straight on a port rather than
+	 * on a bridge over it looks like this, which every boot does before the
+	 * bridge exists.
 	 */
 	port = otto_l3_port_dev_lower_find(ndev, ctrl);
 	if (port < 0) {
-		dev_err(ctrl->dev, "lower interface %s not found\n", ndev->name);
+		dev_dbg(ctrl->dev, "no switch port under %s, trapping instead\n",
+			ndev->name);
 		otto_l3_fib_trap_v4(ctrl, info);
 		return -ENODEV;
 	}
