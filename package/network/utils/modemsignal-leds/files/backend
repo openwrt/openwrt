@@ -1,0 +1,221 @@
+#!/bin/sh
+# SPDX-License-Identifier: GPL-2.0-or-later
+# modemsignal-leds backend: print a normalized signal quality 0..100
+# (or a negative value = no service / error) for one modem.
+#
+#   backend at   <ttydev> [<iface>]  # AT+CSQ via gcom
+#   backend qmi  <cdc-wdm> [<iface>] # uqmi --get-signal-info
+#   backend mm   <syspath> [<iface>] # mmcli signal quality (ModemManager)
+#   backend auto <iface>             # derive channel+device from a netif
+#   backend mock <value>             # print <value> (test / bring-up)
+
+have() { command -v "$1" >/dev/null 2>&1; }
+
+# the bundled gcom helpers are package data and stay in /usr/share, while this
+# script is an executable and lives in /usr/libexec
+DATADIR=${MODEMSIGNAL_LEDS_DATA:-/usr/share/modemsignal-leds}
+
+# CSQ index 0..31 (99 = unknown) -> 0..100
+csq_to_q() {
+	case "$1" in
+	''|*[!0-9]*) echo -1; return ;;
+	esac
+	# only 0..31 is a reading; 99 means unknown and 32..98 are reserved, so
+	# treat everything above 31 as no signal rather than clamping it to full
+	[ "$1" -gt 31 ] && { echo -1; return; }
+	echo $(( $1 * 100 / 31 ))
+}
+
+# RSSI dBm (-110..-50) -> 0..100
+dbm_to_q() {
+	local n="$1" q
+	case "$n" in -*) n="${n#-}" ;; esac
+	case "$n" in
+	''|*[!0-9]*) echo -1; return ;;
+	esac
+	# cellular levels are negative: use the magnitude, so a modem that
+	# reports "75" for -75 dBm does not clamp straight to full scale
+	q=$(( (110 - n) * 100 / 60 ))
+	[ "$q" -lt 0 ] && q=0
+	[ "$q" -gt 100 ] && q=100
+	echo "$q"
+}
+
+# Serialize AT access against our own other instances. netifd does not take
+# this lock, so it does not replace gating on the interface state below.
+at_gcom() {
+	local dev="$1" script="$2"
+	have flock || { gcom -d "$dev" -s "$script" 2>/dev/null; return; }
+	# busybox flock has no -w: take the lock non-blocking and simply skip this
+	# sample if another instance holds it
+	flock -n "/var/lock/modemsignal-${dev##*/}.lock" \
+		gcom -d "$dev" -s "$script" 2>/dev/null
+}
+
+# netifd owns the same control node while it brings the interface up or tears
+# it down. Polling in that window interleaves with its own traffic and corrupts
+# both sides - an AT port is the worst case, but a qmi cdc-wdm channel is
+# just as busy - so stay quiet until the interface is up.
+iface_up() {
+	[ "$(ubus call "network.interface.$1" status 2>/dev/null |
+		jsonfilter -e '@.up' 2>/dev/null)" = "true" ]
+}
+
+# $2 is optional: when the caller knows which interface owns this port, skip
+# the sample while netifd is setting it up or tearing it down (see iface_up).
+b_at() {
+	have gcom || { echo -1; return; }
+	local resp n q mode
+	[ -z "$2" ] || iface_up "$2" || { echo -1; return; }
+	# Standard 3GPP AT+CSQ (0..31), understood by virtually every modem. We
+	# ship our own gcom script because comgt's getstrength.gcom starts with
+	# "flash 0.1", a DTR pulse that hangs up the data call on a modem set to
+	# AT&D2 - not something a read-only poller should do.
+	resp=$(at_gcom "$1" "$DATADIR/getcsq.gcom")
+	# Nothing at all means the transaction did not happen: the modem is not
+	# answering, or another instance holds the lock. Asking a second time
+	# right away only adds traffic, and the daemon's deadline is one poll
+	# interval for both queries together.
+	case "$resp" in
+	*+CSQ:*|*OK*|*ERROR*)	;;
+	*)			echo -1; return ;;
+	esac
+	n=$(printf '%s\n' "$resp" | sed -n 's/.*+CSQ:[[:space:]]*\([0-9]\{1,\}\).*/\1/p' | head -1)
+	q=$(csq_to_q "$n")
+	[ "$q" -ge 0 ] && { echo "$q"; return; }
+	# Some Quectel modems report +CSQ: 99 ("unknown") in NCM/RmNet mode even
+	# when registered, and expose the RSSI via +QCSQ instead. Modems that do
+	# not implement +QCSQ (the EG060W among them) answer ERROR, nothing
+	# matches and we return -1 as before.
+	resp=$(at_gcom "$1" "$DATADIR/getqcsq.gcom")
+	# The fields after the mode differ per radio: "GSM",<rssi> and
+	# "WCDMA",<rssi>,<ecio>,<rscp> have no RSRP, "LTE",<rssi>,<rsrp>,
+	# <sinr>,<rsrq> does, and "NR5G",<rsrp>,<sinr>,<rsrq> has no RSSI at
+	# all, so its RSRP comes first. Prefer RSRP where it exists: RSSI is
+	# wideband power and moves with bandwidth and load, RSRP does not.
+	# Splitting on quotes, commas and the CR that ends every AT response
+	# gives the mode and the two fields after it in one pass. Without the
+	# CR the trailing field keeps it and fails the numeric test, which is
+	# every answer whose last field is the one we want: "GSM",<rssi> and
+	# the short forms of "LTE" and "NR5G".
+	set -- $(printf '%s\n' "$resp" |
+		awk -F'[",\r]' '/\+QCSQ:/ { print $2, $4, $5; exit }')
+	case "$1" in
+	NR5G*)	rsrp_to_q "$2" nr ;;
+	# an "LTE" answer cut short after the RSSI still has a level
+	LTE*)	if [ -n "$3" ]; then rsrp_to_q "$3" lte; else dbm_to_q "$2"; fi ;;
+	*)	dbm_to_q  "$2" ;;
+	esac
+}
+
+# RSRP dBm -> 0..100, with the window picked per radio so the bars land where
+# a handset's would: a phone shows its first bar at about -115 dBm on LTE and
+# fills at -85, which is also what Android ships as its default thresholds.
+# NR reports RSRP over a different range (3GPP TS 38.133) and a good NR cell
+# sits higher, so it gets its own window.
+#
+#   $1 = dBm (sign optional), $2 = lte (default) | nr
+rsrp_to_q() {
+	local n="$1" lo=115 hi=85 q
+	case "$n" in -*) n="${n#-}" ;; esac
+	case "$n" in
+	''|*[!0-9]*) echo -1; return ;;
+	esac
+	case "$2" in
+	nr)	lo=110; hi=65 ;;
+	esac
+	q=$(( (lo - n) * 100 / (lo - hi) ))
+	[ "$q" -lt 0 ] && q=0
+	[ "$q" -gt 100 ] && q=100
+	echo "$q"
+}
+
+# uqmi reports one object per radio, but an array of them when LTE and 5G NR
+# are connected at once (EN-DC), so look for the field at both depths.
+qmi_field() {
+	printf '%s\n' "$1" | jsonfilter -e "@.$2" -e "@[*].$2" 2>/dev/null | head -1
+}
+
+b_qmi() {
+	have uqmi && have jsonfilter || { echo -1; return; }
+	local out v
+	[ -z "$2" ] || iface_up "$2" || { echo -1; return; }
+	out=$(uqmi -d "$1" --get-signal-info 2>/dev/null)
+	# lte and 5gnr report "rsrp", the per-resource-element level, which is
+	# what a bar graph wants. In EN-DC only the lte entry also has "rssi".
+	v=$(qmi_field "$out" rsrp)
+	if [ -n "$v" ]; then
+		# in EN-DC the first entry is the lte one, and so is its rsrp
+		case "$(qmi_field "$out" type)" in
+		5gnr)	rsrp_to_q "$v" nr ;;
+		*)	rsrp_to_q "$v" lte ;;
+		esac
+		return
+	fi
+	# Older radios: lte/wcdma/cdma/hdr report "rssi", gsm/tdma "signal".
+	v=$(qmi_field "$out" rssi)
+	[ -n "$v" ] || v=$(qmi_field "$out" signal)
+	dbm_to_q "$v"
+}
+
+# ModemManager keeps the modem to itself, so ask it rather than the port.
+# "device" of a proto modemmanager interface is the sysfs path mmcli takes,
+# and signal-quality is already a percentage.
+b_mm() {
+	have mmcli || { echo -1; return; }
+	local out v
+	[ -z "$2" ] || iface_up "$2" || { echo -1; return; }
+	out=$(mmcli --modem="$1" --output-keyvalue 2>/dev/null)
+	# "recent: no" means the value is a stale cache rather than a reading.
+	# Only an explicit no counts: not every mmcli prints the field.
+	printf '%s\n' "$out" | grep -q '^modem\.generic\.signal-quality\.recent *: *no' &&
+		{ echo -1; return; }
+	v=$(printf '%s\n' "$out" |
+		sed -n 's/^modem\.generic\.signal-quality\.value[[:space:]]*:[[:space:]]*\([0-9]\{1,\}\).*/\1/p' |
+		head -1)
+	case "$v" in
+	''|*[!0-9]*)	echo -1 ;;
+	*)		[ "$v" -gt 100 ] && v=100; echo "$v" ;;
+	esac
+}
+
+# proto wwan has no device option: it finds the modem at setup time and keeps
+# the driver it picked and the control node in /var/state. Dispatch the same
+# way it does. comgt has a data tty of its own, so its control tty is free.
+b_wwan() {
+	local driver dev
+	driver=$(uci -P /var/state -q get "network.$1.driver")
+	dev=$(uci -P /var/state -q get "network.$1.ctl_device")
+	case "$driver" in
+	qmi_wwan)				b_qmi "$dev" ;;
+	comgt|sierra_net|cdc_ether|*cdc_ncm)	b_at  "$dev" ;;
+	*)					echo -1 ;;
+	esac
+}
+
+b_auto() {
+	local iface="${1:-wwan}" proto dev
+	iface_up "$iface" || { echo -1; return; }
+	proto=$(uci -q get "network.$iface.proto")
+	dev=$(uci -q get "network.$iface.device")
+	case "$proto" in
+	qmi)		b_qmi  "$dev" ;;
+	modemmanager)	b_mm   "$dev" ;;
+	ncm)		b_at   "$dev" ;;
+	wwan)		b_wwan "$iface" ;;
+	# Anything else has no control channel we can query: proto 3g runs
+	# pppd on its one tty, an AT poll there would reconfigure the port
+	# under it, umbim has no signal query, and on a plain cdc-ether modem
+	# on proto dhcp "device" is a netdev, not a tty.
+	*)		echo -1 ;;
+	esac
+}
+
+case "$1" in
+at)	b_at   "$2" "$3" ;;
+qmi)	b_qmi  "$2" "$3" ;;
+mm)	b_mm   "$2" "$3" ;;
+auto)	b_auto "$2" ;;
+mock)	echo "${2:--1}" ;;
+*)	echo -1 ;;
+esac
