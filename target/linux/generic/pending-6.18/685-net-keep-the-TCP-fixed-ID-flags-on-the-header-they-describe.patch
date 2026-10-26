@@ -1,0 +1,197 @@
+From f689def2f03965d7e4c48455c3926d7475044910 Mon Sep 17 00:00:00 2001
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Date: Sat, 24 Oct 2026 16:14:19 +0200
+Subject: [PATCH] net: keep the TCP fixed-ID flags on the header they describe
+
+GRO sets SKB_GSO_TCP_FIXEDID for the outer IPv4 header of a TCP packet
+and SKB_GSO_TCP_FIXEDID_INNER for the inner header of an encapsulated
+one, and segmentation reads them the same way. Three paths do not keep
+the flags on the header they describe:
+
+- Encapsulation: iptunnel_handle_offloads(), bpf_skb_net_grow() and
+  bpf_lwt_push_ip_encap() make the IPv4 header of a GSO packet the
+  inner one but leave SKB_GSO_TCP_FIXEDID. A TCP stream that GRO merged
+  with fixed IDs and that is forwarded into a tunnel gets one outer ID
+  for all segments, also with DF clear, and incrementing inner IDs.
+- Decapsulation: iptunnel_pull_offloads(), bpf_skb_net_shrink() and
+  the segment routing decapsulation in ipv6_srh_rcv() and
+  ipv6_rpl_srh_rcv() leave both flags, so the new outer header is
+  segmented with the state of the removed one: inner IDs that
+  incremented come out fixed when the outer IDs were fixed, and the
+  reverse.
+- Segmentation below GRE and UDP tunnels: inet_gso_segment() tells the
+  inner header from the outer one by SKB_GSO_CB(skb)->encap_level,
+  which gre_gso_segment() and __skb_udp_tunnel_segment() reset before
+  they segment the inner packet. The inner IPv4 header of a GRE, VXLAN,
+  GENEVE, FOU, GUE or bareudp packet is segmented with the outer flag.
+
+Add skb_gso_fixedid_encap() and skb_gso_fixedid_decap(), which move the
+flag to the inner or the outer bit, and call them where a GSO packet
+becomes encapsulated or loses its outer header. The segment routing
+paths use iptunnel_pull_offloads() for this, which also clears the
+tunnel GSO types of the removed header. Keep encap_level below GRE and
+UDP tunnels, as ipip_gso_segment() and the IPv6 tunnel handlers do; the
+inner pass then also masks the features with hw_enc_features, which the
+tunnel handlers have done already, and resets the inner headers of each
+segment.
+
+The three changes go together: with any one of them alone, fixed IDs
+are lost in a case that works today, such as a packet encapsulated and
+decapsulated again without segmentation, or one forwarded into an IPv6
+GRE tunnel.
+
+Fixes: 3271f19bf7b9 ("net: gso: restore ids of outer ip headers correctly")
+Link: https://lore.kernel.org/netdev/cover.1792857378.git.julius@bairaktaris.de/
+[ 6.18: bpf_skb_net_shrink() does not clear skb->encapsulation yet, so
+  its decapsulation hunk is left out ]
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+---
+--- a/include/linux/skbuff.h
++++ b/include/linux/skbuff.h
+@@ -5218,6 +5218,36 @@ static inline void skb_decrease_gso_size
+ 	shinfo->gso_size -= decrement;
+ }
+ 
++/**
++ * skb_gso_fixedid_encap - move the TCP fixed-ID flag to the inner header
++ * @shinfo: shared info of a GSO packet that becomes encapsulated
++ *
++ * The IPv4 header that SKB_GSO_TCP_FIXEDID describes becomes the inner one,
++ * and the new outer header gets an incrementing ID.
++ */
++static inline void skb_gso_fixedid_encap(struct skb_shared_info *shinfo)
++{
++	unsigned int fixedid = shinfo->gso_type & SKB_GSO_TCP_FIXEDID;
++
++	shinfo->gso_type &= ~(SKB_GSO_TCP_FIXEDID | SKB_GSO_TCP_FIXEDID_INNER);
++	shinfo->gso_type |= fixedid << 1;
++}
++
++/**
++ * skb_gso_fixedid_decap - move the TCP fixed-ID flag to the new outer header
++ * @shinfo: shared info of an encapsulated GSO packet losing its outer header
++ *
++ * The inner IPv4 header, which SKB_GSO_TCP_FIXEDID_INNER describes, becomes
++ * the outer one, and the state of the removed outer header is dropped.
++ */
++static inline void skb_gso_fixedid_decap(struct skb_shared_info *shinfo)
++{
++	unsigned int fixedid = shinfo->gso_type & SKB_GSO_TCP_FIXEDID_INNER;
++
++	shinfo->gso_type &= ~(SKB_GSO_TCP_FIXEDID | SKB_GSO_TCP_FIXEDID_INNER);
++	shinfo->gso_type |= fixedid >> 1;
++}
++
+ void __skb_warn_lro_forwarding(const struct sk_buff *skb);
+ 
+ static inline bool skb_warn_if_lro(const struct sk_buff *skb)
+--- a/include/net/ip_tunnels.h
++++ b/include/net/ip_tunnels.h
+@@ -661,6 +661,8 @@ static inline int iptunnel_pull_offloads
+ 		err = skb_unclone(skb, GFP_ATOMIC);
+ 		if (unlikely(err))
+ 			return err;
++		if (skb->encapsulation)
++			skb_gso_fixedid_decap(skb_shinfo(skb));
+ 		skb_shinfo(skb)->gso_type &= ~(NETIF_F_GSO_ENCAP_ALL >>
+ 					       NETIF_F_GSO_SHIFT);
+ 	}
+--- a/net/core/filter.c
++++ b/net/core/filter.c
+@@ -3630,6 +3630,9 @@ static int bpf_skb_net_grow(struct sk_bu
+ 	if (skb_is_gso(skb)) {
+ 		struct skb_shared_info *shinfo = skb_shinfo(skb);
+ 
++		if (encap)
++			skb_gso_fixedid_encap(shinfo);
++
+ 		/* Header must be checked, and gso_segs recomputed. */
+ 		shinfo->gso_type |= gso_type;
+ 		shinfo->gso_segs = 0;
+--- a/net/core/lwt_bpf.c
++++ b/net/core/lwt_bpf.c
+@@ -535,6 +535,7 @@ static int handle_gso_type(struct sk_buf
+ {
+ 	struct skb_shared_info *shinfo = skb_shinfo(skb);
+ 
++	skb_gso_fixedid_encap(shinfo);
+ 	gso_type |= SKB_GSO_DODGY;
+ 	shinfo->gso_type |= gso_type;
+ 	skb_decrease_gso_size(shinfo, encap_len);
+--- a/net/ipv4/gre_offload.c
++++ b/net/ipv4/gre_offload.c
+@@ -35,7 +35,6 @@ static struct sk_buff *gre_gso_segment(s
+ 
+ 	/* setup inner skb. */
+ 	skb->encapsulation = 0;
+-	SKB_GSO_CB(skb)->encap_level = 0;
+ 	__skb_pull(skb, tnl_hlen);
+ 	skb_reset_mac_header(skb);
+ 	skb_set_network_header(skb, skb_inner_network_offset(skb));
+--- a/net/ipv4/ip_tunnel_core.c
++++ b/net/ipv4/ip_tunnel_core.c
+@@ -174,9 +174,10 @@ EXPORT_SYMBOL_GPL(iptunnel_metadata_repl
+ int iptunnel_handle_offloads(struct sk_buff *skb,
+ 			     int gso_type_mask)
+ {
++	bool encap = !skb->encapsulation;
+ 	int err;
+ 
+-	if (likely(!skb->encapsulation)) {
++	if (likely(encap)) {
+ 		skb_reset_inner_headers(skb);
+ 		skb->encapsulation = 1;
+ 	}
+@@ -185,6 +186,8 @@ int iptunnel_handle_offloads(struct sk_b
+ 		err = skb_header_unclone(skb, GFP_ATOMIC);
+ 		if (unlikely(err))
+ 			return err;
++		if (encap)
++			skb_gso_fixedid_encap(skb_shinfo(skb));
+ 		skb_shinfo(skb)->gso_type |= gso_type_mask;
+ 		return 0;
+ 	}
+--- a/net/ipv4/udp_offload.c
++++ b/net/ipv4/udp_offload.c
+@@ -205,7 +205,6 @@ static struct sk_buff *__skb_udp_tunnel_
+ 
+ 	/* setup inner skb. */
+ 	skb->encapsulation = 0;
+-	SKB_GSO_CB(skb)->encap_level = 0;
+ 	__skb_pull(skb, tnl_hlen);
+ 	skb_reset_mac_header(skb);
+ 	skb_set_network_header(skb, skb_inner_network_offset(skb));
+--- a/net/ipv6/exthdrs.c
++++ b/net/ipv6/exthdrs.c
+@@ -53,6 +53,7 @@
+ #include <linux/ioam6_genl.h>
+ #include <net/ioam6.h>
+ #include <net/dst_metadata.h>
++#include <net/ip_tunnels.h>
+ 
+ #include <linux/uaccess.h>
+ 
+@@ -409,7 +410,10 @@ looped_back:
+ 
+ 			skb_reset_network_header(skb);
+ 			skb_reset_transport_header(skb);
+-			skb->encapsulation = 0;
++			if (iptunnel_pull_offloads(skb)) {
++				kfree_skb(skb);
++				return -1;
++			}
+ 			if (hdr->nexthdr == NEXTHDR_IPV4)
+ 				skb->protocol = htons(ETH_P_IP);
+ 			__skb_tunnel_rx(skb, skb->dev, net);
+@@ -516,7 +520,10 @@ looped_back:
+ 
+ 			skb_reset_network_header(skb);
+ 			skb_reset_transport_header(skb);
+-			skb->encapsulation = 0;
++			if (iptunnel_pull_offloads(skb)) {
++				kfree_skb(skb);
++				return -1;
++			}
+ 
+ 			__skb_tunnel_rx(skb, skb->dev, net);
+ 
