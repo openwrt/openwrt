@@ -2777,6 +2777,7 @@ static int rtpcs_930x_sds_rxeq_tap_get(struct rtpcs_serdes *sds, unsigned int ta
 
 static void rtpcs_930x_sds_rxcal_init(struct rtpcs_serdes *sds, enum rtpcs_sds_mode hw_mode)
 {
+	bool fiber = sds->attachment == RTPCS_SDS_ATTACH_FIBER;
 	int tap0_init_val = 0x1f; /* initial DFE TAP0 */
 	int vth_min = 0x1;
 
@@ -2828,12 +2829,10 @@ static void rtpcs_930x_sds_rxcal_init(struct rtpcs_serdes *sds, enum rtpcs_sds_m
 
 	/* LEQ and DFE setting */
 
-	/* assume this is equivalent with (PHY_TYPE == SERDES && MEDIA == FIBER_10G) for now */
 	if (hw_mode == RTPCS_SDS_MODE_10GBASER) {
-		rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0x03, 13, 8, 0x1f);
-		rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0x00, 13, 13, 0x01);
-		/* FILTER_OUT */
-		rtpcs_sds_write_bits(sds, PAGE_ANA_10G, ANA_SPD_REG22, 14, 8, 0x00);
+		/* Restore the ordinary values when replacing fiber with a DAC. */
+		rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0x03, 13, 8, fiber ? 0x1f : 0x0a);
+		rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0x00, 13, 13, fiber);
 	}
 
 	/* REG0_LEQ_DC_GAIN, 0x01 for short DACs */
@@ -3503,12 +3502,7 @@ static int rtpcs_930x_sds_config_attachment(struct rtpcs_serdes *sds,
 		tx_cfg = &rtpcs_930x_sds_tx_config_2g5;
 		break;
 	case RTPCS_SDS_PLL_SPD_10000:
-		/*
-		 * PHY-attached links equalize on the PHY's own far-end
-		 * receiver, less amp drive needed. Real DAC-vs-fiber
-		 * detection doesn't exist yet, so both of those share
-		 * the same config for now.
-		 */
+		/* PHY-attached links need less drive than direct module connections. */
 		tx_cfg = (attachment == RTPCS_SDS_ATTACH_PHY) ? &rtpcs_930x_sds_tx_config_phy
 							      : &rtpcs_930x_sds_tx_config_10g;
 		break;
@@ -3521,6 +3515,8 @@ static int rtpcs_930x_sds_config_attachment(struct rtpcs_serdes *sds,
 
 static int rtpcs_930x_sds_post_config(struct rtpcs_serdes *sds, enum rtpcs_sds_mode hw_mode)
 {
+	if (sds->attachment == RTPCS_SDS_ATTACH_NONE)
+		return 0;
 	if (hw_mode != RTPCS_SDS_MODE_10GBASER &&
 	    hw_mode != RTPCS_SDS_MODE_XSGMII &&
 	    hw_mode != RTPCS_SDS_MODE_USXGMII)
