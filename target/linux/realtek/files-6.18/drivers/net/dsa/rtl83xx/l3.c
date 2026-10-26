@@ -5616,6 +5616,456 @@ static int otto_l3_931x_set_intf_mtu(struct otto_l3_ctrl *ctrl, int id, u16 mtu)
 	return 0;
 }
 
+/* L3_PREFIX_ROUTE_IPUC, 6 words, a TCAM like the router MAC table. The values
+ * written into each field are the vendor's, read out of the struct
+ * dal_mango_l3_route_add() fills and mapped through the table_field_set()
+ * calls of __dal_mango_l3_routeEntry_set().
+ */
+#define RTL931X_RT_VALID		191, 1
+#define RTL931X_RT_FORMAT		190, 1
+#define RTL931X_RT_TYPE			188, 2
+#define RTL931X_RT_VRF			180, 8
+#define RTL931X_RT_DIP			148, 32
+#define RTL931X_RT_FORMAT_MASK		138, 1
+#define RTL931X_RT_TYPE_MASK		136, 2
+#define RTL931X_RT_VRF_MASK		128, 8
+#define RTL931X_RT_DIP_MASK		96, 32
+#define RTL931X_RT_HOST_ROUTE		86, 1
+#define RTL931X_RT_DEFAULT_ROUTE	85, 1
+#define RTL931X_RT_ACTION		81, 3
+#define RTL931X_RT_ECMP			80, 1
+#define RTL931X_RT_NEXTHOP		67, 13
+#define RTL931X_RT_TTL_DEC		66, 1
+#define RTL931X_RT_TTL_CHECK		65, 1
+/* Set by the hardware when the row matches, and held until something writes it
+ * back clear - which is how the RTL930x clears its own. Measured on an
+ * S1300WP: it latches on a forwarding match, a write of zero clears it, and
+ * traffic sets it again. The two addresses in every eight the table does not
+ * implement also read it set, so it means nothing on a row never written.
+ */
+#define RTL931X_RT_HIT			27, 1
+
+/* The second and third row of an IPv6 unicast prefix entry. They hold nothing
+ * but a validity key and 48 bits each of address and mask extension: the row
+ * at N+1 carries bytes 4..9 of each and the one at N+2 bytes 10..15, the first
+ * four bytes being in the IPv4-shaped row at N.
+ *
+ * The SDK describes them as a narrower four word view of the same table, and
+ * that view's bit b IS this six word row's bit b + 64 - both number a field
+ * from the last word of the row, so four fewer words shifts every offset by
+ * two words. Which is why the view's validity key, format selector and type
+ * land exactly on RTL931X_RT_VALID, RT_FORMAT and RT_TYPE, as a TCAM needs
+ * them to: whatever format a row is in, the selector that says so has to sit
+ * in a fixed place. So the only fields an extension row needs of its own are
+ * the two wide ones, and it is written through the ordinary six word view -
+ * which matters, because a four word write would drive only four of the six
+ * data registers of a window that reads and writes through the same six, and
+ * commit the other two holding whatever the previous access left there.
+ */
+#define RTL931X_RT6_ADDR		140, 48
+#define RTL931X_RT6_ADDR_MASK		88, 48
+
+/* Both route tables implement six of every eight addresses: a row congruent to
+ * 6 or 7 mod 8 refuses every write and reads back with only its last field
+ * set. Row numbers in this driver are logical and this is the physical address
+ * they land at, the mapping the SDK uses for the RTL930x host table and which
+ * on this chip the prefix table needs as well.
+ */
+#define RTL931X_L3_ROUTE_ROW(r)		(((r) / 6) * 8 + ((r) % 6))
+
+/* An IPv6 address or mask as the three rows of an entry cut it up: bytes 0..3
+ * in the first, then 4..9 and 10..15. Taken a byte at a time so the order is
+ * the address's own and not the host's.
+ */
+static u64 otto_l3_931x_v6_slice(const struct in6_addr *a, int first, int len)
+{
+	u64 v = 0;
+
+	for (int i = 0; i < len; i++)
+		v = (v << 8) | a->s6_addr[first + i];
+
+	return v;
+}
+
+static void otto_l3_931x_v6_unslice(struct in6_addr *a, int first, int len, u64 v)
+{
+	for (int i = len - 1; i >= 0; i--) {
+		a->s6_addr[first + i] = v & 0xff;
+		v >>= 8;
+	}
+}
+
+/* Build one extension row: its keys, and the 48 bit slice of the address and
+ * of the mask that it holds.
+ */
+static void otto_l3_931x_v6_ext_row(u32 *data, const struct otto_l3_route *rt,
+				    const struct in6_addr *addr,
+				    const struct in6_addr *mask, int first)
+{
+	memset(data, 0, 6 * sizeof(*data));
+
+	otto_l3_931x_fset(data, 6, RTL931X_RT_VALID, rt->attr.valid);
+	otto_l3_931x_fset(data, 6, RTL931X_RT_FORMAT, 0);
+	otto_l3_931x_fset(data, 6, RTL931X_RT_FORMAT_MASK, 1);
+	otto_l3_931x_fset(data, 6, RTL931X_RT_TYPE, rt->attr.type);
+	otto_l3_931x_fset(data, 6, RTL931X_RT_TYPE_MASK, 0x3);
+	otto_l3_931x_fset(data, 6, RTL931X_RT6_ADDR,
+			  otto_l3_931x_v6_slice(addr, first, 6));
+	otto_l3_931x_fset(data, 6, RTL931X_RT6_ADDR_MASK,
+			  otto_l3_931x_v6_slice(mask, first, 6));
+}
+
+/* Decode a prefix route row. Returns false unless it holds a valid IPv4
+ * unicast route; valid is set for any row, type for any valid one.
+ *
+ * Must only ever be given an entry's FIRST row. An IPv6 entry's extension
+ * rows carry their own validity key, and it sits on the very bits this reads
+ * as RTL931X_RT_VALID, RT_FORMAT and RT_TYPE - deliberately, because a TCAM
+ * needs its format selector in a fixed place. So an extension row decodes
+ * here as a perfectly good IPv6 route whose address is a slice of another
+ * one's. Every caller passes r->row, and there is no .route_lookup_hw to hand
+ * back an arbitrary row, which is the only reason that is safe.
+ *
+ * Five fields are left alone. The vendor writes its flag bits 3 and 6 into the
+ * one bit fields at 84 and 64, never writes the three bit field at 61 or the
+ * nine bit field at 87, and which of the driver's attributes those are has not
+ * been established. Nothing in this driver sets dst_null, qos_as or qos_prio,
+ * so they stay clear either way, and leaving them undecoded keeps a guess out
+ * of what a row is compared against.
+ */
+static bool otto_l3_931x_route_decode(const u32 *data, struct otto_l3_route *rt)
+{
+	rt->attr.valid = otto_l3_931x_fget(data, 6, RTL931X_RT_VALID);
+	if (!rt->attr.valid)
+		return false;
+
+	/* The format selector is compared with a full mask on every row this
+	 * driver writes, so a row in another format is not one of ours however
+	 * its type bits happen to read - and type 0 is IPv4 unicast, so without
+	 * this a foreign row would decode as one.
+	 */
+	if (otto_l3_931x_fget(data, 6, RTL931X_RT_FORMAT))
+		return false;
+
+	rt->attr.type = otto_l3_931x_fget(data, 6, RTL931X_RT_TYPE);
+	if (rt->attr.type != ROUTE_TYPE_IP4UC && rt->attr.type != ROUTE_TYPE_IP6UC)
+		return false;
+
+	if (rt->attr.type == ROUTE_TYPE_IP6UC) {
+		/* Only the first four bytes of the address and of the mask are
+		 * in this row; otto_l3_931x_route_read() fetches the rest.
+		 */
+		memset(&rt->dst_ip6, 0, sizeof(rt->dst_ip6));
+		otto_l3_931x_v6_unslice(&rt->dst_ip6, 0, 4,
+					otto_l3_931x_fget(data, 6, RTL931X_RT_DIP));
+		rt->prefix_len = otto_l3_931x_fget(data, 6, RTL931X_RT_HOST_ROUTE) ? 128 :
+				 otto_l3_931x_fget(data, 6, RTL931X_RT_DEFAULT_ROUTE) ? 0 : -1;
+	} else {
+		rt->dst_ip = otto_l3_931x_fget(data, 6, RTL931X_RT_DIP);
+
+		if (otto_l3_931x_fget(data, 6, RTL931X_RT_HOST_ROUTE))
+			rt->prefix_len = 32;
+		else if (otto_l3_931x_fget(data, 6, RTL931X_RT_DEFAULT_ROUTE))
+			rt->prefix_len = 0;
+		else
+			rt->prefix_len = inet_mask_len(otto_l3_931x_fget(data, 6,
+									RTL931X_RT_DIP_MASK));
+	}
+
+	rt->attr.action = otto_l3_931x_fget(data, 6, RTL931X_RT_ACTION);
+	rt->nh.id = otto_l3_931x_fget(data, 6, RTL931X_RT_NEXTHOP);
+	rt->attr.ttl_dec = otto_l3_931x_fget(data, 6, RTL931X_RT_TTL_DEC);
+	rt->attr.ttl_check = otto_l3_931x_fget(data, 6, RTL931X_RT_TTL_CHECK);
+
+	rt->attr.hit = otto_l3_931x_fget(data, 6, RTL931X_RT_HIT);
+
+	return true;
+}
+
+/* Read a whole prefix entry at logical @row. An IPv6 one is three rows: this
+ * takes the address and mask extensions out of the two above it, and the
+ * prefix length from the assembled mask, which is why the decoder leaves it
+ * at -1 for IPv6.
+ */
+static int otto_l3_931x_route_read(struct otto_l3_ctrl *ctrl, int row,
+				   struct otto_l3_route *rt)
+{
+	struct in6_addr mask = {};
+	u32 data[6];
+	int err;
+
+	err = otto_table_read(RTL9310_TBL_L3_PREFIX_ROUTE_IPUC,
+			      RTL931X_L3_ROUTE_ROW(row), &data);
+	if (err)
+		return err;
+
+	if (!otto_l3_931x_route_decode(data, rt))
+		return 0;
+
+	if (rt->attr.type != ROUTE_TYPE_IP6UC)
+		return 1;
+
+	otto_l3_931x_v6_unslice(&mask, 0, 4,
+				otto_l3_931x_fget(data, 6, RTL931X_RT_DIP_MASK));
+
+	for (int i = 0; i < V6_PREFIX_ROWS - 1; i++) {
+		u32 x[6];
+
+		err = otto_table_read(RTL9310_TBL_L3_PREFIX_ROUTE_IPUC,
+				      RTL931X_L3_ROUTE_ROW(row + 1 + i), &x);
+		if (err)
+			return err;
+
+		/* Each row of the three carries its own keys, so a triple a
+		 * failed write left half rewritten is not an entry. Say so
+		 * rather than hand back an address made of two routes.
+		 */
+		if (!otto_l3_931x_fget(x, 6, RTL931X_RT_VALID) ||
+		    otto_l3_931x_fget(x, 6, RTL931X_RT_FORMAT) ||
+		    otto_l3_931x_fget(x, 6, RTL931X_RT_TYPE) != rt->attr.type)
+			return 0;
+
+		otto_l3_931x_v6_unslice(&rt->dst_ip6, 4 + i * 6, 6,
+					otto_l3_931x_fget(x, 6, RTL931X_RT6_ADDR));
+		otto_l3_931x_v6_unslice(&mask, 4 + i * 6, 6,
+					otto_l3_931x_fget(x, 6, RTL931X_RT6_ADDR_MASK));
+	}
+
+	if (rt->prefix_len < 0)
+		rt->prefix_len = otto_l3_930x_mask6_len(&mask);
+
+	return 1;
+}
+
+static int otto_l3_931x_route_matches(struct otto_l3_ctrl *ctrl, int row,
+				      struct otto_l3_route *rt)
+{
+	struct otto_l3_route entry = {};
+	int err;
+
+	err = otto_l3_931x_route_read(ctrl, row, &entry);
+	if (err < 0)
+		return err;
+
+	/* The next hop a row carries is the one its route wrote, so comparing
+	 * it tells two routes for one destination apart whatever their action,
+	 * as on the RTL930x. A row this driver cannot place decodes as none.
+	 */
+	if (!err || entry.attr.type != rt->attr.type ||
+	    entry.prefix_len != rt->prefix_len || entry.nh.id != rt->nh.id)
+		return 0;
+
+	if (rt->attr.type == ROUTE_TYPE_IP6UC)
+		return ipv6_addr_equal(&entry.dst_ip6, &rt->dst_ip6);
+
+	return entry.dst_ip == rt->dst_ip;
+}
+
+/* Write a prefix route at logical row @idx. IPv4 unicast only. */
+static int otto_l3_931x_route_write(struct otto_l3_ctrl *ctrl, int idx,
+				    struct otto_l3_route *rt)
+{
+	char dst[INET6_ADDRSTRLEN + sizeof("/128")];
+	bool v6 = rt->attr.type == ROUTE_TYPE_IP6UC;
+	struct in6_addr mask6 = {}, dst6 = {};
+	u32 data[6] = {};
+	u32 dip, dip_mask, v;
+	int err;
+
+	if (rt->attr.type != ROUTE_TYPE_IP4UC && !v6) {
+		dev_dbg(ctrl->dev, "route type %d not offloaded on this chip\n",
+			rt->attr.type);
+		return -EOPNOTSUPP;
+	}
+
+	if (v6) {
+		otto_l3_930x_net6_mask(rt->prefix_len, &mask6);
+		/* Masked for the same reason the IPv4 destination is: a TCAM
+		 * read gives a don't-care key bit back as zero, so a row
+		 * written with host bits set would not compare equal to itself
+		 * read back and route_matches() would call it another route.
+		 */
+		for (int i = 0; i < 4; i++)
+			dst6.s6_addr32[i] = rt->dst_ip6.s6_addr32[i] &
+					    mask6.s6_addr32[i];
+		dip = otto_l3_931x_v6_slice(&dst6, 0, 4);
+		dip_mask = otto_l3_931x_v6_slice(&mask6, 0, 4);
+	} else {
+		dip_mask = inet_make_mask(rt->prefix_len);
+		dip = rt->dst_ip & dip_mask;
+	}
+
+	dev_dbg(ctrl->dev, "route row %d: %s valid %d action %d next hop %d\n",
+		idx, otto_l3_route_dst(rt, dst, sizeof(dst)), rt->attr.valid,
+		rt->attr.action, rt->nh.id);
+
+	/* Written whole, in one access: a TCAM read gives back a don't-care bit
+	 * as zero, so setting a key and then its mask erases the key.
+	 */
+	otto_l3_931x_fset(data, 6, RTL931X_RT_VALID, rt->attr.valid);
+
+	/* The three keys the vendor compares with a full mask, and their
+	 * values: entry format 0, entry type, and the single VRF.
+	 */
+	otto_l3_931x_fset(data, 6, RTL931X_RT_FORMAT, 0);
+	otto_l3_931x_fset(data, 6, RTL931X_RT_FORMAT_MASK, 1);
+	otto_l3_931x_fset(data, 6, RTL931X_RT_TYPE, rt->attr.type);
+	otto_l3_931x_fset(data, 6, RTL931X_RT_TYPE_MASK, 0x3);
+	otto_l3_931x_fset(data, 6, RTL931X_RT_VRF, RTL931X_L3_VRF);
+	otto_l3_931x_fset(data, 6, RTL931X_RT_VRF_MASK, 0xff);
+
+	/* Masked, like the keys above. A FIB destination arrives masked
+	 * already, so this changes no match, but it keeps a row the driver
+	 * writes identical to one it would write back from a decoded row.
+	 * For IPv6 these are the first four bytes; the rest go in the two
+	 * extension rows below.
+	 */
+	otto_l3_931x_fset(data, 6, RTL931X_RT_DIP, dip);
+	otto_l3_931x_fset(data, 6, RTL931X_RT_DIP_MASK, dip_mask);
+
+	/* A full length prefix and a default route are flagged rather than
+	 * left to the mask, which is how the vendor writes them
+	 */
+	otto_l3_931x_fset(data, 6, RTL931X_RT_HOST_ROUTE,
+			  rt->prefix_len == (v6 ? 128 : 32));
+	otto_l3_931x_fset(data, 6, RTL931X_RT_DEFAULT_ROUTE, rt->prefix_len == 0);
+
+	otto_l3_931x_fset(data, 6, RTL931X_RT_ACTION, rt->attr.action);
+	otto_l3_931x_fset(data, 6, RTL931X_RT_ECMP, 0);
+	otto_l3_931x_fset(data, 6, RTL931X_RT_NEXTHOP, rt->nh.id);
+	otto_l3_931x_fset(data, 6, RTL931X_RT_TTL_DEC, rt->attr.ttl_dec);
+	otto_l3_931x_fset(data, 6, RTL931X_RT_TTL_CHECK, rt->attr.ttl_check);
+	otto_l3_931x_fset(data, 6, RTL931X_RT_HIT, rt->attr.hit);
+
+	if (!v6) {
+		err = otto_table_write(RTL9310_TBL_L3_PREFIX_ROUTE_IPUC,
+				       RTL931X_L3_ROUTE_ROW(idx), &data);
+		goto out;
+	}
+
+	/* The row at idx is the one an entry is matched on, so the other two
+	 * are only ever live while it is valid. Clear it first, whatever this
+	 * write is for: the row need not be free beforehand - a placement
+	 * shifts the block and leaves a stale but still valid copy of its
+	 * neighbour exactly here - so without this, a failure between the two
+	 * extension writes would leave three valid rows holding one new
+	 * address slice and two old ones, an entry for a destination that
+	 * exists nowhere, forwarding to whatever next hop the stale row names.
+	 */
+	v = data[0];
+	data[0] = 0;
+	err = otto_table_write(RTL9310_TBL_L3_PREFIX_ROUTE_IPUC,
+			       RTL931X_L3_ROUTE_ROW(idx), &data);
+	data[0] = v;
+	if (err)
+		goto out;
+
+	for (int i = 0; i < V6_PREFIX_ROWS - 1; i++) {
+		u32 x[6];
+
+		otto_l3_931x_v6_ext_row(x, rt, &dst6, &mask6, 4 + i * 6);
+		err = otto_table_write(RTL9310_TBL_L3_PREFIX_ROUTE_IPUC,
+				       RTL931X_L3_ROUTE_ROW(idx + 1 + i), &x);
+		if (err)
+			goto out;
+	}
+
+	/* and last the row that makes the entry match at all */
+	if (rt->attr.valid)
+		err = otto_table_write(RTL9310_TBL_L3_PREFIX_ROUTE_IPUC,
+				       RTL931X_L3_ROUTE_ROW(idx), &data);
+out:
+	/* No caller looks at this, and for IPv6 a failure part way through
+	 * leaves rows the driver believes it owns, so say so here.
+	 */
+	if (err)
+		dev_err(ctrl->dev, "route row %d not written for %s: %d\n", idx,
+			otto_l3_route_dst(rt, dst, sizeof(dst)), err);
+
+	return err;
+}
+
+/* Move @count prefix route rows from logical @src to logical @dst. The rows
+ * are copied as they are rather than re-encoded, for the reasons
+ * otto_l3_930x_route_rows_move() gives. The hardware has an engine for this -
+ * L3_ENTRY_MV_CTRL and L3_ENTRY_MV_PARAM, which is what the vendor drives -
+ * but a copy through the table interface needs no new protocol and is what the
+ * RTL930x does. Returns -EAGAIN when no row was written and the table is as it
+ * was, and -EIO when the block may be half shifted.
+ */
+static int otto_l3_931x_route_rows_move(struct otto_l3_ctrl *ctrl, int dst,
+					int src, int count)
+{
+	int handle, err = 0;
+	u32 data[6];
+
+	handle = otto_table_acquire(RTL9310_TBL_L3_PREFIX_ROUTE_IPUC);
+	if (handle < 0) {
+		dev_err(ctrl->dev, "cannot move prefix route rows: %d\n", handle);
+		return -EAGAIN;
+	}
+
+	/* The ranges overlap by one row per insertion or removal, so the copy
+	 * runs away from the direction of travel.
+	 */
+	for (int n = 0; n < count; n++) {
+		int i = dst > src ? count - 1 - n : n;
+		bool unread;
+
+		err = __otto_table_read(handle, RTL931X_L3_ROUTE_ROW(src + i), &data);
+		unread = err;
+		if (!err)
+			err = __otto_table_write(handle, RTL931X_L3_ROUTE_ROW(dst + i),
+						 &data);
+		if (err) {
+			dev_err(ctrl->dev, "prefix route row %d not moved to %d: %d\n",
+				src + i, dst + i, err);
+			err = unread && !n ? -EAGAIN : -EIO;
+			break;
+		}
+	}
+
+	otto_table_release(handle);
+
+	return err;
+}
+
+/* The three rows of an IPv6 entry have to be PHYSICALLY consecutive, and six
+ * of every eight addresses are implemented, so a triple may not straddle a
+ * group. In logical row numbers a group is six rows, physically consecutive
+ * within itself, which leaves two places per group for a triple: offsets 0 and
+ * 3. The IPv6 entries run downwards from the top of the table against the IPv4
+ * ones running up, as on the RTL930x, so slot 0 is the highest triple that
+ * fits and the first row of the last whole group is the top of it.
+ *
+ * Restricting a triple to offset 0 or 3 is this driver's choice, not the
+ * vendor's: dal_mango_l3_route_add places them densely, three rows at a time
+ * from the top with no alignment, so the hardware wants three consecutive
+ * addresses and nothing more. Six of every eight addresses existing is what
+ * the step-1 read-only dump measured on this silicon, and under that the
+ * alignment is what keeps a triple's three rows consecutive.
+ *
+ * The row this reports is the BOTTOM of a triple, which the IPv4 bound check
+ * in otto_l3_route_place() depends on: it compares the deepest IPv6 slot's row
+ * against the highest row IPv4 would reach, and a triple runs upwards from
+ * what is reported here.
+ */
+#define RTL931X_V6_ROWS_PER_GROUP	6
+#define RTL931X_FIRST_V6_ROW		(((MAX_ROUTES / RTL931X_V6_ROWS_PER_GROUP) - 1) * \
+					 RTL931X_V6_ROWS_PER_GROUP + V6_PREFIX_ROWS)
+
+static int otto_l3_931x_v6_slot_to_row(struct otto_l3_ctrl *ctrl, int slot)
+{
+	return RTL931X_FIRST_V6_ROW - (slot / 2) * RTL931X_V6_ROWS_PER_GROUP -
+	       (slot % 2) * V6_PREFIX_ROWS;
+}
+
+static int otto_l3_931x_v6_row_to_slot(struct otto_l3_ctrl *ctrl, int row)
+{
+	return 2 * ((RTL931X_FIRST_V6_ROW - row) / RTL931X_V6_ROWS_PER_GROUP) +
+	       (row % RTL931X_V6_ROWS_PER_GROUP ? 0 : 1);
+}
+
 const struct otto_l3_config otto_l3_931x_cfg = {
 	.get_egress_intf = otto_l3_931x_get_egress_intf,
 	.set_egress_intf = otto_l3_931x_set_egress_intf,
@@ -5625,6 +6075,13 @@ const struct otto_l3_config otto_l3_931x_cfg = {
 	.get_router_mac = otto_l3_931x_get_router_mac,
 	.set_router_mac = otto_l3_931x_set_router_mac,
 	.set_nexthop = otto_l3_931x_set_nexthop,
+	.use_l3_tables = true,
+	.v6_move_rows = V6_PREFIX_ROWS,
+	.route_rows_move = otto_l3_931x_route_rows_move,
+	.v6_slot_to_row = otto_l3_931x_v6_slot_to_row,
+	.v6_row_to_slot = otto_l3_931x_v6_row_to_slot,
+	.route_matches = otto_l3_931x_route_matches,
+	.route_write = otto_l3_931x_route_write,
 };
 
 static const struct of_device_id otto_l3_of_ids[] = {
