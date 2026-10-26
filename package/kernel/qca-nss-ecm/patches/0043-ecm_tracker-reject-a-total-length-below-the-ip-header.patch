@@ -1,0 +1,40 @@
+ecm_tracker: reject a total length below the IP header length
+
+ecm_tracker_ip_check_header_and_read() validates the IPv4 header two
+ways - ihl at least 20, and skb->len at least tot_len - and then computes
+
+	remain = ip_hdr->total_length - ip_hdr->ip_header_length;
+
+into a uint16_t. Nothing relates the two operands, so a frame whose
+tot_len is smaller than its ihl underflows remain to nearly 64 KB, and
+that value is handed to every per-protocol header helper as the amount of
+packet left to parse.
+
+Both operands are attacker-chosen and the two existing checks pass
+happily: ihl = 15 (60 bytes) with tot_len = 40 satisfies "ihl >= 20" and
+"skb->len >= tot_len" on any ordinary frame.
+
+One raw Ethernet frame from any bridged LAN or Wi-Fi client reaches it -
+ECM inspects every flow it might accelerate.
+
+Bound the subtraction by its own operands, next to the checks that
+already guard it. The IPv6 branch takes remain straight from
+payload_len and does not subtract, so it has no sibling defect.
+
+Found by a coverage-guided ASan harness over the tracker entry point.
+
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+
+--- a/ecm_tracker.c
++++ b/ecm_tracker.c
+@@ -465,6 +465,10 @@ version_check_done:
+ 			DEBUG_WARN("%px: v4 invalid total len: %u skb len: %u\n", skb, ip_hdr->total_length, skb->len);
+ 			return false;
+ 		}
++		if (ip_hdr->total_length < ip_hdr->ip_header_length) {
++			DEBUG_WARN("%px: v4 total len %u below ip hdr len %u\n", skb, ip_hdr->total_length, ip_hdr->ip_header_length);
++			return false;
++		}
+ 		remain = ip_hdr->total_length - ip_hdr->ip_header_length;
+ 
+ 		/*

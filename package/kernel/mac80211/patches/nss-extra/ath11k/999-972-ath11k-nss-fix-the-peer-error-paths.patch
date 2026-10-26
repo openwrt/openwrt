@@ -1,0 +1,170 @@
+From: kuncy7 <noreply@example.com>
+Subject: [PATCH] ath11k: nss: fix the peer error paths
+
+What happens when the NSS firmware does not get a peer. None of it is
+on the way a station normally joins or leaves.
+
+- The HTT peer map handler runs in the rx softirq with base_lock held.
+  When ath11k_nss_peer_create() fails it drops the lock, takes
+  conf_mutex, calls ath11k_peer_delete() and then unlocks base_lock a
+  second time. conf_mutex is held at that point by ath11k_peer_create(),
+  which is waiting for this very event, and ath11k_peer_delete() sleeps.
+
+  Only mark the peer in the handler and wake the waiter up.
+  ath11k_peer_create() then deletes the peer from process context, in
+  the radio as well. Dropping only the host's entry is not enough: the
+  radio keeps the peer, refuses that station from then on, cannot delete
+  its vdev, and asserts (ar_wal_peer.c, is_graceful_to_handle) when the
+  station tries again after a restart of the radio.
+
+- The memory handed to the NSS firmware for a peer is freed in three
+  places without clearing peer->nss.vaddr, so a failed create followed
+  by the error response from the firmware, or by the delete of that
+  peer, unmaps and frees it again. Free it through one helper that
+  clears the pointer, and unmap in the direction it was mapped.
+
+- Once the create message is out, the NSS firmware owns that memory. A
+  failure after that point freed it under the firmware; leave the peer
+  and its memory to ath11k_nss_peer_delete() instead.
+
+- The response to a peer delete frees that memory, and looks the peer
+  up in the hash table. A peer whose create failed is not in it yet, and
+  one the host expects to be disassociated is not in it any more: the
+  memory stayed allocated and the delete waited five seconds for
+  nothing. Look in the list.
+
+- A create the NSS firmware refuses was silent. Warn.
+
+The helper is taken from Julius Bairaktaris' openwrt-nss-edma
+(nss-edma-rework, 199-002).
+
+--- a/drivers/net/wireless/ath/ath11k/nss.c
++++ b/drivers/net/wireless/ath/ath11k/nss.c
+@@ -325,7 +325,10 @@
+ 	for (i = 0; i < ab->num_radios; i++) {
+ 		struct ath11k_pdev *pdev = &ab->pdevs[i];
+ 		ar = pdev->ar;
+-		peer = ath11k_peer_find_by_id(ar, peer_id);
++		/* by the list: a peer whose create failed, or one the host
++		 * expects to be disassociated, is not in the hash table
++		 */
++		peer = ath11k_peer_find_list_by_id(ar, peer_id);
+ 		if (!peer)
+ 			continue;
+ 
+@@ -2490,18 +2493,21 @@
+ 		   peer_msg->peer_mac_addr, peer_msg->vdev_id, peer_msg->peer_id,
+ 		   peer_msg->hw_ast_idx, peer_msg->tx_ast_hash);
+ 
++	/* The firmware has the peer and its memory from here on. A failure
++	 * below leaves both in place for ath11k_nss_peer_delete().
++	 */
+ 	ret = ath11k_peer_add_ast(ar, peer, peer->addr,
+ 				  ATH11K_AST_TYPE_STATIC);
+ 	if (ret) {
+ 		ath11k_warn(ab, "failed to add STATIC ast: %d\n", ret);
+-		goto peer_mem_free;
++		goto msg_free;
+ 	}
+ 
+ 	peer->nss.nss_stats = kzalloc(sizeof(*peer->nss.nss_stats), GFP_ATOMIC);
+ 	if (!peer->nss.nss_stats) {
+ 		ret = -ENOMEM;
+ 		ath11k_warn(ab, "Unable to create nss stats memory\n");
+-		goto peer_mem_free;
++		goto msg_free;
+ 	}
+ 
+ 	goto msg_free;
+--- a/drivers/net/wireless/ath/ath11k/nss.h
++++ b/drivers/net/wireless/ath/ath11k/nss.h
+@@ -180,6 +180,7 @@
+ 	struct ieee80211_vif *ext_vif;
+ 	struct peer_stats *nss_stats;
+ 	struct completion complete;
++	bool create_failed;
+ };
+ 
+ /* Structure to hold the vif related info for nss offload support */
+--- a/drivers/net/wireless/ath/ath11k/peer.c
++++ b/drivers/net/wireless/ath/ath11k/peer.c
+@@ -9,8 +9,8 @@
+ #include "debug.h"
+ #include "nss.h"
+ 
+-static struct ath11k_peer *ath11k_peer_find_list_by_id(struct ath11k *ar,
+-						       int peer_id)
++struct ath11k_peer *ath11k_peer_find_list_by_id(struct ath11k *ar,
++						int peer_id)
+ {
+ 	struct ath11k_peer *peer;
+ 
+@@ -487,8 +487,8 @@
+ 		ether_addr_copy(peer->addr, mac_addr);
+ 		list_add(&peer->list, &ar->peers);
+ 		wake_up(&ar->peer_mapping_wq);
+-		if (ab->nss.enabled)
+-			ath11k_nss_peer_create(ar, peer);
++		if (ab->nss.enabled && ath11k_nss_peer_create(ar, peer))
++			peer->nss.create_failed = true;
+ 	}
+ 
+ 	ath11k_dbg(ab, ATH11K_DBG_DP_HTT, "peer map vdev %d peer %pM id %d\n",
+@@ -530,7 +530,14 @@
+ 			if (ret) {
+ 				ath11k_warn(ab, "failed to do nss peer create: %d\n",
+ 					    ret);
+-				goto peer_free;
++				/* The radio has this peer and deleting it
++				 * there sleeps: leave that to
++				 * ath11k_peer_create(), which waits for this
++				 * event.
++				 */
++				peer->nss.create_failed = true;
++				wake_up(&ar->peer_mapping_wq);
++				goto exit;
+ 			}
+ 		}
+ 		wake_up(&ar->peer_mapping_wq);
+@@ -545,14 +552,6 @@
+ 	ath11k_dbg(ab, ATH11K_DBG_DP_HTT, "htt peer map vdev %d peer %pM id %d is_wds %d\n",
+ 		   vdev_id, mac_addr, peer_id, is_wds);
+ 
+-	goto exit;
+-
+-peer_free:
+-	/* ath11k_peer_delete() sleeps and this runs in the HTT rx softirq; drop
+-	 * the half-built peer instead and let ath11k_peer_create() time out.
+-	 */
+-	list_del(&peer->list);
+-	kfree(peer);
+ exit:
+ 	spin_unlock_bh(&ab->base_lock);
+ }
+@@ -916,6 +915,15 @@
+ 		goto cleanup;
+ 	}
+ 
++	if (peer->nss.create_failed) {
++		spin_unlock_bh(&ab->base_lock);
++		mutex_unlock(&ar->tbl_mtx_lock);
++		ath11k_warn(ab, "no nss peer for %pM on vdev %i, deleting the peer\n",
++			    param->peer_addr, param->vdev_id);
++		ret = -EIO;
++		goto cleanup;
++	}
++
+ 	ret = ath11k_peer_rhash_add(ar, peer);
+ 	if (ret) {
+ 		spin_unlock_bh(&ab->base_lock);
+--- a/drivers/net/wireless/ath/ath11k/peer.h
++++ b/drivers/net/wireless/ath/ath11k/peer.h
+@@ -99,6 +99,8 @@
+ };
+ 
+ 
++struct ath11k_peer *ath11k_peer_find_list_by_id(struct ath11k *ar,
++						int peer_id);
+ void ath11k_peer_unmap_event(struct ath11k *ar, u16 peer_id);
+ void ath11k_peer_unmap_v2_event(struct ath11k *ar, u16 peer_id, u8 *mac_addr,
+ 			        bool is_wds, u32 free_wds_count);

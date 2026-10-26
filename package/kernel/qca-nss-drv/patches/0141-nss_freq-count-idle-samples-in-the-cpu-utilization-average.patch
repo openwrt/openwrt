@@ -1,0 +1,76 @@
+From: Stanislaw Pal <kuncy7@gmail.com>
+Date: Sat, 5 Sep 2026 19:30:00 +0200
+Subject: [PATCH] nss_freq: count idle samples in the CPU utilization average
+
+cpu_load_ubi reports "Min 100%  Avg 0%  Max 0%" on an idle or lightly
+loaded core, on every board that has been checked (IPQ5018 GL-B3000,
+IPQ5018 LS3434, MX6200), and those are exactly the values
+nss_freq_init_cpu_usage() writes: min starts at NSS_FREQ_CPU_USAGE_MAX,
+max and used start at zero. Nothing had updated them.
+
+nss_freq_compute_cpu_usage() rejects a sample when the usage it derives
+is zero:
+
+	actual_usage = (inst_cnt * 100) / max_ins;
+	if ((actual_usage > NSS_FREQ_CPU_USAGE_MAX) || (actual_usage == 0))
+		return;
+
+max_ins is the instruction budget for a full millisecond (frequency /
+1000, so 1e6 at 1 GHz), so a core running under 1% of that truncates to
+zero and every one of its samples is thrown away. The early return also
+skips the two lines at the bottom of the function that feed the
+averaging window, so avg_ctr never reaches NSS_FREQ_USG_AVG_FREQUENCY
+and the block that computes used, min and max never runs at all. The
+counter is what turns the window into the advertised "averaged over 1
+second"; with idle samples dropped it measures 1000 busy samples
+instead, over an unbounded stretch of wall time.
+
+Zero is a legitimate reading, not bad data. Keep the upper-bound
+rejection, drop the zero test, and guard the division instead: max_ins
+comes from the frequency table and is zero before the first frequency
+is set.
+
+While here, widen actual_usage and usage from uint8_t. usage is scaled
+by 1/NSS_FREQ_CPU_USAGE_MAX_BOUND, so a fully busy core already
+produces 133, and a firmware-supplied inst_cnt beyond ~2.5x the budget
+wraps actual_usage modulo 256 - which can land back under 100 and pass
+the sanity check with a meaningless value.
+
+Signed-off-by: Stanislaw Pal <kuncy7@gmail.com>
+---
+--- a/nss_freq.c
++++ b/nss_freq.c
+@@ -132,8 +132,8 @@
+ static void nss_freq_compute_cpu_usage(struct nss_ctx_instance *nss_ctx, uint32_t inst_cnt)
+ {
+ 	uint32_t estimated_ins_capacity;
+-	uint8_t actual_usage;
+-	uint8_t usage;
++	uint32_t actual_usage;
++	uint32_t usage;
+ 
+ 	spin_lock_bh(&nss_freq_cpu_usage_lock);
+ 
+@@ -141,10 +141,21 @@
+ 	 * If actual CPU usage turns up higher than 100, there is something wrong with the received data.
+ 	 * Upper bound average varies between 80% usage to 100% usage.
+ 	 *
++	 * An idle core is not bad data: max_ins is the instruction budget for a
++	 * whole millisecond, so anything under 1% of it truncates to zero here.
++	 * Rejecting that sample used to skip the averaging counter as well, so on
++	 * a lightly loaded core the block below never ran and the file kept
++	 * reporting its initial values - min 100%, avg 0%, max 0%.
++	 *
+ 	 * TODO: To improve estimation algorithm for calculating how many actual instructions are executed.
+ 	 */
++	if (unlikely(nss_freq_cpu_status.max_ins == 0)) {
++		spin_unlock_bh(&nss_freq_cpu_usage_lock);
++		return;
++	}
++
+ 	actual_usage = (inst_cnt * 100) / nss_freq_cpu_status.max_ins;
+-	if ((actual_usage > NSS_FREQ_CPU_USAGE_MAX) || (actual_usage == 0)) {
++	if (actual_usage > NSS_FREQ_CPU_USAGE_MAX) {
+ 		spin_unlock_bh(&nss_freq_cpu_usage_lock);
+ 		return;
+ 	}

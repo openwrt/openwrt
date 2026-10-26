@@ -1,0 +1,44 @@
+From: Andrei-Alexandru Bleortu <me@andrei-z.com>
+Subject: [PATCH] nss_core: skb reuse: test zerocopy in the right field, keep
+ page_pool skbs
+
+The reuse path hands a transmitted skb back to the firmware as an RX
+buffer when nothing else can still reach it. Two of its checks were
+wrong:
+
+- the zerocopy test read SKBFL_ZEROCOPY_ENABLE from shinfo->tx_flags,
+  while the SKBFL_* bits live in shinfo->flags; skb_zcopy() reads the
+  right field. It only held because zerocopy skbs are also nonlinear,
+  which a later check rejects.
+- an skb whose head belongs to a page_pool (pp_recycle) goes back to
+  its pool on free; reusing it cleared pp_recycle and leaked the page
+  from the pool for good. Ethernet drivers with page_pool RX (stmmac
+  among them) hand the stack exactly such skbs.
+
+Signed-off-by: Andrei-Alexandru Bleortu <me@andrei-z.com>
+---
+--- a/nss_core.c
++++ b/nss_core.c
+@@ -2771,7 +2771,7 @@ static inline bool nss_core_skb_can_reus
+ 
+ 	if (unlikely(irqs_disabled()))
+ 		return false;
+-	if (unlikely(skb_shinfo(nbuf)->tx_flags & SKBFL_ZEROCOPY_ENABLE))
++	if (unlikely(skb_zcopy(nbuf)))
+ 		return false;
+ 
+ 	if (unlikely(skb_is_nonlinear(nbuf)))
+@@ -2800,6 +2800,13 @@ static inline bool nss_core_skb_can_reus
+ 		return false;
+ 
+ 	/*
++	 * A page_pool head goes back to its pool on free; reuse would clear
++	 * pp_recycle and leak it from the pool.
++	 */
++	if (unlikely(nbuf->pp_recycle))
++		return false;
++
++	/*
+ 	 * TODO: This check is only validated on kernel 6.6
+ 	 * This needs to be validated on prior linux
+ 	 * kernel versions.

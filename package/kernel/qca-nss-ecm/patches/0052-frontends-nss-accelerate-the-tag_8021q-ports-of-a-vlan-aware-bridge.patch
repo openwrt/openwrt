@@ -1,0 +1,505 @@
+frontends/nss: accelerate the tag_8021q ports of a VLAN-aware bridge
+
+A tag_8021q DSA port of a VLAN-unaware bridge is, on the wire, a VLAN upper
+of its conduit with the bridge's tag_8021q VID, and 0051 makes it that in
+the interface hierarchy: a VLAN iface above the conduit's ethernet leaf, so
+the rule ends on the conduit and carries the VID. A port of a VLAN-aware
+bridge is not that: its frames cross the conduit with the bridge's own VIDs
+(the CPU port is a tagged member of every bridge VLAN), and the port
+carries as many of them as it is a member of. Until now 0051 still gave it
+the tag_8021q bridge VID: the rule was written with a VID the flow never
+uses, the firmware matched almost nothing, the flow ran on the host at
+62-83 % softirq with 90-210 Mbit/s and retransmissions (measured on an
+Archer AX55 v1, wired VLAN 10 to WAN), and the few frames it did emit went
+out in the tag_8021q VLAN, which the switch delivers to the bridge's ports
+regardless of their VLAN.
+
+Now such a port is no VLAN iface at all: a plain ethernet leaf with no
+interface number - also when the glue bound one of the bridge's VLAN nodes
+to it, since that node names one VLAN and the flow may be in another - which
+every frontend refuses: the non-ported and multicast ones keep those flows
+on the host path. The ported frontends
+resolve the flow themselves: the VID is the one ECM recorded for the port
+in the connection's bridge VLAN filter data, taken only when the flow and
+the return direction agree on it (they can differ for a host with one MAC
+in several VLANs, or a routed flow through the bridge master to a trunk
+port); the endpoint is the conduit's interface; and the qca-dsa-nss glue
+must have a firmware VLAN node of that VID on the conduit, since a tagged
+frame with no node goes to the host unparsed. Without an agreed VID or a
+node the flow is refused rather than tagged wrong. The VID is that side's
+one tag, whether the port is a tagged or an untagged member - the conduit
+carries the tag either way - so a VLAN device of the bridge above such a
+port (br-lan.10 over lan1) keeps its own tag out of the rule; the VAP case
+of 0038 is unchanged.
+
+The lookup into the glue is resolved with symbol_get() at first use, so
+the ECM module neither links against the glue nor needs it loaded.
+
+Index: b/ecm_interface.h
+===================================================================
+--- a/ecm_interface.h
++++ b/ecm_interface.h
+@@ -140,6 +140,8 @@
+ struct net_device *ecm_interface_dev_find_by_addr(ip_addr_t addr, bool *from_local_addr, uint32_t skb_mark);
+ 
+ struct net_device *ecm_interface_get_and_hold_dev_master(struct net_device *dev);
++bool ecm_interface_dsa_8021q_vlan_aware(struct net_device *dev, struct net_device **conduit);
++int32_t ecm_interface_dsa_nss_if_num(struct net_device *conduit, uint16_t vid);
+ int ecm_interface_bridge_vlan_wire_tagged(struct ecm_db_iface_instance *vlan_ii,
+ 					  struct ecm_db_iface_instance *ifaces[],
+ 					  int32_t first);
+Index: b/ecm_interface.c
+===================================================================
+--- a/ecm_interface.c
++++ b/ecm_interface.c
+@@ -83,6 +83,9 @@
+ #if IS_ENABLED(CONFIG_NET_DSA)
+ #include <linux/dsa/8021q.h>
+ #include <net/dsa.h>
++
++/* qca-dsa-nss (package/kernel/qca-dsa-nss), resolved with symbol_get() */
++int qca_dsa_nss_if_num(struct net_device *conduit, u16 vid);
+ #endif
+ #ifdef ECM_INTERFACE_DSA_ENABLE
+ #include <linux/dsa/8021q.h>
+@@ -861,7 +864,16 @@
+ 		return -1;
+ 	}
+ 
+-	if (br_vlan_get_info_rcu(port_dev, vid, &vinfo)) {
++	if (ecm_interface_dsa_8021q_vlan_aware(port_dev, NULL)) {
++		/*
++		 * A tag_8021q DSA port of a VLAN-aware bridge: the ported
++		 * frontends program the wire tag for it themselves (the flow's
++		 * VID, which its conduit carries whether the port is a tagged
++		 * or an untagged member), so this VLAN device's tag stays out
++		 * of the rule, or the side would carry two.
++		 */
++		ret = 0;
++	} else if (br_vlan_get_info_rcu(port_dev, vid, &vinfo)) {
+ 		/*
+ 		 * The port is not a member of this VLAN: misconfiguration or
+ 		 * a stale hierarchy - never accelerate on guesses.
+@@ -961,11 +973,96 @@
+ 
+ 	return dp->cpu_dp->conduit;
+ }
++
++/*
++ * ecm_interface_dsa_8021q_vlan_aware()
++ *	Whether dev is a tag_8021q DSA user port of a VLAN-aware bridge; its
++ *	conduit in *conduit when asked for.
++ */
++bool ecm_interface_dsa_8021q_vlan_aware(struct net_device *dev, struct net_device **conduit)
++{
++	struct dsa_port *dp;
++	struct net_device *br;
++
++	if (!dsa_user_dev_check(dev)) {
++		return false;
++	}
++
++	dp = dsa_port_from_netdev(dev);
++	if (IS_ERR_OR_NULL(dp) || !dp->ds || !dp->ds->tag_8021q_ctx || !dp->cpu_dp || !dp->bridge) {
++		return false;
++	}
++
++	br = dsa_port_bridge_dev_get(dp);
++	if (!br || !br_vlan_enabled(br)) {
++		return false;
++	}
++
++	if (conduit) {
++		*conduit = dp->cpu_dp->conduit;
++	}
++	return true;
++}
++EXPORT_SYMBOL(ecm_interface_dsa_8021q_vlan_aware);
++
++/*
++ * ecm_interface_dsa_nss_if_num()
++ *	The NSS interface number of the firmware VLAN node for vid on the
++ *	conduit's phys_if, -1 when there is none.
++ *
++ * The nodes are the qca-dsa-nss glue's; it is a separate module that may or
++ * may not be loaded, so its lookup is resolved at first use and held for the
++ * life of this module rather than linked. Without it a VLAN-aware bridge's
++ * DSA ports simply stay on the host path.
++ */
++static int (*ecm_interface_dsa_nss_if_num_fn)(struct net_device *conduit, u16 vid);
++
++int32_t ecm_interface_dsa_nss_if_num(struct net_device *conduit, uint16_t vid)
++{
++	int (*fn)(struct net_device *, u16);
++
++	fn = READ_ONCE(ecm_interface_dsa_nss_if_num_fn);
++	if (!fn) {
++		fn = symbol_get(qca_dsa_nss_if_num);
++		if (!fn) {
++			return -1;
++		}
++		if (cmpxchg(&ecm_interface_dsa_nss_if_num_fn, NULL, fn)) {
++			symbol_put(qca_dsa_nss_if_num);
++		}
++	}
++	return fn(conduit, vid);
++}
++EXPORT_SYMBOL(ecm_interface_dsa_nss_if_num);
++
++static void ecm_interface_dsa_nss_if_num_release(void)
++{
++	if (ecm_interface_dsa_nss_if_num_fn) {
++		symbol_put(qca_dsa_nss_if_num);
++		ecm_interface_dsa_nss_if_num_fn = NULL;
++	}
++}
+ #else
+ static inline struct net_device *ecm_interface_dsa_8021q_conduit(struct net_device *dev, uint16_t *vid)
+ {
+ 	return NULL;
+ }
++
++bool ecm_interface_dsa_8021q_vlan_aware(struct net_device *dev, struct net_device **conduit)
++{
++	return false;
++}
++EXPORT_SYMBOL(ecm_interface_dsa_8021q_vlan_aware);
++
++int32_t ecm_interface_dsa_nss_if_num(struct net_device *conduit, uint16_t vid)
++{
++	return -1;
++}
++EXPORT_SYMBOL(ecm_interface_dsa_nss_if_num);
++
++static inline void ecm_interface_dsa_nss_if_num_release(void)
++{
++}
+ #endif
+ 
+ /*
+@@ -974,7 +1071,15 @@
+  */
+ static inline bool ecm_interface_is_vlan_dev(struct net_device *dev)
+ {
+-	return is_vlan_dev(dev) || (ecm_interface_dsa_8021q_conduit(dev, NULL) != NULL);
++	/*
++	 * A port of a VLAN-aware bridge is on the wire with the bridge's own
++	 * VIDs, as many as it is a member of, so no single tag describes it:
++	 * it stays a plain ethernet leaf with no interface number, which every
++	 * frontend refuses, and the ported frontends resolve the flow's VID and
++	 * the conduit themselves (ecm_nss_common_vlan_aware_dsa_side()).
++	 */
++	return is_vlan_dev(dev) ||
++	       (ecm_interface_dsa_8021q_conduit(dev, NULL) != NULL && !ecm_interface_dsa_8021q_vlan_aware(dev, NULL));
+ }
+ 
+ /*
+@@ -4116,6 +4221,18 @@
+ 	 */
+ 	ae_interface_num = feci->ae_interface_number_by_dev_get(dev);
+ 
++	/*
++	 * A port of a VLAN-aware bridge can be the netdev of a firmware VLAN
++	 * node - of one of the bridge's VLANs, whichever the glue bound to it -
++	 * so the lookup above may name a VLAN the flow is not in. Only the
++	 * ported frontends know the flow's VID and resolve the port themselves
++	 * (ecm_nss_common_vlan_aware_dsa_side()); for every other frontend the
++	 * port has no number and the flow stays on the host path.
++	 */
++	if (ecm_interface_dsa_8021q_vlan_aware(dev, NULL)) {
++		ae_interface_num = -1;
++	}
++
+ 	DEBUG_TRACE("%px: Establish interface instance for device: %px is type: %d, name: %s, ifindex: %d, ae_if: %d, mtu: %d\n",
+ 			feci, dev, dev_type, dev_name, dev_interface_num, ae_interface_num, dev_mtu);
+ 
+@@ -11078,6 +11195,8 @@
+ {
+ 	DEBUG_INFO("ECM Interface exit\n");
+ 
++	ecm_interface_dsa_nss_if_num_release();
++
+ 	spin_lock_bh(&ecm_interface_lock);
+ 	ecm_interface_terminate_pending  = true;
+ 	spin_unlock_bh(&ecm_interface_lock);
+Index: b/frontends/nss/ecm_nss_common.h
+===================================================================
+--- a/frontends/nss/ecm_nss_common.h
++++ b/frontends/nss/ecm_nss_common.h
+@@ -110,6 +110,120 @@
+ 	return nss_cmn_get_interface_number_by_dev_and_type(dev, type);
+ }
+ 
++#ifdef ECM_BRIDGE_VLAN_FILTERING_ENABLE
++/*
++ * ecm_nss_common_vlan_filter_vid()
++ *	The 802.1Q VID ci->vlan_filter recorded for dev in the two entries
++ *	starting at first: 0 when neither names dev, -1 when the entry is not
++ *	a usable 802.1Q VID.
++ */
++static inline int ecm_nss_common_vlan_filter_vid(struct ecm_db_connection_instance *ci,
++						 struct net_device *dev, int first)
++{
++	struct ecm_db_connection_vlan_filter *vf;
++	int i;
++
++	for (i = first; i < first + ECM_VLAN_FILTER_RULE_IFACE_MAX; i++) {
++		vf = &ci->vlan_filter[i];
++		if (!vf->is_valid || !vf->ii ||
++		    ecm_db_iface_interface_identifier_get(vf->ii) != dev->ifindex) {
++			continue;
++		}
++		if (vf->vlan_tpid != ETH_P_8021Q || !vf->vlan_tag || vf->vlan_tag >= VLAN_N_VID) {
++			return -1;
++		}
++		return vf->vlan_tag;
++	}
++	return 0;
++}
++#endif
++
++/*
++ * ecm_nss_common_vlan_aware_dsa_side()
++ *	The endpoint of a rule side whose innermost interface is a tag_8021q
++ *	DSA user port of a VLAN-aware bridge: the VID the flow uses on that
++ *	port's conduit, and the conduit's interface number.
++ *
++ *	Such a port is a plain ethernet leaf with no interface number in the
++ *	hierarchy (one port, several VLANs - no single tag describes it), so
++ *	every frontend but this path refuses it. The VID is the one ECM recorded for the port in ci->vlan_filter,
++ *	taken only when both directions agree - flow ingress and return egress
++ *	for the 'from' side, flow egress and return ingress for the 'to' side.
++ *	They can disagree (the VID found for one side is carried into the walk
++ *	of the other, and br_fdb_find_vid_by_mac() returns the newest entry of a
++ *	MAC in any VLAN): a host with one MAC in several VLANs, a routed flow
++ *	through the bridge master to a trunk port. Whether the port itself is a
++ *	tagged or an untagged member does not matter: the CPU port is a tagged
++ *	member of every bridge VLAN, so the conduit carries the tag both ways.
++ *
++ *	Returns 0 when the side is not such a port (nothing to do), 1 with
++ *	*vid and *if_num filled in, -1 when the connection must not be
++ *	accelerated (no agreed VID, or no node for it yet).
++ */
++static inline int ecm_nss_common_vlan_aware_dsa_side(struct ecm_db_connection_instance *ci,
++						     struct ecm_db_iface_instance *ii, bool to_side,
++						     uint16_t *vid, int32_t *if_num)
++{
++	struct net_device *dev;
++	struct net_device *conduit;
++	int ret = -1;
++#ifdef ECM_BRIDGE_VLAN_FILTERING_ENABLE
++	int v, ret_v;
++#endif
++
++	dev = dev_get_by_index(&init_net, ecm_db_iface_interface_identifier_get(ii));
++	if (!dev) {
++		return 0;
++	}
++
++	if (!ecm_interface_dsa_8021q_vlan_aware(dev, &conduit)) {
++		dev_put(dev);
++		return 0;
++	}
++
++#ifdef ECM_BRIDGE_VLAN_FILTERING_ENABLE
++	if (!ci->vlan_filter_valid || !ci->vlan_filter) {
++		DEBUG_TRACE("%px: %s: no bridge VLAN filter data on the connection\n", ci, dev->name);
++		goto out;
++	}
++
++	if (to_side) {
++		v = ecm_nss_common_vlan_filter_vid(ci, dev, ECM_VLAN_FILTER_RULE_FLOW_EGRESS1);
++		ret_v = ecm_nss_common_vlan_filter_vid(ci, dev, ECM_VLAN_FILTER_RULE_RET_INGRESS1);
++	} else {
++		v = ecm_nss_common_vlan_filter_vid(ci, dev, ECM_VLAN_FILTER_RULE_FLOW_INGRESS1);
++		ret_v = ecm_nss_common_vlan_filter_vid(ci, dev, ECM_VLAN_FILTER_RULE_RET_EGRESS1);
++	}
++	if (v <= 0 || v != ret_v) {
++		DEBUG_TRACE("%px: %s: no agreed bridge VLAN (%d / %d)\n", ci, dev->name, v, ret_v);
++		goto out;
++	}
++
++	/*
++	 * The endpoint is the conduit's own interface; the firmware needs a
++	 * VLAN node of this VID on it to classify the frames (measured: a
++	 * tagged frame with no node goes to the host), so no node, no rule.
++	 */
++	if (ecm_interface_dsa_nss_if_num(conduit, (uint16_t)v) < 0) {
++		DEBUG_TRACE("%px: %s: no firmware node for VLAN %d on %s\n", ci, dev->name, v, conduit->name);
++		goto out;
++	}
++
++	*if_num = ecm_nss_common_get_interface_number_by_dev(conduit);
++	if (*if_num < 0) {
++		DEBUG_TRACE("%px: %s: conduit %s has no NSS interface\n", ci, dev->name, conduit->name);
++		goto out;
++	}
++
++	*vid = (uint16_t)v;
++	DEBUG_TRACE("%px: %s: VLAN %u on %s (interface %d)\n", ci, dev->name, *vid, conduit->name, *if_num);
++	ret = 1;
++out:
++#endif
++	dev_put(dev);
++	return ret;
++}
++
+ /*
+  * ecm_nss_common_connection_regenerate()
+  *	Re-generate a specific connection in NSS front end
+Index: b/frontends/nss/ecm_nss_ported_ipv4.c
+===================================================================
+--- a/frontends/nss/ecm_nss_ported_ipv4.c
++++ b/frontends/nss/ecm_nss_ported_ipv4.c
+@@ -323,6 +323,10 @@
+ 	struct ecm_db_iface_instance *to_nss_iface;
+ 	int32_t from_nss_iface_id;
+ 	int32_t to_nss_iface_id;
++	int from_dsa_vlan = 0;
++	int to_dsa_vlan = 0;
++	uint16_t from_dsa_vid = 0;
++	uint16_t to_dsa_vid = 0;
+ 	uint8_t from_nss_iface_address[ETH_ALEN];
+ 	uint8_t to_nss_iface_address[ETH_ALEN];
+ 	ip_addr_t addr;
+@@ -409,6 +413,21 @@
+ 	to_nss_iface = to_ifaces[to_ifaces_first];
+ 	from_nss_iface_id = ecm_db_iface_ae_interface_identifier_get(from_nss_iface);
+ 	to_nss_iface_id = ecm_db_iface_ae_interface_identifier_get(to_nss_iface);
++
++	/*
++	 * A tag_8021q DSA port of a VLAN-aware bridge has no interface number
++	 * of its own: the flow's VID names the firmware node, see
++	 * ecm_nss_common_vlan_aware_dsa_side().
++	 */
++	from_dsa_vlan = ecm_nss_common_vlan_aware_dsa_side(feci->ci, from_nss_iface, false, &from_dsa_vid, &from_nss_iface_id);
++	to_dsa_vlan = ecm_nss_common_vlan_aware_dsa_side(feci->ci, to_nss_iface, true, &to_dsa_vid, &to_nss_iface_id);
++	if ((from_dsa_vlan < 0) || (to_dsa_vlan < 0)) {
++		DEBUG_TRACE("%px: no rule for a VLAN-aware bridge port: from %d, to %d\n", feci, from_dsa_vlan, to_dsa_vlan);
++		ecm_db_connection_interfaces_deref(from_ifaces, from_ifaces_first);
++		ecm_db_connection_interfaces_deref(to_ifaces, to_ifaces_first);
++		goto ported_accel_bad_rule;
++	}
++
+ 	if ((from_nss_iface_id < 0) || (to_nss_iface_id < 0)) {
+ 		DEBUG_TRACE("%px: from_nss_iface_id: %d, to_nss_iface_id: %d\n", feci, from_nss_iface_id, to_nss_iface_id);
+ 		ecm_db_connection_interfaces_deref(from_ifaces, from_ifaces_first);
+@@ -425,6 +444,16 @@
+ 	nircm->nexthop_rule.return_nexthop = ecm_db_iface_ae_interface_identifier_get(to_nss_iface);
+ 
+ 	/*
++	 * A bridged flow's top interface is the port itself: the node then.
++	 */
++	if ((from_dsa_vlan > 0) && (from_ifaces_first == ECM_DB_IFACE_HEIRARCHY_MAX - 1)) {
++		nircm->nexthop_rule.flow_nexthop = from_nss_iface_id;
++	}
++	if ((to_dsa_vlan > 0) && (to_ifaces_first == ECM_DB_IFACE_HEIRARCHY_MAX - 1)) {
++		nircm->nexthop_rule.return_nexthop = to_nss_iface_id;
++	}
++
++	/*
+ 	 * New rule being created
+ 	 */
+ 	nircm->valid_flags |= NSS_IPV4_RULE_CREATE_CONN_VALID;
+@@ -1161,6 +1190,23 @@
+ 	}
+ 
+ 	/*
++	 * The VLAN iface of a tag_8021q DSA port of a VLAN-aware bridge carried
++	 * VID 0 through the walks above (the flow decides it) and a VLAN device
++	 * of the bridge above the port kept its tag out: the flow's VID is that
++	 * side's one tag.
++	 */
++	if (from_dsa_vlan > 0) {
++		nircm->vlan_primary_rule.ingress_vlan_tag = (ETH_P_8021Q << 16) | from_dsa_vid;
++		nircm->valid_flags |= NSS_IPV4_RULE_CREATE_VLAN_VALID;
++		DEBUG_TRACE("%px: VLAN-aware bridge port: ingress vlan tag %x\n", feci, nircm->vlan_primary_rule.ingress_vlan_tag);
++	}
++	if (to_dsa_vlan > 0) {
++		nircm->vlan_primary_rule.egress_vlan_tag = (ETH_P_8021Q << 16) | to_dsa_vid;
++		nircm->valid_flags |= NSS_IPV4_RULE_CREATE_VLAN_VALID;
++		DEBUG_TRACE("%px: VLAN-aware bridge port: egress vlan tag %x\n", feci, nircm->vlan_primary_rule.egress_vlan_tag);
++	}
++
++	/*
+ 	 * Routed or bridged?
+ 	 */
+ 	if (ecm_db_connection_is_routed_get(feci->ci)) {
+Index: b/frontends/nss/ecm_nss_ported_ipv6.c
+===================================================================
+--- a/frontends/nss/ecm_nss_ported_ipv6.c
++++ b/frontends/nss/ecm_nss_ported_ipv6.c
+@@ -329,6 +329,10 @@
+ 	struct ecm_db_iface_instance *to_nss_iface;
+ 	int32_t from_nss_iface_id;
+ 	int32_t to_nss_iface_id;
++	int from_dsa_vlan = 0;
++	int to_dsa_vlan = 0;
++	uint16_t from_dsa_vid = 0;
++	uint16_t to_dsa_vid = 0;
+ 	uint8_t from_nss_iface_address[ETH_ALEN];
+ 	uint8_t to_nss_iface_address[ETH_ALEN];
+ 	struct nss_ipv6_msg *nim;
+@@ -414,6 +418,21 @@
+ 	to_nss_iface = to_ifaces[to_ifaces_first];
+ 	from_nss_iface_id = ecm_db_iface_ae_interface_identifier_get(from_nss_iface);
+ 	to_nss_iface_id = ecm_db_iface_ae_interface_identifier_get(to_nss_iface);
++
++	/*
++	 * A tag_8021q DSA port of a VLAN-aware bridge has no interface number
++	 * of its own: the flow's VID names the firmware node, see
++	 * ecm_nss_common_vlan_aware_dsa_side().
++	 */
++	from_dsa_vlan = ecm_nss_common_vlan_aware_dsa_side(feci->ci, from_nss_iface, false, &from_dsa_vid, &from_nss_iface_id);
++	to_dsa_vlan = ecm_nss_common_vlan_aware_dsa_side(feci->ci, to_nss_iface, true, &to_dsa_vid, &to_nss_iface_id);
++	if ((from_dsa_vlan < 0) || (to_dsa_vlan < 0)) {
++		DEBUG_TRACE("%px: no rule for a VLAN-aware bridge port: from %d, to %d\n", feci, from_dsa_vlan, to_dsa_vlan);
++		ecm_db_connection_interfaces_deref(from_ifaces, from_ifaces_first);
++		ecm_db_connection_interfaces_deref(to_ifaces, to_ifaces_first);
++		goto ported_accel_bad_rule;
++	}
++
+ 	if ((from_nss_iface_id < 0) || (to_nss_iface_id < 0)) {
+ 		DEBUG_TRACE("%px: from_nss_iface_id: %d, to_nss_iface_id: %d\n", feci, from_nss_iface_id, to_nss_iface_id);
+ 		ecm_db_connection_interfaces_deref(from_ifaces, from_ifaces_first);
+@@ -430,6 +449,16 @@
+ 	nircm->nexthop_rule.return_nexthop = ecm_db_iface_ae_interface_identifier_get(to_nss_iface);
+ 
+ 	/*
++	 * A bridged flow's top interface is the port itself: the node then.
++	 */
++	if ((from_dsa_vlan > 0) && (from_ifaces_first == ECM_DB_IFACE_HEIRARCHY_MAX - 1)) {
++		nircm->nexthop_rule.flow_nexthop = from_nss_iface_id;
++	}
++	if ((to_dsa_vlan > 0) && (to_ifaces_first == ECM_DB_IFACE_HEIRARCHY_MAX - 1)) {
++		nircm->nexthop_rule.return_nexthop = to_nss_iface_id;
++	}
++
++	/*
+ 	 * New rule being created
+ 	 */
+ 	nircm->valid_flags |= NSS_IPV6_RULE_CREATE_CONN_VALID;
+@@ -1137,6 +1166,23 @@
+ 	}
+ 
+ 	/*
++	 * The VLAN iface of a tag_8021q DSA port of a VLAN-aware bridge carried
++	 * VID 0 through the walks above (the flow decides it) and a VLAN device
++	 * of the bridge above the port kept its tag out: the flow's VID is that
++	 * side's one tag.
++	 */
++	if (from_dsa_vlan > 0) {
++		nircm->vlan_primary_rule.ingress_vlan_tag = (ETH_P_8021Q << 16) | from_dsa_vid;
++		nircm->valid_flags |= NSS_IPV6_RULE_CREATE_VLAN_VALID;
++		DEBUG_TRACE("%px: VLAN-aware bridge port: ingress vlan tag %x\n", feci, nircm->vlan_primary_rule.ingress_vlan_tag);
++	}
++	if (to_dsa_vlan > 0) {
++		nircm->vlan_primary_rule.egress_vlan_tag = (ETH_P_8021Q << 16) | to_dsa_vid;
++		nircm->valid_flags |= NSS_IPV6_RULE_CREATE_VLAN_VALID;
++		DEBUG_TRACE("%px: VLAN-aware bridge port: egress vlan tag %x\n", feci, nircm->vlan_primary_rule.egress_vlan_tag);
++	}
++
++	/*
+ 	 * Routed or bridged?
+ 	 */
+ 	if (ecm_db_connection_is_routed_get(feci->ci)) {

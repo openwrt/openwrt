@@ -1,0 +1,43 @@
+nss_core: size the command skb for the message, not the payload_len
+
+nss_core_send_cmd() allocates the command skb with buf_size and then
+copies size bytes into it:
+
+	memcpy(skb_put(nbuf, buf_size), (void *)ncm, size);
+
+The existing checks bound the firmware-supplied message length against
+size and buf_size against PAGE_SIZE, but never size against buf_size,
+so a caller passing a message larger than the payload size overruns the
+skb data area into skb_shared_info. nss_wifili_tx_msg() is that caller:
+sizeof(struct nss_wifili_msg) is 2096 while NSS_NBUF_PAYLOAD_SIZE is
+1984, and the memcpy writes 112 bytes past the end of the skb buffer.
+
+Size the allocation for max(size, buf_size) and let the existing
+PAGE_SIZE bound cover that value. skb_put() keeps nbuf->len - and
+therefore the payload_len the firmware sees - at buf_size; the message
+bytes beyond it land in the skb tailroom instead of skb_shared_info.
+
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+
+--- a/nss_core.c
++++ b/nss_core.c
+@@ -3386,13 +3386,16 @@ int32_t nss_core_send_cmd(struct nss_ctx
+ 		return NSS_TX_FAILURE_TOO_LARGE;
+ 	}
+ 
+-	if (buf_size > PAGE_SIZE) {
++	if (max(size, buf_size) > PAGE_SIZE) {
+ 		nss_warning("%px: interface: %d type: %d tx request size too large: %u",
+-					nss_ctx, ncm->interface, ncm->type, buf_size);
++					nss_ctx, ncm->interface, ncm->type, max(size, buf_size));
+ 		return NSS_TX_FAILURE_BAD_PARAM;
+ 	}
+ 
+-	nbuf = dev_alloc_skb(buf_size);
++	/*
++	 * skb_put() below keeps nbuf->len, the firmware-visible length, at buf_size.
++	 */
++	nbuf = dev_alloc_skb(max(size, buf_size));
+ 	if (unlikely(!nbuf)) {
+ 		NSS_PKT_STATS_INC(&nss_ctx->nss_top->stats_drv[NSS_DRV_STATS_NBUF_ALLOC_FAILS]);
+ 		nss_warning("%px: interface: %d type: %d msg dropped as command allocation failed", nss_ctx, ncm->interface, ncm->type);

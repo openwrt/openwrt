@@ -1,0 +1,142 @@
+From: Stanislaw Pal <kuncy7@gmail.com>
+Date: Sat, 5 Sep 2026 15:10:00 +0200
+Subject: [PATCH] nss_hal: ipq50xx: configure the core clock first and enable before set_rate
+
+Two changes to how the IPQ50xx HAL programs the NSS clocks, both to get
+rid of the clock framework warnings printed on every boot:
+
+  ubi0_core_clk_src: rcg didn't update its configuration.
+  WARNING: CPU: 0 PID: 1592 at drivers/clk/qcom/clk-rcg2.c:136 update_config
+
+1. nss_hal_clock_set_and_enable() called clk_set_rate() before
+   clk_prepare_enable(). For the core clock the rate change propagates to
+   the UBI32 PLL, which the bootloader leaves disabled, so the RCG update
+   is issued while its source is not running and never completes; the
+   requested rate (1 GHz from the device tree) was silently not applied
+   and the core kept the bootloader setting. Enable first, then set the
+   rate - the same clk_set_rate() succeeds without a warning once the
+   clock is enabled, which is exactly what the runtime DVFS path through
+   /proc/sys/dev/nss/clock/current_freq does.
+
+2. __nss_hal_clock_configure() programmed the six bus clocks before the
+   core clock. The bootloader leaves ubi0_core_clk_src sourced from GPLL0
+   at 200 MHz. Setting the AXI clocks to 400 MHz asks GPLL0 for an exact
+   800000000 Hz while the framework has it at 799999999 Hz; that 1 Hz
+   change is then re-applied to every GPLL0 child, including the parked
+   core RCG, whose update fails twice. Move the core clock over to its
+   own PLL first, so the ripple no longer reaches it.
+
+With both changes the boot log is clean and the core runs at the rate
+the device tree asks for.
+
+Signed-off-by: Stanislaw Pal <kuncy7@gmail.com>
+---
+--- a/nss_hal/ipq50xx/nss_hal_pvt.c
++++ b/nss_hal/ipq50xx/nss_hal_pvt.c
+@@ -243,20 +243,30 @@
+ 		return -EFAULT;
+ 	}
+ 
++	/*
++	 * Enable first, then set the rate. The core clock is fed by the
++	 * UBI32 PLL, which the bootloader leaves disabled; an RCG update
++	 * issued while its source is not running never completes and the
++	 * clock framework warns ("rcg didn't update its configuration").
++	 * With the clock (and thus the PLL) enabled first the same
++	 * clk_set_rate() succeeds, exactly as it does at runtime through
++	 * /proc/sys/dev/nss/clock/current_freq.
++	 */
++	err = clk_prepare_enable(nss_clk);
++	if (err) {
++		pr_err("%px: cannot enable clock: %s\n", dev, id);
++		return -EFAULT;
++	}
++
+ 	if (rate) {
+ 		err = clk_set_rate(nss_clk, rate);
+ 		if (err) {
+ 			pr_err("%px: cannot set %s freq\n", dev, id);
++			clk_disable_unprepare(nss_clk);
+ 			return -EFAULT;
+ 		}
+ 	}
+ 
+-	err = clk_prepare_enable(nss_clk);
+-	if (err) {
+-		pr_err("%px: cannot enable clock: %s\n", dev, id);
+-		return -EFAULT;
+-	}
+-
+ 	return 0;
+ }
+ 
+@@ -368,29 +378,6 @@
+ {
+ 	int32_t i;
+ 
+-	if (nss_hal_clock_set_and_enable(&nss_dev->dev, NSS_DBG_CLK, 150000000)) {
+-		return -EFAULT;
+-	}
+-
+-	if (nss_hal_clock_set_and_enable(&nss_dev->dev, NSS_CFG_CLK, 100000000)) {
+-		return -EFAULT;
+-	}
+-
+-	if (nss_hal_clock_set_and_enable(&nss_dev->dev, NSS_AXI_CLK, 400000000)) {
+-		return -EFAULT;
+-	}
+-
+-	if (nss_hal_clock_set_and_enable(&nss_dev->dev, NSS_SNOC_AXI_CLK, 400000000)) {
+-		return -EFAULT;
+-	}
+-
+-	if (nss_hal_clock_set_and_enable(&nss_dev->dev, NSS_NC_AXI_CLK, 266670000)) {
+-		return -EFAULT;
+-	}
+-
+-	if (nss_hal_clock_set_and_enable(&nss_dev->dev, NSS_UTCM_CLK, 266670000)) {
+-		return -EFAULT;
+-	}
+ 
+ 	/*
+ 	 * No entries, then just load default
+@@ -450,6 +437,39 @@
+ 		}
+ 	}
+ 
++	/*
++	 * Move the core clock over to the UBI32 PLL before touching the bus
++	 * clocks. The bootloader leaves ubi0_core_clk_src sourced from GPLL0
++	 * (200 MHz); setting the AXI clocks to 400 MHz asks GPLL0 for a 1 Hz
++	 * rate change and the clock framework then re-applies that change to
++	 * every GPLL0 child, including the core RCG, whose update fails while
++	 * it is still parked there ("rcg didn't update its configuration").
++	 * With the core already on its own PLL the ripple no longer reaches it.
++	 */
++	if (nss_hal_clock_set_and_enable(&nss_dev->dev, NSS_DBG_CLK, 150000000)) {
++		return -EFAULT;
++	}
++
++	if (nss_hal_clock_set_and_enable(&nss_dev->dev, NSS_CFG_CLK, 100000000)) {
++		return -EFAULT;
++	}
++
++	if (nss_hal_clock_set_and_enable(&nss_dev->dev, NSS_AXI_CLK, 400000000)) {
++		return -EFAULT;
++	}
++
++	if (nss_hal_clock_set_and_enable(&nss_dev->dev, NSS_SNOC_AXI_CLK, 400000000)) {
++		return -EFAULT;
++	}
++
++	if (nss_hal_clock_set_and_enable(&nss_dev->dev, NSS_NC_AXI_CLK, 266670000)) {
++		return -EFAULT;
++	}
++
++	if (nss_hal_clock_set_and_enable(&nss_dev->dev, NSS_UTCM_CLK, 266670000)) {
++		return -EFAULT;
++	}
++
+ 	nss_info("Supported Frequencies - ");
+ 	for (i = 0; i < NSS_FREQ_MAX_SCALE; i++) {
+ 		switch (nss_runtime_samples.freq_scale[i].frequency) {

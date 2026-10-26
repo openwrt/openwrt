@@ -1,0 +1,83 @@
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Subject: wifi: ath11k: complete pending tx frames on mac stop
+
+Frames the firmware never returns a completion for (e.g. a poll to a
+station that disappeared right before an interface stop) stay in the
+tx idr pool until ath11k_dp_free(), which runs only at device removal,
+after ieee80211_free_hw() - so mac80211 cannot clean up the ack status
+entries of status-requested frames and warns with "Have pending ack
+frames!". Reap the leftovers of the stopping radio in the mac stop
+callback through ieee80211_free_txskb() while the hardware is still
+registered.
+
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+
+diff --git a/drivers/net/wireless/ath/ath11k/dp.c b/drivers/net/wireless/ath/ath11k/dp.c
+index 49a7823..c656deb 100644
+--- a/drivers/net/wireless/ath/ath11k/dp.c
++++ b/drivers/net/wireless/ath/ath11k/dp.c
+@@ -1056,6 +1056,44 @@
+ 	return 0;
+ }
+ 
++/*
++ * Complete pending tx frames of one radio while mac80211 still owns the
++ * hardware. Frames the firmware never completed (e.g. polls to a client
++ * that went away right before an interface stop) would otherwise sit in
++ * the idr pool until ath11k_dp_free(), which runs after
++ * ieee80211_free_hw() - too late for mac80211 to clean the ack status
++ * entries of status-requested frames ("Have pending ack frames!").
++ */
++void ath11k_dp_tx_complete_pending(struct ath11k *ar)
++{
++	struct ath11k_base *ab = ar->ab;
++	struct ath11k_dp *dp = &ab->dp;
++	struct sk_buff *msdu;
++	int i, j;
++
++	for (i = 0; i < DP_TCL_NUM_RING_MAX; i++) {
++		struct dp_tx_ring *tx_ring = &dp->tx_ring[i];
++
++		spin_lock_bh(&tx_ring->tx_idr_lock);
++		for_each_set_bit(j, tx_ring->idrs, DP_TX_IDR_SIZE) {
++			msdu = tx_ring->idr_pool[j].buf;
++			if (!msdu || ATH11K_SKB_CB(msdu)->ar != ar)
++				continue;
++
++			clear_bit(j, tx_ring->idrs);
++			tx_ring->idr_pool[j].buf = NULL;
++
++			dma_unmap_single(ab->dev, ATH11K_SKB_CB(msdu)->paddr,
++					 msdu->len, DMA_TO_DEVICE);
++			ieee80211_free_txskb(ar->hw, msdu);
++
++			if (atomic_dec_and_test(&ar->dp.num_tx_pending))
++				wake_up(&ar->dp.tx_empty_waitq);
++		}
++		spin_unlock_bh(&tx_ring->tx_idr_lock);
++	}
++}
++
+ void ath11k_dp_free(struct ath11k_base *ab)
+ {
+ 	struct ath11k_dp *dp = &ab->dp;
+--- a/drivers/net/wireless/ath/ath11k/dp.h
++++ b/drivers/net/wireless/ath/ath11k/dp.h
+@@ -1766,6 +1766,7 @@
+ 			   int budget);
+ int ath11k_dp_htt_connect(struct ath11k_dp *dp);
+ void ath11k_dp_vdev_tx_attach(struct ath11k *ar, struct ath11k_vif *arvif);
++void ath11k_dp_tx_complete_pending(struct ath11k *ar);
+ void ath11k_dp_free(struct ath11k_base *ab);
+ int ath11k_dp_alloc(struct ath11k_base *ab);
+ int ath11k_dp_pdev_alloc(struct ath11k_base *ab);
+--- a/drivers/net/wireless/ath/ath11k/mac.c
++++ b/drivers/net/wireless/ath/ath11k/mac.c
+@@ -6869,6 +6869,7 @@
+ 	int ret;
+ 
+ 	ath11k_mac_drain_tx(ar);
++	ath11k_dp_tx_complete_pending(ar);
+ 
+ 	mutex_lock(&ar->conf_mutex);
+ 	ret = ath11k_mac_config_mon_status_default(ar, false);

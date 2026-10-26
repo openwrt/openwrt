@@ -1,0 +1,162 @@
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Subject: [PATCH] ath11k: count only the radios a recovery restarts
+
+ath11k_core_post_reconfigure_recovery() calls ieee80211_restart_hw()
+only for a radio in ATH11K_STATE_ON. A radio that is off, wedged or in
+FTM is skipped, so it never comes back through ath11k_mac_op_start() or
+ath11k_mac_op_reconfig_complete() and never increments either recovery
+counter.
+
+Both counters were then compared against ab->num_radios - every radio
+the SoC has. On a device where any radio is not ON at crash time the
+comparison can never become true, with two consequences:
+
+  - ath11k_mac_wait_reconfigure() never completes ab->recovery_start,
+    so every ath11k_core_reset() waits out the full
+    ATH11K_RECOVER_START_TIMEOUT_HZ.
+
+  - ath11k_mac_op_reconfig_complete() never clears ab->is_reset. That
+    one is sticky: from then on every ATH11K_QMI_EVENT_SERVER_EXIT takes
+    the "if (!ab->is_reset)" guard as false and skips
+    ath11k_core_pre_reconfigure_recovery() for the lifetime of the
+    device. That function is what resets ar->state_11d to
+    ATH11K_11D_IDLE and completes completed_11d_scan, among a dozen
+    other completions, so the regulatory worker in
+    ath11k_regd_update_chan_list_work() blocks on an 11D scan that will
+    never report, and the channel list is never pushed to firmware.
+
+Count the radios that are actually restarted and compare against that.
+The count is published before the loop that restarts them, because
+ieee80211_restart_hw() is asynchronous and the first radio's
+ath11k_mac_op_start() can run while the loop is still walking.
+
+The no-radio case ends the reset directly rather than latching is_reset
+with nobody left to clear it, so the tail of reconfig_complete moves
+into ath11k_core_reset_finish(), made idempotent for that reason.
+
+NOT VALIDATED ON HARDWARE. The wedge it addresses was reproduced, the
+fix has not been: exercising it needs a firmware assert on a device with
+one radio deliberately down, and the recovery path is the one place
+CLAUDE.md forbids shipping on inspection alone. Do not ship this to
+testers before a device pass.
+
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+
+diff --git a/drivers/net/wireless/ath/ath11k/core.c b/drivers/net/wireless/ath/ath11k/core.c
+index 48f14dd..e978200 100644
+--- a/drivers/net/wireless/ath/ath11k/core.c
++++ b/drivers/net/wireless/ath/ath11k/core.c
+@@ -2537,11 +2537,43 @@
+ 	reinit_completion(&ab->driver_recovery);
+ }
+ 
++/* Every radio the recovery restarted has reported back: the reset is over.
++ * Idempotent, because the no-radio case below ends the reset without any
++ * reporter and a radio left over from a previous recovery can still arrive.
++ */
++void ath11k_core_reset_finish(struct ath11k_base *ab)
++{
++	if (!ab->is_reset)
++		return;
++
++	atomic_dec(&ab->reset_count);
++	complete(&ab->reset_complete);
++	ab->is_reset = false;
++	atomic_set(&ab->fail_cont_count, 0);
++}
++
+ static void ath11k_core_post_reconfigure_recovery(struct ath11k_base *ab)
+ {
+ 	struct ath11k *ar;
+ 	struct ath11k_pdev *pdev;
+-	int i;
++	int i, expected = 0;
++
++	/* Only a radio in ATH11K_STATE_ON is restarted below, and only a
++	 * restarted radio comes back through ath11k_mac_wait_reconfigure() and
++	 * ath11k_mac_op_reconfig_complete(). Publish how many that is before
++	 * the first ieee80211_restart_hw() can be acted on, because both of
++	 * those compared against ab->num_radios: with one radio off, wedged or
++	 * in FTM the count never got there, so ab->is_reset was never cleared
++	 * and every later ATH11K_QMI_EVENT_SERVER_EXIT skipped
++	 * ath11k_core_pre_reconfigure_recovery() for the lifetime of the
++	 * device.
++	 */
++	for (i = 0; i < ab->num_radios; i++) {
++		ar = ab->pdevs[i].ar;
++		if (ar && ar->state == ATH11K_STATE_ON)
++			expected++;
++	}
++	atomic_set(&ab->recovery_expected, expected);
+ 
+ 	for (i = 0; i < ab->num_radios; i++) {
+ 		pdev = &ab->pdevs[i];
+@@ -2579,6 +2611,16 @@
+ 
+ 		mutex_unlock(&ar->conf_mutex);
+ 	}
++
++	/* With no radio to restart nothing will ever report back, so end the
++	 * reset here instead of latching is_reset and burning the full
++	 * ATH11K_RECOVER_START_TIMEOUT_HZ on the way.
++	 */
++	if (!expected && ab->is_reset) {
++		complete(&ab->recovery_start);
++		ath11k_core_reset_finish(ab);
++	}
++
+ 	complete(&ab->driver_recovery);
+ }
+ 
+--- a/drivers/net/wireless/ath/ath11k/core.h
++++ b/drivers/net/wireless/ath/ath11k/core.h
+@@ -1103,6 +1103,10 @@
+ 	atomic_t reset_count;
+ 	atomic_t recovery_count;
+ 	atomic_t recovery_start_count;
++	/* number of radios this recovery actually restarted, and so the
++	 * number that will report back through the two counters above
++	 */
++	atomic_t recovery_expected;
+ 	bool is_reset;
+ 	struct completion reset_complete;
+ 	struct completion reconfigure_complete;
+@@ -1376,6 +1380,7 @@
+ int ath11k_core_suspend(struct ath11k_base *ab);
+ int ath11k_core_suspend_late(struct ath11k_base *ab);
+ void ath11k_core_pre_reconfigure_recovery(struct ath11k_base *ab);
++void ath11k_core_reset_finish(struct ath11k_base *ab);
+ bool ath11k_core_coldboot_cal_support(struct ath11k_base *ab);
+ 
+ const struct firmware *ath11k_core_firmware_request(struct ath11k_base *ab,
+--- a/drivers/net/wireless/ath/ath11k/mac.c
++++ b/drivers/net/wireless/ath/ath11k/mac.c
+@@ -6706,7 +6706,7 @@
+ 	recovery_start_count = atomic_inc_return(&ab->recovery_start_count);
+ 	ath11k_dbg(ab, ATH11K_DBG_MAC, "recovery start count %d\n", recovery_start_count);
+ 
+-	if (recovery_start_count == ab->num_radios) {
++	if (recovery_start_count == atomic_read(&ab->recovery_expected)) {
+ 		complete(&ab->recovery_start);
+ 		ath11k_dbg(ab, ATH11K_DBG_MAC, "recovery started success\n");
+ 	}
+@@ -9520,13 +9520,13 @@
+ 			ath11k_dbg(ab, ATH11K_DBG_BOOT,
+ 				   "recovery count %d\n", recovery_count);
+ 			/* When there are multiple radios in an SOC,
+-			 * the recovery has to be done for each radio
++			 * the recovery has to be done for each radio that
++			 * was restarted - not for every radio the SOC has,
++			 * since a radio that was off, wedged or in FTM never
++			 * gets here.
+ 			 */
+-			if (recovery_count == ab->num_radios) {
+-				atomic_dec(&ab->reset_count);
+-				complete(&ab->reset_complete);
+-				ab->is_reset = false;
+-				atomic_set(&ab->fail_cont_count, 0);
++			if (recovery_count == atomic_read(&ab->recovery_expected)) {
++				ath11k_core_reset_finish(ab);
+ 				ath11k_dbg(ab, ATH11K_DBG_BOOT, "reset success\n");
+ 			}
+ 		}

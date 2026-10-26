@@ -1,0 +1,27 @@
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Subject: [PATCH] nss_n2h: refuse the pbuf sysctls before the core is up
+
+The dev.nss.n2hcfg sysctls exist from module load, while the probe waits
+for the data plane to be armed. A write to extra_pbuf_core0 or
+extra_pbuf_core1 before that maps the new pages through a context whose
+device is not set yet and faults in dma_map_phys() at 0x210.
+
+Return NSS_TX_FAILURE_NOT_READY from nss_n2h_buf_pool_cfg() until the
+core is initialized, as nss_core_send_cmd() does for every message.
+
+Assisted-by: Claude:claude-opus-5-5
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+---
+--- a/nss_n2h.c
++++ b/nss_n2h.c
+@@ -1217,6 +1217,10 @@ static nss_tx_status_t nss_n2h_buf_pool_
+ 
+ 	nss_assert(core_num < NSS_CORE_MAX);
+ 
++	if (unlikely(nss_ctx->state != NSS_CORE_STATE_INITIALIZED)) {
++		return NSS_TX_FAILURE_NOT_READY;
++	}
++
+ 	nss_n2h_msg_init(&nnm, NSS_N2H_INTERFACE, NSS_METADATA_TYPE_N2H_ADD_BUF_POOL,
+ 			sizeof(struct nss_n2h_buf_pool),
+ 			nss_n2h_bufs_cfg_callback,

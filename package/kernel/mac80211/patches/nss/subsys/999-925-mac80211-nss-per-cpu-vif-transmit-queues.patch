@@ -1,0 +1,54 @@
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Subject: [PATCH] mac80211: allocate per-CPU transmit queues for NSS offload
+
+The NSS offload data path bypasses the mac80211 TXQs entirely: every
+frame goes through dev_queue_xmit and the transmit-queue lock of its
+netdev queue straight into the NSS virtual-device redirect. mac80211
+allocates interface netdevs with a single transmit queue (the TXQ
+world has no use for more), so all concurrent senders serialize on one
+xmit lock - measured as a ~1 Gbit/s ceiling for locally sourced
+transmit towards an HE160 station on IPQ8074, with the radio idle a
+quarter of the time and no CPU saturated.
+
+Allocate one transmit queue per CPU on NSS-enabled builds. Neither
+data netdev_ops implements ndo_select_queue, so the core flow-hashes
+traffic across the queues (per-flow ordering is preserved), and the
+mac80211 queue wake/stop machinery operates on the internal TXQs
+without ever touching netdev subqueues, so host-mode operation is
+unaffected.
+
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+
+diff --git a/net/mac80211/iface.c b/net/mac80211/iface.c
+index 7d77d6b..e11d9ee 100644
+--- a/net/mac80211/iface.c
++++ b/net/mac80211/iface.c
+@@ -2374,9 +2374,28 @@ int ieee80211_if_add(struct ieee80211_local *local, const char *name,
+ 			txq_size += sizeof(struct txq_info) +
+ 				    local->hw.txq_data_size;
+ 
++#ifdef CPTCFG_MAC80211_NSS_SUPPORT
++		/*
++		 * The NSS offload data path bypasses the mac80211 TXQs:
++		 * every frame takes the netdev transmit-queue lock straight
++		 * into the NSS virtual-device redirect, so with the single
++		 * default queue all sender threads serialize on one lock
++		 * (measured ceiling ~1 Gbit/s for locally sourced transmit
++		 * on IPQ8074). Give the interface one transmit queue per
++		 * CPU: neither data netdev_ops implements ndo_select_queue,
++		 * so the core flow-hashes across the queues, and the
++		 * wake_tx_queue world never touches netdev subqueues, so
++		 * the extra queues are invisible to the host-mode path.
++		 */
++		ndev = alloc_netdev_mqs(size + txq_size,
++					name, name_assign_type,
++					ieee80211_if_setup,
++					num_possible_cpus(), 1);
++#else
+ 		ndev = alloc_netdev_mqs(size + txq_size,
+ 					name, name_assign_type,
+ 					ieee80211_if_setup, 1, 1);
++#endif
+ 		if (!ndev)
+ 			return -ENOMEM;
+ 

@@ -1,0 +1,61 @@
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Subject: [PATCH] nss_core: back firmware empty-buffer payloads with kmalloc
+
+The empty-buffer pool skbs are handed to the NSS firmware, which keeps
+them in custody indefinitely (n2h_empty_pool_buf + n2h_wifi_pool_buf,
+~14.5k skbs on a two-radio IPQ8074 with the wifili pool configured).
+dev_alloc_skb() carves their ~2KB payloads out of the shared per-CPU
+page-frag caches, i.e. 32KB compound chunks holding up to 13 buffers,
+interleaved with short-lived traffic skbs. Every payload the firmware
+keeps pins its entire chunk once the neighbouring buffers are freed,
+and the pool slowly diffuses across chunks as buffers cycle through
+the firmware.
+
+Measured on a 512MB AX3600 after 5h of uptime (full-pfn page census):
+6098 order-3 frag chunks = 195MB pinned, holding ~14.4k custody
+payloads = ~34MB of actual buffer memory - a ~5x amplification that
+plateaus only when most custody buffers sit in near-empty chunks. A
+100s saturation burst diluted the pool further (+334 chunks for +135
+payloads) and idle time does not recover the memory.
+
+Allocate the pool payloads with alloc_skb() instead: each payload gets
+its own kmalloc object (kmalloc-4096 for the default 1792-byte medium
+profile buffer), freed in full the moment the skb is freed, bounding
+pool memory at one page per buffer with zero cross-lifetime pinning.
+The skb geometry is unchanged (same payload_len mapping, NET_SKB_PAD
+headroom restored via skb_reserve; the firmware reports payload_offs
+relative to head on return, and tailroom only grows). Allocation cost
+moves from page-frag carve to slab alloc on the refill path only,
+which runs at pool-churn rate, not per-packet rate.
+
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+--- a/nss_core.c
++++ b/nss_core.c
+@@ -2011,7 +2011,18 @@ static void nss_core_alloc_max_avail_siz
+ 		dma_addr_t buffer;
+ 		struct h2n_descriptor *desc = &desc_ring[hlos_index];
+ 
+-		struct sk_buff *nbuf = dev_alloc_skb(max_buf_size);
++		/*
++		 * These skbs are handed to the NSS firmware, which keeps
++		 * them in its empty-buffer pool indefinitely. They must not
++		 * come from the shared per-CPU page-frag caches
++		 * (dev_alloc_skb): a long-held ~2KB payload pins its whole
++		 * 32KB frag chunk once the neighbouring traffic buffers are
++		 * freed, which measured as ~5x RAM amplification on a 512MB
++		 * IPQ8074 (~200MB pinned for ~35MB of payloads). alloc_skb()
++		 * backs each payload with its own kmalloc object instead,
++		 * which is returned in full the moment the skb is freed.
++		 */
++		struct sk_buff *nbuf = alloc_skb(payload_len, GFP_ATOMIC);
+ 		if (unlikely(!nbuf)) {
+ 			/*
+ 			 * ERR:
+@@ -2020,6 +2031,7 @@ static void nss_core_alloc_max_avail_siz
+ 			nss_warning("%px: Could not obtain empty buffer", nss_ctx);
+ 			break;
+ 		}
++		skb_reserve(nbuf, NET_SKB_PAD);
+ 
+ 		/*
+ 		 * Map the skb

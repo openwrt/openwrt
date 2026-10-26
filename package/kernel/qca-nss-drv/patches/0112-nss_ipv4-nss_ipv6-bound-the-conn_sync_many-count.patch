@@ -1,0 +1,188 @@
+nss_ipv4/nss_ipv6: bound the conn_sync_many count by the receive buffer
+
+The sync-many response carries an array of per-connection statistics and
+a count of how many it holds. Both the count and the size it is checked
+against come out of the same firmware-written buffer:
+
+	if (nicsm->count * sizeof(struct nss_ipv4_conn_sync) >= nicsm->size) {
+
+so the test compares one firmware value with another. It is wrong even
+for a well-behaved firmware: ECM seeds size to PAGE_SIZE, which is larger
+than the response buffer, so counts that pass still overread.
+
+Worse, the test guards only the driver's own loop. The handler also sets
+ncm->cb to the registered sync-many callback, and ECM's
+
+	for (i = 0; i < nicsm->count; i++)
+
+in ecm_nss_ipv4_connection_sync_many_callback() has no check at all,
+feeding every record into a connection-hash lookup and a conntrack
+timeout update from NAPI context. With count = 0xffff and 116-byte
+records that is ~7.4 MB read past the response buffer.
+
+ncm->len cannot serve as the bound. The firmware answers in the request's
+own buffer and leaves the header intact, and ECM sends the request with
+len = sizeof(struct nss_ipv4_conn_sync_many_msg), which is the 8-byte
+header in front of the flexible array. A reply with records therefore
+still reads len = 8, and a bound derived from it clamps every periodic
+sync to zero records: only the single CONN_STATS_SYNC at teardown reaches
+ECM, so per-connection totals, the bridge, VLAN and wireless interface
+counters, conntrack accounting and the conntrack timeout refresh all
+stand still while a connection is accelerated. On a GL-B3000 with the
+12.2 firmware br-lan rx stayed flat through a 30 s upload and moved once,
+by one sync period, at the end. On an AX3600 with the 12.5 firmware the
+replies carry len 8 in receive buffers of 280 and 512 bytes, holding 2
+and 4 116-byte records behind the 48-byte header.
+
+Bound the count where both consumers route through it - the message
+handler - by the receive buffer length nss_core_handle_nss_status_pkt()
+validated, recorded in the context for the duration of the callback, and
+drop the test it replaces. Clamping rather than returning is what keeps
+ECM's unguarded loop safe without editing ECM. The clamp warns through
+pr_warn_ratelimited() because nss_warning() is compiled out at the
+default NSS_DEBUG_LEVEL.
+
+Both families change together; the IPv4 and IPv6 paths are line-for-line
+identical here.
+
+Reported-by: kuncy7
+Link: https://github.com/JuliusBairaktaris/openwrt-nss-edma/issues/33
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+
+--- a/nss_core.c
++++ b/nss_core.c
+@@ -460,6 +460,12 @@ void nss_core_handle_nss_status_pkt(stru
+ 		return;
+ 	}
+ 
++	/*
++	 * A response is filled into the request's buffer without ncm->len
++	 * being rewritten, so the receive buffer is the only length that
++	 * covers a variable-length payload.
++	 */
++	nss_ctx->rx_msg_buf_len = buf_len;
+ 	cb(nss_ctx, ncm, app_data);
+ 
+ 	if (ncm->interface != nss_if) {
+--- a/nss_core.h
++++ b/nss_core.h
+@@ -482,6 +482,7 @@ struct nss_ctx_instance {
+ 	uint16_t rps_en;		/* N2H Enable Multiple queues for Data Packets */
+ 	uint16_t n2h_mitigate_en;	/* N2H mitigation */
+ 	uint32_t max_buf_size;		/* Maximum buffer size */
++	uint32_t rx_msg_buf_len;	/* Receive buffer length of the status message being handled */
+ 	uint32_t buf_sz_allocated;	/* size of bufs allocated from host */
+ 	nss_cmn_queue_decongestion_callback_t queue_decongestion_callback[NSS_MAX_CLIENTS];
+ 					/* Queue decongestion callbacks */
+--- a/nss_ipv4.c
++++ b/nss_ipv4.c
+@@ -120,7 +120,27 @@ static void nss_ipv4_rx_msg_handler(stru
+ 		nss_ipv4_stats_conn_sync(nss_ctx, &nim->msg.conn_stats);
+ 		break;
+ 
+-	case NSS_IPV4_TX_CONN_STATS_SYNC_MANY_MSG:
++	case NSS_IPV4_TX_CONN_STATS_SYNC_MANY_MSG: {
++		/*
++		 * count and size are both written by the firmware, so the
++		 * count-against-size test inside the stats helper compares one
++		 * firmware value with another. ncm->len is no bound either: the
++		 * firmware answers in the request's buffer and leaves the
++		 * header-only length ECM sent. Bound count by the receive
++		 * buffer the core validated, and do it here, because the
++		 * registered callback below iterates the same count with no
++		 * test of its own.
++		 */
++		uint32_t hdr = offsetof(struct nss_ipv4_msg, msg.conn_stats_many.conn_sync);
++		uint32_t buf = nss_ctx->rx_msg_buf_len;
++		uint32_t max = (buf < hdr) ? 0 : (buf - hdr) / sizeof(struct nss_ipv4_conn_sync);
++
++		if (nim->msg.conn_stats_many.count > max) {
++			pr_warn_ratelimited("%px: conn_sync_many count %u exceeds buffer capacity %u\n",
++					nss_ctx, nim->msg.conn_stats_many.count, max);
++			nim->msg.conn_stats_many.count = max;
++		}
++
+ 		/*
+ 		 * Update driver statistics on connection sync many.
+ 		 */
+@@ -128,6 +148,7 @@ static void nss_ipv4_rx_msg_handler(stru
+ 		ncm->cb = (nss_ptr_t)nss_ipv4_conn_sync_many_msg_cb;
+ 		break;
+ 	}
++	}
+ 
+ 	/*
+ 	 * Update the callback and app_data for NOTIFY messages, IPv4 sends all notify messages
+--- a/nss_ipv4_stats.c
++++ b/nss_ipv4_stats.c
+@@ -167,14 +167,6 @@ void nss_ipv4_stats_conn_sync_many(struc
+ {
+ 	int i;
+ 
+-	/*
+-	 * Sanity check for the stats count
+-	 */
+-	if (nicsm->count * sizeof(struct nss_ipv4_conn_sync) >= nicsm->size) {
+-		nss_warning("%px: stats sync count %u exceeds the size of this msg %u", nss_ctx, nicsm->count, nicsm->size);
+-		return;
+-	}
+-
+ 	for (i = 0; i < nicsm->count; i++) {
+ 		nss_ipv4_stats_conn_sync(nss_ctx, &nicsm->conn_sync[i]);
+ 	}
+--- a/nss_ipv6.c
++++ b/nss_ipv6.c
+@@ -118,7 +118,27 @@ static void nss_ipv6_rx_msg_handler(stru
+ 		nss_ipv6_stats_conn_sync(nss_ctx, &nim->msg.conn_stats);
+ 		break;
+ 
+-	case NSS_IPV6_TX_CONN_STATS_SYNC_MANY_MSG:
++	case NSS_IPV6_TX_CONN_STATS_SYNC_MANY_MSG: {
++		/*
++		 * count and size are both written by the firmware, so the
++		 * count-against-size test inside the stats helper compares one
++		 * firmware value with another. ncm->len is no bound either: the
++		 * firmware answers in the request's buffer and leaves the
++		 * header-only length ECM sent. Bound count by the receive
++		 * buffer the core validated, and do it here, because the
++		 * registered callback below iterates the same count with no
++		 * test of its own.
++		 */
++		uint32_t hdr = offsetof(struct nss_ipv6_msg, msg.conn_stats_many.conn_sync);
++		uint32_t buf = nss_ctx->rx_msg_buf_len;
++		uint32_t max = (buf < hdr) ? 0 : (buf - hdr) / sizeof(struct nss_ipv6_conn_sync);
++
++		if (nim->msg.conn_stats_many.count > max) {
++			pr_warn_ratelimited("%px: conn_sync_many count %u exceeds buffer capacity %u\n",
++					nss_ctx, nim->msg.conn_stats_many.count, max);
++			nim->msg.conn_stats_many.count = max;
++		}
++
+ 		/*
+ 		 * Update driver statistics on connection sync many.
+ 		 */
+@@ -126,6 +146,7 @@ static void nss_ipv6_rx_msg_handler(stru
+ 		ncm->cb = (nss_ptr_t)nss_ipv6_conn_sync_many_msg_cb;
+ 		break;
+ 	}
++	}
+ 
+ 	/*
+ 	 * Update the callback and app_data for NOTIFY messages, IPv6 sends all notify messages
+--- a/nss_ipv6_stats.c
++++ b/nss_ipv6_stats.c
+@@ -160,14 +160,6 @@ void nss_ipv6_stats_conn_sync_many(struc
+ {
+ 	uint32_t i;
+ 
+-	/*
+-	 * Sanity check for the stats count
+-	 */
+-	if (nicsm->count * sizeof(struct nss_ipv6_conn_sync) >= nicsm->size) {
+-		nss_warning("%px: stats sync count %u exceeds the size of this msg %u", nss_ctx, nicsm->count, nicsm->size);
+-		return;
+-	}
+-
+ 	for (i = 0; i < nicsm->count; i++) {
+ 		nss_ipv6_stats_conn_sync(nss_ctx, &nicsm->conn_sync[i]);
+ 	}

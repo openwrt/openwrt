@@ -1,0 +1,64 @@
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Subject: [PATCH] ecm_sdx: drop the world-writable sysctl mode
+
+Five sysctl nodes register with .mode = 0666, so any process on the box
+can write them: four in ecm_sdx.c and one in the PCC classifier example.
+It is the same permission slip 0039 fixed on
+net/ecm/defunct_by_5tuple_mask, and the same tell - a sibling node in
+the very same table is already 0644, so 0666 is a typo rather than an
+intent.
+
+Neither file is built in our configuration, so this is not a live
+exposure here; it becomes one the moment SDX or the PCC classifier is
+enabled, which is a config switch rather than a code change. Fixing it
+now costs five characters and removes the thing a future config change
+would silently turn on.
+
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+
+--- a/ecm_sdx/ecm_sdx.c
++++ b/ecm_sdx/ecm_sdx.c
+@@ -194,28 +194,28 @@ static struct ctl_table ecm_sdx_sysctl_t
+ 		.procname	= "stats",
+ 		.data		= NULL,
+ 		.maxlen		= sizeof(int),
+-		.mode		= 0666,
++		.mode		= 0644,
+ 		.proc_handler	= &ecm_sdx_stats_handler,
+ 	},
+ 	{
+ 		.procname	= "per_ip_stats",
+ 		.data		= NULL,
+ 		.maxlen		= sizeof(int),
+-		.mode		= 0666,
++		.mode		= 0644,
+ 		.proc_handler	= &ecm_sdx_per_client_stats_handler,
+ 	},
+ 	{
+ 		.procname	= "interface_type",
+ 		.data		= NULL,
+ 		.maxlen		= sizeof(int),
+-		.mode		= 0666,
++		.mode		= 0644,
+ 		.proc_handler	= &ecm_sdx_iface_type_handler,
+ 	},
+ 	{
+ 		.procname	= "lan_prefixes",
+ 		.data		= NULL,
+ 		.maxlen		= sizeof(int),
+-		.mode		= 0666,
++		.mode		= 0644,
+ 		.proc_handler	= &ecm_sdx_lan_prefix_handler,
+ 	},
+ };
+--- a/examples/ecm_sdx_pcc.c
++++ b/examples/ecm_sdx_pcc.c
+@@ -930,7 +930,7 @@ static struct ctl_table ecm_sdx_pcc_sysc
+ 		.procname		= "ecm_sdx_pcc_rule",
+ 		.data			= &ecm_sdx_pcc_rules,
+ 		.maxlen			= sizeof(ecm_sdx_pcc_rules),
+-		.mode			= 0666,
++		.mode			= 0644,
+ 		.proc_handler		= &ecm_sdx_pcc_rule_handler,
+ 	},
+ 	{

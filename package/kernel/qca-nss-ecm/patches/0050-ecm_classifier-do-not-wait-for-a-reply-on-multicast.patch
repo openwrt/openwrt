@@ -1,0 +1,42 @@
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Subject: [PATCH] ecm_classifier: do not wait for a reply on multicast
+
+With accel_delay_pkts set to 1, the default and DSCP classifiers deny
+acceleration of a UDP flow until they see a packet in the reply
+direction. A routed multicast flow never has one, so it stays in
+software. Skip the wait when the destination is a multicast group.
+
+Assisted-by: Claude:claude-opus-5-5
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+---
+--- a/ecm_classifier_default.c
++++ b/ecm_classifier_default.c
+@@ -437,9 +437,11 @@ static void ecm_classifier_default_proce
+ 
+ check_delay:
+ 	/*
+-	 * Should we delay the acceleration?
++	 * Should we delay the acceleration? A multicast flow has no return
++	 * direction to wait for.
+ 	 */
+-	if (ecm_classifier_accel_delay_pkts) {
++	if (ecm_classifier_accel_delay_pkts &&
++	    !ecm_ip_addr_is_multicast(ip_hdr->dest_addr)) {
+ 		if (!ecm_classifier_default_ready_for_accel(cdii, sender)) {
+ 			DEBUG_INFO("%px: connection is not ready for accel\n", cdii);
+ 			spin_lock_bh(&ecm_classifier_default_lock);
+--- a/ecm_classifier_dscp.c
++++ b/ecm_classifier_dscp.c
+@@ -459,8 +459,11 @@ static void ecm_classifier_dscp_process(
+ 		 * Option 1: Wait forever until to see the reply direction traffic
+ 		 * Option 2: Wait for seeing N number of packets. If we still don't see reply,
+ 		 * set the uni-directional values.
++		 * A multicast flow never sees a reply, so it takes the
++		 * uni-directional values at once.
+ 		 */
+-		if (ecm_classifier_accel_delay_pkts) {
++		if (ecm_classifier_accel_delay_pkts &&
++		    !ecm_ip_addr_is_multicast(ip_hdr->dest_addr)) {
+ 			/*
+ 			 * Stop the processing if both side packets are already seen.
+ 			 * Above the process response is already set to allow the

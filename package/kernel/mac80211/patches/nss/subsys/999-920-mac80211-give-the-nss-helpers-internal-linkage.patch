@@ -1,0 +1,51 @@
+mac80211: give the NSS helpers internal linkage
+
+receive_from_nss(), ieee80211_xmit_nss_fixup() and
+ieee80211_8023_xmit_ap() are added by the NSS patches in this series
+and are only ever called from the file that defines them, but were
+left with external linkage and no prototype.
+
+Mark them static. No behaviour change - it keeps three symbols the
+NSS offload path invents out of the module's global namespace and
+silences the missing-prototype warnings that come with them.
+
+The patch was previously called "add kernel 6_12", which described
+nothing it does: none of its hunks is kernel-version dependent.
+
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+
+diff --git a/net/mac80211/iface.c b/net/mac80211/iface.c
+index 91afe88..7d77d6b 100644
+--- a/net/mac80211/iface.c
++++ b/net/mac80211/iface.c
+@@ -1389,7 +1389,7 @@ void ieee80211_del_virtual_monitor(struct ieee80211_local *local)
+ /* This callback is registered for nss redirect to receive packet exceptioned from nss in Rx path.
+  * When packet does not match any of the ecm rules is redirected back here.
+  */
+-void receive_from_nss(struct net_device *dev, struct sk_buff *sk_buff, struct napi_struct *napi)
++static void receive_from_nss(struct net_device *dev, struct sk_buff *sk_buff, struct napi_struct *napi)
+ {
+ 	struct net_device *netdev;
+ 	struct sk_buff *skb;
+diff --git a/net/mac80211/tx.c b/net/mac80211/tx.c
+index ff9937a..e53399b 100644
+--- a/net/mac80211/tx.c
++++ b/net/mac80211/tx.c
+@@ -4645,7 +4645,7 @@ static void ieee80211_mlo_multicast_tx(struct net_device *dev,
+ }
+ 
+ #ifdef CPTCFG_MAC80211_NSS_SUPPORT
+-void ieee80211_xmit_nss_fixup(struct sk_buff *skb,
++static void ieee80211_xmit_nss_fixup(struct sk_buff *skb,
+ 			      struct net_device *dev)
+ {
+ 	struct ieee80211_sub_if_data *sdata = IEEE80211_DEV_TO_SUB_IF(dev);
+@@ -4905,7 +4905,7 @@ out_free:
+ 	kfree_skb(skb);
+ }
+ 
+-void ieee80211_8023_xmit_ap(struct ieee80211_sub_if_data *sdata,
++static void ieee80211_8023_xmit_ap(struct ieee80211_sub_if_data *sdata,
+ 			    struct net_device *dev, struct sta_info *sta,
+ 			    struct ieee80211_key *key, struct sk_buff *skb,
+ 			    u32 info_flags, u32 ctrl_flags, u64 *cookie)

@@ -1,0 +1,61 @@
+Subject: [PATCH] nss_core: re-notify a full empty ring on repeated SOS
+
+The WF810DF RAM test has a full H2N empty ring (127 queued buffers),
+continuing firmware SOS interrupts, and stopped H2N command consumption.
+The existing no-space path returns without notifying firmware again.
+
+Re-publish the producer and repeat the idempotent empty-ring doorbell at
+most once per second while this contradictory state persists. Report the
+first occurrence without flooding the console. This is a diagnostic retry,
+not proof that a missed doorbell caused the observed stall. Do not allocate
+more buffers or reset the core. Also make physical command timeouts visible
+at the normal log level, including the operation that timed out.
+
+--- a/nss_core.c
++++ b/nss_core.c
+@@ -27,6 +27,7 @@
+ #include <linux/version.h>
+ #include <linux/mm.h>
+ #include <linux/of.h>
++#include <linux/ratelimit.h>
+ #include <linux/of_address.h>
+ #include <linux/sizes.h>
+ #include <nss_hal.h>
+@@ -2220,6 +2221,8 @@ static inline void nss_core_handle_empty_buffer_sos(struct nss_ctx_instance *nss_ctx,
+ 	struct nss_meminfo_ctx *mem_ctx = &nss_ctx->meminfo_ctx;
+ 	uint16_t count, size, mask;
+ 	int32_t nss_index, hlos_index;
++	static struct ratelimit_state empty_sos_retry =
++		RATELIMIT_STATE_INIT_FLAGS(empty_sos_retry, HZ, 1, RATELIMIT_MSG_ON_RELEASE);
+ 	struct hlos_h2n_desc_rings *h2n_desc_ring = &nss_ctx->h2n_desc_rings[NSS_IF_H2N_EMPTY_BUFFER_QUEUE];
+
+ 	int paged_mode = nss_core_get_paged_mode();
+@@ -2246,6 +2247,16 @@ static inline void nss_core_handle_empty_buffer_sos(struct nss_ctx_instance *nss_ctx,
+ 	 * Note that total number of descriptors in queue cannot be more than (size - 1)
+ 	 */
+ 	if (!count) {
++		if (__ratelimit(&empty_sos_retry)) {
++			pr_warn_once("NSS core %u: empty SOS with full ring consumer=%d producer=%d; retrying doorbell\n",
++				     nss_ctx->id, nss_index, hlos_index);
++			if_map->h2n_hlos_index[NSS_IF_H2N_EMPTY_BUFFER_QUEUE] = hlos_index;
++			dma_sync_single_for_device(nss_ctx->dev,
++				h2n_hlos_index_to_dma(mem_ctx->if_map_dma, NSS_IF_H2N_EMPTY_BUFFER_QUEUE),
++				sizeof(uint32_t), DMA_TO_DEVICE);
++			NSS_CORE_DSB();
++			nss_hal_send_interrupt(nss_ctx, NSS_H2N_INTR_EMPTY_BUFFER_QUEUE);
++		}
+ 		return;
+ 	}
+
+--- a/nss_phys_if.c
++++ b/nss_phys_if.c
+@@ -280,7 +280,8 @@ nss_tx_status_t nss_phys_if_msg_sync(struct nss_ctx_instance *nss_ctx, struct nss_phys_if_msg *nim)
+ 	if(!ret)
+ 	{
+ 		phif_timeouts++;
+-		nss_warning("%px: phys_if tx failed due to timeout\n", nss_ctx);
++		nss_info_always("%px: phys_if timeout interface=%u type=%u serial=%llu\n",
++				nss_ctx, nim->cm.interface, nim->cm.type, (unsigned long long)phif.serial);
+ 		phif.response = NSS_TX_FAILURE;
+ 	}
+

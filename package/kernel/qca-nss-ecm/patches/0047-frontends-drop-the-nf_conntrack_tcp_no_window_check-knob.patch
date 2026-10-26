@@ -1,0 +1,98 @@
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Subject: [PATCH] frontends: drop the nf_conntrack_tcp_no_window_check knob
+
+The kernel no longer carries the vendor
+nf_conntrack_tcp_no_window_check sysctl. The NSS and SFE frontends
+only ORed it into tcp_be_liberal, which stays.
+
+Assisted-by: Claude:claude-opus-5-5
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+---
+--- a/frontends/nss/ecm_nss_ported_ipv4.c
++++ b/frontends/nss/ecm_nss_ported_ipv4.c
+@@ -1363,7 +1363,6 @@ static void ecm_nss_ported_ipv4_connecti
+ 			int return_dir;
+ 			struct nf_tcp_net *tn = nf_tcp_pernet(nf_ct_net(ct));
+ 			uint32_t tcp_be_liberal = tn->tcp_be_liberal;
+-			uint32_t tcp_no_window_check = tn->tcp_no_window_check;
+ 			ecm_db_connection_address_get(feci->ci, ECM_DB_OBJ_DIR_FROM, addr);
+ 			ecm_front_end_flow_and_return_directions_get(ct, addr, 4, &flow_dir, &return_dir);
+ 
+@@ -1377,11 +1376,7 @@ static void ecm_nss_ported_ipv4_connecti
+ 			nircm->tcp_rule.return_max_window = ct->proto.tcp.seen[return_dir].td_maxwin;
+ 			nircm->tcp_rule.return_end = ct->proto.tcp.seen[return_dir].td_end;
+ 			nircm->tcp_rule.return_max_end = ct->proto.tcp.seen[return_dir].td_maxend;
+-#ifdef ECM_OPENWRT_SUPPORT
+-			if (tcp_be_liberal || tcp_no_window_check
+-#else
+ 			if (tcp_be_liberal
+-#endif
+ 					|| (!feci->tcp_be_liberal_set
+ 						&& ((ct->proto.tcp.seen[flow_dir].flags & IP_CT_TCP_FLAG_BE_LIBERAL)
+ 							|| (ct->proto.tcp.seen[return_dir].flags & IP_CT_TCP_FLAG_BE_LIBERAL)))) {
+--- a/frontends/nss/ecm_nss_ported_ipv6.c
++++ b/frontends/nss/ecm_nss_ported_ipv6.c
+@@ -1291,7 +1291,6 @@ static void ecm_nss_ported_ipv6_connecti
+ 			int return_dir;
+ 			struct nf_tcp_net *tn = nf_tcp_pernet(nf_ct_net(ct));
+ 			uint32_t tcp_be_liberal = tn->tcp_be_liberal;
+-			uint32_t tcp_no_window_check = tn->tcp_no_window_check;
+ 			ecm_front_end_flow_and_return_directions_get(ct, src_ip, 6, &flow_dir, &return_dir);
+ 
+ 			DEBUG_TRACE("%px: TCP Accel Get window data from ct %px for conn %px\n", feci, ct, feci->ci);
+@@ -1304,11 +1303,7 @@ static void ecm_nss_ported_ipv6_connecti
+ 			nircm->tcp_rule.return_max_window = ct->proto.tcp.seen[return_dir].td_maxwin;
+ 			nircm->tcp_rule.return_end = ct->proto.tcp.seen[return_dir].td_end;
+ 			nircm->tcp_rule.return_max_end = ct->proto.tcp.seen[return_dir].td_maxend;
+-#ifdef ECM_OPENWRT_SUPPORT
+-			if (tcp_be_liberal || tcp_no_window_check
+-#else
+ 			if (tcp_be_liberal
+-#endif
+ 					|| (!feci->tcp_be_liberal_set
+ 						&& ((ct->proto.tcp.seen[flow_dir].flags & IP_CT_TCP_FLAG_BE_LIBERAL)
+ 							|| (ct->proto.tcp.seen[return_dir].flags & IP_CT_TCP_FLAG_BE_LIBERAL)))) {
+--- a/frontends/sfe/ecm_sfe_ported_ipv4.c
++++ b/frontends/sfe/ecm_sfe_ported_ipv4.c
+@@ -1921,7 +1921,6 @@ static void ecm_sfe_ported_ipv4_connecti
+ 			int return_dir;
+ 			struct nf_tcp_net *tn = nf_tcp_pernet(nf_ct_net(ct));
+ 			uint32_t tcp_be_liberal = tn->tcp_be_liberal;
+-			uint32_t tcp_no_window_check = tn->tcp_no_window_check;
+ 			ecm_db_connection_address_get(feci->ci, ECM_DB_OBJ_DIR_FROM, addr);
+ 			ecm_front_end_flow_and_return_directions_get(ct, addr, 4, &flow_dir, &return_dir);
+ 
+@@ -1936,11 +1935,7 @@ static void ecm_sfe_ported_ipv4_connecti
+ 			nircm->tcp_rule.return_end = ct->proto.tcp.seen[return_dir].td_end;
+ 			nircm->tcp_rule.return_max_end = ct->proto.tcp.seen[return_dir].td_maxend;
+ 
+-#ifdef ECM_OPENWRT_SUPPORT
+-			if (tcp_be_liberal || tcp_no_window_check
+-#else
+ 			if (tcp_be_liberal
+-#endif
+ 					|| (ct->proto.tcp.seen[flow_dir].flags & IP_CT_TCP_FLAG_BE_LIBERAL)
+ 					|| (ct->proto.tcp.seen[return_dir].flags & IP_CT_TCP_FLAG_BE_LIBERAL)) {
+ 				nircm->rule_flags |= SFE_RULE_CREATE_FLAG_NO_SEQ_CHECK;
+--- a/frontends/sfe/ecm_sfe_ported_ipv6.c
++++ b/frontends/sfe/ecm_sfe_ported_ipv6.c
+@@ -1954,7 +1954,6 @@ static void ecm_sfe_ported_ipv6_connecti
+ 			int return_dir;
+ 			struct nf_tcp_net *tn = nf_tcp_pernet(nf_ct_net(ct));
+ 			uint32_t tcp_be_liberal = tn->tcp_be_liberal;
+-			uint32_t tcp_no_window_check = tn->tcp_no_window_check;
+ 			ecm_front_end_flow_and_return_directions_get(ct, src_ip, 6, &flow_dir, &return_dir);
+ 
+ 			DEBUG_TRACE("%px: TCP Accel Get window data from ct %px for conn %px\n", feci, ct, feci->ci);
+@@ -1967,11 +1966,7 @@ static void ecm_sfe_ported_ipv6_connecti
+ 			nircm->tcp_rule.return_max_window = ct->proto.tcp.seen[return_dir].td_maxwin;
+ 			nircm->tcp_rule.return_end = ct->proto.tcp.seen[return_dir].td_end;
+ 			nircm->tcp_rule.return_max_end = ct->proto.tcp.seen[return_dir].td_maxend;
+-#ifdef ECM_OPENWRT_SUPPORT
+-			if (tcp_be_liberal || tcp_no_window_check
+-#else
+ 			if (tcp_be_liberal
+-#endif
+ 					|| (ct->proto.tcp.seen[flow_dir].flags & IP_CT_TCP_FLAG_BE_LIBERAL)
+ 					|| (ct->proto.tcp.seen[return_dir].flags & IP_CT_TCP_FLAG_BE_LIBERAL)) {
+ 				nircm->rule_flags |= SFE_RULE_CREATE_FLAG_NO_SEQ_CHECK;

@@ -1,0 +1,105 @@
+frontends: restore IPv4/IPv6 offload parity in the ported/non-ported/sync paths
+
+A v4/v6 audit of the ported, non-ported and connection-sync NSS frontends
+found five non-protocol-inherent asymmetries where one family accelerates,
+counts or classifies a flow differently from its sibling. All are upstream
+copy/paste drift (present in the pristine CodeLinaro pin and in QSDK 14.0.r8),
+none are corrected by the existing patch stack. Fix each by mirroring the
+correct sibling:
+
+1. ecm_nss_ipv6.c UDP stats-sync: the IPv4 path promotes a reply-seen
+   accelerated UDP flow to the conntrack 'stream' state (IPS_SEEN_REPLY +
+   IPS_ASSURED) before applying UDP_CT_REPLIED; the IPv6 path applies the
+   timeout but never sets the bits. Consequence: accelerated IPv6 UDP flows
+   are never marked ASSURED, so they stay eligible for early_drop eviction
+   under conntrack-table pressure (risking teardown of long-lived offloaded
+   v6 UDP flows), and the !ASSURED-guarded block re-runs on every sync. Set
+   both bits to match IPv4.
+
+2. ecm_nss_ipv6.c multicast conn-sync totals: the return-direction
+   bytes/packets are accounted with is_from=true (like the flow direction),
+   double-counting them into from_data_total and never updating to_data_total.
+   IPv4 passes false for the return call. Pass false.
+
+3. ecm_non_ported_ipv4.c is_protocol_supported(): EtherIP (IP proto 97, a
+   dual-stack encapsulation) is accepted by the IPv6 non-ported gate but not
+   the IPv4 one, so EtherIP-over-IPv4 is exceptioned to the host while
+   EtherIP-over-IPv6 is accelerated. ecm_interface_is_tunnel_endpoint()
+   already treats IPPROTO_ETHERIP family-agnostically and the NSS frontend
+   passes tuple.protocol generically, so add the IPv4 case to match IPv6.
+
+4. ecm_ported_ipv6.c AE-result switch: the IPv4 file sets
+   ECM_FRONT_END_ENGINE_FLAG_AE_PRECEDENCE in both the AE_CLASSIFIER_RESULT_NONE
+   and _DONT_CARE cases before allocating from the precedence array; the IPv6
+   file sets it in neither, so when an external AE classifier is registered an
+   IPv6 precedence-allocated connection switches AE differently from its IPv4
+   twin. Set the (family-agnostic) flag on both v6 cases to match v4.
+
+5. ecm_nss_ported_ipv6.c to-interface DSA case: the egress VLAN tag is written
+   from vlan_value (the VLAN-case local, 0 here) instead of dsa_vlan_value
+   (the DSA tag just computed two lines above), so a DSA egress interface on a
+   v6 flow would be offloaded with egress VLAN 0. IPv4's to-side DSA case and
+   the v6 from-side DSA case both use dsa_vlan_value; use it here too.
+
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+
+--- a/frontends/cmn/ecm_non_ported_ipv4.c
++++ b/frontends/cmn/ecm_non_ported_ipv4.c
+@@ -108,6 +108,7 @@ static inline bool ecm_non_ported_ipv4_i
+ #if defined(ECM_INTERFACE_PPTP_ENABLE) || defined(ECM_INTERFACE_GRE_TAP_ENABLE) || defined(ECM_INTERFACE_GRE_TUN_ENABLE)
+ 	case IPPROTO_GRE:
+ #endif
++	case IPPROTO_ETHERIP:
+ 	case IPPROTO_RAW:
+ #ifdef ECM_INTERFACE_L2TPV3_ENABLE
+ 	case IPPROTO_L2TP:
+--- a/frontends/cmn/ecm_ported_ipv6.c
++++ b/frontends/cmn/ecm_ported_ipv6.c
+@@ -557,6 +557,7 @@ unsigned int ecm_ported_ipv6_process(str
+ 			 * to the database without accelerating the flow.
+ 			 */
+ 			flags &= ~ECM_FRONT_END_ENGINE_FLAG_CAN_ACCEL;
++			flags |= ECM_FRONT_END_ENGINE_FLAG_AE_PRECEDENCE;
+ 			goto precedence_alloc;
+ 
+ 		case ECM_AE_CLASSIFIER_RESULT_DONT_CARE:
+@@ -564,6 +565,7 @@ unsigned int ecm_ported_ipv6_process(str
+ 			 * External module doesn't care about which AE is selected.
+ 			 * So, allocate one from the AE precedence array.
+ 			 */
++			flags |= ECM_FRONT_END_ENGINE_FLAG_AE_PRECEDENCE;
+ 			goto precedence_alloc;
+ 
+ 		default:
+--- a/frontends/nss/ecm_nss_ipv6.c
++++ b/frontends/nss/ecm_nss_ipv6.c
+@@ -308,7 +308,7 @@ static inline void ecm_nss_ipv6_process_
+ 			 * The amount of data *sent* by the ECM multicast connection 'from' side is the amount the NSS has *received* in the 'flow' direction.
+ 			 */
+ 			ecm_db_multicast_connection_data_totals_update(ci, true, sync->flow_rx_byte_count, sync->flow_rx_packet_count);
+-			ecm_db_multicast_connection_data_totals_update(ci, true, sync->return_rx_byte_count, sync->return_rx_packet_count);
++			ecm_db_multicast_connection_data_totals_update(ci, false, sync->return_rx_byte_count, sync->return_rx_packet_count);
+ 			ecm_db_multicast_connection_interface_heirarchy_stats_update(ci, sync->flow_rx_byte_count, sync->flow_rx_packet_count);
+ 
+ 			/*
+@@ -557,6 +557,9 @@ sync_conntrack:
+ 			if (reply_pkts != 0) {
+ 				struct nf_conntrack_l4proto *l4proto __maybe_unused;
+ 				unsigned int *timeouts;
++
++				set_bit(IPS_SEEN_REPLY_BIT, &ct->status);
++				set_bit(IPS_ASSURED_BIT, &ct->status);
+ 				timeouts = nf_ct_timeout_lookup(ct);
+ 				if (!timeouts) {
+ 					struct nf_udp_net *un = nf_udp_pernet(nf_ct_net(ct));
+--- a/frontends/nss/ecm_nss_ported_ipv6.c
++++ b/frontends/nss/ecm_nss_ported_ipv6.c
+@@ -905,7 +905,7 @@ static void ecm_nss_ported_ipv6_connecti
+ 			/*
+ 			 * Ready to write the DSA VLAN rule
+ 			 */
+-			nircm->vlan_primary_rule.egress_vlan_tag = vlan_value;
++			nircm->vlan_primary_rule.egress_vlan_tag = dsa_vlan_value;
+ 			nircm->valid_flags |= NSS_IPV6_RULE_CREATE_VLAN_VALID;
+ 
+ 			/*

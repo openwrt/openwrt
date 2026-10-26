@@ -1,0 +1,614 @@
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Subject: [PATCH] ecm_interface: track the bridge MDB without qca-mcs
+
+The NSS multicast front end asks qca-mcs for the bridge ports of a
+group. Nothing attaches qca-mcs to the bridge, so the lookup fails and
+routed multicast to a bridge is never accelerated.
+
+Read the egress ports from the bridge itself, as the Linux snooper mode
+already does, in the NSS front end too. When the bridge has snooping
+off or no querier, br_dev_xmit() floods routed traffic to every
+forwarding port, so return those ports for locally sent traffic.
+Bridged traffic is then also delivered to the host, which an
+accelerated flow cannot do, so it stays unaccelerated. Skip ports that
+are not forwarding and bound the port list before it is written.
+
+Refresh the multicast connections of a bridge on the switchdev events
+for MDB entries, STP state, mrouter ports and the snooping toggle. The
+bridge sends them for every port, offloaded or not.
+
+Assisted-by: Claude:claude-opus-5-5
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+--- a/ecm_interface.c
++++ b/ecm_interface.c
+@@ -43,6 +43,7 @@
+ #define mac_addr br_mac_addr
+ #include <br_private.h>
+ #undef mac_addr
++#include <net/switchdev.h>
+ #endif
+ #include <net/genetlink.h>
+ #include <net/netevent.h>
+@@ -5416,7 +5417,7 @@ int32_t ecm_interface_multicast_heirarch
+ 			if (ECM_IP_ADDR_IS_V4(packet_src_addr)) {
+ #ifdef ECM_MCAST_LINUX_SNOOPER_SUPPORT
+ 				rcu_read_lock();
+-				if_num = ecm_interface_linux_mcs_bridge_get_if(dest_dev, packet_src_addr, packet_dest_addr, mc_max_dst, mc_dst_if_index, true);
++				if_num = ecm_interface_linux_mcs_bridge_get_if(dest_dev, packet_src_addr, packet_dest_addr, mc_max_dst, mc_dst_if_index, true, !dest_dev_is_br_dev_src);
+ 				rcu_read_unlock();
+ #else
+ 				if_num = mc_bridge_ipv4_get_if(dest_dev, htonl((packet_src_addr[0])),
+@@ -5430,7 +5431,7 @@ int32_t ecm_interface_multicast_heirarch
+ 				ECM_IP_ADDR_TO_NIN6_ADDR(group6, packet_dest_addr);
+ #ifdef ECM_MCAST_LINUX_SNOOPER_SUPPORT
+ 				rcu_read_lock();
+-				if_num = ecm_interface_linux_mcs_bridge_get_if(dest_dev, packet_src_addr, packet_dest_addr, mc_max_dst, mc_dst_if_index, false);
++				if_num = ecm_interface_linux_mcs_bridge_get_if(dest_dev, packet_src_addr, packet_dest_addr, mc_max_dst, mc_dst_if_index, false, !dest_dev_is_br_dev_src);
+ 				rcu_read_unlock();
+ #else
+ 				if_num = mc_bridge_ipv6_get_if(dest_dev, &origin6, &group6, mc_max_dst,
+@@ -8997,7 +8998,7 @@ static struct net_bridge_mdb_entry *ecm_
+  * ecm_interface_linux_mcs_bridge_get_if()
+  *	Fetch the active listeners for the multicast group.
+  */
+-int ecm_interface_linux_mcs_bridge_get_if(struct net_device *brdev, ip_addr_t origin, ip_addr_t group, uint32_t max_dst, uint32_t *dst_dev, bool is_v4)
++int ecm_interface_linux_mcs_bridge_get_if(struct net_device *brdev, ip_addr_t origin, ip_addr_t group, uint32_t max_dst, uint32_t *dst_dev, bool is_v4, bool local_orig)
+ {
+ 	struct net_bridge_mdb_entry *mdst = NULL;
+ 	struct net_bridge_mcast *brmctx = NULL;
+@@ -9043,18 +9044,37 @@ int ecm_interface_linux_mcs_bridge_get_i
+ 	}
+ 
+ 	/*
+-	 * Fetch the Bridge MDB entry.
++	 * Without snooping or a querier, br_dev_xmit() floods to every
++	 * forwarding port. Bridged traffic is then also delivered to the
++	 * host, which an accelerated flow cannot do.
+ 	 */
+-	mdst = ecm_interface_br_mdb_get(brmctx, origin, group, vid, is_v4);
+-	if (mdst) {
+-		/*
+-		 * Check if the querier exists.
+-		 */
+-		if (!br_multicast_querier_exists(brmctx, &eth, mdst)) {
+-			DEBUG_WARN("%px: Multicast Querier not exists for Bridge\n", brmctx);
++	if (!br_opt_get(br, BROPT_MULTICAST_ENABLED) ||
++	    br_multicast_ctx_vlan_global_disabled(brmctx) ||
++	    !br_multicast_querier_exists(brmctx, &eth, NULL)) {
++		struct net_bridge_port *p;
++
++		if (!local_orig)
+ 			return 0;
++
++		list_for_each_entry_rcu(p, &br->port_list, list) {
++			if (p->state != BR_STATE_FORWARDING ||
++			    (p->flags & BR_PROXYARP))
++				continue;
++
++			if (if_cnt >= max_dst)
++				return -1;
++
++			dst_dev[if_cnt++] = p->dev->ifindex;
+ 		}
+ 
++		return if_cnt;
++	}
++
++	/*
++	 * Fetch the Bridge MDB entry.
++	 */
++	mdst = ecm_interface_br_mdb_get(brmctx, origin, group, vid, is_v4);
++	if (mdst) {
+ 		/*
+ 		 * Check if the obtained MDB is a (*,G) or (S,G) entry.
+ 		 */
+@@ -9066,7 +9086,6 @@ int ecm_interface_linux_mcs_bridge_get_i
+ 	while (pg || rp) {
+ 		struct net_bridge_port *port, *lport, *rport;
+ 		struct net_bridge_mcast_port *mctx = NULL;
+-		struct net_device *dev;
+ 
+ 		lport = pg ? pg->key.port : NULL;
+ 
+@@ -9102,13 +9121,14 @@ int ecm_interface_linux_mcs_bridge_get_i
+ 			port = rport;
+ 		}
+ 
+-		dev = port->dev;
+-		dst_dev[if_cnt] = dev->ifindex;
+-		if_cnt++;
++		if (port->state != BR_STATE_FORWARDING)
++			goto skip_port;
+ 
+-		if (if_cnt > max_dst)
++		if (if_cnt >= max_dst)
+ 			return -1;
+ 
++		dst_dev[if_cnt++] = port->dev->ifindex;
++
+ skip_port:
+ 		if ((unsigned long)lport >= (unsigned long)port)
+ 			pg = rcu_dereference(pg->next);
+@@ -9122,99 +9142,64 @@ skip_port:
+ }
+ 
+ /*
+- * ecm_br_mdb_notify_event()
+- *	Notifier event to Update MDB changes
+- */
+-static int ecm_br_mdb_notify_event(struct notifier_block *nb, unsigned long event, void *data)
+-{
+-	struct br_mdb_event *fe = (struct br_mdb_event *)data;
++ * ecm_interface_br_mcast_event()
++ *	Refresh the multicast connections through a bridge whose port set,
++ *	mrouter ports, snooping state or MDB changed.
++ */
++static int ecm_interface_br_mcast_event(struct notifier_block *nb, unsigned long event, void *ptr)
++{
++	struct switchdev_notifier_port_attr_info *attr_info = ptr;
++	struct switchdev_notifier_port_obj_info *obj_info = ptr;
++	struct net_device *dev = switchdev_notifier_info_to_dev(ptr);
+ 	struct ecm_db_connection_instance *ci;
+-	struct ecm_db_multicast_tuple_instance *ti;
+-	struct ecm_front_end_connection_instance *feci;
+-	struct net_device *dev;
+-	ip_addr_t dest_ip;
+-	int dest_ip_ver;
+ 
+-	if (!fe) {
+-		DEBUG_WARN("Fetched Invalid pointer to the event data\n");
+-		return NOTIFY_DONE;
+-	}
+-
+-	if (!fe->dev) {
+-		DEBUG_WARN("%px: Invalid Netdevide obtained\n", fe);
+-		return NOTIFY_DONE;
+-	}
+-
+-	dev = fe->dev;
+-	dev_hold(dev);
+-	DEBUG_TRACE("%px: Bridge MDB notify event: net_dev:%s, event:%ld, proto:%d\n", fe, dev->name, event, htons(fe->proto));
+-
+-	switch (fe->proto) {
+-	case htons(ETH_P_IP):
+-		ECM_HIN4_ADDR_TO_IP_ADDR(dest_ip, htonl(fe->group.ip));
+-		dest_ip_ver = 4;
++	switch (event) {
++	case SWITCHDEV_PORT_ATTR_SET:
++		if (attr_info->attr->id != SWITCHDEV_ATTR_ID_PORT_STP_STATE &&
++		    attr_info->attr->id != SWITCHDEV_ATTR_ID_PORT_MROUTER &&
++		    attr_info->attr->id != SWITCHDEV_ATTR_ID_BRIDGE_MC_DISABLED)
++			return NOTIFY_DONE;
+ 		break;
+-#if IS_ENABLED(CONFIG_IPV6)
+-	case htons(ETH_P_IPV6):
+-		ECM_NIN6_ADDR_TO_IP_ADDR(dest_ip, fe->group.in6);
+-		dest_ip_ver = 6;
++	case SWITCHDEV_PORT_OBJ_ADD:
++	case SWITCHDEV_PORT_OBJ_DEL:
++		if (obj_info->obj->id != SWITCHDEV_OBJ_ID_PORT_MDB)
++			return NOTIFY_DONE;
+ 		break;
+-#endif
+ 	default:
+-		DEBUG_WARN("%px:Invalid Protocol fetched from the Bridge MDB notifer\n", fe);
+-		dev_put(dev);
+ 		return NOTIFY_DONE;
+ 	}
+ 
+-	/*
+-	 * Get the first entry for the group in the tuple_instance table.
+-	 * Iterate the hash bucket to find a tuple instance whose group IP
+-	 * matches dest_ip. Due to hash collisions between IPv4 and IPv6
+-	 * multicast addresses, the first entry in the bucket may belong to
+-	 * a different IP version / IP.
+-	 */
+-	ti = ecm_db_multicast_connection_get_and_ref_first(dest_ip);
+-	if (!ti) {
+-		DEBUG_WARN("%px: no multicast tuple entry found\n", dev);
+-		dev_put(dev);
+-		return NOTIFY_DONE;
+-	}
+-
+-	while (ti) {
+-		struct ecm_db_multicast_tuple_instance *ti_next;
+-		ip_addr_t grp_ip;
++	if (!netif_is_bridge_master(dev))
++		dev = netdev_master_upper_dev_get(dev);
+ 
+-		ci = ecm_db_multicast_connection_get_from_tuple(ti);
++	if (!dev || !netif_is_bridge_master(dev))
++		return NOTIFY_DONE;
+ 
+-		/*
+-		 * Ensure IP versions match before comparing addresses.
+-		 */
+-		if (ecm_db_connection_ip_version_get(ci) == dest_ip_ver) {
+-			ecm_db_multicast_tuple_instance_group_ip_get(ti, grp_ip);
+-			if (ECM_IP_ADDR_MATCH(grp_ip, dest_ip)) {
+-				feci = ecm_db_connection_front_end_get_and_ref(ci);
++	ci = ecm_db_connections_get_and_ref_first();
++	while (ci) {
++		struct ecm_front_end_connection_instance *feci;
++		struct ecm_db_connection_instance *cin;
++		ip_addr_t group;
+ 
+-				if (feci->multicast_update) {
+-					feci->multicast_update(dest_ip, dev);
+-				}
++		ecm_db_connection_address_get(ci, ECM_DB_OBJ_DIR_TO, group);
++		if (ecm_ip_addr_is_multicast(group)) {
++			feci = ecm_db_connection_front_end_get_and_ref(ci);
++			if (feci->multicast_update)
++				feci->multicast_update(group, dev);
+ 
+-				ecm_front_end_connection_deref(feci);
+-				ecm_db_multicast_connection_deref(ti);
+-				break;
+-			}
++			ecm_front_end_connection_deref(feci);
+ 		}
+ 
+-		ti_next = ecm_db_multicast_connection_get_and_ref_next(ti);
+-		ecm_db_multicast_connection_deref(ti);
+-		ti = ti_next;
++		cin = ecm_db_connection_get_and_ref_next(ci);
++		ecm_db_connection_deref(ci);
++		ci = cin;
+ 	}
+ 
+-	dev_put(dev);
+ 	return NOTIFY_DONE;
+ }
+ 
+-static struct notifier_block ecm_br_mdb_update_nb = {
+-	.notifier_call = ecm_br_mdb_notify_event,
++static struct notifier_block ecm_interface_br_mcast_nb = {
++	.notifier_call = ecm_interface_br_mcast_event,
+ };
+ #endif
+ 
+@@ -10988,7 +10973,7 @@ int ecm_interface_init(void)
+ 	ovsmgr_notifier_register(&ecm_interface_ovs_notifier);
+ #endif
+ #if defined(ECM_MULTICAST_ENABLE) && defined(ECM_MCAST_LINUX_SNOOPER_SUPPORT)
+-	br_mcast_offload_mdb_register_notify(&ecm_br_mdb_update_nb);
++	register_switchdev_blocking_notifier(&ecm_interface_br_mcast_nb);
+ #endif
+ 	ecm_interface_register_nf_hook_wlan_device();
+ 
+@@ -11027,7 +11012,7 @@ void ecm_interface_exit(void)
+ 	}
+ #endif
+ #if defined(ECM_MULTICAST_ENABLE) && defined(ECM_MCAST_LINUX_SNOOPER_SUPPORT)
+-	br_mcast_offload_mdb_unregister_notify(&ecm_br_mdb_update_nb);
++	unregister_switchdev_blocking_notifier(&ecm_interface_br_mcast_nb);
+ #endif
+ #ifdef ECM_INTERFACE_OVS_BRIDGE_ENABLE
+ 	ovsmgr_notifier_unregister(&ecm_interface_ovs_notifier);
+--- a/ecm_interface.h
++++ b/ecm_interface.h
+@@ -127,7 +127,7 @@ int32_t ecm_interface_multicast_from_hei
+ int32_t ecm_interface_multicast_filter_src_interface(struct ecm_db_connection_instance *ci, uint32_t *mc_dst_if_index);
+ 
+ #ifdef ECM_MCAST_LINUX_SNOOPER_SUPPORT
+-int ecm_interface_linux_mcs_bridge_get_if(struct net_device *brdev, ip_addr_t origin, ip_addr_t group, uint32_t max_dst, uint32_t *dst_dev, bool is_v4);
++int ecm_interface_linux_mcs_bridge_get_if(struct net_device *brdev, ip_addr_t origin, ip_addr_t group, uint32_t max_dst, uint32_t *dst_dev, bool is_v4, bool local_orig);
+ #endif
+ 
+ #ifdef ECM_INTERFACE_OVS_BRIDGE_ENABLE
+--- a/frontends/cmn/ecm_multicast_ipv4.c
++++ b/frontends/cmn/ecm_multicast_ipv4.c
+@@ -704,7 +704,7 @@ unsigned int ecm_multicast_ipv4_connecti
+ 
+ #ifdef ECM_MCAST_LINUX_SNOOPER_SUPPORT
+ 			rcu_read_lock();
+-			if_cnt_bridge = ecm_interface_linux_mcs_bridge_get_if(in_dev, ip_src_addr, ip_dest_addr, ECM_DB_MULTICAST_IF_MAX, dst_dev_bridge, true);
++			if_cnt_bridge = ecm_interface_linux_mcs_bridge_get_if(in_dev, ip_src_addr, ip_dest_addr, ECM_DB_MULTICAST_IF_MAX, dst_dev_bridge, true, false);
+ 			rcu_read_unlock();
+ #else
+ 			if_cnt_bridge = mc_bridge_ipv4_get_if(in_dev, ip_src, ip_grp, ECM_DB_MULTICAST_IF_MAX,
+@@ -745,7 +745,7 @@ unsigned int ecm_multicast_ipv4_connecti
+ 
+ #ifdef ECM_MCAST_LINUX_SNOOPER_SUPPORT
+ 	rcu_read_lock();
+-	if_cnt = ecm_interface_linux_mcs_bridge_get_if(out_dev_master, ip_src_addr, ip_dest_addr, ECM_DB_MULTICAST_IF_MAX, dst_dev, true);
++	if_cnt = ecm_interface_linux_mcs_bridge_get_if(out_dev_master, ip_src_addr, ip_dest_addr, ECM_DB_MULTICAST_IF_MAX, dst_dev, true, false);
+ 	rcu_read_unlock();
+ #else
+ 	if_cnt = mc_bridge_ipv4_get_if(out_dev_master, ip_src, ip_grp, ECM_DB_MULTICAST_IF_MAX, dst_dev, mcuc_addr);
+--- a/frontends/cmn/ecm_multicast_ipv6.c
++++ b/frontends/cmn/ecm_multicast_ipv6.c
+@@ -677,7 +677,7 @@ unsigned int ecm_multicast_ipv6_connecti
+ 
+ #ifdef ECM_MCAST_LINUX_SNOOPER_SUPPORT
+ 			rcu_read_lock();
+-			mc_if_cnt_bridge = ecm_interface_linux_mcs_bridge_get_if(in_dev, ip_src_addr, ip_dest_addr, ECM_DB_MULTICAST_IF_MAX, dst_dev_bridge, false);
++			mc_if_cnt_bridge = ecm_interface_linux_mcs_bridge_get_if(in_dev, ip_src_addr, ip_dest_addr, ECM_DB_MULTICAST_IF_MAX, dst_dev_bridge, false, false);
+ 			rcu_read_unlock();
+ #else
+ 			mc_if_cnt_bridge = mc_bridge_ipv6_get_if(in_dev, &origin6, &group6,
+@@ -718,7 +718,7 @@ unsigned int ecm_multicast_ipv6_connecti
+ 
+ #ifdef ECM_MCAST_LINUX_SNOOPER_SUPPORT
+ 	rcu_read_lock();
+-	mc_if_cnt = ecm_interface_linux_mcs_bridge_get_if(out_dev_master, ip_src_addr, ip_dest_addr, ECM_DB_MULTICAST_IF_MAX, mc_dest_if, false);
++	mc_if_cnt = ecm_interface_linux_mcs_bridge_get_if(out_dev_master, ip_src_addr, ip_dest_addr, ECM_DB_MULTICAST_IF_MAX, mc_dest_if, false, false);
+ 	rcu_read_unlock();
+ #else
+ 	mc_if_cnt = mc_bridge_ipv6_get_if(out_dev_master, &origin6, &group6,
+--- a/frontends/nss/ecm_nss_ipv6.c
++++ b/frontends/nss/ecm_nss_ipv6.c
+@@ -65,9 +65,6 @@
+ #define DEBUG_LEVEL ECM_NSS_IPV6_DEBUG_LEVEL
+ 
+ #include <nss_api_if.h>
+-#ifdef ECM_MULTICAST_ENABLE
+-#include <mc_ecm.h>
+-#endif
+ 
+ #include "ecm_types.h"
+ #include "ecm_db_types.h"
+--- a/frontends/nss/ecm_nss_multicast_ipv4.c
++++ b/frontends/nss/ecm_nss_multicast_ipv4.c
+@@ -62,7 +62,6 @@
+ #define DEBUG_LEVEL ECM_NSS_MULTICAST_IPV4_DEBUG_LEVEL
+ 
+ #include <nss_api_if.h>
+-#include <mc_ecm.h>
+ #include "ecm_types.h"
+ #include "ecm_db_types.h"
+ #include "ecm_state.h"
+@@ -1930,10 +1929,10 @@ static void ecm_nss_multicast_ipv4_bridg
+ 	int i, ret;
+ 	uint32_t mc_dst_dev[ECM_DB_MULTICAST_IF_MAX];
+ 	int32_t if_num;
+-	uint8_t dest_mac_addr[ETH_ALEN] = {0};
+ 	uint32_t mc_flags = 0;
+ 	bool if_update;
+ 	bool is_routed;
++	bool local_orig;
+ 	struct net_device *l2_br_dev, *l3_br_dev;
+ 
+ 	ti = ecm_db_multicast_connection_get_and_ref_first(dest_ip);
+@@ -1971,8 +1970,12 @@ static void ecm_nss_multicast_ipv4_bridg
+ 		 * 	if_num > 0   An interface has either left or joined the group. Process the leave/join interface request.
+ 		 */
+ 		memset(mc_dst_dev, 0, sizeof(mc_dst_dev));
+-		if_num = mc_bridge_ipv4_get_if(brdev, htonl(src_ip[0]), htonl(dest_ip[0]), ECM_DB_MULTICAST_IF_MAX,
+-				mc_dst_dev, dest_mac_addr);
++		ci = ecm_db_multicast_connection_get_from_tuple(ti);
++		local_orig = ecm_db_connection_is_routed_get(ci) &&
++			     ecm_db_multicast_tuple_instance_get_l3_br_dev(ti) != brdev;
++		rcu_read_lock();
++		if_num = ecm_interface_linux_mcs_bridge_get_if(brdev, src_ip, dest_ip, ECM_DB_MULTICAST_IF_MAX, mc_dst_dev, true, local_orig);
++		rcu_read_unlock();
+ 		if (if_num < 0) {
+ 			/*
+ 			 * This may a valid case when all the interfaces have left a multicast group.
+@@ -1984,10 +1987,6 @@ static void ecm_nss_multicast_ipv4_bridg
+ 			goto find_next_tuple;
+ 		}
+ 
+-		/*
+-		 * Get a DB connection instance for the 5-tuple
+-		 */
+-		ci = ecm_db_multicast_connection_get_from_tuple(ti);
+ 		DEBUG_TRACE("MCS-cb: src_ip = 0x%x, dest_ip = 0x%x, Num if = %d\n", src_ip[0], dest_ip[0], if_num);
+ 		is_routed = ecm_db_connection_is_routed_get(ci);
+ 
+@@ -2375,33 +2374,6 @@ ssize_t ecm_nss_multicast_ipv4_get_accel
+ }
+ 
+ /*
+- * ecm_br_multicast_update_event_callback()
+- * 	Callback received from bridge multicast snooper module in the
+- * 	following events:
+- * 	a.) Updates to a muticast group due to IGMP JOIN/LEAVE.
+- *
+- * 	group: IP multicast group address
+- * 	brdev: bridge netdevice
+- *
+- * This function does the following:
+- * a.) Lookup the tuple_instance table to find any flows through the bridge for the group
+- * b.) Query the MCS bridge using the source and group address, to receive a list
+- *     of bridge slaves for the flow
+- * c.) Process the updates by matching the received bridge slave list with existing
+- *     destination interfaces heirarchy for the CI, and decide whether to delete an
+- *     exiting interface heirarchy or add a new heirarchy.
+- */
+-static void ecm_br_multicast_update_event_callback(struct net_device *brdev, uint32_t group)
+-{
+-	ip_addr_t dest_ip;
+-
+-	DEBUG_TRACE("ecm_br_multicast_update_event_callback 0x%x, brdev: %s\n", group, brdev->name);
+-
+-	ECM_HIN4_ADDR_TO_IP_ADDR(dest_ip, htonl(group));
+-	ecm_nss_multicast_ipv4_bridge_update_connections(dest_ip, brdev);
+-}
+-
+-/*
+  * ecm_mfc_update_event_callback()
+  * 	Callback called by Linux kernel multicast routing module in the
+  * 	following events:
+@@ -2716,19 +2688,10 @@ int ecm_nss_multicast_ipv4_init(struct d
+ 				(u32 *)&ecm_front_end_ipv4_mc_stopped);
+ 
+ 	/*
+-	 * Register multicast update callback to MCS snooper
+-	 */
+-	if(mc_bridge_ipv4_update_callback_register(ecm_br_multicast_update_event_callback)) {
+-		DEBUG_ERROR("Failed to register MCS callback\n");
+-		return -1;
+-	}
+-
+-	/*
+ 	 * Register multicast update callbacks to MFC
+ 	 */
+ 	if (!ipmr_register_mfc_event_offload_callback(ecm_mfc_update_event_callback)) {
+ 		DEBUG_ERROR("Failed to register MFC callback\n");
+-		mc_bridge_ipv4_update_callback_deregister();
+ 		return -1;
+ 	}
+ 
+@@ -2746,5 +2709,4 @@ void ecm_nss_multicast_ipv4_exit(void)
+ 	 * MFC and MCS snooper
+ 	 */
+ 	ipmr_unregister_mfc_event_offload_callback();
+-	mc_bridge_ipv4_update_callback_deregister();
+ }
+--- a/frontends/nss/ecm_nss_multicast_ipv6.c
++++ b/frontends/nss/ecm_nss_multicast_ipv6.c
+@@ -63,7 +63,6 @@
+ #define DEBUG_LEVEL ECM_NSS_MULTICAST_IPV6_DEBUG_LEVEL
+ 
+ #include <nss_api_if.h>
+-#include <mc_ecm.h>
+ #include "ecm_types.h"
+ #include "ecm_db_types.h"
+ #include "ecm_state.h"
+@@ -1899,8 +1898,6 @@ static void ecm_nss_multicast_ipv6_bridg
+ 	struct ecm_db_multicast_tuple_instance *ti_next;
+ 	struct ecm_multicast_if_update mc_sync;
+ 	struct ecm_db_connection_instance *ci;
+-	struct in6_addr group6;
+-	struct in6_addr origin6;
+ 	ip_addr_t grp_ip;
+ 	ip_addr_t src_ip;
+ 	int i, ret;
+@@ -1908,10 +1905,9 @@ static void ecm_nss_multicast_ipv6_bridg
+ 	uint32_t mc_dst_dev[ECM_DB_MULTICAST_IF_MAX];
+ 	bool mc_update;
+ 	bool is_routed;
++	bool local_orig;
+ 	struct net_device *l2_br_dev, *l3_br_dev;
+-	uint8_t dest_mac_addr[ETH_ALEN] = {0};
+ 
+-	ECM_IP_ADDR_TO_NIN6_ADDR(group6, dest_ip);
+ 	ti = ecm_db_multicast_connection_get_and_ref_first(dest_ip);
+ 	if (!ti) {
+ 		DEBUG_WARN("no multicast tuple entry found. Group IP: " ECM_IP_ADDR_OCTAL_FMT , ECM_IP_ADDR_TO_OCTAL(dest_ip));
+@@ -1942,7 +1938,6 @@ static void ecm_nss_multicast_ipv6_bridg
+ 		 * Get the source IP address for this entry for the group
+ 		 */
+ 		ecm_db_multicast_tuple_instance_source_ip_get(ti, src_ip);
+-		ECM_IP_ADDR_TO_NIN6_ADDR(origin6, src_ip);
+ 
+ 		/*
+ 		 * Query bridge snooper for the destination list when given the group and source
+@@ -1950,8 +1945,12 @@ static void ecm_nss_multicast_ipv6_bridg
+ 		 * 	if_num == 0  All slaves have left the group. Deacel the flow.
+ 		 * 	if_num > 0   An interface leave/Join the group. Process the leave/join interface request.
+ 		 */
+-		if_num = mc_bridge_ipv6_get_if (brdev, &origin6, &group6, ECM_DB_MULTICAST_IF_MAX,
+-				mc_dst_dev, dest_mac_addr);
++		ci = ecm_db_multicast_connection_get_from_tuple(ti);
++		local_orig = ecm_db_connection_is_routed_get(ci) &&
++			     ecm_db_multicast_tuple_instance_get_l3_br_dev(ti) != brdev;
++		rcu_read_lock();
++		if_num = ecm_interface_linux_mcs_bridge_get_if(brdev, src_ip, dest_ip, ECM_DB_MULTICAST_IF_MAX, mc_dst_dev, false, local_orig);
++		rcu_read_unlock();
+ 		if (if_num < 0) {
+ 			/*
+ 			 * This may a valid case when all the interface has left a multicast group.
+@@ -1964,11 +1963,6 @@ static void ecm_nss_multicast_ipv6_bridg
+ 		}
+ 
+ 		/*
+-		 * Get a DB connection instance for the 5-tuple
+-		 */
+-		ci = ecm_db_multicast_connection_get_from_tuple(ti);
+-
+-		/*
+ 		 * The source interface could have joined the group as well.
+ 		 * In such cases, the destination interface list returned by
+ 		 * the snooper would include the source interface as well.
+@@ -2318,36 +2312,6 @@ struct ecm_front_end_connection_instance
+ }
+ 
+ /*
+- * ecm_nss_multicast_ipv6_br_update_event_callback()
+- * 	Callback received from bridge multicast snooper module in the
+- * 	following events:
+- * 	a.) Updates to a muticast group due to IGMP JOIN/LEAVE.
+- *
+- * 	group: IP multicast group address
+- * 	brdev: bridge netdevice
+- *
+- * This function does the following:
+- * a.) Lookup the tuple_instance table to find any flows through the bridge for the group
+- * b.) Query the MCS bridge using the source and group address, to receive a list
+- *     of bridge slaves for the flow
+- * c.) Process the updates by matching the received bridge slave list with existing
+- *     destination interfaces heirarchy for the CI, and decide whether to delete an
+- *     exiting interface heirarchy or add a new heirarchy.
+- */
+-static void ecm_nss_multicast_ipv6_br_update_event_callback(struct net_device *brdev, struct in6_addr *group)
+-{
+-	ip_addr_t dest_ip;
+-	struct in6_addr group6;
+-
+-	memcpy(&group6, group, sizeof(struct in6_addr));
+-	ECM_NIN6_ADDR_TO_IP_ADDR(dest_ip, group6);
+-
+-	DEBUG_TRACE("IP dst: " ECM_IP_ADDR_OCTAL_FMT , ECM_IP_ADDR_TO_OCTAL(dest_ip));
+-
+-	ecm_nss_multicast_ipv6_bridge_update_connections(dest_ip, brdev);
+-}
+-
+-/*
+  * ecm_nss_multicast_ipv6_mfc_update_event_callback()
+  * 	Callback called by Linux kernel multicast routing module in the
+  * 	following events:
+@@ -2673,19 +2637,10 @@ int ecm_nss_multicast_ipv6_init(struct d
+ 				(u32 *)&ecm_front_end_ipv6_mc_stopped);
+ 
+ 	/*
+-	 * Register multicast update callback to MCS snooper
+-	 */
+-	if (mc_bridge_ipv6_update_callback_register(ecm_nss_multicast_ipv6_br_update_event_callback)) {
+-		DEBUG_ERROR("Failed to register MCS callback\n");
+-		return -1;
+-	}
+-
+-	/*
+ 	 * Register multicast update callbacks to MFC
+ 	 */
+ 	if (!ip6mr_register_mfc_event_offload_callback(ecm_nss_multicast_ipv6_mfc_update_event_callback)) {
+ 		DEBUG_ERROR("Failed to register MFC callback\n");
+-		mc_bridge_ipv6_update_callback_deregister();
+ 		return -1;
+ 	}
+ 
+@@ -2703,5 +2658,4 @@ void ecm_nss_multicast_ipv6_exit(void)
+ 	 * MFC and MCS snooper
+ 	 */
+ 	ip6mr_unregister_mfc_event_offload_callback();
+-	mc_bridge_ipv6_update_callback_deregister();
+ }
+--- a/frontends/sfe/ecm_sfe_multicast_ipv4.c
++++ b/frontends/sfe/ecm_sfe_multicast_ipv4.c
+@@ -2457,7 +2457,9 @@ static void ecm_sfe_multicast_ipv4_bridg
+ 
+ #ifdef ECM_MCAST_LINUX_SNOOPER_SUPPORT
+ 		rcu_read_lock();
+-		if_num = ecm_interface_linux_mcs_bridge_get_if(brdev, src_ip, dest_ip, ECM_DB_MULTICAST_IF_MAX, mc_dst_dev, true);
++		if_num = ecm_interface_linux_mcs_bridge_get_if(brdev, src_ip, dest_ip, ECM_DB_MULTICAST_IF_MAX, mc_dst_dev, true,
++				ecm_db_connection_is_routed_get(ecm_db_multicast_connection_get_from_tuple(ti)) &&
++				ecm_db_multicast_tuple_instance_get_l3_br_dev(ti) != brdev);
+ 		rcu_read_unlock();
+ #else
+ 		if_num = mc_bridge_ipv4_get_if(brdev, htonl(src_ip[0]), htonl(dest_ip[0]), ECM_DB_MULTICAST_IF_MAX,
+--- a/frontends/sfe/ecm_sfe_multicast_ipv6.c
++++ b/frontends/sfe/ecm_sfe_multicast_ipv6.c
+@@ -2476,7 +2476,9 @@ static void ecm_sfe_multicast_ipv6_bridg
+ 		 */
+ #ifdef ECM_MCAST_LINUX_SNOOPER_SUPPORT
+ 		rcu_read_lock();
+-		if_num = ecm_interface_linux_mcs_bridge_get_if(brdev, src_ip, dest_ip, ECM_DB_MULTICAST_IF_MAX, mc_dst_dev, false);
++		if_num = ecm_interface_linux_mcs_bridge_get_if(brdev, src_ip, dest_ip, ECM_DB_MULTICAST_IF_MAX, mc_dst_dev, false,
++				ecm_db_connection_is_routed_get(ecm_db_multicast_connection_get_from_tuple(ti)) &&
++				ecm_db_multicast_tuple_instance_get_l3_br_dev(ti) != brdev);
+ 		rcu_read_unlock();
+ #else
+ 		if_num = mc_bridge_ipv6_get_if (brdev, &origin6, &group6,

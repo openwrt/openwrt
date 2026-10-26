@@ -1,0 +1,344 @@
+From: Stanislaw Pal <kuncy7@gmail.com>
+Subject: [PATCH] frontends/nss: rebuild a multicast flow of a tag_8021q bridge
+ on a membership change
+
+When the last member of a group on a port of a routed multicast flow's
+bridge leaves, the bridge update decelerates the flow and leaves the
+rest to the MFC callback: a proxy is expected to take the bridge off the
+route. A static route does not, and neither does a proxy that keeps the
+bridge after the last leave. The connection then keeps its destination
+list, the next packet the host forwards accelerates it again with the
+departed port in it, and the stream keeps going out of that port until
+the source stops. Measured by Adriel Santos on a Xiaomi AX3000T v2
+(IPQ5018, AN8855 with the an8855-8021q tagger, static MFC from
+smcroute): the stream stayed on the port after the MDB entry was gone,
+with every channel a zapping receiver had watched adding to it, where
+the host path stops two seconds after the leave.
+
+On a bridge with tag_8021q DSA ports the rule names the conduit and the
+bridge's VID for every port, and the switch delivers the frames; there is
+no per-port part of the rule to edit. So when a port joins or leaves such
+a bridge, make the connection defunct instead. The next packet builds it
+again from the MFC and the bridge's MDB, as it would for a new flow. A
+pure bridged flow with no port left goes the same way.
+
+Three more things on the way:
+
+- In the create path, the ports of such a bridge all resolve to the same
+  conduit and VID, so the firmware got one rule per port and sent one
+  copy per port, each of which the switch delivered to all the members.
+  Keep one rule per distinct output. ds2bkp found this and the
+  membership problem first (openwrt-xiaomi-ax3000t-rd03v2, their ECM
+  0030); this is the same idea on the VLAN hierarchy of 0051.
+- The egress VLAN tags were reset for the slot of the vif being looked
+  at, not for the rule being filled in, which is a different one once a
+  vif has been skipped: a skipped vif's tag stayed in the next rule.
+- bridge_update_connections() took a second reference to the front end
+  on the update path and dropped one, and none when nothing changed.
+
+Signed-off-by: Stanislaw Pal <kuncy7@gmail.com>
+---
+diff --git a/ecm_interface.c b/ecm_interface.c
+index c8c3b9a..aab4a68 100644
+--- a/ecm_interface.c
++++ b/ecm_interface.c
+@@ -1097,6 +1097,38 @@ static inline bool ecm_interface_is_vlan_dev(struct net_device *dev)
+ 	       (ecm_interface_dsa_8021q_conduit(dev, NULL) != NULL && !ecm_interface_dsa_8021q_vlan_aware(dev, NULL));
+ }
+ 
++static int ecm_interface_dsa_8021q_lower(struct net_device *lower, struct netdev_nested_priv *priv)
++{
++	return ecm_interface_dsa_8021q_conduit(lower, NULL) != NULL;
++}
++
++/*
++ * ecm_interface_bridge_has_dsa_8021q_port()
++ *	Whether a port of the bridge is a DSA user port under a tag_8021q
++ *	tagger.
++ *
++ * The multicast rule of such a bridge names the conduit and the VID the
++ * tagger gives the bridge, the same for every port of it, and the switch
++ * delivers the frames to the ports itself; which ports want a group is the
++ * bridge's to say, not something the rule can be edited for port by port.
++ */
++bool ecm_interface_bridge_has_dsa_8021q_port(struct net_device *brdev)
++{
++	struct netdev_nested_priv priv = { };
++	bool found;
++
++	if (!brdev || !netif_is_bridge_master(brdev)) {
++		return false;
++	}
++
++	rcu_read_lock();
++	found = netdev_walk_all_lower_dev_rcu(brdev, ecm_interface_dsa_8021q_lower, &priv) != 0;
++	rcu_read_unlock();
++
++	return found;
++}
++EXPORT_SYMBOL(ecm_interface_bridge_has_dsa_8021q_port);
++
+ /*
+  * ecm_interface_vlan_real_dev()
+  *	Return immediate VLAN net device or Physical device pointer
+diff --git a/ecm_interface.h b/ecm_interface.h
+index 2b1e5d7..5e315ed 100644
+--- a/ecm_interface.h
++++ b/ecm_interface.h
+@@ -144,6 +144,7 @@ struct net_device *ecm_interface_dev_find_by_addr(ip_addr_t addr, bool *from_loc
+ 
+ struct net_device *ecm_interface_get_and_hold_dev_master(struct net_device *dev);
+ bool ecm_interface_dsa_8021q_vlan_aware(struct net_device *dev, struct net_device **conduit);
++bool ecm_interface_bridge_has_dsa_8021q_port(struct net_device *brdev);
+ int32_t ecm_interface_dsa_nss_if_num(struct net_device *conduit, uint16_t vid);
+ int ecm_interface_bridge_vlan_wire_tagged(struct ecm_db_iface_instance *vlan_ii,
+ 					  struct ecm_db_iface_instance *ifaces[],
+diff --git a/frontends/nss/ecm_nss_multicast_ipv4.c b/frontends/nss/ecm_nss_multicast_ipv4.c
+index 2428af2..4ce2c88 100644
+--- a/frontends/nss/ecm_nss_multicast_ipv4.c
++++ b/frontends/nss/ecm_nss_multicast_ipv4.c
+@@ -467,8 +467,8 @@ static int ecm_nss_multicast_ipv4_connection_update_accelerate(struct ecm_front_
+ 	 */
+ 	for (vif = 0; vif < ECM_DB_MULTICAST_IF_MAX; vif++) {
+ #ifdef ECM_INTERFACE_VLAN_ENABLE
+-		create->if_rule[vif].egress_vlan_tag[0] = ECM_FRONT_END_VLAN_ID_NOT_CONFIGURED;
+-		create->if_rule[vif].egress_vlan_tag[1] = ECM_FRONT_END_VLAN_ID_NOT_CONFIGURED;
++		create->if_rule[valid_vif_idx].egress_vlan_tag[0] = ECM_FRONT_END_VLAN_ID_NOT_CONFIGURED;
++		create->if_rule[valid_vif_idx].egress_vlan_tag[1] = ECM_FRONT_END_VLAN_ID_NOT_CONFIGURED;
+ #endif
+ 
+ 		/*
+@@ -857,6 +857,38 @@ static int ecm_nss_multicast_ipv4_connection_update_accelerate(struct ecm_front_
+ 	return -1;
+ }
+ 
++/*
++ * ecm_nss_multicast_ipv4_if_rule_dup()
++ *	Whether the rule just filled in at idx puts the same frames on the wire
++ *	as one before it.
++ *
++ * The ports of a tag_8021q DSA bridge all resolve to the conduit with the
++ * VID the tagger gives the bridge, and the switch delivers that one frame
++ * to every port of the group itself. A rule per port would have the
++ * firmware send one copy per port, and the switch deliver each of them to
++ * all the members.
++ */
++static bool ecm_nss_multicast_ipv4_if_rule_dup(struct nss_ipv4_mc_rule_create_msg *create, int idx)
++{
++	struct nss_ipv4_mc_if_rule *b = &create->if_rule[idx];
++	int i;
++
++	for (i = 0; i < idx; i++) {
++		struct nss_ipv4_mc_if_rule *a = &create->if_rule[i];
++
++		if (a->if_num == b->if_num &&
++		    a->xlate_src_ip == b->xlate_src_ip &&
++		    a->xlate_src_ident == b->xlate_src_ident &&
++		    a->pppoe_if_num == b->pppoe_if_num &&
++		    a->egress_vlan_tag[0] == b->egress_vlan_tag[0] &&
++		    a->egress_vlan_tag[1] == b->egress_vlan_tag[1]) {
++			return true;
++		}
++	}
++
++	return false;
++}
++
+ /*
+  * ecm_nss_multicast_ipv4_connection_accelerate()
+  * 	Accelerate a multicast UDP connection
+@@ -1073,8 +1105,8 @@ static void ecm_nss_multicast_ipv4_connection_accelerate(struct ecm_front_end_co
+ 
+ 		to_nss_iface_id = -1;
+ 
+-		create->if_rule[vif].egress_vlan_tag[0] = ECM_FRONT_END_VLAN_ID_NOT_CONFIGURED;
+-		create->if_rule[vif].egress_vlan_tag[1] = ECM_FRONT_END_VLAN_ID_NOT_CONFIGURED;
++		create->if_rule[valid_vif_idx].egress_vlan_tag[0] = ECM_FRONT_END_VLAN_ID_NOT_CONFIGURED;
++		create->if_rule[valid_vif_idx].egress_vlan_tag[1] = ECM_FRONT_END_VLAN_ID_NOT_CONFIGURED;
+ 
+ 		ii_temp = ecm_db_multicast_if_heirarchy_get(to_ifaces, vif);
+ 		to_ii_first = ecm_db_multicast_if_first_get_at_index(to_ifaces_first, vif);
+@@ -1335,7 +1367,12 @@ static void ecm_nss_multicast_ipv4_connection_accelerate(struct ecm_front_end_co
+ 				}
+ 			}
+ #endif
+-			valid_vif_idx++;
++			if (ecm_nss_multicast_ipv4_if_rule_dup(create, valid_vif_idx)) {
++				DEBUG_TRACE("%px: vif %d puts the same frames on the wire as an earlier one, dropped\n", feci, vif);
++				memset(&create->if_rule[valid_vif_idx], 0, sizeof(create->if_rule[valid_vif_idx]));
++			} else {
++				valid_vif_idx++;
++			}
+ 		}
+ 	}
+ 
+@@ -2024,9 +2061,14 @@ static void ecm_nss_multicast_ipv4_bridge_update_connections(ip_addr_t dest_ip,
+ 			 */
+ 			if (!if_num) {
+ 				/*
+-				 * Decelerate the flow since there is no active ports left
++				 * Decelerate the flow since there is no active ports left.
++				 * On a tag_8021q DSA bridge the connection goes, see below.
+ 				 */
+-				feci->decelerate(feci);
++				if (ecm_interface_bridge_has_dsa_8021q_port(brdev)) {
++					ecm_db_connection_make_defunct(ci);
++				} else {
++					feci->decelerate(feci);
++				}
+ 				ecm_front_end_connection_deref(feci);
+ 				goto find_next_tuple;
+ 			}
+@@ -2120,12 +2162,27 @@ process_packet:
+ 			 * No updates to this multicast flow. Move on to the next
+ 			 * flow for the same group
+ 			 */
++			ecm_front_end_connection_deref(feci);
+ 			goto find_next_tuple;
+ 		}
+ 
+-		DEBUG_TRACE("BRIDGE UPDATE callback ===> leave_cnt %d, join_cnt %d\n", mc_update.if_leave_cnt, mc_update.if_join_cnt);
++		/*
++		 * A port joined or left a tag_8021q DSA bridge. Rebuild the
++		 * connection from the MFC and the bridge's MDB instead of
++		 * editing it: a decelerated connection keeps its destination
++		 * list, and the next packet accelerates it again with the port
++		 * that left still in it - for good when the MFC keeps the bridge
++		 * (a static route, or a proxy that keeps it after the last
++		 * leave), since nothing else updates the list then.
++		 */
++		if (ecm_interface_bridge_has_dsa_8021q_port(brdev)) {
++			DEBUG_INFO("%px: membership of %s changed, rebuilding the connection\n", ci, brdev->name);
++			ecm_db_connection_make_defunct(ci);
++			ecm_front_end_connection_deref(feci);
++			goto find_next_tuple;
++		}
+ 
+-		feci = ecm_db_connection_front_end_get_and_ref(ci);
++		DEBUG_TRACE("BRIDGE UPDATE callback ===> leave_cnt %d, join_cnt %d\n", mc_update.if_leave_cnt, mc_update.if_join_cnt);
+ 
+ 		/*
+ 		 * Do we have any new interfaces that have joined?
+diff --git a/frontends/nss/ecm_nss_multicast_ipv6.c b/frontends/nss/ecm_nss_multicast_ipv6.c
+index ab1b160..c443030 100644
+--- a/frontends/nss/ecm_nss_multicast_ipv6.c
++++ b/frontends/nss/ecm_nss_multicast_ipv6.c
+@@ -469,8 +469,8 @@ static int ecm_nss_multicast_ipv6_connection_update_accelerate(struct ecm_front_
+ 	 */
+ 	for (vif = 0; vif < ECM_DB_MULTICAST_IF_MAX; vif++) {
+ #ifdef ECM_INTERFACE_VLAN_ENABLE
+-		create->if_rule[vif].egress_vlan_tag[0] = ECM_FRONT_END_VLAN_ID_NOT_CONFIGURED;
+-		create->if_rule[vif].egress_vlan_tag[1] = ECM_FRONT_END_VLAN_ID_NOT_CONFIGURED;
++		create->if_rule[valid_vif_idx].egress_vlan_tag[0] = ECM_FRONT_END_VLAN_ID_NOT_CONFIGURED;
++		create->if_rule[valid_vif_idx].egress_vlan_tag[1] = ECM_FRONT_END_VLAN_ID_NOT_CONFIGURED;
+ #endif
+ 		/*
+ 		 * If there is no state change for an interface at this index,
+@@ -861,6 +861,36 @@ static int ecm_nss_multicast_ipv6_connection_update_accelerate(struct ecm_front_
+ 	return -1;
+ }
+ 
++/*
++ * ecm_nss_multicast_ipv6_if_rule_dup()
++ *	Whether the rule just filled in at idx puts the same frames on the wire
++ *	as one before it.
++ *
++ * The ports of a tag_8021q DSA bridge all resolve to the conduit with the
++ * VID the tagger gives the bridge, and the switch delivers that one frame
++ * to every port of the group itself. A rule per port would have the
++ * firmware send one copy per port, and the switch deliver each of them to
++ * all the members.
++ */
++static bool ecm_nss_multicast_ipv6_if_rule_dup(struct nss_ipv6_mc_rule_create_msg *create, int idx)
++{
++	struct nss_ipv6_mc_if_rule *b = &create->if_rule[idx];
++	int i;
++
++	for (i = 0; i < idx; i++) {
++		struct nss_ipv6_mc_if_rule *a = &create->if_rule[i];
++
++		if (a->if_num == b->if_num &&
++		    a->pppoe_if_num == b->pppoe_if_num &&
++		    a->egress_vlan_tag[0] == b->egress_vlan_tag[0] &&
++		    a->egress_vlan_tag[1] == b->egress_vlan_tag[1]) {
++			return true;
++		}
++	}
++
++	return false;
++}
++
+ /*
+  * ecm_nss_multicast_ipv6_connection_accelerate()
+  * 	Accelerate a multicast UDP connection
+@@ -1072,8 +1102,8 @@ static void ecm_nss_multicast_ipv6_connection_accelerate(struct ecm_front_end_co
+ 		to_nss_iface_id = -1;
+ 
+ #ifdef ECM_INTERFACE_VLAN_ENABLE
+-		create->if_rule[vif].egress_vlan_tag[0] = ECM_FRONT_END_VLAN_ID_NOT_CONFIGURED;
+-		create->if_rule[vif].egress_vlan_tag[1] = ECM_FRONT_END_VLAN_ID_NOT_CONFIGURED;
++		create->if_rule[valid_vif_idx].egress_vlan_tag[0] = ECM_FRONT_END_VLAN_ID_NOT_CONFIGURED;
++		create->if_rule[valid_vif_idx].egress_vlan_tag[1] = ECM_FRONT_END_VLAN_ID_NOT_CONFIGURED;
+ #endif
+ 
+ 		ii_temp = ecm_db_multicast_if_heirarchy_get(to_ifaces, vif);
+@@ -1310,7 +1340,12 @@ static void ecm_nss_multicast_ipv6_connection_accelerate(struct ecm_front_end_co
+ 				}
+ 			}
+ #endif
+-			valid_vif_idx++;
++			if (ecm_nss_multicast_ipv6_if_rule_dup(create, valid_vif_idx)) {
++				DEBUG_TRACE("%px: vif %d puts the same frames on the wire as an earlier one, dropped\n", feci, vif);
++				memset(&create->if_rule[valid_vif_idx], 0, sizeof(create->if_rule[valid_vif_idx]));
++			} else {
++				valid_vif_idx++;
++			}
+ 		}
+ 	}
+ 
+@@ -1996,9 +2031,14 @@ static void ecm_nss_multicast_ipv6_bridge_update_connections(ip_addr_t dest_ip,
+ 			 */
+ 			if (!if_num) {
+ 				/*
+-				 * Decelerate the flow since there is no active ports left
++				 * Decelerate the flow since there is no active ports left.
++				 * On a tag_8021q DSA bridge the connection goes, see below.
+ 				 */
+-				feci->decelerate(feci);
++				if (ecm_interface_bridge_has_dsa_8021q_port(brdev)) {
++					ecm_db_connection_make_defunct(ci);
++				} else {
++					feci->decelerate(feci);
++				}
+ 				ecm_front_end_connection_deref(feci);
+ 				goto find_next_tuple;
+ 			}
+@@ -2092,11 +2132,27 @@ process_packet:
+ 			 * No updates to this multicast flow. Move on to the next
+ 			 * flow for the same group
+ 			 */
++			ecm_front_end_connection_deref(feci);
++			goto find_next_tuple;
++		}
++
++		/*
++		 * A port joined or left a tag_8021q DSA bridge. Rebuild the
++		 * connection from the MFC and the bridge's MDB instead of
++		 * editing it: a decelerated connection keeps its destination
++		 * list, and the next packet accelerates it again with the port
++		 * that left still in it - for good when the MFC keeps the bridge
++		 * (a static route, or a proxy that keeps it after the last
++		 * leave), since nothing else updates the list then.
++		 */
++		if (ecm_interface_bridge_has_dsa_8021q_port(brdev)) {
++			DEBUG_INFO("%px: membership of %s changed, rebuilding the connection\n", ci, brdev->name);
++			ecm_db_connection_make_defunct(ci);
++			ecm_front_end_connection_deref(feci);
+ 			goto find_next_tuple;
+ 		}
+ 
+ 		DEBUG_TRACE("BRIDGE UPDATE callback ===> leave_cnt %d, join_cnt %d\n", mc_sync.if_leave_cnt, mc_sync.if_join_cnt);
+-		feci = ecm_db_connection_front_end_get_and_ref(ci);
+ 
+ 		/*
+ 		 * Do we have any new interfaces that have joined?

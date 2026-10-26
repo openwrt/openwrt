@@ -1,0 +1,80 @@
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Subject: [PATCH] wifi: ath11k: guard CE send and reap against a cleared srng
+
+During firmware-crash recovery ath11k_core_reconfigure_on_crash() calls
+ath11k_hal_srng_clear() (memsetting srng_list, so src_ring.tp_addr becomes
+NULL) and then clears ATH11K_FLAG_CRASH_FLUSH before
+ath11k_core_qmi_firmware_ready() rebuilds the copy-engine srng in
+ath11k_ce_init_pipes(). For the whole firmware boot the CRASH_FLUSH gate in
+ath11k_ce_send() is already open while the CE srng is still zeroed.
+
+A hostapd beacon update (nl80211_set_beacon -> ath11k_wmi_bcn_tmpl ->
+ath11k_wmi_cmd_send -> ath11k_htc_send -> ath11k_ce_send) racing into that
+window passes the CRASH_FLUSH check and dereferences the NULL
+srng->u.src_ring.tp_addr in ath11k_hal_srng_access_begin(), a "Fatal
+exception in interrupt".
+
+Reject the send while that pointer is NULL. Testing tp_addr directly (rather
+than srng->initialized) also closes the rebuild ordering window:
+ath11k_hal_srng_setup() sets ->initialized before ->tp_addr without a
+barrier, so an ->initialized check could still race the CE ring rebuild.
+
+The send-completion reap has the same exposure: when a firmware assert
+storms the target and recovery fails to rebuild the copy-engine rings,
+ath11k_ce_cleanup_pipes() -> ath11k_ce_poll_send_completed() ->
+ath11k_ce_completed_send_next() runs on a CE source srng that
+hal_srng_clear() zeroed, and ath11k_hal_srng_access_begin() dereferences the
+NULL tp_addr:
+
+  Unable to handle kernel read from unreadable memory at virtual address 0
+  pc : ath11k_hal_srng_access_begin+0xc [ath11k]
+   ath11k_ce_cleanup_pipes
+
+Bail out of the reap when the srng has not been rebuilt, mirroring the
+existing empty-ring handling.
+
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+
+diff --git a/drivers/net/wireless/ath/ath11k/ce.c b/drivers/net/wireless/ath/ath11k/ce.c
+index c56dd8a..cd9c1ca 100644
+--- a/drivers/net/wireless/ath/ath11k/ce.c
++++ b/drivers/net/wireless/ath/ath11k/ce.c
+@@ -472,6 +472,17 @@
+ 	srng = &ab->hal.srng_list[pipe->src_ring->hal_ring_id];
+ 
+ 	spin_lock_bh(&srng->lock);
++
++	/*
++	 * During a firmware crash storm ath11k_ce_cleanup_pipes() can call
++	 * this on a CE srng that hal_srng_clear() zeroed and that recovery
++	 * has not rebuilt; ath11k_hal_srng_access_begin() would deref a NULL
++	 * tp_addr. Bail as for an empty ring.
++	 */
++	if (unlikely(!srng->u.src_ring.tp_addr)) {
++		skb = ERR_PTR(-EIO);
++		goto err_unlock;
++	}
+ 
+ 	ath11k_hal_srng_access_begin(ab, srng);
+ 
+@@ -751,6 +762,20 @@
+ 
+ 	srng = &ab->hal.srng_list[pipe->src_ring->hal_ring_id];
+ 
++	/*
++	 * During firmware-crash recovery ath11k_hal_srng_clear() memsets the
++	 * srng_list and ATH11K_FLAG_CRASH_FLUSH is cleared before the copy-engine
++	 * srng is rebuilt in ath11k_core_qmi_firmware_ready().  A send racing into
++	 * that window would dereference the NULL src_ring.tp_addr in
++	 * ath11k_hal_srng_access_begin().  Test that exact field: ath11k_hal_srng_setup()
++	 * sets ->initialized before ->tp_addr (unbarriered), so an ->initialized check
++	 * would still race the rebuild.  Bail until the ring pointer is valid.
++	 */
++	if (unlikely(!srng->u.src_ring.tp_addr)) {
++		spin_unlock_bh(&ab->ce.ce_lock);
++		return -ESHUTDOWN;
++	}
++
+ 	spin_lock_bh(&srng->lock);
+ 
+ 	ath11k_hal_srng_access_begin(ab, srng);

@@ -1,0 +1,36 @@
+#!/bin/sh /etc/rc.common
+#
+# Copyright (c) 2014, 2019-2020 The Linux Foundation. All rights reserved.
+#
+# Permission to use, copy, modify, and/or distribute this software for any
+# purpose with or without fee is hereby granted, provided that the above
+# copyright notice and this permission notice appear in all copies.
+#
+# THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+# WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+# MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+# ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+# WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+# ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+# OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+
+# No START: only wf810df-nss starts ECM after the native WAN handoff.
+start() {
+	local active
+	read -r active < /sys/module/qca_nss_drv/parameters/physical_interface_mask_active || return 1
+	[ "$active" = 1 ] || {
+		logger -t qca-nss-ecm 'native WAN data plane is not ready; refusing ECM'
+		return 1
+	}
+	[ -d /sys/module/ecm ] && return 0
+	# Allocate conntrack event extensions for new flows; never flush existing flows.
+	modprobe nf_conntrack || return 1
+	sysctl -w net.netfilter.nf_conntrack_events=1 || return 1
+	. /lib/functions/wf810df-nss.sh || return 1
+	wf810df_nss_load ecm front_end_selection=1 || return 1
+	sysctl -w dev.nss.general.redirect=1
+}
+
+stop() {
+	logger -t qca-nss-ecm 'NSS mode changes require a reboot; leaving active datapaths intact'
+}

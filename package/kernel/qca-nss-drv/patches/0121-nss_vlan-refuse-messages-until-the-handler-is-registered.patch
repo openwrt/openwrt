@@ -1,0 +1,52 @@
+nss_vlan: refuse messages until the handler is registered
+
+nss_vlan_tx_msg_sync() takes vlan_pvt.sem unconditionally, but that
+semaphore is only initialised by nss_vlan_register_handler(), which the
+HAL calls only when the device tree carries "qcom,vlan-enabled". On a
+board whose DT lacks the property the structure stays zeroed, so down()
+sees count 0, takes the slow path, and ___down_common() walks a wait_list
+whose head is NULL - a kernel panic reachable from a plain "ip link add
+link eth0 name eth0.100 type vlan id 100" once qca-nss-vlan is loaded
+(measured on IPQ5018/GL-B3000).
+
+Record the registration and fail the message instead of dying on it. The
+missing DT property is a board bug and is fixed separately; this keeps the
+driver from turning it into an Oops.
+
+Signed-off-by: Stanislaw Pal <kuncy7@gmail.com>
+---
+--- a/nss_vlan.c
++++ b/nss_vlan.c
+@@ -28,6 +28,7 @@
+ 	int response;
+ 	void *cb;
+ 	void *app_data;
++	bool registered;
+ } vlan_pvt;
+ 
+ /*
+@@ -176,6 +177,17 @@
+ 	nss_tx_status_t status;
+ 	int ret = 0;
+ 
++	/*
++	 * Until nss_vlan_register_handler() has run, the semaphore below is
++	 * still zeroed: down() would take the slow path and walk a NULL
++	 * wait_list head. Fail the message instead of panicking.
++	 */
++	if (!READ_ONCE(vlan_pvt.registered)) {
++		nss_warning("%px: vlan handler not registered (no qcom,vlan-enabled in DT?)\n",
++			    nss_ctx);
++		return NSS_TX_FAILURE_NOT_READY;
++	}
++
+ 	down(&vlan_pvt.sem);
+ 	vlan_pvt.cb = (void *)nvm->cm.cb;
+ 	vlan_pvt.app_data = (void *)nvm->cm.app_data;
+@@ -407,5 +419,6 @@
+ 
+ 	sema_init(&vlan_pvt.sem, 1);
+ 	init_completion(&vlan_pvt.complete);
++	WRITE_ONCE(vlan_pvt.registered, true);
+ }
+ EXPORT_SYMBOL(nss_vlan_register_handler);

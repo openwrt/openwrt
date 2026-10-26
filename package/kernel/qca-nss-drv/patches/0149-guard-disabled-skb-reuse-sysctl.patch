@@ -1,0 +1,17 @@
+Subject: nss: only register skb reuse sysctl when recycling is enabled
+
+The native 6.12 integration disables skb recycling. Match the table's
+existing compile-time guard at registration too.
+
+--- a/nss_init.c
++++ b/nss_init.c
+@@ -716,7 +716,9 @@
+
+ 	nss_clk_hdr = register_sysctl("dev/nss/clock", nss_freq_table);
+ 	nss_gen_hdr = register_sysctl("dev/nss/general", nss_general_table);
++#if (NSS_SKB_REUSE_SUPPORT == 1)
+ 	nss_skb_hdr = register_sysctl("dev/nss/skb_reuse", nss_skb_reuse_table);
++#endif
+ 	/*
+ 	 * Registering sysctl for ipv4/6 specific config.
+ 	 */

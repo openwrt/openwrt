@@ -1,0 +1,30 @@
+From: Stanislaw Pal <kuncy7@gmail.com>
+Date: Sat, 5 Sep 2026 14:30:00 +0200
+Subject: [PATCH] clk: qcom: gcc-ipq5018: keep the NSS core clock enabled
+
+Keep the bootloader-enabled UBI0 core branch running until the NSS driver
+claims it. Gating it in clk_disable_unused() and enabling it again at
+module load can leave the Wi-Fi offload path unable to consume buffers.
+A later enabled clock readback does not exclude this earlier transition.
+
+Backport the pinned reference's single-clock fix to Linux 6.12. On WF810DF,
+an unchanged internal-only RAM image with clk_ignore_unused continues
+processing status messages and empty buffers after radio initialization,
+unlike repeated boots without that argument. The global argument is only
+a diagnostic: this patch preserves the UBI0 core branch alone. Dual-radio,
+AP traffic and cold-power-cycle validation remain required.
+
+Reference: kuncy7/openwrt-nss-edma 9caa35b4d718382ad882cb35c2372dbb569de901
+Signed-off-by: Stanislaw Pal <kuncy7@gmail.com>
+---
+--- a/drivers/clk/qcom/gcc-ipq5018.c
++++ b/drivers/clk/qcom/gcc-ipq5018.c
+@@ -2881,7 +2881,7 @@ static struct clk_branch gcc_ubi0_core_clk = {
+ 				&ubi0_core_clk_src.clkr.hw,
+ 			},
+ 			.num_parents = 1,
+-			.flags = CLK_SET_RATE_PARENT,
++			.flags = CLK_SET_RATE_PARENT | CLK_IGNORE_UNUSED,
+ 			.ops = &clk_branch2_ops,
+ 		},
+ 	},

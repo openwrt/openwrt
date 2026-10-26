@@ -1,0 +1,38 @@
+nss-drv: bound the firmware-supplied port range in the edma stats sync
+
+nss_edma_stats.c takes both loop bounds straight from the message:
+
+	for (i = nepss->start_port; i < nepss->end_port; i++)
+		edma_stats.port[i]... = nepss->port_stats[j]...;
+
+port_stats[] is a flexible array, so j walks off the response buffer
+while i walks off port[NSS_EDMA_NUM_PORTS_MAX]. The header already states
+the intended subset size, NSS_EDMA_STATS_MSG_MAX_PORTS, and nothing in
+the tree referenced it. Reject a range that is empty, ends past the array
+or is wider than one message can carry - a bad pair means the message is
+junk, so there is nothing to salvage by clamping.
+
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+
+--- a/nss_edma_stats.c
++++ b/nss_edma_stats.c
+@@ -751,6 +751,19 @@ void nss_edma_metadata_port_stats_sync(s
+ 	uint16_t i, j = 0;
+ 	struct nss_top_instance *nss_top = nss_ctx->nss_top;
+ 
++	/*
++	 * Both bounds are firmware-written, and port_stats[] is a flexible
++	 * array: i walks edma_stats.port[NSS_EDMA_NUM_PORTS_MAX] while j walks
++	 * off the message. NSS_EDMA_STATS_MSG_MAX_PORTS is the subset size the
++	 * payload was sized for, which nothing in the tree enforced.
++	 */
++	if (nepss->start_port >= nepss->end_port ||
++			nepss->end_port > NSS_EDMA_NUM_PORTS_MAX ||
++			nepss->end_port - nepss->start_port > NSS_EDMA_STATS_MSG_MAX_PORTS) {
++		nss_warning("%px: bad port stats range %u..%u", nss_ctx, nepss->start_port, nepss->end_port);
++		return;
++	}
++
+ 	spin_lock_bh(&nss_top->stats_lock);
+ 
+ 	/*

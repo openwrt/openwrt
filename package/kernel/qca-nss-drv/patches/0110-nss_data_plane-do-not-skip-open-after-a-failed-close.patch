@@ -1,0 +1,67 @@
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Subject: [PATCH] nss_data_plane: do not skip open after a close that failed
+
+The data plane keeps a per-interface notify_open shadow so that a
+repeated open or close costs no firmware round trip. Open is skipped
+when the shadow says the firmware interface is already open, and close
+is skipped when it says it is already closed.
+
+The shadow is only updated when the message succeeds. A close that fails
+therefore leaves it reading "open" - and the very next open returns
+NSS_DP_SUCCESS without sending anything to the firmware at all.
+
+That is the wrong way round for this message pair. nss_phys_if_close()
+is synchronous: it sends NSS_PHYS_IF_CLOSE and then waits three seconds
+for the reply. When it reports failure the usual reason is that the
+reply did not arrive in time - the message itself was already handed to
+the firmware, and the firmware very probably did close the interface.
+So the one case where the shadow is most likely to be wrong is exactly
+the case where it is left untouched, and it is left claiming the state
+that suppresses the message which would repair it.
+
+The consequence is a physical port that never transmits again. Its
+firmware interface is shut while the host believes it is open, so the
+host and the firmware both keep accepting frames for it and none reach
+the wire: carrier up, the MAC's receive counters climbing and its
+transmit counters at exactly zero, the firmware's per-port egress
+counter frozen, and no error reported by anything. A link cycle does not
+touch it, because a link-state notification is not an open. Tearing the
+data plane down and bringing it back does not touch it either, because
+the open on the way back is the one being skipped. Only a reboot clears
+it, since nothing else re-boots the firmware or reloads the driver.
+
+Clear the shadow whichever way the close goes. A close that failed
+leaves the firmware's state unknown, and the safe reading of unknown is
+"assume it is closed": an open sent to an interface that is already open
+costs one message, while an open withheld from one that is closed costs
+the port. This is the same discipline the glue already applies to link
+state, where a notification the firmware did not acknowledge obliges the
+next one to be sent rather than skipped.
+
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+---
+--- a/nss_data_plane/nss_data_plane.c
++++ b/nss_data_plane/nss_data_plane.c
+@@ -65,8 +65,21 @@ static int __nss_data_plane_close(struct
+ 		return NSS_DP_SUCCESS;
+ 	}
+ 
++	/*
++	 * Drop the shadow before the message rather than after it succeeds.
++	 * nss_phys_if_close() waits for the firmware's reply and reports
++	 * failure when it times out, by which point the close itself has
++	 * already been sent - so a failure here means the interface's state is
++	 * unknown, not that it is still open. Leaving the shadow set would let
++	 * the next open short-circuit and send nothing, and a firmware
++	 * interface left shut under a host that believes it is open never
++	 * transmits again until the box is rebooted. An open sent to an
++	 * already-open interface costs one message; an open withheld from a
++	 * closed one costs the port.
++	 */
++	dp->notify_open = 0;
++
+ 	if (nss_phys_if_close(dp->nss_ctx, dp->if_num) == NSS_TX_SUCCESS) {
+-		dp->notify_open = 0;
+ 		return NSS_DP_SUCCESS;
+ 	}
+ 	return NSS_DP_FAILURE;

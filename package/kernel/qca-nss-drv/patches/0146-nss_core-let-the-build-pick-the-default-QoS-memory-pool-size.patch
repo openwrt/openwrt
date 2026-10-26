@@ -1,0 +1,29 @@
+nss_core: let the build pick the default QoS memory pool size
+
+The MP firmware (IPQ5018, 12.2-156 and 12.5-210 alike) answers the
+flow-queue memory request of nssfq_codel with a zero size unless the
+host hands it a QoS pool at core init; without it every nssfq_codel is
+refused with "Firmware reported a zero flow queue size". The HK firmware
+on ipq807x does not need the pool. The pool is only configured from the
+qos_mem_size module parameter, whose default was a fixed 0, so a board
+that needs it had to carry the option in /etc/modules.conf by hand.
+
+Take the default from NSS_QOS_MEM_SIZE_DEFAULT when the build defines
+it (the ipq50xx Makefile sets 1 MB) and keep 0 otherwise. The module
+parameter still overrides it.
+
+--- a/nss_core.c
++++ b/nss_core.c
+@@ -93,7 +93,11 @@
+ module_param_array(pn_qlimits, short, NULL, 0);
+ MODULE_PARM_DESC(pn_qlimits, "Queue limit per queue");
+ 
+-static int qos_mem_size = 0;
++#ifndef NSS_QOS_MEM_SIZE_DEFAULT
++#define NSS_QOS_MEM_SIZE_DEFAULT 0
++#endif
++
++static int qos_mem_size = NSS_QOS_MEM_SIZE_DEFAULT;
+ module_param(qos_mem_size, int, S_IRUGO);
+ MODULE_PARM_DESC(qos_mem_size, "QoS memory size");
+ 

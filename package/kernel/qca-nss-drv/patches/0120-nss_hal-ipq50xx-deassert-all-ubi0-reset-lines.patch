@@ -1,0 +1,27 @@
+nss_hal: ipq50xx: deassert ALL UBI0 reset lines, not just bits 0-2
+
+The GCC register at 0x1868010 (nss-misc-reset) carries six reset lines on
+IPQ5018 (mainline gcc-ipq5018.c): AXI(0), AHB(1), NC_AXI(2), DBG(3),
+UTCM(6) and CORE(7). The QSDK HAL clears only bits 0-2 (mask 0x7) and
+relies on the remaining bits being deasserted by the boot chain - which
+holds on the downstream 5.4 kernel but not on mainline, leaving the UBI32
+core in reset: clocks spin, firmware is copied, but the core never
+executes (no SOS, no h2n consumption, phys_if timeouts).
+
+Clear all six lines. For lines already deasserted this is a no-op.
+
+Verified on GL-B3000 (IPQ5018, fw 12.2-156 and 12.5-210): with mask 0x7
+the core never boots; with 0xcf it reports "nss core 0 booted
+successfully" and sustains ~890 Mbit/s of accelerated forwarding.
+
+--- a/nss_hal/ipq50xx/nss_hal_pvt.c
++++ b/nss_hal/ipq50xx/nss_hal_pvt.c
+@@ -62,7 +62,7 @@
+ /*
+  * Core GCC reset
+  */
+-#define NSS_CORE_GCC_RESET 0x00000007
++#define NSS_CORE_GCC_RESET 0x000000cf
+ 
+ /*
+  * GCC reset

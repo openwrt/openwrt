@@ -1,0 +1,35 @@
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Subject: [PATCH] ath11k: free wifili exception skbs with dev_kfree_skb_any()
+
+The wifili SoC extended-data callback discards every exception it does not
+handle with kfree(), not with an skb free. kfree() returns the sk_buff struct
+to the allocator on its own, so skb_release_data() never runs: the linear data
+buffer is leaked outright, along with any page fragments and the destructor.
+One buffer per exception frame, unbounded over uptime.
+
+MIC errors are the only type handled, so the default arm takes every
+NSS_WIFILI_SOC_EXT_DATA_PKT_MSDU_LINK_DESC, _INVALID_PEER, _2K_JUMP_ERROR and
+_WIFI_PARSE_ERROR the firmware raises - 2K jumps and parse errors are routine
+on a loaded radio, and _INVALID_PEER fires whenever the firmware sees a frame
+for a peer the host has just torn down.
+
+The mesh offload patch already carries this fix, but package/kernel/mac80211
+applies nss/mesh only under CONFIG_ATH11K_NSS_MESH_SUPPORT, so the correct free
+reaches mesh builds alone and every other NSS build keeps the leak. Fix it in
+the wifili path itself, where the callback lives.
+
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+
+diff --git a/drivers/net/wireless/ath/ath11k/nss.c b/drivers/net/wireless/ath/ath11k/nss.c
+index f101919..4235a84 100644
+--- a/drivers/net/wireless/ath/ath11k/nss.c
++++ b/drivers/net/wireless/ath/ath11k/nss.c
+@@ -535,7 +535,7 @@
+ 		ath11k_nss_process_mic_error(ab, skb);
+ 		break;
+ 	default:
+-		kfree(skb);
++		dev_kfree_skb_any(skb);
+ 		break;
+ 	}
+ }

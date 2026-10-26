@@ -1,0 +1,142 @@
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Subject: [PATCH] nss_hal: hold the core in reset on device remove
+
+nss_hal_remove() tears down the host side - interrupts, data plane,
+mappings - but never stops the NSS core, so the firmware keeps executing
+out of its DDR region with no host attached. On the next probe,
+firmware_load then copies the new image over the memory the old
+firmware is still running from. The firmware traps (UBI32 trap dump in
+the kernel log, PCs in IMEM), raises COREDUMP_COMPLETE into the
+interrupt line the probe has just requested, and the coredump handler
+takes the whole system down:
+
+  NSS core 0 signal COREDUMP COMPLETE 4000
+  Kernel panic - not syncing: NSS FW coredump: bringing system down
+
+50ms after the "fw of size ... copied to addr: 40000000" line, and
+before core_reset() would have put the core into reset for the actual
+restart. This makes any driver reload with armed cores a guaranteed
+panic and firmware re-arm unusable as a runtime recovery.
+
+Add a core_halt HAL op that runs the exact reverse of core_reset() -
+assert the ubi32 reset clamp, then both GCC reset sets - and halt ALL
+booted cores first thing in the FIRST nss_hal_remove() call: the driver
+core unbinds in reverse bind order, so core 1's remove runs first, and
+its data_plane_unregister() tears down every core's physical interfaces
+in one pass - the shared-EDMA baseline restore that follows the last
+release must not race a still-running core 0. The clamp alone is not enough: it
+stops instruction fetch but leaves the core complex powered through
+its GCC resets, and a firmware booted over that half-reset state
+either traps right after its boot handshake or hangs in early init.
+Fully back in reset, the core sits across the module reload in the
+same state a cold boot starts from, the qca-ppe-nss glue hands the
+shared EDMA block back to the host during the data plane unregister
+that follows, and the next probe boots the new image cleanly.
+
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+
+---
+--- a/nss_hal/include/nss_hal_ops.h
++++ b/nss_hal/include/nss_hal_ops.h
+@@ -29,6 +29,7 @@
+ struct nss_hal_ops {
+ 	int (*common_reset)(struct platform_device *pdev);
+ 	int (*core_reset)(struct platform_device *nss_dev, void __iomem *map, uint32_t addr, uint32_t clk_src);
++	void (*core_halt)(struct nss_ctx_instance *nss_ctx);
+ 	int (*clock_configure)(struct nss_ctx_instance *nss_ctx, struct platform_device *nss_dev, struct nss_platform_data *npd);
+ 	void (*debug_enable)(void);
+ 	struct nss_platform_data * (*of_get_pdata)(struct platform_device *pdev);
+--- a/nss_hal/ipq807x/nss_hal_pvt.c
++++ b/nss_hal/ipq807x/nss_hal_pvt.c
+@@ -367,6 +367,37 @@ static int __nss_hal_core_reset(struct p
+ }
+ 
+ /*
++ * __nss_hal_core_halt()
++ *	Put the core back into the reset state a cold boot starts from.
++ *
++ * Exact reverse of __nss_hal_core_reset(): assert the ubi32 reset clamp,
++ * then both GCC reset sets. The clamp alone is not enough - it stops
++ * instruction fetch but leaves the core complex powered through its GCC
++ * resets, and a firmware image booted over that half-reset state either
++ * traps right after its boot handshake or hangs waiting in early init.
++ * With the GCC resets asserted the next probe's core_reset() runs the
++ * same de-assert sequence as on a cold boot.
++ */
++static void __nss_hal_core_halt(struct nss_ctx_instance *nss_ctx)
++{
++	uint32_t value;
++
++	nss_write_32(nss_ctx->nmap, NSS_REGS_RESET_CTRL_OFFSET, 1);
++
++	if (!nss_misc_reset)
++		return;
++
++	value = nss_read_32(nss_misc_reset, 0x0);
++	value |= (NSS_CORE_GCC_RESET_2 << (nss_ctx->id << 3));
++	nss_write_32(nss_misc_reset, 0x0, value);
++
++	usleep_range(10, 20);
++
++	value |= (NSS_CORE_GCC_RESET_1 << (nss_ctx->id << 3));
++	nss_write_32(nss_misc_reset, 0x0, value);
++}
++
++/*
+  * __nss_hal_debug_enable()
+  *	Enable NSS debug
+  */
+@@ -794,6 +825,7 @@ bool __nss_hal_init_utcm_shared(struct n
+ struct nss_hal_ops nss_hal_ipq807x_ops = {
+ 	.common_reset = __nss_hal_common_reset,
+ 	.core_reset = __nss_hal_core_reset,
++	.core_halt = __nss_hal_core_halt,
+ 	.clock_configure = __nss_hal_clock_configure,
+ 	.firmware_load = nss_hal_firmware_load,
+ 	.debug_enable = __nss_hal_debug_enable,
+--- a/nss_hal/nss_hal.c
++++ b/nss_hal/nss_hal.c
+@@ -828,6 +828,43 @@ int nss_hal_remove(struct platform_devic
+ 	int i;
+ 
+ 	/*
++	 * Stop the firmware first: without this the cores keep executing
++	 * after the rmmod, and the next probe's firmware_load copies the
++	 * new image over the running firmware's memory - it traps and
++	 * signals a coredump into the freshly requested interrupt line,
++	 * panicking the system before core_reset() would have restarted
++	 * the core.
++	 *
++	 * ALL cores must go into reset here, on the FIRST device remove:
++	 * the driver core unbinds in reverse bind order (core 1 first),
++	 * but data_plane_unregister() below tears down every core's
++	 * physical interfaces in one pass, and the qca-ppe-nss glue hands
++	 * the shared EDMA block back to the host when the last one is
++	 * released - core 0 must already be stopped at that point. Halt
++	 * each core exactly once: the register block of a core whose GCC
++	 * resets are already asserted must not be touched again.
++	 *
++	 * The latch is scoped to the module lifetime rather than to one
++	 * unbind sequence, so an unbind, rebind and second unbind through
++	 * sysfs would skip the halt. That is the intended scope, not an
++	 * oversight: this exists to make the detach clean, not to make
++	 * rebinding work - re-arming the firmware without a module reload
++	 * is a separate unsolved problem - and a module reload clears the
++	 * latch along with the rest of the module's state.
++	 */
++	if (nss_top->hal_ops->core_halt) {
++		static bool cores_halted;
++
++		if (!cores_halted) {
++			for (i = 0; i < nss_top->num_nss; i++) {
++				if (nss_top->nss[i].nmap)
++					nss_top->hal_ops->core_halt(&nss_top->nss[i]);
++			}
++			cores_halted = true;
++		}
++	}
++
++	/*
+ 	 * Clean up debugfs
+ 	 */
+ 	nss_stats_clean();

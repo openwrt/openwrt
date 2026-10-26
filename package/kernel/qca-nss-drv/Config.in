@@ -1,0 +1,287 @@
+menu "Configuration"
+   depends on PACKAGE_kmod-qca-nss-drv
+
+comment "Build Options"
+
+choice
+  prompt "Memory Profile"
+  # 256 MB boards. Anything but LOW hands the firmware an 8192-entry
+  # empty-buffer pool, and each entry is a kmalloc-4k object on 64-bit:
+  # 35 MB before a single packet, on a board with ~160 MB usable.
+  # Single-device builds only: the profile is shared by every board in a
+  # multi-device image, so such a build picks it by hand rather than
+  # losing connection-table size on its 512 MB members the moment a
+  # 256 MB board is ticked.
+  default NSS_MEM_PROFILE_LOW if TARGET_qualcommax_ipq50xx_DEVICE_cudy_p5 || TARGET_qualcommax_ipq50xx_DEVICE_tplink_ex511-v2 || TARGET_qualcommax_ipq50xx_DEVICE_xiaomi_mi-router-ax3000t-v2
+  default NSS_MEM_PROFILE_HIGH if TARGET_qualcommax_ipq807x
+  default NSS_MEM_PROFILE_MEDIUM if (TARGET_qualcommax_ipq60xx || TARGET_qualcommax_ipq50xx)
+  help
+  	This option allows you to select the memory profile.
+  	It should correspond to the total RAM of your board.
+
+  config NSS_MEM_PROFILE_HIGH
+  	bool "Use 1G memory profile"
+  	depends on TARGET_qualcommax_ipq807x
+  	help
+  		This allows configuring NSS boards with 1GB+ memory.
+
+  config NSS_MEM_PROFILE_MEDIUM
+  	bool "Use 512MB memory profile"
+  	help
+  		This allows configuring NSS for boards with 512M memory.
+
+  config NSS_MEM_PROFILE_LOW
+  	bool "Use 256MB memory profile"
+  	help
+  		This allows configuring NSS for boards with 256M memory.
+endchoice
+
+config NSS_DRV_BRIDGE_ENABLE
+	bool
+	default n
+	prompt "Enable BRIDGE"
+	depends on TARGET_qualcommax_ipq807x || TARGET_qualcommax_ipq60xx
+
+config NSS_DRV_CAPWAP_ENABLE
+	bool
+	default n
+	prompt "Enable CAPWAP"
+	depends on TARGET_qualcommax_ipq807x || TARGET_qualcommax_ipq60xx
+
+config NSS_DRV_C2C_ENABLE
+	bool
+	default n
+	prompt "Enable C2C"
+	depends on TARGET_ipq806x || TARGET_qualcommax_ipq807x
+
+config NSS_DRV_CLMAP_ENABLE
+	bool
+	default n
+	prompt "Enable CLMAP"
+
+config NSS_DRV_CRYPTO_ENABLE
+	bool
+	default n
+	prompt "Enable CRYPTO"
+
+config NSS_DRV_DTLS_ENABLE
+	bool
+	default n
+	prompt "Enable DTLS"
+	depends on TARGET_qualcommax_ipq807x || TARGET_qualcommax_ipq60xx
+
+config NSS_DRV_GRE_ENABLE
+	bool
+	default n
+	prompt "Enable GRE"
+
+config NSS_DRV_GRE_REDIR_ENABLE
+	bool
+	default n
+	depends on NSS_DRV_GRE_ENABLE
+	prompt "Enable GRE_REDIR"
+
+config NSS_DRV_GRE_TUNNEL_ENABLE
+	bool
+	default n
+	depends on NSS_DRV_GRE_ENABLE
+	prompt "Enable GRE_TUNNEL"
+
+config NSS_DRV_IGS_ENABLE
+	bool
+	default n
+	prompt "Enable IGS"
+
+config NSS_DRV_IPSEC_ENABLE
+	bool
+	default n
+	prompt "Enable IPSEC"
+
+config NSS_DRV_IPV4_REASM_ENABLE
+	bool
+	default n
+	prompt "Enable IPV4_REASM"
+
+config NSS_DRV_IPV6_ENABLE
+	bool
+	default n
+	prompt "Enable IPV6"
+
+config NSS_DRV_IPV6_REASM_ENABLE
+	bool
+	default n
+	depends on NSS_DRV_IPV6_ENABLE
+	prompt "Enable IPV6_REASM"
+
+config NSS_DRV_L2TP_ENABLE
+	bool
+	default n
+	prompt "Enable L2TP"
+
+config NSS_DRV_LAG_ENABLE
+	bool
+	default n
+	prompt "Enable LAG"
+	depends on TARGET_qualcommax_ipq807x || TARGET_qualcommax_ipq60xx
+
+config NSS_DRV_MAPT_ENABLE
+	bool
+	default n
+	prompt "Enable MAPT"
+
+config NSS_DRV_MATCH_ENABLE
+	bool
+	default n
+	prompt "Enable MATCH"
+
+config NSS_DRV_MIRROR_ENABLE
+	bool
+	default n
+	prompt "Enable MIRROR"
+
+config NSS_DRV_OAM_ENABLE
+	bool
+	default n
+	prompt "Enable OAM"
+	depends on TARGET_ipq806x
+
+config NSS_DRV_PORTID_ENABLE
+	bool
+	default n
+	prompt "Enable PORTID"
+	depends on TARGET_ipq806x
+
+config NSS_DRV_LSO_RX_ENABLE
+	bool
+	default n
+	prompt "Enable LSO RX"
+
+config NSS_DRV_PPPOE_ENABLE
+	bool
+	default n
+	prompt "Enable PPPOE"
+
+config NSS_DRV_PPTP_ENABLE
+	bool
+	default n
+	prompt "Enable PPTP"
+
+config NSS_DRV_PVXLAN_ENABLE
+	bool
+	default n
+	prompt "Enable PVXLAN"
+
+config NSS_DRV_QRFS_ENABLE
+	bool
+	default n
+	prompt "Enable QRFS"
+	depends on TARGET_qualcommax_ipq807x
+
+config NSS_DRV_QVPN_ENABLE
+	bool
+	default n
+	prompt "Enable OpenVpn (QVPN)"
+	depends on TARGET_qualcommax_ipq807x || TARGET_qualcommax_ipq60xx
+
+config NSS_DRV_RMNET_ENABLE
+	bool
+	default n
+	prompt "Enable RMNET"
+	depends on TARGET_qualcommax_ipq807x || TARGET_qualcommax_ipq50xx
+	select NSS_DRV_C2C_ENABLE
+	help
+	  Raw-IP WAN offload. The firmware carries the rmnet_rx nodes on
+	  NSS core 1, so nss_rmnet_rx_create() points the host-to-NSS node
+	  at the core-to-core transmit interface and C2C has to be built
+	  for that nexthop to exist. Nothing binds on a board without a
+	  raw-IP network device, and the allocation is answered by core 1
+	  alone, so a device tree that leaves that core off binds nothing.
+
+config NSS_DRV_SHAPER_ENABLE
+	bool
+	default n
+	prompt "Enable SHAPER"
+
+config NSS_DRV_SJACK_ENABLE
+	bool
+	default n
+	prompt "Enable SJACK"
+
+config NSS_DRV_TLS_ENABLE
+	bool
+	default n
+	prompt "Enable TLS"
+	depends on TARGET_qualcommax_ipq807x || TARGET_qualcommax_ipq60xx
+
+config NSS_DRV_TRUSTSEC_ENABLE
+	bool
+	default n
+	prompt "Enable TRUSTSEC"
+
+config NSS_DRV_UDP_ST_ENABLE
+	bool
+	default n
+	prompt "Enable UDP Speedtest"
+	depends on TARGET_qualcommax_ipq807x || TARGET_qualcommax_ipq50xx
+
+config NSS_DRV_TRUSTSEC_RX_ENABLE
+	bool
+	default n
+	prompt "Enable TRUSTSEC_RX"
+	depends on NSS_DRV_TRUSTSEC_ENABLE
+
+config NSS_DRV_TSTAMP_ENABLE
+	bool
+	default n
+	prompt "Enable TSTAMP"
+	depends on TARGET_ipq806x
+
+config NSS_DRV_TUN6RD_ENABLE
+	bool
+	default n
+	prompt "Enable TUN6RD"
+
+config NSS_DRV_TUNIPIP6_ENABLE
+	bool
+	default n
+	prompt "Enable TUNIPIP6"
+
+config NSS_DRV_VIRT_IF_ENABLE
+	bool
+	default n
+	prompt "Enable VIRT_IF"
+
+config NSS_DRV_VLAN_ENABLE
+	bool
+	default n
+	prompt "Enable VLAN"
+	depends on TARGET_qualcommax_ipq807x || TARGET_qualcommax_ipq60xx || TARGET_qualcommax_ipq50xx
+
+config NSS_DRV_VXLAN_ENABLE
+	bool
+	default n
+	prompt "Enable VXLAN"
+
+config NSS_DRV_WIFIOFFLOAD_ENABLE
+	bool
+	default n
+	prompt "Enable WIFI"
+
+config NSS_DRV_WIFI_EXT_VDEV_ENABLE
+	bool
+	default n
+	depends on NSS_DRV_WIFIOFFLOAD_ENABLE
+	prompt "Enable WIFI EXT VDEV"
+
+config NSS_DRV_WIFI_MESH_ENABLE
+	bool
+	default n
+	depends on NSS_DRV_WIFIOFFLOAD_ENABLE
+	prompt "Enable WIFI MESH"
+
+config NSS_DRV_WIFI_LEGACY_ENABLE
+	bool
+	default n
+	depends on TARGET_ipq806x
+	prompt "Enable Legacy WIFI"
+endmenu

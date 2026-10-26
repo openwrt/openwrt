@@ -1,0 +1,50 @@
+nss-drv-fix-null-ptr-log
+
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+
+--- a/nss_bridge_log.c
++++ b/nss_bridge_log.c
+@@ -99,7 +99,7 @@ static void nss_bridge_log_verbose(struc
+  */
+ void nss_bridge_log_tx_msg(struct nss_bridge_msg *nbm)
+ {
+-	if (nbm->cm.type >= NSS_BRIDGE_MSG_TYPE_MAX) {
++	if (nbm->cm.type < (NSS_IF_MAX_MSG_TYPES + 1) || nbm->cm.type >= (NSS_IF_MAX_MSG_TYPES + NSS_BRIDGE_MSG_TYPE_MAX + 1)) {
+ 		nss_warning("%px: Invalid message type\n", nbm);
+ 		return;
+ 	}
+@@ -119,6 +119,11 @@ void nss_bridge_log_rx_msg(struct nss_br
+ 		return;
+ 	}
+ 
++	if (nbm->cm.type < (NSS_IF_MAX_MSG_TYPES + 1) || nbm->cm.type >= (NSS_IF_MAX_MSG_TYPES + NSS_BRIDGE_MSG_TYPE_MAX + 1)) {
++		nss_warning("%px: Invalid message type\n", nbm);
++		return;
++	}
++
+ 	if (nbm->cm.response == NSS_CMN_RESPONSE_NOTIFY || (nbm->cm.response == NSS_CMN_RESPONSE_ACK)) {
+ 		nss_info("%px: type[%d]:%s, response[%d]:%s\n", nbm, nbm->cm.type,
+ 			nss_bridge_log_message_types_str[nbm->cm.type - NSS_IF_MAX_MSG_TYPES - 1],
+--- a/nss_gre_log.c
++++ b/nss_gre_log.c
+@@ -151,7 +151,7 @@ static void nss_gre_log_verbose(struct n
+  */
+ void nss_gre_log_tx_msg(struct nss_gre_msg *ngm)
+ {
+-	if (ngm->cm.type >= NSS_GRE_MSG_MAX) {
++	if (ngm->cm.type < (NSS_IF_MAX_MSG_TYPES + 1) || ngm->cm.type >= (NSS_IF_MAX_MSG_TYPES + NSS_GRE_MSG_MAX + 1)) {
+ 		nss_warning("%px: Invalid message type\n", ngm);
+ 		return;
+ 	}
+@@ -171,6 +171,11 @@ void nss_gre_log_rx_msg(struct nss_gre_m
+ 		return;
+ 	}
+ 
++	if (ngm->cm.type < (NSS_IF_MAX_MSG_TYPES + 1) || ngm->cm.type >= (NSS_IF_MAX_MSG_TYPES + NSS_GRE_MSG_MAX + 1)) {
++		nss_warning("%px: Invalid message type\n", ngm);
++		return;
++	}
++
+ 	if (ngm->cm.response == NSS_CMN_RESPONSE_NOTIFY || (ngm->cm.response == NSS_CMN_RESPONSE_ACK)) {
+ 		nss_info("%px: type[%d]:%s, response[%d]:%s\n", ngm, ngm->cm.type,
+ 			nss_gre_log_message_types_str[NSS_GRE_LOG_MESSAGE_TYPE_INDEX(ngm->cm.type)],

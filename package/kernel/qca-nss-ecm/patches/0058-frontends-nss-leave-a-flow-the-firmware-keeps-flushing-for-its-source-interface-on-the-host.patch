@@ -1,0 +1,262 @@
+From: Stanislaw Pal <kuncy7@gmail.com>
+Subject: [PATCH] frontends/nss: leave a flow the firmware keeps flushing for
+ its source interface on the host
+
+With the source interface check on (0057) the firmware hands a packet that
+arrives on another interface than its rule's to the host and flushes the
+rule. That is what keeps a flow that crosses the box twice from being sent
+back out of the uplink - but ECM then sees the next packet of the first
+crossing and writes the rule again, the next packet of the second one
+flushes it, and so on for as long as the flow runs: over a thousand rules a
+second made and thrown away for one TCP stream between a guest client and
+a LAN device behind the same access point, and the stream runs slower than
+it does with no acceleration at all.
+
+Such a flow cannot be accelerated: both crossings are one 5-tuple, one
+connection here and one rule in the firmware. The flush message says why
+the rule went (cause = the interface mismatch exception), so count those
+per connection, and after net.ecm.src_interface_mismatch_limit of them in
+a row, each within a second of the one before, fail the connection out the
+way one whose rules never carry a packet is failed out. It stays with the
+host until it ends. A single mismatch is left alone - a station that moved
+to another port looks the same, once. The limit is 3; 0 turns it off.
+
+ecm_nss_ipv4 and ecm_nss_ipv6 in debugfs get src_mismatch_flush_count
+(rules flushed for this) and src_mismatch_fail_count (connections left
+with the host), and the state of a connection shows its own counts.
+
+Measured on an Archer AX55 as the access point, firmware 12.2, a guest
+client and a LAN device on its two SSIDs, iperf3 for 10 s: 7600 to 20800
+rules made and flushed per run before, all of them with this cause; 6 to
+22 after, with the stream on the host and no slower than it was, the
+router's switch table clean, and guest traffic to the WAN accelerated as
+before. UDP behaves the same.
+
+Signed-off-by: Stanislaw Pal <kuncy7@gmail.com>
+---
+ ecm_interface.c                          | 16 +++++++++++
+ ecm_interface.h                          |  1 +
+ frontends/ecm_front_end_common.c         | 47 +++++++++++++++++++++++++++++++
+ frontends/include/ecm_front_end_common.h |  1 +
+ frontends/include/ecm_front_end_types.h  |  3 ++
+ frontends/nss/ecm_nss_ipv4.c             | 22 +++++++++++++++
+ frontends/nss/ecm_nss_ipv6.c             | 22 +++++++++++++++
+ 7 files changed, 112 insertions(+)
+
+--- a/ecm_interface.c
++++ b/ecm_interface.c
+@@ -212,6 +212,15 @@ static bool ecm_interface_terminate_pending = false;		/* True when the user has
+ #endif
+ int ecm_interface_src_check = ECM_INTERFACE_SRC_CHECK_DEFAULT;
+ 
++/*
++ * Source interface mismatch limit.
++ *	With the source interface check on, the acceleration engine flushes a
++ *	rule when a packet of its 5-tuple comes in on another interface. This
++ *	many such flushes in a row, each within a second of the one before,
++ *	and the connection is not accelerated again. 0 turns the limit off.
++ */
++int ecm_interface_src_check_mismatch_limit = 3;
++
+ /*
+  * Sysctl to enable mwan3
+  */
+@@ -10311,6 +10320,13 @@ static struct ctl_table ecm_interface_table[] = {
+ 		.mode			= 0644,
+ 		.proc_handler		= &ecm_interface_src_check_no_flush_handler,
+ 	},
++	{
++		.procname		= "src_interface_mismatch_limit",
++		.data			= &ecm_interface_src_check_mismatch_limit,
++		.maxlen			= sizeof(int),
++		.mode			= 0644,
++		.proc_handler		= &proc_dointvec,
++	},
+ #if defined(CONFIG_NET_CLS_ACT) && defined(ECM_CLASSIFIER_DSCP_IGS)
+ 	{
+ 		.procname		= "igs_enabled",
+--- a/ecm_interface.h
++++ b/ecm_interface.h
+@@ -14,6 +14,7 @@
+ 
+ extern int ecm_interface_src_check;	/* Source interface check flag */
+ extern int ecm_interface_src_check_no_flush;	/* Source interface check no flush flag */
++extern int ecm_interface_src_check_mismatch_limit;	/* Source interface mismatch flushes before acceleration is given up */
+ #if defined(CONFIG_NET_CLS_ACT) && defined(ECM_CLASSIFIER_DSCP_IGS)
+ extern int ecm_interface_igs_enabled;	/* IGS enabled check flag */
+ #endif
+--- a/frontends/ecm_front_end_common.c
++++ b/frontends/ecm_front_end_common.c
+@@ -857,6 +857,12 @@ int ecm_front_end_common_connection_state_get(struct ecm_front_end_connection_in
+ 	if ((result = ecm_state_write(sfi, "no_action_seen_limit", "%d", stats.no_action_seen_limit))) {
+ 		return result;
+ 	}
++	if ((result = ecm_state_write(sfi, "src_mismatch_total", "%d", stats.src_mismatch_total))) {
++		return result;
++	}
++	if ((result = ecm_state_write(sfi, "src_mismatch", "%d", stats.src_mismatch))) {
++		return result;
++	}
+ 	if ((result = ecm_state_write(sfi, "driver_fail_total", "%d", stats.driver_fail_total))) {
+ 		return result;
+ 	}
+@@ -1802,6 +1808,47 @@ void ecm_front_end_connection_action_seen(struct ecm_front_end_connection_instan
+ 	spin_unlock_bh(&feci->lock);
+ }
+ 
++/*
++ * ecm_front_end_connection_src_mismatch_seen()
++ *	The AE flushed the rule because a packet came in on another interface than the rule's.
++ *
++ * The AE finds a connection by its 5-tuple alone. A flow that crosses this box
++ * twice - bridged in one VLAN on the way to a router and in another on the way
++ * back - is one connection here and one rule there, written for one of the two
++ * crossings; every packet of the other one is such a mismatch. Accelerating it
++ * again only repeats that, a rule made and flushed for every few packets, so
++ * after ecm_interface_src_check_mismatch_limit flushes in a row the connection
++ * stays with the host. A single flush is left alone: a station that moved to
++ * another port looks the same once.
++ *
++ * NOTE: Call it before the accel_ceased() method, which fails the connection out.
++ * Returns true when it will.
++ */
++bool ecm_front_end_connection_src_mismatch_seen(struct ecm_front_end_connection_instance *feci)
++{
++	int limit = ecm_interface_src_check_mismatch_limit;
++	bool fail = false;
++
++	DEBUG_CHECK_MAGIC(feci, ECM_FRONT_END_CONNECTION_INSTANCE_MAGIC, "%px: magic failed", feci);
++	spin_lock_bh(&feci->lock);
++	if (time_after(jiffies, feci->stats.src_mismatch_time + HZ)) {
++		feci->stats.src_mismatch = 0;
++	}
++	feci->stats.src_mismatch_time = jiffies;
++	feci->stats.src_mismatch++;
++	feci->stats.src_mismatch_total++;
++	if (limit > 0 && feci->stats.src_mismatch >= limit) {
++		/*
++		 * The accel_ceased() methods fail a connection out on this
++		 */
++		feci->stats.no_action_seen = feci->stats.no_action_seen_limit;
++		fail = true;
++	}
++	spin_unlock_bh(&feci->lock);
++	DEBUG_INFO("%px: Source interface mismatch seen, fail: %d\n", feci, fail);
++	return fail;
++}
++
+ /*
+  * ecm_front_end_connection_ref()
+  *      Ref a connection front end instance
+--- a/frontends/include/ecm_front_end_common.h
++++ b/frontends/include/ecm_front_end_common.h
+@@ -515,6 +515,7 @@ struct net_device *ecm_front_end_xfrm_xs2dev(struct xfrm_state *xs);
+ 
+ ecm_front_end_acceleration_mode_t ecm_front_end_connection_accel_state_get(struct ecm_front_end_connection_instance *feci);
+ void ecm_front_end_connection_action_seen(struct ecm_front_end_connection_instance *feci);
++bool ecm_front_end_connection_src_mismatch_seen(struct ecm_front_end_connection_instance *feci);
+ void ecm_front_end_connection_ref(struct ecm_front_end_connection_instance *feci);
+ int ecm_front_end_connection_deref(struct ecm_front_end_connection_instance *feci);
+ 
+--- a/frontends/include/ecm_front_end_types.h
++++ b/frontends/include/ecm_front_end_types.h
+@@ -235,6 +235,9 @@ struct ecm_front_end_connection_mode_stats {
+ 	uint32_t no_action_seen_total;		/* Total of times acceleration was ended by the accel engine itself without any offload action */
+ 	uint32_t no_action_seen;		/* Count of times consecutive  acceleration was ended by the accel engine itself without any offload action */
+ 	uint32_t no_action_seen_limit;		/* Limit on consecutive no-action at which point offload permanently fails out */
++	uint32_t src_mismatch_total;		/* Total of times the accel engine flushed the rule for a packet from another interface than the rule's */
++	uint32_t src_mismatch;			/* Count of such flushes in a row, each within a second of the one before */
++	unsigned long src_mismatch_time;	/* Time of the last such flush */
+ 	uint32_t driver_fail_total;		/* Total times driver failed to send our command */
+ 	uint32_t driver_fail;			/* Count of consecutive times driver failed to send our command, when this reaches driver_fail_limit acceleration will permanently fail */
+ 	uint32_t driver_fail_limit;		/* Limit on drivers consecutive fails at which point offload permanently fails out */
+--- a/frontends/nss/ecm_nss_ipv4.c
++++ b/frontends/nss/ecm_nss_ipv4.c
+@@ -98,6 +98,8 @@ int ecm_nss_ipv4_no_action_limit_default = 250;		/* Default no-action limit. */
+ int ecm_nss_ipv4_driver_fail_limit_default = 250;		/* Default driver fail limit. */
+ int ecm_nss_ipv4_nack_limit_default = 250;			/* Default nack limit. */
+ int ecm_nss_ipv4_accelerated_count = 0;			/* Total offloads */
++static int ecm_nss_ipv4_src_mismatch_flush_count;		/* Rules the NSS flushed for a packet from another interface */
++static int ecm_nss_ipv4_src_mismatch_fail_count;		/* Connections left with the host for that */
+ int ecm_nss_ipv4_pending_accel_count = 0;			/* Total pending offloads issued to the NSS / awaiting completion */
+ int ecm_nss_ipv4_pending_decel_count = 0;			/* Total pending deceleration requests issued to the NSS / awaiting completion */
+ int ecm_nss_ipv4_vlan_passthrough_enable = 0;		/* VLAN passthrough feature enable or disable flag */
+@@ -413,6 +415,22 @@ static inline void ecm_nss_ipv4_process_one_conn_sync_msg(struct nss_ipv4_conn_s
+ 		 */
+ 		DEBUG_INFO("%px: NSS Initiated final sync seen: %d cause:%d\n", ci, sync->reason, sync->cause);
+ 
++		/*
++		 * A rule flushed for a packet from another interface than its own
++		 * comes back the same way if it is written again.
++		 */
++		if (sync->reason == NSS_IPV4_RULE_SYNC_REASON_FLUSH &&
++				sync->cause == NSS_IPV4_EXCEPTION_EVENT_INTERFACE_MISMATCH) {
++			bool fail = ecm_front_end_connection_src_mismatch_seen(feci);
++
++			spin_lock_bh(&ecm_nss_ipv4_lock);
++			ecm_nss_ipv4_src_mismatch_flush_count++;
++			if (fail) {
++				ecm_nss_ipv4_src_mismatch_fail_count++;
++			}
++			spin_unlock_bh(&ecm_nss_ipv4_lock);
++		}
++
+ 		/*
+ 		 * NSS Decelerated the connection
+ 		 */
+@@ -1060,6 +1078,10 @@ int ecm_nss_ipv4_init(struct dentry *dentry)
+ 				(u32 *)&ecm_nss_ipv4_nack_limit_default);
+ 	ecm_debugfs_create_u32("accelerated_count", S_IRUGO, ecm_nss_ipv4_dentry,
+ 				(u32 *)&ecm_nss_ipv4_accelerated_count);
++	ecm_debugfs_create_u32("src_mismatch_flush_count", S_IRUGO, ecm_nss_ipv4_dentry,
++				(u32 *)&ecm_nss_ipv4_src_mismatch_flush_count);
++	ecm_debugfs_create_u32("src_mismatch_fail_count", S_IRUGO, ecm_nss_ipv4_dentry,
++				(u32 *)&ecm_nss_ipv4_src_mismatch_fail_count);
+ 	ecm_debugfs_create_u32("pending_accel_count", S_IRUGO, ecm_nss_ipv4_dentry,
+ 				(u32 *)&ecm_nss_ipv4_pending_accel_count);
+ 	ecm_debugfs_create_u32("pending_decel_count", S_IRUGO, ecm_nss_ipv4_dentry,
+--- a/frontends/nss/ecm_nss_ipv6.c
++++ b/frontends/nss/ecm_nss_ipv6.c
+@@ -100,6 +100,8 @@ int ecm_nss_ipv6_no_action_limit_default = 250;		/* Default no-action limit. */
+ int ecm_nss_ipv6_driver_fail_limit_default = 250;		/* Default driver fail limit. */
+ int ecm_nss_ipv6_nack_limit_default = 250;			/* Default nack limit. */
+ int ecm_nss_ipv6_accelerated_count = 0;			/* Total offloads */
++static int ecm_nss_ipv6_src_mismatch_flush_count;		/* Rules the NSS flushed for a packet from another interface */
++static int ecm_nss_ipv6_src_mismatch_fail_count;		/* Connections left with the host for that */
+ int ecm_nss_ipv6_pending_accel_count = 0;			/* Total pending offloads issued to the NSS / awaiting completion */
+ int ecm_nss_ipv6_pending_decel_count = 0;			/* Total pending deceleration requests issued to the NSS / awaiting completion */
+ int ecm_nss_ipv6_vlan_passthrough_enable = 0;		/* VLAN passthrough feature enable or disable flag */
+@@ -390,6 +392,22 @@ static inline void ecm_nss_ipv6_process_one_conn_sync_msg(struct nss_ipv6_conn_s
+ 		 */
+ 		DEBUG_INFO("%px: NSS Initiated final sync seen: %d\n", ci, sync->reason);
+ 
++		/*
++		 * A rule flushed for a packet from another interface than its own
++		 * comes back the same way if it is written again.
++		 */
++		if (sync->reason == NSS_IPV6_RULE_SYNC_REASON_FLUSH &&
++				sync->cause == NSS_IPV6_EXCEPTION_EVENT_INTERFACE_MISMATCH) {
++			bool fail = ecm_front_end_connection_src_mismatch_seen(feci);
++
++			spin_lock_bh(&ecm_nss_ipv6_lock);
++			ecm_nss_ipv6_src_mismatch_flush_count++;
++			if (fail) {
++				ecm_nss_ipv6_src_mismatch_fail_count++;
++			}
++			spin_unlock_bh(&ecm_nss_ipv6_lock);
++		}
++
+ 		/*
+ 		 * NSS Decelerated the connection
+ 		 */
+@@ -1037,6 +1055,10 @@ int ecm_nss_ipv6_init(struct dentry *dentry)
+ 				(u32 *)&ecm_nss_ipv6_nack_limit_default);
+ 	ecm_debugfs_create_u32("accelerated_count", S_IRUGO, ecm_nss_ipv6_dentry,
+ 				(u32 *)&ecm_nss_ipv6_accelerated_count);
++	ecm_debugfs_create_u32("src_mismatch_flush_count", S_IRUGO, ecm_nss_ipv6_dentry,
++				(u32 *)&ecm_nss_ipv6_src_mismatch_flush_count);
++	ecm_debugfs_create_u32("src_mismatch_fail_count", S_IRUGO, ecm_nss_ipv6_dentry,
++				(u32 *)&ecm_nss_ipv6_src_mismatch_fail_count);
+ 	ecm_debugfs_create_u32("pending_accel_count", S_IRUGO, ecm_nss_ipv6_dentry,
+ 				(u32 *)&ecm_nss_ipv6_pending_accel_count);
+ 	ecm_debugfs_create_u32("pending_decel_count", S_IRUGO, ecm_nss_ipv6_dentry,

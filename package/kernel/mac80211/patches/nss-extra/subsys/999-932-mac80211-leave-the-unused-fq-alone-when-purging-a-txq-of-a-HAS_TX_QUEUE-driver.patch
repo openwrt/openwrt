@@ -1,0 +1,41 @@
+From: Stanislaw Pal <kuncy7@gmail.com>
+Subject: [PATCH] wifi: mac80211: leave the unused fq alone when purging a txq of a HAS_TX_QUEUE driver
+
+With HAS_TX_QUEUE (785) the driver queues the frames itself:
+ieee80211_txq_setup_flows() returns before fq_init(), so local->fq and
+its lock are never set up, and nothing is ever queued on a txq. The
+interfaces still get their txqs, though, and ieee80211_txq_purge(),
+called when one stops or goes away, took the uninitialised fq->lock to
+empty a queue that cannot hold anything. It only worked because the
+memory is zeroed; lockdep reports it ("trying to register non-static
+key", ieee80211_txq_purge from ieee80211_do_stop, ath11k with NSS
+offload on IPQ5018) and turns itself off.
+
+Skip the fq part of the purge with HAS_TX_QUEUE, as
+ieee80211_txq_teardown_flows() and ieee80211_queue_skb() already do.
+
+Signed-off-by: Stanislaw Pal <kuncy7@gmail.com>
+
+--- a/net/mac80211/tx.c
++++ b/net/mac80211/tx.c
+@@ -1560,10 +1560,16 @@
+ 	struct fq *fq = &local->fq;
+ 	struct fq_tin *tin = &txqi->tin;
+ 
+-	spin_lock_bh(&fq->lock);
+-	fq_tin_reset(fq, tin, fq_skb_free_func);
+-	ieee80211_purge_tx_queue(&local->hw, &txqi->frags);
+-	spin_unlock_bh(&fq->lock);
++	/* With HAS_TX_QUEUE the driver queues the frames itself: fq was
++	 * never set up (no fq_init(), so not even its lock) and nothing
++	 * was ever queued on this txq.
++	 */
++	if (!ieee80211_hw_check(&local->hw, HAS_TX_QUEUE)) {
++		spin_lock_bh(&fq->lock);
++		fq_tin_reset(fq, tin, fq_skb_free_func);
++		ieee80211_purge_tx_queue(&local->hw, &txqi->frags);
++		spin_unlock_bh(&fq->lock);
++	}
+ 
+ 	spin_lock_bh(&local->active_txq_lock[txqi->txq.ac]);
+ 	list_del_init(&txqi->schedule_order);

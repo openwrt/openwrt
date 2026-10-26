@@ -1,0 +1,23 @@
+nss_init: allow triggering the coredump without the debug sysctl
+
+The manual coredump trigger (sysctl dev.nss.general.coredump=1) is gated
+on nss_ctl_debug, but the sysctl that sets that flag is compiled out in
+this build, so the trigger can never fire.  The trigger is the only way
+to get the firmware's internal log ring dumped (patch 0108) after the
+wifili start wedges the phys_if node on IPQ5018 - the firmware is not
+crashed, so the firmware-initiated coredump path never runs.
+
+Drop the gate; writing 1 to the sysctl is already an explicit root-only
+action.
+
+--- a/nss_init.c
++++ b/nss_init.c
+@@ -403,7 +403,7 @@ static int nss_coredump_handler(compat_const struct ctl_table *ctl, int write, v
+ 		 * when NSS FW crashes, so OEM/ODM have a chance to use mdump
+ 		 * to dump crash dump (coredump) and send dump to us for analysis.
+ 		 */
+-		if ((write) && (nss_ctl_debug != 0) && nss_cmd_buf.coredump == 1) {
++		if ((write) && nss_cmd_buf.coredump == 1) {
+ 			printk("Coredumping to DDR\n");
+ 			nss_hal_send_interrupt(nss_ctx, NSS_H2N_INTR_TRIGGER_COREDUMP);
+ 		}

@@ -13,6 +13,9 @@ PKG_CONFIG_DEPENDS += \
 	CONFIG_ATH10K_LEDS \
 	CONFIG_ATH10K_THERMAL \
 	CONFIG_ATH11K_THERMAL \
+	CONFIG_ATH11K_NSS_SUPPORT \
+	CONFIG_ATH11K_MEM_PROFILE_512M \
+	CONFIG_PACKAGE_wf810df-nss \
 	CONFIG_ATH12K_THERMAL \
 	CONFIG_ATH_USER_REGD
 
@@ -60,6 +63,8 @@ config-$(CONFIG_ATH9K_UBNTHSR) += ATH9K_UBNTHSR
 config-$(CONFIG_ATH10K_LEDS) += ATH10K_LEDS
 config-$(CONFIG_ATH10K_THERMAL) += ATH10K_THERMAL
 config-$(CONFIG_ATH11K_THERMAL) += ATH11K_THERMAL
+config-$(CONFIG_ATH11K_NSS_SUPPORT) += ATH11K_NSS_SUPPORT
+config-$(CONFIG_ATH11K_MEM_PROFILE_512M) += ATH11K_MEM_PROFILE_512M
 config-$(CONFIG_ATH12K_THERMAL) += ATH12K_THERMAL
 
 config-$(call config_package,ath9k-htc) += ATH9K_HTC
@@ -320,6 +325,12 @@ define KernelPackage/ath11k
   +kmod-crypto-michael-mic +ATH11K_THERMAL:kmod-hwmon-core \
   +ATH11K_THERMAL:kmod-thermal +kmod-qcom-qmi-helpers
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/ath/ath11k/ath11k.ko
+ifneq ($(CONFIG_PACKAGE_wf810df-nss),y)
+ifdef CONFIG_ATH11K_NSS_SUPPORT
+  AUTOLOAD:=$(call AutoProbe,ath11k)
+  MODPARAMS.ath11k:=nss_offload=0 frame_mode=0
+endif
+endif
 endef
 
 define KernelPackage/ath11k/description
@@ -328,6 +339,22 @@ chipsets.
 endef
 
 define KernelPackage/ath11k/config
+
+       config ATH11K_NSS_SUPPORT
+               bool "Enable NSS Wi-Fi offload"
+               depends on TARGET_qualcommax_ipq50xx
+               select PACKAGE_MAC80211_NSS_SUPPORT
+               select PACKAGE_kmod-qca-nss-drv
+               select NSS_DRV_WIFIOFFLOAD_ENABLE
+               select NSS_DRV_WIFI_EXT_VDEV_ENABLE
+               select ATH11K_MEM_PROFILE_512M
+               default n
+               help
+                  Build the NSS AP data path. Offload remains disabled until
+                  ath11k is loaded with nss_offload=1 after NSS is ready.
+
+       config ATH11K_MEM_PROFILE_512M
+               bool
 
        config ATH11K_THERMAL
                bool "Enable thermal sensors and throttling support"
@@ -342,7 +369,9 @@ define KernelPackage/ath11k-ahb
   URL:=https://wireless.wiki.kernel.org/en/users/drivers/ath11k
   DEPENDS+= @TARGET_qualcommax +kmod-ath11k +kmod-qrtr-smd
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/ath/ath11k/ath11k_ahb.ko
+ifneq ($(CONFIG_PACKAGE_wf810df-nss),y)
   AUTOLOAD:=$(call AutoProbe,ath11k_ahb)
+endif
 endef
 
 define KernelPackage/ath11k-ahb/description
@@ -356,7 +385,9 @@ define KernelPackage/ath11k-pci
   URL:=https://wireless.wiki.kernel.org/en/users/drivers/ath11k
   DEPENDS+= @PCI_SUPPORT +kmod-qrtr-mhi +kmod-ath11k
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/ath/ath11k/ath11k_pci.ko
+ifneq ($(CONFIG_PACKAGE_wf810df-nss),y)
   AUTOLOAD:=$(call AutoProbe,ath11k_pci)
+endif
 endef
 
 define KernelPackage/ath11k-pci/description

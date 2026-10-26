@@ -1,0 +1,39 @@
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Subject: [PATCH] nss_shaper: drain the interface bounce callback on unregister
+
+nss_shaper_unregister_shaper_bounce_bridge() waits for reg->callback_active
+to clear before it drops the registration and calls module_put(); the
+interface sibling twenty lines above it does not. Both are torn down the
+same way and both are called from a module that the bounce callback runs
+in, so the asymmetry is the bug: a bounce callback already dispatched by
+nss_shaper_bounced_callback() can still be running inside the registrant
+when module_put() releases the last reference to the module holding it.
+
+Add the same wait to the interface path, byte for byte the sibling's.
+
+The trigger is root removing a bounce qdisc, so this is well below the
+bar the rest of the audit applied and the reason it was left alone. What
+makes it worth the five lines is that the correct sequence is already
+present in the same file, so this is restoring an invariant rather than
+inventing one.
+
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+
+--- a/nss_shaper.c
++++ b/nss_shaper.c
+@@ -123,6 +123,15 @@ void nss_shaper_unregister_shaper_bounce
+ 	}
+ 
+ 	/*
++	 * Wait until any bounce callback that is active is finished
++	 */
++	while (reg->callback_active) {
++		spin_unlock_bh(&nss_top->lock);
++		yield();
++		spin_lock_bh(&nss_top->lock);
++	}
++
++	/*
+ 	 * Unegister
+ 	 */
+ 	owner = reg->owner;

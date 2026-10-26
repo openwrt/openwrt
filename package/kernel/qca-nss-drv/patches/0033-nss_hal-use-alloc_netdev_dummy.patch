@@ -1,0 +1,125 @@
+nss_hal: use alloc_netdev_dummy for the NAPI dummy netdev
+
+Kernel 6.15 removed init_dummy_netdev(); dummy net devices must be
+allocated with alloc_netdev_dummy() and freed with free_netdev() now,
+so the embedded struct net_device becomes a pointer.
+
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+
+--- a/nss_core.h
++++ b/nss_core.h
+@@ -460,7 +460,7 @@ struct nss_ctx_instance {
+ 	struct nss_top_instance *nss_top;
+ 					/* Back pointer to NSS Top */
+ 	struct device *dev;		/* Pointer to the original device from probe */
+-	struct net_device napi_ndev;    /* Dummy_netdev for NAPI */
++	struct net_device *napi_ndev;   /* Dummy netdev for NAPI */
+ 	uint32_t id;			/* Core ID for this instance */
+ 	void __iomem *nmap;		/* Pointer to NSS CSM registers */
+ 	void __iomem *vmap;		/* Virt mem pointer to virtual register map */
+--- a/nss_hal/fsm9010/nss_hal_pvt.c
++++ b/nss_hal/fsm9010/nss_hal_pvt.c
+@@ -291,7 +291,7 @@ static int __nss_hal_request_irq(struct
+ 	}
+ 
+ 	int_ctx->irq = npd->irq[irq_num];
+-	netif_napi_add_weight(&nss_ctx->napi_ndev, &int_ctx->napi, nss_core_handle_napi, 64);
++	netif_napi_add_weight(nss_ctx->napi_ndev, &int_ctx->napi, nss_core_handle_napi, 64);
+ 	return 0;
+ }
+ 
+--- a/nss_hal/ipq50xx/nss_hal_pvt.c
++++ b/nss_hal/ipq50xx/nss_hal_pvt.c
+@@ -599,7 +599,7 @@ static int __nss_hal_request_irq(struct
+ 		return err;
+ 	}
+ 
+-	netif_napi_add_weight(&nss_ctx->napi_ndev, &int_ctx->napi, napi_poll_cb, napi_wgt);
++	netif_napi_add_weight(nss_ctx->napi_ndev, &int_ctx->napi, napi_poll_cb, napi_wgt);
+ 	int_ctx->cause = cause;
+ 	err = request_irq(irq, nss_hal_handle_irq, 0, irq_name, int_ctx);
+ 	if (err) {
+--- a/nss_hal/ipq60xx/nss_hal_pvt.c
++++ b/nss_hal/ipq60xx/nss_hal_pvt.c
+@@ -707,7 +707,7 @@ static int __nss_hal_request_irq(struct
+ 		return err;
+ 	}
+ 
+-	netif_napi_add_weight(&nss_ctx->napi_ndev, &int_ctx->napi, napi_poll_cb, napi_wgt);
++	netif_napi_add_weight(nss_ctx->napi_ndev, &int_ctx->napi, napi_poll_cb, napi_wgt);
+ 	int_ctx->cause = cause;
+ 	err = request_irq(irq, nss_hal_handle_irq, 0, irq_name, int_ctx);
+ 	if (err) {
+--- a/nss_hal/ipq806x/nss_hal_pvt.c
++++ b/nss_hal/ipq806x/nss_hal_pvt.c
+@@ -688,7 +688,7 @@ static int __nss_hal_request_irq(struct
+ 	}
+ 
+ 	int_ctx->irq = npd->irq[irq_num];
+-	netif_napi_add_weight(&nss_ctx->napi_ndev, &int_ctx->napi, nss_core_handle_napi, 64);
++	netif_napi_add_weight(nss_ctx->napi_ndev, &int_ctx->napi, nss_core_handle_napi, 64);
+ 
+ 	return 0;
+ }
+--- a/nss_hal/ipq807x/nss_hal_pvt.c
++++ b/nss_hal/ipq807x/nss_hal_pvt.c
+@@ -751,7 +751,7 @@ static int __nss_hal_request_irq(struct
+ 		return err;
+ 	}
+ 
+-	netif_napi_add_weight(&nss_ctx->napi_ndev, &int_ctx->napi, napi_poll_cb, napi_wgt);
++	netif_napi_add_weight(nss_ctx->napi_ndev, &int_ctx->napi, napi_poll_cb, napi_wgt);
+ 	int_ctx->cause = cause;
+ 	err = request_irq(irq, nss_hal_handle_irq, 0, irq_name, int_ctx);
+ 	if (err) {
+--- a/nss_hal/ipq95xx/nss_hal_pvt.c
++++ b/nss_hal/ipq95xx/nss_hal_pvt.c
+@@ -888,7 +888,7 @@ static int __nss_hal_request_irq(struct
+ 		return err;
+ 	}
+ 
+-	netif_napi_add_weight(&nss_ctx->napi_ndev, &int_ctx->napi, napi_poll_cb, napi_wgt);
++	netif_napi_add_weight(nss_ctx->napi_ndev, &int_ctx->napi, napi_poll_cb, napi_wgt);
+ 	int_ctx->cause = cause;
+ 	err = request_irq(irq, nss_hal_handle_irq, 0, irq_name, int_ctx);
+ 	if (err) {
+--- a/nss_hal/nss_hal.c
++++ b/nss_hal/nss_hal.c
+@@ -294,10 +294,14 @@ int nss_hal_probe(struct platform_device
+ 	/*
+ 	 * Initialize the dummy netdevice.
+ 	 */
+-	init_dummy_netdev(&nss_ctx->napi_ndev);
++	nss_ctx->napi_ndev = alloc_netdev_dummy(0);
++	if (!nss_ctx->napi_ndev) {
++		err = -ENOMEM;
++		goto err_init;
++	}
+ 
+ 	for (i = 0; i < npd->num_irq; i++) {
+-		err = nss_hal_register_irq(nss_ctx, npd, &nss_ctx->napi_ndev, i);
++		err = nss_hal_register_irq(nss_ctx, npd, nss_ctx->napi_ndev, i);
+ 		if (err) {
+ 			goto err_register_irq;
+ 		}
+@@ -790,6 +794,8 @@ err_register_irq:
+ 	for (i = 0; i < npd->num_irq; i++) {
+ 		nss_hal_clean_up_irq(&nss_ctx->int_ctx[i]);
+ 	}
++	free_netdev(nss_ctx->napi_ndev);
++	nss_ctx->napi_ndev = NULL;
+ 
+ err_init:
+ 	if (nss_dev->dev.of_node) {
+@@ -857,6 +863,11 @@ int nss_hal_remove(struct platform_devic
+ 		}
+ 	}
+ 
++	if (nss_ctx->napi_ndev) {
++		free_netdev(nss_ctx->napi_ndev);
++		nss_ctx->napi_ndev = NULL;
++	}
++
+ 	nss_info("%px: All resources freed for nss core%d", nss_ctx, nss_dev->id);
+ 	return 0;
+ }

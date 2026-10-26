@@ -1,0 +1,23 @@
+From: Andrei-Alexandru Bleortu <me@andrei-z.com>
+Subject: [PATCH] ath11k: nss: test nss-radio-priority for presence, not as a
+ boolean
+
+nss-radio-priority carries the radio's priority as a u32, which the
+thread scheme reads; the multi-SoC thread map only asks whether the
+property is there. of_property_read_bool() on a property with a value
+warns since 6.14 ("Read of boolean property 'nss-radio-priority' with a
+value"); of_property_present() is the call for that question.
+
+Signed-off-by: Andrei-Alexandru Bleortu <me@andrei-z.com>
+
+--- a/drivers/net/wireless/ath/ath11k/nss.c
++++ b/drivers/net/wireless/ath/ath11k/nss.c
+@@ -3016,7 +3016,7 @@
+ 	/* fill rx parameters to initialize rx context */
+ 	wim->wrip.tlv_size = ab->hw_params.hal_desc_sz;
+ 	wim->wrip.rx_buf_len = DP_RXDMA_NSS_REFILL_RING_SIZE;
+-	if (of_property_read_bool(dev->of_node, "nss-radio-priority"))
++	if (of_property_present(dev->of_node, "nss-radio-priority"))
+ 		wim->flags |= WIFILI_MULTISOC_THREAD_MAP_ENABLE;
+ 
+ 	/* fill hal srng message */

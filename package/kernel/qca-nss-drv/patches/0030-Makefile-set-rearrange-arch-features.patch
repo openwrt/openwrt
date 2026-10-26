@@ -1,0 +1,79 @@
+Makefile-set-rearrange-arch-features
+
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+
+--- a/Makefile
++++ b/Makefile
+@@ -124,12 +124,14 @@ qca-nss-drv-objs += \
+ endif
+ endif
+ 
++ifeq ($(SoC),$(filter $(SoC),ipq806x))
+ ifneq "$(NSS_DRV_TSTAMP_ENABLE)" "n"
+ ccflags-y += -DNSS_DRV_TSTAMP_ENABLE
+ qca-nss-drv-objs += \
+ 			 nss_tstamp.o \
+ 			 nss_tstamp_stats.o
+ endif
++endif
+ 
+ ifneq "$(NSS_DRV_GRE_ENABLE)" "n"
+ ccflags-y += -DNSS_DRV_GRE_ENABLE
+@@ -257,6 +259,7 @@ qca-nss-drv-objs += \
+ 			 nss_rmnet_rx_stats.o
+ endif
+ 
++ifeq ($(SoC),$(filter $(SoC),ipq806x))
+ ifneq "$(NSS_DRV_PORTID_ENABLE)" "n"
+ ccflags-y += -DNSS_DRV_PORTID_ENABLE
+ qca-nss-drv-objs += \
+@@ -264,6 +267,7 @@ qca-nss-drv-objs += \
+ 			 nss_portid_log.o \
+ 			 nss_portid_stats.o
+ endif
++endif
+ 
+ ifneq "$(NSS_DRV_IGS_ENABLE)" "n"
+ ccflags-y += -DNSS_DRV_IGS_ENABLE
+@@ -272,12 +276,14 @@ qca-nss-drv-objs += \
+ 			 nss_igs_stats.o
+ endif
+ 
++ifeq ($(SoC),$(filter $(SoC),ipq806x))
+ ifneq "$(NSS_DRV_OAM_ENABLE)" "n"
+ ccflags-y += -DNSS_DRV_OAM_ENABLE
+ qca-nss-drv-objs += \
+ 			 nss_oam.o \
+ 			 nss_oam_log.o
+ endif
++endif
+ 
+ ifneq "$(NSS_DRV_CLMAP_ENABLE)" "n"
+ ccflags-y += -DNSS_DRV_CLMAP_ENABLE
+@@ -352,16 +358,13 @@ endif
+ 
+ ifneq "$(NSS_DRV_WIFIOFFLOAD_ENABLE)" "n"
+ ccflags-y += -DNSS_DRV_WIFIOFFLOAD_ENABLE
+-ifneq "$(NSS_DRV_WIFI_LEGACY_ENABLE)" "n"
+-ccflags-y += -DNSS_DRV_WIFI_LEGACY_ENABLE
++ifeq ($(SoC),$(filter $(SoC),ipq806x))
+ qca-nss-drv-objs += \
+ 			nss_wifi.o \
+ 			nss_wifi_log.o \
+ 			nss_wifi_stats.o
+-ifeq ($(SoC),$(filter $(SoC),ipq806x))
+ ccflags-y += -DNSS_HAL_IPQ806x_SUPPORT
+-endif
+-endif
++else
+ qca-nss-drv-objs += \
+ 			nss_wifi_vdev.o \
+ 			nss_wifili.o \
+@@ -370,6 +373,7 @@ qca-nss-drv-objs += \
+ 			nss_wifili_strings.o \
+ 			nss_wifi_mac_db.o
+ endif
++endif
+ 
+ ifneq "$(NSS_DRV_VLAN_ENABLE)" "n"
+ ccflags-y += -DNSS_DRV_VLAN_ENABLE

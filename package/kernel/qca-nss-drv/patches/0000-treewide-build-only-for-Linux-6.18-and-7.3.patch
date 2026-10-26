@@ -1,0 +1,3592 @@
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Subject: [PATCH] treewide: build only for Linux 6.18 and 7.3
+
+Drop every LINUX_VERSION_CODE branch for kernels older than 6.18 and
+fold the per-version compatibility patches into this one. compat.h goes
+too: its users say const and strscpy() directly and include
+<linux/vmalloc.h> where they call it.
+
+The skb recycle guard admits 6.18 and 7.3. Both kernels have the same
+sk_buff members from tail on and the same skb_shared_info members up to
+dataref, which is what nss_skb_reuse() clears around.
+
+Assisted-by: Claude:claude-opus-5-5
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+---
+
+--- a/Makefile
++++ b/Makefile
+@@ -593,24 +593,7 @@ ccflags-y += -I$(obj)/nss_data_plane/hal
+ ccflags-y += -DNSS_PM_DEBUG_LEVEL=0 -DNSS_SKB_REUSE_SUPPORT=1
+ ccflags-y += -Wall -Werror
+ 
+-KERNELVERSION := $(word 1, $(subst ., ,$(KERNELVERSION))).$(word 2, $(subst ., ,$(KERNELVERSION)))
+-
+-ifneq ($(findstring 3.4, $(KERNELVERSION)),)
+-NSS_CCFLAGS = -DNSS_DT_SUPPORT=0 -DNSS_FW_DBG_SUPPORT=1 -DNSS_PM_SUPPORT=1
+-else
+-NSS_CCFLAGS = -DNSS_DT_SUPPORT=1 -DNSS_FW_DBG_SUPPORT=0 -DNSS_PM_SUPPORT=0
+-
+ ccflags-y += -I$(obj)
+-endif
+-
+-# Fabric scaling is supported in 3.14 and 4.4 only
+-ifneq ($(findstring 3.14, $(KERNELVERSION)),)
+-NSS_CCFLAGS += -DNSS_FABRIC_SCALING_SUPPORT=1
+-else ifneq ($(findstring 4.4, $(KERNELVERSION)),)
+-NSS_CCFLAGS += -DNSS_FABRIC_SCALING_SUPPORT=1
+-else
+-NSS_CCFLAGS += -DNSS_FABRIC_SCALING_SUPPORT=0
+-endif
+ 
+ # Disable Frequency scaling
+ ifeq "$(NSS_FREQ_SCALE_DISABLE)" "y"
+@@ -623,8 +606,4 @@ qca-nss-drv-objs += \
+ ccflags-y += -DNSS_FREQ_SCALE_SUPPORT=1
+ endif
+ 
+-ccflags-y += $(NSS_CCFLAGS)
+-
+-export NSS_CCFLAGS
+-
+ obj ?= .
+--- a/nss_c2c_tx.c
++++ b/nss_c2c_tx.c
+@@ -284,7 +284,7 @@ EXPORT_SYMBOL(nss_c2c_tx_msg_init);
+  * nss_c2c_tx_performance_test_handler()
+  *	Handles the performance test.
+  */
+-static int nss_c2c_tx_performance_test_handler(struct ctl_table *ctl, int write,
++static int nss_c2c_tx_performance_test_handler(const struct ctl_table *ctl, int write,
+ 				void __user *buffer, size_t *lenp, loff_t *ppos)
+ {
+ 	struct nss_top_instance *nss_top = &nss_top_main;
+@@ -330,35 +330,7 @@ static struct ctl_table nss_c2c_tx_table
+ 		.maxlen		= sizeof(int),
+ 		.mode		= 0644,
+ 		.proc_handler	= &nss_c2c_tx_performance_test_handler,
+-	},
+-	{ }
+-};
+-
+-static struct ctl_table nss_c2c_tx_dir[] = {
+-	{
+-		.procname		= "c2c_tx",
+-		.mode			= 0555,
+-		.child			= nss_c2c_tx_table,
+-	},
+-	{ }
+-};
+-
+-static struct ctl_table nss_c2c_tx_root_dir[] = {
+-	{
+-		.procname		= "nss",
+-		.mode			= 0555,
+-		.child			= nss_c2c_tx_dir,
+-	},
+-	{ }
+-};
+-
+-static struct ctl_table nss_c2c_tx_root[] = {
+-	{
+-		.procname		= "dev",
+-		.mode			= 0555,
+-		.child			= nss_c2c_tx_root_dir,
+-	},
+-	{ }
++	}
+ };
+ 
+ static struct ctl_table_header *nss_c2c_tx_header;
+@@ -378,7 +350,7 @@ void nss_c2c_tx_register_sysctl(void)
+ 	/*
+ 	 * Register sysctl table.
+ 	 */
+-	nss_c2c_tx_header = register_sysctl_table(nss_c2c_tx_root);
++	nss_c2c_tx_header = register_sysctl("dev/nss/c2c_tx", nss_c2c_tx_table);
+ }
+ 
+ /*
+--- a/nss_cmn.c
++++ b/nss_cmn.c
+@@ -19,9 +19,7 @@
+  *	NSS generic APIs
+  */
+ 
+-#if (NSS_DT_SUPPORT == 1)
+ #include <linux/of.h>
+-#endif
+ 
+ #include "nss_tx_rx_common.h"
+ 
+@@ -328,7 +326,6 @@ EXPORT_SYMBOL(nss_cmn_unregister_service
+  */
+ bool nss_cmn_get_nss_enabled(void)
+ {
+-#if (NSS_DT_SUPPORT == 1)
+ 	struct device_node *cmn = NULL;
+ 
+ 	/*
+@@ -339,7 +336,6 @@ bool nss_cmn_get_nss_enabled(void)
+ 		nss_info_always("nss is not enabled on this platform\n");
+ 		return false;
+ 	}
+-#endif
+ 	return true;
+ }
+ EXPORT_SYMBOL(nss_cmn_get_nss_enabled);
+--- a/nss_core.c
++++ b/nss_core.c
+@@ -24,18 +24,16 @@
+ 
+ #include "nss_core.h"
+ #include <linux/module.h>
++#include <linux/version.h>
+ #include <linux/mm.h>
+ #include <linux/of.h>
+ #include <nss_hal.h>
+ #include <net/dst.h>
+ #ifdef CONFIG_BRIDGE_NETFILTER
+-#if (LINUX_VERSION_CODE <= KERNEL_VERSION(5, 0, 0))
+-#include <net/netfilter/br_netfilter.h>
+-#else
+ #include <linux/netfilter_bridge.h>
+ #endif
+-#endif
+ #include <linux/etherdevice.h>
++#include <linux/skbuff_ref.h>
+ #include "nss_tx_rx_common.h"
+ 
+ #ifdef NSS_DATA_PLANE_GENERIC_SUPPORT
+@@ -53,16 +51,10 @@
+  * following kernel versions. Before enabling the driver in new kernels,
+  * the skb recycle code must be checked against Linux skb handling.
+  *
+- * Tested on: 3.4, 3.10, 3.14, 3.18, 4.4, 5.4 and 6.6
++ * Tested on: 3.4, 3.10, 3.14, 3.18, 4.4, 5.4, 6.6, 6.12 and 6.18
+  */
+-#if (!( \
+-(((LINUX_VERSION_CODE >= KERNEL_VERSION(3, 4, 0)) && (LINUX_VERSION_CODE < KERNEL_VERSION(3, 5, 0)))) || \
+-(((LINUX_VERSION_CODE >= KERNEL_VERSION(3, 14, 0)) && (LINUX_VERSION_CODE < KERNEL_VERSION(3, 15, 0)))) || \
+-(((LINUX_VERSION_CODE >= KERNEL_VERSION(3, 10, 0)) && (LINUX_VERSION_CODE < KERNEL_VERSION(3, 11, 0)))) || \
+-(((LINUX_VERSION_CODE >= KERNEL_VERSION(3, 18, 0)) && (LINUX_VERSION_CODE < KERNEL_VERSION(3, 19, 0)))) || \
+-(((LINUX_VERSION_CODE >= KERNEL_VERSION(4, 4, 0)) && (LINUX_VERSION_CODE < KERNEL_VERSION(4, 5, 0)))) || \
+-(((LINUX_VERSION_CODE >= KERNEL_VERSION(5, 4, 0)) && (LINUX_VERSION_CODE < KERNEL_VERSION(5, 5, 0)))) || \
+-(((LINUX_VERSION_CODE >= KERNEL_VERSION(6, 6, 0)) && (LINUX_VERSION_CODE < KERNEL_VERSION(6, 7, 0))))))
++#if !((LINUX_VERSION_CODE >= KERNEL_VERSION(6, 18, 0) && LINUX_VERSION_CODE < KERNEL_VERSION(6, 19, 0)) || \
++      (LINUX_VERSION_CODE >= KERNEL_VERSION(7, 3, 0) && LINUX_VERSION_CODE < KERNEL_VERSION(7, 4, 0)))
+ #error "Check skb recycle code in this file to match Linux version"
+ #endif
+ 
+@@ -549,11 +541,7 @@ static void nss_get_ddr_info(struct nss_
+ 	struct device_node *node;
+ 
+ 	si_meminfo(&vals);
+-#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 5, 0))
+-	cached = global_page_state(NR_FILE_PAGES);
+-#else
+ 	cached = global_node_page_state(NR_FILE_PAGES);
+-#endif
+ 
+ 	avail_ddr = (vals.totalram + cached + vals.sharedram) * vals.mem_unit;
+ 	mmu->num_active_cores = nss_top_main.num_nss;
+@@ -857,11 +845,7 @@ static inline void nss_core_handle_virt_
+ 	 * Mimic Linux behavior to allow multi-queue netdev choose which queue to use
+ 	 */
+ 	if (ndev->netdev_ops->ndo_select_queue) {
+-#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 5, 0))
+-		queue_offset = ndev->netdev_ops->ndo_select_queue(ndev, nbuf, NULL, NULL);
+-#else
+ 		queue_offset = ndev->netdev_ops->ndo_select_queue(ndev, nbuf, NULL);
+-#endif
+ 	}
+ 
+ 	skb_set_queue_mapping(nbuf, queue_offset);
+@@ -1113,18 +1097,8 @@ static inline void nss_core_rx_pbuf(stru
+  */
+ static inline void nss_core_set_skb_classify(struct sk_buff *nbuf)
+ {
+-#if (LINUX_VERSION_CODE < KERNEL_VERSION(6, 6, 0))
+-#ifdef CONFIG_NET_CLS_ACT
+-#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 4, 0))
+-	nbuf->tc_verd = SET_TC_NCLS_NSS(nbuf->tc_verd);
+-#else
+-	skb_set_tc_classify_offload(nbuf);
+-#endif
+-#endif
+-#else
+ 	nss_warning("%px:API not supported on 6.6\n", nbuf);
+ 	nss_assert(0);
+-#endif
+ }
+ 
+ /*
+@@ -2633,16 +2607,10 @@ static inline bool nss_core_skb_can_reus
+ 	 * This check is added to avoid deadlock from nf_conntrack
+ 	 * when ecm is trying to flush a rule.
+ 	 */
+-#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 5, 0))
+-	if (unlikely(nbuf->nfct)) {
+-		return false;
+-	}
+-#else
+ 	if (unlikely(nbuf->_nfct)) {
+ 		return false;
+ 	}
+ #endif
+-#endif
+ 
+ #ifdef CONFIG_BRIDGE_NETFILTER
+ 	/*
+@@ -2663,13 +2631,8 @@ static inline bool nss_core_skb_can_reus
+ 
+ 	if (unlikely(irqs_disabled()))
+ 		return false;
+-#if (LINUX_VERSION_CODE < KERNEL_VERSION(6, 6, 0))
+-	if (unlikely(skb_shinfo(nbuf)->tx_flags & SKBTX_DEV_ZEROCOPY))
+-		return false;
+-#else
+ 	if (unlikely(skb_shinfo(nbuf)->tx_flags & SKBFL_ZEROCOPY_ENABLE))
+ 		return false;
+-#endif
+ 
+ 	if (unlikely(skb_is_nonlinear(nbuf)))
+ 		return false;
+@@ -2693,10 +2656,8 @@ static inline bool nss_core_skb_can_reus
+ 	if (unlikely(skb_cloned(nbuf)))
+ 		return false;
+ 
+-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 6, 0))
+ 	if (unlikely(skb_pfmemalloc(nbuf)))
+ 		return false;
+-#endif
+ 
+ 	/*
+ 	 * TODO: This check is only validated on kernel 6.6
+@@ -2722,9 +2683,7 @@ void nss_skb_reuse(struct sk_buff *nbuf)
+ {
+ 	struct skb_shared_info *shinfo;
+ 
+-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 14, 0))
+ 	u8 head_frag = nbuf->head_frag;
+-#endif
+ 
+ 	/*
+ 	 * Reset all the necessary head state information from skb which
+@@ -2740,9 +2699,7 @@ void nss_skb_reuse(struct sk_buff *nbuf)
+ 	nbuf->data = nbuf->head + NET_SKB_PAD;
+ 	skb_reset_tail_pointer(nbuf);
+ 
+-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 14, 0))
+ 	nbuf->head_frag = head_frag;
+-#endif
+ }
+ #endif
+ 
+--- a/nss_core.h
++++ b/nss_core.h
+@@ -26,7 +26,6 @@
+ #define __NSS_CORE_H
+ 
+ #include <linux/kernel.h>
+-#include <linux/version.h>
+ #include <linux/errno.h>
+ #include <linux/types.h>
+ #include <linux/spinlock.h>
+@@ -112,11 +111,7 @@
+ #define NSS_CORE_DSB() dsb(sy)
+ #define NSS_CORE_DMA_CACHE_MAINT(start, size, dir) nss_core_dma_cache_maint(start, size, dir)
+ 
+-#if (LINUX_VERSION_CODE < KERNEL_VERSION(6, 6, 0))
+-#define nss_ioremap ioremap_nocache
+-#else
+ #define nss_ioremap ioremap
+-#endif
+ 
+ /*
+  * nss_core_dma_cache_maint()
+@@ -311,7 +306,6 @@ static inline void nss_core_dma_cache_ma
+ #define NSS_FREQ_1689_MIN	0x14000		/* Instructions Per ms Min */
+ #define NSS_FREQ_1689_MAX	0x25000		/* Instructions Per ms Max */
+ 
+-#if (NSS_DT_SUPPORT == 1)
+ #define NSSTCM_FREQ		400000000	/* NSS TCM Frequency in Hz */
+ 
+ /*
+@@ -332,7 +326,6 @@ static inline void nss_core_dma_cache_ma
+ #define NSS_FABRIC1_NOMINAL	200000000
+ #define NSS_FABRIC0_IDLE	133333000
+ #define NSS_FABRIC1_IDLE	133333000
+-#endif
+ 
+ /* Default NSS packet queue limit. */
+ #define NSS_DEFAULT_QUEUE_LIMIT 256
+@@ -845,7 +838,6 @@ struct nss_freq_cpu_usage {
+ 	uint16_t avg_ctr;				/* Averaging counter */
+ };
+ 
+-#if (NSS_DT_SUPPORT == 1)
+ /*
+  * nss_feature_enabled
+  */
+@@ -952,7 +944,6 @@ struct nss_platform_data {
+ 	enum nss_feature_enabled trustsec_enabled;
+ 				/* Does this core handle TrustSec? */
+ };
+-#endif
+ 
+ /*
+  * nss_core_log_msg_failures()
+@@ -1038,7 +1029,7 @@ extern void nss_stats_clean(void);
+  */
+ extern void nss_log_init(void);
+ extern bool nss_debug_log_buffer_alloc(uint8_t nss_id, uint32_t nentry);
+-extern int nss_logbuffer_handler(struct ctl_table *ctl, int write, void __user *buffer, size_t *lenp, loff_t *ppos);
++extern int nss_logbuffer_handler(const struct ctl_table *ctl, int write, void __user *buffer, size_t *lenp, loff_t *ppos);
+ 
+ /*
+  * APIs to set jumbo_mru & paged_mode
+--- a/nss_coredump.c
++++ b/nss_coredump.c
+@@ -26,11 +26,7 @@
+ #include "nss_log.h"
+ #include <linux/kernel.h>
+ 
+-#if (LINUX_VERSION_CODE < KERNEL_VERSION(6, 6, 0))
+-#include <linux/notifier.h>	/* for panic_notifier_list */
+-#else
+ #include <linux/panic_notifier.h>	/* for panic_notifier_list */
+-#endif
+ #include <linux/jiffies.h>	/* for time */
+ #include "nss_tx_rx_common.h"
+ 
+--- a/nss_crypto_cmn_stats.c
++++ b/nss_crypto_cmn_stats.c
+@@ -17,6 +17,7 @@
+  **************************************************************************
+  */
+ 
++#include <linux/vmalloc.h>
+ #include "nss_core.h"
+ #include "nss_crypto_cmn_stats.h"
+ #include "nss_crypto_cmn_strings.h"
+--- a/nss_data_plane/hal/include/nss_data_plane_hal.h
++++ b/nss_data_plane/hal/include/nss_data_plane_hal.h
+@@ -17,21 +17,12 @@
+ #include "nss_phys_if.h"
+ #include <nss_dp_api_if.h>
+ 
+-#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 5, 0))
+-#define NSS_DATA_PLANE_SUPPORTED_FEATURES (NETIF_F_HIGHDMA \
+-					| NETIF_F_HW_CSUM \
+-					| NETIF_F_RXCSUM \
+-					| NETIF_F_SG \
+-					| NETIF_F_FRAGLIST \
+-					| (NETIF_F_TSO | NETIF_F_TSO6 | NETIF_F_UFO))
+-#else
+ #define NSS_DATA_PLANE_SUPPORTED_FEATURES (NETIF_F_HIGHDMA \
+ 					| NETIF_F_HW_CSUM \
+ 					| NETIF_F_RXCSUM \
+ 					| NETIF_F_SG \
+ 					| NETIF_F_FRAGLIST \
+ 					| (NETIF_F_TSO | NETIF_F_TSO6))
+-#endif
+ 
+ /*
+  * nss_data_plane_param
+--- a/nss_data_plane/hal/nss_ipq50xx.c
++++ b/nss_data_plane/hal/nss_ipq50xx.c
+@@ -73,9 +73,6 @@ void nss_data_plane_hal_set_features(str
+ 	 * QinQ VLAN TSO/checksum offload.
+ 	 */
+ 	dpc->dev->vlan_features |= NSS_DATA_PLANE_SUPPORTED_FEATURES;
+-#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 5, 0))
+-	dpc->dev->vlan_features &= ~NETIF_F_UFO;
+-#endif
+ }
+ 
+ /*
+--- a/nss_data_plane/nss_data_plane_gmac.c
++++ b/nss_data_plane/nss_data_plane_gmac.c
+@@ -20,7 +20,7 @@
+ #include "nss_tx_rx_common.h"
+ #include <nss_gmac_api_if.h>
+ 
+-#define NSS_DP_GMAC_SUPPORTED_FEATURES (NETIF_F_HIGHDMA | NETIF_F_HW_CSUM | NETIF_F_RXCSUM | NETIF_F_SG | NETIF_F_FRAGLIST | (NETIF_F_TSO | NETIF_F_TSO6 | NETIF_F_UFO))
++#define NSS_DP_GMAC_SUPPORTED_FEATURES (NETIF_F_HIGHDMA | NETIF_F_HW_CSUM | NETIF_F_RXCSUM | NETIF_F_SG | NETIF_F_FRAGLIST | (NETIF_F_TSO | NETIF_F_TSO6))
+ #define NSS_DATA_PLANE_GMAC_MAX_INTERFACES 4
+ 
+ static DEFINE_SPINLOCK(nss_data_plane_gmac_stats_lock);
+--- a/nss_dma.c
++++ b/nss_dma.c
+@@ -285,7 +285,7 @@ EXPORT_SYMBOL(nss_dma_get_context);
+  * nss_dma_test_handler()
+  *	Handles the performance test.
+  */
+-static int nss_dma_test_handler(struct ctl_table *ctl, int write, void __user *buffer, size_t *lenp, loff_t *ppos)
++static int nss_dma_test_handler(const struct ctl_table *ctl, int write, void __user *buffer, size_t *lenp, loff_t *ppos)
+ {
+ 	struct nss_ctx_instance *nss_ctx = nss_dma_get_context();
+ 	int cur_state = test_cfg.run.val;
+@@ -375,38 +375,9 @@ static struct ctl_table nss_dma_table[]
+ 		.maxlen		= sizeof(int),
+ 		.mode		= 0644,
+ 		.proc_handler	= proc_dointvec,
+-	},
+-	{ }
+-};
+-
+-#if (LINUX_VERSION_CODE < KERNEL_VERSION(6, 6, 0))
+-static struct ctl_table nss_dma_dir[] = {
+-	{
+-		.procname		= "dma",
+-		.mode			= 0555,
+-		.child			= nss_dma_table,
+-	},
+-	{ }
+-};
+-
+-static struct ctl_table nss_dma_root_dir[] = {
+-	{
+-		.procname		= "nss",
+-		.mode			= 0555,
+-		.child			= nss_dma_dir,
+-	},
+-	{ }
++	}
+ };
+ 
+-static struct ctl_table nss_dma_root[] = {
+-	{
+-		.procname		= "dev",
+-		.mode			= 0555,
+-		.child			= nss_dma_root_dir,
+-	},
+-	{ }
+-};
+-#endif
+ 
+ static struct ctl_table_header *nss_dma_header;
+ 
+@@ -425,11 +396,7 @@ void nss_dma_register_sysctl(void)
+ 	/*
+ 	 * Register sysctl table.
+ 	 */
+-#if (LINUX_VERSION_CODE < KERNEL_VERSION(6, 6, 0))
+-	nss_dma_header = register_sysctl_table(nss_dma_root);
+-#else
+ 	nss_dma_header = register_sysctl("dev/nss/dma", nss_dma_table);
+-#endif
+ }
+ 
+ /*
+--- a/nss_dma_stats.c
++++ b/nss_dma_stats.c
+@@ -17,6 +17,7 @@
+  **************************************************************************
+  */
+ 
++#include <linux/vmalloc.h>
+ #include "nss_core.h"
+ #include "nss_dma.h"
+ #include "nss_dma_stats.h"
+--- a/nss_dscp_map.h
++++ b/nss_dscp_map.h
+@@ -46,7 +46,7 @@ struct nss_dscp_map_parse {
+  * nss_dscp_map_print()
+  *	Sysctl handler for printing dscp/pri mapping.
+  */
+-static int nss_dscp_map_print(struct ctl_table *ctl, void __user *buffer, size_t *lenp,
++static int nss_dscp_map_print(const struct ctl_table *ctl, void *buffer, size_t *lenp,
+ 				loff_t *ppos, struct nss_dscp_map_entry *mapping)
+ {
+ 	char *r_buf;
+@@ -105,7 +105,7 @@ static int nss_dscp_map_print(struct ctl
+ 	len = scnprintf(r_buf + cp_bytes, 4, "\n");
+ 	cp_bytes += len;
+ 
+-	cp_bytes = simple_read_from_buffer(buffer, *lenp, ppos, r_buf, cp_bytes);
++	cp_bytes = memory_read_from_buffer(buffer, *lenp, ppos, r_buf, cp_bytes);
+ 	*lenp = cp_bytes;
+ 	kfree(r_buf);
+ 	return 0;
+@@ -115,13 +115,11 @@ static int nss_dscp_map_print(struct ctl
+  * nss_dscp_map_parse()
+  *	Sysctl handler for dscp/pri mappings.
+  */
+-static int nss_dscp_map_parse(struct ctl_table *ctl, void __user *buffer, size_t *lenp,
++static int nss_dscp_map_parse(const struct ctl_table *ctl, void *buffer, size_t *lenp,
+ 				loff_t *ppos, struct nss_dscp_map_parse *out)
+ {
+ 	int count;
+-	size_t cp_bytes = 0;
+-	char w_buf[7];
+-	loff_t w_offset = 0;
++	char w_buf[8];
+ 	char *str;
+ 	char *tokens[NSS_DSCP_MAP_PARAM_FIELD_COUNT];
+ 	unsigned int dscp, priority, action;
+@@ -135,15 +133,14 @@ static int nss_dscp_map_parse(struct ctl
+ 		return -EINVAL;
+ 	}
+ 
+-	/*
+-	 * It's a write operation
+-	 */
+-	cp_bytes = simple_write_to_buffer(w_buf, *lenp, &w_offset, buffer, 7);
+-	if (cp_bytes != *lenp) {
+-		nss_warning("failed to write to buffer\n");
+-		return -EFAULT;
++	if (*lenp >= sizeof(w_buf)) {
++		nss_warning("Input too large: %zu\n", *lenp);
++		return -EINVAL;
+ 	}
+ 
++	memcpy(w_buf, buffer, *lenp);
++	w_buf[*lenp] = '\0'; /* Ensure null termination */
++
+ 	count = 0;
+ 	str = w_buf;
+ 	tokens[count] = strsep(&str, " ");
+--- a/nss_dtls_cmn_stats.c
++++ b/nss_dtls_cmn_stats.c
+@@ -17,6 +17,7 @@
+  ***************************************************************************
+  */
+ 
++#include <linux/vmalloc.h>
+ #include "nss_core.h"
+ #include "nss_dtls_cmn.h"
+ #include "nss_dtls_cmn_stats.h"
+--- a/nss_hal/fsm9010/nss_hal_pvt.c
++++ b/nss_hal/fsm9010/nss_hal_pvt.c
+@@ -145,7 +145,7 @@ static struct nss_platform_data *__nss_h
+ 	npd->nphys = res_nphys.start;
+ 	npd->vphys = res_vphys.start;
+ 
+-	npd->nmap = ioremap_nocache(npd->nphys, resource_size(&res_nphys));
++	npd->nmap = nss_ioremap(npd->nphys, resource_size(&res_nphys));
+ 	if (!npd->nmap) {
+ 		nss_info_always("%px: nss%d: ioremap() fail for nphys\n", nss_ctx, nss_ctx->id);
+ 		goto out;
+@@ -291,7 +291,7 @@ static int __nss_hal_request_irq(struct
+ 	}
+ 
+ 	int_ctx->irq = npd->irq[irq_num];
+-	netif_napi_add(&nss_ctx->napi_ndev, &int_ctx->napi, nss_core_handle_napi, 64);
++	netif_napi_add_weight(&nss_ctx->napi_ndev, &int_ctx->napi, nss_core_handle_napi, 64);
+ 	return 0;
+ }
+ 
+--- a/nss_hal/include/nss_hal_ops.h
++++ b/nss_hal/include/nss_hal_ops.h
+@@ -22,10 +22,6 @@
+ #ifndef __NSS_HAL_OPS_H
+ #define __NSS_HAL_OPS_H
+ 
+-#if (NSS_DT_SUPPORT != 1)
+-#include <mach/gpiomux.h>
+-#include <mach/msm_nss.h>
+-#endif
+ 
+ /*
+  * nss_hal_ops defines the HAL layer API required to support multiple targets
+--- a/nss_hal/ipq50xx/nss_hal_pvt.c
++++ b/nss_hal/ipq50xx/nss_hal_pvt.c
+@@ -185,13 +185,13 @@ static struct nss_platform_data *__nss_h
+ 	npd->nphys = res_nphys.start;
+ 	npd->qgic_phys = res_qgic_phys.start;
+ 
+-	npd->nmap = ioremap_nocache(npd->nphys, resource_size(&res_nphys));
++	npd->nmap = nss_ioremap(npd->nphys, resource_size(&res_nphys));
+ 	if (!npd->nmap) {
+ 		nss_info_always("%px: nss%d: ioremap() fail for nphys\n", nss_ctx, nss_ctx->id);
+ 		goto out;
+ 	}
+ 
+-	npd->qgic_map = ioremap_nocache(npd->qgic_phys, resource_size(&res_qgic_phys));
++	npd->qgic_map = nss_ioremap(npd->qgic_phys, resource_size(&res_qgic_phys));
+ 	if (!npd->qgic_map) {
+ 		nss_info_always("%px: nss%d: ioremap() fail for qgic map\n", nss_ctx, nss_ctx->id);
+ 		goto out;
+@@ -349,7 +349,7 @@ static int __nss_hal_common_reset(struct
+ 
+ 	of_node_put(cmn);
+ 
+-	nss_misc_reset = ioremap_nocache(res_nss_misc_reset.start, resource_size(&res_nss_misc_reset));
++	nss_misc_reset = nss_ioremap(res_nss_misc_reset.start, resource_size(&res_nss_misc_reset));
+ 	if (!nss_misc_reset) {
+ 		pr_err("%px: ioremap fail for nss_misc_reset\n", nss_dev);
+ 		return -EFAULT;
+@@ -599,7 +599,7 @@ static int __nss_hal_request_irq(struct
+ 		return err;
+ 	}
+ 
+-	netif_napi_add(&nss_ctx->napi_ndev, &int_ctx->napi, napi_poll_cb, napi_wgt);
++	netif_napi_add_weight(&nss_ctx->napi_ndev, &int_ctx->napi, napi_poll_cb, napi_wgt);
+ 	int_ctx->cause = cause;
+ 	err = request_irq(irq, nss_hal_handle_irq, 0, irq_name, int_ctx);
+ 	if (err) {
+--- a/nss_hal/ipq60xx/nss_hal_pvt.c
++++ b/nss_hal/ipq60xx/nss_hal_pvt.c
+@@ -208,13 +208,13 @@ static struct nss_platform_data *__nss_h
+ 	npd->nphys = res_nphys.start;
+ 	npd->qgic_phys = res_qgic_phys.start;
+ 
+-	npd->nmap = ioremap_nocache(npd->nphys, resource_size(&res_nphys));
++	npd->nmap = nss_ioremap(npd->nphys, resource_size(&res_nphys));
+ 	if (!npd->nmap) {
+ 		nss_info_always("%px: nss%d: ioremap() fail for nphys\n", nss_ctx, nss_ctx->id);
+ 		goto out;
+ 	}
+ 
+-	npd->qgic_map = ioremap_nocache(npd->qgic_phys, resource_size(&res_qgic_phys));
++	npd->qgic_map = nss_ioremap(npd->qgic_phys, resource_size(&res_qgic_phys));
+ 	if (!npd->qgic_map) {
+ 		nss_info_always("%px: nss%d: ioremap() fail for qgic map\n", nss_ctx, nss_ctx->id);
+ 		goto out;
+@@ -434,13 +434,13 @@ static int __nss_hal_common_reset(struct
+ 
+ 	of_node_put(cmn);
+ 
+-	nss_misc_reset = ioremap_nocache(res_nss_misc_reset.start, resource_size(&res_nss_misc_reset));
++	nss_misc_reset = nss_ioremap(res_nss_misc_reset.start, resource_size(&res_nss_misc_reset));
+ 	if (!nss_misc_reset) {
+ 		pr_err("%px: ioremap fail for nss_misc_reset\n", nss_dev);
+ 		return -EFAULT;
+ 	}
+ 
+-	nss_misc_reset_flag = ioremap_nocache(res_nss_misc_reset_flag.start, resource_size(&res_nss_misc_reset_flag));
++	nss_misc_reset_flag = nss_ioremap(res_nss_misc_reset_flag.start, resource_size(&res_nss_misc_reset_flag));
+ 	if (!nss_misc_reset_flag) {
+ 		pr_err("%px: ioremap fail for nss_misc_reset_flag\n", nss_dev);
+ 		return -EFAULT;
+@@ -615,62 +615,62 @@ static int __nss_hal_request_irq(struct
+ 	irq_set_status_flags(irq, IRQ_DISABLE_UNLAZY);
+ 
+ 	if (irq_num == NSS_HAL_N2H_INTR_PURPOSE_EMPTY_BUFFER_SOS) {
+-		netif_napi_add(&nss_ctx->napi_ndev, &int_ctx->napi, nss_core_handle_napi_non_queue, NSS_EMPTY_BUFFER_SOS_PROCESSING_WEIGHT);
++		netif_napi_add_weight(&nss_ctx->napi_ndev, &int_ctx->napi, nss_core_handle_napi_non_queue, NSS_EMPTY_BUFFER_SOS_PROCESSING_WEIGHT);
+ 		int_ctx->cause = NSS_N2H_INTR_EMPTY_BUFFERS_SOS;
+ 		err = request_irq(irq, nss_hal_handle_irq, 0, "nss_empty_buf_sos", int_ctx);
+ 	}
+ 
+ 	if (irq_num == NSS_HAL_N2H_INTR_PURPOSE_EMPTY_BUFFER_QUEUE) {
+-		netif_napi_add(&nss_ctx->napi_ndev, &int_ctx->napi, nss_core_handle_napi_queue, NSS_EMPTY_BUFFER_RETURN_PROCESSING_WEIGHT);
++		netif_napi_add_weight(&nss_ctx->napi_ndev, &int_ctx->napi, nss_core_handle_napi_queue, NSS_EMPTY_BUFFER_RETURN_PROCESSING_WEIGHT);
+ 		int_ctx->cause = NSS_N2H_INTR_EMPTY_BUFFER_QUEUE;
+ 		err = request_irq(irq, nss_hal_handle_irq, 0, "nss_empty_buf_queue", int_ctx);
+ 	}
+ 
+ 	if (irq_num == NSS_HAL_N2H_INTR_PURPOSE_TX_UNBLOCKED) {
+-		netif_napi_add(&nss_ctx->napi_ndev, &int_ctx->napi, nss_core_handle_napi_non_queue, NSS_TX_UNBLOCKED_PROCESSING_WEIGHT);
++		netif_napi_add_weight(&nss_ctx->napi_ndev, &int_ctx->napi, nss_core_handle_napi_non_queue, NSS_TX_UNBLOCKED_PROCESSING_WEIGHT);
+ 		int_ctx->cause = NSS_N2H_INTR_TX_UNBLOCKED;
+ 		err = request_irq(irq, nss_hal_handle_irq, 0, "nss-tx-unblock", int_ctx);
+ 	}
+ 
+ 	if (irq_num == NSS_HAL_N2H_INTR_PURPOSE_DATA_QUEUE_0) {
+-		netif_napi_add(&nss_ctx->napi_ndev, &int_ctx->napi, nss_core_handle_napi_queue, NSS_DATA_COMMAND_BUFFER_PROCESSING_WEIGHT);
++		netif_napi_add_weight(&nss_ctx->napi_ndev, &int_ctx->napi, nss_core_handle_napi_queue, NSS_DATA_COMMAND_BUFFER_PROCESSING_WEIGHT);
+ 		int_ctx->cause = NSS_N2H_INTR_DATA_QUEUE_0;
+ 		err = request_irq(irq, nss_hal_handle_irq, 0, "nss_queue0", int_ctx);
+ 	}
+ 
+ 	if (irq_num == NSS_HAL_N2H_INTR_PURPOSE_DATA_QUEUE_1) {
+ 		int_ctx->cause = NSS_N2H_INTR_DATA_QUEUE_1;
+-		netif_napi_add(&nss_ctx->napi_ndev, &int_ctx->napi, nss_core_handle_napi_queue, NSS_DATA_COMMAND_BUFFER_PROCESSING_WEIGHT);
++		netif_napi_add_weight(&nss_ctx->napi_ndev, &int_ctx->napi, nss_core_handle_napi_queue, NSS_DATA_COMMAND_BUFFER_PROCESSING_WEIGHT);
+ 		err = request_irq(irq, nss_hal_handle_irq, 0, "nss_queue1", int_ctx);
+ 	}
+ 
+ 	if (irq_num == NSS_HAL_N2H_INTR_PURPOSE_DATA_QUEUE_2) {
+ 		int_ctx->cause = NSS_N2H_INTR_DATA_QUEUE_2;
+-		netif_napi_add(&nss_ctx->napi_ndev, &int_ctx->napi, nss_core_handle_napi_queue, NSS_DATA_COMMAND_BUFFER_PROCESSING_WEIGHT);
++		netif_napi_add_weight(&nss_ctx->napi_ndev, &int_ctx->napi, nss_core_handle_napi_queue, NSS_DATA_COMMAND_BUFFER_PROCESSING_WEIGHT);
+ 		err = request_irq(irq, nss_hal_handle_irq, 0, "nss_queue2", int_ctx);
+ 	}
+ 
+ 	if (irq_num == NSS_HAL_N2H_INTR_PURPOSE_DATA_QUEUE_3) {
+ 		int_ctx->cause = NSS_N2H_INTR_DATA_QUEUE_3;
+-		netif_napi_add(&nss_ctx->napi_ndev, &int_ctx->napi, nss_core_handle_napi_queue, NSS_DATA_COMMAND_BUFFER_PROCESSING_WEIGHT);
++		netif_napi_add_weight(&nss_ctx->napi_ndev, &int_ctx->napi, nss_core_handle_napi_queue, NSS_DATA_COMMAND_BUFFER_PROCESSING_WEIGHT);
+ 		err = request_irq(irq, nss_hal_handle_irq, 0, "nss_queue3", int_ctx);
+ 	}
+ 
+ 	if (irq_num == NSS_HAL_N2H_INTR_PURPOSE_COREDUMP_COMPLETE) {
+ 		int_ctx->cause = NSS_N2H_INTR_COREDUMP_COMPLETE;
+-		netif_napi_add(&nss_ctx->napi_ndev, &int_ctx->napi, nss_core_handle_napi_emergency, NSS_DATA_COMMAND_BUFFER_PROCESSING_WEIGHT);
++		netif_napi_add_weight(&nss_ctx->napi_ndev, &int_ctx->napi, nss_core_handle_napi_emergency, NSS_DATA_COMMAND_BUFFER_PROCESSING_WEIGHT);
+ 		err = request_irq(irq, nss_hal_handle_irq, 0, "nss_coredump_complete", int_ctx);
+ 	}
+ 
+ 	if (irq_num == NSS_HAL_N2H_INTR_PURPOSE_PAGED_EMPTY_BUFFER_SOS) {
+-		netif_napi_add(&nss_ctx->napi_ndev, &int_ctx->napi, nss_core_handle_napi_non_queue, NSS_EMPTY_BUFFER_SOS_PROCESSING_WEIGHT);
++		netif_napi_add_weight(&nss_ctx->napi_ndev, &int_ctx->napi, nss_core_handle_napi_non_queue, NSS_EMPTY_BUFFER_SOS_PROCESSING_WEIGHT);
+ 		int_ctx->cause = NSS_N2H_INTR_PAGED_EMPTY_BUFFERS_SOS;
+ 		err = request_irq(irq, nss_hal_handle_irq, 0, "nss_paged_empty_buf_sos", int_ctx);
+ 	}
+ 
+ 	if (irq_num == NSS_HAL_N2H_INTR_PURPOSE_PROFILE_DMA) {
+ 		int_ctx->cause = NSS_N2H_INTR_PROFILE_DMA;
+-		netif_napi_add(&nss_ctx->napi_ndev, &int_ctx->napi, nss_core_handle_napi_sdma, NSS_DATA_COMMAND_BUFFER_PROCESSING_WEIGHT);
++		netif_napi_add_weight(&nss_ctx->napi_ndev, &int_ctx->napi, nss_core_handle_napi_sdma, NSS_DATA_COMMAND_BUFFER_PROCESSING_WEIGHT);
+ 		err = request_irq(irq, nss_hal_handle_irq, 0, "nss_profile_dma", int_ctx);
+ 	}
+ 
+--- a/nss_hal/ipq806x/nss_clocks.h
++++ b/nss_hal/ipq806x/nss_clocks.h
+@@ -20,112 +20,4 @@
+ #ifndef __NSS_CLOCKS_H
+ #define __NSS_CLOCKS_H
+ 
+-#if (NSS_DT_SUPPORT != 1)
+-#include <asm/io.h>
+-#include <mach/msm_iomap.h>
+-
+-#define REG(off)	(MSM_CLK_CTL_BASE + (off))
+-#define REG_GCC(off)	(MSM_APCS_GCC_BASE + (off))
+-
+-/* Peripheral clock registers. */
+-#define PLL18_ACR				REG(0x1234)
+-#define PLL18_MODE				REG(0x31A0)
+-#define PLL18_L_VAL				REG(0x31A4)
+-#define PLL18_M_VAL				REG(0x31A8)
+-#define PLL18_N_VAL				REG(0x31AC)
+-#define PLL18_TEST_CTL				REG(0x31B0)
+-#define PLL18_CONFIG				REG(0x31B4)
+-#define PLL18_STATUS				REG(0x31B8)
+-#define PLL_LOCK_DET_STATUS			REG(0x3420)
+-#define PLL_LOCK_DET_MASK			REG(0x3424)
+-#define CE5_CORE_CLK_SRC_CTL 			REG(0x36C0)
+-#define CE5_CORE_CLK_SRC0_NS 			REG(0x36C4)
+-#define NSS_ACC_REG				REG(0x28EC)
+-#define NSS_RESET_SPARE				REG(0x3B60)
+-#define NSSFB0_CLK_SRC_CTL			REG(0x3B80)
+-#define NSSFB0_CLK_SRC0_NS			REG(0x3B84)
+-#define NSSFB0_CLK_SRC1_NS			REG(0x3B88)
+-#define NSSFB0_CLK_CTL				REG(0x3BA0)
+-#define NSSFAB_GLOBAL_BUS_NS			REG(0x3BC0)
+-#define NSSFB1_CLK_SRC_CTL			REG(0x3BE0)
+-#define NSSFB1_CLK_SRC0_NS			REG(0x3BE4)
+-#define NSSFB1_CLK_SRC1_NS			REG(0x3BE8)
+-#define NSSFB1_CLK_CTL				REG(0x3C00)
+-#define CLK_HALT_NSSFAB0_NSSFAB1_STATEA		REG(0x3C20)
+-#define UBI32_MPT0_CLK_CTL			REG(0x3C40)
+-#define UBI32_MPT1_CLK_CTL			REG(0x3C44)
+-#define CE5_HCLK_SRC_CTL			REG(0x3C60)
+-#define CE5_HCLK_SRC0_NS			REG(0x3C64)
+-#define CE5_HCLK_SRC1_NS			REG(0x3C68)
+-#define CE5_HCLK_CTL				REG(0x3C6C)
+-#define NSSFPB_CLK_CTL				REG(0x3C80)
+-#define NSSFPB_CLK_SRC_CTL			REG(0x3C84)
+-#define NSSFPB_CLK_SRC0_NS			REG(0x3C88)
+-#define NSSFPB_CLK_SRC1_NS			REG(0x3C8C)
+-#define GMAC_COREn_CLK_SRC_CTL(n)		REG(0x3CA0+32*(n))
+-#define GMAC_CORE1_CLK_SRC_CTL			REG(0x3CA0)
+-#define GMAC_COREn_CLK_SRC0_MD(n)		REG(0x3CA4+32*(n))
+-#define GMAC_CORE1_CLK_SRC0_MD			REG(0x3CA4)
+-#define GMAC_COREn_CLK_SRC1_MD(n)		REG(0x3CA8+32*(n))
+-#define GMAC_CORE1_CLK_SRC1_MD			REG(0x3CA8)
+-#define GMAC_COREn_CLK_SRC0_NS(n)		REG(0x3CAC+32*(n))
+-#define GMAC_CORE1_CLK_SRC0_NS			REG(0x3CAC)
+-#define GMAC_COREn_CLK_SRC1_NS(n)		REG(0x3CB0+32*(n))
+-#define GMAC_CORE1_CLK_SRC1_NS			REG(0x3CB0)
+-#define GMAC_COREn_CLK_CTL(n)			REG(0x3CB4+32*(n))
+-#define GMAC_CORE1_CLK_CTL			REG(0x3CB4)
+-#define GMAC_COREn_CLK_FS(n)			REG(0x3CB8+32*(n))
+-#define GMAC_CORE1_CLK_FS			REG(0x3CB8)
+-#define GMAC_COREn_RESET(n)			REG(0x3CBC+32*(n))
+-#define GMAC_CORE1_RESET			REG(0x3CBC)
+-#define UBI32_COREn_CLK_SRC_CTL(n)		REG(0x3D20+32*(n))
+-#define UBI32_CORE1_CLK_SRC_CTL			REG(0x3D20)
+-#define UBI32_COREn_CLK_SRC0_MD(n)		REG(0x3D24+32*(n))
+-#define UBI32_CORE1_CLK_SRC0_MD			REG(0x3D24)
+-#define UBI32_COREn_CLK_SRC1_MD(n)		REG(0x3D28+32*(n))
+-#define UBI32_CORE1_CLK_SRC1_MD			REG(0x3D28)
+-#define UBI32_COREn_CLK_SRC0_NS(n)		REG(0x3D2C+32*(n))
+-#define UBI32_CORE1_CLK_SRC0_NS			REG(0x3D2C)
+-#define UBI32_COREn_CLK_SRC1_NS(n)		REG(0x3D30+32*(n))
+-#define UBI32_CORE1_CLK_SRC1_NS			REG(0x3D30)
+-#define UBI32_COREn_CLK_CTL(n)			REG(0x3D34+32*(n))
+-#define UBI32_CORE1_CLK_CTL			REG(0x3D34)
+-#define UBI32_COREn_CLK_FS(n)			REG(0x3D38+32*(n))
+-#define UBI32_CORE1_CLK_FS			REG(0x3D38)
+-#define UBI32_COREn_RESET_CLAMP(n)		REG(0x3D3C+32*(n))
+-#define UBI32_CORE1_RESET_CLAMP			REG(0x3D3C)
+-#define NSS_250MHZ_CLK_SRC_CTL			REG(0x3D60)
+-#define NSS_250MHZ_CLK_SRC0_NS			REG(0x3D64)
+-#define NSS_250MHZ_CLK_SRC1_NS			REG(0x3D68)
+-#define NSS_250MHZ_CLK_SRC0_MD			REG(0x3D6C)
+-#define NSS_250MHZ_CLK_SRC1_MD			REG(0x3D70)
+-#define NSS_250MHZ_CLK_CTL			REG(0x3D74)
+-#define CE5_ACLK_SRC_CTL			REG(0x3D80)
+-#define CE5_ACLK_SRC0_NS			REG(0x3D84)
+-#define CE5_ACLK_SRC1_NS			REG(0x3D88)
+-#define CE5_ACLK_CTL				REG(0x3D8C)
+-#define PLL_ENA_NSS				REG(0x3DA0)
+-#define NSSTCM_CLK_SRC_CTL			REG(0x3DC0)
+-#define NSSTCM_CLK_SRC0_NS			REG(0x3DC4)
+-#define NSSTCM_CLK_SRC1_NS			REG(0x3DC8)
+-#define NSSTCM_CLK_FS				REG(0x3DCC)
+-#define NSSTCM_CLK_CTL				REG(0x3DD0)
+-#define CE5_CORE_0_RESET			REG(0x3E00)
+-#define CE5_CORE_1_RESET			REG(0x3E04)
+-#define CE5_CORE_2_RESET			REG(0x3E08)
+-#define CE5_CORE_3_RESET			REG(0x3E0C)
+-#define CE5_AHB_RESET				REG(0x3E10)
+-#define NSS_RESET				REG(0x3E20)
+-#define GMAC_AHB_RESET				REG(0x3E24)
+-#define MACSEC_CORE1_RESET			REG(0x3E28)
+-#define MACSEC_CORE2_RESET			REG(0x3E2C)
+-#define MACSEC_CORE3_RESET			REG(0x3E30)
+-#define NSS_TCM_RESET				REG(0x3E40)
+-
+-enum nss_hal_pvt_pll_status {
+-	PLL_NOT_LOCKED,
+-	PLL_LOCKED
+-};
+-
+-#endif
+ #endif /* __NSS_CLOCKS_H */
+--- a/nss_hal/ipq806x/nss_hal_pvt.c
++++ b/nss_hal/ipq806x/nss_hal_pvt.c
+@@ -27,25 +27,14 @@
+ #include <linux/gpio.h>
+ #include <linux/version.h>
+ #include <linux/clk.h>
+-#if (NSS_DT_SUPPORT != 1)
+-#include <mach/gpiomux.h>
+-#include <mach/msm_nss.h>
+-#else
+ #include <linux/of.h>
+ #include <linux/of_net.h>
+ #include <linux/of_irq.h>
+ #include <linux/of_address.h>
+ #include <linux/reset.h>
+-#endif
+ #include "nss_hal.h"
+ #include "nss_clocks.h"
+ #include "nss_core.h"
+-#if (NSS_PM_SUPPORT == 1)
+-#include "nss_pm.h"
+-#endif
+-#if (NSS_FABRIC_SCALING_SUPPORT == 1)
+-#include <linux/fab_scaling.h>
+-#endif
+ 
+ #define NSS_H2N_INTR_EMPTY_BUFFER_QUEUE_BIT		0
+ #define NSS_H2N_INTR_DATA_COMMAND_QUEUE_BIT		1
+@@ -62,129 +51,8 @@ static uint32_t intr_cause[] = {(1 << NS
+ 				(1 << NSS_H2N_INTR_TRIGGER_COREDUMP_BIT),
+ 				(1 << NSS_H2N_INTR_EMPTY_PAGED_BUFFER_QUEUE_BIT)};
+ 
+-#if (NSS_DT_SUPPORT == 1)
+ bool nss_crypto_is_scaled = false;
+-#endif
+ 
+-#if (NSS_FW_DBG_SUPPORT == 1)
+-/*
+- * NSS debug pins configuration
+- */
+-
+-/*
+- * Core 0, Data
+- * No pull up, Function 2
+- */
+-static struct gpiomux_setting nss_spi_data_0 = {
+-	.func = GPIOMUX_FUNC_2,
+-	.drv = GPIOMUX_DRV_8MA,
+-	.pull = GPIOMUX_PULL_NONE,
+-	.dir = GPIOMUX_IN,
+-};
+-
+-/*
+- * Core 0, CLK, CS
+- * Pull up high, Function 2
+- */
+-static struct gpiomux_setting nss_spi_cs_clk_0 = {
+-	.func = GPIOMUX_FUNC_2,
+-	.drv = GPIOMUX_DRV_8MA,
+-	.pull = GPIOMUX_PULL_UP,
+-	.dir = GPIOMUX_IN,
+-};
+-
+-/*
+- * Core 1, CS
+- * Pull up high, Function 4
+- */
+-static struct gpiomux_setting nss_spi_cs_1 = {
+-	.func = GPIOMUX_FUNC_4,
+-	.drv = GPIOMUX_DRV_8MA,
+-	.pull = GPIOMUX_PULL_UP,
+-	.dir = GPIOMUX_IN,
+-};
+-
+-/*
+- * Core 1, CLK
+- * Pull up high, Function 5
+- */
+-static struct gpiomux_setting nss_spi_clk_1 = {
+-	.func = GPIOMUX_FUNC_5,
+-	.drv = GPIOMUX_DRV_8MA,
+-	.pull = GPIOMUX_PULL_UP,
+-	.dir = GPIOMUX_IN,
+-};
+-
+-/*
+- * Core 1, Data
+- * Pull up none, Function 5
+- */
+-static struct gpiomux_setting nss_spi_data_1 = {
+-	.func = GPIOMUX_FUNC_5,
+-	.drv = GPIOMUX_DRV_8MA,
+-	.pull = GPIOMUX_PULL_NONE,
+-	.dir = GPIOMUX_IN,
+-};
+-
+-static struct msm_gpiomux_config nss_spi_gpiomux[] = {
+-	{
+-		.gpio = 14,
+-		.settings = {
+-			[GPIOMUX_ACTIVE] = &nss_spi_data_0,
+-			[GPIOMUX_SUSPENDED] = &nss_spi_data_0,
+-		},
+-	},
+-	{
+-		.gpio = 15,
+-		.settings = {
+-			[GPIOMUX_ACTIVE] = &nss_spi_data_0,
+-			[GPIOMUX_SUSPENDED] = &nss_spi_data_0,
+-		},
+-	},
+-	{
+-		.gpio = 16,
+-		.settings = {
+-			[GPIOMUX_ACTIVE] = &nss_spi_cs_clk_0,
+-			[GPIOMUX_SUSPENDED] = &nss_spi_cs_clk_0,
+-		},
+-	},
+-	{
+-		.gpio = 17,
+-		.settings = {
+-			[GPIOMUX_ACTIVE] = &nss_spi_cs_clk_0,
+-			[GPIOMUX_SUSPENDED] = &nss_spi_cs_clk_0,
+-		},
+-	},
+-	{
+-		.gpio = 55,
+-		.settings = {
+-			[GPIOMUX_ACTIVE] = &nss_spi_data_1,
+-			[GPIOMUX_SUSPENDED] = &nss_spi_data_1,
+-		},
+-	},
+-	{
+-		.gpio = 56,
+-		.settings = {
+-			[GPIOMUX_ACTIVE] = &nss_spi_data_1,
+-			[GPIOMUX_SUSPENDED] = &nss_spi_data_1,
+-		},
+-	},
+-	{
+-		.gpio = 57,
+-		.settings = {
+-			[GPIOMUX_ACTIVE] = &nss_spi_cs_1,
+-			[GPIOMUX_SUSPENDED] = &nss_spi_cs_1,
+-		},
+-	},
+-	{
+-		.gpio = 58,
+-		.settings = {
+-			[GPIOMUX_ACTIVE] = &nss_spi_clk_1,
+-			[GPIOMUX_SUSPENDED] = &nss_spi_clk_1,
+-		},
+-	},
+-};
+-#endif /* NSS_FW_DBG_SUPPORT */
+ 
+ /*
+  * nss_hal_scale_fabric()
+@@ -192,17 +60,10 @@ static struct msm_gpiomux_config nss_spi
+  */
+ void nss_hal_scale_fabric(uint32_t work_frequency)
+ {
+-#if (NSS_DT_SUPPORT == 1)
+ 	nss_crypto_pm_event_callback_t crypto_pm_cb;
+ 	bool auto_scale;
+ 	bool turbo;
+ 
+-#if (NSS_FABRIC_SCALING_SUPPORT == 1)
+-	/*
+-	 * PM framework
+-	 */
+-	scale_fabrics();
+-#endif
+ 	if ((nss_fab0_clk != NULL) && (nss_fab1_clk != NULL)) {
+ 		if (work_frequency >= NSS_FREQ_733) {
+ 			clk_set_rate(nss_fab0_clk, NSS_FABRIC0_TURBO);
+@@ -225,7 +86,6 @@ void nss_hal_scale_fabric(uint32_t work_
+ 			nss_crypto_is_scaled = crypto_pm_cb(nss_top_main.crypto_pm_ctx, turbo, auto_scale);
+ 		}
+ 	}
+-#endif
+ }
+ 
+ /*
+@@ -234,19 +94,6 @@ void nss_hal_scale_fabric(uint32_t work_
+  */
+ void nss_hal_pm_support(uint32_t work_frequency)
+ {
+-#if (NSS_PM_SUPPORT == 1)
+-	if (!pm_client) {
+-		return;
+-	}
+-
+-	if (work_frequency >= NSS_FREQ_733) {
+-		nss_pm_set_perf_level(pm_client, NSS_PM_PERF_LEVEL_TURBO);
+-	} else if (work_frequency > NSS_FREQ_110) {
+-		nss_pm_set_perf_level(pm_client, NSS_PM_PERF_LEVEL_NOMINAL);
+-	} else {
+-		nss_pm_set_perf_level(pm_client, NSS_PM_PERF_LEVEL_IDLE);
+-	}
+-#endif
+ }
+ 
+ /*
+@@ -276,7 +123,6 @@ void nss_hal_wq_function(struct work_str
+ 	nss_work_t *my_work = (nss_work_t *)work;
+ 
+ 	mutex_lock(&nss_top_main.wq_lock);
+-#if (NSS_DT_SUPPORT == 1)
+ 	/*
+ 	 * If crypto clock is in Turbo, disable scaling for other
+ 	 * NSS subsystem components and retain them at turbo
+@@ -286,7 +132,6 @@ void nss_hal_wq_function(struct work_str
+ 		mutex_unlock(&nss_top_main.wq_lock);
+ 		return;
+ 	}
+-#endif
+ 
+ 	nss_hal_freq_change(my_work);
+ 
+@@ -322,83 +167,6 @@ static irqreturn_t nss_hal_handle_irq(in
+ 	return IRQ_HANDLED;
+ }
+ 
+-#if (NSS_DT_SUPPORT != 1)
+-#if defined(NSS_ENABLE_CLK)
+-/*
+- * nss_hal_pvt_enable_pll18()
+- *	Enable PLL18
+- */
+-static uint32_t nss_hal_pvt_enable_pll18(uint32_t speed)
+-{
+-	uint32_t retries = 100;
+-
+-	/*
+-	 * Prevent Compiler from commenting out the loop.
+-	 */
+-	uint32_t value;
+-	uint32_t mask = (1 << 2);
+-
+-	/*
+-	 * Start with clean slate
+-	 */
+-	writel(0, PLL18_MODE);
+-
+-	/*
+-	 * Effective VCO Frequency = 1100 MHz Post Divide 2
+-	 */
+-	if (speed == 1100) {
+-		writel(0x4000042C, PLL18_L_VAL);
+-		writel(0x0, PLL18_M_VAL);
+-		writel(0x1, PLL18_N_VAL);
+-
+-		/*
+-		 * PLL configuration (as provided by HW team)
+-		 */
+-		writel(0x01495625, PLL18_CONFIG);
+-		writel(0x00003080, PLL18_TEST_CTL);
+-	} else if (speed == 1466) {
+-		/*
+-		 * Effective VCO Frequency = 1466 MHz Post Divide 2
+-		 */
+-
+-		writel(0x4000043A, PLL18_L_VAL);
+-		writel(0x10, PLL18_M_VAL);
+-		writel(0x19, PLL18_N_VAL);
+-
+-		/*
+-		 * PLL configuration (as provided by HW team)
+-		 */
+-		writel(0x014B5625, PLL18_CONFIG);
+-		writel(0x00003080, PLL18_TEST_CTL);
+-	} else {
+-		BUG_ON(1);
+-	}
+-
+-	/*
+-	 * Enable PLL18 output (sequence provided by HW team)
+-	 */
+-	writel(0x2, PLL18_MODE);
+-	mdelay(1);
+-	writel(0x6, PLL18_MODE);
+-	writel(0x7, PLL18_MODE);
+-
+-	/*
+-	 * Enable NSS Vote for PLL18.
+-	 */
+-	writel(mask, PLL_ENA_NSS);
+-	do {
+-		value = readl(PLL_LOCK_DET_STATUS);
+-		if (value & mask) {
+-			return PLL_LOCKED;
+-		}
+-
+-		mdelay(1);
+-	} while (retries-- > 0);
+-
+-	return PLL_NOT_LOCKED;
+-}
+-#endif
+-#else
+ /*
+  * __nss_hal_of_get_pdata()
+  *	Retrieve platform data from device node.
+@@ -461,7 +229,7 @@ static struct nss_platform_data *__nss_h
+ 	npd->nphys = res_nphys.start;
+ 	npd->vphys = res_vphys.start;
+ 
+-	npd->nmap = ioremap_nocache(npd->nphys, resource_size(&res_nphys));
++	npd->nmap = nss_ioremap(npd->nphys, resource_size(&res_nphys));
+ 	if (!npd->nmap) {
+ 		nss_info_always("%px: nss%d: ioremap() fail for nphys\n", nss_ctx, nss_ctx->id);
+ 		goto out;
+@@ -512,14 +280,12 @@ out:
+ 	of_node_put(np);
+ 	return NULL;
+ }
+-#endif
+ 
+ /*
+  * __nss_hal_core_reset()
+  */
+ static int __nss_hal_core_reset(struct platform_device *nss_dev, void __iomem *map, uint32_t addr, uint32_t clk_src)
+ {
+-#if (NSS_DT_SUPPORT == 1)
+ 	struct reset_control *rstctl = NULL;
+ 
+ 	/*
+@@ -561,86 +327,6 @@ static int __nss_hal_core_reset(struct p
+ 		return -EFAULT;
+ 	}
+ 	reset_control_deassert(rstctl);
+-#else
+-#if defined(NSS_ENABLE_CLOCK)
+-	/*
+-	 * Enable mpt clock
+-	 */
+-	writel(0x10, UBI32_MPT0_CLK_CTL);
+-
+-	/*
+-	 * UBI coren clock root enable
+-	 */
+-	if (clk_src == NSS_REGS_CLK_SRC_DEFAULT) {
+-		/* select Src0 */
+-		writel(0x02, UBI32_COREn_CLK_SRC_CTL(nss_dev->id));
+-	} else {
+-		/* select Src1 */
+-		writel(0x03, UBI32_COREn_CLK_SRC_CTL(nss_dev->id));
+-	}
+-
+-	/*
+-	 * Src0: Bypass M value configuration.
+-	 */
+-
+-	/*
+-	 * Src1: M val is 0x01 and NOT_2D value is 0xfd, 400 MHz with PLL0.
+-	 */
+-	writel(0x100fd, UBI32_COREn_CLK_SRC1_MD(nss_dev->id));
+-
+-	/*
+-	 * Bypass, pll18
+-	 * Effective frequency = 550 MHz
+-	 */
+-	writel(0x00000001, UBI32_COREn_CLK_SRC0_NS(nss_dev->id));
+-
+-	/*
+-	 * Dual edge, pll0, NOT(N_M) = 0xfe.
+-	 * Effective frequency = 400 MHz
+-	 */
+-	writel(0x00fe0142, UBI32_COREn_CLK_SRC1_NS(nss_dev->id));
+-
+-	/*
+-	 * UBI32 coren clock control branch.
+-	 */
+-	writel(0x4f, UBI32_COREn_CLK_FS(nss_dev->id));
+-
+-	/*
+-	 * UBI32 coren clock control branch.
+-	 */
+-	writel(0x10, UBI32_COREn_CLK_CTL(nss_dev->id));
+-#endif
+-	/*
+-	 * Remove UBI32 reset clamp
+-	 */
+-	writel(0xB, UBI32_COREn_RESET_CLAMP(nss_dev->id));
+-
+-	/*
+-	 * Busy wait for few cycles
+-	 */
+-	mdelay(1);
+-
+-	/*
+-	 * Remove UBI32 core clamp
+-	 */
+-	writel(0x3, UBI32_COREn_RESET_CLAMP(nss_dev->id));
+-
+-	mdelay(1);
+-
+-	/*
+-	 * Remove UBI32 AHB reset
+-	 */
+-	writel(0x1, UBI32_COREn_RESET_CLAMP(nss_dev->id));
+-
+-	mdelay(1);
+-
+-	/*
+-	 * Remove UBI32 AXI reset
+-	 */
+-	writel(0x0, UBI32_COREn_RESET_CLAMP(nss_dev->id));
+-
+-	mdelay(1);
+-#endif /* NSS_DT_SUPPORT */
+ 
+ 	/*
+ 	 * Apply ubi32 core reset
+@@ -678,10 +364,6 @@ static int __nss_hal_core_reset(struct p
+  */
+ static void __nss_hal_debug_enable(void)
+ {
+-#if (NSS_FW_DBG_SUPPORT == 1)
+-	msm_gpiomux_install(nss_spi_gpiomux,
+-				ARRAY_SIZE(nss_spi_gpiomux));
+-#endif
+ }
+ 
+ /*
+@@ -690,7 +372,6 @@ static void __nss_hal_debug_enable(void)
+  */
+ static int __nss_hal_common_reset(struct platform_device *nss_dev)
+ {
+-#if (NSS_DT_SUPPORT == 1)
+ 	struct device_node *cmn = NULL;
+ 	struct resource res_nss_fpb_base;
+ 	struct clk *nss_tcm_src = NULL;
+@@ -714,7 +395,7 @@ static int __nss_hal_common_reset(struct
+ 	}
+ 	of_node_put(cmn);
+ 
+-	fpb_base = ioremap_nocache(res_nss_fpb_base.start, resource_size(&res_nss_fpb_base));
++	fpb_base = nss_ioremap(res_nss_fpb_base.start, resource_size(&res_nss_fpb_base));
+ 	if (!fpb_base) {
+ 		pr_err("%px: ioremap fail for nss_fpb_base\n", nss_dev);
+ 		return -EFAULT;
+@@ -789,178 +470,12 @@ static int __nss_hal_common_reset(struct
+ 	nss_info("nss_hal_common_reset Done\n");
+ 	return 0;
+ }
+-#else
+-	uint32_t i;
+-	uint32_t value;
+-	uint32_t status_mask = 0x1;
+-	uint32_t wait_cycles = 100;
+-
+-#if defined(NSS_ENABLE_CLK)
+-	/*
+-	 * NSS FPB CLOCK
+-	 */
+-
+-	/*
+-	 * Enable clock root and Divider 0
+-	 * NOTE: Default value is good so no work here
+-	 */
+-
+-	/*
+-	 * PLL0 (800 MHZ). SRC_SEL is 2 (3'b010)
+-	 * src_div selected is Div-6 (4'b0101).
+-	 *
+-	 * Effective frequency (Divider 0) = 133 MHz
+-	 */
+-	writel(0x2a, NSSFPB_CLK_SRC0_NS);
+-
+-	/*
+-	 * Enable clock branch
+-	 */
+-	writel(0x50, NSSFPB_CLK_CTL);
+-
+-	/*
+-	 * NSS FABRIC0 CLOCK
+-	 */
+-
+-	/*
+-	 * Enable clock root and Divider 0
+-	 * NOTE: Default value is good so no work here
+-	 */
+-
+-	/*
+-	 * PLL0 (800 MHZ) and div is set to 2.
+-	 * Effective frequency = 400 MHZ.
+-	 */
+-	writel(0x0a, NSSFB0_CLK_SRC0_NS);
+-
+-	/*
+-	 * NSS Fabric0 Branch and dynamic clock gating enabled.
+-	 */
+-	writel(0x50, NSSFB0_CLK_CTL);
+-
+-	/*
+-	 * Enable clock root and Divider 0
+-	 * NOTE: Default value is good so no work here
+-	 */
+-
+-	/*
+-	 * PLL0 (800 MHZ) and div is set to 4.
+-	 * Effective frequency = 200 MHZ.
+-	 */
+-	writel(0x1a, NSSFB1_CLK_SRC0_NS);
+-
+-	/*
+-	 * NSS Fabric1 Branch enable and fabric clock gating enabled.
+-	 */
+-	writel(0x50, NSSFB1_CLK_CTL);
+-
+-	/*
+-	 * NSS TCM CLOCK
+-	 */
+-
+-	/*
+-	 * Enable NSS TCM clock root source and select divider 0.
+-	 *
+-	 * NOTE: Default value is not good here
+-	 */
+-	writel(0x2, NSSTCM_CLK_SRC_CTL);
+-
+-	/*
+-	 * PLL0 (800 MHZ) and div is set to 2.
+-	 * Effective frequency = 400 MHZ
+-	 */
+-	writel(0xa, NSSTCM_CLK_SRC0_NS);
+-
+-	/*
+-	 * NSS TCM Branch enable and fabric clock gating enabled.
+-	 */
+-	writel(0x50, NSSTCM_CLK_CTL);
+-
+-	/*
+-	 * Enable global NSS clock branches.
+-	 * NSS global Fab Branch enable and fabric clock gating enabled.
+-	 */
+-	writel(0xf, NSSFAB_GLOBAL_BUS_NS);
+-
+-	/*
+-	 * Send reset interrupt to NSS
+-	 */
+-	writel(0x0, NSS_RESET);
+-
+-	/*
+-	 * Enable PLL18
+-	 */
+-	pll18_status = nss_hal_pvt_enable_pll18();
+-	if (!pll18_status) {
+-		/*
+-		 * Select alternate good source (Src1/pll0)
+-		 */
+-		nss_top->clk_src = NSS_REGS_CLK_SRC_ALTERNATE;
+-		return;
+-	}
+-
+-	/*
+-	 * Select default source (Src0/pll18)
+-	 */
+-	nss_top->clk_src = NSS_REGS_CLK_SRC_DEFAULT;
+-#endif
+-
+-	/*
+-	 * Attach debug interface to TLMM
+-	 */
+-	nss_write_32((uint32_t)MSM_NSS_FPB_BASE, NSS_REGS_FPB_CSR_CFG_OFFSET, 0x360);
+-
+-	/*
+-	 * NSS TCM CLOCK
+-	 */
+-
+-	/*
+-	 * Enable NSS TCM clock root source - SRC1.
+-	 *
+-	 */
+-	writel(0x3, NSSTCM_CLK_SRC_CTL);
+-
+-	/* Enable PLL Voting for 0 */
+-	writel((readl(PLL_ENA_NSS) | 0x1), PLL_ENA_NSS);
+-	do {
+-		value = readl(PLL_LOCK_DET_STATUS);
+-		if (value & status_mask) {
+-			break;
+-		}
+-		mdelay(1);
+-	} while (wait_cycles-- > 0);
+-
+-	/*
+-	 * PLL0 (800 MHZ) and div is set to 3/4.
+-	 * Effective frequency = 266/400 Mhz for SRC0/1
+-	 */
+-	writel(0x12, NSSTCM_CLK_SRC0_NS);
+-	writel(0xa, NSSTCM_CLK_SRC1_NS);
+-
+-	/*
+-	 * NSS TCM Branch enable and fabric clock gating enabled.
+-	 */
+-	writel(0x50, NSSTCM_CLK_CTL);
+-
+-	/*
+-	 * Clear TCM memory
+-	 */
+-	for (i = 0; i < IPQ806X_NSS_TCM_SIZE; i += 4) {
+-		nss_write_32((uint32_t)MSM_NSS_TCM_BASE, i, 0);
+-	}
+-
+-	return 0;
+-}
+-#endif /* NSS_DT_SUPPORT */
+ 
+ /*
+  * __nss_hal_clock_configure()
+  */
+ static int __nss_hal_clock_configure(struct nss_ctx_instance *nss_ctx, struct platform_device *nss_dev, struct nss_platform_data *npd)
+ {
+-#if (NSS_FABRIC_SCALING_SUPPORT == 1)
+-	struct fab_scaling_info fab_data;
+-#endif
+ 	int i, err;
+ 
+ 	/*
+@@ -982,9 +497,6 @@ static int __nss_hal_clock_configure(str
+ 	 */
+ 	if (npd->turbo_frequency) {
+ 		nss_info("nss_driver - Turbo Support %d\n", npd->turbo_frequency);
+-#if (NSS_PM_SUPPORT == 1)
+-		nss_pm_set_turbo();
+-#endif
+ 	} else {
+ 		nss_info("nss_driver - Turbo No Support %d\n", npd->turbo_frequency);
+ 	}
+@@ -1045,15 +557,6 @@ static int __nss_hal_clock_configure(str
+ 	}
+ 
+ clk_complete:
+-#if (NSS_FABRIC_SCALING_SUPPORT == 1)
+-	if (npd->turbo_frequency) {
+-		fab_data.idle_freq = nss_runtime_samples.freq_scale[NSS_FREQ_MID_SCALE].frequency;
+-	} else {
+-		fab_data.idle_freq = nss_runtime_samples.freq_scale[NSS_FREQ_HIGH_SCALE].frequency;
+-	}
+-	fab_data.clk = nss_core0_clk;
+-	fab_scaling_register(&fab_data);
+-#endif
+ 
+ 	/*
+ 	 * Setup Ranges
+@@ -1186,7 +689,7 @@ static int __nss_hal_request_irq(struct
+ 	}
+ 
+ 	int_ctx->irq = npd->irq[irq_num];
+-	netif_napi_add(&nss_ctx->napi_ndev, &int_ctx->napi, nss_core_handle_napi, 64);
++	netif_napi_add_weight(&nss_ctx->napi_ndev, &int_ctx->napi, nss_core_handle_napi, 64);
+ 
+ 	return 0;
+ }
+@@ -1226,9 +729,7 @@ struct nss_hal_ops nss_hal_ipq806x_ops =
+ 	.clock_configure = __nss_hal_clock_configure,
+ 	.firmware_load = nss_hal_firmware_load,
+ 	.debug_enable = __nss_hal_debug_enable,
+-#if (NSS_DT_SUPPORT == 1)
+ 	.of_get_pdata = __nss_hal_of_get_pdata,
+-#endif
+ 	.request_irq = __nss_hal_request_irq,
+ 	.send_interrupt = __nss_hal_send_interrupt,
+ 	.enable_interrupt = __nss_hal_enable_interrupt,
+--- a/nss_hal/ipq807x/nss_hal_pvt.c
++++ b/nss_hal/ipq807x/nss_hal_pvt.c
+@@ -237,7 +237,7 @@ static struct nss_platform_data *__nss_h
+ 	npd->vphys = res_vphys.start;
+ 	npd->qgic_phys = res_qgic_phys.start;
+ 
+-	npd->nmap = ioremap_nocache(npd->nphys, resource_size(&res_nphys));
++	npd->nmap = nss_ioremap(npd->nphys, resource_size(&res_nphys));
+ 	if (!npd->nmap) {
+ 		nss_info_always("%px: nss%d: ioremap() fail for nphys\n", nss_ctx, nss_ctx->id);
+ 		goto out;
+@@ -250,7 +250,7 @@ static struct nss_platform_data *__nss_h
+ 		goto out;
+ 	}
+ 
+-	npd->qgic_map = ioremap_nocache(npd->qgic_phys, resource_size(&res_qgic_phys));
++	npd->qgic_map = nss_ioremap(npd->qgic_phys, resource_size(&res_qgic_phys));
+ 	if (!npd->qgic_map) {
+ 		nss_info_always("%px: nss%d: ioremap() fail for qgic map\n", nss_ctx, nss_ctx->id);
+ 		goto out;
+@@ -470,7 +470,7 @@ static int __nss_hal_common_reset(struct
+ 	}
+ 	of_node_put(cmn);
+ 
+-	nss_misc_reset = ioremap_nocache(res_nss_misc_reset.start, resource_size(&res_nss_misc_reset));
++	nss_misc_reset = nss_ioremap(res_nss_misc_reset.start, resource_size(&res_nss_misc_reset));
+ 	if (!nss_misc_reset) {
+ 		pr_err("%px: ioremap fail for nss_misc_reset\n", nss_dev);
+ 		return -EFAULT;
+@@ -660,62 +660,62 @@ static int __nss_hal_request_irq(struct
+ 	irq_set_status_flags(irq, IRQ_DISABLE_UNLAZY);
+ 
+ 	if (irq_num == NSS_HAL_N2H_INTR_PURPOSE_EMPTY_BUFFER_SOS) {
+-		netif_napi_add(&nss_ctx->napi_ndev, &int_ctx->napi, nss_core_handle_napi_non_queue, NSS_EMPTY_BUFFER_SOS_PROCESSING_WEIGHT);
++		netif_napi_add_weight(&nss_ctx->napi_ndev, &int_ctx->napi, nss_core_handle_napi_non_queue, NSS_EMPTY_BUFFER_SOS_PROCESSING_WEIGHT);
+ 		int_ctx->cause = NSS_N2H_INTR_EMPTY_BUFFERS_SOS;
+ 		err = request_irq(irq, nss_hal_handle_irq, 0, "nss_empty_buf_sos", int_ctx);
+ 	}
+ 
+ 	if (irq_num == NSS_HAL_N2H_INTR_PURPOSE_EMPTY_BUFFER_QUEUE) {
+-		netif_napi_add(&nss_ctx->napi_ndev, &int_ctx->napi, nss_core_handle_napi_queue, NSS_EMPTY_BUFFER_RETURN_PROCESSING_WEIGHT);
++		netif_napi_add_weight(&nss_ctx->napi_ndev, &int_ctx->napi, nss_core_handle_napi_queue, NSS_EMPTY_BUFFER_RETURN_PROCESSING_WEIGHT);
+ 		int_ctx->cause = NSS_N2H_INTR_EMPTY_BUFFER_QUEUE;
+ 		err = request_irq(irq, nss_hal_handle_irq, 0, "nss_empty_buf_queue", int_ctx);
+ 	}
+ 
+ 	if (irq_num == NSS_HAL_N2H_INTR_PURPOSE_TX_UNBLOCKED) {
+-		netif_napi_add(&nss_ctx->napi_ndev, &int_ctx->napi, nss_core_handle_napi_non_queue, NSS_TX_UNBLOCKED_PROCESSING_WEIGHT);
++		netif_napi_add_weight(&nss_ctx->napi_ndev, &int_ctx->napi, nss_core_handle_napi_non_queue, NSS_TX_UNBLOCKED_PROCESSING_WEIGHT);
+ 		int_ctx->cause = NSS_N2H_INTR_TX_UNBLOCKED;
+ 		err = request_irq(irq, nss_hal_handle_irq, 0, "nss-tx-unblock", int_ctx);
+ 	}
+ 
+ 	if (irq_num == NSS_HAL_N2H_INTR_PURPOSE_DATA_QUEUE_0) {
+-		netif_napi_add(&nss_ctx->napi_ndev, &int_ctx->napi, nss_core_handle_napi_queue, NSS_DATA_COMMAND_BUFFER_PROCESSING_WEIGHT);
++		netif_napi_add_weight(&nss_ctx->napi_ndev, &int_ctx->napi, nss_core_handle_napi_queue, NSS_DATA_COMMAND_BUFFER_PROCESSING_WEIGHT);
+ 		int_ctx->cause = NSS_N2H_INTR_DATA_QUEUE_0;
+ 		err = request_irq(irq, nss_hal_handle_irq, 0, "nss_queue0", int_ctx);
+ 	}
+ 
+ 	if (irq_num == NSS_HAL_N2H_INTR_PURPOSE_DATA_QUEUE_1) {
+ 		int_ctx->cause = NSS_N2H_INTR_DATA_QUEUE_1;
+-		netif_napi_add(&nss_ctx->napi_ndev, &int_ctx->napi, nss_core_handle_napi_queue, NSS_DATA_COMMAND_BUFFER_PROCESSING_WEIGHT);
++		netif_napi_add_weight(&nss_ctx->napi_ndev, &int_ctx->napi, nss_core_handle_napi_queue, NSS_DATA_COMMAND_BUFFER_PROCESSING_WEIGHT);
+ 		err = request_irq(irq, nss_hal_handle_irq, 0, "nss_queue1", int_ctx);
+ 	}
+ 
+ 	if (irq_num == NSS_HAL_N2H_INTR_PURPOSE_DATA_QUEUE_2) {
+ 		int_ctx->cause = NSS_N2H_INTR_DATA_QUEUE_2;
+-		netif_napi_add(&nss_ctx->napi_ndev, &int_ctx->napi, nss_core_handle_napi_queue, NSS_DATA_COMMAND_BUFFER_PROCESSING_WEIGHT);
++		netif_napi_add_weight(&nss_ctx->napi_ndev, &int_ctx->napi, nss_core_handle_napi_queue, NSS_DATA_COMMAND_BUFFER_PROCESSING_WEIGHT);
+ 		err = request_irq(irq, nss_hal_handle_irq, 0, "nss_queue2", int_ctx);
+ 	}
+ 
+ 	if (irq_num == NSS_HAL_N2H_INTR_PURPOSE_DATA_QUEUE_3) {
+ 		int_ctx->cause = NSS_N2H_INTR_DATA_QUEUE_3;
+-		netif_napi_add(&nss_ctx->napi_ndev, &int_ctx->napi, nss_core_handle_napi_queue, NSS_DATA_COMMAND_BUFFER_PROCESSING_WEIGHT);
++		netif_napi_add_weight(&nss_ctx->napi_ndev, &int_ctx->napi, nss_core_handle_napi_queue, NSS_DATA_COMMAND_BUFFER_PROCESSING_WEIGHT);
+ 		err = request_irq(irq, nss_hal_handle_irq, 0, "nss_queue3", int_ctx);
+ 	}
+ 
+ 	if (irq_num == NSS_HAL_N2H_INTR_PURPOSE_COREDUMP_COMPLETE) {
+ 		int_ctx->cause = NSS_N2H_INTR_COREDUMP_COMPLETE;
+-		netif_napi_add(&nss_ctx->napi_ndev, &int_ctx->napi, nss_core_handle_napi_emergency, NSS_DATA_COMMAND_BUFFER_PROCESSING_WEIGHT);
++		netif_napi_add_weight(&nss_ctx->napi_ndev, &int_ctx->napi, nss_core_handle_napi_emergency, NSS_DATA_COMMAND_BUFFER_PROCESSING_WEIGHT);
+ 		err = request_irq(irq, nss_hal_handle_irq, 0, "nss_coredump_complete", int_ctx);
+ 	}
+ 
+ 	if (irq_num == NSS_HAL_N2H_INTR_PURPOSE_PAGED_EMPTY_BUFFER_SOS) {
+-		netif_napi_add(&nss_ctx->napi_ndev, &int_ctx->napi, nss_core_handle_napi_non_queue, NSS_EMPTY_BUFFER_SOS_PROCESSING_WEIGHT);
++		netif_napi_add_weight(&nss_ctx->napi_ndev, &int_ctx->napi, nss_core_handle_napi_non_queue, NSS_EMPTY_BUFFER_SOS_PROCESSING_WEIGHT);
+ 		int_ctx->cause = NSS_N2H_INTR_PAGED_EMPTY_BUFFERS_SOS;
+ 		err = request_irq(irq, nss_hal_handle_irq, 0, "nss_paged_empty_buf_sos", int_ctx);
+ 	}
+ 
+ 	if (irq_num == NSS_HAL_N2H_INTR_PURPOSE_PROFILE_DMA) {
+ 		int_ctx->cause = NSS_N2H_INTR_PROFILE_DMA;
+-		netif_napi_add(&nss_ctx->napi_ndev, &int_ctx->napi, nss_core_handle_napi_sdma, NSS_DATA_COMMAND_BUFFER_PROCESSING_WEIGHT);
++		netif_napi_add_weight(&nss_ctx->napi_ndev, &int_ctx->napi, nss_core_handle_napi_sdma, NSS_DATA_COMMAND_BUFFER_PROCESSING_WEIGHT);
+ 		err = request_irq(irq, nss_hal_handle_irq, 0, "nss_profile_dma", int_ctx);
+ 	}
+ 
+--- a/nss_hal/ipq95xx/nss_hal_pvt.c
++++ b/nss_hal/ipq95xx/nss_hal_pvt.c
+@@ -22,7 +22,6 @@
+  */
+ 
+ #include <linux/err.h>
+-#include <linux/version.h>
+ #include <linux/clk.h>
+ #include <linux/of.h>
+ #include <linux/of_net.h>
+@@ -889,11 +888,7 @@ static int __nss_hal_request_irq(struct
+ 		return err;
+ 	}
+ 
+-#if (LINUX_VERSION_CODE < KERNEL_VERSION(6, 6, 0))
+-	netif_napi_add(&nss_ctx->napi_ndev, &int_ctx->napi, napi_poll_cb, napi_wgt);
+-#else
+ 	netif_napi_add_weight(&nss_ctx->napi_ndev, &int_ctx->napi, napi_poll_cb, napi_wgt);
+-#endif
+ 	int_ctx->cause = cause;
+ 	err = request_irq(irq, nss_hal_handle_irq, 0, irq_name, int_ctx);
+ 	if (err) {
+--- a/nss_hal/nss_hal.c
++++ b/nss_hal/nss_hal.c
+@@ -27,6 +27,7 @@
+ #include <linux/firmware.h>
+ #include <linux/of.h>
+ #include <linux/irq.h>
++#include <linux/ethtool.h>
+ 
+ #include "nss_hal.h"
+ #include "nss_arch.h"
+@@ -38,12 +39,6 @@
+ #ifdef NSS_DATA_PLANE_LITE_SUPPORT
+ #include "nss_data_plane_lite.h"
+ #endif
+-#if (NSS_PM_SUPPORT == 1)
+-#include "nss_pm.h"
+-#endif
+-#if (NSS_FABRIC_SCALING_SUPPORT == 1)
+-#include <linux/fab_scaling.h>
+-#endif
+ 
+ /*
+  * Macros
+@@ -58,9 +53,9 @@ int nss_hal_firmware_load(struct nss_ctx
+ 	int rc;
+ 
+ 	if (nss_ctx->id == 0) {
+-		rc = request_firmware(&nss_fw, NSS_AP0_IMAGE, &(nss_dev->dev));
++		rc = firmware_request_nowarn(&nss_fw, NSS_AP0_IMAGE, &(nss_dev->dev));
+ 	} else if (nss_ctx->id == 1) {
+-		rc = request_firmware(&nss_fw, NSS_AP1_IMAGE, &(nss_dev->dev));
++		rc = firmware_request_nowarn(&nss_fw, NSS_AP1_IMAGE, &(nss_dev->dev));
+ 	} else {
+ 		nss_warning("%px: Invalid nss dev: %d\n", nss_ctx, nss_ctx->id);
+ 		return -EINVAL;
+@@ -214,7 +209,6 @@ int nss_hal_probe(struct platform_device
+ 		}
+ 	}
+ 
+-#if (NSS_DT_SUPPORT == 1)
+ 	if (!nss_dev->dev.of_node) {
+ 		pr_err("nss-driver: Device tree not available\n");
+ 		return -ENODEV;
+@@ -228,11 +222,6 @@ int nss_hal_probe(struct platform_device
+ 	nss_ctx = &nss_top->nss[npd->id];
+ 	nss_ctx->id = npd->id;
+ 	nss_dev->id = nss_ctx->id;
+-#else
+-	npd = (struct nss_platform_data *) nss_dev->dev.platform_data;
+-	nss_ctx = &nss_top->nss[nss_dev->id];
+-	nss_ctx->id = nss_dev->id;
+-#endif
+ 	nss_ctx->num_irq = npd->num_irq;
+ 	nss_ctx->nss_top = nss_top;
+ 
+@@ -853,9 +842,6 @@ int nss_hal_remove(struct platform_devic
+ 	nss_data_plane_lite_unregister();
+ #endif
+ 
+-#if (NSS_FABRIC_SCALING_SUPPORT == 1)
+-	fab_scaling_unregister(nss_core0_clk);
+-#endif
+ 
+ 	if (nss_dev->dev.of_node) {
+ 		if (nss_ctx->nmap) {
+--- a/nss_igs.c
++++ b/nss_igs.c
+@@ -17,11 +17,6 @@
+ #include "nss_tx_rx_common.h"
+ #include "nss_igs_stats.h"
+ 
+-#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 4, 0))
+-#ifdef CONFIG_NET_CLS_ACT
+-#include <linux/tc_act/tc_nss_mirred.h>
+-#endif
+-#endif
+ 
+ static struct module *nss_igs_module;
+ 
+--- a/nss_init.c
++++ b/nss_init.c
+@@ -23,9 +23,6 @@
+  *
+  */
+ #include "nss_core.h"
+-#if (NSS_PM_SUPPORT == 1)
+-#include "nss_pm.h"
+-#endif
+ #include "nss_tx_rx_common.h"
+ #ifdef NSS_DATA_PLANE_GENERIC_SUPPORT
+ #include "nss_data_plane.h"
+@@ -43,18 +40,11 @@
+ #include <linux/proc_fs.h>
+ #include <linux/device.h>
+ 
+-#if (NSS_DT_SUPPORT == 1)
+-#if (NSS_FABRIC_SCALING_SUPPORT == 1)
+-#include <linux/fab_scaling.h>
+-#endif
+ #include <linux/of.h>
+ #include <linux/of_net.h>
+ #include <linux/of_irq.h>
+ #include <linux/of_address.h>
+ #include <linux/reset.h>
+-#else
+-#include <mach/msm_nss.h>
+-#endif
+ 
+ #include <linux/sysctl.h>
+ #include <linux/regulator/consumer.h>
+@@ -77,9 +67,6 @@ module_param(nss_skip_nw_process, int, S
+ /*
+  * PM client handle
+  */
+-#if (NSS_PM_SUPPORT == 1)
+-static void *pm_client;
+-#endif
+ 
+ /*
+  * Handler to send NSS messages
+@@ -90,10 +77,8 @@ struct clk *nss_core1_clk;
+ /*
+  * Handle fabric requests - only on new kernel
+  */
+-#if (NSS_DT_SUPPORT == 1)
+ struct clk *nss_fab0_clk;
+ struct clk *nss_fab1_clk;
+-#endif
+ 
+ /*
+  * Top level nss context structure
+@@ -123,12 +108,11 @@ static inline int nss_probe(struct platf
+  * nss_remove()
+  *	HLOS device remove callback
+  */
+-static inline int nss_remove(struct platform_device *nss_dev)
++static inline void nss_remove(struct platform_device *nss_dev)
+ {
+-	return nss_hal_remove(nss_dev);
++	nss_hal_remove(nss_dev);
+ }
+ 
+-#if (NSS_DT_SUPPORT == 1)
+ /*
+  * Platform Device ID for NSS core.
+  */
+@@ -136,10 +120,8 @@ struct of_device_id nss_dt_ids[] = {
+ 	{ .compatible = "qcom,nss" },
+ 	{ .compatible = "qcom,nss0" },
+ 	{ .compatible = "qcom,nss1" },
+-	{},
+ };
+ MODULE_DEVICE_TABLE(of, nss_dt_ids);
+-#endif
+ 
+ /*
+  * nss_driver
+@@ -151,9 +133,7 @@ struct platform_driver nss_driver = {
+ 	.driver	= {
+ 		.name	= "qca-nss",
+ 		.owner	= THIS_MODULE,
+-#if (NSS_DT_SUPPORT == 1)
+ 		.of_match_table = of_match_ptr(nss_dt_ids),
+-#endif
+ 	},
+ };
+ 
+@@ -176,7 +156,7 @@ static void nss_reset_frequency_stats_sa
+  * nss_current_freq_handler()
+  *	Handle Userspace Frequency Change Requests
+  */
+-static int nss_current_freq_handler(struct ctl_table *ctl, int write, void __user *buffer, size_t *lenp, loff_t *ppos)
++static int nss_current_freq_handler(const struct ctl_table *ctl, int write, void __user *buffer, size_t *lenp, loff_t *ppos)
+ {
+ 	int ret, i;
+ 
+@@ -236,7 +216,7 @@ static int nss_current_freq_handler(stru
+  * nss_auto_scale_handler()
+  *	Enables or Disable Auto Scaling
+  */
+-static int nss_auto_scale_handler(struct ctl_table *ctl, int write, void __user *buffer, size_t *lenp, loff_t *ppos)
++static int nss_auto_scale_handler(const struct ctl_table *ctl, int write, void __user *buffer, size_t *lenp, loff_t *ppos)
+ {
+ 	int ret;
+ 
+@@ -301,7 +281,7 @@ static int nss_auto_scale_handler(struct
+  * nss_get_freq_table_handler()
+  *	Display Support Freq and Ex how to Change.
+  */
+-static int nss_get_freq_table_handler(struct ctl_table *ctl, int write, void __user *buffer, size_t *lenp, loff_t *ppos)
++static int nss_get_freq_table_handler(const struct ctl_table *ctl, int write, void __user *buffer, size_t *lenp, loff_t *ppos)
+ {
+ 	int ret, i;
+ 
+@@ -330,7 +310,7 @@ static int nss_get_freq_table_handler(st
+  * nss_get_average_inst_handler()
+  *	Display AVG Inst Per Ms.
+  */
+-static int nss_get_average_inst_handler(struct ctl_table *ctl, int write, void __user *buffer, size_t *lenp, loff_t *ppos)
++static int nss_get_average_inst_handler(const struct ctl_table *ctl, int write, void __user *buffer, size_t *lenp, loff_t *ppos)
+ {
+ 	int ret;
+ 
+@@ -347,32 +327,12 @@ static int nss_get_average_inst_handler(
+ }
+ #endif
+ 
+-#if (NSS_FW_DBG_SUPPORT == 1)
+-/*
+- * nss_debug_handler()
+- *	Enable NSS debug output
+- */
+-static int nss_debug_handler(struct ctl_table *ctl, int write, void __user *buffer, size_t *lenp, loff_t *ppos)
+-{
+-	int ret;
+-
+-	ret = proc_dointvec(ctl, write, buffer, lenp, ppos);
+-	if (!ret) {
+-		if ((write) && (nss_ctl_debug != 0)) {
+-			printk("Enabling NSS SPI Debug\n");
+-			nss_hal_debug_enable();
+-		}
+-	}
+-
+-	return ret;
+-}
+-#endif
+ 
+ /*
+  * nss_coredump_handler()
+  *	Send Signal To Coredump NSS Cores
+  */
+-static int nss_coredump_handler(struct ctl_table *ctl, int write, void __user *buffer, size_t *lenp, loff_t *ppos)
++static int nss_coredump_handler(const struct ctl_table *ctl, int write, void __user *buffer, size_t *lenp, loff_t *ppos)
+ {
+ 	struct nss_ctx_instance *nss_ctx = &nss_top_main.nss[NSS_CORE_0];
+ 	int ret;
+@@ -397,7 +357,7 @@ static int nss_coredump_handler(struct c
+  * nss_jumbo_mru_handler()
+  *	Sysctl to modify nss_jumbo_mru
+  */
+-static int nss_jumbo_mru_handler(struct ctl_table *ctl, int write, void __user *buffer, size_t *lenp, loff_t *ppos)
++static int nss_jumbo_mru_handler(const struct ctl_table *ctl, int write, void __user *buffer, size_t *lenp, loff_t *ppos)
+ {
+ 	int ret;
+ 
+@@ -418,7 +378,7 @@ static int nss_jumbo_mru_handler(struct
+  *	Sysctl to modify nss_paged_mode.
+  */
+ 
+-static int nss_paged_mode_handler(struct ctl_table *ctl, int write, void __user *buffer, size_t *lenp, loff_t *ppos)
++static int nss_paged_mode_handler(const struct ctl_table *ctl, int write, void __user *buffer, size_t *lenp, loff_t *ppos)
+ {
+ 	int ret;
+ 
+@@ -440,7 +400,7 @@ static int nss_paged_mode_handler(struct
+  * nss_get_min_reuse_handler()
+  *	Sysctl to get min reuse sizes
+  */
+-static int nss_get_min_reuse_handler(struct ctl_table *ctl, int write, void __user *buffer, size_t *lenp, loff_t *ppos)
++static int nss_get_min_reuse_handler(const struct ctl_table *ctl, int write, void __user *buffer, size_t *lenp, loff_t *ppos)
+ {
+ 	int ret;
+ 	struct nss_ctx_instance *nss_ctx = NULL;
+@@ -467,7 +427,7 @@ static int nss_get_min_reuse_handler(str
+  * nss_max_reuse_handler()
+  *	Sysctl to modify nss_max_reuse
+  */
+-static int nss_max_reuse_handler(struct ctl_table *ctl, int write, void __user *buffer, size_t *lenp, loff_t *ppos)
++static int nss_max_reuse_handler(const struct ctl_table *ctl, int write, void __user *buffer, size_t *lenp, loff_t *ppos)
+ {
+ 	int ret;
+ 
+@@ -502,8 +462,7 @@ static struct ctl_table nss_skb_reuse_ta
+ 		.maxlen			= sizeof(int),
+ 		.mode			= 0644,
+ 		.proc_handler	= &nss_max_reuse_handler,
+-	},
+-	{ }
++	}
+ };
+ #endif
+ 
+@@ -539,8 +498,7 @@ static struct ctl_table nss_freq_table[]
+ 		.maxlen			= sizeof(int),
+ 		.mode			= 0644,
+ 		.proc_handler	= &nss_get_average_inst_handler,
+-	},
+-	{ }
++	}
+ };
+ #endif
+ 
+@@ -552,15 +510,6 @@ static struct ctl_table nss_general_tabl
+ 		.mode                   = 0644,
+ 		.proc_handler		= proc_dointvec,
+ 	},
+-#if (NSS_FW_DBG_SUPPORT == 1)
+-	{
+-		.procname               = "debug",
+-		.data                   = &nss_ctl_debug,
+-		.maxlen                 = sizeof(int),
+-		.mode                   = 0644,
+-		.proc_handler		= &nss_debug_handler,
+-	},
+-#endif
+ 	{
+ 		.procname               = "coredump",
+ 		.data                   = &nss_cmd_buf.coredump,
+@@ -588,58 +537,12 @@ static struct ctl_table nss_general_tabl
+ 		.maxlen                 = sizeof(int),
+ 		.mode                   = 0644,
+ 		.proc_handler           = &nss_paged_mode_handler,
+-	},
+-	{ }
+-};
+-
+-#if (LINUX_VERSION_CODE < KERNEL_VERSION(6, 6, 0))
+-static struct ctl_table nss_init_dir[] = {
+-#if (NSS_FREQ_SCALE_SUPPORT == 1)
+-	{
+-		.procname               = "clock",
+-		.mode                   = 0555,
+-		.child                  = nss_freq_table,
+-	},
+-#endif
+-	{
+-		.procname               = "general",
+-		.mode                   = 0555,
+-		.child                  = nss_general_table,
+-	},
+-#if (NSS_SKB_REUSE_SUPPORT == 1)
+-	{
+-		.procname               = "skb_reuse",
+-		.mode                   = 0555,
+-		.child                  = nss_skb_reuse_table,
+-	},
+-#endif
+-	{ }
+-};
+-
+-static struct ctl_table nss_root_dir[] = {
+-	{
+-		.procname		= "nss",
+-		.mode			= 0555,
+-		.child			= nss_init_dir,
+-	},
+-	{ }
+-};
+-
+-static struct ctl_table nss_root[] = {
+-	{
+-		.procname		= "dev",
+-		.mode			= 0555,
+-		.child			= nss_root_dir,
+-	},
+-	{ }
++	}
+ };
+ 
+-static struct ctl_table_header *nss_dev_header;
+-#else
+ static struct ctl_table_header *nss_clk_hdr;
+ static struct ctl_table_header *nss_gen_hdr;
+ static struct ctl_table_header *nss_skb_hdr;
+-#endif
+ 
+ /*
+  * nss_init()
+@@ -652,16 +555,10 @@ static int __init nss_init(void)
+ #endif
+ 
+ 
+-#if (NSS_DT_SUPPORT == 1)
+ 	struct device_node *cmn = NULL;
+-#endif
+ 
+ #if defined(NSS_DRV_POINT_OFFLOAD)
+-#if (LINUX_VERSION_CODE < KERNEL_VERSION(6, 6, 0))
+-	pof = of_find_node_by_name(NULL, "reg_update");
+-#else
+ 	pof = of_find_node_by_name(NULL, "reg-update");
+-#endif
+ 	if ((!pof) || (!of_property_read_bool(pof, "ubi_core_enable"))) {
+ 		nss_info_always("UBI is not enabled. Disable qca-nss-drv\n");
+ 		return 0;
+@@ -670,7 +567,6 @@ static int __init nss_init(void)
+ 
+ nss_info("Init NSS driver");
+ 
+-#if (NSS_DT_SUPPORT == 1)
+ 	/*
+ 	 * Get reference to NSS common device node
+ 	 */
+@@ -745,17 +641,6 @@ nss_info("Init NSS driver");
+ 		nss_info_always("No supported HAL compiled on this platform\n");
+ 		return -EFAULT;
+ 	}
+-#else
+-	/*
+-	 * For banana, only ipq806x is supported
+-	 */
+-	nss_top_main.hal_ops = &nss_hal_ipq806x_ops;
+-#ifdef NSS_DATA_PLANE_GENERIC_SUPPORT
+-	nss_top_main.data_plane_ops = &nss_data_plane_gmac_ops;
+-#endif
+-	nss_top_main.num_nss = 2;
+-
+-#endif /* NSS_DT_SUPPORT */
+ 	nss_top_main.nss_hal_common_init_done = false;
+ 
+ 	/*
+@@ -792,16 +677,9 @@ nss_info("Init NSS driver");
+ 	 */
+ 	nss_strings_init();
+ 
+-#if (LINUX_VERSION_CODE < KERNEL_VERSION(6, 6, 0))
+-	/*
+-	 * Register sysctl table.
+-	 */
+-	nss_dev_header = register_sysctl_table(nss_root);
+-#else
+ 	nss_clk_hdr = register_sysctl("dev/nss/clock", nss_freq_table);
+ 	nss_gen_hdr = register_sysctl("dev/nss/general", nss_general_table);
+ 	nss_skb_hdr = register_sysctl("dev/nss/skb_reuse", nss_skb_reuse_table);
+-#endif
+ 	/*
+ 	 * Registering sysctl for ipv4/6 specific config.
+ 	 */
+@@ -870,20 +748,6 @@ nss_info("Init NSS driver");
+ 	 */
+ 	nss_wq = create_workqueue("nss_freq_queue");
+ 
+-#if (NSS_PM_SUPPORT == 1)
+-	/*
+-	 * Initialize NSS Bus PM module
+-	 */
+-	nss_pm_init();
+-
+-	/*
+-	 * Register with Bus driver
+-	 */
+-	pm_client = nss_pm_client_register(NSS_PM_CLIENT_NETAP);
+-	if (!pm_client) {
+-		nss_warning("Error registering with PM driver");
+-	}
+-#endif
+ 
+ 	/*
+ 	 * Initialize mtu size needed as start
+@@ -963,10 +827,6 @@ static void __exit nss_cleanup(void)
+ {
+ 	nss_info("Exit NSS driver");
+ 
+-#if (LINUX_VERSION_CODE < KERNEL_VERSION(6, 6, 0))
+-	if (nss_dev_header)
+-		unregister_sysctl_table(nss_dev_header);
+-#else
+ 	if (nss_clk_hdr)
+ 		unregister_sysctl_table(nss_clk_hdr);
+ 
+@@ -975,7 +835,6 @@ static void __exit nss_cleanup(void)
+ 
+ 	if (nss_skb_hdr)
+ 		unregister_sysctl_table(nss_skb_hdr);
+-#endif
+ 	/*
+ 	 * Unregister n2h specific sysctl
+ 	 */
+--- a/nss_ipsec_cmn_stats.c
++++ b/nss_ipsec_cmn_stats.c
+@@ -17,6 +17,7 @@
+  ***************************************************************************
+  */
+ 
++#include <linux/vmalloc.h>
+ #include "nss_core.h"
+ #include "nss_ipsec_cmn.h"
+ #include "nss_ipsec_cmn_stats.h"
+--- a/nss_ipv4.c
++++ b/nss_ipv4.c
+@@ -591,7 +591,7 @@ void nss_ipv4_free_conn_tables(void)
+  * nss_ipv4_accel_mode_cfg_handler()
+  *	Configure acceleration mode for IPv4
+  */
+-static int nss_ipv4_accel_mode_cfg_handler(struct ctl_table *ctl, int write, void __user *buffer, size_t *lenp, loff_t *ppos)
++static int nss_ipv4_accel_mode_cfg_handler(const struct ctl_table *ctl, int write, void *buffer, size_t *lenp, loff_t *ppos)
+ {
+ 	struct nss_top_instance *nss_top = &nss_top_main;
+ 	struct nss_ctx_instance *nss_ctx = &nss_top->nss[0];
+@@ -635,7 +635,7 @@ static int nss_ipv4_accel_mode_cfg_handl
+  * nss_ipv4_dscp_map_cfg_handler()
+  *	Sysctl handler for dscp/pri mappings.
+  */
+-static int nss_ipv4_dscp_map_cfg_handler(struct ctl_table *ctl, int write, void __user *buffer, size_t *lenp, loff_t *ppos)
++static int nss_ipv4_dscp_map_cfg_handler(const struct ctl_table *ctl, int write, void *buffer, size_t *lenp, loff_t *ppos)
+ {
+ 	struct nss_top_instance *nss_top = &nss_top_main;
+ 	struct nss_ctx_instance *nss_ctx = &nss_top->nss[0];
+@@ -700,35 +700,7 @@ static struct ctl_table nss_ipv4_table[]
+ 		.maxlen		= sizeof(struct nss_dscp_map_entry),
+ 		.mode		= 0644,
+ 		.proc_handler	= &nss_ipv4_dscp_map_cfg_handler,
+-	},
+-	{ }
+-};
+-
+-static struct ctl_table nss_ipv4_dir[] = {
+-	{
+-		.procname		= "ipv4cfg",
+-		.mode			= 0555,
+-		.child			= nss_ipv4_table,
+-	},
+-	{ }
+-};
+-
+-static struct ctl_table nss_ipv4_root_dir[] = {
+-	{
+-		.procname		= "nss",
+-		.mode			= 0555,
+-		.child			= nss_ipv4_dir,
+-	},
+-	{ }
+-};
+-
+-static struct ctl_table nss_ipv4_root[] = {
+-	{
+-		.procname		= "dev",
+-		.mode			= 0555,
+-		.child			= nss_ipv4_root_dir,
+-	},
+-	{ }
++	}
+ };
+ 
+ static struct ctl_table_header *nss_ipv4_header;
+@@ -745,7 +717,7 @@ void nss_ipv4_register_sysctl(void)
+ 	/*
+ 	 * Register sysctl table.
+ 	 */
+-	nss_ipv4_header = register_sysctl_table(nss_ipv4_root);
++	nss_ipv4_header = register_sysctl("dev/nss/ipv4cfg", nss_ipv4_table);
+ }
+ 
+ /*
+--- a/nss_ipv6.c
++++ b/nss_ipv6.c
+@@ -18,6 +18,7 @@
+  * nss_ipv6.c
+  *	NSS IPv6 APIs
+  */
++#include "linux/ipv6.h"
+ #include <nss_core.h>
+ #include "nss_dscp_map.h"
+ #include "nss_ipv6_stats.h"
+@@ -377,7 +378,7 @@ EXPORT_SYMBOL(nss_ipv6_get_mgr);
+  * nss_ipv6_register_handler()
+  *	Register our handler to receive messages for this interface
+  */
+-void nss_ipv6_register_handler()
++void nss_ipv6_register_handler(void)
+ {
+ 	struct nss_ctx_instance *nss_ctx = nss_ipv6_get_mgr();
+ 
+@@ -594,7 +595,7 @@ void nss_ipv6_free_conn_tables(void)
+  * nss_ipv6_accel_mode_cfg_handler()
+  *	Configure acceleration mode for IPv6
+  */
+-static int nss_ipv6_accel_mode_cfg_handler(struct ctl_table *ctl, int write, void __user *buffer, size_t *lenp, loff_t *ppos)
++static int nss_ipv6_accel_mode_cfg_handler(const struct ctl_table *ctl, int write, void *buffer, size_t *lenp, loff_t *ppos)
+ {
+ 	struct nss_top_instance *nss_top = &nss_top_main;
+ 	struct nss_ctx_instance *nss_ctx = &nss_top->nss[0];
+@@ -638,7 +639,7 @@ static int nss_ipv6_accel_mode_cfg_handl
+  * nss_ipv6_dscp_map_cfg_handler()
+  *	Sysctl handler for dscp/pri mappings.
+  */
+-static int nss_ipv6_dscp_map_cfg_handler(struct ctl_table *ctl, int write, void __user *buffer, size_t *lenp, loff_t *ppos)
++static int nss_ipv6_dscp_map_cfg_handler(const struct ctl_table *ctl, int write, void *buffer, size_t *lenp, loff_t *ppos)
+ {
+ 	struct nss_top_instance *nss_top = &nss_top_main;
+ 	struct nss_ctx_instance *nss_ctx = &nss_top->nss[0];
+@@ -702,35 +703,7 @@ static struct ctl_table nss_ipv6_table[]
+ 		.maxlen			= sizeof(struct nss_dscp_map_entry),
+ 		.mode			= 0644,
+ 		.proc_handler		= &nss_ipv6_dscp_map_cfg_handler,
+-	},
+-	{ }
+-};
+-
+-static struct ctl_table nss_ipv6_dir[] = {
+-	{
+-		.procname		= "ipv6cfg",
+-		.mode			= 0555,
+-		.child			= nss_ipv6_table,
+-	},
+-	{ }
+-};
+-
+-static struct ctl_table nss_ipv6_root_dir[] = {
+-	{
+-		.procname		= "nss",
+-		.mode			= 0555,
+-		.child			= nss_ipv6_dir,
+-	},
+-	{ }
+-};
+-
+-static struct ctl_table nss_ipv6_root[] = {
+-	{
+-		.procname		= "dev",
+-		.mode			= 0555,
+-		.child			= nss_ipv6_root_dir,
+-	},
+-	{ }
++	}
+ };
+ 
+ static struct ctl_table_header *nss_ipv6_header;
+@@ -747,7 +720,7 @@ void nss_ipv6_register_sysctl(void)
+ 	/*
+ 	 * Register sysctl table.
+ 	 */
+-	nss_ipv6_header = register_sysctl_table(nss_ipv6_root);
++	nss_ipv6_header = register_sysctl("dev/nss/ipv6cfg", nss_ipv6_table);
+ }
+ 
+ /*
+--- a/nss_log.c
++++ b/nss_log.c
+@@ -524,7 +524,7 @@ fail:
+  * nss_logbuffer_handler()
+  *	Enable NSS debug output
+  */
+-int nss_logbuffer_handler(struct ctl_table *ctl, int write, void __user *buffer, size_t *lenp, loff_t *ppos)
++int nss_logbuffer_handler(const struct ctl_table *ctl, int write, void __user *buffer, size_t *lenp, loff_t *ppos)
+ {
+ 	int ret;
+ 	int core_status;
+--- a/nss_mirror_stats.c
++++ b/nss_mirror_stats.c
+@@ -17,6 +17,7 @@
+  **************************************************************************
+  */
+ 
++#include <linux/vmalloc.h>
+ #include "nss_stats.h"
+ #include "nss_core.h"
+ #include "nss_mirror.h"
+--- a/nss_n2h.c
++++ b/nss_n2h.c
+@@ -357,7 +357,7 @@ static int nss_n2h_get_paged_payload_inf
+  * nss_n2h_set_empty_buf_pool()
+  *	Sets empty pool buffer
+  */
+-static int nss_n2h_set_empty_buf_pool(struct ctl_table *ctl, int write,
++static int nss_n2h_set_empty_buf_pool(const struct ctl_table *ctl, int write,
+ 				void __user *buffer,
+ 				size_t *lenp, loff_t *ppos,
+ 				nss_ptr_t core_num, int *new_val)
+@@ -459,7 +459,7 @@ failure:
+  * nss_n2h_set_empty_paged_pool_buf()
+  *	Sets empty paged pool buffer
+  */
+-static int nss_n2h_set_empty_paged_pool_buf(struct ctl_table *ctl, int write,
++static int nss_n2h_set_empty_paged_pool_buf(const struct ctl_table *ctl, int write,
+ 				void __user *buffer,
+ 				size_t *lenp, loff_t *ppos,
+ 				nss_ptr_t core_num, int *new_val)
+@@ -561,7 +561,7 @@ failure:
+  * nss_n2h_set_water_mark()
+  *	Sets water mark for N2H SOS
+  */
+-static int nss_n2h_set_water_mark(struct ctl_table *ctl, int write,
++static int nss_n2h_set_water_mark(const struct ctl_table *ctl, int write,
+ 					void __user *buffer,
+ 					size_t *lenp, loff_t *ppos,
+ 					uint32_t core_num, int *low, int *high)
+@@ -675,7 +675,7 @@ failure:
+  * nss_n2h_set_paged_water_mark()
+  *	Sets water mark for paged pool N2H SOS
+  */
+-static int nss_n2h_set_paged_water_mark(struct ctl_table *ctl, int write,
++static int nss_n2h_set_paged_water_mark(const struct ctl_table *ctl, int write,
+ 					void __user *buffer,
+ 					size_t *lenp, loff_t *ppos,
+ 					uint32_t core_num, int *low, int *high)
+@@ -789,7 +789,7 @@ failure:
+  * nss_n2h_cfg_wifi_pool()
+  *	Sets number of wifi payloads to adjust high water mark for N2H SoS
+  */
+-static int nss_n2h_cfg_wifi_pool(struct ctl_table *ctl, int write,
++static int nss_n2h_cfg_wifi_pool(const struct ctl_table *ctl, int write,
+ 					void __user *buffer,
+ 					size_t *lenp, loff_t *ppos,
+ 					int *payloads)
+@@ -886,7 +886,7 @@ failure:
+  * nss_n2h_empty_pool_buf_core1_handler()
+  *	Sets the number of empty buffer for core 1
+  */
+-static int nss_n2h_empty_pool_buf_cfg_core1_handler(struct ctl_table *ctl,
++static int nss_n2h_empty_pool_buf_cfg_core1_handler(const struct ctl_table *ctl,
+ 				int write, void __user *buffer,
+ 				size_t *lenp, loff_t *ppos)
+ {
+@@ -898,7 +898,7 @@ static int nss_n2h_empty_pool_buf_cfg_co
+  * nss_n2h_empty_pool_buf_core0_handler()
+  *	Sets the number of empty buffer for core 0
+  */
+-static int nss_n2h_empty_pool_buf_cfg_core0_handler(struct ctl_table *ctl,
++static int nss_n2h_empty_pool_buf_cfg_core0_handler(const struct ctl_table *ctl,
+ 				int write, void __user *buffer,
+ 				size_t *lenp, loff_t *ppos)
+ {
+@@ -910,7 +910,7 @@ static int nss_n2h_empty_pool_buf_cfg_co
+  * nss_n2h_empty_paged_pool_buf_cfg_core1_handler()
+  *	Sets the number of empty paged buffer for core 1
+  */
+-static int nss_n2h_empty_paged_pool_buf_cfg_core1_handler(struct ctl_table *ctl,
++static int nss_n2h_empty_paged_pool_buf_cfg_core1_handler(const struct ctl_table *ctl,
+ 				int write, void __user *buffer,
+ 				size_t *lenp, loff_t *ppos)
+ {
+@@ -922,7 +922,7 @@ static int nss_n2h_empty_paged_pool_buf_
+  * nss_n2h_empty_paged_pool_buf_cfg_core0_handler()
+  *	Sets the number of empty paged buffer for core 0
+  */
+-static int nss_n2h_empty_paged_pool_buf_cfg_core0_handler(struct ctl_table *ctl,
++static int nss_n2h_empty_paged_pool_buf_cfg_core0_handler(const struct ctl_table *ctl,
+ 				int write, void __user *buffer,
+ 				size_t *lenp, loff_t *ppos)
+ {
+@@ -934,7 +934,7 @@ static int nss_n2h_empty_paged_pool_buf_
+  * nss_n2h_water_mark_core1_handler()
+  *	Sets water mark for core 1
+  */
+-static int nss_n2h_water_mark_core1_handler(struct ctl_table *ctl,
++static int nss_n2h_water_mark_core1_handler(const struct ctl_table *ctl,
+ 			int write, void __user *buffer,
+ 			size_t *lenp, loff_t *ppos)
+ {
+@@ -947,7 +947,7 @@ static int nss_n2h_water_mark_core1_hand
+  * nss_n2h_water_mark_core0_handler()
+  *	Sets water mark for core 0
+  */
+-static int nss_n2h_water_mark_core0_handler(struct ctl_table *ctl,
++static int nss_n2h_water_mark_core0_handler(const struct ctl_table *ctl,
+ 			int write, void __user *buffer,
+ 			size_t *lenp, loff_t *ppos)
+ {
+@@ -960,7 +960,7 @@ static int nss_n2h_water_mark_core0_hand
+  * nss_n2h_paged_water_mark_core1_handler()
+  *	Sets paged water mark for core 1
+  */
+-static int nss_n2h_paged_water_mark_core1_handler(struct ctl_table *ctl,
++static int nss_n2h_paged_water_mark_core1_handler(const struct ctl_table *ctl,
+ 			int write, void __user *buffer,
+ 			size_t *lenp, loff_t *ppos)
+ {
+@@ -973,7 +973,7 @@ static int nss_n2h_paged_water_mark_core
+  * nss_n2h_paged_water_mark_core0_handler()
+  *	Sets paged water mark for core 0
+  */
+-static int nss_n2h_paged_water_mark_core0_handler(struct ctl_table *ctl,
++static int nss_n2h_paged_water_mark_core0_handler(const struct ctl_table *ctl,
+ 			int write, void __user *buffer,
+ 			size_t *lenp, loff_t *ppos)
+ {
+@@ -986,7 +986,7 @@ static int nss_n2h_paged_water_mark_core
+  * nss_n2h_wifi_payloads_handler()
+  *	Sets number of wifi payloads
+  */
+-static int nss_n2h_wifi_payloads_handler(struct ctl_table *ctl,
++static int nss_n2h_wifi_payloads_handler(const struct ctl_table *ctl,
+ 			int write, void __user *buffer,
+ 			size_t *lenp, loff_t *ppos)
+ {
+@@ -998,7 +998,7 @@ static int nss_n2h_wifi_payloads_handler
+  * nss_n2h_get_qos_mem_size_cfg_handler()
+  *	Gets the QoS memory pool size
+  */
+-static int nss_n2h_get_qos_mem_size_cfg_handler(struct ctl_table *ctl,
++static int nss_n2h_get_qos_mem_size_cfg_handler(const struct ctl_table *ctl,
+ 			int write, void __user *buffer,
+ 			size_t *lenp, loff_t *ppos)
+ {
+@@ -1281,7 +1281,7 @@ failure:
+  * nss_mitigation_handler()
+  * Enable NSS MITIGATION
+  */
+-static int nss_n2h_mitigationcfg_core0_handler(struct ctl_table *ctl, int write, void __user *buffer, size_t *lenp, loff_t *ppos)
++static int nss_n2h_mitigationcfg_core0_handler(const struct ctl_table *ctl, int write, void __user *buffer, size_t *lenp, loff_t *ppos)
+ {
+ 	struct nss_top_instance *nss_top = &nss_top_main;
+ 	struct nss_ctx_instance *nss_ctx = &nss_top->nss[NSS_CORE_0];
+@@ -1312,7 +1312,7 @@ static int nss_n2h_mitigationcfg_core0_h
+  * nss_mitigation_handler()
+  * Enable NSS MITIGATION
+  */
+-static int nss_n2h_mitigationcfg_core1_handler(struct ctl_table *ctl, int write, void __user *buffer, size_t *lenp, loff_t *ppos)
++static int nss_n2h_mitigationcfg_core1_handler(const struct ctl_table *ctl, int write, void __user *buffer, size_t *lenp, loff_t *ppos)
+ {
+ 	struct nss_top_instance *nss_top = &nss_top_main;
+ 	struct nss_ctx_instance *nss_ctx = &nss_top->nss[NSS_CORE_1];
+@@ -1343,7 +1343,7 @@ static int nss_n2h_mitigationcfg_core1_h
+  * nss_buf_handler()
+  *	Add extra NSS bufs from host memory
+  */
+-static int nss_n2h_buf_cfg_core0_handler(struct ctl_table *ctl, int write, void __user *buffer, size_t *lenp, loff_t *ppos)
++static int nss_n2h_buf_cfg_core0_handler(const struct ctl_table *ctl, int write, void __user *buffer, size_t *lenp, loff_t *ppos)
+ {
+ 	struct nss_top_instance *nss_top = &nss_top_main;
+ 	struct nss_ctx_instance *nss_ctx = &nss_top->nss[NSS_CORE_0];
+@@ -1382,7 +1382,7 @@ static int nss_n2h_buf_cfg_core0_handler
+  * nss_n2h_buf_handler()
+  *	Add extra NSS bufs from host memory
+  */
+-static int nss_n2h_buf_cfg_core1_handler(struct ctl_table *ctl, int write, void __user *buffer, size_t *lenp, loff_t *ppos)
++static int nss_n2h_buf_cfg_core1_handler(const struct ctl_table *ctl, int write, void __user *buffer, size_t *lenp, loff_t *ppos)
+ {
+ 	struct nss_top_instance *nss_top = &nss_top_main;
+ 	struct nss_ctx_instance *nss_ctx = &nss_top->nss[NSS_CORE_1];
+@@ -1435,7 +1435,7 @@ static void nss_n2h_queue_limit_callback
+  * nss_n2h_set_queue_limit_sync()
+  *	Sets the n2h queue size limit synchronously.
+  */
+-static int nss_n2h_set_queue_limit_sync(struct ctl_table *ctl, int write, void __user *buffer,
++static int nss_n2h_set_queue_limit_sync(const struct ctl_table *ctl, int write, void __user *buffer,
+ 					size_t *lenp, loff_t *ppos, uint32_t core_id)
+ {
+ 	struct nss_top_instance *nss_top = &nss_top_main;
+@@ -1512,7 +1512,7 @@ static int nss_n2h_set_queue_limit_sync(
+  * nss_n2h_queue_limit_core0_handler()
+  *	Sets the n2h queue size limit for core0
+  */
+-static int nss_n2h_queue_limit_core0_handler(struct ctl_table *ctl,
++static int nss_n2h_queue_limit_core0_handler(const struct ctl_table *ctl,
+ 				int write, void __user *buffer,
+ 				size_t *lenp, loff_t *ppos)
+ {
+@@ -1524,7 +1524,7 @@ static int nss_n2h_queue_limit_core0_han
+  * nss_n2h_queue_limit_core1_handler()
+  *	Sets the n2h queue size limit for core1
+  */
+-static int nss_n2h_queue_limit_core1_handler(struct ctl_table *ctl,
++static int nss_n2h_queue_limit_core1_handler(const struct ctl_table *ctl,
+ 				int write, void __user *buffer,
+ 				size_t *lenp, loff_t *ppos)
+ {
+@@ -1602,7 +1602,7 @@ static nss_tx_status_t nss_n2h_host_bp_c
+  * nss_n2h_host_bp_cfg_handler()
+  *	Enable n2h back pressure.
+  */
+-static int nss_n2h_host_bp_cfg_handler(struct ctl_table *ctl, int write,
++static int nss_n2h_host_bp_cfg_handler(const struct ctl_table *ctl, int write,
+ 				void __user *buffer, size_t *lenp, loff_t *ppos, uint32_t core_id)
+ {
+ 	struct nss_top_instance *nss_top = &nss_top_main;
+@@ -1640,7 +1640,7 @@ static int nss_n2h_host_bp_cfg_handler(s
+  * nss_n2h_host_bp_cfg_core0_handler()
+  *	Enable n2h back pressure in core 0.
+  */
+-static int nss_n2h_host_bp_cfg_core0_handler(struct ctl_table *ctl, int write,
++static int nss_n2h_host_bp_cfg_core0_handler(const struct ctl_table *ctl, int write,
+ 				void __user *buffer, size_t *lenp, loff_t *ppos)
+ {
+ 	return nss_n2h_host_bp_cfg_handler(ctl, write, buffer, lenp, ppos, NSS_CORE_0);
+@@ -1650,7 +1650,7 @@ static int nss_n2h_host_bp_cfg_core0_han
+  * nss_n2h_host_bp_cfg_core1_handler()
+  *	Enable n2h back pressure in core 1.
+  */
+-static int nss_n2h_host_bp_cfg_core1_handler(struct ctl_table *ctl, int write,
++static int nss_n2h_host_bp_cfg_core1_handler(const struct ctl_table *ctl, int write,
+ 				void __user *buffer, size_t *lenp, loff_t *ppos)
+ {
+ 	return nss_n2h_host_bp_cfg_handler(ctl, write, buffer, lenp, ppos, NSS_CORE_1);
+@@ -1740,9 +1740,7 @@ static struct ctl_table nss_n2h_table_si
+ 		.maxlen			= sizeof(int),
+ 		.mode			= 0644,
+ 		.proc_handler	= &nss_n2h_get_qos_mem_size_cfg_handler,
+-	},
+-
+-	{ }
++	}
+ };
+ 
+ static struct ctl_table nss_n2h_table_multi_core[] = {
+@@ -1900,42 +1898,10 @@ static struct ctl_table nss_n2h_table_mu
+ 		.maxlen			= sizeof(int),
+ 		.mode			= 0644,
+ 		.proc_handler	= &nss_n2h_get_qos_mem_size_cfg_handler,
+-	},
+-	{ }
+-};
+-
+-
+-#if (LINUX_VERSION_CODE < KERNEL_VERSION(6, 6, 0))
+-/*
+- * This table will be overwritten during single-core registration
+- */
+-static struct ctl_table nss_n2h_dir[] = {
+-	{
+-		.procname		= "n2hcfg",
+-		.mode			= 0555,
+-		.child			= nss_n2h_table_multi_core,
+-	},
+-	{ }
++	}
+ };
+ 
+-static struct ctl_table nss_n2h_root_dir[] = {
+-	{
+-		.procname		= "nss",
+-		.mode			= 0555,
+-		.child			= nss_n2h_dir,
+-	},
+-	{ }
+-};
+ 
+-static struct ctl_table nss_n2h_root[] = {
+-	{
+-		.procname		= "dev",
+-		.mode			= 0555,
+-		.child			= nss_n2h_root_dir,
+-	},
+-	{ }
+-};
+-#endif
+ 
+ static struct ctl_table_header *nss_n2h_header;
+ /*
+@@ -2284,12 +2250,7 @@ void nss_n2h_single_core_register_sysctl
+ 	/*
+ 	 * Register sysctl table.
+ 	 */
+-#if (LINUX_VERSION_CODE < KERNEL_VERSION(6, 6, 0))
+-	nss_n2h_dir[0].child = nss_n2h_table_single_core;
+-	nss_n2h_header = register_sysctl_table(nss_n2h_root);
+-#else
+ 	nss_n2h_header = register_sysctl("dev/nss/n2hcfg", nss_n2h_table_single_core);
+-#endif
+ }
+ 
+ /*
+@@ -2388,11 +2349,7 @@ void nss_n2h_multi_core_register_sysctl(
+ 	 * Register sysctl table.
+ 	 */
+ 
+-#if (LINUX_VERSION_CODE < KERNEL_VERSION(6, 6, 0))
+-	nss_n2h_header = register_sysctl_table(nss_n2h_root);
+-#else
+ 	nss_n2h_header = register_sysctl("dev/nss/n2hcfg", nss_n2h_table_multi_core);
+-#endif
+ }
+ 
+ /*
+--- a/nss_n2h_stats.c
++++ b/nss_n2h_stats.c
+@@ -46,6 +46,7 @@ static ssize_t nss_n2h_stats_read(struct
+ 	size_t size_wr = 0;
+ 	ssize_t bytes_read = 0;
+ 	uint64_t *stats_shadow;
++	char n2h_tag[7];
+ 
+ 	char *lbuf = kzalloc(size_al, GFP_KERNEL);
+ 	if (unlikely(lbuf == NULL)) {
+@@ -69,7 +70,8 @@ static ssize_t nss_n2h_stats_read(struct
+ 			stats_shadow[i] = nss_n2h_stats[core][i];
+ 		}
+ 		spin_unlock_bh(&nss_top_main.stats_lock);
+-		size_wr += nss_stats_banner(lbuf, size_wr, size_al, "n2h", core);
++		snprintf(n2h_tag, 7, "N2H %d", core);
++		size_wr += nss_stats_banner(lbuf, size_wr, size_al, n2h_tag, NSS_STATS_SINGLE_CORE);
+ 		size_wr += nss_stats_print("n2h", NULL, NSS_STATS_SINGLE_INSTANCE
+ 						, nss_n2h_strings_stats
+ 						, stats_shadow
+--- a/nss_pm.c
++++ b/nss_pm.c
+@@ -28,176 +28,7 @@
+ #include <nss_api_if.h>
+ #include <nss_core.h>
+ 
+-#if (NSS_DT_SUPPORT != 1)
+-#include <nss_clocks.h>
+-#endif
+-
+-#if (NSS_PM_SUPPORT == 1)
+-#include "nss_pm.h"
+-
+-/*
+- * Global NSS PM structure
+- */
+-struct nss_pm_global_ctx ctx;
+-
+-/*
+- * Bus vector table for GMAC driver
+- */
+-static struct msm_bus_paths nss_gmac_bw_level_tbl[NSS_PM_PERF_MAX_LEVELS] = {
+-		[NSS_PM_PERF_LEVEL_SUSPEND] =  GMAC_BW_MBPS(0, 0),
+-				/* 0 MHz to DDR, 0 MHz to TCM */
+-		[NSS_PM_PERF_LEVEL_IDLE] =  GMAC_BW_MBPS(133, 5),
+-				/* 133 MHz to DDR, 5 MHz to TCM */
+-		[NSS_PM_PERF_LEVEL_NOMINAL] =  GMAC_BW_MBPS(200, 400),
+-				/* 200 MHz to DDR, 10 MHz to TCM */
+-		[NSS_PM_PERF_LEVEL_TURBO] = GMAC_BW_MBPS(266, 533),
+-				/* 266 MHz to DDR, 20 MHz to TCM  */
+-};
+-
+-/*
+- * Bus vector table for Crypto driver
+- */
+-static struct msm_bus_paths nss_crypto_bw_level_tbl[NSS_PM_PERF_MAX_LEVELS] = {
+-		[NSS_PM_PERF_LEVEL_SUSPEND] =  CRYPTO_BW_MBPS(0, 0),
+-				/* 0 MHz to DDR, 0 MHz to TCM */
+-		[NSS_PM_PERF_LEVEL_IDLE] =  CRYPTO_BW_MBPS(133, 5),
+-				/* 133 MHz to DDR, 5 MHz to TCM */
+-		[NSS_PM_PERF_LEVEL_NOMINAL] =  CRYPTO_BW_MBPS(200, 400),
+-				/* 200 MHz to DDR, 10 MHz to TCM */
+-		[NSS_PM_PERF_LEVEL_TURBO] = CRYPTO_BW_MBPS(266, 533),
+-				/* 266 MHz to DDR, 20 MHz to TCM  */
+-};
+-
+-#ifdef  NSS_PM_NETAP_GMAC_SCALING
+-
+-/*
+- * Bus vector table for NSS HLOS driver
+- * This requests bw for both NSS Fab0 and Fab1 on behalf of GMAC and NSS Drivers
+- */
+-static struct msm_bus_paths nss_netap_bw_level_tbl[NSS_PM_PERF_MAX_LEVELS] = {
+-		[NSS_PM_PERF_LEVEL_SUSPEND] =  GMAC_BW_MBPS(0, 0),
+-			/* 0 MHz to DDR, 0 MHz to TCM */
+-		[NSS_PM_PERF_LEVEL_IDLE] =  GMAC_BW_MBPS(122, 122),
+-			/* 133 MHz to DDR and TCM */
+-		[NSS_PM_PERF_LEVEL_NOMINAL] =  GMAC_BW_MBPS(200, 200),
+-			/* 400 MHz to DDR and TCM */
+-		[NSS_PM_PERF_LEVEL_TURBO] = GMAC_BW_MBPS(400, 400),
+-			/* 533 MHz to DDR and TCM  */
+-};
+-
+-#else
+-
+-/*
+- * Bus vector table for NSS HLOS driver
+- */
+-static struct msm_bus_paths nss_netap_bw_level_tbl[NSS_PM_PERF_MAX_LEVELS] = {
+-		[NSS_PM_PERF_LEVEL_SUSPEND] =  NETAP_BW_MBPS(0, 0),
+-			/* 0 MHz to DDR, 0 MHz to TCM */
+-		[NSS_PM_PERF_LEVEL_IDLE] =  NETAP_BW_MBPS(133, 133),
+-			/* 133 MHz to DDR and TCM */
+-		[NSS_PM_PERF_LEVEL_NOMINAL] =  NETAP_BW_MBPS(400, 400),
+-			/* 400 MHz to DDR and TCM */
+-		[NSS_PM_PERF_LEVEL_TURBO] = NETAP_BW_MBPS(533, 533),
+-			/* 533 MHz to DDR and TCM  */
+-};
+-
+-#endif
+-
+-/*
+- * Bus Driver Platform data for GMAC, Crypto and Netap clients
+- */
+-static struct msm_bus_scale_pdata nss_bus_scale[] = {
+-	[NSS_PM_CLIENT_GMAC] = {
+-		.usecase = nss_gmac_bw_level_tbl,
+-		.num_usecases = ARRAY_SIZE(nss_gmac_bw_level_tbl),
+-		.active_only = 1,
+-		.name = "qca-nss-gmac",
+-	},
+-
+-	[NSS_PM_CLIENT_CRYPTO] = {
+-		.usecase = nss_crypto_bw_level_tbl,
+-		.num_usecases = ARRAY_SIZE(nss_crypto_bw_level_tbl),
+-		.active_only = 1,
+-		.name = "qca-nss-crypto",
+-	},
+-
+-	[NSS_PM_CLIENT_NETAP] = {
+-		.usecase = nss_netap_bw_level_tbl,
+-		.num_usecases = ARRAY_SIZE(nss_netap_bw_level_tbl),
+-		.active_only = 1,
+-		.name = "qca-nss-drv",
+-	},
+-};
+-
+-/*
+- * nss_pm_dbg_perf_level_get
+- *    debugfs hook to get the current performance level
+- */
+-static int nss_pm_dbg_perf_level_get(void *data, u64 *val)
+-{
+-	nss_pm_client_data_t *pm_client;
+-
+-	pm_client = (nss_pm_client_data_t *)data;
+-	*val = pm_client->current_perf_lvl;
+-
+-	return NSS_PM_API_SUCCESS;
+-}
+-
+-/*
+- * nss_pm_dbg_autoscale_get
+- *    debugfs hook to get the current autoscale setting
+- */
+-static int nss_pm_dbg_autoscale_get(void *data, u64 *val)
+-{
+-	nss_pm_client_data_t *pm_client;
+-
+-	pm_client = (nss_pm_client_data_t *)data;
+-	*val = pm_client->auto_scale;
+-
+-	return NSS_PM_API_SUCCESS;
+-}
+-
+-/*
+- * nss_pm_dbg_perf_level_set
+- *    debugfs hook to set perf level for a client
+- */
+-static int nss_pm_dbg_perf_level_set(void *data, u64 val)
+-{
+-	uint32_t perf_level;
+-
+-	perf_level = (uint32_t) val;
+-
+-	if (perf_level >= NSS_PM_PERF_MAX_LEVELS ||
+-			perf_level < NSS_PM_PERF_LEVEL_IDLE) {
+-		nss_pm_warning("unsupported performance level %d \n", perf_level);
+-		return NSS_PM_API_FAILED;
+-	}
+-
+-	nss_pm_set_perf_level(data, perf_level);
+-	return NSS_PM_API_SUCCESS;
+-}
+-
+-/*
+- * nss_pm_dbg_autoscale_set
+- *    debugfs hook to enable auto scaling for a client
+- */
+-static int nss_pm_dbg_autoscale_set(void *data, u64 val)
+-{
+-	nss_pm_client_data_t *pm_client;
+-
+-	if (val > 1) {
+-		nss_pm_warning(" Invalid set value, valid values are 0/1 \n");
+-		return NSS_PM_API_FAILED;
+-	}
+-
+-	pm_client->auto_scale = (uint32_t)val;
+-	return NSS_PM_API_SUCCESS;
+-}
+-
+-DEFINE_SIMPLE_ATTRIBUTE(perf_level_fops, nss_pm_dbg_perf_level_get, nss_pm_dbg_perf_level_set, "%llu\n");
+ 
+-DEFINE_SIMPLE_ATTRIBUTE(autoscale_fops, nss_pm_dbg_autoscale_get, nss_pm_dbg_autoscale_set, "%llu\n");
+-#endif /** (NSS_PM_SUPPORT == 1) */
+ 
+ /*
+  * nss_pm_client_register
+@@ -210,73 +41,6 @@ DEFINE_SIMPLE_ATTRIBUTE(autoscale_fops,
+  */
+ void *nss_pm_client_register(nss_pm_client_t client_id)
+ {
+-#if (NSS_PM_SUPPORT == 1)
+-	int ret;
+-	struct dentry *pm_dentry;
+-	nss_pm_client_data_t *pm_client;
+-
+-	if (unlikely(client_id >= NSS_PM_MAX_CLIENTS))  {
+-		nss_pm_warning("nss_pm_client_register invalid client id %d \n", client_id);
+-		goto error;
+-	}
+-
+-	pm_client  =  &ctx.nss_pm_client[client_id];
+-
+-	pm_client->bus_perf_client = msm_bus_scale_register_client(&nss_bus_scale[client_id]);
+-	if (!pm_client->bus_perf_client) {
+-		nss_pm_warning("unable to register bus client \n");
+-		goto error;
+-	}
+-
+-	ret = msm_bus_scale_client_update_request(pm_client->bus_perf_client, NSS_PM_PERF_LEVEL_IDLE);
+-	if (ret) {
+-		nss_pm_warning("initial bandwidth req failed (%d)\n", ret);
+-		msm_bus_scale_unregister_client((uint32_t) pm_client->bus_perf_client);
+-		goto error;
+-	}
+-
+-	pm_client->current_perf_lvl = NSS_PM_PERF_LEVEL_IDLE;
+-
+-	switch (client_id) {
+-		case NSS_PM_CLIENT_GMAC:
+-			pm_dentry = debugfs_create_dir("gmac" , ctx.pm_dentry);
+-			break;
+-
+-		case NSS_PM_CLIENT_CRYPTO:
+-			pm_dentry = debugfs_create_dir("crypto" , ctx.pm_dentry);
+-			break;
+-
+-		case NSS_PM_CLIENT_NETAP:
+-			pm_dentry = debugfs_create_dir("netap" , ctx.pm_dentry);
+-			break;
+-
+-		default:
+-			nss_pm_warning("debugfs create failed invalid client id %d \n", client_id);
+-			msm_bus_scale_unregister_client((uint32_t) pm_client->bus_perf_client);
+-			goto error;
+-
+-	}
+-
+-	if (unlikely(pm_dentry == NULL)) {
+-		nss_pm_info("debugfs not created for %d client pm \n", client_id);
+-		goto out;
+-	}
+-
+-	pm_client->dentry = pm_dentry;
+-	pm_client->client_id = client_id;
+-
+-	if (!debugfs_create_file("perf_level", S_IRUGO | S_IWUSR, pm_dentry, pm_client, &perf_level_fops)) {
+-		nss_pm_info("debugfs perf_level file not created for %d client pm \n", client_id);
+-	}
+-
+-	if (!debugfs_create_file("auto-scale", S_IRUGO | S_IWUSR, pm_dentry, pm_client, &autoscale_fops)) {
+-		nss_pm_info("debugfs auto-scale file not created for %d client pm \n", client_id);
+-	}
+-
+-out:
+-	return (void *)pm_client;
+-error:
+-#endif
+ 	return NULL;
+ }
+ EXPORT_SYMBOL(nss_pm_client_register);
+@@ -287,35 +51,6 @@ EXPORT_SYMBOL(nss_pm_client_register);
+  */
+ int nss_pm_client_unregister(nss_pm_client_t client_id)
+ {
+-#if (NSS_PM_SUPPORT == 1)
+-	nss_pm_client_data_t *pm_client;
+-
+-	if (unlikely(client_id >= NSS_PM_MAX_CLIENTS))  {
+-		nss_pm_warning("nss_pm_client_unregister invalid client id %d \n", client_id);
+-		goto error;
+-	}
+-
+-	pm_client  =  &ctx.nss_pm_client[client_id];
+-
+-	if (unlikely(pm_client == NULL))  {
+-		nss_pm_warning("nss_pm_client_unregister client not registered %d \n", client_id);
+-		goto error;
+-	}
+-
+-	if (pm_client->bus_perf_client) {
+-		msm_bus_scale_unregister_client((uint32_t) pm_client->bus_perf_client);
+-	} else {
+-		nss_pm_info("nss_pm_client_unregister: client not registered \n");
+-	}
+-
+-	if (likely(pm_client->dentry != NULL)) {
+-		debugfs_remove_recursive(pm_client->dentry);
+-	}
+-
+-	return NSS_PM_API_SUCCESS;
+-
+-error:
+-#endif
+ 	return NSS_PM_API_FAILED;
+ }
+ 
+@@ -325,7 +60,8 @@ error:
+  */
+ nss_pm_interface_status_t nss_pm_set_perf_level(void *handle, nss_pm_perf_level_t lvl)
+ {
+-#if ((NSS_DT_SUPPORT == 1) && (NSS_FREQ_SCALE_SUPPORT == 1))
++#if (NSS_FREQ_SCALE_SUPPORT == 1)
++#if !defined(NSS_HAL_IPQ807x_SUPPORT)
+ 	nss_freq_scales_t index;
+ 
+ 	switch (lvl) {
+@@ -341,110 +77,12 @@ nss_pm_interface_status_t nss_pm_set_per
+ 		index = NSS_FREQ_MID_SCALE;
+ 	}
+ 
+-#if !defined(NSS_HAL_IPQ807x_SUPPORT)
+ 	nss_freq_sched_change(index, false);
+ #endif
+ 
+-#elif (NSS_PM_SUPPORT == 1)
+-
+-	int ret = 0;
+-	nss_pm_client_data_t *pm_client;
+-
+-	pm_client = (nss_pm_client_data_t *) handle;
+-	if (pm_client->current_perf_lvl == lvl) {
+-		nss_pm_trace("Already at perf level %d , ignoring request \n", lvl);
+-		return NSS_PM_API_SUCCESS;
+-	}
+-
+-	if (!pm_client->bus_perf_client) {
+-		nss_pm_warning("Bus driver client not registered.request failed \n");
+-		return NSS_PM_API_FAILED;
+-	}
+-
+-	/*
+-	 * Do client specific operations here
+-	 */
+-	if (pm_client->client_id == NSS_PM_CLIENT_NETAP) {
+-		if ((lvl == NSS_PM_PERF_LEVEL_TURBO) && (ctx.turbo_support == true)) {
+-			/*
+-			 * For turbo perf level, switch TCM source to
+-			 * SRC1 to set TCM clock = 400 MHz
+-			 * SRC0 and SRC1 are set to 266 and 400 MHz resp.
+-			 * in nss_hal/ipq806x/nss_hal_pvt.c
+-			 */
+-			writel(0x3, NSSTCM_CLK_SRC_CTL);
+-		} else {
+-			/*
+-			 * For Nominal and Idle perf level, switch to SRC0 to
+-			 * set TCM clock = 266 MHz
+-			 */
+-			writel(0x2, NSSTCM_CLK_SRC_CTL);
+-
+-			if (lvl == NSS_PM_PERF_LEVEL_TURBO) {
+-				lvl = NSS_PM_PERF_LEVEL_NOMINAL;
+-			}
+-		}
+-	}
+-
+-	if (pm_client->client_id == NSS_PM_CLIENT_CRYPTO) {
+-		if ((lvl == NSS_PM_PERF_LEVEL_TURBO) && (ctx.turbo_support == true))  {
+-			/*
+-			 * For Turbo mode, set Crypto core and
+-			 * Fabric  port clocks to 213 MHz
+-			 */
+-			writel(0x23, CE5_ACLK_SRC0_NS);
+-			writel(0x23, CE5_HCLK_SRC0_NS);
+-			writel(0x23, CE5_CORE_CLK_SRC0_NS);
+-
+-			writel(0x2, CE5_ACLK_SRC_CTL);
+-			writel(0x2, CE5_HCLK_SRC_CTL);
+-			writel(0x2, CE5_CORE_CLK_SRC_CTL);
+-		} else {
+-			lvl = NSS_PM_PERF_LEVEL_NOMINAL;
+-		}
+-	}
+-
+-	/* Update bandwidth if request has changed. This may sleep. */
+-	ret = msm_bus_scale_client_update_request(pm_client->bus_perf_client, lvl);
+-	if (ret) {
+-		nss_pm_warning("bandwidth request failed (%d)\n", ret);
+-		return NSS_PM_API_FAILED;
+-	}
+-
+-	nss_pm_info("perf level request, current: %d new: %d \n", pm_client->current_perf_lvl, lvl);
+-	pm_client->current_perf_lvl = lvl;
+ #endif
+ 
+ 	return NSS_PM_API_SUCCESS;
+ }
+ EXPORT_SYMBOL(nss_pm_set_perf_level);
+ 
+-#if (NSS_PM_SUPPORT == 1)
+-/*
+- * nss_pm_set_turbo()
+- *   Sets the turbo support flag globally for all clients
+- */
+-void nss_pm_set_turbo() {
+-
+-	nss_pm_info("NSS Bus PM - Platform supports Turbo Mode \n");
+-	ctx.turbo_support = true;
+-}
+-
+-/*
+- * nss_pm_init()
+- *    Initialize NSS PM top level structures
+- */
+-void nss_pm_init(void) {
+-
+-	nss_pm_info("NSS Bus PM (platform - IPQ806x, build - %s:%s)\n", __DATE__, __TIME__);
+-
+-	ctx.pm_dentry = debugfs_create_dir("qca-nss-pm", NULL);
+-
+-	/* Default turbo support is set to off */
+-	ctx.turbo_support = false;
+-
+-	if (unlikely(ctx.pm_dentry == NULL)) {
+-		nss_pm_warning("Failed to create qca-nss-drv directory in debugfs");
+-	}
+-}
+-#endif
+--- a/nss_ppe.c
++++ b/nss_ppe.c
+@@ -357,7 +357,7 @@ void nss_ppe_init(void)
+ 	/*
+ 	 * Get the PPE base address
+ 	 */
+-	ppe_pvt.ppe_base = ioremap_nocache(PPE_BASE_ADDR, PPE_REG_SIZE);
++	ppe_pvt.ppe_base = nss_ioremap(PPE_BASE_ADDR, PPE_REG_SIZE);
+ 	if (!ppe_pvt.ppe_base) {
+ 		nss_warning("DRV can't get PPE base address\n");
+ 		return;
+--- a/nss_ppe_vp.c
++++ b/nss_ppe_vp.c
+@@ -20,6 +20,7 @@
+  * Header file for qca-ssdk APIs
+  */
+ #include <ref/ref_vsi.h>
++#include <linux/vmalloc.h>
+ 
+ #include "nss_ppe_vp.h"
+ #include "nss_ppe_vp_stats.h"
+@@ -215,7 +216,7 @@ static void nss_ppe_vp_callback(void *ap
+  * Since ath0 has only one type i.e. ath0 is NSS_DYNAMIC_INTERFACE_TYPE_VAP, the above command can be rewritten as
+  * echo ath0 > /proc/sys/nss/ppe_vp/create => Here 6 can be ignored.
+  */
+-static nss_if_num_t nss_ppe_vp_parse_vp_cmd(struct ctl_table *ctl, int write, void __user *buffer, size_t *lenp, loff_t *ppos)
++static nss_if_num_t nss_ppe_vp_parse_vp_cmd(const struct ctl_table *ctl, int write, void __user *buffer, size_t *lenp, loff_t *ppos)
+ {
+ 	int32_t if_num;
+ 	struct net_device *dev;
+@@ -693,7 +694,7 @@ static void nss_ppe_vp_handler(struct ns
+  * nss_ppe_vp_destroy_handler()
+  *	PPE VP destroy handler.
+  */
+-static int nss_ppe_vp_destroy_handler(struct ctl_table *ctl, int write, void __user *buffer, size_t *lenp, loff_t *ppos)
++static int nss_ppe_vp_destroy_handler(const struct ctl_table *ctl, int write, void __user *buffer, size_t *lenp, loff_t *ppos)
+ {
+ 	struct nss_ctx_instance *nss_ctx = nss_ppe_vp_get_context();
+ 	int32_t if_num;
+@@ -730,7 +731,7 @@ static int nss_ppe_vp_destroy_handler(st
+  * nss_ppe_vp_create_handler()
+  *	PPE VP create handler.
+  */
+-static int nss_ppe_vp_create_handler(struct ctl_table *ctl, int write, void __user *buffer, size_t *lenp, loff_t *ppos)
++static int nss_ppe_vp_create_handler(const struct ctl_table *ctl, int write, void __user *buffer, size_t *lenp, loff_t *ppos)
+ {
+ 	int32_t if_num;
+ 	struct nss_ctx_instance *nss_ctx = nss_ppe_vp_get_context();
+@@ -779,26 +780,7 @@ static struct ctl_table nss_ppe_vp_table
+ 		.maxlen         = sizeof(nss_ppe_vp_cmd),
+ 		.mode           = 0644,
+ 		.proc_handler   = &nss_ppe_vp_destroy_handler,
+-	},
+-	{ }
+-};
+-
+-static struct ctl_table nss_ppe_vp_dir[] = {
+-	{
+-		.procname	= "ppe_vp",
+-		.mode		= 0555,
+-		.child		= nss_ppe_vp_table,
+-	},
+-	{ }
+-};
+-
+-static struct ctl_table nss_ppe_vp_root_dir[] = {
+-	{
+-		.procname	= "nss",
+-		.mode		= 0555,
+-		.child		= nss_ppe_vp_dir,
+-	},
+-	{ }
++	}
+ };
+ 
+ static struct ctl_table_header *nss_ppe_vp_procfs_header;
+@@ -812,7 +794,7 @@ void nss_ppe_vp_procfs_register(void)
+ 	/*
+ 	 * Register sysctl table.
+ 	 */
+-	nss_ppe_vp_procfs_header = register_sysctl_table(nss_ppe_vp_root_dir);
++	nss_ppe_vp_procfs_header = register_sysctl("dev/nss/ppe_vp", nss_ppe_vp_table);
+ }
+ 
+ /*
+--- a/nss_pppoe.c
++++ b/nss_pppoe.c
+@@ -203,7 +203,7 @@ static void nss_pppoe_handler(struct nss
+  * nss_pppoe_br_accel_mode_handler()
+  *	Enable/disable pppoe bridge acceleration in NSS
+  */
+-int nss_pppoe_br_accel_mode_handler(struct ctl_table *ctl, int write, void __user *buffer, size_t *lenp, loff_t *ppos)
++int nss_pppoe_br_accel_mode_handler(const struct ctl_table *ctl, int write, void __user *buffer, size_t *lenp, loff_t *ppos)
+ {
+ 	struct nss_ctx_instance *nss_ctx = nss_pppoe_get_context();
+ 	struct nss_pppoe_msg npm;
+@@ -349,35 +349,7 @@ static struct ctl_table nss_pppoe_table[
+ 		.maxlen                 = sizeof(int),
+ 		.mode                   = 0644,
+ 		.proc_handler           = &nss_pppoe_br_accel_mode_handler,
+-	},
+-	{ }
+-};
+-
+-static struct ctl_table nss_pppoe_dir[] = {
+-	{
+-		.procname		= "pppoe",
+-		.mode			= 0555,
+-		.child			= nss_pppoe_table,
+-	},
+-	{ }
+-};
+-
+-static struct ctl_table nss_pppoe_root_dir[] = {
+-	{
+-		.procname		= "nss",
+-		.mode			= 0555,
+-		.child			= nss_pppoe_dir,
+-	},
+-	{ }
+-};
+-
+-static struct ctl_table nss_pppoe_root[] = {
+-	{
+-		.procname		= "dev",
+-		.mode			= 0555,
+-		.child			= nss_pppoe_root_dir,
+-	},
+-	{ }
++	}
+ };
+ 
+ static struct ctl_table_header *nss_pppoe_header;
+@@ -391,7 +363,7 @@ void nss_pppoe_register_sysctl(void)
+ 	/*
+ 	 * Register sysctl table.
+ 	 */
+-	nss_pppoe_header = register_sysctl_table(nss_pppoe_root);
++	nss_pppoe_header = register_sysctl("dev/nss/pppoe", nss_pppoe_table);
+ }
+ 
+ /*
+--- a/nss_project.c
++++ b/nss_project.c
+@@ -235,7 +235,7 @@ static void nss_project_msg_handler(stru
+  * Uses proc_dointvec to process data. For a write operation, also sends worker
+  * thread stats enable messages containing the new value to each NSS core.
+  */
+-static int nss_project_wt_stats_handler(struct ctl_table *ctl, int write,
++static int nss_project_wt_stats_handler(const struct ctl_table *ctl, int write,
+ 	void __user *buffer, size_t *lenp, loff_t *ppos)
+ {
+ 	int ret;
+@@ -332,38 +332,9 @@ static struct ctl_table nss_project_tabl
+ 		.maxlen			= sizeof(int),
+ 		.mode			= 0644,
+ 		.proc_handler		= &nss_project_wt_stats_handler,
+-	},
+-	{ }
+-};
+-
+-#if (LINUX_VERSION_CODE < KERNEL_VERSION(6, 6, 0))
+-static struct ctl_table nss_project_dir[] = {
+-	{
+-		.procname		= "project",
+-		.mode			= 0555,
+-		.child			= nss_project_table,
+-	},
+-	{ }
+-};
+-
+-static struct ctl_table nss_project_root_dir[] = {
+-	{
+-		.procname		= "nss",
+-		.mode			= 0555,
+-		.child			= nss_project_dir,
+-	},
+-	{ }
++	}
+ };
+ 
+-static struct ctl_table nss_project_root[] = {
+-	{
+-		.procname		= "dev",
+-		.mode			= 0555,
+-		.child			= nss_project_root_dir,
+-	},
+-	{ }
+-};
+-#endif
+ 
+ static struct ctl_table_header *nss_project_header;
+ 
+@@ -373,11 +344,7 @@ static struct ctl_table_header *nss_proj
+  */
+ void nss_project_register_sysctl(void)
+ {
+-#if (LINUX_VERSION_CODE < KERNEL_VERSION(6, 6, 0))
+-	nss_project_header = register_sysctl_table(nss_project_root);
+-#else
+ 	nss_project_header = register_sysctl("dev/nss/project", nss_project_table);
+-#endif
+ }
+ 
+ /*
+--- a/nss_qrfs.c
++++ b/nss_qrfs.c
+@@ -117,45 +117,6 @@ static struct nss_ctx_instance *nss_qrfs
+  * nss_qrfs_get_flow_keys()
+  *	Get 5 tuple information from flow keys and set in flow rule message.
+  */
+-#if (LINUX_VERSION_CODE <= KERNEL_VERSION(3, 18, 21))
+-static bool nss_qrfs_get_flow_keys(struct nss_ctx_instance *nss_ctx, struct sk_buff *skb,
+-					struct nss_qrfs_flow_rule_msg *nqfrm)
+-{
+-	struct flow_keys keys;
+-	uint16_t protocol = skb->protocol;
+-	bool res;
+-	struct ipv6hdr *ip6hdr;
+-
+-	res = skb_flow_dissect(skb, &keys);
+-	if (!res) {
+-		nss_warning("%px: failed to get flow keys\n", nss_ctx);
+-		return res;
+-	}
+-
+-	nqfrm->protocol = keys.ip_proto;
+-	nqfrm->src_port = keys.port16[0];
+-	nqfrm->dst_port = keys.port16[1];
+-
+-	if (protocol == htons(ETH_P_IP)) {
+-		nqfrm->ip_version = 4;
+-		nqfrm->src_addr[0] = keys.src;
+-		nqfrm->dst_addr[0] = keys.dst;
+-		return true;
+-	}
+-
+-	nqfrm->ip_version = 6;
+-	ip6hdr = (struct ipv6hdr *)skb_network_header(skb);
+-	if (!ip6hdr) {
+-		nss_warning("%px: failed to get IPv6 address\n", nss_ctx);
+-		return false;
+-	}
+-
+-	memcpy(nqfrm->src_addr, &ip6hdr->saddr, sizeof(struct in6_addr));
+-	memcpy(nqfrm->dst_addr, &ip6hdr->daddr, sizeof(struct in6_addr));
+-
+-	return true;
+-}
+-#else
+ static bool nss_qrfs_get_flow_keys(struct nss_ctx_instance *nss_ctx, struct sk_buff *skb,
+ 					struct nss_qrfs_flow_rule_msg *nqfrm)
+ {
+@@ -185,7 +146,6 @@ static bool nss_qrfs_get_flow_keys(struc
+ 
+ 	return true;
+ }
+-#endif
+ 
+ /*
+  * nss_qrfs_flow_add_msg_callback()
+--- a/nss_qvpn_stats.c
++++ b/nss_qvpn_stats.c
+@@ -19,6 +19,7 @@
+ 
+ #include "nss_core.h"
+ #include <nss_qvpn.h>
++#include <linux/vmalloc.h>
+ #include "nss_qvpn_stats.h"
+ #include "nss_qvpn_strings.h"
+ 
+--- a/nss_rps.c
++++ b/nss_rps.c
+@@ -70,7 +70,7 @@ static inline void nss_rps_pri_map_usage
+  * nss_rps_pri_map_print()
+  *	Sysctl handler for printing rps/pri mapping.
+  */
+-static int nss_rps_pri_map_print(struct ctl_table *ctl, void __user *buffer,
++static int nss_rps_pri_map_print(void *buffer,
+ 				size_t *lenp, loff_t *ppos, int *pri_map)
+ {
+ 	char *r_buf;
+@@ -109,7 +109,7 @@ static int nss_rps_pri_map_print(struct
+ 	len = scnprintf(r_buf + cp_bytes, 4, "\n");
+ 	cp_bytes += len;
+ 
+-	cp_bytes = simple_read_from_buffer(buffer, *lenp, ppos, r_buf, cp_bytes);
++	cp_bytes = memory_read_from_buffer(buffer, *lenp, ppos, r_buf, cp_bytes);
+ 	*lenp = cp_bytes;
+ 	kfree(r_buf);
+ 	return 0;
+@@ -119,13 +119,10 @@ static int nss_rps_pri_map_print(struct
+  * nss_rps_pri_map_parse()
+  *	Sysctl handler for rps/pri mappings.
+  */
+-static int nss_rps_pri_map_parse(struct ctl_table *ctl, void __user *buffer,
+-	size_t *lenp, loff_t *ppos, struct nss_rps_pri_map_parse_data *out)
++static int nss_rps_pri_map_parse(void *buffer,
++	size_t *lenp, struct nss_rps_pri_map_parse_data *out)
+ {
+-	size_t cp_bytes = 0;
+-	char w_buf[5];
+-	loff_t w_offset = 0;
+-	char *str;
++	char w_buf[6];
+ 	unsigned int pri;
+ 	int core, res;
+ 
+@@ -140,14 +137,15 @@ static int nss_rps_pri_map_parse(struct
+ 	/*
+ 	 * It's a write operation
+ 	 */
+-	cp_bytes = simple_write_to_buffer(w_buf, *lenp, &w_offset, buffer, 5);
+-	if (cp_bytes != *lenp) {
+-		nss_warning("failed to write to buffer\n");
+-		return -EFAULT;
++	if (*lenp >= sizeof(w_buf)) {
++		nss_warning("Input too large: %zu\n", *lenp);
++		return -EINVAL;
+ 	}
+ 
+-	str = w_buf;
+-	res = sscanf(str, "%u %d", &pri, &core);
++	memcpy(w_buf, buffer, *lenp);
++	w_buf[*lenp] = '\0'; /* Ensure null termination */
++
++	res = sscanf(w_buf, "%u %d", &pri, &core);
+ 	if (res != NSS_RPS_PRI_MAP_PARAM_FIELD_COUNT) {
+ 		nss_warning("failed to read the buffer\n");
+ 		return -EFAULT;
+@@ -406,8 +404,8 @@ static nss_tx_status_t nss_rps_pri_map_c
+  * nss_rps_cfg_handler()
+  *	Enable NSS RPS.
+  */
+-static int nss_rps_cfg_handler(struct ctl_table *ctl, int write,
+-				void __user *buffer, size_t *lenp, loff_t *ppos)
++static int nss_rps_cfg_handler(const struct ctl_table *ctl, int write,
++				void *buffer, size_t *lenp, loff_t *ppos)
+ {
+ 	struct nss_top_instance *nss_top = &nss_top_main;
+ 	struct nss_ctx_instance *nss_ctx;
+@@ -457,8 +455,8 @@ static int nss_rps_cfg_handler(struct ct
+  * nss_rps_hash_bitmap_cfg_handler()
+  *	Configure NSS rps_hash_bitmap
+  */
+-static int nss_rps_hash_bitmap_cfg_handler(struct ctl_table *ctl, int write,
+-				void __user *buffer, size_t *lenp, loff_t *ppos)
++static int nss_rps_hash_bitmap_cfg_handler(const struct ctl_table *ctl, int write,
++				void *buffer, size_t *lenp, loff_t *ppos)
+ {
+ 	struct nss_top_instance *nss_top = &nss_top_main;
+ 	struct nss_ctx_instance *nss_ctx __attribute__((unused)) = &nss_top->nss[0];
+@@ -520,8 +518,8 @@ static int nss_rps_hash_bitmap_cfg_handl
+ /* nss_rps_pri_map_cfg_handler()
+  *	Configure NSS rps_pri_map
+  */
+-static int nss_rps_pri_map_cfg_handler(struct ctl_table *ctl, int write,
+-				void __user *buffer, size_t *lenp, loff_t *ppos)
++static int nss_rps_pri_map_cfg_handler(const struct ctl_table *ctl, int write,
++				void *buffer, size_t *lenp, loff_t *ppos)
+ {
+ 	struct nss_top_instance *nss_top = &nss_top_main;
+ 	struct nss_ctx_instance *nss_ctx = &nss_top->nss[0];
+@@ -529,10 +527,10 @@ static int nss_rps_pri_map_cfg_handler(s
+ 	int ret, ret_pri_map;
+ 	struct nss_rps_pri_map_parse_data out, current_state;
+ 	if (!write) {
+-		return nss_rps_pri_map_print(ctl, buffer, lenp, ppos, nss_rps_pri_map);
++		return nss_rps_pri_map_print(buffer, lenp, ppos, nss_rps_pri_map);
+ 	}
+ 
+-	ret = nss_rps_pri_map_parse(ctl, buffer, lenp, ppos, &out);
++	ret = nss_rps_pri_map_parse(buffer, lenp, &out);
+ 
+ 	if (ret != NSS_SUCCESS) {
+ 		nss_rps_pri_map_usage();
+@@ -573,39 +571,10 @@ static struct ctl_table nss_rps_table[]
+ 		.maxlen		= sizeof(int),
+ 		.mode		= 0644,
+ 		.proc_handler	= &nss_rps_pri_map_cfg_handler,
+-	},
+-	{ }
+-};
+-
+-
+-#if (LINUX_VERSION_CODE < KERNEL_VERSION(6, 6, 0))
+-static struct ctl_table nss_rps_dir[] = {
+-	{
+-		.procname		= "rps",
+-		.mode			= 0555,
+-		.child			= nss_rps_table,
+-	},
+-	{ }
++	}
+ };
+ 
+-static struct ctl_table nss_rps_root_dir[] = {
+-	{
+-		.procname		= "nss",
+-		.mode			= 0555,
+-		.child			= nss_rps_dir,
+-	},
+-	{ }
+-};
+ 
+-static struct ctl_table nss_rps_root[] = {
+-	{
+-		.procname		= "dev",
+-		.mode			= 0555,
+-		.child			= nss_rps_root_dir,
+-	},
+-	{ }
+-};
+-#endif
+ 
+ static struct ctl_table_header *nss_rps_header;
+ 
+@@ -643,11 +612,7 @@ void nss_rps_register_sysctl(void)
+ 	/*
+ 	 * Register sysctl table.
+ 	 */
+-#if (LINUX_VERSION_CODE < KERNEL_VERSION(6, 6, 0))
+-	nss_rps_header = register_sysctl_table(nss_rps_root);
+-#else
+ 	nss_rps_header = register_sysctl("dev/nss/rps", nss_rps_table);
+-#endif
+ }
+ 
+ /*
+--- a/nss_stats.c
++++ b/nss_stats.c
+@@ -70,7 +70,7 @@ static size_t nss_stats_spacing(uint64_t
+  * nss_stats_nonzero_handler()
+  *	Handler to take nonzero stats print configuration.
+  */
+-static int nss_stats_nonzero_handler(struct ctl_table *ctl, int write, void __user *buffer, size_t *lenp, loff_t *ppos)
++static int nss_stats_nonzero_handler(const struct ctl_table *ctl, int write, void __user *buffer, size_t *lenp, loff_t *ppos)
+ {
+ 	int ret;
+ 	ret = proc_dointvec(ctl, write, buffer, lenp, ppos);
+@@ -84,38 +84,9 @@ static struct ctl_table nss_stats_table[
+ 		.maxlen			= sizeof(int),
+ 		.mode			= 0644,
+ 		.proc_handler		= &nss_stats_nonzero_handler,
+-	},
+-	{ }
+-};
+-
+-#if (LINUX_VERSION_CODE < KERNEL_VERSION(6, 6, 0))
+-static struct ctl_table nss_stats_dir[] = {
+-	{
+-		.procname		= "stats",
+-		.mode			= 0555,
+-		.child			= nss_stats_table,
+-	},
+-	{ }
+-};
+-
+-static struct ctl_table nss_stats_root_dir[] = {
+-	{
+-		.procname		= "nss",
+-		.mode			= 0555,
+-		.child			= nss_stats_dir,
+-	},
+-	{ }
++	}
+ };
+ 
+-static struct ctl_table nss_stats_root[] = {
+-	{
+-		.procname		= "dev",
+-		.mode			= 0555,
+-		.child			= nss_stats_root_dir,
+-	},
+-	{ }
+-};
+-#endif
+ 
+ static struct ctl_table_header *nss_stats_header;
+ 
+@@ -128,11 +99,7 @@ void nss_stats_register_sysctl(void)
+ 	/*
+ 	 * Register sysctl table.
+ 	 */
+-#if (LINUX_VERSION_CODE < KERNEL_VERSION(6, 6, 0))
+-	nss_stats_header = register_sysctl_table(nss_stats_root);
+-#else
+ 	nss_stats_header = register_sysctl("dev/nss/stats", nss_stats_table);
+-#endif
+ }
+ 
+ /*
+@@ -261,7 +228,7 @@ size_t nss_stats_banner(char *lbuf, size
+ 		size_wr += scnprintf(lbuf + size_wr, size_al - size_wr, "<");
+ 	}
+ 
+-	strlcpy(node_upr, node, NSS_STATS_NODE_NAME_MAX);
++	strscpy(node_upr, node, NSS_STATS_NODE_NAME_MAX + 1);
+ 	for (i = 0; node_upr[i] != '\0' && i < NSS_STATS_NODE_NAME_MAX; i++) {
+ 		node_upr[i] = toupper(node_upr[i]);
+ 	}
+@@ -326,7 +293,7 @@ size_t nss_stats_print(char *node, char
+ 			continue;
+ 		}
+ 
+-		strlcpy(stats_string, stats_info[i].stats_name, NSS_STATS_MAX_STR_LENGTH);
++		strscpy(stats_string, stats_info[i].stats_name, NSS_STATS_MAX_STR_LENGTH);
+ 
+ 		/*
+ 		 * Converting  uppercase to lower case.
+@@ -335,7 +302,7 @@ size_t nss_stats_print(char *node, char
+ 			stats_string[j] = tolower(stats_string[j]);
+ 		}
+ 
+-		strlcpy(node_lwr, node, NSS_STATS_NODE_NAME_MAX);
++		strscpy(node_lwr, node, NSS_STATS_NODE_NAME_MAX + 1);
+ 		for (j = 0; node_lwr[j] != '\0' && j < NSS_STATS_NODE_NAME_MAX; j++) {
+ 			node_lwr[j] = tolower(node_lwr[j]);
+ 		}
+--- a/nss_tls_stats.c
++++ b/nss_tls_stats.c
+@@ -17,6 +17,7 @@
+  ******************************************************************************
+  */
+ 
++#include <linux/vmalloc.h>
+ #include "nss_core.h"
+ #include "nss_tls.h"
+ #include "nss_tls_stats.h"
+--- a/nss_tstamp.c
++++ b/nss_tstamp.c
+@@ -155,9 +155,6 @@ static void nss_tstamp_copy_data(struct
+ 
+ 	tstamp = skb_hwtstamps(skb);
+ 	tstamp->hwtstamp = ktime_set(ntm->ts_data_hi, ntm->ts_data_lo);
+-#if (LINUX_VERSION_CODE <= KERNEL_VERSION(3, 16, 0))
+-	tstamp->syststamp = ktime_set(ntm->ts_data_hi, ntm->ts_data_lo);
+-#endif
+ }
+ 
+ /*
+@@ -364,11 +361,7 @@ struct net_device *nss_tstamp_register_n
+ 	struct net_device *ndev;
+ 	uint32_t err = 0;
+ 
+-#if (LINUX_VERSION_CODE <= KERNEL_VERSION(3, 16, 0))
+-	ndev = alloc_netdev(sizeof(struct netdev_priv_instance), "qca-nss-tstamp", nss_tstamp_ndev_setup);
+-#else
+ 	ndev = alloc_netdev(sizeof(struct netdev_priv_instance), "qca-nss-tstamp", NET_NAME_ENUM, nss_tstamp_ndev_setup);
+-#endif
+ 	if (!ndev) {
+ 		nss_warning("Tstamp: Could not allocate tstamp net_device ");
+ 		return NULL;
+--- a/nss_tunipip6_stats.c
++++ b/nss_tunipip6_stats.c
+@@ -17,6 +17,8 @@
+  **************************************************************************
+  */
+ 
++#include <linux/vmalloc.h>
++
+ #include "nss_core.h"
+ #include "nss_tunipip6.h"
+ #include "nss_stats.h"

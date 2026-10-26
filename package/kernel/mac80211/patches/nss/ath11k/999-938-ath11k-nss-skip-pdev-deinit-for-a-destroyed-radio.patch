@@ -1,0 +1,44 @@
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Subject: [PATCH] ath11k: skip nss pdev deinit for an already destroyed radio
+
+ath11k_nss_pdev_deinit() takes its radio from ab->pdevs[radio_id].ar and
+dereferences it unchecked, first through ath11k_nss_peer_stats_disable() and
+then for the deinit message itself. ath11k_mac_destroy() NULLs that pointer for
+every radio, and it sits on the ath11k_core_start() error path - the one a
+crash recovery takes when the firmware never answers with the unified ready
+event.
+
+ath11k_core_reconfigure_on_crash() restores ab->nss.enabled from the module
+parameter before it calls ath11k_core_qmi_firmware_ready(), and the failure
+path back out does not clear it again. A recovery that dies there therefore
+leaves the driver with offload still enabled and no radios at all, so the
+teardown at the top of the next reconfigure walks straight into the NULL.
+
+The first dereference reached is ar->ab in ath11k_nss_stats_cfg(), which every
+offload build takes because ath11k_core_pre_init() sets nss.stats_enabled
+alongside nss.enabled. ab is the first member of struct ath11k, which is why
+the fault address is exactly 0.
+
+A radio that has already been freed has nothing left to deinit - its NSS
+interface number and context lived in the ath11k that ath11k_mac_destroy()
+released - so return early and let the teardown loop account for it.
+
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+
+diff --git a/drivers/net/wireless/ath/ath11k/nss.c b/drivers/net/wireless/ath/ath11k/nss.c
+index 4235a84..3f4cc12 100644
+--- a/drivers/net/wireless/ath/ath11k/nss.c
++++ b/drivers/net/wireless/ath/ath11k/nss.c
+@@ -3484,6 +3484,12 @@
+ 	int dyn_if_type;
+ 	int ret;
+ 
++	/* A recovery that fails after ath11k_mac_destroy() leaves the radios
++	 * freed but nss.enabled set, so the next teardown lands here with none.
++	 */
++	if (!ar)
++		return -ENODEV;
++
+ 	ath11k_dbg(ab, ATH11K_DBG_NSS, "NSS pdev %d deinit\n", radio_id);
+ 	dyn_if_type = ath11k_nss_get_dynamic_interface_type(ab);
+ 

@@ -1,0 +1,17 @@
+nss_init: terminate nss_dt_ids with a NULL entry
+
+OF match tables must end with an empty sentinel; modpost enforces
+this since kernel 6.14 and fails the build otherwise.
+
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+
+--- a/nss_init.c
++++ b/nss_init.c
+@@ -120,6 +120,7 @@ struct of_device_id nss_dt_ids[] = {
+ 	{ .compatible = "qcom,nss" },
+ 	{ .compatible = "qcom,nss0" },
+ 	{ .compatible = "qcom,nss1" },
++	{ },
+ };
+ MODULE_DEVICE_TABLE(of, nss_dt_ids);
+ 

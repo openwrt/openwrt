@@ -1,0 +1,52 @@
+ecm_interface: fix the multicast hierarchy row bound
+
+ecm_interface_multicast_heirarchy_construct_bridge_nonsrcdev() walks the
+bridge slaves of a multicast destination and, for each, takes a hierarchy
+row to build into:
+
+	int total_if = valid_if + br_if;
+	...
+	if (total_if > ECM_DB_MULTICAST_IF_MAX) {
+		...
+		goto fail2;
+	}
+	ifaces = ecm_db_multicast_if_heirarchy_get(interfaces, total_if);
+
+total_if is an index, not a count, and the allocation behind interfaces is
+exactly ECM_DB_MULTICAST_IF_MAX rows -
+
+	#define ECM_DB_TO_MCAST_INTERFACES_SIZE (sizeof(struct ecm_db_iface_instance *) \
+			* ECM_DB_MULTICAST_IF_MAX * ECM_DB_IFACE_HEIRARCHY_MAX)
+
+- with no spare row, so a total_if of exactly 16 passes the test and
+addresses one whole row (ECM_DB_IFACE_HEIRARCHY_MAX pointers) past the
+end. The hierarchy is then constructed into it.
+
+The same file already states the correct form for an index a few lines
+down, DEBUG_ASSERT(valid_if < ECM_DB_MULTICAST_IF_MAX). Note the two
+sibling tests at the same bound are NOT the same defect and are left
+alone: the one on if_num and the one on valid_if at the end of the
+function both guard counts, where 16 is a legitimate full set, and
+tightening them would reject a valid 16-way multicast group.
+
+The accessor's own DEBUG_ASSERT(index <= ECM_DB_MULTICAST_IF_MAX) is off
+by one for the same reason, but it is left for now: with this call site
+corrected, an index of 16 can no longer reach it from here, and
+tightening a live assert - ECM builds at debug level 1, so DEBUG_ASSERT
+is BUG() - without first auditing every other caller would convert a
+latent condition into a panic on a path multicast traffic drives.
+Recorded in OPEN-BUGS.md instead.
+
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+
+--- a/ecm_interface.c
++++ b/ecm_interface.c
+@@ -5417,7 +5417,7 @@ int32_t ecm_interface_multicast_heirarch
+ 					continue;
+ 				}
+ 
+-				if (total_if > ECM_DB_MULTICAST_IF_MAX) {
++				if (total_if >= ECM_DB_MULTICAST_IF_MAX) {
+ 					ecm_interface_hierarchy_delete(interfaces, interface_first_base, total_if);
+ 					dev_put(mc_br_slave_dev);
+ 					goto fail2;

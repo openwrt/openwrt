@@ -1,0 +1,166 @@
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Subject: [PATCH] ath11k: nss: expose the wifili per-peer firmware statistics
+
+The NSS wifili firmware streams per-peer control statistics
+(NSS_WIFILI_PEER_STATS_MSG) that carry the aggregation and link-quality
+story of the offloaded data path: MSDU-level aggregation counts (A-MSDU
+vs unaggregated) in both directions, OFDMA transmit counts, the retry
+control block including the 12.5 firmware's per-MPDU retry counters,
+intra-BSS forwarding and rx MIC/decrypt errors. The host consumed only
+packet/byte/retry/failed totals for the station rate bookkeeping and
+threw the rest away, and nothing exposed even the kept fields.
+
+Accumulate the full set into the existing per-peer nss_stats block and
+add a per-station "nss_stats" debugfs file (created only when NSS
+offload is enabled) that dumps it. This gives offloaded stations the
+aggregation-efficiency and retry visibility that ext_tx_stats provides
+for the host datapath, without enabling any extra firmware traffic:
+the counters ride the peer stats sync that nss_peer_stats_config
+already controls.
+
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+
+diff --git a/drivers/net/wireless/ath/ath11k/debugfs_sta.c b/drivers/net/wireless/ath/ath11k/debugfs_sta.c
+index f71dc02..7d59ed7 100644
+--- a/drivers/net/wireless/ath/ath11k/debugfs_sta.c
++++ b/drivers/net/wireless/ath/ath11k/debugfs_sta.c
+@@ -1092,10 +1092,83 @@
+ 	.llseek = default_llseek,
+ };
+ 
++static ssize_t ath11k_dbg_sta_dump_nss_stats(struct file *file,
++					     char __user *user_buf,
++					     size_t count, loff_t *ppos)
++{
++	struct ieee80211_sta *sta = file->private_data;
++	struct ath11k_sta *arsta = ath11k_sta_to_arsta(sta);
++	struct ath11k *ar = arsta->arvif->ar;
++	struct ath11k_peer *peer;
++	struct peer_stats stats;
++	const int size = 1024;
++	int len = 0, retval;
++	char *buf;
++
++	buf = kzalloc(size, GFP_KERNEL);
++	if (!buf)
++		return -ENOMEM;
++
++	spin_lock_bh(&ar->ab->base_lock);
++	peer = ath11k_peer_find(ar, arsta->arvif->vdev_id, sta->addr);
++	if (!peer || !peer->nss.nss_stats) {
++		spin_unlock_bh(&ar->ab->base_lock);
++		kfree(buf);
++		return -ENOENT;
++	}
++	stats = *peer->nss.nss_stats;
++	spin_unlock_bh(&ar->ab->base_lock);
++
++	len += scnprintf(buf + len, size - len, "tx_packets %u\n", stats.tx_packets);
++	len += scnprintf(buf + len, size - len, "tx_bytes %u\n", stats.tx_bytes);
++	len += scnprintf(buf + len, size - len, "tx_retries %u\n", stats.tx_retries);
++	len += scnprintf(buf + len, size - len, "tx_failed %u\n", stats.tx_failed);
++	len += scnprintf(buf + len, size - len, "tx_amsdu %u\n", stats.tx_amsdu);
++	len += scnprintf(buf + len, size - len, "tx_non_amsdu %u\n", stats.tx_non_amsdu);
++	len += scnprintf(buf + len, size - len, "tx_ofdma %u\n", stats.tx_ofdma);
++	len += scnprintf(buf + len, size - len, "tx_failed_retries %u\n",
++			 stats.tx_failed_retries);
++	len += scnprintf(buf + len, size - len, "tx_multiple_retries %u\n",
++			 stats.tx_multiple_retries);
++#ifdef NSS_FIRMWARE_VERSION_12_5
++	len += scnprintf(buf + len, size - len, "tx_mpdu_retries %u\n",
++			 stats.tx_mpdu_retries);
++	len += scnprintf(buf + len, size - len, "tx_mpdu_total_retries %u\n",
++			 stats.tx_mpdu_total_retries);
++#endif
++	len += scnprintf(buf + len, size - len, "rx_packets %u\n", stats.rx_packets);
++	len += scnprintf(buf + len, size - len, "rx_bytes %u\n", stats.rx_bytes);
++	len += scnprintf(buf + len, size - len, "rx_dropped %u\n", stats.rx_dropped);
++	len += scnprintf(buf + len, size - len, "rx_amsdu %u\n", stats.rx_amsdu);
++	len += scnprintf(buf + len, size - len, "rx_non_amsdu %u\n", stats.rx_non_amsdu);
++	len += scnprintf(buf + len, size - len, "rx_retries %u\n", stats.rx_retries);
++	len += scnprintf(buf + len, size - len, "rx_intra_bss %u\n", stats.rx_intra_bss);
++	len += scnprintf(buf + len, size - len, "rx_intra_bss_fail %u\n",
++			 stats.rx_intra_bss_fail);
++	len += scnprintf(buf + len, size - len, "rx_mic_err %u\n", stats.rx_mic_err);
++	len += scnprintf(buf + len, size - len, "rx_decrypt_err %u\n",
++			 stats.rx_decrypt_err);
++
++	retval = simple_read_from_buffer(user_buf, count, ppos, buf, len);
++	kfree(buf);
++	return retval;
++}
++
++static const struct file_operations fops_nss_peer_stats = {
++	.read = ath11k_dbg_sta_dump_nss_stats,
++	.open = simple_open,
++	.owner = THIS_MODULE,
++	.llseek = default_llseek,
++};
++
+ void ath11k_debugfs_sta_op_add(struct ieee80211_hw *hw, struct ieee80211_vif *vif,
+ 			       struct ieee80211_sta *sta, struct dentry *dir)
+ {
+ 	struct ath11k *ar = hw->priv;
++
++	if (ar->ab->nss.enabled)
++		debugfs_create_file("nss_stats", 0400, dir, sta,
++				    &fops_nss_peer_stats);
+ 
+ 	if (ath11k_debugfs_is_extd_tx_stats_enabled(ar))
+ 		debugfs_create_file("tx_stats", 0400, dir, sta,
+--- a/drivers/net/wireless/ath/ath11k/nss.c
++++ b/drivers/net/wireless/ath/ath11k/nss.c
+@@ -204,6 +204,29 @@
+ 		rx_dropped = pstats->rx.err.mic_err +
+ 			pstats->rx.err.decrypt_err;
+ 		peer->nss.nss_stats->rx_dropped += rx_dropped;
++
++		peer->nss.nss_stats->tx_amsdu += pstats->tx.amsdu_cnt;
++		peer->nss.nss_stats->tx_non_amsdu += pstats->tx.non_amsdu_cnt;
++		peer->nss.nss_stats->tx_ofdma += pstats->tx.ofdma;
++#ifdef NSS_FIRMWARE_VERSION_12_5
++		peer->nss.nss_stats->tx_failed_retries +=
++			pstats->retry.tx_failed_retry_count;
++		peer->nss.nss_stats->tx_multiple_retries +=
++			pstats->retry.tx_multiple_retry_count;
++		peer->nss.nss_stats->tx_mpdu_retries +=
++			pstats->retry.tx_mpdu_retry_count;
++		peer->nss.nss_stats->tx_mpdu_total_retries +=
++			pstats->retry.tx_mpdu_total_retry_count;
++#endif
++		peer->nss.nss_stats->rx_amsdu += pstats->rx.amsdu_cnt;
++		peer->nss.nss_stats->rx_non_amsdu += pstats->rx.non_amsdu_cnt;
++#ifdef NSS_FIRMWARE_VERSION_12_5
++		peer->nss.nss_stats->rx_retries += pstats->retry.rx_retry_count;
++#endif
++		peer->nss.nss_stats->rx_intra_bss += pstats->rx.rx_intra_bss_pkts_num;
++		peer->nss.nss_stats->rx_intra_bss_fail += pstats->rx.rx_intra_bss_fail_num;
++		peer->nss.nss_stats->rx_mic_err += pstats->rx.err.mic_err;
++		peer->nss.nss_stats->rx_decrypt_err += pstats->rx.err.decrypt_err;
+ 
+ 		if (peer->nss.ext_vdev_up)
+ 			ATH11K_NSS_TXRX_NETDEV_STATS(rx, peer->nss.ext_vif, rx_bytes, rx_packets);
+--- a/drivers/net/wireless/ath/ath11k/nss.h
++++ b/drivers/net/wireless/ath/ath11k/nss.h
+@@ -136,6 +136,21 @@
+ 	u32 rx_dropped;
+ 	u32 last_rxdrop;
+ 	struct rate_info rxrate;
++	/* wifili firmware per-peer counters from the peer stats sync */
++	u32 tx_amsdu;
++	u32 tx_non_amsdu;
++	u32 tx_ofdma;
++	u32 tx_failed_retries;
++	u32 tx_multiple_retries;
++	u32 tx_mpdu_retries;
++	u32 tx_mpdu_total_retries;
++	u32 rx_amsdu;
++	u32 rx_non_amsdu;
++	u32 rx_retries;
++	u32 rx_intra_bss;
++	u32 rx_intra_bss_fail;
++	u32 rx_mic_err;
++	u32 rx_decrypt_err;
+ };
+ 
+ enum ath11k_nss_peer_sec_type {

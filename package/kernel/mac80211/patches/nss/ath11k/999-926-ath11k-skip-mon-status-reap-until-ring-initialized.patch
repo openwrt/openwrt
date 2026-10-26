@@ -1,0 +1,55 @@
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Subject: [PATCH] ath11k: skip monitor status reap until the ring is initialized
+
+During firmware recovery the extended interrupt groups are re-enabled
+before the monitor status refill ring has been set up again. Servicing
+the ring in that window passes an uninitialized srng to
+ath11k_hal_srng_access_begin() and panics in interrupt context -
+observed deterministically on IPQ8074 with NSS offload: every firmware
+fatal (hif_ce.c assertion -> Q6 SSR) turned into a host kernel panic
+about one second into the recovery, from the napi thread:
+
+  ath11k_hal_srng_access_begin+0xc
+  ath11k_dp_rx_process_mon_status+0x15c
+  ath11k_dp_service_srng+0xb8
+  ath11k_ahb_ext_grp_napi_poll+0x34
+
+Because the panic fires in the recovery path, it converts every
+recoverable firmware crash into a reboot.
+
+The monitor status refill ring is a source ring - the reap walks it with
+ath11k_hal_srng_src_peek() - so ath11k_hal_srng_access_begin() reads
+srng->u.src_ring.tp_addr, and that is the pointer that is NULL here.
+Test it directly rather than srng->initialized: ath11k_hal_srng_setup()
+sets ->initialized before ->tp_addr and without a barrier, so an
+->initialized check can still be true while tp_addr is NULL and would
+race the very ring rebuild it is meant to exclude. Same reasoning, and
+the same predicate, as the CE guard in 999-929.
+
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+
+diff --git a/drivers/net/wireless/ath/ath11k/dp_rx.c b/drivers/net/wireless/ath/ath11k/dp_rx.c
+index 9e05860..ab1e5a0 100644
+--- a/drivers/net/wireless/ath/ath11k/dp_rx.c
++++ b/drivers/net/wireless/ath/ath11k/dp_rx.c
+@@ -3808,6 +3808,20 @@
+ 	rx_ring = &dp->rx_mon_status_refill_ring[srng_id];
+ 
+ 	srng = &ab->hal.srng_list[rx_ring->refill_buf_ring.ring_id];
++
++	/*
++	 * During firmware recovery the extended interrupt groups are
++	 * re-enabled before the monitor status ring is set up again;
++	 * servicing it in that window dereferences an uninitialized srng
++	 * and panics in interrupt context. This is a source ring, so
++	 * ath11k_hal_srng_access_begin() reads u.src_ring.tp_addr - test
++	 * that pointer rather than ->initialized, because
++	 * ath11k_hal_srng_setup() sets ->initialized before ->tp_addr
++	 * without a barrier, leaving an ->initialized check racing the
++	 * ring rebuild it is meant to exclude.
++	 */
++	if (!srng->u.src_ring.tp_addr)
++		return 0;
+ 
+ 	spin_lock_bh(&srng->lock);
+ 

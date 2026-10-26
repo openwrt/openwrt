@@ -1,0 +1,61 @@
+nss_core: read the memory counters without si_meminfo() in softirq
+
+The DDR info the host sends a core is put together when the core's
+first non-queue interrupt is handled, in the NAPI poll, i.e. in softirq
+context: nss_core_handle_cause_nonqueue() -> nss_send_ddr_info() ->
+nss_get_ddr_info() -> si_meminfo(). si_meminfo() counts the block
+device buffers through nr_blockdev_pages(), which takes the superblock
+inode list lock, and the rest of the kernel takes that lock with
+softirqs enabled. Lockdep reports it ("inconsistent {SOFTIRQ-ON-W} ->
+{IN-SOFTIRQ-W} usage", on IPQ5018 at every boot) and turns itself off;
+if the softirq interrupted a holder of that lock on the same CPU, it
+would deadlock.
+
+Only the total, shared and free RAM go into the result and the log;
+the buffer count was only logged. Read them from totalram_pages() and
+the vmstat counters, which are fine in any context, and drop the
+buffer count from the log line.
+
+Signed-off-by: Stanislaw Pal <kuncy7@gmail.com>
+---
+--- a/nss_core.c
++++ b/nss_core.c
+@@ -561,13 +561,23 @@ static void nss_get_ddr_info(struct nss_mmu_ddr_info *mmu, char *name)
+ {
+ 	__be32 avail_ddr;
+ 	long cached;
+-	struct sysinfo vals;
++	unsigned long totalram, sharedram, freeram;
+ 	struct device_node *node;
+ 
+-	si_meminfo(&vals);
++	/*
++	 * The first call comes from the NAPI poll of the core's first
++	 * non-queue interrupt (nss_send_ddr_info()), in softirq context.
++	 * si_meminfo() is not for that: its buffer count takes the
++	 * superblock inode list lock, which the rest of the kernel takes
++	 * with softirqs on. Read the plain counters instead; the buffer
++	 * count was only ever logged.
++	 */
++	totalram = totalram_pages();
++	sharedram = global_node_page_state(NR_SHMEM);
++	freeram = global_zone_page_state(NR_FREE_PAGES);
+ 	cached = global_node_page_state(NR_FILE_PAGES);
+ 
+-	avail_ddr = (vals.totalram + cached + vals.sharedram) * vals.mem_unit;
++	avail_ddr = (totalram + cached + sharedram) * PAGE_SIZE;
+ 	mmu->num_active_cores = nss_top_main.num_nss;
+ 
+ 	/*
+@@ -641,9 +651,8 @@ case3:
+ 	 */
+ 	mmu->start_address = 0;
+ 	mmu->ddr_size = (avail_ddr + (127 << 20)) & (~127 << 20);
+-	nss_info_always("RAM pages fr %lu buf %lu cached %lu %lu : %lu %u\n",
+-			vals.freeram, vals.bufferram, cached, vals.sharedram,
+-			vals.totalram, mmu->ddr_size);
++	nss_info_always("RAM pages fr %lu cached %lu %lu : %lu %u\n",
++			freeram, cached, sharedram, totalram, mmu->ddr_size);
+ }
+ 
+ /*

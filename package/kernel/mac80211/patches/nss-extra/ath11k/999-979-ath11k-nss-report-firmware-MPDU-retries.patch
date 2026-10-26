@@ -1,0 +1,26 @@
+Subject: [PATCH] wifi: ath11k: report NSS 12.5 MPDU retries to cfg80211
+
+NSS 12.5 supplies retry statistics in a separate peer-sync block. Its
+legacy tx.retries field stays zero on the tested IPQ5018 even while the
+MPDU retry counters advance. cfg80211 expects cumulative MPDU retries;
+accumulate the total MPDU retry count into the existing station counter.
+Keep the legacy field for firmware without the 12.5 retry block and do
+not sum the two sources or count each retried MPDU only once.
+
+This fixes reporting only. Preserve REO duplicate/window checks and all
+raw debugfs counters; retry statistics are not unique IP packet losses.
+
+--- a/drivers/net/wireless/ath/ath11k/nss.c
++++ b/drivers/net/wireless/ath/ath11k/nss.c
+@@ -186,7 +186,11 @@
+ 			pstats->tx.tx_ucast_bytes +
+ 			pstats->tx.tx_bcast_bytes;
+ 		peer->nss.nss_stats->tx_bytes += tx_bytes;
++#ifdef NSS_FIRMWARE_VERSION_12_5
++		peer->nss.nss_stats->tx_retries += pstats->retry.tx_mpdu_total_retry_count;
++#else
+ 		peer->nss.nss_stats->tx_retries += pstats->tx.retries;
++#endif
+
+ 		for (j = 0; j < NSS_WIFILI_TQM_RR_MAX; j++)
+ 			tx_dropped += pstats->tx.dropped.drop_stats[j];

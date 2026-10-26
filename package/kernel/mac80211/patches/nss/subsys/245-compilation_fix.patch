@@ -1,0 +1,66 @@
+From 9cdb8bae50aca80b593d0f53be5b8efedfc91324 Mon Sep 17 00:00:00 2001
+From: Tamizh Chelvam <tamizhr@codeaurora.org>
+Date: Sun, 7 Mar 2021 22:49:26 +0530
+Subject: [PATCH] backport: Compile fix
+
+Adding these changes to fix compilation issue due to
+package upgrade
+
+Keep the backports fast-transmit helpers unchanged and use tx->local
+when checking whether NSS owns sequence assignment.
+
+Signed-off-by: Tamizh Chelvam <tamizhr@codeaurora.org>
+Signed-off-by: Gautham Kumar Senthilkumaran <quic_gauthamk@quicinc.com>
+---
+--- a/net/mac80211/ieee80211_i.h
++++ b/net/mac80211/ieee80211_i.h
+@@ -224,6 +224,7 @@
+ };
+
+ struct ieee80211_rx_data {
++	struct napi_struct *napi;
+ 	struct list_head *list;
+ 	struct sk_buff *skb;
+ 	struct ieee80211_local *local;
+--- a/net/mac80211/tx.c
++++ b/net/mac80211/tx.c
+@@ -3627,7 +3627,8 @@
+
+ 	dev_sw_netstats_tx_add(skb->dev, 1, skb->len);
+
+-	if (hdr->frame_control & cpu_to_le16(IEEE80211_STYPE_QOS_DATA)) {
++	if ((hdr->frame_control & cpu_to_le16(IEEE80211_STYPE_QOS_DATA)) &&
++	    !ieee80211_hw_check(&tx->local->hw, SUPPORTS_NSS_OFFLOAD)) {
+ 		tid = skb->priority & IEEE80211_QOS_CTL_TAG1D_MASK;
+ 		hdr->seq_ctrl = ieee80211_tx_next_seq(sta, tid);
+ 	} else {
+@@ -4828,7 +4829,7 @@
+ {
+ 	struct ieee80211_sub_if_data *sdata = IEEE80211_DEV_TO_SUB_IF(dev);
+ 	struct ethhdr *ehdr = (struct ethhdr *)skb->data;
+-	struct ieee80211_key *key;
++	struct ieee80211_key *key = NULL;
+ 	struct sta_info *sta;
+
+ #ifdef CPTCFG_MAC80211_NSS_SUPPORT
+@@ -4846,6 +4847,12 @@
+ 		goto out;
+ 	}
+
++	if (ieee80211_hw_check(&sdata->local->hw, SUPPORTS_NSS_OFFLOAD)) {
++		if (unlikely(IS_ERR_OR_NULL(sta) || !sta->uploaded))
++			sta = NULL;
++		goto tx_offload;
++	}
++
+ 	if (unlikely(IS_ERR_OR_NULL(sta) || !sta->uploaded ||
+ 	    !test_sta_flag(sta, WLAN_STA_AUTHORIZED) ||
+ 	    sdata->control_port_protocol == ehdr->h_proto))
+@@ -4859,6 +4866,7 @@
+ 		    key->conf.cipher == WLAN_CIPHER_SUITE_TKIP))
+ 		goto skip_offload;
+
++tx_offload:
+ 	sk_pacing_shift_update(skb->sk, sdata->local->hw.tx_sk_pacing_shift);
+ 	ieee80211_8023_xmit(sdata, dev, sta, key, skb);
+ 	goto out;

@@ -1,0 +1,44 @@
+From: nss-edma-rework
+Subject: [PATCH] Makefile: allow disabling PPE virtual-port support
+
+nss_ppe_vp.c is the only nss-drv source that includes qca-ssdk headers
+(ref/ref_vsi.h). On the qca_edma/qca_ppe ethernet stack qca-ssdk does
+not exist, so make the PPE-VP subsystem optional via
+NSS_DRV_PPE_VP_ENABLE=n. The only external caller is the registration
+hook in nss_hal.c, guarded by the same flag.
+
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+
+--- a/Makefile
++++ b/Makefile
+@@ -437,10 +437,14 @@ qca-nss-drv-objs += nss_data_plane/nss_d
+ 					nss_ppe.o \
+ 					nss_ppe_log.o \
+ 					nss_ppe_stats.o \
+-					nss_ppe_strings.o \
+-					nss_ppe_vp.o \
+-					nss_ppe_vp_log.o \
+-					nss_ppe_vp_stats.o
++					nss_ppe_strings.o
++
++ifneq "$(NSS_DRV_PPE_VP_ENABLE)" "n"
++qca-nss-drv-objs += nss_ppe_vp.o \
++		    nss_ppe_vp_log.o \
++		    nss_ppe_vp_stats.o
++ccflags-y += -DNSS_DRV_PPE_VP_ENABLE
++endif
+ 
+ ccflags-y += -DNSS_DRV_PPE_ENABLE
+ ccflags-y += -DNSS_DRV_EDMA_ENABLE
+--- a/nss_hal/nss_hal.c
++++ b/nss_hal/nss_hal.c
+@@ -486,7 +486,9 @@ int nss_hal_probe(struct platform_device
+ 	if (npd->ppe_enabled == NSS_FEATURE_ENABLED) {
+ 		nss_top->ppe_handler_id = nss_dev->id;
+ 		nss_ppe_register_handler();
++#ifdef NSS_DRV_PPE_VP_ENABLE
+ 		nss_ppe_vp_register_handler();
++#endif
+ 	}
+ #endif
+ 

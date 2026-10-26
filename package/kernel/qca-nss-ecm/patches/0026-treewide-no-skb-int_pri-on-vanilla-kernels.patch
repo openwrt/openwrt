@@ -1,0 +1,270 @@
+Read no skb int_pri on kernels without the QSDK QoS patches
+
+skb->int_pri is an sk_buff field that only exists with the QSDK
+kernel patchset, where it carries an internal priority from the
+WiFi driver into the PPE/SFE QoS offload rules. This tree runs on
+vanilla OpenWrt kernels which do not have the field, and its only
+consumers (the PPE and SFE rule QoS fields) do not apply to the NSS
+front-end, so read it as 0, and drop
+ecm_front_end_common_update_int_pri(), which only writes it.
+
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+--- a/ecm_classifier_dscp.c
++++ b/ecm_classifier_dscp.c
+@@ -210,13 +210,13 @@ static void ecm_classifier_dscp_fill_inf
+ {
+ 	if (sender == ECM_TRACKER_SENDER_TYPE_SRC) {
+ 		cdscpi->process_response.flow_qos_tag = skb->priority;
+-		cdscpi->process_response.flow_int_pri = skb->int_pri;
++		cdscpi->process_response.flow_int_pri = 0;	/* skb->int_pri requires QSDK kernel patches */
+ 		cdscpi->process_response.flow_mark = skb->mark;
+ 		cdscpi->process_response.flow_dscp = ip_hdr->ds >> XT_DSCP_SHIFT;
+ 		cdscpi->packet_seen[ECM_CONN_DIR_FLOW] = true;
+ 	} else {
+ 		cdscpi->process_response.return_qos_tag = skb->priority;
+-		cdscpi->process_response.return_int_pri = skb->int_pri;
++		cdscpi->process_response.return_int_pri = 0;	/* skb->int_pri requires QSDK kernel patches */
+ 		cdscpi->process_response.return_mark = skb->mark;
+ 		cdscpi->process_response.return_dscp = ip_hdr->ds >> XT_DSCP_SHIFT;
+ 		cdscpi->packet_seen[ECM_CONN_DIR_RETURN] = true;
+@@ -501,7 +501,7 @@ static void ecm_classifier_dscp_process(
+ 		 */
+ 		if (sender == ECM_TRACKER_SENDER_TYPE_SRC) {
+ 			cdscpi->process_response.flow_qos_tag = skb->priority;
+-			cdscpi->process_response.flow_int_pri = skb->int_pri;
++			cdscpi->process_response.flow_int_pri = 0;	/* skb->int_pri requires QSDK kernel patches */
+ 			cdscpi->process_response.flow_mark = skb->mark;
+ 			cdscpi->process_response.flow_dscp = ip_hdr->ds >> XT_DSCP_SHIFT;
+ 
+@@ -511,7 +511,7 @@ static void ecm_classifier_dscp_process(
+ 			 */
+ 			if (!ci->unidir_accel_en) {
+ 				if (cdscpi->process_response.return_int_pri == 0) {
+-					cdscpi->process_response.return_int_pri = skb->int_pri;
++					cdscpi->process_response.return_int_pri = 0;	/* skb->int_pri requires QSDK kernel patches */
+ 				}
+ 
+ 				if (cdscpi->process_response.return_qos_tag == 0) {
+@@ -528,7 +528,7 @@ static void ecm_classifier_dscp_process(
+ 			}
+ 		} else {
+ 			cdscpi->process_response.return_qos_tag = skb->priority;
+-			cdscpi->process_response.return_int_pri = skb->int_pri;
++			cdscpi->process_response.return_int_pri = 0;	/* skb->int_pri requires QSDK kernel patches */
+ 			cdscpi->process_response.return_mark = skb->mark;
+ 			cdscpi->process_response.return_dscp = ip_hdr->ds >> XT_DSCP_SHIFT;
+ 
+@@ -538,7 +538,7 @@ static void ecm_classifier_dscp_process(
+ 			 */
+ 			if (!ci->unidir_accel_en) {
+ 				if (cdscpi->process_response.flow_int_pri == 0) {
+-					cdscpi->process_response.flow_int_pri = skb->int_pri;
++					cdscpi->process_response.flow_int_pri = 0;	/* skb->int_pri requires QSDK kernel patches */
+ 				}
+ 
+ 				if (cdscpi->process_response.flow_qos_tag == 0) {
+--- a/frontends/cmn/ecm_multicast_ipv4.c
++++ b/frontends/cmn/ecm_multicast_ipv4.c
+@@ -1425,8 +1425,8 @@ process_packet:
+ 	prevalent_pr.drop = false;
+ 	prevalent_pr.flow_qos_tag = skb->priority;
+ 	prevalent_pr.return_qos_tag = skb->priority;
+-	prevalent_pr.flow_int_pri = skb->int_pri;
+-	prevalent_pr.return_int_pri = skb->int_pri;
++	prevalent_pr.flow_int_pri = 0;	/* skb->int_pri requires QSDK kernel patches */
++	prevalent_pr.return_int_pri = 0;	/* skb->int_pri requires QSDK kernel patches */
+ 	prevalent_pr.accel_mode = ECM_CLASSIFIER_ACCELERATION_MODE_ACCEL;
+ 	prevalent_pr.timer_group = ci_orig_timer_group = ecm_db_connection_timer_group_get(ci);
+ 	prevalent_pr.process_actions = 0;
+--- a/frontends/cmn/ecm_multicast_ipv6.c
++++ b/frontends/cmn/ecm_multicast_ipv6.c
+@@ -1389,8 +1389,8 @@ process_packet:
+ 	prevalent_pr.drop = false;
+ 	prevalent_pr.flow_qos_tag = skb->priority;
+ 	prevalent_pr.return_qos_tag = skb->priority;
+-	prevalent_pr.flow_int_pri = skb->int_pri;
+-	prevalent_pr.return_int_pri = skb->int_pri;
++	prevalent_pr.flow_int_pri = 0;	/* skb->int_pri requires QSDK kernel patches */
++	prevalent_pr.return_int_pri = 0;	/* skb->int_pri requires QSDK kernel patches */
+ 	prevalent_pr.accel_mode = ECM_CLASSIFIER_ACCELERATION_MODE_ACCEL;
+ 	prevalent_pr.timer_group = ci_orig_timer_group = ecm_db_connection_timer_group_get(ci);
+ 	prevalent_pr.process_actions = 0;
+--- a/frontends/cmn/ecm_non_ported_ipv4.c
++++ b/frontends/cmn/ecm_non_ported_ipv4.c
+@@ -781,8 +781,8 @@ done:
+ 	prevalent_pr.drop = false;
+ 	prevalent_pr.flow_qos_tag = skb->priority;
+ 	prevalent_pr.return_qos_tag = skb->priority;
+-	prevalent_pr.flow_int_pri = skb->int_pri;
+-	prevalent_pr.return_int_pri = skb->int_pri;
++	prevalent_pr.flow_int_pri = 0;	/* skb->int_pri requires QSDK kernel patches */
++	prevalent_pr.return_int_pri = 0;	/* skb->int_pri requires QSDK kernel patches */
+ 	prevalent_pr.accel_mode = ECM_CLASSIFIER_ACCELERATION_MODE_ACCEL;
+ 	prevalent_pr.timer_group = ci_orig_timer_group = ecm_db_connection_timer_group_get(ci);
+ 
+--- a/frontends/cmn/ecm_non_ported_ipv6.c
++++ b/frontends/cmn/ecm_non_ported_ipv6.c
+@@ -663,8 +663,8 @@ done:
+ 	prevalent_pr.drop = false;
+ 	prevalent_pr.flow_qos_tag = skb->priority;
+ 	prevalent_pr.return_qos_tag = skb->priority;
+-	prevalent_pr.flow_int_pri = skb->int_pri;
+-	prevalent_pr.return_int_pri = skb->int_pri;
++	prevalent_pr.flow_int_pri = 0;	/* skb->int_pri requires QSDK kernel patches */
++	prevalent_pr.return_int_pri = 0;	/* skb->int_pri requires QSDK kernel patches */
+ 	prevalent_pr.accel_mode = ECM_CLASSIFIER_ACCELERATION_MODE_ACCEL;
+ 	prevalent_pr.timer_group = ci_orig_timer_group = ecm_db_connection_timer_group_get(ci);
+ 
+--- a/frontends/cmn/ecm_ported_ipv4.c
++++ b/frontends/cmn/ecm_ported_ipv4.c
+@@ -1038,33 +1038,16 @@ done:
+ 	if (ci->unidir_accel_en) {
+ 		if (sender == ECM_TRACKER_SENDER_TYPE_SRC) {
+ 			prevalent_pr.flow_qos_tag = skb->priority;
+-			prevalent_pr.flow_int_pri = skb->int_pri;
++			prevalent_pr.flow_int_pri = 0;	/* skb->int_pri requires QSDK kernel patches */
+ 		} else {
+ 			prevalent_pr.return_qos_tag = skb->priority;
+-			prevalent_pr.return_int_pri = skb->int_pri;
++			prevalent_pr.return_int_pri = 0;	/* skb->int_pri requires QSDK kernel patches */
+ 		}
+ 	} else {
+ 		prevalent_pr.flow_qos_tag = skb->priority;
+ 		prevalent_pr.return_qos_tag = skb->priority;
+-		prevalent_pr.flow_int_pri = skb->int_pri;
+-		prevalent_pr.return_int_pri = skb->int_pri;
+-	}
+-
+-	/*
+-	 * Derive int_pri for this packet's direction from the prevalent qos_tag
+-	 * and write it into skb->int_pri.
+-	 */
+-	ecm_front_end_common_update_int_pri(ci, skb, sender, prevalent_pr.flow_qos_tag, prevalent_pr.return_qos_tag);
+-
+-	if (ci->unidir_accel_en) {
+-		if (sender == ECM_TRACKER_SENDER_TYPE_SRC) {
+-			prevalent_pr.flow_int_pri = skb->int_pri;
+-		} else {
+-			prevalent_pr.return_int_pri = skb->int_pri;
+-		}
+-	} else {
+-		prevalent_pr.flow_int_pri = skb->int_pri;
+-		prevalent_pr.return_int_pri = skb->int_pri;
++		prevalent_pr.flow_int_pri = 0;	/* skb->int_pri requires QSDK kernel patches */
++		prevalent_pr.return_int_pri = 0;	/* skb->int_pri requires QSDK kernel patches */
+ 	}
+ 
+ 	prevalent_pr.accel_mode = ECM_CLASSIFIER_ACCELERATION_MODE_ACCEL;
+--- a/frontends/cmn/ecm_ported_ipv6.c
++++ b/frontends/cmn/ecm_ported_ipv6.c
+@@ -1063,33 +1063,16 @@ done:
+ 	if (ci->unidir_accel_en) {
+ 		if (sender == ECM_TRACKER_SENDER_TYPE_SRC) {
+ 			prevalent_pr.flow_qos_tag = skb->priority;
+-			prevalent_pr.flow_int_pri = skb->int_pri;
++			prevalent_pr.flow_int_pri = 0;	/* skb->int_pri requires QSDK kernel patches */
+ 		} else {
+ 			prevalent_pr.return_qos_tag = skb->priority;
+-			prevalent_pr.return_int_pri = skb->int_pri;
++			prevalent_pr.return_int_pri = 0;	/* skb->int_pri requires QSDK kernel patches */
+ 		}
+ 	} else {
+ 		prevalent_pr.flow_qos_tag = skb->priority;
+ 		prevalent_pr.return_qos_tag = skb->priority;
+-		prevalent_pr.flow_int_pri = skb->int_pri;
+-		prevalent_pr.return_int_pri = skb->int_pri;
+-	}
+-
+-	/*
+-	 * Derive int_pri for this packet's direction from the prevalent qos_tag
+-	 * and write it into skb->int_pri.
+-	 */
+-	ecm_front_end_common_update_int_pri(ci, skb, sender, prevalent_pr.flow_qos_tag, prevalent_pr.return_qos_tag);
+-
+-	if (ci->unidir_accel_en) {
+-		if (sender == ECM_TRACKER_SENDER_TYPE_SRC) {
+-			prevalent_pr.flow_int_pri = skb->int_pri;
+-		} else {
+-			prevalent_pr.return_int_pri = skb->int_pri;
+-		}
+-	} else {
+-		prevalent_pr.flow_int_pri = skb->int_pri;
+-		prevalent_pr.return_int_pri = skb->int_pri;
++		prevalent_pr.flow_int_pri = 0;	/* skb->int_pri requires QSDK kernel patches */
++		prevalent_pr.return_int_pri = 0;	/* skb->int_pri requires QSDK kernel patches */
+ 	}
+ 
+ 	prevalent_pr.accel_mode = ECM_CLASSIFIER_ACCELERATION_MODE_ACCEL;
+--- a/frontends/ecm_front_end_common.c
++++ b/frontends/ecm_front_end_common.c
+@@ -1168,7 +1168,7 @@ void ecm_front_end_tcp_set_dscp_ext(stru
+ 	if (dscpcte) {
+ 		if (sender == ECM_TRACKER_SENDER_TYPE_SRC) {
+ 			dscpcte->flow_priority = skb->priority;
+-			dscpcte->flow_int_pri = skb->int_pri;
++			dscpcte->flow_int_pri = 0;	/* skb->int_pri requires QSDK kernel patches */
+ 			dscpcte->flow_mark = skb->mark;
+ 			dscpcte->flow_dscp = iph->ds >> XT_DSCP_SHIFT;
+ 			dscpcte->flow_set_flags = NF_CT_DSCPREMARK_EXT_PRIO | NF_CT_DSCPREMARK_EXT_DSCP | NF_CT_DSCPREMARK_EXT_MARK;
+@@ -1176,7 +1176,7 @@ void ecm_front_end_tcp_set_dscp_ext(stru
+ 				    ct, sender, dscpcte->flow_priority, dscpcte->flow_int_pri, dscpcte->flow_dscp, dscpcte->flow_mark, dscpcte->flow_set_flags);
+ 		} else {
+ 			dscpcte->reply_priority =  skb->priority;
+-			dscpcte->reply_int_pri = skb->int_pri;
++			dscpcte->reply_int_pri = 0;	/* skb->int_pri requires QSDK kernel patches */
+ 			dscpcte->reply_mark =  skb->mark;
+ 			dscpcte->reply_dscp = iph->ds >> XT_DSCP_SHIFT;
+ 			dscpcte->return_set_flags = NF_CT_DSCPREMARK_EXT_PRIO | NF_CT_DSCPREMARK_EXT_DSCP | NF_CT_DSCPREMARK_EXT_MARK;
+@@ -2476,41 +2476,6 @@ uint8_t ecm_front_end_common_int_pri_get
+ #endif
+ }
+ 
+-/*
+- * ecm_front_end_common_update_int_pri()
+- *	Map int_pri with correct qos_tag for flow/return direction.
+- */
+-void ecm_front_end_common_update_int_pri(struct ecm_db_connection_instance *ci, struct sk_buff *skb,
+-		ecm_tracker_sender_type_t sender, uint32_t flow_qos_tag, uint32_t return_qos_tag)
+-{
+-	struct ecm_db_iface_instance *ifaces[ECM_DB_IFACE_HEIRARCHY_MAX];
+-	int32_t ifaces_first;
+-	int32_t egress_ifnum;
+-	uint32_t qos_tag;
+-
+-	if (sender == ECM_TRACKER_SENDER_TYPE_SRC) {
+-		/*
+-		 * Flow direction traffic egresses via the TO-side interface.
+-		 */
+-		ifaces_first = ecm_db_connection_interfaces_get_and_ref(ci, ifaces, ECM_DB_OBJ_DIR_TO);
+-		qos_tag = flow_qos_tag;
+-	} else {
+-		/*
+-		 * Return direction traffic egresses via the FROM-side interface.
+-		 */
+-		ifaces_first = ecm_db_connection_interfaces_get_and_ref(ci, ifaces, ECM_DB_OBJ_DIR_FROM);
+-		qos_tag = return_qos_tag;
+-	}
+-
+-	if (ifaces_first == ECM_DB_IFACE_HEIRARCHY_MAX) {
+-		return;
+-	}
+-
+-	egress_ifnum = ecm_db_iface_interface_identifier_get(ifaces[ifaces_first]);
+-	skb->int_pri = ecm_front_end_common_int_pri_get(egress_ifnum, qos_tag, skb->int_pri);
+-	ecm_db_connection_interfaces_deref(ifaces, ifaces_first);
+-}
+-
+ #ifdef ECM_FRONT_END_FSE_ENABLE
+ /*
+  * ecm_front_end_fse_info_get()
+--- a/frontends/include/ecm_front_end_common.h
++++ b/frontends/include/ecm_front_end_common.h
+@@ -528,8 +528,6 @@ bool ecm_front_end_check_tcp_denied_port
+ bool ecm_front_end_common_intf_qdisc_check(int32_t interface_num, bool *is_ppeq);
+ bool ecm_front_end_common_intf_ingress_qdisc_check(int32_t interface_num);
+ uint8_t ecm_front_end_common_int_pri_get(int32_t egress_ifnum, uint32_t qos_tag, uint8_t default_int_pri);
+-void ecm_front_end_common_update_int_pri(struct ecm_db_connection_instance *ci, struct sk_buff *skb,
+-		ecm_tracker_sender_type_t sender, uint32_t flow_qos_tag, uint32_t return_qos_tag);
+ #ifdef ECM_FRONT_END_PPE_QOS_ENABLE
+ bool ecm_front_end_common_check_if_vap(int32_t interface_num);
+ bool ecm_front_end_common_check_dl_vp_qdisc(int32_t interface_num);

@@ -1,0 +1,15 @@
+#!/bin/sh /etc/rc.common
+# SPDX-License-Identifier: GPL-2.0-only
+
+START=19
+
+start() {
+	. /lib/functions.sh
+	. /lib/functions/system.sh
+	. /lib/functions/wf810df-nss.sh
+	wf810df_nss_start
+}
+
+stop() {
+	logger -t wf810df-nss 'NSS mode changes require a reboot; leaving active firmware and datapaths intact'
+}

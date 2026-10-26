@@ -1,0 +1,101 @@
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Subject: [PATCH] ath11k: nss: quiesce wifili offload at SERVER_EXIT before WCSS reset
+
+A Wi-Fi firmware assert drives the ahb SSR path through
+ath11k_core_pre_reconfigure_recovery(), which stops the mac80211 queues and
+drains host TX but leaves the NSS wifili firmware armed and still driving the
+WCSS HAL SRNG pointer registers. Those registers are held in reset while the Q6
+reboots, so the NSS core takes an external abort and coredumps - and because
+wifili and the wired data path share NSS core0, the coredump brings the whole
+box down and the recovery re-arm re-trips it into a reboot loop.
+
+Send the wifili STOP message at SERVER_EXIT, before the WCSS reset lands, so the
+NSS firmware ceases touching the reset register space. The full teardown in
+ath11k_core_reconfigure_on_crash() still runs its stop/deinit/reset and ignores
+this stop's return, so no dynamic-interface node leaks and the offload re-arms
+cleanly once the Q6 is back.
+
+Guard the stop on wifili actually being registered. Cold-boot calibration
+restarts the Q6 through ath11k_core_pre_reconfigure_recovery() on every
+normal boot, before ath11k_nss_init_soc() runs, when ab->nss.if_num is
+still 0; nss_wifili_tx_msg() then rejects the message as a non-wifili
+interface and the stop fails with NSS_TX_FAILURE. ab->nss.ctx is set only
+by init_soc and never cleared, so it distinguishes "never started" from
+"started" without affecting the assert path this patch exists for.
+
+The guard sits in ath11k_nss_stop() rather than in the new caller, so all
+three stop paths share it. The other two cannot currently reach it with a
+null ctx - ath11k_nss_teardown() is only called after a successful setup
+or from behind ATH11K_FLAG_REGISTERED, and the setup error path runs after
+init_soc - but the precondition belongs with the message that requires it.
+Guarding ath11k_nss_teardown() as a whole would instead skip its pdev
+deinit, reset and tx descriptor free.
+
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+
+diff --git a/drivers/net/wireless/ath/ath11k/core.c b/drivers/net/wireless/ath/ath11k/core.c
+index a1d76bc..48f14dd 100644
+--- a/drivers/net/wireless/ath/ath11k/core.c
++++ b/drivers/net/wireless/ath/ath11k/core.c
+@@ -2532,6 +2532,8 @@
+ 
+ 	wake_up(&ab->wmi_ab.tx_credits_wq);
+ 
++	ath11k_nss_pre_reconfigure(ab);
++
+ 	reinit_completion(&ab->driver_recovery);
+ }
+ 
+--- a/drivers/net/wireless/ath/ath11k/nss.c
++++ b/drivers/net/wireless/ath/ath11k/nss.c
+@@ -3417,6 +3417,13 @@
+ 	nss_tx_status_t status;
+ 	int ret;
+ 
++	/* Cold-boot calibration restarts the Q6 through pre_reconfigure before
++	 * ath11k_nss_init_soc() has registered wifili, when if_num is still 0
++	 * and the message is rejected as a non-wifili interface.
++	 */
++	if (!ab->nss.ctx)
++		return 0;
++
+ 	ath11k_dbg(ab, ATH11K_DBG_NSS, "NSS stop\n");
+ 	wlmsg = kzalloc(sizeof(struct nss_wifili_msg), GFP_ATOMIC);
+ 	if (!wlmsg)
+@@ -3554,6 +3561,14 @@
+ 	return 0;
+ }
+ 
++int ath11k_nss_pre_reconfigure(struct ath11k_base *ab)
++{
++	if (!ab->nss.enabled)
++		return 0;
++
++	return ath11k_nss_stop(ab);
++}
++
+ int ath11k_nss_setup(struct ath11k_base *ab)
+ {
+ 	int i;
+--- a/drivers/net/wireless/ath/ath11k/nss.h
++++ b/drivers/net/wireless/ath/ath11k/nss.h
+@@ -280,6 +280,7 @@
+ 				  struct hal_rx_user_status *user_stats);
+ int ath11k_nss_setup(struct ath11k_base *ab);
+ int ath11k_nss_teardown(struct ath11k_base *ab);
++int ath11k_nss_pre_reconfigure(struct ath11k_base *ab);
+ void ath11k_nss_ext_rx_stats(struct ath11k_base *ab, struct htt_rx_ring_tlv_filter *tlv_filter);
+ #else
+ static inline int ath11k_nss_tx(struct ath11k_vif *arvif, struct sk_buff *skb)
+@@ -447,6 +448,11 @@
+ 	return 0;
+ }
+ 
++static inline int ath11k_nss_pre_reconfigure(struct ath11k_base *ab)
++{
++	return 0;
++}
++
+ static inline void ath11k_nss_ext_rx_stats(struct ath11k_base *ab,
+ 					   struct htt_rx_ring_tlv_filter *tlv_filter)
+ {

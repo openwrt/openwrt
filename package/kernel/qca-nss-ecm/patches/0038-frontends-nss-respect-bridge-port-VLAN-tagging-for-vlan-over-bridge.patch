@@ -1,0 +1,478 @@
+frontends/nss: respect the bridge port's VLAN tagging for VLAN-over-bridge
+
+The NSS rule create programs (tpid << 16 | vid) as the ingress/egress
+VLAN tag for every VLAN interface found in the connection's interface
+hierarchy. For a VLAN upper of a VLAN-filtering bridge (br0.X over a
+bridge with bridge-vlan configuration - the standard OpenWrt way to
+route between VLAN subnets) that is wrong whenever the underlying
+bridge port carries the VLAN untagged (pvid/untagged member): the
+firmware then requires tagged ingress - dropping every real frame of
+the flow's return direction - and emits tagged egress that the peer
+host discards. In practice any routed flow into such a network
+black-holes a few packets after acceleration kicks in, while the
+same flow works on the host path.
+
+Add ecm_interface_bridge_vlan_wire_tagged(): for a VLAN device stacked
+on a VLAN-filtering bridge, resolve the bridge port from the same
+interface hierarchy and read the port's per-VLAN flags. Untagged/pvid
+membership keeps the tag out of the rule (the wire is untagged);
+tagged membership programs the tag as before; unresolvable membership
+(port not a member - misconfiguration or stale hierarchy) and
+asymmetric pvid/untagged memberships (not expressible in the rule's
+one-format-per-side model) refuse acceleration so the flow stays on
+the always-correct host path. Plain VLAN-over-ethernet (and
+non-filtering bridges) are unaffected: the tag stays on the wire.
+
+Applied to the ported and non-ported frontends, IPv4 and IPv6 alike.
+
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+
+--- a/ecm_interface.c
++++ b/ecm_interface.c
+@@ -773,6 +773,118 @@ struct net_device *ecm_interface_get_and
+ }
+ EXPORT_SYMBOL(ecm_interface_get_and_hold_dev_master);
+ 
++/*
++ * ecm_interface_bridge_vlan_wire_tagged()
++ *	Whether frames of a VLAN device stacked on a bridge appear tagged on
++ *	the wire of the underlying bridge port in the given interface hierarchy.
++ *
++ *	On a VLAN-filtering bridge the bridge port's per-VLAN configuration -
++ *	not the VLAN header of the upper device - decides the on-wire format:
++ *	an untagged/pvid member carries this VLAN untagged. An acceleration
++ *	rule programmed with the upper device's tag would make the firmware
++ *	require tagged ingress (dropping every real frame of the flow) and
++ *	emit tagged egress (dropped by the peer).
++ *
++ *	Returns 1 when the tag is on the wire (program it into the rule),
++ *	0 when the wire is untagged for this VLAN (keep the tag out of the
++ *	rule), -1 when the on-wire format cannot be determined or cannot be
++ *	expressed in the rule (caller must not accelerate). VLAN devices not
++ *	stacked on a VLAN-filtering bridge always return 1 (plain 8021q
++ *	semantics, tag on the wire).
++ */
++int ecm_interface_bridge_vlan_wire_tagged(struct ecm_db_iface_instance *vlan_ii,
++					  struct ecm_db_iface_instance *ifaces[],
++					  int32_t first)
++{
++	struct net_device *vlan_dev;
++	struct net_device *real_dev;
++	struct net_device *port_dev = NULL;
++	struct bridge_vlan_info vinfo;
++	uint16_t vid;
++	int32_t i;
++	int ret;
++
++	vlan_dev = dev_get_by_index(&init_net, ecm_db_iface_interface_identifier_get(vlan_ii));
++	if (!vlan_dev) {
++		DEBUG_WARN("%px: no net device behind VLAN interface instance\n", vlan_ii);
++		return -1;
++	}
++
++	if (!is_vlan_dev(vlan_dev)) {
++		DEBUG_WARN("%px: %s is not a VLAN device\n", vlan_ii, vlan_dev->name);
++		dev_put(vlan_dev);
++		return -1;
++	}
++
++	real_dev = vlan_dev_real_dev(vlan_dev);
++	vid = vlan_dev_vlan_id(vlan_dev);
++
++	if (!netif_is_bridge_master(real_dev) || !br_vlan_enabled(real_dev)) {
++		dev_put(vlan_dev);
++		return 1;
++	}
++
++	/*
++	 * Find the bridge port this hierarchy runs through.
++	 */
++	rcu_read_lock();
++	for (i = first; i < ECM_DB_IFACE_HEIRARCHY_MAX; i++) {
++		struct net_device *dev;
++
++		dev = dev_get_by_index(&init_net, ecm_db_iface_interface_identifier_get(ifaces[i]));
++		if (!dev) {
++			continue;
++		}
++
++		if (netif_is_bridge_port(dev) &&
++		    netdev_master_upper_dev_get_rcu(dev) == real_dev) {
++			port_dev = dev;
++			break;
++		}
++		dev_put(dev);
++	}
++
++	if (!port_dev) {
++		rcu_read_unlock();
++		DEBUG_WARN("%px: no port of bridge %s in the interface hierarchy of VLAN %s\n",
++			   vlan_ii, real_dev->name, vlan_dev->name);
++		dev_put(vlan_dev);
++		return -1;
++	}
++
++	if (br_vlan_get_info_rcu(port_dev, vid, &vinfo)) {
++		/*
++		 * The port is not a member of this VLAN: misconfiguration or
++		 * a stale hierarchy - never accelerate on guesses.
++		 */
++		DEBUG_WARN("%px: %s is not a member of VLAN %u on %s\n",
++			   vlan_ii, port_dev->name, vid, real_dev->name);
++		ret = -1;
++	} else {
++		bool pvid = !!(vinfo.flags & BRIDGE_VLAN_INFO_PVID);
++		bool untagged = !!(vinfo.flags & BRIDGE_VLAN_INFO_UNTAGGED);
++
++		if (pvid != untagged) {
++			/*
++			 * Ingress and egress wire formats differ; the rule
++			 * carries one format per side for both directions,
++			 * so this membership cannot be expressed.
++			 */
++			DEBUG_WARN("%px: asymmetric pvid/untagged membership of VLAN %u on %s - not accelerating\n",
++				   vlan_ii, vid, port_dev->name);
++			ret = -1;
++		} else {
++			ret = !untagged;
++		}
++	}
++
++	rcu_read_unlock();
++	dev_put(port_dev);
++	dev_put(vlan_dev);
++	return ret;
++}
++EXPORT_SYMBOL(ecm_interface_bridge_vlan_wire_tagged);
++
+ #ifdef ECM_INTERFACE_SKIP_ACCEL_ENABLE
+ /*
+  * ecm_interface_lookup_in_denied_list()
+--- a/ecm_interface.h
++++ b/ecm_interface.h
+@@ -120,6 +120,9 @@ void ecm_interface_stats_update(struct e
+ struct net_device *ecm_interface_dev_find_by_addr(ip_addr_t addr, bool *from_local_addr, uint32_t skb_mark);
+ 
+ struct net_device *ecm_interface_get_and_hold_dev_master(struct net_device *dev);
++int ecm_interface_bridge_vlan_wire_tagged(struct ecm_db_iface_instance *vlan_ii,
++					  struct ecm_db_iface_instance *ifaces[],
++					  int32_t first);
+ void ecm_interface_dev_regenerate_connections(struct net_device *dev);
+ struct net_device *ecm_interface_dev_find_by_local_addr(ip_addr_t addr);
+ bool ecm_interface_find_gateway(ip_addr_t daddr, ip_addr_t saddr, ip_addr_t gw_addr, uint32_t skb_mark);
+--- a/frontends/nss/ecm_nss_non_ported_ipv4.c
++++ b/frontends/nss/ecm_nss_non_ported_ipv4.c
+@@ -814,14 +814,31 @@ static void ecm_nss_non_ported_ipv4_conn
+ 			}
+ 
+ 			/*
+-			 * Primary or secondary (QinQ) VLAN?
++			 * On a VLAN-filtering bridge the bridge port's per-VLAN
++			 * configuration - not the upper VLAN device - decides the
++			 * on-wire format: an untagged/pvid member carries this
++			 * VLAN untagged, so the tag must stay out of the rule.
+ 			 */
+-			if (interface_type_counts[ii_type] == 0) {
+-				nircm->vlan_primary_rule.ingress_vlan_tag = vlan_value;
+-			} else {
+-				nircm->vlan_secondary_rule.ingress_vlan_tag = vlan_value;
++			switch (ecm_interface_bridge_vlan_wire_tagged(ii, from_ifaces, from_ifaces_first)) {
++			case 0:
++				DEBUG_TRACE("%px: VLAN 0x%x untagged on the bridge port - no ingress tag\n", feci, vlan_value);
++				break;
++			case 1:
++				/*
++				 * Primary or secondary (QinQ) VLAN?
++				 */
++				if (interface_type_counts[ii_type] == 0) {
++					nircm->vlan_primary_rule.ingress_vlan_tag = vlan_value;
++				} else {
++					nircm->vlan_secondary_rule.ingress_vlan_tag = vlan_value;
++				}
++				nircm->valid_flags |= NSS_IPV4_RULE_CREATE_VLAN_VALID;
++				break;
++			default:
++				rule_invalid = true;
++				DEBUG_WARN("%px: VLAN 0x%x bridge membership unresolvable - cannot accelerate\n", feci, vlan_value);
++				break;
+ 			}
+-			nircm->valid_flags |= NSS_IPV4_RULE_CREATE_VLAN_VALID;
+ 
+ 			/*
+ 			 * If we have not yet got an ethernet mac then take this one (very unlikely as mac should have been propagated to the slave (outer) device
+@@ -1095,14 +1112,31 @@ static void ecm_nss_non_ported_ipv4_conn
+ 			}
+ 
+ 			/*
+-			 * Primary or secondary (QinQ) VLAN?
++			 * On a VLAN-filtering bridge the bridge port's per-VLAN
++			 * configuration - not the upper VLAN device - decides the
++			 * on-wire format: an untagged/pvid member carries this
++			 * VLAN untagged, so the tag must stay out of the rule.
+ 			 */
+-			if (interface_type_counts[ii_type] == 0) {
+-				nircm->vlan_primary_rule.egress_vlan_tag = vlan_value;
+-			} else {
+-				nircm->vlan_secondary_rule.egress_vlan_tag = vlan_value;
++			switch (ecm_interface_bridge_vlan_wire_tagged(ii, to_ifaces, to_ifaces_first)) {
++			case 0:
++				DEBUG_TRACE("%px: VLAN 0x%x untagged on the bridge port - no egress tag\n", feci, vlan_value);
++				break;
++			case 1:
++				/*
++				 * Primary or secondary (QinQ) VLAN?
++				 */
++				if (interface_type_counts[ii_type] == 0) {
++					nircm->vlan_primary_rule.egress_vlan_tag = vlan_value;
++				} else {
++					nircm->vlan_secondary_rule.egress_vlan_tag = vlan_value;
++				}
++				nircm->valid_flags |= NSS_IPV4_RULE_CREATE_VLAN_VALID;
++				break;
++			default:
++				rule_invalid = true;
++				DEBUG_WARN("%px: VLAN 0x%x bridge membership unresolvable - cannot accelerate\n", feci, vlan_value);
++				break;
+ 			}
+-			nircm->valid_flags |= NSS_IPV4_RULE_CREATE_VLAN_VALID;
+ 
+ 			/*
+ 			 * If we have not yet got an ethernet mac then take this one (very unlikely as mac should have been propagated to the slave (outer) device
+--- a/frontends/nss/ecm_nss_non_ported_ipv6.c
++++ b/frontends/nss/ecm_nss_non_ported_ipv6.c
+@@ -721,14 +721,31 @@ static void ecm_nss_non_ported_ipv6_conn
+ 			}
+ 
+ 			/*
+-			 * Primary or secondary (QinQ) VLAN?
++			 * On a VLAN-filtering bridge the bridge port's per-VLAN
++			 * configuration - not the upper VLAN device - decides the
++			 * on-wire format: an untagged/pvid member carries this
++			 * VLAN untagged, so the tag must stay out of the rule.
+ 			 */
+-			if (interface_type_counts[ii_type] == 0) {
+-				nircm->vlan_primary_rule.ingress_vlan_tag = vlan_value;
+-			} else {
+-				nircm->vlan_secondary_rule.ingress_vlan_tag = vlan_value;
++			switch (ecm_interface_bridge_vlan_wire_tagged(ii, from_ifaces, from_ifaces_first)) {
++			case 0:
++				DEBUG_TRACE("%px: VLAN 0x%x untagged on the bridge port - no ingress tag\n", feci, vlan_value);
++				break;
++			case 1:
++				/*
++				 * Primary or secondary (QinQ) VLAN?
++				 */
++				if (interface_type_counts[ii_type] == 0) {
++					nircm->vlan_primary_rule.ingress_vlan_tag = vlan_value;
++				} else {
++					nircm->vlan_secondary_rule.ingress_vlan_tag = vlan_value;
++				}
++				nircm->valid_flags |= NSS_IPV6_RULE_CREATE_VLAN_VALID;
++				break;
++			default:
++				rule_invalid = true;
++				DEBUG_WARN("%px: VLAN 0x%x bridge membership unresolvable - cannot accelerate\n", feci, vlan_value);
++				break;
+ 			}
+-			nircm->valid_flags |= NSS_IPV6_RULE_CREATE_VLAN_VALID;
+ 
+ 			/*
+ 			 * If we have not yet got an ethernet mac then take this one (very unlikely as mac should have been propagated to the slave (outer) device
+@@ -976,14 +993,31 @@ static void ecm_nss_non_ported_ipv6_conn
+ 			}
+ 
+ 			/*
+-			 * Primary or secondary (QinQ) VLAN?
++			 * On a VLAN-filtering bridge the bridge port's per-VLAN
++			 * configuration - not the upper VLAN device - decides the
++			 * on-wire format: an untagged/pvid member carries this
++			 * VLAN untagged, so the tag must stay out of the rule.
+ 			 */
+-			if (interface_type_counts[ii_type] == 0) {
+-				nircm->vlan_primary_rule.egress_vlan_tag = vlan_value;
+-			} else {
+-				nircm->vlan_secondary_rule.egress_vlan_tag = vlan_value;
++			switch (ecm_interface_bridge_vlan_wire_tagged(ii, to_ifaces, to_ifaces_first)) {
++			case 0:
++				DEBUG_TRACE("%px: VLAN 0x%x untagged on the bridge port - no egress tag\n", feci, vlan_value);
++				break;
++			case 1:
++				/*
++				 * Primary or secondary (QinQ) VLAN?
++				 */
++				if (interface_type_counts[ii_type] == 0) {
++					nircm->vlan_primary_rule.egress_vlan_tag = vlan_value;
++				} else {
++					nircm->vlan_secondary_rule.egress_vlan_tag = vlan_value;
++				}
++				nircm->valid_flags |= NSS_IPV6_RULE_CREATE_VLAN_VALID;
++				break;
++			default:
++				rule_invalid = true;
++				DEBUG_WARN("%px: VLAN 0x%x bridge membership unresolvable - cannot accelerate\n", feci, vlan_value);
++				break;
+ 			}
+-			nircm->valid_flags |= NSS_IPV6_RULE_CREATE_VLAN_VALID;
+ 
+ 			/*
+ 			 * If we have not yet got an ethernet mac then take this one (very unlikely as mac should have been propagated to the slave (outer) device
+--- a/frontends/nss/ecm_nss_ported_ipv4.c
++++ b/frontends/nss/ecm_nss_ported_ipv4.c
+@@ -663,14 +663,31 @@ static void ecm_nss_ported_ipv4_connecti
+ 			}
+ 
+ 			/*
+-			 * Primary or secondary (QinQ) VLAN?
+-			 */
+-			if (interface_type_counts[ii_type] == 0) {
+-				nircm->vlan_primary_rule.ingress_vlan_tag = vlan_value;
+-			} else {
+-				nircm->vlan_secondary_rule.ingress_vlan_tag = vlan_value;
++			 * On a VLAN-filtering bridge the bridge port's per-VLAN
++			 * configuration - not the upper VLAN device - decides the
++			 * on-wire format: an untagged/pvid member carries this
++			 * VLAN untagged, so the tag must stay out of the rule.
++			 */
++			switch (ecm_interface_bridge_vlan_wire_tagged(ii, from_ifaces, from_ifaces_first)) {
++			case 0:
++				DEBUG_TRACE("%px: VLAN 0x%x untagged on the bridge port - no ingress tag\n", feci, vlan_value);
++				break;
++			case 1:
++				/*
++				 * Primary or secondary (QinQ) VLAN?
++				 */
++				if (interface_type_counts[ii_type] == 0) {
++					nircm->vlan_primary_rule.ingress_vlan_tag = vlan_value;
++				} else {
++					nircm->vlan_secondary_rule.ingress_vlan_tag = vlan_value;
++				}
++				nircm->valid_flags |= NSS_IPV4_RULE_CREATE_VLAN_VALID;
++				break;
++			default:
++				rule_invalid = true;
++				DEBUG_WARN("%px: VLAN 0x%x bridge membership unresolvable - cannot accelerate\n", feci, vlan_value);
++				break;
+ 			}
+-			nircm->valid_flags |= NSS_IPV4_RULE_CREATE_VLAN_VALID;
+ 
+ 			/*
+ 			 * If we have not yet got an ethernet mac then take this one (very unlikely as mac should have been propagated to the slave (outer) device
+@@ -1022,14 +1039,31 @@ static void ecm_nss_ported_ipv4_connecti
+ 			}
+ 
+ 			/*
+-			 * Primary or secondary (QinQ) VLAN?
+-			 */
+-			if (interface_type_counts[ii_type] == 0) {
+-				nircm->vlan_primary_rule.egress_vlan_tag = vlan_value;
+-			} else {
+-				nircm->vlan_secondary_rule.egress_vlan_tag = vlan_value;
++			 * On a VLAN-filtering bridge the bridge port's per-VLAN
++			 * configuration - not the upper VLAN device - decides the
++			 * on-wire format: an untagged/pvid member carries this
++			 * VLAN untagged, so the tag must stay out of the rule.
++			 */
++			switch (ecm_interface_bridge_vlan_wire_tagged(ii, to_ifaces, to_ifaces_first)) {
++			case 0:
++				DEBUG_TRACE("%px: VLAN 0x%x untagged on the bridge port - no egress tag\n", feci, vlan_value);
++				break;
++			case 1:
++				/*
++				 * Primary or secondary (QinQ) VLAN?
++				 */
++				if (interface_type_counts[ii_type] == 0) {
++					nircm->vlan_primary_rule.egress_vlan_tag = vlan_value;
++				} else {
++					nircm->vlan_secondary_rule.egress_vlan_tag = vlan_value;
++				}
++				nircm->valid_flags |= NSS_IPV4_RULE_CREATE_VLAN_VALID;
++				break;
++			default:
++				rule_invalid = true;
++				DEBUG_WARN("%px: VLAN 0x%x bridge membership unresolvable - cannot accelerate\n", feci, vlan_value);
++				break;
+ 			}
+-			nircm->valid_flags |= NSS_IPV4_RULE_CREATE_VLAN_VALID;
+ 
+ 			/*
+ 			 * If we have not yet got an ethernet mac then take this one (very unlikely as mac should have been propagated to the slave (outer) device
+--- a/frontends/nss/ecm_nss_ported_ipv6.c
++++ b/frontends/nss/ecm_nss_ported_ipv6.c
+@@ -665,14 +665,31 @@ static void ecm_nss_ported_ipv6_connecti
+ 			}
+ 
+ 			/*
+-			 * Primary or secondary (QinQ) VLAN?
+-			 */
+-			if (interface_type_counts[ii_type] == 0) {
+-				nircm->vlan_primary_rule.ingress_vlan_tag = vlan_value;
+-			} else {
+-				nircm->vlan_secondary_rule.ingress_vlan_tag = vlan_value;
++			 * On a VLAN-filtering bridge the bridge port's per-VLAN
++			 * configuration - not the upper VLAN device - decides the
++			 * on-wire format: an untagged/pvid member carries this
++			 * VLAN untagged, so the tag must stay out of the rule.
++			 */
++			switch (ecm_interface_bridge_vlan_wire_tagged(ii, from_ifaces, from_ifaces_first)) {
++			case 0:
++				DEBUG_TRACE("%px: VLAN 0x%x untagged on the bridge port - no ingress tag\n", feci, vlan_value);
++				break;
++			case 1:
++				/*
++				 * Primary or secondary (QinQ) VLAN?
++				 */
++				if (interface_type_counts[ii_type] == 0) {
++					nircm->vlan_primary_rule.ingress_vlan_tag = vlan_value;
++				} else {
++					nircm->vlan_secondary_rule.ingress_vlan_tag = vlan_value;
++				}
++				nircm->valid_flags |= NSS_IPV6_RULE_CREATE_VLAN_VALID;
++				break;
++			default:
++				rule_invalid = true;
++				DEBUG_WARN("%px: VLAN 0x%x bridge membership unresolvable - cannot accelerate\n", feci, vlan_value);
++				break;
+ 			}
+-			nircm->valid_flags |= NSS_IPV6_RULE_CREATE_VLAN_VALID;
+ 
+ 			/*
+ 			 * If we have not yet got an ethernet mac then take this one (very unlikely as mac should have been propagated to the slave (outer) device
+@@ -999,14 +1016,31 @@ static void ecm_nss_ported_ipv6_connecti
+ 			}
+ 
+ 			/*
+-			 * Primary or secondary (QinQ) VLAN?
+-			 */
+-			if (interface_type_counts[ii_type] == 0) {
+-				nircm->vlan_primary_rule.egress_vlan_tag = vlan_value;
+-			} else {
+-				nircm->vlan_secondary_rule.egress_vlan_tag = vlan_value;
++			 * On a VLAN-filtering bridge the bridge port's per-VLAN
++			 * configuration - not the upper VLAN device - decides the
++			 * on-wire format: an untagged/pvid member carries this
++			 * VLAN untagged, so the tag must stay out of the rule.
++			 */
++			switch (ecm_interface_bridge_vlan_wire_tagged(ii, to_ifaces, to_ifaces_first)) {
++			case 0:
++				DEBUG_TRACE("%px: VLAN 0x%x untagged on the bridge port - no egress tag\n", feci, vlan_value);
++				break;
++			case 1:
++				/*
++				 * Primary or secondary (QinQ) VLAN?
++				 */
++				if (interface_type_counts[ii_type] == 0) {
++					nircm->vlan_primary_rule.egress_vlan_tag = vlan_value;
++				} else {
++					nircm->vlan_secondary_rule.egress_vlan_tag = vlan_value;
++				}
++				nircm->valid_flags |= NSS_IPV6_RULE_CREATE_VLAN_VALID;
++				break;
++			default:
++				rule_invalid = true;
++				DEBUG_WARN("%px: VLAN 0x%x bridge membership unresolvable - cannot accelerate\n", feci, vlan_value);
++				break;
+ 			}
+-			nircm->valid_flags |= NSS_IPV6_RULE_CREATE_VLAN_VALID;
+ 
+ 			/*
+ 			 * If we have not yet got an ethernet mac then take this one (very unlikely as mac should have been propagated to the slave (outer) device

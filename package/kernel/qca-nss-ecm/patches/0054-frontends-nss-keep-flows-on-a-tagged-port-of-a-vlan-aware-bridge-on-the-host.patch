@@ -1,0 +1,272 @@
+From: Stanislaw Pal <kuncy7@gmail.com>
+Subject: [PATCH] frontends/nss: keep flows on a tagged port of a VLAN-aware
+ bridge on the host
+
+The rule the NSS frontends build gets a VLAN tag for a side only from a
+VLAN device in that side's interface hierarchy: br-lan.10 over the bridge
+(0038 then asks the bridge port whether the tag is on the wire), or a
+tag_8021q DSA port of a VLAN-aware bridge, which 0052 resolves from the
+connection's bridge VLAN filter data. An ordinary port of a VLAN-aware
+bridge with no VLAN device above it had neither. That is every bridged
+flow through an ethernet port that is not a switch port, and every routed
+one whose address sits on the bridge itself: the rule was written without
+a tag whatever the port's membership.
+
+Where the port carries the flow's VLAN untagged that is correct. Where it
+is a tagged member, the firmware sent the flow's frames out untagged and
+the peer put them into the port's PVID, while the tagged frames coming
+back matched nothing and went to the host. Reported on an access point
+without a switch (Linksys MX6200: `lan` and `wan` are the two GMACs) with
+the LAN in VLAN 10 untagged and a guest SSID in VLAN 99 tagged on the
+uplink: the first packets of a guest flow reach the router in VLAN 99,
+the ones after the flow is accelerated in VLAN 10, and the guest network
+has no connectivity until Wi-Fi offload is turned off. Whether a given
+flow got that far depended on which of the router's two FDB entries the
+bridge had learned last, so some flows worked.
+
+Check such a side before the rule is built. Without a VLAN device in its
+hierarchy it is accepted only when the bridge VLAN filter data names one
+VLAN for the port in both directions and the port is an untagged PVID
+member of it. A tagged member, an asymmetric one and directions that
+disagree are refused, and the connection stays on the host path, which
+tags correctly. The non-ported frontends record no such data, so there a
+port of a VLAN-aware bridge without a VLAN device above it is always
+refused.
+
+This is the safe half: the flow is forwarded correctly, not fast. Putting
+the tag into the rule also needs a firmware VLAN node for the bridge's VID
+on the port, which only the tag_8021q glue creates today. The multicast
+frontends (built only with kmod-qca-mcs) are not touched.
+
+Signed-off-by: Stanislaw Pal <kuncy7@gmail.com>
+diff -urN a/frontends/nss/ecm_nss_common.h b/frontends/nss/ecm_nss_common.h
+--- a/frontends/nss/ecm_nss_common.h
++++ b/frontends/nss/ecm_nss_common.h
+@@ -110,6 +110,8 @@
+ 	return nss_cmn_get_interface_number_by_dev_and_type(dev, type);
+ }
+ 
++#include <linux/if_bridge.h>
++
+ #ifdef ECM_BRIDGE_VLAN_FILTERING_ENABLE
+ /*
+  * ecm_nss_common_vlan_filter_vid()
+@@ -223,6 +225,124 @@
+ 	dev_put(dev);
+ 	return ret;
+ }
++
++/*
++ * ecm_nss_common_vlan_aware_plain_side()
++ *	Whether a rule side whose innermost interface is an ordinary port of a
++ *	VLAN-aware bridge - an ethernet port that is not a tag_8021q DSA port,
++ *	or a VAP - can be accelerated as its interface hierarchy describes it.
++ *
++ *	The rule gets a VLAN tag for a side only from a VLAN device in that
++ *	side's hierarchy (br-lan.10 over the bridge, see
++ *	ecm_interface_bridge_vlan_wire_tagged()). A bridged flow has none, and
++ *	neither has a routed one whose address sits on the bridge itself, so
++ *	the firmware sends and expects such a flow untagged on the port. That
++ *	is right only where the port carries the flow's VLAN untagged: on a
++ *	tagged member the frames would leave without the tag and land in the
++ *	peer's PVID (a guest SSID bridged to a trunk uplink ends up in the LAN),
++ *	while the tagged frames coming back match nothing.
++ *
++ *	So without a VLAN device in the hierarchy the side is accepted only
++ *	when the connection's bridge VLAN filter data names one VLAN for the
++ *	port in both directions and the port is an untagged PVID member of it.
++ *	Everything else stays on the host path, which tags correctly: a tagged
++ *	member, an asymmetric one, directions that disagree, and a connection
++ *	that has no such data at all (the non-ported frontends record none).
++ *
++ *	Returns 0 when the side can be accelerated (or is no such port), -1
++ *	when the connection must not be.
++ */
++static inline int ecm_nss_common_vlan_aware_plain_side(struct ecm_db_connection_instance *ci,
++						       struct ecm_db_iface_instance *ifaces[],
++						       int32_t first, bool to_side)
++{
++	struct net_device *dev;
++	struct net_device *br;
++	bool vlan_aware;
++	int ret = 0;
++	int32_t i;
++#ifdef ECM_BRIDGE_VLAN_FILTERING_ENABLE
++	struct ecm_db_connection_vlan_filter *vf;
++	struct ecm_db_connection_vlan_filter *egress = NULL;
++	struct ecm_db_connection_vlan_filter *ingress = NULL;
++	int egress_first, ingress_first;
++#endif
++
++	dev = dev_get_by_index(&init_net, ecm_db_iface_interface_identifier_get(ifaces[first]));
++	if (!dev) {
++		return 0;
++	}
++
++	rcu_read_lock();
++	br = netif_is_bridge_port(dev) ? netdev_master_upper_dev_get_rcu(dev) : NULL;
++	vlan_aware = br && netif_is_bridge_master(br) && br_vlan_enabled(br);
++	rcu_read_unlock();
++	if (!vlan_aware) {
++		goto out;
++	}
++
++	/*
++	 * A tag_8021q DSA port is resolved by ecm_nss_common_vlan_aware_dsa_side().
++	 */
++	if (ecm_interface_dsa_8021q_vlan_aware(dev, NULL)) {
++		goto out;
++	}
++
++	/*
++	 * With a VLAN device above the port the tag is that device's business.
++	 */
++	for (i = first; i < ECM_DB_IFACE_HEIRARCHY_MAX; i++) {
++		if (ecm_db_iface_type_get(ifaces[i]) == ECM_DB_IFACE_TYPE_VLAN) {
++			goto out;
++		}
++	}
++
++	ret = -1;
++#ifdef ECM_BRIDGE_VLAN_FILTERING_ENABLE
++	if (!ci->vlan_filter_valid || !ci->vlan_filter) {
++		DEBUG_TRACE("%px: %s: no bridge VLAN filter data on the connection\n", ci, dev->name);
++		goto out;
++	}
++
++	/*
++	 * Frames leave through the port in the flow direction on the 'to'
++	 * side and in the return direction on the 'from' side.
++	 */
++	egress_first = to_side ? ECM_VLAN_FILTER_RULE_FLOW_EGRESS1 : ECM_VLAN_FILTER_RULE_RET_EGRESS1;
++	ingress_first = to_side ? ECM_VLAN_FILTER_RULE_RET_INGRESS1 : ECM_VLAN_FILTER_RULE_FLOW_INGRESS1;
++	for (i = 0; i < ECM_VLAN_FILTER_RULE_IFACE_MAX; i++) {
++		vf = &ci->vlan_filter[egress_first + i];
++		if (!egress && vf->is_valid && vf->ii &&
++		    ecm_db_iface_interface_identifier_get(vf->ii) == dev->ifindex) {
++			egress = vf;
++		}
++		vf = &ci->vlan_filter[ingress_first + i];
++		if (!ingress && vf->is_valid && vf->ii &&
++		    ecm_db_iface_interface_identifier_get(vf->ii) == dev->ifindex) {
++			ingress = vf;
++		}
++	}
++	if (!egress || !ingress || egress->vlan_tag != ingress->vlan_tag) {
++		DEBUG_TRACE("%px: %s: no agreed bridge VLAN (%d / %d)\n", ci, dev->name,
++			    egress ? egress->vlan_tag : -1, ingress ? ingress->vlan_tag : -1);
++		goto out;
++	}
++
++	if (!(egress->flags & ECM_VLAN_FILTER_FLAG_EGRESS_UNTAGGED) ||
++	    !(ingress->flags & ECM_VLAN_FILTER_FLAG_INGRESS_PVID)) {
++		DEBUG_TRACE("%px: %s: VLAN %u is not untagged both ways on the port, the rule would carry no tag\n",
++			    ci, dev->name, egress->vlan_tag);
++		goto out;
++	}
++
++	ret = 0;
++#else
++	DEBUG_TRACE("%px: %s: port of a VLAN-aware bridge, no bridge VLAN filter support\n", ci, dev->name);
++#endif
++out:
++	dev_put(dev);
++	return ret;
++}
+ 
+ /*
+  * ecm_nss_common_connection_regenerate()
+diff -urN a/frontends/nss/ecm_nss_non_ported_ipv4.c b/frontends/nss/ecm_nss_non_ported_ipv4.c
+--- a/frontends/nss/ecm_nss_non_ported_ipv4.c
++++ b/frontends/nss/ecm_nss_non_ported_ipv4.c
+@@ -498,6 +498,20 @@
+ 	}
+ 
+ 	/*
++	 * An ordinary port of a VLAN-aware bridge with no VLAN device above it:
++	 * these connections carry no bridge VLAN filter data to tell whether
++	 * the port has the flow's VLAN untagged, so they stay on the host
++	 * path, see ecm_nss_common_vlan_aware_plain_side().
++	 */
++	if ((ecm_nss_common_vlan_aware_plain_side(feci->ci, from_ifaces, from_ifaces_first, false) < 0) ||
++	    (ecm_nss_common_vlan_aware_plain_side(feci->ci, to_ifaces, to_ifaces_first, true) < 0)) {
++		DEBUG_TRACE("%px: no rule for a port of a VLAN-aware bridge\n", feci);
++		ecm_db_connection_interfaces_deref(from_ifaces, from_ifaces_first);
++		ecm_db_connection_interfaces_deref(to_ifaces, to_ifaces_first);
++		goto non_ported_accel_bad_rule;
++	}
++
++	/*
+ 	 * Get NSS interface ID of the top interface in heirarchy
+ 	 */
+ 	from_nss_iface = from_ifaces[ECM_DB_IFACE_HEIRARCHY_MAX - 1];
+diff -urN a/frontends/nss/ecm_nss_non_ported_ipv6.c b/frontends/nss/ecm_nss_non_ported_ipv6.c
+--- a/frontends/nss/ecm_nss_non_ported_ipv6.c
++++ b/frontends/nss/ecm_nss_non_ported_ipv6.c
+@@ -414,6 +414,20 @@
+ 	}
+ 
+ 	/*
++	 * An ordinary port of a VLAN-aware bridge with no VLAN device above it:
++	 * these connections carry no bridge VLAN filter data to tell whether
++	 * the port has the flow's VLAN untagged, so they stay on the host
++	 * path, see ecm_nss_common_vlan_aware_plain_side().
++	 */
++	if ((ecm_nss_common_vlan_aware_plain_side(feci->ci, from_ifaces, from_ifaces_first, false) < 0) ||
++	    (ecm_nss_common_vlan_aware_plain_side(feci->ci, to_ifaces, to_ifaces_first, true) < 0)) {
++		DEBUG_TRACE("%px: no rule for a port of a VLAN-aware bridge\n", feci);
++		ecm_db_connection_interfaces_deref(from_ifaces, from_ifaces_first);
++		ecm_db_connection_interfaces_deref(to_ifaces, to_ifaces_first);
++		goto non_ported_accel_bad_rule;
++	}
++
++	/*
+ 	 * Get NSS interface ID of the top interface in heirarchy
+ 	 */
+ 	from_nss_iface = from_ifaces[ECM_DB_IFACE_HEIRARCHY_MAX - 1];
+diff -urN a/frontends/nss/ecm_nss_ported_ipv4.c b/frontends/nss/ecm_nss_ported_ipv4.c
+--- a/frontends/nss/ecm_nss_ported_ipv4.c
++++ b/frontends/nss/ecm_nss_ported_ipv4.c
+@@ -428,6 +428,19 @@
+ 		goto ported_accel_bad_rule;
+ 	}
+ 
++	/*
++	 * An ordinary port of a VLAN-aware bridge that carries the flow's VLAN
++	 * tagged: the rule would have no tag for it, see
++	 * ecm_nss_common_vlan_aware_plain_side().
++	 */
++	if ((ecm_nss_common_vlan_aware_plain_side(feci->ci, from_ifaces, from_ifaces_first, false) < 0) ||
++	    (ecm_nss_common_vlan_aware_plain_side(feci->ci, to_ifaces, to_ifaces_first, true) < 0)) {
++		DEBUG_TRACE("%px: no rule for a tagged port of a VLAN-aware bridge\n", feci);
++		ecm_db_connection_interfaces_deref(from_ifaces, from_ifaces_first);
++		ecm_db_connection_interfaces_deref(to_ifaces, to_ifaces_first);
++		goto ported_accel_bad_rule;
++	}
++
+ 	if ((from_nss_iface_id < 0) || (to_nss_iface_id < 0)) {
+ 		DEBUG_TRACE("%px: from_nss_iface_id: %d, to_nss_iface_id: %d\n", feci, from_nss_iface_id, to_nss_iface_id);
+ 		ecm_db_connection_interfaces_deref(from_ifaces, from_ifaces_first);
+diff -urN a/frontends/nss/ecm_nss_ported_ipv6.c b/frontends/nss/ecm_nss_ported_ipv6.c
+--- a/frontends/nss/ecm_nss_ported_ipv6.c
++++ b/frontends/nss/ecm_nss_ported_ipv6.c
+@@ -433,6 +433,19 @@
+ 		goto ported_accel_bad_rule;
+ 	}
+ 
++	/*
++	 * An ordinary port of a VLAN-aware bridge that carries the flow's VLAN
++	 * tagged: the rule would have no tag for it, see
++	 * ecm_nss_common_vlan_aware_plain_side().
++	 */
++	if ((ecm_nss_common_vlan_aware_plain_side(feci->ci, from_ifaces, from_ifaces_first, false) < 0) ||
++	    (ecm_nss_common_vlan_aware_plain_side(feci->ci, to_ifaces, to_ifaces_first, true) < 0)) {
++		DEBUG_TRACE("%px: no rule for a tagged port of a VLAN-aware bridge\n", feci);
++		ecm_db_connection_interfaces_deref(from_ifaces, from_ifaces_first);
++		ecm_db_connection_interfaces_deref(to_ifaces, to_ifaces_first);
++		goto ported_accel_bad_rule;
++	}
++
+ 	if ((from_nss_iface_id < 0) || (to_nss_iface_id < 0)) {
+ 		DEBUG_TRACE("%px: from_nss_iface_id: %d, to_nss_iface_id: %d\n", feci, from_nss_iface_id, to_nss_iface_id);
+ 		ecm_db_connection_interfaces_deref(from_ifaces, from_ifaces_first);

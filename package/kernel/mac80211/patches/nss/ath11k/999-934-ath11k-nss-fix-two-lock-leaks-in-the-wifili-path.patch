@@ -1,0 +1,52 @@
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Subject: [PATCH] ath11k: fix two lock leaks in the wifili path
+
+Two spinlocks in nss.c are released wrongly or not at all. Both leave
+softirqs disabled on the CPU that took them, so the next acquisition of
+the same lock deadlocks the box rather than failing anywhere near the
+bug.
+
+ath11k_nss_wifili_link_desc_return() takes spin_lock_bh(&srng->lock) and
+releases it with spin_unlock(). Its upstream twin,
+ath11k_dp_rx_link_desc_return() in dp_rx.c, is the same function with
+the correct spin_unlock_bh(), which is what the pairing should have
+been.
+
+ath11k_nss_wds_type_rx() takes spin_lock_bh(&ab->base_lock) and then
+returns without releasing it on two early exits, when the netdev has no
+wireless_dev or the wireless_dev has no vif. Every other exit in the
+same function unlocks; these two were missed. base_lock is the driver's
+global peer/AST lock, so leaking it wedges the data path.
+
+Both are pairings rather than behaviour changes: the lock taken decides
+the release, and there is only one release that matches.
+
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+
+diff --git a/drivers/net/wireless/ath/ath11k/nss.c b/drivers/net/wireless/ath/ath11k/nss.c
+index 5ef4f59..f101919 100644
+--- a/drivers/net/wireless/ath/ath11k/nss.c
++++ b/drivers/net/wireless/ath/ath11k/nss.c
+@@ -129,7 +129,7 @@
+ 
+ exit:
+ 	ath11k_hal_srng_access_end(ab, srng);
+-	spin_unlock(&srng->lock);
++	spin_unlock_bh(&srng->lock);
+ }
+ 
+ static void ath11k_nss_get_peer_stats(struct ath11k_base *ab, struct nss_wifili_peer_stats *stats)
+@@ -745,11 +745,13 @@
+ 
+ 	wdev = dev->ieee80211_ptr;
+ 	if (!wdev) {
++		spin_unlock_bh(&ab->base_lock);
+ 		return;
+ 	}
+ 
+ 	vif = wdev_to_ieee80211_vif(wdev);
+ 	if (!vif) {
++		spin_unlock_bh(&ab->base_lock);
+ 		return;
+ 	}
+ 

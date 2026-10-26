@@ -1,0 +1,56 @@
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Subject: [PATCH] ecm_interface: fix the second multicast hierarchy row bound
+
+0040 fixed one of a pair. ecm_interface_multicast_from_heirarchy_construct()
+guards its second heirarchy_get() with
+
+	if (valid_if > ECM_DB_MULTICAST_IF_MAX)
+
+where the sibling twenty lines of context earlier - the one 0040
+corrected - uses >=. The interfaces buffer holds exactly
+ECM_DB_MULTICAST_IF_MAX rows, so valid_if == ECM_DB_MULTICAST_IF_MAX
+passes this guard and
+ecm_db_multicast_if_heirarchy_get(interfaces, valid_if) returns the row
+one past the end, which the code then writes a full interface hierarchy
+into. Reached by a multicast group with exactly the maximum number of
+destination interfaces.
+
+With that closed, tighten the assert in the accessor as well.
+ecm_db_multicast_if_heirarchy_get() asserted index <=
+ECM_DB_MULTICAST_IF_MAX against an allocation of exactly that many rows,
+so it would have passed the bad index through rather than catching it.
+
+Tightening a live DEBUG_ASSERT is only safe with the callers audited,
+since ECM builds at debug level 1 and DEBUG_ASSERT is BUG() there. All
+46 call sites were checked: every one is a loop bounded by
+i < ECM_DB_MULTICAST_IF_MAX, or passes a count already guarded < that
+value - the two in ecm_interface.c by 0040 and by this change, and the
+third by a DEBUG_ASSERT(valid_if < ECM_DB_MULTICAST_IF_MAX) directly
+above it. Nothing legitimate reaches the boundary value once the guard
+above is corrected, so the tightened assert cannot fire on a path
+multicast traffic drives.
+
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+
+--- a/ecm_db/ecm_db_types.h
++++ b/ecm_db/ecm_db_types.h
+@@ -481,7 +481,7 @@ static inline struct ecm_db_iface_instan
+ {
+ 	unsigned long *heirarchy_instance = (unsigned long *)heirarchy_base;
+ 	DEBUG_ASSERT(heirarchy_instance, "Bad memory, multicast interfaces list has been already freed\n");
+-	DEBUG_ASSERT((index <= ECM_DB_MULTICAST_IF_MAX), "Bad index %u\n", index);
++	DEBUG_ASSERT((index < ECM_DB_MULTICAST_IF_MAX), "Bad index %u\n", index);
+ 	return (struct ecm_db_iface_instance *)(heirarchy_instance + (index * ECM_DB_IFACE_HEIRARCHY_MAX));
+ }
+ 
+--- a/ecm_interface.c
++++ b/ecm_interface.c
+@@ -5559,7 +5559,7 @@ int32_t ecm_interface_multicast_heirarch
+ 			return 0;
+ 		}
+ 
+-		if (valid_if > ECM_DB_MULTICAST_IF_MAX) {
++		if (valid_if >= ECM_DB_MULTICAST_IF_MAX) {
+ 			int i;
+ 
+ 			/*

@@ -1,0 +1,245 @@
+From: Adriel Santos <adriel@adriel.eu>
+Subject: [PATCH] ath11k: nss: release VAP nodes before in-place recovery
+
+mac80211 re-adds every interface after a restart without removing it
+first, and ath11k_mac_op_add_interface() zeroes the arvif. The NSS VAP
+and AP_VLAN ext-VAP dynamic nodes created for the old firmware instance
+are never released: they stay allocated and registered, bound to the
+old radio node, one set per recovery. The NSS wifili peers are not
+deleted either: ath11k_mac_peer_cleanup_all() only frees the host side,
+so their NSS peer memory leaks too.
+
+Release them in the order module unload uses. mac80211 removes the
+stations before the AP stops, and remove_interface then deletes the AP
+self peer, the AP_VLAN ext vdevs and the vdev. For each vdev on
+ar->arvifs:
+1. send the NSS peer delete for its station peers;
+2. bring the VAP down in NSS if it was created and up (that also closes
+   its AP_VLAN ext vdevs);
+3. for an AP, send the NSS peer delete for the self peer, then delete
+   each AP_VLAN ext vdev and unlink it under data_lock;
+4. delete the VAP.
+Only the NSS side is done here (no WMI). Do it while the old wifili
+instance still exists, before ath11k_nss_teardown(), as unload does:
+- hw-restart (ab->is_reset): from ath11k_core_halt(), which
+  ath11k_core_reset() calls before the power cycle. The firmware is
+  still up there and can still deliver frames for the deleted peers,
+  as it can during a normal station removal;
+- firmware crash: at the start of ath11k_core_reconfigure_on_crash(),
+  for the radios post_reconfigure_recovery() will halt. There
+  ath11k_core_halt() only runs after NSS has been torn down and set up
+  again, so it skips the release.
+
+An AP_VLAN ext vdev is linked to its AP only once a 4addr station moves
+to it, so one that was created but never added is not on any list.
+Release such a leftover from ath11k_mac_op_add_interface() when
+mac80211 re-adds the AP_VLAN, before the arvif is zeroed (nss.created is
+still set only in that case). That runs after the NSS teardown and
+re-setup; such a node was never bound to a VAP or brought up, so it is
+only the host unregister and the dynamic node deallocation.
+
+
+Taken from https://github.com/ADCDS/openwrt-xiaomi-ax3000t-rd03v2
+(999-999-rd03v2-nss-recovery-2-release-vdevs-on-restart); the nss.c hunks
+of it (peer->nss.vaddr cleared on free, the srng unlock) are already in
+this tree. Seen here on an Archer AX55 v1: after a recovery traffic
+towards the stations stopped until the interfaces were made again.
+
+Signed-off-by: Stanislaw Pal <kuncy7@gmail.com>
+
+--- b/drivers/net/wireless/ath/ath11k/core.h
++++ c/drivers/net/wireless/ath/ath11k/core.h
+@@ -1388,6 +1388,8 @@ void ath11k_core_free_bdf(struct ath11k_
+ int ath11k_core_check_dt(struct ath11k_base *ath11k);
+ int ath11k_core_check_smbios(struct ath11k_base *ab);
+ void ath11k_core_halt(struct ath11k *ar);
++void ath11k_core_nss_stale_ext_vdev_release(struct ath11k *ar,
++					    struct ath11k_vif *arvif);
+ int ath11k_core_resume_early(struct ath11k_base *ab);
+ int ath11k_core_resume(struct ath11k_base *ab);
+ int ath11k_core_suspend(struct ath11k_base *ab);
+--- b/drivers/net/wireless/ath/ath11k/core.c
++++ c/drivers/net/wireless/ath/ath11k/core.c
+@@ -2459,10 +2459,154 @@ err_firmware_stop:
+ 	return ret;
+ }
+ 
++/*
++ * Remove the NSS wifili peers of a vdev: the stations (self == false) or the
++ * AP self peer (self == true). Unload does this through ath11k_peer_delete()
++ * before the vdev goes; ath11k_mac_peer_cleanup_all() in ath11k_core_halt()
++ * only frees the host side. Copy the addresses first: the NSS delete waits
++ * for its response and takes base_lock itself.
++ */
++static void ath11k_core_nss_vdev_peers_delete(struct ath11k *ar,
++					      struct ath11k_vif *arvif,
++					      bool self)
++{
++	struct ath11k_base *ab = ar->ab;
++	struct ath11k_peer *peer;
++	int n = 0, max = 0, i;
++	u8 *addrs;
++
++	spin_lock_bh(&ab->base_lock);
++	list_for_each_entry(peer, &ar->peers, list)
++		max++;
++	spin_unlock_bh(&ab->base_lock);
++
++	if (!max)
++		return;
++
++	addrs = kcalloc(max, ETH_ALEN, GFP_KERNEL);
++	if (!addrs)
++		return;
++
++	spin_lock_bh(&ab->base_lock);
++	list_for_each_entry(peer, &ar->peers, list) {
++		if (n == max)
++			break;
++		if (peer->vdev_id != arvif->vdev_id ||
++		    peer->delete_in_progress || !peer->nss.vaddr)
++			continue;
++		if (ether_addr_equal(peer->addr, arvif->vif->addr) != self)
++			continue;
++		ether_addr_copy(addrs + n++ * ETH_ALEN, peer->addr);
++	}
++	spin_unlock_bh(&ab->base_lock);
++
++	for (i = 0; i < n; i++)
++		ath11k_nss_peer_delete(ar, arvif->vdev_id, addrs + i * ETH_ALEN);
++
++	kfree(addrs);
++}
++
++/*
++ * mac80211 re-adds every interface after a restart without removing it first,
++ * and ath11k_mac_op_add_interface() zeroes the arvif, so the NSS VAP and
++ * AP_VLAN ext-VAP nodes created for the old firmware instance would stay
++ * allocated and registered, bound to the old radio node, for good. Release
++ * them in the order module unload uses, while the old wifili instance still
++ * exists (before ath11k_nss_teardown()): the station peers (mac80211 removes
++ * stations before the AP stops), the VAP down, then as remove_interface does
++ * the AP self peer, the AP_VLAN ext vdevs and the VAP.
++ */
++static void ath11k_core_nss_vdevs_release(struct ath11k *ar)
++{
++	struct ath11k_vif *arvif, *ap_vlan_arvif, *tmp;
++
++	lockdep_assert_held(&ar->conf_mutex);
++
++	if (!ar->ab->nss.enabled)
++		return;
++
++	list_for_each_entry(arvif, &ar->arvifs, list) {
++		ath11k_core_nss_vdev_peers_delete(ar, arvif, false);
++
++		/* also closes the AP_VLAN ext vdevs of an AP */
++		if (arvif->nss.created && arvif->is_up)
++			ath11k_nss_vdev_down(arvif);
++
++		if (arvif->vdev_type == WMI_VDEV_TYPE_AP) {
++			ath11k_core_nss_vdev_peers_delete(ar, arvif, true);
++
++			list_for_each_entry_safe(ap_vlan_arvif, tmp,
++						 &arvif->ap_vlan_arvifs, list) {
++				ath11k_nss_ext_vdev_delete(ap_vlan_arvif);
++				spin_lock_bh(&ar->data_lock);
++				list_del(&ap_vlan_arvif->list);
++				spin_unlock_bh(&ar->data_lock);
++				ap_vlan_arvif->nss.added = false;
++			}
++		}
++
++		ath11k_nss_vdev_delete(arvif);
++	}
++}
++
++/*
++ * An AP_VLAN ext vdev is linked to its AP (ap_vlan_arvifs) only once a 4addr
++ * station moves to it, so ath11k_core_nss_vdevs_release() cannot reach one
++ * that was created but never added. mac80211 re-adds AP_VLAN interfaces after
++ * a restart (SUPPORTS_NSS_OFFLOAD), and ath11k_mac_op_add_interface() calls
++ * this before it zeroes the arvif. nss.created is still set only for such a
++ * leftover: a removed interface cleared it, and a new vif's private area is
++ * zeroed. It runs after the NSS teardown and re-setup, unlike the release
++ * above; a node that was never added was never bound to a VAP or brought up,
++ * so this is only the host unregister and the dynamic node deallocation.
++ */
++void ath11k_core_nss_stale_ext_vdev_release(struct ath11k *ar,
++					    struct ath11k_vif *arvif)
++{
++	lockdep_assert_held(&ar->conf_mutex);
++
++	if (!ar->ab->nss.enabled)
++		return;
++
++	if (arvif->ar != ar || !arvif->nss.created)
++		return;
++
++	ath11k_info(ar->ab, "nss: releasing ext vdev if_num %d left from before the restart\n",
++		    arvif->nss.if_num);
++	ath11k_nss_ext_vdev_delete(arvif);
++}
++
++static void ath11k_core_nss_vdevs_release_all(struct ath11k_base *ab)
++{
++	struct ath11k *ar;
++	int i;
++
++	for (i = 0; i < ab->num_radios; i++) {
++		ar = ab->pdevs[i].ar;
++		if (!ar)
++			continue;
++
++		mutex_lock(&ar->conf_mutex);
++		/* the radios ath11k_core_post_reconfigure_recovery() will halt */
++		if (ar->state == ATH11K_STATE_ON)
++			ath11k_core_nss_vdevs_release(ar);
++		mutex_unlock(&ar->conf_mutex);
++	}
++}
++
+ static int ath11k_core_reconfigure_on_crash(struct ath11k_base *ab)
+ {
+ 	int ret;
+ 
++	/*
++	 * Firmware crash path: ath11k_core_halt() only runs after this function
++	 * has torn NSS down and set it up again, so release the VAPs of the
++	 * old instance here, before the teardown. The hw-restart path
++	 * (is_reset) already halted the radios in ath11k_core_reset().
++	 */
++	if (!ab->is_reset)
++		ath11k_core_nss_vdevs_release_all(ab);
++
+ 	mutex_lock(&ab->core_lock);
+ 
+ 	ath11k_thermal_unregister(ab);
+@@ -2524,6 +2668,14 @@ void ath11k_core_halt(struct ath11k *ar)
+ 
+ 	lockdep_assert_held(&ar->conf_mutex);
+ 
++	/*
++	 * hw-restart path: this runs from ath11k_core_reset() before the power
++	 * cycle and the NSS teardown. The firmware crash path released the
++	 * VAPs in ath11k_core_reconfigure_on_crash() already.
++	 */
++	if (ab->is_reset)
++		ath11k_core_nss_vdevs_release(ar);
++
+ 	ar->num_created_vdevs = 0;
+ 	ar->allocated_vdev_map = 0;
+ 
+--- b/drivers/net/wireless/ath/ath11k/mac.c
++++ c/drivers/net/wireless/ath/ath11k/mac.c
+@@ -7531,6 +7531,10 @@ static int ath11k_mac_op_add_interface(s
+ 		goto err;
+ 	}
+ 
++	/* an AP_VLAN ext vdev left over from before a restart */
++	if (vif->type == NL80211_IFTYPE_AP_VLAN)
++		ath11k_core_nss_stale_ext_vdev_release(ar, arvif);
++
+ 	memset(arvif, 0, sizeof(*arvif));
+ 
+ 	arvif->ar = ar;

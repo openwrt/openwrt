@@ -1,0 +1,77 @@
+ecm_db: fix the world-writable defunct sysctl and its NULL dereference
+
+Two defects on the same node. /proc/sys/net/ecm/defunct_by_5tuple_mask is
+registered with .mode = 0666 while its sibling defunct_by_5tuple - which
+tears down flows the same way - is 0644, so the permission is a slip rather
+than an intent. Any process on the box, not just root, can therefore write it.
+
+The parser behind it then dereferences NULL. Both defunct parsers split the
+write into six space-separated fields and validate each with
+
+	option = strsep(&fields[IDX], "=");
+	if (!option || strcmp(option, "sport")) ...
+	value = fields[IDX];
+	if (!sscanf(value, "%d", &sport)) ...
+
+strsep() returns the whole field and leaves fields[IDX] NULL when the field
+carries no "=", and the name comparison is satisfied by the bare name, so a
+field written as "sport" instead of "sport=443" reaches sscanf() - or
+in4_pton()/in6_pton() for the address fields - with a NULL pointer. One echo
+of "ip_ver 0 0 0 0 0" oopses the kernel, and through the 0666 node it does so
+without any privilege at all.
+
+Reject a field with no separator once, immediately after the field count is
+known, rather than at each of the six use sites: that is where the invariant
+the rest of the function relies on actually belongs, and it cannot be missed
+when a field is added. Both parsers get it - the 0644 one is reachable by
+root only, but the defect is identical.
+
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+
+--- a/ecm_db/ecm_db_connection.c
++++ b/ecm_db/ecm_db_connection.c
+@@ -5095,6 +5095,17 @@ static bool ecm_db_connection_defunct_5t
+ 	}
+ 
+ 	/*
++	 * strsep() below leaves a field NULL when its "=" is missing, and the
++	 * name checks accept the bare name, so the value would be a NULL deref.
++	 */
++	for (field_count = 0; field_count < ECM_DB_CONNECTION_DEFUNCT_BY_5TUPLE_OPTION_MAX; field_count++) {
++		if (!strchr(fields[field_count], '=')) {
++			DEBUG_ERROR("Field %d carries no value\n", field_count);
++			return false;
++		}
++	}
++
++	/*
+ 	 * IP version (ip_ver) field validation.
+ 	 */
+ 	option = strsep(&fields[ECM_DB_CONNECTION_DEFUNCT_BY_5TUPLE_OPTION_IP_VERSION], "=");
+@@ -5449,6 +5460,17 @@ bool ecm_db_connection_defunct_5tuple_bu
+ 	}
+ 
+ 	/*
++	 * strsep() below leaves a field NULL when its "=" is missing, and the
++	 * name checks accept the bare name, so the value would be a NULL deref.
++	 */
++	for (field_count = 0; field_count < ECM_DB_CONNECTION_DEFUNCT_BY_5TUPLE_OPTION_MAX; field_count++) {
++		if (!strchr(fields[field_count], '=')) {
++			DEBUG_ERROR("Field %d carries no value\n", field_count);
++			return false;
++		}
++	}
++
++	/*
+ 	 * IP version (ip_ver) field validation
+ 	 */
+ 	option = strsep(&fields[ECM_DB_CONNECTION_DEFUNCT_BY_5TUPLE_OPTION_IP_VERSION], "=");
+@@ -5630,7 +5652,7 @@ static struct ctl_table ecm_db_connectio
+ 		.procname	= "defunct_by_5tuple_mask",
+ 		.data		= NULL,
+ 		.maxlen		= sizeof(int),
+-		.mode		= 0666,
++		.mode		= 0644,
+ 		.proc_handler	= &ecm_db_connection_defunct_by_5tuple_mask_handler,
+ 	},
+ };

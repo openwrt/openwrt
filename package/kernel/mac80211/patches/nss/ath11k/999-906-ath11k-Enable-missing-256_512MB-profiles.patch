@@ -1,0 +1,42 @@
+ath11k-Enable-missing-256_512MB-profiles
+
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+
+diff --git a/drivers/net/wireless/ath/ath11k/core.c b/drivers/net/wireless/ath/ath11k/core.c
+index 974ddcd..b774075 100644
+--- a/drivers/net/wireless/ath/ath11k/core.c
++++ b/drivers/net/wireless/ath/ath11k/core.c
+@@ -309,6 +309,7 @@
+ 		.tx_ring_size = DP_TCL_DATA_RING_SIZE,
+ 		.smp2p_wow_exit = false,
+ 		.support_fw_mac_sequence = true,
++		.num_vdevs_peers = ath11k_vdevs_peers,
+ 		.support_dual_stations = true,
+ 		.pdev_suspend = false,
+ 	},
+@@ -484,6 +485,7 @@
+ 		.tx_ring_size = DP_TCL_DATA_RING_SIZE,
+ 		.smp2p_wow_exit = false,
+ 		.support_fw_mac_sequence = true,
++		.num_vdevs_peers = ath11k_vdevs_peers,
+ 		.support_dual_stations = true,
+ 		.pdev_suspend = false,
+ 	},
+@@ -655,6 +657,7 @@
+ 		.tx_ring_size = DP_TCL_DATA_RING_SIZE_WCN6750,
+ 		.smp2p_wow_exit = true,
+ 		.support_fw_mac_sequence = true,
++		.num_vdevs_peers = ath11k_vdevs_peers,
+ 		.support_dual_stations = false,
+ 		.pdev_suspend = true,
+ 	},
+@@ -974,7 +977,8 @@
+ 		.fixed_mem_region = true,
+ 		.static_window_map = true,
+ 		.hybrid_bus_type = true,
+-		.fw_mem_mode = 1,
++		.num_vdevs_peers = ath11k_vdevs_peers,
++		.fw_mem_mode = ATH11K_QMI_TARGET_MEM_MODE,
+ 		.supports_sta_ps = false,
+ 		.dbr_debug_support = true,
+ 		.bios_sar_capa = NULL,

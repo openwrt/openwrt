@@ -1,0 +1,57 @@
+// SPDX-License-Identifier: GPL-2.0-only
+/* From kuncy7/openwrt-nss-edma 9caa35b4d718382ad882cb35c2372dbb569de901. */
+
+/ {
+	reserved-memory {
+		nss_region: memory@40000000 {
+			reg = <0x0 0x40000000 0x0 0x1000000>;
+			no-map;
+		};
+	};
+};
+
+&soc {
+	nss-common@1868010 {
+		compatible = "qcom,nss-common";
+		reg = <0x01868010 0x01>;
+		reg-names = "nss-misc-reset";
+		memory-region = <&nss_region>;
+	};
+
+	nss0: nss@7a00000 {
+		compatible = "qcom,nss";
+		interrupts = <GIC_SPI 402 IRQ_TYPE_EDGE_RISING>,
+			     <GIC_SPI 401 IRQ_TYPE_EDGE_RISING>,
+			     <GIC_SPI 400 IRQ_TYPE_EDGE_RISING>,
+			     <GIC_SPI 399 IRQ_TYPE_EDGE_RISING>,
+			     <GIC_SPI 398 IRQ_TYPE_EDGE_RISING>,
+			     <GIC_SPI 397 IRQ_TYPE_EDGE_RISING>,
+			     <GIC_SPI 396 IRQ_TYPE_EDGE_RISING>,
+			     <GIC_SPI 395 IRQ_TYPE_EDGE_RISING>;
+		reg = <0x07a00000 0x100>, <0x0b111000 0x1000>;
+		reg-names = "nphys", "qgic-phys";
+		clocks = <&gcc GCC_UBI0_CFG_CLK>,
+			 <&gcc GCC_UBI0_DBG_CLK>,
+			 <&gcc GCC_UBI0_CORE_CLK>,
+			 <&gcc GCC_UBI0_UTCM_CLK>,
+			 <&gcc GCC_UBI0_AXI_CLK>,
+			 <&gcc GCC_SNOC_UBI0_AXI_CLK>,
+			 <&gcc GCC_UBI0_NC_AXI_CLK>;
+		clock-names = "nss-cfg-clk", "nss-dbg-clk", "nss-core-clk",
+			      "nss-utcm-clk", "nss-axi-clk", "nss-snoc-axi-clk",
+			      "nss-nc-axi-clk";
+		qcom,id = <0>;
+		qcom,num-queue = <4>;
+		qcom,num-irq = <8>;
+		qcom,num-pri = <4>;
+		qcom,load-addr = <0x40000000>;
+		qcom,low-frequency = <850000000>;
+		qcom,mid-frequency = <1000000000>;
+		qcom,max-frequency = <1000000000>;
+		qcom,ipv4-enabled;
+		qcom,ipv6-enabled;
+		qcom,wlanredirect-enabled;
+		qcom,wlan-dataplane-offload-enabled;
+		status = "disabled";
+	};
+};

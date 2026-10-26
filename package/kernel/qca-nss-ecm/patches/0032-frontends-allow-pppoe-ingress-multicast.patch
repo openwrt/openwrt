@@ -1,0 +1,130 @@
+frontends: accelerate multicast received over a PPPoE WAN (IPv4 + IPv6)
+
+The multicast connection_process bails (NF_ACCEPT) for any ARPHRD_PPP
+ingress device, lumping PPPoE in with genuine L3 tunnels (the stock
+"TODO: Add support for multicast over tunnels" skip). On a PPPoE WAN
+(e.g. Telekom IPTV / MagentaTV) the multicast source ingresses pppoe-wan,
+so the flow is dropped before the MFC lookup and the NSS mc_rule is never
+created - routed multicast offload is impossible.
+
+PPPoE is not a generic tunnel for ECM: ECM_INTERFACE_PPPOE_ENABLE is set
+(kmod-pppoe selected), the multicast 'from' interface hierarchy already
+resolves a PPPoE session (PX_PROTO_OE). So in the cmn connection_process
+(both v4 and v6) allow an ARPHRD_PPP ingress through the tunnel guard when
+it is a PPPoE session (ecm_interface_mac_addr_get_pppoe), while still
+skipping non-PPPoE PPP (PPTP/L2TP). Same-subnet and LAN-to-LAN multicast
+(non-PPP ingress) are untouched.
+
+The IPv4 NSS frontend already has the ECM_DB_IFACE_TYPE_PPPOE case in its
+from-interface walk that sets NSS_IPV4_MC_RULE_CREATE_FLAG_INGRESS_PPPOE;
+the IPv6 frontend was missing it (a PPPoE source iface hit default: and the
+INGRESS_PPPOE flag was never set), so add the mirrored case to the v6
+from-walk. The PPPoE egress/to-walk was already symmetric in both families.
+
+Gated behind ECM_INTERFACE_PPPOE_ENABLE. The NSS firmware's ingress-PPPoE
+decap for multicast (the mc_rule carries only the INGRESS_PPPOE flag plus
+src_interface_num=base-eth, no ingress pppoe if_num) is unproven and must
+be validated on real hardware; a fw NACK is harmless (ECM falls back to
+the host path).
+
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+
+--- a/frontends/cmn/ecm_multicast_ipv4.c
++++ b/frontends/cmn/ecm_multicast_ipv4.c
+@@ -560,6 +560,7 @@ unsigned int ecm_multicast_ipv4_connecti
+ 	bool br_dev_found_in_mfc = false;
+ 	int protocol = (int)orig_tuple->dst.protonum;
+ 	__be16 *layer4hdr = NULL;
++	bool in_dev_is_pppoe = false;
+ 
+ 	if (protocol != IPPROTO_UDP) {
+ 		DEBUG_WARN("Invalid Protocol %d in skb %px\n", protocol, skb);
+@@ -581,9 +582,23 @@ unsigned int ecm_multicast_ipv4_connecti
+ 	 *
+ 	 * Acceleration for multicast packet which is sent to
+ 	 * or received from VxLAN tunnel net device should be skipped.
++	 *
++	 * Exception: a PPPoE ingress (e.g. IPTV multicast arriving over a
++	 * PPPoE WAN) IS accelerable - the multicast interface hierarchy and
++	 * the NSS mc_rule handle a PPPoE 'from' interface when
++	 * ECM_INTERFACE_PPPOE_ENABLE is set. Allow ARPHRD_PPP through only
++	 * when it is a PPPoE session; keep skipping non-PPPoE PPP tunnels
++	 * (PPTP/L2TP).
+ 	 */
++#ifdef ECM_INTERFACE_PPPOE_ENABLE
++	if (in_dev->type == ARPHRD_PPP) {
++		uint8_t pppoe_node_addr[ETH_ALEN];
++		in_dev_is_pppoe = ecm_interface_mac_addr_get_pppoe(in_dev, pppoe_node_addr);
++	}
++#endif
+ 	if ((in_dev->type == ECM_ARPHRD_IPSEC_TUNNEL_TYPE) ||
+-	    (in_dev->type == ARPHRD_SIT) || (in_dev->type == ARPHRD_PPP) ||
++	    (in_dev->type == ARPHRD_SIT) ||
++	    ((in_dev->type == ARPHRD_PPP) && !in_dev_is_pppoe) ||
+ 	    (in_dev->type == ARPHRD_TUNNEL6) ||
+ 	    (netif_is_vxlan(in_dev)) || (netif_is_vxlan(out_dev))) {
+ 		DEBUG_TRACE("in_dev: %px, in_type: %d, out_dev: %px, out_type: %d",
+--- a/frontends/cmn/ecm_multicast_ipv6.c
++++ b/frontends/cmn/ecm_multicast_ipv6.c
+@@ -533,6 +533,7 @@ unsigned int ecm_multicast_ipv6_connecti
+ 	struct net_device *l3_br_dev = NULL;
+ 	uint8_t mcuc_addr[ETH_ALEN] = {0};
+ 	ip_addr_t from_nat_mac_lookup;
++	bool in_dev_is_pppoe = false;
+ 
+ 	if (protocol != IPPROTO_UDP) {
+ 		DEBUG_WARN("Invalid Protocol %d in skb %px\n", protocol, skb);
+@@ -553,9 +554,23 @@ unsigned int ecm_multicast_ipv6_connecti
+ 	 *
+ 	 * Acceleration for multicast packet which is sent to
+ 	 * or received from VxLAN tunnel net device should be skipped.
++	 *
++	 * Exception: a PPPoE ingress (e.g. IPTV multicast arriving over a
++	 * PPPoE WAN) IS accelerable - the multicast interface hierarchy and
++	 * the NSS mc_rule handle a PPPoE 'from' interface when
++	 * ECM_INTERFACE_PPPOE_ENABLE is set. Allow ARPHRD_PPP through only
++	 * when it is a PPPoE session; keep skipping non-PPPoE PPP tunnels
++	 * (PPTP/L2TP).
+ 	 */
++#ifdef ECM_INTERFACE_PPPOE_ENABLE
++	if (in_dev->type == ARPHRD_PPP) {
++		uint8_t pppoe_node_addr[ETH_ALEN];
++		in_dev_is_pppoe = ecm_interface_mac_addr_get_pppoe(in_dev, pppoe_node_addr);
++	}
++#endif
+ 	if ((in_dev->type == ECM_ARPHRD_IPSEC_TUNNEL_TYPE) ||
+-	    (in_dev->type == ARPHRD_SIT) || (in_dev->type == ARPHRD_PPP) ||
++	    (in_dev->type == ARPHRD_SIT) ||
++	    ((in_dev->type == ARPHRD_PPP) && !in_dev_is_pppoe) ||
+ 	    (in_dev->type == ARPHRD_TUNNEL6) ||
+ 	    (netif_is_vxlan(in_dev)) || (netif_is_vxlan(out_dev))) {
+ 		DEBUG_TRACE("in_dev: %px, in_type: %d, out_dev: %px, out_type: %d",
+--- a/frontends/nss/ecm_nss_multicast_ipv6.c
++++ b/frontends/nss/ecm_nss_multicast_ipv6.c
+@@ -1027,6 +1027,26 @@ static void ecm_nss_multicast_ipv6_conne
+ 			DEBUG_TRACE("%px: DSA - unsupported\n", feci);
+ #endif
+ 			break;
++		case ECM_DB_IFACE_TYPE_PPPOE:
++#ifdef ECM_INTERFACE_PPPOE_ENABLE
++			/*
++			 * More than one PPPoE in the list is not valid!
++			 */
++			if (interface_type_counts[ii_type] != 0) {
++				DEBUG_TRACE("%px: PPPoE - additional unsupported\n", feci);
++				rule_invalid = true;
++				break;
++			}
++
++			/*
++			 * Set the PPPoE rule creation structure.
++			 */
++			create->valid_flags |= NSS_IPV6_MC_RULE_CREATE_FLAG_INGRESS_PPPOE;
++			DEBUG_TRACE("%px: PPPoE - ingress interface is valid\n", feci);
++#else
++			rule_invalid = true;
++#endif
++			break;
+ 		default:
+ 			DEBUG_TRACE("%px: Ignoring: %d (%s)\n", feci, ii_type, ii_name);
+ 		}

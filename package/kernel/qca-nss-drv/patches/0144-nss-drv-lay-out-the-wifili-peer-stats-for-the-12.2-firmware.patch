@@ -1,0 +1,41 @@
+nss-drv: lay the wifili peer stats out for the 12.2 firmware
+
+The 12.2 firmware writes 196-byte nss_wifili_peer_ctrl_stats entries:
+its rx control block has no ucast_rcv_cnt/ucast_rcv_bytes and its retry
+block has no tx_mpdu_retry_count/tx_mpdu_total_retry_count (checked
+against NHSS.QSDK.12.2.r10 and 12.2.5). Built with the 12.5 layout, the
+host walks the array in 212-byte steps: entry 0 is read correctly, every
+later entry lands 16*i bytes off, ath11k logs "unable to find peer 0" and
+throws the station statistics away - rx counters of the AP interfaces stay
+at 0 and station dump never moves under Wi-Fi offload. Measured on a
+GL-B3000: cm.len 200 with npeers 1 and 2, host entry 212.
+
+Gate the four fields on NSS_FIRMWARE_VERSION_12_2, which the Makefile now
+defines for a 12.2 build, like 0022 does for 11.4.
+
+Signed-off-by: kuncy7 <kuncy7@openwrt-nss-edma>
+--- a/exports/nss_wifili_if.h
++++ b/exports/nss_wifili_if.h
+@@ -1496,9 +1496,11 @@
+ 	uint32_t defrag_mcast_drop;		/**< Total number of defrag multicast dropped packets. */
+ #ifndef NSS_FIRMWARE_VERSION_11_4
+ 	uint32_t mcast_3addr_drop;		/**< Total number of 3 address multicast dropped packets. */
++#ifndef NSS_FIRMWARE_VERSION_12_2
+ 	uint32_t ucast_rcv_cnt;			/**< Total number of unicast packets received. */
+ 	uint32_t ucast_rcv_bytes;		/**< Total number of unicast bytes received. */
+ #endif
++#endif
+ };
+ 
+ #ifndef NSS_FIRMWARE_VERSION_11_4
+@@ -1511,8 +1513,10 @@
+ 	uint32_t tx_retry_count;		/**< Transmit retry count. */
+ 	uint32_t tx_multiple_retry_count;	/**< Transmit multiple retry count. */
+ 	uint32_t rx_retry_count;		/**< Receive retry count. */
++#ifndef NSS_FIRMWARE_VERSION_12_2
+ 	uint32_t tx_mpdu_retry_count;		/**< Per mpdu retry count. */
+ 	uint32_t tx_mpdu_total_retry_count;	/**< Total mpdu retry count. */
++#endif
+ };
+ #endif
+ 

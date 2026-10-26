@@ -1,0 +1,170 @@
+nss_core: bound the N2H descriptor geometry before shaping the skb
+
+payload_offs and payload_len arrive in the N2H descriptor, which the NSS
+firmware writes into host memory. Both are uint16_t, and the linear
+receive path uses them without any bound:
+
+	nbuf->data = nbuf->head + desc->payload_offs;
+	nbuf->len = desc->payload_len;
+	skb_set_tail_pointer(nbuf, nbuf->len);
+
+The buffer they describe is the alloc_skb(max_buf_size + NET_SKB_PAD)
+the host handed to the firmware, mapped in full from nbuf->head - a
+little over 2 KB. Nothing re-derives that size here, so a descriptor
+naming an offset and a length inside 64 KB shapes an skb that claims up
+to 64 KB starting past the allocation. That skb then goes to
+eth_type_trans() and netif_receive_skb(), or to the wifili data-plane
+callback: adjacent slab contents can be forwarded onto the LAN or up the
+PPPoE link. The dma_unmap_single() a few lines further down invalidates
+the same out-of-range span, and the NSS node carries no dma-coherent, so
+that is real cache maintenance over unrelated kernel objects.
+
+The paged sibling has the bound written down already:
+
+	nss_assert(desc->payload_offs + desc->payload_len <= PAGE_SIZE);
+
+but the package builds with NSS_DEBUG_LEVEL=0, where nss_assert() expands
+to nothing, and __skb_fill_page_desc() runs on the unvalidated pair
+regardless.
+
+The same asymmetry costs a minimum as well as a maximum. The paged path
+ends at a pull label that refuses a frame shorter than an ethernet
+header, because the data-plane callbacks all pull one without checking;
+the linear path has no equivalent, so a payload_len below ETH_HLEN
+reaches eth_type_trans(), whose skb_pull_inline() underflows skb->len to
+roughly 4 GiB before napi_gro_receive() sees it. Check that once at the
+dispatch point, where both paths converge and the buffer type is known,
+rather than a second time in each handler.
+
+Check the geometry against the size each path actually allocated and
+mapped, and drop the descriptor the way the existing error paths in these
+two handlers do - unmap what was mapped, decrement the in-firmware skb
+count, free, and return false so the caller skips the consume.
+
+The same buffer feeds nss_core_handle_nss_status_pkt(), which reads
+ncm->interface, ncm->version and ncm->len before anything establishes the
+buffer is even as large as the header - including the ncm->len check
+itself. Take the length from whichever branch supplied the pointer and
+test it first.
+
+And nss_core_handle_nr_frag_skb() appends every non-first segment to the
+head skb with skb_add_rx_frag(jumbo_start, skb_shinfo(jumbo_start)->nr_frags,
+...) while the firmware alone decides how many segments it sends, so a
+chain longer than MAX_SKB_FRAGS walks off the head's frag array. Bound it
+and drop the chain the way the sibling "full frame before a last" path
+already does.
+
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+
+--- a/nss_core.c
++++ b/nss_core.c
+@@ -415,11 +415,23 @@ void nss_core_handle_nss_status_pkt(stru
+ 	nss_core_rx_callback_t cb;
+ 	void *app_data;
+ 	uint16_t nss_if;
++	uint32_t buf_len;
+ 
+ 	if (skb_shinfo(nbuf)->nr_frags > 0) {
+ 		ncm = (struct nss_cmn_msg *)skb_frag_address(&skb_shinfo(nbuf)->frags[0]);
++		buf_len = skb_frag_size(&skb_shinfo(nbuf)->frags[0]);
+ 	} else {
+ 		ncm = (struct nss_cmn_msg *)nbuf->data;
++		buf_len = nbuf->len;
++	}
++
++	/*
++	 * The firmware chose this buffer, and every check below already reads
++	 * the header out of it - including the ncm->len one.
++	 */
++	if (unlikely(buf_len < sizeof(*ncm))) {
++		nss_warning("%px: status buffer %u shorter than the message header", nss_ctx, buf_len);
++		return;
+ 	}
+ 
+ 	/*
+@@ -1043,6 +1055,23 @@ static inline void nss_core_rx_pbuf(stru
+ 		nss_ctx = (struct nss_ctx_instance *)&nss_top_main.nss[core_id - 1];
+ 	}
+ 
++	/*
++	 * The three data buffer types below are handed to registered
++	 * data-plane callbacks, every one of which pulls an ethernet header
++	 * without checking for it. The paged receive path refuses a short
++	 * frame at its pull label; the linear path has no equivalent, and
++	 * eth_type_trans() underflows skb->len rather than failing.
++	 */
++	if (unlikely(nbuf->len < ETH_HLEN) &&
++			(buffer_type == N2H_BUFFER_PACKET ||
++			 buffer_type == N2H_BUFFER_PACKET_VIRTUAL ||
++			 buffer_type == N2H_BUFFER_PACKET_EXT)) {
++		NSS_PKT_STATS_INC(&nss_ctx->nss_top->stats_drv[NSS_DRV_STATS_RX_BAD_DESCRIPTOR]);
++		nss_warning("%px: data buffer shorter than an ethernet header: %u", nss_ctx, nbuf->len);
++		dev_kfree_skb_any(nbuf);
++		return;
++	}
++
+ 	switch (buffer_type) {
+ 	case N2H_BUFFER_PACKET:
+ 		nss_core_handle_buffer_pkt(nss_ctx, interface_num, nbuf, napi, desc->bit_flags, qid, desc->service_code);
+@@ -1135,7 +1164,19 @@ static inline bool nss_core_handle_nr_fr
+ 	uint16_t payload_offs = desc->payload_offs;
+ 	uint16_t bit_flags = desc->bit_flags;
+ 
+-	nss_assert(desc->payload_offs + desc->payload_len <= PAGE_SIZE);
++	/*
++	 * The firmware writes payload_offs and payload_len; the page behind
++	 * this descriptor is the single PAGE_SIZE one the host mapped at
++	 * offset 0. This bound was already written down here as an assert,
++	 * which NSS_DEBUG_LEVEL=0 deletes.
++	 */
++	if (unlikely((uint32_t)payload_offs + payload_len > PAGE_SIZE)) {
++		nss_warning("%px: bad paged descriptor: offs %u len %u", nss_ctx, payload_offs, payload_len);
++		dma_unmap_page(nss_ctx->dev, desc->buffer, PAGE_SIZE, DMA_FROM_DEVICE);
++		NSS_PKT_STATS_DEC(&nss_ctx->nss_top->stats_drv[NSS_DRV_STATS_NSS_SKB_COUNT]);
++		dev_kfree_skb_any(nbuf);
++		return false;
++	}
+ 
+ 	dma_unmap_page(nss_ctx->dev, (desc->buffer + desc->payload_offs), desc->payload_len, DMA_FROM_DEVICE);
+ 
+@@ -1251,6 +1292,18 @@ static inline bool nss_core_handle_nr_fr
+ 	 * Our page is safe although we are freeing it because we
+ 	 * just took a reference to it.
+ 	 */
++	/*
++	 * The firmware decides how many non-first segments it sends; nothing
++	 * else bounds the chain against the head skb's frag array.
++	 */
++	if (unlikely(skb_shinfo(jumbo_start)->nr_frags >= MAX_SKB_FRAGS)) {
++		nss_warning("%px: jumbo chain longer than MAX_SKB_FRAGS", jumbo_start);
++		dev_kfree_skb_any(jumbo_start);
++		*jumbo_start_ptr = NULL;
++		dev_kfree_skb_any(nbuf);
++		return false;
++	}
++
+ 	skb_add_rx_frag(jumbo_start, skb_shinfo(jumbo_start)->nr_frags, skb_frag_page(&skb_shinfo(nbuf)->frags[0]), payload_offs, payload_len, PAGE_SIZE);
+ 	skb_frag_ref(jumbo_start, skb_shinfo(jumbo_start)->nr_frags - 1);
+ 	dev_kfree_skb_any(nbuf);
+@@ -1300,6 +1353,21 @@ static inline bool nss_core_handle_linea
+ 	struct sk_buff *tail = *tail_ptr;
+ 
+ 	/*
++	 * Same firmware-written pair as the paged sibling. Bound them by the
++	 * skb's real capacity: the firmware sends control messages larger than
++	 * the data frame size it was given (wifili SOC statistics are 2092 B
++	 * against a max_buf_size of 1984), which a max_buf_size bound drops.
++	 */
++	if (unlikely((uint32_t)desc->payload_offs + desc->payload_len >
++			skb_end_offset(nbuf))) {
++		nss_warning("%px: bad linear descriptor: offs %u len %u", nss_ctx, desc->payload_offs, desc->payload_len);
++		dma_unmap_single(nss_ctx->dev, desc->buffer, nss_ctx->max_buf_size + NET_SKB_PAD, DMA_FROM_DEVICE);
++		NSS_PKT_STATS_DEC(&nss_ctx->nss_top->stats_drv[NSS_DRV_STATS_NSS_SKB_COUNT]);
++		dev_kfree_skb_any(nbuf);
++		return false;
++	}
++
++	/*
+ 	 * We are in linear SKB mode.
+ 	 */
+ 	nbuf->data = nbuf->head + desc->payload_offs;

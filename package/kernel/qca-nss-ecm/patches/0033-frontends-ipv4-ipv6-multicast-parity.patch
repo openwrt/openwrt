@@ -1,0 +1,63 @@
+frontends: restore IPv4/IPv6 multicast offload parity
+
+A v4/v6 audit of the multicast frontends found four IPv6-only defects where
+the IPv4 path accelerates a flow the IPv6 path drops, crashes on, or loses
+on re-evaluation. None are protocol-inherent; all are copy/paste drift from
+the IPv4 sibling. Fix each by mirroring the IPv4 code:
+
+1. ecm_nss_multicast_ipv6.c from-walk VLAN case: missing 'break;' before the
+   DSA case (present in v4). With DSA disabled the fall-through runs the DSA
+   '#else' arm; harmless today only because the from-walk rule_invalid is
+   reset before use, but it is a real bug the moment DSA is enabled. Add the
+   break to match v4.
+2. ecm_nss_multicast_ipv6.c DSA case declares 'vlan_info' but calls
+   ecm_db_iface_dsa_info_get(ii, &dsa_info) / uses dsa_info - an undeclared
+   symbol that fails to compile under ECM_INTERFACE_DSA_ENABLE (v4 declares
+   dsa_info). Rename to dsa_info.
+3. ecm_multicast_ipv6.c regenerate: the 'from NAT' interface-hierarchy is
+   rebuilt with ip_version=4 (copy/paste; the other three calls pass 6), so
+   a v6 multicast flow is reparsed through the IPv4 resolution path and loses
+   acceleration on every regeneration. Pass 6.
+4. ecm_multicast_ipv6.c pure-bridge path: a NULL out_dev_master is only
+   caught by DEBUG_ASSERT (compiled out in production) before being passed to
+   the snooper query - a NULL-deref risk. v4 bails with goto done. Mirror it.
+
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+
+--- a/frontends/cmn/ecm_multicast_ipv6.c
++++ b/frontends/cmn/ecm_multicast_ipv6.c
+@@ -187,7 +187,7 @@ static void ecm_multicast_ipv6_connectio
+ 	ecm_db_connection_interfaces_deref(from_list, from_list_first);
+ 
+ 	DEBUG_TRACE("%px: Update the 'from NAT' interface heirarchy list\n", ci);
+-	from_nat_list_first = ecm_interface_multicast_from_heirarchy_construct(feci, from_nat_list, ip_dest_addr, ip_src_addr_nat, 4, protocol, in_dev_nat, is_routed, in_dev_nat, src_node_addr_nat, dest_node_addr, layer4hdr, NULL);
++	from_nat_list_first = ecm_interface_multicast_from_heirarchy_construct(feci, from_nat_list, ip_dest_addr, ip_src_addr_nat, 6, protocol, in_dev_nat, is_routed, in_dev_nat, src_node_addr_nat, dest_node_addr, layer4hdr, NULL);
+ 	if (from_nat_list_first == ECM_DB_IFACE_HEIRARCHY_MAX) {
+ 		goto ecm_multicast_ipv6_retry_regen;
+ 	}
+@@ -711,7 +711,10 @@ unsigned int ecm_multicast_ipv6_connecti
+ 	 * interface list
+ 	 */
+ 	out_dev_master =  ecm_interface_get_and_hold_dev_master(out_dev);
+-	DEBUG_ASSERT(out_dev_master, "Expected a master\n");
++	if (!out_dev_master) {
++		DEBUG_WARN("%s is not master device\n", out_dev ? out_dev->name : NULL);
++		goto done;
++	}
+ 
+ #ifdef ECM_MCAST_LINUX_SNOOPER_SUPPORT
+ 	rcu_read_lock();
+--- a/frontends/nss/ecm_nss_multicast_ipv6.c
++++ b/frontends/nss/ecm_nss_multicast_ipv6.c
+@@ -1002,9 +1002,10 @@ static void ecm_nss_multicast_ipv6_conne
+ 			rule_invalid = true;
+ 			DEBUG_TRACE("%px: VLAN - unsupported\n", feci);
+ #endif
++			break;
+ 		case ECM_DB_IFACE_TYPE_DSA:
+ #ifdef ECM_INTERFACE_DSA_ENABLE
+-			struct ecm_db_interface_info_vlan vlan_info;
++			struct ecm_db_interface_info_vlan dsa_info;
+ 
+ 			DEBUG_TRACE("%px: DSA\n", feci);
+ 			if (interface_type_counts[ECM_DB_IFACE_TYPE_VLAN] > 0) {

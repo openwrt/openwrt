@@ -1,0 +1,162 @@
+nss_coredump: allow dumping the firmware log ring on demand
+
+The firmware's log ring is only ever printed from the coredump path,
+which runs when the firmware signals a crash. A firmware that is wedged
+rather than crashed never signals, so its log - the only first-hand
+account of what it was doing - stays unread.
+
+The ring is host memory (meminfo debug_boot_log_desc), so walking it
+needs nothing from the firmware. Split the walk out of
+nss_fw_coredump_notify() and add sysctl dev.nss.general.fwlog to run it
+on demand, without marking the core dead or arming the panic path.
+
+Used to diagnose the wifili start wedging the phys_if node on IPQ5018.
+
+--- a/nss_core.h
++++ b/nss_core.h
+@@ -768,6 +768,7 @@ struct nss_cmd_buffer {
+ 	uint32_t register_data;	/* register data buffer */
+ 	uint32_t average_inst;	/* average of inst for nss core */
+ 	uint32_t coredump;	/* cmd coredump buffer */
++	int fwlog;		/* on-demand firmware log ring dump */
+ };
+ extern struct nss_cmd_buffer nss_cmd_buf;
+ 
+@@ -1049,6 +1050,7 @@ extern uint32_t nss_core_get_min_reuse(struct nss_ctx_instance *nss_ctx);
+ extern void nss_coredump_notify_register(void);
+ extern void nss_coredump_notify_unregister(void);
+ extern void nss_fw_coredump_notify(struct nss_ctx_instance *nss_own, int intr);
++extern void nss_fw_logbuffer_dump(struct nss_ctx_instance *nss_own);
+ extern int nss_coredump_init_delay_work(void);
+ 
+ /*
+--- a/nss_coredump.c
++++ b/nss_coredump.c
+@@ -163,10 +163,17 @@ void nss_coredump_notify_unregister(void)
+  * nss_fw_coredump_notify()
+  *	handler for coredump notification from NSS FW
+  */
+-void nss_fw_coredump_notify(struct nss_ctx_instance *nss_own,
+-				int intr __attribute__ ((unused)))
++/*
++ * nss_fw_logbuffer_dump()
++ *	Print the firmware's log ring for one core, newest first.
++ *
++ * Split out of nss_fw_coredump_notify() so the ring can also be read while
++ * the firmware is still running - a wedged (but not crashed) core never
++ * signals a coredump, and the ring is host memory we can walk regardless.
++ */
++void nss_fw_logbuffer_dump(struct nss_ctx_instance *nss_own)
+ {
+-	int i, j, curr_index, useful_entries, num_cores_wait;
++	int j, curr_index, useful_entries;
+ 	uint32_t nentries, current_entry;
+ 	u64 budget;
+ 	struct nss_log_descriptor *nld;
+@@ -174,12 +181,6 @@ void nss_fw_coredump_notify(struct nss_ctx_instance *nss_own,
+ 	dma_addr_t dma_addr;
+ 	uint32_t offset, index;
+ 
+-	nss_warning("%px: COREDUMP %x Baddr %px stat %x",
+-			nss_own, intr, nss_own->nmap, nss_own->state);
+-	nss_own->state |= NSS_CORE_STATE_FW_DEAD;
+-	queue_delayed_work(coredump_workqueue, &coredump_queuewait,
+-			msecs_to_jiffies(NSS_COREDUMP_WAIT_MS));
+-
+ 	/*
+ 	 * If external log buffer is not set, use the nss initial log buffer.
+ 	 */
+@@ -205,7 +206,7 @@ void nss_fw_coredump_notify(struct nss_ctx_instance *nss_own,
+ 	if (!nld) {
+ 		nss_info_always("%px: no NSS-FW logbuffer for core %u\n",
+ 				nss_own, nss_own->id);
+-		goto dumped;
++		return;
+ 	}
+ 
+ 	dma_sync_single_for_cpu(nss_own->dev, dma_addr, sizeof(struct nss_log_descriptor), DMA_FROM_DEVICE);
+@@ -213,7 +214,7 @@ void nss_fw_coredump_notify(struct nss_ctx_instance *nss_own,
+ 	if (!nentries) {
+ 		nss_info_always("%px: NSS-FW logbuffer for core %u holds no entries\n",
+ 				nss_own, nss_own->id);
+-		goto dumped;
++		return;
+ 	}
+ 
+ 	/*
+@@ -250,8 +251,25 @@ void nss_fw_coredump_notify(struct nss_ctx_instance *nss_own,
+ 		index = index ? index - 1 : nentries - 1;
+ 		nle_print = nle_init + index;
+ 	}
++}
++
++/*
++ * nss_fw_coredump_notify()
++ *	handler for coredump notification from NSS FW
++ */
++void nss_fw_coredump_notify(struct nss_ctx_instance *nss_own,
++				int intr __attribute__ ((unused)))
++{
++	int i, num_cores_wait;
++
++	nss_warning("%px: COREDUMP %x Baddr %px stat %x",
++			nss_own, intr, nss_own->nmap, nss_own->state);
++	nss_own->state |= NSS_CORE_STATE_FW_DEAD;
++	queue_delayed_work(coredump_workqueue, &coredump_queuewait,
++			msecs_to_jiffies(NSS_COREDUMP_WAIT_MS));
++
++	nss_fw_logbuffer_dump(nss_own);
+ 
+-dumped:
+ 	if (nss_own->state & NSS_CORE_STATE_PANIC)
+ 		return;
+ 
+--- a/nss_init.c
++++ b/nss_init.c
+@@ -324,6 +324,32 @@ static int nss_get_average_inst_handler(const struct ctl_table *ctl, int write,
+ #endif
+ 
+ 
++/*
++ * nss_fwlog_handler()
++ *	Dump the firmware's log ring for core 0 on demand.
++ *
++ * The coredump path only runs when the firmware itself signals a crash. A
++ * firmware that is wedged rather than crashed never signals, and then this
++ * is the only way to read what it logged before it stopped: the ring lives
++ * in host memory, so walking it needs nothing from the firmware.
++ */
++static int nss_fwlog_handler(const struct ctl_table *ctl, int write, void __user *buffer, size_t *lenp, loff_t *ppos)
++{
++	struct nss_ctx_instance *nss_ctx = &nss_top_main.nss[NSS_CORE_0];
++	int ret;
++
++	ret = proc_dointvec(ctl, write, buffer, lenp, ppos);
++	if (ret || !write) {
++		return ret;
++	}
++
++	if (nss_cmd_buf.fwlog) {
++		nss_fw_logbuffer_dump(nss_ctx);
++	}
++
++	return ret;
++}
++
+ /*
+  * nss_coredump_handler()
+  *	Send Signal To Coredump NSS Cores
+@@ -513,6 +539,13 @@ static struct ctl_table nss_general_table[] = {
+ 		.mode                   = 0644,
+ 		.proc_handler		= &nss_coredump_handler,
+ 	},
++	{
++		.procname               = "fwlog",
++		.data                   = &nss_cmd_buf.fwlog,
++		.maxlen                 = sizeof(int),
++		.mode                   = 0644,
++		.proc_handler		= &nss_fwlog_handler,
++	},
+ 	{
+ 		.procname               = "logbuf",
+ 		.data                   = &nss_ctl_logbuf,

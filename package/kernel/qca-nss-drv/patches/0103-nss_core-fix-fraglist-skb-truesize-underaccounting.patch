@@ -1,0 +1,53 @@
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Subject: [PATCH] nss_core: fix fraglist skb truesize under-accounting
+
+When the firmware delivers a frame as a multi-segment chain (observed
+for virtually every full-MTU frame received through the wifili path),
+nss_core_handle_linear_skb() builds a fraglist skb but sets the head's
+truesize to desc->payload_len and grows it by desc->payload_len per
+appended segment. The result is truesize == exact wire frame length,
+which accounts for neither the two full-size receive buffers backing
+the chain nor the skb structures themselves.
+
+Before delivery, nss_core_handle_buffer_pkt() linearizes the fraglist
+for netdevs without NETIF_F_FRAGLIST (i.e. all of them). The second
+segment usually fits the head buffer's tailroom, so __skb_linearize()
+succeeds without reallocating the head and the bogus truesize survives
+into the network stack. Locally terminated TCP then trips
+
+  WARNING: ... net/core/skbuff.c:6200 skb_try_coalesce+0x4b8/0x504
+
+(WARN_ON_ONCE(delta < len), delta = truesize - SKB_DATA_ALIGN(sizeof
+(struct sk_buff))) on the first coalesced segment, and every chained
+frame under-accounts socket receive memory by roughly a full buffer.
+
+Keep the allocation-time truesize on the chain head and account each
+appended segment with its own full truesize, matching how the kernel
+itself accounts fraglists (e.g. IP defrag). Over-accounting after a
+later linearize is safe; under-accounting is what the WARN exists to
+catch.
+
+The paged/nr-frags path is already correct (it keeps the initial
+truesize and skb_add_rx_frag() adds PAGE_SIZE per segment) and is not
+touched.
+
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+--- a/nss_core.c
++++ b/nss_core.c
+@@ -1349,7 +1349,6 @@ static inline bool nss_core_handle_linea
+ 
+ 		skb_frag_list_init(nbuf);
+ 		nbuf->data_len = 0;
+-		nbuf->truesize = desc->payload_len;
+ 		nbuf->priority = desc->pri;
+ 
+ #ifdef CONFIG_NET_CLS_ACT
+@@ -1409,7 +1408,7 @@ static inline bool nss_core_handle_linea
+ 	 */
+ 	head->data_len += desc->payload_len;
+ 	head->len += desc->payload_len;
+-	head->truesize += desc->payload_len;
++	head->truesize += nbuf->truesize;
+ 
+ 	if (!(bit_flags & N2H_BIT_FLAG_LAST_SEGMENT)) {
+ 		/*

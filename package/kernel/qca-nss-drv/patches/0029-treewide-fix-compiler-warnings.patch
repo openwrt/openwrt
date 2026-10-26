@@ -1,0 +1,106 @@
+treewide-fix-compiler-warnings
+
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+
+--- a/exports/nss_match.h
++++ b/exports/nss_match.h
+@@ -247,7 +247,7 @@ extern struct nss_ctx_instance *nss_matc
+  * @return
+  * Pointer to the NSS core context.
+  */
+-extern struct nss_ctx_instance *nss_match_register_instance(int if_num, nss_match_msg_sync_callback_t notify_cb);
++extern struct nss_ctx_instance *nss_match_register_instance(int if_num, void (*notify_cb)(void *, struct nss_cmn_msg *));
+ 
+ /**
+  * nss_match_unregister_instance
+--- a/nss_core.c
++++ b/nss_core.c
+@@ -2253,12 +2253,16 @@ static void nss_core_handle_cause_nonque
+ 	 * of processor will prevent any excessive penalties.
+ 	 */
+ 	if (unlikely(nss_ctx->state == NSS_CORE_STATE_UNINITIALIZED)) {
++#ifdef NSS_DRV_C2C_ENABLE
+ 		struct nss_top_instance *nss_top = NULL;
++#endif
+ 		nss_core_init_nss(nss_ctx, if_map);
+ 		nss_send_ddr_info(nss_ctx);
+ 
+ 		nss_info_always("%px: nss core %d booted successfully\n", nss_ctx, nss_ctx->id);
++#ifdef NSS_DRV_C2C_ENABLE
+ 		nss_top = nss_ctx->nss_top;
++#endif
+ 
+ #ifdef NSS_DRV_C2C_ENABLE
+ #if (NSS_MAX_CORES > 1)
+--- a/nss_edma_stats.c
++++ b/nss_edma_stats.c
+@@ -650,9 +650,8 @@ void nss_edma_stats_dentry_create(void)
+ 	/*
+ 	 *  edma error stats
+ 	 */
+-	edma_err_stats_d = NULL;
+ 	edma_err_stats_d = debugfs_create_file("err_stats", 0400, edma_d, &nss_top_main, &nss_edma_err_stats_ops);
+-	if (unlikely(edma_port_stats_d == NULL)) {
++	if (unlikely(edma_err_stats_d == NULL)) {
+ 		nss_warning("Failed to create qca-nss-drv/stats/edma/%d/err_stats file", 0);
+ 		return;
+ 	}
+--- a/nss_lag.c
++++ b/nss_lag.c
+@@ -237,7 +237,7 @@ nss_tx_status_t nss_lag_tx_slave_state(u
+ 	struct nss_lag_pvt lag_msg_state;
+ 
+ 	init_completion(&lag_msg_state.complete);
+-	lag_msg_state.response = false;
++	lag_msg_state.response = NSS_CMN_RESPONSE_ACK;
+ 
+ 	/*
+ 	 * Construct a message to the NSS to update it
+@@ -268,6 +268,6 @@ nss_tx_status_t nss_lag_tx_slave_state(u
+ 		return NSS_TX_FAILURE;
+ 	}
+ 
+-	return lag_msg_state.response;
++	return (nss_tx_status_t)lag_msg_state.response;
+ }
+ EXPORT_SYMBOL(nss_lag_tx_slave_state);
+--- a/nss_map_t.c
++++ b/nss_map_t.c
+@@ -378,7 +378,7 @@ EXPORT_SYMBOL(nss_map_t_unregister_if);
+ /*
+  * nss_get_map_t_context()
+  */
+-struct nss_ctx_instance *nss_map_t_get_context()
++struct nss_ctx_instance *nss_map_t_get_context(void)
+ {
+ 	return (struct nss_ctx_instance *)&nss_top_main.nss[nss_top_main.map_t_handler_id];
+ }
+--- a/nss_match.c
++++ b/nss_match.c
+@@ -244,7 +244,7 @@ EXPORT_SYMBOL(nss_match_unregister_insta
+  * nss_match_register_instance()
+  *	Registers match instance.
+  */
+-struct nss_ctx_instance *nss_match_register_instance(int if_num, nss_match_msg_sync_callback_t notify_cb)
++struct nss_ctx_instance *nss_match_register_instance(int if_num, void (*notify_cb)(void *, struct nss_cmn_msg *))
+ {
+ 	struct nss_ctx_instance *nss_ctx;
+ 	uint32_t status;
+@@ -258,7 +258,7 @@ struct nss_ctx_instance *nss_match_regis
+ 	}
+ 
+ 	nss_core_register_handler(nss_ctx, if_num, nss_match_handler, NULL);
+-	status = nss_core_register_msg_handler(nss_ctx, if_num, (nss_if_rx_msg_callback_t)notify_cb);
++	status = nss_core_register_msg_handler(nss_ctx, if_num, notify_cb);
+ 	if (status != NSS_CORE_STATUS_SUCCESS) {
+ 		nss_warning("%px: Not able to register handler for interface %d with NSS core\n", nss_ctx, if_num);
+ 		return NULL;
+@@ -290,7 +290,7 @@ EXPORT_SYMBOL(nss_match_msg_init);
+  * nss_match_init()
+  * 	Initialize match.
+  */
+-void nss_match_init()
++void nss_match_init(void)
+ {
+ 	nss_match_stats_dentry_create();
+ 	nss_match_strings_dentry_create();

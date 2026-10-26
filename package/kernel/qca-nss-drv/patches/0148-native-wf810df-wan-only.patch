@@ -1,0 +1,155 @@
+--- a/Makefile
++++ b/Makefile
+@@ -605,7 +605,8 @@
+ ccflags-y += -I$(obj)/nss_hal/include -I$(obj)/nss_data_plane/include -I$(obj)/exports -DNSS_DEBUG_LEVEL=0 -DNSS_PKT_STATS_ENABLED=1
+ 
+ ccflags-y += -I$(obj)/nss_data_plane/hal/include
+-ccflags-y += -DNSS_PM_DEBUG_LEVEL=0 -DNSS_SKB_REUSE_SUPPORT=1
++# ponytail: use normal skb allocation on 6.12 until recycling is validated.
++ccflags-y += -DNSS_PM_DEBUG_LEVEL=0 -DNSS_SKB_REUSE_SUPPORT=0
+ ccflags-y += -Wall -Werror
+ 
+ ccflags-y += -I$(obj)
+--- a/nss_init.c
++++ b/nss_init.c
+@@ -99,8 +99,26 @@
+  * nss_probe()
+  *	HLOS device probe callback
+  */
++static bool enabled;
++module_param(enabled, bool, 0444);
++MODULE_PARM_DESC(enabled, "Boot NSS firmware (requires reboot to change)");
++
+ static inline int nss_probe(struct platform_device *nss_dev)
+ {
++	u32 mask;
++
++	if (!enabled)
++		return -ENODEV;
++
++	/* Only the internal WAN may leave the host datapath on this board. */
++	if (!of_machine_is_compatible("fpt,ax3000cv2") ||
++	    of_property_read_u32(nss_dev->dev.of_node,
++				 "qcom,physical-interface-mask", &mask) ||
++	    mask != BIT(0)) {
++		dev_err(&nss_dev->dev, "refusing NSS without WF810DF WAN-only ownership\n");
++		return -EINVAL;
++	}
++
+ 	return nss_hal_probe(nss_dev);
+ }
+ 
+@@ -135,6 +153,8 @@
+ 		.name	= "qca-nss",
+ 		.owner	= THIS_MODULE,
+ 		.of_match_table = of_match_ptr(nss_dt_ids),
++		/* Native IPQ50xx restore does not quiesce firmware DMA. */
++		.suppress_bind_attrs = true,
+ 	},
+ };
+ 
+@@ -847,7 +867,7 @@
+  * nss_cleanup()
+  *	Unregisters nss driver
+  */
+-static void __exit nss_cleanup(void)
++static void __exit __maybe_unused nss_cleanup(void)
+ {
+ 	nss_info("Exit NSS driver");
+ 
+@@ -942,7 +962,7 @@
+ }
+ 
+ module_init(nss_init);
+-module_exit(nss_cleanup);
++/* Reboot-only teardown: the native IPQ50xx datapath cannot detach safely. */
+ 
+ MODULE_DESCRIPTION("QCA NSS Driver");
+ MODULE_AUTHOR("Qualcomm Atheros Inc");
+--- a/nss_data_plane/nss_data_plane.c
++++ b/nss_data_plane/nss_data_plane.c
+@@ -18,6 +18,13 @@
+ #include "nss_core.h"
+ #include "nss_tx_rx_common.h"
+ #include "nss_data_plane_hal.h"
++#include <linux/of.h>
++#include <linux/rtnetlink.h>
++#include <net/dsa.h>
++
++static unsigned int physical_interface_mask_active;
++module_param(physical_interface_mask_active, uint, 0444);
++MODULE_PARM_DESC(physical_interface_mask_active, "Registered native NSS physical interfaces");
+ 
+ /*
+  * nss_data_plane_param
+@@ -250,6 +257,7 @@
+ 	struct nss_data_plane_param *ndpp = &nss_data_plane_params[if_num];
+ 	struct nss_top_instance *nss_top = nss_ctx->nss_top;
+ 	struct net_device *netdev;
++	u32 macid;
+ 	bool is_open;
+ 	int core;
+ 
+@@ -261,6 +269,13 @@
+ 		return false;
+ 	}
+ 
++	if (!netdev->dev.parent ||
++	    of_property_read_u32(netdev->dev.parent->of_node, "qcom,id", &macid) ||
++	    macid != 1 || netdev_uses_dsa(netdev)) {
++		nss_warning("%px: refusing non-WAN native data plane %d\n", nss_ctx, if_num);
++		return false;
++	}
++
+ 	is_open = nss_dp_is_in_open_state(netdev);
+ 	ndpp->dpc.dev = netdev;
+ 	ndpp->nss_ctx = nss_ctx;
+@@ -334,12 +349,23 @@
+  */
+ static void __nss_data_plane_register(struct nss_ctx_instance *nss_ctx)
+ {
++	u32 mask;
+ 	int i;
+ 
++	if (of_property_read_u32(nss_ctx->dev->of_node,
++				 "qcom,physical-interface-mask", &mask) ||
++	    mask != BIT(0))
++		return;
++
++	rtnl_lock();
+ 	for (i = NSS_DP_START_IFNUM; i < NSS_DP_MAX_INTERFACES; i++) {
++		if (!(mask & BIT(i)))
++			continue;
+ 		if (!nss_data_plane_register_to_nss_dp(nss_ctx, i)) {
+ 			nss_warning("%px: Register data plane failed for data plane %d\n", nss_ctx, i);
+ 		} else {
++			WRITE_ONCE(physical_interface_mask_active,
++				   physical_interface_mask_active | BIT(i));
+ 			nss_info("%px: Register data plan to data plane %d success\n", nss_ctx, i);
+ 		}
+ 	}
+@@ -348,6 +374,7 @@
+ 	 * Do any SoC specific registrations.
+ 	 */
+ 	nss_data_plane_hal_register(nss_ctx);
++	rtnl_unlock();
+ }
+ 
+ /*
+@@ -357,6 +384,8 @@
+ {
+ 	int i, core;
+ 
++	rtnl_lock();
++	WRITE_ONCE(physical_interface_mask_active, 0);
+ 	for (core = 0; core < nss_top_main.num_nss; core++) {
+ 		for (i = NSS_DP_START_IFNUM; i < NSS_DP_MAX_INTERFACES; i++) {
+ 			if (nss_top_main.nss[core].subsys_dp_register[i].ndev) {
+@@ -372,6 +401,7 @@
+ 			}
+ 		}
+ 	}
++	rtnl_unlock();
+ }
+ 
+ /*

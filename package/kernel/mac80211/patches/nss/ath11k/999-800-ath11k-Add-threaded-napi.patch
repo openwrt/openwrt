@@ -1,0 +1,95 @@
+ath11k: run the NAPI contexts in threads
+
+dev_set_threaded() on the ath11k NAPI netdevs, plus a name for each so
+the threads are identifiable in ps.
+
+This is not a tuning preference. The CE interrupts must stay on cpu0 -
+the firmware asserts if they are spread - so without threaded NAPI the
+Wi-Fi receive processing runs in softirq context on cpu0, which is
+also the core the NSS firmware delivers host-terminated flows to
+through N2H queue 0. Threading the NAPI contexts is the only lever
+that moves that work off cpu0 without touching the CE affinity.
+
+Measured: under a Wi-Fi client to wired host transfer the busiest NAPI
+thread accumulated 75 jiffies of system time in a 20 second run and
+was last scheduled on core 2, with the rest spread over cores 1 to 3.
+None of it landed on cpu0.
+
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+
+diff --git a/drivers/net/wireless/ath/ath11k/ahb.c b/drivers/net/wireless/ath/ath11k/ahb.c
+index 1dd3914..2738f66 100644
+--- a/drivers/net/wireless/ath/ath11k/ahb.c
++++ b/drivers/net/wireless/ath/ath11k/ahb.c
+@@ -387,6 +387,7 @@
+ 		struct ath11k_ext_irq_grp *irq_grp = &ab->ext_irq_grp[i];
+ 
+ 		if (!irq_grp->napi_enabled) {
++			dev_set_threaded(irq_grp->napi_ndev, true);
+ 			napi_enable(&irq_grp->napi);
+ 			irq_grp->napi_enabled = true;
+ 		}
+@@ -538,6 +539,7 @@
+ 	int irq;
+ 	int ret;
+ 	bool nss_offload;
++	static int devidx = 0;
+ 
+ 	/* TCL Completion, REO Dest, ERR, Exception and h2rxdma rings are offloaded
+ 	 * to nss when its enabled, hence don't enable these interrupts
+@@ -554,6 +556,9 @@
+ 		irq_grp->napi_ndev = alloc_netdev_dummy(0);
+ 		if (!irq_grp->napi_ndev)
+ 			return -ENOMEM;
++
++		snprintf(irq_grp->napi_ndev->name, sizeof(irq_grp->napi_ndev->name), "%s%d:%d",
++			 "ath11k_ahb", devidx, i);
+ 
+ 		netif_napi_add(irq_grp->napi_ndev, &irq_grp->napi,
+ 			       ath11k_ahb_ext_grp_napi_poll);
+@@ -619,6 +624,8 @@
+ 			}
+ 		}
+ 	}
++
++	devidx++;
+ 
+ 	return 0;
+ }
+--- a/drivers/net/wireless/ath/ath11k/pcic.c
++++ b/drivers/net/wireless/ath/ath11k/pcic.c
+@@ -498,6 +498,7 @@
+ 		struct ath11k_ext_irq_grp *irq_grp = &ab->ext_irq_grp[i];
+ 
+ 		if (!irq_grp->napi_enabled) {
++			dev_set_threaded(irq_grp->napi_ndev, true);
+ 			napi_enable(&irq_grp->napi);
+ 			irq_grp->napi_enabled = true;
+ 		}
+@@ -585,6 +586,7 @@
+ 	u32 user_base_data = 0, base_vector = 0;
+ 	struct ath11k_ext_irq_grp *irq_grp;
+ 	unsigned long irq_flags;
++	static int devidx = 0;
+ 
+ 	ret = ath11k_pcic_get_user_msi_assignment(ab, "DP", &num_vectors,
+ 						  &user_base_data,
+@@ -607,6 +609,9 @@
+ 			ret = -ENOMEM;
+ 			goto fail_allocate;
+ 		}
++
++		snprintf(irq_grp->napi_ndev->name, sizeof(irq_grp->napi_ndev->name), "%s%d:%d",
++			 "ath11k_pci", devidx, i);
+ 
+ 		netif_napi_add(irq_grp->napi_ndev, &irq_grp->napi,
+ 			       ath11k_pcic_ext_grp_napi_poll);
+@@ -661,6 +666,8 @@
+ 		}
+ 		ath11k_pcic_ext_grp_disable(irq_grp);
+ 	}
++
++	devidx++;
+ 
+ 	return 0;
+ fail_irq:

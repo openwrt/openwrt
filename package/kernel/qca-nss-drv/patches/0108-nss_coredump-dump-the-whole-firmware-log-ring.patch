@@ -1,0 +1,284 @@
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Subject: [PATCH] nss_coredump: dump the whole firmware log ring
+
+When the NSS firmware coredumps, nss_fw_coredump_notify() prints the
+last NSS_LOG_COREDUMP_LINE_NUM entries of the firmware's log ring, a
+hardcoded 25. The ring the firmware publishes through meminfo holds 32
+entries on ipq807x (debug_boot_log_desc, 0x1420 bytes over a 160-byte
+entry), so a single firmware trap - which logs five lines per trap and
+retries - fills the window on its own and the dump contains nothing but
+the trap. Whatever the firmware was doing beforehand, which is the only
+thing that identifies the fault, has already been printed over.
+
+Dump the ring instead of a fixed slice, and print the sequence number,
+thread and timestamp the firmware already records in every entry so a
+burst can be told apart from activity spread over hours, and so a
+wrapped ring is visible as such. The live readout in nss_log_read()
+already prints index and timestamp; only the coredump path dropped them.
+
+The descriptor is written by DMA from a firmware that has just died, so
+take the entry count from the ring the driver itself allocated where
+there is one, and refuse a zero count rather than deriving indices from
+it: the previous code would divide by zero on a zero count, and a count
+above INT_MAX made curr_index negative and walked the print outside the
+buffer.
+
+For the meminfo ring there is no driver-allocated count, but there is a
+driver-known size: nss_meminfo_init_block_lists() has the region's size
+in hand when it stores the pointer, and threw it away. Keep it, and bound
+log_nentries by it using the same stride the print walk indexes with.
+Without that the count is a firmware field bounded only by a constant
+picked independently of the allocation - 1024 against a 32-entry ring -
+so a corrupt descriptor makes the panic path read, and printk, some
+159 KB past a 5152-byte mapping, on the one code path whose whole purpose
+is to survive a firmware fault intact.
+
+The ring the driver allocates carries the same hazard from the other
+direction: nentry comes from the dev.nss.general.logbuf sysctl, which
+only refuses values below 32, and sizeof(descriptor) + sizeof(entry) *
+nentry wrapped a uint32_t well before kmalloc could refuse it -
+publishing a ring count far larger than the allocation the coredump walk
+then indexes. struct_size_t() saturates instead, so an implausible
+request fails the allocation and no count is published.
+
+Print the newest NSS_LOG_COREDUMP_LINE_MAX entries of a larger ring
+rather than calling the ring unusable and skipping the dump: a fw_logbuf
+above 1024 silently turned off the forensics this patch exists for.
+Both the window and the print run from the newest entry backwards, so a
+budget cut drops the oldest lines, never the ones immediately before the
+trap.
+
+Bound the print in time as well. The notifier arms one
+nss_coredump_wait() covering every core and then prints from the NAPI
+poll, so a print that outruns its share of that window holds off the
+other core's COREDUMP COMPLETE until the backstop panic has already
+truncated the dump. Measured on a 115200 console, 256 entries cost 2.58s
+against a 3456ms wait, and the second core's completion arrived 2.59s
+late as a direct result. Stop at a fraction of the wait and say how many
+entries were printed; because the walk is newest-first, the rest are the
+oldest.
+
+The ring allocation moves to GFP_KERNEL - its only caller is the
+dev.nss.general.logbuf sysctl write handler, which runs in process
+context, and an atomic allocation is what would fail for a larger ring.
+
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+---
+--- a/nss_coredump.c
++++ b/nss_coredump.c
+@@ -28,12 +28,24 @@
+ 
+ #include <linux/panic_notifier.h>	/* for panic_notifier_list */
+ #include <linux/jiffies.h>	/* for time */
++#include <linux/sched/clock.h>	/* for local_clock */
+ #include "nss_tx_rx_common.h"
+ 
+ #if NSS_MAX_CORES > 2	/* see comment in nss_fw_coredump_notify */
+ #error	too many NSS Cores: should be 1 or 2
+ #endif
+ 
++/*
++ * How long nss_fw_coredump_notify() gives the remaining cores to signal that
++ * they have finished dumping, and how much of that each core's log print may
++ * spend. The notifier prints from the NAPI poll, so a print that outruns its
++ * share holds off the other core's COREDUMP COMPLETE until the backstop panic
++ * has already truncated the dump this code exists to produce: 256 entries on a
++ * 115200 console measured 2.58s, against the 3456ms below.
++ */
++#define NSS_COREDUMP_WAIT_MS		3456
++#define NSS_COREDUMP_LOG_BUDGET_MS	(NSS_COREDUMP_WAIT_MS / (NSS_MAX_CORES * 2))
++
+ static struct delayed_work coredump_queuewait;
+ static struct workqueue_struct *coredump_workqueue;
+ 
+@@ -155,6 +167,8 @@ void nss_fw_coredump_notify(struct nss_c
+ 				int intr __attribute__ ((unused)))
+ {
+ 	int i, j, curr_index, useful_entries, num_cores_wait;
++	uint32_t nentries, current_entry;
++	u64 budget;
+ 	struct nss_log_descriptor *nld;
+ 	struct nss_log_entry *nle_init, *nle_print;
+ 	dma_addr_t dma_addr;
+@@ -164,51 +178,80 @@ void nss_fw_coredump_notify(struct nss_c
+ 			nss_own, intr, nss_own->nmap, nss_own->state);
+ 	nss_own->state |= NSS_CORE_STATE_FW_DEAD;
+ 	queue_delayed_work(coredump_workqueue, &coredump_queuewait,
+-			msecs_to_jiffies(3456));
++			msecs_to_jiffies(NSS_COREDUMP_WAIT_MS));
+ 
+ 	/*
+ 	 * If external log buffer is not set, use the nss initial log buffer.
+ 	 */
+ 	nld = (struct nss_log_descriptor *)(nss_rbe[nss_own->id].addr);
+ 	dma_addr = nss_rbe[nss_own->id].dma_addr;
++	nentries = nss_rbe[nss_own->id].nentries;
+ 	if (!nld) {
+ 		nld = nss_own->meminfo_ctx.logbuffer;
+ 		dma_addr = nss_own->meminfo_ctx.logbuffer_dma;
++
++		/*
++		 * log_nentries sits in the block the firmware writes, and the
++		 * firmware has just trapped. The block is ours, so bound the
++		 * count by what we actually mapped, using the stride the walk
++		 * below indexes with.
++		 */
++		nentries = nld ? min_t(uint32_t, nld->log_nentries,
++			(nss_own->meminfo_ctx.logbuffer_size -
++				offsetof(struct nss_log_descriptor, log_ring_buffer)) /
++					sizeof(struct nss_log_entry)) : 0;
++	}
++
++	if (!nld) {
++		nss_info_always("%px: no NSS-FW logbuffer for core %u\n",
++				nss_own, nss_own->id);
++		goto dumped;
+ 	}
+ 
+ 	dma_sync_single_for_cpu(nss_own->dev, dma_addr, sizeof(struct nss_log_descriptor), DMA_FROM_DEVICE);
+ 
++	if (!nentries) {
++		nss_info_always("%px: NSS-FW logbuffer for core %u holds no entries\n",
++				nss_own, nss_own->id);
++		goto dumped;
++	}
++
+ 	/*
+-	 * If the current entry is smaller than or equal to the number of NSS_LOG_COREDUMP_LINE_NUM,
+-	 * only print whatever is in the buffer. Otherwise, dump last NSS_LOG_COREDUMP_LINE_NUM
+-	 * to the dmessage.
++	 * Walk the newest entries backwards from current_entry, so a ring
++	 * larger than the print cap loses its oldest lines rather than all
++	 * of them.
+ 	 */
+-	nss_info_always("%px: Starting NSS-FW logbuffer dump for core %u\n",
+-			nss_own, nss_own->id);
+-	nle_init = nld->log_ring_buffer;
+-	if (nld->current_entry <= NSS_LOG_COREDUMP_LINE_NUM) {
+-		curr_index = 0;
+-		useful_entries = nld->current_entry;
+-	} else {
+-		curr_index = ((nld->current_entry - NSS_LOG_COREDUMP_LINE_NUM) % nld->log_nentries);
+-		useful_entries = NSS_LOG_COREDUMP_LINE_NUM;
+-	}
++	current_entry = nld->current_entry;
++	useful_entries = min3(current_entry, nentries,
++			      (uint32_t)NSS_LOG_COREDUMP_LINE_MAX);
++	curr_index = (current_entry - 1) % nentries;
+ 
++	nss_info_always("%px: Starting NSS-FW logbuffer dump for core %u (ring %u entries, at %u, newest first)\n",
++			nss_own, nss_own->id, nentries, current_entry);
++	nle_init = nld->log_ring_buffer;
+ 	nle_print = nle_init + curr_index;
+-	for (j = index = curr_index; j < (curr_index + useful_entries); j++, index++) {
+-		if (j == nld->log_nentries) {
+-			nle_print = nle_init;
+-			index = 0;
++
++	budget = local_clock() + NSS_COREDUMP_LOG_BUDGET_MS * NSEC_PER_MSEC;
++	for (j = 0, index = curr_index; j < useful_entries; j++) {
++		if (local_clock() > budget) {
++			nss_info_always("%px: NSS-FW logbuffer dump for core %u cut short after %d of %d entries, oldest dropped\n",
++					nss_own, nss_own->id, j, useful_entries);
++			break;
+ 		}
+ 
+ 		offset = (index * sizeof(struct nss_log_entry))
+ 			+ offsetof(struct nss_log_descriptor, log_ring_buffer);
+ 		dma_sync_single_for_cpu(nss_own->dev, dma_addr + offset,
+ 				sizeof(struct nss_log_entry), DMA_FROM_DEVICE);
+-		nss_info_always("%px: %s\n", nss_own, nle_print->message);
+-		nle_print++;
++		nss_info_always("%px: %llu %3u %010u: %s\n", nss_own,
++				nle_print->sequence_num, nle_print->thread_num,
++				nle_print->timestamp, nle_print->message);
++
++		index = index ? index - 1 : nentries - 1;
++		nle_print = nle_init + index;
+ 	}
+ 
++dumped:
+ 	if (nss_own->state & NSS_CORE_STATE_PANIC)
+ 		return;
+ 
+--- a/nss_log.c
++++ b/nss_log.c
+@@ -399,7 +399,7 @@ bool nss_debug_log_buffer_alloc(uint8_t
+ 	struct nss_top_instance *nss_top;
+ 	struct nss_ctx_instance *nss_ctx;
+ 	dma_addr_t dma_addr;
+-	uint32_t size;
++	size_t size;
+ 	void *addr = NULL;
+ 	nss_tx_status_t status;
+ 
+@@ -415,10 +415,16 @@ bool nss_debug_log_buffer_alloc(uint8_t
+ 		return false;
+ 	}
+ 
+-	size = sizeof(struct nss_log_descriptor) + (sizeof(struct nss_log_entry) * nentry);
+-	addr = kmalloc(size, GFP_ATOMIC);
++	/*
++	 * nentry comes from the dev.nss.general.logbuf sysctl, which has no
++	 * upper bound: saturate rather than wrap, so an implausible request
++	 * fails the allocation instead of publishing a ring count that the
++	 * coredump walk would then index past the end of.
++	 */
++	size = struct_size_t(struct nss_log_descriptor, log_ring_buffer, nentry);
++	addr = kmalloc(size, GFP_KERNEL);
+ 	if (!addr) {
+-		nss_warning("%px: Failed to allocate memory for logging (size:%d)\n", nss_ctx, size);
++		nss_warning("%px: Failed to allocate memory for logging (size:%zu)\n", nss_ctx, size);
+ 		return false;
+ 	}
+ 
+--- a/nss_log.h
++++ b/nss_log.h
+@@ -33,6 +33,13 @@ enum nss_debug_interface_msg_type {
+ };
+ 
+ /*
++ * Upper bound on the number of firmware log entries printed during a
++ * coredump. The ring size decides how much is actually dumped; a larger
++ * ring is printed from its newest entry backwards.
++ */
++#define NSS_LOG_COREDUMP_LINE_MAX	1024
++
++/*
+  * The size of each log entry to be displayed.
+  */
+ #define	NSS_LOG_OUTPUT_LINE_SIZE	151	/* 5 + 12 + 132 + '\n' + '\0' (see below) */
+@@ -41,13 +48,6 @@ enum nss_debug_interface_msg_type {
+ #define	NSS_LOG_COOKIE			0xFF785634
+ 
+ /*
+- * Dump last N entry during the coredump.
+- * This number should be lower than the minimum size of the logbuf
+- * which 32 right now.
+- */
+-#define NSS_LOG_COREDUMP_LINE_NUM	25
+-
+-/*
+  * Saves the ring buffer address for logging per NSS core
+  */
+ struct nss_log_ring_buffer_addr {
+--- a/nss_meminfo.c
++++ b/nss_meminfo.c
+@@ -398,6 +398,7 @@ static bool nss_meminfo_init_block_lists
+ 		if (!strcmp(r->name, "debug_boot_log_desc")) {
+ 			BUG_ON(mtype == NSS_MEMINFO_MEMTYPE_UTCM_SHARED);
+ 			mem_ctx->logbuffer_memtype = mtype;
++			mem_ctx->logbuffer_size = r->size;
+ 			mem_ctx->logbuffer_dma = dma_addr;
+ 			mem_ctx->logbuffer = (struct nss_log_descriptor *)kern_addr;
+ 		}
+--- a/nss_meminfo.h
++++ b/nss_meminfo.h
+@@ -120,6 +120,7 @@ struct nss_meminfo_ctx {
+ 	uint32_t if_map_dma;				/* nss_if_mem_map_inst physical address */
+ 	enum nss_meminfo_memtype if_map_memtype;	/* Memory type for nss_if_mem_map */
+ 	struct nss_log_descriptor *logbuffer;		/* nss_logbuffer virtual address */
++	uint32_t logbuffer_size;			/* nss_logbuffer block size */
+ 	uint32_t logbuffer_dma;				/* nss_logbuffer physical address */
+ 	enum nss_meminfo_memtype logbuffer_memtype;	/* Memory type for logbuffer */
+ 	uint32_t c2c_start_dma;				/* nss_c2c start physical address */

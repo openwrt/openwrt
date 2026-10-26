@@ -1,0 +1,69 @@
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Subject: [PATCH] nss_freq: keep the CPU load reporting with frequency scaling off
+
+cpu_load_ubi is computed from the instruction counts the firmware
+reports, but turning frequency scaling off through dev.nss.clock.auto_scale
+or pinning dev.nss.clock.current_freq also switches those counts off.
+The CPU load then keeps the last values it had, or the initial
+100%/0%/0% when scaling is turned off before the first second is
+averaged, which is what qca-nss-pbuf does at boot.
+
+Leave the counts on in both paths. The scaler already ignores them while
+auto_scale is off, once its sample ring is initialized, so mark it
+initialized there as well; otherwise the first samples after boot would
+turn scaling back on.
+
+Assisted-by: Claude:claude-opus-5-5
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+---
+--- a/nss_init.c
++++ b/nss_init.c
+@@ -205,6 +205,7 @@ static int nss_current_freq_handler(cons
+ 	nss_cmd_buf.auto_scale = 0;
+ 	nss_runtime_samples.freq_scale_ready = 0;
+ 	nss_runtime_samples.freq_scale_index = i;
++	nss_runtime_samples.initialized = 1;
+ 
+ 	nss_work = (nss_work_t *)kmalloc(sizeof(nss_work_t), GFP_ATOMIC);
+ 	if (!nss_work) {
+@@ -213,7 +214,7 @@ static int nss_current_freq_handler(cons
+ 	}
+ 	INIT_WORK((struct work_struct *)nss_work, nss_hal_wq_function);
+ 	nss_work->frequency = nss_cmd_buf.current_freq;
+-	nss_work->stats_enable = 0;
++	nss_work->stats_enable = 1;
+ 
+ 	/*
+ 	 * Ensure we start with a fresh set of samples later
+@@ -241,28 +242,10 @@ static int nss_auto_scale_handler(const
+ 
+ 	if (nss_cmd_buf.auto_scale != 1) {
+ 		/*
+-		 * Is auto scaling currently enabled? If so, send the command to
+-		 * disable stats reporting to NSS
++		 * The instruction counts stay on, since the CPU load is computed
++		 * from them; initialized stops them from turning scaling back on.
+ 		 */
+-		if (nss_runtime_samples.freq_scale_ready != 0) {
+-			nss_cmd_buf.current_freq = nss_runtime_samples.freq_scale[nss_runtime_samples.freq_scale_index].frequency;
+-			nss_work = (nss_work_t *)kmalloc(sizeof(nss_work_t), GFP_ATOMIC);
+-			if (!nss_work) {
+-				nss_info("NSS Freq WQ kmalloc fail");
+-				return ret;
+-			}
+-			INIT_WORK((struct work_struct *)nss_work, nss_hal_wq_function);
+-			nss_work->frequency = nss_cmd_buf.current_freq;
+-			nss_work->stats_enable = 0;
+-			queue_work(nss_wq, (struct work_struct *)nss_work);
+-			nss_runtime_samples.freq_scale_ready = 0;
+-
+-			/*
+-			 * The current samples would be stale later when scaling is
+-			 * enabled again, hence reset them
+-			 */
+-			nss_reset_frequency_stats_samples();
+-		}
++		nss_runtime_samples.initialized = 1;
+ 		return ret;
+ 	}
+ 

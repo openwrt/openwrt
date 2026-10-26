@@ -1,0 +1,39 @@
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Subject: [PATCH] nss_data_plane: fix rmmod panic on double unregister
+
+__nss_data_plane_unregister() walks every core's subsys_dp table, but
+each physical interface is registered to ALL cores (exceptions can
+arrive from any core), so the per-interface unregister runs once per
+core. The first pass NULLs nss_data_plane_params[i].nss_ctx; the
+second pass hands that NULL to nss_data_plane_hal_unregister() ->
+nss_cmn_unregister_service_code(), which dereferences it:
+
+  Unable to handle kernel access ... at virtual address 00000000000021a8
+  pc : nss_cmn_unregister_service_code+0x4/0x24 [qca_nss_drv]
+  lr : nss_data_plane_hal_unregister+0x1c/0x34 [qca_nss_drv]
+
+Nobody noticed because the old ethernet stack autoloads qca-nss-drv
+and never removes it; with the data plane glue on the qca_edma stack,
+rmmod with attached ports is a supported operation. Unregister from
+nss-dp only on the first pass.
+
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+
+--- a/nss_data_plane/nss_data_plane.c
++++ b/nss_data_plane/nss_data_plane.c
+@@ -347,7 +347,14 @@ static void __nss_data_plane_unregister(
+ 	for (core = 0; core < nss_top_main.num_nss; core++) {
+ 		for (i = NSS_DP_START_IFNUM; i < NSS_DP_MAX_INTERFACES; i++) {
+ 			if (nss_top_main.nss[core].subsys_dp_register[i].ndev) {
+-				nss_data_plane_unregister_from_nss_dp(i);
++				/*
++				 * The same interface is registered to every
++				 * core's subsys_dp table; unregister from
++				 * nss-dp only once or the second pass feeds
++				 * a NULLed nss_ctx to the hal unregister.
++				 */
++				if (nss_data_plane_params[i].nss_ctx)
++					nss_data_plane_unregister_from_nss_dp(i);
+ 				nss_core_unregister_subsys_dp(&nss_top_main.nss[core], i);
+ 			}
+ 		}

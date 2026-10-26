@@ -1,0 +1,137 @@
+From: Stanislaw Pal <kuncy7@gmail.com>
+Subject: [PATCH] frontends/cmn: keep a bridged flow with a local address on
+ the host
+
+The bridge post-routing hook creates a bridged connection for every IP
+packet forwarded between two ports of a bridge, whatever its addresses.
+One of them can be an address of this very box. On an access point with
+the LAN in VLAN 10 and a guest SSID in VLAN 99 of one VLAN-aware bridge,
+both on the uplink to the router, a guest that talks to the access
+point's own address sends the packet to the router; the access point
+bridges it from the VAP to the uplink in VLAN 99, the router routes it
+and sends it back on the same cable in VLAN 10, and now it is host
+traffic. The same 5-tuple crosses the box twice.
+
+The firmware finds a connection by the 5-tuple alone. Once the bridged
+leg is accelerated, the packet that comes back for the host matches the
+rule too and is sent out of the uplink again, in VLAN 99, with the L2
+header it arrived with: source MAC of the router, destination MAC of the
+access point. The router's switch learns its own MAC on the port to the
+access point and drops every unicast frame the guest network sends to
+the router until the entry ages out, five minutes later; stopping ECM
+does not bring it back. Measured with a GL-B3000 as the router (qca8k:
+`bridge fdb` shows the router's MAC as `dev lan1 vlan 99 self`) and an
+Archer AX55 v1 as the access point: one iperf3 or ssh session from a
+guest to the access point's address takes the whole guest network down
+within a second. Traffic of the guest to anything else is not affected.
+
+Do not create a connection for a bridged packet when its source or its
+destination is a local address. The connection could never be right:
+one of its two legs through this box is not bridged. The reply is
+covered by the same test - it leaves as local traffic, which the routed
+hook ignores, and comes back from the router to be bridged to the
+client with our address as the source.
+
+This is the exact half. A flow between two other hosts that crosses the
+box twice - a guest reaching a LAN host behind the same access point -
+has no local address; for that the firmware has to refuse a packet that
+arrives on another interface than the rule was made for
+(net.ecm.src_interface_check).
+
+Signed-off-by: Stanislaw Pal <kuncy7@gmail.com>
+diff -urN a/frontends/cmn/ecm_ipv4.c b/frontends/cmn/ecm_ipv4.c
+--- a/frontends/cmn/ecm_ipv4.c	2026-10-09 19:48:32.909119786 +0200
++++ b/frontends/cmn/ecm_ipv4.c	2026-10-09 19:48:32.927120323 +0200
+@@ -1098,6 +1098,29 @@
+ }
+ 
+ /*
++ * ecm_ipv4_bridged_flow_is_local()
++ *	True when one end of a bridged flow is an address of this host.
++ *
++ * Such a packet is not ours yet: it is on its way to a router that sends it
++ * back to us (our address sits in another VLAN or subnet than the sender),
++ * or it is our own reply on the last leg to a bridged client. The same
++ * 5-tuple therefore crosses this box twice, once bridged and once as host
++ * traffic, and a rule for the bridged leg also catches the other one.
++ */
++static bool ecm_ipv4_bridged_flow_is_local(struct ecm_tracker_ip_header *ip_hdr)
++{
++	__be32 addr;
++
++	ECM_IP_ADDR_TO_NIN4_ADDR(addr, ip_hdr->dest_addr);
++	if (inet_addr_type(&init_net, addr) == RTN_LOCAL) {
++		return true;
++	}
++
++	ECM_IP_ADDR_TO_NIN4_ADDR(addr, ip_hdr->src_addr);
++	return inet_addr_type(&init_net, addr) == RTN_LOCAL;
++}
++
++/*
+  * ecm_ipv4_ip_process()
+  *	Process IP datagram skb
+  */
+@@ -1146,6 +1169,15 @@
+ 		return NF_ACCEPT;
+ 	}
+ 
++	/*
++	 * A bridged flow to or from one of our own addresses stays on the host.
++	 */
++	if (!is_routed && ecm_ipv4_bridged_flow_is_local(&ip_hdr)) {
++		DEBUG_TRACE("skb %px: bridged flow with a local address, ignoring\n", skb);
++		ecm_stats_v4_inc(ECM_STATS_V4_EXCEPTION_CMN, ECM_STATS_V4_EXCEPTION_BRIDGE_LOCAL_PACKETS_IGNORED);
++		return NF_ACCEPT;
++	}
++
+ 	/*
+ 	 * Extract information, if we have conntrack then use that info as far as we can.
+ 	 */
+diff -urN a/frontends/cmn/ecm_ipv6.c b/frontends/cmn/ecm_ipv6.c
+--- a/frontends/cmn/ecm_ipv6.c	2026-10-09 19:48:32.912119876 +0200
++++ b/frontends/cmn/ecm_ipv6.c	2026-10-09 19:48:32.927120323 +0200
+@@ -1085,6 +1085,27 @@
+ }
+ 
+ /*
++ * ecm_ipv6_bridged_flow_is_local()
++ *	True when one end of a bridged flow is an address of this host.
++ *
++ * See ecm_ipv4_bridged_flow_is_local(): the same 5-tuple crosses this box
++ * twice, once bridged and once as host traffic, and a rule for the bridged
++ * leg also catches the other one.
++ */
++static bool ecm_ipv6_bridged_flow_is_local(struct ecm_tracker_ip_header *ip_hdr)
++{
++	struct in6_addr addr;
++
++	ECM_IP_ADDR_TO_NIN6_ADDR(addr, ip_hdr->dest_addr);
++	if (ipv6_chk_addr(&init_net, &addr, NULL, 0)) {
++		return true;
++	}
++
++	ECM_IP_ADDR_TO_NIN6_ADDR(addr, ip_hdr->src_addr);
++	return ipv6_chk_addr(&init_net, &addr, NULL, 0);
++}
++
++/*
+  * ecm_ipv6_ip_process()
+  *	Process IP datagram skb
+  */
+@@ -1134,6 +1155,15 @@
+ 		return NF_ACCEPT;
+ 	}
+ 
++	/*
++	 * A bridged flow to or from one of our own addresses stays on the host.
++	 */
++	if (!is_routed && ecm_ipv6_bridged_flow_is_local(&ip_hdr)) {
++		DEBUG_TRACE("skb %px: bridged flow with a local address, ignoring\n", skb);
++		ecm_stats_v6_inc(ECM_STATS_V6_EXCEPTION_CMN, ECM_STATS_V6_EXCEPTION_BRIDGE_LOCAL_PACKETS_IGNORED);
++		return NF_ACCEPT;
++	}
++
+ 	/*
+ 	 * Extract information, if we have conntrack then use that info as far as we can.
+ 	 */

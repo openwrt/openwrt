@@ -1,0 +1,144 @@
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Subject: [PATCH] nss_init: tear down module-global registrations on exit
+
+nss_cleanup() leaves three pieces of global kernel state behind, all
+pointing into module memory that is freed by the rmmod:
+
+- the dev/nss/stats sysctl header: the only sysctl table in the driver
+  without an unregister counterpart. The next insmod registers
+  dev/nss/stats again, and insert_header() strlen()s a procname read
+  from the leaked entry's recycled memory:
+
+    __pi_strlen <- __register_sysctl_table <- register_sysctl_sz
+    <- nss_stats_register_sysctl <- init_module [qca_nss_drv]
+
+- the panic notifier block: nss_coredump_notify_register() has no
+  unregister anywhere. The next insmod walks the chain over the stale
+  node when inserting its own:
+
+    notifier_chain_register <- nss_coredump_notify_register
+    <- init_module [qca_nss_drv]
+
+  and any panic in between would call into freed module text.
+
+- the "coredump_wait" singlethread workqueue, which also leaks one
+  kernel thread per reload cycle.
+
+- the qca-nss-drv debugfs tree: it is created at init, but
+  nss_stats_clean() only runs from the per-device remove path. With the
+  core probes deferred (or after any unbind), module exit leaves the
+  root behind, every later load logs "debugfs: 'qca-nss-drv' already
+  exists" and comes up with a broken stats tree.
+
+The driver normally loads once per boot, so none of this shows until
+the module is reloaded - both crash signatures above reproduce on a
+plain rmmod/modprobe cycle. Add the missing unregister paths and call
+them from nss_cleanup(); the coredump teardown runs after
+platform_driver_unregister() so no device interrupt can queue the wait
+work while it is being destroyed.
+
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+
+---
+--- a/nss_core.h
++++ b/nss_core.h
+@@ -1046,6 +1046,7 @@ extern uint32_t nss_core_get_min_reuse(s
+  * APIs for coredump
+  */
+ extern void nss_coredump_notify_register(void);
++extern void nss_coredump_notify_unregister(void);
+ extern void nss_fw_coredump_notify(struct nss_ctx_instance *nss_own, int intr);
+ extern int nss_coredump_init_delay_work(void);
+ 
+--- a/nss_coredump.c
++++ b/nss_coredump.c
+@@ -130,6 +130,24 @@ void nss_coredump_notify_register(void)
+ }
+ 
+ /*
++ * nss_coredump_notify_unregister()
++ *	Tear down what nss_coredump_notify_register() and
++ *	nss_coredump_init_delay_work() registered globally. Called on module
++ *	exit after the platform driver is unregistered, so no interrupt can
++ *	queue the wait work anymore.
++ */
++void nss_coredump_notify_unregister(void)
++{
++	if (coredump_workqueue) {
++		cancel_delayed_work_sync(&coredump_queuewait);
++		destroy_workqueue(coredump_workqueue);
++		coredump_workqueue = NULL;
++	}
++
++	atomic_notifier_chain_unregister(&panic_notifier_list, &nss_panic_nb);
++}
++
++/*
+  * nss_fw_coredump_notify()
+  *	handler for coredump notification from NSS FW
+  */
+--- a/nss_init.c
++++ b/nss_init.c
+@@ -885,6 +885,11 @@ static void __exit nss_cleanup(void)
+ 	nss_ipv6_free_conn_tables();
+ #endif
+ 
++	/*
++	 * Unregister the non-zero-stats sysctl
++	 */
++	nss_stats_unregister_sysctl();
++
+ 	nss_project_unregister_sysctl();
+ 
+ #ifdef NSS_DATA_PLANE_GENERIC_SUPPORT
+@@ -903,6 +908,19 @@ static void __exit nss_cleanup(void)
+ #endif
+ 
+ 	platform_driver_unregister(&nss_driver);
++
++	/*
++	 * The debugfs tree is created at init but nss_stats_clean() only runs
++	 * from the per-device remove path - with the probe deferred it never
++	 * ran, and the leaked root breaks debugfs for every later load.
++	 */
++	nss_stats_clean();
++
++	/*
++	 * All device interrupts are gone now - drop the panic notifier and
++	 * the coredump wait workqueue registered at init.
++	 */
++	nss_coredump_notify_unregister();
+ }
+ 
+ module_init(nss_init);
+--- a/nss_stats.c
++++ b/nss_stats.c
+@@ -103,6 +103,18 @@ void nss_stats_register_sysctl(void)
+ }
+ 
+ /*
++ * nss_stats_unregister_sysctl()
++ *	Unregister the sysctl table for stats.
++ */
++void nss_stats_unregister_sysctl(void)
++{
++	if (nss_stats_header) {
++		unregister_sysctl_table(nss_stats_header);
++		nss_stats_header = NULL;
++	}
++}
++
++/*
+  * nss_stats_open()
+  *	Opens stats file.
+  */
+--- a/nss_stats.h
++++ b/nss_stats.h
+@@ -69,6 +69,7 @@ struct nss_stats_info {
+ };
+ 
+ extern void nss_stats_register_sysctl(void);
++extern void nss_stats_unregister_sysctl(void);
+ void nss_stats_init(void);
+ extern int nss_stats_release(struct inode *inode, struct file *filp);
+ extern int nss_stats_open(struct inode *inode, struct file *filp);

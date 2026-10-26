@@ -1,0 +1,524 @@
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Subject: [PATCH] nss_rmnet_rx: bind raw-IP WAN interfaces to the firmware
+
+The rmnet_rx transport reaches a network device that carries no
+link-layer header through a pair of dynamic interfaces, an NSS-to-host
+node and a host-to-NSS node, and the connection manager asks for the
+NSS-to-host node whenever a rule names a raw-IP device. Nothing creates
+that node pair: nss_rmnet_rx_create() has no caller, and the receive
+side carries a note that the rmnet driver offers no registration for a
+notifier callback. A cellular WAN therefore never accelerates, in
+either direction of a flow, whatever the firmware supports.
+
+Create the node pair from a netdevice notifier, so that every raw-IP WAN
+interface a modem driver registers is bound without a per-driver hook.
+rmnet, MHI and MBIM devices declare ARPHRD_RAWIP; a QMI modem in raw-IP
+mode leaves the type at ARPHRD_NONE, header length and address length
+zero, which the software translators use as well, so the parent device a
+modem bus sets is what separates a modem from a translator.
+
+Egress needs only the NSS-to-host node: the firmware hands an
+accelerated packet back with the buffer marked virtual and the transmit
+callback queues it on the device. Ingress needs a receive handler, since
+a packet the modem driver delivers must reach the firmware before the
+routing path claims it, and the firmware returns whatever it could not
+accelerate on the same NSS-to-host node with the buffer marked as a
+plain packet. That return re-enters the receive path and would meet the
+same receive handler again, so it is delivered through
+netif_receive_skb_core(), which stays on the calling CPU rather than
+deferring to the RPS backlog, under a per-CPU flag the handler reads.
+
+The node the firmware hands the buffer to requires a link-layer header,
+so a device that carries none is framed on the way in and unframed on
+the way back. The addresses are zero - the firmware takes the source
+interface from the node pair and any forwarding decision from the rule -
+and the socket buffer is marked as carrying a link-layer frame rather
+than the protocol inside it. Without the frame the node counts the
+packet and forwards nothing. The protocol of a returned packet comes
+from the IP version field, the only link-layer information a raw-IP
+frame carries.
+
+A returned buffer is the buffer that was injected, so it still carries
+whatever connection tracking state was attached to it before the
+injection. Netfilter treats a packet that arrives already holding state
+as one it has seen, so the reply of a locally originated flow never
+reaches the established state and a zone whose policy drops unsolicited
+input discards it, while the tracking entry stays unreplied with the
+reply direction counting no packets. The state is dropped before the
+packet is handed to the receive path.
+
+Teardown drops the transmit callback and then destroys the node pair,
+in that order and with nothing between: the transmit callback is the one
+registration field nss_core_unregister_subsys_dp() leaves behind, while
+nss_rmnet_rx_destroy_sync() reads the same registration to find the
+device whose reference it releases and returns without releasing
+anything once the device pointer is gone. Calling
+nss_rmnet_rx_unregister() first leaks the device reference: bringing the
+interface down then never finishes unregistering it, and the kernel
+repeats its unregister_netdevice wait, reporting a usage count one above
+what the device started with, until the machine is restarted.
+
+A modem is up long before the offload loads, so the notifier registers
+against an interface that is already up while the cores are still down
+and binds nothing. The core reports ready from a context that cannot
+sleep, so it queues a sweep that takes the rtnl lock and binds what is
+already up.
+
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+Assisted-by: Claude Opus 5 (1M context)
+---
+--- a/nss_core.c
++++ b/nss_core.c
+@@ -1832,6 +1832,10 @@ static void nss_core_init_nss(struct nss
+ 	nss_ctx->state = NSS_CORE_STATE_INITIALIZED;
+ 	spin_unlock_bh(&nss_top->lock);
+ 
++#ifdef NSS_DRV_RMNET_ENABLE
++	nss_rmnet_rx_bind_core_ready();
++#endif
++
+ 	if (nss_ctx->id) {
+ 		ret = nss_n2h_update_queue_config_async(nss_ctx, pn_mq_en, pn_qlimits);
+ 		if (ret != NSS_TX_SUCCESS) {
+--- a/nss_core.h
++++ b/nss_core.h
+@@ -1069,6 +1069,15 @@ extern void nss_ppe_init(void);
+ extern void nss_ppe_free(void);
+ 
+ /*
++ * APIs for the raw-IP interface binding
++ */
++#ifdef NSS_DRV_RMNET_ENABLE
++extern void nss_rmnet_rx_bind_init(void);
++extern void nss_rmnet_rx_bind_core_ready(void);
++extern void nss_rmnet_rx_bind_exit(void);
++#endif
++
++/*
+  * APIs for N2H
+  */
+ extern nss_tx_status_t nss_n2h_cfg_empty_pool_size(struct nss_ctx_instance *nss_ctx, uint32_t pool_sz);
+--- a/nss_init.c
++++ b/nss_init.c
+@@ -826,6 +826,13 @@ nss_info("Init NSS driver");
+ 	nss_wifi_mesh_init();
+ #endif
+ 
++#ifdef NSS_DRV_RMNET_ENABLE
++	/*
++	 * Bind the raw-IP interfaces
++	 */
++	nss_rmnet_rx_bind_init();
++#endif
++
+ 	/*
+ 	 * Register platform_driver
+ 	 */
+@@ -840,6 +847,13 @@ static void __exit nss_cleanup(void)
+ {
+ 	nss_info("Exit NSS driver");
+ 
++#ifdef NSS_DRV_RMNET_ENABLE
++	/*
++	 * Release the raw-IP interfaces while the cores still answer
++	 */
++	nss_rmnet_rx_bind_exit();
++#endif
++
+ 	if (nss_clk_hdr)
+ 		unregister_sysctl_table(nss_clk_hdr);
+ 
+--- a/nss_rmnet_rx.c
++++ b/nss_rmnet_rx.c
+@@ -24,6 +24,7 @@
+ #include "nss_tx_rx_common.h"
+ #include "nss_rmnet_rx_stats.h"
+ #include <net/arp.h>
++#include <linux/netfilter.h>
+ 
+ #define NSS_RMNET_RX_TX_TIMEOUT			3000 /* 3 Seconds */
+ #define NSS_RMNET_RX_GET_INDEX(if_num)	(if_num - NSS_DYNAMIC_IF_START)
+@@ -778,3 +779,383 @@ struct nss_ctx_instance *nss_rmnet_rx_ge
+ 	return &nss_top_main.nss[nss_top_main.rmnet_rx_handler_id];
+ }
+ EXPORT_SYMBOL(nss_rmnet_rx_get_context);
++
++/*
++ * nss_rmnet_rx_bind
++ *	Binding between a raw-IP network device and its rmnet_rx node pair.
++ */
++struct nss_rmnet_rx_bind {
++	struct list_head list;		/* Entry on nss_rmnet_rx_binds */
++	struct net_device *dev;		/* The bound network device */
++	struct nss_rmnet_rx_handle *handle;
++					/* NSS-to-host and host-to-NSS node pair */
++};
++
++/*
++ * Binds are added and removed from netdevice notifier callbacks and from
++ * module exit, all of which hold the RTNL.
++ */
++static LIST_HEAD(nss_rmnet_rx_binds);
++
++/*
++ * Set across the re-injection of a packet the firmware returned unaccelerated,
++ * so that the receive handler passes that packet up instead of offering it to
++ * the firmware a second time.
++ */
++static DEFINE_PER_CPU(bool, nss_rmnet_rx_reinject);
++
++/*
++ * nss_rmnet_rx_bind_find()
++ *	Return the bind for a network device, if it has one.
++ */
++static struct nss_rmnet_rx_bind *nss_rmnet_rx_bind_find(struct net_device *dev)
++{
++	struct nss_rmnet_rx_bind *bind;
++
++	list_for_each_entry(bind, &nss_rmnet_rx_binds, list) {
++		if (bind->dev == dev) {
++			return bind;
++		}
++	}
++
++	return NULL;
++}
++
++/*
++ * nss_rmnet_rx_bind_xmit()
++ *	Transmit an accelerated packet on the raw-IP device.
++ */
++static void nss_rmnet_rx_bind_xmit(struct net_device *dev, struct sk_buff *skb)
++{
++	skb->dev = dev;
++	dev_queue_xmit(skb);
++}
++
++/*
++ * nss_rmnet_rx_bind_receive()
++ *	Deliver a packet the firmware could not accelerate to the stack.
++ *
++ * A raw-IP device carries no link-layer header, so the protocol comes from the
++ * IP version field. netif_receive_skb_core() keeps the delivery on this CPU and
++ * out of the RPS backlog, which is what makes the per-CPU re-injection flag a
++ * sufficient guard against the receive handler seeing the packet again.
++ */
++static void nss_rmnet_rx_bind_receive(struct net_device *dev, struct sk_buff *skb,
++					struct napi_struct *napi)
++{
++	/*
++	 * A buffer that comes back through the firmware's ethernet path
++	 * still carries the header put on it at injection time.
++	 */
++	if (!skb->protocol || skb->protocol == htons(ETH_P_802_3)) {
++		if (unlikely(skb->len < ETH_HLEN + sizeof(struct iphdr))) {
++			dev_kfree_skb_any(skb);
++			return;
++		}
++
++		skb_pull(skb, ETH_HLEN);
++	} else if (unlikely(skb->len < sizeof(struct iphdr))) {
++		dev_kfree_skb_any(skb);
++		return;
++	}
++
++	switch (skb->data[0] & 0xf0) {
++	case 0x40:
++		skb->protocol = htons(ETH_P_IP);
++		break;
++
++	case 0x60:
++		skb->protocol = htons(ETH_P_IPV6);
++		break;
++
++	default:
++		dev_kfree_skb_any(skb);
++		return;
++	}
++
++	skb->dev = dev;
++	skb->pkt_type = PACKET_HOST;
++	skb_reset_mac_header(skb);
++	skb_reset_network_header(skb);
++
++	/*
++	 * The firmware returns the buffer that was injected, so it still
++	 * carries any connection tracking state attached to it before the
++	 * injection. Netfilter takes a packet that arrives with state as one
++	 * it has already seen: the reply of a locally originated flow never
++	 * reaches the established state, and a zone whose policy drops
++	 * unsolicited input discards it.
++	 */
++	nf_reset_ct(skb);
++
++	local_bh_disable();
++	__this_cpu_write(nss_rmnet_rx_reinject, true);
++	netif_receive_skb_core(skb);
++	__this_cpu_write(nss_rmnet_rx_reinject, false);
++	local_bh_enable();
++}
++
++/*
++ * nss_rmnet_rx_bind_handler()
++ *	Offer a received packet to the firmware.
++ */
++static rx_handler_result_t nss_rmnet_rx_bind_handler(struct sk_buff **pskb)
++{
++	struct sk_buff *skb = *pskb;
++	struct nss_rmnet_rx_bind *bind;
++	struct ethhdr *eth;
++	__be16 proto;
++
++	if (__this_cpu_read(nss_rmnet_rx_reinject)) {
++		return RX_HANDLER_PASS;
++	}
++
++	bind = rcu_dereference(skb->dev->rx_handler_data);
++	if (!bind) {
++		return RX_HANDLER_PASS;
++	}
++
++	switch (skb->data[0] & 0xf0) {
++	case 0x40:
++		proto = htons(ETH_P_IP);
++		break;
++
++	case 0x60:
++		proto = htons(ETH_P_IPV6);
++		break;
++
++	default:
++		return RX_HANDLER_PASS;
++	}
++
++	/*
++	 * The node the firmware hands the buffer to requires a link-layer
++	 * header, so a device that carries none gets one. The addresses are
++	 * zero: the source interface comes from the node pair and any
++	 * forwarding decision from the rule.
++	 */
++	if (skb_is_nonlinear(skb) && skb_linearize(skb)) {
++		return RX_HANDLER_PASS;
++	}
++
++	if (skb_cow_head(skb, ETH_HLEN)) {
++		return RX_HANDLER_PASS;
++	}
++
++	eth = skb_push(skb, ETH_HLEN);
++	eth_zero_addr(eth->h_dest);
++	eth_zero_addr(eth->h_source);
++	eth->h_proto = proto;
++	skb->protocol = htons(ETH_P_802_3);
++
++	/*
++	 * The packet stays ours on failure: nss_core_send_packet() frees
++	 * nothing it could not enqueue.
++	 */
++	if (nss_rmnet_rx_tx_buf(bind->handle, skb) != NSS_TX_SUCCESS) {
++		skb_pull(skb, ETH_HLEN);
++		return RX_HANDLER_PASS;
++	}
++
++	return RX_HANDLER_CONSUMED;
++}
++
++/*
++ * nss_rmnet_rx_bind_on_a_bus()
++ *	Determine whether a device came from hardware.
++ *
++ * A multiplexed QMI channel is allocated without a parent and carries the
++ * device the modem bus created as its lower device instead.
++ */
++static bool nss_rmnet_rx_bind_on_a_bus(struct net_device *dev)
++{
++	struct net_device *lower;
++	struct list_head *iter;
++
++	if (dev->dev.parent) {
++		return true;
++	}
++
++	netdev_for_each_lower_dev(dev, lower, iter) {
++		if (lower->dev.parent) {
++			return true;
++		}
++	}
++
++	return false;
++}
++
++/*
++ * nss_rmnet_rx_bind_wanted()
++ *	Determine whether a network device is a raw-IP WAN device.
++ *
++ * rmnet, MHI and the MBIM devices carry ARPHRD_RAWIP. A QMI modem in raw-IP
++ * mode leaves the type at ARPHRD_NONE with no header and no address, which the
++ * software translators use as well; those are created through a link type,
++ * and they carry no hardware underneath.
++ */
++static bool nss_rmnet_rx_bind_wanted(struct net_device *dev)
++{
++	if (dev->type == ARPHRD_RAWIP) {
++		return true;
++	}
++
++	return dev->type == ARPHRD_NONE && !dev->rtnl_link_ops
++		&& !dev->hard_header_len && !dev->addr_len
++		&& nss_rmnet_rx_bind_on_a_bus(dev);
++}
++
++/*
++ * nss_rmnet_rx_bind_del()
++ *	Release the rmnet_rx node pair of a network device.
++ */
++static void nss_rmnet_rx_bind_del(struct net_device *dev)
++{
++	struct nss_rmnet_rx_bind *bind = nss_rmnet_rx_bind_find(dev);
++
++	if (!bind) {
++		return;
++	}
++
++	netdev_rx_handler_unregister(dev);
++
++	/*
++	 * The transmit callback is the one registration field
++	 * nss_core_unregister_subsys_dp() leaves behind, so drop it here.
++	 * Nothing else may: nss_rmnet_rx_destroy_sync() reads the registration
++	 * to find the device whose reference it releases, and returns without
++	 * releasing anything once the device pointer is gone.
++	 */
++	nss_rmnet_rx_xmit_callback_unregister(bind->handle);
++	nss_rmnet_rx_destroy_sync(bind->handle);
++	list_del(&bind->list);
++	kfree(bind);
++}
++
++/*
++ * nss_rmnet_rx_bind_add()
++ *	Give a raw-IP network device an rmnet_rx node pair.
++ */
++static void nss_rmnet_rx_bind_add(struct net_device *dev)
++{
++	struct nss_rmnet_rx_bind *bind;
++
++	if (!nss_rmnet_rx_bind_wanted(dev) || nss_rmnet_rx_bind_find(dev)) {
++		return;
++	}
++
++	if (nss_rmnet_rx_get_context()->state != NSS_CORE_STATE_INITIALIZED) {
++		nss_info_always("%s: raw-IP interface is up before the NSS core\n", dev->name);
++		return;
++	}
++
++	bind = kzalloc(sizeof(*bind), GFP_KERNEL);
++	if (!bind) {
++		return;
++	}
++
++	bind->dev = dev;
++	bind->handle = nss_rmnet_rx_create(dev);
++	if (!bind->handle) {
++		nss_info_always("%s: no rmnet_rx node for the raw-IP interface\n", dev->name);
++		kfree(bind);
++		return;
++	}
++
++	nss_rmnet_rx_register(bind->handle, nss_rmnet_rx_bind_receive, dev);
++	nss_rmnet_rx_xmit_callback_register(bind->handle, nss_rmnet_rx_bind_xmit);
++
++	if (netdev_rx_handler_register(dev, nss_rmnet_rx_bind_handler, bind)) {
++		nss_info_always("%s: raw-IP interface already has a receive handler\n", dev->name);
++		nss_rmnet_rx_xmit_callback_unregister(bind->handle);
++		nss_rmnet_rx_destroy_sync(bind->handle);
++		kfree(bind);
++		return;
++	}
++
++	list_add(&bind->list, &nss_rmnet_rx_binds);
++	nss_info_always("%s: raw-IP interface bound to rmnet_rx node %d\n",
++			dev->name, nss_rmnet_rx_get_interface_num(bind->handle));
++}
++
++/*
++ * nss_rmnet_rx_bind_event()
++ */
++static int nss_rmnet_rx_bind_event(struct notifier_block *nb, unsigned long event, void *ptr)
++{
++	struct net_device *dev = netdev_notifier_info_to_dev(ptr);
++
++	switch (event) {
++	case NETDEV_UP:
++		nss_rmnet_rx_bind_add(dev);
++		break;
++
++	case NETDEV_GOING_DOWN:
++	case NETDEV_UNREGISTER:
++		nss_rmnet_rx_bind_del(dev);
++		break;
++	}
++
++	return NOTIFY_DONE;
++}
++
++static struct notifier_block nss_rmnet_rx_bind_notifier __read_mostly = {
++	.notifier_call = nss_rmnet_rx_bind_event,
++};
++
++/*
++ * nss_rmnet_rx_bind_sweep()
++ *	Bind the raw-IP interfaces that were already up.
++ *
++ * A modem is brought up while the offload is still unloaded, so the
++ * notifier's replay of existing devices finds the core down and binds
++ * nothing. This runs once the core reports ready.
++ */
++static void nss_rmnet_rx_bind_sweep(struct work_struct *work)
++{
++	struct net_device *dev;
++
++	rtnl_lock();
++	for_each_netdev(&init_net, dev) {
++		if (dev->flags & IFF_UP) {
++			nss_rmnet_rx_bind_add(dev);
++		}
++	}
++	rtnl_unlock();
++}
++
++static DECLARE_WORK(nss_rmnet_rx_bind_sweep_work, nss_rmnet_rx_bind_sweep);
++
++/*
++ * nss_rmnet_rx_bind_core_ready()
++ *	Called from the core bring-up, which cannot sleep.
++ */
++void nss_rmnet_rx_bind_core_ready(void)
++{
++	schedule_work(&nss_rmnet_rx_bind_sweep_work);
++}
++
++/*
++ * nss_rmnet_rx_bind_init()
++ */
++void nss_rmnet_rx_bind_init(void)
++{
++	register_netdevice_notifier(&nss_rmnet_rx_bind_notifier);
++}
++
++/*
++ * nss_rmnet_rx_bind_exit()
++ */
++void nss_rmnet_rx_bind_exit(void)
++{
++	struct nss_rmnet_rx_bind *bind, *tmp;
++
++	unregister_netdevice_notifier(&nss_rmnet_rx_bind_notifier);
++	cancel_work_sync(&nss_rmnet_rx_bind_sweep_work);
++
++	rtnl_lock();
++	list_for_each_entry_safe(bind, tmp, &nss_rmnet_rx_binds, list) {
++		nss_rmnet_rx_bind_del(bind->dev);
++	}
++	rtnl_unlock();
++}

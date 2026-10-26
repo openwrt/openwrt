@@ -1,0 +1,100 @@
+frontends: accelerate same-bridge inter-subnet routing
+
+When two IP subnets are aliased on a single Linux bridge (e.g. br-lan
+carrying 192.168.1.0/24 and 192.168.2.0/24), a flow routed between them
+ingresses and egresses the SAME bridge device - a hairpin route. ECM's
+bridge POST_ROUTING hook recognises the routed frame (src MAC == bridge
+MAC) and punts it to the INET POST_ROUTING hook, but the reinjected frame
+never reaches that hook, so the flow is never accelerated (measured:
+v4_bridge_routed_packet_wrong_hook climbs 1:1, accelerated_count +0).
+
+The NSS firmware routes by interface number and already accelerates the
+identical rule shape for LAN->WAN. So when the routed frame's ingress is
+also this bridge (or one of its ports), drive the routed create from the
+bridge hook itself - the interface hierarchy resolves the distinct
+physical ports (e.g. lan1 -> lan2) and the firmware accelerates it.
+Genuine routed traffic from another device (WAN->LAN) has a non-bridge
+ingress and is left to the existing INET-hook delegation, so already
+working flows are untouched.
+
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+
+--- a/frontends/cmn/ecm_ipv4.c
++++ b/frontends/cmn/ecm_ipv4.c
+@@ -2093,6 +2093,40 @@ static unsigned int ecm_ipv4_bridge_post
+ 	 * Case 2: Routed trafffic would be handled by the INET post routing.
+ 	 */
+ 	if (!ecm_mac_addr_equal(skb_eth_hdr->h_source, bridge->dev_addr)) {
++		/*
++		 * QCA NSS same-bridge inter-subnet routing offload:
++		 * When two IP subnets are aliased on one bridge, a flow routed
++		 * between them ingresses and egresses the SAME bridge device (a
++		 * hairpin route). The INET post-routing hook does not accelerate
++		 * the reinjected frame, so drive the routed create here when the
++		 * ingress is also this bridge (or one of its ports). The
++		 * hierarchy resolves the distinct physical ports, yielding a
++		 * normal routed rule the firmware accelerates like LAN->WAN.
++		 * Genuine routed traffic from another device (e.g. WAN->LAN) has
++		 * a non-bridge ingress and falls through to the existing INET-
++		 * hook delegation below.
++		 */
++		{
++			struct net_device *iif = dev_get_by_index(&init_net, skb->skb_iif);
++			bool same_bridge = false;
++			if (iif) {
++				if (iif == bridge) {
++					same_bridge = true;
++				} else {
++					struct net_device *iif_master = ecm_interface_get_and_hold_dev_master(iif);
++					if (iif_master) {
++						same_bridge = (iif_master == bridge);
++						dev_put(iif_master);
++					}
++				}
++				dev_put(iif);
++			}
++			if (same_bridge) {
++				DEBUG_TRACE("skb: %px, same-bridge inter-subnet routed flow on %px (%s), accelerating\n", skb, bridge, bridge->name);
++				result = ecm_ipv4_ip_process(bridge, bridge, NULL, NULL, can_accel, true, false, skb, 0);
++				goto skip_ipv4_bridge_flow;
++			}
++		}
+ 		DEBUG_TRACE("skb: %px, Ignoring routed packet to bridge: %px (%s)\n", skb, bridge, bridge->name);
+ 		ecm_stats_v4_inc(ECM_STATS_V4_EXCEPTION_CMN, ECM_STATS_V4_EXCEPTION_ROUTED_PACKET_WRONG_HOOK);
+ 		goto skip_ipv4_bridge_flow;
+--- a/frontends/cmn/ecm_ipv6.c
++++ b/frontends/cmn/ecm_ipv6.c
+@@ -2199,6 +2199,33 @@ static unsigned int ecm_ipv6_bridge_post
+ 	 * Case 2: Routed trafffic would be handled by the INET post routing.
+ 	 */
+ 	if (!ecm_mac_addr_equal(skb_eth_hdr->h_source, bridge->dev_addr)) {
++		/*
++		 * QCA NSS same-bridge inter-subnet routing offload (see the
++		 * IPv4 hook for the rationale): accelerate a flow routed in and
++		 * out the same bridge device when the ingress is also this
++		 * bridge (or one of its ports).
++		 */
++		{
++			struct net_device *iif = dev_get_by_index(&init_net, skb->skb_iif);
++			bool same_bridge = false;
++			if (iif) {
++				if (iif == bridge) {
++					same_bridge = true;
++				} else {
++					struct net_device *iif_master = ecm_interface_get_and_hold_dev_master(iif);
++					if (iif_master) {
++						same_bridge = (iif_master == bridge);
++						dev_put(iif_master);
++					}
++				}
++				dev_put(iif);
++			}
++			if (same_bridge) {
++				DEBUG_TRACE("skb: %px, same-bridge inter-subnet routed flow on %px (%s), accelerating\n", skb, bridge, bridge->name);
++				result = ecm_ipv6_ip_process(bridge, bridge, NULL, NULL, can_accel, true, false, false, skb, 0);
++				goto skip_ipv6_bridge_flow;
++			}
++		}
+ 		DEBUG_TRACE("skb: %px, Ignoring routed packet to bridge: %px (%s)\n", skb, bridge, bridge->name);
+ 		ecm_stats_v6_inc(ECM_STATS_V6_EXCEPTION_CMN, ECM_STATS_V6_EXCEPTION_ROUTED_PACKET_WRONG_HOOK);
+ 		goto skip_ipv6_bridge_flow;

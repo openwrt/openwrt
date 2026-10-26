@@ -1,0 +1,46 @@
+nss_hal: park the core before copying the firmware over it
+
+A warm reboot does not reset the NSS block: the previous kernel's
+firmware keeps executing out of the load region, and
+nss_hal_firmware_load() copies the new image straight over it. The
+new firmware then comes up dead (no first interrupt) or mute (boot
+interrupt arrives - possibly latched from the old session - but the
+log ring stays empty and every phys_if message times out). Measured
+on IPQ5018/GL-B3000: every warm reboot fails this way, every cold
+boot works, and a u-boot tftpboot before the kernel also "fixes" it
+because reinitializing the GMAC crashes the old firmware first.
+
+Assert the core-local reset clamp before the copy, exactly like
+nss_hal_remove() already does for the rmmod path (same bug, same
+mechanism - that path panicked instead). core_reset() releases the
+clamp in its normal boot sequence. The GCC block resets are left
+alone: on IPQ5018 they gate hardware shared with the host GMAC and
+asserting them kills ethernet past the point a hard reset helps.
+
+Signed-off-by: Stanislaw Pal <kuncy7@gmail.com>
+---
+--- a/nss_hal/nss_hal.c
++++ b/nss_hal/nss_hal.c
+@@ -83,6 +83,22 @@ int nss_hal_firmware_load(struct nss_ctx
+ 		return rc;
+ 	}
+ 
++	/*
++	 * A warm reboot does not reset the NSS block, so the previous
++	 * kernel's firmware is still executing out of this very region.
++	 * Park the core behind its local reset clamp before replacing its
++	 * instruction memory - core_reset() releases the clamp in its usual
++	 * sequence later. Without this the copy races the running core and
++	 * the new image comes up dead or mute on every warm reboot, while
++	 * cold boots (core held in reset by hardware) are fine - measured
++	 * on IPQ5018. The clamp is core-local; the GCC block resets must
++	 * NOT be touched here, on IPQ5018 they gate hardware shared with
++	 * the host GMAC and asserting them kills ethernet beyond even a
++	 * hard reset's help.
++	 */
++	if (npd->nmap)
++		nss_write_32(npd->nmap, NSS_REGS_RESET_CTRL_OFFSET, 0x1);
++
+ 	nss_info("nss_driver - fw of size %d  bytes copied to load addr: %x, nss_id : %d\n", (int)nss_fw->size, npd->load_addr, nss_dev->id);
+ 	memcpy_toio(load_mem, nss_fw->data, nss_fw->size);
+ 	release_firmware(nss_fw);

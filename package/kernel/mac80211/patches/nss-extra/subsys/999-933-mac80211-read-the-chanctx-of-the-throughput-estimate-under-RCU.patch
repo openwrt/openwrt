@@ -1,0 +1,28 @@
+From: Stanislaw Pal <kuncy7@gmail.com>
+Subject: [PATCH] wifi: mac80211: read the chanctx of the throughput estimate under RCU
+
+sta_estimate_expected_throughput() (361) reads
+vif.bss_conf.chanctx_conf with rcu_dereference(), but its callers hold
+the wiphy mutex, not the RCU read lock: a station dump
+(nl80211_dump_station -> sta_set_sinfo) makes lockdep report
+"suspicious rcu_dereference_check() usage" at that line. Only the band
+is taken from the chanctx, so read it inside rcu_read_lock().
+
+The same code is in OpenWrt main.
+
+Signed-off-by: Stanislaw Pal <kuncy7@gmail.com>
+
+--- a/net/mac80211/sta_info.c
++++ b/net/mac80211/sta_info.c
+@@ -3001,9 +3001,11 @@
+ 	u32 duration;
+ 	u8 band = 0;
+ 
++	rcu_read_lock();
+ 	conf = rcu_dereference(sdata->vif.bss_conf.chanctx_conf);
+ 	if (conf)
+ 			band = conf->def.chan->band;
++	rcu_read_unlock();
+ 
+ 	duration = ieee80211_rate_expected_tx_airtime(hw, NULL, ri, band, true, 1024);
+ 	duration += duration >> 4; /* add assumed packet error rate of ~6% */

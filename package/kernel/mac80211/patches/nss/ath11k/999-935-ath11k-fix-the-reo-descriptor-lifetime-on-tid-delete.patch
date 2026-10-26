@@ -1,0 +1,72 @@
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Subject: [PATCH] ath11k: fix the REO descriptor lifetime on tid delete
+
+Two places let a freed REO queue descriptor stay reachable.
+
+ath11k_dp_reo_cmd_list_cleanup() walks three lists. The second and third
+release the descriptor with dma_free_noncoherent() over
+rx_tid->unaligned_size and rx_tid->paddr_unaligned, which is how
+ath11k_dp_rx_tid_buf_alloc() produced it. The first, over
+reo_cmd_update_rx_queue_list, instead calls dma_unmap_single() on the
+aligned address and size and then kfree()s the result of
+dma_alloc_noncoherent(). Neither call matches the allocation, and the
+correct sequence is written twice in the same function ten lines below.
+
+ath11k_peer_rx_tid_delete() copies the peer's dp_rx_tid into the queue
+element and then rebinds its local rx_tid pointer to elem->data inside
+the walk. Everything it clears afterwards - vaddr_unaligned, paddr,
+size, pending_desc_size, unaligned_size - therefore lands on the
+element's copy, and the peer keeps active = true plus the address of a
+descriptor the element now owns and will free. ath11k_peer_rx_tid_cleanup()
+calls this and then ath11k_dp_rx_frags_cleanup() on the same peer entry,
+and a second delete for the tid passes the "if (!rx_tid->active)" gate
+and queues the same descriptor twice.
+
+Clear the peer's copy where ownership transfers, right after the memcpy.
+The frag fields are deliberately left alone: ath11k_dp_rx_frags_cleanup()
+is the next call and still needs dst_ring_desc and rx_frag_list.
+
+The first two hunks are API pairings with one correct answer. The third
+is the least mechanical of the set - it decides that the queue element
+owns the descriptor after the copy, which is what the rest of the
+function already assumes - and wants a device pass.
+
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+
+diff --git a/drivers/net/wireless/ath/ath11k/dp_rx.c b/drivers/net/wireless/ath/ath11k/dp_rx.c
+index ab1e5a0..666903e 100644
+--- a/drivers/net/wireless/ath/ath11k/dp_rx.c
++++ b/drivers/net/wireless/ath/ath11k/dp_rx.c
+@@ -746,9 +746,9 @@
+ 		list_del(&cmd_queue->list);
+ 		rx_tid = &cmd_queue->data;
+ 		if (rx_tid->vaddr_unaligned) {
+-			dma_unmap_single(ab->dev, rx_tid->paddr,
+-					 rx_tid->size, DMA_BIDIRECTIONAL);
+-			kfree(rx_tid->vaddr_unaligned);
++			dma_free_noncoherent(ab->dev, rx_tid->unaligned_size,
++					     rx_tid->vaddr_unaligned,
++					     rx_tid->paddr_unaligned, DMA_BIDIRECTIONAL);
+ 			rx_tid->vaddr_unaligned = NULL;
+ 		}
+ 		kfree(cmd_queue);
+@@ -950,6 +950,19 @@
+ 	elem->peer_id = peer->peer_id;
+ 	elem->tid = tid;
+ 	memcpy(&elem->data, rx_tid, sizeof(*rx_tid));
++
++	/* The queue element owns the REO descriptor from here on, and the loop
++	 * below rebinds rx_tid to elem->data - so the clears it performs never
++	 * reach the peer. Drop the peer's second reference to the same
++	 * descriptor now, leaving the frag fields for
++	 * ath11k_dp_rx_frags_cleanup(), which its caller runs next.
++	 */
++	rx_tid->active = false;
++	rx_tid->vaddr_unaligned = NULL;
++	rx_tid->paddr = 0;
++	rx_tid->size = 0;
++	rx_tid->pending_desc_size = 0;
++	rx_tid->unaligned_size = 0;
+ 
+ 	spin_lock_bh(&dp->reo_cmd_update_queue_lock);
+ 	list_add_tail(&elem->list, &dp->reo_cmd_update_rx_queue_list);

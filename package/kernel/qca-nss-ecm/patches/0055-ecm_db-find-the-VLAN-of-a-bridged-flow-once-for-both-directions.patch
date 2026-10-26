@@ -1,0 +1,174 @@
+From: Stanislaw Pal <kuncy7@gmail.com>
+Subject: [PATCH] ecm_db: find the VLAN of a bridged flow once, for both
+ directions
+
+ecm_db_connection_add_vlan_filter() looks up the bridge VLAN of a bridged
+flow separately for its two directions, each from the FDB entry of that
+direction's source MAC. br_fdb_find_vid_by_mac() returns one entry of the
+MAC, the one the bridge learned last, in whatever VLAN that is. A host
+with its MAC in more than one VLAN of the bridge - a router with one MAC
+on br-lan.10 and br-lan.99 behind a trunk port is the usual case for an
+access point - therefore gets either VLAN, and the two directions of one
+flow can come out in different ones.
+
+For a client of a guest SSID (VLAN 99, untagged on the VAP) talking to
+such a router through a trunk uplink that is: flow direction VLAN 99 from
+the client's entry, return direction VLAN 99 or 10 from the router's.
+With 10 the membership check fails on the VAP, the VLAN filter data is
+not recorded and the connection is never accelerated; with 99 it is.
+Which one a connection gets depends only on the order the bridge learned
+the router's two entries in, and changes when one of them ages out and
+comes back. Measured on a GL-B3000 as the access point: the same guest
+client forwards three times slower, on the host path with
+v4_ported_vlan_filter_add_fail counting every packet, after the router's
+VLAN 10 entry is relearned.
+
+A bridged flow stays in one VLAN, so find that VLAN once and use it for
+both directions. The frame the connection is created from still carries
+the bridge's tag when its egress port is a tagged member or forwards with
+TX offload - br_handle_vlan() has stripped it only for an untagged port -
+and that is exact. Without a tag take the VLAN of one host's FDB entry in
+which the other host is known too, the source's first, then the
+destination's. If neither gives a VLAN the lookups run as before. The
+walks still check each port's membership of the VLAN they are given.
+
+Routed flows are not touched; each of their sides has its own VLAN (0053).
+
+This needs the previous patch. With the VLAN now agreed for every bridged
+flow, an ordinary port that carries it tagged would always get a rule
+without the tag; 0054 is what refuses that rule.
+
+Signed-off-by: Stanislaw Pal <kuncy7@gmail.com>
+diff -urN a/ecm_db/ecm_db_connection.c b/ecm_db/ecm_db_connection.c
+--- a/ecm_db/ecm_db_connection.c
++++ b/ecm_db/ecm_db_connection.c
+@@ -3600,6 +3600,115 @@
+ }
+ 
+ /*
++ * ecm_db_connection_side_dev_get_and_hold()
++ *	The innermost device of one side's interface hierarchy, held.
++ */
++static struct net_device *ecm_db_connection_side_dev_get_and_hold(struct ecm_db_connection_instance *ci, ecm_db_obj_dir_t dir)
++{
++	struct ecm_db_iface_instance *interfaces[ECM_DB_IFACE_HEIRARCHY_MAX];
++	struct net_device *dev;
++	int32_t first_index;
++
++	first_index = ecm_db_connection_interfaces_get_and_ref(ci, interfaces, dir);
++	if (first_index == ECM_DB_IFACE_HEIRARCHY_MAX) {
++		return NULL;
++	}
++
++	dev = dev_get_by_index(&init_net, ecm_db_iface_interface_identifier_get(interfaces[first_index]));
++	ecm_db_connection_interfaces_deref(interfaces, first_index);
++	return dev;
++}
++
++/*
++ * ecm_db_connection_bridged_vid()
++ *	The VLAN of a bridged flow between two ports of one VLAN-filtering
++ *	bridge, 0 when it cannot be told (the walks then look it up as before).
++ *
++ *	A bridged flow stays in one VLAN, in both directions. Looking the two
++ *	directions up separately, each by the FDB entry of its source MAC, goes
++ *	wrong as soon as one of the two hosts has its MAC in more than one VLAN
++ *	of the bridge - a router with one MAC on br-lan.10 and br-lan.99 behind
++ *	a trunk port: br_fdb_find_vid_by_mac() returns the entry learned last,
++ *	the two directions then name different VLANs, the membership check
++ *	fails on the port that is only in one of them and the flow is refused,
++ *	or passes where it should not. Which of the two happens changes with
++ *	the order the bridge learned the entries in.
++ *
++ *	So find the VLAN once, for the flow. The frame the connection is made
++ *	from still carries the bridge's tag when its egress port is a tagged
++ *	member or forwards with TX offload (br_handle_vlan() has stripped it
++ *	only for an untagged port): that is exact. Otherwise take the VLAN of
++ *	one host's FDB entry in which the other host is known as well, the
++ *	source's first, then the destination's.
++ */
++static uint16_t ecm_db_connection_bridged_vid(struct ecm_db_connection_instance *ci, struct sk_buff *skb,
++					      ecm_db_obj_dir_t from_dir, ecm_db_obj_dir_t to_dir,
++					      uint8_t *src_mac_addr, uint8_t *dest_mac_addr)
++{
++	struct net_device *from_dev;
++	struct net_device *to_dev;
++	struct net_device *br;
++	struct net_device *netdev;
++	uint16_t vid = 0;
++	uint16_t v;
++
++	from_dev = ecm_db_connection_side_dev_get_and_hold(ci, from_dir);
++	to_dev = ecm_db_connection_side_dev_get_and_hold(ci, to_dir);
++	if (!from_dev || !to_dev) {
++		goto out;
++	}
++
++	rcu_read_lock();
++	if (!netif_is_bridge_port(from_dev) || !netif_is_bridge_port(to_dev)) {
++		goto unlock;
++	}
++
++	br = netdev_master_upper_dev_get_rcu(from_dev);
++	if (!br || (br != netdev_master_upper_dev_get_rcu(to_dev)) ||
++	    !netif_is_bridge_master(br) || !br_vlan_enabled(br)) {
++		goto unlock;
++	}
++
++	if (skb && skb_vlan_tag_present(skb) && (skb->vlan_proto == htons(ETH_P_8021Q))) {
++		vid = skb_vlan_tag_get_id(skb);
++		DEBUG_TRACE("%px: bridged flow, VLAN %u from the frame\n", ci, vid);
++		goto unlock;
++	}
++
++	v = 0;
++	netdev = br_fdb_find_vid_by_mac(br, src_mac_addr, &v);
++	if (netdev) {
++		dev_put(netdev);
++		if (v && br_fdb_has_entry(to_dev, dest_mac_addr, v)) {
++			vid = v;
++			DEBUG_TRACE("%px: bridged flow, VLAN %u of the source, the destination is known in it\n", ci, vid);
++			goto unlock;
++		}
++	}
++
++	v = 0;
++	netdev = br_fdb_find_vid_by_mac(br, dest_mac_addr, &v);
++	if (netdev) {
++		dev_put(netdev);
++		if (v && br_fdb_has_entry(from_dev, src_mac_addr, v)) {
++			vid = v;
++			DEBUG_TRACE("%px: bridged flow, VLAN %u of the destination, the source is known in it\n", ci, vid);
++		}
++	}
++
++unlock:
++	rcu_read_unlock();
++out:
++	if (from_dev) {
++		dev_put(from_dev);
++	}
++	if (to_dev) {
++		dev_put(to_dev);
++	}
++	return vid;
++}
++
++/*
+  * ecm_db_connection_add_vlan_filter()
+  *	Update bridge vlan filter information in the connection instance, by walking the interface heirarchy in:
+  *	1: Flow direction - FROM heirarchy
+@@ -3666,6 +3775,13 @@
+ 		vid_flow = vid_ret_from = ecm_db_connection_routed_bridge_vid(ci, from_dir);
+ 		vid_flow_to = vid_ret = ecm_db_connection_routed_bridge_vid(ci, to_dir);
+ 		DEBUG_TRACE("%px: routed flow, L3 bridge VLAN from %u to %u\n", ci, vid_flow, vid_ret);
++	} else {
++		/*
++		 * A bridged flow is in one VLAN both ways: find it once, see
++		 * ecm_db_connection_bridged_vid(). 0 leaves the lookups below
++		 * as they were.
++		 */
++		vid_flow = vid_ret = ecm_db_connection_bridged_vid(ci, skb, from_dir, to_dir, src_mac_addr, dest_mac_addr);
+ 	}
+ 
+ 	DEBUG_TRACE("%px: Parse the heirarchy for FROM heirarcy in FLOW direction.\n", ci);

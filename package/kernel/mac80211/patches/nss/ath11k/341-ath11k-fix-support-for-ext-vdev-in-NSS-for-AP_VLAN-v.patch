@@ -1,0 +1,28 @@
+From 516c1d2faf4480c355ec5000d6d4ad4fc287d0e8 Mon Sep 17 00:00:00 2001
+From: Aditya Kumar Singh <quic_adisi@quicinc.com>
+Date: Thu, 30 Dec 2021 17:44:40 +0530
+Subject: [PATCH] ath11k: fix support for ext vdev in NSS for AP_VLAN vif
+ during recovery
+
+When driver is recovering, it tears down nss connection and sets
+ab->nss.enabled as false. However, this is not set back to its original
+state post recovery and hence when ext vdev is added again, warning
+trace appears since ath11k_mac_op_add_interface() does not handle
+NL80211_IFTYPE_AP_VLAN vif with nss disabled and throws a WARN_ON(1).
+
+[ 2777.201255] ------------[ cut here ]------------
+[ 2777.209669] WARNING: CPU: 0 PID: 77 at drivers/net/wireless/ath/ath11k/mac.c:7298 ath11k_mac_op_add_interface+0x314/0xa98 [ath11k]
+[----- a/drivers/net/wireless/ath/ath11k/core.c
++++ b/drivers/net/wireless/ath/ath11k/core.c
+@@ -2410,6 +2410,11 @@
+ 
+ 	clear_bit(ATH11K_FLAG_CRASH_FLUSH, &ab->dev_flags);
+ 
++	/* We have disabled NSS Offload support in the starting.
++	 * Re-enabling it if it was originally enabled in the MODULE_PARM_DESC.
++	 */
++	ab->nss.enabled = nss_offload;
++
+ 	ret = ath11k_core_qmi_firmware_ready(ab);
+ 	if (ret)
+ 		goto err_hal_srng_deinit;

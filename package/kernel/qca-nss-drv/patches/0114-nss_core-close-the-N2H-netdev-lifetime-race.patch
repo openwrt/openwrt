@@ -1,0 +1,132 @@
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Subject: [PATCH] nss_core: close the N2H netdev lifetime race
+
+nss_core_unregister_subsys_dp() clears subsys_dp_register[if_num] and
+returns, and the caller then frees the netdev. Nothing waits for the
+receive path, which reads that same ndev from the NAPI poll. The vendor
+marked one instance of it themselves:
+
+  /* TODO: Need to ensure the ndev is not removed before we take
+   * dev_hold(). */
+
+The hole is wider than that comment. nss_core_handle_virt_if_pkt() at
+least takes a dev_hold() on the pointer it read, so only the window
+between the read and the hold is exposed. Its siblings do not hold at
+all: nss_core_handle_crypto_pkt() and the ext-data path pass ndev
+straight into cb()/ext_cb(), the phys-if data path holds only inside its
+service-code branch, and around eighteen nss_*_msg_handler() functions
+across the subsystem files read the same field into ncm->app_data and
+hand it to their registered callback. Fixing only the site carrying the
+comment would have left every one of those still exposed.
+
+So do it once, on the side that has exactly one writer. Clearing the
+field already stops a later poll from finding the netdev; add the
+barrier that waits out the poll which read it before the clear, and the
+caller's free is safe for every reader without any reader changing.
+softirq is an RCU read-side critical section on non-preemptible kernels
+- CONFIG_PREEMPT_NONE with TREE_RCU is what this target builds - which
+is what makes synchronize_net() sufficient here. On a CONFIG_PREEMPT_RCU
+kernel the readers would need an explicit rcu_read_lock() as well.
+
+This makes nss_core_unregister_subsys_dp() a sleeping function, and the
+kernel will not say so: OpenWrt ships CONFIG_DEBUG_ATOMIC_SLEEP unset, so
+might_sleep() compiles to nothing and an atomic caller sleeps silently
+rather than warning. The contract is therefore carried by inspection.
+
+Of the 51 call sites, 49 unregister from process context on netdev
+teardown and are unaffected. Two hold a spinlock across it, and both are
+fixed here: nss_rmnet_rx_destroy_sync() and nss_virt_if_destroy_sync(),
+which are the same function under two names. Each read the two
+registrations, cleared them and dropped the device reference inside
+spin_lock_bh(&nss_top_main.lock); with the barrier added above, that
+sleeps with bottom halves disabled.
+
+Drop the lock in both rather than hoisting the calls out of it, because
+it protects nothing. nss_top_main.lock otherwise covers only the
+shaper-bounce registrant and nss_ctx->state; these two functions are its
+only users that touch subsys_dp_register at all. The registration side
+writes that array unlocked, and every receive-path reader reads ndev from
+it bare. Narrowing the region would keep two lines asserting an exclusion
+that does not exist, which is what admitted the sleeping call in the
+first place.
+
+Nothing that ran before could have relied on the lock either:
+nss_dynamic_interface_dealloc_node(), reached a few lines below the
+unlock in both functions, blocks on wait_for_completion_timeout()
+unconditionally, so no caller has ever been able to hold a lock across
+these functions.
+
+The rmnet_rx arm reproduces on an IPQ8074 with NSS core 1 running and
+NSS_DRV_RMNET_ENABLE set: bringing a bound raw-IP interface down gives
+"BUG: scheduling while atomic" with preempt_count 0x200 at
+synchronize_net() under nss_rmnet_rx_destroy_sync(), then a second at
+0xfffffe00 - the underflow left by the first - and the machine stops
+responding. The virt_if arm is the same defect but was not reproduced:
+its two callers are reachable only with the mac80211 nss_redirect module
+parameter set, which nothing in this tree sets, or when a shaped device
+has no firmware representation, which does not arise while the bridge
+manager is built.
+
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+
+--- a/nss_core.c
++++ b/nss_core.c
+@@ -389,6 +389,18 @@ void nss_core_unregister_subsys_dp(struc
+ 	reg->ndev = NULL;
+ 	reg->features = 0;
+ 	reg->type = 0;
++
++	/*
++	 * The N2H receive path reads reg->ndev in the NAPI poll and hands it to
++	 * a callback, or holds it - "TODO: Need to ensure the ndev is not
++	 * removed before we take dev_hold()" in nss_core_handle_virt_if_pkt().
++	 * Clearing the field stops any later poll from finding it; this waits
++	 * out the poll that already read it, so the caller can free the netdev
++	 * once we return. Softirq is an RCU read-side section on the
++	 * non-preemptible kernels this builds for, which is what makes one
++	 * barrier here cover every reader instead of a hold at each one.
++	 */
++	synchronize_net();
+ }
+ 
+ /*
+--- a/nss_rmnet_rx.c
++++ b/nss_rmnet_rx.c
+@@ -388,9 +388,7 @@ nss_tx_status_t nss_rmnet_rx_destroy_syn
+ 		return NSS_TX_FAILURE_NOT_READY;
+ 	}
+ 
+-	spin_lock_bh(&nss_top_main.lock);
+ 	if (!nss_ctx->subsys_dp_register[if_num_n2h].ndev || !nss_ctx->subsys_dp_register[if_num_h2n].ndev) {
+-		spin_unlock_bh(&nss_top_main.lock);
+ 		nss_warning("%px: Unregister virt interface %d %d: no context\n", nss_ctx, if_num_n2h, if_num_h2n);
+ 		return NSS_TX_FAILURE_BAD_PARAM;
+ 	}
+@@ -399,7 +397,6 @@ nss_tx_status_t nss_rmnet_rx_destroy_syn
+ 	nss_assert(dev == nss_ctx->subsys_dp_register[if_num_h2n].ndev);
+ 	nss_core_unregister_subsys_dp(nss_ctx, if_num_n2h);
+ 	nss_core_unregister_subsys_dp(nss_ctx, if_num_h2n);
+-	spin_unlock_bh(&nss_top_main.lock);
+ 	dev_put(dev);
+ 
+ 	status = nss_rmnet_rx_handle_destroy_sync(handle);
+--- a/nss_virt_if.c
++++ b/nss_virt_if.c
+@@ -489,9 +489,7 @@ nss_tx_status_t nss_virt_if_destroy_sync
+ 		return NSS_TX_FAILURE_NOT_READY;
+ 	}
+ 
+-	spin_lock_bh(&nss_top_main.lock);
+ 	if (!nss_ctx->subsys_dp_register[if_num_n2h].ndev || !nss_ctx->subsys_dp_register[if_num_h2n].ndev) {
+-		spin_unlock_bh(&nss_top_main.lock);
+ 		nss_warning("%px: Unregister virt interface %d %d: no context\n", nss_ctx, if_num_n2h, if_num_h2n);
+ 		return NSS_TX_FAILURE_BAD_PARAM;
+ 	}
+@@ -500,7 +498,6 @@ nss_tx_status_t nss_virt_if_destroy_sync
+ 	nss_assert(dev == nss_ctx->subsys_dp_register[if_num_h2n].ndev);
+ 	nss_core_unregister_subsys_dp(nss_ctx, if_num_n2h);
+ 	nss_core_unregister_subsys_dp(nss_ctx, if_num_h2n);
+-	spin_unlock_bh(&nss_top_main.lock);
+ 	dev_put(dev);
+ 
+ 	status = nss_virt_if_handle_destroy_sync(handle);

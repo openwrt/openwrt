@@ -1,0 +1,329 @@
+frontends/nss: restart the stats sync when a reply goes missing
+
+The CONN_STATS_SYNC_MANY chain is driven only by the reply callback,
+which queues the next request. A lost reply stops the stats sync for
+that family until ECM is reloaded, and conntrack then expires
+accelerated connections the firmware still forwards.
+
+Tag each request with a sequence number in app_data, which the firmware
+echoes, and arm a 5 s timeout after sending it. On timeout, count it in
+stats_request_counter, warn and restart the walk from index 0. A late
+reply still has its records applied but does not queue another request.
+
+Assisted-by: LLM
+Signed-off-by: Manuel Fombuena <fombuena@outlook.com>
+Assisted-by: Claude:claude-opus-5-5
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+
+--- a/frontends/nss/ecm_nss_ipv4.c
++++ b/frontends/nss/ecm_nss_ipv4.c
+@@ -92,6 +92,7 @@
+ 
+ #define ECM_NSS_IPV4_STATS_SYNC_PERIOD msecs_to_jiffies(1000)
+ #define ECM_NSS_IPV4_STATS_SYNC_UDELAY 4000	/* Delay for 4 ms */
++#define ECM_NSS_IPV4_STATS_SYNC_TIMEOUT msecs_to_jiffies(5000)	/* Give up on an unanswered request */
+ 
+ int ecm_nss_ipv4_no_action_limit_default = 250;		/* Default no-action limit. */
+ int ecm_nss_ipv4_driver_fail_limit_default = 250;		/* Default driver fail limit. */
+@@ -144,6 +145,10 @@ static unsigned long int ecm_nss_ipv4_ro
+ static unsigned long int ecm_nss_ipv4_stats_request_success = 0;	/* Number of success stats request */
+ static unsigned long int ecm_nss_ipv4_stats_request_fail = 0;		/* Number of failed stats request */
+ static unsigned long int ecm_nss_ipv4_stats_request_nack = 0;		/* Number of NACK'd stats request */
++static unsigned long int ecm_nss_ipv4_stats_request_timeout = 0;	/* Number of stats request left unanswered */
++static unsigned long int ecm_nss_ipv4_sync_req_seq;			/* Tag of the latest stats request */
++static unsigned long int ecm_nss_ipv4_sync_req_jiffies;		/* When that request was sent */
++static bool ecm_nss_ipv4_sync_req_pending;				/* A stats request is awaiting its reply */
+ 
+ /*
+  * ecm_nss_ipv4_accel_done_time_update()
+@@ -625,6 +630,7 @@ static void ecm_nss_ipv4_net_dev_callbac
+ static void ecm_nss_ipv4_connection_sync_many_callback(void *app_data, struct nss_ipv4_msg *nim)
+ {
+ 	struct nss_ipv4_conn_sync_many_msg *nicsm = &nim->msg.conn_stats_many;
++	bool current_reply;
+ 	int i;
+ 
+ 	/*
+@@ -634,20 +640,40 @@ static void ecm_nss_ipv4_connection_sync
+ 		return;
+ 	}
+ 
++	/*
++	 * The firmware echoes app_data. A reply without the tag of the request
++	 * in flight answers one that already timed out.
++	 */
++	spin_lock_bh(&ecm_nss_ipv4_lock);
++	current_reply = ecm_nss_ipv4_sync_req_pending
++			&& ((unsigned long int)app_data == ecm_nss_ipv4_sync_req_seq);
++	if (current_reply) {
++		ecm_nss_ipv4_sync_req_pending = false;
++		if (nim->cm.response == NSS_CMN_RESPONSE_ACK) {
++			ecm_nss_ipv4_sync_req_msg->msg.conn_stats_many.index = nicsm->next;
++		} else {
++			/*
++			 * We get a NACK from FW, which should not happen, restart the request
++			 */
++			DEBUG_WARN("IPv4 conn stats request failed, restarting\n");
++			ecm_nss_ipv4_stats_request_nack++;
++			ecm_nss_ipv4_sync_req_msg->msg.conn_stats_many.index = 0;
++		}
++	}
++	spin_unlock_bh(&ecm_nss_ipv4_lock);
++
+ 	if (nim->cm.response == NSS_CMN_RESPONSE_ACK) {
+ 		for (i = 0; i < nicsm->count; i++) {
+ 			ecm_nss_ipv4_process_one_conn_sync_msg(&nicsm->conn_sync[i]);
+ 		}
+-		ecm_nss_ipv4_sync_req_msg->msg.conn_stats_many.index = nicsm->next;
+-	} else {
+-		/*
+-		 * We get a NACK from FW, which should not happen, restart the request
+-		 */
+-		DEBUG_WARN("IPv4 conn stats request failed, restarting\n");
+-		ecm_nss_ipv4_stats_request_nack++;
+-		ecm_nss_ipv4_sync_req_msg->msg.conn_stats_many.index = 0;
+ 	}
+-	queue_delayed_work(ecm_nss_ipv4_workqueue, &ecm_nss_ipv4_work, 0);
++
++	/*
++	 * The work is pending on the reply timeout; pull it forward.
++	 */
++	if (current_reply) {
++		mod_delayed_work(ecm_nss_ipv4_workqueue, &ecm_nss_ipv4_work, 0);
++	}
+ }
+ 
+ /*
+@@ -663,6 +689,36 @@ static void ecm_nss_ipv4_stats_sync_req_
+ 	nss_tx_status_t nss_tx_status;
+ 	int retry = 3;
+ 	unsigned long int current_jiffies;
++	unsigned long int waited = 0;
++	bool timed_out = false;
++
++	spin_lock_bh(&ecm_nss_ipv4_lock);
++	if (ecm_nss_ipv4_sync_req_pending) {
++		waited = jiffies - ecm_nss_ipv4_sync_req_jiffies;
++		if (waited < ECM_NSS_IPV4_STATS_SYNC_TIMEOUT) {
++			/*
++			 * Woken early: keep waiting for the reply.
++			 */
++			spin_unlock_bh(&ecm_nss_ipv4_lock);
++			queue_delayed_work(ecm_nss_ipv4_workqueue, &ecm_nss_ipv4_work,
++					   ECM_NSS_IPV4_STATS_SYNC_TIMEOUT - waited);
++			return;
++		}
++
++		/*
++		 * The reply never came: restart the walk.
++		 */
++		ecm_nss_ipv4_sync_req_pending = false;
++		ecm_nss_ipv4_stats_request_timeout++;
++		nicsm_req->index = 0;
++		timed_out = true;
++	}
++	spin_unlock_bh(&ecm_nss_ipv4_lock);
++
++	if (timed_out) {
++		pr_warn_ratelimited("ECM: IPv4 conn stats request unanswered for %u ms, restarting the sync\n",
++				    jiffies_to_msecs(waited));
++	}
+ 
+ 	spin_lock_bh(&ecm_nss_ipv4_lock);
+ 	if (ecm_nss_ipv4_accelerated_count == 0) {
+@@ -696,11 +752,27 @@ static void ecm_nss_ipv4_stats_sync_req_
+ 		if (ecm_ipv4_terminate_pending) {
+ 			return;
+ 		}
++
++		spin_lock_bh(&ecm_nss_ipv4_lock);
++		ecm_nss_ipv4_sync_req_msg->cm.app_data = (nss_ptr_t)++ecm_nss_ipv4_sync_req_seq;
++		ecm_nss_ipv4_sync_req_jiffies = jiffies;
++		ecm_nss_ipv4_sync_req_pending = true;
++		spin_unlock_bh(&ecm_nss_ipv4_lock);
++
+ 		nss_tx_status = nss_ipv4_tx_with_size(ecm_nss_ipv4_nss_ipv4_mgr, ecm_nss_ipv4_sync_req_msg, PAGE_SIZE);
+ 		if (nss_tx_status == NSS_TX_SUCCESS) {
+ 			ecm_nss_ipv4_stats_request_success++;
++
++			/*
++			 * The reply pulls this forward.
++			 */
++			queue_delayed_work(ecm_nss_ipv4_workqueue, &ecm_nss_ipv4_work, ECM_NSS_IPV4_STATS_SYNC_TIMEOUT);
+ 			return;
+ 		}
++
++		spin_lock_bh(&ecm_nss_ipv4_lock);
++		ecm_nss_ipv4_sync_req_pending = false;
++		spin_unlock_bh(&ecm_nss_ipv4_lock);
+ 		ecm_nss_ipv4_stats_request_fail++;
+ 		retry--;
+ 		DEBUG_TRACE("TX_NOT_OKAY, try again later\n");
+@@ -874,9 +946,9 @@ static ssize_t ecm_nss_ipv4_get_stats_re
+ 		return -ENOMEM;
+ 	}
+ 
+-	ret = snprintf(buf, (ssize_t)PAGE_SIZE, "success=%lu\tfail=%lu\tnack=%lu\t\n",
++	ret = snprintf(buf, (ssize_t)PAGE_SIZE, "success=%lu\tfail=%lu\tnack=%lu\ttimeout=%lu\t\n",
+ 			ecm_nss_ipv4_stats_request_success, ecm_nss_ipv4_stats_request_fail,
+-			ecm_nss_ipv4_stats_request_nack);
++			ecm_nss_ipv4_stats_request_nack, ecm_nss_ipv4_stats_request_timeout);
+ 	if (ret < 0) {
+ 		kfree(buf);
+ 		return -EFAULT;
+--- a/frontends/nss/ecm_nss_ipv6.c
++++ b/frontends/nss/ecm_nss_ipv6.c
+@@ -97,6 +97,7 @@
+ 
+ #define ECM_NSS_IPV6_STATS_SYNC_PERIOD msecs_to_jiffies(1000)
+ #define ECM_NSS_IPV6_STATS_SYNC_UDELAY 4000	/* Delay for 4ms */
++#define ECM_NSS_IPV6_STATS_SYNC_TIMEOUT msecs_to_jiffies(5000)	/* Give up on an unanswered request */
+ 
+ int ecm_nss_ipv6_no_action_limit_default = 250;		/* Default no-action limit. */
+ int ecm_nss_ipv6_driver_fail_limit_default = 250;		/* Default driver fail limit. */
+@@ -134,6 +135,10 @@ static unsigned long int ecm_nss_ipv6_ro
+ static unsigned long int ecm_nss_ipv6_stats_request_success = 0;	/* Number of success stats request */
+ static unsigned long int ecm_nss_ipv6_stats_request_fail = 0;		/* Number of failed stats request */
+ static unsigned long int ecm_nss_ipv6_stats_request_nack = 0;		/* Number of NACK'd stats request */
++static unsigned long int ecm_nss_ipv6_stats_request_timeout = 0;	/* Number of stats request left unanswered */
++static unsigned long int ecm_nss_ipv6_sync_req_seq;			/* Tag of the latest stats request */
++static unsigned long int ecm_nss_ipv6_sync_req_jiffies;		/* When that request was sent */
++static bool ecm_nss_ipv6_sync_req_pending;				/* A stats request is awaiting its reply */
+ 
+ /*
+  * NSS driver linkage
+@@ -604,6 +609,7 @@ static void ecm_nss_ipv6_net_dev_callbac
+ static void ecm_nss_ipv6_connection_sync_many_callback(void *app_data, struct nss_ipv6_msg *nim)
+ {
+ 	struct nss_ipv6_conn_sync_many_msg *nicsm = &nim->msg.conn_stats_many;
++	bool current_reply;
+ 	int i;
+ 
+ 	/*
+@@ -613,20 +619,40 @@ static void ecm_nss_ipv6_connection_sync
+ 		return;
+ 	}
+ 
++	/*
++	 * The firmware echoes app_data. A reply without the tag of the request
++	 * in flight answers one that already timed out.
++	 */
++	spin_lock_bh(&ecm_nss_ipv6_lock);
++	current_reply = ecm_nss_ipv6_sync_req_pending
++			&& ((unsigned long int)app_data == ecm_nss_ipv6_sync_req_seq);
++	if (current_reply) {
++		ecm_nss_ipv6_sync_req_pending = false;
++		if (nim->cm.response == NSS_CMN_RESPONSE_ACK) {
++			ecm_nss_ipv6_sync_req_msg->msg.conn_stats_many.index = nicsm->next;
++		} else {
++			/*
++			 * We get a NACK from FW, which should not happen, restart the request
++			 */
++			DEBUG_WARN("IPv6 conn stats request failed, restarting\n");
++			ecm_nss_ipv6_stats_request_nack++;
++			ecm_nss_ipv6_sync_req_msg->msg.conn_stats_many.index = 0;
++		}
++	}
++	spin_unlock_bh(&ecm_nss_ipv6_lock);
++
+ 	if (nim->cm.response == NSS_CMN_RESPONSE_ACK) {
+ 		for (i = 0; i < nicsm->count; i++) {
+ 			ecm_nss_ipv6_process_one_conn_sync_msg(&nicsm->conn_sync[i]);
+ 		}
+-		ecm_nss_ipv6_sync_req_msg->msg.conn_stats_many.index = nicsm->next;
+-	} else {
+-		/*
+-		 * We get a NACK from FW, which should not happen, restart the request
+-		 */
+-		DEBUG_WARN("IPv6 conn stats request failed, restarting\n");
+-		ecm_nss_ipv6_stats_request_nack++;
+-		ecm_nss_ipv6_sync_req_msg->msg.conn_stats_many.index = 0;
+ 	}
+-	queue_delayed_work(ecm_nss_ipv6_workqueue, &ecm_nss_ipv6_work, 0);
++
++	/*
++	 * The work is pending on the reply timeout; pull it forward.
++	 */
++	if (current_reply) {
++		mod_delayed_work(ecm_nss_ipv6_workqueue, &ecm_nss_ipv6_work, 0);
++	}
+ }
+ 
+ /*
+@@ -642,6 +668,36 @@ static void ecm_nss_ipv6_stats_sync_req_
+ 	nss_tx_status_t nss_tx_status;
+ 	int retry = 3;
+ 	unsigned long int current_jiffies;
++	unsigned long int waited = 0;
++	bool timed_out = false;
++
++	spin_lock_bh(&ecm_nss_ipv6_lock);
++	if (ecm_nss_ipv6_sync_req_pending) {
++		waited = jiffies - ecm_nss_ipv6_sync_req_jiffies;
++		if (waited < ECM_NSS_IPV6_STATS_SYNC_TIMEOUT) {
++			/*
++			 * Woken early: keep waiting for the reply.
++			 */
++			spin_unlock_bh(&ecm_nss_ipv6_lock);
++			queue_delayed_work(ecm_nss_ipv6_workqueue, &ecm_nss_ipv6_work,
++					   ECM_NSS_IPV6_STATS_SYNC_TIMEOUT - waited);
++			return;
++		}
++
++		/*
++		 * The reply never came: restart the walk.
++		 */
++		ecm_nss_ipv6_sync_req_pending = false;
++		ecm_nss_ipv6_stats_request_timeout++;
++		nicsm_req->index = 0;
++		timed_out = true;
++	}
++	spin_unlock_bh(&ecm_nss_ipv6_lock);
++
++	if (timed_out) {
++		pr_warn_ratelimited("ECM: IPv6 conn stats request unanswered for %u ms, restarting the sync\n",
++				    jiffies_to_msecs(waited));
++	}
+ 
+ 	spin_lock_bh(&ecm_nss_ipv6_lock);
+ 	if (ecm_nss_ipv6_accelerated_count == 0) {
+@@ -675,11 +731,27 @@ static void ecm_nss_ipv6_stats_sync_req_
+ 		if (ecm_ipv6_terminate_pending) {
+ 			return;
+ 		}
++
++		spin_lock_bh(&ecm_nss_ipv6_lock);
++		ecm_nss_ipv6_sync_req_msg->cm.app_data = (nss_ptr_t)++ecm_nss_ipv6_sync_req_seq;
++		ecm_nss_ipv6_sync_req_jiffies = jiffies;
++		ecm_nss_ipv6_sync_req_pending = true;
++		spin_unlock_bh(&ecm_nss_ipv6_lock);
++
+ 		nss_tx_status = nss_ipv6_tx_with_size(ecm_nss_ipv6_nss_ipv6_mgr, ecm_nss_ipv6_sync_req_msg, PAGE_SIZE);
+ 		if (nss_tx_status == NSS_TX_SUCCESS) {
+ 			ecm_nss_ipv6_stats_request_success++;
++
++			/*
++			 * The reply pulls this forward.
++			 */
++			queue_delayed_work(ecm_nss_ipv6_workqueue, &ecm_nss_ipv6_work, ECM_NSS_IPV6_STATS_SYNC_TIMEOUT);
+ 			return;
+ 		}
++
++		spin_lock_bh(&ecm_nss_ipv6_lock);
++		ecm_nss_ipv6_sync_req_pending = false;
++		spin_unlock_bh(&ecm_nss_ipv6_lock);
+ 		ecm_nss_ipv6_stats_request_fail++;
+ 		retry--;
+ 		DEBUG_TRACE("TX_NOT_OKAY, try again later\n");
+@@ -854,9 +926,9 @@ static ssize_t ecm_nss_ipv6_get_stats_re
+ 		return -ENOMEM;
+ 	}
+ 
+-	ret = snprintf(buf, (ssize_t)PAGE_SIZE, "success=%lu\tfail=%lu\tnack=%lu\t\n",
++	ret = snprintf(buf, (ssize_t)PAGE_SIZE, "success=%lu\tfail=%lu\tnack=%lu\ttimeout=%lu\t\n",
+ 			ecm_nss_ipv6_stats_request_success, ecm_nss_ipv6_stats_request_fail,
+-			ecm_nss_ipv6_stats_request_nack);
++			ecm_nss_ipv6_stats_request_nack, ecm_nss_ipv6_stats_request_timeout);
+ 	if (ret < 0) {
+ 		kfree(buf);
+ 		return -EFAULT;

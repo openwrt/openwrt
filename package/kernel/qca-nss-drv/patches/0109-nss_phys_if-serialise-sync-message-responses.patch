@@ -1,0 +1,119 @@
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Subject: [PATCH] nss_phys_if: do not answer a request with the previous one's response
+
+Every physical-interface control message - open, close, mac_addr,
+change_mtu, link_state, and the interface-base messages that go through
+the same path - is sent by nss_phys_if_msg_sync(), which serialises
+callers on one semaphore and then waits on a single file-static
+completion for the reply.
+
+The completion is initialised once, at first use, and never reset. On
+the 3 second timeout the sender abandons its request and reports
+NSS_TX_FAILURE, but the request is still queued to the firmware: when
+the reply eventually arrives, nss_phys_if_callback() writes the shared
+response and calls complete() with nobody waiting, leaving the
+completion signalled. From that point the path is permanently skewed by
+one - the next sender's wait_for_completion_timeout() returns
+immediately, consuming that leftover token without waiting for its own
+reply, and reads the previous request's result out of the equally shared
+response field. Its own reply then re-signals the completion, so the
+skew sustains itself for as long as the module is loaded. Nothing short
+of a reboot restores it, and none of it is visible: the driver builds
+with debug messages compiled out.
+
+The effect on the caller is that a control message reports success it
+never had. A port whose link-up notification is reported as delivered,
+but which the firmware never applied, is left with the host convinced
+the port can transmit while the firmware silently discards everything
+sent to it.
+
+Give each request a serial, stamp it into the message's app_data so the
+firmware echoes it back, and drop responses in the callback that are no
+longer the one being waited for. Clear the completion before sending as
+well, so a request never starts against a leftover token.
+
+Count both events and expose them as module parameters. The messages
+beside them compile out at the default debug level, which is the reason
+this went unseen; a box that has never timed out reads zero on both, so
+the counters also say when this is not what went wrong.
+
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+
+--- a/nss_phys_if.c
++++ b/nss_phys_if.c
+@@ -41,11 +41,27 @@ static struct nss_phys_if_pvt {
+ 	struct semaphore sem;
+ 	struct completion complete;
+ 	int response;
++	nss_ptr_t serial;
+ } phif;
+ 
+ static int nss_phys_if_sem_init_done;
+ 
+ /*
++ * Both counters stay zero on a healthy box. A nonzero timeout count is the
++ * event that used to corrupt every later request; a nonzero stale count is this
++ * driver discarding a response that arrived too late to be the awaited one.
++ * They are module parameters because the debug messages beside them compile out
++ * at the default debug level, which is why this failure was never visible.
++ */
++static unsigned int phif_timeouts;
++module_param(phif_timeouts, uint, S_IRUGO);
++MODULE_PARM_DESC(phif_timeouts, "phys_if synchronous messages that timed out");
++
++static unsigned int phif_stale_responses;
++module_param(phif_stale_responses, uint, S_IRUGO);
++MODULE_PARM_DESC(phif_stale_responses, "phys_if responses discarded as stale");
++
++/*
+  * nss_phys_if_update_driver_stats()
+  *	Snoop the extended message and update driver statistics.
+  */
+@@ -145,6 +161,23 @@ static void nss_phys_if_msg_handler(stru
+  */
+ static void nss_phys_if_callback(void *app_data, struct nss_phys_if_msg *nim)
+ {
++	/*
++	 * A request that timed out is abandoned by its sender but stays in
++	 * flight, so its response can arrive after the next request has already
++	 * been sent. Answering that one with this response would report the
++	 * wrong result for it and, worse, leave the completion signalled with
++	 * no waiter, after which every later request returns immediately with
++	 * its predecessor's status - permanently, because nothing resets it.
++	 * The serial is stamped into app_data by the sender, so a response that
++	 * is no longer the one being waited for is simply dropped here.
++	 */
++	if ((nss_ptr_t)app_data != phif.serial) {
++		phif_stale_responses++;
++		nss_warning("phys_if stale response for serial %px, current %px\n",
++				app_data, (void *)phif.serial);
++		return;
++	}
++
+ 	if(nim->cm.response != NSS_CMN_RESPONSE_ACK) {
+ 		nss_warning("phys_if Error response %d\n", nim->cm.response);
+ 		phif.response = NSS_TX_FAILURE;
+@@ -225,6 +258,15 @@ nss_tx_status_t nss_phys_if_msg_sync(str
+ 
+ 	down(&phif.sem);
+ 
++	/*
++	 * Identify this request and start from a cleared completion, so that a
++	 * late response belonging to an earlier, timed-out request cannot be
++	 * mistaken for this one's.
++	 */
++	phif.serial++;
++	nim->cm.app_data = phif.serial;
++	reinit_completion(&phif.complete);
++
+ 	status = nss_phys_if_msg(nss_ctx, nim);
+ 	if(status != NSS_TX_SUCCESS)
+ 	{
+@@ -237,6 +279,7 @@ nss_tx_status_t nss_phys_if_msg_sync(str
+ 
+ 	if(!ret)
+ 	{
++		phif_timeouts++;
+ 		nss_warning("%px: phys_if tx failed due to timeout\n", nss_ctx);
+ 		phif.response = NSS_TX_FAILURE;
+ 	}

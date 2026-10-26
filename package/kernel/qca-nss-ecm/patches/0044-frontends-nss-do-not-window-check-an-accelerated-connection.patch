@@ -1,0 +1,112 @@
+frontends/nss: stop conntrack window-checking a connection it no longer sees
+
+Conntrack stops seeing a connection's packets the moment the firmware starts
+forwarding them. Its TCP window state therefore freezes at the last packet
+that went through the host, and is advanced again only by the stats sync,
+once a second (ECM_NSS_IPV4_STATS_SYNC_PERIOD).
+
+Any packet that returns to the host path inside that window is judged against
+a window that can be thousands of bytes behind: a slow-path exception, the
+first packet after a deceleration, or simply a short flow that completes
+between two syncs. tcp_in_window() fails it, conntrack marks it INVALID, and
+OpenWrt's stock egress rule for a masqueraded zone
+
+	oifname "wan" ct state invalid ... drop
+
+drops it. Nothing records the loss, because from the stack's point of view the
+firewall did its job.
+
+Marking the connection liberal is what the kernel's own offload paths do for
+the same reason - nft_flow_offload.c, act_ct.c and xt_FLOWOFFLOAD.c all set
+IP_CT_TCP_FLAG_BE_LIBERAL on both directions when they take a flow away from
+conntrack, and nf_conntrack_proto_tcp.c reads it before the pernet sysctls.
+Doing it per connection keeps window validation for every flow the firmware is
+not carrying, which the global nf_conntrack_tcp_no_window_check switch does
+not.
+
+The flag has to be hidden from the NO_SEQ_CHECK test above it. That test asks
+whether conntrack's window numbers are worth enforcing, and answers yes unless
+something already marked the connection liberal - a mid-stream pickup, where
+tcp_new() sets the flag because conntrack has no window state to give. Our own
+flag must not answer that question: ECM hands the firmware real window numbers
+from the last sync, and the firmware sees every accelerated packet, so it stays
+the one party able to check them. Without the guard the first acceleration is
+fine and every re-acceleration - the same nf_conn re-entering this path after a
+decel - would read our flag back and silently switch the firmware's sequence
+checking off for the rest of the connection's life.
+
+The flag is deliberately not cleared on deceleration: the packets that follow
+one are exactly the packets this protects.
+
+IPv4 and IPv6 are line-for-line identical here and change together.
+
+Reported-by: Manuel Fombuena <fombuena@outlook.com>
+Co-developed-by: Manuel Fombuena <fombuena@outlook.com>
+Signed-off-by: Manuel Fombuena <fombuena@outlook.com>
+Assisted-by: Claude:claude-opus-5
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+
+--- a/frontends/include/ecm_front_end_types.h
++++ b/frontends/include/ecm_front_end_types.h
+@@ -306,6 +306,7 @@ struct ecm_front_end_connection_instance
+ 	bool destroy_fail_handle_pending;			/* Set while handling the connection destroy failure */
+ 	bool udp_flow_dir_accel;				/* If the UDP flow is accelerated in flow direction. */
+ 	bool udp_return_dir_accel;				/* If the UDP flow is accelerated in return direction. */
++	bool tcp_be_liberal_set;				/* True once we marked this connection's conntrack liberal */
+ 	atomic64_t unidir_accel_fail_reason;				/* Unidirection accel fail reason */
+ #ifdef ECM_FRONT_END_PPE_ENABLE
+ 	atomic64_t ppe_accel_fail_reason;			/* PPE accel fail reason */
+--- a/frontends/nss/ecm_nss_ported_ipv4.c
++++ b/frontends/nss/ecm_nss_ported_ipv4.c
+@@ -1382,10 +1382,22 @@ static void ecm_nss_ported_ipv4_connecti
+ #else
+ 			if (tcp_be_liberal
+ #endif
+-					|| (ct->proto.tcp.seen[flow_dir].flags & IP_CT_TCP_FLAG_BE_LIBERAL)
+-					|| (ct->proto.tcp.seen[return_dir].flags & IP_CT_TCP_FLAG_BE_LIBERAL)) {
++					|| (!feci->tcp_be_liberal_set
++						&& ((ct->proto.tcp.seen[flow_dir].flags & IP_CT_TCP_FLAG_BE_LIBERAL)
++							|| (ct->proto.tcp.seen[return_dir].flags & IP_CT_TCP_FLAG_BE_LIBERAL)))) {
+ 				nircm->rule_flags |= NSS_IPV4_RULE_CREATE_FLAG_NO_SEQ_CHECK;
+ 			}
++
++			/*
++			 * The firmware forwards this connection from here and conntrack stops
++			 * seeing it, so its window freezes until the next stats sync and a
++			 * packet excepted back to the host reads as invalid. Set after the
++			 * test above, and hidden from it, so that relaxing conntrack does not
++			 * also switch off the firmware's own sequence check.
++			 */
++			ct->proto.tcp.seen[flow_dir].flags |= IP_CT_TCP_FLAG_BE_LIBERAL;
++			ct->proto.tcp.seen[return_dir].flags |= IP_CT_TCP_FLAG_BE_LIBERAL;
++			feci->tcp_be_liberal_set = true;
+ 			spin_unlock_bh(&ct->lock);
+ 		}
+ 
+--- a/frontends/nss/ecm_nss_ported_ipv6.c
++++ b/frontends/nss/ecm_nss_ported_ipv6.c
+@@ -1309,10 +1309,22 @@ static void ecm_nss_ported_ipv6_connecti
+ #else
+ 			if (tcp_be_liberal
+ #endif
+-					|| (ct->proto.tcp.seen[flow_dir].flags & IP_CT_TCP_FLAG_BE_LIBERAL)
+-					|| (ct->proto.tcp.seen[return_dir].flags & IP_CT_TCP_FLAG_BE_LIBERAL)) {
++					|| (!feci->tcp_be_liberal_set
++						&& ((ct->proto.tcp.seen[flow_dir].flags & IP_CT_TCP_FLAG_BE_LIBERAL)
++							|| (ct->proto.tcp.seen[return_dir].flags & IP_CT_TCP_FLAG_BE_LIBERAL)))) {
+ 				nircm->rule_flags |= NSS_IPV6_RULE_CREATE_FLAG_NO_SEQ_CHECK;
+ 			}
++
++			/*
++			 * The firmware forwards this connection from here and conntrack stops
++			 * seeing it, so its window freezes until the next stats sync and a
++			 * packet excepted back to the host reads as invalid. Set after the
++			 * test above, and hidden from it, so that relaxing conntrack does not
++			 * also switch off the firmware's own sequence check.
++			 */
++			ct->proto.tcp.seen[flow_dir].flags |= IP_CT_TCP_FLAG_BE_LIBERAL;
++			ct->proto.tcp.seen[return_dir].flags |= IP_CT_TCP_FLAG_BE_LIBERAL;
++			feci->tcp_be_liberal_set = true;
+ 			spin_unlock_bh(&ct->lock);
+ 		}
+ 

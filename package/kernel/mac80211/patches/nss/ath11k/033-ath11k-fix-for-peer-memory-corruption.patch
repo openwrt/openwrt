@@ -1,0 +1,54 @@
+ath11k-fix-for-peer-memory-corruption
+
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+
+diff --git a/drivers/net/wireless/ath/ath11k/mac.c b/drivers/net/wireless/ath/ath11k/mac.c
+index 37c35bf..52fca97 100644
+--- a/drivers/net/wireless/ath/ath11k/mac.c
++++ b/drivers/net/wireless/ath/ath11k/mac.c
+@@ -4308,22 +4308,28 @@
+ 	int ret;
+ 	int i;
+ 	u32 flags = 0;
++	struct ieee80211_key_conf *keys[WMI_MAX_KEY_INDEX + 1];
+ 
+ 	lockdep_assert_held(&ar->conf_mutex);
+ 
+ 	spin_lock_bh(&ab->base_lock);
+ 	peer = ath11k_peer_find(ab, arvif->vdev_id, addr);
++	if (!peer) {
++		spin_unlock_bh(&ab->base_lock);
++		return -ENOENT;
++	}
++	for (i = 0; i < ARRAY_SIZE(keys); i++) {
++		keys[i]= peer->keys[i];
++		peer->keys[i]= NULL;
++	}
+ 	spin_unlock_bh(&ab->base_lock);
+ 
+-	if (!peer)
+-		return -ENOENT;
+-
+-	for (i = 0; i < ARRAY_SIZE(peer->keys); i++) {
+-		if (!peer->keys[i])
++	for (i = 0; i < ARRAY_SIZE(keys); i++) {
++		if (!keys[i])
+ 			continue;
+ 
+ 		/* key flags are not required to delete the key */
+-		ret = ath11k_install_key(arvif, peer->keys[i],
++		ret = ath11k_install_key(arvif, keys[i],
+ 					 DISABLE_KEY, addr, flags);
+ 		if (ret < 0 && first_errno == 0)
+ 			first_errno = ret;
+@@ -4331,10 +4337,6 @@
+ 		if (ret < 0)
+ 			ath11k_warn(ab, "failed to remove peer key %d: %d\n",
+ 				    i, ret);
+-
+-		spin_lock_bh(&ab->base_lock);
+-		peer->keys[i] = NULL;
+-		spin_unlock_bh(&ab->base_lock);
+ 	}
+ 
+ 	return first_errno;

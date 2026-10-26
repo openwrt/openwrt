@@ -1,0 +1,62 @@
+nss_shaper-add-the-11.4-per-node-stats-wire-format
+
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+
+--- a/exports/nss_shaper.h
++++ b/exports/nss_shaper.h
+@@ -709,6 +709,44 @@ struct nss_shaper_node_stats_sync_many {
+                                                 /**< Response to host. */
+ };
+ 
++#ifdef NSS_FIRMWARE_VERSION_11_4
++/*
++ * The 11.4 firmware line predates the stats-sync-many message: the same
++ * shaper-configure type value is the per-node basic-stats request there,
++ * carrying this payload instead (and its response has no leading QoS tag).
++ */
++#define NSS_SHAPER_CONFIG_TYPE_SHAPER_NODE_BASIC_STATS_GET NSS_SHAPER_CONFIG_TYPE_SHAPER_NODE_STATS_SYNC_MANY
++
++/**
++ * nss_shaper_node_stats_response_11_4
++ *	Statistics response layout of the 11.4 firmware (no qos_tag).
++ */
++struct nss_shaper_node_stats_response_11_4 {
++	struct nss_shaper_node_stats sn_stats;	/**< Common shaper node statistics. */
++	union {
++		struct nss_shaper_node_codel_stats codel;
++						/**< CoDel specific statistics. */
++	} per_sn_stats;				/**< Shaper specific statistics. */
++};
++
++/**
++ * nss_shaper_node_basic_stats_get
++ *	Per-node statistics request/response of the 11.4 firmware.
++ */
++struct nss_shaper_node_basic_stats_get {
++	/*
++	 * Request
++	 */
++	uint32_t qos_tag;	/**< QoS tag of the shaper node. */
++
++	/*
++	 * Response
++	 */
++	struct nss_shaper_node_stats_response_11_4 response;
++				/**< Shaper node statistics response. */
++};
++#endif
++
+ /**
+  * nss_shaper_configure
+  *	Configuration message for a shaper node.
+@@ -735,6 +773,10 @@ struct nss_shaper_configure {
+ 				/**< Configuration message for any type of shaper node. */
+ 		struct nss_shaper_node_stats_sync_many stats_get;
+ 				/**< Statistics of multiple shaper nodes. */
++#ifdef NSS_FIRMWARE_VERSION_11_4
++		struct nss_shaper_node_basic_stats_get shaper_node_stats_get;
++				/**< Per-node statistics (11.4 firmware). */
++#endif
+ 	} msg;			/**< Types of configuration messages. */
+ };
+ 

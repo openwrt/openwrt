@@ -1,0 +1,34 @@
+From: Adriel Santos <adriel@adriel.eu>
+Subject: [PATCH] ath11k: tear NSS offload down after the crash-path IRQ quiesce
+
+The NSS series inserts ath11k_nss_teardown() at the top of
+ath11k_core_reconfigure_on_crash(). The same function disables the host
+datapath/CE interrupts on the firmware crash path further down, so the
+offload was released while ring and CE handlers could still run. Move
+the teardown after the quiesce.
+
+Taken from https://github.com/ADCDS/openwrt-xiaomi-ax3000t-rd03v2
+(999-998-rd03v2-nss-teardown-after-irq-quiesce); the nss.c half of it is
+already in this tree.
+
+Signed-off-by: Stanislaw Pal <kuncy7@gmail.com>
+
+--- a/drivers/net/wireless/ath/ath11k/core.c
++++ b/drivers/net/wireless/ath/ath11k/core.c
+@@ -2397,10 +2397,15 @@
+ 
+ 	mutex_lock(&ab->core_lock);
+ 
++	ath11k_thermal_unregister(ab);
++	/* Reset already disables these IRQs before the power cycle. */
++	if (!ab->is_reset) {
++		ath11k_hif_irq_disable(ab);
++		ath11k_hif_ce_irq_disable(ab);
++	}
+ 	ath11k_nss_teardown(ab);
+ 	ab->nss.enabled = false;
+ 
+-	ath11k_thermal_unregister(ab);
+ 	ath11k_dp_pdev_free(ab);
+ 	ath11k_spectral_deinit(ab);
+ 	ath11k_ce_cleanup_pipes(ab);

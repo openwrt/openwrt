@@ -1,0 +1,79 @@
+From: Stanislaw Pal <kuncy7@gmail.com>
+Subject: [PATCH] ath11k_nss: give the hybrid-bus radio its BAR and window offsets
+
+The wifili init message hands the NSS firmware physical register
+addresses: hssm.dev_base_addr is ab->mem_pa, and every ring's
+hwreg_base[] is ab->mem_pa plus a window-translated offset
+(ath11k_nss_fill_srng_info).
+
+On a QCN6122 neither of the two is filled in. The chip is a hybrid-bus
+device, so ath11k_ahb_setup_resources() takes the hybrid_bus_type branch
+and never touches mem_pa - the DT reg is only the MSI address, and the
+real BAR arrives later in the QMI device_info reply, where nothing stores
+it. And ath11k_ahb_hif_ops_qcn6122 has no .get_window_offset, so
+ath11k_hif_get_window_offset() returns the raw UMAC offset instead of the
+window-relative one the host itself uses.
+
+The firmware therefore receives ring registers at physical 0x00Axxxxx -
+a bare offset with no base - and traps on the first transmit, which is
+the first frame the VAP sends after it comes up (IPv6 MLD/NDP is enough;
+no client is needed). Measured on a GL-B3000: without this the core dies
+0.8 s after the VAP is up; with it the radio survives bring-up and the
+firmware reports "hybrid bus BAR 0xa1e00000 size 0x200000".
+
+Signed-off-by: Stanislaw Pal <kuncy7@gmail.com>
+---
+--- a/drivers/net/wireless/ath/ath11k/ahb.c
++++ b/drivers/net/wireless/ath/ath11k/ahb.c
+@@ -843,6 +843,25 @@
+ 	.ce_irq_disable = ath11k_pci_disable_ce_irqs_except_wake_irq,
+ };
+ 
++/* The NSS firmware reaches this radio's ring registers through the same
++ * static windows the host does (UMAC in window 1, CE in window 2 - see
++ * ath11k_ahb_config_static_window_qcn6122()), so the offsets handed to it
++ * in the wifili init message must be window-relative. Without this hook
++ * ath11k_hif_get_window_offset() returns the raw register offset, which
++ * lies outside the mapped range, and the firmware programs rings that do
++ * not exist.
++ */
++static u32 ath11k_ahb_get_window_offset_qcn6122(struct ath11k_base *ab,
++						u32 offset)
++{
++	u32 window_start = ath11k_ahb_get_window_start_wcn6750(ab, offset);
++
++	if (window_start)
++		offset = window_start + (offset & ATH11K_PCI_WINDOW_RANGE_MASK);
++
++	return offset;
++}
++
+ static const struct ath11k_hif_ops ath11k_ahb_hif_ops_qcn6122 = {
+ 	.start = ath11k_pcic_start,
+ 	.stop = ath11k_pcic_stop,
+@@ -859,6 +878,7 @@
+ 	.ce_irq_enable = ath11k_pci_enable_ce_irqs_except_wake_irq,
+ 	.ce_irq_disable = ath11k_pci_disable_ce_irqs_except_wake_irq,
+ 	.config_static_window = ath11k_ahb_config_static_window_qcn6122,
++	.get_window_offset = ath11k_ahb_get_window_offset_qcn6122,
+ };
+ 
+ static int ath11k_core_get_rproc(struct ath11k_base *ab)
+--- a/drivers/net/wireless/ath/ath11k/qmi.c
++++ b/drivers/net/wireless/ath/ath11k/qmi.c
+@@ -2204,6 +2204,15 @@
+ 
+ 	ab->mem = bar_addr_va;
+ 	ab->mem_len = resp.bar_size;
++	/* The NSS wifili path hands the firmware physical register addresses
++	 * derived from mem_pa (hssm.dev_base_addr and every ring's
++	 * hwreg_base[]). On a hybrid-bus radio the BAR comes from this QMI
++	 * reply, not from the DTS, and nothing else fills mem_pa in - so the
++	 * firmware would be told the registers live at physical 0.
++	 */
++	ab->mem_pa = resp.bar_addr;
++	ath11k_info(ab, "hybrid bus BAR 0x%llx size 0x%x\n",
++		    (unsigned long long)resp.bar_addr, resp.bar_size);
+ 
+ 	if (!ab->hw_params.ce_remap)
+ 		ab->mem_ce = ab->mem;

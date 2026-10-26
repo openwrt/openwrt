@@ -1,0 +1,154 @@
+ecm_db: give each side of a routed flow its own bridge VLAN
+
+ecm_db_connection_add_vlan_filter() records, for each side of a
+connection, the bridge VLAN the flow uses on that side's bridge ports. It
+looks the VLAN up once, in the FDB by the source MAC, on the FROM side, and
+carries that VID over to the TO side (and the other way round for the
+return direction). For a bridged flow that is right - it stays in one
+VLAN. A routed flow is different: it can leave one VLAN of a bridge and
+enter another VLAN of the same bridge - a guest VLAN routed to the LAN, or
+the WAN port made a member of VLAN 2 of the one VLAN-aware bridge and the
+WAN on br-lan.2, a common DSA layout. The FROM side's VID is then not a
+VLAN of the TO side's port, the membership check fails, and every such
+flow is refused (v4_ported_vlan_filter_add_fail) and stays on the host
+path. Measured on an Archer AX55 v1, Wi-Fi in VLAN 10 to a WAN in VLAN 2
+of the same bridge: no connection accelerated, 46/54 Mbit/s up/down at
+55 % softirq, where the WAN on its own port gives 305/447 Mbit/s (the
+client's radio) at under 1 %.
+
+The FDB lookup is also only a guess for a routed flow: it returns the
+first entry of a MAC in any VLAN, and for a host with one MAC in several
+VLANs of the bridge (802.1Q sub-interfaces on one NIC) that can be another
+VLAN its port is also a member of - the membership check passes and the
+connection is recorded with the wrong VID.
+
+Walk each side of a routed flow on its own, starting from the VLAN of that
+side's L3 interface when it is a VLAN device of the bridge (br-lan.10) -
+the flow enters or leaves the bridge through it, so the VID is exact - and
+otherwise from the FDB entry of the MAC on that side: the source's for
+FROM, the next hop's for TO. The reachability check of the fallbacks then
+also tests the MAC of that side. Bridged flows are unchanged.
+
+Index: b/ecm_db/ecm_db_connection.c
+===================================================================
+--- a/ecm_db/ecm_db_connection.c
++++ b/ecm_db/ecm_db_connection.c
+@@ -3552,6 +3552,54 @@
+ }
+ 
+ /*
++ * ecm_db_connection_routed_bridge_vid()
++ *	The VLAN a routed flow uses on one side's VLAN-filtering bridge, taken
++ *	from the flow's L3 interface on that side: a VLAN device stacked on the
++ *	bridge (br-lan.10). 0 when the side has none - the address sits on the
++ *	bridge itself, or there is no VLAN-filtering bridge on that side.
++ *
++ *	A routed flow enters and leaves the bridge through such a device, so its
++ *	VID is exact. The FDB can only guess: br_fdb_find_vid_by_mac() returns
++ *	the first entry of a MAC in any VLAN, which for a host with one MAC in
++ *	several VLANs of the bridge (802.1Q sub-interfaces on one NIC) can be
++ *	another VLAN the port is also a member of - the membership check then
++ *	passes and the rule would carry the wrong VID.
++ */
++static uint16_t ecm_db_connection_routed_bridge_vid(struct ecm_db_connection_instance *ci, ecm_db_obj_dir_t dir)
++{
++	struct ecm_db_iface_instance *interfaces[ECM_DB_IFACE_HEIRARCHY_MAX];
++	int32_t first_index;
++	int32_t i;
++	uint16_t vid = 0;
++
++	first_index = ecm_db_connection_interfaces_get_and_ref(ci, interfaces, dir);
++	if (first_index == ECM_DB_IFACE_HEIRARCHY_MAX) {
++		return 0;
++	}
++
++	for (i = first_index; (i < ECM_DB_IFACE_HEIRARCHY_MAX) && !vid; i++) {
++		struct net_device *dev;
++
++		dev = dev_get_by_index(&init_net, ecm_db_iface_interface_identifier_get(interfaces[i]));
++		if (!dev) {
++			continue;
++		}
++
++		if (is_vlan_dev(dev)) {
++			struct net_device *real_dev = vlan_dev_real_dev(dev);
++
++			if (netif_is_bridge_master(real_dev) && br_vlan_enabled(real_dev)) {
++				vid = vlan_dev_vlan_id(dev);
++			}
++		}
++		dev_put(dev);
++	}
++
++	ecm_db_connection_interfaces_deref(interfaces, first_index);
++	return vid;
++}
++
++/*
+  * ecm_db_connection_add_vlan_filter()
+  *	Update bridge vlan filter information in the connection instance, by walking the interface heirarchy in:
+  *	1: Flow direction - FROM heirarchy
+@@ -3569,6 +3617,8 @@
+ 	uint8_t *dest_mac_addr;
+ 	uint16_t vid_flow = 0;
+ 	uint16_t vid_ret = 0;
++	uint16_t vid_flow_to = 0;
++	uint16_t vid_ret_from = 0;
+ 	bool result = false;
+ 
+ 	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%px: magic failed\n", ci);
+@@ -3600,6 +3650,24 @@
+ 	 * the vlan tag used for FLOW path.
+ 	 * TODO: Evaluate integrating VLAN filter configuration during interface heirarchy construction.
+ 	 */
++	/*
++	 * A routed flow can go from one VLAN of a bridge to another VLAN of
++	 * the same bridge (br-lan.10 to br-lan.2 with the WAN port a member of
++	 * VLAN 2, or a guest VLAN to the LAN): the VLAN found for one side is
++	 * then not the other side's, and carrying it over, as below, fails the
++	 * membership check on every such flow. Each side of a routed flow is
++	 * walked on its own instead, starting from the VLAN of that side's L3
++	 * interface when it has one (ecm_db_connection_routed_bridge_vid()),
++	 * else from the FDB entry of the MAC on that side: the source's for
++	 * FROM, the next hop's for TO. A bridged flow stays in one VLAN and
++	 * keeps carrying it.
++	 */
++	if (is_routed) {
++		vid_flow = vid_ret_from = ecm_db_connection_routed_bridge_vid(ci, from_dir);
++		vid_flow_to = vid_ret = ecm_db_connection_routed_bridge_vid(ci, to_dir);
++		DEBUG_TRACE("%px: routed flow, L3 bridge VLAN from %u to %u\n", ci, vid_flow, vid_ret);
++	}
++
+ 	DEBUG_TRACE("%px: Parse the heirarchy for FROM heirarcy in FLOW direction.\n", ci);
+ 	if (!ecm_db_connection_fill_vlan_filter(ci, skb, from_dir, src_mac_addr, dest_mac_addr,
+ 				ECM_VLAN_FILTER_RULE_FLOW_DIR, is_routed, &vid_flow)) {
+@@ -3613,7 +3681,13 @@
+ 	 * to fill the other (TO) direction.
+ 	 */
+ 	DEBUG_TRACE("%px: Parse the heirarchy for TO heirarcy in FLOW direction.\n", ci);
+-	if (!ecm_db_connection_fill_vlan_filter(ci, skb, to_dir, src_mac_addr, dest_mac_addr,
++	if (is_routed) {
++		if (!ecm_db_connection_fill_vlan_filter(ci, skb, to_dir, dest_mac_addr, dest_mac_addr,
++					ECM_VLAN_FILTER_RULE_FLOW_DIR, is_routed, &vid_flow_to)) {
++			DEBUG_WARN("%px: vlan filter info not found for routed ECM_DB_OBJ_DIR_TO and ECM_VLAN_FILTER_RULE_FLOW_DIR\n", ci);
++			goto fail;
++		}
++	} else if (!ecm_db_connection_fill_vlan_filter(ci, skb, to_dir, src_mac_addr, dest_mac_addr,
+ 				ECM_VLAN_FILTER_RULE_FLOW_DIR, is_routed, &vid_flow)) {
+ 		DEBUG_WARN("%px: vlan filter info not found for ECM_DB_OBJ_DIR_TO and ECM_VLAN_FILTER_RULE_FLOW_DIR\n", ci);
+ 		goto fail;
+@@ -3637,7 +3711,13 @@
+ 	 * to fill the other (TO) direction.
+ 	 */
+ 	DEBUG_TRACE("%px: Parse the heirarchy for FROM heirarcy in RET direction.\n", ci);
+-	if (!ecm_db_connection_fill_vlan_filter(ci, skb, from_dir, dest_mac_addr, src_mac_addr,
++	if (is_routed) {
++		if (!ecm_db_connection_fill_vlan_filter(ci, skb, from_dir, src_mac_addr, src_mac_addr,
++					ECM_VLAN_FILTER_RULE_RET_DIR, is_routed, &vid_ret_from)) {
++			DEBUG_WARN("%px: vlan filter info not found for routed ECM_DB_OBJ_DIR_FROM and ECM_VLAN_FILTER_RULE_RET_DIR\n", ci);
++			goto fail;
++		}
++	} else if (!ecm_db_connection_fill_vlan_filter(ci, skb, from_dir, dest_mac_addr, src_mac_addr,
+ 				ECM_VLAN_FILTER_RULE_RET_DIR, is_routed, &vid_ret)) {
+ 		DEBUG_WARN("%px: vlan filter info not found for ECM_DB_OBJ_DIR_FROM and ECM_VLAN_FILTER_RULE_RET_DIR\n", ci);
+ 		goto fail;

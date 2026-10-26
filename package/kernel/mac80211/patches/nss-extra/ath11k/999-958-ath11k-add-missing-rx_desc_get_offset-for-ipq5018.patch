@@ -1,0 +1,45 @@
+From: kuncy7 <noreply@example.com>
+Subject: [PATCH] ath11k: add the missing rx_desc_get_offset to ipq5018_ops
+
+Selecting the 512MB ath11k memory profile panics every IPQ5018 board at
+radio bring-up:
+
+  Unable to handle kernel execute from non-executable memory at 0000000000000000
+  pc : 0x0
+  lr : ath11k_dp_rx_pdev_alloc+0x5c8/0x680 [ath11k]
+
+207-ath11k-Enable-256_512MB-profiles.patch compiles an extra call into
+ath11k_dp_rxdma_ring_sel_config() under CPTCFG_ATH11K_MEM_PROFILE_512M:
+
+  static void ath11k_dp_get_rx_header_offset(...)
+  {
+	ab->hw_params.hw_ops->rx_desc_get_offset(tlv_filter);
+  }
+
+The call is unconditional, but the op was only filled in for ipq8074_ops,
+ipq6018_ops, qca6390_ops and qcn9074_ops. ipq5018_ops does not have it,
+so the call goes to NULL. Without the 512M profile the whole function is
+a "return 0" stub, which is why the default (1GB) build never sees this.
+
+ipq5018_ops is used by both ATH11K_HW_IPQ5018_HW10 and
+ATH11K_HW_QCN6122_HW10, so on a 512M build every radio on the SoC dies;
+only a PCIe QCN9074 survives, because qcn9074_ops has the pointer.
+
+Use the qcn9074 variant: every other rx_desc accessor in ipq5018_ops is
+the qcn9074 one, i.e. the descriptor really is struct hal_rx_desc_qcn9074.
+The op, its helpers and the other tables' entries all live inside the
+same #ifdef, so this is inert unless the 512M profile is selected.
+
+Reported-by: zmu (Redmi AX5400), georgem83 (Linksys MX2000)
+--- a/drivers/net/wireless/ath/ath11k/hw.c
++++ b/drivers/net/wireless/ath/ath11k/hw.c
+@@ -1483,6 +1483,9 @@
+ 	.rx_desc_mpdu_start_addr2 = ath11k_hw_ipq9074_rx_desc_mpdu_start_addr2,
+ 	.get_ring_selector = ath11k_hw_ipq8074_get_tcl_ring_selector,
+ 	.rx_desc_get_hal_mpdu_len = ath11k_hw_qcn9074_rx_desc_get_hal_mpdu_len,
++#ifdef CPTCFG_ATH11K_MEM_PROFILE_512M
++	.rx_desc_get_offset = ath11k_hw_qcn9074_rx_desc_get_offset,
++#endif
+ };
+ 
+ #define ATH11K_TX_RING_MASK_0 BIT(0)

@@ -1,0 +1,1124 @@
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Subject: [PATCH] treewide: build only for Linux 6.18 and 7.3
+
+Drop every LINUX_VERSION_CODE branch for kernels older than 6.18 and
+fold the per-version compatibility patches into this one.
+
+Assisted-by: Claude:claude-opus-5-5
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+---
+
+--- a/Makefile
++++ b/Makefile
+@@ -543,4 +543,10 @@ endif
+ 
+ ccflags-y += -Wall -Werror
+ 
++# Kernel 6.12 compat headers
++ccflags-y += -I$(obj)/compat
++
++# GCC 15+ has stricter checks for prototypes and declarations. Silence them
++ccflags-y += -Wno-missing-prototypes -Wno-missing-declarations
++
+ obj ?= .
+--- /dev/null
++++ b/compat/asm/unaligned.h
+@@ -0,0 +1,8 @@
++/* Compatibility header for <asm/unaligned.h> moved to <linux/unaligned.h> in kernel 6.10+ */
++#ifndef _ASM_UNALIGNED_H
++#define _ASM_UNALIGNED_H
++
++
++#include <linux/unaligned.h>
++
++#endif /* _ASM_UNALIGNED_H */
+--- a/ecm_db/ecm_db_connection.c
++++ b/ecm_db/ecm_db_connection.c
+@@ -40,6 +40,7 @@
+ #ifdef ECM_BRIDGE_VLAN_FILTERING_ENABLE
+ #include <linux/if_vlan.h>
+ #include <linux/if_bridge.h>
++#include <linux/vmalloc.h>
+ #endif
+ 
+ /*
+--- a/ecm_db/ecm_db_host.c
++++ b/ecm_db/ecm_db_host.c
+@@ -36,6 +36,7 @@
+ #include <net/netfilter/nf_conntrack_core.h>
+ #include <net/netfilter/ipv4/nf_conntrack_ipv4.h>
+ #include <net/netfilter/ipv4/nf_defrag_ipv4.h>
++#include <linux/vmalloc.h>
+ 
+ /*
+  * Debug output levels
+--- a/ecm_db/ecm_db_mapping.c
++++ b/ecm_db/ecm_db_mapping.c
+@@ -35,6 +35,7 @@
+ #include <net/netfilter/nf_conntrack_core.h>
+ #include <net/netfilter/ipv4/nf_conntrack_ipv4.h>
+ #include <net/netfilter/ipv4/nf_defrag_ipv4.h>
++#include <linux/vmalloc.h>
+ 
+ /*
+  * Debug output levels
+--- a/ecm_db/ecm_db_node.c
++++ b/ecm_db/ecm_db_node.c
+@@ -35,6 +35,7 @@
+ #include <net/netfilter/nf_conntrack_core.h>
+ #include <net/netfilter/ipv4/nf_conntrack_ipv4.h>
+ #include <net/netfilter/ipv4/nf_defrag_ipv4.h>
++#include <linux/vmalloc.h>
+ 
+ /*
+  * Debug output levels
+--- a/ecm_db/ecm_db_timer.c
++++ b/ecm_db/ecm_db_timer.c
+@@ -6,7 +6,6 @@
+  **************************************************************************
+  */
+ 
+-#include <linux/version.h>
+ #include <linux/types.h>
+ #include <linux/ip.h>
+ #include <linux/tcp.h>
+@@ -377,11 +376,7 @@ EXPORT_SYMBOL(ecm_db_time_get);
+  *	Manage expiration of connections
+  * NOTE: This is softirq context
+  */
+-#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 15, 0))
+-static void ecm_db_timer_callback(unsigned long data)
+-#else
+ static void ecm_db_timer_callback(struct timer_list *tm)
+-#endif
+ {
+ 	uint32_t timer;
+ 
+@@ -419,13 +414,7 @@ void ecm_db_timer_init(void)
+ 	/*
+ 	 * Set a timer to manage cleanup of expired connections
+ 	 */
+-#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 15, 0))
+-	init_timer(&ecm_db_timer);
+-	ecm_db_timer.function = ecm_db_timer_callback;
+-	ecm_db_timer.data = 0;
+-#else
+ 	timer_setup(&ecm_db_timer, ecm_db_timer_callback, 0);
+-#endif
+ 	ecm_db_timer.expires = jiffies + HZ;
+ 	add_timer(&ecm_db_timer);
+ 
+--- a/ecm_interface.c
++++ b/ecm_interface.c
+@@ -6,7 +6,6 @@
+  **************************************************************************
+  */
+ 
+-#include <linux/version.h>
+ #include <linux/types.h>
+ #include <linux/ip.h>
+ #include <linux/tcp.h>
+@@ -838,12 +837,8 @@ static struct net_device *ecm_interface_
+ 	struct net_device *dev;
+ 
+ 	ECM_IP_ADDR_TO_NIN6_ADDR(addr6, addr);
+-#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 9, 0))
+-	dev = (struct net_device *)ipv6_dev_find(&init_net, &addr6, 1);
+-#else
+ 	dev = (struct net_device *)ipv6_dev_find(&init_net, &addr6, NULL);
+ 	dev_hold(dev);
+-#endif
+ 	return dev;
+ }
+ #endif
+@@ -1082,11 +1077,7 @@ static bool ecm_interface_find_gateway_i
+ 		ecm_interface_route_release(&ecm_rt);
+ 		return false;
+ 	}
+-#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 2, 0))
+-	ECM_NIN4_ADDR_TO_IP_ADDR(gw_addr, rt->rt_gateway)
+-#else
+ 	ECM_NIN4_ADDR_TO_IP_ADDR(gw_addr, rt->rt_gw4)
+-#endif
+ 	ecm_interface_route_release(&ecm_rt);
+ 	return true;
+ }
+@@ -1183,11 +1174,7 @@ static bool ecm_interface_mac_addr_get_i
+ 	rt = ecm_rt.rt.rtv4;
+ 	if (rt->rt_uses_gateway || (rt->rt_flags & RTF_GATEWAY)) {
+ 		*on_link = false;
+-#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 2, 0))
+-		ECM_NIN4_ADDR_TO_IP_ADDR(gw_addr, rt->rt_gateway)
+-#else
+ 		ECM_NIN4_ADDR_TO_IP_ADDR(gw_addr, rt->rt_gw4)
+-#endif
+ 	} else {
+ 		*on_link = true;
+ 	}
+@@ -1302,12 +1289,8 @@ static bool ecm_interface_mac_addr_get_i
+ 	 * Get the MAC address that corresponds to IP address given.
+ 	 */
+ 	ECM_IP_ADDR_TO_NIN6_ADDR(daddr, addr);
+-#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 9, 0))
+-	local_dev = ipv6_dev_find(&init_net, &daddr, 1);
+-#else
+ 	local_dev = ipv6_dev_find(&init_net, &daddr, NULL);
+ 	dev_hold(local_dev);
+-#endif
+ 	if (local_dev) {
+ 		DEBUG_TRACE("%pi6 is a local address\n", &daddr);
+ 		memcpy(mac_addr, dev->dev_addr, ETH_ALEN);
+@@ -1793,11 +1776,7 @@ __be32 ecm_interface_vxlan_gpe_get_vni_r
+ 		__be32 daddr;
+ 
+ 		daddr = netif_is_vxlan(indev) ? ip_hdr(skb)->saddr : ip_hdr(skb)->daddr;
+-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 10, 0)
+ 		rt = ip_route_output(&init_net, daddr, 0, 0, 0, RT_SCOPE_UNIVERSE);
+-#else
+-		rt = ip_route_output(&init_net, daddr, 0, 0, 0);
+-#endif
+ 
+ 		if (IS_ERR_OR_NULL(rt)) {
+ 			DEBUG_WARN("%px: VXLAN-GPE failed to get IPv4 route to: %pI4\n", dev, &daddr);
+@@ -2053,11 +2032,7 @@ void ecm_interface_send_neighbour_solici
+ 	 * Issue a Neighbour soliciation request
+ 	 */
+ 	DEBUG_TRACE("Issue Neighbour solicitation request\n");
+-#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 10, 0))
+-	ndisc_send_ns(dev, &dst_addr, &mc_dst_addr, &src_addr);
+-#else
+ 	ndisc_send_ns(dev, &dst_addr, &mc_dst_addr, &src_addr, 0);
+-#endif
+ 	neigh_release(neigh);
+ 	dst_release(&rt6i->dst);
+ }
+@@ -2121,11 +2096,7 @@ struct neighbour *ecm_interface_ipv4_nei
+ 	__be32 ipv4_addr;
+ 
+ 	ECM_IP_ADDR_TO_NIN4_ADDR(ipv4_addr, addr);
+-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 10, 0)
+ 	rt = ip_route_output(&init_net, ipv4_addr, 0, 0, 0, RT_SCOPE_UNIVERSE);
+-#else
+-	rt = ip_route_output(&init_net, ipv4_addr, 0, 0, 0);
+-#endif
+ 	if (IS_ERR_OR_NULL(rt)) {
+ 		return NULL;
+ 	}
+@@ -7757,11 +7728,7 @@ static void ecm_interface_list_stats_upd
+ 					ecm_db_iface_vxlan_info_get(ii, &vxlan_info);
+ 					priv = netdev_priv(dev);
+ 					DEBUG_TRACE("Update VXLAN bridge fdb entry for mac: %pM\n", mac_addr);
+-#if (LINUX_VERSION_CODE <= KERNEL_VERSION(4, 5, 7))
+-					vxlan_fdb_update_mac(priv, mac_addr);
+-#else
+ 					vxlan_fdb_update_mac(priv, mac_addr, vxlan_info.vni);
+-#endif
+ 				}
+ #endif
+ 			}
+@@ -7846,17 +7813,10 @@ skip_bridge_refresh:
+ 
+ 			ovs_stats = this_cpu_ptr(dev->tstats);
+ 			u64_stats_update_begin(&ovs_stats->syncp);
+-#if (LINUX_VERSION_CODE < KERNEL_VERSION(6, 1, 0))
+-			ovs_stats->rx_packets += rx_packets;
+-			ovs_stats->rx_bytes += rx_bytes;
+-			ovs_stats->tx_packets += tx_packets;
+-			ovs_stats->tx_bytes += tx_bytes;
+-#else
+ 			u64_stats_add(&ovs_stats->rx_packets, rx_packets);
+ 			u64_stats_add(&ovs_stats->rx_bytes, rx_bytes);
+ 			u64_stats_add(&ovs_stats->tx_packets, tx_packets);
+ 			u64_stats_add(&ovs_stats->tx_bytes, tx_bytes);
+-#endif
+ 			u64_stats_update_end(&ovs_stats->syncp);
+ 			dev_put(dev);
+ 			continue;
+--- a/ecm_tracker_tcp.c
++++ b/ecm_tracker_tcp.c
+@@ -6,7 +6,6 @@
+  **************************************************************************
+  */
+ 
+-#include <linux/version.h>
+ #include <linux/types.h>
+ #include <linux/ip.h>
+ #include <linux/tcp.h>
+@@ -1128,11 +1127,7 @@ static bool ecm_tracker_tcp_extract_mss(
+ 	 * Parse the TCP header options
+ 	 */
+ 	memset(&opt_rx, 0, sizeof(opt_rx));
+-#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 13, 0))
+-	tcp_parse_options(skb, &opt_rx, 0, NULL);
+-#else
+ 	tcp_parse_options(dev_net(skb->dev), skb, &opt_rx, 0, NULL);
+-#endif
+ 	/*
+ 	 * Was there an MSS?
+ 	 */
+--- a/ecm_types.h
++++ b/ecm_types.h
+@@ -8,7 +8,6 @@
+ #ifndef ECM_TYPES_H_
+ #define ECM_TYPES_H_
+ 
+-#include <linux/version.h>
+ #include <linux/printk.h>
+ #include <linux/debugfs.h>
+ 
+@@ -17,15 +16,9 @@
+  * GRE_VERSION_1701 and GRE_VERSION_PPTP macros in kernel version <  4.9 needs to be converted
+  * to big endian since GRE_VERSION with which it compares is in big endian
+  */
+-#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 9, 0))
+-#define ECM_GRE_VERSION_0   __cpu_to_be16(GRE_VERSION_1701)
+-#define ECM_GRE_VERSION_1   __cpu_to_be16(GRE_VERSION_PPTP)
+-typedef struct gre_hdr_pptp ecm_gre_hdr_pptp;
+-#else
+ #define ECM_GRE_VERSION_0   GRE_VERSION_0
+ #define ECM_GRE_VERSION_1   GRE_VERSION_1
+ typedef struct pptp_gre_header ecm_gre_hdr_pptp;
+-#endif
+ 
+ /*
+  * Flow/Return direction types.
+@@ -604,9 +597,5 @@ static inline bool ecm_debugfs_lookup(co
+ /* Linux 6.11 made the first argument of proc_handler 'const'.
+  * Define a macro to handle this difference.
+  */
+-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 11, 0)
+ #define ECM_CTL_TABLE_CONST const
+-#else
+-#define ECM_CTL_TABLE_CONST
+-#endif
+ 
+--- a/frontends/cmn/ecm_ipv4.c
++++ b/frontends/cmn/ecm_ipv4.c
+@@ -6,7 +6,6 @@
+  ***************************************************************************
+  */
+ 
+-#include <linux/version.h>
+ #include <linux/types.h>
+ #include <linux/ip.h>
+ #include <linux/tcp.h>
+@@ -1174,11 +1173,7 @@ unsigned int ecm_ipv4_ip_process(struct
+ 		 * So, for the newer kernels, instead of comparing the ct with the percpu
+ 		 * fake conntrack, we can check the ct status.
+ 		 */
+-#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 12, 0))
+-		if (unlikely(ct == nf_ct_untracked_get())) {
+-#else
+ 		if (unlikely(ctinfo == IP_CT_UNTRACKED)) {
+-#endif
+ #ifdef ECM_INTERFACE_VXLAN_ENABLE
+ 			/*
+ 			 * If the conntrack connection is set as untracked,
+@@ -1834,7 +1829,7 @@ static unsigned int ecm_ipv4_pppoe_bridg
+ 	struct ecm_tracker_ip_header ip_hdr;
+ 	unsigned int result = NF_ACCEPT;
+ 	struct pppoe_hdr *ph = pppoe_hdr(skb);
+-	uint16_t ppp_proto = *(uint16_t *)ph->tag;
++	uint16_t ppp_proto = *(uint16_t *)(ph + 1);
+ 	uint32_t encap_header_len = 0;
+ 
+ 	ppp_proto = ntohs(ppp_proto);
+--- a/frontends/cmn/ecm_ipv6.c
++++ b/frontends/cmn/ecm_ipv6.c
+@@ -6,7 +6,6 @@
+  ***************************************************************************
+  */
+ 
+-#include <linux/version.h>
+ #include <linux/types.h>
+ #include <linux/ip.h>
+ #include <linux/tcp.h>
+@@ -1162,11 +1161,7 @@ unsigned int ecm_ipv6_ip_process(struct
+ 		 * So, for the newer kernels, instead of comparing the ct with the percpu
+ 		 * fake conntrack, we can check the ct status.
+ 		 */
+-#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 12, 0))
+-		if (unlikely(ct == nf_ct_untracked_get())) {
+-#else
+ 		if (unlikely(ctinfo == IP_CT_UNTRACKED)) {
+-#endif
+ #ifdef ECM_INTERFACE_VXLAN_ENABLE
+ 			/*
+ 			 * If the conntrack connection is set as untracked,
+@@ -1940,7 +1935,7 @@ static unsigned int ecm_ipv6_pppoe_bridg
+ 	struct ecm_tracker_ip_header ip_hdr;
+ 	unsigned int result = NF_ACCEPT;
+ 	struct pppoe_hdr *ph = pppoe_hdr(skb);
+-	uint16_t ppp_proto = *(uint16_t *)ph->tag;
++	uint16_t ppp_proto = *(uint16_t *)(ph + 1);
+ 	uint32_t encap_header_len = 0;
+ 
+ 	ppp_proto = ntohs(ppp_proto);
+--- a/frontends/cmn/ecm_ported_ipv4.c
++++ b/frontends/cmn/ecm_ported_ipv4.c
+@@ -45,7 +45,6 @@
+ #ifdef ECM_INTERFACE_VXLAN_ENABLE
+ #include <net/vxlan.h>
+ #endif
+-#include <linux/netfilter/nf_conntrack_tftp.h>
+ #ifdef ECM_INTERFACE_VLAN_ENABLE
+ #include <linux/if_vlan.h>
+ #endif
+@@ -336,7 +335,7 @@ unsigned int ecm_ported_ipv4_process(str
+ 			src_port = src_port_nat = dest_port;
+ 		}
+ #endif
+-		if (ct && nfct_help(ct) && (dest_port == TFTP_PORT)) {
++		if (ct && nfct_help(ct) && (dest_port == ECM_TFTP_PORT)) {
+ 			DEBUG_TRACE("%px: Connection has helper but protocol is TFTP, it can be accelerated\n", ct);
+ 			flags |= ECM_FRONT_END_ENGINE_FLAG_CAN_ACCEL;
+ 		}
+--- a/frontends/cmn/ecm_ported_ipv6.c
++++ b/frontends/cmn/ecm_ported_ipv6.c
+@@ -45,7 +45,6 @@
+ #ifdef ECM_INTERFACE_VXLAN_ENABLE
+ #include <net/vxlan.h>
+ #endif
+-#include <linux/netfilter/nf_conntrack_tftp.h>
+ #ifdef ECM_INTERFACE_VLAN_ENABLE
+ #include <linux/if_vlan.h>
+ #endif
+@@ -368,7 +367,7 @@ unsigned int ecm_ported_ipv6_process(str
+ 			src_port = src_port_nat = dest_port;
+ 		}
+ #endif
+-		if (ct && nfct_help(ct) && (dest_port == TFTP_PORT)) {
++		if (ct && nfct_help(ct) && (dest_port == ECM_TFTP_PORT)) {
+ 			DEBUG_TRACE("%px: Connection has helper but protocol is TFTP, it can be accelerated\n", ct);
+ 			flags |= ECM_FRONT_END_ENGINE_FLAG_CAN_ACCEL;
+ 		}
+--- a/frontends/ecm_front_end_common.c
++++ b/frontends/ecm_front_end_common.c
+@@ -6,7 +6,6 @@
+  **************************************************************************
+  */
+ 
+-#include <linux/version.h>
+ #include <linux/module.h>
+ #include <linux/of.h>
+ #include <linux/debugfs.h>
+@@ -24,9 +23,7 @@
+ #include <net/addrconf.h>
+ #include <net/gre.h>
+ #include <net/xfrm.h>
+-#if (LINUX_VERSION_CODE > KERNEL_VERSION(6, 6, 0))
+ #include <net/tcx.h>
+-#endif
+ #include <linux/hashtable.h>
+ #include <net/sch_generic.h>
+ #include <linux/vmalloc.h>
+@@ -1101,12 +1098,8 @@ bool ecm_front_end_gre_proto_is_accel_al
+ 		}
+ 	} else {
+ #ifdef ECM_IPV6_ENABLE
+-#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 9, 0))
+-		dev = ipv6_dev_find(&init_net, &(orig_tuple->src.u3.in6), 1);
+-#else
+ 		dev = ipv6_dev_find(&init_net, &(orig_tuple->src.u3.in6), NULL);
+ 		dev_hold(dev);
+-#endif
+ 		if (dev) {
+ 			/*
+ 			 * Source IP address is local
+@@ -1116,12 +1109,8 @@ bool ecm_front_end_gre_proto_is_accel_al
+ 			return false;
+ 		}
+ 
+-#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 9, 0))
+-		dev = ipv6_dev_find(&init_net, &(orig_tuple->dst.u3.in6), 1);
+-#else
+ 		dev = ipv6_dev_find(&init_net, &(orig_tuple->dst.u3.in6), NULL);
+ 		dev_hold(dev);
+-#endif
+ 		if (dev) {
+ 			/*
+ 			 * Destination IP address is local
+@@ -1654,7 +1643,7 @@ static int ecm_front_end_tcp_denied_port
+  * ecm_front_end_unidir_accel_proc_handler()
+  *	Per-direction acceleration sysctl handler.
+  */
+-int ecm_front_end_unidir_accel_proc_handler(struct ctl_table *ctl, int write, void __user *buffer, size_t *lenp, loff_t *ppos)
++int ecm_front_end_unidir_accel_proc_handler(ECM_CTL_TABLE_CONST struct ctl_table *ctl, int write, void *buffer, size_t *lenp, loff_t *ppos)
+ {
+ 	int ret;
+ 
+@@ -1740,7 +1729,6 @@ static struct ctl_table ecm_front_end_sy
+ 		.mode		= 0644,
+ 		.proc_handler	= proc_dointvec,
+ 	},
+-	{}
+ };
+ 
+ /*
+@@ -2321,12 +2309,8 @@ bool ecm_front_end_common_intf_ingress_q
+ 	}
+ 
+ 	BUG_ON(!rcu_read_lock_bh_held());
+-#if (LINUX_VERSION_CODE < KERNEL_VERSION(6, 6, 0))
+-	miniq = rcu_dereference_bh(dev->miniq_ingress);
+-#else
+ 	struct bpf_mprog_entry *entry = rcu_dereference_bh(dev->tcx_ingress);
+ 	miniq = entry ? tcx_entry(entry)->miniq : NULL;
+-#endif
+ 	if (miniq) {
+ 		DEBUG_INFO("Ingress Qdisc is present for device[%s]\n", dev->name);
+ 		dev_put(dev);
+@@ -2440,12 +2424,8 @@ bool ecm_front_end_common_intf_qdisc_che
+ 	}
+ 
+ #if defined(CONFIG_NET_CLS_ACT) && defined(CONFIG_NET_EGRESS)
+-#if (LINUX_VERSION_CODE < KERNEL_VERSION(6, 6, 0))
+-	miniq = rcu_dereference_bh(dev->miniq_egress);
+-#else
+ 	struct bpf_mprog_entry *entry = rcu_dereference_bh(dev->tcx_egress);
+ 	miniq = entry ? tcx_entry(entry)->miniq : NULL;
+-#endif
+ 	if (miniq) {
+ 		DEBUG_INFO("Egress needed\n");
+ 		dev_put(dev);
+--- a/frontends/ecm_front_end_ipv4.c
++++ b/frontends/ecm_front_end_ipv4.c
+@@ -6,7 +6,6 @@
+  **************************************************************************
+  */
+ 
+-#include <linux/version.h>
+ #include <linux/module.h>
+ #include <linux/of.h>
+ #include <linux/debugfs.h>
+@@ -248,11 +247,7 @@ bool ecm_front_end_ipv4_interface_constr
+ 			DEBUG_WARN("No rt_iif dev\n");
+ 			return false;
+ 		}
+-#if (LINUX_VERSION_CODE <= KERNEL_VERSION(5, 2, 0))
+-		rt_gw4 = rt->rt_gateway;
+-#else
+ 		rt_gw4 = rt->rt_gw4;
+-#endif
+ 		dst_dev = dst->dev;
+ 
+ #ifdef ECM_XFRM_ENABLE
+--- a/frontends/include/ecm_front_end_common.h
++++ b/frontends/include/ecm_front_end_common.h
+@@ -28,6 +28,7 @@
+ #endif
+ 
+ #define ECM_FRONT_END_SYSCTL_PATH "/net/ecm"
++#define ECM_TFTP_PORT 69
+ #define ECM_FRONT_END_FAIL_REASON_SHIFT 15
+ 
+ /*
+@@ -159,11 +160,7 @@ static inline bool ecm_front_end_acceler
+ 		 */
+ 		return false;
+ 	}
+-#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 12, 0))
+-	if (unlikely(nf_ct_is_untracked(ct))) {
+-#else
+ 	if (unlikely(ctinfo == IP_CT_UNTRACKED)) {
+-#endif
+ 		/*
+ 		 * Untracked traffic certainly can't be accelerated.
+ 		 */
+--- a/frontends/nss/ecm_nss_common.h
++++ b/frontends/nss/ecm_nss_common.h
+@@ -275,11 +275,7 @@ static inline bool ecm_nss_common_igs_ac
+ 		/*
+ 		 * Check whether ingress qdisc is attached to the egress device or not.
+ 		 */
+-#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 15, 0))
+-		if (likely(!(to_dev->ingress_cl_list))) {
+-#else
+-		if (likely(!(to_dev->miniq_ingress))) {
+-#endif
++		if (likely(!(to_dev->tcx_ingress))) {
+ 			dev_put(to_dev);
+ 			continue;
+ 		}
+--- a/frontends/nss/ecm_nss_ipv4.c
++++ b/frontends/nss/ecm_nss_ipv4.c
+@@ -6,7 +6,6 @@
+  **************************************************************************
+  */
+ 
+-#include <linux/version.h>
+ #include <linux/types.h>
+ #include <linux/ip.h>
+ #include <linux/tcp.h>
+@@ -512,9 +511,6 @@ sync_conntrack:
+ 	}
+ 
+ 	ct = nf_ct_tuplehash_to_ctrack(h);
+-#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 9, 0))
+-	NF_CT_ASSERT(ct->timeout.data == (unsigned long)ct);
+-#endif
+ 	DEBUG_TRACE("%px: NSS Sync: conntrack connection\n", ct);
+ 
+ 	ecm_front_end_flow_and_return_directions_get(ct, flow_ip, 4, &flow_dir, &return_dir);
+@@ -525,11 +521,7 @@ sync_conntrack:
+ 	 */
+ 	if (!test_bit(IPS_FIXED_TIMEOUT_BIT, &ct->status)) {
+ 		spin_lock_bh(&ct->lock);
+-#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 9, 0))
+-		ct->timeout.expires += delta_jiffies;
+-#else
+ 		ct->timeout += delta_jiffies;
+-#endif
+ 		spin_unlock_bh(&ct->lock);
+ 	}
+ 
+@@ -588,14 +580,6 @@ sync_conntrack:
+ 
+ 				set_bit(IPS_SEEN_REPLY_BIT, &ct->status);
+ 				set_bit(IPS_ASSURED_BIT, &ct->status);
+-#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 19, 0))
+-				l4proto = __nf_ct_l4proto_find(AF_INET, IPPROTO_UDP);
+-				timeouts = nf_ct_timeout_lookup(&init_net, ct, l4proto);
+-
+-				spin_lock_bh(&ct->lock);
+-				ct->timeout.expires = jiffies + timeouts[UDP_CT_REPLIED];
+-				spin_unlock_bh(&ct->lock);
+-#else
+ 				timeouts = nf_ct_timeout_lookup(ct);
+ 				if (!timeouts) {
+ 					timeouts = udp_get_timeouts(nf_ct_net(ct));
+@@ -604,7 +588,6 @@ sync_conntrack:
+ 				spin_lock_bh(&ct->lock);
+ 				ct->timeout = jiffies + timeouts[UDP_CT_REPLIED];
+ 				spin_unlock_bh(&ct->lock);
+-#endif
+ 			}
+ 		}
+ 		break;
+--- a/frontends/nss/ecm_nss_ipv6.c
++++ b/frontends/nss/ecm_nss_ipv6.c
+@@ -6,7 +6,6 @@
+  **************************************************************************
+  */
+ 
+-#include <linux/version.h>
+ #include <linux/types.h>
+ #include <linux/ip.h>
+ #include <linux/tcp.h>
+@@ -492,9 +491,6 @@ sync_conntrack:
+ 	}
+ 
+ 	ct = nf_ct_tuplehash_to_ctrack(h);
+-#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 9, 0))
+-	NF_CT_ASSERT(ct->timeout.data == (unsigned long)ct);
+-#endif
+ 	DEBUG_TRACE("%px: NSS Sync: conntrack connection\n", ct);
+ 
+ 	ecm_front_end_flow_and_return_directions_get(ct, flow_ip, 6, &flow_dir, &return_dir);
+@@ -505,11 +501,7 @@ sync_conntrack:
+ 	 */
+ 	if (!test_bit(IPS_FIXED_TIMEOUT_BIT, &ct->status)) {
+ 		spin_lock_bh(&ct->lock);
+-#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 9, 0))
+-		ct->timeout.expires += delta_jiffies;
+-#else
+ 		ct->timeout += delta_jiffies;
+-#endif
+ 		spin_unlock_bh(&ct->lock);
+ 	}
+ 
+@@ -565,14 +557,6 @@ sync_conntrack:
+ 			if (reply_pkts != 0) {
+ 				struct nf_conntrack_l4proto *l4proto __maybe_unused;
+ 				unsigned int *timeouts;
+-#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 19, 0))
+-				l4proto = __nf_ct_l4proto_find(AF_INET6, IPPROTO_UDP);
+-				timeouts = nf_ct_timeout_lookup(&init_net, ct, l4proto);
+-
+-				spin_lock_bh(&ct->lock);
+-				ct->timeout.expires = jiffies + timeouts[UDP_CT_REPLIED];
+-				spin_unlock_bh(&ct->lock);
+-#else
+ 				timeouts = nf_ct_timeout_lookup(ct);
+ 				if (!timeouts) {
+ 					timeouts = udp_get_timeouts(nf_ct_net(ct));
+@@ -581,7 +565,6 @@ sync_conntrack:
+ 				spin_lock_bh(&ct->lock);
+ 				ct->timeout = jiffies + timeouts[UDP_CT_REPLIED];
+ 				spin_unlock_bh(&ct->lock);
+-#endif
+ 			}
+ 		}
+ 		break;
+--- a/frontends/nss/ecm_nss_ported_ipv4.c
++++ b/frontends/nss/ecm_nss_ported_ipv4.c
+@@ -6,7 +6,6 @@
+  **************************************************************************
+  */
+ 
+-#include <linux/version.h>
+ #include <linux/types.h>
+ #include <linux/ip.h>
+ #include <linux/tcp.h>
+@@ -50,7 +49,6 @@
+ #ifdef ECM_INTERFACE_VXLAN_ENABLE
+ #include <net/vxlan.h>
+ #endif
+-#include <linux/netfilter/nf_conntrack_tftp.h>
+ #ifdef ECM_INTERFACE_VLAN_ENABLE
+ #include <linux/if_vlan.h>
+ #endif
+@@ -91,15 +89,6 @@
+ static int ecm_nss_ported_ipv4_accelerated_count[ECM_FRONT_END_PORTED_PROTO_MAX] = {0};
+ 						/* Array of Number of TCP and UDP connections currently offloaded */
+ 
+-#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 13, 0))
+-/*
+- * Expose what should be a static flag in the TCP connection tracker.
+- */
+-#ifdef ECM_OPENWRT_SUPPORT
+-extern int nf_ct_tcp_no_window_check;
+-#endif
+-extern int nf_ct_tcp_be_liberal;
+-#endif
+ 
+ /*
+  * ecm_nss_ported_ipv4_connection_callback()
+@@ -1338,14 +1327,9 @@ static void ecm_nss_ported_ipv4_connecti
+ 		} else {
+ 			int flow_dir;
+ 			int return_dir;
+-#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 13, 0))
+-			uint32_t tcp_be_liberal = nf_ct_tcp_be_liberal;
+-			uint32_t tcp_no_window_check = nf_ct_tcp_no_window_check;
+-#else
+ 			struct nf_tcp_net *tn = nf_tcp_pernet(nf_ct_net(ct));
+ 			uint32_t tcp_be_liberal = tn->tcp_be_liberal;
+ 			uint32_t tcp_no_window_check = tn->tcp_no_window_check;
+-#endif
+ 			ecm_db_connection_address_get(feci->ci, ECM_DB_OBJ_DIR_FROM, addr);
+ 			ecm_front_end_flow_and_return_directions_get(ct, addr, 4, &flow_dir, &return_dir);
+ 
+--- a/frontends/nss/ecm_nss_ported_ipv6.c
++++ b/frontends/nss/ecm_nss_ported_ipv6.c
+@@ -6,7 +6,6 @@
+  **************************************************************************
+  */
+ 
+-#include <linux/version.h>
+ #include <linux/types.h>
+ #include <linux/ip.h>
+ #include <linux/tcp.h>
+@@ -50,7 +49,6 @@
+ #ifdef ECM_INTERFACE_VXLAN_ENABLE
+ #include <net/vxlan.h>
+ #endif
+-#include <linux/netfilter/nf_conntrack_tftp.h>
+ #ifdef ECM_INTERFACE_VLAN_ENABLE
+ #include <linux/if_vlan.h>
+ #endif
+@@ -92,15 +90,6 @@
+ static int ecm_nss_ported_ipv6_accelerated_count[ECM_FRONT_END_PORTED_PROTO_MAX] = {0};
+ 						/* Array of Number of TCP and UDP connections currently offloaded */
+ 
+-#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 13, 0))
+-/*
+- * Expose what should be a static flag in the TCP connection tracker.
+- */
+-#ifdef ECM_OPENWRT_SUPPORT
+-extern int nf_ct_tcp_no_window_check;
+-#endif
+-extern int nf_ct_tcp_be_liberal;
+-#endif
+ 
+ /*
+  * ecm_nss_ported_ipv6_connection_callback()
+@@ -1266,14 +1255,9 @@ static void ecm_nss_ported_ipv6_connecti
+ 		} else {
+ 			int flow_dir;
+ 			int return_dir;
+-#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 13, 0))
+-			uint32_t tcp_be_liberal = nf_ct_tcp_be_liberal;
+-			uint32_t tcp_no_window_check = nf_ct_tcp_no_window_check;
+-#else
+ 			struct nf_tcp_net *tn = nf_tcp_pernet(nf_ct_net(ct));
+ 			uint32_t tcp_be_liberal = tn->tcp_be_liberal;
+ 			uint32_t tcp_no_window_check = tn->tcp_no_window_check;
+-#endif
+ 			ecm_front_end_flow_and_return_directions_get(ct, src_ip, 6, &flow_dir, &return_dir);
+ 
+ 			DEBUG_TRACE("%px: TCP Accel Get window data from ct %px for conn %px\n", feci, ct, feci->ci);
+--- a/frontends/ppe/ecm_ppe_common.c
++++ b/frontends/ppe/ecm_ppe_common.c
+@@ -5,7 +5,6 @@
+  **************************************************************************
+  */
+ 
+-#include <linux/version.h>
+ #include <linux/types.h>
+ #include <linux/ip.h>
+ #include <net/ipv6.h>
+@@ -233,9 +232,6 @@ bool ecm_ppe_feature_check(struct sk_buf
+ 
+ #ifdef ECM_OPENWRT_SUPPORT
+ 	if (ip_hdr->protocol == IPPROTO_TCP) {
+-#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 13, 0))
+-		uint32_t tcp_no_window_check = nf_ct_tcp_no_window_check;
+-#else
+ 		struct nf_conn *ct;
+ 		enum ip_conntrack_info ctinfo;
+ 		struct nf_tcp_net *tn;
+@@ -255,7 +251,6 @@ bool ecm_ppe_feature_check(struct sk_buf
+ 
+ 		tn = nf_tcp_pernet(nf_ct_net(ct));
+ 		tcp_no_window_check = tn->tcp_no_window_check;
+-#endif
+ 		if(unlikely(tcp_no_window_check == 0)) {
+ 			DEBUG_TRACE("%px: TCP window check feature not supported for PPE; skip it\n", skb);
+ 			return false;
+--- a/frontends/ppe/ecm_ppe_ipv4.c
++++ b/frontends/ppe/ecm_ppe_ipv4.c
+@@ -5,7 +5,6 @@
+  **************************************************************************
+  */
+ 
+-#include <linux/version.h>
+ #include <linux/types.h>
+ #include <linux/ip.h>
+ #include <linux/tcp.h>
+@@ -50,6 +49,7 @@
+ #include <net/netfilter/ipv4/nf_defrag_ipv4.h>
+ #ifdef ECM_INTERFACE_VLAN_ENABLE
+ #include <linux/if_vlan.h>
++#include <linux/vmalloc.h>
+ #endif
+ 
+ /*
+@@ -435,9 +435,6 @@ sync_conntrack:
+ 	}
+ 
+ 	ct = nf_ct_tuplehash_to_ctrack(h);
+-#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 9, 0))
+-	NF_CT_ASSERT(ct->timeout.data == (unsigned long)ct);
+-#endif
+ 	DEBUG_TRACE("%px: PPE Sync: conntrack connection\n", ct);
+ 
+ 	ecm_front_end_flow_and_return_directions_get(ct, flow_ip, 4, &flow_dir, &return_dir);
+@@ -448,11 +445,7 @@ sync_conntrack:
+ 	 */
+ 	if (!test_bit(IPS_FIXED_TIMEOUT_BIT, &ct->status)) {
+ 		spin_lock_bh(&ct->lock);
+-#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 9, 0))
+-		ct->timeout.expires += delta_jiffies;
+-#else
+ 		ct->timeout += delta_jiffies;
+-#endif
+ 		spin_unlock_bh(&ct->lock);
+ 	}
+ 
+@@ -491,14 +484,6 @@ sync_conntrack:
+ 
+ 				set_bit(IPS_SEEN_REPLY_BIT, &ct->status);
+ 				set_bit(IPS_ASSURED_BIT, &ct->status);
+-#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 19, 0))
+-				l4proto = __nf_ct_l4proto_find(AF_INET, IPPROTO_UDP);
+-				timeouts = nf_ct_timeout_lookup(&init_net, ct, l4proto);
+-
+-				spin_lock_bh(&ct->lock);
+-				ct->timeout.expires = jiffies + timeouts[UDP_CT_REPLIED];
+-				spin_unlock_bh(&ct->lock);
+-#else
+ 				timeouts = nf_ct_timeout_lookup(ct);
+ 				if (!timeouts) {
+ 					timeouts = udp_get_timeouts(nf_ct_net(ct));
+@@ -507,7 +492,6 @@ sync_conntrack:
+ 				spin_lock_bh(&ct->lock);
+ 				ct->timeout = jiffies + timeouts[UDP_CT_REPLIED];
+ 				spin_unlock_bh(&ct->lock);
+-#endif
+ 			}
+ 		}
+ 		break;
+--- a/frontends/ppe/ecm_ppe_ipv6.c
++++ b/frontends/ppe/ecm_ppe_ipv6.c
+@@ -5,7 +5,6 @@
+  **************************************************************************
+  */
+ 
+-#include <linux/version.h>
+ #include <linux/types.h>
+ #include <linux/ip.h>
+ #include <linux/tcp.h>
+@@ -497,9 +496,6 @@ sync_conntrack:
+ 	}
+ 
+ 	ct = nf_ct_tuplehash_to_ctrack(h);
+-#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 9, 0))
+-	NF_CT_ASSERT(ct->timeout.data == (unsigned long)ct);
+-#endif
+ 	DEBUG_TRACE("%px: PPE Sync: conntrack connection\n", ct);
+ 
+ 	ecm_front_end_flow_and_return_directions_get(ct, flow_ip, 6, &flow_dir, &return_dir);
+@@ -510,11 +506,7 @@ sync_conntrack:
+ 	 */
+ 	if (!test_bit(IPS_FIXED_TIMEOUT_BIT, &ct->status)) {
+ 		spin_lock_bh(&ct->lock);
+-#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 9, 0))
+-		ct->timeout.expires += delta_jiffies;
+-#else
+ 		ct->timeout += delta_jiffies;
+-#endif
+ 		spin_unlock_bh(&ct->lock);
+ 	}
+ 
+@@ -553,14 +545,6 @@ sync_conntrack:
+ 
+ 				set_bit(IPS_SEEN_REPLY_BIT, &ct->status);
+ 				set_bit(IPS_ASSURED_BIT, &ct->status);
+-#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 19, 0))
+-				l4proto = __nf_ct_l4proto_find(AF_INET6, IPPROTO_UDP);
+-				timeouts = nf_ct_timeout_lookup(&init_net, ct, l4proto);
+-
+-				spin_lock_bh(&ct->lock);
+-				ct->timeout.expires = jiffies + timeouts[UDP_CT_REPLIED];
+-				spin_unlock_bh(&ct->lock);
+-#else
+ 				timeouts = nf_ct_timeout_lookup(ct);
+ 				if (!timeouts) {
+ 					timeouts = udp_get_timeouts(nf_ct_net(ct));
+@@ -569,7 +553,6 @@ sync_conntrack:
+ 				spin_lock_bh(&ct->lock);
+ 				ct->timeout = jiffies + timeouts[UDP_CT_REPLIED];
+ 				spin_unlock_bh(&ct->lock);
+-#endif
+ 			}
+ 		}
+ 		break;
+--- a/frontends/ppe/ecm_ppe_ported_ipv4.c
++++ b/frontends/ppe/ecm_ppe_ported_ipv4.c
+@@ -49,7 +49,6 @@
+ #ifdef ECM_INTERFACE_VXLAN_ENABLE
+ #include <net/vxlan.h>
+ #endif
+-#include <linux/netfilter/nf_conntrack_tftp.h>
+ #ifdef ECM_INTERFACE_VLAN_ENABLE
+ #include <linux/if_vlan.h>
+ #endif
+--- a/frontends/ppe/ecm_ppe_ported_ipv6.c
++++ b/frontends/ppe/ecm_ppe_ported_ipv6.c
+@@ -49,7 +49,6 @@
+ #ifdef ECM_INTERFACE_VXLAN_ENABLE
+ #include <net/vxlan.h>
+ #endif
+-#include <linux/netfilter/nf_conntrack_tftp.h>
+ #ifdef ECM_INTERFACE_VLAN_ENABLE
+ #include <linux/if_vlan.h>
+ #endif
+--- a/frontends/sfe/ecm_sfe_ipv4.c
++++ b/frontends/sfe/ecm_sfe_ipv4.c
+@@ -6,7 +6,6 @@
+  **************************************************************************
+  */
+ 
+-#include <linux/version.h>
+ #include <linux/types.h>
+ #include <linux/ip.h>
+ #include <linux/tcp.h>
+@@ -456,9 +455,6 @@ sync_conntrack:
+ 	}
+ 
+ 	ct = nf_ct_tuplehash_to_ctrack(h);
+-#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 9, 0))
+-	NF_CT_ASSERT(ct->timeout.data == (unsigned long)ct);
+-#endif
+ 	DEBUG_TRACE("%px: SFE Sync: conntrack connection\n", ct);
+ 
+ 	ecm_front_end_flow_and_return_directions_get(ct, flow_ip, 4, &flow_dir, &return_dir);
+@@ -478,11 +474,7 @@ sync_conntrack:
+ 		delta_jiffies = ((sync->inc_ticks * HZ) + (MSEC_PER_SEC / 2)) / MSEC_PER_SEC;
+ 
+ 		spin_lock_bh(&ct->lock);
+-#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 9, 0))
+-		ct->timeout.expires += delta_jiffies;
+-#else
+ 		ct->timeout += delta_jiffies;
+-#endif
+ 		spin_unlock_bh(&ct->lock);
+ 	}
+ 
+@@ -541,14 +533,6 @@ sync_conntrack:
+ 
+ 				set_bit(IPS_SEEN_REPLY_BIT, &ct->status);
+ 				set_bit(IPS_ASSURED_BIT, &ct->status);
+-#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 19, 0))
+-				l4proto = __nf_ct_l4proto_find(AF_INET, IPPROTO_UDP);
+-				timeouts = nf_ct_timeout_lookup(&init_net, ct, l4proto);
+-
+-				spin_lock_bh(&ct->lock);
+-				ct->timeout.expires = jiffies + timeouts[UDP_CT_REPLIED];
+-				spin_unlock_bh(&ct->lock);
+-#else
+ 				timeouts = nf_ct_timeout_lookup(ct);
+ 				if (!timeouts) {
+ 					timeouts = udp_get_timeouts(nf_ct_net(ct));
+@@ -557,7 +541,6 @@ sync_conntrack:
+ 				spin_lock_bh(&ct->lock);
+ 				ct->timeout = jiffies + timeouts[UDP_CT_REPLIED];
+ 				spin_unlock_bh(&ct->lock);
+-#endif
+ 			}
+ 		}
+ 		break;
+--- a/frontends/sfe/ecm_sfe_ipv6.c
++++ b/frontends/sfe/ecm_sfe_ipv6.c
+@@ -6,7 +6,6 @@
+  **************************************************************************
+  */
+ 
+-#include <linux/version.h>
+ #include <linux/types.h>
+ #include <linux/ip.h>
+ #include <linux/tcp.h>
+@@ -462,9 +461,6 @@ sync_conntrack:
+ 	}
+ 
+ 	ct = nf_ct_tuplehash_to_ctrack(h);
+-#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 9, 0))
+-	NF_CT_ASSERT(ct->timeout.data == (unsigned long)ct);
+-#endif
+ 	DEBUG_TRACE("%px: SFE Sync: conntrack connection\n", ct);
+ 
+ 	ecm_front_end_flow_and_return_directions_get(ct, flow_ip, 6, &flow_dir, &return_dir);
+@@ -484,11 +480,7 @@ sync_conntrack:
+ 		delta_jiffies = ((sync->inc_ticks * HZ) + (MSEC_PER_SEC / 2)) / MSEC_PER_SEC;
+ 
+ 		spin_lock_bh(&ct->lock);
+-#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 9, 0))
+-		ct->timeout.expires += delta_jiffies;
+-#else
+ 		ct->timeout += delta_jiffies;
+-#endif
+ 		spin_unlock_bh(&ct->lock);
+ 	}
+ 	acct = nf_conn_acct_find(ct)->counter;
+@@ -546,14 +538,6 @@ sync_conntrack:
+ 
+ 				set_bit(IPS_SEEN_REPLY_BIT, &ct->status);
+ 				set_bit(IPS_ASSURED_BIT, &ct->status);
+-#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 19, 0))
+-				l4proto = __nf_ct_l4proto_find(AF_INET6, IPPROTO_UDP);
+-				timeouts = nf_ct_timeout_lookup(&init_net, ct, l4proto);
+-
+-				spin_lock_bh(&ct->lock);
+-				ct->timeout.expires = jiffies + timeouts[UDP_CT_REPLIED];
+-				spin_unlock_bh(&ct->lock);
+-#else
+ 				timeouts = nf_ct_timeout_lookup(ct);
+ 				if (!timeouts) {
+ 					timeouts = udp_get_timeouts(nf_ct_net(ct));
+@@ -562,7 +546,6 @@ sync_conntrack:
+ 				spin_lock_bh(&ct->lock);
+ 				ct->timeout = jiffies + timeouts[UDP_CT_REPLIED];
+ 				spin_unlock_bh(&ct->lock);
+-#endif
+ 			}
+ 		}
+ 		break;
+--- a/frontends/sfe/ecm_sfe_ported_ipv4.c
++++ b/frontends/sfe/ecm_sfe_ported_ipv4.c
+@@ -6,7 +6,6 @@
+  **************************************************************************
+  */
+ 
+-#include <linux/version.h>
+ #include <linux/types.h>
+ #include <linux/ip.h>
+ #include <linux/tcp.h>
+@@ -41,7 +40,6 @@
+ #include <net/netfilter/nf_conntrack_core.h>
+ #include <net/netfilter/ipv4/nf_conntrack_ipv4.h>
+ #include <net/netfilter/ipv4/nf_defrag_ipv4.h>
+-#include <linux/netfilter/nf_conntrack_tftp.h>
+ #ifdef ECM_INTERFACE_DSA_ENABLE
+ #include <linux/dsa/8021q.h>
+ #include <net/dsa.h>
+@@ -194,15 +192,6 @@ static void ecm_sfe_ported_ipv4_wifi_flo
+ }
+ #endif
+ 
+-#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 13, 0))
+-/*
+- * Expose what should be a static flag in the TCP connection tracker.
+- */
+-#ifdef ECM_OPENWRT_SUPPORT
+-extern int nf_ct_tcp_no_window_check;
+-#endif
+-extern int nf_ct_tcp_be_liberal;
+-#endif
+ 
+ /*
+  * ecm_sfe_ported_ipv4_connection_callback()
+@@ -1930,14 +1919,9 @@ static void ecm_sfe_ported_ipv4_connecti
+ 		} else {
+ 			int flow_dir;
+ 			int return_dir;
+-#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 13, 0))
+-			uint32_t tcp_be_liberal = nf_ct_tcp_be_liberal;
+-			uint32_t tcp_no_window_check = nf_ct_tcp_no_window_check;
+-#else
+ 			struct nf_tcp_net *tn = nf_tcp_pernet(nf_ct_net(ct));
+ 			uint32_t tcp_be_liberal = tn->tcp_be_liberal;
+ 			uint32_t tcp_no_window_check = tn->tcp_no_window_check;
+-#endif
+ 			ecm_db_connection_address_get(feci->ci, ECM_DB_OBJ_DIR_FROM, addr);
+ 			ecm_front_end_flow_and_return_directions_get(ct, addr, 4, &flow_dir, &return_dir);
+ 
+--- a/frontends/sfe/ecm_sfe_ported_ipv6.c
++++ b/frontends/sfe/ecm_sfe_ported_ipv6.c
+@@ -6,7 +6,6 @@
+  **************************************************************************
+  */
+ 
+-#include <linux/version.h>
+ #include <linux/types.h>
+ #include <linux/ip.h>
+ #include <linux/tcp.h>
+@@ -42,7 +41,6 @@
+ #include <net/netfilter/nf_conntrack_core.h>
+ #include <net/netfilter/ipv6/nf_conntrack_ipv6.h>
+ #include <net/netfilter/ipv6/nf_defrag_ipv6.h>
+-#include <linux/netfilter/nf_conntrack_tftp.h>
+ #ifdef ECM_INTERFACE_DSA_ENABLE
+ #include <linux/dsa/8021q.h>
+ #include <net/dsa.h>
+@@ -194,15 +192,6 @@ static void ecm_sfe_ported_ipv6_wifi_flo
+ }
+ #endif
+ 
+-#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 13, 0))
+-/*
+- * Expose what should be a static flag in the TCP connection tracker.
+- */
+-#ifdef ECM_OPENWRT_SUPPORT
+-extern int nf_ct_tcp_no_window_check;
+-#endif
+-extern int nf_ct_tcp_be_liberal;
+-#endif
+ 
+ /*
+  * ecm_sfe_ported_ipv6_connection_callback()
+@@ -1963,14 +1952,9 @@ static void ecm_sfe_ported_ipv6_connecti
+ 		} else {
+ 			int flow_dir;
+ 			int return_dir;
+-#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 13, 0))
+-			uint32_t tcp_be_liberal = nf_ct_tcp_be_liberal;
+-			uint32_t tcp_no_window_check = nf_ct_tcp_no_window_check;
+-#else
+ 			struct nf_tcp_net *tn = nf_tcp_pernet(nf_ct_net(ct));
+ 			uint32_t tcp_be_liberal = tn->tcp_be_liberal;
+ 			uint32_t tcp_no_window_check = tn->tcp_no_window_check;
+-#endif
+ 			ecm_front_end_flow_and_return_directions_get(ct, src_ip, 6, &flow_dir, &return_dir);
+ 
+ 			DEBUG_TRACE("%px: TCP Accel Get window data from ct %px for conn %px\n", feci, ct, feci->ci);

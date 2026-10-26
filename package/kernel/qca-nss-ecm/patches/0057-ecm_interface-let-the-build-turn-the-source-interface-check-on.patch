@@ -1,0 +1,41 @@
+From: Stanislaw Pal <kuncy7@gmail.com>
+Subject: [PATCH] ecm_interface: let the build turn the source interface check
+ on
+
+The firmware finds a connection by its 5-tuple alone. A flow that crosses
+the box twice - a guest client behind an access point reaching a device
+on the LAN behind the same access point, through a router on the shared
+uplink - is bridged in the guest VLAN on the way out and in the LAN VLAN
+on the way back. Once the first leg is accelerated, the packet of the
+second leg matches its rule and is sent out of the uplink again, with the
+L2 header it arrived with.
+
+net.ecm.src_interface_check makes the front end set the SRC_INTERFACE_CHECK
+flag on every rule: the firmware then hands a packet that arrives on
+another interface than the rule's to the host and drops the rule. It is
+off by default and can only be turned on once the module is loaded, when
+the first rules may already be in the firmware - and one packet forwarded
+the wrong way is enough.
+
+Let the build choose the initial value. The sysctl works as before.
+
+Signed-off-by: Stanislaw Pal <kuncy7@gmail.com>
+diff -urN a/ecm_interface.c b/ecm_interface.c
+--- a/ecm_interface.c	2026-10-10 17:00:21.537634334 +0200
++++ b/ecm_interface.c	2026-10-10 17:00:21.553634654 +0200
+@@ -203,8 +203,14 @@
+  * Source interface check flag.
+  *	If it is enabled, the acceleration engine will check the flow's interface to see
+  *	whether it matches with the rule's source interface or not.
++ *
++ *	The build can turn it on from the start (ECM_INTERFACE_SRC_CHECK_DEFAULT);
++ *	net.ecm.src_interface_check still changes it at run time.
+  */
+-int ecm_interface_src_check;
++#ifndef ECM_INTERFACE_SRC_CHECK_DEFAULT
++#define ECM_INTERFACE_SRC_CHECK_DEFAULT 0
++#endif
++int ecm_interface_src_check = ECM_INTERFACE_SRC_CHECK_DEFAULT;
+ 
+ /*
+  * Sysctl to enable mwan3

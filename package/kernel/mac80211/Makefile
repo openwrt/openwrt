@@ -35,6 +35,9 @@ PKG_CONFIG_DEPENDS:= \
 	CONFIG_PACKAGE_CFG80211_TESTMODE \
 	CONFIG_PACKAGE_MAC80211_DEBUGFS \
 	CONFIG_PACKAGE_MAC80211_MESH \
+	CONFIG_PACKAGE_MAC80211_NSS_SUPPORT \
+	CONFIG_NSS_FIRMWARE_VERSION_12_2 \
+	CONFIG_NSS_FIRMWARE_VERSION_12_5 \
 	CONFIG_PACKAGE_MAC80211_TRACING \
 	CONFIG_PACKAGE_IWLWIFI_DEBUG \
 	CONFIG_PACKAGE_IWLWIFI_DEBUGFS \
@@ -86,6 +89,7 @@ config-$(CONFIG_PACKAGE_CFG80211_TESTMODE) += NL80211_TESTMODE
 
 config-$(call config_package,mac80211,$(ALL_VARIANTS)) += MAC80211
 config-$(CONFIG_PACKAGE_MAC80211_MESH) += MAC80211_MESH
+config-$(CONFIG_PACKAGE_MAC80211_NSS_SUPPORT) += MAC80211_NSS_SUPPORT
 
 include ath.mk
 include broadcom.mk
@@ -130,7 +134,7 @@ define KernelPackage/mac80211
   $(call KernelPackage/mac80211/Default)
   TITLE:=Linux 802.11 Wireless Networking Stack
   # +kmod-crypto-cmac is a runtime only dependency of net/mac80211/aes_cmac.c
-  DEPENDS+= +kmod-cfg80211 +kmod-crypto-cmac +kmod-crypto-ccm +kmod-crypto-gcm +hostapd-common
+  DEPENDS+= +ATH11K_NSS_SUPPORT:kmod-qca-nss-drv +kmod-cfg80211 +kmod-crypto-cmac +kmod-crypto-ccm +kmod-crypto-gcm +hostapd-common
   KCONFIG:=\
 	CONFIG_AVERAGE=y
   FILES:= $(PKG_BUILD_DIR)/net/mac80211/mac80211.ko
@@ -140,6 +144,9 @@ endef
 
 define KernelPackage/mac80211/config
   if PACKAGE_kmod-mac80211
+
+	config PACKAGE_MAC80211_NSS_SUPPORT
+		bool
 
 	config PACKAGE_MAC80211_DEBUGFS
 		bool "Export mac80211 internals in DebugFS"
@@ -291,6 +298,11 @@ MAKE_OPTS:= \
 	KERNEL_SUBLEVEL=$(lastword $(subst ., ,$(KERNEL_PATCHVER))) \
 	KBUILD_LDFLAGS_MODULE_PREREQ=
 
+ifdef CONFIG_ATH11K_NSS_SUPPORT
+  # Match the NSS driver message layouts, including firmware-dependent fields.
+  MAKE_OPTS += CFLAGS="-I$(STAGING_DIR)/usr/include/qca-nss-drv$(if $(CONFIG_NSS_FIRMWARE_VERSION_12_2), -DNSS_FIRMWARE_VERSION_12_2)$(if $(CONFIG_NSS_FIRMWARE_VERSION_12_5), -DNSS_FIRMWARE_VERSION_12_5)"
+endif
+
 define ConfigVars
 $(subst $(space),,$(foreach opt,$(config-$(1)),CPTCFG_$(opt)=$(1)
 ))
@@ -354,6 +366,10 @@ define Build/Patch
 	$(call PatchDir,$(PKG_BUILD_DIR),$(PATCH_DIR)/mwl,mwl/)
 	$(call PatchDir,$(PKG_BUILD_DIR),$(PATCH_DIR)/brcm,brcm/)
 	$(call PatchDir,$(PKG_BUILD_DIR),$(PATCH_DIR)/rtl,rtl/)
+	$(if $(CONFIG_ATH11K_NSS_SUPPORT),$(call PatchDir,$(PKG_BUILD_DIR),$(PATCH_DIR)/nss/subsys,nss/subsys/))
+	$(if $(CONFIG_ATH11K_NSS_SUPPORT),$(call PatchDir,$(PKG_BUILD_DIR),$(PATCH_DIR)/nss/ath11k,nss/ath11k/))
+	$(if $(CONFIG_ATH11K_NSS_SUPPORT),$(call PatchDir,$(PKG_BUILD_DIR),$(PATCH_DIR)/nss-extra/subsys,nss-extra/subsys/))
+	$(if $(CONFIG_ATH11K_NSS_SUPPORT),$(call PatchDir,$(PKG_BUILD_DIR),$(PATCH_DIR)/nss-extra/ath11k,nss-extra/ath11k/))
 	$(if $(QUILT),touch $(PKG_BUILD_DIR)/.quilt_used)
 endef
 
