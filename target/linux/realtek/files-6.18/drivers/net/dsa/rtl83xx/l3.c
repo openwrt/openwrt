@@ -5072,7 +5072,559 @@ const struct otto_l3_config otto_l3_930x_cfg = {
 	.dbgfs_init = otto_l3_930x_dbgfs_init,
 };
 
+/* The RTL931x L3 block. These addresses, the sizes of the register arrays and
+ * the table descriptors in otto_table.c come from the Realtek GPL SDK's own
+ * metadata rather than from its code: rtk_mango_reg_list[] and
+ * rtk_mango_table_list[] describe every register and table as plain data. The
+ * same extraction run against rtk_longan_reg_list[] reproduces all eleven
+ * RTL930x addresses defined above, which is what says it is being read right.
+ */
+#define RTL931X_L3_IP_ROUTE_CTRL		0xf000
+#define RTL931X_L3_HOST_TBL_CTRL		0xf004
+#define RTL931X_L3_IPUC_ROUTE_CTRL		0xf008
+#define RTL931X_L3_IP6UC_ROUTE_CTRL		0xf00c
+#define RTL931X_L3_IPMC_ROUTE_CTRL		0xf010
+#define RTL931X_L3_IP6MC_ROUTE_CTRL		0xf014
+#define RTL931X_L3_PORT_IP_ROUTE_CTRL(p)	(0xf018 + ((p) << 2))
+#define RTL931X_L3_PORT_IP6_ROUTE_CTRL(p)	(0xf0fc + ((p) << 2))
+#define RTL931X_L3_INTF_IP_MTU(i)		(0xf1e0 + ((i) << 2))
+#define RTL931X_L3_INTF_IP6_MTU(i)		(0xf220 + ((i) << 2))
+#define RTL931X_L3_ENTRY_MV_CTRL		0xf260
+#define RTL931X_L3_ENTRY_MV_PARAM		0xf264
+#define RTL931X_L3_ECMP_HASH_CTRL		0xf268
+#define RTL931X_L3_MONT_CNTR_CTRL		0xf26c
+#define RTL931X_L3_HW_LU_KEY_CTRL		0xf29c
+#define RTL931X_L3_HW_LU_KEY_SIP_CTRL		0xf2a0
+#define RTL931X_L3_HW_LU_KEY_DIP_CTRL		0xf2b0
+#define RTL931X_L3_HW_LU_CTRL			0xf2c0
+
+/* Ports the two per-port route control arrays have a register for, and entries
+ * in each MTU table. The RTL930x holds two MTUs per register and has eight;
+ * the RTL931x has one per register and sixteen.
+ */
+#define RTL931X_L3_ROUTE_PORTS			57
+#define RTL931X_L3_INTF_MTUS			16
+
+/* The MTU itself is 14 bits of its register, not 16: the rest is the reserved
+ * field above it, which every one of them reads as zero.
+ */
+#define RTL931X_L3_MTU_MASK			0x3fff
+
+/* The RTL931x L3 block.
+ *
+ * It routes with the same set of tables as the RTL930x but a different
+ * interface model, so none of the accessors below is a copy of its RTL930x
+ * counterpart:
+ *
+ *  - one index names a row in BOTH L3_IGR_INTF and L3_EGR_INTF. The ingress
+ *    row carries the per-interface routing enables and the VRF the route
+ *    entries are compared against, the egress row the VID and source MAC, so
+ *    allocating an interface writes both halves.
+ *  - the source MAC sits in the egress interface row itself rather than in a
+ *    separate table reached through an index, so an interface's source MAC
+ *    index is the interface's own index.
+ *  - L3_ROUTER_MAC matches on the interface index, not on the VLAN.
+ *  - an ingress VLAN reaches its interface through VLAN table field 4.
+ *  - there is no DMAC table: a next hop names an L2 row, and that row carries
+ *    the gateway MAC inline, which is why .set_dmac stays unset.
+ *
+ * Field offsets are the SDK's own numbering - a bit position counted from the
+ * least significant bit of the LAST word of a row - which is why the
+ * accessors go through otto_l3_931x_fset()/fget() instead of open-coded
+ * shifts, and why a field is named once as an offset and a width.
+ *
+ * Confirmed on an S1300WP: a prefix route forwards, with the source MAC
+ * replaced by the interface's and the destination by the gateway's.
+ *
+ * Unicast only, v4 and v6. An IPv6 prefix entry spans three CONSECUTIVE rows,
+ * the same shape as on the RTL930x, but it takes three accesses rather than
+ * one: this prefix table is 6 words wide against the RTL930x's 11, too narrow
+ * for a 128 bit address and its mask, so row N goes through
+ * L3_PREFIX_ROUTE_IPUC - an IPv6 entry's first row IS the IPv4 layout, and
+ * carries the VRF, the action and the next hop - while N+1 and N+2 go through
+ * _IP6UC_1 and _2, three views of one table picked by what the row holds. The
+ * address and mask are cut 4, 6 and 6 bytes across the three.
+ *
+ * One limitation, deliberate:
+ *  - multicast is not offloaded. An IPMC entry is two rows and an IP6MC one
+ *    six, through their own views, and neither is implemented or tested.
+ *  - the VLAN to interface mapping lives in a row vlan.c owns, and the two
+ *    agree: struct otto_vlan_info carries if_id, otto_vlan_931x_tables_read()
+ *    and otto_vlan_931x_set_tagged() decode and re-encode the same bits this
+ *    writes, and the VLAN add and delete paths read-modify-write through them
+ *    under the same priv->reg_mutex this holds. So the mapping survives VLAN
+ *    reconfiguration and the two writers are serialised. The one path that
+ *    clears it is otto_vlan_setup(), which runs once at switch probe before
+ *    any L3 interface exists.
+ */
+
+/* A field of a row, as an offset and a width. Named once and passed as a
+ * single macro argument, so a call site reads as the field it touches.
+ */
+
+/* L3_EGR_INTF, 4 words */
+#define RTL931X_EGR_VID			116, 12
+#define RTL931X_EGR_MAC			68, 48
+#define RTL931X_EGR_MTU4		64, 4
+#define RTL931X_EGR_MTU6		60, 4
+#define RTL931X_EGR_TTL_SCOPE		52, 8
+#define RTL931X_EGR_HL_SCOPE		44, 8
+#define RTL931X_EGR_ICMP4_REDIRECT	41, 3
+#define RTL931X_EGR_ICMP6_REDIRECT	38, 3
+#define RTL931X_EGR_PBR4_REDIRECT	35, 3
+#define RTL931X_EGR_PBR6_REDIRECT	32, 3
+
+/* L3_IGR_INTF, 2 words. An interface routes only the families its ingress row
+ * enables, and dal_mango_l3_intf_create() leaves the row zero apart from the
+ * VRF, so without them an interface exists and does not route. Setting them is
+ * what the vendor application does straight after creating an interface, and
+ * only on this chip: inos_ifksdk.ko, HalL3AddIterfaceOfAll(), behind
+ * hsl_931x_chip_sdk_get(), calling rtk_l3_intfCtrl_set() with control types 1
+ * and 3. The RTL930x has no equivalent call, which is why there was nothing to
+ * carry over from otto_l3_930x_setup().
+ *
+ * Those two are not the two unicast families. That firmware does not route
+ * IPv6 at all - it never enables IPv6 unicast globally, and the single IPv6
+ * symbol it imports is an L2 multicast one - so neither type it sets can be an
+ * IPv6 enable. Control type n is bit 56 - n, and the four are the families in
+ * pairs: IPv4 unicast, IPv6 unicast, IPv4 multicast, IPv6 multicast. The
+ * vendor's 1 and 3 are then the two IPv4 families, which is what it routes.
+ * Measured: with type 2 clear an IPv6 route matches and no frame leaves, with
+ * it set the frame forwards, and type 4 makes no difference either way. So the
+ * driver sets the two unicast enables and leaves multicast alone, having no
+ * multicast routes to offload.
+ */
+#define RTL931X_IGR_VRF			56, 8
+#define RTL931X_IGR_IP4UC_ROUTE_EN	55, 1
+#define RTL931X_IGR_IP6UC_ROUTE_EN	54, 1
+
+/* L3_ROUTER_MAC, 5 words. A TCAM: every key comes with a mask, a read gives
+ * back a don't-care bit as zero, and so a row is only ever written whole.
+ *
+ * Its mask block is NOT simply the fields below the keys. The keys fill bits
+ * 93..159 and their masks mirror them contiguously at 21..86 - 48 + 10 + 7 + 1
+ * bits, in the same order - which puts the port type's mask at bit 86. The two
+ * one bit fields at 92 and 91 are further keys, masked from bits 20 and 19,
+ * and the SDK writes all four as zero. Taking the first field below the keys
+ * for the port type's mask lands on one of those instead, which reads back
+ * consistently and compares nothing. The pairing is f1<->f7, f2<->f8, f3<->f9,
+ * f4<->f10, confirmed against the struct offsets _dal_mango_l3_macEntry_set()
+ * writes each field from.
+ *
+ * The action here is not encoded like a route's. This field takes the SDK's
+ * identity action list, where 1 is DROP and 2 is TRAP2CPU, while a route entry
+ * takes [0, 2, 3, 1], which is what ROUTE_ACT_* matches. Both agree on 0 for
+ * FORWARD and the generic code only ever asks for FORWARD, so nothing is
+ * mis-encoded today - but ROUTE_ACT_TRAP2CPU written here would mean DROP.
+ */
+#define RTL931X_RMAC_VALID		159, 1
+#define RTL931X_RMAC_PTYPE		158, 1
+#define RTL931X_RMAC_PORT		151, 7
+#define RTL931X_RMAC_INTF		141, 10
+#define RTL931X_RMAC_MAC		93, 48
+#define RTL931X_RMAC_PTYPE_MASK		86, 1
+#define RTL931X_RMAC_PORT_MASK		79, 7
+#define RTL931X_RMAC_INTF_MASK		69, 10
+#define RTL931X_RMAC_MAC_MASK		21, 48
+#define RTL931X_RMAC_ACTION		12, 3
+
+/* L3_NEXTHOP, 1 word */
+#define RTL931X_NH_L2_ID		16, 16
+#define RTL931X_NH_INTF			6, 10
+
+/* VLAN, 4 words: the interface an ingress VLAN routes through, the field
+ * dal_mango_vlan_intfId_set() writes.
+ */
+#define RTL931X_VLAN_INTF_ID		52, 10
+
+/* The VRF every interface and every route uses. The route entries compare it
+ * against the ingress interface's with a full mask, as the vendor does, so the
+ * two have to agree; nothing here offers more than one.
+ */
+#define RTL931X_L3_VRF			0
+
+/* The SDK never uses interface 0: rtk_l3_intfCtrl_set() refuses it outright,
+ * and a VLAN row naming no interface reads as zero, so an interface there
+ * would catch every VLAN that has not been mapped. The driver's interface
+ * indices therefore start at hardware interface 1.
+ */
+#define RTL931X_L3_INTF_ROW(idx)	((idx) + 1)
+
+/* Set a field in a table row held as @words big endian words, where bit 0 is
+ * the least significant bit of the last word, which is how the SDK counts.
+ * One bit at a time: the fields straddle words and nothing here is hot.
+ */
+static void otto_l3_931x_fset(u32 *data, int words, u16 lsb, u16 len, u64 val)
+{
+	for (u16 i = 0; i < len; i++) {
+		u16 bit = lsb + i;
+		int w = words - 1 - bit / 32;
+
+		/* A field that does not fit the row it is named for is a wrong
+		 * offset or width in the tables above, transcribed by hand, and
+		 * a quietly dropped bit there is a route the hardware matches
+		 * on something else. Say so rather than write part of it.
+		 */
+		if (WARN_ONCE(w < 0, "otto_l3: bit %u of a field is past a %d word row\n",
+			      bit, words))
+			return;
+		if (val & BIT_ULL(i))
+			data[w] |= BIT(bit % 32);
+		else
+			data[w] &= ~BIT(bit % 32);
+	}
+}
+
+/* The same field, read back out of @data */
+static u64 otto_l3_931x_fget(const u32 *data, int words, u16 lsb, u16 len)
+{
+	u64 val = 0;
+
+	for (u16 i = 0; i < len; i++) {
+		u16 bit = lsb + i;
+		int w = words - 1 - bit / 32;
+
+		if (WARN_ONCE(w < 0, "otto_l3: bit %u of a field is past a %d word row\n",
+			      bit, words))
+			return val;
+		if (data[w] & BIT(bit % 32))
+			val |= BIT_ULL(i);
+	}
+
+	return val;
+}
+
+/* Point an ingress VLAN at the interface it routes through. Only that field of
+ * the row is touched, because the row belongs to vlan.c.
+ */
+static int otto_l3_931x_vlan_intf_set(struct otto_l3_ctrl *ctrl, u16 vid, int row)
+{
+	u32 data[4];
+	int err;
+
+	/* A device that is not a VLAN device is offered as VLAN 0, and VLAN row
+	 * 0 is reserved - otto_vlan_setup() keeps it for itself and every
+	 * port's initial PVID names it, so pointing it at an interface would
+	 * aim every untagged frame on the switch at that one. Such a device
+	 * routes through the default ingress interface instead, which setup()
+	 * enables for exactly this.
+	 */
+	if (!vid)
+		return 0;
+
+	err = otto_table_read(RTL9310_TBL_VLAN, vid, &data);
+	if (err)
+		return err;
+
+	otto_l3_931x_fset(data, 4, RTL931X_VLAN_INTF_ID, row);
+
+	return otto_table_write(RTL9310_TBL_VLAN, vid, &data);
+}
+
+/* Give up a VLAN's mapping, but only while it is still this interface's. Two
+ * interfaces can carry the same VID - otto_l3_alloc_egress_intf() reuses one
+ * only when the source MAC, the VLAN and the MTU all match - and the VLAN row
+ * names whichever of them wrote it last. Releasing it without looking would
+ * leave that VID's routed ingress traffic on interface 0, which is the default
+ * ingress interface and not what the frame should be routed by.
+ */
+static int otto_l3_931x_vlan_intf_clear(struct otto_l3_ctrl *ctrl, u16 vid, int row)
+{
+	u32 data[4];
+	int err;
+
+	if (!vid)
+		return 0;
+
+	err = otto_table_read(RTL9310_TBL_VLAN, vid, &data);
+	if (err)
+		return err;
+
+	if (otto_l3_931x_fget(data, 4, RTL931X_VLAN_INTF_ID) != row)
+		return 0;
+
+	otto_l3_931x_fset(data, 4, RTL931X_VLAN_INTF_ID, 0);
+
+	return otto_table_write(RTL9310_TBL_VLAN, vid, &data);
+}
+
+static void otto_l3_931x_get_egress_intf(struct otto_l3_ctrl *ctrl, int idx,
+					 struct otto_l3_intf *intf)
+{
+	u32 data[4];
+
+	memset(intf, 0, sizeof(*intf));
+	if (otto_table_read(RTL9310_TBL_L3_EGR_INTF, RTL931X_L3_INTF_ROW(idx), &data))
+		return;
+
+	intf->vid = otto_l3_931x_fget(data, 4, RTL931X_EGR_VID);
+	intf->ip4_mtu_id = otto_l3_931x_fget(data, 4, RTL931X_EGR_MTU4);
+	intf->ip6_mtu_id = otto_l3_931x_fget(data, 4, RTL931X_EGR_MTU6);
+	intf->ttl_scope = otto_l3_931x_fget(data, 4, RTL931X_EGR_TTL_SCOPE);
+	intf->hl_scope = otto_l3_931x_fget(data, 4, RTL931X_EGR_HL_SCOPE);
+	intf->ip4_icmp_redirect = otto_l3_931x_fget(data, 4, RTL931X_EGR_ICMP4_REDIRECT);
+	intf->ip6_icmp_redirect = otto_l3_931x_fget(data, 4, RTL931X_EGR_ICMP6_REDIRECT);
+	intf->ip4_pbr_icmp_redirect = otto_l3_931x_fget(data, 4, RTL931X_EGR_PBR4_REDIRECT);
+	intf->ip6_pbr_icmp_redirect = otto_l3_931x_fget(data, 4, RTL931X_EGR_PBR6_REDIRECT);
+	/* The source MAC is a field of this row, so it is reached by this index */
+	intf->smac_idx = idx;
+}
+
+/* Write both halves of an interface, and the mapping that takes an ingress
+ * VLAN to it. The source MAC is left as it is: otto_l3_931x_set_smac() owns
+ * that field and otto_l3_alloc_egress_intf() writes it right after this.
+ */
+static int otto_l3_931x_set_egress_intf(struct otto_l3_ctrl *ctrl, int idx,
+					struct otto_l3_intf *intf)
+{
+	int row = RTL931X_L3_INTF_ROW(idx);
+	u32 igr[2] = {};
+	u32 data[4];
+	int err;
+
+	err = otto_table_read(RTL9310_TBL_L3_EGR_INTF, row, &data);
+	if (err)
+		goto release;
+
+	otto_l3_931x_fset(data, 4, RTL931X_EGR_VID, intf->vid);
+	otto_l3_931x_fset(data, 4, RTL931X_EGR_MTU4, intf->ip4_mtu_id);
+	otto_l3_931x_fset(data, 4, RTL931X_EGR_MTU6, intf->ip6_mtu_id);
+
+	/* The TTL and hop limit scopes and the four redirect actions are left
+	 * at zero rather than taking the values otto_l3_alloc_egress_intf()
+	 * asks for, which are the RTL930x's.
+	 *
+	 * Those six fields are the one part of this row whose meaning is
+	 * inferred: the SDK metadata gives their offsets and widths, and which
+	 * is which comes from two 8 bit fields and four 3 bit fields appearing
+	 * in the same descending order as on the RTL930x, not from anything
+	 * read out of the SDK's code. Writing a guessed action into the wrong
+	 * field could drop or trap a frame that should be forwarded.
+	 *
+	 * Zero is both the safe value and the proven one. The vendor
+	 * application creates an interface by calling rtk_l3_intf_t_init() and
+	 * then setting the VID and the MAC and nothing else (inos_ifksdk.ko,
+	 * HalL3AddIterfaceOfAll()), and the hand programmed row these fields
+	 * were cleared in is the one that forwarded on an S1300WP. In a six
+	 * value Realtek action list zero is also FORWARD, the benign choice.
+	 *
+	 * None of them is needed to route. Identify them and this comment goes
+	 * away; until then the row the driver writes is the row that was
+	 * measured.
+	 */
+	otto_l3_931x_fset(data, 4, RTL931X_EGR_TTL_SCOPE, 0);
+	otto_l3_931x_fset(data, 4, RTL931X_EGR_HL_SCOPE, 0);
+	otto_l3_931x_fset(data, 4, RTL931X_EGR_ICMP4_REDIRECT, 0);
+	otto_l3_931x_fset(data, 4, RTL931X_EGR_ICMP6_REDIRECT, 0);
+	otto_l3_931x_fset(data, 4, RTL931X_EGR_PBR4_REDIRECT, 0);
+	otto_l3_931x_fset(data, 4, RTL931X_EGR_PBR6_REDIRECT, 0);
+
+	err = otto_table_write(RTL9310_TBL_L3_EGR_INTF, row, &data);
+	if (err)
+		goto release;
+
+	otto_l3_931x_fset(igr, 2, RTL931X_IGR_VRF, RTL931X_L3_VRF);
+	otto_l3_931x_fset(igr, 2, RTL931X_IGR_IP4UC_ROUTE_EN, 1);
+	otto_l3_931x_fset(igr, 2, RTL931X_IGR_IP6UC_ROUTE_EN, 1);
+
+	err = otto_table_write(RTL9310_TBL_L3_IGR_INTF, row, &igr);
+	if (err)
+		goto release;
+
+	err = otto_l3_931x_vlan_intf_set(ctrl, intf->vid, row);
+	if (err)
+		goto release;
+
+	return 0;
+
+release:
+	/* An interface is three writes - egress row, ingress row, VLAN mapping
+	 * - and any of them failing leaves one that cannot route. Clear what
+	 * went in so no half programmed row is left behind, and report, so the
+	 * allocator leaves the index free rather than marking it taken with a
+	 * source MAC.
+	 */
+	dev_err(ctrl->dev, "interface %d for VLAN %d not programmed: %d\n",
+		idx, intf->vid, err);
+	memset(data, 0, sizeof(data));
+	otto_table_write(RTL9310_TBL_L3_EGR_INTF, row, &data);
+	memset(igr, 0, sizeof(igr));
+	otto_table_write(RTL9310_TBL_L3_IGR_INTF, row, &igr);
+	otto_l3_931x_vlan_intf_clear(ctrl, intf->vid, row);
+
+	return err;
+}
+
+/* The source MAC of an interface, a field of its egress row */
+static int otto_l3_931x_get_smac(struct otto_l3_ctrl *ctrl, u32 idx, u64 *mac)
+{
+	u32 data[4];
+	int err;
+
+	err = otto_table_read(RTL9310_TBL_L3_EGR_INTF, RTL931X_L3_INTF_ROW(idx), &data);
+	if (err)
+		return err;
+
+	*mac = otto_l3_931x_fget(data, 4, RTL931X_EGR_MAC);
+
+	return 0;
+}
+
+static int otto_l3_931x_set_smac(struct otto_l3_ctrl *ctrl, u32 idx, u64 mac)
+{
+	int row = RTL931X_L3_INTF_ROW(idx);
+	u32 data[4];
+	int err;
+
+	err = otto_table_read(RTL9310_TBL_L3_EGR_INTF, row, &data);
+	if (err)
+		return err;
+
+	/* A zero source MAC is how otto_l3_intf_put() releases an interface and
+	 * how otto_l3_alloc_egress_intf() recognises a free one, so it is also
+	 * the only notice this chip gets that the other two halves have to go.
+	 * Leaving them would keep the old VLAN routing through a row about to
+	 * be handed to another VLAN with another source MAC.
+	 */
+	if (!mac) {
+		u16 vid = otto_l3_931x_fget(data, 4, RTL931X_EGR_VID);
+		u32 igr[2] = {};
+
+		if (otto_table_write(RTL9310_TBL_L3_IGR_INTF, row, &igr))
+			dev_err(ctrl->dev, "ingress interface %d not cleared\n", idx);
+		if (otto_l3_931x_vlan_intf_clear(ctrl, vid, row))
+			dev_err(ctrl->dev, "VLAN %d still names interface %d\n",
+				vid, idx);
+	}
+
+	otto_l3_931x_fset(data, 4, RTL931X_EGR_MAC, mac);
+
+	return otto_table_write(RTL9310_TBL_L3_EGR_INTF, row, &data);
+}
+
+/* A router MAC entry: the MACs a frame has to be addressed to for the routing
+ * lookup to run on it.
+ *
+ * vid and vid_mask carry the L3 INTERFACE index here, not a VLAN, because that
+ * is what the field matches on this chip. The generic code only ever asks for
+ * any VLAN - value and mask both zero - which is also any interface, and a
+ * rewrite round-trips whatever a read gave back, so no VLAN id is ever
+ * compared against an interface index.
+ */
+static void otto_l3_931x_get_router_mac(struct otto_l3_ctrl *ctrl, u32 idx,
+					struct otto_l3_router_mac *m)
+{
+	u32 data[5];
+
+	memset(m, 0, sizeof(*m));
+	if (otto_table_read(RTL9310_TBL_L3_ROUTER_MAC, idx, &data))
+		return;
+
+	m->valid = otto_l3_931x_fget(data, 5, RTL931X_RMAC_VALID);
+	if (!m->valid)
+		return;
+
+	m->p_type = otto_l3_931x_fget(data, 5, RTL931X_RMAC_PTYPE);
+	m->p_mask = otto_l3_931x_fget(data, 5, RTL931X_RMAC_PTYPE_MASK);
+	m->p_id = otto_l3_931x_fget(data, 5, RTL931X_RMAC_PORT);
+	m->p_id_mask = otto_l3_931x_fget(data, 5, RTL931X_RMAC_PORT_MASK);
+	m->vid = otto_l3_931x_fget(data, 5, RTL931X_RMAC_INTF);
+	m->vid_mask = otto_l3_931x_fget(data, 5, RTL931X_RMAC_INTF_MASK);
+	m->mac = otto_l3_931x_fget(data, 5, RTL931X_RMAC_MAC);
+	m->mac_mask = otto_l3_931x_fget(data, 5, RTL931X_RMAC_MAC_MASK);
+	m->action = otto_l3_931x_fget(data, 5, RTL931X_RMAC_ACTION);
+}
+
+static void otto_l3_931x_set_router_mac(struct otto_l3_ctrl *ctrl, u32 idx,
+					struct otto_l3_router_mac *m)
+{
+	u32 data[5] = {};
+	int err;
+
+	/* Built from zero and written in one access: this is a TCAM, so setting
+	 * a key and then its mask would read the key back as zeros in between
+	 * and write those zeros out again, leaving an entry that matches
+	 * nothing and routes nothing.
+	 */
+	/* Each key goes in masked. A bit the mask does not select is a
+	 * don't-care the hardware ignores, so this changes no match - but the
+	 * generic code asks for "any port" as port 0x3f with a zero mask, and
+	 * leaving that value in the row would make it differ from the row that
+	 * was measured forwarding on an S1300WP over bits nothing compares.
+	 * Masking keeps what the driver writes identical to what was proven.
+	 */
+	otto_l3_931x_fset(data, 5, RTL931X_RMAC_VALID, m->valid);
+	otto_l3_931x_fset(data, 5, RTL931X_RMAC_PTYPE, m->p_type && m->p_mask);
+	otto_l3_931x_fset(data, 5, RTL931X_RMAC_PTYPE_MASK, m->p_mask);
+	otto_l3_931x_fset(data, 5, RTL931X_RMAC_PORT, m->p_id & m->p_id_mask);
+	otto_l3_931x_fset(data, 5, RTL931X_RMAC_PORT_MASK, m->p_id_mask);
+	otto_l3_931x_fset(data, 5, RTL931X_RMAC_INTF, m->vid & m->vid_mask);
+	otto_l3_931x_fset(data, 5, RTL931X_RMAC_INTF_MASK, m->vid_mask);
+	otto_l3_931x_fset(data, 5, RTL931X_RMAC_MAC, m->mac & m->mac_mask);
+	otto_l3_931x_fset(data, 5, RTL931X_RMAC_MAC_MASK, m->mac_mask);
+	otto_l3_931x_fset(data, 5, RTL931X_RMAC_ACTION, m->action);
+
+	dev_dbg(ctrl->dev, "router MAC %d: %08x %08x %08x %08x %08x\n", idx,
+		data[0], data[1], data[2], data[3], data[4]);
+
+	err = otto_table_write(RTL9310_TBL_L3_ROUTER_MAC, idx, &data);
+	if (err)
+		dev_err(ctrl->dev, "router MAC %d not written: %d\n", idx, err);
+}
+
+/* The L2 row a next hop forwards through, and the interface it leaves by.
+ * There is no DMAC table on this chip: @dmac_id is an L2 row, or one of the
+ * reserved values 0xffff drop, 0xfffe trap to CPU, 0xfffd trap to the master
+ * CPU and 0xfffc unresolved.
+ *
+ * There is no matching reader. Hardware interface 0 is the fallback ingress
+ * and not an interface the driver allocates, so it has no driver index to map
+ * back to, and a getter that cannot invert its setter is a trap - the one in
+ * the router MAC table cost a long debugging detour. Nothing in the generic
+ * code calls .get_nexthop, so none is provided.
+ */
+static void otto_l3_931x_set_nexthop(struct otto_l3_ctrl *ctrl, int idx,
+				     u16 dmac_id, u16 interface)
+{
+	u32 v = 0;
+	int err;
+
+	otto_l3_931x_fset(&v, 1, RTL931X_NH_L2_ID, dmac_id);
+	otto_l3_931x_fset(&v, 1, RTL931X_NH_INTF, RTL931X_L3_INTF_ROW(interface));
+
+	dev_dbg(ctrl->dev, "next hop %d: L2 row %d out of interface %d: %08x\n",
+		idx, dmac_id, interface, v);
+
+	err = otto_table_write(RTL9310_TBL_L3_NEXTHOP, idx, &v);
+	if (err)
+		dev_err(ctrl->dev, "next hop %d not written: %d\n", idx, err);
+}
+
+/* With .setup in place the FIB and neighbour notifiers are live and this
+ * config programs the switch. See the RTL931x L3 section above for the
+ * interface model, and for what is deliberately left unset.
+ */
+/* One MTU to a register, fourteen bits of it, and a separate table per family */
+static int otto_l3_931x_set_intf_mtu(struct otto_l3_ctrl *ctrl, int id, u16 mtu)
+{
+	if (id >= RTL931X_L3_INTF_MTUS || mtu > RTL931X_L3_MTU_MASK)
+		return -EINVAL;
+
+	sw_w32_mask(RTL931X_L3_MTU_MASK, mtu, RTL931X_L3_INTF_IP_MTU(id));
+	sw_w32_mask(RTL931X_L3_MTU_MASK, mtu, RTL931X_L3_INTF_IP6_MTU(id));
+
+	return 0;
+}
+
 const struct otto_l3_config otto_l3_931x_cfg = {
+	.get_egress_intf = otto_l3_931x_get_egress_intf,
+	.set_egress_intf = otto_l3_931x_set_egress_intf,
+	.set_intf_mtu = otto_l3_931x_set_intf_mtu,
+	.get_smac = otto_l3_931x_get_smac,
+	.set_smac = otto_l3_931x_set_smac,
+	.get_router_mac = otto_l3_931x_get_router_mac,
+	.set_router_mac = otto_l3_931x_set_router_mac,
+	.set_nexthop = otto_l3_931x_set_nexthop,
 };
 
 static const struct of_device_id otto_l3_of_ids[] = {
