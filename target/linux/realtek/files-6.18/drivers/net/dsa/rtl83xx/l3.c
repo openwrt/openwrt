@@ -1452,10 +1452,16 @@ static int otto_l3_alloc_egress_intf(struct otto_l3_ctrl *ctrl, u64 mac, int vla
 /* Row 0 is not used, see otto_l3_930x_setup(). */
 #define FIRST_PREFIX_ROW	1
 
-/* One access at an entry's first row reads or writes the whole entry, so a
- * move copies that row alone
+/* Rows a move copies for one IPv6 prefix entry, where a single access reads and
+ * writes the whole of it. A family whose entry spans several rows says so with
+ * v6_move_rows.
  */
 #define V6_MOVE_ROWS		1
+
+static int otto_l3_v6_move_rows(struct otto_l3_ctrl *ctrl)
+{
+	return ctrl->cfg->v6_move_rows ? : V6_MOVE_ROWS;
+}
 
 static int otto_l3_v6_row(struct otto_l3_ctrl *ctrl, int slot)
 {
@@ -1544,7 +1550,8 @@ static int otto_l3_route_place(struct otto_l3_ctrl *ctrl, struct otto_l3_route *
 		 */
 		for (int s = rows - 1; s >= rows - below; s--) {
 			err = ctrl->cfg->route_rows_move(ctrl, otto_l3_v6_row(ctrl, s + 1),
-							 otto_l3_v6_row(ctrl, s), V6_MOVE_ROWS);
+							 otto_l3_v6_row(ctrl, s),
+							 otto_l3_v6_move_rows(ctrl));
 			if (err) {
 				if (err == -EIO || s < rows - 1)
 					otto_l3_rows_stale(ctrl, r, otto_l3_v6_row(ctrl, s));
@@ -1616,8 +1623,10 @@ static void otto_l3_route_compact(struct otto_l3_ctrl *ctrl, struct otto_l3_rout
 			return;
 
 		for (int s = slot + 1; s < rows; s++)
-			if (ctrl->cfg->route_rows_move(ctrl, otto_l3_v6_row(ctrl, s - 1),
-						       otto_l3_v6_row(ctrl, s), V6_MOVE_ROWS)) {
+			if (ctrl->cfg->route_rows_move(ctrl,
+						       otto_l3_v6_row(ctrl, s - 1),
+						       otto_l3_v6_row(ctrl, s),
+						       otto_l3_v6_move_rows(ctrl))) {
 				otto_l3_rows_stale(ctrl, r, otto_l3_v6_row(ctrl, s));
 				return;
 			}

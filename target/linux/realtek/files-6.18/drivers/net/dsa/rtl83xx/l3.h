@@ -136,6 +136,12 @@ struct otto_l3_config {
 	 * through the egress interface of a next hop instead.
 	 */
 	bool smac_per_route;
+	/* Rows a move has to copy for one IPv6 prefix entry. One where a single
+	 * access reads and writes the whole entry, which is the RTL930x and
+	 * the default when this is left unset; three on the RTL931x, whose
+	 * prefix table is too narrow to hold an entry in one row.
+	 */
+	u8 v6_move_rows;
 	int (*find_slot)(struct otto_l3_ctrl *ctrl, struct otto_l3_route *rt, bool must_exist);
 	void (*get_egress_intf)(struct otto_l3_ctrl *ctrl, int idx, struct otto_l3_intf *intf);
 	int (*set_egress_intf)(struct otto_l3_ctrl *ctrl, int idx, struct otto_l3_intf *intf);
