@@ -4402,7 +4402,9 @@ static int rtpcs_931x_sds_config_attachment(struct rtpcs_serdes *sds,
 	if (attachment == RTPCS_SDS_ATTACH_NONE)
 		return 0;
 
-	is_dac = (attachment == RTPCS_SDS_ATTACH_DAC_SHORT ||
+	/* DAC-specific tuning only covers 10GBase-R; slower DACs use the ordinary settings. */
+	is_dac = hw_mode == RTPCS_SDS_MODE_10GBASER &&
+		 (attachment == RTPCS_SDS_ATTACH_DAC_SHORT ||
 		  attachment == RTPCS_SDS_ATTACH_DAC_LONG);
 	is_10g = (hw_mode == RTPCS_SDS_MODE_10GBASER ||
 		  hw_mode == RTPCS_SDS_MODE_XSGMII ||
@@ -4414,22 +4416,16 @@ static int rtpcs_931x_sds_config_attachment(struct rtpcs_serdes *sds,
 	rtpcs_sds_write_mask(sds, PAGE_ANA_MISC, ANA_MISC_REG00, RTL93XX_FRC_CMU_EN,
 			     RTL93XX_FRC_CMU_EN_FORCE_ON);
 
-	switch (attachment) {
-	case RTPCS_SDS_ATTACH_DAC_SHORT:
-	case RTPCS_SDS_ATTACH_DAC_LONG:
+	if (is_dac) {
 		tx_cfg = (attachment == RTPCS_SDS_ATTACH_DAC_SHORT) ? &rtpcs_931x_sds_tx_cfg_sdac :
 								      &rtpcs_931x_sds_tx_cfg_ldac;
 
 		rtpcs_sds_write(sds, PAGE_ANA_COM, 0x19, 0xf0a5);
 		rtpcs_sds_write(even_sds, PAGE_ANA_10G, 0x8, 0x02a0); /* [10:7] TX impedance */
-		break;
-
-	case RTPCS_SDS_ATTACH_FIBER:
-		if (is_10g)
+	} else {
+		if (attachment == RTPCS_SDS_ATTACH_FIBER && is_10g)
 			rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0xf, 5, 0, 0x2);
 
-		fallthrough;
-	default:
 		if (sds->ctrl->chip_version == RTPCS_CHIP_V2)
 			tx_cfg = &rtpcs_931x_sds_tx_cfg_v2[sds->id - 2];
 		else
@@ -4437,7 +4433,6 @@ static int rtpcs_931x_sds_config_attachment(struct rtpcs_serdes *sds,
 
 		rtpcs_sds_write(sds, PAGE_ANA_COM, 0x19, 0xf0f0);
 		rtpcs_sds_write(even_sds, PAGE_ANA_10G, 0x8, 0x0294); /* [10:7] TX impedance */
-		break;
 	}
 
 	ret = rtpcs_931x_sds_config_tx_amps(sds, tx_cfg->pre_amp, tx_cfg->main_amp,
@@ -4550,7 +4545,7 @@ unlock:
 /* Apply acquisition defaults and defer calibration until RX is ready. */
 static int rtpcs_931x_sds_post_config(struct rtpcs_serdes *sds, enum rtpcs_sds_mode hw_mode)
 {
-	if (sds->type != RTPCS_SDS_TYPE_10G)
+	if (sds->type != RTPCS_SDS_TYPE_10G || sds->attachment == RTPCS_SDS_ATTACH_NONE)
 		return 0;
 	if (hw_mode != RTPCS_SDS_MODE_10GBASER &&
 	    hw_mode != RTPCS_SDS_MODE_XSGMII &&
