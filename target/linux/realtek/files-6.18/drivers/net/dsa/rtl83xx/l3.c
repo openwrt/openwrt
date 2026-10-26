@@ -1090,15 +1090,26 @@ static int otto_l3_alloc_router_mac(struct otto_l3_ctrl *ctrl, u64 mac)
 		return -1;
 	}
 
-	m.valid = true;
-	m.mac = mac;
-	m.p_type = 0; /* An individual port, not a trunk port */
-	m.p_id = 0x3f;			/* Listen on any port */
-	m.p_id_mask = 0;
-	m.vid = 0;			/* Listen on any VLAN... */
-	m.vid_mask = 0;			/* ... so mask needs to be 0 */
-	m.mac_mask = 0xffffffffffffULL;	/* We want an exact match of the interface MAC */
-	m.action = ROUTE_ACT_FORWARD;	/* Route the packet */
+	/* Written whole rather than field by field, because the scan above left
+	 * m holding whatever the last entry it read did, and a mask carried
+	 * over from another entry narrows what this one matches. p_mask is the
+	 * one that bites: on a family that programs it, such as the RTL931x, a
+	 * leftover 1 turns "any port" into a particular port type. Nothing
+	 * clears L3_ROUTER_MAC at setup, so the leftover can be the
+	 * bootloader's.
+	 */
+	m = (struct otto_l3_router_mac){
+		.valid = true,
+		.mac = mac,
+		.p_type = 0,		/* An individual port, not a trunk port */
+		.p_mask = false,	/* ... and do not match on that at all */
+		.p_id = 0x3f,		/* Listen on any port */
+		.p_id_mask = 0,
+		.vid = 0,		/* Listen on any VLAN... */
+		.vid_mask = 0,		/* ... so mask needs to be 0 */
+		.mac_mask = 0xffffffffffffULL,	/* Exact match of the interface MAC */
+		.action = ROUTE_ACT_FORWARD,	/* Route the packet */
+	};
 	ctrl->cfg->set_router_mac(ctrl, free_mac, &m);
 	set_bit(free_mac, ctrl->router_mac_bm);
 
