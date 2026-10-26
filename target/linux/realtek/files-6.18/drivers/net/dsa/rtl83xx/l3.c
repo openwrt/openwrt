@@ -6441,6 +6441,84 @@ static int otto_l3_931x_setup(struct otto_l3_ctrl *ctrl)
 	return 0;
 }
 
+/* Clear the hit bit of every prefix route row that carries one, so that
+ * reading the rows again says which routes have matched since. The RTL930x has
+ * the same file and clears its bit the same way, by writing the row back
+ * without it.
+ *
+ * Only the MAX_ROUTES rows the driver places routes in are walked, the same way
+ * the RTL930x walks only its own. The table's address space is far larger - it
+ * overlays the flow table - and a row beyond the block is not this driver's to
+ * read, let alone to write back; going through the logical row mapping also
+ * leaves out the two addresses in every eight that are not implemented, which
+ * read the bit set. An IPv6 entry's two extension rows are walked like any
+ * other: the bit sits below everything their layout describes and
+ * otto_l3_931x_v6_ext_row() writes those words as zero, so they never report a
+ * hit and nothing is written to them.
+ */
+static ssize_t otto_l3_931x_clear_hit_write(struct file *filp, const char __user *buf,
+					    size_t count, loff_t *ppos)
+{
+	struct otto_l3_ctrl *ctrl = filp->private_data;
+	unsigned int cleared = 0;
+	int handle, rows;
+
+	if (*ppos)
+		return -EINVAL;
+
+	rows = otto_table_rows(RTL9310_TBL_L3_PREFIX_ROUTE_IPUC);
+	if (rows < 0)
+		return rows;
+
+	handle = otto_table_acquire(RTL9310_TBL_L3_PREFIX_ROUTE_IPUC);
+	if (handle < 0) {
+		dev_err(ctrl->dev, "clear_route_hits: could not take the table: %d\n",
+			handle);
+		return handle;
+	}
+
+	for (int row = 0; row < MAX_ROUTES; row++) {
+		int addr = RTL931X_L3_ROUTE_ROW(row);
+		u32 data[6];
+
+		if (addr >= rows)
+			break;
+		if (__otto_table_read(handle, addr, &data))
+			continue;
+		if (!otto_l3_931x_fget(data, 6, RTL931X_RT_VALID) ||
+		    !otto_l3_931x_fget(data, 6, RTL931X_RT_HIT))
+			continue;
+
+		otto_l3_931x_fset(data, 6, RTL931X_RT_HIT, 0);
+		if (!__otto_table_write(handle, addr, &data))
+			cleared++;
+	}
+
+	otto_table_release(handle);
+
+	dev_info(ctrl->dev, "clear_route_hits: cleared %u entries\n", cleared);
+
+	return count;
+}
+
+static const struct file_operations otto_l3_931x_clear_hit_fops = {
+	.owner = THIS_MODULE,
+	.open = simple_open,
+	.write = otto_l3_931x_clear_hit_write,
+	.llseek = default_llseek,
+};
+
+static void otto_l3_931x_dbgfs_init(struct otto_l3_ctrl *ctrl)
+{
+	struct dentry *root = otto_l3_dbgfs_root(ctrl);
+
+	if (!root)
+		return;
+
+	debugfs_create_file("clear_route_hits", 0200, root, ctrl,
+			    &otto_l3_931x_clear_hit_fops);
+}
+
 const struct otto_l3_config otto_l3_931x_cfg = {
 	.get_egress_intf = otto_l3_931x_get_egress_intf,
 	.set_egress_intf = otto_l3_931x_set_egress_intf,
@@ -6460,6 +6538,13 @@ const struct otto_l3_config otto_l3_931x_cfg = {
 	.find_slot = otto_l3_931x_find_slot,
 	.host_route_write = otto_l3_931x_host_route_write,
 	.setup = otto_l3_931x_setup,
+	.dbgfs_init = otto_l3_931x_dbgfs_init,
+	/* No .set_dmac: a next hop names an L2 row, and that row carries the
+	 * gateway MAC itself, so there is no DMAC table to allocate from.
+	 *
+	 * No .route_lookup_hw: L3_HW_LU_* exists and the SDK never drives it,
+	 * so its protocol is unverified. The driver finds its own rows.
+	 */
 };
 
 static const struct of_device_id otto_l3_of_ids[] = {
