@@ -1,0 +1,613 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jonas Jelonek <jonas@jonasjelonek.de>
+Date: Mon, 26 Oct 2026 10:57:20 +0000
+Subject: [PATCH] net: phylink: pass physical media to PCS configuration
+
+Host interface modes do not identify the physical medium. Retain a small
+media description in phylink and pass it to PCS configuration, including
+passive cable length and an attachment generation for same-profile replug.
+
+Force configuration after SFP setup even when the interface is unchanged.
+Deliver media-none directly to the active PCS on removal and detach, even
+before link-up, and roll back media state on rejected insertion. A later
+PCS receives the current media through normal configuration without a
+separate module lifecycle or notification replay API.
+
+Adapt existing PCS callbacks to the extended configuration signature.
+Only drivers opting into media configuration receive media-none calls.
+Initialize the resolver state before forced configuration on early-down
+paths. Keep this API extension local to Realtek kernels.
+
+Signed-off-by: Jonas Jelonek <jonas@jonasjelonek.de>
+---
+--- a/drivers/net/dsa/b53/b53_serdes.c
++++ b/drivers/net/dsa/b53/b53_serdes.c
+@@ -68,7 +68,7 @@
+ static int b53_serdes_config(struct phylink_pcs *pcs, unsigned int neg_mode,
+ 			     phy_interface_t interface,
+ 			     const unsigned long *advertising,
+-			     bool permit_pause_to_mac)
++			     bool permit_pause_to_mac, const struct phylink_media *media)
+ {
+ 	struct b53_device *dev = pcs_to_b53_pcs(pcs)->dev;
+ 	u8 lane = pcs_to_b53_pcs(pcs)->lane;
+--- a/drivers/net/dsa/mt7530.c
++++ b/drivers/net/dsa/mt7530.c
+@@ -3187,7 +3187,7 @@
+ static int mt753x_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
+ 			     phy_interface_t interface,
+ 			     const unsigned long *advertising,
+-			     bool permit_pause_to_mac)
++			     bool permit_pause_to_mac, const struct phylink_media *media)
+ {
+ 	return 0;
+ }
+--- a/drivers/net/dsa/mv88e6xxx/pcs-6185.c
++++ b/drivers/net/dsa/mv88e6xxx/pcs-6185.c
+@@ -99,7 +99,7 @@
+ static int mv88e6185_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
+ 				phy_interface_t interface,
+ 				const unsigned long *advertising,
+-				bool permit_pause_to_mac)
++				bool permit_pause_to_mac, const struct phylink_media *media)
+ {
+ 	return 0;
+ }
+--- a/drivers/net/dsa/mv88e6xxx/pcs-6352.c
++++ b/drivers/net/dsa/mv88e6xxx/pcs-6352.c
+@@ -186,7 +186,7 @@
+ 				  unsigned int neg_mode,
+ 				  phy_interface_t interface,
+ 				  const unsigned long *advertising,
+-				  bool permit_pause_to_mac)
++				  bool permit_pause_to_mac, const struct phylink_media *media)
+ {
+ 	struct marvell_c22_pcs *mpcs = pcs_to_marvell_c22_pcs(pcs);
+ 	int oldpage, adv, err, ret = 0;
+--- a/drivers/net/dsa/mv88e6xxx/pcs-639x.c
++++ b/drivers/net/dsa/mv88e6xxx/pcs-639x.c
+@@ -300,7 +300,7 @@
+ 				      unsigned int neg_mode,
+ 				      phy_interface_t interface,
+ 				      const unsigned long *advertising,
+-				      bool permit_pause_to_mac)
++				      bool permit_pause_to_mac, const struct phylink_media *media)
+ {
+ 	struct mv88e639x_pcs *mpcs = sgmii_pcs_to_mv88e639x_pcs(pcs);
+ 	u16 val, bmcr;
+@@ -440,7 +440,7 @@
+ 				   unsigned int neg_mode,
+ 				   phy_interface_t interface,
+ 				   const unsigned long *advertising,
+-				   bool permit_pause_to_mac)
++				   bool permit_pause_to_mac, const struct phylink_media *media)
+ {
+ 	return 0;
+ }
+--- a/drivers/net/dsa/mxl862xx/mxl862xx-phylink.c
++++ b/drivers/net/dsa/mxl862xx/mxl862xx-phylink.c
+@@ -71,7 +71,7 @@
+ 				      unsigned int neg_mode,
+ 				      phy_interface_t interface,
+ 				      const unsigned long *advertising,
+-				      bool permit_pause_to_mac)
++				      bool permit_pause_to_mac, const struct phylink_media *media)
+ {
+ 	struct mxl862xx_pcs *mpcs = pcs_to_mxl862xx_pcs(pcs);
+ 	struct mxl862xx_priv *priv = mpcs->priv;
+@@ -298,7 +298,7 @@
+ static int mxl862xx_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
+ 			       phy_interface_t interface,
+ 			       const unsigned long *advertising,
+-			       bool permit_pause_to_mac)
++			       bool permit_pause_to_mac, const struct phylink_media *media)
+ {
+ 	struct mxl862xx_pcs *mpcs = pcs_to_mxl862xx_pcs(pcs);
+ 	struct mxl862xx_priv *priv = mpcs->priv;
+--- a/drivers/net/dsa/qca/qca8k-8xxx.c
++++ b/drivers/net/dsa/qca/qca8k-8xxx.c
+@@ -1518,7 +1518,7 @@
+ static int qca8k_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
+ 			    phy_interface_t interface,
+ 			    const unsigned long *advertising,
+-			    bool permit_pause_to_mac)
++			    bool permit_pause_to_mac, const struct phylink_media *media)
+ {
+ 	struct qca8k_priv *priv = pcs_to_qca8k_pcs(pcs)->priv;
+ 	int cpu_port_index, ret, port;
+--- a/drivers/net/dsa/realtek/rtl8365mb_main.c
++++ b/drivers/net/dsa/realtek/rtl8365mb_main.c
+@@ -1308,7 +1308,7 @@
+ static int rtl8365mb_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
+ 				phy_interface_t interface,
+ 				const unsigned long *advertising,
+-				bool permit_pause_to_mac)
++				bool permit_pause_to_mac, const struct phylink_media *media)
+ {
+ 	const struct rtl8365mb_jam_tbl_entry *sds_jam;
+ 	const int id = RTL8365MB_SDS_EXT_INTERFACE_ID;
+--- a/drivers/net/ethernet/cadence/macb_main.c
++++ b/drivers/net/ethernet/cadence/macb_main.c
+@@ -585,7 +585,7 @@
+ 			       unsigned int neg_mode,
+ 			       phy_interface_t interface,
+ 			       const unsigned long *advertising,
+-			       bool permit_pause_to_mac)
++			       bool permit_pause_to_mac, const struct phylink_media *media)
+ {
+ 	struct macb *bp = container_of(pcs, struct macb, phylink_usx_pcs);
+ 
+@@ -610,7 +610,7 @@
+ 			   unsigned int neg_mode,
+ 			   phy_interface_t interface,
+ 			   const unsigned long *advertising,
+-			   bool permit_pause_to_mac)
++			   bool permit_pause_to_mac, const struct phylink_media *media)
+ {
+ 	return 0;
+ }
+--- a/drivers/net/ethernet/freescale/fman/fman_dtsec.c
++++ b/drivers/net/ethernet/freescale/fman/fman_dtsec.c
+@@ -766,7 +766,7 @@
+ static int dtsec_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
+ 			    phy_interface_t interface,
+ 			    const unsigned long *advertising,
+-			    bool permit_pause_to_mac)
++			    bool permit_pause_to_mac, const struct phylink_media *media)
+ {
+ 	struct fman_mac *dtsec = pcs_to_dtsec(pcs);
+ 
+--- a/drivers/net/ethernet/marvell/mvneta.c
++++ b/drivers/net/ethernet/marvell/mvneta.c
+@@ -4022,7 +4022,7 @@
+ static int mvneta_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
+ 			     phy_interface_t interface,
+ 			     const unsigned long *advertising,
+-			     bool permit_pause_to_mac)
++			     bool permit_pause_to_mac, const struct phylink_media *media)
+ {
+ 	struct mvneta_port *pp = mvneta_pcs_to_port(pcs);
+ 	u32 mask, val, an, old_an, changed;
+--- a/drivers/net/ethernet/marvell/mvpp2/mvpp2_main.c
++++ b/drivers/net/ethernet/marvell/mvpp2/mvpp2_main.c
+@@ -6274,7 +6274,7 @@
+ static int mvpp2_xlg_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
+ 				phy_interface_t interface,
+ 				const unsigned long *advertising,
+-				bool permit_pause_to_mac)
++				bool permit_pause_to_mac, const struct phylink_media *media)
+ {
+ 	return 0;
+ }
+@@ -6346,7 +6346,7 @@
+ static int mvpp2_gmac_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
+ 				 phy_interface_t interface,
+ 				 const unsigned long *advertising,
+-				 bool permit_pause_to_mac)
++				 bool permit_pause_to_mac, const struct phylink_media *media)
+ {
+ 	struct mvpp2_port *port = mvpp2_pcs_gmac_to_port(pcs);
+ 	u32 mask, val, an, old_an, changed;
+--- a/drivers/net/ethernet/marvell/prestera/prestera_main.c
++++ b/drivers/net/ethernet/marvell/prestera/prestera_main.c
+@@ -304,7 +304,7 @@
+ static int prestera_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
+ 			       phy_interface_t interface,
+ 			       const unsigned long *advertising,
+-			       bool permit_pause_to_mac)
++			       bool permit_pause_to_mac, const struct phylink_media *media)
+ {
+ 	struct prestera_port *port = prestera_pcs_to_port(pcs);
+ 	struct prestera_port_mac_config cfg_mac;
+--- a/drivers/net/ethernet/meta/fbnic/fbnic_phylink.c
++++ b/drivers/net/ethernet/meta/fbnic/fbnic_phylink.c
+@@ -157,7 +157,7 @@
+ fbnic_phylink_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
+ 			 phy_interface_t interface,
+ 			 const unsigned long *advertising,
+-			 bool permit_pause_to_mac)
++			 bool permit_pause_to_mac, const struct phylink_media *media)
+ {
+ 	return 0;
+ }
+--- a/drivers/net/ethernet/microchip/lan966x/lan966x_phylink.c
++++ b/drivers/net/ethernet/microchip/lan966x/lan966x_phylink.c
+@@ -99,7 +99,7 @@
+ static int lan966x_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
+ 			      phy_interface_t interface,
+ 			      const unsigned long *advertising,
+-			      bool permit_pause_to_mac)
++			      bool permit_pause_to_mac, const struct phylink_media *media)
+ {
+ 	struct lan966x_port *port = lan966x_pcs_to_port(pcs);
+ 	struct lan966x_port_config config;
+--- a/drivers/net/ethernet/microchip/sparx5/sparx5_phylink.c
++++ b/drivers/net/ethernet/microchip/sparx5/sparx5_phylink.c
+@@ -106,7 +106,7 @@
+ static int sparx5_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
+ 			     phy_interface_t interface,
+ 			     const unsigned long *advertising,
+-			     bool permit_pause_to_mac)
++			     bool permit_pause_to_mac, const struct phylink_media *media)
+ {
+ 	struct sparx5_port *port = sparx5_pcs_to_port(pcs);
+ 	struct sparx5_port_config conf;
+--- a/drivers/net/ethernet/xilinx/xilinx_axienet_main.c
++++ b/drivers/net/ethernet/xilinx/xilinx_axienet_main.c
+@@ -2562,7 +2562,7 @@
+ static int axienet_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
+ 			      phy_interface_t interface,
+ 			      const unsigned long *advertising,
+-			      bool permit_pause_to_mac)
++			      bool permit_pause_to_mac, const struct phylink_media *media)
+ {
+ 	struct mdio_device *pcs_phy = pcs_to_axienet_local(pcs)->pcs_phy;
+ 	struct net_device *ndev = pcs_to_axienet_local(pcs)->ndev;
+--- a/drivers/net/pcs/pcs-lynx.c
++++ b/drivers/net/pcs/pcs-lynx.c
+@@ -194,7 +194,8 @@
+ 
+ static int lynx_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
+ 			   phy_interface_t ifmode,
+-			   const unsigned long *advertising, bool permit)
++			   const unsigned long *advertising, bool permit,
++			   const struct phylink_media *media)
+ {
+ 	struct lynx_pcs *lynx = phylink_pcs_to_lynx(pcs);
+ 
+--- a/drivers/net/pcs/pcs-mtk-lynxi.c
++++ b/drivers/net/pcs/pcs-mtk-lynxi.c
+@@ -191,7 +191,7 @@
+ static int mtk_pcs_lynxi_config(struct phylink_pcs *pcs, unsigned int neg_mode,
+ 				phy_interface_t interface,
+ 				const unsigned long *advertising,
+-				bool permit_pause_to_mac)
++				bool permit_pause_to_mac, const struct phylink_media *media)
+ {
+ 	struct mtk_pcs_lynxi *mpcs = pcs_to_mtk_pcs_lynxi(pcs);
+ 	bool mode_changed = false, changed;
+@@ -323,7 +323,7 @@
+ 	if (!state->link && mpcs->xfi_tphy) {
+ 		mpcs->interface = PHY_INTERFACE_MODE_NA;
+ 		mtk_pcs_lynxi_config(pcs, mpcs->neg_mode,
+-				     state->interface, NULL, false);
++				     state->interface, NULL, false, NULL);
+ 	}
+ }
+ 
+@@ -349,7 +349,7 @@
+ 	 */
+ 	if (mpcs->xfi_tphy && neg_mode != PHYLINK_PCS_NEG_INBAND_ENABLED) {
+ 		mpcs->interface = PHY_INTERFACE_MODE_NA;
+-		mtk_pcs_lynxi_config(pcs, neg_mode, interface, NULL, false);
++		mtk_pcs_lynxi_config(pcs, neg_mode, interface, NULL, false, NULL);
+ 	}
+ 
+ 	if (neg_mode != PHYLINK_PCS_NEG_INBAND_ENABLED) {
+@@ -396,7 +396,7 @@
+ 
+ 	mpcs->interface = PHY_INTERFACE_MODE_NA;
+ 	mtk_pcs_lynxi_config(&mpcs->pcs, mpcs->neg_mode,
+-			     interface, NULL, false);
++			     interface, NULL, false, NULL);
+ 
+ reschedule:
+ 	schedule_delayed_work(&mpcs->link_poll, HZ);
+--- a/drivers/net/pcs/pcs-mtk-usxgmii.c
++++ b/drivers/net/pcs/pcs-mtk-usxgmii.c
+@@ -154,7 +154,7 @@
+ static int mtk_usxgmii_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
+ 				  phy_interface_t interface,
+ 				  const unsigned long *advertising,
+-				  bool permit_pause_to_mac)
++				  bool permit_pause_to_mac, const struct phylink_media *media)
+ {
+ 	struct mtk_usxgmii_pcs *mpcs = pcs_to_mtk_usxgmii_pcs(pcs);
+ 	unsigned int an_ctrl = 0, link_timer = 0, xfi_mode = 0, adapt_mode = 0;
+@@ -337,7 +337,7 @@
+ 	/* Continuously repeat re-configuration sequence until link comes up */
+ 	if (!state->link) {
+ 		mtk_usxgmii_pcs_config(pcs, mpcs->neg_mode,
+-				       state->interface, NULL, false);
++				       state->interface, NULL, false, NULL);
+ 		return;
+ 	}
+ 
+@@ -363,7 +363,7 @@
+ 	/* Reconfiguring USXGMII to ensure the quality of the RX signal
+ 	 * after the line side link up.
+ 	 */
+-	mtk_usxgmii_pcs_config(pcs, neg_mode, interface, NULL, false);
++	mtk_usxgmii_pcs_config(pcs, neg_mode, interface, NULL, false, NULL);
+ 	phy_reset(mpcs->xfi_tphy);
+ 	phy_set_mode_ext(mpcs->xfi_tphy, PHY_MODE_ETHERNET, interface);
+ }
+--- a/drivers/net/pcs/pcs-rzn1-miic.c
++++ b/drivers/net/pcs/pcs-rzn1-miic.c
+@@ -310,7 +310,8 @@
+ 
+ static int miic_config(struct phylink_pcs *pcs, unsigned int neg_mode,
+ 		       phy_interface_t interface,
+-		       const unsigned long *advertising, bool permit)
++		       const unsigned long *advertising, bool permit,
++		       const struct phylink_media *media)
+ {
+ 	struct miic_port *miic_port = phylink_pcs_to_miic_port(pcs);
+ 	struct miic *miic = miic_port->miic;
+--- a/drivers/net/pcs/pcs-xpcs.c
++++ b/drivers/net/pcs/pcs-xpcs.c
+@@ -871,7 +871,7 @@
+ static int xpcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
+ 		       phy_interface_t interface,
+ 		       const unsigned long *advertising,
+-		       bool permit_pause_to_mac)
++		       bool permit_pause_to_mac, const struct phylink_media *media)
+ {
+ 	struct dw_xpcs *xpcs = phylink_pcs_to_xpcs(pcs);
+ 
+--- a/drivers/net/phy/phylink.c
++++ b/drivers/net/phy/phylink.c
+@@ -61,6 +61,8 @@
+ 
+ 	/* The link configuration settings */
+ 	struct phylink_link_state link_config;
++	/* Physical media state, protected by state_mutex. */
++	struct phylink_media media;
+ 
+ 	/* List of available PCS */
+ 	struct list_head pcs_list;
+@@ -968,15 +970,20 @@
+ 	return err;
+ }
+ 
+-static int phylink_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
++static int phylink_pcs_config(struct phylink *pl, unsigned int neg_mode,
+ 			      const struct phylink_link_state *state,
+ 			      bool permit_pause_to_mac)
+ {
+-	if (!pcs)
++	struct phylink_pcs *pcs = pl->pcs;
++
++	lockdep_assert_held(&pl->state_mutex);
++
++	if (!pcs || (pl->media.type == PHYLINK_MEDIA_NONE && !pcs->media_teardown))
+ 		return 0;
+ 
+ 	return pcs->ops->pcs_config(pcs, neg_mode, state->interface,
+-				    state->advertising, permit_pause_to_mac);
++				    state->advertising, permit_pause_to_mac,
++				    &pl->media);
+ }
+ 
+ static void phylink_pcs_link_up(struct phylink_pcs *pcs, unsigned int neg_mode,
+@@ -1415,7 +1422,7 @@
+ 	if (pl->pcs_state == PCS_STATE_STARTING || pcs_changed)
+ 		phylink_pcs_enable(pl->pcs);
+ 
+-	err = phylink_pcs_config(pl->pcs, pl->pcs_neg_mode, state,
++	err = phylink_pcs_config(pl, pl->pcs_neg_mode, state,
+ 				 !!(pl->link_config.pause & MLO_PAUSE_AN));
+ 	if (err < 0) {
+ 		phylink_err(pl, "pcs_config failed: %pe\n", ERR_PTR(err));
+@@ -1484,7 +1491,7 @@
+ 	 * restart negotiation if the pcs_config() helper indicates that
+ 	 * the programmed advertisement has changed.
+ 	 */
+-	ret = phylink_pcs_config(pl->pcs, pl->pcs_neg_mode, &pl->link_config,
++	ret = phylink_pcs_config(pl, pl->pcs_neg_mode, &pl->link_config,
+ 				 !!(pl->link_config.pause & MLO_PAUSE_AN));
+ 	if (ret < 0)
+ 		return ret;
+@@ -1723,6 +1730,8 @@
+ 		mutex_lock(&phy->lock);
+ 	mutex_lock(&pl->state_mutex);
+ 	cur_link_state = phylink_link_is_up(pl);
++	/* Forced configuration also needs a complete state on early-down paths. */
++	link_state = pl->link_config;
+ 
+ 	if (pl->phylink_disable_state) {
+ 		pl->link_failed = false;
+@@ -1877,6 +1886,12 @@
+ 	}
+ 
+ 	pl->sfp_bus = bus;
++	if (bus) {
++		mutex_lock(&pl->state_mutex);
++		pl->media.type = PHYLINK_MEDIA_NONE;
++		pl->media.generation++;
++		mutex_unlock(&pl->state_mutex);
++	}
+ 
+ 	ret = sfp_bus_add_upstream(bus, pl, &sfp_phylink_ops);
+ 	sfp_bus_put(bus);
+@@ -3926,17 +3941,40 @@
+ }
+ EXPORT_SYMBOL_GPL(phylink_speed_up);
+ 
++static void phylink_sfp_clear_media(struct phylink *pl)
++{
++	int ret;
++
++	mutex_lock(&pl->state_mutex);
++	set_bit(PHYLINK_DISABLE_LINK, &pl->phylink_disable_state);
++	pl->media.type = PHYLINK_MEDIA_NONE;
++	pl->media.cable_len_m = 0;
++	pl->media.generation++;
++
++	/* Removal must reach the PCS even if the link never came up. */
++	if (phylink_link_is_up(pl)) {
++		phylink_link_down(pl);
++		pl->old_link_state = false;
++	}
++	ret = phylink_pcs_config(pl, pl->pcs_neg_mode, &pl->link_config,
++				 !!(pl->link_config.pause & MLO_PAUSE_AN));
++	if (ret < 0)
++		phylink_err(pl, "PCS media removal failed: %pe\n", ERR_PTR(ret));
++	mutex_unlock(&pl->state_mutex);
++}
++
+ static void phylink_sfp_attach(void *upstream, struct sfp_bus *bus)
+ {
+ 	struct phylink *pl = upstream;
+ 
+ 	pl->netdev->sfp_bus = bus;
+ }
+ 
+ static void phylink_sfp_detach(void *upstream, struct sfp_bus *bus)
+ {
+ 	struct phylink *pl = upstream;
+ 
++	phylink_sfp_clear_media(pl);
+ 	pl->netdev->sfp_bus = NULL;
+ }
+ 
+@@ -4131,7 +4169,8 @@
+ 
+ 	pl->link_port = pl->sfp_port;
+ 
+-	phylink_sfp_set_config(pl, pl->sfp_support, &config, false);
++	/* A replacement may need setup with exactly the same interface/profile. */
++	phylink_sfp_set_config(pl, pl->sfp_support, &config, true);
+ 
+ 	return 0;
+ }
+@@ -4141,10 +4180,26 @@
+ {
+ 	const struct sfp_module_caps *caps;
+ 	struct phylink *pl = upstream;
++	int ret;
+ 
+ 	ASSERT_RTNL();
+ 
+ 	caps = sfp_get_module_caps(pl->sfp_bus);
++	mutex_lock(&pl->state_mutex);
++	pl->media.type = PHYLINK_MEDIA_OPTICAL;
++	pl->media.cable_len_m = 0;
++	if (caps->port == PORT_TP) {
++		pl->media.type = PHYLINK_MEDIA_PHY;
++	} else if (id->base.sfp_ct_active) {
++		pl->media.type = PHYLINK_MEDIA_CABLE_ACTIVE;
++	} else if (id->base.sfp_ct_passive) {
++		pl->media.type = PHYLINK_MEDIA_DAC_PASSIVE;
++		pl->media.cable_len_m =
++			id->base.link_len[SFP_LINK_LEN_COPPER_1M - SFP_LINK_LEN_SM_KM];
++	}
++	pl->media.generation++;
++	mutex_unlock(&pl->state_mutex);
++
+ 	phy_interface_copy(pl->sfp_interfaces, caps->interfaces);
+ 	linkmode_copy(pl->sfp_support, caps->link_modes);
+ 	pl->sfp_may_have_phy = caps->may_have_phy;
+@@ -4154,13 +4209,18 @@
+ 	if (pl->sfp_may_have_phy)
+ 		return 0;
+ 
+-	return phylink_sfp_config_optical(pl);
++	ret = phylink_sfp_config_optical(pl);
++	/* A rejected insertion is not paired with module_remove() by SFP core. */
++	if (ret < 0)
++		phylink_sfp_clear_media(pl);
++	return ret;
+ }
+ 
+ static void phylink_sfp_module_remove(void *upstream)
+ {
+ 	struct phylink *pl = upstream;
+ 
++	phylink_sfp_clear_media(pl);
+ 	phy_interface_zero(pl->sfp_interfaces);
+ }
+ 
+--- a/include/linux/phylink.h
++++ b/include/linux/phylink.h
+@@ -458,6 +458,39 @@
+ struct phylink_pcs_ops;
+ 
+ /**
++ * enum phylink_media_type - physical connection beyond the PCS
++ * @PHYLINK_MEDIA_UNSPEC: unspecified, retain the driver's non-SFP defaults
++ * @PHYLINK_MEDIA_NONE: no module attached
++ * @PHYLINK_MEDIA_OPTICAL: optical module
++ * @PHYLINK_MEDIA_DAC_PASSIVE: passive direct-attach copper cable
++ * @PHYLINK_MEDIA_CABLE_ACTIVE: active cable
++ * @PHYLINK_MEDIA_PHY: module with a twisted-pair PHY
++ */
++enum phylink_media_type {
++	PHYLINK_MEDIA_UNSPEC,
++	PHYLINK_MEDIA_NONE,
++	PHYLINK_MEDIA_OPTICAL,
++	PHYLINK_MEDIA_DAC_PASSIVE,
++	PHYLINK_MEDIA_CABLE_ACTIVE,
++	PHYLINK_MEDIA_PHY,
++};
++
++/**
++ * struct phylink_media - requested physical media configuration
++ * @type: physical connection type, independent of the host interface
++ * @cable_len_m: passive cable length in metres, zero if unknown
++ * @generation: attachment generation, changes even for same-profile replacement
++ *
++ * Owned by phylink and read-only during pcs_config(). Drivers must copy any
++ * information needed afterwards. Generation is local to the phylink instance.
++ */
++struct phylink_media {
++	enum phylink_media_type type;
++	unsigned int cable_len_m;
++	u64 generation;
++};
++
++/**
+  * struct phylink_pcs - PHYLINK PCS instance
+  * @supported_interfaces: describing which PHY_INTERFACE_MODE_xxx
+  *                        are supported by this PCS.
+@@ -481,6 +514,8 @@
+ 	struct phylink *phylink;
+ 	bool poll;
+ 	bool rxc_always_on;
++	/** @media_teardown: accepts media-none configuration for attachment teardown */
++	bool media_teardown;
+ 
+ 	/* private: */
+ 	struct list_head list;
+@@ -523,7 +558,8 @@
+ 	int (*pcs_config)(struct phylink_pcs *pcs, unsigned int neg_mode,
+ 			  phy_interface_t interface,
+ 			  const unsigned long *advertising,
+-			  bool permit_pause_to_mac);
++			  bool permit_pause_to_mac,
++			  const struct phylink_media *media);
+ 	void (*pcs_an_restart)(struct phylink_pcs *pcs);
+ 	void (*pcs_link_up)(struct phylink_pcs *pcs, unsigned int neg_mode,
+ 			    phy_interface_t interface, int speed, int duplex);
+@@ -603,6 +639,7 @@
+  * @interface: interface mode to be used
+  * @advertising: adertisement ethtool link mode mask
+  * @permit_pause_to_mac: permit forwarding pause resolution to MAC
++ * @media: current physical media and attachment generation
+  *
+  * Configure the PCS for the operating mode, the interface mode, and set
+  * the advertisement mask. @permit_pause_to_mac indicates whether the
+@@ -626,13 +663,22 @@
+  * or when the advertisement is possibly updated. It must not unnecessarily
+  * disrupt an established link.
+  *
++ * A new media generation requires fresh attachment setup even if the interface
++ * and media profile are unchanged. For a PCS setting its media_teardown flag,
++ * %PHYLINK_MEDIA_NONE is also delivered on removal without a preceding link-up,
++ * and only requests that attachment work be stopped; it must not start training
++ * or activate the lane. This call uses the last requested interface and
++ * advertisement and does not restart AN.
++ * Calls are serialized by the phylink state mutex. RTNL is not guaranteed and
++ * must not be acquired by the callback.
++ *
+  * When an autonegotiation restart is required for 802.3z modes, .pcs_config()
+  * should return a positive non-zero integer (e.g. 1) to indicate to phylink
+  * to call the pcs_an_restart() method.
+  */
+ int pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
+ 	       phy_interface_t interface, const unsigned long *advertising,
+-	       bool permit_pause_to_mac);
++	       bool permit_pause_to_mac, const struct phylink_media *media);
+ 
+ /**
+  * pcs_an_restart() - restart 802.3z BaseX autonegotiation
