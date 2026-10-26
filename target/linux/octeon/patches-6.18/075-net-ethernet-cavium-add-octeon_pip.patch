@@ -3,8 +3,8 @@ From: Simon Polack <spolack+git@mailbox.org>
 Subject: [PATCH] net: ethernet: cavium: add octeon_pip
 
 Backport to 6.18 of the octeon_pip series prepared for net-next and not
-posted yet (15 patches, branch octeon-pip-rfc-v1 of
-https://github.com/spolack/linux, 6c34e76095dd on net-next
+posted yet (16 patches, branch octeon-pip-rfc-v1 of
+https://github.com/spolack/linux, 90eb1fd75d25 on net-next
 98c2ad4f5d80), squashed into one patch: the driver for the Ethernet
 ports behind the PIP/IPD and PKO units of OCTEON, OCTEON+, OCTEON II and
 the CN70XX/CN71XX, with phylink and the SGMII/QSGMII/1000BASE-X PCS,
@@ -25,7 +25,7 @@ The ports are named eth%d; OpenWrt renames them from the DT property
 openwrt,netdev-name (lib/preinit/04_set_netdev_label), through the
 net device's of_node the driver sets.
 
-6.18 adaptations: none. The 15 patches apply to 6.18.55 (with the
+6.18 adaptations: none. The 16 patches apply to 6.18.55 (with the
 OpenWrt octeon patches below this one) without changes, and the driver
 builds warning-free (also with W=1); the code is byte-identical to the
 series. Only the context of the networking document index differs
@@ -41,7 +41,7 @@ Signed-off-by: Simon Polack <spolack+git@mailbox.org>
 ---
  .../bindings/net/cavium,octeon-3860-pip.yaml  |  190 ++
  .../devicetree/bindings/net/cavium-pip.txt    |   99 -
- .../ethernet/cavium/octeon_pip.rst            |  242 ++
+ .../ethernet/cavium/octeon_pip.rst            |  259 ++
  .../device_drivers/ethernet/index.rst         |    1 +
  drivers/net/ethernet/cavium/Kconfig           |   21 +
  drivers/net/ethernet/cavium/octeon/Makefile   |   14 +
@@ -52,23 +52,23 @@ Signed-off-by: Simon Polack <spolack+git@mailbox.org>
  .../ethernet/cavium/octeon/octeon_pip_gmx.c   |  766 ++++++
  .../ethernet/cavium/octeon/octeon_pip_gmx.h   |   62 +
  .../ethernet/cavium/octeon/octeon_pip_hw.h    |  377 +++
- .../cavium/octeon/octeon_pip_hw_stub.h        |  130 +
+ .../cavium/octeon/octeon_pip_hw_stub.h        |  131 +
  .../ethernet/cavium/octeon/octeon_pip_ipd.c   |  550 ++++
  .../ethernet/cavium/octeon/octeon_pip_ipd.h   |   68 +
- .../ethernet/cavium/octeon/octeon_pip_link.c  |  388 +++
- .../ethernet/cavium/octeon/octeon_pip_main.c  | 2372 +++++++++++++++++
- .../ethernet/cavium/octeon/octeon_pip_pcs.c   |  683 +++++
- .../ethernet/cavium/octeon/octeon_pip_pcs.h   |   37 +
+ .../ethernet/cavium/octeon/octeon_pip_link.c  |  382 +++
+ .../ethernet/cavium/octeon/octeon_pip_main.c  | 2432 +++++++++++++++++
+ .../ethernet/cavium/octeon/octeon_pip_pcs.c   |  765 +++++
+ .../ethernet/cavium/octeon/octeon_pip_pcs.h   |   38 +
  .../ethernet/cavium/octeon/octeon_pip_pko.c   |  592 ++++
  .../ethernet/cavium/octeon/octeon_pip_pko.h   |  128 +
  .../ethernet/cavium/octeon/octeon_pip_pow.c   |  138 +
  .../ethernet/cavium/octeon/octeon_pip_pow.h   |   67 +
- .../ethernet/cavium/octeon/octeon_pip_regs.h  |  724 +++++
+ .../ethernet/cavium/octeon/octeon_pip_regs.h  |  728 +++++
  .../ethernet/cavium/octeon/octeon_pip_rx.c    | 1400 ++++++++++
  .../ethernet/cavium/octeon/octeon_pip_rx.h    |   23 +
- .../ethernet/cavium/octeon/octeon_pip_tx.c    | 1357 ++++++++++
+ .../ethernet/cavium/octeon/octeon_pip_tx.c    | 1382 ++++++++++
  .../ethernet/cavium/octeon/octeon_pip_tx.h    |   42 +
- 29 files changed, 11413 insertions(+), 99 deletions(-)
+ 29 files changed, 11597 insertions(+), 99 deletions(-)
 
 --- /dev/null
 +++ b/Documentation/devicetree/bindings/net/cavium,octeon-3860-pip.yaml
@@ -367,7 +367,7 @@ Signed-off-by: Simon Polack <spolack+git@mailbox.org>
 -	};
 --- /dev/null
 +++ b/Documentation/networking/device_drivers/ethernet/cavium/octeon_pip.rst
-@@ -0,0 +1,242 @@
+@@ -0,0 +1,259 @@
 +.. SPDX-License-Identifier: GPL-2.0
 +
 +==================================
@@ -540,6 +540,14 @@ Signed-off-by: Simon Polack <spolack+git@mailbox.org>
 +                                fetched or not executed, per queue
 +``<dev> port N ipd buffers``    buffers holding the port's received packets,
 +                                and whether the port asserts backpressure
++``<dev> port N pcs``            SGMII, QSGMII and 1000BASE-X ports: the
++                                interface mode, the PCS in band or out of
++                                band, its control word, out of band on
++                                SGMII and QSGMII its link status, and its
++                                ``PCS_MISC_CTL`` (MAC or PHY side, the MAC
++                                held off, the sample point)
++``<dev> port N pcs an``         in band only: the last autonegotiation's
++                                result and the word the partner sent
 +=============================== ============================================
 +
 +A healthy idle system has ``difference 0``, ``pow queued 0``,
@@ -606,10 +614,19 @@ Signed-off-by: Simon Polack <spolack+git@mailbox.org>
 +  never cross a unit, and counts sent packets in a FAU register instead
 +  of asking for completion work.
 +- The output unit raises no event for a sent packet: transmit
-+  completions come from the receive polls and from a per-queue timer
-+  that schedules the queue's NAPI.
-+- With a PHY on an SGMII or QSGMII port the in-band autonegotiation
-+  between the MAC's PCS and the PHY stays on.
++  completions come from the receive polls, from a per-queue timer that
++  schedules the queue's NAPI, and from the transmit itself once a queue
++  is half full (the NAPI waits for any other NAPI on its CPU, such as
++  the RPS backlog).
++- The PCS of an SGMII or QSGMII port and the PHY must agree on the
++  in-band autonegotiation: a PCS that waits for an autonegotiation the
++  PHY does not send receives nothing, and the other way round. The PCS
++  runs in band by default, with a PHY too, as the vendor SDK does; phylink
++  resolves the mode from the capabilities the PCS and the PHY driver
++  report, and runs a PHY that cannot do in band, and a fixed link, out of
++  band. A PHY driver that reports nothing leaves the PHY at its own
++  setting, which must then be in band. On 1000BASE-X the autonegotiation
++  can also be turned off with ethtool.
 --- a/Documentation/networking/device_drivers/ethernet/index.rst
 +++ b/Documentation/networking/device_drivers/ethernet/index.rst
 @@ -18,6 +18,7 @@ Contents:
@@ -1118,7 +1135,7 @@ Signed-off-by: Simon Polack <spolack+git@mailbox.org>
 +
 +/* octeon_pip_main.c */
 +int opip_link_set(struct opip_port *p, const struct opip_link *link);
-+int opip_pcs_setup(struct opip_port *p);
++int opip_pcs_setup(struct opip_port *p, bool inband);
 +void opip_pcs_restart_an(struct opip_port *p);
 +void opip_port_enable(struct opip_port *p, bool en);
 +void opip_update_hw_stats(struct net_device *dev);
@@ -2939,7 +2956,7 @@ Signed-off-by: Simon Polack <spolack+git@mailbox.org>
 +#endif /* OCTEON_PIP_HW_H */
 --- /dev/null
 +++ b/drivers/net/ethernet/cavium/octeon/octeon_pip_hw_stub.h
-@@ -0,0 +1,130 @@
+@@ -0,0 +1,131 @@
 +/* SPDX-License-Identifier: GPL-2.0 */
 +/*
 + * The hardware layer of octeon_pip without OCTEON hardware (COMPILE_TEST):
@@ -2960,8 +2977,9 @@ Signed-off-by: Simon Polack <spolack+git@mailbox.org>
 +	OCTEON_CN38XX_PASS2, OCTEON_CN50XX, OCTEON_CN52XX,
 +	OCTEON_CN52XX_PASS1_0, OCTEON_CN52XX_PASS1_X, OCTEON_CN56XX,
 +	OCTEON_CN56XX_PASS1_X, OCTEON_CN58XX, OCTEON_CN61XX,
-+	OCTEON_CN63XX, OCTEON_CN66XX, OCTEON_CN68XX, OCTEON_CN68XX_PASS1_X,
-+	OCTEON_CN68XX_PASS2_X, OCTEON_CN70XX, OCTEON_CNF71XX,
++	OCTEON_CN63XX, OCTEON_CN66XX, OCTEON_CN66XX_PASS1_X, OCTEON_CN68XX,
++	OCTEON_CN68XX_PASS1_X, OCTEON_CN68XX_PASS2_X, OCTEON_CN70XX,
++	OCTEON_CNF71XX,
 +};
 +
 +#define OCTEON_IS_MODEL(x)	((void)(x), false)
@@ -3696,7 +3714,7 @@ Signed-off-by: Simon Polack <spolack+git@mailbox.org>
 +#endif /* OCTEON_PIP_IPD_H */
 --- /dev/null
 +++ b/drivers/net/ethernet/cavium/octeon/octeon_pip_link.c
-@@ -0,0 +1,388 @@
+@@ -0,0 +1,382 @@
 +// SPDX-License-Identifier: GPL-2.0
 +/*
 + * The links of octeon_pip's ports: phylink's MAC operations,
@@ -3930,10 +3948,11 @@ Signed-off-by: Simon Polack <spolack+git@mailbox.org>
 + *
 + * RGMII, GMII, SGMII, PICMG and XAUI ports. A port has a PHY or a fixed
 + * link in the device tree, which phylink finds there, or neither. SGMII
-+ * and PICMG ports take the link state their PCS receives in band, with a
-+ * PHY too, and refuse a fixed link. The others refuse in-band status
-+ * (they have no PCS), and without a PHY or a fixed link take the state
-+ * the hardware reports: the RGMII in-band status, the XAUI PCS.
++ * and PICMG ports run their PCS in band, with a PHY too, unless phylink
++ * resolves out of band: a fixed link, or a PHY that cannot run in band.
++ * The others refuse in-band status (they have no PCS), and without a PHY
++ * or a fixed link take the state the hardware reports: the RGMII in-band
++ * status, the XAUI PCS.
 + *
 + * Return: zero on success, a negative errno otherwise
 + */
@@ -3980,19 +3999,12 @@ Signed-off-by: Simon Polack <spolack+git@mailbox.org>
 +	}
 +	if (opip_port_has_pcs(p)) {
 +		/*
-+		 * The PCS runs the SGMII autonegotiation with the PHY, or
-+		 * with whatever else is at the other end, always. In PHY
-+		 * mode phylink would turn the autonegotiation of the PHY
-+		 * off. With a fixed link phylink would warn at every start
-+		 * and keep the carrier up whatever the PCS sees: a partner
-+		 * that answers the autonegotiation is an in-band link.
++		 * The PCS and the other end must agree on the in-band
++		 * autonegotiation. In band is the default, as in the SDK:
++		 * phylink then resolves the mode from the PCS's and the PHY
++		 * driver's capabilities, and runs a PHY that cannot do in
++		 * band, and a fixed link, out of band.
 +		 */
-+		if (np && of_phy_is_fixed_link(np)) {
-+			dev_err(&p->opip->pdev->dev,
-+				"%pOF: no fixed link on an SGMII port, use managed = \"in-band-status\"\n",
-+				np);
-+			return -EINVAL;
-+		}
 +		config->default_an_inband = true;
 +		p->pcs.ops = &opip_pcs_ops;
 +		p->pcs.poll = true;
@@ -4087,7 +4099,7 @@ Signed-off-by: Simon Polack <spolack+git@mailbox.org>
 +}
 --- /dev/null
 +++ b/drivers/net/ethernet/cavium/octeon/octeon_pip_main.c
-@@ -0,0 +1,2372 @@
+@@ -0,0 +1,2432 @@
 +// SPDX-License-Identifier: GPL-2.0
 +/*
 + * octeon_pip: the Ethernet driver of the OCTEON packet I/O blocks.
@@ -4180,22 +4192,23 @@ Signed-off-by: Simon Polack <spolack+git@mailbox.org>
 +}
 +
 +/**
-+ * opip_pcs_setup - set the PCS of an SGMII or PICMG port up for in-band AN
-+ * @p: Port
++ * opip_pcs_setup - set the PCS of an SGMII, QSGMII or 1000BASE-X port up
++ * @p:      Port
++ * @inband: In-band autonegotiation, or the PCS forced out of band
 + *
-+ * Set the PCS of an SGMII, QSGMII or 1000BASE-X port up for in-band
-+ * autonegotiation, under the hardware lock. Ports of other modes are left
-+ * alone.
++ * Set the PCS of an SGMII, QSGMII or 1000BASE-X port up for in-band or
++ * out-of-band operation, under the hardware lock. Ports of other modes
++ * are left alone.
 + *
 + * Return: 0, or the error of opip_pcs_config()
 + */
-+int opip_pcs_setup(struct opip_port *p)
++int opip_pcs_setup(struct opip_port *p, bool inband)
 +{
 +	int ret = 0;
 +
 +	mutex_lock(&p->opip->hw_lock);
 +	if (opip_port_has_pcs(p))
-+		ret = opip_pcs_config(p->iface->num, p->index);
++		ret = opip_pcs_config(p->iface->num, p->index, inband);
 +	mutex_unlock(&p->opip->hw_lock);
 +	return ret;
 +}
@@ -4462,9 +4475,66 @@ Signed-off-by: Simon Polack <spolack+git@mailbox.org>
 +}
 +
 +/*
++ * The PCS of a port: in band or out of band (PCS_MR_CONTROL[AN_EN]) and
++ * the MAC side. The link status only for SGMII and QSGMII out of band:
++ * PCS_MR_STATUS[LNK_ST] latches low and a read clears it, which phylink's
++ * poll must see in band and on 1000BASE-X. In band the autonegotiation's
++ * result and what the partner sent; out of band PCS_AN_RESULTS is
++ * undefined.
++ */
++static void opip_debugfs_pcs(struct seq_file *m, struct net_device *dev)
++{
++	static const unsigned int speeds[] = { 10, 100, 1000, 0 };
++	u64 ctl, st = 0, res = 0, lp = 0, misc;
++	struct opip_port *p = opip_port(dev);
++	int iface = p->iface->num;
++	int index = p->index;
++	bool inband, basex;
++
++	mutex_lock(&p->opip->hw_lock);
++	ctl = opip_rd(OPIP_PCS_MR_CONTROL(iface, index));
++	misc = opip_rd(OPIP_PCS_MISC_CTL(iface, index));
++	inband = ctl & OPIP_PCS_MR_CONTROL_AN_EN;
++	basex = misc & OPIP_PCS_MISC_CTL_MODE;
++	if (inband) {
++		res = opip_rd(OPIP_PCS_AN_RESULTS(iface, index));
++		lp = opip_rd(OPIP_PCS_AN_LP_ABIL(iface, index));
++	} else if (!basex) {
++		st = opip_rd(OPIP_PCS_MR_STATUS(iface, index));
++	}
++	mutex_unlock(&p->opip->hw_lock);
++
++	seq_printf(m, "%s port %d pcs %s %s control %#llx", dev->name, p->port,
++		   phy_modes(p->phy_mode), inband ? "in-band" : "out-of-band",
++		   ctl);
++	if (!inband && !basex)
++		seq_printf(m, " status %#llx link %s", st,
++			   st & OPIP_PCS_MR_STATUS_LNK_ST ? "up" : "down");
++	seq_printf(m, " misc %#llx %s gmxeno %d samp_pt %llu\n", misc,
++		   misc & OPIP_PCS_MISC_CTL_MAC_PHY ? "phy-side" : "mac-side",
++		   !!(misc & OPIP_PCS_MISC_CTL_GMXENO),
++		   FIELD_GET(OPIP_PCS_MISC_CTL_SAMP_PT, misc));
++	if (!inband)
++		return;
++	/* 1000BASE-X: a clause 37 word, no SGMII speed */
++	if (basex) {
++		seq_printf(m, "%s port %d pcs an results %#llx lp %#llx\n",
++			   dev->name, p->port, res, lp);
++		return;
++	}
++	seq_printf(m, "%s port %d pcs an results %#llx link_ok %d an_complete %d speed %u %s lp %#llx\n",
++		   dev->name, p->port, res,
++		   !!(res & OPIP_PCS_AN_RESULTS_LINK_OK),
++		   !!(res & OPIP_PCS_AN_RESULTS_AN_CPT),
++		   speeds[FIELD_GET(OPIP_PCS_AN_RESULTS_SPD, res)],
++		   res & OPIP_PCS_AN_RESULTS_DUP ? "full" : "half", lp);
++}
++
++/*
 + * Per port: the packets in flight on each transmit queue, the commands the
-+ * PKO has been told of and not fetched yet, and the IPD's backpressure
-+ * count of the GMX ports. Under rtnl: the devices and their queue counts.
++ * PKO has been told of and not fetched yet, the IPD's backpressure count
++ * of the GMX ports, and the PCS. Under rtnl: the devices and their queue
++ * counts.
 + */
 +static void opip_debugfs_port(struct seq_file *m, struct net_device *dev)
 +{
@@ -4494,6 +4564,8 @@ Signed-off-by: Simon Polack <spolack+git@mailbox.org>
 +			   dev->name, p->port, opip_ipd_bp_count(p->port),
 +			   on ? "on" : "off", limit);
 +	}
++	if (opip_port_has_pcs(p))
++		opip_debugfs_pcs(m, dev);
 +}
 +
 +static struct dentry *opip_debugfs_root;
@@ -6462,7 +6534,7 @@ Signed-off-by: Simon Polack <spolack+git@mailbox.org>
 +MODULE_DESCRIPTION("Cavium OCTEON PIP/PKO Ethernet driver");
 --- /dev/null
 +++ b/drivers/net/ethernet/cavium/octeon/octeon_pip_pcs.c
-@@ -0,0 +1,683 @@
+@@ -0,0 +1,765 @@
 +// SPDX-License-Identifier: GPL-2.0
 +/*
 + * The PCS blocks: the SGMII/QSGMII PCS of each port of a GMX, and the
@@ -6476,6 +6548,7 @@ Signed-off-by: Simon Polack <spolack+git@mailbox.org>
 +#include <linux/delay.h>
 +#include <linux/iopoll.h>
 +#include <linux/kernel.h>
++#include <linux/mii.h>
 +#include <linux/mutex.h>
 +#include <linux/phylink.h>
 +
@@ -6585,7 +6658,7 @@ Signed-off-by: Simon Polack <spolack+git@mailbox.org>
 + * The GMX port counts, the PCS of each port and its power cycle, then the
 + * ports enabled. On the simulator, which has no link polling, the link
 + * is set up here instead of the power cycle. The PCS of a port is set up
-+ * for in-band autonegotiation later, from phylink, see opip_pcs_config().
++ * for the link later, from phylink, see opip_pcs_config().
 + *
 + * Return: 0, or -EINVAL for more ports than a GMX has
 + */
@@ -6601,7 +6674,7 @@ Signed-off-by: Simon Polack <spolack+git@mailbox.org>
 +		if (opip_on_simulator()) {
 +			struct opip_link link = opip_pcs_link(iface, index);
 +
-+			opip_pcs_link_up(iface, index, link.speed);
++			opip_pcs_link_up(iface, index, &link, true);
 +			opip_pcs_link_set(iface, index, &link);
 +		}
 +	}
@@ -6613,13 +6686,30 @@ Signed-off-by: Simon Polack <spolack+git@mailbox.org>
 +	return 0;
 +}
 +
++/*
++ * Errata G-15618: no soft reset of the PCS on CN63XX, CN66XX pass 1 and
++ * CN68XX; the SDK only restarts the autonegotiation there
++ * (cvmx-helper-sgmii.c, __cvmx_helper_need_g15618(); its comment names
++ * CN63XX up to pass 2.1, its code, followed here, every CN63XX).
++ */
++static bool opip_pcs_no_reset(void)
++{
++	return OCTEON_IS_MODEL(OCTEON_CN63XX) ||
++	       OCTEON_IS_MODEL(OCTEON_CN66XX_PASS1_X) ||
++	       OCTEON_IS_MODEL(OCTEON_CN68XX);
++}
++
 +/**
 + * opip_pcs_reset - take a port's PCS through a reset and start a new AN
 + * @iface: Interface
 + * @index: Port on it
 + *
-+ * Does not wait for the autonegotiation: it completes once the PHY's
-+ * in-band signalling is there, which opip_pcs_link() reports.
++ * No reset on the simulator and on the chips of errata G-15618, see
++ * opip_pcs_no_reset(): only the new autonegotiation. Does not wait for
++ * it: it completes once the PHY's in-band signalling is there, which
++ * opip_pcs_link() reports. Speed and duplex bits a previous out-of-band
++ * link left in PCS_MR_CONTROL stay: with AN_EN set the PCS takes both
++ * from the autonegotiation.
 + *
 + * Return: 0, or -ETIMEDOUT if the PCS does not come out of the reset
 + */
@@ -6627,7 +6717,7 @@ Signed-off-by: Simon Polack <spolack+git@mailbox.org>
 +{
 +	u64 ctl = opip_rd(OPIP_PCS_MR_CONTROL(iface, index));
 +
-+	if (!opip_on_simulator()) {
++	if (!opip_on_simulator() && !opip_pcs_no_reset()) {
 +		opip_wr(OPIP_PCS_MR_CONTROL(iface, index),
 +			ctl | OPIP_PCS_MR_CONTROL_RESET);
 +		if (read_poll_timeout(opip_rd, ctl,
@@ -6637,29 +6727,57 @@ Signed-off-by: Simon Polack <spolack+git@mailbox.org>
 +			return -ETIMEDOUT;
 +	}
 +	ctl |= OPIP_PCS_MR_CONTROL_RST_AN | OPIP_PCS_MR_CONTROL_AN_EN;
-+	ctl &= ~OPIP_PCS_MR_CONTROL_PWR_DN;
++	ctl &= ~(OPIP_PCS_MR_CONTROL_PWR_DN | OPIP_PCS_MR_CONTROL_RESET);
 +	opip_wr(OPIP_PCS_MR_CONTROL(iface, index), ctl);
 +	return 0;
 +}
 +
++/*
++ * Out of band: the autonegotiation off, the PCS powered up, 1000 Mbit/s
++ * full duplex (the SDK's forced setting) until opip_pcs_link_up() sets
++ * the speed and duplex of the link. A PCS already out of band keeps its
++ * link: nothing is written.
++ */
++static void opip_pcs_outband(int iface, int index)
++{
++	const u64 off = OPIP_PCS_MR_CONTROL_RESET | OPIP_PCS_MR_CONTROL_AN_EN |
++			OPIP_PCS_MR_CONTROL_PWR_DN;
++	u64 ctl = opip_rd(OPIP_PCS_MR_CONTROL(iface, index));
++
++	if (!(ctl & off))
++		return;
++	ctl &= ~(off | OPIP_PCS_MR_CONTROL_RST_AN | OPIP_PCS_MR_CONTROL_FIXED);
++	ctl |= mii_bmcr_encode_fixed(SPEED_1000, DUPLEX_FULL);
++	opip_wr(OPIP_PCS_MR_CONTROL(iface, index), ctl);
++}
++
 +/**
-+ * opip_pcs_config - set a port's PCS up for in-band autonegotiation
-+ * @iface: Interface
-+ * @index: Port on it
++ * opip_pcs_config - set a port's PCS up for in-band or out-of-band operation
++ * @iface:  Interface
++ * @index:  Port on it
++ * @inband: In-band autonegotiation, as phylink resolved it
 + *
-+ * A reset and a new autonegotiation, unless the PCS is set up for it
-+ * already (PCS_MR_CONTROL[AN_EN], powered up, out of reset), when a reset
-+ * would only take a link that is up down again. Decided by what is
-+ * programmed, not by the link status: PCS_MR_STATUS[LNK_ST] latches low,
-+ * and reading it here would hide a lost link from pcs_get_state. The
-+ * mode (PCS_MISC_CTL[MODE]) is the bootloader's and stays.
++ * In band: a reset and a new autonegotiation, unless the PCS is set up
++ * for it already (PCS_MR_CONTROL[AN_EN], powered up, out of reset), when
++ * a reset would only take a link that is up down again. Decided by what
++ * is programmed, not by the link status: PCS_MR_STATUS[LNK_ST] latches
++ * low, and reading it here would hide a lost link from pcs_get_state.
++ * Out of band: see opip_pcs_outband(). The PCS and the PHY must agree:
++ * a PCS waiting for an autonegotiation the PHY does not send, or the
++ * other way round, receives nothing. The mode (PCS_MISC_CTL[MODE]) is
++ * the bootloader's and stays.
 + *
 + * Return: 0, or the error of opip_pcs_reset()
 + */
-+int opip_pcs_config(int iface, int index)
++int opip_pcs_config(int iface, int index, bool inband)
 +{
-+	u64 ctl = opip_rd(OPIP_PCS_MR_CONTROL(iface, index));
++	u64 ctl;
 +
++	if (!inband) {
++		opip_pcs_outband(iface, index);
++		return 0;
++	}
++	ctl = opip_rd(OPIP_PCS_MR_CONTROL(iface, index));
 +	if ((ctl & OPIP_PCS_MR_CONTROL_AN_EN) &&
 +	    !(ctl & (OPIP_PCS_MR_CONTROL_PWR_DN | OPIP_PCS_MR_CONTROL_RESET)))
 +		return 0;
@@ -6671,13 +6789,14 @@ Signed-off-by: Simon Polack <spolack+git@mailbox.org>
 + * @iface: Interface
 + * @index: Port on it
 + *
-+ * Sets PCS_MR_CONTROL[RST_AN] and [AN_EN], without a reset of the PCS.
++ * Sets PCS_MR_CONTROL[RST_AN], without a reset of the PCS. phylink asks
++ * for it in band only (1000BASE-X).
 + */
 +void opip_pcs_an_restart(int iface, int index)
 +{
 +	opip_wr(OPIP_PCS_MR_CONTROL(iface, index),
 +		opip_rd(OPIP_PCS_MR_CONTROL(iface, index)) |
-+		OPIP_PCS_MR_CONTROL_RST_AN | OPIP_PCS_MR_CONTROL_AN_EN);
++		OPIP_PCS_MR_CONTROL_RST_AN);
 +}
 +
 +/* The simulator and the PCS's internal loopback: up, 1 Gbit/s full duplex */
@@ -6783,24 +6902,30 @@ Signed-off-by: Simon Polack <spolack+git@mailbox.org>
 +
 +/**
 + * opip_pcs_link_up - set an SGMII port's PCS up for the speed of a link
-+ * @iface: Interface
-+ * @index: Port on it
-+ * @speed: Mbit/s
++ * @iface:  Interface
++ * @index:  Port on it
++ * @link:   The link's speed and duplex
++ * @inband: The PCS runs the in-band autonegotiation
 + *
-+ * The sample point of the speed in PCS_MISC_CTL[SAMP_PT], with the GMX
-+ * disabled and idle.
++ * With the GMX disabled and idle: the sample point of the speed in
++ * PCS_MISC_CTL[SAMP_PT] (the line runs at 1.25 Gbaud at every speed, the
++ * PHY repeats the symbols at 10 and 100 Mbit/s), and out of band the speed
++ * and duplex in PCS_MR_CONTROL (a clause 22 BMCR), which the PCS takes
++ * from the autonegotiation otherwise: at a speed other than the PCS's no
++ * frame passes.
 + *
 + * Return: 0, or -ETIMEDOUT if the GMX does not go idle
 + */
-+int opip_pcs_link_up(int iface, int index, int speed)
++int opip_pcs_link_up(int iface, int index, const struct opip_link *link,
++		     bool inband)
 +{
 +	int enabled = opip_pcs_gmx_hold(iface, index);
-+	u64 misc;
++	u64 misc, ctl;
 +
 +	if (enabled < 0)
 +		return enabled;
 +	misc = opip_rd(OPIP_PCS_MISC_CTL(iface, index));
-+	switch (speed) {
++	switch (link->speed) {
 +	case SPEED_10:
 +		misc = u64_replace_bits(misc, 25, OPIP_PCS_MISC_CTL_SAMP_PT);
 +		break;
@@ -6814,6 +6939,13 @@ Signed-off-by: Simon Polack <spolack+git@mailbox.org>
 +		break;
 +	}
 +	opip_wr(OPIP_PCS_MISC_CTL(iface, index), misc);
++	if (!inband) {
++		ctl = opip_rd(OPIP_PCS_MR_CONTROL(iface, index));
++		ctl &= ~(OPIP_PCS_MR_CONTROL_RST_AN | OPIP_PCS_MR_CONTROL_FIXED);
++		ctl |= mii_bmcr_encode_fixed(link->speed, link->full_duplex ?
++					     DUPLEX_FULL : DUPLEX_HALF);
++		opip_wr(OPIP_PCS_MR_CONTROL(iface, index), ctl);
++	}
 +	opip_pcs_gmx_release(iface, index, enabled);
 +	return 0;
 +}
@@ -6854,9 +6986,10 @@ Signed-off-by: Simon Polack <spolack+git@mailbox.org>
 +/* The phylink PCS of an SGMII, QSGMII or 1000BASE-X port */
 +
 +/*
-+ * phylink polls the PCS once a second, and with a PHY takes the link as
-+ * up when both say so. The PCS is set up for in-band autonegotiation
-+ * from here, the MAC operations set up the GMX.
++ * In band, phylink polls the PCS once a second, and with a PHY takes the
++ * link as up when both say so. Out of band, with a PHY, the link is the
++ * PHY's and phylink does not ask the PCS. The PCS is set up from here,
++ * the MAC operations set up the GMX.
 + */
 +static struct opip_port *opip_pcs_port(struct phylink_pcs *pcs)
 +{
@@ -6871,7 +7004,11 @@ Signed-off-by: Simon Polack <spolack+git@mailbox.org>
 +	struct opip_link link;
 +	u16 status, lpa;
 +
-+	/* 1000BASE-X: a clause 37 advertisement, phylink decodes it */
++	/*
++	 * phylink asks in band only: SGMII and QSGMII with the
++	 * autonegotiation, 1000BASE-X with it or without (INBAND_DISABLED).
++	 * 1000BASE-X: a clause 37 advertisement, phylink decodes it.
++	 */
 +	if (state->interface == PHY_INTERFACE_MODE_1000BASEX &&
 +	    !opip_pcs_forced_up(iface, p->index)) {
 +		status = opip_rd(OPIP_PCS_MR_STATUS(iface, p->index));
@@ -6913,7 +7050,12 @@ Signed-off-by: Simon Polack <spolack+git@mailbox.org>
 +		changed = opip_pcs_set_pause(p->iface->num, p->index, pause);
 +		mutex_unlock(&p->opip->hw_lock);
 +	}
-+	ret = opip_pcs_setup(p);
++	/*
++	 * Out of band and INBAND_DISABLED (1000BASE-X without the
++	 * autonegotiation) are the same to the PCS: AN_EN off, the speed and
++	 * duplex forced
++	 */
++	ret = opip_pcs_setup(p, neg_mode == PHYLINK_PCS_NEG_INBAND_ENABLED);
 +	if (ret) {
 +		netdev_err(p->netdev, "setting up the PCS failed: %d\n", ret);
 +		return ret;
@@ -6931,21 +7073,33 @@ Signed-off-by: Simon Polack <spolack+git@mailbox.org>
 +				 int duplex)
 +{
 +	struct opip_port *p = opip_pcs_port(pcs);
++	struct opip_link link = {
++		.up = true,
++		.full_duplex = duplex == DUPLEX_FULL,
++		.speed = speed,
++	};
 +	int ret;
 +
 +	mutex_lock(&p->opip->hw_lock);
-+	ret = opip_pcs_link_up(p->iface->num, p->index, speed);
++	ret = opip_pcs_link_up(p->iface->num, p->index, &link,
++			       neg_mode == PHYLINK_PCS_NEG_INBAND_ENABLED);
 +	mutex_unlock(&p->opip->hw_lock);
 +	if (ret)
 +		netdev_err(p->netdev, "setting up the PCS for the link failed: %d\n",
 +			   ret);
 +}
 +
-+/* The PCS is set up for in-band autonegotiation, always */
++/*
++ * The PCS runs with the in-band autonegotiation or without it, as phylink
++ * resolves it: in band by default, out of band for a fixed link or a PHY
++ * that cannot run in band, and on 1000BASE-X also with the
++ * autonegotiation turned off by ethtool. A PCS supports one interface
++ * mode, the port's.
++ */
 +static unsigned int opip_pcs_inband_caps(struct phylink_pcs *pcs,
 +					 phy_interface_t interface)
 +{
-+	return LINK_INBAND_ENABLE;
++	return LINK_INBAND_DISABLE | LINK_INBAND_ENABLE;
 +}
 +
 +const struct phylink_pcs_ops opip_pcs_ops = {
@@ -7148,7 +7302,7 @@ Signed-off-by: Simon Polack <spolack+git@mailbox.org>
 +}
 --- /dev/null
 +++ b/drivers/net/ethernet/cavium/octeon/octeon_pip_pcs.h
-@@ -0,0 +1,37 @@
+@@ -0,0 +1,38 @@
 +/* SPDX-License-Identifier: GPL-2.0 */
 +/*
 + * The SGMII/QSGMII PCS of a port, and the XAUI PCS of an interface.
@@ -7173,10 +7327,11 @@ Signed-off-by: Simon Polack <spolack+git@mailbox.org>
 +
 +bool opip_pcs_basex(int iface, int index);
 +int opip_sgmii_enable(int iface, int num_ports);
-+int opip_pcs_config(int iface, int index);
++int opip_pcs_config(int iface, int index, bool inband);
 +void opip_pcs_an_restart(int iface, int index);
 +struct opip_link opip_pcs_link(int iface, int index);
-+int opip_pcs_link_up(int iface, int index, int speed);
++int opip_pcs_link_up(int iface, int index, const struct opip_link *link,
++		     bool inband);
 +int opip_pcs_link_set(int iface, int index, const struct opip_link *link);
 +unsigned int opip_pcs_poll_errors(int iface, int index);
 +
@@ -8125,7 +8280,7 @@ Signed-off-by: Simon Polack <spolack+git@mailbox.org>
 +#endif /* OCTEON_PIP_POW_H */
 --- /dev/null
 +++ b/drivers/net/ethernet/cavium/octeon/octeon_pip_regs.h
-@@ -0,0 +1,724 @@
+@@ -0,0 +1,728 @@
 +/* SPDX-License-Identifier: GPL-2.0 */
 +/*
 + * Registers of the OCTEON packet I/O blocks the octeon_pip driver drives:
@@ -8145,6 +8300,7 @@ Signed-off-by: Simon Polack <spolack+git@mailbox.org>
 +
 +#include <linux/bitfield.h>
 +#include <linux/bits.h>
++#include <linux/mii.h>
 +#include <linux/types.h>
 +
 +#include "octeon_pip_hw.h"
@@ -8380,12 +8536,15 @@ Signed-off-by: Simon Polack <spolack+git@mailbox.org>
 +#define OPIP_PCS_MISC_CTL(i, p)		opip_pcs_reg(i, p, 0x078)
 +#define OPIP_PCS_INT_REG(i, p)		opip_pcs_reg(i, p, 0x080)
 +
-+/* PCS_MRn_CONTROL */
-+#define OPIP_PCS_MR_CONTROL_RESET	BIT_ULL(15)
-+#define OPIP_PCS_MR_CONTROL_LOOPBCK1	BIT_ULL(14)
-+#define OPIP_PCS_MR_CONTROL_AN_EN	BIT_ULL(12)
-+#define OPIP_PCS_MR_CONTROL_PWR_DN	BIT_ULL(11)
-+#define OPIP_PCS_MR_CONTROL_RST_AN	BIT_ULL(9)
++/* PCS_MRn_CONTROL: the clause 22 BMCR */
++#define OPIP_PCS_MR_CONTROL_RESET	BMCR_RESET
++#define OPIP_PCS_MR_CONTROL_LOOPBCK1	BMCR_LOOPBACK
++#define OPIP_PCS_MR_CONTROL_AN_EN	BMCR_ANENABLE
++#define OPIP_PCS_MR_CONTROL_PWR_DN	BMCR_PDOWN
++#define OPIP_PCS_MR_CONTROL_RST_AN	BMCR_ANRESTART
++/* Speed and duplex, mii_bmcr_encode_fixed() */
++#define OPIP_PCS_MR_CONTROL_FIXED \
++	(BMCR_SPEED1000 | BMCR_SPEED100 | BMCR_FULLDPLX)
 +
 +/* PCS_MRn_STATUS */
 +#define OPIP_PCS_MR_STATUS_AN_CPT	BIT_ULL(5)
@@ -10281,7 +10440,7 @@ Signed-off-by: Simon Polack <spolack+git@mailbox.org>
 +#endif /* OCTEON_PIP_RX_H */
 --- /dev/null
 +++ b/drivers/net/ethernet/cavium/octeon/octeon_pip_tx.c
-@@ -0,0 +1,1357 @@
+@@ -0,0 +1,1382 @@
 +// SPDX-License-Identifier: GPL-2.0
 +/*
 + * The transmit side of octeon_pip.
@@ -10317,9 +10476,11 @@ Signed-off-by: Simon Polack <spolack+git@mailbox.org>
 + * for every one). Every queue has a NAPI of its own on the port for the
 + * rest: a transmit outside of a receive poll schedules it once in 8
 + * packets, unless a poll has the queue on its list, and so does a timer
-+ * per queue for whatever is left when nothing else comes along. There is
-+ * no completion interrupt: a packet that asks for one is a three word
-+ * command.
++ * per queue for whatever is left when nothing else comes along. That NAPI
++ * waits for the one its CPU is in (the RPS backlog, another driver's), so
++ * from half full on a transmit outside of a receive poll reads the counter
++ * itself. There is no completion interrupt: a packet that asks for one is
++ * a three word command.
 + *
 + * Derived in part from the staging octeon driver (ethernet-tx.c: the
 + * short frame padding of CN3XXX),
@@ -10353,6 +10514,13 @@ Signed-off-by: Simon Polack <spolack+git@mailbox.org>
 +
 +/* Free slots a stopped transmit queue needs before it is woken */
 +#define OPIP_TX_WAKE_THRESH	(OPIP_TXQ_DEPTH / 4)
++
++/*
++ * Packets in flight from which a transmit outside of a receive poll
++ * completes the queue itself instead of scheduling its NAPI, which runs
++ * only once the NAPI its CPU is in returns, see opip_tx_batch()
++ */
++#define OPIP_TX_COMPLETE_THRESH	(OPIP_TXQ_DEPTH / 2)
 +
 +/*
 + * Packets written between two reads of the counter by the transmit paths.
@@ -10502,16 +10670,19 @@ Signed-off-by: Simon Polack <spolack+git@mailbox.org>
 + *
 + * @budget is the budget the core passed to the NAPI poll this runs in: a
 + * receive poll (its ticks, its end, what it transmits) or the queue's own
-+ * NAPI. The skbs go into the per-CPU NAPI cache they were built from. A
-+ * drain, from process context, and the watchdog pass 0 and free to the
-+ * slab. netpoll transmits with interrupts off and bottom halves on, so it
-+ * leaves the completion to the NAPI and to opip_tx_netpoll(). The stack
-+ * delivers the last packets of every poll (its GRO batch) after the poll
-+ * has returned, so a third of a forwarding load's packets are sent from
-+ * outside the poll on the poll's CPU; freeing those to the slab starved
-+ * the cache, and the next poll built its skbs cold from the slab. A transmit
-+ * outside a receive poll leaves them to the next poll that has the queue
-+ * on its list, or schedules the queue's NAPI, see opip_tx_kick().
++ * NAPI, or any non-zero one for a transmit in a softirq outside of a
++ * receive poll. The skbs go into the per-CPU NAPI cache they were built
++ * from. A drain from process context, the watchdog and a transmit outside
++ * of a softirq pass 0 and free to the slab. netpoll transmits with
++ * interrupts off and bottom halves on, so it leaves the completion to the
++ * NAPI and to opip_tx_netpoll(). The stack delivers the last packets of
++ * every poll (its GRO batch) after the poll has returned, so a third of a
++ * forwarding load's packets are sent from outside the poll on the poll's
++ * CPU; freeing those to the slab starved the cache, and the next poll
++ * built its skbs cold from the slab. A transmit outside a receive poll
++ * leaves them to the next poll that has the queue on its list, or
++ * schedules the queue's NAPI, see opip_tx_kick(), until the ring is half
++ * full, see opip_tx_batch().
 + *
 + * Return: the number of packets completed
 + */
@@ -10605,6 +10776,29 @@ Signed-off-by: Simon Polack <spolack+git@mailbox.org>
 +	q->written = 0;
 +	if (!q->poll_dirty)
 +		napi_schedule(&q->napi);
++}
++
++/*
++ * A transmit has written OPIP_TX_COMPLETE_BATCH packets: complete them in
++ * a receive poll, under the poll's budget. Outside of one the queue's NAPI
++ * does, but the RPS backlog's poll of 64 GRO super-skbs fills the ring
++ * several times over before the NAPI gets to run, and the PKO idles on a
++ * ring of sent packets meanwhile: from OPIP_TX_COMPLETE_THRESH on the
++ * transmit completes them itself, with a NAPI budget in a softirq, to the
++ * slab from process context. Below it the FAU read is not worth it. Under
++ * the queue lock, never for netpoll.
++ */
++static __always_inline void opip_tx_batch(struct net_device *dev,
++					  unsigned int qid, struct opip_txq *q,
++					  struct opip_tx_poll *poll)
++{
++	if (poll)
++		opip_tx_complete(dev, qid, q, poll->budget);
++	else if (opip_txq_inflight(q) >= OPIP_TX_COMPLETE_THRESH)
++		opip_tx_complete(dev, qid, q,
++				 in_serving_softirq() ? NAPI_POLL_WEIGHT : 0);
++	else
++		opip_tx_kick(q);
 +}
 +
 +/*
@@ -11084,16 +11278,9 @@ Signed-off-by: Simon Polack <spolack+git@mailbox.org>
 +	    READ_ONCE(p->pad_runts) && __skb_put_padto(skb, 64, false))
 +		goto drop;
 +
-+	/*
-+	 * The packets sent a batch ago are out: make room before adding,
-+	 * in a receive poll under its budget, else in the queue's NAPI
-+	 */
-+	if (q->written >= OPIP_TX_COMPLETE_BATCH && !netpoll_tx_running(dev)) {
-+		if (poll)
-+			opip_tx_complete(dev, qid, q, poll->budget);
-+		else
-+			opip_tx_kick(q);
-+	}
++	/* The packets sent a batch ago are out: make room before adding */
++	if (q->written >= OPIP_TX_COMPLETE_BATCH && !netpoll_tx_running(dev))
++		opip_tx_batch(dev, qid, q, poll);
 +
 +	/*
 +	 * Before the command is written: a completion may free the skb then.
@@ -11255,7 +11442,8 @@ Signed-off-by: Simon Polack <spolack+git@mailbox.org>
 + * The frames are sent on the queue of this CPU, like the stack's packets
 + * from this CPU, under the same lock. A redirect from a receive poll of
 + * this driver comes in that poll and completes under its budget; from
-+ * elsewhere the completion is the queue's NAPI's.
++ * elsewhere the queue's NAPI completes, or the transmit itself once the
++ * ring is half full, see opip_tx_batch().
 + *
 + * Return: the number of frames sent
 + */
@@ -11282,12 +11470,8 @@ Signed-off-by: Simon Polack <spolack+git@mailbox.org>
 +	/* Bottom halves are off, never an interrupt: see opip_xmit() */
 +	poll = __this_cpu_read(opip_tx_poll_cur);
 +	__netif_tx_lock(txq, cpu);
-+	if (q->written >= OPIP_TX_COMPLETE_BATCH) {
-+		if (poll)
-+			opip_tx_complete(dev, qid, q, poll->budget);
-+		else
-+			opip_tx_kick(q);
-+	}
++	if (q->written >= OPIP_TX_COMPLETE_BATCH)
++		opip_tx_batch(dev, qid, q, poll);
 +	for (i = 0; i < n; i++) {
 +		struct xdp_frame *xdpf = frames[i];
 +
