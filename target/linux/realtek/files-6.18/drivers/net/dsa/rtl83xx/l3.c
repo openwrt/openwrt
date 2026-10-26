@@ -1330,18 +1330,14 @@ static int otto_l3_930x_setup(struct otto_l3_ctrl *ctrl)
 	for (int i = 0; i < MAX_INTF_MTUS; i++)
 		priv->intf_mtu_count[i] = priv->intf_mtus[i] = 0;
 
-	priv->intf_mtu_count[0] = 0; /* Needs to stay forever */
+	/* Slot 0 holds the default and is never given up, so an interface always
+	 * has somewhere to point. The rest start free and take the MTU of the
+	 * first device whose routes ask for them.
+	 */
 	priv->intf_mtus[0] = DEFAULT_MTU;
+	priv->intf_mtu_count[0] = 1;
 	sw_w32_mask(0xffff, DEFAULT_MTU, RTL930X_L3_IP_MTU_CTRL(0));
 	sw_w32_mask(0xffff, DEFAULT_MTU, RTL930X_L3_IP6_MTU_CTRL(0));
-	priv->intf_mtus[1] = DEFAULT_MTU;
-	sw_w32_mask(0xffff0000, DEFAULT_MTU << 16, RTL930X_L3_IP_MTU_CTRL(0));
-	sw_w32_mask(0xffff0000, DEFAULT_MTU << 16, RTL930X_L3_IP6_MTU_CTRL(0));
-
-	sw_w32_mask(0xffff, DEFAULT_MTU, RTL930X_L3_IP_MTU_CTRL(1));
-	sw_w32_mask(0xffff, DEFAULT_MTU, RTL930X_L3_IP6_MTU_CTRL(1));
-	sw_w32_mask(0xffff0000, DEFAULT_MTU << 16, RTL930X_L3_IP_MTU_CTRL(1));
-	sw_w32_mask(0xffff0000, DEFAULT_MTU << 16, RTL930X_L3_IP6_MTU_CTRL(1));
 
 	/* Clear all source port MACs. One that cannot be cleared is only
 	 * logged: a failed setup fails the switch probe.
@@ -1387,13 +1383,115 @@ static int otto_l3_930x_setup(struct otto_l3_ctrl *ctrl)
 	return 0;
 }
 
-static int otto_l3_alloc_egress_intf(struct otto_l3_ctrl *ctrl, u64 mac, int vlan)
+/* The MTU tables hold a handful of values and an egress interface names one of
+ * them by index, so interfaces of the same MTU share a slot. Slot 0 holds the
+ * default and is never given up: it is where an interface points when there is
+ * no slot to be had, which forwards a packet the CPU should have been asked
+ * about rather than dropping one it should not.
+ *
+ * Called with ctrl->lock held.
+ */
+/* A slot in use and already holding this MTU, or negative. Called with
+ * ctrl->lock held.
+ */
+static int otto_l3_mtu_find(struct otto_l3_ctrl *ctrl, u16 mtu)
 {
+	struct otto_dsa_priv *priv = ctrl->priv;
+
+	for (int i = 0; i < MAX_INTF_MTUS; i++)
+		if (priv->intf_mtu_count[i] && priv->intf_mtus[i] == mtu)
+			return i;
+
+	return -1;
+}
+
+/* A slot no interface names, which a new value can be written into, or
+ * negative. Called with ctrl->lock held.
+ */
+static int otto_l3_mtu_spare(struct otto_l3_ctrl *ctrl)
+{
+	struct otto_dsa_priv *priv = ctrl->priv;
+
+	for (int i = 0; i < MAX_INTF_MTUS; i++)
+		if (!priv->intf_mtu_count[i])
+			return i;
+
+	return -1;
+}
+
+static int otto_l3_mtu_get(struct otto_l3_ctrl *ctrl, u16 mtu)
+{
+	struct otto_dsa_priv *priv = ctrl->priv;
+	int free_slot, id;
+
+	if (!mtu || !ctrl->cfg->set_intf_mtu)
+		mtu = DEFAULT_MTU;
+
+	id = otto_l3_mtu_find(ctrl, mtu);
+	if (id >= 0) {
+		priv->intf_mtu_count[id]++;
+		return id;
+	}
+
+	free_slot = otto_l3_mtu_spare(ctrl);
+
+	if (free_slot < 0 || !ctrl->cfg->set_intf_mtu ||
+	    ctrl->cfg->set_intf_mtu(ctrl, free_slot, mtu)) {
+		dev_warn(ctrl->dev, "no MTU slot for %u, routing with %u instead\n",
+			 mtu, priv->intf_mtus[0]);
+		priv->intf_mtu_count[0]++;
+		return 0;
+	}
+
+	priv->intf_mtus[free_slot] = mtu;
+	priv->intf_mtu_count[free_slot] = 1;
+
+	return free_slot;
+}
+
+/* Called with ctrl->lock held. Slot 0 is the default and stays. */
+static void otto_l3_mtu_put(struct otto_l3_ctrl *ctrl, int id)
+{
+	struct otto_dsa_priv *priv = ctrl->priv;
+
+	if (id > 0 && id < MAX_INTF_MTUS && priv->intf_mtu_count[id])
+		priv->intf_mtu_count[id]--;
+}
+
+/* The MTU an interface routes with, for comparing against a device's */
+static u16 otto_l3_intf_mtu(struct otto_l3_ctrl *ctrl, int if_id)
+{
+	struct otto_dsa_priv *priv = ctrl->priv;
+
+	return priv->intf_mtus[ctrl->interfaces[if_id].ip4_mtu_id];
+}
+
+static int otto_l3_alloc_egress_intf(struct otto_l3_ctrl *ctrl, u64 mac, int vlan,
+				     u16 mtu)
+{
+	struct otto_dsa_priv *priv = ctrl->priv;
 	struct otto_l3_intf intf = {};
 	int free_mac = -1, err;
+	u16 eff_mtu;
 	u64 m;
 
+	/* What otto_l3_mtu_get() will settle on, needed before it is called so
+	 * that an interface already routing with it can be reused instead.
+	 */
+	eff_mtu = (!mtu || !ctrl->cfg->set_intf_mtu) ? DEFAULT_MTU : mtu;
+
 	mutex_lock(ctrl->lock);
+
+	/* Once no slot holds the wanted MTU and none is free to take it,
+	 * otto_l3_mtu_get() hands out slot 0, so slot 0's value is what an
+	 * interface for this device can actually be given. Asking for the
+	 * wanted value anyway would match no interface already on that
+	 * fallback, and every route out of the device would take an egress
+	 * interface of its own until there were none left.
+	 */
+	if (otto_l3_mtu_find(ctrl, eff_mtu) < 0 && otto_l3_mtu_spare(ctrl) < 0)
+		eff_mtu = priv->intf_mtus[0];
+
 	for (int i = 0; i < MAX_SMACS; i++) {
 		/* A source MAC that cannot be read is neither free nor a match */
 		if (ctrl->cfg->get_smac(ctrl, i, &m))
@@ -1402,7 +1500,8 @@ static int otto_l3_alloc_egress_intf(struct otto_l3_ctrl *ctrl, u64 mac, int vla
 			free_mac = i;
 			continue;
 		}
-		if (m == mac && ctrl->interfaces[i].vid == vlan) {
+		if (m == mac && ctrl->interfaces[i].vid == vlan &&
+		    otto_l3_intf_mtu(ctrl, i) == eff_mtu) {
 			dev_dbg(ctrl->dev, "reusing egress interface %d for VLAN %d\n",
 				i, vlan);
 			ctrl->intf_refs[i]++;
@@ -1420,8 +1519,7 @@ static int otto_l3_alloc_egress_intf(struct otto_l3_ctrl *ctrl, u64 mac, int vla
 	/* Set up default egress interface 1 */
 	intf.vid = vlan;
 	intf.smac_idx = free_mac;
-	intf.ip4_mtu_id = 1;
-	intf.ip6_mtu_id = 1;
+	intf.ip4_mtu_id = intf.ip6_mtu_id = otto_l3_mtu_get(ctrl, mtu);
 	intf.ttl_scope = 1; /* TTL */
 	intf.hl_scope = 1;  /* Hop Limit */
 	intf.ip4_icmp_redirect = intf.ip6_icmp_redirect = 2;  /* FORWARD */
@@ -1429,19 +1527,25 @@ static int otto_l3_alloc_egress_intf(struct otto_l3_ctrl *ctrl, u64 mac, int vla
 	dev_dbg(ctrl->dev, "new egress interface %d for VLAN %d\n", free_mac, vlan);
 	err = ctrl->cfg->set_egress_intf(ctrl, free_mac, &intf);
 	if (err) {
+		otto_l3_mtu_put(ctrl, intf.ip4_mtu_id);
 		mutex_unlock(ctrl->lock);
 		return err;
 	}
-	ctrl->interfaces[free_mac] = intf;
 
-	/* An interface whose source MAC was not written stays free */
+	/* An interface whose source MAC was not written stays free, so the
+	 * shadow copy is published only once it is really taken: until then
+	 * otto_l3_intf_mtu() would read an MTU slot off an interface that does
+	 * not exist, and a later allocation can be handed the same index.
+	 */
 	err = ctrl->cfg->set_smac(ctrl, free_mac, mac);
 	if (err) {
 		dev_err(ctrl->dev, "source MAC of egress interface %d not written: %d\n",
 			free_mac, err);
+		otto_l3_mtu_put(ctrl, intf.ip4_mtu_id);
 		mutex_unlock(ctrl->lock);
 		return err;
 	}
+	ctrl->interfaces[free_mac] = intf;
 	ctrl->intf_refs[free_mac]++;
 
 	mutex_unlock(ctrl->lock);
@@ -2381,8 +2485,17 @@ static void otto_l3_intf_put(struct otto_l3_ctrl *ctrl, int if_id)
 {
 	mutex_lock(ctrl->lock);
 
-	if (if_id >= 0 && !--ctrl->intf_refs[if_id] && ctrl->cfg->set_smac(ctrl, if_id, 0))
-		dev_err(ctrl->dev, "egress interface %d not freed\n", if_id);
+	if (if_id >= 0 && !--ctrl->intf_refs[if_id]) {
+		/* The source MAC is what marks an interface taken, so its MTU
+		 * slot goes back only once the interface itself has. One that
+		 * could not be freed keeps routing, and a slot handed back
+		 * under it would be rewritten for another interface's MTU.
+		 */
+		if (ctrl->cfg->set_smac(ctrl, if_id, 0))
+			dev_err(ctrl->dev, "egress interface %d not freed\n", if_id);
+		else
+			otto_l3_mtu_put(ctrl, ctrl->interfaces[if_id].ip4_mtu_id);
+	}
 
 	mutex_unlock(ctrl->lock);
 }
@@ -2566,7 +2679,7 @@ static void otto_l3_egress_sync(struct work_struct *work)
 			continue;
 		}
 
-		if_id = otto_l3_alloc_egress_intf(ctrl, mac, r->nh.rvid);
+		if_id = otto_l3_alloc_egress_intf(ctrl, mac, r->nh.rvid, dev->mtu);
 		if (if_id < 0) {
 			kept = true;
 			continue;
@@ -2602,6 +2715,109 @@ static void otto_l3_egress_sync_request(struct otto_l3_ctrl *ctrl, struct net_de
 	queue_work(ctrl->priv->wq, &ew->work);
 }
 
+/* Put @dev's MTU into the slot interface @if_id names, where that can be done
+ * without moving the interface. Answers -EBUSY when it cannot, which leaves the
+ * interface alone for the caller to replace.
+ *
+ * Rewriting a slot in place is only safe while this interface is the only thing
+ * that names it and this device the only one that routes through the interface:
+ * a slot is shared by every interface of the same MTU, and an interface by
+ * every route whose source MAC and VLAN match, this device's or another's.
+ */
+static int otto_l3_intf_mtu_rewrite(struct otto_l3_ctrl *ctrl,
+				    struct net_device *dev, int if_id)
+{
+	struct otto_dsa_priv *priv = ctrl->priv;
+	int id;
+
+	guard(mutex)(ctrl->lock);
+
+	id = ctrl->interfaces[if_id].ip4_mtu_id;
+
+	/* Several routes share an interface, and the first of them moved it
+	 * already
+	 */
+	if (priv->intf_mtus[id] == dev->mtu)
+		return 0;
+
+	/* Moving the interface to a slot that already holds the value is what
+	 * keeps the table free of duplicates, so that is left to the caller
+	 * even when this interface's own slot could have been rewritten.
+	 */
+	if (!id || otto_l3_mtu_find(ctrl, dev->mtu) >= 0 ||
+	    priv->intf_mtu_count[id] != 1 ||
+	    !otto_l3_intf_only_dev(ctrl, if_id, dev->ifindex))
+		return -EBUSY;
+
+	if (ctrl->cfg->set_intf_mtu(ctrl, id, dev->mtu)) {
+		dev_err(ctrl->dev, "MTU of %s not programmed, interface %d keeps %u\n",
+			dev->name, if_id, priv->intf_mtus[id]);
+		return -EIO;
+	}
+
+	priv->intf_mtus[id] = dev->mtu;
+
+	return 0;
+}
+
+/* A device's MTU changed, so the slot its interfaces name no longer holds the
+ * right value. Each of them takes one that does: its own slot rewritten where
+ * that disturbs nobody, and otherwise an interface carrying the new MTU, the
+ * way otto_l3_egress_sync() gives this device's routes their own interface
+ * rather than changing one another device also routes through. An interface
+ * that cannot be moved keeps routing with the old MTU, which is what it did
+ * before any of this existed.
+ */
+static void otto_l3_intf_mtu_sync(struct otto_l3_ctrl *ctrl, struct net_device *dev)
+{
+	struct otto_l3_route *r;
+	bool kept = false;
+
+	if (!ctrl->cfg->set_intf_mtu)
+		return;
+
+	list_for_each_entry(r, &ctrl->routes_list, list) {
+		int if_id, old = r->nh.if_id;
+		u64 mac;
+		int err;
+
+		if (r->gw_ifindex != dev->ifindex || old < 0)
+			continue;
+
+		err = otto_l3_intf_mtu_rewrite(ctrl, dev, old);
+		if (!err)
+			continue;
+		if (err != -EBUSY) {
+			kept = true;
+			continue;
+		}
+
+		/* The interface stays as it is, source MAC included, so it is
+		 * read back out of hardware rather than taken from the device:
+		 * the new interface has to be the old one with another MTU, or
+		 * the routes moved onto it would answer to a different MAC.
+		 */
+		if (ctrl->cfg->get_smac(ctrl, old, &mac) || !mac) {
+			kept = true;
+			continue;
+		}
+
+		if_id = otto_l3_alloc_egress_intf(ctrl, mac, r->nh.rvid, dev->mtu);
+		if (if_id < 0) {
+			kept = true;
+			continue;
+		}
+
+		r->nh.if_id = if_id;
+		if (if_id != old && r->nh.gw && ctrl->cfg->set_nexthop)
+			ctrl->cfg->set_nexthop(ctrl, r->nh.id, r->nh.l2_id, r->nh.if_id);
+		otto_l3_intf_put(ctrl, old);
+	}
+
+	if (kept)
+		dev_err(ctrl->dev, "routes out of %s keep their old MTU\n", dev->name);
+}
+
 static int otto_l3_netdev_notifier(struct notifier_block *nb, unsigned long event, void *ptr)
 {
 	struct otto_l3_ctrl *ctrl = container_of(nb, struct otto_l3_ctrl, nd_nb);
@@ -2631,6 +2847,9 @@ static int otto_l3_netdev_notifier(struct notifier_block *nb, unsigned long even
 	case NETDEV_REGISTER:	/* it may come with the MAC of an entry */
 	case NETDEV_UNREGISTER:
 		otto_l3_router_mac_sync(ctrl, true);
+		break;
+	case NETDEV_CHANGEMTU:
+		otto_l3_intf_mtu_sync(ctrl, netdev_notifier_info_to_dev(ptr));
 		break;
 	}
 
@@ -3040,7 +3259,7 @@ static int otto_l3_fib_add_v4(struct otto_l3_ctrl *ctrl, struct fib_entry_notifi
 			goto out_free_rt;
 
 		/* vid = 0: Do not care about VID */
-		route->nh.if_id = otto_l3_alloc_egress_intf(ctrl, mac, vlan);
+		route->nh.if_id = otto_l3_alloc_egress_intf(ctrl, mac, vlan, ndev->mtu);
 		if (route->nh.if_id < 0)
 			goto out_free_rmac;
 
@@ -3528,7 +3747,7 @@ static int otto_l3_fib_add_v6(struct otto_l3_ctrl *ctrl, struct fib6_entry_notif
 		if (otto_l3_router_mac_get(ctrl, ndev))
 			goto out_failed;
 
-		route->nh.if_id = otto_l3_alloc_egress_intf(ctrl, mac, vlan);
+		route->nh.if_id = otto_l3_alloc_egress_intf(ctrl, mac, vlan, ndev->mtu);
 		if (route->nh.if_id < 0)
 			goto out_failed;
 	}
@@ -4719,10 +4938,24 @@ const struct otto_l3_config otto_l3_839x_cfg = {
 	.dbgfs_init = otto_l3_839x_dbgfs_init,
 };
 
+/* Two MTUs to a register, the low half for an even slot and the high half for
+ * an odd one, which is how otto_l3_930x_setup() writes slot 0.
+ */
+static int otto_l3_930x_set_intf_mtu(struct otto_l3_ctrl *ctrl, int id, u16 mtu)
+{
+	u32 shift = (id & 1) << 4;
+
+	sw_w32_mask(0xffffU << shift, (u32)mtu << shift, RTL930X_L3_IP_MTU_CTRL(id));
+	sw_w32_mask(0xffffU << shift, (u32)mtu << shift, RTL930X_L3_IP6_MTU_CTRL(id));
+
+	return 0;
+}
+
 const struct otto_l3_config otto_l3_930x_cfg = {
 	.use_l3_tables = true,
 	.find_slot = otto_l3_930x_find_slot,
 	.get_egress_intf = otto_l3_930x_get_egress_intf,
+	.set_intf_mtu = otto_l3_930x_set_intf_mtu,
 	.get_smac = otto_l3_930x_get_smac,
 	.set_smac = otto_l3_930x_set_smac,
 	.get_dmac = otto_l3_930x_get_dmac,

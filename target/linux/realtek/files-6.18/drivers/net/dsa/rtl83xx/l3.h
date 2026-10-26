@@ -145,6 +145,15 @@ struct otto_l3_config {
 	int (*find_slot)(struct otto_l3_ctrl *ctrl, struct otto_l3_route *rt, bool must_exist);
 	void (*get_egress_intf)(struct otto_l3_ctrl *ctrl, int idx, struct otto_l3_intf *intf);
 	int (*set_egress_intf)(struct otto_l3_ctrl *ctrl, int idx, struct otto_l3_intf *intf);
+	/* Write one slot of the MTU tables, which an egress interface names by
+	 * index. Both families' tables take the same value, because a device
+	 * has one MTU. The hardware compares it against the IP total length and
+	 * not against the frame: measured on an S1300WP, a slot holding 100
+	 * forwards a 100 byte packet and drops a 101 byte one. So the value is
+	 * the device's MTU as the device reports it. Families without the
+	 * tables leave this unset and route everything with the default.
+	 */
+	int (*set_intf_mtu)(struct otto_l3_ctrl *ctrl, int id, u16 mtu);
 	/* Source MAC entries by their index: on RTL839x those of
 	 * ROUTING_SA_CTRL, on RTL930x the source MAC rows of the egress MAC
 	 * table
