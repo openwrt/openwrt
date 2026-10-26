@@ -41,8 +41,8 @@
 			      "port3_rx", "port3_tx",
 			      "port4_rx", "port4_tx",
 			      "port5_rx", "port5_tx";
-		clock-output-names = "uniphy0_gcc_tx_clk",
-				     "uniphy0_gcc_rx_clk";
+		clock-output-names = "uniphy0_gcc_rx_clk",
+				     "uniphy0_gcc_tx_clk";
 		#clock-cells = <1>;
 		resets = <&gcc GCC_UNIPHY0_SOFT_RESET>,
 			 <&gcc GCC_UNIPHY0_XPCS_RESET>;
@@ -60,8 +60,8 @@
 			 <&gcc GCC_UNIPHY1_PORT5_TX_CLK>;
 		clock-names = "ahb", "sys",
 			      "port5_rx", "port5_tx";
-		clock-output-names = "uniphy1_gcc_tx_clk",
-				     "uniphy1_gcc_rx_clk";
+		clock-output-names = "uniphy1_gcc_rx_clk",
+				     "uniphy1_gcc_tx_clk";
 		#clock-cells = <1>;
 		resets = <&gcc GCC_UNIPHY1_SOFT_RESET>,
 			 <&gcc GCC_UNIPHY1_XPCS_RESET>;
@@ -79,8 +79,8 @@
 			 <&gcc GCC_UNIPHY2_PORT6_TX_CLK>;
 		clock-names = "ahb", "sys",
 			      "port6_rx", "port6_tx";
-		clock-output-names = "uniphy2_gcc_tx_clk",
-				     "uniphy2_gcc_rx_clk";
+		clock-output-names = "uniphy2_gcc_rx_clk",
+				     "uniphy2_gcc_tx_clk";
 		#clock-cells = <1>;
 		resets = <&gcc GCC_UNIPHY2_SOFT_RESET>,
 			 <&gcc GCC_UNIPHY2_XPCS_RESET>;
