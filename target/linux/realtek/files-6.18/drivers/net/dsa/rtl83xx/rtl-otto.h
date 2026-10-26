@@ -211,7 +211,7 @@ struct pie_rule {
 	bool itag_fmt;		/* 0: inner tag packet, 1: inner priority tag or untagged */
 	bool otag_exist;	/* packet with outer tag */
 	bool itag_exist;	/* packet with inner tag */
-	bool frame_type_l2;	/* 0: Ethernet, 1: LLC_SNAP, 2: LLC_Other, 3: Reserved */
+	u8 frame_type_l2;	/* 0: Ethernet, 1: LLC_SNAP, 2: LLC_Other, 3: Reserved */
 	bool igr_normal_port;	/* Ingress port is not cpu or stacking port */
 	u8 tid;			/* The template ID defining the what the templated fields mean */
 
@@ -229,7 +229,7 @@ struct pie_rule {
 	bool itag_fmt_m;
 	bool otag_exist_m;
 	bool itag_exist_m;
-	bool frame_type_l2_m;
+	u8 frame_type_l2_m;
 	bool igr_normal_port_m;
 	u8 tid_m;
 
