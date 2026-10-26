@@ -7,7 +7,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=nftables
 PKG_VERSION:=1.1.7
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
 PKG_SOURCE_URL:=https://netfilter.org/projects/$(PKG_NAME)/files
@@ -29,8 +29,7 @@ CONFIGURE_ARGS += \
         --disable-debug \
         --disable-man-doc \
         --with-mini-gmp \
-        --without-cli \
-        --disable-python
+        --without-cli
 
 define Package/nftables/Default
   SECTION:=net
