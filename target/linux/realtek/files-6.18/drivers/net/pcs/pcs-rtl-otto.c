@@ -4754,7 +4754,7 @@ static void rtpcs_pcs_an_restart(struct phylink_pcs *pcs)
 
 static int rtpcs_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
 			    phy_interface_t interface, const unsigned long *advertising,
-			    bool permit_pause_to_mac)
+			    bool permit_pause_to_mac, const struct phylink_media *media)
 {
 	struct rtpcs_link *link = rtpcs_phylink_pcs_to_link(pcs);
 	struct rtpcs_ctrl *ctrl = link->ctrl;
