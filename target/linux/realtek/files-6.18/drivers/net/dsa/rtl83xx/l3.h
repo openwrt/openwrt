@@ -138,7 +138,7 @@ struct otto_l3_config {
 	bool smac_per_route;
 	int (*find_slot)(struct otto_l3_ctrl *ctrl, struct otto_l3_route *rt, bool must_exist);
 	void (*get_egress_intf)(struct otto_l3_ctrl *ctrl, int idx, struct otto_l3_intf *intf);
-	void (*set_egress_intf)(struct otto_l3_ctrl *ctrl, int idx, struct otto_l3_intf *intf);
+	int (*set_egress_intf)(struct otto_l3_ctrl *ctrl, int idx, struct otto_l3_intf *intf);
 	/* Source MAC entries by their index: on RTL839x those of
 	 * ROUTING_SA_CTRL, on RTL930x the source MAC rows of the egress MAC
 	 * table

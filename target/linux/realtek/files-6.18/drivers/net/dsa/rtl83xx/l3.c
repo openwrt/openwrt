@@ -1283,7 +1283,8 @@ static void otto_l3_930x_get_egress_intf(struct otto_l3_ctrl *ctrl, int idx,
  * 0: FORWARD, 1: DROP, 2: TRAP2CPU, 3: COPY2CPU, 4: TRAP2MASTERCPU, 5: COPY2MASTERCPU,  6: HARDDROP
  * idx is the index in the HW interface table: idx < 0x80
  */
-static void otto_l3_930x_set_egress_intf(struct otto_l3_ctrl *ctrl, int idx, struct otto_l3_intf *intf)
+static int otto_l3_930x_set_egress_intf(struct otto_l3_ctrl *ctrl, int idx,
+					struct otto_l3_intf *intf)
 {
 	u32 data[2];
 
@@ -1300,7 +1301,7 @@ static void otto_l3_930x_set_egress_intf(struct otto_l3_ctrl *ctrl, int idx, str
 	data[1] |= (intf->ip6_pbr_icmp_redirect & 0x7);
 
 	dev_dbg(ctrl->dev, "writing to index %d: %08x %08x\n", idx, data[0], data[1]);
-	otto_table_write(RTL9300_TBL_L3_EGR_INTF, idx & 0x7f, &data);
+	return otto_table_write(RTL9300_TBL_L3_EGR_INTF, idx & 0x7f, &data);
 }
 
 /* Configure L3 routing settings of the device:
@@ -1415,7 +1416,11 @@ static int otto_l3_alloc_egress_intf(struct otto_l3_ctrl *ctrl, u64 mac, int vla
 	intf.ip4_icmp_redirect = intf.ip6_icmp_redirect = 2;  /* FORWARD */
 	intf.ip4_pbr_icmp_redirect = intf.ip6_pbr_icmp_redirect = 2; /* FORWARD; */
 	dev_dbg(ctrl->dev, "new egress interface %d for VLAN %d\n", free_mac, vlan);
-	ctrl->cfg->set_egress_intf(ctrl, free_mac, &intf);
+	err = ctrl->cfg->set_egress_intf(ctrl, free_mac, &intf);
+	if (err) {
+		mutex_unlock(ctrl->lock);
+		return err;
+	}
 	ctrl->interfaces[free_mac] = intf;
 
 	/* An interface whose source MAC was not written stays free */
