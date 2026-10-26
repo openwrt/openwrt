@@ -24,6 +24,7 @@ platform_do_upgrade() {
 	avm,fritz7490-micron|\
 	bt,homehub-v5a|\
 	draytek,vigor2860|\
+	draytek,vigor2862|\
 	zyxel,p-2812hnu-f1|\
 	zyxel,p-2812hnu-f3)
 		nand_do_upgrade $1
