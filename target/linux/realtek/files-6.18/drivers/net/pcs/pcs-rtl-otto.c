@@ -574,6 +574,7 @@ struct rtpcs_serdes {
 	u8 id;
 	u8 num_of_links;
 	bool first_start;
+	bool attachment_changed;
 	struct delayed_work cali_work;
 	bool rxcal_pending;
 	u8 rxcal_tries;
@@ -599,6 +600,7 @@ struct rtpcs_link {
 	struct rtpcs_ctrl *ctrl;
 	struct phylink_pcs pcs;
 	struct rtpcs_serdes *sds;
+	u64 media_generation;
 	int port;
 };
 
@@ -887,31 +889,23 @@ static int rtpcs_sds_select_hw_mode(struct rtpcs_serdes *sds, phy_interface_t if
 	return 0;
 }
 
-static int rtpcs_sds_select_attachment(enum rtpcs_sds_mode hw_mode,
-				       enum rtpcs_sds_attachment *attachment)
+static enum rtpcs_sds_attachment
+rtpcs_media_attachment(const struct phylink_media *media)
 {
-	switch (hw_mode) {
-	case RTPCS_SDS_MODE_OFF:
-		*attachment = RTPCS_SDS_ATTACH_NONE;
-		break;
-	case RTPCS_SDS_MODE_100BASEX:
-	case RTPCS_SDS_MODE_1000BASEX:
-	case RTPCS_SDS_MODE_2500BASEX:
-	case RTPCS_SDS_MODE_10GBASER:
-		*attachment = RTPCS_SDS_ATTACH_FIBER;
-		break;
+	switch (media->type) {
+	case PHYLINK_MEDIA_NONE:
+		return RTPCS_SDS_ATTACH_NONE;
+	case PHYLINK_MEDIA_UNSPEC:
+	case PHYLINK_MEDIA_PHY:
+		return RTPCS_SDS_ATTACH_PHY;
+	case PHYLINK_MEDIA_DAC_PASSIVE:
+		/* An unspecified length uses the long-cable profile. */
+		return media->cable_len_m && media->cable_len_m < 3 ?
+			RTPCS_SDS_ATTACH_DAC_SHORT : RTPCS_SDS_ATTACH_DAC_LONG;
 	default:
-		/*
-		 * SGMII, QSGMII, XSGMII and USXGMII always run into a PHY, be
-		 * it on-board or embedded in an SFP copper module; either way
-		 * the SerDes-to-PHY trace is short and the PHY equalizes for
-		 * itself on the far end.
-		 */
-		*attachment = RTPCS_SDS_ATTACH_PHY;
-		break;
+		/* Active cables and optics use the ordinary module profile. */
+		return RTPCS_SDS_ATTACH_FIBER;
 	}
-
-	return 0;
 }
 
 /* Generic auto-negotiation config */
@@ -3245,6 +3239,8 @@ static void rtpcs_sds_cancel_rx_work(void *data)
 	scoped_guard(mutex, &sds->ctrl->lock) {
 		sds->rxcal_pending = false;
 		sds->rxmon_active = false;
+		sds->rxmon_down = 0;
+		sds->rxmon_recovery_after = 0;
 	}
 
 	/* Unused work items remain zeroed in the SerDes allocation. */
@@ -4911,18 +4907,70 @@ static void rtpcs_pcs_an_restart(struct phylink_pcs *pcs)
 	mutex_unlock(&ctrl->lock);
 }
 
+static void rtpcs_pcs_disable(struct phylink_pcs *pcs)
+{
+	struct rtpcs_link *link = rtpcs_phylink_pcs_to_link(pcs);
+	struct rtpcs_serdes *sds = link->sds;
+
+	/* Disabling one MAC must not interrupt a shared SerDes. */
+	if (sds->num_of_links > 1)
+		return;
+
+	rtpcs_sds_cancel_rx_work(sds);
+
+	scoped_guard(mutex, &link->ctrl->lock) {
+		sds->attachment_changed = true;
+	}
+}
+
+static int rtpcs_sds_reconfigure_attachment(struct rtpcs_serdes *sds)
+{
+	int power_ret, ret;
+
+	if (!sds->ops->config_attachment || sds->hw_mode == RTPCS_SDS_MODE_OFF)
+		return 0;
+
+	/* Preserve the interface mode while changing the analog attachment settings. */
+	ret = sds->ops->set_power(sds, false);
+	if (ret < 0)
+		return ret;
+
+	ret = sds->ops->config_attachment(sds, sds->attachment, sds->hw_mode);
+	power_ret = sds->ops->set_power(sds, true);
+
+	return ret < 0 ? ret : power_ret;
+}
+
 static int rtpcs_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
 			    phy_interface_t interface, const unsigned long *advertising,
 			    bool permit_pause_to_mac, const struct phylink_media *media)
 {
 	struct rtpcs_link *link = rtpcs_phylink_pcs_to_link(pcs);
+	enum rtpcs_sds_usxgmii_submode submode;
+	bool mode_changed, attachment_changed;
 	struct rtpcs_ctrl *ctrl = link->ctrl;
 	struct rtpcs_serdes *sds = link->sds;
 	enum rtpcs_sds_attachment attachment;
-	enum rtpcs_sds_usxgmii_submode submode;
 	enum rtpcs_sds_mode hw_mode;
-	bool mode_changed;
 	int changed, ret;
+
+	attachment = rtpcs_media_attachment(media);
+	scoped_guard(mutex, &ctrl->lock)
+		attachment_changed = sds->attachment != attachment ||
+				     link->media_generation != media->generation;
+	if (attachment_changed || attachment == RTPCS_SDS_ATTACH_NONE) {
+		rtpcs_sds_cancel_rx_work(sds);
+		scoped_guard(mutex, &ctrl->lock) {
+			sds->attachment = attachment;
+			sds->attachment_changed = true;
+		}
+	}
+
+	/* Media removal only stops attachment work; do not reactivate the lane. */
+	if (attachment == RTPCS_SDS_ATTACH_NONE) {
+		link->media_generation = media->generation;
+		return 0;
+	}
 
 	ret = rtpcs_sds_select_hw_mode(sds, interface, &hw_mode, &submode);
 	if (ret < 0) {
@@ -4933,14 +4981,17 @@ static int rtpcs_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
 
 	scoped_guard(mutex, &ctrl->lock) {
 		mode_changed = sds->hw_mode != hw_mode || sds->usxgmii_submode != submode;
-		if (mode_changed) {
+		attachment_changed = sds->attachment_changed;
+		if (mode_changed || attachment_changed) {
 			if (sds->rxcal_pending)
-				dev_dbg(ctrl->dev, "SerDes %u: invalidating pending RX calibration for mode change\n",
+				dev_dbg(ctrl->dev, "SerDes %u: invalidating pending RX calibration for configuration change\n",
 					sds->id);
 			sds->rxcal_pending = false;
 			sds->rxmon_active = false;
 			sds->rxmon_down = 0;
+		}
 
+		if (mode_changed) {
 			ret = rtpcs_sds_config_polarity(sds, interface);
 			if (ret < 0) {
 				dev_err(ctrl->dev, "failed to configure polarity of SerDes %u\n",
@@ -4956,16 +5007,10 @@ static int rtpcs_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
 			if (ret < 0)
 				return ret;
 
-			if (sds->ops->config_attachment) {
-				ret = rtpcs_sds_select_attachment(hw_mode, &attachment);
+			if (sds->ops->config_attachment && hw_mode != RTPCS_SDS_MODE_OFF) {
+				ret = sds->ops->config_attachment(sds, sds->attachment, hw_mode);
 				if (ret < 0)
 					return ret;
-
-				ret = sds->ops->config_attachment(sds, attachment, hw_mode);
-				if (ret < 0)
-					return ret;
-
-				sds->attachment = attachment;
 			}
 
 			ret = sds->ops->set_hw_mode(sds, hw_mode, submode);
@@ -4978,6 +5023,10 @@ static int rtpcs_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
 			ret = sds->ops->activate(sds);
 			if (ret < 0)
 				return ret;
+		} else if (attachment_changed) {
+			ret = rtpcs_sds_reconfigure_attachment(sds);
+			if (ret < 0)
+				return ret;
 		} else {
 			dev_dbg(ctrl->dev, "SerDes %u already in mode %s, no change\n",
 				sds->id, phy_modes(interface));
@@ -4987,7 +5036,7 @@ static int rtpcs_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
 		if (changed < 0)
 			return changed;
 
-		if (mode_changed) {
+		if (mode_changed || attachment_changed) {
 			if (sds->ops->post_config) {
 				ret = sds->ops->post_config(sds, hw_mode);
 				if (ret < 0)
@@ -4995,17 +5044,19 @@ static int rtpcs_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
 			}
 
 			sds->first_start = false;
+			sds->attachment_changed = false;
 
 			dev_info(ctrl->dev, "SerDes %u configured for %s mode\n",
 				 sds->id, phy_modes(interface));
 		}
 	}
+	link->media_generation = media->generation;
 
 	/* Forced SGMII links cannot report PCS changes through MAC link IRQs. */
 	pcs->poll = interface == PHY_INTERFACE_MODE_SGMII &&
 		    neg_mode == PHYLINK_PCS_NEG_INBAND_ENABLED;
 
-	return changed;
+	return changed || attachment_changed;
 }
 
 static void rtpcs_mdio_bus_put(void *data)
@@ -5162,6 +5213,7 @@ static struct phylink_pcs *rtpcs_pcs_get(struct fwnode_reference_args *pcsspec, 
 		link->port = sds->link_port[link_idx];
 		link->sds = sds;
 		link->pcs.ops = sds->ctrl->cfg->pcs_ops;
+		link->pcs.media_teardown = true;
 
 		sds->link[link_idx] = link;
 	}
@@ -5200,6 +5252,7 @@ static int rtpcs_probe(struct platform_device *pdev)
 		sds = &ctrl->serdes[i];
 
 		sds->ctrl = ctrl;
+		sds->attachment = RTPCS_SDS_ATTACH_PHY;
 		sds->first_start = true;
 		sds->id = i;
 		sds->ops = ctrl->cfg->sds_ops;
@@ -5256,6 +5309,7 @@ static int rtpcs_probe(struct platform_device *pdev)
 }
 
 static const struct phylink_pcs_ops rtpcs_pcs_ops = {
+	.pcs_disable		= rtpcs_pcs_disable,
 	.pcs_an_restart		= rtpcs_pcs_an_restart,
 	.pcs_config		= rtpcs_pcs_config,
 	.pcs_get_state		= rtpcs_pcs_get_state,
