@@ -75,9 +75,19 @@
  *   is free. Trapped to the CPU: the same routes as on RTL930x. An event the
  *   driver could not take is not replayed.
  * - RTL838x: route table accessors only. FIB and neighbour events are ignored.
- * - RTL931x: not supported. FIB and neighbour events are ignored.
+ * - RTL931x: IPv4 and IPv6 unicast routes through a gateway are
+ *   forwarded, through the same tables as the RTL930x but a different
+ *   interface model: one index names a row in both L3_IGR_INTF and
+ *   L3_EGR_INTF, the source MAC lives in the egress row, L3_ROUTER_MAC
+ *   matches on the interface index and a next hop names an L2 row that
+ *   carries the gateway MAC itself. An IPv6 prefix entry takes three
+ *   rows. Host routes use table 0 of the exact match table only.
+ *   Trapped to the CPU: the same routes as on RTL930x. Multicast and
+ *   IPv6 host routes are not offloaded. The programmed state is shown
+ *   in debugfs, under realtek_otto_l3.
  */
 
+#include <linux/bitfield.h>
 #include <linux/debugfs.h>
 #include <linux/if_vlan.h>
 #include <linux/inet.h>
@@ -6270,6 +6280,167 @@ static int otto_l3_931x_host_route_write(struct otto_l3_ctrl *ctrl, int idx,
 	return err;
 }
 
+/* Exception actions, as the hardware numbers them. The SDK does not write a
+ * logical action into these fields: it converts one through a per-field list
+ * with rt_util_actListIndex_get(), so the number in the register is an index
+ * into that list and means nothing without it.
+ *
+ * The TTL-fail field of L3_IPUC_ROUTE_CTRL and the non-IP field of
+ * L3_IP_ROUTE_CTRL both convert through [DROP, TRAP2CPU, TRAP2MASTERCPU] -
+ * byte for byte the list the RTL930x uses for the same two fields, which is
+ * what lets otto_l3_930x_setup()'s choice of value carry over. Read out of the
+ * SDK's own tables rather than guessed.
+ *
+ * Not every list carries over. The four entry lists on bits 0..3 of
+ * L3_IP_ROUTE_CTRL are [HARDDROP, TRAP2CPU, TRAP2MASTERCPU, DROP] here against
+ * [DROP, TRAP2CPU, TRAP2MASTERCPU, FORWARD] on the RTL930x, so the same number
+ * means a different thing. Those are left at their reset value.
+ */
+#define RTL931X_L3_ACT_TRAP2CPU			1
+#define RTL931X_L3_IPUC_TTL_FAIL_ACT		GENMASK(17, 16)
+#define RTL931X_L3_IP6UC_HL_FAIL_ACT		GENMASK(21, 20)
+#define RTL931X_L3_NON_IP_ACT			GENMASK(11, 10)
+
+#define RTL931X_ALE_L3_MISC_CTRL		0xf2e8
+
+/* What dal_mango_l3_init() leaves in L3_NEXTHOP row 0 */
+#define RTL931X_L3_NH_UNRESOLVED		0xfffc
+
+/* Bring the L3 block up: what dal_mango_l3_init() programs, the MTUs, an empty
+ * interface table, and IPv4 unicast routing enabled.
+ */
+static int otto_l3_931x_setup(struct otto_l3_ctrl *ctrl)
+{
+	struct otto_dsa_priv *priv = ctrl->priv;
+	int uncleared = 0;
+	u32 nh = 0;
+
+	/* An MTU register is compared against the IP total length and not
+	 * against the frame, so it holds a device's MTU as the device reports
+	 * it - which is what the vendor writes, and why writing room for the
+	 * headers on top was wrong. Measured on an S1300WP with a slot holding
+	 * 100: a 100 byte packet forwards, a 101 byte one is dropped and
+	 * counted in the fifth egress counter.
+	 *
+	 * Slot 0 holds the default and is never given up, so an interface
+	 * always has somewhere to point; the rest start free.
+	 */
+	for (int i = 0; i < MAX_INTF_MTUS; i++)
+		priv->intf_mtu_count[i] = priv->intf_mtus[i] = 0;
+
+	priv->intf_mtus[0] = DEFAULT_MTU;
+	priv->intf_mtu_count[0] = 1;
+
+	scoped_guard(mutex, ctrl->lock)
+		for (int i = 0; i < RTL931X_L3_INTF_MTUS; i++) {
+			sw_w32_mask(RTL931X_L3_MTU_MASK, DEFAULT_MTU,
+				    RTL931X_L3_INTF_IP_MTU(i));
+			sw_w32_mask(RTL931X_L3_MTU_MASK, DEFAULT_MTU,
+				    RTL931X_L3_INTF_IP6_MTU(i));
+		}
+
+	/* An unresolved next hop in row 0, which is what dal_mango_l3_init()
+	 * leaves there: a route pointing at it drops rather than forwards to
+	 * whatever row 0 happens to name.
+	 *
+	 * Logged, not returned: a non-zero return from here becomes a failed
+	 * switch probe, which costs every port on the box. A table that was
+	 * merely busy is not worth that, and the rest of this function already
+	 * follows that rule.
+	 */
+	otto_l3_931x_fset(&nh, 1, RTL931X_NH_L2_ID, RTL931X_L3_NH_UNRESOLVED);
+	if (otto_table_write(RTL9310_TBL_L3_NEXTHOP, 0, &nh))
+		dev_err(ctrl->dev,
+			"next hop row 0 not marked unresolved, a route pointing at it may forward\n");
+
+	/* Clear both halves of every interface the driver can allocate, so a
+	 * free one reads as free. One that cannot be cleared is only logged: a
+	 * failed setup fails the switch probe.
+	 */
+	for (int i = 0; i < MAX_SMACS; i++) {
+		int row = RTL931X_L3_INTF_ROW(i);
+		u32 egr[4] = {};
+		u32 igr[2] = {};
+
+		if (otto_table_write(RTL9310_TBL_L3_EGR_INTF, row, &egr) ||
+		    otto_table_write(RTL9310_TBL_L3_IGR_INTF, row, &igr))
+			uncleared++;
+	}
+	if (uncleared)
+		dev_err(ctrl->dev, "%d L3 interfaces not cleared\n", uncleared);
+
+	/* A frame is routed only if the interface it arrives on allows it, and
+	 * the interface it arrives on is the one its ingress VLAN names. A VLAN
+	 * that names none reads as interface 0, which is where every VLAN
+	 * without an egress interface of its own lands - the driver allocates
+	 * those for the VLANs routes leave by, which need not be the VLANs
+	 * traffic arrives on. So interface 0 carries the enables too, as the
+	 * ingress any unmapped VLAN falls back to. Its egress half stays empty:
+	 * an egress interface is chosen by a next hop, never by a VLAN, and the
+	 * driver allocates those from interface 1 up.
+	 *
+	 * This is the one part of the sequence not exercised on silicon. The
+	 * per-interface enables were confirmed on interfaces 1 and 2, with the
+	 * ingress VLAN mapped to interface 1; whether interface 0 gates an
+	 * unmapped VLAN the same way follows from the model but has not been
+	 * measured.
+	 */
+	scoped_guard(mutex, ctrl->lock) {
+		u32 igr[2] = {};
+
+		otto_l3_931x_fset(igr, 2, RTL931X_IGR_VRF, RTL931X_L3_VRF);
+		otto_l3_931x_fset(igr, 2, RTL931X_IGR_IP4UC_ROUTE_EN, 1);
+		otto_l3_931x_fset(igr, 2, RTL931X_IGR_IP6UC_ROUTE_EN, 1);
+		if (otto_table_write(RTL9310_TBL_L3_IGR_INTF, 0, &igr))
+			dev_err(ctrl->dev,
+				"default ingress interface not written, a VLAN with no interface will not route\n");
+	}
+
+	scoped_guard(mutex, ctrl->lock) {
+		/* The two fields dal_mango_l3_init() sets, and the host table
+		 * hash algorithm it picks: bit 3 set, bit 2 clear, the same
+		 * choice otto_l3_930x_setup() makes.
+		 */
+		sw_w32_mask(BIT(7) | 0x3f, BIT(7) | 0x3f, RTL931X_ALE_L3_MISC_CTRL);
+		sw_w32_mask(BIT(2), BIT(3), RTL931X_L3_HOST_TBL_CTRL);
+
+		/* Unicast routing on for both families */
+		sw_w32_mask(0, BIT(0), RTL931X_L3_IPUC_ROUTE_CTRL);
+		sw_w32_mask(0, BIT(0), RTL931X_L3_IP6UC_ROUTE_CTRL);
+
+		/* A packet whose hop count runs out is answered rather than
+		 * dropped, and so is one that reaches a router MAC without
+		 * being IP - ARP among them, which is how the box stays
+		 * reachable through a routed port. Both default to DROP here.
+		 */
+		sw_w32_mask(RTL931X_L3_IPUC_TTL_FAIL_ACT,
+			    FIELD_PREP(RTL931X_L3_IPUC_TTL_FAIL_ACT,
+				       RTL931X_L3_ACT_TRAP2CPU),
+			    RTL931X_L3_IPUC_ROUTE_CTRL);
+		sw_w32_mask(RTL931X_L3_IP6UC_HL_FAIL_ACT,
+			    FIELD_PREP(RTL931X_L3_IP6UC_HL_FAIL_ACT,
+				       RTL931X_L3_ACT_TRAP2CPU),
+			    RTL931X_L3_IP6UC_ROUTE_CTRL);
+		sw_w32_mask(RTL931X_L3_NON_IP_ACT,
+			    FIELD_PREP(RTL931X_L3_NON_IP_ACT,
+				       RTL931X_L3_ACT_TRAP2CPU),
+			    RTL931X_L3_IP_ROUTE_CTRL);
+
+		dev_dbg(ctrl->dev, "L3_IP_ROUTE_CTRL %08x, IPUC %08x, IP6UC %08x, ALE_L3_MISC_CTRL %08x\n",
+			sw_r32(RTL931X_L3_IP_ROUTE_CTRL),
+			sw_r32(RTL931X_L3_IPUC_ROUTE_CTRL),
+			sw_r32(RTL931X_L3_IP6UC_ROUTE_CTRL),
+			sw_r32(RTL931X_ALE_L3_MISC_CTRL));
+	}
+
+	/* Route id 0 is never handed out, which keeps next hop row 0 the
+	 * unresolved sentinel written above: a route's id is its next hop row.
+	 */
+	set_bit(0, ctrl->route_use_bm);
+
+	return 0;
+}
+
 const struct otto_l3_config otto_l3_931x_cfg = {
 	.get_egress_intf = otto_l3_931x_get_egress_intf,
 	.set_egress_intf = otto_l3_931x_set_egress_intf,
@@ -6288,6 +6459,7 @@ const struct otto_l3_config otto_l3_931x_cfg = {
 	.route_write = otto_l3_931x_route_write,
 	.find_slot = otto_l3_931x_find_slot,
 	.host_route_write = otto_l3_931x_host_route_write,
+	.setup = otto_l3_931x_setup,
 };
 
 static const struct of_device_id otto_l3_of_ids[] = {
