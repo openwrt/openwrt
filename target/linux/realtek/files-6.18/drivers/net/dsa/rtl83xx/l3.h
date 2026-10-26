@@ -93,7 +93,18 @@ struct otto_l3_route {
 	u32 dst_ip;			/* IP of the destination net */
 	struct in6_addr dst_ip6;
 	int prefix_len;			/* Network prefix len of the destination net */
+	/* In the exact match table rather than the prefix table. Cleared when a
+	 * route meant for it finds its hash bucket full and is placed as a
+	 * prefix route instead, so that everything keyed on this - row
+	 * bookkeeping, placement, teardown, what the FIB is told - treats it as
+	 * what it actually became.
+	 */
 	bool is_host_route;
+	/* Which pool its id came from, which is not the same question: a route
+	 * that fell back keeps the id it was allocated, and only the pool that
+	 * handed it out may take it back.
+	 */
+	bool host_id;
 	bool replaced;			/* torn down for a route to the same destination */
 	int id;				/* ID number of this route */
 	int row;			/* Row it occupies in the prefix route table */

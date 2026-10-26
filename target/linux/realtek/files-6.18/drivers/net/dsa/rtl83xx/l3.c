@@ -1819,6 +1819,45 @@ static void otto_l3_fib4_trap_report(struct otto_l3_ctrl *ctrl, struct otto_l3_r
 /* The host table holds one entry per address, and the local table is looked up
  * before main: while an address is the switch's own, the entry is the local
  * route's, and a host route from main for that address keeps out of it.
+ *
+ * Whether a route is one of those that compete for the single exact match
+ * entry an address has. is_host_route is the wrong way to ask that: a route
+ * that found its hash bucket full is placed in the prefix table and clears
+ * that flag, yet it is still the same address and still competes.
+ *
+ * Only IPv4 full length routes reach the exact match table - every IPv6 path
+ * allocates a prefix route - so a /128 is deliberately not included here. Its
+ * local and main rows coexist in the prefix table, where placement already
+ * puts the local one first.
+ */
+static bool otto_l3_wants_host_entry(struct otto_l3_ctrl *ctrl,
+				     const struct otto_l3_route *r)
+{
+	return ctrl->cfg->host_route_write && r->attr.type == ROUTE_TYPE_IP4UC &&
+	       r->prefix_len == 32;
+}
+
+static bool otto_l3_same_dst(const struct otto_l3_route *a,
+			     const struct otto_l3_route *b)
+{
+	if (a->attr.type != b->attr.type)
+		return false;
+
+	return a->attr.type == ROUTE_TYPE_IP6UC ?
+	       ipv6_addr_equal(&a->dst_ip6, &b->dst_ip6) : a->dst_ip == b->dst_ip;
+}
+
+/* The two sides of this are deliberately different questions.
+ *
+ * r is passed over only when it has no entry of its own to maintain, which is
+ * what is_host_route says and not what otto_l3_wants_host_entry() says: a route
+ * that fell back owns a prefix row, and every caller dispatches on that same
+ * flag right below, so calling such a route shadowed here would leave its row
+ * to nobody - neither written, nor rewritten, nor cleared on the way out.
+ *
+ * q is any local route that competes for the address, in whichever table it
+ * ended up, because the exact match table is consulted before the prefix TCAM:
+ * an entry r took there would override a local route sitting in a prefix row.
  */
 static bool otto_l3_host_shadowed(struct otto_l3_ctrl *ctrl, struct otto_l3_route *r)
 {
@@ -1828,15 +1867,21 @@ static bool otto_l3_host_shadowed(struct otto_l3_ctrl *ctrl, struct otto_l3_rout
 		return false;
 
 	list_for_each_entry(q, &ctrl->routes_list, list)
-		if (q != r && q->is_host_route && q->tb_id == RT_TABLE_LOCAL &&
-		    q->attr.type == r->attr.type && q->dst_ip == r->dst_ip)
+		if (q != r && q->tb_id == RT_TABLE_LOCAL &&
+		    otto_l3_wants_host_entry(ctrl, q) && otto_l3_same_dst(q, r))
 			return true;
 
 	return false;
 }
 
 /* The address is the switch's no longer: a host route from main for it gets
- * the entry back, as it last wrote it
+ * the entry back, as it last wrote it.
+ *
+ * Only a route still waiting for that entry is given it, which is again
+ * is_host_route and not otto_l3_wants_host_entry(): one that fell back to the
+ * prefix table has a row of its own, and writing a slot for it too would leave
+ * one route in both tables, with only the row maintained and only the slot
+ * looked at.
  */
 static void otto_l3_host_unshadow(struct otto_l3_ctrl *ctrl, struct otto_l3_route *r)
 {
@@ -1844,9 +1889,8 @@ static void otto_l3_host_unshadow(struct otto_l3_ctrl *ctrl, struct otto_l3_rout
 	int slot;
 
 	list_for_each_entry(q, &ctrl->routes_list, list) {
-		if (q == r || !q->is_host_route || q->tb_id == RT_TABLE_LOCAL ||
-		    q->attr.type != r->attr.type || q->dst_ip != r->dst_ip ||
-		    !q->attr.valid)
+		if (q == r || q->tb_id == RT_TABLE_LOCAL || !q->attr.valid ||
+		    !q->is_host_route || !otto_l3_same_dst(q, r))
 			continue;
 
 		slot = ctrl->cfg->find_slot(ctrl, q, false);
@@ -1879,7 +1923,7 @@ static bool otto_l3_local_covers(struct otto_l3_ctrl *ctrl, struct otto_l3_route
 
 	list_for_each_entry(q, &ctrl->routes_list, list) {
 		if (q->attr.type != r->attr.type || q->tb_id != RT_TABLE_LOCAL ||
-		    q->is_host_route || q->prefix_len >= r->prefix_len)
+		    q->prefix_len >= r->prefix_len)
 			continue;
 		if (r->attr.type == ROUTE_TYPE_IP4UC &&
 		    !((q->dst_ip ^ r->dst_ip) & inet_make_mask(q->prefix_len)))
@@ -1935,13 +1979,40 @@ static int otto_l3_route_install(struct otto_l3_ctrl *ctrl, struct otto_l3_route
 		slot = ctrl->cfg->find_slot(ctrl, r, true);
 		if (slot == -ENOENT)
 			slot = ctrl->cfg->find_slot(ctrl, r, false);
-		if (slot == -ENOSPC)
-			dev_err(ctrl->dev, "no slot for host route %pI4\n", &r->dst_ip);
-		if (slot < 0)
+		if (slot >= 0) {
+			dev_dbg(ctrl->dev, "Got slot for route: %d\n", slot);
+			return ctrl->cfg->host_route_write(ctrl, slot, r);
+		}
+
+		/* A bucket that could not be read is an error to report, not a
+		 * full one to route around
+		 */
+		if (slot != -ENOSPC)
 			return slot;
 
-		dev_dbg(ctrl->dev, "Got slot for route: %d\n", slot);
-		return ctrl->cfg->host_route_write(ctrl, slot, r);
+		/* The exact match table holds six entries per hash bucket and
+		 * the hash is a fold of the destination, so a seventh address
+		 * landing on one bucket has nowhere to go there. The prefix
+		 * table matches a full length address as well as any other, it
+		 * just costs a row, so place it there rather than leave the
+		 * route in software. Once it has one it stops being a host
+		 * route in every sense except which pool its id came from -
+		 * not before, or a route that found neither a slot nor a row
+		 * would never look in the exact match table again.
+		 *
+		 * It stays there for as long as it lives, even once a slot in
+		 * its bucket frees up again. Nothing is wrong with the route
+		 * while it does - the prefix table matches it exactly - it
+		 * just costs a row that the exact match table could have held.
+		 * Migrating it back would mean watching every host route
+		 * teardown for a bucket that someone else overflowed, to save
+		 * a row in a table that has 512 of them; the trade did not
+		 * look worth the moving parts. The consequence is that which
+		 * table an address ends up in depends on the order routes
+		 * arrived in, so do not read it as a property of the address.
+		 */
+		dev_dbg(ctrl->dev, "hash bucket full for %pI4, taking a prefix row instead\n",
+			&r->dst_ip);
 	}
 
 	if (r->row < 0) {
@@ -1954,6 +2025,7 @@ static int otto_l3_route_install(struct otto_l3_ctrl *ctrl, struct otto_l3_route
 		return -ENOSPC;
 	}
 
+	r->is_host_route = false;
 	err = ctrl->cfg->route_write(ctrl, r->row, r);
 	if (!err)
 		r->row_reserved = false;
@@ -2865,12 +2937,17 @@ static void otto_l3_route_free(struct otto_l3_ctrl *ctrl, struct otto_l3_route *
 
 	/* On RTL930x a prefix route's id is also the next hop row it routes
 	 * through, which a row left in hardware may still name while the rows
-	 * are stale
+	 * are stale. Whether to keep the id is therefore a question about the
+	 * table the route was in, not about the pool the id came from: a host
+	 * route that fell back owns a prefix row like any other, and
+	 * otto_l3_route_teardown() keeps that row's next hop for this reason.
 	 */
-	if (r->is_host_route)
-		clear_bit(r->id - MAX_ROUTES, ctrl->host_route_use_bm);
-	else if (!ctrl->prefix_rows_stale)
-		clear_bit(r->id, ctrl->route_use_bm);
+	if (r->is_host_route || !ctrl->prefix_rows_stale) {
+		if (r->host_id)
+			clear_bit(r->id - MAX_ROUTES, ctrl->host_route_use_bm);
+		else
+			clear_bit(r->id, ctrl->route_use_bm);
+	}
 
 	if (IS_REACHABLE(CONFIG_IPV6) && r->f6i) {
 		fib6_info_hw_flags_set(&init_net, r->f6i, false, false, false);
@@ -2904,9 +2981,6 @@ static void otto_l3_route_remove(struct otto_l3_ctrl *ctrl, struct otto_l3_route
 			dev_err(ctrl->dev, "Host route %pI4 was not in hardware\n",
 				&r->dst_ip);
 		}
-
-		if (r->tb_id == RT_TABLE_LOCAL && !r->replaced)
-			otto_l3_host_unshadow(ctrl, r);
 	} else {
 		/* If there is a HW representation of the route, delete it */
 		if (r->row >= FIRST_PREFIX_ROW) {
@@ -2980,6 +3054,15 @@ static void otto_l3_route_remove(struct otto_l3_ctrl *ctrl, struct otto_l3_route
 			otto_l3_route_compact(ctrl, r);
 		}
 	}
+
+	/* A local route hands the address's exact match entry back whichever
+	 * table it was itself living in: one that fell back to a prefix row
+	 * still kept a main host route for the same address out of that entry,
+	 * so it has to be the one to say the address is free again.
+	 */
+	if (r->tb_id == RT_TABLE_LOCAL && !r->replaced &&
+	    otto_l3_wants_host_entry(ctrl, r))
+		otto_l3_host_unshadow(ctrl, r);
 }
 
 static void otto_l3_route_teardown(struct otto_l3_ctrl *ctrl, struct otto_l3_route *r)
@@ -3044,13 +3127,16 @@ static struct otto_l3_route *otto_l3_route_alloc(struct otto_l3_ctrl *ctrl,
 	 * route (on RTL93xx) as we use this ID to associate a next-hop entry
 	 */
 	r->id = host ? idx + MAX_ROUTES : idx;
-	r->row = -1;	/* no row until placed; a host route never has one */
+	r->row = -1;	/* no row until placed, which a host route only needs
+			 * if its bucket turns out to be full
+			 */
 	r->gw_ip = *gw;
 	r->pr.packet_cntr = -1;
 	r->nh.if_id = -1;
 	r->nh.dmac_id = -1;
 	r->switch_mac_id = -1;
 	r->is_host_route = host;
+	r->host_id = host;
 	INIT_LIST_HEAD(&r->srcs);
 
 	list_add_tail(&r->list, &ctrl->routes_list);
@@ -3153,6 +3239,7 @@ static int otto_l3_fib_add_v4(struct otto_l3_ctrl *ctrl, struct fib_entry_notifi
 	struct in6_addr gw;
 	struct fib_nh *nh;
 	int port, vlan;
+	bool host;
 
 	/* A route through a nexthop object has no nexthop array to read, a
 	 * blackhole, unreachable or prohibit route has no device behind its
@@ -3232,6 +3319,15 @@ static int otto_l3_fib_add_v4(struct otto_l3_ctrl *ctrl, struct fib_entry_notifi
 		return -ENOSPC;
 	}
 
+	/* Whether this was allocated for the exact match table, which is what
+	 * the two tests further down mean. otto_l3_route_install() clears
+	 * is_host_route when a full hash bucket sends the route to the prefix
+	 * table instead, so reading the flag after that answers a different
+	 * question - and would hand the route to otto_l3_route_trap_new() for a
+	 * second install.
+	 */
+	host = route->is_host_route;
+
 	route->dst_ip = info->dst;
 	route->prefix_len = info->dst_len;
 	route->tb_id = info->tb_id;
@@ -3263,7 +3359,7 @@ static int otto_l3_fib_add_v4(struct otto_l3_ctrl *ctrl, struct fib_entry_notifi
 		if (route->nh.if_id < 0)
 			goto out_free_rmac;
 
-		if (!nh->fib_nh_gw4 && route->is_host_route) {
+		if (!nh->fib_nh_gw4 && host) {
 			route->nh.mac = mac;
 			route->nh.port = priv->r->port_ignore;
 			route->attr.valid = true;
@@ -3283,7 +3379,7 @@ static int otto_l3_fib_add_v4(struct otto_l3_ctrl *ctrl, struct fib_entry_notifi
 	 * turns it into a forwarding one once the gateway resolves. The next
 	 * hop index stays zero until then, as on any entry that only traps.
 	 */
-	if (nh->fib_nh_gw4 || !route->is_host_route)
+	if (nh->fib_nh_gw4 || !host)
 		otto_l3_route_trap_new(ctrl, route);
 
 	/* We need to resolve the mac address of the GW */
