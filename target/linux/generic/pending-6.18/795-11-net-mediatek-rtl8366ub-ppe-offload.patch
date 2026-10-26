@@ -1,0 +1,319 @@
+From: GL.iNet Test Build <support@gl-inet.com>
+Subject: [PATCH] net: mediatek: integrate RTL8366UB PPE offload
+
+Integrate the RTL8366UB 802.1Q DSA tagger with MediaTek Ethernet and
+PPE output selection. Substitute the conduit for DSA user devices,
+use internal management VIDs for standalone and VLAN-unaware paths,
+and retain the business VID without an outer management tag for
+VLAN-aware forwarding. Reject unsupported VLAN-aware encapsulations.
+
+Preserve the bridge-resolved business VLAN in flowtable paths,
+including untagged user-port egress and routing through a bridge PVID.
+Initialize the shared dummy NAPI device before publishing netdevs so
+a link-up racing with probe cannot enter mtk_open() too early.
+
+Apply after the RTL8366UB switch and tagger patch. This consolidates
+the Ethernet, PPE and flowtable portions of the MT5000 patch series
+with kernel-style whitespace formatting and no logic changes.
+
+---
+--- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
++++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
+@@ -1582,7 +1582,8 @@ static void mtk_tx_set_dma_desc_v2(struc
+ 		/* tx checksum offload */
+ 		if (info->csum)
+ 			data |= TX_DMA_CHKSUM_V2;
+-		if (mtk_is_netsys_v3_or_greater(eth) && netdev_uses_dsa(dev))
++		if (mtk_is_netsys_v3_or_greater(eth) && netdev_uses_dsa(dev) &&
++		    dev->dsa_ptr->tag_ops->proto == DSA_TAG_PROTO_MTK)
+ 			data |= TX_DMA_SPTAG_V3;
+ 	}
+ 	WRITE_ONCE(desc->txd5, data);
+@@ -3749,14 +3750,15 @@ static void mtk_gdm_config(struct mtk_et
+ 	val = mtk_r32(eth, MTK_GDMA_FWD_CFG(id));
+ 
+ 	/* default setup the forward port to send frame to PDMA */
+-	val &= ~0xffff;
++	val &= ~(0xffff | MTK_GDMA_SPECIAL_TAG);
+ 
+ 	/* Enable RX checksum */
+ 	val |= MTK_GDMA_ICS_EN | MTK_GDMA_TCS_EN | MTK_GDMA_UCS_EN;
+ 
+ 	val |= config;
+ 
+-	if (eth->netdev[id] && netdev_uses_dsa(eth->netdev[id]))
++	if (eth->netdev[id] && netdev_uses_dsa(eth->netdev[id]) &&
++	    eth->netdev[id]->dsa_ptr->tag_ops->proto == DSA_TAG_PROTO_MTK)
+ 		val |= MTK_GDMA_SPECIAL_TAG;
+ 
+ 	mtk_w32(eth, val, MTK_GDMA_FWD_CFG(id));
+@@ -5732,6 +5734,21 @@ static int mtk_probe(struct platform_dev
+ 		}
+ 	}
+ 
++	/* we run 2 devices on the same DMA ring so we need a dummy device
++	 * for NAPI to work. Allocate it before registering netdevs so a
++	 * userspace link-up cannot race with its initialization.
++	 */
++	eth->dummy_dev = alloc_netdev_dummy(0);
++	if (!eth->dummy_dev) {
++		err = -ENOMEM;
++		dev_err(eth->dev, "failed to allocated dummy device\n");
++		goto err_unreg_netdev;
++	}
++	eth->dummy_dev->threaded = 1;
++	strcpy(eth->dummy_dev->name, "mtk_eth");
++	netif_napi_add(eth->dummy_dev, &eth->tx_napi, mtk_napi_tx);
++	netif_napi_add(eth->dummy_dev, &eth->rx_napi, mtk_napi_rx);
++
+ 	for (i = 0; i < MTK_MAX_DEVS; i++) {
+ 		if (!eth->netdev[i])
+ 			continue;
+@@ -5746,20 +5763,6 @@ static int mtk_probe(struct platform_dev
+ 				   eth->netdev[i]->base_addr, eth->irq[MTK_FE_IRQ_SHARED]);
+ 	}
+ 
+-	/* we run 2 devices on the same DMA ring so we need a dummy device
+-	 * for NAPI to work
+-	 */
+-	eth->dummy_dev = alloc_netdev_dummy(0);
+-	if (!eth->dummy_dev) {
+-		err = -ENOMEM;
+-		dev_err(eth->dev, "failed to allocated dummy device\n");
+-		goto err_unreg_netdev;
+-	}
+-	eth->dummy_dev->threaded = 1;
+-	strcpy(eth->dummy_dev->name, "mtk_eth");
+-	netif_napi_add(eth->dummy_dev, &eth->tx_napi, mtk_napi_tx);
+-	netif_napi_add(eth->dummy_dev, &eth->rx_napi, mtk_napi_rx);
+-
+ 	platform_set_drvdata(pdev, eth);
+ 	schedule_delayed_work(&eth->reset.monitor_work,
+ 			      MTK_DMA_MONITOR_TIMEOUT);
+@@ -5768,6 +5771,12 @@ static int mtk_probe(struct platform_dev
+ 
+ err_unreg_netdev:
+ 	mtk_unreg_dev(eth);
++	if (eth->dummy_dev) {
++		netif_napi_del(&eth->tx_napi);
++		netif_napi_del(&eth->rx_napi);
++		free_netdev(eth->dummy_dev);
++		eth->dummy_dev = NULL;
++	}
+ err_deinit_ppe:
+ 	mtk_ppe_deinit(eth);
+ 	mtk_mdio_cleanup(eth);
+--- a/drivers/net/ethernet/mediatek/mtk_ppe_offload.c
++++ b/drivers/net/ethernet/mediatek/mtk_ppe_offload.c
+@@ -167,25 +167,23 @@ mtk_flow_mangle_ipv4(const struct flow_a
+ 	return 0;
+ }
+ 
+-/*
+- * Inspect *dev as a DSA user netdev.  On success, substitute *dev with
+- * the conduit netdev, return the DSA user port's dp->index, and in
+- * *push_vid hand back either 0 (native MTK tag; the PPE injects its
+- * magic etype later via mtk_foe_entry_set_dsa()) or the outer 802.1Q
+- * VID the PPE should push on the egressing frame (tag_8021q taggers
+- * that use an outer Q-in-Q tag with a standalone per-port VID, i.e.
+- * the MxL862xx tag_8021q tagger).
+- *
+- * push_vid may be NULL for callers that only want the idev->conduit
+- * substitution (e.g. ingress-side ppe_idx selection, where no VID
+- * is to be pushed on the flow entry).
+- *
+- * Other tag_8021q-based taggers (sja1105, ocelot_8021q, ...) use
+- * different tag layers and/or bridge-scoped VIDs; do not extend the
+- * switch below to cover them without per-tagger review.
++enum mtk_flow_dsa_tag_mode {
++	MTK_FLOW_DSA_TAG_NATIVE,
++	MTK_FLOW_DSA_TAG_8021Q,
++	MTK_FLOW_DSA_TAG_NONE,
++};
++
++struct mtk_flow_dsa_tag {
++	enum mtk_flow_dsa_tag_mode mode;
++	u16 vid;
++};
++
++/* Substitute a DSA user netdev with its conduit and return its port index.
++ * tag may be NULL for ingress-side conduit/PPE lookup. On egress, distinguish
++ * native MTK tags, outer 802.1Q management tags and business-VLAN-only frames.
+  */
+ static int
+-mtk_flow_get_dsa_port(struct net_device **dev, u16 *push_vid)
++mtk_flow_get_dsa_port(struct net_device **dev, struct mtk_flow_dsa_tag *tag)
+ {
+ #if IS_ENABLED(CONFIG_NET_DSA)
+ 	struct dsa_port *dp;
+@@ -196,12 +194,32 @@ mtk_flow_get_dsa_port(struct net_device
+ 
+ 	switch (dp->cpu_dp->tag_ops->proto) {
+ 	case DSA_TAG_PROTO_MTK:
+-		if (push_vid)
+-			*push_vid = 0;
++		if (tag)
++			tag->mode = MTK_FLOW_DSA_TAG_NATIVE;
+ 		break;
+ 	case DSA_TAG_PROTO_MXL862_8021Q:
+-		if (push_vid)
+-			*push_vid = dsa_tag_8021q_standalone_vid(dp);
++		if (tag) {
++			tag->mode = MTK_FLOW_DSA_TAG_8021Q;
++			tag->vid = dsa_tag_8021q_standalone_vid(dp);
++		}
++		break;
++	case DSA_TAG_PROTO_RTL8366UB_8021Q:
++		if (tag) {
++			struct net_device *br = dsa_port_bridge_dev_get(dp);
++
++			if (br && dsa_port_is_vlan_filtering(dp)) {
++				tag->mode = MTK_FLOW_DSA_TAG_NONE;
++			} else {
++				tag->mode = MTK_FLOW_DSA_TAG_8021Q;
++				if (br) {
++					int bridge_num = dsa_port_bridge_num_get(dp);
++
++					tag->vid = dsa_tag_8021q_bridge_vid(bridge_num);
++				} else {
++					tag->vid = dsa_tag_8021q_standalone_vid(dp);
++				}
++			}
++		}
+ 		break;
+ 	default:
+ 		return -ENODEV;
+@@ -217,15 +235,16 @@ mtk_flow_get_dsa_port(struct net_device
+ 
+ static int
+ mtk_flow_set_output_device(struct mtk_eth *eth, struct mtk_foe_entry *foe,
+-			   struct net_device *dev, const u8 *dest_mac,
++			   struct net_device *dev, const struct mtk_flow_data *data,
+ 			   int *wed_index)
+ {
++	struct mtk_flow_dsa_tag tag = {};
+ 	struct mtk_wdma_info info = {};
+ 	struct mtk_mac *mac;
+ 	int pse_port, dsa_port, queue;
+-	u16 push_vid = 0;
++	int err;
+ 
+-	if (mtk_flow_get_wdma_info(dev, dest_mac, &info) == 0) {
++	if (mtk_flow_get_wdma_info(dev, data->eth.h_dest, &info) == 0) {
+ 		mtk_foe_entry_set_wdma(eth, foe, info.wdma_idx, info.queue,
+ 				       info.bss, info.wcid, info.amsdu);
+ 		if (mtk_is_netsys_v2_or_greater(eth)) {
+@@ -249,7 +268,7 @@ mtk_flow_set_output_device(struct mtk_et
+ 		goto out;
+ 	}
+ 
+-	dsa_port = mtk_flow_get_dsa_port(&dev, &push_vid);
++	dsa_port = mtk_flow_get_dsa_port(&dev, &tag);
+ 
+ 	if (dev == eth->netdev[0])
+ 		pse_port = PSE_GDM1_PORT;
+@@ -261,10 +280,28 @@ mtk_flow_set_output_device(struct mtk_et
+ 		return -EOPNOTSUPP;
+ 
+ 	if (dsa_port >= 0) {
+-		if (push_vid)
+-			mtk_foe_entry_set_vlan(eth, foe, push_vid);
+-		else
++		switch (tag.mode) {
++		case MTK_FLOW_DSA_TAG_NATIVE:
+ 			mtk_foe_entry_set_dsa(eth, foe, dsa_port);
++			break;
++		case MTK_FLOW_DSA_TAG_8021Q:
++			err = mtk_foe_entry_set_vlan(eth, foe, tag.vid);
++			if (err)
++				return err;
++			break;
++		case MTK_FLOW_DSA_TAG_NONE:
++			/* The CPU link must carry the business VID even for an
++			 * untagged user port. Never use the CPU port's PVID or a
++			 * bridge management VID as an implicit fallback. VIDs
++			 * 3072-4095 are reserved for DSA management.
++			 */
++			if (data->vlan.num != 1 || data->pppoe.num ||
++			    data->vlan.vlans[0].proto != htons(ETH_P_8021Q) ||
++			    !data->vlan.vlans[0].id ||
++			    data->vlan.vlans[0].id >= 3072)
++				return -EOPNOTSUPP;
++			break;
++		}
+ 	}
+ 
+ 	if (dsa_port >= 0 && dsa_port < MTK_DSA_USER_PORT_MAX) {
+@@ -520,7 +557,7 @@ mtk_flow_offload_replace(struct mtk_eth
+ 			return err;
+ 	}
+ 
+-	err = mtk_flow_set_output_device(eth, &foe, odev, data.eth.h_dest,
++	err = mtk_flow_set_output_device(eth, &foe, odev, &data,
+ 					 &wed_index);
+ 	if (err)
+ 		return err;
+--- a/net/netfilter/nf_flow_table_path.c
++++ b/net/netfilter/nf_flow_table_path.c
+@@ -7,6 +7,7 @@
+ #include <linux/spinlock.h>
+ #include <linux/netfilter/nf_conntrack_common.h>
+ #include <linux/netfilter/nf_tables.h>
++#include <net/dsa.h>
+ #include <net/ip.h>
+ #include <net/inet_dscp.h>
+ #include <net/netfilter/nf_tables.h>
+@@ -89,6 +90,24 @@ struct nft_forward_info {
+ 	enum flow_offload_xmit_type xmit_type;
+ };
+ 
++/* RTL8366UB uses the business VLAN, rather than an internal DSA tag, to
++ * classify CPU-originated frames on a VLAN-filtering bridge. Keep that VID
++ * on the CPU link; the switch performs untagging at the user-port egress.
++ */
++static bool
++nft_bridge_vlan_keep_tag(const struct net_device_path_stack *stack, int index)
++{
++	const struct net_device_path *bridge = &stack->path[index];
++	const struct net_device_path *dsa;
++
++	if (!bridge->bridge.vlan_id || index + 1 >= stack->num_paths)
++		return false;
++
++	dsa = &stack->path[index + 1];
++	return dsa->type == DEV_PATH_DSA &&
++	       dsa->dsa.proto == DSA_TAG_PROTO_RTL8366UB_8021Q;
++}
++
+ static void nft_dev_path_info(const struct net_device_path_stack *stack,
+ 			      struct nft_forward_info *info,
+ 			      unsigned char *ha, struct nf_flowtable *flowtable)
+@@ -133,6 +152,28 @@ static void nft_dev_path_info(const stru
+ 			if (is_zero_ether_addr(info->h_source))
+ 				memcpy(info->h_source, path->dev->dev_addr, ETH_ALEN);
+ 
++			if (nft_bridge_vlan_keep_tag(stack, i)) {
++				int n = info->num_encaps;
++
++				/* Use the VID resolved by the bridge, including its
++				 * PVID when routing through the bridge itself. An
++				 * untagged destination port may have another PVID.
++				 */
++				if (!n ||
++				    info->encap[n - 1].id != path->bridge.vlan_id ||
++				    info->encap[n - 1].proto != path->bridge.vlan_proto) {
++					if (n >= NF_FLOW_TABLE_ENCAP_MAX) {
++						info->indev = NULL;
++						return;
++					}
++					info->encap[n].id = path->bridge.vlan_id;
++					info->encap[n].proto = path->bridge.vlan_proto;
++					info->num_encaps++;
++				}
++				info->xmit_type = FLOW_OFFLOAD_XMIT_DIRECT;
++				break;
++			}
++
+ 			switch (path->bridge.vlan_mode) {
+ 			case DEV_PATH_BR_VLAN_UNTAG_HW:
+ 				info->ingress_vlans |= BIT(info->num_encaps - 1);
