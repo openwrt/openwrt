@@ -24,8 +24,8 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  	if (!drm_dev_enter(drm, &idx))
  		goto out;
  
-@@ -1647,7 +1645,6 @@ static void vc4_hdmi_encoder_post_crtc_e
- 			   VC4_HDMI_RAM_PACKET_ENABLE);
+@@ -1641,7 +1639,6 @@ static void vc4_hdmi_encoder_post_crtc_e
+ 			  VC4_HDMI_SCHEDULER_CONTROL_HDMI_ACTIVE));
  
  		spin_unlock_irqrestore(&vc4_hdmi->hw_lock, flags);
 -		vc4_hdmi->packet_ram_enabled = true;

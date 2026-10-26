@@ -248,7 +248,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  
  static struct sk_buff *sit_ip6ip6_gro_receive(struct list_head *head,
  					      struct sk_buff *skb)
-@@ -388,6 +389,7 @@ INDIRECT_CALLABLE_SCOPE int ipv6_gro_com
+@@ -387,6 +388,7 @@ INDIRECT_CALLABLE_SCOPE int ipv6_gro_com
  out:
  	return err;
  }
