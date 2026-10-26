@@ -12,7 +12,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/net/mac80211/sta_info.c
 +++ b/net/mac80211/sta_info.c
-@@ -3058,6 +3058,29 @@ static void sta_set_link_sinfo(struct st
+@@ -3058,6 +3058,31 @@ static void sta_set_link_sinfo(struct st
  	}
  }
  
@@ -27,9 +27,11 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +	u32 duration;
 +	u8 band = 0;
 +
++	rcu_read_lock();
 +	conf = rcu_dereference(sdata->vif.bss_conf.chanctx_conf);
 +	if (conf)
 +			band = conf->def.chan->band;
++	rcu_read_unlock();
 +
 +	duration = ieee80211_rate_expected_tx_airtime(hw, NULL, ri, band, true, 1024);
 +	duration += duration >> 4; /* add assumed packet error rate of ~6% */
@@ -42,7 +44,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  void sta_set_sinfo(struct sta_info *sta, struct station_info *sinfo,
  		   bool tidstats)
  {
-@@ -3283,6 +3306,8 @@ void sta_set_sinfo(struct sta_info *sta,
+@@ -3283,6 +3308,8 @@ void sta_set_sinfo(struct sta_info *sta,
  		sinfo->sta_flags.set |= BIT(NL80211_STA_FLAG_TDLS_PEER);
  
  	thr = sta_get_expected_throughput(sta);
