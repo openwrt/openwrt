@@ -50,6 +50,9 @@ lantiq_setup_interfaces()
 	draytek,vigor2860)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4 lan5 lan6" "wan"
 		;;
+	draytek,vigor2862)
+		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "wan"
+		;;
 	*)
 		ucidef_set_interface_lan 'eth0'
 		;;
@@ -78,7 +81,8 @@ lantiq_setup_dsl()
 		annex="b"
 		;;
 	avm,fritz5490|\
-	avm,fritz5490-micron)
+	avm,fritz5490-micron|\
+	draytek,vigor2862)
 		return
 		;;
 	esac

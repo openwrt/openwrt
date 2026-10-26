@@ -27,7 +27,7 @@ endef
 
 define Build/draytek-factory
 	$(STAGING_DIR_HOST)/bin/draytek-drayboot \
-		-u $(STAGING_DIR_IMAGE)/vigor2860_ram-u-boot.bin \
+		-u $(STAGING_DIR_IMAGE)/$(1)-u-boot.bin \
 		-k $(IMAGE_KERNEL) -r $@ -o $@.new
 	mv $@.new $@
 endef
