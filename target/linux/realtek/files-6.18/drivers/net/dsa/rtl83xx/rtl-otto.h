@@ -539,6 +539,7 @@ struct otto_dsa_priv {
 	struct mutex reg_mutex;		/* Mutex for individual register manipulations */
 	struct mutex pie_mutex;		/* Mutex for Packet Inspection Engine */
 	int link_state_irq;
+	bool link_state_irq_requested;
 	int mirror_group_ports[4];
 	int mirror_group_flower[4];	/* flower rules mirroring through each group */
 	const struct rtldsa_config *r;
