@@ -338,6 +338,12 @@ define U-Boot/vigor2860_ram
   BUILD_DEVICES:=draytek_vigor2860
 endef
 
+define U-Boot/vigor2862_ram
+  NAME:=DrayTek Vigor 2862 (RAM, chainloaded by DrayBoot)
+  BUILD_SUBTARGET:=xrx200
+  BUILD_DEVICES:=draytek_vigor2862
+endef
+
 UBOOT_TARGETS:= \
 	arv4519pw_ram arv4519pw_nor arv4519pw_brn \
 	arv7506pw11_ram arv7506pw11_nor arv7506pw11_brn \
@@ -356,7 +362,7 @@ UBOOT_TARGETS:= \
 	p2812hnufx_ram p2812hnufx_nandspl \
 	vgv7510kw22_brn vgv7510kw22_nor vgv7510kw22_ram \
 	vgv7519_brn vgv7519_nor vgv7519_ram \
-	vigor2860_ram
+	vigor2860_ram vigor2862_ram
 
 define CompressVR9Firmware
 	$(STAGING_DIR_HOST)/bin/lzma e \

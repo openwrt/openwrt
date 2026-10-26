@@ -1,0 +1,591 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Gregory Dymarek <gregd72002@gmail.com>
+Date: Sun, 25 Oct 2026 00:00:00 +0000
+Subject: [PATCH] MIPS: add board support for DrayTek Vigor 2862
+
+xRX330 (GRX390), RAM variant chainloaded by DrayBoot (TEXT_BASE 0xA0024000).
+
+Adds CONFIG_LTQ_SOC_GRX390 for the xRX330 differences from VRX200: CGU_SYS
+clock decode, EBU at 0x16000000 and RAM sizing by probing. Names part 0x011
+(GRX369) and maps boot strap 15 to SPI.
+
+DrayBoot checks the checksum over the slot header length on every NAND boot
+and restores its backup on a mismatch, so on first boot the board code shrinks
+the header of a combined factory image to the U-Boot region, as on the 2860.
+
+DrayBoot boots the GPHYs from a firmware copy at 0x200000, which the kernel
+overwrites while the GPHYs still run from it. Copy it to the top 128 KiB of
+RAM, hidden from U-Boot by the new CONFIG_SYS_MEM_TOP_HIDE and outside
+Linux's memory, and restart the GPHYs from there, so Linux finds them
+running and needs no GPHY firmware.
+
+Signed-off-by: Gregory Dymarek <gregd72002@gmail.com>
+---
+--- a/arch/mips/cpu/mips32/vrx200/cgu.c
++++ b/arch/mips/cpu/mips32/vrx200/cgu.c
+@@ -59,6 +59,50 @@
+ 	return (ltq_readl(&ltq_cgu_regs->sys) & mask) >> shift;
+ }
+ 
++#ifdef CONFIG_LTQ_SOC_GRX390
++/*
++ * xRX330 (GRX390) uses a different CGU_SYS layout than VRX200:
++ * bits 10:9 select the system PLL output, bits 6:4 the CPU divider and
++ * bits 2:0 the FPI divider. Decoded as in Linux arch/mips/lantiq/xway/clk.c.
++ */
++static unsigned long ltq_grx390_sys_clock(void)
++{
++	switch (ltq_cgu_sys_readl(0x3 << 9, 9)) {
++	case 1:
++		return 666666667;
++	case 2:
++		return 720000000;
++	default:
++		return CLOCK_600_MHZ;
++	}
++}
++
++unsigned long ltq_get_io_region_clock(void)
++{
++	unsigned long clk = ltq_grx390_sys_clock();
++
++	switch (ltq_cgu_sys_readl(0x7, 0)) {
++	case 2:
++		return clk >> 2;
++	default:
++		return clk >> 1;
++	}
++}
++
++unsigned long ltq_get_cpu_clock(void)
++{
++	unsigned long clk = ltq_grx390_sys_clock();
++
++	switch (ltq_cgu_sys_readl(0x7 << 4, 4)) {
++	case 1:
++		return clk >> 1;
++	case 2:
++		return clk >> 2;
++	default:
++		return clk;
++	}
++}
++#else
+ unsigned long ltq_get_io_region_clock(void)
+ {
+ 	unsigned int ocp_sel;
+@@ -135,6 +179,8 @@
+ 	return clk;
+ }
+ 
++#endif /* CONFIG_LTQ_SOC_GRX390 */
++
+ unsigned long ltq_get_bus_clock(void)
+ {
+ 	return ltq_get_io_region_clock();
+--- a/arch/mips/cpu/mips32/vrx200/chipid.c
++++ b/arch/mips/cpu/mips32/vrx200/chipid.c
+@@ -54,6 +54,8 @@
+ 	case LTQ_SOC_GRX288:
+ 	case LTQ_SOC_GRX288_2:
+ 		return "GRX288";
++	case LTQ_SOC_GRX369:
++		return "GRX369";
+ 	default:
+ 		printf("Unknown partnum: %x\n", partnum);
+ 	}
+--- a/arch/mips/cpu/mips32/vrx200/mem.c
++++ b/arch/mips/cpu/mips32/vrx200/mem.c
+@@ -25,6 +25,16 @@
+ 	return ltq_readl(ltq_mc_ddr_base + LTQ_MC_DDR_CCR_OFFSET(index));
+ }
+ 
++#ifdef CONFIG_LTQ_SOC_GRX390
++/*
++ * The xRX330 DDR controller does not match the VRX200 CCR layout decoded
++ * below, so size the RAM by probing it instead.
++ */
++phys_size_t initdram(int board_type)
++{
++	return get_ram_size((long *)CONFIG_SYS_SDRAM_BASE, 256 << 20);
++}
++#else
+ phys_size_t initdram(int board_type)
+ {
+ 	u32 max_col_reg, max_row_reg, column_size, addr_pins;
+@@ -55,3 +65,4 @@
+ 
+ 	return size;
+ }
++#endif /* CONFIG_LTQ_SOC_GRX390 */
+--- a/arch/mips/cpu/mips32/vrx200/rcu.c
++++ b/arch/mips/cpu/mips32/vrx200/rcu.c
+@@ -160,6 +160,11 @@
+ 		return BOOT_SPI;
+ 	case 12:
+ 		return BOOT_NAND;
++#ifdef CONFIG_LTQ_SOC_GRX390
++	case 15:
++		/* observed on Vigor 2862 (xRX330, boots from SPI-NOR) */
++		return BOOT_SPI;
++#endif
+ 	default:
+ 		return BOOT_UNKNOWN;
+ 	}
+--- a/arch/mips/include/asm/arch-vrx200/soc.h
++++ b/arch/mips/include/asm/arch-vrx200/soc.h
+@@ -15,7 +15,11 @@
+ #define LTQ_ASC1_BASE			0x1E100C00
+ #define LTQ_DMA_BASE			0x1E104100
+ 
++#ifdef CONFIG_LTQ_SOC_GRX390
++#define LTQ_EBU_BASE			0x16000000	/* xRX330: same layout, other base */
++#else
+ #define LTQ_EBU_BASE			0x1E105300
++#endif
+ #define LTQ_EBU_REGION0_BASE		0x10000000
+ #define LTQ_EBU_REGION1_BASE		0x14000000
+ #define LTQ_EBU_NAND_BASE		(LTQ_EBU_BASE + 0xB0)
+--- a/arch/mips/include/asm/lantiq/chipid.h
++++ b/arch/mips/include/asm/lantiq/chipid.h
+@@ -12,6 +12,7 @@
+ 	LTQ_SOC_VRX288_2 = 0x000B,	/* VRX288 v1.2 */
+ 	LTQ_SOC_VRX268_2 = 0x000C,	/* VRX268 v1.2 */
+ 	LTQ_SOC_GRX288_2 = 0x000D,	/* GRX288 v1.2 */
++	LTQ_SOC_GRX369 = 0x0011,	/* GRX369 (xRX330) */
+ 	LTQ_SOC_DANUBE = 0x0129,
+ 	LTQ_SOC_DANUBE_S = 0x012B,
+ 	LTQ_SOC_TWINPASS = 0x012D,
+--- a/arch/mips/lib/board.c
++++ b/arch/mips/lib/board.c
+@@ -162,6 +162,9 @@
+ 
+ 	/* We can reserve some RAM "on top" here.
+ 	 */
++#ifdef CONFIG_SYS_MEM_TOP_HIDE
++	addr -= CONFIG_SYS_MEM_TOP_HIDE;
++#endif
+ 
+ 	/* round down to next 4 kB limit.
+ 	 */
+--- /dev/null
++++ b/board/draytek/vigor2862/config.mk
+@@ -0,0 +1,7 @@
++#
++# Copyright (C) 2012-2013 Daniel Schwierzeck, daniel.schwierzeck@gmail.com
++#
++# SPDX-License-Identifier:	GPL-2.0+
++#
++
++PLATFORM_CPPFLAGS += -I$(TOPDIR)/board/$(BOARDDIR)
+--- /dev/null
++++ b/board/draytek/vigor2862/ddr_settings.h
+@@ -0,0 +1,73 @@
++/*
++ * Copyright (C) 2013 Luka Perkov <luka@openwrt.org>
++ *
++ * Not used at runtime: this is a RAM-boot U-Boot and DRAM is already
++ * initialised by DrayBoot (CONFIG_SKIP_LOWLEVEL_INIT). The file is only
++ * required because arch/mips/cpu/mips32/vrx200/mem_init.S includes it.
++ * Values copied from the ZyXEL P-2812HNU-Fx board.
++ *
++ * SPDX-License-Identifier:	GPL-2.0+
++ */
++
++#define	MC_CCR00_VALUE	0x101
++#define	MC_CCR01_VALUE	0x1000100
++#define	MC_CCR02_VALUE	0x1010000
++#define	MC_CCR03_VALUE	0x101
++#define	MC_CCR04_VALUE	0x1000000
++#define	MC_CCR05_VALUE	0x1000101
++#define	MC_CCR06_VALUE	0x1000100
++#define	MC_CCR07_VALUE	0x1010000
++#define	MC_CCR08_VALUE	0x1000101
++#define	MC_CCR09_VALUE	0x0
++#define	MC_CCR10_VALUE	0x2000100
++#define	MC_CCR11_VALUE	0x2000300
++#define	MC_CCR12_VALUE	0x30000
++#define	MC_CCR13_VALUE	0x202
++#define	MC_CCR14_VALUE	0x7080A0F
++#define	MC_CCR15_VALUE	0x2040F
++#define	MC_CCR16_VALUE	0x40000
++#define	MC_CCR17_VALUE	0x70102
++#define	MC_CCR18_VALUE	0x4020002
++#define	MC_CCR19_VALUE	0x30302
++#define	MC_CCR20_VALUE	0x8000700
++#define	MC_CCR21_VALUE	0x40F020A
++#define	MC_CCR22_VALUE	0x0
++#define	MC_CCR23_VALUE	0xC020000
++#define	MC_CCR24_VALUE	0x4401B04
++#define	MC_CCR25_VALUE	0x0
++#define	MC_CCR26_VALUE	0x0
++#define	MC_CCR27_VALUE	0x6420000
++#define	MC_CCR28_VALUE	0x0
++#define	MC_CCR29_VALUE	0x0
++#define	MC_CCR30_VALUE	0x798
++#define	MC_CCR31_VALUE	0x0
++#define	MC_CCR32_VALUE	0x0
++#define	MC_CCR33_VALUE	0x650000
++#define	MC_CCR34_VALUE	0x200C8
++#define	MC_CCR35_VALUE	0x1D445D
++#define	MC_CCR36_VALUE	0xC8
++#define	MC_CCR37_VALUE	0xC351
++#define	MC_CCR38_VALUE	0x0
++#define	MC_CCR39_VALUE	0x141F04
++#define	MC_CCR40_VALUE	0x142704
++#define	MC_CCR41_VALUE	0x141B42
++#define	MC_CCR42_VALUE	0x141B42
++#define	MC_CCR43_VALUE	0x566504
++#define	MC_CCR44_VALUE	0x566504
++#define	MC_CCR45_VALUE	0x565F17
++#define	MC_CCR46_VALUE	0x565F17
++#define	MC_CCR47_VALUE	0x0
++#define	MC_CCR48_VALUE	0x0
++#define	MC_CCR49_VALUE	0x0
++#define	MC_CCR50_VALUE	0x0
++#define	MC_CCR51_VALUE	0x0
++#define	MC_CCR52_VALUE	0x133
++#define	MC_CCR53_VALUE	0xF3014B27
++#define	MC_CCR54_VALUE	0xF3014B27
++#define	MC_CCR55_VALUE	0xF3014B27
++#define	MC_CCR56_VALUE	0xF3014B27
++#define	MC_CCR57_VALUE	0x7800301
++#define	MC_CCR58_VALUE	0x7800301
++#define	MC_CCR59_VALUE	0x7800301
++#define	MC_CCR60_VALUE	0x7800301
++#define	MC_CCR61_VALUE	0x4
+--- /dev/null
++++ b/board/draytek/vigor2862/Makefile
+@@ -0,0 +1,27 @@
++#
++# Copyright (C) 2000-2011 Wolfgang Denk, DENX Software Engineering, wd@denx.de
++#
++# SPDX-License-Identifier:	GPL-2.0+
++#
++
++include $(TOPDIR)/config.mk
++
++LIB	= $(obj)lib$(BOARD).o
++
++COBJS	= $(BOARD).o
++
++SRCS	:= $(SOBJS:.o=.S) $(COBJS:.o=.c)
++OBJS	:= $(addprefix $(obj),$(COBJS))
++SOBJS	:= $(addprefix $(obj),$(SOBJS))
++
++$(LIB):	$(obj).depend $(OBJS) $(SOBJS)
++	$(call cmd_link_o_target, $(OBJS) $(SOBJS))
++
++#########################################################################
++
++# defines $(obj).depend target
++include $(SRCTREE)/rules.mk
++
++sinclude $(obj).depend
++
++#########################################################################
+--- /dev/null
++++ b/board/draytek/vigor2862/vigor2862.c
+@@ -0,0 +1,202 @@
++/*
++* Copyright (C) 2026 Gregory Dymarek
++* Based on board/draytek/vigor2860
++*
++* SPDX-License-Identifier:	GPL-2.0+
++*/
++
++#include <common.h>
++#include <asm/lantiq/chipid.h>
++#include <asm/lantiq/cpu.h>
++#include <nand.h>
++#include <malloc.h>
++#include <errno.h>
++#include <asm/addrspace.h>
++#include <asm/io.h>
++#include <u-boot/crc.h>
++
++DECLARE_GLOBAL_DATA_PTR;
++
++#define DRAYBOOT_PRIMARY   0x01380000   /* DrayBoot primary slot (NAND) */
++#define UBOOT_LEN          0x00080104   /* 0x100 hdr + 0x80000 payload + 4 cksum */
++#define CHECKSUM_OFFSET    0x00080100   /* shrunk ~sum word lands here (in the pad) */
++#define CONVERT_LEN        0x000A0000   /* 5 x 128 KiB, block-aligned, below kernel */
++#define COMBINED_MIN       0x00100000   /* kernel starts here; smaller => not combined */
++
++/*
++ * DrayBoot verifies ~sum over the length in the slot header on every NAND
++ * boot and restores the slot from its backup on a mismatch. A combined
++ * factory image covers the kernel and rootfs, so shrink the header to the
++ * U-Boot region on first boot; later kernel/rootfs updates then leave
++ * DrayBoot's checksum valid.
++ */
++static int convert_drayboot_image(void)
++{
++	nand_info_t *nand = &nand_info[0];
++	nand_erase_options_t eopts;
++	unsigned char peek[CONFIG_SYS_NAND_PAGE_SIZE];
++	unsigned char *buf;
++	size_t len;
++	unsigned int image_len, sum, i;
++	loff_t off;
++	int ret;
++
++	/* Cheap peek: read only the first page to get word0 before any heavy work. */
++	len = CONFIG_SYS_NAND_PAGE_SIZE;
++	ret = nand_read(nand, DRAYBOOT_PRIMARY, &len, peek);
++	if (ret && ret != -EUCLEAN) {
++		printf("DRAYBOOT: header read failed (%d)\n", ret);
++		return -1;
++	}
++	image_len = ntohl(*(unsigned int *)peek);
++	printf("DRAYBOOT: image length = 0x%08x\n", image_len);
++
++	/* Already converted - every boot after the first lands here. */
++	if (image_len == UBOOT_LEN)
++		return 0;
++
++	/* Not a combined installer (uboot-only or malformed): leave the slot
++	 * untouched so DrayBoot keeps booting it with its original checksum. */
++	if (image_len < COMBINED_MIN) {
++		printf("DRAYBOOT: 0x%x not a combined image, skipping convert\n",
++		       image_len);
++		return 0;
++	}
++
++	/* Converting. Raw offsets are only valid if the whole span is good
++	 * blocks - matches DrayBoot's view and prevents silent corruption. */
++	for (off = DRAYBOOT_PRIMARY; off < DRAYBOOT_PRIMARY + CONVERT_LEN;
++	     off += nand->erasesize) {
++		if (nand_block_isbad(nand, off)) {
++			printf("DRAYBOOT: bad block @ 0x%08llx, aborting convert\n",
++			       (unsigned long long)off);
++			return -1;
++		}
++	}
++
++	buf = malloc(CONVERT_LEN);
++	if (!buf) {
++		printf("DRAYBOOT: malloc failed\n");
++		return -1;
++	}
++
++	len = CONVERT_LEN;
++	ret = nand_read(nand, DRAYBOOT_PRIMARY, &len, buf);
++	if (ret && ret != -EUCLEAN) {		/* -EUCLEAN = corrected, not fatal */
++		printf("DRAYBOOT: NAND read failed (%d)\n", ret);
++		goto out;
++	}
++
++	/* Shrink word0 to U-Boot only, recompute ~sum over [0, CHECKSUM_OFFSET). */
++	*(unsigned int *)buf = htonl(UBOOT_LEN);
++	sum = 0;
++	for (i = 0; i < CHECKSUM_OFFSET; i += 4)
++		sum += ntohl(*(unsigned int *)(buf + i));
++	*(unsigned int *)(buf + CHECKSUM_OFFSET) = htonl(~sum);
++
++	/* Erase via the options API (3-arg nand_erase does not exist in 2013.10). */
++	memset(&eopts, 0, sizeof(eopts));
++	eopts.offset = DRAYBOOT_PRIMARY;
++	eopts.length = CONVERT_LEN;
++	eopts.quiet  = 1;
++	ret = nand_erase_opts(nand, &eopts);
++	if (ret) {
++		printf("DRAYBOOT: NAND erase failed (%d)\n", ret);
++		goto out;	/* word0 now gone -> DrayBoot falls back to backup slot */
++	}
++
++	len = CONVERT_LEN;
++	ret = nand_write(nand, DRAYBOOT_PRIMARY, &len, buf);
++	if (ret) {
++		printf("DRAYBOOT: NAND write failed (%d)\n", ret);
++		goto out;
++	}
++
++	printf("DRAYBOOT: converted primary slot to U-Boot-only (0x%08x)\n",
++	       UBOOT_LEN);
++	ret = 0;
++out:
++	free(buf);
++	return ret;
++}
++
++#define RCU_RST_REQ        0x1f203010
++#define RCU_BASE           0x1f203000
++#define DRAYBOOT_GPHY_FW   0x00200000   /* DrayBoot's GPHY GE image */
++#define GPHY_FW_LEN        0x00010000
++
++/* GPHY0-3: firmware address register (RCU offset) and RST_REQ bit */
++static const struct {
++	u16 gfs_add;
++	u8 rst;
++} gphys[] = {
++	{ 0x020, 31 },
++	{ 0x058, 29 },
++	{ 0x0ac, 28 },
++	{ 0x264, 10 },
++};
++
++/*
++ * DrayBoot unpacks the GPHY firmware from SPI to RAM and boots the GPHYs
++ * from there, but the kernel is loaded over that RAM and the GPHYs run
++ * from it. Copy it to the RAM hidden from U-Boot and Linux
++ * (CONFIG_SYS_MEM_TOP_HIDE, 16 KiB aligned) and restart the GPHYs from the
++ * copy, so Linux finds them running and needs no firmware.
++ */
++static void boot_gphys(void)
++{
++	ulong base = CONFIG_SYS_SDRAM_BASE + gd->ram_size -
++		     CONFIG_SYS_MEM_TOP_HIDE;
++	void *fw = (void *)CKSEG1ADDR(base);
++	void *src = (void *)CKSEG1ADDR(DRAYBOOT_GPHY_FW);
++	u32 mask = 0;
++	int i;
++
++	if (readl(CKSEG1ADDR(RCU_BASE + gphys[0].gfs_add)) != DRAYBOOT_GPHY_FW) {
++		puts("GPHY:  no DrayBoot firmware\n");
++		return;
++	}
++
++	memcpy(fw, src, GPHY_FW_LEN);
++
++	for (i = 0; i < ARRAY_SIZE(gphys); i++)
++		mask |= 1 << gphys[i].rst;
++
++	/* the vendor BSP waits 200 ms after asserting the GPHY reset */
++	writel(readl(CKSEG1ADDR(RCU_RST_REQ)) | mask, CKSEG1ADDR(RCU_RST_REQ));
++	mdelay(200);
++	for (i = 0; i < ARRAY_SIZE(gphys); i++)
++		writel(CPHYSADDR(base), CKSEG1ADDR(RCU_BASE + gphys[i].gfs_add));
++	writel(readl(CKSEG1ADDR(RCU_RST_REQ)) & ~mask, CKSEG1ADDR(RCU_RST_REQ));
++
++	printf("GPHY:  booted from 0x%08lx, crc32 %08x\n",
++	       CPHYSADDR(base), crc32(0, fw, GPHY_FW_LEN));
++}
++
++/*
++ * xRX330 (GRX390). DrayBoot has already set up clocks, DDR, the DC/DC
++ * converter and the NAND/UART pinmux, and the VRX200 code for those does
++ * not match this SoC, so none of it is redone here.
++ */
++int board_early_init_f(void)
++{
++	return 0;
++}
++
++int checkboard(void)
++{
++	puts("Board: " CONFIG_BOARD_NAME "\n");
++	ltq_chip_print_info();
++
++	return 0;
++}
++
++int misc_init_r(void)
++{
++	/* shrink the DrayBoot slot header to U-Boot only (first boot only) */
++	convert_drayboot_image();
++
++	boot_gphys();
++
++	return 0;
++}
+--- a/boards.cfg
++++ b/boards.cfg
+@@ -1256,3 +1256,4 @@
+ Orphan  powerpc     mpc8xx         -           -               mbx8xx              MBX860T                              -                                                                                                                                 -
+ Orphan  powerpc     mpc8xx         -           -               nx823               NX823                                -                                                                                                                                 -
+ Active	mips	mips32	vrx200	draytek	vigor2860	vigor2860_ram	vigor2860:SYS_BOOT_RAM	Gregory Dymarek
++Active	mips	mips32	vrx200	draytek	vigor2862	vigor2862_ram	vigor2862:SYS_BOOT_RAM	Gregory Dymarek
+--- /dev/null
++++ b/include/configs/vigor2862.h
+@@ -0,0 +1,90 @@
++/*
++* Copyright (C) 2026 Gregory Dymarek
++* Based on include/configs/vigor2860.h
++*
++* SPDX-License-Identifier:	GPL-2.0+
++*/
++
++#ifndef __CONFIG_H
++#define __CONFIG_H
++
++#define CONFIG_MACH_TYPE	"Vigor2862"
++#define CONFIG_IDENT_STRING	" "CONFIG_MACH_TYPE
++#define CONFIG_BOARD_NAME	"DrayTek Vigor 2862"
++
++/* Configure SoC */
++#define CONFIG_LTQ_SUPPORT_UART			/* Enable ASC and UART */
++
++#define CONFIG_LTQ_SUPPORT_NAND_FLASH		/* Have a Toshiba 128 MiB NAND flash */
++
++#define CONFIG_SYS_NAND_PAGE_COUNT	64
++#define CONFIG_SYS_NAND_PAGE_SIZE	2048
++#define CONFIG_SYS_NAND_OOBSIZE		64
++#define CONFIG_SYS_NAND_BLOCK_SIZE	(128 * 1024)
++#define CONFIG_SYS_NAND_BAD_BLOCK_POS	NAND_LARGE_BADBLOCK_POS
++
++/*
++ * No SPI flash support: the SPI NOR holds DrayBoot and the board data (MAC)
++ * and must never be written from U-Boot.
++ */
++
++#define CONFIG_SYS_DRAM_PROBE
++
++/* top 128 KiB: GPHY firmware, the GPHYs run from it (board boot_gphys()) */
++#define CONFIG_SYS_MEM_TOP_HIDE	0x20000
++
++#undef CONFIG_SYS_BOOTM_LEN
++#define CONFIG_SYS_BOOTM_LEN          0x2000000       /* 32 MB */
++
++/* Environment */
++#define CONFIG_ENV_IS_NOWHERE
++
++#define CONFIG_ENV_SIZE			(8 * 1024)
++#define CONFIG_LOADADDR            CONFIG_SYS_LOAD_ADDR
++
++/* Console */
++#define CONFIG_LTQ_ADVANCED_CONSOLE
++#define CONFIG_BAUDRATE			115200
++#define CONFIG_CONSOLE_ASC		1
++#define CONFIG_CONSOLE_DEV		"ttyLTQ0"
++
++/* xRX330 (GRX390): CGU_SYS, EBU base and DDR controller differ from VRX200 */
++#define CONFIG_LTQ_SOC_GRX390
++
++/* Pull in default board configs for Lantiq XWAY VRX200 */
++#include <asm/lantiq/config.h>
++#include <asm/arch/config.h>
++
++/* Pull in default OpenWrt configs for Lantiq SoC */
++#include "openwrt-lantiq-common.h"
++
++/*
++ * No NAND SPL on this board, and NAND offset 0 belongs to DrayBoot:
++ * drop the default commands that load or write a U-Boot image there.
++ */
++#undef CONFIG_ENV_WRITE_UBOOT_NAND
++#define CONFIG_ENV_WRITE_UBOOT_NAND
++#undef CONFIG_ENV_LOAD_UBOOT_NAND
++#define CONFIG_ENV_LOAD_UBOOT_NAND
++
++
++#define CONFIG_EXTRA_ENV_SETTINGS	\
++	CONFIG_ENV_LANTIQ_DEFAULTS
++
++/* DrayBoot leaves caches in a state that linux cannot handle; force reset them */
++#define CONFIG_SYS_MIPS_CACHE_INIT_CHAINLOAD
++
++/* DrayBoot RAM entry: phys 0x24000, link at uncached KSEG1 alias */
++#undef  CONFIG_SYS_TEXT_BASE
++#define CONFIG_SYS_TEXT_BASE	0xA0024000
++
++#undef  CONFIG_BOARD_LATE_INIT
++#define CONFIG_MISC_INIT_R
++#undef  CONFIG_LOADADDR
++#define CONFIG_LOADADDR   0x82000000
++
++#undef  CONFIG_BOOTCOMMAND
++#define CONFIG_BOOTCOMMAND \
++    "nand read ${loadaddr} 0x1480000 0x400000 && bootm ${loadaddr}"
++
++#endif /* __CONFIG_H */
