@@ -1026,7 +1026,7 @@ uc_hostapd_bss_rename(uc_vm_t *vm, size_t nargs)
 	for (sta = hapd->sta_list; sta; sta = sta->next) {
 		char cur_name[IFNAMSIZ + 1], new_name[IFNAMSIZ + 1];
 
-		if (!(sta->flags & WLAN_STA_WDS) || sta->pending_wds_enable)
+		if (!sta->wds_vlan)
 			continue;
 
 		snprintf(cur_name, sizeof(cur_name), "%s.sta%d", prev_ifname, sta->aid);

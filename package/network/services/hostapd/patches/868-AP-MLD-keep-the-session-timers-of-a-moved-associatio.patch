@@ -33,7 +33,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
 --- a/src/ap/sta_info.c
 +++ b/src/ap/sta_info.c
-@@ -1067,6 +1067,41 @@ void ap_sta_session_warning_timeout(stru
+@@ -1064,6 +1064,41 @@ void ap_sta_session_warning_timeout(stru
  }
  
  
@@ -77,7 +77,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	struct hostapd_data *hapd = eloop_ctx;
 --- a/src/ap/sta_info.h
 +++ b/src/ap/sta_info.h
-@@ -420,6 +420,10 @@ void ap_sta_no_session_timeout(struct ho
+@@ -421,6 +421,10 @@ void ap_sta_no_session_timeout(struct ho
  			       struct sta_info *sta);
  void ap_sta_session_warning_timeout(struct hostapd_data *hapd,
  				    struct sta_info *sta, int warning_time);
