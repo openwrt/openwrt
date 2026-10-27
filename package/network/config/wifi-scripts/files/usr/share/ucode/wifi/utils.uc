@@ -60,7 +60,15 @@ function find_phy_by_macaddr(phys, macaddr) {
 
 export function json_file_read(path) {
 	let data = readfile(path);
-	return data ? json(data) : null;
+	if (!data)
+		return null;
+
+	try {
+		return json(data);
+	} catch (e) {
+		warn(`${path}: ${e.message}\n`);
+		return null;
+	}
 }
 
 export function board_wlan() {
