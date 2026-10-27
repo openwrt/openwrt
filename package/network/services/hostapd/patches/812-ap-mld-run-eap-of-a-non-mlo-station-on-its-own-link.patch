@@ -78,7 +78,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  #endif /* RADIUS_SERVER */
 --- a/src/ap/hostapd.c
 +++ b/src/ap/hostapd.c
-@@ -1572,12 +1572,84 @@ static struct sta_info * hostapd_das_fin
+@@ -1627,12 +1627,84 @@ static struct sta_info * hostapd_das_fin
  }
  
  
@@ -165,7 +165,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  }
  
  
-@@ -1591,7 +1663,7 @@ hostapd_das_disconnect(void *ctx, struct
+@@ -1646,7 +1718,7 @@ hostapd_das_disconnect(void *ctx, struct
  	if (hostapd_das_nas_mismatch(hapd, attr))
  		return RADIUS_DAS_NAS_MISMATCH;
  
@@ -174,7 +174,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	if (sta == NULL) {
  		if (multi) {
  			wpa_printf(MSG_DEBUG,
-@@ -1630,7 +1702,7 @@ hostapd_das_coa(void *ctx, struct radius
+@@ -1685,7 +1757,7 @@ hostapd_das_coa(void *ctx, struct radius
  	if (hostapd_das_nas_mismatch(hapd, attr))
  		return RADIUS_DAS_NAS_MISMATCH;
  

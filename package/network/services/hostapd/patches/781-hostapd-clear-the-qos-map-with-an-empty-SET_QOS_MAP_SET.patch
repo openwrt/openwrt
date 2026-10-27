@@ -36,7 +36,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  			wpa_printf(MSG_ERROR, "Too many qos_map_set parameters");
 --- a/src/drivers/driver_nl80211.c
 +++ b/src/drivers/driver_nl80211.c
-@@ -12885,8 +12885,10 @@ static int nl80211_set_qos_map(void *pri
+@@ -12893,8 +12893,10 @@ static int nl80211_set_qos_map(void *pri
  	wpa_hexdump(MSG_DEBUG, "nl80211: Setting QoS Map",
  		    qos_map_set, qos_map_set_len);
  

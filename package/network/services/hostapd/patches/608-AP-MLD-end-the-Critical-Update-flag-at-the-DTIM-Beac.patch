@@ -1,0 +1,413 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Sat, 10 Oct 2026 08:00:00 +0200
+Subject: [PATCH] AP MLD: end the Critical Update flag at the DTIM Beacon
+
+Depends on 602-ap-mld-announce-the-removal-of-an-affiliated-ap.patch and
+on the mac80211 patches that add NL80211_EXT_FEATURE_BEACON_CRIT_UPDATE,
+NL80211_ATTR_CRIT_UPDATE_ID and NL80211_CMD_CRIT_UPDATE_DONE.
+
+IEEE 802.11be-2024 35.3.10 sets the Critical Update flag until and
+including the next DTIM Beacon on the link. hostapd does not see the
+DTIM Count of its Beacon frames, so patch 602 sets the flag for DTIM
+period + 1 counts of the AP Removal Timer. That holds the DTIM Beacon in
+every phase, but keeps the flag after it.
+
+Where the driver declares NL80211_EXT_FEATURE_BEACON_CRIT_UPDATE, set
+the flag on each link of the AP MLD when a link removal starts, and keep
+it until NL80211_CMD_CRIT_UPDATE_DONE reports the DTIM Beacon of that
+link. Then update the Beacon and Probe Response frames of the link
+without it. Without the feature, and for a nontransmitted BSSID, which
+has no Beacon frames of its own, the count of patch 602 stays.
+
+Each critical update of a link gets a new ID, which hostapd passes with
+each Beacon update that sets the flag. The driver starts a new critical
+update for a new ID, also after the DTIM Beacon of the previous one, and
+continues the current one for the same ID. So the updates of the AP
+Removal Timer at each count do not extend the flag. The event names the
+ID of the critical update that ended, so an event of an earlier critical
+update does not end a later one.
+
+Add NL80211_ATTR_STA_DUMP_LINK_STATS to nl80211_copy.h as well, so that
+the attribute numbers match the kernel headers of mac80211 patch 004.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/src/ap/drv_callbacks.c
++++ b/src/ap/drv_callbacks.c
+@@ -3035,6 +3035,10 @@ void hostapd_wpa_event(void *ctx, enum w
+ 			   hapd->conf->iface);
+ 		hostapd_mld_interface_freed(hapd);
+ 		break;
++	case EVENT_CRIT_UPDATE_DONE:
++		hostapd_crit_update_done(hapd, data->crit_update_done.link_id,
++					 data->crit_update_done.id);
++		break;
+ #endif /* CONFIG_IEEE80211BE */
+ 	default:
+ 		wpa_printf(MSG_DEBUG, "Unknown event %d", event);
+--- a/src/ap/hostapd.c
++++ b/src/ap/hostapd.c
+@@ -455,8 +455,20 @@ static void hostapd_link_remove_timeout_
+ 						void *user_ctx);
+ 
+ 
+-/* Set until and including the next DTIM Beacon (IEEE Std 802.11be-2024,
+- * 35.3.10); the driver counts DTIMs. */
++/* A nontransmitted BSSID sends no Beacon frames of its own, so the driver does
++ * not end its flag */
++static bool hostapd_crit_update_offload(struct hostapd_data *hapd)
++{
++	return (hapd->iface->drv_flags2 &
++		WPA_DRIVER_FLAGS2_BEACON_CRIT_UPDATE) &&
++		hostapd_mbssid_get_tx_bss(hapd) == hapd;
++}
++
++
++/* Until and including the next DTIM Beacon (IEEE Std 802.11be-2024, 35.3.10).
++ * Without the driver, which sees the DTIM Count, the flag is set for DTIM
++ * period + 1 counts, which hold the next DTIM Beacon also when a Beacon update
++ * takes effect later than the one before it. */
+ bool hostapd_link_remove_critical_update(struct hostapd_data *hapd)
+ {
+ 	struct hostapd_data *link_bss;
+@@ -464,6 +476,9 @@ bool hostapd_link_remove_critical_update
+ 	if (!hapd->conf->mld_ap || !hapd->mld)
+ 		return false;
+ 
++	if (hostapd_crit_update_offload(hapd))
++		return hapd->eht_mld_crit_update;
++
+ 	for_each_mld_link(link_bss, hapd) {
+ 		u16 announced = link_bss->eht_mld_link_removal_start -
+ 			link_bss->eht_mld_link_removal_count;
+@@ -754,6 +769,23 @@ static void hostapd_link_remove_timeout_
+ }
+ 
+ 
++/* A new ID starts a new critical update in the driver, also before hostapd
++ * reads the event of the previous one */
++static void hostapd_mld_crit_update_start(struct hostapd_data *hapd)
++{
++	struct hostapd_data *link_bss;
++
++	for_each_mld_link(link_bss, hapd) {
++		if (!link_bss->started || !hostapd_crit_update_offload(link_bss))
++			continue;
++
++		link_bss->eht_mld_crit_update = true;
++		if (!++link_bss->eht_mld_crit_update_id)
++			link_bss->eht_mld_crit_update_id = 1;
++	}
++}
++
++
+ /* A repeated request must not set the AP Removal Timer back (IEEE Std
+  * 802.11be-2024, 35.3.6.3). */
+ int hostapd_link_remove(struct hostapd_data *hapd, u32 count)
+@@ -795,12 +827,34 @@ int hostapd_link_remove(struct hostapd_d
+ 	if (hapd->eht_mld_bss_param_change == 255)
+ 		hapd->eht_mld_bss_param_change = 0;
+ 
++	hostapd_mld_crit_update_start(hapd);
+ 	ieee802_11_set_beacon(hapd);
+ 	os_get_reltime(&hapd->eht_mld_link_removal_due);
+ 	hostapd_link_remove_timeout_register(hapd);
+ 	return 0;
+ }
+ 
++
++/* Unlike switch_link_hapd(), a link that hostapd no longer has is not
++ * replaced by the first link */
++void hostapd_crit_update_done(struct hostapd_data *hapd, int link_id, u32 id)
++{
++	if (link_id < 0 || !hapd->conf->mld_ap || !hapd->mld)
++		return;
++
++	hapd = hostapd_mld_get_link_bss(hapd, link_id);
++	if (!hapd || !hapd->eht_mld_crit_update ||
++	    id != hapd->eht_mld_crit_update_id)
++		return;
++
++	wpa_printf(MSG_DEBUG, "MLD: Critical update done, link_id=%u",
++		   hapd->mld_link_id);
++
++	hapd->eht_mld_crit_update = false;
++	if (hapd->started && hapd->beacon_set_done)
++		ieee802_11_set_beacon(hapd);
++}
++
+ #endif /* CONFIG_IEEE80211BE */
+ 
+ 
+@@ -812,6 +866,7 @@ void hostapd_free_hapd_data(struct hosta
+ 	hapd->eht_mld_link_removal_count = 0;
+ 	hapd->eht_mld_link_removal_expired = false;
+ 	hapd->eht_mld_link_removal_tx = 0;
++	hapd->eht_mld_crit_update = false;
+ #endif /* CONFIG_IEEE80211BE */
+ 
+ 	os_free(hapd->probereq_cb);
+--- a/src/ap/hostapd.h
++++ b/src/ap/hostapd.h
+@@ -555,6 +555,9 @@ struct hostapd_data {
+ 	struct os_reltime eht_mld_link_removal_due;
+ 	bool eht_mld_link_removal_expired;
+ 	unsigned int eht_mld_link_removal_tx;
++	/* Critical Update flag set until EVENT_CRIT_UPDATE_DONE */
++	bool eht_mld_crit_update;
++	u32 eht_mld_crit_update_id;
+ #endif /* CONFIG_IEEE80211BE */
+ 
+ #ifdef CONFIG_NAN_USD
+@@ -1000,6 +1003,7 @@ struct hostapd_data * hostapd_mld_get_li
+ 					       u8 link_id);
+ int hostapd_link_remove(struct hostapd_data *hapd, u32 count);
+ bool hostapd_link_remove_critical_update(struct hostapd_data *hapd);
++void hostapd_crit_update_done(struct hostapd_data *hapd, int link_id, u32 id);
+ u64 hostapd_link_remove_expiry_ms(struct hostapd_data *hapd);
+ u64 hostapd_link_remove_ms(struct hostapd_data *hapd);
+ void hostapd_mld_beacons_update(struct hostapd_data *hapd);
+--- a/src/drivers/driver_common.c
++++ b/src/drivers/driver_common.c
+@@ -110,6 +110,7 @@ const char * event_to_string(enum wpa_ev
+ 	E2S(NAN_CHAN_EVACUATION);
+ 	E2S(PEER_MEASUREMENT_RESULT);
+ 	E2S(PEER_MEASUREMENT_COMPLETE);
++	E2S(CRIT_UPDATE_DONE);
+ 	}
+ 
+ 	return "UNKNOWN";
+--- a/src/drivers/driver.h
++++ b/src/drivers/driver.h
+@@ -1930,6 +1930,13 @@ struct wpa_driver_ap_params {
+ 	u8 mld_link_id;
+ 
+ 	/**
++	 * crit_update_id - ID of the critical update of the Critical Update
++	 * flag in the beacon head, 0 if none (see
++	 * WPA_DRIVER_FLAGS2_BEACON_CRIT_UPDATE)
++	 */
++	u32 crit_update_id;
++
++	/**
+ 	 * psk - PSK passed to the driver for 4-way handshake offload
+ 	 */
+ 	u8 psk[PMK_LEN];
+@@ -2580,6 +2587,9 @@ struct wpa_driver_capa {
+ #define WPA_DRIVER_FLAGS2_PMKSA_PRIVACY		0x0000001000000000ULL
+ /** Driver supports MAC address filter for remain-on-channel */
+ #define WPA_DRIVER_FLAGS2_ROC_ADDR_FILTER	0x0000002000000000ULL
++/** Driver ends the Critical Update flag of an AP link after the DTIM Beacon
++ * and reports it with EVENT_CRIT_UPDATE_DONE, see crit_update_id */
++#define WPA_DRIVER_FLAGS2_BEACON_CRIT_UPDATE	0x0000004000000000ULL
+ 	u64 flags2;
+ 
+ #define FULL_AP_CLIENT_STATE_SUPP(drv_flags) \
+@@ -6700,6 +6710,14 @@ enum wpa_event_type {
+ 	 * measurement session identified by the cookie has ended.
+ 	 */
+ 	EVENT_PEER_MEASUREMENT_COMPLETE,
++
++	/**
++	 * EVENT_CRIT_UPDATE_DONE - The Critical Update flag of an AP link
++	 * ended with the DTIM Beacon
++	 *
++	 * Described in wpa_event_data.crit_update_done.
++	 */
++	EVENT_CRIT_UPDATE_DONE,
+ };
+ 
+ 
+@@ -7670,6 +7688,16 @@ union wpa_event_data {
+ 	} bss_color_collision;
+ 
+ 	/**
++	 * struct crit_update_done - Data for EVENT_CRIT_UPDATE_DONE
++	 * @link_id: Link ID of the AP link, -1 if not an AP MLD
++	 * @id: ID of the critical update, 0 if none
++	 */
++	struct crit_update_done {
++		int link_id;
++		u32 id;
++	} crit_update_done;
++
++	/**
+ 	 * struct pasn_auth - Data for EVENT_PASN_AUTH
+ 	 */
+ 	struct pasn_auth pasn_auth;
+--- a/src/drivers/driver_nl80211_capa.c
++++ b/src/drivers/driver_nl80211_capa.c
+@@ -607,6 +607,9 @@ static void wiphy_info_ext_feature_flags
+ 			      NL80211_EXT_FEATURE_ROC_ADDR_FILTER))
+ 		capa->flags2 |= WPA_DRIVER_FLAGS2_ROC_ADDR_FILTER;
+ 	if (ext_feature_isset(ext_features, len,
++			      NL80211_EXT_FEATURE_BEACON_CRIT_UPDATE))
++		capa->flags2 |= WPA_DRIVER_FLAGS2_BEACON_CRIT_UPDATE;
++	if (ext_feature_isset(ext_features, len,
+ 			      NL80211_EXT_FEATURE_SCHED_SCAN_RELATIVE_RSSI))
+ 		capa->flags |= WPA_DRIVER_FLAGS_SCHED_SCAN_RELATIVE_RSSI;
+ 	if (ext_feature_isset(ext_features, len,
+--- a/src/drivers/driver_nl80211_event.c
++++ b/src/drivers/driver_nl80211_event.c
+@@ -199,6 +199,7 @@ static const char * nl80211_command_to_s
+ 	C2S(NL80211_CMD_NAN_CHANNEL_EVAC)
+ 	C2S(NL80211_CMD_START_PD)
+ 	C2S(NL80211_CMD_STOP_PD)
++	C2S(NL80211_CMD_CRIT_UPDATE_DONE)
+ 	C2S(__NL80211_CMD_AFTER_LAST)
+ 	}
+ #undef C2S
+@@ -4826,6 +4827,39 @@ process_incumbt_intf_event:
+ }
+ 
+ 
++static void nl80211_crit_update_done_event(struct i802_bss *bss,
++					   struct nlattr *tb[])
++{
++	union wpa_event_data data;
++
++	os_memset(&data, 0, sizeof(data));
++	data.crit_update_done.link_id = NL80211_DRV_LINK_ID_NA;
++
++	if (tb[NL80211_ATTR_MLO_LINK_ID]) {
++		data.crit_update_done.link_id =
++			nla_get_u8(tb[NL80211_ATTR_MLO_LINK_ID]);
++
++		if (!nl80211_link_valid(bss->valid_links,
++					data.crit_update_done.link_id)) {
++			wpa_printf(MSG_DEBUG,
++				   "nl80211: Invalid critical update event link ID %d",
++				   data.crit_update_done.link_id);
++			return;
++		}
++	}
++
++	if (tb[NL80211_ATTR_CRIT_UPDATE_ID])
++		data.crit_update_done.id =
++			nla_get_u32(tb[NL80211_ATTR_CRIT_UPDATE_ID]);
++
++	wpa_printf(MSG_DEBUG,
++		   "nl80211: Critical update done - Link ID %d ID %u",
++		   data.crit_update_done.link_id, data.crit_update_done.id);
++
++	wpa_supplicant_event(bss->ctx, EVENT_CRIT_UPDATE_DONE, &data);
++}
++
++
+ static void do_process_drv_event(struct i802_bss *bss, int cmd,
+ 				 struct nlattr **tb)
+ {
+@@ -5098,6 +5132,9 @@ static void do_process_drv_event(struct
+ 	case NL80211_CMD_LINKS_REMOVED:
+ 		mlme_event_link_removal(drv, tb[NL80211_ATTR_MLO_LINKS]);
+ 		break;
++	case NL80211_CMD_CRIT_UPDATE_DONE:
++		nl80211_crit_update_done_event(bss, tb);
++		break;
+ 	case NL80211_CMD_ASSOC_MLO_RECONF:
+ 		mlme_event_link_addition(bss, nla_data(frame), nla_len(frame));
+ 		break;
+--- a/src/ap/beacon.c
++++ b/src/ap/beacon.c
+@@ -2871,6 +2871,8 @@ static int __ieee802_11_set_beacon(struc
+ 
+ #ifdef CONFIG_IEEE80211BE
+ 	params.punct_bitmap = iconf->punct_bitmap;
++	if (hapd->eht_mld_crit_update)
++		params.crit_update_id = hapd->eht_mld_crit_update_id;
+ #endif /* CONFIG_IEEE80211BE */
+ 
+ 	if (cmode &&
+--- a/src/drivers/driver_nl80211.c
++++ b/src/drivers/driver_nl80211.c
+@@ -5886,6 +5886,14 @@ static int wpa_driver_nl80211_set_ap(voi
+ 			goto fail;
+ 	}
+ 
++	if (params->crit_update_id) {
++		wpa_printf(MSG_DEBUG, "nl80211: crit_update_id=%u",
++			   params->crit_update_id);
++		if (nla_put_u32(msg, NL80211_ATTR_CRIT_UPDATE_ID,
++				params->crit_update_id))
++			goto fail;
++	}
++
+ 	if (params->proberesp && params->proberesp_len) {
+ 		wpa_hexdump(MSG_DEBUG, "nl80211: proberesp (offload)",
+ 			    params->proberesp, params->proberesp_len);
+--- a/src/drivers/nl80211_copy.h
++++ b/src/drivers/nl80211_copy.h
+@@ -1457,6 +1457,14 @@
+  *	and multiple can be nested in %NL80211_ATTR_MLO_LINKS but then the
+  *	update isn't atomic if any failures happen.
+  *	Only supported with %NL80211_EXT_FEATURE_UPDATE_BEACON.
++ * @NL80211_CMD_CRIT_UPDATE_DONE: Notify user space that the Critical Update
++ *	flag is clear in the Beacon frames of an AP link, after the DTIM Beacon
++ *	frame that followed the start of the critical update. The event carries
++ *	%NL80211_ATTR_WIPHY, %NL80211_ATTR_IFINDEX, %NL80211_ATTR_WDEV, for an
++ *	AP MLD %NL80211_ATTR_MLO_LINK_ID, and %NL80211_ATTR_CRIT_UPDATE_ID if
++ *	the critical update has an ID. See
++ *	%NL80211_EXT_FEATURE_BEACON_CRIT_UPDATE.
++ *
+  * @NL80211_CMD_MAX: highest used command number
+  * @__NL80211_CMD_AFTER_LAST: internal use
+  */
+@@ -1738,6 +1746,7 @@ enum nl80211_commands {
+ 	NL80211_CMD_NAN_SET_NON_EVAC_CHANNELS,
+ 
+ 	NL80211_CMD_UPDATE_BEACON,
++	NL80211_CMD_CRIT_UPDATE_DONE,
+ 
+ 	/* add new commands above here */
+ 
+@@ -3230,6 +3239,12 @@ enum nl80211_commands {
+  *
+  * @NL80211_ATTR_ASSOC_PROTECTED_TWT: Enable protected TWT for the association,
+  *	requires protected TWT support (flag attribute)
++ * @NL80211_ATTR_CRIT_UPDATE_ID: u32 ID, not 0, of the critical update to
++ *	which the Critical Update flag in the beacon head belongs. Used with
++ *	the beacon of %NL80211_CMD_START_AP, %NL80211_CMD_SET_BEACON and the
++ *	other commands that carry a beacon, and in
++ *	%NL80211_CMD_CRIT_UPDATE_DONE. See
++ *	%NL80211_EXT_FEATURE_BEACON_CRIT_UPDATE.
+  *
+  * @NUM_NL80211_ATTR: total number of nl80211_attrs available
+  * @NL80211_ATTR_MAX: highest attribute number currently defined
+@@ -3837,6 +3852,7 @@ enum nl80211_attrs {
+ 	NL80211_ATTR_CIP_CAPABILITIES,
+ 
+ 	NL80211_ATTR_ASSOC_PROTECTED_TWT,
++	NL80211_ATTR_CRIT_UPDATE_ID,
+ 
+ 	/* add attributes here, update the policy in nl80211.c */
+ 
+@@ -7169,6 +7185,21 @@ enum nl80211_feature_flags {
+  *
+  * @NL80211_EXT_FEATURE_UPDATE_BEACON: Driver supports
+  *	%NL80211_CMD_UPDATE_BEACON.
++ * @NL80211_EXT_FEATURE_BEACON_CRIT_UPDATE: The driver clears the Critical
++ *	Update flag (IEEE 802.11be-2024, 9.4.1.4) in the Beacon frames of an
++ *	AP link after the next DTIM Beacon frame (35.3.10), and reports it with
++ *	%NL80211_CMD_CRIT_UPDATE_DONE. User space sets the flag in the beacon
++ *	head of each link that a critical update affects, with an
++ *	%NL80211_ATTR_CRIT_UPDATE_ID other than that of the previous critical
++ *	update of the link. A beacon update with a new ID starts a critical
++ *	update, also when the previous one is done, and the next DTIM Beacon
++ *	frame after it ends it. A beacon update with the flag and the same ID,
++ *	or without an ID, continues the current critical update, or starts one
++ *	if there is none. After the DTIM Beacon frame, the driver keeps the
++ *	flag out of the Beacon frames until a beacon update without the flag
++ *	or with a new ID. User space keeps the flag until the event with the
++ *	ID of the current critical update. The driver does not track the flag
++ *	of a nontransmitted BSSID and reports no event for it.
+  *
+  * @NUM_NL80211_EXT_FEATURES: number of extended features.
+  * @MAX_NL80211_EXT_FEATURES: highest extended feature index.
+@@ -7254,6 +7285,7 @@ enum nl80211_ext_feature_index {
+ 	NL80211_EXT_FEATURE_PROBE_AP,
+ 	NL80211_EXT_FEATURE_FAST_ROAM_OFFLOAD,
+ 	NL80211_EXT_FEATURE_UPDATE_BEACON,
++	NL80211_EXT_FEATURE_BEACON_CRIT_UPDATE,
+ 
+ 	/* add new features before the definition below */
+ 	NUM_NL80211_EXT_FEATURES,
