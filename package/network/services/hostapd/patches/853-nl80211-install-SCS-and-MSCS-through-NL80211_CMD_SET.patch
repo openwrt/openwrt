@@ -150,7 +150,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	 * @version: IP version of the IP address, 4 or 6
 --- a/src/drivers/driver_nl80211.c
 +++ b/src/drivers/driver_nl80211.c
-@@ -12980,6 +12980,144 @@ static int nl80211_set_qos_map(void *pri
+@@ -12985,6 +12985,144 @@ static int nl80211_set_qos_map(void *pri
  }
  
  
@@ -295,7 +295,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  static int get_wowlan_handler(struct nl_msg *msg, void *arg)
  {
  	struct nlattr *tb[NL80211_ATTR_MAX + 1];
-@@ -17032,6 +17170,8 @@ const struct wpa_driver_ops wpa_driver_n
+@@ -17037,6 +17175,8 @@ const struct wpa_driver_ops wpa_driver_n
  #endif /* ANDROID */
  	.vendor_cmd = nl80211_vendor_cmd,
  	.set_qos_map = nl80211_set_qos_map,
