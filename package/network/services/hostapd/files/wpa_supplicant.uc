@@ -771,6 +771,8 @@ let main_obj = {
 						continue;
 					if (!(data.radio_mask & radio_mask))
 						continue;
+					if (!data.phy_config[phy.radio])
+						continue;
 					data.radio_mask_present |= radio_mask;
 					found = true;
 				}
