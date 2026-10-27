@@ -912,7 +912,7 @@ hostapd_bss_del_client(struct ubus_context *ctx, struct ubus_object *obj,
 		else
 			ap_sta_disassociate(sta_bss, sta, reason);
 	} else if (memcmp(addr, bcast, ETH_ALEN) == 0) {
-		hostapd_free_stas(hapd);
+		hostapd_free_stas_all_links(hapd);
 	}
 
 	if (tb[DEL_CLIENT_BAN_TIME])

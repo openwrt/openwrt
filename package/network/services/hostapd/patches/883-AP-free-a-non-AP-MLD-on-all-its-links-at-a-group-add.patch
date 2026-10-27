@@ -1,0 +1,85 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Mon, 26 Oct 2026 19:00:00 +0100
+Subject: [PATCH] AP: free a non-AP MLD on all its links at a group addressed
+ drop
+
+Depends on 880-AP-free-a-non-AP-MLD-on-all-its-links-at-a-drop-with.patch.
+
+DEAUTHENTICATE and DISASSOCIATE of ff:ff:ff:ff:ff:ff on the control
+interface, and del_client of the broadcast address on ubus, send the
+group addressed frame on the link of the command and free the stations
+of that BSS with hostapd_free_stas(). The frame ends the association of
+a non-AP MLD on all its links (IEEE Std 802.11be-2024, 11.3.4.5), but
+on a link that is not its association link hostapd_free_stas() frees
+only its link STA. hostapd kept the STA of the association link,
+associated and authorized, and the driver kept the station on that
+link.
+
+Add hostapd_free_stas_all_links(), which frees these non-AP MLDs with
+hostapd_free_link_sta_mlds() before hostapd_free_stas(), and use it for
+the group addressed drops and in hostapd_bss_stas_leave().
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/src/ap/ctrl_iface_ap.c
++++ b/src/ap/ctrl_iface_ap.c
+@@ -682,7 +682,7 @@ int hostapd_ctrl_iface_deauthenticate(st
+ 		if (sta)
+ 			ap_sta_deauthenticate(hapd, sta, reason);
+ 		else if (addr[0] == 0xff)
+-			hostapd_free_stas(hapd);
++			hostapd_free_stas_all_links(hapd);
+ 	}
+ 
+ 	return 0;
+@@ -747,7 +747,7 @@ int hostapd_ctrl_iface_disassociate(stru
+ 		if (sta)
+ 			ap_sta_disassociate(hapd, sta, reason);
+ 		else if (addr[0] == 0xff)
+-			hostapd_free_stas(hapd);
++			hostapd_free_stas_all_links(hapd);
+ 	}
+ 
+ 	return 0;
+--- a/src/ap/hostapd.c
++++ b/src/ap/hostapd.c
+@@ -1963,10 +1963,7 @@ static int hostapd_flush_old_stations(st
+ 
+ static void hostapd_bss_stas_leave(struct hostapd_data *hapd)
+ {
+-#ifdef CONFIG_IEEE80211BE
+-	hostapd_free_link_sta_mlds(hapd);
+-#endif /* CONFIG_IEEE80211BE */
+-	hostapd_free_stas(hapd);
++	hostapd_free_stas_all_links(hapd);
+ 	hostapd_flush_old_stations(hapd, WLAN_REASON_DEAUTH_LEAVING);
+ }
+ 
+--- a/src/ap/sta_info.c
++++ b/src/ap/sta_info.c
+@@ -2438,6 +2438,15 @@ void hostapd_free_link_sta_mlds(struct h
+ #endif /* CONFIG_IEEE80211BE */
+ 
+ 
++void hostapd_free_stas_all_links(struct hostapd_data *hapd)
++{
++#ifdef CONFIG_IEEE80211BE
++	hostapd_free_link_sta_mlds(hapd);
++#endif /* CONFIG_IEEE80211BE */
++	hostapd_free_stas(hapd);
++}
++
++
+ /* The driver station of a non-AP MLD holds all its links. */
+ void ap_free_sta_all_links(struct hostapd_data *hapd, struct sta_info *sta)
+ {
+--- a/src/ap/sta_info.h
++++ b/src/ap/sta_info.h
+@@ -445,6 +445,7 @@ void ap_free_sta(struct hostapd_data *ha
+ void ap_free_sta_all_links(struct hostapd_data *hapd, struct sta_info *sta);
+ void ap_sta_ip6addr_del(struct hostapd_data *hapd, struct sta_info *sta);
+ void hostapd_free_stas(struct hostapd_data *hapd);
++void hostapd_free_stas_all_links(struct hostapd_data *hapd);
+ void ap_handle_timer(void *eloop_ctx, void *timeout_ctx);
+ void ap_sta_replenish_timeout(struct hostapd_data *hapd, struct sta_info *sta,
+ 			      u32 session_timeout);
