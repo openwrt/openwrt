@@ -426,6 +426,34 @@ function mld_macaddr_list(new_mld, added, prev_mld)
 	return list;
 }
 
+function mld_set_iface_config(name, data, phy, config)
+{
+	let radio = phy.radio;
+
+	wpas.printf(`Set MLD interface ${name} radio ${radio} config: ${keys(config)}`);
+
+	data.phy_config[radio] = config;
+	if (config && !phy.stopped)
+		data.radio_mask_present |= 1 << radio;
+	else
+		data.radio_mask_present &= ~(1 << radio);
+
+	mld_freq_list_update(data);
+	mld_kept_release(data, 1 << radio);
+}
+
+// a config_set can reach a new process before the mld_set that creates the entry
+function mld_phy_config_fill(data)
+{
+	for (let config_name, phy in wpas.data.config) {
+		let config = phy.mld_config?.[data.name];
+		if (phy.name != data.phy || phy.radio == null || !config)
+			continue;
+
+		mld_set_iface_config(data.name, data, phy, config);
+	}
+}
+
 function mld_set_config(config)
 {
 	let prev_mld = { ...wpas.data.mld };
@@ -474,21 +502,9 @@ function mld_set_config(config)
 		mld_remove(data);
 
 	wpas.data.mld = new_mld;
+	for (let name in added)
+		mld_phy_config_fill(new_mld[name]);
 	macaddr_sync_defer(ubus, "wpa_supplicant", "mld", mld_macaddr_list(new_mld, added, prev_mld));
-}
-
-function mld_set_iface_config(name, data, radio, config)
-{
-	wpas.printf(`Set MLD interface ${name} radio ${radio} config: ${keys(config)}`);
-
-	data.phy_config[radio] = config;
-	if (config)
-		data.radio_mask_present |= 1 << radio;
-	else
-		data.radio_mask_present &= ~(1 << radio);
-
-	mld_freq_list_update(data);
-	mld_kept_release(data, 1 << radio);
 }
 
 function mld_update_iface(name, data) {
@@ -512,7 +528,7 @@ function mld_update_phy(phy, ifaces) {
 		if (data.phy != phy.name)
 			continue;
 
-		mld_set_iface_config(name, data, phy.radio, ifaces[name]);
+		mld_set_iface_config(name, data, phy, ifaces[name]);
 		mld_update_iface(name, data);
 	}
 }
@@ -584,6 +600,7 @@ function set_config(config_name, phy_name, radio, num_global_macaddr, macaddr_ba
 	phy.radio = radio;
 	phy.num_global_macaddr = num_global_macaddr;
 	phy.macaddr_base = macaddr_base;
+	phy.stopped = false;
 
 	let values = [];
 	let mlo_ifaces = {};
@@ -593,6 +610,7 @@ function set_config(config_name, phy_name, radio, num_global_macaddr, macaddr_ba
 		else
 			push(values, [ config.iface, prepare_config(config) ]);
 
+	phy.mld_config = mlo_ifaces;
 	mld_update_phy(phy, mlo_ifaces);
 	phy.update(values);
 
@@ -798,6 +816,7 @@ let main_obj = {
 				return libubus.STATUS_NOT_FOUND;
 
 			let radio_mask = phy.radio != null ? (1 << phy.radio) : 0;
+			phy.stopped = req.args.stop;
 			if (req.args.stop) {
 				for (let ifname in phy.data)
 					iface_stop(phy.data[ifname]);
