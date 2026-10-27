@@ -831,15 +831,60 @@ function radio_base(radio)
 	});
 }
 
+// The Spatial Reuse Parameter Set of the radio. A running AP takes it with SET
+// and a Beacon update, and its BSS color through a color change announcement.
+const radio_sr_fields = [
+	"he_spr_sr_control", "he_spr_non_srg_obss_pd_max_offset",
+	"he_spr_srg_obss_pd_min_offset", "he_spr_srg_obss_pd_max_offset",
+	"he_spr_srg_bss_colors", "he_spr_srg_partial_bssid",
+];
+
+function radio_line_is_sr(line)
+{
+	let key = split(line, "=", 2)[0];
+
+	return key == "he_bss_color" || index(radio_sr_fields, key) >= 0;
+}
+
+function radio_sr_values(radio)
+{
+	let values = {};
+
+	for (let line in filter(radio.data, radio_line_is_sr)) {
+		let kv = split(line, "=", 2);
+		values[kv[0]] = kv[1];
+	}
+
+	return values;
+}
+
+// A change of the BSS color and the spatial reuse fields alone, on the same
+// channel, of a radio whose BSS color is enabled before and after.
+function radio_sr_change(old_radio, new_radio)
+{
+	let rest = (radio) => filter(radio_base(radio), (line) => !radio_line_is_sr(line));
+
+	return is_equal(rest(old_radio), rest(new_radio)) &&
+	       radio_sr_values(old_radio).he_bss_color != null &&
+	       radio_sr_values(new_radio).he_bss_color != null &&
+	       old_radio.channel == new_radio.channel &&
+	       is_equal(filter(old_radio.data, radio_line_is_chan),
+	                filter(new_radio.data, radio_line_is_chan));
+}
+
 function radio_reload_class(old_radio, new_radio)
 {
 	if (is_equal(old_radio, new_radio))
 		return "same";
 
-	// anything beyond channel/width, or the channel-follow flag flipping,
-	// needs a full restart
-	if (!is_equal(radio_base(old_radio), radio_base(new_radio)) ||
-	    (!old_radio.channel_follow) != (!new_radio.channel_follow))
+	if ((!old_radio.channel_follow) != (!new_radio.channel_follow))
+		return "restart";
+
+	if (radio_sr_change(old_radio, new_radio))
+		return "spatial_reuse";
+
+	// anything beyond channel/width needs a full restart
+	if (!is_equal(radio_base(old_radio), radio_base(new_radio)))
 		return "restart";
 
 	// base identical and apsta flag unchanged: only treat this as a channel
@@ -1037,6 +1082,56 @@ function iface_runs_channel(name, config)
 	       (!wanted.sec_channel || running.center_seg0_idx == wanted.center_seg0_idx);
 }
 
+const status_bss_color_re = /^he_bss_color=([0-9]+)$/;
+
+// hostapd leaves the configured color by itself after a color collision, so
+// the color it runs comes from STATUS. STATUS names no color while BSS Color
+// Disabled is set; the configured color stands in for it then.
+function iface_bss_color_running(bss, old)
+{
+	let m = match(bss.ctrl("STATUS") ?? "", status_bss_color_re);
+
+	return int(m ? m[1] : old.he_bss_color);
+}
+
+// The spatial reuse fields first and the color after: mac80211 refuses a
+// beacon update while a color change runs.
+function iface_spatial_reuse_apply(name, config, old_config)
+{
+	let iface = hostapd.interfaces[name];
+	let bss_list = values(hostapd.bss[name] ?? {});
+	if (!iface || iface.state() != "ENABLED" || !length(bss_list))
+		return false;
+
+	let old = radio_sr_values(old_config.radio);
+	let want = radio_sr_values(config.radio);
+	for (let key in radio_sr_fields) {
+		if (old[key] == want[key])
+			continue;
+
+		// An absent bitmap is empty, and an absent offset is one the SR
+		// Control field marks as not present.
+		let value = want[key] ?? (index(key, "_srg_bss_colors") > 0 ||
+		                          index(key, "_srg_partial_bssid") > 0 ? "" : "0");
+		if (bss_list[0].ctrl(`SET ${key} ${value}`) != "OK")
+			return false;
+	}
+
+	for (let bss in bss_list)
+		if (!bss.update_beacon())
+			return false;
+
+	// A requested colour above 63 asks for a random colour, which the running colour is.
+	let color = int(want.he_bss_color);
+	if (color <= 63 &&
+	    iface_bss_color_running(bss_list[0], old) != color &&
+	    bss_list[0].ctrl(`COLOR_CHANGE ${color}`) != "OK")
+		return false;
+
+	hostapd.printf(`Spatial reuse update on phy ${name}, BSS color ${want.he_bss_color}`);
+	return true;
+}
+
 function iface_reload_config(name, phydev, config, old_config)
 {
 	let phy = phydev.name;
@@ -1047,6 +1142,10 @@ function iface_reload_config(name, phydev, config, old_config)
 	switch (radio_reload_class(old_config.radio, config.radio)) {
 	case "restart":
 		return false;
+	case "spatial_reuse":
+		if (!iface_spatial_reuse_apply(name, config, old_config))
+			return false;
+		break;
 	case "channel":
 		if (iface_runs_channel(name, config))
 			break;
