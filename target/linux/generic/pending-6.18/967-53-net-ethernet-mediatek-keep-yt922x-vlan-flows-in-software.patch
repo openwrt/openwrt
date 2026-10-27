@@ -1,0 +1,51 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Shi Jiayang <shi05275@163.com>
+Subject: [PATCH] net: ethernet: mediatek: keep YT922x VLAN flows in software
+
+The YT922x software tagger supplies the PVID of an access port, and an
+untagged access frame does not expose that PVID to the PPE. A MAC-only
+flow key would then be shared by distinct VLANs.
+
+Keep YT922x VLAN/PPE traffic on the software path until the SoC flow key
+and tag actions can represent access PVIDs. Hardware forwarding inside
+the switch still uses its VLAN tables. VLAN-unaware PPE is unchanged.
+
+Signed-off-by: Shi Jiayang <shi05275@163.com>
+---
+--- a/drivers/net/ethernet/mediatek/mtk_ppe.c
++++ b/drivers/net/ethernet/mediatek/mtk_ppe.c
+@@ -801,6 +801,20 @@ void __mtk_ppe_check_skb(struct mtk_ppe
+ 	int entry_len;
+ 	u8 *tag;
+ 
++#if IS_ENABLED(CONFIG_NET_DSA)
++	/* An untagged access frame does not expose its bridge PVID to PPE.
++	 * Do not bind it using a MAC-only key shared by distinct VLANs.
++	 */
++	if (netdev_uses_dsa(skb->dev) &&
++	    skb->dev->dsa_ptr->tag_ops->proto == DSA_TAG_PROTO_YT922X_4B) {
++		struct dsa_port *dp;
++
++		dsa_switch_for_each_user_port(dp, skb->dev->dsa_ptr->ds)
++			if (dsa_port_is_vlan_filtering(dp))
++				return;
++	}
++#endif
++
+ 	spin_lock_bh(&ppe_lock);
+ 
+ 	if (FIELD_GET(MTK_FOE_IB1_STATE, hwe->ib1) == MTK_FOE_STATE_BIND)
+--- a/drivers/net/ethernet/mediatek/mtk_ppe_offload.c
++++ b/drivers/net/ethernet/mediatek/mtk_ppe_offload.c
+@@ -211,6 +211,11 @@ mtk_flow_get_dsa_port(struct net_device
+ 			*push_vid = dsa_tag_8021q_standalone_vid(dp);
+ 		break;
+ 	case DSA_TAG_PROTO_YT922X_4B:
++		/* The software tagger supplies access-port PVIDs. PPE cannot
++		 * reproduce this policy yet, so retain the software path.
++		 */
++		if (dsa_port_is_vlan_filtering(dp))
++			return -EOPNOTSUPP;
+ 		if (!yt922x_4b_port_tag(dp->index))
+ 			return -ENODEV;
+ 		if (push_vid)
