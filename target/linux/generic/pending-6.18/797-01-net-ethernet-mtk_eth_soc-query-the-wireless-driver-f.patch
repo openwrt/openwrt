@@ -1,0 +1,825 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Sun, 30 Aug 2026 01:44:29 +0200
+Subject: [PATCH] net: ethernet: mtk_eth_soc: query the wireless driver for the
+ flow TID
+
+Packets that the PPE forwards to a WLAN station bypass the wireless
+stack, so the SCS and MSCS rules of the station are not applied to
+them. Query the wireless driver for the user priority of a flow before
+the entry is bound, and store the result in the TID field of the WINFO
+data. Only netsys v3 has this field.
+
+The query happens in __mtk_ppe_check_skb(), because that is the only
+place where the flow of an entry is known for both rule based entries
+and the learned subflows of a bridge entry. The flow description is
+built from the FOE entry and only includes the fields that the entry
+matches on, since one answer has to be valid for every packet that hits
+the entry. This leaves out the DSCP, which varies per packet, and the
+ports of 3-tuple entries. If the driver cannot answer with the fields
+provided, the entry stays unbound.
+
+The DSCP of the packet that binds the entry is passed along for the
+QoS map fallback, so that a flow without a matching rule gets the
+priority that the software path gives its frames, instead of TID 0.
+
+Add a flush callback for the wireless driver to use when the rules of
+a station change, or when the learned priority of one flow changes. It
+unbinds the matching entries of that station, so that the next packet
+binds them again with a fresh query. A bridge entry has no hardware
+entry of its own, so its subflows are removed instead and learned
+again. The wireless driver selects the entries, since matching a flow
+key needs cfg80211.
+
+An AP learns the priority of an MSCS flow from its uplink frames, which
+an offloaded uplink keeps from the wireless stack. A flush of a station
+therefore also unbinds the flows that come from it. An entry records
+the station when the WED receive path binds it. The flow key of the
+wireless driver describes the frames to the station, so the match
+callback learns whether an entry carries the frames of the station. For
+such an entry the flow description takes the tuple before NAT, as the
+station sent it. A routed entry holds the MAC addresses of the next hop,
+so its description leaves them out.
+
+The query runs in the receive path, where hw_lock cannot be taken.
+Publish the WED device for it through a separate RCU protected pointer,
+which is cleared and synchronised before the device is detached.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+
+--- a/drivers/net/ethernet/mediatek/mtk_eth_soc.h
++++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.h
+@@ -1576,6 +1576,8 @@ int mtk_gmac_usxgmii_path_setup(struct m
+ int mtk_eth_offload_init(struct mtk_eth *eth, u8 id);
+ int mtk_eth_setup_tc(struct net_device *dev, enum tc_setup_type type,
+ 		     void *type_data);
++void mtk_flow_offload_unbind_wcid(struct mtk_eth *eth, int wed_index, u16 wcid,
++				  struct mtk_flow_match *match);
+ int mtk_flow_offload_cmd(struct mtk_eth *eth, struct flow_cls_offload *cls,
+ 			 int ppe_index);
+ void mtk_flow_offload_cleanup(struct mtk_eth *eth, struct list_head *list);
+--- a/drivers/net/ethernet/mediatek/mtk_ppe.c
++++ b/drivers/net/ethernet/mediatek/mtk_ppe.c
+@@ -9,11 +9,13 @@
+ #include <linux/if_ether.h>
+ #include <linux/if_vlan.h>
+ 
++#include <net/cfg80211.h>
+ #include <net/dst_metadata.h>
+ #include <net/dsa.h>
+ #include <net/ipv6.h>
+ 
+ #include "mtk_eth_soc.h"
++#include "mtk_wed.h"
+ #include "mtk_ppe.h"
+ #include "mtk_ppe_regs.h"
+ 
+@@ -475,6 +477,160 @@ int mtk_foe_entry_set_wdma(struct mtk_et
+ 	return 0;
+ }
+ 
++/*
++ * Only report the fields that the entry matches on, since the answer has to
++ * hold for every packet that hits it. This excludes the DSCP and the ports of
++ * 3-tuple entries. An entry with @rx set carries the frames of a station, so
++ * its tuple is taken before NAT, as the station sent it.
++ */
++static void
++mtk_foe_entry_get_flow(struct mtk_eth *eth, struct mtk_foe_entry *entry,
++		       bool rx, struct cfg80211_flow_info *info)
++{
++	int type = mtk_get_ib1_pkt_type(eth, entry->ib1);
++	struct mtk_foe_mac_info *l2;
++	struct mtk_ipv4_tuple *t;
++	int i;
++
++	memset(info, 0, sizeof(*info));
++	info->key.proto = entry->ib1 & MTK_FOE_IB1_UDP ? IPPROTO_UDP
++						       : IPPROTO_TCP;
++
++	l2 = mtk_foe_entry_l2(eth, entry);
++	put_unaligned_be32(l2->dest_mac_hi, info->key.da);
++	put_unaligned_be16(l2->dest_mac_lo, info->key.da + 4);
++	put_unaligned_be32(l2->src_mac_hi, info->key.sa);
++	put_unaligned_be16(l2->src_mac_lo, info->key.sa + 4);
++	info->key.eth_type = htons(l2->etype);
++	info->present = BIT(CFG80211_FLOW_F_ETH_DA) |
++			BIT(CFG80211_FLOW_F_ETH_SA) |
++			BIT(CFG80211_FLOW_F_ETH_TYPE);
++
++	switch (type) {
++	case MTK_PPE_PKT_TYPE_IPV4_HNAPT:
++	case MTK_PPE_PKT_TYPE_IPV4_ROUTE:
++		if (type == MTK_PPE_PKT_TYPE_IPV4_HNAPT && !rx)
++			t = &entry->ipv4.new;
++		else
++			t = &entry->ipv4.orig;
++		info->key.ip_version = 4;
++		info->key.src.s6_addr32[0] = cpu_to_be32(t->src_ip);
++		info->key.dst.s6_addr32[0] = cpu_to_be32(t->dest_ip);
++
++		if (type == MTK_PPE_PKT_TYPE_IPV4_ROUTE) {
++			info->key.proto = t->protocol;
++			break;
++		}
++
++		info->key.src_port = cpu_to_be16(t->src_port);
++		info->key.dst_port = cpu_to_be16(t->dest_port);
++		info->present |= BIT(CFG80211_FLOW_F_SRC_PORT) |
++				 BIT(CFG80211_FLOW_F_DST_PORT);
++		break;
++	case MTK_PPE_PKT_TYPE_IPV6_ROUTE_3T:
++	case MTK_PPE_PKT_TYPE_IPV6_ROUTE_5T:
++		info->key.ip_version = 6;
++		for (i = 0; i < 4; i++) {
++			info->key.src.s6_addr32[i] =
++				cpu_to_be32(entry->ipv6.src_ip[i]);
++			info->key.dst.s6_addr32[i] =
++				cpu_to_be32(entry->ipv6.dest_ip[i]);
++		}
++
++		if (type == MTK_PPE_PKT_TYPE_IPV6_ROUTE_3T) {
++			info->key.proto = entry->ipv6.protocol;
++			break;
++		}
++
++		info->key.src_port = cpu_to_be16(entry->ipv6.src_port);
++		info->key.dst_port = cpu_to_be16(entry->ipv6.dest_port);
++		info->present |= BIT(CFG80211_FLOW_F_SRC_PORT) |
++				 BIT(CFG80211_FLOW_F_DST_PORT);
++		break;
++	default:
++		info->key.proto = 0;
++		return;
++	}
++
++	info->present |= BIT(CFG80211_FLOW_F_IP_VERSION) |
++			 BIT(CFG80211_FLOW_F_IP_SRC) |
++			 BIT(CFG80211_FLOW_F_IP_DST) |
++			 BIT(CFG80211_FLOW_F_PROTO);
++}
++
++static void
++mtk_foe_entry_set_tid(struct mtk_eth *eth, struct mtk_foe_entry *entry, u8 tid)
++{
++	struct mtk_foe_mac_info *l2;
++
++	if (!mtk_is_netsys_v3_or_greater(eth))
++		return;
++
++	l2 = mtk_foe_entry_l2(eth, entry);
++	l2->amsdu &= ~MTK_FOE_WINFO_AMSDU_TID;
++	l2->amsdu |= FIELD_PREP(MTK_FOE_WINFO_AMSDU_TID, tid);
++}
++
++/* The DSCP of the packet that binds an entry, for the QoS map fallback */
++static int mtk_ppe_skb_dscp(struct sk_buff *skb)
++{
++	int off = skb_mac_header(skb) - skb->data + 2 * ETH_ALEN;
++	__be16 proto = skb->protocol;
++	u8 buf[2], *p;
++
++	if (proto == htons(ETH_P_XDSA)) {
++		if (!skb_metadata_dst(skb))
++			off += 4;
++
++		p = skb_header_pointer(skb, off, 2, buf);
++		if (!p)
++			return -1;
++
++		proto = get_unaligned((__be16 *)p);
++	}
++
++	while (eth_type_vlan(proto)) {
++		p = skb_header_pointer(skb, off + 4, 2, buf);
++		if (!p)
++			return -1;
++
++		proto = get_unaligned((__be16 *)p);
++		off += 4;
++	}
++
++	p = skb_header_pointer(skb, off + 2, 2, buf);
++	if (!p)
++		return -1;
++
++	switch (proto) {
++	case htons(ETH_P_IP):
++		return p[1] >> 2;
++	case htons(ETH_P_IPV6):
++		return ((p[0] & 0xf) << 2) | (p[1] >> 6);
++	default:
++		return -1;
++	}
++}
++
++static bool
++mtk_foe_entry_set_prio(struct mtk_ppe *ppe, struct mtk_flow_entry *base,
++		       struct mtk_foe_entry *foe, int dscp)
++{
++	struct cfg80211_flow_info info;
++	u8 tid = 0;
++
++	if (base->wed_index < 0)
++		return true;
++
++	mtk_foe_entry_get_flow(ppe->eth, foe, false, &info);
++	if (mtk_wed_flow_prio(base->wed_index, base->wcid, &info, dscp, &tid))
++		return false;
++
++	mtk_foe_entry_set_tid(ppe->eth, foe, tid);
++
++	return true;
++}
++
+ int mtk_foe_entry_set_queue(struct mtk_eth *eth, struct mtk_foe_entry *entry,
+ 			    unsigned int queue)
+ {
+@@ -522,6 +678,22 @@ mtk_flow_entry_match(struct mtk_eth *eth
+ }
+ 
+ static void
++__mtk_foe_entry_unbind(struct mtk_ppe *ppe, struct mtk_flow_entry *entry)
++{
++	struct mtk_foe_entry *hwe;
++
++	if (entry->hash == 0xffff)
++		return;
++
++	hwe = mtk_foe_get_entry(ppe, entry->hash);
++	hwe->ib1 &= ~MTK_FOE_IB1_STATE;
++	hwe->ib1 |= FIELD_PREP(MTK_FOE_IB1_STATE, MTK_FOE_STATE_INVALID);
++	dma_wmb();
++	mtk_ppe_cache_clear(ppe);
++	entry->hash = 0xffff;
++}
++
++static void
+ __mtk_foe_entry_clear(struct mtk_ppe *ppe, struct mtk_flow_entry *entry,
+ 		      bool set_state)
+ {
+@@ -536,14 +708,8 @@ __mtk_foe_entry_clear(struct mtk_ppe *pp
+ 		return;
+ 	}
+ 
+-	if (entry->hash != 0xffff && set_state) {
+-		struct mtk_foe_entry *hwe = mtk_foe_get_entry(ppe, entry->hash);
+-
+-		hwe->ib1 &= ~MTK_FOE_IB1_STATE;
+-		hwe->ib1 |= FIELD_PREP(MTK_FOE_IB1_STATE, MTK_FOE_STATE_INVALID);
+-		dma_wmb();
+-		mtk_ppe_cache_clear(ppe);
+-	}
++	if (set_state)
++		__mtk_foe_entry_unbind(ppe, entry);
+ 	entry->hash = 0xffff;
+ 
+ 	if (entry->type != MTK_FLOW_TYPE_L2_SUBFLOW)
+@@ -554,6 +720,66 @@ __mtk_foe_entry_clear(struct mtk_ppe *pp
+ 	kfree(entry);
+ }
+ 
++static bool
++mtk_foe_entry_flow_match(struct mtk_ppe *ppe, struct mtk_foe_entry *foe,
++			 bool rx, bool bridged,
++			 const struct mtk_flow_match *match)
++{
++	struct cfg80211_flow_info info;
++
++	if (!match->fn)
++		return true;
++
++	mtk_foe_entry_get_flow(ppe->eth, foe, rx, &info);
++
++	/* A routed entry holds the MAC addresses of the next hop */
++	if (rx && !bridged)
++		info.present &= ~(BIT(CFG80211_FLOW_F_ETH_SA) |
++				  BIT(CFG80211_FLOW_F_ETH_DA));
++
++	return match->fn(&info, rx, match->arg);
++}
++
++/* A bound subflow whose hardware entry the hardware reused no longer matches */
++static bool
++mtk_foe_subflow_match(struct mtk_ppe *ppe, struct mtk_flow_entry *subflow,
++		      bool rx, const struct mtk_flow_match *match)
++{
++	struct mtk_foe_entry *hwe = mtk_foe_get_entry(ppe, subflow->hash);
++
++	if (FIELD_GET(MTK_FOE_IB1_STATE, hwe->ib1) != MTK_FOE_STATE_BIND)
++		return false;
++
++	return mtk_foe_entry_flow_match(ppe, hwe, rx, true, match);
++}
++
++/* A bridge entry has no hardware entry, so drop its subflows instead */
++void mtk_foe_entry_unbind(struct mtk_ppe *ppe, struct mtk_flow_entry *entry,
++			  bool rx, const struct mtk_flow_match *match)
++{
++	struct mtk_flow_entry *cur;
++	struct hlist_node *tmp;
++
++	spin_lock_bh(&ppe_lock);
++
++	if (entry->type != MTK_FLOW_TYPE_L2) {
++		if (mtk_foe_entry_flow_match(ppe, &entry->data, rx, false,
++					     match))
++			__mtk_foe_entry_unbind(ppe, entry);
++		goto out;
++	}
++
++	hlist_for_each_entry_safe(cur, tmp, &entry->l2_flows, l2_list) {
++		if (match->fn && !mtk_foe_subflow_match(ppe, cur, rx, match))
++			continue;
++
++		__mtk_foe_entry_clear(ppe, cur, true);
++	}
++
++out:
++	spin_unlock_bh(&ppe_lock);
++}
++
+ static int __mtk_foe_entry_idle_time(struct mtk_ppe *ppe, u32 ib1)
+ {
+ 	u32 ib1_ts_mask = mtk_get_ib1_ts_mask(ppe->eth);
+@@ -748,7 +974,7 @@ int mtk_foe_entry_commit(struct mtk_ppe
+ 
+ static void
+ mtk_foe_entry_commit_subflow(struct mtk_ppe *ppe, struct mtk_flow_entry *entry,
+-			     u16 hash)
++			     u16 hash, int dscp, int rx_wed_index, u16 rx_wcid)
+ {
+ 	const struct mtk_soc_data *soc = ppe->eth->soc;
+ 	struct mtk_flow_entry *flow_info;
+@@ -763,9 +989,12 @@ mtk_foe_entry_commit_subflow(struct mtk_
+ 
+ 	flow_info->type = MTK_FLOW_TYPE_L2_SUBFLOW;
+ 	flow_info->hash = hash;
+-	hlist_add_head(&flow_info->list,
+-		       &ppe->foe_flow[hash / soc->hash_offset]);
+-	hlist_add_head(&flow_info->l2_list, &entry->l2_flows);
++	flow_info->wed_index = entry->wed_index;
++	flow_info->wcid = entry->wcid;
++
++	/* all subflows of a bridge entry come from one station */
++	entry->rx_wed_index = rx_wed_index;
++	entry->rx_wcid = rx_wcid;
+ 
+ 	hwe = mtk_foe_get_entry(ppe, hash);
+ 	memcpy(&flow_info->data, hwe, soc->foe_entry_size);
+@@ -784,10 +1013,20 @@ mtk_foe_entry_commit_subflow(struct mtk_
+ 
+ 	*mtk_foe_entry_ib2(ppe->eth, &flow_info->data) = entry->data.bridge.ib2;
+ 
++	if (!mtk_foe_entry_set_prio(ppe, flow_info, &flow_info->data, dscp)) {
++		kfree(flow_info);
++		return;
++	}
++
++	hlist_add_head(&flow_info->list,
++		       &ppe->foe_flow[hash / soc->hash_offset]);
++	hlist_add_head(&flow_info->l2_list, &entry->l2_flows);
++
+ 	__mtk_foe_entry_commit(ppe, &flow_info->data, hash);
+ }
+ 
+-void __mtk_ppe_check_skb(struct mtk_ppe *ppe, struct sk_buff *skb, u16 hash)
++void __mtk_ppe_check_skb(struct mtk_ppe *ppe, struct sk_buff *skb, u16 hash,
++			 int rx_wed_index, u16 rx_wcid)
+ {
+ 	const struct mtk_soc_data *soc = ppe->eth->soc;
+ 	struct hlist_head *head = &ppe->foe_flow[hash / soc->hash_offset];
+@@ -799,6 +1038,7 @@ void __mtk_ppe_check_skb(struct mtk_ppe
+ 	struct ethhdr *eh;
+ 	bool found = false;
+ 	int entry_len;
++	int dscp;
+ 	u8 *tag;
+ 
+ 	spin_lock_bh(&ppe_lock);
+@@ -809,6 +1049,8 @@ void __mtk_ppe_check_skb(struct mtk_ppe
+ 	entry_len = mtk_flow_entry_match_len(ppe->eth, hwe);
+ 	memcpy(&foe, hwe, entry_len);
+ 
++	dscp = mtk_ppe_skb_dscp(skb);
++
+ 	hlist_for_each_entry_safe(entry, n, head, list) {
+ 		if (found ||
+ 		    !mtk_flow_entry_match(ppe->eth, entry, &foe, entry_len)) {
+@@ -817,9 +1059,16 @@ void __mtk_ppe_check_skb(struct mtk_ppe
+ 			continue;
+ 		}
+ 
++		found = true;
++		if (!mtk_foe_entry_set_prio(ppe, entry, &entry->data, dscp)) {
++			entry->hash = 0xffff;
++			continue;
++		}
++
++		entry->rx_wed_index = rx_wed_index;
++		entry->rx_wcid = rx_wcid;
+ 		entry->hash = hash;
+ 		__mtk_foe_entry_commit(ppe, &entry->data, hash);
+-		found = true;
+ 	}
+ 
+ 	if (found)
+@@ -856,7 +1105,8 @@ void __mtk_ppe_check_skb(struct mtk_ppe
+ 	if (!entry)
+ 		goto out;
+ 
+-	mtk_foe_entry_commit_subflow(ppe, entry, hash);
++	mtk_foe_entry_commit_subflow(ppe, entry, hash, dscp, rx_wed_index,
++				     rx_wcid);
+ 
+ out:
+ 	spin_unlock_bh(&ppe_lock);
+--- a/drivers/net/ethernet/mediatek/mtk_ppe.h
++++ b/drivers/net/ethernet/mediatek/mtk_ppe.h
+@@ -8,6 +8,17 @@
+ #include <linux/bitfield.h>
+ #include <linux/rhashtable.h>
+ 
++struct cfg80211_flow_info;
++
++/*
++ * Selects hardware entries by their flow, every entry when @fn is NULL. @rx is
++ * set for an entry that carries the frames of the station.
++ */
++struct mtk_flow_match {
++	bool (*fn)(const struct cfg80211_flow_info *info, bool rx, void *arg);
++	void *arg;
++};
++
+ #define MTK_PPE_ENTRIES_SHIFT		4
+ #define MTK_PPE_ENTRIES			(1024 << MTK_PPE_ENTRIES_SHIFT)
+ #define MTK_PPE_HASH_MASK		(MTK_PPE_ENTRIES - 1)
+@@ -303,8 +314,11 @@ struct mtk_flow_entry {
+ 	};
+ 	u8 type;
+ 	s8 wed_index;
++	s8 rx_wed_index;
+ 	u8 ppe_index;
+ 	u16 hash;
++	u16 wcid;
++	u16 rx_wcid;
+ 	struct mtk_foe_entry data;
+ 	struct rhash_head node;
+ 	unsigned long cookie;
+@@ -357,10 +371,12 @@ int mtk_ppe_stop(struct mtk_ppe *ppe);
+ int mtk_ppe_prepare_reset(struct mtk_ppe *ppe);
+ struct mtk_foe_accounting *mtk_ppe_mib_entry_read(struct mtk_ppe *ppe, u16 index);
+ 
+-void __mtk_ppe_check_skb(struct mtk_ppe *ppe, struct sk_buff *skb, u16 hash);
++void __mtk_ppe_check_skb(struct mtk_ppe *ppe, struct sk_buff *skb, u16 hash,
++			 int rx_wed_index, u16 rx_wcid);
+ 
+ static inline void
+-mtk_ppe_check_skb(struct mtk_ppe *ppe, struct sk_buff *skb, u16 hash)
++mtk_ppe_check_skb(struct mtk_ppe *ppe, struct sk_buff *skb, u16 hash,
++		  int rx_wed_index, u16 rx_wcid)
+ {
+ 	u16 now, diff;
+ 
+@@ -376,7 +392,7 @@ mtk_ppe_check_skb(struct mtk_ppe *ppe, s
+ 		return;
+ 
+ 	ppe->foe_check_time[hash] = now;
+-	__mtk_ppe_check_skb(ppe, skb, hash);
++	__mtk_ppe_check_skb(ppe, skb, hash, rx_wed_index, rx_wcid);
+ }
+ 
+ int mtk_foe_entry_prepare(struct mtk_eth *eth, struct mtk_foe_entry *entry,
+@@ -405,6 +421,8 @@ int mtk_foe_entry_set_queue(struct mtk_e
+ 			    unsigned int queue);
+ int mtk_foe_entry_commit(struct mtk_ppe *ppe, struct mtk_flow_entry *entry);
+ void mtk_foe_entry_clear(struct mtk_ppe *ppe, struct mtk_flow_entry *entry);
++void mtk_foe_entry_unbind(struct mtk_ppe *ppe, struct mtk_flow_entry *entry,
++			  bool rx, const struct mtk_flow_match *match);
+ int mtk_ppe_debugfs_init(struct mtk_ppe *ppe, int index);
+ void mtk_foe_entry_get_stats(struct mtk_ppe *ppe, struct mtk_flow_entry *entry,
+ 			     int *idle);
+--- a/drivers/net/ethernet/mediatek/mtk_ppe_offload.c
++++ b/drivers/net/ethernet/mediatek/mtk_ppe_offload.c
+@@ -223,7 +223,7 @@ mtk_flow_get_dsa_port(struct net_device
+ static int
+ mtk_flow_set_output_device(struct mtk_eth *eth, struct mtk_foe_entry *foe,
+ 			   struct net_device *dev, const u8 *dest_mac,
+-			   int *wed_index)
++			   int *wed_index, u16 *wcid)
+ {
+ 	struct mtk_wdma_info info = {};
+ 	struct mtk_mac *mac;
+@@ -251,6 +251,7 @@ mtk_flow_set_output_device(struct mtk_et
+ 			pse_port = 3;
+ 		}
+ 		*wed_index = info.wdma_idx;
++		*wcid = info.wcid;
+ 		goto out;
+ 	}
+ 
+@@ -318,6 +319,7 @@ mtk_flow_offload_replace(struct mtk_eth
+ 	int offload_type = 0;
+ 	int wed_index = -1;
+ 	u16 addr_type = 0;
++	u16 wcid = 0;
+ 	u8 l4proto = 0;
+ 	int err = 0;
+ 	int i;
+@@ -527,7 +529,7 @@ mtk_flow_offload_replace(struct mtk_eth
+ 	}
+ 
+ 	err = mtk_flow_set_output_device(eth, &foe, odev, data.eth.h_dest,
+-					 &wed_index);
++					 &wed_index, &wcid);
+ 	if (err)
+ 		return err;
+ 
+@@ -550,7 +552,9 @@ mtk_flow_offload_replace(struct mtk_eth
+ 	entry->cookie = f->cookie;
+ 	memcpy(&entry->data, &foe, sizeof(entry->data));
+ 	entry->wed_index = wed_index;
++	entry->rx_wed_index = -1;
+ 	entry->ppe_index = ppe_index;
++	entry->wcid = wcid;
+ 
+ 	err = mtk_foe_entry_commit(eth->ppe[entry->ppe_index], entry);
+ 	if (err < 0)
+@@ -641,6 +645,66 @@ int mtk_flow_offload_cmd(struct mtk_eth
+ 	return err;
+ }
+ 
++/* @rx is set for an entry that carries the frames of the station */
++static bool
++mtk_flow_entry_wcid_match(struct mtk_flow_entry *entry, int wed_index, u16 wcid,
++			  bool *rx)
++{
++	*rx = false;
++	if (entry->wed_index == wed_index && entry->wcid == wcid)
++		return true;
++
++	*rx = true;
++	return entry->rx_wed_index == wed_index && entry->rx_wcid == wcid;
++}
++
++static void
++mtk_flow_offload_walk_wcid(struct mtk_eth *eth, int wed_index, u16 wcid,
++			   void (*fn)(struct mtk_ppe *ppe,
++				      struct mtk_flow_entry *entry, bool rx,
++				      void *arg),
++			   void *arg)
++{
++	struct mtk_flow_entry *entry;
++	struct rhashtable_iter iter;
++	bool rx;
++
++	mutex_lock(&mtk_flow_offload_mutex);
++
++	rhashtable_walk_enter(&eth->flow_table, &iter);
++	rhashtable_walk_start(&iter);
++	while ((entry = rhashtable_walk_next(&iter)) != NULL) {
++		if (IS_ERR(entry)) {
++			if (PTR_ERR(entry) != -EAGAIN)
++				break;
++			continue;
++		}
++
++		if (!mtk_flow_entry_wcid_match(entry, wed_index, wcid, &rx))
++			continue;
++
++		fn(eth->ppe[entry->ppe_index], entry, rx, arg);
++	}
++	rhashtable_walk_stop(&iter);
++	rhashtable_walk_exit(&iter);
++
++	mutex_unlock(&mtk_flow_offload_mutex);
++}
++
++static void
++mtk_flow_entry_unbind_cb(struct mtk_ppe *ppe, struct mtk_flow_entry *entry,
++			 bool rx, void *arg)
++{
++	mtk_foe_entry_unbind(ppe, entry, rx, arg);
++}
++
++void mtk_flow_offload_unbind_wcid(struct mtk_eth *eth, int wed_index, u16 wcid,
++				  struct mtk_flow_match *match)
++{
++	mtk_flow_offload_walk_wcid(eth, wed_index, wcid,
++				   mtk_flow_entry_unbind_cb, match);
++}
++
+ static int
+ mtk_eth_setup_tc_block_cb(enum tc_setup_type type, void *type_data, void *cb_priv)
+ {
+--- a/drivers/net/ethernet/mediatek/mtk_wed.c
++++ b/drivers/net/ethernet/mediatek/mtk_wed.c
+@@ -51,6 +51,9 @@
+ static struct mtk_wed_hw *hw_list[3];
+ static DEFINE_MUTEX(hw_lock);
+ 
++/* Used by the flow priority query from the receive path, without hw_lock */
++static struct mtk_wed_device __rcu *flow_prio_dev[ARRAY_SIZE(hw_list)];
++
+ struct mtk_wed_flow_block_priv {
+ 	struct mtk_wed_hw *hw;
+ 	struct net_device *dev;
+@@ -522,6 +525,8 @@ mtk_wed_assign(struct mtk_wed_device *de
+ 
+ out:
+ 	hw->wed_dev = dev;
++	rcu_assign_pointer(flow_prio_dev[hw->index], dev);
++
+ 	return hw;
+ }
+ 
+@@ -1129,6 +1134,9 @@ __mtk_wed_detach(struct mtk_wed_device *
+ {
+ 	struct mtk_wed_hw *hw = dev->hw;
+ 
++	rcu_assign_pointer(flow_prio_dev[hw->index], NULL);
++	synchronize_rcu();
++
+ 	mtk_wed_deinit(dev);
+ 
+ 	mtk_wdma_rx_reset(dev);
+@@ -1164,6 +1172,24 @@ __mtk_wed_detach(struct mtk_wed_device *
+ 	hw->wed_dev = NULL;
+ }
+ 
++int mtk_wed_flow_prio(int index, u16 wcid, const struct cfg80211_flow_info *info,
++		      int dscp, u8 *prio)
++{
++	struct mtk_wed_device *dev;
++	int ret = 0;
++
++	if (index < 0 || index >= ARRAY_SIZE(flow_prio_dev))
++		return 0;
++
++	rcu_read_lock();
++	dev = rcu_dereference(flow_prio_dev[index]);
++	if (dev && dev->wlan.flow_prio)
++		ret = dev->wlan.flow_prio(dev, wcid, info, dscp, prio);
++	rcu_read_unlock();
++
++	return ret;
++}
++
+ static void
+ mtk_wed_detach(struct mtk_wed_device *dev)
+ {
+@@ -1957,7 +1983,7 @@ mtk_wed_wdma_tx_ring_setup(struct mtk_we
+ 
+ static void
+ mtk_wed_ppe_check(struct mtk_wed_device *dev, struct sk_buff *skb,
+-		  u32 reason, u32 hash)
++		  u32 reason, u32 hash, u16 wcid)
+ {
+ 	struct mtk_eth *eth = dev->hw->eth;
+ 	struct ethhdr *eh;
+@@ -1971,7 +1997,22 @@ mtk_wed_ppe_check(struct mtk_wed_device
+ 	skb_set_mac_header(skb, 0);
+ 	eh = eth_hdr(skb);
+ 	skb->protocol = eh->h_proto;
+-	mtk_ppe_check_skb(eth->ppe[dev->hw->index], skb, hash);
++	mtk_ppe_check_skb(eth->ppe[dev->hw->index], skb, hash, dev->hw->index,
++			  wcid);
++}
++
++static void
++mtk_wed_flow_flush(struct mtk_wed_device *dev, u16 wcid,
++		   bool (*match)(const struct cfg80211_flow_info *info,
++				 bool rx, void *arg),
++		   void *arg)
++{
++	struct mtk_flow_match m = {
++		.fn = match,
++		.arg = arg,
++	};
++
++	mtk_flow_offload_unbind_wcid(dev->hw->eth, dev->hw->index, wcid, &m);
+ }
+ 
+ static void
+@@ -2798,6 +2839,7 @@ void mtk_wed_add_hw(struct device_node *
+ 		.rro_rx_ring_setup = mtk_wed_rro_rx_ring_setup,
+ 		.msdu_pg_rx_ring_setup = mtk_wed_msdu_pg_rx_ring_setup,
+ 		.ind_rx_ring_setup = mtk_wed_ind_rx_ring_setup,
++		.flow_flush = mtk_wed_flow_flush,
+ 	};
+ 	struct device_node *eth_np = eth->dev->of_node;
+ 	struct platform_device *pdev;
+--- a/drivers/net/ethernet/mediatek/mtk_wed.h
++++ b/drivers/net/ethernet/mediatek/mtk_wed.h
+@@ -185,6 +185,8 @@ void mtk_wed_add_hw(struct device_node *
+ void mtk_wed_exit(void);
+ int mtk_wed_flow_add(int index);
+ void mtk_wed_flow_remove(int index);
++int mtk_wed_flow_prio(int index, u16 wcid, const struct cfg80211_flow_info *info,
++		      int dscp, u8 *prio);
+ void mtk_wed_fe_reset(void);
+ void mtk_wed_fe_reset_complete(void);
+ #else
+@@ -206,6 +208,13 @@ static inline void mtk_wed_flow_remove(i
+ {
+ }
+ 
++static inline int mtk_wed_flow_prio(int index, u16 wcid,
++				    const struct cfg80211_flow_info *info,
++				    int dscp, u8 *prio)
++{
++	return 0;
++}
++
+ static inline void mtk_wed_fe_reset(void)
+ {
+ }
+--- a/include/linux/soc/mediatek/mtk_wed.h
++++ b/include/linux/soc/mediatek/mtk_wed.h
+@@ -16,6 +16,7 @@
+ 
+ struct mtk_wed_hw;
+ struct mtk_wdma_desc;
++struct cfg80211_flow_info;
+ 
+ enum mtk_wed_wo_cmd {
+ 	MTK_WED_WO_CMD_WED_CFG,
+@@ -188,6 +189,9 @@ struct mtk_wed_device {
+ 					   struct mtk_wed_wo_rx_stats *stats);
+ 		int (*reset)(struct mtk_wed_device *wed);
+ 		void (*reset_complete)(struct mtk_wed_device *wed);
++		int (*flow_prio)(struct mtk_wed_device *wed, u16 wcid,
++				 const struct cfg80211_flow_info *info,
++				 int dscp, u8 *prio);
+ 	} wlan;
+ #endif
+ };
+@@ -204,7 +208,7 @@ struct mtk_wed_ops {
+ 			  void *data, int len);
+ 	void (*detach)(struct mtk_wed_device *dev);
+ 	void (*ppe_check)(struct mtk_wed_device *dev, struct sk_buff *skb,
+-			  u32 reason, u32 hash);
++			  u32 reason, u32 hash, u16 wcid);
+ 
+ 	void (*stop)(struct mtk_wed_device *dev);
+ 	void (*start)(struct mtk_wed_device *dev, u32 irq_mask);
+@@ -225,6 +229,10 @@ struct mtk_wed_ops {
+ 				      void __iomem *regs);
+ 	int (*ind_rx_ring_setup)(struct mtk_wed_device *dev,
+ 				 void __iomem *regs);
++	void (*flow_flush)(struct mtk_wed_device *dev, u16 wcid,
++			   bool (*match)(const struct cfg80211_flow_info *info,
++					 bool rx, void *arg),
++			   void *arg);
+ };
+ 
+ extern const struct mtk_wed_ops __rcu *mtk_soc_wed_ops;
+@@ -288,8 +296,8 @@ static inline bool mtk_wed_is_amsdu_supp
+ 	(_dev)->ops->irq_set_mask(_dev, _mask)
+ #define mtk_wed_device_rx_ring_setup(_dev, _ring, _regs, _reset) \
+ 	(_dev)->ops->rx_ring_setup(_dev, _ring, _regs, _reset)
+-#define mtk_wed_device_ppe_check(_dev, _skb, _reason, _hash) \
+-	(_dev)->ops->ppe_check(_dev, _skb, _reason, _hash)
++#define mtk_wed_device_ppe_check(_dev, _skb, _reason, _hash, _wcid) \
++	(_dev)->ops->ppe_check(_dev, _skb, _reason, _hash, _wcid)
+ #define mtk_wed_device_update_msg(_dev, _id, _msg, _len) \
+ 	(_dev)->ops->msg_update(_dev, _id, _msg, _len)
+ #define mtk_wed_device_stop(_dev) (_dev)->ops->stop(_dev)
+@@ -304,6 +312,8 @@ static inline bool mtk_wed_is_amsdu_supp
+ 	(_dev)->ops->msdu_pg_rx_ring_setup(_dev, _ring, _regs)
+ #define mtk_wed_device_ind_rx_ring_setup(_dev, _regs) \
+ 	(_dev)->ops->ind_rx_ring_setup(_dev, _regs)
++#define mtk_wed_device_flow_flush(_dev, _wcid, _match, _arg) \
++	(_dev)->ops->flow_flush(_dev, _wcid, _match, _arg)
+ 
+ #else
+ static inline bool mtk_wed_device_active(struct mtk_wed_device *dev)
+@@ -319,7 +329,8 @@ static inline bool mtk_wed_device_active
+ #define mtk_wed_device_irq_get(_dev, _mask) 0
+ #define mtk_wed_device_irq_set_mask(_dev, _mask) do {} while (0)
+ #define mtk_wed_device_rx_ring_setup(_dev, _ring, _regs, _reset) -ENODEV
+-#define mtk_wed_device_ppe_check(_dev, _skb, _reason, _hash)  do {} while (0)
++#define mtk_wed_device_ppe_check(_dev, _skb, _reason, _hash, _wcid) \
++	do {} while (0)
+ #define mtk_wed_device_update_msg(_dev, _id, _msg, _len) -ENODEV
+ #define mtk_wed_device_stop(_dev) do {} while (0)
+ #define mtk_wed_device_dma_reset(_dev) do {} while (0)
+@@ -328,6 +339,8 @@ static inline bool mtk_wed_device_active
+ #define mtk_wed_device_rro_rx_ring_setup(_dev, _ring, _regs) -ENODEV
+ #define mtk_wed_device_msdu_pg_rx_ring_setup(_dev, _ring, _regs) -ENODEV
+ #define mtk_wed_device_ind_rx_ring_setup(_dev, _regs) -ENODEV
++#define mtk_wed_device_flow_flush(_dev, _wcid, _match, _arg) \
++	do { (void)(_match); (void)(_arg); } while (0)
+ #endif
+ 
+ #endif
+--- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
++++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
+@@ -2603,7 +2603,7 @@ static int mtk_poll_rx(struct napi_struc
+ 		}
+ 
+ 		if (reason == MTK_PPE_CPU_REASON_HIT_UNBIND_RATE_REACHED)
+-			mtk_ppe_check_skb(eth->ppe[ppe_idx], skb, hash);
++			mtk_ppe_check_skb(eth->ppe[ppe_idx], skb, hash, -1, 0);
+ 
+ 		skb_record_rx_queue(skb, 0);
+ 		napi_gro_receive(napi, skb);

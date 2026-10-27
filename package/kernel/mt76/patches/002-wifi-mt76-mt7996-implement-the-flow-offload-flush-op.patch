@@ -1,0 +1,209 @@
+From 45843eda41fa6cad87769ebf875a2408f66c97fe Mon Sep 17 00:00:00 2001
+From: Felix Fietkau <nbd@nbd.name>
+Date: Fri, 16 Oct 2026 14:35:09 +0200
+Subject: [PATCH] wifi: mt76: mt7996: implement the flow offload flush op
+
+Unbind the PPE entries of a station that match the flushed flow key, so
+that the next packet binds them again with a fresh priority query. The
+driver selects the entries through the WED match callback, since
+matching a flow key needs cfg80211. The forward path fills entries with
+the station index of the default link, so the same index is flushed.
+
+The PPE also unbinds the flows that come from the station, so that its
+uplink frames reach mac80211 again. Pass the station index of the
+default link with a frame of the WED RX path, which binds those entries.
+The RX path always uses the first WED device, so flush that one as well
+when the station is sent through the second. mt7915 passes its station
+index too.
+
+The flow key describes the frames to the station, so compare an entry
+that carries the frames of the station in the mirrored direction. A
+routed entry of that direction holds the MAC addresses of the next hop,
+so leave out the fields that the entry does not carry.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+ mt7915/mac.c  |   3 +-
+ mt7996/mac.c  |   9 ++++-
+ mt7996/main.c | 104 +++++++++++++++++++++++++++++++++++++++++++++++---
+ 3 files changed, 109 insertions(+), 7 deletions(-)
+
+--- a/mt7915/mac.c
++++ b/mt7915/mac.c
+@@ -256,7 +256,8 @@ mt7915_wed_check_ppe(struct mt7915_dev *
+ 
+ 	mtk_wed_device_ppe_check(&dev->mt76.mmio.wed, skb,
+ 				 FIELD_GET(MT_DMA_PPE_CPU_REASON, info),
+-				 FIELD_GET(MT_DMA_PPE_ENTRY, info));
++				 FIELD_GET(MT_DMA_PPE_ENTRY, info),
++				 msta->wcid.idx);
+ }
+ 
+ static int
+--- a/mt7996/mac.c
++++ b/mt7996/mac.c
+@@ -389,12 +389,18 @@ mt7996_wed_check_ppe(struct mt7996_dev *
+ 		     struct mt7996_sta *msta, struct sk_buff *skb,
+ 		     u32 info)
+ {
++	struct mt7996_sta_link *msta_link;
+ 	struct ieee80211_vif *vif;
+ 	struct wireless_dev *wdev;
+ 
+ 	if (!msta || !msta->vif)
+ 		return;
+ 
++	/* the flow offload ops use the default link */
++	msta_link = mt7996_sta_link(msta, msta->deflink_id);
++	if (!msta_link)
++		return;
++
+ 	if (!mt76_queue_is_wed_rx(q))
+ 		return;
+ 
+@@ -408,7 +414,8 @@ mt7996_wed_check_ppe(struct mt7996_dev *
+ 
+ 	mtk_wed_device_ppe_check(&dev->mt76.mmio.wed, skb,
+ 				 FIELD_GET(MT_DMA_PPE_CPU_REASON, info),
+-				 FIELD_GET(MT_DMA_PPE_ENTRY, info));
++				 FIELD_GET(MT_DMA_PPE_ENTRY, info),
++				 msta_link->wcid.idx);
+ }
+ 
+ static int
+--- a/mt7996/main.c
++++ b/mt7996/main.c
+@@ -2940,6 +2940,102 @@ out:
+ 	return ret;
+ }
+ 
++static struct mtk_wed_device *
++mt7996_sta_wed(struct mt7996_dev *dev, struct mt7996_sta_link *msta_link)
++{
++	if (dev->hif2 &&
++	    ((is_mt7996(&dev->mt76) && msta_link->wcid.phy_idx == MT_BAND2) ||
++	     (is_mt7992(&dev->mt76) && msta_link->wcid.phy_idx == MT_BAND1)))
++		return &dev->mt76.mmio.wed_hif2;
++
++	return &dev->mt76.mmio.wed;
++}
++
++/* The forward path fills the entries with the index of the default link */
++static struct mtk_wed_device *
++mt7996_sta_flow_wed(struct mt7996_dev *dev, struct ieee80211_sta *sta,
++		    u16 *wcid_idx)
++{
++	struct mt7996_sta *msta = (struct mt7996_sta *)sta->drv_priv;
++	struct mt7996_sta_link *msta_link;
++	struct mtk_wed_device *wed;
++
++	msta_link = mt7996_sta_link_protected(dev, msta, msta->deflink_id);
++	if (!msta_link)
++		return NULL;
++
++	wed = mt7996_sta_wed(dev, msta_link);
++	if (!mtk_wed_device_active(wed))
++		return NULL;
++
++	*wcid_idx = msta_link->wcid.idx;
++
++	return wed;
++}
++
++struct mt7996_flow_match {
++	const struct cfg80211_flow_key *key;
++	u32 fields;
++};
++
++/*
++ * The key describes the frames to the station, so an entry that carries the
++ * frames of the station is compared in the mirrored direction. A routed entry
++ * of that direction holds the MAC addresses of the next hop and reports none,
++ * so the comparison skips the fields that the entry does not carry.
++ */
++static bool
++mt7996_flow_match(const struct cfg80211_flow_info *info, bool rx, void *arg)
++{
++	struct mt7996_flow_match *m = arg;
++	struct cfg80211_flow_info ref = {
++		.key = *m->key,
++		.present = m->fields,
++	};
++	enum cfg80211_flow_dir dir = CFG80211_FLOW_AS_IS;
++	struct cfg80211_flow_key key, want;
++	u32 fields = m->fields;
++
++	if (rx) {
++		dir = CFG80211_FLOW_MIRRORED;
++		fields &= info->present;
++	}
++
++	if (!cfg80211_flow_key_build(info, fields, dir, &key))
++		return false;
++
++	cfg80211_flow_key_build(&ref, fields, CFG80211_FLOW_AS_IS, &want);
++
++	return !memcmp(&key, &want, sizeof(key));
++}
++
++static void
++mt7996_flow_offload_flush(struct ieee80211_hw *hw, struct ieee80211_vif *vif,
++			  struct ieee80211_sta *sta,
++			  const struct cfg80211_flow_key *key, u32 fields)
++{
++	struct mt7996_flow_match m = {
++		.key = key,
++		.fields = fields,
++	};
++	struct mt7996_dev *dev = mt7996_hw_dev(hw);
++	struct mtk_wed_device *rx_wed = &dev->mt76.mmio.wed;
++	struct mtk_wed_device *wed;
++	u16 wcid_idx;
++
++	wed = mt7996_sta_flow_wed(dev, sta, &wcid_idx);
++	if (!wed)
++		return;
++
++	mtk_wed_device_flow_flush(wed, wcid_idx, key ? mt7996_flow_match : NULL,
++				  &m);
++
++	/* uplink entries belong to the RX WED */
++	if (wed != rx_wed && mtk_wed_device_active(rx_wed))
++		mtk_wed_device_flow_flush(rx_wed, wcid_idx,
++					  key ? mt7996_flow_match : NULL, &m);
++}
++
+ static int
+ mt7996_net_fill_forward_path(struct ieee80211_hw *hw,
+ 			     struct ieee80211_vif *vif,
+@@ -2949,9 +3045,9 @@ mt7996_net_fill_forward_path(struct ieee
+ {
+ 	struct mt7996_sta *msta = (struct mt7996_sta *)sta->drv_priv;
+ 	struct mt7996_dev *dev = mt7996_hw_dev(hw);
+-	struct mtk_wed_device *wed = &dev->mt76.mmio.wed;
+ 	struct mt7996_sta_link *msta_link;
+ 	struct mt7996_vif_link *link;
++	struct mtk_wed_device *wed;
+ 
+ 	link = mt7996_vif_link(dev, vif, msta->deflink_id);
+ 	if (!link)
+@@ -2964,10 +3060,7 @@ mt7996_net_fill_forward_path(struct ieee
+ 	if (!msta_link->wcid.sta || msta_link->wcid.idx > MT7996_WTBL_STA)
+ 		return -EIO;
+ 
+-	if (dev->hif2 &&
+-	    ((is_mt7996(&dev->mt76) && msta_link->wcid.phy_idx == MT_BAND2) ||
+-	     (is_mt7992(&dev->mt76) && msta_link->wcid.phy_idx == MT_BAND1)))
+-		wed = &dev->mt76.mmio.wed_hif2;
++	wed = mt7996_sta_wed(dev, msta_link);
+ 
+ 	if (!mtk_wed_device_active(wed) &&
+ 	    !mt76_npu_device_active(&dev->mt76))
+@@ -3144,6 +3237,7 @@ const struct ieee80211_ops mt7996_ops =
+ #endif
+ 	.set_radar_background = mt7996_set_radar_background,
+ 	.net_fill_forward_path = mt7996_net_fill_forward_path,
++	.flow_offload_flush = mt7996_flow_offload_flush,
+ #if defined(CONFIG_NET_MEDIATEK_SOC_WED) || defined(CONFIG_MT7996_NPU)
+ 	.net_setup_tc = mt7996_net_setup_tc,
+ #endif
