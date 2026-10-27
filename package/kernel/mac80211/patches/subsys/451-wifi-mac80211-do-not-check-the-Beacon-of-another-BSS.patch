@@ -1,0 +1,43 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Sat, 17 Oct 2026 15:00:00 +0200
+Subject: [PATCH] wifi: mac80211: do not check the Beacon of another BSS with
+ an AP's BIGTK
+
+An AP vif holds the BIGTK of its own links alone. For a Beacon with a
+MME, ieee80211_rx_h_decrypt() takes the BIGTK of the key index from the
+station or from the link, and an OBSS has no station, so the AP's own
+BIGTK checked the OBSS Beacon. The MIC failed (RX_DROP_U_MIC_FAIL)
+before ieee80211_rx_h_mgmt_check(), so no OBSS Beacon with beacon
+protection reached cfg80211_report_obss_beacon_khz() and hostapd never
+learned such a neighbour, for example its BSS Color.
+
+Let a Beacon whose transmitter is none of the AP's own addresses go on
+without a key, so that ieee80211_rx_h_mgmt_check() reports it. Beacons
+of the AP's own links, and every Beacon on a non-AP interface, take the
+BIGTK as before. ieee80211_drop_unencrypted_mgmt() is unchanged.
+
+ieee80211_rx_h_mgmt_check() also runs the software BSS Color collision
+check, ieee80211_rx_check_bss_color_collision(), on the Beacons it now
+receives. A neighbour with beacon protection and the AP's own colour
+now raises a colour collision, as an unprotected one does.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+
+--- a/net/mac80211/rx.c
++++ b/net/mac80211/rx.c
+@@ -2107,6 +2107,15 @@ ieee80211_rx_h_decrypt(struct ieee80211_
+ 		    (status->flag & RX_FLAG_IV_STRIPPED))
+ 			return RX_CONTINUE;
+ 
++		/*
++		 * An AP holds the BIGTK of its own links alone. The Beacon of
++		 * another BSS goes on unverified to ieee80211_rx_h_mgmt_check(),
++		 * which reports it as an OBSS Beacon.
++		 */
++		if (rx->sdata->vif.type == NL80211_IFTYPE_AP &&
++		    !ieee80211_is_our_addr(rx->sdata, hdr->addr2, NULL))
++			return RX_CONTINUE;
++
+ 		if (mmie_keyidx < NUM_DEFAULT_KEYS + NUM_DEFAULT_MGMT_KEYS ||
+ 		    mmie_keyidx >= NUM_DEFAULT_KEYS + NUM_DEFAULT_MGMT_KEYS +
+ 				   NUM_DEFAULT_BEACON_KEYS) {
