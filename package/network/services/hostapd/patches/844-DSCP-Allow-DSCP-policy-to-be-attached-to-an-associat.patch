@@ -182,7 +182,7 @@ Signed-off-by: Aishwarya R <aishwarya.r@oss.qualcomm.com>
  
  static void ap_sta_remove_in_other_bss(struct hostapd_data *hapd,
  				       struct sta_info *sta);
-@@ -670,6 +671,8 @@ void ap_free_sta(struct hostapd_data *ha
+@@ -672,6 +673,8 @@ void ap_free_sta(struct hostapd_data *ha
  	ml_deinit_link_reconf_req(&sta->reconf_req);
  #endif /* CONFIG_IEEE80211BE */
  

@@ -551,7 +551,7 @@ as adding/removing interfaces.
  void ap_free_sta(struct hostapd_data *hapd, struct sta_info *sta)
  {
  #ifndef CONFIG_NO_VLAN
-@@ -610,6 +619,8 @@ void ap_free_sta(struct hostapd_data *ha
+@@ -612,6 +621,8 @@ void ap_free_sta(struct hostapd_data *ha
  	os_free(sta->eap_auth_data.rsnxe);
  #endif /* CONFIG_IEEE8021X_AUTH */
  
@@ -560,7 +560,7 @@ as adding/removing interfaces.
  	os_free(sta);
  }
  
-@@ -1870,6 +1881,8 @@ void ap_sta_set_authorized_event(struct
+@@ -1872,6 +1883,8 @@ void ap_sta_set_authorized_event(struct
  #endif /* CONFIG_P2P */
  	const u8 *ip_ptr = NULL;
  

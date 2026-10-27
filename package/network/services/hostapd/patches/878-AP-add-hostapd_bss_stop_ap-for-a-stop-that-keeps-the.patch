@@ -57,7 +57,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  int hostapd_add_iface(struct hapd_interfaces *ifaces, char *buf);
 --- a/src/ap/sta_info.c
 +++ b/src/ap/sta_info.c
-@@ -2399,6 +2399,28 @@ void hostapd_free_mld_partner_stas(struc
+@@ -2401,6 +2401,28 @@ void hostapd_free_mld_partner_stas(struc
  		ap_sta_remove_link_sta(hapd, sta);
  	}
  }

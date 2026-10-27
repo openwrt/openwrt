@@ -140,8 +140,8 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  			       HOSTAPD_LEVEL_DEBUG,
 --- a/src/ap/sta_info.c
 +++ b/src/ap/sta_info.c
-@@ -473,6 +473,8 @@ void ap_free_sta(struct hostapd_data *ha
- 	sta->assoc_ie_taxonomy = NULL;
+@@ -475,6 +475,8 @@ void ap_free_sta(struct hostapd_data *ha
+ 	sta->assoc_frame_taxonomy = NULL;
  #endif /* CONFIG_TAXONOMY */
  
 +	ap_sta_clear_assoc_req(sta);
@@ -149,7 +149,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	ht40_intolerant_remove(hapd->iface, sta);
  
  #ifdef CONFIG_P2P
-@@ -1903,15 +1905,25 @@ const u8 * ap_sta_wpa_get_dpp_pkhash(str
+@@ -1905,15 +1907,25 @@ const u8 * ap_sta_wpa_get_dpp_pkhash(str
  }
  
  

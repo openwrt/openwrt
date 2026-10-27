@@ -45,7 +45,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  }
 --- a/src/ap/sta_info.c
 +++ b/src/ap/sta_info.c
-@@ -1690,7 +1690,7 @@ void ap_sta_set_link_vlan(struct hostapd
+@@ -1692,7 +1692,7 @@ void ap_sta_set_link_vlan(struct hostapd
  
  
  static int ap_sta_bind_vlan_helper(struct hostapd_data *hapd,
@@ -54,7 +54,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  {
  #ifndef CONFIG_NO_VLAN
  	const char *iface;
-@@ -1766,8 +1766,10 @@ skip_counting:
+@@ -1768,8 +1768,10 @@ skip_counting:
  				  sta->vlan_id) < 0)
  		wpa_printf(MSG_INFO, "Failed to update VLAN-ID for WPA");
  
@@ -67,7 +67,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	if (ret < 0) {
  		hostapd_logger(vlan_bss, sta->addr, HOSTAPD_MODULE_IEEE80211,
  			       HOSTAPD_LEVEL_DEBUG, "could not bind the STA "
-@@ -1794,7 +1796,7 @@ int ap_sta_bind_vlan(struct hostapd_data
+@@ -1796,7 +1798,7 @@ int ap_sta_bind_vlan(struct hostapd_data
  	struct hapd_interfaces *interfaces = hapd->iface->interfaces;
  #endif /* CONFIG_IEEE80211BE */
  
@@ -76,7 +76,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	if (ret)
  		return ret;
  #ifdef CONFIG_IEEE80211BE
-@@ -1809,7 +1811,7 @@ int ap_sta_bind_vlan(struct hostapd_data
+@@ -1811,7 +1813,7 @@ int ap_sta_bind_vlan(struct hostapd_data
  
  		tmp_sta = ap_get_sta(tmp_hapd, sta->addr);
  		if (tmp_sta)
@@ -85,7 +85,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	}
  #endif /* CONFIG_IEEE80211BE */
  
-@@ -1817,6 +1819,14 @@ int ap_sta_bind_vlan(struct hostapd_data
+@@ -1819,6 +1821,14 @@ int ap_sta_bind_vlan(struct hostapd_data
  }
  
  

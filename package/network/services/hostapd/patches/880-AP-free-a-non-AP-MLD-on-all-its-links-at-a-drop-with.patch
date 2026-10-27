@@ -42,7 +42,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		if (sta)
 --- a/src/ap/sta_info.c
 +++ b/src/ap/sta_info.c
-@@ -2405,23 +2405,33 @@ void hostapd_free_mld_partner_stas(struc
+@@ -2407,23 +2407,33 @@ void hostapd_free_mld_partner_stas(struc
   * its links, so free the non-AP MLDs whose association link is another one. */
  void hostapd_free_link_sta_mlds(struct hostapd_data *hapd)
  {
