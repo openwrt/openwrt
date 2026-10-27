@@ -433,6 +433,8 @@ function config_start()
 		dev.start();
 		dev.check();
 	}
+
+	wdev.mld_start_idle();
 }
 
 function check_interfaces()
@@ -734,6 +736,7 @@ function wifi_reset()
 }
 
 wifi_reset();
+wdev.round_start_set(supplicant_update_mlo);
 
 wireless.obj = ubus.publish("network.wireless", ubus_obj);
 wireless.listener = ubus.listener("ubus.object.add", (event, msg) => {
