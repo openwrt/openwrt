@@ -1924,9 +1924,21 @@ void hostapd_ubus_handle_link_measurement(struct hostapd_data *hapd, const u8 *d
 
 #ifdef CONFIG_WNM_AP
 
+/* IEEE Std 802.11be-2024, 9.6.13.9 reserves the Link Removal Imminent field
+ * unless the sending AP is affiliated with an AP MLD of several APs. */
+static bool
+hostapd_bss_tr_link_removal_valid(struct hostapd_data *hapd)
+{
+#ifdef CONFIG_IEEE80211BE
+	return hapd->conf->mld_ap && hapd->mld && hapd->mld->num_links > 1;
+#else
+	return false;
+#endif
+}
+
 static int
 hostapd_bss_tr_send(struct hostapd_data *hapd, u8 *addr, bool disassoc_imminent, bool abridged,
-		    u16 disassoc_timer, u8 validity_period, u8 dialog_token,
+		    bool link_removal_imminent, u16 disassoc_timer, u8 validity_period, u8 dialog_token,
 		    struct blob_attr *neighbors, bool mbo, u8 mbo_reason, u8 cell_pref,
 		    u16 reassoc_delay)
 {
@@ -2026,6 +2038,13 @@ hostapd_bss_tr_send(struct hostapd_data *hapd, u8 *addr, bool disassoc_imminent,
 	if (disassoc_imminent)
 		req_mode |= WNM_BSS_TM_REQ_DISASSOC_IMMINENT;
 
+	if (link_removal_imminent && hostapd_bss_tr_link_removal_valid(hapd))
+		req_mode |= WNM_BSS_TM_REQ_LINK_REMOVAL_IMMINENT;
+	else if (link_removal_imminent)
+		wpa_printf(MSG_DEBUG, "%s: BSS TM Request to " MACSTR
+			   ": Link Removal Imminent cleared, the AP is in no AP MLD of several links",
+			   hapd->conf->iface, MAC2STR(sta->addr));
+
 	ret = wnm_send_bss_tm_req(hapd, sta, req_mode, disassoc_timer, validity_period, NULL,
 				  dialog_token, NULL, nr, nr_len, mbo_len ? mbo_buf : NULL, mbo_len);
 	os_free(nr);
@@ -2041,6 +2060,7 @@ enum {
 	BSS_TR_NEIGHBORS,
 	BSS_TR_ABRIDGED,
 	BSS_TR_DIALOG_TOKEN,
+	BSS_TR_LINK_REMOVAL_IMMINENT,
 #ifdef CONFIG_MBO
 	BSS_TR_MBO_REASON,
 	BSS_TR_CELL_PREF,
@@ -2057,6 +2077,7 @@ static const struct blobmsg_policy bss_tr_policy[__BSS_TR_DISASSOC_MAX] = {
 	[BSS_TR_NEIGHBORS] = { "neighbors", BLOBMSG_TYPE_ARRAY },
 	[BSS_TR_ABRIDGED] = { "abridged", BLOBMSG_TYPE_BOOL },
 	[BSS_TR_DIALOG_TOKEN] = { "dialog_token", BLOBMSG_TYPE_INT32 },
+	[BSS_TR_LINK_REMOVAL_IMMINENT] = { "link_removal_imminent", BLOBMSG_TYPE_BOOL },
 #ifdef CONFIG_MBO
 	[BSS_TR_MBO_REASON] = { "mbo_reason", BLOBMSG_TYPE_INT32 },
 	[BSS_TR_CELL_PREF] = { "cell_pref", BLOBMSG_TYPE_INT32 },
@@ -2077,6 +2098,7 @@ hostapd_bss_transition_request(struct ubus_context *ctx, struct ubus_object *obj
 	u32 dialog_token = 1;
 	bool abridged;
 	bool da_imminent;
+	bool link_removal_imminent;
 	bool mbo = false;
 	u32 mbo_reason = MBO_TRANSITION_REASON_UNSPECIFIED;
 	u32 cell_pref = MBO_CELL_PREF_NO_USE;
@@ -2101,6 +2123,8 @@ hostapd_bss_transition_request(struct ubus_context *ctx, struct ubus_object *obj
 
 	da_imminent = !!(tb[BSS_TR_DA_IMMINENT] && blobmsg_get_bool(tb[BSS_TR_DA_IMMINENT]));
 	abridged = !!(tb[BSS_TR_ABRIDGED] && blobmsg_get_bool(tb[BSS_TR_ABRIDGED]));
+	link_removal_imminent = !!(tb[BSS_TR_LINK_REMOVAL_IMMINENT] &&
+				   blobmsg_get_bool(tb[BSS_TR_LINK_REMOVAL_IMMINENT]));
 
 #ifdef CONFIG_MBO
 	if (tb[BSS_TR_MBO_REASON]) {
@@ -2125,8 +2149,8 @@ hostapd_bss_transition_request(struct ubus_context *ctx, struct ubus_object *obj
 	if (dialog_token > 0xff || valid_period > 0xff || da_timer > 0xffff)
 		return UBUS_STATUS_INVALID_ARGUMENT;
 
-	return hostapd_bss_tr_send(hapd, addr, da_imminent, abridged, da_timer, valid_period,
-				   dialog_token, tb[BSS_TR_NEIGHBORS], mbo, mbo_reason, cell_pref,
+	return hostapd_bss_tr_send(hapd, addr, da_imminent, abridged, link_removal_imminent,
+				   da_timer, valid_period, dialog_token, tb[BSS_TR_NEIGHBORS], mbo, mbo_reason, cell_pref,
 				   reassoc_delay);
 }
 #endif
