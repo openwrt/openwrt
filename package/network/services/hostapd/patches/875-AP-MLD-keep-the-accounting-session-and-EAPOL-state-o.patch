@@ -1,0 +1,208 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Sun, 25 Oct 2026 18:00:00 +0100
+Subject: [PATCH] AP MLD: keep the accounting session and EAPOL state of a
+ moved association
+
+Depends on 836-AP-MLD-keep-the-association-of-a-non-AP-MLD-at-a-lin.patch
+and 868-AP-MLD-keep-the-session-timers-of-a-moved-associatio.patch.
+
+Each affiliated STA of a non-AP MLD runs an accounting session of its
+own: ieee802_1x_ml_set_sta_authorized() authorizes the link STAs, and
+each starts a session with its own Acct-Session-Id. Only the
+association STA has an EAPOL state machine, so only its session carries
+the User-Name, Class and Chargeable-User-Identity of the EAP
+authentication; the sessions of the link STAs name the MAC address.
+
+When the association moves to another link, at an AP removal of the
+association link or at a Link Reconfiguration that deletes it, the
+caller frees the old association STA. ap_free_sta() sends an
+Accounting-Stop for the session with the EAP identity, and
+ieee802_1x_free_station() frees the EAPOL state machine. The non-AP MLD
+stays associated, but the RADIUS server sees the session of its user
+end, and the AP no longer reauthenticates it at eap_reauth_period.
+
+Move both to the new association STA in hostapd_ml_move_assoc_sta():
+- accounting_sta_move() ends the session that the new association STA
+  started for its own link, and gives that STA the session of the old
+  one: Acct-Session-Id, start time, counters and interim settings. The
+  interim update timer keeps its remaining time.
+- ieee802_1x_move_station() gives the new STA the EAPOL state machine.
+  The links share the authenticator, so only the STA of the state
+  machine changes. The RADIUS User-Name and CUI of the STA move with it.
+
+ap_free_sta() of the old STA then has no session to stop and no state
+machine to free.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/src/ap/accounting.c
++++ b/src/ap/accounting.c
+@@ -572,6 +572,38 @@ void accounting_mld_first_bss_moved(stru
+ 						   accounting_interim_error_cb,
+ 						   first);
+ }
++
++
++/* The session that the association STA of a non-AP MLD started goes on in
++ * the STA that becomes its association STA. That STA started a session for
++ * its own link, which ends. */
++void accounting_sta_move(struct hostapd_data *hapd, struct sta_info *sta,
++			 struct hostapd_data *new_hapd,
++			 struct sta_info *new_sta)
++{
++	if (!sta->acct_session_started)
++		return;
++
++	accounting_sta_stop(new_hapd, new_sta);
++	ap_sta_move_timeout(accounting_interim_update, hapd, sta, new_hapd,
++			    new_sta);
++	new_sta->acct_session_id = sta->acct_session_id;
++	new_sta->acct_session_start = sta->acct_session_start;
++	new_sta->acct_terminate_cause = sta->acct_terminate_cause;
++	new_sta->acct_interim_interval = sta->acct_interim_interval;
++	new_sta->acct_interim_errors = sta->acct_interim_errors;
++	new_sta->last_rx_bytes_hi = sta->last_rx_bytes_hi;
++	new_sta->last_rx_bytes_lo = sta->last_rx_bytes_lo;
++	new_sta->last_tx_bytes_hi = sta->last_tx_bytes_hi;
++	new_sta->last_tx_bytes_lo = sta->last_tx_bytes_lo;
++	new_sta->acct_session_started = 1;
++	sta->acct_session_started = 0;
++	hostapd_logger(new_hapd, new_sta->addr, HOSTAPD_MODULE_RADIUS,
++		       HOSTAPD_LEVEL_INFO,
++		       "moved accounting session %016llX from link %u",
++		       (unsigned long long) new_sta->acct_session_id,
++		       hapd->mld_link_id);
++}
+ #endif /* CONFIG_IEEE80211BE */
+ 
+ 
+--- a/src/ap/accounting.h
++++ b/src/ap/accounting.h
+@@ -39,6 +39,13 @@ static inline void accounting_mld_first_
+ 						  struct hostapd_data *first)
+ {
+ }
++
++static inline void accounting_sta_move(struct hostapd_data *hapd,
++				       struct sta_info *sta,
++				       struct hostapd_data *new_hapd,
++				       struct sta_info *new_sta)
++{
++}
+ #else /* CONFIG_NO_ACCOUNTING */
+ int accounting_sta_get_id(struct hostapd_data *hapd, struct sta_info *sta);
+ void accounting_sta_start(struct hostapd_data *hapd, struct sta_info *sta);
+@@ -47,6 +54,9 @@ int accounting_init(struct hostapd_data
+ void accounting_deinit(struct hostapd_data *hapd);
+ void accounting_mld_first_bss_moved(struct hostapd_data *old,
+ 				    struct hostapd_data *first);
++void accounting_sta_move(struct hostapd_data *hapd, struct sta_info *sta,
++			 struct hostapd_data *new_hapd,
++			 struct sta_info *new_sta);
+ #endif /* CONFIG_NO_ACCOUNTING */
+ 
+ #endif /* ACCOUNTING_H */
+--- a/src/ap/ieee802_11_eht.c
++++ b/src/ap/ieee802_11_eht.c
+@@ -17,6 +17,8 @@
+ #include "ap_drv_ops.h"
+ #include "wpa_auth.h"
+ #include "ieee802_11.h"
++#include "accounting.h"
++#include "ieee802_1x.h"
+ 
+ 
+ static u16 ieee80211_eht_ppet_size(u16 ppe_thres_hdr, const u8 *phy_cap_info)
+@@ -1645,7 +1647,8 @@ static void hostapd_ml_reconf_adds_rever
+ 
+ 
+ /* Makes the STA of the non-AP MLD on link_id its association STA, which takes
+- * over the wpa_sm. sta stays, as a link STA, for the caller to free. */
++ * over the wpa_sm, the session timers, the accounting session and the EAPOL
++ * state machine. sta stays, as a link STA, for the caller to free. */
+ struct sta_info * hostapd_ml_move_assoc_sta(struct hostapd_data *hapd,
+ 					    struct sta_info *sta, u8 link_id,
+ 					    struct hostapd_data **assoc_hapd)
+@@ -1669,6 +1672,8 @@ struct sta_info * hostapd_ml_move_assoc_
+ 	wpa_reset_assoc_sm_info(assoc_sta->wpa_sm, (*assoc_hapd)->wpa_auth,
+ 				link_id);
+ 	ap_sta_move_session_timeouts(hapd, sta, *assoc_hapd, assoc_sta);
++	accounting_sta_move(hapd, sta, *assoc_hapd, assoc_sta);
++	ieee802_1x_move_station(*assoc_hapd, sta, assoc_sta);
+ 	return assoc_sta;
+ }
+ 
+--- a/src/ap/ieee802_1x.c
++++ b/src/ap/ieee802_1x.c
+@@ -1550,6 +1550,30 @@ void ieee802_1x_free_station(struct host
+ }
+ 
+ 
++/* The links of an AP MLD share the authenticator, so the state machine of a
++ * non-AP MLD goes on with the STA that becomes its association STA. */
++void ieee802_1x_move_station(struct hostapd_data *new_hapd,
++			     struct sta_info *sta, struct sta_info *new_sta)
++{
++	struct eapol_state_machine *sm = sta->eapol_sm;
++
++	os_free(new_sta->identity);
++	new_sta->identity = sta->identity;
++	sta->identity = NULL;
++	os_free(new_sta->radius_cui);
++	new_sta->radius_cui = sta->radius_cui;
++	sta->radius_cui = NULL;
++
++	if (!sm)
++		return;
++
++	ieee802_1x_free_station(new_hapd, new_sta);
++	sta->eapol_sm = NULL;
++	sm->sta = new_sta;
++	new_sta->eapol_sm = sm;
++}
++
++
+ #ifndef CONFIG_NO_RADIUS
+ static void ieee802_1x_decapsulate_radius(struct hostapd_data *hapd,
+ 					  struct sta_info *sta)
+--- a/src/ap/ieee802_1x.h
++++ b/src/ap/ieee802_1x.h
+@@ -22,6 +22,8 @@ void ieee802_1x_receive(struct hostapd_d
+ 			size_t len, enum frame_encryption encrypted);
+ void ieee802_1x_new_station(struct hostapd_data *hapd, struct sta_info *sta);
+ void ieee802_1x_free_station(struct hostapd_data *hapd, struct sta_info *sta);
++void ieee802_1x_move_station(struct hostapd_data *new_hapd,
++			     struct sta_info *sta, struct sta_info *new_sta);
+ 
+ void ieee802_1x_abort_auth(struct hostapd_data *hapd, struct sta_info *sta);
+ void ieee802_1x_set_sta_authorized(struct hostapd_data *hapd,
+--- a/src/ap/sta_info.c
++++ b/src/ap/sta_info.c
+@@ -1068,10 +1068,10 @@ void ap_sta_session_warning_timeout(stru
+ 
+ 
+ #ifdef CONFIG_IEEE80211BE
+-static void ap_sta_move_timeout(eloop_timeout_handler handler,
+-				struct hostapd_data *hapd, struct sta_info *sta,
+-				struct hostapd_data *new_hapd,
+-				struct sta_info *new_sta)
++void ap_sta_move_timeout(eloop_timeout_handler handler,
++			 struct hostapd_data *hapd, struct sta_info *sta,
++			 struct hostapd_data *new_hapd,
++			 struct sta_info *new_sta)
+ {
+ 	struct os_reltime remaining;
+ 
+--- a/src/ap/sta_info.h
++++ b/src/ap/sta_info.h
+@@ -420,6 +420,10 @@ void ap_sta_no_session_timeout(struct ho
+ 			       struct sta_info *sta);
+ void ap_sta_session_warning_timeout(struct hostapd_data *hapd,
+ 				    struct sta_info *sta, int warning_time);
++void ap_sta_move_timeout(void (*handler)(void *eloop_ctx, void *timeout_ctx),
++			 struct hostapd_data *hapd, struct sta_info *sta,
++			 struct hostapd_data *new_hapd,
++			 struct sta_info *new_sta);
+ void ap_sta_move_session_timeouts(struct hostapd_data *hapd,
+ 				  struct sta_info *sta,
+ 				  struct hostapd_data *new_hapd,

@@ -1,0 +1,81 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Sat, 24 Oct 2026 15:00:00 +0200
+Subject: [PATCH] AP: take the authenticator of a station timer from its state
+ machine
+
+wpa_rekey_ptk() and wpa_send_eapol_timeout() were registered with the
+authenticator of the moment as eloop_ctx. A non-AP MLD whose association
+moves to another link (hostapd_ml_move_assoc_sta()) gets a new
+sm->wpa_auth, but a pending timer kept the authenticator of the old
+association link. When that affiliated AP is freed at the expiry of its
+AP Removal Timer, wpa_deinit() frees the authenticator that the timer
+still holds, and the timer then logs through freed memory.
+
+Register both timers with no eloop_ctx and take the authenticator from
+sm->wpa_auth when they fire. The timers keep their remaining time over
+the move. For a non-MLD station sm->wpa_auth never changes, so the
+behaviour stays the same.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/src/ap/wpa_auth.c
++++ b/src/ap/wpa_auth.c
+@@ -640,10 +640,9 @@ static void wpa_rekey_gtk(void *eloop_ct
+ 
+ static void wpa_rekey_ptk(void *eloop_ctx, void *timeout_ctx)
+ {
+-	struct wpa_authenticator *wpa_auth = eloop_ctx;
+ 	struct wpa_state_machine *sm = timeout_ctx;
+ 
+-	wpa_auth_logger(wpa_auth, wpa_auth_get_spa(sm), LOGGER_DEBUG,
++	wpa_auth_logger(sm->wpa_auth, wpa_auth_get_spa(sm), LOGGER_DEBUG,
+ 			"rekeying PTK");
+ 	wpa_request_new_ptk(sm);
+ 	wpa_sm_step(sm);
+@@ -659,7 +658,7 @@ void wpa_auth_set_ptk_rekey_timer(struct
+ 			   sm->wpa_auth->conf.wpa_ptk_rekey);
+ 		eloop_cancel_timeout(wpa_rekey_ptk, ELOOP_ALL_CTX, sm);
+ 		eloop_register_timeout(sm->wpa_auth->conf.wpa_ptk_rekey, 0,
+-				       wpa_rekey_ptk, sm->wpa_auth, sm);
++				       wpa_rekey_ptk, NULL, sm);
+ 	}
+ }
+ 
+@@ -2111,17 +2110,16 @@ static int wpa_gmk_to_gtk(const u8 *gmk,
+ 
+ static void wpa_send_eapol_timeout(void *eloop_ctx, void *timeout_ctx)
+ {
+-	struct wpa_authenticator *wpa_auth = eloop_ctx;
+ 	struct wpa_state_machine *sm = timeout_ctx;
+ 
+ 	if (sm->waiting_radius_psk) {
+-		wpa_auth_logger(wpa_auth, sm->addr, LOGGER_DEBUG,
++		wpa_auth_logger(sm->wpa_auth, sm->addr, LOGGER_DEBUG,
+ 				"Ignore EAPOL-Key timeout while waiting for RADIUS PSK");
+ 		return;
+ 	}
+ 
+ 	sm->pending_1_of_4_timeout = 0;
+-	wpa_auth_logger(wpa_auth, wpa_auth_get_spa(sm), LOGGER_DEBUG,
++	wpa_auth_logger(sm->wpa_auth, wpa_auth_get_spa(sm), LOGGER_DEBUG,
+ 			"EAPOL-Key timeout");
+ 	sm->TimeoutEvt = true;
+ 	wpa_sm_step(sm);
+@@ -2417,7 +2415,7 @@ skip_tx:
+ 		   "WPA: Use EAPOL-Key timeout of %u ms (retry counter %u)",
+ 		   timeout_ms, ctr);
+ 	eloop_register_timeout(timeout_ms / 1000, (timeout_ms % 1000) * 1000,
+-			       wpa_send_eapol_timeout, wpa_auth, sm);
++			       wpa_send_eapol_timeout, NULL, sm);
+ }
+ 
+ 
+@@ -7379,7 +7377,7 @@ void wpa_auth_eapol_key_tx_status(struct
+ 		eloop_cancel_timeout(wpa_send_eapol_timeout, ELOOP_ALL_CTX, sm);
+ 		eloop_register_timeout(timeout_ms / 1000,
+ 				       (timeout_ms % 1000) * 1000,
+-				       wpa_send_eapol_timeout, wpa_auth, sm);
++				       wpa_send_eapol_timeout, NULL, sm);
+ 	}
+ 
+ #ifdef CONFIG_TESTING_OPTIONS
