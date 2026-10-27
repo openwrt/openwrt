@@ -30,9 +30,13 @@ function wpad_update_mlo(service, mode)
 		if (data.mode != mode)
 			continue;
 
-		data.phy = find_phy(data.radio_config[0], true);
-		if (!data.phy)
+		let radio = data.radio_config[0];
+		data.phy = radio ? find_phy(radio, true) : null;
+		if (!data.phy) {
+			let reason = radio ? "no phy for its first radio" : "its first radio is not a known device";
+			netifd.log(netifd.L_WARNING, `wireless: ${ifname}: MLD skipped, ${reason}\n`);
 			continue;
+		}
 
 		let entry = { ...data };
 		delete entry.radio_config;
