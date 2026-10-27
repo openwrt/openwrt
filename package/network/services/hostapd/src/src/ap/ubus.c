@@ -26,6 +26,7 @@
 #include "airtime_policy.h"
 #include "hw_features.h"
 #include "base64.h"
+#include "robust_av.h"
 
 static struct ubus_context *ctx;
 static struct blob_buf b;
@@ -1288,6 +1289,82 @@ hostapd_vendor_elements(struct ubus_context *ctx, struct ubus_object *obj,
 	return UBUS_STATUS_OK;
 }
 
+#ifdef CONFIG_ROBUST_AV
+enum {
+	DSCP_REQ_ADDR,
+	DSCP_REQ_ELEMENTS,
+	DSCP_REQ_RESET,
+	__DSCP_REQ_MAX
+};
+
+static const struct blobmsg_policy dscp_req_policy[__DSCP_REQ_MAX] = {
+	[DSCP_REQ_ADDR] = { "addr", BLOBMSG_TYPE_STRING },
+	[DSCP_REQ_ELEMENTS] = { "elements", BLOBMSG_TYPE_STRING },
+	[DSCP_REQ_RESET] = { "reset", BLOBMSG_TYPE_BOOL },
+};
+
+static int
+hostapd_dscp_policy_request(struct ubus_context *ctx, struct ubus_object *obj,
+			    struct ubus_request_data *req, const char *method,
+			    struct blob_attr *msg)
+{
+	struct blob_attr *tb[__DSCP_REQ_MAX];
+	struct hostapd_data *hapd = get_hapd_from_object(obj);
+	struct sta_info *sta;
+	const char *hex;
+	u8 addr[ETH_ALEN];
+	u8 *elems;
+	size_t len;
+	bool reset;
+	int ret;
+
+	blobmsg_parse(dscp_req_policy, __DSCP_REQ_MAX, tb,
+		      blob_data(msg), blob_len(msg));
+
+	if (!tb[DSCP_REQ_ADDR] || !tb[DSCP_REQ_ELEMENTS] ||
+	    hwaddr_aton(blobmsg_data(tb[DSCP_REQ_ADDR]), addr))
+		return UBUS_STATUS_INVALID_ARGUMENT;
+
+	hex = blobmsg_data(tb[DSCP_REQ_ELEMENTS]);
+	len = os_strlen(hex);
+	if (len & 1)
+		return UBUS_STATUS_INVALID_ARGUMENT;
+	len /= 2;
+
+	reset = tb[DSCP_REQ_RESET] && blobmsg_get_bool(tb[DSCP_REQ_RESET]);
+
+	hapd = hostapd_ubus_sta_bss(hapd, addr, &sta);
+	if (!sta)
+		return UBUS_STATUS_NOT_FOUND;
+
+	elems = os_malloc(len + 1);
+	if (!elems)
+		return UBUS_STATUS_UNKNOWN_ERROR;
+
+	if (hexstr2bin(hex, elems, len)) {
+		os_free(elems);
+		return UBUS_STATUS_INVALID_ARGUMENT;
+	}
+
+	ret = hostapd_send_dscp_policy_request_raw(hapd, sta, reset, elems,
+						   len);
+	os_free(elems);
+
+	if (ret == -EOPNOTSUPP)
+		return UBUS_STATUS_NOT_SUPPORTED;
+	if (ret == -EINVAL)
+		return UBUS_STATUS_INVALID_ARGUMENT;
+	if (ret < 0)
+		return UBUS_STATUS_UNKNOWN_ERROR;
+
+	blob_buf_init(&b, 0);
+	blobmsg_add_u32(&b, "dialog_token", ret);
+	ubus_send_reply(ctx, req, b.head);
+
+	return UBUS_STATUS_OK;
+}
+#endif /* CONFIG_ROBUST_AV */
+
 static void
 hostapd_rrm_print_nr(struct hostapd_neighbor_entry *nr)
 {
@@ -2405,6 +2482,9 @@ static const struct ubus_method bss_methods[] = {
 	UBUS_METHOD("switch_chan", hostapd_switch_chan, csa_policy),
 #endif
 	UBUS_METHOD("set_vendor_elements", hostapd_vendor_elements, ve_policy),
+#ifdef CONFIG_ROBUST_AV
+	UBUS_METHOD("dscp_policy_request", hostapd_dscp_policy_request, dscp_req_policy),
+#endif
 	UBUS_METHOD("notify_response", hostapd_notify_response, notify_policy),
 	UBUS_METHOD("bss_transition_query_answer", hostapd_bss_transition_query_answer, btq_policy),
 	UBUS_METHOD("bss_mgmt_enable", hostapd_bss_mgmt_enable, bss_mgmt_enable_policy),
