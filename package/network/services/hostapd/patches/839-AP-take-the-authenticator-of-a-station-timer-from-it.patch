@@ -70,7 +70,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  }
  
  
-@@ -7379,7 +7377,7 @@ void wpa_auth_eapol_key_tx_status(struct
+@@ -7387,7 +7385,7 @@ void wpa_auth_eapol_key_tx_status(struct
  		eloop_cancel_timeout(wpa_send_eapol_timeout, ELOOP_ALL_CTX, sm);
  		eloop_register_timeout(timeout_ms / 1000,
  				       (timeout_ms % 1000) * 1000,
