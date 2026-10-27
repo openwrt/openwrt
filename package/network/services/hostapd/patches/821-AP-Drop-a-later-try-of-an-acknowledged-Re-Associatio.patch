@@ -1,0 +1,200 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Wed, 21 Oct 2026 23:50:00 +0200
+Subject: [PATCH] AP: Drop a later try of an acknowledged (Re)Association
+ Request frame
+
+mac80211 sends the next try of a (Re)Association Request frame as a new
+frame, with a new sequence number and without the Retry bit. If the AP
+answers slowly, the station sends that try before it receives the
+response to the earlier one, and hostapd can read it after the TX
+status of the response. The drop of a request while a response waits
+for its TX status does not cover this order.
+
+handle_assoc() then processes the try as a new association of a station
+that is already associated. add_associated_sta() removes the station
+from the driver and adds it again, and the TX status of the second
+response starts the 4-way handshake again. For a non-AP MLD,
+ieee80211_ml_process_link() also rejects the partner links ("MLD: link:
+Station already exists"). The station ignores the second response and
+keeps the state of the first one, so the two ends disagree.
+
+Keep the body of the request whose successful response the station
+acknowledged. Drop a request with the same subtype and body for one
+second after that TX status, while the station is associated. The
+station already holds the response to that request and sends no further
+try once it received it, so such a frame is a try that hostapd reads
+late. A changed request is processed as before, since the station can
+change its parameters.
+
+The window ends early when the station becomes authorized, because it
+then completed the handshake on the first response. A station that is
+authorized already when it sends the request does not become authorized
+again, so it keeps the window, and a late try of its re-association is
+dropped in the same way. The window also ends after a Disassociation
+frame, which allows a new association without authentication, with an
+Authentication frame that starts over, with a response that was not
+acknowledged, since the station may not hold it, and with a failure
+response, which commits no state.
+
+IEEE Std 802.11-2024 duplicate detection (10.3.2.14) uses only the
+Retry bit and the sequence number, so it does not apply to these frames.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/src/ap/ieee802_11.c
++++ b/src/ap/ieee802_11.c
+@@ -4288,6 +4288,58 @@ static bool assoc_resp_pending(struct st
+ }
+ 
+ 
++/* Bounds the delay of a try of the request that was sent before the station
++ * received the response */
++#define ASSOC_REQ_REPEAT_MAX_SEC 1
++
++static void assoc_req_keep(struct sta_info *sta,
++			   const struct ieee80211_mgmt *mgmt, size_t len,
++			   int reassoc)
++{
++	ap_sta_clear_assoc_req(sta);
++	sta->assoc_req_body = wpabuf_alloc_copy((const u8 *) mgmt +
++						IEEE80211_HDRLEN,
++						len - IEEE80211_HDRLEN);
++	sta->assoc_req_reassoc = !!reassoc;
++}
++
++
++static void assoc_resp_ack_set(struct sta_info *sta, int ok, u16 status)
++{
++	if (!ok || status != WLAN_STATUS_SUCCESS || !sta->assoc_req_body) {
++		ap_sta_clear_assoc_req(sta);
++		return;
++	}
++
++	os_get_reltime(&sta->assoc_resp_ack_time);
++}
++
++
++static bool assoc_req_repeated(struct sta_info *sta,
++			       const struct ieee80211_mgmt *mgmt, size_t len,
++			       int reassoc)
++{
++	const u8 *body = (const u8 *) mgmt + IEEE80211_HDRLEN;
++	size_t body_len = len - IEEE80211_HDRLEN;
++	struct os_reltime now;
++
++	if (!sta->assoc_req_body ||
++	    !os_reltime_initialized(&sta->assoc_resp_ack_time) ||
++	    !(sta->flags & WLAN_STA_ASSOC))
++		return false;
++
++	os_get_reltime(&now);
++	if (os_reltime_expired(&now, &sta->assoc_resp_ack_time,
++			       ASSOC_REQ_REPEAT_MAX_SEC))
++		return false;
++
++	return sta->assoc_req_reassoc == !!reassoc &&
++		wpabuf_len(sta->assoc_req_body) == body_len &&
++		os_memcmp(wpabuf_head(sta->assoc_req_body), body,
++			  body_len) == 0;
++}
++
++
+ static void handle_auth(struct hostapd_data *hapd,
+ 			const struct ieee80211_mgmt *mgmt, size_t len,
+ 			int rssi, int from_queue)
+@@ -4683,8 +4735,10 @@ static void handle_auth(struct hostapd_d
+ 	sta->last_seq_ctrl = seq_ctrl;
+ 	sta->last_subtype = WLAN_FC_STYPE_AUTH;
+ 	/* PASN does not start the association over */
+-	if (auth_transaction == 1 && auth_alg != WLAN_AUTH_PASN)
++	if (auth_transaction == 1 && auth_alg != WLAN_AUTH_PASN) {
+ 		assoc_resp_pending_clear(sta);
++		ap_sta_clear_assoc_req(sta);
++	}
+ #ifdef CONFIG_MBO
+ 	sta->auth_rssi = rssi;
+ #endif /* CONFIG_MBO */
+@@ -7663,6 +7717,14 @@ static void handle_assoc(struct hostapd_
+ 			       seq_ctrl);
+ 		return;
+ 	}
++	if (assoc_req_repeated(sta, mgmt, len, reassoc)) {
++		hostapd_logger(hapd, sta->addr, HOSTAPD_MODULE_IEEE80211,
++			       HOSTAPD_LEVEL_DEBUG,
++			       "Drop association frame seq_ctrl=0x%x that repeats the acknowledged request",
++			       seq_ctrl);
++		return;
++	}
++	assoc_req_keep(sta, mgmt, len, reassoc);
+ 	sta->last_seq_ctrl = seq_ctrl;
+ 	sta->last_subtype = reassoc ? WLAN_FC_STYPE_REASSOC_REQ :
+ 		WLAN_FC_STYPE_ASSOC_REQ;
+@@ -8895,6 +8957,8 @@ static void handle_assoc_cb(struct hosta
+ 	else
+ 		status = le_to_host16(mgmt->u.assoc_resp.status_code);
+ 
++	assoc_resp_ack_set(sta, ok, status);
++
+ 	if (!ok) {
+ 		hostapd_logger(hapd, mgmt->da, HOSTAPD_MODULE_IEEE80211,
+ 			       HOSTAPD_LEVEL_DEBUG,
+--- a/src/ap/sta_info.c
++++ b/src/ap/sta_info.c
+@@ -473,6 +473,8 @@ void ap_free_sta(struct hostapd_data *ha
+ 	sta->assoc_ie_taxonomy = NULL;
+ #endif /* CONFIG_TAXONOMY */
+ 
++	ap_sta_clear_assoc_req(sta);
++
+ 	ht40_intolerant_remove(hapd->iface, sta);
+ 
+ #ifdef CONFIG_P2P
+@@ -1903,15 +1905,25 @@ const u8 * ap_sta_wpa_get_dpp_pkhash(str
+ }
+ 
+ 
++void ap_sta_clear_assoc_req(struct sta_info *sta)
++{
++	wpabuf_free(sta->assoc_req_body);
++	sta->assoc_req_body = NULL;
++	os_memset(&sta->assoc_resp_ack_time, 0,
++		  sizeof(sta->assoc_resp_ack_time));
++}
++
++
+ bool ap_sta_set_authorized_flag(struct hostapd_data *hapd, struct sta_info *sta,
+ 				int authorized)
+ {
+ 	if (!!authorized == !!(sta->flags & WLAN_STA_AUTHORIZED))
+ 		return false;
+ 
+-	if (authorized)
++	if (authorized) {
+ 		sta->flags |= WLAN_STA_AUTHORIZED;
+-	else
++		ap_sta_clear_assoc_req(sta);
++	} else
+ 		sta->flags &= ~WLAN_STA_AUTHORIZED;
+ 
+ 	return true;
+--- a/src/ap/sta_info.h
++++ b/src/ap/sta_info.h
+@@ -270,6 +270,10 @@ struct sta_info {
+ 	/* Last Authentication/(Re)Association Request/Action frame subtype */
+ 	u8 last_subtype;
+ 	struct os_reltime assoc_resp_pending_since;
++	/* A late try of an answered request can arrive after the TX status */
++	struct wpabuf *assoc_req_body;
++	bool assoc_req_reassoc;
++	struct os_reltime assoc_resp_ack_time;
+ 
+ #ifdef CONFIG_MBO
+ 	u8 cell_capa; /* 0 = unknown (not an MBO STA); otherwise,
+@@ -439,6 +443,7 @@ const u8 * ap_sta_wpa_get_dpp_pkhash(str
+ void ap_sta_disconnect(struct hostapd_data *hapd, struct sta_info *sta,
+ 		       const u8 *addr, u16 reason);
+ 
++void ap_sta_clear_assoc_req(struct sta_info *sta);
+ bool ap_sta_set_authorized_flag(struct hostapd_data *hapd, struct sta_info *sta,
+ 				int authorized);
+ void ap_sta_set_authorized_event(struct hostapd_data *hapd,
