@@ -471,6 +471,19 @@ function mld_update_phy(phy, ifaces) {
 	}
 }
 
+// configured radios of the MLD that a phy_set_state stop took and no start
+// gave back
+function mld_radios_held(data)
+{
+	let held = 0;
+
+	for (let radio = 0; radio < length(data.phy_config); radio++)
+		if (data.phy_config[radio] && !(data.radio_mask_present & (1 << radio)))
+			held |= 1 << radio;
+
+	return held & data.radio_mask;
+}
+
 function mld_start() {
 	if (wpas.data.mld_pending)
 		return;
@@ -488,6 +501,12 @@ function mld_start() {
 			mld_reload(data, phy_list);
 		if (!add_mask)
 			continue;
+
+		let held = mld_radios_held(data);
+		if (held) {
+			wpas.printf(`MLD interface ${name} waits for radios held=${held}`);
+			continue;
+		}
 
 		if (!data.radio_mask_up)
 			mld_add(data, phy_list);
