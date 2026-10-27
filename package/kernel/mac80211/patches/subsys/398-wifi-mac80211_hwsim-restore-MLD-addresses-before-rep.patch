@@ -22,7 +22,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 ---
 --- a/drivers/net/wireless/virtual/mac80211_hwsim_main.c
 +++ b/drivers/net/wireless/virtual/mac80211_hwsim_main.c
-@@ -1643,15 +1643,41 @@ static void mac80211_hwsim_write_tsf(str
+@@ -1660,15 +1660,41 @@ static void mac80211_hwsim_write_tsf(str
  	spin_unlock_bh(&data->tsf_offset_lock);
  }
  
@@ -65,7 +65,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	void *msg_head;
  	unsigned int hwsim_flags = 0;
  	int i;
-@@ -1731,7 +1757,12 @@ static void mac80211_hwsim_tx_frame_nl(s
+@@ -1748,7 +1774,12 @@ static void mac80211_hwsim_tx_frame_nl(s
  
  	/* We create a cookie to identify this skb */
  	cookie = atomic_inc_return(&data->pending_cookie);
@@ -79,7 +79,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	if (nla_put_u64_64bit(skb, HWSIM_ATTR_COOKIE, cookie, HWSIM_ATTR_PAD))
  		goto nla_put_failure;
  
-@@ -2107,6 +2138,7 @@ static void mac80211_hwsim_tx(struct iee
+@@ -2124,6 +2155,7 @@ static void mac80211_hwsim_tx(struct iee
  {
  	struct mac80211_hwsim_data *data = hw->priv;
  	struct ieee80211_tx_info *txi = IEEE80211_SKB_CB(skb);
@@ -87,7 +87,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	struct ieee80211_hdr *hdr = (void *)skb->data;
  	struct ieee80211_chanctx_conf *chanctx_conf;
  	struct ieee80211_channel *channel;
-@@ -2190,6 +2222,8 @@ static void mac80211_hwsim_tx(struct iee
+@@ -2207,6 +2239,8 @@ static void mac80211_hwsim_tx(struct iee
  		 * probe response).
  		 */
  		if (sta && sta->mlo && link_sta) {
@@ -96,7 +96,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  			/* address translation to link addresses on TX */
  			ether_addr_copy(hdr->addr1, link_sta->addr);
  			ether_addr_copy(hdr->addr2, bss_conf->addr);
-@@ -2264,7 +2298,8 @@ static void mac80211_hwsim_tx(struct iee
+@@ -2281,7 +2315,8 @@ static void mac80211_hwsim_tx(struct iee
  	_portid = READ_ONCE(data->wmediumd);
  
  	if (_portid || hwsim_virtio_enabled)
@@ -106,7 +106,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	/* NO wmediumd detected, perfect medium simulation */
  	data->tx_pkts++;
-@@ -2274,6 +2309,7 @@ static void mac80211_hwsim_tx(struct iee
+@@ -2291,6 +2326,7 @@ static void mac80211_hwsim_tx(struct iee
  	if (ack && skb->len >= 16)
  		mac80211_hwsim_monitor_ack(channel, hdr->addr2);
  
@@ -114,7 +114,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	ieee80211_tx_info_clear_status(txi);
  
  	/* frame was transmitted at most favorable rate at first attempt */
-@@ -2410,7 +2446,7 @@ void mac80211_hwsim_tx_frame(struct ieee
+@@ -2427,7 +2463,7 @@ void mac80211_hwsim_tx_frame(struct ieee
  	}
  
  	if (_portid || hwsim_virtio_enabled)
@@ -123,7 +123,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	data->tx_pkts++;
  	data->tx_bytes += skb->len;
-@@ -6339,6 +6375,7 @@ static int hwsim_tx_info_frame_received_
+@@ -6566,6 +6602,7 @@ static int hwsim_tx_info_frame_received_
  	u64 ret_skb_cookie;
  	struct sk_buff *skb, *tmp;
  	const u8 *src;
@@ -131,7 +131,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	unsigned int hwsim_flags;
  	int i;
  	unsigned long flags;
-@@ -6373,8 +6410,7 @@ static int hwsim_tx_info_frame_received_
+@@ -6600,8 +6637,7 @@ static int hwsim_tx_info_frame_received_
  	skb_queue_walk_safe(&data2->pending, skb, tmp) {
  		uintptr_t skb_cookie;
  
@@ -141,7 +141,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  		if (skb_cookie == ret_skb_cookie) {
  			__skb_unlink(skb, &data2->pending);
-@@ -6398,6 +6434,7 @@ static int hwsim_tx_info_frame_received_
+@@ -6625,6 +6661,7 @@ static int hwsim_tx_info_frame_received_
  
  	/* now send back TX status */
  	txi = IEEE80211_SKB_CB(skb);
@@ -149,7 +149,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	ieee80211_tx_info_clear_status(txi);
  
-@@ -6421,6 +6458,7 @@ static int hwsim_tx_info_frame_received_
+@@ -6648,6 +6685,7 @@ static int hwsim_tx_info_frame_received_
  	if (hwsim_flags & HWSIM_TX_CTL_NO_ACK)
  		txi->flags |= IEEE80211_TX_STAT_NOACK_TRANSMITTED;
  
