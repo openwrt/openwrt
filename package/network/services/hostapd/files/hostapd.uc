@@ -1541,10 +1541,11 @@ function iface_config_remove(name, old_config)
 }
 
 // No fallback to a PHY restart, which would take the other BSSes down.
-function mld_link_bss_remove(phy, name)
+// bss is the object of the hook: hostapd freed the BSS data before the hook,
+// and hostapd.bss still holds the object it released then.
+function mld_link_bss_remove(phy, name, bss)
 {
 	let config = hostapd.data.config[phy];
-	let bss = hostapd.bss[phy]?.[name];
 	if (!config || !bss)
 		return;
 
@@ -2502,7 +2503,7 @@ return {
 		bss_event("remove", name);
 	},
 	bss_link_removed: function(phy, name, obj) {
-		mld_link_bss_remove(phy, name);
+		mld_link_bss_remove(phy, name, obj);
 	},
 	sta_auth: function(iface, sta) {
 		let msg = { iface, sta };
