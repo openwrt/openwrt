@@ -9,6 +9,7 @@ let countries = json(readfile('/usr/share/iso3166.json'));
 let board_data = json(readfile('/etc/board.json'));
 
 let ubus = libubus.connect();
+let bss_ubus = libubus.connect(null, 2);
 
 export let phys;
 let interfaces;
@@ -95,7 +96,20 @@ const iftypes = [
 
 export let ifaces = {};
 
+function bss_info_get(daemon, ifname, timed_out) {
+	if (timed_out[daemon])
+		return null;
+
+	let bss_info = bss_ubus.call(daemon, 'bss_info', { iface: ifname });
+	if (bss_ubus.error(true) == libubus.STATUS_TIMEOUT)
+		timed_out[daemon] = true;
+
+	return bss_info;
+}
+
 export function update() {
+	let timed_out = {};
+
 	phys = nl80211.request(nl80211.const.NL80211_CMD_GET_WIPHY, nl80211.const.NLM_F_DUMP, { split_wiphy_dump: true });
 	interfaces = nl80211.request(nl80211.const.NL80211_CMD_GET_INTERFACE, nl80211.const.NLM_F_DUMP);
 	wireless_status = ubus.call('network.wireless', 'status');
@@ -112,9 +126,9 @@ export function update() {
 		iface.assoclist = nl80211.request(nl80211.const.NL80211_CMD_GET_STATION, nl80211.const.NLM_F_DUMP, { dev: v.ifname }) ?? [];
 		iface.hardware = get_hardware_id(iface);
 
-		iface.bss_info = ubus.call('hostapd', 'bss_info', { iface: v.ifname });
+		iface.bss_info = bss_info_get('hostapd', v.ifname, timed_out);
 		if (!iface.bss_info)
-			iface.bss_info = ubus.call('wpa_supplicant', 'bss_info', { iface: v.ifname });
+			iface.bss_info = bss_info_get('wpa_supplicant', v.ifname, timed_out);
 	}
 
 	for (let radio, data in wireless_status)
