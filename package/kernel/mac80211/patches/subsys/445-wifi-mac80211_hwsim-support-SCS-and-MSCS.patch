@@ -25,7 +25,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 ---
 --- a/drivers/net/wireless/virtual/mac80211_hwsim_i.h
 +++ b/drivers/net/wireless/virtual/mac80211_hwsim_i.h
-@@ -150,6 +150,9 @@ struct mac80211_hwsim_data {
+@@ -172,6 +172,9 @@ struct mac80211_hwsim_data {
  	/* RSSI in rx status of the receiver */
  	int rx_rssi;
  
@@ -37,7 +37,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	struct cfg80211_pmsr_request *pmsr_request;
 --- a/drivers/net/wireless/virtual/mac80211_hwsim_main.c
 +++ b/drivers/net/wireless/virtual/mac80211_hwsim_main.c
-@@ -4536,6 +4536,24 @@ static int mac80211_hwsim_set_radar_back
+@@ -4856,6 +4856,24 @@ static int mac80211_hwsim_set_radar_back
  	return 0;
  }
  
@@ -62,7 +62,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  #ifdef CPTCFG_MAC80211_DEBUGFS
  #define HWSIM_DEBUGFS_OPS					\
  	.link_add_debugfs = mac80211_hwsim_link_add_debugfs,
-@@ -4560,6 +4578,7 @@ static int mac80211_hwsim_set_radar_back
+@@ -4880,6 +4898,7 @@ static int mac80211_hwsim_set_radar_back
  	.link_sta_rc_update = mac80211_hwsim_sta_rc_update,	\
  	.conf_tx = mac80211_hwsim_conf_tx,			\
  	.get_survey = mac80211_hwsim_get_survey,		\
@@ -70,7 +70,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	CFG80211_TESTMODE_CMD(mac80211_hwsim_testmode_cmd)	\
  	.ampdu_action = mac80211_hwsim_ampdu_action,		\
  	.flush = mac80211_hwsim_flush,				\
-@@ -4977,7 +4996,8 @@ static const struct ieee80211_sband_ifty
+@@ -5297,7 +5316,8 @@ static const struct ieee80211_sband_ifty
  				.mac_cap_info[0] =
  					IEEE80211_EHT_MAC_CAP0_EPCS_PRIO_ACCESS |
  					IEEE80211_EHT_MAC_CAP0_OM_CONTROL |
@@ -80,7 +80,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  				.phy_cap_info[0] =
  					IEEE80211_EHT_PHY_CAP0_242_TONE_RU_GT20MHZ |
  					IEEE80211_EHT_PHY_CAP0_NDP_4_EHT_LFT_32_GI |
-@@ -5273,7 +5293,8 @@ static const struct ieee80211_sband_ifty
+@@ -5593,7 +5613,8 @@ static const struct ieee80211_sband_ifty
  				.mac_cap_info[0] =
  					IEEE80211_EHT_MAC_CAP0_EPCS_PRIO_ACCESS |
  					IEEE80211_EHT_MAC_CAP0_OM_CONTROL |
@@ -90,7 +90,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  				.phy_cap_info[0] =
  					IEEE80211_EHT_PHY_CAP0_242_TONE_RU_GT20MHZ |
  					IEEE80211_EHT_PHY_CAP0_NDP_4_EHT_LFT_32_GI |
-@@ -5616,7 +5637,8 @@ static const struct ieee80211_sband_ifty
+@@ -5936,7 +5957,8 @@ static const struct ieee80211_sband_ifty
  				.mac_cap_info[0] =
  					IEEE80211_EHT_MAC_CAP0_EPCS_PRIO_ACCESS |
  					IEEE80211_EHT_MAC_CAP0_OM_CONTROL |
@@ -100,7 +100,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  				.phy_cap_info[0] =
  					IEEE80211_EHT_PHY_CAP0_320MHZ_IN_6GHZ |
  					IEEE80211_EHT_PHY_CAP0_242_TONE_RU_GT20MHZ |
-@@ -6447,6 +6469,8 @@ static int mac80211_hwsim_new_radio(stru
+@@ -6769,6 +6791,8 @@ static int mac80211_hwsim_new_radio(stru
  			      NL80211_EXT_FEATURE_EXT_KEY_ID);
  	wiphy_ext_feature_set(hw->wiphy,
  			      NL80211_EXT_FEATURE_ASSOC_FRAME_ENCRYPTION);
@@ -109,7 +109,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	hw->wiphy->interface_modes = param->iftypes;
  
-@@ -6629,6 +6653,8 @@ static int mac80211_hwsim_new_radio(stru
+@@ -6951,6 +6975,8 @@ static int mac80211_hwsim_new_radio(stru
  			    &hwsim_fops_group);
  	debugfs_create_file("rx_rssi", 0666, data->debugfs, data,
  			    &hwsim_fops_rx_rssi);
