@@ -1,0 +1,112 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Sat, 24 Oct 2026 18:00:00 +0200
+Subject: [PATCH] AP MLD: bind the VLAN of a link added by Link
+ Reconfiguration
+
+Upstream fix: hostap main 741d70dd8e32 has the same code; to be
+reported upstream.
+
+At association, ap_sta_bind_vlan() binds every partner link STA of a
+non-AP MLD to its VLAN: the AP_VLAN reference, a reference to the VLAN
+group of that link's authenticator (wpa_auth_sta_set_vlan()), and the
+driver VLAN of the link. A link added by Link Reconfiguration got none
+of this. wpa_auth_set_ml_info() points the link at its authenticator
+without a group reference. Where that authenticator had no group of the
+VLAN, the Link Reconfiguration Response carried the GTK of the default
+group for the link. Where it had one, a later release of the link put a
+reference that it never took, which freed the VLAN group of the link
+while another station still used it.
+
+Bind the added link STA alone, before the response is built. The
+partner links hold their references already; ap_sta_bind_vlan() would
+take a second one on each.
+
+Do not set the driver VLAN of the added link. The driver holds one
+station for the non-AP MLD, and a VLAN change moves that whole station
+(mac80211 ieee80211_change_station()). The association bound it to its
+interface already: the AP_VLAN, or the WDS interface of a 4-address
+Multi-AP backhaul STA. A move to the VLAN interface, or to the main
+interface for VLAN ID 0, would take a backhaul STA off its WDS
+interface and stop its data. The WDS check of ap_sta_bind_vlan_helper()
+does not catch this, because a backhaul STA gets its WDS interface at
+the association without WLAN_STA_WDS.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/src/ap/ieee802_11_eht.c
++++ b/src/ap/ieee802_11_eht.c
+@@ -1897,6 +1897,7 @@ hostapd_ml_process_reconf_link(struct ho
+ 	}
+ 	wpa_auth_set_ml_info(lsta->wpa_sm, lsta->mld_assoc_link_id,
+ 			     &lsta->mld_info);
++	ap_sta_bind_link_vlan(lhapd, lsta);
+ 
+ 	return WLAN_STATUS_SUCCESS;
+ }
+--- a/src/ap/sta_info.c
++++ b/src/ap/sta_info.c
+@@ -1690,7 +1690,7 @@ void ap_sta_set_link_vlan(struct hostapd
+ 
+ 
+ static int ap_sta_bind_vlan_helper(struct hostapd_data *hapd,
+-				   struct sta_info *sta)
++				   struct sta_info *sta, bool drv_set)
+ {
+ #ifndef CONFIG_NO_VLAN
+ 	const char *iface;
+@@ -1766,8 +1766,10 @@ skip_counting:
+ 				  sta->vlan_id) < 0)
+ 		wpa_printf(MSG_INFO, "Failed to update VLAN-ID for WPA");
+ 
+-	ret = hostapd_drv_set_sta_vlan(iface, hapd, sta->addr, sta->vlan_id,
+-				       mld_link_id);
++	ret = 0;
++	if (drv_set)
++		ret = hostapd_drv_set_sta_vlan(iface, hapd, sta->addr,
++					       sta->vlan_id, mld_link_id);
+ 	if (ret < 0) {
+ 		hostapd_logger(vlan_bss, sta->addr, HOSTAPD_MODULE_IEEE80211,
+ 			       HOSTAPD_LEVEL_DEBUG, "could not bind the STA "
+@@ -1794,7 +1796,7 @@ int ap_sta_bind_vlan(struct hostapd_data
+ 	struct hapd_interfaces *interfaces = hapd->iface->interfaces;
+ #endif /* CONFIG_IEEE80211BE */
+ 
+-	ret = ap_sta_bind_vlan_helper(hapd, sta);
++	ret = ap_sta_bind_vlan_helper(hapd, sta, true);
+ 	if (ret)
+ 		return ret;
+ #ifdef CONFIG_IEEE80211BE
+@@ -1809,7 +1811,7 @@ int ap_sta_bind_vlan(struct hostapd_data
+ 
+ 		tmp_sta = ap_get_sta(tmp_hapd, sta->addr);
+ 		if (tmp_sta)
+-			ap_sta_bind_vlan_helper(tmp_hapd, tmp_sta);
++			ap_sta_bind_vlan_helper(tmp_hapd, tmp_sta, true);
+ 	}
+ #endif /* CONFIG_IEEE80211BE */
+ 
+@@ -1817,6 +1819,14 @@ int ap_sta_bind_vlan(struct hostapd_data
+ }
+ 
+ 
++/* The driver holds one station for a non-AP MLD, which stays on the interface
++ * that the association bound it to when a link is added. */
++int ap_sta_bind_link_vlan(struct hostapd_data *hapd, struct sta_info *sta)
++{
++	return ap_sta_bind_vlan_helper(hapd, sta, false);
++}
++
++
+ void ap_sta_set_sa_query_timeout(struct hostapd_data *hapd,
+ 				 struct sta_info *sta, int value)
+ {
+--- a/src/ap/sta_info.h
++++ b/src/ap/sta_info.h
+@@ -447,6 +447,7 @@ int ap_sta_wps_cancel(struct hostapd_dat
+ 		      struct sta_info *sta, void *ctx);
+ #endif /* CONFIG_WPS */
+ int ap_sta_bind_vlan(struct hostapd_data *hapd, struct sta_info *sta);
++int ap_sta_bind_link_vlan(struct hostapd_data *hapd, struct sta_info *sta);
+ int ap_sta_set_vlan(struct hostapd_data *hapd, struct sta_info *sta,
+ 		    struct vlan_description *vlan_desc);
+ void ap_sta_set_link_vlan(struct hostapd_data *hapd, struct sta_info *sta,
