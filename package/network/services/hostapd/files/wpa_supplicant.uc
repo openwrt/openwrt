@@ -218,6 +218,29 @@ function phy_name(phy, radio)
 	return phy;
 }
 
+function mld_freq_list(data, radio_mask)
+{
+	let freq_list;
+
+	for (let radio = 0; radio < length(data.phy_config); radio++) {
+		let config = data.phy_config[radio];
+		if (!config?.freq_list || !(radio_mask & (1 << radio)))
+			continue;
+		if (!freq_list)
+			freq_list = [ ...config.freq_list ];
+		else
+			push(freq_list, ...config.freq_list);
+	}
+
+	return freq_list;
+}
+
+// a radio that hostapd holds gives no BSS to the scan and the link selection
+function mld_freq_list_update(data)
+{
+	data.freq_list = mld_freq_list(data, data.radio_mask_present);
+}
+
 function mld_remove(data)
 {
 	if (!data.radio_mask_up)
@@ -228,6 +251,37 @@ function mld_remove(data)
 	wpas.remove_iface(name);
 	wdev_remove(name);
 	data.radio_mask_up = 0;
+	data.radio_mask_kept = 0;
+}
+
+function mld_freq_list_apply(data)
+{
+	let iface = wpas.interfaces[data.name];
+
+	if (iface && length(data.freq_list) > 0)
+		iface.config('freq_list', data.freq_list);
+}
+
+function mld_kept_release(data, radio_mask)
+{
+	if (!(data.radio_mask_kept & radio_mask))
+		return;
+
+	data.radio_mask_kept &= ~radio_mask;
+	mld_freq_list_apply(data);
+}
+
+// a station without a link holds no channel on the radio
+const mld_keep_states = [ "DISCONNECTED", "INACTIVE", "SCANNING" ];
+
+function mld_hold_keep(data)
+{
+	if (!(data.radio_mask_up & data.radio_mask_present) || !length(data.freq_list))
+		return false;
+
+	let status = wpas.interfaces[data.name]?.status();
+
+	return index(mld_keep_states, status?.state) >= 0;
 }
 
 function mld_first_phy(data)
@@ -411,6 +465,7 @@ function mld_set_config(config)
 			radio_mask,
 			radio_mask_up: 0,
 			radio_mask_present: 0,
+			radio_mask_kept: 0,
 		};
 		added[name] = data;
 	}
@@ -432,17 +487,8 @@ function mld_set_iface_config(name, data, radio, config)
 	else
 		data.radio_mask_present &= ~(1 << radio);
 
-	let freq_list;
-	for (let config in data.phy_config) {
-		if (!config || !config.freq_list)
-			continue;
-		if (!freq_list)
-			freq_list = [ ...config.freq_list ];
-		else
-			push(freq_list, ...config.freq_list);
-	}
-
-	data.freq_list = freq_list;
+	mld_freq_list_update(data);
+	mld_kept_release(data, 1 << radio);
 }
 
 function mld_update_iface(name, data) {
@@ -454,7 +500,7 @@ function mld_update_iface(name, data) {
 		return;
 	}
 
-	let mask = data.radio_mask_up & ~data.radio_mask_present;
+	let mask = data.radio_mask_up & ~data.radio_mask_present & ~data.radio_mask_kept;
 	if (!mask)
 		return;
 
@@ -759,8 +805,19 @@ let main_obj = {
 					if (data.phy != phy.name)
 						continue;
 					data.radio_mask_present &= ~radio_mask;
-					if (data.radio_mask_up & radio_mask)
+					mld_freq_list_update(data);
+					let link = data.radio_mask_up & radio_mask;
+					if (link && !mld_hold_keep(data)) {
 						mld_update_iface(name, data);
+						continue;
+					}
+
+					if (link) {
+						wpas.printf(`Keep MLD interface ${name} without radio ${phy.radio}`);
+						data.radio_mask_kept |= radio_mask;
+					}
+					if (data.radio_mask_kept)
+						mld_freq_list_apply(data);
 				}
 			} else {
 				start_pending(name);
@@ -774,6 +831,8 @@ let main_obj = {
 					if (!data.phy_config[phy.radio])
 						continue;
 					data.radio_mask_present |= radio_mask;
+					mld_freq_list_update(data);
+					mld_kept_release(data, radio_mask);
 					found = true;
 				}
 				if (found)
@@ -802,7 +861,7 @@ let main_obj = {
 			for (let name, data in wpas.data.mld) {
 				if (data.phy != phy.name)
 					continue;
-				if (data.radio_mask_up & radio_mask)
+				if (data.radio_mask_up & ~data.radio_mask_kept & radio_mask)
 					push(ifnames, name);
 			}
 
