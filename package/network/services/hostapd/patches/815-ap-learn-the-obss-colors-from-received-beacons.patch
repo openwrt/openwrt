@@ -21,7 +21,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/src/ap/hostapd.c
 +++ b/src/ap/hostapd.c
-@@ -5768,9 +5768,10 @@ void hostapd_switch_color_timeout_handle
+@@ -6013,9 +6013,10 @@ void hostapd_switch_color_timeout_handle
  
  
  /* The colours of the OBSSs around the radio, which the kernel's BSS colour
@@ -35,7 +35,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
   * - the kernel repeats an event every 500 ms while it hears the colliding
   *   OBSS, and hostapd judges a collision persistent within
   *   DOT11BSS_COLOR_COLLISION_AP_PERIOD + 10 s;
-@@ -5867,6 +5868,30 @@ void hostapd_bss_colors_collision_event(
+@@ -6112,6 +6113,30 @@ void hostapd_bss_colors_collision_event(
  				      BSS_COLOR_EVENT_AGE);
  }
  
@@ -68,7 +68,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  void hostapd_bss_colors_collision_report(struct hostapd_iface *iface,
 --- a/src/ap/hostapd.h
 +++ b/src/ap/hostapd.h
-@@ -908,6 +908,7 @@ void hostapd_bss_colors_collision_event(
+@@ -925,6 +925,7 @@ void hostapd_bss_colors_collision_event(
  					u64 bitmap);
  void hostapd_bss_colors_collision_report(struct hostapd_iface *iface,
  					 u64 bitmap);
@@ -78,7 +78,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  void hostapd_cleanup_cca_params(struct hostapd_data *hapd);
 --- a/src/ap/ieee802_11.c
 +++ b/src/ap/ieee802_11.c
-@@ -8138,6 +8138,28 @@ static void handle_deauth(struct hostapd
+@@ -8140,6 +8140,28 @@ static void handle_deauth(struct hostapd
  }
  
  
@@ -107,7 +107,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  static void handle_beacon(struct hostapd_data *hapd,
  			  const struct ieee80211_mgmt *mgmt, size_t len,
  			  struct hostapd_frame_info *fi)
-@@ -8159,6 +8181,10 @@ static void handle_beacon(struct hostapd
+@@ -8161,6 +8183,10 @@ static void handle_beacon(struct hostapd
  					     sizeof(mgmt->u.beacon)), &elems,
  				      0);
  

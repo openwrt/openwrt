@@ -20,7 +20,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/src/ap/ieee802_11.c
 +++ b/src/ap/ieee802_11.c
-@@ -8150,6 +8150,10 @@ static void handle_beacon(struct hostapd
+@@ -8152,6 +8152,10 @@ static void handle_beacon(struct hostapd
  		return;
  	}
  
@@ -74,7 +74,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  int nl80211_has_ifidx(struct wpa_driver_nl80211_data *drv, int ifidx,
 --- a/src/drivers/driver_nl80211_event.c
 +++ b/src/drivers/driver_nl80211_event.c
-@@ -1831,8 +1831,7 @@ static void mlme_event_link_addition(str
+@@ -1836,8 +1836,7 @@ static void mlme_event_link_addition(str
  }
  
  

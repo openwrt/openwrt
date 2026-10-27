@@ -261,7 +261,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  #endif /* CONFIG_NO_RADIUS */
  
  	ssid = &hapd->conf->ssid;
-@@ -5985,6 +5986,28 @@ int hostapd_mld_add_link(struct hostapd_
+@@ -6230,6 +6231,28 @@ int hostapd_mld_add_link(struct hostapd_
  }
  
  
@@ -290,7 +290,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  int hostapd_mld_remove_link(struct hostapd_data *hapd)
  {
  	struct hostapd_mld *mld = hapd->mld;
-@@ -6026,6 +6049,10 @@ int hostapd_mld_remove_link(struct hosta
+@@ -6271,6 +6294,10 @@ int hostapd_mld_remove_link(struct hosta
  			hostapd_mld_move_vlan_list(hapd, next_fbss);
  
  		mld->fbss = next_fbss;

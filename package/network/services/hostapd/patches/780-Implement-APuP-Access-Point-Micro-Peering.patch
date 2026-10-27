@@ -423,7 +423,7 @@ Hotfix-by: Sebastian Gottschall https://github.com/mirror/dd-wrt/commit/0c3001a6
  	if (resp != WLAN_STATUS_SUCCESS)
  		goto out;
  
-@@ -8153,6 +8156,11 @@ static void handle_beacon(struct hostapd
+@@ -8155,6 +8158,11 @@ static void handle_beacon(struct hostapd
  				      0);
  
  	ap_list_process_beacon(hapd->iface, mgmt, &elems, fi);
@@ -448,7 +448,7 @@ Hotfix-by: Sebastian Gottschall https://github.com/mirror/dd-wrt/commit/0c3001a6
  u16 copy_sta_vendor_vht(struct hostapd_data *hapd, struct sta_info *sta,
 --- a/src/drivers/driver.h
 +++ b/src/drivers/driver.h
-@@ -4555,7 +4555,7 @@ struct wpa_driver_ops {
+@@ -4558,7 +4558,7 @@ struct wpa_driver_ops {
  	 * Returns: 0 on success, -1 on failure
  	 */
  	int (*set_wds_sta)(void *priv, const u8 *addr, int aid, int val,

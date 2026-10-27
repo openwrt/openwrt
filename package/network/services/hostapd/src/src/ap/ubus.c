@@ -544,6 +544,29 @@ hostapd_spr_add(struct hostapd_data *hapd)
 #endif
 }
 
+#ifdef CONFIG_IEEE80211BE
+static const char * const adv_ttlm_state_names[] = {
+	[HOSTAPD_ADV_TTLM_NONE] = "none",
+	[HOSTAPD_ADV_TTLM_REQUESTED] = "requested",
+	[HOSTAPD_ADV_TTLM_ESTABLISHED] = "established",
+};
+
+static void
+hostapd_bss_adv_ttlm_add(struct hostapd_data *hapd)
+{
+	struct hostapd_mld *mld = hapd->mld;
+	void *t;
+
+	t = blobmsg_open_table(&b, "adv_ttlm");
+	blobmsg_add_string(&b, "state", adv_ttlm_state_names[mld->adv_ttlm_state]);
+	if (mld->adv_ttlm_state != HOSTAPD_ADV_TTLM_NONE) {
+		blobmsg_add_u32(&b, "links", mld->adv_ttlm_links);
+		blobmsg_add_u32(&b, "duration", mld->adv_ttlm_duration);
+	}
+	blobmsg_close_table(&b, t);
+}
+#endif /* CONFIG_IEEE80211BE */
+
 static void
 hostapd_bss_status_links_add(struct ubus_object *obj)
 {
@@ -567,11 +590,22 @@ hostapd_bss_status_links_add(struct ubus_object *obj)
 		blobmsg_add_u32(&b, "link_id", link_bss->mld_link_id);
 		blobmsg_printf(&b, "bssid", MACSTR, MAC2STR(link_bss->own_addr));
 		blobmsg_add_u32(&b, "freq", link_bss->iface->freq);
+		if (link_bss->adv_ttlm_started)
+			blobmsg_add_u32(&b, "adv_ttlm_switch_tsf",
+					link_bss->adv_ttlm_switch_tsf);
 		hostapd_bss_color_add(link_bss);
 		hostapd_spr_add(link_bss);
 		blobmsg_close_table(&b, l);
 	}
 	blobmsg_close_array(&b, links);
+
+	for (i = 0; i < MAX_NUM_MLD_LINKS; i++) {
+		if (!umld->links[i] || !umld->links[i]->mld)
+			continue;
+
+		hostapd_bss_adv_ttlm_add(umld->links[i]);
+		break;
+	}
 #endif /* CONFIG_IEEE80211BE */
 }
 
@@ -2235,6 +2269,57 @@ hostapd_bss_get_sta_ies(struct ubus_context *ctx, struct ubus_object *obj,
 #endif
 
 
+#ifdef CONFIG_IEEE80211BE
+enum {
+	ADV_TTLM_LINKS,
+	ADV_TTLM_DURATION,
+	ADV_TTLM_SWITCH_TIME,
+	__ADV_TTLM_MAX
+};
+
+static const struct blobmsg_policy adv_ttlm_policy[__ADV_TTLM_MAX] = {
+	[ADV_TTLM_LINKS] = { "links", BLOBMSG_TYPE_INT32 },
+	[ADV_TTLM_DURATION] = { "duration", BLOBMSG_TYPE_INT32 },
+	[ADV_TTLM_SWITCH_TIME] = { "switch_time", BLOBMSG_TYPE_INT32 },
+};
+
+static int
+hostapd_bss_ttlm_advertise(struct ubus_context *ctx, struct ubus_object *obj,
+			   struct ubus_request_data *req, const char *method,
+			   struct blob_attr *msg)
+{
+	struct hostapd_data *hapd = get_hapd_from_object(obj);
+	struct blob_attr *tb[__ADV_TTLM_MAX];
+	u32 links, switch_time = 0;
+	int ret;
+
+	blobmsg_parse(adv_ttlm_policy, __ADV_TTLM_MAX, tb, blob_data(msg), blob_len(msg));
+
+	if (!tb[ADV_TTLM_LINKS] || !tb[ADV_TTLM_DURATION])
+		return UBUS_STATUS_INVALID_ARGUMENT;
+
+	links = blobmsg_get_u32(tb[ADV_TTLM_LINKS]);
+	if (links > 0xffff)
+		return UBUS_STATUS_INVALID_ARGUMENT;
+
+	if (tb[ADV_TTLM_SWITCH_TIME])
+		switch_time = blobmsg_get_u32(tb[ADV_TTLM_SWITCH_TIME]);
+
+	ret = hostapd_adv_ttlm_request(hapd, links, switch_time,
+				       blobmsg_get_u32(tb[ADV_TTLM_DURATION]));
+	switch (ret) {
+	case 0:
+		return 0;
+	case -EINVAL:
+		return UBUS_STATUS_INVALID_ARGUMENT;
+	case -EOPNOTSUPP:
+		return UBUS_STATUS_NOT_SUPPORTED;
+	default:
+		return UBUS_STATUS_UNKNOWN_ERROR;
+	}
+}
+#endif /* CONFIG_IEEE80211BE */
+
 static const struct ubus_method bss_methods[] = {
 	UBUS_METHOD_NOARG("reload", hostapd_bss_reload),
 	UBUS_METHOD_NOARG("get_clients", hostapd_bss_get_clients),
@@ -2254,6 +2339,9 @@ static const struct ubus_method bss_methods[] = {
 #endif
 	UBUS_METHOD_NOARG("update_beacon", hostapd_bss_update_beacon),
 	UBUS_METHOD_NOARG("get_features", hostapd_bss_get_features),
+#ifdef CONFIG_IEEE80211BE
+	UBUS_METHOD("ttlm_advertise", hostapd_bss_ttlm_advertise, adv_ttlm_policy),
+#endif
 #ifdef NEED_AP_MLME
 	UBUS_METHOD("switch_chan", hostapd_switch_chan, csa_policy),
 #endif
@@ -2999,3 +3087,21 @@ void hostapd_ubus_notify_bss_color(struct hostapd_data *hapd)
 
 	ubus_notify(ctx, obj, "bss-color-change", b.head, -1);
 }
+
+#ifdef CONFIG_IEEE80211BE
+void hostapd_ubus_notify_adv_ttlm(struct hostapd_data *hapd)
+{
+	struct ubus_object *obj = hostapd_ubus_notify_obj(hapd);
+
+	if (!obj->has_subscribers || !hapd->mld)
+		return;
+
+	blob_buf_init(&b, 0);
+	blobmsg_add_string(&b, "ifname", hapd->conf->iface);
+	blobmsg_printf(&b, "mld_addr", MACSTR, MAC2STR(hapd->mld->mld_addr));
+	blobmsg_add_string(&b, "state",
+			   adv_ttlm_state_names[hapd->mld->adv_ttlm_state]);
+
+	ubus_notify(ctx, obj, "adv-ttlm", b.head, -1);
+}
+#endif /* CONFIG_IEEE80211BE */

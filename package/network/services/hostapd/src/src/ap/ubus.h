@@ -93,6 +93,7 @@ void hostapd_ubus_notify_authorized(struct hostapd_data *hapd, struct sta_info *
 void hostapd_ubus_notify_sta_links(struct hostapd_data *hapd, struct sta_info *sta);
 void hostapd_ubus_notify_csa(struct hostapd_data *hapd, int freq);
 void hostapd_ubus_notify_bss_color(struct hostapd_data *hapd);
+void hostapd_ubus_notify_adv_ttlm(struct hostapd_data *hapd);
 void hostapd_ubus_notify_action_frame(struct hostapd_data *hapd,
 				      const char *type, const u8 *addr,
 				      const u8 *body, size_t body_len);
@@ -208,6 +209,11 @@ hostapd_ubus_notify_csa(struct hostapd_data *hapd, int freq)
 
 static inline void
 hostapd_ubus_notify_bss_color(struct hostapd_data *hapd)
+{
+}
+
+static inline void
+hostapd_ubus_notify_adv_ttlm(struct hostapd_data *hapd)
 {
 }
 
