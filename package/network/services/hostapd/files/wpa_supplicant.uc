@@ -433,7 +433,7 @@ function mld_set_iface_config(name, data, phy, config)
 	wpas.printf(`Set MLD interface ${name} radio ${radio} config: ${keys(config)}`);
 
 	data.phy_config[radio] = config;
-	if (config && !phy.stopped)
+	if (config && !phy.stopped && (data.radio_mask & (1 << radio)))
 		data.radio_mask_present |= 1 << radio;
 	else
 		data.radio_mask_present &= ~(1 << radio);
