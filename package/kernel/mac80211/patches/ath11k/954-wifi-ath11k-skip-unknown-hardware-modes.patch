@@ -1,0 +1,43 @@
+From 671ae26defe2fc5ed31b32b8f709e54683ee09f6 Mon Sep 17 00:00:00 2001
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Date: Mon, 26 Oct 2026 16:10:00 +0100
+Subject: [PATCH] wifi: ath11k: skip unknown hardware modes
+
+ath11k_wmi_tlv_hw_mode_caps() indexes ath11k_hw_mode_pri_map[] with the
+hw_mode_id the firmware reports, without a range check. A firmware or
+board data file that reports a mode above WMI_HOST_HW_MODE_MAX reads
+past the end of the array, and the result decides whether that mode
+becomes the preferred one. Skip every mode from WMI_HOST_HW_MODE_MAX up,
+as ath12k does since commit 1e9b1363e2de ("wifi: ath12k: avoid array
+overflow of hw mode for preferred_hw_mode").
+
+Tested-on: IPQ8074 hw2.0 AHB WLAN.HK.2.9.0.1-02146-QCAHKSWPL_SILICONZ-1
+
+Fixes: d5c65159f289 ("ath11k: driver for Qualcomm IEEE 802.11ax devices")
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+---
+--- a/drivers/net/wireless/ath/ath11k/wmi.c
++++ b/drivers/net/wireless/ath/ath11k/wmi.c
+@@ -4767,17 +4767,19 @@ static int ath11k_wmi_tlv_hw_mode_caps(s
+ 		return ret;
+ 	}
+ 
+-	i = 0;
+-	while (i < svc_rdy_ext->n_hw_mode_caps) {
++	for (i = 0; i < svc_rdy_ext->n_hw_mode_caps; i++) {
+ 		hw_mode_caps = &svc_rdy_ext->hw_mode_caps[i];
+ 		mode = hw_mode_caps->hw_mode_id;
++
++		if (mode >= WMI_HOST_HW_MODE_MAX)
++			continue;
++
+ 		pref = soc->wmi_ab.preferred_hw_mode;
+ 
+ 		if (ath11k_hw_mode_pri_map[mode] < ath11k_hw_mode_pri_map[pref]) {
+ 			svc_rdy_ext->pref_hw_mode_caps = *hw_mode_caps;
+ 			soc->wmi_ab.preferred_hw_mode = mode;
+ 		}
+-		i++;
+ 	}
+ 
+ 	ath11k_dbg(soc, ATH11K_DBG_WMI, "preferred_hw_mode:%d\n",
