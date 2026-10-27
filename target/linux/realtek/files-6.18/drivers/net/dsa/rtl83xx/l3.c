@@ -3066,10 +3066,16 @@ static int otto_l3_fib_add_v4(struct otto_l3_ctrl *ctrl, struct fib_entry_notifi
 
 out_free_rmac:
 out_free_rt:
+	/* The destination is left without an entry of its own, and the table
+	 * answers with the lowest matching row, so a shorter prefix already in
+	 * hardware would pick these packets up and forward them to its own
+	 * gateway. Give the destination a row that traps instead, which is what
+	 * every other route the hardware cannot carry gets.
+	 */
 	otto_l3_route_put_intf(ctrl, route);
 	otto_l3_switch_mac_put(ctrl, route->switch_mac_id);
 	otto_l3_route_free(ctrl, route);
-	otto_l3_fib4_info_failed(info);
+	otto_l3_fib_trap_v4(ctrl, info);
 	return 0;
 }
 
@@ -3562,11 +3568,14 @@ not_offloaded:
 	return 0;
 
 out_failed:
+	/* As on the IPv4 side: with no entry of its own the destination is
+	 * answered by whatever shorter prefix sits above it, so it gets a
+	 * trapping row rather than nothing.
+	 */
 	if (route)
 		otto_l3_route_teardown(ctrl, route);
-	fib6_info_hw_flags_set(&init_net, rt, false, false, true);
 
-	return -ENOSPC;
+	return otto_l3_fib_trap_v6(ctrl, rt, members);
 }
 
 static int otto_l3_fib_del_v6(struct otto_l3_ctrl *ctrl, struct fib6_entry_notifier_info *info,
