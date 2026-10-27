@@ -61,11 +61,12 @@ function bss_refusal(config, band) {
 	if (personal && !config.ppsk && kind == 'invalid')
 		return 'INVALID_WPA_PSK';
 
-	const sae_only = config.auth_type == 'sae' || (config.auth_type == 'psk-sae-compat' && band == '6g');
+	/* outside 6 GHz, psk-sae-compat offers SAE in the RSNE Override element */
+	const sae_needed = config.auth_type in [ 'sae', 'psk-sae', 'psk-sae-compat' ];
 	const mld_sae = config.auth_type == 'psk' && config.rsno2_sae;
 	const sae_password = sae_password_available(config);
 
-	if (personal && sae_only && !sae_password)
+	if (personal && sae_needed && !sae_password)
 		return 'SAE_NO_PASSWORD';
 	if (personal && mld_sae && !sae_password)
 		return 'MLD_SAE_NO_PASSWORD';
