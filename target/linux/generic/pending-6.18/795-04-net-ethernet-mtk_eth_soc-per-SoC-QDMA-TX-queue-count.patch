@@ -59,7 +59,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	mtk_w32(eth, val, soc->reg_map->qdma.qtx_sch + ofs);
  }
  
-@@ -2985,7 +2986,11 @@ static int mtk_tx_alloc(struct mtk_eth *
+@@ -2995,7 +2996,11 @@ static int mtk_tx_alloc(struct mtk_eth *
  			soc->reg_map->qdma.crx_ptr);
  		mtk_w32(eth, ring->last_free_ptr, soc->reg_map->qdma.drx_ptr);
  
@@ -72,7 +72,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  			val = (QDMA_RES_THRES << 8) | QDMA_RES_THRES;
  			mtk_w32(eth, val, soc->reg_map->qdma.qtx_cfg + ofs);
  
-@@ -2997,7 +3002,6 @@ static int mtk_tx_alloc(struct mtk_eth *
+@@ -3007,7 +3012,6 @@ static int mtk_tx_alloc(struct mtk_eth *
  			if (mtk_is_netsys_v1(eth))
  				val |= MTK_QTX_SCH_LEAKY_BUCKET_EN;
  			mtk_w32(eth, val, soc->reg_map->qdma.qtx_sch + ofs);
@@ -80,7 +80,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  		}
  		val = MTK_QDMA_TX_SCH_MAX_WFQ | (MTK_QDMA_TX_SCH_MAX_WFQ << 16);
  		mtk_w32(eth, val, soc->reg_map->qdma.tx_sch_rate);
-@@ -3562,7 +3566,7 @@ static void mtk_dma_free(struct mtk_eth
+@@ -3572,7 +3576,7 @@ static void mtk_dma_free(struct mtk_eth
  	int i, j, txqs = 1;
  
  	if (MTK_HAS_CAPS(eth->soc->caps, MTK_QDMA))
@@ -89,7 +89,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  
  	for (i = 0; i < MTK_MAX_DEVS; i++) {
  		if (!eth->netdev[i])
-@@ -3834,7 +3838,7 @@ found:
+@@ -3844,7 +3848,7 @@ found:
  		return NOTIFY_DONE;
  
  	dp = dsa_port_from_netdev(dev);
@@ -98,7 +98,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  		return NOTIFY_DONE;
  
  	if (mac->speed > 0 && mac->speed <= s.base.speed)
-@@ -5133,7 +5137,7 @@ static int mtk_add_mac(struct mtk_eth *e
+@@ -5143,7 +5147,7 @@ static int mtk_add_mac(struct mtk_eth *e
  	}
  
  	if (MTK_HAS_CAPS(eth->soc->caps, MTK_QDMA))
@@ -107,7 +107,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  
  	eth->netdev[id] = alloc_etherdev_mqs(sizeof(*mac), txqs, 1);
  	if (!eth->netdev[id]) {
-@@ -5784,6 +5788,7 @@ static const struct mtk_soc_data mt2701_
+@@ -5794,6 +5798,7 @@ static const struct mtk_soc_data mt2701_
  	.required_clks = MT7623_CLKS_BITMAP,
  	.required_pctl = true,
  	.version = 1,
@@ -115,7 +115,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	.tx = {
  		DESC_SIZE(struct mtk_tx_dma),
  		.dma_max_len = MTK_TX_DMA_BUF_LEN,
-@@ -5811,6 +5816,7 @@ static const struct mtk_soc_data mt7621_
+@@ -5821,6 +5826,7 @@ static const struct mtk_soc_data mt7621_
  	.offload_version = 1,
  	.ppe_num = 1,
  	.hash_offset = 2,
@@ -123,7 +123,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	.foe_entry_size = MTK_FOE_ENTRY_V1_SIZE,
  	.tx = {
  		DESC_SIZE(struct mtk_tx_dma),
-@@ -5841,6 +5847,7 @@ static const struct mtk_soc_data mt7622_
+@@ -5851,6 +5857,7 @@ static const struct mtk_soc_data mt7622_
  	.ppe_num = 1,
  	.hash_offset = 2,
  	.has_accounting = true,
@@ -131,7 +131,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	.foe_entry_size = MTK_FOE_ENTRY_V1_SIZE,
  	.tx = {
  		DESC_SIZE(struct mtk_tx_dma),
-@@ -5869,6 +5876,7 @@ static const struct mtk_soc_data mt7623_
+@@ -5879,6 +5886,7 @@ static const struct mtk_soc_data mt7623_
  	.offload_version = 1,
  	.ppe_num = 1,
  	.hash_offset = 2,
@@ -139,7 +139,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	.foe_entry_size = MTK_FOE_ENTRY_V1_SIZE,
  	.disable_pll_modes = true,
  	.tx = {
-@@ -5897,6 +5905,7 @@ static const struct mtk_soc_data mt7629_
+@@ -5907,6 +5915,7 @@ static const struct mtk_soc_data mt7629_
  	.required_pctl = false,
  	.has_accounting = true,
  	.version = 1,
@@ -147,7 +147,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	.tx = {
  		DESC_SIZE(struct mtk_tx_dma),
  		.dma_max_len = MTK_TX_DMA_BUF_LEN,
-@@ -5926,6 +5935,7 @@ static const struct mtk_soc_data mt7981_
+@@ -5936,6 +5945,7 @@ static const struct mtk_soc_data mt7981_
  	.ppe_num = 2,
  	.hash_offset = 4,
  	.has_accounting = true,
@@ -155,7 +155,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	.foe_entry_size = MTK_FOE_ENTRY_V2_SIZE,
  	.tx = {
  		DESC_SIZE(struct mtk_tx_dma_v2),
-@@ -5956,6 +5966,7 @@ static const struct mtk_soc_data mt7986_
+@@ -5966,6 +5976,7 @@ static const struct mtk_soc_data mt7986_
  	.ppe_num = 2,
  	.hash_offset = 4,
  	.has_accounting = true,
@@ -163,7 +163,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	.foe_entry_size = MTK_FOE_ENTRY_V2_SIZE,
  	.tx = {
  		DESC_SIZE(struct mtk_tx_dma_v2),
-@@ -5986,6 +5997,7 @@ static const struct mtk_soc_data mt7988_
+@@ -5996,6 +6007,7 @@ static const struct mtk_soc_data mt7988_
  	.ppe_num = 3,
  	.hash_offset = 4,
  	.has_accounting = true,
