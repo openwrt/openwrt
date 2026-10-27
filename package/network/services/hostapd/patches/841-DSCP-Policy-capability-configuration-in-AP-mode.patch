@@ -1,0 +1,66 @@
+From: Aishwarya R <aishwarya.r@oss.qualcomm.com>
+Date: Tue, 12 May 2026 10:54:48 +0530
+Subject: [PATCH] DSCP: Policy capability configuration in AP mode
+
+Introduce a new configuration parameter enable_dscp_policy_capa
+to allow enabling or disabling DSCP policy capability per BSS.
+
+The DSCP policy capability is disabled by default. Add
+enable_dscp_policy_capa=1 option in the configuration file to enable
+DSCP policy.
+
+Backport of hostap commit 081d4fddab41. OpenWrt context: config_file.c,
+ap_config.h: placed after the APUP options of OpenWrt's patch 780.
+
+Signed-off-by: Aishwarya R <aishwarya.r@oss.qualcomm.com>
+---
+--- a/hostapd/config_file.c
++++ b/hostapd/config_file.c
+@@ -5272,6 +5272,10 @@ static int hostapd_config_fill(struct ho
+ 		os_strlcpy(bss->apup_peer_ifname_prefix,
+ 		           pos, sizeof(bss->apup_peer_ifname_prefix));
+ #endif // def CONFIG_APUP
++#ifdef CONFIG_ROBUST_AV
++	} else if (os_strcmp(buf, "enable_dscp_policy_capa") == 0) {
++		bss->enable_dscp_policy_capa = atoi(pos);
++#endif /* CONFIG_ROBUST_AV */
+ 	} else {
+ 		wpa_printf(MSG_ERROR,
+ 			   "Line %d: unknown configuration item '%s'",
+--- a/hostapd/hostapd.conf
++++ b/hostapd/hostapd.conf
+@@ -3553,6 +3553,22 @@ own_ip_addr=127.0.0.1
+ # These elements are added after the 'vendor_elements'.
+ #presp_elements=
+ 
++##### DSCP Policy support ###############################################
++#
++# The DSCP Policy capability enables unsolicited and query-based configuration
++# of uplink DSCP marking policies by APs on STAs. DSCP Policy Request enables
++# an AP to, either in response to a query or in an unsolicited manner, request
++# an associated STA to add, update or remove DSCP policies.
++#
++# This feature is compiled in only if CONFIG_ROBUST_AV=y is set in the
++# build configuration.
++#
++# Enable DSCP Policy support in AP
++# 0 = disabled (default)
++# 1 = enabled
++#enable_dscp_policy_capa=0
++#
++
+ ##### Multiple BSSID support ##################################################
+ #
+ # Above configuration is using the default interface (wlan#, or multi-SSID VLAN
+--- a/src/ap/ap_config.h
++++ b/src/ap/ap_config.h
+@@ -1054,6 +1054,9 @@ struct hostapd_bss_config {
+ 	 */
+ 	char apup_peer_ifname_prefix[IFNAMSIZ + 1];
+ #endif /* CONFIG_APUP */
++#ifdef CONFIG_ROBUST_AV
++	bool enable_dscp_policy_capa;
++#endif /* CONFIG_ROBUST_AV */
+ };
+ 
+ /**

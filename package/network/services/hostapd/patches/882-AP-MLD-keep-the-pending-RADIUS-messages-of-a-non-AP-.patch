@@ -21,7 +21,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 ---
 --- a/src/ap/sta_info.c
 +++ b/src/ap/sta_info.c
-@@ -550,7 +550,9 @@ void ap_free_sta(struct hostapd_data *ha
+@@ -551,7 +551,9 @@ void ap_free_sta(struct hostapd_data *ha
  
  	rsn_preauth_free_station(hapd, sta);
  #ifndef CONFIG_NO_RADIUS

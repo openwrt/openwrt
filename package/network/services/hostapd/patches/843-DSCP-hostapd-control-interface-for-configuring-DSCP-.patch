@@ -1,0 +1,633 @@
+From: Aishwarya R <aishwarya.r@oss.qualcomm.com>
+Date: Tue, 12 May 2026 10:54:51 +0530
+Subject: [PATCH] DSCP: hostapd control interface for configuring DSCP policies
+
+Introduce a new hostapd control interface command DSCP_POLICY to allow
+runtime configuration of DSCP policies for associated stations.
+
+Add parsing logic for DSCP policy parameters including DSCP value,
+classifier mask, IP version, IP addresses, ports, and domain name. Add
+support for both IPv4 and IPv6 classifiers.
+
+Add support to validate input parameters and construction of frame
+classifiers.
+
+An example dscp_policy command usage:
+
+hostapd_cli -i <wlanX> dscp_policy <sta_addr> <policy_id=>
+<request_type=> <dscp=> [classifier_mask=] [ip_version=] [src_ip=]
+[dst_ip=] [src_port=] [dst_port=] [protocol=] [domain_name=] [reset=]
+
+Supported parameters:
+- policy_id=<0-255>: Unique identifier for the DSCP policy
+- request_type=<add/update/remove>: Indicates whether to add, update
+                                    or remove the policy
+- dscp=<0-63>: DSCP value
+- classifier_mask=<bitmask>: Specifies TCLAS fields to match
+- ip_version=<4/6>: IP version for classifier
+- src_ip=<IPv4/IPv6 address>: Source IP address
+- dst_ip=<IPv4/IPv6 address>: Destination IP address
+- src_port=<0-65535>: Source port
+- dst_port=<0-65535>: Destination port (mutually exclusive with dst_port)
+- start_port=<0-65535>: Start of port range
+- end_port=<0-65535>: End of port range
+- protocol=<0-255>: Transport protocol
+- domain_name=<string>: domain name (max 255 characters)
+- reset=<0|1>: Flag to reset DSCP policy for the station
+
+Backport of hostap commit cd5c149a6f87. OpenWrt context: ctrl_iface.c,
+hostapd_cli.c: placed after the AFC commands of the 2.12 branch;
+sta_info.h: placed after the bss_color_in_use field of OpenWrt's patch
+174.
+
+Signed-off-by: Aishwarya R <aishwarya.r@oss.qualcomm.com>
+---
+--- a/hostapd/ctrl_iface.c
++++ b/hostapd/ctrl_iface.c
+@@ -66,6 +66,7 @@
+ #include "ap/dpp_hostapd.h"
+ #include "ap/dfs.h"
+ #include "ap/nan_usd_ap.h"
++#include "ap/robust_av.h"
+ #include "wps/wps_defs.h"
+ #include "wps/wps.h"
+ #include "fst/fst_ctrl_iface.h"
+@@ -772,6 +773,55 @@ static int hostapd_ctrl_iface_send_qos_m
+ #endif /* CONFIG_INTERWORKING */
+ 
+ 
++#ifdef CONFIG_ROBUST_AV
++static int hostapd_ctrl_iface_set_dscp_policy(struct hostapd_data *hapd,
++					      const char *cmd)
++{
++	u8 addr[ETH_ALEN];
++	struct hostapd_dscp_policy policy;
++	struct sta_info *sta;
++	const char *params;
++	char *reset_str;
++
++	if (!hapd->conf->enable_dscp_policy_capa)
++		return -1;
++
++	if (hwaddr_aton(cmd, addr))
++		return -1;
++
++	sta = ap_get_sta(hapd, addr);
++	if (!sta) {
++		wpa_printf(MSG_INFO, "DSCP: STA " MACSTR " not capable",
++			   MAC2STR(addr));
++		return -1;
++	}
++
++	params = os_strchr(cmd, ' ');
++	if (!params || *++params == '\0')
++		return -1;
++
++	reset_str = os_strstr(params, "reset=");
++	if (reset_str) {
++		sta->dscp_reset = atoi(reset_str + 6);
++		wpa_printf(MSG_DEBUG,
++			   "DSCP: Reset flag set to %d for STA " MACSTR,
++			   sta->dscp_reset, MAC2STR(addr));
++		return 0;
++	}
++
++	if (parse_dscp_policy_string(sta, &policy, params) < 0 ||
++	    validate_dscp_policy(&policy) < 0 ||
++	    build_frame_classifier(&policy) < 0) {
++		free_dscp_policy(&policy);
++		return -1;
++	}
++
++	free_dscp_policy(&policy);
++	return 0;
++}
++#endif /* CONFIG_ROBUST_AV */
++
++
+ #ifdef CONFIG_WNM_AP
+ 
+ static int hostapd_ctrl_iface_coloc_intf_req(struct hostapd_data *hapd,
+@@ -4706,6 +4756,11 @@ static int hostapd_ctrl_iface_receive_pr
+ 		if (hostapd_ctrl_afc_send_request(hapd, buf + 16) < 0)
+ 			reply_len = -1;
+ #endif /* CONFIG_AFC */
++#ifdef CONFIG_ROBUST_AV
++	} else if (os_strncmp(buf, "DSCP_POLICY ", 12) == 0) {
++		if (hostapd_ctrl_iface_set_dscp_policy(hapd, buf + 12))
++			reply_len = -1;
++#endif /* CONFIG_ROBUST_AV */
+ 	} else {
+ 		os_memcpy(reply, "UNKNOWN COMMAND\n", 16);
+ 		reply_len = 16;
+--- a/hostapd/hostapd_cli.c
++++ b/hostapd/hostapd_cli.c
+@@ -879,6 +879,44 @@ static int hostapd_cli_cmd_send_qos_map_
+ }
+ 
+ 
++#ifdef CONFIG_ROBUST_AV
++static int hostapd_cli_cmd_set_dscp_policy(struct wpa_ctrl *ctrl,
++					   int argc, char *argv[])
++{
++	char cmd[512];
++	int res;
++	int i;
++	size_t total = 0;
++
++	if (argc < 2) {
++		printf("Invalid dscp_policy command\n"
++		       "usage: dscp_policy <sta_addr> <policy_id=> <request_type=> <dscp=>\n"
++		       "[classifier_mask=] [ip_version=] [src_ip=] [dst_ip=] [src_port=] [dst_port=]\n"
++		       "[protocol=] [domain_name=] [reset=]\n");
++		return -1;
++	}
++
++	res = os_snprintf(cmd, sizeof(cmd), "DSCP_POLICY");
++	if (os_snprintf_error(sizeof(cmd), res))
++		return -1;
++
++	total = res;
++
++	for (i = 0; i < argc; i++) {
++		res = os_snprintf(cmd + total, sizeof(cmd) - total, " %s",
++				  argv[i]);
++		if (os_snprintf_error(sizeof(cmd) - total, res)) {
++			printf("Too long DSCP_POLICY command.\n");
++			return -1;
++		}
++		total += res;
++	}
++
++	return wpa_ctrl_command(ctrl, cmd);
++}
++#endif /* CONFIG_ROBUST_AV */
++
++
+ static int hostapd_cli_cmd_hs20_wnm_notif(struct wpa_ctrl *ctrl, int argc,
+ 					  char *argv[])
+ {
+@@ -1959,6 +1997,12 @@ static const struct hostapd_cli_cmd host
+ 	{ "afc_send_request", hostapd_cli_cmd_afc_send_request, NULL,
+ 	  " = Send another AFC request and upadte the timeout"},
+ #endif /* CONFIG_AFC */
++#ifdef CONFIG_ROBUST_AV
++	{"dscp_policy", hostapd_cli_cmd_set_dscp_policy, NULL,
++	 "<sta_addr> <policy_id=> <request_type=> <dscp=> [classifier_mask=]\n"
++	 "[ip_version=] [src_ip=] [dst_ip=] [src_port=] [dst_port=]\n"
++	 "[protocol=] [domain_name=] [reset=] = Set DSCP policy"},
++#endif /* CONFIG_ROBUST_AV */
+ 	{ NULL, NULL, NULL, NULL }
+ };
+ 
+--- a/src/ap/robust_av.c
++++ b/src/ap/robust_av.c
+@@ -42,3 +42,343 @@ void hostapd_update_dscp_policy_capabili
+ 			   " supports DSCP Policy", MAC2STR(sta->addr));
+ 	}
+ }
++
++
++static int parse_ipv4_params(struct hostapd_dscp_policy *policy,
++			     const char *token)
++{
++	if (os_strncmp(token, "dst_ip=", 7) == 0) {
++		if (inet_pton(AF_INET, token + 7,
++			      &policy->type4_param.ip_params.v4.dst_ip) <= 0)
++			return -EINVAL;
++	} else if (os_strncmp(token, "src_ip=", 7) == 0) {
++		if (inet_pton(AF_INET, token + 7,
++			      &policy->type4_param.ip_params.v4.src_ip) <= 0)
++			return -EINVAL;
++	} else if (os_strncmp(token, "dst_port=", 9) == 0) {
++		policy->type4_param.ip_params.v4.dst_port = atoi(token + 9);
++	} else if (os_strncmp(token, "src_port=", 9) == 0) {
++		policy->type4_param.ip_params.v4.src_port = atoi(token + 9);
++	} else if (os_strncmp(token, "protocol=", 9) == 0) {
++		policy->type4_param.ip_params.v4.protocol = atoi(token + 9);
++	}
++	return 0;
++}
++
++
++static int parse_ipv6_params(struct hostapd_dscp_policy *policy,
++			     const char *token)
++{
++	if (os_strncmp(token, "dst_ip=", 7) == 0) {
++		if (inet_pton(AF_INET6, token + 7,
++			      &policy->type4_param.ip_params.v6.dst_ip) <= 0)
++			return -EINVAL;
++	} else if (os_strncmp(token, "src_ip=", 7) == 0) {
++		if (inet_pton(AF_INET6, token + 7,
++			      &policy->type4_param.ip_params.v6.src_ip) <= 0)
++			return -EINVAL;
++	} else if (os_strncmp(token, "dst_port=", 9) == 0) {
++		policy->type4_param.ip_params.v6.dst_port = atoi(token + 9);
++	} else if (os_strncmp(token, "src_port=", 9) == 0) {
++		policy->type4_param.ip_params.v6.src_port = atoi(token + 9);
++	} else if (os_strncmp(token, "protocol=", 9) == 0) {
++		policy->type4_param.ip_params.v6.next_header = atoi(token + 9);
++	}
++
++	return 0;
++}
++
++
++static int parse_dscp_value(struct hostapd_dscp_policy *policy,
++			    const char *token)
++{
++	if (os_strncmp(token, "policy_id=", 10) == 0) {
++		int policy_id = atoi(token + 10);
++
++		if (policy_id > 0 && policy_id < 256) {
++			policy->policy_id = policy_id;
++		} else {
++			wpa_printf(MSG_INFO, "Invalid policy id value: %d",
++				   policy_id);
++			return -EINVAL;
++		}
++	} else if (os_strncmp(token, "request_type=", 13) == 0) {
++		const char *val = token + 13;
++
++		if (os_strcasecmp(val, "add") == 0 ||
++		    os_strcasecmp(val, "update") == 0) {
++			policy->req_type = DSCP_POLICY_REQ_ADD;
++		} else if (os_strcasecmp(val, "remove") == 0) {
++			policy->req_type = DSCP_POLICY_REQ_REMOVE;
++		} else {
++			wpa_printf(MSG_INFO, "Invalid request_type: %s", val);
++			return -EINVAL;
++		}
++	} else if (os_strncmp(token, "dscp=", 5) == 0) {
++		unsigned long dscp = strtoul(token + 5, NULL, 0);
++
++		if (dscp <= 63) {
++			policy->dscp = dscp;
++			policy->dscp_info = true;
++		} else {
++			wpa_printf(MSG_INFO, "Invalid DSCP value: %lu", dscp);
++			return -EINVAL;
++		}
++	}
++
++	return 0;
++}
++
++
++static int parse_domain_name(struct hostapd_dscp_policy *policy,
++			     const char *token)
++{
++	const char *name;
++
++	if (os_strncmp(token, "domain_name=", 12) == 0) {
++		name = token + 12;
++		if (os_strlen(name) <= 255) {
++			os_free(policy->domain_name);
++			policy->domain_name = os_strdup(name);
++			if (!policy->domain_name)
++				return -ENOMEM;
++			policy->domain_name_len =
++				os_strlen(policy->domain_name);
++		} else {
++			wpa_printf(MSG_INFO, "Domain name too long");
++			return -EINVAL;
++		}
++	}
++	return 0;
++}
++
++
++static int parse_port_range(struct hostapd_dscp_policy *policy,
++			    const char *token)
++{
++	int port;
++
++	if (os_strncmp(token, "start_port=", 11) == 0) {
++		port = atoi(token + 11);
++		if (port >= 0 && port <= 65535) {
++			policy->start_port = port;
++			policy->port_range_info = true;
++		} else {
++			wpa_printf(MSG_INFO, "Invalid start port: %d", port);
++			return -EINVAL;
++		}
++	} else if (os_strncmp(token, "end_port=", 9) == 0) {
++		port = atoi(token + 9);
++		if (port >= 0 && port <= 65535) {
++			policy->end_port = port;
++			policy->port_range_info = true;
++		} else {
++			wpa_printf(MSG_INFO, "Invalid end port: %d", port);
++			return -EINVAL;
++		}
++	}
++	return 0;
++}
++
++
++int validate_dscp_policy(struct hostapd_dscp_policy *policy)
++{
++	if (!policy)
++		return -1;
++
++	if (policy->policy_id < 1) {
++		wpa_printf(MSG_INFO, "DSCP Invalid policy_id");
++		return -EINVAL;
++	}
++
++	/* Domain name + destination IP not allowed */
++	if (policy->domain_name &&
++	    (policy->type4_param.classifier_mask & TCLAS_MASK_DST_IP)) {
++		wpa_printf(MSG_INFO,
++			   "DSCP: Both domain name and destination IP address not expected");
++		return -EINVAL;
++	}
++
++	/* Port range + Destination port not allowed */
++	if ((policy->type4_param.classifier_mask & TCLAS_MASK_DST_PORT) &&
++	    policy->port_range_info) {
++		wpa_printf(MSG_INFO,
++			   "DSCP: Both port range and destination port not expected");
++		return -EINVAL;
++	}
++	return 0;
++}
++
++
++void free_dscp_policy(struct hostapd_dscp_policy *policy)
++{
++	if (!policy)
++		return;
++	os_free(policy->domain_name);
++	policy->domain_name = NULL;
++	os_free(policy->frame_classifier);
++	policy->frame_classifier = NULL;
++}
++
++
++int parse_dscp_policy_string(struct sta_info *sta,
++			     struct hostapd_dscp_policy *policy,
++			     const char *params)
++{
++	char *token, *buf;
++	char *context;
++	int ret = 0;
++
++	buf = os_strdup(params);
++	if (!buf)
++		return -1;
++
++	os_memset(policy, 0, sizeof(*policy));
++	context = buf;
++
++	while ((token = str_token(buf, " ", &context))) {
++		if (os_strncmp(token, "classifier_mask=", 16) == 0) {
++			policy->type4_param.classifier_mask =
++				strtoul(token + 16, NULL, 0);
++		} else if (os_strncmp(token, "ip_version=", 11) == 0) {
++			policy->type4_param.ip_version = atoi(token + 11);
++		} else if (os_strncmp(token, "policy_id=", 10) == 0 ||
++			   os_strncmp(token, "request_type=", 13) == 0 ||
++			   os_strncmp(token, "dscp=", 5) == 0) {
++			ret = parse_dscp_value(policy, token);
++			if (ret < 0)
++				break;
++		} else if (os_strncmp(token, "domain_name=", 12) == 0) {
++			ret = parse_domain_name(policy, token);
++			if (ret < 0)
++				break;
++		} else if (os_strncmp(token, "start_port=", 11) == 0 ||
++			   os_strncmp(token, "end_port=", 9) == 0) {
++			ret = parse_port_range(policy, token);
++			if (ret < 0)
++				break;
++		} else if (policy->type4_param.ip_version == 4) {
++			ret = parse_ipv4_params(policy, token);
++			if (ret < 0)
++				break;
++		} else if (policy->type4_param.ip_version == 6) {
++			ret = parse_ipv6_params(policy, token);
++			if (ret < 0)
++				break;
++		} else {
++			wpa_printf(MSG_DEBUG,
++				   "DSCP: Unknown attribute '%s' skipped",
++				   token);
++			ret = -EINVAL;
++			break;
++		}
++	}
++
++	os_free(buf);
++	if (ret)
++		free_dscp_policy(policy);
++	return ret;
++}
++
++
++static int build_frame_classifier_type4_ipv4(struct hostapd_dscp_policy *policy)
++{
++	u8 *buf;
++	u8 classifier_mask;
++	size_t len = IPV4_CLASSIFIER_LEN;
++
++	if (!policy)
++		return -1;
++
++	classifier_mask = policy->type4_param.classifier_mask;
++	buf = os_zalloc(len);
++	if (!buf)
++		return -1;
++
++	buf[0] = CLASSIFIER_TYPE_4;
++	buf[1] = classifier_mask;
++	buf[2] = IPV4;
++
++	if (classifier_mask & TCLAS_MASK_SRC_IP)
++		os_memcpy(&buf[3], &policy->type4_param.ip_params.v4.src_ip,
++			  IPV4_ADDR_LEN);
++
++	if (classifier_mask & TCLAS_MASK_DST_IP)
++		os_memcpy(&buf[7], &policy->type4_param.ip_params.v4.dst_ip,
++			  IPV4_ADDR_LEN);
++
++	if (classifier_mask & TCLAS_MASK_SRC_PORT)
++		WPA_PUT_BE16(&buf[11],
++			     policy->type4_param.ip_params.v4.src_port);
++
++	if (classifier_mask & TCLAS_MASK_DST_PORT)
++		WPA_PUT_BE16(&buf[13],
++			     policy->type4_param.ip_params.v4.dst_port);
++
++	if (classifier_mask & TCLAS_MASK_PROTOCOL)
++		buf[16] = policy->type4_param.ip_params.v4.protocol;
++
++	os_free(policy->frame_classifier);
++	policy->frame_classifier = buf;
++	policy->frame_classifier_len = len;
++	return 0;
++}
++
++
++static int build_frame_classifier_type4_ipv6(struct hostapd_dscp_policy *policy)
++{
++	u8 *buf;
++	u8 classifier_mask;
++	size_t len = IPV6_CLASSIFIER_LEN;
++
++	if (!policy)
++		return -EINVAL;
++
++	classifier_mask = policy->type4_param.classifier_mask;
++	buf = os_zalloc(len);
++	if (!buf)
++		return -ENOMEM;
++
++	buf[0] = CLASSIFIER_TYPE_4;
++	buf[1] = classifier_mask;
++	buf[2] = IPV6;
++
++	if (classifier_mask & TCLAS_MASK_SRC_IP)
++		os_memcpy(&buf[3], &policy->type4_param.ip_params.v6.src_ip,
++			  IPV6_ADDR_LEN);
++
++	if (classifier_mask & TCLAS_MASK_DST_IP)
++		os_memcpy(&buf[19], &policy->type4_param.ip_params.v6.dst_ip,
++			  IPV6_ADDR_LEN);
++
++	if (classifier_mask & TCLAS_MASK_SRC_PORT)
++		WPA_PUT_BE16(&buf[35],
++			     policy->type4_param.ip_params.v6.src_port);
++
++	if (classifier_mask & TCLAS_MASK_DST_PORT)
++		WPA_PUT_BE16(&buf[37],
++			     policy->type4_param.ip_params.v6.dst_port);
++
++	if (classifier_mask & TCLAS_MASK_PROTOCOL)
++		buf[40] = policy->type4_param.ip_params.v6.next_header;
++
++	os_free(policy->frame_classifier);
++	policy->frame_classifier = buf;
++	policy->frame_classifier_len = len;
++
++	return 0;
++}
++
++
++int build_frame_classifier(struct hostapd_dscp_policy *policy)
++{
++	switch (policy->type4_param.ip_version) {
++	case IPV4:
++		return build_frame_classifier_type4_ipv4(policy);
++	case IPV6:
++		return build_frame_classifier_type4_ipv6(policy);
++	default:
++		wpa_printf(MSG_DEBUG, "IP version not specified");
++		return 0;
++	}
++}
+--- a/src/ap/robust_av.h
++++ b/src/ap/robust_av.h
+@@ -12,6 +12,78 @@
+ struct hostapd_data;
+ struct sta_info;
+ 
++#define CLASSIFIER_TYPE_4	4
++
++/* Bit positions for classifier mask */
++#define TCLAS_MASK_SRC_IP	BIT(1)
++#define TCLAS_MASK_DST_IP	BIT(2)
++#define TCLAS_MASK_SRC_PORT	BIT(3)
++#define TCLAS_MASK_DST_PORT	BIT(4)
++#define TCLAS_MASK_PROTOCOL	BIT(6)
++
++#define IPV4_CLASSIFIER_LEN 18
++#define IPV6_CLASSIFIER_LEN 44
++/* Field sizes */
++#define IPV4_ADDR_LEN	4
++#define IPV6_ADDR_LEN	16
++#define PORT_LEN	2
++#define PROTOCOL_LEN	1
++#define HEADER_LEN	3
++
++
++enum ip_version {
++	IPV4 = 4,
++	IPV6 = 6,
++};
++
++
++struct ipv4_params {
++	struct in_addr src_ip;
++	struct in_addr dst_ip;
++	u16 src_port;
++	u16 dst_port;
++	u8 dscp;
++	u8 protocol;
++};
++
++
++struct ipv6_params {
++	struct in6_addr src_ip;
++	struct in6_addr dst_ip;
++	u16 src_port;
++	u16 dst_port;
++	u8 dscp;
++	u8 next_header;
++	u8 flow_label[3];
++};
++
++
++struct type4_params {
++	u8 classifier_mask;
++	enum ip_version ip_version;
++	union {
++		struct ipv4_params v4;
++		struct ipv6_params v6;
++	} ip_params;
++};
++
++
++struct hostapd_dscp_policy {
++	u8 policy_id;  /* Unique Identifier */
++	u8 req_type;
++	u8 dscp;
++	bool dscp_info;
++	u8 *frame_classifier;
++	u8 frame_classifier_len;
++	struct type4_params type4_param;
++	char *domain_name;
++	u8 domain_name_len;
++	u16 start_port;
++	u16 end_port;
++	bool port_range_info;
++};
++
++
+ #ifdef CONFIG_ROBUST_AV
+ 
+ void hostapd_update_dscp_policy_capability(struct hostapd_data *hapd,
+@@ -29,4 +101,11 @@ hostapd_update_dscp_policy_capability(st
+ 
+ #endif /* CONFIG_ROBUST_AV */
+ 
++int validate_dscp_policy(struct hostapd_dscp_policy *policy);
++void free_dscp_policy(struct hostapd_dscp_policy *policy);
++int parse_dscp_policy_string(struct sta_info *sta,
++			     struct hostapd_dscp_policy *policy,
++			     const char *params);
++int build_frame_classifier(struct hostapd_dscp_policy *policy);
++
+ #endif /* ROBUST_AV_H */
+--- a/src/ap/sta_info.h
++++ b/src/ap/sta_info.h
+@@ -376,6 +376,9 @@ struct sta_info {
+ 	 * none or a cancelled report */
+ 	u8 bss_color_in_use;
+ #endif /* CONFIG_IEEE80211AX */
++#ifdef CONFIG_ROBUST_AV
++	bool dscp_reset;
++#endif /* CONFIG_ROBUST_AV */
+ };
+ 
+ 
