@@ -1,0 +1,83 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Shi Jiayang <shi05275@163.com>
+Subject: [PATCH] net: dsa: yt922x: synchronize MDB with bridge snooping
+
+Permanent MDB entries survive a bridge snooping toggle. Leaving their
+hardware destinations installed while snooping is disabled suppresses
+software flooding back to YT9224 ports and loses multicast packets.
+
+Implement the DSA port_bridge_mcast_snooping operation. Remove cached MDB
+entries from hardware when disabled, replay them when enabled, and keep disabled-state MDB updates out of the forwarding table.
+Ignore deferred notifications superseded by a newer bridge state.
+
+Signed-off-by: Shi Jiayang <shi05275@163.com>
+
+---
+--- a/drivers/net/dsa/yt921x.c
++++ b/drivers/net/dsa/yt921x.c
+@@ -6736,7 +6736,12 @@ static int yt922x_mdb_update(struct dsa_
+ 	for (p = 0; p < ARRAY_SIZE(found->vids); p++)
+ 		if (p == port ? vids : found->vids[p])
+ 			ports |= BIT(p);
+-	ret = yt922x_mdb_write(priv, mdb->addr, hwvid, ports);
++	/* Permanent bridge MDB entries survive snooping being disabled.
++	 * Keep their ownership cache, but leave multicast trapping active
++	 * until the bridge wants selective forwarding again.
++	 */
++	ret = yt922x_mdb_write(priv, mdb->addr, hwvid,
++			       br_multicast_enabled(db.bridge.dev) ? ports : 0);
+ 	if (ret) {
+ 		if (ret != -ENOSPC)
+ 			yt922x_bridge_quarantine(priv, ret);
+@@ -6757,6 +6762,43 @@ out:
+ 	return ret;
+ }
+ 
++static int yt922x_dsa_port_bridge_mcast_snooping(struct dsa_switch *ds,
++						 int port, bool enabled)
++{
++	struct yt921x_priv *priv = to_yt921x_priv(ds);
++	struct net_device *bridge;
++	struct yt922x_mdb_entry *entry;
++	int p, ret = 0;
++	u16 ports;
++
++	mutex_lock(&priv->reg_lock);
++	bridge = priv->ports[port].yt922x_bridge;
++	/* Notifications are deferred; a newer toggle can supersede this one. */
++	if (!bridge || enabled != br_multicast_enabled(bridge))
++		goto out;
++	if (priv->yt922x_bridge_broken) {
++		ret = -EIO;
++		goto out;
++	}
++	list_for_each_entry(entry, &priv->yt922x_mdb_entries, list) {
++		if (entry->bridge != bridge)
++			continue;
++		ports = 0;
++		if (enabled)
++			for (p = 0; p < ARRAY_SIZE(entry->vids); p++)
++				if (entry->vids[p])
++					ports |= BIT(p);
++		ret = yt922x_mdb_write(priv, entry->addr, entry->vid, ports);
++		if (ret) {
++			yt922x_bridge_quarantine(priv, ret);
++			break;
++		}
++	}
++out:
++	mutex_unlock(&priv->reg_lock);
++	return ret;
++}
++
+ static int yt922x_dsa_port_mdb_add(struct dsa_switch *ds, int port,
+ 				   const struct switchdev_obj_port_mdb *mdb,
+ 				   struct dsa_db db)
+@@ -7342,6 +7384,7 @@ static int yt922x_dsa_connect_tag_protoc
+ static const struct dsa_switch_ops yt922x_dsa_switch_ops = {
+ 	.port_bridge_join	= yt922x_dsa_port_bridge_join,
+ 	.port_mdb_add		= yt922x_dsa_port_mdb_add,
++	.port_bridge_mcast_snooping = yt922x_dsa_port_bridge_mcast_snooping,
+ 	.port_mdb_del		= yt922x_dsa_port_mdb_del,
+ 	.port_fdb_add		= yt922x_dsa_port_fdb_add,
+ 	.port_fdb_del		= yt922x_dsa_port_fdb_del,

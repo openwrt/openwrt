@@ -3,7 +3,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=mipi-dbi
-PKG_RELEASE:=5
+PKG_RELEASE:=6
 
 PKG_LICENSE:=GPL-2.0-or-later
 PKG_LICENSE_FILES:=
@@ -59,5 +59,29 @@ define Package/mipi-dbi-ph240240t004-zar/install
 	$(INSTALL_DATA) $(PKG_BUILD_DIR)/ph240240t004-zar.bin $(1)/lib/firmware/
 endef
 
+define Package/mipi-dbi-glinet-gl-be10000
+  $(Package/mipi-dbi-default)
+  TITLE:=MIPI DBI LCD init sequence for GL.iNet GL-BE10000
+  DEPENDS+=@TARGET_mediatek_filogic
+endef
+
+define Package/mipi-dbi-glinet-gl-be10000/install
+	$(INSTALL_DIR) $(1)/lib/firmware
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/glinet,gl-be10000-panel.bin $(1)/lib/firmware/
+endef
+
+define Package/mipi-dbi-glinet-gl-be14000
+  $(Package/mipi-dbi-default)
+  TITLE:=MIPI DBI LCD init sequence for GL.iNet GL-BE14000
+  DEPENDS+=@TARGET_mediatek_filogic
+endef
+
+define Package/mipi-dbi-glinet-gl-be14000/install
+	$(INSTALL_DIR) $(1)/lib/firmware
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/glinet,gl-be14000-panel.bin $(1)/lib/firmware/
+endef
+
 $(eval $(call BuildPackage,mipi-dbi-ubnt-utr))
 $(eval $(call BuildPackage,mipi-dbi-ph240240t004-zar))
+$(eval $(call BuildPackage,mipi-dbi-glinet-gl-be10000))
+$(eval $(call BuildPackage,mipi-dbi-glinet-gl-be14000))

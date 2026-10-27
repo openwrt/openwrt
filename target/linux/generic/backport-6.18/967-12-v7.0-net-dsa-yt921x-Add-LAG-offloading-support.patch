@@ -1,0 +1,268 @@
+From 0b42aeb46873c0204c15ff3f11d31f3a4133776b Mon Sep 17 00:00:00 2001
+From: David Yang <mmyangfl@gmail.com>
+Date: Sun, 18 Jan 2026 00:21:11 +0800
+Subject: [PATCH] net: dsa: yt921x: Add LAG offloading support
+
+Add offloading for a link aggregation group supported by the YT921x
+switches.
+
+Signed-off-by: David Yang <mmyangfl@gmail.com>
+Link: https://patch.msgid.link/20260117162116.1063043-1-mmyangfl@gmail.com
+Signed-off-by: Paolo Abeni <pabeni@redhat.com>
+---
+ drivers/net/dsa/yt921x.c | 186 +++++++++++++++++++++++++++++++++++++++
+ drivers/net/dsa/yt921x.h |  20 +++++
+ 2 files changed, 206 insertions(+)
+
+--- a/drivers/net/dsa/yt921x.c
++++ b/drivers/net/dsa/yt921x.c
+@@ -1117,6 +1117,188 @@ yt921x_dsa_port_mirror_add(struct dsa_sw
+ 	return res;
+ }
+ 
++static int yt921x_lag_hash(struct yt921x_priv *priv, u32 ctrl, bool unique_lag,
++			   struct netlink_ext_ack *extack)
++{
++	u32 val;
++	int res;
++
++	/* Hash Mode is global. Make sure the same Hash Mode is set to all the
++	 * 2 possible lags.
++	 * If we are the unique LAG we can set whatever hash mode we want.
++	 * To change hash mode it's needed to remove all LAG and change the mode
++	 * with the latest.
++	 */
++	if (unique_lag) {
++		res = yt921x_reg_write(priv, YT921X_LAG_HASH, ctrl);
++		if (res)
++			return res;
++	} else {
++		res = yt921x_reg_read(priv, YT921X_LAG_HASH, &val);
++		if (res)
++			return res;
++
++		if (val != ctrl) {
++			NL_SET_ERR_MSG_MOD(extack,
++					   "Mismatched Hash Mode across different lags is not supported");
++			return -EOPNOTSUPP;
++		}
++	}
++
++	return 0;
++}
++
++static int yt921x_lag_set(struct yt921x_priv *priv, u8 index, u16 ports_mask)
++{
++	unsigned long targets_mask = ports_mask;
++	unsigned int cnt;
++	u32 ctrl;
++	int port;
++	int res;
++
++	cnt = 0;
++	for_each_set_bit(port, &targets_mask, YT921X_PORT_NUM) {
++		ctrl = YT921X_LAG_MEMBER_PORT(port);
++		res = yt921x_reg_write(priv, YT921X_LAG_MEMBERnm(index, cnt),
++				       ctrl);
++		if (res)
++			return res;
++
++		cnt++;
++	}
++
++	ctrl = YT921X_LAG_GROUP_PORTS(ports_mask) |
++	       YT921X_LAG_GROUP_MEMBER_NUM(cnt);
++	return yt921x_reg_write(priv, YT921X_LAG_GROUPn(index), ctrl);
++}
++
++static int
++yt921x_dsa_port_lag_leave(struct dsa_switch *ds, int port, struct dsa_lag lag)
++{
++	struct yt921x_priv *priv = to_yt921x_priv(ds);
++	struct dsa_port *dp;
++	u32 ctrl;
++	int res;
++
++	if (!lag.id)
++		return -EINVAL;
++
++	ctrl = 0;
++	dsa_lag_foreach_port(dp, ds->dst, &lag)
++		ctrl |= BIT(dp->index);
++
++	mutex_lock(&priv->reg_lock);
++	res = yt921x_lag_set(priv, lag.id - 1, ctrl);
++	mutex_unlock(&priv->reg_lock);
++
++	return res;
++}
++
++static int
++yt921x_dsa_port_lag_check(struct dsa_switch *ds, struct dsa_lag lag,
++			  struct netdev_lag_upper_info *info,
++			  struct netlink_ext_ack *extack)
++{
++	unsigned int members;
++	struct dsa_port *dp;
++
++	if (!lag.id)
++		return -EINVAL;
++
++	members = 0;
++	dsa_lag_foreach_port(dp, ds->dst, &lag)
++		/* Includes the port joining the LAG */
++		members++;
++
++	if (members > YT921X_LAG_PORT_NUM) {
++		NL_SET_ERR_MSG_MOD(extack,
++				   "Cannot offload more than 4 LAG ports");
++		return -EOPNOTSUPP;
++	}
++
++	if (info->tx_type != NETDEV_LAG_TX_TYPE_HASH) {
++		NL_SET_ERR_MSG_MOD(extack,
++				   "Can only offload LAG using hash TX type");
++		return -EOPNOTSUPP;
++	}
++
++	if (info->hash_type != NETDEV_LAG_HASH_L2 &&
++	    info->hash_type != NETDEV_LAG_HASH_L23 &&
++	    info->hash_type != NETDEV_LAG_HASH_L34) {
++		NL_SET_ERR_MSG_MOD(extack,
++				   "Can only offload L2 or L2+L3 or L3+L4 TX hash");
++		return -EOPNOTSUPP;
++	}
++
++	return 0;
++}
++
++static int
++yt921x_dsa_port_lag_join(struct dsa_switch *ds, int port, struct dsa_lag lag,
++			 struct netdev_lag_upper_info *info,
++			 struct netlink_ext_ack *extack)
++{
++	struct yt921x_priv *priv = to_yt921x_priv(ds);
++	struct dsa_port *dp;
++	bool unique_lag;
++	unsigned int i;
++	u32 ctrl;
++	int res;
++
++	res = yt921x_dsa_port_lag_check(ds, lag, info, extack);
++	if (res)
++		return res;
++
++	ctrl = 0;
++	switch (info->hash_type) {
++	case NETDEV_LAG_HASH_L34:
++		ctrl |= YT921X_LAG_HASH_IP_DST;
++		ctrl |= YT921X_LAG_HASH_IP_SRC;
++		ctrl |= YT921X_LAG_HASH_IP_PROTO;
++
++		ctrl |= YT921X_LAG_HASH_L4_DPORT;
++		ctrl |= YT921X_LAG_HASH_L4_SPORT;
++		break;
++	case NETDEV_LAG_HASH_L23:
++		ctrl |= YT921X_LAG_HASH_MAC_DA;
++		ctrl |= YT921X_LAG_HASH_MAC_SA;
++
++		ctrl |= YT921X_LAG_HASH_IP_DST;
++		ctrl |= YT921X_LAG_HASH_IP_SRC;
++		ctrl |= YT921X_LAG_HASH_IP_PROTO;
++		break;
++	case NETDEV_LAG_HASH_L2:
++		ctrl |= YT921X_LAG_HASH_MAC_DA;
++		ctrl |= YT921X_LAG_HASH_MAC_SA;
++		break;
++	default:
++		return -EOPNOTSUPP;
++	}
++
++	/* Check if we are the unique configured LAG */
++	unique_lag = true;
++	dsa_lags_foreach_id(i, ds->dst)
++		if (i != lag.id && dsa_lag_by_id(ds->dst, i)) {
++			unique_lag = false;
++			break;
++		}
++
++	mutex_lock(&priv->reg_lock);
++	do {
++		res = yt921x_lag_hash(priv, ctrl, unique_lag, extack);
++		if (res)
++			break;
++
++		ctrl = 0;
++		dsa_lag_foreach_port(dp, ds->dst, &lag)
++			ctrl |= BIT(dp->index);
++		res = yt921x_lag_set(priv, lag.id - 1, ctrl);
++	} while (0);
++	mutex_unlock(&priv->reg_lock);
++
++	return res;
++}
++
+ static int yt921x_fdb_wait(struct yt921x_priv *priv, u32 *valp)
+ {
+ 	struct device *dev = to_device(priv);
+@@ -2880,6 +3062,9 @@ static const struct dsa_switch_ops yt921
+ 	/* mirror */
+ 	.port_mirror_del	= yt921x_dsa_port_mirror_del,
+ 	.port_mirror_add	= yt921x_dsa_port_mirror_add,
++	/* lag */
++	.port_lag_leave		= yt921x_dsa_port_lag_leave,
++	.port_lag_join		= yt921x_dsa_port_lag_join,
+ 	/* fdb */
+ 	.port_fdb_dump		= yt921x_dsa_port_fdb_dump,
+ 	.port_fast_age		= yt921x_dsa_port_fast_age,
+@@ -2976,6 +3161,7 @@ static int yt921x_mdio_probe(struct mdio
+ 	ds->ageing_time_min = 1 * 5000;
+ 	ds->ageing_time_max = U16_MAX * 5000;
+ 	ds->phylink_mac_ops = &yt921x_phylink_mac_ops;
++	ds->num_lag_ids = YT921X_LAG_NUM;
+ 	ds->num_ports = YT921X_PORT_NUM;
+ 
+ 	mdiodev_set_drvdata(mdiodev, priv);
+--- a/drivers/net/dsa/yt921x.h
++++ b/drivers/net/dsa/yt921x.h
+@@ -370,6 +370,14 @@
+ #define  YT921X_FILTER_PORTn(port)		BIT(port)
+ #define YT921X_VLAN_EGR_FILTER		0x180598
+ #define  YT921X_VLAN_EGR_FILTER_PORTn(port)	BIT(port)
++#define YT921X_LAG_GROUPn(n)		(0x1805a8 + 4 * (n))
++#define  YT921X_LAG_GROUP_PORTS_M		GENMASK(13, 3)
++#define   YT921X_LAG_GROUP_PORTS(x)			FIELD_PREP(YT921X_LAG_GROUP_PORTS_M, (x))
++#define  YT921X_LAG_GROUP_MEMBER_NUM_M		GENMASK(2, 0)
++#define   YT921X_LAG_GROUP_MEMBER_NUM(x)		FIELD_PREP(YT921X_LAG_GROUP_MEMBER_NUM_M, (x))
++#define YT921X_LAG_MEMBERnm(n, m)	(0x1805b0 + 4 * (4 * (n) + (m)))
++#define  YT921X_LAG_MEMBER_PORT_M		GENMASK(3, 0)
++#define   YT921X_LAG_MEMBER_PORT(x)			FIELD_PREP(YT921X_LAG_MEMBER_PORT_M, (x))
+ #define YT921X_CPU_COPY			0x180690
+ #define  YT921X_CPU_COPY_FORCE_INT_PORT		BIT(2)
+ #define  YT921X_CPU_COPY_TO_INT_CPU		BIT(1)
+@@ -414,6 +422,15 @@
+ #define  YT921X_PORT_IGR_TPIDn_STAG(x)		BIT((x) + 4)
+ #define  YT921X_PORT_IGR_TPIDn_CTAG_M		GENMASK(3, 0)
+ #define  YT921X_PORT_IGR_TPIDn_CTAG(x)		BIT(x)
++#define YT921X_LAG_HASH			0x210090
++#define  YT921X_LAG_HASH_L4_SPORT		BIT(7)
++#define  YT921X_LAG_HASH_L4_DPORT		BIT(6)
++#define  YT921X_LAG_HASH_IP_PROTO		BIT(5)
++#define  YT921X_LAG_HASH_IP_SRC			BIT(4)
++#define  YT921X_LAG_HASH_IP_DST			BIT(3)
++#define  YT921X_LAG_HASH_MAC_SA			BIT(2)
++#define  YT921X_LAG_HASH_MAC_DA			BIT(1)
++#define  YT921X_LAG_HASH_SRC_PORT		BIT(0)
+ 
+ #define YT921X_PORTn_VLAN_CTRL(port)	(0x230010 + 4 * (port))
+ #define  YT921X_PORT_VLAN_CTRL_SVLAN_PRI_EN	BIT(31)
+@@ -458,6 +475,9 @@ enum yt921x_fdb_entry_status {
+ 
+ #define YT921X_MSTI_NUM		16
+ 
++#define YT921X_LAG_NUM		2
++#define YT921X_LAG_PORT_NUM	4
++
+ #define YT9215_MAJOR	0x9002
+ #define YT9218_MAJOR	0x9001
+ 
