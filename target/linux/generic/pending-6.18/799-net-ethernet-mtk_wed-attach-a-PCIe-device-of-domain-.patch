@@ -1,0 +1,70 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Tue, 27 Oct 2026 22:00:00 +0100
+Subject: [PATCH] net: ethernet: mtk_wed: attach a PCIe device of domain 2
+
+mtk_wed_attach() refuses a PCIe device whose PCI domain is above 1, a
+limit from the two WED instances of MT7986. Since MT7988 support,
+hw_list holds three instances, and mtk_wed_get_pcie_base() maps WED 2 to
+the PCIe controller at 0x11290000, which mt7988a.dtsi gives domain 2. A
+device on that controller, such as the second PCIe interface of the
+MT7996 on the ASUS ZenWiFi BT8, thus runs without WED, while the first
+interface of the same chip runs with it.
+
+Accept every domain that indexes hw_list. Write a non-zero WED index as
+1 into the partial A-MSDU TXD source, like the MediaTek SDK patch
+"refactor mtk_wed_attach for support wed2" does. On detach, keep the
+WED DMA device while any other WED instance is attached, not only while
+the other one of WED 0 and 1 is.
+
+Fixes: e2f64db13aa1 ("net: ethernet: mtk_wed: introduce WED support for MT7988")
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+
+--- a/drivers/net/ethernet/mediatek/mtk_wed.c
++++ b/drivers/net/ethernet/mediatek/mtk_wed.c
+@@ -623,7 +623,7 @@ mtk_wed_amsdu_init(struct mtk_wed_device
+ 
+ 	/* init partial amsdu offload txd src */
+ 	wed_set(dev, MTK_WED_AMSDU_HIFTXD_CFG,
+-		FIELD_PREP(MTK_WED_AMSDU_HIFTXD_SRC, dev->hw->index));
++		FIELD_PREP(MTK_WED_AMSDU_HIFTXD_SRC, !!dev->hw->index));
+ 
+ 	/* init qmem */
+ 	wed_set(dev, MTK_WED_AMSDU_PSE, MTK_WED_AMSDU_PSE_RESET);
+@@ -1129,6 +1129,18 @@ mtk_wed_deinit(struct mtk_wed_device *de
+ 	}
+ }
+ 
++static bool
++mtk_wed_other_attached(struct mtk_wed_hw *hw)
++{
++	int i;
++
++	for (i = 0; i < ARRAY_SIZE(hw_list); i++)
++		if (hw_list[i] && hw_list[i] != hw && hw_list[i]->wed_dev)
++			return true;
++
++	return false;
++}
++
+ static void
+ __mtk_wed_detach(struct mtk_wed_device *dev)
+ {
+@@ -1162,8 +1174,7 @@ __mtk_wed_detach(struct mtk_wed_device *
+ 					   BIT(hw->index), BIT(hw->index));
+ 	}
+ 
+-	if ((!hw_list[!hw->index] || !hw_list[!hw->index]->wed_dev) &&
+-	    hw->eth->dma_dev != hw->eth->dev)
++	if (!mtk_wed_other_attached(hw) && hw->eth->dma_dev != hw->eth->dev)
+ 		mtk_eth_set_dma_device(hw->eth, hw->eth->dev);
+ 
+ 	memset(dev, 0, sizeof(*dev));
+@@ -2455,7 +2466,7 @@ mtk_wed_attach(struct mtk_wed_device *de
+ 			 "mtk_wed_attach without holding the RCU read lock");
+ 
+ 	if ((dev->wlan.bus_type == MTK_WED_BUS_PCIE &&
+-	     pci_domain_nr(dev->wlan.pci_dev->bus) > 1) ||
++	     pci_domain_nr(dev->wlan.pci_dev->bus) >= ARRAY_SIZE(hw_list)) ||
+ 	    !try_module_get(THIS_MODULE))
+ 		ret = -ENODEV;
+ 
