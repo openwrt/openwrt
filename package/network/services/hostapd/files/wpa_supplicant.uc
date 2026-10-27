@@ -1226,6 +1226,9 @@ function iface_channel_switch(ifname, iface, info)
 	}
 
 	ubus.call("hostapd", "apsta_state", msg);
+	let err = ubus.error();
+	if (err)
+		wpas.printf(`hostapd refused to follow the channel switch of ${ifname} to ${info.frequency} MHz: ${err}`);
 }
 
 function iface_ubus_remove(ifname)
