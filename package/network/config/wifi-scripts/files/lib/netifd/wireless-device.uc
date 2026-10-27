@@ -406,7 +406,6 @@ function update(data)
 
 	wdev_reset(this);
 	this.config_change = true;
-	this.check();
 }
 
 function start()
@@ -687,6 +686,7 @@ export function new(data, script, driver)
 		ifindex_cache: {},
 
 		autostart: true,
+		config_change: true,
 		state: "down",
 	};
 	wdev_update_disabled_vifs(wdev);

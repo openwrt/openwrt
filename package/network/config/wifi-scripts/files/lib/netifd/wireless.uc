@@ -18,6 +18,10 @@ let wireless = netifd.wireless = {
 	path: realpath(netifd.main_path + "/wireless"),
 };
 
+// netifd runs config_init before it adds the interfaces of the reload: set
+// up no radio until config_start, which it calls after interface_start_pending()
+let config_pending;
+
 function wpad_update_mlo(service, mode)
 {
 	let config = {};
@@ -169,6 +173,8 @@ function update_config(new_devices, mlo_vifs)
 
 function config_init(uci)
 {
+	config_pending = true;
+
 	let config = uci.get_all("wireless");
 
 	let handlers = {};
@@ -414,14 +420,22 @@ function config_init(uci)
 
 function config_start()
 {
-	for (let name, dev in wireless.devices)
-		if (dev.autostart)
-			dev.start();
+	config_pending = false;
 
+	for (let name, dev in wireless.devices) {
+		if (!dev.autostart)
+			continue;
+
+		dev.start();
+		dev.check();
+	}
 }
 
 function check_interfaces()
 {
+	if (config_pending)
+		return;
+
 	for (let name, dev in wireless.devices)
 		if (dev.autostart)
 			dev.check();
@@ -561,6 +575,7 @@ const ubus_obj = {
 
 			return wdev_call(req, (dev) => {
 				dev.update();
+				dev.check();
 				return 0;
 			});
 		}
