@@ -214,7 +214,8 @@ define KernelPackage/ipsec
 	CONFIG_NET_KEY \
 	CONFIG_XFRM_USER \
 	CONFIG_INET_IPCOMP \
-	CONFIG_XFRM_IPCOMP
+	CONFIG_XFRM_IPCOMP \
+	CONFIG_XFRM_MIGRATE=y
   FILES:=$(foreach mod,$(IPSEC-m),$(LINUX_DIR)/net/$(mod).ko)
   AUTOLOAD:=$(call AutoLoad,30,$(notdir $(IPSEC-m)))
 endef
