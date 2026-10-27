@@ -340,13 +340,20 @@ function dbm2quality(dbm) {
 	return quality;
 }
 
+function get_band_modes(iface) {
+	let band = iface.radio?.band;
+	if (!band)
+		return null;
+
+	return wlan_data?.['phy' + iface.wiphy]?.info?.bands?.[uc(band)]?.modes;
+}
+
 function hwmodelist(name) {
 	const mode = { 'HT*': 'n', 'VHT*': 'ac', 'HE*': 'ax', 'EHT*': 'be' };
 	let iface = ifaces[name];
-	let phy = wlan_data?.['phy' + iface.wiphy];
-	if (!phy || !iface.radio?.band)
+	let htmodes = get_band_modes(iface);
+	if (!htmodes)
 		return '';
-	let htmodes = phy.info.bands[uc(iface.radio.band)].modes;
 	let list = [];
 	if (iface.radio.band == '2g' && 'NOHT' in htmodes)
 		push(list, 'g/b');
@@ -507,12 +514,11 @@ export function info(name) {
 };
 
 export function htmodelist(name) {
-	let iface = ifaces[name];
-	let phy = wlan_data?.['phy' + iface.wiphy];
-	if (!phy || !iface.radio.band)
+	let htmodes = get_band_modes(ifaces[name]);
+	if (!htmodes)
 		return [];
 
-	return filter(phy.info.bands[uc(iface.radio.band)].modes, (v) => v != 'NOHT');
+	return filter(htmodes, (v) => v != 'NOHT');
 };
 
 export function txpowerlist(name) {
