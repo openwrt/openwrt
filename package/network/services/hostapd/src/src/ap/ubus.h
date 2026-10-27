@@ -27,6 +27,13 @@ enum hostapd_ubus_rsn_error {
 	HOSTAPD_UBUS_RSN_ERROR_STA_DEAUTH = 7,
 };
 
+/* The kinds of Robust AV Streaming request of the EasyMesh disallow lists */
+enum hostapd_robust_av_kind {
+	HOSTAPD_ROBUST_AV_MSCS,
+	HOSTAPD_ROBUST_AV_SCS,
+	__HOSTAPD_ROBUST_AV_MAX
+};
+
 struct hostapd_ubus_request {
 	enum hostapd_ubus_event_type type;
 	const struct ieee80211_mgmt *mgmt_frame;
@@ -56,6 +63,8 @@ struct hostapd_ubus_bss {
 	bool mld;
 	bool mld_link;
 	uint32_t mgmt_flags;
+	u8 *robust_av_disallow[__HOSTAPD_ROBUST_AV_MAX];
+	size_t robust_av_disallow_num[__HOSTAPD_ROBUST_AV_MAX];
 };
 
 void hostapd_ubus_add_iface(struct hostapd_iface *iface);
@@ -99,6 +108,15 @@ void hostapd_ubus_notify_adv_ttlm(struct hostapd_data *hapd);
 void hostapd_ubus_notify_action_frame(struct hostapd_data *hapd,
 				      const char *type, const u8 *addr,
 				      const u8 *body, size_t body_len);
+bool hostapd_ubus_robust_av_disallowed(struct hostapd_data *hapd,
+				       enum hostapd_robust_av_kind kind,
+				       const u8 *addr);
+void hostapd_ubus_notify_robust_av(struct hostapd_data *hapd,
+				   struct sta_info *sta,
+				   enum hostapd_robust_av_kind kind,
+				   const u8 *elem, size_t elem_len,
+				   u16 status, bool autonomous,
+				   bool configured);
 
 #ifdef CONFIG_APUP
 void hostapd_ubus_notify_apup_newpeer(
@@ -223,6 +241,22 @@ static inline void
 hostapd_ubus_notify_action_frame(struct hostapd_data *hapd, const char *type,
 				 const u8 *addr, const u8 *body,
 				 size_t body_len)
+{
+}
+
+static inline bool
+hostapd_ubus_robust_av_disallowed(struct hostapd_data *hapd,
+				  enum hostapd_robust_av_kind kind,
+				  const u8 *addr)
+{
+	return false;
+}
+
+static inline void
+hostapd_ubus_notify_robust_av(struct hostapd_data *hapd, struct sta_info *sta,
+			      enum hostapd_robust_av_kind kind,
+			      const u8 *elem, size_t elem_len,
+			      u16 status, bool autonomous, bool configured)
 {
 }
 

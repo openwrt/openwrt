@@ -104,16 +104,16 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  #endif /* ACCOUNTING_H */
 --- a/src/ap/ieee802_11_eht.c
 +++ b/src/ap/ieee802_11_eht.c
-@@ -17,6 +17,8 @@
- #include "ap_drv_ops.h"
+@@ -18,6 +18,8 @@
  #include "wpa_auth.h"
  #include "ieee802_11.h"
+ #include "scs.h"
 +#include "accounting.h"
 +#include "ieee802_1x.h"
  
  
  static u16 ieee80211_eht_ppet_size(u16 ppe_thres_hdr, const u8 *phy_cap_info)
-@@ -1645,7 +1647,8 @@ static void hostapd_ml_reconf_adds_rever
+@@ -1651,7 +1653,8 @@ static void hostapd_ml_reconf_adds_rever
  
  
  /* Makes the STA of the non-AP MLD on link_id its association STA, which takes
@@ -123,15 +123,15 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  struct sta_info * hostapd_ml_move_assoc_sta(struct hostapd_data *hapd,
  					    struct sta_info *sta, u8 link_id,
  					    struct hostapd_data **assoc_hapd)
-@@ -1669,6 +1672,8 @@ struct sta_info * hostapd_ml_move_assoc_
+@@ -1675,6 +1678,8 @@ struct sta_info * hostapd_ml_move_assoc_
  	wpa_reset_assoc_sm_info(assoc_sta->wpa_sm, (*assoc_hapd)->wpa_auth,
  				link_id);
  	ap_sta_move_session_timeouts(hapd, sta, *assoc_hapd, assoc_sta);
 +	accounting_sta_move(hapd, sta, *assoc_hapd, assoc_sta);
 +	ieee802_1x_move_station(*assoc_hapd, sta, assoc_sta);
- 	return assoc_sta;
- }
- 
+ #ifdef CONFIG_ROBUST_AV
+ 	os_memcpy(assoc_sta->scs_active, sta->scs_active,
+ 		  sizeof(sta->scs_active));
 --- a/src/ap/ieee802_1x.c
 +++ b/src/ap/ieee802_1x.c
 @@ -1550,6 +1550,30 @@ void ieee802_1x_free_station(struct host
@@ -195,7 +195,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
 --- a/src/ap/sta_info.h
 +++ b/src/ap/sta_info.h
-@@ -435,6 +435,10 @@ void ap_sta_no_session_timeout(struct ho
+@@ -438,6 +438,10 @@ void ap_sta_no_session_timeout(struct ho
  			       struct sta_info *sta);
  void ap_sta_session_warning_timeout(struct hostapd_data *hapd,
  				    struct sta_info *sta, int warning_time);

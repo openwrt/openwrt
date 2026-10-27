@@ -1,0 +1,151 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Tue, 27 Oct 2026 13:29:58 +0000
+Subject: [PATCH] hostapd: add the configuration option robust_av_scs_disabled
+
+Add the BSS option robust_av_scs_disabled, 0 by default. Where it is
+set, hostapd ignores SCS and MSCS Request frames, answers no MSCS
+Descriptor element of a (Re)Association Request, clears the SCS and
+Mirrored SCS bits (54 and 85) of the Extended Capabilities element and
+the SCS Traffic Description Support bit of the EHT MAC Capabilities
+Information field. An AP MLD takes the setting of its first link.
+
+Based on "mtk: hostapd: add configuration disable_robust_av_scs to
+control scs feature" of the MediaTek feed. The rework applies the
+option to MSCS as well and builds it under CONFIG_ROBUST_AV.
+
+Co-developed-by: Howard Hsu <howard-yh.hsu@mediatek.com>
+Signed-off-by: Howard Hsu <howard-yh.hsu@mediatek.com>
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/hostapd/config_file.c
++++ b/hostapd/config_file.c
+@@ -5275,6 +5275,8 @@ static int hostapd_config_fill(struct ho
+ #ifdef CONFIG_ROBUST_AV
+ 	} else if (os_strcmp(buf, "enable_dscp_policy_capa") == 0) {
+ 		bss->enable_dscp_policy_capa = atoi(pos);
++	} else if (os_strcmp(buf, "robust_av_scs_disabled") == 0) {
++		bss->robust_av_scs_disabled = !!atoi(pos);
+ #endif /* CONFIG_ROBUST_AV */
+ 	} else {
+ 		wpa_printf(MSG_ERROR,
+--- a/hostapd/hostapd.conf
++++ b/hostapd/hostapd.conf
+@@ -3568,6 +3568,13 @@ own_ip_addr=127.0.0.1
+ # 1 = enabled
+ #enable_dscp_policy_capa=0
+ #
++# Disable the handling of SCS and MSCS requests (Robust AV Streaming) and the
++# SCS and Mirrored SCS bits of the Extended Capabilities element. An AP MLD
++# takes the setting of its first link.
++# 0 = SCS and MSCS requests are handled where the driver supports them (default)
++# 1 = SCS and MSCS requests are not handled
++#robust_av_scs_disabled=0
++#
+ 
+ ##### Multiple BSSID support ##################################################
+ #
+--- a/src/ap/ap_config.h
++++ b/src/ap/ap_config.h
+@@ -1056,6 +1056,7 @@ struct hostapd_bss_config {
+ #endif /* CONFIG_APUP */
+ #ifdef CONFIG_ROBUST_AV
+ 	bool enable_dscp_policy_capa;
++	bool robust_av_scs_disabled;
+ #endif /* CONFIG_ROBUST_AV */
+ };
+ 
+--- a/src/ap/ieee802_11_eht.c
++++ b/src/ap/ieee802_11_eht.c
+@@ -17,6 +17,7 @@
+ #include "ap_drv_ops.h"
+ #include "wpa_auth.h"
+ #include "ieee802_11.h"
++#include "scs.h"
+ 
+ 
+ static u16 ieee80211_eht_ppet_size(u16 ppe_thres_hdr, const u8 *phy_cap_info)
+@@ -139,6 +140,10 @@ u8 * hostapd_eid_eht_capab(struct hostap
+ 	cap = (struct ieee80211_eht_capabilities *) pos;
+ 	os_memset(cap, 0, sizeof(*cap));
+ 	cap->mac_cap = host_to_le16(eht_cap->mac_cap);
++#ifdef CONFIG_ROBUST_AV
++	if (hostapd_is_robust_av_scs_disabled(hapd))
++		cap->mac_cap &= ~host_to_le16(EHT_MACCAP_SCS_TRAFFIC_DESC);
++#endif /* CONFIG_ROBUST_AV */
+ 	os_memcpy(cap->phy_cap, eht_cap->phy_cap, EHT_PHY_CAPAB_LEN);
+ 
+ 	if (!is_6ghz_op_class(hapd->iconf->op_class))
+--- a/src/ap/ieee802_11_shared.c
++++ b/src/ap/ieee802_11_shared.c
+@@ -19,6 +19,7 @@
+ #include "wpa_auth.h"
+ #include "dpp_hostapd.h"
+ #include "robust_av.h"
++#include "scs.h"
+ #include "ieee802_11.h"
+ 
+ 
+@@ -535,6 +536,13 @@ u8 * hostapd_eid_ext_capab(struct hostap
+ 			*pos &= ~0x08;
+ 		if (i == 2 && !hapd->iconf->mbssid)
+ 			*pos &= ~0x40;
++#ifdef CONFIG_ROBUST_AV
++		/* Bit 54 - SCS, bit 85 - Mirrored SCS */
++		if (i == 6 && hostapd_is_robust_av_scs_disabled(hapd))
++			*pos &= ~0x40;
++		if (i == 10 && hostapd_is_robust_av_scs_disabled(hapd))
++			*pos &= ~0x20;
++#endif /* CONFIG_ROBUST_AV */
+ 	}
+ 
+ 	while (len > 0 && eid[1 + len] == 0) {
+--- a/src/ap/scs.c
++++ b/src/ap/scs.c
+@@ -37,6 +37,19 @@ static struct sta_info * robust_av_sta(s
+ }
+ 
+ 
++bool hostapd_is_robust_av_scs_disabled(struct hostapd_data *hapd)
++{
++#ifdef CONFIG_IEEE80211BE
++	struct hostapd_data *first = hostapd_mld_get_first_bss(hapd);
++
++	if (first)
++		return first->conf->robust_av_scs_disabled;
++#endif /* CONFIG_IEEE80211BE */
++
++	return hapd->conf->robust_av_scs_disabled;
++}
++
++
+ static bool scs_id_active(struct sta_info *sta, u8 scsid)
+ {
+ 	return sta->scs_active[scsid / 8] & BIT(scsid % 8);
+@@ -331,7 +344,7 @@ u8 * hostapd_eid_mscs_assoc(struct hosta
+ 	u16 status;
+ 
+ 	req = get_ie_ext(ies, ies_len, WLAN_EID_EXT_MSCS_DESCRIPTOR);
+-	if (!req)
++	if (!req || hostapd_is_robust_av_scs_disabled(hapd))
+ 		return eid;
+ 
+ 	sta = robust_av_sta(&hapd, sta);
+@@ -421,6 +434,9 @@ void hostapd_handle_robust_av_streaming(
+ 	const u8 *body = &mgmt->u.action.category;
+ 	struct sta_info *sta;
+ 
++	if (hostapd_is_robust_av_scs_disabled(hapd))
++		return;
++
+ 	/* Category, Robust AV Streaming Action and Dialog Token */
+ 	if (len < IEEE80211_HDRLEN + 3)
+ 		return;
+--- a/src/ap/scs.h
++++ b/src/ap/scs.h
+@@ -14,5 +14,6 @@ void hostapd_handle_robust_av_streaming(
+ u8 * hostapd_eid_mscs_assoc(struct hostapd_data *hapd, struct sta_info *sta,
+ 			    const u8 *ies, size_t ies_len, u8 *eid);
+ int hostapd_del_mscs(struct hostapd_data *hapd, const u8 *addr);
++bool hostapd_is_robust_av_scs_disabled(struct hostapd_data *hapd);
+ 
+ #endif /* SCS_H */

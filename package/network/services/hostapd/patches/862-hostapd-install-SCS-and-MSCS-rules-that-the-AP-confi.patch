@@ -1,0 +1,456 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Sat, 24 Oct 2026 16:37:42 +0200
+Subject: [PATCH] hostapd: install SCS and MSCS rules that the AP configures
+
+EasyMesh 6.1 section 20.2.4 has a Multi-AP Agent activate MSCS and SCS
+rules that its Controller sends for a station, also for a station that
+sits behind the 4-address backhaul station of another agent. Such a rule
+is not requested by the peer: the agent identifies it by the QMID of the
+Controller and picks the SCSID itself, and the rule does not depend on
+the association of the station with the agent's fronthaul AP.
+
+Add hostapd_robust_av_configure(): it takes a whole SCS Descriptor or
+MSCS Descriptor element for an associated peer and, where given, a host
+behind it, and passes the rule to the driver with that client address,
+an MSCS also with the configured flag. hostapd keeps no state of such a
+rule and sends no frame and no robust-av notification for it. The
+disallow lists and robust_av_scs_disabled apply to the requests of
+stations only.
+
+The element parsers of the request paths become scs_desc_elems_parse()
+and mscs_desc_parse(), which both paths use.
+
+DEL_MSCS names the BSS of the control socket, the first BSS of an AP
+MLD, while a non-MLO station has its entry on the link it associated to
+alone. hostapd_del_mscs() and hostapd_robust_av_configure() look the
+associated station up on every link of the AP MLD and act on the BSS of
+its association link. The ubus caller of hostapd_robust_av_configure()
+already resolves that BSS with hostapd_ubus_sta_bss().
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+ src/ap/scs.c | 312 +++++++++++++++++++++++++++++++++++++--------------
+ src/ap/scs.h |   6 +
+ 2 files changed, 233 insertions(+), 85 deletions(-)
+
+--- a/src/ap/scs.c
++++ b/src/ap/scs.c
+@@ -131,17 +131,70 @@ static u16 hostapd_scs_desc_set(struct h
+ 
+ 
+ /*
+- * The TCLAS elements and the TCLAS Processing element go to the driver as one
+- * list, in the order received, without the other elements of the descriptor.
++ * The optional elements of an SCS Descriptor element of Request Type Add or
++ * Change. The TCLAS elements and the TCLAS Processing element go to the
++ * driver as one list, in the order received, in *tclas, which the caller
++ * frees.
+  */
++static bool scs_desc_elems_parse(const struct element *scs,
++				 struct hostapd_scs_desc *desc, u8 **tclas)
++{
++	const struct element *elem;
++	size_t tclas_len = 0;
++
++	*tclas = os_malloc(scs->datalen);
++	if (!*tclas)
++		return false;
++
++	for_each_element(elem, scs->data + 2, scs->datalen - 2) {
++		switch (elem->id) {
++		case WLAN_EID_INTRA_ACCESS_CATEGORY_PRIORITY:
++			if (elem->datalen < 1 || desc->up >= 0)
++				return false;
++			desc->up = elem->data[0] & 0x07;
++			break;
++		case WLAN_EID_TCLAS:
++		case WLAN_EID_TCLAS_PROCESSING:
++			os_memcpy(*tclas + tclas_len, elem, 2 + elem->datalen);
++			tclas_len += 2 + elem->datalen;
++			break;
++		case WLAN_EID_EXTENSION:
++			if (elem->datalen < 1 ||
++			    elem->data[0] != WLAN_EID_EXT_QOS_CHARACTERISTICS)
++				break;
++			if (desc->qos_char)
++				return false;
++			desc->qos_char = (const u8 *) elem;
++			desc->qos_char_len = 2 + elem->datalen;
++			break;
++		default:
++			break;
++		}
++	}
++
++	if (!for_each_element_completed(elem, scs->data + 2,
++					scs->datalen - 2)) {
++		wpa_printf(MSG_DEBUG,
++			   "SCS: Truncated element in SCS Descriptor %u",
++			   desc->id);
++		return false;
++	}
++
++	if (tclas_len) {
++		desc->tclas = *tclas;
++		desc->tclas_len = tclas_len;
++	}
++
++	return true;
++}
++
++
+ static u16 hostapd_process_scs_descriptor(struct hostapd_data *hapd,
+ 					  struct sta_info *sta,
+ 					  const struct element *scs)
+ {
+ 	struct hostapd_scs_desc desc;
+-	const struct element *elem;
+ 	u8 *tclas = NULL;
+-	size_t tclas_len = 0;
+ 	u16 status = WLAN_STATUS_REQUEST_DECLINED;
+ 	bool active;
+ 
+@@ -178,54 +231,10 @@ static u16 hostapd_process_scs_descripto
+ 		goto out;
+ 	}
+ 
+-	if (desc.req_type == SCS_REQ_REMOVE) {
+-		status = hostapd_scs_desc_set(hapd, sta, &desc);
+-		goto out;
+-	}
+-
+-	tclas = os_malloc(scs->datalen);
+-	if (!tclas)
++	if (desc.req_type != SCS_REQ_REMOVE &&
++	    !scs_desc_elems_parse(scs, &desc, &tclas))
+ 		goto out;
+ 
+-	for_each_element(elem, scs->data + 2, scs->datalen - 2) {
+-		switch (elem->id) {
+-		case WLAN_EID_INTRA_ACCESS_CATEGORY_PRIORITY:
+-			if (elem->datalen < 1 || desc.up >= 0)
+-				goto out;
+-			desc.up = elem->data[0] & 0x07;
+-			break;
+-		case WLAN_EID_TCLAS:
+-		case WLAN_EID_TCLAS_PROCESSING:
+-			os_memcpy(tclas + tclas_len, elem, 2 + elem->datalen);
+-			tclas_len += 2 + elem->datalen;
+-			break;
+-		case WLAN_EID_EXTENSION:
+-			if (elem->datalen < 1 ||
+-			    elem->data[0] != WLAN_EID_EXT_QOS_CHARACTERISTICS)
+-				break;
+-			if (desc.qos_char)
+-				goto out;
+-			desc.qos_char = (const u8 *) elem;
+-			desc.qos_char_len = 2 + elem->datalen;
+-			break;
+-		default:
+-			break;
+-		}
+-	}
+-
+-	if (!for_each_element_completed(elem, scs->data + 2,
+-					scs->datalen - 2)) {
+-		wpa_printf(MSG_DEBUG,
+-			   "SCS: Truncated element in SCS Descriptor %u",
+-			   desc.id);
+-		goto out;
+-	}
+-
+-	if (tclas_len) {
+-		desc.tclas = tclas;
+-		desc.tclas_len = tclas_len;
+-	}
+-
+ 	status = hostapd_scs_desc_set(hapd, sta, &desc);
+ 
+ out:
+@@ -241,56 +250,46 @@ out:
+ /*
+  * @elem: The MSCS Descriptor element from its Element ID Extension
+  * @len: Length of @elem
+- * Returns: the status code for the request
++ * The TCLAS Mask elements go to the driver as one list in *masks, which the
++ * caller frees.
+  */
+-static u16 hostapd_set_mscs(struct hostapd_data *hapd, struct sta_info *sta,
+-			    const u8 *elem, size_t len)
++static bool mscs_desc_parse(const u8 *elem, size_t len,
++			    struct hostapd_mscs_desc *desc, u8 **masks)
+ {
+-	struct hostapd_mscs_desc desc;
+ 	const struct element *sub;
+-	u8 *masks = NULL;
+ 	size_t masks_len = 0;
+-	u16 status = WLAN_STATUS_REQUEST_DECLINED;
+ 
+-	os_memset(&desc, 0, sizeof(desc));
+ 	if (len < MSCS_DESCRIPTOR_FIXED_LEN) {
+ 		wpa_printf(MSG_DEBUG, "MSCS: Short MSCS Descriptor element");
+-		goto out;
++		return false;
+ 	}
+ 
+-	desc.req_type = elem[1];
+-	desc.up_bitmap = elem[2];
+-	desc.up_limit = elem[3] & 0x07;
+-	desc.stream_timeout = WPA_GET_LE32(&elem[4]);
+-
+-	if (hostapd_ubus_robust_av_disallowed(hapd, HOSTAPD_ROBUST_AV_MSCS,
+-					      sta->addr)) {
+-		wpa_printf(MSG_DEBUG, "MSCS: " MACSTR " is disallowed",
+-			   MAC2STR(sta->addr));
+-		goto out;
+-	}
++	desc->req_type = elem[1];
++	desc->up_bitmap = elem[2];
++	desc->up_limit = elem[3] & 0x07;
++	desc->stream_timeout = WPA_GET_LE32(&elem[4]);
+ 
+-	switch (desc.req_type) {
++	switch (desc->req_type) {
+ 	case SCS_REQ_ADD:
+ 	case SCS_REQ_CHANGE:
+ 		break;
+ 	case SCS_REQ_REMOVE:
+ 		/* A removal names no classifier, its elements are ignored */
+-		goto set;
++		return true;
+ 	default:
+-		goto out;
++		return false;
+ 	}
+ 
+-	masks = os_malloc(len);
+-	if (!masks)
+-		goto out;
++	*masks = os_malloc(len);
++	if (!*masks)
++		return false;
+ 
+ 	for_each_element(sub, elem + MSCS_DESCRIPTOR_FIXED_LEN,
+ 			 len - MSCS_DESCRIPTOR_FIXED_LEN) {
+ 		if (sub->id != WLAN_EID_EXTENSION || sub->datalen < 1 ||
+ 		    sub->data[0] != WLAN_EID_EXT_TCLAS_MASK)
+ 			continue;
+-		os_memcpy(masks + masks_len, sub, 2 + sub->datalen);
++		os_memcpy(*masks + masks_len, sub, 2 + sub->datalen);
+ 		masks_len += 2 + sub->datalen;
+ 	}
+ 
+@@ -299,13 +298,40 @@ static u16 hostapd_set_mscs(struct hosta
+ 	    !masks_len) {
+ 		wpa_printf(MSG_DEBUG,
+ 			   "MSCS: No TCLAS Mask element or a truncated element");
++		return false;
++	}
++
++	desc->tclas_mask = *masks;
++	desc->tclas_mask_len = masks_len;
++
++	return true;
++}
++
++
++/*
++ * @elem: The MSCS Descriptor element from its Element ID Extension
++ * @len: Length of @elem
++ * Returns: the status code for the request
++ */
++static u16 hostapd_set_mscs(struct hostapd_data *hapd, struct sta_info *sta,
++			    const u8 *elem, size_t len)
++{
++	struct hostapd_mscs_desc desc;
++	u8 *masks = NULL;
++	u16 status = WLAN_STATUS_REQUEST_DECLINED;
++
++	os_memset(&desc, 0, sizeof(desc));
++
++	if (hostapd_ubus_robust_av_disallowed(hapd, HOSTAPD_ROBUST_AV_MSCS,
++					      sta->addr)) {
++		wpa_printf(MSG_DEBUG, "MSCS: " MACSTR " is disallowed",
++			   MAC2STR(sta->addr));
+ 		goto out;
+ 	}
+ 
+-	desc.tclas_mask = masks;
+-	desc.tclas_mask_len = masks_len;
++	if (!mscs_desc_parse(elem, len, &desc, &masks))
++		goto out;
+ 
+-set:
+ 	if (hostapd_drv_set_mscs(hapd, sta->addr, &desc, &status)) {
+ 		status = WLAN_STATUS_REQUEST_DECLINED;
+ 		goto out;
+@@ -366,6 +392,30 @@ out:
+ }
+ 
+ 
++static bool robust_av_sta_associated(struct hostapd_data *hapd,
++				     struct sta_info *sta)
++{
++	return sta->flags & WLAN_STA_ASSOC;
++}
++
++
++/*
++ * DEL_MSCS names the first BSS of an AP MLD, while a non-MLO station has
++ * its entry on the link it associated to alone.
++ */
++static struct sta_info * robust_av_assoc_sta(struct hostapd_data **hapd,
++					     const u8 *addr)
++{
++	struct sta_info *sta;
++
++	sta = ap_get_sta_mld_links(hapd, addr, robust_av_sta_associated);
++	if (!sta)
++		return NULL;
++
++	return robust_av_sta(hapd, sta);
++}
++
++
+ /* Remove the MSCS of a station and tell it with an unsolicited MSCS Response */
+ int hostapd_del_mscs(struct hostapd_data *hapd, const u8 *addr)
+ {
+@@ -373,12 +423,8 @@ int hostapd_del_mscs(struct hostapd_data
+ 	struct sta_info *sta;
+ 	u16 status;
+ 
+-	sta = ap_get_sta(hapd, addr);
+-	if (!sta || !(sta->flags & WLAN_STA_ASSOC))
+-		return -1;
+-
+-	sta = robust_av_sta(&hapd, sta);
+-	if (!sta->mscs_active)
++	sta = robust_av_assoc_sta(&hapd, addr);
++	if (!sta || !sta->mscs_active)
+ 		return -1;
+ 
+ 	os_memset(&desc, 0, sizeof(desc));
+@@ -459,6 +505,102 @@ u8 * hostapd_eid_mscs_assoc(struct hosta
+ }
+ 
+ 
++static int robust_av_configure_scs(struct hostapd_data *hapd,
++				   struct sta_info *sta, const u8 *client,
++				   const u8 *elem, u16 *status)
++{
++	const struct element *scs = (const struct element *) elem;
++	struct hostapd_scs_desc desc;
++	u8 *tclas = NULL;
++	int ret = -EINVAL;
++
++	if (scs->id != WLAN_EID_SCS_DESCRIPTOR || scs->datalen < 2 ||
++	    !scs->data[0])
++		return -EINVAL;
++
++	os_memset(&desc, 0, sizeof(desc));
++	desc.id = scs->data[0];
++	desc.req_type = scs->data[1];
++	desc.up = -1;
++	desc.client = client;
++
++	switch (desc.req_type) {
++	case SCS_REQ_ADD:
++	case SCS_REQ_CHANGE:
++		if (!scs_desc_elems_parse(scs, &desc, &tclas))
++			goto out;
++		break;
++	case SCS_REQ_REMOVE:
++		break;
++	default:
++		goto out;
++	}
++
++	ret = hostapd_drv_set_scs(hapd, sta->addr, &desc, status);
++out:
++	os_free(tclas);
++	return ret;
++}
++
++
++static int robust_av_configure_mscs(struct hostapd_data *hapd,
++				    struct sta_info *sta, const u8 *client,
++				    const u8 *elem, u16 *status)
++{
++	struct hostapd_mscs_desc desc;
++	u8 *masks = NULL;
++	int ret = -EINVAL;
++
++	if (elem[0] != WLAN_EID_EXTENSION || elem[1] < 1 ||
++	    elem[2] != WLAN_EID_EXT_MSCS_DESCRIPTOR)
++		return -EINVAL;
++
++	os_memset(&desc, 0, sizeof(desc));
++	desc.client = client;
++	desc.configured = true;
++
++	if (mscs_desc_parse(&elem[2], elem[1], &desc, &masks))
++		ret = hostapd_drv_set_mscs(hapd, sta->addr, &desc, status);
++
++	os_free(masks);
++	return ret;
++}
++
++
++/*
++ * A rule that the AP configures on behalf of the network, for example for a
++ * Multi-AP Controller (EasyMesh 6.1, 20.2.4), and not at the request of the
++ * peer: hostapd keeps no state of it and reports nothing about it.
++ * @addr: The associated peer, the MLD address of a non-AP MLD
++ * @client: A host behind the 4-address peer @addr, or %NULL for the peer
++ * @elem: The whole SCS Descriptor or MSCS Descriptor element
++ * @len: Length of @elem
++ * @status: Buffer for the status code of the driver
++ * Returns: 0 where the driver answered with @status, -ENOENT where @addr is
++ * not associated, -EINVAL for a malformed element, or another negative value
++ * from the driver
++ */
++int hostapd_robust_av_configure(struct hostapd_data *hapd, const u8 *addr,
++				const u8 *client,
++				enum hostapd_robust_av_kind kind,
++				const u8 *elem, size_t len, u16 *status)
++{
++	struct sta_info *sta;
++
++	sta = robust_av_assoc_sta(&hapd, addr);
++	if (!sta)
++		return -ENOENT;
++
++	if (len < 3 || elem[1] != len - 2)
++		return -EINVAL;
++
++	if (kind == HOSTAPD_ROBUST_AV_SCS)
++		return robust_av_configure_scs(hapd, sta, client, elem, status);
++
++	return robust_av_configure_mscs(hapd, sta, client, elem, status);
++}
++
++
+ static void send_scs_response(struct hostapd_data *hapd, const u8 *da,
+ 			      u8 dialog_token, const struct wpabuf *duples,
+ 			      u8 count)
+--- a/src/ap/scs.h
++++ b/src/ap/scs.h
+@@ -6,6 +6,8 @@
+ #ifndef SCS_H
+ #define SCS_H
+ 
++#include "ubus.h"
++
+ struct hostapd_data;
+ struct sta_info;
+ 
+@@ -16,5 +18,9 @@ u8 * hostapd_eid_mscs_assoc(struct hosta
+ int hostapd_del_mscs(struct hostapd_data *hapd, const u8 *addr);
+ bool hostapd_is_robust_av_scs_disabled(struct hostapd_data *hapd);
+ void hostapd_robust_av_sta_removed(struct hostapd_data *hapd, const u8 *addr);
++int hostapd_robust_av_configure(struct hostapd_data *hapd, const u8 *addr,
++				const u8 *client,
++				enum hostapd_robust_av_kind kind,
++				const u8 *elem, size_t len, u16 *status);
+ 
+ #endif /* SCS_H */
