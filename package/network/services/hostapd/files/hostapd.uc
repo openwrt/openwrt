@@ -18,6 +18,7 @@ hostapd.data.config = {};
 hostapd.data.pending_config = {};
 hostapd.data.apsta_freq = {};
 hostapd.data.apsta_stopped = {};
+hostapd.data.link_reload = {};
 
 hostapd.data.file_fields = {
 	vlan_file: true,
@@ -406,12 +407,19 @@ function csa_timer_cancel(name)
 	}
 }
 
+function iface_link_reload_cancel(name)
+{
+	hostapd.data.link_reload[name]?.timer.cancel();
+	delete hostapd.data.link_reload[name];
+}
+
 function iface_restart(phydev, config, old_config)
 {
 	let phy = phydev.name;
 	let pending = hostapd.data.pending_config[phy];
 
 	csa_timer_cancel(phy);
+	iface_link_reload_cancel(phy);
 
 	if (pending)
 		pending.abort();
@@ -1579,11 +1587,97 @@ function mld_link_bss_remove(phy, name, bss)
 	iface_macaddr_prune(phy, config);
 }
 
+const LINK_RELOAD_COUNT = 10;
+const LINK_RELOAD_MARGIN_MS = 1000;
+
+// The links of AP MLDs that a restart of the radio stops while their own BSS
+// stays the same. A non-AP MLD that is not told keeps sending on such a link
+// once it beacons again; an AP removal of the link tells it (IEEE
+// 802.11be-2024 35.3.6.3).
+function iface_reload_links(name, config, old_config)
+{
+	let links = {};
+
+	if (hostapd.interfaces[name]?.state() != "ENABLED")
+		return links;
+
+	for (let prev in old_config?.bss ?? []) {
+		if (!prev.mld_ap)
+			continue;
+
+		let cur = filter(config.bss, (b) => b.ifname == prev.ifname)[0];
+		let bss = hostapd.bss[name]?.[prev.ifname];
+		if (!cur || !bss ||
+		    bss_config_hash(cur.data) != bss_config_hash(prev.data))
+			continue;
+
+		links[prev.ifname] = bss;
+	}
+
+	return links;
+}
+
+function iface_link_reload_restart(name)
+{
+	let reload = hostapd.data.link_reload[name];
+	if (!reload)
+		return;
+
+	hostapd.printf(`Restart interface for phy ${name}`);
+	iface_restart(reload.phydev, reload.config, reload.old_config);
+}
+
+// The restart waits for the expiry of each removal, or for its latest time,
+// where hostapd keeps the link.
+function iface_link_reload_start(name, phydev, config, old_config)
+{
+	let reload = { phydev, config, old_config, links: {} };
+	let wait_ms = 0;
+
+	for (let ifname, bss in iface_reload_links(name, config, old_config)) {
+		let removal = bss.link_remove?.(LINK_RELOAD_COUNT);
+		if (!removal)
+			continue;
+
+		reload.links[ifname] = true;
+		wait_ms = max(wait_ms, removal.removal_ms);
+	}
+
+	if (!length(reload.links))
+		return false;
+
+	hostapd.printf(`Announce the removal of ${join(", ", keys(reload.links))} on phy ${name} before its restart`);
+	reload.timer = uloop.timer(wait_ms + LINK_RELOAD_MARGIN_MS,
+				   () => iface_link_reload_restart(name));
+	hostapd.data.link_reload[name] = reload;
+
+	return true;
+}
+
+function iface_link_reload_expired(phy, name)
+{
+	let reload = hostapd.data.link_reload[phy];
+	if (!reload?.links[name])
+		return false;
+
+	delete reload.links[name];
+	if (!length(reload.links))
+		reload.timer.set(0);
+
+	return true;
+}
+
 function iface_set_config(name, config)
 {
 	let old_config = hostapd.data.config[name];
+	let reload = hostapd.data.link_reload[name];
+
+	// The radio runs the configuration from before the announced restart
+	if (reload)
+		old_config = reload.old_config;
 
 	if (!config) {
+		iface_link_reload_cancel(name);
 		delete hostapd.data.config[name];
 		return iface_config_remove(name, old_config);
 	}
@@ -1600,8 +1694,15 @@ function iface_set_config(name, config)
 	config.orig_bss = [ ...config.bss ];
 	iface_check_mld(phydev, name, config);
 	if (!length(config.bss)) {
+		iface_link_reload_cancel(name);
 		iface_macaddr_prune(name, config);
 		return iface_config_remove(name, old_config);
+	}
+
+	if (reload) {
+		reload.phydev = phydev;
+		reload.config = config;
+		return 0;
 	}
 
 	try {
@@ -1613,6 +1714,9 @@ function iface_set_config(name, config)
 	} catch (e) {
 		hostapd.printf(`Error reloading config: ${e}\n${e.stacktrace[0].context}`);
 	}
+
+	if (iface_link_reload_start(name, phydev, config, old_config))
+		return 0;
 
 	hostapd.printf(`Restart interface for phy ${name}`);
 	let ret = iface_restart(phydev, config, old_config);
@@ -2503,7 +2607,8 @@ return {
 		bss_event("remove", name);
 	},
 	bss_link_removed: function(phy, name, obj) {
-		mld_link_bss_remove(phy, name, obj);
+		if (!iface_link_reload_expired(phy, name))
+			mld_link_bss_remove(phy, name, obj);
 	},
 	sta_auth: function(iface, sta) {
 		let msg = { iface, sta };
