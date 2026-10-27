@@ -1,0 +1,178 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Date: Mon, 26 Oct 2026 20:34:28 +0100
+Subject: [PATCH 1/2] main: wait for the helpers before exiting
+
+Since procd commit 39b5aac ("service: clean up descendant processes for
+non-jail instances"), procd kills what is left in the cgroup of an
+instance as soon as its main process exits. netifd sends SIGTERM to its
+helpers on exit and exits at once, so they are killed while they shut
+down: pppd before it sends its PADT, which leaves the session open on
+the peer, and a running hotplug call, such as the SQM script, while it
+holds its lock.
+
+Keep running the event loop after signalling the helpers until they and
+the running hotplug call have exited, and start no other helper or
+hotplug call meanwhile. The term timeout of procd bounds the wait.
+
+On a PPPoE WAN, stopping netifd through procd left pppd without a PADT
+before. With this change, pppd sent its PADT in four runs out of four,
+one of them while the hotplug calls of the ifup were running, and
+netifd exited within 2 s.
+
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+---
+ interface-event.c | 20 +++++++++++++++++++-
+ interface.h       |  2 ++
+ main.c            | 47 +++++++++++++++++++++++++++++++++++++++++++----
+ netifd.h          |  1 +
+ 4 files changed, 65 insertions(+), 5 deletions(-)
+
+--- a/interface-event.c
++++ b/interface-event.c
+@@ -24,6 +24,7 @@
+ char *hotplug_cmd_path = DEFAULT_HOTPLUG_PATH;
+ static struct interface *current;
+ static enum interface_event current_ev;
++static bool stopped;
+ static struct list_head pending = LIST_HEAD_INIT(pending);
+ 
+ static void task_complete(struct uloop_process *proc, int ret);
+@@ -87,7 +88,7 @@ static void
+ call_hotplug(void)
+ {
+ 	const char *device = NULL;
+-	if (list_empty(&pending))
++	if (stopped || list_empty(&pending))
+ 		return;
+ 
+ 	current = list_first_entry(&pending, struct interface, hotplug_list);
+@@ -108,9 +109,26 @@ task_complete(struct uloop_process *proc
+ 	if (current)
+ 		D(SYSTEM, "Complete hotplug handler for interface '%s'", current->name);
+ 	current = NULL;
++	if (stopped) {
++		netifd_exit_check();
++		return;
++	}
++
+ 	call_hotplug();
+ }
+ 
++void
++interface_event_stop(void)
++{
++	stopped = true;
++}
++
++bool
++interface_event_running(void)
++{
++	return task.pending;
++}
++
+ /*
+  * Queue an interface for an up/down event.
+  * An interface can only have one event in the queue and one
+--- a/interface.h
++++ b/interface.h
+@@ -209,6 +209,8 @@ void interface_remove_user(struct interf
+ 
+ int interface_handle_link(struct interface *iface, const char *name, struct blob_attr *vlan, bool add, bool link_ext);
+ void interface_relink_hotplug(void);
++void interface_event_stop(void);
++bool interface_event_running(void);
+ 
+ void interface_add_error(struct interface *iface, const char *subsystem,
+ 			 const char *code, const char **data, int n_data);
+--- a/main.c
++++ b/main.c
+@@ -38,6 +38,7 @@ const char *resolv_conf = DEFAULT_RESOLV
+ static char **global_argv;
+ 
+ static struct list_head process_list = LIST_HEAD_INIT(process_list);
++static bool exiting;
+ static struct udebug ud;
+ static struct udebug_buf udb_log;
+ struct udebug_buf udb_nl;
+@@ -90,6 +91,7 @@ netifd_delete_process(struct netifd_proc
+ 	list_del(&proc->list);
+ 	ustream_free(&proc->log.stream);
+ 	close(proc->log.fd.fd);
++	netifd_exit_check();
+ }
+ 
+ static void __attribute__((format (printf, 1, 0)))
+@@ -216,6 +218,9 @@ netifd_start_process(const char **argv,
+ 
+ 	netifd_kill_process(proc);
+ 
++	if (exiting)
++		return -1;
++
+ 	if (pipe(pfds) < 0)
+ 		return -1;
+ 
+@@ -352,14 +357,48 @@ netifd_setup_signals(void)
+ 	sigaction(SIGPIPE, &s, NULL);
+ }
+ 
++static bool
++netifd_exit_busy(void)
++{
++	return !list_empty(&process_list) || interface_event_running();
++}
++
++void
++netifd_exit_check(void)
++{
++	if (exiting && !netifd_exit_busy())
++		uloop_end();
++}
++
++static void
++netifd_exit_process_cb(struct uloop_process *proc, int ret)
++{
++	struct netifd_process *np;
++
++	np = container_of(proc, struct netifd_process, uloop);
++	netifd_delete_process(np);
++}
++
+ static void
+ netifd_kill_processes(void)
+ {
+-	struct netifd_process *proc, *tmp;
++	struct netifd_process *proc;
++
++	/*
++	 * SIGTERM lets a DHCP client release its lease and pppd end its
++	 * session. Wait for them and for a running hotplug call, since
++	 * procd kills what is left in the cgroup of netifd as soon as
++	 * netifd exits, and bounds this wait with its term_timeout.
++	 */
++	interface_event_stop();
++	list_for_each_entry(proc, &process_list, list) {
++		proc->uloop.cb = netifd_exit_process_cb;
++		kill(proc->uloop.pid, SIGTERM);
++	}
+ 
+-	/* SIGTERM lets a DHCP client release its lease */
+-	list_for_each_entry_safe(proc, tmp, &process_list, list)
+-		__netifd_kill_process(proc, SIGTERM);
++	exiting = true;
++	if (netifd_exit_busy())
++		uloop_run();
+ }
+ 
+ int main(int argc, char **argv)
+--- a/netifd.h
++++ b/netifd.h
+@@ -110,6 +110,7 @@ void netifd_log_message(int priority, co
+ void netifd_add_process(struct netifd_process *proc, int fd, int pid);
+ int netifd_start_process(const char **argv, char **env, struct netifd_process *proc);
+ void netifd_kill_process(struct netifd_process *proc);
++void netifd_exit_check(void);
+ 
+ struct device;
+ struct interface;

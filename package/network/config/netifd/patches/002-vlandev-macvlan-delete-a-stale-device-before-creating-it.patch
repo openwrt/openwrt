@@ -1,0 +1,43 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Date: Mon, 26 Oct 2026 20:45:34 +0100
+Subject: [PATCH 2/2] vlandev, macvlan: delete a stale device before creating
+ it
+
+A netifd that exits without bringing its interfaces down, as on a stop
+through procd or after a crash, leaves its vlan and macvlan devices in
+the kernel. The next netifd creates them with NLM_F_EXCL, which fails
+with -EEXIST, so an interface on such a device fails with
+DEVICE_CLAIM_FAILED until the device is removed by hand.
+
+Delete the device before creating it, as veth does since commit
+df2f5c9 ("veth: delete device before creation to handle stale state").
+
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+---
+ macvlan.c | 2 ++
+ vlandev.c | 2 ++
+ 2 files changed, 4 insertions(+)
+
+--- a/macvlan.c
++++ b/macvlan.c
+@@ -91,6 +91,8 @@ macvlan_set_up(struct macvlan_device *mv
+ 	if (ret < 0)
+ 		return ret;
+ 
++	system_macvlan_del(&mvdev->dev);
++
+ 	ret = system_macvlan_add(&mvdev->dev, mvdev->parent.dev, &mvdev->config);
+ 	if (ret < 0)
+ 		goto release;
+--- a/vlandev.c
++++ b/vlandev.c
+@@ -180,6 +180,8 @@ vlandev_set_up(struct vlandev_device *mv
+ 	if (ret < 0)
+ 		return ret;
+ 
++	system_vlandev_del(&mvdev->dev);
++
+ 	ret = system_vlandev_add(&mvdev->dev, mvdev->parent.dev, &mvdev->config);
+ 	if (ret < 0)
+ 		goto release;
