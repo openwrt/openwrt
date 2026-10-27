@@ -203,6 +203,10 @@ define BuildKernel
 	$(_SINGLE)$(KERNEL_MAKE) scripts_dtc
 	$(MAKE) -C image compile-dtb TARGET_BUILD=
 
+  dtbs_check: $(STAMP_CONFIGURED)
+	$(_SINGLE)$(KERNEL_MAKE) scripts_dtc dt_binding_schemas
+	$(MAKE) -C image check-dtb TARGET_BUILD=
+
   oldconfig menuconfig nconfig xconfig: $(STAMP_PREPARED) $(STAMP_CHECKED) FORCE
 	rm -f $(LINUX_DIR)/.config.prev
 	rm -f $(STAMP_CONFIGURED)
