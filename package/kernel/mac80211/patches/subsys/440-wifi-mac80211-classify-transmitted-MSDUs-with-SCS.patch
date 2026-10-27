@@ -1,0 +1,266 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Fri, 28 Aug 2026 10:04:33 +0200
+Subject: [PATCH] wifi: mac80211: classify transmitted MSDUs with SCS
+
+Hook the evaluator into ieee80211_select_queue(), which every data
+transmit path of an AP reaches, including 802.11 encapsulation offload
+and the unicast copies of a multicast frame. The TID it produces
+selects the TXQ, the AC and the block ack session, so the
+classification has to run before the frame is queued.
+
+It runs before cfg80211_classify8021d(), which preserves the priority
+that a frame already carries. A frame forwarded between two stations
+of the same AP carries its received TID that way and has to be
+classified like any other MSDU.
+
+The hook is limited to AP and AP_VLAN interfaces, because only the AP
+side classifies downlink MSDUs.
+
+Mark a classified frame with IEEE80211_TX_CTRL_STREAM_CLASSIFIED.
+Hardware that derives the TID from the frame itself, such as from its
+DSCP, has to be given the priority of such a frame explicitly.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+
+--- a/net/mac80211/ieee80211_i.h
++++ b/net/mac80211/ieee80211_i.h
+@@ -2268,6 +2268,7 @@ int ieee80211_set_scs(struct wiphy *wiph
+ int ieee80211_set_mscs(struct wiphy *wiphy, struct net_device *dev,
+ 		       const u8 *peer, struct cfg80211_mscs_desc *desc);
+ void ieee80211_sta_scs_free(struct sta_info *sta);
++bool ieee80211_flow_classify(struct sta_info *sta, struct sk_buff *skb);
+ 
+ /* link handling */
+ void ieee80211_link_setup(struct ieee80211_link_data *link);
+@@ -2320,7 +2321,7 @@ void __ieee80211_xmit_fast(struct ieee80
+ 			   struct sta_info *sta,
+ 			   struct ieee80211_fast_tx *fast_tx,
+ 			   struct sk_buff *skb, bool ampdu,
+-			   const u8 *da, const u8 *sa);
++			   const u8 *da, const u8 *sa, u32 ctrl_flags);
+ void ieee80211_aggr_check(struct ieee80211_sub_if_data *sdata,
+ 			  struct sta_info *sta, struct sk_buff *skb);
+ 
+--- a/net/mac80211/scs.c
++++ b/net/mac80211/scs.c
+@@ -84,6 +84,37 @@ ieee80211_scs_sta_build(struct cfg80211_
+ 	return scs;
+ }
+ 
++/**
++ * ieee80211_flow_classify - give an MSDU the user priority of its stream
++ *
++ * @sta: the receiver
++ * @skb: the MSDU, in IEEE 802.3 format
++ *
++ * Return: %true when it set skb->priority, %false to leave the frame to the
++ *	QoS map.
++ */
++bool ieee80211_flow_classify(struct sta_info *sta, struct sk_buff *skb)
++{
++	struct cfg80211_scs_verdict verdict;
++	struct cfg80211_flow_info info;
++	struct ieee80211_scs_sta *scs;
++
++	scs = rcu_dereference(sta->scs);
++	if (!scs)
++		return false;
++
++	if (!cfg80211_flow_parse(skb, &info))
++		return false;
++
++	cfg80211_scs_evaluate(scs->rule, scs->n_rules, &info, &verdict);
++	if (!verdict.match)
++		return false;
++
++	skb->priority = verdict.up;
++
++	return true;
++}
++
+ int ieee80211_set_scs(struct wiphy *wiphy, struct net_device *dev,
+ 		      const u8 *peer, struct cfg80211_scs_desc * const *desc,
+ 		      struct cfg80211_scs_result *res, u8 n_desc)
+--- a/net/mac80211/wme.c
++++ b/net/mac80211/wme.c
+@@ -145,7 +145,8 @@ u16 ieee80211_select_queue_80211(struct
+ }
+ 
+ u16 ieee80211_select_queue(struct ieee80211_sub_if_data *sdata,
+-			   struct sta_info *sta, struct sk_buff *skb)
++			   struct sta_info *sta, struct sk_buff *skb,
++			   u32 *ctrl_flags)
+ {
+ 	const struct ethhdr *eth = (void *)skb->data;
+ 	struct mac80211_qos_map *qos_map;
+@@ -174,6 +175,16 @@ u16 ieee80211_select_queue(struct ieee80
+ 		goto downgrade;
+ 	}
+ 
++	/* A stream priority overrides the received one of a forwarded frame */
++	if (sta &&
++	    (sdata->vif.type == NL80211_IFTYPE_AP ||
++	     sdata->vif.type == NL80211_IFTYPE_AP_VLAN) &&
++	    ieee80211_flow_classify(sta, skb)) {
++		if (ctrl_flags)
++			*ctrl_flags |= IEEE80211_TX_CTRL_STREAM_CLASSIFIED;
++		goto downgrade;
++	}
++
+ 	/* use the data classifier to determine what 802.1d tag the
+ 	 * data frame has */
+ 	qos_map = rcu_dereference(sdata->qos_map);
+--- a/include/net/mac80211.h
++++ b/include/net/mac80211.h
+@@ -1129,6 +1129,8 @@ enum mac80211_tx_info_flags {
+  * @IEEE80211_TX_CTRL_DONT_USE_RATE_MASK: Don't use rate mask for this frame
+  *	which is transmitted due to scanning or offchannel TX, not in normal
+  *	operation on the interface.
++ * @IEEE80211_TX_CTRL_STREAM_CLASSIFIED: SCS or MSCS set the priority of this
++ *	frame, so it does not follow from the frame contents.
+  * @IEEE80211_TX_CTRL_MLO_LINK: If not @IEEE80211_LINK_UNSPECIFIED, this
+  *	frame should be transmitted on the specific link. This really is
+  *	only relevant for frames that do not have data present, and is
+@@ -1150,6 +1152,7 @@ enum mac80211_tx_control_flags {
+ 	IEEE80211_TX_CTRL_DONT_REORDER		= BIT(8),
+ 	IEEE80211_TX_CTRL_MCAST_MLO_FIRST_TX	= BIT(9),
+ 	IEEE80211_TX_CTRL_DONT_USE_RATE_MASK	= BIT(10),
++	IEEE80211_TX_CTRL_STREAM_CLASSIFIED	= BIT(11),
+ 	IEEE80211_TX_CTRL_MLO_LINK		= 0xf0000000,
+ };
+ 
+--- a/net/mac80211/mesh.c
++++ b/net/mac80211/mesh.c
+@@ -800,7 +800,8 @@ bool ieee80211_mesh_xmit_fast(struct iee
+ 	if (!skb)
+ 		return true;
+ 
+-	skb_set_queue_mapping(skb, ieee80211_select_queue(sdata, sta, skb));
++	skb_set_queue_mapping(skb,
++			      ieee80211_select_queue(sdata, sta, skb, NULL));
+ 
+ 	meshhdr = (struct ieee80211s_hdr *)entry->hdr;
+ 	if ((meshhdr->flags & MESH_FLAGS_AE) == MESH_FLAGS_AE_A5_A6) {
+@@ -821,7 +822,7 @@ bool ieee80211_mesh_xmit_fast(struct iee
+ 
+ 	skb_push(skb, 2 * ETH_ALEN);
+ 	__ieee80211_xmit_fast(sdata, sta, &entry->fast_tx, skb, tid_tx,
+-			      entry->mpath->dst, sdata->vif.addr);
++			      entry->mpath->dst, sdata->vif.addr, 0);
+ 
+ 	return true;
+ }
+--- a/net/mac80211/rx.c
++++ b/net/mac80211/rx.c
+@@ -2949,7 +2949,7 @@ ieee80211_rx_mesh_fast_forward(struct ie
+ 	memcpy(&eth, skb->data, ETH_HLEN - 2);
+ 	skb_pull(skb, 2);
+ 	__ieee80211_xmit_fast(sdata, sta, &entry->fast_tx, skb, tid_tx,
+-			      eth.h_dest, eth.h_source);
++			      eth.h_dest, eth.h_source, 0);
+ 	IEEE80211_IFSTA_MESH_CTR_INC(ifmsh, fwded_unicast);
+ 	IEEE80211_IFSTA_MESH_CTR_INC(ifmsh, fwded_frames);
+ 
+--- a/net/mac80211/tx.c
++++ b/net/mac80211/tx.c
+@@ -3782,7 +3782,7 @@ void __ieee80211_xmit_fast(struct ieee80
+ 			   struct sta_info *sta,
+ 			   struct ieee80211_fast_tx *fast_tx,
+ 			   struct sk_buff *skb, bool ampdu,
+-			   const u8 *da, const u8 *sa)
++			   const u8 *da, const u8 *sa, u32 ctrl_flags)
+ {
+ 	struct ieee80211_local *local = sdata->local;
+ 	struct ieee80211_hdr *hdr = (void *)fast_tx->hdr;
+@@ -3821,7 +3821,7 @@ void __ieee80211_xmit_fast(struct ieee80
+ 	info->control.vif = &sdata->vif;
+ 	info->flags = IEEE80211_TX_CTL_FIRST_FRAGMENT |
+ 		      IEEE80211_TX_CTL_DONTFRAG;
+-	info->control.flags = IEEE80211_TX_CTRL_FAST_XMIT |
++	info->control.flags = IEEE80211_TX_CTRL_FAST_XMIT | ctrl_flags |
+ 			      u32_encode_bits(IEEE80211_LINK_UNSPECIFIED,
+ 					      IEEE80211_TX_CTRL_MLO_LINK);
+ 
+@@ -3871,7 +3871,7 @@ free:
+ static bool ieee80211_xmit_fast(struct ieee80211_sub_if_data *sdata,
+ 				struct sta_info *sta,
+ 				struct ieee80211_fast_tx *fast_tx,
+-				struct sk_buff *skb)
++				struct sk_buff *skb, u32 ctrl_flags)
+ {
+ 	u16 ethertype = (skb->data[12] << 8) | skb->data[13];
+ 	struct ieee80211_hdr *hdr = (void *)fast_tx->hdr;
+@@ -3913,7 +3913,7 @@ static bool ieee80211_xmit_fast(struct i
+ 	skb_list_walk_safe(skb, skb, next) {
+ 		skb_mark_not_on_list(skb);
+ 		__ieee80211_xmit_fast(sdata, sta, fast_tx, skb, tid_tx,
+-				      eth.h_dest, eth.h_source);
++				      eth.h_dest, eth.h_source, ctrl_flags);
+ 	}
+ 
+ 	return true;
+@@ -4458,7 +4458,8 @@ void __ieee80211_subif_start_xmit(struct
+ 	if (IS_ERR(sta))
+ 		sta = NULL;
+ 
+-	skb_set_queue_mapping(skb, ieee80211_select_queue(sdata, sta, skb));
++	skb_set_queue_mapping(skb, ieee80211_select_queue(sdata, sta, skb,
++							   &ctrl_flags));
+ 	ieee80211_aggr_check(sdata, sta, skb);
+ 
+ 	if (sta) {
+@@ -4466,8 +4467,11 @@ void __ieee80211_subif_start_xmit(struct
+ 
+ 		fast_tx = rcu_dereference(sta->fast_tx);
+ 
++		/* The fast path sets its own link and control flags */
+ 		if (fast_tx &&
+-		    ieee80211_xmit_fast(sdata, sta, fast_tx, skb))
++		    ieee80211_xmit_fast(sdata, sta, fast_tx, skb,
++					ctrl_flags &
++					IEEE80211_TX_CTRL_STREAM_CLASSIFIED))
+ 			goto out;
+ 	}
+ 
+@@ -4769,10 +4773,11 @@ static void ieee80211_8023_xmit(struct i
+ 	struct tid_ampdu_tx *tid_tx = NULL;
+ 	struct sk_buff *seg, *next;
+ 	unsigned int skbs = 0, len = 0;
++	u32 ctrl_flags = 0;
+ 	u16 queue;
+ 	u8 tid;
+ 
+-	queue = ieee80211_select_queue(sdata, sta, skb);
++	queue = ieee80211_select_queue(sdata, sta, skb, &ctrl_flags);
+ 	skb_set_queue_mapping(skb, queue);
+ 
+ 	if (unlikely(test_bit(SCAN_SW_SCANNING, &local->scanning)) &&
+@@ -4827,6 +4832,7 @@ static void ieee80211_8023_xmit(struct i
+ 
+ 	info->flags |= IEEE80211_TX_CTL_HW_80211_ENCAP;
+ 	info->control.vif = &sdata->vif;
++	info->control.flags |= ctrl_flags;
+ 
+ 	if (key)
+ 		info->control.hw_key = &key->conf;
+@@ -6773,7 +6779,7 @@ int ieee80211_tx_control_port(struct wip
+ 	}
+ 
+ 	if (!IS_ERR(sta)) {
+-		u16 queue = ieee80211_select_queue(sdata, sta, skb);
++		u16 queue = ieee80211_select_queue(sdata, sta, skb, NULL);
+ 
+ 		skb_set_queue_mapping(skb, queue);
+ 
+--- a/net/mac80211/wme.h
++++ b/net/mac80211/wme.h
+@@ -14,7 +14,8 @@ u16 ieee80211_select_queue_80211(struct
+ 				 struct sk_buff *skb,
+ 				 struct ieee80211_hdr *hdr);
+ u16 ieee80211_select_queue(struct ieee80211_sub_if_data *sdata,
+-			   struct sta_info *sta, struct sk_buff *skb);
++			   struct sta_info *sta, struct sk_buff *skb,
++			   u32 *ctrl_flags);
+ void ieee80211_set_qos_hdr(struct ieee80211_sub_if_data *sdata,
+ 			   struct sk_buff *skb);
+ 

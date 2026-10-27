@@ -1,0 +1,95 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Tue, 13 Oct 2026 11:57:36 +0200
+Subject: [PATCH] wifi: cfg80211: split the DSCP mapping out of
+ cfg80211_classify8021d()
+
+A driver that passes the DSCP mapping to its firmware, or that
+classifies an offloaded flow, has a DSCP but no frame to pass to
+cfg80211_classify8021d(). Move the QoS map lookup and the RFC 8325
+default mapping into cfg80211_dscp_to_up(), so that a caller can map a
+DSCP without a frame.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+
+--- a/include/net/cfg80211.h
++++ b/include/net/cfg80211.h
+@@ -8101,6 +8101,15 @@ unsigned int cfg80211_classify8021d(stru
+ 				    struct cfg80211_qos_map *qos_map);
+ 
+ /**
++ * cfg80211_dscp_to_up - map a DSCP to a user priority
++ * @dscp: the DSCP, 0 to 63
++ * @qos_map: Interworking QoS mapping or %NULL for the RFC 8325 default
++ * Return: The user priority.
++ */
++unsigned int cfg80211_dscp_to_up(unsigned int dscp,
++				 const struct cfg80211_qos_map *qos_map);
++
++/**
+  * cfg80211_find_elem_match - match information element and byte array in data
+  *
+  * @eid: element ID
+--- a/net/wireless/util.c
++++ b/net/wireless/util.c
+@@ -1014,19 +1014,30 @@ unsigned int cfg80211_classify8021d(stru
+ 		return 0;
+ 	}
+ 
++	ret = cfg80211_dscp_to_up(dscp >> 2, qos_map);
++out:
++	return array_index_nospec(ret, IEEE80211_NUM_TIDS);
++}
++EXPORT_SYMBOL(cfg80211_classify8021d);
++
++unsigned int cfg80211_dscp_to_up(unsigned int dscp,
++				 const struct cfg80211_qos_map *qos_map)
++{
++	unsigned int ret;
++
+ 	if (qos_map) {
+-		unsigned int i, tmp_dscp = dscp >> 2;
++		unsigned int i;
+ 
+ 		for (i = 0; i < qos_map->num_des; i++) {
+-			if (tmp_dscp == qos_map->dscp_exception[i].dscp) {
++			if (dscp == qos_map->dscp_exception[i].dscp) {
+ 				ret = qos_map->dscp_exception[i].up;
+ 				goto out;
+ 			}
+ 		}
+ 
+ 		for (i = 0; i < 8; i++) {
+-			if (tmp_dscp >= qos_map->up[i].low &&
+-			    tmp_dscp <= qos_map->up[i].high) {
++			if (dscp >= qos_map->up[i].low &&
++			    dscp <= qos_map->up[i].high) {
+ 				ret = i;
+ 				goto out;
+ 			}
+@@ -1037,7 +1048,7 @@ unsigned int cfg80211_classify8021d(stru
+ 	 * Most Significant Bits (MSBs) of the DSCP are used as the
+ 	 * corresponding L2 markings.
+ 	 */
+-	ret = dscp >> 5;
++	ret = dscp >> 3;
+ 
+ 	/* Handle specific DSCP values for which the default mapping (as
+ 	 * described above) doesn't adhere to the intended usage of the DSCP
+@@ -1050,7 +1061,7 @@ unsigned int cfg80211_classify8021d(stru
+ 	 * - Real-Time Interactive: CS4
+ 	 * - Signaling: CS5
+ 	 */
+-	switch (dscp >> 2) {
++	switch (dscp) {
+ 	case 10:
+ 	case 12:
+ 	case 14:
+@@ -1095,7 +1106,7 @@ unsigned int cfg80211_classify8021d(stru
+ out:
+ 	return array_index_nospec(ret, IEEE80211_NUM_TIDS);
+ }
+-EXPORT_SYMBOL(cfg80211_classify8021d);
++EXPORT_SYMBOL(cfg80211_dscp_to_up);
+ 
+ const struct element *ieee80211_bss_get_elem(struct cfg80211_bss *bss, u8 id)
+ {

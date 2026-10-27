@@ -1,0 +1,120 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Sun, 30 Aug 2026 02:30:20 +0200
+Subject: [PATCH] wifi: mac80211_hwsim: support SCS and MSCS
+
+Advertise both services, so that the stack can be tested without
+hardware. mac80211 implements them in software, so the two extended
+feature flags are all a simulated device needs for classification.
+
+Also implement sta_set_scs, since mac80211 declines every descriptor
+with a traffic description when no driver answers it. Nothing here
+schedules a stream, so the answer comes from debugfs: the scs_status
+file holds the status code for such descriptors, and zero accepts them.
+This lets a test cover both outcomes.
+
+Set the SCS Traffic Description Support subfield of the EHT MAC
+Capabilities for AP interfaces on every band. Without it, a non-AP EHT
+STA never sends a QoS Characteristics element to a simulated AP
+(IEEE Std 802.11be-2024, 35.17: "A non-AP EHT STA shall not transmit an
+SCS Request frame with SCS Descriptor element(s) containing a QoS
+Characteristics element to an AP from which it has not received an EHT
+Capabilities element with the SCS Traffic Description Support field
+equal to 1.").
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/drivers/net/wireless/virtual/mac80211_hwsim_i.h
++++ b/drivers/net/wireless/virtual/mac80211_hwsim_i.h
+@@ -163,6 +163,9 @@ struct mac80211_hwsim_data {
+ 	/* RSSI in rx status of the receiver */
+ 	int rx_rssi;
+ 
++	/* Status code for a traffic description, 0 accepts */
++	u16 scs_status;
++
+ 	/* only used when pmsr capability is supplied */
+ 	struct cfg80211_pmsr_capabilities pmsr_capa;
+ 	struct cfg80211_pmsr_request *pmsr_request;
+--- a/drivers/net/wireless/virtual/mac80211_hwsim_main.c
++++ b/drivers/net/wireless/virtual/mac80211_hwsim_main.c
+@@ -4822,6 +4822,24 @@ static int mac80211_hwsim_set_radar_back
+ 	return 0;
+ }
+ 
++/* The status code for a traffic description is set via debugfs for testing */
++static int mac80211_hwsim_sta_set_scs(struct ieee80211_hw *hw,
++				      struct ieee80211_vif *vif,
++				      struct ieee80211_sta *sta,
++				      struct cfg80211_scs_desc * const *desc,
++				      struct cfg80211_scs_result *res,
++				      u8 n_desc)
++{
++	struct mac80211_hwsim_data *data = hw->priv;
++	u8 i;
++
++	for (i = 0; i < n_desc; i++)
++		if (desc[i]->qos_char)
++			res[i].status = data->scs_status;
++
++	return 0;
++}
++
+ #ifdef CPTCFG_MAC80211_DEBUGFS
+ #define HWSIM_DEBUGFS_OPS					\
+ 	.link_add_debugfs = mac80211_hwsim_link_add_debugfs,
+@@ -4846,6 +4864,7 @@ static int mac80211_hwsim_set_radar_back
+ 	.link_sta_rc_update = mac80211_hwsim_sta_rc_update,	\
+ 	.conf_tx = mac80211_hwsim_conf_tx,			\
+ 	.get_survey = mac80211_hwsim_get_survey,		\
++	.sta_set_scs = mac80211_hwsim_sta_set_scs,		\
+ 	CFG80211_TESTMODE_CMD(mac80211_hwsim_testmode_cmd)	\
+ 	.ampdu_action = mac80211_hwsim_ampdu_action,		\
+ 	.flush = mac80211_hwsim_flush,				\
+@@ -5270,7 +5289,8 @@ static const struct ieee80211_sband_ifty
+ 				.mac_cap_info[0] =
+ 					IEEE80211_EHT_MAC_CAP0_EPCS_PRIO_ACCESS |
+ 					IEEE80211_EHT_MAC_CAP0_OM_CONTROL |
+-					IEEE80211_EHT_MAC_CAP0_TRIG_TXOP_SHARING_MODE1,
++					IEEE80211_EHT_MAC_CAP0_TRIG_TXOP_SHARING_MODE1 |
++					IEEE80211_EHT_MAC_CAP0_SCS_TRAFFIC_DESC,
+ 				.phy_cap_info[0] =
+ 					IEEE80211_EHT_PHY_CAP0_242_TONE_RU_GT20MHZ |
+ 					IEEE80211_EHT_PHY_CAP0_NDP_4_EHT_LFT_32_GI |
+@@ -5566,7 +5586,8 @@ static const struct ieee80211_sband_ifty
+ 				.mac_cap_info[0] =
+ 					IEEE80211_EHT_MAC_CAP0_EPCS_PRIO_ACCESS |
+ 					IEEE80211_EHT_MAC_CAP0_OM_CONTROL |
+-					IEEE80211_EHT_MAC_CAP0_TRIG_TXOP_SHARING_MODE1,
++					IEEE80211_EHT_MAC_CAP0_TRIG_TXOP_SHARING_MODE1 |
++					IEEE80211_EHT_MAC_CAP0_SCS_TRAFFIC_DESC,
+ 				.phy_cap_info[0] =
+ 					IEEE80211_EHT_PHY_CAP0_242_TONE_RU_GT20MHZ |
+ 					IEEE80211_EHT_PHY_CAP0_NDP_4_EHT_LFT_32_GI |
+@@ -5909,7 +5930,8 @@ static const struct ieee80211_sband_ifty
+ 				.mac_cap_info[0] =
+ 					IEEE80211_EHT_MAC_CAP0_EPCS_PRIO_ACCESS |
+ 					IEEE80211_EHT_MAC_CAP0_OM_CONTROL |
+-					IEEE80211_EHT_MAC_CAP0_TRIG_TXOP_SHARING_MODE1,
++					IEEE80211_EHT_MAC_CAP0_TRIG_TXOP_SHARING_MODE1 |
++					IEEE80211_EHT_MAC_CAP0_SCS_TRAFFIC_DESC,
+ 				.phy_cap_info[0] =
+ 					IEEE80211_EHT_PHY_CAP0_320MHZ_IN_6GHZ |
+ 					IEEE80211_EHT_PHY_CAP0_242_TONE_RU_GT20MHZ |
+@@ -6723,6 +6745,8 @@ static int mac80211_hwsim_new_radio(stru
+ 			      NL80211_EXT_FEATURE_EXT_KEY_ID);
+ 	wiphy_ext_feature_set(hw->wiphy,
+ 			      NL80211_EXT_FEATURE_ASSOC_FRAME_ENCRYPTION);
++	wiphy_ext_feature_set(hw->wiphy, NL80211_EXT_FEATURE_SCS);
++	wiphy_ext_feature_set(hw->wiphy, NL80211_EXT_FEATURE_MSCS);
+ 
+ 	hw->wiphy->interface_modes = param->iftypes;
+ 
+@@ -6905,6 +6929,8 @@ static int mac80211_hwsim_new_radio(stru
+ 			    &hwsim_fops_group);
+ 	debugfs_create_file("rx_rssi", 0666, data->debugfs, data,
+ 			    &hwsim_fops_rx_rssi);
++	debugfs_create_u16("scs_status", 0600, data->debugfs,
++			   &data->scs_status);
+ 	if (!data->use_chanctx)
+ 		debugfs_create_file("dfs_simulate_radar", 0222,
+ 				    data->debugfs,
