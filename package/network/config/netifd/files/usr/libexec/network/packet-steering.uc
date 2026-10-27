@@ -170,6 +170,13 @@ for (let dev in netdevs) {
 		let phy = `phy${phyidx}`;
 		if (index(pdev.phy, phy) < 0)
 			push(pdev.phy, phy);
+
+		// mac80211 gives the netdev one receive queue even when the
+		// driver spreads its receive rings over the CPUs by RSS
+		let wiphy = trim(readfile(`/sys/class/net/${dev}/phy80211/name`));
+		let hwflags = readfile(`/sys/kernel/debug/ieee80211/${wiphy}/hwflags`);
+		if (hwflags && index(hwflags, "USES_RSS") >= 0)
+			pdev.rss = true;
 	}
 
 	push(pdev.netdev, dev);
@@ -319,7 +326,7 @@ function assign_dev_cpu(dev) {
 	// the load over every CPU when the interrupts are spread too, and
 	// steering it to one CPU would funnel it back
 	let hw_spread = !length(dev.tasks) &&
-		length(dev.rx_queues) >= length(cpus) &&
+		(dev.rss || length(dev.rx_queues) >= length(cpus)) &&
 		length(irq_cpus) == length(cpus);
 
 	if (length(dev.tasks) > 0) {
