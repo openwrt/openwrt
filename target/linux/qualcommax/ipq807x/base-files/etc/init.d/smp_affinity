@@ -115,5 +115,8 @@ boot() {
 
   $enable && {
     enable_affinity_ipq807x
+
+    # receive steering depends on where the ring interrupts are
+    [ -x /etc/init.d/packet_steering ] && /etc/init.d/packet_steering reload
   }
 }
