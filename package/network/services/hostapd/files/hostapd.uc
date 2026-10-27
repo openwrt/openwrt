@@ -1346,8 +1346,9 @@ function iface_reload_config(name, phydev, config, old_config)
 		if (old_ifname == new_ifname)
 			continue;
 
+		// Short enough that "<tmp>.sta<aid>" of a WDS station fits IFNAMSIZ
 		if (hostapd.bss[name][new_ifname]) {
-			new_ifname = "tmp_" + substr(hostapd.sha1(new_ifname), 0, 8);
+			new_ifname = sprintf("tmp%d", i);
 			push(rename_list, i);
 		}
 
