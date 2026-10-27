@@ -154,6 +154,7 @@ static void hostapd_ubus_ref_dec(void)
 	if (ctx_ref)
 		return;
 
+	eloop_cancel_timeout(ubus_reconnect_timeout, ctx, NULL);
 	uloop_fd_delete(&ctx->sock);
 	ubus_free(ctx);
 	ctx = NULL;
