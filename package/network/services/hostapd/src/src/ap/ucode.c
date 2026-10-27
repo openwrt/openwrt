@@ -745,12 +745,8 @@ uc_hostapd_iface_stop(uc_vm_t *vm, size_t nargs)
 	if (iface->state != HAPD_IFACE_ENABLED)
 		uc_hostapd_disable_iface(iface);
 
-	for (i = 0; i < iface->num_bss; i++) {
-		struct hostapd_data *hapd = iface->bss[i];
-
-		hostapd_drv_stop_ap(hapd);
-		hapd->beacon_set_done = 0;
-	}
+	for (i = 0; i < iface->num_bss; i++)
+		hostapd_bss_stop_ap(iface->bss[i]);
 
 	return NULL;
 }

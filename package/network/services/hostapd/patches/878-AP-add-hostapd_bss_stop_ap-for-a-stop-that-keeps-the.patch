@@ -1,0 +1,98 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Sun, 25 Oct 2026 17:00:00 +0100
+Subject: [PATCH] AP: add hostapd_bss_stop_ap() for a stop that keeps the BSS
+
+mac80211 drops every station of a BSS that stops beaconing, and of an
+AP MLD every non-AP MLD that holds the stopped link, without a frame
+to the stations and without an event that hostapd acts on. A caller
+that stops a BSS with hostapd_drv_stop_ap() and starts it again later,
+with the same BSSID, leaves hostapd with entries of stations that the
+driver no longer holds, and the stations are not told.
+
+Add hostapd_bss_stop_ap(), which frees the stations and sends the
+broadcast Deauthentication with reason 3, as hostapd_bss_deinit_no_free()
+does for a disabled BSS, and then stops the BSS in the driver. It keeps
+the WEP keys, which a later start does not set again.
+
+The Deauthentication ends the association of a non-AP MLD on all its
+links, also of one whose association link is another link of the AP
+MLD. hostapd_free_stas() frees only the link STA of such a non-AP MLD
+on the stopped link, so free it on all its links first.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/src/ap/hostapd.c
++++ b/src/ap/hostapd.c
+@@ -1971,6 +1971,21 @@ void hostapd_bss_deinit_no_free(struct h
+ }
+ 
+ 
++/* The driver drops the stations of a BSS that stops beaconing, so tell and
++ * free them first. The keys of the BSS stay for the next start. */
++void hostapd_bss_stop_ap(struct hostapd_data *hapd)
++{
++#ifdef CONFIG_IEEE80211BE
++	if (hapd->conf->mld_ap)
++		hostapd_free_link_sta_mlds(hapd);
++#endif /* CONFIG_IEEE80211BE */
++	hostapd_free_stas(hapd);
++	hostapd_flush_old_stations(hapd, WLAN_REASON_DEAUTH_LEAVING);
++	hostapd_drv_stop_ap(hapd);
++	hapd->beacon_set_done = 0;
++}
++
++
+ /**
+  * hostapd_validate_bssid_configuration - Validate BSSID configuration
+  * @iface: Pointer to interface data
+--- a/src/ap/hostapd.h
++++ b/src/ap/hostapd.h
+@@ -902,6 +902,7 @@ int hostapd_reload_iface(struct hostapd_
+ int hostapd_reload_bss_only(struct hostapd_data *bss);
+ int hostapd_disable_iface(struct hostapd_iface *hapd_iface);
+ void hostapd_bss_deinit_no_free(struct hostapd_data *hapd);
++void hostapd_bss_stop_ap(struct hostapd_data *hapd);
+ void hostapd_free_hapd_data(struct hostapd_data *hapd);
+ void hostapd_cleanup_iface_partial(struct hostapd_iface *iface);
+ int hostapd_add_iface(struct hapd_interfaces *ifaces, char *buf);
+--- a/src/ap/sta_info.c
++++ b/src/ap/sta_info.c
+@@ -2399,6 +2399,28 @@ void hostapd_free_mld_partner_stas(struc
+ 		ap_sta_remove_link_sta(hapd, sta);
+ 	}
+ }
++
++
++/* A Deauthentication on one link ends the association of a non-AP MLD on all
++ * its links, so free the non-AP MLDs whose association link is another one. */
++void hostapd_free_link_sta_mlds(struct hostapd_data *hapd)
++{
++	struct sta_info *sta, *next, *assoc_sta;
++	struct hostapd_data *assoc_hapd;
++
++	for (sta = hapd->sta_list; sta; sta = next) {
++		next = sta->next;
++		if (!hostapd_sta_is_link_sta(hapd, sta))
++			continue;
++
++		assoc_sta = hostapd_ml_get_assoc_sta(hapd, sta, &assoc_hapd);
++		if (!assoc_sta || assoc_sta == sta)
++			continue;
++
++		ap_sta_remove_link_sta(assoc_hapd, assoc_sta);
++		ap_free_sta(assoc_hapd, assoc_sta);
++	}
++}
+ #endif /* CONFIG_IEEE80211BE */
+ 
+ 
+--- a/src/ap/sta_info.h
++++ b/src/ap/sta_info.h
+@@ -524,6 +524,7 @@ void ap_sta_mld_info_copy(struct mld_inf
+ void ap_free_link_sta(struct hostapd_data *lhapd, struct sta_info *lsta);
+ void hostapd_free_link_stas(struct hostapd_data *hapd);
+ void hostapd_free_mld_partner_stas(struct hostapd_data *hapd);
++void hostapd_free_link_sta_mlds(struct hostapd_data *hapd);
+ void set_wpa_sm_for_each_partner_link(struct hostapd_data *hapd,
+ 				      struct sta_info *psta, void *wpa_sm);
+ void clear_wpa_sm_for_each_partner_link(struct hostapd_data *hapd,
