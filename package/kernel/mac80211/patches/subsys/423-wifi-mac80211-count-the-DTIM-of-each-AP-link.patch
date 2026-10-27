@@ -1,0 +1,218 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Sat, 10 Oct 2026 08:00:00 +0200
+Subject: [PATCH] wifi: mac80211: count the DTIM of each AP link
+
+__ieee80211_beacon_add_tim() counts the DTIM in sdata->u.ap.ps, which
+all links of an AP MLD share. Each Beacon frame that a link builds with
+ieee80211_beacon_get() moves the one count, so the DTIM Count in the
+Beacon frames of a link does not follow the TBTTs of that link. With two
+links and a DTIM period of 2, one link can send a DTIM Count of 0 in
+every Beacon frame and the other in none.
+
+Keep the count in the link, as each affiliated AP is a BSS with its own
+TBTTs. ieee80211_recalc_dtim() sets the count of the link it gets, from
+the beacon interval and DTIM period of that link.
+ieee80211_get_buffered_bc() reads the beacon of the default link, so it
+serves only an AP that is not an AP MLD, and it reads the count of the
+default link. A mesh interface keeps its count in its ps_data.
+
+The debugfs file dtim_count shows the count of a link. For an AP MLD it
+is in the directory of each link; for another AP it stays in the
+directory of the interface.
+
+Fixes: 6e8912a50375 ("wifi: mac80211: return a beacon for a specific link")
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/net/mac80211/cfg.c
++++ b/net/mac80211/cfg.c
+@@ -1919,7 +1919,7 @@ static int ieee80211_start_ap(struct wip
+ 	}
+ 
+ 	tsf = drv_get_tsf(local, sdata);
+-	ieee80211_recalc_dtim(sdata, tsf);
++	ieee80211_recalc_dtim(link, tsf);
+ 
+ 	if (link->u.ap.s1g_short_beacon)
+ 		ieee80211_recalc_sb_count(sdata, tsf);
+--- a/net/mac80211/debugfs_netdev.c
++++ b/net/mac80211/debugfs_netdev.c
+@@ -603,7 +603,7 @@ IEEE80211_IF_FILE_RW(tdls_wider_bw);
+ /* AP attributes */
+ IEEE80211_IF_FILE(num_mcast_sta, u.ap.num_mcast_sta, ATOMIC);
+ IEEE80211_IF_FILE(num_sta_ps, u.ap.ps.num_sta_ps, ATOMIC);
+-IEEE80211_IF_FILE(dtim_count, u.ap.ps.dtim_count, DEC);
++IEEE80211_IF_LINK_FILE(dtim_count, u.ap.dtim_count, DEC);
+ IEEE80211_IF_FILE(num_mcast_sta_vlan, u.vlan.num_mcast_sta, ATOMIC);
+ 
+ static ssize_t ieee80211_if_fmt_num_buffered_multicast(
+@@ -704,7 +704,7 @@ static ssize_t ieee80211_if_parse_tsf(
+ 		}
+ 	}
+ 
+-	ieee80211_recalc_dtim(sdata, drv_get_tsf(local, sdata));
++	ieee80211_recalc_dtim(&sdata->deflink, drv_get_tsf(local, sdata));
+ 	return buflen;
+ }
+ IEEE80211_IF_FILE_RW(tsf);
+@@ -854,7 +854,6 @@ static void add_ap_files(struct ieee8021
+ {
+ 	DEBUGFS_ADD(num_mcast_sta);
+ 	DEBUGFS_ADD(num_sta_ps);
+-	DEBUGFS_ADD(dtim_count);
+ 	DEBUGFS_ADD(num_buffered_multicast);
+ 	DEBUGFS_ADD_MODE(tkip_mic_test, 0200);
+ 	DEBUGFS_ADD_MODE(multicast_to_unicast, 0600);
+@@ -992,6 +991,9 @@ static void add_link_files(struct ieee80
+ 	case NL80211_IFTYPE_STATION:
+ 		DEBUGFS_ADD_MODE(dentry, smps, 0600);
+ 		break;
++	case NL80211_IFTYPE_AP:
++		DEBUGFS_ADD(dentry, dtim_count);
++		break;
+ 	default:
+ 		break;
+ 	}
+--- a/net/mac80211/ieee80211_i.h
++++ b/net/mac80211/ieee80211_i.h
+@@ -1100,6 +1100,8 @@ struct ieee80211_link_data_ap {
+ 
+ 	/* to be used after channel switch. */
+ 	struct cfg80211_beacon_data *next_beacon;
++
++	int dtim_count;
+ };
+ 
+ struct ieee80211_link_data {
+@@ -2871,7 +2873,7 @@ void ieee80211_dfs_radar_detected_work(s
+ int ieee80211_send_action_csa(struct ieee80211_sub_if_data *sdata,
+ 			      struct cfg80211_csa_settings *csa_settings);
+ void ieee80211_recalc_sb_count(struct ieee80211_sub_if_data *sdata, u64 tsf);
+-void ieee80211_recalc_dtim(struct ieee80211_sub_if_data *sdata, u64 tsf);
++void ieee80211_recalc_dtim(struct ieee80211_link_data *link, u64 tsf);
+ 
+ struct ieee80211_check_combinations_data {
+ 	const struct cfg80211_chan_def *chandef;
+--- a/net/mac80211/mesh.c
++++ b/net/mac80211/mesh.c
+@@ -1189,7 +1189,7 @@ int ieee80211_start_mesh(struct ieee8021
+ 		return -ENOMEM;
+ 	}
+ 
+-	ieee80211_recalc_dtim(sdata, drv_get_tsf(local, sdata));
++	ieee80211_recalc_dtim(&sdata->deflink, drv_get_tsf(local, sdata));
+ 	ieee80211_link_info_change_notify(sdata, &sdata->deflink, changed);
+ 
+ 	netif_carrier_on(sdata->dev);
+--- a/net/mac80211/tx.c
++++ b/net/mac80211/tx.c
+@@ -5228,6 +5228,10 @@ static void __ieee80211_beacon_add_tim(s
+ 	bool mcast_traffic = false, have_bits = false;
+ 	struct ieee80211_bss_conf *link_conf = link->conf;
+ 	bool s1g = ieee80211_get_link_sband(link)->band == NL80211_BAND_S1GHZ;
++	int *dtim_count = &ps->dtim_count;
++
++	if (sdata->vif.type == NL80211_IFTYPE_AP)
++		dtim_count = &link->u.ap.dtim_count;
+ 
+ 	/* Generate bitmap for TIM only if there are any STAs in power save
+ 	 * mode. */
+@@ -5238,19 +5242,19 @@ static void __ieee80211_beacon_add_tim(s
+ 					  IEEE80211_MAX_AID + 1);
+ 
+ 	if (!is_template) {
+-		if (ps->dtim_count == 0)
+-			ps->dtim_count = link_conf->dtim_period - 1;
++		if (*dtim_count == 0)
++			*dtim_count = link_conf->dtim_period - 1;
+ 		else
+-			ps->dtim_count--;
++			(*dtim_count)--;
+ 	}
+ 
+ 	/* Length is set after parsing the AID bitmap */
+ 	tim = skb_put(skb, sizeof(struct element));
+ 	tim->id = WLAN_EID_TIM;
+-	skb_put_u8(skb, ps->dtim_count);
++	skb_put_u8(skb, *dtim_count);
+ 	skb_put_u8(skb, link_conf->dtim_period);
+ 
+-	if (ps->dtim_count == 0 && !skb_queue_empty(&ps->bc_buf))
++	if (*dtim_count == 0 && !skb_queue_empty(&ps->bc_buf))
+ 		mcast_traffic = true;
+ 
+ 	ps->dtim_bc_mc = mcast_traffic;
+@@ -6353,6 +6357,7 @@ ieee80211_get_buffered_bc(struct ieee802
+ 	struct ps_data *ps;
+ 	struct ieee80211_tx_info *info;
+ 	struct ieee80211_chanctx_conf *chanctx_conf;
++	int dtim_count;
+ 
+ 	sdata = vif_to_sdata(vif);
+ 
+@@ -6370,13 +6375,15 @@ ieee80211_get_buffered_bc(struct ieee802
+ 			goto out;
+ 
+ 		ps = &sdata->u.ap.ps;
++		dtim_count = sdata->deflink.u.ap.dtim_count;
+ 	} else if (ieee80211_vif_is_mesh(&sdata->vif)) {
+ 		ps = &sdata->u.mesh.ps;
++		dtim_count = ps->dtim_count;
+ 	} else {
+ 		goto out;
+ 	}
+ 
+-	if (ps->dtim_count != 0 || !ps->dtim_bc_mc)
++	if (dtim_count != 0 || !ps->dtim_bc_mc)
+ 		goto out; /* send buffered bc/mc only after DTIM beacon */
+ 
+ 	while (1) {
+--- a/net/mac80211/util.c
++++ b/net/mac80211/util.c
+@@ -4094,25 +4094,30 @@ int ieee80211_parse_p2p_noa(const struct
+ }
+ EXPORT_SYMBOL(ieee80211_parse_p2p_noa);
+ 
+-void ieee80211_recalc_dtim(struct ieee80211_sub_if_data *sdata, u64 tsf)
++void ieee80211_recalc_dtim(struct ieee80211_link_data *link, u64 tsf)
+ {
++	struct ieee80211_sub_if_data *sdata = link->sdata;
++	struct ieee80211_sub_if_data *ap;
+ 	u64 dtim_count = 0;
+-	u32 beacon_int = sdata->vif.bss_conf.beacon_int * 1024;
+-	u8 dtim_period = sdata->vif.bss_conf.dtim_period;
+-	struct ps_data *ps;
++	u32 beacon_int = link->conf->beacon_int * 1024;
++	u8 dtim_period = link->conf->dtim_period;
++	int *count;
+ 	u8 bcns_from_dtim;
+ 
+ 	if (tsf == -1ULL || !beacon_int || !dtim_period)
+ 		return;
+ 
+-	if (sdata->vif.type == NL80211_IFTYPE_AP ||
+-	    sdata->vif.type == NL80211_IFTYPE_AP_VLAN) {
++	if (sdata->vif.type == NL80211_IFTYPE_AP) {
++		count = &link->u.ap.dtim_count;
++	} else if (sdata->vif.type == NL80211_IFTYPE_AP_VLAN) {
+ 		if (!sdata->bss)
+ 			return;
+ 
+-		ps = &sdata->bss->ps;
++		ap = container_of(sdata->bss, struct ieee80211_sub_if_data,
++				  u.ap);
++		count = &ap->deflink.u.ap.dtim_count;
+ 	} else if (ieee80211_vif_is_mesh(&sdata->vif)) {
+-		ps = &sdata->u.mesh.ps;
++		count = &sdata->u.mesh.ps.dtim_count;
+ 	} else {
+ 		return;
+ 	}
+@@ -4130,7 +4135,7 @@ void ieee80211_recalc_dtim(struct ieee80
+ 	else
+ 		dtim_count = dtim_period - bcns_from_dtim;
+ 
+-	ps->dtim_count = dtim_count;
++	*count = dtim_count;
+ }
+ 
+ /*
