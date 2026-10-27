@@ -1,0 +1,41 @@
+From 42c68407a0be98b1e706cb23fd7feba235521ee5 Mon Sep 17 00:00:00 2001
+From: Rex Lu <rex.lu@mediatek.com>
+Date: Fri, 27 Sep 2024 13:46:33 +0800
+Subject: [PATCH] net: ethernet: mtk_wed: free the hw_rro buffers once in a rx
+ reset
+
+Since the WED 3.0 reset support, mtk_wed_rx_reset() calls
+mtk_wed_hwrro_free_buffer() after mtk_wed_free_rx_buffer(), which
+already frees the hw_rro buffers. The second call walks the freed page
+list and passes stale pointers to __free_page(). An MT7996 with hw_rro
+on MT7988 hits this on the first reset:
+
+  Unable to handle kernel paging request at virtual address 7a901ab7624f6322
+  pc : ___free_pages+0x14/0x90
+  Call trace:
+   ___free_pages+0x14/0x90 (P)
+   __free_pages+0x10/0x18
+   mtk_wed_hwrro_free_buffer+0x5c/0xc0
+   mtk_wed_reset_dma+0x790/0xb00
+   mt7996_dma_reset+0x1b0/0x444 [mt7996e]
+   mt7996_mac_reset_work+0x354/0x1280 [mt7996e]
+
+Free the hw_rro buffers only through mtk_wed_free_rx_buffer(), as
+before the reset support was added.
+
+Fixes: 1543b8ff02f0 ("net: ethernet: mtk_wed: add wed 3.0 reset support")
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+ drivers/net/ethernet/mediatek/mtk_wed.c | 1 -
+ 1 file changed, 1 deletion(-)
+
+--- a/drivers/net/ethernet/mediatek/mtk_wed.c
++++ b/drivers/net/ethernet/mediatek/mtk_wed.c
+@@ -1741,7 +1741,6 @@ mtk_wed_rx_reset(struct mtk_wed_device *
+ 				   false);
+ 	}
+ 	mtk_wed_free_rx_buffer(dev);
+-	mtk_wed_hwrro_free_buffer(dev);
+ 
+ 	return 0;
+ }
