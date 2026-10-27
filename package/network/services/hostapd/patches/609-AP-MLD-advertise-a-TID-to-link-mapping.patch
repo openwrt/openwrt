@@ -104,7 +104,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		wpa_printf(MSG_DEBUG, "Unknown event %d", event);
 --- a/src/ap/hostapd.c
 +++ b/src/ap/hostapd.c
-@@ -797,6 +797,10 @@ int hostapd_link_remove(struct hostapd_d
+@@ -802,6 +802,10 @@ int hostapd_link_remove(struct hostapd_d
  	if (hostapd_link_remove_pending(hapd))
  		return 0;
  
@@ -115,7 +115,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	if (hapd->csa_in_progress)
  		return -1;
  
-@@ -855,6 +859,243 @@ void hostapd_crit_update_done(struct hos
+@@ -860,6 +864,243 @@ void hostapd_crit_update_done(struct hos
  		ieee802_11_set_beacon(hapd);
  }
  
@@ -359,7 +359,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  #endif /* CONFIG_IEEE80211BE */
  
  
-@@ -897,6 +1138,10 @@ void hostapd_free_hapd_data(struct hosta
+@@ -902,6 +1143,10 @@ void hostapd_free_hapd_data(struct hosta
  	hapd->owe_trans_ssid_len = 0;
  #endif /* CONFIG_OWE */
  

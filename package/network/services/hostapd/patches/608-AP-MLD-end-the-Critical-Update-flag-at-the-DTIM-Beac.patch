@@ -80,7 +80,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	for_each_mld_link(link_bss, hapd) {
  		u16 announced = link_bss->eht_mld_link_removal_start -
  			link_bss->eht_mld_link_removal_count;
-@@ -754,6 +769,23 @@ static void hostapd_link_remove_timeout_
+@@ -759,6 +774,23 @@ static void hostapd_link_remove_timeout_
  }
  
  
@@ -104,7 +104,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  /* A repeated request must not set the AP Removal Timer back (IEEE Std
   * 802.11be-2024, 35.3.6.3). */
  int hostapd_link_remove(struct hostapd_data *hapd, u32 count)
-@@ -795,12 +827,34 @@ int hostapd_link_remove(struct hostapd_d
+@@ -800,12 +832,34 @@ int hostapd_link_remove(struct hostapd_d
  	if (hapd->eht_mld_bss_param_change == 255)
  		hapd->eht_mld_bss_param_change = 0;
  
@@ -139,7 +139,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  #endif /* CONFIG_IEEE80211BE */
  
  
-@@ -812,6 +866,7 @@ void hostapd_free_hapd_data(struct hosta
+@@ -817,6 +871,7 @@ void hostapd_free_hapd_data(struct hosta
  	hapd->eht_mld_link_removal_count = 0;
  	hapd->eht_mld_link_removal_expired = false;
  	hapd->eht_mld_link_removal_tx = 0;

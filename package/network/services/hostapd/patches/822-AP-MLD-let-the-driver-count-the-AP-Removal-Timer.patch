@@ -260,7 +260,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  static struct hostapd_data *
  hostapd_link_remove_partner(struct hostapd_data *hapd, struct sta_info *sta)
  {
-@@ -736,21 +855,28 @@ static void hostapd_link_remove_notify_s
+@@ -741,21 +860,28 @@ static void hostapd_link_remove_notify_s
  }
  
  
@@ -293,7 +293,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	hostapd_free_link_stas(hapd);
  	hostapd_link_remove_notify_stas(hapd);
  
-@@ -768,6 +894,88 @@ static void hostapd_link_remove_expire(s
+@@ -773,6 +899,88 @@ static void hostapd_link_remove_expire(s
  }
  
  
@@ -382,7 +382,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  /* hostapd sees no TBTT: the countdown runs from the return of the first
   * Beacon update and expires before the TBTT that the count names. */
  static void hostapd_link_remove_timeout_handler(void *eloop_data,
-@@ -775,7 +983,9 @@ static void hostapd_link_remove_timeout_
+@@ -780,7 +988,9 @@ static void hostapd_link_remove_timeout_
  {
  	struct hostapd_data *hapd = (struct hostapd_data *) eloop_data;
  
@@ -393,7 +393,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		return;
  	hapd->eht_mld_link_removal_count--;
  
-@@ -783,6 +993,14 @@ static void hostapd_link_remove_timeout_
+@@ -788,6 +998,14 @@ static void hostapd_link_remove_timeout_
  		   hapd->mld_link_id,
  		   hapd->eht_mld_link_removal_count);
  
@@ -408,7 +408,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	if (!hapd->eht_mld_link_removal_count) {
  		hostapd_link_remove_expire(hapd);
  		return;
-@@ -845,6 +1063,10 @@ int hostapd_link_remove(struct hostapd_d
+@@ -850,6 +1068,10 @@ int hostapd_link_remove(struct hostapd_d
  		return -1;
  	}
  
@@ -419,7 +419,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	wpa_printf(MSG_DEBUG,
  		   "MLD: Remove link_id=%u in %u beacons",
  		   hapd->mld_link_id, count);
-@@ -856,13 +1078,87 @@ int hostapd_link_remove(struct hostapd_d
+@@ -861,13 +1083,87 @@ int hostapd_link_remove(struct hostapd_d
  		hapd->eht_mld_bss_param_change = 0;
  
  	hostapd_mld_crit_update_start(hapd);
@@ -508,7 +508,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  /* Unlike switch_link_hapd(), a link that hostapd no longer has is not
   * replaced by the first link */
  void hostapd_crit_update_done(struct hostapd_data *hapd, int link_id, u32 id)
-@@ -1128,7 +1424,11 @@ void hostapd_free_hapd_data(struct hosta
+@@ -1133,7 +1429,11 @@ void hostapd_free_hapd_data(struct hosta
  #ifdef CONFIG_IEEE80211BE
  	eloop_cancel_timeout(hostapd_link_remove_timeout_handler, hapd, NULL);
  	eloop_cancel_timeout(hostapd_link_remove_finish, hapd, NULL);
