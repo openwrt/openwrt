@@ -1,0 +1,63 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Sat, 24 Oct 2026 11:20:46 +0200
+Subject: [PATCH] DSCP: remove an invalidated policy from the list of the station
+
+invalidate_policy_by_id() freed the fields of the policy and left a
+NULL entry in sta->policies, with num_dscp_policies unchanged. The
+response handler, the wildcard and the classifier match of a DSCP Policy
+Query read every entry without a NULL check, so a DSCP Policy Response
+that declined a policy, or accepted its removal, made the next such
+frame dereference NULL. The policy structure itself leaked.
+
+Remove the entry from the list and free it, and keep the offset of a
+pending More batch on the same policy.
+
+hostapd_handle_dscp_policy_response() also printed the address of a
+NULL station; return before the print.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/src/ap/robust_av.c
++++ b/src/ap/robust_av.c
+@@ -1454,13 +1454,22 @@ static void invalidate_policy_by_id(stru
+ 	for (i = 0; i < sta->num_dscp_policies; i++) {
+ 		struct hostapd_dscp_policy *policy = sta->policies[i];
+ 
+-		if (policy && policy->policy_id == policy_id) {
+-			wpa_printf(MSG_DEBUG, "DSCP: Invalidating policy %u",
+-				   policy_id);
+-			free_dscp_policy(policy);
+-			sta->policies[i] = NULL;
+-			break;
+-		}
++		if (policy->policy_id != policy_id)
++			continue;
++
++		wpa_printf(MSG_DEBUG, "DSCP: Invalidating policy %u",
++			   policy_id);
++		free_dscp_policy(policy);
++		os_free(policy);
++		sta->num_dscp_policies--;
++		os_memmove(&sta->policies[i], &sta->policies[i + 1],
++			   (sta->num_dscp_policies - i) *
++			   sizeof(*sta->policies));
++		/* The next batch of a request with More set starts at this
++		 * index of the list. */
++		if (i < sta->dscp_state.offset)
++			sta->dscp_state.offset--;
++		break;
+ 	}
+ }
+ 
+@@ -1578,7 +1587,10 @@ int hostapd_handle_dscp_policy_response(
+ 	u8 response_control;
+ 	u8 count;
+ 
+-	if (!sta || !(sta->flags & WLAN_STA_DSCP_POLICY)) {
++	if (!sta)
++		return -1;
++
++	if (!(sta->flags & WLAN_STA_DSCP_POLICY)) {
+ 		wpa_printf(MSG_DEBUG, "DSCP: STA " MACSTR " not capable",
+ 			   MAC2STR(sta->addr));
+ 		return -1;
