@@ -3,10 +3,11 @@
 import * as nl80211 from 'nl80211';
 import * as libubus from 'ubus';
 import { readfile, stat } from "fs";
+import { json_file_read, board_wlan } from 'wifi.utils';
 
-let wifi_devices = json(readfile('/usr/share/wifi_devices.json'));
-let countries = json(readfile('/usr/share/iso3166.json'));
-let board_data = json(readfile('/etc/board.json'));
+let wifi_devices = json_file_read('/usr/share/wifi_devices.json');
+let countries = json_file_read('/usr/share/iso3166.json');
+let wlan_data = board_wlan();
 
 let ubus = libubus.connect();
 let bss_ubus = libubus.connect(null, 2);
@@ -65,7 +66,7 @@ function get_hardware_id(iface) {
 		for (let lookup in [ 'vendor', 'device', 'subsystem_vendor', 'subsystem_device' ])
 			push(data, trim(readfile(path + lookup), '\n'));
 		
-		for (let device in wifi_devices.pci) {
+		for (let device in wifi_devices?.pci) {
 			let match = 0;
 			for (let i = 0; i < 4; i++)
 				if (lc(data[i]) == lc(device[i]))
@@ -80,7 +81,7 @@ function get_hardware_id(iface) {
 	}
 
 	let compatible = trim(readfile(`/sys/class/net/${iface.ifname}/device/of_node/compatible`), '\n');
-	if (compatible && wifi_devices.compatible[compatible]) {
+	if (compatible && wifi_devices?.compatible?.[compatible]) {
 		hw.id = wifi_devices.compatible[compatible][0] + ' ' + wifi_devices.compatible[compatible][1];
 		hw.compatible = compatible;
 		hw.type = 'embedded';
@@ -342,7 +343,7 @@ function dbm2quality(dbm) {
 function hwmodelist(name) {
 	const mode = { 'HT*': 'n', 'VHT*': 'ac', 'HE*': 'ax', 'EHT*': 'be' };
 	let iface = ifaces[name];
-	let phy = board_data.wlan?.['phy' + iface.wiphy];
+	let phy = wlan_data?.['phy' + iface.wiphy];
 	if (!phy || !iface.radio?.band)
 		return '';
 	let htmodes = phy.info.bands[uc(iface.radio.band)].modes;
@@ -507,7 +508,7 @@ export function info(name) {
 
 export function htmodelist(name) {
 	let iface = ifaces[name];
-	let phy = board_data.wlan?.['phy' + iface.wiphy];
+	let phy = wlan_data?.['phy' + iface.wiphy];
 	if (!phy || !iface.radio.band)
 		return [];
 
