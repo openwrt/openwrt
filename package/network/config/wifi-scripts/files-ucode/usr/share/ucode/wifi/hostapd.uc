@@ -467,7 +467,7 @@ function device_htmode_append(config) {
 
 		append_vars(config, [
 			'ieee80211be', 'eht_su_beamformer', 'eht_su_beamformee',
-			'eht_mu_beamformer',
+			'eht_mu_beamformer', 'punct_bitmap',
 		]);
 
 		if (config.hw_mode == 'a')
