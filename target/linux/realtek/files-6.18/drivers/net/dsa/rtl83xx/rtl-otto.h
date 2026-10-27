@@ -538,6 +538,7 @@ struct otto_dsa_priv {
 	struct regmap *map;
 	struct mutex reg_mutex;		/* Mutex for individual register manipulations */
 	struct mutex pie_mutex;		/* Mutex for Packet Inspection Engine */
+	u32 pie_failed_blocks;		/* RTL930x blocks disabled after failed rollback */
 	int link_state_irq;
 	bool link_state_irq_requested;
 	int mirror_group_ports[4];

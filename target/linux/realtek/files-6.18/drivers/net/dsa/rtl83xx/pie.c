@@ -2054,6 +2054,9 @@ static int otto_pie_930x_lookup_enable(struct otto_dsa_priv *priv, int index)
 {
 	int block = index / PIE_BLOCK_SIZE;
 
+	if (priv->pie_failed_blocks & BIT(block))
+		return -EIO;
+
 	return regmap_write_bits(priv->map, RTL930X_PIE_BLK_LOOKUP_CTRL, BIT(block), BIT(block));
 }
 
@@ -2380,37 +2383,61 @@ int otto_pie_930x_rule_write(struct otto_dsa_priv *priv, int idx, struct pie_rul
 	if (idx < 0 || idx >= priv->r->n_pie_blocks * PIE_BLOCK_SIZE || pr->tid > 1)
 		return -EINVAL;
 
-	err = regmap_read(priv->map, RTL930X_PIE_BLK_TMPLTE_CTRL(block), &t_select);
-	if (err)
-		return err;
-	template = (t_select >> (pr->tid * 4)) & 0xf;
-	if (pr->valid && template >= ARRAY_SIZE(rtl930x_fixed_templates))
-		return -EOPNOTSUPP;
+	/* Invalidating a row must not depend on reading its template selector. */
+	if (pr->valid) {
+		err = regmap_read(priv->map, RTL930X_PIE_BLK_TMPLTE_CTRL(block), &t_select);
+		if (err)
+			return err;
+		template = (t_select >> (pr->tid * 4)) & 0xf;
+		if (template >= ARRAY_SIZE(rtl930x_fixed_templates))
+			return -EOPNOTSUPP;
+
+		pr_debug("%s: %d, t_select: %08x\n", __func__, idx, t_select);
+		otto_pie_930x_write_fixed_fields(r, pr);
+		otto_pie_930x_write_templated(r, pr, rtl930x_fixed_templates[template]);
+		otto_pie_930x_write_action(r, pr);
+	}
 
 	tbl = otto_table_acquire(RTL9300_TBL_IACL);
 	if (tbl < 0)
 		return tbl;
 
-	pr_debug("%s: %d, t_select: %08x\n", __func__, idx, t_select);
-
-	if (!pr->valid) {
-		err = __otto_table_write(tbl, idx, &r);
-		otto_table_release(tbl);
-		return err;
-	}
-	otto_pie_930x_write_fixed_fields(r, pr);
-
-	pr_debug("%s: template %d\n", __func__, (t_select >> (pr->tid * 4)) & 0xf);
-	otto_pie_930x_write_templated(r, pr, rtl930x_fixed_templates[template]);
-
-	otto_pie_930x_write_action(r, pr);
-
-/*	otto_pie_930x_rule_dump_raw(r); */
-
 	err = __otto_table_write(tbl, idx, &r);
 	otto_table_release(tbl);
 
 	return err;
+}
+
+/* TC discards a failed flow, so no later remove callback can withdraw it.
+ * The table API waits for the preceding command before writing the empty row.
+ * If that cannot complete, keep the whole block disabled until reprobe: a
+ * delayed write must not become active when another rule enables lookup.
+ */
+static void otto_pie_930x_rule_rollback(struct otto_dsa_priv *priv, struct pie_rule *pr)
+{
+	int block = pr->id / PIE_BLOCK_SIZE;
+	int err;
+	u32 lookup;
+
+	lockdep_assert_held(&priv->pie_mutex);
+	pr->valid = false;
+	err = otto_pie_930x_rule_write(priv, pr->id, pr);
+	if (!err) {
+		clear_bit(pr->id, priv->pie_use_bm);
+		return;
+	}
+
+	priv->pie_failed_blocks |= BIT(block);
+	bitmap_set(priv->pie_use_bm, block * PIE_BLOCK_SIZE, PIE_BLOCK_SIZE);
+	err = regmap_write_bits(priv->map, RTL930X_PIE_BLK_LOOKUP_CTRL, BIT(block), 0);
+	if (!err)
+		err = regmap_read(priv->map, RTL930X_PIE_BLK_LOOKUP_CTRL, &lookup);
+	if (err || (lookup & BIT(block)))
+		dev_crit(priv->dev, "PIE block %d could not be disabled after failed rollback; reset required\n",
+			 block);
+	else
+		dev_err(priv->dev, "PIE block %d disabled after failed rollback; its TC rules are inactive until reprobe\n",
+			block);
 }
 
 static bool otto_pie_930x_templ_has(int t, enum rtl930x_template_field_id field_type)
@@ -2506,6 +2533,8 @@ int otto_pie_930x_rule_add(struct otto_dsa_priv *priv, struct pie_rule *pr)
 	mutex_lock(&priv->pie_mutex);
 
 	for (block = min_block; block < max_block; block++) {
+		if (priv->pie_failed_blocks & BIT(block))
+			continue;
 		err = regmap_read(priv->map, RTL930X_PIE_BLK_TMPLTE_CTRL(block), &t_select);
 		if (err)
 			goto out_unlock;
@@ -2539,9 +2568,9 @@ int otto_pie_930x_rule_add(struct otto_dsa_priv *priv, struct pie_rule *pr)
 	if (!err)
 		err = otto_pie_930x_lookup_enable(priv, idx);
 	if (err) {
-		/* A failed operation may have reached hardware. Keep this ID reserved. */
-		pr->valid = false;
-		dev_err(priv->dev, "TC rule programming failed, retaining hardware reservation\n");
+		/* A failed operation may have reached hardware. Withdraw it before reuse. */
+		otto_pie_930x_rule_rollback(priv, pr);
+		dev_err(priv->dev, "TC rule programming failed: %d\n", err);
 	}
 out_unlock:
 	mutex_unlock(&priv->pie_mutex);
