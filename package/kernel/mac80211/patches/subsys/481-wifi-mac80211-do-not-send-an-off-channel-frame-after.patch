@@ -1,0 +1,104 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Sun, 25 Oct 2026 16:44:33 +0100
+Subject: [PATCH] wifi: mac80211: do not send an off-channel frame after the ROC expired
+
+ieee80211_ready_on_channel() and ieee80211_remain_on_channel_expired()
+only queue the wiphy works hw_roc_start and hw_roc_done. If the wiphy
+lock is held for longer than the ROC duration, the driver reports the
+expiry before hw_roc_start runs. ieee80211_hw_roc_start() then still
+transmits the pending mgmt frame on the off-channel queue, although the
+driver has left the channel. On mac80211_hwsim, which clears tmp_chan
+when its ROC expires, this triggers:
+
+  TX w/o channel - queue = 4
+  WARNING: drivers/net/wireless/virtual/mac80211_hwsim_main.c:2653 at mac80211_hwsim_tx+0x87d/0xc10
+   ieee80211_tx_frags+0x170/0x280
+   __ieee80211_tx_skb_tid_band+0x8e/0x160
+   ieee80211_hw_roc_start+0x59/0xd0
+   cfg80211_wiphy_work+0x88/0xb0
+
+It was seen with a station that sends an action frame off-channel with
+a wait of 0 ms while its disconnection holds the wiphy lock.
+
+Remember that the driver reported the expiry of the current ROC. In that
+case, do not transmit the frames of the ROC when the start is processed:
+hw_roc_done ends the ROC and reports each frame as not acknowledged. Do
+not combine a new request with an expired ROC either, so that it waits
+for a ROC of its own. A plain ROC still gets its ready notification,
+followed by the expiry.
+
+Fixes: 90fc4b3a5ba2 ("mac80211: implement off-channel TX using hw r-o-c offload")
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+
+--- a/net/mac80211/ieee80211_i.h
++++ b/net/mac80211/ieee80211_i.h
+@@ -1767,6 +1767,7 @@ struct ieee80211_local {
+ 	struct list_head roc_list;
+ 	struct wiphy_work hw_roc_start, hw_roc_done;
+ 	unsigned long hw_roc_start_time;
++	bool hw_roc_expired;
+ 	u64 roc_cookie_counter;
+ 
+ 	struct idr ack_status_frames;
+--- a/net/mac80211/offchannel.c
++++ b/net/mac80211/offchannel.c
+@@ -262,6 +262,7 @@ static void ieee80211_hw_roc_start(struc
+ {
+ 	struct ieee80211_local *local =
+ 		container_of(work, struct ieee80211_local, hw_roc_start);
++	bool expired = READ_ONCE(local->hw_roc_expired);
+ 	struct ieee80211_roc_work *roc;
+ 
+ 	lockdep_assert_wiphy(local->hw.wiphy);
+@@ -271,6 +272,11 @@ static void ieee80211_hw_roc_start(struc
+ 			break;
+ 
+ 		roc->hw_begun = true;
++
++		/* the driver has left the channel, hw_roc_done fails the frame */
++		if (expired && roc->frame)
++			continue;
++
+ 		ieee80211_handle_roc_started(roc, local->hw_roc_start_time);
+ 	}
+ }
+@@ -319,8 +325,11 @@ static void _ieee80211_start_next_roc(st
+ 	}
+ 
+ 	if (local->ops->remain_on_channel) {
+-		int ret = drv_remain_on_channel(local, roc->sdata, roc->chan,
+-						max_dur, type);
++		int ret;
++
++		WRITE_ONCE(local->hw_roc_expired, false);
++		ret = drv_remain_on_channel(local, roc->sdata, roc->chan,
++					    max_dur, type);
+ 
+ 		if (ret) {
+ 			wiphy_warn(local->hw.wiphy,
+@@ -512,6 +521,7 @@ void ieee80211_remain_on_channel_expired
+ 
+ 	trace_api_remain_on_channel_expired(local);
+ 
++	WRITE_ONCE(local->hw_roc_expired, true);
+ 	wiphy_work_queue(hw->wiphy, &local->hw_roc_done);
+ }
+ EXPORT_SYMBOL_GPL(ieee80211_remain_on_channel_expired);
+@@ -533,6 +543,9 @@ ieee80211_coalesce_hw_started_roc(struct
+ 	if (!cur_roc->hw_begun && new_roc->duration > cur_roc->duration)
+ 		return false;
+ 
++	if (READ_ONCE(local->hw_roc_expired))
++		return false;
++
+ 	remaining = cur_roc->start_time +
+ 		    msecs_to_jiffies(cur_roc->duration) -
+ 		    now;
+@@ -625,6 +638,7 @@ static int ieee80211_start_roc_work(stru
+ 			/* otherwise actually kick it off here
+ 			 * (for error handling)
+ 			 */
++			WRITE_ONCE(local->hw_roc_expired, false);
+ 			ret = drv_remain_on_channel(local, sdata, channel,
+ 						    duration, type);
+ 			if (ret) {
