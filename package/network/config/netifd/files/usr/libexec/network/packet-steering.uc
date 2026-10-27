@@ -57,8 +57,11 @@ function set_task_cpu(pid, cpu) {
 
 function cpu_mask(cpu)
 {
-	let mask;
-	if (cpu < 0)
+	let mask = 0;
+	if (type(cpu) == "array")
+		for (let c in cpu)
+			mask |= 1 << int(c);
+	else if (cpu < 0)
 		mask = (1 << length(cpus)) - 1;
 	else
 		mask = (1 << int(cpu));
@@ -329,6 +332,19 @@ function assign_dev_cpu(dev) {
 		(dev.rss || length(dev.rx_queues) >= length(cpus)) &&
 		length(irq_cpus) == length(cpus);
 
+	// A softirq NAPI runs where its interrupts are taken; spread the
+	// stack work over the other CPUs instead of piling it on top
+	let rps_cpus;
+	if (!all_cpus && !length(dev.tasks) && length(irq_cpus) > 0 &&
+	    length(irq_cpus) < length(cpus)) {
+		rps_cpus = map(filter(cpus, (cpu) => index(irq_cpus, cpu.id) < 0),
+			       (cpu) => cpu.id);
+		for (let cpu in irq_cpus)
+			cpu_add_weight(cpu, napi_weight / length(irq_cpus));
+		for (let cpu in rps_cpus)
+			cpu_add_weight(cpu, rx_weight / length(rps_cpus));
+	}
+
 	if (length(dev.tasks) > 0) {
 		let cpu = dev.napi_cpu = get_next_cpu(napi_weight);
 		for (let task in dev.tasks)
@@ -339,6 +355,8 @@ function assign_dev_cpu(dev) {
 		let cpu;
 		if (all_cpus)
 			cpu = -1;
+		else if (rps_cpus)
+			cpu = rps_cpus;
 		else if (!hw_spread)
 			cpu = get_next_cpu(rx_weight, dev.napi_cpu);
 		for (let netdev in dev.netdev)
