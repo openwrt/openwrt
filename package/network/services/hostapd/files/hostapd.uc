@@ -345,6 +345,8 @@ function iface_pending_next(ret, data)
 			}
 		} catch(e) {
 			hostapd.printf(`Exception: ${e}\n${e.stacktrace[0].context}`);
+			iface_supplicant_start(cfg.phydev);
+			__iface_pending_next(cfg, "done");
 			return;
 		}
 		pending = !this.defer;
@@ -1526,8 +1528,11 @@ function iface_config_remove(name, old_config)
 {
 	let pending = hostapd.data.pending_config[name];
 
-	if (pending)
+	// an aborted setup can have stopped wpa_supplicant
+	if (pending) {
 		pending.abort();
+		iface_supplicant_start(pending.phydev);
+	}
 
 	delete hostapd.data.apsta_freq[name];
 	delete hostapd.data.apsta_stopped[name];
