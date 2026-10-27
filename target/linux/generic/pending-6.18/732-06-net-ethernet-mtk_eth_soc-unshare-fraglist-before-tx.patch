@@ -1,0 +1,89 @@
+From dfac9992262a126693720d57b94d7d38e5effc7a Mon Sep 17 00:00:00 2001
+From: Piotr Nielacny <piotr.nielacny@gmail.com>
+Date: Tue, 27 Oct 2026 14:53:25 +0100
+Subject: [PATCH] net: ethernet: mtk_eth_soc: unshare fraglist buffers before
+ TX
+
+The OpenWrt fraglist GSO transmit path modifies the parent's IP header and
+the headers of its frag_list entries. Mirroring can leave the parent data
+cloned and individual child skbs with multiple users. skb_cow_head() does
+not make the sk_buff object exclusive, so expanding a shared child's head
+violates the pskb_expand_head() precondition.
+
+Unclone the parent before editing its header or list links, clone shared
+child skbs, and make each child header writable. Prepare the whole list
+before starting DMA mapping so allocation failures use the existing drop
+path. Preserve page fragments and avoid full packet linearization; COW
+may still copy payload stored in the linear head.
+
+Signed-off-by: Piotr Nielacny <piotr.nielacny@gmail.com>
+---
+ drivers/net/ethernet/mediatek/mtk_eth_soc.c | 42 +++++++++++++++++++--
+ 1 file changed, 38 insertions(+), 4 deletions(-)
+
+--- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
++++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
+@@ -1701,9 +1701,6 @@ next:
+ 	if (cur_skb != skb) {
+ 		struct tcphdr *th, *th2;
+ 
+-		if (skb_cow_head(cur_skb, header_len))
+-			goto err_dma;
+-
+ 		memcpy(cur_skb->data - header_len, skb->data,
+ 		       skb_network_offset(skb));
+ 
+@@ -1923,6 +1920,40 @@ static bool mtk_skb_has_small_frag(struc
+ 	return false;
+ }
+ 
++static int mtk_skb_prepare_fraglist(struct sk_buff *skb,
++				    unsigned int header_len)
++{
++	struct sk_buff **fragp, *frag;
++	int err;
++
++	/* The head and frag_list links must be private before changing them. */
++	err = skb_unclone(skb, GFP_ATOMIC);
++	if (err)
++		return err;
++
++	for (fragp = &skb_shinfo(skb)->frag_list; (frag = *fragp);
++	     fragp = &frag->next) {
++		if (skb_shared(frag)) {
++			struct sk_buff *nfrag;
++
++			nfrag = skb_clone(frag, GFP_ATOMIC);
++			if (!nfrag)
++				return -ENOMEM;
++
++			nfrag->next = frag->next;
++			*fragp = nfrag;
++			consume_skb(frag);
++			frag = nfrag;
++		}
++
++		err = skb_cow_head(frag, header_len);
++		if (err)
++			return err;
++	}
++
++	return 0;
++}
++
+ static bool mtk_skb_valid_gso(struct mtk_eth *eth, struct sk_buff *skb,
+ 			      unsigned int header_len)
+ {
+@@ -1989,8 +2020,11 @@ static netdev_tx_t mtk_start_xmit(struct
+ 			goto send;
+ 		}
+ 
+-		if ((skb_shinfo(skb)->gso_type & SKB_GSO_FRAGLIST))
++		if (skb_shinfo(skb)->gso_type & SKB_GSO_FRAGLIST) {
++			if (mtk_skb_prepare_fraglist(skb, header_len))
++				goto drop;
+ 			goto send;
++		}
+ 
+ 		if (skb_shinfo(skb)->gso_type &
+ 				(SKB_GSO_TCPV4 | SKB_GSO_TCPV6)) {
