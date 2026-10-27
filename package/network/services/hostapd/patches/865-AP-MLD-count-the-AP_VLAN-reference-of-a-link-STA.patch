@@ -1,0 +1,89 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Sat, 24 Oct 2026 18:00:00 +0200
+Subject: [PATCH] AP MLD: count the AP_VLAN reference of a link STA
+
+Upstream fix: hostap main 741d70dd8e32 has the same code; to be
+reported upstream.
+
+ieee80211_ml_process_link() copied sta->vlan_id of the STA a link STA
+is set up from, without a reference to the dynamic VLAN entry, while
+ap_free_sta() of the link STA drops a reference for sta->vlan_id and one
+for sta->vlan_id_bound. Where the VLAN is assigned before the link STAs
+exist (SAE password VLAN), each link STA dropped one reference more than
+it took. With three links, the removal of both partner links of a
+station's association link removed the AP_VLAN netdev while the station
+stayed associated on it.
+
+Take the reference where the VLAN ID is copied, as ap_sta_set_vlan()
+does for an existing entry.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/src/ap/ieee802_11.c
++++ b/src/ap/ieee802_11.c
+@@ -6681,7 +6681,7 @@ int ieee80211_ml_process_link(struct hos
+ 		   hapd->mld_link_id, sta->aid);
+ 
+ 	sta->flags |= WLAN_STA_AUTH | WLAN_STA_ASSOC_REQ_OK;
+-	sta->vlan_id = origin_sta->vlan_id;
++	ap_sta_set_link_vlan(hapd, sta, origin_sta);
+ 
+ 	/* TODO: What other processing is required? */
+ 
+--- a/src/ap/sta_info.c
++++ b/src/ap/sta_info.c
+@@ -1652,6 +1652,43 @@ int ap_sta_set_vlan(struct hostapd_data
+ }
+ 
+ 
++/* A link STA of a non-AP MLD takes the VLAN of the STA it is set up from and
++ * holds its own reference to it, which ap_free_sta() drops. */
++void ap_sta_set_link_vlan(struct hostapd_data *hapd, struct sta_info *sta,
++			  const struct sta_info *origin_sta)
++{
++#ifndef CONFIG_NO_VLAN
++	struct hostapd_vlan *vlan;
++	struct hostapd_data *vlan_bss = hapd;
++#endif /* CONFIG_NO_VLAN */
++
++	sta->vlan_id = origin_sta->vlan_id;
++#ifndef CONFIG_NO_VLAN
++	if (sta->vlan_id <= 0)
++		return;
++
++#ifdef CONFIG_IEEE80211BE
++	if (hapd->conf->mld_ap) {
++		vlan_bss = hostapd_mld_get_first_bss(hapd);
++		if (!vlan_bss)
++			vlan_bss = hapd;
++	}
++#endif /* CONFIG_IEEE80211BE */
++
++	for (vlan = vlan_bss->conf->vlan; vlan; vlan = vlan->next) {
++		if (vlan->vlan_id == sta->vlan_id)
++			break;
++	}
++	if (!vlan)
++		return;
++
++	sta->vlan_desc = &vlan->vlan_desc;
++	if (vlan->dynamic_vlan > 0)
++		vlan->dynamic_vlan++;
++#endif /* CONFIG_NO_VLAN */
++}
++
++
+ static int ap_sta_bind_vlan_helper(struct hostapd_data *hapd,
+ 				   struct sta_info *sta)
+ {
+--- a/src/ap/sta_info.h
++++ b/src/ap/sta_info.h
+@@ -449,6 +449,8 @@ int ap_sta_wps_cancel(struct hostapd_dat
+ int ap_sta_bind_vlan(struct hostapd_data *hapd, struct sta_info *sta);
+ int ap_sta_set_vlan(struct hostapd_data *hapd, struct sta_info *sta,
+ 		    struct vlan_description *vlan_desc);
++void ap_sta_set_link_vlan(struct hostapd_data *hapd, struct sta_info *sta,
++			  const struct sta_info *origin_sta);
+ void ap_sta_start_sa_query(struct hostapd_data *hapd, struct sta_info *sta);
+ void ap_sta_stop_sa_query(struct hostapd_data *hapd, struct sta_info *sta);
+ void ap_sta_set_sa_query_timeout(struct hostapd_data *hapd,
