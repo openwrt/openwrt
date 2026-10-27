@@ -103,7 +103,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
   * @vif: &struct ieee80211_vif pointer from the add_interface callback.
 --- a/net/mac80211/cfg.c
 +++ b/net/mac80211/cfg.c
-@@ -5746,6 +5746,36 @@ void ieee80211_color_change_finish(struc
+@@ -5753,6 +5753,36 @@ void ieee80211_color_change_finish(struc
  }
  EXPORT_SYMBOL_GPL(ieee80211_color_change_finish);
  
@@ -140,7 +140,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  void ieee80211_crit_update_done_work(struct wiphy *wiphy,
  				     struct wiphy_work *work)
  {
-@@ -6064,6 +6094,28 @@ ieee80211_set_ttlm(struct wiphy *wiphy,
+@@ -6071,6 +6101,28 @@ ieee80211_set_ttlm(struct wiphy *wiphy,
  }
  
  static int
@@ -169,7 +169,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  ieee80211_assoc_ml_reconf(struct wiphy *wiphy, struct net_device *dev,
  			  struct cfg80211_ml_reconf_req *req)
  {
-@@ -6219,6 +6271,8 @@ const struct cfg80211_ops mac80211_confi
+@@ -6226,6 +6278,8 @@ const struct cfg80211_ops mac80211_confi
  	.del_link_station = ieee80211_del_link_station,
  	.set_hw_timestamp = ieee80211_set_hw_timestamp,
  	.set_ttlm = ieee80211_set_ttlm,

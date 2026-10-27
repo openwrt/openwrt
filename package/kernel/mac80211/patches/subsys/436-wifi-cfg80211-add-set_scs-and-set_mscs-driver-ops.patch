@@ -19,7 +19,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/include/net/cfg80211.h
 +++ b/include/net/cfg80211.h
-@@ -4299,6 +4299,15 @@ struct cfg80211_scs_desc {
+@@ -4302,6 +4302,15 @@ struct cfg80211_scs_desc {
  };
  
  /**
@@ -35,7 +35,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
   * struct cfg80211_mscs_desc - the MSCS of one peer
   *
   * @req_type: add, remove or change
-@@ -5416,6 +5425,13 @@ struct mgmt_frame_regs {
+@@ -5419,6 +5428,13 @@ struct mgmt_frame_regs {
   *
   * @set_qos_map: Set QoS mapping information to the driver
   *
@@ -49,7 +49,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
   * @set_ap_chanwidth: Set the AP (including P2P GO) mode channel width for the
   *	given interface This is used e.g. for dynamic HT 20/40 MHz channel width
   *	changes during the lifetime of the BSS.
-@@ -5829,6 +5845,13 @@ struct cfg80211_ops {
+@@ -5832,6 +5848,13 @@ struct cfg80211_ops {
  			       struct net_device *dev,
  			       struct cfg80211_qos_map *qos_map);
  

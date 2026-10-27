@@ -47,7 +47,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  };
  
  struct mac_address {
-@@ -10743,6 +10748,20 @@ cfg80211_6ghz_power_type(u8 control, u32
+@@ -10746,6 +10751,20 @@ cfg80211_6ghz_power_type(u8 control, u32
  void cfg80211_links_removed(struct net_device *dev, u16 link_mask);
  
  /**
@@ -94,7 +94,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	if (attrs[NL80211_ATTR_MBSSID_ELEMS]) {
  		struct cfg80211_mbssid_elems *mbssid =
  			nl80211_parse_mbssid_elems(&rdev->wiphy,
-@@ -21489,6 +21499,61 @@ void cfg80211_links_removed(struct net_d
+@@ -21496,6 +21506,61 @@ void cfg80211_links_removed(struct net_d
  }
  EXPORT_SYMBOL(cfg80211_links_removed);
  

@@ -82,7 +82,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  };
  
  /* policy for the key attributes */
-@@ -18263,6 +18292,390 @@ static int nl80211_set_qos_map(struct sk
+@@ -18270,6 +18299,390 @@ static int nl80211_set_qos_map(struct sk
  	return ret;
  }
  
@@ -473,7 +473,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  static int nl80211_add_tx_ts(struct sk_buff *skb, struct genl_info *info)
  {
  	struct cfg80211_registered_device *rdev = info->user_ptr[0];
-@@ -20498,6 +20911,18 @@ static const struct genl_small_ops nl802
+@@ -20505,6 +20918,18 @@ static const struct genl_small_ops nl802
  		.flags = GENL_UNS_ADMIN_PERM,
  		.internal_flags = IFLAGS(NL80211_FLAG_NEED_NETDEV_UP),
  	},

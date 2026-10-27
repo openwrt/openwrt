@@ -48,7 +48,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 ---
 --- a/include/net/cfg80211.h
 +++ b/include/net/cfg80211.h
-@@ -1861,6 +1861,49 @@ struct cfg80211_ttlm_params {
+@@ -1864,6 +1864,49 @@ struct cfg80211_ttlm_params {
  };
  
  /**
@@ -98,7 +98,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
   * struct station_parameters - station parameters
   *
   * Used to change and create a new station.
-@@ -5247,6 +5290,16 @@ struct mgmt_frame_regs {
+@@ -5250,6 +5293,16 @@ struct mgmt_frame_regs {
   *
   * @set_hw_timestamp: Enable/disable HW timestamping of TM/FTM frames.
   * @set_ttlm: set the TID to link mapping.
@@ -115,7 +115,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
   * @set_epcs: Enable/Disable EPCS for station mode.
   * @get_radio_mask: get bitmask of radios in use.
   *	(invoked with the wiphy mutex held)
-@@ -5633,6 +5686,10 @@ struct cfg80211_ops {
+@@ -5636,6 +5689,10 @@ struct cfg80211_ops {
  				    struct cfg80211_set_hw_timestamp *hwts);
  	int	(*set_ttlm)(struct wiphy *wiphy, struct net_device *dev,
  			    struct cfg80211_ttlm_params *params);
@@ -126,7 +126,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	u32	(*get_radio_mask)(struct wiphy *wiphy, struct net_device *dev);
  	int     (*assoc_ml_reconf)(struct wiphy *wiphy, struct net_device *dev,
  				   struct cfg80211_ml_reconf_req *req);
-@@ -7295,6 +7352,7 @@ struct wireless_dev {
+@@ -7298,6 +7355,7 @@ struct wireless_dev {
  			struct cfg80211_chan_def preset_chandef;
  			u8 ssid[IEEE80211_MAX_SSID_LEN];
  			u8 ssid_len;
@@ -134,7 +134,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		} ap;
  		struct {
  			struct cfg80211_internal_bss *current_bss;
-@@ -10762,6 +10820,19 @@ void cfg80211_crit_update_done(struct ne
+@@ -10765,6 +10823,19 @@ void cfg80211_crit_update_done(struct ne
  			       u32 crit_update_id);
  
  /**
@@ -182,7 +182,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  };
  
  /* policy for the key attributes */
-@@ -19273,6 +19285,90 @@ nl80211_set_ttlm(struct sk_buff *skb, st
+@@ -19280,6 +19292,90 @@ nl80211_set_ttlm(struct sk_buff *skb, st
  	return rdev_set_ttlm(rdev, dev, &params);
  }
  
@@ -273,7 +273,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  static int nl80211_assoc_ml_reconf(struct sk_buff *skb, struct genl_info *info)
  {
  	struct cfg80211_registered_device *rdev = info->user_ptr[0];
-@@ -20577,6 +20673,12 @@ static const struct genl_small_ops nl802
+@@ -20584,6 +20680,12 @@ static const struct genl_small_ops nl802
  		.internal_flags = IFLAGS(NL80211_FLAG_NEED_NETDEV_UP),
  	},
  	{
@@ -286,7 +286,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		.cmd = NL80211_CMD_ASSOC_MLO_RECONF,
  		.doit = nl80211_assoc_ml_reconf,
  		.flags = GENL_UNS_ADMIN_PERM,
-@@ -21554,6 +21656,125 @@ void cfg80211_crit_update_done(struct ne
+@@ -21561,6 +21663,125 @@ void cfg80211_crit_update_done(struct ne
  }
  EXPORT_SYMBOL(cfg80211_crit_update_done);
  
