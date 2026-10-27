@@ -47,6 +47,13 @@ function sae_password_option(config) {
 	return false;
 }
 
+/* SAE needs a passphrase or sae_password entries: a 64 hex digit key is a
+ * raw PSK */
+function sae_password_available(config) {
+	return !!config.ppsk || key_kind(config.key) == 'passphrase' || !!config.sae_station_passwords ||
+		sae_password_option(config);
+}
+
 function bss_refusal(config, band) {
 	const personal = config.auth_type in [ 'psk', 'psk2', 'sae', 'psk-sae', 'psk-sae-compat' ];
 	const kind = key_kind(config.key);
@@ -54,12 +61,9 @@ function bss_refusal(config, band) {
 	if (personal && !config.ppsk && kind == 'invalid')
 		return 'INVALID_WPA_PSK';
 
-	/* SAE needs a passphrase or sae_password entries: a 64 hex digit key is
-	 * a raw PSK */
 	const sae_only = config.auth_type == 'sae' || (config.auth_type == 'psk-sae-compat' && band == '6g');
 	const mld_sae = config.auth_type == 'psk' && config.rsno2_sae;
-	const sae_password = config.ppsk || kind == 'passphrase' || config.sae_station_passwords ||
-		sae_password_option(config);
+	const sae_password = sae_password_available(config);
 
 	if (personal && sae_only && !sae_password)
 		return 'SAE_NO_PASSWORD';
@@ -103,8 +107,13 @@ function mld_links(link_config, dev_config, phy_features, rsno2) {
 }
 
 /* WPA3 Specification v3.5 14.2: an AP MLD includes an identical RSNE
- * Override 2 element on all links, so a link that needs it adds it to all */
+ * Override 2 element on all links, so a link that needs it adds it to all.
+ * With sae_ext_key 0 and no SAE password, the AP MLD sends none, so that a
+ * raw PSK keeps working. */
 function mld_rsno2(link_config, dev_config, phy_features) {
+	if (link_config.sae_ext_key === false && !sae_password_available(link_config))
+		return false;
+
 	for (let link in mld_links(link_config, dev_config, phy_features))
 		if (link.config.rsno2_sae)
 			return true;
