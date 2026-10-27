@@ -31,6 +31,12 @@ static struct ubus_context *ctx;
 static struct blob_buf b;
 static int ctx_ref;
 
+/*
+ * Objects whose add waits for a ubus connection. Each holds a reference, so
+ * the context and its reconnect timer stay until the object is added.
+ */
+static DEFINE_DL_LIST(ubus_pending);
+
 #ifdef CONFIG_IEEE80211BE
 /*
  * The links of an AP MLD share one interface name, and so one object, which
@@ -108,6 +114,45 @@ struct ubus_banned_client {
 	u16 status;
 };
 
+static void ubus_connect_timeout(void *eloop_data, void *user_ctx);
+static void ubus_reconnect_timeout(void *eloop_data, void *user_ctx);
+
+static void hostapd_ubus_ref_inc(void)
+{
+	ctx_ref++;
+}
+
+static void hostapd_ubus_ref_dec(void)
+{
+	ctx_ref--;
+	if (ctx_ref)
+		return;
+
+	eloop_cancel_timeout(ubus_connect_timeout, NULL, NULL);
+	if (!ctx)
+		return;
+
+	eloop_cancel_timeout(ubus_reconnect_timeout, ctx, NULL);
+	uloop_fd_delete(&ctx->sock);
+	ubus_free(ctx);
+	ctx = NULL;
+}
+
+static void hostapd_ubus_pending_flush(void)
+{
+	struct hostapd_ubus_bss *ubus, *tmp;
+
+	dl_list_for_each_safe(ubus, tmp, &ubus_pending, struct hostapd_ubus_bss,
+			      pending) {
+		if (ubus_add_object(ctx, &ubus->obj) && ctx->sock.eof)
+			return;
+
+		dl_list_del(&ubus->pending);
+		if (!ubus->obj.id)
+			hostapd_ubus_ref_dec();
+	}
+}
+
 static void ubus_reconnect_timeout(void *eloop_data, void *user_ctx)
 {
 	if (ubus_reconnect(ctx, NULL)) {
@@ -116,6 +161,7 @@ static void ubus_reconnect_timeout(void *eloop_data, void *user_ctx)
 	}
 
 	ubus_add_uloop(ctx);
+	hostapd_ubus_pending_flush();
 }
 
 static void hostapd_ubus_connection_lost(struct ubus_context *ctx)
@@ -136,28 +182,16 @@ static bool hostapd_ubus_init(void)
 
 	ctx->connection_lost = hostapd_ubus_connection_lost;
 	ubus_add_uloop(ctx);
+	eloop_cancel_timeout(ubus_connect_timeout, NULL, NULL);
+	hostapd_ubus_pending_flush();
 
 	return true;
 }
 
-static void hostapd_ubus_ref_inc(void)
+static void ubus_connect_timeout(void *eloop_data, void *user_ctx)
 {
-	ctx_ref++;
-}
-
-static void hostapd_ubus_ref_dec(void)
-{
-	ctx_ref--;
-	if (!ctx)
-		return;
-
-	if (ctx_ref)
-		return;
-
-	eloop_cancel_timeout(ubus_reconnect_timeout, ctx, NULL);
-	uloop_fd_delete(&ctx->sock);
-	ubus_free(ctx);
-	ctx = NULL;
+	if (!hostapd_ubus_init())
+		eloop_register_timeout(1, 0, ubus_connect_timeout, NULL, NULL);
 }
 
 void hostapd_ubus_add_iface(struct hostapd_iface *iface)
@@ -2491,8 +2525,18 @@ static void hostapd_ubus_obj_add(struct hostapd_ubus_bss *ubus, const char *ifna
 		obj->subscribe_cb = hostapd_bss_subscribe_cb;
 	}
 
-	if (!ubus_add_object(ctx, obj))
+	if (ctx && !ubus_add_object(ctx, obj)) {
 		hostapd_ubus_ref_inc();
+		return;
+	}
+
+	if (ctx && !ctx->sock.eof)
+		return;
+
+	dl_list_add_tail(&ubus_pending, &ubus->pending);
+	hostapd_ubus_ref_inc();
+	if (!ctx && !eloop_is_timeout_registered(ubus_connect_timeout, NULL, NULL))
+		eloop_register_timeout(1, 0, ubus_connect_timeout, NULL, NULL);
 }
 
 static void hostapd_ubus_obj_free(struct hostapd_ubus_bss *ubus)
@@ -2500,7 +2544,10 @@ static void hostapd_ubus_obj_free(struct hostapd_ubus_bss *ubus)
 	struct ubus_object *obj = &ubus->obj;
 	char *name = (char *) obj->name;
 
-	if (ctx && obj->id) {
+	if (ubus->pending.next) {
+		dl_list_del(&ubus->pending);
+		hostapd_ubus_ref_dec();
+	} else if (ctx && obj->id) {
 		ubus_remove_object(ctx, obj);
 		hostapd_ubus_ref_dec();
 	}
@@ -2592,8 +2639,7 @@ void hostapd_ubus_add_bss(struct hostapd_data *hapd)
 		return;
 #endif
 
-	if (!hostapd_ubus_init())
-		return;
+	hostapd_ubus_init();
 
 #ifdef CONFIG_IEEE80211BE
 	if (hostapd_ubus_mld_add_link(hapd))
