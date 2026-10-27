@@ -527,6 +527,7 @@ hostapd_bss_get_features(struct ubus_context *ctx, struct ubus_object *obj,
 	blobmsg_add_u8(&b, "vht_supported", vht_supported(hapd->iface->hw_features));
 #ifdef CONFIG_WPS
 	blobmsg_add_u8(&b, "wps_link_start", 1);
+	blobmsg_add_u8(&b, "wps_link_cancel", 1);
 #endif /* CONFIG_WPS */
 	ubus_send_reply(ctx, req, b.head);
 
@@ -943,12 +944,12 @@ hostapd_bss_list_bans(struct ubus_context *ctx, struct ubus_object *obj,
 
 #ifdef CONFIG_WPS
 enum {
-	WPS_START_LINK_ID,
-	__WPS_START_MAX
+	WPS_LINK_ID,
+	__WPS_LINK_MAX
 };
 
-static const struct blobmsg_policy wps_start_policy[__WPS_START_MAX] = {
-	[WPS_START_LINK_ID] = { "link_id", BLOBMSG_TYPE_INT32 },
+static const struct blobmsg_policy wps_link_policy[__WPS_LINK_MAX] = {
+	[WPS_LINK_ID] = { "link_id", BLOBMSG_TYPE_INT32 },
 };
 
 /* Each link of an AP MLD is a BSS of its own, and with wps_independent the
@@ -972,22 +973,29 @@ hostapd_ubus_link_hapd(struct ubus_object *obj, int link_id)
 	return NULL;
 }
 
+static struct hostapd_data *
+hostapd_ubus_wps_hapd(struct ubus_object *obj, struct blob_attr *msg)
+{
+	struct blob_attr *tb[__WPS_LINK_MAX];
+
+	blobmsg_parse(wps_link_policy, __WPS_LINK_MAX, tb, blob_data(msg), blob_len(msg));
+
+	if (!tb[WPS_LINK_ID])
+		return get_hapd_from_object(obj);
+
+	return hostapd_ubus_link_hapd(obj, blobmsg_get_u32(tb[WPS_LINK_ID]));
+}
+
 static int
 hostapd_bss_wps_start(struct ubus_context *ctx, struct ubus_object *obj,
 			struct ubus_request_data *req, const char *method,
 			struct blob_attr *msg)
 {
-	struct blob_attr *tb[__WPS_START_MAX];
-	struct hostapd_data *hapd = get_hapd_from_object(obj);
+	struct hostapd_data *hapd = hostapd_ubus_wps_hapd(obj, msg);
 	int rc;
 
-	blobmsg_parse(wps_start_policy, __WPS_START_MAX, tb, blob_data(msg), blob_len(msg));
-
-	if (tb[WPS_START_LINK_ID]) {
-		hapd = hostapd_ubus_link_hapd(obj, blobmsg_get_u32(tb[WPS_START_LINK_ID]));
-		if (!hapd)
-			return UBUS_STATUS_NOT_FOUND;
-	}
+	if (!hapd)
+		return UBUS_STATUS_NOT_FOUND;
 
 	rc = hostapd_wps_button_pushed(hapd, NULL);
 
@@ -1048,8 +1056,11 @@ hostapd_bss_wps_cancel(struct ubus_context *ctx, struct ubus_object *obj,
 			struct ubus_request_data *req, const char *method,
 			struct blob_attr *msg)
 {
+	struct hostapd_data *hapd = hostapd_ubus_wps_hapd(obj, msg);
 	int rc;
-	struct hostapd_data *hapd = get_hapd_from_object(obj);
+
+	if (!hapd)
+		return UBUS_STATUS_NOT_FOUND;
 
 	rc = hostapd_wps_cancel(hapd);
 
@@ -2700,9 +2711,9 @@ static const struct ubus_method bss_methods[] = {
 #endif
 	UBUS_METHOD_NOARG("list_bans", hostapd_bss_list_bans),
 #ifdef CONFIG_WPS
-	UBUS_METHOD("wps_start", hostapd_bss_wps_start, wps_start_policy),
+	UBUS_METHOD("wps_start", hostapd_bss_wps_start, wps_link_policy),
 	UBUS_METHOD_NOARG("wps_status", hostapd_bss_wps_status),
-	UBUS_METHOD_NOARG("wps_cancel", hostapd_bss_wps_cancel),
+	UBUS_METHOD("wps_cancel", hostapd_bss_wps_cancel, wps_link_policy),
 #endif
 	UBUS_METHOD_NOARG("update_beacon", hostapd_bss_update_beacon),
 	UBUS_METHOD_NOARG("get_features", hostapd_bss_get_features),
