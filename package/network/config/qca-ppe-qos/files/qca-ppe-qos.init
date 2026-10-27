@@ -125,7 +125,7 @@ add_filter() {
 		ip) mangle="munge ip tos set $(($5 | ecn))" ;;
 		*)  mangle="munge ip6 traffic_class set $(($5 | ecn))" ;;
 		esac
-		if tc filter add dev "$1" parent ffff: pref $PREF protocol "$2" \
+		if tc filter add dev "$1" ingress pref $PREF protocol "$2" \
 			flower skip_sw ip_proto "$3" ip_tos $ecn/0x3 $4 \
 			action pedit ex $mangle $prio >/dev/null 2>&1 ; then
 			INSTALLED=$((INSTALLED + 1))
@@ -248,11 +248,11 @@ apply_rule() {
 flush_filters() {
 	local p n
 	for p in $(switch_ports); do
-		for n in $(tc filter show dev "$p" parent ffff: 2>/dev/null |
+		for n in $(tc filter show dev "$p" ingress 2>/dev/null |
 			   sed -n 's/.* pref \([0-9]*\) .*/\1/p' | sort -u); do
 			# 510 too: an earlier version installed up to it.
 			[ "$n" -ge $PREF_BASE ] && [ "$n" -le 510 ] &&
-				tc filter del dev "$p" parent ffff: pref "$n" \
+				tc filter del dev "$p" ingress pref "$n" \
 					>/dev/null 2>&1
 		done
 	done
@@ -392,10 +392,14 @@ apply() {
 		done
 	fi
 
-	# The marking filters share the ingress qdisc with sqm's meter, so the
-	# qdisc is only ever added, never replaced.
+	# The marking filters share the port's ingress hook with sqm's scripts,
+	# so the hook is only ever added, never replaced: a clsact, which an sqm
+	# script that also needs the port's egress can share, unless an ingress
+	# qdisc is there already. The filters go on as "ingress" (ffff:fff2),
+	# which reaches either kind; "parent ffff:" fails on a clsact.
 	for port in $(switch_ports); do
-		tc qdisc add dev "$port" handle ffff: ingress 2>/dev/null
+		tc qdisc add dev "$port" clsact 2>/dev/null ||
+			tc qdisc add dev "$port" handle ffff: ingress 2>/dev/null
 	done
 
 	PREF_N=0
