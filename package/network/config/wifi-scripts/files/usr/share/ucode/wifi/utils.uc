@@ -58,8 +58,13 @@ function find_phy_by_macaddr(phys, macaddr) {
 	return filter(phys, (phy) => phy_file(phy, "macaddress") == macaddr)[0];
 }
 
+function board_wlan() {
+	let data = readfile("/etc/board.json");
+	return data ? json(data).wlan : null;
+}
+
 function rename_phy_by_name(phys, name, rename) {
-	let data = json(readfile("/etc/board.json")).wlan;
+	let data = board_wlan();
 	if (!data)
 		return;
 
@@ -92,7 +97,7 @@ function find_phy_by_path(phys, path) {
 	if (!name)
 		return;
 
-	let data = json(readfile("/etc/board.json")).wlan;
+	let data = board_wlan();
 	if (!data || data[name])
 		return name;
 
@@ -126,7 +131,7 @@ function find_phy_by_name(phys, name, rename) {
 }
 
 export function find_phy(config, rename) {
-	let phys = lsdir("/sys/class/ieee80211");
+	let phys = lsdir("/sys/class/ieee80211") ?? [];
 
 	return find_phy_by_path(phys, config.path) ??
 	       find_phy_by_macaddr(phys, config.macaddr) ??
