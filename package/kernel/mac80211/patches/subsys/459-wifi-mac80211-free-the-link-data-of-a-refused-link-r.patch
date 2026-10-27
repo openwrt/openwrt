@@ -1,0 +1,37 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Sat, 24 Oct 2026 02:45:00 +0200
+Subject: [PATCH] wifi: mac80211: free the link data of a refused link
+ reconfiguration
+
+When the AP MLD refuses every link that a Link Reconfiguration Request
+adds, ieee80211_process_ml_reconf_resp() clears each bit of
+added_links and goes to ieee80211_ml_reconf_reset(). That returns early
+because added_links and removed_links are both 0, so it neither frees
+reconf.add_links_data nor calls cfg80211_mlo_reconf_add_done(), and
+the BSS references of the request stay held. The reset in
+ieee80211_set_disassoc() returns early in the same way. Each later
+authentication then takes its link address from the stale data in
+ieee80211_mgd_setup_link(): a link outside the refused request gets
+the address 00:00:00:00:00:00, and the AP drops the frame.
+
+Also reset the reconfiguration state while add_links_data is set. As
+on a timeout or a disconnection during a reconfiguration, cfg80211 then
+gets the done notification without a frame and releases the BSS
+references.
+
+Fixes: 36e05b0b8390 ("wifi: mac80211: Support dynamic link addition and removal")
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/net/mac80211/mlme.c
++++ b/net/mac80211/mlme.c
+@@ -4517,8 +4517,8 @@ static void ieee80211_ml_reconf_reset(st
+ 		sdata->u.mgd.reconf.add_links_data;
+ 
+ 	if (!ieee80211_vif_is_mld(&sdata->vif) ||
+-	    !(sdata->u.mgd.reconf.added_links |
+-	      sdata->u.mgd.reconf.removed_links))
++	    (!(sdata->u.mgd.reconf.added_links |
++	       sdata->u.mgd.reconf.removed_links) && !add_links_data))
+ 		return;
+ 
+ 	wiphy_delayed_work_cancel(sdata->local->hw.wiphy,
