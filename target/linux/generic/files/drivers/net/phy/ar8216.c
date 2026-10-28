@@ -2416,6 +2416,30 @@ ar8xxx_start(struct ar8xxx_priv *priv)
 	return 0;
 }
 
+/*
+ * Some boards wire the switch's port 4 to the CPU MAC and need the AR8316
+ * RGMII workaround applied for it.  The driver normally learns this from
+ * the addr != 0 probe of that PHY, but the switch PHY ID (0x004dd041) is
+ * also claimed by at803x, so that path may never run.  Let the board say
+ * so in the device tree instead.
+ */
+static bool
+ar8xxx_port4_is_phy(struct ar8xxx_priv *priv)
+{
+	struct device_node *np = priv->pdev ? priv->pdev->of_node : NULL;
+
+	if (np && of_property_read_bool(np, "qca,phy4-mii-enable"))
+		return true;
+
+	if (np && np->parent &&
+	    of_property_read_bool(np->parent, "qca,phy4-mii-enable"))
+		return true;
+
+	return priv->mii_bus->dev.of_node &&
+	       of_property_read_bool(priv->mii_bus->dev.of_node,
+				     "qca,phy4-mii-enable");
+}
+
 static int
 ar8xxx_phy_config_init(struct phy_device *phydev)
 {
@@ -2449,6 +2473,21 @@ ar8xxx_phy_config_init(struct phy_device *phydev)
 	ret = ar8xxx_start(priv);
 	if (ret)
 		return ret;
+
+	/*
+	 * ar8xxx_start() reprograms every port through
+	 * ar8xxx_sw_reset_switch() after ar8316_hw_init() ran, which throws
+	 * away the port 4 RGMII workaround.  When the board declares port 4
+	 * as the CPU PHY, redo the init afterwards, exactly like the
+	 * addr != 0 path above does when ar8xxx owns that PHY.
+	 */
+	if (chip_is_ar8316(priv) &&
+	    ar8xxx_port4_is_phy(priv)) {
+		priv->dev.ports = (AR8216_NUM_PORTS - 1);
+		priv->initialized = false;
+		priv->port4_phy = true;
+		ar8316_hw_init(priv);
+	}
 
 #ifdef CONFIG_ETHERNET_PACKET_MANGLE
 	/* VID fixup only needed on ar8216 */
