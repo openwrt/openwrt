@@ -5,6 +5,8 @@ PKG_RELEASE:=1
 PKG_LICENSE:=GPL-2.0-only
 PKG_MAINTAINER:=Julius Bairaktaris <julius@bairaktaris.de>
 
+PKG_FLAGS:=nonshared
+
 include $(INCLUDE_DIR)/package.mk
 
 define Package/qca-ppe-qos
@@ -13,7 +15,6 @@ define Package/qca-ppe-qos
   TITLE:=Qualcomm PPE hardware QoS classifiers
   DEPENDS:=@TARGET_qualcommax +KERNEL_DCB:dcb +tc +kmod-sched-flower +kmod-sched-act-pedit \
 	+kmod-sched-prio +kmod-sched-ets +kmod-sched-mqprio +kmod-sched-act-police
-  PKGARCH:=all
 endef
 
 define Package/qca-ppe-qos/description
