@@ -2780,6 +2780,7 @@ static void ppe_sparse_work(struct work_struct *work)
 						 sparse_work.work);
 	struct ppe_flow_entry *entry;
 	u32 pkts, delta;
+	bool shaped;
 
 	mutex_lock(&priv->flow_lock);
 	list_for_each_entry(entry, &priv->flow_list, list) {
@@ -2799,7 +2800,16 @@ static void ppe_sparse_work(struct work_struct *work)
 			ppe_flow_account(priv, entry, acct, bytes);
 		}
 
-		if (delta > PPE_SPARSE_PKTS || !ppe_sparse_flows) {
+		/* The list is a queue of a shaped user port, so only a flow
+		 * that leaves by one has a use for it. Anywhere else the profile
+		 * buys nothing and costs the flow the DSCP its ACL rule writes,
+		 * which the switch stops applying once the flow's profile
+		 * outranks the ACL.
+		 */
+		shaped = entry->oport != QCA_PPE_CPU_PORT &&
+			 ppe_port_shaped(priv, entry->oport);
+
+		if (delta > PPE_SPARSE_PKTS || !ppe_sparse_flows || !shaped) {
 			entry->quiet = 0;
 			if (entry->sparse &&
 			    !ppe_flow_profile_set(priv, entry, entry->profile)) {
