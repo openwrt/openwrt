@@ -1141,7 +1141,7 @@ static void ppe_flow_free_egress(struct qca_ppe_priv *priv,
 		ppe_uplink_put(priv, entry->uplink);
 }
 
-static bool ppe_cpu_xmit = true;
+static bool ppe_cpu_xmit;
 module_param_named(cpu_xmit, ppe_cpu_xmit, bool, 0644);
 MODULE_PARM_DESC(cpu_xmit,
 		 "Route flows to devices outside the switch in hardware and pass them out through the CPU port");
