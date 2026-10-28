@@ -41,6 +41,20 @@ omcproxy_add_proxy() {
 	config_get scope $1 scope
 	[ -n "$scope" ] && proxy="$proxy,scope=$scope"
 
+	local opt value fast_leave altnets altnet
+	for opt in robustness query_interval query_response_interval last_member_query_interval; do
+		config_get value $1 $opt
+		[ -n "$value" ] && proxy="$proxy,$opt=$value"
+	done
+
+	config_get_bool fast_leave $1 fast_leave 0
+	[ "$fast_leave" = 1 ] && proxy="$proxy,fast_leave"
+
+	config_get altnets $1 altnet
+	for altnet in $altnets; do
+		proxy="$proxy,altnet=$altnet"
+	done
+
 	PROXIES="$PROXIES $updevice$proxy"
 }
 
