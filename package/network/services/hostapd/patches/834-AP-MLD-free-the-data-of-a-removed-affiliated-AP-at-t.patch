@@ -75,7 +75,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 ---
 --- a/src/ap/hostapd.c
 +++ b/src/ap/hostapd.c
-@@ -752,6 +752,39 @@ void hostapd_mld_beacons_update(struct h
+@@ -765,6 +765,39 @@ void hostapd_mld_beacons_update(struct h
  }
  
  
@@ -115,7 +115,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  static void hostapd_link_remove_finish(void *eloop_data, void *user_ctx)
  {
  	struct hostapd_data *hapd = eloop_data;
-@@ -767,7 +800,18 @@ static void hostapd_link_remove_finish(v
+@@ -780,7 +813,18 @@ static void hostapd_link_remove_finish(v
  	wpa_printf(MSG_DEBUG, "MLD: Removal timer expired, link_id=%u stopped",
  		   hapd->mld_link_id);
  
@@ -134,7 +134,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	hostapd_mld_beacons_update(hapd);
  
  	hostapd_ucode_bss_cb(hapd, "bss_link_removed");
-@@ -4272,6 +4316,8 @@ void hostapd_interface_free(struct hosta
+@@ -4314,6 +4358,8 @@ void hostapd_interface_free(struct hosta
  		if (iface->bss[j])
  			hostapd_mld_ref_dec(iface->bss[j]);
  #endif /* CONFIG_IEEE80211BE */

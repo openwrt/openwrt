@@ -40,7 +40,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 ---
 --- a/src/ap/hostapd.c
 +++ b/src/ap/hostapd.c
-@@ -866,8 +866,70 @@ void hostapd_link_remove_tx_status(struc
+@@ -879,8 +879,70 @@ void hostapd_link_remove_tx_status(struc
  }
  
  
@@ -113,7 +113,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  static void hostapd_link_remove_notify_stas(struct hostapd_data *hapd)
  {
  	struct hostapd_data *tx_hapd;
-@@ -927,6 +989,7 @@ static void hostapd_link_remove_expire_s
+@@ -940,6 +1002,7 @@ static void hostapd_link_remove_expire_s
  	unsigned int wait_us;
  
  	hostapd_free_link_stas(hapd);

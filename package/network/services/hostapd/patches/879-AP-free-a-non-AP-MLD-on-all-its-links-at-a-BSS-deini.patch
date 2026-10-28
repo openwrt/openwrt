@@ -20,7 +20,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 ---
 --- a/src/ap/hostapd.c
 +++ b/src/ap/hostapd.c
-@@ -1961,10 +1961,19 @@ static int hostapd_flush_old_stations(st
+@@ -2003,10 +2003,19 @@ static int hostapd_flush_old_stations(st
  }
  
  
@@ -41,7 +41,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  #ifdef CONFIG_WEP
  	hostapd_clear_wep(hapd);
  #endif /* CONFIG_WEP */
-@@ -1975,12 +1984,7 @@ void hostapd_bss_deinit_no_free(struct h
+@@ -2017,12 +2026,7 @@ void hostapd_bss_deinit_no_free(struct h
   * free them first. The keys of the BSS stay for the next start. */
  void hostapd_bss_stop_ap(struct hostapd_data *hapd)
  {

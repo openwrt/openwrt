@@ -22,6 +22,14 @@ MediaTek SDK does. The host timer sets no beacon, and keeps the count of
 the Probe Response frames and the times of the ucode link_remove method
 current.
 
+A link of the AP MLD that starts during the countdown, for example at a
+restart of its radio, sends its first Beacon frame at the expiry, before
+the other links drop the element. A link that stops again before the
+expiry stays stopped. Where the removal ends without the expiry, for
+example at a disable of the radio of the removed link, such a link
+starts then. The removed link itself does not start at the expiry, also
+where it restarted during the countdown.
+
 NL80211_CMD_LINKS_REMOVED on the AP interface reports the expiry, which
 the driver sends after the Beacon frame with the count 1 and before the
 removal TBTT, once it stopped the TX of the link. That event ends the
@@ -159,7 +167,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  static u64 hostapd_link_remove_expiry_us(struct hostapd_data *hapd)
  {
  	struct os_reltime now, left;
-@@ -575,21 +617,98 @@ u64 hostapd_link_remove_expiry_ms(struct
+@@ -575,21 +617,111 @@ u64 hostapd_link_remove_expiry_ms(struct
   * caller commits no earlier than the link stops. */
  u64 hostapd_link_remove_ms(struct hostapd_data *hapd)
  {
@@ -194,26 +202,39 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +}
 +
 +
-+/* The driver counts the AP Removal Timer from the Beacon frames it took at the
-+ * start, so no link of the AP MLD gets another one until the expiry. */
-+bool hostapd_link_remove_beacon_held(struct hostapd_data *hapd)
++static struct hostapd_data *
++hostapd_link_remove_offload_link(struct hostapd_data *hapd)
 +{
 +	struct hostapd_data *link_bss;
 +
 +	if (!hapd->conf->mld_ap || !hapd->mld)
-+		return false;
++		return NULL;
 +
 +	for_each_mld_link(link_bss, hapd) {
-+		if (!link_bss->eht_mld_link_removal_offload)
-+			continue;
-+
-+		wpa_printf(MSG_DEBUG,
-+			   "MLD: No Beacon update for link_id=%u while the driver counts the removal of link_id=%u",
-+			   hapd->mld_link_id, link_bss->mld_link_id);
-+		return true;
++		if (link_bss->eht_mld_link_removal_offload)
++			return link_bss;
 +	}
 +
-+	return false;
++	return NULL;
++}
++
++
++/* The driver counts the AP Removal Timer from the Beacon frames it took at the
++ * start, so no link of the AP MLD gets another one until the expiry. */
++bool hostapd_link_remove_beacon_held(struct hostapd_data *hapd)
++{
++	struct hostapd_data *removed = hostapd_link_remove_offload_link(hapd);
++
++	if (!removed)
++		return false;
++
++	if (!hapd->beacon_set_done)
++		hapd->eht_mld_beacon_start_held = true;
++
++	wpa_printf(MSG_DEBUG,
++		   "MLD: No Beacon update for link_id=%u while the driver counts the removal of link_id=%u",
++		   hapd->mld_link_id, removed->mld_link_id);
++	return true;
 +}
 +
 +
@@ -260,7 +281,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  static struct hostapd_data *
  hostapd_link_remove_partner(struct hostapd_data *hapd, struct sta_info *sta)
  {
-@@ -741,21 +860,28 @@ static void hostapd_link_remove_notify_s
+@@ -741,21 +873,28 @@ static void hostapd_link_remove_notify_s
  }
  
  
@@ -293,7 +314,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	hostapd_free_link_stas(hapd);
  	hostapd_link_remove_notify_stas(hapd);
  
-@@ -773,6 +899,88 @@ static void hostapd_link_remove_expire(s
+@@ -773,6 +912,111 @@ static void hostapd_link_remove_expire(s
  }
  
  
@@ -352,6 +373,28 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +}
 +
 +
++/* Before the other links drop the element, so that a link that started during
++ * the countdown counts as a link that beacons */
++static void hostapd_link_remove_start_held(struct hostapd_data *hapd)
++{
++	struct hostapd_data *link_bss;
++
++	for_each_mld_link(link_bss, hapd) {
++		if (!link_bss->eht_mld_beacon_start_held)
++			continue;
++
++		link_bss->eht_mld_beacon_start_held = false;
++		if (link_bss == hapd)
++			continue;
++
++		wpa_printf(MSG_DEBUG,
++			   "MLD: Start link_id=%u after the removal of link_id=%u",
++			   link_bss->mld_link_id, hapd->mld_link_id);
++		ieee802_11_set_beacon_per_bss_only(link_bss);
++	}
++}
++
++
 +/* The expiry comes before the removal TBTT, after the driver stopped the TX of
 + * the link. The other links drop the element before that TBTT, and the
 + * stations get their frames and the link stops after it (IEEE Std
@@ -365,6 +408,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +	us = hostapd_link_remove_tbtt_after_us(hapd);
 +	hapd->eht_mld_link_removal_offload = false;
 +	hapd->eht_mld_link_removal_count = 0;
++	hostapd_link_remove_start_held(hapd);
 +
 +	if (!hostapd_link_remove_expire_beacons(hapd))
 +		return;
@@ -382,7 +426,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  /* hostapd sees no TBTT: the countdown runs from the return of the first
   * Beacon update and expires before the TBTT that the count names. */
  static void hostapd_link_remove_timeout_handler(void *eloop_data,
-@@ -780,7 +988,9 @@ static void hostapd_link_remove_timeout_
+@@ -780,7 +1024,9 @@ static void hostapd_link_remove_timeout_
  {
  	struct hostapd_data *hapd = (struct hostapd_data *) eloop_data;
  
@@ -393,7 +437,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		return;
  	hapd->eht_mld_link_removal_count--;
  
-@@ -788,6 +998,14 @@ static void hostapd_link_remove_timeout_
+@@ -788,6 +1034,14 @@ static void hostapd_link_remove_timeout_
  		   hapd->mld_link_id,
  		   hapd->eht_mld_link_removal_count);
  
@@ -408,7 +452,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	if (!hapd->eht_mld_link_removal_count) {
  		hostapd_link_remove_expire(hapd);
  		return;
-@@ -850,6 +1068,10 @@ int hostapd_link_remove(struct hostapd_d
+@@ -850,6 +1104,10 @@ int hostapd_link_remove(struct hostapd_d
  		return -1;
  	}
  
@@ -419,7 +463,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	wpa_printf(MSG_DEBUG,
  		   "MLD: Remove link_id=%u in %u beacons",
  		   hapd->mld_link_id, count);
-@@ -861,13 +1083,87 @@ int hostapd_link_remove(struct hostapd_d
+@@ -861,13 +1119,87 @@ int hostapd_link_remove(struct hostapd_d
  		hapd->eht_mld_bss_param_change = 0;
  
  	hostapd_mld_crit_update_start(hapd);
@@ -508,8 +552,12 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  /* Unlike switch_link_hapd(), a link that hostapd no longer has is not
   * replaced by the first link */
  void hostapd_crit_update_done(struct hostapd_data *hapd, int link_id, u32 id)
-@@ -1133,7 +1429,11 @@ void hostapd_free_hapd_data(struct hosta
+@@ -1131,12 +1463,22 @@ void hostapd_adv_ttlm_event(struct hosta
+ void hostapd_free_hapd_data(struct hostapd_data *hapd)
+ {
  #ifdef CONFIG_IEEE80211BE
++	bool removal_offload = hapd->eht_mld_link_removal_offload;
++
  	eloop_cancel_timeout(hostapd_link_remove_timeout_handler, hapd, NULL);
  	eloop_cancel_timeout(hostapd_link_remove_finish, hapd, NULL);
 +	eloop_cancel_timeout(hostapd_link_remove_offload_missing, hapd, NULL);
@@ -517,12 +565,19 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	hapd->eht_mld_link_removal_count = 0;
 +	hapd->eht_mld_link_removal_offload = false;
 +	hapd->eht_mld_link_removal_start_pending = false;
++	hapd->eht_mld_beacon_start_held = false;
  	hapd->eht_mld_link_removal_expired = false;
  	hapd->eht_mld_link_removal_tx = 0;
  	hapd->eht_mld_crit_update = false;
++	/* The removal ends here without the expiry that starts these links */
++	if (removal_offload && hapd->conf && hapd->conf->mld_ap && hapd->mld)
++		hostapd_link_remove_start_held(hapd);
+ #endif /* CONFIG_IEEE80211BE */
+ 
+ 	os_free(hapd->probereq_cb);
 --- a/src/ap/hostapd.h
 +++ b/src/ap/hostapd.h
-@@ -555,6 +555,13 @@ struct hostapd_data {
+@@ -555,6 +555,16 @@ struct hostapd_data {
  	struct os_reltime eht_mld_link_removal_due;
  	bool eht_mld_link_removal_expired;
  	unsigned int eht_mld_link_removal_tx;
@@ -533,10 +588,13 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +	bool eht_mld_link_removal_start_pending;
 +	/* The return of the update that started the driver's count */
 +	struct os_reltime eht_mld_link_removal_return;
++	/* The first Beacon frame of this link waits for the expiry of an
++	 * offloaded removal of another link */
++	bool eht_mld_beacon_start_held;
  	/* Critical Update flag set until EVENT_CRIT_UPDATE_DONE */
  	bool eht_mld_crit_update;
  	u32 eht_mld_crit_update_id;
-@@ -1033,6 +1040,9 @@ u64 hostapd_link_remove_expiry_ms(struct
+@@ -1033,6 +1043,9 @@ u64 hostapd_link_remove_expiry_ms(struct
  u64 hostapd_link_remove_ms(struct hostapd_data *hapd);
  void hostapd_mld_beacons_update(struct hostapd_data *hapd);
  void hostapd_link_remove_tx_status(struct hostapd_data *hapd, const u8 *addr);
@@ -741,3 +799,13 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	/* add new features before the definition below */
  	NUM_NL80211_EXT_FEATURES,
+--- a/src/ap/ap_drv_ops.h
++++ b/src/ap/ap_drv_ops.h
+@@ -399,6 +399,7 @@ static inline int hostapd_drv_stop_ap(st
+ 	if (!hapd->driver || !hapd->driver->stop_ap || !hapd->drv_priv)
+ 		return 0;
+ #ifdef CONFIG_IEEE80211BE
++	hapd->eht_mld_beacon_start_held = false;
+ 	if (hapd->conf->mld_ap)
+ 		link_id = hapd->mld_link_id;
+ #endif /* CONFIG_IEEE80211BE */
