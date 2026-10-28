@@ -6,6 +6,7 @@ START=96
 EXTRA_COMMANDS="attach"
 
 BLE_SERIAL=/dev/ttyMSM1
+STOCK_PSR="csr8x11-a12-bt4.2-patch.psr csr8x11-coex.psr"
 
 gen_mac_psr() {
 	local lan_mac ble_mac
@@ -16,6 +17,45 @@ gen_mac_psr() {
 	mkdir -p /etc/bluetooth
 	echo "&0001 = 00${ble_mac:9:2} ${ble_mac:12:2}${ble_mac:15:2} 00${ble_mac:6:2} ${ble_mac:0:2}${ble_mac:3:2}" \
 		> /etc/bluetooth/csr8x11-mac.psr
+}
+
+# The PSKEY files are Zyxel's and are not shipped. The usual install leaves
+# the stock firmware in the other slot, so read them from there once. The
+# kernel refuses to mount the stock squashfs (non-standard xz options), but
+# unsquashfs reads it.
+copy_stock_psr() {
+	local idx slot part dev tmp file
+
+	for file in $STOCK_PSR; do
+		[ -r /etc/bluetooth/$file ] || break
+	done
+	[ -r /etc/bluetooth/$file ] && return 0
+
+	command -v unsquashfs >/dev/null || {
+		logger -t nbg7815-bluetooth "no PSKEY files; install squashfs-tools-unsquashfs to take them from the stock firmware"
+		return 0
+	}
+
+	idx=$(find_mtd_index 0:bootconfig)
+	[ -n "$idx" ] || return 0
+	slot=$(hexdump -e '1/1 "%01x|"' -n 1 -s 168 -C /dev/mtd$idx | cut -f 1 -d "|" | head -n1)
+	case "$slot" in
+	0) part=rootfs_1 ;;
+	1) part=rootfs ;;
+	*) return 0 ;;
+	esac
+	dev=$(find_mmc_part $part)
+	[ -b "$dev" ] || return 0
+
+	tmp=$(mktemp -d) || return 0
+	unsquashfs -n -d "$tmp/root" "$dev" etc/bluetooth >/dev/null 2>&1
+	mkdir -p /etc/bluetooth
+	for file in $STOCK_PSR; do
+		[ -r /etc/bluetooth/$file ] && continue
+		cp "$tmp/root/etc/bluetooth/$file" /etc/bluetooth/ 2>/dev/null &&
+			logger -t nbg7815-bluetooth "$file taken from the stock firmware in $part"
+	done
+	rm -rf "$tmp"
 }
 
 load_psr() {
@@ -37,6 +77,7 @@ attach() {
 	. /lib/functions/system.sh
 
 	gen_mac_psr
+	copy_stock_psr
 
 	# PSKEYs before attach, following the stock order: the chip answers
 	# cleanly to the BCSP load and the attach follows, while loading over
