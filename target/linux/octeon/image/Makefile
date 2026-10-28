@@ -34,9 +34,6 @@ define Device/generic
 endef
 TARGET_DEVICES += generic
 
-ifeq ($(SUBTARGET),generic)
-else
 include $(SUBTARGET).mk
-endif
 
 $(eval $(call BuildImage))
