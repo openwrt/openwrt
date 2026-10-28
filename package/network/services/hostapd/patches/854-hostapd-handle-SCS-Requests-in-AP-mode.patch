@@ -1,0 +1,406 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Tue, 27 Oct 2026 13:29:58 +0000
+Subject: [PATCH] hostapd: handle SCS Requests in AP mode
+
+Answer the SCS Request frames of an associated station (IEEE Std
+802.11-2024, 11.25.2) with an SCS Response that holds the status of each
+SCS Descriptor element. The driver installs each descriptor through
+set_scs(): hostapd passes the SCSID, the Request Type, the User Priority
+of the Intra-Access Category Priority element, the TCLAS and TCLAS
+Processing elements and the QoS Characteristics element as received,
+and the driver answers with the status code.
+
+hostapd keeps the SCSIDs of the active streams of each station, on the
+station entry of the association link of a non-AP MLD. It declines an
+Add of an active SCSID, and a Change or a Remove of an SCSID that is not
+active, without asking the driver.
+
+Based on the SCS Request handling of the MediaTek feed, "mtk: hostapd:
+Add Triggered Uplink Access Optimization support" and its bounds fix
+"mtk: hostapd: fix out-of-bounds access in SCS Request handling". The
+rework replaces the vendor command with the set_scs() driver operation,
+handles downlink descriptors and any number of descriptors per frame,
+and builds under CONFIG_ROBUST_AV.
+
+A move of the association of a non-AP MLD to another link STA moves
+its SCS streams as well.
+
+Co-developed-by: Howard Hsu <howard-yh.hsu@mediatek.com>
+Signed-off-by: Howard Hsu <howard-yh.hsu@mediatek.com>
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/hostapd/Makefile
++++ b/hostapd/Makefile
+@@ -1401,6 +1401,7 @@ endif
+ ifdef CONFIG_ROBUST_AV
+ CFLAGS += -DCONFIG_ROBUST_AV
+ OBJS += ../src/ap/robust_av.o
++OBJS += ../src/ap/scs.o
+ endif
+ 
+ OBJS += ../src/drivers/driver_common.o
+--- a/src/ap/Makefile
++++ b/src/ap/Makefile
+@@ -49,6 +49,7 @@ LIB_OBJS= \
+ 	pmksa_cache_auth.o \
+ 	preauth_auth.o \
+ 	robust_av.o \
++	scs.o \
+ 	rrm.o \
+ 	sta_info.o \
+ 	tkip_countermeasures.o \
+--- a/src/ap/ieee802_11.c
++++ b/src/ap/ieee802_11.c
+@@ -63,6 +63,7 @@
+ #include "nan_usd_ap.h"
+ #include "pasn/pasn_common.h"
+ #include "robust_av.h"
++#include "scs.h"
+ 
+ #ifdef CONFIG_APUP
+ #	include "apup.h"
+@@ -8627,6 +8628,12 @@ static int handle_action(struct hostapd_
+ 		ieee802_11_rx_protected_eht_action(hapd, mgmt, len);
+ 		return 1;
+ #endif /* CONFIG_IEEE80211BE */
++#ifdef CONFIG_ROBUST_AV
++	case WLAN_ACTION_ROBUST_AV_STREAMING:
++		hostapd_handle_robust_av_streaming(hapd, (const u8 *) mgmt,
++						   len);
++		return 1;
++#endif /* CONFIG_ROBUST_AV */
+ 	}
+ 
+ 	hostapd_logger(hapd, mgmt->sa, HOSTAPD_MODULE_IEEE80211,
+--- /dev/null
++++ b/src/ap/scs.c
+@@ -0,0 +1,264 @@
++// SPDX-License-Identifier: BSD-3-Clause
++/*
++ * Copyright (c) 2024 MediaTek Inc.
++ */
++
++#include "utils/includes.h"
++
++#include "utils/common.h"
++#include "common/ieee802_11_defs.h"
++#include "common/ieee802_11_common.h"
++#include "hostapd.h"
++#include "ieee802_11.h"
++#include "sta_info.h"
++#include "ap_config.h"
++#include "ap_drv_ops.h"
++#include "scs.h"
++
++/*
++ * The links of an AP MLD each hold a station entry of a non-AP MLD; the entry
++ * of the association link holds the streams, whichever link a request takes.
++ */
++static struct sta_info * robust_av_sta(struct hostapd_data **hapd,
++				       struct sta_info *sta)
++{
++	struct hostapd_data *assoc_hapd = *hapd;
++	struct sta_info *assoc_sta;
++
++	assoc_sta = hostapd_ml_get_assoc_sta(*hapd, sta, &assoc_hapd);
++	if (!assoc_sta)
++		return sta;
++
++	*hapd = assoc_hapd;
++	return assoc_sta;
++}
++
++
++static bool scs_id_active(struct sta_info *sta, u8 scsid)
++{
++	return sta->scs_active[scsid / 8] & BIT(scsid % 8);
++}
++
++
++static void scs_id_set(struct sta_info *sta, u8 scsid, bool active)
++{
++	if (active)
++		sta->scs_active[scsid / 8] |= BIT(scsid % 8);
++	else
++		sta->scs_active[scsid / 8] &= ~BIT(scsid % 8);
++}
++
++
++static u16 hostapd_scs_desc_set(struct hostapd_data *hapd, struct sta_info *sta,
++				struct hostapd_scs_desc *desc)
++{
++	u16 status;
++
++	if (hostapd_drv_set_scs(hapd, sta->addr, desc, &status))
++		return WLAN_STATUS_REQUEST_DECLINED;
++
++	if (desc->req_type == SCS_REQ_REMOVE &&
++	    status == WLAN_STATUS_TCLAS_PROCESSING_TERMINATED)
++		scs_id_set(sta, desc->id, false);
++	else if (desc->req_type != SCS_REQ_REMOVE &&
++		 status == WLAN_STATUS_SUCCESS)
++		scs_id_set(sta, desc->id, true);
++
++	return status;
++}
++
++
++/*
++ * The TCLAS elements and the TCLAS Processing element go to the driver as one
++ * list, in the order received, without the other elements of the descriptor.
++ */
++static u16 hostapd_process_scs_descriptor(struct hostapd_data *hapd,
++					  struct sta_info *sta,
++					  const struct element *scs)
++{
++	struct hostapd_scs_desc desc;
++	const struct element *elem;
++	u8 *tclas = NULL;
++	size_t tclas_len = 0;
++	u16 status = WLAN_STATUS_REQUEST_DECLINED;
++	bool active;
++
++	os_memset(&desc, 0, sizeof(desc));
++	desc.id = scs->data[0];
++	desc.req_type = scs->data[1];
++	desc.up = -1;
++
++	if (!desc.id) {
++		wpa_printf(MSG_DEBUG, "SCS: SCSID 0 is invalid");
++		goto out;
++	}
++
++	active = scs_id_active(sta, desc.id);
++
++	switch (desc.req_type) {
++	case SCS_REQ_ADD:
++		if (active)
++			goto out;
++		break;
++	case SCS_REQ_CHANGE:
++	case SCS_REQ_REMOVE:
++		if (!active)
++			goto out;
++		break;
++	default:
++		goto out;
++	}
++
++	if (desc.req_type == SCS_REQ_REMOVE) {
++		status = hostapd_scs_desc_set(hapd, sta, &desc);
++		goto out;
++	}
++
++	tclas = os_malloc(scs->datalen);
++	if (!tclas)
++		goto out;
++
++	for_each_element(elem, scs->data + 2, scs->datalen - 2) {
++		switch (elem->id) {
++		case WLAN_EID_INTRA_ACCESS_CATEGORY_PRIORITY:
++			if (elem->datalen < 1 || desc.up >= 0)
++				goto out;
++			desc.up = elem->data[0] & 0x07;
++			break;
++		case WLAN_EID_TCLAS:
++		case WLAN_EID_TCLAS_PROCESSING:
++			os_memcpy(tclas + tclas_len, elem, 2 + elem->datalen);
++			tclas_len += 2 + elem->datalen;
++			break;
++		case WLAN_EID_EXTENSION:
++			if (elem->datalen < 1 ||
++			    elem->data[0] != WLAN_EID_EXT_QOS_CHARACTERISTICS)
++				break;
++			if (desc.qos_char)
++				goto out;
++			desc.qos_char = (const u8 *) elem;
++			desc.qos_char_len = 2 + elem->datalen;
++			break;
++		default:
++			break;
++		}
++	}
++
++	if (!for_each_element_completed(elem, scs->data + 2,
++					scs->datalen - 2)) {
++		wpa_printf(MSG_DEBUG,
++			   "SCS: Truncated element in SCS Descriptor %u",
++			   desc.id);
++		goto out;
++	}
++
++	if (tclas_len) {
++		desc.tclas = tclas;
++		desc.tclas_len = tclas_len;
++	}
++
++	status = hostapd_scs_desc_set(hapd, sta, &desc);
++
++out:
++	os_free(tclas);
++	wpa_printf(MSG_DEBUG,
++		   "SCS: " MACSTR " SCSID %u Request Type %u: status %u",
++		   MAC2STR(sta->addr), desc.id, desc.req_type, status);
++
++	return status;
++}
++
++
++static void send_scs_response(struct hostapd_data *hapd, const u8 *da,
++			      u8 dialog_token, const struct wpabuf *duples,
++			      u8 count)
++{
++	struct wpabuf *buf;
++
++	if (count == 0)
++		return;
++
++	buf = wpabuf_alloc(4 + wpabuf_len(duples));
++	if (!buf)
++		return;
++
++	wpabuf_put_u8(buf, WLAN_ACTION_ROBUST_AV_STREAMING);
++	wpabuf_put_u8(buf, ROBUST_AV_SCS_RESP);
++	wpabuf_put_u8(buf, dialog_token);
++	wpabuf_put_u8(buf, count);
++	wpabuf_put_buf(buf, duples);
++
++	hostapd_drv_send_action(hapd, hapd->iface->freq, 0, da,
++				wpabuf_head(buf), wpabuf_len(buf));
++	wpabuf_free(buf);
++}
++
++
++static void hostapd_handle_scs_req(struct hostapd_data *hapd,
++				   struct sta_info *sta, const u8 *da,
++				   const u8 *body, size_t len)
++{
++	const struct element *elem;
++	struct wpabuf *duples;
++	unsigned int count = 0;
++	u8 token = body[2];
++	u16 status;
++
++	duples = wpabuf_alloc(len);
++	if (!duples)
++		return;
++
++	for_each_element(elem, body + 3, len - 3) {
++		if (count == 255) {
++			wpa_printf(MSG_DEBUG, "SCS: Too many SCS Descriptors");
++			break;
++		}
++
++		if (elem->id != WLAN_EID_SCS_DESCRIPTOR || elem->datalen < 2) {
++			wpa_printf(MSG_DEBUG, "SCS: Invalid SCS Descriptor");
++			break;
++		}
++
++		status = hostapd_process_scs_descriptor(hapd, sta, elem);
++		wpabuf_put_u8(duples, elem->data[0]);
++		wpabuf_put_le16(duples, status);
++		count++;
++	}
++
++	send_scs_response(hapd, da, token, duples, count);
++	wpabuf_free(duples);
++}
++
++
++void hostapd_handle_robust_av_streaming(struct hostapd_data *hapd,
++					const u8 *buf, size_t len)
++{
++	const struct ieee80211_mgmt *mgmt = (const struct ieee80211_mgmt *) buf;
++	struct hostapd_data *sta_hapd = hapd;
++	const u8 *body = &mgmt->u.action.category;
++	struct sta_info *sta;
++
++	/* Category, Robust AV Streaming Action and Dialog Token */
++	if (len < IEEE80211_HDRLEN + 3)
++		return;
++
++	len -= IEEE80211_HDRLEN;
++
++	sta = ap_get_sta(hapd, mgmt->sa);
++	if (!sta || !(sta->flags & WLAN_STA_ASSOC)) {
++		wpa_printf(MSG_DEBUG,
++			   "Robust AV: Station " MACSTR " not associated",
++			   MAC2STR(mgmt->sa));
++		return;
++	}
++
++	sta = robust_av_sta(&sta_hapd, sta);
++
++	switch (body[1]) {
++	case ROBUST_AV_SCS_REQ:
++		hostapd_handle_scs_req(sta_hapd, sta, mgmt->sa, body, len);
++		break;
++	default:
++		break;
++	}
++}
+--- /dev/null
++++ b/src/ap/scs.h
+@@ -0,0 +1,14 @@
++/* SPDX-License-Identifier: BSD-3-Clause */
++/*
++ * Copyright (c) 2024 MediaTek Inc.
++ */
++
++#ifndef SCS_H
++#define SCS_H
++
++struct hostapd_data;
++
++void hostapd_handle_robust_av_streaming(struct hostapd_data *hapd,
++					const u8 *buf, size_t len);
++
++#endif /* SCS_H */
+--- a/src/ap/sta_info.h
++++ b/src/ap/sta_info.h
+@@ -388,6 +388,7 @@ struct sta_info {
+ 	bool dscp_reset;
+ 	u8 unsolicited_dialog_token;
+ 	struct dscp_policy_state dscp_state;
++	u8 scs_active[32]; /* bitmap of the SCSIDs with an active stream */
+ #endif /* CONFIG_ROBUST_AV */
+ };
+ 
+--- a/src/drivers/driver_nl80211.c
++++ b/src/drivers/driver_nl80211.c
+@@ -3208,6 +3208,11 @@ static int nl80211_action_subscribe_ap(s
+ 	if (nl80211_register_action_frame(bss, (u8 *) "\x25\x0b", 2) < 0)
+ 		ret = -1;
+ #endif /* CONFIG_IEEE80211BE */
++#ifdef CONFIG_ROBUST_AV
++	/* Robust AV Streaming - SCS Request */
++	if (nl80211_register_action_frame(bss, (u8 *) "\x13\x00", 2) < 0)
++		ret = -1;
++#endif /* CONFIG_ROBUST_AV */
+ 	/* Vendor-specific Protected */
+ 	if (nl80211_register_action_frame(bss, (u8 *) "\x7e", 1) < 0)
+ 		ret = -1;
+--- a/wpa_supplicant/Makefile
++++ b/wpa_supplicant/Makefile
+@@ -1102,6 +1102,7 @@ endif
+ ifdef CONFIG_ROBUST_AV
+ CFLAGS += -DCONFIG_ROBUST_AV
+ OBJS += ../src/ap/robust_av.o
++OBJS += ../src/ap/scs.o
+ endif
+ 
+ CFLAGS += -DEAP_SERVER -DEAP_SERVER_IDENTITY
+--- a/src/ap/ieee802_11_eht.c
++++ b/src/ap/ieee802_11_eht.c
+@@ -1668,6 +1668,11 @@ struct sta_info * hostapd_ml_move_assoc_
+ 
+ 	wpa_reset_assoc_sm_info(assoc_sta->wpa_sm, (*assoc_hapd)->wpa_auth,
+ 				link_id);
++#ifdef CONFIG_ROBUST_AV
++	os_memcpy(assoc_sta->scs_active, sta->scs_active,
++		  sizeof(sta->scs_active));
++	os_memset(sta->scs_active, 0, sizeof(sta->scs_active));
++#endif /* CONFIG_ROBUST_AV */
+ 	return assoc_sta;
+ }
+ 

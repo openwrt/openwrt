@@ -1,0 +1,284 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Tue, 27 Oct 2026 13:29:58 +0000
+Subject: [PATCH] hostapd: handle MSCS requests in AP mode
+
+Answer the MSCS Request frame of an associated station with an MSCS
+Response, and the MSCS Descriptor element of a (Re)Association Request
+with an MSCS Descriptor element that holds the MSCS Status subelement in
+the (Re)Association Response (IEEE Std 802.11-2024, 11.25.3). The driver
+installs the MSCS through set_mscs(): hostapd passes the Request Type,
+the User Priority Control and Stream Timeout fields and the TCLAS Mask
+elements as received, and the driver answers with the status code. A
+removal passes no TCLAS Mask element. hostapd keeps whether the station
+holds an MSCS.
+
+The MSCS of a (Re)Association Request is installed when the response
+reports success, after the station was added to the driver.
+
+Based on "mtk: hostapd: support handle mscs protocol" of the MediaTek
+feed and its bounds fix "mtk: hostapd: fix out-of-bounds read in
+hostapd_handle_mscs_req()". The rework replaces the netlink socket to
+the vendor module with the set_mscs() driver operation, passes the
+whole classifier of every TCLAS Mask element in place of the Classifier
+Type and the Classifier Mask, leaves the classifier checks to the
+driver, and builds under CONFIG_ROBUST_AV.
+
+A move of the association of a non-AP MLD to another link STA moves
+its MSCS as well.
+
+Co-developed-by: Howard Hsu <howard-yh.hsu@mediatek.com>
+Signed-off-by: Howard Hsu <howard-yh.hsu@mediatek.com>
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/src/ap/ieee802_11.c
++++ b/src/ap/ieee802_11.c
+@@ -6972,6 +6972,9 @@ static u16 send_assoc_resp(struct hostap
+ 	u16 res = WLAN_STATUS_SUCCESS;
+ 
+ 	buflen = sizeof(struct ieee80211_mgmt) + 1024;
++#ifdef CONFIG_ROBUST_AV
++	buflen += 14; /* MSCS Descriptor element with an MSCS Status */
++#endif /* CONFIG_ROBUST_AV */
+ #ifdef CONFIG_FILS
+ 	if (sta && sta->fils_hlp_resp)
+ 		buflen += wpabuf_len(sta->fils_hlp_resp);
+@@ -7149,6 +7152,11 @@ static u16 send_assoc_resp(struct hostap
+ rsnxe_done:
+ #endif /* CONFIG_TESTING_OPTIONS */
+ 
++#ifdef CONFIG_ROBUST_AV
++	if (sta && status_code == WLAN_STATUS_SUCCESS)
++		p = hostapd_eid_mscs_assoc(hapd, sta, ies, ies_len, p);
++#endif /* CONFIG_ROBUST_AV */
++
+ #ifdef CONFIG_IEEE80211BE
+ 	if (hostapd_is_eht_enabled(hapd)) {
+ 		if (hapd->conf->mld_ap)
+--- a/src/ap/scs.c
++++ b/src/ap/scs.c
+@@ -15,6 +15,9 @@
+ #include "ap_drv_ops.h"
+ #include "scs.h"
+ 
++/* Element ID Extension, Request Type, User Priority Control, Stream Timeout */
++#define MSCS_DESCRIPTOR_FIXED_LEN 8
++
+ /*
+  * The links of an AP MLD each hold a station entry of a non-AP MLD; the entry
+  * of the association link holds the streams, whichever link a request takes.
+@@ -169,6 +172,158 @@ out:
+ }
+ 
+ 
++/*
++ * @elem: The MSCS Descriptor element from its Element ID Extension
++ * @len: Length of @elem
++ * Returns: the status code for the request
++ */
++static u16 hostapd_set_mscs(struct hostapd_data *hapd, struct sta_info *sta,
++			    const u8 *elem, size_t len)
++{
++	struct hostapd_mscs_desc desc;
++	const struct element *sub;
++	u8 *masks = NULL;
++	size_t masks_len = 0;
++	u16 status = WLAN_STATUS_REQUEST_DECLINED;
++
++	os_memset(&desc, 0, sizeof(desc));
++	if (len < MSCS_DESCRIPTOR_FIXED_LEN) {
++		wpa_printf(MSG_DEBUG, "MSCS: Short MSCS Descriptor element");
++		goto out;
++	}
++
++	desc.req_type = elem[1];
++	desc.up_bitmap = elem[2];
++	desc.up_limit = elem[3] & 0x07;
++	desc.stream_timeout = WPA_GET_LE32(&elem[4]);
++
++	switch (desc.req_type) {
++	case SCS_REQ_ADD:
++	case SCS_REQ_CHANGE:
++		break;
++	case SCS_REQ_REMOVE:
++		/* A removal names no classifier, its elements are ignored */
++		goto set;
++	default:
++		goto out;
++	}
++
++	masks = os_malloc(len);
++	if (!masks)
++		goto out;
++
++	for_each_element(sub, elem + MSCS_DESCRIPTOR_FIXED_LEN,
++			 len - MSCS_DESCRIPTOR_FIXED_LEN) {
++		if (sub->id != WLAN_EID_EXTENSION || sub->datalen < 1 ||
++		    sub->data[0] != WLAN_EID_EXT_TCLAS_MASK)
++			continue;
++		os_memcpy(masks + masks_len, sub, 2 + sub->datalen);
++		masks_len += 2 + sub->datalen;
++	}
++
++	if (!for_each_element_completed(sub, elem + MSCS_DESCRIPTOR_FIXED_LEN,
++					len - MSCS_DESCRIPTOR_FIXED_LEN) ||
++	    !masks_len) {
++		wpa_printf(MSG_DEBUG,
++			   "MSCS: No TCLAS Mask element or a truncated element");
++		goto out;
++	}
++
++	desc.tclas_mask = masks;
++	desc.tclas_mask_len = masks_len;
++
++set:
++	if (hostapd_drv_set_mscs(hapd, sta->addr, &desc, &status)) {
++		status = WLAN_STATUS_REQUEST_DECLINED;
++		goto out;
++	}
++
++	if (desc.req_type == SCS_REQ_REMOVE &&
++	    status == WLAN_STATUS_TCLAS_PROCESSING_TERMINATED)
++		sta->mscs_active = false;
++	else if (desc.req_type != SCS_REQ_REMOVE &&
++		 status == WLAN_STATUS_SUCCESS)
++		sta->mscs_active = true;
++
++out:
++	os_free(masks);
++	wpa_printf(MSG_DEBUG, "MSCS: " MACSTR " Request Type %u: status %u",
++		   MAC2STR(sta->addr), desc.req_type, status);
++
++	return status;
++}
++
++
++static void send_mscs_response(struct hostapd_data *hapd, const u8 *da,
++			       u8 dialog_token, u16 status)
++{
++	u8 buf[5];
++
++	buf[0] = WLAN_ACTION_ROBUST_AV_STREAMING;
++	buf[1] = ROBUST_AV_MSCS_RESP;
++	buf[2] = dialog_token;
++	WPA_PUT_LE16(&buf[3], status);
++
++	hostapd_drv_send_action(hapd, hapd->iface->freq, 0, da, buf,
++				sizeof(buf));
++}
++
++
++static void hostapd_handle_mscs_req(struct hostapd_data *hapd,
++				    struct sta_info *sta, const u8 *da,
++				    const u8 *body, size_t len)
++{
++	const u8 *elem = body + 3;
++	size_t left = len - 3;
++	u16 status = WLAN_STATUS_REQUEST_DECLINED;
++
++	if (left < 3 || elem[0] != WLAN_EID_EXTENSION || elem[1] < 1 ||
++	    elem[1] > left - 2 || elem[2] != WLAN_EID_EXT_MSCS_DESCRIPTOR) {
++		wpa_printf(MSG_DEBUG, "MSCS: No valid MSCS Descriptor element");
++		goto out;
++	}
++
++	status = hostapd_set_mscs(hapd, sta, &elem[2], elem[1]);
++
++out:
++	send_mscs_response(hapd, da, body[2], status);
++}
++
++
++/*
++ * The MSCS Descriptor element of a (Re)Association Request: the response
++ * carries the outcome in the MSCS Status subelement of an MSCS Descriptor
++ * element (IEEE Std 802.11-2024, 11.25.3).
++ */
++u8 * hostapd_eid_mscs_assoc(struct hostapd_data *hapd, struct sta_info *sta,
++			    const u8 *ies, size_t ies_len, u8 *eid)
++{
++	const u8 *req;
++	u8 *pos = eid;
++	u16 status;
++
++	req = get_ie_ext(ies, ies_len, WLAN_EID_EXT_MSCS_DESCRIPTOR);
++	if (!req)
++		return eid;
++
++	sta = robust_av_sta(&hapd, sta);
++	status = hostapd_set_mscs(hapd, sta, &req[2], req[1]);
++
++	*pos++ = WLAN_EID_EXTENSION;
++	*pos++ = MSCS_DESCRIPTOR_FIXED_LEN + 4;
++	*pos++ = WLAN_EID_EXT_MSCS_DESCRIPTOR;
++	*pos++ = SCS_REQ_ADD;
++	os_memset(pos, 0, MSCS_DESCRIPTOR_FIXED_LEN - 2);
++	pos += MSCS_DESCRIPTOR_FIXED_LEN - 2;
++	*pos++ = MCSC_SUBELEM_STATUS;
++	*pos++ = 2;
++	WPA_PUT_LE16(pos, status);
++	pos += 2;
++
++	return pos;
++}
++
++
+ static void send_scs_response(struct hostapd_data *hapd, const u8 *da,
+ 			      u8 dialog_token, const struct wpabuf *duples,
+ 			      u8 count)
+@@ -258,6 +413,9 @@ void hostapd_handle_robust_av_streaming(
+ 	case ROBUST_AV_SCS_REQ:
+ 		hostapd_handle_scs_req(sta_hapd, sta, mgmt->sa, body, len);
+ 		break;
++	case ROBUST_AV_MSCS_REQ:
++		hostapd_handle_mscs_req(sta_hapd, sta, mgmt->sa, body, len);
++		break;
+ 	default:
+ 		break;
+ 	}
+--- a/src/ap/scs.h
++++ b/src/ap/scs.h
+@@ -7,8 +7,11 @@
+ #define SCS_H
+ 
+ struct hostapd_data;
++struct sta_info;
+ 
+ void hostapd_handle_robust_av_streaming(struct hostapd_data *hapd,
+ 					const u8 *buf, size_t len);
++u8 * hostapd_eid_mscs_assoc(struct hostapd_data *hapd, struct sta_info *sta,
++			    const u8 *ies, size_t ies_len, u8 *eid);
+ 
+ #endif /* SCS_H */
+--- a/src/ap/sta_info.h
++++ b/src/ap/sta_info.h
+@@ -389,6 +389,7 @@ struct sta_info {
+ 	u8 unsolicited_dialog_token;
+ 	struct dscp_policy_state dscp_state;
+ 	u8 scs_active[32]; /* bitmap of the SCSIDs with an active stream */
++	bool mscs_active;
+ #endif /* CONFIG_ROBUST_AV */
+ };
+ 
+--- a/src/drivers/driver_nl80211.c
++++ b/src/drivers/driver_nl80211.c
+@@ -3212,6 +3212,9 @@ static int nl80211_action_subscribe_ap(s
+ 	/* Robust AV Streaming - SCS Request */
+ 	if (nl80211_register_action_frame(bss, (u8 *) "\x13\x00", 2) < 0)
+ 		ret = -1;
++	/* Robust AV Streaming - MSCS Request */
++	if (nl80211_register_action_frame(bss, (u8 *) "\x13\x04", 2) < 0)
++		ret = -1;
+ #endif /* CONFIG_ROBUST_AV */
+ 	/* Vendor-specific Protected */
+ 	if (nl80211_register_action_frame(bss, (u8 *) "\x7e", 1) < 0)
+--- a/src/ap/ieee802_11_eht.c
++++ b/src/ap/ieee802_11_eht.c
+@@ -1672,6 +1672,8 @@ struct sta_info * hostapd_ml_move_assoc_
+ 	os_memcpy(assoc_sta->scs_active, sta->scs_active,
+ 		  sizeof(sta->scs_active));
+ 	os_memset(sta->scs_active, 0, sizeof(sta->scs_active));
++	assoc_sta->mscs_active = sta->mscs_active;
++	sta->mscs_active = false;
+ #endif /* CONFIG_ROBUST_AV */
+ 	return assoc_sta;
+ }

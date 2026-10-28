@@ -1,0 +1,61 @@
+From: "A. Sverdlin" <alexander.sverdlin@siemens.com>
+Date: Tue, 27 Oct 2026 12:33:42 +0100
+Subject: [PATCH] leds: trigger: netdev: Access net_dev under trigger_data->lock in the worker
+
+netdev_trig_work() dereferences trigger_data->net_dev without the lock,
+while set_device_name() and netdev_trig_notify() dev_put() and replace it
+under trigger_data->lock. On NETDEV_UNREGISTER the worker can run
+dev_get_stats() on a netdev being freed (UAF).
+
+Take trigger_data->lock in the worker. cancel_delayed_work_sync() must then
+never run under that lock.
+
+Cc: stable@vger.kernel.org
+Closes: https://lore.kernel.org/all/20260914142116.6DAC51F000FF@smtp.kernel.org/
+Fixes: 06f502f57d0d ("leds: trigger: Introduce a NETDEV trigger")
+Signed-off-by: Alexander Sverdlin <alexander.sverdlin@siemens.com>
+Link: https://lore.kernel.org/linux-leds/20261027113349.383147-3-alexander.sverdlin@siemens.com/
+---
+Changelog:
+v3:
+- explicit mutex_lock()/mutex_unlock() instead of guard()
+
+ drivers/leds/trigger/ledtrig-netdev.c | 9 ++++++++-
+ 1 file changed, 8 insertions(+), 1 deletion(-)
+
+--- a/drivers/leds/trigger/ledtrig-netdev.c
++++ b/drivers/leds/trigger/ledtrig-netdev.c
+@@ -634,9 +634,12 @@ static void netdev_trig_work(struct work
+ 	unsigned long interval;
+ 	int invert;
+ 
++	mutex_lock(&trigger_data->lock);
++
+ 	/* If we dont have a device, insure we are off */
+ 	if (!trigger_data->net_dev) {
+ 		led_set_brightness(trigger_data->led_cdev, LED_OFF);
++		mutex_unlock(&trigger_data->lock);
+ 		return;
+ 	}
+ 
+@@ -644,8 +647,10 @@ static void netdev_trig_work(struct work
+ 	if (!test_bit(TRIGGER_NETDEV_TX, &trigger_data->mode) &&
+ 	    !test_bit(TRIGGER_NETDEV_RX, &trigger_data->mode) &&
+ 	    !test_bit(TRIGGER_NETDEV_TX_ERR, &trigger_data->mode) &&
+-	    !test_bit(TRIGGER_NETDEV_RX_ERR, &trigger_data->mode))
++	    !test_bit(TRIGGER_NETDEV_RX_ERR, &trigger_data->mode)) {
++		mutex_unlock(&trigger_data->lock);
+ 		return;
++	}
+ 
+ 	dev_stats = dev_get_stats(trigger_data->net_dev, &temp);
+ 	new_activity =
+@@ -682,6 +687,8 @@ static void netdev_trig_work(struct work
+ 
+ 	schedule_delayed_work(&trigger_data->work,
+ 			(atomic_read(&trigger_data->interval)*2));
++
++	mutex_unlock(&trigger_data->lock);
+ }
+ 
+ static int netdev_trig_activate(struct led_classdev *led_cdev)

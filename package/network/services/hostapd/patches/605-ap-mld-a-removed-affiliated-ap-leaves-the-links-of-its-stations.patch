@@ -21,7 +21,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 ---
 --- a/src/ap/sta_info.c
 +++ b/src/ap/sta_info.c
-@@ -691,7 +691,8 @@ void ap_free_link_sta(struct hostapd_dat
+@@ -693,7 +693,8 @@ void ap_free_link_sta(struct hostapd_dat
  
  void hostapd_free_link_stas(struct hostapd_data *hapd)
  {
@@ -31,7 +31,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	sta = hapd->sta_list;
  	while (sta) {
-@@ -705,7 +706,10 @@ void hostapd_free_link_stas(struct hosta
+@@ -707,7 +708,10 @@ void hostapd_free_link_stas(struct hosta
  			   MAC2STR(prev->addr));
  		ap_sta_link_event(hapd, WPA_EVENT_LINK_STA_REMOVED, prev->addr,
  				  hapd->mld_link_id);

@@ -1,0 +1,88 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Fri, 23 Oct 2026 22:45:00 +0200
+Subject: [PATCH] AP MLD: Keep the ML information of a station whose
+ association after a timed out SA Query fails
+
+Depends on 181-ap-mld-re-add-station-after-sa-query-timeout.patch.
+
+After a timed out SA Query, handle_assoc() checks the request of a
+non-AP MLD with a new WPA state machine and puts the earlier one back
+if the request fails. hostapd_process_ml_assoc_req() writes the
+request into the mld_info of the same station entry, and on a failure
+of its own it clears it: the entry then is no MLD station any more and
+has a zero MLD address. hostapd_ml_get_assoc_sta() no longer finds it,
+and a later request without a new authentication fails with an MLD
+address mismatch. A failure after the parse leaves the links of the refused
+request in the entry instead.
+
+Keep a copy of the mld_info with the earlier state machine and put it
+back after the response, which carries the per-link profiles of the
+request.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/src/ap/ieee802_11.c
++++ b/src/ap/ieee802_11.c
+@@ -7533,6 +7533,7 @@ static void handle_assoc(struct hostapd_
+ #ifdef CONFIG_IEEE80211BE
+ 	bool reset_prev_assoc = false;
+ 	struct wpa_state_machine *prev_wpa_sm = NULL;
++	struct mld_info prev_mld_info;
+ #endif /* CONFIG_IEEE80211BE */
+ 
+ 	if (len < IEEE80211_HDRLEN + (reassoc ? sizeof(mgmt->u.reassoc_req) :
+@@ -7782,6 +7783,7 @@ static void handle_assoc(struct hostapd_
+ 		reset_prev_assoc = true;
+ 		prev_wpa_sm = sta->wpa_sm;
+ 		sta->wpa_sm = NULL;
++		ap_sta_mld_info_copy(&prev_mld_info, &sta->mld_info);
+ 	}
+ #endif /* CONFIG_IEEE80211BE */
+ 
+@@ -8037,6 +8039,14 @@ static void handle_assoc(struct hostapd_
+ 	if (sta)
+ 		assoc_resp_pending_set(sta, resp, reply_res);
+ 
++#ifdef CONFIG_IEEE80211BE
++	/* After the response, which carries the profiles of the request */
++	if (reset_prev_assoc) {
++		ap_sta_free_sta_profile(&sta->mld_info);
++		ap_sta_mld_info_copy(&sta->mld_info, &prev_mld_info);
++	}
++#endif /* CONFIG_IEEE80211BE */
++
+ 	if (set_beacon)
+ 		ieee802_11_update_beacons(hapd->iface);
+ 
+--- a/src/ap/sta_info.c
++++ b/src/ap/sta_info.c
+@@ -2369,6 +2369,19 @@ void ap_sta_free_sta_profile(struct mld_
+ 		info->links[i].resp_sta_profile = NULL;
+ 	}
+ }
++
++
++/* The copy holds no response profiles, so that the source keeps them. */
++void ap_sta_mld_info_copy(struct mld_info *dst, const struct mld_info *src)
++{
++	int i;
++
++	os_memcpy(dst, src, sizeof(*dst));
++	for (i = 0; i < MAX_NUM_MLD_LINKS; i++) {
++		dst->links[i].resp_sta_profile = NULL;
++		dst->links[i].resp_sta_profile_len = 0;
++	}
++}
+ #endif /* CONFIG_IEEE80211BE */
+ 
+ bool ap_sta_is_mld(struct hostapd_data *hapd,
+--- a/src/ap/sta_info.h
++++ b/src/ap/sta_info.h
+@@ -476,6 +476,7 @@ bool ap_sta_is_mld(struct hostapd_data *
+ void ap_sta_set_mld(struct sta_info *sta, bool mld);
+ 
+ void ap_sta_free_sta_profile(struct mld_info *info);
++void ap_sta_mld_info_copy(struct mld_info *dst, const struct mld_info *src);
+ 
+ void ap_free_link_sta(struct hostapd_data *lhapd, struct sta_info *lsta);
+ void hostapd_free_link_stas(struct hostapd_data *hapd);

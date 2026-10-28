@@ -1,0 +1,429 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Sat, 10 Oct 2026 08:00:00 +0200
+Subject: [PATCH] wifi: mac80211: clear the Critical Update flag after the
+ DTIM Beacon
+
+mac80211 sends the beacon head of user space as it is, so the Critical
+Update flag stays in the Beacon frames until user space updates the
+beacon. User space cannot see the DTIM Beacon frame that ends the flag
+(IEEE 802.11be-2024 35.3.10).
+
+Track the flag for each link of an AP MLD. A beacon update that sets it
+with a new critical update ID, or while no critical update runs, starts
+it, and the next DTIM Beacon frame of the link ends it. For Beacon
+frames from ieee80211_beacon_get(), mac80211 sees the DTIM Count it
+writes. A driver that builds Beacon frames from a template calls the new
+ieee80211_crit_update_done() when the device sent the DTIM Beacon frame.
+It passes the critical update ID that ieee80211_beacon_get_template()
+reported for the template of that Beacon frame, so that a late report of
+an older critical update does not end a newer one. From then on,
+mac80211 clears the flag in the Beacon frames and in the template,
+updates the beacon of the driver and sends NL80211_CMD_CRIT_UPDATE_DONE
+with the ID. The flag stays out until user space updates the beacon
+without it or with a new ID, because user space can update the beacon
+with the flag of the same critical update before it reads the event.
+
+Each beacon holds the critical update that it belongs to. A Beacon
+frame that mac80211 builds from a beacon while a beacon update replaces
+it neither ends nor clears the flag of the critical update of the new
+beacon.
+
+A nontransmitted BSSID has no Beacon frames of its own, so mac80211
+does not track its flag and reports no event for it.
+
+cfg80211_beacon_dup() copies the critical update ID, so that the beacon
+after a channel switch or a colour change keeps the ID that user space
+gave for it.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/include/linux/ieee80211.h
++++ b/include/linux/ieee80211.h
+@@ -1384,6 +1384,8 @@ struct ieee80211_tdls_data {
+ #define WLAN_CAPABILITY_PRIVACY		(1<<4)
+ #define WLAN_CAPABILITY_SHORT_PREAMBLE	(1<<5)
+ #define WLAN_CAPABILITY_PBCC		(1<<6)
++/* IEEE 802.11be-2024, 9.4.1.4: in an AP affiliated with an AP MLD */
++#define WLAN_CAPABILITY_CRITICAL_UPDATE	(1<<6)
+ #define WLAN_CAPABILITY_CHANNEL_AGILITY	(1<<7)
+ 
+ /* 802.11h */
+--- a/include/net/mac80211.h
++++ b/include/net/mac80211.h
+@@ -5755,6 +5755,9 @@ void ieee80211_report_low_ack(struct iee
+  *	to countdown counters.  This array can contain zero values which
+  *	should be ignored.
+  * @mbssid_off: position of the multiple bssid element
++ * @crit_update_id: ID of the critical update whose Critical Update flag the
++ *	beacon carries (%NL80211_ATTR_CRIT_UPDATE_ID), 0 if mac80211 tracks no
++ *	flag in it or user space gave no ID. See ieee80211_crit_update_done().
+  */
+ struct ieee80211_mutable_offsets {
+ 	u16 tim_offset;
+@@ -5762,6 +5765,7 @@ struct ieee80211_mutable_offsets {
+ 
+ 	u16 cntdwn_counter_offs[IEEE80211_MAX_CNTDWN_COUNTERS_NUM];
+ 	u16 mbssid_off;
++	u32 crit_update_id;
+ };
+ 
+ /**
+@@ -5968,6 +5972,36 @@ bool ieee80211_beacon_cntdwn_is_complete
+ void ieee80211_color_change_finish(struct ieee80211_vif *vif, u8 link_id);
+ 
+ /**
++ * ieee80211_crit_update_done - notify mac80211 that the Critical Update flag
++ *	of an AP link is clear
++ * @vif: &struct ieee80211_vif pointer from the add_interface callback.
++ * @link_id: link ID of the AP link
++ * @crit_update_id: &ieee80211_mutable_offsets.crit_update_id of the beacon
++ *	template whose DTIM Beacon frame ended the flag
++ *
++ * For a link of an AP MLD whose beacon template has the Critical Update flag
++ * (%WLAN_CAPABILITY_CRITICAL_UPDATE), a driver with
++ * %NL80211_EXT_FEATURE_BEACON_CRIT_UPDATE that builds its Beacon frames from
++ * ieee80211_beacon_get_template() clears the flag in the frames after the
++ * next DTIM Beacon frame and then calls this function. mac80211 then keeps
++ * the flag out of the beacon template until user space updates the beacon
++ * without it or starts a new critical update, and reports
++ * %NL80211_CMD_CRIT_UPDATE_DONE.
++ * mac80211 ignores the call if @crit_update_id is not that of the current
++ * critical update of the link, so the driver passes the ID of the template
++ * that the device used for the DTIM Beacon frame. A device that does not
++ * name the template in its report lets the driver keep that order itself,
++ * for example by passing the ID of the last template that the device
++ * accepted before the report.
++ * For Beacon frames from ieee80211_beacon_get(), mac80211 does this itself.
++ * mac80211 does not track the flag of a nontransmitted BSSID.
++ *
++ * This function can be called from any context.
++ */
++void ieee80211_crit_update_done(struct ieee80211_vif *vif,
++				unsigned int link_id, u32 crit_update_id);
++
++/**
+  * ieee80211_proberesp_get - retrieve a Probe Response template
+  * @hw: pointer obtained from ieee80211_alloc_hw().
+  * @vif: &struct ieee80211_vif pointer from the add_interface callback.
+--- a/net/mac80211/cfg.c
++++ b/net/mac80211/cfg.c
+@@ -1467,6 +1467,40 @@ static void ieee80211_update_ap_bandwidt
+ 	ieee80211_recalc_chanctx_min_def(local, chanctx);
+ }
+ 
++static bool
++ieee80211_beacon_has_crit_update(struct ieee80211_sub_if_data *sdata,
++				 const struct beacon_data *beacon)
++{
++	const struct ieee80211_mgmt *mgmt = (const void *)beacon->head;
++
++	if (!ieee80211_vif_is_mld(&sdata->vif) ||
++	    beacon->head_len < offsetofend(struct ieee80211_mgmt,
++					   u.beacon.capab_info))
++		return false;
++
++	return mgmt->u.beacon.capab_info &
++	       cpu_to_le16(WLAN_CAPABILITY_CRITICAL_UPDATE);
++}
++
++/* A nontransmitted BSSID sends no Beacon frame of its own, so no DTIM Beacon
++ * frame ends its flag.
++ */
++static s64 ieee80211_link_crit_update_next(struct ieee80211_link_data *link,
++					   const struct beacon_data *beacon,
++					   s64 old, u32 crit_update_id)
++{
++	if (link->conf->nontransmitted ||
++	    !ieee80211_beacon_has_crit_update(link->sdata, beacon))
++		return IEEE80211_CRIT_UPDATE(IEEE80211_CRIT_UPDATE_IDLE, 0);
++
++	if ((crit_update_id && crit_update_id != ieee80211_crit_update_id(old)) ||
++	    ieee80211_crit_update_state(old) == IEEE80211_CRIT_UPDATE_IDLE)
++		return IEEE80211_CRIT_UPDATE(IEEE80211_CRIT_UPDATE_ACTIVE,
++					     crit_update_id);
++
++	return old;
++}
++
+ static int
+ ieee80211_assign_beacon(struct ieee80211_sub_if_data *sdata,
+ 			struct ieee80211_link_data *link,
+@@ -1482,6 +1516,7 @@ ieee80211_assign_beacon(struct ieee80211
+ 	int size, err;
+ 	u64 _changed = BSS_CHANGED_BEACON;
+ 	struct ieee80211_bss_conf *link_conf = link->conf;
++	s64 crit_update;
+ 
+ 	old = sdata_dereference(link->u.ap.beacon, sdata);
+ 
+@@ -1599,9 +1634,17 @@ ieee80211_assign_beacon(struct ieee80211
+ 		_changed |= BSS_CHANGED_FTM_RESPONDER;
+ 	}
+ 
++	crit_update = atomic64_read(&link->u.ap.crit_update);
++	new->crit_update = ieee80211_link_crit_update_next(link, new, crit_update,
++							   params->crit_update_id);
++
+ 	rcu_assign_pointer(link->u.ap.beacon, new);
+ 	sdata->u.ap.active = true;
+ 
++	/* keep the end that a Beacon frame of the old beacon set meanwhile */
++	if (new->crit_update != crit_update)
++		atomic64_set(&link->u.ap.crit_update, new->crit_update);
++
+ 	if (old)
+ 		kfree_rcu(old, rcu_head);
+ 
+@@ -2078,6 +2121,9 @@ static int ieee80211_stop_ap(struct wiph
+ 	RCU_INIT_POINTER(link->u.ap.fils_discovery, NULL);
+ 	RCU_INIT_POINTER(link->u.ap.unsol_bcast_probe_resp, NULL);
+ 	RCU_INIT_POINTER(link->u.ap.s1g_short_beacon, NULL);
++	atomic64_set(&link->u.ap.crit_update,
++		     IEEE80211_CRIT_UPDATE(IEEE80211_CRIT_UPDATE_IDLE, 0));
++	wiphy_work_cancel(wiphy, &link->crit_update_done_work);
+ 	kfree_rcu(old_beacon, rcu_head);
+ 	if (old_probe_resp)
+ 		kfree_rcu(old_probe_resp, rcu_head);
+@@ -4373,6 +4419,7 @@ cfg80211_beacon_dup(struct cfg80211_beac
+ 
+ 	/* might copy -1, meaning no changes requested */
+ 	new_beacon->ftm_responder = beacon->ftm_responder;
++	new_beacon->crit_update_id = beacon->crit_update_id;
+ 	if (beacon->lci) {
+ 		new_beacon->lci_len = beacon->lci_len;
+ 		new_beacon->lci = pos;
+@@ -5706,6 +5753,67 @@ void ieee80211_color_change_finish(struc
+ }
+ EXPORT_SYMBOL_GPL(ieee80211_color_change_finish);
+ 
++void ieee80211_crit_update_done_work(struct wiphy *wiphy,
++				     struct wiphy_work *work)
++{
++	struct ieee80211_link_data *link =
++		container_of(work, struct ieee80211_link_data,
++			     crit_update_done_work);
++	struct ieee80211_sub_if_data *sdata = link->sdata;
++	s64 crit_update;
++
++	lockdep_assert_wiphy(wiphy);
++
++	crit_update = atomic64_read(&link->u.ap.crit_update);
++	if (!ieee80211_sdata_running(sdata) ||
++	    ieee80211_crit_update_state(crit_update) !=
++	    IEEE80211_CRIT_UPDATE_DONE)
++		return;
++
++	/* the beacon template of the driver still holds the flag */
++	ieee80211_link_info_change_notify(sdata, link, BSS_CHANGED_BEACON);
++	cfg80211_crit_update_done(sdata->dev, link->link_id,
++				  ieee80211_crit_update_id(crit_update));
++}
++
++/* @crit_update names the critical update that ended, so that the end of an
++ * older one does not end a newer one.
++ */
++void ieee80211_link_crit_update_done(struct ieee80211_link_data *link,
++				     s64 crit_update)
++{
++	u32 id = ieee80211_crit_update_id(crit_update);
++	s64 active = IEEE80211_CRIT_UPDATE(IEEE80211_CRIT_UPDATE_ACTIVE, id);
++
++	if (atomic64_cmpxchg(&link->u.ap.crit_update, active,
++			     IEEE80211_CRIT_UPDATE(IEEE80211_CRIT_UPDATE_DONE,
++						   id)) != active)
++		return;
++
++	wiphy_work_queue(link->sdata->local->hw.wiphy,
++			 &link->crit_update_done_work);
++}
++
++void ieee80211_crit_update_done(struct ieee80211_vif *vif,
++				unsigned int link_id, u32 crit_update_id)
++{
++	struct ieee80211_sub_if_data *sdata = vif_to_sdata(vif);
++	struct ieee80211_link_data *link;
++
++	if (WARN_ON(vif->type != NL80211_IFTYPE_AP ||
++		    link_id >= IEEE80211_MLD_MAX_NUM_LINKS))
++		return;
++
++	rcu_read_lock();
++	link = rcu_dereference(sdata->link[link_id]);
++	if (link)
++		ieee80211_link_crit_update_done(link,
++			IEEE80211_CRIT_UPDATE(IEEE80211_CRIT_UPDATE_ACTIVE,
++					      crit_update_id));
++	rcu_read_unlock();
++}
++EXPORT_SYMBOL_GPL(ieee80211_crit_update_done);
++
+ void
+ ieee80211_obss_color_collision_notify(struct ieee80211_vif *vif,
+ 				      u64 color_bitmap, u8 link_id)
+--- a/net/mac80211/ieee80211_i.h
++++ b/net/mac80211/ieee80211_i.h
+@@ -288,6 +288,8 @@ struct beacon_data {
+ 	u8 cntdwn_current_counter;
+ 	struct cfg80211_mbssid_elems *mbssid_ies;
+ 	struct cfg80211_rnr_elems *rnr_ies;
++	/* IEEE80211_CRIT_UPDATE() of the critical update of the beacon */
++	s64 crit_update;
+ 	struct rcu_head rcu_head;
+ };
+ 
+@@ -1091,6 +1093,34 @@ struct ieee80211_link_data_managed {
+ 	int mu_edca_last_param_set;
+ };
+ 
++/**
++ * enum ieee80211_crit_update - Critical Update flag of an AP link
++ * @IEEE80211_CRIT_UPDATE_IDLE: the beacon does not set the flag
++ * @IEEE80211_CRIT_UPDATE_ACTIVE: the beacon sets the flag, and the
++ *	DTIM Beacon frame that ends it is still to come
++ * @IEEE80211_CRIT_UPDATE_DONE: the DTIM Beacon frame went out; the
++ *	flag stays out of the Beacon frames until user space updates
++ *	the beacon without it
++ */
++enum ieee80211_crit_update {
++	IEEE80211_CRIT_UPDATE_IDLE,
++	IEEE80211_CRIT_UPDATE_ACTIVE,
++	IEEE80211_CRIT_UPDATE_DONE,
++};
++
++/* the state and the ID of a critical update change together */
++#define IEEE80211_CRIT_UPDATE(state, id)	((s64)((u64)(id) << 32 | (state)))
++
++static inline enum ieee80211_crit_update ieee80211_crit_update_state(s64 val)
++{
++	return (u32)val;
++}
++
++static inline u32 ieee80211_crit_update_id(s64 val)
++{
++	return (u64)val >> 32;
++}
++
+ struct ieee80211_link_data_ap {
+ 	struct beacon_data __rcu *beacon;
+ 	struct probe_resp __rcu *probe_resp;
+@@ -1102,6 +1132,9 @@ struct ieee80211_link_data_ap {
+ 	struct cfg80211_beacon_data *next_beacon;
+ 
+ 	int dtim_count;
++
++	/* IEEE80211_CRIT_UPDATE() */
++	atomic64_t crit_update;
+ };
+ 
+ struct ieee80211_link_data {
+@@ -1128,6 +1161,8 @@ struct ieee80211_link_data {
+ 	struct wiphy_delayed_work color_collision_detect_work;
+ 	u64 color_bitmap;
+ 
++	struct wiphy_work crit_update_done_work;
++
+ 	/* context reservation -- protected with wiphy mutex */
+ 	struct ieee80211_chanctx *reserved_chanctx;
+ 	struct ieee80211_chan_req reserved;
+@@ -2181,6 +2216,12 @@ void ieee80211_color_change_finalize_wor
+ void ieee80211_color_collision_detection_work(struct wiphy *wiphy,
+ 					      struct wiphy_work *work);
+ 
++/* Critical Update flag handling */
++void ieee80211_crit_update_done_work(struct wiphy *wiphy,
++				     struct wiphy_work *work);
++void ieee80211_link_crit_update_done(struct ieee80211_link_data *link,
++				     s64 crit_update);
++
+ /* interface handling */
+ #define MAC80211_SUPPORTED_FEATURES_TX	(NETIF_F_IP_CSUM | NETIF_F_IPV6_CSUM | \
+ 					 NETIF_F_HW_CSUM | NETIF_F_SG | \
+--- a/net/mac80211/iface.c
++++ b/net/mac80211/iface.c
+@@ -572,6 +572,8 @@ static void ieee80211_do_stop(struct iee
+ 	wiphy_work_cancel(local->hw.wiphy, &sdata->deflink.csa.finalize_work);
+ 	wiphy_work_cancel(local->hw.wiphy,
+ 			  &sdata->deflink.color_change_finalize_work);
++	wiphy_work_cancel(local->hw.wiphy,
++			  &sdata->deflink.crit_update_done_work);
+ 	wiphy_hrtimer_work_cancel(local->hw.wiphy,
+ 				  &sdata->deflink.dfs_cac_timer_work);
+ 
+--- a/net/mac80211/link.c
++++ b/net/mac80211/link.c
+@@ -133,6 +133,8 @@ void ieee80211_link_init(struct ieee8021
+ 			ieee80211_color_change_finalize_work);
+ 	wiphy_delayed_work_init(&link->color_collision_detect_work,
+ 				ieee80211_color_collision_detection_work);
++	wiphy_work_init(&link->crit_update_done_work,
++			ieee80211_crit_update_done_work);
+ 	wiphy_hrtimer_work_init(&link->dfs_cac_timer_work,
+ 				ieee80211_dfs_cac_timer_work);
+ 
+@@ -170,6 +172,8 @@ void ieee80211_link_stop(struct ieee8021
+ 			  &link->color_change_finalize_work);
+ 	wiphy_work_cancel(link->sdata->local->hw.wiphy,
+ 			  &link->csa.finalize_work);
++	wiphy_work_cancel(link->sdata->local->hw.wiphy,
++			  &link->crit_update_done_work);
+ 
+ 	if (link->sdata->wdev.links[link->link_id].cac_started) {
+ 		wiphy_hrtimer_work_cancel(link->sdata->local->hw.wiphy,
+--- a/net/mac80211/tx.c
++++ b/net/mac80211/tx.c
+@@ -5668,6 +5668,46 @@ ieee80211_beacon_add_mbssid(struct sk_bu
+ 			     beacon->mbssid_ies->elem[i].len);
+ }
+ 
++static void ieee80211_beacon_crit_update(struct ieee80211_link_data *link,
++					 const struct beacon_data *beacon,
++					 struct sk_buff *skb, u16 tim_offset,
++					 struct ieee80211_mutable_offsets *offs,
++					 bool is_template)
++{
++	s64 crit_update = atomic64_read(&link->u.ap.crit_update);
++	u32 id = ieee80211_crit_update_id(beacon->crit_update);
++	const struct element *tim = (void *)(skb->data + tim_offset);
++	struct ieee80211_mgmt *mgmt = (void *)skb->data;
++
++	if (ieee80211_crit_update_state(beacon->crit_update) ==
++	    IEEE80211_CRIT_UPDATE_IDLE)
++		return;
++
++	/* a beacon update replaced the beacon of this frame meanwhile */
++	if (ieee80211_crit_update_id(crit_update) != id) {
++		if (offs)
++			offs->crit_update_id = id;
++		return;
++	}
++
++	switch (ieee80211_crit_update_state(crit_update)) {
++	case IEEE80211_CRIT_UPDATE_ACTIVE:
++		if (offs)
++			offs->crit_update_id = id;
++
++		/* the flag ends after the DTIM Beacon frame, which keeps it */
++		if (!is_template && !tim->data[0])
++			ieee80211_link_crit_update_done(link, crit_update);
++		break;
++	case IEEE80211_CRIT_UPDATE_DONE:
++		mgmt->u.beacon.capab_info &=
++			~cpu_to_le16(WLAN_CAPABILITY_CRITICAL_UPDATE);
++		break;
++	case IEEE80211_CRIT_UPDATE_IDLE:
++		break;
++	}
++}
++
+ static struct sk_buff *
+ __ieee80211_beacon_get_ap(struct ieee80211_hw *hw,
+ 			  struct ieee80211_vif *vif,
+@@ -5709,6 +5749,8 @@ __ieee80211_beacon_get_ap(struct ieee802
+ 	skb_put_data(skb, beacon->head, beacon->head_len);
+ 
+ 	ieee80211_beacon_add_tim(sdata, link, &ap->ps, skb, is_template);
++	ieee80211_beacon_crit_update(link, beacon, skb, beacon->head_len, offs,
++				     is_template);
+ 
+ 	if (offs) {
+ 		offs->tim_offset = beacon->head_len;

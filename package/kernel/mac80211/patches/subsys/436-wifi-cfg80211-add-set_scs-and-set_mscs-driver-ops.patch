@@ -1,0 +1,205 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Fri, 28 Aug 2026 10:04:32 +0200
+Subject: [PATCH] wifi: cfg80211: add set_scs and set_mscs driver ops
+
+Add the ops that install the SCS descriptors and the MSCS of one peer,
+the extended feature flags that advertise them, and a wiphy_register()
+check that a wiphy which advertises a service also implements the op.
+Userspace sets the SCS and Mirrored SCS capability bits based on the
+feature flags.
+
+One SCS Request frame can carry several descriptors with different
+request types, so set_scs takes an array and answers each descriptor in
+a result entry of the same index. A declined change leaves the previous
+classification of that SCSID in force. A negative return fails the
+request as a whole. A peer has at most one active MSCS, so set_mscs
+returns a single status.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+
+--- a/include/net/cfg80211.h
++++ b/include/net/cfg80211.h
+@@ -4302,6 +4302,15 @@ struct cfg80211_scs_desc {
+ };
+ 
+ /**
++ * struct cfg80211_scs_result - result for one SCS descriptor
++ *
++ * @status: IEEE status code
++ */
++struct cfg80211_scs_result {
++	u16 status;
++};
++
++/**
+  * struct cfg80211_mscs_desc - the MSCS of one peer
+  *
+  * @req_type: add, remove or change
+@@ -5419,6 +5428,13 @@ struct mgmt_frame_regs {
+  *
+  * @set_qos_map: Set QoS mapping information to the driver
+  *
++ * @set_scs: Add, change or remove SCS descriptors of one peer. Userspace
++ *	handles the action frame exchange. Each descriptor is answered with
++ *	a status code in the result entry of the same index. A declined add
++ *	or change leaves the previous classification of that SCSID in force.
++ *	A negative return fails the request as a whole.
++ * @set_mscs: Install, change or remove the MSCS of one peer.
++ *
+  * @set_ap_chanwidth: Set the AP (including P2P GO) mode channel width for the
+  *	given interface This is used e.g. for dynamic HT 20/40 MHz channel width
+  *	changes during the lifetime of the BSS.
+@@ -5832,6 +5848,13 @@ struct cfg80211_ops {
+ 			       struct net_device *dev,
+ 			       struct cfg80211_qos_map *qos_map);
+ 
++	int	(*set_scs)(struct wiphy *wiphy, struct net_device *dev,
++			   const u8 *peer,
++			   struct cfg80211_scs_desc * const *desc,
++			   struct cfg80211_scs_result *res, u8 n_desc);
++	int	(*set_mscs)(struct wiphy *wiphy, struct net_device *dev,
++			    const u8 *peer, struct cfg80211_mscs_desc *desc);
++
+ 	int	(*set_ap_chanwidth)(struct wiphy *wiphy, struct net_device *dev,
+ 				    unsigned int link_id,
+ 				    struct cfg80211_chan_def *chandef);
+--- a/net/wireless/core.c
++++ b/net/wireless/core.c
+@@ -968,6 +968,16 @@ int wiphy_register(struct wiphy *wiphy)
+ 		    rdev->ops->update_connect_params))
+ 		return -EINVAL;
+ 
++	if (WARN_ON(wiphy_ext_feature_isset(&rdev->wiphy,
++					    NL80211_EXT_FEATURE_SCS) &&
++		    !rdev->ops->set_scs))
++		return -EINVAL;
++
++	if (WARN_ON(wiphy_ext_feature_isset(&rdev->wiphy,
++					    NL80211_EXT_FEATURE_MSCS) &&
++		    !rdev->ops->set_mscs))
++		return -EINVAL;
++
+ 	if (wiphy->addresses)
+ 		memcpy(wiphy->perm_addr, wiphy->addresses[0].addr, ETH_ALEN);
+ 
+--- a/net/wireless/rdev-ops.h
++++ b/net/wireless/rdev-ops.h
+@@ -1185,6 +1185,38 @@ static inline int rdev_set_qos_map(struc
+ 	return ret;
+ }
+ 
++static inline int rdev_set_scs(struct cfg80211_registered_device *rdev,
++			       struct net_device *dev, const u8 *peer,
++			       struct cfg80211_scs_desc * const *desc,
++			       struct cfg80211_scs_result *res, u8 n_desc)
++{
++	int ret = -EOPNOTSUPP;
++
++	if (rdev->ops->set_scs) {
++		trace_rdev_set_scs(&rdev->wiphy, dev, peer, n_desc);
++		ret = rdev->ops->set_scs(&rdev->wiphy, dev, peer, desc, res,
++					 n_desc);
++		trace_rdev_return_int(&rdev->wiphy, ret);
++	}
++
++	return ret;
++}
++
++static inline int rdev_set_mscs(struct cfg80211_registered_device *rdev,
++				struct net_device *dev, const u8 *peer,
++				struct cfg80211_mscs_desc *desc)
++{
++	int ret = -EOPNOTSUPP;
++
++	if (rdev->ops->set_mscs) {
++		trace_rdev_set_mscs(&rdev->wiphy, dev, peer, desc);
++		ret = rdev->ops->set_mscs(&rdev->wiphy, dev, peer, desc);
++		trace_rdev_return_int(&rdev->wiphy, ret);
++	}
++
++	return ret;
++}
++
+ static inline int
+ rdev_set_ap_chanwidth(struct cfg80211_registered_device *rdev,
+ 		      struct net_device *dev,
+--- a/net/wireless/trace.h
++++ b/net/wireless/trace.h
+@@ -2640,6 +2640,55 @@ TRACE_EVENT(rdev_set_ap_chanwidth,
+ 		  __entry->link_id)
+ );
+ 
++TRACE_EVENT(rdev_set_scs,
++	TP_PROTO(struct wiphy *wiphy, struct net_device *netdev,
++		 const u8 *peer, u8 n_desc),
++	TP_ARGS(wiphy, netdev, peer, n_desc),
++	TP_STRUCT__entry(
++		WIPHY_ENTRY
++		NETDEV_ENTRY
++		MAC_ENTRY(peer)
++		__field(u8, n_desc)
++	),
++	TP_fast_assign(
++		WIPHY_ASSIGN;
++		NETDEV_ASSIGN;
++		MAC_ASSIGN(peer, peer);
++		__entry->n_desc = n_desc;
++	),
++	TP_printk(WIPHY_PR_FMT ", " NETDEV_PR_FMT ", %pM, %d descriptors",
++		  WIPHY_PR_ARG, NETDEV_PR_ARG, __entry->peer, __entry->n_desc)
++);
++
++TRACE_EVENT(rdev_set_mscs,
++	TP_PROTO(struct wiphy *wiphy, struct net_device *netdev,
++		 const u8 *peer, const struct cfg80211_mscs_desc *desc),
++	TP_ARGS(wiphy, netdev, peer, desc),
++	TP_STRUCT__entry(
++		WIPHY_ENTRY
++		NETDEV_ENTRY
++		MAC_ENTRY(peer)
++		__field(u32, fields)
++		__field(u32, stream_timeout)
++		__field(u8, up_bitmap)
++		__field(u8, up_limit)
++	),
++	TP_fast_assign(
++		WIPHY_ASSIGN;
++		NETDEV_ASSIGN;
++		MAC_ASSIGN(peer, peer);
++		__entry->fields = desc ? desc->fields : 0;
++		__entry->stream_timeout = desc ? desc->stream_timeout : 0;
++		__entry->up_bitmap = desc ? desc->up_bitmap : 0;
++		__entry->up_limit = desc ? desc->up_limit : 0;
++	),
++	TP_printk(WIPHY_PR_FMT ", " NETDEV_PR_FMT
++		  ", %pM, fields %x, UP bitmap %x, UP limit %d, timeout %d",
++		  WIPHY_PR_ARG, NETDEV_PR_ARG, __entry->peer, __entry->fields,
++		  __entry->up_bitmap, __entry->up_limit,
++		  __entry->stream_timeout)
++);
++
+ TRACE_EVENT(rdev_add_tx_ts,
+ 	TP_PROTO(struct wiphy *wiphy, struct net_device *netdev,
+ 		 u8 tsid, const u8 *peer, u8 user_prio, u16 admitted_time),
+--- a/include/uapi/linux/nl80211.h
++++ b/include/uapi/linux/nl80211.h
+@@ -7291,6 +7291,10 @@ enum nl80211_feature_flags {
+  *	%NL80211_CMD_ADV_TTLM_ENDED. A link that the mapping disables or
+  *	enables is a critical update (35.3.10), so the request also needs
+  *	%NL80211_EXT_FEATURE_BEACON_CRIT_UPDATE.
++ * @NL80211_EXT_FEATURE_SCS: Driver supports the stream classification
++ *	service, configured with %NL80211_CMD_SET_SCS.
++ * @NL80211_EXT_FEATURE_MSCS: Driver supports the mirrored stream
++ *	classification service, configured with %NL80211_CMD_SET_MSCS.
+  *
+  * @NUM_NL80211_EXT_FEATURES: number of extended features.
+  * @MAX_NL80211_EXT_FEATURES: highest extended feature index.
+@@ -7378,6 +7382,8 @@ enum nl80211_ext_feature_index {
+ 	NL80211_EXT_FEATURE_UPDATE_BEACON,
+ 	NL80211_EXT_FEATURE_BEACON_CRIT_UPDATE,
+ 	NL80211_EXT_FEATURE_AP_ADV_TTLM,
++	NL80211_EXT_FEATURE_SCS,
++	NL80211_EXT_FEATURE_MSCS,
+ 
+ 	/* add new features before the definition below */
+ 	NUM_NL80211_EXT_FEATURES,

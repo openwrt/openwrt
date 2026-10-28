@@ -1,0 +1,140 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Wed, 21 Oct 2026 19:30:00 +0200
+Subject: [PATCH] AP: Drop a (Re)Association Request frame while a response
+ is pending
+
+handle_assoc() drops a repeated (Re)Association Request frame only when
+the frame has the Retry bit set and the same sequence number. mac80211
+sends the next try of the request as a new frame 100 ms after the
+earlier try was acknowledged. If the AP needs longer to answer, hostapd
+reads the new request right after it queued the response to the
+earlier one, before the TX status of that response.
+
+For a non-AP MLD, ieee80211_ml_process_link() then finds the link
+station of the first request, rejects the partner link and releases
+its group key reference. add_associated_sta() removes the station from
+the driver and adds it again with the association link only. The
+non-AP MLD uses the first response, which accepted all links, so the
+two ends disagree on the links: the station misses the GTK of the
+partner link in message 3 of the 4-way handshake, or it is
+deauthenticated when it transmits on that link.
+
+Drop a new (Re)Association Request frame from a station while a
+successful (Re)Association Response frame to it waits for its TX
+status. mac80211 does not tie a response to one try of the request, so
+the response already sent answers the new request too. Limit the wait
+to one second in case the TX status is never reported. A response with a
+failure status commits no state, so a request after it is processed as
+before. This is similar to the handling of a pending FILS HLP request
+in commit 17adac9ef9f7 ("FILS: Do not process FILS HLP request again
+while previous one is pending").
+
+An Authentication frame with transaction sequence number 1 ends the
+wait. The station then starts over, so the response that waits for its
+TX status does not answer its next request, and a lost or late TX
+status does not delay that request. PASN is the exception: it does not
+start the association over.
+
+Fixes: 5f5db9366cde ("AP: MLO: Process Multi-Link element from (Re)Association Request frame")
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/src/ap/ieee802_11.c
++++ b/src/ap/ieee802_11.c
+@@ -4257,6 +4257,37 @@ static const u8 * auth_peer_link_addr(st
+ #endif /* CONFIG_IEEE80211BE */
+ 
+ 
++/* Bounds the wait for a TX status that the driver never reports */
++#define ASSOC_RESP_PENDING_MAX_SEC 1
++
++static void assoc_resp_pending_set(struct sta_info *sta, u16 status,
++				   u16 reply_res)
++{
++	if (status == WLAN_STATUS_SUCCESS && reply_res == WLAN_STATUS_SUCCESS)
++		os_get_reltime(&sta->assoc_resp_pending_since);
++}
++
++
++static void assoc_resp_pending_clear(struct sta_info *sta)
++{
++	os_memset(&sta->assoc_resp_pending_since, 0,
++		  sizeof(sta->assoc_resp_pending_since));
++}
++
++
++static bool assoc_resp_pending(struct sta_info *sta)
++{
++	struct os_reltime now;
++
++	if (!os_reltime_initialized(&sta->assoc_resp_pending_since))
++		return false;
++
++	os_get_reltime(&now);
++	return !os_reltime_expired(&now, &sta->assoc_resp_pending_since,
++				   ASSOC_RESP_PENDING_MAX_SEC);
++}
++
++
+ static void handle_auth(struct hostapd_data *hapd,
+ 			const struct ieee80211_mgmt *mgmt, size_t len,
+ 			int rssi, int from_queue)
+@@ -4651,6 +4682,9 @@ static void handle_auth(struct hostapd_d
+ 
+ 	sta->last_seq_ctrl = seq_ctrl;
+ 	sta->last_subtype = WLAN_FC_STYPE_AUTH;
++	/* PASN does not start the association over */
++	if (auth_transaction == 1 && auth_alg != WLAN_AUTH_PASN)
++		assoc_resp_pending_clear(sta);
+ #ifdef CONFIG_MBO
+ 	sta->auth_rssi = rssi;
+ #endif /* CONFIG_MBO */
+@@ -7348,6 +7382,7 @@ void fils_hlp_finish_assoc(struct hostap
+ 				    sta->fils_pending_assoc_is_reassoc,
+ 				    sta->fils_pending_assoc_req,
+ 				    sta->fils_pending_assoc_req_len, 0, 0);
++	assoc_resp_pending_set(sta, WLAN_STATUS_SUCCESS, reply_res);
+ 	os_free(sta->fils_pending_assoc_req);
+ 	sta->fils_pending_assoc_req = NULL;
+ 	sta->fils_pending_assoc_req_len = 0;
+@@ -7621,6 +7656,13 @@ static void handle_assoc(struct hostapd_
+ 			       seq_ctrl);
+ 		return;
+ 	}
++	if (assoc_resp_pending(sta)) {
++		hostapd_logger(hapd, sta->addr, HOSTAPD_MODULE_IEEE80211,
++			       HOSTAPD_LEVEL_DEBUG,
++			       "Drop association frame seq_ctrl=0x%x while the previous response waits for TX status",
++			       seq_ctrl);
++		return;
++	}
+ 	sta->last_seq_ctrl = seq_ctrl;
+ 	sta->last_subtype = reassoc ? WLAN_FC_STYPE_REASSOC_REQ :
+ 		WLAN_FC_STYPE_ASSOC_REQ;
+@@ -7930,6 +7972,8 @@ static void handle_assoc(struct hostapd_
+ 					    NULL : sta,
+ 					    mgmt->sa, resp, reassoc,
+ 					    pos, left, rssi, omit_rsnxe);
++	if (sta)
++		assoc_resp_pending_set(sta, resp, reply_res);
+ 
+ 	if (set_beacon)
+ 		ieee802_11_update_beacons(hapd->iface);
+@@ -8824,6 +8868,8 @@ static void handle_assoc_cb(struct hosta
+ 		return;
+ 	}
+ 
++	assoc_resp_pending_clear(sta);
++
+ #ifdef CONFIG_IEEE80211BE
+ 	if (ap_sta_is_mld(hapd, sta) &&
+ 	    hapd->mld_link_id != sta->mld_assoc_link_id) {
+--- a/src/ap/sta_info.h
++++ b/src/ap/sta_info.h
+@@ -269,6 +269,7 @@ struct sta_info {
+ 	u16 last_seq_ctrl;
+ 	/* Last Authentication/(Re)Association Request/Action frame subtype */
+ 	u8 last_subtype;
++	struct os_reltime assoc_resp_pending_since;
+ 
+ #ifdef CONFIG_MBO
+ 	u8 cell_capa; /* 0 = unknown (not an MBO STA); otherwise,

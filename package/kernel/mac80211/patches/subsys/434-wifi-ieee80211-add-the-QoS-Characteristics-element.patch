@@ -1,0 +1,154 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Fri, 28 Aug 2026 10:04:32 +0200
+Subject: [PATCH] wifi: ieee80211: add the QoS Characteristics element
+
+Add the element structure with accessors for the direction and the
+presence bitmap, and ieee80211_qos_char_size_ok(), which checks that
+the element length matches the optional fields that the presence
+bitmap announces. The accessors read the fixed part only, so they are
+safe to use once that check passed.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+
+--- a/include/linux/ieee80211-eht.h
++++ b/include/linux/ieee80211-eht.h
+@@ -1277,4 +1277,129 @@ static inline u32 ieee80211_eml_trans_ti
+ 				 _data + ieee80211_mle_common_size(_data),\
+ 				 _len - ieee80211_mle_common_size(_data))
+ 
++/**
++ * struct ieee80211_qos_char_elem - QoS Characteristics element
++ * @element_id: %WLAN_EID_EXTENSION
++ * @length: length of everything behind it
++ * @element_id_ext: %WLAN_EID_EXT_QOS_CHARACTERISTICS
++ * @control: control info, see %IEEE80211_QOS_CHAR_CTRL_*
++ * @min_service_interval: minimum service period interval, in microseconds
++ * @max_service_interval: maximum service period interval, in microseconds
++ * @min_data_rate: minimum data rate at the MAC SAP, in kilobits per second
++ * @delay_bound: targeted transport time of an MSDU, in microseconds
++ * @variable: the optional parameters that the presence bitmap names, in the
++ *	order of the %IEEE80211_QOS_CHAR_PRES_* bits
++ *
++ * The whole element, header included, because a device takes it unchanged.
++ */
++struct ieee80211_qos_char_elem {
++	u8 element_id;
++	u8 length;
++	u8 element_id_ext;
++	__le32 control;
++	__le32 min_service_interval;
++	__le32 max_service_interval;
++	u8 min_data_rate[3];
++	u8 delay_bound[3];
++	u8 variable[];
++} __packed;
++
++#define IEEE80211_QOS_CHAR_CTRL_DIRECTION		GENMASK(1, 0)
++#define IEEE80211_QOS_CHAR_CTRL_PRESENCE		GENMASK(24, 9)
++
++#define IEEE80211_QOS_CHAR_DIR_UPLINK			0
++#define IEEE80211_QOS_CHAR_DIR_DOWNLINK			1
++#define IEEE80211_QOS_CHAR_DIR_DIRECT			2
++
++#define IEEE80211_QOS_CHAR_PRES_MAX_MSDU_SIZE		BIT(0)
++#define IEEE80211_QOS_CHAR_PRES_SERVICE_START_TIME	BIT(1)
++#define IEEE80211_QOS_CHAR_PRES_SERVICE_START_LINK_ID	BIT(2)
++#define IEEE80211_QOS_CHAR_PRES_MEAN_DATA_RATE		BIT(3)
++#define IEEE80211_QOS_CHAR_PRES_BURST_SIZE		BIT(4)
++#define IEEE80211_QOS_CHAR_PRES_MSDU_LIFETIME		BIT(5)
++#define IEEE80211_QOS_CHAR_PRES_MSDU_DELIVERY_INFO	BIT(6)
++#define IEEE80211_QOS_CHAR_PRES_MEDIUM_TIME		BIT(7)
++
++/**
++ * ieee80211_qos_char_presence - QoS Characteristics presence bitmap
++ * @qc: the element
++ * Return: the Presence Bitmap Of Additional Parameters subfield, a bitmap of
++ *	%IEEE80211_QOS_CHAR_PRES_*
++ */
++static inline u16
++ieee80211_qos_char_presence(const struct ieee80211_qos_char_elem *qc)
++{
++	return u32_get_bits(le32_to_cpu(qc->control),
++			    IEEE80211_QOS_CHAR_CTRL_PRESENCE);
++}
++
++/**
++ * ieee80211_qos_char_direction - QoS Characteristics direction
++ * @qc: the element
++ * Return: %IEEE80211_QOS_CHAR_DIR_UPLINK, _DOWNLINK or _DIRECT
++ */
++static inline u8
++ieee80211_qos_char_direction(const struct ieee80211_qos_char_elem *qc)
++{
++	return u32_get_bits(le32_to_cpu(qc->control),
++			    IEEE80211_QOS_CHAR_CTRL_DIRECTION);
++}
++
++/**
++ * ieee80211_qos_char_size_ok - check a QoS Characteristics element
++ * @data: candidate octets, from the Element ID
++ * @len: length of @data
++ *
++ * Call this before the other accessors, which assume a valid element.
++ *
++ * Return: %true if @data holds a QoS Characteristics element whose length
++ *	matches its presence bitmap
++ */
++static inline bool ieee80211_qos_char_size_ok(const u8 *data, size_t len)
++{
++	const struct ieee80211_qos_char_elem *qc = (const void *)data;
++	size_t needed = sizeof(*qc);
++	u16 present;
++
++	if (len < needed)
++		return false;
++
++	if (qc->element_id != WLAN_EID_EXTENSION ||
++	    qc->element_id_ext != WLAN_EID_EXT_QOS_CHARACTERISTICS ||
++	    qc->length != len - 2)
++		return false;
++
++	present = ieee80211_qos_char_presence(qc);
++
++	if (present & ~GENMASK(7, 0))
++		return false;
++
++	if (ieee80211_qos_char_direction(qc) > IEEE80211_QOS_CHAR_DIR_DIRECT)
++		return false;
++
++	/* The LinkID refers to the Service Start Time, which must be present */
++	if (present & IEEE80211_QOS_CHAR_PRES_SERVICE_START_LINK_ID &&
++	    !(present & IEEE80211_QOS_CHAR_PRES_SERVICE_START_TIME))
++		return false;
++
++	if (present & IEEE80211_QOS_CHAR_PRES_MAX_MSDU_SIZE)
++		needed += 2;
++	if (present & IEEE80211_QOS_CHAR_PRES_SERVICE_START_TIME)
++		needed += 4;
++	if (present & IEEE80211_QOS_CHAR_PRES_SERVICE_START_LINK_ID)
++		needed += 1;
++	if (present & IEEE80211_QOS_CHAR_PRES_MEAN_DATA_RATE)
++		needed += 3;
++	if (present & IEEE80211_QOS_CHAR_PRES_BURST_SIZE)
++		needed += 4;
++	if (present & IEEE80211_QOS_CHAR_PRES_MSDU_LIFETIME)
++		needed += 2;
++	if (present & IEEE80211_QOS_CHAR_PRES_MSDU_DELIVERY_INFO)
++		needed += 1;
++	if (present & IEEE80211_QOS_CHAR_PRES_MEDIUM_TIME)
++		needed += 2;
++
++	return len == needed;
++}
++
+ #endif /* LINUX_IEEE80211_EHT_H */
+--- a/include/linux/ieee80211.h
++++ b/include/linux/ieee80211.h
+@@ -1817,6 +1817,7 @@ enum ieee80211_eid_ext {
+ 	WLAN_EID_EXT_EHT_MULTI_LINK = 107,
+ 	WLAN_EID_EXT_EHT_CAPABILITY = 108,
+ 	WLAN_EID_EXT_TID_TO_LINK_MAPPING = 109,
++	WLAN_EID_EXT_QOS_CHARACTERISTICS = 113,
+ 	WLAN_EID_EXT_BANDWIDTH_INDICATION = 135,
+ 	WLAN_EID_EXT_KNOWN_STA_IDENTIFCATION = 136,
+ 	WLAN_EID_EXT_NON_AP_STA_REG_CON = 137,

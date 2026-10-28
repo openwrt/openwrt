@@ -1,0 +1,57 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Mon, 26 Oct 2026 14:00:00 +0100
+Subject: [PATCH] AP: free a non-AP MLD on all its links at a BSS deinit
+
+Depends on 878-AP-add-hostapd_bss_stop_ap-for-a-stop-that-keeps-the.patch.
+
+hostapd_bss_deinit_no_free() flushes the stations of the link in the
+driver and sends the broadcast Deauthentication. mac80211 then drops
+every non-AP MLD that holds the link with all its links, and the
+Deauthentication ends the association of such a non-AP MLD on all its
+links. hostapd_free_stas() frees only the link STA of a non-AP MLD
+whose association link is another link of the AP MLD, so DISABLE of
+that link left the non-AP MLD associated and authorized on its
+association link, and its next association failed.
+
+hostapd_bss_stop_ap() already frees such a non-AP MLD on all its links
+first. Share that part with hostapd_bss_deinit_no_free().
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/src/ap/hostapd.c
++++ b/src/ap/hostapd.c
+@@ -1961,10 +1961,19 @@ static int hostapd_flush_old_stations(st
+ }
+ 
+ 
+-void hostapd_bss_deinit_no_free(struct hostapd_data *hapd)
++static void hostapd_bss_stas_leave(struct hostapd_data *hapd)
+ {
++#ifdef CONFIG_IEEE80211BE
++	hostapd_free_link_sta_mlds(hapd);
++#endif /* CONFIG_IEEE80211BE */
+ 	hostapd_free_stas(hapd);
+ 	hostapd_flush_old_stations(hapd, WLAN_REASON_DEAUTH_LEAVING);
++}
++
++
++void hostapd_bss_deinit_no_free(struct hostapd_data *hapd)
++{
++	hostapd_bss_stas_leave(hapd);
+ #ifdef CONFIG_WEP
+ 	hostapd_clear_wep(hapd);
+ #endif /* CONFIG_WEP */
+@@ -1975,12 +1984,7 @@ void hostapd_bss_deinit_no_free(struct h
+  * free them first. The keys of the BSS stay for the next start. */
+ void hostapd_bss_stop_ap(struct hostapd_data *hapd)
+ {
+-#ifdef CONFIG_IEEE80211BE
+-	if (hapd->conf->mld_ap)
+-		hostapd_free_link_sta_mlds(hapd);
+-#endif /* CONFIG_IEEE80211BE */
+-	hostapd_free_stas(hapd);
+-	hostapd_flush_old_stations(hapd, WLAN_REASON_DEAUTH_LEAVING);
++	hostapd_bss_stas_leave(hapd);
+ 	hostapd_drv_stop_ap(hapd);
+ 	hapd->beacon_set_done = 0;
+ }

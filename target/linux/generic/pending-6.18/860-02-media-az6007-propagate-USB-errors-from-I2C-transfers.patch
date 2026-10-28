@@ -1,0 +1,52 @@
+From 836927162becc1664722728db485d0e6f7822244 Mon Sep 17 00:00:00 2001
+From: Josef Schlehofer <pepe.schlehofer@gmail.com>
+Date: Tue, 22 Sep 2026 21:02:38 +0200
+Subject: [PATCH v2 2/6] media: az6007: propagate USB errors from I2C transfers
+
+__az6007_read(), __az6007_write() and az6007_i2c_xfer() currently map
+usb_control_msg() failures to -EIO. After disconnect, USB reports
+-ENODEV, but drxk cannot distinguish a gone device from a transfer
+error.
+
+Propagate the error reported by usb_control_msg() instead. Keep short
+transfers mapped to -EIO as before.
+
+This lets drxk stop retrying and accessing the device after disconnect.
+
+Signed-off-by: Josef Schlehofer <pepe.schlehofer@gmail.com>
+Link: https://lore.kernel.org/all/20261004100741.71711-3-pepe.schlehofer@gmail.com/
+---
+ drivers/media/usb/dvb-usb-v2/az6007.c | 7 ++++---
+ 1 file changed, 4 insertions(+), 3 deletions(-)
+
+--- a/drivers/media/usb/dvb-usb-v2/az6007.c
++++ b/drivers/media/usb/dvb-usb-v2/az6007.c
+@@ -109,7 +109,7 @@ static int __az6007_read(struct usb_devi
+ 			      value, index, b, blen, 5000);
+ 	if (ret < 0) {
+ 		pr_warn("usb read operation failed. (%d)\n", ret);
+-		return -EIO;
++		return ret;
+ 	}
+ 
+ 	if (az6007_xfer_debug) {
+@@ -163,7 +163,7 @@ static int __az6007_write(struct usb_dev
+ 			      value, index, b, blen, 5000);
+ 	if (ret != blen) {
+ 		pr_err("usb write operation failed. (%d)\n", ret);
+-		return -EIO;
++		return ret < 0 ? ret : -EIO;
+ 	}
+ 
+ 	return 0;
+@@ -782,8 +782,9 @@ static int az6007_i2c_xfer(struct i2c_ad
+ 			if (ret >= len) {
+ 				for (j = 0; j < len; j++)
+ 					msgs[i + 1].buf[j] = st->data[j + 5];
+-			} else
++			} else if (ret >= 0) {
+ 				ret = -EIO;
++			}
+ 			i++;
+ 		} else if (!(msgs[i].flags & I2C_M_RD)) {
+ 			/* write bytes */

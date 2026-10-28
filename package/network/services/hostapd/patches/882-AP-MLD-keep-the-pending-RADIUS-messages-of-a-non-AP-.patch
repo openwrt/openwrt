@@ -1,0 +1,34 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Mon, 26 Oct 2026 16:00:00 +0100
+Subject: [PATCH] AP MLD: keep the pending RADIUS messages of a non-AP MLD
+ at a link STA free
+
+The links of an AP MLD share the RADIUS client of the first BSS, and
+the EAPOL state machine of a non-AP MLD sends its Access-Requests with
+the MLD address. ap_free_sta() flushes the pending authentication
+messages of sta->addr, which is the MLD address for every affiliated
+STA. The free of a link STA, at an AP removal of a link that is not
+the association link or of the old association STA after a move of the
+association, drops the pending Access-Request of the MLD, which stays
+associated. The Access-Accept or Access-Challenge then finds no
+request, and the EAP authentication stalls.
+
+Flush only at the free of the association STA.
+
+Depends on 836-AP-MLD-keep-the-association-of-a-non-AP-MLD-at-a-lin.patch.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/src/ap/sta_info.c
++++ b/src/ap/sta_info.c
+@@ -573,7 +573,9 @@ void ap_free_sta(struct hostapd_data *ha
+ 
+ 	rsn_preauth_free_station(hapd, sta);
+ #ifndef CONFIG_NO_RADIUS
+-	if (hapd->radius)
++	/* The links of an AP MLD share the RADIUS client, and the pending
++	 * messages of a non-AP MLD belong to its association STA. */
++	if (hapd->radius && !hostapd_sta_is_link_sta(hapd, sta))
+ 		radius_client_flush_auth(hapd->radius, sta->addr);
+ #endif /* CONFIG_NO_RADIUS */
+ 

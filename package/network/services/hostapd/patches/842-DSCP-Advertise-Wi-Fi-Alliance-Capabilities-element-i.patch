@@ -1,0 +1,190 @@
+From: Aishwarya R <aishwarya.r@oss.qualcomm.com>
+Date: Tue, 12 May 2026 10:54:50 +0530
+Subject: [PATCH] DSCP: Advertise Wi-Fi Alliance Capabilities element in AP mode
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Add support for advertising DSCP policy capabilities in Beacon,
+Probe Response, and (Re)Association Response frames.
+
+This is controlled by a configuration option enable_dscp_policy_capa.
+
+When enabled, the AP includes the Wi-Fi Alliance Capabilities element
+indicating support for DSCP policy and unsolicited DSCP policy
+capabilities, as defined by the Wi‑Fi QoS Management Specification v4.0,
+Section 3.4.
+
+Backport of hostap commit 60f2674a4e40. OpenWrt context: ieee802_11.c,
+ieee802_11.h, ieee802_11_eht.c: OpenWrt's patch 184 already passes the
+station to ieee80211_ml_build_assoc_resp() and builds the per-link
+elements in ieee80211_ml_link_elems(), so the element goes there after
+the WMM element, and the signature change and its callers are dropped.
+
+Signed-off-by: Aishwarya R <aishwarya.r@oss.qualcomm.com>
+---
+--- a/src/ap/ap_drv_ops.c
++++ b/src/ap/ap_drv_ops.c
+@@ -22,6 +22,7 @@
+ #include "hs20.h"
+ #include "wpa_auth.h"
+ #include "hw_features.h"
++#include "robust_av.h"
+ #include "ap_drv_ops.h"
+ 
+ 
+@@ -74,7 +75,7 @@ int hostapd_build_ap_extra_ies(struct ho
+ 			       struct wpabuf **assocresp_ret)
+ {
+ 	struct wpabuf *beacon = NULL, *proberesp = NULL, *assocresp = NULL;
+-	u8 buf[200], *pos;
++	u8 buf[208], *pos;
+ 
+ 	*beacon_ret = *proberesp_ret = *assocresp_ret = NULL;
+ 
+@@ -119,6 +120,12 @@ int hostapd_build_ap_extra_ies(struct ho
+ 		goto fail;
+ #endif /* CONFIG_FILS */
+ 
++	pos = hostapd_eid_wfa_capab(hapd, NULL, buf);
++	if (add_buf_data(&beacon, buf, pos - buf) < 0 ||
++	    add_buf_data(&proberesp, buf, pos - buf) < 0 ||
++	    add_buf_data(&assocresp, buf, pos - buf) < 0)
++		goto fail;
++
+ 	if (!hapd->conf->rsn_override_omit_rsnxe) {
+ 		pos = hostapd_eid_rsnxe(hapd, buf, sizeof(buf));
+ 		if (add_buf_data(&assocresp, buf, pos - buf) < 0)
+--- a/src/ap/beacon.c
++++ b/src/ap/beacon.c
+@@ -34,6 +34,7 @@
+ #include "dfs.h"
+ #include "taxonomy.h"
+ #include "ieee802_11_auth.h"
++#include "robust_av.h"
+ 
+ 
+ #ifdef NEED_AP_MLME
+@@ -828,6 +829,7 @@ static size_t hostapd_probe_resp_elems_l
+ 	buflen += hostapd_get_rsne_override_len(hapd);
+ 	buflen += hostapd_get_rsne_override_2_len(hapd);
+ 	buflen += hostapd_get_rsnxe_override_len(hapd);
++	buflen += hostapd_eid_wfa_capab_len(hapd);
+ 
+ 	return buflen;
+ }
+@@ -1035,6 +1037,8 @@ static u8 * hostapd_probe_resp_fill_elem
+ 	pos = hostapd_get_rsne_override_2(hapd, pos, epos - pos);
+ 	pos = hostapd_get_rsnxe_override(hapd, pos, epos - pos);
+ 
++	pos = hostapd_eid_wfa_capab(hapd, NULL, pos);
++
+ 	if (hapd->conf->vendor_elements) {
+ 		os_memcpy(pos, wpabuf_head(hapd->conf->vendor_elements),
+ 			  wpabuf_len(hapd->conf->vendor_elements));
+@@ -2346,6 +2350,7 @@ int ieee802_11_build_ap_params(struct ho
+ 	tail_len += hostapd_get_rsne_override_len(hapd);
+ 	tail_len += hostapd_get_rsne_override_2_len(hapd);
+ 	tail_len += hostapd_get_rsnxe_override_len(hapd);
++	tail_len += hostapd_eid_wfa_capab_len(hapd);
+ 
+ 	tailpos = tail = os_malloc(tail_len);
+ 	if (head == NULL || tail == NULL) {
+@@ -2570,6 +2575,8 @@ int ieee802_11_build_ap_params(struct ho
+ 	tailpos = hostapd_get_rsnxe_override(hapd, tailpos,
+ 					     tail + tail_len - tailpos);
+ 
++	tailpos = hostapd_eid_wfa_capab(hapd, NULL, tailpos);
++
+ 	if (hapd->conf->vendor_elements) {
+ 		os_memcpy(tailpos, wpabuf_head(hapd->conf->vendor_elements),
+ 			  wpabuf_len(hapd->conf->vendor_elements));
+--- a/src/ap/ieee802_11.c
++++ b/src/ap/ieee802_11.c
+@@ -62,6 +62,7 @@
+ #include "comeback_token.h"
+ #include "nan_usd_ap.h"
+ #include "pasn/pasn_common.h"
++#include "robust_av.h"
+ 
+ #ifdef CONFIG_APUP
+ #	include "apup.h"
+@@ -6405,6 +6406,9 @@ static u8 * ieee80211_ml_link_elems(stru
+ 	if (sta && (sta->flags & WLAN_STA_WMM))
+ 		p = hostapd_eid_wmm(hapd, p);
+ 
++	if (sta)
++		p = hostapd_eid_wfa_capab(hapd, sta, p);
++
+ 	return ml_put_buf(p, end, hapd->conf->assocresp_elements);
+ }
+ 
+@@ -7336,6 +7340,7 @@ rsnxe_done:
+ #endif /* CONFIG_P2P_MANAGER */
+ 
+ 	p = hostapd_eid_mbo(hapd, p, buf + buflen - p);
++	p = hostapd_eid_wfa_capab(hapd, sta, p);
+ 
+ 	if (hapd->conf->assocresp_elements &&
+ 	    (size_t) (buf + buflen - p) >=
+--- a/src/ap/ieee802_11.h
++++ b/src/ap/ieee802_11.h
+@@ -174,6 +174,9 @@ int hostapd_get_he_twt_responder(struct
+ bool hostapd_get_ht_vht_twt_responder(struct hostapd_data *hapd);
+ void hostapd_wfa_capab(struct hostapd_data *hapd, struct sta_info *sta,
+ 		       const u8 *pos, const u8 *end);
++u8 * hostapd_eid_wfa_capab(struct hostapd_data *hapd, struct sta_info *sta,
++			   u8 *eid);
++u8 hostapd_eid_wfa_capab_len(struct hostapd_data *hapd);
+ u8 * hostapd_eid_cca(struct hostapd_data *hapd, u8 *eid);
+ void hostapd_tx_status(struct hostapd_data *hapd, const u8 *addr,
+ 		       const u8 *buf, size_t len, int ack);
+--- a/src/ap/ieee802_11_shared.c
++++ b/src/ap/ieee802_11_shared.c
+@@ -1342,3 +1342,46 @@ void hostapd_wfa_capab(struct hostapd_da
+ 	if (gen_capa)
+ 		hostapd_wfa_gen_capab(hapd, sta, gen_capa + 2, gen_capa[1]);
+ }
++
++
++u8 hostapd_eid_wfa_capab_len(struct hostapd_data *hapd)
++{
++	u8 buf[257], *pos = buf;
++
++	pos = hostapd_eid_wfa_capab(hapd, NULL, pos);
++	return pos - buf;
++}
++
++
++u8 * hostapd_eid_wfa_capab(struct hostapd_data *hapd, struct sta_info *sta,
++			   u8 *eid)
++{
++	u8 *len;
++	u8 capab = 0;
++
++#ifdef CONFIG_ROBUST_AV
++	if (hapd->conf->enable_dscp_policy_capa &&
++	    ap_pmf_enabled(hapd->conf) &&
++	    (!sta || (sta->flags & WLAN_STA_DSCP_POLICY)))
++		capab |= WFA_CAPA_QM_DSCP_POLICY | WFA_CAPA_QM_UNSOLIC_DSCP;
++#endif /* CONFIG_ROBUST_AV */
++
++	if (!capab)
++		return eid;
++
++	/* Wi-Fi Alliance Capabilities element */
++	*eid++ = WLAN_EID_VENDOR_SPECIFIC;
++	len = eid++;
++	WPA_PUT_BE24(eid, OUI_WFA);
++	eid += 3;
++	*eid++ = WFA_CAPA_OUI_TYPE;
++
++	*eid++ = 1; /* Capabilities Length */
++	*eid++ = capab; /* Capabilities */
++
++	/* Followed by optional Attributes */
++
++	*len = eid - len - 1;
++
++	return eid;
++}

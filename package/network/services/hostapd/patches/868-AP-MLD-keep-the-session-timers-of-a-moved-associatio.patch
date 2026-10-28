@@ -1,0 +1,90 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Sat, 24 Oct 2026 18:00:00 +0200
+Subject: [PATCH] AP MLD: keep the session timers of a moved association
+
+When the association of a non-AP MLD moves to another link
+(hostapd_ml_move_assoc_sta()), the caller frees the old association STA,
+and ap_free_sta() cancels its session timer and its session warning
+timer. Link STAs never get them, so the session limit from a RADIUS
+Session-Timeout or an HS 2.0 deauthentication request no longer applies
+to the MLD.
+
+Move both timers to the new association STA with their remaining time,
+together with the session deadline and the HS 2.0 session information
+that the warning timer uses. The inactivity timer needs no move: every
+link STA has its own from ap_sta_add().
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+ src/ap/ieee802_11_eht.c |  1 +
+ src/ap/sta_info.c       | 35 +++++++++++++++++++++++++++++++++++
+ src/ap/sta_info.h       |  4 ++++
+ 3 files changed, 40 insertions(+)
+
+--- a/src/ap/ieee802_11_eht.c
++++ b/src/ap/ieee802_11_eht.c
+@@ -1674,6 +1674,7 @@ struct sta_info * hostapd_ml_move_assoc_
+ 
+ 	wpa_reset_assoc_sm_info(assoc_sta->wpa_sm, (*assoc_hapd)->wpa_auth,
+ 				link_id);
++	ap_sta_move_session_timeouts(hapd, sta, *assoc_hapd, assoc_sta);
+ #ifdef CONFIG_ROBUST_AV
+ 	os_memcpy(assoc_sta->scs_active, sta->scs_active,
+ 		  sizeof(sta->scs_active));
+--- a/src/ap/sta_info.c
++++ b/src/ap/sta_info.c
+@@ -1069,6 +1069,41 @@ void ap_sta_session_warning_timeout(stru
+ }
+ 
+ 
++#ifdef CONFIG_IEEE80211BE
++static void ap_sta_move_timeout(eloop_timeout_handler handler,
++				struct hostapd_data *hapd, struct sta_info *sta,
++				struct hostapd_data *new_hapd,
++				struct sta_info *new_sta)
++{
++	struct os_reltime remaining;
++
++	if (eloop_cancel_timeout_one(handler, hapd, sta, &remaining))
++		eloop_register_timeout(remaining.sec, remaining.usec, handler,
++				       new_hapd, new_sta);
++}
++
++
++/* The session of a non-AP MLD goes on when its association moves to
++ * another link, so its timers keep their remaining time. */
++void ap_sta_move_session_timeouts(struct hostapd_data *hapd,
++				  struct sta_info *sta,
++				  struct hostapd_data *new_hapd,
++				  struct sta_info *new_sta)
++{
++	ap_sta_move_timeout(ap_handle_session_timer, hapd, sta, new_hapd,
++			    new_sta);
++	ap_sta_move_timeout(ap_handle_session_warning_timer, hapd, sta,
++			    new_hapd, new_sta);
++	new_sta->session_timeout = sta->session_timeout;
++	new_sta->session_timeout_set = sta->session_timeout_set;
++	os_free(new_sta->hs20_session_info_url);
++	new_sta->hs20_session_info_url = sta->hs20_session_info_url;
++	sta->hs20_session_info_url = NULL;
++	new_sta->hs20_disassoc_timer = sta->hs20_disassoc_timer;
++}
++#endif /* CONFIG_IEEE80211BE */
++
++
+ static void ap_sta_assoc_timeout(void *eloop_ctx, void *timeout_ctx)
+ {
+ 	struct hostapd_data *hapd = eloop_ctx;
+--- a/src/ap/sta_info.h
++++ b/src/ap/sta_info.h
+@@ -437,6 +437,10 @@ void ap_sta_no_session_timeout(struct ho
+ 			       struct sta_info *sta);
+ void ap_sta_session_warning_timeout(struct hostapd_data *hapd,
+ 				    struct sta_info *sta, int warning_time);
++void ap_sta_move_session_timeouts(struct hostapd_data *hapd,
++				  struct sta_info *sta,
++				  struct hostapd_data *new_hapd,
++				  struct sta_info *new_sta);
+ struct sta_info * ap_sta_add(struct hostapd_data *hapd, const u8 *addr);
+ void ap_sta_disassociate(struct hostapd_data *hapd, struct sta_info *sta,
+ 			 u16 reason);

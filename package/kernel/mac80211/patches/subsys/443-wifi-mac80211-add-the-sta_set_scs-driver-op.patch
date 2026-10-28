@@ -1,0 +1,357 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Fri, 28 Aug 2026 12:26:47 +0200
+Subject: [PATCH] wifi: mac80211: add the sta_set_scs driver op
+
+Pass the SCS descriptors of a request to the driver and let it answer
+each of them. This is the only path by which the QoS Characteristics
+element reaches a driver.
+
+The classifier runs in software whatever the driver answers, but only
+the driver can schedule a stream according to its traffic description.
+A driver therefore declines a descriptor only when it cannot serve the
+traffic description. mac80211 then leaves that descriptor out of the
+set, and a declined change keeps the rule of that SCSID. Without the
+op, or before the station is uploaded, mac80211 declines every
+descriptor that carries a traffic description.
+
+After a hardware restart the device lost every stream, so each stored
+rule is passed to the driver again as an add. A refusal at that point
+changes nothing, since the acceptance already went out to the peer.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+
+--- a/include/net/mac80211.h
++++ b/include/net/mac80211.h
+@@ -5091,6 +5091,34 @@ struct ieee80211_ops {
+ 			  struct cfg80211_pmsr_request *request);
+ 	void (*abort_pmsr)(struct ieee80211_hw *hw, struct ieee80211_vif *vif,
+ 			   struct cfg80211_pmsr_request *request);
++	/**
++	 * @sta_set_scs:
++	 * Called with the SCS descriptors that a station requested, after
++	 * cfg80211 validated them. Optional, only reached when the wiphy
++	 * advertises %NL80211_EXT_FEATURE_SCS. Without it, every descriptor
++	 * with a QoS Characteristics element is declined.
++	 *
++	 * - The results arrive zeroed, which means accepted. Write only
++	 *   refusals, in the result entry of the same index.
++	 * - Decline a descriptor only when its traffic description cannot
++	 *   be served. mac80211 classifies frames in software either way.
++	 * - A declined add or change keeps the previous descriptor of that
++	 *   SCSID. An accepted one without a traffic description replaces
++	 *   the device state of that SCSID.
++	 * - A removal only drops driver state, the result is ignored. A
++	 *   station going away drops its rules without a call.
++	 * - After a hardware restart every stored rule is passed again as
++	 *   an add, one per call, and the result is ignored.
++	 * - A negative return fails the whole request and leaves the rule
++	 *   set unchanged, so the driver must leave the device as it was.
++	 * - The descriptors belong to the MLD, not to one link.
++	 *
++	 * Called with the wiphy mutex held. This callback may sleep.
++	 */
++	int (*sta_set_scs)(struct ieee80211_hw *hw, struct ieee80211_vif *vif,
++			   struct ieee80211_sta *sta,
++			   struct cfg80211_scs_desc * const *desc,
++			   struct cfg80211_scs_result *res, u8 n_desc);
+ 	int (*set_tid_config)(struct ieee80211_hw *hw,
+ 			      struct ieee80211_vif *vif,
+ 			      struct ieee80211_sta *sta,
+--- a/net/mac80211/driver-ops.h
++++ b/net/mac80211/driver-ops.h
+@@ -1552,6 +1552,32 @@ static inline void drv_del_nan_func(stru
+ 	trace_drv_return_void(local);
+ }
+ 
++static inline int drv_sta_set_scs(struct ieee80211_local *local,
++				  struct ieee80211_sub_if_data *sdata,
++				  struct sta_info *sta,
++				  struct cfg80211_scs_desc * const *desc,
++				  struct cfg80211_scs_result *res, u8 n_desc)
++{
++	int ret;
++
++	might_sleep();
++	lockdep_assert_wiphy(local->hw.wiphy);
++
++	if (!local->ops->sta_set_scs || !sta->uploaded)
++		return 0;
++
++	sdata = get_bss_sdata(sdata);
++	if (!check_sdata_in_driver(sdata))
++		return -EIO;
++
++	trace_drv_sta_set_scs(local, sdata, &sta->sta, n_desc);
++	ret = local->ops->sta_set_scs(&local->hw, &sdata->vif, &sta->sta, desc,
++				      res, n_desc);
++	trace_drv_return_int(local, ret);
++
++	return ret;
++}
++
+ static inline int drv_set_tid_config(struct ieee80211_local *local,
+ 				     struct ieee80211_sub_if_data *sdata,
+ 				     struct ieee80211_sta *sta,
+--- a/net/mac80211/ieee80211_i.h
++++ b/net/mac80211/ieee80211_i.h
+@@ -2271,6 +2271,7 @@ int ieee80211_set_scs(struct wiphy *wiph
+ 		      struct cfg80211_scs_result *res, u8 n_desc);
+ int ieee80211_set_mscs(struct wiphy *wiphy, struct net_device *dev,
+ 		       const u8 *peer, struct cfg80211_mscs_desc *desc);
++void ieee80211_sta_scs_reconfig(struct sta_info *sta);
+ void ieee80211_sta_scs_free(struct sta_info *sta);
+ bool ieee80211_flow_classify(struct sta_info *sta, struct sk_buff *skb);
+ void ieee80211_flow_learn(struct ieee80211_rx_data *rx);
+--- a/net/mac80211/scs.c
++++ b/net/mac80211/scs.c
+@@ -6,6 +6,7 @@
+  */
+ #include <linux/ieee80211.h>
+ #include <net/cfg80211.h>
++#include "driver-ops.h"
+ #include "ieee80211_i.h"
+ #include "sta_info.h"
+ 
+@@ -39,6 +40,8 @@ static void *ieee80211_scs_rule_copy(con
+ 	struct cfg80211_scs_desc *dst = pos;
+ 
+ 	memcpy(dst, src, len);
++	/* A stored rule is always handed back to the driver as an install */
++	dst->req_type = NL80211_SCS_REQ_ADD;
+ 	pos += len;
+ 
+ 	if (src->qos_char_len) {
+@@ -63,39 +66,52 @@ static u8 ieee80211_scs_rule_find(struct
+ 	return i;
+ }
+ 
+-/* @rule points into the old set and into the request, so copy each rule */
+-static struct ieee80211_scs_sta *
+-ieee80211_scs_sta_build(struct cfg80211_scs_desc * const *rule, u8 n_rules)
++static size_t ieee80211_scs_sta_head(unsigned int n_rules)
+ {
+ 	struct ieee80211_scs_sta *scs;
+-	size_t head, size;
+-	void *pos;
+-	u8 i;
+ 
+-	if (!n_rules)
+-		return NULL;
++	return ALIGN(struct_size(scs, rule, n_rules),
++		     __alignof__(struct cfg80211_scs_desc));
++}
+ 
+-	head = ALIGN(struct_size(scs, rule, n_rules), __alignof__(**rule));
++/*
++ * Size for every rule that can end up in the set, so that no allocation
++ * fails after the driver programmed the accepted descriptors.
++ */
++static size_t ieee80211_scs_sta_size(const struct ieee80211_scs_sta *old,
++				     struct cfg80211_scs_desc * const *desc,
++				     u8 n_desc, unsigned int n_alloc)
++{
++	size_t size = ieee80211_scs_sta_head(n_alloc);
++	unsigned int i;
+ 
+-	size = head;
+-	for (i = 0; i < n_rules; i++)
+-		size += ieee80211_scs_rule_size(rule[i]);
++	for (i = 0; old && i < old->n_rules; i++)
++		size += ieee80211_scs_rule_size(old->rule[i]);
+ 
+-	/* 255 rules with 255 classifiers each exceed what kmalloc hands out */
+-	scs = kvzalloc(size, GFP_KERNEL);
+-	if (!scs)
+-		return ERR_PTR(-ENOMEM);
++	for (i = 0; i < n_desc; i++)
++		size += ieee80211_scs_rule_size(desc[i]);
++
++	return size;
++}
++
++/*
++ * @rule points into the old set and into the request, so copy each rule.
++ * The block was sized for @n_alloc rules.
++ */
++static void ieee80211_scs_sta_fill(struct ieee80211_scs_sta *scs,
++				   struct cfg80211_scs_desc * const *rule,
++				   u8 n_rules, unsigned int n_alloc)
++{
++	void *pos = (void *)scs + ieee80211_scs_sta_head(n_alloc);
++	u8 i;
+ 
+ 	/* Set before the array is filled, for __counted_by() */
+ 	scs->n_rules = n_rules;
+ 
+-	pos = (void *)scs + head;
+ 	for (i = 0; i < n_rules; i++) {
+ 		scs->rule[i] = pos;
+ 		pos = ieee80211_scs_rule_copy(rule[i], pos);
+ 	}
+-
+-	return scs;
+ }
+ 
+ /**
+@@ -369,7 +385,9 @@ int ieee80211_set_scs(struct wiphy *wiph
+ 	struct ieee80211_scs_sta *scs, *old;
+ 	struct cfg80211_scs_desc **rule;
+ 	struct sta_info *sta;
++	unsigned int n_alloc;
+ 	u8 i, n_rules = 0;
++	int ret;
+ 
+ 	lockdep_assert_wiphy(wiphy);
+ 
+@@ -380,11 +398,32 @@ int ieee80211_set_scs(struct wiphy *wiph
+ 	old = wiphy_dereference(wiphy, sta->scs);
+ 
+ 	/* One rule per SCSID bounds the size of the new set */
+-	rule = kcalloc((old ? old->n_rules : 0) + n_desc, sizeof(*rule),
+-		       GFP_KERNEL);
++	n_alloc = (old ? old->n_rules : 0) + n_desc;
++
++	rule = kcalloc(n_alloc, sizeof(*rule), GFP_KERNEL);
+ 	if (!rule)
+ 		return -ENOMEM;
+ 
++	/* 255 rules with 255 classifiers each exceed what kmalloc hands out */
++	scs = kvzalloc(ieee80211_scs_sta_size(old, desc, n_desc, n_alloc),
++		       GFP_KERNEL);
++	if (!scs) {
++		ret = -ENOMEM;
++		goto free;
++	}
++
++	if (sdata->local->ops->sta_set_scs && sta->uploaded) {
++		ret = drv_sta_set_scs(sdata->local, sdata, sta, desc, res,
++				      n_desc);
++		if (ret)
++			goto free;
++	} else {
++		/* Without a driver, no traffic description can be served */
++		for (i = 0; i < n_desc; i++)
++			if (desc[i]->qos_char)
++				res[i].status = WLAN_STATUS_REQUEST_DECLINED;
++	}
++
+ 	if (old) {
+ 		n_rules = old->n_rules;
+ 		memcpy(rule, old->rule, n_rules * sizeof(*rule));
+@@ -406,22 +445,35 @@ int ieee80211_set_scs(struct wiphy *wiph
+ 			continue;
+ 		}
+ 
++		if (res[i].status != WLAN_STATUS_SUCCESS)
++			continue;
++
+ 		if (at < n_rules)
+ 			rule[at] = desc[i];
+ 		else
+ 			rule[n_rules++] = desc[i];
+ 	}
+ 
+-	scs = ieee80211_scs_sta_build(rule, n_rules);
++	if (n_rules) {
++		ieee80211_scs_sta_fill(scs, rule, n_rules, n_alloc);
++	} else {
++		kvfree(scs);
++		scs = NULL;
++	}
++
+ 	kfree(rule);
+-	if (IS_ERR(scs))
+-		return PTR_ERR(scs);
+ 
+ 	rcu_assign_pointer(sta->scs, scs);
+ 	if (old)
+ 		kvfree_rcu(old, rcu_head);
+ 
+ 	return 0;
++
++free:
++	kvfree(scs);
++	kfree(rule);
++
++	return ret;
+ }
+ 
+ int ieee80211_set_mscs(struct wiphy *wiphy, struct net_device *dev,
+@@ -478,6 +530,30 @@ int ieee80211_set_mscs(struct wiphy *wip
+ 	return 0;
+ }
+ 
++/*
++ * A restarted device lost every stream, so program them again. A refusal
++ * changes nothing here: the rule stays and mac80211 keeps classifying for it.
++ */
++void ieee80211_sta_scs_reconfig(struct sta_info *sta)
++{
++	struct ieee80211_local *local = sta->local;
++	struct ieee80211_scs_sta *scs;
++	u8 i;
++
++	lockdep_assert_wiphy(local->hw.wiphy);
++
++	scs = wiphy_dereference(local->hw.wiphy, sta->scs);
++	if (!scs)
++		return;
++
++	/* One rule per call, so no result array has to be allocated */
++	for (i = 0; i < scs->n_rules; i++) {
++		struct cfg80211_scs_result res = {};
++
++		drv_sta_set_scs(local, sta->sdata, sta, &scs->rule[i], &res, 1);
++	}
++}
++
+ void ieee80211_sta_scs_free(struct sta_info *sta)
+ {
+ 	struct ieee80211_mscs_sta *mscs;
+--- a/net/mac80211/trace.h
++++ b/net/mac80211/trace.h
+@@ -1029,6 +1029,33 @@ DECLARE_EVENT_CLASS(sta_event,
+ 	)
+ );
+ 
++TRACE_EVENT(drv_sta_set_scs,
++	TP_PROTO(struct ieee80211_local *local,
++		 struct ieee80211_sub_if_data *sdata,
++		 struct ieee80211_sta *sta, u8 n_desc),
++
++	TP_ARGS(local, sdata, sta, n_desc),
++
++	TP_STRUCT__entry(
++		LOCAL_ENTRY
++		VIF_ENTRY
++		STA_ENTRY
++		__field(u8, n_desc)
++	),
++
++	TP_fast_assign(
++		LOCAL_ASSIGN;
++		VIF_ASSIGN;
++		STA_ASSIGN;
++		__entry->n_desc = n_desc;
++	),
++
++	TP_printk(
++		LOCAL_PR_FMT  VIF_PR_FMT  STA_PR_FMT " %d descriptors",
++		LOCAL_PR_ARG, VIF_PR_ARG, STA_PR_ARG, __entry->n_desc
++	)
++);
++
+ DEFINE_EVENT(sta_event, drv_sta_statistics,
+ 	TP_PROTO(struct ieee80211_local *local,
+ 		 struct ieee80211_sub_if_data *sdata,
+--- a/net/mac80211/util.c
++++ b/net/mac80211/util.c
+@@ -1744,6 +1744,8 @@ static void ieee80211_reconfig_stations(
+ 		     state < sta->sta_state; state++)
+ 			WARN_ON(drv_sta_state(local, sta->sdata, sta, state,
+ 					      state + 1));
++
++		ieee80211_sta_scs_reconfig(sta);
+ 	}
+ }
+ 
