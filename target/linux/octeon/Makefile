@@ -8,6 +8,8 @@ ARCH:=mips64
 BOARD:=octeon
 BOARDNAME:=Cavium Networks Octeon
 FEATURES:=squashfs ramdisk pci usb
+SUBTARGETS:=generic octeonplus
+# All subtargets share this CPU type and so the packages; only the kernels differ
 CPU_TYPE:=octeonplus
 
 KERNEL_PATCHVER:=6.18
