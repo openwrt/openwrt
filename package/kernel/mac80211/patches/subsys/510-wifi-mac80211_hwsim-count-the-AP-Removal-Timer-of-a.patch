@@ -19,7 +19,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 ---
 --- a/drivers/net/wireless/virtual/mac80211_hwsim_main.c
 +++ b/drivers/net/wireless/virtual/mac80211_hwsim_main.c
-@@ -3284,14 +3284,17 @@ ended:
+@@ -3306,14 +3306,17 @@ ended:
  }
  
  /* The removal TBTT of a link is anchored at its first Beacon frame that
@@ -40,7 +40,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	u16 count = get_unaligned_le16(timer);
  	u64 left = 0;
  
-@@ -3299,7 +3302,7 @@ static void hwsim_ap_removal_timer_write
+@@ -3321,7 +3324,7 @@ static void hwsim_ap_removal_timer_write
  		return;
  
  	if (!(rem->links & BIT(removed))) {
@@ -49,7 +49,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  			return;
  
  		rem->links |= BIT(removed);
-@@ -3335,12 +3338,43 @@ static bool hwsim_ap_removal_link_tbtt(s
+@@ -3357,12 +3360,43 @@ static bool hwsim_ap_removal_link_tbtt(s
  	if (tbtt + bcn_int >= rem->tbtt[link_id] &&
  	    !(rem->expired & BIT(link_id))) {
  		rem->expired |= BIT(link_id);
@@ -94,7 +94,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  static bool mac80211_hwsim_ap_removal_tbtt(struct mac80211_hwsim_data *data,
  					   struct ieee80211_vif *vif,
  					   unsigned int link_id, u64 tbtt,
-@@ -3395,13 +3429,17 @@ static bool mac80211_hwsim_ap_removal_tb
+@@ -3417,13 +3451,17 @@ static bool mac80211_hwsim_ap_removal_tb
  
  			announced |= BIT(removed);
  			hwsim_ap_removal_timer_write(data, rem, link_id, tbtt,
