@@ -760,7 +760,7 @@ define KernelPackage/drm-imx
 	$(LINUX_DIR)/drivers/gpu/drm/imx/ipuv3/imxdrm.ko \
 	$(LINUX_DIR)/drivers/gpu/drm/drm_dma_helper.ko \
 	$(LINUX_DIR)/drivers/gpu/ipu-v3/imx-ipu-v3.ko
-  AUTOLOAD:=$(call AutoLoad,08,imxdrm imx-ipu-v3 imx-ipuv3-crtc)
+  AUTOLOAD:=$(call AutoLoad,08,imxdrm imx-ipu-v3)
 endef
 
 define KernelPackage/drm-imx/description
