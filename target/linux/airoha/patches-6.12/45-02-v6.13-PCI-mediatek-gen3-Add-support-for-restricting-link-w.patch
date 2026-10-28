@@ -1,0 +1,89 @@
+From b609a15e7969d6a50d65067ee783b5d9365b04dd Mon Sep 17 00:00:00 2001
+From: AngeloGioacchino Del Regno <angelogioacchino.delregno@collabora.com>
+Date: Mon, 4 Nov 2024 12:49:35 +0100
+Subject: [PATCH 2/2] PCI: mediatek-gen3: Add support for restricting link
+ width
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Add support for restricting the port's link width by specifying
+the num-lanes devicetree property in the PCIe node.
+
+The setting is done in the GEN_SETTINGS register (in the driver
+named as PCIE_SETTING_REG), where each set bit in [11:8] activates
+a set of lanes (from bits 11 to 8 respectively, x16/x8/x4/x2).
+
+Link: https://lore.kernel.org/r/20241104114935.172908-3-angelogioacchino.delregno@collabora.com
+Signed-off-by: AngeloGioacchino Del Regno <angelogioacchino.delregno@collabora.com>
+Signed-off-by: Krzysztof Wilczyński <kwilczynski@kernel.org>
+Reviewed-by: Fei Shao <fshao@chromium.org>
+Reviewed-by: Manivannan Sadhasivam <manivannan.sadhasivam@linaro.org>
+---
+ drivers/pci/controller/pcie-mediatek-gen3.c | 20 ++++++++++++++++++++
+ 1 file changed, 20 insertions(+)
+
+--- a/drivers/pci/controller/pcie-mediatek-gen3.c
++++ b/drivers/pci/controller/pcie-mediatek-gen3.c
+@@ -34,6 +34,7 @@
+ #define PCIE_BASE_CFG_SPEED		GENMASK(15, 8)
+ 
+ #define PCIE_SETTING_REG		0x80
++#define PCIE_SETTING_LINK_WIDTH		GENMASK(11, 8)
+ #define PCIE_SETTING_GEN_SUPPORT	GENMASK(14, 12)
+ #define PCIE_PCI_IDS_1			0x9c
+ #define PCI_CLASS(class)		(class << 8)
+@@ -181,6 +182,7 @@ struct mtk_msi_set {
+  * @clks: PCIe clocks
+  * @num_clks: PCIe clocks count for this port
+  * @max_link_speed: Maximum link speed (PCIe Gen) for this port
++ * @num_lanes: Number of PCIe lanes for this port
+  * @irq: PCIe controller interrupt number
+  * @saved_irq_state: IRQ enable state saved at suspend time
+  * @irq_lock: lock protecting IRQ register access
+@@ -202,6 +204,7 @@ struct mtk_gen3_pcie {
+ 	struct clk_bulk_data *clks;
+ 	int num_clks;
+ 	u8 max_link_speed;
++	u8 num_lanes;
+ 
+ 	int irq;
+ 	u32 saved_irq_state;
+@@ -414,6 +417,14 @@ static int mtk_pcie_startup_port(struct
+ 			val |= FIELD_PREP(PCIE_SETTING_GEN_SUPPORT,
+ 					  GENMASK(pcie->max_link_speed - 2, 0));
+ 	}
++	if (pcie->num_lanes) {
++		val &= ~PCIE_SETTING_LINK_WIDTH;
++
++		/* Zero means one lane, each bit activates x2/x4/x8/x16 */
++		if (pcie->num_lanes > 1)
++			val |= FIELD_PREP(PCIE_SETTING_LINK_WIDTH,
++					  GENMASK(fls(pcie->num_lanes >> 2), 0));
++	};
+ 	writel_relaxed(val, pcie->base + PCIE_SETTING_REG);
+ 
+ 	/* Set Link Control 2 (LNKCTL2) speed restriction, if any */
+@@ -862,6 +873,7 @@ static int mtk_pcie_parse_port(struct mt
+ 	struct device *dev = pcie->dev;
+ 	struct platform_device *pdev = to_platform_device(dev);
+ 	struct resource *regs;
++	u32 num_lanes;
+ 
+ 	regs = platform_get_resource_byname(pdev, IORESOURCE_MEM, "pcie-mac");
+ 	if (!regs)
+@@ -907,6 +919,14 @@ static int mtk_pcie_parse_port(struct mt
+ 		return pcie->num_clks;
+ 	}
+ 
++       ret = of_property_read_u32(dev->of_node, "num-lanes", &num_lanes);
++       if (ret == 0) {
++	       if (num_lanes == 0 || num_lanes > 16 || (num_lanes != 1 && num_lanes % 2))
++			dev_warn(dev, "invalid num-lanes, using controller defaults\n");
++	       else
++			pcie->num_lanes = num_lanes;
++       }
++
+ 	return 0;
+ }
+ 
