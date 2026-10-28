@@ -667,7 +667,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  static void
  mtk_wed_detach(struct mtk_wed_device *dev)
  {
-@@ -1965,7 +1991,7 @@ mtk_wed_wdma_tx_ring_setup(struct mtk_we
+@@ -1971,7 +1997,7 @@ mtk_wed_wdma_tx_ring_setup(struct mtk_we
  
  static void
  mtk_wed_ppe_check(struct mtk_wed_device *dev, struct sk_buff *skb,
@@ -676,7 +676,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  {
  	struct mtk_eth *eth = dev->hw->eth;
  	struct ethhdr *eh;
-@@ -1979,7 +2005,22 @@ mtk_wed_ppe_check(struct mtk_wed_device
+@@ -1985,7 +2011,22 @@ mtk_wed_ppe_check(struct mtk_wed_device
  	skb_set_mac_header(skb, 0);
  	eh = eth_hdr(skb);
  	skb->protocol = eh->h_proto;
@@ -700,7 +700,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  }
  
  static void
-@@ -2819,6 +2860,7 @@ void mtk_wed_add_hw(struct device_node *
+@@ -2825,6 +2866,7 @@ void mtk_wed_add_hw(struct device_node *
  		.rro_rx_ring_setup = mtk_wed_rro_rx_ring_setup,
  		.msdu_pg_rx_ring_setup = mtk_wed_msdu_pg_rx_ring_setup,
  		.ind_rx_ring_setup = mtk_wed_ind_rx_ring_setup,

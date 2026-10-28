@@ -59,7 +59,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		mtk_eth_set_dma_device(hw->eth, hw->eth->dev);
  
  	memset(dev, 0, sizeof(*dev));
-@@ -2476,7 +2487,7 @@ mtk_wed_attach(struct mtk_wed_device *de
+@@ -2482,7 +2493,7 @@ mtk_wed_attach(struct mtk_wed_device *de
  			 "mtk_wed_attach without holding the RCU read lock");
  
  	if ((dev->wlan.bus_type == MTK_WED_BUS_PCIE &&
