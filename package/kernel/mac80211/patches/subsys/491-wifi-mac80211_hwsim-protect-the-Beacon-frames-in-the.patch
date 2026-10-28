@@ -1,0 +1,53 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Wed, 28 Oct 2026 18:00:00 +0100
+Subject: [PATCH] wifi: mac80211_hwsim: protect the Beacon frames in the
+ driver
+
+mac80211 adds the MME with the BIP MIC of the BIGTK inside
+ieee80211_beacon_get(), so a field that the driver writes into the
+Beacon frame afterwards breaks the MIC, and a station with the BIGTK
+drops the frame. The fields that hwsim writes now, the Timestamp and
+the Power Management bit, are masked out of the MIC, but the next patch
+has hwsim count the AP Removal Timer in the Beacon frame.
+
+Take the BIGTK of an AP interface as a hardware key, so that mac80211
+leaves the protection to the driver, and protect each Beacon frame with
+ieee80211_encrypt_tx_skb() just before it is sent, as for the group
+addressed frames. The PN stays the one of mac80211's key. As for the
+other keys of mac80211_hwsim, mac80211 then asks the driver for the
+sequence number of the key and gets 0.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/drivers/net/wireless/virtual/mac80211_hwsim_main.c
++++ b/drivers/net/wireless/virtual/mac80211_hwsim_main.c
+@@ -2428,6 +2428,17 @@ static int mac80211_hwsim_set_key(struct
+ 	case WLAN_CIPHER_SUITE_GCMP:
+ 	case WLAN_CIPHER_SUITE_GCMP_256:
+ 		break;
++	case WLAN_CIPHER_SUITE_AES_CMAC:
++	case WLAN_CIPHER_SUITE_BIP_CMAC_256:
++	case WLAN_CIPHER_SUITE_BIP_GMAC_128:
++	case WLAN_CIPHER_SUITE_BIP_GMAC_256:
++		/* the BIGTK protects a Beacon frame only after the driver
++		 * changed it
++		 */
++		if (vif->type == NL80211_IFTYPE_AP &&
++		    (key->keyidx == 6 || key->keyidx == 7))
++			return 0;
++		return 1;
+ 	default:
+ 		return 1;
+ 	}
+@@ -3273,6 +3284,11 @@ static void __mac80211_hwsim_beacon_tx(s
+ 		dev_kfree_skb(skb);
+ 		return;
+ 	}
++
++	if (ieee80211_encrypt_tx_skb(skb) < 0) {
++		dev_kfree_skb(skb);
++		return;
++	}
+ 
+ 	info = IEEE80211_SKB_CB(skb);
+ 	if (ieee80211_hw_check(hw, SUPPORTS_RC_TABLE))
