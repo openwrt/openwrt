@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later OR MIT
 
+#include <dt-bindings/leds/common.h>
 #include <dt-bindings/pinctrl/mt65xx.h>
 
 #include "mt7981b.dtsi"
@@ -32,12 +33,14 @@
 		compatible = "gpio-leds";
 
 		led_blue: dome-blue {
-			label = "blue:dome";
+			color = <LED_COLOR_ID_BLUE>;
+			function = "dome";
 			gpios = <&pio 9 GPIO_ACTIVE_HIGH>;
 		};
 
 		led_white: dome-white {
-			label = "white:dome";
+			color = <LED_COLOR_ID_WHITE>;
+			function = "dome";
 			gpios = <&pio 34 GPIO_ACTIVE_HIGH>;
 		};
 	};
