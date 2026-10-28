@@ -533,7 +533,8 @@ static void ath79_set_pllval(struct ag71xx *ag)
 		pll_val = ag->plldata[0];
 		break;
 	default:
-		BUG();
+		pr_err_once("ag71xx: cannot set PLL for speed %d\n", ag->speed);
+		return;
 	}
 
 	if (pll_val)
@@ -852,7 +853,8 @@ static void ath79_mii_ctrl_set_speed(struct ag71xx *ag)
 		mii_speed =  AR71XX_MII_CTRL_SPEED_1000;
 		break;
 	default:
-		BUG();
+		pr_err_once("ag71xx: cannot set MII speed for %d\n", ag->speed);
+		return;
 	}
 
 	t = __raw_readl(ag->mii_base);
@@ -909,7 +911,8 @@ __ag71xx_link_adjust(struct ag71xx *ag, bool update)
 		cfg2 |= MAC_CFG2_IF_10_100;
 		break;
 	default:
-		BUG();
+		pr_err_once("%s: unsupported link speed %u\n",
+			    ag->dev->name, speed);
 		return;
 	}
 
