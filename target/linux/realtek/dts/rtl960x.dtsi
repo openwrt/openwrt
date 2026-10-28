@@ -151,8 +151,8 @@
 		};
 
 		gpio0: gpio-controller@3300 {
-			compatible = "realtek,rtl9607-gpio";
-			reg = <0x3300 0x1c>;
+			compatible = "realtek,rtl9300-gpio", "realtek,otto-gpio";
+			reg = <0x3300 0x1c>, <0x3338 0x8>;
 
 			gpio-controller;
 			#gpio-cells = <2>;
