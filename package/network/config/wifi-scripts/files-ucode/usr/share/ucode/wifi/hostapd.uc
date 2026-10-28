@@ -277,14 +277,14 @@ function device_htmode_append(config) {
 					break;
 				}
 			config.op_class = 137;
-			config.eht_oper_chwidth = 7;
+			config.eht_oper_chwidth = 9;
 
 			/*
 			 * Set HE operation values for 160MHz backward compatibility
 			 * with WiFi 6E clients. Pick the 160MHz half that contains
 			 * the primary channel.
 			 */
-			config.he_oper_chwidth = 3;
+			config.he_oper_chwidth = 2;
 			if (config.channel < config.eht_oper_centr_freq_seg0_idx)
 				config.he_oper_centr_freq_seg0_idx = config.eht_oper_centr_freq_seg0_idx - 16;
 			else
