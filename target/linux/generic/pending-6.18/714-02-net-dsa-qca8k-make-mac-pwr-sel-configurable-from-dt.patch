@@ -1,0 +1,65 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Alexander Vickberg <wickbergster@gmail.com>
+Date: Sun, 29 Mar 2026 18:25:42 +0200
+Subject: [PATCH] net: dsa: qca8k: make MAC_PWR_SEL configurable from DT
+
+qca8k_setup_mac_pwr_sel() sets the RGMII I/O voltage bits in MAC_PWR_SEL
+(0x00e4) from the machine compatible: "qcom,ipq8064" puts RGMII0 at 1.8V
+and "qcom,ipq8065" puts RGMII1 at 1.8V. That does not match the boards:
+
+- Many ipq8064 boards (TP-Link C2600, Netgear R7500 and D7800, Linksys
+  EA8500 and others) need RGMII1 at 1.8V and RGMII0 at 1.5V. Their
+  swconfig initvals wrote 0x0006a545, DSA writes 0x000aa545. The
+  NEC WG2600HP3 (ipq8062) also lists "qcom,ipq8064" and gets the same
+  wrong value.
+- The Netgear R7500 and R7500v2 use the same SoC and need opposite
+  settings.
+- ipq8065 boards also list "qcom,ipq8064", so both checks match and both
+  interfaces end up at 1.8V. Their swconfig initvals set RGMII0 only.
+
+With 0x000aa545 the C2600 stops receiving on the CPU port after hours
+or days of traffic. Test builds that write 0x0006a545 have run for
+months without it. Those builds also stopped forcing flow control on
+the CPU ports, a change that is not part of this patch.
+
+The voltage depends on the board wiring. Replace the compatible checks
+with two boolean properties on the switch node:
+
+  qca,mac-pwr-sel-rgmii0-1p8v: RGMII0 (MAC0, bit 19) at 1.8V
+  qca,mac-pwr-sel-rgmii1-1p8v: RGMII1 (MAC5/MAC6, bit 18) at 1.8V
+
+A set bit selects 1.8V, a clear bit 1.5V (QCA8337 datasheet 80-Y0619-3
+Rev. D, table 5-43). The bits only matter with the internal regulator.
+The register is written only when at least one property is present, so
+switches without the properties keep their current value.
+
+Link: https://github.com/openwrt/openwrt/issues/18979
+Signed-off-by: Alexander Vickberg <wickbergster@gmail.com>
+[luminoso: write the register only when a property is set, rename the
+ properties to 1p8v, move the binding to its own patch, rewrite the
+ description]
+Signed-off-by: Guilherme Cardoso <luminoso@gmail.com>
+---
+ drivers/net/dsa/qca/qca8k-8xxx.c |    9 ++-------
+ 1 file changed, 2 insertions(+), 7 deletions(-)
+
+--- a/drivers/net/dsa/qca/qca8k-8xxx.c
++++ b/drivers/net/dsa/qca/qca8k-8xxx.c
+@@ -1066,15 +1066,10 @@ qca8k_setup_mac_pwr_sel(struct qca8k_pri
+ 	u32 mask = 0;
+ 	int ret = 0;
+ 
+-	/* SoC specific settings for ipq8064.
+-	 * If more device require this consider adding
+-	 * a dedicated binding.
+-	 */
+-	if (of_machine_is_compatible("qcom,ipq8064"))
++	if (device_property_read_bool(priv->dev, "qca,mac-pwr-sel-rgmii0-1p8v"))
+ 		mask |= QCA8K_MAC_PWR_RGMII0_1_8V;
+ 
+-	/* SoC specific settings for ipq8065 */
+-	if (of_machine_is_compatible("qcom,ipq8065"))
++	if (device_property_read_bool(priv->dev, "qca,mac-pwr-sel-rgmii1-1p8v"))
+ 		mask |= QCA8K_MAC_PWR_RGMII1_1_8V;
+ 
+ 	if (mask) {
