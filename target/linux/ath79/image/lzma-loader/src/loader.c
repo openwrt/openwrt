@@ -256,6 +256,25 @@ void loader_main(unsigned long reg_a0, unsigned long reg_a1,
 
 	printf("Starting kernel at %08x...\n\n", kernel_la);
 
+#ifdef CONFIG_BOARD_MIKROTIK_ROUTERBOARD_450G
+	/*
+	 * RouterBOOT 3.18 hands over its argument block as 0xa0872200, the
+	 * KSEG1 alias of the low physical address 0x00872200, which lies
+	 * inside the window the kernel image is decompressed to and is
+	 * overwritten by it.  The kernel walks argv[] in fw_init_cmdline(),
+	 * called from prom_init() before any exception handler or console
+	 * exists, and dereferencing the stale pointers wedges the CPU without
+	 * a single line on the serial port - both when this board is booted
+	 * over TFTP and when it is booted from NAND.
+	 *
+	 * ath79 takes its command line from the device tree
+	 * (CONFIG_MIPS_CMDLINE_FROM_DTB), so ignore the arguments since there
+	 * is nothing to lose, and only on this board.
+	 */
+	reg_a0 = 0;
+	reg_a1 = 0;
+#endif
+
 #ifdef CONFIG_KERNEL_CMDLINE
 	reg_a0 = kernel_argc;
 	reg_a1 = (unsigned long) kernel_argv;
