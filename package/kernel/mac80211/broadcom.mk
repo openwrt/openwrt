@@ -1,5 +1,5 @@
 PKG_DRIVERS += \
-	b43 brcmsmac brcmfmac brcmutil
+	b43 brcmfmac brcmutil
 
 PKG_CONFIG_DEPENDS += \
 	CONFIG_PACKAGE_B43_DEBUG \
@@ -25,7 +25,6 @@ config-$(CONFIG_PACKAGE_B43_PIO) += B43_PIO
 config-$(CONFIG_PACKAGE_B43_DEBUG) += B43_DEBUG
 
 config-$(call config_package,brcmutil) += BRCMUTIL
-config-$(call config_package,brcmsmac) += BRCMSMAC
 config-$(call config_package,brcmfmac) += BRCMFMAC
 config-$(CONFIG_BRCMFMAC_SDIO) += BRCMFMAC_SDIO
 config-$(CONFIG_BRCMFMAC_USB) += BRCMFMAC_USB
@@ -331,7 +330,7 @@ define KernelPackage/brcmutil
 endef
 
 define KernelPackage/brcmutil/description
- This module contains some common parts needed by Broadcom Wireless drivers brcmsmac and brcmfmac.
+ This module contains some common parts needed by the Broadcom brcmfmac wireless driver.
 endef
 
 define KernelPackage/brcmutil/config
@@ -340,56 +339,10 @@ define KernelPackage/brcmutil/config
 	config PACKAGE_BRCM80211_DEBUG
 		bool "Broadcom wireless driver debugging"
 		help
-		  Say Y, if you want to debug brcmsmac and brcmfmac wireless driver.
+		  Say Y, if you want to debug the brcmfmac wireless driver.
 
   endif
 endef
-
-PKG_BRCMSMAC_FW_NAME:=broadcom-wl
-PKG_BRCMSMAC_FW_VERSION:=5.100.138
-PKG_BRCMSMAC_FW_OBJECT:=$(PKG_BRCMSMAC_FW_NAME)-$(PKG_BRCMSMAC_FW_VERSION)/linux/wl_apsta.o
-PKG_BRCMSMAC_FW_SOURCE:=$(PKG_BRCMSMAC_FW_NAME)-$(PKG_BRCMSMAC_FW_VERSION).tar.bz2
-PKG_BRCMSMAC_FW_SOURCE_URL:=@OPENWRT
-PKG_BRCMSMAC_FW_HASH:=f1e7067aac5b62b67b8b6e4c517990277804339ac16065eb13c731ff909ae46f
-
-define Download/brcmsmac
-  FILE:=$(PKG_BRCMSMAC_FW_SOURCE)
-  URL:=$(PKG_BRCMSMAC_FW_SOURCE_URL)
-  HASH:=$(PKG_BRCMSMAC_FW_HASH)
-endef
-$(eval $(call Download,brcmsmac))
-
-define KernelPackage/brcmsmac
-  $(call KernelPackage/mac80211/Default)
-  TITLE:=Broadcom IEEE802.11n PCIe SoftMAC WLAN driver
-  URL:=https://wireless.wiki.kernel.org/en/users/drivers/brcm80211
-  DEPENDS+=@!TARGET_bcm47xx_legacy +kmod-mac80211 +!TARGET_bcm47xx:kmod-bcma +kmod-lib-cordic +kmod-lib-crc8 +kmod-brcmutil +!BRCMSMAC_USE_FW_FROM_WL:brcmsmac-firmware
-  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/broadcom/brcm80211/brcmsmac/brcmsmac.ko
-  AUTOLOAD:=$(call AutoProbe,brcmsmac)
-  MENU:=1
-endef
-
-define KernelPackage/brcmsmac/description
- Kernel module for Broadcom IEEE802.11n PCIe Wireless cards
-endef
-
-define KernelPackage/brcmsmac/config
-  if PACKAGE_kmod-brcmsmac
-
-	config BRCMSMAC_USE_FW_FROM_WL
-		bool "Use firmware extracted from broadcom proprietary driver"
-		default y
-		help
-		  Instead of using the official brcmsmac firmware a firmware
-		  version 666.2 extracted from the proprietary Broadcom driver
-		  is used. This is needed to get core rev 17 used in bcm4716
-		  to work.
-
-		  If unsure, say Y.
-
-  endif
-endef
-
 
 define KernelPackage/brcmfmac
   $(call KernelPackage/mac80211/Default)
@@ -468,13 +421,5 @@ else
 endif
 ifneq ($(CONFIG_B43_FW_SQUASH),)
 	b43-fwsquash.py "$(CONFIG_B43_FW_SQUASH_PHYTYPES)" "$(CONFIG_B43_FW_SQUASH_COREREVS)" "$(1)/lib/firmware/b43"
-endif
-endef
-
-define KernelPackage/brcmsmac/install
-	$(INSTALL_DIR) $(1)/lib/firmware/brcm
-ifeq ($(CONFIG_BRCMSMAC_USE_FW_FROM_WL),y)
-	tar xjf "$(DL_DIR)/$(PKG_BRCMSMAC_FW_SOURCE)" -C "$(PKG_BUILD_DIR)"
-	b43-fwcutter --brcmsmac -w $(1)/lib/firmware/ $(PKG_BUILD_DIR)/$(PKG_BRCMSMAC_FW_OBJECT)
 endif
 endef
