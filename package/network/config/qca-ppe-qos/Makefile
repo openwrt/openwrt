@@ -3,7 +3,6 @@ include $(TOPDIR)/rules.mk
 PKG_NAME:=qca-ppe-qos
 PKG_RELEASE:=1
 PKG_LICENSE:=GPL-2.0-only
-PKG_LICENSE_FILES:=
 PKG_MAINTAINER:=Julius Bairaktaris <julius@bairaktaris.de>
 
 include $(INCLUDE_DIR)/package.mk
