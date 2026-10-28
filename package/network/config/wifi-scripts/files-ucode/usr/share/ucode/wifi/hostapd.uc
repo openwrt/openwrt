@@ -11,8 +11,8 @@ import * as nl80211 from 'nl80211';
 import * as ap from 'wifi.ap';
 import * as fs from 'fs';
 
-const NL80211_EXT_FEATURE_ENABLE_FTM_RESPONDER = 33;
-const NL80211_EXT_FEATURE_RADAR_BACKGROUND = 61;
+const NL80211_EXT_FEATURE_ENABLE_FTM_RESPONDER = 32;
+const NL80211_EXT_FEATURE_RADAR_BACKGROUND = 60;
 
 let phy_features = {};
 let phy_capabilities = {};
