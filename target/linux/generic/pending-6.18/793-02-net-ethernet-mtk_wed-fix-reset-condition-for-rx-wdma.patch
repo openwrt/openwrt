@@ -1,0 +1,34 @@
+From: Zhi-Jun You <hujy652@gmail.com>
+Date: Mon, 26 Oct 2026 17:57:29 +0800
+Subject: [PATCH] net: ethernet: mtk_wed: fix reset condition for rx wdma
+
+In mtk_wdma_rx_reset, currently only resets the CPU index of the rings
+that doesn't have a descriptor. This is wrong because no descriptor
+means the ring is not configured.
+
+Also mtk_wed_start makes sure that all rx_wdma rings are set up this
+would lead to no ring getting their CPU index reset.
+
+Fix this by inverting the reset condition so allocated rings will be
+reset.
+
+Fixes: 4c5de09eb0d0 ("net: ethernet: mtk_wed: add configure wed wo support")
+Reported-by: Sashiko <sashiko-bot@kernel.org>
+Link: https://sashiko.dev/#/patchset/20260724172040.1653-1-hujy652%40gmail.com
+Signed-off-by: Zhi-Jun You <hujy652@gmail.com>
+---
+---
+ drivers/net/ethernet/mediatek/mtk_wed.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/net/ethernet/mediatek/mtk_wed.c
++++ b/drivers/net/ethernet/mediatek/mtk_wed.c
+@@ -257,7 +257,7 @@ mtk_wdma_rx_reset(struct mtk_wed_device
+ 	wdma_w32(dev, MTK_WDMA_RESET_IDX, 0);
+ 
+ 	for (i = 0; i < ARRAY_SIZE(dev->rx_wdma); i++) {
+-		if (dev->rx_wdma[i].desc)
++		if (!dev->rx_wdma[i].desc)
+ 			continue;
+ 
+ 		wdma_w32(dev,

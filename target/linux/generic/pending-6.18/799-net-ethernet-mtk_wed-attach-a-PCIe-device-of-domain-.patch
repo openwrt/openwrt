@@ -30,7 +30,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	/* init qmem */
  	wed_set(dev, MTK_WED_AMSDU_PSE, MTK_WED_AMSDU_PSE_RESET);
-@@ -1129,6 +1129,18 @@ mtk_wed_deinit(struct mtk_wed_device *de
+@@ -1137,6 +1137,18 @@ mtk_wed_deinit(struct mtk_wed_device *de
  	}
  }
  
@@ -49,7 +49,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  static void
  __mtk_wed_detach(struct mtk_wed_device *dev)
  {
-@@ -1162,8 +1174,7 @@ __mtk_wed_detach(struct mtk_wed_device *
+@@ -1170,8 +1182,7 @@ __mtk_wed_detach(struct mtk_wed_device *
  					   BIT(hw->index), BIT(hw->index));
  	}
  
@@ -59,7 +59,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		mtk_eth_set_dma_device(hw->eth, hw->eth->dev);
  
  	memset(dev, 0, sizeof(*dev));
-@@ -2455,7 +2466,7 @@ mtk_wed_attach(struct mtk_wed_device *de
+@@ -2476,7 +2487,7 @@ mtk_wed_attach(struct mtk_wed_device *de
  			 "mtk_wed_attach without holding the RCU read lock");
  
  	if ((dev->wlan.bus_type == MTK_WED_BUS_PCIE &&
