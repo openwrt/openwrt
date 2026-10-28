@@ -1042,7 +1042,7 @@ define KernelPackage/keys-trusted
   DEPENDS:=@KERNEL_KEYS +kmod-crypto-hash +kmod-crypto-hmac +kmod-crypto-sha1 +kmod-tpm
   KCONFIG:=CONFIG_TRUSTED_KEYS
   FILES:= $(LINUX_DIR)/security/keys/trusted-keys/trusted.ko
-  AUTOLOAD:=$(call AutoLoad,01,trusted-keys,1)
+  AUTOLOAD:=$(call AutoLoad,01,trusted,1)
 endef
 
 define KernelPackage/keys-trusted/description
