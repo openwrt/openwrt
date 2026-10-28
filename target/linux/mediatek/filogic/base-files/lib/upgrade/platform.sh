@@ -219,6 +219,7 @@ platform_do_upgrade() {
 	tplink,tl-xdr6086|\
 	tplink,tl-xdr6088|\
 	tplink,tl-xtr8488|\
+	ubnt,unifi-6-plus-ubootmod|\
 	wavlink,wl-wnt100x3-ubootmod|\
 	xiaomi,mi-router-ax3000t-ubootmod|\
 	xiaomi,redmi-router-ax6000-ubootmod|\
@@ -471,6 +472,7 @@ platform_check_image() {
 	tplink,tl-xdr6086|\
 	tplink,tl-xdr6088|\
 	tplink,tl-xtr8488|\
+	ubnt,unifi-6-plus-ubootmod|\
 	wavlink,wl-wnt100x3-ubootmod|\
 	xiaomi,mi-router-ax3000t-ubootmod|\
 	xiaomi,redmi-router-ax6000-ubootmod|\
@@ -545,7 +547,8 @@ platform_copy_config() {
 	smartrg,sdg-8733a|\
 	smartrg,sdg-8734|\
 	smartrg,sdg-9000|\
-	ubnt,unifi-6-plus)
+	ubnt,unifi-6-plus|\
+	ubnt,unifi-6-plus-ubootmod)
 		emmc_copy_config
 		;;
 	esac
