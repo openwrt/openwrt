@@ -414,7 +414,7 @@ function iface_rrm(config) {
 	set_default(config, 'rrm_beacon_report', config.ieee80211k);
 
 	append_vars(config, [
-		'rrm_neighbor_report', 'rrm_beacon_report', 'rnr', 'ftm_responder',
+		'rrm_neighbor_report', 'rrm_beacon_report', 'rnr',
 	]);
 }
 
