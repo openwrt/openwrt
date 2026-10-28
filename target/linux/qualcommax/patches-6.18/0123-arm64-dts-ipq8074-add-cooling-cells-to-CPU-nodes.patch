@@ -14,7 +14,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
 
 --- a/arch/arm64/boot/dts/qcom/ipq8074.dtsi
 +++ b/arch/arm64/boot/dts/qcom/ipq8074.dtsi
-@@ -41,6 +41,7 @@
+@@ -48,6 +48,7 @@
  			enable-method = "psci";
  			clocks = <&apcs_glb APCS_ALIAS0_CORE_CLK>;
  			clock-names = "cpu";
@@ -22,7 +22,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
  		};
  
  		cpu1: cpu@1 {
-@@ -51,6 +52,7 @@
+@@ -58,6 +59,7 @@
  			next-level-cache = <&l2_0>;
  			clocks = <&apcs_glb APCS_ALIAS0_CORE_CLK>;
  			clock-names = "cpu";
@@ -30,7 +30,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
  		};
  
  		cpu2: cpu@2 {
-@@ -61,6 +63,7 @@
+@@ -68,6 +70,7 @@
  			next-level-cache = <&l2_0>;
  			clocks = <&apcs_glb APCS_ALIAS0_CORE_CLK>;
  			clock-names = "cpu";
@@ -38,7 +38,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
  		};
  
  		cpu3: cpu@3 {
-@@ -71,6 +74,7 @@
+@@ -78,6 +81,7 @@
  			next-level-cache = <&l2_0>;
  			clocks = <&apcs_glb APCS_ALIAS0_CORE_CLK>;
  			clock-names = "cpu";
