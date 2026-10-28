@@ -10,7 +10,7 @@ include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=ppp
 PKG_VERSION:=2.5.4
-PKG_RELEASE:=3
+PKG_RELEASE:=4
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=https://download.samba.org/pub/ppp
@@ -55,6 +55,7 @@ $(call Package/ppp/Default)
   TITLE:=PPP daemon
   USERID:=ppp=454:ppp=454
   VARIANT:=default
+  CONFLICTS:=ppp-multilink
 endef
 
 define Package/ppp-multilink
@@ -63,6 +64,7 @@ $(call Package/ppp/Default)
   TITLE:=PPP daemon (with multilink support)
   USERID:=ppp=454:ppp=454
   VARIANT:=multilink
+  PROVIDES:=ppp
 endef
 
 define Package/ppp/description
