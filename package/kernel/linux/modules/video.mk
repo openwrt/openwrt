@@ -837,7 +837,7 @@ define KernelPackage/drm-panel-backlight-quirks
   KCONFIG:=CONFIG_DRM_PANEL_BACKLIGHT_QUIRKS
   DEPENDS:=+kmod-backlight
   FILES:=$(LINUX_DIR)/drivers/gpu/drm/drm_panel_backlight_quirks.ko
-  AUTOLOAD:=$(call AutoProbe,panel-backlight-quirks)
+  AUTOLOAD:=$(call AutoProbe,drm_panel_backlight_quirks)
 endef
 
 define KernelPackage/drm-panel-backlight-quirks/description
