@@ -1,0 +1,38 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Guilherme Cardoso <luminoso@gmail.com>
+Subject: [PATCH] dt-bindings: net: dsa: qca8k: add MAC_PWR_SEL voltage flags
+
+MAC_PWR_SEL (0x00e4) on the QCA8337 selects 1.5V or 1.8V I/O for the
+RGMII0 (MAC0) and RGMII1 (MAC5/MAC6) interfaces. The right setting
+depends on how the board is wired. Add two flags so the device tree
+can state it.
+
+Link: https://github.com/openwrt/openwrt/issues/18979
+Signed-off-by: Guilherme Cardoso <luminoso@gmail.com>
+---
+ Documentation/devicetree/bindings/net/dsa/qca8k.yaml |   14 ++++++++++++++
+ 1 file changed, 14 insertions(+)
+
+--- a/Documentation/devicetree/bindings/net/dsa/qca8k.yaml
++++ b/Documentation/devicetree/bindings/net/dsa/qca8k.yaml
+@@ -59,6 +59,20 @@ properties:
+       using SW regs. The pin strappings related to LED open-drain mode are
+       B68 on the QCA832x and B49 on the QCA833x.
+ 
++  qca,mac-pwr-sel-rgmii0-1p8v:
++    $ref: /schemas/types.yaml#/definitions/flag
++    description:
++      Set the MAC0 RGMII interface to 1.8V in the MAC_PWR_SEL register. If
++      either qca,mac-pwr-sel-rgmii0-1p8v or qca,mac-pwr-sel-rgmii1-1p8v is
++      set, an interface without its property is set to 1.5V. If neither is
++      set, the driver keeps its old default, which depends on the SoC
++      compatible.
++
++  qca,mac-pwr-sel-rgmii1-1p8v:
++    $ref: /schemas/types.yaml#/definitions/flag
++    description:
++      Set the MAC5/6 RGMII interface to 1.8V in the MAC_PWR_SEL register.
++
+   mdio:
+     $ref: /schemas/net/mdio.yaml#
+     unevaluatedProperties: false
