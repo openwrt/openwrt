@@ -65,7 +65,7 @@
 
 #define RTL839X_RMA_LLDP_CTRL			(0x124C)
 
-void rtldsa_839x_print_matrix(void)
+void rtldsa_839x_print_matrix(struct otto_dsa_priv *priv)
 {
 	volatile u64 *ptr9;
 
@@ -102,7 +102,7 @@ static inline int rtl839x_mac_port_ctrl(int p)
 	return RTL839X_MAC_PORT_CTRL(p);
 }
 
-static void rtl839x_traffic_set(int source, u64 dest_matrix)
+static void rtl839x_traffic_set(struct otto_dsa_priv *priv, int source, u64 dest_matrix)
 {
 	/* The isolation mask also applies to frames routed in hardware, which
 	 * may have to leave through the port they came in on. The SDK keeps a
@@ -112,12 +112,12 @@ static void rtl839x_traffic_set(int source, u64 dest_matrix)
 	rtl839x_set_port_reg_be(dest_matrix | BIT_ULL(source), rtl839x_port_iso_ctrl(source));
 }
 
-static void rtl839x_traffic_enable(int source, int dest)
+static void rtl839x_traffic_enable(struct otto_dsa_priv *priv, int source, int dest)
 {
 	rtl839x_mask_port_reg_be(0, BIT_ULL(dest), rtl839x_port_iso_ctrl(source));
 }
 
-static void rtl839x_traffic_disable(int source, int dest)
+static void rtl839x_traffic_disable(struct otto_dsa_priv *priv, int source, int dest)
 {
 	rtl839x_mask_port_reg_be(BIT_ULL(dest), 0, rtl839x_port_iso_ctrl(source));
 }
@@ -164,19 +164,21 @@ static void rtl839x_init_eee(struct otto_dsa_priv *priv, bool enable)
 	priv->eee_enabled = enable;
 }
 
-static void rtl839x_set_igr_filter(int port,  enum igr_filter state)
+static void rtl839x_set_igr_filter(struct otto_dsa_priv *priv, int port, enum igr_filter state)
 {
 	sw_w32_mask(0x3 << ((port & 0xf) << 1), state << ((port & 0xf) << 1),
 		    RTL839X_VLAN_PORT_IGR_FLTR + (((port >> 4) << 2)));
 }
 
-static void rtl839x_set_egr_filter(int port,  enum egr_filter state)
+static void rtl839x_set_egr_filter(struct otto_dsa_priv *priv, int port, enum egr_filter state)
 {
 	sw_w32_mask(0x1 << (port % 0x20), state << (port % 0x20),
 		    RTL839X_VLAN_PORT_EGR_FLTR + (((port >> 5) << 2)));
 }
 
-static void rtl839x_set_receive_management_action(int port, rma_ctrl_t type, action_type_t action)
+static void rtl839x_set_receive_management_action(struct otto_dsa_priv *priv,
+						int port, rma_ctrl_t type,
+						action_type_t action)
 {
 	switch (type) {
 	case BPDU:

@@ -103,7 +103,7 @@ static inline int rtl931x_mac_max_len_reg(int p)
 	return RTL931X_MAC_L2_PORT_MAX_LEN_CTRL + (p << 2);
 }
 
-void rtldsa_931x_print_matrix(void)
+void rtldsa_931x_print_matrix(struct otto_dsa_priv *priv)
 {
 	int tbl = otto_table_acquire(RTL9310_TBL_PORT_ISO_CTRL);
 	u32 v[2];
@@ -115,8 +115,9 @@ void rtldsa_931x_print_matrix(void)
 	otto_table_release(tbl);
 }
 
-static void rtldsa_931x_set_receive_management_action(int port, rma_ctrl_t type,
-						      action_type_t action)
+static void rtldsa_931x_set_receive_management_action(struct otto_dsa_priv *priv,
+						int port, rma_ctrl_t type,
+						action_type_t action)
 {
 	u32 shift;
 	u32 value;
@@ -195,7 +196,7 @@ static void rtldsa_931x_set_receive_management_action(int port, rma_ctrl_t type,
 }
 
 /* Enable traffic between a source port and a destination port matrix */
-static void rtl931x_traffic_set(int source, u64 dest_matrix)
+static void rtl931x_traffic_set(struct otto_dsa_priv *priv, int source, u64 dest_matrix)
 {
 	u32 buf[2] = { dest_matrix >> (32 - 7), dest_matrix << 7 };
 
@@ -203,7 +204,7 @@ static void rtl931x_traffic_set(int source, u64 dest_matrix)
 }
 
 /* The ternary below only ever selects word 0 or 1, whatever dest is */
-static void rtl931x_traffic_enable(int source, int dest)
+static void rtl931x_traffic_enable(struct otto_dsa_priv *priv, int source, int dest)
 {
 	int tbl = otto_table_acquire(RTL9310_TBL_PORT_ISO_CTRL);
 	int idx = (dest + 7) / 32 ? 0 : 1;
@@ -215,7 +216,7 @@ static void rtl931x_traffic_enable(int source, int dest)
 	otto_table_release(tbl);
 }
 
-static void rtl931x_traffic_disable(int source, int dest)
+static void rtl931x_traffic_disable(struct otto_dsa_priv *priv, int source, int dest)
 {
 	int tbl = otto_table_acquire(RTL9310_TBL_PORT_ISO_CTRL);
 	int idx = (dest + 7) / 32 ? 0 : 1;
@@ -227,13 +228,13 @@ static void rtl931x_traffic_disable(int source, int dest)
 	otto_table_release(tbl);
 }
 
-static void rtl931x_set_igr_filter(int port, enum igr_filter state)
+static void rtl931x_set_igr_filter(struct otto_dsa_priv *priv, int port, enum igr_filter state)
 {
 	sw_w32_mask(0x3 << ((port & 0xf) << 1), state << ((port & 0xf) << 1),
 		    RTL931X_VLAN_PORT_IGR_FLTR + (((port >> 4) << 2)));
 }
 
-static void rtl931x_set_egr_filter(int port,  enum egr_filter state)
+static void rtl931x_set_egr_filter(struct otto_dsa_priv *priv, int port, enum egr_filter state)
 {
 	sw_w32_mask(0x1 << (port % 0x20), state << (port % 0x20),
 		    RTL931X_VLAN_PORT_EGR_FLTR + (((port >> 5) << 2)));

@@ -99,7 +99,7 @@
 #define RTL930X_SMI_MAC_TYPE_MULTIGIG_PHY	0x1
 #define RTL930X_SMI_MAC_TYPE_1G_PHY		0x3
 
-void rtldsa_930x_print_matrix(void)
+void rtldsa_930x_print_matrix(struct otto_dsa_priv *priv)
 {
 	int tbl = otto_table_acquire(RTL9300_TBL_PORT_ISO_CTRL);
 	u32 v;
@@ -126,8 +126,9 @@ static inline int rtl930x_mac_max_len_reg(int p)
 	return RTL930X_MAC_L2_PORT_MAX_LEN_CTRL(p);
 }
 
-static void rtldsa_930x_set_receive_management_action(int port, rma_ctrl_t type,
-						      action_type_t action)
+static void rtldsa_930x_set_receive_management_action(struct otto_dsa_priv *priv,
+						int port, rma_ctrl_t type,
+						action_type_t action)
 {
 	u32 shift;
 	u32 value;
@@ -206,14 +207,14 @@ static void rtldsa_930x_set_receive_management_action(int port, rma_ctrl_t type,
 }
 
 /* Enable traffic between a source port and a destination port matrix */
-static void rtl930x_traffic_set(int source, u64 dest_matrix)
+static void rtl930x_traffic_set(struct otto_dsa_priv *priv, int source, u64 dest_matrix)
 {
 	u32 v = dest_matrix << 3;
 
 	otto_table_write(RTL9300_TBL_PORT_ISO_CTRL, source, &v);
 }
 
-static void rtl930x_traffic_enable(int source, int dest)
+static void rtl930x_traffic_enable(struct otto_dsa_priv *priv, int source, int dest)
 {
 	int tbl = otto_table_acquire(RTL9300_TBL_PORT_ISO_CTRL);
 	u32 v;
@@ -224,7 +225,7 @@ static void rtl930x_traffic_enable(int source, int dest)
 	otto_table_release(tbl);
 }
 
-static void rtl930x_traffic_disable(int source, int dest)
+static void rtl930x_traffic_disable(struct otto_dsa_priv *priv, int source, int dest)
 {
 	int tbl = otto_table_acquire(RTL9300_TBL_PORT_ISO_CTRL);
 	u32 v;
@@ -235,7 +236,7 @@ static void rtl930x_traffic_disable(int source, int dest)
 	otto_table_release(tbl);
 }
 
-void rtl9300_dump_debug(void)
+void rtl9300_dump_debug(struct otto_dsa_priv *priv)
 {
 	u16 r = RTL930X_STAT_PRVTE_DROP_COUNTER0;
 
@@ -247,7 +248,7 @@ void rtl9300_dump_debug(void)
 	}
 	pr_debug("# %08x %08x %08x %08x %08x\n",
 		 sw_r32(r), sw_r32(r + 4), sw_r32(r + 8), sw_r32(r + 12), sw_r32(r + 16));
-	rtldsa_930x_print_matrix();
+	rtldsa_930x_print_matrix(priv);
 	pr_debug("RTL930X_L2_PORT_SABLK_CTRL: %08x, RTL930X_L2_PORT_DABLK_CTRL %08x\n",
 		 sw_r32(RTL930X_L2_PORT_SABLK_CTRL), sw_r32(RTL930X_L2_PORT_DABLK_CTRL)
 
@@ -392,13 +393,13 @@ static void rtl930x_init_eee(struct otto_dsa_priv *priv, bool enable)
 // 	return mtu_id;
 // }
 
-static void rtl930x_set_igr_filter(int port,  enum igr_filter state)
+static void rtl930x_set_igr_filter(struct otto_dsa_priv *priv, int port, enum igr_filter state)
 {
 	sw_w32_mask(0x3 << ((port & 0xf) << 1), state << ((port & 0xf) << 1),
 		    RTL930X_VLAN_PORT_IGR_FLTR + (((port >> 4) << 2)));
 }
 
-static void rtl930x_set_egr_filter(int port,  enum egr_filter state)
+static void rtl930x_set_egr_filter(struct otto_dsa_priv *priv, int port, enum egr_filter state)
 {
 	sw_w32_mask(0x1 << (port % 0x1D), state << (port % 0x1D),
 		    RTL930X_VLAN_PORT_EGR_FLTR + (((port / 29) << 2)));

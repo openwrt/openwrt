@@ -959,19 +959,19 @@ int otto_vlan_port_filtering(struct dsa_switch *ds, int port,
 		 * The Egress filter used 1 bit per state (0: DISABLED, 1: ENABLED)
 		 */
 		if (port != priv->r->cpu_port) {
-			priv->r->set_vlan_igr_filter(port, IGR_DROP);
-			priv->r->set_vlan_egr_filter(port, EGR_ENABLE);
+			priv->r->set_vlan_igr_filter(priv, port, IGR_DROP);
+			priv->r->set_vlan_egr_filter(priv, port, EGR_ENABLE);
 		} else {
-			priv->r->set_vlan_igr_filter(port, IGR_TRAP);
-			priv->r->set_vlan_egr_filter(port, EGR_DISABLE);
+			priv->r->set_vlan_igr_filter(priv, port, IGR_TRAP);
+			priv->r->set_vlan_egr_filter(priv, port, EGR_DISABLE);
 		}
 
 	} else {
 		/* Disable ingress and egress filtering */
 		if (port != priv->r->cpu_port)
-			priv->r->set_vlan_igr_filter(port, IGR_FORWARD);
+			priv->r->set_vlan_igr_filter(priv, port, IGR_FORWARD);
 
-		priv->r->set_vlan_egr_filter(port, EGR_DISABLE);
+		priv->r->set_vlan_egr_filter(priv, port, EGR_DISABLE);
 	}
 
 	priv->ports[port].vlan_filtering = vlan_filtering;

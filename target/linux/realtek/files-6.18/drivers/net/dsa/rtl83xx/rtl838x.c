@@ -73,7 +73,7 @@
 
 #define RTL838X_RMA_LLDP_CTRL			(0x4340)
 
-void rtldsa_838x_print_matrix(void)
+void rtldsa_838x_print_matrix(struct otto_dsa_priv *priv)
 {
 	unsigned volatile int *ptr8;
 
@@ -100,17 +100,17 @@ static inline int rtl838x_mac_port_ctrl(int p)
 	return RTL838X_MAC_PORT_CTRL(p);
 }
 
-static void rtl838x_traffic_set(int source, u64 dest_matrix)
+static void rtl838x_traffic_set(struct otto_dsa_priv *priv, int source, u64 dest_matrix)
 {
 	rtl838x_set_port_reg(dest_matrix, rtl838x_port_iso_ctrl(source));
 }
 
-static void rtl838x_traffic_enable(int source, int dest)
+static void rtl838x_traffic_enable(struct otto_dsa_priv *priv, int source, int dest)
 {
 	rtl838x_mask_port_reg(0, BIT(dest), rtl838x_port_iso_ctrl(source));
 }
 
-static void rtl838x_traffic_disable(int source, int dest)
+static void rtl838x_traffic_disable(struct otto_dsa_priv *priv, int source, int dest)
 {
 	rtl838x_mask_port_reg(BIT(dest), 0, rtl838x_port_iso_ctrl(source));
 }
@@ -158,19 +158,21 @@ static void rtl838x_init_eee(struct otto_dsa_priv *priv, bool enable)
 	priv->eee_enabled = enable;
 }
 
-static void rtl838x_set_igr_filter(int port, enum igr_filter state)
+static void rtl838x_set_igr_filter(struct otto_dsa_priv *priv, int port, enum igr_filter state)
 {
 	sw_w32_mask(0x3 << ((port & 0xf) << 1), state << ((port & 0xf) << 1),
 		    RTL838X_VLAN_PORT_IGR_FLTR + (((port >> 4) << 2)));
 }
 
-static void rtl838x_set_egr_filter(int port, enum egr_filter state)
+static void rtl838x_set_egr_filter(struct otto_dsa_priv *priv, int port, enum egr_filter state)
 {
 	sw_w32_mask(0x1 << (port % 0x1d), state << (port % 0x1d),
 		    RTL838X_VLAN_PORT_EGR_FLTR + (((port / 29) << 2)));
 }
 
-static void rtl838x_set_receive_management_action(int port, rma_ctrl_t type, action_type_t action)
+static void rtl838x_set_receive_management_action(struct otto_dsa_priv *priv,
+						int port, rma_ctrl_t type,
+						action_type_t action)
 {
 	switch (type) {
 	case BPDU:
