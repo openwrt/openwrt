@@ -152,10 +152,17 @@ static int rb4xx_gpio_probe(struct platform_device *pdev)
 	return devm_gpiochip_add_data(dev, &gpio->chip, gpio);
 }
 
+static const struct of_device_id rb4xx_gpio_of_match[] = {
+	{ .compatible = "mikrotik,rb4xx-gpio" },
+	{ }
+};
+MODULE_DEVICE_TABLE(of, rb4xx_gpio_of_match);
+
 static struct platform_driver rb4xx_gpio_driver = {
 	.probe = rb4xx_gpio_probe,
 	.driver = {
 		.name = "rb4xx-gpio",
+		.of_match_table = rb4xx_gpio_of_match,
 	},
 };
 
