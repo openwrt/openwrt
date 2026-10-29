@@ -1,0 +1,47 @@
+From 33743858c7585a23d56ef83c56322f5288f997fd Mon Sep 17 00:00:00 2001
+From: Hleb Shauchenka <me@marleb.org>
+Date: Sat, 7 Nov 2026 17:39:47 +0100
+Subject: [PATCH net-next v2 2/3] net: phy: realtek: return MDIO read errors
+ from hwmon
+
+rtl822x_hwmon_read() masks or shifts the value returned by
+phy_read_mmd() without checking it and returns success, so a failed
+MDIO read is reported as a temperature: -EIO reads as -2.5 C and
+-ETIMEDOUT as -55 C.
+
+Return the error instead. Once the sensor feeds a thermal zone, the
+thermal core then keeps its previous state rather than acting on a
+bogus reading.
+
+The problem was found by an AI review of the previous posting, and
+this patch was prepared with AI assistance (Claude Opus 5.5). It is
+build-tested only: I could not provoke a failed MDIO read on hardware.
+
+Link: https://lore.kernel.org/netdev/20261107-realtek-hwmon-tz-v2-2-6b9a69d44470@marleb.org/
+Fixes: 33700ca45b7d ("net: phy: realtek: add hwmon support for temp sensor on RTL822x")
+Signed-off-by: Hleb Shauchenka <me@marleb.org>
+---
+--- a/drivers/net/phy/realtek/realtek_hwmon.c
++++ b/drivers/net/phy/realtek/realtek_hwmon.c
+@@ -30,13 +30,17 @@ static int rtl822x_hwmon_read(struct dev
+ 
+ 	switch (attr) {
+ 	case hwmon_temp_input:
+-		raw = phy_read_mmd(phydev, MDIO_MMD_VEND2, RTL822X_VND2_TSRR) & 0x3ff;
+-		*val = rtl822x_hwmon_get_temp(raw);
++		raw = phy_read_mmd(phydev, MDIO_MMD_VEND2, RTL822X_VND2_TSRR);
++		if (raw < 0)
++			return raw;
++		*val = rtl822x_hwmon_get_temp(raw & 0x3ff);
+ 		break;
+ 	case hwmon_temp_max:
+ 		/* Chip reduces speed to 1G if threshold is exceeded */
+-		raw = phy_read_mmd(phydev, MDIO_MMD_VEND2, RTL822X_VND2_TSSR) >> 6;
+-		*val = rtl822x_hwmon_get_temp(raw);
++		raw = phy_read_mmd(phydev, MDIO_MMD_VEND2, RTL822X_VND2_TSSR);
++		if (raw < 0)
++			return raw;
++		*val = rtl822x_hwmon_get_temp(raw >> 6);
+ 		break;
+ 	default:
+ 		return -EINVAL;
