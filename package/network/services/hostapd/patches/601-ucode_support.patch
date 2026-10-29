@@ -42,8 +42,17 @@ as adding/removing interfaces.
  
  	return global;
  }
-@@ -9002,6 +9008,8 @@ void wpa_supplicant_deinit(struct wpa_gl
- 
+@@ -8994,6 +9000,8 @@ void wpa_supplicant_deinit(struct wpa_gl
+ 	wifi_display_deinit(global);
+ #endif /* CONFIG_WIFI_DISPLAY */
+
++	wpas_ucode_terminate();
++
+ 	while (global->ifaces)
+ 		wpa_supplicant_remove_iface(global, global->ifaces, 1);
+
+@@ -9002,6 +9010,8 @@ void wpa_supplicant_deinit(struct wpa_gl
+
  	wpas_notify_supplicant_deinitialized(global);
  
 +	wpas_ucode_free();

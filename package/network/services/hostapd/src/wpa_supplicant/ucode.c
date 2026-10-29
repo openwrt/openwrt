@@ -941,6 +941,12 @@ free_vm:
 	return -1;
 }
 
+void wpas_ucode_terminate(void)
+{
+	if (wpa_ucode_call_prepare("terminate") == 0)
+		ucv_put(wpa_ucode_call(0));
+}
+
 void wpas_ucode_free(void)
 {
 	if (wpa_ucode_call_prepare("shutdown") == 0)
