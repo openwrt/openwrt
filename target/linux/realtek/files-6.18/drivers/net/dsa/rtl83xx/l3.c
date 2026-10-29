@@ -532,7 +532,8 @@ static int otto_l3_930x_host_route_read(struct otto_l3_ctrl *ctrl, int idx,
 }
 
 /* Write a host route entry from the table using its index. Only unicast routes supported */
-static void otto_l3_930x_host_route_write(struct otto_l3_ctrl *ctrl, int idx, struct otto_l3_route *rt)
+static int otto_l3_930x_host_route_write(struct otto_l3_ctrl *ctrl, int idx,
+					 struct otto_l3_route *rt)
 {
 	/* Only the unicast layout is handled below */
 	u32 data[5];
@@ -574,10 +575,10 @@ static void otto_l3_930x_host_route_write(struct otto_l3_ctrl *ctrl, int idx, st
 	case ROUTE_TYPE_IP4MC:
 	case ROUTE_TYPE_IP6MC:
 		dev_warn(ctrl->dev, "route type not supported\n");
-		return;
+		return -EOPNOTSUPP;
 	}
 
-	otto_table_write(RTL9300_TBL_L3_HOST_ROUTE_IPUC, idx, &data);
+	return otto_table_write(RTL9300_TBL_L3_HOST_ROUTE_IPUC, idx, &data);
 }
 
 /* Slots one entry occupies, by type: IPv4 unicast, IPv4 multicast, IPv6
