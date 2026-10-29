@@ -1,0 +1,151 @@
+From 538499b65ac7bb2dc29d4a4fe18407a237607705 Mon Sep 17 00:00:00 2001
+From: Denys Vlasenko <vda.linux@googlemail.com>
+Date: Sun, 11 Oct 2026 17:48:38 +0200
+Subject: [PATCH] ash,hush: fix read builtin versus already-handled signal
+
+function                                             old     new   delta
+builtin_read                                         178     205     +27
+shell_builtin_read                                  1340    1350     +10
+pgetc                                                623     633     +10
+dotrap                                               157     164      +7
+check_and_run_traps                                  278     285      +7
+readcmd                                              227     222      -5
+------------------------------------------------------------------------------
+(add/remove: 0/0 grow/shrink: 5/1 up/down: 61/-5)              Total: 56 bytes
+
+Signed-off-by: Denys Vlasenko <vda.linux@googlemail.com>
+[pepe.schlehofer@gmail.com: backport to 1.38.0, adjust the preadfd() hunk
+ to its code, drop the test suite changes]
+---
+ shell/ash.c          | 15 +++++++++------
+ shell/hush.c         | 12 +++++++++---
+ shell/shell_common.c | 18 ++++++++++++++++++
+ 3 files changed, 36 insertions(+), 9 deletions(-)
+
+--- a/shell/ash.c
++++ b/shell/ash.c
+@@ -3664,7 +3664,7 @@ signal_handler(int signo)
+ 		if (!trap[SIGCHLD])
+ 			return;
+ 	}
+-#if ENABLE_FEATURE_EDITING
++#if 1 // ENABLE_FEATURE_EDITING || IF_READ_WHICH_WE_ALWAYS_SUPPORT
+ //TODO: don't do it if it's SIGCHLD?
+ 	bb_got_signal = signo; /* for read_line_input / read builtin: "we got a signal" */
+ #endif
+@@ -9585,8 +9585,7 @@ static int funcline;            /* start
+ static int evalstring(char *s, int flags);
+ 
+ /* Called to execute a trap.
+- * Single callsite - at the end of evaltree().
+- * If we return non-zero, evaltree raises EXEXIT exception.
++ * Called in at the beginning and end of evaltree(), and in readcmd() if signal is trapped.
+  *
+  * Perhaps we should avoid entering new trap handlers
+  * while we are executing a trap handler. [is it a TODO?]
+@@ -9607,6 +9606,7 @@ dotrap(void)
+ 		status = exitstatus;
+ 		savestatus = status;
+ 	}
++	bb_got_signal = 0; /* or else read builtin gets immediately "interrupted" by already handled past signal */
+ 	pending_sig = 0;
+ 	barrier();
+ 
+@@ -11384,6 +11384,8 @@ preadfd(void)
+ 		 * #(bash 5.0.17 exits after first "T", looks like a bug)
+ 		 */
+ 		bb_got_signal = 0;
++		if (pending_sig)
++			goto got_signal;
+ 		INTOFF; /* no longjmp'ing out of read_line_input please */
+ 		nr = read_line_input(line_input_state, cmdedit_prompt, buf, IBUFSIZ);
+ 		if (bb_got_signal == SIGINT)
+@@ -11412,6 +11414,7 @@ preadfd(void)
+ 				nr = 0;
+ 			}
+ 			else if (errno == EINTR) { /* got signal? */
++ got_signal:
+ 				if (bb_got_signal != SIGINT)
+ 					write(STDOUT_FILENO, "\n", 1);
+ 				goto empty_line_input;
+@@ -14654,14 +14657,14 @@ readcmd(int argc UNUSED_PARAM, char **ar
+  again:
+ 	INTOFF;
+ 	r = shell_builtin_read(&params);
+-	INTON;
++	INTON; /* here non-blocked SIGINT will longjmp */
+ 
+ 	if ((uintptr_t)r == 1 && errno == EINTR) {
+ 		/* To get SIGCHLD: sleep 1 & read x; echo $x
+ 		 * Correct behavior is to not exit "read"
+ 		 */
+-		if (pending_sig == 0)
+-			goto again;
++		dotrap(); /* NOP if pending_sig == 0 */
++		goto again;
+ 	}
+ 
+ 	if ((uintptr_t)r == 2) /* -t SEC timeout? */
+--- a/shell/hush.c
++++ b/shell/hush.c
+@@ -2085,7 +2085,7 @@ enum {
+ static void record_pending_signo(int sig)
+ {
+ 	sigaddset(&G.pending_set, sig);
+-#if ENABLE_FEATURE_EDITING
++#if ENABLE_FEATURE_EDITING || ENABLE_HUSH_READ
+ 	if (sig != SIGCHLD
+ 	 || (G_traps && G_traps[SIGCHLD] && G_traps[SIGCHLD][0])
+ 	 /* ^^^ if SIGCHLD, interrupt line reading only if it has a trap */
+@@ -2280,7 +2280,9 @@ static NORETURN void save_history_run_ex
+ static int check_and_run_traps(void)
+ {
+ 	int last_sig = 0;
+-
++#if ENABLE_HUSH_READ
++	bb_got_signal = 0; /* or else read builtin gets immediately "interrupted" by already handled past signal */
++#endif
+ 	while (1) {
+ 		int sig;
+ 
+@@ -11753,8 +11755,12 @@ static int FAST_FUNC builtin_read(char *
+ 
+ 	if ((uintptr_t)r == 1 && errno == EINTR) {
+ 		unsigned sig = check_and_run_traps();
+-		if (sig != SIGINT)
++		if (sig != SIGINT
++		 || (G_traps && G_traps[SIGINT] && G_traps[SIGINT][0])
++		) {
++			/* Redo the read after signals other than untrapped SIGINT */
+ 			goto again;
++		}
+ 	}
+ 
+ 	if ((uintptr_t)r == 2) /* -t SEC timeout? */
+--- a/shell/shell_common.c
++++ b/shell/shell_common.c
+@@ -224,6 +224,24 @@ shell_builtin_read(struct builtin_read_p
+ 				retval = (const char *)(uintptr_t)2;
+ 				break;
+ 			}
++			// Both ash and hush set bb_got_signal in their signal handlers.
++// This can be handled cleaner via:
++// bb_got_signal = 0;
++// if (shell_already_knows_it_has_pending_signal())
++//	return -1 + EINTR;
++// check_got_signal_and_poll()
++// ...
++// but shell_already_knows_it_has_pending_signal() check is shell-specific!
++// Therefore we can't clear bb_got_signal here - we depend on trap processing
++// clearing it every time traps are run (not leaving it stuck in a set state).
++			if (errno == EINTR) {
++				// We got a signal and our caller will act on it after seeing EINTR.
++				// Clear its indicator (if any) so that we do not "get signal" ad infinitum.
++				// Testcases:
++				// ash -c 'trap "echo I" int; (sleep 1;kill -int $$)& read -pP: v'
++				// ash -c 'trap "echo I" int; (sleep 1;kill -int $$)& sleep 2; read -pP: v'
++				bb_got_signal = 0;
++			}
+ 			retval = (const char *)(uintptr_t)1;
+ 			goto ret;
+ 		}
