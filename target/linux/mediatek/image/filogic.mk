@@ -425,7 +425,7 @@ define Device/airtel_aap4221zy
   UBINIZE_OPTS := -E 5
   BLOCKSIZE := 256k
   PAGESIZE := 4096
-  IMAGE_SIZE := 131072k
+  IMAGE_SIZE := 465408k
   KERNEL_IN_UBI := 1
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
 endef
