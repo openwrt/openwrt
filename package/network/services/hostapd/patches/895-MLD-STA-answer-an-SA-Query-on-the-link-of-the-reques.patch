@@ -1,0 +1,136 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Thu, 29 Oct 2026 23:02:42 +0100
+Subject: [PATCH] MLD STA: answer an SA Query on the link of the request
+
+With OCV, a non-AP MLD validates an SA Query Request against the
+association link and answers on that link with its OCI. An AP MLD sends
+the request on another link where an established advertised TID-to-link
+mapping disables the association link, and the driver then refuses the
+response, since it does not send a frame to the AP MLD off-channel. IEEE
+Std 802.11-2024 11.13: a STA that receives an SA Query Request "shall
+respond".
+
+Validate the OCI of a received SA Query frame against the link that
+received it, and answer a request on that link with its OCI. The SA
+Query Request of the station keeps the association link, since user
+space does not know which other links are enabled.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/wpa_supplicant/events.c
++++ b/wpa_supplicant/events.c
+@@ -6012,7 +6012,8 @@ static void wpas_event_rx_mgmt_action(struct wpa_supplicant *wpa_s,
+ 
+ #ifdef CONFIG_SME
+ 	if (category == WLAN_ACTION_SA_QUERY) {
+-		sme_sa_query_rx(wpa_s, mgmt->da, mgmt->sa, payload, plen);
++		sme_sa_query_rx(wpa_s, mgmt->da, mgmt->sa, payload, plen,
++				freq);
+ 		return;
+ 	}
+ #endif /* CONFIG_SME */
+--- a/wpa_supplicant/sme.c
++++ b/wpa_supplicant/sme.c
+@@ -5592,12 +5592,26 @@ void sme_event_ch_switch(struct wpa_supplicant *wpa_s)
+ }
+ 
+ 
++static int sme_link_id_by_freq(struct wpa_supplicant *wpa_s, int freq)
++{
++	int i;
++
++	for_each_link(wpa_s->valid_links, i) {
++		if (wpa_s->links[i].freq == (unsigned int) freq)
++			return i;
++	}
++
++	return -1;
++}
++
++
+ static void sme_process_sa_query_request(struct wpa_supplicant *wpa_s,
+ 					 const u8 *sa, const u8 *data,
+-					 size_t len)
++					 size_t len, int link_id)
+ {
+ 	u8 resp[2 + WLAN_SA_QUERY_TR_ID_LEN + OCV_OCI_EXTENDED_LEN];
+ 	u8 resp_len = 2 + WLAN_SA_QUERY_TR_ID_LEN;
++	unsigned int freq;
+ 
+ 	wpa_dbg(wpa_s, MSG_DEBUG, "SME: Sending SA Query Response to "
+ 		MACSTR, MAC2STR(wpa_s->bssid));
+@@ -5605,12 +5619,18 @@ static void sme_process_sa_query_request(struct wpa_supplicant *wpa_s,
+ 	resp[0] = WLAN_ACTION_SA_QUERY;
+ 	resp[1] = WLAN_SA_QUERY_RESPONSE;
+ 	os_memcpy(resp + 2, data + 1, WLAN_SA_QUERY_TR_ID_LEN);
++	freq = wpas_ap_action_freq(wpa_s, wpa_sm_ocv_enabled(wpa_s->wpa));
+ 
+ #ifdef CONFIG_OCV
+ 	if (wpa_sm_ocv_enabled(wpa_s->wpa)) {
+ 		struct wpa_channel_info ci;
+ 
+-		if (wpa_drv_channel_info(wpa_s, -1, &ci) != 0) {
++		/* The OCI names the channel of the link that carries the
++		 * response: the link of the request */
++		if (link_id >= 0)
++			freq = wpa_s->links[link_id].freq;
++
++		if (wpa_drv_channel_info(wpa_s, link_id, &ci) != 0) {
+ 			wpa_printf(MSG_WARNING,
+ 				   "Failed to get channel info for OCI element in SA Query Response frame");
+ 			return;
+@@ -5633,11 +5653,8 @@ static void sme_process_sa_query_request(struct wpa_supplicant *wpa_s,
+ 	}
+ #endif /* CONFIG_OCV */
+ 
+-	if (wpa_drv_send_action(wpa_s,
+-				wpas_ap_action_freq(
+-					wpa_s, wpa_sm_ocv_enabled(wpa_s->wpa)),
+-				0, wpa_s->bssid, wpa_s->own_addr, wpa_s->bssid,
+-				resp, resp_len, 0) < 0)
++	if (wpa_drv_send_action(wpa_s, freq, 0, wpa_s->bssid, wpa_s->own_addr,
++				wpa_s->bssid, resp, resp_len, 0) < 0)
+ 		wpa_msg(wpa_s, MSG_INFO,
+ 			"SME: Failed to send SA Query Response");
+ }
+@@ -5678,8 +5695,10 @@ static void sme_process_sa_query_response(struct wpa_supplicant *wpa_s,
+ 
+ 
+ void sme_sa_query_rx(struct wpa_supplicant *wpa_s, const u8 *da, const u8 *sa,
+-		     const u8 *data, size_t len)
++		     const u8 *data, size_t len, int freq)
+ {
++	int link_id = sme_link_id_by_freq(wpa_s, freq);
++
+ 	if (len < 1 + WLAN_SA_QUERY_TR_ID_LEN)
+ 		return;
+ 	if (is_multicast_ether_addr(da)) {
+@@ -5705,7 +5724,7 @@ void sme_sa_query_rx(struct wpa_supplicant *wpa_s, const u8 *da, const u8 *sa,
+ 			return;
+ 		}
+ 
+-		if (wpa_drv_channel_info(wpa_s, -1, &ci) != 0) {
++		if (wpa_drv_channel_info(wpa_s, link_id, &ci) != 0) {
+ 			wpa_printf(MSG_WARNING,
+ 				   "Failed to get channel info to validate received OCI in SA Query Action frame");
+ 			return;
+@@ -5724,7 +5743,7 @@ void sme_sa_query_rx(struct wpa_supplicant *wpa_s, const u8 *da, const u8 *sa,
+ #endif /* CONFIG_OCV */
+ 
+ 	if (data[0] == WLAN_SA_QUERY_REQUEST)
+-		sme_process_sa_query_request(wpa_s, sa, data, len);
++		sme_process_sa_query_request(wpa_s, sa, data, len, link_id);
+ 	else if (data[0] == WLAN_SA_QUERY_RESPONSE)
+ 		sme_process_sa_query_response(wpa_s, sa, data, len);
+ }
+--- a/wpa_supplicant/sme.h
++++ b/wpa_supplicant/sme.h
+@@ -32,7 +32,7 @@ void sme_event_unprot_disconnect(struct wpa_supplicant *wpa_s, const u8 *sa,
+ 				 const u8 *da, u16 reason_code);
+ void sme_event_ch_switch(struct wpa_supplicant *wpa_s);
+ void sme_sa_query_rx(struct wpa_supplicant *wpa_s, const u8 *da, const u8 *sa,
+-		     const u8 *data, size_t len);
++		     const u8 *data, size_t len, int freq);
+ void sme_state_changed(struct wpa_supplicant *wpa_s);
+ void sme_clear_on_disassoc(struct wpa_supplicant *wpa_s);
+ void sme_deinit(struct wpa_supplicant *wpa_s);
