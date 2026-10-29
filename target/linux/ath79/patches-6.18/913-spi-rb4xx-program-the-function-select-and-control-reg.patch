@@ -1,0 +1,111 @@
+From 9ddde32ed3085b0f0e9cda12c73561c10c97b416 Mon Sep 17 00:00:00 2001
+From: xiao bo <peterwillcn@gmail.com>
+Subject: [PATCH] spi: rb4xx: program the function select and control register per message
+
+The ar71xx driver entered GPIO mode and programmed the clock control
+register before every message and restored both afterwards, but the
+merged driver only touches the function select register once in probe
+and never writes the control register at all.
+
+As a result the CPLD on the MikroTik RB4xx boards no longer latches
+commands: the LED class devices are registered and the transfers
+complete without error,
+
+  rb4xx-spi: cs=1 len=2 nbits=1 first=0x9
+  rb4xx-cpld: set_0_7 val=0x8e -> 0
+
+yet no LED changes and the NAND behind the same CPLD channel is not
+detected ("nand: No NAND device found").  Booting the same board with
+the ar71xx based firmware shows the CPLD and NAND working, with
+
+  mtd4: 00040000 00020000 "booter"
+  mtd5: 003c0000 00020000 "kernel"
+  mtd6: 1fc00000 00020000 "ubi"
+
+so this is a driver regression rather than a hardware limitation.
+
+Enter GPIO mode and program the control register when a message
+starts, and leave GPIO mode again when it ends, matching
+rb4xx_spi_msg() from the ar71xx driver.  The divider is derived from
+the same 25 MHz the flash and the CPLD are described with, and is
+clamped to one because the SoC reads the first bit wrongly with a
+zero divider.
+
+--- a/drivers/spi/spi-rb4xx.c
++++ b/drivers/spi/spi-rb4xx.c
+@@ -22,6 +22,7 @@
+ #define AR71XX_SPI_REG_RDS		0x0c	/* Read Data Shift */
+ 
+ #define AR71XX_SPI_FS_GPIO		BIT(0)	/* Enable GPIO mode */
++#define AR71XX_SPI_CTRL_FAST		BIT(6)	/* Fast clock */
+ 
+ #define AR71XX_SPI_IOC_DO		BIT(0)	/* Data Out pin */
+ #define AR71XX_SPI_IOC_CLK		BIT(8)	/* CLK pin */
+@@ -30,6 +31,7 @@
+ struct rb4xx_spi {
+ 	void __iomem *base;
+ 	struct clk *clk;
++	u32 spi_ctrl_flash;
+ };
+ 
+ static inline u32 rb4xx_read(struct rb4xx_spi *rbspi, u32 reg)
+@@ -92,13 +94,22 @@ static void rb4xx_set_cs(struct spi_devi
+ 	struct rb4xx_spi *rbspi = spi_controller_get_devdata(spi->controller);
+ 
+ 	/*
+-	 * Setting CS is done along with bitbanging the actual values,
+-	 * since it's all on the same hardware register. However the
+-	 * CPLD needs CS deselected after every command.
++	 * The SPI core passes !enable here, so "enable" means the end of the
++	 * message.  The bus is driven through the I/O control register while
++	 * the function select register is in GPIO mode, which has to be
++	 * entered before the first bit and left again afterwards.  The CPLD
++	 * also needs CS deselected after every command, otherwise it never
++	 * latches it.
+ 	 */
+-	if (enable)
++	if (enable) {
+ 		rb4xx_write(rbspi, AR71XX_SPI_REG_IOC,
+ 			    AR71XX_SPI_IOC_CS(0) | AR71XX_SPI_IOC_CS(1));
++		rb4xx_write(rbspi, AR71XX_SPI_REG_CTRL, rbspi->spi_ctrl_flash);
++		rb4xx_write(rbspi, AR71XX_SPI_REG_FS, 0);
++	} else {
++		rb4xx_write(rbspi, AR71XX_SPI_REG_FS, AR71XX_SPI_FS_GPIO);
++		rb4xx_write(rbspi, AR71XX_SPI_REG_CTRL, rbspi->spi_ctrl_flash);
++	}
+ }
+ 
+ static int rb4xx_transfer_one(struct spi_controller *host,
+@@ -146,6 +157,7 @@ static int rb4xx_spi_probe(struct platfo
+ 	struct clk *ahb_clk;
+ 	struct rb4xx_spi *rbspi;
+ 	int err;
++	u32 div;
+ 	void __iomem *spi_base;
+ 
+ 	spi_base = devm_platform_ioremap_resource(pdev, 0);
+@@ -173,15 +185,21 @@ static int rb4xx_spi_probe(struct platfo
+ 	rbspi->base = spi_base;
+ 	rbspi->clk = ahb_clk;
+ 
++	/*
++	 * The CPU has a bug when the divider is zero (the first bit read is
++	 * random), so clamp it to one.
++	 */
++	div = (clk_get_rate(ahb_clk) - 1) / (2 * 25000000);
++	if (!div)
++		div = 1;
++	rbspi->spi_ctrl_flash = AR71XX_SPI_CTRL_FAST | div;
++
+ 	err = devm_spi_register_controller(&pdev->dev, host);
+ 	if (err) {
+ 		dev_err(&pdev->dev, "failed to register SPI host\n");
+ 		return err;
+ 	}
+ 
+-	/* Enable SPI */
+-	rb4xx_write(rbspi, AR71XX_SPI_REG_FS, AR71XX_SPI_FS_GPIO);
+-
+ 	return 0;
+ }
+ 
