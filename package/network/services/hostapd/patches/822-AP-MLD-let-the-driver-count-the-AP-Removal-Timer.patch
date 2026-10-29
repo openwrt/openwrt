@@ -552,7 +552,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  /* Unlike switch_link_hapd(), a link that hostapd no longer has is not
   * replaced by the first link */
  void hostapd_crit_update_done(struct hostapd_data *hapd, int link_id, u32 id)
-@@ -1131,12 +1463,22 @@ void hostapd_adv_ttlm_event(struct hosta
+@@ -1164,12 +1496,22 @@ void hostapd_adv_ttlm_event(struct hosta
  void hostapd_free_hapd_data(struct hostapd_data *hapd)
  {
  #ifdef CONFIG_IEEE80211BE

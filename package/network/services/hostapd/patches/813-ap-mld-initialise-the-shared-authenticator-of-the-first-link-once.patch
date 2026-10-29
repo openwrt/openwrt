@@ -32,13 +32,16 @@ skip then keeps: free what a failed RADIUS server setup leaves, and
 free the authenticator when the driver setup, the RADIUS handler
 registration or the WEP key setup fails.
 
-A first BSS that is disabled before its own setup keeps its pointers to
-the shared objects, because hostapd_free_hapd_data() returns early for
-a BSS that was not started. Drop them when such a BSS leaves the AP MLD
-and another link becomes the first BSS, so that a later init cannot
-skip over objects that the new owner frees. Where such a BSS is the last
-link, it keeps the objects of its earlier configuration over a disable
-and enable, as it keeps the RADIUS client.
+A first BSS that is disabled or removed before its own setup keeps its
+pointers to the shared objects, because hostapd_free_hapd_data() returns
+early for a BSS that was not started. Release them when such a BSS
+leaves the AP MLD. Where another link becomes the first BSS, drop the
+pointers, so that a later init cannot skip over objects that the new
+owner frees. Where the BSS is the last link, free the objects, as the
+free of a started first BSS does: its next setup then builds them from
+its current configuration, and a removal does not leak them. The RADIUS
+client part of hostapd_free_hapd_data() moves to a helper that both
+paths call.
 
 Fixes: 3cf7bf68f43d ("AP MLD: Fix deferred first link BSS's authentication server init")
 Signed-off-by: Felix Fietkau <nbd@nbd.name>
@@ -75,20 +78,93 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	return 0;
 --- a/src/ap/hostapd.c
 +++ b/src/ap/hostapd.c
-@@ -1363,6 +1363,17 @@ void hostapd_bss_link_deinit(struct host
+@@ -1128,6 +1128,39 @@ void hostapd_adv_ttlm_event(struct hosta
+ #endif /* CONFIG_IEEE80211BE */
+ 
+ 
++static void hostapd_bss_radius_deinit(struct hostapd_data *hapd)
++{
++#ifndef CONFIG_NO_RADIUS
++	if (hostapd_mld_is_first_bss(hapd)) {
++#ifdef CONFIG_IEEE80211BE
++		struct hapd_interfaces *ifaces = hapd->iface->interfaces;
++		size_t i;
++
++		for (i = 0; ifaces && i < ifaces->count; i++) {
++			struct hostapd_iface *iface = ifaces->iface[i];
++			size_t j;
++
++			for (j = 0; iface && j < iface->num_bss; j++) {
++				struct hostapd_data *h = iface->bss[j];
++
++				if (hapd == h)
++					continue;
++				if (h->radius == hapd->radius)
++					h->radius = NULL;
++				if (h->radius_das == hapd->radius_das)
++					h->radius_das = NULL;
++			}
++		}
++#endif /* CONFIG_IEEE80211BE */
++		radius_client_deinit(hapd->radius);
++		radius_das_deinit(hapd->radius_das);
++	}
++	hapd->radius = NULL;
++	hapd->radius_das = NULL;
++#endif /* CONFIG_NO_RADIUS */
++}
++
++
+ void hostapd_free_hapd_data(struct hostapd_data *hapd)
+ {
+ #ifdef CONFIG_IEEE80211BE
+@@ -1178,34 +1211,7 @@ void hostapd_free_hapd_data(struct hosta
+ 	hostapd_deinit_wpa(hapd);
+ 	vlan_deinit(hapd);
+ 	hostapd_acl_deinit(hapd);
+-#ifndef CONFIG_NO_RADIUS
+-	if (hostapd_mld_is_first_bss(hapd)) {
+-#ifdef CONFIG_IEEE80211BE
+-		struct hapd_interfaces *ifaces = hapd->iface->interfaces;
+-		size_t i;
+-
+-		for (i = 0; ifaces && i < ifaces->count; i++) {
+-			struct hostapd_iface *iface = ifaces->iface[i];
+-			size_t j;
+-
+-			for (j = 0; iface && j < iface->num_bss; j++) {
+-				struct hostapd_data *h = iface->bss[j];
+-
+-				if (hapd == h)
+-					continue;
+-				if (h->radius == hapd->radius)
+-					h->radius = NULL;
+-				if (h->radius_das == hapd->radius_das)
+-					h->radius_das = NULL;
+-			}
+-		}
+-#endif /* CONFIG_IEEE80211BE */
+-		radius_client_deinit(hapd->radius);
+-		radius_das_deinit(hapd->radius_das);
+-	}
+-	hapd->radius = NULL;
+-	hapd->radius_das = NULL;
+-#endif /* CONFIG_NO_RADIUS */
++	hostapd_bss_radius_deinit(hapd);
+ 
+ 	hostapd_deinit_wps(hapd);
+ 	ieee802_1x_dealloc_kay_sm_hapd(hapd);
+@@ -1363,6 +1369,14 @@ void hostapd_bss_link_deinit(struct host
  		return;
  
  	hostapd_mld_remove_link(hapd);
 +
 +	/* Another link can set up the shared objects on behalf of a first BSS
 +	 * that is not started, and hostapd_free_hapd_data() skips that BSS. */
-+	if (!hapd->started && !hostapd_mld_is_first_bss(hapd)) {
++	if (!hapd->started) {
 +		ieee802_1x_deinit(hapd);
 +		authsrv_deinit(hapd);
-+#ifndef CONFIG_NO_RADIUS
-+		hapd->radius = NULL;
-+		hapd->radius_das = NULL;
-+#endif /* CONFIG_NO_RADIUS */
++		hostapd_bss_radius_deinit(hapd);
 +	}
  #endif /* CONFIG_IEEE80211BE */
  }

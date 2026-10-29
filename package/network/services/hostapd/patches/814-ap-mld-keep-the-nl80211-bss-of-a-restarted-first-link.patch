@@ -42,7 +42,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  {
 --- a/src/ap/hostapd.c
 +++ b/src/ap/hostapd.c
-@@ -2275,6 +2275,12 @@ int hostapd_setup_bss(struct hostapd_dat
+@@ -2278,6 +2278,12 @@ int hostapd_setup_bss(struct hostapd_dat
  					   hapd->mld_link_id, hapd->conf->iface);
  				goto setup_mld;
  			}
@@ -55,7 +55,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  			use_existing = true;
  		}
  #endif /* CONFIG_IEEE80211BE */
-@@ -2291,6 +2297,9 @@ int hostapd_setup_bss(struct hostapd_dat
+@@ -2294,6 +2300,9 @@ int hostapd_setup_bss(struct hostapd_dat
  			return -1;
  		}
  

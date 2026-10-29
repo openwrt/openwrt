@@ -134,7 +134,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	hostapd_mld_beacons_update(hapd);
  
  	hostapd_ucode_bss_cb(hapd, "bss_link_removed");
-@@ -4314,6 +4358,8 @@ void hostapd_interface_free(struct hosta
+@@ -4317,6 +4361,8 @@ void hostapd_interface_free(struct hosta
  		if (iface->bss[j])
  			hostapd_mld_ref_dec(iface->bss[j]);
  #endif /* CONFIG_IEEE80211BE */
