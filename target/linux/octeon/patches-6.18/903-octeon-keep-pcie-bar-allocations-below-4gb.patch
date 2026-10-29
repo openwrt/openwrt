@@ -37,9 +37,9 @@ it is translated by the BAR2 window, not by these resources.
 
 Signed-off-by: Andrew LaMarche <andrewjlamarche@gmail.com>
 
---- a/arch/mips/pci/pcie-octeon.c	2026-10-28 11:40:27
-+++ b/arch/mips/pci/pcie-octeon.c	2026-10-28 11:40:27
-@@ -2089,9 +2089,22 @@
+--- a/arch/mips/pci/pcie-octeon.c
++++ b/arch/mips/pci/pcie-octeon.c
+@@ -2089,9 +2089,22 @@ static int __init octeon_pcie_setup(void
  			octeon_pcie0_controller.mem_resource->start =
  				cvmx_pcie_get_mem_base_address(0) +
  				(4ul << 30) - (OCTEON_PCI_BAR1_HOLE_SIZE << 20);
@@ -63,7 +63,7 @@ Signed-off-by: Andrew LaMarche <andrewjlamarche@gmail.com>
  			/*
  			 * Ports must be above 16KB for the ISA bus
  			 * filtering in the PCI-X to PCI bridge.
-@@ -2171,7 +2184,7 @@
+@@ -2171,7 +2184,7 @@ static int __init octeon_pcie_setup(void
  				(OCTEON_PCI_BAR1_HOLE_SIZE << 20);
  			octeon_pcie1_controller.mem_resource->end =
  				cvmx_pcie_get_mem_base_address(1) +

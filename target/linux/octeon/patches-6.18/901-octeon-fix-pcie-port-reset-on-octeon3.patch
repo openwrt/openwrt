@@ -49,8 +49,8 @@ on every boot.
 
 Signed-off-by: Andrew LaMarche <andrewjlamarche@gmail.com>
 
---- a/arch/mips/pci/pcie-octeon.c	2026-10-28 11:28:20
-+++ b/arch/mips/pci/pcie-octeon.c	2026-10-28 11:40:27
+--- a/arch/mips/pci/pcie-octeon.c
++++ b/arch/mips/pci/pcie-octeon.c
 @@ -19,6 +19,7 @@
  #include <asm/octeon/cvmx-pescx-defs.h>
  #include <asm/octeon/cvmx-pexp-defs.h>
@@ -59,7 +59,7 @@ Signed-off-by: Andrew LaMarche <andrewjlamarche@gmail.com>
  #include <asm/octeon/cvmx-dpi-defs.h>
  #include <asm/octeon/cvmx-sli-defs.h>
  #include <asm/octeon/cvmx-sriox-defs.h>
-@@ -1174,6 +1175,37 @@
+@@ -1174,6 +1175,37 @@ static u64 octeon_pemx_bar1_index_addr(i
  	return CVMX_PEMX_BAR1_INDEXX(index, pcie_port);
  }
  
@@ -97,7 +97,7 @@ Signed-off-by: Andrew LaMarche <andrewjlamarche@gmail.com>
  /**
   * Initialize a PCIe gen 2 port for use in host(RC) mode. It doesn't enumerate
   * the bus.
-@@ -1186,7 +1218,8 @@
+@@ -1186,7 +1218,8 @@ static int __cvmx_pcie_rc_initialize_gen
  {
  	int i;
  	union cvmx_ciu_soft_prst ciu_soft_prst;
@@ -107,7 +107,7 @@ Signed-off-by: Andrew LaMarche <andrewjlamarche@gmail.com>
  	union cvmx_pemx_bar_ctl pemx_bar_ctl;
  	union cvmx_pemx_ctl_status pemx_ctl_status;
  	union cvmx_pemx_bist_status pemx_bist_status;
-@@ -1266,8 +1299,7 @@
+@@ -1266,8 +1299,7 @@ static int __cvmx_pcie_rc_initialize_gen
  #endif
  
  	/* Make sure we aren't trying to setup a target mode interface in host mode */
@@ -117,7 +117,7 @@ Signed-off-by: Andrew LaMarche <andrewjlamarche@gmail.com>
  		pr_notice("PCIe: Port %d in endpoint mode.\n", pcie_port);
  		return -1;
  	}
-@@ -1291,34 +1323,77 @@
+@@ -1291,33 +1323,76 @@ static int __cvmx_pcie_rc_initialize_gen
  		}
  	}
  	/* Bring the PCIe out of reset */
@@ -205,8 +205,7 @@ Signed-off-by: Andrew LaMarche <andrewjlamarche@gmail.com>
  			cvmx_write_csr(CVMX_CIU_SOFT_PRST, ciu_soft_prst.u64);
 -		/* Wait until pcie resets the ports. */
 -		udelay(2000);
-+		}
- 	}
+-	}
 -	if (pcie_port) {
 -		ciu_soft_prst.u64 = cvmx_read_csr(CVMX_CIU_SOFT_PRST1);
 -		ciu_soft_prst.s.soft_prst = 0;
@@ -215,11 +214,11 @@ Signed-off-by: Andrew LaMarche <andrewjlamarche@gmail.com>
 -		ciu_soft_prst.u64 = cvmx_read_csr(CVMX_CIU_SOFT_PRST);
 -		ciu_soft_prst.s.soft_prst = 0;
 -		cvmx_write_csr(CVMX_CIU_SOFT_PRST, ciu_soft_prst.u64);
--	}
++		}
+ 	}
  
  	/* Wait for PCIe reset to complete */
- 	udelay(1000);
-@@ -1328,7 +1403,16 @@
+@@ -1328,7 +1403,16 @@ static int __cvmx_pcie_rc_initialize_gen
  	 * the board probably hasn't wired the clocks up and the
  	 * interface should be skipped.
  	 */
@@ -237,7 +236,7 @@ Signed-off-by: Andrew LaMarche <andrewjlamarche@gmail.com>
  		pr_notice("PCIe: Port %d stuck in reset, skipping.\n", pcie_port);
  		return -1;
  	}
-@@ -1337,7 +1421,17 @@
+@@ -1337,7 +1421,17 @@ static int __cvmx_pcie_rc_initialize_gen
  	pemx_bist_status.u64 = cvmx_read_csr(CVMX_PEMX_BIST_STATUS(pcie_port));
  	if (pemx_bist_status.u64)
  		pr_notice("PCIe: BIST FAILED for port %d (0x%016llx)\n", pcie_port, CAST64(pemx_bist_status.u64));
@@ -256,11 +255,10 @@ Signed-off-by: Andrew LaMarche <andrewjlamarche@gmail.com>
  	/* Errata PCIE-14766 may cause the lower 6 bits to be randomly set on CN63XXp1 */
  	if (OCTEON_IS_MODEL(OCTEON_CN63XX_PASS1_X))
  		pemx_bist_status2.u64 &= ~0x3full;
-@@ -1462,6 +1556,20 @@
- 	pemx_ctl_status.u64 = cvmx_read_csr(CVMX_PEMX_CTL_STATUS(pcie_port));
+@@ -1463,6 +1557,20 @@ static int __cvmx_pcie_rc_initialize_gen
  	pemx_ctl_status.s.cfg_rtry = 250 * 5000000 / 0x10000;
  	cvmx_write_csr(CVMX_PEMX_CTL_STATUS(pcie_port), pemx_ctl_status.u64);
-+
+ 
 +	if (OCTEON_IS_OCTEON3()) {
 +		/*
 +		 * The PERST# issued above restarts the endpoint's own boot
@@ -274,10 +272,11 @@ Signed-off-by: Andrew LaMarche <andrewjlamarche@gmail.com>
 +		 */
 +		msleep(800);
 +	}
- 
++
  	/* Display the link status */
  	pciercx_cfg032.u32 = cvmx_pcie_cfgx_read(pcie_port, CVMX_PCIERCX_CFG032(pcie_port));
-@@ -1945,9 +2053,7 @@
+ 	pr_notice("PCIe: Port %d link active, %d lanes, speed gen%d\n", pcie_port, pciercx_cfg032.s.nlw, pciercx_cfg032.s.ls);
+@@ -1945,9 +2053,7 @@ static int __init octeon_pcie_setup(void
  		host_mode = npei_ctl_status.s.host_mode;
  		octeon_dma_bar_type = OCTEON_DMA_BAR_TYPE_PCIE;
  	} else {
@@ -288,7 +287,7 @@ Signed-off-by: Andrew LaMarche <andrewjlamarche@gmail.com>
  		octeon_dma_bar_type = OCTEON_DMA_BAR_TYPE_PCIE2;
  	}
  
-@@ -2019,9 +2125,7 @@
+@@ -2019,9 +2125,7 @@ static int __init octeon_pcie_setup(void
  				host_mode = 0;
  		}
  	} else {
