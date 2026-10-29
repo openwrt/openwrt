@@ -1,0 +1,98 @@
+#!/bin/sh
+# SPDX-License-Identifier: GPL-2.0-only
+#
+# Keep the slot switch for the stock firmware of the UniFi Cloud Gateway Fiber
+# in stock's /opt/ucg-switch: there "sh /opt/ucg-switch/ucg-slot-switch.sh a|b"
+# selects an OpenWrt slot, without anything else installed on stock.
+# usage: ucgfiber-stockkit            update stock's copy if it differs
+#        ucgfiber-stockkit --make <dir>  only build the kit in <dir>
+#
+# The kit is this image's own env tools: loader, libc, busybox and its applet
+# links, fw_printenv/fw_setenv, ucgfiber-envset, ucgfiber-stock-envset, the
+# reference env (OpenWrt's squashfs (xz) and overlay (f2fs) cannot be read by
+# stock's kernel, so stock cannot run them from a slot).
+# Stock's / is an overlay whose writable layer is data/ on the ext4 partition
+# "overlay" (p6); /opt/ucg-switch is data/opt/ucg-switch there. The partition is
+# mounted read-only to compare and read-write only when the kit differs; it is
+# written only when it has stock's layout (data/ and .workdir/). Stock's
+# system partitions are never touched.
+
+SRC="${UCG_STOCKKIT_ROOT:-/rom}"
+SYSBLOCK="${UCG_SYSBLOCK:-/sys/class/block}"
+DEVDIR="${UCG_DEVDIR:-/dev}"
+MNT=/tmp/ucgfiber-stockkit.mnt
+KIT=/tmp/ucgfiber-stockkit.kit
+
+log() { logger -t ucgfiber -p "daemon.${2:-notice}" "stockkit: $1"; echo "ucgfiber-stockkit: $1" >&2; }
+
+# <dir>: the kit, with the layout ucgfiber-stock-envset expects (it finds
+# everything relative to its own place in usr/sbin)
+make_kit() {
+	local d="$1" l
+	rm -rf "$d"
+	mkdir -p "$d/bin" "$d/sbin" "$d/lib" "$d/usr/bin" "$d/usr/sbin" "$d/usr/share/ucgfiber" || return 1
+	cp "$SRC/lib/libc.so" "$d/lib/libc.so" &&
+		ln -s libc.so "$d/lib/ld-musl-aarch64.so.1" &&
+		cp "$SRC/lib/libgcc_s.so.1" "$d/lib/libgcc_s.so.1" &&
+		cp "$SRC/bin/busybox" "$d/bin/busybox" &&
+		cp "$SRC/usr/sbin/fw_printenv" "$d/usr/sbin/fw_printenv" &&
+		ln -s fw_printenv "$d/usr/sbin/fw_setenv" &&
+		cp "$SRC/usr/sbin/ucgfiber-envset" "$SRC/usr/sbin/ucgfiber-stock-envset" "$d/usr/sbin/" &&
+		cp "$SRC/usr/share/ucgfiber/uboot-env.txt" "$d/usr/share/ucgfiber/" &&
+		{ [ ! -f "$SRC/usr/share/ucgfiber/uboot-env-prev.txt" ] ||
+			cp "$SRC/usr/share/ucgfiber/uboot-env-prev.txt" "$d/usr/share/ucgfiber/"; } &&
+		cp "$SRC/usr/share/ucgfiber/ucg-slot-switch.sh" "$d/" || return 1
+	# the applet links as in the image (relative, so they resolve inside the kit)
+	for l in "$SRC"/bin/* "$SRC"/sbin/* "$SRC"/usr/bin/* "$SRC"/usr/sbin/*; do
+		[ -L "$l" ] || continue
+		case "$(readlink "$l")" in *busybox) ;; *) continue ;; esac
+		ln -s "$(readlink "$l")" "$d${l#$SRC}" || return 1
+	done
+	[ -L "$d/bin/sleep" ] || return 1
+	grep -h '^DISTRIB_REVISION=' "$SRC/etc/openwrt_release" >"$d/VERSION" 2>/dev/null
+	chmod 755 "$d/usr/sbin/ucgfiber-envset" "$d/usr/sbin/ucgfiber-stock-envset" "$d/ucg-slot-switch.sh"
+}
+
+# <dir>: one line per file and link, sorted: compares two kits
+manifest() {
+	(cd "$1" 2>/dev/null && find . | sort | while read -r f; do
+		if [ -L "$f" ]; then echo "L $f $(readlink "$f")"
+		elif [ -f "$f" ]; then echo "F $f $(sha256sum <"$f" | cut -d' ' -f1)"
+		else echo "D $f"; fi
+	done)
+}
+
+if [ "$1" = "--make" ]; then
+	[ -n "$2" ] || { echo "usage: $0 --make <dir>" >&2; exit 1; }
+	make_kit "$2"
+	exit
+fi
+
+# stock's data partition, by its GPT name
+part=
+for u in "$SYSBLOCK"/*/uevent; do
+	grep -qx 'PARTNAME=overlay' "$u" 2>/dev/null || continue
+	part="$DEVDIR/$(sed -n 's/^DEVNAME=//p' "$u")"
+done
+[ -b "$part" ] || [ -f "$part" ] || { log "no partition named overlay, nothing written" warn; exit 1; }
+
+make_kit "$KIT" || { rm -rf "$KIT"; log "cannot build the kit from $SRC" err; exit 1; }
+
+cleanup() { umount "$MNT" 2>/dev/null; rmdir "$MNT" 2>/dev/null; rm -rf "$KIT"; }
+trap cleanup EXIT
+mkdir -p "$MNT"
+mount -t ext4 -o ro,noload "$part" "$MNT" 2>/dev/null || { log "cannot mount $part (ext4) read-only, nothing written" warn; exit 1; }
+[ -d "$MNT/data" ] && [ -d "$MNT/.workdir" ] || { log "$part does not have stock's layout (data/, .workdir/), nothing written" warn; exit 1; }
+
+if [ "$(manifest "$MNT/data/opt/ucg-switch")" = "$(manifest "$KIT")" ] && [ ! -e "$MNT/data/opt/ucg-switch.new" ]; then
+	exit 0
+fi
+
+umount "$MNT" && mount -t ext4 -o rw,noatime "$part" "$MNT" 2>/dev/null ||
+	{ log "cannot mount $part read-write, nothing written" err; exit 1; }
+t="$MNT/data/opt/ucg-switch"
+mkdir -p "$MNT/data/opt" && chmod 755 "$MNT/data/opt" &&
+	rm -rf "$t.new" && cp -a "$KIT" "$t.new" && sync &&
+	rm -rf "$t" && mv "$t.new" "$t" && sync || { log "writing $t failed" err; exit 1; }
+[ "$(manifest "$t")" = "$(manifest "$KIT")" ] || { log "$t reads back different" err; exit 1; }
+log "stock's /opt/ucg-switch updated ($(cat "$KIT/VERSION" 2>/dev/null))"
