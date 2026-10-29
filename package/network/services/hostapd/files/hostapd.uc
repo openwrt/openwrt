@@ -2672,12 +2672,19 @@ function bss_event(type, name, data) {
 
 	data ??= {};
 	data.name = name;
-	hostapd.data.obj.notify(`bss.${type}`, data, null, null, null, -1);
+	hostapd.data.obj?.notify(`bss.${type}`, data, null, null, null, -1);
 	ubus.call("service", "event", { type: `hostapd.${name}.${type}`, data: {} });
 }
 
 return {
 	shutdown: function() {
+		// Nothing serves the connection from here on, so a caller that
+		// still resolves an object waits for its own timeout.
+		hostapd.data.obj?.remove();
+		hostapd.data.auth_obj?.remove();
+		delete hostapd.data.obj;
+		delete hostapd.data.auth_obj;
+
 		for (let phy in hostapd.data.config)
 			iface_set_config(phy);
 		hostapd.udebug_set(null);
