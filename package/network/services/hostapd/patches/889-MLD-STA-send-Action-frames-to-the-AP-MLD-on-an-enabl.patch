@@ -1,0 +1,377 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Thu, 29 Oct 2026 16:47:32 +0100
+Subject: [PATCH] MLD STA: send Action frames to the AP MLD on an enabled link
+
+wpa_supplicant sends each Action frame to the AP on the frequency of
+the association link. An established advertised TID-to-link mapping
+can disable that link, and mac80211 then sends the frame there by a
+remain-on-channel. IEEE Std 802.11be-2024, 35.3.7.2.1: "If a link is
+disabled for a non-AP MLD, it shall not be used for individually
+addressed frame exchange ..., including Management and Control
+frames". The frame also goes on the association link where it answers
+a request that the AP MLD sent on another link.
+
+35.3.14.1 makes the SA Query, WNM Sleep Mode, BSS Transition
+Management, SCS, MSCS and FT Action frames intended for the MLD, so
+they may use any enabled link. Every other individually addressed
+frame is intended for the STA of one link, and goes through another
+link only with an MLO Link Info element (35.3.14.3), which
+wpa_supplicant does not build.
+
+Send the frames intended for the MLD, and the frames that the station
+sends unprompted (BSS Transition Management Query, Neighbor Report
+Request, MBO WNM Notification, WFA Capabilities, DSCP Policy Query),
+with no frequency, so that the driver picks an active link. A frame
+with an OCI keeps the association link, since its OCI names that
+link's channel. Send the Radio Measurement Report, the Link
+Measurement Report and the solicited DSCP Policy Response on the
+frequency on which the request arrived. Do not let the nl80211 driver
+send a frame to the AP MLD off-channel: a frame for a link that is not
+active, such as a disabled one, is refused.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+
+--- a/src/drivers/driver_nl80211.c
++++ b/src/drivers/driver_nl80211.c
+@@ -10209,6 +10209,12 @@ static int wpa_driver_nl80211_send_action(struct i802_bss *bss,
+ 		      drv->nlmode == NL80211_IFTYPE_NAN_DATA))
+ 		offchanok = 0;
+ 
++	/* A frame to the AP MLD goes on an active link or not at all, since a
++	 * link that is not active can be disabled (IEEE 802.11be 35.3.7.2.1) */
++	if (is_sta_interface(drv->nlmode) && drv->sta_mlo_info.valid_links &&
++	    ether_addr_equal(dst, drv->sta_mlo_info.ap_mld_addr))
++		offchanok = 0;
++
+ 	wpa_printf(MSG_DEBUG,
+ 		   "nl80211: Send Action frame (ifindex=%d, freq=%u MHz wait=%d ms no_cck=%d offchanok=%d dst="
+ 		   MACSTR " src=" MACSTR " bssid=" MACSTR ", link_id=%d)",
+--- a/wpa_supplicant/events.c
++++ b/wpa_supplicant/events.c
+@@ -6094,7 +6094,7 @@ static void wpas_event_rx_mgmt_action(struct wpa_supplicant *wpa_s,
+ 		wpas_rrm_handle_radio_measurement_request(wpa_s, mgmt->sa,
+ 							  mgmt->da,
+ 							  payload + 1,
+-							  plen - 1);
++							  plen - 1, freq);
+ 		return;
+ 	}
+ 
+@@ -6109,7 +6109,7 @@ static void wpas_event_rx_mgmt_action(struct wpa_supplicant *wpa_s,
+ 	    payload[0] == WLAN_RRM_LINK_MEASUREMENT_REQUEST) {
+ 		wpas_rrm_handle_link_measurement_request(wpa_s, mgmt->sa,
+ 							 payload + 1, plen - 1,
+-							 rssi);
++							 rssi, freq);
+ 		return;
+ 	}
+ #endif /* CONFIG_NO_RRM */
+@@ -6174,7 +6174,7 @@ static void wpas_event_rx_mgmt_action(struct wpa_supplicant *wpa_s,
+ 	if (category == WLAN_ACTION_VENDOR_SPECIFIC_PROTECTED && plen > 4 &&
+ 	    WPA_GET_BE32(payload) == QM_ACTION_VENDOR_TYPE) {
+ 		wpas_handle_qos_mgmt_recv_action(wpa_s, mgmt->da, mgmt->sa,
+-						 payload + 4, plen - 4);
++						 payload + 4, plen - 4, freq);
+ 		return;
+ 	}
+ #endif /* CONFIG_NO_ROBUST_AV */
+--- a/wpa_supplicant/mbo.c
++++ b/wpa_supplicant/mbo.c
+@@ -300,8 +300,8 @@ static void wpas_mbo_send_wnm_notification(struct wpa_supplicant *wpa_s,
+ 
+ 	wpabuf_put_data(buf, data, len);
+ 
+-	res = wpa_drv_send_action(wpa_s, wpa_s->assoc_freq, 0, wpa_s->bssid,
+-				  wpa_s->own_addr, wpa_s->bssid,
++	res = wpa_drv_send_action(wpa_s, wpas_ap_action_freq(wpa_s, false), 0,
++				  wpa_s->bssid, wpa_s->own_addr, wpa_s->bssid,
+ 				  wpabuf_head(buf), wpabuf_len(buf), 0);
+ 	if (res < 0)
+ 		wpa_printf(MSG_DEBUG,
+--- a/wpa_supplicant/robust_av.c
++++ b/wpa_supplicant/robust_av.c
+@@ -361,8 +361,8 @@ int wpas_send_mscs_req(struct wpa_supplicant *wpa_s)
+ 	wpas_populate_mscs_descriptor_ie(&wpa_s->robust_av, buf);
+ 
+ 	wpa_hexdump_buf(MSG_MSGDUMP, "MSCS Request", buf);
+-	ret = wpa_drv_send_action(wpa_s, wpa_s->assoc_freq, 0, wpa_s->bssid,
+-				  wpa_s->own_addr, wpa_s->bssid,
++	ret = wpa_drv_send_action(wpa_s, wpas_ap_action_freq(wpa_s, false), 0,
++				  wpa_s->bssid, wpa_s->own_addr, wpa_s->bssid,
+ 				  wpabuf_head(buf), wpabuf_len(buf), 0);
+ 	if (ret < 0)
+ 		wpa_dbg(wpa_s, MSG_INFO, "MSCS: Failed to send MSCS Request");
+@@ -629,8 +629,8 @@ static int _wpa_send_scs_req(struct wpa_supplicant *wpa_s,
+ 	}
+ 
+ 	wpa_hexdump_buf(MSG_DEBUG, "SCS Request", buf);
+-	ret = wpa_drv_send_action(wpa_s, wpa_s->assoc_freq, 0, wpa_s->bssid,
+-				  wpa_s->own_addr, wpa_s->bssid,
++	ret = wpa_drv_send_action(wpa_s, wpas_ap_action_freq(wpa_s, false), 0,
++				  wpa_s->bssid, wpa_s->own_addr, wpa_s->bssid,
+ 				  wpabuf_head(buf), wpabuf_len(buf), 0);
+ 	if (ret < 0) {
+ 		wpa_dbg(wpa_s, MSG_ERROR, "SCS: Failed to send SCS Request");
+@@ -1658,7 +1658,8 @@ static void wpas_fill_dscp_policy(struct dscp_policy_data *policy, u8 attr_id,
+ 
+ void wpas_handle_qos_mgmt_recv_action(struct wpa_supplicant *wpa_s,
+ 				      const u8 *dst, const u8 *src,
+-				      const u8 *buf, size_t len)
++				      const u8 *buf, size_t len,
++				      unsigned int freq)
+ {
+ 	int rem_len;
+ 	const u8 *qos_ie, *attr;
+@@ -1714,6 +1715,7 @@ void wpas_handle_qos_mgmt_recv_action(struct wpa_supplicant *wpa_s,
+ 	}
+ 
+ 	wpa_s->dscp_req_dialog_token = buf[1];
++	wpa_s->dscp_req_freq = freq;
+ 	more = buf[2] & DSCP_POLICY_CTRL_MORE;
+ 	reset = buf[2] & DSCP_POLICY_CTRL_RESET;
+ 
+@@ -1840,8 +1842,10 @@ int wpas_send_dscp_response(struct wpa_supplicant *wpa_s,
+ 	}
+ 
+ 	wpa_hexdump_buf(MSG_MSGDUMP, "DSCP response frame: ", buf);
+-	ret = wpa_drv_send_action(wpa_s, wpa_s->assoc_freq, 0, wpa_s->bssid,
+-				  wpa_s->own_addr, wpa_s->bssid,
++	ret = wpa_drv_send_action(wpa_s,
++				  resp_data->solicited ? wpa_s->dscp_req_freq :
++				  wpas_ap_action_freq(wpa_s, false), 0,
++				  wpa_s->bssid, wpa_s->own_addr, wpa_s->bssid,
+ 				  wpabuf_head(buf), wpabuf_len(buf), 0);
+ 	if (ret < 0) {
+ 		wpa_msg(wpa_s, MSG_INFO, "QM: Failed to send DSCP response");
+@@ -1921,8 +1925,8 @@ int wpas_send_dscp_query(struct wpa_supplicant *wpa_s, const char *domain_name,
+ 	}
+ #undef DOMAIN_NAME_OFFSET
+ 
+-	ret = wpa_drv_send_action(wpa_s, wpa_s->assoc_freq, 0, wpa_s->bssid,
+-				  wpa_s->own_addr, wpa_s->bssid,
++	ret = wpa_drv_send_action(wpa_s, wpas_ap_action_freq(wpa_s, false), 0,
++				  wpa_s->bssid, wpa_s->own_addr, wpa_s->bssid,
+ 				  wpabuf_head(buf), wpabuf_len(buf), 0);
+ 	if (ret < 0) {
+ 		wpa_dbg(wpa_s, MSG_ERROR, "QM: Failed to send DSCP query");
+--- a/wpa_supplicant/rrm.c
++++ b/wpa_supplicant/rrm.c
+@@ -304,8 +304,8 @@ int wpas_rrm_send_neighbor_rep_request(struct wpa_supplicant *wpa_s,
+ 
+ 	wpa_s->rrm.next_neighbor_rep_token++;
+ 
+-	if (wpa_drv_send_action(wpa_s, wpa_s->assoc_freq, 0, wpa_s->bssid,
+-				wpa_s->own_addr, wpa_s->bssid,
++	if (wpa_drv_send_action(wpa_s, wpas_ap_action_freq(wpa_s, false), 0,
++				wpa_s->bssid, wpa_s->own_addr, wpa_s->bssid,
+ 				wpabuf_head(buf), wpabuf_len(buf), 0) < 0) {
+ 		wpa_dbg(wpa_s, MSG_DEBUG,
+ 			"RRM: Failed to send Neighbor Report Request");
+@@ -427,7 +427,7 @@ static void wpas_rrm_send_msr_report_mpdu(struct wpa_supplicant *wpa_s,
+ 
+ 	wpabuf_put_data(report, data, len);
+ 
+-	if (wpa_drv_send_action(wpa_s, wpa_s->assoc_freq, 0, wpa_s->bssid,
++	if (wpa_drv_send_action(wpa_s, wpa_s->rrm.freq, 0, wpa_s->bssid,
+ 				wpa_s->own_addr, wpa_s->bssid,
+ 				wpabuf_head(report), wpabuf_len(report), 0)) {
+ 		wpa_printf(MSG_ERROR,
+@@ -1431,7 +1431,8 @@ out:
+ 
+ void wpas_rrm_handle_radio_measurement_request(struct wpa_supplicant *wpa_s,
+ 					       const u8 *src, const u8 *dst,
+-					       const u8 *frame, size_t len)
++					       const u8 *frame, size_t len,
++					       unsigned int freq)
+ {
+ 	struct wpabuf *report;
+ 
+@@ -1455,6 +1456,7 @@ void wpas_rrm_handle_radio_measurement_request(struct wpa_supplicant *wpa_s,
+ 
+ 	wpa_s->rrm.token = *frame;
+ 	os_memcpy(wpa_s->rrm.dst_addr, dst, ETH_ALEN);
++	wpa_s->rrm.freq = freq;
+ 
+ 	/* Number of repetitions is not supported */
+ 
+@@ -1470,7 +1472,7 @@ void wpas_rrm_handle_radio_measurement_request(struct wpa_supplicant *wpa_s,
+ void wpas_rrm_handle_link_measurement_request(struct wpa_supplicant *wpa_s,
+ 					      const u8 *src,
+ 					      const u8 *frame, size_t len,
+-					      int rssi)
++					      int rssi, unsigned int freq)
+ {
+ 	struct wpabuf *buf;
+ 	const struct rrm_link_measurement_request *req;
+@@ -1525,7 +1527,7 @@ void wpas_rrm_handle_link_measurement_request(struct wpa_supplicant *wpa_s,
+ 	wpabuf_put_data(buf, &report, sizeof(report));
+ 	wpa_hexdump_buf(MSG_DEBUG, "RRM: Link measurement report", buf);
+ 
+-	if (wpa_drv_send_action(wpa_s, wpa_s->assoc_freq, 0, src,
++	if (wpa_drv_send_action(wpa_s, freq, 0, src,
+ 				wpa_s->own_addr, wpa_s->bssid,
+ 				wpabuf_head(buf), wpabuf_len(buf), 0)) {
+ 		wpa_printf(MSG_ERROR,
+--- a/wpa_supplicant/sme.c
++++ b/wpa_supplicant/sme.c
+@@ -5482,8 +5482,10 @@ static void sme_send_sa_query_req(struct wpa_supplicant *wpa_s,
+ 	}
+ #endif /* CONFIG_OCV */
+ 
+-	if (wpa_drv_send_action(wpa_s, wpa_s->assoc_freq, 0, wpa_s->bssid,
+-				wpa_s->own_addr, wpa_s->bssid,
++	if (wpa_drv_send_action(wpa_s,
++				wpas_ap_action_freq(
++					wpa_s, wpa_sm_ocv_enabled(wpa_s->wpa)),
++				0, wpa_s->bssid, wpa_s->own_addr, wpa_s->bssid,
+ 				req, req_len, 0) < 0)
+ 		wpa_msg(wpa_s, MSG_INFO, "SME: Failed to send SA Query "
+ 			"Request");
+@@ -5646,8 +5648,10 @@ static void sme_process_sa_query_request(struct wpa_supplicant *wpa_s,
+ 	}
+ #endif /* CONFIG_OCV */
+ 
+-	if (wpa_drv_send_action(wpa_s, wpa_s->assoc_freq, 0, wpa_s->bssid,
+-				wpa_s->own_addr, wpa_s->bssid,
++	if (wpa_drv_send_action(wpa_s,
++				wpas_ap_action_freq(
++					wpa_s, wpa_sm_ocv_enabled(wpa_s->wpa)),
++				0, wpa_s->bssid, wpa_s->own_addr, wpa_s->bssid,
+ 				resp, resp_len, 0) < 0)
+ 		wpa_msg(wpa_s, MSG_INFO,
+ 			"SME: Failed to send SA Query Response");
+--- a/wpa_supplicant/wnm_sta.c
++++ b/wpa_supplicant/wnm_sta.c
+@@ -186,8 +186,9 @@ int ieee802_11_send_wnmsleep_req(struct wpa_supplicant *wpa_s,
+ 	len = 1 + sizeof(mgmt->u.action.u.wnm_sleep_req) + wnmsleep_ie_len +
+ 		wnmtfs_ie_len + oci_ie_len;
+ 
+-	res = wpa_drv_send_action(wpa_s, wpa_s->assoc_freq, 0, wpa_s->bssid,
+-				  wpa_s->own_addr, wpa_s->bssid,
++	res = wpa_drv_send_action(wpa_s,
++				  wpas_ap_action_freq(wpa_s, oci_ie_len > 0), 0,
++				  wpa_s->bssid, wpa_s->own_addr, wpa_s->bssid,
+ 				  &mgmt->u.action.category, len, 0);
+ 	if (res < 0)
+ 		wpa_printf(MSG_DEBUG, "Failed to send WNM-Sleep Request "
+@@ -1057,8 +1058,8 @@ static int wnm_send_bss_transition_mgmt_resp(
+ 	}
+ #endif /* CONFIG_MBO */
+ 
+-	res = wpa_drv_send_action(wpa_s, wpa_s->assoc_freq, 0, wpa_s->bssid,
+-				  wpa_s->own_addr, wpa_s->bssid,
++	res = wpa_drv_send_action(wpa_s, wpas_ap_action_freq(wpa_s, false), 0,
++				  wpa_s->bssid, wpa_s->own_addr, wpa_s->bssid,
+ 				  wpabuf_head_u8(buf), wpabuf_len(buf), 0);
+ 	if (res < 0) {
+ 		wpa_printf(MSG_DEBUG,
+@@ -1834,8 +1835,8 @@ int wnm_send_bss_transition_mgmt_query(struct wpa_supplicant *wpa_s,
+ 		wpabuf_put(buf, ret);
+ 	}
+ 
+-	ret = wpa_drv_send_action(wpa_s, wpa_s->assoc_freq, 0, wpa_s->bssid,
+-				  wpa_s->own_addr, wpa_s->bssid,
++	ret = wpa_drv_send_action(wpa_s, wpas_ap_action_freq(wpa_s, false), 0,
++				  wpa_s->bssid, wpa_s->own_addr, wpa_s->bssid,
+ 				  wpabuf_head_u8(buf), wpabuf_len(buf), 0);
+ 
+ 	wpabuf_free(buf);
+--- a/wpa_supplicant/wpa_supplicant.c
++++ b/wpa_supplicant/wpa_supplicant.c
+@@ -583,8 +583,8 @@ static void wpas_wfa_capab_tx(void *eloop_ctx, void *timeout_ctx)
+ 	wpabuf_free(attr);
+ 
+ 	wpa_printf(MSG_DEBUG, "WFA: Send WFA Capabilities frame");
+-	if (wpa_drv_send_action(wpa_s, wpa_s->assoc_freq, 0, wpa_s->bssid,
+-				wpa_s->own_addr, wpa_s->bssid,
++	if (wpa_drv_send_action(wpa_s, wpas_ap_action_freq(wpa_s, false), 0,
++				wpa_s->bssid, wpa_s->own_addr, wpa_s->bssid,
+ 				wpabuf_head(buf), wpabuf_len(buf), 0) < 0)
+ 		wpa_printf(MSG_DEBUG,
+ 			   "WFA: Failed to send WFA Capabilities frame");
+@@ -10316,6 +10316,15 @@ bool wpas_ap_link_address(struct wpa_supplicant *wpa_s, const u8 *addr)
+ }
+ 
+ 
++unsigned int wpas_ap_action_freq(struct wpa_supplicant *wpa_s, bool oci)
++{
++	/* An OCI names the channel of the association link */
++	if (!wpa_s->valid_links || oci)
++		return wpa_s->assoc_freq;
++	return 0;
++}
++
++
+ int wpa_drv_send_action(struct wpa_supplicant *wpa_s, unsigned int freq,
+ 			unsigned int wait, const u8 *dst, const u8 *src,
+ 			const u8 *bssid, const u8 *data, size_t data_len,
+--- a/wpa_supplicant/wpa_supplicant_i.h
++++ b/wpa_supplicant/wpa_supplicant_i.h
+@@ -490,6 +490,9 @@ struct rrm_data {
+ 
+ 	/* destination address of the current radio measurement request */
+ 	u8 dst_addr[ETH_ALEN];
++
++	/* receive frequency of the current radio measurement request */
++	unsigned int freq;
+ };
+ 
+ enum wpa_supplicant_test_failure {
+@@ -1666,6 +1669,7 @@ struct wpa_supplicant {
+ 	struct dl_list active_scs_ids;
+ 	bool ongoing_scs_req;
+ 	u8 dscp_req_dialog_token;
++	unsigned int dscp_req_freq;
+ 	u8 dscp_query_dialog_token;
+ 	unsigned int enable_dscp_policy_capa:1;
+ 	unsigned int connection_dscp:1;
+@@ -1950,11 +1954,12 @@ int wpas_rrm_send_neighbor_rep_request(struct wpa_supplicant *wpa_s,
+ 				       void *cb_ctx);
+ void wpas_rrm_handle_radio_measurement_request(struct wpa_supplicant *wpa_s,
+ 					       const u8 *src, const u8 *dst,
+-					       const u8 *frame, size_t len);
++					       const u8 *frame, size_t len,
++					       unsigned int freq);
+ void wpas_rrm_handle_link_measurement_request(struct wpa_supplicant *wpa_s,
+ 					      const u8 *src,
+ 					      const u8 *frame, size_t len,
+-					      int rssi);
++					      int rssi, unsigned int freq);
+ void wpas_rrm_refuse_request(struct wpa_supplicant *wpa_s);
+ int wpas_beacon_rep_scan_process(struct wpa_supplicant *wpa_s,
+ 				 struct wpa_scan_results *scan_res,
+@@ -2178,7 +2183,8 @@ void wpas_handle_robust_av_scs_recv_action(struct wpa_supplicant *wpa_s,
+ void wpas_scs_deinit(struct wpa_supplicant *wpa_s);
+ void wpas_handle_qos_mgmt_recv_action(struct wpa_supplicant *wpa_s,
+ 				      const u8 *dst, const u8 *src,
+-				      const u8 *buf, size_t len);
++				      const u8 *buf, size_t len,
++				      unsigned int freq);
+ void wpas_dscp_deinit(struct wpa_supplicant *wpa_s);
+ int wpas_send_dscp_response(struct wpa_supplicant *wpa_s,
+ 			    struct dscp_resp_data *resp_data);
+@@ -2214,6 +2220,7 @@ bool wpas_is_6ghz_supported(struct wpa_supplicant *wpa_s, bool only_enabled);
+ 
+ bool wpa_is_non_eht_scs_traffic_desc_supported(struct wpa_bss *bss);
+ bool wpas_ap_link_address(struct wpa_supplicant *wpa_s, const u8 *addr);
++unsigned int wpas_ap_action_freq(struct wpa_supplicant *wpa_s, bool oci);
+ bool wpas_ap_supports_rsn_overriding(struct wpa_supplicant *wpa_s,
+ 				     struct wpa_bss *bss);
+ bool wpas_ap_supports_rsn_overriding_2(struct wpa_supplicant *wpa_s,
+--- a/wpa_supplicant/wpas_glue.c
++++ b/wpa_supplicant/wpas_glue.c
+@@ -740,9 +740,11 @@ static int wpa_supplicant_send_ft_action(void *ctx, u8 action,
+ 	pos += ETH_ALEN;
+ 	os_memcpy(pos, ies, ies_len);
+ 
+-	ret = wpa_drv_send_action(wpa_s, wpa_s->assoc_freq, 0,
+-				  wpa_s->bssid, wpa_s->own_addr, wpa_s->bssid,
+-				  data, data_len, 0);
++	ret = wpa_drv_send_action(wpa_s,
++				  wpas_ap_action_freq(
++					wpa_s, wpa_sm_ocv_enabled(wpa_s->wpa)),
++				  0, wpa_s->bssid, wpa_s->own_addr,
++				  wpa_s->bssid, data, data_len, 0);
+ 	os_free(data);
+ 
+ 	return ret;
