@@ -1518,6 +1518,19 @@ static int ag71xx_probe(struct platform_device *pdev)
 	if (!dev)
 		return -ENOMEM;
 
+	/*
+	 * Pin the interface name to the device tree alias so that the naming
+	 * does not depend on which MAC happens to probe first.  Boards where
+	 * one MAC defers on its PHY and the other does not would otherwise
+	 * swap eth0 and eth1 between boots.
+	 */
+	{
+		int id = of_alias_get_id(np, "ethernet");
+
+		if (id >= 0)
+			snprintf(dev->name, IFNAMSIZ, "eth%d", id);
+	}
+
 	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
 	if (!res)
 		return -EINVAL;
