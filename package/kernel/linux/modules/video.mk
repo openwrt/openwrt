@@ -68,7 +68,7 @@ define KernelPackage/backlight
 		CONFIG_BACKLIGHT_ADP8860=n \
 		CONFIG_BACKLIGHT_ADP8870=n
 	FILES:=$(LINUX_DIR)/drivers/video/backlight/backlight.ko
-	AUTOLOAD:=$(call AutoProbe,video backlight)
+	AUTOLOAD:=$(call AutoProbe,backlight)
 endef
 
 define KernelPackage/backlight/description
@@ -98,7 +98,7 @@ define KernelPackage/backlight-pwm
 	DEPENDS:=@PWM_SUPPORT +kmod-backlight
 	KCONFIG:=CONFIG_BACKLIGHT_PWM
 	FILES:=$(LINUX_DIR)/drivers/video/backlight/pwm_bl.ko
-	AUTOLOAD:=$(call AutoProbe,video pwm_bl,1)
+	AUTOLOAD:=$(call AutoProbe,pwm_bl,1)
 endef
 
 define KernelPackage/backlight-pwm/description
