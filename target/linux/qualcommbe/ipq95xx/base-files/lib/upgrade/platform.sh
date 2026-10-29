@@ -1,8 +1,8 @@
 PART_NAME=firmware
 REQUIRE_IMAGE_METADATA=1
 
-RAMFS_COPY_BIN='fw_printenv fw_setenv head cmp sha256sum tr mktemp'
-RAMFS_COPY_DATA='/etc/fw_env.config /var/lock/fw_printenv.lock'
+RAMFS_COPY_BIN='fw_printenv fw_setenv head cmp sha256sum tr mktemp ln ucgfiber-envset'
+RAMFS_COPY_DATA='/etc/fw_env.config /var/lock/fw_printenv.lock /usr/share/ucgfiber/uboot-env.txt'
 
 platform_check_image() {
 	case "$(board_name)" in
@@ -12,6 +12,10 @@ platform_check_image() {
 			return 1
 		}
 		return 0
+		;;
+	ubnt,ucgfiber)
+		ucgfiber_check_image "$1"
+		return $?
 		;;
 	*)
 		return 0
@@ -35,6 +39,9 @@ platform_do_upgrade() {
 	linksys,ln6001)
 		ln6001_do_upgrade "$1" || return 1
 		;;
+	ubnt,ucgfiber)
+		ucgfiber_do_upgrade "$1" || return 1
+		;;
 	*)
 		default_do_upgrade "$1"
 		;;
@@ -46,6 +53,9 @@ platform_copy_config() {
 	8devices,kiwi-dvk|\
 	askey,sbe1v1k)
 		emmc_copy_config
+		;;
+	ubnt,ucgfiber)
+		ucgfiber_copy_config
 		;;
 	esac
 }

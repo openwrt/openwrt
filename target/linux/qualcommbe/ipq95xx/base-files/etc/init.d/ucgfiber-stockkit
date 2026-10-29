@@ -1,0 +1,17 @@
+#!/bin/sh /etc/rc.common
+# SPDX-License-Identifier: GPL-2.0-only
+# Keep the slot switch in stock's /opt/ucg-switch (opt-in):
+#   uci set ucgfiber.stockkit.enabled=1; uci commit ucgfiber
+
+START=99
+
+start() {
+	local enabled
+
+	config_load ucgfiber
+	config_get_bool enabled stockkit enabled 0
+	[ "$enabled" = 1 ] || return 0
+	# only when running from a slot (not from a RAM boot)
+	grep -q 'root=PARTLABEL=owrt_rootfs_[ab]' /proc/cmdline || return 0
+	/usr/sbin/ucgfiber-stockkit &
+}

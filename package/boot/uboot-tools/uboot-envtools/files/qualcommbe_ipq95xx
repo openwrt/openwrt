@@ -15,6 +15,9 @@ askey,sbe1v1k)
 linksys,ln6001)
 	ubootenv_add_mmc "u_env" "" "0x0" "0x40000" "0x40000"
 	;;
+ubnt,ucgfiber)
+	ubootenv_add_mtd "u-boot-env" "0x0" "0x10000" "0x10000"
+	;;
 esac
 
 config_load ubootenv
