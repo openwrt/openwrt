@@ -1,0 +1,45 @@
+From 235764ad1e048fb9513a02d15bfd6cbe5b21edcb Mon Sep 17 00:00:00 2001
+From: Felix Fietkau <nbd@nbd.name>
+Date: Mon, 26 Oct 2026 12:57:31 +0100
+Subject: [PATCH 1/3] net: ethernet: mtk_wed: clear the rx buffer pointers
+ after freeing them
+
+mtk_wed_free_rx_buffer() and mtk_wed_hwrro_free_buffer() keep
+rx_buf_ring.desc, hw_rro.desc and hw_rro.pages after freeing them.
+mtk_wed_rx_reset() frees the buffers, and the restart allocates them
+again in mtk_wed_rx_buffer_alloc(). If an allocation there fails before
+the new pointer is stored, the freed pointer stays, and
+__mtk_wed_detach() frees it a second time.
+
+Clear the pointers after the free, so that a pointer is only set while
+its buffer is allocated.
+
+Fixes: b08134c6e109 ("net: ethernet: mtk_wed: add mtk_wed_rx_reset routine")
+Fixes: 6757d345dd7d ("net: ethernet: mtk_wed: introduce hw_rro support for MT7988")
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+ drivers/net/ethernet/mediatek/mtk_wed.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+--- a/drivers/net/ethernet/mediatek/mtk_wed.c
++++ b/drivers/net/ethernet/mediatek/mtk_wed.c
+@@ -886,9 +886,11 @@ mtk_wed_hwrro_free_buffer(struct mtk_wed
+ 
+ 	dma_free_coherent(dev->hw->dev, dev->hw_rro.size * sizeof(*desc),
+ 			  desc, dev->hw_rro.desc_phys);
++	dev->hw_rro.desc = NULL;
+ 
+ free_pagelist:
+ 	kfree(page_list);
++	dev->hw_rro.pages = NULL;
+ }
+ 
+ static void
+@@ -902,6 +904,7 @@ mtk_wed_free_rx_buffer(struct mtk_wed_de
+ 	dev->wlan.release_rx_buf(dev);
+ 	dma_free_coherent(dev->hw->dev, dev->rx_buf_ring.size * sizeof(*desc),
+ 			  desc, dev->rx_buf_ring.desc_phys);
++	dev->rx_buf_ring.desc = NULL;
+ 
+ 	mtk_wed_hwrro_free_buffer(dev);
+ }
