@@ -1,0 +1,131 @@
+From c80855059801831710ead93d44f425cd205dec7c Mon Sep 17 00:00:00 2001
+From: Simon Polack <spolack+git@mailbox.org>
+Date: Sat, 10 Oct 2026 17:59:12 +0200
+Subject: [PATCH] socket: fix the file descriptor on 64-bit big-endian
+
+A socket keeps its descriptor in the data pointer of its resource,
+ucv_socket_new() stores "(void *)(intptr_t)fd". Three places read it back
+through an "int *" to that pointer: args_get_(), uv_to_fileno() and
+uc_socket_inst_close().
+
+Where a pointer has 64 bits and the byte order is big-endian, the int
+at that address is the upper half of the pointer, which is 0. Every
+method of every socket then works on descriptor 0: fileno() returns 0,
+recv() fails with "Not a socket" or reads standard input, a uloop handle
+of the socket watches descriptor 0, and close() closes descriptor 0 and
+leaves the real descriptor open until the resource is collected. On
+little-endian the lower half is read and it works; on 32-bit both have
+the same size.
+
+Read and write the value as the pointer it is, through intptr_t
+typed pointers.
+
+Found on mips64 (Cavium Octeon, OpenWrt octeon target), where a script
+with two sockets could not work: socket.connect() to a TCP port returned
+a socket whose fileno() was 0 while descriptor 0 was the standard input.
+
+Add a regression test checking that sockets report distinct descriptors
+above the standard ones and that close() releases the descriptor of the
+socket and leaves standard input open. The test can only fail on a
+64-bit big-endian build; run on s390x under qemu-user, it fails without
+this change and passes with it.
+
+Fixes: e8d78a2 ("lib: introduce socket library")
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Signed-off-by: Simon Polack <spolack+git@mailbox.org>
+[simplify change by changing variable type]
+Signed-off-by: Jo-Philipp Wich <jo@mein.io>
+---
+ lib/socket.c                               | 14 ++++---
+ tests/custom/08_lib_socket/01_fileno_close | 43 ++++++++++++++++++++++
+ 2 files changed, 52 insertions(+), 5 deletions(-)
+ create mode 100644 tests/custom/08_lib_socket/01_fileno_close
+
+--- a/lib/socket.c
++++ b/lib/socket.c
+@@ -170,7 +170,7 @@ args_get_(uc_vm_t *vm, size_t nargs, int
+ 	uc_value_t **ptr, *arg;
+ 	uc_type_t type, t;
+ 	size_t index = 0;
+-	int *sockfd;
++	intptr_t *sockfd;
+ 	va_list ap;
+ 	bool opt;
+ 
+@@ -820,9 +820,9 @@ static bool
+ uv_to_fileno(uc_vm_t *vm, uc_value_t *val, int *fileno)
+ {
+ 	uc_value_t *fn;
+-	int *fdptr;
++	intptr_t *fdptr;
+ 
+-	fdptr = (int *)ucv_resource_dataptr(val, "socket");
++	fdptr = (intptr_t *)ucv_resource_dataptr(val, "socket");
+ 
+ 	if (fdptr) {
+ 		if (*fdptr < 0)
+@@ -4874,12 +4874,16 @@ uc_socket_inst_sockname(uc_vm_t *vm, siz
+ static uc_value_t *
+ uc_socket_inst_close(uc_vm_t *vm, size_t nargs)
+ {
+-	int *sockfd = uc_fn_this("socket");
++	intptr_t *sockfd = uc_fn_this("socket");
++	int fd;
+ 
+ 	if (!sockfd || *sockfd == -1)
+ 		err_return(EBADF, "Invalid socket context");
+ 
+-	if (!xclose(sockfd))
++	fd = *sockfd;
++	*sockfd = -1;
++
++	if (!xclose(&fd))
+ 		err_return(errno, "close()");
+ 
+ 	ok_return(ucv_boolean_new(true));
+--- /dev/null
++++ b/tests/custom/08_lib_socket/01_fileno_close
+@@ -0,0 +1,43 @@
++Test that a socket reports and closes its own file descriptor.
++
++The descriptor is stored in the data pointer of the socket resource and
++was read back through an `int *`. On 64-bit big-endian systems that
++yields the upper half of the pointer: `fileno()` returned 0 for every
++socket and `close()` closed descriptor 0 instead of the socket.
++
++The failure only shows on a 64-bit big-endian build, on other systems
++this test passes regardless of the fix.
++
++-- Testcase --
++{%
++	import * as socket from 'socket';
++	import * as fs from 'fs';
++
++	let s1 = socket.create(socket.AF_INET, socket.SOCK_DGRAM, 0);
++	let s2 = socket.create(socket.AF_INET, socket.SOCK_DGRAM, 0);
++	let fd1 = s1.fileno(), fd2 = s2.fileno();
++
++	printf("fds_valid=%s fds_distinct=%s\n",
++		(fd1 > 2 && fd2 > 2) ? "yes" : "no",
++		(fd1 != fd2) ? "yes" : "no");
++
++	printf("close=%s\n", s1.close());
++	printf("fd_released=%s\n", fs.stat(`/proc/self/fd/${fd1}`) == null ? "yes" : "no");
++	printf("stdin_open=%s\n", fs.stat("/proc/self/fd/0") != null ? "yes" : "no");
++
++	printf("fileno_after_close=%J error=%s\n", s1.fileno(), socket.error());
++	printf("close_after_close=%J error=%s\n", s1.close(), socket.error());
++
++	printf("other_socket_intact=%s\n", s2.fileno() == fd2 ? "yes" : "no");
++%}
++-- End --
++
++-- Expect stdout --
++fds_valid=yes fds_distinct=yes
++close=true
++fd_released=yes
++stdin_open=yes
++fileno_after_close=null error=Invalid socket context: Bad file descriptor
++close_after_close=null error=Invalid socket context: Bad file descriptor
++other_socket_intact=yes
++-- End --
