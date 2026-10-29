@@ -580,6 +580,7 @@ static void otto_l3_930x_host_route_write(struct otto_l3_ctrl *ctrl, int idx, st
  */
 static const u8 otto_l3_930x_slot_widths[] = { 1, 2, 3, 6 };
 
+/* Return a logical slot, -ENOENT for a missing route, or -ENOSPC if full. */
 static int otto_l3_930x_find_slot(struct otto_l3_ctrl *ctrl, struct otto_l3_route *rt, bool must_exist)
 {
 	int slot_width, algorithm, addr, idx;
@@ -622,7 +623,7 @@ static int otto_l3_930x_find_slot(struct otto_l3_ctrl *ctrl, struct otto_l3_rout
 		}
 	}
 
-	return -1;
+	return must_exist ? -ENOENT : -ENOSPC;
 }
 
 /*
@@ -1793,12 +1794,12 @@ static int otto_l3_route_install(struct otto_l3_ctrl *ctrl, struct otto_l3_route
 
 	if (r->is_host_route) {
 		slot = ctrl->cfg->find_slot(ctrl, r, true);
-		if (slot < 0)
+		if (slot == -ENOENT)
 			slot = ctrl->cfg->find_slot(ctrl, r, false);
-		if (slot < 0) {
+		if (slot == -ENOSPC)
 			dev_err(ctrl->dev, "no slot for host route %pI4\n", &r->dst_ip);
-			return -ENOSPC;
-		}
+		if (slot < 0)
+			return slot;
 
 		dev_dbg(ctrl->dev, "Got slot for route: %d\n", slot);
 		ctrl->cfg->host_route_write(ctrl, slot, r);
