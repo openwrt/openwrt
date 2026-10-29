@@ -1,4 +1,4 @@
-From de2e57e70ad2eb96fa88193bd700b4a7e68ff75c Mon Sep 17 00:00:00 2001
+From b5aad2a0a9a9c0d98ace8d5af673cfb54b72068d Mon Sep 17 00:00:00 2001
 From: Daniel Golle <daniel@makrotopia.org>
 Date: Fri, 16 Oct 2026 17:39:58 +0100
 Subject: [PATCH] ARM: dts: rockchip: rv1126: Add the RKVENC video encoder
@@ -34,10 +34,10 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +		reg = <0xfe870100 0x20>;
 +	};
 +
- 	qos_ispp_m0: qos@fe880000 {
- 		compatible = "rockchip,rv1126-qos", "syscon";
- 		reg = <0xfe880000 0x20>;
-@@ -472,6 +487,17 @@
+ 	gic: interrupt-controller@feff0000 {
+ 		compatible = "arm,gic-400";
+ 		interrupt-controller;
+@@ -451,6 +466,17 @@
  					 <&qos_iep>;
  				#power-domain-cells = <0>;
  			};
@@ -55,7 +55,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  		};
  	};
  
-@@ -1315,6 +1341,34 @@
+@@ -1263,6 +1289,34 @@
  		status = "disabled";
  	};
  
