@@ -1,4 +1,4 @@
-From 4478c9d81c72508da867630331ae5d6e7fa31b9f Mon Sep 17 00:00:00 2001
+From c3457dcea8a4390a130397b34df392f7b2f7018f Mon Sep 17 00:00:00 2001
 From: Daniel Golle <daniel@makrotopia.org>
 Date: Fri, 16 Oct 2026 23:57:02 +0100
 Subject: [PATCH] media: platform: rockchip: Add RKVENC v1 encoder driver
@@ -53,16 +53,16 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  .../platform/rockchip/rkvenc/rkvenc-nal.h     |   12 +
  .../platform/rockchip/rkvenc/rkvenc-rc.c      |  180 +++
  .../platform/rockchip/rkvenc/rkvenc-ref.c     |  127 ++
- .../platform/rockchip/rkvenc/rkvenc-v4l2.c    | 1149 +++++++++++++++++
+ .../platform/rockchip/rkvenc/rkvenc-v4l2.c    | 1150 +++++++++++++++++
  .../rockchip/rkvenc/rkvenc-vepu541-h264.c     |  207 +++
- .../rockchip/rkvenc/rkvenc-vepu541-hevc.c     |  211 +++
- .../rockchip/rkvenc/rkvenc-vepu541-regs.h     |  283 ++++
- .../rockchip/rkvenc/rkvenc-vepu541-tables.c   |   97 ++
+ .../rockchip/rkvenc/rkvenc-vepu541-hevc.c     |  183 +++
+ .../rockchip/rkvenc/rkvenc-vepu541-regs.h     |  284 ++++
+ .../rockchip/rkvenc/rkvenc-vepu541-tables.c   |  278 ++++
  .../platform/rockchip/rkvenc/rkvenc-vepu541.c |  218 ++++
- .../platform/rockchip/rkvenc/rkvenc-vepu541.h |  198 +++
- .../media/platform/rockchip/rkvenc/rkvenc.c   |  520 ++++++++
+ .../platform/rockchip/rkvenc/rkvenc-vepu541.h |  201 +++
+ .../media/platform/rockchip/rkvenc/rkvenc.c   |  533 ++++++++
  .../media/platform/rockchip/rkvenc/rkvenc.h   |  249 ++++
- 20 files changed, 4073 insertions(+)
+ 20 files changed, 4244 insertions(+)
  create mode 100644 drivers/media/platform/rockchip/rkvenc/Kconfig
  create mode 100644 drivers/media/platform/rockchip/rkvenc/Makefile
  create mode 100644 drivers/media/platform/rockchip/rkvenc/rkvenc-gop.c
@@ -1064,7 +1064,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +}
 --- /dev/null
 +++ b/drivers/media/platform/rockchip/rkvenc/rkvenc-v4l2.c
-@@ -0,0 +1,1149 @@
+@@ -0,0 +1,1150 @@
 +// SPDX-License-Identifier: GPL-2.0-only
 +/*
 + * V4L2 stateful mem-to-mem front end for the Rockchip RKVENC v1 encoder.
@@ -1560,7 +1560,8 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +		f.src.plane[1] = f.src.plane[0] + ctx->bytesperline * ctx->height;
 +	else
 +		f.src.plane[1] = lower_32_bits(
-+			vb2_dma_contig_plane_dma_addr(&src->vb2_buf, 1));
++			vb2_dma_contig_plane_dma_addr(&src->vb2_buf, 1) +
++			src->vb2_buf.planes[1].data_offset);
 +
 +	f.bs.base = lower_32_bits(
 +		vb2_dma_contig_plane_dma_addr(&dst->vb2_buf, 0));

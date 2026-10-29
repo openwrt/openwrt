@@ -412,7 +412,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +}
 --- a/drivers/media/platform/rockchip/rkvenc/rkvenc-v4l2.c
 +++ b/drivers/media/platform/rockchip/rkvenc/rkvenc-v4l2.c
-@@ -517,17 +517,22 @@ static void rkvenc_device_run(void *priv
+@@ -518,17 +518,22 @@ static void rkvenc_device_run(void *priv
  	else
  		rkvenc_hevc_build_pic(ctx, &f.hevc, idr);
  
@@ -437,7 +437,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  finish_error:
  	dev->job_running = false;
  	dev->job_ctx = NULL;
-@@ -538,8 +543,16 @@ finish_error:
+@@ -539,8 +544,16 @@ finish_error:
  		v4l2_m2m_job_finish(dev->m2m_dev, ctx->m2m_ctx);
  }
  
@@ -454,7 +454,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  };
  
  /* ----------------------------------------------------------------------- */
-@@ -1024,6 +1037,7 @@ static int rkvenc_open(struct file *filp
+@@ -1025,6 +1038,7 @@ static int rkvenc_open(struct file *filp
  	if (ret)
  		goto err_m2m;
  
@@ -462,7 +462,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	v4l2_fh_add(&ctx->fh, filp);
  	return 0;
  
-@@ -1039,6 +1053,7 @@ static int rkvenc_release(struct file *f
+@@ -1040,6 +1054,7 @@ static int rkvenc_release(struct file *f
  {
  	struct rkvenc_ctx *ctx = fh_to_rkvenc_ctx(filp->private_data);
  
