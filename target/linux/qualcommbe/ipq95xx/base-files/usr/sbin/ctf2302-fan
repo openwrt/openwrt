@@ -1,0 +1,108 @@
+#!/bin/sh
+# Simple fan control for the Sensylink CTF2302 (Ubiquiti UCG-Fiber).
+#
+# Every INTERVAL seconds, take the hottest of all hwmon temperatures (the
+# CTF2302, the SFP modules, the switch) and the SoC thermal zones. The fan
+# never stops: pwm1 is PWM_MIN at or below T_ON and follows a linear curve
+# to PWM_MAX at or above T_HIGH. PWM_MIN is a quiet duty that keeps the
+# fan turning (about 3,500 RPM; stock starts the fan at 110). The duty
+# rises at once and falls by at most STEP_DOWN per interval. If no
+# temperature can be read, the fan runs at PWM_MAX. On exit it is left at
+# PWM_MAX.
+
+SYS="${CTF2302_SYSFS:-/sys}"
+INTERVAL="${CTF2302_INTERVAL:-5}"
+T_ON=60000
+T_HIGH=75000
+PWM_MIN=80
+PWM_MAX=255
+STEP_DOWN=8
+
+log() {
+	logger -t ctf2302-fan "$*" 2>/dev/null || echo "ctf2302-fan: $*" >&2
+}
+
+find_hwmon() {
+	local d
+
+	for d in "$SYS"/class/hwmon/hwmon*; do
+		[ "$(cat "$d/name" 2>/dev/null)" = "ctf2302" ] && {
+			echo "$d"
+			return 0
+		}
+	done
+	return 1
+}
+
+# hottest reading in millidegrees C, empty if none could be read
+max_temp() {
+	local max="" t f
+
+	for f in "$SYS"/class/hwmon/hwmon*/temp*_input "$SYS"/class/thermal/thermal_zone*/temp; do
+		[ -r "$f" ] || continue
+		read -r t < "$f" 2>/dev/null || continue
+		case "$t" in
+			""|*[!0-9-]*) continue ;;
+		esac
+		[ -z "$max" ] || [ "$t" -gt "$max" ] && max="$t"
+	done
+	echo "$max"
+}
+
+# sets WANT
+target_pwm() {
+	local t="$1"
+
+	if [ -z "$t" ] || [ "$t" -ge "$T_HIGH" ]; then
+		WANT="$PWM_MAX"
+	elif [ "$t" -le "$T_ON" ]; then
+		WANT="$PWM_MIN"
+	else
+		# linear from PWM_MIN at T_ON to PWM_MAX at T_HIGH (integer math,
+		# multiply first)
+		WANT=$((PWM_MIN + (t - T_ON) * (PWM_MAX - PWM_MIN) / (T_HIGH - T_ON)))
+	fi
+}
+
+step() {
+	local t want cur
+
+	t="$(max_temp)"
+	[ -n "$t" ] || [ "$NO_TEMP_LOGGED" = 1 ] || {
+		log "no temperature readable, fan at full speed"
+		NO_TEMP_LOGGED=1
+	}
+	target_pwm "$t"
+	want="$WANT"
+	read -r cur < "$HWMON/pwm1" 2>/dev/null || cur="$PWM_MAX"
+	case "$cur" in
+		""|*[!0-9]*) cur="$PWM_MAX" ;;
+	esac
+	[ "$want" -gt 0 ] && [ "$want" -lt "$cur" ] &&
+		[ $((cur - want)) -gt "$STEP_DOWN" ] && want=$((cur - STEP_DOWN))
+	[ "$want" = "$cur" ] || echo "$want" > "$HWMON/pwm1"
+}
+
+i=0
+until HWMON="$(find_hwmon)"; do
+	i=$((i + 1))
+	[ "$i" -ge 60 ] && {
+		log "no ctf2302 hwmon device found"
+		exit 1
+	}
+	sleep 1
+done
+
+trap 'echo "$PWM_MAX" > "$HWMON/pwm1"; exit 0' INT TERM
+log "controlling $HWMON/pwm1 ($PWM_MIN at <= $((T_ON / 1000)) C, $PWM_MAX at $((T_HIGH / 1000)) C)"
+
+if [ -n "$CTF2302_ONCE" ]; then
+	step
+	exit 0
+fi
+
+while :; do
+	step
+	sleep "$INTERVAL" &
+	wait $!
+done
