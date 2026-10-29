@@ -3,6 +3,7 @@
 #include <asm/mach-rtl-otto/mach-rtl-otto.h>
 #include <linux/etherdevice.h>
 #include <linux/iopoll.h>
+#include <linux/regmap.h>
 #include <net/nexthop.h>
 
 #include "lag.h"
@@ -73,16 +74,28 @@
 
 #define RTL838X_RMA_LLDP_CTRL			(0x4340)
 
+static u32 rtl838x_read_debug_reg(struct otto_dsa_priv *priv, u32 reg)
+{
+	u32 val;
+
+	if (regmap_read(priv->map, reg, &val))
+		return 0;
+	return val;
+}
+
 void rtldsa_838x_print_matrix(struct otto_dsa_priv *priv)
 {
-	unsigned volatile int *ptr8;
-
-	ptr8 = RTL838X_SW_BASE + RTL838X_PORT_ISO_CTRL(0);
 	for (int i = 0; i < 28; i += 8)
 		pr_debug("> %8x %8x %8x %8x %8x %8x %8x %8x\n",
-			 ptr8[i + 0], ptr8[i + 1], ptr8[i + 2], ptr8[i + 3],
-			 ptr8[i + 4], ptr8[i + 5], ptr8[i + 6], ptr8[i + 7]);
-	pr_debug("CPU_PORT> %8x\n", ptr8[28]);
+			 rtl838x_read_debug_reg(priv, RTL838X_PORT_ISO_CTRL(i + 0)),
+			 rtl838x_read_debug_reg(priv, RTL838X_PORT_ISO_CTRL(i + 1)),
+			 rtl838x_read_debug_reg(priv, RTL838X_PORT_ISO_CTRL(i + 2)),
+			 rtl838x_read_debug_reg(priv, RTL838X_PORT_ISO_CTRL(i + 3)),
+			 rtl838x_read_debug_reg(priv, RTL838X_PORT_ISO_CTRL(i + 4)),
+			 rtl838x_read_debug_reg(priv, RTL838X_PORT_ISO_CTRL(i + 5)),
+			 rtl838x_read_debug_reg(priv, RTL838X_PORT_ISO_CTRL(i + 6)),
+			 rtl838x_read_debug_reg(priv, RTL838X_PORT_ISO_CTRL(i + 7)));
+	pr_debug("CPU_PORT> %8x\n", rtl838x_read_debug_reg(priv, RTL838X_PORT_ISO_CTRL(28)));
 }
 
 static inline int rtl838x_port_iso_ctrl(int p)
@@ -102,17 +115,17 @@ static inline int rtl838x_mac_port_ctrl(int p)
 
 static void rtl838x_traffic_set(struct otto_dsa_priv *priv, int source, u64 dest_matrix)
 {
-	rtl838x_set_port_reg(dest_matrix, rtl838x_port_iso_ctrl(source));
+	regmap_write(priv->map, rtl838x_port_iso_ctrl(source), (u32)dest_matrix);
 }
 
 static void rtl838x_traffic_enable(struct otto_dsa_priv *priv, int source, int dest)
 {
-	rtl838x_mask_port_reg(0, BIT(dest), rtl838x_port_iso_ctrl(source));
+	regmap_write_bits(priv->map, rtl838x_port_iso_ctrl(source), BIT(dest), BIT(dest));
 }
 
 static void rtl838x_traffic_disable(struct otto_dsa_priv *priv, int source, int dest)
 {
-	rtl838x_mask_port_reg(BIT(dest), 0, rtl838x_port_iso_ctrl(source));
+	regmap_write_bits(priv->map, rtl838x_port_iso_ctrl(source), BIT(dest), 0);
 }
 
 /* Enables or disables the EEE/EEEP capability of a port */
@@ -128,15 +141,15 @@ static void rtldsa_838x_set_mac_eee(struct otto_dsa_priv *priv, int port, bool e
 	v = enable ? 0x3 : 0x0;
 
 	/* Set EEE state for 100 (bit 9) & 1000MBit (bit 10) */
-	sw_w32_mask(GENMASK(10, 9), v << 9, priv->r->mac_force_mode_ctrl(port));
+	regmap_write_bits(priv->map, priv->r->mac_force_mode_ctrl(port), GENMASK(10, 9), v << 9);
 
 	/* Set TX/RX EEE state */
 	if (enable) {
-		sw_w32_mask(0, BIT(port), RTL838X_EEE_PORT_TX_EN);
-		sw_w32_mask(0, BIT(port), RTL838X_EEE_PORT_RX_EN);
+		regmap_write_bits(priv->map, RTL838X_EEE_PORT_TX_EN, BIT(port), BIT(port));
+		regmap_write_bits(priv->map, RTL838X_EEE_PORT_RX_EN, BIT(port), BIT(port));
 	} else {
-		sw_w32_mask(BIT(port), 0, RTL838X_EEE_PORT_TX_EN);
-		sw_w32_mask(BIT(port), 0, RTL838X_EEE_PORT_RX_EN);
+		regmap_write_bits(priv->map, RTL838X_EEE_PORT_TX_EN, BIT(port), 0);
+		regmap_write_bits(priv->map, RTL838X_EEE_PORT_RX_EN, BIT(port), 0);
 	}
 	priv->ports[port].eee_enabled = enable;
 }
@@ -144,11 +157,11 @@ static void rtldsa_838x_set_mac_eee(struct otto_dsa_priv *priv, int port, bool e
 static void rtl838x_init_eee(struct otto_dsa_priv *priv, bool enable)
 {
 	pr_debug("Setting up EEE, state: %d\n", enable);
-	sw_w32_mask(BIT(2), 0, RTL838X_SMI_GLB_CTRL);
+	regmap_write_bits(priv->map, RTL838X_SMI_GLB_CTRL, BIT(2), 0);
 
 	/* Set timers for EEE */
-	sw_w32(0x5001411, RTL838X_EEE_TX_TIMER_GIGA_CTRL);
-	sw_w32(0x5001417, RTL838X_EEE_TX_TIMER_GELITE_CTRL);
+	regmap_write(priv->map, RTL838X_EEE_TX_TIMER_GIGA_CTRL, 0x5001411);
+	regmap_write(priv->map, RTL838X_EEE_TX_TIMER_GELITE_CTRL, 0x5001417);
 
 	/* Enable EEE MAC support on ports */
 	for (int i = 0; i < priv->r->cpu_port; i++) {
@@ -160,15 +173,15 @@ static void rtl838x_init_eee(struct otto_dsa_priv *priv, bool enable)
 
 static void rtl838x_set_igr_filter(struct otto_dsa_priv *priv, int port, enum igr_filter state)
 {
-	sw_w32_mask(GENMASK(1, 0) << ((port & 0xf) << 1),
-		    (u32)(state & 0x3) << ((port & 0xf) << 1),
-		    RTL838X_VLAN_PORT_IGR_FLTR + (((port >> 4) << 2)));
+	regmap_write_bits(priv->map, RTL838X_VLAN_PORT_IGR_FLTR + (((port >> 4) << 2)),
+			  GENMASK(1, 0) << ((port & 0xf) << 1),
+			  (u32)(state & 0x3) << ((port & 0xf) << 1));
 }
 
 static void rtl838x_set_egr_filter(struct otto_dsa_priv *priv, int port, enum egr_filter state)
 {
-	sw_w32_mask(BIT(port % 0x1d), (u32)(state & 0x1) << (port % 0x1d),
-		    RTL838X_VLAN_PORT_EGR_FLTR + (((port / 29) << 2)));
+	regmap_write_bits(priv->map, RTL838X_VLAN_PORT_EGR_FLTR + (((port / 29) << 2)),
+			  BIT(port % 0x1d), (u32)(state & 0x1) << (port % 0x1d));
 }
 
 static void rtl838x_set_receive_management_action(struct otto_dsa_priv *priv,
@@ -177,19 +190,19 @@ static void rtl838x_set_receive_management_action(struct otto_dsa_priv *priv,
 {
 	switch (type) {
 	case BPDU:
-		sw_w32_mask(GENMASK(1, 0) << ((port & 0xf) << 1),
-			    (u32)(action & 0x3) << ((port & 0xf) << 1),
-			    RTL838X_RMA_BPDU_CTRL + ((port >> 4) << 2));
+		regmap_write_bits(priv->map, RTL838X_RMA_BPDU_CTRL + ((port >> 4) << 2),
+				  GENMASK(1, 0) << ((port & 0xf) << 1),
+				  (u32)(action & 0x3) << ((port & 0xf) << 1));
 		break;
 	case PTP:
-		sw_w32_mask(GENMASK(1, 0) << ((port & 0xf) << 1),
-			    (u32)(action & 0x3) << ((port & 0xf) << 1),
-			    RTL838X_RMA_PTP_CTRL + ((port >> 4) << 2));
+		regmap_write_bits(priv->map, RTL838X_RMA_PTP_CTRL + ((port >> 4) << 2),
+				  GENMASK(1, 0) << ((port & 0xf) << 1),
+				  (u32)(action & 0x3) << ((port & 0xf) << 1));
 		break;
 	case LLDP:
-		sw_w32_mask(GENMASK(1, 0) << ((port & 0xf) << 1),
-			    (u32)(action & 0x3) << ((port & 0xf) << 1),
-			    RTL838X_RMA_LLDP_CTRL + ((port >> 4) << 2));
+		regmap_write_bits(priv->map, RTL838X_RMA_LLDP_CTRL + ((port >> 4) << 2),
+				  GENMASK(1, 0) << ((port & 0xf) << 1),
+				  (u32)(action & 0x3) << ((port & 0xf) << 1));
 		break;
 	default:
 		break;
