@@ -2474,21 +2474,6 @@ ar8xxx_phy_config_init(struct phy_device *phydev)
 	if (ret)
 		return ret;
 
-	/*
-	 * ar8xxx_start() reprograms every port through
-	 * ar8xxx_sw_reset_switch() after ar8316_hw_init() ran, which throws
-	 * away the port 4 RGMII workaround.  When the board declares port 4
-	 * as the CPU PHY, redo the init afterwards, exactly like the
-	 * addr != 0 path above does when ar8xxx owns that PHY.
-	 */
-	if (chip_is_ar8316(priv) &&
-	    ar8xxx_port4_is_phy(priv)) {
-		priv->dev.ports = (AR8216_NUM_PORTS - 1);
-		priv->initialized = false;
-		priv->port4_phy = true;
-		ar8316_hw_init(priv);
-	}
-
 #ifdef CONFIG_ETHERNET_PACKET_MANGLE
 	/* VID fixup only needed on ar8216 */
 	if (chip_is_ar8216(priv)) {
@@ -2529,6 +2514,18 @@ ar8xxx_check_link_states(struct ar8xxx_priv *priv)
 	mutex_unlock(&priv->reg_mutex);
 
 	return changed;
+}
+
+/*
+ * Boards whose MACs are not phylib clients (fixed link) still need the
+ * switch programmed.  Initialise it as soon as the switch PHY is probed.
+ */
+static bool
+ar8xxx_init_at_probe(struct ar8xxx_priv *priv)
+{
+	struct device_node *np = priv->mii_bus->dev.of_node;
+
+	return np && of_property_read_bool(np, "qca,init-at-probe");
 }
 
 static int
@@ -2688,6 +2685,20 @@ ar8xxx_phy_probe(struct phy_device *phydev)
 
 found:
 	priv->use_count++;
+
+	if (phydev->mdio.addr == 0 && ar8xxx_init_at_probe(priv)) {
+		if (ar8xxx_port4_is_phy(priv)) {
+			priv->dev.ports = (AR8216_NUM_PORTS - 1);
+			priv->port4_phy = true;
+		}
+
+		priv->phy = phydev;
+		phydev->interface = PHY_INTERFACE_MODE_RGMII;
+
+		ret = ar8xxx_start(priv);
+		if (ret)
+			goto err_unregister_switch;
+	}
 
 	if (phydev->mdio.addr == 0 && priv->chip->config_at_probe) {
 		priv->phy = phydev;
