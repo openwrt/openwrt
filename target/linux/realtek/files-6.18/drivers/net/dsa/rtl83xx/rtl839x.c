@@ -65,15 +65,24 @@
 
 #define RTL839X_RMA_LLDP_CTRL			(0x124C)
 
+static u64 rtl839x_read_debug_matrix(struct otto_dsa_priv *priv, int port)
+{
+	u32 v[2];
+
+	if (regmap_bulk_read(priv->map, RTL839X_PORT_ISO_CTRL(port), v, ARRAY_SIZE(v)))
+		return 0;
+	return ((u64)v[0] << 32) | v[1];
+}
+
 void rtldsa_839x_print_matrix(struct otto_dsa_priv *priv)
 {
-	volatile u64 *ptr9;
-
-	ptr9 = RTL838X_SW_BASE + RTL839X_PORT_ISO_CTRL(0);
 	for (int i = 0; i < 52; i += 4)
 		pr_debug("> %16llx %16llx %16llx %16llx\n",
-			 ptr9[i + 0], ptr9[i + 1], ptr9[i + 2], ptr9[i + 3]);
-	pr_debug("CPU_PORT> %16llx\n", ptr9[52]);
+			 rtl839x_read_debug_matrix(priv, i + 0),
+			 rtl839x_read_debug_matrix(priv, i + 1),
+			 rtl839x_read_debug_matrix(priv, i + 2),
+			 rtl839x_read_debug_matrix(priv, i + 3));
+	pr_debug("CPU_PORT> %16llx\n", rtl839x_read_debug_matrix(priv, 52));
 }
 
 static inline int rtl839x_port_iso_ctrl(int p)
@@ -104,22 +113,34 @@ static inline int rtl839x_mac_port_ctrl(int p)
 
 static void rtl839x_traffic_set(struct otto_dsa_priv *priv, int source, u64 dest_matrix)
 {
+	u64 ports = dest_matrix | BIT_ULL(source);
+	u32 reg = rtl839x_port_iso_ctrl(source);
+
 	/* The isolation mask also applies to frames routed in hardware, which
 	 * may have to leave through the port they came in on. The SDK keeps a
 	 * port in its own mask; a bridged frame is still not sent back out of
 	 * its ingress port.
 	 */
-	rtl839x_set_port_reg_be(dest_matrix | BIT_ULL(source), rtl839x_port_iso_ctrl(source));
+	regmap_write(priv->map, reg, upper_32_bits(ports));
+	regmap_write(priv->map, reg + 4, lower_32_bits(ports));
 }
 
 static void rtl839x_traffic_enable(struct otto_dsa_priv *priv, int source, int dest)
 {
-	rtl839x_mask_port_reg_be(0, BIT_ULL(dest), rtl839x_port_iso_ctrl(source));
+	u64 mask = BIT_ULL(dest);
+	u32 reg = rtl839x_port_iso_ctrl(source);
+
+	regmap_write_bits(priv->map, reg, upper_32_bits(mask), upper_32_bits(mask));
+	regmap_write_bits(priv->map, reg + 4, lower_32_bits(mask), lower_32_bits(mask));
 }
 
 static void rtl839x_traffic_disable(struct otto_dsa_priv *priv, int source, int dest)
 {
-	rtl839x_mask_port_reg_be(BIT_ULL(dest), 0, rtl839x_port_iso_ctrl(source));
+	u64 mask = BIT_ULL(dest);
+	u32 reg = rtl839x_port_iso_ctrl(source);
+
+	regmap_write_bits(priv->map, reg, upper_32_bits(mask), 0);
+	regmap_write_bits(priv->map, reg + 4, lower_32_bits(mask), 0);
 }
 
 /* Enables or disables the EEE/EEEP capability of a port */
@@ -136,11 +157,11 @@ static void rtldsa_839x_set_mac_eee(struct otto_dsa_priv *priv, int port, bool e
 	v = enable ? 0xf : 0x0;
 
 	/* Set EEE for 100, 500, 1000MBit and 10GBit */
-	sw_w32_mask(GENMASK(11, 8), v << 8, rtl839x_mac_force_mode_ctrl(port));
+	regmap_write_bits(priv->map, rtl839x_mac_force_mode_ctrl(port), GENMASK(11, 8), v << 8);
 
 	/* Set TX/RX EEE state */
 	v = enable ? 0x3 : 0x0;
-	sw_w32(v, RTL839X_EEE_CTRL(port));
+	regmap_write(priv->map, RTL839X_EEE_CTRL(port), v);
 
 	priv->ports[port].eee_enabled = enable;
 }
@@ -150,12 +171,12 @@ static void rtl839x_init_eee(struct otto_dsa_priv *priv, bool enable)
 	pr_debug("Setting up EEE, state: %d\n", enable);
 
 	/* Set wake timer for TX and pause timer both to 0x21 */
-	sw_w32_mask(GENMASK(27, 20) | GENMASK(7, 0), 0x21 << 20 | 0x21,
-		    RTL839X_EEE_TX_TIMER_GELITE_CTRL);
+	regmap_write_bits(priv->map, RTL839X_EEE_TX_TIMER_GELITE_CTRL,
+			  GENMASK(27, 20) | GENMASK(7, 0), 0x21 << 20 | 0x21);
 	/* Set pause wake timer for GIGA-EEE to 0x11 */
-	sw_w32_mask(GENMASK(27, 20), 0x11 << 20, RTL839X_EEE_TX_TIMER_GIGA_CTRL);
+	regmap_write_bits(priv->map, RTL839X_EEE_TX_TIMER_GIGA_CTRL, GENMASK(27, 20), 0x11 << 20);
 	/* Set pause wake timer for 10GBit ports to 0x11 */
-	sw_w32_mask(GENMASK(27, 20), 0x11 << 20, RTL839X_EEE_TX_TIMER_10G_CTRL);
+	regmap_write_bits(priv->map, RTL839X_EEE_TX_TIMER_10G_CTRL, GENMASK(27, 20), 0x11 << 20);
 
 	/* Setup EEE on all ports */
 	for (int i = 0; i < priv->r->cpu_port; i++) {
@@ -167,15 +188,15 @@ static void rtl839x_init_eee(struct otto_dsa_priv *priv, bool enable)
 
 static void rtl839x_set_igr_filter(struct otto_dsa_priv *priv, int port, enum igr_filter state)
 {
-	sw_w32_mask(GENMASK(1, 0) << ((port & 0xf) << 1),
-		    (u32)(state & 0x3) << ((port & 0xf) << 1),
-		    RTL839X_VLAN_PORT_IGR_FLTR + (((port >> 4) << 2)));
+	regmap_write_bits(priv->map, RTL839X_VLAN_PORT_IGR_FLTR + (((port >> 4) << 2)),
+			  GENMASK(1, 0) << ((port & 0xf) << 1),
+			  (u32)(state & 0x3) << ((port & 0xf) << 1));
 }
 
 static void rtl839x_set_egr_filter(struct otto_dsa_priv *priv, int port, enum egr_filter state)
 {
-	sw_w32_mask(BIT(port % 0x20), (u32)(state & 0x1) << (port % 0x20),
-		    RTL839X_VLAN_PORT_EGR_FLTR + (((port >> 5) << 2)));
+	regmap_write_bits(priv->map, RTL839X_VLAN_PORT_EGR_FLTR + (((port >> 5) << 2)),
+			  BIT(port % 0x20), (u32)(state & 0x1) << (port % 0x20));
 }
 
 static void rtl839x_set_receive_management_action(struct otto_dsa_priv *priv,
@@ -184,19 +205,19 @@ static void rtl839x_set_receive_management_action(struct otto_dsa_priv *priv,
 {
 	switch (type) {
 	case BPDU:
-		sw_w32_mask(GENMASK(1, 0) << ((port & 0xf) << 1),
-			    (u32)(action & 0x3) << ((port & 0xf) << 1),
-			    RTL839X_RMA_BPDU_CTRL + ((port >> 4) << 2));
+		regmap_write_bits(priv->map, RTL839X_RMA_BPDU_CTRL + ((port >> 4) << 2),
+				  GENMASK(1, 0) << ((port & 0xf) << 1),
+				  (u32)(action & 0x3) << ((port & 0xf) << 1));
 		break;
 	case PTP:
-		sw_w32_mask(GENMASK(1, 0) << ((port & 0xf) << 1),
-			    (u32)(action & 0x3) << ((port & 0xf) << 1),
-			    RTL839X_RMA_PTP_CTRL + ((port >> 4) << 2));
+		regmap_write_bits(priv->map, RTL839X_RMA_PTP_CTRL + ((port >> 4) << 2),
+				  GENMASK(1, 0) << ((port & 0xf) << 1),
+				  (u32)(action & 0x3) << ((port & 0xf) << 1));
 		break;
 	case LLDP:
-		sw_w32_mask(GENMASK(1, 0) << ((port & 0xf) << 1),
-			    (u32)(action & 0x3) << ((port & 0xf) << 1),
-			    RTL839X_RMA_LLDP_CTRL + ((port >> 4) << 2));
+		regmap_write_bits(priv->map, RTL839X_RMA_LLDP_CTRL + ((port >> 4) << 2),
+				  GENMASK(1, 0) << ((port & 0xf) << 1),
+				  (u32)(action & 0x3) << ((port & 0xf) << 1));
 		break;
 	default:
 		break;
