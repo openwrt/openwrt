@@ -221,11 +221,18 @@ static void rb4xx_nand_remove(struct platform_device *pdev)
 	nand_cleanup(&nand->chip);
 }
 
+static const struct of_device_id rb4xx_nand_of_match[] = {
+	{ .compatible = "mikrotik,rb4xx-nand" },
+	{ }
+};
+MODULE_DEVICE_TABLE(of, rb4xx_nand_of_match);
+
 static struct platform_driver rb4xx_nand_driver = {
 	.probe  = rb4xx_nand_probe,
 	.remove = rb4xx_nand_remove,
 	.driver = {
 		.name = "rb4xx-nand",
+		.of_match_table = rb4xx_nand_of_match,
 	},
 };
 
