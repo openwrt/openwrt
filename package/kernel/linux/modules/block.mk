@@ -47,7 +47,7 @@ define KernelPackage/ata-ahci
   KCONFIG:=CONFIG_SATA_AHCI
   FILES:= \
     $(LINUX_DIR)/drivers/ata/ahci.ko
-  AUTOLOAD:=$(call AutoLoad,41,libahci ahci,1)
+  AUTOLOAD:=$(call AutoLoad,41,ahci,1)
   $(call AddDepends/ata)
 endef
 
@@ -64,7 +64,7 @@ define KernelPackage/ata-ahci-platform
   FILES:= \
     $(LINUX_DIR)/drivers/ata/ahci_platform.ko \
     $(LINUX_DIR)/drivers/ata/libahci_platform.ko
-  AUTOLOAD:=$(call AutoLoad,40,libahci libahci_platform ahci_platform,1)
+  AUTOLOAD:=$(call AutoLoad,40,libahci_platform ahci_platform,1)
   $(call AddDepends/ata,@TARGET_ipq806x||TARGET_layerscape||TARGET_rockchip||TARGET_sunxi)
 endef
 
