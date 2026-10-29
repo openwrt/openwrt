@@ -3390,6 +3390,7 @@ static int otto_l3_fib_del_v6_src(struct otto_l3_ctrl *ctrl, struct fib6_info *r
 static int otto_l3_add_catch_all(struct otto_l3_ctrl *ctrl, u8 type)
 {
 	struct otto_l3_route *route;
+	int err;
 
 	route = otto_l3_route_alloc(ctrl, &in6addr_any, ROUTE_PREFIX);
 	if (!route)
@@ -3405,7 +3406,11 @@ static int otto_l3_add_catch_all(struct otto_l3_ctrl *ctrl, u8 type)
 		return -ENOSPC;
 	}
 
-	ctrl->cfg->route_write(ctrl, route->row, route);
+	err = ctrl->cfg->route_write(ctrl, route->row, route);
+	if (err) {
+		otto_l3_route_teardown(ctrl, route);
+		return err;
+	}
 
 	return 0;
 }
