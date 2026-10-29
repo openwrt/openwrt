@@ -2698,6 +2698,104 @@ hostapd_bss_ttlm_advertise(struct ubus_context *ctx, struct ubus_object *obj,
 		return UBUS_STATUS_UNKNOWN_ERROR;
 	}
 }
+
+enum {
+	NEG_TTLM_NEGOTIATION,
+	NEG_TTLM_MAPPINGS,
+	__NEG_TTLM_MAX
+};
+
+static const struct blobmsg_policy neg_ttlm_policy[__NEG_TTLM_MAX] = {
+	[NEG_TTLM_NEGOTIATION] = { "negotiation", BLOBMSG_TYPE_BOOL },
+	[NEG_TTLM_MAPPINGS] = { "mappings", BLOBMSG_TYPE_ARRAY },
+};
+
+enum {
+	NEG_TTLM_PREF_ADDR,
+	NEG_TTLM_PREF_DEFAULT,
+	NEG_TTLM_PREF_LINKS,
+	__NEG_TTLM_PREF_MAX
+};
+
+static const struct blobmsg_policy neg_ttlm_pref_policy[__NEG_TTLM_PREF_MAX] = {
+	[NEG_TTLM_PREF_ADDR] = { "addr", BLOBMSG_TYPE_STRING },
+	[NEG_TTLM_PREF_DEFAULT] = { "default", BLOBMSG_TYPE_BOOL },
+	[NEG_TTLM_PREF_LINKS] = { "links", BLOBMSG_TYPE_ARRAY },
+};
+
+static int
+hostapd_neg_ttlm_pref_parse(struct blob_attr *attr,
+			    struct hostapd_neg_ttlm_pref *pref)
+{
+	struct blob_attr *tb[__NEG_TTLM_PREF_MAX], *cur;
+	int rem, tid = 0;
+	u32 links;
+
+	if (blobmsg_type(attr) != BLOBMSG_TYPE_TABLE)
+		return -1;
+
+	blobmsg_parse(neg_ttlm_pref_policy, __NEG_TTLM_PREF_MAX, tb,
+		      blobmsg_data(attr), blobmsg_data_len(attr));
+
+	os_memset(pref, 0, sizeof(*pref));
+	if (!tb[NEG_TTLM_PREF_ADDR] ||
+	    hwaddr_aton(blobmsg_data(tb[NEG_TTLM_PREF_ADDR]), pref->addr))
+		return -1;
+
+	pref->dflt = tb[NEG_TTLM_PREF_DEFAULT] &&
+		blobmsg_get_bool(tb[NEG_TTLM_PREF_DEFAULT]);
+	if (pref->dflt)
+		return tb[NEG_TTLM_PREF_LINKS] ? -1 : 0;
+
+	if (!tb[NEG_TTLM_PREF_LINKS])
+		return -1;
+
+	blobmsg_for_each_attr(cur, tb[NEG_TTLM_PREF_LINKS], rem) {
+		if (tid == EHT_TTLM_NUM_TIDS ||
+		    blobmsg_type(cur) != BLOBMSG_TYPE_INT32)
+			return -1;
+
+		links = blobmsg_get_u32(cur);
+		if (!links || links > 0xffff)
+			return -1;
+
+		pref->links[tid++] = links;
+	}
+
+	return tid == EHT_TTLM_NUM_TIDS ? 0 : -1;
+}
+
+static int
+hostapd_bss_ttlm_negotiation(struct ubus_context *ctx, struct ubus_object *obj,
+			     struct ubus_request_data *req, const char *method,
+			     struct blob_attr *msg)
+{
+	struct hostapd_neg_ttlm_pref pref[HOSTAPD_NEG_TTLM_PREF_MAX];
+	struct hostapd_data *hapd = get_hapd_from_object(obj);
+	struct blob_attr *tb[__NEG_TTLM_MAX], *cur;
+	bool enabled = true;
+	size_t num = 0;
+	int rem;
+
+	blobmsg_parse(neg_ttlm_policy, __NEG_TTLM_MAX, tb, blob_data(msg), blob_len(msg));
+
+	if (tb[NEG_TTLM_NEGOTIATION])
+		enabled = blobmsg_get_bool(tb[NEG_TTLM_NEGOTIATION]);
+
+	if (tb[NEG_TTLM_MAPPINGS]) {
+		blobmsg_for_each_attr(cur, tb[NEG_TTLM_MAPPINGS], rem) {
+			if (num == HOSTAPD_NEG_TTLM_PREF_MAX ||
+			    hostapd_neg_ttlm_pref_parse(cur, &pref[num]))
+				return UBUS_STATUS_INVALID_ARGUMENT;
+			num++;
+		}
+	}
+
+	if (hostapd_neg_ttlm_policy_set(hapd, enabled, pref, num))
+		return UBUS_STATUS_NOT_SUPPORTED;
+
+	return 0;
+}
 #endif /* CONFIG_IEEE80211BE */
 
 static const struct ubus_method bss_methods[] = {
@@ -2721,6 +2819,7 @@ static const struct ubus_method bss_methods[] = {
 	UBUS_METHOD_NOARG("get_features", hostapd_bss_get_features),
 #ifdef CONFIG_IEEE80211BE
 	UBUS_METHOD("ttlm_advertise", hostapd_bss_ttlm_advertise, adv_ttlm_policy),
+	UBUS_METHOD("ttlm_negotiation", hostapd_bss_ttlm_negotiation, neg_ttlm_policy),
 #endif
 #ifdef NEED_AP_MLME
 	UBUS_METHOD("switch_chan", hostapd_switch_chan, csa_policy),
