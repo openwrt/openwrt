@@ -158,34 +158,34 @@ static void rtldsa_931x_set_receive_management_action(struct otto_dsa_priv *priv
 	case BPDU:
 		reg = RTL931X_RMA_BPDU_CTRL + (port / 10) * 4;
 		shift = (port % 10) * 3;
-		sw_w32_mask(GENMASK(shift + 2, shift), value << shift, reg);
+		regmap_write_bits(priv->map, reg, GENMASK(shift + 2, shift), value << shift);
 		break;
 	case PTP:
 		reg = RTL931X_RMA_PTP_CTRL + port * 4;
 
 		/* udp */
-		sw_w32_mask(GENMASK(3, 2), value << 2, reg);
+		regmap_write_bits(priv->map, reg, GENMASK(3, 2), value << 2);
 
 		/* eth2 */
-		sw_w32_mask(GENMASK(1, 0), value, reg);
+		regmap_write_bits(priv->map, reg, GENMASK(1, 0), value);
 		break;
 	case PTP_UDP:
 		reg = RTL931X_RMA_PTP_CTRL + port * 4;
-		sw_w32_mask(GENMASK(3, 2), value << 2, reg);
+		regmap_write_bits(priv->map, reg, GENMASK(3, 2), value << 2);
 		break;
 	case PTP_ETH2:
 		reg = RTL931X_RMA_PTP_CTRL + port * 4;
-		sw_w32_mask(GENMASK(1, 0), value, reg);
+		regmap_write_bits(priv->map, reg, GENMASK(1, 0), value);
 		break;
 	case LLDP:
 		reg = RTL931X_RMA_LLDP_CTRL + (port / 10) * 4;
 		shift = (port % 10) * 3;
-		sw_w32_mask(GENMASK(shift + 2, shift), value << shift, reg);
+		regmap_write_bits(priv->map, reg, GENMASK(shift + 2, shift), value << shift);
 		break;
 	case EAPOL:
 		reg = RTL931X_RMA_EAPOL_CTRL + (port / 10) * 4;
 		shift = (port % 10) * 3;
-		sw_w32_mask(GENMASK(shift + 2, shift), value << shift, reg);
+		regmap_write_bits(priv->map, reg, GENMASK(shift + 2, shift), value << shift);
 		break;
 	case GRATARP:
 		/* The two-bit action field cannot encode FLOODALL (4). */
@@ -193,7 +193,7 @@ static void rtldsa_931x_set_receive_management_action(struct otto_dsa_priv *priv
 			return;
 		reg = RTL931X_TRAP_ARP_GRAT_PORT_ACT + (port / 16) * 4;
 		shift = (port % 16) * 2;
-		sw_w32_mask(GENMASK(shift + 1, shift), value << shift, reg);
+		regmap_write_bits(priv->map, reg, GENMASK(shift + 1, shift), value << shift);
 		break;
 	}
 }
@@ -233,15 +233,15 @@ static void rtl931x_traffic_disable(struct otto_dsa_priv *priv, int source, int 
 
 static void rtl931x_set_igr_filter(struct otto_dsa_priv *priv, int port, enum igr_filter state)
 {
-	sw_w32_mask(GENMASK(1, 0) << ((port & 0xf) << 1),
-		    (u32)(state & 0x3) << ((port & 0xf) << 1),
-		    RTL931X_VLAN_PORT_IGR_FLTR + (((port >> 4) << 2)));
+	regmap_write_bits(priv->map, RTL931X_VLAN_PORT_IGR_FLTR + (((port >> 4) << 2)),
+			  GENMASK(1, 0) << ((port & 0xf) << 1),
+			  (u32)(state & 0x3) << ((port & 0xf) << 1));
 }
 
 static void rtl931x_set_egr_filter(struct otto_dsa_priv *priv, int port, enum egr_filter state)
 {
-	sw_w32_mask(BIT(port % 0x20), (u32)(state & 0x1) << (port % 0x20),
-		    RTL931X_VLAN_PORT_EGR_FLTR + (((port >> 5) << 2)));
+	regmap_write_bits(priv->map, RTL931X_VLAN_PORT_EGR_FLTR + (((port >> 5) << 2)),
+			  BIT(port % 0x20), (u32)(state & 0x1) << (port % 0x20));
 }
 
 static void rtldsa_931x_led_get_forced(const struct device_node *node,
@@ -263,6 +263,15 @@ static void rtldsa_931x_led_get_forced(const struct device_node *node,
 		for_each_set_bit(port, mask, RTL931X_CPU_PORT)
 			forced_leds_per_port[port] = leds_in_set[set];
 	}
+}
+
+static u32 rtl931x_read_debug_reg(struct otto_dsa_priv *priv, u32 reg)
+{
+	u32 val;
+
+	if (regmap_read(priv->map, reg, &val))
+		return 0;
+	return val;
 }
 
 static void rtldsa_931x_led_init(struct otto_dsa_priv *priv)
@@ -304,8 +313,8 @@ static void rtldsa_931x_led_init(struct otto_dsa_priv *priv)
 			break;
 		}
 
-		sw_w32_mask(RTL931X_LED_CLK_SEL_MASK,
-			    FIELD_PREP(RTL931X_LED_CLK_SEL_MASK, clk_sel), RTL931X_LED_GLB_CTRL);
+		regmap_write_bits(priv->map, RTL931X_LED_GLB_CTRL, RTL931X_LED_CLK_SEL_MASK,
+				  FIELD_PREP(RTL931X_LED_CLK_SEL_MASK, clk_sel));
 	}
 
 	for (int set = 0; set < 4; set++) {
@@ -314,8 +323,8 @@ static void rtldsa_931x_led_init(struct otto_dsa_priv *priv)
 		int leds_in_this_set = 0;
 
 		/* Reset LED set configuration */
-		sw_w32(0, RTL931X_LED_SETX_0_CTRL(set));
-		sw_w32(0, RTL931X_LED_SETX_1_CTRL(set));
+		regmap_write(priv->map, RTL931X_LED_SETX_0_CTRL(set), 0);
+		regmap_write(priv->map, RTL931X_LED_SETX_1_CTRL(set), 0);
 
 		/* Each LED set has (up to) 4 LEDs, and each LED is configured
 		 * with 16 bits. So each 32 bit register holds configuration for
@@ -342,9 +351,9 @@ static void rtldsa_931x_led_init(struct otto_dsa_priv *priv)
 
 		/* Write configuration for selected LEDs */
 		for (int i = 0, led = leds_in_this_set - 1; led >= 0; led--, i++) {
-			sw_w32_mask(GENMASK(15, 0) << RTL931X_LED_SET_LEDX_SHIFT(led),
-				    (0xffff & set_config[i]) << RTL931X_LED_SET_LEDX_SHIFT(led),
-				    RTL931X_LED_SETX_LEDY(set, led));
+			regmap_write_bits(priv->map, RTL931X_LED_SETX_LEDY(set, led),
+					  GENMASK(15, 0) << RTL931X_LED_SET_LEDX_SHIFT(led),
+					  (0xffff & set_config[i]) << RTL931X_LED_SET_LEDX_SHIFT(led));
 		}
 	}
 
@@ -354,8 +363,10 @@ static void rtldsa_931x_led_init(struct otto_dsa_priv *priv)
 		int pos = (i << 1) % 32;
 		u32 set;
 
-		sw_w32_mask(GENMASK(1, 0) << pos, 0, RTL931X_LED_PORT_FIB_SET_SEL_CTRL(i));
-		sw_w32_mask(GENMASK(1, 0) << pos, 0, RTL931X_LED_PORT_COPR_SET_SEL_CTRL(i));
+		regmap_write_bits(priv->map, RTL931X_LED_PORT_FIB_SET_SEL_CTRL(i),
+				  GENMASK(1, 0) << pos, 0);
+		regmap_write_bits(priv->map, RTL931X_LED_PORT_COPR_SET_SEL_CTRL(i),
+				  GENMASK(1, 0) << pos, 0);
 
 		/* Skip port if not present (auto-detect) or not in forced mask */
 		if (!priv->ports[i].phy && !priv->ports[i].has_pcs && !(forced_leds_per_port[i]))
@@ -365,9 +376,8 @@ static void rtldsa_931x_led_init(struct otto_dsa_priv *priv)
 			priv->ports[i].leds_on_this_port = forced_leds_per_port[i];
 
 		/* 0x0 = 1 led, 0x1 = 2 leds, 0x2 = 3 leds, 0x3 = 4 leds per port */
-		sw_w32_mask(GENMASK(1, 0) << pos,
-			    (((u32)priv->ports[i].leds_on_this_port - 1) & 0x3) << pos,
-			    RTL931X_LED_PORT_NUM_CTRL(i));
+		regmap_write_bits(priv->map, RTL931X_LED_PORT_NUM_CTRL(i), GENMASK(1, 0) << pos,
+				  (((u32)priv->ports[i].leds_on_this_port - 1) & 0x3) << pos);
 
 		if (priv->ports[i].phy)
 			pm_copper |= BIT_ULL(i);
@@ -375,10 +385,10 @@ static void rtldsa_931x_led_init(struct otto_dsa_priv *priv)
 			pm_fiber |= BIT_ULL(i);
 
 		set = priv->ports[i].led_set;
-		sw_w32_mask(GENMASK(1, 0) << pos, (set & 0x3) << pos,
-			    RTL931X_LED_PORT_COPR_SET_SEL_CTRL(i));
-		sw_w32_mask(GENMASK(1, 0) << pos, (set & 0x3) << pos,
-			    RTL931X_LED_PORT_FIB_SET_SEL_CTRL(i));
+		regmap_write_bits(priv->map, RTL931X_LED_PORT_COPR_SET_SEL_CTRL(i),
+				  GENMASK(1, 0) << pos, (set & 0x3) << pos);
+		regmap_write_bits(priv->map, RTL931X_LED_PORT_FIB_SET_SEL_CTRL(i),
+				  GENMASK(1, 0) << pos, (set & 0x3) << pos);
 	}
 
 	/* LED interface: 1 = serial (default), 2 = single-colour scan, 3 = bi-colour scan */
@@ -387,19 +397,26 @@ static void rtldsa_931x_led_init(struct otto_dsa_priv *priv)
 		dev_warn(dev, "invalid realtek,led-mode %u, using serial\n", led_mode);
 		led_mode = 1;
 	}
-	sw_w32_mask(GENMASK(1, 0), led_mode, RTL931X_LED_GLB_CTRL);
+	regmap_write_bits(priv->map, RTL931X_LED_GLB_CTRL, GENMASK(1, 0), led_mode);
 
 	if (of_property_read_bool(node, "active-low"))
-		sw_w32_mask(RTL931X_LED_GLB_ACTIVE_LOW, 0, RTL931X_LED_GLB_CTRL);
+		regmap_write_bits(priv->map, RTL931X_LED_GLB_CTRL, RTL931X_LED_GLB_ACTIVE_LOW, 0);
 	else
-		sw_w32_mask(0, RTL931X_LED_GLB_ACTIVE_LOW, RTL931X_LED_GLB_CTRL);
+		regmap_write_bits(priv->map, RTL931X_LED_GLB_CTRL, RTL931X_LED_GLB_ACTIVE_LOW,
+				  RTL931X_LED_GLB_ACTIVE_LOW);
 
-	rtl839x_set_port_reg_le(pm_copper, RTL931X_LED_PORT_COPR_MASK_CTRL);
-	rtl839x_set_port_reg_le(pm_fiber, RTL931X_LED_PORT_FIB_MASK_CTRL);
-	rtl839x_set_port_reg_le(pm_copper | pm_fiber, RTL931X_LED_PORT_COMBO_MASK_CTRL);
+	regmap_write(priv->map, RTL931X_LED_PORT_COPR_MASK_CTRL, lower_32_bits(pm_copper));
+	regmap_write(priv->map, RTL931X_LED_PORT_COPR_MASK_CTRL + 4, upper_32_bits(pm_copper));
+	regmap_write(priv->map, RTL931X_LED_PORT_FIB_MASK_CTRL, lower_32_bits(pm_fiber));
+	regmap_write(priv->map, RTL931X_LED_PORT_FIB_MASK_CTRL + 4, upper_32_bits(pm_fiber));
+	regmap_write(priv->map, RTL931X_LED_PORT_COMBO_MASK_CTRL,
+		     lower_32_bits(pm_copper | pm_fiber));
+	regmap_write(priv->map, RTL931X_LED_PORT_COMBO_MASK_CTRL + 4,
+		     upper_32_bits(pm_copper | pm_fiber));
 
 	for (int i = 0; i < 32; i++)
-		dev_dbg(dev, "%08x: %08x\n", 0xbb000600 + i * 4, sw_r32(0x0600 + i * 4));
+		dev_dbg(dev, "%08x: %08x\n", 0xbb000600 + i * 4,
+			 rtl931x_read_debug_reg(priv, 0x0600 + i * 4));
 }
 
 static int
