@@ -71,12 +71,14 @@ endif
 
 ifdef CONFIG_BUILDBOT
   $(TOOLCHAIN_DIR)/stamp/.ver_check: $(TMP_DIR)/.build
-	echo $(toolchain_hash) > $(TMP_DIR)/.ver_check
-	cmp -s $(TMP_DIR)/.ver_check $@ || { \
-		rm -rf $(BUILD_DIR) $(STAGING_DIR) $(TOOLCHAIN_DIR) $(BUILD_DIR_TOOLCHAIN); \
-		mkdir -p $(TOOLCHAIN_DIR)/stamp; \
-		mv $(TMP_DIR)/.ver_check $@; \
-	}
+	$(call locked, \
+		[ "$$(cat $@ 2>/dev/null)" = "$(toolchain_hash)" ] || { \
+			rm -rf $(BUILD_DIR) $(STAGING_DIR) $(TOOLCHAIN_DIR) $(BUILD_DIR_TOOLCHAIN); \
+			mkdir -p $(TOOLCHAIN_DIR)/stamp; \
+			echo $(toolchain_hash) > $@; \
+		}; \
+		touch $@ \
+	,toolchain-ver-check)
 
 $(TOOLCHAIN_DIR)/info.mk $(STAGING_DIR)/.prepared: $(TOOLCHAIN_DIR)/stamp/.ver_check
 endif
