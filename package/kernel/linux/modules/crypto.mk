@@ -335,7 +335,7 @@ endef
 
 define KernelPackage/crypto-ghash/arm-ce
   FILES+= $(LINUX_DIR)/arch/arm/crypto/ghash-arm-ce.ko
-  AUTOLOAD+=$(call AutoLoad,09,ghash-arm-ce)
+  AUTOLOAD+=ghash-arm-ce
 endef
 
 KernelPackage/crypto-ghash/imx/cortexa7=$(KernelPackage/crypto-ghash/arm-ce)
