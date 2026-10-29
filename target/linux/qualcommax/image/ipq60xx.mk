@@ -303,13 +303,13 @@ TARGET_DEVICES += qihoo_360v6
 
 define Device/redmi_ax5-jdcloud
 	$(call Device/FitImage)
+	$(call Device/EmmcImage)
 	DEVICE_VENDOR := Redmi
 	DEVICE_MODEL := AX5 JDCloud
 	SOC := ipq6000
 	KERNEL_SIZE := 6144k
 	DEVICE_DTS_CONFIG := config@cp03-c1
 	DEVICE_PACKAGES := ipq-wifi-redmi_ax5-jdcloud kmod-fs-f2fs f2fs-tools
-	IMAGE/sysupgrade.bin/squashfs := append-rootfs | pad-to 64k | sysupgrade-tar rootfs=$$$$@ | append-metadata
 endef
 TARGET_DEVICES += redmi_ax5-jdcloud
 
