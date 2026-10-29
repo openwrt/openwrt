@@ -1628,7 +1628,8 @@ static void otto_l3_route_compact(struct otto_l3_ctrl *ctrl, struct otto_l3_rout
 
 	/* The tail now holds a copy of the row the block has pulled up. */
 	r->attr.valid = false;
-	ctrl->cfg->route_write(ctrl, last, r);
+	if (ctrl->cfg->route_write(ctrl, last, r))
+		otto_l3_rows_stale(ctrl, r, last);
 }
 
 /* %pI4 and %pI6c take arguments of different types, so a message that can
@@ -1793,7 +1794,7 @@ static bool otto_l3_row_frozen(struct otto_l3_ctrl *ctrl, struct otto_l3_route *
 static int otto_l3_route_install(struct otto_l3_ctrl *ctrl, struct otto_l3_route *r)
 {
 	char dst[INET6_ADDRSTRLEN + sizeof("/128")];
-	int slot;
+	int slot, err;
 
 	if (otto_l3_host_shadowed(ctrl, r)) {
 		dev_dbg(ctrl->dev, "%pI4 is an address of the switch, its entry stays\n",
@@ -1811,20 +1812,23 @@ static int otto_l3_route_install(struct otto_l3_ctrl *ctrl, struct otto_l3_route
 			return slot;
 
 		dev_dbg(ctrl->dev, "Got slot for route: %d\n", slot);
-		ctrl->cfg->host_route_write(ctrl, slot, r);
-		return 0;
+		return ctrl->cfg->host_route_write(ctrl, slot, r);
 	}
 
-	if (r->row < 0)
+	if (r->row < 0) {
 		r->row = otto_l3_route_place(ctrl, r);
+		r->row_reserved = r->row >= FIRST_PREFIX_ROW;
+	}
 	if (r->row < 0) {
 		dev_err(ctrl->dev, "no row for prefix route %s\n",
 			otto_l3_route_dst(r, dst, sizeof(dst)));
 		return -ENOSPC;
 	}
 
-	ctrl->cfg->route_write(ctrl, r->row, r);
-	return 0;
+	err = ctrl->cfg->route_write(ctrl, r->row, r);
+	if (!err)
+		r->row_reserved = false;
+	return err;
 }
 
 /* Writes what a route now says where it already is */
@@ -2662,6 +2666,24 @@ static void otto_l3_route_remove(struct otto_l3_ctrl *ctrl, struct otto_l3_route
 	} else {
 		/* If there is a HW representation of the route, delete it */
 		if (r->row >= FIRST_PREFIX_ROW) {
+			/* Placement reserved this slot even if the initial write
+			 * failed. It may hold an old row's duplicate, or a write
+			 * that completed late. Clear it before closing the gap;
+			 * a completed table write also drains preceding commands.
+			 * Once rows are stale, only the readback path below can
+			 * establish which row still belongs to this route.
+			 */
+			if (r->row_reserved && !ctrl->prefix_rows_stale) {
+				r->attr.valid = false;
+				if (ctrl->cfg->route_write(ctrl, r->row, r)) {
+					otto_l3_rows_stale(ctrl, r, r->row);
+					return;
+				}
+				r->row_reserved = false;
+				otto_l3_route_compact(ctrl, r);
+				return;
+			}
+
 			/* The route was written at the row we recorded, and one
 			 * that could not be placed has none. A row is only
 			 * cleared while it reads back as the route; where the
@@ -2856,7 +2878,11 @@ static void otto_l3_fib_trap_v4(struct otto_l3_ctrl *ctrl, struct fib_entry_noti
 	route->fib_type = info->type;
 
 	if (otto_l3_route_install(ctrl, route)) {
-		otto_l3_route_free(ctrl, route);
+		/* Placement may already have shifted other routes. Keep its
+		 * reserved row in the count until removal can close the gap.
+		 */
+		if (route->row < FIRST_PREFIX_ROW)
+			otto_l3_route_free(ctrl, route);
 		otto_l3_fib4_info_failed(info);
 		return;
 	}

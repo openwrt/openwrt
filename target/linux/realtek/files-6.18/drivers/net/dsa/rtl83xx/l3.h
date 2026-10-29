@@ -97,6 +97,7 @@ struct otto_l3_route {
 	bool replaced;			/* torn down for a route to the same destination */
 	int id;				/* ID number of this route */
 	int row;			/* Row it occupies in the prefix route table */
+	bool row_reserved;		/* Placed prefix row without a confirmed write */
 	unsigned int members;		/* FIB entries a trap row stands for */
 	struct list_head srcs;		/* source-specific routes a trap row stands for */
 	bool srcs_incomplete;		/* a source could not be tracked */
