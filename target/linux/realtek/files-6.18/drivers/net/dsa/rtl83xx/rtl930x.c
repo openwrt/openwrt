@@ -199,6 +199,9 @@ static void rtldsa_930x_set_receive_management_action(struct otto_dsa_priv *priv
 		sw_w32_mask(GENMASK(shift + 2, shift), value << shift, reg);
 		break;
 	case GRATARP:
+		/* The two-bit action field cannot encode FLOODALL (4). */
+		if (value > 3)
+			return;
 		reg = RTL930X_SPCL_TRAP_PORT_CTRL + (port / 16) * 4;
 		shift = (port % 16) * 2;
 		sw_w32_mask(GENMASK(shift + 1, shift), value << shift, reg);
@@ -383,9 +386,11 @@ static void rtl930x_init_eee(struct otto_dsa_priv *priv, bool enable)
 // 	priv->intf_mtus[i] = mtu;
 // 	pr_debug("Writing MTU %d to slot %d\n", priv->intf_mtus[i], i);
 // 	/* Set MTU-value of the slot TODO: distinguish between IPv4/IPv6 routes / slots */
-// 	sw_w32_mask(0xffff << ((i % 2) * 16), priv->intf_mtus[i] << ((i % 2) * 16),
+// 	sw_w32_mask(GENMASK(15, 0) << ((i % 2) * 16),
+// 		    ((u32)priv->intf_mtus[i] & 0xffff) << ((i % 2) * 16),
 // 		    RTL930X_L3_IP_MTU_CTRL(i));
-// 	sw_w32_mask(0xffff << ((i % 2) * 16), priv->intf_mtus[i] << ((i % 2) * 16),
+// 	sw_w32_mask(GENMASK(15, 0) << ((i % 2) * 16),
+// 		    ((u32)priv->intf_mtus[i] & 0xffff) << ((i % 2) * 16),
 // 		    RTL930X_L3_IP6_MTU_CTRL(i));
 
 // 	priv->intf_mtu_count[i]++;
@@ -395,13 +400,14 @@ static void rtl930x_init_eee(struct otto_dsa_priv *priv, bool enable)
 
 static void rtl930x_set_igr_filter(struct otto_dsa_priv *priv, int port, enum igr_filter state)
 {
-	sw_w32_mask(0x3 << ((port & 0xf) << 1), state << ((port & 0xf) << 1),
+	sw_w32_mask(GENMASK(1, 0) << ((port & 0xf) << 1),
+		    (u32)(state & 0x3) << ((port & 0xf) << 1),
 		    RTL930X_VLAN_PORT_IGR_FLTR + (((port >> 4) << 2)));
 }
 
 static void rtl930x_set_egr_filter(struct otto_dsa_priv *priv, int port, enum egr_filter state)
 {
-	sw_w32_mask(0x1 << (port % 0x1D), state << (port % 0x1D),
+	sw_w32_mask(BIT(port % 0x1D), (u32)(state & 0x1) << (port % 0x1D),
 		    RTL930X_VLAN_PORT_EGR_FLTR + (((port / 29) << 2)));
 }
 
@@ -503,7 +509,7 @@ static void rtl930x_led_init(struct otto_dsa_priv *priv)
 
 		/* Write configuration for selected LEDs */
 		for (int i = 0, led = leds_in_this_set - 1; led >= 0; led--, i++) {
-			sw_w32_mask(0xffff << RTL930X_LED_SET_LEDX_SHIFT(led),
+			sw_w32_mask(GENMASK(15, 0) << RTL930X_LED_SET_LEDX_SHIFT(led),
 				    (0xffff & set_config[i]) << RTL930X_LED_SET_LEDX_SHIFT(led),
 				    RTL930X_LED_SETX_LEDY(set, led));
 		}
@@ -515,8 +521,8 @@ static void rtl930x_led_init(struct otto_dsa_priv *priv)
 		int pos = (i << 1) % 32;
 		u32 set;
 
-		sw_w32_mask(0x3 << pos, 0, RTL930X_LED_PORT_FIB_SET_SEL_CTRL(i));
-		sw_w32_mask(0x3 << pos, 0, RTL930X_LED_PORT_COPR_SET_SEL_CTRL(i));
+		sw_w32_mask(GENMASK(1, 0) << pos, 0, RTL930X_LED_PORT_FIB_SET_SEL_CTRL(i));
+		sw_w32_mask(GENMASK(1, 0) << pos, 0, RTL930X_LED_PORT_COPR_SET_SEL_CTRL(i));
 
 		if (!priv->ports[i].phy && !priv->ports[i].has_pcs && !(forced_leds_per_port[i]))
 			continue;
@@ -525,18 +531,22 @@ static void rtl930x_led_init(struct otto_dsa_priv *priv)
 			priv->ports[i].leds_on_this_port = forced_leds_per_port[i];
 
 		/* 0x0 = 1 led, 0x1 = 2 leds, 0x2 = 3 leds, 0x3 = 4 leds per port */
-		sw_w32_mask(0x3 << pos, (priv->ports[i].leds_on_this_port - 1) << pos, RTL930X_LED_PORT_NUM_CTRL(i));
+		sw_w32_mask(GENMASK(1, 0) << pos,
+			    (((u32)priv->ports[i].leds_on_this_port - 1) & 0x3) << pos,
+			    RTL930X_LED_PORT_NUM_CTRL(i));
 
 		pm |= BIT(i);
 
 		set = priv->ports[i].led_set;
-		sw_w32_mask(0, set << pos, RTL930X_LED_PORT_COPR_SET_SEL_CTRL(i));
-		sw_w32_mask(0, set << pos, RTL930X_LED_PORT_FIB_SET_SEL_CTRL(i));
+		sw_w32_mask(GENMASK(1, 0) << pos, (set & 0x3) << pos,
+			    RTL930X_LED_PORT_COPR_SET_SEL_CTRL(i));
+		sw_w32_mask(GENMASK(1, 0) << pos, (set & 0x3) << pos,
+			    RTL930X_LED_PORT_FIB_SET_SEL_CTRL(i));
 	}
 
 	/* Set LED mode */
 	of_property_read_u32(node, "realtek,led-mode", &led_mode);
-	sw_w32_mask(0x3, led_mode & 0x3, RTL930X_LED_GLB_CTRL);
+	sw_w32_mask(GENMASK(1, 0), led_mode & 0x3, RTL930X_LED_GLB_CTRL);
 
 	/* Set LED active state */
 	if (of_property_read_bool(node, "active-low"))

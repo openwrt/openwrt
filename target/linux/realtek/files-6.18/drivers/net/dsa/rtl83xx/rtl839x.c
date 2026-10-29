@@ -136,7 +136,7 @@ static void rtldsa_839x_set_mac_eee(struct otto_dsa_priv *priv, int port, bool e
 	v = enable ? 0xf : 0x0;
 
 	/* Set EEE for 100, 500, 1000MBit and 10GBit */
-	sw_w32_mask(0xf << 8, v << 8, rtl839x_mac_force_mode_ctrl(port));
+	sw_w32_mask(GENMASK(11, 8), v << 8, rtl839x_mac_force_mode_ctrl(port));
 
 	/* Set TX/RX EEE state */
 	v = enable ? 0x3 : 0x0;
@@ -150,11 +150,12 @@ static void rtl839x_init_eee(struct otto_dsa_priv *priv, bool enable)
 	pr_debug("Setting up EEE, state: %d\n", enable);
 
 	/* Set wake timer for TX and pause timer both to 0x21 */
-	sw_w32_mask(0xff << 20 | 0xff, 0x21 << 20 | 0x21, RTL839X_EEE_TX_TIMER_GELITE_CTRL);
+	sw_w32_mask(GENMASK(27, 20) | GENMASK(7, 0), 0x21 << 20 | 0x21,
+		    RTL839X_EEE_TX_TIMER_GELITE_CTRL);
 	/* Set pause wake timer for GIGA-EEE to 0x11 */
-	sw_w32_mask(0xff << 20, 0x11 << 20, RTL839X_EEE_TX_TIMER_GIGA_CTRL);
+	sw_w32_mask(GENMASK(27, 20), 0x11 << 20, RTL839X_EEE_TX_TIMER_GIGA_CTRL);
 	/* Set pause wake timer for 10GBit ports to 0x11 */
-	sw_w32_mask(0xff << 20, 0x11 << 20, RTL839X_EEE_TX_TIMER_10G_CTRL);
+	sw_w32_mask(GENMASK(27, 20), 0x11 << 20, RTL839X_EEE_TX_TIMER_10G_CTRL);
 
 	/* Setup EEE on all ports */
 	for (int i = 0; i < priv->r->cpu_port; i++) {
@@ -166,13 +167,14 @@ static void rtl839x_init_eee(struct otto_dsa_priv *priv, bool enable)
 
 static void rtl839x_set_igr_filter(struct otto_dsa_priv *priv, int port, enum igr_filter state)
 {
-	sw_w32_mask(0x3 << ((port & 0xf) << 1), state << ((port & 0xf) << 1),
+	sw_w32_mask(GENMASK(1, 0) << ((port & 0xf) << 1),
+		    (u32)(state & 0x3) << ((port & 0xf) << 1),
 		    RTL839X_VLAN_PORT_IGR_FLTR + (((port >> 4) << 2)));
 }
 
 static void rtl839x_set_egr_filter(struct otto_dsa_priv *priv, int port, enum egr_filter state)
 {
-	sw_w32_mask(0x1 << (port % 0x20), state << (port % 0x20),
+	sw_w32_mask(BIT(port % 0x20), (u32)(state & 0x1) << (port % 0x20),
 		    RTL839X_VLAN_PORT_EGR_FLTR + (((port >> 5) << 2)));
 }
 
@@ -182,15 +184,18 @@ static void rtl839x_set_receive_management_action(struct otto_dsa_priv *priv,
 {
 	switch (type) {
 	case BPDU:
-		sw_w32_mask(3 << ((port & 0xf) << 1), (action & 0x3) << ((port & 0xf) << 1),
+		sw_w32_mask(GENMASK(1, 0) << ((port & 0xf) << 1),
+			    (u32)(action & 0x3) << ((port & 0xf) << 1),
 			    RTL839X_RMA_BPDU_CTRL + ((port >> 4) << 2));
 		break;
 	case PTP:
-		sw_w32_mask(3 << ((port & 0xf) << 1), (action & 0x3) << ((port & 0xf) << 1),
+		sw_w32_mask(GENMASK(1, 0) << ((port & 0xf) << 1),
+			    (u32)(action & 0x3) << ((port & 0xf) << 1),
 			    RTL839X_RMA_PTP_CTRL + ((port >> 4) << 2));
 		break;
 	case LLDP:
-		sw_w32_mask(3 << ((port & 0xf) << 1), (action & 0x3) << ((port & 0xf) << 1),
+		sw_w32_mask(GENMASK(1, 0) << ((port & 0xf) << 1),
+			    (u32)(action & 0x3) << ((port & 0xf) << 1),
 			    RTL839X_RMA_LLDP_CTRL + ((port >> 4) << 2));
 		break;
 	default:

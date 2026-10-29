@@ -128,7 +128,7 @@ static void rtldsa_838x_set_mac_eee(struct otto_dsa_priv *priv, int port, bool e
 	v = enable ? 0x3 : 0x0;
 
 	/* Set EEE state for 100 (bit 9) & 1000MBit (bit 10) */
-	sw_w32_mask(0x3 << 9, v << 9, priv->r->mac_force_mode_ctrl(port));
+	sw_w32_mask(GENMASK(10, 9), v << 9, priv->r->mac_force_mode_ctrl(port));
 
 	/* Set TX/RX EEE state */
 	if (enable) {
@@ -144,7 +144,7 @@ static void rtldsa_838x_set_mac_eee(struct otto_dsa_priv *priv, int port, bool e
 static void rtl838x_init_eee(struct otto_dsa_priv *priv, bool enable)
 {
 	pr_debug("Setting up EEE, state: %d\n", enable);
-	sw_w32_mask(0x4, 0, RTL838X_SMI_GLB_CTRL);
+	sw_w32_mask(BIT(2), 0, RTL838X_SMI_GLB_CTRL);
 
 	/* Set timers for EEE */
 	sw_w32(0x5001411, RTL838X_EEE_TX_TIMER_GIGA_CTRL);
@@ -160,13 +160,14 @@ static void rtl838x_init_eee(struct otto_dsa_priv *priv, bool enable)
 
 static void rtl838x_set_igr_filter(struct otto_dsa_priv *priv, int port, enum igr_filter state)
 {
-	sw_w32_mask(0x3 << ((port & 0xf) << 1), state << ((port & 0xf) << 1),
+	sw_w32_mask(GENMASK(1, 0) << ((port & 0xf) << 1),
+		    (u32)(state & 0x3) << ((port & 0xf) << 1),
 		    RTL838X_VLAN_PORT_IGR_FLTR + (((port >> 4) << 2)));
 }
 
 static void rtl838x_set_egr_filter(struct otto_dsa_priv *priv, int port, enum egr_filter state)
 {
-	sw_w32_mask(0x1 << (port % 0x1d), state << (port % 0x1d),
+	sw_w32_mask(BIT(port % 0x1d), (u32)(state & 0x1) << (port % 0x1d),
 		    RTL838X_VLAN_PORT_EGR_FLTR + (((port / 29) << 2)));
 }
 
@@ -176,15 +177,18 @@ static void rtl838x_set_receive_management_action(struct otto_dsa_priv *priv,
 {
 	switch (type) {
 	case BPDU:
-		sw_w32_mask(3 << ((port & 0xf) << 1), (action & 0x3) << ((port & 0xf) << 1),
+		sw_w32_mask(GENMASK(1, 0) << ((port & 0xf) << 1),
+			    (u32)(action & 0x3) << ((port & 0xf) << 1),
 			    RTL838X_RMA_BPDU_CTRL + ((port >> 4) << 2));
 		break;
 	case PTP:
-		sw_w32_mask(3 << ((port & 0xf) << 1), (action & 0x3) << ((port & 0xf) << 1),
+		sw_w32_mask(GENMASK(1, 0) << ((port & 0xf) << 1),
+			    (u32)(action & 0x3) << ((port & 0xf) << 1),
 			    RTL838X_RMA_PTP_CTRL + ((port >> 4) << 2));
 		break;
 	case LLDP:
-		sw_w32_mask(3 << ((port & 0xf) << 1), (action & 0x3) << ((port & 0xf) << 1),
+		sw_w32_mask(GENMASK(1, 0) << ((port & 0xf) << 1),
+			    (u32)(action & 0x3) << ((port & 0xf) << 1),
 			    RTL838X_RMA_LLDP_CTRL + ((port >> 4) << 2));
 		break;
 	default:
