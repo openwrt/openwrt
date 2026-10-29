@@ -8,7 +8,7 @@ for a rootfs, and has optional fields for the "software" version. It also
  requires a "support" string that describes the list of compatible devices.
 
 This module is intended for creating such images with an OpenWRT UBI image, but
-also supports analysis and extraction of vendor images. Altough tplink2023
+also supports analysis and extraction of vendor images. Although tplink2023
 images can be signed, this program does not support signing image.
 
 To get an explanation of the commandline arguments, run this program with the
@@ -84,7 +84,7 @@ def extract(datafile):
         section_file.write(rootfs_contents)
 
 def get_section_contents(section):
-    '''I don't remember what this does. It's been a year since I wrote this'''
+    '''Return a section's payload from its inline "data" or its "file", checking it matches "size"'''
     if section.get('data'):
         data = section['data']
     elif section.get('file'):
@@ -148,7 +148,7 @@ def write_image(output_image, header):
         out_file.seek(0)
         out_file.write(struct.pack('>I16s', size, md5_sum.digest()))
 
-def encode_soft_verson():
+def encode_soft_version():
     '''Not sure of the meaning of version. Also doesn't appear to be needed.'''
     return struct.pack('>4B1I2I', 0xff, 1, 0 ,0, 0x2020202, 30000, 1)
 
@@ -173,7 +173,7 @@ def create_image(output_image, root, support):
 
     sw_version = {}
     sw_version['name'] = 'soft-version'
-    sw_version['data'] = encode_soft_verson()
+    sw_version['data'] = encode_soft_version()
     sw_version['size'] = len(sw_version['data'])
     sw_version['last'] = 1
     header['items'].append(sw_version)
@@ -197,14 +197,14 @@ def main(args):
             pretty.pprint(header)
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='EAP extractor')
+    parser = argparse.ArgumentParser(description='tplink2023 image tool')
     parser.add_argument('--info', action='store_true')
     parser.add_argument('--extract', action='store_true')
     parser.add_argument('--create', action='store_true')
     parser.add_argument('image', type=str,
                     help='Name of image to create or decode')
     parser.add_argument('--rootfs', type=str,
-                    help='When creating an EAP image, UBI image with rootfs and kernel')
+                    help='When creating an image, UBI image with rootfs and kernel')
     parser.add_argument('--support', type=str,
                     help='String for the "support-list" section')
 
