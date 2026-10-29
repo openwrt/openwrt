@@ -106,7 +106,9 @@ function setup_phy(phy, config, data) {
 		system(`iw phy ${phy} set antenna ${config.txantenna} ${config.rxantenna} >/dev/null 2>&1`);
 	}
 	system(`iw phy ${phy} set distance ${config.distance} >/dev/null 2>&1`);
-	system(`iw phy ${phy} set txpower ${config.txpower}`);
+	// Multi-radio wiphys: netifd sets the power per interface (wireless-device.uc).
+	if (config.radio == null || config.radio < 0)
+		system(`iw phy ${phy} set txpower ${config.txpower}`);
 
 	if (config.frag)
 		system(`iw phy ${phy} set frag ${config.frag}`);
