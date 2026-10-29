@@ -1,0 +1,41 @@
+From d5b5ab50d2f62e118c15beb31e1aef0c00f18823 Mon Sep 17 00:00:00 2001
+From: Hleb Shauchenka <me@marleb.org>
+Date: Sun, 8 Nov 2026 22:13:45 +0100
+Subject: net: phy: realtek: return MDIO read errors from hwmon
+
+rtl822x_hwmon_read() masks or shifts the value returned by
+phy_read_mmd() without checking it and returns success, so a failed
+MDIO read is reported as a temperature: -EIO reads as -2.5 C and
+-ETIMEDOUT as -55 C.
+
+Return the error instead, so that readers of the hwmon attributes see
+the failure rather than a plausible but wrong temperature.
+
+Signed-off-by: Hleb Shauchenka <me@marleb.org>
+Link: https://patch.msgid.link/20261108-realtek-hwmon-tz-v3-1-b4e9fb16d323@marleb.org
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+--- a/drivers/net/phy/realtek/realtek_hwmon.c
++++ b/drivers/net/phy/realtek/realtek_hwmon.c
+@@ -30,13 +30,17 @@ static int rtl822x_hwmon_read(struct dev
+ 
+ 	switch (attr) {
+ 	case hwmon_temp_input:
+-		raw = phy_read_mmd(phydev, MDIO_MMD_VEND2, RTL822X_VND2_TSRR) & 0x3ff;
+-		*val = rtl822x_hwmon_get_temp(raw);
++		raw = phy_read_mmd(phydev, MDIO_MMD_VEND2, RTL822X_VND2_TSRR);
++		if (raw < 0)
++			return raw;
++		*val = rtl822x_hwmon_get_temp(raw & 0x3ff);
+ 		break;
+ 	case hwmon_temp_max:
+ 		/* Chip reduces speed to 1G if threshold is exceeded */
+-		raw = phy_read_mmd(phydev, MDIO_MMD_VEND2, RTL822X_VND2_TSSR) >> 6;
+-		*val = rtl822x_hwmon_get_temp(raw);
++		raw = phy_read_mmd(phydev, MDIO_MMD_VEND2, RTL822X_VND2_TSSR);
++		if (raw < 0)
++			return raw;
++		*val = rtl822x_hwmon_get_temp(raw >> 6);
+ 		break;
+ 	default:
+ 		return -EINVAL;
