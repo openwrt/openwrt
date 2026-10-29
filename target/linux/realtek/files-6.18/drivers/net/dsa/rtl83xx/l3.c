@@ -504,18 +504,22 @@ static bool otto_l3_930x_host_route_decode(const u32 *data, struct otto_l3_route
 }
 
 /* Read a host route entry from the table using its index. Only IPv4 and IPv6 unicast supported */
-static void otto_l3_930x_host_route_read(struct otto_l3_ctrl *ctrl, int idx, struct otto_l3_route *rt)
+static int otto_l3_930x_host_route_read(struct otto_l3_ctrl *ctrl, int idx,
+					struct otto_l3_route *rt)
 {
 	/* Only the unicast layout is handled below */
 	u32 data[5];
+	int err;
 
 	idx = ((idx / 6) * 8) + (idx % 6);
 
-	otto_table_read(RTL9300_TBL_L3_HOST_ROUTE_IPUC, idx, &data);
+	err = otto_table_read(RTL9300_TBL_L3_HOST_ROUTE_IPUC, idx, &data);
+	if (err)
+		return err;
 	if (!otto_l3_930x_host_route_decode(data, rt)) {
 		if (rt->attr.valid)
 			dev_warn(ctrl->dev, "route type not supported\n");
-		return;
+		return 0;
 	}
 
 	dev_dbg(ctrl->dev, "index %d is valid: %d\n", idx, rt->attr.valid);
@@ -523,6 +527,8 @@ static void otto_l3_930x_host_route_read(struct otto_l3_ctrl *ctrl, int idx, str
 		rt->nh.id, rt->attr.hit, rt->attr.action, rt->attr.ttl_dec, rt->attr.ttl_check,
 		rt->attr.dst_null);
 	dev_dbg(ctrl->dev, "Destination: %pI4\n", &rt->dst_ip);
+
+	return 0;
 }
 
 /* Write a host route entry from the table using its index. Only unicast routes supported */
@@ -583,7 +589,7 @@ static const u8 otto_l3_930x_slot_widths[] = { 1, 2, 3, 6 };
 /* Return a logical slot, -ENOENT for a missing route, or -ENOSPC if full. */
 static int otto_l3_930x_find_slot(struct otto_l3_ctrl *ctrl, struct otto_l3_route *rt, bool must_exist)
 {
-	int slot_width, algorithm, addr, idx;
+	int slot_width, algorithm, addr, idx, err;
 	struct otto_l3_route route_entry;
 	u32 hash;
 
@@ -601,7 +607,9 @@ static int otto_l3_930x_find_slot(struct otto_l3_ctrl *ctrl, struct otto_l3_rout
 			idx = ((addr / 8) * 6) + (addr % 8);
 			dev_dbg(ctrl->dev, "logical address %d\n", idx);
 
-			otto_l3_930x_host_route_read(ctrl, idx, &route_entry);
+			err = otto_l3_930x_host_route_read(ctrl, idx, &route_entry);
+			if (err)
+				return err;
 			dev_dbg(ctrl->dev, "route valid %d, route dest: %pI4, hit %d\n",
 				rt->attr.valid, &rt->dst_ip, rt->attr.hit);
 			if (!must_exist && !route_entry.attr.valid)
