@@ -1,0 +1,16 @@
+#!/bin/sh
+
+. /lib/functions/uci-defaults.sh
+
+board_config_update
+
+case "$(board_name)" in
+ubnt,ucgfiber)
+	ucidef_set_led_netdev "sfp1" "SFP1" "green:sfp-7" "sfp1" "link tx rx"
+	ucidef_set_led_netdev "sfp2" "SFP2" "green:sfp-6" "sfp2" "link tx rx"
+	;;
+esac
+
+board_config_flush
+
+exit 0
