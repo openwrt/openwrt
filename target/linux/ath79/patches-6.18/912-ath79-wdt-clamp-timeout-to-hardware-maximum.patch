@@ -1,0 +1,42 @@
+From df473ea6d6056cf607920ee2224f6ca55fbbb152 Mon Sep 17 00:00:00 2001
+From: xiao bo <peterwillcn@gmail.com>
+Subject: [PATCH] ath79: wdt: clamp the timeout to what the counter can express
+
+The watchdog counter runs off the AHB clock, so the longest timeout it can
+express is 0xffffffff / wdt_freq, which is 25 seconds on an AR7161.  procd
+always asks for 30 seconds and then logs:
+
+  WDT failed to set timeout 30s: Invalid argument
+
+and keeps the previous value, which looks like a failure during sysupgrade
+although the watchdog itself works.
+
+Clamp larger requests to the maximum instead of rejecting them.  The value
+actually programmed is reported back through WDIOC_SETTIMEOUT, so callers see
+the real timeout.
+
+--- a/drivers/watchdog/ath79_wdt.c
++++ b/drivers/watchdog/ath79_wdt.c
+@@ -111,9 +111,21 @@ static inline void ath79_wdt_disable(voi
+ 
+ static int ath79_wdt_set_timeout(int val)
+ {
+-	if (val < 1 || val > max_timeout)
++	/*
++	 * The counter runs off the AHB clock, so the longest timeout it can
++	 * express is 0xffffffff / wdt_freq - 25 seconds on an AR7161.  Clamp
++	 * larger requests instead of rejecting them: callers such as procd
++	 * always ask for 30 seconds and then only log an error and keep the
++	 * previous value, which looks like a failure although the watchdog
++	 * works fine.  The value actually used is reported back to the caller
++	 * by WDIOC_SETTIMEOUT.
++	 */
++	if (val < 1)
+ 		return -EINVAL;
+ 
++	if (val > max_timeout)
++		val = max_timeout;
++
+ 	timeout = val;
+ 	ath79_wdt_keepalive();
+ 
