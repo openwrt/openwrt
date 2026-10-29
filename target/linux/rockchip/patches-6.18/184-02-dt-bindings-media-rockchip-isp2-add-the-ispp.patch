@@ -1,0 +1,49 @@
+From 9982d18b9fb130068ba0ca135c0215f779594fce Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Wed, 28 Oct 2026 09:56:08 +0000
+Subject: [PATCH] dt-bindings: media: rockchip-isp2: Add the ISPP output port
+
+The RV1126 ISP feeds its processed frames to the ISPP that follows it
+in the pipeline. Describe that connection as the second port of the
+ISP node.
+
+The RV1126 ISP takes its raw frames from the VICAP through the memory
+readback, so the first port, the inline VICAP input of the RK3588, is
+not required there.
+
+Assisted-by: LLM
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ .../devicetree/bindings/media/rockchip-isp2.yaml   | 14 ++++++++++++--
+ 1 file changed, 12 insertions(+), 2 deletions(-)
+
+--- a/Documentation/devicetree/bindings/media/rockchip-isp2.yaml
++++ b/Documentation/devicetree/bindings/media/rockchip-isp2.yaml
+@@ -88,8 +88,15 @@ properties:
+             $ref: video-interfaces.yaml#
+             unevaluatedProperties: false
+ 
+-    required:
+-      - port@0
++      port@1:
++        $ref: /schemas/graph.yaml#/$defs/port-base
++        unevaluatedProperties: false
++        description: connection point for the ISPP input
++
++        properties:
++          endpoint:
++            $ref: video-interfaces.yaml#
++            unevaluatedProperties: false
+ 
+ required:
+   - compatible
+@@ -122,6 +129,9 @@ allOf:
+           maxItems: 2
+         resets: false
+         reset-names: false
++        ports:
++          required:
++            - port@0
+ 
+   - if:
+       properties:
