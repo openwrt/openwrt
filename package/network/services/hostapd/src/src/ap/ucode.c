@@ -1523,6 +1523,7 @@ int hostapd_ucode_init(struct hapd_interfaces *ifaces)
 	uc_vm_registry_set(vm, "hostap.iface_registry", iface_registry);
 
 	global = wpa_ucode_global_init("hostapd", global_type);
+	hostapd_ucode_update_interfaces();
 
 	if (wpa_ucode_run(HOSTAPD_UC_PATH "hostapd.uc"))
 		goto free_vm;
