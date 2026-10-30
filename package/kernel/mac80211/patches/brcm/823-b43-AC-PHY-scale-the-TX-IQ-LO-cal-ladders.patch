@@ -1,0 +1,181 @@
+From: Ville Takio <ville+git@takio.fi>
+Subject: [PATCH] b43: AC-PHY: scale the TX IQ/LO calibration ladders
+
+The two ladders loaded into table 0x0c before each chain's TX IQ/LO
+calibration are the N-PHY ladder percentages scaled by the bbmult of the
+chain's calibration TX gain: 64 and 60 give the two ladders the 5 GHz
+captures show. On 2.4 GHz the calibration gains have a bbmult of 65 and
+64, and wl 7.14 leaves the 64 ladder in the table, while b43 loaded the
+5 GHz ones.
+
+Generate the ladder from the chain's calibration bbmult instead of
+choosing between the two fixed 5 GHz ladders.
+
+--- a/drivers/net/wireless/broadcom/b43/phy_ac.c
++++ b/drivers/net/wireless/broadcom/b43/phy_ac.c
+@@ -7162,75 +7162,59 @@ void b43_phy_ac_rxiqcal_apply(struct b43
+ 
+ /*
+  * The ladders the calibrations load into table 0x000c before measuring a
+- * chain: eighteen cells per chain (0x00-0x11 chain 0, 0x20-0x31 chain 1), a
+- * gain in the high byte and an index in the low one. The stock driver
+- * writes one of three, whole, six times per cold segment with three wired
+- * chains and five with two:
++ * chain: eighteen cells per chain (0x00-0x11 for the LO step, 0x20-0x31 for
++ * the IQ step), a gain in the high byte and an index in the low one. The
++ * stock driver loads one before each chain it measures:
+  *
+- *   after stage 2 of the RX IQ cal                    ladder A
+- *   after chain 0 of the AFE cal                      ladder B
+- *   before chain 2 of the AFE cal, first bring-up     see below
+- *   before the second RX IQ iteration                 ladder A
+- *   after chain 0 of the frequency-dependent pass     ladder B
+- *   before chain 2 of that pass                       see below
++ *   after stage 2 of the RX IQ cal                    chain 0
++ *   after chain 0 of the AFE cal                      chain 1
++ *   before chain 2 of the AFE cal, first bring-up     chain 2
++ *   before the second RX IQ iteration                 chain 0
++ *   after chain 0 of the frequency-dependent pass     chain 1
++ *   before chain 2 of that pass                       chain 2
+  *
+- * The "before chain 2" loads are the ramp where chain 2 is unwired (d6220);
+- * on the tg789vac, ladder B up to ch144 and ladder A from ch149 at every
+- * width (ABBABB on 37 segments, ABAABA on the 9 in UNII-3), see
+- * b43_phy_ac_cal_like_chain0(). The agcombo, captured in U-NII-1 only,
+- * writes ABBABB. Each load is the eighteen pairs interleaved under a lock.
++ * The gains are the N-PHY ladder percentages scaled by the bbmult of the
++ * chain's calibration TX gain, rounded down: 64 gives the ladder the 5 GHz
++ * captures load for chain 0 and the 2.4 GHz end state of wl 7.14, 60 the
++ * one they load for the chains calibrated at index 0x1e. A chain that is
++ * not wired gets the bare index ramp (d6220).
+  * [capture-ref: router-data/d6220/cold-sweep.zip!cold01-ch36-bw20.txt;
+  *   17999-18218, 18723-18942]
+  */
+-struct b43_phy_ac_gain_ladder {
+-	u16 c0[18];
+-	u16 c1[18];
++static const u8 b43_phy_ac_ladder_lo_pct[18] = {
++	3, 4, 6, 9, 13, 18, 25, 25, 25, 25, 25, 25, 25, 25, 35, 50, 71, 100,
+ };
+-
+-static const struct b43_phy_ac_gain_ladder b43_phy_ac_ladder_a = {
+-	{ 0x0100, 0x0200, 0x0300, 0x0500, 0x0800, 0x0b00, 0x1000,
+-	  0x1001, 0x1002, 0x1003, 0x1004, 0x1005, 0x1006, 0x1007,
+-	  0x1607, 0x2007, 0x2d07, 0x4007 },
+-	{ 0x0100, 0x0200, 0x0300, 0x0500, 0x0800, 0x0b00, 0x1000,
+-	  0x1600, 0x2000, 0x2d00, 0x4000, 0x4001, 0x4002, 0x4003,
+-	  0x4004, 0x4005, 0x4006, 0x4007 },
++static const u8 b43_phy_ac_ladder_lo_idx[18] = {
++	0, 0, 0, 0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 7, 7, 7, 7,
+ };
+-
+-static const struct b43_phy_ac_gain_ladder b43_phy_ac_ladder_b = {
+-	{ 0x0100, 0x0200, 0x0300, 0x0500, 0x0700, 0x0a00, 0x0f00,
+-	  0x0f01, 0x0f02, 0x0f03, 0x0f04, 0x0f05, 0x0f06, 0x0f07,
+-	  0x1507, 0x1e07, 0x2a07, 0x3c07 },
+-	{ 0x0100, 0x0200, 0x0300, 0x0500, 0x0700, 0x0a00, 0x0f00,
+-	  0x1500, 0x1e00, 0x2a00, 0x3c00, 0x3c01, 0x3c02, 0x3c03,
+-	  0x3c04, 0x3c05, 0x3c06, 0x3c07 },
++static const u8 b43_phy_ac_ladder_iq_pct[18] = {
++	3, 4, 6, 9, 13, 18, 25, 35, 50, 71, 100, 100, 100, 100, 100, 100, 100, 100,
+ };
+-
+-/* The index alone, no gain: ladder A's low bytes. */
+-static const struct b43_phy_ac_gain_ladder b43_phy_ac_ladder_ramp = {
+-	{ 0, 0, 0, 0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 7, 7, 7, 7 },
+-	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7 },
++static const u8 b43_phy_ac_ladder_iq_idx[18] = {
++	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7,
+ };
+ 
+-static const struct b43_phy_ac_gain_ladder *
+-b43_phy_ac_ladder_before_chain2(struct b43_wldev *dev)
+-{
+-	if (!(dev->phy.ac->coremask & BIT(2)))
+-		return &b43_phy_ac_ladder_ramp;
+-	return b43_phy_ac_cal_like_chain0(dev, 2) ? &b43_phy_ac_ladder_a :
+-						    &b43_phy_ac_ladder_b;
+-}
+-
+ static void b43_phy_ac_gain_ladder_write(struct b43_wldev *dev,
+-				const struct b43_phy_ac_gain_ladder *l)
++					 unsigned int chain)
+ {
++	struct b43_phy_ac *ac = dev->phy.ac;
++	bool wired = ac->coremask & BIT(chain);
++	unsigned int scale = ac->bbmult_cal[chain];
+ 	unsigned int i;
+ 	u16 gate;
+ 
+ 	B43_AC_FN();
+ 	gate = b43_phy_ac_tbl_write_lock(dev);
+-	for (i = 0; i < ARRAY_SIZE(l->c0); i++) {
+-		b43_actab_write_bulk(dev, 0x000c, 0x00 + i, 16, 1, &l->c0[i]);
+-		b43_actab_write_bulk(dev, 0x000c, 0x20 + i, 16, 1, &l->c1[i]);
++	for (i = 0; i < ARRAY_SIZE(b43_phy_ac_ladder_lo_pct); i++) {
++		u16 lo = b43_phy_ac_ladder_lo_idx[i];
++		u16 iq = b43_phy_ac_ladder_iq_idx[i];
++
++		if (wired) {
++			lo |= (b43_phy_ac_ladder_lo_pct[i] * scale / 100) << 8;
++			iq |= (b43_phy_ac_ladder_iq_pct[i] * scale / 100) << 8;
++		}
++		b43_actab_write_bulk(dev, 0x000c, 0x00 + i, 16, 1, &lo);
++		b43_actab_write_bulk(dev, 0x000c, 0x20 + i, 16, 1, &iq);
+ 	}
+ 	b43_phy_ac_tbl_write_unlock(dev, gate);
+ }
+@@ -7330,7 +7314,7 @@ void b43_phy_ac_post_rxiqcal_stage2(stru
+ 		}
+ 	}
+ 
+-	b43_phy_ac_gain_ladder_write(dev, &b43_phy_ac_ladder_a);
++	b43_phy_ac_gain_ladder_write(dev, 0);
+ }
+ 
+ /*
+@@ -7486,12 +7470,12 @@ void b43_phy_ac_rxcal_afe_calibrate(stru
+ 	}
+ 	/*
+ 	 * Iteration 6, cmd 0x8234, observed result 0xfe02. Ends the core-0 group
+-	 * with ladder B; see b43_phy_ac_gain_ladder_write().
++	 * with chain 1's ladder; see b43_phy_ac_gain_ladder_write().
+ 	 */
+ 	{
+ 		b43_phy_ac_rxcal_afe_iter(dev, 0x8234, 0x0000,
+ 					  NULL, 0, 0x0083, 1, 0x0043);
+-		b43_phy_ac_gain_ladder_write(dev, &b43_phy_ac_ladder_b);
++		b43_phy_ac_gain_ladder_write(dev, 1);
+ 	}
+ 
+ 	/* ==== Core 1 (cmd 0x9XXX, RAD.RD 0x0344) ==== */
+@@ -7534,8 +7518,7 @@ void b43_phy_ac_rxcal_afe_calibrate(stru
+ 
+ 	/* The load before chain 2, on the first bring-up only. */
+ 	if (dev->phy.ac->status_mask & B43_PHY_AC_STATE_FIRST_BRINGUP)
+-		b43_phy_ac_gain_ladder_write(dev,
+-					     b43_phy_ac_ladder_before_chain2(dev));
++		b43_phy_ac_gain_ladder_write(dev, 2);
+ 
+ 	/* ==== Core 2 (cmd 0xaXXX, RAD.RD 0x0544) ==== */
+ 
+@@ -8074,7 +8057,7 @@ void b43_phy_ac_rxiqcal_prep_second_iter
+ 	}
+ 
+ 	/* Segment C: ladder A. */
+-	b43_phy_ac_gain_ladder_write(dev, &b43_phy_ac_ladder_a);
++	b43_phy_ac_gain_ladder_write(dev, 0);
+ }
+ 
+ /*
+@@ -8130,9 +8113,7 @@ void b43_phy_ac_rxiqcal_run_meas_iters(s
+ 		 * the agcombo and the tg789vac.
+ 		 */
+ 		if ((i & 1) && (dev->phy.ac->coremask & ~GENMASK(i / 2, 0)))
+-			b43_phy_ac_gain_ladder_write(dev, i == 1 ?
+-					&b43_phy_ac_ladder_b :
+-					b43_phy_ac_ladder_before_chain2(dev));
++			b43_phy_ac_gain_ladder_write(dev, i / 2 + 1);
+ 	}
+ }
+ 
