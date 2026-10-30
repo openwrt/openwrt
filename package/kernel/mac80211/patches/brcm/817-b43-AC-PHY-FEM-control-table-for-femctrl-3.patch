@@ -15,10 +15,8 @@ switch points at.
 Without the table a station cannot associate with a 2.4 GHz AP on the
 RT-AC66U B1.
 
-Index: backports-7.2/drivers/net/wireless/broadcom/b43/phy_ac.c
-===================================================================
---- backports-7.2.orig/drivers/net/wireless/broadcom/b43/phy_ac.c
-+++ backports-7.2/drivers/net/wireless/broadcom/b43/phy_ac.c
+--- a/drivers/net/wireless/broadcom/b43/phy_ac.c
++++ b/drivers/net/wireless/broadcom/b43/phy_ac.c
 @@ -3100,6 +3100,12 @@ static const u32 b43_acphy_txv_for_spexp
   *                     The same 6.30.223 as the MacBook's sets that bit
   *                     after its table; the routers never touch 0x040a.

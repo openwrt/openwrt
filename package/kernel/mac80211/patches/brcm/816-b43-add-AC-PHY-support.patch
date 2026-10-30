@@ -13,10 +13,8 @@ at bb6a455 (b43/ directory), merged onto backports 7.2 and OpenWrt's
 - keep OpenWrt's gpiomask parameter, no-PIO fallback and antenna
   control in the code the port moved
 
-Index: backports-7.2/drivers/net/wireless/broadcom/b43/Kconfig
-===================================================================
---- backports-7.2.orig/drivers/net/wireless/broadcom/b43/Kconfig
-+++ backports-7.2/drivers/net/wireless/broadcom/b43/Kconfig
+--- a/drivers/net/wireless/broadcom/b43/Kconfig
++++ b/drivers/net/wireless/broadcom/b43/Kconfig
 @@ -150,13 +150,29 @@ config B43_PHY_LCN
  	  Say N, this is BROKEN and crashes driver.
  
@@ -50,10 +48,8 @@ Index: backports-7.2/drivers/net/wireless/broadcom/b43/Kconfig
  
  # This config option automatically enables b43 LEDS support,
  # if it's possible.
-Index: backports-7.2/drivers/net/wireless/broadcom/b43/Makefile
-===================================================================
---- backports-7.2.orig/drivers/net/wireless/broadcom/b43/Makefile
-+++ backports-7.2/drivers/net/wireless/broadcom/b43/Makefile
+--- a/drivers/net/wireless/broadcom/b43/Makefile
++++ b/drivers/net/wireless/broadcom/b43/Makefile
 @@ -15,6 +15,10 @@ b43-$(CPTCFG_B43_PHY_HT)	+= tables_phy_h
  b43-$(CPTCFG_B43_PHY_HT)	+= radio_2059.o
  b43-$(CPTCFG_B43_PHY_LCN)	+= phy_lcn.o tables_phy_lcn.o
@@ -65,10 +61,8 @@ Index: backports-7.2/drivers/net/wireless/broadcom/b43/Makefile
  b43-y				+= sysfs.o
  b43-y				+= xmit.o
  b43-y				+= dma.o
-Index: backports-7.2/drivers/net/wireless/broadcom/b43/b43.h
-===================================================================
---- backports-7.2.orig/drivers/net/wireless/broadcom/b43/b43.h
-+++ backports-7.2/drivers/net/wireless/broadcom/b43/b43.h
+--- a/drivers/net/wireless/broadcom/b43/b43.h
++++ b/drivers/net/wireless/broadcom/b43/b43.h
 @@ -9,6 +9,7 @@
  #include <linux/bcma/bcma.h>
  #include <linux/ssb/ssb.h>
@@ -460,10 +454,8 @@ Index: backports-7.2/drivers/net/wireless/broadcom/b43/b43.h
  __printf(2, 3) void b43warn(struct b43_wl *wl, const char *fmt, ...);
  __printf(2, 3) void b43dbg(struct b43_wl *wl, const char *fmt, ...);
  
-Index: backports-7.2/drivers/net/wireless/broadcom/b43/bus.c
-===================================================================
---- backports-7.2.orig/drivers/net/wireless/broadcom/b43/bus.c
-+++ backports-7.2/drivers/net/wireless/broadcom/b43/bus.c
+--- a/drivers/net/wireless/broadcom/b43/bus.c
++++ b/drivers/net/wireless/broadcom/b43/bus.c
 @@ -99,6 +99,10 @@ struct b43_bus_dev *b43_bus_dev_bcma_ini
  	    bcm47xx_bus.bcma.bus.chipinfo.id == BCMA_CHIP_ID_BCM4716)
  		dev->flush_writes = true;
@@ -475,10 +467,8 @@ Index: backports-7.2/drivers/net/wireless/broadcom/b43/bus.c
  
  	dev->dev = &core->dev;
  	dev->dma_dev = core->dma_dev;
-Index: backports-7.2/drivers/net/wireless/broadcom/b43/dma.c
-===================================================================
---- backports-7.2.orig/drivers/net/wireless/broadcom/b43/dma.c
-+++ backports-7.2/drivers/net/wireless/broadcom/b43/dma.c
+--- a/drivers/net/wireless/broadcom/b43/dma.c
++++ b/drivers/net/wireless/broadcom/b43/dma.c
 @@ -6,6 +6,8 @@
    DMA ringbuffer and descriptor allocation/management
  
@@ -1013,10 +1003,8 @@ Index: backports-7.2/drivers/net/wireless/broadcom/b43/dma.c
  	ring->current_slot = slot;
  }
  
-Index: backports-7.2/drivers/net/wireless/broadcom/b43/dma.h
-===================================================================
---- backports-7.2.orig/drivers/net/wireless/broadcom/b43/dma.h
-+++ backports-7.2/drivers/net/wireless/broadcom/b43/dma.h
+--- a/drivers/net/wireless/broadcom/b43/dma.h
++++ b/drivers/net/wireless/broadcom/b43/dma.h
 @@ -90,6 +90,11 @@ struct b43_dmadesc32 {
  #define		B43_DMA64_TXPARITYDISABLE		0x00000800
  #define		B43_DMA64_TXADDREXT_MASK		0x00030000
@@ -1077,10 +1065,8 @@ Index: backports-7.2/drivers/net/wireless/broadcom/b43/dma.h
  void b43_dma_rx(struct b43_dmaring *ring);
  
  void b43_dma_direct_fifo_rx(struct b43_wldev *dev,
-Index: backports-7.2/drivers/net/wireless/broadcom/b43/helpers_phy_ac.c
-===================================================================
 --- /dev/null
-+++ backports-7.2/drivers/net/wireless/broadcom/b43/helpers_phy_ac.c
++++ b/drivers/net/wireless/broadcom/b43/helpers_phy_ac.c
 @@ -0,0 +1,106 @@
 +// SPDX-License-Identifier: GPL-2.0-or-later
 +/*
@@ -1188,10 +1174,8 @@ Index: backports-7.2/drivers/net/wireless/broadcom/b43/helpers_phy_ac.c
 +	b43_phy_bw_clk_set(dev, clk);
 +	b43_read32(dev, B43_MMIO_MACCTL);
 +}
-Index: backports-7.2/drivers/net/wireless/broadcom/b43/leds.c
-===================================================================
---- backports-7.2.orig/drivers/net/wireless/broadcom/b43/leds.c
-+++ backports-7.2/drivers/net/wireless/broadcom/b43/leds.c
+--- a/drivers/net/wireless/broadcom/b43/leds.c
++++ b/drivers/net/wireless/broadcom/b43/leds.c
 @@ -9,6 +9,8 @@
    Copyright (c) 2005-2007 Michael Buesch <m@bues.ch>
    Copyright (c) 2005 Danny van Dyk <kugelfang@gentoo.org>
@@ -1553,10 +1537,8 @@ Index: backports-7.2/drivers/net/wireless/broadcom/b43/leds.c
 +	for (i = 0; i < ARRAY_SIZE(leds->led); i++)
 +		b43_unregister_led(&leds->led[i]);
  }
-Index: backports-7.2/drivers/net/wireless/broadcom/b43/leds.h
-===================================================================
---- backports-7.2.orig/drivers/net/wireless/broadcom/b43/leds.h
-+++ backports-7.2/drivers/net/wireless/broadcom/b43/leds.h
+--- a/drivers/net/wireless/broadcom/b43/leds.h
++++ b/drivers/net/wireless/broadcom/b43/leds.h
 @@ -23,6 +23,8 @@ struct b43_led {
  	/* If activelow is true, the LED is ON if the
  	 * bit is switched off. */
@@ -1615,10 +1597,8 @@ Index: backports-7.2/drivers/net/wireless/broadcom/b43/leds.h
  #endif /* CPTCFG_B43_LEDS */
  
  #endif /* B43_LEDS_H_ */
-Index: backports-7.2/drivers/net/wireless/broadcom/b43/main.c
-===================================================================
---- backports-7.2.orig/drivers/net/wireless/broadcom/b43/main.c
-+++ backports-7.2/drivers/net/wireless/broadcom/b43/main.c
+--- a/drivers/net/wireless/broadcom/b43/main.c
++++ b/drivers/net/wireless/broadcom/b43/main.c
 @@ -9,6 +9,8 @@
    Copyright (c) 2005 Danny van Dyk <kugelfang@gentoo.org>
    Copyright (c) 2005 Andreas Jaggi <andreas.jaggi@waterwave.ch>
@@ -4613,10 +4593,8 @@ Index: backports-7.2/drivers/net/wireless/broadcom/b43/main.c
  	ieee80211_queue_work(dev->wl->hw, &dev->restart_work);
  }
  
-Index: backports-7.2/drivers/net/wireless/broadcom/b43/phy_ac.c
-===================================================================
---- backports-7.2.orig/drivers/net/wireless/broadcom/b43/phy_ac.c
-+++ backports-7.2/drivers/net/wireless/broadcom/b43/phy_ac.c
+--- a/drivers/net/wireless/broadcom/b43/phy_ac.c
++++ b/drivers/net/wireless/broadcom/b43/phy_ac.c
 @@ -4,14 +4,48 @@
   * IEEE 802.11ac AC-PHY support
   *
@@ -15723,10 +15701,8 @@ Index: backports-7.2/drivers/net/wireless/broadcom/b43/phy_ac.c
 +	(void)b43_phy_ac_farrow_vals;
 +	(void)b43_phy_ac_farrow_vals_432x_media_a1;
 +}
-Index: backports-7.2/drivers/net/wireless/broadcom/b43/phy_ac.h
-===================================================================
---- backports-7.2.orig/drivers/net/wireless/broadcom/b43/phy_ac.h
-+++ backports-7.2/drivers/net/wireless/broadcom/b43/phy_ac.h
+--- a/drivers/net/wireless/broadcom/b43/phy_ac.h
++++ b/drivers/net/wireless/broadcom/b43/phy_ac.h
 @@ -3,20 +3,83 @@
  #define B43_PHY_AC_H_
  
@@ -16614,10 +16590,8 @@ Index: backports-7.2/drivers/net/wireless/broadcom/b43/phy_ac.h
 +#endif
 +
  #endif /* B43_PHY_AC_H_ */
-Index: backports-7.2/drivers/net/wireless/broadcom/b43/phy_common.c
-===================================================================
---- backports-7.2.orig/drivers/net/wireless/broadcom/b43/phy_common.c
-+++ backports-7.2/drivers/net/wireless/broadcom/b43/phy_common.c
+--- a/drivers/net/wireless/broadcom/b43/phy_common.c
++++ b/drivers/net/wireless/broadcom/b43/phy_common.c
 @@ -99,14 +99,15 @@ int b43_phy_init(struct b43_wldev *dev)
  
  	err = ops->init(dev);
@@ -16743,10 +16717,8 @@ Index: backports-7.2/drivers/net/wireless/broadcom/b43/phy_common.c
  		break;
  #endif
  #ifdef CPTCFG_B43_SSB
-Index: backports-7.2/drivers/net/wireless/broadcom/b43/phy_common.h
-===================================================================
---- backports-7.2.orig/drivers/net/wireless/broadcom/b43/phy_common.h
-+++ backports-7.2/drivers/net/wireless/broadcom/b43/phy_common.h
+--- a/drivers/net/wireless/broadcom/b43/phy_common.h
++++ b/drivers/net/wireless/broadcom/b43/phy_common.h
 @@ -33,7 +33,8 @@ struct b43_wldev;
  #define B43_PHYVER_TYPE_SHIFT		8
  #define B43_PHYVER_VERSION		0x00FF
@@ -16822,10 +16794,8 @@ Index: backports-7.2/drivers/net/wireless/broadcom/b43/phy_common.h
 +void b43_phy_bw_clk_set(struct b43_wldev *dev, u32 bits);
  
  #endif /* LINUX_B43_PHY_COMMON_H_ */
-Index: backports-7.2/drivers/net/wireless/broadcom/b43/pio.c
-===================================================================
---- backports-7.2.orig/drivers/net/wireless/broadcom/b43/pio.c
-+++ backports-7.2/drivers/net/wireless/broadcom/b43/pio.c
+--- a/drivers/net/wireless/broadcom/b43/pio.c
++++ b/drivers/net/wireless/broadcom/b43/pio.c
 @@ -456,6 +456,7 @@ static int pio_tx_frame(struct b43_pio_t
  	cookie = generate_cookie(q, pack);
  	hdrlen = b43_txhdr_size(dev);
@@ -16901,10 +16871,8 @@ Index: backports-7.2/drivers/net/wireless/broadcom/b43/pio.c
  	if (q->rev >= 8)
  		b43_piorx_write32(q, B43_PIO8_RXCTL, B43_PIO8_RXCTL_DATARDY);
  	else
-Index: backports-7.2/drivers/net/wireless/broadcom/b43/ppr_ac.c
-===================================================================
 --- /dev/null
-+++ backports-7.2/drivers/net/wireless/broadcom/b43/ppr_ac.c
++++ b/drivers/net/wireless/broadcom/b43/ppr_ac.c
 @@ -0,0 +1,314 @@
 +// SPDX-License-Identifier: GPL-2.0
 +/*
@@ -17220,10 +17188,8 @@ Index: backports-7.2/drivers/net/wireless/broadcom/b43/ppr_ac.c
 +			return true;
 +	return false;
 +}
-Index: backports-7.2/drivers/net/wireless/broadcom/b43/ppr_ac.h
-===================================================================
 --- /dev/null
-+++ backports-7.2/drivers/net/wireless/broadcom/b43/ppr_ac.h
++++ b/drivers/net/wireless/broadcom/b43/ppr_ac.h
 @@ -0,0 +1,94 @@
 +/* SPDX-License-Identifier: GPL-2.0 */
 +#ifndef B43_PPR_AC_H_
@@ -17319,10 +17285,8 @@ Index: backports-7.2/drivers/net/wireless/broadcom/b43/ppr_ac.h
 +			     enum nl80211_chan_width width);
 +
 +#endif /* B43_PPR_AC_H_ */
-Index: backports-7.2/drivers/net/wireless/broadcom/b43/radio_2069.c
-===================================================================
 --- /dev/null
-+++ backports-7.2/drivers/net/wireless/broadcom/b43/radio_2069.c
++++ b/drivers/net/wireless/broadcom/b43/radio_2069.c
 @@ -0,0 +1,1674 @@
 +// SPDX-License-Identifier: GPL-2.0-or-later
 +/*
@@ -18998,10 +18962,8 @@ Index: backports-7.2/drivers/net/wireless/broadcom/b43/radio_2069.c
 +	b43dbg(dev->wl, "phy-ac: radio pwron 0x040b readback: %04x after %u polls\n",
 +	       pon, polls);
 +}
-Index: backports-7.2/drivers/net/wireless/broadcom/b43/radio_2069.h
-===================================================================
 --- /dev/null
-+++ backports-7.2/drivers/net/wireless/broadcom/b43/radio_2069.h
++++ b/drivers/net/wireless/broadcom/b43/radio_2069.h
 @@ -0,0 +1,48 @@
 +/* SPDX-License-Identifier: GPL-2.0-or-later */
 +#ifndef B43_RADIO_2069_H_
@@ -19051,10 +19013,8 @@ Index: backports-7.2/drivers/net/wireless/broadcom/b43/radio_2069.h
 +void b43_radio_2069_afe_lpf_stage(struct b43_wldev *dev, u16 afe_728);
 +
 +#endif /* B43_RADIO_2069_H_ */
-Index: backports-7.2/drivers/net/wireless/broadcom/b43/tables_phy_ac.c
-===================================================================
 --- /dev/null
-+++ backports-7.2/drivers/net/wireless/broadcom/b43/tables_phy_ac.c
++++ b/drivers/net/wireless/broadcom/b43/tables_phy_ac.c
 @@ -0,0 +1,1082 @@
 +// SPDX-License-Identifier: GPL-2.0-or-later
 +/*
@@ -20138,10 +20098,8 @@ Index: backports-7.2/drivers/net/wireless/broadcom/b43/tables_phy_ac.c
 +
 +	b43_phy_ac_tbl_write_unlock(dev, saved);
 +}
-Index: backports-7.2/drivers/net/wireless/broadcom/b43/tables_phy_ac.h
-===================================================================
 --- /dev/null
-+++ backports-7.2/drivers/net/wireless/broadcom/b43/tables_phy_ac.h
++++ b/drivers/net/wireless/broadcom/b43/tables_phy_ac.h
 @@ -0,0 +1,51 @@
 +/* SPDX-License-Identifier: GPL-2.0-or-later */
 +#ifndef B43_TABLES_PHY_AC_H_
@@ -20194,10 +20152,8 @@ Index: backports-7.2/drivers/net/wireless/broadcom/b43/tables_phy_ac.h
 +void b43_phy_ac_tbl_write_unlock(struct b43_wldev *dev, u16 saved);
 +
 +#endif /* B43_TABLES_PHY_AC_H_ */
-Index: backports-7.2/drivers/net/wireless/broadcom/b43/xmit.c
-===================================================================
---- backports-7.2.orig/drivers/net/wireless/broadcom/b43/xmit.c
-+++ backports-7.2/drivers/net/wireless/broadcom/b43/xmit.c
+--- a/drivers/net/wireless/broadcom/b43/xmit.c
++++ b/drivers/net/wireless/broadcom/b43/xmit.c
 @@ -10,12 +10,15 @@
    Copyright (C) 2005, 2006 Michael Buesch <m@bues.ch>
    Copyright (C) 2005 Danny van Dyk <kugelfang@gentoo.org>
@@ -21281,10 +21237,8 @@ Index: backports-7.2/drivers/net/wireless/broadcom/b43/xmit.c
  	if (status->frame_count == 0) {
  		/* The frame was not transmitted at all. */
  		report->status.rates[0].count = 0;
-Index: backports-7.2/drivers/net/wireless/broadcom/b43/xmit.h
-===================================================================
---- backports-7.2.orig/drivers/net/wireless/broadcom/b43/xmit.h
-+++ backports-7.2/drivers/net/wireless/broadcom/b43/xmit.h
+--- a/drivers/net/wireless/broadcom/b43/xmit.h
++++ b/drivers/net/wireless/broadcom/b43/xmit.h
 @@ -187,11 +187,91 @@ struct b43_tx_legacy_rate_phy_ctl_entry
  #define  B43_TXH_PHY1_MODUL_QAM64	0x1800 /* QAM64 */
  #define  B43_TXH_PHY1_MODUL_QAM256	0x2000 /* QAM256 */
