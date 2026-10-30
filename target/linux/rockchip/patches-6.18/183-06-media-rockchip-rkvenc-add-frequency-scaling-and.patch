@@ -1,4 +1,4 @@
-From bcf5c3598fd14420c900f14c96ef9b554d5ee6a8 Mon Sep 17 00:00:00 2001
+From 37c56aa3b70a0eda2d0d2ef705921890b2264ece Mon Sep 17 00:00:00 2001
 From: Daniel Golle <daniel@makrotopia.org>
 Date: Fri, 16 Oct 2026 23:57:17 +0100
 Subject: [PATCH] media: rockchip: rkvenc: Add frequency scaling and cooling
@@ -31,9 +31,9 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  .../media/platform/rockchip/rkvenc/Makefile   |   1 +
  .../platform/rockchip/rkvenc/rkvenc-dvfs.c    | 370 ++++++++++++++++++
  .../platform/rockchip/rkvenc/rkvenc-v4l2.c    |  20 +-
- .../media/platform/rockchip/rkvenc/rkvenc.c   |  10 +-
+ .../media/platform/rockchip/rkvenc/rkvenc.c   |  11 +-
  .../media/platform/rockchip/rkvenc/rkvenc.h   |  47 +++
- 6 files changed, 448 insertions(+), 3 deletions(-)
+ 6 files changed, 449 insertions(+), 3 deletions(-)
  create mode 100644 drivers/media/platform/rockchip/rkvenc/rkvenc-dvfs.c
 
 --- a/drivers/media/platform/rockchip/rkvenc/Kconfig
@@ -501,7 +501,15 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	v4l2_fh_del(&ctx->fh, filp);
 --- a/drivers/media/platform/rockchip/rkvenc/rkvenc.c
 +++ b/drivers/media/platform/rockchip/rkvenc/rkvenc.c
-@@ -240,6 +240,7 @@ static void rkvenc_finish_job(struct rkv
+@@ -236,6 +236,7 @@ static void rkvenc_finish_job(struct rkv
+ 			ctx->joined_header_done = false;
+ 		dev->job_ctx = NULL;
+ 		pm_runtime_put(dev->dev);
++		rkvenc_dvfs_job_end(dev, ctx);
+ 		rkvenc_m2m_ops.device_run(ctx);
+ 		return;
+ 	} else {
+@@ -259,6 +260,7 @@ static void rkvenc_finish_job(struct rkv
  
  	dev->job_ctx = NULL;
  	pm_runtime_put(dev->dev);
@@ -509,7 +517,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  
  	v4l2_m2m_buf_done_and_job_finish(dev->m2m_dev, ctx->m2m_ctx, state);
  }
-@@ -466,12 +467,18 @@ static int rkvenc_probe(struct platform_
+@@ -485,12 +487,18 @@ static int rkvenc_probe(struct platform_
  		goto err_unreg_v4l2;
  	}
  
@@ -529,7 +537,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  err_release_m2m:
  	v4l2_m2m_release(rkvenc->m2m_dev);
  err_unreg_v4l2:
-@@ -486,6 +493,7 @@ static void rkvenc_remove(struct platfor
+@@ -505,6 +513,7 @@ static void rkvenc_remove(struct platfor
  	struct rkvenc_dev *rkvenc = platform_get_drvdata(pdev);
  
  	cancel_delayed_work_sync(&rkvenc->watchdog);
@@ -613,7 +621,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  
  	u32 src_fourcc;
  	u32 coded_fourcc;
-@@ -215,6 +252,16 @@ void rkvenc_hw_recover(struct rkvenc_dev
+@@ -216,6 +253,16 @@ void rkvenc_hw_recover(struct rkvenc_dev
  int rkvenc_v4l2_init(struct rkvenc_dev *dev);
  void rkvenc_v4l2_cleanup(struct rkvenc_dev *dev);
  
