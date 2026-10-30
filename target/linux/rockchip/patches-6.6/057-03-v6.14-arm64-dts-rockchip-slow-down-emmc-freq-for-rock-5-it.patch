@@ -1,0 +1,35 @@
+From b36402e4a0772d1b3da06a4f5fbd1cfe4d6f1cc0 Mon Sep 17 00:00:00 2001
+From: Jianfeng Liu <liujianfeng1994@gmail.com>
+Date: Fri, 28 Feb 2025 22:33:08 +0800
+Subject: arm64: dts: rockchip: slow down emmc freq for rock 5 itx
+
+The current max-frequency 200000000 of emmc is not stable. When doing
+heavy write there will be I/O Error. After setting max-frequency to
+150000000 the emmc is stable under write.
+
+Also remove property mmc-hs200-1_8v because we are already running at
+HS400 mode.
+
+Tested with fio command:
+fio -filename=./test_randread -direct=1 -iodepth 1 -thread \
+-rw=randwrite -ioengine=psync -bs=16k -size=1G -numjobs=10 \
+-runtime=600 -group_reporting -name=mytest
+
+Signed-off-by: Jianfeng Liu <liujianfeng1994@gmail.com>
+Link: https://lore.kernel.org/r/20250228143341.70244-1-liujianfeng1994@gmail.com
+Signed-off-by: Heiko Stuebner <heiko@sntech.de>
+
+--- a/arch/arm64/boot/dts/rockchip/rk3588-rock-5-itx.dts
++++ b/arch/arm64/boot/dts/rockchip/rk3588-rock-5-itx.dts
+@@ -690,10 +690,9 @@
+ 
+ &sdhci {
+ 	bus-width = <8>;
+-	max-frequency = <200000000>;
++	max-frequency = <150000000>;
+ 	mmc-hs400-1_8v;
+ 	mmc-hs400-enhanced-strobe;
+-	mmc-hs200-1_8v;
+ 	no-sdio;
+ 	no-sd;
+ 	non-removable;
