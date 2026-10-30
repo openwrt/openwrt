@@ -130,3 +130,32 @@ define Device/ocedo_panda
   DEVICE_COMPAT_MESSAGE := Config cannot be migrated from swconfig to DSA
 endef
 TARGET_DEVICES += ocedo_panda
+
+define Build/watchguard_firebox-t30-bootfs
+	rm -f $(KDIR)/watchguard_firebox-t30-bootfs.img
+	TOPDIR=$(TOPDIR) sh $(TOPDIR)/scripts/make_watchguard_t30w_bootfs.sh \
+		$(STAGING_DIR_HOST)/bin \
+		$(IMAGE_KERNEL) \
+		$(KDIR)/image-$(firstword $(DEVICE_DTS)).dtb \
+		$(KDIR)/watchguard_firebox-t30-bootfs.img
+endef
+
+define Build/watchguard_firebox-t30-factory
+	rm -f $@
+	TOPDIR=$(TOPDIR) sh $(TOPDIR)/scripts/make_watchguard_t30w_sdimage.sh \
+		$(STAGING_DIR_HOST)/bin \
+		$(KDIR)/watchguard_firebox-t30-bootfs.img \
+		$(IMAGE_ROOTFS) \
+		$@
+endef
+
+define Device/watchguard_firebox-t30
+  DEVICE_VENDOR := WatchGuard
+  DEVICE_MODEL := Firebox T30
+  DEVICE_DTS := fsl/firebox-t30
+  DEVICE_PACKAGES := kmod-rtc-ds1307 kmod-ath9k kmod-usb-storage kmod-fs-ext4 wpad-basic-mbedtls
+  KERNEL := kernel-bin | append-dtb
+  IMAGE/factory.img := watchguard_firebox-t30-bootfs | watchguard_firebox-t30-factory
+  IMAGE/sysupgrade.bin := sysupgrade-tar
+endef
+TARGET_DEVICES += watchguard_firebox-t30
