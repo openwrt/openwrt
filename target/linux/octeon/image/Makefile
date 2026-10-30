@@ -128,7 +128,7 @@ define Device/paloaltonetworks_pa-220
   DEVICE_PACKAGES += kmod-hwmon-tmp421 kmod-rtc-ds1307 resize2fs sfdisk
   KERNEL := kernel-bin | strip-kernel | patch-cmdline | append-dtb-to-elf
   KERNEL_DEPENDS := $$(wildcard $(DTS_DIR)/$(DEVICE_DTS).dts)
-  CMDLINE := -root=/dev/mmcblk0p2 rootfstype=ext4 rootwait console=ttyS0,9600 pcie_octeon.pcie_disable=1
+  CMDLINE := -root=/dev/mmcblk0p2 rootfstype=ext4 rootwait console=ttyS0,9600 pcie_octeon.pcie_disable=1 octeon_ethernet.receive_group_order=2
   FILESYSTEMS := ext4
   IMAGE/sysupgrade.tar := sysupgrade-tar | append-metadata
 endef
