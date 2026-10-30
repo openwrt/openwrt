@@ -1,0 +1,89 @@
+From 0aab97337e2130a269ac24593b3a91a8e0ac5eee Mon Sep 17 00:00:00 2001
+From: Jo-Philipp Wich <jo@mein.io>
+Date: Thu, 10 Sep 2026 18:01:53 +0200
+Subject: [PATCH] ubus: drop per-instance proto when releasing resources
+
+uc_ubus_put_res() clears a resource's stored value references to break
+resource <-> closure reference cycles deterministically. Now that ubus
+request resources carry a per-instance prototype (see the previous
+commit), also drop that slot so a released request resource does not
+retain its per-call proto.
+
+Rather than reading the resource's internal value count, sweep the value
+slots through the public setter up to UBUS_RES_MAX, the largest slot
+count across all ubus resource types; the setter ignores indexes beyond
+a resource's own count, so this is safe for every type. This keeps the
+function free of any internal struct access.
+
+Signed-off-by: Jo-Philipp Wich <jo@mein.io>
+---
+ lib/ubus.c | 51 ++++++++++++++++++++++++++++++++-------------------
+ 1 file changed, 32 insertions(+), 19 deletions(-)
+
+--- a/lib/ubus.c
++++ b/lib/ubus.c
+@@ -669,25 +669,6 @@ uc_ubus_error(uc_vm_t *vm, size_t nargs)
+ 	return rv;
+ }
+ 
+-static void
+-uc_ubus_put_res(uc_value_t **rp)
+-{
+-	uc_value_t *res = *rp;
+-	uc_resource_ext_t *ext;
+-
+-	*rp = NULL;
+-
+-	if (!res)
+-		return;
+-
+-	ext = (uc_resource_ext_t *)res;
+-	for (size_t i = 0; i < ext->uvcount; i++)
+-		ucv_resource_value_set(res, i, NULL);
+-
+-	ucv_resource_persistent_set(res, false);
+-	ucv_put(res);
+-}
+-
+ enum {
+ 	CONN_RES_FD,
+ 	CONN_RES_CB,
+@@ -727,6 +708,38 @@ enum {
+ 	__SUB_RES_MAX,
+ };
+ 
++/* Largest value slot count across all ubus resource types. Keep in sync
++ * with the largest __*_RES_MAX above; used to sweep a resource's value
++ * slots without needing to know its specific type. */
++enum {
++	UBUS_RES_MAX = __DEFER_RES_MAX
++};
++
++static void
++uc_ubus_put_res(uc_value_t **rp)
++{
++	uc_value_t *res = *rp;
++	size_t i;
++
++	*rp = NULL;
++
++	if (!res)
++		return;
++
++	/* drop the stored references (including a per-instance prototype, if
++	 * present) to break resource <-> closure reference cycles
++	 * deterministically, without waiting for a gc pass. The setter
++	 * ignores indexes beyond the resource's own value count, so it is
++	 * safe to sweep up to the largest ubus resource slot count. */
++	for (i = 0; i < UBUS_RES_MAX; i++)
++		ucv_resource_value_set(res, i, NULL);
++
++	ucv_resource_proto_set(res, NULL);
++
++	ucv_resource_persistent_set(res, false);
++	ucv_put(res);
++}
++
+ static uc_value_t *
+ blob_to_ucv(uc_vm_t *vm, struct blob_attr *attr, bool table, const char **name);
+ 
