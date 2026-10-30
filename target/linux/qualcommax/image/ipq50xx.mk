@@ -397,6 +397,25 @@ define Device/tplink_re700x
 endef
 TARGET_DEVICES += tplink_re700x
 
+define Device/ubnt_unifi-6-pro
+	$(call Device/FitImage)
+	$(call Device/EmmcImage)
+	DEVICE_VENDOR := Ubiquiti
+	DEVICE_MODEL := UniFi U6 Pro
+	SOC := ipq5018
+	DEVICE_DTS_CONFIG := config@a650
+	# Stock U-Boot keeps ubnt_app at 0x41000000-0x41018000 until bootm prep
+	KERNEL_LOADADDR := 0x41200000
+	KERNEL_SIZE := 65536k
+	KERNEL = kernel-bin | libdeflate-gzip | \
+		fit gzip $$(KDIR)/image-$$(DEVICE_DTS).dtb | check-size $$(KERNEL_SIZE)
+	IMAGE/sysupgrade.bin/squashfs := append-rootfs | pad-to 64k | \
+		check-size 49152k | sysupgrade-tar rootfs=$$$$@ | append-metadata
+	DEVICE_PACKAGES := ath11k-firmware-ipq5018 kmod-ath11k-pci \
+		ath11k-firmware-qcn9074 ipq-wifi-ubnt_unifi-6-pro
+endef
+TARGET_DEVICES += ubnt_unifi-6-pro
+
 define Device/wallys_dr5018s
 	$(call Device/FitImage)
 	$(call Device/UbiFit)
