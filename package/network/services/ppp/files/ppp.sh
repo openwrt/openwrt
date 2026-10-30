@@ -167,8 +167,8 @@ ppp_generic_setup() {
 	[ -x /sbin/ujail ] && [ -f "$caps" ] && id -u ppp >/dev/null 2>&1 && {
 		jail="/sbin/ujail -t 5 -n pppd -U ppp -G ppp -C $caps -c --"
 		chown ppp /dev/ppp
-		mkdir -p /var/run/pppd
-		chown ppp /var/run/pppd
+		mkdir -p /var/run/pppd /var/run/pptp
+		chown ppp /var/run/pppd /var/run/pptp
 		# pppd rewrites the peer DNS file behind /etc/ppp/resolv.conf at
 		# every connect; one left by a root-run instance refuses uid 454
 		rm -f /tmp/resolv.conf.ppp
