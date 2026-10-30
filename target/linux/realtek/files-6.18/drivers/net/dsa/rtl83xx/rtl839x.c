@@ -35,8 +35,6 @@
 
 #define RTL839X_PORT_ISO_CTRL(port)		(0x1400 + ((port) << 3))
 
-#define RTL839X_TBL_ACCESS_CTRL_2		(0x611C)
-
 #define RTL839X_MAC_LINK_STS			(0x0390)
 
 #define RTL839X_EEE_TX_TIMER_GELITE_CTRL	(0x042C)
@@ -88,17 +86,6 @@ void rtldsa_839x_print_matrix(struct otto_dsa_priv *priv)
 static inline int rtl839x_port_iso_ctrl(int p)
 {
 	return RTL839X_PORT_ISO_CTRL(p);
-}
-
-void rtl839x_exec_tbl2_cmd(struct otto_dsa_priv *priv, u32 cmd)
-{
-	u32 val;
-
-	if (regmap_write(priv->map, RTL839X_TBL_ACCESS_CTRL_2, cmd))
-		return;
-
-	regmap_read_poll_timeout(priv->map, RTL839X_TBL_ACCESS_CTRL_2,
-				val, !(val & BIT(9)), 0, 0);
 }
 
 static inline int rtl839x_mac_force_mode_ctrl(int p)

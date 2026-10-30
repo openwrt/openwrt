@@ -3,12 +3,11 @@
 #include <net/dsa.h>
 #include <linux/delay.h>
 #include <linux/regmap.h>
+#include <linux/soc/realtek/otto_table.h>
 #include <asm/mach-rtl-otto/mach-rtl-otto.h>
 
 #include "qos.h"
 #include "rtl-otto.h"
-
-#define RTL839X_TBL_ACCESS_DATA_2(i)		(0x6120 + (((i) << 2)))
 
 #define RTL838X_SCHED_P_EGR_RATE_CTRL(p)	(0xC008 + (((p) << 7)))
 
@@ -97,33 +96,6 @@ static int rtldsa_max_available_queue[] = {0, 1, 2, 3, 4, 5, 6, 7};
 static int rtldsa_default_queue_weights[] = {1, 1, 1, 1, 1, 1, 1, 1};
 static int dot1p_priority_remapping[] = {0, 1, 2, 3, 4, 5, 6, 7};
 
-static void otto_qos_839x_read_scheduling_table(struct otto_dsa_priv *priv, int port)
-{
-	u32 cmd = 1 << 9 | /* Execute cmd */
-		  0 << 8 | /* Read */
-		  0 << 6 | /* Table type 0b00 */
-		  (port & 0x3f);
-	rtl839x_exec_tbl2_cmd(priv, cmd);
-}
-
-static void otto_qos_839x_write_scheduling_table(struct otto_dsa_priv *priv, int port)
-{
-	u32 cmd = 1 << 9 | /* Execute cmd */
-		  1 << 8 | /* Write */
-		  0 << 6 | /* Table type 0b00 */
-		  (port & 0x3f);
-	rtl839x_exec_tbl2_cmd(priv, cmd);
-}
-
-static void otto_qos_839x_read_out_q_table(struct otto_dsa_priv *priv, int port)
-{
-	u32 cmd = 1 << 9 | /* Execute cmd */
-		  0 << 8 | /* Read */
-		  2 << 6 | /* Table type 0b10 */
-		  (port & 0x3f);
-	rtl839x_exec_tbl2_cmd(priv, cmd);
-}
-
 u32 otto_qos_838x_get_egress_rate(struct otto_dsa_priv *priv, int port)
 {
 	u32 rate = 0;
@@ -153,52 +125,52 @@ int otto_qos_838x_set_egress_rate(struct otto_dsa_priv *priv, int port, u32 rate
 /* Sets the rate limit, 10MBit/s is equal to a rate value of 625 */
 u32 otto_qos_839x_get_egress_rate(struct otto_dsa_priv *priv, int port)
 {
-	u32 rate = 0, v = 0;
+	u32 data[2];
+	int err;
 
 	if (port >= priv->r->cpu_port)
 		return 0;
 
 	mutex_lock(&priv->reg_mutex);
-
-	otto_qos_839x_read_scheduling_table(priv, port);
-
-	regmap_read(priv->map, RTL839X_TBL_ACCESS_DATA_2(7), &rate);
-	rate &= 0xff;
-	rate <<= 12;
-	regmap_read(priv->map, RTL839X_TBL_ACCESS_DATA_2(8), &v);
-	rate |= v >> 20;
-
+	err = otto_table_offset_read(RTL8390_TBL_SCHED, port, &data, 7);
 	mutex_unlock(&priv->reg_mutex);
-	pr_debug("%s: Getting egress rate on port %d is %d\n", __func__, port, rate);
+	if (err) {
+		dev_err(priv->dev, "Failed to read egress rate on port %d: %d\n", port, err);
+		return 0;
+	}
 
-	return rate;
+	return ((data[0] & 0xff) << 12) | (data[1] >> 20);
 }
 
 /* Sets the rate limit, 10MBit/s is equal to a rate value of 625, returns previous rate */
 static int otto_qos_839x_set_egress_rate_locked(struct otto_dsa_priv *priv, int port,
 					     u32 rate)
 {
-	u32 old_rate = 0, v = 0;
+	u32 data[9], old_rate;
+	int tbl, err;
 
 	lockdep_assert_held(&priv->reg_mutex);
 
-	pr_debug("%s: Setting egress rate on port %d to %d\n", __func__, port, rate);
 	if (port >= priv->r->cpu_port)
-		return -1;
+		return -EINVAL;
 
-	otto_qos_839x_read_scheduling_table(priv, port);
+	tbl = otto_table_acquire(RTL8390_TBL_SCHED);
+	if (tbl < 0)
+		return tbl;
 
-	regmap_read(priv->map, RTL839X_TBL_ACCESS_DATA_2(7), &old_rate);
-	old_rate &= 0xff;
-	old_rate <<= 12;
-	regmap_read(priv->map, RTL839X_TBL_ACCESS_DATA_2(8), &v);
-	old_rate |= v >> 20;
-	regmap_write_bits(priv->map, RTL839X_TBL_ACCESS_DATA_2(7), 0xff, (rate >> 12) & 0xff);
-	regmap_write_bits(priv->map, RTL839X_TBL_ACCESS_DATA_2(8), 0xfffU << 20, rate << 20);
+	err = __otto_table_read(tbl, port, &data);
+	if (err)
+		goto out;
 
-	otto_qos_839x_write_scheduling_table(priv, port);
-
-	return old_rate;
+	old_rate = ((data[7] & 0xff) << 12) | (data[8] >> 20);
+	data[7] = (data[7] & ~0xffU) | ((rate >> 12) & 0xff);
+	data[8] = (data[8] & ~(0xfffU << 20)) | (rate << 20);
+	err = __otto_table_write(tbl, port, &data);
+	if (!err)
+		err = old_rate;
+out:
+	otto_table_release(tbl);
+	return err;
 }
 
 int otto_qos_839x_set_egress_rate(struct otto_dsa_priv *priv, int port, u32 rate)
@@ -278,89 +250,109 @@ static void otto_qos_839x_set_ingress_priority(struct otto_dsa_priv *priv, int p
 	regmap_write_bits(priv->map, RTL839X_PRI_SEL_PORT_PRI(port), (7 << shift) | val, val);
 }
 
-static int otto_qos_839x_get_scheduling_algorithm_locked(struct otto_dsa_priv *priv, int port)
-{
-	u32 v = 0;
-
-	lockdep_assert_held(&priv->reg_mutex);
-
-	otto_qos_839x_read_scheduling_table(priv, port);
-	regmap_read(priv->map, RTL839X_TBL_ACCESS_DATA_2(8), &v);
-
-	if (v & BIT(19))
-		return WEIGHTED_ROUND_ROBIN;
-
-	return WEIGHTED_FAIR_QUEUE;
-}
-
 static void otto_qos_839x_set_scheduling_algorithm(struct otto_dsa_priv *priv, int port,
-						   enum scheduler_type sched)
+						 enum scheduler_type sched)
 {
-	enum scheduler_type t;
-	bool drain;
-	u32 v = 0, oam_state = 0, oam_port_state = 0;
-	u32 count = 0;
-	int i, egress_rate;
+	u32 data[9], oam_state = 0, oam_port_state = 0, egress_rate = 0;
+	bool restore_oam = false, restore_rate = false;
+	u32 count, v;
+	int tbl, err, ret;
 
 	mutex_lock(&priv->reg_mutex);
-	t = otto_qos_839x_get_scheduling_algorithm_locked(priv, port);
-	drain = sched == WEIGHTED_FAIR_QUEUE && t == WEIGHTED_ROUND_ROBIN &&
-		port != priv->r->cpu_port;
-	/* Check whether we need to empty the egress queue of that port due to Errata E0014503 */
-	if (drain) {
-		/* Read Operations, Adminstatrion and Management control register */
-		regmap_read(priv->map, RTL839X_OAM_CTRL, &oam_state);
+	err = otto_table_read(RTL8390_TBL_SCHED, port, &data);
+	if (err)
+		goto out;
 
-		/* Get current OAM state */
-		regmap_read(priv->map, RTL839X_OAM_PORT_ACT_CTRL(port), &oam_port_state);
+	/* Erratum E0014503: drain the port when switching from WRR to WFQ. */
+	if (sched == WEIGHTED_FAIR_QUEUE && (data[8] & BIT(19)) &&
+	    port != priv->r->cpu_port) {
+		egress_rate = ((data[7] & 0xff) << 12) | (data[8] >> 20);
+		err = regmap_read(priv->map, RTL839X_OAM_CTRL, &oam_state);
+		if (err)
+			goto out;
+		err = regmap_read(priv->map, RTL839X_OAM_PORT_ACT_CTRL(port), &oam_port_state);
+		if (err)
+			goto out;
 
-		/* Disable OAM to block traffice */
-		regmap_read(priv->map, RTL839X_OAM_CTRL, &v);
-		regmap_write_bits(priv->map, RTL839X_OAM_CTRL, 1, 1);
-		regmap_read(priv->map, RTL839X_OAM_CTRL, &v);
+		/* Restore saved state even if a write fails after reaching hardware. */
+		restore_oam = true;
+		err = regmap_write_bits(priv->map, RTL839X_OAM_CTRL, 1, 1);
+		if (err)
+			goto restore;
+		err = regmap_read(priv->map, RTL839X_OAM_CTRL, &v);
+		if (err)
+			goto restore;
+		err = regmap_write(priv->map, RTL839X_OAM_PORT_ACT_CTRL(port), 0x2);
+		if (err)
+			goto restore;
 
-		/* Set to trap action OAM forward (bits 1, 2) and OAM Mux Action Drop (bit 0) */
-		regmap_write(priv->map, RTL839X_OAM_PORT_ACT_CTRL(port), 0x2);
+		restore_rate = true;
+		ret = otto_qos_839x_set_egress_rate_locked(priv, port, 0xfffff);
+		if (ret < 0) {
+			err = ret;
+			goto restore;
+		}
 
-		/* Set port egress rate to unlimited */
-		egress_rate = otto_qos_839x_set_egress_rate_locked(priv, port, 0xFFFFF);
-
-		/* Wait until the egress used page count of that port is 0 */
-		i = 0;
-		do {
+		/* OUT_Q shares the SCHED access register: do not hold either table here. */
+		for (int i = 0; i < 3500; i++) {
 			usleep_range(100, 200);
-			otto_qos_839x_read_out_q_table(priv, port);
-			regmap_read(priv->map, RTL839X_TBL_ACCESS_DATA_2(6), &count);
-			count >>= 20;
-			i++;
-		} while (i < 3500 && count > 0);
+			err = otto_table_offset_read(RTL8390_TBL_OUT_Q, port, &count, 6);
+			if (err)
+				goto restore;
+			if (!(count >> 20))
+				break;
+		}
 	}
 
-	/* Actually set the scheduling algorithm */
-	otto_qos_839x_read_scheduling_table(priv, port);
-	regmap_write_bits(priv->map, RTL839X_TBL_ACCESS_DATA_2(8), BIT(19), sched ? BIT(19) : 0);
-	otto_qos_839x_write_scheduling_table(priv, port);
-
-	if (drain) {
-		/* Restore OAM state to control register */
-		regmap_write(priv->map, RTL839X_OAM_CTRL, oam_state);
-
-		/* Restore trap action state */
-		regmap_write(priv->map, RTL839X_OAM_PORT_ACT_CTRL(port), oam_port_state);
-
-		/* Restore port egress rate */
-		otto_qos_839x_set_egress_rate_locked(priv, port, egress_rate);
+	tbl = otto_table_acquire(RTL8390_TBL_SCHED);
+	if (tbl < 0) {
+		err = tbl;
+		goto restore;
 	}
+	err = __otto_table_read(tbl, port, &data);
+	if (!err) {
+		data[8] &= ~BIT(19);
+		if (sched == WEIGHTED_ROUND_ROBIN)
+			data[8] |= BIT(19);
+		err = __otto_table_write(tbl, port, &data);
+	}
+	otto_table_release(tbl);
 
+restore:
+	if (restore_oam) {
+		ret = regmap_write(priv->map, RTL839X_OAM_CTRL, oam_state);
+		if (ret && !err)
+			err = ret;
+		ret = regmap_write(priv->map, RTL839X_OAM_PORT_ACT_CTRL(port), oam_port_state);
+		if (ret && !err)
+			err = ret;
+	}
+	if (restore_rate) {
+		ret = otto_qos_839x_set_egress_rate_locked(priv, port, egress_rate);
+		if (ret < 0 && !err)
+			err = ret;
+	}
+out:
 	mutex_unlock(&priv->reg_mutex);
+	if (err)
+		dev_err(priv->dev, "Failed to set scheduling algorithm on port %d: %d\n", port, err);
 }
 
 static void otto_qos_839x_set_scheduling_queue_weights(struct otto_dsa_priv *priv, int port,
-						       int *queue_weights)
+						    int *queue_weights)
 {
-	mutex_lock(&priv->reg_mutex);
+	u32 data[9];
+	int tbl, err;
 
-	otto_qos_839x_read_scheduling_table(priv, port);
+	mutex_lock(&priv->reg_mutex);
+	tbl = otto_table_acquire(RTL8390_TBL_SCHED);
+	if (tbl < 0) {
+		err = tbl;
+		goto out;
+	}
+	err = __otto_table_read(tbl, port, &data);
+	if (err)
+		goto release;
 
 	for (int i = 0; i < 8; i++) {
 		int lsb = 48 + i * 10;
@@ -368,16 +360,21 @@ static void otto_qos_839x_set_scheduling_queue_weights(struct otto_dsa_priv *pri
 		int start_bit = lsb & 31;
 		u32 weight = queue_weights[i] & 0x3ff;
 
-		regmap_write_bits(priv->map, RTL839X_TBL_ACCESS_DATA_2(word),
-				  0x3ffU << start_bit, weight << start_bit);
-		if (start_bit > 22)
-			regmap_write_bits(priv->map, RTL839X_TBL_ACCESS_DATA_2(word - 1),
-					  0x3ffU >> (32 - start_bit),
-					  weight >> (32 - start_bit));
+		data[word] &= ~(0x3ffU << start_bit);
+		data[word] |= weight << start_bit;
+		if (start_bit > 22) {
+			data[word - 1] &= ~(0x3ffU >> (32 - start_bit));
+			data[word - 1] |= weight >> (32 - start_bit);
+		}
 	}
 
-	otto_qos_839x_write_scheduling_table(priv, port);
+	err = __otto_table_write(tbl, port, &data);
+release:
+	otto_table_release(tbl);
+out:
 	mutex_unlock(&priv->reg_mutex);
+	if (err)
+		dev_err(priv->dev, "Failed to set queue weights on port %d: %d\n", port, err);
 }
 
 void otto_qos_838x_init(struct otto_dsa_priv *priv)
