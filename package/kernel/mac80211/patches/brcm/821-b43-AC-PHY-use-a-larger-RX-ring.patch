@@ -1,0 +1,34 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Ville Takio <ville+git@takio.fi>
+Subject: [PATCH] b43: use a larger RX ring on the AC-PHY cores
+
+OpenWrt reduces the RX ring to 32 slots to save memory on the older
+devices. At AC-PHY rates the ring overflows under load: an iperf3 run
+from a 1x1 VHT80 client logged 31 "RX descriptor underrun" warnings in
+30 seconds. Keep the upstream 256 slots for the AC cores.
+
+--- a/drivers/net/wireless/broadcom/b43/dma.c
++++ b/drivers/net/wireless/broadcom/b43/dma.c
+@@ -899,6 +899,8 @@ struct b43_dmaring *b43_setup_dmaring(st
+ 
+ 	if (for_tx)
+ 		nr_slots = B43_TXRING_SLOTS;
++	else if (b43_is_ac_core(dev))
++		nr_slots = B43_RXRING_SLOTS_AC;
+ 	else
+ 		nr_slots = B43_RXRING_SLOTS;
+ 
+--- a/drivers/net/wireless/broadcom/b43/dma.h
++++ b/drivers/net/wireless/broadcom/b43/dma.h
+@@ -178,6 +178,11 @@ struct b43_dmadesc_generic {
+ /* DMA engine tuning knobs */
+ #define B43_TXRING_SLOTS		256
+ #define B43_RXRING_SLOTS		32
++/*
++ * The AC-PHY cores receive A-MPDUs at a few hundred Mbit/s; 32 slots
++ * overflow under load.
++ */
++#define B43_RXRING_SLOTS_AC		256
+ #define B43_DMA0_RX_FW598_BUFSIZE	(B43_DMA0_RX_FW598_FO + IEEE80211_MAX_FRAME_LEN)
+ #define B43_DMA0_RX_FW351_BUFSIZE	(B43_DMA0_RX_FW351_FO + IEEE80211_MAX_FRAME_LEN)
+ /*
