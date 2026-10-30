@@ -1,0 +1,21 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Ville Takio <ville+git@takio.fi>
+Subject: [PATCH] b43: AC-PHY: use mdelay() for the 5.85 ms rxcore delay
+
+ARM rejects a constant udelay() above 2 ms at link time
+(__bad_udelay). The delay may run in atomic context, so keep it busy
+waiting with mdelay().
+
+Index: backports-7.2/drivers/net/wireless/broadcom/b43/phy_ac.c
+===================================================================
+--- backports-7.2.orig/drivers/net/wireless/broadcom/b43/phy_ac.c
++++ backports-7.2/drivers/net/wireless/broadcom/b43/phy_ac.c
+@@ -2873,7 +2873,7 @@ static void b43_phy_ac_rxcore_setstate(s
+ 	 * read after. The capture delays 5848 us after the wide-open write.
+ 	 */
+ 	b43_phy_write(dev, 0x16d8, 0xffff);
+-	udelay(5850);
++	mdelay(6);
+ 
+ 	b43_phy_maskset(dev, 0x0160, (u16)~0x0007, coremask);
+ 	b43_phy_maskset(dev, B43_PHY_AC_RF_SEQ_MODE, (u16)~0x0070,
