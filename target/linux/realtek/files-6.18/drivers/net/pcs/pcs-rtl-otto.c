@@ -191,7 +191,7 @@ enum rtpcs_page {
 #define  RTL838X_REG_CML_SEL		BIT(1)
 
 #define SDS_EXT_REG29			0x1d
-#define  RTL930X_XSG_LINK_STS		GENMASK(8, 0)
+#define  RTL93XX_XSG_LINK_STS		GENMASK(8, 0)
 
 /* PAGE_FIB_EXT */
 
@@ -520,6 +520,7 @@ struct rtpcs_sds_ops {
 	/* optional */
 	int (*xsg_write)(struct rtpcs_serdes *sds, enum rtpcs_page page, int regnum,
 			 int bithigh, int bitlow, u16 value);
+	int (*get_xsgmii_link)(struct rtpcs_serdes *sds);
 
 	int (*set_autoneg)(struct rtpcs_serdes *sds, unsigned int neg_mode,
 			   const unsigned long *advertising);
@@ -1616,6 +1617,20 @@ static int rtpcs_93xx_sds_10gr_link_status(struct rtpcs_serdes *sds, bool *latch
 	return (link & RTL93XX_10GBASE_R_T_RX_LINK) == RTL93XX_10GBASE_R_T_RX_LINK;
 }
 
+/* Caller holds ctrl->lock to serialize mode changes and SerDes access. */
+static int rtpcs_93xx_sds_rx_link_status(struct rtpcs_serdes *sds)
+{
+	switch (sds->hw_mode) {
+	case RTPCS_SDS_MODE_10GBASER:
+	case RTPCS_SDS_MODE_USXGMII:
+		return rtpcs_93xx_sds_10gr_link_status(sds, NULL);
+	case RTPCS_SDS_MODE_XSGMII:
+		return sds->ops->get_xsgmii_link(sds);
+	default:
+		return -EOPNOTSUPP;
+	}
+}
+
 static int rtpcs_93xx_sds_set_autoneg(struct rtpcs_serdes *sds, unsigned int neg_mode,
 				      const unsigned long *advertising)
 {
@@ -2098,47 +2113,24 @@ static int rtpcs_930x_sds_get_phys_sds_id(int sds_id, int page)
 	return sds_id;
 }
 
-/* Caller holds ctrl->lock to serialize mode changes and SerDes access. */
-static bool rtpcs_930x_sds_rx_link_up(struct rtpcs_serdes *sds)
+static int rtpcs_930x_sds_get_xsgmii_link(struct rtpcs_serdes *sds)
 {
 	int phys_sds_id, val, i;
 
-	switch (sds->hw_mode) {
-	case RTPCS_SDS_MODE_10GBASER:
-	case RTPCS_SDS_MODE_USXGMII:
-		val = rtpcs_93xx_sds_10gr_link_status(sds, NULL);
-		if (val < 0) {
-			dev_err(sds->ctrl->dev, "SerDes %u: RX link-status read failed: %d\n",
-				sds->id, val);
-			return false;
-		}
-		return val > 0;
+	if (sds->id != 2 && sds->id != 3)
+		return -EOPNOTSUPP;
 
-	case RTPCS_SDS_MODE_XSGMII:
-		if (sds->id != 2 && sds->id != 3)
-			return false;
-
-		phys_sds_id = rtpcs_930x_sds_get_phys_sds_id(sds->id, PAGE_SDS_EXT);
-
-		for (i = 0; i < 2; i++) {
-			val = __rtpcs_sds_read_raw(sds->ctrl, phys_sds_id + i,
-						  PAGE_SDS_EXT, SDS_EXT_REG29, 15, 0);
-			if (val < 0) {
-				dev_err(sds->ctrl->dev,
-					"SerDes %u: RX link-status read failed on backing SerDes %d: %d\n",
-					sds->id, phys_sds_id + i, val);
-				return false;
-			}
-
-			if ((val & RTL930X_XSG_LINK_STS) != RTL930X_XSG_LINK_STS)
-				return false;
-		}
-
-		return true;
-
-	default:
-		return false;
+	phys_sds_id = rtpcs_930x_sds_get_phys_sds_id(sds->id, PAGE_SDS_EXT);
+	for (i = 0; i < 2; i++) {
+		val = __rtpcs_sds_read_raw(sds->ctrl, phys_sds_id + i,
+					  PAGE_SDS_EXT, SDS_EXT_REG29, 15, 0);
+		if (val < 0)
+			return val;
+		if ((val & RTL93XX_XSG_LINK_STS) != RTL93XX_XSG_LINK_STS)
+			return 0;
 	}
+
+	return 1;
 }
 
 static int rtpcs_930x_sds_op_read(struct rtpcs_serdes *sds, enum rtpcs_page page, int regnum,
@@ -3108,6 +3100,7 @@ static int rtpcs_930x_sds_check_calibration(struct rtpcs_serdes *sds,
 					    enum rtpcs_sds_mode hw_mode)
 {
 	u32 errors1, errors2;
+	int link;
 
 	rtpcs_930x_sds_sym_err_reset(sds, hw_mode);
 	rtpcs_930x_sds_sym_err_reset(sds, hw_mode);
@@ -3120,7 +3113,13 @@ static int rtpcs_930x_sds_check_calibration(struct rtpcs_serdes *sds,
 	dev_dbg(sds->ctrl->dev, "SerDes %u: RX calibration symbol errors %u -> %u\n",
 		sds->id, errors1, errors2);
 
-	if (!rtpcs_930x_sds_rx_link_up(sds)) {
+	link = rtpcs_93xx_sds_rx_link_status(sds);
+	if (link < 0) {
+		dev_err(sds->ctrl->dev, "SerDes %u: RX link-status read failed: %d\n",
+			sds->id, link);
+		return link;
+	}
+	if (!link) {
 		dev_dbg(sds->ctrl->dev, "SerDes %u: RX link down after calibration (mode=%u, attempt=%u/%u)\n",
 			sds->id, hw_mode, sds->rxcal_tries, RTPCS_RXCAL_MAX_TRIES);
 		return 1;
@@ -3572,6 +3571,23 @@ static int rtpcs_930x_sds_probe(struct rtpcs_serdes *sds)
 }
 
 /* RTL931X */
+
+static int rtpcs_931x_sds_get_xsgmii_link(struct rtpcs_serdes *sds)
+{
+	enum rtpcs_page page;
+	int val;
+
+	for (int i = 0; i < 2; i++) {
+		page = i ? DIGI_2(PAGE_SDS_EXT) : DIGI_1(PAGE_SDS_EXT);
+		val = rtpcs_sds_read(sds, page, SDS_EXT_REG29);
+		if (val < 0)
+			return val;
+		if ((val & RTL93XX_XSG_LINK_STS) != RTL93XX_XSG_LINK_STS)
+			return 0;
+	}
+
+	return 1;
+}
 
 /*
  * The SerDes MDIO driver maps page regions to different background SerDes.
@@ -5179,6 +5195,7 @@ static const struct rtpcs_sds_ops rtpcs_930x_sds_ops = {
 	.write			= rtpcs_930x_sds_op_write,
 	.write_mask		= rtpcs_930x_sds_op_write_mask,
 	.xsg_write		= rtpcs_930x_sds_op_xsg_write,
+	.get_xsgmii_link		= rtpcs_930x_sds_get_xsgmii_link,
 	.set_autoneg		= rtpcs_93xx_sds_set_autoneg,
 	.restart_autoneg	= rtpcs_generic_sds_restart_autoneg,
 	.get_pll_select		= rtpcs_930x_sds_get_pll_select,
@@ -5216,6 +5233,7 @@ static const struct rtpcs_sds_ops rtpcs_931x_sds_ops = {
 	.write			= rtpcs_generic_sds_op_write,
 	.write_mask		= rtpcs_generic_sds_op_write_mask,
 	.xsg_write		= rtpcs_931x_sds_op_xsg_write,
+	.get_xsgmii_link		= rtpcs_931x_sds_get_xsgmii_link,
 	.set_autoneg		= rtpcs_93xx_sds_set_autoneg,
 	.restart_autoneg	= rtpcs_generic_sds_restart_autoneg,
 	.get_pll_select		= rtpcs_931x_sds_get_pll_select,
