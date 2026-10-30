@@ -15,6 +15,9 @@ alpine_setup_interfaces()
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4 lan5 lan6" "eth0"
 		ucidef_set_interface "dmz" device "eth2"
 		;;
+	checkpoint,l-72)
+		ucidef_set_interface_lan "eth1"
+		;;
 	*)
 		echo "Unsupported hardware. Network interfaces not initialized"
 		;;
@@ -34,6 +37,10 @@ alpine_setup_macs()
 		[ -n "$wan_mac" ] && ucidef_set_interface_macaddr "wan" "$wan_mac"
 		[ -n "$lan_mac" ] && ucidef_set_interface_macaddr "lan" "$lan_mac"
 		[ -n "$dmz_mac" ] && ucidef_set_interface_macaddr "dmz" "$dmz_mac"
+		;;
+	checkpoint,l-72)
+		lan_mac=$(mtd_get_mac_ascii u-boot-env dmz_mac_addr)
+		[ -n "$lan_mac" ] && ucidef_set_interface_macaddr "lan" "$lan_mac"
 		;;
 	esac
 }
