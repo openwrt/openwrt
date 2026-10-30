@@ -1,0 +1,125 @@
+#!/bin/sh
+# SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+#
+# zmsh-factory-flash: Flashes password-protected factory payloads to the inactive bank.
+
+set -e
+
+PROGNAME="$(basename "$0")"
+PAYLOAD="$1"
+TMP_DIR=""
+PASSWORD="20greedisgood20"
+
+cleanup() {
+	[ -n "$TMP_DIR" ] && rm -rf "$TMP_DIR"
+}
+
+find_zmsh_mtd_part() {
+	local mtd
+	mtd=$(grep -e "\"$1\"" /proc/mtd | cut -d: -f1)
+	[ -n "$mtd" ] && echo "/dev/$mtd"
+}
+
+require_cmd() {
+	if ! command -v "$1" >/dev/null 2>&1; then
+		echo "Error: '$1' utility not found. Please install it." >&2
+		exit 1
+	fi
+}
+
+trap cleanup EXIT INT TERM
+
+# --- Basic Checks ---
+
+if [ -z "$PAYLOAD" ] || [ ! -f "$PAYLOAD" ]; then
+	cat >&2 <<EOF
+Usage: $PROGNAME <stock-payload.bin>
+EOF
+	exit 1
+fi
+
+for cmd in unzip md5sum tar zmsh-bootconfig mtd ubiformat mktemp; do
+	require_cmd "$cmd"
+done
+
+echo "--- ZMSH Dual-Bank Factory Flasher ---"
+
+# --- Feature Validation & Bank Detection ---
+
+echo "Validating 'zone' partition integrity..."
+if ! zmsh-bootconfig -s validate zone; then
+	echo "Error: The 'zone' partition is invalid or missing." >&2
+	echo "This device does not appear to support ZMSH dual-bank flashing. Aborting." >&2
+	exit 1
+fi
+
+BS=$(zmsh-bootconfig -s get zone bs)
+if [ "$BS" = "0" ]; then
+	echo "Current Bank: A (bs=0). Targeting Bank: B."
+	TARGET_KERNEL="kernel1"
+	TARGET_UBI="ubi1"
+elif [ "$BS" = "1" ]; then
+	echo "Current Bank: B (bs=1). Targeting Bank: A."
+	TARGET_KERNEL="kernel0"
+	TARGET_UBI="ubi0"
+else
+	echo "Error: Invalid BootStatus ($BS) returned from zmsh-bootconfig. Aborting." >&2
+	exit 1
+fi
+
+# Resolve target MTD character device paths
+KERNEL_MTD=$(find_zmsh_mtd_part "$TARGET_KERNEL")
+UBI_MTD=$(find_zmsh_mtd_part "$TARGET_UBI")
+
+if [ -z "$KERNEL_MTD" ] || [ -z "$UBI_MTD" ]; then
+	echo "Error: Could not locate target MTD partitions ($TARGET_KERNEL or $TARGET_UBI)." >&2
+	exit 1
+fi
+
+echo "Target Kernel MTD : $KERNEL_MTD"
+echo "Target UBI MTD    : $UBI_MTD"
+
+# --- Unpack and Verify Payload ---
+
+echo "Unpacking password-protected payload..."
+TMP_DIR="$(mktemp -d "/tmp/zmsh-flash-XXXXXX")"
+unzip -P "$PASSWORD" -q "$PAYLOAD" -d "$TMP_DIR"
+
+if [ ! -f "$TMP_DIR/firmware.bin" ] || [ ! -f "$TMP_DIR/md5" ]; then
+	echo "Error: Payload is missing firmware.bin or md5 signature." >&2
+	exit 1
+fi
+
+echo "Verifying MD5 checksum..."
+EXPECTED_MD5=$(cat "$TMP_DIR/md5")
+ACTUAL_MD5=$(md5sum "$TMP_DIR/firmware.bin" | cut -d' ' -f1)
+
+if [ "$EXPECTED_MD5" != "$ACTUAL_MD5" ]; then
+	echo "Error: MD5 mismatch! Expected $EXPECTED_MD5, got $ACTUAL_MD5." >&2
+	exit 1
+fi
+
+echo "Extracting inner firmware components..."
+tar -xf "$TMP_DIR/firmware.bin" -C "$TMP_DIR"
+
+if [ ! -f "$TMP_DIR/kernel" ] || [ ! -f "$TMP_DIR/rootfs.ubi" ]; then
+	echo "Error: Inner tarball did not contain 'kernel' and 'rootfs.ubi'." >&2
+	exit 1
+fi
+
+# --- Flash and Stage ---
+
+echo "Flashing Kernel to $KERNEL_MTD..."
+mtd write "$TMP_DIR/kernel" "$KERNEL_MTD"
+
+echo "Formatting and flashing UBI to $UBI_MTD..."
+ubiformat "$UBI_MTD" -y -f "$TMP_DIR/rootfs.ubi"
+
+echo "Toggling BootStatus and staging RunStatus..."
+zmsh-bootconfig -s toggle zone
+zmsh-bootconfig -s stage zone
+
+echo "--- Upgrade Complete ---"
+echo "The factory payload has been flashed to the inactive bank."
+echo "Please reboot to boot into the flashed firmware."
+exit 0
