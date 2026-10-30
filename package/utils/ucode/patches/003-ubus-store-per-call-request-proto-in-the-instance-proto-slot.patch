@@ -1,0 +1,69 @@
+From fbdd169efd17130fec41d219a1d3456a9f653120 Mon Sep 17 00:00:00 2001
+From: Jo-Philipp Wich <jo@mein.io>
+Date: Thu, 10 Sep 2026 18:01:45 +0200
+Subject: [PATCH] ubus: store per-call request proto in the instance proto
+ slot
+
+The ubus request handler attached the per-call reqproto object (holding
+args/info) to the shared "ubus.request" resource-type prototype:
+
+    ucv_prototype_set(ucv_prototype_get(reqobj), reqproto)
+
+Because reqobj was created without an instance proto slot,
+ucv_prototype_get() returned the shared type prototype, which was then
+mutated to point at the per-call object. This leaked the per-call object
+(and everything it referenced) into the type prototype for the lifetime
+of the VM, and caused a use-after-free at teardown: uc_vm_free() releases
+the restype prototypes before the final GC, so the shared type prototype
+was freed while still pointing at the per-call object, which was then
+freed again as an unreachable value.
+
+Create the request resource with ucv_resource_create_with_proto() instead,
+which stores reqproto in the resource's per-instance proto slot and chains
+it to the type prototype, so property lookup on the request object still
+falls through to the shared request methods (reply(), error(), ...).
+
+Fixes: #437
+Signed-off-by: Jo-Philipp Wich <jo@mein.io>
+---
+ lib/ubus.c | 22 +++++++++++++++++-----
+ 1 file changed, 17 insertions(+), 5 deletions(-)
+
+--- a/lib/ubus.c
++++ b/lib/ubus.c
+@@ -2444,8 +2444,23 @@ uc_ubus_handle_reply_common(struct ubus_context *ctx,
+ 	uc_value_t *reqobj, *res;
+ 	int rv;
+ 
+-	/* allocate deferred method call context */
+-	reqobj = ucv_resource_create_ex(vm, "ubus.request", (void **)&callctx, 1, sizeof(*callctx));
++	/* allocate deferred method call context.
++	 *
++	 * reqproto is a per-call object, so it must be stored in the request
++	 * resource's instance-specific prototype slot rather than being attached
++	 * to the shared "ubus.request" type prototype. The latter would leak the
++	 * per-call object (and everything it references) into the type prototype
++	 * for the lifetime of the VM, and cause a use-after-free at teardown:
++	 * uc_vm_free() releases the restype prototypes before the final GC, so
++	 * the shared type prototype is freed while still pointing at the
++	 * per-call object, which is then freed again as an unreachable value.
++	 *
++	 * ucv_resource_create_with_proto() takes ownership of reqproto and
++	 * chains it to the type prototype, so property lookup on reqobj still
++	 * falls through to the shared request methods.
++	 */
++	reqobj = ucv_resource_create_with_proto(vm, "ubus.request",
++			(void **)&callctx, 1, sizeof(*callctx), reqproto);
+ 
+ 	if (!callctx)
+ 		return UBUS_STATUS_UNKNOWN_ERROR;
+@@ -2459,9 +2474,6 @@ uc_ubus_handle_reply_common(struct ubus_context *ctx,
+ 	/* fd is copied to deferred request. ensure it does not get closed early */
+ 	ubus_request_get_caller_fd(req);
+ 
+-	if (reqproto)
+-		ucv_prototype_set(ucv_prototype_get(reqobj), reqproto);
+-
+ 	/* push object context, handler and request object onto stack */
+ 	uc_vm_stack_push(vm, ucv_get(this));
+ 	uc_vm_stack_push(vm, ucv_get(func));
