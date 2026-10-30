@@ -340,6 +340,14 @@ define Device/linksys_ea6500-v2
 endef
 TARGET_DEVICES += linksys_ea6500-v2
 
+define Device/linksys_ea6900
+  DEVICE_VENDOR := Linksys
+  DEVICE_MODEL := EA6900
+  DEVICE_VARIANT := v1
+  DEVICE_PACKAGES := $(USB3_PACKAGES)
+endef
+TARGET_DEVICES += linksys_ea6900
+
 define Device/linksys_ea9200
   DEVICE_VENDOR := Linksys
   DEVICE_MODEL := EA9200
