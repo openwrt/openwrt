@@ -1,0 +1,44 @@
+From 039dca54b44121c9f99e2011df032b3e181d3db1 Mon Sep 17 00:00:00 2001
+From: Henry Essinghigh <henry@essinghigh.dev>
+Date: Fri, 30 Oct 2026 00:38:47 +0000
+Subject: [PATCH] MIPS: Octeon: fall back to the legacy boot core mask
+
+The PA-220 U-Boot reports bootinfo version 1.4 but leaves garbage in
+ext_core_mask. Use the valid legacy core_mask on CN70xx when the two
+masks disagree so that all four CPU cores are brought up.
+
+Signed-off-by: Henry Essinghigh <henry@essinghigh.dev>
+---
+ arch/mips/cavium-octeon/setup.c | 21 +++++++++++++++++++++
+ 1 file changed, 21 insertions(+)
+
+--- a/arch/mips/cavium-octeon/setup.c
++++ b/arch/mips/cavium-octeon/setup.c
+@@ -722,6 +722,27 @@ void __init prom_init(void)
+ 		for (i = 512; i < 1024; i++)
+ 			cvmx_coremask_clear_core(&sysinfo->core_mask, i);
+ 
++	/*
++	 * Some bootloaders (e.g. the Palo Alto PA-220 U-Boot) report bootinfo
++	 * version 1.4 but leave garbage in ext_core_mask while the legacy
++	 * 32-bit core_mask is correct. On chips with at most 32 cores, trust
++	 * the legacy mask whenever the two disagree.
++	 */
++	if (OCTEON_IS_MODEL(OCTEON_CN70XX) && octeon_bootinfo->core_mask) {
++		bool mismatch = sysinfo->core_mask.coremask_bitmap[0] !=
++				octeon_bootinfo->core_mask;
++
++		for (i = 1; i < CVMX_COREMASK_BMPSZ; i++)
++			if (sysinfo->core_mask.coremask_bitmap[i])
++				mismatch = true;
++		if (mismatch) {
++			memset(&sysinfo->core_mask, 0,
++			       sizeof(sysinfo->core_mask));
++			cvmx_coremask_set64(&sysinfo->core_mask,
++					    octeon_bootinfo->core_mask);
++		}
++	}
++
+ 	sysinfo->exception_base_addr = octeon_bootinfo->exception_base_addr;
+ 	sysinfo->cpu_clock_hz = octeon_bootinfo->eclock_hz;
+ 	sysinfo->dram_data_rate_hz = octeon_bootinfo->dclock_hz * 2;
