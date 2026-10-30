@@ -196,6 +196,8 @@
 
 	i2c8: i2c@8 {
 		reg = <8>;
+		#address-cells = <1>;
+		#size-cells = <0>;
 
 		adt7475@2e {
 			compatible = "adi,adt7475";
@@ -209,6 +211,8 @@
 
 	i2c5: i2c@5 {
 		reg = <5>;
+		#address-cells = <1>;
+		#size-cells = <0>;
 
 		gpio1: gpio@22 {
 			compatible = "nxp,pca9555";

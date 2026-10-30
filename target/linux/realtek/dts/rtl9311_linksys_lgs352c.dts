@@ -22,6 +22,8 @@
 
 	i2c2: i2c@2 {
 		reg = <2>;
+		#address-cells = <1>;
+		#size-cells = <0>;
 
 		lm63@4c {
 			compatible = "national,lm63";

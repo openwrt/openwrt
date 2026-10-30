@@ -85,6 +85,8 @@
 &i2c_mst1 {
 	i2c1: i2c@1 {
 		reg = <1>;
+		#address-cells = <1>;
+		#size-cells = <0>;
 
 		lm63@4c {
 			compatible = "national,lm63";
