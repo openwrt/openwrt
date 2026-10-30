@@ -163,6 +163,7 @@ u32 otto_qos_839x_get_egress_rate(struct otto_dsa_priv *priv, int port)
 	otto_qos_839x_read_scheduling_table(priv, port);
 
 	regmap_read(priv->map, RTL839X_TBL_ACCESS_DATA_2(7), &rate);
+	rate &= 0xff;
 	rate <<= 12;
 	regmap_read(priv->map, RTL839X_TBL_ACCESS_DATA_2(8), &v);
 	rate |= v >> 20;
