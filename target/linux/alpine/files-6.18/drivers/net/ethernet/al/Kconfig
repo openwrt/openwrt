@@ -1,0 +1,7 @@
+config NET_AL_ETH
+	tristate "Annapurna Labs unified 1G/10G Ethernet driver"
+	depends on PCI && INET && ARCH_ALPINE
+	select PHYLIB
+	help
+	  This is the driver supports both standard and advanced Annapurna Labs
+	  1G and 10G Ethernet controllers.
