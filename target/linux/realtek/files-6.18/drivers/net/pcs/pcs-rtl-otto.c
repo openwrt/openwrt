@@ -4447,7 +4447,7 @@ static void rtpcs_931x_rx_linkmon_work_handler(struct work_struct *work)
 	    sds->hw_mode != RTPCS_SDS_MODE_10GBASER)
 		goto unlock;
 
-	link = rtpcs_93xx_sds_10gr_link_status(sds, NULL);
+	link = rtpcs_93xx_sds_rx_link_status(sds);
 	if (link < 0) {
 		sds->rxmon_down = 0;
 		dev_err_ratelimited(sds->ctrl->dev, "SerDes %u: RX link monitor read failed: %d\n",
