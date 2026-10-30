@@ -1,4 +1,4 @@
-From c3457dcea8a4390a130397b34df392f7b2f7018f Mon Sep 17 00:00:00 2001
+From 50505095537aed9ee3a852b5c7c7f7b40c60d5f1 Mon Sep 17 00:00:00 2001
 From: Daniel Golle <daniel@makrotopia.org>
 Date: Fri, 16 Oct 2026 23:57:02 +0100
 Subject: [PATCH] media: platform: rockchip: Add RKVENC v1 encoder driver
@@ -780,7 +780,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +
 +/* Derived safe policy values (design/04 "needs approval" boxes). */
 +#define RKVENC_RC_W_CLAMP	4096u	/* C12: I/P complexity ratio cap */
-+#define RKVENC_RC_QP_STEP	4u	/* C13: max QP change per frame/type */
++#define RKVENC_RC_QP_STEP	4	/* C13: max QP change per frame/type */
 +#define RKVENC_RC_DEFAULT_FPS	30u	/* C6: default frame rate (S_PARM) */
 +
 +static u32 rkvenc_qs[RKVENC_QP_MAX + 1];
@@ -840,7 +840,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	u8 hi = ctx->c.max_qp;
 +	s32 prev = ctx->rc_qp[t];
 +	u32 target;
-+	unsigned int q;
++	int q;
 +
 +	if (!ctx->rc_active) {
 +		*qp = frame_type ? ctx->c.p_frame_qp : ctx->c.i_frame_qp;
