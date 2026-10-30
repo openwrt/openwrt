@@ -1,0 +1,46 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Ville Takio <ville+git@takio.fi>
+Subject: [PATCH] b43: AC-PHY: set the first TX-to-RX sequencer delay per boardflags2
+
+wl 7.14 writes 0x78 to RF sequencer table cell 0x80, the first delay of
+the TX-to-RX sequence, at the end of its FEM control setup when
+boardflags2 bit 20 is set on 2.4 GHz or bit 21 on 5 GHz, except on
+boardtypes 0xa9c6 and 0xaa52. The port left the cell at the hardware
+default, as on the d6220, which has neither bit; the RT-AC66U B1 has
+both, and its wl 7.14 captures show 0x78 on both bands.
+
+--- a/drivers/net/wireless/broadcom/b43/phy_ac.c
++++ b/drivers/net/wireless/broadcom/b43/phy_ac.c
+@@ -3298,6 +3298,21 @@ static void b43_phy_ac_set_regtbl_on_fem
+ 	if (sprom->boardflags_lo & B43_BFL_BTCOEXIST)
+ 		b43_phy_ac_chipctl_set(dev, 0x01000000);
+ 
++	/*
++	 * First TX-to-RX sequencer delay, RFSEQ cell 0x80: wl 7.14 sets it to
++	 * 0x78 at the end of its FEM setup when boardflags2 bit 20 (2.4 GHz)
++	 * or bit 21 (5 GHz) is set, except on boardtypes 0xa9c6 and 0xaa52.
++	 * The RT-AC66U B1 has both bits; the d6220 neither, which keeps the
++	 * hardware default there.
++	 */
++	if (dev->dev->board_type != 0xa9c6 && dev->dev->board_type != 0xaa52 &&
++	    (sprom->boardflags2_hi &
++	     (b43_current_band(dev->wl) == NL80211_BAND_2GHZ ? 0x0010 : 0x0020))) {
++		static const u16 tx2rx_dly0 = 0x0078;
++
++		b43_actab_write_bulk(dev, 7, 0x0080, 16, 1, &tx2rx_dly0);
++	}
++
+ 	b43_phy_ac_tbl_write_unlock(dev, saved);
+ }
+ 
+@@ -3914,8 +3929,8 @@ static void b43_phy_ac_analog_on_reset(s
+ /*
+  * RF sequencer command tables (table 7) and the spexp TXV (table 0x10):
+  * the table-load half of the reset-time setup, under the outer gate
+- * analog_on_reset() took. The band-gated 0x80 write is skipped on these
+- * boards (boardflags2 = 0x2) and omitted.
++ * analog_on_reset() took. The boardflags2-gated write of cell 0x80 is in
++ * b43_phy_ac_set_regtbl_on_femctrl(), where wl 7.14 has it.
+  * [capture-ref: router-data/d6220/cold-sweep.zip!cold01-ch36-bw20.txt;
+  *   6265-6903]
+  * [capture-ref: router-data/d6220/hot-sweep.zip!segmenti/01-up-ch36-bw20.txt;
