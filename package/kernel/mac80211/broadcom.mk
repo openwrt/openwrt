@@ -37,6 +37,15 @@ config-$(CONFIG_PACKAGE_BRCM80211_DEBUG) += BRCMDBG
 config-$(CONFIG_LEDS_TRIGGERS) += B43_LEDS B43LEGACY_LEDS
 
 #Broadcom firmware
+ifneq ($(CONFIG_B43_FW_6_30),)
+  PKG_B43_FWV4_NAME:=broadcom-wl
+  PKG_B43_FWV4_VERSION:=6.30.163.46
+  PKG_B43_FWV4_OBJECT:=$(PKG_B43_FWV4_NAME)-$(PKG_B43_FWV4_VERSION).wl_apsta.o
+  PKG_B43_FWV4_SOURCE:=$(PKG_B43_FWV4_NAME)-$(PKG_B43_FWV4_VERSION).tar.bz2
+  PKG_B43_FWV4_SOURCE_URL:=@OPENWRT \
+	https://web.archive.org/web/2023id_/http://www.lwfinger.com/b43-firmware/
+  PKG_B43_FWV4_HASH:=a07c3b6b277833c7dbe61daa511f908cd66c5e2763eb7a0859abc36cd9335c2d
+else
 ifneq ($(CONFIG_B43_FW_5_10),)
   PKG_B43_FWV4_NAME:=broadcom-wl
   PKG_B43_FWV4_VERSION:=5.10.56.27.3
@@ -67,6 +76,7 @@ else
   PKG_B43_FWV4_SOURCE:=$(PKG_B43_FWV4_NAME)-$(PKG_B43_FWV4_VERSION).tar.bz2
   PKG_B43_FWV4_SOURCE_URL:=@OPENWRT
   PKG_B43_FWV4_HASH:=a9f4e276a4d8d3a1cd0f2eb87080ae89b77f0a7140f06d4e9e2135fc44fdd533
+endif
 endif
 endif
 endif
@@ -123,6 +133,7 @@ config PACKAGE_B43_USE_BCMA
 
 	choice
 		prompt "b43 firmware version"
+		default B43_FW_6_30 if PACKAGE_B43_PHY_AC
 		default B43_FW_5_100_138
 		help
 		  This option allows you to select the version of the b43 firmware.
@@ -157,6 +168,14 @@ config PACKAGE_B43_USE_BCMA
 
 		  If unsure, select the this firmware.
 
+	config B43_FW_6_30
+		bool "Firmware 784.2 from driver 6.30.163.46"
+		help
+		  Firmware for BCM43xx devices, including the core revision 42
+		  microcode the AC-PHY devices (BCM4352, BCM4360) need.
+
+		  Select this if you enabled AC-PHY support.
+
 	config B43_OPENFIRMWARE
 		bool "Open FirmWare for WiFi networks"
 		help
@@ -188,6 +207,7 @@ config PACKAGE_B43_USE_BCMA
 		depends on B43_FW_SQUASH
 		default "5,6,7,8,9,10,11,13,15" if TARGET_bcm47xx_legacy
 		default "16,28,29,30" if TARGET_bcm47xx_mips74k
+		default "5,6,7,8,9,10,11,13,15,16,28,29,30,42" if PACKAGE_B43_PHY_AC
 		default "5,6,7,8,9,10,11,13,15,16,28,29,30"
 		help
 		  This is a comma separated list of core revision numbers.
@@ -203,6 +223,7 @@ config PACKAGE_B43_USE_BCMA
 		depends on B43_FW_SQUASH
 		default "G,N,LP" if TARGET_bcm47xx_legacy
 		default "N,HT" if TARGET_bcm47xx_mips74k
+		default "G,N,LP,HT,AC" if PACKAGE_B43_PHY_AC
 		default "G,N,LP,HT"
 		help
 		  This is a comma separated list of PHY types:
