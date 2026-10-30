@@ -55,6 +55,7 @@ $(call Package/ppp/Default)
   TITLE:=PPP daemon
   USERID:=ppp=454:ppp=454
   VARIANT:=default
+  CONFLICTS:=ppp-multilink
 endef
 
 define Package/ppp-multilink
@@ -63,6 +64,7 @@ $(call Package/ppp/Default)
   TITLE:=PPP daemon (with multilink support)
   USERID:=ppp=454:ppp=454
   VARIANT:=multilink
+  PROVIDES:=ppp
 endef
 
 define Package/ppp/description
