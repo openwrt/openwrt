@@ -505,6 +505,12 @@ enum rtpcs_chip_version {
 	RTPCS_CHIP_V2,
 };
 
+enum rtpcs_rx_phase {
+	RTPCS_RX_PHASE_IDLE = 0,
+	RTPCS_RX_PHASE_CALIBRATION,
+	RTPCS_RX_PHASE_MONITORING,
+};
+
 struct rtpcs_ctrl;
 struct rtpcs_serdes;
 
@@ -574,10 +580,9 @@ struct rtpcs_serdes {
 	u8 num_of_links;
 	bool first_start;
 	struct delayed_work cali_work;
-	bool rxcal_pending;
+	enum rtpcs_rx_phase rx_phase;
 	u8 rxcal_tries;
 	struct delayed_work linkmon_work;
-	bool rxmon_active;
 	u8 rxmon_down;
 	u64 rxmon_recovery_after;
 };
@@ -2054,9 +2059,8 @@ static void rtpcs_93xx_sds_arm_rxcal(struct rtpcs_serdes *sds)
 {
 	lockdep_assert_held(&sds->ctrl->lock);
 
-	sds->rxmon_active = false;
 	sds->rxcal_tries = 0;
-	sds->rxcal_pending = true;
+	sds->rx_phase = RTPCS_RX_PHASE_CALIBRATION;
 	mod_delayed_work(system_wq, &sds->cali_work, msecs_to_jiffies(RTPCS_RXCAL_START_MS));
 }
 
@@ -2064,9 +2068,8 @@ static void rtpcs_93xx_sds_arm_linkmon(struct rtpcs_serdes *sds)
 {
 	lockdep_assert_held(&sds->ctrl->lock);
 
-	sds->rxcal_pending = false;
 	sds->rxmon_down = 0;
-	sds->rxmon_active = true;
+	sds->rx_phase = RTPCS_RX_PHASE_MONITORING;
 	dev_dbg(sds->ctrl->dev, "SerDes %u: RX link monitor armed\n", sds->id);
 	mod_delayed_work(system_wq, &sds->linkmon_work, msecs_to_jiffies(RTPCS_RXMON_POLL_MS));
 }
@@ -2080,9 +2083,9 @@ static void rtpcs_93xx_rx_cali_work_handler(struct work_struct *work)
 
 	mutex_lock(&sds->ctrl->lock);
 	dev_dbg(sds->ctrl->dev,
-		"SerDes %u: RX calibration worker entered, mode=%u pending=%u\n",
-		sds->id, sds->hw_mode, sds->rxcal_pending);
-	if (!sds->rxcal_pending)
+		"SerDes %u: RX calibration worker entered, mode=%u phase=%u\n",
+		sds->id, sds->hw_mode, sds->rx_phase);
+	if (sds->rx_phase != RTPCS_RX_PHASE_CALIBRATION)
 		goto unlock;
 
 	ret = rtpcs_93xx_sds_rxcal_ready(sds);
@@ -2120,7 +2123,7 @@ static void rtpcs_93xx_rx_linkmon_work_handler(struct work_struct *work)
 	sds = container_of(to_delayed_work(work), struct rtpcs_serdes, linkmon_work);
 
 	mutex_lock(&sds->ctrl->lock);
-	if (!sds->rxmon_active || sds->rxcal_pending)
+	if (sds->rx_phase != RTPCS_RX_PHASE_MONITORING)
 		goto unlock;
 
 	link = rtpcs_93xx_sds_rx_link_status(sds);
@@ -3302,8 +3305,7 @@ static void rtpcs_sds_cancel_rx_work(void *data)
 	struct rtpcs_serdes *sds = data;
 
 	scoped_guard(mutex, &sds->ctrl->lock) {
-		sds->rxcal_pending = false;
-		sds->rxmon_active = false;
+		sds->rx_phase = RTPCS_RX_PHASE_IDLE;
 	}
 
 	/* Unused work items remain zeroed in the SerDes allocation. */
@@ -4765,11 +4767,10 @@ static int rtpcs_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
 	scoped_guard(mutex, &ctrl->lock) {
 		mode_changed = sds->hw_mode != hw_mode || sds->usxgmii_submode != submode;
 		if (mode_changed) {
-			if (sds->rxcal_pending)
+			if (sds->rx_phase == RTPCS_RX_PHASE_CALIBRATION)
 				dev_dbg(ctrl->dev, "SerDes %u: invalidating pending RX calibration for mode change\n",
 					sds->id);
-			sds->rxcal_pending = false;
-			sds->rxmon_active = false;
+			sds->rx_phase = RTPCS_RX_PHASE_IDLE;
 			sds->rxmon_down = 0;
 
 			ret = rtpcs_sds_config_polarity(sds, interface);
