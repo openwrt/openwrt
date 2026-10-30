@@ -1,0 +1,77 @@
+From: Ville Takio <ville+git@takio.fi>
+Subject: [PATCH] bcma, ssb: read pdoffset2g40ma and pdoffset2g40mvalid
+
+SROM rev 11 word 100 holds the 2.4 GHz 40 MHz power-detector offset,
+four bits per chain in bits 11:0, and a valid flag in bit 15 (the
+layout of the Broadcom SROM variable table). Read it from the SROM and,
+on NVRAM-based devices, from pdoffset2g40ma<n> and pdoffset2g40mvalid,
+for the b43 AC-PHY TX power control.
+---
+--- a/drivers/bcma/sprom.c
++++ b/drivers/bcma/sprom.c
+@@ -601,6 +601,16 @@
+ 	SPEX(rpcal5gb[2], SSB_SPROM11_RPCAL_5GH, ~0, 0);
+ 	SPEX(rpcal5gb[3], SSB_SPROM11_RPCAL_5GU, ~0, 0);
+ 
++	SPEX(pdoffset2g40ma[0], SSB_SPROM11_PDOFFSET2G40M,
++	     SSB_SPROM11_PDOFFSET2G40M_MA0, SSB_SPROM11_PDOFFSET2G40M_MA0_SHIFT);
++	SPEX(pdoffset2g40ma[1], SSB_SPROM11_PDOFFSET2G40M,
++	     SSB_SPROM11_PDOFFSET2G40M_MA1, SSB_SPROM11_PDOFFSET2G40M_MA1_SHIFT);
++	SPEX(pdoffset2g40ma[2], SSB_SPROM11_PDOFFSET2G40M,
++	     SSB_SPROM11_PDOFFSET2G40M_MA2, SSB_SPROM11_PDOFFSET2G40M_MA2_SHIFT);
++	SPEX(pdoffset2g40mvalid, SSB_SPROM11_PDOFFSET2G40M,
++	     SSB_SPROM11_PDOFFSET2G40M_VALID,
++	     SSB_SPROM11_PDOFFSET2G40M_VALID_SHIFT);
++
+ 	for (i = 0; i < 3; i++) {
+ 		bus->sprom.pdoffset40ma[i] =
+ 			sprom[SPOFF(SSB_SPROM11_PDOFFSET40MA) + i];
+--- a/drivers/firmware/broadcom/bcm47xx_sprom.c
++++ b/drivers/firmware/broadcom/bcm47xx_sprom.c
+@@ -640,6 +640,8 @@
+ 			       &sprom->pdoffset40ma[i], 0, fallback);
+ 		nvram_read_u16(prefix, postfix, "pdoffset80ma",
+ 			       &sprom->pdoffset80ma[i], 0, fallback);
++		nvram_read_u8(prefix, postfix, "pdoffset2g40ma",
++			      &sprom->pdoffset2g40ma[i], 0, fallback);
+ 
+ 		for (b = 0; b < ARRAY_SIZE(rxgains); b++) {
+ 			struct ssb_sprom_rxgains *rx = rxgains[b].rx;
+@@ -662,6 +664,8 @@
+ 	nvram_read_u16_array(prefix, NULL, "tssifloor5g", sprom->tssifloor5g,
+ 			     ARRAY_SIZE(sprom->tssifloor5g), fallback);
+ 
++	nvram_read_u8(prefix, NULL, "pdoffset2g40mvalid",
++		      &sprom->pdoffset2g40mvalid, 0, fallback);
+ 	nvram_read_u8(prefix, NULL, "agbg0", &agbg0, 0, fallback);
+ 	nvram_read_u8(prefix, NULL, "aga0", &aga0, 0, fallback);
+ 	sprom->antenna_gain_qdb[0] = ssb_sprom_antgain_qdb(agbg0);
+--- a/include/linux/ssb/ssb.h
++++ b/include/linux/ssb/ssb.h
+@@ -234,6 +234,8 @@
+ 	u16 rpcal5gb[4];
+ 	u16 pdoffset40ma[3];
+ 	u16 pdoffset80ma[3];
++	u8 pdoffset2g40ma[3];	/* 4 bits, signed */
++	u8 pdoffset2g40mvalid;
+ 	/* Explicit per-rate-group power offsets of the bonded channels'
+ 	 * sub-band rows (20-in-40, 20-in-80/160, 40-in-80, duplicate legacy),
+ 	 * low-rate and high-rate halves, and the MCS 8-9 offsets; nibbles.
+--- a/include/linux/ssb/ssb_regs.h
++++ b/include/linux/ssb/ssb_regs.h
+@@ -657,6 +657,15 @@
+ #define SSB_SPROM11_TSSIFLOOR_2G	0x00BE
+ #define SSB_SPROM11_TSSIFLOOR_5GL	0x00C0
+ #define SSB_SPROM11_TSSIFLOOR_MASK	0x03FF
++#define SSB_SPROM11_PDOFFSET2G40M	0x00C8	/* 4 bits per chain */
++#define  SSB_SPROM11_PDOFFSET2G40M_MA0		0x000F
++#define  SSB_SPROM11_PDOFFSET2G40M_MA0_SHIFT	0
++#define  SSB_SPROM11_PDOFFSET2G40M_MA1		0x00F0
++#define  SSB_SPROM11_PDOFFSET2G40M_MA1_SHIFT	4
++#define  SSB_SPROM11_PDOFFSET2G40M_MA2		0x0F00
++#define  SSB_SPROM11_PDOFFSET2G40M_MA2_SHIFT	8
++#define  SSB_SPROM11_PDOFFSET2G40M_VALID	0x8000
++#define  SSB_SPROM11_PDOFFSET2G40M_VALID_SHIFT	15
+ #define SSB_SPROM11_PDOFFSET40MA	0x00CA	/* 3 x u16, one per chain */
+ #define SSB_SPROM11_PDOFFSET80MA	0x00D0	/* 3 x u16, one per chain */
+ #define SSB_SPROM11_SUBBAND5GVER	0x00D6
