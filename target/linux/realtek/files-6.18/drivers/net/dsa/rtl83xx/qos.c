@@ -174,15 +174,16 @@ u32 otto_qos_839x_get_egress_rate(struct otto_dsa_priv *priv, int port)
 }
 
 /* Sets the rate limit, 10MBit/s is equal to a rate value of 625, returns previous rate */
-int otto_qos_839x_set_egress_rate(struct otto_dsa_priv *priv, int port, u32 rate)
+static int otto_qos_839x_set_egress_rate_locked(struct otto_dsa_priv *priv, int port,
+					     u32 rate)
 {
 	u32 old_rate = 0, v = 0;
+
+	lockdep_assert_held(&priv->reg_mutex);
 
 	pr_debug("%s: Setting egress rate on port %d to %d\n", __func__, port, rate);
 	if (port >= priv->r->cpu_port)
 		return -1;
-
-	mutex_lock(&priv->reg_mutex);
 
 	otto_qos_839x_read_scheduling_table(priv, port);
 
@@ -196,6 +197,15 @@ int otto_qos_839x_set_egress_rate(struct otto_dsa_priv *priv, int port, u32 rate
 
 	otto_qos_839x_write_scheduling_table(priv, port);
 
+	return old_rate;
+}
+
+int otto_qos_839x_set_egress_rate(struct otto_dsa_priv *priv, int port, u32 rate)
+{
+	int old_rate;
+
+	mutex_lock(&priv->reg_mutex);
+	old_rate = otto_qos_839x_set_egress_rate_locked(priv, port, rate);
 	mutex_unlock(&priv->reg_mutex);
 
 	return old_rate;
@@ -267,16 +277,14 @@ static void otto_qos_839x_set_ingress_priority(struct otto_dsa_priv *priv, int p
 	regmap_write_bits(priv->map, RTL839X_PRI_SEL_PORT_PRI(port), (7 << shift) | val, val);
 }
 
-static int otto_qos_839x_get_scheduling_algorithm(struct otto_dsa_priv *priv, int port)
+static int otto_qos_839x_get_scheduling_algorithm_locked(struct otto_dsa_priv *priv, int port)
 {
 	u32 v = 0;
 
-	mutex_lock(&priv->reg_mutex);
+	lockdep_assert_held(&priv->reg_mutex);
 
 	otto_qos_839x_read_scheduling_table(priv, port);
 	regmap_read(priv->map, RTL839X_TBL_ACCESS_DATA_2(8), &v);
-
-	mutex_unlock(&priv->reg_mutex);
 
 	if (v & BIT(19))
 		return WEIGHTED_ROUND_ROBIN;
@@ -287,14 +295,18 @@ static int otto_qos_839x_get_scheduling_algorithm(struct otto_dsa_priv *priv, in
 static void otto_qos_839x_set_scheduling_algorithm(struct otto_dsa_priv *priv, int port,
 						   enum scheduler_type sched)
 {
-	enum scheduler_type t = otto_qos_839x_get_scheduling_algorithm(priv, port);
+	enum scheduler_type t;
+	bool drain;
 	u32 v = 0, oam_state = 0, oam_port_state = 0;
 	u32 count = 0;
 	int i, egress_rate;
 
 	mutex_lock(&priv->reg_mutex);
+	t = otto_qos_839x_get_scheduling_algorithm_locked(priv, port);
+	drain = sched == WEIGHTED_FAIR_QUEUE && t == WEIGHTED_ROUND_ROBIN &&
+		port != priv->r->cpu_port;
 	/* Check whether we need to empty the egress queue of that port due to Errata E0014503 */
-	if (sched == WEIGHTED_FAIR_QUEUE && t == WEIGHTED_ROUND_ROBIN && port != priv->r->cpu_port) {
+	if (drain) {
 		/* Read Operations, Adminstatrion and Management control register */
 		regmap_read(priv->map, RTL839X_OAM_CTRL, &oam_state);
 
@@ -310,7 +322,7 @@ static void otto_qos_839x_set_scheduling_algorithm(struct otto_dsa_priv *priv, i
 		regmap_write(priv->map, RTL839X_OAM_PORT_ACT_CTRL(port), 0x2);
 
 		/* Set port egress rate to unlimited */
-		egress_rate = otto_qos_839x_set_egress_rate(priv, port, 0xFFFFF);
+		egress_rate = otto_qos_839x_set_egress_rate_locked(priv, port, 0xFFFFF);
 
 		/* Wait until the egress used page count of that port is 0 */
 		i = 0;
@@ -328,7 +340,7 @@ static void otto_qos_839x_set_scheduling_algorithm(struct otto_dsa_priv *priv, i
 	regmap_write_bits(priv->map, RTL839X_TBL_ACCESS_DATA_2(8), BIT(19), sched ? BIT(19) : 0);
 	otto_qos_839x_write_scheduling_table(priv, port);
 
-	if (sched == WEIGHTED_FAIR_QUEUE && t == WEIGHTED_ROUND_ROBIN && port != priv->r->cpu_port) {
+	if (drain) {
 		/* Restore OAM state to control register */
 		regmap_write(priv->map, RTL839X_OAM_CTRL, oam_state);
 
@@ -336,7 +348,7 @@ static void otto_qos_839x_set_scheduling_algorithm(struct otto_dsa_priv *priv, i
 		regmap_write(priv->map, RTL839X_OAM_PORT_ACT_CTRL(port), oam_port_state);
 
 		/* Restore port egress rate */
-		otto_qos_839x_set_egress_rate(priv, port, egress_rate);
+		otto_qos_839x_set_egress_rate_locked(priv, port, egress_rate);
 	}
 
 	mutex_unlock(&priv->reg_mutex);
