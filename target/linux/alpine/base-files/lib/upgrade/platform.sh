@@ -13,7 +13,8 @@ platform_do_upgrade() {
 
 	case "$board" in
 	checkpoint,l-71|\
-	checkpoint,l-71w)
+	checkpoint,l-71w|\
+	checkpoint,l-72)
 		CI_UBIPART="ubi"
 		CI_KERNPART="kernel"
 		nand_do_upgrade "$1"

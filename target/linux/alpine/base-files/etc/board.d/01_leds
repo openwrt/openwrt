@@ -9,6 +9,12 @@ checkpoint,l-71w)
 	ucidef_set_led_usbport "usb" "USB" "green:usb" "usb1-port1" "usb2-port1"
 	ucidef_set_led_usbport "sd" "SD" "green:sd" "usb1-port2"
 	;;
+checkpoint,l-72)
+	ucidef_set_led_netdev "dmz_red" "DMZ (red)" "red:dmz-copper" "eth1" "link_10 link_1000"
+	ucidef_set_led_netdev "dmz_green" "DMZ (green)" "green:dmz-copper" "eth1" "link_100 link_1000"
+	ucidef_set_led_usbport "usb" "USB" "green:usb" "usb1-port1" "usb2-port1" "usb1-port2" "usb2-port2"
+	ucidef_set_led_usbport "sd" "SD" "green:sd" "usb1-port3"
+	;;
 esac
 
 board_config_flush
