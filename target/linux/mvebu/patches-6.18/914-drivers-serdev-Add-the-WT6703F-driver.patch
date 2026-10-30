@@ -1,0 +1,97 @@
+From d1420ae72fd9b29facec5065aa0ee81d6600cc8a Mon Sep 17 00:00:00 2001
+From: Alexander Giese <blizzardwyvern@web.de>
+Date: Sun, 18 Oct 2026 22:15:07 +0200
+Subject: [PATCH] mvebu: add WT6703F support for WD Cloud EX2 Ultra
+
+Add kernel support for the WT6703F management controller used by the
+WD My Cloud EX2 Ultra.
+
+The new serdev/MFD driver provides shared command transport for:
+
+- hwmon temperature, fan tachometer, and PWM interfaces
+- standard status LEDs with mutual exclusion and hardware blinking
+
+Add the corresponding controller nodes to the EX2 Ultra device tree and
+enable the required kernel options.
+
+Also add a userspace fan-control service that combines system, PHY, disk,
+and WT6703F temperatures to control the fan PWM. Guard the service so it
+is enabled and run only on boards compatible with the WD My Cloud EX2 Ultra.
+
+Signed-off-by: Alexander Giese <blizzardwyvern@web.de>
+
+---
+--- a/drivers/mfd/Kconfig
++++ b/drivers/mfd/Kconfig
+@@ -2458,6 +2458,19 @@ config MFD_IEI_WT61P803_PUZZLE
+ 	  used for fan control, temperature sensor reading, LED control
+ 	  and system identification.
+ 
++config MFD_WD_WT6703F
++	tristate "WD WT6703F MCU support"
++	depends on SERIAL_DEV_BUS
++	select MFD_CORE
++	help
++	  Support for the WD WT6703F MCU found in WD My Cloud devices.
++	  The MCU is connected via UART and controls chassis functions
++	  including status LED, thermal monitoring, and fan control.
++
++	  This driver provides the core MCU communication interface used
++	  by other drivers like the LED, thermal management, RTC, and
++	  fan control drivers.
++
+ config MFD_INTEL_M10_BMC_CORE
+         tristate
+         select MFD_CORE
+--- a/drivers/mfd/Makefile
++++ b/drivers/mfd/Makefile
+@@ -257,6 +257,7 @@ obj-$(CONFIG_MFD_RT5033)	+= rt5033.o
+ obj-$(CONFIG_MFD_RT5120)	+= rt5120.o
+ obj-$(CONFIG_MFD_SKY81452)	+= sky81452.o
+ obj-$(CONFIG_MFD_IEI_WT61P803_PUZZLE)  += iei-wt61p803-puzzle.o
++obj-$(CONFIG_MFD_WD_WT6703F) 	+= wd-wt6703f.o
+
+ obj-$(CONFIG_INTEL_SOC_PMIC)		+= intel_soc_pmic_crc.o
+ obj-$(CONFIG_INTEL_SOC_PMIC_BXTWC)	+= intel_soc_pmic_bxtwc.o
+--- a/drivers/hwmon/Kconfig
++++ b/drivers/hwmon/Kconfig
+@@ -2739,3 +2739,11 @@
+ endif # ACPI
+
++config SENSORS_WD_WT6703F_HWMON
++	tristate "WD WT6703F hwmon support"
++	depends on MFD_WD_WT6703F
++	depends on HWMON
++	help
++	  Enable temperature monitoring and fan speed control for the
++	  WD WT6703F MCU.
++
+ endif # HWMON
+--- a/drivers/hwmon/Makefile
++++ b/drivers/hwmon/Makefile
+@@ -251,3 +251,4 @@
+ obj-$(CONFIG_PMBUS)	+= pmbus/
+
+ ccflags-$(CONFIG_HWMON_DEBUG_CHIP) := -DDEBUG
++obj-$(CONFIG_SENSORS_WD_WT6703F_HWMON)	+= wd-wt6703f-hwmon.o
+--- a/drivers/leds/Kconfig
++++ b/drivers/leds/Kconfig
+@@ -1043,4 +1043,13 @@ comment "Simatic LED drivers"
+ comment "Simatic LED drivers"
+ source "drivers/leds/simatic/Kconfig"
++
++config LEDS_WD_WT6703F
++	tristate "WD WT6703F LED support"
++	depends on LEDS_CLASS
++	depends on MFD_WD_WT6703F
++	help
++	  Enable standard LED class devices for the WD WT6703F MCU
++	  status LEDs. The driver supports the blue, red, and orange
++	  power LED modes and the MCU hardware blink mode.
+
+ endif # NEW_LEDS
+--- a/drivers/leds/Makefile
++++ b/drivers/leds/Makefile
+@@ -125,1 +125,2 @@
+ obj-y					+= blink/
++obj-$(CONFIG_LEDS_WD_WT6703F)		+= wd-wt6703f-leds.o
