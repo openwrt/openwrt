@@ -2050,6 +2050,27 @@ static int rtpcs_93xx_sds_get_cmu_page(enum rtpcs_sds_mode hw_mode)
 	}
 }
 
+static void rtpcs_93xx_sds_arm_rxcal(struct rtpcs_serdes *sds)
+{
+	lockdep_assert_held(&sds->ctrl->lock);
+
+	sds->rxmon_active = false;
+	sds->rxcal_tries = 0;
+	sds->rxcal_pending = true;
+	mod_delayed_work(system_wq, &sds->cali_work, msecs_to_jiffies(RTPCS_RXCAL_START_MS));
+}
+
+static void rtpcs_93xx_sds_arm_linkmon(struct rtpcs_serdes *sds)
+{
+	lockdep_assert_held(&sds->ctrl->lock);
+
+	sds->rxcal_pending = false;
+	sds->rxmon_down = 0;
+	sds->rxmon_active = true;
+	dev_dbg(sds->ctrl->dev, "SerDes %u: RX link monitor armed\n", sds->id);
+	mod_delayed_work(system_wq, &sds->linkmon_work, msecs_to_jiffies(RTPCS_RXMON_POLL_MS));
+}
+
 static void rtpcs_93xx_rx_linkmon_work_handler(struct work_struct *work)
 {
 	struct rtpcs_serdes *sds;
@@ -3289,10 +3310,7 @@ static void rtpcs_930x_rx_cali_work_handler(struct work_struct *work)
 			 sds->id, sds->rxcal_tries);
 	}
 
-	sds->rxcal_pending = false;
-	sds->rxmon_down = 0;
-	sds->rxmon_active = true;
-	mod_delayed_work(system_wq, &sds->linkmon_work, msecs_to_jiffies(RTPCS_RXMON_POLL_MS));
+	rtpcs_93xx_sds_arm_linkmon(sds);
 unlock:
 	mutex_unlock(&sds->ctrl->lock);
 }
@@ -3586,13 +3604,9 @@ static int rtpcs_930x_sds_post_config(struct rtpcs_serdes *sds, enum rtpcs_sds_m
 
 	rtpcs_930x_sds_rxcal_init(sds, hw_mode);
 
-	sds->rxmon_active = false;
-	sds->rxmon_down = 0;
 	dev_dbg(sds->ctrl->dev, "SerDes %u: arming RX calibration for mode %u\n",
 		sds->id, hw_mode);
-	sds->rxcal_tries = 0;
-	sds->rxcal_pending = true;
-	mod_delayed_work(system_wq, &sds->cali_work, msecs_to_jiffies(RTPCS_RXCAL_START_MS));
+	rtpcs_93xx_sds_arm_rxcal(sds);
 	return 0;
 }
 
@@ -4467,11 +4481,7 @@ static void rtpcs_931x_rx_cali_work_handler(struct work_struct *work)
 		dev_warn(sds->ctrl->dev, "SerDes %u: RX calibration did not pass after %u attempts: %d\n",
 			 sds->id, sds->rxcal_tries, ret);
 	}
-	sds->rxcal_pending = false;
-	sds->rxmon_down = 0;
-	sds->rxmon_active = true;
-	dev_dbg(sds->ctrl->dev, "SerDes %u: RX link monitor armed\n", sds->id);
-	mod_delayed_work(system_wq, &sds->linkmon_work, msecs_to_jiffies(RTPCS_RXMON_POLL_MS));
+	rtpcs_93xx_sds_arm_linkmon(sds);
 unlock:
 	mutex_unlock(&sds->ctrl->lock);
 }
@@ -4486,18 +4496,13 @@ static int rtpcs_931x_sds_post_config(struct rtpcs_serdes *sds, enum rtpcs_sds_m
 	    hw_mode != RTPCS_SDS_MODE_USXGMII)
 		return 0;
 
-	sds->rxmon_active = false;
-	sds->rxmon_down = 0;
-
 	if (hw_mode != RTPCS_SDS_MODE_XSGMII)
 		rtpcs_931x_sds_reset_leq_dfe(sds);
 
 	if (sds->attachment != RTPCS_SDS_ATTACH_PHY && hw_mode != RTPCS_SDS_MODE_10GBASER)
 		return 0;
 
-	sds->rxcal_tries = 0;
-	sds->rxcal_pending = true;
-	mod_delayed_work(system_wq, &sds->cali_work, msecs_to_jiffies(RTPCS_RXCAL_START_MS));
+	rtpcs_93xx_sds_arm_rxcal(sds);
 
 	return 0;
 }
