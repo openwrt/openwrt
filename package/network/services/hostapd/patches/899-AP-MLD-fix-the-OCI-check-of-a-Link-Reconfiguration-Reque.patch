@@ -1,0 +1,42 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Fri, 30 Oct 2026 12:00:00 +0100
+Subject: [PATCH] AP MLD: fix the OCI check of a Link Reconfiguration Request
+
+hostapd_handle_link_reconf_req() treats the return value of
+ocv_verify_tx_params() as true on success, but OCI_SUCCESS is 0. A
+Link Reconfiguration Request with a valid OCI is dropped, and one with
+an invalid OCI passes. Compare against OCI_SUCCESS, and take the transmit
+parameters of the station on the link, as the SA Query check does.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/src/ap/ieee802_11_eht.c
++++ b/src/ap/ieee802_11_eht.c
+@@ -2834,6 +2834,8 @@ hostapd_handle_link_reconf_req(struct ho
+ 		}
+ 	} else {
+ 		struct wpa_channel_info ci;
++		int tx_chanwidth;
++		int tx_seg1_idx;
+ 
+ 		if (!wpa_auth_uses_ocv(assoc_sta->wpa_sm)) {
+ 			wpa_printf(MSG_INFO,
+@@ -2847,9 +2849,16 @@ hostapd_handle_link_reconf_req(struct ho
+ 			goto out;
+ 		}
+ 
+-		if (!ocv_verify_tx_params(elems.oci, elems.oci_len, &ci,
++		if (get_sta_tx_parameters(assoc_sta->wpa_sm,
++					  hostapd_mld_link_id(hapd),
+ 					  channel_width_to_int(ci.chanwidth),
+-					  ci.seg1_idx)) {
++					  ci.seg1_idx, &tx_chanwidth,
++					  &tx_seg1_idx) < 0)
++			goto out;
++
++		if (ocv_verify_tx_params(elems.oci, elems.oci_len, &ci,
++					 tx_chanwidth, tx_seg1_idx) !=
++		    OCI_SUCCESS) {
+ 			wpa_printf(MSG_INFO,
+ 				   "MLD: OCI verification failed; drop Link Reconfiguration Request");
+ 			goto out;
