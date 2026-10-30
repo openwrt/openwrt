@@ -362,17 +362,17 @@ static void otto_qos_839x_set_scheduling_queue_weights(struct otto_dsa_priv *pri
 	otto_qos_839x_read_scheduling_table(priv, port);
 
 	for (int i = 0; i < 8; i++) {
-		int lsb = 48 + i * 8;
-		int low_byte = 8 - (lsb >> 5);
-		int start_bit = lsb - (low_byte << 5);
-		int high_mask = 0x3ff >> (32 - start_bit);
+		int lsb = 48 + i * 10;
+		int word = 8 - (lsb >> 5);
+		int start_bit = lsb & 31;
+		u32 weight = queue_weights[i] & 0x3ff;
 
-		regmap_write_bits(priv->map, RTL839X_TBL_ACCESS_DATA_2(low_byte),
-				  0x3ff << start_bit, (queue_weights[i] & 0x3ff) << start_bit);
-		if (high_mask)
-			regmap_write_bits(priv->map, RTL839X_TBL_ACCESS_DATA_2(low_byte - 1),
-					  high_mask,
-					  (queue_weights[i] & 0x3ff) >> (32 - start_bit));
+		regmap_write_bits(priv->map, RTL839X_TBL_ACCESS_DATA_2(word),
+				  0x3ffU << start_bit, weight << start_bit);
+		if (start_bit > 22)
+			regmap_write_bits(priv->map, RTL839X_TBL_ACCESS_DATA_2(word - 1),
+					  0x3ffU >> (32 - start_bit),
+					  weight >> (32 - start_bit));
 	}
 
 	otto_qos_839x_write_scheduling_table(priv, port);
