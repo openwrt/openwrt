@@ -1,0 +1,35 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Ville Takio <ville+git@takio.fi>
+Subject: [PATCH] b43: AC-PHY: program the farrow resampler at 2.4 GHz 40 MHz
+
+The farrow resampler was left unprogrammed on 2.4 GHz at 40 MHz, with
+whatever the previous channel left in 0x0199-0x01a3 and the per-core
+deltaphase. wl 7.14 programs it with the 2.4 GHz mode at the bonded
+centre frequency: on the RT-AC66U B1 at ch6/40 (2447 MHz) the ratio
+0x16f0ccd and deltaphase 0x594621 of the same formula.
+
+--- a/drivers/net/wireless/broadcom/b43/phy_ac.c
++++ b/drivers/net/wireless/broadcom/b43/phy_ac.c
+@@ -11156,16 +11156,13 @@ static void b43_phy_ac_farrow_setup(stru
+ 			   B43_PHY_AC_STATE_RX_CCK | B43_PHY_AC_STATE_RX_OFDM |
+ 			   B43_PHY_AC_STATE_CCA_RESET);
+ 
+-	if (b43_current_band(dev->wl) == NL80211_BAND_2GHZ) {
+-		if (width != NL80211_CHAN_WIDTH_20) {
+-			b43_phy_ac_todo(dev,
+-				"Farrow resampler not programmed at "
+-				"2.4 GHz with width %d: not measured\n",
+-				width);
+-			return;
+-		}
++	/*
++	 * 2.4 GHz uses its own mode at 20 and 40 MHz: wl 7.14 on the
++	 * RT-AC66U B1 at ch6/40 (centre 2447 MHz) writes the ratio and
++	 * deltaphase of this formula, 0x16f0ccd and 0x594621.
++	 */
++	if (b43_current_band(dev->wl) == NL80211_BAND_2GHZ)
+ 		m = &b43_phy_ac_farrow_mode_2g_20;
+-	}
+ 
+ 	/*
+ 	 * The operating channel's centre frequency, and the mode that goes
