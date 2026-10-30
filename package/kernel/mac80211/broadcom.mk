@@ -35,6 +35,16 @@ config-$(CONFIG_PACKAGE_BRCM80211_DEBUG) += BRCMDBG
 config-$(CONFIG_LEDS_TRIGGERS) += B43_LEDS B43LEGACY_LEDS
 
 #Broadcom firmware
+ifneq ($(CONFIG_B43_FW_6_30),)
+  PKG_B43_FWV4_NAME:=broadcom-wl
+  PKG_B43_FWV4_VERSION:=6.30.163.46
+  PKG_B43_FWV4_OBJECT:=$(PKG_B43_FWV4_NAME)-$(PKG_B43_FWV4_VERSION).wl_apsta.o
+  PKG_B43_FWV4_SOURCE:=$(PKG_B43_FWV4_NAME)-$(PKG_B43_FWV4_VERSION).tar.bz2
+  PKG_B43_FWV4_SOURCE_URL:=@OPENWRT \
+	@SF/b43-firmware \
+	https://web.archive.org/web/2023id_/http://www.lwfinger.com/b43-firmware/
+  PKG_B43_FWV4_HASH:=a07c3b6b277833c7dbe61daa511f908cd66c5e2763eb7a0859abc36cd9335c2d
+else
 ifneq ($(CONFIG_B43_FW_5_10),)
   PKG_B43_FWV4_NAME:=broadcom-wl
   PKG_B43_FWV4_VERSION:=5.10.56.27.3
@@ -65,6 +75,7 @@ else
   PKG_B43_FWV4_SOURCE:=$(PKG_B43_FWV4_NAME)-$(PKG_B43_FWV4_VERSION).tar.bz2
   PKG_B43_FWV4_SOURCE_URL:=@OPENWRT
   PKG_B43_FWV4_HASH:=a9f4e276a4d8d3a1cd0f2eb87080ae89b77f0a7140f06d4e9e2135fc44fdd533
+endif
 endif
 endif
 endif
@@ -154,6 +165,14 @@ config PACKAGE_B43_USE_BCMA
 		  This firmware currently gets most of the testing and is needed for some N-PHY devices.
 
 		  If unsure, select the this firmware.
+
+	config B43_FW_6_30
+		bool "Firmware 784.2 from driver 6.30.163.46"
+		help
+		  Firmware for BCM43xx devices, including the core revision 42
+		  microcode the AC-PHY devices (BCM4352, BCM4360) need.
+
+		  Select this if you enabled AC-PHY support.
 
 	config B43_OPENFIRMWARE
 		bool "Open FirmWare for WiFi networks"
