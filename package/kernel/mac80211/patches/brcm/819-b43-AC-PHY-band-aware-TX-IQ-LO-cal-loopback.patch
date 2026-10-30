@@ -1,0 +1,77 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Ville Takio <ville+git@takio.fi>
+Subject: [PATCH] b43: AC-PHY: select the 2.4 GHz TX IQ/LO calibration loopback
+
+The TX IQ/LO calibration routes each chain's TX output back to the
+receiver through radio registers 0x1a, 0x1e, 0x1f and 0x170. The values
+were transcribed from a 5 GHz capture and were used on both bands. On
+2.4 GHz the stock driver (wl 7.14.164.18) selects the other setting of
+each field. With the 5 GHz path the calibration measures no loopback
+signal and stores large, wrong IQ and LO coefficients, so the transmitted
+OFDM signal is distorted and the link stays at MCS 1-3.
+
+Set the loopback per band, as the stock driver does.
+
+Index: backports-7.2/drivers/net/wireless/broadcom/b43/phy_ac.c
+===================================================================
+--- backports-7.2.orig/drivers/net/wireless/broadcom/b43/phy_ac.c
++++ backports-7.2/drivers/net/wireless/broadcom/b43/phy_ac.c
+@@ -7014,6 +7014,29 @@
+ 					  b43_phy_ac_chain_range_regs[i] + s);
+ }
+ 
++/*
++ * Route the chain's TX output into the IQ/LO calibration loopback. The
++ * coupler and mixer path are per band: on 2.4 GHz the stock driver selects
++ * the other setting of each field, and the 5 GHz values there leave the
++ * calibration without a loopback signal and with bogus coefficients.
++ */
++static void b43_phy_ac_txcal_loopback(struct b43_wldev *dev, u16 s)
++{
++	bool band_2g = b43_current_band(dev->wl) == NL80211_BAND_2GHZ;
++
++	b43_radio_maskset(dev, 0x001a + s, (u16)~0x00f0,
++			  band_2g ? 0x0080 : 0x00b0);
++	b43_radio_maskset(dev, 0x001f + s, (u16)~0x0004,
++			  band_2g ? 0 : 0x0004);
++	b43_radio_maskset(dev, 0x0170 + s, (u16)~0x0100,
++			  band_2g ? 0 : 0x0100);
++	b43_radio_maskset(dev, 0x0170 + s, (u16)~0x4000,
++			  band_2g ? 0x4000 : 0);
++	b43_radio_maskset(dev, 0x001e + s, (u16)~0x0004,
++			  band_2g ? 0x0004 : 0);
++	b43_radio_maskset(dev, 0x001a + s, (u16)~0x0300, 0);
++}
++
+ /* Save 0x040f for a later write-back, then clear its bit 9. */
+ static void b43_phy_ac_rxcal_040f_save(struct b43_wldev *dev)
+ {
+@@ -7085,12 +7108,7 @@
+ 			u16 s = (u16)(c * 0x200);
+ 
+ 			b43_phy_ac_chain_range_save(dev, c);
+-			b43_radio_maskset(dev, 0x001a + s, (u16)~0x00f0, 0x00b0);
+-			b43_radio_maskset(dev, 0x001f + s, (u16)~0x0004, 0x0004);
+-			b43_radio_maskset(dev, 0x0170 + s, (u16)~0x0100, 0x0100);
+-			b43_radio_maskset(dev, 0x0170 + s, (u16)~0x4000, 0);
+-			b43_radio_maskset(dev, 0x001e + s, (u16)~0x0004, 0);
+-			b43_radio_maskset(dev, 0x001a + s, (u16)~0x0300, 0);
++			b43_phy_ac_txcal_loopback(dev, s);
+ 		}
+ 	}
+ 
+@@ -7817,13 +7835,7 @@
+ 		u16 s = (u16)(core * 0x200);
+ 
+ 		b43_phy_ac_chain_range_save(dev, core);
+-		/* each maskset is MOD + RD + WR */
+-		b43_radio_maskset(dev, 0x001a + s, (u16)~0x00f0, 0x00b0);
+-		b43_radio_maskset(dev, 0x001f + s, (u16)~0x0004, 0x0004);
+-		b43_radio_maskset(dev, 0x0170 + s, (u16)~0x0100, 0x0100);
+-		b43_radio_maskset(dev, 0x0170 + s, (u16)~0x4000, 0);
+-		b43_radio_maskset(dev, 0x001e + s, (u16)~0x0004, 0);
+-		b43_radio_maskset(dev, 0x001a + s, (u16)~0x0300, 0);
++		b43_phy_ac_txcal_loopback(dev, s);
+ 	}
+ }
+ 
