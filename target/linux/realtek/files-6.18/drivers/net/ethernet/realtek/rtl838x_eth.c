@@ -13,6 +13,7 @@
 #include <linux/platform_device.h>
 #include <linux/sched.h>
 #include <linux/slab.h>
+#include <linux/soc/realtek/otto_common.h>
 #include <linux/of.h>
 #include <linux/of_net.h>
 #include <linux/of_mdio.h>
@@ -25,14 +26,14 @@
 #include <net/dsa.h>
 #include <net/dst_metadata.h>
 #include <net/page_pool/helpers.h>
-#include <net/switchdev.h>
 
 #include "rtl838x_eth.h"
 
 static void rteth_838x_create_tx_header(struct rteth_frag *frag, unsigned int port, int prio)
 {
 	/* cpu_tag[0] is reserved on the RTL83XX SoCs */
-	frag->cpu_tag[1] = 0x0400;  /* BIT 10: RTL8380_CPU_TAG */
+	frag->cpu_tag[1] = FIELD_PREP(RTETH_838X_TAG1_PROTO_MASK, RTETH_838X_TAG1_PROTO) |
+			   RTETH_838X_TAG1_BP_FLTR2;
 	frag->cpu_tag[2] = 0x0200;  /* Set only AS_DPM, to enable DPM settings below */
 	frag->cpu_tag[3] = 0x0000;
 	frag->cpu_tag[4] = BIT(port) >> 16;
@@ -109,7 +110,7 @@ static void rteth_93xx_enable_rx_irq(struct rteth_ctrl *ctrl, int ring)
 }
 
 static void rteth_83xx_confirm_disable_irqs(struct rteth_ctrl *ctrl,
-					    unsigned long *rings, bool *l2)
+					    unsigned long *rings)
 {
 	unsigned long flags;
 	u32 disable, state;
@@ -118,7 +119,6 @@ static void rteth_83xx_confirm_disable_irqs(struct rteth_ctrl *ctrl,
 
 	regmap_read(ctrl->map, ctrl->cfg->dma_if_intr_sts, &state);
 	*rings = FIELD_GET(GENMASK(7, 0), state) | FIELD_GET(GENMASK(15, 8), state);
-	*l2 = !!(state & RTETH_839X_DMA_IF_INTR_NOTIFY_MASK);
 	disable = FIELD_PREP(GENMASK(7, 0), *rings) | FIELD_PREP(GENMASK(15, 8), *rings);
 
 	regmap_clear_bits(ctrl->map, ctrl->cfg->dma_if_intr_msk, disable);
@@ -128,7 +128,7 @@ static void rteth_83xx_confirm_disable_irqs(struct rteth_ctrl *ctrl,
 }
 
 static void rteth_93xx_confirm_disable_irqs(struct rteth_ctrl *ctrl,
-					    unsigned long *rings, bool *l2)
+					    unsigned long *rings)
 {
 	u32 state_done, state_runout;
 	unsigned long flags;
@@ -138,7 +138,6 @@ static void rteth_93xx_confirm_disable_irqs(struct rteth_ctrl *ctrl,
 	regmap_read(ctrl->map, ctrl->cfg->dma_if_intr_sts, &state_runout);
 	regmap_read(ctrl->map, ctrl->cfg->dma_if_intr_sts + 4, &state_done);
 	*rings = state_runout | state_done;
-	*l2 = false;
 
 	regmap_clear_bits(ctrl->map, ctrl->cfg->dma_if_intr_msk, *rings);
 	regmap_clear_bits(ctrl->map, ctrl->cfg->dma_if_intr_msk + 4, *rings);
@@ -160,18 +159,8 @@ static void rteth_disable_all_irqs(struct rteth_ctrl *ctrl)
 
 static void rteth_enable_all_rx_irqs(struct rteth_ctrl *ctrl)
 {
-	int mask, reg;
-
 	for (int ring = 0; ring < RTETH_RX_RINGS; ring++)
 		ctrl->cfg->enable_rx_irq(ctrl, ring);
-
-	/*
-	 * RTL839x has additional L2 notification interrupts. Simply activate them. All other
-	 * devices that do not have the feature have adequate reserved bit space and ignore it.
-	 */
-	mask = GENMASK(2, 0) << ((ctrl->cfg->rx_rings * 2 + 4) % 32);
-	reg = (ctrl->cfg->rx_rings * 2 + 4) / 32;
-	regmap_update_bits(ctrl->map, ctrl->cfg->dma_if_intr_msk + reg * 4, mask, mask);
 }
 
 static void rteth_83xx_update_counter(struct rteth_ctrl *ctrl, int ring, int released)
@@ -197,7 +186,10 @@ static bool rteth_838x_decode_tag(struct rteth_frag *frag, struct rteth_dsa_tag 
 	t->crc_error = t->reason == 13;
 
 	pr_debug("Reason: %d\n", t->reason);
-	if (t->reason != 6) /* NIC_RX_REASON_SPECIAL_TRAP */
+	/* A tc trap rule sets ACL_HIT */
+	if (t->reason != 2 && /* NIC_RX_REASON_RMA */
+	    t->reason != 6 && /* NIC_RX_REASON_SPECIAL_TRAP */
+	    !(frag->cpu_tag[2] & BIT(11)))
 		t->l2_offloaded = 1;
 	else
 		t->l2_offloaded = 0;
@@ -214,8 +206,13 @@ static bool rteth_839x_decode_tag(struct rteth_frag *frag, struct rteth_dsa_tag 
 	t->crc_error = frag->cpu_tag[4] & BIT(6);
 
 	pr_debug("Reason: %d\n", t->reason);
+	/* A tc trap rule leaves REASON 0 and sets ACL_HIT with its PIE row in
+	 * ACL_IDX. L3 rules set ACL_HIT too, from rows of their own.
+	 */
 	if ((t->reason >= 7 && t->reason <= 13) || /* NIC_RX_REASON_RMA */
-	    (t->reason >= 23 && t->reason <= 25))  /* NIC_RX_REASON_SPECIAL_TRAP */
+	    (t->reason >= 23 && t->reason <= 25) || /* NIC_RX_REASON_SPECIAL_TRAP */
+	    ((frag->cpu_tag[3] & BIT(15)) &&
+	     (frag->cpu_tag[2] & 0xfff) < RTL839X_PIE_L3_FIRST))
 		t->l2_offloaded = 0;
 	else
 		t->l2_offloaded = 1;
@@ -229,7 +226,7 @@ static bool rteth_93xx_decode_tag(struct rteth_frag *frag, struct rteth_dsa_tag 
 	t->queue = (frag->cpu_tag[2] >> 11) & 0x1f;
 	t->reason = frag->cpu_tag[7] & 0x3f;
 	t->crc_error = frag->cpu_tag[1] & BIT(6);
-	t->l2_offloaded = (t->reason >= 19 && t->reason <= 27) ? 0 : 1;
+	t->l2_offloaded = (t->reason >= 19 && t->reason <= 28) || t->reason == 55 ? 0 : 1;
 
 	if (t->reason != 63)
 		pr_debug("%s: Reason %d, port %d, queue %d\n", __func__, t->reason, t->port, t->queue);
@@ -237,87 +234,17 @@ static bool rteth_93xx_decode_tag(struct rteth_frag *frag, struct rteth_dsa_tag 
 	return t->l2_offloaded;
 }
 
-struct fdb_update_work {
-	struct work_struct work;
-	struct net_device *dev;
-	u64 macs[RTETH_NOTIFY_EVENTS + 1];
-};
-
-static void rtl838x_fdb_sync(struct work_struct *work)
-{
-	const struct fdb_update_work *uw = container_of(work, struct fdb_update_work, work);
-
-	for (int i = 0; uw->macs[i]; i++) {
-		struct switchdev_notifier_fdb_info info;
-		u8 addr[ETH_ALEN];
-		int action;
-
-		action = (uw->macs[i] & (1ULL << 63)) ?
-			 SWITCHDEV_FDB_ADD_TO_BRIDGE :
-			 SWITCHDEV_FDB_DEL_TO_BRIDGE;
-		u64_to_ether_addr(uw->macs[i] & 0xffffffffffffULL, addr);
-		info.addr = &addr[0];
-		info.vid = 0;
-		info.offloaded = 1;
-		pr_debug("FDB entry %d: %llx, action %d\n", i, uw->macs[0], action);
-		call_switchdev_notifiers(action, uw->dev, &info.info, NULL);
-	}
-	kfree(work);
-}
-
-static void rtl839x_l2_notification_handler(struct rteth_ctrl *ctrl)
-{
-	struct notify_b *nb = ctrl->membase;
-	u32 e = ctrl->lastEvent;
-
-	while (!(nb->ring[e] & 1)) {
-		struct fdb_update_work *w;
-		struct n_event *event;
-		u64 mac;
-		int i;
-
-		w = kzalloc(sizeof(*w), GFP_ATOMIC);
-		if (!w)
-			return;
-
-		INIT_WORK(&w->work, rtl838x_fdb_sync);
-
-		for (i = 0; i < RTETH_NOTIFY_EVENTS; i++) {
-			event = &nb->blocks[e].events[i];
-			if (!event->valid)
-				continue;
-			mac = event->mac;
-			if (event->type)
-				mac |= 1ULL << 63;
-			w->dev = ctrl->dev;
-			w->macs[i] = mac;
-		}
-
-		/* Hand the ring entry back to the switch */
-		nb->ring[e] = nb->ring[e] | 1;
-		e = (e + 1) % RTETH_NOTIFY_BLOCKS;
-
-		w->macs[i] = 0ULL;
-		schedule_work(&w->work);
-	}
-	ctrl->lastEvent = e;
-}
-
 static irqreturn_t rteth_net_irq(int irq, void *dev_id)
 {
 	struct net_device *dev = dev_id;
 	struct rteth_ctrl *ctrl = netdev_priv(dev);
 	unsigned long ring, rings;
-	bool l2;
 
-	ctrl->cfg->confirm_disable_irqs(ctrl, &rings, &l2);
+	ctrl->cfg->confirm_disable_irqs(ctrl, &rings);
 	for_each_set_bit(ring, &rings, RTETH_RX_RINGS) {
 		netdev_dbg(dev, "schedule rx ring %lu\n", ring);
 		napi_schedule(&ctrl->rx_info[ring].napi);
 	}
-
-	if (unlikely(l2))
-		rtl839x_l2_notification_handler(ctrl);
 
 	return IRQ_HANDLED;
 }
@@ -351,12 +278,6 @@ static void rteth_838x_hw_reset(struct rteth_ctrl *ctrl)
 
 static void rteth_839x_hw_reset(struct rteth_ctrl *ctrl)
 {
-	u32 int_saved, nbuf;
-
-	/* Preserve L2 notification and NBUF settings */
-	regmap_read(ctrl->map, ctrl->cfg->dma_if_intr_msk, &int_saved);
-	regmap_read(ctrl->map, RTETH_839X_DMA_IF_NBUF_BASE_CTRL, &nbuf);
-
 	/* Disable link change interrupt on RTL839x */
 	regmap_write(ctrl->map, RTETH_839X_IMR_PORT_LINK_STS_CHG, 0);
 	regmap_write(ctrl->map, RTETH_839X_IMR_PORT_LINK_STS_CHG + 4, 0);
@@ -368,10 +289,6 @@ static void rteth_839x_hw_reset(struct rteth_ctrl *ctrl)
 	regmap_write(ctrl->map, RTETH_839X_ISR_PORT_LINK_STS_CHG + 4, 0xffffffff);
 	regmap_write(ctrl->map, RTETH_839X_IMR_PORT_LINK_STS_CHG, 0xffffffff);
 	regmap_write(ctrl->map, RTETH_839X_IMR_PORT_LINK_STS_CHG + 4, 0xffffffff);
-
-	/* Restore notification settings: on RTL838x these bits are null */
-	regmap_update_bits(ctrl->map, ctrl->cfg->dma_if_intr_msk, 7 << 20, int_saved & (7 << 20));
-	regmap_write(ctrl->map, RTETH_839X_DMA_IF_NBUF_BASE_CTRL, nbuf);
 }
 
 static void rteth_93xx_set_hol(struct rteth_ctrl *ctrl)
@@ -731,33 +648,6 @@ static int rteth_setup_ring_buffer(struct rteth_ctrl *ctrl)
 	return 0;
 }
 
-static void rteth_839x_setup_notify_buffer(struct rteth_ctrl *ctrl)
-{
-	struct notify_b *b = ctrl->membase;
-
-	for (int i = 0; i < RTETH_NOTIFY_BLOCKS; i++)
-		b->ring[i] = KSEG1ADDR(&b->blocks[i]) | RTETH_RING_OWN_HW;
-	b->ring[RTETH_NOTIFY_BLOCKS - 1] |= RTETH_RING_WRAP;
-
-	regmap_write(ctrl->map, RTETH_839X_DMA_IF_NBUF_BASE_CTRL, (u32)b->ring);
-	regmap_update_bits(ctrl->map, RTETH_839X_L2_NOTIFICATION_CTRL, 0x3ff << 2, 100 << 2);
-
-	/* Setup notification events */
-
-	/* RTL8390_L2_CTRL_0_FLUSH_NOTIFY_EN */
-	regmap_set_bits(ctrl->map, RTETH_839X_L2_CTRL_0, BIT(14));
-	/* SUSPEND_NOTIFICATION_EN */
-	regmap_set_bits(ctrl->map, RTETH_839X_L2_NOTIFICATION_CTRL, BIT(12));
-
-	/* Enable Notification */
-	regmap_set_bits(ctrl->map, RTETH_839X_L2_NOTIFICATION_CTRL, BIT(0));
-	ctrl->lastEvent = 0;
-
-	/* Make sure the ring structure is visible to the ASIC */
-	mb();
-	flush_cache_all();
-}
-
 static void rteth_838x_hw_init(struct rteth_ctrl *ctrl)
 {
 	/* Trap IGMP/MLD traffic to CPU-Port */
@@ -776,16 +666,35 @@ static void rteth_839x_hw_init(struct rteth_ctrl *ctrl)
 
 static void rteth_930x_hw_init(struct rteth_ctrl *ctrl)
 {
-	/* Trap MLD and IGMP messages to CPU_PORT */
-	regmap_write(ctrl->map, RTETH_930X_VLAN_APP_PKT_CTRL, 0x12);
+	u64 q12 = 0;
+	u32 q8 = 0;
+
+	/* Trap IGMP and MLD to the CPU (IGMP_ACT = MLD_ACT = 1) in every VLAN
+	 * whose group mask selects them
+	 */
+	regmap_write(ctrl->map, RTETH_930X_VLAN_APP_PKT_CTRL, 0x9);
 	/* Flush learned FDB entries on link down of a port */
 	regmap_set_bits(ctrl->map, RTETH_930X_L2_CTRL, BIT(7));
+
+	/* Queue n of the CPU tag is queue n of the port: 3 bits per entry for
+	 * ports with 8 queues, 4 bits per entry for ports with 12
+	 */
+	for (int q = 0; q < 12; q++) {
+		if (q < 8)
+			q8 |= q << (q * 3);
+		q12 |= (u64)q << (q * 4);
+	}
+	regmap_write(ctrl->map, RTETH_930X_QM_CPUQID2QID_CTRL, q8);
+	regmap_write(ctrl->map, RTETH_930X_QM_CPUQID2XGQID_CTRL, lower_32_bits(q12));
+	regmap_write(ctrl->map, RTETH_930X_QM_CPUQID2XGQID_CTRL + 4, upper_32_bits(q12));
 }
 
 static void rteth_931x_hw_init(struct rteth_ctrl *ctrl)
 {
-	/* Trap MLD and IGMP messages to CPU_PORT */
-	regmap_write(ctrl->map, RTETH_931X_VLAN_APP_PKT_CTRL, 0x12);
+	/* Trap IGMP and MLD to the CPU (IGMP_ACT = MLD_ACT = 1) in every VLAN
+	 * whose group mask selects them
+	 */
+	regmap_write(ctrl->map, RTETH_931X_VLAN_APP_PKT_CTRL, 0x9);
 	/* Set PCIE_PWR_DOWN */
 	regmap_set_bits(ctrl->map, RTETH_931X_PS_SOC_CTRL, BIT(1));
 }
@@ -818,9 +727,6 @@ static int rteth_open(struct net_device *dev)
 	ret = rteth_setup_ring_buffer(ctrl);
 	if (ret)
 		return ret;
-
-	if (ctrl->cfg->setup_notify_buffer)
-		ctrl->cfg->setup_notify_buffer(ctrl);
 
 	rteth_hw_ring_setup(ctrl);
 	phylink_start(ctrl->phylink);
@@ -970,41 +876,64 @@ static void rteth_838x_set_rx_mode(struct net_device *dev)
 		regmap_write(ctrl->map, RTETH_838X_RMA_CTRL_0, GENMASK(21, 0));
 		regmap_write(ctrl->map, RTETH_838X_RMA_CTRL_1, GENMASK(14, 0));
 	}
+
+	/*
+	 * Always trap slow protocols to 01-80-C2-00-00-02 (e.g. LACP, not OAM),
+	 * past STP and VLAN filtering. Program the bypasses before the trap:
+	 * bit 0: SLOW_PROTO_BYPASS_STP
+	 * bit 9: RMA_SLOWPRO_BYPASS_VLAN
+	 */
+	regmap_set_bits(ctrl->map, RTETH_838X_RMA_CTRL_1, BIT(0) | BIT(9));
+	regmap_update_bits(ctrl->map, RTETH_838X_RMA_CTRL_0, GENMASK(3, 2),
+			   RTETH_838X_RMA_CTRL_0_SLOW_TRAP);
 }
 
 static void rteth_839x_set_rx_mode(struct net_device *dev)
 {
 	struct rteth_ctrl *ctrl = netdev_priv(dev);
+	u32 rma_actions = 0;
+	u32 bypass = BIT(0) | BIT(6);
+	u32 rma0;
 
-	/* Flood all classes of RMA addresses (01-80-C2-00-00-{01..2F})
-	 * CTRL_0_FULL = GENMASK(31, 2) = 0xFFFFFFFC
-	 * Lower two bits are reserved, corresponding to RMA 01-80-C2-00-00-00
-	 * CTRL_1_FULL = CTRL_2_FULL = GENMASK(31, 0)
+	/* Each two-bit RMA action field uses: 0 = forward, 1 = drop, 2 = trap to CPU. */
+	if (dev->flags & (IFF_PROMISC | IFF_ALLMULTI))
+		rma_actions = 0xaaaaaaaaU;
+
+	/*
+	 * Always bypass STP and VLAN filtering for slow protocols:
+	 * bit 0: SLOW_PROTO_BYPASS_STP
+	 * bit 6: RMA_02_BYPASS_VLAN
+	 *
+	 * Promiscuous mode additionally enables the other RMA bypasses.
 	 */
-	if (!(dev->flags & (IFF_PROMISC | IFF_ALLMULTI))) {
-		regmap_write(ctrl->map, RTETH_839X_RMA_CTRL_0, 0);
-		regmap_write(ctrl->map, RTETH_839X_RMA_CTRL_1, 0);
-		regmap_write(ctrl->map, RTETH_839X_RMA_CTRL_2, 0);
-		regmap_write(ctrl->map, RTETH_839X_RMA_CTRL_3, 0);
-	}
-	if (dev->flags & IFF_ALLMULTI) {
-		regmap_write(ctrl->map, RTETH_839X_RMA_CTRL_0, GENMASK(31, 2));
-		regmap_write(ctrl->map, RTETH_839X_RMA_CTRL_1, GENMASK(31, 0));
-		regmap_write(ctrl->map, RTETH_839X_RMA_CTRL_2, GENMASK(31, 0));
-	}
-	if (dev->flags & IFF_PROMISC) {
-		regmap_write(ctrl->map, RTETH_839X_RMA_CTRL_0, GENMASK(31, 2));
-		regmap_write(ctrl->map, RTETH_839X_RMA_CTRL_1, GENMASK(31, 0));
-		regmap_write(ctrl->map, RTETH_839X_RMA_CTRL_2, GENMASK(31, 0));
-		regmap_write(ctrl->map, RTETH_839X_RMA_CTRL_3, GENMASK(9, 0));
-	}
+	if (dev->flags & IFF_PROMISC)
+		bypass = GENMASK(9, 0);
+
+	/*
+	 * Preserve lookup-miss handling (bit 10) and reserved bits.
+	 * Program the bypasses before enabling the traps.
+	 */
+	regmap_update_bits(ctrl->map, RTETH_839X_RMA_CTRL_3,
+			   GENMASK(9, 0), bypass);
+
+	/* Always trap 01-80-C2-00-00-02. Bits 1:0 of RMA_CTRL_0 are reserved. */
+	rma0 = (rma_actions & GENMASK(31, 2)) |
+	       RTETH_839X_RMA_CTRL_0_SLOW_TRAP;
+
+	regmap_update_bits(ctrl->map, RTETH_839X_RMA_CTRL_0,
+			   GENMASK(31, 2), rma0);
+	regmap_write(ctrl->map, RTETH_839X_RMA_CTRL_1, rma_actions);
+	regmap_write(ctrl->map, RTETH_839X_RMA_CTRL_2, rma_actions);
 }
 
 static void rteth_930x_set_rx_mode(struct net_device *dev)
 {
 	struct rteth_ctrl *ctrl = netdev_priv(dev);
 
-	/* Flood all classes of RMA addresses (01-80-C2-00-00-{01..2F})
+	/* Trap all classes of RMA addresses (01-80-C2-00-00-{01..2F}) to the
+	 * CPU. On RTL93xx, 3 in an RMA action field traps to the master CPU,
+	 * which on a standalone switch is this one; unlike RTL838x, there is
+	 * no flood action for these addresses.
 	 * CTRL_0_FULL = GENMASK(31, 2) = 0xFFFFFFFC
 	 * Lower two bits are reserved, corresponding to RMA 01-80-C2-00-00-00
 	 * CTRL_1_FULL = CTRL_2_FULL = GENMASK(31, 0)
@@ -1024,7 +953,10 @@ static void rteth_931x_set_rx_mode(struct net_device *dev)
 {
 	struct rteth_ctrl *ctrl = netdev_priv(dev);
 
-	/* Flood all classes of RMA addresses (01-80-C2-00-00-{01..2F})
+	/* Trap all classes of RMA addresses (01-80-C2-00-00-{01..2F}) to the
+	 * CPU. On RTL93xx, 3 in an RMA action field traps to the master CPU,
+	 * which on a standalone switch is this one; unlike RTL838x, there is
+	 * no flood action for these addresses.
 	 * CTRL_0_FULL = GENMASK(31, 2) = 0xFFFFFFFC
 	 * Lower two bits are reserved, corresponding to RMA 01-80-C2-00-00-00.
 	 * CTRL_1_FULL = CTRL_2_FULL = GENMASK(31, 0)
@@ -1101,18 +1033,6 @@ static int rteth_start_xmit(struct sk_buff *skb, struct net_device *dev)
 	struct rteth_frag *frag;
 	dma_addr_t packet_dma;
 
-	port = rteth_get_dsa_port(skb, dev);
-	if (port < 0)
-		len += ETH_FCS_LEN; /* No reusable 4 byte tag, add space for 4 byte layer 2 FCS */
-
-	len = max(ETH_ZLEN + ETH_FCS_LEN, len);
-	if (unlikely(skb_put_padto(skb, len))) {
-		dev->stats.tx_errors++;
-		netdev_warn(dev, "skb pad failed\n");
-
-		return NETDEV_TX_OK;
-	}
-
 	slot = ctrl->tx_info[ring].send_count & (RTETH_TX_RING_SIZE - 1);
 	frag = &ctrl->tx_data[ring].frag[slot];
 	packet_dma = ctrl->tx_data[ring].ring[slot];
@@ -1124,6 +1044,18 @@ static int rteth_start_xmit(struct sk_buff *skb, struct net_device *dev)
 			netdev_warn(dev, "tx ring %d busy, waiting for slot %d\n", ring, slot);
 
 		return NETDEV_TX_BUSY;
+	}
+
+	port = rteth_get_dsa_port(skb, dev);
+	if (port < 0)
+		len += ETH_FCS_LEN; /* No reusable 4 byte tag, add space for 4 byte layer 2 FCS */
+
+	len = max(ETH_ZLEN + ETH_FCS_LEN, len);
+	if (unlikely(skb_put_padto(skb, len))) {
+		dev->stats.tx_errors++;
+		netdev_warn(dev, "skb pad failed\n");
+
+		return NETDEV_TX_OK;
 	}
 
 	if (unlikely(*packet_skb))
@@ -1138,7 +1070,8 @@ static int rteth_start_xmit(struct sk_buff *skb, struct net_device *dev)
 	}
 
 	if (port >= 0)
-		ctrl->cfg->create_tx_header(frag, port, 0); // TODO ok to set prio to 0?
+		ctrl->cfg->create_tx_header(frag, port, ctrl->cfg->tx_queue_from_priority ?
+					    min_t(u32, skb->priority, 7) : 0);
 
 	/* Hand frag over to switch */
 	dma_wmb();
@@ -1175,6 +1108,7 @@ static struct sk_buff *rteth_create_skb(struct rteth_ctrl *ctrl, int ring, int s
 	struct page_pool *pool = ctrl->rx_info[ring].pool;
 	struct net_device *dev = ctrl->dev;
 	unsigned int len = frag->len;
+	struct metadata_dst *md_dst;
 	struct rteth_dsa_tag tag;
 	struct sk_buff *skb;
 
@@ -1190,11 +1124,9 @@ static struct sk_buff *rteth_create_skb(struct rteth_ctrl *ctrl, int ring, int s
 	skb_put(skb, len);
 
 	ctrl->cfg->decode_tag(frag, &tag);
-	if (netdev_uses_dsa(dev)) {
-		if (tag.port < ctrl->cfg->cpu_port)
-			skb_dst_set_noref(skb, &ctrl->dsa_meta[tag.port]->dst);
-		if (tag.l2_offloaded)
-			skb->offload_fwd_mark = 1;
+	if (netdev_uses_dsa(dev) && tag.port < ctrl->cfg->cpu_port) {
+		md_dst = tag.l2_offloaded ? ctrl->dsa_meta[tag.port] : ctrl->dsa_meta_trapped[tag.port];
+		skb_dst_set_noref(skb, &md_dst->dst);
 	}
 
 	if (dev->features & NETIF_F_RXCSUM) {
@@ -1505,22 +1437,20 @@ static int rteth_set_link_ksettings(struct net_device *dev,
 	return phylink_ethtool_ksettings_set(ctrl->phylink, cmd);
 }
 
-static int rteth_83xx_set_features(struct net_device *dev, netdev_features_t features)
+static void rteth_set_rx_mode(struct net_device *dev)
 {
 	struct rteth_ctrl *ctrl = netdev_priv(dev);
 
-	if ((features ^ dev->features) & NETIF_F_RXCSUM)
-		regmap_assign_bits(ctrl->map, ctrl->cfg->mac_l2_port_ctrl, BIT(3), features & NETIF_F_RXCSUM);
-
-	return 0;
+	ctrl->cfg->set_rx_mode(dev);
 }
 
-static int rteth_93xx_set_features(struct net_device *dev, netdev_features_t features)
+static int rteth_set_features(struct net_device *dev, netdev_features_t features)
 {
 	struct rteth_ctrl *ctrl = netdev_priv(dev);
 
 	if ((features ^ dev->features) & NETIF_F_RXCSUM)
-		regmap_assign_bits(ctrl->map, ctrl->cfg->mac_l2_port_ctrl, BIT(4), features & NETIF_F_RXCSUM);
+		regmap_assign_bits(ctrl->map, ctrl->cfg->mac_l2_port_ctrl,
+				   ctrl->cfg->rx_csum_mask, features & NETIF_F_RXCSUM);
 
 	return 0;
 }
@@ -1542,16 +1472,16 @@ static int rteth_setup_tc(struct net_device *dev, enum tc_setup_type type, void 
 	return ds->ops->port_setup_tc(ds, dp->index, type, type_data);
 }
 
-static const struct net_device_ops rteth_838x_netdev_ops = {
+static const struct net_device_ops rteth_netdev_ops = {
 	.ndo_open		= rteth_open,
 	.ndo_stop		= rteth_stop,
 	.ndo_change_mtu		= rteth_change_mtu,
 	.ndo_start_xmit		= rteth_start_xmit,
 	.ndo_set_mac_address	= rteth_set_mac_address,
 	.ndo_validate_addr	= eth_validate_addr,
-	.ndo_set_rx_mode	= rteth_838x_set_rx_mode,
+	.ndo_set_rx_mode	= rteth_set_rx_mode,
 	.ndo_tx_timeout		= rteth_tx_timeout,
-	.ndo_set_features	= rteth_83xx_set_features,
+	.ndo_set_features	= rteth_set_features,
 	.ndo_setup_tc		= rteth_setup_tc,
 };
 
@@ -1591,20 +1521,8 @@ static const struct rteth_cfg rteth_838x_cfg = {
 	.init_mac		= rteth_838x_init_mac,
 	.set_hol		= rteth_83xx_set_hol,
 	.set_max_packet_length	= rteth_838x_set_max_packet_length,
-	.netdev_ops		= &rteth_838x_netdev_ops,
-};
-
-static const struct net_device_ops rteth_839x_netdev_ops = {
-	.ndo_open		= rteth_open,
-	.ndo_stop		= rteth_stop,
-	.ndo_change_mtu		= rteth_change_mtu,
-	.ndo_start_xmit		= rteth_start_xmit,
-	.ndo_set_mac_address	= rteth_set_mac_address,
-	.ndo_validate_addr	= eth_validate_addr,
-	.ndo_set_rx_mode	= rteth_839x_set_rx_mode,
-	.ndo_tx_timeout		= rteth_tx_timeout,
-	.ndo_set_features	= rteth_83xx_set_features,
-	.ndo_setup_tc		= rteth_setup_tc,
+	.set_rx_mode		= rteth_838x_set_rx_mode,
+	.rx_csum_mask		= BIT(3),
 };
 
 static const struct rteth_cfg rteth_839x_cfg = {
@@ -1641,21 +1559,8 @@ static const struct rteth_cfg rteth_839x_cfg = {
 	.init_mac		= rteth_839x_init_mac,
 	.set_hol		= rteth_83xx_set_hol,
 	.set_max_packet_length	= rteth_839x_set_max_packet_length,
-	.setup_notify_buffer	= rteth_839x_setup_notify_buffer,
-	.netdev_ops		= &rteth_839x_netdev_ops,
-};
-
-static const struct net_device_ops rteth_930x_netdev_ops = {
-	.ndo_open		= rteth_open,
-	.ndo_stop		= rteth_stop,
-	.ndo_change_mtu		= rteth_change_mtu,
-	.ndo_start_xmit		= rteth_start_xmit,
-	.ndo_set_mac_address	= rteth_set_mac_address,
-	.ndo_validate_addr	= eth_validate_addr,
-	.ndo_set_rx_mode	= rteth_930x_set_rx_mode,
-	.ndo_tx_timeout		= rteth_tx_timeout,
-	.ndo_set_features	= rteth_93xx_set_features,
-	.ndo_setup_tc		= rteth_setup_tc,
+	.set_rx_mode		= rteth_839x_set_rx_mode,
+	.rx_csum_mask		= BIT(3),
 };
 
 static const struct rteth_cfg rteth_930x_cfg = {
@@ -1679,6 +1584,7 @@ static const struct rteth_cfg rteth_930x_cfg = {
 	.mac_force_mode_ctrl	= RTETH_930X_MAC_FORCE_MODE_CTRL,
 	.rst_glb_ctrl		= RTETH_930X_RST_GLB_CTRL_0,
 	.skb_headroom		= RTETH_SKB_HEADROOM_FAST,
+	.tx_queue_from_priority	= true,
 	.mac_reg		= { RTETH_930X_MAC_L2_ADDR_CTRL },
 	.l2_tbl_flush_ctrl	= RTETH_930X_L2_TBL_FLUSH_CTRL,
 	.confirm_disable_irqs	= rteth_93xx_confirm_disable_irqs,
@@ -1693,20 +1599,8 @@ static const struct rteth_cfg rteth_930x_cfg = {
 	.init_mac		= rteth_930x_init_mac,
 	.set_hol		= rteth_93xx_set_hol,
 	.set_max_packet_length	= rteth_930x_set_max_packet_length,
-	.netdev_ops		= &rteth_930x_netdev_ops,
-};
-
-static const struct net_device_ops rteth_931x_netdev_ops = {
-	.ndo_open		= rteth_open,
-	.ndo_stop		= rteth_stop,
-	.ndo_change_mtu		= rteth_change_mtu,
-	.ndo_start_xmit		= rteth_start_xmit,
-	.ndo_set_mac_address	= rteth_set_mac_address,
-	.ndo_validate_addr	= eth_validate_addr,
-	.ndo_set_rx_mode	= rteth_931x_set_rx_mode,
-	.ndo_tx_timeout		= rteth_tx_timeout,
-	.ndo_set_features	= rteth_93xx_set_features,
-	.ndo_setup_tc		= rteth_setup_tc,
+	.set_rx_mode		= rteth_930x_set_rx_mode,
+	.rx_csum_mask		= BIT(4),
 };
 
 static const struct rteth_cfg rteth_931x_cfg = {
@@ -1730,7 +1624,7 @@ static const struct rteth_cfg rteth_931x_cfg = {
 	.mac_force_mode_ctrl	= RTETH_931X_MAC_FORCE_MODE_CTRL,
 	.rst_glb_ctrl		= RTETH_931X_RST_GLB_CTRL,
 	.skb_headroom		= RTETH_SKB_HEADROOM_FAST,
-	.mac_reg		= { RTETH_930X_MAC_L2_ADDR_CTRL },
+	.mac_reg		= { RTETH_931X_MAC_L2_ADDR_CTRL },
 	.l2_tbl_flush_ctrl	= RTETH_931X_L2_TBL_FLUSH_CTRL,
 	.confirm_disable_irqs	= rteth_93xx_confirm_disable_irqs,
 	.enable_rx_irq		= rteth_93xx_enable_rx_irq,
@@ -1744,7 +1638,8 @@ static const struct rteth_cfg rteth_931x_cfg = {
 	.init_mac		= rteth_931x_init_mac,
 	.set_hol		= rteth_93xx_set_hol,
 	.set_max_packet_length	= rteth_931x_set_max_packet_length,
-	.netdev_ops		= &rteth_931x_netdev_ops,
+	.set_rx_mode		= rteth_931x_set_rx_mode,
+	.rx_csum_mask		= BIT(4),
 };
 
 static const struct phylink_mac_ops rteth_mac_ops = {
@@ -1758,17 +1653,26 @@ static const struct ethtool_ops rteth_ethtool_ops = {
 	.set_link_ksettings	= rteth_set_link_ksettings,
 };
 
+static struct metadata_dst *rteth_metadata_dst(unsigned int port, bool trapped)
+{
+	struct metadata_dst *md_dst = metadata_dst_alloc(0, METADATA_HW_PORT_MUX, GFP_KERNEL);
+
+	if (!md_dst)
+		return NULL;
+
+	md_dst->u.port_info.port_id = port;
+	md_dst->u.port_info.trapped = trapped;
+
+	return md_dst;
+}
+
 static int rteth_metadata_dst_alloc(struct rteth_ctrl *ctrl)
 {
-	struct metadata_dst *md_dst;
-
 	for (int i = 0; i < ARRAY_SIZE(ctrl->dsa_meta); i++) {
-		md_dst = metadata_dst_alloc(0, METADATA_HW_PORT_MUX, GFP_KERNEL);
-		if (!md_dst)
+		ctrl->dsa_meta[i] = rteth_metadata_dst(i, false);
+		ctrl->dsa_meta_trapped[i] = rteth_metadata_dst(i, true);
+		if (!ctrl->dsa_meta[i] || !ctrl->dsa_meta_trapped[i])
 			return -ENOMEM;
-
-		md_dst->u.port_info.port_id = i;
-		ctrl->dsa_meta[i] = md_dst;
 	}
 
 	return 0;
@@ -1777,10 +1681,10 @@ static int rteth_metadata_dst_alloc(struct rteth_ctrl *ctrl)
 static void rteth_metadata_dst_free(struct rteth_ctrl *ctrl)
 {
 	for (int i = 0; i < ARRAY_SIZE(ctrl->dsa_meta); i++) {
-		if (!ctrl->dsa_meta[i])
-			continue;
-
-		metadata_dst_free(ctrl->dsa_meta[i]);
+		if (ctrl->dsa_meta[i])
+			metadata_dst_free(ctrl->dsa_meta[i]);
+		if (ctrl->dsa_meta_trapped[i])
+			metadata_dst_free(ctrl->dsa_meta_trapped[i]);
 	}
 }
 
@@ -1823,14 +1727,6 @@ static int rteth_probe(struct platform_device *pdev)
 	if (IS_ERR(ctrl->map))
 		return PTR_ERR(ctrl->map);
 
-	/* Allocate buffer memory */
-	ctrl->membase = dmam_alloc_coherent(&pdev->dev, sizeof(struct notify_b),
-					    (void *)&dev->mem_start, GFP_KERNEL);
-	if (!ctrl->membase) {
-		dev_err(&pdev->dev, "cannot allocate DMA buffer\n");
-		return -ENOMEM;
-	}
-
 	ctrl->rx_data = dmam_alloc_coherent(&pdev->dev, sizeof(struct rteth_rx_data) * RTETH_RX_RINGS,
 					    &ctrl->rx_dma, GFP_KERNEL);
 	if (!ctrl->rx_data)
@@ -1851,7 +1747,7 @@ static int rteth_probe(struct platform_device *pdev)
 	dev->max_mtu = ctrl->cfg->max_mtu;
 	dev->features = NETIF_F_RXCSUM;
 	dev->hw_features = NETIF_F_RXCSUM;
-	dev->netdev_ops = ctrl->cfg->netdev_ops;
+	dev->netdev_ops = &rteth_netdev_ops;
 
 	/* Obtain device IRQ number */
 	dev->irq = platform_get_irq(pdev, 0);

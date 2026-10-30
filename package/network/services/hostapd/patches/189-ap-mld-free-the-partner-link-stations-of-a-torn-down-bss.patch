@@ -1,0 +1,65 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Tue, 6 Oct 2026 07:53:01 +0200
+Subject: [PATCH] AP MLD: Free the partner link stations of a BSS that is torn down
+
+hostapd_free_stas() frees the stations of a BSS. For a non-AP MLD whose
+association link is that BSS, ap_free_sta() clears the state machine of
+the partner link stations but leaves those stations on the partner
+links, where they stay without a state machine. This happens when the
+BSS is deinitialised, on EVENT_INTERFACE_DISABLED, on a configuration
+reload of the BSS, and on DEAUTHENTICATE or DISASSOCIATE with
+ff:ff:ff:ff:ff:ff on the control interface.
+
+Free the partner link stations together with the stations of the BSS.
+When the whole AP MLD goes down, the first link frees the partner link
+stations that the later links would free with their own BSS.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+
+--- a/src/ap/sta_info.c
++++ b/src/ap/sta_info.c
+@@ -603,6 +603,10 @@ void hostapd_free_stas(struct hostapd_da
+ {
+ 	struct sta_info *sta, *prev;
+ 
++#ifdef CONFIG_IEEE80211BE
++	hostapd_free_mld_partner_stas(hapd);
++#endif /* CONFIG_IEEE80211BE */
++
+ 	sta = hapd->sta_list;
+ 
+ 	while (sta) {
+@@ -2128,6 +2132,22 @@ static void ap_sta_remove_link_sta(struc
+ 		}
+ 	}
+ }
++
++
++/* ap_free_sta() of the station on the association link clears the state
++ * machine of its partner link stations and leaves them on their links. */
++void hostapd_free_mld_partner_stas(struct hostapd_data *hapd)
++{
++	struct sta_info *sta;
++
++	for (sta = hapd->sta_list; sta; sta = sta->next) {
++		if (!ap_sta_is_mld(hapd, sta) ||
++		    sta->mld_assoc_link_id != hapd->mld_link_id)
++			continue;
++
++		ap_sta_remove_link_sta(hapd, sta);
++	}
++}
+ #endif /* CONFIG_IEEE80211BE */
+ 
+ 
+--- a/src/ap/sta_info.h
++++ b/src/ap/sta_info.h
+@@ -478,6 +478,7 @@ static inline void ap_sta_set_mld(struct
+ void ap_sta_free_sta_profile(struct mld_info *info);
+ 
+ void hostapd_free_link_stas(struct hostapd_data *hapd);
++void hostapd_free_mld_partner_stas(struct hostapd_data *hapd);
+ void set_wpa_sm_for_each_partner_link(struct hostapd_data *hapd,
+ 				      struct sta_info *psta, void *wpa_sm);
+ void clear_wpa_sm_for_each_partner_link(struct hostapd_data *hapd,

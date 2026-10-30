@@ -2,7 +2,9 @@
 import * as ubus from "ubus";
 import * as uloop from "uloop";
 import { is_equal } from "./utils.uc";
-import { access } from "fs";
+import { access, lsdir } from "fs";
+
+const wds_sta_re = /^(.+)\.sta[0-9]+$/;
 
 const NOTIFY_CMD_UP = 0;
 const NOTIFY_CMD_SET_DATA = 1;
@@ -16,8 +18,9 @@ let wdev_cur;
 let wdev_handler = {};
 let wdev_script_task, wdev_script_timeout;
 let handler_timer;
+let round_start_cb;
 
-function wireless_config_done()
+function supplicant_mld_start()
 {
 	ubus.call({
 		object: "wpa_supplicant",
@@ -25,6 +28,11 @@ function wireless_config_done()
 		return: "ignore",
 		data: { },
 	});
+}
+
+function wireless_config_done()
+{
+	supplicant_mld_start();
 
 	ubus.call({
 		object: "service",
@@ -79,6 +87,18 @@ function handle_link(dev, data, up)
 			link_ext: true,
 			up,
 		});
+}
+
+function handle_wds_sta_links(data, netdevs)
+{
+	if (data.type != "vif" && data.type != "vlan")
+		return;
+
+	for (let dev in netdevs) {
+		let m = match(dev, wds_sta_re);
+		if (m && m[1] == data.ifname)
+			handle_link(dev, data, true);
+	}
 }
 
 function wdev_config_init(wdev)
@@ -251,6 +271,9 @@ function run_next_handler()
 
 function run_handler(wdev, op, cb)
 {
+	if (!wdev_cur && !length(wdev_handler) && round_start_cb)
+		round_start_cb();
+
 	wdev.dbg("queue " + op);
 	wdev_handler[wdev.name] = {
 		op, wdev, cb,
@@ -392,7 +415,6 @@ function update(data)
 
 	wdev_reset(this);
 	this.config_change = true;
-	this.check();
 }
 
 function start()
@@ -472,9 +494,13 @@ function wdev_mark_up(wdev)
 
 	wdev_reset(wdev);
 
+	let netdevs = lsdir("/sys/class/net") ?? [];
 	for (let section, data in wdev.handler_data) {
-		if (data.ifname)
-			handle_link(data.ifname, data, true);
+		if (!data.ifname)
+			continue;
+
+		handle_link(data.ifname, data, true);
+		handle_wds_sta_links(data, netdevs);
 	}
 	wdev.state = "up";
 
@@ -555,7 +581,7 @@ function notify(req)
 function hotplug(name, add)
 {
 	let dev = name;
-	let m = match(name, /^(.+)\.sta[0-9]+$/);
+	let m = match(name, wds_sta_re);
 	if (m)
 		name = m[1];
 
@@ -581,6 +607,8 @@ function get_status_data(wdev, vif, parent_vif)
 	};
 	if (hdata && hdata.ifname)
 		data.ifname = hdata.ifname;
+	if (hdata?.error)
+		data.error = hdata.error;
 	return data;
 }
 
@@ -656,6 +684,19 @@ const wdev_proto = {
 	dbg,
 };
 
+export function round_start_set(cb)
+{
+	round_start_cb = cb;
+};
+
+export function mld_start_idle()
+{
+	if (wdev_cur || length(wdev_handler) > 0)
+		return;
+
+	supplicant_mld_start();
+};
+
 export function new(data, script, driver)
 {
 	let wdev = {
@@ -667,6 +708,7 @@ export function new(data, script, driver)
 		ifindex_cache: {},
 
 		autostart: true,
+		config_change: true,
 		state: "down",
 	};
 	wdev_update_disabled_vifs(wdev);

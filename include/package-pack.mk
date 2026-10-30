@@ -330,6 +330,7 @@ endif
 
 ifneq ($(CONFIG_USE_APK),)
     APK_TAGS_$(1):=
+    APK_INFO_$(1):=
 
     ifneq ($$(ABIV_$(1)),)
       APK_TAGS_$(1)+=openwrt:abiversion=$$(ABIV_$(1))
@@ -575,7 +576,7 @@ else
 
 	if [ -n "$(USERID)" ]; then echo $(USERID) > $$(IDIR_$(1))/lib/apk/packages/$(1)$$(ABIV_$(1)).rusers; fi;
 	if [ -n "$(ALTERNATIVES)" ]; then echo $(ALTERNATIVES) > $$(IDIR_$(1))/lib/apk/packages/$(1)$$(ABIV_$(1)).alternatives; fi;
-	(cd $$(IDIR_$(1)) && find . -type f,l -printf "/%P\n" | sort > $(TMP_DIR)/$(1).list && mv $(TMP_DIR)/$(1).list $$(IDIR_$(1))/lib/apk/packages/$(1)$$(ABIV_$(1)).list)
+	$$(if $$(findstring layer:1,$$(APK_INFO_$(1))),,(cd $$(IDIR_$(1)) && find . -type f,l -printf "/%P\n" | sort > $(TMP_DIR)/$(1).list && mv $(TMP_DIR)/$(1).list $$(IDIR_$(1))/lib/apk/packages/$(1)$$(ABIV_$(1)).list))
 	# Move conffiles to IDIR and build conffiles_static with csums
 	if [ -f $$(ADIR_$(1))/conffiles ]; then \
 		mv -f $$(ADIR_$(1))/conffiles $$(IDIR_$(1))/lib/apk/packages/$(1)$$(ABIV_$(1)).conffiles; \
@@ -609,6 +610,7 @@ else
 	  --info "name:$(1)$$(ABIV_$(1))" \
 	  --info "version:$(VERSION)" \
 	  $$(if $$(APK_TAGS_$(1)),--info "tags:$$(APK_TAGS_$(1))") \
+	  $$(APK_INFO_$(1)) \
 	  --info "description:$$(call description_escape,$$(strip $$(Package/$(1)/description)))" \
 	  $(if $(findstring all,$(PKGARCH)),--info "arch:noarch",--info "arch:$(PKGARCH)") \
 	  --info "license:$(LICENSE)" \
@@ -626,6 +628,13 @@ endif
 
 	@[ -f $$(PACK_$(1)) ]
 
+$(BuildTarget/ipkg/disabled)
+  endef
+
+  # Packages that are not selected only need the clean rule, which removes
+  # packages built before they were deselected. The rest of BuildTarget/ipkg
+  # takes about 0.7 ms per package to parse, for more than 1000 kmods.
+  define BuildTarget/ipkg/disabled
     $(1)-clean:
 ifeq ($(CONFIG_USE_APK),)
 	$$(call remove_ipkg_files,$(1),$$(call opkg_package_files,$(call gen_package_wildcard,$(1))))
@@ -633,8 +642,6 @@ else
 	$$(call remove_ipkg_files,$(1),$$(call apk_package_files,$(call gen_package_wildcard,$(1))))
 endif
 
-
     clean: $(1)-clean
-
   endef
 endif

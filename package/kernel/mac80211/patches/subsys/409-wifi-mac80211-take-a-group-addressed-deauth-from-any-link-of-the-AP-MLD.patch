@@ -1,0 +1,69 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Mon, 28 Sep 2026 03:00:00 +0200
+Subject: [PATCH] wifi: mac80211: take a group addressed deauth from any link of the AP MLD
+
+ieee80211_prepare_and_rx_handle() translates the link addresses of an
+individually addressed frame to MLD addresses, but leaves a group
+addressed frame as it is. A group addressed Deauthentication or
+Disassociation frame from an AP affiliated with the AP MLD therefore
+names that AP's link address as the BSSID. ieee80211_rx_mgmt_deauth()
+and ieee80211_rx_mgmt_disassoc() compare the BSSID with the AP MLD
+address alone and drop the frame without a trace, unless the link
+address of that AP equals the AP MLD address. cfg80211 would drop it
+as well, as it compares the BSSID with the connected address.
+
+Deauthentication frames may be sent as group addressed frames
+(802.11-2024 12.3.3.1), and the destination deauthenticates with the
+originating MLD (802.11be 11.3.4.5). An AP that restarts a link
+flushes its stations and sends such a frame; a non-AP MLD associated
+on another link then keeps a dead association.
+
+Name the sender of a group addressed deauthentication or disassociation
+frame by the AP MLD address when it comes from the BSSID of the link it
+was received on. The frame has passed the management frame protection
+checks at that point.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/net/mac80211/mlme.c
++++ b/net/mac80211/mlme.c
+@@ -5678,6 +5678,27 @@ const char *ieee80211_get_reason_code_st
+ 	}
+ }
+ 
++/*
++ * ieee80211_prepare_and_rx_handle() translates the addresses of
++ * individually addressed frames only.
++ */
++static void ieee80211_mgd_group_addrs_to_mld(struct ieee80211_link_data *link,
++					     struct ieee80211_mgmt *mgmt)
++{
++	struct ieee80211_sub_if_data *sdata = link->sdata;
++
++	if (!ieee80211_vif_is_mld(&sdata->vif) ||
++	    !is_multicast_ether_addr(mgmt->da))
++		return;
++
++	if (!ether_addr_equal(mgmt->bssid, link->u.mgd.bssid) ||
++	    !ether_addr_equal(mgmt->sa, link->u.mgd.bssid))
++		return;
++
++	ether_addr_copy(mgmt->sa, sdata->vif.cfg.ap_addr);
++	ether_addr_copy(mgmt->bssid, sdata->vif.cfg.ap_addr);
++}
++
+ static void ieee80211_rx_mgmt_deauth(struct ieee80211_sub_if_data *sdata,
+ 				     struct ieee80211_mgmt *mgmt, size_t len)
+ {
+@@ -11845,9 +11866,11 @@ void ieee80211_sta_rx_queued_frame(struc
+ 		ieee80211_rx_mgmt_auth(sdata, mgmt, skb->len);
+ 		break;
+ 	case IEEE80211_STYPE_DEAUTH:
++		ieee80211_mgd_group_addrs_to_mld(link, mgmt);
+ 		ieee80211_rx_mgmt_deauth(sdata, mgmt, skb->len);
+ 		break;
+ 	case IEEE80211_STYPE_DISASSOC:
++		ieee80211_mgd_group_addrs_to_mld(link, mgmt);
+ 		ieee80211_rx_mgmt_disassoc(sdata, mgmt, skb->len);
+ 		break;
+ 	case IEEE80211_STYPE_ASSOC_RESP:

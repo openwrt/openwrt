@@ -12,9 +12,9 @@ PKG_RELEASE:=1
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL=$(PROJECT_GIT)/project/procd.git
-PKG_MIRROR_HASH:=9739973cc23579073925848427fbbfb94559b32db3e89027cf3def4661a7d576
-PKG_SOURCE_DATE:=2026-09-19
-PKG_SOURCE_VERSION:=c230ad87d6b72964583a7395871e4827baf9250d
+PKG_MIRROR_HASH:=8d2e4f8ab27dbdc06b3f0aef1220e7de7edea492b9d8a69371121c58cb6ddfa1
+PKG_SOURCE_DATE:=2026-10-18
+PKG_SOURCE_VERSION:=5aef7c33b01455157c1373a14e2a3fa47d024c6c
 CMAKE_INSTALL:=1
 
 PKG_LICENSE:=GPL-2.0
@@ -43,7 +43,7 @@ define Package/procd/Default
   DEPENDS:=+ubusd +ubus +libjson-script +ubox +libubox +libudebug \
 	  +libubus +libblobmsg-json +libjson-c +jshn
   TITLE:=OpenWrt system process manager
-  USERID:=:dialout=20 :audio=29
+  USERID:=:dialout=20
 endef
 
 define Package/procd
@@ -113,7 +113,8 @@ SECCOMP=$(if $(CONFIG_PACKAGE_procd-seccomp),1,0)
 CMAKE_OPTIONS += -DSECCOMP_SUPPORT=$(SECCOMP) -DUTRACE_SUPPORT=$(SECCOMP)
 
 define Package/procd/install
-	$(INSTALL_DIR) $(1)/sbin $(1)/etc $(1)/lib/functions
+	$(INSTALL_DIR) $(1)/sbin $(1)/etc $(1)/etc/hotplug.json.d \
+		$(1)/etc/hotplug-preinit.json.d $(1)/lib/functions
 
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/{init,procd,askfirst,udevtrigger,upgraded} $(1)/sbin/
 	$(INSTALL_DATA) $(PKG_INSTALL_DIR)/usr/lib/libsetlbf.so $(1)/lib

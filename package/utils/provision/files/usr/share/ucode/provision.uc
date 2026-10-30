@@ -8,35 +8,85 @@ import * as fs from "fs";
 
 const MAGIC = 0xf09f8697;
 const HDR_LEN = 9;
+const DATA_MAX = 131072;
+const PARTNAME_RE = /(^|\n)PARTNAME=provisioning(\n|$)/;
 
 let hdr = struct.new(">LLc");
 
-const ubi_proto = {
-	read: function() {
-		let file = fs.open(this.dev);
+function dev_read()
+{
+	let file = fs.open(this.dev);
+	if (!file)
+		return;
+
+	let hdr_data = file.read(HDR_LEN);
+	if (!hdr_data)
+		return;
+
+	hdr_data = hdr.unpack(hdr_data);
+	if (!hdr_data)
+		return;
+
+	if (hdr_data[0] != MAGIC)
+		return;
+
+	if (hdr_data[1] > DATA_MAX || hdr_data[2] != 0)
+		return;
+
+	let data = file.read(hdr_data[1]);
+	if (length(data) != hdr_data[1])
+		return;
+
+	return data;
+}
+
+const block_proto = {
+	read: dev_read,
+	commit: function(data) {
+		let len = HDR_LEN + length(data);
+		if (length(data) > DATA_MAX || len > this.size)
+			return false;
+
+		let file = fs.open(this.dev, "r+");
 		if (!file)
-			return;
+			return false;
 
-		let hdr_data = file.read(HDR_LEN);
-		if (!hdr_data)
-			return;
-
-		hdr_data = hdr.unpack(hdr_data);
-		if (!hdr_data)
-			return;
-
-		if (hdr_data[0] != MAGIC)
-			return;
-
-		if (hdr_data[1] > 131072 || hdr_data[2] != 0)
-			return;
-
-		let data = file.read(hdr_data[1]);
-		if (length(data) != hdr_data[1])
-			return;
-
-		return data;
+		let written = file.write(hdr.pack(MAGIC, length(data), 0) + data);
+		// close() reports no error, so a failed write-back shows only here.
+		let flushed = file.flush();
+		file.close();
+		return written == len && flushed;
 	},
+	// A partition cannot be removed from here, so its data is erased.
+	destroy: function() {
+		let len = min(this.size, HDR_LEN + DATA_MAX);
+		let file = fs.open(this.dev, "r+");
+		if (!file)
+			return false;
+
+		let written = file.write(struct.pack(`${len}x`));
+		let flushed = file.flush();
+		file.close();
+		return written == len && flushed;
+	}
+};
+
+function open_block()
+{
+	for (let uevent in fs.glob("/sys/class/block/*/uevent")) {
+		if (!match(fs.readfile(uevent) ?? "", PARTNAME_RE))
+			continue;
+
+		let dir = fs.dirname(uevent);
+		return proto({
+			dev: "/dev/" + fs.basename(dir),
+			size: int(trim(fs.readfile(dir + "/size") ?? "0")) * 512,
+		}, block_proto);
+	}
+}
+
+const ubi_proto = {
+	read: dev_read,
 	commit: function(data) {
 		let len = HDR_LEN + length(data);
 
@@ -79,7 +129,7 @@ function create_ubi()
 
 	let dev = fs.basename(fs.dirname(found[0]));
 	dev = "/dev/" + replace(dev, /_\d+$/, "");
-	if (system(`ubimkvol ${dev} -N provisioning -s 131072`) != 0)
+	if (system(`ubimkvol ${dev} -N provisioning -s ${DATA_MAX}`) != 0)
 		return;
 
 	return open_ubi();
@@ -180,10 +230,10 @@ function __open(backend)
 
 export function create()
 {
-	return __open(create_ubi());
+	return __open(open_ubi() ?? open_block() ?? create_ubi());
 };
 
 export function open()
 {
-	return __open(open_ubi());
+	return __open(open_ubi() ?? open_block());
 };

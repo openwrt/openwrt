@@ -24,6 +24,28 @@ define Device/hasivo_s1300wp-8xgt-4s-plus
 endef
 TARGET_DEVICES += hasivo_s1300wp-8xgt-4s-plus
 
+define Device/horaco_zx-swtgw2c48ns
+  SOC := rtl9313
+  DEVICE_VENDOR := Horaco
+  DEVICE_MODEL := ZX-SWTGW2C48NS
+  DEVICE_ALT0_VENDOR := HRUI
+  DEVICE_ALT0_MODEL := HR-SWTGW2C48NS
+  DEVICE_ALT1_VENDOR := SODOLA
+  DEVICE_ALT1_MODEL := SL-SWTGW2C48NS
+  DEVICE_PACKAGES := rtl826x-firmware kmod-hwmon-adt7475
+  IMAGE_SIZE := 28672k
+  UIMAGE_MAGIC := 0x83800000
+  $(Device/kernel-lzma)
+  IMAGES += factory.bin
+  IMAGE/factory.bin := \
+	append-kernel | \
+	pad-to 64k | \
+	append-rootfs | \
+	pad-rootfs | \
+	check-size
+endef
+TARGET_DEVICES += horaco_zx-swtgw2c48ns
+
 define Device/mokerlink_10gt080m
   SOC := rtl9313
   DEVICE_VENDOR := MokerLink
@@ -76,6 +98,16 @@ define Device/sirivision_sr-st31212f
 endef
 TARGET_DEVICES += sirivision_sr-st31212f
 
+define Device/ubnt_usw-pro-xg-10-poe
+  SOC := rtl9313
+  DEVICE_VENDOR := Ubiquiti
+  DEVICE_MODEL := UniFi USW Pro XG 10 PoE
+  IMAGE_SIZE := 30272k
+  DEVICE_PACKAGES := rtl826x-firmware kmod-hwmon-adt7475 kmod-pse-realtek-mcu-i2c
+  $(Device/kernel-lzma)
+endef
+TARGET_DEVICES += ubnt_usw-pro-xg-10-poe
+
 define Device/ubnt_usw-pro-xg-8-poe
   SOC := rtl9313
   DEVICE_VENDOR := Ubiquiti
@@ -99,6 +131,19 @@ define Device/xikestor_sks8300-12x-v1
         append-rootfs | pad-rootfs | append-metadata | check-size
 endef
 TARGET_DEVICES += xikestor_sks8300-12x-v1
+
+define Device/xikestor_sks8300-12x-v2
+  SOC := rtl9313
+  DEVICE_VENDOR := XikeStor
+  DEVICE_MODEL := SKS8300-12X
+  DEVICE_VARIANT := V2
+  IMAGE_SIZE := 13312k
+  DEVICE_PACKAGES := kmod-hwmon-max6650 kmod-hwmon-lm75 kmod-thermal
+  IMAGE/sysupgrade.bin := pad-extra 16 | append-kernel | pad-to 64k | \
+	append-rootfs | pad-rootfs | append-metadata | check-size
+  $(Device/kernel-lzma)
+endef
+TARGET_DEVICES += xikestor_sks8300-12x-v2
 
 define Device/zyxel_xs1930
   SOC := rtl9313

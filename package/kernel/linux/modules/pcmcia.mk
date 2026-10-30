@@ -66,7 +66,6 @@ $(eval $(call KernelPackage,pcmcia-yenta))
 define KernelPackage/pcmcia-serial
   TITLE:=Serial devices support
   KCONFIG:= \
-	CONFIG_PCMCIA_SERIAL_CS \
 	CONFIG_SERIAL_8250_CS
   FILES:=$(LINUX_DIR)/drivers/tty/serial/8250/serial_cs.ko
   AUTOLOAD:=$(call AutoLoad,45,serial_cs)

@@ -1,0 +1,42 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Sun, 25 Oct 2026 12:00:00 +0100
+Subject: [PATCH] wifi: mac80211: keep the priority of an 802.3 frame for the slow path
+
+ieee80211_8023_xmit() classifies a frame with ieee80211_select_queue()
+before it checks the aggregation session of its TID. While that session
+is not operational, it passes the frame to
+__ieee80211_subif_start_xmit(), which classifies it again. The first
+classification replaced a priority of 256 to 263 by the UP it names, so
+the second one takes the UP from the DSCP. The frames of a new flow that
+are sent during the ADDBA exchange thus go out with another TID than the
+frames after it.
+
+Give the slow path the priority that the frame had on entry, so that
+both paths classify it the same way.
+
+Fixes: 96ae9cd02c0f ("mac80211: check and refresh aggregation session in encap offload tx")
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+
+--- a/net/mac80211/tx.c
++++ b/net/mac80211/tx.c
+@@ -4910,6 +4910,7 @@ static void ieee80211_8023_xmit(struct i
+ 	struct tid_ampdu_tx *tid_tx = NULL;
+ 	struct sk_buff *seg, *next;
+ 	unsigned int skbs = 0, len = 0;
++	u32 priority = skb->priority;
+ 	u32 ctrl_flags = 0;
+ 	u16 queue;
+ 	u8 tid;
+@@ -4933,7 +4934,11 @@ static void ieee80211_8023_xmit(struct i
+ 		tid_tx = rcu_dereference(sta->ampdu_mlme.tid_tx[tid]);
+ 	if (tid_tx) {
+ 		if (!test_bit(HT_AGG_STATE_OPERATIONAL, &tid_tx->state)) {
+-			/* fall back to non-offload slow path */
++			/*
++			 * fall back to non-offload slow path, which classifies
++			 * the frame again
++			 */
++			skb->priority = priority;
+ 			__ieee80211_subif_start_xmit(skb, dev, 0,
+ 						     IEEE80211_TX_CTRL_MLO_LINK_UNSPEC,
+ 						     NULL);

@@ -15,6 +15,25 @@ enum hostapd_ubus_event_type {
 	HOSTAPD_UBUS_TYPE_MAX
 };
 
+/* RSN Error: the frame in which the RSN procedure failed */
+enum hostapd_ubus_rsn_error {
+	HOSTAPD_UBUS_RSN_ERROR_NONE = 0,
+	HOSTAPD_UBUS_RSN_ERROR_AUTH = 1,
+	HOSTAPD_UBUS_RSN_ERROR_ASSOC = 2,
+	HOSTAPD_UBUS_RSN_ERROR_EAPOL_M2 = 3,
+	HOSTAPD_UBUS_RSN_ERROR_EAPOL_M4 = 4,
+	HOSTAPD_UBUS_RSN_ERROR_FILS = 5,
+	HOSTAPD_UBUS_RSN_ERROR_PASN = 6,
+	HOSTAPD_UBUS_RSN_ERROR_STA_DEAUTH = 7,
+};
+
+/* The kinds of Robust AV Streaming request of the EasyMesh disallow lists */
+enum hostapd_robust_av_kind {
+	HOSTAPD_ROBUST_AV_MSCS,
+	HOSTAPD_ROBUST_AV_SCS,
+	__HOSTAPD_ROBUST_AV_MAX
+};
+
 struct hostapd_ubus_request {
 	enum hostapd_ubus_event_type type;
 	const struct ieee80211_mgmt *mgmt_frame;
@@ -33,11 +52,19 @@ struct sta_info;
 
 #include <libubox/avl.h>
 #include <libubus.h>
+#include "utils/list.h"
 
 struct hostapd_ubus_bss {
 	struct ubus_object obj;
+	struct dl_list pending;
 	struct avl_tree banned;
 	int notify_response;
+	bool answer_bss_transition_query;
+	bool mld;
+	bool mld_link;
+	uint32_t mgmt_flags;
+	u8 *robust_av_disallow[__HOSTAPD_ROBUST_AV_MAX];
+	size_t robust_av_disallow_num[__HOSTAPD_ROBUST_AV_MAX];
 };
 
 void hostapd_ubus_add_iface(struct hostapd_iface *iface);
@@ -50,8 +77,14 @@ void hostapd_ubus_remove_vlan(struct hostapd_data *hapd, struct hostapd_vlan *vl
 int hostapd_ubus_handle_event(struct hostapd_data *hapd, struct hostapd_ubus_request *req);
 void hostapd_ubus_handle_link_measurement(struct hostapd_data *hapd, const u8 *data, size_t len);
 void hostapd_ubus_notify(struct hostapd_data *hapd, const char *type, const u8 *mac);
+void hostapd_ubus_notify_sta(struct hostapd_data *hapd, const char *type,
+			     struct sta_info *sta);
+void hostapd_ubus_notify_key_mismatch(struct hostapd_data *hapd, const u8 *addr,
+				      enum hostapd_ubus_rsn_error rsn_error,
+				      const u8 *frame, size_t len);
 void hostapd_ubus_notify_beacon_report(struct hostapd_data *hapd,
-				       const u8 *addr, u8 token, u8 rep_mode,
+				       const u8 *addr, u8 token, u8 meas_token,
+				       u8 rep_mode,
 				       struct rrm_measurement_beacon_report *rep,
 				       size_t len);
 void hostapd_ubus_notify_radar_detected(struct hostapd_iface *iface, int frequency,
@@ -68,7 +101,22 @@ int hostapd_ubus_notify_bss_transition_query(
 	const u8 *candidate_list, u16 candidate_list_len);
 void hostapd_ubus_notify_authorized(struct hostapd_data *hapd, struct sta_info *sta,
 				    const char *auth_alg);
+void hostapd_ubus_notify_sta_links(struct hostapd_data *hapd, struct sta_info *sta);
 void hostapd_ubus_notify_csa(struct hostapd_data *hapd, int freq);
+void hostapd_ubus_notify_bss_color(struct hostapd_data *hapd);
+void hostapd_ubus_notify_adv_ttlm(struct hostapd_data *hapd);
+void hostapd_ubus_notify_action_frame(struct hostapd_data *hapd,
+				      const char *type, const u8 *addr,
+				      const u8 *body, size_t body_len);
+bool hostapd_ubus_robust_av_disallowed(struct hostapd_data *hapd,
+				       enum hostapd_robust_av_kind kind,
+				       const u8 *addr);
+void hostapd_ubus_notify_robust_av(struct hostapd_data *hapd,
+				   struct sta_info *sta,
+				   enum hostapd_robust_av_kind kind,
+				   const u8 *elem, size_t elem_len,
+				   u16 status, bool autonomous,
+				   bool configured);
 
 #ifdef CONFIG_APUP
 void hostapd_ubus_notify_apup_newpeer(
@@ -116,9 +164,22 @@ static inline void hostapd_ubus_notify(struct hostapd_data *hapd, const char *ty
 {
 }
 
+static inline void
+hostapd_ubus_notify_sta(struct hostapd_data *hapd, const char *type,
+			struct sta_info *sta)
+{
+}
+
+static inline void
+hostapd_ubus_notify_key_mismatch(struct hostapd_data *hapd, const u8 *addr,
+				 enum hostapd_ubus_rsn_error rsn_error,
+				 const u8 *frame, size_t len)
+{
+}
+
 static inline void hostapd_ubus_notify_beacon_report(struct hostapd_data *hapd,
 						     const u8 *addr, u8 token,
-						     u8 rep_mode,
+						     u8 meas_token, u8 rep_mode,
 						     struct rrm_measurement_beacon_report *rep,
 						     size_t len)
 {
@@ -157,7 +218,45 @@ hostapd_ubus_notify_authorized(struct hostapd_data *hapd, struct sta_info *sta,
 }
 
 static inline void
+hostapd_ubus_notify_sta_links(struct hostapd_data *hapd, struct sta_info *sta)
+{
+}
+
+static inline void
 hostapd_ubus_notify_csa(struct hostapd_data *hapd, int freq)
+{
+}
+
+static inline void
+hostapd_ubus_notify_bss_color(struct hostapd_data *hapd)
+{
+}
+
+static inline void
+hostapd_ubus_notify_adv_ttlm(struct hostapd_data *hapd)
+{
+}
+
+static inline void
+hostapd_ubus_notify_action_frame(struct hostapd_data *hapd, const char *type,
+				 const u8 *addr, const u8 *body,
+				 size_t body_len)
+{
+}
+
+static inline bool
+hostapd_ubus_robust_av_disallowed(struct hostapd_data *hapd,
+				  enum hostapd_robust_av_kind kind,
+				  const u8 *addr)
+{
+	return false;
+}
+
+static inline void
+hostapd_ubus_notify_robust_av(struct hostapd_data *hapd, struct sta_info *sta,
+			      enum hostapd_robust_av_kind kind,
+			      const u8 *elem, size_t elem_len,
+			      u16 status, bool autonomous, bool configured)
 {
 }
 

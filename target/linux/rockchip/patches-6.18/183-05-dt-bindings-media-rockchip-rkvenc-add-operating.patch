@@ -1,0 +1,31 @@
+From 3abba483e809d697f09aab1bc7e1f1e9d2175fc3 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Fri, 16 Oct 2026 21:16:15 +0100
+Subject: [PATCH] dt-bindings: media: rockchip,rkvenc: Add operating points
+
+The encoder core clock and its supply are scaled between operating
+points, and the encoder is a cooling device of the thermal zones.
+
+Assisted-by: LLM
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ .../devicetree/bindings/media/rockchip,rv1126-rkvenc.yaml | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+--- a/Documentation/devicetree/bindings/media/rockchip,rv1126-rkvenc.yaml
++++ b/Documentation/devicetree/bindings/media/rockchip,rv1126-rkvenc.yaml
+@@ -42,6 +42,14 @@ properties:
+ 
+   assigned-clock-rates: true
+ 
++  operating-points-v2: true
++
++  venc-supply:
++    description: Supply of the encoder core, scaled with the operating points.
++
++  "#cooling-cells":
++    const: 2
++
+   resets:
+     items:
+       - description: AXI reset

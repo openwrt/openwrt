@@ -7,7 +7,7 @@ Use the NAS identifier to find the right receiver context on incoming messages
 
 --- a/src/ap/hostapd.c
 +++ b/src/ap/hostapd.c
-@@ -1446,6 +1446,7 @@ static int hostapd_bss_radius_init(struc
+@@ -2065,6 +2065,7 @@ static int hostapd_bss_radius_init(struc
  
  		os_memset(&das_conf, 0, sizeof(das_conf));
  		das_conf.port = conf->radius_das_port;
@@ -41,7 +41,7 @@ Use the NAS identifier to find the right receiver context on incoming messages
 +	struct dl_list list;
 +	struct radius_das_port *port;
  	u8 *shared_secret;
-+	u8 *nas_identifier;
++	char *nas_identifier;
  	size_t shared_secret_len;
  	struct hostapd_ip_addr client_addr;
  	unsigned int time_window;
@@ -299,7 +299,7 @@ Use the NAS identifier to find the right receiver context on incoming messages
  struct radius_das_conf {
  	int port;
  	const u8 *shared_secret;
-+	const u8 *nas_identifier;
++	const char *nas_identifier;
  	size_t shared_secret_len;
  	const struct hostapd_ip_addr *client_addr;
  	unsigned int time_window;

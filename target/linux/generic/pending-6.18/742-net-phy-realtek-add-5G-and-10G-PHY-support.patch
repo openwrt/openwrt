@@ -50,28 +50,17 @@ Signed-off-by: Balázs Triszka <info@balika011.hu>
  #endif /* REALTEK_H */
 --- a/drivers/net/phy/realtek/realtek_main.c
 +++ b/drivers/net/phy/realtek/realtek_main.c
-@@ -11,11 +11,13 @@
- #include <linux/ethtool_netlink.h>
- #include <linux/of.h>
- #include <linux/phy.h>
-+#include <linux/phy/phy-common-props.h>
- #include <linux/pm_wakeirq.h>
- #include <linux/netdevice.h>
- #include <linux/module.h>
- #include <linux/delay.h>
- #include <linux/clk.h>
-+#include <linux/crc32.h>
- #include <linux/string_choices.h>
- #include <net/phy/realtek_phy.h>
- 
-@@ -217,10 +219,27 @@
- #define RTL_8221B_VM_CG				0x001cc84a
- #define RTL_8251B				0x001cc862
+@@ -231,6 +231,9 @@
  #define RTL_8261C				0x001cc890
+ #define RTL_8261C_CG				0x001cc898
+ #define RTL_8261CE_CG				0x001cc899
 +#define RTL_8261N				0x001ccaf3
 +#define RTL_8264				0x001ccaf2
 +#define RTL_8264B				0x001cc813
  
+ #define RTL8261C_CE_MODEL		0x00
+ #define RTL8261D_MODEL			0x81
+@@ -311,6 +314,26 @@ struct rtl8261x_fw_entry {
  /* RTL8211E and RTL8211F support up to three LEDs */
  #define RTL8211x_LED_COUNT			3
  
@@ -80,8 +69,14 @@ Signed-off-by: Balázs Triszka <info@balika011.hu>
 +#define   RTL826X_VEND1_SERDES_GLOBAL_CFG_HSO_INV	BIT(7)
 +
 +#define RTL826X_VEND1_PKG_MODEL			0x103
++#define   RTL826X_VEND1_PKG_MODEL_8251		0x8251
++#define   RTL826X_VEND1_PKG_MODEL_8254		0x8254
++#define   RTL826X_VEND1_PKG_MODEL_8261		0x8261
 +#define RTL826X_VEND1_VERSION_ID		0x104
 +#define   RTL826X_VEND1_VERSION_ID_VARIANT	GENMASK(2, 0)
++/* MODEL_CHAR_1ST/2ND encode "BE" (B=0x2, E=0x5) in bits 15:6 */
++#define   RTL826X_VEND1_VERSION_ID_MODEL	GENMASK(15, 6)
++#define   RTL826X_VEND1_VERSION_ID_MODEL_BE	0x1140
 +
 +#define RTL826X_VND2_INER			0xA424
 +#define   RTL826X_VND2_INER_LINK_STATUS		BIT(4)
@@ -92,7 +87,7 @@ Signed-off-by: Balázs Triszka <info@balika011.hu>
  MODULE_DESCRIPTION("Realtek PHY driver");
  MODULE_AUTHOR("Johnson Leung");
  MODULE_LICENSE("GPL");
-@@ -2151,6 +2170,125 @@ static int rtl8251b_c45_match_phy_device
+@@ -2888,6 +2911,125 @@ static int rtl8251b_c45_match_phy_device
  	return rtlgen_is_c45_match(phydev, RTL_8251B, true);
  }
  
@@ -111,7 +106,7 @@ Signed-off-by: Balázs Triszka <info@balika011.hu>
 +	if (data < 0)
 +		return 0;
 +
-+	if (data != 0x8251)
++	if (data != RTL826X_VEND1_PKG_MODEL_8251)
 +		return 0;
 +
 +	return 1;
@@ -132,7 +127,7 @@ Signed-off-by: Balázs Triszka <info@balika011.hu>
 +	if (data < 0)
 +		return 0;
 +
-+	if (data != 0x8254)
++	if (data != RTL826X_VEND1_PKG_MODEL_8254)
 +		return 0;
 +
 +	return 1;
@@ -153,14 +148,14 @@ Signed-off-by: Balázs Triszka <info@balika011.hu>
 +	if (data < 0)
 +		return 0;
 +
-+	if (data == 0x8251)
++	if (data != RTL826X_VEND1_PKG_MODEL_8261)
 +		return 0;
 +
 +	data = phy_read_mmd(phydev, MDIO_MMD_VEND1, RTL826X_VEND1_VERSION_ID);
 +	if (data < 0)
 +		return 0;
 +
-+	if ((data & 0xFFC0) != 0x1140)
++	if ((data & RTL826X_VEND1_VERSION_ID_MODEL) != RTL826X_VEND1_VERSION_ID_MODEL_BE)
 +		return 0;
 +
 +	return 1;
@@ -181,14 +176,14 @@ Signed-off-by: Balázs Triszka <info@balika011.hu>
 +	if (data < 0)
 +		return 0;
 +
-+	if (data == 0x8251)
++	if (data != RTL826X_VEND1_PKG_MODEL_8261)
 +		return 0;
 +
 +	data = phy_read_mmd(phydev, MDIO_MMD_VEND1, RTL826X_VEND1_VERSION_ID);
 +	if (data < 0)
 +		return 0;
 +
-+	if ((data & 0xFFC0) == 0x1140)
++	if ((data & RTL826X_VEND1_VERSION_ID_MODEL) == RTL826X_VEND1_VERSION_ID_MODEL_BE)
 +		return 0;
 +
 +	return 1;
@@ -209,7 +204,7 @@ Signed-off-by: Balázs Triszka <info@balika011.hu>
 +	if (data < 0)
 +		return 0;
 +
-+	if (data == 0x8254)
++	if (data == RTL826X_VEND1_PKG_MODEL_8254)
 +		return 0;
 +
 +	return 1;
@@ -218,7 +213,7 @@ Signed-off-by: Balázs Triszka <info@balika011.hu>
  static int rtlgen_resume(struct phy_device *phydev)
  {
  	int ret = genphy_resume(phydev);
-@@ -2372,6 +2510,482 @@ static int rtlgen_sfp_config_aneg(struct
+@@ -3109,6 +3251,485 @@ static int rtlgen_sfp_config_aneg(struct
  	return 0;
  }
  
@@ -252,9 +247,12 @@ Signed-off-by: Balázs Triszka <info@balika011.hu>
 +	if (!priv->enable_pma_low_power)
 +		phydev_warn(phydev, "PMA low-power suspend disabled\n");
 +
-+	/* Disable EEE due to link stability issues */
++	/* Disable EEE due to link stability issues (incl. multi-G / rate-adapt) */
 +	phy_disable_eee_mode(phydev, ETHTOOL_LINK_MODE_100baseT_Full_BIT);
 +	phy_disable_eee_mode(phydev, ETHTOOL_LINK_MODE_1000baseT_Full_BIT);
++	phy_disable_eee_mode(phydev, ETHTOOL_LINK_MODE_2500baseT_Full_BIT);
++	phy_disable_eee_mode(phydev, ETHTOOL_LINK_MODE_5000baseT_Full_BIT);
++	phy_disable_eee_mode(phydev, ETHTOOL_LINK_MODE_10000baseT_Full_BIT);
 +
 +	ret = rtl826x_patch_db_init(phydev);
 +	if (ret < 0)
@@ -318,7 +316,7 @@ Signed-off-by: Balázs Triszka <info@balika011.hu>
 +	if (ret < 0)
 +		return ret;
 +
-+	/* toggle reset */
++	/* Soft-reset (MMD30.0x145); after release wait datasheet t7 SMI-ready */
 +	ret = phy_set_bits_mmd(phydev, MDIO_MMD_VEND1, 0x145, BIT(0));
 +	if (ret < 0)
 +		return ret;
@@ -334,7 +332,7 @@ Signed-off-by: Balázs Triszka <info@balika011.hu>
 +		return ret;
 +	}
 +
-+	msleep(30);
++	msleep(150);
 +
 +	ret = rtlgen_phy_patch(phydev);
 +	if (ret) {
@@ -701,10 +699,10 @@ Signed-off-by: Balázs Triszka <info@balika011.hu>
  static struct phy_driver realtek_drvs[] = {
  	{
  		PHY_ID_MATCH_EXACT(0x00008201),
-@@ -2686,6 +3300,108 @@ static struct phy_driver realtek_drvs[]
- 		.resume		= genphy_resume,
- 		.read_mmd	= genphy_read_mmd_unsupported,
- 		.write_mmd	= genphy_write_mmd_unsupported,
+@@ -3459,6 +4080,108 @@ static struct phy_driver realtek_drvs[]
+ 		.led_hw_control_get	= rtl8261x_led_hw_control_get,
+ 		.led_hw_control_set	= rtl8261x_led_hw_control_set,
+ 		.led_polarity_set	= rtl8261x_led_polarity_set,
 +	}, {
 +		.name           = "RTL8251L 5Gbps PHY",
 +		.config_init    = rtl826x_config_init,
@@ -809,16 +807,6 @@ Signed-off-by: Balázs Triszka <info@balika011.hu>
 +		.set_tunable    = rtl826x_set_tunable,
  	},
  };
- 
---- a/drivers/net/phy/realtek/Kconfig
-+++ b/drivers/net/phy/realtek/Kconfig
-@@ -1,6 +1,7 @@
- # SPDX-License-Identifier: GPL-2.0-only
- config REALTEK_PHY
- 	tristate "Realtek PHYs"
-+	select PHY_COMMON_PROPS
- 	help
- 	  Currently supports RTL821x/RTL822x and fast ethernet PHYs
  
 --- /dev/null
 +++ b/drivers/net/phy/realtek/phy_patch.c

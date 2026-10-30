@@ -44,6 +44,7 @@ define Device/evaluation
   KERNEL_SUFFIX := -uImage
   IMAGES := root.ubi
   IMAGE/root.ubi := append-ubi
+  FILESYSTEMS/root.ubi := squashfs ubifs
 endef
 
 define Device/evaluation-zImage
@@ -68,6 +69,7 @@ define Device/production
   UBINIZE_OPTS := -E 5
   IMAGES := factory.bin
   IMAGE/factory.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi
+  FILESYSTEMS/factory.bin := squashfs ubifs
 endef
 
 define Device/production-dtb

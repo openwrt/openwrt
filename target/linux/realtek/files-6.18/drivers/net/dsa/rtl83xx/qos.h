@@ -5,16 +5,19 @@
 
 #include <linux/types.h>
 
-struct rtl838x_switch_priv;
+struct otto_dsa_priv;
 
-u32 rtldsa_838x_get_egress_rate(struct rtl838x_switch_priv *priv, int port);
-int rtldsa_838x_set_egress_rate(struct rtl838x_switch_priv *priv, int port, u32 rate);
-u32 rtldsa_839x_get_egress_rate(struct rtl838x_switch_priv *priv, int port);
-int rtldsa_839x_set_egress_rate(struct rtl838x_switch_priv *priv, int port, u32 rate);
+u32 otto_qos_838x_get_egress_rate(struct otto_dsa_priv *priv, int port);
+int otto_qos_838x_set_egress_rate(struct otto_dsa_priv *priv, int port, u32 rate);
+u32 otto_qos_839x_get_egress_rate(struct otto_dsa_priv *priv, int port);
+int otto_qos_839x_set_egress_rate(struct otto_dsa_priv *priv, int port, u32 rate);
 
-void rtldsa_838x_qos_init(struct rtl838x_switch_priv *priv);
-void rtldsa_839x_qos_init(struct rtl838x_switch_priv *priv);
-void rtldsa_930x_qos_init(struct rtl838x_switch_priv *priv);
-void rtldsa_931x_qos_init(struct rtl838x_switch_priv *priv);
+void otto_qos_838x_init(struct otto_dsa_priv *priv);
+void otto_qos_839x_init(struct otto_dsa_priv *priv);
+void otto_qos_930x_init(struct otto_dsa_priv *priv);
+void otto_qos_931x_init(struct otto_dsa_priv *priv);
+void otto_qos_930x_queue_sched_set(struct otto_dsa_priv *priv, int port, int queue, u32 weight,
+				   bool strict);
+void otto_qos_queue_sched_reset(struct otto_dsa_priv *priv, int port);
 
 #endif /* _OTTO_QOS_H */

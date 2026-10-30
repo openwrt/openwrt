@@ -1,0 +1,171 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Thu, 15 Oct 2026 14:20:00 +0200
+Subject: [PATCH] ap: mld: keep the nl80211 BSS of a restarted first link
+
+The ucode bss stop of an AP MLD BSS that is the first BSS of its
+hostapd_iface removes its link with hostapd_if_link_remove(). When that
+is the last link of the i802_bss, driver_nl80211_link_remove() removes
+the BSS through wpa_driver_nl80211_if_remove(), which frees it if
+another BSS shares the driver instance, for example a BSS of another
+radio of the same wiphy. The hostapd_data keeps the freed i802_bss as
+drv_priv, since hostapd_mld_interface_freed() only clears the links
+still on the MLD list. The restart passes it to hostapd_if_add(), and
+hostapd_cleanup_driver(), the ucode add_bss and set_first_bss use it
+while the BSS is stopped.
+
+Add a link_remove_keep_bss() driver op that removes the link and keeps
+the BSS without links, and use it for the ucode bss stop. A restart of
+the first BSS then adds only the link to the kept BSS, as
+hostapd_driver_init() does for the first link of an AP MLD. The kernel
+handles this as it handles the first ADD_LINK on a new interface.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/src/ap/ap_drv_ops.h
++++ b/src/ap/ap_drv_ops.h
+@@ -489,6 +489,16 @@ static inline int hostapd_drv_link_add(s
+ 
+ }
+ 
++static inline int hostapd_drv_link_remove_keep_bss(struct hostapd_data *hapd)
++{
++	if (!hapd->driver || !hapd->drv_priv ||
++	    !hapd->driver->link_remove_keep_bss)
++		return -1;
++
++	return hapd->driver->link_remove_keep_bss(hapd->drv_priv,
++						  hapd->mld_link_id);
++}
++
+ static inline int hostapd_drv_link_sta_remove(struct hostapd_data *hapd,
+ 					      const u8 *addr)
+ {
+--- a/src/ap/hostapd.c
++++ b/src/ap/hostapd.c
+@@ -2275,6 +2275,12 @@ int hostapd_setup_bss(struct hostapd_dat
+ 					   hapd->mld_link_id, hapd->conf->iface);
+ 				goto setup_mld;
+ 			}
++			/* hostapd_drv_link_remove_keep_bss() kept its BSS */
++			if (hapd == hapd->iface->bss[0]) {
++				os_memcpy(if_addr, hapd->mld->mld_addr,
++					  ETH_ALEN);
++				goto bss_added;
++			}
+ 			use_existing = true;
+ 		}
+ #endif /* CONFIG_IEEE80211BE */
+@@ -2291,6 +2297,9 @@ int hostapd_setup_bss(struct hostapd_dat
+ 			return -1;
+ 		}
+ 
++#ifdef CONFIG_IEEE80211BE
++bss_added:
++#endif /* CONFIG_IEEE80211BE */
+ 		if (!addr)
+ 			os_memcpy(hapd->own_addr, if_addr, ETH_ALEN);
+ 
+--- a/src/drivers/driver.h
++++ b/src/drivers/driver.h
+@@ -5783,6 +5783,17 @@ struct wpa_driver_ops {
+ 	bool (*is_drv_shared)(void *priv, int link_id);
+ 
+ 	/**
++	 * link_remove_keep_bss - Remove a link and keep the AP BSS
++	 * @priv: Private driver interface data
++	 * @link_id: Valid link ID to remove
++	 * Returns: 0 on success, -1 on failure
++	 *
++	 * Unlike link_remove(), this keeps the BSS and @priv when the last
++	 * link is removed, so that link_add() can add a link to it again.
++	 */
++	int (*link_remove_keep_bss)(void *priv, u8 link_id);
++
++	/**
+ 	 * link_sta_remove - Remove a link STA from an MLD STA
+ 	 * @priv: Private driver interface data
+ 	 * @link_id: The link ID which the link STA is using
+--- a/src/drivers/driver_nl80211.c
++++ b/src/drivers/driver_nl80211.c
+@@ -10631,6 +10631,28 @@ static void nl80211_remove_links(struct
+ }
+ 
+ 
++#ifdef CONFIG_IEEE80211BE
++static int nl80211_remove_ap_link(struct i802_bss *bss, u8 link_id)
++{
++	struct wpa_driver_nl80211_data *drv = bss->drv;
++	int ret;
++
++	ret = nl80211_remove_link(bss, link_id);
++
++	if (drv->ctx == bss->ctx) {
++		eloop_cancel_timeout(wpa_driver_nl80211_send_rfkill,
++				     drv, drv->ctx);
++		bss->ctx = bss->flink->ctx;
++		drv->ctx = bss->ctx;
++	} else {
++		bss->ctx = bss->flink->ctx;
++	}
++
++	return ret;
++}
++#endif /* CONFIG_IEEE80211BE */
++
++
+ static int wpa_driver_nl80211_deinit_ap(void *priv)
+ {
+ 	struct i802_bss *bss = priv;
+@@ -11958,7 +11980,6 @@ static int driver_nl80211_link_remove(vo
+ 				      const char *ifname, u8 link_id)
+ {
+ 	struct i802_bss *bss = priv;
+-	struct wpa_driver_nl80211_data *drv = bss->drv;
+ 	int ret;
+ 
+ 	if (type == WPA_IF_AP_VLAN)
+@@ -11971,16 +11992,7 @@ static int driver_nl80211_link_remove(vo
+ 		   "nl80211: Teardown AP(%s) link %d (type=%d ifname=%s links=0x%x)",
+ 		   bss->ifname, link_id, type, ifname, bss->valid_links);
+ 
+-	nl80211_remove_link(bss, link_id);
+-
+-	if (drv->ctx == bss->ctx) {
+-		eloop_cancel_timeout(wpa_driver_nl80211_send_rfkill,
+-				     drv, drv->ctx);
+-		bss->ctx = bss->flink->ctx;
+-		drv->ctx = bss->ctx;
+-	} else {
+-		bss->ctx = bss->flink->ctx;
+-	}
++	nl80211_remove_ap_link(bss, link_id);
+ 
+ 	if (!bss->valid_links) {
+ 		void *ctx = bss->ctx;
+@@ -11999,6 +12011,18 @@ static int driver_nl80211_link_remove(vo
+ }
+ 
+ 
++static int driver_nl80211_link_remove_keep_bss(void *priv, u8 link_id)
++{
++	struct i802_bss *bss = priv;
++
++	wpa_printf(MSG_DEBUG,
++		   "nl80211: Remove AP(%s) link %d, keep the BSS (links=0x%x)",
++		   bss->ifname, link_id, bss->valid_links);
++
++	return nl80211_remove_ap_link(bss, link_id);
++}
++
++
+ static bool nl80211_is_drv_shared(void *priv, int link_id)
+ {
+ 	struct i802_bss *bss = priv;
+@@ -17061,6 +17085,7 @@ const struct wpa_driver_ops wpa_driver_n
+ 	.is_drv_shared = nl80211_is_drv_shared,
+ 	.link_sta_remove = wpa_driver_nl80211_link_sta_remove,
+ 	.can_share_drv = wpa_driver_nl80211_can_share_drv,
++	.link_remove_keep_bss = driver_nl80211_link_remove_keep_bss,
+ 	.setup_link_reconfig = nl80211_send_link_reconfig_request,
+ #endif /* CONFIG_IEEE80211BE */
+ #ifdef CONFIG_TESTING_OPTIONS

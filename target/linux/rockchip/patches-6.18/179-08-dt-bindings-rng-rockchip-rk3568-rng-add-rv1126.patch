@@ -1,0 +1,102 @@
+From b5e8b6b31a624912b853727662ddebee3f0c373f Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Sat, 10 Oct 2026 12:00:09 +0100
+Subject: [PATCH] dt-bindings: rng: rockchip,rk3568-rng: add rv1126
+
+The RV1126 crypto block contains the same TRNG as the RK3568. Its
+register window starts at the TRNG control register, 0x400 into the
+crypto block, so that it does not overlap the node of the crypto engine.
+It sits in the crypto power domain and is clocked by the AHB clock of
+the block, which the node has to name now that the clock driver and the
+power domain provide them: left alone, they are switched off when no
+consumer claims them. The block is shared with the secure world, so the
+RV1126 node has no reset line, and the TRNG core clock is not described.
+
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ .../bindings/rng/rockchip,rk3568-rng.yaml     | 48 +++++++++++++++++--
+ 1 file changed, 43 insertions(+), 5 deletions(-)
+
+--- a/Documentation/devicetree/bindings/rng/rockchip,rk3568-rng.yaml
++++ b/Documentation/devicetree/bindings/rng/rockchip,rk3568-rng.yaml
+@@ -6,7 +6,11 @@ $schema: http://devicetree.org/meta-sche
+ 
+ title: Rockchip RK3568 TRNG
+ 
+-description: True Random Number Generator on Rockchip RK3568 SoC
++description:
++  True Random Number Generator on Rockchip RK3568 SoC. The RV1126 provides
++  the same TRNG in its crypto block; its register window starts at the
++  TRNG control register. The block is shared with the secure world, so the
++  RV1126 variant has no reset line.
+ 
+ maintainers:
+   - Aurelien Jarno <aurelien@aurel32.net>
+@@ -16,29 +20,63 @@ properties:
+   compatible:
+     enum:
+       - rockchip,rk3568-rng
++      - rockchip,rv1126-rng
+ 
+   reg:
+     maxItems: 1
+ 
+   clocks:
++    minItems: 1
+     items:
+       - description: TRNG clock
+       - description: TRNG AHB clock
+ 
+   clock-names:
++    minItems: 1
+     items:
+-      - const: core
++      - enum: [core, ahb]
+       - const: ahb
+ 
++  power-domains:
++    maxItems: 1
++
+   resets:
+     maxItems: 1
+ 
+ required:
+   - compatible
+   - reg
+-  - clocks
+-  - clock-names
+-  - resets
++
++allOf:
++  - if:
++      properties:
++        compatible:
++          contains:
++            const: rockchip,rk3568-rng
++    then:
++      properties:
++        clocks:
++          minItems: 2
++        clock-names:
++          minItems: 2
++        power-domains: false
++      required:
++        - clocks
++        - clock-names
++        - resets
++    else:
++      properties:
++        clocks:
++          maxItems: 1
++        clock-names:
++          maxItems: 1
++          items:
++            - const: ahb
++        resets: false
++      required:
++        - clocks
++        - clock-names
++        - power-domains
+ 
+ additionalProperties: false
+ 

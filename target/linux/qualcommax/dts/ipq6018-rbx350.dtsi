@@ -1,5 +1,6 @@
-#include "ipq6018-512m.dtsi"
+#include "ipq6018.dtsi"
 #include "ipq6018-cp-cpu.dtsi"
+#include "ipq6018-512m.dtsi"
 #include "ipq6018-ess.dtsi"
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
@@ -267,4 +268,5 @@
 &wifi {
 	status = "okay";
 	qcom,ath11k-calibration-variant = "Netgear-RBK350";
+	qcom,ath11k-fw-memory-mode = <1>;
 };

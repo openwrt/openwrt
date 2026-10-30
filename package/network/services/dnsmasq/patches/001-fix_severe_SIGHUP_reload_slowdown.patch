@@ -1,0 +1,98 @@
+From a9cb3971c695e0132f52a225b80c604ed47864f3 Mon Sep 17 00:00:00 2001
+From: Pank <pank@pank.org>
+Date: Wed, 2 Sep 2026 11:50:00 +0800
+Subject: [PATCH 1/1] Fix severe SIGHUP reload slowdown caused by store_name
+ quadratic search
+
+When reloading large hosts files (e.g. 1.7M addn-hosts entries) on SIGHUP,
+free_names() previously only reset block->last = 0 without unlinking or
+moving blocks to a spare pool. As a result, all existing blocks remained
+in hostblocks. When reloading, the head block was filled first and stayed
+at the head while full, forcing store_name() to linearly traverse all
+previously filled blocks for every subsequent name insertion. This resulted
+in O(N^2) complexity, taking ~10 minutes for 1.7M records.
+
+Fix this by introducing nameblock_spare (matching config_spare / big_free
+spare pool semantics), moving freed blocks to the spare pool in free_names(),
+and restricting store_name() to only check the active head block before
+popping from nameblock_spare (or mallocing). This restores O(1) per-entry
+insertion and reduces reload time from 10 minutes to ~3 seconds.
+---
+ src/cache.c | 46 ++++++++++++++++++++++++++++++++--------------
+ 1 file changed, 32 insertions(+), 14 deletions(-)
+
+--- a/src/cache.c
++++ b/src/cache.c
+@@ -217,6 +217,8 @@ static void free_config_crec(struct crec
+   config_spare  = p;
+ }
+ 
++static struct nameblock *nameblock_spare = NULL;
++
+ static char *store_name(unsigned int namelen, unsigned int index)
+ {
+   struct nameblock *block;
+@@ -225,21 +227,28 @@ static char *store_name(unsigned int nam
+   if (namelen > NAMEBLOCK_CHARS)
+     return NULL;
+   
+-  for (block = hostblocks; block; block = block->next)
+-    if (block->index == index && NAMEBLOCK_CHARS - block->last >= namelen)
+-      break;
++  if (hostblocks && hostblocks->index == index && NAMEBLOCK_CHARS - hostblocks->last >= namelen)
++    {
++      ret = &hostblocks->data[hostblocks->last];
++      hostblocks->last += namelen;
++      return ret;
++    }
++
++  if (nameblock_spare)
++    {
++      block = nameblock_spare;
++      nameblock_spare = nameblock_spare->next;
++    }
++  else
++    block = whine_malloc(sizeof(struct nameblock));
+ 
+-  if (!block && ((block = whine_malloc(sizeof(struct nameblock)))))
++  if (block)
+     {
+       block->next = hostblocks;
+       block->index = index;
++      block->last = namelen;
+       hostblocks = block;
+-    }
+-  
+-  if (block && NAMEBLOCK_CHARS - block->last >= namelen)
+-    {
+-      ret = &block->data[block->last];
+-      block->last += namelen;
++      ret = &block->data[0];
+     }
+ 
+   return ret;
+@@ -247,11 +256,20 @@ static char *store_name(unsigned int nam
+ 
+ static void free_names(unsigned int index)
+ {
+-  struct nameblock *block;
++  struct nameblock *block, *tmp, **up;
+ 
+-  for (block = hostblocks; block; block = block->next)
+-    if (index == UID_NONE || block->index == index)
+-      block->last = 0;
++  for (up = &hostblocks, block = hostblocks; block; block = tmp)
++    {
++      tmp = block->next;
++      if (index == UID_NONE || block->index == index)
++	{
++	  *up = tmp;
++	  block->next = nameblock_spare;
++	  nameblock_spare = block;
++	}
++      else
++	up = &block->next;
++    }
+ }
+ 
+ /* In most cases, we create the hash table once here by calling this with (hash_table == NULL)

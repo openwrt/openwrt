@@ -4,8 +4,8 @@ Date: Mon, 27 Jul 2026 17:11:29 +0100
 Subject: [PATCH] nvme/host/pci: Revert to upstream
 
 ---
- drivers/nvme/host/pci.c | 102 +---------------------------------------
- 1 file changed, 2 insertions(+), 100 deletions(-)
+ drivers/nvme/host/pci.c | 98 ---------------------------------------
+ 1 file changed, 98 deletions(-)
 
 --- a/drivers/nvme/host/pci.c
 +++ b/drivers/nvme/host/pci.c
@@ -21,17 +21,6 @@ Subject: [PATCH] nvme/host/pci: Revert to upstream
  	void **host_mem_desc_bufs;
  	unsigned int nr_allocated_queues;
  	unsigned int nr_write_queues;
-@@ -781,8 +779,8 @@ static void nvme_unmap_data(struct reque
- 
- 	if (!blk_rq_dma_unmap(req, dma_dev, &iod->dma_state, iod->total_len)) {
- 		if (nvme_pci_cmd_use_sgl(&iod->cmd))
--			nvme_free_sgls(req, &iod->cmd.common.dptr.sgl,
--				       iod->descriptors[0]);
-+			nvme_free_sgls(req, iod->descriptors[0],
-+				       &iod->cmd.common.dptr.sgl);
- 		else
- 			nvme_free_prps(req);
- 	}
 @@ -2322,13 +2320,6 @@ static int nvme_set_host_mem(struct nvme
  	return ret;
  }

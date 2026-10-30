@@ -1,0 +1,79 @@
+From d8b2b8a28b611a53ef84c8423f5665cb750eb39c Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Fri, 9 Oct 2026 14:00:57 +0100
+Subject: [PATCH] phy: rockchip: inno-usb2: add rv1126 support
+
+The RV1126 has an OTG PHY at 0xff4c0000 and a host PHY at 0xff4c8000.
+Their control and status registers sit in the general register files
+from offset 0x10230 on, with the same layout of suspend, bvalid, id
+and linestate controls as the other Innosilicon USB2 PHYs.
+
+The host PHY has no linestate status register in its description, so
+it is powered by its host controller. No charger detection registers
+are described.
+
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ drivers/phy/rockchip/phy-rockchip-inno-usb2.c | 44 +++++++++++++++++++
+ 1 file changed, 44 insertions(+)
+
+--- a/drivers/phy/rockchip/phy-rockchip-inno-usb2.c
++++ b/drivers/phy/rockchip/phy-rockchip-inno-usb2.c
+@@ -2386,6 +2386,49 @@ static const struct rockchip_usb2phy_cfg
+ 	{ /* sentinel */ }
+ };
+ 
++static const struct rockchip_usb2phy_cfg rv1126_phy_cfgs[] = {
++	{
++		.reg = 0xff4c0000,
++		.num_ports	= 1,
++		.clkout_ctl	= { 0x10230, 14, 14, 0, 1 },
++		.port_cfgs	= {
++			[USB2PHY_PORT_OTG] = {
++				.phy_sus	= { 0x10230, 8, 0, 0x052, 0x1d5 },
++				.bypass_otgsuspendm = { 0x10234, 12, 12, 0, 1 },
++				.idpullup	= { 0x10230, 11, 11, 0, 1 },
++				.bvalid_det_en	= { 0x10300, 3, 2, 0, 3 },
++				.bvalid_det_st	= { 0x10304, 3, 2, 0, 3 },
++				.bvalid_det_clr	= { 0x10308, 3, 2, 0, 3 },
++				.idfall_det_en	= { 0x10300, 5, 5, 0, 1 },
++				.idfall_det_st	= { 0x10304, 5, 5, 0, 1 },
++				.idfall_det_clr	= { 0x10308, 5, 5, 0, 1 },
++				.idrise_det_en	= { 0x10300, 4, 4, 0, 1 },
++				.idrise_det_st	= { 0x10304, 4, 4, 0, 1 },
++				.idrise_det_clr	= { 0x10308, 4, 4, 0, 1 },
++				.ls_det_en	= { 0x10300, 0, 0, 0, 1 },
++				.ls_det_st	= { 0x10304, 0, 0, 0, 1 },
++				.ls_det_clr	= { 0x10308, 0, 0, 0, 1 },
++				.utmi_bvalid	= { 0x10248, 9, 9, 0, 1 },
++				.utmi_id	= { 0x10248, 6, 6, 0, 1 },
++			},
++		},
++	},
++	{
++		.reg = 0xff4c8000,
++		.num_ports	= 1,
++		.clkout_ctl	= { 0x10238, 9, 9, 0, 1 },
++		.port_cfgs	= {
++			[USB2PHY_PORT_HOST] = {
++				.phy_sus	= { 0x10238, 3, 0, 0x2, 0x5 },
++				.ls_det_en	= { 0x10300, 1, 1, 0, 1 },
++				.ls_det_st	= { 0x10304, 1, 1, 0, 1 },
++				.ls_det_clr	= { 0x10308, 1, 1, 0, 1 },
++			},
++		},
++	},
++	{ /* sentinel */ }
++};
++
+ static const struct of_device_id rockchip_usb2phy_dt_match[] = {
+ 	{ .compatible = "rockchip,px30-usb2phy", .data = &rk3328_phy_cfgs },
+ 	{ .compatible = "rockchip,rk3036-usb2phy", .data = &rk3036_phy_cfgs },
+@@ -2401,6 +2444,7 @@ static const struct of_device_id rockchi
+ 	{ .compatible = "rockchip,rk3576-usb2phy", .data = &rk3576_phy_cfgs },
+ 	{ .compatible = "rockchip,rk3588-usb2phy", .data = &rk3588_phy_cfgs },
+ 	{ .compatible = "rockchip,rv1108-usb2phy", .data = &rv1108_phy_cfgs },
++	{ .compatible = "rockchip,rv1126-usb2phy", .data = &rv1126_phy_cfgs },
+ 	{}
+ };
+ MODULE_DEVICE_TABLE(of, rockchip_usb2phy_dt_match);

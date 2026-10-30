@@ -1,0 +1,59 @@
+From: Rex Lu <rex.lu@mediatek.com>
+Date: Wed, 11 Mar 2026 14:52:49 +0800
+Subject: [PATCH] net: ethernet: mtk_wed: bypass the RROQM when hw_rro is used
+
+With hw_rro on WED v3, the WLAN chip reorders RX frames, and WED takes
+them from the RRO rings into the RRO ingress of the route QM. The RROQM,
+whose MIOD and feedback rings serve the WO firmware, and the legacy
+ingress of the route QM (IGRS1) are still configured as for WED v2. The
+MediaTek SDK sets the RROQM bypass and forces the destination of IGRS1
+in this mode.
+
+Do the same when hw_rro is used. Without hw_rro, for example with
+mt7915 on WED v3, RX reordering still goes through the WO firmware and
+the RROQM, so keep the configuration there.
+
+Signed-off-by: Rex Lu <rex.lu@mediatek.com>
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/drivers/net/ethernet/mediatek/mtk_wed.c
++++ b/drivers/net/ethernet/mediatek/mtk_wed.c
+@@ -1406,6 +1406,8 @@ mtk_wed_rro_hw_init(struct mtk_wed_devic
+ 
+ 	wed_w32(dev, MTK_WED_RROQM_RST_IDX, 0);
+ 	wed_w32(dev, MTK_WED_RROQM_MIOD_CTRL2, MTK_WED_MIOD_CNT - 1);
++	if (dev->wlan.hw_rro)
++		wed_set(dev, MTK_WED_RROQM_GLO_CFG, MTK_WED_RROQM_GLO_CFG_BYPASS);
+ 	wed_set(dev, MTK_WED_CTRL, MTK_WED_CTRL_RX_RRO_QM_EN);
+ }
+ 
+@@ -1433,6 +1435,10 @@ mtk_wed_route_qm_hw_init(struct mtk_wed_
+ 			FIELD_PREP(MTK_WED_RTQM_ENQ_CFG_TXDMAD_FPORT,
+ 				   0x3 + dev->hw->index));
+ 	}
++
++	if (dev->wlan.hw_rro)
++		wed_set(dev, MTK_WED_RTQM_IGRS1_CFG0,
++			FIELD_PREP(MTK_WED_RTQM_IGRS1_CFG0_DEST_FORCE, 0x2));
+ 	/* enable RX_ROUTE_QM */
+ 	wed_set(dev, MTK_WED_CTRL, MTK_WED_CTRL_RX_ROUTE_QM_EN);
+ }
+--- a/drivers/net/ethernet/mediatek/mtk_wed_regs.h
++++ b/drivers/net/ethernet/mediatek/mtk_wed_regs.h
+@@ -529,6 +529,8 @@ struct mtk_wdma_desc {
+ #define MTK_WED_RTQM_IGRS0_I2H_PKT_CNT(_n)		(0xb2c + (_n) * 0x4)
+ #define MTK_WED_RTQM_IGRS0_FDROP_CNT			0xb34
+ 
++#define MTK_WED_RTQM_IGRS1_CFG0				0xb3c
++#define MTK_WED_RTQM_IGRS1_CFG0_DEST_FORCE		GENMASK(2, 0)
+ #define MTK_WED_RTQM_IGRS1_I2HW_DMAD_CNT		0xb44
+ #define MTK_WED_RTQM_IGRS1_I2H_DMAD_CNT(_n)		(0xb48 + (_n) * 0x4)
+ #define MTK_WED_RTQM_IGRS1_I2HW_PKT_CNT			0xb50
+@@ -574,6 +576,7 @@ struct mtk_wdma_desc {
+ #define MTK_WED_RTQM_DEQ_ERR_CNT			0xbec
+ 
+ #define MTK_WED_RROQM_GLO_CFG				0xc04
++#define MTK_WED_RROQM_GLO_CFG_BYPASS			BIT(24)
+ #define MTK_WED_RROQM_RST_IDX				0xc08
+ #define MTK_WED_RROQM_RST_IDX_MIOD			BIT(0)
+ #define MTK_WED_RROQM_RST_IDX_FDBK			BIT(4)

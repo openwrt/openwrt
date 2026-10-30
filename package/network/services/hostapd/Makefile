@@ -5,7 +5,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=hostapd
-PKG_RELEASE:=2
+PKG_RELEASE:=4
 
 PKG_SOURCE_URL:=https://w1.fi/hostap.git
 PKG_SOURCE_PROTO:=git
@@ -18,6 +18,7 @@ PKG_LICENSE:=BSD-3-Clause
 PKG_CPE_ID:=cpe:/a:w1.fi:hostapd
 
 PKG_BUILD_PARALLEL:=1
+PKG_PARALLEL_VARIANTS:=1
 PKG_ASLR_PIE_REGULAR:=1
 
 PKG_CONFIG_DEPENDS:= \
@@ -42,6 +43,12 @@ LOCAL_TYPE=$(strip \
 		$(if $(findstring supplicant,$(BUILD_VARIANT)),supplicant, \
 		hostapd \
 		)))
+
+# hostapd-utils and wpa-cli can be packed by several variants, which are
+# built in parallel. Only pack them in the first selected variant that
+# builds them, so the variants do not write the same files.
+HOSTAPD_UTILS_VARIANT=$(firstword $(filter-out supplicant-%,$(ALL_VARIANTS)))
+WPA_CLI_VARIANT=$(firstword $(filter wpad-% supplicant-%,$(ALL_VARIANTS)))
 
 LOCAL_AND_LIB_VARIANT=$(patsubst hostapd-%,%,\
 		      $(patsubst wpad-%,%,\
@@ -740,6 +747,13 @@ define Package/hostapd-common/install
 	$(INSTALL_DATA) ./files/wpad.json $(1)/etc/capabilities
 endef
 
+define Package/hostapd-common/postinst
+#!/bin/sh
+if [ -z "$${IPKG_INSTROOT}" ]; then
+  killall -s HUP ubusd || true
+fi
+endef
+
 define Package/hostapd/install
 	$(call Install/hostapd,$(1))
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/hostapd/hostapd $(1)/usr/sbin/
@@ -753,7 +767,7 @@ Package/hostapd-openssl/install = $(Package/hostapd/install)
 Package/hostapd-wolfssl/install = $(Package/hostapd/install)
 Package/hostapd-mbedtls/install = $(Package/hostapd/install)
 
-ifneq ($(LOCAL_TYPE),supplicant)
+ifeq ($(BUILD_VARIANT),$(HOSTAPD_UTILS_VARIANT))
   define Package/hostapd-utils/install
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/hostapd/hostapd_cli $(1)/usr/sbin/
@@ -793,7 +807,7 @@ Package/wpa-supplicant-mesh-openssl/install = $(Package/wpa-supplicant/install)
 Package/wpa-supplicant-mesh-wolfssl/install = $(Package/wpa-supplicant/install)
 Package/wpa-supplicant-mesh-mbedtls/install = $(Package/wpa-supplicant/install)
 
-ifneq ($(LOCAL_TYPE),hostapd)
+ifeq ($(BUILD_VARIANT),$(WPA_CLI_VARIANT))
   define Package/wpa-cli/install
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(CP) $(PKG_BUILD_DIR)/wpa_supplicant/wpa_cli $(1)/usr/sbin/

@@ -1,0 +1,32 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Tue, 27 Oct 2026 21:40:00 +0000
+Subject: [PATCH] AP MLD: Send a link-agnostic Action frame to a non-MLD STA on its link
+
+hapd_drv_send_action() sends the Action frames that IEEE Std
+802.11be-2024, 35.3.14 makes link-agnostic (Robust AV Streaming SCS and
+MSCS, WNM BSS Transition Management and WNM Sleep Mode) with link ID -1
+to every station of an AP MLD. For a station that is not a non-AP MLD,
+the SA and the BSSID are the link address of the BSS. If that address
+is not the address of the interface, cfg80211_mlme_mgmt_tx() refuses
+the frame with -EINVAL. A non-MLD station on such a link then gets no
+SCS Response and no MSCS Response.
+
+35.3.14 applies between an AP MLD and a non-AP MLD only. Send these
+frames to a non-MLD station of the BSS on the link of the BSS, as
+hostapd_drv_sta_disassoc() does for the Disassociation frame. A
+destination without an entry in the BSS keeps link ID -1.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/src/ap/ap_drv_ops.c
++++ b/src/ap/ap_drv_ops.c
+@@ -1039,7 +1039,8 @@ static int hapd_drv_send_action(struct hostapd_data *hapd, unsigned int freq,
+ 			bssid = own_addr;
+ 		}
+ 
+-		if (!hostapd_is_action_frame_link_agnostic(data[0], data[1]))
++		if (!hostapd_is_action_frame_link_agnostic(data[0], data[1]) ||
++		    (sta && !ap_sta_is_mld(hapd, sta)))
+ 			link_id = hapd->mld_link_id;
+ #endif /* CONFIG_IEEE80211BE */
+ 	}

@@ -1,0 +1,43 @@
+From: "A. Sverdlin" <alexander.sverdlin@siemens.com>
+Date: Tue, 27 Oct 2026 12:33:44 +0100
+Subject: [PATCH] leds: trigger: netdev: Report invalid interval to user space
+
+interval_store() silently accepts out-of-range values: a write outside
+the [5, 10000] ms bounds returns the full count as if it succeeded, yet
+the interval is left unchanged.
+
+Reject out-of-range values with -EINVAL instead.
+
+Cc: stable@vger.kernel.org
+Fixes: 06f502f57d0d ("leds: trigger: Introduce a NETDEV trigger")
+Signed-off-by: Alexander Sverdlin <alexander.sverdlin@siemens.com>
+Link: https://lore.kernel.org/linux-leds/20261027113349.383147-5-alexander.sverdlin@siemens.com/
+---
+Changelog:
+v6:
+- patch introduced
+
+ drivers/leds/trigger/ledtrig-netdev.c | 11 ++++++-----
+ 1 file changed, 6 insertions(+), 5 deletions(-)
+
+--- a/drivers/leds/trigger/ledtrig-netdev.c
++++ b/drivers/leds/trigger/ledtrig-netdev.c
+@@ -468,12 +468,13 @@ static ssize_t interval_store(struct dev
+ 		return ret;
+ 
+ 	/* impose some basic bounds on the timer interval */
+-	if (value >= 5 && value <= 10000) {
+-		cancel_delayed_work_sync(&trigger_data->work);
++	if (value < 5 || value > 10000)
++		return -EINVAL;
+ 
+-		atomic_set(&trigger_data->interval, msecs_to_jiffies(value));
+-		set_baseline_state(trigger_data);	/* resets timer */
+-	}
++	cancel_delayed_work_sync(&trigger_data->work);
++
++	atomic_set(&trigger_data->interval, msecs_to_jiffies(value));
++	set_baseline_state(trigger_data);	/* resets timer */
+ 
+ 	return size;
+ }

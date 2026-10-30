@@ -1,0 +1,44 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Tue, 20 Oct 2026 14:50:27 +0200
+Subject: [PATCH] nl80211: Return -ENOBUFS when the channel switch request does not fit
+
+nl80211_switch_channel() stores the result of nl80211_put_freq_params()
+in ret within the condition that adds the first attributes. If adding a
+later attribute of that condition fails, the function frees the message
+and returns 0. hostapd_switch_channel() then sets csa_in_progress for a
+channel switch that the driver never received.
+
+Return -ENOBUFS for a failure to add an attribute, as before the
+conversion from the NLA_PUT macros.
+
+Fixes: a862e4a38fa2 ("nl80211: Continue getting rid of NLA_PUT* macro use")
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+
+--- a/src/drivers/driver_nl80211.c
++++ b/src/drivers/driver_nl80211.c
+@@ -12376,15 +12376,20 @@ static int nl80211_switch_channel(void *
+ 
+ 	if (!(msg = nl80211_bss_msg(bss, 0, NL80211_CMD_CHANNEL_SWITCH)) ||
+ 	    nla_put_u32(msg, NL80211_ATTR_CH_SWITCH_COUNT,
+-			settings->cs_count) ||
+-	    (ret = nl80211_put_freq_params(msg, &settings->freq_params, bss)) ||
+-	    (settings->block_tx &&
++			settings->cs_count))
++		goto fail;
++
++	ret = nl80211_put_freq_params(msg, &settings->freq_params, bss);
++	if (ret)
++		goto error;
++
++	if ((settings->block_tx &&
+ 	     nla_put_flag(msg, NL80211_ATTR_CH_SWITCH_BLOCK_TX)) ||
+ 	    (drv->nlmode == NL80211_IFTYPE_MESH_POINT && drv->mesh_handle_dfs &&
+ 	     nla_put_flag(msg, NL80211_ATTR_HANDLE_DFS)) ||
+ 	    (settings->link_id != NL80211_DRV_LINK_ID_NA &&
+ 	     nla_put_u8(msg, NL80211_ATTR_MLO_LINK_ID, settings->link_id)))
+-		goto error;
++		goto fail;
+ 
+ 	/* beacon_after params */
+ 	ret = set_beacon_data(msg, &settings->beacon_after, false);

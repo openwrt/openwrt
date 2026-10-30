@@ -1,0 +1,31 @@
+From: John Crispin <john@phrozen.org>
+Subject: [PATCH] configure: do not use a bash redirection
+
+configure runs with /bin/sh, but uses the bash redirection &> to check
+for bpftool. A POSIX shell such as dash runs "command -v $BPFTOOL" in
+the background instead, so configure replaces BPFTOOL with the output
+of whereis and does not find bpftool, although it is available.
+
+Use >/dev/null 2>&1, which all shells support.
+
+Signed-off-by: John Crispin <john@phrozen.org>
+---
+ configure | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/configure
++++ b/configure
+@@ -109,11 +109,11 @@
+         exit 1
+     fi
+ 
+-    if ! command -v $BPFTOOL &>/dev/null; then
++    if ! command -v $BPFTOOL >/dev/null 2>&1; then
+         BPFTOOL=$(whereis -b bpftool | awk '{print $2}')
+     fi
+ 
+-    if command -v $BPFTOOL &>/dev/null && $BPFTOOL gen help 2>&1 | grep 'gen skeleton.*name' > /dev/null; then
++    if command -v $BPFTOOL >/dev/null 2>&1 && $BPFTOOL gen help 2>&1 | grep 'gen skeleton.*name' > /dev/null; then
+         bpftool_version=$($BPFTOOL version | head -n 1)
+         echo "using $bpftool_version"
+     else

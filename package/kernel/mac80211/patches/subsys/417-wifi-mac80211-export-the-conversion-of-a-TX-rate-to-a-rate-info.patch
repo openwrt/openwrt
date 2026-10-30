@@ -1,0 +1,63 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Thu, 1 Oct 2026 20:44:01 +0200
+Subject: [PATCH] wifi: mac80211: export the conversion of a TX rate to a rate
+ info
+
+mac80211 books the TX bytes and packets of an MLO station on the default
+link, because it counts a frame before the driver selects the link, and
+the last TX rate there too, because a TX status names no link. A driver
+that selects the link can keep these per link and report them from its
+link_sta_statistics callback, but it has no way to convert the TX rate
+it recorded to the rate info that cfg80211 reports.
+
+Export ieee80211_tx_rate_to_rate_info() for that.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+ include/net/mac80211.h  | 19 +++++++++++++++++++
+ net/mac80211/cfg.c      |  1 +
+ net/mac80211/sta_info.h |  3 ---
+ 3 files changed, 20 insertions(+), 3 deletions(-)
+
+--- a/include/net/mac80211.h
++++ b/include/net/mac80211.h
+@@ -5625,6 +5625,17 @@ void ieee80211_tx_rate_update(struct iee
+ 			      struct ieee80211_tx_info *info);
+ 
+ /**
++ * ieee80211_tx_rate_to_rate_info - convert a TX rate to a rate info
++ *
++ * @sband: the band the frame was sent on, for a legacy rate; may be %NULL
++ * @rate: the TX rate, as in &struct ieee80211_tx_info
++ * @rinfo: the rate info to fill, zeroed by the caller
++ */
++void ieee80211_tx_rate_to_rate_info(struct ieee80211_supported_band *sband,
++				    const struct ieee80211_tx_rate *rate,
++				    struct rate_info *rinfo);
++
++/**
+  * ieee80211_tx_status_skb - transmit status callback
+  *
+  * Call this function for all transmitted frames after they have been
+--- a/net/mac80211/cfg.c
++++ b/net/mac80211/cfg.c
+@@ -993,6 +993,7 @@ void ieee80211_tx_rate_to_rate_info(stru
+ 	if (rate->flags & IEEE80211_TX_RC_SHORT_GI)
+ 		rinfo->flags |= RATE_INFO_FLAGS_SHORT_GI;
+ }
++EXPORT_SYMBOL(ieee80211_tx_rate_to_rate_info);
+ 
+ void sta_set_rate_info_tx(struct sta_info *sta,
+ 			  const struct ieee80211_tx_rate *rate,
+--- a/net/mac80211/sta_info.h
++++ b/net/mac80211/sta_info.h
+@@ -984,9 +984,6 @@ static inline int sta_info_flush(struct
+ 	return __sta_info_flush(sdata, false, link_id, NULL);
+ }
+ 
+-void ieee80211_tx_rate_to_rate_info(struct ieee80211_supported_band *sband,
+-				    const struct ieee80211_tx_rate *rate,
+-				    struct rate_info *rinfo);
+ void sta_set_rate_info_tx(struct sta_info *sta,
+ 			  const struct ieee80211_tx_rate *rate,
+ 			  struct rate_info *rinfo);

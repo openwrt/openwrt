@@ -416,6 +416,17 @@ ucidef_set_led_ataport() {
 	_ucidef_set_led_trigger "$1" "$2" "$3" ata"$4"
 }
 
+ucidef_set_led_brightness() {
+	_ucidef_set_led_common "$1" "$2" "$3"
+
+	json_add_string type brightness
+	json_add_string default "$4"
+	[ -n "$5" ] && json_add_string brightness "$5"
+	json_select ..
+
+	json_select ..
+}
+
 _ucidef_set_led_common() {
 	local cfg="led_$1"
 	local name="$2"
@@ -426,6 +437,23 @@ _ucidef_set_led_common() {
 	json_select_object "$1"
 	json_add_string name "$name"
 	json_add_string sysfs "$sysfs"
+}
+
+ucidef_set_led_colors() {
+	local cfg="$1"
+
+	shift
+
+	json_select_object led
+	json_select_object "$cfg"
+
+	while [ "$#" -gt 1 ]; do
+		json_add_string "color_$1" "$2"
+		shift 2
+	done
+
+	json_select ..
+	json_select ..
 }
 
 ucidef_set_led_default() {

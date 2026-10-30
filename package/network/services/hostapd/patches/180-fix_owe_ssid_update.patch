@@ -1,26 +1,333 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Tue, 20 Oct 2026 14:46:55 +0200
+Subject: [PATCH] OWE: Refresh the transition mode information of owe_transition_ifname
+
+hostapd_owe_trans_get_info() copies the BSSID and the SSID of the BSS
+that owe_transition_ifname names into owe_transition_bssid and
+owe_transition_ssid once, and returns early on every later call. If
+that BSS comes back with a different SSID or BSSID, for example after
+DISABLE, SET ssid and ENABLE or after a RELOAD, or if it is disabled
+or removed, the OWE Transition Mode element of the OWE BSS keeps the
+old values.
+
+Keep the information learned from owe_transition_ifname apart from the
+configuration and look up the BSS again on interface enable, ADD,
+RELOAD, DISABLE and REMOVE. Only a started BSS provides the
+information; without one, the element is removed. The Beacon frames
+are updated only when the information changes. A statically
+configured owe_transition_bssid and owe_transition_ssid keep their
+precedence over owe_transition_ifname.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+
 --- a/src/ap/hostapd.c
 +++ b/src/ap/hostapd.c
-@@ -2521,7 +2521,11 @@ static int hostapd_owe_iface_iter(struct
- 		if (!bss->conf->ssid.ssid_set || !bss->conf->ssid.ssid_len ||
+@@ -125,6 +125,9 @@ void hostapd_reconfig_encryption(struct
+ }
+ 
+ 
++static void hostapd_owe_update_trans(struct hostapd_iface *iface);
++
++
+ static void hostapd_reload_bss(struct hostapd_data *hapd)
+ {
+ 	struct hostapd_ssid *ssid;
+@@ -201,6 +204,7 @@ static void hostapd_reload_bss(struct ho
+ 		/* try to continue */
+ 	}
+ 	wpa_printf(MSG_DEBUG, "Reconfigured interface %s", hapd->conf->iface);
++	hostapd_owe_update_trans(hapd->iface);
+ }
+ 
+ 
+@@ -528,6 +532,9 @@ void hostapd_free_hapd_data(struct hosta
+ 	hapd->started = 0;
+ 	hapd->beacon_set_done = 0;
+ 	hapd->beacon_started = 0;
++#ifdef CONFIG_OWE
++	hapd->owe_trans_ssid_len = 0;
++#endif /* CONFIG_OWE */
+ 
+ 	wpa_printf(MSG_DEBUG, "%s(%s)", __func__, hapd->conf->iface);
+ 	accounting_deinit(hapd);
+@@ -2507,9 +2514,23 @@ void fst_hostapd_fill_iface_obj(struct h
+ 
+ #ifdef CONFIG_OWE
+ 
++bool hostapd_owe_trans_static(struct hostapd_bss_config *conf)
++{
++	return conf->owe_transition_ssid_len > 0 &&
++		!is_zero_ether_addr(conf->owe_transition_bssid);
++}
++
++
++struct hostapd_owe_trans_lookup {
++	struct hostapd_data *hapd;
++	struct hostapd_data *bss;
++};
++
++
+ static int hostapd_owe_iface_iter(struct hostapd_iface *iface, void *ctx)
+ {
+-	struct hostapd_data *hapd = ctx;
++	struct hostapd_owe_trans_lookup *lookup = ctx;
++	struct hostapd_data *hapd = lookup->hapd;
+ 	size_t i;
+ 
+ 	for (i = 0; i < iface->num_bss; i++) {
+@@ -2526,17 +2547,12 @@ static int hostapd_owe_iface_iter(struct
+ 			   MAC2STR(bss->own_addr),
+ 			   wpa_ssid_txt(bss->conf->ssid.ssid,
+ 					bss->conf->ssid.ssid_len));
+-		if (!bss->conf->ssid.ssid_set || !bss->conf->ssid.ssid_len ||
++		if (!bss->started || !bss->conf->ssid.ssid_set ||
++		    !bss->conf->ssid.ssid_len ||
  		    is_zero_ether_addr(bss->own_addr))
  			continue;
--
-+		if (!os_memcmp(hapd->conf->owe_transition_bssid, bss->own_addr, ETH_ALEN) &&
-+		    hapd->conf->owe_transition_ssid_len == bss->conf->ssid.ssid_len &&
-+		    !os_memcmp(hapd->conf->owe_transition_ssid, bss->conf->ssid.ssid,
-+			       bss->conf->ssid.ssid_len))
-+			return 0;
- 		os_memcpy(hapd->conf->owe_transition_bssid, bss->own_addr,
- 			  ETH_ALEN);
- 		os_memcpy(hapd->conf->owe_transition_ssid,
-@@ -2538,10 +2542,6 @@ static int hostapd_owe_iface_iter(struct
  
+-		os_memcpy(hapd->conf->owe_transition_bssid, bss->own_addr,
+-			  ETH_ALEN);
+-		os_memcpy(hapd->conf->owe_transition_ssid,
+-			  bss->conf->ssid.ssid, bss->conf->ssid.ssid_len);
+-		hapd->conf->owe_transition_ssid_len = bss->conf->ssid.ssid_len;
+-		wpa_printf(MSG_DEBUG,
+-			   "OWE: Copied transition mode information");
++		lookup->bss = bss;
+ 		return 1;
+ 	}
+ 
+@@ -2544,20 +2560,55 @@ static int hostapd_owe_iface_iter(struct
+ }
+ 
+ 
++static bool hostapd_owe_trans_info_matches(struct hostapd_data *hapd,
++					   struct hostapd_data *bss)
++{
++	return ether_addr_equal(hapd->owe_trans_bssid, bss->own_addr) &&
++		hapd->owe_trans_ssid_len == bss->conf->ssid.ssid_len &&
++		os_memcmp(hapd->owe_trans_ssid, bss->conf->ssid.ssid,
++			  bss->conf->ssid.ssid_len) == 0;
++}
++
++
  int hostapd_owe_trans_get_info(struct hostapd_data *hapd)
  {
 -	if (hapd->conf->owe_transition_ssid_len > 0 &&
 -	    !is_zero_ether_addr(hapd->conf->owe_transition_bssid))
--		return 0;
--
++	struct hostapd_owe_trans_lookup lookup = { .hapd = hapd };
++	struct hostapd_data *bss;
++
++	if (hostapd_owe_trans_static(hapd->conf))
+ 		return 0;
+ 
  	/* Find transition mode SSID/BSSID information from a BSS operated by
  	 * this hostapd instance. */
  	if (!hapd->iface->interfaces ||
+ 	    !hapd->iface->interfaces->for_each_interface)
+-		return hostapd_owe_iface_iter(hapd->iface, hapd);
++		hostapd_owe_iface_iter(hapd->iface, &lookup);
+ 	else
+-		return hapd->iface->interfaces->for_each_interface(
+-			hapd->iface->interfaces, hostapd_owe_iface_iter, hapd);
++		hapd->iface->interfaces->for_each_interface(
++			hapd->iface->interfaces, hostapd_owe_iface_iter,
++			&lookup);
++
++	bss = lookup.bss;
++	if (!bss) {
++		if (!hapd->owe_trans_ssid_len)
++			return 0;
++		hapd->owe_trans_ssid_len = 0;
++		os_memset(hapd->owe_trans_bssid, 0, ETH_ALEN);
++		wpa_printf(MSG_DEBUG,
++			   "OWE: Transition mode BSS %s gone - removed transition mode information",
++			   hapd->conf->owe_transition_ifname);
++		return 1;
++	}
++
++	if (hostapd_owe_trans_info_matches(hapd, bss))
++		return 0;
++
++	os_memcpy(hapd->owe_trans_bssid, bss->own_addr, ETH_ALEN);
++	os_memcpy(hapd->owe_trans_ssid, bss->conf->ssid.ssid,
++		  bss->conf->ssid.ssid_len);
++	hapd->owe_trans_ssid_len = bss->conf->ssid.ssid_len;
++	wpa_printf(MSG_DEBUG, "OWE: Copied transition mode information");
++	return 1;
+ }
+ 
+ 
+@@ -2593,21 +2644,30 @@ static int hostapd_owe_iface_iter2(struc
+ #endif /* CONFIG_OWE */
+ 
+ 
+-static void hostapd_owe_update_trans(struct hostapd_iface *iface)
++static void hostapd_owe_update_trans_ifaces(struct hapd_interfaces *interfaces,
++					    struct hostapd_iface *iface)
+ {
+ #ifdef CONFIG_OWE
+-	/* Check whether the enabled BSS can complete OWE transition mode
+-	 * configuration for any pending interface. */
+-	if (!iface->interfaces ||
+-	    !iface->interfaces->for_each_interface)
+-		hostapd_owe_iface_iter2(iface, NULL);
+-	else
+-		iface->interfaces->for_each_interface(
+-			iface->interfaces, hostapd_owe_iface_iter2, NULL);
++	/* Check whether the changed BSS completes, changes or removes the OWE
++	 * transition mode information of any interface. */
++	if (!interfaces || !interfaces->for_each_interface) {
++		if (iface)
++			hostapd_owe_iface_iter2(iface, NULL);
++		return;
++	}
++
++	interfaces->for_each_interface(interfaces, hostapd_owe_iface_iter2,
++				       NULL);
+ #endif /* CONFIG_OWE */
+ }
+ 
+ 
++static void hostapd_owe_update_trans(struct hostapd_iface *iface)
++{
++	hostapd_owe_update_trans_ifaces(iface->interfaces, iface);
++}
++
++
+ static void hostapd_interface_setup_failure_handler(void *eloop_ctx,
+ 						    void *timeout_ctx)
+ {
+@@ -3820,6 +3880,7 @@ int hostapd_disable_iface(struct hostapd
+ 		   hapd_iface->bss[0]->conf->iface);
+ 	hostapd_set_state(hapd_iface, HAPD_IFACE_DISABLED);
+ 	hostapd_refresh_all_iface_beacons(hapd_iface);
++	hostapd_owe_update_trans(hapd_iface);
+ 	return 0;
+ }
+ 
+@@ -4165,6 +4226,7 @@ static int hostapd_remove_bss(struct hos
+ 	for (i = idx; i < iface->conf->num_bss; i++)
+ 		iface->conf->bss[i] = iface->conf->bss[i + 1];
+ 
++	hostapd_owe_update_trans(iface);
+ 	return 0;
+ }
+ 
+@@ -4179,8 +4241,12 @@ int hostapd_remove_iface(struct hapd_int
+ 		if (hapd_iface == NULL)
+ 			return -1;
+ 		if (!os_strcmp(hapd_iface->conf->bss[0]->iface, buf)) {
++			int ret;
++
+ 			wpa_printf(MSG_INFO, "Remove interface '%s'", buf);
+-			return hostapd_remove_hapd_iface(hapd_iface);
++			ret = hostapd_remove_hapd_iface(hapd_iface);
++			hostapd_owe_update_trans_ifaces(interfaces, NULL);
++			return ret;
+ 		}
+ 
+ 		for (j = 0; j < hapd_iface->conf->num_bss; j++) {
+--- a/src/ap/hostapd.h
++++ b/src/ap/hostapd.h
+@@ -281,6 +281,12 @@ struct hostapd_data {
+ 	struct wps_context *wps;
+ 
+ 	int beacon_set_done;
++#ifdef CONFIG_OWE
++	/* OWE transition mode information of owe_transition_ifname */
++	u8 owe_trans_bssid[ETH_ALEN];
++	u8 owe_trans_ssid[SSID_MAX_LEN];
++	size_t owe_trans_ssid_len;
++#endif /* CONFIG_OWE */
+ 	struct wpabuf *wps_beacon_ie;
+ 	struct wpabuf *wps_probe_resp_ie;
+ #ifdef CONFIG_WPS
+@@ -853,6 +859,7 @@ hostapd_switch_channel_fallback(struct h
+ void hostapd_cleanup_cs_params(struct hostapd_data *hapd);
+ void hostapd_periodic_iface(struct hostapd_iface *iface);
+ int hostapd_owe_trans_get_info(struct hostapd_data *hapd);
++bool hostapd_owe_trans_static(struct hostapd_bss_config *conf);
+ void hostapd_ocv_check_csa_sa_query(void *eloop_ctx, void *timeout_ctx);
+ 
+ void hostapd_switch_color(struct hostapd_data *hapd, u64 bitmap);
+--- a/src/ap/ieee802_11_shared.c
++++ b/src/ap/ieee802_11_shared.c
+@@ -873,10 +873,22 @@ u8 hostapd_mbo_ie_len(struct hostapd_dat
+ 
+ 
+ #ifdef CONFIG_OWE
+-static int hostapd_eid_owe_trans_enabled(struct hostapd_data *hapd)
++static void hostapd_owe_trans_info(struct hostapd_data *hapd,
++				   const u8 **bssid, const u8 **ssid,
++				   size_t *ssid_len)
+ {
+-	return hapd->conf->owe_transition_ssid_len > 0 &&
+-		!is_zero_ether_addr(hapd->conf->owe_transition_bssid);
++	struct hostapd_bss_config *conf = hapd->conf;
++
++	if (hostapd_owe_trans_static(conf)) {
++		*bssid = conf->owe_transition_bssid;
++		*ssid = conf->owe_transition_ssid;
++		*ssid_len = conf->owe_transition_ssid_len;
++		return;
++	}
++
++	*bssid = hapd->owe_trans_bssid;
++	*ssid = hapd->owe_trans_ssid;
++	*ssid_len = hapd->owe_trans_ssid_len;
+ }
+ #endif /* CONFIG_OWE */
+ 
+@@ -884,9 +896,13 @@ static int hostapd_eid_owe_trans_enabled
+ size_t hostapd_eid_owe_trans_len(struct hostapd_data *hapd)
+ {
+ #ifdef CONFIG_OWE
+-	if (!hostapd_eid_owe_trans_enabled(hapd))
++	const u8 *bssid, *ssid;
++	size_t ssid_len;
++
++	hostapd_owe_trans_info(hapd, &bssid, &ssid, &ssid_len);
++	if (!ssid_len)
+ 		return 0;
+-	return 6 + ETH_ALEN + 1 + hapd->conf->owe_transition_ssid_len;
++	return 6 + ETH_ALEN + 1 + ssid_len;
+ #else /* CONFIG_OWE */
+ 	return 0;
+ #endif /* CONFIG_OWE */
+@@ -898,13 +914,14 @@ u8 * hostapd_eid_owe_trans(struct hostap
+ {
+ #ifdef CONFIG_OWE
+ 	u8 *pos = eid;
+-	size_t elen;
++	const u8 *bssid, *ssid;
++	size_t elen, ssid_len;
+ 
+-	if (hapd->conf->owe_transition_ifname[0] &&
+-	    !hostapd_eid_owe_trans_enabled(hapd))
++	if (hapd->conf->owe_transition_ifname[0] && !hapd->owe_trans_ssid_len)
+ 		hostapd_owe_trans_get_info(hapd);
+ 
+-	if (!hostapd_eid_owe_trans_enabled(hapd))
++	hostapd_owe_trans_info(hapd, &bssid, &ssid, &ssid_len);
++	if (!ssid_len)
+ 		return pos;
+ 
+ 	elen = hostapd_eid_owe_trans_len(hapd);
+@@ -919,12 +936,11 @@ u8 * hostapd_eid_owe_trans(struct hostap
+ 	WPA_PUT_BE24(pos, OUI_WFA);
+ 	pos += 3;
+ 	*pos++ = OWE_OUI_TYPE;
+-	os_memcpy(pos, hapd->conf->owe_transition_bssid, ETH_ALEN);
++	os_memcpy(pos, bssid, ETH_ALEN);
+ 	pos += ETH_ALEN;
+-	*pos++ = hapd->conf->owe_transition_ssid_len;
+-	os_memcpy(pos, hapd->conf->owe_transition_ssid,
+-		  hapd->conf->owe_transition_ssid_len);
+-	pos += hapd->conf->owe_transition_ssid_len;
++	*pos++ = ssid_len;
++	os_memcpy(pos, ssid, ssid_len);
++	pos += ssid_len;
+ 
+ 	return pos;
+ #else /* CONFIG_OWE */

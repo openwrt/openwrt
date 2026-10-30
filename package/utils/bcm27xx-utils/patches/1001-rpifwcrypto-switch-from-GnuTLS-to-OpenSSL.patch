@@ -1,22 +1,37 @@
-From 74a161cc45b1f68ff4735b31c37329a97e73ea2e Mon Sep 17 00:00:00 2001
+From 2ddd6298ec558ffe7f856d342ed57e1bce692782 Mon Sep 17 00:00:00 2001
 From: Joshua Covington <joshuacov@gmail.com>
-Date: Mon, 8 Jun 2026 22:46:01 +0000
-Subject: [PATCH 1/2] rpifwcrypto: switch from GnuTLS to OpenSSL
+Date: Thu, 17 Sep 2026 23:47:23 +0000
+Subject: [PATCH] rpifwcrypto: switch from GnuTLS to OpenSSL
 
-Switch rpi-fw-crypto from GnuTLS to OpenSSL
+Replace GnuTLS with OpenSSL (EVP) for SHA-256 hashing in
+rpi-fw-crypto, since libgnutls28-dev is being phased out in
+favor of libssl-dev across the project.
+
+- hash_file(): rewrite using EVP_MD_CTX / EVP_DigestInit_ex /
+  EVP_DigestUpdate / EVP_DigestFinal_ex, with single-exit error
+  handling and a length check on the returned digest.
+- CMakeLists.txt: find_package(OpenSSL) instead of GnuTLS; guard
+  the top-level rpifwcrypto subdirectory on OPENSSL_FOUND (not
+  the OpenSSL_FOUND alias, only available since CMake 4.2).
+- Link against the OpenSSL::Crypto imported target instead of
+  raw ${GNUTLS_LIBRARIES}/${GNUTLS_INCLUDE_DIRS}.
+- Update prerequisites.sh and rpifwcrypto READMEs to require libssl-dev
+  instead of libgnutls28-dev.
 
 Signed-off-by: Joshua Covington <joshuacov@gmail.com>
 ---
  CMakeLists.txt             |  9 +++---
+ prerequisites.sh           |  2 +-
  rpifwcrypto/CMakeLists.txt |  8 +++---
- rpifwcrypto/main.c         | 57 +++++++++++++++++++++++---------------
- 3 files changed, 43 insertions(+), 31 deletions(-)
+ rpifwcrypto/README.md      |  2 +-
+ rpifwcrypto/main.c         | 56 ++++++++++++++++++++++++--------------
+ 5 files changed, 45 insertions(+), 32 deletions(-)
 
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -22,11 +22,10 @@ add_subdirectory(vcgencmd)
- add_subdirectory(vclog)
+@@ -23,11 +23,10 @@ add_subdirectory(vclog)
  add_subdirectory(vcmailbox)
+ add_subdirectory(splashasm)
  
 -# Only build rpifwcrypto if GnuTLS is available
 -include(CheckIncludeFile)
@@ -24,12 +39,17 @@ Signed-off-by: Joshua Covington <joshuacov@gmail.com>
 -if(HAVE_GNUTLS_CRYPTO_H)
 +# Only build rpifwcrypto if OpenSSL is available
 +find_package(OpenSSL QUIET)
-+if(OpenSSL_FOUND)
++if(OPENSSL_FOUND)
      add_subdirectory(rpifwcrypto)
  else()
 -    message(STATUS "gnutls/crypto.h not found - skipping rpifwcrypto")
 +    message(STATUS "OpenSSL not found - skipping rpifwcrypto")
  endif()
+--- a/prerequisites.sh
++++ b/prerequisites.sh
+@@ -1 +1 @@
+-apt install cmake device-tree-compiler libncurses-dev libfdt-dev libgnutls28-dev
++apt install cmake device-tree-compiler libncurses-dev libfdt-dev libssl-dev
 --- a/rpifwcrypto/CMakeLists.txt
 +++ b/rpifwcrypto/CMakeLists.txt
 @@ -10,8 +10,8 @@ endif()
@@ -54,6 +74,17 @@ Signed-off-by: Joshua Covington <joshuacov@gmail.com>
  
  # Install rules
  install(TARGETS rpi-fw-crypto RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+--- a/rpifwcrypto/README.md
++++ b/rpifwcrypto/README.md
+@@ -18,7 +18,7 @@ or the librpifwcrypto.so shared library.
+ 
+ ## Build Instructions
+ 
+-Install prerequisites with `sudo apt install cmake libgnutls28-dev` - you need at least version 3.10.
++Install prerequisites with `sudo apt install cmake libssl-dev` - you need at least version 3.10.
+ 
+ ```
+ mkdir build
 --- a/rpifwcrypto/main.c
 +++ b/rpifwcrypto/main.c
 @@ -2,7 +2,7 @@
@@ -65,7 +96,7 @@ Signed-off-by: Joshua Covington <joshuacov@gmail.com>
  #include "rpifwcrypto.h"
  
  #define SHA256_HASH_SIZE 32
-@@ -69,53 +69,66 @@ static void usage(const char *progname)
+@@ -69,53 +69,67 @@ static void usage(const char *progname)
  
  static int hash_file(const char *filename, unsigned char *hash, size_t hash_size)
  {
@@ -138,10 +169,10 @@ Signed-off-by: Joshua Covington <joshuacov@gmail.com>
 +        goto out;
 +    }
  
--    /* Get the hash output, ensuring we don't write beyond the provided buffer */
+     /* Get the hash output, ensuring we don't write beyond the provided buffer */
 -    gnutls_hash_deinit(hash_handle, temp_hash);
 -    memcpy(hash, temp_hash, hash_size < SHA256_HASH_SIZE ? hash_size : SHA256_HASH_SIZE);
-+    memcpy(hash, temp_hash, SHA256_HASH_SIZE);
++    memcpy(hash, temp_hash, hash_size < temp_hash_len ? hash_size : temp_hash_len);
 +    rc = 0;
  
 -    return 0;

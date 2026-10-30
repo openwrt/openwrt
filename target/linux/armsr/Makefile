@@ -17,5 +17,6 @@ DEFAULT_PACKAGES += mkf2fs e2fsprogs
 # in sysupgrade. vfat required for
 # mounting ESP partition
 DEFAULT_PACKAGES += blkid kmod-fs-vfat
+DEFAULT_PACKAGES += video-support
 
 $(eval $(call BuildTarget))

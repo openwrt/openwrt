@@ -26,7 +26,12 @@
 #define RTETH_838X_QM_PKT2CPU_INTPRI_0		(0x5f04)
 #define RTETH_838X_QM_PKT2CPU_INTPRI_CNT	3
 #define RTETH_838X_RMA_CTRL_0			(0x4300)
+#define RTETH_838X_RMA_CTRL_0_SLOW_TRAP		(2 << 2)
 #define RTETH_838X_RMA_CTRL_1			(0x4304)
+#define RTETH_838X_TAG1_PROTO_MASK		GENMASK(15, 8)
+#define RTETH_838X_TAG1_PROTO			0x04
+/* TX CPU tag: bypass the egress spanning-tree port state and egress VLAN filtering */
+#define RTETH_838X_TAG1_BP_FLTR2		BIT(4)
 
 #define RTETH_839X_CPU_PORT			52
 #define RTETH_839X_DMA_IF_CTRL			(0x786c)
@@ -44,6 +49,7 @@
 #define RTETH_839X_QM_PKT2CPU_INTPRI_0		(0x1148)
 #define RTETH_839X_QM_PKT2CPU_INTPRI_CNT	3
 #define RTETH_839X_RMA_CTRL_0			(0x1200)
+#define RTETH_839X_RMA_CTRL_0_SLOW_TRAP		(2 << 4)
 #define RTETH_839X_RMA_CTRL_1			(0x1204)
 #define RTETH_839X_RMA_CTRL_2			(0x1208)
 #define RTETH_839X_RMA_CTRL_3			(0x120c)
@@ -61,6 +67,8 @@
 #define RTETH_930X_MAC_L2_CPU_MAX_LEN_CTRL	(0xa3a0)
 #define RTETH_930X_MAC_L2_PORT_CTRL		(0x3268 + RTETH_930X_CPU_PORT * 64)
 #define RTETH_930X_MAC_L2_PORT_MAX_LEN_CTRL	(0x326c + RTETH_930X_CPU_PORT * 64)
+#define RTETH_930X_QM_CPUQID2QID_CTRL		(0xa324)
+#define RTETH_930X_QM_CPUQID2XGQID_CTRL		(0xa334)
 #define RTETH_930X_QM_RSN2CPUQID_CTRL_0		(0xa344)
 #define RTETH_930X_QM_RSN2CPUQID_CTRL_CNT	11
 #define RTETH_930X_RMA_CTRL_0			(0x9e60)
@@ -112,8 +120,6 @@
 #define RTETH_931X_L2_NTFY_IF_INTR_MSK		(0x09E4)
 #define RTETH_931X_L2_NTFY_IF_INTR_STS		(0x09E8)
 
-#define RTETH_839X_DMA_IF_INTR_NOTIFY_MASK	GENMASK(22, 20)
-
 #define RTETH_838X_DMA_IF_TX_CUR_DESC_ADDR_CTRL	(0x9F48)
 #define RTETH_930X_DMA_IF_TX_CUR_DESC_ADDR_CTRL	(0xE008)
 
@@ -143,8 +149,6 @@
 #define RTETH_RX_PAUSE_EN			BIT(7)
 
 /* L2 Notification DMA interface */
-#define RTETH_839X_DMA_IF_NBUF_BASE_CTRL	(0x785C)
-#define RTETH_839X_L2_NOTIFICATION_CTRL		(0x7808)
 #define RTETH_931X_L2_NTFY_RING_BASE_ADDR	(0x09DC)
 #define RTETH_931X_L2_NTFY_RING_CUR_ADDR	(0x09E0)
 #define RTETH_931X_L2_NTFY_CTRL			(0xCDC8)
@@ -194,9 +198,6 @@
 #define RTETH_TX_RING_SIZE			16
 #define RTETH_TX_RINGS				2
 #define RTETH_TX_TRIGGER(ctrl, ring)		((0x16 >> ring) & ctrl->cfg->tx_trigger_mask)
-
-#define RTETH_NOTIFY_EVENTS			10
-#define RTETH_NOTIFY_BLOCKS			10
 
 #define RTETH_RX_TRUNCATE_EN_93XX		BIT(6)
 #define RTETH_RX_TRUNCATE_EN_83XX		BIT(4)
@@ -268,38 +269,17 @@ struct rteth_tx_info {
 	struct sk_buff		*skb[RTETH_TX_RING_SIZE];
 };
 
-struct n_event {
-	u32			type:2;
-	u32			fidVid:12;
-	u64			mac:48;
-	u32			slp:6;
-	u32			valid:1;
-	u32			reserved:27;
-} __packed __aligned(1);
-
-struct notify_block {
-	struct n_event		events[RTETH_NOTIFY_EVENTS];
-};
-
-struct notify_b {
-	struct notify_block	blocks[RTETH_NOTIFY_BLOCKS];
-	u32			reserved1[8];
-	u32			ring[RTETH_NOTIFY_BLOCKS];
-	u32			reserved2[8];
-};
-
 struct rteth_ctrl {
 	const struct rteth_cfg	*cfg;
 	struct regmap		*map;
 	struct net_device	*dev;
 	struct platform_device	*pdev;
-	void			*membase;
 	spinlock_t		lock;
 	struct mii_bus		*mii_bus;
 	struct phylink		*phylink;
 	struct phylink_config	phylink_config;
-	u32			lastEvent;
 	struct metadata_dst	*dsa_meta[RTETH_931X_CPU_PORT];
+	struct metadata_dst	*dsa_meta_trapped[RTETH_931X_CPU_PORT];
 	/* receive handling */
 	dma_addr_t		rx_dma;
 	spinlock_t		rx_lock;
@@ -336,9 +316,10 @@ struct rteth_cfg {
 	int dma_tx_base;
 	int rst_glb_ctrl;
 	int skb_headroom;
+	bool tx_queue_from_priority;
 	u32 mac_reg[RTETH_MAX_MAC_REGS];
 	int l2_tbl_flush_ctrl;
-	void (*confirm_disable_irqs)(struct rteth_ctrl *ctrl, unsigned long *rings, bool *l2);
+	void (*confirm_disable_irqs)(struct rteth_ctrl *ctrl, unsigned long *rings);
 	void (*enable_rx_irq)(struct rteth_ctrl *ctrl, int ring);
 	void (*create_tx_header)(struct rteth_frag *frag, unsigned int dest_port, int prio);
 	bool (*decode_tag)(struct rteth_frag *frag, struct rteth_dsa_tag *tag);
@@ -349,9 +330,9 @@ struct rteth_cfg {
 	int (*init_mac)(struct rteth_ctrl *ctrl);
 	void (*set_hol)(struct rteth_ctrl *ctrl);
 	void (*set_max_packet_length)(struct rteth_ctrl *ctrl, int len);
-	void (*setup_notify_buffer)(struct rteth_ctrl *ctrl);
 	void (*update_counter)(struct rteth_ctrl *ctrl, int ring, int released);
-	const struct net_device_ops *netdev_ops;
+	void (*set_rx_mode)(struct net_device *dev);
+	u32 rx_csum_mask;
 };
 
 

@@ -1,0 +1,142 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Tue, 20 Oct 2026 14:45:02 +0200
+Subject: [PATCH] AP MLD: Initialise the shared authenticator of the first link once
+
+Since commit 3cf7bf68f43d ("AP MLD: Fix deferred first link BSS's
+authentication server init"), a link that is set up before the first
+link of its AP MLD initialises the RADIUS client, the authentication
+server and the IEEE 802.1X authenticator on behalf of the first BSS,
+whose own setup waits for ACS, the HT40 scan or DFS. When the first BSS
+is set up later, hostapd_bss_radius_init() skips the RADIUS client, but
+authsrv_init() and ieee802_1x_init() run again. They give the first BSS
+a second EAP server configuration and a second authenticator, and the
+other links keep the first ones. One of the two pairs is never freed.
+
+When the first link is then removed, the handover to the new first BSS
+finds another authenticator there than in the removed BSS and moves
+nothing. The authenticator of the remaining links keeps the removed BSS
+as the context of its callbacks, and hostapd crashes on the next
+association:
+
+  WPA_TRACE: eloop SIGSEGV - START
+  ap_get_sta_mld_links() ../src/ap/sta_info.c:107
+  ieee802_1x_sta_entry_alive() ../src/ap/ieee802_1x.c:2490
+  eapol_sm_sta_entry_alive() ../src/eapol_auth/eapol_auth_sm.c:902
+  eapol_sm_step_run() ../src/eapol_auth/eapol_auth_sm.c:930
+
+Skip both inits for a first BSS that already holds the objects, as the
+RADIUS client init does. Set the WPS context of the EAP server
+configuration then, since the init on behalf of the first BSS runs
+before its WPS init. A failed init must not leave an object that the
+skip then keeps: free what a failed RADIUS server setup leaves, and
+free the authenticator when the driver setup, the RADIUS handler
+registration or the WEP key setup fails.
+
+A first BSS that is disabled before its own setup keeps its pointers to
+the shared objects, because hostapd_free_hapd_data() returns early for
+a BSS that was not started. Drop them when such a BSS leaves the AP MLD
+and another link becomes the first BSS, so that a later init cannot
+skip over objects that the new owner frees. Where such a BSS is the last
+link, it keeps the objects of its earlier configuration over a disable
+and enable, as it keeps the RADIUS client.
+
+Fixes: 3cf7bf68f43d ("AP MLD: Fix deferred first link BSS's authentication server init")
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+
+--- a/src/ap/authsrv.c
++++ b/src/ap/authsrv.c
+@@ -417,6 +417,14 @@ int authsrv_init(struct hostapd_data *ha
+ 	}
+ #endif /* CONFIG_IEEE80211BE */
+ 
++	if (hapd->eap_cfg) {
++		wpa_printf(MSG_DEBUG, "Skipping auth_serv init (already done)");
++
++		/* An init on behalf of this BSS ran before its WPS init */
++		hapd->eap_cfg->wps = hapd->wps;
++		return 0;
++	}
++
+ #ifdef EAP_TLS_FUNCS
+ 	if (hapd->conf->eap_server &&
+ 	    (hapd->conf->ca_cert || hapd->conf->server_cert ||
+@@ -521,8 +529,10 @@ int authsrv_init(struct hostapd_data *ha
+ 
+ #ifdef RADIUS_SERVER
+ 	if (hapd->conf->radius_server_clients &&
+-	    hostapd_setup_radius_srv(hapd))
++	    hostapd_setup_radius_srv(hapd)) {
++		authsrv_deinit(hapd);
+ 		return -1;
++	}
+ #endif /* RADIUS_SERVER */
+ 
+ 	return 0;
+--- a/src/ap/hostapd.c
++++ b/src/ap/hostapd.c
+@@ -1363,6 +1363,17 @@ void hostapd_bss_link_deinit(struct host
+ 		return;
+ 
+ 	hostapd_mld_remove_link(hapd);
++
++	/* Another link can set up the shared objects on behalf of a first BSS
++	 * that is not started, and hostapd_free_hapd_data() skips that BSS. */
++	if (!hapd->started && !hostapd_mld_is_first_bss(hapd)) {
++		ieee802_1x_deinit(hapd);
++		authsrv_deinit(hapd);
++#ifndef CONFIG_NO_RADIUS
++		hapd->radius = NULL;
++		hapd->radius_das = NULL;
++#endif /* CONFIG_NO_RADIUS */
++	}
+ #endif /* CONFIG_IEEE80211BE */
+ }
+ 
+--- a/src/ap/ieee802_1x.c
++++ b/src/ap/ieee802_1x.c
+@@ -2648,6 +2648,12 @@ int ieee802_1x_init(struct hostapd_data
+ 	}
+ #endif /* CONFIG_IEEE80211BE */
+ 
++	if (hapd->eapol_auth) {
++		wpa_printf(MSG_DEBUG,
++			   "Skipping IEEE 802.1X state machine init (already done)");
++		return 0;
++	}
++
+ 	os_memset(&conf, 0, sizeof(conf));
+ 	conf.eap_cfg = hapd->eap_cfg;
+ 	conf.ctx = hapd;
+@@ -2688,12 +2694,12 @@ int ieee802_1x_init(struct hostapd_data
+ 
+ 	if ((hapd->conf->ieee802_1x || hapd->conf->wpa) &&
+ 	    hostapd_set_drv_ieee8021x(hapd, hapd->conf->iface, 1))
+-		return -1;
++		goto fail;
+ 
+ #ifndef CONFIG_NO_RADIUS
+ 	if (radius_client_register(hapd->radius, RADIUS_AUTH,
+ 				   ieee802_1x_receive_auth, hapd))
+-		return -1;
++		goto fail;
+ #endif /* CONFIG_NO_RADIUS */
+ 
+ #ifdef CONFIG_WEP
+@@ -2708,11 +2714,15 @@ int ieee802_1x_init(struct hostapd_data
+ 		ieee802_1x_rekey(hapd, NULL);
+ 
+ 		if (!hapd->eapol_auth->default_wep_key)
+-			return -1;
++			goto fail;
+ 	}
+ #endif /* CONFIG_WEP */
+ 
+ 	return 0;
++
++fail:
++	ieee802_1x_deinit(hapd);
++	return -1;
+ }
+ 
+ 

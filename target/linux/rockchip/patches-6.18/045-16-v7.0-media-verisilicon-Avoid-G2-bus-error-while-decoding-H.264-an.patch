@@ -1,0 +1,160 @@
+From e0203ddf9af7c8e170e1e99ce83b4dc07f0cd765 Mon Sep 17 00:00:00 2001
+From: Ming Qian <ming.qian@oss.nxp.com>
+Date: Fri, 5 Dec 2025 09:54:26 +0800
+Subject: [PATCH] media: verisilicon: Avoid G2 bus error while decoding H.264
+ and HEVC
+
+For the i.MX8MQ platform, there is a hardware limitation: the g1 VPU and
+g2 VPU cannot decode simultaneously; otherwise, it will cause below bus
+error and produce corrupted pictures, even potentially lead to system hang.
+
+[  110.527986] hantro-vpu 38310000.video-codec: frame decode timed out.
+[  110.583517] hantro-vpu 38310000.video-codec: bus error detected.
+
+Therefore, it is necessary to ensure that g1 and g2 operate alternately.
+This allows for successful multi-instance decoding of H.264 and HEVC.
+
+To achieve this, g1 and g2 share the same v4l2_m2m_dev, and then the
+v4l2_m2m_dev can handle the scheduling.
+
+Fixes: cb5dd5a0fa518 ("media: hantro: Introduce G2/HEVC decoder")
+Cc: stable@vger.kernel.org
+Signed-off-by: Ming Qian <ming.qian@oss.nxp.com>
+Reviewed-by: Frank Li <Frank.Li@nxp.com>
+Co-developed-by: Nicolas Dufresne <nicolas.dufresne@collabora.com>
+Signed-off-by: Nicolas Dufresne <nicolas.dufresne@collabora.com>
+Signed-off-by: Hans Verkuil <hverkuil+cisco@kernel.org>
+---
+ drivers/media/platform/verisilicon/hantro.h   |  2 +
+ .../media/platform/verisilicon/hantro_drv.c   | 42 +++++++++++++++++--
+ .../media/platform/verisilicon/imx8m_vpu_hw.c |  8 ++++
+ 3 files changed, 49 insertions(+), 3 deletions(-)
+
+--- a/drivers/media/platform/verisilicon/hantro.h
++++ b/drivers/media/platform/verisilicon/hantro.h
+@@ -77,6 +77,7 @@ struct hantro_irq {
+  * @double_buffer:		core needs double buffering
+  * @legacy_regs:		core uses legacy register set
+  * @late_postproc:		postproc must be set up at the end of the job
++ * @shared_devices:		an array of device ids that cannot run concurrently
+  */
+ struct hantro_variant {
+ 	unsigned int enc_offset;
+@@ -101,6 +102,7 @@ struct hantro_variant {
+ 	unsigned int double_buffer : 1;
+ 	unsigned int legacy_regs : 1;
+ 	unsigned int late_postproc : 1;
++	const struct of_device_id *shared_devices;
+ };
+ 
+ /**
+--- a/drivers/media/platform/verisilicon/hantro_drv.c
++++ b/drivers/media/platform/verisilicon/hantro_drv.c
+@@ -13,6 +13,7 @@
+ #include <linux/clk.h>
+ #include <linux/module.h>
+ #include <linux/of.h>
++#include <linux/of_platform.h>
+ #include <linux/platform_device.h>
+ #include <linux/pm.h>
+ #include <linux/pm_runtime.h>
+@@ -1035,6 +1036,41 @@ static int hantro_disable_multicore(stru
+ 	return 0;
+ }
+ 
++static struct v4l2_m2m_dev *hantro_get_v4l2_m2m_dev(struct hantro_dev *vpu)
++{
++	struct device_node *node;
++	struct hantro_dev *shared_vpu;
++
++	if (!vpu->variant || !vpu->variant->shared_devices)
++		goto init_new_m2m_dev;
++
++	for_each_matching_node(node, vpu->variant->shared_devices) {
++		struct platform_device *pdev;
++		struct v4l2_m2m_dev *m2m_dev;
++
++		pdev = of_find_device_by_node(node);
++		if (!pdev)
++			continue;
++
++		shared_vpu = platform_get_drvdata(pdev);
++		if (IS_ERR_OR_NULL(shared_vpu) || shared_vpu == vpu) {
++			platform_device_put(pdev);
++			continue;
++		}
++
++		v4l2_m2m_get(shared_vpu->m2m_dev);
++		m2m_dev = shared_vpu->m2m_dev;
++		platform_device_put(pdev);
++
++		of_node_put(node);
++
++		return m2m_dev;
++	}
++
++init_new_m2m_dev:
++	return v4l2_m2m_init(&vpu_m2m_ops);
++}
++
+ static int hantro_probe(struct platform_device *pdev)
+ {
+ 	const struct of_device_id *match;
+@@ -1186,7 +1222,7 @@ static int hantro_probe(struct platform_
+ 	}
+ 	platform_set_drvdata(pdev, vpu);
+ 
+-	vpu->m2m_dev = v4l2_m2m_init(&vpu_m2m_ops);
++	vpu->m2m_dev = hantro_get_v4l2_m2m_dev(vpu);
+ 	if (IS_ERR(vpu->m2m_dev)) {
+ 		v4l2_err(&vpu->v4l2_dev, "Failed to init mem2mem device\n");
+ 		ret = PTR_ERR(vpu->m2m_dev);
+@@ -1225,7 +1261,7 @@ err_rm_enc_func:
+ 	hantro_remove_enc_func(vpu);
+ err_m2m_rel:
+ 	media_device_cleanup(&vpu->mdev);
+-	v4l2_m2m_release(vpu->m2m_dev);
++	v4l2_m2m_put(vpu->m2m_dev);
+ err_v4l2_unreg:
+ 	v4l2_device_unregister(&vpu->v4l2_dev);
+ err_clk_unprepare:
+@@ -1248,7 +1284,7 @@ static void hantro_remove(struct platfor
+ 	hantro_remove_dec_func(vpu);
+ 	hantro_remove_enc_func(vpu);
+ 	media_device_cleanup(&vpu->mdev);
+-	v4l2_m2m_release(vpu->m2m_dev);
++	v4l2_m2m_put(vpu->m2m_dev);
+ 	v4l2_device_unregister(&vpu->v4l2_dev);
+ 	clk_bulk_unprepare(vpu->variant->num_clocks, vpu->clocks);
+ 	reset_control_assert(vpu->resets);
+--- a/drivers/media/platform/verisilicon/imx8m_vpu_hw.c
++++ b/drivers/media/platform/verisilicon/imx8m_vpu_hw.c
+@@ -343,6 +343,12 @@ const struct hantro_variant imx8mq_vpu_v
+ 	.num_regs = ARRAY_SIZE(imx8mq_reg_names)
+ };
+ 
++static const struct of_device_id imx8mq_vpu_shared_resources[] __initconst = {
++	{ .compatible = "nxp,imx8mq-vpu-g1", },
++	{ .compatible = "nxp,imx8mq-vpu-g2", },
++	{ /* sentinel */ }
++};
++
+ const struct hantro_variant imx8mq_vpu_g1_variant = {
+ 	.dec_fmts = imx8m_vpu_dec_fmts,
+ 	.num_dec_fmts = ARRAY_SIZE(imx8m_vpu_dec_fmts),
+@@ -356,6 +362,7 @@ const struct hantro_variant imx8mq_vpu_g
+ 	.num_irqs = ARRAY_SIZE(imx8mq_irqs),
+ 	.clk_names = imx8mq_g1_clk_names,
+ 	.num_clocks = ARRAY_SIZE(imx8mq_g1_clk_names),
++	.shared_devices = imx8mq_vpu_shared_resources,
+ };
+ 
+ const struct hantro_variant imx8mq_vpu_g2_variant = {
+@@ -371,6 +378,7 @@ const struct hantro_variant imx8mq_vpu_g
+ 	.num_irqs = ARRAY_SIZE(imx8mq_g2_irqs),
+ 	.clk_names = imx8mq_g2_clk_names,
+ 	.num_clocks = ARRAY_SIZE(imx8mq_g2_clk_names),
++	.shared_devices = imx8mq_vpu_shared_resources,
+ };
+ 
+ const struct hantro_variant imx8mm_vpu_g1_variant = {

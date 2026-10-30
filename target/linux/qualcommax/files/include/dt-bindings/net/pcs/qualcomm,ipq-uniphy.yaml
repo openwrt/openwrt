@@ -76,16 +76,16 @@ properties:
         - const: ref
 
   clock-output-names:
-    description: Name of the uniphy GCC clock for TX and RX.
+    description: Name of the uniphy GCC clock for RX and TX.
     items:
-      - enum:
-          - uniphy0_gcc_tx_clk
-          - uniphy1_gcc_tx_clk
-          - uniphy2_gcc_tx_clk
       - enum:
           - uniphy0_gcc_rx_clk
           - uniphy1_gcc_rx_clk
           - uniphy2_gcc_rx_clk
+      - enum:
+          - uniphy0_gcc_tx_clk
+          - uniphy1_gcc_tx_clk
+          - uniphy2_gcc_tx_clk
       - const: uniphy0_ref_clk
 
   '#clock-cells':
@@ -130,8 +130,8 @@ examples:
         clock-names = "ahb", "sys",
                       "port5_rx", "port5_tx";
 
-        clock-output-names = "uniphy1_gcc_tx_clk",
-                             "uniphy1_gcc_rx_clk";
+        clock-output-names = "uniphy1_gcc_rx_clk",
+                             "uniphy1_gcc_tx_clk";
 
         resets = <&gcc GCC_UNIPHY1_SOFT_RESET>,
                  <&gcc GCC_UNIPHY1_XPCS_RESET>;
@@ -168,8 +168,8 @@ examples:
                       "port4_rx", "port4_tx",
                       "port5_rx", "port5_tx";
 
-        clock-output-names = "uniphy0_gcc_tx_clk",
-                             "uniphy0_gcc_rx_clk";
+        clock-output-names = "uniphy0_gcc_rx_clk",
+                             "uniphy0_gcc_tx_clk";
 
         resets = <&gcc GCC_UNIPHY0_SOFT_RESET>,
                  <&gcc GCC_UNIPHY0_XPCS_RESET>;

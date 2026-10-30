@@ -1,0 +1,50 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Sat, 24 Oct 2026 09:38:44 +0200
+Subject: [PATCH] wifi: mac80211: remove the stations of an AP VLAN before its
+ links
+
+ieee80211_do_stop() clears the links of an AP VLAN through
+ieee80211_apvlan_link_clear() before it flushes the stations of the
+VLAN. ieee80211_vif_update_links() then finds the station of a VLAN
+that goes down while a station of an AP MLD is on it, and warns:
+
+  WARNING: net/mac80211/link.c:352 at ieee80211_vif_update_links+0xcec/0xd30
+  Call Trace:
+   ieee80211_vif_set_links+0x3d/0x80
+   ieee80211_do_stop+0x768/0xa80
+   ieee80211_stop+0x7e/0x130
+   __dev_close_many+0xdb/0x1a0
+
+Reachable by setting a WDS VLAN down, or by removing the radio, while
+its station is associated. Before commit ae6691b8c1fd ("wifi: mac80211:
+check stations are removed before MLD change") the VLAN lost its
+debugfs directory, station directories included, before the stations
+were removed.
+
+Clear the links of an AP VLAN only after its stations are removed.
+
+Fixes: 90233b0ad215 ("wifi: mac80211: Create separate links for VLAN interfaces")
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+
+--- a/net/mac80211/iface.c
++++ b/net/mac80211/iface.c
+@@ -511,9 +511,6 @@ static void ieee80211_do_stop(struct iee
+ 	case NL80211_IFTYPE_MONITOR:
+ 		list_del_rcu(&sdata->u.mntr.list);
+ 		break;
+-	case NL80211_IFTYPE_AP_VLAN:
+-		ieee80211_apvlan_link_clear(sdata);
+-		break;
+ 	default:
+ 		break;
+ 	}
+@@ -537,6 +534,9 @@ static void ieee80211_do_stop(struct iee
+ 		     sdata->vif.type != NL80211_IFTYPE_NAN &&
+ 		     sdata->vif.type != NL80211_IFTYPE_NAN_DATA && flushed > 0);
+ 
++	if (sdata->vif.type == NL80211_IFTYPE_AP_VLAN)
++		ieee80211_apvlan_link_clear(sdata);
++
+ 	/* don't count this interface for allmulti while it is down */
+ 	if (sdata->flags & IEEE80211_SDATA_ALLMULTI)
+ 		atomic_dec(&local->iff_allmultis);

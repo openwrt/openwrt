@@ -1,12 +1,393 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
 #include <asm/mach-rtl-otto/mach-rtl-otto.h>
+#include <linux/cleanup.h>
+#include <linux/debugfs.h>
 #include <linux/etherdevice.h>
+#include <linux/regmap.h>
+#include <linux/seq_file.h>
+#include <linux/soc/realtek/otto_table.h>
+#include <linux/string.h>
 
 #include "l2.h"
+#include "l3.h"
 #include "rtl-otto.h"
 
-u64 rtl838x_l2_hash_seed(u64 mac, u32 vid)
+#define RTL838X_L2_LRN_CONSTRT			(0x329C)
+#define RTL839X_L2_LRN_CONSTRT			(0x3910)
+#define RTL930X_L2_LRN_CONSTRT_CTRL		(0x909c)
+#define RTL931X_L2_LRN_CONSTRT_CTRL		(0xC964)
+
+#define RTL838X_L2_FLD_PMSK			(0x3288)
+#define RTL839X_L2_FLD_PMSK			(0x38EC)
+#define RTL930X_L2_BC_FLD_PMSK			(0x9068)
+#define RTL931X_L2_BC_FLD_PMSK			(0xC8FC)
+
+#define RTL930X_L2_UNKN_UC_FLD_PMSK		(0x9064)
+#define RTL931X_L2_UNKN_UC_FLD_PMSK		(0xC8F4)
+
+#define RTL838X_L2_BC_FLD(pmsk)			(pmsk << 9)
+#define RTL838X_L2_UNKN_UC_FLD(pmsk)		(pmsk)
+#define RTL839X_L2_BC_FLD(pmsk)			(pmsk << 12)
+#define RTL839X_L2_UNKN_UC_FLD(pmsk)		(pmsk)
+
+#define RTL838X_L2_LRN_CONSTRT_EN		(0x3368)
+#define RTL838X_L2_PORT_LRN_CONSTRT		(0x32A0)
+#define RTL839X_L2_PORT_LRN_CONSTRT		(0x3914)
+#define RTL930X_L2_LRN_PORT_CONSTRT_CTRL	(0x90A4)
+#define RTL931X_L2_LRN_PORT_CONSTRT_CTRL	(0xC96C)
+
+#define RTL838X_L2_PORT_NEW_SALRN(p)		(0x328c + (((p >> 4) << 2)))
+#define RTL839X_L2_PORT_NEW_SALRN(p)		(0x38F0 + (((p >> 4) << 2)))
+#define RTL930X_L2_PORT_SALRN(p)		(0x8FEC + (((p >> 4) << 2)))
+#define RTL931X_L2_PORT_NEW_SALRN(p)		(0xC820 + (((p >> 4) << 2)))
+
+#define RTL838X_L2_PORT_NEW_SA_FWD(p)		(0x3294 + (((p >> 4) << 2)))
+#define RTL839X_L2_PORT_NEW_SA_FWD(p)		(0x3900 + (((p >> 4) << 2)))
+#define RTL930X_L2_PORT_NEW_SA_FWD(p)		(0x8FF4 + (((p / 10) << 2)))
+#define RTL931X_L2_PORT_NEW_SA_FWD(p)		(0xC830 + (((p / 10) << 2)))
+
+#define RTL838X_L2_PORT_STATIC_MV_ACT(p)	(0x327c + (((p >> 4) << 2)))
+#define RTL839X_L2_PORT_STATIC_MV_ACT(p)	(0x38dc + (((p >> 4) << 2)))
+
+#define MV_ACT_PORT_SHIFT(p)			((p % 16) * 2)
+#define MV_ACT_MASK				0x3
+#define MV_ACT_FORWARD				0
+#define MV_ACT_DROP				1
+
+#define RTL838X_SPCL_TRAP_ARP_CTRL		(0x698C)
+
+#define RTL839X_SPCL_TRAP_ARP_CTRL		(0x1060)
+
+int otto_l2_get_ageing_time(struct otto_dsa_priv *priv)
+{
+	u32 val, aging;
+	int t, err;
+
+	err = regmap_read(priv->map, priv->r->l2_ctrl_1, &val);
+	if (err)
+		return err;
+	t = val;
+
+	/* RTL838x uses a high-resolution 23-bit AGE_UNIT where one unit is
+	 * 204.8 ms. RTL839x and RTL93xx use a 21-bit AGE_UNIT where one unit
+	 * is 600 ms. An AGE_UNIT value of 0 disables dynamic address aging.
+	 */
+	if (priv->r->high_res_l2_age) {
+		t &= GENMASK(22, 0);
+		t = t * 128 / 625;
+	} else {
+		t &= GENMASK(20, 0);
+		t = t * 3 / 5;
+	}
+
+	pr_debug("L2 AGING time: %d sec\n", t);
+	if (!regmap_read(priv->map, priv->r->l2_port_aging_out, &aging))
+		pr_debug("Dynamic aging for ports: %x\n", aging);
+
+	return t;
+}
+
+static int otto_l2_hash_index(u32 key, int slot)
+{
+	return slot > 3 ? ((key >> 14) & 0xffff) | (slot & 3) : ((key << 2) | slot) & 0xffff;
+}
+
+/* Uses the seed to identify a hash bucket in the L2 using the derived hash key and then loops
+ * over the entries in the bucket until either a matching entry is found or an empty slot
+ * Returns the filled in rtl838x_l2_entry and the index in the bucket when an entry was found
+ * when an empty slot was found and must exist is false, the index of the slot is returned
+ * when no slots are available returns -1
+ */
+int otto_l2_find_hash_entry(struct otto_dsa_priv *priv, u64 seed,
+			    bool must_exist, struct rtl838x_l2_entry *e)
+{
+	u32 key = priv->r->l2_hash_key(priv, seed);
+	int free_slot = -1;
+	u64 entry;
+
+	pr_debug("%s: using key %x, for seed %016llx\n", __func__, key, seed);
+	/* Loop over all entries in the hash-bucket and over the second block on 93xx SoCs */
+	for (int i = 0; i < priv->r->l2_bucket_size; i++) {
+		entry = priv->r->read_l2_entry_using_hash(key, i, e);
+		pr_debug("valid %d, mac %016llx\n", e->valid, ether_addr_to_u64(&e->mac[0]));
+
+		/* Remember the first free slot, but keep looking: the address
+		 * may be sitting further down the bucket.
+		 */
+		if (!e->valid) {
+			if (free_slot < 0)
+				free_slot = i;
+			continue;
+		}
+
+		if ((entry & 0x0fffffffffffffffULL) == seed)
+			return otto_l2_hash_index(key, i);
+	}
+
+	if (must_exist || free_slot < 0)
+		return -1;
+
+	/* The loop leaves the last entry it read here, valid bit included.
+	 * Reading the free slot back does not undo that on RTL930x and
+	 * RTL931x, whose readers return as soon as the valid bit is clear.
+	 */
+	memset(e, 0, sizeof(*e));
+
+	return otto_l2_hash_index(key, free_slot);
+}
+
+/* Uses the seed to identify an entry in the CAM by looping over all its entries
+ * Returns the filled in rtl838x_l2_entry and the index in the CAM when an entry was found
+ * when an empty slot was found the index of the slot is returned
+ * when no slots are available returns -1
+ */
+int otto_l2_find_cam_entry(struct otto_dsa_priv *priv, u64 seed,
+			   bool must_exist, struct rtl838x_l2_entry *e)
+{
+	int idx = -1;
+	int cam_rows;
+	u64 entry;
+
+	cam_rows = otto_table_rows(priv->r->l2_cam_tbl);
+	if (cam_rows < 0)
+		return -1;
+
+	for (int i = 0; i < cam_rows; i++) {
+		entry = priv->r->read_cam(i, e);
+		if (!must_exist && !e->valid) {
+			if (idx < 0) /* First empty entry? */
+				idx = i;
+			break;
+		} else if ((entry & 0x0fffffffffffffffULL) == seed) {
+			pr_debug("Found entry in CAM\n");
+			idx = i;
+			break;
+		}
+	}
+
+	return idx;
+}
+
+/* RTL931x hashes its second block into rows the fib_entries count does not
+ * reach, so an index can fall outside the map and is simply not tracked.
+ */
+struct rtldsa_l2_uc *otto_l2_uc_lookup(struct otto_dsa_priv *priv, int idx)
+{
+	if (idx < 0 || idx >= priv->r->fib_entries)
+		return NULL;
+
+	return &priv->l2_uc_map[idx];
+}
+
+/* The count pins at its ceiling rather than wrapping: an entry that reached it
+ * is never freed by the driver again, which leaks a row but never hands a live
+ * one to somebody else.
+ */
+static void otto_l2_uc_get(struct otto_dsa_priv *priv, int idx)
+{
+	struct rtldsa_l2_uc *m = otto_l2_uc_lookup(priv, idx);
+
+	if (!m)
+		return;
+
+	if (m->l3_refcount == RTLDSA_L2_L3_REFCOUNT_MAX) {
+		dev_warn_once(priv->dev, "L2 entry %d has too many routes to count\n", idx);
+		return;
+	}
+
+	m->l3_refcount++;
+}
+
+static void otto_l2_uc_put(struct otto_dsa_priv *priv, int idx)
+{
+	struct rtldsa_l2_uc *m = otto_l2_uc_lookup(priv, idx);
+
+	if (!m || !m->l3_refcount || m->l3_refcount == RTLDSA_L2_L3_REFCOUNT_MAX)
+		return;
+
+	m->l3_refcount--;
+}
+
+/* Give the row back once nothing forwards through it any more. @e has to be a
+ * fresh read of the row at nh->l2_id.
+ */
+static void otto_l2_uc_release_row(struct otto_dsa_priv *priv,
+				   struct otto_l3_nexthop *nh,
+				   struct rtl838x_l2_entry *e)
+{
+	struct rtldsa_l2_uc *m = otto_l2_uc_lookup(priv, nh->l2_id);
+
+	/* Another route is still forwarding through this entry: it has to stay
+	 * exactly as it is, next hop and route id included.
+	 */
+	if (m && m->l3_refcount)
+		return;
+
+	/* The bridge put this address here as well, so the entry stays; it
+	 * just stops being a next hop.
+	 */
+	if (e->is_static && (!m || !m->fdb_ref))
+		e->valid = false;
+	e->next_hop = false;
+	/* A DMAC entry or a route id takes that field on the families that
+	 * keep one, so what goes back is the relay VID, which the row still
+	 * carries either way.
+	 */
+	e->vid = e->rvid;
+
+	priv->r->write_l2_entry_using_hash(priv, nh->l2_id >> 2, nh->l2_id & 0x3, e);
+}
+
+/* Release a reference taken on a remembered index. The switch drops rows on
+ * its own, by ageing and by the per-port flush the bridge asks for, and
+ * whoever claims one next counts itself from zero: that count is not ours to
+ * spend. Search on the seed the reference was taken on, because the caller has
+ * already overwritten the address.
+ */
+static void otto_l2_uc_put_row(struct otto_dsa_priv *priv,
+			       struct otto_l3_nexthop *nh)
+{
+	struct rtl838x_l2_entry e = {};
+
+	if (otto_l2_find_hash_entry(priv, nh->l2_seed, true, &e) != nh->l2_id)
+		return;
+
+	if (!e.next_hop)
+		return;
+
+	otto_l2_uc_put(priv, nh->l2_id);
+	otto_l2_uc_release_row(priv, nh, &e);
+}
+
+/* Add an L2 nexthop entry for the L3 routing system / PIE forwarding in the SoC
+ * Use VID and MAC in rtl838x_l2_entry to find the entry the switch holds for the
+ * gateway and mark it as a nexthop by setting its nexthop bit
+ * Called from the L3 layer
+ * The index in the L2 hash table is filled into nh->l2_id;
+ */
+int otto_l2_nexthop_add(struct otto_dsa_priv *priv, struct otto_l3_nexthop *nh)
+{
+	struct rtl838x_l2_entry e = {};
+	u64 seed = priv->r->l2_hash_seed(nh->mac, nh->rvid);
+	int idx;
+
+	pr_debug("%s searching for %08llx vid %d, seed: %016llx\n",
+		 __func__, nh->mac, nh->rvid, seed);
+
+	/* The search, the count and the write are one step: anything else may
+	 * claim the entry we settled on in between.
+	 */
+	guard(mutex)(&priv->reg_mutex);
+
+	idx = otto_l2_find_hash_entry(priv, seed, false, &e);
+	if (idx < 0) {
+		pr_err("%s: No more L2 forwarding entries available\n", __func__);
+		return -1;
+	}
+
+	/* With a next hop that has no port, an RTL930x delivers every forwarded
+	 * frame twice, once from the switch and once from the Linux stack, and
+	 * an RTL839x cuts the gateway off from the switch. A row invented here
+	 * would be static, and nothing would replace it: dsa_user_fdb_event()
+	 * drops an address the software bridge learns on an offloaded port
+	 * before the driver sees it. The caller traps the route, leaves the
+	 * slot to the address, and lets the switch learn it.
+	 */
+	if (!e.valid) {
+		if (nh->l2_installed)
+			otto_l2_uc_put_row(priv, nh);
+		nh->l2_installed = false;
+		return -ENOENT;
+	}
+
+	/* Found an existing entry, make it a nexthop entry */
+	if (nh->l2_installed && nh->l2_id != idx)
+		otto_l2_uc_put_row(priv, nh);
+
+	if (!nh->l2_installed || nh->l2_id != idx)
+		otto_l2_uc_get(priv, idx);
+
+	nh->l2_id = idx;
+	nh->l2_seed = seed;
+	nh->port = e.port;
+	nh->rvid = e.rvid;
+	nh->dev_id = e.stack_dev;
+	/* If the entry is already a valid next hop entry, don't change it, but
+	 * for the DMAC entry it names: every route through the entry holds that
+	 * one, and the entry may still name one given up while it stayed a next
+	 * hop, or, on RTL839x, the row of the device's old MAC.
+	 */
+	if (e.next_hop) {
+		if (e.nh_route_id == nh->dmac_id)
+			return 0;
+		e.nh_route_id = nh->dmac_id;
+		priv->r->write_l2_entry_using_hash(priv, idx >> 2, idx & 0x3, &e);
+		return 0;
+	}
+	e.next_hop = true;
+	e.nh_route_id = nh->dmac_id;		/* DMAC entry or route ID takes place of VID */
+	e.nh_vlan_target = false;
+
+	priv->r->write_l2_entry_using_hash(priv, idx >> 2, idx & 0x3, &e);
+
+	return 0;
+}
+
+bool otto_l2_nexthop_current(struct otto_dsa_priv *priv, struct otto_l3_nexthop *nh)
+{
+	struct rtl838x_l2_entry e = {};
+
+	if (!nh->l2_installed)
+		return false;
+
+	guard(mutex)(&priv->reg_mutex);
+
+	return otto_l2_find_hash_entry(priv, nh->l2_seed, true, &e) == nh->l2_id &&
+	       e.next_hop && e.port == nh->port;
+}
+
+/* Removes a Layer 2 next hop entry in the forwarding database
+ * If it was static, the entire entry is removed, otherwise the nexthop bit is cleared
+ * and we wait until the entry ages out
+ */
+int otto_l2_nexthop_del(struct otto_dsa_priv *priv, struct otto_l3_nexthop *nh)
+{
+	struct rtl838x_l2_entry e = {};
+	u32 key = nh->l2_id >> 2;
+	int i = nh->l2_id & 0x3;
+	int idx;
+
+	guard(mutex)(&priv->reg_mutex);
+
+	dev_dbg(priv->dev, "next hop %d sits at key %d, index %d\n", nh->l2_id, key, i);
+
+	/* Search on the seed the installer claimed the row on, because the
+	 * caller replaces the address before every install. Landing on the
+	 * recorded index answers both questions at once: the row still holds
+	 * the address that was installed, and it is still the same row. A
+	 * negative index means the address has left the bucket altogether.
+	 */
+	idx = otto_l2_find_hash_entry(priv, nh->l2_seed, true, &e);
+	if (idx != nh->l2_id) {
+		dev_err(priv->dev, "next hop %d is at %d now, not removing it\n",
+			nh->l2_id, idx);
+		return -ESTALE;
+	}
+
+	if (!e.next_hop) {
+		dev_err(priv->dev, "next hop %d is no longer one, leaving it alone\n",
+			nh->l2_id);
+		return -ESTALE;
+	}
+
+	otto_l2_uc_put(priv, nh->l2_id);
+	otto_l2_uc_release_row(priv, nh, &e);
+
+	return 0;
+}
+
+u64 otto_l2_838x_hash_seed(u64 mac, u32 vid)
 {
 	return mac << 12 | vid;
 }
@@ -14,11 +395,14 @@ u64 rtl838x_l2_hash_seed(u64 mac, u32 vid)
 /* Applies the same hash algorithm as the one used currently by the ASIC to the seed
  * and returns a key into the L2 hash table
  */
-u32 rtl838x_l2_hash_key(struct rtl838x_switch_priv *priv, u64 seed)
+u32 otto_l2_838x_hash_key(struct otto_dsa_priv *priv, u64 seed)
 {
+	u32 ctrl = 0;
 	u32 h1, h2, h3, h;
 
-	if (sw_r32(priv->r->l2_ctrl_0) & 1) {
+	regmap_read(priv->map, priv->r->l2_ctrl_0, &ctrl);
+
+	if (ctrl & 1) {
 		h1 = (seed >> 11) & 0x7ff;
 		h1 = ((h1 & 0x1f) << 6) | ((h1 >> 5) & 0x3f);
 
@@ -39,18 +423,18 @@ u32 rtl838x_l2_hash_key(struct rtl838x_switch_priv *priv, u64 seed)
 	return h;
 }
 
-int rtl838x_l2_port_new_salrn(int p)
+int otto_l2_838x_port_new_salrn(int p)
 {
 	return RTL838X_L2_PORT_NEW_SALRN(p);
 }
 
-int rtl838x_l2_port_new_sa_fwd(int p)
+int otto_l2_838x_port_new_sa_fwd(int p)
 {
 	return RTL838X_L2_PORT_NEW_SA_FWD(p);
 }
 
 /* Fills an L2 entry structure from the SoC registers */
-static void rtl838x_fill_l2_entry(u32 r[], struct rtl838x_l2_entry *e)
+static void otto_l2_838x_fill_entry(u32 r[], struct rtl838x_l2_entry *e)
 {
 	/* Table contains different entry types, we need to identify the right one:
 	 * Check for MC entries, first
@@ -115,7 +499,7 @@ static void rtl838x_fill_l2_entry(u32 r[], struct rtl838x_l2_entry *e)
 }
 
 /* Fills the 3 SoC table registers r[] with the information of in the rtl838x_l2_entry */
-static void rtl838x_fill_l2_row(u32 r[], struct rtl838x_l2_entry *e)
+static void otto_l2_838x_fill_row(u32 r[], struct rtl838x_l2_entry *e)
 {
 	u64 mac = ether_addr_to_u64(e->mac);
 
@@ -164,7 +548,7 @@ static void rtl838x_fill_l2_row(u32 r[], struct rtl838x_l2_entry *e)
  * hash is the id of the bucket and pos is the position of the entry in that bucket
  * The data read from the SoC is filled into rtl838x_l2_entry
  */
-u64 rtl838x_read_l2_entry_using_hash(u32 hash, u32 pos, struct rtl838x_l2_entry *e)
+u64 otto_l2_838x_read_entry_using_hash(u32 hash, u32 pos, struct rtl838x_l2_entry *e)
 {
 	u32 r[3];
 	u32 idx = (0 << 14) | (hash << 2) | pos; /* Search SRAM, with hash and at pos in bucket */
@@ -172,32 +556,33 @@ u64 rtl838x_read_l2_entry_using_hash(u32 hash, u32 pos, struct rtl838x_l2_entry 
 	/* Access L2 Table 0 */
 	otto_table_read(RTL8380_TBL_L2_UC, idx, &r);
 
-	rtl838x_fill_l2_entry(r, e);
+	otto_l2_838x_fill_entry(r, e);
 	if (!e->valid)
 		return 0;
 
 	return (((u64)r[1]) << 32) | (r[2]);  /* mac and vid concatenated as hash seed */
 }
 
-void rtl838x_write_l2_entry_using_hash(u32 hash, u32 pos, struct rtl838x_l2_entry *e)
+void otto_l2_838x_write_entry_using_hash(struct otto_dsa_priv *priv,
+					 u32 hash, u32 pos, struct rtl838x_l2_entry *e)
 {
 	u32 r[3];
 	u32 idx = (0 << 14) | (hash << 2) | pos; /* Access SRAM, with hash and at pos in bucket */
 
-	rtl838x_fill_l2_row(r, e);
+	otto_l2_838x_fill_row(r, e);
 
 	/* Access L2 Table 0 */
 	otto_table_write(RTL8380_TBL_L2_UC, idx, &r);
 }
 
-u64 rtl838x_read_cam(int idx, struct rtl838x_l2_entry *e)
+u64 otto_l2_838x_read_cam(int idx, struct rtl838x_l2_entry *e)
 {
 	u32 r[3];
 
 	/* Access L2 Table 1 */
 	otto_table_read(RTL8380_TBL_L2_CAM_UC, idx, &r);
 
-	rtl838x_fill_l2_entry(r, e);
+	otto_l2_838x_fill_entry(r, e);
 	if (!e->valid)
 		return 0;
 
@@ -207,17 +592,17 @@ u64 rtl838x_read_cam(int idx, struct rtl838x_l2_entry *e)
 	return (((u64)r[1]) << 32) | r[2];
 }
 
-void rtl838x_write_cam(int idx, struct rtl838x_l2_entry *e)
+void otto_l2_838x_write_cam(int idx, struct rtl838x_l2_entry *e)
 {
 	u32 r[3];
 
-	rtl838x_fill_l2_row(r, e);
+	otto_l2_838x_fill_row(r, e);
 
 	/* Access L2 Table 1 */
 	otto_table_write(RTL8380_TBL_L2_CAM_UC, idx, &r);
 }
 
-u64 rtl838x_read_mcast_pmask(int idx)
+u64 otto_l2_838x_read_mcast_pmask(int idx)
 {
 	u32 portmask;
 
@@ -226,88 +611,101 @@ u64 rtl838x_read_mcast_pmask(int idx)
 	return portmask;
 }
 
-void rtl838x_write_mcast_pmask(int idx, u64 portmask)
+void otto_l2_838x_write_mcast_pmask(int idx, u64 portmask)
 {
 	u32 buf[1] = { ((u32)portmask) & RTL838X_MC_PMASK_ALL_PORTS };
 
 	otto_table_write(RTL8380_TBL_MC_PMSK, idx, &buf);
 }
 
-void rtl838x_l2_learning_setup(void)
+void otto_l2_838x_learning_setup(struct otto_dsa_priv *priv)
 {
 	/* Set portmask for broadcast traffic and unknown unicast address flooding
 	 * to the reserved entry in the portmask table used also for
 	 * multicast flooding
 	 */
-	sw_w32(RTL838X_L2_BC_FLD(MC_PMASK_ALL_PORTS_IDX) |
-	       RTL838X_L2_UNKN_UC_FLD(MC_PMASK_ALL_PORTS_IDX),
-	       RTL838X_L2_FLD_PMSK);
+	regmap_write(priv->map, RTL838X_L2_FLD_PMSK,
+		     RTL838X_L2_BC_FLD(MC_PMASK_ALL_PORTS_IDX) |
+		     RTL838X_L2_UNKN_UC_FLD(MC_PMASK_ALL_PORTS_IDX));
 
 	/* Enable learning constraint system-wide (bit 0), per-port (bit 1)
 	 * and per vlan (bit 2)
 	 */
-	sw_w32(0x7, RTL838X_L2_LRN_CONSTRT_EN);
+	regmap_write(priv->map, RTL838X_L2_LRN_CONSTRT_EN, 0x7);
 
 	/* Limit learning to maximum: 16k entries, after that just flood (bits 0-1) */
-	sw_w32((0x3fff << 2) | 0, RTL838X_L2_LRN_CONSTRT);
+	regmap_write(priv->map, RTL838X_L2_LRN_CONSTRT, (0x3fff << 2) | 0);
 
 	/* Do not trap ARP packets to CPU_PORT */
-	sw_w32(0, RTL838X_SPCL_TRAP_ARP_CTRL);
+	regmap_write(priv->map, RTL838X_SPCL_TRAP_ARP_CTRL, 0);
 }
 
-void rtl838x_enable_learning(int port, bool enable)
+void otto_l2_838x_enable_learning(struct otto_dsa_priv *priv, int port, bool enable)
 {
 	/* Limit learning to maximum: 16k entries */
 
-	sw_w32_mask(0x3fff << 2, enable ? (0x3fff << 2) : 0,
-		    RTL838X_L2_PORT_LRN_CONSTRT + (port << 2));
+	/* Force the write, as with the old read/modify/write accessors. */
+	regmap_write_bits(priv->map, RTL838X_L2_PORT_LRN_CONSTRT + (port << 2),
+			  0x3fff << 2, enable ? (0x3fff << 2) : 0);
 }
 
-void rtl838x_enable_flood(int port, enum rtldsa_flood_type mode)
+void otto_l2_838x_enable_flood(struct otto_dsa_priv *priv,
+			       int port, enum rtldsa_flood_type mode)
 {
 	/* 0: Forward
 	 * 1: Disable
 	 * 2: to CPU
 	 * 3: Copy to CPU
 	 */
-	sw_w32_mask(0x3, mode,
-		    RTL838X_L2_PORT_LRN_CONSTRT + (port << 2));
+	/* Preserve (old & ~clear) | set, including set bits outside clear. */
+	regmap_write_bits(priv->map, RTL838X_L2_PORT_LRN_CONSTRT + (port << 2),
+			  0x3 | mode, mode);
 }
 
-void rtl838x_enable_mcast_flood(int port, bool enable)
+void otto_l2_838x_enable_mcast_flood(struct otto_dsa_priv *priv, int port, bool enable)
 {
 }
 
-void rtl838x_enable_bcast_flood(int port, bool enable)
+void otto_l2_838x_enable_bcast_flood(struct otto_dsa_priv *priv, int port, bool enable)
 {
 }
 
-void rtl838x_set_static_move_action(int port, bool forward)
+void otto_l2_838x_set_static_move_action(struct otto_dsa_priv *priv,
+					 int port, bool forward)
 {
 	int shift = MV_ACT_PORT_SHIFT(port);
 	u32 val = forward ? MV_ACT_FORWARD : MV_ACT_DROP;
 
-	sw_w32_mask(MV_ACT_MASK << shift, val << shift,
-		    RTL838X_L2_PORT_STATIC_MV_ACT(port));
+	regmap_write_bits(priv->map, RTL838X_L2_PORT_STATIC_MV_ACT(port),
+			  MV_ACT_MASK << shift, val << shift);
 }
 
-int rtldsa_838x_fast_age(struct rtl838x_switch_priv *priv, int port, int vid)
+int otto_l2_838x_fast_age(struct otto_dsa_priv *priv, int port, int vid)
 {
 	u32 val;
+	int err;
 
 	val = BIT(26) | BIT(23) | (port << 5);
 	if (vid >= 0)
 		val |= BIT(24) | (vid << 10);
 
-	sw_w32(val, priv->r->l2_tbl_flush_ctrl);
-	do { } while (sw_r32(priv->r->l2_tbl_flush_ctrl) & BIT(26));
+	err = regmap_write(priv->map, priv->r->l2_tbl_flush_ctrl, val);
+	if (err)
+		return err;
 
-	return 0;
+	return regmap_read_poll_timeout(priv->map, priv->r->l2_tbl_flush_ctrl,
+					val, !(val & BIT(26)), 0, 0);
 }
 
-int rtl838x_set_ageing_time(unsigned long msec)
+int otto_l2_838x_set_ageing_time(struct otto_dsa_priv *priv, unsigned long msec)
 {
-	int t = sw_r32(RTL838X_L2_CTRL_1);
+	u32 val, aging;
+	int t, err;
+
+	err = regmap_read(priv->map, RTL838X_L2_CTRL_1, &val);
+	if (err)
+		return err;
+	t = val;
 
 	t &= 0x7FFFFF;
 	t = t * 128 / 625; /* Aging time in seconds. 0: L2 aging disabled */
@@ -315,14 +713,17 @@ int rtl838x_set_ageing_time(unsigned long msec)
 
 	t = (msec * 625 + 127000) / 128000;
 	t = t > 0x7FFFFF ? 0x7FFFFF : t;
-	sw_w32_mask(0x7FFFFF, t, RTL838X_L2_CTRL_1);
-	pr_debug("Dynamic aging for ports: %x\n", sw_r32(RTL838X_L2_PORT_AGING_OUT));
+	err = regmap_write_bits(priv->map, RTL838X_L2_CTRL_1, 0x7FFFFF | t, t);
+	if (err)
+		return err;
+	if (!regmap_read(priv->map, RTL838X_L2_PORT_AGING_OUT, &aging))
+		pr_debug("Dynamic aging for ports: %x\n", aging);
 
 	return 0;
 }
 
 /* Hash seed is vid (actually rvid) concatenated with the MAC address */
-u64 rtl839x_l2_hash_seed(u64 mac, u32 vid)
+u64 otto_l2_839x_hash_seed(u64 mac, u32 vid)
 {
 	u64 v = vid;
 
@@ -335,11 +736,14 @@ u64 rtl839x_l2_hash_seed(u64 mac, u32 vid)
 /* Applies the same hash algorithm as the one used currently by the ASIC to the seed
  * and returns a key into the L2 hash table
  */
-u32 rtl839x_l2_hash_key(struct rtl838x_switch_priv *priv, u64 seed)
+u32 otto_l2_839x_hash_key(struct otto_dsa_priv *priv, u64 seed)
 {
+	u32 ctrl = 0;
 	u32 h1, h2, h;
 
-	if (sw_r32(priv->r->l2_ctrl_0) & 1) {
+	regmap_read(priv->map, priv->r->l2_ctrl_0, &ctrl);
+
+	if (ctrl & 1) {
 		h1 = (u32)(((seed >> 60) & 0x3f) ^ ((seed >> 54) & 0x3f) ^
 			   ((seed >> 36) & 0x3f) ^ ((seed >> 30) & 0x3f) ^
 			   ((seed >> 12) & 0x3f) ^ ((seed >> 6) & 0x3f));
@@ -357,17 +761,17 @@ u32 rtl839x_l2_hash_key(struct rtl838x_switch_priv *priv, u64 seed)
 	return h;
 }
 
-int rtl839x_l2_port_new_salrn(int p)
+int otto_l2_839x_port_new_salrn(int p)
 {
 	return RTL839X_L2_PORT_NEW_SALRN(p);
 }
 
-int rtl839x_l2_port_new_sa_fwd(int p)
+int otto_l2_839x_port_new_sa_fwd(int p)
 {
 	return RTL839X_L2_PORT_NEW_SA_FWD(p);
 }
 
-static void rtl839x_fill_l2_entry(u32 r[], struct rtl838x_l2_entry *e)
+static void otto_l2_839x_fill_entry(u32 r[], struct rtl838x_l2_entry *e)
 {
 	/* Table contains different entry types, we need to identify the right one:
 	 * Check for MC entries, first
@@ -429,7 +833,7 @@ static void rtl839x_fill_l2_entry(u32 r[], struct rtl838x_l2_entry *e)
 }
 
 /* Fills the 3 SoC table registers r[] with the information in the rtl838x_l2_entry */
-static void rtl839x_fill_l2_row(u32 r[], struct rtl838x_l2_entry *e)
+static void otto_l2_839x_fill_row(u32 r[], struct rtl838x_l2_entry *e)
 {
 	if (!e->valid) {
 		r[0] = r[1] = r[2] = 0;
@@ -479,58 +883,59 @@ static void rtl839x_fill_l2_row(u32 r[], struct rtl838x_l2_entry *e)
  * hash is the id of the bucket and pos is the position of the entry in that bucket
  * The data read from the SoC is filled into rtl838x_l2_entry
  */
-u64 rtl839x_read_l2_entry_using_hash(u32 hash, u32 pos, struct rtl838x_l2_entry *e)
+u64 otto_l2_839x_read_entry_using_hash(u32 hash, u32 pos, struct rtl838x_l2_entry *e)
 {
 	u32 r[3];
 	u32 idx = (0 << 14) | (hash << 2) | pos; /* Search SRAM, with hash and at pos in bucket */
 
 	otto_table_read(RTL8390_TBL_L2_UC, idx, &r);
 
-	rtl839x_fill_l2_entry(r, e);
+	otto_l2_839x_fill_entry(r, e);
 	if (!e->valid)
 		return 0;
 
-	return rtl839x_l2_hash_seed(ether_addr_to_u64(&e->mac[0]), e->rvid);
+	return otto_l2_839x_hash_seed(ether_addr_to_u64(&e->mac[0]), e->rvid);
 }
 
-void rtl839x_write_l2_entry_using_hash(u32 hash, u32 pos, struct rtl838x_l2_entry *e)
+void otto_l2_839x_write_entry_using_hash(struct otto_dsa_priv *priv,
+					 u32 hash, u32 pos, struct rtl838x_l2_entry *e)
 {
 	u32 r[3];
 	u32 idx = (0 << 14) | (hash << 2) | pos; /* Access SRAM, with hash and at pos in bucket */
 
-	rtl839x_fill_l2_row(r, e);
+	otto_l2_839x_fill_row(r, e);
 
 	otto_table_write(RTL8390_TBL_L2_UC, idx, &r);
 }
 
-u64 rtl839x_read_cam(int idx, struct rtl838x_l2_entry *e)
+u64 otto_l2_839x_read_cam(int idx, struct rtl838x_l2_entry *e)
 {
 	u32 r[3];
 
 	/* Access L2 Table 1 */
 	otto_table_read(RTL8390_TBL_L2_CAM_UC, idx, &r);
 
-	rtl839x_fill_l2_entry(r, e);
+	otto_l2_839x_fill_entry(r, e);
 	if (!e->valid)
 		return 0;
 
 	pr_debug("Found in CAM: R1 %x R2 %x R3 %x\n", r[0], r[1], r[2]);
 
 	/* Return MAC with concatenated VID ac concatenated ID */
-	return rtl839x_l2_hash_seed(ether_addr_to_u64(&e->mac[0]), e->rvid);
+	return otto_l2_839x_hash_seed(ether_addr_to_u64(&e->mac[0]), e->rvid);
 }
 
-void rtl839x_write_cam(int idx, struct rtl838x_l2_entry *e)
+void otto_l2_839x_write_cam(int idx, struct rtl838x_l2_entry *e)
 {
 	u32 r[3];
 
-	rtl839x_fill_l2_row(r, e);
+	otto_l2_839x_fill_row(r, e);
 
 	/* Access L2 Table 1 */
 	otto_table_write(RTL8390_TBL_L2_CAM_UC, idx, &r);
 }
 
-u64 rtl839x_read_mcast_pmask(int idx)
+u64 otto_l2_839x_read_mcast_pmask(int idx)
 {
 	u32 buf[2];
 	u64 portmask;
@@ -544,7 +949,7 @@ u64 rtl839x_read_mcast_pmask(int idx)
 	return portmask;
 }
 
-void rtl839x_write_mcast_pmask(int idx, u64 portmask)
+void otto_l2_839x_write_mcast_pmask(int idx, u64 portmask)
 {
 	u32 buf[2];
 
@@ -555,76 +960,87 @@ void rtl839x_write_mcast_pmask(int idx, u64 portmask)
 	otto_table_write(RTL8390_TBL_MC_PMSK, idx, &buf);
 }
 
-void rtl839x_l2_learning_setup(void)
+void otto_l2_839x_learning_setup(struct otto_dsa_priv *priv)
 {
 	/* Set portmask for broadcast (offset bit 12) and unknown unicast (offset 0)
 	 * address flooding to the reserved entry in the portmask table used
 	 * also for multicast flooding
 	 */
-	sw_w32(RTL839X_L2_BC_FLD(MC_PMASK_ALL_PORTS_IDX) |
-	       RTL839X_L2_UNKN_UC_FLD(MC_PMASK_ALL_PORTS_IDX),
-	       RTL839X_L2_FLD_PMSK);
+	regmap_write(priv->map, RTL839X_L2_FLD_PMSK,
+		     RTL839X_L2_BC_FLD(MC_PMASK_ALL_PORTS_IDX) |
+		     RTL839X_L2_UNKN_UC_FLD(MC_PMASK_ALL_PORTS_IDX));
 
 	/* Limit learning to maximum: 32k entries, after that just flood (bits 0-1) */
-	sw_w32((0x7fff << 2) | 0, RTL839X_L2_LRN_CONSTRT);
+	regmap_write(priv->map, RTL839X_L2_LRN_CONSTRT, (0x7fff << 2) | 0);
 
 	/* Do not trap ARP packets to CPU_PORT */
-	sw_w32(0, RTL839X_SPCL_TRAP_ARP_CTRL);
+	regmap_write(priv->map, RTL839X_SPCL_TRAP_ARP_CTRL, 0);
 }
 
-void rtl839x_enable_learning(int port, bool enable)
+void otto_l2_839x_enable_learning(struct otto_dsa_priv *priv, int port, bool enable)
 {
 	/* Limit learning to maximum: 32k entries */
 
-	sw_w32_mask(0x7fff << 2, enable ? (0x7fff << 2) : 0,
-		    RTL839X_L2_PORT_LRN_CONSTRT + (port << 2));
+	regmap_write_bits(priv->map, RTL839X_L2_PORT_LRN_CONSTRT + (port << 2),
+			  0x7fff << 2, enable ? (0x7fff << 2) : 0);
 }
 
-void rtl839x_enable_flood(int port, enum rtldsa_flood_type mode)
+void otto_l2_839x_enable_flood(struct otto_dsa_priv *priv,
+			       int port, enum rtldsa_flood_type mode)
 {
 	/* 0: Forward
 	 * 1: Disable
 	 * 2: to CPU
 	 * 3: Copy to CPU
 	 */
-	sw_w32_mask(0x3, mode,
-		    RTL839X_L2_PORT_LRN_CONSTRT + (port << 2));
+	regmap_write_bits(priv->map, RTL839X_L2_PORT_LRN_CONSTRT + (port << 2),
+			  0x3 | mode, mode);
 }
 
-void rtl839x_enable_mcast_flood(int port, bool enable)
+void otto_l2_839x_enable_mcast_flood(struct otto_dsa_priv *priv, int port, bool enable)
 {
 }
 
-void rtl839x_enable_bcast_flood(int port, bool enable)
+void otto_l2_839x_enable_bcast_flood(struct otto_dsa_priv *priv, int port, bool enable)
 {
 }
 
-void rtl839x_set_static_move_action(int port, bool forward)
+void otto_l2_839x_set_static_move_action(struct otto_dsa_priv *priv,
+					 int port, bool forward)
 {
 	int shift = MV_ACT_PORT_SHIFT(port);
 	u32 val = forward ? MV_ACT_FORWARD : MV_ACT_DROP;
 
-	sw_w32_mask(MV_ACT_MASK << shift, val << shift,
-		    RTL839X_L2_PORT_STATIC_MV_ACT(port));
+	regmap_write_bits(priv->map, RTL839X_L2_PORT_STATIC_MV_ACT(port),
+			  MV_ACT_MASK << shift, val << shift);
 }
 
-int rtldsa_839x_fast_age(struct rtl838x_switch_priv *priv, int port, int vid)
+int otto_l2_839x_fast_age(struct otto_dsa_priv *priv, int port, int vid)
 {
 	u32 val;
+	int err;
 
 	val = BIT(28) | BIT(25) | (port << 6);
 	if (vid >= 0)
 		val |= BIT(26) | (vid << 12);
 
-	sw_w32(val, priv->r->l2_tbl_flush_ctrl);
-	do { } while (sw_r32(priv->r->l2_tbl_flush_ctrl) & BIT(28));
+	err = regmap_write(priv->map, priv->r->l2_tbl_flush_ctrl, val);
+	if (err)
+		return err;
 
-	return 0;
+	return regmap_read_poll_timeout(priv->map, priv->r->l2_tbl_flush_ctrl,
+					val, !(val & BIT(28)), 0, 0);
 }
 
-int rtl839x_set_ageing_time(unsigned long msec)
+int otto_l2_839x_set_ageing_time(struct otto_dsa_priv *priv, unsigned long msec)
 {
-	int t = sw_r32(RTL839X_L2_CTRL_1);
+	u32 val, aging;
+	int t, err;
+
+	err = regmap_read(priv->map, RTL839X_L2_CTRL_1, &val);
+	if (err)
+		return err;
+	t = val;
 
 	t &= 0x1FFFFF;
 	t = t * 3 / 5; /* Aging time in seconds. 0: L2 aging disabled */
@@ -632,76 +1048,79 @@ int rtl839x_set_ageing_time(unsigned long msec)
 
 	t = (msec * 5 + 2000) / 3000;
 	t = t > 0x1FFFFF ? 0x1FFFFF : t;
-	sw_w32_mask(0x1FFFFF, t, RTL839X_L2_CTRL_1);
-	pr_debug("Dynamic aging for ports: %x\n", sw_r32(RTL839X_L2_PORT_AGING_OUT));
+	err = regmap_write_bits(priv->map, RTL839X_L2_CTRL_1, 0x1FFFFF | t, t);
+	if (err)
+		return err;
+	if (!regmap_read(priv->map, RTL839X_L2_PORT_AGING_OUT, &aging))
+		pr_debug("Dynamic aging for ports: %x\n", aging);
 
 	return 0;
 }
 
-int rtl930x_l2_port_new_salrn(int p)
+int otto_l2_930x_port_new_salrn(int p)
 {
 	return RTL930X_L2_PORT_SALRN(p);
 }
 
-int rtl930x_l2_port_new_sa_fwd(int p)
+int otto_l2_930x_port_new_sa_fwd(int p)
 {
 	/* TODO: The definition of the fields changed, because of the master-cpu in a stack */
 	return RTL930X_L2_PORT_NEW_SA_FWD(p);
 }
 
-void rtl930x_l2_learning_setup(void)
+void otto_l2_930x_learning_setup(struct otto_dsa_priv *priv)
 {
 	/* Portmask for flooding broadcast traffic */
-	sw_w32(RTL930X_MC_PMASK_ALL_PORTS, RTL930X_L2_BC_FLD_PMSK);
+	regmap_write(priv->map, RTL930X_L2_BC_FLD_PMSK, RTL930X_MC_PMASK_ALL_PORTS);
 
 	/* Portmask for flooding unicast traffic with unknown destination */
-	sw_w32(RTL930X_MC_PMASK_ALL_PORTS, RTL930X_L2_UNKN_UC_FLD_PMSK);
+	regmap_write(priv->map, RTL930X_L2_UNKN_UC_FLD_PMSK, RTL930X_MC_PMASK_ALL_PORTS);
 
 	/* Limit learning to maximum: 32k entries, after that just flood (bits 0-1) */
-	sw_w32((0x7fff << 2) | 0, RTL930X_L2_LRN_CONSTRT_CTRL);
+	regmap_write(priv->map, RTL930X_L2_LRN_CONSTRT_CTRL, (0x7fff << 2) | 0);
 }
 
-void rtldsa_930x_enable_learning(int port, bool enable)
+void otto_l2_930x_enable_learning(struct otto_dsa_priv *priv, int port, bool enable)
 {
 	/* Limit learning to maximum: 32k entries */
-	sw_w32_mask(GENMASK(17, 3), enable ? (0x7ffe << 3) : 0,
-		    RTL930X_L2_LRN_PORT_CONSTRT_CTRL + port * 4);
+	regmap_write_bits(priv->map, RTL930X_L2_LRN_PORT_CONSTRT_CTRL + port * 4,
+			  GENMASK(17, 3), enable ? (0x7ffe << 3) : 0);
 }
 
-void rtldsa_930x_l2_port_new_sa_fwd(int port, enum rtldsa_flood_type mode)
+void otto_l2_930x_set_port_new_sa_fwd(struct otto_dsa_priv *priv,
+				      int port, enum rtldsa_flood_type mode)
 {
 	u32 new_sa_fwd_shift = (port % 10) * 3;
+	u32 val = mode << new_sa_fwd_shift;
 
-	sw_w32_mask(GENMASK(new_sa_fwd_shift + 2, new_sa_fwd_shift),
-		    mode << new_sa_fwd_shift,
-		    rtl930x_l2_port_new_sa_fwd(port));
+	regmap_write_bits(priv->map, otto_l2_930x_port_new_sa_fwd(port),
+			  GENMASK(new_sa_fwd_shift + 2, new_sa_fwd_shift) | val, val);
 }
 
-void rtldsa_930x_enable_flood(int port, enum rtldsa_flood_type mode)
+void otto_l2_930x_enable_flood(struct otto_dsa_priv *priv,
+			       int port, enum rtldsa_flood_type mode)
 {
 	u32 port_mask = BIT(port);
 	u32 val;
 
 	val = (mode == RTLDSA_FLOOD_TYPE_FORWARD) ? port_mask : 0;
 
-	sw_w32_mask(GENMASK(2, 0), mode,
-		    RTL930X_L2_LRN_PORT_CONSTRT_CTRL + port * 4);
+	regmap_write_bits(priv->map, RTL930X_L2_LRN_PORT_CONSTRT_CTRL + port * 4,
+			  GENMASK(2, 0) | mode, mode);
 
-	sw_w32_mask(port_mask,
-		    val,
-		    RTL930X_L2_UNKN_UC_FLD_PMSK);
+	regmap_write_bits(priv->map, RTL930X_L2_UNKN_UC_FLD_PMSK,
+			  port_mask, val);
 }
 
-void rtldsa_930x_enable_bcast_flood(int port, bool enable)
+void otto_l2_930x_enable_bcast_flood(struct otto_dsa_priv *priv, int port, bool enable)
 {
 	u32 port_mask = BIT(port);
 
-	sw_w32_mask(port_mask,
-		    enable ? port_mask : 0,
-		    RTL930X_L2_BC_FLD_PMSK);
+	regmap_write_bits(priv->map, RTL930X_L2_BC_FLD_PMSK,
+			  port_mask, enable ? port_mask : 0);
 }
 
-u64 rtl930x_l2_hash_seed(u64 mac, u32 vid)
+u64 otto_l2_930x_hash_seed(u64 mac, u32 vid)
 {
 	u64 v = vid;
 
@@ -716,9 +1135,12 @@ u64 rtl930x_l2_hash_seed(u64 mac, u32 vid)
  * both hashes in the lower and higher word of the return value since only 12 bit of
  * the hash are significant
  */
-u32 rtl930x_l2_hash_key(struct rtl838x_switch_priv *priv, u64 seed)
+u32 otto_l2_930x_hash_key(struct otto_dsa_priv *priv, u64 seed)
 {
+	u32 ctrl = 0;
 	u32 k0, k1, h1, h2, h;
+
+	regmap_read(priv->map, RTL930X_L2_CTRL, &ctrl);
 
 	k0 = (u32)(((seed >> 55) & 0x1f) ^
 		   ((seed >> 44) & 0x7ff) ^
@@ -733,7 +1155,7 @@ u32 rtl930x_l2_hash_key(struct rtl838x_switch_priv *priv, u64 seed)
 	h2 = (seed >> 33) & 0x7ff;
 	h2 = ((h2 & 0x3f) << 5) | ((h2 >> 6) & 0x3f);
 
-	k1 = (u32)(((seed << 55) & 0x1f) ^
+	k1 = (u32)(((seed >> 55) & 0x1f) ^
 		   ((seed >> 44) & 0x7ff) ^
 		   h2 ^
 		   ((seed >> 22) & 0x7ff) ^
@@ -741,7 +1163,7 @@ u32 rtl930x_l2_hash_key(struct rtl838x_switch_priv *priv, u64 seed)
 		   (seed & 0x7ff));
 
 	/* Algorithm choice for block 0 */
-	if (sw_r32(RTL930X_L2_CTRL) & BIT(0))
+	if (ctrl & BIT(0))
 		h = k1;
 	else
 		h = k0;
@@ -752,7 +1174,7 @@ u32 rtl930x_l2_hash_key(struct rtl838x_switch_priv *priv, u64 seed)
 	 * 2048 is in fact the hash-table size 16384 divided by 4 hashes per bucket
 	 * divided by 2 to divide the hash space in 2
 	 */
-	if (sw_r32(RTL930X_L2_CTRL) & BIT(1))
+	if (ctrl & BIT(1))
 		h |= (k1 + 2048) << 16;
 	else
 		h |= (k0 + 2048) << 16;
@@ -761,7 +1183,7 @@ u32 rtl930x_l2_hash_key(struct rtl838x_switch_priv *priv, u64 seed)
 }
 
 /* Fills an L2 entry structure from the SoC registers */
-static void rtl930x_fill_l2_entry(u32 r[], struct rtl838x_l2_entry *e)
+static void otto_l2_930x_fill_entry(u32 r[], struct rtl838x_l2_entry *e)
 {
 	pr_debug("In %s valid?\n", __func__);
 	e->valid = !!(r[2] & BIT(31));
@@ -820,7 +1242,7 @@ static void rtl930x_fill_l2_entry(u32 r[], struct rtl838x_l2_entry *e)
 }
 
 /* Fills the 3 SoC table registers r[] with the information of in the rtl838x_l2_entry */
-static void rtl930x_fill_l2_row(u32 r[], struct rtl838x_l2_entry *e)
+static void otto_l2_930x_fill_row(u32 r[], struct rtl838x_l2_entry *e)
 {
 	u32 port;
 
@@ -870,7 +1292,7 @@ static void rtl930x_fill_l2_row(u32 r[], struct rtl838x_l2_entry *e)
  * hash is the id of the bucket and pos is the position of the entry in that bucket
  * The data read from the SoC is filled into rtl838x_l2_entry
  */
-u64 rtl930x_read_l2_entry_using_hash(u32 hash, u32 pos, struct rtl838x_l2_entry *e)
+u64 otto_l2_930x_read_entry_using_hash(u32 hash, u32 pos, struct rtl838x_l2_entry *e)
 {
 	u32 r[3];
 	u32 idx;
@@ -895,7 +1317,7 @@ u64 rtl930x_read_l2_entry_using_hash(u32 hash, u32 pos, struct rtl838x_l2_entry 
 
 	otto_table_read(RTL9300_TBL_L2_UC, idx, &r);
 
-	rtl930x_fill_l2_entry(r, e);
+	otto_l2_930x_fill_entry(r, e);
 
 	pr_debug("%s: valid: %d, nh: %d\n", __func__, e->valid, e->next_hop);
 	if (!e->valid)
@@ -908,14 +1330,15 @@ u64 rtl930x_read_l2_entry_using_hash(u32 hash, u32 pos, struct rtl838x_l2_entry 
 	      ((u64)e->mac[4]) << 8 |
 	      ((u64)e->mac[5]);
 
-	seed = rtl930x_l2_hash_seed(mac, e->rvid);
+	seed = otto_l2_930x_hash_seed(mac, e->rvid);
 	pr_debug("%s: mac %016llx, seed %016llx\n", __func__, mac, seed);
 
 	/* return vid with concatenated mac as unique id */
 	return seed;
 }
 
-void rtl930x_write_l2_entry_using_hash(u32 hash, u32 pos, struct rtl838x_l2_entry *e)
+void otto_l2_930x_write_entry_using_hash(struct otto_dsa_priv *priv,
+					 u32 hash, u32 pos, struct rtl838x_l2_entry *e)
 {
 	u32 r[3];
 	u32 idx = (0 << 14) | (hash << 2) | pos; /* Access SRAM, with hash and at pos in bucket */
@@ -924,18 +1347,18 @@ void rtl930x_write_l2_entry_using_hash(u32 hash, u32 pos, struct rtl838x_l2_entr
 	pr_debug("%s: index %d -> mac %02x:%02x:%02x:%02x:%02x:%02x\n", __func__, idx,
 		 e->mac[0], e->mac[1], e->mac[2], e->mac[3], e->mac[4], e->mac[5]);
 
-	rtl930x_fill_l2_row(r, e);
+	otto_l2_930x_fill_row(r, e);
 
 	otto_table_write(RTL9300_TBL_L2_UC, idx, &r);
 }
 
-u64 rtl930x_read_cam(int idx, struct rtl838x_l2_entry *e)
+u64 otto_l2_930x_read_cam(int idx, struct rtl838x_l2_entry *e)
 {
 	u32 r[3];
 
 	otto_table_read(RTL9300_TBL_L2_CAM_UC, idx, &r);
 
-	rtl930x_fill_l2_entry(r, e);
+	otto_l2_930x_fill_entry(r, e);
 	if (!e->valid)
 		return 0;
 
@@ -943,17 +1366,17 @@ u64 rtl930x_read_cam(int idx, struct rtl838x_l2_entry *e)
 	return ((u64)r[0] << 28) | ((r[1] & 0xffff0000) >> 4) | e->vid;
 }
 
-void rtl930x_write_cam(int idx, struct rtl838x_l2_entry *e)
+void otto_l2_930x_write_cam(int idx, struct rtl838x_l2_entry *e)
 {
 	u32 r[3];
 
-	rtl930x_fill_l2_row(r, e);
+	otto_l2_930x_fill_row(r, e);
 
 	/* Access L2 Table 1 */
 	otto_table_write(RTL9300_TBL_L2_CAM_UC, idx, &r);
 }
 
-u64 rtl930x_read_mcast_pmask(int idx)
+u64 otto_l2_930x_read_mcast_pmask(int idx)
 {
 	u32 portmask;
 
@@ -965,7 +1388,7 @@ u64 rtl930x_read_mcast_pmask(int idx)
 	return portmask;
 }
 
-void rtl930x_write_mcast_pmask(int idx, u64 portmask)
+void otto_l2_930x_write_mcast_pmask(int idx, u64 portmask)
 {
 	u32 pm = portmask;
 
@@ -979,9 +1402,12 @@ void rtl930x_write_mcast_pmask(int idx, u64 portmask)
  * lower and higher word of the return value since only 12 bit of
  * the hash are significant
  */
-u32 rtl930x_hash(struct rtl838x_switch_priv *priv, u64 seed)
+u32 otto_l2_930x_hash(struct otto_dsa_priv *priv, u64 seed)
 {
+	u32 ctrl = 0;
 	u32 k0, k1, h1, h2, h;
+
+	regmap_read(priv->map, RTL930X_L2_CTRL, &ctrl);
 
 	k0 = (u32) (((seed >> 55) & 0x1f) ^
 		    ((seed >> 44) & 0x7ff) ^
@@ -996,7 +1422,7 @@ u32 rtl930x_hash(struct rtl838x_switch_priv *priv, u64 seed)
 	h2 = (seed >> 33) & 0x7ff;
 	h2 = ((h2 & 0x3f) << 5) | ((h2 >> 6) & 0x3f);
 
-	k1 = (u32) (((seed << 55) & 0x1f) ^
+	k1 = (u32) (((seed >> 55) & 0x1f) ^
 		    ((seed >> 44) & 0x7ff) ^
 		    h2 ^
 		    ((seed >> 22) & 0x7ff) ^
@@ -1004,7 +1430,7 @@ u32 rtl930x_hash(struct rtl838x_switch_priv *priv, u64 seed)
 		    (seed & 0x7ff));
 
 	/* Algorithm choice for block 0 */
-	if (sw_r32(RTL930X_L2_CTRL) & BIT(0))
+	if (ctrl & BIT(0))
 		h = k1;
 	else
 		h = k0;
@@ -1015,7 +1441,7 @@ u32 rtl930x_hash(struct rtl838x_switch_priv *priv, u64 seed)
 	 * 2048 is in fact the hash-table size 16384 divided by 4 hashes per bucket
 	 * divided by 2 to divide the hash space in 2
 	 */
-	if (sw_r32(RTL930X_L2_CTRL) & BIT(1))
+	if (ctrl & BIT(1))
 		h |= (k1 + 2048) << 16;
 	else
 		h |= (k0 + 2048) << 16;
@@ -1023,11 +1449,14 @@ u32 rtl930x_hash(struct rtl838x_switch_priv *priv, u64 seed)
 	return h;
 }
 
-int rtldsa_930x_fast_age(struct rtl838x_switch_priv *priv, int port, int vid)
+int otto_l2_930x_fast_age(struct otto_dsa_priv *priv, int port, int vid)
 {
 	u32 val;
+	int err;
 
-	sw_w32(port << 11, RTL930X_L2_TBL_FLUSH_CTRL + 4);
+	err = regmap_write(priv->map, RTL930X_L2_TBL_FLUSH_CTRL + 4, port << 11);
+	if (err)
+		return err;
 
 	val = 0;
 	val |= BIT(26); /* compare port id */
@@ -1037,16 +1466,23 @@ int rtldsa_930x_fast_age(struct rtl838x_switch_priv *priv, int port, int vid)
 		val |= vid << 12;
 	}
 
-	sw_w32(val, RTL930X_L2_TBL_FLUSH_CTRL);
+	err = regmap_write(priv->map, RTL930X_L2_TBL_FLUSH_CTRL, val);
+	if (err)
+		return err;
 
-	do { } while (sw_r32(priv->r->l2_tbl_flush_ctrl) & BIT(30));
-
-	return 0;
+	return regmap_read_poll_timeout(priv->map, priv->r->l2_tbl_flush_ctrl,
+					val, !(val & BIT(30)), 0, 0);
 }
 
-int rtl930x_set_ageing_time(unsigned long msec)
+int otto_l2_930x_set_ageing_time(struct otto_dsa_priv *priv, unsigned long msec)
 {
-	int t = sw_r32(RTL930X_L2_AGE_CTRL);
+	u32 val, aging;
+	int t, err;
+
+	err = regmap_read(priv->map, RTL930X_L2_AGE_CTRL, &val);
+	if (err)
+		return err;
+	t = val;
 
 	t &= 0x1FFFFF;
 	t = (t * 7) / 10;
@@ -1054,23 +1490,26 @@ int rtl930x_set_ageing_time(unsigned long msec)
 
 	t = (msec / 100 + 6) / 7;
 	t = t > 0x1FFFFF ? 0x1FFFFF : t;
-	sw_w32_mask(0x1FFFFF, t, RTL930X_L2_AGE_CTRL);
-	pr_debug("Dynamic aging for ports: %x\n", sw_r32(RTL930X_L2_PORT_AGE_CTRL));
+	err = regmap_write_bits(priv->map, RTL930X_L2_AGE_CTRL, 0x1FFFFF | t, t);
+	if (err)
+		return err;
+	if (!regmap_read(priv->map, RTL930X_L2_PORT_AGE_CTRL, &aging))
+		pr_debug("Dynamic aging for ports: %x\n", aging);
 
 	return 0;
 }
 
-int rtl931x_l2_port_new_salrn(int p)
+int otto_l2_931x_port_new_salrn(int p)
 {
 	return RTL931X_L2_PORT_NEW_SALRN(p);
 }
 
-int rtl931x_l2_port_new_sa_fwd(int p)
+int otto_l2_931x_port_new_sa_fwd(int p)
 {
 	return RTL931X_L2_PORT_NEW_SA_FWD(p);
 }
 
-u64 rtldsa_931x_l2_hash_seed(u64 mac, u32 vid)
+u64 otto_l2_931x_hash_seed(u64 mac, u32 vid)
 {
 	return (u64)vid << 48 | mac;
 }
@@ -1080,9 +1519,12 @@ u64 rtldsa_931x_l2_hash_seed(u64 mac, u32 vid)
  * both hashes in the lower and higher word of the return value since only 12 bit of
  * the hash are significant.
  */
-u32 rtl931x_l2_hash_key(struct rtl838x_switch_priv *priv, u64 seed)
+u32 otto_l2_931x_hash_key(struct otto_dsa_priv *priv, u64 seed)
 {
+	u32 ctrl = 0;
 	u32 h, h0, h1, h2, h3, h4, k0, k1;
+
+	regmap_read(priv->map, RTL931X_L2_CTRL, &ctrl);
 
 	h0 = seed & 0xfff;
 	h1 = (seed >> 12) & 0xfff;
@@ -1103,7 +1545,7 @@ u32 rtl931x_l2_hash_key(struct rtl838x_switch_priv *priv, u64 seed)
 	k1 = h0 ^ h1 ^ h2 ^ h3 ^ h4;
 
 	/* Algorithm choice for block 0 */
-	if (sw_r32(RTL931X_L2_CTRL) & BIT(0))
+	if (ctrl & BIT(0))
 		h = k1;
 	else
 		h = k0;
@@ -1114,7 +1556,7 @@ u32 rtl931x_l2_hash_key(struct rtl838x_switch_priv *priv, u64 seed)
 	 * 4096 is in fact the hash-table size 32768 divided by 4 hashes per bucket
 	 * divided by 2 to divide the hash space in 2
 	 */
-	if (sw_r32(RTL931X_L2_CTRL) & BIT(1))
+	if (ctrl & BIT(1))
 		h |= (k1 + 4096) << 16;
 	else
 		h |= (k0 + 4096) << 16;
@@ -1123,7 +1565,7 @@ u32 rtl931x_l2_hash_key(struct rtl838x_switch_priv *priv, u64 seed)
 }
 
 /* Fills an L2 entry structure from the SoC registers */
-static void rtl931x_fill_l2_entry(u32 r[], struct rtl838x_l2_entry *e)
+static void otto_l2_931x_fill_entry(u32 r[], struct rtl838x_l2_entry *e)
 {
 	pr_debug("In %s valid?\n", __func__);
 	e->valid = !!(r[0] & BIT(31));
@@ -1183,7 +1625,7 @@ static void rtl931x_fill_l2_entry(u32 r[], struct rtl838x_l2_entry *e)
 }
 
 /* Fills the 3 SoC table registers r[] with the information of in the rtl838x_l2_entry */
-static void rtl931x_fill_l2_row(u32 r[], struct rtl838x_l2_entry *e)
+static void otto_l2_931x_fill_row(u32 r[], struct rtl838x_l2_entry *e)
 {
 	u32 port;
 
@@ -1239,7 +1681,7 @@ static void rtl931x_fill_l2_row(u32 r[], struct rtl838x_l2_entry *e)
  * hash is the id of the bucket and pos is the position of the entry in that bucket
  * The data read from the SoC is filled into rtl838x_l2_entry
  */
-u64 rtl931x_read_l2_entry_using_hash(u32 hash, u32 pos, struct rtl838x_l2_entry *e)
+u64 otto_l2_931x_read_entry_using_hash(u32 hash, u32 pos, struct rtl838x_l2_entry *e)
 {
 	u32 r[4];
 	u32 idx;
@@ -1264,7 +1706,7 @@ u64 rtl931x_read_l2_entry_using_hash(u32 hash, u32 pos, struct rtl838x_l2_entry 
 
 	otto_table_read(RTL9310_TBL_L2_UC, idx, &r);
 
-	rtl931x_fill_l2_entry(r, e);
+	otto_l2_931x_fill_entry(r, e);
 
 	pr_debug("%s: valid: %d, nh: %d\n", __func__, e->valid, e->next_hop);
 	if (!e->valid)
@@ -1277,19 +1719,19 @@ u64 rtl931x_read_l2_entry_using_hash(u32 hash, u32 pos, struct rtl838x_l2_entry 
 	      ((u64)e->mac[4]) << 8 |
 	      ((u64)e->mac[5]);
 
-	seed = rtldsa_931x_l2_hash_seed(mac, e->rvid);
+	seed = otto_l2_931x_hash_seed(mac, e->rvid);
 	pr_debug("%s: mac %016llx, seed %016llx\n", __func__, mac, seed);
 
 	/* return vid with concatenated mac as unique id */
 	return seed;
 }
 
-u64 rtl931x_read_cam(int idx, struct rtl838x_l2_entry *e)
+u64 otto_l2_931x_read_cam(int idx, struct rtl838x_l2_entry *e)
 {
 	u32 r[4];
 
 	otto_table_read(RTL9310_TBL_L2_CAM_UC, idx, &r);
-	rtl931x_fill_l2_entry(r, e);
+	otto_l2_931x_fill_entry(r, e);
 	if (!e->valid)
 		return 0;
 
@@ -1297,18 +1739,19 @@ u64 rtl931x_read_cam(int idx, struct rtl838x_l2_entry *e)
 	return ((((u64)(r[0] & 0xffff) << 32) | (u64)r[1]) << 12) | e->vid;
 }
 
-void rtl931x_write_cam(int idx, struct rtl838x_l2_entry *e)
+void otto_l2_931x_write_cam(int idx, struct rtl838x_l2_entry *e)
 {
 	u32 r[4];
 
-	rtl931x_fill_l2_row(r, e);
+	otto_l2_931x_fill_row(r, e);
 
 	otto_table_write(RTL9310_TBL_L2_CAM_UC, idx, &r);
 }
 
-void rtl931x_write_l2_entry_using_hash(u32 hash, u32 pos, struct rtl838x_l2_entry *e)
+void otto_l2_931x_write_entry_using_hash(struct otto_dsa_priv *priv,
+					 u32 hash, u32 pos, struct rtl838x_l2_entry *e)
 {
-	u32 r[4];
+	u32 r[4], ctrl;
 	u32 idx = (0 << 14) | (hash << 2) | pos; /* Access SRAM, with hash and at pos in bucket */
 	int hash_algo_id;
 
@@ -1316,51 +1759,62 @@ void rtl931x_write_l2_entry_using_hash(u32 hash, u32 pos, struct rtl838x_l2_entr
 	pr_debug("%s: index %d -> mac %02x:%02x:%02x:%02x:%02x:%02x\n", __func__, idx,
 		 e->mac[0], e->mac[1], e->mac[2], e->mac[3], e->mac[4], e->mac[5]);
 
+	if (regmap_read(priv->map, RTL931X_L2_CTRL, &ctrl))
+		return;
+
 	if (idx < 0x4000)
-		hash_algo_id = sw_r32(RTL931X_L2_CTRL) & BIT(0);
+		hash_algo_id = ctrl & BIT(0);
 	else
-		hash_algo_id = (sw_r32(RTL931X_L2_CTRL) & BIT(1)) >> 1;
+		hash_algo_id = (ctrl & BIT(1)) >> 1;
 
 	if (hash_algo_id == 0)
 		e->hash_msb = (e->rvid >> 2) & 0x1;
 	else
 		e->hash_msb = (e->rvid >> 11) & 0x1;
 
-	rtl931x_fill_l2_row(r, e);
+	otto_l2_931x_fill_row(r, e);
 	pr_debug("%s: %d: %08x %08x %08x\n", __func__, idx, r[0], r[1], r[2]);
 
 	otto_table_write(RTL9310_TBL_L2_UC, idx, &r);
 }
 
-void rtl931x_l2_learning_setup(void)
+void otto_l2_931x_learning_setup(struct otto_dsa_priv *priv)
 {
 	/* Portmask for flooding broadcast traffic */
-	rtl839x_set_port_reg_be(RTL931X_MC_PMASK_ALL_PORTS, RTL931X_L2_BC_FLD_PMSK);
+	regmap_write(priv->map, RTL931X_L2_BC_FLD_PMSK,
+		     upper_32_bits(RTL931X_MC_PMASK_ALL_PORTS));
+	regmap_write(priv->map, RTL931X_L2_BC_FLD_PMSK + 4,
+		     lower_32_bits(RTL931X_MC_PMASK_ALL_PORTS));
 
 	/* Portmask for flooding unicast traffic with unknown destination */
-	rtl839x_set_port_reg_be(RTL931X_MC_PMASK_ALL_PORTS, RTL931X_L2_UNKN_UC_FLD_PMSK);
+	regmap_write(priv->map, RTL931X_L2_UNKN_UC_FLD_PMSK,
+		     upper_32_bits(RTL931X_MC_PMASK_ALL_PORTS));
+	regmap_write(priv->map, RTL931X_L2_UNKN_UC_FLD_PMSK + 4,
+		     lower_32_bits(RTL931X_MC_PMASK_ALL_PORTS));
 
 	/* Limit learning to maximum: 64k entries, after that just flood (bits 0-2) */
-	sw_w32((0xffff << 3) | FORWARD, RTL931X_L2_LRN_CONSTRT_CTRL);
+	regmap_write(priv->map, RTL931X_L2_LRN_CONSTRT_CTRL, (0xffff << 3) | FORWARD);
 }
 
-void rtldsa_931x_enable_learning(int port, bool enable)
+void otto_l2_931x_enable_learning(struct otto_dsa_priv *priv, int port, bool enable)
 {
 	/* Limit learning to maximum: 64k entries */
-	sw_w32_mask(GENMASK(18, 3), enable ? (0xfffe << 3) : 0,
-		    RTL931X_L2_LRN_PORT_CONSTRT_CTRL + port * 4);
+	regmap_write_bits(priv->map, RTL931X_L2_LRN_PORT_CONSTRT_CTRL + port * 4,
+			  GENMASK(18, 3), enable ? (0xfffe << 3) : 0);
 }
 
-void rtldsa_931x_l2_port_new_sa_fwd(int port, enum rtldsa_flood_type mode)
+void otto_l2_931x_set_port_new_sa_fwd(struct otto_dsa_priv *priv,
+				      int port, enum rtldsa_flood_type mode)
 {
 	u32 new_sa_fwd_shift = (port % 10) * 3;
+	u32 val = mode << new_sa_fwd_shift;
 
-	sw_w32_mask(GENMASK(new_sa_fwd_shift + 2, new_sa_fwd_shift),
-		    mode << new_sa_fwd_shift,
-		    rtl931x_l2_port_new_sa_fwd(port));
+	regmap_write_bits(priv->map, otto_l2_931x_port_new_sa_fwd(port),
+			  GENMASK(new_sa_fwd_shift + 2, new_sa_fwd_shift) | val, val);
 }
 
-void rtldsa_931x_enable_flood(int port, enum rtldsa_flood_type mode)
+void otto_l2_931x_enable_flood(struct otto_dsa_priv *priv,
+			       int port, enum rtldsa_flood_type mode)
 {
 	/* RTL931X_L2_UNKN_UC_FLD_PMSK is big-endian */
 	u32 port_offset = ((63 - port) / 32) * 4;
@@ -1369,26 +1823,24 @@ void rtldsa_931x_enable_flood(int port, enum rtldsa_flood_type mode)
 
 	val = (mode == RTLDSA_FLOOD_TYPE_FORWARD) ? port_mask : 0;
 
-	sw_w32_mask(GENMASK(2, 0), mode,
-		    RTL931X_L2_LRN_PORT_CONSTRT_CTRL + port * 4);
+	regmap_write_bits(priv->map, RTL931X_L2_LRN_PORT_CONSTRT_CTRL + port * 4,
+			  GENMASK(2, 0) | mode, mode);
 
-	sw_w32_mask(port_mask,
-		    val,
-		    RTL931X_L2_UNKN_UC_FLD_PMSK + port_offset);
+	regmap_write_bits(priv->map, RTL931X_L2_UNKN_UC_FLD_PMSK + port_offset,
+			  port_mask, val);
 }
 
-void rtldsa_931x_enable_bcast_flood(int port, bool enable)
+void otto_l2_931x_enable_bcast_flood(struct otto_dsa_priv *priv, int port, bool enable)
 {
 	/* RTL931X_L2_BC_FLD_PMSK is big-endian */
 	u32 port_offset = ((63 - port) / 32) * 4;
 	u32 port_mask = BIT(port % 32);
 
-	sw_w32_mask(port_mask,
-		    enable ? port_mask : 0,
-		    RTL931X_L2_BC_FLD_PMSK + port_offset);
+	regmap_write_bits(priv->map, RTL931X_L2_BC_FLD_PMSK + port_offset,
+			  port_mask, enable ? port_mask : 0);
 }
 
-u64 rtl931x_read_mcast_pmask(int idx)
+u64 otto_l2_931x_read_mcast_pmask(int idx)
 {
 	u64 portmask;
 	u32 buf[2];
@@ -1404,7 +1856,7 @@ u64 rtl931x_read_mcast_pmask(int idx)
 	return portmask;
 }
 
-void rtl931x_write_mcast_pmask(int idx, u64 portmask)
+void otto_l2_931x_write_mcast_pmask(int idx, u64 portmask)
 {
 	u64 pm = portmask;
 	u32 buf[2];
@@ -1417,9 +1869,15 @@ void rtl931x_write_mcast_pmask(int idx, u64 portmask)
 	otto_table_write(RTL9310_TBL_MC_PMSK, idx, &buf);
 }
 
-int rtl931x_set_ageing_time(unsigned long msec)
+int otto_l2_931x_set_ageing_time(struct otto_dsa_priv *priv, unsigned long msec)
 {
-	int t = sw_r32(RTL931X_L2_AGE_CTRL);
+	u32 val, aging;
+	int t, err;
+
+	err = regmap_read(priv->map, RTL931X_L2_AGE_CTRL, &val);
+	if (err)
+		return err;
+	t = val;
 
 	t &= 0x1FFFFF;
 	t = (t * 8) / 10;
@@ -1427,29 +1885,178 @@ int rtl931x_set_ageing_time(unsigned long msec)
 
 	t = (msec / 100 + 7) / 8;
 	t = t > 0x1FFFFF ? 0x1FFFFF : t;
-	sw_w32_mask(0x1FFFFF, t, RTL931X_L2_AGE_CTRL);
-	pr_debug("Dynamic aging for ports: %x\n", sw_r32(RTL931X_L2_PORT_AGE_CTRL));
+	err = regmap_write_bits(priv->map, RTL931X_L2_AGE_CTRL, 0x1FFFFF | t, t);
+	if (err)
+		return err;
+	if (!regmap_read(priv->map, RTL931X_L2_PORT_AGE_CTRL, &aging))
+		pr_debug("Dynamic aging for ports: %x\n", aging);
 
 	return 0;
 }
 
-int rtldsa_931x_fast_age(struct rtl838x_switch_priv *priv, int port, int vid)
+int otto_l2_931x_fast_age(struct otto_dsa_priv *priv, int port, int vid)
 {
 	u32 val;
+	int err;
 
-	sw_w32(0, RTL931X_L2_TBL_FLUSH_CTRL + 4);
+	err = regmap_write(priv->map, RTL931X_L2_TBL_FLUSH_CTRL + 4, 0);
+	if (err)
+		return err;
 
 	val = 0;
 	val |= port << 11;
 	val |= BIT(24); /* compare port id */
 	val |= BIT(28); /* status - trigger flush */
 	if (vid >= 0) {
-		sw_w32(vid << 20, RTL931X_L2_TBL_FLUSH_CTRL + 4);
+		err = regmap_write(priv->map, RTL931X_L2_TBL_FLUSH_CTRL + 4, vid << 20);
+		if (err)
+			return err;
 		val |= BIT(26); /* compare VID */
 	}
-	sw_w32(val, RTL931X_L2_TBL_FLUSH_CTRL);
+	err = regmap_write(priv->map, RTL931X_L2_TBL_FLUSH_CTRL, val);
+	if (err)
+		return err;
 
-	do { } while (sw_r32(RTL931X_L2_TBL_FLUSH_CTRL) & BIT(28));
+	return regmap_read_poll_timeout(priv->map, RTL931X_L2_TBL_FLUSH_CTRL,
+					val, !(val & BIT(28)), 0, 0);
+}
+
+static void otto_l2_dump_entry(struct seq_file *m, struct otto_dsa_priv *priv,
+			       struct rtl838x_l2_entry *e)
+{
+	u64 portmask;
+
+	if (e->type == L2_UNICAST) {
+		seq_puts(m, "L2_UNICAST\n");
+
+		seq_printf(m, "  mac %02x:%02x:%02x:%02x:%02x:%02x vid %u rvid %u\n",
+			   e->mac[0], e->mac[1], e->mac[2], e->mac[3], e->mac[4], e->mac[5],
+			   e->vid, e->rvid);
+
+		seq_printf(m, "  port %d age %d", e->port, e->age);
+		if (e->is_trunk) {
+			if (e->trunk < ARRAY_SIZE(priv->lags_port_members))
+				seq_printf(m, "  trunk %d trunk_members: 0x%08llx non-primary: 0x%08llx primary-port: %d",
+					   e->trunk,
+					   priv->lags_port_members[e->trunk],
+					   priv->lag_non_primary,
+					   priv->lag_primary[e->trunk]);
+			else
+				seq_printf(m, "  trunk %d (out of range)", e->trunk);
+		}
+		if (e->is_static)
+			seq_puts(m, " static");
+		if (e->block_da)
+			seq_puts(m, " block_da");
+		if (e->block_sa)
+			seq_puts(m, " block_sa");
+		if (e->suspended)
+			seq_puts(m, " suspended");
+		if (e->next_hop)
+			seq_printf(m, " next_hop route_id %u", e->nh_route_id);
+		seq_puts(m, "\n");
+
+	} else {
+		if (e->type == L2_MULTICAST) {
+			seq_puts(m, "L2_MULTICAST\n");
+
+			seq_printf(m, "  mac %02x:%02x:%02x:%02x:%02x:%02x vid %u rvid %u\n",
+				   e->mac[0], e->mac[1], e->mac[2], e->mac[3], e->mac[4], e->mac[5],
+				   e->vid, e->rvid);
+		}
+
+		if (e->type == IP4_MULTICAST || e->type == IP6_MULTICAST) {
+			seq_puts(m, (e->type == IP4_MULTICAST) ?
+				 "IP4_MULTICAST\n" : "IP6_MULTICAST\n");
+
+			seq_printf(m, "  gip %08x sip %08x vid %u rvid %u\n",
+				   e->mc_gip, e->mc_sip, e->vid, e->rvid);
+		}
+
+		portmask = priv->r->read_mcast_pmask(e->mc_portmask_index);
+		seq_printf(m, "  index %u ports", e->mc_portmask_index);
+		for (int i = 0; i < 64; i++) {
+			if (portmask & BIT_ULL(i))
+				seq_printf(m, " %d", i);
+		}
+		seq_puts(m, "\n");
+	}
+
+	seq_puts(m, "\n");
+}
+
+static int otto_l2_fdb_show(struct seq_file *m, void *v)
+{
+	struct otto_dsa_priv *priv = m->private;
+	int uc_rows, cam_rows;
+
+	uc_rows = otto_table_rows(priv->r->l2_uc_tbl);
+	if (uc_rows < 0)
+		return uc_rows;
+
+	cam_rows = otto_table_rows(priv->r->l2_cam_tbl);
+	if (cam_rows < 0)
+		return cam_rows;
+
+	guard(mutex)(&priv->reg_mutex);
+
+	/* With a position below 4, read_l2_entry_using_hash() reads row
+	 * (bucket << 2 | pos) on every family, so this walk visits each row
+	 * once, the second hash block of RTL930x/RTL931x included.
+	 */
+	for (int i = 0; i < uc_rows; i++) {
+		struct rtl838x_l2_entry e = {};
+
+		priv->r->read_l2_entry_using_hash(i >> 2, i & 0x3, &e);
+
+		if (e.valid) {
+			seq_printf(m, "Hash table bucket %d index %d ", i >> 2, i & 0x3);
+			otto_l2_dump_entry(m, priv, &e);
+		}
+
+		if (!((i + 1) % 64))
+			cond_resched();
+	}
+
+	for (int i = 0; i < cam_rows; i++) {
+		struct rtl838x_l2_entry e = {};
+
+		priv->r->read_cam(i, &e);
+
+		if (!e.valid)
+			continue;
+
+		seq_printf(m, "CAM index %d ", i);
+		otto_l2_dump_entry(m, priv, &e);
+	}
 
 	return 0;
+}
+DEFINE_SHOW_ATTRIBUTE(otto_l2_fdb);
+
+static void otto_l2_dbgfs_remove(void *data)
+{
+	debugfs_remove_recursive(data);
+}
+
+#define RTLDSA_L2_DBG_ROOT_DIR	"realtek_otto_l2"
+
+void otto_l2_dbgfs_init(struct otto_dsa_priv *priv)
+{
+	struct device *dev = priv->dev;
+	struct dentry *root;
+
+	root = debugfs_create_dir(RTLDSA_L2_DBG_ROOT_DIR, NULL);
+	if (IS_ERR(root)) {
+		/* -ENODEV is a kernel built without debugfs, not a failure */
+		if (PTR_ERR(root) != -ENODEV)
+			dev_warn(dev, "could not create %s debugfs directory\n",
+				 RTLDSA_L2_DBG_ROOT_DIR);
+		return;
+	}
+
+	if (devm_add_action_or_reset(dev, otto_l2_dbgfs_remove, root))
+		return;
+
+	debugfs_create_file("fdb", 0400, root, priv, &otto_l2_fdb_fops);
 }

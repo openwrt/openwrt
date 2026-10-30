@@ -24,12 +24,24 @@ define Device/askey_sbe1v1k
 	DEVICE_ALT1_VENDOR := Spectrum
 	DEVICE_ALT1_MODEL := SBE1V1K
 	DEVICE_DTS_CONFIG := config@rtq7300t-rev0
-	KERNEL_LOADADDR := 0x42080000
+	KERNEL_LOADADDR := 0x42200000
 	SOC := ipq9570
 	DEVICE_PACKAGES := ath12k-firmware-qcn9274 f2fsck ipq-wifi-askey_sbe1v1k kmod-ath12k \
 		kmod-hwmon-pwmfan kmod-phy-realtek mkf2fs rtl826x-firmware
 endef
 TARGET_DEVICES += askey_sbe1v1k
+
+define Device/linksys_ln6001
+	$(call Device/FitImage)
+	DEVICE_VENDOR := Linksys
+	DEVICE_MODEL := LN6001
+	DEVICE_DTS := ipq9554-linksys-ln6001
+	SOC := ipq9554
+	DEVICE_PACKAGES += bluetooth-uart kmod-leds-pwm kmod-fs-f2fs mkf2fs f2fsck
+	IMAGE/sysupgrade.bin/squashfs := append-rootfs | pad-to 64k | \
+		check-size 128m | sysupgrade-tar rootfs=$$$$@ | append-metadata
+endef
+TARGET_DEVICES += linksys_ln6001
 
 define Device/qcom_rdp433
 	$(call Device/FitImageLzma)

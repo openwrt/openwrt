@@ -1,7 +1,7 @@
 ARCH:=mips
 SUBTARGET:=xrx200_legacy
 BOARDNAME:=XRX200 Legacy
-FEATURES+=atm ramdisk small_flash
+FEATURES+=ramdisk small_flash
 CPU_TYPE:=24kc
 
 DEFAULT_PACKAGES+=kmod-leds-gpio \

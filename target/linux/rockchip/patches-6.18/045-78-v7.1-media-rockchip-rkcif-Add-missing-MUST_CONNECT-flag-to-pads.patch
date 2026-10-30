@@ -1,0 +1,61 @@
+From 8e3c751259dc2d1325838eff26f41032523c7b57 Mon Sep 17 00:00:00 2001
+From: Dang Huynh <dang.huynh@mainlining.org>
+Date: Thu, 29 Jan 2026 14:24:02 +0700
+Subject: [PATCH] media: rockchip: rkcif: Add missing MUST_CONNECT flag to pads
+
+The pads missed checks for connected devices which may a null dereference
+when the stream is enabled.
+
+Unable to handle kernel NULL pointer dereference at virtual address
+0000000000000020
+pc : rkcif_interface_enable_streams+0x48/0xf0
+lr : rkcif_interface_enable_streams+0x44/0xf0
+Call trace:
+ rkcif_interface_enable_streams+0x48/0xf0
+ v4l2_subdev_enable_streams+0x26c/0x3f0
+ rkcif_stream_start_streaming+0x140/0x278
+ vb2_start_streaming+0x74/0x188
+ vb2_core_streamon+0xe0/0x1d8
+ vb2_ioctl_streamon+0x60/0xa8
+ v4l_streamon+0x2c/0x40
+ __video_do_ioctl+0x34c/0x400
+ video_usercopy+0x2d0/0x800
+ video_ioctl2+0x20/0x60
+ v4l2_ioctl+0x48/0x78
+
+Fixes: 501802e2ad51 ("media: rockchip: rkcif: add abstraction for dma blocks")
+Fixes: 85411d17bee9 ("media: rockchip: rkcif: add abstraction for interface and crop blocks")
+Cc: stable@vger.kernel.org
+Signed-off-by: Dang Huynh <dang.huynh@mainlining.org>
+Reviewed-by: Michael Riesch <michael.riesch@collabora.com>
+Reviewed-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Sakari Ailus <sakari.ailus@linux.intel.com>
+Signed-off-by: Mauro Carvalho Chehab <mchehab+huawei@kernel.org>
+---
+ drivers/media/platform/rockchip/rkcif/rkcif-interface.c | 3 ++-
+ drivers/media/platform/rockchip/rkcif/rkcif-stream.c    | 2 +-
+ 2 files changed, 3 insertions(+), 2 deletions(-)
+
+--- a/drivers/media/platform/rockchip/rkcif/rkcif-interface.c
++++ b/drivers/media/platform/rockchip/rkcif/rkcif-interface.c
+@@ -378,7 +378,8 @@ int rkcif_interface_register(struct rkci
+ 		snprintf(sd->name, sizeof(sd->name), "rkcif-mipi%d",
+ 			 interface->index - RKCIF_MIPI_BASE);
+ 
+-	pads[RKCIF_IF_PAD_SINK].flags = MEDIA_PAD_FL_SINK;
++	pads[RKCIF_IF_PAD_SINK].flags = MEDIA_PAD_FL_SINK |
++					MEDIA_PAD_FL_MUST_CONNECT;
+ 	pads[RKCIF_IF_PAD_SRC].flags = MEDIA_PAD_FL_SOURCE;
+ 	ret = media_entity_pads_init(&sd->entity, RKCIF_IF_PAD_MAX, pads);
+ 	if (ret)
+--- a/drivers/media/platform/rockchip/rkcif/rkcif-stream.c
++++ b/drivers/media/platform/rockchip/rkcif/rkcif-stream.c
+@@ -555,7 +555,7 @@ int rkcif_stream_register(struct rkcif_d
+ 	vdev->vfl_dir = VFL_DIR_RX;
+ 	video_set_drvdata(vdev, stream);
+ 
+-	stream->pad.flags = MEDIA_PAD_FL_SINK;
++	stream->pad.flags = MEDIA_PAD_FL_SINK | MEDIA_PAD_FL_MUST_CONNECT;
+ 
+ 	stream->pix.height = CIF_MIN_HEIGHT;
+ 	stream->pix.width = CIF_MIN_WIDTH;

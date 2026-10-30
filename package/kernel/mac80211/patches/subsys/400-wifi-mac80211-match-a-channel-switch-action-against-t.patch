@@ -1,0 +1,28 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Mon, 08 Sep 2026 06:00:00 +0000
+Subject: [PATCH] wifi: mac80211: match a channel switch action against the
+ receiving link
+
+ieee80211_rx_h_action() compares the BSSID of an extended channel switch
+announcement against sdata->deflink.u.mgd.bssid. An MLO association does
+not use the default link, so that field holds the zero address and the
+frame is never queued.
+
+Use the BSSID of the link the frame arrived on. ieee80211_rx_data_set_sta()
+always sets rx->link, and for a non-MLO association it points at the
+default link, so this keeps the current behaviour there.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+
+--- a/net/mac80211/rx.c
++++ b/net/mac80211/rx.c
+@@ -3731,7 +3731,7 @@ ieee80211_rx_h_action(struct ieee80211_r
+ 			break;
+ 		if (!rx->sta)
+ 			break;
+-		if (!ether_addr_equal(mgmt->bssid, sdata->deflink.u.mgd.bssid))
++		if (!ether_addr_equal(mgmt->bssid, rx->link->u.mgd.bssid))
+ 			break;
+ 		if (mgmt->u.action.action_code !=
+ 				WLAN_PUB_ACTION_EXT_CHANSW_ANN)

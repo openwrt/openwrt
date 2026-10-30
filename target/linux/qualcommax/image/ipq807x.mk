@@ -25,12 +25,10 @@ define Build/asus-trx
 endef
 
 define Build/netgear-rbx750_850-qsdk-ipq-factory
-	$(CP) $(NETGEAR_FLASH_SCRIPT) $(KDIR_TMP)/
-
 	echo "VERSION : V8.0.0.0_$(LINUX_VERSION)" > $@.metadata
 	echo "MODEL_ID : $(DEVICE_MODEL)" >> $@.metadata
 
-	$(TOPDIR)/scripts/mkits-qsdk-ipq-image.sh $@.its $(NETGEAR_FLASH_SCRIPT) txt $@.metadata ubi $@
+	$(TOPDIR)/scripts/mkits-qsdk-ipq-image.sh $@.its $(CURDIR)/$(NETGEAR_FLASH_SCRIPT) txt $@.metadata ubi $@
 	PATH=$(LINUX_DIR)/scripts/dtc:$(PATH) mkimage -f $@.its $@.new
 	@mv $@.new $@
 endef
@@ -41,7 +39,8 @@ define Build/wax6xx-netgear-tar
 	md5sum $@.tmp/nand-ipq807x-apps.img | cut -c 1-32 > $@.tmp/nand-ipq807x-apps.md5sum
 	echo $(DEVICE_MODEL) > $@.tmp/metadata.txt
 	echo $(DEVICE_MODEL)"_V99.9.9.9" > $@.tmp/version
-	tar -C $@.tmp/ -cf $@ .
+	$(TAR) -C $@.tmp/ -cf $@ --sort=name --numeric-owner --owner=0 --group=0 --mode=go-w \
+		$(if $(SOURCE_DATE_EPOCH),--mtime="@$(SOURCE_DATE_EPOCH)") .
 	rm -rf $@.tmp
 endef
 
@@ -216,7 +215,6 @@ define Device/linksys_mx
 	SOC := ipq8072
 	IMAGES += factory.bin
 	IMAGE/factory.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi | linksys-image type=$$$$(DEVICE_MODEL)
-	DEVICE_PACKAGES := kmod-leds-pca963x
 endef
 
 define Device/linksys_mx4x00
@@ -229,13 +227,15 @@ define Device/linksys_mx4200v1
 	$(call Device/linksys_mx4x00)
 	DEVICE_MODEL := MX4200
 	DEVICE_VARIANT := v1
-	DEVICE_PACKAGES += kmod-hci-uart
+	DEVICE_PACKAGES += kmod-hci-uart kmod-leds-pca963x
 endef
 TARGET_DEVICES += linksys_mx4200v1
 
 define Device/linksys_mx4200v2
-	$(call Device/linksys_mx4200v1)
+	$(call Device/linksys_mx4x00)
+	DEVICE_MODEL := MX4200
 	DEVICE_VARIANT := v2
+	DEVICE_PACKAGES += kmod-hci-uart kmod-leds-st1202
 endef
 TARGET_DEVICES += linksys_mx4200v2
 
@@ -247,6 +247,7 @@ define Device/linksys_mx4300
 	KERNEL_SIZE := 8192k
 	IMAGE_SIZE := 171264k
 	NAND_SIZE := 1024m
+	DEVICE_PACKAGES += kmod-leds-pca963x
 endef
 TARGET_DEVICES += linksys_mx4300
 
@@ -254,7 +255,7 @@ define Device/linksys_mx5300
 	$(call Device/linksys_mx)
 	DEVICE_MODEL := MX5300
 	DEVICE_PACKAGES += kmod-rtc-ds1307 ipq-wifi-linksys_mx5300 \
-		kmod-ath10k-ct ath10k-firmware-qca9984-ct
+		kmod-ath10k-ct ath10k-firmware-qca9984-ct kmod-leds-pca963x
 endef
 TARGET_DEVICES += linksys_mx5300
 
@@ -262,7 +263,7 @@ define Device/linksys_mx8500
 	$(call Device/linksys_mx)
 	DEVICE_MODEL := MX8500
 	DEVICE_PACKAGES += ipq-wifi-linksys_mx8500 kmod-ath11k-pci \
-		ath11k-firmware-qcn9074 kmod-hci-uart
+		ath11k-firmware-qcn9074 kmod-hci-uart kmod-leds-pca963x
 endef
 TARGET_DEVICES += linksys_mx8500
 
@@ -627,7 +628,8 @@ define Device/zyxel_nbg7815
 	DEVICE_DTS_CONFIG := config@nbg7815
 	SOC := ipq8074
 	DEVICE_PACKAGES := kmod-fs-f2fs f2fs-tools ipq-wifi-zyxel_nbg7815 kmod-ath11k-pci \
-		kmod-hci-uart kmod-hwmon-tmp103
+		kmod-hci-uart kmod-hwmon-tmp103 kmod-hwmon-gpiofan \
+		kmod-leds-lp5569
 endef
 TARGET_DEVICES += zyxel_nbg7815
 

@@ -10,6 +10,7 @@ ipq50xx_setup_interfaces()
 	elecom,wrc-x3000gs2|\
 	elecom,wrc-x3000gst2|\
 	iodata,wn-dax3000gr|\
+	linksys,mr2000|\
 	linksys,mr5500|\
 	tplink,archer-ax55-v1|\
 	zyxel,scr50axe)
@@ -18,14 +19,21 @@ ipq50xx_setup_interfaces()
 	glinet,gl-b3000)
 		ucidef_set_interfaces_lan_wan "lan1 lan2" "wan"
 		;;
+	glinet,gl-x2000)
+		ucidef_set_interfaces_lan_wan "lan" "wan"
+		;;
+	avm,fritzbox-4050|\
 	cmcc,mr3000d-ci|\
+	cmcc,rax3000q|\
 	linksys,mx2000|\
 	linksys,mx5500|\
 	linksys,spnmx56|\
+	mercusys,mr80x-v2|\
 	xiaomi,ax6000)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" "wan"
 		;;
 	linksys,mx6200|\
+	wallys,dr5018s|\
 	yuncore,ax830|\
 	yuncore,ax850)
 		ucidef_set_interfaces_lan_wan "lan" "wan"
@@ -38,6 +46,16 @@ ipq50xx_setup_interfaces()
 		ucidef_set_network_device_conduit "lan3" "eth1"
 		ucidef_set_network_device_conduit "wan" "eth0"
 		;;
+	xunison,exigo-hub-d50-5g)
+		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" "wan"
+		;;
+	tplink,eap650-outdoor-v1|\
+	tplink,re700x)
+		ucidef_set_interface_lan "lan" "dhcp"
+		;;
+	zte,t5400)
+		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" "eth0"
+		;;
 	esac
 }
 
@@ -45,8 +63,19 @@ ipq50xx_setup_macs()
 {
 	local board="$1"
 	local label_mac=""
+	local lan_mac=""
+	local wan_mac=""
 
 	case $board in
+	avm,fritzbox-4050)
+		wan_mac=$(cat /proc/device-tree/chosen/macdsl)
+		lan_mac=$(cat /proc/device-tree/chosen/maca)
+		[ -n "$wan_mac" ] && ucidef_set_interface_macaddr "wan" $wan_mac
+		[ -n "$lan_mac" ] && ucidef_set_interface_macaddr "lan" $lan_mac
+		[ -n "$lan_mac" ] && ucidef_set_network_device_mac "eth1" "$lan_mac"
+		[ -n "$lan_mac" ] && ucidef_set_label_macaddr "$lan_mac"
+		;;
+	mercusys,mr80x-v2|\
 	tplink,archer-ax55-v1)
 		# factory MAC is 6 raw bytes in tp_data/default-mac, mounted
 		# read-only during preinit (see lib/preinit/09_mount_tp_data)
@@ -58,6 +87,13 @@ ipq50xx_setup_macs()
 		# gmac1 has no nvmem MAC source, so stmmac would randomise the
 		# DSA conduit's address on every boot - pin it to the label MAC
 		ucidef_set_network_device_mac "eth0" "$label_mac"
+		;;
+	tplink,eap650-outdoor-v1|\
+	tplink,re700x)
+		label_mac=$(get_mac_binary /tmp/factory_data/default-mac 0)
+		[ -n "$label_mac" ] || return
+		ucidef_set_interface_macaddr "lan" "$label_mac"
+		ucidef_set_label_macaddr "$label_mac"
 		;;
 	esac
 }

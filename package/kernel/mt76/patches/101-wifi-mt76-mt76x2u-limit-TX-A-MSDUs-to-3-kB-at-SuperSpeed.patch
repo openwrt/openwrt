@@ -1,0 +1,72 @@
+From 510c7c602c2b6694830ea6ea318a7ce9dd5973e1 Mon Sep 17 00:00:00 2001
+From: Rosen Penev <rosenp@gmail.com>
+Date: Thu, 22 Oct 2026 23:08:37 -0700
+Subject: [PATCH] wifi: mt76: mt76x2u: limit TX A-MSDUs to 3 kB at
+ SuperSpeed
+
+At SuperSpeed the MT7612U stops accepting bulk OUT data after it was
+sent a TX frame longer than 3072 bytes (TXWI and 802.11 frame, the
+TXINFO length). The TX URBs never complete, MCU commands time out
+("mt76x02u_mcu_wait_resp failed with -110") and only a power cycle
+brings the device back; neither a USB reset nor a host reboot with the
+port powered recovers it. Single frames never get that long, but
+A-MSDUs of two full-size subframes are 3096 bytes.
+
+Behind a USB 3 hub this happens within seconds of continuous traffic,
+plugged in directly within minutes. Frames of up to 3072 bytes, at
+MTU 1488, ran for minutes behind the hub, frames of 3080 bytes, at
+MTU 1492, wedged the device. At high speed the same A-MSDUs work.
+
+Cap the A-MSDU length for all TIDs when the device runs at SuperSpeed.
+This keeps A-MSDUs of smaller frames.
+
+Link: https://github.com/openwrt/mt76/issues/405
+Fixes: ee676cd5017c ("mt76: add driver code for MT76x2u based devices")
+Assisted-by: LLM
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+---
+ mt76x2/usb.c   | 25 ++++++++++++++++++-
+ 1 file changed, 24 insertions(+), 1 deletion(-)
+
+--- a/mt76x2/usb.c
++++ b/mt76x2/usb.c
+@@ -29,6 +29,30 @@ static const struct usb_device_id mt76x2
+ 	{ },
+ };
+ 
++/* At SuperSpeed the MT7612U wedges its bulk OUT path on TX frames longer
++ * than 3072 bytes (TXWI and 802.11 frame), which only A-MSDUs reach. mt76
++ * adds 22 bytes (TXWI, header padding) to the MPDU, and mac80211 counts
++ * each new subframe up to 11 bytes (LLC header, padding) short, plus the
++ * 14-byte subframe header it adds to the first subframe after the check.
++ */
++#define MT76X2U_SS_MAX_AMSDU_LEN	(3072 - 22 - 11 - 14)
++
++static int mt76x2u_sta_add(struct mt76_dev *mdev, struct ieee80211_vif *vif,
++			   struct ieee80211_sta *sta)
++{
++	struct usb_device *udev = interface_to_usbdev(to_usb_interface(mdev->dev));
++	int i;
++
++	if (udev->speed >= USB_SPEED_SUPER) {
++		for (i = 0; i < ARRAY_SIZE(sta->deflink.agg.max_tid_amsdu_len); i++)
++			sta->deflink.agg.max_tid_amsdu_len[i] =
++				MT76X2U_SS_MAX_AMSDU_LEN;
++		ieee80211_sta_recalc_aggregates(sta);
++	}
++
++	return mt76x02_sta_add(mdev, vif, sta);
++}
++
+ static int mt76x2u_probe(struct usb_interface *intf,
+ 			 const struct usb_device_id *id)
+ {
+@@ -43,7 +67,7 @@ static int mt76x2u_probe(struct usb_inte
+ 		.tx_status_data = mt76x02_tx_status_data,
+ 		.rx_skb = mt76x02_queue_rx_skb,
+ 		.sta_ps = mt76x02_sta_ps,
+-		.sta_add = mt76x02_sta_add,
++		.sta_add = mt76x2u_sta_add,
+ 		.sta_remove = mt76x02_sta_remove,
+ 	};
+ 	struct usb_device *udev = interface_to_usbdev(intf);

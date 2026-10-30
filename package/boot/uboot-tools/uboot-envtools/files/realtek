@@ -12,6 +12,10 @@ apresia,aplgs120gtss)
 	ubootenv_add_mtd "u-boot-env" "0x0" "0x40000" "0x10000"
 	ubootenv_add_sys_mtd "u-boot-env2" "0x0" "0x40000" "0x10000"
 	;;
+bt-pon,bt-g711ax)
+	ubootenv_add_mtd "u-boot-env" "0x0" "0x4000" "0x20000"
+	ubootenv_add_mtd "u-boot-env2" "0x0" "0x4000" "0x20000"
+	;;
 d-link,dgs-1210-10mp|\
 d-link,dgs-1210-10p|\
 d-link,dgs-1210-16|\

@@ -1,0 +1,375 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+/*
+* There are 36 trip levels and the cooling maps start from cooling
+* state 1 (0-index) so cooling-levels must have at least 37 elements.
+* If greater increments between trip levels/cooling-levels are
+* desired/needed, pad the cooling-levels with repeated values:
+* 	cooling-levels = <... 128 128 128 192 192 192 ...>;
+*
+* THERMAL_TRIPS_COMMON and THERMAL_COOLING_MAPS_COMMON must have
+* the same argument within a thermal zone because the argument
+* is the prefix to the trip levels node labels.
+*
+* example:
+* / {
+* 	...
+* 	thermal-zones {
+* 		wifi0-thermal {
+* 			thermal-sensors = <&wifi 0>;
+* 			polling-delay-passive = <1000>;
+* 			polling-delay = <1000>;
+*
+* 			trips {
+* 				THERMAL_TRIPS_COMMON(wifi0)
+* 			};
+*
+* 			cooling-maps {
+* 				THERMAL_COOLING_MAPS_COMMON(wifi0)
+* 			};
+* 		};
+*
+* 		wifi1-thermal {
+* 			thermal-sensors = <&wifi 1>;
+* 			polling-delay-passive = <1000>;
+* 			polling-delay = <1000>;
+*
+* 			trips {
+* 				THERMAL_TRIPS_COMMON(wifi1)
+* 			};
+*
+* 			cooling-maps {
+* 				THERMAL_COOLING_MAPS_COMMON(wifi1)
+* 			};
+* 		};
+* 	};
+* 	...
+* };
+*/
+
+#define THERMAL_TRIPS_COMMON(thermaldevice)			\
+	thermaldevice##_trip_active_highest: active-highest {	\
+		temperature = <108750>;				\
+		hysteresis = <2500>;				\
+		type = "active";				\
+	};							\
+	thermaldevice##_trip_active_high: active-high {		\
+		temperature = <107500>;				\
+		hysteresis = <2500>;				\
+		type = "active";				\
+	};							\
+	thermaldevice##_trip_active_33: active-33 {		\
+		temperature = <106250>;				\
+		hysteresis = <2500>;				\
+		type = "active";				\
+	};							\
+	thermaldevice##_trip_active_32: active-32 {		\
+		temperature = <105000>;				\
+		hysteresis = <2500>;				\
+		type = "active";				\
+	};							\
+	thermaldevice##_trip_active_31: active-31 {		\
+		temperature = <103750>;				\
+		hysteresis = <2500>;				\
+		type = "active";				\
+	};							\
+	thermaldevice##_trip_active_30: active-30 {		\
+		temperature = <102500>;				\
+		hysteresis = <2500>;				\
+		type = "active";				\
+	};							\
+	thermaldevice##_trip_active_29: active-29 {		\
+		temperature = <101250>;				\
+		hysteresis = <2500>;				\
+		type = "active";				\
+	};							\
+	thermaldevice##_trip_active_28: active-28 {		\
+		temperature = <100000>;				\
+		hysteresis = <2500>;				\
+		type = "active";				\
+	};							\
+	thermaldevice##_trip_active_27: active-27 {		\
+		temperature = <98750>;				\
+		hysteresis = <2500>;				\
+		type = "active";				\
+	};							\
+	thermaldevice##_trip_active_26: active-26 {		\
+		temperature = <97500>;				\
+		hysteresis = <2500>;				\
+		type = "active";				\
+	};							\
+	thermaldevice##_trip_active_25: active-25 {		\
+		temperature = <96250>;				\
+		hysteresis = <2500>;				\
+		type = "active";				\
+	};							\
+	thermaldevice##_trip_active_24: active-24 {		\
+		temperature = <95000>;				\
+		hysteresis = <2500>;				\
+		type = "active";				\
+	};							\
+	thermaldevice##_trip_active_23: active-23 {		\
+		temperature = <93750>;				\
+		hysteresis = <2500>;				\
+		type = "active";				\
+	};							\
+	thermaldevice##_trip_active_22: active-22 {		\
+		temperature = <92500>;				\
+		hysteresis = <2500>;				\
+		type = "active";				\
+	};							\
+	thermaldevice##_trip_active_21: active-21 {		\
+		temperature = <91250>;				\
+		hysteresis = <2500>;				\
+		type = "active";				\
+	};							\
+	thermaldevice##_trip_active_20: active-20 {		\
+		temperature = <90000>;				\
+		hysteresis = <2500>;				\
+		type = "active";				\
+	};							\
+	thermaldevice##_trip_active_med: active-med {		\
+		temperature = <88750>;				\
+		hysteresis = <2500>;				\
+		type = "active";				\
+	};							\
+	thermaldevice##_trip_active_18: active-18 {		\
+		temperature = <87500>;				\
+		hysteresis = <2500>;				\
+		type = "active";				\
+	};							\
+	thermaldevice##_trip_active_17: active-17 {		\
+		temperature = <86250>;				\
+		hysteresis = <2500>;				\
+		type = "active";				\
+	};							\
+	thermaldevice##_trip_active_16: active-16 {		\
+		temperature = <85000>;				\
+		hysteresis = <2500>;				\
+		type = "active";				\
+	};							\
+	thermaldevice##_trip_active_15: active-15 {		\
+		temperature = <83750>;				\
+		hysteresis = <2500>;				\
+		type = "active";				\
+	};							\
+	thermaldevice##_trip_active_14: active-14 {		\
+		temperature = <82500>;				\
+		hysteresis = <2500>;				\
+		type = "active";				\
+	};							\
+	thermaldevice##_trip_active_13: active-13 {		\
+		temperature = <81250>;				\
+		hysteresis = <2500>;				\
+		type = "active";				\
+	};							\
+	thermaldevice##_trip_active_12: active-12 {		\
+		temperature = <80000>;				\
+		hysteresis = <2500>;				\
+		type = "active";				\
+	};							\
+	thermaldevice##_trip_active_11: active-11 {		\
+		temperature = <78750>;				\
+		hysteresis = <2500>;				\
+		type = "active";				\
+	};							\
+	thermaldevice##_trip_active_10: active-10 {		\
+		temperature = <77500>;				\
+		hysteresis = <2500>;				\
+		type = "active";				\
+	};							\
+	thermaldevice##_trip_active_9: active-9 {		\
+		temperature = <76250>;				\
+		hysteresis = <2500>;				\
+		type = "active";				\
+	};							\
+	thermaldevice##_trip_active_8: active-8 {		\
+		temperature = <75000>;				\
+		hysteresis = <2500>;				\
+		type = "active";				\
+	};							\
+	thermaldevice##_trip_active_7: active-7 {		\
+		temperature = <73750>;				\
+		hysteresis = <2500>;				\
+		type = "active";				\
+	};							\
+	thermaldevice##_trip_active_6: active-6 {		\
+		temperature = <72500>;				\
+		hysteresis = <2500>;				\
+		type = "active";				\
+	};							\
+	thermaldevice##_trip_active_5: active-5 {		\
+		temperature = <71250>;				\
+		hysteresis = <2500>;				\
+		type = "active";				\
+	};							\
+	thermaldevice##_trip_active_4: active-4 {		\
+		temperature = <70000>;				\
+		hysteresis = <2500>;				\
+		type = "active";				\
+	};							\
+	thermaldevice##_trip_active_3: active-3 {		\
+		temperature = <68750>;				\
+		hysteresis = <2500>;				\
+		type = "active";				\
+	};							\
+	thermaldevice##_trip_active_2: active-2 {		\
+		temperature = <67500>;				\
+		hysteresis = <2500>;				\
+		type = "active";				\
+	};							\
+	thermaldevice##_trip_active_low: active-low {		\
+		temperature = <66250>;				\
+		hysteresis = <2500>;				\
+		type = "active";				\
+	};							\
+	thermaldevice##_trip_active_lowest: active-lowest {	\
+		temperature = <65000>;				\
+		hysteresis = <5000>;				\
+		type = "active";				\
+	};
+
+#define THERMAL_COOLING_MAPS_COMMON(thermaldevice)		\
+	thermaldevice-active-highest {				\
+		cooling-device = <&fan 36 36>;			\
+		trip = <&thermaldevice##_trip_active_highest>;	\
+	};							\
+	thermaldevice-active-high {				\
+		cooling-device = <&fan 35 35>;			\
+		trip = <&thermaldevice##_trip_active_high>;	\
+	};							\
+	thermaldevice-active-33 {				\
+		cooling-device = <&fan 34 34>;			\
+		trip = <&thermaldevice##_trip_active_33>;	\
+	};							\
+	thermaldevice-active-32 {				\
+		cooling-device = <&fan 33 33>;			\
+		trip = <&thermaldevice##_trip_active_32>;	\
+	};							\
+	thermaldevice-active-31 {				\
+		cooling-device = <&fan 32 32>;			\
+		trip = <&thermaldevice##_trip_active_31>;	\
+	};							\
+	thermaldevice-active-30 {				\
+		cooling-device = <&fan 31 31>;			\
+		trip = <&thermaldevice##_trip_active_30>;	\
+	};							\
+	thermaldevice-active-29 {				\
+		cooling-device = <&fan 30 30>;			\
+		trip = <&thermaldevice##_trip_active_29>;	\
+	};							\
+	thermaldevice-active-28 {				\
+		cooling-device = <&fan 29 29>;			\
+		trip = <&thermaldevice##_trip_active_28>;	\
+	};							\
+	thermaldevice-active-27 {				\
+		cooling-device = <&fan 28 28>;			\
+		trip = <&thermaldevice##_trip_active_27>;	\
+	};							\
+	thermaldevice-active-26 {				\
+		cooling-device = <&fan 27 27>;			\
+		trip = <&thermaldevice##_trip_active_26>;	\
+	};							\
+	thermaldevice-active-25 {				\
+		cooling-device = <&fan 26 26>;			\
+		trip = <&thermaldevice##_trip_active_25>;	\
+	};							\
+	thermaldevice-active-24 {				\
+		cooling-device = <&fan 25 25>;			\
+		trip = <&thermaldevice##_trip_active_24>;	\
+	};							\
+	thermaldevice-active-23 {				\
+		cooling-device = <&fan 24 24>;			\
+		trip = <&thermaldevice##_trip_active_23>;	\
+	};							\
+	thermaldevice-active-22 {				\
+		cooling-device = <&fan 23 23>;			\
+		trip = <&thermaldevice##_trip_active_22>;	\
+	};							\
+	thermaldevice-active-21 {				\
+		cooling-device = <&fan 22 22>;			\
+		trip = <&thermaldevice##_trip_active_21>;	\
+	};							\
+	thermaldevice-active-20 {				\
+		cooling-device = <&fan 21 21>;			\
+		trip = <&thermaldevice##_trip_active_20>;	\
+	};							\
+	thermaldevice-active-med {				\
+		cooling-device = <&fan 20 20>;			\
+		trip = <&thermaldevice##_trip_active_med>;	\
+	};							\
+	thermaldevice-active-18 {				\
+		cooling-device = <&fan 19 19>;			\
+		trip = <&thermaldevice##_trip_active_18>;	\
+	};							\
+	thermaldevice-active-17 {				\
+		cooling-device = <&fan 18 18>;			\
+		trip = <&thermaldevice##_trip_active_17>;	\
+	};							\
+	thermaldevice-active-16 {				\
+		cooling-device = <&fan 17 17>;			\
+		trip = <&thermaldevice##_trip_active_16>;	\
+	};							\
+	thermaldevice-active-15 {				\
+		cooling-device = <&fan 16 16>;			\
+		trip = <&thermaldevice##_trip_active_15>;	\
+	};							\
+	thermaldevice-active-14 {				\
+		cooling-device = <&fan 15 15>;			\
+		trip = <&thermaldevice##_trip_active_14>;	\
+	};							\
+	thermaldevice-active-13 {				\
+		cooling-device = <&fan 14 14>;			\
+		trip = <&thermaldevice##_trip_active_13>;	\
+	};							\
+	thermaldevice-active-12 {				\
+		cooling-device = <&fan 13 13>;			\
+		trip = <&thermaldevice##_trip_active_12>;	\
+	};							\
+	thermaldevice-active-11 {				\
+		cooling-device = <&fan 12 12>;			\
+		trip = <&thermaldevice##_trip_active_11>;	\
+	};							\
+	thermaldevice-active-10 {				\
+		cooling-device = <&fan 11 11>;			\
+		trip = <&thermaldevice##_trip_active_10>;	\
+	};							\
+	thermaldevice-active-9 {				\
+		cooling-device = <&fan 10 10>;			\
+		trip = <&thermaldevice##_trip_active_9>;	\
+	};							\
+	thermaldevice-active-8 {				\
+		cooling-device = <&fan 9 9>;			\
+		trip = <&thermaldevice##_trip_active_8>;	\
+	};							\
+	thermaldevice-active-7 {				\
+		cooling-device = <&fan 8 8>;			\
+		trip = <&thermaldevice##_trip_active_7>;	\
+	};							\
+	thermaldevice-active-6 {				\
+		cooling-device = <&fan 7 7>;			\
+		trip = <&thermaldevice##_trip_active_6>;	\
+	};							\
+	thermaldevice-active-5 {				\
+		cooling-device = <&fan 6 6>;			\
+		trip = <&thermaldevice##_trip_active_5>;	\
+	};							\
+	thermaldevice-active-4 {				\
+		cooling-device = <&fan 5 5>;			\
+		trip = <&thermaldevice##_trip_active_4>;	\
+	};							\
+	thermaldevice-active-3 {				\
+		cooling-device = <&fan 4 4>;			\
+		trip = <&thermaldevice##_trip_active_3>;	\
+	};							\
+	thermaldevice-active-2 {				\
+		cooling-device = <&fan 3 3>;			\
+		trip = <&thermaldevice##_trip_active_2>;	\
+	};							\
+	thermaldevice-active-low {				\
+		cooling-device = <&fan 2 2>;			\
+		trip = <&thermaldevice##_trip_active_low>;	\
+	};							\
+	thermaldevice-active-lowest {				\
+		cooling-device = <&fan 1 1>;			\
+		trip = <&thermaldevice##_trip_active_lowest>;	\
+	};

@@ -19,6 +19,7 @@ PKG_SOURCE_URL:=https://mirror.ox.ac.uk/pub/OpenBSD/LibreSSL \
 	https://ftp.openbsd.org/pub/OpenBSD/LibreSSL
 
 HOST_BUILD_PARALLEL:=1
+HOST_CONFIGURE_CACHE:=1
 
 include $(INCLUDE_DIR)/host-build.mk
 

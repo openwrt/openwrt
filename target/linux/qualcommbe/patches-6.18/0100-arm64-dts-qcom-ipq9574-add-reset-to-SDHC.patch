@@ -1,0 +1,23 @@
+From 4c6d5fec4434ff41dcf080b42e91f677b92437bd Mon Sep 17 00:00:00 2001
+From: Robert Marko <robert.marko@sartura.hr>
+Date: Fri, 25 Sep 2026 21:13:16 +0200
+Subject: [PATCH] arm64: dts: qcom: ipq9574: add reset to SDHC
+
+Add reset to SDHCI controller so it can be reset to avoid timeout issues
+after software reset due to bootloader set configuration.
+
+Signed-off-by: Robert Marko <robert.marko@sartura.hr>
+---
+ arch/arm64/boot/dts/qcom/ipq9574.dtsi | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/arch/arm64/boot/dts/qcom/ipq9574.dtsi
++++ b/arch/arm64/boot/dts/qcom/ipq9574.dtsi
+@@ -465,6 +465,7 @@
+ 				 <&xo_board_clk>,
+ 				 <&gcc GCC_SDCC1_ICE_CORE_CLK>;
+ 			clock-names = "iface", "core", "xo", "ice";
++			resets = <&gcc GCC_SDCC_BCR>;
+ 			non-removable;
+ 			supports-cqe;
+ 			status = "disabled";

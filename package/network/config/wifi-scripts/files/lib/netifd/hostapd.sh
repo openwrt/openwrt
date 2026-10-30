@@ -873,7 +873,6 @@ hostapd_set_bss_options() {
 
 	append bss_conf "ssid=$ssid" "$N"
 	[ -n "$network_bridge" ] && append bss_conf "bridge=$network_bridge${N}wds_bridge=" "$N"
-	[ -n "$network_ifname" ] && append bss_conf "snoop_iface=$network_ifname" "$N"
 	[ -n "$iapp_interface" ] && {
 		local ifname
 		network_get_device ifname "$iapp_interface" || ifname="$iapp_interface"
@@ -1191,6 +1190,7 @@ hostapd_set_bss_options() {
 	set_default na_mcast_to_ucast "$proxy_arp"
 	if [ "$proxy_arp" -gt 0 ]; then
 		append bss_conf "proxy_arp=$proxy_arp" "$N"
+		[ -n "$network_ifname" ] && append bss_conf "snoop_iface=$network_ifname" "$N"
 	fi
 	if [ "$na_mcast_to_ucast" -gt 0 ]; then
 		append bss_conf "na_mcast_to_ucast=$na_mcast_to_ucast" "$N"
@@ -1319,6 +1319,7 @@ wpa_supplicant_prepare_interface() {
 	fi
 	wpa_supplicant_teardown_interface "$ifname"
 	cat > "$_config" <<EOF
+ctrl_interface=$_rpath
 ${scan_list:+freq_list=$scan_list}
 $ap_scan
 $country_str

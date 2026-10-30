@@ -1,7 +1,7 @@
 let libubus = require("ubus");
 import * as uloop from "uloop";
 import { open, readfile } from "fs";
-import { wdev_create, wdev_set_mesh_params, wdev_remove, is_equal, wdev_set_up, vlist_new, phy_open } from "common";
+import { wdev_create, wdev_set_mesh_params, wdev_remove, is_equal, wdev_set_up, vlist_new, phy_open, macaddr_keep, macaddr_sync_defer, macaddr_sync_entry, mld_prev_match } from "common";
 
 let ubus = libubus.connect();
 
@@ -18,8 +18,9 @@ wpas.data.mld = {};
 wpas.data.config = {};
 wpas.data.iface_phy = {};
 wpas.data.iface_ubus = {};
-wpas.data.macaddr_list = {};
 wpas.data.dpp_hooks = {};
+wpas.data.eapol = {};
+wpas.data.wired = {};
 
 function iface_stop(iface)
 {
@@ -34,7 +35,27 @@ function iface_stop(iface)
 	iface.running = false;
 }
 
-function iface_start(phydev, iface, macaddr_list)
+function phy_macaddr_get(phydev, name, prev, data)
+{
+	let phy = wpas.data.config[phydev.name];
+	let ret = phydev.macaddr_get(ubus, "wpa_supplicant", name, {
+		num_global: phy?.num_global_macaddr,
+		macaddr_base: phy?.macaddr_base,
+		ifname: name,
+		static: !!data.macaddr,
+		...data,
+	});
+
+	if (ret.macaddr)
+		return ret.macaddr;
+
+	prev = ret.transport ? (data.macaddr ?? prev) : null;
+	wpas.printf(`No MAC address from netifd for ${name}: ${ret.error}${prev ? ", using " + prev : ""}`);
+
+	return prev;
+}
+
+function iface_start(phydev, iface)
 {
 	let phy = phydev.name;
 
@@ -42,26 +63,106 @@ function iface_start(phydev, iface, macaddr_list)
 		return;
 
 	let ifname = iface.config.iface;
-	let wdev_config = {};
-	for (let field in iface.config)
-		wdev_config[field] = iface.config[field];
-	if (!wdev_config.macaddr)
-		wdev_config.macaddr = phydev.macaddr_next();
+	let macaddr = phy_macaddr_get(phydev, ifname, iface.macaddr, {
+		group: phydev.name,
+		macaddr: iface.config.macaddr,
+	});
+	if (!macaddr)
+		return;
 
-	wpas.data.iface_phy[ifname] = phy;
+	iface.macaddr = macaddr;
+	let wdev_config = { ...iface.config, macaddr };
+
 	wdev_remove(ifname);
 	let ret = phydev.wdev_add(ifname, wdev_config);
-	if (ret)
+	if (ret) {
 		wpas.printf(`Failed to create device ${ifname}: ${ret}`);
-	wdev_set_up(ifname, true);
+		return;
+	}
+
+	ret = wdev_set_up(ifname, true);
+	if (ret) {
+		wpas.printf(`Failed to bring up device ${ifname}: ${ret}`);
+		wdev_remove(ifname);
+		return;
+	}
+
+	wpas.data.iface_phy[ifname] = phy;
 	wpas.add_iface(iface.config);
 	iface.running = true;
 }
 
+// a change of these lines needs no new netdev
+const network_update_keys = [
+	"ssid", "psk", "sae_password", "key_mgmt", "ieee80211w", "sae_pwe",
+	"proto", "pairwise", "group",
+];
+// the options of a station MLD that only produce those lines
+const mld_network_keys = [
+	"ssid", "key", "encryption", "ieee80211w", "sae_pwe", "sae_ext_key",
+];
+const config_line_re = /^(\t?)([a-z0-9_]+)=/;
+
+function config_equal_except(config_a, config_b, keys)
+{
+	let rest_a = { ...config_a };
+	let rest_b = { ...config_b };
+
+	for (let key in keys) {
+		delete rest_a[key];
+		delete rest_b[key];
+	}
+
+	return is_equal(rest_a, rest_b);
+}
+
+// every radio of a station MLD writes its own freq_list into the shared file
+function config_line_keep(line)
+{
+	let m = match(line, config_line_re);
+	if (!m)
+		return true;
+	if (!m[1])
+		return m[2] != "freq_list";
+
+	return index(network_update_keys, m[2]) < 0;
+}
+
+function config_data_strip(config_data)
+{
+	return filter(split(config_data ?? "", "\n"), config_line_keep);
+}
+
+function iface_network_apply(ifname, old_data, new_data, freq_list)
+{
+	let iface = wpas.interfaces[ifname];
+	if (!iface ||
+	    !is_equal(config_data_strip(old_data), config_data_strip(new_data)) ||
+	    !iface.network_update())
+		return false;
+
+	wpas.printf(`Update network of interface ${ifname} in place`);
+	if (length(freq_list) > 0)
+		iface.config('freq_list', freq_list);
+
+	return true;
+}
+
 function iface_cb(new_if, old_if)
 {
+	if (old_if && new_if)
+		new_if.macaddr = old_if.macaddr;
+
 	if (old_if && new_if && is_equal(old_if.config, new_if.config)) {
 		new_if.running = old_if.running;
+		return;
+	}
+
+	if (old_if?.running && new_if && new_if.config.mode == "sta" &&
+	    config_equal_except(old_if.config, new_if.config, [ "config_data" ]) &&
+	    iface_network_apply(old_if.config.iface, old_if.config.config_data,
+				new_if.config.config_data)) {
+		new_if.running = true;
 		return;
 	}
 
@@ -81,34 +182,6 @@ function prepare_config(config, radio)
 	return { config };
 }
 
-function iface_macaddr_add(macaddr_list, phy)
-{
-	for (let ifname, iface in phy.data)
-		if (iface.config.macaddr)
-			macaddr_list[iface.config.macaddr] = -1;
-}
-
-// A configured address never passes through macaddr_next(), and the wdev of
-// its interface exists only while the interface runs. The configuration is
-// therefore the only source of such an address.
-function phy_macaddr_list(phy_name, phy)
-{
-	let macaddr_list = {};
-
-	for (let addr in wpas.data.macaddr_list[phy_name])
-		macaddr_list[addr] = -1;
-
-	for (let name, cur in wpas.data.config)
-		if (cur.name == phy.name)
-			iface_macaddr_add(macaddr_list, cur);
-
-	for (let name, mld in wpas.data.mld)
-		if (mld.phy == phy.name && mld.config?.macaddr)
-			macaddr_list[mld.config.macaddr] = -1;
-
-	return macaddr_list;
-}
-
 function phy_dev_open(phy_name)
 {
 	let phy = wpas.data.config[phy_name];
@@ -117,16 +190,7 @@ function phy_dev_open(phy_name)
 		return;
 	}
 
-	let phydev = phy_open(phy.name, phy.radio);
-	if (!phydev)
-		return;
-
-	phydev.macaddr_init(phy_macaddr_list(phy_name, phy), {
-		num_global: phy.num_global_macaddr,
-		macaddr_base: phy.macaddr_base,
-	});
-
-	return phydev;
+	return phy_open(phy.name, phy.radio);
 }
 
 function start_pending(phy_name)
@@ -156,6 +220,29 @@ function phy_name(phy, radio)
 	return phy;
 }
 
+function mld_freq_list(data, radio_mask)
+{
+	let freq_list;
+
+	for (let radio = 0; radio < length(data.phy_config); radio++) {
+		let config = data.phy_config[radio];
+		if (!config?.freq_list || !(radio_mask & (1 << radio)))
+			continue;
+		if (!freq_list)
+			freq_list = [ ...config.freq_list ];
+		else
+			push(freq_list, ...config.freq_list);
+	}
+
+	return freq_list;
+}
+
+// a radio that hostapd holds gives no BSS to the scan and the link selection
+function mld_freq_list_update(data)
+{
+	data.freq_list = mld_freq_list(data, data.radio_mask_present);
+}
+
 function mld_remove(data)
 {
 	if (!data.radio_mask_up)
@@ -166,6 +253,37 @@ function mld_remove(data)
 	wpas.remove_iface(name);
 	wdev_remove(name);
 	data.radio_mask_up = 0;
+	data.radio_mask_kept = 0;
+}
+
+function mld_freq_list_apply(data)
+{
+	let iface = wpas.interfaces[data.name];
+
+	if (iface && length(data.freq_list) > 0)
+		iface.config('freq_list', data.freq_list);
+}
+
+function mld_kept_release(data, radio_mask)
+{
+	if (!(data.radio_mask_kept & radio_mask))
+		return;
+
+	data.radio_mask_kept &= ~radio_mask;
+	mld_freq_list_apply(data);
+}
+
+// a station without a link holds no channel on the radio
+const mld_keep_states = [ "DISCONNECTED", "INACTIVE", "SCANNING" ];
+
+function mld_hold_keep(data)
+{
+	if (!(data.radio_mask_up & data.radio_mask_present) || !length(data.freq_list))
+		return false;
+
+	let status = wpas.interfaces[data.name]?.status();
+
+	return index(mld_keep_states, status?.state) >= 0;
 }
 
 function mld_first_phy(data)
@@ -174,6 +292,16 @@ function mld_first_phy(data)
 
 	for (let i = 0; mask; i++, mask >>= 1)
 		if (mask & 1)
+			return i;
+}
+
+// the first configured radio stays the same when a radio goes down
+function mld_macaddr_radio(data)
+{
+	let mask = data.radio_mask;
+
+	for (let i = 0; mask; i++, mask >>= 1)
+		if ((mask & 1) && wpas.data.config[data.phy + '.' + i])
 			return i;
 }
 
@@ -188,7 +316,7 @@ function mld_radio_index(data, freq)
 function mld_add(data, phy_list)
 {
 	let name = data.name;
-	phy_list ??= [];
+	phy_list ??= {};
 
 	wpas.printf(`Add MLD interface ${name}`);
 
@@ -196,7 +324,7 @@ function mld_add(data, phy_list)
 	if (radio == null)
 		return;
 
-	let phy_name = data.phy + '.' + radio;
+	let phy_name = data.phy + '.' + (mld_macaddr_radio(data) ?? radio);
 	let phydev = phy_list[phy_name];
 	if (!phydev) {
 		phydev = phy_dev_open(phy_name);
@@ -206,16 +334,32 @@ function mld_add(data, phy_list)
 		phy_list[phy_name] = phydev;
 	}
 
-	let wdev_config = { ...data.config, radio_mask: data.radio_mask };
-	if (!wdev_config.macaddr)
-		wdev_config.macaddr = phydev.macaddr_next();
+	let macaddr = phy_macaddr_get(phydev, name, data.macaddr, {
+		group: "mld",
+		macaddr: data.config.macaddr,
+		any_radio: true,
+	});
+	if (!macaddr)
+		return;
+
+	data.macaddr = macaddr;
+	let wdev_config = { ...data.config, radio_mask: data.radio_mask, macaddr };
 	let ret = phydev.wdev_add(name, wdev_config);
-	if (ret)
+	if (ret) {
 		wpas.printf(`Failed to create device ${name}: ${ret}`);
+		return;
+	}
 
 	let first_config = data.phy_config[radio];
 
-	wdev_set_up(name, true);
+	ret = wdev_set_up(name, true);
+	if (ret) {
+		wpas.printf(`Failed to bring up device ${name}: ${ret}`);
+		wdev_remove(name);
+		return;
+	}
+
+	data.config_data = readfile(first_config?.config);
 	wpas.add_iface(first_config);
 
 	let iface = wpas.interfaces[name];
@@ -245,18 +389,93 @@ function mld_add_links(data)
 	mld_add(data);
 }
 
+function mld_reload(data, phy_list)
+{
+	let first_config = data.phy_config[mld_first_phy(data)];
+	let config_data = readfile(first_config?.config);
+
+	if (iface_network_apply(data.name, data.config_data, config_data,
+				data.freq_list)) {
+		data.config_data = config_data;
+		return;
+	}
+
+	mld_remove(data);
+	mld_add(data, phy_list);
+}
+
+function mld_macaddr_list(new_mld, added, prev_mld)
+{
+	let list = macaddr_keep(keys(new_mld));
+	let news = {};
+	let prevs = {};
+
+	for (let name, config in added)
+		if (!config.macaddr)
+			news[name] = config;
+	for (let name, data in prev_mld)
+		if (data.macaddr && !data.config.macaddr)
+			prevs[name] = data.config;
+
+	for (let name, from in mld_prev_match(news, prevs)) {
+		new_mld[name].macaddr = prev_mld[from].macaddr;
+		if (from != name)
+			list[name] = macaddr_sync_entry(new_mld[name].phy, -1, prev_mld[from].macaddr, {
+				any_radio: true,
+			});
+	}
+
+	return list;
+}
+
+function mld_set_iface_config(name, data, phy, config)
+{
+	let radio = phy.radio;
+
+	wpas.printf(`Set MLD interface ${name} radio ${radio} config: ${keys(config)}`);
+
+	data.phy_config[radio] = config;
+	if (config && !phy.stopped && (data.radio_mask & (1 << radio)))
+		data.radio_mask_present |= 1 << radio;
+	else
+		data.radio_mask_present &= ~(1 << radio);
+
+	mld_freq_list_update(data);
+	mld_kept_release(data, 1 << radio);
+}
+
+// a config_set can reach a new process before the mld_set that creates the entry
+function mld_phy_config_fill(data)
+{
+	for (let config_name, phy in wpas.data.config) {
+		let config = phy.mld_config?.[data.name];
+		if (phy.name != data.phy || phy.radio == null || !config)
+			continue;
+
+		mld_set_iface_config(data.name, data, phy, config);
+	}
+}
+
 function mld_set_config(config)
 {
 	let prev_mld = { ...wpas.data.mld };
 	let new_mld = {};
-	let phy_list = {};
-	let new_config = !length(prev_mld);
+	let added = {};
 
 	wpas.printf(`Set MLD config: ${keys(config)}`);
 
 	for (let name, data in config) {
 		let prev = prev_mld[name];
 		if (prev && is_equal(prev.config, data)) {
+			new_mld[name] = prev;
+			delete prev_mld[name];
+			continue;
+		}
+
+		if (prev && config_equal_except(prev.config, data, mld_network_keys)) {
+			wpas.printf(`Update network of MLD interface ${name}`);
+			prev.config = data;
+			prev.reload = true;
 			new_mld[name] = prev;
 			delete prev_mld[name];
 			continue;
@@ -272,40 +491,22 @@ function mld_set_config(config)
 			config: data,
 			phy: data.phy,
 			phy_config: [],
+			macaddr: prev?.macaddr,
 			radio_mask,
 			radio_mask_up: 0,
 			radio_mask_present: 0,
+			radio_mask_kept: 0,
 		};
+		added[name] = data;
 	}
 
 	for (let name, data in prev_mld)
 		mld_remove(data);
 
 	wpas.data.mld = new_mld;
-
-}
-
-function mld_set_iface_config(name, data, radio, config)
-{
-	wpas.printf(`Set MLD interface ${name} radio ${radio} config: ${keys(config)}`);
-
-	data.phy_config[radio] = config;
-	if (config)
-		data.radio_mask_present |= 1 << radio;
-	else
-		data.radio_mask_present &= ~(1 << radio);
-
-	let freq_list;
-	for (let config in data.phy_config) {
-		if (!config || !config.freq_list)
-			continue;
-		if (!freq_list)
-			freq_list = [ ...config.freq_list ];
-		else
-			push(freq_list, ...config.freq_list);
-	}
-
-	data.freq_list = freq_list;
+	for (let name in added)
+		mld_phy_config_fill(new_mld[name]);
+	macaddr_sync_defer(ubus, "wpa_supplicant", "mld", mld_macaddr_list(new_mld, added, prev_mld));
 }
 
 function mld_update_iface(name, data) {
@@ -317,7 +518,7 @@ function mld_update_iface(name, data) {
 		return;
 	}
 
-	let mask = data.radio_mask_up & ~data.radio_mask_present;
+	let mask = data.radio_mask_up & ~data.radio_mask_present & ~data.radio_mask_kept;
 	if (!mask)
 		return;
 
@@ -329,9 +530,22 @@ function mld_update_phy(phy, ifaces) {
 		if (data.phy != phy.name)
 			continue;
 
-		mld_set_iface_config(name, data, phy.radio, ifaces[name]);
+		mld_set_iface_config(name, data, phy, ifaces[name]);
 		mld_update_iface(name, data);
 	}
+}
+
+// configured radios of the MLD that a phy_set_state stop took and no start
+// gave back
+function mld_radios_held(data)
+{
+	let held = 0;
+
+	for (let radio = 0; radio < length(data.phy_config); radio++)
+		if (data.phy_config[radio] && !(data.radio_mask_present & (1 << radio)))
+			held |= 1 << radio;
+
+	return held & data.radio_mask;
 }
 
 function mld_start() {
@@ -343,9 +557,20 @@ function mld_start() {
 	let phy_list = {};
 	for (let name, data in wpas.data.mld) {
 		wpas.printf(`MLD interface ${name} present=${data.radio_mask_present} up=${data.radio_mask_up}`);
+		let reload = data.reload;
+		delete data.reload;
+
 		let add_mask = data.radio_mask_present & ~data.radio_mask_up;
+		if (!add_mask && reload && data.radio_mask_up)
+			mld_reload(data, phy_list);
 		if (!add_mask)
 			continue;
+
+		let held = mld_radios_held(data);
+		if (held) {
+			wpas.printf(`MLD interface ${name} waits for radios held=${held}`);
+			continue;
+		}
 
 		if (!data.radio_mask_up)
 			mld_add(data, phy_list);
@@ -377,6 +602,7 @@ function set_config(config_name, phy_name, radio, num_global_macaddr, macaddr_ba
 	phy.radio = radio;
 	phy.num_global_macaddr = num_global_macaddr;
 	phy.macaddr_base = macaddr_base;
+	phy.stopped = false;
 
 	let values = [];
 	let mlo_ifaces = {};
@@ -386,8 +612,17 @@ function set_config(config_name, phy_name, radio, num_global_macaddr, macaddr_ba
 		else
 			push(values, [ config.iface, prepare_config(config) ]);
 
+	phy.mld_config = mlo_ifaces;
 	mld_update_phy(phy, mlo_ifaces);
 	phy.update(values);
+
+	macaddr_sync_defer(ubus, "wpa_supplicant", config_name, macaddr_keep(keys(phy.data)));
+}
+
+function config_clear()
+{
+	for (let name, phy in wpas.data.config)
+		set_config(name, phy.name, phy.radio, phy.num_global_macaddr, phy.macaddr_base, []);
 }
 
 function iface_status_fill_radio_link(mld, radio, msg, link)
@@ -465,6 +700,14 @@ function dpp_channel_handle_request(channel, req)
 			return libubus.STATUS_UNKNOWN_ERROR;
 		return 0;
 
+	case "tx_gas_comeback_req":
+		iface = dpp_find_iface(data.ifname);
+		if (!iface)
+			return libubus.STATUS_NOT_FOUND;
+		if (!iface.dpp_send_gas_comeback_req(data.dst, data.freq ?? 0, data.dialog_token ?? 0))
+			return libubus.STATUS_UNKNOWN_ERROR;
+		return 0;
+
 	case "dpp_bootstrap_gen":
 		iface = dpp_find_iface(data.ifname);
 		if (!iface)
@@ -493,8 +736,8 @@ function dpp_channel_handle_request(channel, req)
 		let chirp_cmd = "DPP_CHIRP own=" + data.id;
 		if (data.iter)
 			chirp_cmd += " iter=" + data.iter;
-		if (data.scan_interval)
-			chirp_cmd += " listen=" + data.scan_interval;
+		if (data.listen_freq)
+			chirp_cmd += " listen=" + data.listen_freq;
 		let chirp_result = iface.ctrl(chirp_cmd);
 		return (chirp_result == "OK") ? 0 : libubus.STATUS_UNKNOWN_ERROR;
 
@@ -575,6 +818,7 @@ let main_obj = {
 				return libubus.STATUS_NOT_FOUND;
 
 			let radio_mask = phy.radio != null ? (1 << phy.radio) : 0;
+			phy.stopped = req.args.stop;
 			if (req.args.stop) {
 				for (let ifname in phy.data)
 					iface_stop(phy.data[ifname]);
@@ -582,8 +826,19 @@ let main_obj = {
 					if (data.phy != phy.name)
 						continue;
 					data.radio_mask_present &= ~radio_mask;
-					if (data.radio_mask_up & radio_mask)
+					mld_freq_list_update(data);
+					let link = data.radio_mask_up & radio_mask;
+					if (link && !mld_hold_keep(data)) {
 						mld_update_iface(name, data);
+						continue;
+					}
+
+					if (link) {
+						wpas.printf(`Keep MLD interface ${name} without radio ${phy.radio}`);
+						data.radio_mask_kept |= radio_mask;
+					}
+					if (data.radio_mask_kept)
+						mld_freq_list_apply(data);
 				}
 			} else {
 				start_pending(name);
@@ -594,28 +849,17 @@ let main_obj = {
 						continue;
 					if (!(data.radio_mask & radio_mask))
 						continue;
+					if (!data.phy_config[phy.radio])
+						continue;
 					data.radio_mask_present |= radio_mask;
+					mld_freq_list_update(data);
+					mld_kept_release(data, radio_mask);
 					found = true;
 				}
 				if (found)
 					mld_start();
 			}
 
-			return 0;
-		}
-	},
-	phy_set_macaddr_list: {
-		args: {
-			phy: "",
-			radio: 0,
-			macaddr: [],
-		},
-		call: function(req) {
-			let phy = phy_name(req.args.phy, req.args.radio);
-			if (!phy)
-				return libubus.STATUS_INVALID_ARGUMENT;
-
-			wpas.data.macaddr_list[phy] = req.args.macaddr;
 			return 0;
 		}
 	},
@@ -638,7 +882,7 @@ let main_obj = {
 			for (let name, data in wpas.data.mld) {
 				if (data.phy != phy.name)
 					continue;
-				if (data.radio_mask_up & radio_mask)
+				if (data.radio_mask_up & ~data.radio_mask_kept & radio_mask)
 					push(ifnames, name);
 			}
 
@@ -710,6 +954,14 @@ let main_obj = {
 			return 0;
 		}
 	},
+	config_reset: {
+		args: {},
+		call: function(req) {
+			config_clear();
+			mld_set_config({});
+			return 0;
+		}
+	},
 	config_set: {
 		args: {
 			phy: "",
@@ -751,6 +1003,9 @@ let main_obj = {
 
 			if (wpas.add_iface(req.args) < 0)
 				return libubus.STATUS_INVALID_ARGUMENT;
+
+			if (req.args.driver == "wired")
+				wpas.data.wired[req.args.iface] = true;
 
 			return {
 				pid: wpas.getpid()
@@ -810,7 +1065,7 @@ let main_obj = {
 
 					let entry = {
 						wiphy: phy.name,
-						macaddr: config.macaddr,
+						macaddr: config.macaddr ?? iface_data.macaddr,
 						running: !!iface_data.running,
 						pending: !iface_data.running,
 					};
@@ -828,8 +1083,9 @@ let main_obj = {
 					links: {},
 				};
 
-				if (mld.config && mld.config.macaddr)
-					entry.macaddr = mld.config.macaddr;
+				let macaddr = mld.config?.macaddr ?? mld.macaddr;
+				if (macaddr)
+					entry.macaddr = macaddr;
 
 				let mask = mld.radio_mask;
 				for (let radio = 0; mask; radio++, mask >>= 1) {
@@ -884,6 +1140,10 @@ function iface_event(type, name, data) {
 
 function iface_hostapd_notify(ifname, iface, state)
 {
+	// a wired port has no PHY whose AP side would follow its channel
+	if (wpas.data.wired[ifname])
+		return;
+
 	let status = iface.status();
 	let ubus = wpas.data.ubus;
 	let msg = {};
@@ -975,6 +1235,9 @@ function iface_channel_switch(ifname, iface, info)
 	}
 
 	ubus.call("hostapd", "apsta_state", msg);
+	let err = ubus.error();
+	if (err)
+		wpas.printf(`hostapd refused to follow the channel switch of ${ifname} to ${info.frequency} MHz: ${err}`);
 }
 
 function iface_ubus_remove(ifname)
@@ -999,6 +1262,63 @@ function iface_ubus_notify(ifname, event)
 	obj.notify('ctrl-event', event, null, null, null, -1);
 }
 
+function ctrl_reply_parse(reply, prefix)
+{
+	let data = {};
+
+	for (let line in split(reply ?? "", "\n")) {
+		let pos = index(line, "=");
+		if (pos <= 0)
+			continue;
+
+		let key = substr(line, 0, pos);
+		if (prefix && index(key, prefix) != 0)
+			continue;
+
+		data[key] = substr(line, pos + 1);
+	}
+
+	return data;
+}
+
+function iface_eapol_count(ifname, ev)
+{
+	let counts = wpas.data.eapol[ifname];
+	if (!counts)
+		return;
+
+	if (index(ev, "CTRL-EVENT-EAP-SUCCESS") == 0)
+		counts.success++;
+	else if (index(ev, "CTRL-EVENT-EAP-FAILURE") == 0)
+		counts.failure++;
+}
+
+function ctrl_int(value)
+{
+	return value != null ? int(value) : null;
+}
+
+function iface_eapol_status(ifname, iface)
+{
+	let status = ctrl_reply_parse(iface.ctrl("STATUS-VERBOSE"));
+	let counts = wpas.data.eapol[ifname] ?? {};
+
+	return {
+		wpa_state: status.wpa_state,
+		pae_state: status["Supplicant PAE state"],
+		port_status: status.suppPortStatus,
+		eap_state: status["EAP state"],
+		eap_method: status.selectedMethod,
+		held_period: ctrl_int(status.heldPeriod),
+		auth_period: ctrl_int(status.authPeriod),
+		start_period: ctrl_int(status.startPeriod),
+		max_start: ctrl_int(status.maxStart),
+		mib: ctrl_reply_parse(iface.ctrl("MIB"), "dot1xSupp"),
+		success_count: counts.success ?? 0,
+		failure_count: counts.failure ?? 0,
+	};
+}
+
 function iface_ubus_add(ifname)
 {
 	let ubus = wpas.data.ubus;
@@ -1014,6 +1334,11 @@ function iface_ubus_add(ifname)
 					return libubus.STATUS_NOT_FOUND;
 
 				iface.ctrl("RECONFIGURE");
+
+				// the file of a station MLD holds the frequencies of one radio only
+				let mld = wpas.data.mld[ifname];
+				if (length(mld?.freq_list) > 0)
+					iface.config('freq_list', mld.freq_list);
 				return 0;
 			},
 		},
@@ -1055,15 +1380,35 @@ function iface_ubus_add(ifname)
 				};
 			},
 		},
+		eapol_status: {
+			args: {},
+			call: (req) => {
+				let iface = wpas.interfaces[ifname];
+				if (!iface)
+					return libubus.STATUS_NOT_FOUND;
+
+				return iface_eapol_status(ifname, iface);
+			},
+		},
+		eapol_reset: {
+			args: {},
+			call: (req) => {
+				if (!wpas.interfaces[ifname])
+					return libubus.STATUS_NOT_FOUND;
+
+				wpas.data.eapol[ifname] = { success: 0, failure: 0 };
+				return 0;
+			},
+		},
 	});
 	wpas.data.iface_ubus[ifname] = obj;
 }
 
 return {
 	shutdown: function() {
-		for (let phy in wpas.data.config)
-			set_config(phy, []);
-		wpas.ubus.disconnect();
+		config_clear();
+		wpas.udebug_set(null);
+		wpas.data.ubus.disconnect();
 	},
 	bss_allowed: function(ifname, bss) {
 		let mld = wpas.data.mld[ifname];
@@ -1073,6 +1418,7 @@ return {
 		return mld_bss_allowed(mld, bss);
 	},
 	iface_add: function(name, obj) {
+		wpas.data.eapol[name] = { success: 0, failure: 0 };
 		iface_ubus_add(name);
 		iface_event("add", name);
 	},
@@ -1080,8 +1426,11 @@ return {
 		iface_event("remove", name);
 		iface_ubus_remove(name);
 		delete wpas.data.dpp_hooks[name];
+		delete wpas.data.eapol[name];
+		delete wpas.data.wired[name];
 	},
 	ctrl_event: function(name, iface, ev) {
+		iface_eapol_count(name, ev);
 		iface_ubus_notify(name, ev);
 
 		// The set of links of an associated MLD can change without a state
@@ -1128,7 +1477,7 @@ return {
 		}
 	},
 	event: function(ifname, iface, ev, info) {
-		if (ev == "CH_SWITCH_STARTED")
+		if (ev == "CH_SWITCH_STARTED" || ev == "LINK_CH_SWITCH_STARTED")
 			iface_channel_switch(ifname, iface, info);
 	},
 	wps_credentials: function(ifname, iface, cred) {

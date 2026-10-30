@@ -5,10 +5,13 @@
 			"methods": [ "event" ]
 		},
 		"wpa_supplicant": {
-			"methods": [ "phy_set_state", "phy_set_macaddr_list", "phy_status" ]
+			"methods": [ "phy_set_state", "phy_status" ]
 		},
 		"hostapd": {
 			"methods": [ "apsta_state" ]
+		},
+		"network.wireless": {
+			"methods": [ "macaddr_get", "macaddr_sync", "macaddr_release" ]
 		},
 		"udebug": {
 			"methods": [ "get_config" ]

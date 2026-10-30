@@ -113,11 +113,11 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 
-		ports {
+		ethernet-ports {
 			#address-cells = <1>;
 			#size-cells = <0>;
 
-			port@1 {
+			ethernet-port@1 {
 				reg = <1>;
 				label = "lan1";
 				phy-handle = <&qca8337_0>;
@@ -142,7 +142,7 @@
 				};
 			};
 
-			port@2 {
+			ethernet-port@2 {
 				reg = <2>;
 				label = "lan2";
 				phy-handle = <&qca8337_1>;
@@ -167,7 +167,7 @@
 				};
 			};
 
-			port@3 {
+			ethernet-port@3 {
 				reg = <3>;
 				label = "lan3";
 				phy-handle = <&qca8337_2>;
@@ -192,7 +192,7 @@
 				};
 			};
 
-			port@4 {
+			ethernet-port@4 {
 				reg = <4>;
 				label = "lan4";
 				phy-handle = <&qca8337_3>;
@@ -217,7 +217,7 @@
 				};
 			};
 
-			port@5 {
+			ethernet-port@5 {
 				reg = <5>;
 				label = "wan";
 				phy-handle = <&qca8337_4>;
@@ -242,7 +242,7 @@
 				};
 			};
 
-			port@6 {
+			ethernet-port@6 {
 				reg = <6>;
 				label = "cpu";
 				phy-mode = "sgmii";

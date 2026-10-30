@@ -42,10 +42,12 @@ MOD_TARGETS:= \
 
 MAKE_PATH:=tools/testing/selftests/bpf
 
+# Use SAN_CFLAGS to cover target libbpf as well as userspace selftests,
+# without passing target flags to host tools or kernel modules.
 MAKE_VARS:= \
 	ARCH="$(LINUX_KARCH)" \
 	CROSS_COMPILE="$(TARGET_CROSS)" \
-	EXTRA_CFLAGS="$(TARGET_CFLAGS) $(TARGET_CPPFLAGS)" \
+	SAN_CFLAGS="$(TARGET_CFLAGS) $(TARGET_CPPFLAGS)" \
 	LDLIBS="$(TARGET_LDFLAGS)" \
 	TOOLCHAIN_INCLUDE="$(TOOLCHAIN_INC_DIRS)" \
 	KBUILD_OUTPUT="$(LINUX_DIR)"

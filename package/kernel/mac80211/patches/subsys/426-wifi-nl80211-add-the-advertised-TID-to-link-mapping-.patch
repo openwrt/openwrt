@@ -1,0 +1,677 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Sun, 11 Oct 2026 20:00:00 +0200
+Subject: [PATCH] wifi: nl80211: add the advertised TID-to-link mapping of an AP
+ MLD
+
+An AP MLD disables a link for all associated non-AP MLDs with an
+advertised TID-to-link mapping (IEEE 802.11be-2024 35.3.7.2.4). cfg80211
+handles the negotiated mapping of a station only, so user space cannot
+request an advertised one.
+
+The mapping depends on timing that user space does not see. It is
+established at a TBTT, the Mapping Switch Time field holds bits 10 to 25
+of the TSF of each link at that TBTT, and the Expected Duration field
+counts down in each Beacon frame once the mapping is established.
+
+Add a command with which user space requests a mapping of all TIDs to a
+set of links for a duration. Add an extended feature with which the
+driver declares that it times the switch and the end, disables the other
+links while the mapping is established and keeps the Expected Duration
+field current. The driver reports the Mapping Switch Time field of each
+link when it scheduled the mapping, then the establishment and the end,
+so that user space builds the element of each step.
+
+cfg80211 keeps one mapping per AP MLD. It rejects a request while
+another mapping is requested or established, and names the mapping with
+a cookie in the reply and in each event. The driver gets the cookie with
+the request and passes it back with each step, so that cfg80211 drops a
+late step of an earlier mapping. cfg80211 checks the cookie and sends
+the event of a step under the event lock of the interface, so that no
+step of a mapping follows the end of the mapping. A link that stops
+beaconing changes the
+links of the AP MLD, so cfg80211 then cancels the mapping in the driver
+with a new operation and ends it for user space.
+
+The remaining Expected Duration of a frame counts from the most recent
+TBTT (9.4.2.324), which user space does not see either. The driver
+reports the CLOCK_BOOTTIME of the TBTT at which the mapping was
+established, and with the start on each link that of the first TBTT of
+the link at or after it. CLOCK_BOOTTIME is the clock of the other
+nl80211 timestamps and the clock that user space reads without a TSF.
+
+Each step enables or disables links, which is a critical update, so a
+request also needs NL80211_EXT_FEATURE_BEACON_CRIT_UPDATE. The Mapping
+Switch Time field holds 16 bits of the TSF in TUs, which bounds the
+switch time to 0xffff TUs.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/include/net/cfg80211.h
++++ b/include/net/cfg80211.h
+@@ -1864,6 +1864,49 @@ struct cfg80211_ttlm_params {
+ };
+ 
+ /**
++ * struct cfg80211_adv_ttlm_params - advertised TID-to-link mapping
++ *
++ * Used with %NL80211_CMD_ADV_TTLM_REQUEST.
++ *
++ * @links: bitmap of the link IDs to which all TIDs map, in both directions
++ * @switch_time: TUs from the request to the establishment of the mapping, at
++ *	most 0xffff
++ * @duration: TUs that the mapping lasts once established, at most 0xffffff
++ * @cookie: cookie of the mapping, set by cfg80211; the driver passes it back
++ *	in each &struct cfg80211_adv_ttlm_event of the mapping
++ */
++struct cfg80211_adv_ttlm_params {
++	u16 links;
++	u32 switch_time;
++	u32 duration;
++	u64 cookie;
++};
++
++/**
++ * struct cfg80211_adv_ttlm_event - step of an advertised TID-to-link mapping
++ *
++ * Used with cfg80211_adv_ttlm_notify().
++ *
++ * @cmd: %NL80211_CMD_ADV_TTLM_STARTED, %NL80211_CMD_ADV_TTLM_ESTABLISHED or
++ *	%NL80211_CMD_ADV_TTLM_ENDED
++ * @cookie: &cfg80211_adv_ttlm_params.cookie of the mapping
++ * @link_id: link ID, with %NL80211_CMD_ADV_TTLM_STARTED only
++ * @switch_tsf: Mapping Switch Time field of the link, with
++ *	%NL80211_CMD_ADV_TTLM_STARTED only
++ * @tbtt_boottime: CLOCK_BOOTTIME in ns of a TBTT, 0 if not known: with
++ *	%NL80211_CMD_ADV_TTLM_STARTED the first TBTT of the link at or after
++ *	the establishment, with %NL80211_CMD_ADV_TTLM_ESTABLISHED the TBTT at
++ *	which the mapping was established
++ */
++struct cfg80211_adv_ttlm_event {
++	enum nl80211_commands cmd;
++	u64 cookie;
++	unsigned int link_id;
++	u16 switch_tsf;
++	u64 tbtt_boottime;
++};
++
++/**
+  * struct station_parameters - station parameters
+  *
+  * Used to change and create a new station.
+@@ -5250,6 +5293,16 @@ struct mgmt_frame_regs {
+  *
+  * @set_hw_timestamp: Enable/disable HW timestamping of TM/FTM frames.
+  * @set_ttlm: set the TID to link mapping.
++ * @adv_ttlm_request: advertise a TID-to-link mapping of an AP MLD, see
++ *	%NL80211_CMD_ADV_TTLM_REQUEST. cfg80211 calls it only while no mapping
++ *	is requested or established. (invoked with the wiphy mutex held)
++ * @adv_ttlm_cancel: cancel the advertised TID-to-link mapping with the given
++ *	cookie. cfg80211 calls it when a link of the AP MLD stops before the
++ *	end of the mapping, and then reports %NL80211_CMD_ADV_TTLM_ENDED
++ *	itself. The driver stops the mapping in the device and reports no
++ *	further step of it. A driver whose device cannot stop a mapping
++ *	rejects a new request with -EBUSY until the device ended it.
++ *	(invoked with the wiphy mutex held)
+  * @set_epcs: Enable/Disable EPCS for station mode.
+  * @get_radio_mask: get bitmask of radios in use.
+  *	(invoked with the wiphy mutex held)
+@@ -5636,6 +5689,10 @@ struct cfg80211_ops {
+ 				    struct cfg80211_set_hw_timestamp *hwts);
+ 	int	(*set_ttlm)(struct wiphy *wiphy, struct net_device *dev,
+ 			    struct cfg80211_ttlm_params *params);
++	int	(*adv_ttlm_request)(struct wiphy *wiphy, struct net_device *dev,
++				    struct cfg80211_adv_ttlm_params *params);
++	void	(*adv_ttlm_cancel)(struct wiphy *wiphy, struct net_device *dev,
++				   u64 cookie);
+ 	u32	(*get_radio_mask)(struct wiphy *wiphy, struct net_device *dev);
+ 	int     (*assoc_ml_reconf)(struct wiphy *wiphy, struct net_device *dev,
+ 				   struct cfg80211_ml_reconf_req *req);
+@@ -7298,6 +7355,7 @@ struct wireless_dev {
+ 			struct cfg80211_chan_def preset_chandef;
+ 			u8 ssid[IEEE80211_MAX_SSID_LEN];
+ 			u8 ssid_len;
++			atomic64_t adv_ttlm_cookie;
+ 		} ap;
+ 		struct {
+ 			struct cfg80211_internal_bss *current_bss;
+@@ -10765,6 +10823,19 @@ void cfg80211_crit_update_done(struct ne
+ 			       u32 crit_update_id);
+ 
+ /**
++ * cfg80211_adv_ttlm_notify - notify about an advertised TID-to-link mapping
++ * @dev: network device of the AP MLD
++ * @event: the step of the mapping
++ * @gfp: allocation flags
++ *
++ * cfg80211 drops a notification whose cookie is not that of the mapping
++ * that is requested or established, see %NL80211_CMD_ADV_TTLM_REQUEST.
++ */
++void cfg80211_adv_ttlm_notify(struct net_device *dev,
++			      const struct cfg80211_adv_ttlm_event *event,
++			      gfp_t gfp);
++
++/**
+  * struct cfg80211_mlo_reconf_done_data - MLO reconfiguration data
+  * @buf: MLO Reconfiguration Response frame (header + body)
+  * @len: length of the frame data
+--- a/net/wireless/nl80211.c
++++ b/net/wireless/nl80211.c
+@@ -693,6 +693,11 @@ static const struct netlink_range_valida
+ 	.max = 0xffff,
+ };
+ 
++static const struct netlink_range_validation nl80211_adv_ttlm_range[] = {
++	{ .min = 1, .max = 0xffff },	/* NL80211_ATTR_MLO_ADV_TTLM_SWITCH_TIME */
++	{ .min = 1, .max = 0xffffff },	/* NL80211_ATTR_MLO_ADV_TTLM_DURATION */
++};
++
+ static const struct netlink_range_validation q_range = {
+ 	.max = INT_MAX,
+ };
+@@ -1097,6 +1102,13 @@ static const struct nla_policy nl80211_p
+ 		NLA_POLICY_FULL_RANGE(NLA_U32, &nl80211_punct_bitmap_range),
+ 	[NL80211_ATTR_STA_DUMP_LINK_STATS] = { .type = NLA_FLAG },
+ 	[NL80211_ATTR_CRIT_UPDATE_ID] = NLA_POLICY_MIN(NLA_U32, 1),
++	[NL80211_ATTR_MLO_ADV_TTLM_LINKS] = NLA_POLICY_MIN(NLA_U16, 1),
++	[NL80211_ATTR_MLO_ADV_TTLM_SWITCH_TIME] =
++		NLA_POLICY_FULL_RANGE(NLA_U32, &nl80211_adv_ttlm_range[0]),
++	[NL80211_ATTR_MLO_ADV_TTLM_DURATION] =
++		NLA_POLICY_FULL_RANGE(NLA_U32, &nl80211_adv_ttlm_range[1]),
++	[NL80211_ATTR_MLO_ADV_TTLM_SWITCH_TSF] = { .type = NLA_U16 },
++	[NL80211_ATTR_MLO_ADV_TTLM_TBTT_BOOTTIME] = { .type = NLA_U64 },
+ };
+ 
+ /* policy for the key attributes */
+@@ -19280,6 +19292,90 @@ nl80211_set_ttlm(struct sk_buff *skb, st
+ 	return rdev_set_ttlm(rdev, dev, &params);
+ }
+ 
++static int
++nl80211_adv_ttlm_request(struct sk_buff *skb, struct genl_info *info)
++{
++	struct cfg80211_registered_device *rdev = info->user_ptr[0];
++	struct cfg80211_adv_ttlm_params params = {};
++	struct net_device *dev = info->user_ptr[1];
++	struct wireless_dev *wdev = dev->ieee80211_ptr;
++	unsigned int link_id;
++	unsigned long links;
++	struct sk_buff *msg;
++	u64 cookie;
++	void *hdr;
++	int err;
++
++	if (!rdev->ops->adv_ttlm_request ||
++	    !wiphy_ext_feature_isset(&rdev->wiphy,
++				     NL80211_EXT_FEATURE_AP_ADV_TTLM) ||
++	    !wiphy_ext_feature_isset(&rdev->wiphy,
++				     NL80211_EXT_FEATURE_BEACON_CRIT_UPDATE))
++		return -EOPNOTSUPP;
++
++	if (wdev->iftype != NL80211_IFTYPE_AP || !wdev->valid_links)
++		return -EOPNOTSUPP;
++
++	if (!info->attrs[NL80211_ATTR_MLO_ADV_TTLM_LINKS] ||
++	    !info->attrs[NL80211_ATTR_MLO_ADV_TTLM_SWITCH_TIME] ||
++	    !info->attrs[NL80211_ATTR_MLO_ADV_TTLM_DURATION])
++		return -EINVAL;
++
++	params.links = nla_get_u16(info->attrs[NL80211_ATTR_MLO_ADV_TTLM_LINKS]);
++	params.switch_time =
++		nla_get_u32(info->attrs[NL80211_ATTR_MLO_ADV_TTLM_SWITCH_TIME]);
++	params.duration =
++		nla_get_u32(info->attrs[NL80211_ATTR_MLO_ADV_TTLM_DURATION]);
++
++	if ((params.links & ~wdev->valid_links) ||
++	    params.links == wdev->valid_links)
++		return -EINVAL;
++
++	links = params.links;
++	for_each_set_bit(link_id, &links, IEEE80211_MLD_MAX_NUM_LINKS)
++		if (!wdev->links[link_id].ap.beacon_interval)
++			return -ENOLINK;
++
++	msg = nlmsg_new(NLMSG_DEFAULT_SIZE, GFP_KERNEL);
++	if (!msg)
++		return -ENOMEM;
++
++	hdr = nl80211hdr_put(msg, info->snd_portid, info->snd_seq, 0,
++			     NL80211_CMD_ADV_TTLM_REQUEST);
++	if (!hdr) {
++		err = -ENOBUFS;
++		goto free_msg;
++	}
++
++	cookie = cfg80211_assign_cookie(rdev);
++	if (nla_put_u64_64bit(msg, NL80211_ATTR_COOKIE, cookie,
++			      NL80211_ATTR_PAD)) {
++		err = -ENOBUFS;
++		goto free_msg;
++	}
++
++	if (atomic64_cmpxchg(&wdev->u.ap.adv_ttlm_cookie, 0, cookie)) {
++		err = -EBUSY;
++		goto free_msg;
++	}
++
++	params.cookie = cookie;
++
++	err = rdev_adv_ttlm_request(rdev, dev, &params);
++	if (err) {
++		atomic64_set(&wdev->u.ap.adv_ttlm_cookie, 0);
++		goto free_msg;
++	}
++
++	genlmsg_end(msg, hdr);
++
++	return genlmsg_reply(msg, info);
++
++ free_msg:
++	nlmsg_free(msg);
++	return err;
++}
++
+ static int nl80211_assoc_ml_reconf(struct sk_buff *skb, struct genl_info *info)
+ {
+ 	struct cfg80211_registered_device *rdev = info->user_ptr[0];
+@@ -20584,6 +20680,12 @@ static const struct genl_small_ops nl802
+ 		.internal_flags = IFLAGS(NL80211_FLAG_NEED_NETDEV_UP),
+ 	},
+ 	{
++		.cmd = NL80211_CMD_ADV_TTLM_REQUEST,
++		.doit = nl80211_adv_ttlm_request,
++		.flags = GENL_UNS_ADMIN_PERM,
++		.internal_flags = IFLAGS(NL80211_FLAG_NEED_NETDEV_UP),
++	},
++	{
+ 		.cmd = NL80211_CMD_ASSOC_MLO_RECONF,
+ 		.doit = nl80211_assoc_ml_reconf,
+ 		.flags = GENL_UNS_ADMIN_PERM,
+@@ -21561,6 +21663,125 @@ void cfg80211_crit_update_done(struct ne
+ }
+ EXPORT_SYMBOL(cfg80211_crit_update_done);
+ 
++static struct sk_buff *
++nl80211_adv_ttlm_msg(struct net_device *dev,
++		     const struct cfg80211_adv_ttlm_event *event, gfp_t gfp)
++{
++	struct wireless_dev *wdev = dev->ieee80211_ptr;
++	struct cfg80211_registered_device *rdev = wiphy_to_rdev(wdev->wiphy);
++	struct sk_buff *msg;
++	void *hdr;
++
++	msg = nlmsg_new(NLMSG_DEFAULT_SIZE, gfp);
++	if (!msg)
++		return NULL;
++
++	hdr = nl80211hdr_put(msg, 0, 0, 0, event->cmd);
++	if (!hdr)
++		goto nla_put_failure;
++
++	if (nla_put_u32(msg, NL80211_ATTR_WIPHY, rdev->wiphy_idx) ||
++	    nla_put_u32(msg, NL80211_ATTR_IFINDEX, dev->ifindex) ||
++	    nla_put_u64_64bit(msg, NL80211_ATTR_WDEV, wdev_id(wdev),
++			      NL80211_ATTR_PAD) ||
++	    nla_put_u64_64bit(msg, NL80211_ATTR_COOKIE, event->cookie,
++			      NL80211_ATTR_PAD))
++		goto nla_put_failure;
++
++	if (event->cmd == NL80211_CMD_ADV_TTLM_STARTED &&
++	    (nla_put_u8(msg, NL80211_ATTR_MLO_LINK_ID, event->link_id) ||
++	     nla_put_u16(msg, NL80211_ATTR_MLO_ADV_TTLM_SWITCH_TSF,
++			 event->switch_tsf)))
++		goto nla_put_failure;
++
++	if (event->cmd != NL80211_CMD_ADV_TTLM_ENDED && event->tbtt_boottime &&
++	    nla_put_u64_64bit(msg, NL80211_ATTR_MLO_ADV_TTLM_TBTT_BOOTTIME,
++			      event->tbtt_boottime, NL80211_ATTR_PAD))
++		goto nla_put_failure;
++
++	genlmsg_end(msg, hdr);
++
++	return msg;
++
++ nla_put_failure:
++	nlmsg_free(msg);
++	return NULL;
++}
++
++static void nl80211_send_adv_ttlm(struct net_device *dev, struct sk_buff *msg,
++				  gfp_t gfp)
++{
++	genlmsg_multicast_netns(&nl80211_fam, wiphy_net(dev->ieee80211_ptr->wiphy),
++				msg, 0, NL80211_MCGRP_MLME, gfp);
++}
++
++void cfg80211_adv_ttlm_notify(struct net_device *dev,
++			      const struct cfg80211_adv_ttlm_event *event,
++			      gfp_t gfp)
++{
++	struct wireless_dev *wdev = dev->ieee80211_ptr;
++	atomic64_t *cookie = &wdev->u.ap.adv_ttlm_cookie;
++	struct sk_buff *msg;
++	unsigned long flags;
++
++	trace_cfg80211_adv_ttlm_notify(dev, event);
++
++	if (WARN_ON(event->cmd != NL80211_CMD_ADV_TTLM_STARTED &&
++		    event->cmd != NL80211_CMD_ADV_TTLM_ESTABLISHED &&
++		    event->cmd != NL80211_CMD_ADV_TTLM_ENDED))
++		return;
++
++	if (WARN_ON(wdev->iftype != NL80211_IFTYPE_AP))
++		return;
++
++	if (WARN_ON(event->cmd == NL80211_CMD_ADV_TTLM_STARTED &&
++		    !(wdev->valid_links & BIT(event->link_id))))
++		return;
++
++	if (!event->cookie)
++		return;
++
++	msg = nl80211_adv_ttlm_msg(dev, event, gfp);
++	if (!msg)
++		return;
++
++	/* the event goes out before the ENDED event of a stop, or not at all */
++	spin_lock_irqsave(&wdev->event_lock, flags);
++	if (atomic64_read(cookie) != event->cookie ||
++	    (event->cmd == NL80211_CMD_ADV_TTLM_ENDED &&
++	     atomic64_cmpxchg(cookie, event->cookie, 0) != event->cookie)) {
++		spin_unlock_irqrestore(&wdev->event_lock, flags);
++		nlmsg_free(msg);
++		return;
++	}
++
++	nl80211_send_adv_ttlm(dev, msg, GFP_ATOMIC);
++	spin_unlock_irqrestore(&wdev->event_lock, flags);
++}
++EXPORT_SYMBOL(cfg80211_adv_ttlm_notify);
++
++void nl80211_adv_ttlm_stop(struct cfg80211_registered_device *rdev,
++			   struct wireless_dev *wdev)
++{
++	struct cfg80211_adv_ttlm_event event = {
++		.cmd = NL80211_CMD_ADV_TTLM_ENDED,
++	};
++	unsigned long flags;
++	struct sk_buff *msg;
++
++	spin_lock_irqsave(&wdev->event_lock, flags);
++	event.cookie = atomic64_xchg(&wdev->u.ap.adv_ttlm_cookie, 0);
++	spin_unlock_irqrestore(&wdev->event_lock, flags);
++	if (!event.cookie)
++		return;
++
++	rdev_adv_ttlm_cancel(rdev, wdev->netdev, event.cookie);
++
++	msg = nl80211_adv_ttlm_msg(wdev->netdev, &event, GFP_KERNEL);
++	if (msg)
++		nl80211_send_adv_ttlm(wdev->netdev, msg, GFP_KERNEL);
++}
++
+ void nl80211_mlo_reconf_add_done(struct net_device *dev,
+ 				 struct cfg80211_mlo_reconf_done_data *data)
+ {
+--- a/net/wireless/rdev-ops.h
++++ b/net/wireless/rdev-ops.h
+@@ -1593,6 +1593,34 @@ rdev_set_ttlm(struct cfg80211_registered
+ 	return ret;
+ }
+ 
++static inline int
++rdev_adv_ttlm_request(struct cfg80211_registered_device *rdev,
++		      struct net_device *dev,
++		      struct cfg80211_adv_ttlm_params *params)
++{
++	struct wiphy *wiphy = &rdev->wiphy;
++	int ret = -EOPNOTSUPP;
++
++	trace_rdev_adv_ttlm_request(wiphy, dev, params);
++	if (rdev->ops->adv_ttlm_request)
++		ret = rdev->ops->adv_ttlm_request(wiphy, dev, params);
++	trace_rdev_return_int(wiphy, ret);
++
++	return ret;
++}
++
++static inline void
++rdev_adv_ttlm_cancel(struct cfg80211_registered_device *rdev,
++		     struct net_device *dev, u64 cookie)
++{
++	struct wiphy *wiphy = &rdev->wiphy;
++
++	trace_rdev_adv_ttlm_cancel(wiphy, dev, cookie);
++	if (rdev->ops->adv_ttlm_cancel)
++		rdev->ops->adv_ttlm_cancel(wiphy, dev, cookie);
++	trace_rdev_return_void(wiphy);
++}
++
+ static inline u32
+ rdev_get_radio_mask(struct cfg80211_registered_device *rdev,
+ 		    struct net_device *dev)
+--- a/net/wireless/trace.h
++++ b/net/wireless/trace.h
+@@ -3198,6 +3198,49 @@ TRACE_EVENT(rdev_set_ttlm,
+ 		  WIPHY_PR_ARG, NETDEV_PR_ARG)
+ );
+ 
++TRACE_EVENT(rdev_adv_ttlm_request,
++	TP_PROTO(struct wiphy *wiphy, struct net_device *netdev,
++		 struct cfg80211_adv_ttlm_params *params),
++	TP_ARGS(wiphy, netdev, params),
++	TP_STRUCT__entry(
++		WIPHY_ENTRY
++		NETDEV_ENTRY
++		__field(u16, links)
++		__field(u32, switch_time)
++		__field(u32, duration)
++		__field(u64, cookie)
++	),
++	TP_fast_assign(
++		WIPHY_ASSIGN;
++		NETDEV_ASSIGN;
++		__entry->links = params->links;
++		__entry->switch_time = params->switch_time;
++		__entry->duration = params->duration;
++		__entry->cookie = params->cookie;
++	),
++	TP_printk(WIPHY_PR_FMT ", " NETDEV_PR_FMT
++		  ", links: 0x%x, switch_time: %u, duration: %u, cookie: %llu",
++		  WIPHY_PR_ARG, NETDEV_PR_ARG, __entry->links,
++		  __entry->switch_time, __entry->duration, __entry->cookie)
++);
++
++TRACE_EVENT(rdev_adv_ttlm_cancel,
++	TP_PROTO(struct wiphy *wiphy, struct net_device *netdev, u64 cookie),
++	TP_ARGS(wiphy, netdev, cookie),
++	TP_STRUCT__entry(
++		WIPHY_ENTRY
++		NETDEV_ENTRY
++		__field(u64, cookie)
++	),
++	TP_fast_assign(
++		WIPHY_ASSIGN;
++		NETDEV_ASSIGN;
++		__entry->cookie = cookie;
++	),
++	TP_printk(WIPHY_PR_FMT ", " NETDEV_PR_FMT ", cookie: %llu",
++		  WIPHY_PR_ARG, NETDEV_PR_ARG, __entry->cookie)
++);
++
+ TRACE_EVENT(rdev_set_epcs,
+ 	TP_PROTO(struct wiphy *wiphy, struct net_device *netdev,
+ 		 bool val),
+@@ -4254,6 +4297,33 @@ TRACE_EVENT(cfg80211_crit_update_done,
+ 		  NETDEV_PR_ARG, __entry->link_id, __entry->crit_update_id)
+ );
+ 
++TRACE_EVENT(cfg80211_adv_ttlm_notify,
++	TP_PROTO(struct net_device *netdev,
++		 const struct cfg80211_adv_ttlm_event *event),
++	TP_ARGS(netdev, event),
++	TP_STRUCT__entry(
++		NETDEV_ENTRY
++		__field(u32, cmd)
++		__field(u64, cookie)
++		__field(unsigned int, link_id)
++		__field(u16, switch_tsf)
++		__field(u64, tbtt_boottime)
++	),
++	TP_fast_assign(
++		NETDEV_ASSIGN;
++		__entry->cmd = event->cmd;
++		__entry->cookie = event->cookie;
++		__entry->link_id = event->link_id;
++		__entry->switch_tsf = event->switch_tsf;
++		__entry->tbtt_boottime = event->tbtt_boottime;
++	),
++	TP_printk(NETDEV_PR_FMT
++		  ", cmd:%x, cookie:%llu, link_id:%u, switch_tsf:%u, tbtt_boottime:%llu",
++		  NETDEV_PR_ARG, __entry->cmd, __entry->cookie,
++		  __entry->link_id, __entry->switch_tsf,
++		  __entry->tbtt_boottime)
++);
++
+ TRACE_EVENT(cfg80211_mlo_reconf_add_done,
+ 	TP_PROTO(struct net_device *netdev, u16 link_mask,
+ 		 const u8 *buf, size_t len, bool driver_initiated),
+--- a/net/wireless/ap.c
++++ b/net/wireless/ap.c
+@@ -38,6 +38,7 @@ static int ___cfg80211_stop_ap(struct cf
+ 		wdev->links[link_id].ap.beacon_interval = 0;
+ 		memset(&wdev->links[link_id].ap.chandef, 0,
+ 		       sizeof(wdev->links[link_id].ap.chandef));
++		nl80211_adv_ttlm_stop(rdev, wdev);
+ 
+ 		if (!cfg80211_beaconing_iface_active(wdev)) {
+ 			wdev->conn_owner_nlportid = 0;
+--- a/net/wireless/nl80211.h
++++ b/net/wireless/nl80211.h
+@@ -120,6 +120,8 @@ nl80211_radar_notify(struct cfg80211_reg
+ 		     struct net_device *netdev, gfp_t gfp);
+ 
+ void nl80211_send_ap_stopped(struct wireless_dev *wdev, unsigned int link_id);
++void nl80211_adv_ttlm_stop(struct cfg80211_registered_device *rdev,
++			   struct wireless_dev *wdev);
+ 
+ void cfg80211_free_coalesce(struct cfg80211_coalesce *coalesce);
+ 
+--- a/include/uapi/linux/nl80211.h
++++ b/include/uapi/linux/nl80211.h
+@@ -1465,6 +1465,42 @@
+  *	the critical update has an ID. See
+  *	%NL80211_EXT_FEATURE_BEACON_CRIT_UPDATE.
+  *
++ * @NL80211_CMD_ADV_TTLM_REQUEST: Advertise a TID-to-link mapping of an AP
++ *	MLD (IEEE 802.11be-2024, 35.3.7.2.4) that maps all TIDs, in both
++ *	directions, to the links of %NL80211_ATTR_MLO_ADV_TTLM_LINKS. Each of
++ *	these links must beacon, and at least one link of the AP MLD must be
++ *	outside the mapping. The mapping is established
++ *	%NL80211_ATTR_MLO_ADV_TTLM_SWITCH_TIME TUs after the request, at the
++ *	TBTT the driver picks, and lasts %NL80211_ATTR_MLO_ADV_TTLM_DURATION
++ *	TUs. The driver disables the other links while it is established and
++ *	returns to the default mapping at the end. User space adds the
++ *	TID-To-Link Mapping element to the Beacon and Probe Response frames of
++ *	each link. Once the mapping is established, the driver finds the
++ *	element without the Mapping Switch Time field in the beacon tail that
++ *	it gets and counts its Expected Duration field down in each Beacon
++ *	frame. The reply carries %NL80211_ATTR_COOKIE, which each event of the
++ *	mapping carries as well. A request while a mapping is requested or
++ *	established fails with -EBUSY. If a link of the AP MLD stops before
++ *	the end, cfg80211 cancels the mapping in the driver, sends
++ *	%NL80211_CMD_ADV_TTLM_ENDED and drops the later events of the driver
++ *	for that mapping. See %NL80211_EXT_FEATURE_AP_ADV_TTLM.
++ * @NL80211_CMD_ADV_TTLM_STARTED: Notify user space that the driver scheduled
++ *	the requested mapping. Sent for each link of the AP MLD, with
++ *	%NL80211_ATTR_MLO_LINK_ID and %NL80211_ATTR_MLO_ADV_TTLM_SWITCH_TSF,
++ *	and %NL80211_ATTR_MLO_ADV_TTLM_TBTT_BOOTTIME of the first TBTT of the
++ *	link at or after the establishment if the driver knows it.
++ * @NL80211_CMD_ADV_TTLM_ESTABLISHED: Notify user space that the advertised
++ *	mapping is established. The Mapping Switch Time field leaves the
++ *	element, and the links outside the mapping are disabled. The event
++ *	carries %NL80211_ATTR_MLO_ADV_TTLM_TBTT_BOOTTIME of the TBTT at which
++ *	the mapping was established if the driver knows it, so that user
++ *	space can compute the remaining Expected Duration from the most
++ *	recent TBTT (IEEE 802.11be-2024, 9.4.2.324).
++ * @NL80211_CMD_ADV_TTLM_ENDED: Notify user space that the advertised mapping
++ *	ended. User space removes the element; all links are enabled again.
++ *	The events of an advertised mapping carry %NL80211_ATTR_WIPHY,
++ *	%NL80211_ATTR_IFINDEX, %NL80211_ATTR_WDEV and %NL80211_ATTR_COOKIE.
++ *
+  * @NL80211_CMD_MAX: highest used command number
+  * @__NL80211_CMD_AFTER_LAST: internal use
+  */
+@@ -1748,6 +1784,11 @@ enum nl80211_commands {
+ 	NL80211_CMD_UPDATE_BEACON,
+ 	NL80211_CMD_CRIT_UPDATE_DONE,
+ 
++	NL80211_CMD_ADV_TTLM_REQUEST,
++	NL80211_CMD_ADV_TTLM_STARTED,
++	NL80211_CMD_ADV_TTLM_ESTABLISHED,
++	NL80211_CMD_ADV_TTLM_ENDED,
++
+ 	/* add new commands above here */
+ 
+ 	/* used to define NL80211_CMD_MAX below */
+@@ -3246,6 +3287,23 @@ enum nl80211_commands {
+  *	%NL80211_CMD_CRIT_UPDATE_DONE. See
+  *	%NL80211_EXT_FEATURE_BEACON_CRIT_UPDATE.
+  *
++ * @NL80211_ATTR_MLO_ADV_TTLM_LINKS: u16 bitmap of the link IDs to which an
++ *	advertised TID-to-link mapping maps all TIDs, see
++ *	%NL80211_CMD_ADV_TTLM_REQUEST.
++ * @NL80211_ATTR_MLO_ADV_TTLM_SWITCH_TIME: u32 time in TUs from the request to
++ *	the establishment of an advertised TID-to-link mapping, at most 0xffff,
++ *	the range of the Mapping Switch Time field (IEEE 802.11be-2024,
++ *	9.4.2.324).
++ * @NL80211_ATTR_MLO_ADV_TTLM_DURATION: u32 time in TUs that an advertised
++ *	TID-to-link mapping lasts once established, at most 0xffffff, the range
++ *	of the Expected Duration field (IEEE 802.11be-2024, 9.4.2.324).
++ * @NL80211_ATTR_MLO_ADV_TTLM_SWITCH_TSF: u16 Mapping Switch Time field for
++ *	the link of %NL80211_ATTR_MLO_LINK_ID: bits 10 to 25 of that link's TSF
++ *	at the establishment of the mapping (IEEE 802.11be-2024, 9.4.2.324).
++ * @NL80211_ATTR_MLO_ADV_TTLM_TBTT_BOOTTIME: u64 time of a TBTT of an
++ *	advertised TID-to-link mapping, in ns of %CLOCK_BOOTTIME, see
++ *	%NL80211_CMD_ADV_TTLM_STARTED and %NL80211_CMD_ADV_TTLM_ESTABLISHED.
++ *
+  * @NUM_NL80211_ATTR: total number of nl80211_attrs available
+  * @NL80211_ATTR_MAX: highest attribute number currently defined
+  * @__NL80211_ATTR_AFTER_LAST: internal use
+@@ -3854,6 +3912,12 @@ enum nl80211_attrs {
+ 	NL80211_ATTR_ASSOC_PROTECTED_TWT,
+ 	NL80211_ATTR_CRIT_UPDATE_ID,
+ 
++	NL80211_ATTR_MLO_ADV_TTLM_LINKS,
++	NL80211_ATTR_MLO_ADV_TTLM_SWITCH_TIME,
++	NL80211_ATTR_MLO_ADV_TTLM_DURATION,
++	NL80211_ATTR_MLO_ADV_TTLM_SWITCH_TSF,
++	NL80211_ATTR_MLO_ADV_TTLM_TBTT_BOOTTIME,
++
+ 	/* add attributes here, update the policy in nl80211.c */
+ 
+ 	__NL80211_ATTR_AFTER_LAST,
+@@ -7201,6 +7265,16 @@ enum nl80211_feature_flags {
+  *	ID of the current critical update. The driver does not track the flag
+  *	of a nontransmitted BSSID and reports no event for it.
+  *
++ * @NL80211_EXT_FEATURE_AP_ADV_TTLM: The driver advertises a TID-to-link
++ *	mapping of an AP MLD with %NL80211_CMD_ADV_TTLM_REQUEST: it times the
++ *	switch and the end, disables the links outside the mapping while it is
++ *	established, counts the Expected Duration field of the TID-To-Link
++ *	Mapping element in the Beacon frames down, and reports each step with
++ *	%NL80211_CMD_ADV_TTLM_STARTED, %NL80211_CMD_ADV_TTLM_ESTABLISHED and
++ *	%NL80211_CMD_ADV_TTLM_ENDED. A link that the mapping disables or
++ *	enables is a critical update (35.3.10), so the request also needs
++ *	%NL80211_EXT_FEATURE_BEACON_CRIT_UPDATE.
++ *
+  * @NUM_NL80211_EXT_FEATURES: number of extended features.
+  * @MAX_NL80211_EXT_FEATURES: highest extended feature index.
+  */
+@@ -7286,6 +7360,7 @@ enum nl80211_ext_feature_index {
+ 	NL80211_EXT_FEATURE_FAST_ROAM_OFFLOAD,
+ 	NL80211_EXT_FEATURE_UPDATE_BEACON,
+ 	NL80211_EXT_FEATURE_BEACON_CRIT_UPDATE,
++	NL80211_EXT_FEATURE_AP_ADV_TTLM,
+ 
+ 	/* add new features before the definition below */
+ 	NUM_NL80211_EXT_FEATURES,

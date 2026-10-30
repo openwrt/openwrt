@@ -1,0 +1,27 @@
+From 5f2530a4df8e0573e54cc0f4175c06ecb810a4dd Mon Sep 17 00:00:00 2001
+From: Bert Karwatzki <spasswolf@web.de>
+Date: Tue, 8 Sep 2026 11:43:40 +0200
+Subject: [PATCH] mac80211: tx: Use info->flags in ieee80211_tx_h_select_key()
+
+Without this ieee80211_select_key_8023() is never called and wifi never
+connects.
+
+Fixes: 0e80db08668b ("wifi: mac80211: fix key selection for encap offload frames")
+Signed-off-by: Bert Karwatzki <spasswolf@web.de>
+Link: https://patch.msgid.link/20260908094341.12196-1-spasswolf@web.de
+Signed-off-by: Johannes Berg <johannes.berg@intel.com>
+---
+ net/mac80211/tx.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/net/mac80211/tx.c
++++ b/net/mac80211/tx.c
+@@ -633,7 +633,7 @@ ieee80211_tx_h_select_key(struct ieee802
+ 	struct ieee80211_tx_info *info = IEEE80211_SKB_CB(tx->skb);
+ 	struct ieee80211_hdr *hdr = (struct ieee80211_hdr *)tx->skb->data;
+ 
+-	if (info->control.flags & IEEE80211_TX_CTL_HW_80211_ENCAP)
++	if (info->flags & IEEE80211_TX_CTL_HW_80211_ENCAP)
+ 		return ieee80211_select_key_8023(tx);
+ 
+ 	if (unlikely(info->flags & IEEE80211_TX_INTFL_DONT_ENCRYPT)) {

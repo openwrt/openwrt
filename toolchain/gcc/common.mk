@@ -45,7 +45,7 @@ endif
 PATCH_DIR=../patches-$(GCC_MAJOR_VERSION).x
 
 BUGURL=http://bugs.openwrt.org/
-PKGVERSION=OpenWrt GCC $(PKG_VERSION) $(REVISION)
+PKGVERSION=OpenWrt GCC $(PKG_VERSION) toolchain-$(TOOLCHAIN_HASH)
 
 HOST_BUILD_PARALLEL:=1
 
@@ -175,12 +175,16 @@ ifneq ($(shell gcc --version 2>&1 | grep -E "Apple.(LLVM|clang)"),)
   CFLAGS+= -fbracket-depth=512
 endif
 
+# notdir of the toolchain build directory and of the toolchain staging
+# directory are the same string, so the replacement keeps the root.
+IREMAP_TOOLCHAIN:=$(call iremap,$(BUILD_DIR_TOOLCHAIN),build_dir/$(notdir $(BUILD_DIR_TOOLCHAIN)))
+
 GCC_CONFIGURE+= \
 	CFLAGS="$(CFLAGS)" \
 	CXXFLAGS="$(CFLAGS)" \
-	CFLAGS_FOR_TARGET="$(TARGET_CFLAGS)" \
-	CXXFLAGS_FOR_TARGET="$(TARGET_CFLAGS)" \
-	GOCFLAGS_FOR_TARGET="$(TARGET_CFLAGS)"
+	CFLAGS_FOR_TARGET="$(TARGET_CFLAGS) $(IREMAP_TOOLCHAIN)" \
+	CXXFLAGS_FOR_TARGET="$(TARGET_CFLAGS) $(IREMAP_TOOLCHAIN)" \
+	GOCFLAGS_FOR_TARGET="$(TARGET_CFLAGS) $(IREMAP_TOOLCHAIN)"
 
 GCC_MAKE:= \
 	export SHELL="$(BASH)"; \

@@ -1,0 +1,37 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Mon, 28 Sep 2026 10:30:00 +0200
+Subject: [PATCH] wifi: mac80211_hwsim: make the interface limit of a radio a parameter
+
+A radio combines up to 2048 interfaces of the station, AP, mesh and P2P
+types, far more than hardware does. Userspace that derives the number of
+BSSes a radio supports from the interface combinations then reports a
+value no real radio has.
+
+Add the max_interfaces module parameter for that limit. It keeps 2048 by
+default.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/drivers/net/wireless/virtual/mac80211_hwsim_main.c
++++ b/drivers/net/wireless/virtual/mac80211_hwsim_main.c
+@@ -72,6 +72,11 @@ static bool mlo;
+ module_param(mlo, bool, 0444);
+ MODULE_PARM_DESC(mlo, "Support MLO");
+ 
++static u16 max_interfaces = 2048;
++module_param(max_interfaces, ushort, 0444);
++MODULE_PARM_DESC(max_interfaces,
++		 "Interfaces of the station, AP, mesh and P2P types a radio combines");
++
+ static bool multi_radio;
+ module_param(multi_radio, bool, 0444);
+ MODULE_PARM_DESC(multi_radio, "Support Multiple Radios per wiphy");
+@@ -5926,7 +5931,7 @@ static int mac80211_hwsim_new_radio(stru
+ 	}
+ 
+ 	if (param->iftypes & HWSIM_DEFAULT_IF_LIMIT) {
+-		data->if_limits[n_limits].max = 2048;
++		data->if_limits[n_limits].max = max_interfaces ?: 1;
+ 		/*
+ 		 * For this case, we may only support a subset of
+ 		 * HWSIM_DEFAULT_IF_LIMIT, therefore we only want to add the

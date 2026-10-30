@@ -7,17 +7,16 @@ define Build/wax610-netgear-tar
 	md5sum $@.tmp/nand-ipq6018-apps.img | cut -c 1-32 > $@.tmp/nand-ipq6018-apps.md5sum
 	echo "WAX610" > $@.tmp/metadata.txt
 	echo "WAX610-610Y_V99.9.9.9" > $@.tmp/version
- 	tar -C $@.tmp/ -cf $@ .
+	$(TAR) -C $@.tmp/ -cf $@ --sort=name --numeric-owner --owner=0 --group=0 --mode=go-w \
+		$(if $(SOURCE_DATE_EPOCH),--mtime="@$(SOURCE_DATE_EPOCH)") .
 	rm -rf $@.tmp
 endef
 
 define Build/netgear-rbx350-qsdk-ipq-factory
-	$(CP) $(FLASH_SCRIPT) $(KDIR_TMP)/
-
 	echo "VERSION : V5.0.0.0_$(LINUX_VERSION)" > $@.metadata
 	echo "MODEL_ID : $(DEVICE_MODEL)" >> $@.metadata
 
-	$(TOPDIR)/scripts/mkits-qsdk-ipq-image.sh $@.its $(FLASH_SCRIPT) txt $@.metadata ubi $@
+	$(TOPDIR)/scripts/mkits-qsdk-ipq-image.sh $@.its $(CURDIR)/$(FLASH_SCRIPT) txt $@.metadata ubi $@
 	PATH=$(LINUX_DIR)/scripts/dtc:$(PATH) mkimage -f $@.its $@.new
 	@mv $@.new $@
 endef
@@ -168,7 +167,7 @@ define Device/linksys_mr
 	KERNEL_SIZE := 8192k
 	IMAGES += factory.bin
 	IMAGE/factory.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi | linksys-image type=$$$$(DEVICE_MODEL)
-	DEVICE_PACKAGE := kmod-usb-ledtrig-usbport
+	DEVICE_PACKAGES := kmod-usb-ledtrig-usbport
 endef
 
 define Device/linksys_mr7350
@@ -384,6 +383,22 @@ define Device/tplink_eap620-hd-v3
 
 endef
 TARGET_DEVICES += tplink_eap620-hd-v3
+
+define Device/wallys_dr6018s
+	$(call Device/FitImage)
+	$(call Device/UbiFit)
+	DEVICE_VENDOR := Wallys
+	DEVICE_MODEL := DR6018S
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	DEVICE_DTS_CONFIG := config@cp01-c4
+	SOC := ipq6010
+	NAND_SIZE := 256m
+	IMAGES += nand-factory.bin
+	IMAGE/nand-factory.bin := append-ubi | qsdk-ipq-factory-nand
+	DEVICE_PACKAGES := ath11k-firmware-qcn9074 ipq-wifi-wallys_dr6018s kmod-ath11k-pci
+endef
+TARGET_DEVICES += wallys_dr6018s
 
 define Device/yuncore_fap650
 	$(call Device/FitImage)

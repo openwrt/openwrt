@@ -122,7 +122,8 @@ define Build/dwl8610ap-image
 	cp $@ $@.tmptar/rootfs.bin
 	# Hash the rootfs.bin
 	cat $@.tmptar/rootfs.bin | md5sum > $@.tmptar/rootfs.md5
-	cd $@.tmptar && tar -c -f $@.new *
+	cd $@.tmptar && $(TAR) -c -f $@.new --sort=name --numeric-owner --owner=0 --group=0 --mode=go-w \
+		$(if $(SOURCE_DATE_EPOCH),--mtime="@$(SOURCE_DATE_EPOCH)") *
 	rm -rf $@.tmptar
 	mv $@.new $@
 endef
@@ -470,6 +471,7 @@ TARGET_DEVICES += meraki_mx64-a0
 define Device/meraki_mx65
   $(call Device/meraki_mx6x)
   DEVICE_MODEL := MX65
+  DEVICE_PACKAGES += kmod-dsa-qca8k
   DEVICE_DTS_CONFIG := config@3
   DEVICE_DTS := bcm958625-meraki-mx65
 endef
@@ -499,6 +501,15 @@ define Device/netgear_r6300-v2
   NETGEAR_BOARD_ID := U12H240T00_NETGEAR
 endef
 TARGET_DEVICES += netgear_r6300-v2
+
+define Device/netgear_r6400-v1
+  DEVICE_MODEL := R6400
+  DEVICE_VARIANT := v1
+  DEVICE_PACKAGES := $(B43) $(USB3_PACKAGES)
+  $(Device/netgear)
+  NETGEAR_BOARD_ID := U12H332T00_NETGEAR
+endef
+TARGET_DEVICES += netgear_r6400-v1
 
 define Device/netgear_r7000
   DEVICE_MODEL := R7000

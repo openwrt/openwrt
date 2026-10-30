@@ -55,7 +55,7 @@ Signed-off-by: Minda Chen <minda.chen@starfivetech.com>
  };
  
  /* Uart divisor latch read */
-@@ -1057,6 +1065,11 @@ static void autoconfig_16550a(struct uar
+@@ -1058,6 +1066,11 @@ static void autoconfig_16550a(struct uar
  		up->port.type = PORT_U6_16550A;
  		up->capabilities |= UART_CAP_AFE;
  	}
@@ -67,7 +67,7 @@ Signed-off-by: Minda Chen <minda.chen@starfivetech.com>
  }
  
  /*
-@@ -2574,7 +2587,6 @@ static unsigned int serial8250_get_baud_
+@@ -2582,7 +2595,6 @@ static unsigned int serial8250_get_baud_
  		min = port->uartclk / 16 / UART_DIV_MAX;
  		max = (port->uartclk + tolerance) / 16;
  	}

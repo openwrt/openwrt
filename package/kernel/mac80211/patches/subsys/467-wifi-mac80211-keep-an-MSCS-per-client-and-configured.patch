@@ -1,0 +1,723 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Sat, 24 Oct 2026 14:00:03 +0200
+Subject: [PATCH] wifi: mac80211: keep an MSCS per client and configured flag
+
+A station holds one MSCS. ieee80211_flow_learn() only learns frames
+whose source address is the station's own, and the learned priority
+applies to every MSDU sent to the station. On a 4-address peer, the
+uplink of a host behind it is never learned, and an MSCS for one host
+replaces that of another.
+
+Keep a list of MSCS per station, identified by the client address and
+the configured flag. An MSCS without a client mirrors the flows of the
+station itself, as before. Each MSCS learns from uplink MSDUs whose
+source address is its client and applies to downlink MSDUs whose
+destination address is its client, with entries of its own. The MSCS
+that the station requested come first in the list, so that one of them
+wins over a configured one for the same MSDU, as Wi-Fi EasyMesh 6.0,
+20.2.5 requires. A station holds at most 16 MSCS, and a request beyond
+that is declined.
+
+The MSCS debugfs file lists every MSCS of the station, and the SCS file
+shows the client of a rule.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+
+--- a/net/mac80211/debugfs_sta.c
++++ b/net/mac80211/debugfs_sta.c
+@@ -227,6 +227,9 @@ static int sta_scs_seq_show(struct seq_f
+ 
+ 	seq_printf(s, "scsid %u up %u processing %s", desc->id, desc->up, proc);
+ 
++	if (!is_zero_ether_addr(desc->client))
++		seq_printf(s, " client %pM", desc->client);
++
+ 	if (desc->qos_char)
+ 		seq_printf(s, " qos_char %u direction %u", desc->qos_char_len,
+ 			   ieee80211_qos_char_direction(desc->qos_char));
+@@ -273,102 +276,49 @@ static const struct file_operations sta_
+ 	.release = seq_release,
+ };
+ 
+-struct sta_mscs_iter {
+-	struct sta_info *sta;
+-	struct ieee80211_mscs_sta *mscs;
+-};
+-
+-/* The entry list is not an RCU list, so the whole walk holds the lock */
+-static void *sta_mscs_seq_start(struct seq_file *s, loff_t *pos)
+-	__acquires(RCU)
++static int sta_mscs_show(struct seq_file *s, void *data)
+ {
+-	struct sta_mscs_iter *iter = s->private;
++	struct sta_info *sta = s->private;
++	struct ieee80211_flow_entry *entry;
++	struct ieee80211_mscs_sta *mscs;
+ 
+ 	rcu_read_lock();
+-	iter->mscs = rcu_dereference(iter->sta->mscs);
+-	if (!iter->mscs)
+-		return NULL;
+-
+-	spin_lock_bh(&iter->mscs->lock);
+-
+-	if (*pos == 0)
+-		return SEQ_START_TOKEN;
+-
+-	return seq_list_start(&iter->mscs->entries, *pos - 1);
+-}
+-
+-static void *sta_mscs_seq_next(struct seq_file *s, void *v, loff_t *pos)
+-{
+-	struct sta_mscs_iter *iter = s->private;
+-
+-	if (v == SEQ_START_TOKEN) {
+-		++*pos;
+-		return seq_list_start(&iter->mscs->entries, 0);
+-	}
+-
+-	return seq_list_next(v, &iter->mscs->entries, pos);
+-}
+-
+-static void sta_mscs_seq_stop(struct seq_file *s, void *v)
+-	__releases(RCU)
+-{
+-	struct sta_mscs_iter *iter = s->private;
+ 
+-	if (iter->mscs)
+-		spin_unlock_bh(&iter->mscs->lock);
++	list_for_each_entry_rcu(mscs, &sta->mscs, list) {
++		spin_lock_bh(&mscs->lock);
+ 
+-	rcu_read_unlock();
+-}
+-
+-static int sta_mscs_seq_show(struct seq_file *s, void *v)
+-{
+-	struct sta_mscs_iter *iter = s->private;
+-	struct ieee80211_mscs_sta *mscs = iter->mscs;
+-	struct ieee80211_flow_entry *entry;
+-
+-	if (v == SEQ_START_TOKEN) {
+ 		seq_printf(s,
+-			   "up_bitmap 0x%02x up_limit %u timeout %ums entries %u\n",
++			   "client %pM%s up_bitmap 0x%02x up_limit %u timeout %ums entries %u\n",
++			   mscs->client, mscs->configured ? " configured" : "",
+ 			   mscs->up_bitmap, mscs->up_limit,
+ 			   jiffies_to_msecs(mscs->timeout), mscs->n_entries);
+-		return 0;
+-	}
+ 
+-	entry = list_entry(v, struct ieee80211_flow_entry, list);
++		list_for_each_entry(entry, &mscs->entries, list) {
++			seq_printf(s, "  up %u age %ums", READ_ONCE(entry->up),
++				   jiffies_to_msecs(jiffies -
++						    READ_ONCE(entry->last_update)));
++			sta_flow_key_show(s, &entry->hkey.key, mscs->layout);
++			seq_putc(s, '\n');
++		}
+ 
+-	seq_printf(s, "  up %u age %ums", READ_ONCE(entry->up),
+-		   jiffies_to_msecs(jiffies - READ_ONCE(entry->last_update)));
+-	sta_flow_key_show(s, &entry->hkey.key, mscs->layout);
+-	seq_putc(s, '\n');
++		spin_unlock_bh(&mscs->lock);
++	}
++
++	rcu_read_unlock();
+ 
+ 	return 0;
+ }
+ 
+-static const struct seq_operations sta_mscs_seq_ops = {
+-	.start = sta_mscs_seq_start,
+-	.next = sta_mscs_seq_next,
+-	.stop = sta_mscs_seq_stop,
+-	.show = sta_mscs_seq_show,
+-};
+-
+ static int sta_mscs_open(struct inode *inode, struct file *file)
+ {
+-	struct sta_mscs_iter *iter;
+-
+-	iter = __seq_open_private(file, &sta_mscs_seq_ops, sizeof(*iter));
+-	if (!iter)
+-		return -ENOMEM;
+-
+-	iter->sta = inode->i_private;
+-
+-	return 0;
++	return single_open(file, sta_mscs_show, inode->i_private);
+ }
+ 
+ static const struct file_operations sta_mscs_ops = {
+ 	.open = sta_mscs_open,
+ 	.read = seq_read,
+ 	.llseek = seq_lseek,
+-	.release = seq_release_private,
++	.release = single_release,
+ };
+ 
+ #define AQM_TXQ_ENTRY_LEN 130
+--- a/net/mac80211/scs.c
++++ b/net/mac80211/scs.c
+@@ -14,12 +14,16 @@
+ /* An hour, in TUs of 1024 microseconds */
+ #define IEEE80211_MSCS_TIMEOUT_MAX_TU	3515625
+ 
+-/* Limit on learned MSCS entries per station */
++/* Limit on MSCS per station */
++#define IEEE80211_MSCS_MAX		16
++
++/* Limit on learned entries per MSCS */
+ #define IEEE80211_MSCS_ENTRIES_MAX	64
+ 
+-/* The hashed bytes must hold no padding between the peer and the key */
++/* The hashed bytes must hold no padding between the MSCS and the key */
+ static_assert(offsetofend(struct ieee80211_flow_hkey, key) ==
+-	      sizeof(struct sta_info *) + sizeof(struct cfg80211_flow_key));
++	      sizeof(struct ieee80211_mscs_sta *) +
++	      sizeof(struct cfg80211_flow_key));
+ 
+ static const struct rhashtable_params flow_rht_params = {
+ 	.head_offset = offsetof(struct ieee80211_flow_entry, node),
+@@ -115,31 +119,24 @@ static void ieee80211_scs_sta_fill(struc
+ 	}
+ }
+ 
+-static bool ieee80211_flow_lookup(struct sta_info *sta,
++static bool ieee80211_mscs_lookup(struct sta_info *sta,
++				  struct ieee80211_mscs_sta *mscs,
+ 				  const struct cfg80211_flow_info *info,
+ 				  struct cfg80211_scs_verdict *verdict)
+ {
+ 	struct ieee80211_flow_entry *entry;
+-	struct ieee80211_mscs_sta *mscs;
+ 	struct ieee80211_flow_hkey hkey;
+-	struct ieee80211_scs_sta *scs;
+ 
+-	memset(verdict, 0, sizeof(*verdict));
+-
+-	scs = rcu_dereference(sta->scs);
+-	mscs = rcu_dereference(sta->mscs);
++	if (!(info->present & BIT(CFG80211_FLOW_F_ETH_DA))) {
++		verdict->undecided = true;
+ 
+-	if (scs) {
+-		cfg80211_scs_evaluate(scs->rule, scs->n_rules, info, verdict);
+-		if (verdict->match)
+-			return true;
++		return false;
+ 	}
+ 
+-	/* An SCS match takes precedence over the MSCS */
+-	if (!mscs)
++	if (!ether_addr_equal(info->key.da, mscs->client))
+ 		return false;
+ 
+-	hkey.sta = sta;
++	hkey.mscs = mscs;
+ 	if (!cfg80211_flow_key_build(info, mscs->layout, CFG80211_FLOW_AS_IS,
+ 				     &hkey.key)) {
+ 		verdict->undecided = true;
+@@ -158,6 +155,34 @@ static bool ieee80211_flow_lookup(struct
+ 	return true;
+ }
+ 
++static bool ieee80211_flow_lookup(struct sta_info *sta,
++				  const struct cfg80211_flow_info *info,
++				  struct cfg80211_scs_verdict *verdict)
++{
++	struct ieee80211_mscs_sta *mscs;
++	struct ieee80211_scs_sta *scs;
++
++	memset(verdict, 0, sizeof(*verdict));
++
++	scs = rcu_dereference(sta->scs);
++	if (scs) {
++		cfg80211_scs_evaluate(scs->rule, scs->n_rules, info, verdict);
++		if (verdict->match)
++			return true;
++	}
++
++	/*
++	 * An SCS match takes precedence over the MSCS. The list order gives
++	 * an MSCS that the station requested precedence over a configured one
++	 * (Wi-Fi EasyMesh 20.2.5).
++	 */
++	list_for_each_entry_rcu(mscs, &sta->mscs, list)
++		if (ieee80211_mscs_lookup(sta, mscs, info, verdict))
++			return true;
++
++	return false;
++}
++
+ /**
+  * ieee80211_flow_classify - give an MSDU the user priority of its stream
+  *
+@@ -172,7 +197,7 @@ bool ieee80211_flow_classify(struct sta_
+ 	struct cfg80211_scs_verdict verdict;
+ 	struct cfg80211_flow_info info;
+ 
+-	if (!rcu_access_pointer(sta->scs) && !rcu_access_pointer(sta->mscs))
++	if (!rcu_access_pointer(sta->scs) && list_empty(&sta->mscs))
+ 		return false;
+ 
+ 	if (!cfg80211_flow_parse(skb, &info))
+@@ -277,19 +302,16 @@ static bool ieee80211_flow_entry_refresh
+ }
+ 
+ /* Return the time until the next entry expires, zero when none is left */
+-static unsigned long ieee80211_flow_gc_sta(struct ieee80211_sub_if_data *sdata,
+-					   struct sta_info *sta)
++static unsigned long ieee80211_flow_gc_mscs(struct ieee80211_sub_if_data *sdata,
++					    struct sta_info *sta,
++					    struct ieee80211_mscs_sta *mscs)
+ {
+ 	struct ieee80211_flow_entry *entry;
+-	struct ieee80211_mscs_sta *mscs;
+ 	unsigned long delay = 0;
+ 
+-	mscs = wiphy_dereference(sta->local->hw.wiphy, sta->mscs);
+-	if (!mscs)
+-		return 0;
+-
+-	/* Only this work and a new MSCS free entries, both under the wiphy
+-	 * lock, so an entry stays valid while the driver is asked about it.
++	/* Only this work and a change of the MSCS free entries, both under the
++	 * wiphy lock, so an entry stays valid while the driver is asked about
++	 * it.
+ 	 */
+ 	while (true) {
+ 		spin_lock_bh(&mscs->lock);
+@@ -324,6 +346,25 @@ static unsigned long ieee80211_flow_gc_s
+ 	return delay;
+ }
+ 
++static unsigned long ieee80211_flow_gc_sta(struct ieee80211_sub_if_data *sdata,
++					   struct sta_info *sta)
++{
++	struct ieee80211_mscs_sta *mscs;
++	unsigned long delay = 0;
++
++	lockdep_assert_wiphy(sdata->local->hw.wiphy);
++
++	list_for_each_entry(mscs, &sta->mscs, list) {
++		unsigned long mscs_delay = ieee80211_flow_gc_mscs(sdata, sta,
++								  mscs);
++
++		if (mscs_delay && (!delay || mscs_delay < delay))
++			delay = mscs_delay;
++	}
++
++	return delay;
++}
++
+ static void ieee80211_flow_gc_work(struct wiphy *wiphy, struct wiphy_work *work)
+ {
+ 	struct ieee80211_sub_if_data *sdata;
+@@ -350,15 +391,10 @@ static void ieee80211_flow_gc_work(struc
+ }
+ 
+ /* Tell the driver about every flow whose learned priority changed */
+-static void ieee80211_flow_flush_sta(struct ieee80211_sub_if_data *sdata,
+-				     struct sta_info *sta)
++static void ieee80211_flow_flush_mscs(struct ieee80211_sub_if_data *sdata,
++				      struct sta_info *sta,
++				      struct ieee80211_mscs_sta *mscs)
+ {
+-	struct ieee80211_mscs_sta *mscs;
+-
+-	mscs = wiphy_dereference(sdata->local->hw.wiphy, sta->mscs);
+-	if (!mscs)
+-		return;
+-
+ 	while (true) {
+ 		struct ieee80211_flow_entry *entry;
+ 		struct cfg80211_flow_key key;
+@@ -384,6 +420,17 @@ static void ieee80211_flow_flush_sta(str
+ 	}
+ }
+ 
++static void ieee80211_flow_flush_sta(struct ieee80211_sub_if_data *sdata,
++				     struct sta_info *sta)
++{
++	struct ieee80211_mscs_sta *mscs;
++
++	lockdep_assert_wiphy(sdata->local->hw.wiphy);
++
++	list_for_each_entry(mscs, &sta->mscs, list)
++		ieee80211_flow_flush_mscs(sdata, sta, mscs);
++}
++
+ static void ieee80211_flow_flush_work(struct wiphy *wiphy,
+ 				      struct wiphy_work *work)
+ {
+@@ -439,7 +486,7 @@ static void ieee80211_flow_insert(struct
+ 	if (!entry)
+ 		return;
+ 
+-	entry->hkey.sta = hkey->sta;
++	entry->hkey.mscs = hkey->mscs;
+ 	entry->hkey.key = hkey->key;
+ 	entry->up = up;
+ 	entry->last_update = jiffies;
+@@ -448,8 +495,8 @@ static void ieee80211_flow_insert(struct
+ 
+ 	spin_lock_bh(&mscs->lock);
+ 
+-	/* Another MSCS may have been installed, which emptied this list */
+-	if (rcu_dereference(hkey->sta->mscs) != mscs)
++	/* The MSCS may have been changed or removed, which emptied this list */
++	if (mscs->removed)
+ 		goto drop;
+ 
+ 	if (mscs->n_entries >= IEEE80211_MSCS_ENTRIES_MAX)
+@@ -486,62 +533,71 @@ drop:
+ 	kfree(entry);
+ }
+ 
++static void ieee80211_flow_learn_mscs(struct ieee80211_sub_if_data *sdata,
++				      struct ieee80211_mscs_sta *mscs,
++				      const struct cfg80211_flow_info *info,
++				      u8 up)
++{
++	struct ieee80211_flow_entry *entry;
++	struct ieee80211_flow_hkey hkey;
++
++	hkey.mscs = mscs;
++	if (!cfg80211_flow_key_build(info, mscs->layout,
++				     CFG80211_FLOW_MIRRORED, &hkey.key))
++		return;
++
++	entry = rhashtable_lookup(&sdata->bss->flow_tbl, &hkey,
++				  flow_rht_params);
++	if (!entry) {
++		ieee80211_flow_insert(sdata, mscs, &hkey, up);
++		return;
++	}
++
++	WRITE_ONCE(entry->last_update, jiffies);
++	if (READ_ONCE(entry->up) == up)
++		return;
++
++	WRITE_ONCE(entry->up, up);
++	WRITE_ONCE(entry->flush, true);
++	wiphy_work_queue(sdata->local->hw.wiphy, &sdata->bss->flow_flush_work);
++}
++
+ /**
+  * ieee80211_flow_learn - record the user priority of an uplink flow
+  *
+  * @rx: the received frame, in IEEE 802.3 format
+  *
+- * The key is built for the downlink direction, so that the transmit path
+- * can look it up as is.
++ * Every MSCS of the source address learns the frame. The key is built for
++ * the downlink direction, so that the transmit path can look it up as is.
+  */
+ void ieee80211_flow_learn(struct ieee80211_rx_data *rx)
+ {
+ 	struct ieee80211_sub_if_data *sdata = rx->sdata;
+ 	const struct ethhdr *eth = (void *)rx->skb->data;
+-	struct ieee80211_flow_hkey hkey;
+ 	struct ieee80211_mscs_sta *mscs;
+-	struct ieee80211_flow_entry *entry;
+ 	struct cfg80211_flow_info info;
+ 	/* The TID from ieee80211_parse_qos(), or from a decap offload driver */
+ 	u32 up = rx->skb->priority;
++	bool parsed = false;
+ 
+ 	if (sdata->vif.type != NL80211_IFTYPE_AP &&
+ 	    sdata->vif.type != NL80211_IFTYPE_AP_VLAN)
+ 		return;
+ 
+-	mscs = rcu_dereference(rx->sta->mscs);
+-	if (!mscs)
++	if (up > 7 || is_multicast_ether_addr(eth->h_dest))
+ 		return;
+ 
+-	if (up > 7 || !(mscs->up_bitmap & BIT(up)))
+-		return;
+-
+-	if (is_multicast_ether_addr(eth->h_dest) ||
+-	    !ether_addr_equal(eth->h_source, rx->sta->addr))
+-		return;
+-
+-	if (!cfg80211_flow_parse(rx->skb, &info))
+-		return;
++	list_for_each_entry_rcu(mscs, &rx->sta->mscs, list) {
++		if (!(mscs->up_bitmap & BIT(up)) ||
++		    !ether_addr_equal(eth->h_source, mscs->client))
++			continue;
+ 
+-	hkey.sta = rx->sta;
+-	if (!cfg80211_flow_key_build(&info, mscs->layout,
+-				     CFG80211_FLOW_MIRRORED, &hkey.key))
+-		return;
++		if (!parsed && !cfg80211_flow_parse(rx->skb, &info))
++			return;
+ 
+-	entry = rhashtable_lookup(&sdata->bss->flow_tbl, &hkey,
+-				  flow_rht_params);
+-	if (!entry) {
+-		ieee80211_flow_insert(sdata, mscs, &hkey, up);
+-		return;
++		parsed = true;
++		ieee80211_flow_learn_mscs(sdata, mscs, &info, up);
+ 	}
+-
+-	WRITE_ONCE(entry->last_update, jiffies);
+-	if (READ_ONCE(entry->up) == up)
+-		return;
+-
+-	WRITE_ONCE(entry->up, up);
+-	WRITE_ONCE(entry->flush, true);
+-	wiphy_work_queue(sdata->local->hw.wiphy, &sdata->bss->flow_flush_work);
+ }
+ 
+ int ieee80211_set_scs(struct wiphy *wiphy, struct net_device *dev,
+@@ -645,12 +701,41 @@ free:
+ 	return ret;
+ }
+ 
++static struct ieee80211_mscs_sta *
++ieee80211_mscs_find(struct sta_info *sta, const u8 *client, bool configured)
++{
++	struct ieee80211_mscs_sta *mscs;
++
++	lockdep_assert_wiphy(sta->local->hw.wiphy);
++
++	list_for_each_entry(mscs, &sta->mscs, list)
++		if (mscs->configured == configured &&
++		    ether_addr_equal(mscs->client, client))
++			return mscs;
++
++	return NULL;
++}
++
++/* The caller took @mscs off the list of the station */
++static void ieee80211_mscs_free(struct ieee80211_if_ap *ap,
++				struct ieee80211_mscs_sta *mscs)
++{
++	/* The entries were keyed with this MSCS */
++	spin_lock_bh(&mscs->lock);
++	mscs->removed = true;
++	ieee80211_flow_purge(ap, mscs);
++	spin_unlock_bh(&mscs->lock);
++
++	kfree_rcu(mscs, rcu_head);
++}
++
+ int ieee80211_set_mscs(struct wiphy *wiphy, struct net_device *dev,
+ 		       const u8 *peer, struct cfg80211_mscs_desc *desc)
+ {
+ 	struct ieee80211_sub_if_data *sdata = IEEE80211_DEV_TO_SUB_IF(dev);
+-	struct ieee80211_mscs_sta *mscs = NULL, *old;
++	struct ieee80211_mscs_sta *mscs, *old;
+ 	struct sta_info *sta;
++	const u8 *client;
+ 	u32 tu;
+ 
+ 	lockdep_assert_wiphy(wiphy);
+@@ -663,39 +748,57 @@ int ieee80211_set_mscs(struct wiphy *wip
+ 	if (!sta)
+ 		return -ENOENT;
+ 
+-	if (desc->req_type != NL80211_SCS_REQ_REMOVE) {
+-		mscs = kzalloc_obj(*mscs);
+-		if (!mscs)
+-			return -ENOMEM;
+-
+-		mscs->layout = desc->fields;
+-		mscs->up_bitmap = desc->up_bitmap;
+-		mscs->up_limit = desc->up_limit;
+-
+-		/*
+-		 * Cap at an hour to keep tu * 1024 within the unsigned int
+-		 * that usecs_to_jiffies() takes. A timeout of zero jiffies
+-		 * would expire an entry at the next collection.
+-		 */
+-		tu = min(desc->stream_timeout, IEEE80211_MSCS_TIMEOUT_MAX_TU);
+-		mscs->timeout = max(1UL, usecs_to_jiffies(tu * 1024));
++	client = is_zero_ether_addr(desc->client) ? sta->sta.addr : desc->client;
++	old = ieee80211_mscs_find(sta, client, desc->configured);
++
++	if (desc->req_type == NL80211_SCS_REQ_REMOVE) {
++		if (!old)
++			return 0;
+ 
+-		spin_lock_init(&mscs->lock);
+-		INIT_LIST_HEAD(&mscs->entries);
++		list_del_rcu(&old->list);
++		sta->n_mscs--;
++		ieee80211_mscs_free(sta->sdata->bss, old);
++		goto flush;
+ 	}
+ 
+-	old = wiphy_dereference(wiphy, sta->mscs);
+-	rcu_assign_pointer(sta->mscs, mscs);
++	if (!old && sta->n_mscs >= IEEE80211_MSCS_MAX)
++		return -ENOSPC;
++
++	mscs = kzalloc_obj(*mscs);
++	if (!mscs)
++		return -ENOMEM;
++
++	ether_addr_copy(mscs->client, client);
++	mscs->configured = desc->configured;
++	mscs->layout = desc->fields;
++	mscs->up_bitmap = desc->up_bitmap;
++	mscs->up_limit = desc->up_limit;
++
++	/*
++	 * Cap at an hour to keep tu * 1024 within the unsigned int that
++	 * usecs_to_jiffies() takes. A timeout of zero jiffies would expire an
++	 * entry at the next collection.
++	 */
++	tu = min(desc->stream_timeout, IEEE80211_MSCS_TIMEOUT_MAX_TU);
++	mscs->timeout = max(1UL, usecs_to_jiffies(tu * 1024));
++
++	spin_lock_init(&mscs->lock);
++	INIT_LIST_HEAD(&mscs->entries);
+ 
+ 	if (old) {
+-		/* The entries were keyed with the old layout */
+-		spin_lock_bh(&old->lock);
+-		ieee80211_flow_purge(sta->sdata->bss, old);
+-		spin_unlock_bh(&old->lock);
++		list_replace_rcu(&old->list, &mscs->list);
++		ieee80211_mscs_free(sta->sdata->bss, old);
++	} else {
++		/* The station's own requests take precedence (EasyMesh 20.2.5) */
++		if (mscs->configured)
++			list_add_tail_rcu(&mscs->list, &sta->mscs);
++		else
++			list_add_rcu(&mscs->list, &sta->mscs);
+ 
+-		kfree_rcu(old, rcu_head);
++		sta->n_mscs++;
+ 	}
+ 
++flush:
+ 	drv_flow_offload_flush(sdata->local, sdata, sta, NULL, 0);
+ 
+ 	return 0;
+@@ -727,7 +830,7 @@ void ieee80211_sta_scs_reconfig(struct s
+ 
+ void ieee80211_sta_scs_free(struct sta_info *sta)
+ {
+-	struct ieee80211_mscs_sta *mscs;
++	struct ieee80211_mscs_sta *mscs, *tmp;
+ 	struct ieee80211_scs_sta *scs;
+ 
+ 	/* Nothing can reach the station any more, so no lock is needed */
+@@ -735,11 +838,9 @@ void ieee80211_sta_scs_free(struct sta_i
+ 	RCU_INIT_POINTER(sta->scs, NULL);
+ 	kvfree(scs);
+ 
+-	mscs = rcu_dereference_raw(sta->mscs);
+-	RCU_INIT_POINTER(sta->mscs, NULL);
+-	if (!mscs)
+-		return;
+-
+-	ieee80211_flow_purge(sta->sdata->bss, mscs);
+-	kfree(mscs);
++	list_for_each_entry_safe(mscs, tmp, &sta->mscs, list) {
++		list_del(&mscs->list);
++		ieee80211_flow_purge(sta->sdata->bss, mscs);
++		kfree(mscs);
++	}
+ }
+--- a/net/mac80211/sta_info.c
++++ b/net/mac80211/sta_info.c
+@@ -689,6 +689,7 @@ __sta_info_alloc(struct ieee80211_sub_if
+ 	sta->sta.cur = &sta->sta.deflink.agg;
+ 
+ 	spin_lock_init(&sta->lock);
++	INIT_LIST_HEAD(&sta->mscs);
+ 	spin_lock_init(&sta->ps_lock);
+ 	INIT_WORK(&sta->drv_deliver_wk, sta_deliver_ps_frames);
+ 	wiphy_work_init(&sta->ampdu_mlme.work, ieee80211_ba_session_work);
+--- a/net/mac80211/sta_info.h
++++ b/net/mac80211/sta_info.h
+@@ -651,25 +651,35 @@ struct ieee80211_scs_sta {
+ };
+ 
+ /**
+- * struct ieee80211_mscs_sta - the MSCS of one station
++ * struct ieee80211_mscs_sta - one MSCS of a station
+  *
++ * @list: linkage in &sta_info.mscs
+  * @rcu_head: for freeing
++ * @client: the host whose flows are mirrored, the station's own address
++ *	unless the MSCS names a host behind a 4-address station
++ * @configured: the AP configured the MSCS on behalf of the network, not at
++ *	the request of the station
++ * @removed: the MSCS left &sta_info.mscs, so no entry may be added
+  * @layout: classifier parameters, a bitmap of &enum cfg80211_flow_field
+  * @up_bitmap: user priorities that the AP learns from, one bit each
+  * @up_limit: ceiling for the assigned user priority
+  * @timeout: minimum lifetime of a learned value, in jiffies
+- * @lock: protects @entries and @n_entries
+- * @entries: the learned entries of this station, for teardown
++ * @lock: protects @removed, @entries and @n_entries
++ * @entries: the learned entries of this MSCS, for teardown
+  * @n_entries: number of entries in @entries
+  */
+ struct ieee80211_mscs_sta {
++	struct list_head list;
+ 	struct rcu_head rcu_head;
++	u8 client[ETH_ALEN];
++	bool configured;
++	bool removed;
+ 	u32 layout;
+ 	u8 up_bitmap;
+ 	u8 up_limit;
+ 	unsigned long timeout;
+ 
+-	spinlock_t lock; /* protects @entries and @n_entries */
++	spinlock_t lock; /* protects @removed, @entries and @n_entries */
+ 	struct list_head entries;
+ 	u32 n_entries;
+ };
+@@ -677,14 +687,15 @@ struct ieee80211_mscs_sta {
+ /**
+  * struct ieee80211_flow_hkey - what a learned entry is looked up by
+  *
+- * @sta: the peer, so that a flow of one station never answers for another
++ * @mscs: the MSCS that learned it, so that a flow of one station or client
++ *	never answers for another
+  * @key: the masked tuple, in the downlink direction
+  *
+  * Not packed: the whole of it is compared, but a packed aggregate would force
+- * byte-wise access to @sta.
++ * byte-wise access to @mscs.
+  */
+ struct ieee80211_flow_hkey {
+-	struct sta_info *sta;
++	struct ieee80211_mscs_sta *mscs;
+ 	struct cfg80211_flow_key key;
+ };
+ 
+@@ -771,7 +782,9 @@ struct ieee80211_flow_entry {
+  * @fast_tx: TX fastpath information
+  * @fast_rx: RX fastpath information
+  * @scs: SCS rule set, or %NULL
+- * @mscs: MSCS parameters, or %NULL
++ * @mscs: the MSCS list, an RCU list that the wiphy mutex protects. Those that
++ *	the station requested come before the configured ones.
++ * @n_mscs: number of entries in @mscs
+  * @tdls_chandef: a TDLS peer can have a wider chandef that is compatible to
+  *	the BSS one.
+  * @frags: fragment cache
+@@ -809,7 +822,8 @@ struct sta_info {
+ 	struct ieee80211_fast_rx __rcu *fast_rx;
+ 
+ 	struct ieee80211_scs_sta __rcu *scs;
+-	struct ieee80211_mscs_sta __rcu *mscs;
++	struct list_head mscs;
++	u8 n_mscs;
+ 
+ #ifdef CPTCFG_MAC80211_MESH
+ 	struct mesh_sta *mesh;

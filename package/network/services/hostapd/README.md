@@ -29,6 +29,7 @@ Initiate an 802.11v transition request.
 | neighbors | array | no | BSS Transition Candidate List |
 | abridged | bool | no | prefer APs in the BSS Transition Candidate List |
 | dialog_token | int32 | no | identifier for the request/report transaction |
+| link_removal_imminent | bool | no | set Link Removal Imminent bit; sent as 0 unless the BSS is a link of an AP MLD of two or more links (IEEE 802.11be-2024 9.6.13.9); with the bit sent, a client MLD of two or more links is not disassociated at the end of disassociation_timer |
 | mbo_reason | int32 | no | MBO Transition Reason Code Attribute |
 | cell_pref | int32 | no | MBO Cellular Data Connection Preference Attribute |
 | reassoc_delay | int32 | no | MBO Re-association retry delay |
@@ -66,6 +67,7 @@ Kick a client off the network.
 | reason | int32 | no | 802.11 reason code |
 | deauth | bool | no | deauthenticates client instead of disassociating |
 | ban_time | int32 | no | ban client for N milliseconds |
+| ban_status | int32 | no | Status Code the ban answers the client's authentication and association with, 1 to 65535 (default 17) |
 
 ### example
 `ubus call hostapd.wl5-fb del_client '{ "addr": "68:2f:67:8b:98:ed", "reason": 5, "deauth": true, "ban_time": 10000 }'`

@@ -9,12 +9,12 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=ppp
-PKG_VERSION:=2.5.3
-PKG_RELEASE:=2
+PKG_VERSION:=2.5.4
+PKG_RELEASE:=5
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=https://download.samba.org/pub/ppp
-PKG_HASH:=ddda28dec8aca99a403ab6070d94ffd2b17d63e9a4c5509158e99e148f572d4f
+PKG_HASH:=379a630a40d858a1347f6592d671791dde12101697a743ef9900012f3765be31
 
 PKG_MAINTAINER:=Felix Fietkau <nbd@nbd.name>
 PKG_LICENSE:=BSD-4-Clause
@@ -32,18 +32,16 @@ CONFIGURE_ARGS += \
 	--disable-cbcp \
 	--disable-eaptls \
 	--disable-mslanman \
-	--disable-openssl-engine \
 	--disable-peap \
 	--disable-systemd \
 	--enable-ipv6cp \
 	--enable-microsoft-extensions \
 	--enable-plugins \
-	--with-atm \
 	--with-static-pcap \
+	--without-atm \
 	--without-openssl \
 	--without-pam \
-	--without-pcap \
-	--without-srp
+	--without-pcap
 
 define Package/ppp/Default
   SECTION:=net
@@ -55,6 +53,7 @@ define Package/ppp
 $(call Package/ppp/Default)
   DEPENDS:= +USE_GLIBC:libcrypt-compat +kmod-ppp
   TITLE:=PPP daemon
+  USERID:=ppp=454:ppp=454
   VARIANT:=default
 endef
 
@@ -62,6 +61,7 @@ define Package/ppp-multilink
 $(call Package/ppp/Default)
   DEPENDS:= +USE_GLIBC:libcrypt-compat +kmod-ppp
   TITLE:=PPP daemon (with multilink support)
+  USERID:=ppp=454:ppp=454
   VARIANT:=multilink
 endef
 
@@ -81,7 +81,7 @@ endef
 
 define Package/ppp-mod-pppoa
 $(call Package/ppp/Default)
-  DEPENDS:=@(PACKAGE_ppp||PACKAGE_ppp-multilink) +linux-atm +kmod-pppoa
+  DEPENDS:=@(PACKAGE_ppp||PACKAGE_ppp-multilink) +kmod-pppoa
   TITLE:=PPPoA plugin
 endef
 
@@ -211,13 +211,28 @@ define Package/ppp/install
 	$(INSTALL_DATA) ./files/etc/ppp/filter $(1)/etc/ppp/
 	$(INSTALL_DATA) ./files/etc/ppp/options $(1)/etc/ppp/
 	$(LN) /tmp/resolv.conf.ppp $(1)/etc/ppp/resolv.conf
+	$(INSTALL_DIR) $(1)/etc/capabilities
+	$(INSTALL_DATA) ./files/pppd.capabilities $(1)/etc/capabilities/pppd.json
+	$(INSTALL_DIR) $(1)/usr/share/acl.d
+	$(INSTALL_DATA) ./files/pppd_acl.json $(1)/usr/share/acl.d/pppd.json
 	$(INSTALL_DIR) $(1)/lib/netifd/proto
 	$(INSTALL_BIN) ./files/ppp.sh $(1)/lib/netifd/proto/
 	$(INSTALL_BIN) ./files/lib/netifd/ppp-up $(1)/lib/netifd/
 	$(INSTALL_BIN) ./files/lib/netifd/ppp6-up $(1)/lib/netifd/
 	$(INSTALL_BIN) ./files/lib/netifd/ppp-down $(1)/lib/netifd/
+	$(INSTALL_BIN) ./files/lib/netifd/ppp-net-init $(1)/lib/netifd/
+	$(INSTALL_DIR) $(1)/etc/uci-defaults
+	$(INSTALL_BIN) ./files/50-ppp-secrets-mode.sh $(1)/etc/uci-defaults
 endef
 Package/ppp-multilink/install=$(Package/ppp/install)
+
+define Package/ppp/postinst
+#!/bin/sh
+if [ -z "$${IPKG_INSTROOT}" ]; then
+  killall -s HUP ubusd || true
+fi
+endef
+Package/ppp-multilink/postinst=$(Package/ppp/postinst)
 
 define Package/ppp-mod-pppoa/install
 	$(INSTALL_DIR) $(1)/usr/lib/pppd/$(PKG_VERSION)
@@ -242,6 +257,8 @@ define Package/ppp-mod-radius/install
 		$(1)/etc/ppp/radius/
 	$(INSTALL_CONF) ./files/etc/ppp/radius/servers \
 		$(1)/etc/ppp/radius/
+	$(INSTALL_DIR) $(1)/etc/uci-defaults
+	$(INSTALL_BIN) ./files/50-ppp-radius-servers-mode.sh $(1)/etc/uci-defaults
 endef
 
 define Package/ppp-mod-pppol2tp/install

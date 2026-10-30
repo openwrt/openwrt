@@ -1,0 +1,50 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Tue, 20 Oct 2026 14:29:59 +0200
+Subject: [PATCH] hostapd: Clear the QoS Map with an empty SET_QOS_MAP_SET
+
+SET_QOS_MAP_SET sets the QoS Map of the driver and the configured one
+of a running BSS. It refuses a map of fewer than 16 values, so no
+control interface command removes the QoS Map from a running BSS.
+
+Let an empty SET_QOS_MAP_SET clear the QoS Map of the driver and the
+configured one. cfg80211 clears the map for an NL80211_CMD_SET_QOS_MAP
+without NL80211_ATTR_QOS_MAP, so nl80211_set_qos_map() leaves the
+attribute out for an empty map. The nl80211 policy rejects an attribute
+of fewer than 16 octets.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+
+--- a/hostapd/ctrl_iface.c
++++ b/hostapd/ctrl_iface.c
+@@ -659,6 +659,16 @@ static int hostapd_ctrl_iface_set_qos_ma
+ 	const char *pos = cmd;
+ 	int val, ret;
+ 
++	if (!*cmd) {
++		if (hostapd_drv_set_qos_map(hapd, NULL, 0)) {
++			wpa_printf(MSG_INFO, "Failed to clear QoS Map Set");
++			return -1;
++		}
++
++		hapd->conf->qos_map_set_len = 0;
++		return 0;
++	}
++
+ 	for (;;) {
+ 		if (count == sizeof(qos_map_set)) {
+ 			wpa_printf(MSG_ERROR, "Too many qos_map_set parameters");
+--- a/src/drivers/driver_nl80211.c
++++ b/src/drivers/driver_nl80211.c
+@@ -12921,8 +12921,10 @@ static int nl80211_set_qos_map(void *pri
+ 	wpa_hexdump(MSG_DEBUG, "nl80211: Setting QoS Map",
+ 		    qos_map_set, qos_map_set_len);
+ 
++	/* cfg80211 clears the map of a request without NL80211_ATTR_QOS_MAP */
+ 	if (!(msg = nl80211_cmd_msg(bss, 0, NL80211_CMD_SET_QOS_MAP)) ||
+-	    nla_put(msg, NL80211_ATTR_QOS_MAP, qos_map_set_len, qos_map_set)) {
++	    (qos_map_set_len &&
++	     nla_put(msg, NL80211_ATTR_QOS_MAP, qos_map_set_len, qos_map_set))) {
+ 		nlmsg_free(msg);
+ 		return -ENOBUFS;
+ 	}

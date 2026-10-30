@@ -1,6 +1,6 @@
 --- a/configure
 +++ b/configure
-@@ -7357,97 +7357,6 @@ esac
+@@ -7697,99 +7697,6 @@ esac
  fi
  
  
@@ -40,8 +40,9 @@
 -if ac_fn_c_try_link "$LINENO"
 -then :
 -  ac_lbl_cv_pcap_debug_defined=yes
--else $as_nop
--  ac_lbl_cv_pcap_debug_defined=no
+-else case e in #(
+-  e) ac_lbl_cv_pcap_debug_defined=no ;;
+-esac
 -fi
 -rm -f core conftest.err conftest.$ac_objext conftest.beam \
 -    conftest$ac_exeext conftest.$ac_ext
@@ -78,8 +79,9 @@
 -if ac_fn_c_try_link "$LINENO"
 -then :
 -  ac_lbl_cv_yydebug_defined=yes
--else $as_nop
--  ac_lbl_cv_yydebug_defined=no
+-else case e in #(
+-  e) ac_lbl_cv_yydebug_defined=no ;;
+-esac
 -fi
 -rm -f core conftest.err conftest.$ac_objext conftest.beam \
 -    conftest$ac_exeext conftest.$ac_ext

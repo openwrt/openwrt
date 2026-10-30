@@ -1,0 +1,33 @@
+#!/bin/sh /etc/rc.common
+# SPDX-License-Identifier: GPL-2.0-only
+
+START=61
+STOP=10
+USE_PROCD=1
+
+start_uart() {
+	local section="$1" enabled device protocol speed
+	config_get_bool enabled "$section" enabled 0
+	[ "$enabled" = 1 ] || return 0
+	config_get device "$section" device
+	config_get protocol "$section" protocol h4
+	config_get speed "$section" speed 115200
+	[ -c "$device" ] || return 1
+
+	procd_open_instance "$section"
+	procd_set_param command /usr/bin/btattach -B "$device" -P "$protocol" -S "$speed"
+	procd_set_param respawn 3600 5 3
+	procd_set_param stdout 1
+	procd_set_param stderr 1
+	procd_set_param term_timeout 5
+	procd_close_instance
+}
+
+start_service() {
+	config_load bluetooth-uart
+	config_foreach start_uart uart
+}
+
+service_triggers() {
+	procd_add_reload_trigger bluetooth-uart
+}

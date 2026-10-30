@@ -55,6 +55,26 @@ endef
 $(eval $(call KernelPackage,smi-bcm2835-dev))
 
 
+define KernelPackage/clk-hog
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=GPCLK clock output support (clk-hog)
+  KCONFIG:=CONFIG_CLK_HOG
+  FILES:=$(LINUX_DIR)/drivers/clk/clk-hog.ko
+  AUTOLOAD:=$(call AutoLoad,20,clk-hog)
+  DEPENDS:=@TARGET_bcm27xx
+endef
+
+define KernelPackage/clk-hog/description
+  Keeps a clock enabled for as long as its device tree node is
+  bound, even with no other driver using it. Needed to actually
+  output a signal with the gpclk or gpclk-pi5 overlay (GPCLK on a
+  GPIO pin); without this module the overlay loads but the clock
+  output stays off.
+endef
+
+$(eval $(call KernelPackage,clk-hog))
+
+
 define KernelPackage/rp1-pio
   SUBMENU:=$(OTHER_MENU)
   TITLE:=RP1 PIO block support

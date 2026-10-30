@@ -15,8 +15,11 @@ PKG_SKIP_DOWNLOAD=$(USE_SOURCE_DIR)$(USE_GIT_TREE)$(USE_GIT_SRC_CHECKOUT)
 
 MAKE_J:=$(if $(MAKE_JOBSERVER),$(MAKE_JOBSERVER) $(if $(filter 3.% 4.0 4.1,$(MAKE_VERSION)),-j))
 
-PKG_SOURCE_DATE_EPOCH = $(if $(DUMP),,$(shell $(TOPDIR)/scripts/get_source_date_epoch.sh \
-	$(if $(wildcard $(PKG_BUILD_DIR)/version.date),$(PKG_BUILD_DIR),$(CURDIR))))
+# Make expands PKG_SOURCE_DATE_EPOCH for every recipe of the package, so
+# keep the result for each directory.
+source_date_epoch=$(if $(filter undefined,$(origin source_date_epoch/$(1))),$(eval source_date_epoch/$(1):=$(shell $(TOPDIR)/scripts/get_source_date_epoch.sh $(1))))$(source_date_epoch/$(1))
+PKG_SOURCE_DATE_EPOCH = $(if $(DUMP),,$(call source_date_epoch,$(if \
+	$(wildcard $(PKG_BUILD_DIR)/version.date),$(PKG_BUILD_DIR),$(CURDIR))))
 
 ifeq ($(strip $(PKG_BUILD_PARALLEL)),0)
 PKG_JOBS?=-j1
@@ -36,7 +39,7 @@ $(if $(filter no-$(1),$(PKG_BUILD_FLAGS)),0,$(if $(filter $(1),$(PKG_BUILD_FLAGS
 endef
 
 ifeq ($(call pkg_build_flag,iremap,1),1)
-  IREMAP_CFLAGS = $(call iremap,$(PKG_BUILD_DIR),$(notdir $(PKG_BUILD_DIR)))
+  IREMAP_CFLAGS = $(call iremap,$(PKG_BUILD_DIR),$(notdir $(PKG_BUILD_DIR))) $(IREMAP_STAGING_DIR)
   TARGET_CFLAGS += $(IREMAP_CFLAGS)
 endif
 ifdef CONFIG_USE_MIPS16
@@ -123,7 +126,7 @@ ifneq ($(PREV_STAMP_PREPARED),)
   STAMP_PREPARED:=$(PREV_STAMP_PREPARED)
   CONFIG_AUTOREBUILD:=
 else
-  STAMP_PREPARED=$(PKG_BUILD_DIR)/.prepared$(if $(QUILT)$(DUMP),,_$(shell $(call $(if $(CONFIG_AUTOREMOVE),find_md5_reproducible,find_md5),${CURDIR} $(PKG_FILE_DEPENDS),))_$(call confvar,CONFIG_AUTOREMOVE $(PKG_PREPARED_DEPENDS)))
+  STAMP_PREPARED=$(PKG_BUILD_DIR)/.prepared$(if $(QUILT)$(DUMP),,_$(PKG_FILES_MD5)_$(call confvar,CONFIG_AUTOREMOVE $(PKG_PREPARED_DEPENDS)))
 endif
 STAMP_CONFIGURED=$(PKG_BUILD_DIR)/.configured$(if $(DUMP),,_$(call confvar,$(PKG_CONFIG_DEPENDS)))
 STAMP_CONFIGURED_WILDCARD=$(PKG_BUILD_DIR)/.configured_*
@@ -131,6 +134,7 @@ STAMP_BUILT:=$(PKG_BUILD_DIR)/.built
 STAMP_INSTALLED:=$(STAGING_DIR)/stamp/.$(PKG_DIR_NAME)$(if $(BUILD_VARIANT),.$(BUILD_VARIANT),)_installed
 
 STAGING_FILES_LIST:=$(PKG_DIR_NAME)$(if $(BUILD_VARIANT),.$(BUILD_VARIANT),).list
+STAGING_TMP_DIR:=$(TMP_DIR)/stage-$(PKG_DIR_NAME)$(if $(BUILD_VARIANT),.$(BUILD_VARIANT),)
 
 define CleanStaging
 	rm -f $(STAMP_INSTALLED)
@@ -184,18 +188,26 @@ include $(INCLUDE_DIR)/autotools.mk
 _pkg_target:=$(if $(QUILT),,.)
 
 override MAKEFLAGS=
-CONFIG_SITE:=$(INCLUDE_DIR)/site/$(ARCH)
+CONFIG_SITE_BASE:=$(INCLUDE_DIR)/site/$(ARCH)
+CONFIG_SITE:=$(INCLUDE_DIR)/site/cache
+# Set PKG_CONFIGURE_CACHE:=1 to keep the autoconf result cache of this package
+# between builds. Opt in only after you check that the package configures the
+# same way with a warm cache as it does without one. A configure script that
+# changes CPPFLAGS or CFLAGS inside an AC_CACHE_VAL body is not safe: a warm
+# cache restores the value and skips the change. Compare the generated
+# Makefile, not only config.h, because that is where the difference shows.
+PKG_CONFIGURE_CACHE_FILE = $(CONFIGURE_CACHE_BASE)/$(TOOLCHAIN_DIR_NAME)/$(notdir $(PKG_BUILD_DIR))/$(call strhash,$(CONFIGURE_ARGS) $(CONFIGURE_VARS)).cache
 CUR_MAKEFILE:=$(filter-out Makefile,$(firstword $(MAKEFILE_LIST)))
 SUBMAKE:=$(NO_TRACE_MAKE) $(if $(CUR_MAKEFILE),-f $(CUR_MAKEFILE))
 PKG_CONFIG_PATH=$(STAGING_DIR)/usr/lib/pkgconfig:$(STAGING_DIR)/usr/share/pkgconfig
-unexport QUIET CONFIG_SITE
+unexport QUIET CONFIG_SITE CONFIG_SITE_BASE
 
 ifeq ($(DUMP)$(filter prereq clean refresh update,$(MAKECMDGOALS)),)
   ifneq ($(if $(QUILT),,$(CONFIG_AUTOREBUILD)),)
     define Build/Autoclean
       $(PKG_BUILD_DIR)/.dep_files: $(STAMP_PREPARED)
       $(call rdep,${CURDIR} $(PKG_FILE_DEPENDS),$(STAMP_PREPARED),$(PKG_BUILD_DIR)/.dep_files,-x "*/.dep_*")
-      $(if $(filter prepare,$(MAKECMDGOALS)),,$(call rdep,$(PKG_BUILD_DIR),$(STAMP_BUILT),,-x "*/.dep_*" -x "*/ipkg*"))
+      $(if $(filter prepare,$(MAKECMDGOALS)),,$(call rdep,$(PKG_BUILD_DIR),$(STAMP_BUILT),,-x "*/.dep_*" -x "*/ipkg*" -x "$(PKG_BUILD_DIR)/apk-*"))
     endef
   endif
 endif
@@ -220,6 +232,7 @@ define Build/Exports/Default
   $(1) : export STAGING_PREFIX=$$(STAGING_DIR)/usr
   $(1) : export PATH=$$(TARGET_PATH_PKG)
   $(1) : export CONFIG_SITE:=$$(CONFIG_SITE)
+  $(1) : export CONFIG_SITE_BASE:=$$(CONFIG_SITE_BASE)
   $(1) : export PKG_CONFIG_PATH:=$$(PKG_CONFIG_PATH)
   $(1) : export PKG_CONFIG_LIBDIR:=$$(PKG_CONFIG_PATH)
   $(1) : export GIT_CEILING_DIRECTORIES:=$$(BUILD_DIR)
@@ -243,6 +256,7 @@ define Build/CoreTargets
 
   $(STAMP_PREPARED) : export PATH=$$(TARGET_PATH_PKG)
   $(STAMP_PREPARED): $(STAMP_PREPARED_DEPENDS)
+	$(call BuildTimeLog,begin,prepare)
 	@-rm -rf $(PKG_BUILD_DIR)
 	@mkdir -p $(PKG_BUILD_DIR)
 	touch $$@_check
@@ -250,18 +264,23 @@ define Build/CoreTargets
 	$(Build/Prepare)
 	$(foreach hook,$(Hooks/Prepare/Post),$(call $(hook))$(sep))
 	touch $$@
+	$(call BuildTimeLog,end,prepare)
 
   $(call Build/Exports,$(STAMP_CONFIGURED))
+  $(if $(and $(CONFIGURE_CACHE_BASE),$(PKG_CONFIGURE_CACHE)),$(STAMP_CONFIGURED) : export CONFIGURE_CACHE_FILE:=$(PKG_CONFIGURE_CACHE_FILE))
   $(STAMP_CONFIGURED): $(STAMP_PREPARED) $(STAMP_CONFIGURED_DEPENDS)
+	$(call BuildTimeLog,begin,configure)
 	rm -f $(STAMP_CONFIGURED_WILDCARD)
 	$(CleanStaging)
 	$(foreach hook,$(Hooks/Configure/Pre),$(call $(hook))$(sep))
 	$(Build/Configure)
 	$(foreach hook,$(Hooks/Configure/Post),$(call $(hook))$(sep))
 	touch $$@
+	$(call BuildTimeLog,end,configure)
 
   $(call Build/Exports,$(STAMP_BUILT))
   $(STAMP_BUILT): $(STAMP_CONFIGURED) $(STAMP_BUILT_DEPENDS)
+	$(call BuildTimeLog,begin,compile)
 	rm -f $$@
 	touch $$@_check
 	$(foreach hook,$(Hooks/Compile/Pre),$(call $(hook))$(sep))
@@ -270,32 +289,35 @@ define Build/CoreTargets
 	$(Build/Install)
 	$(foreach hook,$(Hooks/Install/Post),$(call $(hook))$(sep))
 	touch $$@
+	$(call BuildTimeLog,end,compile)
 
   $(STAMP_INSTALLED) : export PATH=$$(TARGET_PATH_PKG)
   $(STAMP_INSTALLED): $(STAMP_BUILT)
-	rm -rf $(TMP_DIR)/stage-$(PKG_DIR_NAME)
-	mkdir -p $(TMP_DIR)/stage-$(PKG_DIR_NAME)/host $(STAGING_DIR)/packages
+	$(call BuildTimeLog,begin,install)
+	rm -rf $(STAGING_TMP_DIR)
+	mkdir -p $(STAGING_TMP_DIR)/host $(STAGING_DIR)/packages
 	$(foreach hook,$(Hooks/InstallDev/Pre),\
-		$(call $(hook),$(TMP_DIR)/stage-$(PKG_DIR_NAME),$(TMP_DIR)/stage-$(PKG_DIR_NAME)/host)$(sep)\
+		$(call $(hook),$(STAGING_TMP_DIR),$(STAGING_TMP_DIR)/host)$(sep)\
 	)
-	$(call Build/InstallDev,$(TMP_DIR)/stage-$(PKG_DIR_NAME),$(TMP_DIR)/stage-$(PKG_DIR_NAME)/host)
+	$(call Build/InstallDev,$(STAGING_TMP_DIR),$(STAGING_TMP_DIR)/host)
 	$(foreach hook,$(Hooks/InstallDev/Post),\
-		$(call $(hook),$(TMP_DIR)/stage-$(PKG_DIR_NAME),$(TMP_DIR)/stage-$(PKG_DIR_NAME)/host)$(sep)\
+		$(call $(hook),$(STAGING_TMP_DIR),$(STAGING_TMP_DIR)/host)$(sep)\
 	)
 	if [ -f $(STAGING_DIR)/packages/$(STAGING_FILES_LIST) ]; then \
 		$(SCRIPT_DIR)/clean-package.sh \
 			"$(STAGING_DIR)/packages/$(STAGING_FILES_LIST)" \
 			"$(STAGING_DIR)"; \
 	fi
-	if [ -d $(TMP_DIR)/stage-$(PKG_DIR_NAME) ]; then \
-		(cd $(TMP_DIR)/stage-$(PKG_DIR_NAME); find ./ > $(TMP_DIR)/stage-$(PKG_DIR_NAME).files); \
+	if [ -d $(STAGING_TMP_DIR) ]; then \
+		(cd $(STAGING_TMP_DIR); find ./ > $(STAGING_TMP_DIR).files); \
 		$(call locked, \
-			mv $(TMP_DIR)/stage-$(PKG_DIR_NAME).files $(STAGING_DIR)/packages/$(STAGING_FILES_LIST) && \
-			$(CP) $(TMP_DIR)/stage-$(PKG_DIR_NAME)/* $(STAGING_DIR)/; \
+			mv $(STAGING_TMP_DIR).files $(STAGING_DIR)/packages/$(STAGING_FILES_LIST) && \
+			$(CP) $(STAGING_TMP_DIR)/* $(STAGING_DIR)/; \
 		,staging-dir); \
 	fi
-	rm -rf $(TMP_DIR)/stage-$(PKG_DIR_NAME)
+	rm -rf $(STAGING_TMP_DIR)
 	touch $$@
+	$(call BuildTimeLog,end,install)
 
   ifdef Build/InstallDev
     $(_pkg_target)compile: $(STAMP_INSTALLED)
@@ -340,7 +362,8 @@ endef
 endif
 
   BUILD_PACKAGES += $(1)
-  $(STAMP_PREPARED): $$(if $(QUILT)$(DUMP),,$(call find_library_dependencies,$(1)))
+  $(if $(CONFIG_PACKAGE_$(1))$(DEVELOPER), \
+    $(STAMP_PREPARED): $$(if $(QUILT)$(DUMP),,$(call find_library_dependencies,$(1))))
 
   $(foreach FIELD, TITLE CATEGORY SECTION VERSION,
     ifeq ($($(FIELD)),)
@@ -353,7 +376,8 @@ endif
     $(foreach target, \
       $(if $(Package/$(1)/targets),$(Package/$(1)/targets), \
         $(if $(PKG_TARGETS),$(PKG_TARGETS), ipkg) \
-      ), $(BuildTarget/$(target)) \
+      ), $(if $(or $(CONFIG_PACKAGE_$(1)),$(DEVELOPER),$(filter undefined,$(origin BuildTarget/$(target)/disabled))), \
+	$(BuildTarget/$(target)),$(BuildTarget/$(target)/disabled)) \
     ) \
   )
   $(if $(PKG_HOST_ONLY),,$(call Build/DefaultTargets,$(1)))

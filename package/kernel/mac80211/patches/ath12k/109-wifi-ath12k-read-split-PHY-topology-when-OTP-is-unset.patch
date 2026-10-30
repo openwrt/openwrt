@@ -1,0 +1,43 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Satoshi Ikeuchi <satosan.ikm@gmail.com>
+Date: Tue, 29 Sep 2026 00:00:00 +0000
+Subject: [PATCH] wifi: ath12k: read split-PHY topology when OTP is unset
+
+QCN9274 hw2.0 needs the single- or dual-MAC selection before target
+capabilities can be queried. A zero or erased OTP board ID cannot describe
+the topology, so the driver currently defaults to single MAC.
+
+Use the radio's qcom,split-phy property for this otherwise ambiguous case.
+This describes the individual device, without matching a machine name or
+changing the default for other radios on the same system.
+
+Keep valid OTP authoritative and retain the existing fallback for devices
+without the property and for other hardware revisions. Leave later QMI
+capability discovery and WMI mode selection unchanged.
+
+Link: https://github.com/torvalds/linux/commit/af9bc78d14fbe77db6e7526efaced162060f27bc
+Signed-off-by: Satoshi Ikeuchi <satosan.ikm@gmail.com>
+---
+--- a/drivers/net/wireless/ath/ath12k/mhi.c
++++ b/drivers/net/wireless/ath/ath12k/mhi.c
+@@ -6,6 +6,7 @@
+ 
+ #include <linux/msi.h>
+ #include <linux/pci.h>
++#include <linux/property.h>
+ #include <linux/firmware.h>
+ 
+ #include "core.h"
+@@ -209,8 +210,11 @@ int ath12k_mhi_register(struct ath12k_pc
+ 		board_id = u32_get_bits(board_id, OTP_BOARD_ID_MASK);
+ 
+ 		if (!board_id || (board_id == OTP_INVALID_BOARD_ID)) {
++			dualmac = ab->hw_rev == ATH12K_HW_QCN9274_HW20 &&
++				  device_property_read_bool(ab->dev, "qcom,split-phy");
+ 			ath12k_dbg(ab, ATH12K_DBG_BOOT,
+-				   "failed to read board id\n");
++				   "invalid OTP, selecting %s-mac\n",
++				   dualmac ? "dual" : "single");
+ 		} else if (board_id & OTP_VALID_DUALMAC_BOARD_ID_MASK) {
+ 			dualmac = true;
+ 			ath12k_dbg(ab, ATH12K_DBG_BOOT,

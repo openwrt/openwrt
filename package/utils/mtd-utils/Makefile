@@ -30,6 +30,8 @@ PKG_CPE_ID:=cpe:/a:mtd-utils_project:mtd-utils
 
 PKG_MAINTAINER:=John Crispin <john@phrozen.org>
 
+PKG_BUILD_PARALLEL:=1
+
 include $(INCLUDE_DIR)/package.mk
 
 define Package/mtd-utils/Default

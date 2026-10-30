@@ -15,7 +15,7 @@ ifdef CONFIG_USE_MKLIBS
 		--sysroot $(STAGING_DIR_ROOT) \
 		`cat $(TMP_DIR)/mklibs-libs | sed 's:/*[^/]\+/*$$::' | uniq | sed 's:^$(STAGING_DIR_ROOT):-L :'` \
 		--ldlib $(patsubst $(STAGING_DIR_ROOT)/%,/%,$(firstword $(wildcard \
-			$(foreach name,ld-uClibc.so.* ld-linux.so.* ld-*.so ld-musl-*.so.*, \
+			$(foreach name,ld-linux.so.* ld-*.so ld-musl-*.so.*, \
 			  $(STAGING_DIR_ROOT)/lib/$(name) \
 			)))) \
 		--target $(REAL_GNU_TARGET_NAME) \
@@ -124,4 +124,5 @@ define prepare_rootfs
 	$(call clean_ipkg,$(1))
 	$(call mklibs,$(1))
 	$(if $(SOURCE_DATE_EPOCH),find $(1)/ -mindepth 1 -execdir touch -hcd "@$(SOURCE_DATE_EPOCH)" "{}" +)
+	$(if $(SOURCE_DATE_EPOCH),touch -hcd "@$(SOURCE_DATE_EPOCH)" $(1))
 endef

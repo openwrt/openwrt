@@ -317,9 +317,9 @@
 	 * owns it and gives the chip the 25 ms / 100 ms it expects before any
 	 * register access.
 	 */
-	switch@29 {
+	switch@1d {
 		compatible = "realtek,rtl8365mb";
-		reg = <29>;
+		reg = <0x1d>;
 		reset-gpios = <&tlmm 33 GPIO_ACTIVE_LOW>;
 
 		/*

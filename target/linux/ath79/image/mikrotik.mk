@@ -95,7 +95,7 @@ define Device/mikrotik_routerboard-951g-2hnd
   $(Device/mikrotik_nand)
   SOC := ar9344
   DEVICE_MODEL := RouterBOARD 951G-2HnD
-  DEVICE_PACKAGES += kmod-usb-ohci kmod-usb2 kmod-dsa-qca8k kmod-phy-qca83xx \
+  DEVICE_PACKAGES += kmod-usb-ohci kmod-usb2 kmod-dsa-qca8k \
 	-swconfig -kmod-switch-ar8xxx
   DEVICE_COMPAT_MESSAGE := \
        Switched to DSA. Cannot preserve the network config.
@@ -147,7 +147,7 @@ define Device/mikrotik_routerboard-962uigs-5hact2hnt
   SOC := qca9558
   DEVICE_MODEL := RouterBOARD 962UiGS-5HacT2HnT (hAP ac)
   DEVICE_PACKAGES += kmod-ath10k-ct ath10k-firmware-qca988x-ct kmod-usb2 \
-	kmod-i2c-gpio kmod-sfp kmod-dsa-qca8k kmod-phy-qca83xx \
+	kmod-i2c-gpio kmod-sfp kmod-dsa-qca8k \
 	-swconfig -kmod-switch-ar8xxx
   IMAGE_SIZE := 16256k
   DEVICE_COMPAT_MESSAGE := \

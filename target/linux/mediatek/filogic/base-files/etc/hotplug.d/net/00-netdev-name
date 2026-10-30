@@ -1,0 +1,5 @@
+. /lib/functions/netdev-name.sh
+
+[ "$ACTION" = add ] || exit 0
+
+netdev_name_set "/sys$DEVPATH"

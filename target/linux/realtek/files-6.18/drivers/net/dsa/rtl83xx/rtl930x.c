@@ -3,15 +3,78 @@
 #include <asm/mach-rtl-otto/mach-rtl-otto.h>
 #include <linux/etherdevice.h>
 #include <linux/inetdevice.h>
+#include <linux/regmap.h>
 
+#include "lag.h"
 #include "l2.h"
 #include "l3.h"
 #include "pie.h"
 #include "qos.h"
+#include "mirror.h"
+#include "mac.h"
 #include "rtl-otto.h"
 #include "stats.h"
 #include "tc.h"
 #include "vlan.h"
+#include "stp.h"
+
+#define RTL930X_MAC_L2_PORT_CTRL(port)		(0x3268 + (((port) << 6)))
+
+/* MAC maximum packet length (jumbo frame) control.
+ *
+ * The switch MAC drops frames whose L2 length exceeds the configured maximum.
+ * A family holds either one register per user port or a single one for the
+ * whole switch. The length is a direct byte value held in two 14-bit fields
+ * (high-speed links in [13:0], 10/100M links in [27:14]); bit 28 selects
+ * whether VLAN tag bytes count towards the limit.
+ */
+
+/* RTL930x holds one register per user port, inside the 64-byte MAC block of
+ * the port. The CPU port has a row of its own, which the ethernet driver owns
+ * and programs from the conduit MTU. Register offsets taken from the
+ * reverse-engineered Realtek register maps at https://svanheule.net/realtek/
+ */
+#define RTL930X_MAC_L2_PORT_MAX_LEN_CTRL(port)	(0x326C + (((port) << 6)))
+
+/* Largest frame each family switches; the length field would allow 16383 */
+#define RTL930X_MAX_FRAME			12288
+
+#define RTL930X_MAC_FORCE_MODE_CTRL		(0xCA1C)
+
+#define RTL930X_MAC_LINK_STS			(0xCB10)
+
+#define RTL930X_EEE_CTRL(p)			(0x3274 + ((p) << 6))
+#define RTL930X_VLAN_PORT_AFT			(0x8260)
+
+#define RTL930X_TRK_HASH_CTRL			(0x9F80)
+#define RTL930X_TRK_CTRL			(0x9F88)
+
+#define RTL930X_RMA_BPDU_FLD_PMSK		(0x9F18)
+
+#define RTL930X_IMR_GLB				(0xC628)
+#define RTL930X_IMR_PORT_LINK_STS_CHG		(0xC62C)
+#define RTL930X_ISR_GLB				(0xC658)
+#define RTL930X_ISR_PORT_LINK_STS_CHG		(0xC660)
+
+#define RTL930X_LED_GLB_CTRL			(0xCC00)
+
+#define RTL930X_RMA_BPDU_CTRL			(0x9E7C)
+
+#define RTL930X_RMA_PTP_CTRL			(0x9E88)
+
+#define RTL930X_RMA_LLDP_CTRL			(0x9EFC)
+
+#define RTL930X_RMA_EAPOL_CTRL			(0x9F08)
+#define RTL930X_SPCL_TRAP_PORT_CTRL		(0xA1A0)
+
+/* Port LED Control */
+#define RTL930X_LED_PORT_NUM_CTRL(p)		(0xCC04 + (((p >> 4) << 2)))
+#define RTL930X_LED_SET0_0_CTRL			(0xCC28)
+#define RTL930X_LED_PORT_COPR_SET_SEL_CTRL(p)	(0xCC2C + (((p >> 4) << 2)))
+#define RTL930X_LED_PORT_FIB_SET_SEL_CTRL(p)	(0xCC34 + (((p >> 4) << 2)))
+#define RTL930X_LED_PORT_COPR_MASK_CTRL		(0xCC3C)
+#define RTL930X_LED_PORT_FIB_MASK_CTRL		(0xCC40)
+#define RTL930X_LED_PORT_COMBO_MASK_CTRL	(0xCC44)
 
 #define RTL930X_LED_GLB_ACTIVE_LOW				BIT(22)
 #define RTL930X_LED_CLK_SEL_MASK				GENMASK(17, 16)
@@ -29,105 +92,14 @@
 /* get shift for given led in any set */
 #define RTL930X_LED_SET_LEDX_SHIFT(x) (16 * (x % 2))
 
-const struct rtldsa_mib_list_item rtldsa_930x_mib_list[] = {
-	MIB_LIST_ITEM("ifOutDiscards", MIB_ITEM(MIB_REG_STD, 0xbc, 1)),
-	MIB_LIST_ITEM("dot1dTpPortInDiscards", MIB_ITEM(MIB_REG_STD, 0xb8, 1)),
-	MIB_LIST_ITEM("DropEvents", MIB_ITEM(MIB_REG_STD, 0x90, 1)),
-	MIB_LIST_ITEM("tx_BroadcastPkts", MIB_ITEM(MIB_REG_STD, 0x8c, 1)),
-	MIB_LIST_ITEM("tx_MulticastPkts", MIB_ITEM(MIB_REG_STD, 0x88, 1)),
-	MIB_LIST_ITEM("tx_CRCAlignErrors", MIB_ITEM(MIB_REG_STD, 0x84, 1)),
-	MIB_LIST_ITEM("tx_UndersizePkts", MIB_ITEM(MIB_REG_STD, 0x7c, 1)),
-	MIB_LIST_ITEM("tx_OversizePkts", MIB_ITEM(MIB_REG_STD, 0x74, 1)),
-	MIB_LIST_ITEM("tx_Fragments", MIB_ITEM(MIB_REG_STD, 0x6c, 1)),
-	MIB_LIST_ITEM("tx_Jabbers", MIB_ITEM(MIB_REG_STD, 0x64, 1)),
-	MIB_LIST_ITEM("tx_Collisions", MIB_ITEM(MIB_REG_STD, 0x5c, 1)),
-	MIB_LIST_ITEM("rx_UndersizeDropPkts", MIB_ITEM(MIB_REG_PRV, 0x7c, 1)),
-	MIB_LIST_ITEM("tx_PktsFlexibleOctetsSet1", MIB_ITEM(MIB_REG_PRV, 0x68, 1)),
-	MIB_LIST_ITEM("rx_PktsFlexibleOctetsSet1", MIB_ITEM(MIB_REG_PRV, 0x64, 1)),
-	MIB_LIST_ITEM("tx_PktsFlexibleOctetsCRCSet1", MIB_ITEM(MIB_REG_PRV, 0x60, 1)),
-	MIB_LIST_ITEM("rx_PktsFlexibleOctetsCRCSet1", MIB_ITEM(MIB_REG_PRV, 0x5c, 1)),
-	MIB_LIST_ITEM("tx_PktsFlexibleOctetsSet0", MIB_ITEM(MIB_REG_PRV, 0x58, 1)),
-	MIB_LIST_ITEM("rx_PktsFlexibleOctetsSet0", MIB_ITEM(MIB_REG_PRV, 0x54, 1)),
-	MIB_LIST_ITEM("tx_PktsFlexibleOctetsCRCSet0", MIB_ITEM(MIB_REG_PRV, 0x50, 1)),
-	MIB_LIST_ITEM("rx_PktsFlexibleOctetsCRCSet0", MIB_ITEM(MIB_REG_PRV, 0x4c, 1)),
-	MIB_LIST_ITEM("LengthFieldError", MIB_ITEM(MIB_REG_PRV, 0x48, 1)),
-	MIB_LIST_ITEM("FalseCarrierTimes", MIB_ITEM(MIB_REG_PRV, 0x44, 1)),
-	MIB_LIST_ITEM("UndersizeOctets", MIB_ITEM(MIB_REG_PRV, 0x40, 1)),
-	MIB_LIST_ITEM("FramingErrors", MIB_ITEM(MIB_REG_PRV, 0x3c, 1)),
-	MIB_LIST_ITEM("ParserErrors", MIB_ITEM(MIB_REG_PRV, 0x38, 1)),
-	MIB_LIST_ITEM("rx_MacDiscards", MIB_ITEM(MIB_REG_PRV, 0x34, 1)),
-	MIB_LIST_ITEM("rx_MacIPGShortDrop", MIB_ITEM(MIB_REG_PRV, 0x30, 1))
-};
+#define RTL930X_SMI_MAC_TYPE_CTRL		0xca04
+#define RTL930X_SMI_MAC_TYPE_P0_23(pn)		(GENMASK(1, 0) << (((pn) / 4) * 2))
+#define RTL930X_SMI_MAC_TYPE_P24_27(pn)		(GENMASK(2, 0) << (((pn) - 24) * 3 + 12))
+#define RTL930X_SMI_MAC_TYPE_PCS		0x0
+#define RTL930X_SMI_MAC_TYPE_MULTIGIG_PHY	0x1
+#define RTL930X_SMI_MAC_TYPE_1G_PHY		0x3
 
-const struct rtldsa_mib_desc rtldsa_930x_mib_desc = {
-	.symbol_errors = MIB_ITEM(MIB_REG_STD, 0xa0, 1),
-
-	.if_in_octets = MIB_ITEM(MIB_REG_STD, 0xf8, 2),
-	.if_out_octets = MIB_ITEM(MIB_REG_STD, 0xf0, 2),
-	.if_in_ucast_pkts = MIB_ITEM(MIB_REG_STD, 0xe8, 2),
-	.if_in_mcast_pkts = MIB_ITEM(MIB_REG_STD, 0xe0, 2),
-	.if_in_bcast_pkts = MIB_ITEM(MIB_REG_STD, 0xd8, 2),
-	.if_out_ucast_pkts = MIB_ITEM(MIB_REG_STD, 0xd0, 2),
-	.if_out_mcast_pkts = MIB_ITEM(MIB_REG_STD, 0xc8, 2),
-	.if_out_bcast_pkts = MIB_ITEM(MIB_REG_STD, 0xc0, 2),
-	.if_out_discards = MIB_ITEM(MIB_REG_STD, 0xbc, 1),
-	.single_collisions = MIB_ITEM(MIB_REG_STD, 0xb4, 1),
-	.multiple_collisions = MIB_ITEM(MIB_REG_STD, 0xb0, 1),
-	.deferred_transmissions = MIB_ITEM(MIB_REG_STD, 0xac, 1),
-	.late_collisions = MIB_ITEM(MIB_REG_STD, 0xa8, 1),
-	.excessive_collisions = MIB_ITEM(MIB_REG_STD, 0xa4, 1),
-	.crc_align_errors = MIB_ITEM(MIB_REG_STD, 0x80, 1),
-	.rx_pkts_over_max_octets = MIB_ITEM(MIB_REG_PRV, 0x6c, 1),
-
-	.unsupported_opcodes = MIB_ITEM(MIB_REG_STD, 0x9c, 1),
-
-	.rx_undersize_pkts = MIB_ITEM(MIB_REG_STD, 0x78, 1),
-	.rx_oversize_pkts = MIB_ITEM(MIB_REG_STD, 0x70, 1),
-	.rx_fragments = MIB_ITEM(MIB_REG_STD, 0x68, 1),
-	.rx_jabbers = MIB_ITEM(MIB_REG_STD, 0x60, 1),
-
-	.tx_pkts = {
-		MIB_ITEM(MIB_REG_STD, 0x58, 1),
-		MIB_ITEM(MIB_REG_STD, 0x50, 1),
-		MIB_ITEM(MIB_REG_STD, 0x48, 1),
-		MIB_ITEM(MIB_REG_STD, 0x40, 1),
-		MIB_ITEM(MIB_REG_STD, 0x38, 1),
-		MIB_ITEM(MIB_REG_STD, 0x30, 1),
-		MIB_ITEM(MIB_REG_PRV, 0x78, 1),
-		MIB_ITEM(MIB_REG_PRV, 0x70, 1)
-	},
-	.rx_pkts = {
-		MIB_ITEM(MIB_REG_STD, 0x54, 1),
-		MIB_ITEM(MIB_REG_STD, 0x4c, 1),
-		MIB_ITEM(MIB_REG_STD, 0x44, 1),
-		MIB_ITEM(MIB_REG_STD, 0x3c, 1),
-		MIB_ITEM(MIB_REG_STD, 0x34, 1),
-		MIB_ITEM(MIB_REG_STD, 0x2c, 1),
-		MIB_ITEM(MIB_REG_PRV, 0x74, 1),
-		MIB_ITEM(MIB_REG_PRV, 0x6c, 1),
-	},
-	.rmon_ranges = {
-		{ 0, 64 },
-		{ 65, 127 },
-		{ 128, 255 },
-		{ 256, 511 },
-		{ 512, 1023 },
-		{ 1024, 1518 },
-		{ 1519, 12288 },
-		{ 12289, 65535 }
-	},
-
-	.drop_events = MIB_ITEM(MIB_REG_STD, 0x90, 1),
-	.collisions = MIB_ITEM(MIB_REG_STD, 0x5c, 1),
-
-	.rx_pause_frames = MIB_ITEM(MIB_REG_STD, 0x98, 1),
-	.tx_pause_frames = MIB_ITEM(MIB_REG_STD, 0x94, 1),
-
-	.list_count = ARRAY_SIZE(rtldsa_930x_mib_list),
-	.list = rtldsa_930x_mib_list
-};
-
-void rtldsa_930x_print_matrix(void)
+void rtldsa_930x_print_matrix(struct otto_dsa_priv *priv)
 {
 	int tbl = otto_table_acquire(RTL9300_TBL_PORT_ISO_CTRL);
 	u32 v;
@@ -136,173 +108,6 @@ void rtldsa_930x_print_matrix(void)
 		__otto_table_read(tbl, i, &v);
 		pr_debug("> %08x\n", v);
 	}
-	otto_table_release(tbl);
-}
-
-static int rtldsa_930x_get_mirror_config(struct rtldsa_mirror_config *config,
-					 int group, int port)
-{
-	config->ctrl = RTL930X_MIR_CTRL + group * 4;
-	config->spm = RTL930X_MIR_SPM_CTRL + group * 4;
-	config->dpm = RTL930X_MIR_DPM_CTRL + group * 4;
-
-	/* Enable mirroring to destination port */
-	config->val = BIT(0);
-	config->val |= port << 9;
-
-	/* mirror mode: let mirrored packets follow TX settings of
-	 * mirroring port
-	 */
-	config->val |= BIT(5);
-
-	/* direction of traffic to be mirrored when a packet
-	 * hits both SPM and DPM ports: prefer egress
-	 */
-	config->val |= BIT(4);
-
-	return 0;
-}
-
-static inline int rtl930x_trk_mbr_ctr(int group)
-{
-	return RTL930X_TRK_MBR_CTRL + (group << 2);
-}
-
-static void rtldsa_930x_lag_set_port2group(int group, int port, bool valid)
-{
-	int tbl = otto_table_acquire(RTL9300_TBL_SRC_TRK_MAP);
-	u32 mask = valid ? RTL930X_SRC_TRK_MAP_TRK_VALID : 0;
-
-	mask |= FIELD_PREP(RTL930X_SRC_TRK_MAP_TRK_ID, group); // Update TRK Field.
-	__otto_table_write(tbl, port, &mask);
-	otto_table_release(tbl);
-}
-
-/* Write data from the data buffer into the lag-entry strucure */
-static void rtldsa_930x_lag_fill_data(u32 data[], struct rtldsa_93xx_lag_entry *e)
-{
-	/* 95-64 */
-	e->num_tx_candi = FIELD_GET(RTL930X_LAG_NUM_TX_CANDI, data[0]);
-	e->l2_hash_mask_idx = FIELD_GET(RTL930X_LAG_L2_HASH_MSK_IDX, data[0]);
-	e->ip4_hash_mask_idx = FIELD_GET(RTL930X_LAG_IP4_HASH_MSK_IDX, data[0]);
-	e->ip6_hash_mask_idx = FIELD_GET(RTL930X_LAG_IP6_HASH_MSK_IDX, data[0]);
-	e->flood_dlf_bcast.sep_dlf_bcast_en = FIELD_GET(RTL930X_LAG_SEP_DLF_BCAST_EN, data[0]);
-	e->sep_kwn_mc_en = FIELD_GET(RTL930X_LAG_SEP_KWN_MC_EN, data[0]);
-	e->trk_dev7 = FIELD_GET(RTL930X_LAG_TRK_DEV7, data[0]);
-	e->trk_port7 = FIELD_GET(RTL930X_LAG_TRK_PORT7, data[0]);
-	e->trk_dev6 = FIELD_GET(RTL930X_LAG_TRK_DEV6, data[0]);
-	e->trk_port6 = FIELD_GET(RTL930X_LAG_TRK_PORT6, data[0]);
-
-	/* 63-32 */
-	e->trk_dev5 = FIELD_GET(RTL930X_LAG_TRK_DEV5, data[1]);
-	e->trk_port5 = FIELD_GET(RTL930X_LAG_TRK_PORT5, data[1]);
-	e->trk_dev4 = FIELD_GET(RTL930X_LAG_TRK_DEV4, data[1]);
-	e->trk_port4 = FIELD_GET(RTL930X_LAG_TRK_PORT4, data[1]);
-	e->trk_dev3 = FIELD_GET(RTL930X_LAG_TRK_DEV3, data[1]);
-	e->trk_port3 = FIELD_GET(RTL930X_LAG_TRK_PORT3, data[1]);
-
-	/* 31-0 */
-	e->trk_dev2 = FIELD_GET(RTL930X_LAG_TRK_DEV2, data[2]);
-	e->trk_port2 = FIELD_GET(RTL930X_LAG_TRK_PORT2, data[2]);
-	e->trk_dev1 = FIELD_GET(RTL930X_LAG_TRK_DEV1, data[2]);
-	e->trk_port1 = FIELD_GET(RTL930X_LAG_TRK_PORT1, data[2]);
-	e->trk_dev0 = FIELD_GET(RTL930X_LAG_TRK_DEV0, data[2]);
-	e->trk_port0 = FIELD_GET(RTL930X_LAG_TRK_PORT0, data[2]);
-}
-
-/* Write lag-entry data into buffer */
-static void rtldsa_930x_lag_write_data(u32 data[], struct rtldsa_93xx_lag_entry *e)
-{
-	/* 95-64 */
-	data[0] = FIELD_PREP(RTL930X_LAG_NUM_TX_CANDI, e->num_tx_candi);
-	data[0] |= FIELD_PREP(RTL930X_LAG_L2_HASH_MSK_IDX, e->l2_hash_mask_idx);
-	data[0] |= FIELD_PREP(RTL930X_LAG_IP4_HASH_MSK_IDX, e->ip4_hash_mask_idx);
-	data[0] |= FIELD_PREP(RTL930X_LAG_IP6_HASH_MSK_IDX, e->ip6_hash_mask_idx);
-	data[0] |= FIELD_PREP(RTL930X_LAG_SEP_DLF_BCAST_EN, e->flood_dlf_bcast.sep_dlf_bcast_en);
-	data[0] |= FIELD_PREP(RTL930X_LAG_SEP_KWN_MC_EN, e->sep_kwn_mc_en);
-	data[0] |= FIELD_PREP(RTL930X_LAG_TRK_DEV7, e->trk_dev7);
-	data[0] |= FIELD_PREP(RTL930X_LAG_TRK_PORT7, e->trk_port7);
-	data[0] |= FIELD_PREP(RTL930X_LAG_TRK_DEV6, e->trk_dev6);
-	data[0] |= FIELD_PREP(RTL930X_LAG_TRK_PORT6, e->trk_port6);
-
-	/* 63-32 */
-	data[1] = FIELD_PREP(RTL930X_LAG_TRK_DEV5, e->trk_dev5);
-	data[1] |= FIELD_PREP(RTL930X_LAG_TRK_PORT5, e->trk_port5);
-	data[1] |= FIELD_PREP(RTL930X_LAG_TRK_DEV4, e->trk_dev4);
-	data[1] |= FIELD_PREP(RTL930X_LAG_TRK_PORT4, e->trk_port4);
-	data[1] |= FIELD_PREP(RTL930X_LAG_TRK_DEV3, e->trk_dev3);
-	data[1] |= FIELD_PREP(RTL930X_LAG_TRK_PORT3, e->trk_port3);
-
-	/* 31-0 */
-	data[2] = FIELD_PREP(RTL930X_LAG_TRK_DEV2, e->trk_dev2);
-	data[2] |= FIELD_PREP(RTL930X_LAG_TRK_PORT2, e->trk_port2);
-	data[2] |= FIELD_PREP(RTL930X_LAG_TRK_DEV1, e->trk_dev1);
-	data[2] |= FIELD_PREP(RTL930X_LAG_TRK_PORT1, e->trk_port1);
-	data[2] |= FIELD_PREP(RTL930X_LAG_TRK_DEV0, e->trk_dev0);
-	data[2] |= FIELD_PREP(RTL930X_LAG_TRK_PORT0, e->trk_port0);
-}
-
-static void rtldsa_930x_lag_set_local_group_id(int local_group, int global_group, bool valid)
-{
-	u32 mask = 0;
-
-	mask |= valid ? RTL930X_TRK_ID_CTRL_TRK_VALID : 0;
-	mask |= FIELD_PREP(RTL930X_TRK_ID_CTRL_TRK_ID, global_group);
-	sw_w32(mask, RTL930X_TRK_ID_CTRL + (4 * local_group));
-}
-
-static void rtldsa_930x_lag_set_local_port2group(int group, int port, bool valid)
-{
-	u32 mask = 0;
-
-	mask |= valid ? RTL930X_LOCAL_PORT_TRK_MAP_IS_TRK_MBR : 0;
-	mask |= FIELD_PREP(RTL930X_LOCAL_PORT_TRK_MAP_TRK_ID, group);
-	sw_w32(mask, RTL930X_LOCAL_PORT_TRK_MAP + (4 * port));
-}
-
-static void rtldsa_930x_lag_sync_tables(void)
-{
-	u32 val;
-	int ret;
-
-	sw_w32(BIT(0), RTL930X_TRK_LOCAL_TBL_REFRESH);
-
-	ret = readx_poll_timeout(sw_r32, RTL930X_TRK_LOCAL_TBL_REFRESH, val,
-				 !(val & BIT(0)), 20, 10000);
-	if (ret)
-		pr_err("%s: timeout\n", __func__);
-}
-
-static int rtldsa_930x_lag_table(void)
-{
-	return otto_table_acquire(RTL9300_TBL_LAG);
-}
-
-static int rtldsa_930x_stp_get(struct rtl838x_switch_priv *priv, u16 msti, int port)
-{
-	int idx = 1 - ((port + 3) / 16);
-	int bit = 2 * ((port + 3) % 16);
-	/* port ranges 0..RTL930X_CPU_PORT (28), so idx is always 0 or 1 */
-	u32 buf[2];
-	int state;
-
-	otto_table_read(RTL9300_TBL_MSTI, msti, &buf);
-	state = (buf[idx] >> bit) & 0x3;
-
-	return state;
-}
-
-static void rtl930x_stp_set(struct rtl838x_switch_priv *priv, u16 msti, int port, int state)
-{
-	int tbl = otto_table_acquire(RTL9300_TBL_MSTI);
-	int idx = 1 - ((port + 3) / 16);
-	int bit = 2 * ((port + 3) % 16);
-	/* port ranges 0..RTL930X_CPU_PORT (28), so idx is always 0 or 1 */
-	u32 buf[2];
-
-	__otto_table_read(tbl, msti, &buf);
-	buf[idx] = (buf[idx] & ~(0x3 << bit)) | (state << bit);
-	__otto_table_write(tbl, msti, &buf);
 	otto_table_release(tbl);
 }
 
@@ -321,8 +126,9 @@ static inline int rtl930x_mac_max_len_reg(int p)
 	return RTL930X_MAC_L2_PORT_MAX_LEN_CTRL(p);
 }
 
-static void rtldsa_930x_set_receive_management_action(int port, rma_ctrl_t type,
-						      action_type_t action)
+static void rtldsa_930x_set_receive_management_action(struct otto_dsa_priv *priv,
+						int port, rma_ctrl_t type,
+						action_type_t action)
 {
 	u32 shift;
 	u32 value;
@@ -363,52 +169,57 @@ static void rtldsa_930x_set_receive_management_action(int port, rma_ctrl_t type,
 	case BPDU:
 		reg = RTL930X_RMA_BPDU_CTRL + (port / 10) * 4;
 		shift = (port % 10) * 3;
-		sw_w32_mask(GENMASK(shift + 2, shift), value << shift, reg);
+		regmap_write_bits(priv->map, reg, GENMASK(shift + 2, shift), value << shift);
 		break;
 	case PTP:
 		reg = RTL930X_RMA_PTP_CTRL + port * 4;
 
 		/* udp */
-		sw_w32_mask(GENMASK(3, 2), value << 2, reg);
+		regmap_write_bits(priv->map, reg, GENMASK(3, 2), value << 2);
 
 		/* eth2 */
-		sw_w32_mask(GENMASK(1, 0), value, reg);
+		regmap_write_bits(priv->map, reg, GENMASK(1, 0), value);
 		break;
 	case PTP_UDP:
 		reg = RTL930X_RMA_PTP_CTRL + port * 4;
-		sw_w32_mask(GENMASK(3, 2), value << 2, reg);
+		regmap_write_bits(priv->map, reg, GENMASK(3, 2), value << 2);
 		break;
 	case PTP_ETH2:
 		reg = RTL930X_RMA_PTP_CTRL + port * 4;
-		sw_w32_mask(GENMASK(1, 0), value, reg);
+		regmap_write_bits(priv->map, reg, GENMASK(1, 0), value);
 		break;
 	case LLDP:
 		reg = RTL930X_RMA_LLDP_CTRL + (port / 10) * 4;
 		shift = (port % 10) * 3;
-		sw_w32_mask(GENMASK(shift + 2, shift), value << shift, reg);
+		regmap_write_bits(priv->map, reg, GENMASK(shift + 2, shift), value << shift);
 		break;
 	case EAPOL:
 		reg = RTL930X_RMA_EAPOL_CTRL + (port / 10) * 4;
 		shift = (port % 10) * 3;
-		sw_w32_mask(GENMASK(shift + 2, shift), value << shift, reg);
+		regmap_write_bits(priv->map, reg, GENMASK(shift + 2, shift), value << shift);
 		break;
 	case GRATARP:
+		/* The two-bit action field cannot encode FLOODALL (4). */
+		if (value > 3) {
+			pr_warn("%s: Port flooding not supported for GRATARP\n", __func__);
+			return;
+		}
 		reg = RTL930X_SPCL_TRAP_PORT_CTRL + (port / 16) * 4;
 		shift = (port % 16) * 2;
-		sw_w32_mask(GENMASK(shift + 1, shift), value << shift, reg);
+		regmap_write_bits(priv->map, reg, GENMASK(shift + 1, shift), value << shift);
 		break;
 	}
 }
 
 /* Enable traffic between a source port and a destination port matrix */
-static void rtl930x_traffic_set(int source, u64 dest_matrix)
+static void rtl930x_traffic_set(struct otto_dsa_priv *priv, int source, u64 dest_matrix)
 {
 	u32 v = dest_matrix << 3;
 
 	otto_table_write(RTL9300_TBL_PORT_ISO_CTRL, source, &v);
 }
 
-static void rtl930x_traffic_enable(int source, int dest)
+static void rtl930x_traffic_enable(struct otto_dsa_priv *priv, int source, int dest)
 {
 	int tbl = otto_table_acquire(RTL9300_TBL_PORT_ISO_CTRL);
 	u32 v;
@@ -419,7 +230,7 @@ static void rtl930x_traffic_enable(int source, int dest)
 	otto_table_release(tbl);
 }
 
-static void rtl930x_traffic_disable(int source, int dest)
+static void rtl930x_traffic_disable(struct otto_dsa_priv *priv, int source, int dest)
 {
 	int tbl = otto_table_acquire(RTL9300_TBL_PORT_ISO_CTRL);
 	u32 v;
@@ -430,27 +241,45 @@ static void rtl930x_traffic_disable(int source, int dest)
 	otto_table_release(tbl);
 }
 
-void rtl9300_dump_debug(void)
+static u32 rtl930x_read_debug_reg(struct otto_dsa_priv *priv, u32 reg)
+{
+	u32 val;
+
+	if (regmap_read(priv->map, reg, &val))
+		return 0;
+	return val;
+}
+
+void rtl9300_dump_debug(struct otto_dsa_priv *priv)
 {
 	u16 r = RTL930X_STAT_PRVTE_DROP_COUNTER0;
 
 	for (int i = 0; i < 10; i++) {
 		pr_debug("# %d %08x %08x %08x %08x %08x %08x %08x %08x\n", i * 8,
-			 sw_r32(r), sw_r32(r + 4), sw_r32(r + 8), sw_r32(r + 12),
-			 sw_r32(r + 16), sw_r32(r + 20), sw_r32(r + 24), sw_r32(r + 28));
+			 rtl930x_read_debug_reg(priv, r),
+			 rtl930x_read_debug_reg(priv, r + 4),
+			 rtl930x_read_debug_reg(priv, r + 8),
+			 rtl930x_read_debug_reg(priv, r + 12),
+			 rtl930x_read_debug_reg(priv, r + 16),
+			 rtl930x_read_debug_reg(priv, r + 20),
+			 rtl930x_read_debug_reg(priv, r + 24),
+			 rtl930x_read_debug_reg(priv, r + 28));
 		r += 32;
 	}
 	pr_debug("# %08x %08x %08x %08x %08x\n",
-		 sw_r32(r), sw_r32(r + 4), sw_r32(r + 8), sw_r32(r + 12), sw_r32(r + 16));
-	rtldsa_930x_print_matrix();
+		 rtl930x_read_debug_reg(priv, r),
+		 rtl930x_read_debug_reg(priv, r + 4),
+		 rtl930x_read_debug_reg(priv, r + 8),
+		 rtl930x_read_debug_reg(priv, r + 12),
+		 rtl930x_read_debug_reg(priv, r + 16));
+	rtldsa_930x_print_matrix(priv);
 	pr_debug("RTL930X_L2_PORT_SABLK_CTRL: %08x, RTL930X_L2_PORT_DABLK_CTRL %08x\n",
-		 sw_r32(RTL930X_L2_PORT_SABLK_CTRL), sw_r32(RTL930X_L2_PORT_DABLK_CTRL)
-
-	);
+		 rtl930x_read_debug_reg(priv, RTL930X_L2_PORT_SABLK_CTRL),
+		 rtl930x_read_debug_reg(priv, RTL930X_L2_PORT_DABLK_CTRL));
 }
 
 /* Enables or disables the EEE/EEEP capability of a port */
-static void rtldsa_930x_set_mac_eee(struct rtl838x_switch_priv *priv, int port, bool enable)
+static void rtldsa_930x_set_mac_eee(struct otto_dsa_priv *priv, int port, bool enable)
 {
 	u32 v;
 
@@ -462,16 +291,16 @@ static void rtldsa_930x_set_mac_eee(struct rtl838x_switch_priv *priv, int port, 
 	v = enable ? 0x3f : 0x0;
 
 	/* Set EEE/EEEP state for 100, 500, 1000MBit and 2.5, 5 and 10GBit */
-	sw_w32_mask(0, v << 10, rtl930x_mac_force_mode_ctrl(port));
+	regmap_write_bits(priv->map, rtl930x_mac_force_mode_ctrl(port), v << 10, v << 10);
 
 	/* Set TX/RX EEE state */
 	v = enable ? 0x3 : 0x0;
-	sw_w32(v, RTL930X_EEE_CTRL(port));
+	regmap_write(priv->map, RTL930X_EEE_CTRL(port), v);
 
 	priv->ports[port].eee_enabled = enable;
 }
 
-static void rtl930x_init_eee(struct rtl838x_switch_priv *priv, bool enable)
+static void rtl930x_init_eee(struct otto_dsa_priv *priv, bool enable)
 {
 	pr_debug("Setting up EEE, state: %d\n", enable);
 
@@ -483,8 +312,6 @@ static void rtl930x_init_eee(struct rtl838x_switch_priv *priv, bool enable)
 
 	priv->eee_enabled = enable;
 }
-
-#ifdef CONFIG_NET_DSA_RTL83XX_RTL930X_L3_OFFLOAD
 
 // Currently not used
 // static u32 rtl930x_l3_hash6(struct in6_addr *ip6, int algorithm, bool move_dip)
@@ -540,7 +367,7 @@ static void rtl930x_init_eee(struct rtl838x_switch_priv *priv, bool enable)
 // }
 
 // Currently not used
-// static int rtl930x_l3_mtu_del(struct rtl838x_switch_priv *priv, int mtu)
+// static int rtl930x_l3_mtu_del(struct otto_dsa_priv *priv, int mtu)
 // {
 // 	int i;
 
@@ -557,7 +384,7 @@ static void rtl930x_init_eee(struct rtl838x_switch_priv *priv, bool enable)
 // }
 
 // Currently not used
-// static int rtl930x_l3_mtu_add(struct rtl838x_switch_priv *priv, int mtu)
+// static int rtl930x_l3_mtu_add(struct otto_dsa_priv *priv, int mtu)
 // {
 // 	int i, free_mtu;
 // 	int mtu_id;
@@ -579,116 +406,27 @@ static void rtl930x_init_eee(struct rtl838x_switch_priv *priv, bool enable)
 // 	priv->intf_mtus[i] = mtu;
 // 	pr_debug("Writing MTU %d to slot %d\n", priv->intf_mtus[i], i);
 // 	/* Set MTU-value of the slot TODO: distinguish between IPv4/IPv6 routes / slots */
-// 	sw_w32_mask(0xffff << ((i % 2) * 16), priv->intf_mtus[i] << ((i % 2) * 16),
-// 		    RTL930X_L3_IP_MTU_CTRL(i));
-// 	sw_w32_mask(0xffff << ((i % 2) * 16), priv->intf_mtus[i] << ((i % 2) * 16),
-// 		    RTL930X_L3_IP6_MTU_CTRL(i));
+// 	regmap_write_bits(priv->map, RTL930X_L3_IP_MTU_CTRL(i), GENMASK(15, 0) << ((i % 2) * 16),
+// 			  ((u32)priv->intf_mtus[i] & 0xffff) << ((i % 2) * 16));
+// 	regmap_write_bits(priv->map, RTL930X_L3_IP6_MTU_CTRL(i), GENMASK(15, 0) << ((i % 2) * 16),
+// 			  ((u32)priv->intf_mtus[i] & 0xffff) << ((i % 2) * 16));
 
 // 	priv->intf_mtu_count[i]++;
 
 // 	return mtu_id;
 // }
 
-// Currently not used
-// /* Creates an interface for a route by setting up the HW tables in the SoC */
-// static int rtl930x_l3_intf_add(struct rtl838x_switch_priv *priv, struct rtl838x_l3_intf *intf)
-// {
-// 	int i, intf_id, mtu_id;
-// 	/* number of MTU-values < 16384 */
-
-// 	/* Use the same IPv6 mtu as the ip4 mtu for this route if unset */
-// 	intf->ip6_mtu = intf->ip6_mtu ? intf->ip6_mtu : intf->ip4_mtu;
-
-// 	mtu_id = rtl930x_l3_mtu_add(priv, intf->ip4_mtu);
-// 	pr_debug("%s: added mtu %d with mtu-id %d\n", __func__, intf->ip4_mtu, mtu_id);
-// 	if (mtu_id < 0)
-// 		return -ENOSPC;
-// 	intf->ip4_mtu_id = mtu_id;
-// 	intf->ip6_mtu_id = mtu_id;
-
-// 	for (i = 0; i < MAX_INTERFACES; i++) {
-// 		if (!priv->interfaces[i])
-// 			break;
-// 	}
-// 	if (i >= MAX_INTERFACES) {
-// 		pr_err("%s: cannot find free interface entry\n", __func__);
-// 		return -EINVAL;
-// 	}
-// 	intf_id = i;
-// 	priv->interfaces[i] = kzalloc(sizeof(struct rtl838x_l3_intf), GFP_KERNEL);
-// 	if (!priv->interfaces[i]) {
-// 		pr_err("%s: no memory to allocate new interface\n", __func__);
-// 		return -ENOMEM;
-// 	}
-// }
-
-#endif /* CONFIG_NET_DSA_RTL83XX_RTL930X_L3_OFFLOAD */
-
-/* A PIE rule logs its matched packets into the LOG table entry that carries
- * its own rule ID, in data word 1 - one entry per rule. Counters handed out
- * by rtldsa_packet_cntr_alloc() for L3 route statistics start above the PIE
- * rule ID range and pack two 32-bit counters into one 64-bit LOG entry.
- */
-#define RTL930X_PIE_RULE_IDS	(rtldsa_930x_cfg.n_pie_blocks * PIE_BLOCK_SIZE)
-
-static u32 rtl930x_packet_cntr_read(struct rtl838x_switch_priv *priv, int counter)
+static void rtl930x_set_igr_filter(struct otto_dsa_priv *priv, int port, enum igr_filter state)
 {
-	u32 buf[2];
-	u32 v;
-
-	dev_dbg(priv->dev, "reading LOG packet counter %d\n", counter);
-
-	if (counter < RTL930X_PIE_RULE_IDS) {
-		otto_table_read(RTL9300_TBL_LOG, counter, &buf);
-		v = buf[1];
-	} else {
-		/* Two counters share one entry, so the parity of counter picks
-		 * which half of it to return.
-		 */
-		otto_table_read(RTL9300_TBL_LOG, counter / 2, &buf);
-		v = counter % 2 ? buf[0] : buf[1];
-	}
-
-	dev_dbg(priv->dev, "LOG entry: %08x %08x\n", buf[0], buf[1]);
-
-	return v;
+	regmap_write_bits(priv->map, RTL930X_VLAN_PORT_IGR_FLTR + (((port >> 4) << 2)),
+			  GENMASK(1, 0) << ((port & 0xf) << 1),
+			  (u32)(state & 0x3) << ((port & 0xf) << 1));
 }
 
-static void rtl930x_packet_cntr_clear(struct rtl838x_switch_priv *priv, int counter)
+static void rtl930x_set_egr_filter(struct otto_dsa_priv *priv, int port, enum egr_filter state)
 {
-	int tbl = otto_table_acquire(RTL9300_TBL_LOG);
-
-	u32 v[2];
-
-	dev_dbg(priv->dev, "clearing LOG packet counter %d\n", counter);
-
-	/* Read-modify-write: for a route counter the other 32-bit counter in
-	 * the same 64-bit entry must be preserved; for a PIE rule ID the entry
-	 * is ours alone but the RMW is harmless.
-	 */
-	if (counter < RTL930X_PIE_RULE_IDS) {
-		__otto_table_read(tbl, counter, &v);
-		v[1] = 0;
-		__otto_table_write(tbl, counter, &v);
-	} else {
-		__otto_table_read(tbl, counter / 2, &v);
-		v[counter % 2 ? 0 : 1] = 0;
-		__otto_table_write(tbl, counter / 2, &v);
-	}
-
-	otto_table_release(tbl);
-}
-
-static void rtl930x_set_igr_filter(int port,  enum igr_filter state)
-{
-	sw_w32_mask(0x3 << ((port & 0xf) << 1), state << ((port & 0xf) << 1),
-		    RTL930X_VLAN_PORT_IGR_FLTR + (((port >> 4) << 2)));
-}
-
-static void rtl930x_set_egr_filter(int port,  enum egr_filter state)
-{
-	sw_w32_mask(0x1 << (port % 0x1D), state << (port % 0x1D),
-		    RTL930X_VLAN_PORT_EGR_FLTR + (((port / 29) << 2)));
+	regmap_write_bits(priv->map, RTL930X_VLAN_PORT_EGR_FLTR + (((port / 29) << 2)),
+			  BIT(port % 0x1D), (u32)(state & 0x1) << (port % 0x1D));
 }
 
 static void rtldsa_930x_led_get_forced(const struct device_node *node,
@@ -712,7 +450,7 @@ static void rtldsa_930x_led_get_forced(const struct device_node *node,
 	}
 }
 
-static void rtl930x_led_init(struct rtl838x_switch_priv *priv)
+static void rtl930x_led_init(struct otto_dsa_priv *priv)
 {
 	u8 forced_leds_per_port[RTL930X_CPU_PORT] = {};
 	struct device_node *node;
@@ -751,8 +489,8 @@ static void rtl930x_led_init(struct rtl838x_switch_priv *priv)
 			break;
 		}
 
-		sw_w32_mask(RTL930X_LED_CLK_SEL_MASK,
-			    FIELD_PREP(RTL930X_LED_CLK_SEL_MASK, clk_sel), RTL930X_LED_GLB_CTRL);
+		regmap_write_bits(priv->map, RTL930X_LED_GLB_CTRL, RTL930X_LED_CLK_SEL_MASK,
+				  FIELD_PREP(RTL930X_LED_CLK_SEL_MASK, clk_sel));
 	}
 
 	for (int set = 0; set < 4; set++) {
@@ -761,8 +499,8 @@ static void rtl930x_led_init(struct rtl838x_switch_priv *priv)
 		int leds_in_this_set = 0;
 
 		/* Reset LED set configuration */
-		sw_w32(0, RTL930X_LED_SETX_0_CTRL(set));
-		sw_w32(0, RTL930X_LED_SETX_1_CTRL(set));
+		regmap_write(priv->map, RTL930X_LED_SETX_0_CTRL(set), 0);
+		regmap_write(priv->map, RTL930X_LED_SETX_1_CTRL(set), 0);
 
 		/* Each LED set has (up to) 4 LEDs, and each LED is configured
 		 * with 16 bits. So each 32 bit register holds configuration for
@@ -789,9 +527,9 @@ static void rtl930x_led_init(struct rtl838x_switch_priv *priv)
 
 		/* Write configuration for selected LEDs */
 		for (int i = 0, led = leds_in_this_set - 1; led >= 0; led--, i++) {
-			sw_w32_mask(0xffff << RTL930X_LED_SET_LEDX_SHIFT(led),
-				    (0xffff & set_config[i]) << RTL930X_LED_SET_LEDX_SHIFT(led),
-				    RTL930X_LED_SETX_LEDY(set, led));
+			regmap_write_bits(priv->map, RTL930X_LED_SETX_LEDY(set, led),
+					  GENMASK(15, 0) << RTL930X_LED_SET_LEDX_SHIFT(led),
+					  (0xffff & set_config[i]) << RTL930X_LED_SET_LEDX_SHIFT(led));
 		}
 	}
 
@@ -801,8 +539,10 @@ static void rtl930x_led_init(struct rtl838x_switch_priv *priv)
 		int pos = (i << 1) % 32;
 		u32 set;
 
-		sw_w32_mask(0x3 << pos, 0, RTL930X_LED_PORT_FIB_SET_SEL_CTRL(i));
-		sw_w32_mask(0x3 << pos, 0, RTL930X_LED_PORT_COPR_SET_SEL_CTRL(i));
+		regmap_write_bits(priv->map, RTL930X_LED_PORT_FIB_SET_SEL_CTRL(i),
+				  GENMASK(1, 0) << pos, 0);
+		regmap_write_bits(priv->map, RTL930X_LED_PORT_COPR_SET_SEL_CTRL(i),
+				  GENMASK(1, 0) << pos, 0);
 
 		if (!priv->ports[i].phy && !priv->ports[i].has_pcs && !(forced_leds_per_port[i]))
 			continue;
@@ -811,43 +551,79 @@ static void rtl930x_led_init(struct rtl838x_switch_priv *priv)
 			priv->ports[i].leds_on_this_port = forced_leds_per_port[i];
 
 		/* 0x0 = 1 led, 0x1 = 2 leds, 0x2 = 3 leds, 0x3 = 4 leds per port */
-		sw_w32_mask(0x3 << pos, (priv->ports[i].leds_on_this_port - 1) << pos, RTL930X_LED_PORT_NUM_CTRL(i));
+		regmap_write_bits(priv->map, RTL930X_LED_PORT_NUM_CTRL(i), GENMASK(1, 0) << pos,
+				  (((u32)priv->ports[i].leds_on_this_port - 1) & 0x3) << pos);
 
 		pm |= BIT(i);
 
 		set = priv->ports[i].led_set;
-		sw_w32_mask(0, set << pos, RTL930X_LED_PORT_COPR_SET_SEL_CTRL(i));
-		sw_w32_mask(0, set << pos, RTL930X_LED_PORT_FIB_SET_SEL_CTRL(i));
+		regmap_write_bits(priv->map, RTL930X_LED_PORT_COPR_SET_SEL_CTRL(i),
+				  GENMASK(1, 0) << pos, (set & 0x3) << pos);
+		regmap_write_bits(priv->map, RTL930X_LED_PORT_FIB_SET_SEL_CTRL(i),
+				  GENMASK(1, 0) << pos, (set & 0x3) << pos);
 	}
 
 	/* Set LED mode */
 	of_property_read_u32(node, "realtek,led-mode", &led_mode);
-	sw_w32_mask(0x3, led_mode & 0x3, RTL930X_LED_GLB_CTRL);
+	regmap_write_bits(priv->map, RTL930X_LED_GLB_CTRL, GENMASK(1, 0), led_mode & 0x3);
 
 	/* Set LED active state */
 	if (of_property_read_bool(node, "active-low"))
-		sw_w32_mask(RTL930X_LED_GLB_ACTIVE_LOW, 0, RTL930X_LED_GLB_CTRL);
+		regmap_write_bits(priv->map, RTL930X_LED_GLB_CTRL, RTL930X_LED_GLB_ACTIVE_LOW, 0);
 	else
-		sw_w32_mask(0, RTL930X_LED_GLB_ACTIVE_LOW, RTL930X_LED_GLB_CTRL);
+		regmap_write_bits(priv->map, RTL930X_LED_GLB_CTRL, RTL930X_LED_GLB_ACTIVE_LOW,
+				  RTL930X_LED_GLB_ACTIVE_LOW);
 
 	/* Set port type masks */
-	sw_w32(pm, RTL930X_LED_PORT_COPR_MASK_CTRL);
-	sw_w32(pm, RTL930X_LED_PORT_FIB_MASK_CTRL);
-	sw_w32(pm, RTL930X_LED_PORT_COMBO_MASK_CTRL);
+	regmap_write(priv->map, RTL930X_LED_PORT_COPR_MASK_CTRL, pm);
+	regmap_write(priv->map, RTL930X_LED_PORT_FIB_MASK_CTRL, pm);
+	regmap_write(priv->map, RTL930X_LED_PORT_COMBO_MASK_CTRL, pm);
 
 	for (int i = 0; i < 24; i++)
-		dev_dbg(dev, "%08x: %08x\n", 0xbb00cc00 + i * 4, sw_r32(0xcc00 + i * 4));
+		dev_dbg(dev, "%08x: %08x\n", 0xbb00cc00 + i * 4,
+			rtl930x_read_debug_reg(priv, 0xcc00 + i * 4));
+}
+
+static int
+rtldsa_930x_mac_link_state_source_set(struct otto_dsa_priv *priv,
+				      int port,
+				      enum rtldsa_mac_link_state_source source,
+				      phy_interface_t interface)
+{
+	u32 mask, src_val;
+
+	if (port < 24)
+		mask = RTL930X_SMI_MAC_TYPE_P0_23(port);
+	else if (port < 28)
+		mask = RTL930X_SMI_MAC_TYPE_P24_27(port);
+	else
+		return 0;
+
+	if (source == RTLDSA_MAC_LINK_STATE_SOURCE_PCS)
+		src_val = RTL930X_SMI_MAC_TYPE_PCS;
+	else if (interface == PHY_INTERFACE_MODE_2500BASEX ||
+		 interface == PHY_INTERFACE_MODE_10GBASER ||
+		 interface == PHY_INTERFACE_MODE_USXGMII ||
+		 interface == PHY_INTERFACE_MODE_10G_QXGMII)
+		src_val = RTL930X_SMI_MAC_TYPE_MULTIGIG_PHY;
+	else
+		src_val = RTL930X_SMI_MAC_TYPE_1G_PHY;
+
+	return regmap_update_bits(priv->map, RTL930X_SMI_MAC_TYPE_CTRL,
+				  mask, field_prep(mask, src_val));
 }
 
 const struct rtldsa_config rtldsa_930x_cfg = {
 	.switch_ops = &rtldsa_93xx_switch_ops,
 	.phylink_mac_ops = &rtldsa_93xx_phylink_mac_ops,
-	.spanning_tree_ctrl = RTL930X_ST_CTRL,
+	.stp_init = rtldsa_930x_stp_init,
 	.l2_bucket_size = 8,
 	.n_mst = 64,
 	.num_lag_ids = 16,
 	.cpu_port = RTL930X_CPU_PORT,
 	.fib_entries = 16384,
+	.l2_uc_tbl = RTL9300_TBL_L2_UC,
+	.l2_cam_tbl = RTL9300_TBL_L2_CAM_UC,
 	.mask_port_reg_be = rtl838x_mask_port_reg,
 	.set_port_reg_be = rtl838x_set_port_reg,
 	.get_port_reg_be = rtl838x_get_port_reg,
@@ -858,18 +634,19 @@ const struct rtldsa_config rtldsa_930x_cfg = {
 	.stat_rst = RTL930X_STAT_RST,
 	.stat_port_std_mib = RTL930X_STAT_PORT_MIB_CNTR,
 	.stat_port_prv_mib = RTL930X_STAT_PORT_PRVTE_CNTR,
-	.mib_desc = &rtldsa_930x_mib_desc,
-	.stat_counters_lock = rtldsa_counters_lock_register,
-	.stat_counters_unlock = rtldsa_counters_unlock_register,
-	.stat_update_counters_atomically = rtldsa_update_counters_atomically,
-	.stat_counter_poll_interval = RTLDSA_COUNTERS_POLL_INTERVAL,
+	.mib_desc = &otto_stats_930x_mib_desc,
+	.drop_desc = &otto_stats_930x_drop_desc,
+	.stat_counters_lock = otto_stats_counters_lock_register,
+	.stat_counters_unlock = otto_stats_counters_unlock_register,
+	.stat_update_counters_atomically = otto_stats_update_counters_atomically,
+	.stat_counter_poll_interval = OTTO_STATS_COUNTERS_POLL_INTERVAL,
 	.traffic_enable = rtl930x_traffic_enable,
 	.traffic_disable = rtl930x_traffic_disable,
 	.traffic_set = rtl930x_traffic_set,
 	.l2_ctrl_0 = RTL930X_L2_CTRL,
 	.l2_ctrl_1 = RTL930X_L2_AGE_CTRL,
 	.l2_port_aging_out = RTL930X_L2_PORT_AGE_CTRL,
-	.set_ageing_time = rtl930x_set_ageing_time,
+	.set_ageing_time = otto_l2_930x_set_ageing_time,
 	.l2_tbl_flush_ctrl = RTL930X_L2_TBL_FLUSH_CTRL,
 	.isr_glb_src = RTL930X_ISR_GLB,
 	.isr_port_link_sts_chg = RTL930X_ISR_PORT_LINK_STS_CHG,
@@ -878,73 +655,89 @@ const struct rtldsa_config rtldsa_930x_cfg = {
 	.n_counters = 2048,
 	.n_pie_blocks = 16,
 	.pie_rule_id_is_log_counter = true,
+	.pie_cls_flower = true,
 	.port_ignore = 0x3f,
-	.vlan_tables_read = rtl930x_vlan_tables_read,
-	.vlan_set_tagged = rtl930x_vlan_set_tagged,
-	.vlan_set_untagged = rtl930x_vlan_set_untagged,
-	.vlan_profile_get = rtldsa_930x_vlan_profile_get,
-	.vlan_profile_dump = rtldsa_930x_vlan_profile_dump,
-	.vlan_profile_setup = rtl930x_vlan_profile_setup,
-	.vlan_fwd_on_inner = rtl930x_vlan_fwd_on_inner,
+	.vlan_tables_read = otto_vlan_930x_tables_read,
+	.vlan_set_tagged = otto_vlan_930x_set_tagged,
+	.vlan_set_untagged = otto_vlan_930x_set_untagged,
+	.vlan_profile_get = otto_vlan_930x_profile_get,
+	.vlan_profile_dump = otto_vlan_930x_profile_dump,
+	.vlan_profile_setup = otto_vlan_930x_profile_setup,
+	.vlan_port_aft = RTL930X_VLAN_PORT_AFT,
+	.vlan_fwd_on_inner = otto_vlan_930x_port_forward_on_inner,
+	.vlan_qinq_setup = otto_vlan_930x_qinq_setup,
+	.vlan_port_qinq_set = otto_vlan_930x_port_qinq_set,
 	.set_vlan_igr_filter = rtl930x_set_igr_filter,
 	.set_vlan_egr_filter = rtl930x_set_egr_filter,
 	.stp_get = rtldsa_930x_stp_get,
 	.stp_set = rtl930x_stp_set,
 	.mac_link_sts = RTL930X_MAC_LINK_STS,
-	.mac_force_mode_mask = RTL930X_FORCE_EN | RTL930X_FORCE_LINK_EN,
+	.mac_force_mode = {
+		.force_en_mask = RTL930X_FORCE_EN,
+		.fc_force_en_mask = RTL930X_MAC_FORCE_FC_EN,
+		.link_up_mask = RTL930X_FORCE_LINK_EN,
+		.duplex_mask = RTL930X_DUPLEX_MODE,
+		.speed_mask = RTL930X_SPEED_MASK,
+		.tx_pause_mask = RTL930X_TX_PAUSE_EN,
+		.rx_pause_mask = RTL930X_RX_PAUSE_EN,
+		.media_mask = RTL930X_MEDIA_SEL,
+	},
 	.mac_force_mode_ctrl = rtl930x_mac_force_mode_ctrl,
+	.mac_link_state_source_set = rtldsa_930x_mac_link_state_source_set,
 	.mac_port_ctrl = rtl930x_mac_port_ctrl,
 	.mac_capabilities = MAC_ASYM_PAUSE | MAC_SYM_PAUSE | MAC_10 | MAC_100 |
 			    MAC_1000FD | MAC_2500FD | MAC_5000FD | MAC_10000FD,
 	.mac_max_len_reg = rtl930x_mac_max_len_reg,
 	.max_frame = RTL930X_MAX_FRAME,
-	.l2_port_new_salrn = rtl930x_l2_port_new_salrn,
-	.l2_port_new_sa_fwd = rtl930x_l2_port_new_sa_fwd,
+	.l2_port_new_salrn = otto_l2_930x_port_new_salrn,
+	.l2_port_new_sa_fwd = otto_l2_930x_port_new_sa_fwd,
 	.get_mirror_config = rtldsa_930x_get_mirror_config,
-	.port_rate_police_add = rtldsa_930x_port_rate_police_add,
-	.port_rate_police_del = rtldsa_930x_port_rate_police_del,
+	.port_rate_police_add = otto_tc_930x_port_rate_police_add,
+	.port_rate_police_del = otto_tc_930x_port_rate_police_del,
 	.print_matrix = rtldsa_930x_print_matrix,
-	.read_l2_entry_using_hash = rtl930x_read_l2_entry_using_hash,
-	.write_l2_entry_using_hash = rtl930x_write_l2_entry_using_hash,
-	.read_cam = rtl930x_read_cam,
-	.write_cam = rtl930x_write_cam,
-	.vlan_port_keep_tag_set = rtl930x_vlan_port_keep_tag_set,
-	.vlan_port_pvidmode_set = rtl930x_vlan_port_pvidmode_set,
-	.vlan_port_pvid_set = rtl930x_vlan_port_pvid_set,
-	.fast_age = rtldsa_930x_fast_age,
-	.trk_mbr_ctr = rtl930x_trk_mbr_ctr,
+	.read_l2_entry_using_hash = otto_l2_930x_read_entry_using_hash,
+	.write_l2_entry_using_hash = otto_l2_930x_write_entry_using_hash,
+	.read_cam = otto_l2_930x_read_cam,
+	.write_cam = otto_l2_930x_write_cam,
+	.vlan_port_keep_tag_set = otto_vlan_930x_port_keep_tag_set,
+	.vlan_port_pvidmode_set = otto_vlan_930x_port_pvid_mode_set,
+	.vlan_port_pvid_set = otto_vlan_930x_port_pvid_set,
+	.fast_age = otto_l2_930x_fast_age,
+	.trk_mbr_ctr = otto_lag_930x_trk_mbr_ctr,
 	.rma_bpdu_fld_pmask = RTL930X_RMA_BPDU_FLD_PMSK,
 	.init_eee = rtl930x_init_eee,
 	.set_mac_eee = rtldsa_930x_set_mac_eee,
-	.l2_hash_seed = rtl930x_l2_hash_seed,
-	.l2_hash_key = rtl930x_l2_hash_key,
-	.read_mcast_pmask = rtl930x_read_mcast_pmask,
-	.write_mcast_pmask = rtl930x_write_mcast_pmask,
-	.pie_init = rtl930x_pie_init,
-	.pie_rule_write = rtl930x_pie_rule_write,
-	.pie_rule_add = rtl930x_pie_rule_add,
-	.pie_rule_rm = rtl930x_pie_rule_rm,
-	.l2_learning_setup = rtl930x_l2_learning_setup,
-	.packet_cntr_read = rtl930x_packet_cntr_read,
-	.packet_cntr_clear = rtl930x_packet_cntr_clear,
+	.l2_hash_seed = otto_l2_930x_hash_seed,
+	.l2_hash_key = otto_l2_930x_hash_key,
+	.read_mcast_pmask = otto_l2_930x_read_mcast_pmask,
+	.write_mcast_pmask = otto_l2_930x_write_mcast_pmask,
+	.pie_init = otto_pie_930x_init,
+	.pie_rule_write = otto_pie_930x_rule_write,
+	.pie_rule_add = otto_pie_930x_rule_add,
+	.pie_rule_rm = otto_pie_930x_rule_rm,
+	.l2_learning_setup = otto_l2_930x_learning_setup,
+	.packet_cntr_read = otto_stats_930x_packet_cntr_read,
+	.packet_cntr_clear = otto_stats_930x_packet_cntr_clear,
 	.led_init = rtl930x_led_init,
-	.enable_learning = rtldsa_930x_enable_learning,
-	.enable_l2_new_sa_fwd = rtldsa_930x_l2_port_new_sa_fwd,
-	.enable_flood = rtldsa_930x_enable_flood,
-	.enable_bcast_flood = rtldsa_930x_enable_bcast_flood,
+	.enable_learning = otto_l2_930x_enable_learning,
+	.enable_l2_new_sa_fwd = otto_l2_930x_set_port_new_sa_fwd,
+	.enable_flood = otto_l2_930x_enable_flood,
+	.enable_bcast_flood = otto_l2_930x_enable_bcast_flood,
 	.set_receive_management_action = rtldsa_930x_set_receive_management_action,
-	.qos_init = rtldsa_930x_qos_init,
+	.queue_sched_set = otto_qos_930x_queue_sched_set,
+	.egress_shaper_set = otto_tc_930x_egress_shaper_set,
+	.qos_init = otto_qos_930x_init,
 	.trk_ctrl = RTL930X_TRK_CTRL,
 	.trk_hash_ctrl = RTL930X_TRK_HASH_CTRL,
-	.prepare_lag_fdb = rtldsa_93xx_prepare_lag_fdb,
-	.lag_switch_init = rtldsa_93xx_lag_switch_init,
-	.lag_set_port_members = rtldsa_93xx_lag_set_port_members,
-	.lag_set_distribution_algorithm = rtldsa_93xx_lag_set_distribution_algorithm,
-	.lag_set_local_group_id = rtldsa_930x_lag_set_local_group_id,
-	.lag_write_data = rtldsa_930x_lag_write_data,
-	.lag_fill_data = rtldsa_930x_lag_fill_data,
-	.lag_set_local_port2group = rtldsa_930x_lag_set_local_port2group,
-	.lag_set_port2group = rtldsa_930x_lag_set_port2group,
-	.lag_sync_tables = rtldsa_930x_lag_sync_tables,
-	.lag_table = rtldsa_930x_lag_table,
+	.prepare_lag_fdb = otto_lag_93xx_prepare_fdb,
+	.lag_switch_init = otto_lag_93xx_switch_init,
+	.lag_set_port_members = otto_lag_93xx_set_port_members,
+	.lag_set_distribution_algorithm = otto_lag_93xx_set_distribution_algorithm,
+	.lag_set_local_group_id = otto_lag_930x_set_local_group_id,
+	.lag_write_data = otto_lag_930x_write_data,
+	.lag_fill_data = otto_lag_930x_fill_data,
+	.lag_set_local_port2group = otto_lag_930x_set_local_port2group,
+	.lag_set_port2group = otto_lag_930x_set_port2group,
+	.lag_sync_tables = otto_lag_930x_sync_tables,
+	.lag_table = otto_lag_930x_table,
 };

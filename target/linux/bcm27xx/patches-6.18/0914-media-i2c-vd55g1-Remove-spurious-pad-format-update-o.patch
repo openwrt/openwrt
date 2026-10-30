@@ -1,0 +1,37 @@
+From 51721a52cb8f80096eddd60b767bf0cc4cd8965e Mon Sep 17 00:00:00 2001
+From: Benjamin Mugnier <benjamin.mugnier@foss.st.com>
+Date: Mon, 29 Jun 2026 12:51:47 +0200
+Subject: [PATCH] media: i2c: vd55g1: Remove spurious pad format update on
+ init_state()
+
+Commit 3e275097e206a67f2b691c8167313871ee421cd7 upstream.
+
+vd55g1_update_pad_fmt() is called in vd55g1_init_state(). But
+vd55g1_set_pad_fmt(), called at the end of vd55g1_init_state(), also
+calls vd55g1_update_pad_fmt() itself.
+
+Enhance readability and clear confusion by only preparing the format in
+vd55g1_init_state() and let vd55g1_set_pad_fmt() update it instead,
+effectively calling it only 1 time instead of 2.
+
+Reviewed-by: Jacopo Mondi <jacopo.mondi@ideasonboard.com>
+Signed-off-by: Benjamin Mugnier <benjamin.mugnier@foss.st.com>
+---
+ drivers/media/i2c/vd55g1.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+--- a/drivers/media/i2c/vd55g1.c
++++ b/drivers/media/i2c/vd55g1.c
+@@ -1365,9 +1365,9 @@ static int vd55g1_init_state(struct v4l2
+ 		code = vd55g1_mbus_formats_mono[0];
+ 	else
+ 		code = vd55g1_mbus_formats_bayer[0][0];
+-	vd55g1_update_pad_fmt(sensor,
+-			      &vd55g1_supported_modes[VD55G1_MODE_IDX_DEF],
+-			      vd55g1_get_fmt_code(sensor, code), &fmt.format);
++	fmt.format.code = vd55g1_get_fmt_code(sensor, code);
++	fmt.format.width = vd55g1_supported_modes[VD55G1_MODE_IDX_DEF].width;
++	fmt.format.height = vd55g1_supported_modes[VD55G1_MODE_IDX_DEF].height;
+ 
+ 	return vd55g1_set_pad_fmt(sd, sd_state, &fmt);
+ }

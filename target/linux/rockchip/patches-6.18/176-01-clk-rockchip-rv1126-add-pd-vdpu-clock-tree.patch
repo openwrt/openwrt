@@ -1,0 +1,86 @@
+From 71a1581bad415edd21b90b122503325f8795de53 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Fri, 9 Oct 2026 14:29:25 +0100
+Subject: [PATCH] clk: rockchip: rv1126: Add PD_VDPU clock tree
+
+The video decoder power domain of the RV1126 contains the RKVDEC
+decoder and the JPEG block that holds the VPU encoder and decoder.
+Add the bus clocks of the two parts together with the clocks of the
+decoder cores and of the JPEG block.
+
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ drivers/clk/rockchip/clk-rv1126.c | 48 +++++++++++++++++++++++++++++++
+ 1 file changed, 48 insertions(+)
+
+--- a/drivers/clk/rockchip/clk-rv1126.c
++++ b/drivers/clk/rockchip/clk-rv1126.c
+@@ -178,6 +178,7 @@ PNAME(mux_audpwm_p)			= { "sclk_audpwm_d
+ PNAME(mux_dclk_vop_p)			= { "dclk_vop_div", "dclk_vop_fracdiv", "xin24m" };
+ PNAME(mux_cpll_gpll_hpll_p)		= { "cpll", "gpll", "hpll" };
+ PNAME(mux_gpll_cpll_hpll_p)		= { "gpll", "cpll", "hpll" };
++PNAME(mux_cpll_hpll_gpll_p)		= { "cpll", "hpll", "gpll" };
+ PNAME(mux_gpll_usb480m_p)		= { "gpll", "usb480m" };
+ PNAME(mux_cif_out2io_p)			= { "xin24m", "clk_cif_out2io_div",
+ 					    "clk_cif_out2io_fracdiv" };
+@@ -735,6 +736,40 @@ static struct rockchip_clk_branch rv1126
+ 			RV1126_CLKGATE_CON(11), 1, GFLAGS),
+ 
+ 	/*
++	 * Clock-Architecture Diagram 8
++	 */
++	/* PD_VDPU */
++	COMPOSITE(ACLK_PDVDEC, "aclk_pdvdec", mux_cpll_hpll_gpll_p, 0,
++		  RV1126_CLKSEL_CON(42), 6, 2, MFLAGS, 0, 5, DFLAGS,
++		  RV1126_CLKGATE_CON(13), 0, GFLAGS),
++	COMPOSITE_NOMUX(HCLK_PDVDEC, "hclk_pdvdec", "aclk_pdvdec", 0,
++			RV1126_CLKSEL_CON(41), 8, 5, DFLAGS,
++			RV1126_CLKGATE_CON(13), 4, GFLAGS),
++	COMPOSITE(ACLK_PDJPEG, "aclk_pdjpeg", mux_cpll_hpll_gpll_p, 0,
++		  RV1126_CLKSEL_CON(44), 6, 2, MFLAGS, 0, 5, DFLAGS,
++		  RV1126_CLKGATE_CON(13), 9, GFLAGS),
++	COMPOSITE_NOMUX(HCLK_PDJPEG, "hclk_pdjpeg", "aclk_pdjpeg", 0,
++			RV1126_CLKSEL_CON(44), 8, 5, DFLAGS,
++			RV1126_CLKGATE_CON(13), 10, GFLAGS),
++	GATE(ACLK_VDEC, "aclk_vdec", "aclk_pdvdec", 0,
++	     RV1126_CLKGATE_CON(13), 7, GFLAGS),
++	GATE(HCLK_VDEC, "hclk_vdec", "hclk_pdvdec", 0,
++	     RV1126_CLKGATE_CON(13), 8, GFLAGS),
++	COMPOSITE(CLK_VDEC_CORE, "clk_vdec_core", mux_cpll_hpll_gpll_p, 0,
++		  RV1126_CLKSEL_CON(42), 14, 2, MFLAGS, 8, 5, DFLAGS,
++		  RV1126_CLKGATE_CON(13), 1, GFLAGS),
++	COMPOSITE(CLK_VDEC_CA, "clk_vdec_ca", mux_cpll_hpll_gpll_p, 0,
++		  RV1126_CLKSEL_CON(43), 6, 2, MFLAGS, 0, 5, DFLAGS,
++		  RV1126_CLKGATE_CON(13), 2, GFLAGS),
++	COMPOSITE(CLK_VDEC_HEVC_CA, "clk_vdec_hevc_ca", mux_cpll_hpll_gpll_p, 0,
++		  RV1126_CLKSEL_CON(43), 14, 2, MFLAGS, 8, 5, DFLAGS,
++		  RV1126_CLKGATE_CON(13), 3, GFLAGS),
++	GATE(ACLK_JPEG, "aclk_jpeg", "aclk_pdjpeg", 0,
++	     RV1126_CLKGATE_CON(13), 13, GFLAGS),
++	GATE(HCLK_JPEG, "hclk_jpeg", "hclk_pdjpeg", 0,
++	     RV1126_CLKGATE_CON(13), 14, GFLAGS),
++
++	/*
+ 	 * Clock-Architecture Diagram 9
+ 	 */
+ 	/* PD_VO */
+@@ -1027,6 +1062,19 @@ static struct rockchip_clk_branch rv1126
+ 			RV1126_CLKGATE_CON(9), 3, GFLAGS),
+ 
+ 	/*
++	 * Clock-Architecture Diagram 8
++	 */
++	/* PD_VDPU */
++	GATE(0, "aclk_pdvdec_niu", "aclk_pdvdec", CLK_IGNORE_UNUSED,
++	     RV1126_CLKGATE_CON(13), 5, GFLAGS),
++	GATE(0, "hclk_pdvdec_niu", "hclk_pdvdec", CLK_IGNORE_UNUSED,
++	     RV1126_CLKGATE_CON(13), 6, GFLAGS),
++	GATE(0, "aclk_pdjpeg_niu", "aclk_pdjpeg", CLK_IGNORE_UNUSED,
++	     RV1126_CLKGATE_CON(13), 11, GFLAGS),
++	GATE(0, "hclk_pdjpeg_niu", "hclk_pdjpeg", CLK_IGNORE_UNUSED,
++	     RV1126_CLKGATE_CON(13), 12, GFLAGS),
++
++	/*
+ 	 * Clock-Architecture Diagram 9
+ 	 */
+ 	/* PD_VO */

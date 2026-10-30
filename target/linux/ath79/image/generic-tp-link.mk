@@ -53,11 +53,9 @@ define Device/tplink_archer-c5-v1
   DEVICE_MODEL := Archer C5
   DEVICE_VARIANT := v1
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ledtrig-usbport kmod-ath10k-ct \
-	ath10k-firmware-qca988x-ct kmod-dsa-qca8k kmod-phy-qca83xx -swconfig
+	ath10k-firmware-qca988x-ct
   TPLINK_HWID := 0xc5000001
   SUPPORTED_DEVICES += archer-c5
-  DEVICE_COMPAT_VERSION := 1.1
-  DEVICE_COMPAT_MESSAGE := Config cannot be migrated from swconfig to DSA
 endef
 TARGET_DEVICES += tplink_archer-c5-v1
 
@@ -164,12 +162,9 @@ define Device/tplink_archer-c7-v1
   SOC := qca9558
   DEVICE_MODEL := Archer C7
   DEVICE_VARIANT := v1
-  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ledtrig-usbport \
-	kmod-dsa-qca8k kmod-phy-qca83xx -swconfig
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ledtrig-usbport
   TPLINK_HWID := 0x75000001
   SUPPORTED_DEVICES += archer-c7
-  DEVICE_COMPAT_VERSION := 1.1
-  DEVICE_COMPAT_MESSAGE := Config cannot be migrated from swconfig to DSA
 endef
 TARGET_DEVICES += tplink_archer-c7-v1
 
@@ -179,11 +174,9 @@ define Device/tplink_archer-c7-v2
   DEVICE_MODEL := Archer C7
   DEVICE_VARIANT := v2
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ledtrig-usbport kmod-ath10k-ct \
-	ath10k-firmware-qca988x-ct kmod-dsa-qca8k kmod-phy-qca83xx -swconfig
+	ath10k-firmware-qca988x-ct
   TPLINK_HWID := 0xc7000002
   SUPPORTED_DEVICES += archer-c7
-  DEVICE_COMPAT_VERSION := 1.1
-  DEVICE_COMPAT_MESSAGE := Config cannot be migrated from swconfig to DSA
   IMAGES += factory-us.bin factory-eu.bin
   IMAGE/factory-us.bin := tplink-v1-image factory -C US
   IMAGE/factory-eu.bin := tplink-v1-image factory -C EU
@@ -509,6 +502,17 @@ define Device/tplink_eap245-v3
 endef
 TARGET_DEVICES += tplink_eap245-v3
 
+define Device/tplink_f52-outdoor-v1
+  $(Device/tplink-eap2x5)
+  SOC := qca9563
+  IMAGE_SIZE := 13824k
+  DEVICE_MODEL := F52-Outdoor
+  DEVICE_VARIANT := v1
+  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca9888-ct
+  TPLINK_BOARD_ID := F52-V1
+endef
+TARGET_DEVICES += tplink_f52-outdoor-v1
+
 define Device/tplink_deco-m4r-v1
   $(Device/tplink-safeloader-uimage)
   SOC := qca9563
@@ -679,11 +683,9 @@ define Device/tplink_tl-wdr7500-v3
   DEVICE_MODEL := TL-WDR7500
   DEVICE_VARIANT := v3
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ledtrig-usbport kmod-ath10k-ct \
-	ath10k-firmware-qca988x-ct kmod-dsa-qca8k kmod-phy-qca83xx -swconfig
+	ath10k-firmware-qca988x-ct
   TPLINK_HWID := 0x75000003
   SUPPORTED_DEVICES += archer-c7
-  DEVICE_COMPAT_VERSION := 1.1
-  DEVICE_COMPAT_MESSAGE := Config cannot be migrated from swconfig to DSA
 endef
 TARGET_DEVICES += tplink_tl-wdr7500-v3
 

@@ -41,6 +41,10 @@
 #define RTSDS_93XX_CMD_PAGE_MASK	GENMASK(12, 7)
 #define RTSDS_93XX_CMD_REG_MASK		GENMASK(17, 13)
 
+#define RTSDS_960X_SDS_CNT		3
+#define RTSDS_960X_PAGE_CNT		64
+#define RTSDS_960X_BASE			0x40030
+
 struct rtsds_ctrl {
 	struct device *dev;
 	struct regmap *map;
@@ -91,7 +95,7 @@ static const char * const rtsds_page_name[RTSDS_DBG_PAGE_NAMES] = {
 	[0x06] = "TGR_PRO_0",	[0x07] = "TGR_PRO_1",
 	[0x08] = "TGX_STD_0",	[0x09] = "TGX_STD_1",
 	[0x0a] = "TGX_PRO_0",	[0x0b] = "TGX_PRO_1",
-	[0x1f] = "WDIG",
+	[0x0c] = "WSDS_DIG",	[0x1f] = "WDIG",
 	[0x20] = "ANA_MISC",	[0x21] = "ANA_COM",
 	[0x22] = "ANA_SPD",	[0x23] = "ANA_SPD_EXT",
 	[0x24] = "ANA_1G2",	[0x25] = "ANA_1G2_EXT",
@@ -414,6 +418,58 @@ static int rtsds_93xx_write(struct rtsds_ctrl *ctrl, int sds, int page, int regn
 	return rtsds_rt93xx_io(ctrl, backsds, subpage, regnum, RTSDS_93XX_CMD_WRITE);
 }
 
+/* RTL960X (at least RTL9607C) has 3 SerDes starting at 0xbb040030. Serdes 0 is
+ * for PON transceiver and Serdes 1/2 are HSGMII. The pages are laid out in a
+ * similar structure as RTL838x with SDS, SDS_EXT, FIB, FIB_EXT but not in the
+ * same order as the rest of the switch SoCs: WSDS_DIG is 1st, then goes WDIG,
+ * ANA_MISC, ANA_COM, ANA_SPD, ANA_1P25, ANA_GPON, ANA_EPON, and then ordinary
+ * SDS, SDS_EXT, FIB and FIB_EXT. The serdes 1/2 however only have WSDS_DIG,
+ * SDS, SDS_EXT, FIB and FIB_EXT pages. There is however a page WSDS_ANA that
+ * comes before WSDS_DIG at 0xbb040000 but it is ignored because it doesn't
+ * align nicely, is empty with full of DMY bit fields and is unused by SDK.
+ */
+
+static int rtsds_960x_reg_offset(int sds, int page, int regnum)
+{
+	if (page < 0x4)
+		return 0x7d0 + (sds << 12) + (page << 9) + (regnum << 2);
+	else if (page == 0x0c)
+		return (sds << 12) + (regnum << 2);
+	else if (page >= 0x1f && page <= 0x22 && sds == 0)
+		return 0x450 + ((page - 0x1f) << 7) + (regnum << 2);
+	else if (page == 0x24 && sds == 0)
+		return 0x650 + (regnum << 2);
+	else if (page == 0x30 && sds == 0)
+		return 0x6d0 + (regnum << 2);
+	else if (page == 0x32 && sds == 0)
+		return 0x750 + (regnum << 2);
+
+	return -EINVAL; /* hole */
+}
+
+static int rtsds_960x_read(struct rtsds_ctrl *ctrl, int sds, int page, int regnum)
+{
+	int offset = rtsds_960x_reg_offset(sds, page, regnum);
+	int ret, value;
+
+	if (offset < 0)
+		return 0;
+
+	ret = regmap_read(ctrl->map, ctrl->cfg->base + offset, &value);
+
+	return ret ? ret : value & RTSDS_VAL_MASK;
+}
+
+static int rtsds_960x_write(struct rtsds_ctrl *ctrl, int sds, int page, int regnum, u16 value)
+{
+	int offset = rtsds_960x_reg_offset(sds, page, regnum);
+
+	if (offset < 0)
+		return 0;
+
+	return regmap_write(ctrl->map, ctrl->cfg->base + offset, value);
+}
+
 static int rtsds_read(struct mii_bus *bus, int addr, int devad, int regnum)
 {
 	struct rtsds_ctrl *ctrl = bus->priv;
@@ -514,6 +570,15 @@ static const struct rtsds_config rtsds_931x_cfg = {
 	.write			= rtsds_93xx_write,
 };
 
+static const struct rtsds_config rtsds_960x_cfg = {
+	.sds_cnt		= RTSDS_960X_SDS_CNT,
+	.page_cnt		= RTSDS_960X_PAGE_CNT,
+	.base			= RTSDS_960X_BASE,
+	.get_backing_sds	= rtsds_83xx_get_backing_sds,
+	.read			= rtsds_960x_read,
+	.write			= rtsds_960x_write,
+};
+
 static const struct of_device_id rtsds_of_match[] = {
 	{
 		.compatible = "realtek,rtl8380-serdes-mdio",
@@ -530,6 +595,10 @@ static const struct of_device_id rtsds_of_match[] = {
 	{
 		.compatible = "realtek,rtl9311-serdes-mdio",
 		.data = &rtsds_931x_cfg,
+	},
+	{
+		.compatible = "realtek,rtl9607c-serdes-mdio",
+		.data = &rtsds_960x_cfg,
 	},
 	{ /* sentinel */ }
 };

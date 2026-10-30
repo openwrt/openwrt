@@ -10,7 +10,7 @@ CPU_TYPE:=cortex-a15
 CPU_SUBTYPE:=neon-vfpv4
 SUBTARGETS:=generic chromium
 
-KERNEL_PATCHVER:=6.12
+KERNEL_PATCHVER:=6.18
 
 KERNELNAME:=zImage Image dtbs
 

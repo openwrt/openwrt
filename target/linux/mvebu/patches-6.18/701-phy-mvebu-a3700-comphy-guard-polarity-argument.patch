@@ -1,0 +1,32 @@
+From 6883d0047f17e58625b231d8ea7af5d30b14300e Mon Sep 17 00:00:00 2001
+From: Štěpán Dalecký <daleckystepan@gmail.com>
+Date: Thu, 1 Oct 2026 14:21:10 +0200
+Subject: [PATCH] phy: marvell: a3700: check argument count before reading polarity
+
+The Armada 3700 COMPHY nodes use #phy-cells = <1>. The translator
+unconditionally reads args[1] to configure TX and RX polarity, although
+the phandle parser only initializes the supplied argument cells.
+Consequently, one-cell PHY references can configure polarity from an
+uninitialized argument slot.
+
+Default both polarity flags to false when the second argument is absent,
+and preserve polarity selection for callers supplying two arguments.
+
+Signed-off-by: Štěpán Dalecký <daleckystepan@gmail.com>
+---
+ drivers/phy/marvell/phy-mvebu-a3700-comphy.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/drivers/phy/marvell/phy-mvebu-a3700-comphy.c
++++ b/drivers/phy/marvell/phy-mvebu-a3700-comphy.c
+@@ -1232,8 +1232,8 @@ static struct phy *mvebu_a3700_comphy_xl
+ 		return ERR_PTR(-EINVAL);
+ 	}
+ 
+-	lane->invert_tx = args->args[1] & BIT(0);
+-	lane->invert_rx = args->args[1] & BIT(1);
++	lane->invert_tx = args->args_count > 1 && (args->args[1] & BIT(0));
++	lane->invert_rx = args->args_count > 1 && (args->args[1] & BIT(1));
+ 
+ 	return phy;
+ }

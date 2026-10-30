@@ -25,6 +25,7 @@
 #include <linux/phy.h>
 #include <linux/platform_device.h>
 #include <linux/reset.h>
+#include <linux/version.h>
 
 /* DMA channels */
 #define DMA_CHAN_WIDTH			0x10
@@ -280,7 +281,7 @@ static const struct of_device_id bcm6348_iudma_of_match[] = {
 	{ .compatible = "brcm,bcm6358-iudma", },
 	{ /* sentinel */ }
 };
-MODULE_DEVICE_TABLE(of, bcm6348_emac_of_match);
+MODULE_DEVICE_TABLE(of, bcm6348_iudma_of_match);
 
 static struct platform_driver bcm6348_iudma_driver = {
 	.driver = {
@@ -572,7 +573,11 @@ static int bcm6348_emac_refill_rx(struct net_device *ndev)
  */
 static void bcm6348_emac_refill_rx_timer(struct timer_list *t)
 {
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6,16,0)
 	struct bcm6348_emac *emac = from_timer(emac, t, rx_timeout);
+#else
+	struct bcm6348_emac *emac = timer_container_of(emac, t, rx_timeout);
+#endif
 	struct net_device *ndev = emac->net_dev;
 
 	spin_lock(&emac->rx_lock);
@@ -1289,7 +1294,7 @@ static int bcm6348_emac_stop(struct net_device *ndev)
 	napi_disable(&emac->napi);
 	if (ndev->phydev)
 		phy_stop(ndev->phydev);
-	del_timer_sync(&emac->rx_timeout);
+	timer_delete_sync(&emac->rx_timeout);
 
 	/* mask all interrupts */
 	emac_writel(emac, 0, ENET_IRMASK_REG);

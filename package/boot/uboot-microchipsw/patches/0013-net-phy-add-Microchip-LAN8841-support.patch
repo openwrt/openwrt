@@ -1,0 +1,230 @@
+From cffde5cc761235f8e1ee0bd9644eb5beb7f8043e Mon Sep 17 00:00:00 2001
+From: Robert Marko <robert.marko@sartura.hr>
+Date: Tue, 23 Dec 2025 14:17:01 +0100
+Subject: [PATCH 13/17] net: phy: add Microchip LAN8841 support
+
+Add driver for the Microchip LAN8841 PHY.
+
+It provides fixes for erratas, as well as support for enabling the required
+RGMII delays based on the PHY mode.
+
+It is based on the upstream Linux driver.
+
+Signed-off-by: Robert Marko <robert.marko@sartura.hr>
+---
+ drivers/net/phy/Kconfig     |   3 +
+ drivers/net/phy/Makefile    |   1 +
+ drivers/net/phy/microchip.c | 185 ++++++++++++++++++++++++++++++++++++
+ 3 files changed, 189 insertions(+)
+ create mode 100644 drivers/net/phy/microchip.c
+
+--- a/drivers/net/phy/Kconfig
++++ b/drivers/net/phy/Kconfig
+@@ -232,6 +232,9 @@ config PHY_MICREL_KSZ8XXX
+ 
+ endif # PHY_MICREL
+ 
++config PHY_MICROCHIP
++	bool "Microchip Ethernet PHYs support"
++
+ config PHY_MOTORCOMM
+ 	bool "Motorcomm PHYs"
+ 	help
+--- a/drivers/net/phy/Makefile
++++ b/drivers/net/phy/Makefile
+@@ -25,6 +25,7 @@ obj-y += mediatek/
+ obj-y += airoha/
+ obj-$(CONFIG_PHY_MICREL_KSZ8XXX) += micrel_ksz8xxx.o
+ obj-$(CONFIG_PHY_MICREL_KSZ90X1) += micrel_ksz90x1.o
++obj-$(CONFIG_PHY_MICROCHIP) += microchip.o
+ obj-$(CONFIG_PHY_MESON_GXL) += meson-gxl.o
+ obj-$(CONFIG_PHY_MOTORCOMM) += motorcomm.o
+ obj-$(CONFIG_PHY_NATSEMI) += natsemi.o
+--- /dev/null
++++ b/drivers/net/phy/microchip.c
+@@ -0,0 +1,185 @@
++// SPDX-License-Identifier: GPL-2.0+
++
++#include <phy.h>
++#include <linux/bitops.h>
++
++#define PHY_ID_MATCH_MODEL_MASK 	GENMASK(31, 4)
++#define PHY_ID_LAN8841			0x00221650
++
++#define LAN8841_MMD_COMMON_CTRL_REG	2
++#define LAN8841_RXC_DLL_CTRL		76
++#define LAN8841_TXC_DLL_CTRL		77
++#define LAN8841_DLL_ENABLE_DELAY	0
++
++#define LAN8841_MMD_TIMER_REG			0
++#define LAN8841_MMD0_REGISTER_17		17
++#define LAN8841_MMD0_REGISTER_17_DROP_OPT(x)	((x) & 0x3)
++#define LAN8841_MMD0_REGISTER_17_XMIT_TOG_TX_DIS	BIT(3)
++#define LAN8841_OPERATION_MODE_STRAP_OVERRIDE_LOW_REG	2
++#define LAN8841_OPERATION_MODE_STRAP_OVERRIDE_LOW_REG_MAGJACK	BIT(14)
++#define LAN8841_MMD_ANALOG_REG			28
++#define LAN8841_ANALOG_CONTROL_1		1
++#define LAN8841_ANALOG_CONTROL_1_PLL_TRIM(x)	(((x) & 0x3) << 5)
++#define LAN8841_ANALOG_CONTROL_10		13
++#define LAN8841_ANALOG_CONTROL_10_PLL_DIV(x)	((x) & 0x3)
++#define LAN8841_ANALOG_CONTROL_11		14
++#define LAN8841_ANALOG_CONTROL_11_LDO_REF(x)	(((x) & 0x7) << 12)
++#define LAN8841_TX_LOW_I_CH_C_D_POWER_MANAGMENT	69
++#define LAN8841_TX_LOW_I_CH_C_D_POWER_MANAGMENT_VAL 0xbffc
++#define LAN8841_BTRX_POWER_DOWN			70
++#define LAN8841_BTRX_POWER_DOWN_QBIAS_CH_A	BIT(0)
++#define LAN8841_BTRX_POWER_DOWN_BTRX_CH_A	BIT(1)
++#define LAN8841_BTRX_POWER_DOWN_QBIAS_CH_B	BIT(2)
++#define LAN8841_BTRX_POWER_DOWN_BTRX_CH_B	BIT(3)
++#define LAN8841_BTRX_POWER_DOWN_BTRX_CH_C	BIT(5)
++#define LAN8841_BTRX_POWER_DOWN_BTRX_CH_D	BIT(7)
++#define LAN8841_ADC_CHANNEL_MASK		198
++#define LAN8841_PTP_RX_PARSE_L2_ADDR_EN		370
++#define LAN8841_PTP_RX_PARSE_IP_ADDR_EN		371
++#define LAN8841_PTP_RX_VERSION			374
++#define LAN8841_PTP_TX_PARSE_L2_ADDR_EN		434
++#define LAN8841_PTP_TX_PARSE_IP_ADDR_EN		435
++#define LAN8841_PTP_TX_VERSION			438
++#define LAN8841_PTP_CMD_CTL			256
++#define LAN8841_PTP_CMD_CTL_PTP_ENABLE		BIT(2)
++#define LAN8841_PTP_CMD_CTL_PTP_DISABLE		BIT(1)
++#define LAN8841_PTP_CMD_CTL_PTP_RESET		BIT(0)
++#define LAN8841_PTP_RX_PARSE_CONFIG		368
++#define LAN8841_PTP_TX_PARSE_CONFIG		432
++#define LAN8841_PTP_RX_MODE			381
++#define LAN8841_PTP_INSERT_TS_EN		BIT(0)
++#define LAN8841_PTP_INSERT_TS_32BIT		BIT(1)
++
++static int lan8841_config_rgmii_delay(struct phy_device *phydev)
++{
++	u16 rxcdll_val, txcdll_val;
++	int ret;
++
++	switch (phydev->interface) {
++	case PHY_INTERFACE_MODE_RGMII:
++		rxcdll_val = BIT(14);
++		txcdll_val = BIT(14);
++		break;
++	case PHY_INTERFACE_MODE_RGMII_ID:
++		rxcdll_val = LAN8841_DLL_ENABLE_DELAY;
++		txcdll_val = LAN8841_DLL_ENABLE_DELAY;
++		break;
++	case PHY_INTERFACE_MODE_RGMII_RXID:
++		rxcdll_val = LAN8841_DLL_ENABLE_DELAY;
++		txcdll_val = BIT(14);
++		break;
++	case PHY_INTERFACE_MODE_RGMII_TXID:
++		rxcdll_val = BIT(14);
++		txcdll_val = LAN8841_DLL_ENABLE_DELAY;
++		break;
++	default:
++		return 0;
++	}
++
++	ret = phy_modify_mmd(phydev, LAN8841_MMD_COMMON_CTRL_REG,
++			     LAN8841_RXC_DLL_CTRL, BIT_MASK(14),
++			     rxcdll_val);
++	if (ret < 0)
++		return ret;
++
++	return phy_modify_mmd(phydev, LAN8841_MMD_COMMON_CTRL_REG,
++			      LAN8841_TXC_DLL_CTRL, BIT_MASK(14),
++			      txcdll_val);
++}
++
++static int lan8841_config_init(struct phy_device *phydev)
++{
++	int ret;
++
++	if (phy_interface_is_rgmii(phydev)) {
++		ret = lan8841_config_rgmii_delay(phydev);
++		if (ret < 0)
++			return ret;
++	}
++
++	/* Initialize the HW by resetting everything */
++	phy_modify_mmd(phydev, LAN8841_MMD_COMMON_CTRL_REG,
++		       LAN8841_PTP_CMD_CTL,
++		       LAN8841_PTP_CMD_CTL_PTP_RESET,
++		       LAN8841_PTP_CMD_CTL_PTP_RESET);
++
++	phy_modify_mmd(phydev, LAN8841_MMD_COMMON_CTRL_REG,
++		       LAN8841_PTP_CMD_CTL,
++		       LAN8841_PTP_CMD_CTL_PTP_ENABLE,
++		       LAN8841_PTP_CMD_CTL_PTP_ENABLE);
++
++	/* Don't process any frames */
++	phy_write_mmd(phydev, LAN8841_MMD_COMMON_CTRL_REG,
++		      LAN8841_PTP_RX_PARSE_CONFIG, 0);
++	phy_write_mmd(phydev, LAN8841_MMD_COMMON_CTRL_REG,
++		      LAN8841_PTP_TX_PARSE_CONFIG, 0);
++	phy_write_mmd(phydev, LAN8841_MMD_COMMON_CTRL_REG,
++		      LAN8841_PTP_TX_PARSE_L2_ADDR_EN, 0);
++	phy_write_mmd(phydev, LAN8841_MMD_COMMON_CTRL_REG,
++		      LAN8841_PTP_RX_PARSE_L2_ADDR_EN, 0);
++	phy_write_mmd(phydev, LAN8841_MMD_COMMON_CTRL_REG,
++		      LAN8841_PTP_TX_PARSE_IP_ADDR_EN, 0);
++	phy_write_mmd(phydev, LAN8841_MMD_COMMON_CTRL_REG,
++		      LAN8841_PTP_RX_PARSE_IP_ADDR_EN, 0);
++
++	/* Disable checking for minorVersionPTP field */
++	phy_write_mmd(phydev, LAN8841_MMD_COMMON_CTRL_REG,
++		      LAN8841_PTP_RX_VERSION, 0xff00);
++	phy_write_mmd(phydev, LAN8841_MMD_COMMON_CTRL_REG,
++		      LAN8841_PTP_TX_VERSION, 0xff00);
++
++	/* 100BT Clause 40 improvement errata */
++	phy_write_mmd(phydev, LAN8841_MMD_ANALOG_REG,
++		      LAN8841_ANALOG_CONTROL_1,
++		      LAN8841_ANALOG_CONTROL_1_PLL_TRIM(0x2));
++	phy_write_mmd(phydev, LAN8841_MMD_ANALOG_REG,
++		      LAN8841_ANALOG_CONTROL_10,
++		      LAN8841_ANALOG_CONTROL_10_PLL_DIV(0x1));
++
++	/* 10M/100M Ethernet Signal Tuning Errata for Shorted-Center Tap
++	 * Magnetics
++	 */
++	ret = phy_read_mmd(phydev, LAN8841_MMD_COMMON_CTRL_REG,
++			   LAN8841_OPERATION_MODE_STRAP_OVERRIDE_LOW_REG);
++	if (ret & LAN8841_OPERATION_MODE_STRAP_OVERRIDE_LOW_REG_MAGJACK) {
++		phy_write_mmd(phydev, LAN8841_MMD_ANALOG_REG,
++			      LAN8841_TX_LOW_I_CH_C_D_POWER_MANAGMENT,
++			      LAN8841_TX_LOW_I_CH_C_D_POWER_MANAGMENT_VAL);
++		phy_write_mmd(phydev, LAN8841_MMD_ANALOG_REG,
++			      LAN8841_BTRX_POWER_DOWN,
++			      LAN8841_BTRX_POWER_DOWN_QBIAS_CH_A |
++			      LAN8841_BTRX_POWER_DOWN_BTRX_CH_A |
++			      LAN8841_BTRX_POWER_DOWN_QBIAS_CH_B |
++			      LAN8841_BTRX_POWER_DOWN_BTRX_CH_B |
++			      LAN8841_BTRX_POWER_DOWN_BTRX_CH_C |
++			      LAN8841_BTRX_POWER_DOWN_BTRX_CH_D);
++	}
++
++	/* LDO Adjustment errata */
++	phy_write_mmd(phydev, LAN8841_MMD_ANALOG_REG,
++		      LAN8841_ANALOG_CONTROL_11,
++		      LAN8841_ANALOG_CONTROL_11_LDO_REF(1));
++
++	/* 100BT RGMII latency tuning errata */
++	phy_write_mmd(phydev, MDIO_MMD_PMAPMD,
++		      LAN8841_ADC_CHANNEL_MASK, 0x0);
++	phy_write_mmd(phydev, LAN8841_MMD_TIMER_REG,
++		      LAN8841_MMD0_REGISTER_17,
++		      LAN8841_MMD0_REGISTER_17_DROP_OPT(2) |
++		      LAN8841_MMD0_REGISTER_17_XMIT_TOG_TX_DIS);
++
++	/* Disable Power Down */
++	phy_modify(phydev, MDIO_DEVAD_NONE, MII_BMCR, BMCR_PDOWN, 0);
++
++	return 0;
++}
++
++U_BOOT_PHY_DRIVER(lan8841) = {
++	.name = "Microchip LAN8841",
++	.uid = PHY_ID_LAN8841,
++	.mask = PHY_ID_MATCH_MODEL_MASK,
++	.features = PHY_GBIT_FEATURES,
++	.config = &lan8841_config_init,
++	.startup = &genphy_startup,
++	.shutdown = &genphy_shutdown,
++};

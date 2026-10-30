@@ -15,6 +15,7 @@ PKG_HASH:=06c9e13bdf7eb24d4ceb6b59205a4f67c2c7e7213119644430fe82fbd14a0abb
 PKG_CPE_ID:=cpe:/a:gnu:bison
 
 HOST_BUILD_PARALLEL:=1
+HOST_CONFIGURE_CACHE:=1
 
 include $(INCLUDE_DIR)/host-build.mk
 

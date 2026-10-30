@@ -1,0 +1,203 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Tue, 6 Oct 2026 07:58:59 +0200
+Subject: [PATCH] AP: Restore BSS Color Disabled when no colour change starts
+
+hostapd_switch_color_timeout_handler() and
+hostapd_ctrl_iface_color_change() set he_bss_color_disabled before they
+start the colour change on each BSS of the radio. If
+hostapd_fill_cca_settings() or hostapd_drv_switch_color() fails on every
+BSS, no colour change starts, but the configuration keeps BSS Color
+Disabled. The next Beacon update then disables BSS Color without a
+colour change, and COLOR_CHANGE still reports success.
+
+Start the colour change of both in one function. If no colour change
+started, restore the previous state of BSS Color Disabled and make
+COLOR_CHANGE fail.
+
+COLOR_CHANGE thus also frees the Unsolicited Broadcast Probe Response
+template that hostapd_fill_cca_settings() builds on 6 GHz, as the
+timeout handler already did. Before, each COLOR_CHANGE leaked one
+template per BSS.
+
+Fixes: 2d5e6c33e452 ("hostapd: Set BSS Color Disabled=1 during CCA countdown")
+Fixes: 51b5b9512ffb ("Update Probe Response template on BSS color change")
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+
+--- a/hostapd/ctrl_iface.c
++++ b/hostapd/ctrl_iface.c
+@@ -2571,12 +2571,9 @@ static int hostapd_ctrl_iface_color_chan
+ 					   const char *pos)
+ {
+ #ifdef NEED_AP_MLME
+-	struct cca_settings settings;
+-	int ret, color;
+ 	unsigned int i;
+ 	char *end;
+-
+-	os_memset(&settings, 0, sizeof(settings));
++	int color;
+ 
+ 	color = strtol(pos, &end, 10);
+ 	if (pos == end || color < 0 || color > 63) {
+@@ -2623,38 +2620,18 @@ static int hostapd_ctrl_iface_color_chan
+ 		return -1;
+ 	}
+ 
+-	/* IEEE Std 802.11-2024, 26.17.3.4: BSS Color Disabled shall be 1 during
+-	 * the time leading up to the BSS color change TBTT.
+-	 */
+-	hostapd_bss_color_disabled_set(iface, 1);
+-
+-	for (i = 0; i < iface->num_bss; i++) {
+-		struct hostapd_data *bss = iface->bss[i];
+-
+-		hostapd_cleanup_cca_params(bss);
+-
+-		bss->cca_color = color;
+-		bss->cca_count = 10;
+-
+-		if (hostapd_fill_cca_settings(bss, &settings)) {
+-			wpa_printf(MSG_DEBUG,
+-				   "color_change: Filling CCA settings failed for color: %d\n",
+-				   color);
+-			hostapd_cleanup_cca_params(bss);
+-			continue;
+-		}
+-		eloop_cancel_timeout(hostapd_switch_color_timeout_handler,
+-				     bss, NULL);
+-
+-		wpa_printf(MSG_DEBUG, "Setting user selected color: %d", color);
+-		ret = hostapd_drv_switch_color(bss, &settings);
+-		if (ret)
+-			hostapd_cleanup_cca_params(bss);
+-
+-		free_beacon_data(&settings.beacon_cca);
+-		free_beacon_data(&settings.beacon_after);
++	wpa_printf(MSG_DEBUG, "Setting user selected color: %d", color);
++	if (hostapd_cca_start(iface, color)) {
++		wpa_printf(MSG_ERROR,
++			   "color_change: Color change failed for color: %d",
++			   color);
++		return -1;
+ 	}
+ 
++	for (i = 0; i < iface->num_bss; i++)
++		eloop_cancel_timeout(hostapd_switch_color_timeout_handler,
++				     iface->bss[i], NULL);
++
+ 	return 0;
+ #else /* NEED_AP_MLME */
+ 	return -1;
+--- a/src/ap/hostapd.c
++++ b/src/ap/hostapd.c
+@@ -5100,6 +5100,53 @@ int hostapd_fill_cca_settings(struct hos
+ }
+ 
+ 
++/* IEEE Std 802.11-2024, 26.17.3.4: BSS Color Disabled is 1 up to the BSS
++ * color change TBTT, in beacon_cca (built inside hostapd_fill_cca_settings())
++ * and in any Beacon frame rebuilt during the countdown. */
++int hostapd_cca_start(struct hostapd_iface *iface, u8 color)
++{
++	u8 was_disabled = iface->conf->he_op.he_bss_color_disabled;
++	unsigned int started = 0;
++	size_t i;
++
++	hostapd_bss_color_disabled_set(iface, 1);
++
++	for (i = 0; i < iface->num_bss; i++) {
++		struct hostapd_data *bss = iface->bss[i];
++		struct cca_settings settings;
++		int ret;
++
++		os_memset(&settings, 0, sizeof(settings));
++		hostapd_cleanup_cca_params(bss);
++		bss->cca_color = color;
++		bss->cca_count = 10;
++
++		if (hostapd_fill_cca_settings(bss, &settings)) {
++			hostapd_cleanup_cca_params(bss);
++			continue;
++		}
++
++		ret = hostapd_drv_switch_color(bss, &settings);
++		if (ret)
++			hostapd_cleanup_cca_params(bss);
++		else
++			started++;
++
++		free_beacon_data(&settings.beacon_cca);
++		free_beacon_data(&settings.beacon_after);
++		os_free(settings.ubpr.unsol_bcast_probe_resp_tmpl);
++	}
++
++	if (started)
++		return 0;
++
++	/* No colour change started, so the beacons still carry the state BSS
++	 * Color Disabled had before; the configuration takes it back. */
++	hostapd_bss_color_disabled_set(iface, was_disabled);
++	return -1;
++}
++
++
+ void hostapd_switch_color_timeout_handler(void *eloop_data, void *user_ctx)
+ {
+ 	struct hostapd_data *hapd = (struct hostapd_data *) eloop_data;
+@@ -5116,14 +5163,6 @@ void hostapd_switch_color_timeout_handle
+ 	if (delta_t < DOT11BSS_COLOR_COLLISION_AP_PERIOD)
+ 		return;
+ 
+-	/* IEEE Std 802.11-2024, 26.17.3.5.1: once the BSS color collision has
+-	 * persisted for dot11BSSColorCollisionAPPeriod the AP shall set BSS
+-	 * Color Disabled to 1. Set it now so that beacon_cca (built inside
+-	 * hostapd_fill_cca_settings()) and any incidental beacon rebuild
+-	 * during the CCA countdown carry the correct Disabled=1 state.
+-	 */
+-	hostapd_bss_color_disabled_set(hapd->iface, 1);
+-
+ 	avoided = hostapd_bss_colors_avoided(hapd->iface);
+ 	r = os_random() % HE_OPERATION_BSS_COLOR_MAX;
+ 	for (i = 0; i < HE_OPERATION_BSS_COLOR_MAX; i++) {
+@@ -5144,29 +5183,7 @@ void hostapd_switch_color_timeout_handle
+ 		return;
+ 	}
+ 
+-	for (b = 0; b < hapd->iface->num_bss; b++) {
+-		struct hostapd_data *bss = hapd->iface->bss[b];
+-		struct cca_settings settings;
+-		int ret;
+-
+-		os_memset(&settings, 0, sizeof(settings));
+-		hostapd_cleanup_cca_params(bss);
+-		bss->cca_color = r;
+-		bss->cca_count = 10;
+-
+-		if (hostapd_fill_cca_settings(bss, &settings)) {
+-			hostapd_cleanup_cca_params(bss);
+-			continue;
+-		}
+-
+-		ret = hostapd_drv_switch_color(bss, &settings);
+-		if (ret)
+-			hostapd_cleanup_cca_params(bss);
+-
+-		free_beacon_data(&settings.beacon_cca);
+-		free_beacon_data(&settings.beacon_after);
+-		os_free(settings.ubpr.unsol_bcast_probe_resp_tmpl);
+-	}
++	hostapd_cca_start(hapd->iface, r);
+ }
+ 
+ 
+--- a/src/ap/hostapd.h
++++ b/src/ap/hostapd.h
+@@ -968,6 +968,7 @@ int hostapd_build_beacon_data(struct hos
+ void free_beacon_data(struct beacon_data *beacon);
+ int hostapd_fill_cca_settings(struct hostapd_data *hapd,
+ 			      struct cca_settings *settings);
++int hostapd_cca_start(struct hostapd_iface *iface, u8 color);
+ void hostapd_switch_color_timeout_handler(void *eloop_data, void *user_ctx);
+ void hostapd_bss_colors_in_use_timeout(void *eloop_data, void *user_ctx);
+ bool hostapd_is_cca_in_progress(struct hostapd_iface *iface);

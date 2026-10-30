@@ -4,9 +4,15 @@ import { readfile, writefile, realpath, glob, basename, unlink, open, rename } f
 import { is_equal } from "/usr/share/hostap/common.uc";
 let nl = require("nl80211");
 
-let board_file = "/etc/board.json";
-let prev_board_data = json(readfile(board_file));
-let board_data = json(readfile(board_file));
+let base_file = "/etc/board-base.json";
+let board_file = "/tmp/sysinfo/board.json";
+let base_data = readfile(base_file);
+if (!base_data)
+	exit(1);
+
+let prev_data = readfile(board_file);
+let prev_board_data = prev_data ? json(prev_data) : null;
+let board_data = json(base_data);
 
 function phy_idx(name) {
 	return +rtrim(readfile(`/sys/class/ieee80211/${name}/index`));
@@ -26,16 +32,6 @@ function phy_path(name) {
 		devpath += `+${ofs}`;
 
 	return devpath;
-}
-
-function cleanup() {
-	let wlan = board_data.wlan;
-
-	for (let name in wlan)
-		if (substr(name, 0, 3) == "phy")
-			delete wlan[name];
-		else
-			delete wlan[name].info;
 }
 
 function wiphy_path_match(entry_path, path) {
@@ -253,7 +249,6 @@ function wiphy_detect() {
 	}
 }
 
-cleanup();
 wiphy_detect();
 if (!is_equal(prev_board_data, board_data)) {
 	let new_file = board_file + ".new";

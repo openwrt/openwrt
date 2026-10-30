@@ -1,0 +1,157 @@
+From 738c0499881fdd046f4793ec99fdc945298cd152 Mon Sep 17 00:00:00 2001
+From: Simon Kelley <simon@thekelleys.org.uk>
+Date: Tue, 20 Oct 2026 23:19:11 +0100
+Subject: [PATCH] Fix OOB heap write in blockdata_read()
+
+A flaw in the blockdata_read() function allows an attacker to overflow
+heap buffers. If memory allocation fails whilst reading data from
+an IPC pipe, some data is left unread in the pipe. This has the effect of
+desynchronising further reads from the pipe and allows an attacker
+to overflow a heap buffer.
+
+Note that the attack depends on running the dnsmasq process out of memory
+so that calls to malloc() begin to fail. This is difficult to do on
+most platforms, unless a small ulimit is set on the size of the
+dnsmasq process. This makes practical attacks somewhat difficult.
+
+Thanks to Michel Belleau for finding and characterising this vulnerability.
+---
+ src/blockdata.c | 71 +++++++++++++++++++++++++++++++++----------------
+ src/cache.c     | 15 ++++++++---
+ 2 files changed, 60 insertions(+), 26 deletions(-)
+
+--- a/src/blockdata.c
++++ b/src/blockdata.c
+@@ -16,7 +16,9 @@
+ 
+ #include "dnsmasq.h"
+ 
+-static struct blockdata *keyblock_free;
++static struct blockdata *new_block(void);
++
++static struct blockdata *keyblock_free, *fallback;
+ static unsigned int blockdata_count, blockdata_hwm, blockdata_alloced;
+ 
+ static void add_blocks(int n)
+@@ -48,7 +50,11 @@ void blockdata_init(void)
+   /* Note that daemon->cachesize is enforced to have non-zero size if OPT_DNSSEC_VALID is set */  
+   if (option_bool(OPT_DNSSEC_VALID))
+     add_blocks(daemon->cachesize);
+-}
++
++  /* make sure we have one block to fall back on. */
++  if (!(fallback = new_block()))
++    die(_("Blockdata init: no memory"), NULL, EC_MISC);
++ }
+ 
+ void blockdata_report(void)
+ {
+@@ -84,36 +90,47 @@ static struct blockdata *blockdata_alloc
+   struct blockdata *block, *ret = NULL;
+   struct blockdata **prev = &ret;
+   size_t blen;
+-
+-  do
++  int fail;
++  
++  for (fail = 0; len != 0; len -= blen)
+     {
+-      if (!(block = new_block()))
+-	{
+-	  /* failed to alloc, free partial chain */
+-	  blockdata_free(ret);
+-	  return NULL;
+-	}
++       blen = len > KEYBLOCK_LEN ? KEYBLOCK_LEN : len;
+ 
+-      if ((blen = len > KEYBLOCK_LEN ? KEYBLOCK_LEN : len) > 0)
++       if (!fail)
+ 	{
+-	  if (data)
++	  if ((block = new_block()))
+ 	    {
+-	      memcpy(block->key, data, blen);
+-	      data += blen;
++	      *prev = block;
++	      prev = &block->next;
+ 	    }
+-	  else if (!read_write(fd, block->key, blen, RW_READ))
++	  else
+ 	    {
+-	      /* failed read free partial chain */
+-	      blockdata_free(ret);
+-	      return NULL;
++	      /* Failed to alloc, use the pre-allocated fall-back. 
++		 This allows us to always read the specified amount of data from the fd. */
++	      fail = 1;
++	      block = fallback;
+ 	    }
+ 	}
+-      
+-      len -= blen;
+-      *prev = block;
+-      prev = &block->next;
+-    } while (len != 0);
+-  
++
++       if (data)
++	 {
++	   memcpy(block->key, data, blen);
++	   data += blen;
++	 }
++       else if (!read_write(fd, block->key, blen, RW_READ))
++	 {
++	   fail = 1;
++	   break;
++	 }
++    }
++  
++  if (fail)
++    {
++      /* failed, free partial chain */
++      blockdata_free(ret);
++      return NULL;
++    }
++
+   return ret;
+ }
+ 
+@@ -235,6 +252,14 @@ void blockdata_write(struct blockdata *b
+     }
+ }
+ 
++/* NOTE: this can fail (NULL return) for three possible reasons.
++   1) len == 0 - trivial
++   2) end of stream. 
++   3) malloc failure when allocating blocks.
++
++   Unless EOF is encountered, len octets will always be read from the stream,
++   even in memory allocation fails.
++*/
+ struct blockdata *blockdata_read(int fd, size_t len)
+ {
+   return blockdata_alloc_real(fd, NULL, len);
+--- a/src/cache.c
++++ b/src/cache.c
+@@ -1039,9 +1039,18 @@ int cache_recv_insert(time_t now, int fd
+ 		unsigned short class = C_IN;
+ 		struct blockdata *block = NULL;
+ 
+-		if ((flags & F_RR) && !(flags & F_NEG) && (flags & F_KEYTAG)
+-		    && !(block = addr.rrblock.rrdata = blockdata_read(fd, addr.rrblock.datalen)))
+-		  continue;
++		/* Note that blockdata_read() can return NULL either
++		   because the stream ended, OR memory allocation failed.
++		   We continue here rather than returning 0 to finish draining 
++		   the pipe in the second case. If the stream ended, the read
++		   of the next length at the top of the loop will fail
++		   and we'll return 0 there. */
++		if (flags & F_RR)
++		  {
++		    if (!(flags & F_NEG) && (flags & F_KEYTAG) &&
++			!(block = addr.rrblock.rrdata = blockdata_read(fd, addr.rrblock.datalen)))
++		      continue;
++		  }
+ #ifdef HAVE_DNSSEC
+ 		else if (flags & F_DNSKEY)
+ 		  {

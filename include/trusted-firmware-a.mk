@@ -84,6 +84,11 @@ endef
 
 DTC=$(wildcard $(LINUX_DIR)/scripts/dtc/dtc)
 
+# TF-A embeds __TIME__ and __DATE__ by default, which makes the binaries
+# differ on every build.
+TFA_BUILD_TIMESTAMP=$(if $(PKG_SOURCE_DATE_EPOCH),$(shell LC_ALL=C perl -MPOSIX \
+	-e 'print strftime("%H:%M:%S, %b %e %Y", gmtime($(PKG_SOURCE_DATE_EPOCH)))'))
+
 define Build/Compile/Trusted-Firmware-A
 	+unset CC; \
 	$(MAKE) $(PKG_JOBS) -C $(PKG_BUILD_DIR) \
@@ -92,6 +97,7 @@ define Build/Compile/Trusted-Firmware-A
 		$(if $(DTC),DTC="$(DTC)") \
 		PLAT=$(PLAT) \
 		BUILD_STRING="OpenWrt $(PKG_VERSION_PREFIX)$(PKG_VERSION)-$(PKG_RELEASE) ($(VARIANT))" \
+		$(if $(TFA_BUILD_TIMESTAMP),BUILD_MESSAGE_TIMESTAMP='"$(TFA_BUILD_TIMESTAMP)"') \
 		$(TFA_MAKE_FLAGS)
 endef
 

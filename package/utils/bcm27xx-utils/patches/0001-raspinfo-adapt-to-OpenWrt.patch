@@ -1,4 +1,4 @@
-From 0db3fb3119eda8c2360454c2a01f84602a879c38 Mon Sep 17 00:00:00 2001
+From 3620d4ead69a4f928d8b81f24785ba7504197e0d Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?=C3=81lvaro=20Fern=C3=A1ndez=20Rojas?= <noltari@gmail.com>
 Date: Tue, 16 Jan 2024 15:32:12 +0100
 Subject: [PATCH] raspinfo: adapt to OpenWrt
@@ -8,8 +8,8 @@ Content-Transfer-Encoding: 8bit
 
 Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
 ---
- raspinfo/raspinfo | 206 +++-------------------------------------------
- 1 file changed, 11 insertions(+), 195 deletions(-)
+ raspinfo/raspinfo | 214 ++++------------------------------------------
+ 1 file changed, 15 insertions(+), 199 deletions(-)
 
 --- a/raspinfo/raspinfo
 +++ b/raspinfo/raspinfo
@@ -270,7 +270,7 @@ Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
  elif command -v raspi-gpio > /dev/null; then
     raspi-gpio get 2>&1
  else
-@@ -335,9 +151,9 @@ echo "------------------"
+@@ -335,11 +151,11 @@ echo "------------------"
  echo
  
  if command -v vcdbg > /dev/null; then
@@ -280,8 +280,11 @@ Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
 -   sudo vclog --msg 2>&1
 +   vclog --msg 2>&1
  else
-    echo "vcdbg not found"
+-   echo "vcdbg not found"
++   echo "vcdbg/vclog not found"
  fi
+ 
+ echo
 @@ -347,16 +163,16 @@ echo "dmesg log"
  echo "---------"
  echo

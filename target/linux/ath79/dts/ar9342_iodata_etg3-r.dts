@@ -111,9 +111,9 @@
 &mdio0 {
 	status = "okay";
 
-	phy0: ethernet-phy@0 {
-		reg = <0>;
-		phy-mode = "rgmii";
+	ethernet-switch@10 {
+		compatible = "qca,ar8327";
+		reg = <0x10>;
 
 		qca,ar8327-initvals = <
 			0x04 0x07600000 /* PORT0 PAD MODE CTRL */
@@ -132,7 +132,6 @@
 	pll-data = <0x0e000000 0x00000101 0x00001616>;
 
 	phy-mode = "rgmii";
-	phy-handle = <&phy0>;
 
 	nvmem-cells = <&macaddr_uboot_ethaddr 0>;
 	nvmem-cell-names = "mac-address";
@@ -143,5 +142,10 @@
 		rgmii-gmac0 = <1>;
 		rxd-delay = <3>;
 		rxdv-delay = <3>;
+	};
+
+	fixed-link {
+		speed = <1000>;
+		full-duplex;
 	};
 };

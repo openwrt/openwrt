@@ -1,0 +1,176 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Tue, 20 Oct 2026 14:47:14 +0200
+Subject: [PATCH] AP MLD: Use the EAP server mode of a non-MLO station's link
+
+The links of an AP MLD share the EAP server configuration of the first
+BSS, and with it the eap_server setting of that BSS. The setting is a
+per-BSS parameter and can differ between the links, for example where
+WPS, which needs the internal EAP server, runs on some links only.
+Where the first BSS has eap_server=0, eap_sm_Policy_getDecision() picks
+the passthrough mode for a non-MLO station on another link after its
+EAP-Response/Identity, although that link has eap_server=1. The
+response goes to the RADIUS client, and a WPS Enrollee on that link
+never gets an EAP-WSC exchange.
+
+Give the EAP session of a non-MLO station on a link other than the
+first the EAP server mode of that link, as it already gets the WPS
+context of that link. An MLO station keeps the mode of the shared
+configuration, since its one session serves all links. A station of
+the first BSS keeps it as well, since radius_server_init() enables the
+internal EAP server in that configuration. The RADIUS server keeps the
+mode of its configuration for its own sessions.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+
+--- a/src/ap/ieee802_1x.c
++++ b/src/ap/ieee802_1x.c
+@@ -1053,6 +1053,18 @@ static void handle_eap(struct hostapd_da
+ }
+ 
+ 
++/* The links of an AP MLD share the EAP server configuration of the first BSS,
++ * whose mode the RADIUS server can enable, while each link has an eap_server
++ * parameter of its own. One session of an MLO station serves all its links. */
++static bool ieee802_1x_sta_eap_server(struct hostapd_data *hapd,
++				      struct sta_info *sta)
++{
++	if (hostapd_mld_is_first_bss(hapd) || ap_sta_is_mld(hapd, sta))
++		return hapd->eap_cfg->eap_server;
++	return hapd->conf->eap_server;
++}
++
++
+ struct eapol_state_machine *
+ ieee802_1x_alloc_eapol_sm(struct hostapd_data *hapd, struct sta_info *sta)
+ {
+@@ -1068,7 +1080,8 @@ ieee802_1x_alloc_eapol_sm(struct hostapd
+ 	return eapol_auth_alloc(hapd->eapol_auth, sta->addr, flags,
+ 				sta->wps_ie, sta->p2p_ie, sta,
+ 				sta->identity, sta->radius_cui, hapd->wps,
+-				hapd->msg_ctx);
++				hapd->msg_ctx,
++				ieee802_1x_sta_eap_server(hapd, sta));
+ }
+ 
+ 
+--- a/src/eap_server/eap.h
++++ b/src/eap_server/eap.h
+@@ -273,9 +273,11 @@ struct eap_config {
+ struct eap_session_data {
+ 	const struct wpabuf *assoc_wps_ie;
+ 	/* The links of an AP MLD share the EAP server configuration, while
+-	 * each link has a WPS context and a control interface of its own. */
++	 * each link has a WPS context, a control interface and an EAP server
++	 * mode of its own. */
+ 	struct wps_context *wps;
+ 	void *msg_ctx;
++	bool eap_server;
+ 	const struct wpabuf *assoc_p2p_ie;
+ 	const u8 *peer_addr;
+ #ifdef CONFIG_TESTING_OPTIONS
+--- a/src/eap_server/eap_i.h
++++ b/src/eap_server/eap_i.h
+@@ -190,6 +190,7 @@ struct eap_sm {
+ 	struct wpabuf *assoc_p2p_ie;
+ 	struct wps_context *wps;
+ 	void *msg_ctx;
++	bool eap_server;
+ 
+ 	bool start_reauth;
+ 
+--- a/src/eap_server/eap_server.c
++++ b/src/eap_server/eap_server.c
+@@ -222,7 +222,7 @@ SM_STATE(EAP, INITIALIZE)
+ {
+ 	SM_ENTRY(EAP, INITIALIZE);
+ 
+-	if (sm->eap_if.eapRestart && !sm->cfg->eap_server && sm->identity) {
++	if (sm->eap_if.eapRestart && !sm->eap_server && sm->identity) {
+ 		/*
+ 		 * Need to allow internal Identity method to be used instead
+ 		 * of passthrough at the beginning of reauthentication.
+@@ -861,7 +861,7 @@ SM_STATE(EAP, INITIATE_RECEIVED)
+ 	os_memcpy(nai, parse.keyname, parse.keyname_len);
+ 	nai[parse.keyname_len] = '\0';
+ 
+-	if (!sm->cfg->eap_server) {
++	if (!sm->eap_server) {
+ 		/*
+ 		 * In passthrough case, EAP-Initiate/Re-auth replaces
+ 		 * EAP Identity exchange. Use keyName-NAI as the user identity
+@@ -1351,7 +1351,7 @@ SM_STEP(EAP)
+ 		else if (sm->decision == DECISION_INITIATE_REAUTH_START)
+ 			SM_ENTER(EAP, INITIATE_REAUTH_START);
+ #ifdef CONFIG_ERP
+-		else if (sm->cfg->eap_server && sm->cfg->erp && sm->rxInitiate)
++		else if (sm->eap_server && sm->cfg->erp && sm->rxInitiate)
+ 			SM_ENTER(EAP, INITIATE_RECEIVED);
+ #endif /* CONFIG_ERP */
+ 		else
+@@ -1361,7 +1361,7 @@ SM_STEP(EAP)
+ 		SM_ENTER(EAP, SEND_REQUEST);
+ 		break;
+ 	case EAP_INITIATE_RECEIVED:
+-		if (!sm->cfg->eap_server)
++		if (!sm->eap_server)
+ 			SM_ENTER(EAP, SELECT_ACTION);
+ 		break;
+ 	case EAP_TIMEOUT_FAILURE:
+@@ -1721,7 +1721,7 @@ static enum eap_type eap_sm_Policy_getNe
+ 
+ static int eap_sm_Policy_getDecision(struct eap_sm *sm)
+ {
+-	if (!sm->cfg->eap_server && sm->identity && !sm->start_reauth) {
++	if (!sm->eap_server && sm->identity && !sm->start_reauth) {
+ 		wpa_printf(MSG_DEBUG, "EAP: getDecision: -> PASSTHROUGH");
+ 		return DECISION_PASSTHROUGH;
+ 	}
+@@ -1870,6 +1870,7 @@ struct eap_sm * eap_server_sm_init(void
+ 		sm->assoc_p2p_ie = wpabuf_dup(sess->assoc_p2p_ie);
+ 	sm->wps = sess->wps;
+ 	sm->msg_ctx = sess->msg_ctx;
++	sm->eap_server = sess->eap_server;
+ 	if (sess->peer_addr)
+ 		os_memcpy(sm->peer_addr, sess->peer_addr, ETH_ALEN);
+ #ifdef CONFIG_TESTING_OPTIONS
+--- a/src/eapol_auth/eapol_auth_sm.c
++++ b/src/eapol_auth/eapol_auth_sm.c
+@@ -789,7 +789,7 @@ eapol_auth_alloc(struct eapol_authentica
+ 		 int flags, const struct wpabuf *assoc_wps_ie,
+ 		 const struct wpabuf *assoc_p2p_ie, void *sta_ctx,
+ 		 const char *identity, const char *radius_cui,
+-		 struct wps_context *wps, void *msg_ctx)
++		 struct wps_context *wps, void *msg_ctx, bool eap_server)
+ {
+ 	struct eapol_state_machine *sm;
+ 	struct eap_session_data eap_sess;
+@@ -848,6 +848,7 @@ eapol_auth_alloc(struct eapol_authentica
+ 	eap_sess.peer_addr = addr;
+ 	eap_sess.wps = wps;
+ 	eap_sess.msg_ctx = msg_ctx;
++	eap_sess.eap_server = eap_server;
+ 	sm->eap = eap_server_sm_init(sm, &eapol_cb, eapol->conf.eap_cfg,
+ 				     &eap_sess);
+ 	if (sm->eap == NULL) {
+--- a/src/eapol_auth/eapol_auth_sm.h
++++ b/src/eapol_auth/eapol_auth_sm.h
+@@ -74,7 +74,7 @@ eapol_auth_alloc(struct eapol_authentica
+ 		 int flags, const struct wpabuf *assoc_wps_ie,
+ 		 const struct wpabuf *assoc_p2p_ie, void *sta_ctx,
+ 		 const char *identity, const char *radius_cui,
+-		 struct wps_context *wps, void *msg_ctx);
++		 struct wps_context *wps, void *msg_ctx, bool eap_server);
+ void eapol_auth_free(struct eapol_state_machine *sm);
+ void eapol_auth_step(struct eapol_state_machine *sm);
+ int eapol_auth_dump_state(struct eapol_state_machine *sm, char *buf,
+--- a/src/radius/radius_server.c
++++ b/src/radius/radius_server.c
+@@ -661,6 +661,7 @@ radius_server_get_new_session(struct rad
+ 	os_memset(&eap_sess, 0, sizeof(eap_sess));
+ 	eap_sess.wps = data->eap_cfg->wps;
+ 	eap_sess.msg_ctx = data->eap_cfg->msg_ctx;
++	eap_sess.eap_server = data->eap_cfg->eap_server;
+ 	radius_server_testing_options(sess, &eap_sess);
+ 	sess->eap = eap_server_sm_init(sess, &radius_server_eapol_cb,
+ 				       data->eap_cfg, &eap_sess);

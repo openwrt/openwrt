@@ -1,0 +1,56 @@
+From bbd4f8e9217162a79cd0b016b646b3afcbbf7629 Mon Sep 17 00:00:00 2001
+From: Ping-Ke Shih <pkshih@realtek.com>
+Date: Thu, 24 Sep 2026 08:46:37 +0800
+Subject: [PATCH] wifi: rtw88: TX report with long timeout for non-PCIE devices
+
+Many USB and SDIO devices can't report TX status within 500 ms, and
+extending to 2500 ms as tested USB/SDIO devices can fix the problem [1].
+To avoid adding chip ID one by one, and this change looks harmless.
+Keep PCIE using short timeout, and others use long timeout.
+
+[1] https://lore.kernel.org/linux-wireless/20260921165343.8131-1-pepe.schlehofer@gmail.com/
+
+Signed-off-by: Ping-Ke Shih <pkshih@realtek.com>
+Link: https://lore.kernel.org/linux-wireless/20260924004637.9958-1-pkshih@realtek.com/
+---
+ drivers/net/wireless/realtek/rtw88/tx.c | 9 +++++----
+ drivers/net/wireless/realtek/rtw88/tx.h | 3 ++-
+ 2 files changed, 7 insertions(+), 5 deletions(-)
+
+--- a/drivers/net/wireless/realtek/rtw88/tx.c
++++ b/drivers/net/wireless/realtek/rtw88/tx.c
+@@ -196,7 +196,7 @@ void rtw_tx_report_purge_timer(struct ti
+ void rtw_tx_report_enqueue(struct rtw_dev *rtwdev, struct sk_buff *skb, u8 sn)
+ {
+ 	struct rtw_tx_report *tx_report = &rtwdev->tx_report;
+-	unsigned long timeout = RTW_TX_PROBE_TIMEOUT;
++	unsigned long timeout;
+ 	unsigned long flags;
+ 	u8 *drv_data;
+ 
+@@ -208,9 +208,10 @@ void rtw_tx_report_enqueue(struct rtw_de
+ 	__skb_queue_tail(&tx_report->queue, skb);
+ 	spin_unlock_irqrestore(&tx_report->q_lock, flags);
+ 
+-	if (rtwdev->chip->id == RTW_CHIP_TYPE_8723D &&
+-	    rtwdev->hci.type == RTW_HCI_TYPE_USB)
+-		timeout = msecs_to_jiffies(2500);
++	if (rtwdev->hci.type == RTW_HCI_TYPE_PCIE)
++		timeout = RTW_TX_PROBE_TIMEOUT_SHORT;
++	else
++		timeout = RTW_TX_PROBE_TIMEOUT_LONG;
+ 
+ 	mod_timer(&tx_report->purge_timer, jiffies + timeout);
+ }
+--- a/drivers/net/wireless/realtek/rtw88/tx.h
++++ b/drivers/net/wireless/realtek/rtw88/tx.h
+@@ -7,7 +7,8 @@
+ 
+ #define RTK_TX_MAX_AGG_NUM_MASK		0x1f
+ 
+-#define RTW_TX_PROBE_TIMEOUT		msecs_to_jiffies(500)
++#define RTW_TX_PROBE_TIMEOUT_SHORT	msecs_to_jiffies(500)
++#define RTW_TX_PROBE_TIMEOUT_LONG	msecs_to_jiffies(2500)
+ 
+ struct rtw_tx_desc {
+ 	__le32 w0;

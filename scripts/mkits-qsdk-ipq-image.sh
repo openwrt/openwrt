@@ -45,7 +45,8 @@ while [ -n "$1" -a -n "$2" ] || [ $has_script ]; do
 	script)
 		name="$node_type"
 		file="$1"; shift
-		desc="${file%.*} uboot ${file##*.}"
+		desc="${file##*/}"
+		desc="${desc%.*} uboot ${desc##*.}"
 		type="$node_type"
 		node_type="firmware"
 	;;

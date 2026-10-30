@@ -18,4 +18,5 @@ reload_service() {
 service_triggers()
 {
 	procd_add_reload_trigger "dhcp" "network" "system"
+	procd_add_reload_data_trigger "dhcp"
 }

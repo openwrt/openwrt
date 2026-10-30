@@ -1,7 +1,7 @@
 let libubus = require("ubus");
 import * as uloop from "uloop";
 import { open, readfile, access } from "fs";
-import { wdev_remove, is_equal, vlist_new, phy_is_fullmac, phy_open, wdev_set_radio_mask, wdev_set_up } from "common";
+import { wdev_remove, is_equal, vlist_new, phy_is_fullmac, phy_open, wdev_set_radio_mask, wdev_set_up, macaddr_keep, macaddr_sync, macaddr_sync_defer, macaddr_sync_entry, macaddr_release_defer, mld_prev_match } from "common";
 
 let ubus = libubus.connect(null, 60);
 
@@ -17,6 +17,8 @@ libubus.guard(ex_handler);
 hostapd.data.config = {};
 hostapd.data.pending_config = {};
 hostapd.data.apsta_freq = {};
+hostapd.data.apsta_stopped = {};
+hostapd.data.link_reload = {};
 
 hostapd.data.file_fields = {
 	vlan_file: true,
@@ -103,34 +105,64 @@ start_disabled=1
 	return str;
 }
 
+// The width argument of hostapd.freq_info() for an oper_chwidth value and for
+// an operating class. freq_info() has no width for 80+80 MHz.
+const CHWIDTH_FREQ_INFO_WIDTH = { "0": 0, "1": 1, "2": 2, "9": 3 };
+const OP_CLASS_FREQ_INFO_WIDTH = { "128": 1, "129": 2, "133": 1, "134": 2, "137": 3 };
+const OP_CLASS_80P80 = [ "130", "135" ];
+
+const radio_op_class_re = /^op_class=([0-9]+)$/;
+const radio_oper_chwidth_re = /^(vht|he|eht)_oper_chwidth=([0-9]+)$/;
+
+// hostapd takes the width from op_class where the config has one and ignores
+// the oper_chwidth fields then (op_class_to_ch_width()).
+function radio_freq_info_width(radio)
+{
+	for (let line in radio.data) {
+		let m = match(line, radio_op_class_re);
+		if (!m)
+			continue;
+		if (index(OP_CLASS_80P80, m[1]) >= 0)
+			return null;
+		return OP_CLASS_FREQ_INFO_WIDTH[m[1]] ?? 0;
+	}
+
+	let width = 0;
+	for (let line in radio.data) {
+		let m = match(line, radio_oper_chwidth_re);
+		if (!m)
+			continue;
+
+		let val = CHWIDTH_FREQ_INFO_WIDTH[m[2]];
+		if (val == null)
+			return null;
+		if (val > width)
+			width = val;
+	}
+
+	return width;
+}
+
 function iface_freq_info(iface, config, params)
 {
 	let freq = params.frequency;
 	if (!freq)
 		return null;
 
+	let width = freq < 4000 ? 0 : radio_freq_info_width(config.radio);
+	if (width == null)
+		return null;
+
 	let sec_offset = params.sec_chan_offset;
 	if (sec_offset != -1 && sec_offset != 1)
 		sec_offset = 0;
 
-	let width = 0;
 	for (let line in config.radio.data) {
 		if (!sec_offset && match(line, /^ht_capab=.*HT40/)) {
 			sec_offset = null; // auto-detect
-			continue;
+			break;
 		}
-
-		let val = match(line, /^(vht_oper_chwidth|he_oper_chwidth)=(\d+)/);
-		if (!val)
-			continue;
-
-		val = int(val[2]);
-		if (val > width)
-			width = val;
 	}
-
-	if (freq < 4000)
-		width = 0;
 
 	/*
 	 * 6 GHz has no HT Operation IE, so the secondary channel offset cannot
@@ -165,60 +197,144 @@ function iface_add(phy, config, phy_status)
 	return iface.start(freq_info) >= 0;
 }
 
-function mld_macaddr_list()
+function bss_macaddr_name(group, bss)
 {
-	let macaddr_list = {};
-	for (let name, mld in hostapd.data.mld)
-		if (mld.macaddr)
-			macaddr_list[mld.macaddr] = -1;
-
-	return macaddr_list;
+	return group + "/" + bss.ifname;
 }
 
-// A link of an MLD has no wdev of its own, so a scan of the wdevs reports the
-// address of the MLD instead of the BSSID. The configuration of the PHY is the
-// only source of these addresses. skip names the configuration whose addresses
-// the caller assigns again.
-function phy_bss_macaddr_add(macaddr_list, phy, skip)
+// A link carries the MLD address where the configuration names it as its
+// BSSID. A generated MLD address comes from radio 0 (mld_add_bss()).
+function bss_mld_share(phydev, bss)
 {
-	for (let name, config in hostapd.data.config) {
-		if (config == skip || config.phy != phy)
-			continue;
+	if (!bss.mld_ap)
+		return null;
+	if (bss.bssid && bss.bssid == bss.mld_bssid)
+		return bss.ifname;
+	if (!phydev.radio && bss.default_macaddr &&
+	    hostapd.data.mld[bss.ifname]?.default_macaddr)
+		return bss.ifname;
 
-		for (let bss in config.bss)
-			if (bss.bssid)
-				macaddr_list[bss.bssid] = -1;
+	return null;
+}
+
+function bss_macaddr_args(phydev, config, bss)
+{
+	let data = {
+		group: phydev.name,
+		ifname: bss.ifname,
+		share: bss_mld_share(phydev, bss),
+		num_global: config.num_global_macaddr,
+		macaddr_base: config.macaddr_base,
+		mbssid: config.mbssid,
+	};
+
+	if (!bss.default_macaddr) {
+		data.macaddr = bss.bssid;
+		data.static = true;
+	} else if (data.share) {
+		data.macaddr = bss.mld_bssid;
 	}
+
+	return data;
 }
 
-function iface_config_macaddr_list(config)
+function bss_macaddr_get(phydev, config, bss, prev)
 {
-	let macaddr_list = mld_macaddr_list();
-	phy_bss_macaddr_add(macaddr_list, config.phy, config);
-	for (let i = 0; i < length(config.bss); i++) {
-		let bss = config.bss[i];
-		if (!bss.default_macaddr)
-			macaddr_list[bss.bssid] = i;
-	}
+	let ret = phydev.macaddr_get(ubus, "hostapd", bss_macaddr_name(phydev.name, bss),
+				     bss_macaddr_args(phydev, config, bss));
+	if (ret.macaddr)
+		return ret.macaddr;
 
-	return macaddr_list;
+	let addr = ret.transport ? (bss.default_macaddr ? prev : bss.bssid) : null;
+	hostapd.printf(`No MAC address from netifd for ${bss.ifname} on phy ${phydev.name}: ${ret.error}${addr ? ", using " + addr : ""}`);
+
+	return addr;
 }
 
-function phy_macaddr_list(phy)
+function bss_macaddr_entry(phydev, bss, from)
 {
-	let macaddr_list = mld_macaddr_list();
-	phy_bss_macaddr_add(macaddr_list, phy);
-
-	return macaddr_list;
+	return phydev.macaddr_sync_entry(bss.bssid, {
+		share: bss_mld_share(phydev, bss),
+		static: !bss.default_macaddr,
+		from,
+	});
 }
 
-function iface_update_supplicant_macaddr(phydev)
+function iface_macaddr_options(config)
 {
-	ubus.defer("wpa_supplicant", "phy_set_macaddr_list", {
+	return {
+		num_global: config.num_global_macaddr,
+		macaddr_base: config.macaddr_base,
+		mbssid: config.mbssid,
+	};
+}
+
+function iface_macaddr_prune(name, config)
+{
+	let names = map(config?.bss ?? [], (bss) => bss_macaddr_name(name, bss));
+
+	macaddr_sync_defer(ubus, "hostapd", name, macaddr_keep(names),
+			   iface_macaddr_options(config ?? {}));
+}
+
+function iface_macaddr_sync(phydev, config)
+{
+	let list = {};
+
+	for (let bss in config.bss)
+		list[bss_macaddr_name(phydev.name, bss)] = bss_macaddr_entry(phydev, bss);
+
+	macaddr_sync_defer(ubus, "hostapd", phydev.name, list,
+			   iface_macaddr_options(config));
+}
+
+function iface_supplicant_start(phydev)
+{
+	ubus.defer("wpa_supplicant", "phy_set_state", {
 		phy: phydev.phy,
 		radio: phydev.radio ?? -1,
-		macaddr: keys(phy_macaddr_list(phydev.phy))
+		stop: false,
 	});
+}
+
+const PHY_WAIT_MS = 100;
+const PHY_WAIT_MAX = 300;
+
+function phy_busy(phy, self)
+{
+	for (let name, config in hostapd.data.config) {
+		let iface = hostapd.interfaces[name];
+		if (name == self || config.phy != phy || !iface)
+			continue;
+
+		if (iface.csa_in_progress())
+			return "channel switch";
+
+		let state = iface.state();
+		if (state == "ACS" || state == "HT_SCAN")
+			return "scan";
+	}
+
+	return null;
+}
+
+// The radios of a multi-radio wiphy share its limits: mac80211 brings up no
+// interface during a channel switch (ieee80211_check_concurrent_iface()), and
+// cfg80211 runs one scan at a time. hostapd retries a refused 20/40 MHz
+// coexistence scan for 15 s only, which an ACS on another radio can exceed.
+function iface_pending_phy_wait(pending)
+{
+	let busy = phy_busy(pending.phydev.phy, pending.phy);
+	if (!busy)
+		return false;
+
+	if (++pending.phy_wait > PHY_WAIT_MAX) {
+		hostapd.printf(`The ${busy} on phy ${pending.phydev.phy} did not end, starting ${pending.phy} anyway`);
+		return false;
+	}
+
+	pending.wait(PHY_WAIT_MS);
+	return true;
 }
 
 function __iface_pending_next(pending, state, ret, data)
@@ -231,21 +347,30 @@ function __iface_pending_next(pending, state, ret, data)
 	if (pending.defer)
 		pending.defer.abort();
 	delete pending.defer;
+	if (pending.timer)
+		pending.timer.cancel();
+	delete pending.timer;
 	switch (state) {
 	case "init":
-		iface_update_supplicant_macaddr(phydev);
 		return "create_bss";
 	case "create_bss":
 		if (!bss.mld_ap) {
 			let err = phydev.wdev_add(bss.ifname, {
 				mode: "ap",
+				macaddr: bss.bssid,
 				radio: phydev.radio,
 			});
 			if (err) {
 				hostapd.printf(`Failed to create ${bss.ifname} on phy ${phy}: ${err}`);
+				iface_supplicant_start(phydev);
 				return null;
 			}
 		}
+
+		return "phy_check";
+	case "phy_check":
+		if (iface_pending_phy_wait(pending))
+			return "phy_check";
 
 		pending.call("wpa_supplicant", "phy_status", {
 			phy: phydev.phy,
@@ -267,6 +392,9 @@ function __iface_pending_next(pending, state, ret, data)
 		});
 		return "wpas_stopped";
 	case "wpas_stopped":
+		if (iface_pending_phy_wait(pending))
+			return "wpas_stopped";
+
 		if (!iface_add(phy, config))
 			hostapd.printf(`hostapd.add_iface failed for phy ${phy} ifname=${bss.ifname}`);
 		pending.call("wpa_supplicant", "phy_set_state", {
@@ -296,9 +424,11 @@ function iface_pending_next(ret, data)
 			}
 		} catch(e) {
 			hostapd.printf(`Exception: ${e}\n${e.stacktrace[0].context}`);
+			iface_supplicant_start(cfg.phydev);
+			__iface_pending_next(cfg, "done");
 			return;
 		}
-		pending = !this.defer;
+		pending = !this.defer && !this.timer;
 	}
 }
 
@@ -312,13 +442,33 @@ function iface_pending_ubus_call(obj, method, arg)
 {
 	let ubus = hostapd.data.ubus;
 	let pending = this;
-	this.defer = ubus.defer(obj, method, arg, (ret, data) => { delete pending.defer; pending.next(ret, data) });
+
+	/* libubus can run this from inside a synchronous ubus call, so continue
+	 * from the event loop */
+	this.defer = ubus.defer(obj, method, arg, (ret, data) => {
+		delete pending.defer;
+		pending.timer = uloop.timer(0, () => {
+			delete pending.timer;
+			pending.next(ret, data);
+		});
+	});
+}
+
+function iface_pending_wait(ms)
+{
+	let pending = this;
+
+	this.timer = uloop.timer(ms, () => {
+		delete pending.timer;
+		pending.next();
+	});
 }
 
 const iface_pending_proto = {
 	next: iface_pending_next,
 	call: iface_pending_ubus_call,
 	abort: iface_pending_abort,
+	wait: iface_pending_wait,
 };
 
 function iface_pending_init(phydev, config)
@@ -327,6 +477,7 @@ function iface_pending_init(phydev, config)
 
 	let pending = proto({
 		next_state: "init",
+		phy_wait: 0,
 		phydev: phydev,
 		phy: phy,
 		config: config,
@@ -335,30 +486,6 @@ function iface_pending_init(phydev, config)
 
 	hostapd.data.pending_config[phy] = pending;
 	pending.next();
-}
-
-function iface_macaddr_init(phydev, config, macaddr_list)
-{
-	let macaddr_data = {
-		num_global: config.num_global_macaddr ?? 1,
-		macaddr_base: config.macaddr_base,
-		mbssid: config.mbssid ?? 0,
-	};
-
-	return phydev.macaddr_init(macaddr_list, macaddr_data);
-}
-
-// The address of an MLD is also the address of one of its links.
-// mld_add_bss() takes it from radio 0, so only a link on radio 0 can use it. A
-// link on another radio must keep the reservation, because the two links would
-// otherwise use one address.
-function bss_macaddr_next(phydev, macaddr_list, bss, idx)
-{
-	let mld_addr = bss.mld_bssid;
-	if (phydev.radio || macaddr_list[mld_addr] != -1)
-		mld_addr = null;
-
-	return phydev.macaddr_next(idx, mld_addr);
 }
 
 function csa_timer_cancel(name)
@@ -370,16 +497,24 @@ function csa_timer_cancel(name)
 	}
 }
 
+function iface_link_reload_cancel(name)
+{
+	hostapd.data.link_reload[name]?.timer.cancel();
+	delete hostapd.data.link_reload[name];
+}
+
 function iface_restart(phydev, config, old_config)
 {
 	let phy = phydev.name;
 	let pending = hostapd.data.pending_config[phy];
 
 	csa_timer_cancel(phy);
+	iface_link_reload_cancel(phy);
 
 	if (pending)
 		pending.abort();
 
+	delete hostapd.data.apsta_stopped[phy];
 	hostapd.remove_iface(phy);
 
 	let prev_bssid = {};
@@ -390,37 +525,31 @@ function iface_restart(phydev, config, old_config)
 	iface_remove(old_config);
 	iface_remove(config);
 
+	// an aborted setup can have stopped wpa_supplicant
 	if (!config.bss || !config.bss[0]) {
 		hostapd.printf(`No bss for phy ${phy}`);
+		if (pending)
+			iface_supplicant_start(phydev);
 		return;
 	}
 
-	let macaddr_list = iface_macaddr_init(phydev, config,
-					      iface_config_macaddr_list(config));
-	let keep = {};
-
-	// macaddr_next() returns the first free address. Therefore a restart can
-	// move a generated BSSID to a different link of an AP MLD. A non-AP MLD
-	// compares the link addresses in the association response with the
-	// addresses it learned. If the addresses differ, the non-AP MLD drops the
-	// association. Therefore a BSS that survives the restart keeps its address.
-	for (let i = 0; i < length(config.bss); i++) {
-		let bss = config.bss[i];
-		let prev = prev_bssid[bss.ifname];
-
-		if (!bss.default_macaddr || !prev || macaddr_list[prev] != null)
+	iface_macaddr_prune(phydev.name, config);
+	for (let bss in config.bss) {
+		let addr = bss_macaddr_get(phydev, config, bss, prev_bssid[bss.ifname]);
+		if (addr) {
+			bss.bssid = addr;
 			continue;
+		}
 
-		bss.bssid = prev;
-		macaddr_list[prev] = i;
-		keep[i] = true;
+		hostapd.printf(`Failed to get a MAC address for phy ${phy}`);
+		for (let cur in config.bss)
+			if (cur.default_macaddr)
+				delete cur.bssid;
+		if (pending)
+			iface_supplicant_start(phydev);
+		return;
 	}
-
-	for (let i = 0; i < length(config.bss); i++) {
-		let bss = config.bss[i];
-		if (bss.default_macaddr && !keep[i])
-			bss.bssid = bss_macaddr_next(phydev, macaddr_list, bss, i);
-	}
+	iface_macaddr_sync(phydev, config);
 
 	iface_pending_init(phydev, config);
 }
@@ -574,11 +703,178 @@ function bss_find_existing(config, prev_config, prev_hash)
 		if (!prev_hash[i] || hash != prev_hash[i])
 			continue;
 
+		// An MLD BSS is identified by its netdev name, which is shared with
+		// all radios that contribute a link. A rename onto the name of
+		// another MLD fails with EEXIST.
+		if (config.mld_ap && prev_config.bss[i].ifname != config.ifname)
+			continue;
+
 		prev_hash[i] = null;
 		return i;
 	}
 
 	return -1;
+}
+
+function bss_ctrl_ok(bss, ifname, cmd)
+{
+	let ret = bss.ctrl(cmd);
+	if (ret == "OK")
+		return true;
+
+	hostapd.printf(`Could not run ${split(cmd, " ")[0]} on bss ${ifname}: ${ret}`);
+	return false;
+}
+
+let qos_map_ctrl;
+
+// SET_QOS_MAP_SET and SEND_QOS_MAP_CONF exist only with CONFIG_INTERWORKING.
+// SEND_QOS_MAP_CONF without an address fails and sends no frame.
+function bss_qos_map_ctrl(bss)
+{
+	qos_map_ctrl ??= bss.ctrl("SEND_QOS_MAP_CONF ") == "FAIL";
+
+	return qos_map_ctrl;
+}
+
+const STA_ADDR_RE = /^([0-9a-f]{2}:){5}[0-9a-f]{2}$/;
+const STA_ASSOC_RE = /^flags=.*\[ASSOC\]/;
+const STA_EXT_CAPAB_RE = /^ext_capab=([0-9a-f]+)/;
+
+// hostapd sends a QoS Map Configure frame only to a station that set the QoS
+// Map bit (bit 32) of its Extended Capabilities.
+function sta_qos_map_capable(reply)
+{
+	let capab = match(reply, STA_EXT_CAPAB_RE)?.[1];
+
+	return !!match(reply, STA_ASSOC_RE) && length(capab) >= 10 &&
+	       !!(hex(substr(capab, 8, 2)) & 1);
+}
+
+function bss_qos_map_stations(bss)
+{
+	let list = [];
+	let reply = bss.ctrl("STA-FIRST");
+
+	while (reply) {
+		let addr = split(reply, "\n")[0];
+		if (!match(addr, STA_ADDR_RE))
+			break;
+
+		if (sta_qos_map_capable(reply))
+			push(list, addr);
+		reply = bss.ctrl(`STA-NEXT ${addr}`);
+	}
+
+	return list;
+}
+
+// An empty SET_QOS_MAP_SET clears the map (patch 781). No frame removes a map
+// from a station, so it keeps the old one until it associates again.
+function bss_qos_map_apply(bss, ifname, value)
+{
+	if (!bss_ctrl_ok(bss, ifname, `SET_QOS_MAP_SET ${value ?? ""}`))
+		return false;
+
+	if (!value)
+		return true;
+
+	for (let addr in bss_qos_map_stations(bss)) {
+		let ret = bss.ctrl(`SEND_QOS_MAP_CONF ${addr}`);
+		if (ret != "OK")
+			hostapd.printf(`Could not send the QoS Map of bss ${ifname} to ${addr}: ${ret}`);
+	}
+
+	return true;
+}
+
+// hostapd reads multi_ap_vlanid only when it builds a (Re)Association
+// Response, so an associated station keeps the old value until it associates
+// again.
+const BSS_INPLACE_FIELDS = {
+	multi_ap_vlanid: {
+		apply: (bss, ifname, value) =>
+			bss_ctrl_ok(bss, ifname, `SET multi_ap_vlanid ${value ?? "0"}`),
+	},
+	qos_map_set: {
+		supported: bss_qos_map_ctrl,
+		apply: bss_qos_map_apply,
+	},
+};
+
+function bss_inplace_field(bss, key)
+{
+	let field = BSS_INPLACE_FIELDS[key];
+
+	return !!field && (!field.supported || field.supported(bss));
+}
+
+function bss_inplace_changes(config, prev, bss, changed)
+{
+	let data = remove_file_fields(config.data);
+	let prev_data = remove_file_fields(prev.data);
+	let changes = {};
+	let inplace = true;
+
+	for (let line in prev_data) {
+		if (index(data, line) >= 0)
+			continue;
+
+		let val = split(line, "=", 2);
+		push(changed, val[0]);
+		if (!bss_inplace_field(bss, val[0]))
+			inplace = false;
+		changes[val[0]] = { value: null };
+	}
+
+	for (let line in data) {
+		if (index(prev_data, line) >= 0)
+			continue;
+
+		let val = split(line, "=", 2);
+		push(changed, val[0]);
+		if (!bss_inplace_field(bss, val[0]))
+			inplace = false;
+		changes[val[0]] = { value: val[1] };
+	}
+
+	return (inplace && length(changes)) ? changes : null;
+}
+
+// A new BSS drops its stations, so the log names what keeps a bss from an
+// update in place. Any bss of the hostapd process answers for `supported`.
+function bss_find_inplace(config, prev_config, prev_hash, bss)
+{
+	for (let i = 0; i < length(prev_config.bss); i++) {
+		let prev = prev_config.bss[i];
+
+		if (!prev_hash[i] || prev.ifname != config.ifname)
+			continue;
+
+		let changed = [];
+		let changes = bss_inplace_changes(config, prev, bss, changed);
+		if (!changes) {
+			let reason = length(changed) ? join(", ", uniq(changed)) :
+				"line order or ifindex of a named interface";
+			hostapd.printf(`bss ${config.ifname} changed in ${reason}, replacing it`);
+			continue;
+		}
+
+		prev_hash[i] = null;
+		return { index: i, changes };
+	}
+
+	return null;
+}
+
+function bss_inplace_apply(bss, ifname, changes)
+{
+	for (let key, change in changes)
+		if (!BSS_INPLACE_FIELDS[key].apply(bss, ifname, change.value))
+			return false;
+
+	hostapd.printf(`Updated ${join(", ", keys(changes))} of bss ${ifname} in place`);
+	return true;
 }
 
 function get_config_bss(name, config, idx)
@@ -603,6 +899,14 @@ function get_config_bss(name, config, idx)
 	return if_bss[ifname];
 }
 
+function bss_remove(name, bss, config)
+{
+	hostapd.printf(`Remove bss '${config.ifname}' on phy '${name}'`);
+	bss.delete();
+	if (!config.mld_ap)
+		wdev_remove(config.ifname);
+}
+
 const radio_chan_fields = [
 	"op_class",
 	"vht_oper_chwidth", "vht_oper_centr_freq_seg0_idx",
@@ -623,8 +927,49 @@ function radio_base(radio)
 	return map(filter(radio.data, (line) => !radio_line_is_chan(line)), (line) => {
 		if (substr(line, 0, 9) != "ht_capab=")
 			return line;
-		return replace(replace(line, "[HT40+]", ""), "[HT40-]", "");
+		return replace(replace(line, "[HT40+]", "[HT40]"), "[HT40-]", "[HT40]");
 	});
+}
+
+// The Spatial Reuse Parameter Set of the radio. A running AP takes it with SET
+// and a Beacon update, and its BSS color through a color change announcement.
+const radio_sr_fields = [
+	"he_spr_sr_control", "he_spr_non_srg_obss_pd_max_offset",
+	"he_spr_srg_obss_pd_min_offset", "he_spr_srg_obss_pd_max_offset",
+	"he_spr_srg_bss_colors", "he_spr_srg_partial_bssid",
+];
+
+function radio_line_is_sr(line)
+{
+	let key = split(line, "=", 2)[0];
+
+	return key == "he_bss_color" || index(radio_sr_fields, key) >= 0;
+}
+
+function radio_sr_values(radio)
+{
+	let values = {};
+
+	for (let line in filter(radio.data, radio_line_is_sr)) {
+		let kv = split(line, "=", 2);
+		values[kv[0]] = kv[1];
+	}
+
+	return values;
+}
+
+// A change of the BSS color and the spatial reuse fields alone, on the same
+// channel, of a radio whose BSS color is enabled before and after.
+function radio_sr_change(old_radio, new_radio)
+{
+	let rest = (radio) => filter(radio_base(radio), (line) => !radio_line_is_sr(line));
+
+	return is_equal(rest(old_radio), rest(new_radio)) &&
+	       radio_sr_values(old_radio).he_bss_color != null &&
+	       radio_sr_values(new_radio).he_bss_color != null &&
+	       old_radio.channel == new_radio.channel &&
+	       is_equal(filter(old_radio.data, radio_line_is_chan),
+	                filter(new_radio.data, radio_line_is_chan));
 }
 
 function radio_reload_class(old_radio, new_radio)
@@ -632,10 +977,14 @@ function radio_reload_class(old_radio, new_radio)
 	if (is_equal(old_radio, new_radio))
 		return "same";
 
-	// anything beyond channel/width, or the channel-follow flag flipping,
-	// needs a full restart
-	if (!is_equal(radio_base(old_radio), radio_base(new_radio)) ||
-	    (!old_radio.channel_follow) != (!new_radio.channel_follow))
+	if ((!old_radio.channel_follow) != (!new_radio.channel_follow))
+		return "restart";
+
+	if (radio_sr_change(old_radio, new_radio))
+		return "spatial_reuse";
+
+	// anything beyond channel/width needs a full restart
+	if (!is_equal(radio_base(old_radio), radio_base(new_radio)))
 		return "restart";
 
 	// base identical and apsta flag unchanged: only treat this as a channel
@@ -741,6 +1090,148 @@ function iface_channel_switch(name, config)
 	return true;
 }
 
+function bss_list_prev_macaddr(bss_list, old_bss_list)
+{
+	let old = {};
+	for (let bss in old_bss_list)
+		old[bss.ifname] = bss;
+
+	return map(bss_list, (bss) => {
+		let prev = old[bss.ifname];
+		if (!prev ||
+		    prev.default_macaddr != bss.default_macaddr ||
+		    prev.random_macaddr != bss.random_macaddr)
+			return bss;
+		if (!bss.default_macaddr && !bss.random_macaddr)
+			return bss;
+
+		return { ...bss, bssid: prev.bssid };
+	});
+}
+
+// Move the addresses in one step, so that a rename or a swap of names
+// does not give an address to another BSS.
+function iface_macaddr_move(phydev, config, old_config, bss_list_cfg)
+{
+	let list = {};
+
+	if (!length(bss_list_cfg))
+		list[bss_macaddr_name(phydev.name, old_config.bss[0])] = "";
+
+	for (let pass = 0; pass < 2; pass++) {
+		for (let i = 0; i < length(config.bss); i++) {
+			let bss = config.bss[i];
+			let configured = !bss.default_macaddr;
+			if (configured != (pass == 0))
+				continue;
+
+			let name = bss_macaddr_name(phydev.name, bss);
+			let prev = bss_list_cfg[i];
+			if (!bss.bssid) {
+				list[name] = "";
+				continue;
+			}
+
+			list[name] = bss_macaddr_entry(phydev, bss,
+				prev ? bss_macaddr_name(phydev.name, prev) : null);
+		}
+	}
+
+	let ret = macaddr_sync(ubus, "hostapd", phydev.name, list,
+			       iface_macaddr_options(config));
+	if (!ret) {
+		hostapd.printf(`Could not move the MAC addresses on phy ${phydev.name}: ${ubus.error()}`);
+		return true;
+	}
+
+	if (length(ret.refused)) {
+		hostapd.printf(`MAC addresses refused on phy ${phydev.name}: ${join(", ", ret.refused)}`);
+		return false;
+	}
+
+	return true;
+}
+
+// A failed start leaves the interface DISABLED until a restart. apsta_state
+// can also leave it DISABLED, while it waits for its station.
+function iface_start_failed(name)
+{
+	let iface = hostapd.interfaces[name];
+
+	return !!iface && iface.state() == "DISABLED" &&
+	       !hostapd.data.apsta_stopped[name];
+}
+
+// Whether the interface runs the channel `config` names already. A channel
+// switch hostapd makes by itself, after a radar, leaves the stored config on
+// the channel it left, so a config that names the channel it moved to is no
+// change of channel.
+function iface_runs_channel(name, config)
+{
+	let iface = hostapd.interfaces[name];
+	if (!iface || iface.state() != "ENABLED" || !config.radio.frequency)
+		return false;
+
+	let running = iface.freq_running();
+	let wanted = iface_freq_info(iface, config, { frequency: config.radio.frequency });
+	if (!running || !wanted)
+		return false;
+
+	return running.frequency == wanted.frequency &&
+	       running.sec_channel == wanted.sec_channel &&
+	       (!wanted.sec_channel || running.center_seg0_idx == wanted.center_seg0_idx);
+}
+
+const status_bss_color_re = /^he_bss_color=([0-9]+)$/;
+
+// hostapd leaves the configured color by itself after a color collision, so
+// the color it runs comes from STATUS. STATUS names no color while BSS Color
+// Disabled is set; the configured color stands in for it then.
+function iface_bss_color_running(bss, old)
+{
+	let m = match(bss.ctrl("STATUS") ?? "", status_bss_color_re);
+
+	return int(m ? m[1] : old.he_bss_color);
+}
+
+// The spatial reuse fields first and the color after: mac80211 refuses a
+// beacon update while a color change runs.
+function iface_spatial_reuse_apply(name, config, old_config)
+{
+	let iface = hostapd.interfaces[name];
+	let bss_list = values(hostapd.bss[name] ?? {});
+	if (!iface || iface.state() != "ENABLED" || !length(bss_list))
+		return false;
+
+	let old = radio_sr_values(old_config.radio);
+	let want = radio_sr_values(config.radio);
+	for (let key in radio_sr_fields) {
+		if (old[key] == want[key])
+			continue;
+
+		// An absent bitmap is empty, and an absent offset is one the SR
+		// Control field marks as not present.
+		let value = want[key] ?? (index(key, "_srg_bss_colors") > 0 ||
+		                          index(key, "_srg_partial_bssid") > 0 ? "" : "0");
+		if (bss_list[0].ctrl(`SET ${key} ${value}`) != "OK")
+			return false;
+	}
+
+	for (let bss in bss_list)
+		if (!bss.update_beacon())
+			return false;
+
+	// A requested colour above 63 asks for a random colour, which the running colour is.
+	let color = int(want.he_bss_color);
+	if (color <= 63 &&
+	    iface_bss_color_running(bss_list[0], old) != color &&
+	    bss_list[0].ctrl(`COLOR_CHANGE ${color}`) != "OK")
+		return false;
+
+	hostapd.printf(`Spatial reuse update on phy ${name}, BSS color ${want.he_bss_color}`);
+	return true;
+}
+
 function iface_reload_config(name, phydev, config, old_config)
 {
 	let phy = phydev.name;
@@ -748,17 +1239,41 @@ function iface_reload_config(name, phydev, config, old_config)
 	if (!old_config)
 		return false;
 
+	let prev_macaddr_bss = bss_list_prev_macaddr(config.bss, old_config.bss);
+	let bss_same = is_equal(old_config.bss, prev_macaddr_bss);
+
 	switch (radio_reload_class(old_config.radio, config.radio)) {
 	case "restart":
 		return false;
+	case "spatial_reuse":
+		if (!iface_spatial_reuse_apply(name, config, old_config))
+			return false;
+		break;
 	case "channel":
-		if (!iface_channel_switch(name, config))
+		if (iface_runs_channel(name, config))
+			break;
+		// A BSS reload stops and starts the BSS, which ends its part of the
+		// channel switch in mac80211 while hostapd still holds it in a CSA.
+		if (!bss_same || !iface_channel_switch(name, config))
 			return false;
 		break;
 	}
 
-	if (is_equal(old_config.bss, config.bss))
-		return true;
+	// A configuration whose restart failed has no interface, and one whose
+	// start failed has a disabled one. Only a running or pending one is up
+	// to date.
+	if (bss_same) {
+		if (!hostapd.data.pending_config[name] && iface_start_failed(name)) {
+			hostapd.printf(`Interface for phy ${name} failed to start`);
+			return false;
+		}
+
+		if (hostapd.interfaces[name] || hostapd.data.pending_config[name]) {
+			for (let i = 0; i < length(config.bss); i++)
+				config.bss[i].bssid = prev_macaddr_bss[i].bssid;
+			return true;
+		}
+	}
 
 	if (hostapd.data.pending_config[name])
 		return false;
@@ -784,7 +1299,6 @@ function iface_reload_config(name, phydev, config, old_config)
 		return false;
 	}
 
-	let macaddr_list = iface_config_macaddr_list(config);
 	let bss_list = [];
 	let bss_list_cfg = [];
 	let prev_bss_hash = [];
@@ -795,13 +1309,27 @@ function iface_reload_config(name, phydev, config, old_config)
 	}
 
 	// Step 1: find (possibly renamed) interfaces with the same config
-	// and store them in the new order (with gaps)
+	// and store them in the new order (with gaps), then interfaces of the
+	// same name whose changes apply in place (bss_find_inplace())
+	let inplace = [];
+	for (let pass = 0; pass < 2; pass++)
 	for (let i = 0; i < length(config.bss); i++) {
-		let prev;
+		let prev = -1;
+
+		if (bss_list[i])
+			continue;
 
 		// For fullmac devices, the first interface needs to be preserved,
 		// since it's treated as the master
-		if (!i && phy_is_fullmac(phy)) {
+		let fullmac_first = !i && phy_is_fullmac(phydev.phy);
+		if (pass) {
+			let found = !fullmac_first &&
+				bss_find_inplace(config.bss[i], old_config, prev_bss_hash, first_bss);
+			if (found) {
+				prev = found.index;
+				inplace[i] = found.changes;
+			}
+		} else if (fullmac_first) {
 			prev = 0;
 			prev_bss_hash[0] = null;
 		} else {
@@ -821,15 +1349,13 @@ function iface_reload_config(name, phydev, config, old_config)
 		if (!prev_bss)
 			return false;
 
-		// try to preserve MAC address of this BSS by reassigning another
-		// BSS if necessary
 		if ((cur_config.default_macaddr || cur_config.random_macaddr) &&
 		    cur_config.random_macaddr == prev_config.random_macaddr &&
-		    cur_config.default_macaddr == prev_config.default_macaddr &&
-		    !macaddr_list[prev_config.bssid]) {
-			macaddr_list[prev_config.bssid] = i;
+		    cur_config.default_macaddr == prev_config.default_macaddr)
 			cur_config.bssid = prev_config.bssid;
-		}
+
+		if (!cur_config.bssid)
+			return false;
 
 		bss_list[i] = prev_bss;
 		bss_list_cfg[i] = old_config.bss[prev];
@@ -840,9 +1366,30 @@ function iface_reload_config(name, phydev, config, old_config)
 		return false;
 	}
 
+	// A BSS cannot change between plain and MLD link in place, because
+	// hostapd_bss_setup_multi_link() only runs when a BSS is allocated. A
+	// rename to an MLD name fails as well, since bss_check_mld() already
+	// created that netdev, and a rename of an MLD link renames the netdev of
+	// all radios. Delete and recreate the first BSS instead. If no other BSS
+	// is kept, keep the old one until the first new BSS exists, so that the
+	// PHY never runs without a BSS, but no longer: its netdev and its
+	// control socket keep its name, which a later new BSS can reuse.
+	let deferred_bss, deferred_cfg;
+	const first_bss_converts =
+		(config.bss[0].mld_ap || old_config.bss[0].mld_ap) &&
+		old_config.bss[0].ifname != config.bss[0].ifname;
+
 	// Step 2: if none were found, rename and preserve the first one
-	if (length(bss_list) == 0) {
+	if (length(bss_list) == 0 && !first_bss_converts) {
 		// can't change the bssid of the first bss
+		let mld_addr = config.bss[0].default_macaddr &&
+			bss_mld_share(phydev, config.bss[0]) &&
+			config.bss[0].mld_bssid;
+		if (mld_addr && old_config.bss[0].bssid != mld_addr) {
+			hostapd.printf(`MLD address of first interface changed: ${lc(old_config.bss[0].bssid)} -> ${lc(mld_addr)}`);
+			return false;
+		}
+
 		if (config.bss[0].bssid != old_config.bss[0].bssid) {
 			if (!config.bss[0].default_macaddr) {
 				hostapd.printf(`BSSID of first interface changed: ${lc(old_config.bss[0].bssid)} -> ${lc(config.bss[0].bssid)}`);
@@ -856,11 +1403,13 @@ function iface_reload_config(name, phydev, config, old_config)
 		if (!prev_bss)
 			return false;
 
-		macaddr_list[config.bss[0].bssid] = 0;
 		bss_list[0] = prev_bss;
 		bss_list_cfg[0] = old_config.bss[0];
 		prev_bss_hash[0] = null;
 	}
+
+	if (!iface_macaddr_move(phydev, config, old_config, bss_list_cfg))
+		return false;
 
 	// Step 3: delete all unused old interfaces
 	for (let i = 0; i < length(prev_bss_hash); i++) {
@@ -871,11 +1420,13 @@ function iface_reload_config(name, phydev, config, old_config)
 		if (!prev_bss)
 			return false;
 
-		let ifname = old_config.bss[i].ifname;
-		hostapd.printf(`Remove bss '${ifname}' on phy '${name}'`);
-		prev_bss.delete();
-		if (!old_config.bss[i].mld_ap)
-			wdev_remove(ifname);
+		if (!i && !length(bss_list)) {
+			deferred_bss = prev_bss;
+			deferred_cfg = old_config.bss[0];
+			continue;
+		}
+
+		bss_remove(name, prev_bss, old_config.bss[i]);
 	}
 
 	// Step 4: rename preserved interfaces, use temporary name on duplicates
@@ -889,8 +1440,9 @@ function iface_reload_config(name, phydev, config, old_config)
 		if (old_ifname == new_ifname)
 			continue;
 
+		// Short enough that "<tmp>.sta<aid>" of a WDS station fits IFNAMSIZ
 		if (hostapd.bss[name][new_ifname]) {
-			new_ifname = "tmp_" + substr(hostapd.sha1(new_ifname), 0, 8);
+			new_ifname = sprintf("tmp%d", i);
 			push(rename_list, i);
 		}
 
@@ -914,31 +1466,14 @@ function iface_reload_config(name, phydev, config, old_config)
 	}
 
 	// Step 6: assign BSSID for newly created interfaces
-	macaddr_list = iface_macaddr_init(phydev, config, macaddr_list);
 	for (let i = 0; i < length(config.bss); i++) {
-		if (bss_list[i])
-			continue;
 		let bsscfg = config.bss[i];
-
-		let mac_idx = macaddr_list[bsscfg.bssid];
-		if (mac_idx < 0)
-			macaddr_list[bsscfg.bssid] = i;
-		if (mac_idx == i)
+		if (bsscfg.bssid)
 			continue;
 
-		// statically assigned bssid of the new interface is in conflict
-		// with the bssid of a reused interface. reassign the reused interface
-		if (!bsscfg.default_macaddr) {
-			// can't update bssid of the first BSS, need to restart
-			if (mac_idx <= 0)
-				return false;
-
-			bsscfg = config.bss[mac_idx];
-		}
-
-		let addr = bss_macaddr_next(phydev, macaddr_list, bsscfg, i);
+		let addr = bss_macaddr_get(phydev, config, bsscfg);
 		if (!addr) {
-			hostapd.printf(`Failed to generate mac address for phy ${name}`);
+			hostapd.printf(`Failed to get a MAC address for phy ${name}`);
 			return false;
 		}
 		bsscfg.bssid = addr;
@@ -960,6 +1495,11 @@ function iface_reload_config(name, phydev, config, old_config)
 			hostapd.printf(`Failed to add new bss ${ifname} on phy ${name}`);
 			return false;
 		}
+
+		if (deferred_bss) {
+			bss_remove(name, deferred_bss, deferred_cfg);
+			deferred_bss = null;
+		}
 	}
 
 	// Step 8: update interface bss order
@@ -975,12 +1515,20 @@ function iface_reload_config(name, phydev, config, old_config)
 
 		let ifname = config.bss[i].ifname;
 		let bss = bss_list[i];
+		let prev_cfg = bss_list_cfg[i];
 
-		if (is_equal(config.bss[i], bss_list_cfg[i]))
+		if (inplace[i]) {
+			if (!bss_inplace_apply(bss, ifname, inplace[i]))
+				return false;
+
+			prev_cfg = { ...prev_cfg, data: config.bss[i].data };
+		}
+
+		if (is_equal(config.bss[i], prev_cfg))
 			continue;
 
 		if (is_equal(bss_remove_file_fields(config.bss[i]),
-		             bss_remove_file_fields(bss_list_cfg[i]))) {
+		             bss_remove_file_fields(prev_cfg))) {
 			hostapd.printf(`Update config data files for bss ${ifname}`);
 			if (bss.set_config(config_inline, i, true) < 0) {
 				hostapd.printf(`Could not update config data files for bss ${ifname}`);
@@ -991,9 +1539,9 @@ function iface_reload_config(name, phydev, config, old_config)
 			}
 		}
 
-		bss_reload_psk(bss, config.bss[i], bss_list_cfg[i]);
-		bss_reload_rxkhs(bss, config.bss[i], bss_list_cfg[i]);
-		if (is_equal(config.bss[i], bss_list_cfg[i]))
+		bss_reload_psk(bss, config.bss[i], prev_cfg);
+		bss_reload_rxkhs(bss, config.bss[i], prev_cfg);
+		if (is_equal(config.bss[i], prev_cfg))
 			continue;
 
 		hostapd.printf(`Reload config for bss '${config.bss[0].ifname}' on phy '${name}'`);
@@ -1002,6 +1550,8 @@ function iface_reload_config(name, phydev, config, old_config)
 			return false;
 		}
 	}
+
+	iface_macaddr_sync(phydev, config);
 
 	return true;
 }
@@ -1030,9 +1580,16 @@ function bss_check_mld(phydev, iface_name, bss)
 		macaddr: mld_data.macaddr,
 		radio_mask: mld_data.radio_mask,
 	});
-	wdev_set_up(bss.ifname, true);
 	if (err) {
 		hostapd.printf(`Failed to create MLD ${bss.ifname} on phy ${phydev.name}: ${err}`);
+		delete mld_data.iface[iface_name];
+		return;
+	}
+
+	err = wdev_set_up(bss.ifname, true);
+	if (err) {
+		hostapd.printf(`Failed to bring up MLD ${bss.ifname} on phy ${phydev.name}: ${err}`);
+		wdev_remove(bss.ifname);
 		delete mld_data.iface[iface_name];
 		return;
 	}
@@ -1072,16 +1629,150 @@ function iface_check_mld(phydev, name, config)
 
 function iface_config_remove(name, old_config)
 {
+	let pending = hostapd.data.pending_config[name];
+
+	// an aborted setup can have stopped wpa_supplicant
+	if (pending) {
+		pending.abort();
+		iface_supplicant_start(pending.phydev);
+	}
+
 	delete hostapd.data.apsta_freq[name];
+	delete hostapd.data.apsta_stopped[name];
 	hostapd.remove_iface(name);
 	return iface_remove(old_config);
+}
+
+// No fallback to a PHY restart, which would take the other BSSes down.
+// bss is the object of the hook: hostapd freed the BSS data before the hook,
+// and hostapd.bss still holds the object it released then.
+function mld_link_bss_remove(phy, name, bss)
+{
+	let config = hostapd.data.config[phy];
+	if (!config || !bss)
+		return;
+
+	let idx = index(map(config.bss, (b) => b.ifname), name);
+	if (idx < 0)
+		return;
+
+	hostapd.printf(`Remove expired link of MLD ${name} on phy '${phy}'`);
+
+	let mld_data = hostapd.data.mld[name];
+	if (mld_data?.iface)
+		delete mld_data.iface[phy];
+	if (mld_data?.config?.radios)
+		mld_data.config = {
+			...mld_data.config,
+			radios: filter(mld_data.config.radios, (r) => r != config.radio_idx),
+		};
+
+	config.orig_bss = filter(config.orig_bss ?? config.bss, (b) => b.ifname != name);
+
+	if (length(config.bss) == 1) {
+		delete hostapd.data.config[phy];
+		iface_macaddr_prune(phy, null);
+		iface_config_remove(phy, config);
+		return;
+	}
+
+	let bss_config = config.bss[idx];
+	splice(config.bss, idx, 1);
+	bss_remove(phy, bss, bss_config);
+	iface_macaddr_prune(phy, config);
+}
+
+const LINK_RELOAD_COUNT = 10;
+const LINK_RELOAD_MARGIN_MS = 1000;
+
+// The links of AP MLDs that a restart of the radio stops while their own BSS
+// stays the same. A non-AP MLD that is not told keeps sending on such a link
+// once it beacons again; an AP removal of the link tells it (IEEE
+// 802.11be-2024 35.3.6.3).
+function iface_reload_links(name, config, old_config)
+{
+	let links = {};
+
+	if (hostapd.interfaces[name]?.state() != "ENABLED")
+		return links;
+
+	for (let prev in old_config?.bss ?? []) {
+		if (!prev.mld_ap)
+			continue;
+
+		let cur = filter(config.bss, (b) => b.ifname == prev.ifname)[0];
+		let bss = hostapd.bss[name]?.[prev.ifname];
+		if (!cur || !bss ||
+		    bss_config_hash(cur.data) != bss_config_hash(prev.data))
+			continue;
+
+		links[prev.ifname] = bss;
+	}
+
+	return links;
+}
+
+function iface_link_reload_restart(name)
+{
+	let reload = hostapd.data.link_reload[name];
+	if (!reload)
+		return;
+
+	hostapd.printf(`Restart interface for phy ${name}`);
+	iface_restart(reload.phydev, reload.config, reload.old_config);
+}
+
+// The restart waits for the expiry of each removal, or for its latest time,
+// where hostapd keeps the link.
+function iface_link_reload_start(name, phydev, config, old_config)
+{
+	let reload = { phydev, config, old_config, links: {} };
+	let wait_ms = 0;
+
+	for (let ifname, bss in iface_reload_links(name, config, old_config)) {
+		let removal = bss.link_remove?.(LINK_RELOAD_COUNT);
+		if (!removal)
+			continue;
+
+		reload.links[ifname] = true;
+		wait_ms = max(wait_ms, removal.removal_ms);
+	}
+
+	if (!length(reload.links))
+		return false;
+
+	hostapd.printf(`Announce the removal of ${join(", ", keys(reload.links))} on phy ${name} before its restart`);
+	reload.timer = uloop.timer(wait_ms + LINK_RELOAD_MARGIN_MS,
+				   () => iface_link_reload_restart(name));
+	hostapd.data.link_reload[name] = reload;
+
+	return true;
+}
+
+function iface_link_reload_expired(phy, name)
+{
+	let reload = hostapd.data.link_reload[phy];
+	if (!reload?.links[name])
+		return false;
+
+	delete reload.links[name];
+	if (!length(reload.links))
+		reload.timer.set(0);
+
+	return true;
 }
 
 function iface_set_config(name, config)
 {
 	let old_config = hostapd.data.config[name];
+	let reload = hostapd.data.link_reload[name];
+
+	// The radio runs the configuration from before the announced restart
+	if (reload)
+		old_config = reload.old_config;
 
 	if (!config) {
+		iface_link_reload_cancel(name);
 		delete hostapd.data.config[name];
 		return iface_config_remove(name, old_config);
 	}
@@ -1097,19 +1788,30 @@ function iface_set_config(name, config)
 
 	config.orig_bss = [ ...config.bss ];
 	iface_check_mld(phydev, name, config);
-	if (!length(config.bss))
+	if (!length(config.bss)) {
+		iface_link_reload_cancel(name);
+		iface_macaddr_prune(name, config);
 		return iface_config_remove(name, old_config);
+	}
+
+	if (reload) {
+		reload.phydev = phydev;
+		reload.config = config;
+		return 0;
+	}
 
 	try {
 		let ret = iface_reload_config(name, phydev, config, old_config);
 		if (ret) {
-			iface_update_supplicant_macaddr(phydev);
 			hostapd.printf(`Reloaded settings for phy ${name}`);
 			return 0;
 		}
 	} catch (e) {
 		hostapd.printf(`Error reloading config: ${e}\n${e.stacktrace[0].context}`);
 	}
+
+	if (iface_link_reload_start(name, phydev, config, old_config))
+		return 0;
 
 	hostapd.printf(`Restart interface for phy ${name}`);
 	let ret = iface_restart(phydev, config, old_config);
@@ -1230,6 +1932,10 @@ function iface_load_config(phy, radio, filename)
 	}
 	f.close();
 
+	for (let bss in config.bss)
+		if (!bss.bssid)
+			bss.default_macaddr = true;
+
 	return config;
 }
 
@@ -1255,16 +1961,35 @@ function bss_config(bss_name) {
 	}
 }
 
-function mld_rename_bss(data, name)
+function mld_radio_mask(radios)
 {
-	if (data.ifname == name)
-		return true;
+	let radio_mask = 0;
+	for (let r in radios)
+		if (r != null)
+			radio_mask |= 1 << r;
 
-	// TODO: handle rename gracefully
-	return false;
+	return radio_mask;
 }
 
-function mld_add_bss(name, data, phy_list, i)
+function mld_macaddr_get(phydev, name, config, prev)
+{
+	let ret = phydev.macaddr_get(ubus, "hostapd", name, {
+		group: "mld",
+		ifname: name,
+		macaddr: config.macaddr,
+		static: !!config.macaddr,
+		any_radio: true,
+	});
+	if (ret.macaddr)
+		return ret.macaddr;
+
+	let addr = ret.transport ? (config.macaddr ?? prev) : null;
+	hostapd.printf(`No MAC address from netifd for MLD ${name}: ${ret.error}${addr ? ", using " + addr : ""}`);
+
+	return addr;
+}
+
+function mld_add_bss(name, data, phy_list, prev)
 {
 	let config = data.config;
 	if (!config.phy)
@@ -1278,31 +2003,47 @@ function mld_add_bss(name, data, phy_list, i)
 		if (!phydev)
 			return;
 
-		iface_macaddr_init(phydev, data.config, phy_macaddr_list(config.phy));
-
 		phy_list[config.phy] = phydev;
 	}
 
-	data.macaddr = config.macaddr;
-	if (!data.macaddr) {
-		data.macaddr = phydev.macaddr_next();
-		data.default_macaddr = true;
-	}
+	data.macaddr = mld_macaddr_get(phydev, name, config, prev?.macaddr);
+	if (!data.macaddr)
+		return;
 
-	let radio_mask = 0;
-	for (let r in config.radios)
-		if (r != null)
-			radio_mask |= 1 << r;
+	data.default_macaddr = !config.macaddr;
 
-	data.radio_mask = radio_mask;
+	data.radio_mask = mld_radio_mask(config.radios);
 	data.ifname = name;
 }
 
-function mld_find_matching_config(list, config)
+// An MLD netdev is defined by its name, wiphy, radio mask and address, i.e. the
+// config fields used by mld_add_bss(). The caller looks up the previous entry by
+// name. All remaining fields are BSS level and reach hostapd through the per PHY
+// config file, so a change to them must not destroy the netdev and all BSSes
+// attached to it.
+//
+// A radio that leaves the MLD removes only its own link. A radio that joins
+// gets a new netdev, as mt7996 keeps the state of a removed link until the
+// netdev goes.
+function mld_config_matches(data, config)
 {
-	for (let name, data in list)
-		if (is_equal(data.config, config))
-			return name;
+	if (!data.ifname || !data.config)
+		return false;
+
+	if (data.config.phy != config.phy)
+		return false;
+
+	if (mld_radio_mask(config.radios) & ~mld_radio_mask(data.config.radios))
+		return false;
+
+	// cfg80211 refuses a link with another SSID while a link beacons
+	if (data.config.ssid != config.ssid)
+		return false;
+
+	if (config.macaddr)
+		return data.macaddr == config.macaddr;
+
+	return !!data.default_macaddr;
 }
 
 function mld_reload_interface(name)
@@ -1317,6 +2058,81 @@ function mld_reload_interface(name)
 	iface_set_config(name, config);
 }
 
+function mld_prev_set(new_mld, prev_mld)
+{
+	let news = {};
+	let prevs = {};
+
+	for (let name, data in new_mld)
+		if (!data.ifname && !data.config.macaddr)
+			news[name] = data.config;
+	for (let name, data in prev_mld)
+		if (data.default_macaddr && data.macaddr)
+			prevs[name] = data.config;
+
+	for (let name, from in mld_prev_match(news, prevs))
+		new_mld[name].prev_name = from;
+}
+
+// The links of a removed MLD give up their entries on every radio, and
+// those of a continued MLD move to the links of the new MLD. A move needs
+// a target name without a live entry; in a cycle of renames the entries
+// stay stale and the links claim them by name.
+function mld_links_release(new_mld, prev_mld)
+{
+	let next = {};
+	for (let name, data in new_mld)
+		if (data.prev_name)
+			next[data.prev_name] = name;
+
+	let order = [];
+	let seen = {};
+	let visit;
+	visit = function(name) {
+		if (seen[name])
+			return;
+
+		seen[name] = true;
+		if (next[name] && prev_mld[next[name]])
+			visit(next[name]);
+		push(order, name);
+	};
+	for (let name in prev_mld)
+		visit(name);
+
+	for (let group, config in hostapd.data.config) {
+		if (!config)
+			continue;
+
+		for (let name in order)
+			macaddr_release_defer(ubus, "hostapd", bss_macaddr_name(group, { ifname: name }),
+				next[name] && next[name] != name ? {
+					to: bss_macaddr_name(group, { ifname: next[name] }),
+					ifname: next[name],
+					share: next[name],
+					replace: !prev_mld[next[name]],
+				} : null);
+	}
+}
+
+function mld_macaddr_list(new_mld, prev_mld)
+{
+	let list = {};
+
+	for (let name, data in new_mld) {
+		let prev = prev_mld[data.prev_name];
+		list[name] = "";
+		if (data.ifname || !prev || data.prev_name == name)
+			continue;
+
+		list[name] = macaddr_sync_entry(data.config.phy, -1, prev.macaddr, {
+			any_radio: true,
+		});
+	}
+
+	return list;
+}
+
 function mld_set_config(config)
 {
 	let prev_mld = { ...hostapd.data.mld };
@@ -1326,16 +2142,19 @@ function mld_set_config(config)
 
 	hostapd.printf(`Set MLD config: ${keys(config)}`);
 
-	// find renamed/new interfaces
+	// find kept/new interfaces
 	for (let name, data in config) {
-		let prev = mld_find_matching_config(prev_mld, data);
-		if (prev) {
-			let data = prev_mld[prev];
-			if (mld_rename_bss(data, name)) {
-				new_mld[name] = data;
-				delete prev_mld[prev];
-				continue;
-			}
+		let prev = prev_mld[name];
+		if (prev && mld_config_matches(prev, data)) {
+			let mask = mld_radio_mask(data.radios);
+			if (mask != mld_radio_mask(prev.config.radios))
+				hostapd.printf(`Keep MLD interface ${name}, radios ${mask} of mask ${prev.radio_mask}`);
+			if (!prev.has_wdev)
+				prev.radio_mask = mask;
+			prev.config = data;
+			new_mld[name] = prev;
+			delete prev_mld[name];
+			continue;
 		}
 
 		new_mld[name] = {
@@ -1367,11 +2186,15 @@ function mld_set_config(config)
 		wdev_remove(name);
 	}
 
+	mld_prev_set(new_mld, prev_mld);
+	mld_links_release(new_mld, prev_mld);
+
 	// add new interfaces
 	hostapd.data.mld = new_mld;
+	macaddr_sync_defer(ubus, "hostapd", "mld", mld_macaddr_list(new_mld, prev_mld));
 	for (let name, data in new_mld)
 		if (!data.ifname)
-			mld_add_bss(name, data, phy_list);
+			mld_add_bss(name, data, phy_list, prev_mld[data.prev_name ?? name]);
 
 	if (!new_config)
 		return;
@@ -1438,7 +2261,7 @@ function dpp_channel_handle_request(channel, req)
 			return libubus.STATUS_NOT_FOUND;
 		let val = data.enable ? "dd04506f9a1e" : "";
 		bss.ctrl("SET vendor_elements " + val);
-		bss.ctrl("UPDATE_BEACON");
+		bss.update_beacon();
 		return 0;
 
 	default:
@@ -1521,6 +2344,7 @@ let main_obj = {
 
 			if (!req.args.up) {
 				delete hostapd.data.apsta_freq[phy];
+				hostapd.data.apsta_stopped[phy] = true;
 				iface.stop();
 				return 0;
 			}
@@ -1536,8 +2360,10 @@ let main_obj = {
 				 */
 				delete hostapd.data.apsta_freq[phy];
 
-				if (iface_channel_switch(phy, config))
+				if (iface_channel_switch(phy, config)) {
+					delete hostapd.data.apsta_stopped[phy];
 					return 0;
+				}
 
 				let phydev = phy_open(config.phy, config.radio_idx);
 				if (phydev)
@@ -1557,6 +2383,8 @@ let main_obj = {
 					let ret = iface.switch_channel(freq_info);
 					if (!ret)
 						return libubus.STATUS_UNKNOWN_ERROR;
+
+					delete hostapd.data.apsta_stopped[phy];
 					return 0;
 				}
 			}
@@ -1565,18 +2393,8 @@ let main_obj = {
 			if (!ret)
 				return libubus.STATUS_UNKNOWN_ERROR;
 
+			delete hostapd.data.apsta_stopped[phy];
 			return 0;
-		}
-	},
-	config_get_macaddr_list: {
-		args: {
-			phy: "",
-		},
-		call: function(req) {
-			if (!req.args.phy)
-				return libubus.STATUS_INVALID_ARGUMENT;
-
-			return { macaddr: keys(phy_macaddr_list(req.args.phy)) };
 		}
 	},
 	switch_channel: {
@@ -1724,6 +2542,55 @@ let main_obj = {
 			return ret;
 		}
 	},
+	mbo_assoc_disallow: {
+		args: {
+			iface: "",
+			reason: 0,
+		},
+		call: function(req) {
+			if (!req.args.iface)
+				return libubus.STATUS_INVALID_ARGUMENT;
+
+			// Every link of an AP MLD is a BSS of its own, and each builds
+			// its own Beacon.
+			let found = false;
+			for (let phy, bss_list in hostapd.bss) {
+				let bss = bss_list[req.args.iface];
+				if (!bss)
+					continue;
+
+				found = true;
+				if (bss.ctrl(`SET mbo_assoc_disallow ${+req.args.reason}`) != "OK")
+					return libubus.STATUS_UNKNOWN_ERROR;
+			}
+
+			return found ? 0 : libubus.STATUS_NOT_FOUND;
+		}
+	},
+	mld_link_remove: {
+		args: {
+			phy: "",
+			radio: 0,
+			iface: "",
+			count: 0,
+		},
+		call: function(req) {
+			let phy = phy_name(req.args.phy, req.args.radio);
+			if (!phy || !req.args.iface || !req.args.count ||
+			    req.args.count < 0 || req.args.count > 0xffff)
+				return libubus.STATUS_INVALID_ARGUMENT;
+
+			let bss = hostapd.bss[phy]?.[req.args.iface];
+			if (!bss)
+				return libubus.STATUS_NOT_FOUND;
+
+			let removal = bss.link_remove?.(req.args.count);
+			if (removal == null)
+				return libubus.STATUS_NOT_SUPPORTED;
+
+			return removal;
+		}
+	},
 	status: {
 		args: {},
 		call: function(req) {
@@ -1735,7 +2602,8 @@ let main_obj = {
 
 				let is_pending = !!hostapd.data.pending_config[phy_name];
 				let iface = hostapd.interfaces[phy_name];
-				let is_running = iface && iface.state() == "ENABLED" && !is_pending;
+				let state = iface?.state();
+				let is_running = iface && state == "ENABLED" && !is_pending;
 
 				for (let bss in config.bss) {
 					let ifname = bss.ifname;
@@ -1755,6 +2623,7 @@ let main_obj = {
 							macaddr: bss.bssid,
 							running: is_running,
 							pending: is_pending,
+							state,
 						};
 					} else {
 						entry = {
@@ -1762,6 +2631,7 @@ let main_obj = {
 							macaddr: bss.bssid,
 							running: is_running,
 							pending: is_pending,
+							state,
 						};
 						if (config.radio_idx != null && config.radio_idx >= 0)
 							entry.radio = config.radio_idx;
@@ -1811,7 +2681,7 @@ return {
 		for (let phy in hostapd.data.config)
 			iface_set_config(phy);
 		hostapd.udebug_set(null);
-		hostapd.ubus.disconnect();
+		hostapd.data.ubus.disconnect();
 	},
 	bss_create: function(phy, name, obj) {
 		phy = hostapd.data.config[phy];
@@ -1830,6 +2700,10 @@ return {
 	bss_remove: function(phy, name, obj) {
 		delete hostapd.data.dpp_hooks[name];
 		bss_event("remove", name);
+	},
+	bss_link_removed: function(phy, name, obj) {
+		if (!iface_link_reload_expired(phy, name))
+			mld_link_bss_remove(phy, name, obj);
 	},
 	sta_auth: function(iface, sta) {
 		let msg = { iface, sta };
@@ -1865,6 +2739,8 @@ return {
 		});
 		if (response && response.response)
 			return response.response;
+		if (response && response.pending)
+			return true;
 		return null;
 	},
 	wps_m7_rx: function(ifname, addr, data) {

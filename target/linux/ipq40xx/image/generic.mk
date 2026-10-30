@@ -77,10 +77,11 @@ endef
 define Build/wac5xx-netgear-tar
 	mkdir $@.tmp
 	mv $@ $@.tmp/wac5xx-ubifs-root.img
-	md5sum $@.tmp/wac5xx-ubifs-root.img > $@.tmp/wac5xx-ubifs-root.md5sum
+	(cd $@.tmp && md5sum wac5xx-ubifs-root.img) > $@.tmp/wac5xx-ubifs-root.md5sum
 	echo "WAC505 WAC510" > $@.tmp/metadata.txt
 	echo "WAC505_V9.9.9.9" > $@.tmp/version
-	tar -C $@.tmp/ -cf $@ .
+	$(TAR) -C $@.tmp/ -cf $@ --sort=name --numeric-owner --owner=0 --group=0 --mode=go-w \
+		$(if $(SOURCE_DATE_EPOCH),--mtime="@$(SOURCE_DATE_EPOCH)") .
 	rm -rf $@.tmp
 endef
 
@@ -444,7 +445,7 @@ define Device/edgecore_oap100
 	PAGESIZE := 2048
 	IMAGES := sysupgrade.bin
 	DEVICE_DTS_CONFIG := config@ap.dk07.1-c1
-	DEVICE_PACKAGES := kmod-usb-acm kmod-usb-net kmod-usb-net-cdc-qmi uqmi
+	DEVICE_PACKAGES := kmod-usb-acm kmod-usb-net kmod-usb-net-qmi-wwan uqmi
 endef
 # Missing DSA Setup
 #TARGET_DEVICES += edgecore_oap100
@@ -951,8 +952,11 @@ define Device/netgear_orbi
 	$(call Device/DniImage)
 	SOC := qcom-ipq4019
 	DEVICE_VENDOR := NETGEAR
-	IMAGE/factory.img := append-kernel | pad-offset 128k 64 | \
-		append-uImage-fakehdr filesystem | pad-to $$$$(KERNEL_SIZE) | \
+	KERNEL = kernel-bin | fit none $$(KDIR)/image-$$(DEVICE_DTS).dtb | \
+		pad-offset 128k 64 | append-uImage-fakehdr filesystem | \
+		check-size $$(KERNEL_SIZE)
+	KERNEL_INITRAMFS = kernel-bin | fit none $$(KDIR)/image-$$(DEVICE_DTS).dtb
+	IMAGE/factory.img := append-kernel | pad-to $$$$(KERNEL_SIZE) | \
 		append-rootfs | pad-rootfs | netgear-dni
 	IMAGE/sysupgrade.bin/squashfs := append-rootfs | pad-to 64k | \
 		sysupgrade-tar rootfs=$$$$@ | append-metadata
@@ -1326,7 +1330,7 @@ define Device/ubnt_utr
 	PAGESIZE := 2048
 	KERNEL_IN_UBI :=
 	UBINIZE_PARTS = vol=$$(KDIR_KERNEL_IMAGE)
-	DEVICE_PACKAGES := ipq-wifi-ubnt_utr kmod-i2c-gpio kmod-iio-st_accel-i2c kmod-drm-panel-mipi-dbi kmod-backlight-pwm kmod-gpio-pwm kmod-btusb mipi-dbi-ubnt-utr
+	DEVICE_PACKAGES := ipq-wifi-ubnt_utr kmod-i2c-gpio kmod-iio-st_accel-i2c kmod-backlight-pwm kmod-gpio-pwm kmod-btusb mipi-dbi-ubnt-utr video-support
 endef
 TARGET_DEVICES += ubnt_utr
 

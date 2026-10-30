@@ -1,0 +1,262 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Sun, 30 Aug 2026 01:41:35 +0200
+Subject: [PATCH] wifi: mac80211: add the flow offload flush op
+
+A driver that uses ieee80211_sta_flow_prio() stores the result in its
+hardware flow entries. Once the SCS or MSCS rules of a station change,
+those entries are stale. Add a driver op that is called after each rule
+change, so that the driver can drop the entries of the station and
+query again when the flows are added back.
+
+A learned MSCS priority also changes an answer, but only for one flow.
+When a flow is learned or its priority changes, the entry is marked
+and a work passes its key to the driver, so that only the matching
+hardware entries are dropped. The work runs under the wiphy lock, since
+the learn path runs in the receive path and the op may sleep. The key
+describes the frames to the station. The driver also drops the entries
+of the flow that carry the frames of the station, since mac80211 learns
+an MSCS priority only from frames that it receives.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+
+--- a/include/net/mac80211.h
++++ b/include/net/mac80211.h
+@@ -5119,6 +5119,27 @@ struct ieee80211_ops {
+ 			   struct ieee80211_sta *sta,
+ 			   struct cfg80211_scs_desc * const *desc,
+ 			   struct cfg80211_scs_result *res, u8 n_desc);
++	/**
++	 * @flow_offload_flush:
++	 * Called after the SCS or MSCS rules of a station changed, or after
++	 * the learned MSCS priority of one flow changed. Any priority that
++	 * ieee80211_sta_flow_prio() returned before is stale, so the driver
++	 * must drop the hardware flow entries that use it. With a %NULL
++	 * @key, every entry of the station is stale. Otherwise only the
++	 * entries whose flow, masked to @fields, equals @key are stale.
++	 * @key describes the frames to the station. The driver also drops
++	 * the entries of the same flow in the direction from the station,
++	 * since mac80211 learns an MSCS priority only from frames that it
++	 * receives.
++	 * Optional, only needed by drivers that use ieee80211_sta_flow_prio().
++	 *
++	 * Called with the wiphy mutex held. This callback may sleep.
++	 */
++	void (*flow_offload_flush)(struct ieee80211_hw *hw,
++				   struct ieee80211_vif *vif,
++				   struct ieee80211_sta *sta,
++				   const struct cfg80211_flow_key *key,
++				   u32 fields);
+ 	int (*set_tid_config)(struct ieee80211_hw *hw,
+ 			      struct ieee80211_vif *vif,
+ 			      struct ieee80211_sta *sta,
+--- a/net/mac80211/driver-ops.h
++++ b/net/mac80211/driver-ops.h
+@@ -1578,6 +1578,28 @@ static inline int drv_sta_set_scs(struct
+ 	return ret;
+ }
+ 
++static inline void drv_flow_offload_flush(struct ieee80211_local *local,
++					  struct ieee80211_sub_if_data *sdata,
++					  struct sta_info *sta,
++					  const struct cfg80211_flow_key *key,
++					  u32 fields)
++{
++	might_sleep();
++	lockdep_assert_wiphy(local->hw.wiphy);
++
++	if (!local->ops->flow_offload_flush || !sta->uploaded)
++		return;
++
++	sdata = get_bss_sdata(sdata);
++	if (!check_sdata_in_driver(sdata))
++		return;
++
++	trace_drv_flow_offload_flush(local, sdata, &sta->sta);
++	local->ops->flow_offload_flush(&local->hw, &sdata->vif, &sta->sta, key,
++				       fields);
++	trace_drv_return_void(local);
++}
++
+ static inline int drv_set_tid_config(struct ieee80211_local *local,
+ 				     struct ieee80211_sub_if_data *sdata,
+ 				     struct ieee80211_sta *sta,
+--- a/net/mac80211/ieee80211_i.h
++++ b/net/mac80211/ieee80211_i.h
+@@ -345,6 +345,7 @@ struct ieee80211_if_ap {
+ 	/* learned MSCS entries of every station of this BSS, and its VLANs */
+ 	struct rhashtable flow_tbl;
+ 	struct wiphy_delayed_work flow_gc_work;
++	struct wiphy_work flow_flush_work;
+ };
+ 
+ struct ieee80211_if_vlan {
+--- a/net/mac80211/scs.c
++++ b/net/mac80211/scs.c
+@@ -295,10 +295,65 @@ static void ieee80211_flow_gc_work(struc
+ 		wiphy_delayed_work_queue(wiphy, &ap->flow_gc_work, delay);
+ }
+ 
++/* Tell the driver about every flow whose learned priority changed */
++static void ieee80211_flow_flush_sta(struct ieee80211_sub_if_data *sdata,
++				     struct sta_info *sta)
++{
++	struct ieee80211_mscs_sta *mscs;
++
++	mscs = wiphy_dereference(sdata->local->hw.wiphy, sta->mscs);
++	if (!mscs)
++		return;
++
++	while (true) {
++		struct ieee80211_flow_entry *entry;
++		struct cfg80211_flow_key key;
++		bool found = false;
++
++		spin_lock_bh(&mscs->lock);
++		list_for_each_entry(entry, &mscs->entries, list) {
++			if (!READ_ONCE(entry->flush))
++				continue;
++
++			WRITE_ONCE(entry->flush, false);
++			key = entry->hkey.key;
++			found = true;
++			break;
++		}
++		spin_unlock_bh(&mscs->lock);
++
++		if (!found)
++			return;
++
++		drv_flow_offload_flush(sdata->local, sta->sdata, sta, &key,
++				       mscs->layout);
++	}
++}
++
++static void ieee80211_flow_flush_work(struct wiphy *wiphy,
++				      struct wiphy_work *work)
++{
++	struct ieee80211_sub_if_data *sdata;
++	struct ieee80211_if_ap *ap;
++	struct sta_info *sta;
++
++	ap = container_of(work, struct ieee80211_if_ap, flow_flush_work);
++	sdata = container_of(ap, struct ieee80211_sub_if_data, u.ap);
++
++	list_for_each_entry(sta, &sdata->local->sta_list, list) {
++		if (sta->sdata->bss != ap)
++			continue;
++
++		ieee80211_flow_flush_sta(sdata, sta);
++	}
++}
++
+ int ieee80211_flow_tbl_init(struct ieee80211_sub_if_data *sdata)
+ {
+ 	wiphy_delayed_work_init(&sdata->u.ap.flow_gc_work,
+ 				ieee80211_flow_gc_work);
++	wiphy_work_init(&sdata->u.ap.flow_flush_work,
++			ieee80211_flow_flush_work);
+ 
+ 	return rhashtable_init(&sdata->u.ap.flow_tbl, &flow_rht_params);
+ }
+@@ -314,6 +369,7 @@ void ieee80211_flow_tbl_destroy(struct i
+ {
+ 	wiphy_delayed_work_cancel(sdata->local->hw.wiphy,
+ 				  &sdata->u.ap.flow_gc_work);
++	wiphy_work_cancel(sdata->local->hw.wiphy, &sdata->u.ap.flow_flush_work);
+ 	rhashtable_free_and_destroy(&sdata->u.ap.flow_tbl,
+ 				    ieee80211_flow_tbl_free, NULL);
+ }
+@@ -333,6 +389,8 @@ static void ieee80211_flow_insert(struct
+ 	entry->hkey.key = hkey->key;
+ 	entry->up = up;
+ 	entry->last_update = jiffies;
++	/* An offloaded entry of this flow carries the QoS map fallback */
++	entry->flush = true;
+ 
+ 	spin_lock_bh(&mscs->lock);
+ 
+@@ -365,6 +423,8 @@ static void ieee80211_flow_insert(struct
+ 		wiphy_delayed_work_queue(sdata->local->hw.wiphy,
+ 					 &sdata->bss->flow_gc_work, 1);
+ 
++	wiphy_work_queue(sdata->local->hw.wiphy, &sdata->bss->flow_flush_work);
++
+ 	return;
+ 
+ drop:
+@@ -416,13 +476,18 @@ void ieee80211_flow_learn(struct ieee802
+ 
+ 	entry = rhashtable_lookup(&sdata->bss->flow_tbl, &hkey,
+ 				  flow_rht_params);
+-	if (entry) {
+-		WRITE_ONCE(entry->up, up);
+-		WRITE_ONCE(entry->last_update, jiffies);
++	if (!entry) {
++		ieee80211_flow_insert(sdata, mscs, &hkey, up);
+ 		return;
+ 	}
+ 
+-	ieee80211_flow_insert(sdata, mscs, &hkey, up);
++	WRITE_ONCE(entry->last_update, jiffies);
++	if (READ_ONCE(entry->up) == up)
++		return;
++
++	WRITE_ONCE(entry->up, up);
++	WRITE_ONCE(entry->flush, true);
++	wiphy_work_queue(sdata->local->hw.wiphy, &sdata->bss->flow_flush_work);
+ }
+ 
+ int ieee80211_set_scs(struct wiphy *wiphy, struct net_device *dev,
+@@ -515,6 +580,8 @@ int ieee80211_set_scs(struct wiphy *wiph
+ 	if (old)
+ 		kvfree_rcu(old, rcu_head);
+ 
++	drv_flow_offload_flush(sdata->local, sdata, sta, NULL, 0);
++
+ 	return 0;
+ 
+ free:
+@@ -575,6 +642,8 @@ int ieee80211_set_mscs(struct wiphy *wip
+ 		kfree_rcu(old, rcu_head);
+ 	}
+ 
++	drv_flow_offload_flush(sdata->local, sdata, sta, NULL, 0);
++
+ 	return 0;
+ }
+ 
+--- a/net/mac80211/sta_info.h
++++ b/net/mac80211/sta_info.h
+@@ -696,6 +696,8 @@ struct ieee80211_flow_hkey {
+  * @list: linkage in &ieee80211_mscs_sta.entries
+  * @last_update: jiffies of the last uplink frame of this flow
+  * @up: the learned user priority
++ * @flush: @up changed since the driver was last told to drop the
++ *	offloaded entries of this flow
+  * @rcu_head: for freeing
+  */
+ struct ieee80211_flow_entry {
+@@ -704,6 +706,7 @@ struct ieee80211_flow_entry {
+ 	struct list_head list;
+ 	unsigned long last_update;
+ 	u8 up;
++	bool flush;
+ 	struct rcu_head rcu_head;
+ };
+ 
+--- a/net/mac80211/trace.h
++++ b/net/mac80211/trace.h
+@@ -1056,6 +1056,13 @@ TRACE_EVENT(drv_sta_set_scs,
+ 	)
+ );
+ 
++DEFINE_EVENT(sta_event, drv_flow_offload_flush,
++	TP_PROTO(struct ieee80211_local *local,
++		 struct ieee80211_sub_if_data *sdata,
++		 struct ieee80211_sta *sta),
++	TP_ARGS(local, sdata, sta)
++);
++
+ DEFINE_EVENT(sta_event, drv_sta_statistics,
+ 	TP_PROTO(struct ieee80211_local *local,
+ 		 struct ieee80211_sub_if_data *sdata,

@@ -22,6 +22,8 @@ PKG_BUILD_FLAGS:=no-lto
 
 HOST_BUILD_DEPENDS:=libsepol/host musl-fts/host pcre2/host
 
+PKG_BUILD_PARALLEL:=1
+
 include $(INCLUDE_DIR)/package.mk
 include $(INCLUDE_DIR)/host-build.mk
 

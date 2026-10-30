@@ -161,6 +161,7 @@ platform_do_upgrade() {
 	case "$board" in
 	abt,asr3000|\
 	acer,predator-w6x-ubootmod|\
+	asus,rt-ax59u-ubi|\
 	asus,zenwifi-bt8-ubootmod|\
 	bananapi,bpi-r3|\
 	bananapi,bpi-r3-mini|\
@@ -168,10 +169,12 @@ platform_do_upgrade() {
 	bananapi,bpi-r4-2g5|\
 	bananapi,bpi-r4-poe|\
 	bananapi,bpi-r4-lite|\
+	bananapi,bpi-r4-pro-4e|\
 	bananapi,bpi-r4-pro-8x|\
 	bazis,ax3000wm|\
 	cmcc,a10-ubootmod|\
 	cmcc,rax3000m|\
+	comfast,cf-wa933-ubi|\
 	comfast,cf-wr632ax-ubi|\
 	comfast,cf-wr632ax-ubootmod|\
 	creatlentem,clt-r30b1-ubi|\
@@ -210,6 +213,8 @@ platform_do_upgrade() {
 	snr,snr-cpe-ax2|\
 	teralink,tl3020-256mb|\
 	tplink,be450-ubi|\
+	tplink,tl-7dr7230*|\
+	tplink,tl-7dr7250*|\
 	tplink,tl-xdr4288|\
 	tplink,tl-xdr6086|\
 	tplink,tl-xdr6088|\
@@ -243,7 +248,8 @@ platform_do_upgrade() {
 	smartrg,sdg-8732|\
 	smartrg,sdg-8733|\
 	smartrg,sdg-8733a|\
-	smartrg,sdg-8734)
+	smartrg,sdg-8734|\
+	smartrg,sdg-9000)
 		CI_KERNPART="kernel"
 		CI_ROOTPART="rootfs"
 		emmc_do_upgrade "$1"
@@ -413,6 +419,7 @@ platform_check_image() {
 	case "$board" in
 	abt,asr3000|\
 	acer,predator-w6x-ubootmod|\
+	asus,rt-ax59u-ubi|\
 	asus,zenwifi-bt8-ubootmod|\
 	bananapi,bpi-r3|\
 	bananapi,bpi-r3-mini|\
@@ -420,10 +427,12 @@ platform_check_image() {
 	bananapi,bpi-r4-2g5|\
 	bananapi,bpi-r4-poe|\
 	bananapi,bpi-r4-lite|\
+	bananapi,bpi-r4-pro-4e|\
 	bananapi,bpi-r4-pro-8x|\
 	bazis,ax3000wm|\
 	cmcc,a10-ubootmod|\
 	cmcc,rax3000m|\
+	comfast,cf-wa933-ubi|\
 	comfast,cf-wr632ax-ubi|\
 	comfast,cf-wr632ax-ubootmod|\
 	creatlentem,clt-r30b1-ubi|\
@@ -456,6 +465,8 @@ platform_check_image() {
 	routerich,ax3000-ubootmod|\
 	teralink,tl3020-256mb|\
 	tplink,be450-ubi|\
+	tplink,tl-7dr7230*|\
+	tplink,tl-7dr7250*|\
 	tplink,tl-xdr4288|\
 	tplink,tl-xdr6086|\
 	tplink,tl-xdr6088|\
@@ -499,6 +510,7 @@ platform_copy_config() {
 	bananapi,bpi-r4-2g5|\
 	bananapi,bpi-r4-poe|\
 	bananapi,bpi-r4-lite|\
+	bananapi,bpi-r4-pro-4e|\
 	bananapi,bpi-r4-pro-8x|\
 	cmcc,rax3000m|\
 	gatonetworks,gdsp|\
@@ -532,6 +544,7 @@ platform_copy_config() {
 	smartrg,sdg-8733|\
 	smartrg,sdg-8733a|\
 	smartrg,sdg-8734|\
+	smartrg,sdg-9000|\
 	ubnt,unifi-6-plus)
 		emmc_copy_config
 		;;

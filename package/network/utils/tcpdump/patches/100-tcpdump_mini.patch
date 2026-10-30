@@ -532,7 +532,7 @@
  			/*
 --- a/print-tcp.c
 +++ b/print-tcp.c
-@@ -629,6 +629,7 @@ tcp_print(netdissect_options *ndo,
+@@ -630,6 +630,7 @@ tcp_print(netdissect_options *ndo,
                                  ND_PRINT(" %u", utoval);
                                  break;
  
@@ -540,7 +540,7 @@
                          case TCPOPT_MPTCP:
                              {
                                  const u_char *snapend_save;
-@@ -652,7 +653,7 @@ tcp_print(netdissect_options *ndo,
+@@ -653,7 +654,7 @@ tcp_print(netdissect_options *ndo,
                                          goto bad;
                                  break;
                              }
@@ -549,7 +549,7 @@
                          case TCPOPT_FASTOPEN:
                                  datalen = len - 2;
                                  LENCHECK(datalen);
-@@ -740,6 +741,7 @@ tcp_print(netdissect_options *ndo,
+@@ -741,6 +742,7 @@ tcp_print(netdissect_options *ndo,
                  return;
          }
  
@@ -557,7 +557,7 @@
          if (ndo->ndo_packettype) {
                  switch (ndo->ndo_packettype) {
                  case PT_ZMTP1:
-@@ -755,12 +757,15 @@ tcp_print(netdissect_options *ndo,
+@@ -756,12 +758,15 @@ tcp_print(netdissect_options *ndo,
                  }
                  return;
          }
@@ -573,7 +573,7 @@
          } else if (IS_SRC_OR_DST_PORT(TELNET_PORT)) {
                  telnet_print(ndo, bp, length);
          } else if (IS_SRC_OR_DST_PORT(SMTP_PORT)) {
-@@ -779,10 +784,12 @@ tcp_print(netdissect_options *ndo,
+@@ -780,10 +785,12 @@ tcp_print(netdissect_options *ndo,
          } else if (IS_SRC_OR_DST_PORT(NETBIOS_SSN_PORT)) {
                  nbt_tcp_print(ndo, bp, length);
  #endif
@@ -587,7 +587,7 @@
  #ifdef ENABLE_SMB
          } else if (IS_SRC_OR_DST_PORT(SMB_PORT)) {
                  smb_tcp_print(ndo, bp, length);
-@@ -790,18 +797,22 @@ tcp_print(netdissect_options *ndo,
+@@ -791,18 +798,22 @@ tcp_print(netdissect_options *ndo,
          } else if (IS_SRC_OR_DST_PORT(RTSP_PORT)) {
                  ND_PRINT(": ");
                  rtsp_print(ndo, bp, length);

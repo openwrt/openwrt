@@ -4,6 +4,7 @@ endef
 
 define Device/UbiFit
   KERNEL_IN_UBI := 1
+  FILESYSTEMS := squashfs
   IMAGES := factory.ubi sysupgrade.bin
   IMAGE/factory.ubi := append-ubi
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata

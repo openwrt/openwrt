@@ -1,0 +1,65 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Sat, 24 Oct 2026 06:03:04 +0200
+Subject: [PATCH] ubus: free a lost connection only from check_ubus_listeners()
+
+When ubusd goes away, ubus_disconnect_cb() runs from within libubus.
+If ubus_reconnect() fails, it frees the context with ubus_destroy().
+check_ubus_listeners() reads ubus->sock.fd right after
+ubus_handle_event() returns, from the freed context:
+
+  ERROR: AddressSanitizer: heap-use-after-free
+    #0 check_ubus_listeners src/ubus.c
+    #1 main src/dnsmasq.c
+  freed by thread T0 here:
+    #1 ubus_destroy src/ubus.c
+    #2 ubus_disconnect_cb src/ubus.c
+
+The callback also runs inside ubus_complete_request(), which reads the
+context after the callback returns. That wait happens in
+ubus_dns_notify() and in the connmark allowlist notify with a timeout.
+
+Let the callback leave the context alone. check_ubus_listeners() hands
+every poll event of the socket to libubus and frees the context once
+libubus marked it lost; the main loop then connects again through
+ubus_init(). This also stops a stale POLLHUP from closing a connection
+that ubus_reconnect() just opened on the same fd number.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+ src/ubus.c | 16 +++++-----------
+ 1 file changed, 5 insertions(+), 11 deletions(-)
+
+--- a/src/ubus.c
++++ b/src/ubus.c
+@@ -100,15 +100,9 @@ static void ubus_destroy(struct ubus_con
+ 
+ static void ubus_disconnect_cb(struct ubus_context *ubus)
+ {
+-  int ret;
+-
+-  ret = ubus_reconnect(ubus, NULL);
+-  if (ret)
+-    {
+-      my_syslog(LOG_ERR, _("Cannot reconnect to UBus: %s"), ubus_strerror(ret));
+-
+-      ubus_destroy(ubus);
+-    }
++  /* A waiting ubus_complete_request() uses the context after this
++     callback returns, so check_ubus_listeners() frees it. */
++  (void)ubus;
+ }
+ 
+ char *ubus_init()
+@@ -182,10 +176,10 @@ void check_ubus_listeners()
+   
+   error_logged = 0;
+ 
+-  if (poll_check(ubus->sock.fd, POLLIN))
++  if (poll_check(ubus->sock.fd, POLLIN | POLLHUP | POLLERR))
+     ubus_handle_event(ubus);
+   
+-  if (poll_check(ubus->sock.fd, POLLHUP | POLLERR))
++  if (ubus->sock.eof)
+     {
+       my_syslog(LOG_INFO, _("Disconnecting from UBus"));
+ 

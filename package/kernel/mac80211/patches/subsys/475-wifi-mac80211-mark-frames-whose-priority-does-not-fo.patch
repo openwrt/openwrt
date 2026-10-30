@@ -1,0 +1,103 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Sat, 24 Oct 2026 22:30:00 +0200
+Subject: [PATCH] wifi: mac80211: mark frames whose priority does not follow the DSCP
+
+A device that encapsulates 802.3 frames in firmware can take the TID of
+a frame from its DSCP with a mapping of its own. A frame whose priority
+mac80211 did not take from the DSCP with the RFC 8325 default is then
+sent with another TID. This applies to a priority of 256 to 263 set
+before the frame reaches mac80211, a VLAN PCP, a QoS map of the
+interface and an SCS or MSCS rule.
+
+Mark such frames with IEEE80211_TX_CTRL_EXPLICIT_UP, so that a driver
+can hand skb->priority to the device for them. Compare after the
+downgrade for admission control, which can change the priority as well.
+A frame without a DSCP is expected at priority 0.
+cfg80211_classify8021d() gives an 802.21 frame priority 7 and an MPLS
+frame the traffic class of its label, so these frames are marked unless
+their priority is 0.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+
+--- a/include/net/mac80211.h
++++ b/include/net/mac80211.h
+@@ -1131,6 +1131,10 @@ enum mac80211_tx_info_flags {
+  *	operation on the interface.
+  * @IEEE80211_TX_CTRL_STREAM_CLASSIFIED: SCS or MSCS set the priority of this
+  *	frame, so it does not follow from the frame contents.
++ * @IEEE80211_TX_CTRL_EXPLICIT_UP: the priority of this frame is not the one
++ *	that cfg80211_dscp_to_up() without a QoS map gives its DSCP, or not 0
++ *	for a frame without a DSCP. A device that classifies an 802.3 frame by
++ *	its DSCP itself must take skb->priority for this frame.
+  * @IEEE80211_TX_CTRL_MLO_LINK: If not @IEEE80211_LINK_UNSPECIFIED, this
+  *	frame should be transmitted on the specific link. This really is
+  *	only relevant for frames that do not have data present, and is
+@@ -1153,6 +1157,7 @@ enum mac80211_tx_control_flags {
+ 	IEEE80211_TX_CTRL_MCAST_MLO_FIRST_TX	= BIT(9),
+ 	IEEE80211_TX_CTRL_DONT_USE_RATE_MASK	= BIT(10),
+ 	IEEE80211_TX_CTRL_STREAM_CLASSIFIED	= BIT(11),
++	IEEE80211_TX_CTRL_EXPLICIT_UP		= BIT(12),
+ 	IEEE80211_TX_CTRL_MLO_LINK		= 0xf0000000,
+ };
+ 
+--- a/net/mac80211/wme.c
++++ b/net/mac80211/wme.c
+@@ -10,6 +10,7 @@
+ #include <linux/module.h>
+ #include <linux/if_arp.h>
+ #include <linux/types.h>
++#include <net/dsfield.h>
+ #include <net/ip.h>
+ #include <net/pkt_sched.h>
+ 
+@@ -144,6 +145,29 @@ u16 ieee80211_select_queue_80211(struct
+ 	return ieee80211_downgrade_queue(sdata, NULL, skb);
+ }
+ 
++/*
++ * Whether the priority of @skb is the one that the RFC 8325 mapping gives
++ * its DSCP, or 0 for a frame without a DSCP. A device that classifies an
++ * 802.3 frame by its DSCP itself arrives at that priority.
++ */
++static bool ieee80211_prio_follows_dscp(struct sk_buff *skb)
++{
++	unsigned int up = 0;
++
++	switch (skb->protocol) {
++	case htons(ETH_P_IP):
++		up = cfg80211_dscp_to_up(ipv4_get_dsfield(ip_hdr(skb)) >> 2,
++					 NULL);
++		break;
++	case htons(ETH_P_IPV6):
++		up = cfg80211_dscp_to_up(ipv6_get_dsfield(ipv6_hdr(skb)) >> 2,
++					 NULL);
++		break;
++	}
++
++	return skb->priority == up;
++}
++
+ u16 ieee80211_select_queue(struct ieee80211_sub_if_data *sdata,
+ 			   struct sta_info *sta, struct sk_buff *skb,
+ 			   u32 *ctrl_flags)
+@@ -151,6 +175,7 @@ u16 ieee80211_select_queue(struct ieee80
+ 	const struct ethhdr *eth = (void *)skb->data;
+ 	struct mac80211_qos_map *qos_map;
+ 	bool qos;
++	u16 ac;
+ 
+ 	/* Ensure hash is set prior to potential SW encryption */
+ 	skb_get_hash(skb);
+@@ -192,7 +217,11 @@ u16 ieee80211_select_queue(struct ieee80
+ 					       &qos_map->qos_map : NULL);
+ 
+  downgrade:
+-	return ieee80211_downgrade_queue(sdata, sta, skb);
++	ac = ieee80211_downgrade_queue(sdata, sta, skb);
++	if (ctrl_flags && !ieee80211_prio_follows_dscp(skb))
++		*ctrl_flags |= IEEE80211_TX_CTRL_EXPLICIT_UP;
++
++	return ac;
+ }
+ 
+ /**

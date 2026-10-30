@@ -13,6 +13,10 @@ alfa-network,ax1800rm)
 	ucidef_set_led_netdev "lan3" "lan3" "green:lan3" "lan3"
 	ucidef_set_led_netdev "wan" "wan" "green:wan" "wan"
 	;;
+asus,4g-ax56)
+	ucidef_set_led_netdev "wan" "WAN" "white:wan" "wan" "link tx rx"
+	ucidef_set_led_netdev "mobile" "Mobile" "white:mobile" "usb0" "link tx rx"
+	;;
 asus,rp-ac87)
 	ucidef_set_rssimon "wlan0" "200000" "1"
 	ucidef_set_rssimon "wlan1" "200000" "1"
@@ -221,7 +225,8 @@ tplink,archer-ax21-v4|\
 tplink,archer-ax23-v1|\
 tplink,archer-c6-v3|\
 tplink,archer-c6u-v1|\
-tplink,ex220-v1)
+tplink,ex220-v1|\
+tplink,ex220-v1-nand)
 	ucidef_set_led_netdev "lan" "LAN" "green:lan" "br-lan"
 	ucidef_set_led_netdev "wan" "WAN" "green:wan" "wan"
 	;;

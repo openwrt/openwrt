@@ -1,0 +1,229 @@
+From 413cb5519d21fda9c59afb366b852c98c8837f48 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Fri, 16 Oct 2026 23:54:17 +0100
+Subject: [PATCH] media: rockchip: rkisp2: Measure AWB means on the ISP 2.0
+
+The raw white balance block of the ISP 2.0 has neither the weight RAM
+nor the per-cell count RAM of the later versions at the addresses the
+driver programs and reads, so the AWB statistics block stays empty on
+the RV1126. The ISP 2.0 still has the white balance measurement of the
+ISP core, which reports the mean red, green and blue values of a window.
+
+Program that measurement from the AWB measurement parameters on the ISP
+2.0, spanning the grid of sub-windows and using the maximum limits of
+the colours in RGB mode, and report its means and pixel count in the new
+AWB_MEAN statistics block in place of the counts.
+
+Assisted-by: LLM
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ .../platform/rockchip/rkisp2/rkisp2-params.c  | 52 +++++++++++++++++++
+ .../platform/rockchip/rkisp2/rkisp2-stats.c   | 38 +++++++++++++-
+ .../uapi/linux/media/rockchip/rkisp2-config.h | 39 ++++++++++++--
+ 3 files changed, 124 insertions(+), 5 deletions(-)
+
+--- a/drivers/media/platform/rockchip/rkisp2/rkisp2-params.c
++++ b/drivers/media/platform/rockchip/rkisp2/rkisp2-params.c
+@@ -733,6 +733,53 @@ static void rkisp2_params_hist_big(struc
+ 	rkisp2_write(params->rkisp2, ctrl, control);
+ }
+ 
++/* The AWB measurement sub-windows form the grid of RKISP2_ISP_AWB_COUNTS_SIZE */
++#define RKISP2_AWB_GRID 15
++
++/*
++ * The ISP 2.0 measures the white balance means in the ISP core AWB block,
++ * which takes the whole window and, in RGB mode, the maximum of each colour.
++ */
++static void rkisp2_params_awb_mean(struct rkisp2_params *params,
++				   const struct rkisp2_params_awb_meas *arg,
++				   __u16 flags)
++{
++	struct rkisp2_device *rkisp2 = params->rkisp2;
++	u32 prop;
++
++	prop = rkisp2_read(rkisp2, RKISP2_CIF_ISP_AWB_PROP_V10) &
++	       RKISP2_CIF_ISP_AWB_MODE_MASK_NONE;
++
++	if (flags & V4L2_ISP_PARAMS_FL_BLOCK_DISABLE) {
++		rkisp2_write(rkisp2, RKISP2_CIF_ISP_AWB_PROP_V10, prop);
++		return;
++	}
++
++	if (!(flags & V4L2_ISP_PARAMS_FL_BLOCK_ENABLE))
++		return;
++
++	rkisp2_write(rkisp2, RKISP2_CIF_ISP_AWB_WND_H_OFFS_V10,
++		     arg->meas_window.h_offs);
++	rkisp2_write(rkisp2, RKISP2_CIF_ISP_AWB_WND_V_OFFS_V10,
++		     arg->meas_window.v_offs);
++	rkisp2_write(rkisp2, RKISP2_CIF_ISP_AWB_WND_H_SIZE_V10,
++		     arg->meas_window.h_size * RKISP2_AWB_GRID);
++	rkisp2_write(rkisp2, RKISP2_CIF_ISP_AWB_WND_V_SIZE_V10,
++		     arg->meas_window.v_size * RKISP2_AWB_GRID);
++	rkisp2_write(rkisp2, RKISP2_CIF_ISP_AWB_FRAMES_V10, 0);
++
++	rkisp2_write(rkisp2, RKISP2_CIF_ISP_AWB_REF_V10,
++		     RKISP2_CIF_ISP_AWB_REF_CR_SET(arg->limits[1].r) |
++			     arg->limits[1].b);
++	rkisp2_write(rkisp2, RKISP2_CIF_ISP_AWB_THRESH_V10,
++		     RKISP2_CIF_ISP_AWB_MIN_Y_SET(arg->limits[1].g));
++
++	rkisp2_write(rkisp2, RKISP2_CIF_ISP_AWB_PROP_V10,
++		     prop | RKISP2_CIF_ISP_AWB_MODE_RGB_EN);
++	rkisp2_param_set_bits(params, RKISP2_CIF_ISP_CTRL,
++			      RKISP2_CIF_ISP_CTRL_ISP_AWB_ENA);
++}
++
+ static void rkisp2_params_awb_meas(struct rkisp2_params *params,
+ 				   union rkisp2_params_block block)
+ {
+@@ -741,6 +788,11 @@ static void rkisp2_params_awb_meas(struc
+ 	u32 val;
+ 	u32 control = 0;
+ 
++	if (params->rkisp2->info->isp_ver == RKISP2_V0) {
++		rkisp2_params_awb_mean(params, arg, block.header->flags);
++		return;
++	}
++
+ 	if (block.header->flags & V4L2_ISP_PARAMS_FL_BLOCK_DISABLE) {
+ 		rkisp2_param_clear_bits(params, ISP3X_RAWAWB_CTRL,
+ 					ISP3X_RAWAWB_CTRL_EN);
+--- a/drivers/media/platform/rockchip/rkisp2/rkisp2-stats.c
++++ b/drivers/media/platform/rockchip/rkisp2/rkisp2-stats.c
+@@ -30,6 +30,7 @@ rkisp2_stats_blocks_info[] = {
+ 	RKISP2_STATS_BLOCK_INFO(HIST_BIG1, hist),
+ 	RKISP2_STATS_BLOCK_INFO(HIST_BIG2, hist),
+ 	RKISP2_STATS_BLOCK_INFO(AWB, awb),
++	RKISP2_STATS_BLOCK_INFO(AWB_MEAN, awb_mean),
+ };
+ 
+ /*
+@@ -41,6 +42,7 @@ union rkisp2_stats_block {
+ 	struct rkisp2_stats_ae_lite ae_lite;
+ 	struct rkisp2_stats_hist hist;
+ 	struct rkisp2_stats_awb awb;
++	struct rkisp2_stats_awb_mean awb_mean;
+ };
+ 
+ #define rkisp2_init_stats_block(rkisp2, buf, type)			\
+@@ -367,6 +369,37 @@ static void rkisp2_stats_get_rawawb(stru
+ 	rkisp2_write(rkisp2, ctrl, val1 | ISP3X_RAWAWB_CTRL_MEAS_DONE);
+ }
+ 
++/* The ISP 2.0 measures the white balance means in the ISP core AWB block. */
++static void rkisp2_stats_get_awb_mean(struct rkisp2_stats *stats,
++				      struct v4l2_isp_buffer *pbuf)
++{
++	struct rkisp2_device *rkisp2 = stats->rkisp2;
++	struct rkisp2_stats_awb_mean *awb_mean;
++	union rkisp2_stats_block *block;
++	u32 val;
++
++	block = rkisp2_init_stats_block(rkisp2, pbuf,
++					RKISP2_STATS_BLOCK_AWB_MEAN);
++	if (IS_ERR(block))
++		return;
++
++	awb_mean = &block->awb_mean;
++
++	val = rkisp2_read(rkisp2, RKISP2_CIF_ISP_RIS);
++	awb_mean->done = !!(val & RKISP2_CIF_ISP_AWB_DONE);
++	if (!awb_mean->done)
++		return;
++
++	val = rkisp2_read(rkisp2, RKISP2_CIF_ISP_AWB_WHITE_CNT_V10);
++	awb_mean->count = RKISP2_CIF_ISP_AWB_GET_PIXEL_CNT(val);
++	val = rkisp2_read(rkisp2, RKISP2_CIF_ISP_AWB_MEAN_V10);
++	awb_mean->mean_r = RKISP2_CIF_ISP_AWB_GET_MEAN_CR_R(val);
++	awb_mean->mean_g = RKISP2_CIF_ISP_AWB_GET_MEAN_Y_G(val);
++	awb_mean->mean_b = RKISP2_CIF_ISP_AWB_GET_MEAN_CB_B(val);
++
++	rkisp2_write(rkisp2, RKISP2_CIF_ISP_ICR, RKISP2_CIF_ISP_AWB_DONE);
++}
++
+ /* This is always called in an intterupt context */
+ static struct rkisp2_buffer *rkisp2_stats_get_buf(struct rkisp2_stats *stats)
+ {
+@@ -418,7 +451,10 @@ static void rkisp2_stats_send_measuremen
+ 
+ 	rkisp2_stats_get_hist(stats, status, cur_stat_buf);
+ 
+-	rkisp2_stats_get_rawawb(stats, status, cur_stat_buf);
++	if (stats->rkisp2->info->isp_ver == RKISP2_V0)
++		rkisp2_stats_get_awb_mean(stats, cur_stat_buf);
++	else
++		rkisp2_stats_get_rawawb(stats, status, cur_stat_buf);
+ 
+ 	rkisp2_write(stats->rkisp2, ISP_ISP3A_ICR, stats->icr);
+ 
+--- a/include/uapi/linux/media/rockchip/rkisp2-config.h
++++ b/include/uapi/linux/media/rockchip/rkisp2-config.h
+@@ -104,6 +104,7 @@ enum rkisp2_isp_histogram_data_sel {
+  * @RKISP2_STATS_BLOCK_HIST_BIG1: Histogram (big 1)
+  * @RKISP2_STATS_BLOCK_HIST_BIG2: Histogram (big 2)
+  * @RKISP2_STATS_BLOCK_AWB: Auto white balance counts
++ * @RKISP2_STATS_BLOCK_AWB_MEAN: Auto white balance means (ISP 2.0)
+  */
+ enum rkisp2_stats_block_type {
+ 	RKISP2_STATS_BLOCK_AE_LITE,
+@@ -112,6 +113,7 @@ enum rkisp2_stats_block_type {
+ 	RKISP2_STATS_BLOCK_HIST_BIG1,
+ 	RKISP2_STATS_BLOCK_HIST_BIG2,
+ 	RKISP2_STATS_BLOCK_AWB,
++	RKISP2_STATS_BLOCK_AWB_MEAN,
+ };
+ 
+ /**
+@@ -177,10 +179,35 @@ struct rkisp2_stats_awb {
+ 	__u8 reserved;
+ };
+ 
+-#define RKISP2_STATS_MAX_SIZE					\
+-	(sizeof(struct rkisp2_stats_ae_lite)			+\
+-	sizeof(struct rkisp2_stats_hist) * 4			+\
+-	sizeof(struct rkisp2_stats_awb))
++/**
++ * struct rkisp2_stats_awb_mean - statistics auto white balance means
++ *
++ * @header: block header (type = RKISP2_STATS_BLOCK_AWB_MEAN)
++ * @count: Number of pixels within the limits of the measurement
++ * @mean_r: Mean red value of those pixels (8 bits)
++ * @mean_g: Mean green value of those pixels (8 bits)
++ * @mean_b: Mean blue value of those pixels (8 bits)
++ * @done: This set to nonzero when the stats are ready
++ *
++ * The ISP 2.0 measures the means of the AWB measurement window, which spans
++ * the 15x15 grid of the sub-windows given by the AWB measurement
++ * configuration, and provides this block in place of the counts. The means
++ * are measured after the white balance gains have been applied.
++ */
++struct rkisp2_stats_awb_mean {
++	struct v4l2_isp_block_header header;
++	__u32 count;
++	__u8 mean_r;
++	__u8 mean_g;
++	__u8 mean_b;
++	__u8 done;
++};
++
++#define RKISP2_STATS_MAX_SIZE                   \
++	(sizeof(struct rkisp2_stats_ae_lite) +  \
++	 sizeof(struct rkisp2_stats_hist) * 4 + \
++	 sizeof(struct rkisp2_stats_awb) +      \
++	 sizeof(struct rkisp2_stats_awb_mean))
+ 
+ /*---------- Parameters ------------*/
+ 
+@@ -620,6 +647,10 @@ struct rkisp2_params_hist_big {
+  * @limits: Limits for white point detection [min, max] (8 bits)
+  * @weights: Weights (6-bits)
+  * @reserved: padding
++ *
++ * The ISP 2.0 measures the means over the grid of sub-windows, keeps the
++ * pixels below the maximum limits of the red, green and blue values and
++ * ignores the weights.
+  */
+ struct rkisp2_params_awb_meas {
+ 	struct v4l2_isp_params_block_header header;

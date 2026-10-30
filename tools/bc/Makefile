@@ -17,6 +17,8 @@ PKG_CPE_ID:=cpe:/a:gnu:bc
 
 PKG_SUBDIRS:=lib bc dc
 
+HOST_CONFIGURE_CACHE:=1
+
 include $(INCLUDE_DIR)/host-build.mk
 
 define Host/Uninstall

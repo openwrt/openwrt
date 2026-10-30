@@ -23,8 +23,14 @@ realtek_setup_interfaces()
 	local board="$1"
 	local lan_list="$2"
 
-	ucidef_set_bridge_device switch
-	ucidef_set_interface_lan "$lan_list"
+	case $board in
+	bt-pon,bt-g711ax)
+		ucidef_set_interface_lan "$lan_list"
+		;;
+	*)
+		ucidef_set_bridge_device switch
+		ucidef_set_interface_lan "$lan_list"
+	esac
 }
 
 realtek_setup_macs_lan()
@@ -60,6 +66,7 @@ realtek_setup_macs()
 	linksys,lgs328mpc-v2|\
 	linksys,lgs352c|\
 	netgear,gs108t-v3|\
+	netgear,gs110tp-v3|\
 	netgear,gs110tpp-v1|\
 	netgear,gs110tup-v1|\
 	netgear,gs308t-v1|\
@@ -84,6 +91,7 @@ realtek_setup_macs()
 	draytek,g2282x|\
 	hasivo,s1100wp-8gt-se|\
 	hasivo,s600wp-5gt-2sx-se|\
+	horaco,zx-swtgw2c48ns|\
 	hpe,1920-8g|\
 	hpe,1920-8g-poe-65w|\
 	hpe,1920-8g-poe-180w|\
@@ -102,6 +110,8 @@ realtek_setup_macs()
 	sirivision,sr-st3408f|\
 	sirivision,sr-st3808f|\
 	sirivision,sr-st31212f|\
+	ubnt,usw-pro-max-24-poe|\
+	ubnt,usw-pro-xg-10-poe|\
 	ubnt,usw-pro-xg-8-poe|\
 	zyxel,gs1920-24-v1|\
 	zyxel,gs1920-24hp-v2)
@@ -116,6 +126,7 @@ realtek_setup_macs()
 	hasivo,s600wp-5gt-2s-plus|\
 	mokerlink,10gt080m|\
 	tplink,tl-st1008f-v2|\
+	xikestor,sks8300-12x-v2|\
 	zyxel,xgs1010-12-a1|\
 	zyxel,xgs1010-12-b1)
 		lan_mac=$(mtd_get_mac_ascii u-boot-env ethaddr)
@@ -209,8 +220,7 @@ realtek_setup_poe()
 		ucidef_set_poe 193 "lan8 lan7 lan6 lan5 lan4 lan3 lan2 lan1 lan16 lan15 lan14 lan13 lan12 lan11 lan10 lan9 lan24 lan23
 				lan22 lan21 lan20 lan19 lan18 lan17"
 		;;
-	edgecore,ecs4100-12ph|\
-	netgear,gs110tpp-v1)
+	edgecore,ecs4100-12ph)
 		ucidef_set_poe 130 "$(filter_port_list "$lan_list" "lan9 lan10")"
 		;;
 	datto,l8)
@@ -235,9 +245,6 @@ realtek_setup_poe()
 		;;
 	netgear,gs110tup-v1)
 		ucidef_set_poe 240 "$(filter_port_list "$lan_list" "lan9 lan10")"
-		;;
-	netgear,gs310tp-v1)
-		ucidef_set_poe 55 "$(filter_port_list "$lan_list" "lan9 lan10")"
 		;;
 	zyxel,gs1900-24ep-a1)
 		ucidef_set_poe 130 "lan1 lan2 lan3 lan4 lan5 lan6 lan7 lan8 lan9 lan10 lan11 lan12"

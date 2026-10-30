@@ -12,7 +12,7 @@ PKG_CPE_ID:=cpe:/a:gnu:ncurses
 PKG_VERSION_MAJOR:=6.6
 PKG_SNAPSHOT_DATE:=20260801
 PKG_VERSION:=$(PKG_VERSION_MAJOR)$(if $(PKG_SNAPSHOT_DATE),.$(PKG_SNAPSHOT_DATE),)
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=https://github.com/ThomasDickey/ncurses-snapshots.git
@@ -107,6 +107,7 @@ ifeq ($(HOST_OS),FreeBSD)
 endif
 
 MAKE_FLAGS += \
+	CPP="$(TARGET_CC) -E -P" \
 	BUILD_CC="$(HOSTCC)" \
 	HOSTCC="$(HOSTCC)" \
 	HOSTCCFLAGS="" \

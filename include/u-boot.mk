@@ -5,12 +5,18 @@ PKG_NAME ?= u-boot
 ifndef PKG_SOURCE_PROTO
 PKG_SOURCE = $(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL = \
+	https://git.u-boot-project.org/u-boot/u-boot/-/releases/v$(PKG_VERSION)/downloads \
 	https://mirror.cyberbits.eu/u-boot \
 	https://ftp.denx.de/pub/u-boot \
 	ftp://ftp.denx.de/pub/u-boot
 endif
 
 PKG_BUILD_DIR = $(BUILD_DIR)/$(PKG_NAME)-$(BUILD_VARIANT)/$(PKG_NAME)-$(PKG_VERSION)
+ifndef PKG_SOURCE_PROTO
+ifeq ($(firstword $(sort $(PKG_VERSION) 2026.10)),2026.10)
+  PKG_BUILD_DIR = $(BUILD_DIR)/$(PKG_NAME)-$(BUILD_VARIANT)/$(PKG_NAME)-v$(PKG_VERSION)
+endif
+endif
 
 PKG_TARGETS := bin
 PKG_FLAGS:=nonshared
@@ -104,7 +110,7 @@ define Build/U-Boot/Target
       endif
     endif
     $(if $(DEFAULT),DEFAULT:=$(DEFAULT))
-    URL:=https://docs.u-boot.org/en/latest/
+    URL:=https://docs.u-boot-project.org/en/latest/
   endef
 
   define Package/u-boot-$(1)/install

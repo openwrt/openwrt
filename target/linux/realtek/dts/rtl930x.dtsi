@@ -381,6 +381,31 @@
 		};
 	};
 
+	pinmux@1b0003a0 {
+		compatible = "pinctrl-single";
+		reg = <0x1b0003a0 0x4>;
+
+		pinctrl-single,bit-per-mux;
+		pinctrl-single,register-width = <32>;
+		pinctrl-single,function-mask = <0x1>;
+		#pinctrl-cells = <2>;
+
+		/* Enable GPIO 3, 4, 5 */
+		pinmux_disable_spi0: disable-spi0 {
+			pinctrl-single,bits = <0x0 0x0 0x2000>;
+		};
+
+		/* Enable GPIO 6 */
+		pinmux_disable_spi0_cs1: disable-spi-cs1 {
+			pinctrl-single,bits = <0x0 0x0 0x800>;
+		};
+
+		/* Enable GPIO 7 */
+		pinmux_disable_spi0_cs0: disable-spi-cs0 {
+			pinctrl-single,bits = <0x0 0x0 0x400>;
+		};
+	};
+
 	pinmux@1b00c600 {
 		compatible = "pinctrl-single";
 		reg = <0x1b00c600 0x4>;

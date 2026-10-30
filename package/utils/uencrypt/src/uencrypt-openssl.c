@@ -88,7 +88,7 @@ int do_crypt(FILE *infile, FILE *outfile, ctx_t *ctx)
 	ret = EVP_CipherUpdate(ctx, outbuf, &outlen, inbuf, inlen);
 	if (!ret) {
 	    fprintf(stderr, "Error: EVP_CipherUpdate: %d\n", ret);
-	    return ret;
+	    return EXIT_FAILURE;
 	}
 	ret = fwrite(outbuf, 1, outlen, outfile);
 	if (ret != outlen) {
@@ -99,7 +99,7 @@ int do_crypt(FILE *infile, FILE *outfile, ctx_t *ctx)
     ret = EVP_CipherFinal_ex(ctx, outbuf, &outlen);
     if (!ret) {
 	fprintf(stderr, "Error: EVP_CipherFinal: %d\n", ret);
-	return ret;
+	return EXIT_FAILURE;
     }
     ret = fwrite(outbuf, 1, outlen, outfile);
     if (ret != outlen) {

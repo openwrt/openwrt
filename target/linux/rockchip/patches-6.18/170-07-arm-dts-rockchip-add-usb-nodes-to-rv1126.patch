@@ -1,0 +1,164 @@
+From 2e1280a7851437412c3cbfa9647bb6c2413bf534 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Fri, 9 Oct 2026 14:03:05 +0100
+Subject: [PATCH] ARM: dts: rockchip: add usb nodes to rv1126
+
+Add the two USB2 PHYs, the DWC3 dual-role controller in high-speed
+only configuration and the EHCI and OHCI host controllers that share
+the second PHY, together with the USB power domain and its QoS
+registers. The nodes are disabled and left for boards to enable.
+
+The disconnect interrupts of the PHYs are not described since the PHY
+driver does not use them.
+
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ arch/arm/boot/dts/rockchip/rv1126.dtsi | 116 +++++++++++++++++++++++++
+ 1 file changed, 116 insertions(+)
+
+--- a/arch/arm/boot/dts/rockchip/rv1126.dtsi
++++ b/arch/arm/boot/dts/rockchip/rv1126.dtsi
+@@ -118,6 +118,16 @@
+ 		};
+ 	};
+ 
++	qos_usb_host: qos@fe810000 {
++		compatible = "rockchip,rv1126-qos", "syscon";
++		reg = <0xfe810000 0x20>;
++	};
++
++	qos_usb_otg: qos@fe810080 {
++		compatible = "rockchip,rv1126-qos", "syscon";
++		reg = <0xfe810080 0x20>;
++	};
++
+ 	qos_emmc: qos@fe860000 {
+ 		compatible = "rockchip,rv1126-qos", "syscon";
+ 		reg = <0xfe860000 0x20>;
+@@ -204,6 +214,18 @@
+ 				#power-domain-cells = <0>;
+ 			};
+ 
++			power-domain@RV1126_PD_USB {
++				reg = <RV1126_PD_USB>;
++				clocks = <&cru HCLK_USBHOST>,
++					 <&cru HCLK_USBHOST_ARB>,
++					 <&cru CLK_USBHOST_UTMI_OHCI>,
++					 <&cru ACLK_USBOTG>,
++					 <&cru CLK_USBOTG_REF>;
++				pm_qos = <&qos_usb_host>,
++					 <&qos_usb_otg>;
++				#power-domain-cells = <0>;
++			};
++
+ 			power-domain@RV1126_PD_VO {
+ 				reg = <RV1126_PD_VO>;
+ 				clocks = <&cru ACLK_RGA>,
+@@ -375,6 +397,50 @@
+ 		#reset-cells = <1>;
+ 	};
+ 
++	u2phy0: usb2-phy@ff4c0000 {
++		compatible = "rockchip,rv1126-usb2phy";
++		reg = <0xff4c0000 0x8000>;
++		rockchip,usbgrf = <&grf>;
++		clocks = <&pmucru CLK_USBPHY_OTG_REF>, <&cru PCLK_USBPHY_OTG>;
++		clock-names = "phyclk", "pclk";
++		clock-output-names = "usb480m_phy_otg";
++		resets = <&cru SRST_USBPHYPOR_OTG>, <&cru SRST_USBPHY_OTG_P>;
++		reset-names = "phy", "apb";
++		#clock-cells = <0>;
++		status = "disabled";
++
++		u2phy0_otg: otg-port {
++			interrupts = <GIC_SPI 115 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 116 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 117 IRQ_TYPE_LEVEL_HIGH>;
++			interrupt-names = "otg-bvalid", "otg-id", "linestate";
++			#phy-cells = <0>;
++			status = "disabled";
++		};
++	};
++
++	u2phy1: usb2-phy@ff4c8000 {
++		compatible = "rockchip,rv1126-usb2phy";
++		reg = <0xff4c8000 0x8000>;
++		rockchip,usbgrf = <&grf>;
++		clocks = <&pmucru CLK_USBPHY_HOST_REF>, <&cru PCLK_USBPHY_HOST>;
++		clock-names = "phyclk", "pclk";
++		clock-output-names = "usb480m_phy";
++		assigned-clocks = <&cru USB480M>;
++		assigned-clock-parents = <&u2phy1>;
++		resets = <&cru SRST_USBPHYPOR_HOST>, <&cru SRST_USBPHY_HOST_P>;
++		reset-names = "phy", "apb";
++		#clock-cells = <0>;
++		status = "disabled";
++
++		u2phy1_host: host-port {
++			interrupts = <GIC_SPI 118 IRQ_TYPE_LEVEL_HIGH>;
++			interrupt-names = "linestate";
++			#phy-cells = <0>;
++			status = "disabled";
++		};
++	};
++
+ 	dmac: dma-controller@ff4e0000 {
+ 		compatible = "arm,pl330", "arm,primecell";
+ 		reg = <0xff4e0000 0x4000>;
+@@ -714,6 +780,56 @@
+ 		status = "disabled";
+ 	};
+ 
++	usb_otg: usb@ffd00000 {
++		compatible = "rockchip,rv1126-dwc3", "snps,dwc3";
++		reg = <0xffd00000 0x100000>;
++		interrupts = <GIC_SPI 85 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&cru CLK_USBOTG_REF>, <&cru ACLK_USBOTG>;
++		clock-names = "ref_clk", "bus_clk";
++		dr_mode = "otg";
++		extcon = <&u2phy0>;
++		maximum-speed = "high-speed";
++		phys = <&u2phy0_otg>;
++		phy-names = "usb2-phy";
++		phy_type = "utmi_wide";
++		power-domains = <&power RV1126_PD_USB>;
++		resets = <&cru SRST_USBOTG_A>;
++		reset-names = "usb3-otg";
++		snps,dis_enblslpm_quirk;
++		snps,dis-u2-freeclk-exists-quirk;
++		snps,dis_u2_susphy_quirk;
++		snps,dis-del-phy-power-chg-quirk;
++		snps,dis-tx-ipgap-linecheck-quirk;
++		tx-fifo-resize;
++		status = "disabled";
++	};
++
++	usb_host0_ehci: usb@ffe00000 {
++		compatible = "generic-ehci";
++		reg = <0xffe00000 0x10000>;
++		interrupts = <GIC_SPI 82 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&cru HCLK_USBHOST>, <&cru HCLK_USBHOST_ARB>,
++			 <&u2phy1>;
++		clock-names = "usbhost", "arbiter", "utmi";
++		phys = <&u2phy1_host>;
++		phy-names = "usb";
++		power-domains = <&power RV1126_PD_USB>;
++		status = "disabled";
++	};
++
++	usb_host0_ohci: usb@ffe10000 {
++		compatible = "generic-ohci";
++		reg = <0xffe10000 0x10000>;
++		interrupts = <GIC_SPI 83 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&cru HCLK_USBHOST>, <&cru HCLK_USBHOST_ARB>,
++			 <&u2phy1>;
++		clock-names = "usbhost", "arbiter", "utmi";
++		phys = <&u2phy1_host>;
++		phy-names = "usb";
++		power-domains = <&power RV1126_PD_USB>;
++		status = "disabled";
++	};
++
+ 	pinctrl: pinctrl {
+ 		compatible = "rockchip,rv1126-pinctrl";
+ 		rockchip,grf = <&grf>;
