@@ -1,7 +1,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=ucert
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL=$(PROJECT_GIT)/project/ucert.git
@@ -42,6 +42,7 @@ $(call Package/ucert/Default)
   TITLE:=OpenWrt certificate verification utility
   VARIANT:=tiny
   DEFAULT_VARIANT:=1
+  CONFLICTS:=ucert-full
 endef
 
 define Package/ucert-full
