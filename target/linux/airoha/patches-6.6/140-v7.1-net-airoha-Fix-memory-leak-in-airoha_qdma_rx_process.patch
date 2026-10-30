@@ -1,0 +1,37 @@
+From 285fa6b1e03cff78ead0383e1b259c44b95faf90 Mon Sep 17 00:00:00 2001
+From: Lorenzo Bianconi <lorenzo@kernel.org>
+Date: Thu, 2 Apr 2026 14:57:10 +0200
+Subject: [PATCH] net: airoha: Fix memory leak in airoha_qdma_rx_process()
+
+If an error occurs on the subsequents buffers belonging to the
+non-linear part of the skb (e.g. due to an error in the payload length
+reported by the NIC or if we consumed all the available fragments for
+the skb), the page_pool fragment will not be linked to the skb so it will
+not return to the pool in the airoha_qdma_rx_process() error path. Fix the
+memory leak partially reverting commit 'd6d2b0e1538d ("net: airoha: Fix
+page recycling in airoha_qdma_rx_process()")' and always running
+page_pool_put_full_page routine in the airoha_qdma_rx_process() error
+path.
+
+Fixes: d6d2b0e1538d ("net: airoha: Fix page recycling in airoha_qdma_rx_process()")
+Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
+Reviewed-by: Simon Horman <horms@kernel.org>
+Link: https://patch.msgid.link/20260402-airoha_qdma_rx_process-mem-leak-fix-v1-1-b5706f402d3c@kernel.org
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ drivers/net/ethernet/airoha/airoha_eth.c | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+--- a/drivers/net/ethernet/airoha/airoha_eth.c
++++ b/drivers/net/ethernet/airoha/airoha_eth.c
+@@ -703,9 +703,8 @@ free_frag:
+ 		if (q->skb) {
+ 			dev_kfree_skb(q->skb);
+ 			q->skb = NULL;
+-		} else {
+-			page_pool_put_full_page(q->page_pool, page, true);
+ 		}
++		page_pool_put_full_page(q->page_pool, page, true);
+ 	}
+ 	airoha_qdma_fill_rx_queue(q);
+ 
