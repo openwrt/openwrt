@@ -3122,7 +3122,7 @@ static int rtpcs_930x_sds_check_calibration(struct rtpcs_serdes *sds,
 	if (!link) {
 		dev_dbg(sds->ctrl->dev, "SerDes %u: RX link down after calibration (mode=%u, attempt=%u/%u)\n",
 			sds->id, hw_mode, sds->rxcal_tries, RTPCS_RXCAL_MAX_TRIES);
-		return 1;
+		return -ENOLINK;
 	}
 
 	switch (hw_mode) {
@@ -3133,14 +3133,14 @@ static int rtpcs_930x_sds_check_calibration(struct rtpcs_serdes *sds,
 			dev_dbg(sds->ctrl->dev, "SerDes %u: XSGMII errors %u -> %u, delta=%u (max %u), saturation=%#x\n",
 				sds->id, errors1, errors2, errors2 - errors1,
 				RTPCS_RXCAL_XSG_MAX_ERR_DELTA, RTPCS_RXCAL_XSG_ERR_SATURATION);
-			return 1;
+			return -EIO;
 		}
 		break;
 	default:
 		if (errors2 > 0) {
 			dev_dbg(sds->ctrl->dev, "SerDes %u: symbol errors %u (expected 0)\n",
 				sds->id, errors2);
-			return 1;
+			return -EIO;
 		}
 		break;
 	}
@@ -3151,8 +3151,8 @@ static int rtpcs_930x_sds_check_calibration(struct rtpcs_serdes *sds,
 static void rtpcs_930x_rx_cali_work_handler(struct work_struct *work)
 {
 	unsigned long lock_start, attempt_start;
-	bool calib_failed, latch_sts;
 	struct rtpcs_serdes *sds;
+	bool latch_sts;
 	int ret;
 
 	sds = container_of(to_delayed_work(work), struct rtpcs_serdes, cali_work);
@@ -3172,13 +3172,10 @@ static void rtpcs_930x_rx_cali_work_handler(struct work_struct *work)
 	}
 
 	ret = rtpcs_93xx_sds_rxcal_ready(sds);
-	if (ret < 0) {
-		dev_err(sds->ctrl->dev, "SerDes %u: RX calibration readiness check failed: %d\n",
-			sds->id, ret);
-		goto terminate;
-	}
-
-	if (!ret) {
+	if (ret < 0)
+		dev_err_ratelimited(sds->ctrl->dev, "SerDes %u: RX calibration readiness check failed: %d\n",
+				    sds->id, ret);
+	if (ret <= 0) {
 		dev_dbg(sds->ctrl->dev, "SerDes %u: RX not ready for calibration, checking again in %u ms\n",
 			sds->id, RTPCS_RXCAL_POLL_MS);
 		schedule_delayed_work(&sds->cali_work, msecs_to_jiffies(RTPCS_RXCAL_POLL_MS));
@@ -3205,7 +3202,7 @@ static void rtpcs_930x_rx_cali_work_handler(struct work_struct *work)
 		if (ret < 0) {
 			dev_err(sds->ctrl->dev, "SerDes %u: RX link-status read failed: %d\n",
 				sds->id, ret);
-			goto terminate;
+			goto check_result;
 		}
 		if (latch_sts) {
 			dev_dbg(sds->ctrl->dev, "SerDes %u: RX calibration repeating VTH/TAP0 adaptation\n",
@@ -3217,12 +3214,13 @@ static void rtpcs_930x_rx_cali_work_handler(struct work_struct *work)
 	}
 
 	msleep(50);
-	calib_failed = rtpcs_930x_sds_check_calibration(sds, sds->hw_mode);
+	ret = rtpcs_930x_sds_check_calibration(sds, sds->hw_mode);
+check_result:
 	dev_dbg(sds->ctrl->dev, "SerDes %u: RX calibration attempt %u/%u %s after %u ms\n",
 		sds->id, sds->rxcal_tries, RTPCS_RXCAL_MAX_TRIES,
-		calib_failed ? "failed" : "passed",
+		ret < 0 ? "failed" : "passed",
 		jiffies_to_msecs(jiffies - attempt_start));
-	if (calib_failed) {
+	if (ret < 0) {
 		if (sds->rxcal_tries < RTPCS_RXCAL_MAX_TRIES) {
 			dev_dbg(sds->ctrl->dev, "SerDes %u: retrying RX calibration in %u ms\n",
 				sds->id, RTPCS_RXCAL_RETRY_MS);
@@ -3234,7 +3232,6 @@ static void rtpcs_930x_rx_cali_work_handler(struct work_struct *work)
 			 sds->id, sds->rxcal_tries);
 	}
 
-terminate:
 	sds->rxcal_pending = false;
 unlock:
 	mutex_unlock(&sds->ctrl->lock);
