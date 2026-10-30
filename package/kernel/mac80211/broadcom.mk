@@ -8,6 +8,7 @@ PKG_CONFIG_DEPENDS += \
 	CONFIG_PACKAGE_B43_PHY_N \
 	CONFIG_PACKAGE_B43_PHY_LP \
 	CONFIG_PACKAGE_B43_PHY_HT \
+	CONFIG_PACKAGE_B43_PHY_AC \
 	CONFIG_PACKAGE_B43_BUSES_BCMA_AND_SSB \
 	CONFIG_PACKAGE_B43_BUSES_BCMA \
 	CONFIG_PACKAGE_B43_BUSES_SSB \
@@ -21,6 +22,7 @@ config-$(CONFIG_PACKAGE_B43_PHY_G) += B43_PHY_G
 config-$(CONFIG_PACKAGE_B43_PHY_N) += B43_PHY_N
 config-$(CONFIG_PACKAGE_B43_PHY_LP) += B43_PHY_LP
 config-$(CONFIG_PACKAGE_B43_PHY_HT) += B43_PHY_HT
+config-$(CONFIG_PACKAGE_B43_PHY_AC) += B43_PHY_AC
 config-$(CONFIG_PACKAGE_B43_PIO) += B43_PIO
 config-$(CONFIG_PACKAGE_B43_DEBUG) += B43_DEBUG
 
@@ -303,6 +305,19 @@ config PACKAGE_B43_USE_BCMA
 		  Currently only 11g speed is available.
 
 		  If unsure, say Y.
+
+	config PACKAGE_B43_PHY_AC
+		bool "Enable support for AC-PHYs"
+		select DRIVER_11AC_SUPPORT
+		default n
+		help
+		  Enable support for AC-PHY (802.11ac). This includes support for
+		  the following devices:
+		  PCI: BCM4352, BCM4360
+
+		  Experimental.
+
+		  If unsure, say N.
 
 	config PACKAGE_B43_PHY_LCN
 		bool "Enable support for LCN-PHYs"
