@@ -288,6 +288,7 @@ Send a Beacon Measurement Request to a client.
 | mode | int32 | yes | mode to be used for measurement (0: passive, 1: active, 2: beacon table) |
 | bssid | string | no | filter BSSes in Beacon Measurement Report by BSSID |
 | ssid | string | no | filter BSSes in Beacon Measurement Report by SSID|
+| last_indication | bool | no | ask the client to mark the reports in the last frame of its response (Last Beacon Report Indication Request subelement). One frame can give several `beacon-report` events with the same `token`, and an event without `report` carries no indication |
 
 
 ## rrm_nr_get_own

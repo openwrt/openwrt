@@ -1960,6 +1960,7 @@ enum {
 	BEACON_REQ_REPORTING_DETAIL,
 	BEACON_REQ_CHANNEL_REPORTS,
 	BEACON_REQ_ELEMENT_LIST,
+	BEACON_REQ_LAST_INDICATION,
 	__BEACON_REQ_MAX,
 };
 
@@ -1974,6 +1975,7 @@ static const struct blobmsg_policy beacon_req_policy[__BEACON_REQ_MAX] = {
 	[BEACON_REQ_REPORTING_DETAIL] = { "reporting_detail", BLOBMSG_TYPE_INT32 },
 	[BEACON_REQ_CHANNEL_REPORTS] = { "channel_reports", BLOBMSG_TYPE_ARRAY },
 	[BEACON_REQ_ELEMENT_LIST] = { "element_list", BLOBMSG_TYPE_ARRAY },
+	[BEACON_REQ_LAST_INDICATION] = { "last_indication", BLOBMSG_TYPE_BOOL },
 };
 
 enum {
@@ -2066,6 +2068,7 @@ hostapd_rrm_beacon_req(struct ubus_context *ctx, struct ubus_object *obj,
 	int reporting_detail = 255;
 	int n_elements = 0;
 	int cr_len;
+	bool last_indication;
 
 	blobmsg_parse(beacon_req_policy, __BEACON_REQ_MAX, tb, blob_data(msg), blob_len(msg));
 
@@ -2105,6 +2108,11 @@ hostapd_rrm_beacon_req(struct ubus_context *ctx, struct ubus_object *obj,
 		buf_len += 2 + n_elements;
 
 	if (reporting_detail >= 0 && reporting_detail < 3)
+		buf_len += 3;
+
+	last_indication = tb[BEACON_REQ_LAST_INDICATION] &&
+			  blobmsg_get_bool(tb[BEACON_REQ_LAST_INDICATION]);
+	if (last_indication)
 		buf_len += 3;
 
 	/* hostapd_send_beacon_req() puts 3 + this length into the one octet
@@ -2158,6 +2166,14 @@ hostapd_rrm_beacon_req(struct ubus_context *ctx, struct ubus_object *obj,
 	if (tb[BEACON_REQ_CHANNEL_REPORTS])
 		hostapd_rrm_beacon_req_channel_reports(req,
 					tb[BEACON_REQ_CHANNEL_REPORTS]);
+
+	/* The station marks the reports in the last frame of its response to this
+	 * request (802.11-2024 9.4.2.19.7, 11.10.9.1). */
+	if (last_indication) {
+		wpabuf_put_u8(req, WLAN_BEACON_REQUEST_SUBELEM_LAST_INDICATION);
+		wpabuf_put_u8(req, 1);
+		wpabuf_put_u8(req, 1);
+	}
 
 	hapd = hostapd_ubus_sta_bss(hapd, addr, &sta);
 	ret = hostapd_send_beacon_req(hapd, addr, 0, req);
