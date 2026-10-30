@@ -7,11 +7,9 @@ the channel, so a lower TX power set from user space had no effect. Cap
 it by the power mac80211 configures as well, with the antenna gain
 taken off as for the regulatory limit.
 
-Index: backports-7.2/drivers/net/wireless/broadcom/b43/phy_ac.c
-===================================================================
---- backports-7.2.orig/drivers/net/wireless/broadcom/b43/phy_ac.c
-+++ backports-7.2/drivers/net/wireless/broadcom/b43/phy_ac.c
-@@ -1948,6 +1948,19 @@
+--- a/drivers/net/wireless/broadcom/b43/phy_ac.c
++++ b/drivers/net/wireless/broadcom/b43/phy_ac.c
+@@ -1948,6 +1948,19 @@ static u16 b43_phy_ac_reg_ceiling(struct
  			best = lim;
  	}
  
