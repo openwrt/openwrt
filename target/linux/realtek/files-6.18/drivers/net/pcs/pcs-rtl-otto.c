@@ -2057,8 +2057,7 @@ static void rtpcs_93xx_rx_linkmon_work_handler(struct work_struct *work)
 	sds = container_of(to_delayed_work(work), struct rtpcs_serdes, linkmon_work);
 
 	mutex_lock(&sds->ctrl->lock);
-	if (!sds->rxmon_active || sds->rxcal_pending ||
-	    sds->hw_mode != RTPCS_SDS_MODE_10GBASER)
+	if (!sds->rxmon_active || sds->rxcal_pending)
 		goto unlock;
 
 	link = rtpcs_93xx_sds_rx_link_status(sds);
@@ -3284,12 +3283,9 @@ check_result:
 	}
 
 	sds->rxcal_pending = false;
-	if (sds->hw_mode == RTPCS_SDS_MODE_10GBASER) {
-		sds->rxmon_down = 0;
-		sds->rxmon_active = true;
-		mod_delayed_work(system_wq, &sds->linkmon_work,
-				 msecs_to_jiffies(RTPCS_RXMON_POLL_MS));
-	}
+	sds->rxmon_down = 0;
+	sds->rxmon_active = true;
+	mod_delayed_work(system_wq, &sds->linkmon_work, msecs_to_jiffies(RTPCS_RXMON_POLL_MS));
 unlock:
 	mutex_unlock(&sds->ctrl->lock);
 }
@@ -4458,13 +4454,10 @@ static void rtpcs_931x_rx_cali_work_handler(struct work_struct *work)
 			 sds->id, sds->rxcal_tries, ret);
 	}
 	sds->rxcal_pending = false;
-	if (sds->hw_mode == RTPCS_SDS_MODE_10GBASER) {
-		sds->rxmon_down = 0;
-		sds->rxmon_active = true;
-		dev_dbg(sds->ctrl->dev, "SerDes %u: RX link monitor armed\n", sds->id);
-		mod_delayed_work(system_wq, &sds->linkmon_work,
-				 msecs_to_jiffies(RTPCS_RXMON_POLL_MS));
-	}
+	sds->rxmon_down = 0;
+	sds->rxmon_active = true;
+	dev_dbg(sds->ctrl->dev, "SerDes %u: RX link monitor armed\n", sds->id);
+	mod_delayed_work(system_wq, &sds->linkmon_work, msecs_to_jiffies(RTPCS_RXMON_POLL_MS));
 unlock:
 	mutex_unlock(&sds->ctrl->lock);
 }
