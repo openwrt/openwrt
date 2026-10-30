@@ -2071,6 +2071,47 @@ static void rtpcs_93xx_sds_arm_linkmon(struct rtpcs_serdes *sds)
 	mod_delayed_work(system_wq, &sds->linkmon_work, msecs_to_jiffies(RTPCS_RXMON_POLL_MS));
 }
 
+static void rtpcs_93xx_rx_cali_work_handler(struct work_struct *work)
+{
+	struct rtpcs_serdes *sds;
+	int ret;
+
+	sds = container_of(to_delayed_work(work), struct rtpcs_serdes, cali_work);
+
+	mutex_lock(&sds->ctrl->lock);
+	dev_dbg(sds->ctrl->dev,
+		"SerDes %u: RX calibration worker entered, mode=%u pending=%u\n",
+		sds->id, sds->hw_mode, sds->rxcal_pending);
+	if (!sds->rxcal_pending)
+		goto unlock;
+
+	ret = rtpcs_93xx_sds_rxcal_ready(sds);
+	if (ret < 0)
+		dev_err_ratelimited(sds->ctrl->dev, "SerDes %u: RX calibration readiness check failed: %d\n",
+				    sds->id, ret);
+	if (ret <= 0) {
+		schedule_delayed_work(&sds->cali_work, msecs_to_jiffies(RTPCS_RXCAL_POLL_MS));
+		goto unlock;
+	}
+
+	sds->rxcal_tries++;
+	ret = sds->ops->rx_calibrate(sds);
+	dev_dbg(sds->ctrl->dev, "SerDes %u: RX calibration attempt %u/%u returned %d\n",
+		sds->id, sds->rxcal_tries, RTPCS_RXCAL_MAX_TRIES, ret);
+	if (ret < 0) {
+		if (sds->rxcal_tries < RTPCS_RXCAL_MAX_TRIES) {
+			schedule_delayed_work(&sds->cali_work,
+					      msecs_to_jiffies(RTPCS_RXCAL_RETRY_MS));
+			goto unlock;
+		}
+		dev_warn(sds->ctrl->dev, "SerDes %u: RX calibration did not pass after %u attempts: %d\n",
+			 sds->id, sds->rxcal_tries, ret);
+	}
+	rtpcs_93xx_sds_arm_linkmon(sds);
+unlock:
+	mutex_unlock(&sds->ctrl->lock);
+}
+
 static void rtpcs_93xx_rx_linkmon_work_handler(struct work_struct *work)
 {
 	struct rtpcs_serdes *sds;
@@ -3256,65 +3297,6 @@ static int rtpcs_930x_sds_rx_calibrate(struct rtpcs_serdes *sds)
 	return rtpcs_930x_sds_check_calibration(sds, sds->hw_mode);
 }
 
-static void rtpcs_930x_rx_cali_work_handler(struct work_struct *work)
-{
-	unsigned long lock_start, attempt_start;
-	struct rtpcs_serdes *sds;
-	int ret;
-
-	sds = container_of(to_delayed_work(work), struct rtpcs_serdes, cali_work);
-
-	lock_start = jiffies;
-	mutex_lock(&sds->ctrl->lock);
-
-	dev_dbg(sds->ctrl->dev,
-		"SerDes %u: RX calibration worker entered, mode=%u pending=%u lock-wait=%u ms\n",
-		sds->id, sds->hw_mode, sds->rxcal_pending,
-		jiffies_to_msecs(jiffies - lock_start));
-
-	if (!sds->rxcal_pending) {
-		dev_dbg(sds->ctrl->dev, "SerDes %u: RX calibration request no longer pending\n",
-			sds->id);
-		goto unlock;
-	}
-
-	ret = rtpcs_93xx_sds_rxcal_ready(sds);
-	if (ret < 0)
-		dev_err_ratelimited(sds->ctrl->dev, "SerDes %u: RX calibration readiness check failed: %d\n",
-				    sds->id, ret);
-	if (ret <= 0) {
-		dev_dbg(sds->ctrl->dev, "SerDes %u: RX not ready for calibration, checking again in %u ms\n",
-			sds->id, RTPCS_RXCAL_POLL_MS);
-		schedule_delayed_work(&sds->cali_work, msecs_to_jiffies(RTPCS_RXCAL_POLL_MS));
-		goto unlock;
-	}
-
-	attempt_start = jiffies;
-	sds->rxcal_tries++;
-	dev_dbg(sds->ctrl->dev, "SerDes %u: RX calibration attempt %u/%u\n",
-		sds->id, sds->rxcal_tries, RTPCS_RXCAL_MAX_TRIES);
-	ret = sds->ops->rx_calibrate(sds);
-	dev_dbg(sds->ctrl->dev, "SerDes %u: RX calibration attempt %u/%u %s after %u ms\n",
-		sds->id, sds->rxcal_tries, RTPCS_RXCAL_MAX_TRIES,
-		ret < 0 ? "failed" : "passed",
-		jiffies_to_msecs(jiffies - attempt_start));
-	if (ret < 0) {
-		if (sds->rxcal_tries < RTPCS_RXCAL_MAX_TRIES) {
-			dev_dbg(sds->ctrl->dev, "SerDes %u: retrying RX calibration in %u ms\n",
-				sds->id, RTPCS_RXCAL_RETRY_MS);
-			schedule_delayed_work(&sds->cali_work,
-					      msecs_to_jiffies(RTPCS_RXCAL_RETRY_MS));
-			goto unlock;
-		}
-		dev_warn(sds->ctrl->dev, "SerDes %u: RX calibration did not pass after %u attempts\n",
-			 sds->id, sds->rxcal_tries);
-	}
-
-	rtpcs_93xx_sds_arm_linkmon(sds);
-unlock:
-	mutex_unlock(&sds->ctrl->lock);
-}
-
 static void rtpcs_sds_cancel_rx_work(void *data)
 {
 	struct rtpcs_serdes *sds = data;
@@ -3638,7 +3620,7 @@ static int rtpcs_930x_sds_probe(struct rtpcs_serdes *sds)
 			return PTR_ERR(sds->swcore_regs.usxgmii_submode);
 	}
 
-	INIT_DELAYED_WORK(&sds->cali_work, rtpcs_930x_rx_cali_work_handler);
+	INIT_DELAYED_WORK(&sds->cali_work, rtpcs_93xx_rx_cali_work_handler);
 	INIT_DELAYED_WORK(&sds->linkmon_work, rtpcs_93xx_rx_linkmon_work_handler);
 
 	return devm_add_action_or_reset(dev, rtpcs_sds_cancel_rx_work, sds);
@@ -4447,45 +4429,6 @@ static int rtpcs_931x_sds_rx_calibrate(struct rtpcs_serdes *sds)
 	return ret;
 }
 
-static void rtpcs_931x_rx_cali_work_handler(struct work_struct *work)
-{
-	struct rtpcs_serdes *sds;
-	int ret;
-
-	sds = container_of(to_delayed_work(work), struct rtpcs_serdes, cali_work);
-
-	mutex_lock(&sds->ctrl->lock);
-	if (!sds->rxcal_pending)
-		goto unlock;
-
-	ret = rtpcs_93xx_sds_rxcal_ready(sds);
-	if (ret < 0)
-		dev_err_ratelimited(sds->ctrl->dev, "SerDes %u: RX calibration readiness check failed: %d\n",
-			sds->id, ret);
-	if (ret <= 0) {
-		schedule_delayed_work(&sds->cali_work, msecs_to_jiffies(RTPCS_RXCAL_POLL_MS));
-		goto unlock;
-	}
-
-	sds->rxcal_tries++;
-	ret = sds->ops->rx_calibrate(sds);
-
-	dev_dbg(sds->ctrl->dev, "SerDes %u: RX calibration attempt %u/%u returned %d\n",
-		sds->id, sds->rxcal_tries, RTPCS_RXCAL_MAX_TRIES, ret);
-	if (ret < 0) {
-		if (sds->rxcal_tries < RTPCS_RXCAL_MAX_TRIES) {
-			schedule_delayed_work(&sds->cali_work,
-					      msecs_to_jiffies(RTPCS_RXCAL_RETRY_MS));
-			goto unlock;
-		}
-		dev_warn(sds->ctrl->dev, "SerDes %u: RX calibration did not pass after %u attempts: %d\n",
-			 sds->id, sds->rxcal_tries, ret);
-	}
-	rtpcs_93xx_sds_arm_linkmon(sds);
-unlock:
-	mutex_unlock(&sds->ctrl->lock);
-}
-
 /* Apply acquisition defaults and defer calibration until RX is ready. */
 static int rtpcs_931x_sds_post_config(struct rtpcs_serdes *sds, enum rtpcs_sds_mode hw_mode)
 {
@@ -4631,7 +4574,7 @@ static int rtpcs_931x_sds_probe(struct rtpcs_serdes *sds)
 			return ret;
 	}
 
-	INIT_DELAYED_WORK(&sds->cali_work, rtpcs_931x_rx_cali_work_handler);
+	INIT_DELAYED_WORK(&sds->cali_work, rtpcs_93xx_rx_cali_work_handler);
 	INIT_DELAYED_WORK(&sds->linkmon_work, rtpcs_93xx_rx_linkmon_work_handler);
 
 	return devm_add_action_or_reset(dev, rtpcs_sds_cancel_rx_work, sds);
