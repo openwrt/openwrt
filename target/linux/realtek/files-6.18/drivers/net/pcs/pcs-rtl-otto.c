@@ -2049,6 +2049,57 @@ static int rtpcs_93xx_sds_get_cmu_page(enum rtpcs_sds_mode hw_mode)
 	}
 }
 
+static void rtpcs_93xx_rx_linkmon_work_handler(struct work_struct *work)
+{
+	struct rtpcs_serdes *sds;
+	int link;
+
+	sds = container_of(to_delayed_work(work), struct rtpcs_serdes, linkmon_work);
+
+	mutex_lock(&sds->ctrl->lock);
+	if (!sds->rxmon_active || sds->rxcal_pending ||
+	    sds->hw_mode != RTPCS_SDS_MODE_10GBASER)
+		goto unlock;
+
+	link = rtpcs_93xx_sds_rx_link_status(sds);
+	if (link < 0) {
+		sds->rxmon_down = 0;
+		dev_err_ratelimited(sds->ctrl->dev, "SerDes %u: RX link monitor read failed: %d\n",
+				sds->id, link);
+		goto rearm;
+	}
+	if (link) {
+		if (sds->rxmon_down)
+			dev_dbg(sds->ctrl->dev, "SerDes %u: RX link recovered during debounce\n",
+				sds->id);
+		sds->rxmon_down = 0;
+		goto rearm;
+	}
+
+	/* Saturate the debounce count while waiting for the recovery deadline. */
+	if (sds->rxmon_down < RTPCS_RXMON_DOWN_SAMPLES) {
+		sds->rxmon_down++;
+		dev_dbg(sds->ctrl->dev, "SerDes %u: RX link down, sample %u/%u\n",
+			sds->id, sds->rxmon_down, RTPCS_RXMON_DOWN_SAMPLES);
+	}
+	if (sds->rxmon_down < RTPCS_RXMON_DOWN_SAMPLES ||
+	    time_before64(get_jiffies_64(), sds->rxmon_recovery_after))
+		goto rearm;
+
+	dev_dbg(sds->ctrl->dev,
+		"SerDes %u: RX link loss confirmed; restoring baseline and rearming calibration\n",
+		sds->id);
+	sds->ops->post_config(sds, sds->hw_mode);
+	sds->rxmon_recovery_after = get_jiffies_64() +
+				    msecs_to_jiffies(RTPCS_RXMON_RECOVERY_MS);
+	goto unlock;
+
+rearm:
+	schedule_delayed_work(&sds->linkmon_work, msecs_to_jiffies(RTPCS_RXMON_POLL_MS));
+unlock:
+	mutex_unlock(&sds->ctrl->lock);
+}
+
 /* RTL930X */
 
 /* This mapping is not coherent so it cannot be expressed arithmetically */
@@ -3233,6 +3284,12 @@ check_result:
 	}
 
 	sds->rxcal_pending = false;
+	if (sds->hw_mode == RTPCS_SDS_MODE_10GBASER) {
+		sds->rxmon_down = 0;
+		sds->rxmon_active = true;
+		mod_delayed_work(system_wq, &sds->linkmon_work,
+				 msecs_to_jiffies(RTPCS_RXMON_POLL_MS));
+	}
 unlock:
 	mutex_unlock(&sds->ctrl->lock);
 }
@@ -3526,6 +3583,8 @@ static int rtpcs_930x_sds_post_config(struct rtpcs_serdes *sds, enum rtpcs_sds_m
 
 	rtpcs_930x_sds_rxcal_init(sds, hw_mode);
 
+	sds->rxmon_active = false;
+	sds->rxmon_down = 0;
 	dev_dbg(sds->ctrl->dev, "SerDes %u: arming RX calibration for mode %u\n",
 		sds->id, hw_mode);
 	sds->rxcal_tries = 0;
@@ -3563,6 +3622,7 @@ static int rtpcs_930x_sds_probe(struct rtpcs_serdes *sds)
 	}
 
 	INIT_DELAYED_WORK(&sds->cali_work, rtpcs_930x_rx_cali_work_handler);
+	INIT_DELAYED_WORK(&sds->linkmon_work, rtpcs_93xx_rx_linkmon_work_handler);
 
 	return devm_add_action_or_reset(dev, rtpcs_sds_cancel_rx_work, sds);
 }
@@ -4435,57 +4495,6 @@ static int rtpcs_931x_sds_post_config(struct rtpcs_serdes *sds, enum rtpcs_sds_m
 	return 0;
 }
 
-static void rtpcs_931x_rx_linkmon_work_handler(struct work_struct *work)
-{
-	struct rtpcs_serdes *sds;
-	int link;
-
-	sds = container_of(to_delayed_work(work), struct rtpcs_serdes, linkmon_work);
-
-	mutex_lock(&sds->ctrl->lock);
-	if (!sds->rxmon_active || sds->rxcal_pending ||
-	    sds->hw_mode != RTPCS_SDS_MODE_10GBASER)
-		goto unlock;
-
-	link = rtpcs_93xx_sds_rx_link_status(sds);
-	if (link < 0) {
-		sds->rxmon_down = 0;
-		dev_err_ratelimited(sds->ctrl->dev, "SerDes %u: RX link monitor read failed: %d\n",
-			sds->id, link);
-		goto rearm;
-	}
-	if (link) {
-		if (sds->rxmon_down)
-			dev_dbg(sds->ctrl->dev, "SerDes %u: RX link recovered during debounce\n",
-				sds->id);
-		sds->rxmon_down = 0;
-		goto rearm;
-	}
-
-	/* Saturate the debounce count while waiting for the recovery deadline. */
-	if (sds->rxmon_down < RTPCS_RXMON_DOWN_SAMPLES) {
-		sds->rxmon_down++;
-		dev_dbg(sds->ctrl->dev, "SerDes %u: RX link down, sample %u/%u\n",
-			sds->id, sds->rxmon_down, RTPCS_RXMON_DOWN_SAMPLES);
-	}
-	if (sds->rxmon_down < RTPCS_RXMON_DOWN_SAMPLES ||
-	    time_before64(get_jiffies_64(), sds->rxmon_recovery_after))
-		goto rearm;
-
-	dev_dbg(sds->ctrl->dev,
-		"SerDes %u: RX link loss confirmed; restoring baseline and rearming calibration\n",
-		sds->id);
-	rtpcs_931x_sds_post_config(sds, sds->hw_mode);
-	sds->rxmon_recovery_after = get_jiffies_64() +
-				    msecs_to_jiffies(RTPCS_RXMON_RECOVERY_MS);
-	goto unlock;
-
-rearm:
-	schedule_delayed_work(&sds->linkmon_work, msecs_to_jiffies(RTPCS_RXMON_POLL_MS));
-unlock:
-	mutex_unlock(&sds->ctrl->lock);
-}
-
 static int rtpcs_931x_sds_config_hw_mode(struct rtpcs_serdes *sds,
 					 enum rtpcs_sds_mode hw_mode)
 {
@@ -4611,7 +4620,7 @@ static int rtpcs_931x_sds_probe(struct rtpcs_serdes *sds)
 	}
 
 	INIT_DELAYED_WORK(&sds->cali_work, rtpcs_931x_rx_cali_work_handler);
-	INIT_DELAYED_WORK(&sds->linkmon_work, rtpcs_931x_rx_linkmon_work_handler);
+	INIT_DELAYED_WORK(&sds->linkmon_work, rtpcs_93xx_rx_linkmon_work_handler);
 
 	return devm_add_action_or_reset(dev, rtpcs_sds_cancel_rx_work, sds);
 }
