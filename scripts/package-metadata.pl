@@ -681,10 +681,10 @@ sub gen_image_cyclonedxsbom() {
 	};
 
 	my %abimap;
-	my @abipkgs = grep { defined $package{$_}->{abi_version} } keys %package;
+	my @abipkgs = grep { !/^kmod-/ and defined $package{$_}->{abi_version} } keys %package;
 	foreach my $name (@abipkgs) {
 		my $pkg = $package{$name};
-		my $abipkg = $name . $pkg->{abi_version};
+		my $abipkg = $name . ($name =~ /\d$/ ? "-" : "") . $pkg->{abi_version};
 		$abimap{$abipkg} = $name;
 	}
 
