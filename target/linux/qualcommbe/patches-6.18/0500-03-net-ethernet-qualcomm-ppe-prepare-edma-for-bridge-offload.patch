@@ -1,0 +1,113 @@
+From: Kenneth Kasilag <kenneth@kasilag.me>
+Date: Fri, 03 Jul 2026 00:00:00 +0000
+Subject: [PATCH] net: ethernet: qualcomm: ppe: prepare EDMA ports for bridge offload
+
+Packets received from a port bridged in hardware must not be forwarded
+again by the software bridge to other ports of the same switch. Mark
+them with offload_fwd_mark when the port is flagged as offloaded, and
+report a common parent switch ID on all PPE ports, so the bridge can
+tell which ports the hardware has already covered while still
+forwarding to its software ports, such as wireless interfaces.
+
+Also add edma_port_dev_check() so the bridge offload can recognize PPE
+port net devices in notifier events.
+
+Signed-off-by: Kenneth Kasilag <kenneth@kasilag.me>
+---
+--- a/drivers/net/ethernet/qualcomm/ppe/edma_port.c
++++ b/drivers/net/ethernet/qualcomm/ppe/edma_port.c
+@@ -309,6 +309,23 @@ static int edma_port_set_mac_address(str
+ 	return 0;
+ }
+ 
++/* All PPE ports share the same parent switch ID, derived from the PPE
++ * device name. The bridge uses it to tell which of its ports forward
++ * to each other in hardware.
++ */
++static int edma_port_get_port_parent_id(struct net_device *netdev,
++					struct netdev_phys_item_id *ppid)
++{
++	struct edma_port_priv *port_priv = (struct edma_port_priv *)netdev_priv(netdev);
++	struct ppe_device *ppe_dev = port_priv->ppe_port->ppe_dev;
++	const char *name = dev_name(ppe_dev->dev);
++
++	ppid->id_len = min_t(size_t, strlen(name), sizeof(ppid->id));
++	memcpy(ppid->id, name, ppid->id_len);
++
++	return 0;
++}
++
+ static const struct net_device_ops edma_port_netdev_ops = {
+ 	.ndo_open = edma_port_open,
+ 	.ndo_stop = edma_port_close,
+@@ -320,9 +337,22 @@ static const struct net_device_ops edma_
+ 	.ndo_eth_ioctl = edma_port_ioctl,
+ 	.ndo_features_check = edma_port_feature_check,
+ 	.ndo_select_queue = edma_port_select_queue,
++	.ndo_get_port_parent_id = edma_port_get_port_parent_id,
+ };
+ 
+ /**
++ * edma_port_dev_check - Check whether a net device is a PPE port
++ * @dev: net device to check
++ *
++ * Return: true when the net device is one of the PPE port net devices
++ * created by this driver.
++ */
++bool edma_port_dev_check(const struct net_device *dev)
++{
++	return dev->netdev_ops == &edma_port_netdev_ops;
++}
++
++/**
+  * edma_port_destroy - EDMA port destroy.
+  * @port: PPE port
+  *
+--- a/drivers/net/ethernet/qualcomm/ppe/edma_port.h
++++ b/drivers/net/ethernet/qualcomm/ppe/edma_port.h
+@@ -82,6 +82,8 @@ struct edma_port_pcpu_stats {
+  * @netdev: Corresponding netdevice
+  * @pcpu_stats: Per CPU netdev statistics
+  * @txr_map: Tx ring per-core mapping
++ * @br_offload: Port is bridged in hardware, written under RTNL and read
++ * in the Rx path to mark received packets as hardware forwarded
+  * @flags: Feature flags
+  */
+ struct edma_port_priv {
+@@ -89,9 +91,11 @@ struct edma_port_priv {
+ 	struct net_device *netdev;
+ 	struct edma_port_pcpu_stats pcpu_stats;
+ 	struct edma_txdesc_ring *txr_map[EDMA_PORT_MAX_CORE];
++	bool br_offload;
+ 	unsigned long flags;
+ };
+ 
+ void edma_port_destroy(struct ppe_port *port);
+ int edma_port_setup(struct ppe_port *port);
++bool edma_port_dev_check(const struct net_device *dev);
+ #endif
+--- a/drivers/net/ethernet/qualcomm/ppe/edma_rx.c
++++ b/drivers/net/ethernet/qualcomm/ppe/edma_rx.c
+@@ -506,6 +506,8 @@ static int edma_rx_reap(struct edma_rxde
+ 
+ 		/* Handle linear packets or initial segments first. */
+ 		if (likely(!(rxdesc_ring->head))) {
++			struct edma_port_priv *port_priv;
++
+ 			ndev = edma_rx_get_src_dev(rxdesc_stats, rxdesc_pri, skb);
+ 			if (unlikely(!ndev)) {
+ 				dev_kfree_skb_any(skb);
+@@ -516,6 +518,13 @@ static int edma_rx_reap(struct edma_rxde
+ 			skb->dev = ndev;
+ 			skb->skb_iif = ndev->ifindex;
+ 
++			/* Packets from a port bridged in hardware were
++			 * already forwarded to the other bridged ports,
++			 * tell the software bridge not to do it again.
++			 */
++			port_priv = netdev_priv(ndev);
++			skb->offload_fwd_mark = READ_ONCE(port_priv->br_offload);
++
+ 			/* Handle linear packets. */
+ 			if (likely(!EDMA_RXDESC_MORE_BIT_GET(rxdesc_pri))) {
+ 				if (unlikely(!
