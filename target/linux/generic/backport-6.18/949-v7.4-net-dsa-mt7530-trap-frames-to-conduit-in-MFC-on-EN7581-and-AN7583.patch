@@ -1,0 +1,53 @@
+From a58b221496dd576191095d12996f39cee58cf6a8 Mon Sep 17 00:00:00 2001
+From: Tao Gong <gongtao0607@gmail.com>
+Date: Thu, 22 Oct 2026 20:56:48 +0000
+Subject: [PATCH] net: dsa: mt7530: trap frames to conduit in MFC on EN7581 and
+ AN7583
+
+On EN7581, STP BPDUs received on switch user ports never reach the CPU.
+
+Like MT7531 and MT7988, EN7581 and AN7583 only set the CPU port bitmap
+in MT7531_CFC and are skipped by mt753x_conduit_state_change(). On
+EN7581 this is not enough: trapped BPDUs reach the CPU only when
+MT7530_CPU_EN and MT7530_CPU_PORT are also set in MT753X_MFC. Add
+EN7581 and AN7583 to mt753x_conduit_state_change().
+
+Tested on an AN7581 board (Gemtek W1700K, airoha,en7581-switch), where
+only lan3 and lan4 are switch user ports. With RSTP BPDUs arriving on
+lan4:
+- without this patch, none reached the CPU;
+- setting CPU_EN and CPU_PORT by hand delivered them, and clearing them
+  stopped them;
+- with this patch, they are received from boot.
+
+Only BPDUs were tested. AN7583 is untested and is included because the
+driver sets it up like EN7581.
+
+Fixes: 2b0229f67932 ("net: dsa: mt7530: Add EN7581 support")
+Fixes: d76556db10bf ("net: dsa: mt7530: Add AN7583 support")
+Acked-by: Lorenzo Bianconi <lorenzo.bianconi@oss.qualcomm.com>
+Signed-off-by: Tao Gong <gongtao0607@gmail.com>
+Link: https://patch.msgid.link/20261022205649.2351696-1-gongtao0607@gmail.com
+Signed-off-by: Paolo Abeni <pabeni@redhat.com>
+---
+ drivers/net/dsa/mt7530.c | 7 +++++--
+ 1 file changed, 5 insertions(+), 2 deletions(-)
+
+--- a/drivers/net/dsa/mt7530.c
++++ b/drivers/net/dsa/mt7530.c
+@@ -3273,10 +3273,13 @@ mt753x_conduit_state_change(struct dsa_s
+ 
+ 	/* Set the CPU port to trap frames to for MT7530. Trapped frames will be
+ 	 * forwarded to the numerically smallest CPU port whose conduit
+-	 * interface is up.
++	 * interface is up. On EN7581, trapped BPDUs do not reach the CPU port
++	 * without this, even with the CPU port bitmap set. AN7583 is set up
++	 * the same way as EN7581.
+ 	 */
+ 	if (priv->id != ID_MT7530 && priv->id != ID_MT7621 &&
+-	    priv->id != ID_EN7528)
++	    priv->id != ID_EN7528 &&
++	    priv->id != ID_EN7581 && priv->id != ID_AN7583)
+ 		return;
+ 
+ 	mask = BIT(cpu_dp->index);
