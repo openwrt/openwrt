@@ -96,7 +96,7 @@ function setup_phy(phy, config, data) {
 	});
 
 	if (config.txpower != null)
-		config.txpower = 'fixed ' + config.txpower + '00';
+		config.txpower = 'fixed ' + int(config.txpower) * 100;
 	else
 		config.txpower = 'auto';
 
