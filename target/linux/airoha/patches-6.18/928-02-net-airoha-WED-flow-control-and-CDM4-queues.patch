@@ -1,0 +1,124 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Airoha Team <airoha@airoha.com>
+Date: Tue, 13 Oct 2026 00:00:00 +0200
+Subject: [PATCH] net: airoha: WED flow control and CDM4 queues on AN7563
+
+With a WED enabled in the device tree, program what the vendor fe driver
+does for the Wi-Fi offload (fe.c RECONFIG_WOE_FC, set for AN7552): the
+QDMA1 flow control mapping 3 (FE + 0x1bc) names the CDM4 queues 10 and 11,
+the WDMA rings' queues (WOE_PORT 7, WOE_OQ1 10, WOE_OQ2 11), and the PSE
+output queue reservation covers all 12 queues of CDM4 on this SoC
+(PSE_PORT7_QUEUE_NUM).  Without an enabled WED node nothing changes.
+
+Signed-off-by: Lukasz M <lukasz1992m+openwrt@gmail.com>
+---
+--- a/drivers/net/ethernet/airoha/airoha_eth.c
++++ b/drivers/net/ethernet/airoha/airoha_eth.c
+@@ -331,6 +331,24 @@ static int airoha_fe_set_pse_oq_rsv(stru
+ 	return 0;
+ }
+ 
++/* a WED the board enables: the CDM4 setup below is for its WDMA rings */
++static bool airoha_wed_present(struct airoha_eth *eth)
++{
++	struct device_node *np;
++
++	if (!eth->soc->wed_cdm4_queues)
++		return false;
++
++	for_each_compatible_node(np, NULL, "airoha,an7552-wed") {
++		if (of_device_is_available(np)) {
++			of_node_put(np);
++			return true;
++		}
++	}
++
++	return false;
++}
++
+ static void airoha_fe_pse_ports_init(struct airoha_eth *eth)
+ {
+ 	const u32 pse_port_num_queues[] = {
+@@ -346,8 +364,12 @@ static void airoha_fe_pse_ports_init(str
+ 		[FE_PSE_PORT_GDM4] = 2,
+ 		[FE_PSE_PORT_CDM5] = 2,
+ 	};
++	int cdm4_queues = pse_port_num_queues[FE_PSE_PORT_CDM4];
+ 	int q;
+ 
++	if (airoha_wed_present(eth))
++		cdm4_queues = eth->soc->wed_cdm4_queues;
++
+ 	if (airoha_ppe_is_enabled(eth, 1)) {
+ 		u32 all_rsv;
+ 
+@@ -390,7 +412,7 @@ static void airoha_fe_pse_ports_init(str
+ 	for (q = 0; q < pse_port_num_queues[FE_PSE_PORT_CDM3] - 1; q++)
+ 		airoha_fe_set_pse_oq_rsv(eth, FE_PSE_PORT_CDM3, q, 0);
+ 	/* CDM4 */
+-	for (q = 4; q < pse_port_num_queues[FE_PSE_PORT_CDM4]; q++)
++	for (q = 4; q < cdm4_queues; q++)
+ 		airoha_fe_set_pse_oq_rsv(eth, FE_PSE_PORT_CDM4, q,
+ 					 PSE_QUEUE_RSV_PAGES);
+ 	if (airoha_ppe_is_enabled(eth, 1)) {
+@@ -611,6 +633,20 @@ static int airoha_fe_init(struct airoha_
+ 		      FIELD_PREP(GDM_SPORT_OFF1_MASK, 8) |
+ 		      FIELD_PREP(GDM_SPORT_OFF0_MASK, 8));
+ 
++	/*
++	 * Flow control of the WDMA rings: CDM4 (PSE port 7) queues 10 and 11
++	 * (vendor fe.c, RECONFIG_WOE_FC; WOE_PORT, WOE_OQ1 and WOE_OQ2)
++	 */
++	if (airoha_wed_present(eth)) {
++		u32 port = FE_PSE_PORT_CDM4 << QDMA1_FC_MAPPING_PORT_SHIFT;
++
++		airoha_fe_wr(eth, REG_FE_QDMA1_FC_MAPPING(3),
++			     FIELD_PREP(QDMA1_FC_MAPPING_LO_MASK,
++					port | eth->soc->wed_oq[0]) |
++			     FIELD_PREP(QDMA1_FC_MAPPING_HI_MASK,
++					port | eth->soc->wed_oq[1]));
++	}
++
+ 	/* set PSE Page as 128B */
+ 	airoha_fe_rmw(eth, REG_FE_DMA_GLO_CFG,
+ 		      FE_DMA_GLO_L2_SPACE_MASK | FE_DMA_GLO_PG_SZ_MASK,
+@@ -5842,6 +5878,9 @@ static const struct airoha_eth_soc_data
+ 	 * EN7581 and AN7583 only, not AN7552
+ 	 */
+ 	.ppe_no_fast_path = true,
++	/* vendor fe_reg_en7512.h: PSE_PORT7_QUEUE_NUM 12, WOE_OQ1/WOE_OQ2 10/11 */
++	.wed_cdm4_queues = 12,
++	.wed_oq = { 10, 11 },
+ 	.ops = {
+ 		.get_sport = airoha_an7583_get_sport,
+ 		.get_vip_port = airoha_an7583_get_vip_port,
+--- a/drivers/net/ethernet/airoha/airoha_eth.h
++++ b/drivers/net/ethernet/airoha/airoha_eth.h
+@@ -680,6 +680,12 @@ struct airoha_eth_soc_data {
+ 	const struct airoha_ppe_host_cfg *ppe_host;
+ 	/* PPE has no fast path (AIROHA_FOE_IB2_FAST_PATH) */
+ 	bool ppe_no_fast_path;
++	/*
++	 * Wi-Fi WED: queues of PSE port CDM4 on this SoC (0: no WED) and the
++	 * two of them that carry the WDMA rings
++	 */
++	u8 wed_cdm4_queues;
++	u8 wed_oq[2];
+ 	struct {
+ 		int (*get_sport)(struct airoha_gdm_port *port, int nbq);
+ 		u32 (*get_vip_port)(struct airoha_gdm_port *port, int nbq);
+--- a/drivers/net/ethernet/airoha/airoha_regs.h
++++ b/drivers/net/ethernet/airoha/airoha_regs.h
+@@ -76,6 +76,12 @@
+ #define REG_FE_PSE_QUEUE_CFG_VAL	0x0084
+ #define PSE_CFG_OQ_RSV_MASK		GENMASK(13, 0)
+ 
++/* QDMA1 flow control mapping (vendor fe_reg_en7512.h QDMA1_FC_MAPPING) */
++#define REG_FE_QDMA1_FC_MAPPING(_n)	(0x01b0 + ((_n) << 2))
++#define QDMA1_FC_MAPPING_LO_MASK	GENMASK(15, 0)
++#define QDMA1_FC_MAPPING_HI_MASK	GENMASK(31, 16)
++#define QDMA1_FC_MAPPING_PORT_SHIFT	5
++
+ #define PSE_FQ_CFG			0x008c
+ #define PSE_FQ_LIMIT_MASK		GENMASK(14, 0)
+ 
