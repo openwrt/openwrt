@@ -26,7 +26,7 @@ Signed-off-by: David Turner <david.turner@raspberrypi.com>
  	 * NOTE: This function should really be called with vc4_hdmi->mutex
  	 * held, but doing so results in reentrancy issues since
  	 * cec_s_phys_addr() might call .adap_enable, which leads to that
-@@ -2344,6 +2350,8 @@ static int vc4_hdmi_audio_init(struct vc
+@@ -2338,6 +2344,8 @@ static int vc4_hdmi_audio_init(struct vc
  	dai_link->platforms->name = dev_name(dev);
  	dai_link->init = vc4_hdmi_codec_init;
  
