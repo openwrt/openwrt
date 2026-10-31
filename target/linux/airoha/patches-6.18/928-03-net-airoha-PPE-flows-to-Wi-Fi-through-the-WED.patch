@@ -79,7 +79,7 @@ Signed-off-by: Lukasz M <lukasz1992m+openwrt@gmail.com>
  #include <net/ipv6.h>
  #include <net/pkt_cls.h>
  #include <net/route.h>
-@@ -22,6 +23,101 @@
+@@ -22,6 +23,147 @@
  DEFINE_MUTEX(flow_offload_mutex);
  static DEFINE_SPINLOCK(ppe_lock);
  
@@ -178,10 +178,56 @@ Signed-off-by: Lukasz M <lukasz1992m+openwrt@gmail.com>
 +	mutex_unlock(&airoha_ppe_wed_lock);
 +}
 +
++void airoha_ppe_wed_flow_flush(int idx, u16 wcid)
++{
++	struct airoha_flow_table_entry *e;
++	struct rhashtable_iter iter;
++	struct airoha_eth *eth;
++	u32 flushed = 0;
++
++	mutex_lock(&flow_offload_mutex);
++
++	eth = airoha_ppe_wed_eth;
++	if (!eth)
++		goto out;
++
++	rhashtable_walk_enter(&eth->flow_table, &iter);
++	rhashtable_walk_start(&iter);
++	while ((e = rhashtable_walk_next(&iter))) {
++		u32 type;
++		u16 etype;
++
++		if (IS_ERR(e))
++			continue;
++
++		if (!e->wed || e->wed_idx != idx)
++			continue;
++
++		type = FIELD_GET(AIROHA_FOE_IB1_BIND_PACKET_TYPE, e->data.ib1);
++		etype = type >= PPE_PKT_TYPE_IPV6_ROUTE_3T ?
++			e->data.ipv6.l2.etype : e->data.ipv4.l2.common.etype;
++		if (FIELD_GET(AIROHA_FOE_WED_ETYPE_WCID, etype) != wcid)
++			continue;
++
++		airoha_ppe_foe_flow_remove_entry(eth->ppe, e);
++		e->wed = false;
++		e->stale = true;
++		flushed++;
++	}
++	rhashtable_walk_stop(&iter);
++	rhashtable_walk_exit(&iter);
++
++	while (flushed--)
++		airoha_ppe_wed_flow_remove(idx);
++out:
++	mutex_unlock(&flow_offload_mutex);
++}
++EXPORT_SYMBOL_GPL(airoha_ppe_wed_flow_flush);
++
  static const struct rhashtable_params airoha_flow_table_params = {
  	.head_offset = offsetof(struct airoha_flow_table_entry, node),
  	.key_offset = offsetof(struct airoha_flow_table_entry, cookie),
-@@ -315,6 +411,7 @@ static int airoha_ppe_get_wdma_info(stru
+@@ -315,6 +457,7 @@ static int airoha_ppe_get_wdma_info(stru
  		return -EINVAL;
  
  	info->idx = path->mtk_wdma.wdma_idx;
@@ -189,7 +235,7 @@ Signed-off-by: Lukasz M <lukasz1992m+openwrt@gmail.com>
  	info->bss = path->mtk_wdma.bss;
  	info->wcid = path->mtk_wdma.wcid;
  
-@@ -349,7 +446,7 @@ static int airoha_ppe_foe_entry_prepare(
+@@ -349,7 +492,7 @@ static int airoha_ppe_foe_entry_prepare(
  					struct airoha_foe_entry *hwe,
  					struct net_device *netdev, int type,
  					struct airoha_flow_data *data,
@@ -198,7 +244,7 @@ Signed-off-by: Lukasz M <lukasz1992m+openwrt@gmail.com>
  {
  	u32 qdata = FIELD_PREP(AIROHA_FOE_SHAPER_ID, 0x7f), ports_pad, val;
  	int wlan_etype = -EINVAL, dsa_port = airoha_get_dsa_port(&netdev);
-@@ -373,14 +470,44 @@ static int airoha_ppe_foe_entry_prepare(
+@@ -373,14 +516,44 @@ static int airoha_ppe_foe_entry_prepare(
  
  		if (!airoha_ppe_get_wdma_info(netdev, data->eth.h_dest,
  					      &info)) {
@@ -251,7 +297,7 @@ Signed-off-by: Lukasz M <lukasz1992m+openwrt@gmail.com>
  		} else {
  			struct airoha_gdm_dev *dev = netdev_priv(netdev);
  			struct airoha_gdm_port *port;
-@@ -1105,12 +1232,19 @@ static int airoha_ppe_flow_offload_repla
+@@ -1105,12 +1278,19 @@ static int airoha_ppe_flow_offload_repla
  	struct flow_action_entry *act;
  	u8 dsfield = 0, l4proto = 0;
  	struct airoha_foe_entry hwe;
@@ -275,7 +321,7 @@ Signed-off-by: Lukasz M <lukasz1992m+openwrt@gmail.com>
  
  	if (!flow_rule_match_key(rule, FLOW_DISSECTOR_KEY_META))
  		return -EOPNOTSUPP;
-@@ -1209,7 +1343,7 @@ static int airoha_ppe_flow_offload_repla
+@@ -1209,7 +1389,7 @@ static int airoha_ppe_flow_offload_repla
  		return -EINVAL;
  
  	err = airoha_ppe_foe_entry_prepare(eth, &hwe, odev, offload_type,
@@ -284,7 +330,7 @@ Signed-off-by: Lukasz M <lukasz1992m+openwrt@gmail.com>
  	if (err)
  		return err;
  
-@@ -1277,11 +1411,22 @@ static int airoha_ppe_flow_offload_repla
+@@ -1277,11 +1457,22 @@ static int airoha_ppe_flow_offload_repla
  			return err;
  	}
  
@@ -309,7 +355,7 @@ Signed-off-by: Lukasz M <lukasz1992m+openwrt@gmail.com>
  	memcpy(&e->data, &hwe, sizeof(e->data));
  
  	err = airoha_ppe_foe_flow_commit_entry(eth->ppe, e);
-@@ -1299,6 +1444,9 @@ remove_foe_entry:
+@@ -1299,6 +1490,9 @@ remove_foe_entry:
  	airoha_ppe_foe_flow_remove_entry(eth->ppe, e);
  free_entry:
  	kfree(e);
@@ -319,7 +365,7 @@ Signed-off-by: Lukasz M <lukasz1992m+openwrt@gmail.com>
  
  	return err;
  }
-@@ -1316,6 +1464,8 @@ static int airoha_ppe_flow_offload_destr
+@@ -1316,6 +1510,8 @@ static int airoha_ppe_flow_offload_destr
  	airoha_ppe_foe_flow_remove_entry(eth->ppe, e);
  	rhashtable_remove_fast(&eth->flow_table, &e->node,
  			       airoha_flow_table_params);
@@ -328,7 +374,7 @@ Signed-off-by: Lukasz M <lukasz1992m+openwrt@gmail.com>
  	kfree(e);
  
  	return 0;
-@@ -1716,6 +1866,13 @@ int airoha_ppe_init(struct airoha_eth *e
+@@ -1716,6 +1912,13 @@ int airoha_ppe_init(struct airoha_eth *e
  	if (err)
  		goto error_l2_flow_table_destroy;
  
@@ -342,7 +388,7 @@ Signed-off-by: Lukasz M <lukasz1992m+openwrt@gmail.com>
  	return 0;
  
  error_l2_flow_table_destroy:
-@@ -1732,6 +1889,9 @@ void airoha_ppe_deinit(struct airoha_eth
+@@ -1732,6 +1935,9 @@ void airoha_ppe_deinit(struct airoha_eth
  
  	mutex_lock(&flow_offload_mutex);
  
@@ -420,10 +466,28 @@ Signed-off-by: Lukasz M <lukasz1992m+openwrt@gmail.com>
  	mutex_unlock(&hw_lock);
  }
  
-@@ -1104,6 +1123,74 @@ static const struct mtk_wed_ops airoha_w
- 	.setup_tc		= airoha_wed_setup_tc,
- };
+@@ -1063,6 +1082,14 @@ static int airoha_wed_setup_tc(struct mt
+ 	return -EOPNOTSUPP;
+ }
  
++static void airoha_wed_flow_flush(struct mtk_wed_device *dev, u16 wcid,
++				  bool (*match)(const struct cfg80211_flow_info *info,
++						bool rx, void *arg),
++				  void *arg)
++{
++	airoha_ppe_wed_flow_flush(dev->hw->index, wcid);
++}
++
+ static u32 airoha_wed_irq_get(struct mtk_wed_device *dev, u32 mask)
+ {
+ 	u32 val;
+@@ -1102,6 +1129,75 @@ static const struct mtk_wed_ops airoha_w
+ 	.detach			= airoha_wed_detach,
+ 	.ppe_check		= airoha_wed_ppe_check,
+ 	.setup_tc		= airoha_wed_setup_tc,
++	.flow_flush		= airoha_wed_flow_flush,
++};
++
 +/*
 + * What mtk_wed_flow_add() and mtk_wed_flow_remove() do: the first flow of a
 + * WED hands its token space to the hardware (the Wi-Fi driver stops using it),
@@ -490,12 +554,10 @@ Signed-off-by: Lukasz M <lukasz1992m+openwrt@gmail.com>
 +static const struct airoha_ppe_wed_ops airoha_wed_ppe_ops = {
 +	.flow_add	= airoha_wed_flow_add,
 +	.flow_remove	= airoha_wed_flow_remove,
-+};
-+
- /* ---- debugfs ---- */
+ };
  
- /* the registers worth looking at first, with their vendor names */
-@@ -1253,6 +1340,8 @@ static int airoha_wed_probe(struct platf
+ /* ---- debugfs ---- */
+@@ -1253,6 +1349,8 @@ static int airoha_wed_probe(struct platf
  	hw_list[hw->index] = hw;
  	rcu_assign_pointer(mtk_soc_wed_ops, &airoha_wed_ops);
  	mutex_unlock(&hw_lock);
@@ -504,7 +566,7 @@ Signed-off-by: Lukasz M <lukasz1992m+openwrt@gmail.com>
  
  	hw->debugfs_dir = debugfs_create_dir(dev_name(dev), NULL);
  	debugfs_create_file("regs", 0400, hw->debugfs_dir, hw,
-@@ -1281,8 +1370,10 @@ static void airoha_wed_remove(struct pla
+@@ -1281,8 +1379,10 @@ static void airoha_wed_remove(struct pla
  		rcu_assign_pointer(mtk_soc_wed_ops, NULL);
  	mutex_unlock(&hw_lock);
  
@@ -518,7 +580,7 @@ Signed-off-by: Lukasz M <lukasz1992m+openwrt@gmail.com>
  }
 --- /dev/null
 +++ b/include/linux/soc/airoha/airoha_wed.h
-@@ -0,0 +1,21 @@
+@@ -0,0 +1,22 @@
 +/* SPDX-License-Identifier: GPL-2.0-only */
 +#ifndef AIROHA_WED_H
 +#define AIROHA_WED_H
@@ -538,5 +600,6 @@ Signed-off-by: Lukasz M <lukasz1992m+openwrt@gmail.com>
 +void airoha_ppe_wed_unregister(const struct airoha_ppe_wed_ops *ops);
 +/* the WED idx is detached: its flows are unbound and no longer counted */
 +void airoha_ppe_wed_detach(int idx);
++void airoha_ppe_wed_flow_flush(int idx, u16 wcid);
 +
 +#endif

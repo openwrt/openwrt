@@ -1,0 +1,64 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Lukasz M <lukasz1992m+openwrt@gmail.com>
+Date: Sat, 21 Nov 2026 10:00:00 +0100
+Subject: [PATCH] mt76 npu reorder the mt7916 rx in mt76
+
+mt76_rx_poll_complete skips the mt76 reorder buffer whenever a wed or
+an npu is active, on the assumption that the hardware below reorders.
+Neither does here: the airoha wed is tx only (no rx capability) and the
+MT7916 has no hardware reorder, while its NPU passes the frames on as
+they come unless it is told the ba windows.  Without a reorder the
+aggregated rx reached the stack out of order.
+
+Handing the windows to the NPU (experimental/0110) held a client's
+uplink for 50..100 ms several times a second under a download, even
+with the block ack requests forwarded.  Keep the windows in the mt76
+reorder buffer instead: skip it only for a wed with rx and for an npu
+whose driver does not ask for the host reorder, and ask for it on the
+mt7916.
+
+Signed-off-by: Lukasz M <lukasz1992m+openwrt@gmail.com>
+---
+--- a/mac80211.c
++++ b/mac80211.c
+@@ -1663,8 +1663,14 @@
+ 
+ 	while ((skb = __skb_dequeue(&dev->rx_skb[q])) != NULL) {
+ 		mt76_check_sta(dev, skb);
+-		if (mtk_wed_device_active(&dev->mmio.wed) ||
+-		    mt76_npu_device_active(dev))
++		/* leave the reorder to the hardware only where it
++		 * does it: a wed with rx, an npu that orders the
++		 * frames itself.  the airoha wed is tx only and the
++		 * mt7916 npu passes the frames as they come. */
++		if ((mtk_wed_device_active(&dev->mmio.wed) &&
++		     mtk_wed_get_rx_capa(&dev->mmio.wed)) ||
++		    (mt76_npu_device_active(dev) &&
++		     !dev->mmio.npu_host_reorder))
+ 			__skb_queue_tail(&frames, skb);
+ 		else
+ 			mt76_rx_aggr_reorder(skb, &frames);
+--- a/mt76.h
++++ b/mt76.h
+@@ -736,6 +736,8 @@
+ 	struct airoha_npu __rcu *npu;
+ 	phys_addr_t phy_addr;
+ 	int npu_type;
++	/* the npu passes the frames unordered: mt76 reorders them */
++	bool npu_host_reorder;
+ };
+ 
+ struct mt76_rx_status {
+--- a/mt7915/npu.c
++++ b/mt7915/npu.c
+@@ -224,6 +224,10 @@
+ {
+ 	int err;
+ 
++	/* the mt7916 has no hardware reorder and the npu is not told
++	 * about the ba windows: mt76 keeps the reorder buffer */
++	dev->mt76.mmio.npu_host_reorder = is_mt7916(&dev->mt76);
++
+ 	mutex_lock(&dev->mt76.mutex);
+ 	err = __mt7915_npu_hw_init(dev);
+ 	mutex_unlock(&dev->mt76.mutex);

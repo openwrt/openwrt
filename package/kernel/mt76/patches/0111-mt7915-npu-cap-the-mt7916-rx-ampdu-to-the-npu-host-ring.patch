@@ -1,0 +1,91 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Lukasz M <lukasz1992m+openwrt@gmail.com>
+Date: Sat, 21 Nov 2026 12:00:00 +0100
+Subject: [PATCH] mt7915 npu cap the mt7916 rx ampdu to the npu host ring
+
+The MT7916 NPU passes the rx frames to the host through a ring of 512
+descriptors, fixed in its firmware (index wraps at 0x200), and drops a
+frame when the descriptor two slots ahead is still owned by the host,
+with no retry (counter +0x6c / +0xec of the band's debug block).
+
+A client answering a download sends its tcp acks in A-MPDUs of up to
+256 mpdus on HE.  Measured on an AN7563 with a 1200 Mbit/s HE client
+at ~100 Mbit/s down: the npu wrote over 128 frames into the host ring
+within one millisecond 223 times a minute (max 318), the ring reached
+2 free slots and the npu dropped ~500 mpdus a minute that the chip had
+already acked.  The holes (2..39 mpdus) then held the tid's later
+frames for the 100 ms reorder timeout: 5..10 % of the client's uplink
+pings came 50..200 ms late.  Raising the napi thread priority did not
+help; the host stack cannot take a burst at that rate.
+
+Offer smaller rx ba windows while the npu carries the rx, 64 subframes
+by default (module parameter npu_rx_ampdu, 0 = no cap), so a burst fits
+the ring.
+
+Signed-off-by: Lukasz M <lukasz1992m+openwrt@gmail.com>
+---
+--- a/mt7915/main.c
++++ b/mt7915/main.c
+@@ -784,6 +784,7 @@
+ 	mt7915_mac_wtbl_update(dev, idx,
+ 			       MT_WTBL_UPDATE_ADM_COUNT_CLEAR);
+ 	mt7915_mcu_add_sta(dev, vif, sta, CONN_STATE_DISCONNECT, true);
++	mt7916_npu_sta_add(dev, sta);
+ 
+ 	if (!is_mt7915(&dev->mt76)) {
+ 		mt7915_mcu_set_vow_drr_ctrl(dev, msta, VOW_DRR_CTRL_STA_PAUSE, 0);
+--- a/mt7915/mt7915.h
++++ b/mt7915/mt7915.h
+@@ -690,6 +690,7 @@
+ int mt7915_npu_hw_init(struct mt7915_dev *dev);
+ bool mt7915_npu_rx_setup(struct mt7915_dev *dev);
+ void mt7915_npu_stop(struct mt7915_dev *dev);
++void mt7916_npu_sta_add(struct mt7915_dev *dev, struct ieee80211_sta *sta);
+ #else
+ static inline int __mt7915_npu_hw_init(struct mt7915_dev *dev)
+ {
+@@ -706,6 +707,10 @@
+ static inline void mt7915_npu_stop(struct mt7915_dev *dev)
+ {
+ }
++static inline void mt7916_npu_sta_add(struct mt7915_dev *dev,
++				      struct ieee80211_sta *sta)
++{
++}
+ #endif
+ 
+ #endif
+--- a/mt7915/npu.c
++++ b/mt7915/npu.c
+@@ -254,3 +254,31 @@
+ 	if (err)
+ 		dev_warn(dev->mt76.dev, "NPU reset failed: %d\n", err);
+ }
++
++/*
++ * The NPU hands the rx frames to the host through a ring of 512
++ * descriptors (fixed in its firmware) and drops a frame when the ring is
++ * full, with no retry.  A client answering a download sends its tcp acks
++ * in A-MPDUs of up to 256 small mpdus on HE; two of them land within a
++ * millisecond, faster than the host stack takes them, and the dropped
++ * mpdus leave holes that hold the tid's later frames in the reorder
++ * buffer for its 100 ms timeout.  Offer smaller rx ba windows so a burst
++ * fits the ring.
++ */
++static int npu_rx_ampdu = 64;
++module_param(npu_rx_ampdu, int, 0644);
++MODULE_PARM_DESC(npu_rx_ampdu,
++		 "MT7916 with NPU rx: max rx A-MPDU subframes offered (0: no cap)");
++
++void mt7916_npu_sta_add(struct mt7915_dev *dev, struct ieee80211_sta *sta)
++{
++	int cap = READ_ONCE(npu_rx_ampdu);
++
++	if (!is_mt7916(&dev->mt76) || !mt76_npu_device_active(&dev->mt76) ||
++	    cap <= 0)
++		return;
++
++	sta->max_rx_aggregation_subframes =
++		min_t(u16, sta->max_rx_aggregation_subframes,
++		      clamp(cap, 8, IEEE80211_MAX_AMPDU_BUF_HE));
++}
