@@ -11,6 +11,21 @@
 	};
 };
 
+&blsp1_uart2 {
+	status = "okay";
+
+	pinctrl-0 = <&bluetooth_uart_pins>;
+	pinctrl-names = "default";
+};
+
+&tlmm {
+	bluetooth_uart_pins: bluetooth-uart-state {
+		pins = "gpio8", "gpio9", "gpio10", "gpio11";
+		function = "blsp_uart1";
+		bias-disable;
+	};
+};
+
 &usb3_hs_phy {
 	status = "okay";
 };
