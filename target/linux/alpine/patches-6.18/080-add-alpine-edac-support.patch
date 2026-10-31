@@ -1,0 +1,9 @@
+--- a/drivers/edac/Kconfig
++++ b/drivers/edac/Kconfig
+@@ -592,4 +592,6 @@ config EDAC_VERSALNET
+ 	  and other system errors from various IP subsystems like RPU, NOCs,
+ 	  HNICX, PL on the AMD Versal NET DDR memory controller.
+ 
++source "drivers/edac/al/Kconfig"
++
+ endif # EDAC
