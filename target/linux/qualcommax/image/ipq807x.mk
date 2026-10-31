@@ -78,6 +78,20 @@ define Device/arcadyan_aw1000
 endef
 TARGET_DEVICES += arcadyan_aw1000
 
+define Device/arista_c-260
+	$(call Device/FitImage)
+	$(call Device/UbiFit)
+	DEVICE_VENDOR := Arista
+	DEVICE_MODEL := C-260
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	DEVICE_DTS_CONFIG := config@hk01
+	SOC := ipq8074
+	DEVICE_PACKAGES := ipq-wifi-arista_c-260 kmod-ath10k-ct ath10k-firmware-qca988x-ct \
+		kmod-spi-gpio kmod-gpio-nxp-74hc164
+endef
+TARGET_DEVICES += arista_c-260
+
 define Device/asus_rt-ax89x
 	DEVICE_VENDOR := Asus
 	DEVICE_MODEL := RT-AX89X
