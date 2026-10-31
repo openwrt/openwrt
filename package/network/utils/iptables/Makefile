@@ -10,7 +10,7 @@ include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=iptables
 PKG_VERSION:=1.8.10
-PKG_RELEASE:=3
+PKG_RELEASE:=4
 
 PKG_SOURCE_URL:=https://netfilter.org/projects/iptables/files
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
@@ -55,7 +55,7 @@ define Package/iptables-zz-legacy
 $(call Package/iptables/Default)
   TITLE:=IP firewall administration tool
   DEPENDS+= +xtables-legacy
-  PROVIDES:=iptables iptables-legacy
+  PROVIDES:=@iptables iptables-legacy
   ALTERNATIVES:=\
     200:/usr/sbin/iptables:xtables-legacy-multi \
     200:/usr/sbin/iptables-restore:xtables-legacy-multi \
@@ -115,7 +115,8 @@ define Package/arptables-nft
 $(call Package/iptables/Default)
   DEPENDS:=+kmod-nft-arp +xtables-nft +kmod-arptables
   TITLE:=ARP firewall administration tool nft
-  PROVIDES:=arptables
+  PROVIDES:=@arptables
+  DEFAULT_VARIANT:=1
   ALTERNATIVES:=\
     300:/usr/sbin/arptables:xtables-nft-multi \
     300:/usr/sbin/arptables-restore:xtables-nft-multi \
@@ -129,7 +130,8 @@ define Package/ebtables-nft
 $(call Package/iptables/Default)
   DEPENDS:=+kmod-nft-bridge +xtables-nft +kmod-ebtables
   TITLE:=Bridge firewall administration tool nft
-  PROVIDES:=ebtables
+  PROVIDES:=@ebtables
+  DEFAULT_VARIANT:=1
   ALTERNATIVES:=\
     300:/usr/sbin/ebtables:xtables-nft-multi \
     300:/usr/sbin/ebtables-restore:xtables-nft-multi \
@@ -143,7 +145,7 @@ define Package/iptables-nft
 $(call Package/iptables/Default)
   TITLE:=IP firewall administration tool nft
   DEPENDS:=+kmod-ipt-core +xtables-nft
-  PROVIDES:=iptables
+  PROVIDES:=@iptables
   DEFAULT_VARIANT:=1
   ALTERNATIVES:=\
     300:/usr/sbin/iptables:xtables-nft-multi \
@@ -475,7 +477,7 @@ $(call Package/iptables/Default)
   DEPENDS:=@IPV6 +kmod-ip6tables +xtables-legacy
   CATEGORY:=Network
   TITLE:=IPv6 firewall administration tool
-  PROVIDES:=ip6tables ip6tables-legacy
+  PROVIDES:=@ip6tables ip6tables-legacy
   ALTERNATIVES:=\
     200:/usr/sbin/ip6tables:xtables-legacy-multi \
     200:/usr/sbin/ip6tables-restore:xtables-legacy-multi \
@@ -489,7 +491,7 @@ define Package/ip6tables-nft
 $(call Package/iptables/Default)
   DEPENDS:=@IPV6 +kmod-ip6tables +xtables-nft
   TITLE:=IP firewall administration tool nft
-  PROVIDES:=ip6tables
+  PROVIDES:=@ip6tables
   DEFAULT_VARIANT:=1
   ALTERNATIVES:=\
     300:/usr/sbin/ip6tables:xtables-nft-multi \
