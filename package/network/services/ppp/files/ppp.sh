@@ -173,7 +173,7 @@ ppp_generic_setup() {
 	[ "$delegate" != "0" ] && delegate=""
 	[ "$norelease" = "1" ] || norelease=""
 
-	local jail arg caps=/etc/capabilities/pppd.json
+	local jail arg secret secrets caps=/etc/capabilities/pppd.json
 	[ -x /sbin/ujail ] && [ -f "$caps" ] && id -u ppp >/dev/null 2>&1 && {
 		jail="/sbin/ujail -t 5 -n pppd -U ppp -G ppp -C $caps -c --"
 		chown ppp /dev/ppp
@@ -187,6 +187,12 @@ ppp_generic_setup() {
 		# root:dialout 0660, which no capability overrides.
 		for arg in "$@"; do
 			[ -c "$arg" ] && chown ppp "$arg"
+		done
+		for secret in chap-secrets pap-secrets; do
+			[ -f "/etc/ppp/$secret" ] || continue
+			ppp_install_file "/var/run/pppd/$config.$secret" ppp \
+				< "/etc/ppp/$secret" || continue
+			secrets="$secrets $secret /var/run/pppd/$config.$secret"
 		done
 	}
 
@@ -215,6 +221,7 @@ ppp_generic_setup() {
 		$demand $persist maxfail $maxfail \
 		${holdoff:+holdoff "$holdoff"} \
 		${optfile:+file "$optfile" net-init-script /lib/netifd/ppp-net-init} \
+		$secrets \
 		${connect:+connect "$connect"} \
 		${disconnect:+disconnect "$disconnect"} \
 		ip-up-script /lib/netifd/ppp-up \
@@ -229,7 +236,9 @@ ppp_generic_teardown() {
 	local interface="$1"
 	local errorstring=$(ppp_exitcode_tostring $ERROR)
 
-	rm -f "/var/run/pppd/$interface.opts"
+	rm -f "/var/run/pppd/$interface.opts" \
+		"/var/run/pppd/$interface.chap-secrets" \
+		"/var/run/pppd/$interface.pap-secrets"
 
 	case "$ERROR" in
 		0)
