@@ -1,0 +1,119 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Ville Takio <ville+git@takio.fi>
+Subject: [PATCH] b43: AC-PHY: init gain step and 0x06ee from wl's gain estimate
+
+After the gain split wl 7.14 corrects the init gain per core: a gain
+estimate from the width's clip level (and the TR isolation on an
+external LNA band) is added to the init gains and classed against eight
+levels. The class sets 0x06ee bits 1:0; well above the top, one step
+moves from stage 4 to stage 5. b43 wrote 1 at 20 MHz and 2 above from
+the d6220 and kept the split. Now 0x06dd and 0x06ee bits 1:0 equal
+wl's on every core of the RT-AC66U B1 at 2.4 GHz 20/40 and 5 GHz
+20/40/80 MHz.
+
+--- a/drivers/net/wireless/broadcom/b43/phy_ac.c
++++ b/drivers/net/wireless/broadcom/b43/phy_ac.c
+@@ -4861,6 +4861,56 @@ static void b43_phy_ac_agc_split(const s
+ }
+ 
+ /*
++ * wl 7.14's correction after the gain split, per core: a gain estimate from
++ * the width's clip level (-66, -63, -60 dBm at 20, 40, 80 MHz) and, on an
++ * external LNA band, the TR isolation less the stage 0 gain, averaged at 20
++ * MHz and weighted 26:39 above with a second term, -16 dB less the stage 0
++ * gain. Added to the gains of init stages 0-4 it is classed against eight
++ * levels: the class sets 0x06ee bits 1:0, and above the top by more than 2
++ * dB one step moves from stage 4 to stage 5. On the RT-AC66U B1 this gives
++ * wl's 0x06dd and 0x06ee bits 1:0 on every core at 2.4 GHz 20/40 and 5 GHz
++ * 20/40/80 MHz, including the one core that moves at 5 GHz 20 MHz.
++ */
++static u16 b43_phy_ac_agc_step(const struct b43_phy_ac_agc_rows *rows,
++			       unsigned int width_mhz, bool elna, int e,
++			       const u8 *c, u8 *c4, u8 *c5)
++{
++	static const s16 lvl[8] = { -40, -5, 20, 40, 55, 80, 100, 116 };
++	static const u8 cls[8] = { 0, 0, 1, 1, 1, 1, 2, 2 };
++	int s0g = rows->gain[0][c[0]];
++	int w = width_mhz == 20 ? -66 : (width_mhz == 40 ? -63 : -60);
++	int a = w + (elna ? e - s0g : 0);
++	int b = -16 - s0g;
++	int x = width_mhz == 20 ? (a + b) >> 1 : -((a * -26 + b * -39) >> 6);
++	int v, prev, idx;
++	unsigned int k;
++
++	v = 10 * (x + rows->gain[0][c[0]] + rows->gain[1][c[1]] +
++		  rows->gain[2][c[2]] + rows->gain[3][c[3]] + rows->gain[4][c[4]]);
++	if (v < lvl[0])
++		return 0;
++	if (v <= lvl[7]) {
++		prev = lvl[0];
++		idx = 0;
++		for (k = 1; k < ARRAY_SIZE(lvl); k++) {
++			if (v <= lvl[k] && prev <= v) {
++				if (lvl[k] - v <= max(v - prev, 0))
++					idx++;
++				return cls[idx];
++			}
++			idx++;
++			prev = lvl[k];
++		}
++		return 0;
++	}
++	if (v - lvl[7] > 20 && *c4 != 0 && *c5 != 7) {
++		(*c4)--;
++		(*c5)++;
++	}
++	return 2;
++}
++
++/*
+  * Per-core body of the post-noise-shaping block, at a 0x200 stride: peek
+  * and write 0x06dc/0x06dd, write table 0x07 at 0xf9 + core = 0xc0b5, unlock
+  * the outer gate, five groups of (clear bit 1 of 0x06e3, two writes), eight
+@@ -4894,6 +4944,7 @@ b43_phy_ac_post_noise_shaping_rx_regprog
+ 	u8 c[B43_PHY_AC_AGC_STAGES];
+ 	u16 init_lo, init_hi, init_tbl, clip_lo, clip_hi;
+ 	u16 md_lo, md_hi, lo1_lo, lo1_hi, lo2_lo, lo2_hi;
++	u16 ee_class;
+ 	const u8 *caps = band_2g ? caps_2g : caps_5g;
+ 
+ 	/*
+@@ -4910,8 +4961,24 @@ b43_phy_ac_post_noise_shaping_rx_regprog
+ 	b43_phy_ac_agc_rows_read(dev, core, &rows);
+ 	b43_phy_ac_agc_split(&rows, caps, 0, 69, c);
+ 	init_lo = (u16)(c[1] << 1 | c[2] << 4 | c[3] << 7);
+-	init_hi = (u16)(0x0004 | c[4] << 4 | c[5] << 8);
+ 	init_tbl = (u16)(c[1] | c[2] << 3 | c[3] << 6 | c[4] << 10 | c[5] << 13);
++	{
++		const struct ssb_sprom *sp = dev->dev->bus_sprom;
++		const struct ssb_sprom_rxgains *rx =
++			band_2g ? &sp->rxgains_2g : &sp->rxgains_5gl;
++		bool elna = band_2g ? !!(sp->boardflags_lo & B43_BFL_EXTLNA) :
++				      !!(sp->boardflags_hi & B43_BFH_EXTLNA_5GHZ);
++		enum nl80211_chan_width cw = dev->phy.ac->cal_width;
++		unsigned int mhz = cw == NL80211_CHAN_WIDTH_20 ? 20 :
++				   (cw == NL80211_CHAN_WIDTH_40 ? 40 : 80);
++		u8 c4 = c[4], c5 = c[5];
++
++		/* table 7 keeps the split's values, as wl's does */
++		ee_class = b43_phy_ac_agc_step(&rows, mhz, elna,
++					       (rx->triso[core] + 4) << 1,
++					       c, &c4, &c5);
++		init_hi = (u16)(0x0004 | c4 << 4 | c5 << 8);
++	}
+ 	b43_phy_ac_agc_split(&rows, caps, 0, 48, c);
+ 	clip_lo = (u16)(c[1] << 1 | c[2] << 4 | c[3] << 7);
+ 	clip_hi = (u16)(0x0004 | c[4] << 4 | c[5] << 8);
+@@ -4980,10 +5047,8 @@ b43_phy_ac_post_noise_shaping_rx_regprog
+ 	b43_phy_read_log(dev, 0x06dd + stride);
+ 	b43_phy_read_log(dev, 0x06dd + stride);
+ 
+-	/* 1 at 20 MHz, 2 from 40 on. */
+-	b43_phy_maskset(dev, 0x06ee + stride, (u16)~0x0003,
+-			dev->phy.ac->cal_width == NL80211_CHAN_WIDTH_20
+-				? 0x0001 : 0x0002);
++	/* bits 1:0 from b43_phy_ac_agc_step() */
++	b43_phy_maskset(dev, 0x06ee + stride, (u16)~0x0003, ee_class);
+ }
+ 
+ /*
