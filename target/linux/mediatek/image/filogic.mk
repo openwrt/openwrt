@@ -3433,6 +3433,43 @@ define Device/openwrt_one
 endef
 TARGET_DEVICES += openwrt_one
 
+define Device/oray_pgy-x1pro
+  DEVICE_VENDOR := Oray
+  DEVICE_MODEL := PGY-X1Pro
+  DEVICE_ALT0_VENDOR := OrayBox
+  DEVICE_ALT0_MODEL := X1 Pro
+  DEVICE_ALT1_VENDOR := Beirui
+  DEVICE_ALT1_MODEL := PGY-X1Pro
+  DEVICE_ALT2_VENDOR := Dandelion
+  DEVICE_ALT2_MODEL := X1 Pro
+  DEVICE_ALT3_VENDOR := Pomegranate
+  DEVICE_ALT3_MODEL := X1 Pro
+  DEVICE_ALT4_VENDOR := AweSeed
+  DEVICE_ALT4_MODEL := X1 Pro
+  DEVICE_DTS := mt7981b-oray-pgy-x1pro
+  DEVICE_DTS_DIR := ../dts
+  UBINIZE_OPTS := -E 5
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  KERNEL_IN_UBI := 1
+  UBOOTENV_IN_UBI := 1
+  IMAGES := sysupgrade.itb
+  KERNEL_INITRAMFS_SUFFIX := -recovery.itb
+  KERNEL := kernel-bin | libdeflate-gzip
+  KERNEL_INITRAMFS := kernel-bin | lzma | \
+	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd | \
+	pad-to 64k
+  IMAGE/sysupgrade.itb := append-kernel | \
+	fit gzip $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb external-static-with-rootfs | \
+	append-metadata
+  DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware \
+	mt7981-wo-firmware kmod-regulator-userspace-consumer kmod-usb3
+  ARTIFACTS := bl31-uboot.fip preloader.bin
+  ARTIFACT/bl31-uboot.fip := mt7981-bl31-uboot oray_pgy-x1pro
+  ARTIFACT/preloader.bin := mt7981-bl2 spim-nand-ddr3-1866
+endef
+TARGET_DEVICES += oray_pgy-x1pro
+
 define Device/qihoo_360t7-common
   DEVICE_VENDOR := Qihoo
   DEVICE_DTS_DIR := ../dts
