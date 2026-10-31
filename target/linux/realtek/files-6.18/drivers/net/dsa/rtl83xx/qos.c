@@ -92,8 +92,8 @@ enum scheduler_type {
 	WEIGHTED_ROUND_ROBIN,
 };
 
-static int rtldsa_max_available_queue[] = {0, 1, 2, 3, 4, 5, 6, 7};
-static int rtldsa_default_queue_weights[] = {1, 1, 1, 1, 1, 1, 1, 1};
+static int otto_qos_max_available_queue[] = {0, 1, 2, 3, 4, 5, 6, 7};
+static int otto_qos_default_queue_weights[] = {1, 1, 1, 1, 1, 1, 1, 1};
 static int dot1p_priority_remapping[] = {0, 1, 2, 3, 4, 5, 6, 7};
 
 u32 otto_qos_838x_get_egress_rate(struct otto_dsa_priv *priv, int port)
@@ -216,19 +216,19 @@ static void otto_qos_83xx_setup_prio2queue_cpu_matrix(struct otto_dsa_priv *priv
 	regmap_read(priv->map, reg, &old);
 	pr_info("QM_PKT2CPU_INTPRI_MAP: %08x\n", old);
 	for (int i = 0; i < MAX_PRIOS; i++)
-		v |= rtldsa_max_available_queue[i] << (i * 3);
+		v |= otto_qos_max_available_queue[i] << (i * 3);
 	regmap_write(priv->map, reg, v);
 }
 
 static void otto_qos_838x_setup_default_prio2queue(struct otto_dsa_priv *priv)
 {
-	otto_qos_838x_setup_prio2queue_matrix(priv, rtldsa_max_available_queue);
+	otto_qos_838x_setup_prio2queue_matrix(priv, otto_qos_max_available_queue);
 	otto_qos_83xx_setup_prio2queue_cpu_matrix(priv, RTL838X_QM_PKT2CPU_INTPRI_MAP);
 }
 
 static void otto_qos_839x_setup_default_prio2queue(struct otto_dsa_priv *priv)
 {
-	otto_qos_839x_setup_prio2queue_matrix(priv, rtldsa_max_available_queue);
+	otto_qos_839x_setup_prio2queue_matrix(priv, otto_qos_max_available_queue);
 	otto_qos_83xx_setup_prio2queue_cpu_matrix(priv, RTL839X_QM_PKT2CPU_INTPRI_MAP);
 }
 
@@ -440,7 +440,7 @@ void otto_qos_839x_init(struct otto_dsa_priv *priv)
 	for (int port = 0; port <= priv->r->cpu_port; port++) {
 		otto_qos_839x_set_ingress_priority(priv, port, 0);
 		otto_qos_839x_set_scheduling_algorithm(priv, port, WEIGHTED_FAIR_QUEUE);
-		otto_qos_839x_set_scheduling_queue_weights(priv, port, rtldsa_default_queue_weights);
+		otto_qos_839x_set_scheduling_queue_weights(priv, port, otto_qos_default_queue_weights);
 		/* Do re-marking based on outer tag */
 		regmap_write_bits(priv->map, RTL839X_RMK_PORT_DEI_TAG_CTRL(port),
 				  BIT(port % 32), BIT(port % 32));
@@ -529,7 +529,7 @@ void otto_qos_930x_queue_sched_set(struct otto_dsa_priv *priv, int port, int que
 void otto_qos_queue_sched_reset(struct otto_dsa_priv *priv, int port)
 {
 	for (int q = 0; q < MAX_PRIOS; q++)
-		priv->r->queue_sched_set(priv, port, q, rtldsa_default_queue_weights[q], false);
+		priv->r->queue_sched_set(priv, port, q, otto_qos_default_queue_weights[q], false);
 }
 
 static void otto_qos_930x_set_scheduling_queue_weights(struct otto_dsa_priv *priv)
@@ -578,7 +578,7 @@ void otto_qos_930x_init(struct otto_dsa_priv *priv)
 	dsa_switch_for_each_user_port(dp, priv->ds)
 		otto_qos_930x_set_group_selector(priv, dp->index, 0);
 
-	otto_qos_930x_prio2queue_matrix(priv, rtldsa_max_available_queue);
+	otto_qos_930x_prio2queue_matrix(priv, otto_qos_max_available_queue);
 
 	/* configure priority weights */
 	v = 0;
@@ -638,7 +638,7 @@ static void otto_qos_931x_set_scheduling_queue_weights(struct otto_dsa_priv *pri
 			else
 				addr = RTL931X_SCHED_PORT_Q_CTRL_SET1(dp->index, q);
 
-			regmap_write(priv->map, addr, rtldsa_default_queue_weights[q]);
+			regmap_write(priv->map, addr, otto_qos_default_queue_weights[q]);
 		}
 	}
 }
@@ -652,7 +652,7 @@ void otto_qos_931x_init(struct otto_dsa_priv *priv)
 	dsa_switch_for_each_user_port(dp, priv->ds)
 		otto_qos_931x_set_group_selector(priv, dp->index, 0);
 
-	otto_qos_931x_prio2queue_matrix(priv, rtldsa_max_available_queue);
+	otto_qos_931x_prio2queue_matrix(priv, otto_qos_max_available_queue);
 
 	/* configure priority weights */
 	v = 0;
