@@ -1,0 +1,65 @@
+From 467355a5e3d0c5e24da19cd35c1d720640f88be2 Mon Sep 17 00:00:00 2001
+From: Semih Baskan <strst.gs@gmail.com>
+Date: Mon, 26 Oct 2026 16:44:08 +0000
+Subject: [PATCH] wifi: ath11k: ignore regulatory info of phys outside the hw
+ mode
+
+The firmware sends a regulatory event for every phy it reports, also
+for phys the selected hw mode does not use. On the Zyxel NBG7815
+(IPQ8074) the firmware advertises DBS with phy_id_map 0x3 and DBS_SBS
+with phy_id_map 0x7, and its events always carry num_phy 3. With DBS
+selected num_radios is 2, so the event for phy 2 takes the fallback
+path in ath11k_reg_handle_chan_list() and hits its WARN_ON(1) each time
+the firmware starts:
+
+  WARNING: CPU: 0 PID: 0 at drivers/net/wireless/ath/ath11k/reg.c:828 ath11k_reg_handle_chan_list+0x230/0x2e0 [ath11k]
+  ath11k c000000.wifi: failed to process regulatory info -22
+
+There is no radio to apply the rules of an unused phy to, so drop the
+event, as the single_pdev_only case already does. A phy ID at or above
+the num_phy of the event still goes to the fallback.
+
+Tested-on: IPQ8074 hw2.0 AHB WLAN.HK.2.9.0.1-02146-QCAHKSWPL_SILICONZ-1
+
+Signed-off-by: Semih Baskan <strst.gs@gmail.com>
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+---
+ drivers/net/wireless/ath/ath11k/reg.c | 14 +++++++++++++-
+ 1 file changed, 13 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/net/wireless/ath/ath11k/reg.c b/drivers/net/wireless/ath/ath11k/reg.c
+index b7dfc4f..a8afc77 100644
+--- a/drivers/net/wireless/ath/ath11k/reg.c
++++ b/drivers/net/wireless/ath/ath11k/reg.c
+@@ -751,15 +751,27 @@ int ath11k_reg_handle_chan_list(struct ath11k_base *ab,
+ 	if (pdev_idx >= ab->num_radios) {
+ 		/* Process the event for phy0 only if single_pdev_only
+ 		 * is true. If pdev_idx is valid but not 0, discard the
+-		 * event. Otherwise, it goes to fallback. In either case
++		 * event. The firmware also sends the rules of phys that
++		 * the selected hw mode does not use, discard those too.
++		 * Otherwise, it goes to fallback. In either case
+ 		 * ath11k_reg_reset_info() needs to be called to avoid
+ 		 * memory leak issue.
+ 		 */
++		u8 num_phy = reg_info->num_phy;
++
+ 		ath11k_reg_reset_info(reg_info);
+ 
+ 		if (ab->hw_params.single_pdev_only &&
+ 		    pdev_idx < ab->hw_params.num_rxdma_per_pdev)
+ 			return 0;
++
++		if (pdev_idx < num_phy) {
++			ath11k_dbg(ab, ATH11K_DBG_REG,
++				   "ignoring regulatory info of unused phy %d\n",
++				   pdev_idx);
++			return 0;
++		}
++
+ 		goto fallback;
+ 	}
+ 
+-- 
+2.43.0
+
