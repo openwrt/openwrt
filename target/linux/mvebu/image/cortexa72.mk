@@ -127,17 +127,6 @@ define Device/mikrotik_rb5009upr
 endef
 TARGET_DEVICES += mikrotik_rb5009upr
 
-define Device/marvell_clearfog-gt-8k
-  $(call Device/Default-arm64)
-  DEVICE_VENDOR := SolidRun
-  DEVICE_MODEL := Clearfog
-  DEVICE_VARIANT := GT-8K
-  DEVICE_PACKAGES += kmod-i2c-mux-pca954x kmod-crypto-hw-safexcel
-  DEVICE_DTS := armada-8040-clearfog-gt-8k
-  SUPPORTED_DEVICES := marvell,armada8040-clearfog-gt-8k
-endef
-TARGET_DEVICES += marvell_clearfog-gt-8k
-
 define Device/iei_puzzle-m901
   $(call Device/Default-arm64)
   SOC := cn9131
@@ -155,6 +144,17 @@ define Device/iei_puzzle-m902
   DEVICE_PACKAGES += kmod-rtc-ds1307
 endef
 TARGET_DEVICES += iei_puzzle-m902
+
+define Device/solidrun_clearfog-gt-8k
+  $(call Device/Default-arm64)
+  DEVICE_VENDOR := SolidRun
+  DEVICE_MODEL := Clearfog
+  DEVICE_VARIANT := GT-8K
+  DEVICE_PACKAGES += kmod-i2c-mux-pca954x kmod-crypto-hw-safexcel
+  DEVICE_DTS := armada-8040-clearfog-gt-8k
+  SUPPORTED_DEVICES := solidrun,clearfog-gt-8k
+endef
+TARGET_DEVICES += solidrun_clearfog-gt-8k
 
 define Device/solidrun_clearfog-pro
   $(call Device/Default-arm64)
