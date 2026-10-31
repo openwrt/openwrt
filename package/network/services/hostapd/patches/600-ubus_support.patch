@@ -339,11 +339,16 @@ probe/assoc/auth requests via object subscribe.
  }
  
  
-@@ -407,6 +410,7 @@ void hostapd_handle_radio_measurement(st
+@@ -407,6 +410,11 @@ void hostapd_handle_radio_measurement(st
  		break;
  	case WLAN_RRM_LINK_MEASUREMENT_REPORT:
- 		hostapd_handle_link_mesr_report(hapd, buf, len);
-+		hostapd_ubus_handle_link_measurement(hapd, buf, len);
+-		hostapd_handle_link_mesr_report(hapd, buf, len);
++		/* A report for a request made over ubus goes to the ubus
++		 * subscribers; hostap's own handler would only log it as
++		 * unexpected. */
++		if (!hostapd_ubus_handle_link_measurement(hapd, buf, len) ||
++		    hapd->link_mesr_req_active)
++			hostapd_handle_link_mesr_report(hapd, buf, len);
  		break;
  	default:
  		wpa_printf(MSG_DEBUG, "RRM action %u is not supported",

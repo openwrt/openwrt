@@ -2247,7 +2247,7 @@ static struct ubus_object *hostapd_ubus_notify_obj(struct hostapd_data *hapd)
 	return &hostapd_ubus_state(hapd)->obj;
 }
 
-void hostapd_ubus_handle_link_measurement(struct hostapd_data *hapd, const u8 *data, size_t len)
+bool hostapd_ubus_handle_link_measurement(struct hostapd_data *hapd, const u8 *data, size_t len)
 {
 	struct ubus_object *obj = hostapd_ubus_notify_obj(hapd);
 	const struct ieee80211_mgmt *mgmt = (const struct ieee80211_mgmt *) data;
@@ -2259,10 +2259,10 @@ void hostapd_ubus_handle_link_measurement(struct hostapd_data *hapd, const u8 *d
 	pos = mgmt->u.action.u.rrm.variable;
 
 	if (end - pos < 8)
-		return;
+		return false;
 
 	if (!obj->has_subscribers)
-		return;
+		return false;
 
 	blob_buf_init(&b, 0);
 	blobmsg_add_macaddr(&b, "address", mgmt->sa);
@@ -2273,6 +2273,8 @@ void hostapd_ubus_handle_link_measurement(struct hostapd_data *hapd, const u8 *d
 	blobmsg_add_u16(&b, "rsni", pos[7]);
 
 	ubus_notify(ctx, obj, "link-measurement-report", b.head, -1);
+
+	return true;
 }
 
 
