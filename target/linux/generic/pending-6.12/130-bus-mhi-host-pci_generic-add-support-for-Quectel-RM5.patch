@@ -1,0 +1,44 @@
+From bcf254f280856a1875569e0c9517ffbcf218e2e7 Mon Sep 17 00:00:00 2001
+From: Chris Webb <chris@arachsys.com>
+Date: Thu, 15 Aug 2024 09:16:00 +0000
+Subject: [PATCH] bus: mhi: host: pci_generic: add support for Quectel
+ RM520N-GL 0x5201 variant
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+I have a router board with a Quectel RM520N-GL 5G module that speaks
+either USB or PCIe. When switched to PCIe mode, the modem present itself
+on PCI bus with following IDs:
+
+  0003:01:00.0 Unassigned class [ff00]: Qualcomm Technologies, Inc Device [17cb:0308]
+    Subsystem: Qualcomm Technologies, Inc Device [17cb:5201]
+
+and is currently being wrongly detected by the kernel as:
+
+  mhi-pci-generic 0000:01:00.0: MHI PCI device found: qcom-sdx65m
+
+which results into wrong modem configuration and thus missing wwanX
+netdev. So lets fix it by adding a new device entry for this 0x5201 variant.
+
+Upstream-Status: Submitted [https://lore.kernel.org/mhi/20250512112631.2477075-1-ynezz@true.cz/T/#u]
+Link: https://lore.kernel.org/mhi/ZqllDCWfiKravZAo@arachsys.com/T/#u
+Fixes: 1cad976a1be9 ("bus: mhi: host: pci_generic: Add support for Quectel RM520N-GL modem")
+Signed-off-by: Chris Webb <chris@arachsys.com>
+Signed-off-by: Petr Štetiar <ynezz@true.cz>
+---
+ drivers/bus/mhi/host/pci_generic.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+--- a/drivers/bus/mhi/host/pci_generic.c
++++ b/drivers/bus/mhi/host/pci_generic.c
+@@ -732,6 +732,9 @@ static const struct pci_device_id mhi_pc
+ 		.driver_data = (kernel_ulong_t) &mhi_telit_fn980_hw_v1_info },
+ 	{ PCI_DEVICE(PCI_VENDOR_ID_QCOM, 0x0306),
+ 		.driver_data = (kernel_ulong_t) &mhi_qcom_sdx55_info },
++	/* RM520N-GL variant with Qualcomm vendor and subvendor ID */
++	{ PCI_DEVICE_SUB(PCI_VENDOR_ID_QCOM, 0x0308, PCI_VENDOR_ID_QCOM, 0x5201),
++		.driver_data = (kernel_ulong_t) &mhi_quectel_rm5xx_info },
+ 	/* Telit FN990 */
+ 	{ PCI_DEVICE_SUB(PCI_VENDOR_ID_QCOM, 0x0308, 0x1c5d, 0x2010),
+ 		.driver_data = (kernel_ulong_t) &mhi_telit_fn990_info },
