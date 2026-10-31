@@ -1,0 +1,32 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Navid Ghahremani <ghahramani.navid@gmail.com>
+Date: Sun, 27 Sep 2026 22:20:00 +0100
+Subject: [PATCH] econet-eth: add EN751627 support
+
+Add EN751627 to the SoC match table for econet-eth.
+Like EN751221, EN751627 runs in big-endian mode and uses native
+descriptor byte order (dscp_byte_swap = true).
+
+Signed-off-by: Navid Ghahremani <ghahramani.navid@gmail.com>
+---
+--- a/econet_eth.c
++++ b/econet_eth.c
+@@ -431,9 +431,18 @@ static const struct en75_soc_data en7528
+ 	.dscp_byte_swap = false,
+ };
+
++/*
++ * EN751627 uses native big-endian DMA descriptors, like EN751221.
++ * DSCP here means descriptor; this setting does not control IP DSCP/QoS.
++ */
++static const struct en75_soc_data en751627_soc_data = {
++	.dscp_byte_swap = true,
++};
++
+ static const struct of_device_id of_en75_match[] = {
+ 	{ .compatible = "econet,en751221-eth", .data = &en751221_soc_data },
+ 	{ .compatible = "econet,en7528-eth", .data = &en7528_soc_data },
++	{ .compatible = "econet,en751627-eth", .data = &en751627_soc_data },
+ 	{ /* sentinel */ }
+ };
+ MODULE_DEVICE_TABLE(of, of_en75_match);
