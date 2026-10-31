@@ -1,0 +1,59 @@
+From: Dragos Cosmin <zahariadragoscosmin@hotmail.com>
+Subject: ARM: dts: gemini: nas4210b: use the boot loader's GMAC0 skew delays
+
+With the current skew settings eth0 links at 1 Gbps but nearly every
+received frame is an RX error and transmit does not work. Use the values
+the stock boot loader programs (read back from a working box running the
+old OpenWrt kernel, which leaves them untouched):
+GMAC0 RXC 15, GMAC0 TXC 11, GMAC0 TXD0-3 7. GMAC1 keeps TXC 10.
+
+Assisted-by: Claude:claude-opus-5-5
+Signed-off-by: Dragos Cosmin <zahariadragoscosmin@hotmail.com>
+---
+--- a/arch/arm/boot/dts/gemini/gemini-nas4210b.dts
++++ b/arch/arm/boot/dts/gemini/gemini-nas4210b.dts
+@@ -140,6 +140,13 @@
+ 						groups = "gpio1dgrp";
+ 					};
+ 				};
++				/*
++				 * Skew values as left by the stock Storlink boot loader
++				 * (GLOBAL_GMAC_CTRL_SKEW 0xa7f0b7f0, GMAC0/1 data skew
++				 * 0x77777777), read back on a working IB-4210-B. The
++				 * previous GMAC0 RXC 10 / TXC 10 / TXD 5 gave heavy RX
++				 * errors and no usable TX at 1 Gbps on the RTL8211B.
++				 */
+ 				pinctrl-gmii {
+ 					mux {
+ 						function = "gmii";
+@@ -151,7 +158,7 @@
+ 					};
+ 					conf1 {
+ 						pins = "T8 GMAC0 RXC";
+-						skew-delay = <10>;
++						skew-delay = <15>;
+ 					};
+ 					conf2 {
+ 						pins = "T11 GMAC1 RXC";
+@@ -162,7 +169,11 @@
+ 						skew-delay = <7>;
+ 					};
+ 					conf4 {
+-						pins = "V7 GMAC0 TXC", "P10 GMAC1 TXC";
++						pins = "V7 GMAC0 TXC";
++						skew-delay = <11>;
++					};
++					conf8 {
++						pins = "P10 GMAC1 TXC";
+ 						skew-delay = <10>;
+ 					};
+ 					conf5 {
+@@ -178,7 +189,7 @@
+ 					conf6 {
+ 						pins = "U7 GMAC0 TXD0", "T7 GMAC0 TXD1",
+ 						       "R7 GMAC0 TXD2", "P7 GMAC0 TXD3";
+-						skew-delay = <5>;
++						skew-delay = <7>;
+ 					};
+ 					/* Set up drive strength on GMAC0 to 16 mA */
+ 					conf7 {
