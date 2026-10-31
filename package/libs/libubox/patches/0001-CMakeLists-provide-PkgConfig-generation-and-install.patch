@@ -1,0 +1,55 @@
+From e3fe86ab07974f671853b5be2bf5b95dd92e2cfa Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Tue, 20 Oct 2026 00:00:22 +0200
+Subject: [PATCH] CMakeLists: provide PkgConfig generation and install
+
+Provide PkgConfig generation and install to permit usage of libubox on
+other project.
+
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+---
+ CMakeLists.txt |  9 +++++++++
+ ubox.pc.in     | 11 +++++++++++
+ 2 files changed, 20 insertions(+)
+ create mode 100644 ubox.pc.in
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index bb67fecf7716..5b2272d741a9 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -35,6 +35,15 @@ IF(NOT HAVE_GETTIME OR NOT HAVE_SHM)
+ 	ENDIF()
+ ENDIF()
+ 
++CONFIGURE_FILE(
++    ubox.pc.in
++    ubox.pc
++    @ONLY
++)
++
++INSTALL(FILES ubox.pc
++	DESTINATION lib/pkgconfig
++)
+ FILE(GLOB headers *.h)
+ LIST(FILTER headers EXCLUDE REGEX "-priv.h$" )
+ INSTALL(FILES ${headers}
+diff --git a/ubox.pc.in b/ubox.pc.in
+new file mode 100644
+index 000000000000..50182e224257
+--- /dev/null
++++ b/ubox.pc.in
+@@ -0,0 +1,11 @@
++prefix=/usr
++exec_prefix=${prefix}
++libdir=${exec_prefix}/lib
++includedir=${prefix}/include
++
++Name: ubox
++Description: OpenWrt basic utility library
++Requires:
++Version:
++Libs: -L${libdir} -lubox
++Cflags: -I${includedir}
+-- 
+2.55.0
+
