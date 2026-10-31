@@ -276,7 +276,8 @@ platform_do_upgrade() {
 		;;
 	tplink,deco-x80-5g|\
 	tplink,eap620hd-v1|\
-	tplink,eap660hd-v1)
+	tplink,eap660hd-v1|\
+	tplink,eap660hd-v2)
 		tplink_do_upgrade "$1"
 		;;
 	yuncore,ax880)
