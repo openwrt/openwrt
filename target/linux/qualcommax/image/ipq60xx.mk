@@ -299,6 +299,18 @@ define Device/qihoo_360v6
 endef
 TARGET_DEVICES += qihoo_360v6
 
+define Device/redmi_ax5-jdcloud
+	$(call Device/FitImage)
+	$(call Device/EmmcImage)
+	DEVICE_VENDOR := Redmi
+	DEVICE_MODEL := AX5 JDCloud
+	SOC := ipq6000
+	KERNEL_SIZE := 6144k
+	DEVICE_DTS_CONFIG := config@cp03-c1
+	DEVICE_PACKAGES := ipq-wifi-redmi_ax5-jdcloud kmod-fs-f2fs f2fs-tools
+endef
+TARGET_DEVICES += redmi_ax5-jdcloud
+
 define Device/tplink_eap6xx-common
 	$(call Device/FitImage)
 	$(call Device/UbiFit)
