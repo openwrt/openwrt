@@ -1,0 +1,262 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Gleb Pesin <dormancygrace@gmail.com>
+Date: Thu, 1 Oct 2026 20:35:55 +0000
+Subject: [PATCH] net: ethernet: mediatek: collect MT7620 CPU GDM1 counters
+
+MT7620 uses a different CPU GDM1 counter layout from NETSYS. Its FE
+statistics are currently disabled, leaving hardware and rtnetlink packet
+and byte counters at zero. Backport the twelve-counter table and
+clear-on-read accumulation from the Linux MT7620 preparation, with
+one-second polling while the conduit is open. Cancel polling before
+stopping DMA and drain remaining counters on close. Down and reset
+queries return cached totals; reopening preserves them.
+
+Keep rtnetlink packet and byte counts based on completed TX skbs and RX
+skbs delivered to Linux. Hardware counters can include TSO segments and
+parser errors, so expose them separately through ethtool. Switch port
+MIB counters remain independent and use their existing wrap extension.
+
+Assisted-by: Codex (OpenAI GPT-6)
+Signed-off-by: Gleb Pesin <dormancygrace@gmail.com>
+---
+
+--- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
++++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
+@@ -303,6 +303,28 @@ static const struct mtk_ethtool_stats {
+ 	MTK_ETHTOOL_XDP_STAT(tx_xdp_xmit_errors),
+ };
+ 
++#define MT7620_MIB_STAT(x, reg) \
++	{ #x, offsetof(struct mtk_hw_stats, x) / sizeof(u64), reg }
++
++static const struct {
++	char str[ETH_GSTRING_LEN];
++	u16 offset;
++	u16 reg;
++} mt7620_mib[] = {
++	MT7620_MIB_STAT(tx_bytes, 0x00),
++	MT7620_MIB_STAT(tx_packets, 0x04),
++	MT7620_MIB_STAT(tx_skip, 0x08),
++	MT7620_MIB_STAT(tx_collisions, 0x0c),
++	MT7620_MIB_STAT(rx_bytes, 0x20),
++	MT7620_MIB_STAT(rx_packets, 0x24),
++	MT7620_MIB_STAT(rx_overflow, 0x28),
++	MT7620_MIB_STAT(rx_fcs_errors, 0x2c),
++	MT7620_MIB_STAT(rx_short_errors, 0x30),
++	MT7620_MIB_STAT(rx_long_errors, 0x34),
++	MT7620_MIB_STAT(rx_checksum_errors, 0x38),
++	MT7620_MIB_STAT(rx_flow_control_packets, 0x3c),
++};
++
+ static const char * const mtk_clks_source_name[] = {
+ 	"ethif",
+ 	"sgmiitop",
+@@ -1255,15 +1277,19 @@ void mtk_stats_update_mac(struct mtk_mac
+ {
+ 	struct mtk_hw_stats *hw_stats = mac->hw_stats;
+ 	struct mtk_eth *eth = mac->hw;
+-	/* MT7620 has a different MIB layout. Keep software netdev counters
+-	 * authoritative until its MIB decoder is ported.
+-	 */
+-	if (MTK_HAS_CAPS(eth->soc->caps, MTK_SOC_MT7620))
+-		return;
+ 
+ 	u64_stats_update_begin(&hw_stats->syncp);
+ 
+-	if (MTK_HAS_CAPS(eth->soc->caps, MTK_SOC_MT7628)) {
++	if (MTK_HAS_CAPS(eth->soc->caps, MTK_SOC_MT7620)) {
++		u64 *data = (u64 *)hw_stats;
++		int i;
++
++		/* CPU GDM1 counters clear on read, unlike the switch port MIB. */
++		for (i = 0; i < ARRAY_SIZE(mt7620_mib); i++)
++			data[mt7620_mib[i].offset] +=
++				mtk_r32(eth, eth->soc->reg_map->gdm1_cnt +
++					mt7620_mib[i].reg);
++	} else if (MTK_HAS_CAPS(eth->soc->caps, MTK_SOC_MT7628)) {
+ 		hw_stats->tx_packets += mtk_r32(mac->hw, MT7628_SDM_TPCNT);
+ 		hw_stats->tx_bytes += mtk_r32(mac->hw, MT7628_SDM_TBCNT);
+ 		hw_stats->rx_packets += mtk_r32(mac->hw, MT7628_SDM_RPCNT);
+@@ -1338,6 +1364,24 @@ static void mtk_stats_update(struct mtk_
+ 	}
+ }
+ 
++static void mt7620_stats_read(struct mtk_eth *eth)
++{
++	struct mtk_hw_stats *stats = eth->mac[0]->hw_stats;
++
++	spin_lock_bh(&stats->stats_lock);
++	mtk_stats_update_mac(eth->mac[0]);
++	spin_unlock_bh(&stats->stats_lock);
++}
++
++static void mt7620_stats_poll(struct work_struct *work)
++{
++	struct mtk_eth *eth = container_of(work, struct mtk_eth,
++					 mt7620_stats_work.work);
++
++	mt7620_stats_read(eth);
++	schedule_delayed_work(&eth->mt7620_stats_work, HZ);
++}
++
+ static void mtk_get_stats64(struct net_device *dev,
+ 			    struct rtnl_link_stats64 *storage)
+ {
+@@ -1345,6 +1389,11 @@ static void mtk_get_stats64(struct net_d
+ 	struct mtk_hw_stats *hw_stats = mac->hw_stats;
+ 	unsigned int start;
+ 
++	if (MTK_HAS_CAPS(mac->hw->soc->caps, MTK_SOC_MT7620)) {
++		dev_get_tstats64(dev, storage);
++		return;
++	}
++
+ 	if (netif_running(dev) && netif_device_present(dev)) {
+ 		if (spin_trylock_bh(&hw_stats->stats_lock)) {
+ 			mtk_stats_update_mac(mac);
+@@ -2712,6 +2761,8 @@ static int mtk_poll_rx(struct napi_struc
+ 			skb->ip_summed = CHECKSUM_UNNECESSARY;
+ 		else
+ 			skb_checksum_none_assert(skb);
++		if (MTK_HAS_CAPS(eth->soc->caps, MTK_SOC_MT7620))
++			dev_sw_netstats_rx_add(netdev, skb->len);
+ 		skb->protocol = eth_type_trans(skb, netdev);
+ 
+ 		if (MTK_HAS_CAPS(eth->soc->caps, MTK_SOC_MT7620) &&
+@@ -2807,6 +2858,9 @@ mtk_poll_tx_done(struct mtk_eth *eth, st
+ 	if (!dev)
+ 		return;
+ 
++	if (MTK_HAS_CAPS(eth->soc->caps, MTK_SOC_MT7620))
++		dev_sw_netstats_tx_add(dev, 1, bytes);
++
+ 	txq = netdev_get_tx_queue(dev, skb_get_queue_mapping(skb));
+ 	if (state->txq == txq) {
+ 		state->done++;
+@@ -4163,6 +4217,9 @@ static int mtk_open(struct net_device *d
+ 		mtk_w32(eth, 0, MTK_CDMP_EG_CTRL);
+ 	}
+ 
++	if (MTK_HAS_CAPS(eth->soc->caps, MTK_SOC_MT7620))
++		schedule_delayed_work(&eth->mt7620_stats_work, HZ);
++
+ 	return 0;
+ }
+ 
+@@ -4205,6 +4262,9 @@ static int mtk_stop(struct net_device *d
+ 	if (!refcount_dec_and_test(&eth->dma_refcnt))
+ 		return 0;
+ 
++	if (MTK_HAS_CAPS(eth->soc->caps, MTK_SOC_MT7620))
++		cancel_delayed_work_sync(&eth->mt7620_stats_work);
++
+ 	for (i = 0; i < MTK_MAX_DEVS; i++)
+ 		mtk_gdm_config(eth, i, MTK_GDMA_DROP_ALL);
+ 
+@@ -4220,6 +4280,9 @@ static int mtk_stop(struct net_device *d
+ 		mtk_stop_dma(eth, eth->soc->reg_map->qdma.glo_cfg);
+ 	mtk_stop_dma(eth, eth->soc->reg_map->pdma.glo_cfg);
+ 
++	if (MTK_HAS_CAPS(eth->soc->caps, MTK_SOC_MT7620))
++		mt7620_stats_read(eth);
++
+ 	mtk_dma_free(eth);
+ 
+ 	for (i = 0; i < ARRAY_SIZE(eth->ppe); i++)
+@@ -5141,7 +5204,8 @@ static void mtk_get_drvinfo(struct net_d
+ 
+ 	strscpy(info->driver, mac->hw->dev->driver->name, sizeof(info->driver));
+ 	strscpy(info->bus_info, dev_name(mac->hw->dev), sizeof(info->bus_info));
+-	info->n_stats = ARRAY_SIZE(mtk_ethtool_stats);
++	info->n_stats = MTK_HAS_CAPS(mac->hw->soc->caps, MTK_SOC_MT7620) ?
++			ARRAY_SIZE(mt7620_mib) : ARRAY_SIZE(mtk_ethtool_stats);
+ }
+ 
+ static u32 mtk_get_msglevel(struct net_device *dev)
+@@ -5173,12 +5237,18 @@ static int mtk_nway_reset(struct net_dev
+ 
+ static void mtk_get_strings(struct net_device *dev, u32 stringset, u8 *data)
+ {
++	struct mtk_mac *mac = netdev_priv(dev);
+ 	int i;
+ 
++	if (MTK_HAS_CAPS(mac->hw->soc->caps, MTK_SOC_MT7620)) {
++		if (stringset == ETH_SS_STATS)
++			for (i = 0; i < ARRAY_SIZE(mt7620_mib); i++)
++				ethtool_puts(&data, mt7620_mib[i].str);
++		return;
++	}
++
+ 	switch (stringset) {
+ 	case ETH_SS_STATS: {
+-		struct mtk_mac *mac = netdev_priv(dev);
+-
+ 		for (i = 0; i < ARRAY_SIZE(mtk_ethtool_stats); i++)
+ 			ethtool_puts(&data, mtk_ethtool_stats[i].str);
+ 		if (mtk_page_pool_enabled(mac->hw))
+@@ -5192,10 +5262,15 @@ static void mtk_get_strings(struct net_d
+ 
+ static int mtk_get_sset_count(struct net_device *dev, int sset)
+ {
++	struct mtk_mac *mac = netdev_priv(dev);
++
++	if (MTK_HAS_CAPS(mac->hw->soc->caps, MTK_SOC_MT7620))
++		return sset == ETH_SS_STATS ? ARRAY_SIZE(mt7620_mib) :
++					     -EOPNOTSUPP;
++
+ 	switch (sset) {
+ 	case ETH_SS_STATS: {
+ 		int count = ARRAY_SIZE(mtk_ethtool_stats);
+-		struct mtk_mac *mac = netdev_priv(dev);
+ 
+ 		if (mtk_page_pool_enabled(mac->hw))
+ 			count += page_pool_ethtool_stats_get_count();
+@@ -5233,6 +5308,21 @@ static void mtk_get_ethtool_stats(struct
+ 	unsigned int start;
+ 	int i;
+ 
++	if (MTK_HAS_CAPS(mac->hw->soc->caps, MTK_SOC_MT7620)) {
++		if (netif_running(dev) && netif_device_present(dev) &&
++		    !test_bit(MTK_RESETTING, &mac->hw->state))
++			mt7620_stats_read(mac->hw);
++
++		data_src = (u64 *)hwstats;
++		do {
++			start = u64_stats_fetch_begin(&hwstats->syncp);
++			for (i = 0; i < ARRAY_SIZE(mt7620_mib); i++)
++				data[i] = data_src[mt7620_mib[i].offset];
++		} while (u64_stats_fetch_retry(&hwstats->syncp, start));
++
++		return;
++	}
++
+ 	if (unlikely(test_bit(MTK_RESETTING, &mac->hw->state)))
+ 		return;
+ 
+@@ -5707,6 +5797,8 @@ no_pcs:
+ 			  mac->phylink_config.supported_interfaces);
+ 
+ 	SET_NETDEV_DEV(eth->netdev[id], eth->dev);
++	if (MTK_HAS_CAPS(eth->soc->caps, MTK_SOC_MT7620))
++		eth->netdev[id]->pcpu_stat_type = NETDEV_PCPU_STAT_TSTATS;
+ 	eth->netdev[id]->watchdog_timeo = 5 * HZ;
+ 	eth->netdev[id]->netdev_ops = &mtk_netdev_ops;
+ 	eth->netdev[id]->base_addr = (unsigned long)eth->base;
+@@ -5941,6 +6033,7 @@ static int mtk_probe(struct platform_dev
+ 
+ 	eth->rx_dim.mode = DIM_CQ_PERIOD_MODE_START_FROM_EQE;
+ 	INIT_WORK(&eth->rx_dim.work, mtk_dim_rx);
++	INIT_DELAYED_WORK(&eth->mt7620_stats_work, mt7620_stats_poll);
+ 	INIT_DELAYED_WORK(&eth->reset.monitor_work, mtk_hw_reset_monitor_work);
+ 
+ 	eth->tx_dim.mode = DIM_CQ_PERIOD_MODE_START_FROM_EQE;
+--- a/drivers/net/ethernet/mediatek/mtk_eth_soc.h
++++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.h
+@@ -1381,6 +1381,7 @@ struct mtk_eth {
+ 
+ 	const struct mtk_soc_data	*soc;
+ 
++	struct delayed_work		mt7620_stats_work;
+ 	spinlock_t			dim_lock;
+ 
+ 	u32				rx_events;
