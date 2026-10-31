@@ -1,0 +1,45 @@
+From: Ville Takio <ville+git@takio.fi>
+Subject: [PATCH] b43: AC-PHY: program the 0x034d ladder per band and width
+
+PHY 0x034d-0x0353, 0x028d and 0x04d7/0x04db were never written, so they
+kept their power-on values, or whatever wl left before a warm reboot.
+With the power-on set the 5 GHz 80 MHz downlink of the RT-AC66U B1
+drops to 3-30 Mbit/s or stops; with the set wl writes at 5 GHz 40 MHz
+and on 2.4 GHz it carries 153-160 Mbit/s. Program that set at 5 GHz
+80 MHz and the power-on set elsewhere.
+
+--- a/drivers/net/wireless/broadcom/b43/phy_ac.c
++++ b/drivers/net/wireless/broadcom/b43/phy_ac.c
+@@ -3735,6 +3735,32 @@ static void b43_phy_ac_coeff_bank_init(s
+ 	b43_phy_maskset(dev, 0x0312, (u16)~0x00ff, bw == 80 ? 0x0009 : 0x0013);
+ 	b43_phy_maskset(dev, 0x0313, (u16)~0xff00, bw == 80 ? 0x0900 : 0x1300);
+ 
++	/*
++	 * The 0x034d-0x0353 ladder (13 bits each) with 0x028d and 0x04d7/0x04db.
++	 * b43 did not write them, so they kept the power-on set (lo) unless wl
++	 * had run before a warm reboot. wl 7.14 writes lo at 5 GHz 20 and 80
++	 * MHz and hi at 5 GHz 40 MHz and on 2.4 GHz (RT-AC66U B1). On that
++	 * board b43 needs hi at 5 GHz 80 MHz: with lo the AP's 80 MHz downlink
++	 * drops to 3-30 Mbit/s or stops, with hi it carries 153-160 Mbit/s.
++	 * Elsewhere lo, which b43 has always run with.
++	 */
++	{
++		static const u16 lo[7] = { 0x012c, 0x0145, 0x015e, 0x0177,
++					   0x0320, 0x0384, 0x03b6 };
++		static const u16 hi[7] = { 0x001e, 0x0055, 0x0080, 0x00aa,
++					   0x02bc, 0x0320, 0x0384 };
++		bool use_hi = bw == 80 &&
++			      b43_current_band(dev->wl) == NL80211_BAND_5GHZ;
++		const u16 *ladder = use_hi ? hi : lo;
++		unsigned int i;
++
++		for (i = 0; i < ARRAY_SIZE(lo); i++)
++			b43_phy_maskset(dev, 0x034d + i, (u16)~0x1fff, ladder[i]);
++		b43_phy_write(dev, 0x028d, use_hi ? 0x090d : 0x0d11);
++		b43_phy_write(dev, 0x04d7, use_hi ? 0x2055 : 0x206a);
++		b43_phy_write(dev, 0x04db, use_hi ? 0x2055 : 0x206a);
++	}
++
+ 	/* 4. Per-core LUT 0x06ed/0x06ef, every silicon core. */
+ 	for (core = 0; core < num_cores; core++) {
+ 		u16 stride = (u16)(core * 0x200);
