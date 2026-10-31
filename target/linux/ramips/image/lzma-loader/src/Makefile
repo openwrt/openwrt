@@ -63,7 +63,7 @@ ifeq ($(strip $(SUBTARGET)),mt7620)
 CFLAGS	+= -DSOC_MT7620
 endif
 
-ifeq ($(strip $(SUBTARGET)),mt7621)
+ifneq ($(filter mt7621 mt7621_small,$(strip $(SUBTARGET))),)
 CFLAGS	+= -DSOC_MT7621
 endif
 
