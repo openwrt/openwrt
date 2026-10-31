@@ -1,0 +1,75 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Łukasz Buśko <lukasz.busko@guns4hire.cc>
+Date: Mon, 12 Oct 2026 07:27:39 +0200
+Subject: [PATCH] arm64: dts: mediatek: mt7988a-bpi-r4-pro: add ethernet mux for WAN
+
+The WAN 10G SerDes of the BPi-R4 Pro 8X reaches either the external
+Aeonsemi AS21010 PHY (phy28) or the SFP2 cage through a passive mux
+driven by the SFP2 module detect line. Describe both lanes as channels
+of a "mediatek,eth-mux" attached to gmac1 so the lane is selected at
+runtime instead of by a boot-time overlay.
+
+The mux node does not repeat the module detect GPIO of the cage: the
+driver asks the SFP bus referenced by its SFP channel whether a module
+is present, which keeps that line a single consumer of the sfp driver.
+
+Channel ids match the logical chan-sel GPIO value: channel 0 is the PHY
+lane (also described by the gmac1 node itself, which is the state the
+mux starts in), channel 1 is the SFP lane. Both channels repeat the
+pcs-handle of the MAC because the phylink of the selected channel owns
+the PCS of that SerDes.
+
+The PHY channel keeps USXGMII with in-band status while the SFP channel
+keeps 10GBASE-R: the PHY rate-adapts its host SerDes to the speed
+negotiated on the copper side and needs the PCS in-band negotiation,
+whereas a 10G SFP+ module presents a fixed-rate 10GBASE-R link that
+would never complete USXGMII AN.
+
+Based on the Bananapi BPi-R4 Pro 8X vendor device tree.
+---
+ arch/arm64/boot/dts/mediatek/mt7988a-bananapi-bpi-r4-pro-8x.dts | 34 ++++++++++++++++++++++++++++++++++
+ 1 file changed, 34 insertions
+
+--- a/arch/arm64/boot/dts/mediatek/mt7988a-bananapi-bpi-r4-pro-8x.dts
++++ b/arch/arm64/boot/dts/mediatek/mt7988a-bananapi-bpi-r4-pro-8x.dts
+@@ -24,6 +24,40 @@
+ 	status = "okay";
+ };
+ 
++&eth {
++	mux: mux-bus {
++		#address-cells = <1>;
++		#size-cells = <0>;
++
++		mux1: ethernet-mux@1 {
++			compatible = "mediatek,eth-mux";
++			reg = <1>;
++			#address-cells = <1>;
++			#size-cells = <0>;
++			chan-sel-gpios = <&pio 3 GPIO_ACTIVE_HIGH>;
++			sfp-present-channel = <1>;
++
++			mux1_phy: channel@0 {
++				reg = <0>;
++				phy-mode = "usxgmii";
++				phy-connection-type = "usxgmii";
++				managed = "in-band-status";
++				phy-handle = <&phy28>;
++				pcs-handle = <&sgmiipcs1>, <&usxgmiisys1>;
++			};
++
++			mux1_sfp: channel@1 {
++				reg = <1>;
++				phy-mode = "10gbase-r";
++				phy-connection-type = "10gbase-r";
++				managed = "in-band-status";
++				sfp = <&sfp2>;
++				pcs-handle = <&sgmiipcs1>, <&usxgmiisys1>;
++			};
++		};
++	};
++};
++
+ &switch16 {
+ 	ports {
+ 		port@13 {
