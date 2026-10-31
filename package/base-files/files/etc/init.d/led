@@ -127,6 +127,15 @@ load_led() {
 		"netdev")
 			[ -n "$dev" ] && {
 				echo $dev > /sys/class/leds/${sysfs}/device_name
+				# Attaching a device to a hardware controlled LED reads back
+				# the mode programmed into the PHY. Clear it first, the
+				# kernel refuses link_* while link is set and vice versa.
+				[ -n "$mode" ] && for m in link link_10 link_100 link_1000 \
+					link_2500 link_5000 link_10000 half_duplex full_duplex \
+					tx rx tx_err rx_err; do
+					[ -e "/sys/class/leds/${sysfs}/$m" ] && \
+						echo 0 > /sys/class/leds/${sysfs}/$m
+				done
 				for m in $mode; do
 					[ -e "/sys/class/leds/${sysfs}/$m" ] && \
 						echo 1 > /sys/class/leds/${sysfs}/$m
