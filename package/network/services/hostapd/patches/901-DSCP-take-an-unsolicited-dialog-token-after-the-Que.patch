@@ -1,0 +1,103 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Sat, 31 Oct 2026 17:00:00 +0000
+Subject: [PATCH] DSCP: take an unsolicited dialog token after the Query token
+
+hostapd_handle_dscp_policy_query() echoes the Dialog Token of a DSCP
+Policy Query, and the counter of unsolicited tokens does not follow it.
+wpa_supplicant starts its Query tokens at 1 and so does the counter, so
+the first unsolicited DSCP Policy Request after a Query carries the
+token of the solicited Request. QoS Management v4.0 Table 35 requires a
+unique non-zero value for an unsolicited Request.
+
+Raise the counter to the Query token where that token is ahead of it in
+8-bit serial order, so that an old token does not move the counter back.
+A station with tokens that do not ascend can still collide; the AP has
+to echo what the station picks.
+
+The counter lives in the sta_info. For a non-AP MLD, each link has its
+own, a Query can arrive on any link, and the ubus method sends from the
+association link. Keep the one counter of the association STA, which
+hostapd_ml_move_assoc_sta() already moves.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/src/ap/robust_av.c
++++ b/src/ap/robust_av.c
+@@ -485,8 +485,22 @@ void free_dscp_policies(struct sta_info *sta)
+ }
+ 
+ 
+-static u8 get_next_unsolicited_dialog_token(struct sta_info *sta)
++/* A non-AP MLD has one sequence of tokens, whichever link sends or receives. */
++static struct sta_info * dscp_token_sta(struct hostapd_data *hapd,
++					struct sta_info *sta)
+ {
++	struct hostapd_data *assoc_hapd;
++	struct sta_info *assoc_sta;
++
++	assoc_sta = hostapd_ml_get_assoc_sta(hapd, sta, &assoc_hapd);
++	return assoc_sta ? assoc_sta : sta;
++}
++
++
++static u8 get_next_unsolicited_dialog_token(struct hostapd_data *hapd,
++					    struct sta_info *sta)
++{
++	sta = dscp_token_sta(hapd, sta);
+ 	sta->unsolicited_dialog_token++;
+ 	if (sta->unsolicited_dialog_token == 0)
+ 		sta->unsolicited_dialog_token = 1;
+@@ -494,6 +508,18 @@ static u8 get_next_unsolicited_dialog_token(struct sta_info *sta)
+ }
+ 
+ 
++/* The station picks the token of a Query and the AP has to echo it, so later
++ * unsolicited tokens continue after it. A token behind the counter in serial
++ * order is an old one and leaves the counter. */
++static void raise_unsolicited_dialog_token(struct hostapd_data *hapd,
++					   struct sta_info *sta, u8 query_token)
++{
++	sta = dscp_token_sta(hapd, sta);
++	if ((u8) (query_token - sta->unsolicited_dialog_token) < 128)
++		sta->unsolicited_dialog_token = query_token;
++}
++
++
+ static struct hostapd_dscp_policy *
+ hostapd_get_dscp_policy_by_id(struct sta_info *sta, int id)
+ {
+@@ -604,7 +630,7 @@ int hostapd_send_unsolicited_dscp_policy_request(struct hostapd_data *hapd,
+ 	if (!(sta->flags & WLAN_STA_DSCP_POLICY))
+ 		return -1;
+ 
+-	dialog_token = get_next_unsolicited_dialog_token(sta);
++	dialog_token = get_next_unsolicited_dialog_token(hapd, sta);
+ 	frame = new_dscp_policy_req_frame(hapd, sta, dialog_token, reset, more);
+ 	if (!frame)
+ 		return -1;
+@@ -700,7 +726,7 @@ int hostapd_send_dscp_policy_request_raw(struct hostapd_data *hapd,
+ 	if (!for_each_element_completed(elem, elems, elems_len))
+ 		return -EINVAL;
+ 
+-	dialog_token = get_next_unsolicited_dialog_token(sta);
++	dialog_token = get_next_unsolicited_dialog_token(hapd, sta);
+ 	frame = new_dscp_policy_req_frame(hapd, sta, dialog_token, reset, 0);
+ 	if (!frame)
+ 		return -ENOMEM;
+@@ -1434,6 +1460,7 @@ int hostapd_handle_dscp_policy_query(struct hostapd_data *hapd,
+ 		wpa_printf(MSG_DEBUG, "QM: No matching DSCP policies found");
+ 
+ 	dialog_token = ctx.dialog_token;
++	raise_unsolicited_dialog_token(hapd, sta, dialog_token);
+ 
+ 	resp = build_dscp_policy_request(hapd, sta, &ctx, offset, &used,
+ 					 dialog_token, &more);
+@@ -1602,7 +1629,7 @@ static void hostapd_send_next_dscp_policy_batch(struct hostapd_data *hapd,
+ 	if (!hapd || !sta || !sta->policies || sta->num_dscp_policies == 0)
+ 		return;
+ 
+-	dialog_token = get_next_unsolicited_dialog_token(sta);
++	dialog_token = get_next_unsolicited_dialog_token(hapd, sta);
+ 
+ 	frame = hostapd_build_dscp_policy_request_from_offset(hapd, sta,
+ 							      dialog_token,
