@@ -46,6 +46,12 @@ function subscribe(name, message_cb, update_cb)
 
 function send_ext(data)
 {
+	if (!this.channel)
+		this.connect();
+
+	if (!this.channel)
+		return;
+
 	this.channel.request({
 		method: "message",
 		return: "ignore",
