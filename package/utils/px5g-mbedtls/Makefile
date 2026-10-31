@@ -8,7 +8,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=px5g-mbedtls
-PKG_RELEASE:=14
+PKG_RELEASE:=15
 PKG_LICENSE:=LGPL-2.1
 
 PKG_BUILD_FLAGS:=no-mips16
@@ -39,6 +39,7 @@ define Package/px5g-standalone
   SUBMENU:=Encryption
   TITLE:=X.509 certificate generator (standalone)
   VARIANT:=standalone
+  CONFLICTS:=px5g-mbedtls px5g-wolfssl
 endef
 Package/px5g-standalone/description = $(Package/px5g-mbedtls/description)
 
