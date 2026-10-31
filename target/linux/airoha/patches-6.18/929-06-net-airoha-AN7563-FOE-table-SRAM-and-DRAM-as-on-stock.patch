@@ -1,0 +1,304 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Lukasz M <lukasz1992m+openwrt@gmail.com>
+Date: Sat, 31 Oct 2026 12:00:00 +0100
+Subject: [PATCH] net airoha AN7563 FOE table SRAM and DRAM as on stock
+
+On AN7552/AN7563 the DRAM FOE entries do not follow the SRAM ones: the
+stock hw_nat driver puts their indexes at hwnat_dram_idx_base, 0x4000 for a
+16K DRAM table (GetDramHasHIdxBase()), allocates
+(0x4000 + 16K) entries of 80 bytes, 2.5 MiB, and points TB_BASE 512
+entries into it (stock 0x1fb50e20 = 0x8b80a000, 0xa000 = 512 * 80).  The
+FOE index the hardware reports is SRAM 0..511 or DRAM 0x4000..0x7fff.
+
+- Size the FOE table and the per-index arrays (foe_flow, foe_check_time)
+  for that index space, keep TB_BASE where it was, and take only valid
+  indexes in airoha_ppe_check_skb().
+- Write the seed of the XOR hash mode as the stock does (0x1fb50e44 =
+  0x12345678; ours was 0).
+- Turn the DRAM table on with the stock TB_HASH_CFG, 0x1fb50e50 =
+  0x31011101: SRAM hash 0 (mode 0) and hash 1 (mode 1), DRAM enabled with
+  hash 0 (mode 0) and hash 1 (mode 3, the CRC32 of vendor hw_nat
+  FoeHashFun()).  TB_CFG already gives 16K DRAM entries
+  (code 4, stock 0x87c0ffb4).  The PPE binds up to 512 + 16K flows.
+- No NPU flow stats for a host-run PPE: the counters are kept by the NPU
+  firmware and airoha_ppe_foe_get_flow_stats_index() maps FOE indexes to
+  them as one contiguous table; on AN7563 the NPU has no PPE support and
+  the index space has a gap, so report no stats there, as for AN7583.
+
+The X-WRT driver warned that its DRAM table corrupted RAM: it allocated
+(512 + 16K) entries while the hardware addresses DRAM entries from index
+0x4000, up to about 1.2 MiB past such a buffer.  To catch a mistake in
+the index model here, the table gets 64 KiB pattern zones before and
+after it; debugfs ppe/foe_guard reports any byte the hardware changed.
+
+Signed-off-by: Lukasz M <lukasz1992m+openwrt@gmail.com>
+---
+--- a/drivers/net/ethernet/airoha/airoha_eth.c
++++ b/drivers/net/ethernet/airoha/airoha_eth.c
+@@ -6163,6 +6163,13 @@ static const struct airoha_ppe_host_cfg
+ 	.tb_cfg_age = PPE_TB_CFG_KEEPALIVE_MASK | PPE_TB_CFG_AGE_TCP_FIN_MASK |
+ 		      PPE_TB_CFG_AGE_UDP_MASK | PPE_TB_CFG_AGE_TCP_MASK |
+ 		      PPE_TB_CFG_AGE_UNBIND_MASK | PPE_TB_CFG_AGE_NON_L4_MASK,
++	/* stock 0x1fb50e44 */
++	.hash_seed = 0x12345678,
++	/*
++	 * stock 0x1fb50e50: SRAM hash 0 (mode 0) and hash 1 (mode 1), and the
++	 * DRAM table with hash 0 (mode 0) and hash 1 (mode 3, CRC32)
++	 */
++	.tb_hash_cfg = 0x31011101,
+ };
+ 
+ /*
+@@ -6212,6 +6219,12 @@ static const struct airoha_eth_soc_data
+ 	.ip_asse_rx_ring = 9,
+ 	.ppe_sram_entries = 512,
+ 	.ppe_sram_tb_num = 7,
++	/*
++	 * vendor GetDramHasHIdxBase(): with 16K DRAM entries their FOE
++	 * indexes start at 0x4000, so the table spans 0x8000 entries of which
++	 * 512..0x3fff are never used (the stock allocates the same 2.5 MiB)
++	 */
++	.ppe_dram_idx_base = 0x4000,
+ 	.pse_use_gdmp = true,
+ 	/* stock REG_GDM_MISC_CFG (0x1fb50148) reads 0 */
+ 	.no_gdm2_misc_cfg = true,
+--- a/drivers/net/ethernet/airoha/airoha_eth.h
++++ b/drivers/net/ethernet/airoha/airoha_eth.h
+@@ -13,6 +13,7 @@
+ #include <linux/kernel.h>
+ #include <linux/netdevice.h>
+ #include <linux/reset.h>
++#include <linux/sizes.h>
+ #include <linux/soc/airoha/airoha_offload.h>
+ #include <net/dsa.h>
+ 
+@@ -68,6 +69,12 @@
+ #define PPE_STATS_NUM_ENTRIES		(4 * 1024)
+ #define PPE_DRAM_NUM_ENTRIES		(16 * 1024)
+ #define PPE_ENTRY_SIZE			80
++/*
++ * Pattern zones around a FOE table with DRAM entries at an index base: a
++ * hardware write past the table shows in debugfs ppe/foe_guard
++ */
++#define AIROHA_PPE_FOE_GUARD_LEN	SZ_64K
++#define AIROHA_PPE_FOE_GUARD_BYTE	0x5a
+ #define PPE_RAM_NUM_ENTRIES_SHIFT(_n)	(__ffs((_n) >> 10))
+ 
+ #define MTK_HDR_LEN			4
+@@ -649,6 +656,8 @@ struct airoha_ppe {
+ 
+ 	void *foe;
+ 	dma_addr_t foe_dma;
++	/* zones of AIROHA_PPE_FOE_GUARD_LEN before and after the FOE table */
++	u8 *foe_guard;
+ 
+ 	struct rhashtable l2_flows;
+ 
+@@ -685,6 +694,10 @@ struct airoha_ppe_host_cfg {
+ 	u32 unbind_age;
+ 	/* PPE_TB_CFG: keep alive and ageing of the bound entries */
+ 	u32 tb_cfg_age;
++	/* REG_PPE_HASH_SEED, the seed of the XOR hash (mode 0) */
++	u32 hash_seed;
++	/* REG_PPE_TB_HASH_CFG as a whole (0: the driver's own) */
++	u32 tb_hash_cfg;
+ };
+ 
+ struct regmap;
+@@ -730,6 +743,11 @@ struct airoha_eth_soc_data {
+ 	/* PPE SRAM entries per PPE and their PPE_TB_CFG code (0: 8K) */
+ 	u16 ppe_sram_entries;
+ 	u8 ppe_sram_tb_num;
++	/*
++	 * FOE index of the first DRAM entry (0: right after the SRAM ones).
++	 * The indexes between the SRAM entries and this base are not used.
++	 */
++	u16 ppe_dram_idx_base;
+ 	/* the PSE also buffers in the GDMP SRAM ("gdmp" reg, airoha,scu) */
+ 	bool pse_use_gdmp;
+ 	/* REG_GDM_MISC_CFG stays 0: no GDM2 ack-wait / channel-valid mode */
+--- a/drivers/net/ethernet/airoha/airoha_ppe.c
++++ b/drivers/net/ethernet/airoha/airoha_ppe.c
+@@ -140,6 +140,14 @@ static int airoha_ppe_get_num_stats_entr
+ 	if (airoha_is_7583(ppe->eth))
+ 		return -EOPNOTSUPP;
+ 
++	/*
++	 * The flow counters are kept by the NPU firmware and indexed as one
++	 * contiguous FOE table; a PPE the host runs (no PPE in the NPU) with
++	 * a gap before its DRAM entries has neither.
++	 */
++	if (ppe->eth->soc->ppe_host || ppe->eth->soc->ppe_dram_idx_base)
++		return -EOPNOTSUPP;
++
+ 	return PPE_STATS_NUM_ENTRIES;
+ }
+ 
+@@ -171,8 +179,22 @@ static u32 airoha_ppe_get_total_sram_num
+ u32 airoha_ppe_get_total_num_entries(struct airoha_ppe *ppe)
+ {
+ 	u32 sram_num_entries = airoha_ppe_get_total_sram_num_entries(ppe);
++	u32 dram_idx_base = ppe->eth->soc->ppe_dram_idx_base;
+ 
+-	return sram_num_entries + PPE_DRAM_NUM_ENTRIES;
++	return (dram_idx_base ?: sram_num_entries) + PPE_DRAM_NUM_ENTRIES;
++}
++
++/* an index the hardware can report: not in the gap before the DRAM base */
++static bool airoha_ppe_foe_index_valid(struct airoha_ppe *ppe, u32 hash)
++{
++	u32 dram_idx_base = ppe->eth->soc->ppe_dram_idx_base;
++
++	if (hash >= airoha_ppe_get_total_num_entries(ppe))
++		return false;
++
++	return !dram_idx_base ||
++	       hash < airoha_ppe_get_total_sram_num_entries(ppe) ||
++	       hash >= dram_idx_base;
+ }
+ 
+ bool airoha_ppe_is_enabled(struct airoha_eth *eth, int index)
+@@ -921,11 +943,21 @@ static int airoha_ppe_foe_commit_entry(s
+ 	struct airoha_npu *npu;
+ 	int err = 0;
+ 
+-	memcpy(&hwe->d, &e->d, sizeof(*hwe) - sizeof(hwe->ib1));
+-	wmb();
+-
+ 	e->ib1 &= ~AIROHA_FOE_IB1_BIND_TIMESTAMP;
+ 	e->ib1 |= FIELD_PREP(AIROHA_FOE_IB1_BIND_TIMESTAMP, ts);
++	/*
++	 * A DRAM entry is plain memory the PPE reads on every hit: an unbind
++	 * takes the state away before the body is rewritten (a removed L2
++	 * subflow writes zeros), so no frame is forwarded on a half-cleared
++	 * entry.  A bind writes the body first, the state last.
++	 */
++	if (FIELD_GET(AIROHA_FOE_IB1_BIND_STATE, e->ib1) !=
++	    AIROHA_FOE_STATE_BIND) {
++		hwe->ib1 = e->ib1;
++		wmb();
++	}
++	memcpy(&hwe->d, &e->d, sizeof(*hwe) - sizeof(hwe->ib1));
++	wmb();
+ 	hwe->ib1 = e->ib1;
+ 
+ 	rcu_read_lock();
+@@ -1634,6 +1666,10 @@ static void airoha_ppe_host_setup(struct
+ 		airoha_fe_wr(eth, REG_PPE_KEEPALIVE(i), cfg->keepalive);
+ 		airoha_fe_wr(eth, REG_PPE_UNBIND_AGE(i), cfg->unbind_age);
+ 		airoha_fe_set(eth, REG_PPE_TB_CFG(i), cfg->tb_cfg_age);
++		airoha_fe_wr(eth, REG_PPE_HASH_SEED(i), cfg->hash_seed);
++		if (cfg->tb_hash_cfg)
++			airoha_fe_wr(eth, REG_PPE_TB_HASH_CFG(i),
++				     cfg->tb_hash_cfg);
+ 	}
+ 
+ 	for (i = 0; i < eth->soc->num_ppe; i++)
+@@ -1722,10 +1758,9 @@ void airoha_ppe_check_skb(struct airoha_
+ 			  u16 hash, bool rx_wlan)
+ {
+ 	struct airoha_ppe *ppe = dev->priv;
+-	u32 ppe_hash_mask = airoha_ppe_get_total_num_entries(ppe) - 1;
+ 	u16 now, diff;
+ 
+-	if (hash > ppe_hash_mask)
++	if (!airoha_ppe_foe_index_valid(ppe, hash))
+ 		return;
+ 
+ 	now = (u16)jiffies;
+@@ -1830,10 +1865,26 @@ int airoha_ppe_init(struct airoha_eth *e
+ 
+ 	ppe_num_entries = airoha_ppe_get_total_num_entries(ppe);
+ 	foe_size = ppe_num_entries * sizeof(struct airoha_foe_entry);
+-	ppe->foe = dmam_alloc_coherent(eth->dev, foe_size, &ppe->foe_dma,
+-				       GFP_KERNEL);
+-	if (!ppe->foe)
+-		return -ENOMEM;
++	if (eth->soc->ppe_dram_idx_base) {
++		u32 guard = AIROHA_PPE_FOE_GUARD_LEN;
++
++		ppe->foe_guard = dmam_alloc_coherent(eth->dev,
++						     foe_size + 2 * guard,
++						     &ppe->foe_dma, GFP_KERNEL);
++		if (!ppe->foe_guard)
++			return -ENOMEM;
++
++		memset(ppe->foe_guard, AIROHA_PPE_FOE_GUARD_BYTE, guard);
++		memset(ppe->foe_guard + guard + foe_size,
++		       AIROHA_PPE_FOE_GUARD_BYTE, guard);
++		ppe->foe = ppe->foe_guard + guard;
++		ppe->foe_dma += guard;
++	} else {
++		ppe->foe = dmam_alloc_coherent(eth->dev, foe_size,
++					       &ppe->foe_dma, GFP_KERNEL);
++		if (!ppe->foe)
++			return -ENOMEM;
++	}
+ 
+ 	ppe->foe_flow = devm_kzalloc(eth->dev,
+ 				     ppe_num_entries * sizeof(*ppe->foe_flow),
+--- a/drivers/net/ethernet/airoha/airoha_regs.h
++++ b/drivers/net/ethernet/airoha/airoha_regs.h
+@@ -328,6 +328,9 @@
+ #define REG_PPE_TB_BASE(_n)			(((_n) ? PPE2_BASE : PPE1_BASE) + 0x220)
+ 
+ #define REG_PPE_BIND_RATE(_n)			(((_n) ? PPE2_BASE : PPE1_BASE) + 0x228)
++
++/* vendor FoeHashFun(): the seed of hash mode 0 (stock 0x12345678) */
++#define REG_PPE_HASH_SEED(_n)			(((_n) ? PPE2_BASE : PPE1_BASE) + 0x244)
+ #define PPE_BIND_RATE_L2B_BIND_MASK		GENMASK(31, 16)
+ #define PPE_BIND_RATE_BIND_MASK			GENMASK(15, 0)
+ 
+--- a/drivers/net/ethernet/airoha/airoha_ppe_debugfs.c
++++ b/drivers/net/ethernet/airoha/airoha_ppe_debugfs.c
+@@ -173,6 +173,40 @@ static int airoha_ppe_debugfs_foe_bind_s
+ }
+ DEFINE_SHOW_ATTRIBUTE(airoha_ppe_debugfs_foe_bind);
+ 
++/* bytes of the zones around the FOE table that are not the pattern any more */
++static int airoha_ppe_debugfs_foe_guard_show(struct seq_file *m,
++					     void *private)
++{
++	struct airoha_ppe *ppe = m->private;
++	u32 foe_size = airoha_ppe_get_total_num_entries(ppe) *
++		       sizeof(struct airoha_foe_entry);
++	const u8 *zone[] = {
++		ppe->foe_guard,
++		ppe->foe_guard + AIROHA_PPE_FOE_GUARD_LEN + foe_size,
++	};
++	static const char * const name[] = { "before", "after" };
++	int i, j;
++
++	for (i = 0; i < ARRAY_SIZE(zone); i++) {
++		int first = -1, count = 0;
++
++		for (j = 0; j < AIROHA_PPE_FOE_GUARD_LEN; j++) {
++			if (zone[i][j] == AIROHA_PPE_FOE_GUARD_BYTE)
++				continue;
++			if (first < 0)
++				first = j;
++			count++;
++		}
++		seq_printf(m, "%s: %d bytes changed", name[i], count);
++		if (count)
++			seq_printf(m, ", first at +%#x", first);
++		seq_puts(m, "\n");
++	}
++
++	return 0;
++}
++DEFINE_SHOW_ATTRIBUTE(airoha_ppe_debugfs_foe_guard);
++
+ int airoha_ppe_debugfs_init(struct airoha_ppe *ppe)
+ {
+ 	ppe->debugfs_dir = debugfs_create_dir("ppe", NULL);
+@@ -183,6 +217,9 @@ int airoha_ppe_debugfs_init(struct airoh
+ 	if (ppe->eth->soc->wed_cdm4_queues)
+ 		debugfs_create_bool("wed_flows", 0644, ppe->debugfs_dir,
+ 				    &ppe->wed_flows);
++	if (ppe->foe_guard)
++		debugfs_create_file("foe_guard", 0444, ppe->debugfs_dir, ppe,
++				    &airoha_ppe_debugfs_foe_guard_fops);
+ 
+ 	return 0;
+ }

@@ -1,0 +1,46 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: OpenWrt xPON <xpon@openwrt.local>
+Date: Sat, 31 Oct 2026 12:00:00 +0100
+Subject: [PATCH] net: airoha: add AN7563 SoC compatible
+
+AN7563 (AN7552/AN7563 family) presents the same Ethernet front-end
+port and source-port layout as AN7583.  Give it its own compatible and
+soc data reusing the AN7583 callbacks.
+
+The AN7583 data requests the "hsi0-mac", "hsi1-mac" and "xfp-mac"
+resets.  The AN7552 vendor SDK does not document which SCU reset bits
+gate these MACs on this SoC, so the AN7563 data requests none rather
+than toggling unverified reset lines.
+
+Signed-off-by: Lukasz M <lukasz1992m+openwrt@gmail.com>
+---
+ drivers/net/ethernet/airoha/airoha_eth.c | 16 ++++++++++++++++
+ 1 file changed, 16 insertions(+)
+
+--- a/drivers/net/ethernet/airoha/airoha_eth.c
++++ b/drivers/net/ethernet/airoha/airoha_eth.c
+@@ -4465,8 +4465,24 @@ static const struct airoha_eth_soc_data
+ 	},
+ };
+ 
++/*
++ * AN7563/AN7552 shares the AN7583 front-end port and source-port layout.
++ * The vendor SDK does not document which SCU reset lines gate its HSGMII
++ * and XFP MACs, so no xsi reset is requested here.
++ */
++static const struct airoha_eth_soc_data an7563_soc_data = {
++	.version = 0x7583,
++	.num_ppe = 1,
++	.ops = {
++		.get_sport = airoha_an7583_get_sport,
++		.get_vip_port = airoha_an7583_get_vip_port,
++		.get_dev_from_sport = airoha_an7583_get_dev_from_sport,
++	},
++};
++
+ static const struct of_device_id of_airoha_match[] = {
+ 	{ .compatible = "airoha,en7581-eth", .data = &en7581_soc_data },
++	{ .compatible = "airoha,an7563-eth", .data = &an7563_soc_data },
+ 	{ .compatible = "airoha,an7583-eth", .data = &an7583_soc_data },
+ 	{ /* sentinel */ }
+ };

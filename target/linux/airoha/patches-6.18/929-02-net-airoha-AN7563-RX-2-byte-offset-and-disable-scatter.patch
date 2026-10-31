@@ -1,0 +1,148 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Lukasz M <lukasz1992m+openwrt@gmail.com>
+Date: Sat, 31 Oct 2026 12:00:00 +0100
+Subject: [PATCH] net airoha AN7563 RX 2 byte offset and disable scatter
+
+On AN7563 ARM 32-bit:
+- Enable RX_2B_OFFSET in QDMA GLOBAL_CFG to align IP headers in buffers.
+- Disable RX scatter on non-LRO rings: with scatter enabled, frames > 1024
+  bytes lost the 2 byte offset on subsequent descriptors, breaking ping
+  with large payloads and TCP transfers.
+
+Signed-off-by: Lukasz M <lukasz1992m+openwrt@gmail.com>
+---
+--- a/drivers/net/ethernet/airoha/airoha_eth.c
++++ b/drivers/net/ethernet/airoha/airoha_eth.c
+@@ -224,15 +224,26 @@ static void airoha_fe_maccr_init(struct
+ 	int p;
+ 
+ 	for (p = 1; p <= ARRAY_SIZE(eth->ports); p++) {
++		u32 len = eth->soc->gdm_max_len[p] ?: AIROHA_MAX_RX_SIZE;
++
++		/*
++		 * Without RX scatter a frame has to fit one RX buffer: the
++		 * GDM drops a longer one (long length error) instead of the
++		 * QDMA getting a frame it has no room for.  The same bound as
++		 * the max_mtu of the netdevs (airoha_alloc_gdm_device()), so
++		 * only frames that already break the MTU are lost.
++		 */
++		if (eth->soc->no_rx_sg)
++			len = min_t(u32, len,
++				    SKB_WITH_OVERHEAD(AIROHA_RX_LEN(PAGE_SIZE / 2)));
++
+ 		airoha_fe_set(eth, REG_GDM_FWD_CFG(p),
+ 			      GDM_TCP_CKSUM_MASK | GDM_UDP_CKSUM_MASK |
+ 			      GDM_IP4_CKSUM_MASK | GDM_DROP_CRC_ERR_MASK);
+ 		airoha_fe_rmw(eth, REG_GDM_LEN_CFG(p),
+ 			      GDM_SHORT_LEN_MASK | GDM_LONG_LEN_MASK,
+ 			      FIELD_PREP(GDM_SHORT_LEN_MASK, 60) |
+-			      FIELD_PREP(GDM_LONG_LEN_MASK,
+-					 eth->soc->gdm_max_len[p] ?:
+-					 AIROHA_MAX_RX_SIZE));
++			      FIELD_PREP(GDM_LONG_LEN_MASK, len));
+ 	}
+ 
+ 	airoha_fe_rmw(eth, REG_CDM_VLAN_CTRL(1), CDM_VLAN_MASK,
+@@ -849,7 +860,13 @@ static int airoha_qdma_fill_rx_queue(str
+ 		WRITE_ONCE(desc->tcp_ts_reply, 0);
+ 		val = FIELD_PREP(QDMA_DESC_LEN_MASK, e->dma_len);
+ 		WRITE_ONCE(desc->ctrl, cpu_to_le32(val));
+-		WRITE_ONCE(desc->addr, cpu_to_le32(e->dma_addr));
++		/* with RX_2B_OFFSET the DMA takes a 4 byte aligned address and
++		 * puts the frame 2 bytes into it, i.e. at e->dma_addr
++		 */
++		WRITE_ONCE(desc->addr,
++			   cpu_to_le32(e->dma_addr -
++				       (qdma->eth->soc->rx_2b_offset ?
++					NET_IP_ALIGN : 0)));
+ 		val = FIELD_PREP(QDMA_DESC_NEXT_ID_MASK, q->head);
+ 		WRITE_ONCE(desc->data, cpu_to_le32(val));
+ 		WRITE_ONCE(desc->msg0, 0);
+@@ -1252,7 +1269,7 @@ static int airoha_qdma_init_rx_queue(str
+ 			FIELD_PREP(RX_RING_THR_MASK, thr));
+ 	airoha_qdma_rmw(qdma, REG_RX_DMA_IDX(qid), RX_RING_DMA_IDX_MASK,
+ 			FIELD_PREP(RX_RING_DMA_IDX_MASK, q->head));
+-	if (lro_q)
++	if (lro_q || eth->soc->no_rx_sg)
+ 		airoha_qdma_clear(qdma, REG_RX_SCATTER_CFG(qid),
+ 				  RX_RING_SG_EN_MASK);
+ 	else
+@@ -1919,6 +1936,7 @@ static void airoha_qdma_init_qos_stats(s
+ 
+ static int airoha_qdma_hw_init(struct airoha_qdma *qdma)
+ {
++	u32 val;
+ 	int i;
+ 
+ 	/* clear pending irqs, only in the status registers this SoC has */
+@@ -1958,15 +1976,22 @@ static int airoha_qdma_hw_init(struct ai
+ 					  TX_RING_IRQ_BLOCKING_CFG_MASK);
+ 	}
+ 
+-	airoha_qdma_wr(qdma, REG_QDMA_GLOBAL_CFG,
+-		       FIELD_PREP(GLOBAL_CFG_DMA_PREFERENCE_MASK, 3) |
+-		       GLOBAL_CFG_CPU_TXR_RR_MASK |
+-		       GLOBAL_CFG_PAYLOAD_BYTE_SWAP_MASK |
+-		       GLOBAL_CFG_MULTICAST_MODIFY_FP_MASK |
+-		       GLOBAL_CFG_MULTICAST_EN_MASK |
+-		       GLOBAL_CFG_IRQ0_EN_MASK | GLOBAL_CFG_IRQ1_EN_MASK |
+-		       GLOBAL_CFG_TX_WB_DONE_MASK |
+-		       FIELD_PREP(GLOBAL_CFG_MAX_ISSUE_NUM_MASK, 2));
++	/*
++	 * Stock XX530v V2, GLOBAL_CFG: QDMA0 0xf6380065, QDMA1 0xf4180065, i.e.
++	 * RX_2B_OFFSET on both and the multicast bits only on QDMA0.
++	 */
++	val = FIELD_PREP(GLOBAL_CFG_DMA_PREFERENCE_MASK, 3) |
++	      GLOBAL_CFG_CPU_TXR_RR_MASK |
++	      GLOBAL_CFG_PAYLOAD_BYTE_SWAP_MASK |
++	      GLOBAL_CFG_IRQ0_EN_MASK | GLOBAL_CFG_IRQ1_EN_MASK |
++	      GLOBAL_CFG_TX_WB_DONE_MASK |
++	      FIELD_PREP(GLOBAL_CFG_MAX_ISSUE_NUM_MASK, 2);
++	if (qdma->eth->soc->rx_2b_offset)
++		val |= GLOBAL_CFG_RX_2B_OFFSET_MASK;
++	if (!airoha_qdma_is_stock_wan(qdma))
++		val |= GLOBAL_CFG_MULTICAST_MODIFY_FP_MASK |
++		       GLOBAL_CFG_MULTICAST_EN_MASK;
++	airoha_qdma_wr(qdma, REG_QDMA_GLOBAL_CFG, val);
+ 
+ 	airoha_qdma_init_qos(qdma);
+ 
+@@ -5542,6 +5567,13 @@ static int airoha_alloc_gdm_device(struc
+ 	netdev->netdev_ops = &airoha_netdev_ops;
+ 	netdev->ethtool_ops = &airoha_ethtool_ops;
+ 	netdev->max_mtu = AIROHA_MAX_MTU;
++	if (eth->soc->no_rx_sg) {
++		/* a frame has to fit one RX buffer: the DSA tag, the Ethernet
++		 * header and the FCS come on top of the MTU
++		 */
++		netdev->max_mtu = SKB_WITH_OVERHEAD(AIROHA_RX_LEN(PAGE_SIZE / 2)) -
++				  ETH_HLEN - ETH_FCS_LEN - 4;
++	}
+ 	netdev->watchdog_timeo = 5 * HZ;
+ 	netdev->hw_features = AIROHA_HW_FEATURES;
+ 	if (!eth->soc->no_lro)
+@@ -6132,6 +6164,11 @@ static const struct airoha_eth_soc_data
+ 	.no_lro = true,
+ 	.hwfwd_dram_1k = true,
+ 	.qdma1_wan_stock_cfg = true,
++	.rx_2b_offset = true,
++	/* stock: REG_RX_SCATTER_CFG is 0 on all 16 rings of both QDMAs, and
++	 * with it on, frames over 1 KiB come without the 2 byte offset
++	 */
++	.no_rx_sg = true,
+ 	.ip_frag_rx_ring = 8,
+ 	.ip_asse_rx_ring = 9,
+ 	.ppe_sram_entries = 512,
+--- a/drivers/net/ethernet/airoha/airoha_eth.h
++++ b/drivers/net/ethernet/airoha/airoha_eth.h
+@@ -720,6 +720,10 @@ struct airoha_eth_soc_data {
+ 	bool hwfwd_dram_1k;
+ 	/* WAN QDMA (QDMA1) set up as the stock fe_core/qdma_wan does */
+ 	bool qdma1_wan_stock_cfg;
++	/* QDMA writes the frame 2 bytes into a 4 byte aligned buffer */
++	bool rx_2b_offset;
++	/* RX rings without scatter: one descriptor per frame */
++	bool no_rx_sg;
+ 	/* rx rings for IP fragments and reassembled frames (0: NPU/ring 22) */
+ 	u8 ip_frag_rx_ring;
+ 	u8 ip_asse_rx_ring;
