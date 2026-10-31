@@ -1,0 +1,5 @@
+imxtract $imgaddr ubi
+nand erase 0x02580000 0x06980000
+nand write $fileaddr 0x02580000 $filesize
+nand erase 0x08f00000 0x06980000
+nand write $fileaddr 0x08f00000 $filesize
