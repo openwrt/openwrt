@@ -24,7 +24,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 ---
 --- a/net/mac80211/rx.c
 +++ b/net/mac80211/rx.c
-@@ -5357,7 +5357,7 @@ static bool ieee80211_rx_for_interface(s
+@@ -5422,7 +5422,7 @@ static bool ieee80211_rx_for_interface(s
  {
  	struct link_sta_info *link_sta;
  	struct ieee80211_hdr *hdr = (void *)skb->data;
@@ -33,7 +33,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	int link_id = -1;
  
  	if (ieee80211_is_s1g_beacon(hdr->frame_control)) {
-@@ -5380,7 +5380,9 @@ static bool ieee80211_rx_for_interface(s
+@@ -5445,7 +5445,9 @@ static bool ieee80211_rx_for_interface(s
  	} else {
  		struct ieee80211_rx_status *status = IEEE80211_SKB_RXCB(skb);
  
