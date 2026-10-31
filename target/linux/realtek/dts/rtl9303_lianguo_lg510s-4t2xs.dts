@@ -1,0 +1,229 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
+/dts-v1/;
+
+#include "rtl930x.dtsi"
+
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/leds/common.h>
+
+/ {
+	compatible = "lianguo,lg510s-4t2xs", "realtek,rtl9303-soc";
+	model = "Lianguo LG510S-4T2XS";
+
+	memory@0 {
+		device_type = "memory";
+		reg = <0x0 0x8000000>;
+	};
+
+	chosen {
+		stdout-path = "serial0:115200n8";
+	};
+
+	aliases {
+		label-mac-device = &ethernet0;
+		led-boot = &led_sys;
+		led-failsafe = &led_sys;
+		led-running = &led_sys;
+		led-upgrade = &led_sys;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		pinctrl-names = "default";
+		pinctrl-0 = <&pinmux_disable_sys_led>;
+
+		led_sys: led-0 {
+			gpios = <&gpio0 0 GPIO_ACTIVE_HIGH>;
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_STATUS;
+		};
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		button-reset {
+			label = "reset";
+			gpios = <&gpio0 5 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+	};
+
+	/*
+	 * Serial LED chain with three LEDs per port; the first is unused.
+	 * The second lights at 10G, the third at lower speeds.
+	 */
+	led_set {
+		compatible = "realtek,rtl9300-leds";
+		active-low;
+		realtek,led-mode = <RTL93XX_LED_MODE_SERIAL>;
+
+		/* RJ45 ports */
+		led_set0 = <
+			(RTL93XX_LED_SET_NONE)
+			(RTL93XX_LED_SET_10G | RTL93XX_LED_SET_LINK | RTL93XX_LED_SET_ACT)
+			(RTL93XX_LED_SET_5G | RTL93XX_LED_SET_2P5G | RTL93XX_LED_SET_1G |
+			 RTL93XX_LED_SET_100M | RTL93XX_LED_SET_LINK | RTL93XX_LED_SET_ACT)
+		>;
+
+		/* SFP+ ports */
+		led_set1 = <
+			(RTL93XX_LED_SET_NONE)
+			(RTL93XX_LED_SET_10G | RTL93XX_LED_SET_LINK | RTL93XX_LED_SET_ACT)
+			(RTL93XX_LED_SET_2P5G | RTL93XX_LED_SET_1G | RTL93XX_LED_SET_100M |
+			 RTL93XX_LED_SET_LINK | RTL93XX_LED_SET_ACT)
+		>;
+
+		/* The unpopulated port 24 is part of the serial LED chain */
+		realtek,led-set0-force-port-mask = <0x01000000>;
+	};
+
+	sfp0: sfp-p5 {
+		compatible = "sff,sfp";
+		i2c-bus = <&i2c_sfp0>;
+		los-gpios = <&gpio0 13 GPIO_ACTIVE_HIGH>;
+		mod-def0-gpios = <&gpio0 14 GPIO_ACTIVE_LOW>;
+		tx-disable-gpios = <&gpio0 15 GPIO_ACTIVE_HIGH>;
+		maximum-power-milliwatt = <2000>;
+	};
+
+	sfp1: sfp-p6 {
+		compatible = "sff,sfp";
+		/* GPIO 18 shares its pin with the USB LED */
+		pinctrl-names = "default";
+		pinctrl-0 = <&pinmux_disable_usb_led>;
+		i2c-bus = <&i2c_sfp1>;
+		los-gpios = <&gpio0 16 GPIO_ACTIVE_HIGH>;
+		mod-def0-gpios = <&gpio0 17 GPIO_ACTIVE_LOW>;
+		tx-disable-gpios = <&gpio0 18 GPIO_ACTIVE_HIGH>;
+		maximum-power-milliwatt = <2000>;
+	};
+};
+
+/* SCL on GPIO 8, SDA on GPIO 9 and 10 */
+&i2c_mst1 {
+	status = "okay";
+
+	i2c_sfp0: i2c@0 {
+		reg = <0>;
+	};
+
+	i2c_sfp1: i2c@1 {
+		reg = <1>;
+	};
+};
+
+&spi0 {
+	status = "okay";
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <10000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "loader";
+				reg = <0x0 0xe0000>;
+				read-only;
+			};
+
+			partition@e0000 {
+				label = "bdinfo";
+				reg = <0xe0000 0x10000>;
+				read-only;
+
+				nvmem-layout {
+					compatible = "u-boot,env";
+
+					macaddr_ubootenv_ethaddr: ethaddr {
+						#nvmem-cell-cells = <1>;
+					};
+				};
+			};
+
+			partition@f0000 {
+				label = "sysinfo";
+				reg = <0xf0000 0x10000>;
+				read-only;
+			};
+
+			partition@100000 {
+				label = "jffs2-cfg";
+				reg = <0x100000 0x100000>;
+				read-only;
+			};
+
+			partition@200000 {
+				label = "jffs2-log";
+				reg = <0x200000 0x100000>;
+				read-only;
+			};
+
+			/* "runtime" in the stock layout */
+			partition@300000 {
+				label = "firmware";
+				reg = <0x300000 0xc00000>;
+				compatible = "openwrt,uimage", "denx,uimage";
+				openwrt,ih-magic = <0x83800000>;
+			};
+
+			partition@f00000 {
+				label = "oeminfo";
+				reg = <0xf00000 0x100000>;
+				read-only;
+			};
+		};
+	};
+};
+
+&ethernet0 {
+	nvmem-cells = <&macaddr_ubootenv_ethaddr 0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&mdio_bus0 {
+	/* RTL8264B */
+	ethernet-phy-package@0 {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <0>;
+
+		PHY_C45(0, 0)
+		PHY_C45(8, 1)
+		PHY_C45(16, 2)
+		PHY_C45(20, 3)
+	};
+};
+
+&switch0 {
+	ethernet-ports {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		SWITCH_PORT_LED(0, 1, 2, 0, 0, usxgmii)
+		SWITCH_PORT_LED(8, 2, 3, 0, 0, usxgmii)
+		SWITCH_PORT_LED(16, 3, 4, 0, 0, usxgmii)
+		SWITCH_PORT_LED(20, 4, 5, 0, 0, usxgmii)
+
+		SWITCH_PORT_SFP(25, 5, 7, 1, 0)
+		SWITCH_PORT_SFP(26, 6, 8, 1, 1)
+
+		/* CPU port */
+		port@28 {
+			ethernet = <&ethernet0>;
+			reg = <28>;
+			phy-mode = "internal";
+
+			fixed-link {
+				speed = <1000>;
+				full-duplex;
+			};
+		};
+	};
+};
