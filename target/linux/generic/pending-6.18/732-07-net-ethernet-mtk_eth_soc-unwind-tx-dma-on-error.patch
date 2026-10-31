@@ -1,0 +1,64 @@
+From 8256535ea520805638282480caac214823651e53 Mon Sep 17 00:00:00 2001
+From: Piotr Nielacny <piotr.nielacny@gmail.com>
+Date: Tue, 27 Oct 2026 14:53:25 +0100
+Subject: [PATCH] net: ethernet: mtk_eth_soc: unwind all mappings on TX error
+
+The OpenWrt TX error loop stops before state.txd, skipping mappings in the
+current descriptor when a later mapping fails. If the first mapping fails,
+state.txd equals the first descriptor and the loop instead wraps around
+the ring, touching descriptors outside the aborted packet.
+
+Stop after processing state.txd to cover exactly the initialized
+descriptors, including the current one.
+
+Also unmap a successful mapping immediately if mtk_tx_map_info() cannot
+reserve its descriptor. That mapping has not been recorded in tx_buf and
+cannot be recovered by descriptor-based cleanup.
+
+Signed-off-by: Piotr Nielacny <piotr.nielacny@gmail.com>
+---
+ drivers/net/ethernet/mediatek/mtk_eth_soc.c | 16 +++++++++++++---
+ 1 file changed, 13 insertions(+), 3 deletions(-)
+
+--- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
++++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
+@@ -1758,8 +1758,11 @@ next_frag:
+ 		offset += txd_info.size;
+ 		txd_info.last = !frag_size && !skb_shinfo(cur_skb)->nr_frags &&
+ 				(gso_fraglist || !next_skb);
+-		if (mtk_tx_map_info(eth, ring, dev, &state, &txd_info) < 0)
++		if (mtk_tx_map_info(eth, ring, dev, &state, &txd_info) < 0) {
++			dma_unmap_single(eth->dma_dev, txd_info.addr,
++					 txd_info.size, DMA_TO_DEVICE);
+ 			goto err_dma;
++		}
+ 	}
+ 
+ 	for (i = 0; i < skb_shinfo(cur_skb)->nr_frags; i++) {
+@@ -1781,8 +1784,11 @@ next_frag:
+ 			offset += txd_info.size;
+ 			txd_info.last = i == skb_shinfo(cur_skb)->nr_frags - 1 &&
+ 					!frag_size && (gso_fraglist || !next_skb);
+-			if (mtk_tx_map_info(eth, ring, dev, &state, &txd_info) < 0)
++			if (mtk_tx_map_info(eth, ring, dev, &state, &txd_info) < 0) {
++				dma_unmap_page(eth->dma_dev, txd_info.addr,
++					       txd_info.size, DMA_TO_DEVICE);
+ 				goto err_dma;
++			}
+ 		}
+ 	}
+ 
+@@ -1849,8 +1855,12 @@ err_dma:
+ 		if (!MTK_HAS_CAPS(soc->caps, MTK_QDMA))
+ 			itxd_pdma->txd2 = TX_DMA_DESP2_DEF;
+ 
++		/* state.txd may still own earlier mappings when a later map fails. */
++		if (itxd == state.txd)
++			break;
++
+ 		itxd = mtk_qdma_phys_to_virt(ring, itxd->txd2);
+-	} while (itxd != state.txd);
++	} while (1);
+ 
+ 	return -ENOMEM;
+ }
