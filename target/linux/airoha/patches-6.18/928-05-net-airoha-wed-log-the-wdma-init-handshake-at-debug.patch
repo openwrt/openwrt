@@ -1,0 +1,45 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Lukasz M <lukasz1992m+openwrt@gmail.com>
+Date: Mon, 2 Nov 2026 16:00:00 +0100
+Subject: [PATCH] net: airoha: wed: log the WDMA init handshake at debug
+
+WED_EXT_INT_STATUS_RX_DRV_INIT_WDMA_EN (bit 19) is part of the error
+mask shared with the vendor driver and with mainline, but this WED
+enables the WDMA RX DMA, and the RX driver raises the bit once when it
+comes up.  Every start therefore logs "error status=00080000" for what
+is the handshake of a working initialisation.
+
+Keep the mask as it is - an unexpected bit 19 still has to be acked and
+must not be lost if it ever means something else - and only change how
+it is reported: a lone bit 19 goes to debug, anything else stays on the
+error line, with bit 19 included when it arrives together with a real
+fault.
+
+Signed-off-by: Lukasz M <lukasz1992m+openwrt@gmail.com>
+---
+--- a/drivers/net/ethernet/airoha/airoha_wed.c
++++ b/drivers/net/ethernet/airoha/airoha_wed.c
+@@ -1097,8 +1097,21 @@ static u32 airoha_wed_irq_get(struct mtk
+ 	val = wed_r32(dev, WED_EXT_INT_STATUS);
+ 	wed_w32(dev, WED_EXT_INT_STATUS, val);
+ 	val &= WED_EXT_INT_STATUS_ERROR_MASK;
+-	if (val && net_ratelimit())
+-		pr_err("airoha_wed%d: error status=%08x\n", dev->hw->index, val);
++	/*
++	 * The WDMA RX driver sets RX_DRV_INIT_WDMA_EN once, when the RX DMA
++	 * is enabled: the handshake of a working init, not a fault.  It is in
++	 * the error mask the vendor and mainline share, and this WED enables
++	 * the WDMA RX DMA (the v1 in mainline does not), so say it once at
++	 * debug level and keep the error line for the real bits.
++	 */
++	if (val & ~WED_EXT_INT_STATUS_RX_DRV_INIT_WDMA_EN) {
++		if (net_ratelimit())
++			pr_err("airoha_wed%d: error status=%08x\n",
++			       dev->hw->index, val);
++	} else if (val) {
++		pr_debug("airoha_wed%d: wdma rx driver initialised\n",
++			 dev->hw->index);
++	}
+ 
+ 	val = wed_r32(dev, WED_INT_STATUS);
+ 	val &= mask;
