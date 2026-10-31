@@ -6,9 +6,9 @@ PKG_RELEASE:=1
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL=$(PROJECT_GIT)/project/firmware/qca-wireless.git
-PKG_SOURCE_DATE:=2026-10-25
-PKG_SOURCE_VERSION:=49ce14c099b16044b7062df54bdabeb495b804ad
-PKG_MIRROR_HASH:=b9c6723021af9267035b7e25762b80c06887a5ea9c524b2649b0b27ea58b121c
+PKG_SOURCE_DATE:=2026-10-29
+PKG_SOURCE_VERSION:=9157db7cf0814d91adf552ebfd13bbdef0b1c00a
+PKG_MIRROR_HASH:=7216efef75945f16e6bb462fe91de0cddf7cca1863673171b775ad705dc005fd
 PKG_FLAGS:=nonshared
 
 include $(INCLUDE_DIR)/package.mk
@@ -86,6 +86,7 @@ ALLWIFIBOARDS:= \
 	netgear_wax610y \
 	netgear_wax620 \
 	netgear_wax630 \
+	nokia_beacon-10 \
 	prpl_haze \
 	qihoo_360v6 \
 	qnap_301w \
@@ -301,6 +302,7 @@ $(eval $(call generate-ipq-wifi-package,netgear_wax610,Netgear WAX610))
 $(eval $(call generate-ipq-wifi-package,netgear_wax610y,Netgear WAX610Y))
 $(eval $(call generate-ipq-wifi-package,netgear_wax620,Netgear WAX620))
 $(eval $(call generate-ipq-wifi-package,netgear_wax630,Netgear WAX630))
+$(eval $(call generate-ipq-wifi-package,nokia_beacon-10,Nokia Beacon 10))
 $(eval $(call generate-ipq-wifi-package,prpl_haze,prpl Haze))
 $(eval $(call generate-ipq-wifi-package,qihoo_360v6,Qihoo 360V6))
 $(eval $(call generate-ipq-wifi-package,qnap_301w,QNAP 301w))

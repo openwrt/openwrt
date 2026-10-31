@@ -43,6 +43,23 @@ define Device/linksys_ln6001
 endef
 TARGET_DEVICES += linksys_ln6001
 
+define Device/nokia_beacon-10
+	$(call Device/FitImage)
+	$(call Device/EmmcImage)
+	DEVICE_VENDOR := Nokia
+	DEVICE_MODEL := Beacon 10
+	DEVICE_DTS := ipq9574-nokia-beacon-10
+	SOC := ipq9574
+	KERNEL_SIZE := 65536k
+	KERNEL += | check-size $$(KERNEL_SIZE)
+	DEVICE_PACKAGES := ath11k-firmware-ipq9574 ath11k-firmware-qcn9074 \
+		block-mount f2fsck ipq-wifi-nokia_beacon-10 kmod-ath11k-ahb \
+		kmod-ath11k-pci kmod-fs-f2fs kmod-phy-realtek mkf2fs \
+		rtl826x-firmware
+	IMAGES := sysupgrade.bin
+endef
+TARGET_DEVICES += nokia_beacon-10
+
 define Device/qcom_rdp433
 	$(call Device/FitImageLzma)
 	DEVICE_VENDOR := Qualcomm Technologies, Inc.
