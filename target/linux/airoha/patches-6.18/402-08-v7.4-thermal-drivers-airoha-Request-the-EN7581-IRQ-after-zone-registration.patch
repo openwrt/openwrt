@@ -1,0 +1,78 @@
+From 7efceedd23678cd58e98b2c64d4b2b7be03f6cf9 Mon Sep 17 00:00:00 2001
+From: Vitaliy Sochnev <sochnev.v.74@gmail.com>
+Date: Tue, 15 Sep 2026 20:41:28 +0100
+Subject: [PATCH] thermal/drivers/airoha: Request the EN7581 IRQ after zone
+ registration
+
+The EN7581 IRQ is requested before the thermal zone is registered, and
+the handler passes priv->tz to thermal_zone_device_update(). Unbind
+leaves the monitor interrupt enabled, so an interrupt pending on the
+next bind fires while priv->tz is NULL. On a Nokia XG-040G-MD this
+oopses in thermal_zone_device_update(). On unbind, devres also frees the
+zone before the IRQ.
+
+Request the IRQ in post_probe, after zone registration.
+
+Fixes: 42de37f40e1b ("thermal/drivers: Add support for Airoha EN7581 thermal sensor")
+Signed-off-by: Vitaliy Sochnev <sochnev.v.74@gmail.com>
+Signed-off-by: Daniel Lezcano <daniel.lezcano@kernel.org>
+Link: https://patch.msgid.link/20260915194128.42508-1-sochnev.v.74@gmail.com
+Upstream: https://github.com/torvalds/linux/commit/7efceedd23678cd58e98b2c64d4b2b7be03f6cf9
+
+Backport to 6.18: retain the existing IRQ request error message.
+---
+ drivers/thermal/airoha_thermal.c | 26 ++++++++++++++------------
+ 1 file changed, 14 insertions(+), 12 deletions(-)
+
+--- a/drivers/thermal/airoha_thermal.c
++++ b/drivers/thermal/airoha_thermal.c
+@@ -570,7 +570,7 @@ static int en7581_thermal_probe(struct p
+ 	struct device_node *chip_scu_np;
+ 	struct device *dev = &pdev->dev;
+ 	void __iomem *base;
+-	int i, irq, ret;
++	int i;
+ 
+ 	base = devm_platform_ioremap_resource(pdev, 0);
+ 	if (IS_ERR(base))
+@@ -607,6 +607,18 @@ static int en7581_thermal_probe(struct p
+ 	of_address_to_resource(chip_scu_np, 0, &priv->scu_adc_res);
+ 	of_node_put(chip_scu_np);
+ 
++	en7581_thermal_setup_monitor(priv);
++	en7581_thermal_setup_adc_val(dev, priv);
++
++	return 0;
++}
++
++static int en7581_thermal_post_probe(struct platform_device *pdev)
++{
++	struct airoha_thermal_priv *priv = platform_get_drvdata(pdev);
++	int irq, ret;
++
++	/* After zone registration: the handler uses priv->tz */
+ 	irq = platform_get_irq(pdev, 0);
+ 	if (irq < 0)
+ 		return irq;
+@@ -615,20 +627,10 @@ static int en7581_thermal_probe(struct p
+ 					en7581_thermal_irq, IRQF_ONESHOT,
+ 					pdev->name, priv);
+ 	if (ret) {
+-		dev_err(dev, "Can't get interrupt working.\n");
++		dev_err(&pdev->dev, "Can't get interrupt working.\n");
+ 		return ret;
+ 	}
+ 
+-	en7581_thermal_setup_monitor(priv);
+-	en7581_thermal_setup_adc_val(dev, priv);
+-
+-	return 0;
+-}
+-
+-static int en7581_thermal_post_probe(struct platform_device *pdev)
+-{
+-	struct airoha_thermal_priv *priv = platform_get_drvdata(pdev);
+-
+ 	/* Enable LOW and HIGH interrupt (if supported) */
+ 	regmap_write(priv->map, EN7581_TEMPMONINT,
+ 		     EN7581_HOFSINTEN0 | EN7581_LOFSINTEN0);
