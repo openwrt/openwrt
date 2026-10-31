@@ -1,0 +1,137 @@
+# Create the "rootfs_data" UBI volume, and its /dev node, before mount_root
+# goes looking for them, on boards whose install path can't leave behind a
+# pre-made UBI image -- this board's recovery-page upload only ever writes
+# the kernel and rootfs slots, so its UBI partition always arrives blank.
+# UBI auto-formats a blank device on attach, but creates no user volume, and
+# nothing in fstools creates "rootfs_data" outside a sysupgrade.
+#
+# The mknod is required, not defensive: CONFIG_DEVTMPFS is unset, so /dev is
+# populated by a one-shot coldplug scan before preinit runs, and procd's
+# hotplug handler doesn't start until after preinit -- a volume created here
+# would otherwise have no /dev node until mount_root has already given up
+# and left / read-only.
+#
+# Runs from a 79_ preinit file so it's ordered before 80_mount_root.
+# Idempotent: on later boots UBI attaches the existing volume before
+# procd's coldplug scan, so the volume and node already exist.
+#
+# Boards facing the same "no factory UBI image" install-path gap can join
+# the case list at the bottom instead of duplicating this file: set
+# econet_ubi_mtd_part to your board's UBI MTD partition name (not
+# standardized across econet boards -- this board's is "ubi",
+# huawei,hg2821t-u's is "rootfs_a" per its own `ubi.mtd=` bootarg) and add
+# your board's compatible string.
+
+econet_ubi_reformat() {
+	local mtdnum
+
+	[ -c /dev/ubi0 ] && return 0
+	[ -x /usr/sbin/ubiformat ] && [ -x /usr/sbin/ubiattach ] || return 0
+
+	mtdnum="$(find_mtd_index "$econet_ubi_mtd_part")"
+	[ -n "$mtdnum" ] || return 0
+
+	echo "- ubi attach failed, reformatting mtd$mtdnum -"
+	/usr/sbin/ubiformat "/dev/mtd$mtdnum" -y || return 0
+	/usr/sbin/ubiattach -m "$mtdnum" || return 0
+
+	local sysfs="/sys/class/ubi/ubi0"
+	[ -r "$sysfs/dev" ] || return 0
+	local devno="$(cat "$sysfs/dev")"
+	local major="${devno%%:*}"
+	local minor="${devno##*:}"
+	[ -n "$major" ] && [ -n "$minor" ] || return 0
+	mknod /dev/ubi0 c "$major" "$minor"
+}
+
+# A third case, seen on real hardware: the volume exists but its UBIFS is
+# unmountable (a bad master node -- can follow an unclean shutdown, not just
+# a bad install). /dev/ubi0 and the volume both check out fine, so the only
+# way to detect it is to actually mount it; recreate the volume if that
+# fails. Mounted read-only so the probe itself can't corrupt anything.
+econet_ubi_check_overlay() {
+	local vol="$1" mp=/tmp/.ubicheck
+
+	[ -x /usr/sbin/ubirmvol ] && [ -x /usr/sbin/ubimkvol ] || return 0
+
+	mkdir -p "$mp" || return 0
+	if mount -t ubifs -o ro "/dev/$vol" "$mp" 2>/dev/null; then
+		umount "$mp"
+		rmdir "$mp" 2>/dev/null
+		return 0
+	fi
+	rmdir "$mp" 2>/dev/null
+
+	echo "- rootfs_data is unmountable, recreating it -"
+	/usr/sbin/ubirmvol /dev/ubi0 -N rootfs_data || return 0
+	/usr/sbin/ubimkvol /dev/ubi0 -N rootfs_data -m || return 0
+	# The volume just went away and came back: the old /dev node's minor is
+	# stale and the sysfs dir was recreated, so drop the node and let the
+	# caller re-derive both from a fresh look at sysfs.
+	rm -f "/dev/$vol"
+}
+
+# Find the rootfs_data volume in sysfs and echo its directory, or nothing.
+econet_ubi_vol_sysfs() {
+	local sysfs
+	for sysfs in /sys/class/ubi/ubi0_*; do
+		[ -r "$sysfs/name" ] || continue
+		[ "$(cat "$sysfs/name")" = "rootfs_data" ] || continue
+		echo "$sysfs"
+		return 0
+	done
+	return 1
+}
+
+# Create /dev/<vol> for the rootfs_data volume if it is missing.
+econet_ubi_mknode() {
+	local sysfs vol devno major minor
+
+	sysfs="$(econet_ubi_vol_sysfs)" || return 1
+	vol="${sysfs##*/}"
+	[ -c "/dev/$vol" ] && { echo "$vol"; return 0; }
+
+	devno="$(cat "$sysfs/dev" 2>/dev/null)"
+	major="${devno%%:*}"
+	minor="${devno##*:}"
+	[ -n "$major" ] && [ -n "$minor" ] || return 1
+
+	echo "- creating /dev/$vol ($major:$minor) -" >&2
+	mknod "/dev/$vol" c "$major" "$minor" || return 1
+	echo "$vol"
+}
+
+econet_ubi_rootfs_data() {
+	local ubidev=/dev/ubi0
+	local vol
+
+	econet_ubi_reformat
+
+	[ -c "$ubidev" ] || return 0
+	[ -x /usr/sbin/ubimkvol ] || return 0
+
+	if ! /usr/sbin/ubinfo "$ubidev" -N rootfs_data >/dev/null 2>&1; then
+		echo "- creating UBI rootfs_data volume -"
+		/usr/sbin/ubimkvol "$ubidev" -N rootfs_data -m || return 0
+	fi
+
+	# Node first: the mount probe below needs something to mount.
+	vol="$(econet_ubi_mknode)" || return 0
+	econet_ubi_check_overlay "$vol"
+	# check_overlay drops the node if it recreated the volume; remake it.
+	[ -c "/dev/$vol" ] || econet_ubi_mknode >/dev/null
+	return 0
+}
+
+case "$(cat /tmp/sysinfo/board_name 2>/dev/null)" in
+zte,zxhn-h267a)
+	# The recovery page's erase only covers this board's ubi partition's
+	# first 24 MiB (of 91.25 MiB) -- the clean "empty device" case UBI
+	# auto-formats. The remaining tail is left stale from whatever was
+	# flashed before, which can make the kernel-side `ubi.mtd=ubi` attach
+	# fail outright instead; econet_ubi_reformat() detects that (no
+	# /dev/ubi0) and reformats the whole partition first.
+	econet_ubi_mtd_part="ubi"
+	boot_hook_add preinit_main econet_ubi_rootfs_data
+	;;
+esac
