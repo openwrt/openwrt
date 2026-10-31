@@ -2009,6 +2009,23 @@ static void __ppe_port_queue_limit_set(struct qca_ppe_priv *priv, int port)
 	ppe_pause_update(priv);
 }
 
+/* Whether the switch shapes a port's egress: a rate on the port or on any of
+ * its bands.
+ */
+bool ppe_port_shaped(struct qca_ppe_priv *priv, int port)
+{
+	struct ppe_port_shaper *sh = &priv->shaper[port];
+	int i;
+
+	if (READ_ONCE(sh->rate_bps))
+		return true;
+	for (i = 0; i < ARRAY_SIZE(sh->queue_rate); i++)
+		if (READ_ONCE(sh->queue_rate[i]))
+			return true;
+
+	return false;
+}
+
 /* A shaper's queue is where SQM drops, and a port that pauses its link when
  * its ingress buffers fill moves that queue into the device on the other end
  * instead: the client on an upload, the modem on a download. While anything on
@@ -2018,17 +2035,12 @@ void ppe_pause_update(struct qca_ppe_priv *priv)
 {
 	static DEFINE_MUTEX(lock);
 	bool shaped = false;
-	int port, i, bm;
+	int port, bm;
 
 	guard(mutex)(&lock);
 
-	for (port = 0; port < PPE_NUM_PORTS; port++) {
-		struct ppe_port_shaper *sh = &priv->shaper[port];
-
-		shaped |= !!sh->rate_bps;
-		for (i = 0; i < ARRAY_SIZE(sh->queue_rate); i++)
-			shaped |= !!sh->queue_rate[i];
-	}
+	for (port = 0; port < PPE_NUM_PORTS; port++)
+		shaped |= ppe_port_shaped(priv, port);
 
 	for (port = 1; port < PPE_NUM_PORTS; port++) {
 		bm = PPE_BM_PHY_START + port - 1;
