@@ -1,0 +1,59 @@
+#!/bin/sh
+#
+# Some boards' ath11k cards start only with their vendor's own build of the
+# firmware, which OpenWrt cannot ship. Each such board still carries it, in
+# the vendor system on its own flash. When the driver first asks for a file
+# that is missing, copy it from there, unmodified.
+
+[ -e /lib/firmware/$FIRMWARE ] && exit 0
+
+. /lib/functions.sh
+
+# vendor_firmware_extract PART VOLUME SRC FILE...: the FILEs, from the
+# directory SRC of the squashfs in UBI volume VOLUME of mtd partition PART,
+# into the directory of $FIRMWARE
+vendor_firmware_extract() {
+	local part=$1 volume=$2 src=$3 mtd ubi v vol node tmp f
+	shift 3
+
+	mtd=$(find_mtd_index "$part")
+	[ -n "$mtd" ] || return 1
+	ubi=$(ubiattach -m "$mtd" 2>/dev/null | \
+		sed -n 's/.*UBI device number \([0-9]*\).*/\1/p')
+	[ -n "$ubi" ] || return 1
+
+	for v in /sys/class/ubi/ubi${ubi}_*; do
+		[ "$(cat "$v/name" 2>/dev/null)" = "$volume" ] && vol=${v##*/}
+	done
+	if [ -n "$vol" ]; then
+		# the node's own hotplug event waits behind this one
+		node=/dev/$vol
+		[ -c "$node" ] || mknod "$node" c $(sed 's/:/ /' /sys/class/ubi/$vol/dev)
+		tmp=$(mktemp -d)
+		unsquashfs -n -d "$tmp" "$node" \
+			$(for f in "$@"; do echo "$src/$f"; done) > /dev/null 2>&1
+		mkdir -p "/lib/firmware/${FIRMWARE%/*}"
+		for f in "$@"; do
+			[ -s "$tmp/$src/$f" ] && cp "$tmp/$src/$f" "/lib/firmware/${FIRMWARE%/*}/$f"
+		done
+		rm -rf "$tmp"
+	fi
+	ubidetach -d "$ubi" > /dev/null 2>&1
+	[ -s "/lib/firmware/$FIRMWARE" ]
+}
+
+board=$(board_name)
+
+case "$FIRMWARE" in
+"ath11k/QCN9074/hw1.0/amss.bin"|\
+"ath11k/QCN9074/hw1.0/m3.bin")
+	case "$board" in
+	arista,c-360)
+		# Arista's build of WLAN.HK.2.5.r4, in its system in NAND slot 1
+		vendor_firmware_extract rootfs_1 ubi_rootfs \
+			lib/firmware/IPQ8074/WIFI_FW/qcn9000 amss.bin m3.bin ||
+			logger -t ath11k-vendor-firmware "no $FIRMWARE in the Arista system"
+		;;
+	esac
+	;;
+esac
