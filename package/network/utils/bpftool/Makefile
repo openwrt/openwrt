@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=bpftool
 PKG_VERSION:=7.8.0
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE_URL:=https://github.com/libbpf/bpftool
 PKG_MIRROR_HASH:=d588927f9cc86b579e182b7cdc2848512832017a76c6982eedb9ff7f58a813a3
@@ -42,7 +42,7 @@ define Package/bpftool-minimal
   TITLE+= (Minimal)
   VARIANT:=minimal
   DEFAULT_VARIANT:=1
-  PROVIDES:=bpftool
+  PROVIDES:=@bpftool
   ALTERNATIVES:=200:/usr/sbin/bpftool:/usr/libexec/bpftool-minimal
 endef
 
@@ -50,7 +50,7 @@ define Package/bpftool-full
   $(call Package/bpftool/Default)
   TITLE+= (Full)
   VARIANT:=full
-  PROVIDES:=bpftool
+  PROVIDES:=@bpftool
   ALTERNATIVES:=300:/usr/sbin/bpftool:/usr/libexec/bpftool-full
   DEPENDS+= +libbfd +libopcodes
 endef
