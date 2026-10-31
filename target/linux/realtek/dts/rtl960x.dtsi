@@ -287,6 +287,15 @@
 		reset-names = "p1-usb2phy";
 	};
 
+	xhci_usb2_phy: usb-phy@18000500 {
+		compatible = "realtek,rtl9607-xhci-usb2phy";
+		reg = <0x18000500 0x4>, <0x1806c280 0x4>;
+		#phy-cells = <0>;
+
+		resets = <&ip_en_rst 30>;
+		reset-names = "p0-usb2phy";
+	};
+
 	ochi: ohci@18020000 {
 		compatible = "generic-ohci";
 		reg = <0x18020000 0x200>;
