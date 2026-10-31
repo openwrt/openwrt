@@ -140,19 +140,51 @@ proto_map_setup() {
 	      json_add_string snat_ip $(eval "echo \$RULE_${k}_IPV4ADDR")
 	    json_close_object
 	  else
-	    for portset in $(eval "echo \$RULE_${k}_PORTSETS"); do
-              for proto in icmp tcp udp; do
-	        json_add_object ""
-	          json_add_string type nat
-	          json_add_string target SNAT
-	          json_add_string family inet
-	          json_add_string proto "$proto"
-                  json_add_boolean connlimit_ports 1
-                  json_add_string snat_ip $(eval "echo \$RULE_${k}_IPV4ADDR")
-                  json_add_string snat_port "$portset"
-	        json_close_object
-              done
-	    done
+	    local portsets="$(eval "echo \$RULE_${k}_PORTSETS")"
+
+	    if [ -x /sbin/fw4 ]; then
+	      local nftdir="/var/run/map-portsets"
+	      local nftfile="$nftdir/map-$cfg.nft"
+	      local ipv4addr="$(eval "echo \$RULE_${k}_IPV4ADDR")"
+	      local count=0
+	      local idx=0
+	      local left
+
+	      for portset in $portsets; do
+		count=$((count + 1))
+	      done
+
+	      mkdir -p "$nftdir"
+	      : > "$nftfile.tmp"
+
+	      for portset in $portsets; do
+		left=$((count - idx))
+		for proto in icmp tcp udp; do
+		  if [ "$left" -gt 1 ]; then
+		    echo "meta nfproto ipv4 oifname \"$link\" meta l4proto $proto numgen random mod $left == 0 counter snat ip to $ipv4addr:$portset" >> "$nftfile.tmp"
+		  else
+		    echo "meta nfproto ipv4 oifname \"$link\" meta l4proto $proto counter snat ip to $ipv4addr:$portset" >> "$nftfile.tmp"
+		  fi
+		done
+		idx=$((idx + 1))
+	      done
+
+	      mv "$nftfile.tmp" "$nftfile"
+	    else
+	      for portset in $portsets; do
+		for proto in icmp tcp udp; do
+		  json_add_object ""
+		    json_add_string type nat
+		    json_add_string target SNAT
+		    json_add_string family inet
+		    json_add_string proto "$proto"
+		    json_add_boolean connlimit_ports 1
+		    json_add_string snat_ip $(eval "echo \$RULE_${k}_IPV4ADDR")
+		    json_add_string snat_port "$portset"
+		  json_close_object
+		done
+	      done
+	    fi
 	  fi
 	  if [ "$maptype" = "map-t" ]; then
 		[ -z "$zone" ] && zone=$(fw3 -q network $iface 2>/dev/null)
@@ -214,6 +246,7 @@ proto_map_teardown() {
 	esac
 
 	rm -f /tmp/map-$cfg.rules
+	rm -f /var/run/map-portsets/map-$cfg.nft /var/run/map-portsets/map-$cfg.nft.tmp
 }
 
 proto_map_init_config() {
