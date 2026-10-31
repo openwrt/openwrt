@@ -1,0 +1,63 @@
+From 16f4ef535376ac0e0c1e9bef211139b29ed35ed9 Mon Sep 17 00:00:00 2001
+From: Sergei Mironov <serj.95reg@gmail.com>
+Date: Fri, 09 Oct 2026 02:53:33 +0300
+Subject: [PATCH] arm64: dts: mt7988a-bpi-r4: enable serial1 and serial2
+
+Enable the two auxiliary UARTs of the MT7988A SoC on the BananaPi
+BPi-R4. Both nodes are disabled in mt7988a.dtsi, so ttyS1 and ttyS2 are
+not available for peripherals connected to the 26-pin header (CON2).
+
+UART1 is on pins 11 and 13 (GPIO81/80). Its pads are already muxed to
+the UART function at boot, so it needs no pinctrl.
+
+UART2 shares the JTAG pads on pins 8 and 10 (GPIO59/58), with RTS/CTS
+on pins 16 and 18 (GPIO61/60). They are not muxed to UART by default,
+so select the uart2_3 pin group. The dedicated UART2 pads (GPIO0-3) are
+used by the SFP cage and the other groups overlap SPI and PCM.
+
+Add the serial1 and serial2 aliases as well, so the port numbering does
+not depend on probe order.
+
+Signed-off-by: Sergei Mironov <serj.95reg@gmail.com>
+--- a/arch/arm64/boot/dts/mediatek/mt7988a-bananapi-bpi-r4.dtsi
++++ b/arch/arm64/boot/dts/mediatek/mt7988a-bananapi-bpi-r4.dtsi
+@@ -87,6 +87,8 @@
+ 		ethernet1 = &gmac1;
+ 		ethernet2 = &gmac2;
+ 		serial0 = &serial0;
++		serial1 = &serial1;
++		serial2 = &serial2;
+ 		led-boot = &led_green;
+ 		led-failsafe = &led_green;
+ 		led-running = &led_green;
+@@ -611,6 +613,13 @@
+ 			groups = "spi0", "spi0_wp_hold";
+ 		};
+ 	};
++
++	uart2_pins: uart2-pins {
++		mux {
++			function = "uart";
++			groups = "uart2_3";
++		};
++	};
+ };
+ 
+ &pwm {
+@@ -621,6 +630,16 @@
+ 	status = "okay";
+ };
+ 
++&serial1 {
++	status = "okay";
++};
++
++&serial2 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&uart2_pins>;
++	status = "okay";
++};
++
+ &spi0 {
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&spi0_flash_pins>;
