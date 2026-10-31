@@ -68,7 +68,7 @@ define KernelPackage/backlight
 		CONFIG_BACKLIGHT_ADP8860=n \
 		CONFIG_BACKLIGHT_ADP8870=n
 	FILES:=$(LINUX_DIR)/drivers/video/backlight/backlight.ko
-	AUTOLOAD:=$(call AutoProbe,video backlight)
+	AUTOLOAD:=$(call AutoProbe,backlight)
 endef
 
 define KernelPackage/backlight/description
@@ -98,7 +98,7 @@ define KernelPackage/backlight-pwm
 	DEPENDS:=@PWM_SUPPORT +kmod-backlight
 	KCONFIG:=CONFIG_BACKLIGHT_PWM
 	FILES:=$(LINUX_DIR)/drivers/video/backlight/pwm_bl.ko
-	AUTOLOAD:=$(call AutoProbe,video pwm_bl,1)
+	AUTOLOAD:=$(call AutoProbe,pwm_bl,1)
 endef
 
 define KernelPackage/backlight-pwm/description
@@ -760,7 +760,7 @@ define KernelPackage/drm-imx
 	$(LINUX_DIR)/drivers/gpu/drm/imx/ipuv3/imxdrm.ko \
 	$(LINUX_DIR)/drivers/gpu/drm/drm_dma_helper.ko \
 	$(LINUX_DIR)/drivers/gpu/ipu-v3/imx-ipu-v3.ko
-  AUTOLOAD:=$(call AutoLoad,08,imxdrm imx-ipu-v3 imx-ipuv3-crtc)
+  AUTOLOAD:=$(call AutoLoad,08,imxdrm imx-ipu-v3)
 endef
 
 define KernelPackage/drm-imx/description
@@ -780,7 +780,7 @@ define KernelPackage/drm-imx-hdmi
 	$(LINUX_DIR)/drivers/gpu/drm/bridge/synopsys/dw-hdmi.ko \
 	$(LINUX_DIR)/drivers/gpu/drm/bridge/synopsys/dw-hdmi-ahb-audio.ko \
 	$(LINUX_DIR)/drivers/gpu/drm/imx/ipuv3/dw_hdmi-imx.ko
-  AUTOLOAD:=$(call AutoLoad,08,dw-hdmi dw-hdmi-ahb-audio.ko dw_hdmi-imx)
+  AUTOLOAD:=$(call AutoLoad,08,dw-hdmi dw-hdmi-ahb-audio dw_hdmi-imx)
 endef
 
 define KernelPackage/drm-imx-hdmi/description
@@ -837,7 +837,7 @@ define KernelPackage/drm-panel-backlight-quirks
   KCONFIG:=CONFIG_DRM_PANEL_BACKLIGHT_QUIRKS
   DEPENDS:=+kmod-backlight
   FILES:=$(LINUX_DIR)/drivers/gpu/drm/drm_panel_backlight_quirks.ko
-  AUTOLOAD:=$(call AutoProbe,panel-backlight-quirks)
+  AUTOLOAD:=$(call AutoProbe,drm_panel_backlight_quirks)
 endef
 
 define KernelPackage/drm-panel-backlight-quirks/description
