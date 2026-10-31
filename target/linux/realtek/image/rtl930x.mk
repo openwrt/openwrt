@@ -232,6 +232,27 @@ define Device/mokerlink_2g080gm
 endef
 TARGET_DEVICES += mokerlink_2g080gm
 
+define Device/mokerlink_poe-10g07110gsm
+  SOC := rtl9303
+  UIMAGE_MAGIC := 0x83800000
+  DEVICE_VENDOR := MokerLink
+  DEVICE_MODEL := POE-10G07110GSM
+  DEVICE_PACKAGES := \
+	kmod-hwmon-adt7475 \
+	kmod-pse-realtek-rtl8239 \
+	rtl826x-firmware
+  IMAGE_SIZE := 12288k
+  $(Device/kernel-lzma)
+  IMAGES += factory.bix
+  IMAGE/factory.bix := \
+	append-kernel | \
+	pad-to 64k | \
+	append-rootfs | \
+	pad-rootfs | \
+	check-size
+endef
+TARGET_DEVICES += mokerlink_poe-10g07110gsm
+
 define Device/nicgiga_s100-0800s-m
   SOC := rtl9303
   UIMAGE_MAGIC := 0x93030000

@@ -161,3 +161,29 @@ define KernelPackage/pse-hasivo-hs104/description
 endef
 
 $(eval $(call KernelPackage,pse-hasivo-hs104))
+
+define KernelPackage/pse-realtek-rtl8239
+  SUBMENU:=$(PSE_MENU)
+  TITLE:=Realtek RTL8239 PSE controller support
+  KCONFIG:=CONFIG_PSE_REALTEK_RTL8239
+  DEPENDS:=@TARGET_realtek +kmod-i2c-core
+  FILES:=$(LINUX_DIR)/drivers/net/pse-pd/realtek-rtl8239.ko
+  AUTOLOAD:=$(call AutoProbe,realtek-rtl8239)
+  $(call AddDepends/pse-pd)
+endef
+
+define KernelPackage/pse-realtek-rtl8239/description
+ Kernel module for Realtek RTL8239 PoE PSE controllers driven directly
+ over I2C, without a PSE microcontroller in front of them. The chip
+ firmware is not included; see the driver.
+endef
+
+# The firmware is copied in by the owner, so keep it across sysupgrade:
+# rtl8239-bt.bin, or rtl8239c-bt.bin on an RTL8239C
+define KernelPackage/pse-realtek-rtl8239/install
+	$(INSTALL_DIR) $(1)/lib/upgrade/keep.d
+	echo /lib/firmware/realtek/rtl8239-bt.bin > $(1)/lib/upgrade/keep.d/pse-realtek-rtl8239
+	echo /lib/firmware/realtek/rtl8239c-bt.bin >> $(1)/lib/upgrade/keep.d/pse-realtek-rtl8239
+endef
+
+$(eval $(call KernelPackage,pse-realtek-rtl8239))
