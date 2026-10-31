@@ -133,15 +133,9 @@
 	};
 };
 
-&mdio0 {
-	status = "okay";
-};
-
 &mdio1 {
 	status = "okay";
 
-	pinctrl-0 = <&mdio1_pins>, <&switch_reset_pins>;
-	pinctrl-names = "default";
 	reset-gpios = <&tlmm 26 GPIO_ACTIVE_LOW>;
 
 	/* RTL8367S switch (Realtek RTL8365MB-compatible) via MDIO */
@@ -269,22 +263,6 @@
 		function = "gpio";
 		drive-strength = <8>;
 		bias-pull-up;
-	};
-
-	mdio1_pins: mdio-state {
-		mdc-pins {
-			pins = "gpio36";
-			function = "mdc";
-			drive-strength = <8>;
-			bias-pull-up;
-		};
-
-		mdio-pins {
-			pins = "gpio37";
-			function = "mdio";
-			drive-strength = <8>;
-			bias-pull-up;
-		};
 	};
 
 	switch_reset_pins: switch-reset-state {

@@ -1,0 +1,55 @@
+From 20f3599d85b416fd292a199364cb1248dcd9c780 Mon Sep 17 00:00:00 2001
+From: Yongzhao Chen <yongzhao.derek@gmail.com>
+Date: Sun, 27 Sep 2026 17:51:36 +0200
+Subject: [PATCH] net: phy: qcom: at803x: Fix IPQ5018 short-cable DAC values
+
+When "qcom,dac-preset-short-cable" is set, ipq5018_config_init()
+programs the MDAC (MMD1 0x8100) and EDAC (debug 0x4380) fields. Both
+fields occupy bits 15:8 (IPQ5018_PHY_DAC_MASK), but the value 0x10 is
+passed unshifted as the set argument of phy_modify_mmd() and
+at803x_debug_reg_mask(). Neither helper shifts or masks that argument,
+so both fields are cleared to 0x00 instead of being set to 0x10, and
+bit 4 of the low byte, which is outside the field, is set.
+
+Use FIELD_PREP() to place the value in the field. This matches the
+vendor SDK, which clears bits 15:8 and ORs in the value shifted left
+by 8.
+
+On a Redmi AX5400 board, where the IPQ5018 internal PHY connects to a
+QCA8337 switch PHY without a cable, MDAC and EDAC read 0x6868 and
+0x7800 before the write. With this change they read back 0x1068 and
+0x1000, with the low byte preserved. Without it, the same writes would
+leave 0x0078 and 0x0010.
+
+No in-tree DTS sets this property yet, but it is documented in
+qca,ar803x.yaml and used by several IPQ5018 boards in OpenWrt.
+
+Fixes: d46502279a11 ("net: phy: qcom: at803x: Add Qualcomm IPQ5018 Internal PHY support")
+Signed-off-by: Yongzhao Chen <yongzhao.derek@gmail.com>
+Reviewed-by: Andrew Lunn <andrew@lunn.ch>
+Link: https://patch.msgid.link/20260927155136.2489-1-yongzhao.derek@gmail.com
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ drivers/net/phy/qcom/at803x.c | 8 ++++++--
+ 1 file changed, 6 insertions(+), 2 deletions(-)
+
+--- a/drivers/net/phy/qcom/at803x.c
++++ b/drivers/net/phy/qcom/at803x.c
+@@ -1065,11 +1065,15 @@ static int ipq5018_config_init(struct ph
+ 	if (priv->set_short_cable_dac) {
+ 		/* setting MDAC (Multi-level Digital-to-Analog Converter) in MMD1 */
+ 		phy_modify_mmd(phydev, MDIO_MMD_PMAPMD, IPQ5018_PHY_MMD1_MDAC,
+-			       IPQ5018_PHY_DAC_MASK, IPQ5018_PHY_MMD1_MDAC_VAL);
++			       IPQ5018_PHY_DAC_MASK,
++			       FIELD_PREP(IPQ5018_PHY_DAC_MASK,
++					  IPQ5018_PHY_MMD1_MDAC_VAL));
+ 
+ 		/* setting EDAC (Error-detection and Correction) in debug register */
+ 		at803x_debug_reg_mask(phydev, IPQ5018_PHY_DEBUG_EDAC,
+-				      IPQ5018_PHY_DAC_MASK, IPQ5018_PHY_DEBUG_EDAC_VAL);
++				      IPQ5018_PHY_DAC_MASK,
++				      FIELD_PREP(IPQ5018_PHY_DAC_MASK,
++						 IPQ5018_PHY_DEBUG_EDAC_VAL));
+ 	}
+ 
+ 	return 0;
