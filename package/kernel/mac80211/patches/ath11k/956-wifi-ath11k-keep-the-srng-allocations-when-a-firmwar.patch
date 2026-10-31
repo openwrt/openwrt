@@ -1,0 +1,102 @@
+From 6578c18959a193556fa08007defb5874a1acbc5f Mon Sep 17 00:00:00 2001
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Date: Mon, 24 Aug 2026 13:21:10 +0200
+Subject: [PATCH] wifi: ath11k: keep the srng allocations when a firmware
+ recovery fails
+
+Since commit 32be3ca4cf78 ("wifi: ath11k: HAL SRNG: don't deinitialize
+and re-initialize again") recovery zeroes the hal state instead of
+freeing and reallocating it, but a failed recovery still calls
+ath11k_hal_srng_deinit(). This frees the ring pointer buffers and the
+ring configuration, which only probe allocates, while the rings still
+point into them. Driver removal then walks the copy engine rings through
+the freed buffers:
+
+  ath11k c000000.wifi: failed to reconfigure driver on crash recovery
+  ...
+  Unable to handle kernel paging request at virtual address
+  ffffffc080ee5090
+  pc : ath11k_hal_srng_access_begin+0xc/0x60 [ath11k]
+  Call trace:
+   ath11k_hal_srng_access_begin+0xc/0x60 [ath11k] (P)
+   ath11k_ce_cleanup_pipes+0x16c/0x4cc [ath11k]
+   ath11k_ahb_stop+0x2c/0x3c [ath11k_ahb]
+   ath11k_core_deinit+0xec/0x168 [ath11k]
+   ath11k_ahb_remove+0x30/0x90 [ath11k_ahb]
+
+Return the error and keep the allocations for ath11k_ahb_remove() and
+ath11k_pci_remove() to free.
+
+A recovery that fails before ath11k_ce_init_pipes() rebuilds the rings
+leaves them as ath11k_hal_srng_clear() zeroed them, and the same walk
+then reads the NULL tail pointer in ath11k_ce_completed_send_next(), at
+removal or in the next recovery. Skip reaping a ring without a tail
+pointer, and test ATH11K_FLAG_CRASH_FLUSH in ath11k_ce_send() before it
+reaps, so that only the cleanup, which runs in the restart worker or
+after it is cancelled, reaches a cleared ring.
+
+Tested-on: IPQ8074 hw2.0 AHB WLAN.HK.2.9.0.1-02146-QCAHKSWPL_SILICONZ-1
+
+Fixes: 32be3ca4cf78 ("wifi: ath11k: HAL SRNG: don't deinitialize and re-initialize again")
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+---
+ drivers/net/wireless/ath/ath11k/ce.c   | 14 +++++++++++---
+ drivers/net/wireless/ath/ath11k/core.c |  6 +-----
+ 2 files changed, 12 insertions(+), 8 deletions(-)
+
+--- a/drivers/net/wireless/ath/ath11k/ce.c
++++ b/drivers/net/wireless/ath/ath11k/ce.c
+@@ -470,6 +470,14 @@ static struct sk_buff *ath11k_ce_complet
+ 
+ 	srng = &ab->hal.srng_list[pipe->src_ring->hal_ring_id];
+ 
++	/* A recovery that failed before ath11k_ce_init_pipes() leaves the
++	 * ring, lock included, as ath11k_hal_srng_clear() zeroed it.
++	 */
++	if (!srng->u.src_ring.tp_addr) {
++		spin_unlock_bh(&ab->ce.ce_lock);
++		return ERR_PTR(-EIO);
++	}
++
+ 	spin_lock_bh(&srng->lock);
+ 
+ 	ath11k_hal_srng_access_begin(ab, srng);
+@@ -718,6 +726,9 @@ int ath11k_ce_send(struct ath11k_base *a
+ 	u8 byte_swap_data = 0;
+ 	int num_used;
+ 
++	if (test_bit(ATH11K_FLAG_CRASH_FLUSH, &ab->dev_flags))
++		return -ESHUTDOWN;
++
+ 	/* Check if some entries could be regained by handling tx completion if
+ 	 * the CE has interrupts disabled and the used entries is more than the
+ 	 * defined usage threshold.
+@@ -740,9 +751,6 @@ int ath11k_ce_send(struct ath11k_base *a
+ 			ath11k_ce_poll_send_completed(ab, pipe->pipe_num);
+ 	}
+ 
+-	if (test_bit(ATH11K_FLAG_CRASH_FLUSH, &ab->dev_flags))
+-		return -ESHUTDOWN;
+-
+ 	spin_lock_bh(&ab->ce.ce_lock);
+ 
+ 	write_index = pipe->src_ring->write_index;
+--- a/drivers/net/wireless/ath/ath11k/core.c
++++ b/drivers/net/wireless/ath/ath11k/core.c
+@@ -2505,15 +2505,11 @@ static int ath11k_core_reconfigure_on_cr
+ 
+ 	ret = ath11k_core_qmi_firmware_ready(ab);
+ 	if (ret)
+-		goto err_hal_srng_deinit;
++		return ret;
+ 
+ 	clear_bit(ATH11K_FLAG_RECOVERY, &ab->dev_flags);
+ 
+ 	return 0;
+-
+-err_hal_srng_deinit:
+-	ath11k_hal_srng_deinit(ab);
+-	return ret;
+ }
+ 
+ void ath11k_core_halt(struct ath11k *ar)
