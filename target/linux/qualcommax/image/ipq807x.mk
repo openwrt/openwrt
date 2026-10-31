@@ -663,3 +663,23 @@ define Device/zyxel_nwa210ax
 	ZYXEL_MODEL_ID := 5c e1
 endef
 TARGET_DEVICES += zyxel_nwa210ax
+
+define Device/zyxel_wax510d
+	$(call Device/zyxel_nwax10ax_common)
+	DEVICE_MODEL := WAX510D
+	DEVICE_DTS_CONFIG := config@ac01
+	SOC := ipq8070
+	DEVICE_PACKAGES := ipq-wifi-zyxel_nwa110ax zyxel-bootconfig-ipq807x kmod-leds-lp5562
+	ZYXEL_MODEL_ID := 59 e1
+endef
+TARGET_DEVICES += zyxel_wax510d
+
+define Device/zyxel_wax610d
+	$(call Device/zyxel_nwax10ax_common)
+	DEVICE_MODEL := WAX610D
+	DEVICE_DTS_CONFIG := config@ac02
+	SOC := ipq8071
+	DEVICE_PACKAGES := ipq-wifi-zyxel_nwa210ax zyxel-bootconfig-ipq807x kmod-leds-lp5562
+	ZYXEL_MODEL_ID := 5c e1
+endef
+TARGET_DEVICES += zyxel_wax610d
