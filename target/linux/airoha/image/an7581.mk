@@ -200,7 +200,8 @@ define Device/skyworth_sk-g7220
 
   DEVICE_PACKAGES += kmod-usb-ohci kmod-usb2 kmod-usb3 \
                      hostapd-mbedtls wpad-mbedtls wpa-supplicant-mbedtls \
-                     kmod-mt7996e kmod-mt7996-firmware airoha-en7581-mt7996-npu-firmware
+                     kmod-mt7996e kmod-mt7992-firmware airoha-en7581-mt7996-npu-firmware \
+                     airoha-en8811h-firmware kmod-phy-airoha-en8811h
 endef
 TARGET_DEVICES += skyworth_sk-g7220
 

@@ -952,7 +952,13 @@
 		reg = <0x1fa02000 0xb00>,
 		      <0x1fa06000 0x400>;
 		reg-names = "wed", "wdma";
-		interrupts = <GIC_SPI 67 IRQ_TYPE_LEVEL_HIGH>;
+
+		interrupts = <GIC_SPI 67 IRQ_TYPE_LEVEL_HIGH>,
+		             <GIC_SPI 69 IRQ_TYPE_LEVEL_HIGH>,
+		             <GIC_SPI 70 IRQ_TYPE_LEVEL_HIGH>,
+		             <GIC_SPI 71 IRQ_TYPE_LEVEL_HIGH>;
+		interrupt-names = "wed", "wdma-port0",
+		                  "wdma-port1", "wdma-woe";
 	};
 
 	wed1: wed@1fa03000 {
@@ -960,7 +966,13 @@
 		reg = <0x1fa03000 0xb00>,
 		      <0x1fa06400 0x400>;
 		reg-names = "wed", "wdma";
-		interrupts = <GIC_SPI 68 IRQ_TYPE_LEVEL_HIGH>;
+
+		interrupts = <GIC_SPI 68 IRQ_TYPE_LEVEL_HIGH>,
+		             <GIC_SPI 72 IRQ_TYPE_LEVEL_HIGH>,
+		             <GIC_SPI 73 IRQ_TYPE_LEVEL_HIGH>,
+		             <GIC_SPI 74 IRQ_TYPE_LEVEL_HIGH>;
+		interrupt-names = "wed", "wdma-port0",
+		                  "wdma-port1", "wdma-woe";
 	};
 
 	eth: ethernet@1fb50000 {

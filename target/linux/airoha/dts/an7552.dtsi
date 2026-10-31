@@ -467,20 +467,20 @@
 		};
 	};
 
-	thermal: thermal-sensor@1efbd800 {
-		compatible = "airoha,en7552-thermal";
-		reg = <0x1efbd000 0x0fff>;
+	thermal: thermal-sensor@1efbd000 {
+		compatible = "airoha,an7552-thermal";
+		reg = <0x1efbd000 0x1000>;
 		interrupts = <GIC_SPI 23 IRQ_TYPE_LEVEL_HIGH>;
 		airoha,chip-scu = <&chip_scu>;
 
-		#thermal-sensor-cells = <1>;
+		#thermal-sensor-cells = <0>;
 	};
 
 	thermal-zones {
 		cpu_thermal: cpu-thermal {
 			polling-delay-passive = <200>;
 			polling-delay = <1000>;
-			thermal-sensors = <&thermal 0>;
+			thermal-sensors = <&thermal>;
 			trips {
 				cpu_passive: cpu-passive {
 					temperature = <105000>;
@@ -523,7 +523,13 @@
 		reg = <0x1fa02000 0xb00>,
 		      <0x1fa06000 0x400>;
 		reg-names = "wed", "wdma";
-		interrupts = <GIC_SPI 67 IRQ_TYPE_LEVEL_HIGH>;
+
+		interrupts = <GIC_SPI 67 IRQ_TYPE_LEVEL_HIGH>,
+		             <GIC_SPI 69 IRQ_TYPE_LEVEL_HIGH>,
+		             <GIC_SPI 70 IRQ_TYPE_LEVEL_HIGH>,
+		             <GIC_SPI 71 IRQ_TYPE_LEVEL_HIGH>;
+		interrupt-names = "wed", "wdma-port0",
+		                  "wdma-port1", "wdma-woe";
 	};
 
 	wed1: wed@1fa03000 {
@@ -531,7 +537,13 @@
 		reg = <0x1fa03000 0xb00>,
 		      <0x1fa06400 0x400>;
 		reg-names = "wed", "wdma";
-		interrupts = <GIC_SPI 68 IRQ_TYPE_LEVEL_HIGH>;
+
+		interrupts = <GIC_SPI 68 IRQ_TYPE_LEVEL_HIGH>,
+		             <GIC_SPI 72 IRQ_TYPE_LEVEL_HIGH>,
+		             <GIC_SPI 73 IRQ_TYPE_LEVEL_HIGH>,
+		             <GIC_SPI 74 IRQ_TYPE_LEVEL_HIGH>;
+		interrupt-names = "wed", "wdma-port0",
+		                  "wdma-port1", "wdma-woe";
 	};
 
 	ipsec: ipsec@1fbfa000 {
