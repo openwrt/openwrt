@@ -66,7 +66,7 @@ define Device/nokia_xg-040g-mf-ubi
   DEVICE_DTS := an7583-nokia_xg-040g-mf-ubi
   UBOOTENV_IN_UBI := 1
   KERNEL_IN_UBI := 1
-  KERNEL := kernel-bin | gzip
+  KERNEL := kernel-bin | libdeflate-gzip
   KERNEL_INITRAMFS := kernel-bin | lzma | \
 	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd | pad-to 128k
   KERNEL_INITRAMFS_SUFFIX := -recovery.itb
