@@ -186,6 +186,29 @@ define Device/hasivo_s600wp-5gt-2sx-se
 endef
 TARGET_DEVICES += hasivo_s600wp-5gt-2sx-se
 
+define Device/horaco_zx-sw82ts-l2p
+  SOC := rtl9302
+  UIMAGE_MAGIC := 0x93000000
+  HASIVO_MODEL := 9312
+  DEVICE_VENDOR := Horaco
+  DEVICE_MODEL := ZX-SW82TS-L2P
+  DEVICE_ALT0_VENDOR := Hasivo
+  DEVICE_ALT0_MODEL := S1300WP-8GT-2S+
+  DEVICE_PACKAGES := kmod-block2mtd kmod-hasivo-mcu-sensor kmod-hasivo-mcu-wdt \
+	kmod-loop kmod-mfd-hasivo-stc8 kmod-pse-hasivo-hs104 kmod-rtc-pcf8563 losetup
+  IMAGE_SIZE := 29696k
+  $(Device/kernel-lzma)
+  IMAGES += factory.tar.gz
+  IMAGE/factory.tar.gz := \
+	append-kernel | \
+	pad-to 64k | \
+	append-rootfs | \
+	pad-rootfs | \
+	check-size 7168k | \
+	hasivo-web-factory
+endef
+TARGET_DEVICES += horaco_zx-sw82ts-l2p
+
 define Device/horaco_zx-swtgw2c8f
   SOC := rtl9303
   UIMAGE_MAGIC := 0x83800000

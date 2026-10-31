@@ -68,6 +68,63 @@ realtek_get_mac_xml()
 	echo "$mac"
 }
 
+# Mount a JFFS2 filesystem inside an MTD partition (optionally at an offset)
+# via block2mtd and read a text MAC address file (used by OEM imi firmware).
+mtd_jffs2_get_mac_txt()
+{
+	local mtdname="$1"
+	local offset=$((${2:-0}))
+	local file="${3:-mac.txt}"
+	local erasesize="${4:-4096}"
+	local part
+	local loop_dev
+	local jffs2_part
+	local mnt_dir
+	local mac
+
+	part=$(find_mtd_part "$mtdname")
+	if [ -z "$part" ]; then
+		echo "mtd_jffs2_get_mac_txt: partition $mtdname not found!" >&2
+		return
+	fi
+
+	[ "$offset" -lt "$(mtd_get_part_size "$mtdname")" ] || return
+
+	[ -b "$part" ] || mknod "$part" b 31 "$(find_mtd_index "$mtdname")" 2>/dev/null
+	modprobe loop 2>/dev/null
+	modprobe block2mtd 2>/dev/null
+	[ -c /dev/loop-control ] || mknod /dev/loop-control c 10 237 2>/dev/null
+	[ -b /dev/loop0 ] || mknod /dev/loop0 b 7 0 2>/dev/null
+
+	loop_dev=$(losetup -f --show -o "$offset" "$part" 2>/dev/null)
+	[ -z "$loop_dev" ] && losetup -o "$offset" /dev/loop0 "$part" 2>/dev/null && loop_dev=/dev/loop0
+	[ -n "$loop_dev" ] || return
+
+	echo "${loop_dev},${erasesize}" > /sys/module/block2mtd/parameters/block2mtd 2>/dev/null
+	jffs2_part=$(find_mtd_part "block2mtd: $loop_dev")
+	if [ -n "$jffs2_part" ]; then
+		[ -b "$jffs2_part" ] || mknod "$jffs2_part" b 31 "$(find_mtd_index "block2mtd: $loop_dev")" 2>/dev/null
+		mnt_dir=$(mktemp -d 2>/dev/null || echo "/tmp/jffs2_mac_$$")
+		mkdir -p "$mnt_dir"
+		if mount -t jffs2 -o ro,noatime "$jffs2_part" "$mnt_dir" 2>/dev/null; then
+			if [ -f "$mnt_dir/$file" ]; then
+				mac=$(macaddr_canonicalize "$(head -n 1 "$mnt_dir/$file" | tr -d '\r\n')")
+			fi
+			umount "$mnt_dir" 2>/dev/null
+		fi
+		rmdir "$mnt_dir" 2>/dev/null
+	fi
+	rmmod block2mtd 2>/dev/null
+	losetup -d "$loop_dev" 2>/dev/null
+
+	case "$mac" in
+	""|00:00:00:00:00:00) return ;;
+	esac
+	[ $((0x${mac%%:*} & 1)) -eq 0 ] || return
+
+	echo "$mac"
+}
+
 realtek_setup_macs()
 {
 	local board="$1"
@@ -168,6 +225,20 @@ realtek_setup_macs()
 		for port in $lan_list wan; do
 			[ -n "$lan_mac" ] && ucidef_set_network_device_mac $port $lan_mac
 		done
+		;;
+	horaco,zx-sw82ts-l2p)
+		lan_mac=$(mtd_get_mac_ascii u-boot-env ethaddr)
+		mac_prefix=$(echo "$lan_mac" | cut -d: -f1-5)
+		if [ -z "$lan_mac" ] || [ "$mac_prefix" = "00:e0:4c:00:00" ]; then
+			lan_mac=$(mtd_jffs2_get_mac_txt firmware 0x700000 mac.txt)
+			mac_prefix=$(echo "$lan_mac" | cut -d: -f1-5)
+			if [ -n "$lan_mac" ] && [ "$mac_prefix" != "00:e0:4c:00:00" ]; then
+				fw_setenv ethaddr "$lan_mac"
+			fi
+		fi
+		[ -z "$lan_mac" ] || [ "$mac_prefix" = "00:e0:4c:00:00" ] && lan_mac=$(macaddr_random)
+		lan_mac_start=$lan_mac
+		eth0_mac=$lan_mac
 		;;
 	xikestor,sks8300-8x)
 		lan_mac=$(mtd_get_mac_binary board-info 0x1f1)
