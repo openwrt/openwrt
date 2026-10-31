@@ -1,0 +1,43 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jackie Han <jackie.han@gmail.com>
+Date: Thu, 22 Oct 2026 00:00:00 +0800
+Subject: [PATCH] Revert "firmware: qcom: scm: Disable SDI and write no dump to dump mode"
+
+Commit 79cb2cb8d89b ("firmware: qcom: scm: Disable SDI and write no dump
+to dump mode") made qcom_scm_probe() always call
+qcom_scm_set_download_mode() and call qcom_scm_disable_sdi() whenever
+download mode is disabled, regardless of the "qcom,sdi-enabled" DT
+property.
+
+On ipq40xx (legacy SMC convention) this makes warm resets unreliable:
+the board either crashes a few seconds after boot or hangs at
+"Starting kernel". Only set the download mode when it is requested and
+only disable SDI when the DT says it is enabled by default, as before
+79cb2cb8d89b.
+
+The reason why these calls break warm reset on ipq40xx is not known.
+This is an OpenWrt-local workaround for ipq40xx and not meant for
+mainline in this form.
+
+Fixes: 79cb2cb8d89b ("firmware: qcom: scm: Disable SDI and write no dump to dump mode")
+Link: https://github.com/openwrt/openwrt/issues/22807
+Signed-off-by: Jackie Han <jackie.han@gmail.com>
+---
+--- a/drivers/firmware/qcom/qcom_scm.c
++++ b/drivers/firmware/qcom/qcom_scm.c
+@@ -2559,12 +2559,13 @@ static int qcom_scm_probe(struct platfor
+ 	 * will cause the boot stages to enter download mode, unless
+ 	 * disabled below by a clean shutdown/reboot.
+ 	 */
+-	qcom_scm_set_download_mode(download_mode);
++	if (download_mode)
++		qcom_scm_set_download_mode(download_mode);
+ 
+ 	/*
+ 	 * Disable SDI if indicated by DT that it is enabled by default.
+ 	 */
+-	if (of_property_read_bool(pdev->dev.of_node, "qcom,sdi-enabled") || !download_mode)
++	if (of_property_read_bool(pdev->dev.of_node, "qcom,sdi-enabled"))
+ 		qcom_scm_disable_sdi();
+ 
+ 	/*
