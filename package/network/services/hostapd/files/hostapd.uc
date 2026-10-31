@@ -2269,6 +2269,17 @@ function dpp_channel_handle_request(channel, req)
 	}
 }
 
+// The links of an AP MLD share one name, one ubus object and one hook. A restart
+// of one link publishes no object event, so nothing registers the hook again.
+function dpp_name_held_elsewhere(phy, name)
+{
+	for (let other, bss_list in hostapd.bss)
+		if (other != phy && bss_list[name])
+			return true;
+
+	return false;
+}
+
 function dpp_channel_handle_disconnect(channel)
 {
 	for (let ifname, hook in hostapd.data.dpp_hooks) {
@@ -2705,7 +2716,8 @@ return {
 		bss_event("reload", name, { reconf: reconf != 0 });
 	},
 	bss_remove: function(phy, name, obj) {
-		delete hostapd.data.dpp_hooks[name];
+		if (!dpp_name_held_elsewhere(phy, name))
+			delete hostapd.data.dpp_hooks[name];
 		bss_event("remove", name);
 	},
 	bss_link_removed: function(phy, name, obj) {
