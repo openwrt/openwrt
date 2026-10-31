@@ -280,7 +280,7 @@
 	wifi@0,0 {
 		compatible = "qcom,ath10k";
 		reg = <0x00010000 0 0 0 0>;
-		qcom,ath10k-calibration-variant = "Nokia-AC400i";
+		qcom,calibration-variant = "Nokia-AC400i";
 		nvmem-cells = <&precal_art_1000>, <&macaddr_uboot_ethaddr 2>;
 		nvmem-cell-names = "pre-calibration", "mac-address";
 	};
@@ -294,7 +294,7 @@
 	wifi@0,0 {
 		compatible = "qcom,ath10k";
 		reg = <0x00010000 0 0 0 0>;
-		qcom,ath10k-calibration-variant = "Nokia-AC400i";
+		qcom,calibration-variant = "Nokia-AC400i";
 		nvmem-cells = <&precal_art_5000>, <&macaddr_uboot_ethaddr 3>;
 		nvmem-cell-names = "pre-calibration", "mac-address";
 	};
