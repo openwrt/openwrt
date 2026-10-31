@@ -73,7 +73,7 @@ Signed-off-by: Lukasz M <lukasz1992m+openwrt@gmail.com>
  			RXQ_CONFIG(MT_RXQ_MAIN, WFDMA0, MT_INT_WED_RX_DONE_BAND0_MT7916,
  				   MT7916_RXQ_BAND0);
  			RXQ_CONFIG(MT_RXQ_MCU_WA, WFDMA0, MT_INT_WED_RX_DONE_WA_MT7916,
-@@ -107,25 +125,37 @@ static void mt7915_dma_config(struct mt7
+@@ -107,25 +125,42 @@ static void mt7915_dma_config(struct mt7
  			if (mt76_npu_device_active(&dev->mt76)) {
  				RXQ_CONFIG(MT_RXQ_MAIN, WFDMA0, 0,
  					   MT7916_RXQ_BAND0);
@@ -90,14 +90,21 @@ Signed-off-by: Lukasz M <lukasz1992m+openwrt@gmail.com>
 +							 MT_INT_RX_DONE_WA_MAIN_MT7916,
  					   MT7916_RXQ_MCU_WA_MAIN);
  			} else {
- 				RXQ_CONFIG(MT_RXQ_MAIN, WFDMA0, MT_INT_RX_DONE_BAND0_MT7916,
+-				RXQ_CONFIG(MT_RXQ_MAIN, WFDMA0, MT_INT_RX_DONE_BAND0_MT7916,
++				RXQ_CONFIG(MT_RXQ_MAIN, WFDMA0,
++					   wed_tx_only ? MT_INT_WED_RX_DONE_BAND0_MT7916 :
++							 MT_INT_RX_DONE_BAND0_MT7916,
  					   MT7916_RXQ_BAND0);
 -				RXQ_CONFIG(MT_RXQ_MCU_WA, WFDMA0, MT_INT_RX_DONE_WA,
 +				RXQ_CONFIG(MT_RXQ_MCU_WA, WFDMA0,
 +					   wed_tx_only ? MT_INT_WED_RX_DONE_WA_MT7916 :
 +							 MT_INT_RX_DONE_WA,
  					   MT7916_RXQ_MCU_WA);
- 				RXQ_CONFIG(MT_RXQ_BAND1, WFDMA0, MT_INT_RX_DONE_BAND1_MT7916,
+-				RXQ_CONFIG(MT_RXQ_BAND1, WFDMA0, MT_INT_RX_DONE_BAND1_MT7916,
++				RXQ_CONFIG(MT_RXQ_BAND1, WFDMA0,
++					   (wed_tx_only && !dev->hif2) ?
++					   MT_INT_WED_RX_DONE_BAND1_MT7916 :
++					   MT_INT_RX_DONE_BAND1_MT7916,
  					   MT7916_RXQ_BAND1);
 -				RXQ_CONFIG(MT_RXQ_MAIN_WA, WFDMA0, MT_INT_RX_DONE_WA_MAIN_MT7916,
 +				RXQ_CONFIG(MT_RXQ_MAIN_WA, WFDMA0,
@@ -117,6 +124,31 @@ Signed-off-by: Lukasz M <lukasz1992m+openwrt@gmail.com>
  				   MT7915_TXQ_BAND1);
  		}
  	}
+@@ -431,9 +466,22 @@ void mt7915_dma_npu_fallback(struct mt79
+ 	if (dev->mt76.q_rx[MT_RXQ_BAND1].ndesc) {
+ 		mt76_queue_rx_reset(dev, MT_RXQ_BAND1);
+ 		mask |= MT_INT_RX(MT_RXQ_BAND1);
+ 	}
+-	if (mask)
+-		mt7915_irq_enable(dev, mask);
++	if (!mask)
++		return;
++
++	if (mtk_wed_device_active(&dev->mt76.mmio.wed)) {
++		u32 wed_irq_mask = dev->mt76.mmio.irqmask | mask |
++				   MT_INT_TX_DONE_BAND0 | MT_INT_TX_DONE_BAND1;
++
++		if (!is_mt798x(&dev->mt76))
++			mt76_wr(dev, MT_INT_WED_MASK_CSR, wed_irq_mask);
++		else
++			mt76_wr(dev, MT_INT_MASK_CSR, wed_irq_mask);
++		mtk_wed_device_start(&dev->mt76.mmio.wed, wed_irq_mask);
++	}
++
++	mt7915_irq_enable(dev, mask);
+ }
+ 
+ int mt7915_dma_init(struct mt7915_dev *dev, struct mt7915_phy *phy2)
 --- a/mt7915/mac.c
 +++ b/mt7915/mac.c
 @@ -839,7 +839,20 @@ u32 mt7915_wed_init_buf(void *ptr, dma_a
@@ -143,7 +175,38 @@ Signed-off-by: Lukasz M <lukasz1992m+openwrt@gmail.com>
  	struct mt76_dev *mdev = &dev->mt76;
 --- a/mt7915/main.c
 +++ b/mt7915/main.c
-@@ -1817,8 +1817,16 @@ mt7915_net_fill_forward_path(struct ieee
+@@ -816,6 +816,9 @@ __mt7915_drop_sta(void *ptr, u8 *mac, st
+ 		return;
+ 
+ 	msta = (struct mt7915_sta *)sta->drv_priv;
++	if (mtk_wed_device_active(&data->dev->mt76.mmio.wed))
++		mtk_wed_device_flow_flush(&data->dev->mt76.mmio.wed,
++					  msta->wcid.idx, NULL, NULL);
+ 	mt7915_mcu_add_sta(data->dev, vif, sta, CONN_STATE_DISCONNECT, false);
+ 	msta->wcid.tx_info &= ~MT_WCID_TX_INFO_SET;
+ 	msta->wcid.sta_disabled = 1;
+@@ -884,6 +887,9 @@ int mt7915_mac_sta_event(struct mt76_dev
+ 			mt7915_mac_twt_teardown_flow(dev, msta, i);
+ 		mutex_unlock(&dev->mt76.mutex);
+ 
++		if (mtk_wed_device_active(&mdev->mmio.wed))
++			mtk_wed_device_flow_flush(&mdev->mmio.wed,
++						  msta->wcid.idx, NULL, NULL);
+ 		mt7915_mcu_add_sta(dev, vif, sta, CONN_STATE_DISCONNECT, false);
+ 		msta->wcid.tx_info &= ~MT_WCID_TX_INFO_SET;
+ 		msta->wcid.sta_disabled = 1;
+@@ -900,6 +906,10 @@ void mt7915_mac_sta_remove(struct mt76_d
+ 	struct mt7915_dev *dev = container_of(mdev, struct mt7915_dev, mt76);
+ 	struct mt7915_sta *msta = (struct mt7915_sta *)sta->drv_priv;
+ 
++	if (mtk_wed_device_active(&mdev->mmio.wed))
++		mtk_wed_device_flow_flush(&mdev->mmio.wed, msta->wcid.idx,
++					  NULL, NULL);
++
+ 	mt7915_mac_wtbl_update(dev, msta->wcid.idx,
+ 			       MT_WTBL_UPDATE_ADM_COUNT_CLEAR);
+ 
+@@ -1817,8 +1827,16 @@ mt7915_net_fill_forward_path(struct ieee
  	path->mtk_wdma.wdma_idx = wed->wdma_idx;
  	path->mtk_wdma.bss = mvif->mt76.idx;
  	path->mtk_wdma.queue = phy->mt76->band_idx;

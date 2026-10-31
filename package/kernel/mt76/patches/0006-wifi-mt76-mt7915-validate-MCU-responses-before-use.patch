@@ -1,0 +1,28 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Lukasz M <lukasz1992m+openwrt@gmail.com>
+Date: Sat, 31 Oct 2026 12:00:00 +0100
+Subject: [PATCH] wifi: mt76: mt7915: check the length of a radar report
+
+mt7915_mcu_rx_radar_detected() reads rdd_idx, at offset 36, from an
+event whose length comes straight from the DMA descriptor.  Drop a
+report too short to hold it.
+
+The other checks of the original patch (response header, EFUSE_ACCESS
+length and valid flag, GET_MIB_INFO length, unwritten efuse blocks in
+mt7915_eeprom_load()) are in mt76 upstream as of 2026-10-28.
+
+Signed-off-by: Lukasz M <lukasz1992m+openwrt@gmail.com>
+---
+--- a/mt7915/mcu.c
++++ b/mt7915/mcu.c
+@@ -318,6 +318,10 @@ mt7915_mcu_rx_radar_detected(struct mt79
+ 	struct mt7915_mcu_rdd_report *r;
+ 	u32 sku;
+ 
++	/* only rdd_idx is read here; the pulse arrays are not used */
++	if (skb->len < offsetof(struct mt7915_mcu_rdd_report, rdd_idx) + 1)
++		return;
++
+ 	r = (struct mt7915_mcu_rdd_report *)skb->data;
+ 
+ 	switch (r->rdd_idx) {

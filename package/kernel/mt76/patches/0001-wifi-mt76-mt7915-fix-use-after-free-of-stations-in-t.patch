@@ -1,0 +1,86 @@
+From 402b3d50671569a07f914637a75def0c39922904 Mon Sep 17 00:00:00 2001
+From: Chad Monroe <chad@monroe.io>
+Date: Wed, 7 Oct 2026 10:39:43 -0400
+Subject: [PATCH] [PATCH 1/8] wifi: mt76: mt7915: fix use-after-free of stations in the
+
+ poll and RC paths
+
+The station poll and the rate control work each take a station off
+sta_poll_list under sta_poll_lock, drop the lock, and then keep using
+it. mt7915_mac_sta_remove() takes the same lock but does not wait for
+the poll to release the station, and mac80211 frees it right after the
+removal callback with no grace period, so rcu_read_lock() does not help.
+
+Hold sta_poll_lock across the per-station poll body and dev->mt76.mutex
+across the RC work, as mt7996 already does there. Station removal takes
+both, so every station stays valid until the driver is done with it.
+mt7915 is MMIO, so the register accesses under the spinlock do not
+sleep, and the mutex is taken first, matching every other path that
+needs both locks.
+
+Adapted from the cmonroe/feed-wifi-master series to a tree that does
+not yet carry 9008 and 9009.
+
+Signed-off-by: Lukasz M <lukasz1992m+openwrt@gmail.com>
+---
+ mt7915/mac.c | 19 +++++++++++++++++--
+ 1 file changed, 17 insertions(+), 2 deletions(-)
+
+--- a/mt7915/mac.c
++++ b/mt7915/mac.c
+@@ -123,8 +123,12 @@ static void mt7915_mac_sta_poll(struct m
+ 		msta = list_first_entry(&sta_poll_list,
+ 					struct mt7915_sta, wcid.poll_list);
+ 		list_del_init(&msta->wcid.poll_list);
+-		spin_unlock_bh(&dev->mt76.sta_poll_lock);
+ 
++		/* Keep sta_poll_lock while msta is in use: mt7915_mac_sta_remove()
++		 * takes it, and mac80211 frees the station right after that call,
++		 * without a grace period, so rcu_read_lock() does not help.
++		 * The lock is released again on every exit path below.
++		 */
+ 		idx = msta->wcid.idx;
+ 
+ 		/* refresh peer's airtime reporting */
+@@ -159,8 +163,10 @@ static void mt7915_mac_sta_poll(struct m
+ 			memset(msta->airtime_ac, 0, sizeof(msta->airtime_ac));
+ 		}
+ 
+-		if (!msta->wcid.sta)
++		if (!msta->wcid.sta) {
++			spin_unlock_bh(&dev->mt76.sta_poll_lock);
+ 			continue;
++		}
+ 
+ 		sta = container_of((void *)msta, struct ieee80211_sta,
+ 				   drv_priv);
+@@ -227,6 +233,8 @@ static void mt7915_mac_sta_poll(struct m
+ 			mt76_rx_signal(msta->vif->phy->mt76->antenna_mask, rssi);
+ 
+ 		ewma_avg_signal_add(&msta->avg_ack_signal, -msta->ack_signal);
++
++		spin_unlock_bh(&dev->mt76.sta_poll_lock);
+ 	}
+ 
+ 	rcu_read_unlock();
+@@ -1977,6 +1985,11 @@ void mt7915_mac_sta_rc_work(struct work_
+ 	u32 changed;
+ 	LIST_HEAD(list);
+ 
++	/* Station removal holds this mutex, so every station taken off the
++	 * list below stays valid while the MCU commands below sleep.
++	 */
++	mutex_lock(&dev->mt76.mutex);
++
+ 	spin_lock_bh(&dev->mt76.sta_poll_lock);
+ 	list_splice_init(&dev->sta_rc_list, &list);
+ 
+@@ -2002,6 +2015,8 @@ void mt7915_mac_sta_rc_work(struct work_
+ 	}
+ 
+ 	spin_unlock_bh(&dev->mt76.sta_poll_lock);
++
++	mutex_unlock(&dev->mt76.mutex);
+ }
+ 
+ void mt7915_mac_work(struct work_struct *work)
