@@ -1,0 +1,117 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: PTPT52.AI <ptpt52@gmail.com>
+Date: Sun, 20 Sep 2026 12:00:00 +0800
+Subject: [PATCH] clk: en7523: add AN7563 PCIe reset sequence
+
+AN7563 currently falls back to the EN7581 clock data.  The EN7581 PCIe
+clock operations only gate the reference clocks, but AN7563 requires the
+same external-device and host-controller reset sequence as EN7523 before
+the PCIe link can train.
+
+Add dedicated AN7563 clock data which retains the EN7581 clock and reset
+descriptions while using the vendor-documented PCIe reset sequence.  Keep
+the controller reset asserted for 600 ms as required by the AN7552/AN7563
+SDK before releasing PERST and waiting for the endpoint to become ready.
+
+[Vendor counterpart: mt7512_pcie_reset() in pcie-ecnt.c.  The 600 ms
+ wait comes after the host controller reset is released and before PERST
+ is released (airoha-collection host_7552/pcie-ecnt.c: mdelay(600)); the
+ older vendor_sdk copy waits 5 ms there.  The sequence is otherwise the
+ one en7523_pci_prepare() already implements.]
+
+Signed-off-by: PTPT52.AI <ptpt52@gmail.com>
+---
+--- a/Documentation/devicetree/bindings/clock/airoha,en7523-scu.yaml
++++ b/Documentation/devicetree/bindings/clock/airoha,en7523-scu.yaml
+@@ -28,10 +28,13 @@
+ 
+ properties:
+   compatible:
+-    items:
++    oneOf:
+       - enum:
+           - airoha,en7523-scu
+           - airoha,en7581-scu
++      - items:
++          - const: airoha,an7563-scu
++          - const: airoha,en7581-scu
+ 
+   reg:
+     items:
+@@ -67,7 +70,8 @@
+   - if:
+       properties:
+         compatible:
+-          const: airoha,en7581-scu
++          contains:
++            enum: [airoha,an7563-scu, airoha,en7581-scu]
+     then:
+       properties:
+         reg:
+--- a/drivers/clk/clk-en7523.c
++++ b/drivers/clk/clk-en7523.c
+@@ -658,7 +658,8 @@
+ 	return !!(val & REG_PCI_CONTROL_REFCLK_EN1);
+ }
+ 
+-static int en7523_pci_prepare(struct clk_hw *hw)
++static int en7523_pci_prepare_reset(struct clk_hw *hw,
++				    unsigned int reset_delay_ms)
+ {
+ 	struct en_clk_gate *cg = container_of(hw, struct en_clk_gate, hw);
+ 	struct regmap *map = cg->map;
+@@ -683,7 +684,10 @@
+ 	regmap_set_bits(map, REG_RESET_CONTROL1, mask);
+ 	msleep(100);
+ 	regmap_clear_bits(map, REG_RESET_CONTROL1, mask);
+-	usleep_range(5000, 10000);
++	if (reset_delay_ms)
++		msleep(reset_delay_ms);
++	else
++		usleep_range(5000, 10000);
+ 
+ 	/* Release device */
+ 	mask = REG_PCI_CONTROL_PERSTOUT1 | REG_PCI_CONTROL_PERSTOUT;
+@@ -695,6 +699,16 @@
+ 	return 0;
+ }
+ 
++static int en7523_pci_prepare(struct clk_hw *hw)
++{
++	return en7523_pci_prepare_reset(hw, 0);
++}
++
++static int an7563_pci_prepare(struct clk_hw *hw)
++{
++	return en7523_pci_prepare_reset(hw, 600);
++}
++
+ static void en7523_pci_unprepare(struct clk_hw *hw)
+ {
+ 	struct en_clk_gate *cg = container_of(hw, struct en_clk_gate, hw);
+@@ -1236,6 +1250,17 @@
+ 	.hw_init = en7523_clk_hw_init,
+ };
+ 
++static const struct en_clk_soc_data an7563_data = {
++	.base_clks = en7581_base_clks,
++	.num_clocks = ARRAY_SIZE(en7581_base_clks) + 1,
++	.pcie_ops = {
++		.is_enabled = en7523_pci_is_enabled,
++		.prepare = an7563_pci_prepare,
++		.unprepare = en7523_pci_unprepare,
++	},
++	.hw_init = en7581_clk_hw_init,
++};
++
+ static const struct en_clk_soc_data en7581_data = {
+ 	.base_clks = en7581_base_clks,
+ 	/* We increment num_clocks by 1 to account for additional PCIe clock */
+@@ -1262,6 +1287,7 @@
+ };
+ 
+ static const struct of_device_id of_match_clk_en7523[] = {
++	{ .compatible = "airoha,an7563-scu", .data = &an7563_data },
+ 	{ .compatible = "airoha,en7523-scu", .data = &en7523_data },
+ 	{ .compatible = "airoha,en7581-scu", .data = &en7581_data },
+ 	{ .compatible = "airoha,an7583-scu", .data = &an7583_data },

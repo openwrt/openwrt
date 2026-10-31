@@ -1,0 +1,183 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: PTPT52.AI <ptpt52@gmail.com>
+Date: Sun, 20 Sep 2026 12:10:00 +0800
+Subject: [PATCH] phy: airoha: add AN7563 PCIe PHY support
+
+The AN7563 PCIe PHY needs three analog settings before link training.
+Without them the PHY retains its reset defaults and both root ports remain
+in the Detect state with link status clear.
+
+Add a small generic-PHY provider which applies the values documented by
+the AN7552/AN7563 SDK when the PCIe host calls phy_init().
+
+[Checked against vendor drivers/pci/host_7552/pcie-ecnt-phy.c
+ pcie_initSequence(): the same three writes on both ports; its probe calls
+ nothing else (pcieClk_init() and pcie_PowerSaving() are commented out).]
+
+Signed-off-by: PTPT52.AI <ptpt52@gmail.com>
+---
+--- /dev/null
++++ b/Documentation/devicetree/bindings/phy/airoha,an7563-pcie-phy.yaml
+@@ -0,0 +1,46 @@
++# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
++%YAML 1.2
++---
++$id: http://devicetree.org/schemas/phy/airoha,an7563-pcie-phy.yaml#
++$schema: http://devicetree.org/meta-schemas/core.yaml#
++
++title: Airoha AN7563 PCI-Express PHY
++
++maintainers:
++  - Lorenzo Bianconi <lorenzo@kernel.org>
++
++description:
++  The AN7563 PCIe PHY provides the physical layer for one PCIe Gen2 root
++  port. Each root port has an independent register region and PHY instance.
++
++properties:
++  compatible:
++    const: airoha,an7563-pcie-phy
++
++  reg:
++    maxItems: 1
++
++  "#phy-cells":
++    const: 0
++
++required:
++  - compatible
++  - reg
++  - "#phy-cells"
++
++additionalProperties: false
++
++examples:
++  - |
++    soc {
++        #address-cells = <1>;
++        #size-cells = <1>;
++
++        pcie-phy@1fa93700 {
++            compatible = "airoha,an7563-pcie-phy";
++            reg = <0x1fa93700 0x568>;
++            #phy-cells = <0>;
++        };
++    };
++
++...
+--- a/drivers/phy/airoha/Kconfig
++++ b/drivers/phy/airoha/Kconfig
+@@ -12,6 +12,17 @@
+ 	  This driver create the basic PHY instance and provides initialize
+ 	  callback for PCIe GEN3 port.
+ 
++config PHY_AIROHA_AN7563_PCIE
++	tristate "Airoha AN7563 PCIe-PHY Driver"
++	depends on ARCH_AIROHA || COMPILE_TEST
++	depends on OF
++	select GENERIC_PHY
++	help
++	  Say Y here to add support for the PCIe PHY found in Airoha
++	  AN7563 and AN7552 SoCs. The driver applies the required analog
++	  settings before PCIe link training starts.
++	  The PHY is required for PCIe endpoint enumeration.
++
+ config PHY_AIROHA_AN7583_PCIE
+ 	tristate "Airoha AN7583 PCIe-PHY Driver"
+ 	depends on ARCH_AIROHA || COMPILE_TEST
+--- a/drivers/phy/airoha/Makefile
++++ b/drivers/phy/airoha/Makefile
+@@ -1,5 +1,6 @@
+ # SPDX-License-Identifier: GPL-2.0
+ 
++obj-$(CONFIG_PHY_AIROHA_AN7563_PCIE)	+= phy-an7563-pcie.o
+ obj-$(CONFIG_PHY_AIROHA_AN7583_PCIE)	+= phy-an7583-pcie.o
+ obj-$(CONFIG_PHY_AIROHA_PCIE)		+= phy-airoha-pcie.o
+ obj-$(CONFIG_PHY_AIROHA_USB)		+= phy-airoha-usb.o
+--- /dev/null
++++ b/drivers/phy/airoha/phy-an7563-pcie.c
+@@ -0,0 +1,84 @@
++// SPDX-License-Identifier: GPL-2.0-only
++/*
++ * Copyright (c) 2026 AIROHA Inc
++ * Author: PTPT52.AI <ptpt52@gmail.com>
++ */
++
++#include <linux/io.h>
++#include <linux/module.h>
++#include <linux/of.h>
++#include <linux/phy/phy.h>
++#include <linux/platform_device.h>
++
++#define AN7563_PCIE_PHY_RX_CDR		0x318
++#define AN7563_PCIE_PHY_RX_CDR_VAL	0x04100803
++#define AN7563_PCIE_PHY_PLL_CTRL		0x404
++#define AN7563_PCIE_PHY_PLL_CTRL_VAL	0x60080007
++#define AN7563_PCIE_PHY_CLK_CTRL		0x418
++#define AN7563_PCIE_PHY_CLK_CTRL_VAL	0x0c010000
++
++struct an7563_pcie_phy {
++	void __iomem *base;
++};
++
++static int an7563_pcie_phy_init(struct phy *phy)
++{
++	struct an7563_pcie_phy *pcie_phy = phy_get_drvdata(phy);
++
++	writel(AN7563_PCIE_PHY_CLK_CTRL_VAL,
++	       pcie_phy->base + AN7563_PCIE_PHY_CLK_CTRL);
++	writel(AN7563_PCIE_PHY_PLL_CTRL_VAL,
++	       pcie_phy->base + AN7563_PCIE_PHY_PLL_CTRL);
++	writel(AN7563_PCIE_PHY_RX_CDR_VAL,
++	       pcie_phy->base + AN7563_PCIE_PHY_RX_CDR);
++
++	return 0;
++}
++
++static const struct phy_ops an7563_pcie_phy_ops = {
++	.init = an7563_pcie_phy_init,
++	.owner = THIS_MODULE,
++};
++
++static int an7563_pcie_phy_probe(struct platform_device *pdev)
++{
++	struct device *dev = &pdev->dev;
++	struct an7563_pcie_phy *pcie_phy;
++	struct phy_provider *provider;
++	struct phy *phy;
++
++	pcie_phy = devm_kzalloc(dev, sizeof(*pcie_phy), GFP_KERNEL);
++	if (!pcie_phy)
++		return -ENOMEM;
++
++	pcie_phy->base = devm_platform_ioremap_resource(pdev, 0);
++	if (IS_ERR(pcie_phy->base))
++		return PTR_ERR(pcie_phy->base);
++
++	phy = devm_phy_create(dev, dev->of_node, &an7563_pcie_phy_ops);
++	if (IS_ERR(phy))
++		return dev_err_probe(dev, PTR_ERR(phy), "failed to create PHY\n");
++
++	phy_set_drvdata(phy, pcie_phy);
++	provider = devm_of_phy_provider_register(dev, of_phy_simple_xlate);
++
++	return PTR_ERR_OR_ZERO(provider);
++}
++
++static const struct of_device_id an7563_pcie_phy_of_match[] = {
++	{ .compatible = "airoha,an7563-pcie-phy" },
++	{ /* sentinel */ }
++};
++MODULE_DEVICE_TABLE(of, an7563_pcie_phy_of_match);
++
++static struct platform_driver an7563_pcie_phy_driver = {
++	.probe = an7563_pcie_phy_probe,
++	.driver = {
++		.name = "an7563-pcie-phy",
++		.of_match_table = an7563_pcie_phy_of_match,
++	},
++};
++module_platform_driver(an7563_pcie_phy_driver);
++
++MODULE_DESCRIPTION("Airoha AN7563 PCIe PHY driver");
++MODULE_LICENSE("GPL");
