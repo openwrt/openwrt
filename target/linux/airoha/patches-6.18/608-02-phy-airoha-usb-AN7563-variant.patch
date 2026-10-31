@@ -1,0 +1,296 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Lukasz M <lukasz1992@localhost>
+Date: Sat, 31 Oct 2026 12:00:00 +0100
+Subject: [PATCH] phy: airoha: add AN7563 USB PHY variant support
+
+AN7563/AN7552 has the EN7581 USB PHY register map, but the vendor SDK
+(drivers/usb_ext/mu3_phy/mtk-phy_7552.c, 7552.2.20240327, and
+mtk-phy_7552.h) programs it differently:
+
+- two USB2 ports, the second one 0x1000 above the first, each set up and
+  slew-rate calibrated with MONCLK_SEL = its port number;
+- USB20_DISCTH 9 (580 mV) instead of 0xa;
+- SSUSB_CDR_RST_RESERVE 0x08 instead of 0xe;
+- power up clears bits 31 and 29 of 0x80c only (mtk_usb_PowerUp), power
+  down sets them;
+- no SCU access: the USB3 PHY has a serdes of its own, so the EN7581
+  USB/PCIe serdes switch (SCU 0x9c bit 3) is not written and the USB3
+  instance needs no airoha,serdes-port.
+
+Add these as match data and an "airoha,an7563-usb-phy" compatible; the
+EN7581 data keeps the current values.
+
+Signed-off-by: Lukasz M <lukasz1992@localhost>
+---
+--- a/drivers/phy/airoha/phy-airoha-usb.c
++++ b/drivers/phy/airoha/phy-airoha-usb.c
+@@ -10,6 +10,7 @@
+ #include <linux/module.h>
+ #include <linux/mfd/syscon.h>
+ #include <linux/phy/phy.h>
++#include <linux/of.h>
+ #include <linux/platform_device.h>
+ #include <linux/regmap.h>
+ 
+@@ -136,10 +137,29 @@
+ 	AIROHA_PHY_USB_MAX,
+ };
+ 
++/*
++ * Per-SoC differences.  AN7563/AN7552 values: vendor SDK
++ * drivers/usb_ext/mu3_phy/mtk-phy_7552.c (driver 7552.2.20240327) and
++ * mtk-phy_7552.h: two USB2 ports, the second one 0x1000 above the first,
++ * calibrated with MONCLK_SEL = port number; DISCTH 9; U3 CDR_RST_RESERVE
++ * 0x08; the USB3 PHY has a serdes of its own (no SCU access in the vendor
++ * code); power up clears only bits 31 and 29 of 0x80c, power down sets them.
++ */
++struct airoha_usb_phy_soc_data {
++	unsigned int u2_ports;
++	u32 u2_discth;
++	u32 u3_cdr_reserve;
++	u32 u3_power_on_clear;
++	bool u3_own_serdes;
++};
++
++#define AIROHA_USB_PHY_U2_PORT_STRIDE		0x1000
++
+ struct airoha_usb_phy_priv {
+ 	struct device *dev;
+ 	struct regmap *regmap;
+ 	struct regmap *scu;
++	const struct airoha_usb_phy_soc_data *soc;
+ 
+ 	unsigned int monclk_sel;
+ 	unsigned int serdes_port;
+@@ -147,52 +167,53 @@
+ 	struct airoha_usb_phy_instance *phys[AIROHA_PHY_USB_MAX];
+ };
+ 
+-static void airoha_usb_phy_u2_slew_rate_calibration(struct airoha_usb_phy_priv *priv)
++static void airoha_usb_phy_u2_slew_rate_calibration(struct airoha_usb_phy_priv *priv,
++						      u32 off, u32 monclk)
+ {
+ 	u32 fm_out;
+ 	u32 srctrl;
+ 
+ 	/* Enable HS TX SR calibration */
+-	regmap_set_bits(priv->regmap, AIROHA_USB_PHY_USBPHYACR5,
++	regmap_set_bits(priv->regmap, off + AIROHA_USB_PHY_USBPHYACR5,
+ 			AIROHA_USB_PHY_USB20_HSTX_SRCAL_EN);
+ 
+ 	usleep_range(1000, 1500);
+ 
+ 	/* Enable Free run clock */
+-	regmap_set_bits(priv->regmap, AIROHA_USB_PHY_FMMONR1,
++	regmap_set_bits(priv->regmap, off + AIROHA_USB_PHY_FMMONR1,
+ 			AIROHA_USB_PHY_FRCK_EN);
+ 
+ 	/* Select Monitor Clock */
+-	regmap_update_bits(priv->regmap, AIROHA_USB_PHY_FMCR0,
++	regmap_update_bits(priv->regmap, off + AIROHA_USB_PHY_FMCR0,
+ 			   AIROHA_USB_PHY_MONCLK_SEL,
+ 			   FIELD_PREP(AIROHA_USB_PHY_MONCLK_SEL,
+-				      priv->monclk_sel));
++				      monclk));
+ 
+ 	/* Set cyclecnt */
+-	regmap_update_bits(priv->regmap, AIROHA_USB_PHY_FMCR0,
++	regmap_update_bits(priv->regmap, off + AIROHA_USB_PHY_FMCR0,
+ 			   AIROHA_USB_PHY_CYCLECNT,
+ 			   FIELD_PREP(AIROHA_USB_PHY_CYCLECNT,
+ 				      AIROHA_USB_PHY_U2_FM_DET_CYCLE_CNT));
+ 
+ 	/* Enable Frequency meter */
+-	regmap_set_bits(priv->regmap, AIROHA_USB_PHY_FMCR0,
++	regmap_set_bits(priv->regmap, off + AIROHA_USB_PHY_FMCR0,
+ 			AIROHA_USB_PHY_FREQDET_EN);
+ 
+ 	/* Timeout can happen and we will apply workaround at the end */
+-	regmap_read_poll_timeout(priv->regmap, AIROHA_USB_PHY_FMMONR0, fm_out,
++	regmap_read_poll_timeout(priv->regmap, off + AIROHA_USB_PHY_FMMONR0, fm_out,
+ 				 fm_out, AIROHA_USB_PHY_FREQDET_SLEEP,
+ 				 AIROHA_USB_PHY_FREQDET_TIMEOUT);
+ 
+ 	/* Disable Frequency meter */
+-	regmap_clear_bits(priv->regmap, AIROHA_USB_PHY_FMCR0,
++	regmap_clear_bits(priv->regmap, off + AIROHA_USB_PHY_FMCR0,
+ 			  AIROHA_USB_PHY_FREQDET_EN);
+ 
+ 	/* Disable Free run clock */
+-	regmap_clear_bits(priv->regmap, AIROHA_USB_PHY_FMMONR1,
++	regmap_clear_bits(priv->regmap, off + AIROHA_USB_PHY_FMMONR1,
+ 			  AIROHA_USB_PHY_FRCK_EN);
+ 
+ 	/* Disable HS TX SR calibration */
+-	regmap_clear_bits(priv->regmap, AIROHA_USB_PHY_USBPHYACR5,
++	regmap_clear_bits(priv->regmap, off + AIROHA_USB_PHY_USBPHYACR5,
+ 			  AIROHA_USB_PHY_USB20_HSTX_SRCAL_EN);
+ 
+ 	usleep_range(1000, 1500);
+@@ -209,40 +230,53 @@
+ 		dev_dbg(priv->dev, "SR calibration applied: %x\n", srctrl);
+ 	}
+ 
+-	regmap_update_bits(priv->regmap, AIROHA_USB_PHY_USBPHYACR5,
++	regmap_update_bits(priv->regmap, off + AIROHA_USB_PHY_USBPHYACR5,
+ 			   AIROHA_USB_PHY_USB20_HSTX_SRCTRL,
+ 			   FIELD_PREP(AIROHA_USB_PHY_USB20_HSTX_SRCTRL, srctrl));
+ }
+ 
+ static void airoha_usb_phy_u2_init(struct airoha_usb_phy_priv *priv)
+ {
+-	regmap_update_bits(priv->regmap, AIROHA_USB_PHY_USBPHYACR4,
+-			   AIROHA_USB_PHY_USB20_FS_CR,
+-			   AIROHA_USB_PHY_USB20_FS_CR_MIN);
+-
+-	regmap_update_bits(priv->regmap, AIROHA_USB_PHY_USBPHYACR4,
+-			   AIROHA_USB_PHY_USB20_FS_SR,
+-			   AIROHA_USB_PHY_USB20_FS_SR_NORMAL);
+-
+-	/* FIXME: evaluate if needed */
+-	regmap_update_bits(priv->regmap, AIROHA_USB_PHY_USBPHYACR6,
+-			   AIROHA_USB_PHY_USB20_SQTH,
+-			   AIROHA_USB_PHY_USB20_SQTH_130);
+-
+-	regmap_update_bits(priv->regmap, AIROHA_USB_PHY_USBPHYACR6,
+-			   AIROHA_USB_PHY_USB20_DISCTH,
+-			   AIROHA_USB_PHY_USB20_DISCTH_600);
++	unsigned int port;
+ 
+-	/* Enable the USB port and then disable after calibration */
+-	regmap_clear_bits(priv->regmap, AIROHA_USB_PHY_USBPHYACR6,
+-			  AIROHA_USB_PHY_USB20_BC11_SW_EN);
++	for (port = 0; port < priv->soc->u2_ports; port++) {
++		u32 off = port * AIROHA_USB_PHY_U2_PORT_STRIDE;
+ 
+-	airoha_usb_phy_u2_slew_rate_calibration(priv);
++		regmap_update_bits(priv->regmap, off + AIROHA_USB_PHY_USBPHYACR4,
++				   AIROHA_USB_PHY_USB20_FS_CR,
++				   AIROHA_USB_PHY_USB20_FS_CR_MIN);
++
++		regmap_update_bits(priv->regmap, off + AIROHA_USB_PHY_USBPHYACR4,
++				   AIROHA_USB_PHY_USB20_FS_SR,
++				   AIROHA_USB_PHY_USB20_FS_SR_NORMAL);
++
++		/* FIXME: evaluate if needed */
++		regmap_update_bits(priv->regmap, off + AIROHA_USB_PHY_USBPHYACR6,
++				   AIROHA_USB_PHY_USB20_SQTH,
++				   AIROHA_USB_PHY_USB20_SQTH_130);
++
++		regmap_update_bits(priv->regmap, off + AIROHA_USB_PHY_USBPHYACR6,
++				   AIROHA_USB_PHY_USB20_DISCTH,
++				   priv->soc->u2_discth);
++
++		/* Enable the USB port and then disable after calibration */
++		regmap_clear_bits(priv->regmap, off + AIROHA_USB_PHY_USBPHYACR6,
++				  AIROHA_USB_PHY_USB20_BC11_SW_EN);
++
++		airoha_usb_phy_u2_slew_rate_calibration(priv, off,
++							priv->monclk_sel + port);
++
++		/*
++		 * The first port is switched by power_on/off; a further port
++		 * has no phy of its own and stays enabled, as in the vendor
++		 * driver.
++		 */
++		if (!port)
++			regmap_set_bits(priv->regmap, AIROHA_USB_PHY_USBPHYACR6,
++					AIROHA_USB_PHY_USB20_BC11_SW_EN);
+ 
+-	regmap_set_bits(priv->regmap, AIROHA_USB_PHY_USBPHYACR6,
+-			AIROHA_USB_PHY_USB20_BC11_SW_EN);
+-
+-	usleep_range(1000, 1500);
++		usleep_range(1000, 1500);
++	}
+ }
+ 
+ /*
+@@ -257,7 +291,8 @@
+ 
+ 	regmap_update_bits(priv->regmap, AIROHA_USB_PHY_U3_PHYA_REG6,
+ 			   AIROHA_USB_PHY_SSUSB_CDR_RESERVE,
+-			   FIELD_PREP(AIROHA_USB_PHY_SSUSB_CDR_RESERVE, 0xe));
++			   FIELD_PREP(AIROHA_USB_PHY_SSUSB_CDR_RESERVE,
++				      priv->soc->u3_cdr_reserve));
+ 
+ 	regmap_update_bits(priv->regmap, AIROHA_USB_PHY_U3_PHYA_REG0,
+ 			   AIROHA_USB_PHY_SSUSB_BG_DIV,
+@@ -306,10 +341,7 @@
+ static int airoha_usb_phy_u3_power_on(struct airoha_usb_phy_priv *priv)
+ {
+ 	regmap_clear_bits(priv->regmap, AIROHA_USB_PHY_GPIO_CTLD,
+-			  AIROHA_USB_PHY_SSUSB_IP_SW_RST |
+-			  AIROHA_USB_PHY_MCU_BUS_CK_GATE_EN |
+-			  AIROHA_USB_PHY_FORCE_SSUSB_IP_SW_RST |
+-			  AIROHA_USB_PHY_SSUSB_SW_RST);
++			  priv->soc->u3_power_on_clear);
+ 
+ 	usleep_range(1000, 1500);
+ 
+@@ -418,6 +450,10 @@
+ {
+ 	u32 sel;
+ 
++	/* the USB3 PHY has its own serdes, nothing to switch */
++	if (priv->soc->u3_own_serdes)
++		return mode == PHY_MODE_PCIE ? -EINVAL : 0;
++
+ 	/* Only USB2 supports PCIe mode */
+ 	if (mode == PHY_MODE_PCIE &&
+ 	    priv->serdes_port != AIROHA_SCU_SERDES_USB2)
+@@ -510,13 +546,14 @@
+ 		return -ENOMEM;
+ 
+ 	priv->dev = dev;
++	priv->soc = of_device_get_match_data(dev);
+ 
+ 	ret = of_property_read_u32(dev->of_node, "airoha,usb2-monitor-clk-sel",
+ 				   &priv->monclk_sel);
+ 	if (ret)
+ 		return dev_err_probe(dev, ret, "Monitor clock selection is mandatory for USB PHY calibration.\n");
+ 
+-	if (priv->monclk_sel > 3)
++	if (priv->monclk_sel + priv->soc->u2_ports - 1 > 3)
+ 		return dev_err_probe(dev, -EINVAL, "only 4 Monitor clock are selectable on the SoC.\n");
+ 
+ 	base = devm_platform_ioremap_resource(pdev, 0);
+@@ -543,7 +580,7 @@
+ 		}
+ 
+ 		/* Skip registering USB3 instance if not supported */
+-		if (phy_type == PHY_TYPE_USB3) {
++		if (phy_type == PHY_TYPE_USB3 && !priv->soc->u3_own_serdes) {
+ 			ret = of_property_read_u32(dev->of_node, "airoha,serdes-port",
+ 						   &priv->serdes_port);
+ 			if (ret)
+@@ -575,8 +612,28 @@
+ 	return PTR_ERR_OR_ZERO(phy_provider);
+ }
+ 
++static const struct airoha_usb_phy_soc_data an7581_usb_phy_data = {
++	.u2_ports = 1,
++	.u2_discth = AIROHA_USB_PHY_USB20_DISCTH_600,
++	.u3_cdr_reserve = 0xe,
++	.u3_power_on_clear = AIROHA_USB_PHY_SSUSB_IP_SW_RST |
++			     AIROHA_USB_PHY_MCU_BUS_CK_GATE_EN |
++			     AIROHA_USB_PHY_FORCE_SSUSB_IP_SW_RST |
++			     AIROHA_USB_PHY_SSUSB_SW_RST,
++};
++
++static const struct airoha_usb_phy_soc_data an7563_usb_phy_data = {
++	.u2_ports = 2,
++	.u2_discth = AIROHA_USB_PHY_USB20_DISCTH_580,
++	.u3_cdr_reserve = 0x08,
++	.u3_power_on_clear = AIROHA_USB_PHY_SSUSB_IP_SW_RST |
++			     AIROHA_USB_PHY_FORCE_SSUSB_IP_SW_RST,
++	.u3_own_serdes = true,
++};
++
+ static const struct of_device_id airoha_phy_id_table[] = {
+-	{ .compatible = "airoha,an7581-usb-phy" },
++	{ .compatible = "airoha,an7581-usb-phy", .data = &an7581_usb_phy_data },
++	{ .compatible = "airoha,an7563-usb-phy", .data = &an7563_usb_phy_data },
+ 	{ },
+ };
+ MODULE_DEVICE_TABLE(of, airoha_phy_id_table);
