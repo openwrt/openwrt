@@ -1,0 +1,51 @@
+From d6573869e524dc81c3054293c8361ac1b25e6cc4 Mon Sep 17 00:00:00 2001
+From: Anders Kaseorg <andersk@mit.edu>
+Date: Sat, 10 Oct 2026 01:23:20 +0000
+Subject: 88W8964: don't claim mgmt frame CCMP header and MIC are stripped
+
+When the 88W8964 firmware passes up a protected management frame, it
+has decrypted the frame in place but left the 8-byte CCMP header and
+the 8-byte MIC around the body. For example, a 4-byte BSS Transition
+Management Query arrived as a 44-byte frame:
+
+  24-byte header | 01 00 00 20 00 00 00 00 | 0a 06 05 06 | 8-byte MIC
+
+The driver nevertheless reports RX_FLAG_IV_STRIPPED and
+RX_FLAG_MMIC_STRIPPED, so mac80211 skips its own CCMP processing and
+parses the CCMP header as the start of the frame body. Every protected
+management frame from a station is misread this way: the query above
+was seen as category 1 (QoS) action 0, block ack action frames were not
+recognized, and protected deauthentication and disassociation frames
+were parsed with a bogus reason code.
+
+For management frames, report only RX_FLAG_DECRYPTED, so that mac80211
+removes the CCMP header and MIC itself (and checks the PN against
+replays).
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Signed-off-by: Anders Kaseorg <andersk@mit.edu>
+---
+ hif/pcie/8964/rx_ndp.c | 9 ++++++++-
+ 1 file changed, 8 insertions(+), 1 deletion(-)
+
+--- a/hif/pcie/8964/rx_ndp.c
++++ b/hif/pcie/8964/rx_ndp.c
+@@ -369,10 +369,17 @@ static inline void pcie_rx_process_slow_
+ 			    is_multicast_ether_addr(wh->addr1) ||
+ 			    (ieee80211_is_mgmt(wh->frame_control) &&
+ 			    !is_multicast_ether_addr(wh->addr1))) {
+-				if (!ieee80211_is_auth(wh->frame_control))
++				if (!ieee80211_is_mgmt(wh->frame_control))
+ 					status->flag |= RX_FLAG_IV_STRIPPED |
+ 							RX_FLAG_DECRYPTED |
+ 							RX_FLAG_MMIC_STRIPPED;
++				else if (!ieee80211_is_auth(wh->frame_control))
++					/* The firmware decrypts protected
++					 * management frames in place, but
++					 * leaves the CCMP header and MIC for
++					 * mac80211 to remove.
++					 */
++					status->flag |= RX_FLAG_DECRYPTED;
+ 			}
+ 		}
+ 
