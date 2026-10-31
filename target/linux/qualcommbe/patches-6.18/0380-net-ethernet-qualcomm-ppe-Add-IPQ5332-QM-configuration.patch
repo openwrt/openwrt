@@ -1,0 +1,63 @@
+From 64ef11329f4940e497f57fdce30bd8c379cd9126 Mon Sep 17 00:00:00 2001
+From: Til Kaiser <mail@tk154.de>
+Date: Wed, 30 Sep 2026 21:39:53 +0200
+Subject: [PATCH] net: ethernet: qualcomm: ppe: Add IPQ5332 QM configuration
+
+IPQ5332 uses a smaller QM buffer pool than IPQ9574. Assign 500 buffers
+to group0 and configure unicast and multicast queue ceilings of 300 and
+50 buffers, respectively, with a resume offset of 18.
+
+The values come from QSDK 14.0.1595.1665 qca-ssdk revision
+48484d531927b070b996685f1570aff3bccb9c32, src/init/ssdk_hppe.c and
+src/adpt/hppe/adpt_hppe_qm.c. Select them using the PPE type dispatch.
+
+Signed-off-by: Til Kaiser <mail@tk154.de>
+
+--- a/drivers/net/ethernet/qualcomm/ppe/ppe_config.c
++++ b/drivers/net/ethernet/qualcomm/ppe/ppe_config.c
+@@ -376,6 +376,33 @@ static const struct ppe_qm_queue_config
+ 	},
+ };
+ 
++/* IPQ5332 QM group0 buffer limit. */
++static const int ipq5332_ppe_qm_group_config = 500;
++
++/* IPQ5332 unicast and multicast queue thresholds. */
++static const struct ppe_qm_queue_config ipq5332_ppe_qm_queue_config[] = {
++	{
++		/* QM settings for unicast queues 0 to 255. */
++		.queue_start	= 0,
++		.queue_end	= 255,
++		.prealloc_buf	= 0,
++		.ceil		= 300,
++		.weight		= 7,
++		.resume_offset	= 18,
++		.dynamic	= true,
++	},
++	{
++		/* QM settings for multicast queues 256 to 299. */
++		.queue_start	= 256,
++		.queue_end	= 299,
++		.prealloc_buf	= 0,
++		.ceil		= 50,
++		.weight		= 0,
++		.resume_offset	= 18,
++		.dynamic	= false,
++	},
++};
++
+ /* PPE scheduler configuration for BM includes multiple entries. Each entry
+  * indicates the primary port to be assigned the buffers for the ingress or
+  * to release the buffers for the egress. Backup port ID will be used when
+@@ -2012,6 +2039,11 @@ static int ppe_config_qm(struct ppe_devi
+ 		queue_cfg = ipq5424_ppe_qm_queue_config;
+ 		queue_cfg_count = ARRAY_SIZE(ipq5424_ppe_qm_queue_config);
+ 		break;
++	case IPQ5332_PPE:
++		group_buffer_cfg = ipq5332_ppe_qm_group_config;
++		queue_cfg = ipq5332_ppe_qm_queue_config;
++		queue_cfg_count = ARRAY_SIZE(ipq5332_ppe_qm_queue_config);
++		break;
+ 	default:
+ 		dev_err(ppe_dev->dev, "Invalid PPE type %d\n", ppe_dev->type);
+ 		return -EINVAL;
