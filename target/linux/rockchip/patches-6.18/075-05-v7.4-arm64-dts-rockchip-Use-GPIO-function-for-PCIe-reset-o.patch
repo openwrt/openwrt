@@ -1,0 +1,64 @@
+From e95e4fcdc4541e999888f297174e8f6f5f5f899a Mon Sep 17 00:00:00 2001
+From: Dennis Gilmore <dennis@ausil.us>
+Date: Thu, 1 Oct 2026 21:57:46 -0500
+Subject: [PATCH] arm64: dts: rockchip: Use GPIO function for PCIe reset on
+ Orange Pi 5 Pro
+
+The PERST# pins of pcie2x1l1 and pcie2x1l2 are used as reset-gpios,
+but the default pinctrl state muxes them to the controllers' dedicated
+PERST# function instead of GPIO.
+
+Linux happens to work because the pin is switched to GPIO function
+when it is requested as a GPIO, but the devicetree should describe the
+pin function the board actually uses. Bootloaders such as U-Boot apply
+the pinctrl state as described and do not change the function when the
+GPIO is requested, and probing pcie2x1l2 then hangs.
+
+Add GPIO pinctrl nodes for both reset pins and use them in place of
+the PERST# function, like other RK3588 boards do.
+
+Fixes: f47af8ebbe53 ("arm64: dts: rockchip: Add Orange Pi 5 Pro board support")
+Signed-off-by: Dennis Gilmore <dennis@ausil.us>
+Link: https://patch.msgid.link/20261002025746.3284691-1-dennis@ausil.us
+Signed-off-by: Heiko Stuebner <heiko@sntech.de>
+---
+ .../boot/dts/rockchip/rk3588s-orangepi-5-pro.dts   | 14 ++++++++++++--
+ 1 file changed, 12 insertions(+), 2 deletions(-)
+
+--- a/arch/arm64/boot/dts/rockchip/rk3588s-orangepi-5-pro.dts
++++ b/arch/arm64/boot/dts/rockchip/rk3588s-orangepi-5-pro.dts
+@@ -188,7 +188,7 @@
+ /* NVMe */
+ &pcie2x1l1 {
+ 	pinctrl-names = "default";
+-	pinctrl-0 = <&pcie30x1m1_1_perstn>, <&pcie30x1m1_1_clkreqn>,
++	pinctrl-0 = <&pcie2_1_rst>, <&pcie30x1m1_1_clkreqn>,
+ 		    <&pcie30x1m1_1_waken>;
+ 	reset-gpios = <&gpio4 RK_PA2 GPIO_ACTIVE_HIGH>;
+ 	supports-clkreq;
+@@ -199,7 +199,7 @@
+ /* NIC */
+ &pcie2x1l2 {
+ 	pinctrl-names = "default";
+-	pinctrl-0 = <&pcie20x1m0_perstn>, <&pcie20x1m0_clkreqn>,
++	pinctrl-0 = <&pcie2_2_rst>, <&pcie20x1m0_clkreqn>,
+ 		    <&pcie20x1m0_waken>;
+ 	reset-gpios = <&gpio3 RK_PD1 GPIO_ACTIVE_HIGH>;
+ 	vpcie3v3-supply = <&vcc3v3_eth>;
+@@ -223,6 +223,16 @@
+ 		};
+ 	};
+ 
++	pcie {
++		pcie2_1_rst: pcie2-1-rst {
++			rockchip,pins = <4 RK_PA2 RK_FUNC_GPIO &pcfg_pull_none>;
++		};
++
++		pcie2_2_rst: pcie2-2-rst {
++			rockchip,pins = <3 RK_PD1 RK_FUNC_GPIO &pcfg_pull_none>;
++		};
++	};
++
+ 	usb {
+ 		vcc5v0_otg_en: vcc5v0-otg-en {
+ 			rockchip,pins = <0 RK_PC4 RK_FUNC_GPIO &pcfg_pull_down>;
