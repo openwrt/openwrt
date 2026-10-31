@@ -1,0 +1,109 @@
+From 7086a93f043a79d9d31109f3566085e2fc7feb9f Mon Sep 17 00:00:00 2001
+From: George Moussalem <george.moussalem@outlook.com>
+Date: Thu, 17 Sep 2026 17:51:16 +0400
+Subject: [PATCH ath-next 08/16] wifi: ath11k: Power up userPD
+MIME-Version: 1.0
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+Message-Id: <20260917-ipq5018-qcn6122-mpd-v1-8-ca1168c321a2@outlook.com>
+
+Set the spawn bit to instruct Q6 to spawn the userPD thread.
+Wait for userPD to spawn which is indicated by spawn interrupt. The
+ready interrupt is triggered once the userPD is powered up completely.
+
+Signed-off-by: George Moussalem <george.moussalem@outlook.com>
+---
+ drivers/net/wireless/ath/ath11k/ahb.c | 56 +++++++++++++++++++++++++++++++++++
+ drivers/net/wireless/ath/ath11k/ahb.h |  7 +++++
+ 2 files changed, 63 insertions(+)
+
+--- a/drivers/net/wireless/ath/ath11k/ahb.c
++++ b/drivers/net/wireless/ath/ath11k/ahb.c
+@@ -11,6 +11,7 @@
+ #include <linux/of.h>
+ #include <linux/of_reserved_mem.h>
+ #include <linux/dma-mapping.h>
++#include <linux/firmware/qcom/qcom_scm.h>
+ #include <linux/iommu.h>
+ #include "ahb.h"
+ #include "debug.h"
+@@ -431,8 +432,63 @@ static void ath11k_ahb_stop(struct ath11
+ 	ath11k_ce_cleanup_pipes(ab);
+ }
+ 
++static int ath11k_ahb_boot_user_pd(struct ath11k_base *ab)
++{
++	struct ath11k_ahb *ab_ahb = ath11k_ahb_priv(ab);
++	unsigned long time_left;
++	int ret;
++
++	if (ab->hw_rev == ATH11K_HW_IPQ5018_HW10) {
++		ret = qcom_scm_pas_set_wifi_power_mode(MPD_WCNSS_PAS_ID, true);
++		if (ret) {
++			ath11k_err(ab, "failed to power up wifi: %d\n", ret);
++			return ret;
++		}
++	}
++
++	ret = qcom_smem_state_update_bits(ab_ahb->spawn_state, BIT(ab_ahb->spawn_bit),
++					  BIT(ab_ahb->spawn_bit));
++	if (ret) {
++		ath11k_err(ab, "Failed to update spawn state %d\n", ret);
++		return ret;
++	}
++
++	time_left = wait_for_completion_timeout(&ab_ahb->userpd_spawned,
++						ATH11K_USERPD_SPAWN_TIMEOUT);
++	if (!time_left) {
++		ath11k_err(ab, "UserPD spawn wait timed out\n");
++		return -ETIMEDOUT;
++	}
++
++	time_left = wait_for_completion_timeout(&ab_ahb->userpd_ready,
++						ATH11K_USERPD_READY_TIMEOUT);
++	if (!time_left) {
++		ath11k_err(ab, "UserPD ready wait timed out\n");
++		return -ETIMEDOUT;
++	}
++
++	qcom_smem_state_update_bits(ab_ahb->spawn_state, BIT(ab_ahb->spawn_bit), 0);
++
++	ath11k_dbg(ab, ATH11K_DBG_AHB, "UserPD%d is now UP\n", ab_ahb->userpd_id);
++
++	return 0;
++}
++
+ static int ath11k_ahb_power_up(struct ath11k_base *ab)
+ {
++	struct ath11k_ahb *ab_ahb = ath11k_ahb_priv(ab);
++	int ret;
++
++	if (ab_ahb->userpd_id > 0 &&
++	    ab_ahb->userpd_id < ATH11K_AHB_USERPD_ID_MAX) {
++		ret = ath11k_ahb_boot_user_pd(ab);
++		if (ret) {
++			ath11k_err(ab, "failed to boot userPD%d: %d\n",
++				   ab_ahb->userpd_id, ret);
++			return ret;
++		}
++	}
++
+ 	return 0;
+ }
+ 
+--- a/drivers/net/wireless/ath/ath11k/ahb.h
++++ b/drivers/net/wireless/ath/ath11k/ahb.h
+@@ -19,6 +19,13 @@
+ #define ATH11K_ROOTPD_READY_TIMEOUT		(5 * HZ)
+ #define ATH11K_RPROC_AFTER_POWERUP		QCOM_SSR_AFTER_POWERUP
+ 
++#define ATH11K_USERPD_SPAWN_TIMEOUT		(5 * HZ)
++#define ATH11K_USERPD_READY_TIMEOUT		(10 * HZ)
++#define ATH11K_USERPD_STOP_TIMEOUT		(5 * HZ)
++#define ATH11K_USERPD_FW_NAME_LEN		35
++
++#define MPD_WCNSS_PAS_ID			0xD
++
+ enum ath11k_ahb_userpd_id {
+ 	ATH11K_AHB_USERPD_ID_1 = 1,
+ 	ATH11K_AHB_USERPD_ID_MAX,
