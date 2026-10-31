@@ -22,6 +22,9 @@ ubootenv_add_nor_default() {
 }
 
 case "$board" in
+*aap4221zy*)
+	ubootenv_add_mtd "u-boot-env" "0x0" "0x20000" "0x40000" "1"
+	;;
 abt,asr3000|\
 acer,predator-w6x-ubootmod|\
 asus,rt-ax59u-ubi|\
