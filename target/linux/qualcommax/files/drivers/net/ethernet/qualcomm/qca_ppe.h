@@ -138,6 +138,7 @@
 #define   PPE_XGMAC_CRC_STRIP_TYPE	BIT(2) /* Called CST */
 #define   PPE_XGMAC_GMII_MPLS_LAYER_CK	BIT(6) /* Called GMPSLCE */
 #define   PPE_XGMAC_WATCHDOG_DISABLE	BIT(7) /* Called WD */
+#define   PPE_XGMAC_LOOPBACK		BIT(10) /* Called LM */
 
 #define PPE_XGMAC_PACKET_FILTER(xgmac)	(PPE_MAC_XGMAC_CSR_BASE + (xgmac) * 0x4000 + 0x8)
 #define   PPE_XGMAC_PROMISCUOUS		BIT(0) /* Called PR */
@@ -262,6 +263,7 @@
 #define   PPE_PORT_BRIDGE_CTRL_TXMAC_EN	BIT(16)
 
 #define PPE_MC_MTU_CTRL(port)		(PPE_L2_BASE + 0xa00 + (port) * 0x4)
+#define   PPE_MC_MTU_CTRL_MTU		GENMASK(13, 0)
 #define   PPE_MC_MTU_CTRL_TX_CNT_EN	BIT(16)
 
 #define PPE_RFDB_TBL(idx)		(PPE_L2_BASE + 0x1000 + (idx) * 0x8)
@@ -276,7 +278,9 @@
 #define   PPE_VSI_TBL_NEW_ADDR_LRN_EN	BIT(0)
 #define   PPE_VSI_TBL_STA_MOVE_LRN_EN	BIT(3)
 
-#define PPE_MRU_MTU_CTRL(port)		(PPE_L2_BASE + 0x3000 + (port) * 0x10)
+#define PPE_MRU_MTU_CTRL(port, stride)	(PPE_L2_BASE + 0x3000 + (port) * (stride))
+#define   PPE_MRU_MTU_CTRL_MRU		GENMASK(13, 0)
+#define   PPE_MRU_MTU_CTRL_MTU		GENMASK(29, 16)
 #define   PPE_MRU_MTU_CTRL_RX_CNT_EN	BIT(0)
 #define   PPE_MRU_MTU_CTRL_TX_CNT_EN	BIT(1)
 
@@ -419,8 +423,7 @@
 #define PPE_VSI_MAX			32
 #define PPE_VSI_INVALID			U32_MAX
 #define PPE_DEFAULT_MTU			1514
-#define PPE_MTU_SHIFT			16
-#define PPE_MAX_FRAME_SIZE		0x3000
+#define PPE_MAX_FRAME_SIZE		12288
 #define PPE_AGE_UNIT_MS			8000
 
 #define PPE_FDB_TBL_NUM			2048
@@ -468,6 +471,7 @@ struct ppe_data {
 	enum ppe_type type;
 	u8 num_ports;
 	u8 num_gmacs;
+	u8 mru_mtu_ctrl_stride;
 	u8 loopback_port;
 	u8 bm_phy_end;
 	u8 bm_internal_start;

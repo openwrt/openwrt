@@ -35,7 +35,7 @@
  		select SYS_SUPPORTS_HIGHMEM
 --- a/drivers/pci/controller/pcie-mediatek.c
 +++ b/drivers/pci/controller/pcie-mediatek.c
-@@ -77,6 +77,7 @@
+@@ -78,6 +78,7 @@
  
  #define PCIE_CONF_VEND_ID	0x100
  #define PCIE_CONF_DEVICE_ID	0x102
@@ -43,7 +43,7 @@
  #define PCIE_CONF_CLASS_ID	0x106
  
  #define PCIE_INT_MASK		0x420
-@@ -89,6 +90,11 @@
+@@ -90,6 +91,11 @@
  #define MSI_MASK		BIT(23)
  #define MTK_MSI_IRQS_NUM	32
  
@@ -55,7 +55,7 @@
  #define PCIE_AHB_TRANS_BASE0_L	0x438
  #define PCIE_AHB_TRANS_BASE0_H	0x43c
  #define AHB2PCIE_SIZE(x)	((x) & GENMASK(4, 0))
-@@ -750,6 +756,86 @@ static int mtk_pcie_startup_port_v2(stru
+@@ -753,6 +759,86 @@ static int mtk_pcie_startup_port_v2(stru
  	return 0;
  }
  
@@ -142,7 +142,7 @@
  static void __iomem *mtk_pcie_map_bus(struct pci_bus *bus,
  				      unsigned int devfn, int where)
  {
-@@ -1120,6 +1206,20 @@ static int mtk_pcie_probe(struct platfor
+@@ -1131,6 +1217,20 @@ static int mtk_pcie_probe(struct platfor
  	if (err)
  		goto put_resources;
  
@@ -163,7 +163,7 @@
  	return 0;
  
  put_resources:
-@@ -1233,12 +1333,19 @@ static const struct mtk_pcie_soc mtk_pci
+@@ -1244,12 +1344,19 @@ static const struct mtk_pcie_soc mtk_pci
  	.setup_irq = mtk_pcie_setup_irq,
  };
  

@@ -297,7 +297,7 @@
 					#address-cells = <1>;
 					#size-cells = <1>;
 
-					aqr_fw: firmware@0 {
+					aqr_fw: firmware@28 {
 						/* Skip the QCOM MBN Header of 40 bytes */
 						reg = <0x28 0x60002>;
 					};
@@ -472,6 +472,7 @@
 			label = "wan";
 			phy-handle = <&aqr114c>;
 			phy-mode = "usxgmii";
+			managed = "in-band-status";
 			pcs-handle = <&uniphy2 0>;
 			nvmem-cells = <&hw_mac_addr 0>;
 			nvmem-cell-names = "mac-address";

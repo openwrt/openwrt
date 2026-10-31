@@ -96,7 +96,7 @@ Signed-off-by: Maíra Canal <mcanal@igalia.com>
 -void v3d_submit_init(struct drm_device *dev);
 --- a/drivers/gpu/drm/v3d/v3d_gem.c
 +++ b/drivers/gpu/drm/v3d/v3d_gem.c
-@@ -299,8 +299,6 @@ v3d_gem_init(struct drm_device *dev)
+@@ -311,8 +311,6 @@ v3d_gem_init(struct drm_device *dev)
  	if (ret)
  		return ret;
  
@@ -215,7 +215,7 @@ Signed-off-by: Maíra Canal <mcanal@igalia.com>
  
  	kref_init(&job->refcount);
  
-@@ -1402,7 +1339,7 @@ v3d_submit_cpu_ioctl(struct drm_device *
+@@ -1404,7 +1341,7 @@ v3d_submit_cpu_ioctl(struct drm_device *
  	trace_v3d_submit_cpu_ioctl(&v3d->drm, cpu_job->job_type);
  
  	ret = v3d_job_init(v3d, file_priv, &cpu_job->base,
@@ -224,7 +224,7 @@ Signed-off-by: Maíra Canal <mcanal@igalia.com>
  	if (ret) {
  		v3d_job_deallocate((void *)&cpu_job);
  		goto fail;
-@@ -1488,14 +1425,3 @@ fail:
+@@ -1490,14 +1427,3 @@ fail:
  
  	return ret;
  }

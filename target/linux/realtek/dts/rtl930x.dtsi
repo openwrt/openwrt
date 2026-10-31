@@ -8,7 +8,7 @@
 	#address-cells = <1>;
 	#size-cells = <1>;
 
-	compatible = "realtek,rtl838x-soc";
+	compatible = "realtek,rtl930x-soc";
 
 	cpus {
 		#address-cells = <1>;
@@ -244,13 +244,15 @@
 		};
 
 		mdio_serdes: mdio-serdes {
-			compatible = "realtek,rtl9301-serdes-mdio", "realtek,otto-serdes-mdio";
+			compatible = "realtek,rtl9301-serdes-mdio";
 		};
 
 		pcs {
 			compatible = "realtek,rtl9301-pcs", "realtek,otto-pcs";
 			#address-cells = <1>;
 			#size-cells = <0>;
+
+			mdio-parent-bus = <&mdio_serdes>;
 
 			serdes0: serdes@0 {
 				reg = <0>;

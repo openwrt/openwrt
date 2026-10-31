@@ -470,7 +470,7 @@ uc_hostapd_iface_add_bss(uc_vm_t *vm, size_t nargs)
 
 	if (iface->state == HAPD_IFACE_ENABLED) {
 		hapd->conf->start_disabled = 0;
-		if (hostapd_setup_bss(hapd, -1, true))
+		if (hostapd_setup_bss(hapd, false, true))
 			goto deinit_ctrl;
 	}
 

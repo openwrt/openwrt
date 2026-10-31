@@ -118,7 +118,7 @@ export function parse_encryption(config, dev_config, phy_features) {
 
 	if (!config.wpa)
 		config.wpa_pairwise ??= null;
-	else if (config.hw_mode == 'ad')
+	else if (dev_config.band == '60g')
 		config.wpa_pairwise ??= 'GCMP';
 	else if (config.gcmp256 && phy_features?.cipher_gcmp256)
 		config.wpa_pairwise ??= 'GCMP-256 CCMP';

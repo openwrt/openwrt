@@ -3,7 +3,6 @@ RAMFS_COPY_BIN='fitblk fit_check_sign'
 
 platform_do_upgrade() {
 	local board=$(board_name)
-	local file_type=$(identify $1)
 
 	case "$board" in
 	bananapi,bpi-r64|\

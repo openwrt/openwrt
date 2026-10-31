@@ -1,0 +1,45 @@
+// SPDX-License-Identifier: (GPL-2.0 OR MIT)
+/*
+ * Copyright (C) 2026 SmartRG Inc.
+ * Author: Chad Monroe <chad.monroe@smartrg.com>
+ *
+ * Holtek MCU system LED controller on i2c1.
+ */
+
+/ {
+	aliases {
+		led-boot = &led_sys_green;
+		led-failsafe = &led_sys_blue;
+		led-running = &led_sys_white;
+		led-upgrade = &led_sys_red;
+	};
+};
+
+&i2c1 {
+	system-leds@30 {
+		compatible = "srg,sysled";
+		reg = <0x30>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		led_sys_red: led@1 {
+			label = "red";
+			reg = <1>;
+		};
+
+		led_sys_green: led@2 {
+			label = "green";
+			reg = <2>;
+		};
+
+		led_sys_blue: led@3 {
+			label = "blue";
+			reg = <3>;
+		};
+
+		led_sys_white: led@4 {
+			label = "white";
+			reg = <4>;
+		};
+	};
+};

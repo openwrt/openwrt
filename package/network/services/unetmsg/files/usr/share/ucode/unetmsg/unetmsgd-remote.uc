@@ -301,7 +301,8 @@ function network_open_channel(net, name, peer)
 		return;
 
 	core.dbg(`Try to connect to ${name}\n`);
-	sock.setopt(socket.SOL_TCP, socket.TCP_USER_TIMEOUT, TCP_TIMEOUT);
+	if (!sock.setopt(socket.IPPROTO_TCP, socket.TCP_USER_TIMEOUT, TCP_TIMEOUT))
+		warn(`Failed to set TCP user timeout on channel socket: ${socket.error()}\n`);
 	sock.connect(addr);
 	let auth_data_cb = (msg) => {
 		if (!network_auth_valid(sock_data.name, sock_data.id, msg.token))
@@ -425,7 +426,8 @@ function network_open(name, info)
 	net.rx_channels = {};
 	net.tx_channels = {};
 
-	net.socket.setopt(socket.SOL_TCP, socket.TCP_USER_TIMEOUT, TCP_TIMEOUT);
+	if (!net.socket.setopt(socket.IPPROTO_TCP, socket.TCP_USER_TIMEOUT, TCP_TIMEOUT))
+		warn(`Failed to set TCP user timeout on listen socket: ${socket.error()}\n`);
 
 	let cb = () => {
 		let addr = {};

@@ -34,12 +34,12 @@ define Device/Default
 	KERNEL_DEPENDS = $$(wildcard $(DTS_DIR)/$$(DEVICE_DTS).dts)
 	KERNEL_LOADADDR := 0x8000
 	IMAGES := sdcard.img.gz
-	IMAGE/sdcard.img.gz := zynq-sdcard | gzip
+	IMAGE/sdcard.img.gz := zynq-sdcard | libdeflate-gzip
 endef
 
 define Device/FitImageGzip
 	KERNEL_SUFFIX := -fit-uImage.itb
-	KERNEL = kernel-bin | gzip | fit gzip $$(DTS_DIR)/$$(DEVICE_DTS).dtb
+	KERNEL = kernel-bin | libdeflate-gzip | fit gzip $$(DTS_DIR)/$$(DEVICE_DTS).dtb
 	KERNEL_NAME := Image
 endef
 

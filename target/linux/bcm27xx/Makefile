@@ -24,8 +24,6 @@ include $(INCLUDE_DIR)/target.mk
 DEFAULT_PACKAGES := $(filter-out urngd,$(DEFAULT_PACKAGES))
 DEFAULT_PACKAGES += \
 	$(if $(CONFIG_TARGET_bcm27xx_bcm2712),,bcm27xx-gpu-fw) bcm27xx-utils \
-	kmod-usb-hid \
-	kmod-sound-core kmod-sound-arm-bcm2835 \
 	kmod-fs-vfat kmod-nls-cp437 kmod-nls-iso8859-1 \
 	partx-utils mkf2fs e2fsprogs
 

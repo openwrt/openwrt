@@ -730,6 +730,7 @@
 			label = "10g-copper";
 			phy-handle = <&aqr113c>;
 			phy-mode = "usxgmii";
+			managed = "in-band-status";
 			pcs-handle = <&uniphy2 0>;
 			nvmem-cells = <&macaddr_ubootenv_ethaddr>;
 			nvmem-cell-names = "mac-address";

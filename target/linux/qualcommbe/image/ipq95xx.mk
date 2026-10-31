@@ -29,3 +29,54 @@ define Device/qcom_rdp433
 	IMAGE/sysupgrade.bin := append-kernel | pad-to 64k | append-rootfs | pad-rootfs | check-size | append-metadata
 endef
 TARGET_DEVICES += qcom_rdp433
+
+define Device/jiorouter_ax6000-jidu6j11
+	$(call Device/FitImage)
+	$(call Device/UbiFit)
+	DEVICE_VENDOR := JioRouter
+	DEVICE_MODEL := AX6000
+	SOC := ipq9554
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	DEVICE_PACKAGES := kmod-ath11k-ahb kmod-ath11k kmod-ath11k-pci \
+		ath11k-firmware-ipq9574 ath11k-firmware-qcn9074 \
+		ipq-wifi-jiorouter_ax6000-jidu6j11 \
+		uboot-envtools kmod-leds-gpio kmod-gpio-button-hotplug \
+		kmod-qcom-ppe kmod-usb3 kmod-usb-dwc3 kmod-usb-dwc3-qcom \
+		kmod-ledtrig-netdev
+endef
+
+define Device/jiorouter_ax6000-jidu6j11-6111
+	$(call Device/jiorouter_ax6000-jidu6j11)
+	DEVICE_VARIANT := JIDU6J11-6111
+	DEVICE_DTS := ipq9554-jiorouter-ax6000-jidu6j11-6111
+endef
+TARGET_DEVICES += jiorouter_ax6000-jidu6j11-6111
+
+define Device/jiorouter_ax6000-jidu6j11-6411
+	$(call Device/jiorouter_ax6000-jidu6j11)
+	DEVICE_VARIANT := JIDU6J11-6411
+	DEVICE_DTS := ipq9554-jiorouter-ax6000-jidu6j11-6411
+endef
+TARGET_DEVICES += jiorouter_ax6000-jidu6j11-6411
+
+define Device/jiorouter_ax6000-jidu6j11-6611
+	$(call Device/jiorouter_ax6000-jidu6j11)
+	DEVICE_VARIANT := JIDU6J11-6611
+	DEVICE_DTS := ipq9554-jiorouter-ax6000-jidu6j11-6611
+endef
+TARGET_DEVICES += jiorouter_ax6000-jidu6j11-6611
+
+define Device/jiorouter_ax6000-jidu6j11-6811
+	$(call Device/jiorouter_ax6000-jidu6j11)
+	DEVICE_VARIANT := JIDU6J11-6811
+	DEVICE_DTS := ipq9554-jiorouter-ax6000-jidu6j11-6811
+endef
+TARGET_DEVICES += jiorouter_ax6000-jidu6j11-6811
+
+define Device/jiorouter_ax6000-jidu6j11-6911
+	$(call Device/jiorouter_ax6000-jidu6j11)
+	DEVICE_VARIANT := JIDU6J11-6911
+	DEVICE_DTS := ipq9554-jiorouter-ax6000-jidu6j11-6911
+endef
+TARGET_DEVICES += jiorouter_ax6000-jidu6j11-6911

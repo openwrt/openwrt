@@ -15,7 +15,7 @@ define Device/aerohive_hiveap-330
   DEVICE_MODEL := HiveAP-330
   DEVICE_ALT0_VENDOR := Aerohive
   DEVICE_ALT0_MODEL := HiveAP-350
-  DEVICE_PACKAGES := kmod-tpm-i2c-atmel kmod-hwmon-lm70
+  DEVICE_PACKAGES := kmod-tpm-i2c-atmel kmod-hwmon-lm70 kmod-phy-at803x
   BLOCKSIZE := 128k
   KERNEL := kernel-bin | uImage none
   KERNEL_INITRAMFS := kernel-bin | uImage none
@@ -66,6 +66,7 @@ TARGET_DEVICES += aerohive_hiveap-330
 define Device/enterasys_ws-ap3710i
   DEVICE_VENDOR := Enterasys
   DEVICE_MODEL := WS-AP3710i
+  DEVICE_PACKAGES := kmod-phy-at803x
   BLOCKSIZE := 128k
   KERNEL_NAME := simpleImage.ws-ap3710i
   KERNEL_ENTRY := 0x3000000
@@ -80,7 +81,7 @@ TARGET_DEVICES += enterasys_ws-ap3710i
 define Device/extreme-networks_ws-ap3825i
   DEVICE_VENDOR := Extreme Networks
   DEVICE_MODEL := WS-AP3825i
-  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca988x-ct
+  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca988x-ct kmod-phy-at803x
   BLOCKSIZE := 128k
   KERNEL_NAME := simpleImage.ws-ap3825i
   KERNEL_ENTRY := 0x3000000
@@ -98,6 +99,7 @@ define Device/hpe_msm460
   DEVICE_ALT0_MODEL := MSM430
   DEVICE_ALT1_VENDOR := Hewlett-Packard
   DEVICE_ALT1_MODEL := MSM466
+  DEVICE_PACKAGES := kmod-phy-marvell
   KERNEL = kernel-bin | fit none $(KDIR)/image-$$(DEVICE_DTS).dtb
   KERNEL_NAME := zImage.la3000000
   KERNEL_ENTRY := 0x3000000
@@ -116,7 +118,7 @@ TARGET_DEVICES += hpe_msm460
 define Device/ocedo_panda
   DEVICE_VENDOR := OCEDO
   DEVICE_MODEL := Panda
-  DEVICE_PACKAGES := kmod-rtc-ds1307
+  DEVICE_PACKAGES := kmod-rtc-ds1307 kmod-dsa-b53-mdio kmod-phy-broadcom
   KERNEL = kernel-bin | libdeflate-gzip | fit gzip $(KDIR)/image-$$(DEVICE_DTS).dtb
   PAGESIZE := 2048
   SUBPAGESIZE := 512

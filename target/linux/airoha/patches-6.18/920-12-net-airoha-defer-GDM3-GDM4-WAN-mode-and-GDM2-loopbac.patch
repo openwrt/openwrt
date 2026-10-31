@@ -384,7 +384,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  
  	_bstats_update(opt->stats.bstats, 0, tx_packets);
  	dev->cpu_tx_packets = cpu_tx_packets;
-@@ -3093,16 +3187,18 @@ static int airoha_qdma_set_tx_rate_limit
+@@ -3092,16 +3186,18 @@ static int airoha_qdma_set_tx_rate_limit
  					 u32 bucket_size)
  {
  	struct airoha_gdm_dev *dev = netdev_priv(netdev);
@@ -405,7 +405,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  							 REG_EGRESS_TRTCM_CFG,
  							 i, rate, bucket_size);
  		if (err)
-@@ -3138,11 +3234,12 @@ static int airoha_tc_htb_alloc_leaf_queu
+@@ -3137,11 +3233,12 @@ static int airoha_tc_htb_alloc_leaf_queu
  	u32 channel = TC_H_MIN(opt->classid) % AIROHA_NUM_QOS_CHANNELS;
  	int err, num_tx_queues = AIROHA_NUM_TX_RING + channel + 1;
  	struct airoha_gdm_dev *dev = netdev_priv(netdev);
@@ -419,7 +419,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  	if (test_and_set_bit(channel, qdma->qos_channel_map)) {
  		NL_SET_ERR_MSG_MOD(opt->extack,
  				   "qdma qos channel already in use");
-@@ -3178,7 +3275,7 @@ static int airoha_qdma_set_rx_meter(stru
+@@ -3177,7 +3274,7 @@ static int airoha_qdma_set_rx_meter(stru
  				    u32 rate, u32 bucket_size,
  				    enum trtcm_unit_type unit_type)
  {
@@ -428,7 +428,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  	int i;
  
  	for (i = 0; i < ARRAY_SIZE(qdma->q_rx); i++) {
-@@ -3353,10 +3450,11 @@ static void airoha_tc_remove_htb_queue(s
+@@ -3352,10 +3449,11 @@ static void airoha_tc_remove_htb_queue(s
  {
  	struct airoha_gdm_dev *dev = netdev_priv(netdev);
  	int num_tx_queues = AIROHA_NUM_TX_RING;
@@ -441,7 +441,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  	clear_bit(queue, qdma->qos_channel_map);
  	clear_bit(queue, dev->qos_sq_bmap);
  
-@@ -3382,6 +3480,95 @@ static int airoha_tc_htb_delete_leaf_que
+@@ -3381,6 +3479,95 @@ static int airoha_tc_htb_delete_leaf_que
  	return 0;
  }
  
@@ -537,7 +537,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  static int airoha_tc_htb_destroy(struct net_device *netdev)
  {
  	struct airoha_gdm_dev *dev = netdev_priv(netdev);
-@@ -3390,6 +3577,8 @@ static int airoha_tc_htb_destroy(struct
+@@ -3389,6 +3576,8 @@ static int airoha_tc_htb_destroy(struct
  	for_each_set_bit(q, dev->qos_sq_bmap, AIROHA_NUM_QOS_CHANNELS)
  		airoha_tc_remove_htb_queue(netdev, q);
  
@@ -546,7 +546,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  	return 0;
  }
  
-@@ -3409,24 +3598,33 @@ static int airoha_tc_get_htb_get_leaf_qu
+@@ -3408,24 +3597,33 @@ static int airoha_tc_get_htb_get_leaf_qu
  	return 0;
  }
  

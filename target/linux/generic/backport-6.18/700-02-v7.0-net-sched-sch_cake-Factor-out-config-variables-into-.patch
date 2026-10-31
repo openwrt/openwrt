@@ -116,9 +116,9 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
 +	if (qd->min_netlen > len)
 +		qd->min_netlen = len;
  
- 	len += q->rate_overhead;
+ 	len = max((s32)len + q->rate_overhead, (s32)q->rate_mpu);
  
-@@ -1385,10 +1389,10 @@ static u32 cake_calc_overhead(struct cak
+@@ -1382,10 +1386,10 @@ static u32 cake_calc_overhead(struct cak
  		len += (len + 63) / 64;
  	}
  
@@ -133,7 +133,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  
  	return len;
  }
-@@ -1592,7 +1596,7 @@ static unsigned int cake_drop(struct Qdi
+@@ -1589,7 +1593,7 @@ static unsigned int cake_drop(struct Qdi
  	flow->dropped++;
  	WRITE_ONCE(b->tin_dropped, b->tin_dropped + 1);
  
@@ -142,7 +142,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  		cake_advance_shaper(q, b, skb, now, true);
  
  	qdisc_drop_reason(skb, sch, to_free, SKB_DROP_REASON_QDISC_OVERLIMIT);
-@@ -1662,7 +1666,8 @@ static u8 cake_handle_diffserv(struct sk
+@@ -1659,7 +1663,8 @@ static u8 cake_handle_diffserv(struct sk
  static struct cake_tin_data *cake_select_tin(struct Qdisc *sch,
  					     struct sk_buff *skb)
  {
@@ -152,7 +152,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  	u32 tin, mark;
  	bool wash;
  	u8 dscp;
-@@ -1679,24 +1684,24 @@ static struct cake_tin_data *cake_select
+@@ -1676,24 +1681,24 @@ static struct cake_tin_data *cake_select
  	if (q->tin_mode == CAKE_DIFFSERV_BESTEFFORT)
  		tin = 0;
  
@@ -184,7 +184,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  }
  
  static u32 cake_classify(struct Qdisc *sch, struct cake_tin_data **t,
-@@ -1752,7 +1757,7 @@ static s32 cake_enqueue(struct sk_buff *
+@@ -1749,7 +1754,7 @@ static s32 cake_enqueue(struct sk_buff *
  	bool same_flow = false;
  
  	/* choose flow to insert into */
@@ -193,7 +193,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  	if (idx == 0) {
  		if (ret & __NET_XMIT_BYPASS)
  			qdisc_qstats_drop(sch);
-@@ -1787,7 +1792,7 @@ static s32 cake_enqueue(struct sk_buff *
+@@ -1784,7 +1789,7 @@ static s32 cake_enqueue(struct sk_buff *
  	if (unlikely(len > b->max_skblen))
  		b->max_skblen = len;
  
@@ -202,7 +202,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  		struct sk_buff *segs, *nskb;
  		netdev_features_t features = netif_skb_features(skb);
  		unsigned int slen = 0, numsegs = 0;
-@@ -1828,7 +1833,7 @@ static s32 cake_enqueue(struct sk_buff *
+@@ -1825,7 +1830,7 @@ static s32 cake_enqueue(struct sk_buff *
  		get_cobalt_cb(skb)->adjusted_len = cake_overhead(q, skb);
  		flow_queue_add(flow, skb);
  
@@ -211,7 +211,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  			ack = cake_ack_filter(q, flow);
  
  		if (ack) {
-@@ -1837,7 +1842,7 @@ static s32 cake_enqueue(struct sk_buff *
+@@ -1834,7 +1839,7 @@ static s32 cake_enqueue(struct sk_buff *
  			ack_pkt_len = qdisc_pkt_len(ack);
  			b->bytes += ack_pkt_len;
  			q->buffer_used += skb->truesize - ack->truesize;
@@ -220,7 +220,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  				cake_advance_shaper(q, b, ack, now, true);
  
  			qdisc_tree_reduce_backlog(sch, 1, ack_pkt_len);
-@@ -1860,7 +1865,7 @@ static s32 cake_enqueue(struct sk_buff *
+@@ -1857,7 +1862,7 @@ static s32 cake_enqueue(struct sk_buff *
  		cake_heapify_up(q, b->overflow_idx[idx]);
  
  	/* incoming bandwidth capacity estimate */
@@ -229,7 +229,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  		u64 packet_interval = \
  			ktime_to_ns(ktime_sub(now, q->last_packet_time));
  
-@@ -1892,7 +1897,7 @@ static s32 cake_enqueue(struct sk_buff *
+@@ -1889,7 +1894,7 @@ static s32 cake_enqueue(struct sk_buff *
  			if (ktime_after(now,
  					ktime_add_ms(q->last_reconfig_time,
  						     250))) {
@@ -238,7 +238,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  				cake_reconfigure(sch);
  			}
  		}
-@@ -1912,7 +1917,7 @@ static s32 cake_enqueue(struct sk_buff *
+@@ -1909,7 +1914,7 @@ static s32 cake_enqueue(struct sk_buff *
  		flow->set = CAKE_SET_SPARSE;
  		b->sparse_flow_count++;
  
@@ -247,7 +247,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  	} else if (flow->set == CAKE_SET_SPARSE_WAIT) {
  		/* this flow was empty, accounted as a sparse flow, but actually
  		 * in the bulk rotation.
-@@ -1921,8 +1926,8 @@ static s32 cake_enqueue(struct sk_buff *
+@@ -1918,8 +1923,8 @@ static s32 cake_enqueue(struct sk_buff *
  		b->sparse_flow_count--;
  		b->bulk_flow_count++;
  
@@ -258,7 +258,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  	}
  
  	if (q->buffer_used > q->buffer_max_used)
-@@ -2109,8 +2114,8 @@ retry:
+@@ -2106,8 +2111,8 @@ retry:
  				b->sparse_flow_count--;
  				b->bulk_flow_count++;
  
@@ -269,7 +269,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  
  				flow->set = CAKE_SET_BULK;
  			} else {
-@@ -2122,7 +2127,7 @@ retry:
+@@ -2119,7 +2124,7 @@ retry:
  			}
  		}
  
@@ -278,7 +278,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  		list_move_tail(&flow->flowchain, &b->old_flows);
  
  		goto retry;
-@@ -2146,8 +2151,8 @@ retry:
+@@ -2143,8 +2148,8 @@ retry:
  				if (flow->set == CAKE_SET_BULK) {
  					b->bulk_flow_count--;
  
@@ -289,7 +289,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  
  					b->decaying_flow_count++;
  				} else if (flow->set == CAKE_SET_SPARSE ||
-@@ -2165,8 +2170,8 @@ retry:
+@@ -2162,8 +2167,8 @@ retry:
  				else if (flow->set == CAKE_SET_BULK) {
  					b->bulk_flow_count--;
  
@@ -300,7 +300,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  				} else
  					b->decaying_flow_count--;
  
-@@ -2177,14 +2182,14 @@ retry:
+@@ -2174,14 +2179,14 @@ retry:
  
  		reason = cobalt_should_drop(&flow->cvars, &b->cparams, now, skb,
  					    (b->bulk_flow_count *
@@ -317,7 +317,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  			len = cake_advance_shaper(q, b, skb,
  						  now, true);
  			flow->deficit -= len;
-@@ -2195,7 +2200,7 @@ retry:
+@@ -2192,7 +2197,7 @@ retry:
  		qdisc_tree_reduce_backlog(sch, 1, qdisc_pkt_len(skb));
  		qdisc_qstats_drop(sch);
  		kfree_skb_reason(skb, reason);
@@ -326,7 +326,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  			goto retry;
  	}
  
-@@ -2320,7 +2325,7 @@ static int cake_config_besteffort(struct
+@@ -2317,7 +2322,7 @@ static int cake_config_besteffort(struct
  	struct cake_sched_data *q = qdisc_priv(sch);
  	struct cake_tin_data *b = &q->tins[0];
  	u32 mtu = psched_mtu(qdisc_dev(sch));
@@ -335,7 +335,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  
  	q->tin_cnt = 1;
  
-@@ -2328,7 +2333,7 @@ static int cake_config_besteffort(struct
+@@ -2325,7 +2330,7 @@ static int cake_config_besteffort(struct
  	q->tin_order = normal_order;
  
  	cake_set_rate(b, rate, mtu,
@@ -344,7 +344,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  	b->tin_quantum = 65535;
  
  	return 0;
-@@ -2339,7 +2344,7 @@ static int cake_config_precedence(struct
+@@ -2336,7 +2341,7 @@ static int cake_config_precedence(struct
  	/* convert high-level (user visible) parameters into internal format */
  	struct cake_sched_data *q = qdisc_priv(sch);
  	u32 mtu = psched_mtu(qdisc_dev(sch));
@@ -353,7 +353,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  	u32 quantum = 256;
  	u32 i;
  
-@@ -2350,8 +2355,8 @@ static int cake_config_precedence(struct
+@@ -2347,8 +2352,8 @@ static int cake_config_precedence(struct
  	for (i = 0; i < q->tin_cnt; i++) {
  		struct cake_tin_data *b = &q->tins[i];
  
@@ -364,7 +364,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  
  		b->tin_quantum = max_t(u16, 1U, quantum);
  
-@@ -2428,7 +2433,7 @@ static int cake_config_diffserv8(struct
+@@ -2425,7 +2430,7 @@ static int cake_config_diffserv8(struct
  
  	struct cake_sched_data *q = qdisc_priv(sch);
  	u32 mtu = psched_mtu(qdisc_dev(sch));
@@ -373,7 +373,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  	u32 quantum = 256;
  	u32 i;
  
-@@ -2442,8 +2447,8 @@ static int cake_config_diffserv8(struct
+@@ -2439,8 +2444,8 @@ static int cake_config_diffserv8(struct
  	for (i = 0; i < q->tin_cnt; i++) {
  		struct cake_tin_data *b = &q->tins[i];
  
@@ -384,7 +384,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  
  		b->tin_quantum = max_t(u16, 1U, quantum);
  
-@@ -2472,7 +2477,7 @@ static int cake_config_diffserv4(struct
+@@ -2469,7 +2474,7 @@ static int cake_config_diffserv4(struct
  
  	struct cake_sched_data *q = qdisc_priv(sch);
  	u32 mtu = psched_mtu(qdisc_dev(sch));
@@ -393,7 +393,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  	u32 quantum = 1024;
  
  	q->tin_cnt = 4;
-@@ -2483,13 +2488,13 @@ static int cake_config_diffserv4(struct
+@@ -2480,13 +2485,13 @@ static int cake_config_diffserv4(struct
  
  	/* class characteristics */
  	cake_set_rate(&q->tins[0], rate, mtu,
@@ -411,7 +411,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  
  	/* bandwidth-sharing weights */
  	q->tins[0].tin_quantum = quantum;
-@@ -2509,7 +2514,7 @@ static int cake_config_diffserv3(struct
+@@ -2506,7 +2511,7 @@ static int cake_config_diffserv3(struct
   */
  	struct cake_sched_data *q = qdisc_priv(sch);
  	u32 mtu = psched_mtu(qdisc_dev(sch));
@@ -420,7 +420,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  	u32 quantum = 1024;
  
  	q->tin_cnt = 3;
-@@ -2520,11 +2525,11 @@ static int cake_config_diffserv3(struct
+@@ -2517,11 +2522,11 @@ static int cake_config_diffserv3(struct
  
  	/* class characteristics */
  	cake_set_rate(&q->tins[0], rate, mtu,
@@ -435,7 +435,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  
  	/* bandwidth-sharing weights */
  	q->tins[0].tin_quantum = quantum;
-@@ -2536,7 +2541,8 @@ static int cake_config_diffserv3(struct
+@@ -2533,7 +2538,8 @@ static int cake_config_diffserv3(struct
  
  static void cake_reconfigure(struct Qdisc *sch)
  {
@@ -445,7 +445,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  	int c, ft;
  
  	switch (q->tin_mode) {
-@@ -2562,36 +2568,37 @@ static void cake_reconfigure(struct Qdis
+@@ -2559,36 +2565,37 @@ static void cake_reconfigure(struct Qdis
  		break;
  	}
  
@@ -494,7 +494,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  	struct nlattr *tb[TCA_CAKE_MAX + 1];
  	u16 rate_flags;
  	u8 flow_mode;
-@@ -2645,19 +2652,19 @@ static int cake_change(struct Qdisc *sch
+@@ -2642,19 +2649,19 @@ static int cake_change(struct Qdisc *sch
  			   nla_get_s32(tb[TCA_CAKE_OVERHEAD]));
  		rate_flags |= CAKE_FLAG_OVERHEAD;
  
@@ -522,7 +522,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  	}
  
  	if (tb[TCA_CAKE_MPU])
-@@ -2713,7 +2720,7 @@ static int cake_change(struct Qdisc *sch
+@@ -2710,7 +2717,7 @@ static int cake_change(struct Qdisc *sch
  
  	WRITE_ONCE(q->rate_flags, rate_flags);
  	WRITE_ONCE(q->flow_mode, flow_mode);
@@ -531,7 +531,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  		sch_tree_lock(sch);
  		cake_reconfigure(sch);
  		sch_tree_unlock(sch);
-@@ -2729,14 +2736,20 @@ static void cake_destroy(struct Qdisc *s
+@@ -2726,14 +2733,20 @@ static void cake_destroy(struct Qdisc *s
  	qdisc_watchdog_cancel(&q->watchdog);
  	tcf_block_put(q->block);
  	kvfree(q->tins);
@@ -553,7 +553,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  	sch->limit = 10240;
  	q->tin_mode = CAKE_DIFFSERV_DIFFSERV3;
  	q->flow_mode  = CAKE_FLOW_TRIPLE;
-@@ -2748,33 +2761,36 @@ static int cake_init(struct Qdisc *sch,
+@@ -2745,33 +2758,36 @@ static int cake_init(struct Qdisc *sch,
  			       * for 5 to 10% of interval
  			       */
  	q->rate_flags |= CAKE_FLAG_SPLIT_GSO;
@@ -601,7 +601,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  
  		INIT_LIST_HEAD(&b->new_flows);
  		INIT_LIST_HEAD(&b->old_flows);
-@@ -2790,22 +2806,27 @@ static int cake_init(struct Qdisc *sch,
+@@ -2787,22 +2803,27 @@ static int cake_init(struct Qdisc *sch,
  			INIT_LIST_HEAD(&flow->flowchain);
  			cobalt_vars_init(&flow->cvars);
  

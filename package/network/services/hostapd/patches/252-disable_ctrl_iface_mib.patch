@@ -16,7 +16,7 @@ Subject: [PATCH] Remove some unnecessary control interface functionality
  else
 --- a/hostapd/ctrl_iface.c
 +++ b/hostapd/ctrl_iface.c
-@@ -3987,6 +3987,7 @@ static int hostapd_ctrl_iface_receive_pr
+@@ -4089,6 +4089,7 @@ static int hostapd_ctrl_iface_receive_pr
  						      reply_size);
  	} else if (os_strcmp(buf, "STATUS-DRIVER") == 0) {
  		reply_len = hostapd_drv_status(hapd, reply, reply_size);
@@ -24,7 +24,7 @@ Subject: [PATCH] Remove some unnecessary control interface functionality
  	} else if (os_strcmp(buf, "MIB") == 0) {
  		reply_len = ieee802_11_get_mib(hapd, reply, reply_size);
  		if (reply_len >= 0) {
-@@ -4028,6 +4029,7 @@ static int hostapd_ctrl_iface_receive_pr
+@@ -4130,6 +4131,7 @@ static int hostapd_ctrl_iface_receive_pr
  	} else if (os_strncmp(buf, "STA-NEXT ", 9) == 0) {
  		reply_len = hostapd_ctrl_iface_sta_next(hapd, buf + 9, reply,
  							reply_size);
@@ -121,7 +121,7 @@ Subject: [PATCH] Remove some unnecessary control interface functionality
  
  int ieee802_1x_get_mib(struct hostapd_data *hapd, char *buf, size_t buflen)
  {
-@@ -3049,6 +3050,7 @@ int ieee802_1x_get_mib_sta(struct hostap
+@@ -3052,6 +3053,7 @@ int ieee802_1x_get_mib_sta(struct hostap
  	return len;
  }
  
@@ -131,7 +131,7 @@ Subject: [PATCH] Remove some unnecessary control interface functionality
  static void ieee802_1x_wnm_notif_send(void *eloop_ctx, void *timeout_ctx)
 --- a/src/ap/wpa_auth.c
 +++ b/src/ap/wpa_auth.c
-@@ -6548,6 +6548,7 @@ static const char * wpa_bool_txt(int val
+@@ -6552,6 +6552,7 @@ static const char * wpa_bool_txt(int val
  	return val ? "TRUE" : "FALSE";
  }
  
@@ -139,7 +139,7 @@ Subject: [PATCH] Remove some unnecessary control interface functionality
  
  #define RSN_SUITE "%02x-%02x-%02x-%d"
  #define RSN_SUITE_ARG(s) \
-@@ -6700,7 +6701,7 @@ int wpa_get_mib_sta(struct wpa_state_mac
+@@ -6704,7 +6705,7 @@ int wpa_get_mib_sta(struct wpa_state_mac
  
  	return len;
  }

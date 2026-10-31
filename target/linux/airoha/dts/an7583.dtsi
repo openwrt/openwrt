@@ -3,6 +3,7 @@
 #include <dt-bindings/interrupt-controller/irq.h>
 #include <dt-bindings/interrupt-controller/arm-gic.h>
 #include <dt-bindings/clock/en7523-clk.h>
+#include <dt-bindings/phy/airoha,an7581-usb-phy.h>
 #include <dt-bindings/phy/phy.h>
 #include <dt-bindings/reset/airoha,an7583-reset.h>
 #include <dt-bindings/leds/common.h>
@@ -98,7 +99,7 @@
 	};
 
 	cpufreq: cpufreq {
-		compatible = "airoha,en7581-cpufreq";
+		compatible = "airoha,an7583-cpufreq";
 
 		operating-points-v2 = <&cpu_smcc_opp_table>;
 
@@ -310,14 +311,6 @@
 		regulator-min-microvolt = <3300000>;
 		regulator-max-microvolt = <3300000>;
 		regulator-always-on;
-	};
-
-	sfp1: sfp1 {
-		compatible = "sff,sfp";
-	};
-
-	sfp2: sfp2 {
-		compatible = "sff,sfp";
 	};
 
 	soc {
@@ -539,6 +532,53 @@
 			status = "disabled";
 		};
 
+		usb0: usb@1fab0000 {
+			compatible = "mediatek,mtk-xhci";
+			reg = <0x0 0x1fab0000 0x0 0x3e00>,
+			      <0x0 0x1fab3e00 0x0 0x100>;
+			reg-names = "mac", "ippc";
+			interrupts = <GIC_SPI 33 IRQ_TYPE_LEVEL_HIGH>;
+
+			phys = <&usb0_u2 PHY_TYPE_USB2>, <&usb1_u2 PHY_TYPE_USB2>,
+			       <&usb0_u3 PHY_TYPE_USB3>;
+
+			status = "disabled";
+		};
+
+		usb_phy: phy@1fac0000 {
+			compatible = "airoha,an7583-usb-phy";
+			reg = <0x0 0x1fac0000 0x0 0x2000>,
+			      <0x0 0x1fa6f000 0x0 0x1000>,
+			      <0x0 0x1fa6e000 0x0 0x1000>,
+			      <0x0 0x1fa6a000 0x0 0x1000>;
+			reg-names = "phy", "ana", "pma", "dig";
+
+			status = "disabled";
+
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			usb0_u2: usb2-phy@0 {
+				reg = <0x0>;
+				airoha,usb2-monitor-clk-sel = <AIROHA_USB2_MONCLK_SEL1>;
+
+				#phy-cells = <1>;
+			};
+
+			usb1_u2: usb2-phy@1000 {
+				reg = <0x1000>;
+				airoha,usb2-monitor-clk-sel = <AIROHA_USB2_MONCLK_SEL2>;
+
+				#phy-cells = <1>;
+			};
+
+			usb0_u3: usb3-phy {
+				airoha,scu = <&scuclk>;
+
+				#phy-cells = <1>;
+			};
+		};
+
 		crypto@1fb70000 {
 			compatible = "inside-secure,safexcel-eip93ies";
 			reg = <0x0 0x1fb70000 0x0 0x1000>;
@@ -707,35 +747,34 @@
 
 				gsw_port1: port@1 {
 					reg = <1>;
-					label = "lan1";
 					phy-mode = "internal";
 					phy-handle = <&gsw_phy1>;
+					status = "disabled";
 				};
 
 				gsw_port2: port@2 {
 					reg = <2>;
-					label = "lan2";
 					phy-mode = "internal";
 					phy-handle = <&gsw_phy2>;
+					status = "disabled";
 				};
 
 				gsw_port3: port@3 {
 					reg = <3>;
-					label = "lan3";
 					phy-mode = "internal";
 					phy-handle = <&gsw_phy3>;
+					status = "disabled";
 				};
 
 				gsw_port4: port@4 {
 					reg = <4>;
-					label = "lan4";
 					phy-mode = "internal";
 					phy-handle = <&gsw_phy4>;
+					status = "disabled";
 				};
 
 				port@6 {
 					reg = <6>;
-					label = "cpu";
 					ethernet = <&gdm1>;
 					phy-mode = "internal";
 
@@ -755,6 +794,7 @@
 					compatible = "ethernet-phy-ieee802.3-c22";
 					reg = <9>;
 					phy-mode = "internal";
+					status = "disabled";
 
 					leds {
 						#address-cells = <1>;
@@ -769,14 +809,14 @@
 						 * overridden to maintain unique sysfs
 						 * naming.
 						 */
-						gsw_phy1_led0: gsw-phy1-led0@0 {
+						gsw_phy1_led0: led@0 {
 							reg = <0>;
 							function = LED_FUNCTION_LAN;
 							function-enumerator = <1>;
 							status = "disabled";
 						};
 
-						gsw_phy1_led1: gsw-phy1-led1@1 {
+						gsw_phy1_led1: led@1 {
 							reg = <1>;
 							function = LED_FUNCTION_LAN;
 							function-enumerator = <1>;
@@ -789,19 +829,20 @@
 					compatible = "ethernet-phy-ieee802.3-c22";
 					reg = <10>;
 					phy-mode = "internal";
+					status = "disabled";
 
 					leds {
 						#address-cells = <1>;
 						#size-cells = <0>;
 
-						gsw_phy2_led0: gsw-phy2-led0@0 {
+						gsw_phy2_led0: led@0 {
 							reg = <0>;
 							function = LED_FUNCTION_LAN;
 							function-enumerator = <2>;
 							status = "disabled";
 						};
 
-						gsw_phy2_led1: gsw-phy2-led1@1 {
+						gsw_phy2_led1: led@1 {
 							reg = <1>;
 							function = LED_FUNCTION_LAN;
 							function-enumerator = <2>;
@@ -814,19 +855,20 @@
 					compatible = "ethernet-phy-ieee802.3-c22";
 					reg = <11>;
 					phy-mode = "internal";
+					status = "disabled";
 
 					leds {
 						#address-cells = <1>;
 						#size-cells = <0>;
 
-						gsw_phy3_led0: gsw-phy3-led0@0 {
+						gsw_phy3_led0: led@0 {
 							reg = <0>;
 							function = LED_FUNCTION_LAN;
 							function-enumerator = <3>;
 							status = "disabled";
 						};
 
-						gsw_phy3_led1: gsw-phy3-led1@1 {
+						gsw_phy3_led1: led@1 {
 							reg = <1>;
 							function = LED_FUNCTION_LAN;
 							function-enumerator = <3>;
@@ -839,19 +881,20 @@
 					compatible = "ethernet-phy-ieee802.3-c22";
 					reg = <12>;
 					phy-mode = "internal";
+					status = "disabled";
 
 					leds {
 						#address-cells = <1>;
 						#size-cells = <0>;
 
-						gsw_phy4_led0: gsw-phy4-led0@0 {
+						gsw_phy4_led0: led@0 {
 							reg = <0>;
 							function = LED_FUNCTION_LAN;
 							function-enumerator = <4>;
 							status = "disabled";
 						};
 
-						gsw_phy4_led1: gsw-phy4-led1@1 {
+						gsw_phy4_led1: led@1 {
 							reg = <1>;
 							function = LED_FUNCTION_LAN;
 							function-enumerator = <4>;

@@ -8,12 +8,12 @@ endef
 TARGET_DEVICES += en7528_generic
 
 define Device/dasan_h660gm-a
+  $(call Device/tclinux-ubi)
   DEVICE_VENDOR := DASAN
   DEVICE_MODEL := H660GM-A
-  DEVICE_PACKAGES := kmod-usb2 kmod-mt7603 kmod-mt7615e kmod-mt7663-firmware-ap
+  FACTORY_SIZE := 32m
   TRX_MODEL := Dewberry
-  IMAGES := tclinux.trx
-  IMAGE/tclinux.trx := append-kernel | lzma | tclinux-trx
+  DEVICE_PACKAGES := kmod-usb2 kmod-mt7603 kmod-mt7615e kmod-mt7663-firmware-ap
 endef
 
 define Device/dasan_h660gm-a-airtel

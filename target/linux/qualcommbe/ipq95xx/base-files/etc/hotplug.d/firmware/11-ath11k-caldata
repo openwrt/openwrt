@@ -1,0 +1,35 @@
+#!/bin/sh
+
+[ -e /lib/firmware/$FIRMWARE ] && exit 0
+
+. /lib/functions/caldata.sh
+
+board=$(board_name)
+
+case "$FIRMWARE" in
+"ath11k/IPQ9574/hw1.0/cal-ahb-c000000.wifi.bin")
+	case "$board" in
+	jiorouter,ax6000-jidu6j11-6111|\
+	jiorouter,ax6000-jidu6j11-6411|\
+	jiorouter,ax6000-jidu6j11-6611|\
+	jiorouter,ax6000-jidu6j11-6811|\
+	jiorouter,ax6000-jidu6j11-6911)
+		caldata_extract "0:ART" 0x1000 0x20000
+		;;
+	esac
+	;;
+"ath11k/QCN9074/hw1.0/cal-pci-0001:01:00.0.bin")
+	case "$board" in
+	jiorouter,ax6000-jidu6j11-6111|\
+	jiorouter,ax6000-jidu6j11-6411|\
+	jiorouter,ax6000-jidu6j11-6611|\
+	jiorouter,ax6000-jidu6j11-6811|\
+	jiorouter,ax6000-jidu6j11-6911)
+		caldata_extract "0:ART" 0x4c000 0x20000
+		;;
+	esac
+	;;
+*)
+	exit 1
+	;;
+esac

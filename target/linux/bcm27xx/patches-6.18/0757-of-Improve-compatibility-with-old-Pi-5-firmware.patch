@@ -95,7 +95,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  				continue;
 --- a/drivers/of/of_reserved_mem.c
 +++ b/drivers/of/of_reserved_mem.c
-@@ -159,11 +159,25 @@ static int __init __reserved_mem_reserve
+@@ -168,11 +168,25 @@ static int __init __reserved_mem_reserve
  	int len;
  	const __be32 *prop;
  	bool nomap, default_cma;
@@ -121,7 +121,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  	if (len && len % t_len != 0) {
  		pr_err("Reserved memory: invalid reg property in '%s', skipping node.\n",
  		       uname);
-@@ -180,7 +194,7 @@ static int __init __reserved_mem_reserve
+@@ -189,7 +203,7 @@ static int __init __reserved_mem_reserve
  
  	while (len >= t_len) {
  		base = dt_mem_next_cell(dt_root_addr_cells, &prop);
@@ -130,7 +130,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  
  		if (size && early_init_dt_reserve_memory(base, size, nomap) == 0) {
  			/* Architecture specific contiguous memory fixup. */
-@@ -267,8 +281,21 @@ void __init fdt_scan_reserved_mem_reg_no
+@@ -277,8 +291,21 @@ void __init fdt_scan_reserved_mem_reg_no
  		if (default_cma && cma_skip_dt_default_reserved_mem())
  			continue;
  
@@ -154,7 +154,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  
  		base = b;
  		size = s;
-@@ -406,16 +433,24 @@ static int __init __reserved_mem_alloc_s
+@@ -424,16 +451,24 @@ static int __init __reserved_mem_alloc_s
  	const __be32 *prop;
  	bool nomap, default_cma;
  	int ret;

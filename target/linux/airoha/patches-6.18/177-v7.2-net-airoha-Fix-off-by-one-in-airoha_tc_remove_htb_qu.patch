@@ -23,7 +23,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
 
 --- a/drivers/net/ethernet/airoha/airoha_eth.c
 +++ b/drivers/net/ethernet/airoha/airoha_eth.c
-@@ -3006,7 +3006,7 @@ static void airoha_tc_remove_htb_queue(s
+@@ -3005,7 +3005,7 @@ static void airoha_tc_remove_htb_queue(s
  	struct airoha_qdma *qdma = dev->qdma;
  
  	netif_set_real_num_tx_queues(netdev, netdev->real_num_tx_queues - 1);

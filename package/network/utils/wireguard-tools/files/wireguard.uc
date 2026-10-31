@@ -31,7 +31,7 @@ function ensure_key_is_generated(cursor, section_name) {
 }
 
 function to_array(val) {
-	return type(val) == 'array' ? val : split(val, /\s+/);
+	return type(val) == 'array' ? val : split(trim(val), /\s+/);
 }
 
 function parse_address(addr) {

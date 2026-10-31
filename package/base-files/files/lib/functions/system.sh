@@ -136,6 +136,25 @@ mtd_get_mac_encrypted_deco() {
 	echo $macaddr
 }
 
+get_mac_uci_config() {
+	local file="$1"
+
+	sed -n 's/^\s*option macaddr\s*'"'"'\?\([0-9A-F:]\+\)'"'"'\?/\1/Ip' "$file" | head -n1
+}
+
+mtd_get_mac_uci_config() {
+	local mtdname="$1"
+	local part
+
+	part=$(find_mtd_part "$mtdname")
+	if [ -z "$part" ]; then
+		echo "mtd_get_mac_uci_config: partition $mtdname not found!" >&2
+		return
+	fi
+
+	get_mac_uci_config "$part"
+}
+
 mtd_get_mac_uci_config_ubi() {
 	local volumename="$1"
 
@@ -144,7 +163,7 @@ mtd_get_mac_uci_config_ubi() {
 	local ubidev=$(nand_attach_ubi $CI_UBIPART)
 	local part=$(nand_find_volume $ubidev $volumename)
 
-	cat "/dev/$part" | sed -n 's/^\s*option macaddr\s*'"'"'\?\([0-9A-F:]\+\)'"'"'\?/\1/Ip'
+	get_mac_uci_config "/dev/$part"
 }
 
 mtd_get_mac_text() {

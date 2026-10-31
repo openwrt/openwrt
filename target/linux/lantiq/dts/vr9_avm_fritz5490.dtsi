@@ -10,14 +10,13 @@
 };
 
 &aliases {
-	led-dsl = &led_info_green;
-	led-internet = &led_internet;
 	led-wifi = &led_wifi;
 };
 
 &leds {
-	led_fiber: fiber {
-		label = "green:fiber";
+	fiber {
+		function = "fiber";
+		color = <LED_COLOR_ID_GREEN>;
 		gpios = <&gpio 47 GPIO_ACTIVE_LOW>;
 	};
 
@@ -27,8 +26,9 @@
 		gpios = <&gpio 36 GPIO_ACTIVE_LOW>;
 	};
 
-	led_internet: internet {
-		label = "green:internet";
+	fon {
+		function = "fon";
+		color = <LED_COLOR_ID_GREEN>;
 		gpios = <&gpio 35 GPIO_ACTIVE_LOW>;
 	};
 };
@@ -107,7 +107,7 @@
 	port@0 {
 		reg = <0>;
 		label = "wan";
-		phy-mode = "rgmii";
+		phy-mode = "rgmii-rxid";
 		phy-handle = <&phy6>;
 	};
 

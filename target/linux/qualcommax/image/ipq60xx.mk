@@ -172,7 +172,7 @@ define Device/linksys_mr7500
 	IMAGE_SIZE := 147456k
 	DEVICE_PACKAGES += ipq-wifi-linksys_mr7500 \
 		ath11k-firmware-qcn9074 kmod-ath11k-pci \
-		kmod-leds-pwm kmod-phy-aquantia
+		kmod-leds-pwm
 endef
 TARGET_DEVICES += linksys_mr7500
 
@@ -298,6 +298,25 @@ define Device/tplink_eap625-outdoor-hd-v1
 
 endef
 TARGET_DEVICES += tplink_eap625-outdoor-hd-v1
+
+define Device/tplink_eap620-hd-v2
+	$(call Device/FitImage)
+	$(call Device/UbiFit)
+	DEVICE_VENDOR := TP-Link
+	DEVICE_MODEL := EAP620 HD v2
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	SOC := ipq6018
+	DEVICE_PACKAGES := ipq-wifi-tplink_eap620-hd-v2
+	IMAGES += web-ui-factory.bin
+	IMAGE/web-ui-factory.bin := append-ubi | tplink-image-2022
+	TPLINK_SUPPORT_STRING := SupportList:\r\n \
+		EAP620 HD(TP-Link|UN|AX1800-D):2.0\r\n \
+		EAP620 HD(TP-Link|CA|AX1800-D):2.0\r\n \
+		EAP620 HD(TP-Link|JP|AX1800-D):2.0\r\n \
+		EAP620 HD(TP-Link|EG|AX1800-D):2.0\r\n
+endef
+TARGET_DEVICES += tplink_eap620-hd-v2
 
 define Device/tplink_eap620-hd-v3
 	$(call Device/FitImage)

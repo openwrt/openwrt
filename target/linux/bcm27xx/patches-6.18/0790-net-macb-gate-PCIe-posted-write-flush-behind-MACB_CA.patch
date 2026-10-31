@@ -77,7 +77,7 @@ Signed-off-by: Lukasz Raczylo <lukasz@raczylo.com>
  	spin_unlock(&bp->lock);
  
  	if (CIRC_SPACE(queue->tx_head, queue->tx_tail, bp->tx_ring_size) < 1)
-@@ -5810,6 +5813,7 @@ static const struct macb_config raspberr
+@@ -5835,6 +5838,7 @@ static const struct macb_config raspberr
  	.caps = MACB_CAPS_GIGABIT_MODE_AVAILABLE | MACB_CAPS_CLK_HW_CHG |
  		MACB_CAPS_JUMBO |
  		MACB_CAPS_GEM_HAS_PTP |

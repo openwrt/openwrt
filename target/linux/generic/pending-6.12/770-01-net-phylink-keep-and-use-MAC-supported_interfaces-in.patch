@@ -51,7 +51,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  	pl->config = config;
  	if (config->type == PHYLINK_NETDEV) {
  		pl->netdev = to_net_dev(config->dev);
-@@ -2091,7 +2099,7 @@ static int phylink_validate_phy(struct p
+@@ -2092,7 +2100,7 @@ static int phylink_validate_phy(struct p
  		 * those which the host supports.
  		 */
  		phy_interface_and(interfaces, phy->possible_interfaces,
@@ -60,7 +60,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  
  		if (phy_interface_empty(interfaces)) {
  			phylink_err(pl, "PHY has no common interfaces\n");
-@@ -3565,14 +3573,14 @@ static int phylink_sfp_config_optical(st
+@@ -3566,14 +3574,14 @@ static int phylink_sfp_config_optical(st
  
  	phylink_dbg(pl, "optical SFP: interfaces=[mac=%*pbl, sfp=%*pbl]\n",
  		    (int)PHY_INTERFACE_MODE_MAX,
@@ -77,7 +77,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  			  pl->sfp_interfaces);
  	if (phy_interface_empty(interfaces)) {
  		phylink_err(pl, "unsupported SFP module: no common interface modes\n");
-@@ -3730,7 +3738,7 @@ static int phylink_sfp_connect_phy(void
+@@ -3731,7 +3739,7 @@ static int phylink_sfp_connect_phy(void
  
  	/* Set the PHY's host supported interfaces */
  	phy_interface_and(phy->host_interfaces, phylink_sfp_interfaces,

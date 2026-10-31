@@ -60,7 +60,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	airoha_set_macaddr(dev, netdev->dev_addr);
  
  	switch (port->id) {
-@@ -3047,7 +3049,6 @@ static int airoha_alloc_gdm_device(struc
+@@ -3046,7 +3048,6 @@ static int airoha_alloc_gdm_device(struc
  	}
  
  	dev = netdev_priv(netdev);
@@ -68,7 +68,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	dev->port = port;
  	port->dev = dev;
  	dev->eth = eth;
-@@ -3110,7 +3111,7 @@ static int airoha_register_gdm_devices(s
+@@ -3109,7 +3110,7 @@ static int airoha_register_gdm_devices(s
  		if (!port)
  			continue;
  
@@ -77,7 +77,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		if (err)
  			return err;
  	}
-@@ -3225,8 +3226,12 @@ error_napi_stop:
+@@ -3224,8 +3225,12 @@ error_napi_stop:
  			continue;
  
  		dev = port->dev;
@@ -92,7 +92,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		airoha_metadata_dst_free(port);
  	}
  	airoha_hw_cleanup(eth);
-@@ -3254,7 +3259,7 @@ static void airoha_remove(struct platfor
+@@ -3253,7 +3258,7 @@ static void airoha_remove(struct platfor
  
  		dev = port->dev;
  		if (dev)

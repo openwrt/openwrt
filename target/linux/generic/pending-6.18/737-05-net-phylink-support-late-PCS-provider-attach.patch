@@ -110,7 +110,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  
  	/* What interface are supported by the current link.
  	 * Can change on removal or addition of new PCS.
-@@ -1993,6 +1995,51 @@ out:
+@@ -1994,6 +1996,51 @@ out:
  	return ret;
  }
  
@@ -162,7 +162,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  /**
   * phylink_create() - create a phylink instance
   * @config: a pointer to the target &struct phylink_config
-@@ -2048,6 +2095,11 @@ struct phylink *phylink_create(struct ph
+@@ -2049,6 +2096,11 @@ struct phylink *phylink_create(struct ph
  				 pl->supported_interfaces,
  				 pcs->supported_interfaces);
  

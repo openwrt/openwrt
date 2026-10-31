@@ -160,6 +160,7 @@ enum {
 	MT7530_ATTR_ENABLE_VLAN,
 };
 
+#if IS_REACHABLE(CONFIG_SWCONFIG)
 struct mt7530_port_entry {
 	u16	pvid;
 	bool	mirror_rx;
@@ -171,10 +172,12 @@ struct mt7530_vlan_entry {
 	u8	member;
 	u8	etags;
 };
+#endif /* CONFIG_SWCONFIG */
 
 struct mt7530_priv {
 	void __iomem		*base;
 	struct mii_bus		*bus;
+#if IS_REACHABLE(CONFIG_SWCONFIG)
 	struct switch_dev	swdev;
 
 	u8			mirror_dest_port;
@@ -182,8 +185,10 @@ struct mt7530_priv {
 	struct mt7530_vlan_entry	vlan_entries[MT7530_NUM_VLANS];
 	struct mt7530_port_entry	port_entries[MT7530_NUM_PORTS];
 	char arl_buf[MT7530_NUM_ARL_RECORDS * ARL_LINE_LENGTH + 1];
+#endif /* CONFIG_SWCONFIG */
 };
 
+#if IS_REACHABLE(CONFIG_SWCONFIG)
 struct mt7530_mapping {
 	char	*name;
 	u16	pvids[MT7530_NUM_PORTS];
@@ -285,6 +290,7 @@ mt7530_set_vlan_enable(struct switch_dev *dev,
 
 	return 0;
 }
+#endif /* CONFIG_SWCONFIG */
 
 static u32
 mt7530_r32(struct mt7530_priv *priv, u32 reg)
@@ -324,6 +330,7 @@ mt7530_w32(struct mt7530_priv *priv, u32 reg, u32 val)
 	iowrite32(val, priv->base + reg);
 }
 
+#if IS_REACHABLE(CONFIG_SWCONFIG)
 static void
 mt7530_vtcr(struct mt7530_priv *priv, u32 cmd, u32 val)
 {
@@ -1003,15 +1010,20 @@ static const struct switch_dev_ops mt7530_ops = {
 	.apply_config = mt7530_apply_config,
 	.reset_switch = mt7530_reset_switch,
 };
+#endif /* CONFIG_SWCONFIG */
 
 int
 mt7530_probe(struct device *dev, void __iomem *base, struct mii_bus *bus, int vlan)
 {
-	struct switch_dev *swdev;
 	struct mt7530_priv *mt7530;
+	bool swconfig_active = false;
+	const char *name = bus ? "mt7530" : "mt7620";
+	int i;
+#if IS_REACHABLE(CONFIG_SWCONFIG)
+	struct switch_dev *swdev;
 	struct mt7530_mapping *map;
 	int ret;
-	int i;
+#endif /* CONFIG_SWCONFIG */
 
 	mt7530 = devm_kzalloc(dev, sizeof(struct mt7530_priv), GFP_KERNEL);
 	if (!mt7530)
@@ -1019,16 +1031,12 @@ mt7530_probe(struct device *dev, void __iomem *base, struct mii_bus *bus, int vl
 
 	mt7530->base = base;
 	mt7530->bus = bus;
+#if IS_REACHABLE(CONFIG_SWCONFIG)
 	mt7530->global_vlan_enable = vlan;
 
 	swdev = &mt7530->swdev;
-	if (bus) {
-		swdev->alias = "mt7530";
-		swdev->name = "mt7530";
-	} else {
-		swdev->alias = "mt7620";
-		swdev->name = "mt7620";
-	}
+	swdev->alias = name;
+	swdev->name = name;
 	swdev->cpu_port = MT7530_CPU_PORT;
 	swdev->ports = MT7530_NUM_PORTS;
 	swdev->vlans = MT7530_NUM_VLANS;
@@ -1045,9 +1053,15 @@ mt7530_probe(struct device *dev, void __iomem *base, struct mii_bus *bus, int vl
 		if (map)
 			mt7530_apply_mapping(mt7530, map);
 		mt7530_apply_config(swdev);
+		swconfig_active = true;
 	} else {
-		pr_info("%s: swconfig disabled, MAC learning disabled on all ports\n", swdev->name);
+		dev_info(dev, "swconfig disabled, MAC learning disabled on all ports\n");
+	}
+#else
+	dev_info(dev, "swconfig support not reachable, MAC learning disabled on all ports\n");
+#endif /* CONFIG_SWCONFIG */
 
+	if (!swconfig_active) {
 		for (i = 0; i < MT7530_NUM_PORTS; i++) {
 			mt7530_w32(mt7530, REG_ESW_PORT_PSC(i),
 				mt7530_r32(mt7530, REG_ESW_PORT_PSC(i)) | REG_ESW_PORT_PSC_SA_DIS);
@@ -1059,7 +1073,7 @@ mt7530_probe(struct device *dev, void __iomem *base, struct mii_bus *bus, int vl
 		dev_info(dev, "fixing up MHWTRAP register - bootloader probably played with it\n");
 		mt7530_w32(mt7530, REG_HWTRAP, 0x1117edf);
 	}
-	dev_info(dev, "loaded %s driver\n", swdev->name);
+	dev_info(dev, "loaded %s driver\n", name);
 
 	return 0;
 }

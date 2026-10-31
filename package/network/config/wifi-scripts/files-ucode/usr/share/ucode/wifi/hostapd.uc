@@ -32,8 +32,10 @@ function set_device_defaults(config) {
 	/* validate band */
 	if (config.band == '2g')
 		config.hw_mode = 'g';
-	else if (config.band in [ '5g', '6g', '60g' ])
+	else if (config.band in [ '5g', '6g' ])
 		config.hw_mode = 'a';
+	else if (config.band == '60g')
+		config.hw_mode = 'ad';
 	else
 		switch (config.hw_mode) {
 		case 'a':
@@ -137,13 +139,6 @@ function device_cell_density_append(config) {
 			break;
 		}
 	}
-}
-
-function device_rates(config) {
-	for (let key in [ 'supported_rates', 'basic_rates' ])
-		config[key] = map(config[key], x => x / 100);
-
-	append_vars(config, [ 'beacon_rate', 'supported_rates', 'basic_rates' ]);
 }
 
 function device_htmode_append(config) {
@@ -321,7 +316,7 @@ function device_htmode_append(config) {
 		set_default(config, 'tx_queue_data2_burst', '2.0');
 
 		let vht_capab = phy_capabilities.vht_capa;
-		
+
 		config.vht_capab = '';
 		if (vht_capab & 0x10 && config.rxldpc)
 			config.vht_capab += '[RXLDPC]';
@@ -516,8 +511,6 @@ function generate(config) {
 	device_country_code(config);
 
 	device_cell_density_append(config);
-
-	device_rates(config);
 
 	/* beacon */
 	append_vars(config, [ 'beacon_int', 'beacon_rate', 'rnr_beacon' ]);

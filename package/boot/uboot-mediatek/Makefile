@@ -317,6 +317,18 @@ define U-Boot/mt7981_comfast_cf-wr632ax
   DEPENDS:=+trusted-firmware-a-mt7981-spim-nand-ddr3-1866
 endef
 
+define U-Boot/mt7981_comfast_cf-wr632ax-ubi
+  NAME:=COMFAST CF-WR632AX (UBI)
+  BUILD_SUBTARGET:=filogic
+  BUILD_DEVICES:=comfast_cf-wr632ax-ubi
+  UBOOT_CONFIG:=mt7981_comfast_cf-wr632ax-ubi
+  UBOOT_IMAGE:=u-boot.fip
+  BL2_BOOTDEV:=spim-nand-ubi
+  BL2_SOC:=mt7981
+  BL2_DDRTYPE:=ddr3-1866
+  DEPENDS:=+trusted-firmware-a-mt7981-spim-nand-ubi-ddr3-1866
+endef
+
 define U-Boot/mt7981_creatlentem_clt-r30b1-ubi
   NAME:=CreatLentem CLT-R30B1 (UBI)
   BUILD_SUBTARGET:=filogic
@@ -544,6 +556,18 @@ define U-Boot/mt7981_netis_eap930-v1
   DEPENDS:=+trusted-firmware-a-mt7981-spim-nand-ddr3
 endef
 
+define U-Boot/mt7981_netis_n6-v2
+  NAME:=netis N6 V2
+  BUILD_SUBTARGET:=filogic
+  BUILD_DEVICES:=netis_n6-v2
+  UBOOT_CONFIG:=mt7981_netis_n6-v2
+  UBOOT_IMAGE:=u-boot.fip
+  BL2_BOOTDEV:=spim-nand
+  BL2_SOC:=mt7981
+  BL2_DDRTYPE:=ddr3-1866
+  DEPENDS:=+trusted-firmware-a-mt7981-spim-nand-ddr3-1866
+endef
+
 define U-Boot/mt7981_netis_nx30v2
   NAME:=netis NX30 V2
   BUILD_SUBTARGET:=filogic
@@ -723,6 +747,18 @@ define U-Boot/mt7981_snr_snr-cpe-ax2
   BL2_SOC:=mt7981
   BL2_DDRTYPE:=ddr3
   DEPENDS:=+trusted-firmware-a-mt7981-spim-nand-ddr3
+endef
+
+define U-Boot/mt7981_teralink_tl3020-256mb
+  NAME:=Teralink TL3020 256mb
+  BUILD_SUBTARGET:=filogic
+  BUILD_DEVICES:=teralink_tl3020-256mb
+  UBOOT_CONFIG:=mt7981_teralink_tl3020-256mb
+  UBOOT_IMAGE:=u-boot.fip
+  BL2_BOOTDEV:=spim-nand
+  BL2_SOC:=mt7981
+  BL2_DDRTYPE:=ddr3-1866
+  DEPENDS:=+trusted-firmware-a-mt7981-spim-nand-ddr3-1866
 endef
 
 define U-Boot/mt7981_wavlink_wl-wnt100x3
@@ -1255,6 +1291,18 @@ define U-Boot/mt7988_rfb-sd
   DEPENDS:=+trusted-firmware-a-mt7988-sdmmc-comb
 endef
 
+define U-Boot/mt7988_tplink_be450
+  NAME:=TP-Link BE450 (UBI)
+  BUILD_SUBTARGET:=filogic
+  BUILD_DEVICES:=tplink_be450-ubi
+  UBOOT_CONFIG:=mt7988d_tplink_be450
+  UBOOT_IMAGE:=u-boot.fip
+  BL2_BOOTDEV:=spim-nand-ubi
+  BL2_SOC:=mt7988
+  BL2_DDRTYPE:=ddr4
+  DEPENDS:=+trusted-firmware-a-mt7988-spim-nand-ubi-ddr4
+endef
+
 UBOOT_TARGETS := \
 	mt7620_mt7530_rfb \
 	mt7620_rfb \
@@ -1283,6 +1331,7 @@ UBOOT_TARGETS := \
 	mt7981_cmcc_rax3000m-nand-ddr3 \
 	mt7981_cmcc_rax3000m-nand-ddr4 \
 	mt7981_comfast_cf-wr632ax \
+	mt7981_comfast_cf-wr632ax-ubi \
 	mt7981_creatlentem_clt-r30b1-ubi \
 	mt7981_cudy_m3000-v1 \
 	mt7981_cudy_m3000-v2-yt8821 \
@@ -1302,6 +1351,7 @@ UBOOT_TARGETS := \
 	mt7981_jcg_q30-pro \
 	mt7981_konka_komi-a31 \
 	mt7981_netis_eap930-v1 \
+	mt7981_netis_n6-v2 \
 	mt7981_netis_nx30v2 \
 	mt7981_netis_nx31 \
 	mt7981_netis_nx32u \
@@ -1317,6 +1367,7 @@ UBOOT_TARGETS := \
 	mt7981_qihoo_360t7 \
 	mt7981_qihoo_360t7-ubi \
 	mt7981_snr_snr-cpe-ax2 \
+	mt7981_teralink_tl3020-256mb \
 	mt7981_wavlink_wl-wnt100x3 \
 	mt7981_xiaomi_mi-router-ax3000t \
 	mt7981_xiaomi_mi-router-wr30u \
@@ -1360,7 +1411,8 @@ UBOOT_TARGETS := \
 	mt7988_rfb-snand \
 	mt7988_rfb-nor \
 	mt7988_rfb-emmc \
-	mt7988_rfb-sd
+	mt7988_rfb-sd \
+	mt7988_tplink_be450
 
 UBOOT_CUSTOMIZE_CONFIG := \
 	--disable TOOLS_KWBIMAGE \

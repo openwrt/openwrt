@@ -1250,6 +1250,22 @@ define Device/sony_ncp-hg100-cellular
 endef
 TARGET_DEVICES += sony_ncp-hg100-cellular
 
+define Device/sophos_apx120
+	$(call Device/FitImage)
+	$(call Device/UbiFit)
+	DEVICE_VENDOR := Sophos
+	DEVICE_MODEL := APX 120
+	SOC := qcom-ipq4019
+	DEVICE_DTS_CONFIG := config@ap.dk01.1-c2
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	IMAGES := sysupgrade.bin
+	DEVICE_PACKAGES := kmod-tpm-i2c-atmel
+	# Stock U-Boot rejects UBI layout changes from sysupgrade-tar
+	IMAGE/sysupgrade.bin := append-ubi | append-metadata
+endef
+TARGET_DEVICES += sophos_apx120
+
 define Device/teltonika_rutx10
 	$(call Device/FitImage)
 	$(call Device/UbiFit)
@@ -1298,6 +1314,21 @@ define Device/tel_x1pro
 endef
 # Missing DSA Setup
 #TARGET_DEVICES += tel_x1pro
+
+define Device/ubnt_utr
+	$(call Device/FitImageLzma)
+	$(call Device/UbiFit)
+	DEVICE_VENDOR := Ubiquiti
+	DEVICE_MODEL := UniFi Travel Router
+	SOC := qcom-ipq4018
+	DEVICE_DTS_CONFIG := config@ea06
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	KERNEL_IN_UBI :=
+	UBINIZE_PARTS = vol=$$(KDIR_KERNEL_IMAGE)
+	DEVICE_PACKAGES := ipq-wifi-ubnt_utr kmod-i2c-gpio kmod-iio-st_accel-i2c kmod-drm-panel-mipi-dbi kmod-backlight-pwm kmod-gpio-pwm kmod-btusb mipi-dbi-ubnt-utr
+endef
+TARGET_DEVICES += ubnt_utr
 
 define Device/unielec_u4019-32m
 	$(call Device/FitImage)

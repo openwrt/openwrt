@@ -7,9 +7,8 @@
 
 include $(TOPDIR)/rules.mk
 
-PKG_VERSION:=2019.07
-
-PKG_HASH:=bff4fa77e8da17521c030ca4c5b947a056c1b1be4d3e6ee8637020b8d50251d0
+PKG_VERSION:=2026.04
+PKG_HASH:=ac7c04b8b7004923b00a4e5d6699c5df4d21233bac9fda690d8cfbc209fff2fd
 
 include $(INCLUDE_DIR)/kernel.mk
 include $(INCLUDE_DIR)/u-boot.mk
@@ -28,6 +27,7 @@ endef
 define U-Boot/zc702
   NAME:=Xilinx ZC702 Dev Board
   BUILD_DEVICES:=xlnx_zynq-zc702
+  UBOOT_CONFIG:=xilinx_zynq_virt
 endef
 
 define U-Boot/antminer-s9
@@ -39,16 +39,19 @@ endef
 define U-Boot/zed
   NAME:=Avnet Digilent ZedBoard Dev Board
   BUILD_DEVICES:=avnet_zynq-zed
+  UBOOT_CONFIG:=xilinx_zynq_virt
 endef
 
 define U-Boot/zybo
   NAME:=Digilent Zybo Dev Board
   BUILD_DEVICES:=digilent_zynq-zybo
+  UBOOT_CONFIG:=xilinx_zynq_virt
 endef
 
 define U-Boot/zybo_z7
   NAME:=Digilent Zybo Z7 board
   BUILD_DEVICES:=digilent_zynq-zybo-z7
+  UBOOT_CONFIG:=xilinx_zynq_virt
 endef
 
 UBOOT_TARGETS := \

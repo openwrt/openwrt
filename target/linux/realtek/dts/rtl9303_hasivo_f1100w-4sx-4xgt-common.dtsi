@@ -13,6 +13,13 @@
 		led-failsafe = &led_sys;
 		led-running = &led_sys;
 		led-upgrade = &led_sys;
+
+		/* Pin the STC8 to i2c0 so the PoE pse-0-* LED triggers bind. */
+		i2c0 = &i2c_stc8;
+		i2c1 = &i2c_sfp0;
+		i2c2 = &i2c_sfp1;
+		i2c3 = &i2c_sfp2;
+		i2c4 = &i2c_sfp3;
 	};
 
 	chosen {
@@ -51,30 +58,59 @@
 		>;
 	};
 
+	/* I2C bus to the STC8 MCU, which controls watchdog, sensor, and PoE. */
+	i2c_stc8: i2c-gpio {
+		compatible = "i2c-gpio";
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		scl-gpios = <&gpio0 22 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
+		sda-gpios = <&gpio0 23 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
+		clock-frequency = <100000>;
+
+		stc8: stc8@6e {
+			compatible = "hasivo,stc8-mfd", "syscon";
+			reg = <0x6e>;
+			#address-cells = <2>;
+			#size-cells = <0>;
+			hasivo,execute-bit = <0x40>;
+			hasivo,execute-bit-registers = <0x01 0x02>;
+			status = "okay";
+
+			watchdog {
+				compatible = "hasivo,mcu-wdt";
+			};
+
+			sensor {
+				compatible = "hasivo,mcu-sensor";
+			};
+		};
+	};
+
 	sfp0: sfp-p1 {
 		compatible = "sff,sfp";
-		i2c-bus = <&i2c0>;
+		i2c-bus = <&i2c_sfp0>;
 		mod-def0-gpios = <&gpio0 0 GPIO_ACTIVE_LOW>;
 		#thermal-sensor-cells = <0>;
 	};
 
 	sfp1: sfp-p2 {
 		compatible = "sff,sfp";
-		i2c-bus = <&i2c1>;
+		i2c-bus = <&i2c_sfp1>;
 		mod-def0-gpios = <&gpio0 1 GPIO_ACTIVE_LOW>;
 		#thermal-sensor-cells = <0>;
 	};
 
 	sfp2: sfp-p3 {
 		compatible = "sff,sfp";
-		i2c-bus = <&i2c2>;
+		i2c-bus = <&i2c_sfp2>;
 		mod-def0-gpios = <&gpio0 2 GPIO_ACTIVE_LOW>;
 		#thermal-sensor-cells = <0>;
 	};
 
 	sfp3: sfp-p4 {
 		compatible = "sff,sfp";
-		i2c-bus = <&i2c3>;
+		i2c-bus = <&i2c_sfp3>;
 		mod-def0-gpios = <&gpio0 3 GPIO_ACTIVE_LOW>;
 		#thermal-sensor-cells = <0>;
 	};
@@ -83,10 +119,10 @@
 &i2c_mst1 {
 	status = "okay";
 
-	i2c0: i2c@0 { reg = <0>; };
-	i2c1: i2c@1 { reg = <1>; };
-	i2c2: i2c@2 { reg = <2>; };
-	i2c3: i2c@3 { reg = <3>; };
+	i2c_sfp0: i2c@0 { reg = <0>; };
+	i2c_sfp1: i2c@1 { reg = <1>; };
+	i2c_sfp2: i2c@2 { reg = <2>; };
+	i2c_sfp3: i2c@3 { reg = <3>; };
 };
 
 &spi0 {

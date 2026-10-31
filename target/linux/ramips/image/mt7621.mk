@@ -3125,6 +3125,18 @@ define Device/tplink_ec330-g5u-v1
 endef
 TARGET_DEVICES += tplink_ec330-g5u-v1
 
+define Device/tplink_er605-v1
+  DEVICE_VENDOR := TP-Link
+  DEVICE_MODEL := ER605
+  DEVICE_VARIANT := v1
+  DEVICE_ALT0_VENDOR := TP-Link
+  DEVICE_ALT0_MODEL := TL-R605
+  DEVICE_ALT0_VARIANT := v1
+  DEVICE_PACKAGES := -wpad-basic-mbedtls -uboot-envtools
+  IMAGE_SIZE := 13760k
+endef
+TARGET_DEVICES += tplink_er605-v1
+
 define Device/tplink_er605-v2
   $(Device/nand)
   DEVICE_COMPAT_VERSION := 1.2

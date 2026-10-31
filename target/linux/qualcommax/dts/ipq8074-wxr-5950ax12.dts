@@ -312,6 +312,7 @@
 			label = "wan";
 			phy-handle = <&aqr113c_1>;
 			phy-mode = "usxgmii";
+			managed = "in-band-status";
 			pcs-handle = <&uniphy1 0>;
 			nvmem-cells = <&macaddr_appsblenv_ethaddr>;
 			nvmem-cell-names = "mac-address";
@@ -322,6 +323,7 @@
 			label = "lan1";
 			phy-handle = <&aqr113c_2>;
 			phy-mode = "usxgmii";
+			managed = "in-band-status";
 			pcs-handle = <&uniphy2 0>;
 			nvmem-cells = <&macaddr_appsblenv_ethaddr>;
 			nvmem-cell-names = "mac-address";
