@@ -10,7 +10,7 @@ include $(TOPDIR)/rules.mk
 PKG_NAME:=dnsmasq
 PKG_UPSTREAM_VERSION:=2.93
 PKG_VERSION:=$(subst test,~~test,$(subst rc,~rc,$(PKG_UPSTREAM_VERSION)))
-PKG_RELEASE:=9
+PKG_RELEASE:=10
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_UPSTREAM_VERSION).tar.xz
 PKG_SOURCE_URL:=https://thekelleys.org.uk/dnsmasq/
@@ -52,6 +52,7 @@ define Package/dnsmasq
 $(call Package/dnsmasq/Default)
   VARIANT:=nodhcpv6
   DEFAULT_VARIANT:=1
+  CONFLICTS:=dnsmasq-dhcpv6 dnsmasq-full
 endef
 
 define Package/dnsmasq-dhcpv6
@@ -60,6 +61,7 @@ $(call Package/dnsmasq/Default)
   DEPENDS+=@IPV6
   VARIANT:=dhcpv6
   PROVIDES:=dnsmasq
+  CONFLICTS:=dnsmasq-full
 endef
 
 define Package/dnsmasq-full
