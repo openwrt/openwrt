@@ -6,6 +6,10 @@ if [ -x /usr/sbin/blkid ]; then
   RAMFS_COPY_BIN="/usr/sbin/blkid"
 fi
 
+if [ "$(board_name)" = "paloaltonetworks,pa-220" ]; then
+	RAMFS_COPY_BIN="$RAMFS_COPY_BIN resize2fs"
+fi
+
 platform_get_rootfs() {
 	local rootfsdev
 	local rootpartuuid
@@ -47,6 +51,9 @@ platform_copy_config_helper() {
 
 platform_copy_config() {
 	case "$(board_name)" in
+	paloaltonetworks,pa-220)
+		platform_copy_config_helper /dev/mmcblk0p1 ext3
+		;;
 	ubnt,erlite|\
 	ubnt,usg)
 		platform_copy_config_helper /dev/sda1 vfat
@@ -83,6 +90,10 @@ platform_do_flash() {
 
 		echo "flashing Itus Kernel to /boot/$kernel (/dev/mmblk1p1)"
 		tar -Oxf $tar_file "$board_dir/kernel" > /boot/$kernel
+	elif [ "$board" = "paloaltonetworks,pa-220" ]; then
+		mount -t ext3 "$kernel" /boot || exit 1
+		mkdir -p /boot/boot || exit 1
+		tar -Oxf "$tar_file" "$board_dir/kernel" > /boot/boot/vmlinux.oct3-mp || exit 1
 	else
 		if [ "${board}" = "cisco,vedge1000" ]; then
 			local rootpartuuid
@@ -110,6 +121,9 @@ platform_do_flash() {
 
 	echo "flashing rootfs to ${rootfs}"
 	tar xf $tar_file $board_dir/root -O | dd of="${rootfs}" bs=4096
+	if [ "$board" = "paloaltonetworks,pa-220" ]; then
+		resize2fs -f "$rootfs" || exit 1
+	fi
 
 	sync
 	umount /boot
@@ -127,6 +141,7 @@ platform_do_upgrade() {
 	fi
 	[ -b "${rootfs}" ] || return 1
 	case "$board" in
+	paloaltonetworks,pa-220 | \
 	er | \
 	ubnt,edgerouter-4 | \
 	ubnt,edgerouter-6p)
@@ -155,11 +170,17 @@ platform_check_image() {
 	local board=$(board_name)
 	local tar_file="$1"
 
+	if [ "$board" = "paloaltonetworks,pa-220" ] && [ -b /dev/mmcblk0p3 ]; then
+		echo "Initialize eMMC from the RAM image before upgrading."
+		return 1
+	fi
+
 	local board_dir=$(tar tf "$tar_file" | grep -m 1 '^sysupgrade-.*/$')
 	board_dir=${board_dir%/}
 	[ -n "$board_dir" ] || return 1
 
 	case "$board" in
+	paloaltonetworks,pa-220 | \
 	er | \
 	itus,shield-router | \
 	ubnt,edgerouter-4 | \

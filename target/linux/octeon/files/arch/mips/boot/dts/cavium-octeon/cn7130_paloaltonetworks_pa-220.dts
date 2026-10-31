@@ -1,0 +1,351 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "cn71xx.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/leds/common.h>
+
+/ {
+	compatible = "paloaltonetworks,pa-220", "cavium,cn7130";
+	model = "Palo Alto Networks PA-220";
+
+	memory@0 {
+		device_type = "memory";
+		reg = <0x0 0x00000000>,
+		      <0x0 0x10000000>,
+		      <0x0 0x20000000>,
+		      <0x0 0x30000000>;
+	};
+
+	aliases {
+		led-boot = &led_stat_orange;
+		led-failsafe = &led_stat_orange;
+		led-running = &led_stat_green;
+		led-upgrade = &led_stat_orange;
+	};
+
+	/*
+	 * Board CPLD on the boot bus. Register 5 bit 2 is the 88E1680 reset
+	 * (handled in the kernel board fixup). Register D holds the U-Boot
+	 * select / CPLD watchdog: never write it. The front-panel status
+	 * LEDs are one bit per colour in registers 7 and 6 (PWR is hardwired).
+	 * Only the LED bits are touched (read-modify-write).
+	 */
+	cpld: cpld@1b040000 {
+		compatible = "syscon", "simple-mfd";
+		reg = <0x0 0x1b040000 0x0 0x10>;
+		reg-io-width = <1>;
+
+		led-ha-green {
+			compatible = "register-bit-led";
+			offset = <0x07>;
+			mask = <0x01>;
+			color = <LED_COLOR_ID_GREEN>;
+			function = "ha";
+		};
+
+		led-ha-orange {
+			compatible = "register-bit-led";
+			offset = <0x07>;
+			mask = <0x02>;
+			color = <LED_COLOR_ID_ORANGE>;
+			function = "ha";
+		};
+
+		led-alarm-green {
+			compatible = "register-bit-led";
+			offset = <0x07>;
+			mask = <0x04>;
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_ALARM;
+		};
+
+		led-alarm-red {
+			compatible = "register-bit-led";
+			offset = <0x07>;
+			mask = <0x08>;
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_ALARM;
+			linux,default-trigger = "panic";
+		};
+
+		led_stat_green: led-status-green {
+			compatible = "register-bit-led";
+			offset = <0x07>;
+			mask = <0x10>;
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_STATUS;
+		};
+
+		led_stat_orange: led-status-orange {
+			compatible = "register-bit-led";
+			offset = <0x07>;
+			mask = <0x20>;
+			color = <LED_COLOR_ID_ORANGE>;
+			function = LED_FUNCTION_STATUS;
+			default-state = "on";
+		};
+
+		led-temp-green {
+			compatible = "register-bit-led";
+			offset = <0x06>;
+			mask = <0x01>;
+			color = <LED_COLOR_ID_GREEN>;
+			function = "temp";
+			default-state = "on";
+		};
+
+		led-temp-orange {
+			compatible = "register-bit-led";
+			offset = <0x06>;
+			mask = <0x02>;
+			color = <LED_COLOR_ID_ORANGE>;
+			function = "temp";
+		};
+	};
+};
+
+/* PA-220 I/O clock is 500 MHz, not 400 MHz */
+&uart0 {
+	status = "okay";
+	clock-frequency = <500000000>;
+};
+
+&mmc {
+	status = "okay";
+
+	mmc-slot@0 {
+		compatible = "mmc-slot";
+		reg = <0>;
+		non-removable;
+		/*
+		 * Soldered eMMC: skip the SDIO and SD probes. The eMMC never answers
+		 * them and each unanswered command waits for the 850 ms controller
+		 * watchdog, which delayed the root device by ~9 s at boot.
+		 */
+		no-sdio;
+		no-sd;
+		max-frequency = <50000000>;
+		/*
+		 * DDR52 stalls under sustained reads on this board ("Bad status
+		 * ... before command write"); run 50 MHz SDR like PanOS does.
+		 */
+		cavium,no-ddr;
+		voltage-ranges = <3300 3300>;
+		bus-width = <8>;
+	};
+};
+
+&usb0 {
+	status = "okay";
+	power = <&gpio 2 GPIO_ACTIVE_HIGH>;
+	refclk-type-ss = "dlmc_ref_clk0";
+};
+
+&xhci0 {
+	status = "okay";
+	dr_mode = "host";
+};
+
+&usb1 {
+	status = "okay";
+	power = <&gpio 3 GPIO_ACTIVE_HIGH>;
+	refclk-type-ss = "dlmc_ref_clk0";
+};
+
+&xhci1 {
+	status = "okay";
+	dr_mode = "host";
+};
+
+&twsi0 {
+	status = "okay";
+
+	rtc@68 {
+		compatible = "dallas,ds1338";
+		reg = <0x68>;
+	};
+
+	/*
+	 * TMP421 temperature sensor. Palo Alto's tree also lists 0x48-0x4b,
+	 * but those are not fitted on the PA-220 (probe fails with -EIO/-ENXIO).
+	 */
+	temp-sensor@4c {
+		compatible = "ti,tmp421";
+		reg = <0x4c>;
+	};
+};
+
+/* Whole SPI flash read-only, to protect the bootloader */
+&spi {
+	status = "okay";
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <5000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "spi-flash";
+				reg = <0x0 0x1000000>;
+				read-only;
+			};
+		};
+	};
+};
+
+/*
+ * Marvell 88E1680 octal PHY, addresses 8-15. Reset release and power-up
+ * are done by the PA-220 board fixup in the kernel (950 patch).
+ */
+
+&smi0 {
+	status = "okay";
+
+	phy8: ethernet-phy@8 {
+		compatible = "ethernet-phy-ieee802.3-c22";
+		reg = <8>;
+	};
+	phy9: ethernet-phy@9 {
+		compatible = "ethernet-phy-ieee802.3-c22";
+		reg = <9>;
+	};
+	phy10: ethernet-phy@a {
+		compatible = "ethernet-phy-ieee802.3-c22";
+		reg = <10>;
+	};
+	phy11: ethernet-phy@b {
+		compatible = "ethernet-phy-ieee802.3-c22";
+		reg = <11>;
+	};
+	phy12: ethernet-phy@c {
+		compatible = "ethernet-phy-ieee802.3-c22";
+		reg = <12>;
+	};
+	phy13: ethernet-phy@d {
+		compatible = "ethernet-phy-ieee802.3-c22";
+		reg = <13>;
+	};
+	phy14: ethernet-phy@e {
+		compatible = "ethernet-phy-ieee802.3-c22";
+		reg = <14>;
+	};
+	phy15: ethernet-phy@f {
+		compatible = "ethernet-phy-ieee802.3-c22";
+		reg = <15>;
+	};
+};
+
+/* MGT port: Marvell 88E1512 PHY at address 1 on MDIO bus 1 */
+&smi1 {
+	status = "okay";
+
+	phy1: ethernet-phy@1 {
+		compatible = "ethernet-phy-ieee802.3-c22";
+		reg = <1>;
+		/*
+		 * Palo Alto's LED setting (page 3 reg 16 = 0x0040): LED0 on
+		 * while linked, LED1 blinks on activity. Overrides the Linux
+		 * Marvell driver's default (0x1177), which never blinks.
+		 */
+		marvell,reg-init = <3 0x10 0 0x0040>;
+	};
+};
+
+&pip {
+	status = "okay";
+
+	interface@0 {
+		status = "okay";
+
+		ethernet@0 {
+			label = "eth1";
+			status = "okay";
+			phy-mode = "sgmii";
+			phy-handle = <&phy8>;
+			local-mac-address = [00 00 00 00 00 00];
+		};
+		ethernet@1 {
+			label = "eth2";
+			status = "okay";
+			phy-mode = "sgmii";
+			phy-handle = <&phy9>;
+			local-mac-address = [00 00 00 00 00 00];
+		};
+		ethernet@2 {
+			label = "eth3";
+			status = "okay";
+			phy-mode = "sgmii";
+			phy-handle = <&phy10>;
+			local-mac-address = [00 00 00 00 00 00];
+		};
+		ethernet@3 {
+			label = "eth4";
+			status = "okay";
+			phy-mode = "sgmii";
+			phy-handle = <&phy11>;
+			local-mac-address = [00 00 00 00 00 00];
+		};
+	};
+
+	interface@1 {
+		status = "okay";
+
+		ethernet@0 {
+			label = "eth5";
+			status = "okay";
+			phy-mode = "sgmii";
+			phy-handle = <&phy12>;
+			local-mac-address = [00 00 00 00 00 00];
+		};
+		ethernet@1 {
+			label = "eth6";
+			status = "okay";
+			phy-mode = "sgmii";
+			phy-handle = <&phy13>;
+			local-mac-address = [00 00 00 00 00 00];
+		};
+		ethernet@2 {
+			label = "eth7";
+			status = "okay";
+			phy-mode = "sgmii";
+			phy-handle = <&phy14>;
+			local-mac-address = [00 00 00 00 00 00];
+		};
+		ethernet@3 {
+			label = "eth8";
+			status = "okay";
+			phy-mode = "sgmii";
+			phy-handle = <&phy15>;
+			local-mac-address = [00 00 00 00 00 00];
+		};
+	};
+
+	/*
+	 * MGT port: CN70XX AGL (RGMII) = interface 4. The 88E1512's own RGMII
+	 * delays are off (as in Palo Alto's reg-init); the AGL DLL supplies
+	 * the clock delay, so the PHY side is plain "rgmii".
+	 */
+	interface@4 {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		compatible = "cavium,octeon-3860-pip-interface";
+		reg = <4>; /* Interface */
+		status = "okay";
+
+		ethernet@0 {
+			compatible = "cavium,octeon-3860-pip-port";
+			reg = <0>; /* Port */
+			label = "mgt";
+			status = "okay";
+			phy-mode = "rgmii";
+			phy-handle = <&phy1>;
+			local-mac-address = [00 00 00 00 00 00];
+		};
+	};
+};
