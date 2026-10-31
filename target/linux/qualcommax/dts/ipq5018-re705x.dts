@@ -1,0 +1,64 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+/dts-v1/;
+
+#include "ipq5018-re700x.dtsi"
+
+/ {
+	model = "TP-Link RE705X";
+	compatible = "tplink,re705x", "qcom,ipq5018";
+};
+
+/*
+ * The RE705X has 512 MB of RAM, so both radios can be enabled (the RE700X
+ * keeps them disabled for its smaller memory). The QCN6122 runs on userpd3
+ * with the firmware-default reset configuration, like the other IPQ5018 +
+ * QCN6122 boards; the RE700X's userpd2 override is not used here.
+ */
+&wifi {
+	status = "okay";
+};
+
+&wifi1 {
+	status = "okay";
+
+	qcom,rproc = <&q6_wcss_pd3>;
+	qcom,userpd-subsys-name = "q6v5_wcss_userpd3";
+};
+
+&q6v5_wcss {
+	/delete-property/ boot-args;
+};
+
+/* LED and button GPIOs confirmed on the RE705X by GPIO sweep. */
+&led_power {
+	gpios = <&tlmm 38 GPIO_ACTIVE_HIGH>;
+};
+
+&led_wps_red {
+	gpios = <&tlmm 18 GPIO_ACTIVE_HIGH>;
+};
+
+&led_wlan2g {
+	gpios = <&tlmm 39 GPIO_ACTIVE_HIGH>;
+};
+
+&led_wlan5g {
+	gpios = <&tlmm 13 GPIO_ACTIVE_HIGH>;
+};
+
+&led_pins {
+	pins = "gpio13", "gpio18", "gpio22", "gpio38", "gpio39";
+};
+
+&button_pins {
+	pins = "gpio25", "gpio31";
+};
+
+&{/keys/button-reset} {
+	gpios = <&tlmm 25 GPIO_ACTIVE_LOW>;
+};
+
+&{/keys/button-wps} {
+	gpios = <&tlmm 31 GPIO_ACTIVE_LOW>;
+};
