@@ -230,7 +230,7 @@
 		reg = <0x00010000 0 0 0 0>;
 		nvmem-cell-names = "pre-calibration", "mac-address";
 		nvmem-cells = <&precal_art_9000>, <&macaddr_orgdata_32>;
-		qcom,ath10k-calibration-variant = "Buffalo-WTR-M2133HP";
+		qcom,calibration-variant = "Buffalo-WTR-M2133HP";
 	};
 };
 
@@ -399,7 +399,7 @@
 	status = "okay";
 	nvmem-cell-names = "pre-calibration", "mac-address";
 	nvmem-cells = <&precal_art_1000>, <&macaddr_orgdata_26>;
-	qcom,ath10k-calibration-variant = "Buffalo-WTR-M2133HP";
+	qcom,calibration-variant = "Buffalo-WTR-M2133HP";
 	ieee80211-freq-limit = <2400000 2483000>;
 };
 
@@ -407,7 +407,7 @@
 	status = "okay";
 	nvmem-cell-names = "pre-calibration", "mac-address";
 	nvmem-cells = <&precal_art_5000>, <&macaddr_orgdata_2c>;
-	qcom,ath10k-calibration-variant = "Buffalo-WTR-M2133HP";
+	qcom,calibration-variant = "Buffalo-WTR-M2133HP";
 };
 
 &switch {
