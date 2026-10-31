@@ -20,6 +20,7 @@
 		led-upgrade = &led_blue;
 
 		serial0 = &blsp1_uart2;
+		serial2 = &blsp1_uart3;
 	};
 
 	chosen {
@@ -186,6 +187,18 @@
 	status = "okay";
 };
 
+/*
+ * Silicon Labs EFR32MG21 (Thread/802.15.4 and Bluetooth LE radio
+ * co-processor) on UART3 with RTS/CTS, 921600 baud. GPIO 42 is its reset
+ * (low = in reset) and GPIO 64 its bootloader pin (low at reset = stay
+ * in the bootloader). Both are released here and stay usable as GPIOs.
+ */
+&blsp1_uart3 {
+	pinctrl-0 = <&uart3_pins &iot_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
 &rpm_requests {
 	regulators {
 		compatible = "qcom,rpm-mp5496-regulators";
@@ -256,6 +269,31 @@
 };
 
 &tlmm {
+	uart3_pins: uart3-state {
+		pins = "gpio15", "gpio16", "gpio17", "gpio18";
+		function = "blsp3_uart";
+		drive-strength = <8>;
+		bias-disable;
+	};
+
+	iot_default: iot-default-state {
+		reset-pins {
+			pins = "gpio42";
+			function = "gpio";
+			drive-strength = <8>;
+			bias-pull-up;
+			output-high;
+		};
+
+		boot-pins {
+			pins = "gpio64";
+			function = "gpio";
+			drive-strength = <8>;
+			bias-pull-up;
+			output-high;
+		};
+	};
+
 	/*
 	 * GPIO 60 is the shared hardware reset for the QCA8075 package, and the
 	 * board holds it asserted (low) at power-on. reset-gpios is NOT honored
