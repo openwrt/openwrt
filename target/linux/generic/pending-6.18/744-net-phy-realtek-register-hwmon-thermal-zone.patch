@@ -1,0 +1,35 @@
+From dcb2f5eeaf421cfaab9b805c359e6679f5953c16 Mon Sep 17 00:00:00 2001
+From: Hleb Shauchenka <me@marleb.org>
+Date: Thu, 29 Oct 2026 16:59:06 +0100
+Subject: [PATCH net-next] net: phy: realtek: register hwmon thermal zones
+
+The Realtek PHY hwmon device exposes the PHY temperature, but its
+channel info lacks HWMON_C_REGISTER_TZ, so the hwmon core does not
+register the sensor with the thermal framework and device-tree
+thermal zones that reference the PHY cannot bind.
+
+Set the flag, as the Aquantia PHY driver does. This lets the RTL8261N
+sensors on the Zyxel XGS1250-12 B1 drive the chassis fan through
+thermal cooling maps.
+
+Tested on a Zyxel XGS1250-12 B1 with OpenWrt's Linux 6.18.55: the
+three PHY thermal zones register, and an emulated 85 C reading on one
+of them (CONFIG_THERMAL_EMULATION) switches the fan on through the
+existing 80 C trip and off again once cleared.
+
+This patch was prepared with AI assistance (Claude Opus 5.5 and Sol
+6.1), which also helped investigate the problem and run the tests on
+my switch.
+
+Signed-off-by: Hleb Shauchenka <me@marleb.org>
+---
+--- a/drivers/net/phy/realtek/realtek_hwmon.c
++++ b/drivers/net/phy/realtek/realtek_hwmon.c
+@@ -51,6 +51,7 @@ static const struct hwmon_ops rtl822x_hw
+ };
+ 
+ static const struct hwmon_channel_info * const rtl822x_hwmon_info[] = {
++	HWMON_CHANNEL_INFO(chip, HWMON_C_REGISTER_TZ),
+ 	HWMON_CHANNEL_INFO(temp, HWMON_T_INPUT | HWMON_T_MAX),
+ 	NULL
+ };
