@@ -64,7 +64,7 @@ Signed-off-by: Lukasz M <lukasz1992m+openwrt@gmail.com>
  			TXQ_CONFIG(0, WFDMA0, MT_INT_TX_DONE_BAND0,
  				   MT7915_TXQ_BAND0);
  			TXQ_CONFIG(1, WFDMA0, MT_INT_TX_DONE_BAND1,
-@@ -405,6 +416,21 @@ static int mt7915_dma_enable(struct mt79
+@@ -405,6 +416,25 @@ static int mt7915_dma_enable(struct mt79
  	return mt7915_dma_start(dev, reset, true);
  }
  
@@ -75,10 +75,14 @@ Signed-off-by: Lukasz M <lukasz1992m+openwrt@gmail.com>
 +
 +	mt7915_dma_config(dev);
 +
-+	if (dev->mt76.q_rx[MT_RXQ_MAIN].ndesc)
++	if (dev->mt76.q_rx[MT_RXQ_MAIN].ndesc) {
++		mt76_queue_rx_reset(dev, MT_RXQ_MAIN);
 +		mask |= MT_INT_RX(MT_RXQ_MAIN);
-+	if (dev->mt76.q_rx[MT_RXQ_BAND1].ndesc)
++	}
++	if (dev->mt76.q_rx[MT_RXQ_BAND1].ndesc) {
++		mt76_queue_rx_reset(dev, MT_RXQ_BAND1);
 +		mask |= MT_INT_RX(MT_RXQ_BAND1);
++	}
 +	if (mask)
 +		mt7915_irq_enable(dev, mask);
 +}
@@ -86,7 +90,7 @@ Signed-off-by: Lukasz M <lukasz1992m+openwrt@gmail.com>
  int mt7915_dma_init(struct mt7915_dev *dev, struct mt7915_phy *phy2)
  {
  	struct mt76_dev *mdev = &dev->mt76;
-@@ -578,6 +604,14 @@ int mt7915_dma_init(struct mt7915_dev *d
+@@ -578,6 +608,14 @@ int mt7915_dma_init(struct mt7915_dev *d
  	if (ret < 0)
  		return ret;
  
@@ -101,6 +105,20 @@ Signed-off-by: Lukasz M <lukasz1992m+openwrt@gmail.com>
  	netif_napi_add_tx(dev->mt76.tx_napi_dev, &dev->mt76.tx_napi,
  			  mt7915_poll_tx);
  	napi_enable(&dev->mt76.tx_napi);
+@@ -717,6 +755,11 @@ int mt7915_dma_reset(struct mt7915_dev *
+ 	mt76_tx_status_check(&dev->mt76, true);
+ 
+-	mt76_for_each_q_rx(&dev->mt76, i)
+-		mt76_queue_rx_reset(dev, i);
++	mt76_for_each_q_rx(&dev->mt76, i) {
++		if (mt76_npu_device_active(&dev->mt76) &&
++		    (i == MT_RXQ_MAIN || i == MT_RXQ_BAND1))
++			continue;
++
++		mt76_queue_rx_reset(dev, i);
++	}
+ 
+ 	if (mtk_wed_device_active(wed) && is_mt7915(&dev->mt76))
 --- a/mt7915/init.c
 +++ b/mt7915/init.c
 @@ -1328,6 +1328,10 @@ int mt7915_register_device(struct mt7915
@@ -258,7 +276,7 @@ Signed-off-by: Lukasz M <lukasz1992m+openwrt@gmail.com>
  #endif
 --- /dev/null
 +++ b/mt7915/npu.c
-@@ -0,0 +1,234 @@
+@@ -0,0 +1,239 @@
 +// SPDX-License-Identifier: GPL-2.0-only
 +/*
 + * Copyright (c) 2026 AIROHA Inc
@@ -464,6 +482,11 @@ Signed-off-by: Lukasz M <lukasz1992m+openwrt@gmail.com>
 +
 +	mt7915_npu_rxd_set(dev);
 +
++	if (!dev->phy.mt76->band_idx)
++		mt76_queue_rx_cleanup(dev, &dev->mt76.q_rx[MT_RXQ_MAIN]);
++	if (dev->dbdc_support || dev->phy.mt76->band_idx)
++		mt76_queue_rx_cleanup(dev, &dev->mt76.q_rx[MT_RXQ_BAND1]);
++
 +	for (i = MT_RXQ_NPU0; i <= MT_RXQ_NPU1; i++)
 +		airoha_npu_wlan_enable_irq(npu, i - MT_RXQ_NPU0);
 +
@@ -523,3 +546,20 @@ Signed-off-by: Lukasz M <lukasz1992m+openwrt@gmail.com>
  	mt76_npu_queue_cleanup(dev, &dev->q_rx[MT_RXQ_NPU1]);
  }
 +EXPORT_SYMBOL_GPL(mt76_npu_deinit);
+--- a/mac80211.c
++++ b/mac80211.c
+@@ -650,8 +650,13 @@ int mt76_create_page_pool(struct mt76_de
+ 	switch (idx) {
+ 	case MT_RXQ_MAIN:
+ 	case MT_RXQ_BAND1:
+ 	case MT_RXQ_BAND2:
++		if (mt76_npu_device_active(dev)) {
++			pp_params.pool_size = 16;
++			break;
++		}
++		fallthrough;
+ 	case MT_RXQ_NPU0:
+ 	case MT_RXQ_NPU1:
+ 		pp_params.pool_size = 256;
+ 		break;
+

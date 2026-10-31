@@ -77,7 +77,23 @@ Signed-off-by: Lukasz M <lukasz1992m+openwrt@gmail.com>
  
  int mt76_npu_fill_rx_queue(struct mt76_dev *dev, struct mt76_queue *q)
  {
-@@ -59,6 +92,49 @@ void mt76_npu_queue_cleanup(struct mt76_
+@@ -40,6 +73,15 @@ int mt76_npu_fill_rx_queue(struct mt76_d
+ 		nframes++;
+ 	}
+ 
++	/*
++	 * Hand the slots back to the NPU only once they have a new buffer,
++	 * up to the one kept free in front of the tail.
++	 */
++	if (nframes) {
++		dma_wmb();
++		Q_WRITE(q, dma_idx, (q->head + 1) % q->ndesc);
++	}
++
+ 	return nframes;
+ }
+ 
+@@ -59,6 +101,60 @@ void mt76_npu_queue_cleanup(struct mt76_
  	spin_unlock_bh(&q->lock);
  }
  
@@ -98,6 +114,13 @@ Signed-off-by: Lukasz M <lukasz1992m+openwrt@gmail.com>
 +	struct airoha_npu_rx_dma_desc *desc = (void *)q->desc;
 +	int i, n, total = 0, sum = 0;
 +
++	if (!q->queued ||
++	    !FIELD_GET(NPU_RX_DMA_DESC_DONE_MASK, READ_ONCE(desc[index].ctrl)))
++		return 0;
++
++	/* The frame length and slot count are only valid once the first slot is done */
++	dma_rmb();
++
 +	if (is_mt7916(dev))
 +		total = FIELD_GET(GENMASK(26, 14), desc[index].ctrl);
 +
@@ -107,8 +130,12 @@ Signed-off-by: Lukasz M <lukasz1992m+openwrt@gmail.com>
 +	for (i = 0; i < q->queued; i++) {
 +		int idx = (index + i) % q->ndesc;
 +
-+		if (!FIELD_GET(NPU_RX_DMA_DESC_DONE_MASK, desc[idx].ctrl))
-+			return 0;
++		if (i > 0) {
++			if (!FIELD_GET(NPU_RX_DMA_DESC_DONE_MASK,
++				       READ_ONCE(desc[idx].ctrl)))
++				return 0;
++			dma_rmb();
++		}
 +
 +		if (!total) {
 +			if (i + 1 == n)
@@ -127,7 +154,7 @@ Signed-off-by: Lukasz M <lukasz1992m+openwrt@gmail.com>
  static struct sk_buff *mt76_npu_dequeue(struct mt76_dev *dev,
  					struct mt76_queue *q,
  					u32 *info)
-@@ -66,32 +142,46 @@ static struct sk_buff *mt76_npu_dequeue(
+@@ -66,32 +162,46 @@ static struct sk_buff *mt76_npu_dequeue(
  	struct airoha_npu_rx_dma_desc *desc = (void *)q->desc;
  	int i, nframes, index = q->tail;
  	struct sk_buff *skb = NULL;
@@ -188,7 +215,7 @@ Signed-off-by: Lukasz M <lukasz1992m+openwrt@gmail.com>
  		} else {
  			struct skb_shared_info *shinfo = skb_shinfo(skb);
  			struct page *page = virt_to_head_page(e->buf);
-@@ -101,6 +191,8 @@ static struct sk_buff *mt76_npu_dequeue(
+@@ -101,6 +211,8 @@ static struct sk_buff *mt76_npu_dequeue(
  				skb_add_rx_frag(skb, nr_frags, page,
  						e->buf - page_address(page),
  						len, q->buf_size);
@@ -197,7 +224,15 @@ Signed-off-by: Lukasz M <lukasz1992m+openwrt@gmail.com>
  		}
  
  		*info = desc[index].info;
-@@ -275,7 +367,7 @@ int mt76_npu_rx_queue_init(struct mt76_d
+@@ -108,7 +220,6 @@ static struct sk_buff *mt76_npu_dequeue(
+ 	}
+ 	q->tail = index;
+ 	q->queued -= i;
+-	Q_WRITE(q, dma_idx, q->tail);
+ 
+ 	return skb;
+ }
+@@ -275,7 +386,7 @@ int mt76_npu_rx_queue_init(struct mt76_d
  	q->flags = MT_NPU_Q_RX(index);
  	size = qid == MT_RXQ_NPU1 ? NPU_RX1_DESC_NUM : NPU_RX0_DESC_NUM;
  	err = dev->queue_ops->alloc(dev, q, 0, size,

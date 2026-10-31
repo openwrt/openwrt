@@ -1,0 +1,41 @@
+From 59767c8e05439b6a0f0a7ad8d8c5c5b98d407fa2 Mon Sep 17 00:00:00 2001
+From: Lukasz M <lukasz1992m+openwrt@gmail.com>
+Date: Tue, 13 Oct 2026 20:00:00 +0200
+Subject: [PATCH] [PATCH 2/8] wifi: mt76: mt7915: do not let the TX backoff subtraction
+
+ underflow
+
+mt7915_mcu_get_chan_mib_info() subtracts the accumulated TXOP backoff
+from the TX duration to get the channel busy time. Both operands are
+u64 and nothing bounds backoff by the duration. The MIB counters wrap,
+so after a wrap the backoff can exceed the duration and the subtraction
+wraps to a value near 2^64. The delta guard does not catch it: the
+wrapped result is larger than the previous sample, so it is accepted as
+a large forward step and permanently corrupts the survey busy time.
+
+Clamp the subtraction. This is complementary to the mt7915_mib_delta()
+guard, which rejects a counter that stepped backwards.
+
+Signed-off-by: Lukasz M <lukasz1992m+openwrt@gmail.com>
+---
+ mt7915/mcu.c | 8 +++++++-
+ 1 file changed, 7 insertions(+), 1 deletion(-)
+
+--- a/mt7915/mcu.c
++++ b/mt7915/mcu.c
+@@ -3272,8 +3272,14 @@ int mt7915_mcu_get_chan_mib_info(struct
+ #define __res_u64(s) le64_to_cpu(res[s].data)
+ 	/* subtract Tx backoff time from Tx duration for MT7915 */
+ 	if (is_mt7915(&dev->mt76)) {
++		u64 tx = __res_u64(1);
+ 		u64 backoff = (__res_u64(4) & 0xffff) * 79;  /* 16us + 9us * 7 */
+-		cc_tx = __res_u64(1) - backoff;
++
++		/* the MIB counters wrap, and a wrapped backoff value can
++		 * exceed the TX duration. Do not let this u64 subtraction
++		 * underflow, the result would be stored as a huge delta.
++		 */
++		cc_tx = backoff < tx ? tx - backoff : 0;
+ 	} else {
+ 		cc_tx = __res_u64(1);
+ 	}
