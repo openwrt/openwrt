@@ -113,7 +113,7 @@ static ssize_t stp_state_read(struct file *filp, char __user *buffer, size_t cou
 {
 	struct rtldsa_port *p = filp->private_data;
 	struct dsa_switch *ds = p->dp->ds;
-	int state = rtldsa_port_get_stp_state(ds->priv, p->dp->index);
+	int state = otto_stp_port_state_get(ds->priv, p->dp->index);
 
 	if (state < 0)
 		return state;
@@ -131,7 +131,7 @@ static ssize_t stp_state_write(struct file *filp, const char __user *buffer,
 	if (res < 0)
 		return res;
 
-	rtldsa_port_stp_state_set(p->dp->ds, p->dp->index, (u8)value);
+	otto_stp_port_state_set(p->dp->ds, p->dp->index, (u8)value);
 
 	return res;
 }
