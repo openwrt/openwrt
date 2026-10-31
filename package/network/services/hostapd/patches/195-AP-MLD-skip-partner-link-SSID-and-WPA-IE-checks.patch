@@ -1,0 +1,41 @@
+From: Alexander Astrovsky <astrouski@google.com>
+Date: Mon, 24 Aug 2026 10:40:00 +0000
+Subject: [PATCH] AP: MLD: skip partner link SSID and WPA IE checks
+
+In 802.11be MLO, association requests carry partner link Information
+Elements (IEs) in the Basic Multi-Link element. These partner link IEs
+contain per-link capabilities and parameters, but they typically omit the
+SSID element and WPA/RSN IEs (as security negotiation occurs at the MLD
+level on the primary association link).
+
+Previously, hostapd treated partner link IEs identically to primary
+association requests, checking for mandatory SSID and WPA IEs. When
+absent, hostapd rejected the partner link with WLAN_STATUS_UNSPECIFIED_FAILURE.
+
+Skip mandatory SSID and WPA IE checks when processing partner link IEs in
+MLO associations.
+
+Signed-off-by: Alexander Astrovsky <astrouski@google.com>
+---
+Index: hostapd-2026.08.07~831364bf/src/ap/ieee802_11.c
+===================================================================
+--- hostapd-2026.08.07~831364bf.orig/src/ap/ieee802_11.c
++++ hostapd-2026.08.07~831364bf/src/ap/ieee802_11.c
+@@ -5458,7 +5458,7 @@ static int __check_assoc_ies(struct host
+ #endif /* CONFIG_ENC_ASSOC */
+ #endif /* CONFIG_SAE */
+ 
+-	if (type != LINK_PARSE_RECONF) {
++	if (type != LINK_PARSE_RECONF && !sta->mld_assoc_sta) {
+ 		resp = check_ssid(hapd, sta, elems->ssid, elems->ssid_len);
+ 		if (resp != WLAN_STATUS_SUCCESS)
+ 			goto out;
+@@ -5704,7 +5704,7 @@ static int __check_assoc_ies(struct host
+ 		sta->flags |= WLAN_STA_MAYBE_WPS;
+ 	} else
+ #endif /* CONFIG_WPS */
+-	if (hapd->conf->wpa && wpa_ie == NULL) {
++	if (hapd->conf->wpa && wpa_ie == NULL && !assoc_wpa_sm) {
+ 		hostapd_logger(hapd, sta->addr, HOSTAPD_MODULE_IEEE80211,
+ 			       HOSTAPD_LEVEL_INFO,
+ 			       "No WPA/RSN IE in association request");
