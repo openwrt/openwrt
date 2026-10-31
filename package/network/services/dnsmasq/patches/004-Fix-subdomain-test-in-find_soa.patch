@@ -1,0 +1,25 @@
+From 7719737f3687a2e8e98d8ede31e4f1a006f2deea Mon Sep 17 00:00:00 2001
+From: Simon Kelley <simon@thekelleys.org.uk>
+Date: Fri, 16 Oct 2026 15:22:23 +0100
+Subject: [PATCH] Fix subdomain-test in find_soa()
+
+Do correct subdomain test, rather than a substring match.
+
+Thanks to Lucas Celant <lcelant@redhat.com> for spotting this.
+
+CVE-2026-93008 may apply.
+---
+ src/rfc1035.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/src/rfc1035.c
++++ b/src/rfc1035.c
+@@ -560,7 +560,7 @@ static int find_soa(struct dns_header *h
+ 	  soa_len = strlen(daemon->workspacename);
+ 
+ 	  /* SOA must be for the name we're interested in. */
+-	  if (soa_len <= name_len && memcmp(daemon->workspacename, name + name_len - soa_len, soa_len) == 0)
++	  if (hostname_issubdomain(daemon->workspacename, name) != 0)
+ 	    {
+ 	      int prefix = name_len - soa_len;
+ 	      

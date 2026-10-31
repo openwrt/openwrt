@@ -1,0 +1,152 @@
+From 11493fe2186f837aeda74e8bf7fae8b92773a498 Mon Sep 17 00:00:00 2001
+From: Simon Kelley <simon@thekelleys.org.uk>
+Date: Fri, 16 Oct 2026 20:58:00 +0100
+Subject: [PATCH] Improve resistance to many simultaneous TCP connections.
+
+Dnsmasq limits the number of simultaneous TCP connections,
+to avoid resource-exhaustion attacks. Once the limit if reached,
+dnsmasq stops accepting TCP connections from the kernel.
+
+When doing dnssec validation, the same resources are used to
+handle internally generated queries with large answers
+needed to validate incoming queries which can still arrive via UDP.
+If a dnsmasq daemon has reached the limit on incoming
+TCP connections then these queries will fail to validate needlessly.
+
+Bump the number of TCP-process resources by 50% when dnssec validation
+is enabled, and reserve the extra 50% only for internally-generated
+dnssec validation queries. This allows validation to continue even
+when dnsmasq is ignoring new TCP requests.
+
+Thanks to Lucas Celant <lcelant@redhat.com> for spotting this.
+
+CVE-2026-93007 may apply.
+---
+ src/dnsmasq.c | 33 ++++++++++++++++++++++++---------
+ src/dnsmasq.h |  3 ++-
+ 2 files changed, 26 insertions(+), 10 deletions(-)
+
+--- a/src/dnsmasq.c
++++ b/src/dnsmasq.c
+@@ -140,6 +140,9 @@ int main (int argc, char **argv)
+       /* one char flag per possible RR in answer section (may get extended). */
+       daemon->rr_status_sz = 64;
+       daemon->rr_status = safe_malloc(sizeof(*daemon->rr_status) * daemon->rr_status_sz);
++      /* Increase TCP process slots by half, and reserve the extra for validation-to-tcp use only. */
++      daemon->dnssec_tcp_slot_reserved = daemon->max_procs/2;
++      daemon->max_procs += daemon->dnssec_tcp_slot_reserved;
+     }
+ #endif
+   
+@@ -427,7 +430,8 @@ int main (int argc, char **argv)
+ 
+       daemon->tcp_pids = safe_malloc(daemon->max_procs*sizeof(pid_t));
+       daemon->tcp_pipes = safe_malloc(daemon->max_procs*sizeof(int));
+-
++      daemon->tcp_type = safe_malloc(daemon->max_procs);
++      
+       for (i = 0; i < daemon->max_procs; i++)
+ 	daemon->tcp_pipes[i] = -1;
+     }
+@@ -1652,7 +1656,11 @@ static void async_event(int pipe, time_t
+ 		  
+ 		  /* tcp_pipes == -1 && tcp_pids == 0 required to free slot */
+ 		  if (daemon->tcp_pipes[i] == -1)
+-		    daemon->metrics[METRIC_TCP_CONNECTIONS]--;
++		    {
++		      if (daemon->tcp_type[i])
++			 daemon->dnssec_tcp_slot_reserved++;
++		      daemon->metrics[METRIC_TCP_CONNECTIONS]--;
++		    }
+ 		}
+ 	break;
+ 	
+@@ -1888,7 +1896,7 @@ static void set_dns_listeners(void)
+   struct serverfd *serverfdp;
+   struct listener *listener;
+   struct randfd_list *rfl;
+-  int i;
++  int i, j;
+   
+   for (serverfdp = daemon->sfds; serverfdp; serverfdp = serverfdp->next)
+     poll_listen(serverfdp->fd, POLLIN);
+@@ -1902,8 +1910,8 @@ static void set_dns_listeners(void)
+     poll_listen(rfl->rfd->fd, POLLIN);
+   
+   /* check to see if we have free tcp process slots. */
+-  for (i = daemon->max_procs - 1; i >= 0; i--)
+-    if (daemon->tcp_pids[i] == 0 && daemon->tcp_pipes[i] == -1)
++  for (j = 0, i = daemon->max_procs - 1; i >= 0; i--)
++    if (daemon->tcp_pids[i] == 0 && daemon->tcp_pipes[i] == -1 && ++j > daemon->dnssec_tcp_slot_reserved)
+       break;
+ 
+   for (listener = daemon->listeners; listener; listener = listener->next)
+@@ -1930,7 +1938,7 @@ static void check_dns_listeners(time_t n
+   struct serverfd *serverfdp;
+   struct listener *listener;
+   struct randfd_list *rfl;
+-  int i;
++  int i, j;
+   
+   /* Note that handling events here can create or destroy fds and
+      render the result of the last poll() call invalid. Once
+@@ -1955,7 +1963,11 @@ static void check_dns_listeners(time_t n
+ 	      daemon->tcp_pipes[i] = -1;	
+ 	      /* tcp_pipes == -1 && tcp_pids == 0 required to free slot */
+ 	      if (daemon->tcp_pids[i] == 0)
+-		daemon->metrics[METRIC_TCP_CONNECTIONS]--;
++		{
++		  daemon->metrics[METRIC_TCP_CONNECTIONS]--;
++		  if (daemon->tcp_type[i])
++		    daemon->dnssec_tcp_slot_reserved++;
++		}
+ 	    }
+ 	  return;
+ 	}
+@@ -1995,8 +2007,8 @@ static void check_dns_listeners(time_t n
+      at least one a poll() time, that we still do.
+      There may be more waiting connections after
+      poll() returns then free process slots. */
+-  for (i = daemon->max_procs - 1; i >= 0; i--)
+-    if (daemon->tcp_pids[i] == 0 && daemon->tcp_pipes[i] == -1)
++  for (j = 0,i = daemon->max_procs - 1; i >= 0; i--)
++    if (daemon->tcp_pids[i] == 0 && daemon->tcp_pipes[i] == -1 && ++j > daemon->dnssec_tcp_slot_reserved)
+       break;
+ 
+   if (i >= 0)
+@@ -2159,6 +2171,7 @@ static void do_tcp_connection(struct lis
+ 
+ 	  daemon->tcp_pids[slot] = p;
+ 	  daemon->tcp_pipes[slot] = pipefd[0];
++	  daemon->tcp_type[slot] = 0;
+ 	  daemon->metrics[METRIC_TCP_CONNECTIONS]++;
+ 	  if (daemon->metrics[METRIC_TCP_CONNECTIONS] > daemon->max_procs_used)
+ 	    daemon->max_procs_used = daemon->metrics[METRIC_TCP_CONNECTIONS];
+@@ -2280,6 +2293,8 @@ int swap_to_tcp(struct frec *forward, ti
+ 	  /* i holds index of free slot */
+ 	  daemon->tcp_pids[i] = p;
+ 	  daemon->tcp_pipes[i] = pipefd[0];
++	  daemon->tcp_type[i] = 1;
++	  daemon->dnssec_tcp_slot_reserved--;
+ 	  daemon->metrics[METRIC_TCP_CONNECTIONS]++;
+ 	  if (daemon->metrics[METRIC_TCP_CONNECTIONS] > daemon->max_procs_used)
+ 	    daemon->max_procs_used = daemon->metrics[METRIC_TCP_CONNECTIONS];
+--- a/src/dnsmasq.h
++++ b/src/dnsmasq.h
+@@ -1295,6 +1295,7 @@ extern struct daemon {
+   int    fd_save;          /*      "        "        */
+   pid_t *tcp_pids;
+   int *tcp_pipes;
++  char *tcp_type;
+   int pipe_to_parent;
+   int numrrand;
+   struct randfd *randomsocks;
+@@ -1354,7 +1355,7 @@ extern struct daemon {
+   /* file for packet dumps. */
+   int dumpfd;
+ #endif
+-  int max_procs;
++  int max_procs, dnssec_tcp_slot_reserved;
+   uint max_procs_used;
+ } *daemon;
+ 
