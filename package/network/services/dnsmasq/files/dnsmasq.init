@@ -179,8 +179,16 @@ append_connmark_allowlist() {
 	xappend "--connmark-allowlist=$1"
 }
 
+# Device of a logical interface: from netifd, else (at boot, before netifd
+# runs) the device configured for it, else the name itself.
+interface_device() {
+	network_get_device ifname "$1" && return
+	ifname="$(uci_get network "$1" device)"
+	[ -n "$ifname" ] || ifname="$1"
+}
+
 append_interface() {
-	network_get_device ifname "$1" || ifname="$1"
+	interface_device "$1"
 	xappend "--interface=$ifname"
 }
 
@@ -189,7 +197,7 @@ append_listenaddress() {
 }
 
 append_notinterface() {
-	network_get_device ifname "$1" || ifname="$1"
+	interface_device "$1"
 	xappend "--except-interface=$ifname"
 }
 
@@ -1056,10 +1064,11 @@ dnsmasq_start()
 		config_list_foreach "$cfg" "connmark_allowlist" append_connmark_allowlist
 	}
 
-	[ -n "$BOOT" ] || {
-		config_list_foreach "$cfg" "interface" append_interface
-		config_list_foreach "$cfg" "notinterface" append_notinterface
-	}
+	# Also at boot: without them, multiple instances all bind every address
+	# (127.0.0.1 included) and collide until the interface triggers reload
+	# them. bind-dynamic binds the devices as they appear.
+	config_list_foreach "$cfg" "interface" append_interface
+	config_list_foreach "$cfg" "notinterface" append_notinterface
 	config_get_bool ignore_hosts_dir "$cfg" ignore_hosts_dir 0
 	if [ "$ignore_hosts_dir" = "1" ]; then
 		xappend "--addn-hosts=$HOSTFILE"
