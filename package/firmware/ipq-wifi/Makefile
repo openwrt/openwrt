@@ -86,6 +86,7 @@ ALLWIFIBOARDS:= \
 	netgear_wax610y \
 	netgear_wax620 \
 	netgear_wax630 \
+	nokia_beacon-10 \
 	prpl_haze \
 	qihoo_360v6 \
 	qnap_301w \
@@ -301,6 +302,7 @@ $(eval $(call generate-ipq-wifi-package,netgear_wax610,Netgear WAX610))
 $(eval $(call generate-ipq-wifi-package,netgear_wax610y,Netgear WAX610Y))
 $(eval $(call generate-ipq-wifi-package,netgear_wax620,Netgear WAX620))
 $(eval $(call generate-ipq-wifi-package,netgear_wax630,Netgear WAX630))
+$(eval $(call generate-ipq-wifi-package,nokia_beacon-10,Nokia Beacon 10))
 $(eval $(call generate-ipq-wifi-package,prpl_haze,prpl Haze))
 $(eval $(call generate-ipq-wifi-package,qihoo_360v6,Qihoo 360V6))
 $(eval $(call generate-ipq-wifi-package,qnap_301w,QNAP 301w))
