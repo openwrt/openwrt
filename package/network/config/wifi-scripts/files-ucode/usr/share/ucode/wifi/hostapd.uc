@@ -424,6 +424,14 @@ function device_htmode_append(config) {
 				'he_spr_srg_obss_pd_min_offset', 'he_spr_srg_obss_pd_max_offset',
 				'he_spr_srg_bss_colors', 'he_spr_srg_partial_bssid'
 			]);
+		} else {
+			/* Without a colour, clients can't tell this BSS's PPDUs
+			 * from another's, so forbid them spatial reuse. With no SR
+			 * Parameter Set at all they may use non-SRG OBSS PD up to
+			 * -62 dBm, and ignore this AP's weaker frames as an OBSS's.
+			 */
+			config.he_spr_sr_control |= 3;
+			append_vars(config, [ 'he_spr_sr_control' ]);
 		}
 
 		if (!(he_phy_cap[3] & 0x80))
