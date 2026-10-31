@@ -341,9 +341,8 @@ menuconfig RUST_TOOLCHAINOPTS
 
 choice
 	prompt "Rust toolchain" if RUST_TOOLCHAINOPTS
-	default RUST_TOOLCHAIN_BUILD if EXPERIMENTAL && TARGET_mpc85xx
-	default RUST_TOOLCHAIN_PREBUILT if EXPERIMENTAL
-	default RUST_TOOLCHAIN_NONE
+	default RUST_TOOLCHAIN_BUILD if TARGET_mpc85xx
+	default RUST_TOOLCHAIN_PREBUILT
 	help
 	  With None, Rust packages build with rust/host of the packages
 	  feed. After switching from None to a Rust toolchain in a tree
@@ -366,10 +365,11 @@ choice
 		select USE_RUST_PREBUILT
 		help
 		  Downloads rustc, cargo, rust-src and llvm-tools from
-		  static.rust-lang.org instead of building them. The cross
-		  rust-std for the target is still built from source by
-		  package/libs/libstd-rust. Not available for e500v2 targets,
-		  which need the LLVM fix of tools/rust.
+		  static.rust-lang.org, or from the OpenWrt source mirror, to
+		  which the buildbots upload them, instead of building them.
+		  The cross rust-std for the target is still built from source
+		  by package/libs/libstd-rust. Not available for e500v2
+		  targets, which need the LLVM fix of tools/rust.
 
 	config RUST_TOOLCHAIN_HOST
 		bool "Use host Rust toolchain"
@@ -423,22 +423,26 @@ config KERNEL_RUST
 	depends on aarch64 || (arm && arm_v7 && !BIG_ENDIAN && !KERNEL_KASAN) \
 		|| (loongarch64 && !KERNEL_KASAN) || x86_64
 	select BUILD_BINDGEN
-	default y
+	default y if USE_LLVM_HOST || USE_LLVM_PREBUILT || BUILDBOT
 	help
 	  Builds bindgen and passes RUSTC/BINDGEN/RUST_LIB_SRC to the kernel
 	  Kbuild, enabling CONFIG_RUST to be selected in the kernel .config.
 	  riscv64 is excluded: kernel Rust on riscv64 requires CC_IS_CLANG.
+	  On by default with a host or prebuilt LLVM toolchain, and on the
+	  buildbots, as bindgen needs libclang.
 
 config BUILD_BINDGEN
 	bool
 	prompt "Build bindgen (C-header to Rust bindings)" if RUST_TOOLCHAINOPTS
 	depends on USE_RUST_TOOLCHAIN
 	select USE_LLVM_BUILD if !USE_LLVM_HOST && !USE_LLVM_PREBUILT
-	default y
+	default y if USE_LLVM_HOST || USE_LLVM_PREBUILT || BUILDBOT
 	help
 	  Installs bindgen-cli to the host toolchain. Required for kernel Rust
 	  and for meson-based Rust projects (Mesa3D RustiCL, Nouveau, glycin).
-	  Automatically selected by KERNEL_RUST.
+	  Automatically selected by KERNEL_RUST. On by default with a host or
+	  prebuilt LLVM toolchain, and on the buildbots; otherwise bindgen
+	  builds LLVM from source for its libclang.
 
 config USE_CBINDGEN
 	bool
@@ -482,11 +486,11 @@ config USE_LLVM_BUILD
 	bool
 
 config USE_RUST_BUILD
-	default y if EXPERIMENTAL && !RUST_TOOLCHAINOPTS && TARGET_mpc85xx
+	default y if !RUST_TOOLCHAINOPTS && TARGET_mpc85xx
 	bool
 
 config USE_RUST_PREBUILT
-	default y if EXPERIMENTAL && !RUST_TOOLCHAINOPTS && !TARGET_mpc85xx
+	default y if !RUST_TOOLCHAINOPTS && !TARGET_mpc85xx
 	bool
 
 config USE_RUST_HOST
