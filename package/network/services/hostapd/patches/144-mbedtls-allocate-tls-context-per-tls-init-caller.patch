@@ -1,0 +1,667 @@
+From 5a685cdc11d140849fea3f97d6268c602ead5273 Mon Sep 17 00:00:00 2001
+From: Karsten Sperling <ksperling@apple.com>
+Date: Thu, 30 Jul 2026 00:38:01 +1200
+Subject: [PATCH] mbedtls: allocate a TLS context per tls_init() caller
+
+The tls.h API and its callers within hostapd expect independent
+contexts, e.g. one per BSS with eap_server=1, since those are configured
+independently.
+
+Prior to this change, tls_init() returned &tls_ctx_global, a file-static
+singleton, and refcounted repeat calls rather than creating a new
+context. Two BSSes each calling tls_init() + tls_global_set_params()
+therefore shared one configuration, so the certs, CA and TLS version
+range came from whichever BSS was configured last. In addition,
+tls_init() returned early on the second and later calls, before copying
+the struct tls_config, so those BSSes silently lost their event_cb,
+cb_ctx, crl_reload_interval and openssl_ciphers: TLS events for every
+BSS were reported against the first BSS's context.
+
+Allocate a struct tls_global in tls_init() instead, and reach it from
+struct tls_connection (conn->global) and struct tls_conf
+(tls_conf->global). The struct name "tls_global" is retained for the
+context to avoid unnecessary code churn, but the context is now only
+"global" as in "not per-connection" rather than a per-process global.
+
+The mbedtls_ctr_drbg_context returned by crypto_mbedtls_ctr_drbg() is
+already a singleton so there is no need to store a separate pointer to
+it in tls_global.
+
+The logic for distinguishing server configs, tls_ctx_global.tls_conf !=
+NULL, i.e. "has tls_global_set_params() been called", is now expressed
+as tls_conf->global->tls_conf != NULL.
+
+tls_mbedtls_verify_fail_event() gains a tls_connection parameter to
+reach the event callback; all of its callers are within
+tls_mbedtls_verify_cb(), which already has one.
+
+Also apply the openssl_ciphers from the struct tls_config as the default
+for connections that do not configure their own, matching the OpenSSL
+backend. Its only previous reader was the fallback for a connection
+without a tls_conf in tls_connection_handshake(), which can only be
+reached when the context has no tls_conf either, yet dereferenced it for
+tls_flags -- a pre-existing NULL dereference, now removed along with the
+rest of that code.
+
+On mbedtls < 3.0 the key material export callback can only be registered
+on the mbedtls_ssl_config, so the connection it is registered for is
+whichever one was set up last on that config. This pre-existing
+limitation was previously process-wide and is now confined to the
+connections of a single context; it is noted at the registration site.
+
+Also handle os_strdup() failures in tls_init() and
+tls_global_set_params().
+
+Some hwsim tests that use an external authentication server were
+affected by the incorrect sharing of the global context; these now pass.
+
+Signed-off-by: Karsten Sperling <ksperling@apple.com>
+
+--- a/src/crypto/tls_mbedtls.c
++++ b/src/crypto/tls_mbedtls.c
+@@ -132,8 +132,11 @@ typedef mbedtls_tls_prf_types int;
+ #endif
+ 
+ 
++struct tls_global;
++
+ struct tls_conf {
+ 	mbedtls_ssl_config conf;
++	struct tls_global *global;
+ 
+ 	unsigned int verify_peer:1;
+ 	unsigned int verify_depth0_only:1;
+@@ -169,21 +172,27 @@ struct tls_conf {
+ };
+ 
+ 
++/* Configuration and state that is shared between TLS connections created from
++ * it, created by tls_init(). "global" here means "shared between connections";
++ * there is one instance per tls_init() caller (e.g. per BSS for the EAP
++ * server). Always outlives the connections created from it. */
+ struct tls_global {
+ 	struct tls_conf *tls_conf;
+ 	char *ocsp_stapling_response;
+-	mbedtls_ctr_drbg_context *ctr_drbg; /*(see crypto_mbedtls.c)*/
+ 	char *ca_cert_file;
+ 	struct os_reltime crl_reload_previous;
+ 	unsigned int crl_reload_interval;
+-	uint32_t refcnt;
+-	struct tls_config init_conf;
+-};
+ 
+-static struct tls_global tls_ctx_global;
++	void (*event_cb)(void *ctx, enum tls_event ev,
++			 union tls_event_data *data);
++	void *cb_ctx;
++	int cert_in_cb;
++	char *openssl_ciphers;
++};
+ 
+ 
+ struct tls_connection {
++	struct tls_global *global; /* owning "tls_ctx" */
+ 	struct tls_conf *tls_conf;
+ 	struct wpabuf *push_buf;
+ 	struct wpabuf *pull_buf;
+@@ -273,16 +282,21 @@ static void emsgrc(int level, const char
+ #define ilog(rc, msg) emsgrc(MSG_INFO,  (msg), (rc))
+ 
+ 
+-struct tls_conf * tls_conf_init(void *tls_ctx)
++/* Returns the global, lazily initialized DRBG context (crypto_mbedtls.c) */
++mbedtls_ctr_drbg_context * crypto_mbedtls_ctr_drbg(void); /*(not in header)*/
++
++
++static struct tls_conf * tls_conf_init(struct tls_global *global)
+ {
+ 	struct tls_conf *tls_conf = os_zalloc(sizeof(*tls_conf));
+ 	if (tls_conf == NULL)
+ 		return NULL;
+ 	tls_conf->refcnt = 1;
++	tls_conf->global = global;
+ 
+ 	mbedtls_ssl_config_init(&tls_conf->conf);
+ 	mbedtls_ssl_conf_rng(&tls_conf->conf,
+-			     mbedtls_ctr_drbg_random, tls_ctx_global.ctr_drbg);
++	                     mbedtls_ctr_drbg_random, crypto_mbedtls_ctr_drbg());
+ 	mbedtls_x509_crt_init(&tls_conf->ca_cert);
+ 	mbedtls_x509_crt_init(&tls_conf->client_cert);
+ 	mbedtls_pk_init(&tls_conf->private_key);
+@@ -291,7 +305,7 @@ struct tls_conf * tls_conf_init(void *tl
+ }
+ 
+ 
+-void tls_conf_deinit(struct tls_conf *tls_conf)
++static void tls_conf_deinit(struct tls_conf *tls_conf)
+ {
+ 	if (tls_conf == NULL || --tls_conf->refcnt != 0)
+ 		return;
+@@ -315,44 +329,46 @@ void tls_conf_deinit(struct tls_conf *tl
+ }
+ 
+ 
+-mbedtls_ctr_drbg_context * crypto_mbedtls_ctr_drbg(void); /*(not in header)*/
+-
+ __attribute_cold__
+ void * tls_init(const struct tls_config *conf)
+ {
+-	/* RFE: review struct tls_config *conf (different from tls_conf) */
+-
+-	if (++tls_ctx_global.refcnt > 1)
+-		return &tls_ctx_global;
++	struct tls_global *global = os_zalloc(sizeof(*global));
++	if (global == NULL)
++		return NULL;
+ 
+-	tls_ctx_global.ctr_drbg = crypto_mbedtls_ctr_drbg();
+-	/* copy struct for future use */
+-	tls_ctx_global.init_conf = *conf;
+-	if (conf->openssl_ciphers)
+-		tls_ctx_global.init_conf.openssl_ciphers =
+-		  os_strdup(conf->openssl_ciphers);
++	/* Copy the relevant parts of the tls_config (different from tls_conf)
++	 * Note: conf->tls_flags is ignored, matching OpenSSL / GnuTLS. */
++	global->event_cb = conf->event_cb;
++	global->cb_ctx = conf->cb_ctx;
++	global->cert_in_cb = conf->cert_in_cb;
++
++	if (conf->openssl_ciphers) {
++		global->openssl_ciphers = os_strdup(conf->openssl_ciphers);
++		if (global->openssl_ciphers == NULL) {
++			os_free(global);
++			return NULL;
++		}
++	}
+ 
+-	tls_ctx_global.crl_reload_interval = conf->crl_reload_interval;
+-	os_get_reltime(&tls_ctx_global.crl_reload_previous);
++	global->crl_reload_interval = conf->crl_reload_interval;
++	os_get_reltime(&global->crl_reload_previous);
+ 
+-	return &tls_ctx_global;
++	return global;
+ }
+ 
+ 
+ __attribute_cold__
+ void tls_deinit(void *tls_ctx)
+ {
+-	if (tls_ctx == NULL || --tls_ctx_global.refcnt != 0)
++	struct tls_global *global = tls_ctx;
++	if (global == NULL)
+ 		return;
+ 
+-	tls_conf_deinit(tls_ctx_global.tls_conf);
+-	os_free(tls_ctx_global.ca_cert_file);
+-	os_free(tls_ctx_global.ocsp_stapling_response);
+-	char *openssl_ciphers; /*(allocated in tls_init())*/
+-	*(const char **)&openssl_ciphers =
+-	  tls_ctx_global.init_conf.openssl_ciphers;
+-	os_free(openssl_ciphers);
+-	os_memset(&tls_ctx_global, 0, sizeof(tls_ctx_global));
++	tls_conf_deinit(global->tls_conf);
++	os_free(global->ca_cert_file);
++	os_free(global->ocsp_stapling_response);
++	os_free(global->openssl_ciphers);
++	os_free(global);
+ }
+ 
+ 
+@@ -414,26 +430,30 @@ void tls_connection_deinit(void *tls_ctx
+ }
+ 
+ 
+-static void tls_mbedtls_refresh_crl(void);
++static void tls_mbedtls_refresh_crl(struct tls_global *global);
+ static int tls_mbedtls_ssl_setup(struct tls_connection *conn);
+ 
+ struct tls_connection * tls_connection_init(void *tls_ctx)
+ {
++	struct tls_global *global = tls_ctx;
++	if (global == NULL)
++		return NULL;
+ 	struct tls_connection *conn = os_zalloc(sizeof(*conn));
+ 	if (conn == NULL)
+ 		return NULL;
+ 
+ 	mbedtls_ssl_init(&conn->ssl);
++	conn->global = global;
+ 
+-	conn->tls_conf = tls_ctx_global.tls_conf; /*(inherit global conf, if set)*/
++	conn->tls_conf = global->tls_conf; /*(inherit global conf, if set)*/
+ 	if (conn->tls_conf) {
+ 		++conn->tls_conf->refcnt;
+ 		/* check for CRL refresh if inheriting from global config */
+-		tls_mbedtls_refresh_crl();
++		tls_mbedtls_refresh_crl(global);
+ 
+ 		conn->verify_peer = conn->tls_conf->verify_peer;
+ 		if (tls_mbedtls_ssl_setup(conn) != 0) {
+-			tls_connection_deinit(&tls_ctx_global, conn);
++			tls_connection_deinit(global, conn);
+ 			return NULL;
+ 		}
+ 	}
+@@ -619,6 +639,14 @@ static int tls_mbedtls_ssl_setup(struct
+ 	mbedtls_ssl_set_export_keys_cb(
+ 	    &conn->ssl, tls_connection_export_keys_cb, conn);
+   #elif MBEDTLS_VERSION_NUMBER >= 0x02120000 /* mbedtls 2.18.0 */
++	/* Known limitation on mbedtls < 3.0: this callback is conf-scoped, so
++	 * the tls_connection registered here is whichever one was set up last
++	 * on this tls_conf. It is read when mbedtls derives keys, i.e. during
++	 * the handshake, so two connections sharing a tls_conf that are both
++	 * mid-handshake (EAP authentications interleave across stations) can
++	 * have one connection's key material written into the other. Consumers
++	 * of the key material are tls_connection_export_key() and
++	 * tls_connection_get_eap_fast_key(). */
+ 	mbedtls_ssl_conf_export_keys_ext_cb(
+ 	    &conn->tls_conf->conf, tls_connection_export_keys_cb, conn);
+   #endif
+@@ -1467,16 +1495,16 @@ static int tls_mbedtls_set_ca_and_crl(st
+ }
+ 
+ 
+-static void tls_mbedtls_refresh_crl(void)
++static void tls_mbedtls_refresh_crl(struct tls_global *global)
+ {
+ 	/* check for CRL refresh
+ 	 * continue even if error occurs; continue with previous cert, CRL */
+-	unsigned int crl_reload_interval = tls_ctx_global.crl_reload_interval;
+-	const char *ca_cert_file = tls_ctx_global.ca_cert_file;
++	unsigned int crl_reload_interval = global->crl_reload_interval;
++	const char *ca_cert_file = global->ca_cert_file;
+ 	if (!crl_reload_interval || !ca_cert_file)
+ 		return;
+ 
+-	struct os_reltime *previous = &tls_ctx_global.crl_reload_previous;
++	struct os_reltime *previous = &global->crl_reload_previous;
+ 	struct os_reltime now;
+ 	if (os_get_reltime(&now) != 0
+ 	    || !os_reltime_expired(&now, previous, crl_reload_interval))
+@@ -1489,7 +1517,7 @@ static void tls_mbedtls_refresh_crl(void
+ 	 * or else it would be a good idea to check mtime and size,
+ 	 * and avoid reloading if file has not changed */
+ 
+-	if (tls_mbedtls_set_ca_and_crl(tls_ctx_global.tls_conf, ca_cert_file) == 0)
++	if (tls_mbedtls_set_ca_and_crl(global->tls_conf, ca_cert_file) == 0)
+ 		*previous = now;
+ }
+ 
+@@ -1580,7 +1608,7 @@ static int tls_mbedtls_set_certs(struct
+ 	else {
+ 		/* Initial setting: REQUIRED for client, OPTIONAL for server
+ 		 *   (see also tls_connection_set_verify()) */
+-		tls_conf->verify_peer = (tls_ctx_global.tls_conf == NULL);
++		tls_conf->verify_peer = (tls_conf->global->tls_conf == NULL);
+ 		int authmode = tls_conf->verify_peer
+ 		  ? MBEDTLS_SSL_VERIFY_REQUIRED
+ 		  : MBEDTLS_SSL_VERIFY_OPTIONAL;
+@@ -1646,7 +1674,7 @@ static int tls_mbedtls_set_certs(struct
+ 			(const unsigned char *)pwd,
+ 			pwd ? os_strlen(pwd) : 0,
+ 			mbedtls_ctr_drbg_random,
+-			tls_ctx_global.ctr_drbg);
++			crypto_mbedtls_ctr_drbg());
+ 	  #else
+ 		ret = mbedtls_pk_parse_key(&tls_conf->private_key,
+ 			data, len,
+@@ -1752,22 +1780,28 @@ static int tls_mbedtls_set_params(struct
+ 		return -1;
+ 	}
+ 
++	/* The openssl_ciphers given to tls_init() is the default for connections
++	 * that do not configure their own, as in the OpenSSL backend. */
++	const char *openssl_ciphers = params->openssl_ciphers
++	                            ? params->openssl_ciphers
++	                            : tls_conf->global->openssl_ciphers;
++
+ 	int suiteb128 = 0;
+ 	int suiteb192 = 0;
+-	if (params->openssl_ciphers) {
+-		if (os_strcmp(params->openssl_ciphers, "SUITEB192") == 0) {
++	if (openssl_ciphers) {
++		if (os_strcmp(openssl_ciphers, "SUITEB192") == 0) {
+ 			suiteb192 = 1;
+ 			tls_conf->flags |= TLS_CONN_SUITEB;
+ 		}
+-		if (os_strcmp(params->openssl_ciphers, "SUITEB128") == 0) {
++		if (os_strcmp(openssl_ciphers, "SUITEB128") == 0) {
+ 			suiteb128 = 1;
+ 			tls_conf->flags |= TLS_CONN_SUITEB;
+ 		}
+ 	}
+ 
+ 	int ret = mbedtls_ssl_config_defaults(
+-	    &tls_conf->conf, tls_ctx_global.tls_conf ? MBEDTLS_SSL_IS_SERVER
+-	                                             : MBEDTLS_SSL_IS_CLIENT,
++	    &tls_conf->conf, tls_conf->global->tls_conf ? MBEDTLS_SSL_IS_SERVER
++	                                                : MBEDTLS_SSL_IS_CLIENT,
+ 	    MBEDTLS_SSL_TRANSPORT_STREAM,
+ 	    (tls_conf->flags & TLS_CONN_SUITEB) ? MBEDTLS_SSL_PRESET_SUITEB
+ 	                                        : MBEDTLS_SSL_PRESET_DEFAULT);
+@@ -1808,8 +1842,8 @@ static int tls_mbedtls_set_params(struct
+ 		return -1;
+ 	}
+ 
+-	if (params->openssl_ciphers) {
+-		if (!tls_mbedtls_set_ciphers(tls_conf, params->openssl_ciphers))
++	if (openssl_ciphers) {
++		if (!tls_mbedtls_set_ciphers(tls_conf, openssl_ciphers))
+ 			return -1;
+ 	}
+ 	else if (tls_conf->flags & TLS_CONN_SUITEB) {
+@@ -1828,21 +1862,22 @@ static int tls_mbedtls_set_params(struct
+ int tls_connection_set_params(void *tls_ctx, struct tls_connection *conn,
+ 			      const struct tls_connection_params *params)
+ {
+-	if (conn == NULL || params == NULL)
++	if (conn == NULL || params == NULL || tls_ctx != conn->global)
+ 		return -1;
++	struct tls_global *global = conn->global;
+ 
+ 	tls_conf_deinit(conn->tls_conf);
+-	struct tls_conf *tls_conf = conn->tls_conf = tls_conf_init(tls_ctx);
++	struct tls_conf *tls_conf = conn->tls_conf = tls_conf_init(global);
+ 	if (tls_conf == NULL)
+ 		return -1;
+ 
+-	if (tls_ctx_global.tls_conf) {
+-		tls_conf->check_crl = tls_ctx_global.tls_conf->check_crl;
+-		tls_conf->check_crl_strict = tls_ctx_global.tls_conf->check_crl_strict;
++	if (global->tls_conf) {
++		tls_conf->check_crl = global->tls_conf->check_crl;
++		tls_conf->check_crl_strict = global->tls_conf->check_crl_strict;
+ 		/*(tls_openssl.c inherits check_cert_subject from global conf)*/
+-		if (tls_ctx_global.tls_conf->check_cert_subject) {
++		if (global->tls_conf->check_cert_subject) {
+ 			tls_conf->check_cert_subject =
+-			  os_strdup(tls_ctx_global.tls_conf->check_cert_subject);
++			  os_strdup(global->tls_conf->check_cert_subject);
+ 			if (tls_conf->check_cert_subject == NULL)
+ 				return -1;
+ 		}
+@@ -1957,31 +1992,42 @@ __attribute_cold__
+ int tls_global_set_params(void *tls_ctx,
+ 			  const struct tls_connection_params *params)
+ {
++	struct tls_global *global = tls_ctx;
++
+ 	/* XXX: why might global_set_params be called more than once? */
+-	if (tls_ctx_global.tls_conf)
+-		tls_conf_deinit(tls_ctx_global.tls_conf);
+-	tls_ctx_global.tls_conf = tls_conf_init(tls_ctx);
+-	if (tls_ctx_global.tls_conf == NULL)
++	if (global->tls_conf)
++		tls_conf_deinit(global->tls_conf);
++	global->tls_conf = tls_conf_init(global);
++	if (global->tls_conf == NULL)
+ 		return -1;
+ 
+-	os_free(tls_ctx_global.ocsp_stapling_response);
+-	tls_ctx_global.ocsp_stapling_response = NULL;
+-	if (params->ocsp_stapling_response)
+-		tls_ctx_global.ocsp_stapling_response =
++	os_free(global->ocsp_stapling_response);
++	global->ocsp_stapling_response = NULL;
++	if (params->ocsp_stapling_response) {
++		global->ocsp_stapling_response =
+ 			os_strdup(params->ocsp_stapling_response);
++		if (global->ocsp_stapling_response == NULL)
++			return -1;
++	}
++
++	os_free(global->ca_cert_file);
++	global->ca_cert_file = NULL;
++	if (params->ca_cert) {
++		global->ca_cert_file = os_strdup(params->ca_cert);
++		if (global->ca_cert_file == NULL)
++			return -1;
++	}
+ 
+-	os_free(tls_ctx_global.ca_cert_file);
+-	tls_ctx_global.ca_cert_file = NULL;
+-	if (params->ca_cert)
+-		tls_ctx_global.ca_cert_file = os_strdup(params->ca_cert);
+-	return tls_mbedtls_set_params(tls_ctx_global.tls_conf, params);
++	return tls_mbedtls_set_params(global->tls_conf, params);
+ }
+ 
+ 
+ int tls_global_set_verify(void *tls_ctx, int check_crl, int strict)
+ {
+-	tls_ctx_global.tls_conf->check_crl = check_crl;
+-	tls_ctx_global.tls_conf->check_crl_strict = strict; /*(time checks)*/
++	struct tls_global *global = tls_ctx;
++
++	global->tls_conf->check_crl = check_crl;
++	global->tls_conf->check_crl_strict = strict; /*(time checks)*/
+ 	return 0;
+ }
+ 
+@@ -2214,7 +2260,7 @@ static void tls_mbedtls_suiteb_handshake
+ 	/* tests/hwsim/test_suite_b.py test_suite_b_192_rsa_insufficient_dh */
+ 	if (!(conn->tls_conf->flags & TLS_CONN_SUITEB))
+ 		return;
+-	if (tls_ctx_global.tls_conf) /*(is server; want issue event on client)*/
++	if (conn->global->tls_conf) /*(is server; want issue event on client)*/
+ 		return;
+   #if 0
+ 	/*(info not available on client;
+@@ -2230,8 +2276,8 @@ static void tls_mbedtls_suiteb_handshake
+ 	         < 384 /*(3072/8)*/)
+   #endif
+ 	{
+-		struct tls_config *init_conf = &tls_ctx_global.init_conf;
+-		if (init_conf->event_cb) {
++		struct tls_global *global = conn->global;
++		if (global->event_cb) {
+ 			union tls_event_data ev;
+ 			os_memset(&ev, 0, sizeof(ev));
+ 			ev.alert.is_local = 1;
+@@ -2239,7 +2285,7 @@ static void tls_mbedtls_suiteb_handshake
+ 			/*"internal error" string for tests/hwsim/test_suiteb.py */
+ 			ev.alert.description = "internal error: handshake failure";
+ 			/*ev.alert.description = "insufficient security";*/
+-			init_conf->event_cb(init_conf->cb_ctx, TLS_ALERT, &ev);
++			global->event_cb(global->cb_ctx, TLS_ALERT, &ev);
+ 		}
+ 	}
+ }
+@@ -2262,11 +2308,9 @@ struct wpabuf * tls_connection_handshake
+ 	}
+ 
+ 	if (conn->tls_conf == NULL) {
++		/* Apply the tls_init() defaults; see tls_mbedtls_set_params() */
+ 		struct tls_connection_params params;
+ 		os_memset(&params, 0, sizeof(params));
+-		params.openssl_ciphers =
+-		  tls_ctx_global.init_conf.openssl_ciphers;
+-		params.flags = tls_ctx_global.tls_conf->flags;
+ 		if (tls_connection_set_params(tls_ctx, conn, &params) != 0)
+ 			return NULL;
+ 	}
+@@ -2350,7 +2394,7 @@ struct wpabuf * tls_connection_handshake
+ 	case MBEDTLS_ERR_SSL_WANT_READ:
+ 	case MBEDTLS_ERR_SSL_CRYPTO_IN_PROGRESS:
+ 	case MBEDTLS_ERR_SSL_ASYNC_IN_PROGRESS:
+-		if (tls_ctx_global.tls_conf /*(is server)*/
++		if (conn->global->tls_conf /*(is server)*/
+ 		    && conn->established && conn->push_buf == NULL)
+ 			/* Need to return something to trigger completion of EAP-TLS. */
+ 			conn->push_buf = wpabuf_alloc(0);
+@@ -3024,11 +3068,12 @@ tls_mbedtls_match_dn_field(mbedtls_x509_
+ 
+ __attribute_cold__
+ static void
+-tls_mbedtls_verify_fail_event (mbedtls_x509_crt *crt, int depth,
++tls_mbedtls_verify_fail_event (struct tls_connection *conn,
++                               mbedtls_x509_crt *crt, int depth,
+                                const char *errmsg, enum tls_fail_reason reason)
+ {
+-	struct tls_config *init_conf = &tls_ctx_global.init_conf;
+-	if (init_conf->event_cb == NULL)
++	struct tls_global *global = conn->global;
++	if (global->event_cb == NULL)
+ 		return;
+ 
+ 	struct wpabuf *certbuf = wpabuf_alloc_copy(crt->raw.p, crt->raw.len);
+@@ -3043,7 +3088,7 @@ tls_mbedtls_verify_fail_event (mbedtls_x
+ 	ev.cert_fail.reason_txt = errmsg;
+ 	ev.cert_fail.cert = certbuf;
+ 
+-	init_conf->event_cb(init_conf->cb_ctx, TLS_CERT_CHAIN_FAILURE, &ev);
++	global->event_cb(global->cb_ctx, TLS_CERT_CHAIN_FAILURE, &ev);
+ 
+ 	wpabuf_free(certbuf);
+ }
+@@ -3054,8 +3099,8 @@ static void
+ tls_mbedtls_verify_cert_event (struct tls_connection *conn,
+                                mbedtls_x509_crt *crt, int depth)
+ {
+-	struct tls_config *init_conf = &tls_ctx_global.init_conf;
+-	if (init_conf->event_cb == NULL)
++	struct tls_global *global = conn->global;
++	if (global->event_cb == NULL)
+ 		return;
+ 
+ 	struct wpabuf *certbuf = NULL;
+@@ -3145,12 +3190,12 @@ tls_mbedtls_verify_cert_event (struct tl
+ 
+ 	struct tls_conf *tls_conf = conn->tls_conf;
+ 	if (tls_conf->ca_cert_probe || (tls_conf->flags & TLS_CONN_EXT_CERT_CHECK)
+-	    || init_conf->cert_in_cb) {
++	    || global->cert_in_cb) {
+ 		certbuf = wpabuf_alloc_copy(crt->raw.p, crt->raw.len);
+ 		ev.peer_cert.cert = certbuf;
+ 	}
+ 
+-	init_conf->event_cb(init_conf->cb_ctx, TLS_PEER_CERTIFICATE, &ev);
++	global->event_cb(global->cb_ctx, TLS_PEER_CERTIFICATE, &ev);
+ 
+ 	wpabuf_free(certbuf);
+ 	char **altsubject;
+@@ -3177,7 +3222,7 @@ tls_mbedtls_verify_cb (void *arg, mbedtl
+ 	if (depth > 8) { /*(depth 8 picked as arbitrary limit)*/
+ 		emsg(MSG_WARNING, "client cert chain too long");
+ 		*flags |= MBEDTLS_X509_BADCERT_OTHER; /* cert chain too long */
+-		tls_mbedtls_verify_fail_event(crt, depth,
++		tls_mbedtls_verify_fail_event(conn, crt, depth,
+ 			                      "client cert chain too long",
+ 		                              TLS_FAIL_BAD_CERTIFICATE);
+ 	}
+@@ -3191,7 +3236,7 @@ tls_mbedtls_verify_cb (void *arg, mbedtl
+ 			if (sha256_vector(1, addr, &crt->raw.len, hash) < 0
+ 			    || os_memcmp(tls_conf->ca_cert_hash, hash, sizeof(hash)) != 0) {
+ 				*flags |= MBEDTLS_X509_BADCERT_NOT_TRUSTED;
+-				tls_mbedtls_verify_fail_event(crt, depth,
++				tls_mbedtls_verify_fail_event(conn, crt, depth,
+ 			                                      "cert hash mismatch",
+ 				                              TLS_FAIL_UNTRUSTED);
+ 			}
+@@ -3207,7 +3252,7 @@ tls_mbedtls_verify_cb (void *arg, mbedtl
+ 		 * other TLS modules so that hwsim tests find exact string match)*/
+ 		if (!conn->peer_subject) { /* error copying subject string */
+ 			*flags |= MBEDTLS_X509_BADCERT_OTHER;
+-			tls_mbedtls_verify_fail_event(crt, depth,
++			tls_mbedtls_verify_fail_event(conn, crt, depth,
+ 			                              "internal error",
+ 			                              TLS_FAIL_UNSPECIFIED);
+ 		}
+@@ -3222,7 +3267,7 @@ tls_mbedtls_verify_cb (void *arg, mbedtl
+ 			           "MTLS: Subject '%s' did not match with '%s'",
+ 			           conn->peer_subject, tls_conf->subject_match);
+ 			*flags |= MBEDTLS_X509_BADCERT_CN_MISMATCH;
+-			tls_mbedtls_verify_fail_event(crt, depth,
++			tls_mbedtls_verify_fail_event(conn, crt, depth,
+ 			                              "Subject mismatch",
+ 			                              TLS_FAIL_SUBJECT_MISMATCH);
+ 		}
+@@ -3232,7 +3277,7 @@ tls_mbedtls_verify_cb (void *arg, mbedtl
+ 				   "MTLS: altSubjectName match '%s' not found",
+ 			           tls_conf->altsubject_match);
+ 			*flags |= MBEDTLS_X509_BADCERT_CN_MISMATCH;
+-			tls_mbedtls_verify_fail_event(crt, depth,
++			tls_mbedtls_verify_fail_event(conn, crt, depth,
+ 			                              "AltSubject mismatch",
+ 			                              TLS_FAIL_ALTSUBJECT_MISMATCH);
+ 		}
+@@ -3242,7 +3287,7 @@ tls_mbedtls_verify_cb (void *arg, mbedtl
+ 			           "MTLS: Domain suffix match '%s' not found",
+ 				   tls_conf->suffix_match);
+ 			*flags |= MBEDTLS_X509_BADCERT_CN_MISMATCH;
+-			tls_mbedtls_verify_fail_event(crt, depth,
++			tls_mbedtls_verify_fail_event(conn, crt, depth,
+ 			                              "Domain suffix mismatch",
+ 			                              TLS_FAIL_DOMAIN_SUFFIX_MISMATCH);
+ 		}
+@@ -3252,14 +3297,14 @@ tls_mbedtls_verify_cb (void *arg, mbedtl
+ 			           "MTLS: Domain match '%s' not found",
+ 				   tls_conf->domain_match);
+ 			*flags |= MBEDTLS_X509_BADCERT_CN_MISMATCH;
+-			tls_mbedtls_verify_fail_event(crt, depth,
++			tls_mbedtls_verify_fail_event(conn, crt, depth,
+ 			                              "Domain mismatch",
+ 			                              TLS_FAIL_DOMAIN_MISMATCH);
+ 		}
+ 		if (tls_conf->check_cert_subject
+ 		    && !tls_mbedtls_match_dn_field(crt, tls_conf->check_cert_subject)) {
+ 			*flags |= MBEDTLS_X509_BADCERT_CN_MISMATCH;
+-			tls_mbedtls_verify_fail_event(crt, depth,
++			tls_mbedtls_verify_fail_event(conn, crt, depth,
+ 			                              "Distinguished Name",
+ 			                              TLS_FAIL_DN_MISMATCH);
+ 		}
+@@ -3272,7 +3317,7 @@ tls_mbedtls_verify_cb (void *arg, mbedtl
+ 				 *   suite_b_192_rsa_ecdhe_radius_rsa2048_client
+ 				 *   suite_b_192_rsa_dhe_radius_rsa2048_client */
+ 				*flags |= MBEDTLS_X509_BADCERT_BAD_KEY;
+-				tls_mbedtls_verify_fail_event(crt, depth,
++				tls_mbedtls_verify_fail_event(conn, crt, depth,
+ 				                              "Insufficient RSA modulus size",
+ 				                              TLS_FAIL_INSUFFICIENT_KEY_LEN);
+ 			}
+@@ -3281,7 +3326,7 @@ tls_mbedtls_verify_cb (void *arg, mbedtl
+ 			/* see tests/hwsim test_ap_eap.py ap_wpa2_eap_tls_check_crl */
+ 			emsg(MSG_WARNING, "check_crl set but no CRL loaded; reject all?");
+ 			*flags |= MBEDTLS_X509_BADCERT_OTHER;
+-			tls_mbedtls_verify_fail_event(crt, depth,
++			tls_mbedtls_verify_fail_event(conn, crt, depth,
+ 				                      "check_crl set but no CRL loaded; "
+ 			                              "reject all?",
+ 			                              TLS_FAIL_BAD_CERTIFICATE);
+@@ -3335,7 +3380,7 @@ tls_mbedtls_verify_cb (void *arg, mbedtl
+ 				reason = TLS_FAIL_BAD_CERTIFICATE;
+ 				errmsg = "certificate uses insecure algorithm";
+ 			}
+-			tls_mbedtls_verify_fail_event(crt, depth, errmsg, reason);
++			tls_mbedtls_verify_fail_event(conn, crt, depth, errmsg, reason);
+ 		}
+ 	  #if 0
+ 		/* ??? send (again) cert events for all certs in chain ???
+@@ -3357,20 +3402,20 @@ tls_mbedtls_verify_cb (void *arg, mbedtl
+ 		}
+ 	}
+ 	else if (depth == 0) {
+-		struct tls_config *init_conf = &tls_ctx_global.init_conf;
++		struct tls_global *global = conn->global;
+ 		if (tls_conf->ca_cert_probe) {
+ 			/* reject server certificate on probe-only run */
+ 			*flags |= MBEDTLS_X509_BADCERT_OTHER;
+-			tls_mbedtls_verify_fail_event(crt, depth,
++			tls_mbedtls_verify_fail_event(conn, crt, depth,
+ 			                              "server chain probe",
+ 			                              TLS_FAIL_SERVER_CHAIN_PROBE);
+ 		}
+-		else if (init_conf->event_cb) {
++		else if (global->event_cb) {
+ 			/* ??? send event as soon as depth == 0 is verified ???
+ 			 * What about rest of chain?
+ 			 * Follows tls_mbedtls.c behavior: */
+-			init_conf->event_cb(init_conf->cb_ctx,
+-			                    TLS_CERT_CHAIN_SUCCESS, NULL);
++			global->event_cb(global->cb_ctx,
++			                 TLS_CERT_CHAIN_SUCCESS, NULL);
+ 		}
+ 	}
+ 
