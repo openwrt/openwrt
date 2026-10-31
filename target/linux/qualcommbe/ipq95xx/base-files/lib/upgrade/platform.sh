@@ -13,6 +13,14 @@ platform_check_image() {
 		}
 		return 0
 		;;
+	nokia,beacon-10)
+		[ -n "$(find_mmc_part owrt_kernel mmcblk0)" ] &&
+			[ -n "$(find_mmc_part owrt_rootfs mmcblk0)" ] || {
+			echo "Beacon 10 OpenWrt partitions not found" >&2
+			return 1
+		}
+		return 0
+		;;
 	*)
 		return 0
 		;;
@@ -35,6 +43,12 @@ platform_do_upgrade() {
 	linksys,ln6001)
 		ln6001_do_upgrade "$1" || return 1
 		;;
+	nokia,beacon-10)
+		CI_ROOTDEV="mmcblk0"
+		CI_KERNPART="owrt_kernel"
+		CI_ROOTPART="owrt_rootfs"
+		emmc_do_upgrade "$1"
+		;;
 	*)
 		default_do_upgrade "$1"
 		;;
@@ -44,7 +58,8 @@ platform_do_upgrade() {
 platform_copy_config() {
 	case "$(board_name)" in
 	8devices,kiwi-dvk|\
-	askey,sbe1v1k)
+	askey,sbe1v1k|\
+	nokia,beacon-10)
 		emmc_copy_config
 		;;
 	esac
