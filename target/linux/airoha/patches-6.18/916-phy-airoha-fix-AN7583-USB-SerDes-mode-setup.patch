@@ -21,9 +21,11 @@ Signed-off-by: Zhengping Zhang <zhengping.zhang@airoha.com>
  drivers/phy/airoha/phy-an7583-usb.c |   10 +++++++++-
  2 files changed, 15 insertions(+), 1 deletion(-)
 
---- a/drivers/clk/clk-en7523.c
-+++ b/drivers/clk/clk-en7523.c
-@@ -1214,6 +1214,9 @@ static int en7581_serdes_phy_set_mode(st
+Index: linux-6.18.64/drivers/clk/clk-en7523.c
+===================================================================
+--- linux-6.18.64.orig/drivers/clk/clk-en7523.c
++++ linux-6.18.64/drivers/clk/clk-en7523.c
+@@ -1228,6 +1228,9 @@ static int en7581_serdes_phy_set_mode(st
  		mask = REG_SSUSB_HSGMII_SEL_MASK;
  
  		if (mode != PHY_MODE_ETHERNET &&
@@ -33,7 +35,7 @@ Signed-off-by: Zhengping Zhang <zhengping.zhang@airoha.com>
  		    mode != PHY_MODE_USB_DEVICE_SS)
  			return -EINVAL;
  
-@@ -1228,6 +1231,9 @@ static int en7581_serdes_phy_set_mode(st
+@@ -1242,6 +1245,9 @@ static int en7581_serdes_phy_set_mode(st
  		mask = REG_USB_PCIE_SEL_MASK;
  
  		if (mode != PHY_MODE_PCIE &&
@@ -43,8 +45,10 @@ Signed-off-by: Zhengping Zhang <zhengping.zhang@airoha.com>
  		    mode != PHY_MODE_USB_DEVICE_SS)
  			return -EINVAL;
  
---- a/drivers/phy/airoha/phy-an7583-usb.c
-+++ b/drivers/phy/airoha/phy-an7583-usb.c
+Index: linux-6.18.64/drivers/phy/airoha/phy-an7583-usb.c
+===================================================================
+--- linux-6.18.64.orig/drivers/phy/airoha/phy-an7583-usb.c
++++ linux-6.18.64/drivers/phy/airoha/phy-an7583-usb.c
 @@ -867,8 +867,14 @@ static void an7583_usb_phy_kband_calibra
  
  static int an7583_usb_phy_u3_init(struct phy *phy)
