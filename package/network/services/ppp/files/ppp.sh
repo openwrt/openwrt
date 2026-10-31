@@ -69,14 +69,24 @@ ppp_opt_quote() {
 	printf '%s' "$1" | sed 's/\\/\\\\/g; s/"/\\"/g'
 }
 
-ppp_write_auth_file() {
-	local file="$1" user="$2" pass="$3"
+ppp_install_file() {
+	local file="$1" owner="$2" tmp
 
-	(
-		umask 077
-		printf 'user "%s"\npassword "%s"\n' \
-			"$(ppp_opt_quote "$user")" "$(ppp_opt_quote "$pass")" > "$file"
-	)
+	tmp=$(mktemp /var/run/.pppd.XXXXXX) || return
+	cat > "$tmp"
+	[ -z "$owner" ] || chown "$owner" "$tmp"
+	mv -f -T "$tmp" "$file" || {
+		rm -f "$tmp"
+		return 1
+	}
+}
+
+ppp_write_auth_file() {
+	local file="$1" user="$2" pass="$3" owner="$4"
+
+	printf 'user "%s"\npassword "%s"\n' \
+		"$(ppp_opt_quote "$user")" "$(ppp_opt_quote "$pass")" |
+		ppp_install_file "$file" "$owner"
 }
 
 ppp_generic_init_config() {
@@ -184,8 +194,7 @@ ppp_generic_setup() {
 	[ -n "$username" ] && {
 		optfile="/var/run/pppd/$config.opts"
 		mkdir -p /var/run/pppd
-		ppp_write_auth_file "$optfile" "$username" "$password"
-		[ -n "$jail" ] && chown ppp "$optfile"
+		ppp_write_auth_file "$optfile" "$username" "$password" ${jail:+ppp}
 	}
 
 	proto_run_command "$config" $jail /usr/sbin/pppd \
