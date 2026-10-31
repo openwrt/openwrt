@@ -1,0 +1,258 @@
+name: Sync JIDU6J11 OpenWrt fork with official OpenWrt
+
+on:
+  workflow_dispatch:
+    inputs:
+      fork_branch:
+        description: "Your fork branch containing JIDU6J11 support"
+        required: true
+        default: "main"
+
+      upstream_repository:
+        description: "Official OpenWrt repository"
+        required: true
+        default: "https://github.com/openwrt/openwrt.git"
+
+      upstream_ref:
+        description: "Official OpenWrt branch or tag to merge"
+        required: true
+        default: "main"
+
+      jidu_variant:
+        description: "JIDU6J11 hardware variant to verify"
+        required: true
+        default: "6411"
+        type: choice
+        options:
+          - "6111"
+          - "6411"
+          - "6611"
+          - "6811"
+          - "6911"
+
+      create_pull_request:
+        description: "Create a pull request if the merge is clean"
+        required: true
+        default: true
+        type: boolean
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: sync-openwrt-upstream-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  sync-upstream:
+    name: Merge official OpenWrt into JIDU6J11 fork
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+
+    env:
+      FORK_BRANCH: ${{ inputs.fork_branch }}
+      UPSTREAM_REPOSITORY: ${{ inputs.upstream_repository }}
+      UPSTREAM_REF: ${{ inputs.upstream_ref }}
+      JIDU_VARIANT: ${{ inputs.jidu_variant }}
+      DEVICE_ID: jiorouter_ax6000-jidu6j11-${{ inputs.jidu_variant }}
+
+    steps:
+      - name: Validate inputs
+        run: |
+          set -euo pipefail
+
+          if [ -z "$FORK_BRANCH" ]; then
+            echo "::error::Fork branch is required."
+            exit 1
+          fi
+
+          if [ -z "$UPSTREAM_REPOSITORY" ] || [ -z "$UPSTREAM_REF" ]; then
+            echo "::error::Upstream repository and ref are required."
+            exit 1
+          fi
+
+      - name: Checkout fork with full history
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.fork_branch }}
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure Git identity
+        run: |
+          set -euo pipefail
+
+          git config user.name "github-actions[bot]"
+          git config user.email \
+            "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Add official OpenWrt upstream remote
+        run: |
+          set -euo pipefail
+
+          git remote add upstream "$UPSTREAM_REPOSITORY" || true
+          git remote set-url upstream "$UPSTREAM_REPOSITORY"
+          git fetch upstream "$UPSTREAM_REF" --no-tags
+
+          git remote -v
+
+      - name: Create upstream-sync branch
+        run: |
+          set -euo pipefail
+
+          sync_branch="jidu6j11-upstream-sync-$(date +%Y%m%d-%H%M%S)"
+          echo "SYNC_BRANCH=$sync_branch" >> "$GITHUB_ENV"
+
+          git checkout -b "$sync_branch"
+
+      - name: Attempt merge from official OpenWrt
+        id: merge
+        run: |
+          set -uo pipefail
+
+          merge_ok=true
+
+          if ! git merge --no-edit \
+            "upstream/$UPSTREAM_REF"; then
+            merge_ok=false
+          fi
+
+          if [ "$merge_ok" = "true" ] && [ -n "$(git ls-files -u)" ]; then
+            merge_ok=false
+          fi
+
+          if [ "$merge_ok" = "false" ]; then
+            echo "MERGE_CONFLICT=true" >> "$GITHUB_ENV"
+
+            echo "::error::Upstream merge has conflicts requiring manual resolution."
+            echo "::group::Conflicted files"
+            git diff --name-only --diff-filter=U || true
+            echo "::endgroup::"
+
+            echo "::group::Merge status"
+            git status || true
+            echo "::endgroup::"
+
+            mkdir -p conflict-report
+
+            git diff --name-only --diff-filter=U \
+              > conflict-report/conflicted-files.txt || true
+
+            git status > conflict-report/git-status.txt || true
+
+            git diff > conflict-report/conflict-diff.patch || true
+
+            exit 1
+          fi
+
+          echo "MERGE_CONFLICT=false" >> "$GITHUB_ENV"
+
+      - name: Verify JIDU6J11 device support survived merge
+        if: env.MERGE_CONFLICT == 'false'
+        run: |
+          set -euo pipefail
+
+          if ! grep -Rqs "$DEVICE_ID" target/linux/qualcommbe; then
+            echo "::error::JIDU6J11 device $DEVICE_ID is missing after upstream merge."
+            echo "::group::Available JIDU6J11 devices"
+            grep -RhoE 'jiorouter_ax6000-jidu6j11-[0-9]+' \
+              target/linux/qualcommbe | sort -u || true
+            echo "::endgroup::"
+            exit 1
+          fi
+
+          grep -Rni "$DEVICE_ID" target/linux/qualcommbe
+
+      - name: Upload conflict report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: upstream-merge-conflicts-${{ github.run_number }}
+          path: conflict-report/
+          if-no-files-found: ignore
+          retention-days: 14
+
+      - name: Push clean merge branch
+        if: env.MERGE_CONFLICT == 'false'
+        run: |
+          set -euo pipefail
+
+          git push origin "$SYNC_BRANCH"
+
+      - name: Create pull request
+        if: >
+          env.MERGE_CONFLICT == 'false' &&
+          inputs.create_pull_request == true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          title="Sync JIDU6J11 with official OpenWrt $UPSTREAM_REF"
+
+          body=$(cat <<EOF
+          Automated merge of official OpenWrt \`$UPSTREAM_REF\` into \`$FORK_BRANCH\`.
+
+          **Target device:** \`$DEVICE_ID\`
+
+          ### Before merging this pull request
+
+          - Review conflicts and JIDU/QCA-specific changes.
+          - Run the JIDU6J11 firmware build workflow against this branch.
+          - Test the resulting \`*-initramfs-factory.ubi\` before flashing a permanent sysupgrade image.
+
+          ### Files to review especially
+
+          - \`target/linux/generic/\`
+          - \`target/linux/qualcommbe/\`
+          - \`include/kernel-*\`
+          - \`package/kernel/\`
+          - QCA wireless/NSS-related patches
+          EOF
+          )
+
+          gh pr create \
+            --base "$FORK_BRANCH" \
+            --head "$SYNC_BRANCH" \
+            --title "$title" \
+            --body "$body"
+
+      - name: Explain conflict resolution
+        if: failure()
+        run: |
+          cat <<'EOF'
+          The upstream merge could not be completed automatically.
+
+          Download the `upstream-merge-conflicts` artifact. It contains:
+
+          - conflicted-files.txt
+          - git-status.txt
+          - conflict-diff.patch
+
+          Resolve conflicts locally, preserving JIDU6J11 device support:
+
+            git fetch origin
+            git checkout <your-fork-branch>
+            git pull
+            git remote add upstream https://github.com/openwrt/openwrt.git
+            git fetch upstream
+            git checkout -b jidu6j11-upstream-sync
+            git merge upstream/main
+
+          Prefer official upstream for:
+            - target/linux/generic/
+            - include/kernel-*
+            - package/kernel/
+            - core packages
+
+          Preserve JIDU6J11 support in:
+            - target/linux/qualcommbe/ipq95xx/
+            - target/linux/qualcommbe/image/ipq95xx.mk
+            - JIDU DTS, board-support, calibration, and image-generation files
+
+          After resolving:
+            git add .
+            git commit
+            git push origin jidu6j11-upstream-sync
+          EOF
