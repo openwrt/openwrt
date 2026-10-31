@@ -1,0 +1,34 @@
+From 5ba2f82042d682b97b31909eb36647f4e7f16d2a Mon Sep 17 00:00:00 2001
+From: Nick Hainke <vincent@systemli.org>
+Date: Wed, 15 Apr 2026 09:34:17 +0200
+Subject: [PATCH] system: guard stdcountof.h include for portability
+
+Apple Clang on macOS does not provide stdcountof.h (a C23 header).
+Guard the include with HAVE_STDCOUNTOF_H, which is set by gnulib's
+stdcountof-h module during configure, and fall back to a classic
+countof() macro when the header is unavailable.
+
+Fixes build failure on macOS CI.
+
+Signed-off-by: Nick Hainke <vincent@systemli.org>
+---
+ src/system.h | 8 +++++++-
+ 1 file changed, 7 insertions(+), 1 deletion(-)
+
+--- a/src/system.h
++++ b/src/system.h
+@@ -70,7 +70,13 @@
+ #endif
+ 
+ #include <stdckdint.h>
+-#include <stdcountof.h>
++#ifdef HAVE_STDCOUNTOF_H
++# include <stdcountof.h>
++#else
++# ifndef countof
++#  define countof(array) (sizeof (array) / sizeof *(array))
++# endif
++#endif
+ #include <stddef.h>
+ #include <string.h>
+ #include <uchar.h>
