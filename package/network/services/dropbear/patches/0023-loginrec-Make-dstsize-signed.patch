@@ -1,0 +1,76 @@
+From f28a755ee6ffa66488cc75b866f29c0266b41783 Mon Sep 17 00:00:00 2001
+From: Matt Johnston <matt@ucc.asn.au>
+Date: Wed, 15 Jul 2026 21:53:25 +0800
+Subject: [PATCH 23/23] loginrec: Make dstsize signed
+
+dstsize was changed from int to size_t a long time ago, differing from
+OpenSSH. This is not correct, since ((int)len - dstsize) will be
+calculated with unsigned arithmetic and wrap, so "> 0" passes.
+That leads to src going backwards into earlier logininfo struct.
+
+Reported by @basavaraj-sm05 Basavaraj S Maneppagol
+
+This partially reverts the CVS commit.
+line_full_name() keeps "unsigned int" to avoid a signed comparison warning.
+
+Revision 1.7 - (view) (download) (annotate) - [select for diffs]
+Mon Jun 23 08:15:05 2003 UTC (23 years ago) by matt
+Branch: MAIN
+CVS Tags: RELEASE_0_34, RELEASE_0_35, RELEASE_0_36
+Changes since 1.6: +4 -4 lines
+Diff to previous 1.6
+
+tidying, get rid of some signed/unsigned comparisons, other compiler warnings
+
+(git conversion
+https://github.com/mkj/dropbear/commit/e629f4327f19dd903aa9cd565541eaa8676afd78)
+
+(cherry picked from commit 12fd4ab5c12627e8314c6979bcae7a2a8f70b1b3)
+---
+ src/loginrec.c | 6 +++---
+ src/loginrec.h | 6 +++---
+ 2 files changed, 6 insertions(+), 6 deletions(-)
+
+--- a/src/loginrec.c
++++ b/src/loginrec.c
+@@ -372,7 +372,7 @@ login_utmp_only(struct logininfo *li)
+ /* line_fullname(): add the leading '/dev/' if it doesn't exist make
+  * sure dst has enough space, if not just copy src (ugh) */
+ char *
+-line_fullname(char *dst, const char *src, size_t dstsize)
++line_fullname(char *dst, const char *src, unsigned int dstsize)
+ {
+ 	memset(dst, '\0', dstsize);
+ 	if ((strncmp(src, "/dev/", 5) == 0) || (dstsize < (strlen(src) + 5))) {
+@@ -386,7 +386,7 @@ line_fullname(char *dst, const char *src
+ 
+ /* line_stripname(): strip the leading '/dev' if it exists, return dst */
+ char *
+-line_stripname(char *dst, const char *src, size_t dstsize)
++line_stripname(char *dst, const char *src, int dstsize)
+ {
+ 	memset(dst, '\0', dstsize);
+ 	if (strncmp(src, "/dev/", 5) == 0)
+@@ -403,7 +403,7 @@ line_stripname(char *dst, const char *sr
+  * NOTE: use strncpy because we do NOT necessarily want zero
+  * termination */
+ char *
+-line_abbrevname(char *dst, const char *src, size_t dstsize)
++line_abbrevname(char *dst, const char *src, int dstsize)
+ {
+ 	size_t len;
+ 
+--- a/src/loginrec.h
++++ b/src/loginrec.h
+@@ -174,8 +174,8 @@ void login_write (struct logininfo *li);
+ int login_log_entry(struct logininfo *li);
+ 
+ /* produce various forms of the line filename */
+-char *line_fullname(char *dst, const char *src, size_t dstsize);
+-char *line_stripname(char *dst, const char *src, size_t dstsize);
+-char *line_abbrevname(char *dst, const char *src, size_t dstsize);
++char *line_fullname(char *dst, const char *src, unsigned int dstsize);
++char *line_stripname(char *dst, const char *src, int dstsize);
++char *line_abbrevname(char *dst, const char *src, int dstsize);
+ 
+ #endif /* DROPBEAR_HAVE_LOGINREC_H_ */
