@@ -1,0 +1,43 @@
+From 997a84c8cc7969026866d15294e7edda3d41dc32 Mon Sep 17 00:00:00 2001
+From: Rogan Lynch <roganl@gmail.com>
+Date: Sun, 25 Oct 2026 07:26:21 -0700
+Subject: [PATCH] source: mark source file handles close-on-exec
+
+A source keeps its FILE open until it is freed, which for the
+sources of a loaded program is the lifetime of the process. Without
+FD_CLOEXEC these handles survive execve(), so a process that
+re-execs itself with the program still loaded (rpcd on SIGHUP)
+carries every previous generation along: one descriptor per ucode
+source file per reload, until RLIMIT_NOFILE is hit.
+
+Set FD_CLOEXEC after opening the file.
+
+Newer ucode (1dd1f88, "close the file of a source after its
+compilation") no longer holds the handle open; this is the minimal
+equivalent for the release pinned by openwrt-25.12.
+
+Signed-off-by: Rogan Lynch <roganl@gmail.com>
+---
+ source.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+--- a/source.c
++++ b/source.c
+@@ -16,6 +16,7 @@
+ 
+ #include <string.h>
+ #include <errno.h>
++#include <fcntl.h>
+ 
+ #include "ucode/source.h"
+ #include "ucode/platform.h"
+@@ -30,6 +31,9 @@ uc_source_new_file(const char *path)
+ 	if (!fp)
+ 		return NULL;
+ 
++	/* the handle stays open until the source is freed, keep it out of exec()ed images */
++	fcntl(fileno(fp), F_SETFD, FD_CLOEXEC);
++
+ 	src = xalloc(ALIGN(sizeof(*src)) + strlen(path) + 1);
+ 
+ 	src->header.type = UC_SOURCE;
