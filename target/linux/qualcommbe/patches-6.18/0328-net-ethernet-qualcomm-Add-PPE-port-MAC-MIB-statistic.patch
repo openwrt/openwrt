@@ -568,7 +568,7 @@ Signed-off-by: Lei Wei <quic_leiwei@quicinc.com>
  #endif
 --- a/drivers/net/ethernet/qualcomm/ppe/ppe_regs.h
 +++ b/drivers/net/ethernet/qualcomm/ppe/ppe_regs.h
-@@ -618,6 +618,48 @@
+@@ -671,6 +671,48 @@
  #define GMAC_MIB_CTRL_MASK			\
  	(GMAC_MIB_RD_CLR | GMAC_MIB_RST | GMAC_MIB_EN)
  
@@ -617,7 +617,7 @@ Signed-off-by: Lei Wei <quic_leiwei@quicinc.com>
  /* XGMAC TX configuration register */
  #define XGMAC_TX_CONFIG_ADDR			0x0
  #define XGMAC_SPEED_M				GENMASK(31, 29)
-@@ -680,6 +722,55 @@
+@@ -733,6 +775,55 @@
  #define XGMAC_MCF				BIT(3)
  #define XGMAC_CNTRST				BIT(0)
  
