@@ -1,0 +1,42 @@
+From 07435407a57a54456f5e6e7e88787f9439fbe198 Mon Sep 17 00:00:00 2001
+From: Rosen Penev <rosenp@gmail.com>
+Date: Wed, 21 Oct 2026 15:59:50 -0700
+Subject: [PATCH 845/846] wifi: b43: apply the TX power limit set on the
+ interface
+
+A TX power limit set with "iw dev <dev> set txpower" never reaches the
+hardware. mac80211 keeps such a limit per interface and only passes it
+to the driver as BSS_CHANGED_TXPOWER. The power level of the hardware
+configuration, which b43_op_config() turns into the desired TX power,
+is only recalculated for a limit set on the whole wiphy, or when the
+channel changes.
+
+Take the TX power of the interface on BSS_CHANGED_TXPOWER as the
+desired TX power, and recheck the TX power right away, as
+b43_op_config() does.
+
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+---
+ drivers/net/wireless/broadcom/b43/main.c | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
+
+--- a/drivers/net/wireless/broadcom/b43/main.c
++++ b/drivers/net/wireless/broadcom/b43/main.c
+@@ -4534,6 +4534,17 @@ static void b43_op_bss_info_changed(stru
+ 	}
+ 
+ 	b43_mac_enable(dev);
++
++	/*
++	 * mac80211 passes a TX power limit set on the interface only here,
++	 * not in the power level of the hardware configuration.
++	 */
++	if (changed & BSS_CHANGED_TXPOWER && conf->txpower > 0 &&
++	    conf->txpower != dev->phy.desired_txpower) {
++		dev->phy.desired_txpower = conf->txpower;
++		b43_phy_txpower_check(dev, B43_TXPWR_IGNORE_TIME |
++					   B43_TXPWR_IGNORE_TSSI);
++	}
+ out_unlock_mutex:
+ 	mutex_unlock(&wl->mutex);
+ }

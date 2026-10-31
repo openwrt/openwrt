@@ -1,0 +1,97 @@
+From eaecba2a1ec95f0aadaf6bd0467868c48f9b4df5 Mon Sep 17 00:00:00 2001
+From: Rosen Penev <rosenp@gmail.com>
+Date: Wed, 21 Oct 2026 15:59:50 -0700
+Subject: [PATCH 846/846] wifi: b43: HT-PHY: apply the regulatory and user TX
+ power limits
+
+The HT-PHY TX power control loop always aims at the maximum power in
+the SPROM for the band, 19 dBm on 2.4 GHz on a BCM4331, and
+b43_phy_ht_op_recalc_txpower() does nothing. Neither the regulatory
+limit of the channel nor a limit set by the user is applied.
+
+Cap the target of each core at the regulatory and user limits, but no
+lower than 8 dBm as on N-PHY, and have recalc_txpower set the loop up
+again when the channel or the user limit changes. The setup stops the
+loop, so restart it from the index it had reached. With a static TX
+gain the loop stays off.
+
+On a BCM4331 (HT-PHY rev 1) on 2.4 GHz, with an Intel 3168 in monitor
+mode receiving its frames, limits of 16, 13 and 10 dBm lower the
+received power by 3.5, 5.5 and 7.5 dB, and back to automatic it
+returns to where it was. 5 GHz throughput at automatic power is
+unchanged.
+
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+---
+ drivers/net/wireless/broadcom/b43/phy_ht.c | 33 ++++++++++++++++++++++
+ drivers/net/wireless/broadcom/b43/phy_ht.h |  3 ++
+ 2 files changed, 36 insertions(+)
+
+--- a/drivers/net/wireless/broadcom/b43/phy_ht.c
++++ b/drivers/net/wireless/broadcom/b43/phy_ht.c
+@@ -671,6 +671,7 @@ static void b43_phy_ht_tx_power_ctl_setu
+ 	s16 a1[3], b0[3], b1[3];
+ 
+ 	u16 freq = dev->phy.chandef->chan->center_freq;
++	int limit;
+ 	int i, c;
+ 
+ 	if (b43_current_band(dev->wl) == NL80211_BAND_2GHZ) {
+@@ -708,6 +709,17 @@ static void b43_phy_ht_tx_power_ctl_setu
+ 		b1[0] = b1[1] = b1[2] = -1393;
+ 	}
+ 
++	/* Regulatory and user limits, but no lower than 8 dBm */
++	limit = INT_TO_Q52(dev->phy.chandef->chan->max_power);
++	if (dev->phy.desired_txpower)
++		limit = min(limit, INT_TO_Q52(dev->phy.desired_txpower));
++	limit = max(limit, INT_TO_Q52(8));
++	for (c = 0; c < 3; c++)
++		target[c] = min_t(int, target[c], limit);
++
++	phy_ht->tx_pwr_last_recalc_freq = freq;
++	phy_ht->tx_pwr_last_recalc_limit = dev->phy.desired_txpower;
++
+ 	b43_phy_set(dev, B43_PHY_HT_TSSIMODE, B43_PHY_HT_TSSIMODE_EN);
+ 	b43_phy_mask(dev, B43_PHY_HT_TXPCTL_CMD_C1,
+ 		     ~B43_PHY_HT_TXPCTL_CMD_C1_PCTLEN & 0xFFFF);
+@@ -1215,6 +1227,27 @@ static void b43_phy_ht_op_radio_write(st
+ static enum b43_txpwr_result
+ b43_phy_ht_op_recalc_txpower(struct b43_wldev *dev, bool ignore_tssi)
+ {
++	struct b43_phy_ht *phy_ht = dev->phy.ht;
++	u16 freq = dev->phy.chandef->chan->center_freq;
++	bool enabled = phy_ht->tx_pwr_ctl;
++
++	if (phy_ht->tx_pwr_last_recalc_freq == freq &&
++	    phy_ht->tx_pwr_last_recalc_limit == dev->phy.desired_txpower)
++		return B43_TXPWR_RES_DONE;
++
++	/*
++	 * The setup stops the TX power control loop. Restart it from the
++	 * index it had reached, with the new target. With a static TX gain
++	 * the loop stays off, and the target only takes effect once it runs.
++	 */
++	b43_mac_suspend(dev);
++	if (enabled)
++		b43_phy_ht_tx_power_ctl(dev, false);
++	b43_phy_ht_tx_power_ctl_setup(dev);
++	if (enabled)
++		b43_phy_ht_tx_power_ctl(dev, true);
++	b43_mac_enable(dev);
++
+ 	return B43_TXPWR_RES_DONE;
+ }
+ 
+--- a/drivers/net/wireless/broadcom/b43/phy_ht.h
++++ b/drivers/net/wireless/broadcom/b43/phy_ht.h
+@@ -129,6 +129,9 @@ struct b43_phy_ht {
+ 
+ 	bool tx_pwr_ctl;
+ 	u8 tx_pwr_idx[3];
++	/* Channel and user limit the TX power control target is set for */
++	u16 tx_pwr_last_recalc_freq;
++	int tx_pwr_last_recalc_limit;
+ 
+ 	s32 bb_mult_save[3];
+ 

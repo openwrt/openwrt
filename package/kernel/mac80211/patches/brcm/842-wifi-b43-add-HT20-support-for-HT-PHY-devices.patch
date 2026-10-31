@@ -1,0 +1,143 @@
+From 4864ce49b262ecfabe63f4df929dc6b78fe6ff49 Mon Sep 17 00:00:00 2001
+From: Rosen Penev <rosenp@gmail.com>
+Date: Sat, 17 Oct 2026 14:21:17 -0700
+Subject: [PATCH 842/846] wifi: b43: add HT20 support for HT-PHY devices
+
+b43 advertises HT20 on N-PHY devices only. The TX header and RX code
+for HT rates do not depend on the PHY, so HT-PHY devices can use them
+as well.
+
+Advertise HT20 on HT-PHY devices too, in both bands. mac80211 needs
+four queues for HT, but b43 gives the BCM4331, the only HT-PHY chip,
+one queue, as its FIFOs other than best effort do not transmit. Give
+it four queues but keep hardware QoS off, so that all frames go
+through the best effort FIFO as before. Map every frame to the
+first queue, as the queues share the FIFO, and stop and wake all
+mac80211 queues together when hardware QoS is off. With one queue that
+is what b43 did already.
+
+Tested on a BCM4331 (HT-PHY rev 1, radio 2059 rev 0, firmware 784.2)
+as a station on 5 GHz, channel 112, at -73 dBm, with hardware CCMP and
+PMF. The 2.4 GHz band has not been tested with HT. Against iperf3 on
+the access point, the BCM4331 runs at MCS 7 with the short guard
+interval in both directions, with block ack sessions in both
+directions:
+
+            down (Mbit/s)  up (Mbit/s)  ping
+  legacy    18-20          15           2.4 ms
+  HT        40-43          39-42        1.7-2.1 ms
+
+About 6% of the MPDUs sent in A-MPDUs are given up after the retries,
+and 0-6% of the pings are lost. Limiting the rate to MCS 0-6 halves
+the losses at the same throughput, so they come from MCS 7 being
+marginal at this signal level.
+
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+---
+ drivers/net/wireless/broadcom/b43/b43.h  |  8 +++++--
+ drivers/net/wireless/broadcom/b43/main.c | 29 +++++++++++++++++++-----
+ 2 files changed, 29 insertions(+), 8 deletions(-)
+
+--- a/drivers/net/wireless/broadcom/b43/b43.h
++++ b/drivers/net/wireless/broadcom/b43/b43.h
+@@ -1148,12 +1148,16 @@ static inline bool b43_using_pio_transfe
+ 	return dev->__using_pio_transfers;
+ }
+ 
++/*
++ * Without hardware QoS all mac80211 queues share one FIFO, so they are
++ * stopped and woken together.
++ */
+ static inline void b43_wake_queue(struct b43_wldev *dev, int queue_prio)
+ {
+ 	if (dev->qos_enabled)
+ 		ieee80211_wake_queue(dev->wl->hw, queue_prio);
+ 	else
+-		ieee80211_wake_queue(dev->wl->hw, 0);
++		ieee80211_wake_queues(dev->wl->hw);
+ }
+ 
+ static inline void b43_stop_queue(struct b43_wldev *dev, int queue_prio)
+@@ -1161,7 +1165,7 @@ static inline void b43_stop_queue(struct
+ 	if (dev->qos_enabled)
+ 		ieee80211_stop_queue(dev->wl->hw, queue_prio);
+ 	else
+-		ieee80211_stop_queue(dev->wl->hw, 0);
++		ieee80211_stop_queues(dev->wl->hw);
+ }
+ 
+ /* Message printing */
+--- a/drivers/net/wireless/broadcom/b43/main.c
++++ b/drivers/net/wireless/broadcom/b43/main.c
+@@ -421,6 +421,15 @@ static struct ieee80211_supported_band b
+ 	.ht_cap		= B43_HT_CAP,
+ };
+ 
++static struct ieee80211_supported_band b43_band_5GHz_htphy_ht = {
++	.band		= NL80211_BAND_5GHZ,
++	.channels	= b43_5ghz_htphy_chantable,
++	.n_channels	= ARRAY_SIZE(b43_5ghz_htphy_chantable),
++	.bitrates	= b43_a_ratetable,
++	.n_bitrates	= b43_a_ratetable_size,
++	.ht_cap		= B43_HT_CAP,
++};
++
+ /*
+  * Whether b43 enables HT on the PHY of @dev. HT needs the 598 firmware TX
+  * header. The firmware is not loaded when the bands are set up: with an
+@@ -429,7 +438,8 @@ static struct ieee80211_supported_band b
+  */
+ static bool b43_ht_supported(struct b43_wldev *dev)
+ {
+-	return dev->phy.type == B43_PHYTYPE_N && dev->phy.rev >= 3;
++	return (dev->phy.type == B43_PHYTYPE_N && dev->phy.rev >= 3) ||
++	       dev->phy.type == B43_PHYTYPE_HT;
+ }
+ 
+ static void b43_wireless_core_exit(struct b43_wldev *dev);
+@@ -2724,9 +2734,12 @@ static void b43_request_firmware(struct
+ 	goto out;
+ 
+ start_ieee80211:
++	/*
++	 * mac80211 needs four queues for HT. On the BCM4331 only the best
++	 * effort FIFO works, so it gets them without hardware QoS.
++	 */
+ 	wl->hw->queues = B43_QOS_QUEUE_NUM;
+-	if (!modparam_qos || dev->fw.opensource ||
+-	    dev->dev->chip_id == BCMA_CHIP_ID_BCM4331)
++	if (!modparam_qos || dev->fw.opensource)
+ 		wl->hw->queues = 1;
+ 
+ 	err = ieee80211_register_hw(wl->hw);
+@@ -2836,7 +2849,8 @@ static int b43_upload_microcode(struct b
+ 	if (b43_ht_supported(dev) && dev->fw.hdr_format != B43_FW_HDR_598)
+ 		b43warn(dev->wl, "HT needs firmware 598 or newer, sending legacy rates only\n");
+ 
+-	dev->qos_enabled = dev->wl->hw->queues > 1;
++	dev->qos_enabled = dev->wl->hw->queues > 1 &&
++			   dev->dev->chip_id != BCMA_CHIP_ID_BCM4331;
+ 	/* Default to firmware/hardware crypto acceleration. */
+ 	dev->hwcrypto_enabled = true;
+ 
+@@ -3998,6 +4012,9 @@ static void b43_op_tx(struct ieee80211_h
+ 		return;
+ 	}
+ 
++	/* Without hardware QoS, all frames go through the first queue */
++	if (wl->current_dev && !wl->current_dev->qos_enabled)
++		skb_set_queue_mapping(skb, 0);
+ 	skb_queue_mapping = skb_get_queue_mapping(skb);
+ 	skb_queue_tail(&wl->tx_queue[skb_queue_mapping], skb);
+ 	if (skb_queue_len(&wl->tx_queue[skb_queue_mapping]) >=
+@@ -5766,8 +5783,8 @@ static int b43_setup_bands(struct b43_wl
+ 				&b43_band_5GHz_nphy;
+ 	} else if (dev->phy.type == B43_PHYTYPE_HT) {
+ 		if (have_5ghz_phy)
+-			hw->wiphy->bands[NL80211_BAND_5GHZ] =
+-				&b43_band_5GHz_htphy;
++			hw->wiphy->bands[NL80211_BAND_5GHZ] = ht ?
++				&b43_band_5GHz_htphy_ht : &b43_band_5GHz_htphy;
+ 	} else {
+ 		if (have_5ghz_phy)
+ 			hw->wiphy->bands[NL80211_BAND_5GHZ] = &b43_band_5GHz_aphy;

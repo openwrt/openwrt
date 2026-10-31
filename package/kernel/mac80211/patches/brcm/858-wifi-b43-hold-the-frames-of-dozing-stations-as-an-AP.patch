@@ -1,0 +1,368 @@
+From: Rosen Penev <rosenp@gmail.com>
+Subject: [PATCH] wifi: b43: hold the frames of dozing stations as an AP
+
+b43 does nothing when a station of its AP goes to sleep: sta_notify is
+empty, and the PMQ of the firmware is disabled. mac80211 buffers the
+frames for the station that it still holds, and takes back those that
+fail while it dozes, but the frames already in tx_queue are sent to a
+station that does not listen. Each A-MPDU frame among them is sent
+B43_AMPDU_RETRY_LIMIT more times, and then dropped, as mac80211 frees
+A-MPDU frames that come back filtered. Erik Conijn measured 46% ping
+loss to a phone with its screen off under load on a Netgear R6400,
+and none with his fix.
+
+Like ath9k does, keep the frames in the driver while their station
+dozes, as they are taken from tx_queue:
+- give the plain ones back to mac80211 as filtered, so that it buffers
+  them with the others, sets the TIM bit and sends them for a PS-Poll;
+- hold the A-MPDU frames in a queue of the station, which keeps their
+  place in the block ack window, and report their TIDs as buffered;
+- send held frames for a PS-Poll or uAPSD trigger in
+  release_buffered_frames, with More Data set while more are buffered
+  and the end of the service period on the last one;
+- put the held frames back at the head of tx_queue when the station
+  wakes, ahead of what mac80211 buffered meanwhile.
+Frames released for a trigger only join an A-MPDU with each other.
+
+Nothing changes while no station dozes.
+
+Based on "b43: AP mode: hold frames for stations in power save" by
+Erik Conijn, adapted to frames taken from the mac80211 TXQs and to the
+TX path running without wl->mutex.
+
+Reported-by: Erik Conijn <egc112@msn.com>
+Assisted-by: LLM
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+---
+--- a/drivers/net/wireless/broadcom/b43/b43.h
++++ b/drivers/net/wireless/broadcom/b43/b43.h
+@@ -853,6 +853,14 @@ struct b43_sta {
+ 	u16 baw_start[IEEE80211_NUM_TIDS];
+ 	/* MPDUs from baw_start sent and waiting for their final status */
+ 	u64 baw_pending[IEEE80211_NUM_TIDS];
++	/* AP mode: the station dozes */
++	bool asleep;
++	/* psq is set up, and frames may be added to it */
++	bool ps_init;
++	/* A-MPDU frames held while the station dozes, by their lock */
++	struct sk_buff_head psq;
++	/* TIDs of psq reported to mac80211 as buffered */
++	u16 ps_tids;
+ };
+ 
+ /*
+@@ -1040,6 +1048,8 @@ struct b43_wl {
+ 	spinlock_t txq_lock;
+ 	/* ACs with a TX status since b43_do_tx_work() last took their frames */
+ 	unsigned long txq_pull;
++	/* Stations in power save, as an AP */
++	atomic_t ps_dozing;
+ 	/*
+ 	 * Serializes DMA transmission and TX status instead of wl->mutex,
+ 	 * see b43_tx_direct(). tx_busy is set while it is held, and
+--- a/drivers/net/wireless/broadcom/b43/main.c
++++ b/drivers/net/wireless/broadcom/b43/main.c
+@@ -3882,7 +3882,9 @@ static bool b43_tx_ampdu_candidate(struc
+  * Whether the frame at the head of @queue can join @skb in an A-MPDU:
+  * the same receiver and TID, and the same rate, as the A-MPDU is sent at
+  * the rate of its first MPDU. MPDUs sent again at a lower rate and rate
+- * control probes go in A-MPDUs of their own.
++ * control probes go in A-MPDUs of their own. Frames released for a
++ * PS-Poll or uAPSD trigger only go with each other, the others wait
++ * until the station wakes.
+  */
+ static bool b43_tx_ampdu_continues(struct b43_wldev *dev,
+ 				   struct sk_buff_head *queue,
+@@ -3902,6 +3904,8 @@ static bool b43_tx_ampdu_continues(struc
+ 	nrate = &IEEE80211_SKB_CB(next)->control.rates[0];
+ 	return ether_addr_equal(nhdr->addr1, hdr->addr1) &&
+ 	       ieee80211_get_tid(nhdr) == ieee80211_get_tid(hdr) &&
++	       !((IEEE80211_SKB_CB(next)->flags ^ IEEE80211_SKB_CB(skb)->flags) &
++		 IEEE80211_TX_CTL_NO_PS_BUFFER) &&
+ 	       nrate->idx == rate->idx &&
+ 	       (nrate->flags & rate_flags) == (rate->flags & rate_flags);
+ }
+@@ -4067,6 +4071,144 @@ static bool b43_tx_ofdm_hold(struct b43_
+ }
+ 
+ /*
++ * AP power save. mac80211 buffers the frames for a dozing station that
++ * it still holds, and takes back the ones that fail while it dozes, but
++ * the frames waiting in tx_queue would go to a station that does not
++ * listen. Give the plain ones back to mac80211 as filtered, so that it
++ * buffers them as well. It frees A-MPDU frames given back, so hold those
++ * in the psq of the station, report their TIDs as buffered for the TIM,
++ * and put them back at the head of tx_queue for a PS-Poll or uAPSD
++ * trigger, or once the station wakes.
++ */
++
++/* The b43 data of the receiver of @skb if it dozes. Under RCU. */
++static struct b43_sta *b43_ps_sta(struct b43_wl *wl, struct sk_buff *skb,
++				  struct ieee80211_sta **psta)
++{
++	struct ieee80211_hdr *hdr = (struct ieee80211_hdr *)skb->data;
++	struct ieee80211_sta *sta;
++	struct b43_sta *bsta;
++
++	if (!wl->vif || wl->vif->type != NL80211_IFTYPE_AP ||
++	    is_multicast_ether_addr(hdr->addr1))
++		return NULL;
++	sta = ieee80211_find_sta(wl->vif, hdr->addr1);
++	if (!sta)
++		return NULL;
++	bsta = (struct b43_sta *)sta->drv_priv;
++	if (!READ_ONCE(bsta->asleep))
++		return NULL;
++	*psta = sta;
++	return bsta;
++}
++
++static u8 b43_ps_tid(struct sk_buff *skb)
++{
++	struct ieee80211_hdr *hdr = (struct ieee80211_hdr *)skb->data;
++
++	return ieee80211_is_data_qos(hdr->frame_control) ?
++	       ieee80211_get_tid(hdr) : 0;
++}
++
++/* Report the TIDs with frames in psq as buffered, and the others not */
++static void b43_ps_report_tids(struct ieee80211_sta *sta,
++			       struct b43_sta *bsta)
++{
++	unsigned long change;
++	struct sk_buff *skb;
++	unsigned long flags;
++	u16 tids = 0;
++	int tid;
++
++	spin_lock_irqsave(&bsta->psq.lock, flags);
++	skb_queue_walk(&bsta->psq, skb)
++		tids |= BIT(b43_ps_tid(skb));
++	change = tids ^ bsta->ps_tids;
++	bsta->ps_tids = tids;
++	spin_unlock_irqrestore(&bsta->psq.lock, flags);
++
++	for_each_set_bit(tid, &change, IEEE80211_NUM_TIDS)
++		ieee80211_sta_set_buffered(sta, tid, tids & BIT(tid));
++}
++
++/*
++ * Keep @skb, just taken from tx_queue, from its receiver if that dozes.
++ * Returns whether it did.
++ */
++static bool b43_ps_hold(struct b43_wl *wl, struct sk_buff *skb)
++{
++	struct ieee80211_tx_info *info = IEEE80211_SKB_CB(skb);
++	struct ieee80211_sta *sta;
++	struct b43_sta *bsta;
++	unsigned long flags;
++	bool held = false;
++
++	/* Released for a PS-Poll or uAPSD trigger */
++	if (info->flags & IEEE80211_TX_CTL_NO_PS_BUFFER)
++		return false;
++
++	rcu_read_lock();
++	bsta = b43_ps_sta(wl, skb, &sta);
++	if (!bsta)
++		goto out;
++
++	if (!(info->flags & IEEE80211_TX_CTL_AMPDU)) {
++		ieee80211_tx_info_clear_status(info);
++		info->flags |= IEEE80211_TX_STAT_TX_FILTERED;
++		ieee80211_tx_status_skb(wl->hw, skb);
++		held = true;
++		goto out;
++	}
++
++	/* b43_ps_wake() takes the frames once it cleared asleep */
++	spin_lock_irqsave(&bsta->psq.lock, flags);
++	if (bsta->ps_init && bsta->asleep) {
++		__skb_queue_tail(&bsta->psq, skb);
++		held = true;
++	}
++	spin_unlock_irqrestore(&bsta->psq.lock, flags);
++	if (held)
++		b43_ps_report_tids(sta, bsta);
++out:
++	rcu_read_unlock();
++	return held;
++}
++
++/* Put the frames in @list back at the head of tx_queue, in their order */
++static void b43_ps_requeue(struct b43_wl *wl, struct sk_buff_head *list)
++{
++	struct b43_wldev *dev = READ_ONCE(wl->current_dev);
++	struct sk_buff *skb;
++
++	while ((skb = __skb_dequeue_tail(list)))
++		skb_queue_head(&wl->tx_queue[dev ? b43_tx_queue_num(dev, skb) :
++					     skb_get_queue_mapping(skb)], skb);
++	ieee80211_queue_work(wl->hw, &wl->tx_work);
++}
++
++/* The station woke: send the frames held for it ahead of the new ones */
++static void b43_ps_wake(struct b43_wl *wl, struct b43_sta *bsta)
++{
++	struct sk_buff_head list;
++	unsigned long flags;
++
++	__skb_queue_head_init(&list);
++	spin_lock_irqsave(&bsta->psq.lock, flags);
++	if (!bsta->asleep) {
++		spin_unlock_irqrestore(&bsta->psq.lock, flags);
++		return;
++	}
++	bsta->asleep = false;
++	atomic_dec(&wl->ps_dozing);
++	/* mac80211 forgets the buffered TIDs when the station wakes */
++	bsta->ps_tids = 0;
++	skb_queue_splice_init(&bsta->psq, &list);
++	spin_unlock_irqrestore(&bsta->psq.lock, flags);
++
++	b43_ps_requeue(wl, &list);
++}
++
++/*
+  * Send the frames in tx_queue. Must be called with wl->tx_lock held if
+  * b43_tx_direct(), or else with wl->mutex held.
+  */
+@@ -4093,6 +4235,9 @@ static void b43_do_tx_work(struct b43_wl
+ 	for (queue_num = 0; queue_num < B43_QOS_QUEUE_NUM; queue_num++) {
+ 		while (skb_queue_len(&wl->tx_queue[queue_num])) {
+ 			skb = skb_dequeue(&wl->tx_queue[queue_num]);
++			if (unlikely(atomic_read(&wl->ps_dozing)) &&
++			    b43_ps_hold(wl, skb))
++				continue;
+ 			if (!ofdm_seen && b43_tx_is_ofdm(dev, skb)) {
+ 				ofdm_seen = true;
+ 				if (b43_tx_ofdm_hold(dev)) {
+@@ -5816,8 +5961,118 @@ static void b43_op_sta_notify(struct iee
+ 			      struct ieee80211_sta *sta)
+ {
+ 	struct b43_wl *wl = hw_to_b43_wl(hw);
++	struct b43_sta *bsta = (struct b43_sta *)sta->drv_priv;
++	unsigned long flags;
+ 
+ 	B43_WARN_ON(!vif || wl->vif != vif);
++	if (vif->type != NL80211_IFTYPE_AP)
++		return;
++
++	switch (notify_cmd) {
++	case STA_NOTIFY_SLEEP:
++		spin_lock_irqsave(&bsta->psq.lock, flags);
++		if (bsta->ps_init && !bsta->asleep) {
++			bsta->asleep = true;
++			atomic_inc(&wl->ps_dozing);
++		}
++		spin_unlock_irqrestore(&bsta->psq.lock, flags);
++		break;
++	case STA_NOTIFY_AWAKE:
++		b43_ps_wake(wl, bsta);
++		break;
++	}
++}
++
++/*
++ * Send up to @num_frames of the frames held for @sta on @tids, for a
++ * PS-Poll or a uAPSD trigger, with the More Data bit as long as more are
++ * buffered, and end the service period with the last one.
++ */
++static void b43_op_release_buffered_frames(struct ieee80211_hw *hw,
++					   struct ieee80211_sta *sta,
++					   u16 tids, int num_frames,
++					   enum ieee80211_frame_release_type reason,
++					   bool more_data)
++{
++	struct b43_wl *wl = hw_to_b43_wl(hw);
++	struct b43_sta *bsta = (struct b43_sta *)sta->drv_priv;
++	struct sk_buff *skb, *tmp;
++	struct sk_buff_head list;
++	unsigned long flags;
++
++	__skb_queue_head_init(&list);
++	spin_lock_irqsave(&bsta->psq.lock, flags);
++	skb_queue_walk_safe(&bsta->psq, skb, tmp) {
++		if (skb_queue_len(&list) >= num_frames)
++			break;
++		if (!(tids & BIT(b43_ps_tid(skb))))
++			continue;
++		__skb_unlink(skb, &bsta->psq);
++		__skb_queue_tail(&list, skb);
++	}
++	more_data |= !skb_queue_empty(&bsta->psq);
++	spin_unlock_irqrestore(&bsta->psq.lock, flags);
++
++	if (skb_queue_empty(&list)) {
++		ieee80211_sta_eosp(sta);
++		return;
++	}
++
++	skb_queue_walk(&list, skb) {
++		struct ieee80211_tx_info *info = IEEE80211_SKB_CB(skb);
++		struct ieee80211_hdr *hdr = (struct ieee80211_hdr *)skb->data;
++		bool last = skb_queue_is_last(&list, skb);
++
++		info->flags |= IEEE80211_TX_CTL_NO_PS_BUFFER;
++		if (!last || more_data)
++			hdr->frame_control |=
++				cpu_to_le16(IEEE80211_FCTL_MOREDATA);
++		if (!last)
++			continue;
++		info->flags |= IEEE80211_TX_STATUS_EOSP |
++			       IEEE80211_TX_CTL_REQ_TX_STATUS;
++		if (reason == IEEE80211_FRAME_RELEASE_UAPSD)
++			*ieee80211_get_qos_ctl(hdr) |= IEEE80211_QOS_CTL_EOSP;
++	}
++
++	b43_ps_report_tids(sta, bsta);
++	b43_ps_requeue(wl, &list);
++}
++
++static int b43_op_sta_add(struct ieee80211_hw *hw, struct ieee80211_vif *vif,
++			  struct ieee80211_sta *sta)
++{
++	struct b43_sta *bsta = (struct b43_sta *)sta->drv_priv;
++
++	/* Added again after a restart: the queue is set up already */
++	if (!bsta->ps_init) {
++		skb_queue_head_init(&bsta->psq);
++		bsta->ps_init = true;
++	}
++
++	return 0;
++}
++
++static int b43_op_sta_remove(struct ieee80211_hw *hw,
++			     struct ieee80211_vif *vif,
++			     struct ieee80211_sta *sta)
++{
++	struct b43_wl *wl = hw_to_b43_wl(hw);
++	struct b43_sta *bsta = (struct b43_sta *)sta->drv_priv;
++	struct sk_buff_head list;
++	unsigned long flags;
++
++	__skb_queue_head_init(&list);
++	spin_lock_irqsave(&bsta->psq.lock, flags);
++	if (bsta->asleep)
++		atomic_dec(&wl->ps_dozing);
++	bsta->asleep = false;
++	bsta->ps_init = false;
++	skb_queue_splice_init(&bsta->psq, &list);
++	spin_unlock_irqrestore(&bsta->psq.lock, flags);
++	ieee80211_purge_tx_queue(hw, &list);
++
++	return 0;
+ }
+ 
+ static void b43_op_sw_scan_start_notifier(struct ieee80211_hw *hw,
+@@ -5992,6 +6247,9 @@ static const struct ieee80211_ops b43_hw
+ 	.stop			= b43_op_stop,
+ 	.set_tim		= b43_op_beacon_set_tim,
+ 	.sta_notify		= b43_op_sta_notify,
++	.release_buffered_frames = b43_op_release_buffered_frames,
++	.sta_add		= b43_op_sta_add,
++	.sta_remove		= b43_op_sta_remove,
+ 	.ampdu_action		= b43_op_ampdu_action,
+ 	.sw_scan_start		= b43_op_sw_scan_start_notifier,
+ 	.sw_scan_complete	= b43_op_sw_scan_complete_notifier,

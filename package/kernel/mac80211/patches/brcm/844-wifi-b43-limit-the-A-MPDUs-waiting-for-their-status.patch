@@ -1,0 +1,126 @@
+From a46bcecece6101465e8be26daa09173513d1b46b Mon Sep 17 00:00:00 2001
+From: Rosen Penev <rosenp@gmail.com>
+Date: Sun, 18 Oct 2026 23:14:24 -0700
+Subject: [PATCH 844/846] wifi: b43: limit the A-MPDUs waiting for their status
+
+b43_tx_work() makes an A-MPDU of the frames queued when it runs and
+puts it on the ring right away. A sender that paces its packets, such
+as TCP with BBR, hands them over one at a time, so most go out in an
+A-MPDU of their own while the A-MPDUs before them still wait on the
+ring. In a capture of an upload from a BCM4331, 1794 of 4613 A-MPDUs
+held one MPDU, and each costs the RTS, the CTS, the preamble and the
+block ack of a full one.
+
+Keep at most two A-MPDUs per ring waiting for their TX status. Frames
+queued meanwhile wait in tx_queue, and the next TX status starts
+b43_tx_work() again to send them in one A-MPDU. An empty ring has
+nothing on the way, so a lost TX status cannot keep the count up.
+
+On a BCM4331 at -54 dBm on 5 GHz, against iperf3 on the access point:
+
+                      down (Mbit/s)  up (Mbit/s)  given up
+  no limit, 10 s      78             71           866
+  2, 10 s             82             73           571
+  3, 10 s             81             71           707
+  2, 60 s             85             69           2539, 2955
+  3, 60 s             85             68           3331
+
+In two of the three 60 s runs, one ping in the first second after
+connecting took about a second.
+
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+---
+ drivers/net/wireless/broadcom/b43/dma.c  | 23 +++++++++++++++++++++++
+ drivers/net/wireless/broadcom/b43/dma.h  |  3 +++
+ drivers/net/wireless/broadcom/b43/main.c |  8 +++++---
+ 3 files changed, 31 insertions(+), 3 deletions(-)
+
+--- a/drivers/net/wireless/broadcom/b43/dma.c
++++ b/drivers/net/wireless/broadcom/b43/dma.c
+@@ -1729,6 +1729,26 @@ static void b43_dma_ampdu_rate_status(st
+ 	ieee80211_tx_status_ext(dev->wl->hw, &status);
+ }
+ 
++/* A-MPDUs per TX ring waiting for their TX status */
++#define B43_AMPDU_INFLIGHT	2
++
++/*
++ * Whether the ring for @skb has enough A-MPDUs on the way. Frames queued
++ * meanwhile then go out together in the next one, instead of each in an
++ * A-MPDU of its own as they arrive.
++ */
++bool b43_dma_ampdu_busy(struct b43_wldev *dev, struct sk_buff *skb)
++{
++	struct b43_dmaring *ring;
++
++	ring = select_ring_by_priority(dev, skb_get_queue_mapping(skb));
++	/* Nothing is on the way when the ring is empty */
++	if (!ring->used_slots)
++		ring->ampdu_inflight = 0;
++
++	return ring->ampdu_inflight >= B43_AMPDU_INFLIGHT;
++}
++
+ /*
+  * Queue the MPDUs of an A-MPDU. The firmware sends frames marked first,
+  * intermediate and last back to back as one PPDU, so the DMA engine is
+@@ -1795,6 +1815,7 @@ int b43_dma_tx_ampdu(struct b43_wldev *d
+ 	ampdu->active = false;
+ 
+ 	b43_dma_end_ampdu(ring, first_slot, len, queued < n);
++	ring->ampdu_inflight++;
+ 
+ 	if (free_slots(ring) < TX_SLOTS_PER_FRAME) {
+ 		unsigned int skb_mapping = skb_get_queue_mapping(skbs[0]);
+@@ -1826,6 +1847,8 @@ static void b43_dma_handle_ampdu_txstatu
+ 	bool last;
+ 
+ 	__skb_queue_head_init(&retry);
++	if (ring->ampdu_inflight)
++		ring->ampdu_inflight--;
+ 	rcu_read_lock();
+ 	do {
+ 		/* Header slot */
+--- a/drivers/net/wireless/broadcom/b43/dma.h
++++ b/drivers/net/wireless/broadcom/b43/dma.h
+@@ -257,6 +257,8 @@ struct b43_dmaring {
+ 	enum b43_dmatype type;
+ 	/* Boolean. Is this ring stopped at ieee80211 level? */
+ 	bool stopped;
++	/* A-MPDUs on the ring that have no TX status yet */
++	unsigned int ampdu_inflight;
+ 	/* The QOS priority assigned to this ring. Only used for TX rings.
+ 	 * This is the mac80211 "queue" value. */
+ 	u8 queue_prio;
+@@ -293,6 +295,7 @@ void b43_dma_free(struct b43_wldev *dev)
+ void b43_dma_tx_suspend(struct b43_wldev *dev);
+ void b43_dma_tx_resume(struct b43_wldev *dev);
+ 
++bool b43_dma_ampdu_busy(struct b43_wldev *dev, struct sk_buff *skb);
+ enum b43_ampdu_window {
+ 	B43_AMPDU_IN_WINDOW,
+ 	B43_AMPDU_AHEAD,	/* Not yet: the window is full */
+--- a/drivers/net/wireless/broadcom/b43/main.c
++++ b/drivers/net/wireless/broadcom/b43/main.c
+@@ -3907,8 +3907,9 @@ static int b43_tx_ampdu(struct b43_wldev
+ }
+ 
+ /*
+- * A-MPDU frames can wait in tx_queue for the block ack window, so stop the
+- * mac80211 queue when it holds two A-MPDUs worth of frames.
++ * A-MPDU frames can wait in tx_queue, for the block ack window or for the
++ * A-MPDUs on the way, so stop the mac80211 queue when it holds two
++ * A-MPDUs worth of frames.
+  */
+ #define B43_TX_QUEUE_MAX	(2 * B43_AMPDU_MAX_FRAMES)
+ #define B43_TX_QUEUE_WAKE	(B43_TX_QUEUE_MAX / 2)
+@@ -3945,7 +3946,8 @@ static void b43_tx_work(struct work_stru
+ 					continue;
+ 				}
+ 				/* The next TX status starts this work again */
+-				if (win == B43_AMPDU_AHEAD) {
++				if (b43_dma_ampdu_busy(dev, skb) ||
++				    win == B43_AMPDU_AHEAD) {
+ 					skb_queue_head(&wl->tx_queue[queue_num],
+ 						       skb);
+ 					break;

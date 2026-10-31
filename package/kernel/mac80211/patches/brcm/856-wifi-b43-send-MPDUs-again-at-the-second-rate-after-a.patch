@@ -1,0 +1,144 @@
+From: Rosen Penev <rosenp@gmail.com>
+Subject: [PATCH] wifi: b43: send MPDUs again at the second rate after a failed re-send
+
+An MPDU that the block ack did not cover is sent again at the rates
+rate control picks at that moment, which nearly always start with the
+rate that just failed. When a station briefly cannot receive that
+rate, the MPDU goes out at it up to B43_AMPDU_RETRY_LIMIT more times
+and is then given up. On a Netgear R6400 (BCM4331), a phone with its
+screen off at times sent no block ack for two-stream frames, and the
+AP sent the same MPDU six times at MCS 13 within 12 ms before it sent
+a block ack request.
+
+Send it again once at the first rate, which the RTS/CTS in front of an
+A-MPDU protects against a collision, and from then on at the second
+one, minstrel's most reliable rate with max_rates = 2, like multi-rate
+retry hardware does.
+
+An A-MPDU goes out at the rate of its first MPDU, so end it where the
+rate changes. Until now, MPDUs at another rate, these and the probes
+of rate control, were sent at the rate of the MPDU ahead of them.
+
+Assisted-by: LLM
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+---
+--- a/drivers/net/wireless/broadcom/b43/dma.c
++++ b/drivers/net/wireless/broadcom/b43/dma.c
+@@ -1633,13 +1633,14 @@ static bool b43_dma_ampdu_frame_acked(co
+ }
+ 
+ /*
+- * Whether the MPDU in @skb may be sent again. It must still be in the
+- * block ack window, which follows the newest MPDU queued: once it falls
+- * behind, the receiver takes it for an old frame, or for a new one once
+- * the sequence numbers wrap.
++ * How many times the MPDU in @skb is sent again, counting this time, or
++ * 0 if it may not be sent again. It must still be in the block ack
++ * window, which follows the newest MPDU queued: once it falls behind,
++ * the receiver takes it for an old frame, or for a new one once the
++ * sequence numbers wrap.
+  */
+-static bool b43_dma_ampdu_may_retry(struct b43_wldev *dev,
+-				    struct sk_buff *skb)
++static unsigned int b43_dma_ampdu_may_retry(struct b43_wldev *dev,
++					    struct sk_buff *skb)
+ {
+ 	struct ieee80211_hdr *hdr = (struct ieee80211_hdr *)skb->data;
+ 	u16 seq = b43_dma_ampdu_seq(skb);
+@@ -1649,11 +1650,11 @@ static bool b43_dma_ampdu_may_retry(stru
+ 
+ 	bsta = b43_dma_ampdu_sta(dev, skb);
+ 	if (!bsta || !dev->wl->vif)
+-		return false;
++		return 0;
+ 
+ 	if (ieee80211_sn_sub(bsta->ampdu_seq[tid], seq) >=
+ 	    IEEE80211_MAX_AMPDU_BUF_HT)
+-		return false;
++		return 0;
+ 
+ 	retry = &bsta->ampdu_retry[tid][seq % IEEE80211_MAX_AMPDU_BUF_HT];
+ 	if (retry->seq != seq) {
+@@ -1661,10 +1662,9 @@ static bool b43_dma_ampdu_may_retry(stru
+ 		retry->count = 0;
+ 	}
+ 	if (retry->count >= B43_AMPDU_RETRY_LIMIT)
+-		return false;
++		return 0;
+ 
+-	retry->count++;
+-	return true;
++	return ++retry->count;
+ }
+ 
+ /*
+@@ -1686,6 +1686,7 @@ static bool b43_dma_complete_ampdu_frame
+ 	struct b43_private_tx_info *priv_info = b43_get_priv_tx_info(info);
+ 	struct ieee80211_hdr *hdr = (struct ieee80211_hdr *)skb->data;
+ 	bool acked = b43_dma_ampdu_frame_acked(status, skb);
++	unsigned int resend;
+ 	struct b43_sta *bsta;
+ 	int i;
+ 
+@@ -1694,7 +1695,8 @@ static bool b43_dma_complete_ampdu_frame
+ 	priv_info->bouncebuffer = NULL;
+ 	meta->skb = B43_DMA_PTR_POISON;
+ 
+-	if (!acked && b43_dma_ampdu_may_retry(dev, skb)) {
++	resend = acked ? 0 : b43_dma_ampdu_may_retry(dev, skb);
++	if (resend) {
+ 		hdr->frame_control |= cpu_to_le16(IEEE80211_FCTL_RETRY);
+ 		/* The bounce buffer pointer took the place of the vif */
+ 		info->control.vif = dev->wl->vif;
+@@ -1710,6 +1712,16 @@ static bool b43_dma_complete_ampdu_frame
+ 								    NULL),
+ 				       skb, info->control.rates,
+ 				       ARRAY_SIZE(info->control.rates));
++		/*
++		 * That is nearly always the rate that just failed. Send it
++		 * again once at it, with the RTS/CTS of an A-MPDU against a
++		 * collision, and then at the second rate, which minstrel
++		 * picks as its most reliable one with max_rates = 2, as
++		 * multi-rate retry hardware does.
++		 */
++		if (resend > 1 && info->control.rates[1].idx >= 0 &&
++		    (info->control.rates[1].flags & IEEE80211_TX_RC_MCS))
++			info->control.rates[0] = info->control.rates[1];
+ 		__skb_queue_tail(retry, skb);
+ 		return false;
+ 	}
+--- a/drivers/net/wireless/broadcom/b43/main.c
++++ b/drivers/net/wireless/broadcom/b43/main.c
+@@ -3880,22 +3880,30 @@ static bool b43_tx_ampdu_candidate(struc
+ 
+ /*
+  * Whether the frame at the head of @queue can join @skb in an A-MPDU:
+- * the same receiver and TID.
++ * the same receiver and TID, and the same rate, as the A-MPDU is sent at
++ * the rate of its first MPDU. MPDUs sent again at a lower rate and rate
++ * control probes go in A-MPDUs of their own.
+  */
+ static bool b43_tx_ampdu_continues(struct b43_wldev *dev,
+ 				   struct sk_buff_head *queue,
+ 				   struct sk_buff *skb)
+ {
++	const u16 rate_flags = IEEE80211_TX_RC_MCS | IEEE80211_TX_RC_SHORT_GI;
+ 	struct ieee80211_hdr *hdr = (struct ieee80211_hdr *)skb->data;
+ 	struct sk_buff *next = skb_peek(queue);
++	struct ieee80211_tx_rate *rate, *nrate;
+ 	struct ieee80211_hdr *nhdr;
+ 
+ 	if (!next || !b43_tx_ampdu_candidate(dev, next))
+ 		return false;
+ 
+ 	nhdr = (struct ieee80211_hdr *)next->data;
++	rate = &IEEE80211_SKB_CB(skb)->control.rates[0];
++	nrate = &IEEE80211_SKB_CB(next)->control.rates[0];
+ 	return ether_addr_equal(nhdr->addr1, hdr->addr1) &&
+-	       ieee80211_get_tid(nhdr) == ieee80211_get_tid(hdr);
++	       ieee80211_get_tid(nhdr) == ieee80211_get_tid(hdr) &&
++	       nrate->idx == rate->idx &&
++	       (nrate->flags & rate_flags) == (rate->flags & rate_flags);
+ }
+ 
+ /* The A-MPDU length the peer accepts, as announced in its HT capabilities */

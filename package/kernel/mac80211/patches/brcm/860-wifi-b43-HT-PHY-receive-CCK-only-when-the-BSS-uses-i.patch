@@ -1,0 +1,201 @@
+From: Erik Conijn <egc112@msn.com>
+Subject: [PATCH] wifi: b43: HT-PHY: receive CCK only when the BSS uses it
+
+The HT-PHY receiver locks onto every CCK (802.11b) frame it detects, also
+a weak one from a distant BSS, and stays on it until it ends. A 1 Mbit/s
+broadcast of 200 bytes keeps it busy for about 2 ms, and a much stronger
+OFDM frame of our own BSS that starts meanwhile is not received: it gets no
+ACK, and the sender backs off and sends it again.
+
+On a BCM4331 access point with an 802.11n client next to it, 13-16 % of
+the client's frames were not acknowledged at the first attempt on an
+otherwise quiet channel, whatever the signal level (-25 or -46 dBm at a
+sniffer), the rate (MCS 4-15) or the number of streams. With the AP's own
+receive times aligned to an independent sniffer, 90 % of the frames that
+started while the AP was receiving another frame were lost, against 2 %
+of the others, and the other frame was almost always a weak, corrupted
+1 Mbit/s broadcast of a neighbour.
+
+A BSS without CCK basic rates does not need CCK reception: its stations
+answer at a basic rate and are sent no CCK frames. OpenWrt sets up 2.4 GHz
+networks like that by default. Turn CCK reception off in the classifier
+then, as an access point or while associated as a station, and keep it
+while scanning (other APs beacon at 1 Mbit/s), while a monitor interface
+is up, and when the BSS has CCK basic rates. The new module parameter
+ht_cck_rx overrides it (0 never, 1 always).
+
+With this, 98.6-99.2 % of the client's frames are acknowledged at the
+first attempt, and TCP goes from 49.6 to 53.7 Mbit/s to the client and
+from 85.2 to 93.7 Mbit/s from it.
+
+Assisted-by: Claude:claude-opus-5-5
+Signed-off-by: Erik Conijn <egc112@msn.com>
+[rosenp: without the debugfs state, b43 has no b43_ampdu statistics]
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+---
+--- a/drivers/net/wireless/broadcom/b43/b43.h
++++ b/drivers/net/wireless/broadcom/b43/b43.h
+@@ -1016,6 +1016,8 @@ struct b43_wl {
+ #endif /* CPTCFG_B43_HWRNG */
+ 
+ 	bool radiotap_enabled;
++	/* A software scan is on, which needs CCK reception */
++	bool cck_scanning;
+ 	bool radio_enabled;
+ 
+ 	/* The beacon we are currently using (AP or IBSS mode). */
+--- a/drivers/net/wireless/broadcom/b43/main.c
++++ b/drivers/net/wireless/broadcom/b43/main.c
+@@ -38,6 +38,7 @@
+ #include "phy_common.h"
+ #include "phy_g.h"
+ #include "phy_n.h"
++#include "phy_ht.h"
+ #include "dma.h"
+ #include "pio.h"
+ #include "sysfs.h"
+@@ -102,6 +103,10 @@ static int modparam_qos = 1;
+ module_param_named(qos, modparam_qos, int, 0444);
+ MODULE_PARM_DESC(qos, "Enable QOS support (default on)");
+ 
++static int modparam_ht_cck_rx = -1;
++module_param_named(ht_cck_rx, modparam_ht_cck_rx, int, 0644);
++MODULE_PARM_DESC(ht_cck_rx, "HT-PHY: receive CCK (802.11b) frames: -1 only when the BSS has CCK basic rates (default), 0 never, 1 always");
++
+ static int modparam_btcoex = 1;
+ module_param_named(btcoex, modparam_btcoex, int, 0444);
+ MODULE_PARM_DESC(btcoex, "Enable Bluetooth coexistence (default on)");
+@@ -4794,6 +4799,43 @@ static void b43_set_beacon_listen_interv
+ 	b43_shm_write16(dev, B43_SHM_SHARED, B43_SHM_SH_BCN_LI, interval);
+ }
+ 
++/*
++ * HT-PHY: the receiver locks onto any CCK frame it detects, also a weak
++ * one of a distant BSS, and stays on it to its end: a 1 Mbit/s broadcast
++ * of 200 bytes keeps it deaf for 2 ms, and a much stronger frame of our
++ * own BSS that starts meanwhile is lost. A BSS without CCK basic rates
++ * never needs CCK reception, as its stations answer at a basic rate and
++ * are sent no CCK frames, so turn it off there, as an AP or while
++ * associated as a station. Keep it while scanning, as other APs beacon
++ * at 1 Mbit/s, and while a monitor interface is up.
++ */
++static void b43_update_cck_rx(struct b43_wldev *dev)
++{
++	struct b43_wl *wl = dev->wl;
++	struct ieee80211_vif *vif = wl->vif;
++	struct ieee80211_supported_band *sband;
++	bool on = true;
++	int i;
++
++	if (dev->phy.type != B43_PHYTYPE_HT)
++		return;
++
++	if (modparam_ht_cck_rx == 0) {
++		on = false;
++	} else if (modparam_ht_cck_rx < 0 && vif && !wl->radiotap_enabled &&
++		   !wl->cck_scanning && vif->bss_conf.basic_rates &&
++		   (vif->type == NL80211_IFTYPE_AP ||
++		    (vif->type == NL80211_IFTYPE_STATION && vif->cfg.assoc))) {
++		sband = wl->hw->wiphy->bands[NL80211_BAND_2GHZ];
++		on = false;
++		for (i = 0; sband && i < sband->n_bitrates; i++)
++			if ((vif->bss_conf.basic_rates & BIT(i)) &&
++			    b43_is_cck_rate(sband->bitrates[i].hw_value))
++				on = true;
++	}
++	b43_phy_ht_set_cck_rx(dev, on);
++}
++
+ /* Write the short and long frame retry limit values. */
+ static void b43_set_retry_limits(struct b43_wldev *dev,
+ 				 unsigned int short_retry,
+@@ -4847,6 +4889,7 @@ static int b43_op_config(struct ieee8021
+ 		goto out_mac_enable;
+ 
+ 	dev->wl->radiotap_enabled = !!(conf->flags & IEEE80211_CONF_MONITOR);
++	b43_update_cck_rx(dev);
+ 
+ 	/* Adjust the desired TX power level. */
+ 	if (conf->power_level != 0) {
+@@ -4975,6 +5018,8 @@ static void b43_op_bss_info_changed(stru
+ 
+ 	if (changed & BSS_CHANGED_BASIC_RATES)
+ 		b43_update_basic_rates(dev, conf->basic_rates);
++	if (changed & (BSS_CHANGED_BASIC_RATES | BSS_CHANGED_ASSOC))
++		b43_update_cck_rx(dev);
+ 
+ 	if (changed & BSS_CHANGED_ERP_SLOT) {
+ 		if (conf->use_short_slot)
+@@ -6107,6 +6152,8 @@ static void b43_op_sw_scan_start_notifie
+ 	if (dev && (b43_status(dev) >= B43_STAT_INITIALIZED)) {
+ 		/* Disable CFP update during scan on other channels. */
+ 		b43_hf_write(dev, b43_hf_read(dev) | B43_HF_SKCFPUP);
++		wl->cck_scanning = true;
++		b43_update_cck_rx(dev);
+ 	}
+ 	mutex_unlock(&wl->mutex);
+ }
+@@ -6122,6 +6169,8 @@ static void b43_op_sw_scan_complete_noti
+ 	if (dev && (b43_status(dev) >= B43_STAT_INITIALIZED)) {
+ 		/* Re-enable CFP update. */
+ 		b43_hf_write(dev, b43_hf_read(dev) & ~B43_HF_SKCFPUP);
++		wl->cck_scanning = false;
++		b43_update_cck_rx(dev);
+ 	}
+ 	mutex_unlock(&wl->mutex);
+ }
+--- a/drivers/net/wireless/broadcom/b43/phy_ht.c
++++ b/drivers/net/wireless/broadcom/b43/phy_ht.c
+@@ -265,6 +265,20 @@ static u16 b43_phy_ht_classifier(struct
+ 	return tmp;
+ }
+ 
++/* Turn CCK (802.11b) reception on or off, also for later PHY inits */
++void b43_phy_ht_set_cck_rx(struct b43_wldev *dev, bool on)
++{
++	struct b43_phy_ht *phy_ht = dev->phy.ht;
++
++	if (phy_ht->cck_rx_off == !on)
++		return;
++	phy_ht->cck_rx_off = !on;
++	if (b43_current_band(dev->wl) == NL80211_BAND_2GHZ)
++		b43_phy_ht_classifier(dev, B43_PHY_HT_CLASS_CTL_CCK_EN,
++				      on ? B43_PHY_HT_CLASS_CTL_CCK_EN : 0);
++	b43dbg(dev->wl, "HT-PHY: CCK reception %s\n", on ? "on" : "off");
++}
++
+ static void b43_phy_ht_reset_cca(struct b43_wldev *dev)
+ {
+ 	u16 bbcfg;
+@@ -1026,6 +1040,7 @@ static int b43_phy_ht_op_init(struct b43
+ 		b43_phy_ht_classifier(dev, B43_PHY_HT_CLASS_CTL_CCK_EN, 0);
+ 	else
+ 		b43_phy_ht_classifier(dev, B43_PHY_HT_CLASS_CTL_CCK_EN,
++				      phy_ht->cck_rx_off ? 0 :
+ 				      B43_PHY_HT_CLASS_CTL_CCK_EN);
+ 
+ 	b43_phy_set(dev, 0xb1, 0x91);
+--- a/drivers/net/wireless/broadcom/b43/phy_ht.h
++++ b/drivers/net/wireless/broadcom/b43/phy_ht.h
+@@ -136,10 +136,21 @@ struct b43_phy_ht {
+ 	s32 bb_mult_save[3];
+ 
+ 	u8 idle_tssi[3];
++
++	/* 2.4 GHz CCK (802.11b) reception is off */
++	bool cck_rx_off;
+ };
+ 
+ 
+ struct b43_phy_operations;
+ extern const struct b43_phy_operations b43_phyops_ht;
+ 
++#ifdef CPTCFG_B43_PHY_HT
++void b43_phy_ht_set_cck_rx(struct b43_wldev *dev, bool on);
++#else
++static inline void b43_phy_ht_set_cck_rx(struct b43_wldev *dev, bool on)
++{
++}
++#endif
++
+ #endif /* B43_PHY_HT_H_ */
