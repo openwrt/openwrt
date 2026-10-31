@@ -344,6 +344,10 @@ define Build/DefaultTargets
   endef
 endef
 
+define PackageConflicts
+$(sort $(Package/$(1)/conflicts) $(filter-out $(1),$(foreach provide,$(Package/$(1)/provides),$(PROVIDERS/$(provide)))))
+endef
+
 define BuildPackage
   $(eval $(Package/Default))
   $(eval $(Package/$(1)))
@@ -361,6 +365,12 @@ define Package/$(1)/description
 endef
 endif
 
+  $(if $(DUMP),,$(eval ABIV_$(1) := $(call FormatABISuffix,$(1),$(ABI_VERSION))))
+  $(eval Package/$(1)/conflicts := $(CONFLICTS))
+  $(eval Package/$(1)/provides := $(sort $(1) $(filter-out @%,$(PROVIDES))))
+  $(if $(BUILDONLY),,$(foreach provide,$(Package/$(1)/provides), \
+    $(eval PROVIDERS/$(provide) += $(1))))
+
   BUILD_PACKAGES += $(1)
   $(if $(CONFIG_PACKAGE_$(1))$(DEVELOPER), \
     $(STAMP_PREPARED): $$(if $(QUILT)$(DUMP),,$(call find_library_dependencies,$(1))))
@@ -372,7 +382,7 @@ endif
   )
 
   $(if $(DUMP), \
-    $(if $(CHECK),,$(Dumpinfo/Package)), \
+    $(if $(CHECK),,$(call Dumpinfo/Package,$(1))), \
     $(foreach target, \
       $(if $(Package/$(1)/targets),$(Package/$(1)/targets), \
         $(if $(PKG_TARGETS),$(PKG_TARGETS), ipkg) \

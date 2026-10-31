@@ -39,7 +39,6 @@ define Package/rtl826x-lp-firmware
   $(call Package/rtl826x-firmware/Default)
   TITLE:=Realtek RTL8251L/RTL8261BE/RTL8261N/RTL8254B/RTL8264/RTL8264B low-power firmware
   PROVIDES:=rtl826x-firmware
-  CONFLICTS:=rtl826x-firmware
 endef
 
 define Package/rtl826x-firmware/install

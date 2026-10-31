@@ -264,6 +264,7 @@ sub parse_package_metadata($) {
 		/^Default: \s*(.+)\s*$/ and $pkg->{default} = $1;
 		/^Provides: \s*(.+)\s*$/ and do {
 			my @vpkg = split /\s+/, $1;
+			$pkg->{nonvirtual_provides} = [grep { !/^@/ } @vpkg];
 			foreach (@vpkg) {
 				s/^@//;
 			}
@@ -277,6 +278,7 @@ sub parse_package_metadata($) {
 		/^Menu-Depends: \s*(.+)\s*$/ and $pkg->{mdepends} = [ split /\s+/, $1 ];
 		/^Depends: \s*(.+)\s*$/ and $pkg->{depends} = [ split /\s+/, $1 ];
 		/^Conflicts: \s*(.+)\s*$/ and $pkg->{conflicts} = [ split /\s+/, $1 ];
+		/^Inferred-Conflicts: \s*(.+)\s*$/ and $pkg->{inferred_conflicts} = [ split /\s+/, $1 ];
 		/^Hidden: \s*(.+)\s*$/ and $pkg->{hidden} = 1;
 		/^Build-Variant: \s*([\w\-]+)\s*/ and $pkg->{variant} = $1;
 		/^Default-Variant: .*/ and $pkg->{variant_default} = 1;

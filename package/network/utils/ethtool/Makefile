@@ -36,7 +36,6 @@ endef
 define Package/ethtool
 $(call Package/ethtool/Default)
   VARIANT:=tiny
-  CONFLICTS:=ethtool-full
   DEFAULT_VARIANT:=1
 endef
 
