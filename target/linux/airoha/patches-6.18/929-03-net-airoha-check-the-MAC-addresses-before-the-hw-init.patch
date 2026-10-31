@@ -1,0 +1,79 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Lukasz M <lukasz1992m+openwrt@gmail.com>
+Date: Sat, 31 Oct 2026 12:00:00 +0100
+Subject: [PATCH] net airoha check the MAC addresses before the hw init
+
+The LAN MAC address of the XX530v V2 is an nvmem cell in a fixed-layout
+of the "oem" partition.  In this kernel the fixed layout is a driver on
+the nvmem layout bus, and its cells exist only once that driver has
+probed, so of_get_ethdev_address() can return -EPROBE_DEFER.
+
+airoha_probe() looks the address up only after airoha_hw_init(), with
+the QDMA rings and the NAPI threads running, and on AN7563 the error path
+taken for the deferral hangs the SoC.  Look the addresses of all port
+nodes up before anything is set up, and return -EPROBE_DEFER from there.
+
+Also print the error when a random address is used.
+
+Signed-off-by: Lukasz M <lukasz1992m+openwrt@gmail.com>
+---
+--- a/drivers/net/ethernet/airoha/airoha_eth.c
++++ b/drivers/net/ethernet/airoha/airoha_eth.c
+@@ -5593,8 +5593,8 @@ static int airoha_alloc_gdm_device(struc
+ 			return err;
+ 
+ 		eth_hw_addr_random(netdev);
+-		dev_info(eth->dev, "generated random MAC address %pM\n",
+-			 netdev->dev_addr);
++		dev_info(eth->dev, "generated random MAC address %pM (%pe)\n",
++			 netdev->dev_addr, ERR_PTR(err));
+ 	}
+ 
+ 	/* Allowed nbq for EN7581 on GDM3 port are 4 and 5 for PCIE0
+@@ -5731,6 +5731,28 @@ static int airoha_register_gdm_devices(s
+ 	return 0;
+ }
+ 
++/* The port MAC addresses may come from an nvmem cell whose provider is not
++ * there yet: check them before the hardware is set up, so that a deferred
++ * probe does not have to stop running DMA engines again.
++ */
++static int airoha_mac_addresses_ready(struct device_node *np)
++{
++	u8 addr[ETH_ALEN];
++
++	if (!of_device_is_available(np))
++		return 0;
++
++	if (of_get_mac_address(np, addr) == -EPROBE_DEFER)
++		return -EPROBE_DEFER;
++
++	for_each_child_of_node_scoped(np, child) {
++		if (airoha_mac_addresses_ready(child) == -EPROBE_DEFER)
++			return -EPROBE_DEFER;
++	}
++
++	return 0;
++}
++
+ static int airoha_probe(struct platform_device *pdev)
+ {
+ 	struct reset_control_bulk_data *xsi_rsts;
+@@ -5802,6 +5824,17 @@ static int airoha_probe(struct platform_
+ 		return err;
+ 	}
+ 
++	for_each_child_of_node_scoped(pdev->dev.of_node, np) {
++		if (!of_device_is_compatible(np, "airoha,eth-mac"))
++			continue;
++
++		err = airoha_mac_addresses_ready(np);
++		if (err)
++			return dev_err_probe(eth->dev, err,
++					     "%pOF: MAC address not ready\n",
++					     np);
++	}
++
+ 	eth->napi_dev = alloc_netdev_dummy(0);
+ 	if (!eth->napi_dev)
+ 		return -ENOMEM;
