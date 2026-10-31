@@ -1,0 +1,38 @@
+From 68835d13b9a438cfcdca3a54adb8ce2938b7ab99 Mon Sep 17 00:00:00 2001
+From: Navid Ghahremani <ghahramani.navid@gmail.com>
+Date: Mon, 12 Oct 2026 07:51:44 +0100
+Subject: [PATCH 22/24] usb: dwc3: generic-plat: Add ZTE ZX279128S
+
+Use the generic DWC3 platform integration to enable clocks and release
+resets. ZX279128S is an always-on networking gateway SoC without
+system low-power sleep/suspend states, and the suspend clock is an APB
+clock gating input handled alongside core clocks, making the generic
+platform glue sufficient.
+
+Signed-off-by: Navid Ghahremani <ghahramani.navid@gmail.com>
+---
+ drivers/usb/dwc3/Kconfig             | 2 +-
+ drivers/usb/dwc3/dwc3-generic-plat.c | 1 +
+ 2 files changed, 2 insertions(+), 1 deletion(-)
+
+--- a/drivers/usb/dwc3/Kconfig
++++ b/drivers/usb/dwc3/Kconfig
+@@ -195,7 +195,7 @@ config USB_DWC3_GENERIC_PLAT
+ 	default USB_DWC3
+ 	help
+ 	  Support USB3 functionality in simple SoC integrations.
+-	  Currently supports SpacemiT DWC USB3. Platforms using
++	  Currently supports SpacemiT and ZTE zx279128s DWC USB3. Platforms using
+ 	  dwc3-of-simple can easily switch to dwc3-generic by flattening
+ 	  the dwc3 child node in the device tree.
+ 	  Say 'Y' or 'M' here if your platform integrates DWC3 in a similar way.
+--- a/drivers/usb/dwc3/dwc3-generic-plat.c
++++ b/drivers/usb/dwc3/dwc3-generic-plat.c
+@@ -144,6 +144,7 @@ static const struct dev_pm_ops dwc3_gene
+ 
+ static const struct of_device_id dwc3_generic_of_match[] = {
+ 	{ .compatible = "spacemit,k1-dwc3", },
++	{ .compatible = "zte,zx279128s-dwc3", },
+ 	{ /* sentinel */ }
+ };
+ MODULE_DEVICE_TABLE(of, dwc3_generic_of_match);
