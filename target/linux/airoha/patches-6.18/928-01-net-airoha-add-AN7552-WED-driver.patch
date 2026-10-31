@@ -1,0 +1,1582 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Lukasz M <lukasz1992m+openwrt@gmail.com>
+Date: Sat, 31 Oct 2026 12:00:00 +0100
+Subject: [PATCH] net: airoha: add the AN7552 WED driver
+
+Add support for the AN7552/AN7563 Wi-Fi Ethernet Dispatch (WED) blocks:
+attach, TX buffer manager, TX and tx free rings, WDMA RX rings, interrupts,
+DMA enable and reset, and the struct mtk_wed_ops the mt76 driver uses
+(published as mtk_soc_wed_ops).  Values follow the vendor whnat driver
+(MT7916 plug-in of the Airoha wireless SDK) and the stock unit.
+
+- PCIe interrupt agent polls only while the interrupt is asserted
+  (POLL_EN 1): the vendor's always-poll work-around is off in woe_basic.h
+  (CFG_WORK_AROUND_INT_POLL 0, "hw fixed") and the stock unit reads
+  WED_PCIE_INT_CTRL 0x1fa0257c = 0x00001000.
+- DMA reset as whnat_hal_hw_reset(WHNAT_RESET_IDX_ONLY) (woe_hw.c
+  reset_tx_traffic(), reset_rx_traffic()), one helper per vendor
+  function and in its order: WED TX DMA; the WDMA RX DMA, then the WED's
+  WDMA RX driver with its FSM auto idle off, then the WDMA DRX/CRX of both
+  rings and the WED's WDMA RX driver indexes (WED_WDMA_RST_IDX 0xa08
+  CRX/DRV); the free agent (busy bit, token FIFO drained) and the buffer
+  manager; the WPDMA TX driver; the tx free ring side (WPDMA RX driver,
+  WED RX DMA, CRX_IDX1, DRX_IDX1, RX1 CPU index).  Each engine is waited
+  for on its busy bit (WED_CTRL 1, 3, 9, 11); one that stays busy gets its
+  module reset (WHNAT_RESET_IDX_MODULE).
+- The start that follows (restore_tx_traffic()) turns the WDMA RX DMA on,
+  as the stock unit runs it (0x1fa06204 = 0x5c000454), and the WDMA RX
+  driver's FSM auto idle back on as at attach.
+- Stop clears the WPDMA interrupt mask (pdma_mask_set(0)); disable
+  leaves RX INFO3 reserved (wdma_dma_ctrl()).
+
+Signed-off-by: Lukasz M <lukasz1992m+openwrt@gmail.com>
+---
+--- a/drivers/net/ethernet/airoha/Kconfig
++++ b/drivers/net/ethernet/airoha/Kconfig
+@@ -32,4 +32,16 @@ config NET_AIROHA_FLOW_STATS
+ 	help
+ 	  Enable Airoha flowtable statistic counters.
+ 
++config NET_AIROHA_SOC_WED
++	bool "Airoha SoC Wi-Fi Ethernet Dispatch (WED) support"
++	depends on NET_AIROHA=y
++	depends on !NET_MEDIATEK_SOC_WED
++	help
++	  This driver supports the Wi-Fi Ethernet Dispatch (WED) blocks of the
++	  Airoha AN7552/AN7563, which carry the TX of the PCIe Wi-Fi cards
++	  without the CPU.  It offers the interface of the MediaTek WED
++	  (mtk_soc_wed_ops) to the Wi-Fi driver, so it cannot be built with
++	  the MediaTek one.  The blocks stay unused until a board enables them
++	  in the device tree.
++
+ endif #NET_VENDOR_AIROHA
+--- a/drivers/net/ethernet/airoha/Makefile
++++ b/drivers/net/ethernet/airoha/Makefile
+@@ -7,3 +7,6 @@ obj-$(CONFIG_NET_AIROHA) += airoha-eth.o
+ airoha-eth-y := airoha_eth.o airoha_ppe.o
+ airoha-eth-$(CONFIG_DEBUG_FS) += airoha_ppe_debugfs.o
+ obj-$(CONFIG_NET_AIROHA_NPU) += airoha_npu.o
++obj-$(CONFIG_NET_AIROHA_SOC_WED) += airoha_wed.o
++# the Wi-Fi driver's interface is only declared with this symbol
++CFLAGS_airoha_wed.o += -DCONFIG_NET_MEDIATEK_SOC_WED=1
+--- /dev/null
++++ b/drivers/net/ethernet/airoha/airoha_wed.c
+@@ -0,0 +1,1308 @@
++// SPDX-License-Identifier: GPL-2.0-only
++/*
++ * Airoha AN7552 / AN7563 Wi-Fi Ethernet Dispatch (WED).
++ *
++ * The block is a variant of the MediaTek WED v1 (MT7622): the vendor stack
++ * (whnat driver) binds one WED per Wi-Fi card between the CPU (FE/PPE) and
++ * that card's PCIe controller.  The XX530v V2 has a single MT7916 DBDC card
++ * (main interface on pcie0), so a single WED is used (WED0): its two WED TX
++ * rings (18/19, one per band) and its WDMA serve both bands together; the
++ * second WED block of the SoC (0x1fa03000) stays unused.  The driver offers
++ * the interface
++ * of the MediaTek one (struct mtk_wed_ops, published as mtk_soc_wed_ops) so
++ * that mt76 can use it unchanged.  Register offsets, fields and the order of
++ * the setup are those of the vendor driver, whnat/ of the MT7916 plug-in
++ * (airolha_sdk_wireless/wifi/MT7916_v7623/embedded/plug_in/whnat); the
++ * structure of the code follows the mainline mtk_wed.c, v1 paths only.
++ *
++ * Only the TX of the Wi-Fi cards goes through the WED (CFG_HW_TX_SUPPORT in
++ * the vendor driver); the RX of the cards is the NPU's.  There is no CR mirror
++ * (CFG_CR_MIRROR_SUPPORT is 0 on this SoC) and no dynamic buffer manager
++ * (CFG_DYNAMIC_BM_SUPPORT is 0), so neither is here.
++ */
++#include <linux/bitfield.h>
++#include <linux/debugfs.h>
++#include <linux/dma-mapping.h>
++#include <linux/io.h>
++#include <linux/iopoll.h>
++#include <linux/module.h>
++#include <linux/of.h>
++#include <linux/of_address.h>
++#include <linux/of_irq.h>
++#include <linux/pci.h>
++#include <linux/platform_device.h>
++#include <linux/seq_file.h>
++#include <linux/slab.h>
++#include <linux/soc/mediatek/mtk_wed.h>
++
++#include "airoha_wed_regs.h"
++
++/* wed.h WED_TOKEN_UNIT: the buffer manager counts groups of 128 tokens */
++#define AIROHA_WED_TOKEN_UNIT		128
++/* woe_client_jedi.h: WIFI_TX_RING_SIZE, WIFI_TX_1ST_BUF_SIZE, WIFI_TX_BUF_SIZE */
++#define AIROHA_WED_TX_RING_SIZE		2048
++#define AIROHA_WED_FBUF_SIZE		128
++#define AIROHA_WED_PKT_SIZE		1900
++/* wdma.h WDMA_TX_BM_RING_SIZE */
++#define AIROHA_WED_WDMA_RING_SIZE	1024
++/* one 128 byte first buffer and one 1900 byte packet buffer share a slot */
++#define AIROHA_WED_BUF_SIZE		2048
++#define AIROHA_WED_BUF_PER_PAGE		(PAGE_SIZE / AIROHA_WED_BUF_SIZE)
++
++#define AIROHA_WED_MAX_HW		2
++
++struct mtk_wed_hw {
++	struct device *dev;
++	void __iomem *regs;
++	void __iomem *wdma;
++	u32 wdma_phy;
++	struct device_node *pcie;
++	u32 pcie_base;
++	struct dentry *debugfs_dir;
++	struct mtk_wed_device *wed_dev;
++	int index;
++	int irq;
++	/*
++	 * A DMA reset found an engine that would not go idle: it may still
++	 * read or write its rings and buffers.  Nothing of it is reset,
++	 * started or freed again until the next boot (airoha_wed_reset_dma()).
++	 */
++	bool reset_failed;
++};
++
++const struct mtk_wed_ops __rcu *mtk_soc_wed_ops;
++EXPORT_SYMBOL_GPL(mtk_soc_wed_ops);
++
++static struct mtk_wed_hw *hw_list[AIROHA_WED_MAX_HW];
++static DEFINE_MUTEX(hw_lock);
++
++static u32 wed_r32(struct mtk_wed_device *dev, u32 reg)
++{
++	return readl(dev->hw->regs + reg);
++}
++
++static void wed_w32(struct mtk_wed_device *dev, u32 reg, u32 val)
++{
++	writel(val, dev->hw->regs + reg);
++}
++
++static void wed_m32(struct mtk_wed_device *dev, u32 reg, u32 mask, u32 val)
++{
++	wed_w32(dev, reg, (wed_r32(dev, reg) & ~mask) | val);
++}
++
++static void wed_set(struct mtk_wed_device *dev, u32 reg, u32 mask)
++{
++	wed_m32(dev, reg, 0, mask);
++}
++
++static void wed_clr(struct mtk_wed_device *dev, u32 reg, u32 mask)
++{
++	wed_m32(dev, reg, mask, 0);
++}
++
++static u32 wdma_r32(struct mtk_wed_device *dev, u32 reg)
++{
++	return readl(dev->hw->wdma + reg);
++}
++
++static void wdma_w32(struct mtk_wed_device *dev, u32 reg, u32 val)
++{
++	writel(val, dev->hw->wdma + reg);
++}
++
++static void wdma_set(struct mtk_wed_device *dev, u32 reg, u32 mask)
++{
++	wdma_w32(dev, reg, wdma_r32(dev, reg) | mask);
++}
++
++static void wdma_clr(struct mtk_wed_device *dev, u32 reg, u32 mask)
++{
++	wdma_w32(dev, reg, wdma_r32(dev, reg) & ~mask);
++}
++
++static void wpdma_tx_w32(struct mtk_wed_device *dev, int ring, u32 reg, u32 val)
++{
++	if (!dev->tx_ring[ring].wpdma)
++		return;
++
++	writel(val, dev->tx_ring[ring].wpdma + reg);
++}
++
++static u32 wed_read_reset(struct mtk_wed_device *dev)
++{
++	return wed_r32(dev, WED_RESET);
++}
++
++static u32 wdma_read_glo_cfg(struct mtk_wed_device *dev)
++{
++	return wdma_r32(dev, WDMA_GLO_CFG);
++}
++
++static u32 wed_check_busy(struct mtk_wed_device *dev, u32 reg, u32 mask)
++{
++	return !!(wed_r32(dev, reg) & mask);
++}
++
++/* the agent has to be idle before it is reset or switched off */
++static int wed_poll_busy(struct mtk_wed_device *dev, u32 reg, u32 mask)
++{
++	int sleep = 15000;
++	int timeout = 100 * sleep;
++	u32 val;
++
++	return read_poll_timeout(wed_check_busy, val, !val, sleep, timeout,
++				 false, dev, reg, mask);
++}
++
++static void wed_reset(struct mtk_wed_device *dev, u32 mask)
++{
++	u32 status;
++
++	wed_w32(dev, WED_RESET, mask);
++	if (readx_poll_timeout(wed_read_reset, dev, status,
++			       !(status & mask), 0, 1000))
++		WARN_ON_ONCE(1);
++}
++
++/* the WDMA's RX DMA stops (woe_hw.c wdma_agt_dis_ck(): 100 x 10..15 ms) */
++static int wdma_rx_stop(struct mtk_wed_device *dev)
++{
++	u32 status;
++	int ret;
++
++	wdma_clr(dev, WDMA_GLO_CFG, WDMA_GLO_CFG_RX_DMA_EN);
++	ret = readx_poll_timeout(wdma_read_glo_cfg, dev, status,
++				 !(status & WDMA_GLO_CFG_RX_DMA_BUSY), 15000,
++				 100 * 15000);
++	if (ret)
++		dev_err(dev->hw->dev, "wdma rx dma stays busy\n");
++
++	return ret;
++}
++
++/* the WDMA's DRX and CRX indexes, both rings (woe_hw.c reset_wdma()) */
++static void wdma_rx_reset_idx(struct mtk_wed_device *dev)
++{
++	int i;
++
++	wdma_w32(dev, WDMA_RESET_IDX, WDMA_RESET_IDX_RX);
++	wdma_w32(dev, WDMA_RESET_IDX, 0);
++	for (i = 0; i < ARRAY_SIZE(dev->rx_wdma); i++)
++		wdma_w32(dev, WDMA_RING_RX(i) + WED_RING_OFS_CPU_IDX, 0);
++}
++
++static int wdma_rx_reset(struct mtk_wed_device *dev)
++{
++	int ret;
++
++	ret = wdma_rx_stop(dev);
++	wdma_rx_reset_idx(dev);
++
++	return ret;
++}
++
++static void wed_ring_reset(struct mtk_wed_ring *ring, int size, bool tx)
++{
++	void *head = (void *)ring->desc;
++	int i;
++
++	for (i = 0; i < size; i++) {
++		struct mtk_wdma_desc *desc;
++
++		desc = (struct mtk_wdma_desc *)(head + i * ring->desc_size);
++		desc->buf0 = 0;
++		desc->ctrl = cpu_to_le32(tx ? WED_DESC_DDONE : WED_DESC_TO_HOST);
++		desc->buf1 = 0;
++		desc->info = 0;
++	}
++}
++
++static int wed_ring_alloc(struct mtk_wed_device *dev, struct mtk_wed_ring *ring,
++			  int size, u32 desc_size, bool tx)
++{
++	ring->desc = dma_alloc_coherent(dev->hw->dev, size * desc_size,
++					&ring->desc_phys, GFP_KERNEL);
++	if (!ring->desc)
++		return -ENOMEM;
++
++	ring->desc_size = desc_size;
++	ring->size = size;
++	wed_ring_reset(ring, size, tx);
++
++	return 0;
++}
++
++static void wed_free_ring(struct mtk_wed_device *dev, struct mtk_wed_ring *ring)
++{
++	if (!ring->desc)
++		return;
++
++	dma_free_coherent(dev->hw->dev, ring->size * ring->desc_size,
++			  ring->desc, ring->desc_phys);
++	ring->desc = NULL;
++}
++
++static void wed_free_tx_rings(struct mtk_wed_device *dev)
++{
++	int i;
++
++	for (i = 0; i < ARRAY_SIZE(dev->tx_ring); i++)
++		wed_free_ring(dev, &dev->tx_ring[i]);
++	for (i = 0; i < ARRAY_SIZE(dev->rx_wdma); i++)
++		wed_free_ring(dev, &dev->rx_wdma[i]);
++}
++
++/* ---- TX buffers ---- */
++
++/*
++ * One descriptor per token: the first 128 bytes of its slot are the TXD and
++ * TXP the Wi-Fi chip is given (wed.c token_buf_init(): sdp0/sdl0), the 1900
++ * bytes after them carry the packet (sdp1/sdlen1, last1 set).  The first
++ * buffer is always 128 bytes, CFG_WORK_AROUND_128_ALIGN of the vendor driver.
++ */
++static int wed_tx_buffer_alloc(struct mtk_wed_device *dev)
++{
++	struct device *hwdev = dev->hw->dev;
++	int token = dev->wlan.token_start;
++	struct mtk_wed_buf *page_list;
++	struct mtk_wdma_desc *desc;
++	dma_addr_t desc_phys;
++	int i, page_idx = 0, ring_size;
++
++	ring_size = dev->wlan.nbuf & ~(AIROHA_WED_BUF_PER_PAGE - 1);
++	if (!ring_size || ring_size % AIROHA_WED_TOKEN_UNIT ||
++	    ring_size / AIROHA_WED_TOKEN_UNIT >
++	    FIELD_MAX(WED_TX_BM_CTRL_VLD_GRP_NUM))
++		return -EINVAL;
++	dev->tx_buf_ring.size = ring_size;
++
++	page_list = kcalloc(ring_size / AIROHA_WED_BUF_PER_PAGE,
++			    sizeof(*page_list), GFP_KERNEL);
++	if (!page_list)
++		return -ENOMEM;
++	dev->tx_buf_ring.pages = page_list;
++
++	desc = dma_alloc_coherent(hwdev, ring_size * sizeof(*desc), &desc_phys,
++				  GFP_KERNEL);
++	if (!desc)
++		return -ENOMEM;
++	dev->tx_buf_ring.desc = desc;
++	dev->tx_buf_ring.desc_phys = desc_phys;
++
++	for (i = 0; i < ring_size; i += AIROHA_WED_BUF_PER_PAGE) {
++		dma_addr_t page_phys, buf_phys;
++		struct page *page;
++		void *buf;
++		int s;
++
++		page = __dev_alloc_page(GFP_KERNEL | GFP_DMA32);
++		if (!page)
++			return -ENOMEM;
++
++		page_phys = dma_map_page(hwdev, page, 0, PAGE_SIZE,
++					 DMA_BIDIRECTIONAL);
++		if (dma_mapping_error(hwdev, page_phys)) {
++			__free_page(page);
++			return -ENOMEM;
++		}
++
++		page_list[page_idx].p = page;
++		page_list[page_idx++].phy_addr = page_phys;
++		dma_sync_single_for_cpu(hwdev, page_phys, PAGE_SIZE,
++					DMA_BIDIRECTIONAL);
++
++		buf = page_to_virt(page);
++		buf_phys = page_phys;
++
++		for (s = 0; s < AIROHA_WED_BUF_PER_PAGE; s++, desc++) {
++			dma_addr_t pkt_phys = buf_phys + AIROHA_WED_FBUF_SIZE;
++			u32 txd_size;
++
++			/*
++			 * init_buf() points the TXP at the packet right behind
++			 * the TXD and TXP; here it is the second buffer, so
++			 * the size is asked first and the address given again.
++			 */
++			txd_size = dev->wlan.init_buf(buf, 0, token);
++			if (!txd_size || txd_size > AIROHA_WED_FBUF_SIZE) {
++				dma_sync_single_for_device(hwdev, page_phys,
++							   PAGE_SIZE,
++							   DMA_BIDIRECTIONAL);
++				return -EINVAL;
++			}
++			dev->wlan.init_buf(buf, pkt_phys - txd_size, token++);
++
++			desc->buf0 = cpu_to_le32(buf_phys);
++			desc->buf1 = cpu_to_le32(pkt_phys);
++			desc->ctrl = cpu_to_le32(FIELD_PREP(WED_DESC_SDL0,
++							    AIROHA_WED_FBUF_SIZE) |
++						 FIELD_PREP(WED_DESC_SDL1,
++							    AIROHA_WED_PKT_SIZE) |
++						 WED_DESC_LAST1);
++			desc->info = 0;
++
++			buf += AIROHA_WED_BUF_SIZE;
++			buf_phys += AIROHA_WED_BUF_SIZE;
++		}
++
++		dma_sync_single_for_device(hwdev, page_phys, PAGE_SIZE,
++					   DMA_BIDIRECTIONAL);
++	}
++
++	return 0;
++}
++
++static void wed_free_tx_buffer(struct mtk_wed_device *dev)
++{
++	struct mtk_wed_buf *page_list = dev->tx_buf_ring.pages;
++	struct device *hwdev = dev->hw->dev;
++	int i, page_idx = 0;
++
++	if (!page_list)
++		return;
++
++	if (!dev->tx_buf_ring.desc)
++		goto free_pagelist;
++
++	for (i = 0; i < dev->tx_buf_ring.size; i += AIROHA_WED_BUF_PER_PAGE) {
++		void *page = page_list[page_idx].p;
++
++		if (!page)
++			break;
++
++		dma_unmap_page(hwdev, page_list[page_idx++].phy_addr, PAGE_SIZE,
++			       DMA_BIDIRECTIONAL);
++		__free_page(page);
++	}
++
++	dma_free_coherent(hwdev,
++			  dev->tx_buf_ring.size * sizeof(struct mtk_wdma_desc),
++			  dev->tx_buf_ring.desc, dev->tx_buf_ring.desc_phys);
++
++free_pagelist:
++	kfree(page_list);
++	dev->tx_buf_ring.pages = NULL;
++	dev->tx_buf_ring.desc = NULL;
++}
++
++/* ---- setup and teardown ---- */
++
++static void wed_set_ext_int(struct mtk_wed_device *dev, bool en)
++{
++	wed_w32(dev, WED_EXT_INT_MASK, en ? WED_EXT_INT_MASK_ALL : 0);
++	wed_r32(dev, WED_EXT_INT_MASK);
++}
++
++static void wed_dma_disable(struct mtk_wed_device *dev)
++{
++	wed_clr(dev, WED_WPDMA_GLO_CFG,
++		WED_WPDMA_GLO_CFG_TX_DRV_EN | WED_WPDMA_GLO_CFG_RX_DRV_EN);
++	wed_clr(dev, WED_WDMA_GLO_CFG, WED_WDMA_GLO_CFG_RX_DRV_EN);
++	wed_clr(dev, WED_GLO_CFG,
++		WED_GLO_CFG_TX_DMA_EN | WED_GLO_CFG_RX_DMA_EN);
++	/* wdma_dma_ctrl(): INFO3 stays reserved */
++	wdma_clr(dev, WDMA_GLO_CFG,
++		 WDMA_GLO_CFG_RX_INFO1_PRERES | WDMA_GLO_CFG_RX_INFO2_PRERES);
++}
++
++static void wed_stop(struct mtk_wed_device *dev)
++{
++	wed_dma_disable(dev);
++	wed_set_ext_int(dev, false);
++
++	wed_w32(dev, WED_WPDMA_INT_TRIGGER, 0);
++	wed_w32(dev, WED_WDMA_INT_TRIGGER, 0);
++	wdma_w32(dev, WDMA_INT_MASK, 0);
++	wdma_w32(dev, WDMA_INT_GRP2, 0);
++	wed_w32(dev, WED_WPDMA_INT_MASK, 0);
++}
++
++static void wed_deinit(struct mtk_wed_device *dev)
++{
++	wed_stop(dev);
++
++	wed_clr(dev, WED_CTRL,
++		WED_CTRL_WDMA_INT_AGENT_EN | WED_CTRL_WPDMA_INT_AGENT_EN |
++		WED_CTRL_TX_BM_EN | WED_CTRL_TX_FREE_AGENT_EN);
++}
++
++static void __wed_detach(struct mtk_wed_device *dev)
++{
++	struct mtk_wed_hw *hw = dev->hw;
++
++	/*
++	 * The Wi-Fi driver's handler reads the WED through dev, which is
++	 * cleared below: no new interrupt, and one running on another CPU
++	 * is over before that.
++	 */
++	wed_w32(dev, WED_INT_MASK, 0);
++	wed_set_ext_int(dev, false);
++	synchronize_irq(hw->irq);
++
++	wed_deinit(dev);
++
++	if (hw->reset_failed) {
++		/* an engine that never went idle: no reset, keep its memory */
++		dev_err(hw->dev,
++			"wed %d hung, its rings and buffers stay allocated\n",
++			hw->index);
++	} else {
++		wdma_rx_reset(dev);
++		wed_reset(dev, WED_RESET_WED);
++		wed_free_tx_buffer(dev);
++		wed_free_tx_rings(dev);
++	}
++
++	memset(dev, 0, sizeof(*dev));
++	module_put(THIS_MODULE);
++
++	hw->wed_dev = NULL;
++}
++
++static void airoha_wed_detach(struct mtk_wed_device *dev)
++{
++	mutex_lock(&hw_lock);
++	__wed_detach(dev);
++	mutex_unlock(&hw_lock);
++}
++
++/*
++ * whnat_hal_pcie_map(), whnat_hal_wed_init() and whnat_hal_wdma_init(): what
++ * the vendor driver sets up once, before any ring exists.
++ */
++static void wed_hw_init_early(struct mtk_wed_device *dev)
++{
++	struct mtk_wed_hw *hw = dev->hw;
++	u32 wdma_base = hw->wdma_phy & GENMASK(31, 16);
++	u32 wdma_ofs = hw->wdma_phy & GENMASK(15, 0);
++
++	wed_deinit(dev);
++	wed_reset(dev, WED_RESET_WED);
++
++	/* the Wi-Fi chip's registers, as the WED sees them on the PCIe bus */
++	wed_w32(dev, WED_WPDMA_CFG_BASE, dev->wlan.wpdma_phys);
++
++	/*
++	 * pcie interrupt agent (SRC_SEL is 0: a single WED on this board).
++	 * Poll only while the interrupt is asserted: stock 0x1fa0257c reads
++	 * 0x00001000, the always-poll work-around is off in the SDK
++	 * (woe_basic.h CFG_WORK_AROUND_INT_POLL 0, "hw fixed").
++	 */
++	wed_w32(dev, WED_PCIE_CFG_BASE, hw->pcie_base);
++	wed_w32(dev, WED_PCIE_INT_CTRL,
++		FIELD_PREP(WED_PCIE_INT_CTRL_POLL_EN, WED_PCIE_POLL_ASSERT) |
++		FIELD_PREP(WED_PCIE_INT_CTRL_SRC_SEL, hw->index));
++
++	/*
++	 * whnat_hal_wed_init(), BB_SOC: 64 byte bursts, the DMAD supply and
++	 * skip/recycle bits off, AXI_W_AFTER_AW and WCOMPLETE_SEL on ("fix WDMA
++	 * stress fail issue on ECNT platform"), auto idle left enabled.
++	 */
++	wed_m32(dev, WED_WDMA_GLO_CFG,
++		WED_WDMA_GLO_CFG_BT_SIZE |
++		WED_WDMA_GLO_CFG_RX_DIS_FSM_AUTO_IDLE |
++		WED_WDMA_GLO_CFG_IDLE_DMAD_SUPPLY |
++		WED_WDMA_GLO_CFG_DYNAMIC_SKIP_DMAD_PREP |
++		WED_WDMA_GLO_CFG_DYNAMIC_DMAD_RECYCLE,
++		FIELD_PREP(WED_WDMA_GLO_CFG_BT_SIZE, 2) |
++		WED_WDMA_GLO_CFG_AXI_W_AFTER_AW |
++		WED_WDMA_GLO_CFG_WCOMPLETE_SEL);
++
++	/* whnat_hal_wdma_init(): the WDMA is reached through CFG_BASE + 16 bit */
++	wdma_set(dev, WDMA_GLO_CFG,
++		 WDMA_GLO_CFG_RX_INFO1_PRERES | WDMA_GLO_CFG_RX_INFO2_PRERES |
++		 WDMA_GLO_CFG_RX_INFO3_PRERES);
++	wed_w32(dev, WED_WDMA_CFG_BASE, wdma_base);
++	wed_w32(dev, WED_WDMA_OFFSET0,
++		FIELD_PREP(WED_WDMA_OFST0_GLO_INTS, wdma_ofs + WDMA_INT_STATUS) |
++		FIELD_PREP(WED_WDMA_OFST0_GLO_CFG, wdma_ofs + WDMA_GLO_CFG));
++	wed_w32(dev, WED_WDMA_OFFSET1,
++		FIELD_PREP(WED_WDMA_OFST1_TX_CTRL, wdma_ofs + WDMA_RING_TX(0)) |
++		FIELD_PREP(WED_WDMA_OFST1_RX_CTRL, wdma_ofs + WDMA_RING_RX(0)));
++}
++
++/* whnat_hal_bfm_init(): the TX buffer manager, once the rings are there */
++static void wed_hw_init(struct mtk_wed_device *dev)
++{
++	if (dev->init_done)
++		return;
++
++	dev->init_done = true;
++	wed_set_ext_int(dev, false);
++
++	wed_w32(dev, WED_TX_BM_CTRL,
++		WED_TX_BM_CTRL_PAUSE |
++		FIELD_PREP(WED_TX_BM_CTRL_VLD_GRP_NUM,
++			   dev->tx_buf_ring.size / AIROHA_WED_TOKEN_UNIT) |
++		FIELD_PREP(WED_TX_BM_CTRL_RSV_GRP_NUM,
++			   AIROHA_WED_TX_RING_SIZE / 256));
++	wed_w32(dev, WED_TX_BM_BASE, dev->tx_buf_ring.desc_phys);
++	wed_w32(dev, WED_TX_BM_TKID,
++		FIELD_PREP(WED_TX_BM_TKID_START, dev->wlan.token_start) |
++		FIELD_PREP(WED_TX_BM_TKID_END,
++			   dev->wlan.token_start + dev->wlan.nbuf - 1));
++	wed_w32(dev, WED_TX_BM_BUF_LEN,
++		AIROHA_WED_PKT_SIZE & WED_TX_BM_BUF_LEN_MASK);
++	wed_w32(dev, WED_TX_BM_DYN_THR,
++		FIELD_PREP(WED_TX_BM_DYN_THR_LO, 1) | WED_TX_BM_DYN_THR_HI);
++
++	wed_reset(dev, WED_RESET_TX_BM);
++
++	wed_set(dev, WED_CTRL, WED_CTRL_TX_BM_EN | WED_CTRL_TX_FREE_AGENT_EN);
++	wed_clr(dev, WED_TX_BM_CTRL, WED_TX_BM_CTRL_PAUSE);
++}
++
++/* whnat_hal_int_ctrl() with the agents enabled */
++static void wed_configure_irq(struct mtk_wed_device *dev, u32 irq_mask)
++{
++	u32 wdma_mask = WED_WDMA_INT_TRIGGER_RX_DONE;
++
++	wed_set(dev, WED_CTRL,
++		WED_CTRL_WDMA_INT_AGENT_EN | WED_CTRL_WPDMA_INT_AGENT_EN |
++		WED_CTRL_TX_BM_EN | WED_CTRL_TX_FREE_AGENT_EN);
++
++	wed_w32(dev, WED_PCIE_INT_TRIGGER, WED_PCIE_INT_TRIGGER_STATUS);
++	wed_w32(dev, WED_WPDMA_INT_TRIGGER,
++		WED_WPDMA_INT_TRIGGER_RX_DONE | WED_WPDMA_INT_TRIGGER_TX_DONE);
++	wed_set(dev, WED_WPDMA_INT_CTRL, WED_WPDMA_INT_CTRL_SUBRT_ADV);
++	wed_clr(dev, WED_WDMA_INT_CTRL, WED_WDMA_INT_CTRL_POLL_SRC_SEL);
++
++	wed_w32(dev, WED_WDMA_INT_TRIGGER, wdma_mask);
++	wdma_w32(dev, WDMA_INT_MASK, wdma_mask);
++	wdma_w32(dev, WDMA_INT_GRP2, wdma_mask);
++	wed_w32(dev, WED_WPDMA_INT_MASK, irq_mask);
++	wed_w32(dev, WED_INT_MASK, irq_mask);
++}
++
++/*
++ * wed_dma_ctrl() with WHNAT_DMA_TXRX and restore_tx_traffic() of the vendor
++ * driver: the WED's DMA and drivers, then the WDMA's RX DMA, which the stock
++ * unit runs (0x1fa06204 = 0x5c000454, RX_DMA_EN set).  A reset leaves the
++ * WDMA RX driver's FSM auto idle off (reset_wed_rx_drv()); it is back on as
++ * at attach and on the stock unit (0x1fa02a04 bit 13 clear).
++ */
++static void wed_dma_enable(struct mtk_wed_device *dev)
++{
++	/*
++	 * wdma_dma_ctrl(TXRX): wed_dma_disable() took INFO1/2 away, a start
++	 * after a stop (Wi-Fi SER) gets them back as at attach
++	 */
++	wdma_set(dev, WDMA_GLO_CFG,
++		 WDMA_GLO_CFG_RX_INFO1_PRERES | WDMA_GLO_CFG_RX_INFO2_PRERES |
++		 WDMA_GLO_CFG_RX_INFO3_PRERES);
++	wed_set(dev, WED_GLO_CFG, WED_GLO_CFG_TX_DMA_EN | WED_GLO_CFG_RX_DMA_EN);
++	wed_set(dev, WED_WPDMA_GLO_CFG,
++		WED_WPDMA_GLO_CFG_TX_DRV_EN | WED_WPDMA_GLO_CFG_RX_DRV_EN);
++	wed_m32(dev, WED_WDMA_GLO_CFG, WED_WDMA_GLO_CFG_RX_DIS_FSM_AUTO_IDLE,
++		WED_WDMA_GLO_CFG_RX_DRV_EN);
++	wdma_set(dev, WDMA_GLO_CFG, WDMA_GLO_CFG_RX_DMA_EN);
++}
++
++static int wed_wdma_rx_ring_setup(struct mtk_wed_device *dev, int idx,
++				  int size, bool reset)
++{
++	struct mtk_wed_ring *wdma;
++
++	if (idx >= ARRAY_SIZE(dev->rx_wdma))
++		return -EINVAL;
++
++	wdma = &dev->rx_wdma[idx];
++	if (!reset && wed_ring_alloc(dev, wdma, AIROHA_WED_WDMA_RING_SIZE,
++				     sizeof(struct mtk_wdma_desc), true))
++		return -ENOMEM;
++
++	wdma_w32(dev, WDMA_RING_RX(idx) + WED_RING_OFS_BASE, wdma->desc_phys);
++	wdma_w32(dev, WDMA_RING_RX(idx) + WED_RING_OFS_COUNT, size);
++	wdma_w32(dev, WDMA_RING_RX(idx) + WED_RING_OFS_CPU_IDX, 0);
++
++	wed_w32(dev, WED_WDMA_RING_RX(idx) + WED_RING_OFS_BASE, wdma->desc_phys);
++	wed_w32(dev, WED_WDMA_RING_RX(idx) + WED_RING_OFS_COUNT, size);
++
++	return 0;
++}
++
++/*
++ * whnat_hal_hw_reset() of the vendor driver: reset_tx_traffic() and
++ * reset_rx_traffic().  An engine is switched off and waited for; nothing is
++ * reset while it is busy, it may still be moving data.  The vendor tries
++ * WHNAT_RESET_IDX_ONLY first and, when an engine stays busy, the whole
++ * sequence again as WHNAT_RESET_IDX_MODULE, which waits once more before it
++ * resets the module (woe_main.c:604-606); an engine busy after that ends the
++ * sequence with an error.  Here: index reset when the engine is idle in
++ * time, module reset when it gets idle only in the second wait, the rest of
++ * the sequence skipped when it never does.  airoha_wed_start() is
++ * restore_tx_traffic() and restore_rx_traffic().
++ */
++enum wed_idle {
++	WED_IDLE,		/* idle in the first wait: index reset */
++	WED_IDLE_LATE,		/* idle in the second wait: module reset */
++};
++
++static int wed_wait_idle(struct mtk_wed_device *dev, u32 reg, u32 mask,
++			 const char *name)
++{
++	if (!wed_poll_busy(dev, reg, mask))
++		return WED_IDLE;
++
++	dev_err(dev->hw->dev, "%s busy after reset request, waiting longer\n",
++		name);
++	if (!wed_poll_busy(dev, reg, mask))
++		return WED_IDLE_LATE;
++
++	dev_err(dev->hw->dev, "%s stays busy, DMA reset aborted\n", name);
++	return -EBUSY;
++}
++
++/* reset_wed_tx_dma() */
++static int wed_reset_tx_dma(struct mtk_wed_device *dev)
++{
++	int idle;
++
++	wed_clr(dev, WED_GLO_CFG, WED_GLO_CFG_TX_DMA_EN);
++	idle = wed_wait_idle(dev, WED_GLO_CFG, WED_GLO_CFG_TX_DMA_BUSY,
++			     "wed tx dma");
++	if (idle < 0)
++		return idle;
++
++	if (idle == WED_IDLE) {
++		wed_w32(dev, WED_RESET_IDX, WED_RESET_IDX_TX);
++		wed_w32(dev, WED_RESET_IDX, 0);
++	} else {
++		wed_reset(dev, WED_RESET_WED_TX_DMA);
++	}
++
++	return 0;
++}
++
++/* reset_wed_rx_drv(): the WDMA RX DMA, then the WED's WDMA RX driver */
++static int wed_reset_wdma_rx_drv(struct mtk_wed_device *dev)
++{
++	bool late = false;
++	int idle;
++
++	if (wdma_rx_stop(dev)) {
++		u32 status;
++
++		late = true;
++		if (readx_poll_timeout(wdma_read_glo_cfg, dev, status,
++				       !(status & WDMA_GLO_CFG_RX_DMA_BUSY),
++				       15000, 100 * 15000)) {
++			dev_err(dev->hw->dev,
++				"wdma rx dma stays busy, DMA reset aborted\n");
++			return -EBUSY;
++		}
++	}
++
++	wed_m32(dev, WED_WDMA_GLO_CFG, WED_WDMA_GLO_CFG_RX_DRV_EN,
++		WED_WDMA_GLO_CFG_RX_DIS_FSM_AUTO_IDLE);
++	idle = wed_wait_idle(dev, WED_WDMA_GLO_CFG,
++			     WED_WDMA_GLO_CFG_RX_DRV_BUSY, "wdma rx drv");
++	if (idle < 0)
++		return idle;
++
++	wdma_rx_reset_idx(dev);
++
++	if (idle == WED_IDLE && !late) {
++		wed_w32(dev, WED_WDMA_RESET_IDX,
++			WED_WDMA_RESET_IDX_RX | WED_WDMA_RESET_IDX_DRV);
++		wed_w32(dev, WED_WDMA_RESET_IDX, 0);
++		wed_set(dev, WED_WDMA_GLO_CFG, WED_WDMA_GLO_CFG_RST_INIT_COMPLETE);
++		wed_clr(dev, WED_WDMA_GLO_CFG, WED_WDMA_GLO_CFG_RST_INIT_COMPLETE);
++		return 0;
++	}
++
++	wed_clr(dev, WED_CTRL, WED_CTRL_WDMA_INT_AGENT_EN);
++	if (wed_wait_idle(dev, WED_CTRL, WED_CTRL_WDMA_INT_AGENT_BUSY,
++			  "wdma int agent") < 0)
++		return -EBUSY;
++	wed_reset(dev, WED_RESET_WDMA_INT_AGENT);
++	wed_reset(dev, WED_RESET_WDMA_RX_DRV);
++
++	return 0;
++}
++
++static u32 wed_read_tkfifo_depth(struct mtk_wed_device *dev)
++{
++	return FIELD_GET(WED_TX_BM_INTF_TKFIFO_FDEP,
++			 wed_r32(dev, WED_TX_BM_INTF));
++}
++
++/*
++ * reset_wed_tx_bm(): the free agent drains its token FIFO, then the BM;
++ * module resets only, the vendor has no index variant
++ */
++static int wed_reset_tx_bm(struct mtk_wed_device *dev)
++{
++	u32 depth;
++
++	wed_clr(dev, WED_CTRL, WED_CTRL_TX_FREE_AGENT_EN);
++	if (wed_wait_idle(dev, WED_CTRL, WED_CTRL_TX_FREE_AGENT_BUSY,
++			  "tx free agent") < 0)
++		return -EBUSY;
++	if (readx_poll_timeout(wed_read_tkfifo_depth, dev, depth,
++			       depth == WED_TX_BM_INTF_TKFIFO_EMPTY, 10,
++			       10000)) {
++		dev_err(dev->hw->dev,
++			"tx free agent fifo not drained, DMA reset aborted\n");
++		return -EBUSY;
++	}
++	wed_reset(dev, WED_RESET_TX_FREE_AGENT);
++
++	wed_clr(dev, WED_CTRL, WED_CTRL_TX_BM_EN);
++	if (wed_wait_idle(dev, WED_CTRL, WED_CTRL_TX_BM_BUSY, "tx bm") < 0)
++		return -EBUSY;
++	wed_reset(dev, WED_RESET_TX_BM);
++
++	return 0;
++}
++
++/* reset_wed_tx_drv(): the WPDMA TX driver */
++static int wed_reset_wpdma_tx_drv(struct mtk_wed_device *dev)
++{
++	int idle;
++
++	wed_clr(dev, WED_WPDMA_GLO_CFG, WED_WPDMA_GLO_CFG_TX_DRV_EN);
++	idle = wed_wait_idle(dev, WED_WPDMA_GLO_CFG,
++			     WED_WPDMA_GLO_CFG_TX_DRV_BUSY, "wpdma tx drv");
++	if (idle < 0)
++		return idle;
++
++	if (idle == WED_IDLE) {
++		wed_w32(dev, WED_WPDMA_RESET_IDX, WED_WPDMA_RESET_IDX_TX);
++		wed_w32(dev, WED_WPDMA_RESET_IDX, 0);
++		return 0;
++	}
++
++	wed_clr(dev, WED_CTRL, WED_CTRL_WPDMA_INT_AGENT_EN);
++	if (wed_wait_idle(dev, WED_CTRL, WED_CTRL_WPDMA_INT_AGENT_BUSY,
++			  "wpdma int agent") < 0)
++		return -EBUSY;
++	wed_reset(dev, WED_RESET_WPDMA_INT_AGENT);
++	wed_reset(dev, WED_RESET_WPDMA_TX_DRV);
++
++	return 0;
++}
++
++/*
++ * reset_rx_traffic(): the RX side, which here is only the tx free ring
++ * (WPDMA RX 1 into WED RX 1)
++ */
++static int wed_reset_rx(struct mtk_wed_device *dev)
++{
++	int drv, dma;
++
++	wed_clr(dev, WED_WPDMA_GLO_CFG, WED_WPDMA_GLO_CFG_RX_DRV_EN);
++	drv = wed_wait_idle(dev, WED_WPDMA_GLO_CFG,
++			    WED_WPDMA_GLO_CFG_RX_DRV_BUSY, "wpdma rx drv");
++	if (drv < 0)
++		return drv;
++
++	wed_clr(dev, WED_GLO_CFG, WED_GLO_CFG_RX_DMA_EN);
++	dma = wed_wait_idle(dev, WED_GLO_CFG, WED_GLO_CFG_RX_DMA_BUSY,
++			    "wed rx dma");
++	if (dma < 0)
++		return dma;
++
++	if (drv == WED_IDLE && dma == WED_IDLE) {
++		wed_w32(dev, WED_WPDMA_RESET_IDX, WED_WPDMA_RESET_IDX_RX);
++		wed_w32(dev, WED_RESET_IDX, WED_RESET_IDX_RX);
++		wed_w32(dev, WED_WPDMA_RESET_IDX, 0);
++		wed_w32(dev, WED_RESET_IDX, 0);
++	} else {
++		wed_clr(dev, WED_CTRL, WED_CTRL_WPDMA_INT_AGENT_EN);
++		if (wed_wait_idle(dev, WED_CTRL, WED_CTRL_WPDMA_INT_AGENT_BUSY,
++				  "wpdma int agent") < 0)
++			return -EBUSY;
++		wed_reset(dev, WED_RESET_WPDMA_INT_AGENT);
++		wed_reset(dev, WED_RESET_WPDMA_RX_DRV);
++	}
++	wed_w32(dev, WED_RING_RX(1) + WED_RING_OFS_CPU_IDX, 0);
++
++	return 0;
++}
++
++static void airoha_wed_reset_dma(struct mtk_wed_device *dev)
++{
++	int i;
++
++	/* mt7915_mac_restart() retries up to ten times: no second long wait */
++	if (dev->hw->reset_failed)
++		return;
++
++	for (i = 0; i < ARRAY_SIZE(dev->tx_ring); i++) {
++		if (!dev->tx_ring[i].desc)
++			continue;
++
++		wed_ring_reset(&dev->tx_ring[i], AIROHA_WED_TX_RING_SIZE, true);
++	}
++
++	/*
++	 * reset_tx_traffic() and reset_rx_traffic() stop at the first error.
++	 * The vendor gives up there and so do we: mt76 does not learn of it
++	 * (the op returns nothing) and goes on to airoha_wed_start(), which
++	 * then leaves the engines off, and the detach leaves the memory they
++	 * may still use allocated.
++	 */
++	if (wed_reset_tx_dma(dev) || wed_reset_wdma_rx_drv(dev) ||
++	    wed_reset_tx_bm(dev) || wed_reset_wpdma_tx_drv(dev) ||
++	    wed_reset_rx(dev)) {
++		dev->hw->reset_failed = true;
++		dev_err(dev->hw->dev,
++			"DMA reset incomplete, Wi-Fi offload stays off until reboot\n");
++	}
++
++	dev->init_done = false;
++}
++
++static void airoha_wed_start(struct mtk_wed_device *dev, u32 irq_mask)
++{
++	int i;
++
++	if (dev->hw->reset_failed)
++		return;
++
++	for (i = 0; i < ARRAY_SIZE(dev->rx_wdma); i++)
++		if (!dev->rx_wdma[i].desc)
++			wed_wdma_rx_ring_setup(dev, i, 16, false);
++
++	wed_hw_init(dev);
++	wed_configure_irq(dev, irq_mask);
++	wed_set_ext_int(dev, true);
++	wed_dma_enable(dev);
++	dev->running = true;
++}
++
++/*
++ * The slot is the PCIe controller the chip sits behind; the WED node names
++ * its controller (airoha,pcie), so the match does not depend on the domain
++ * numbers.
++ */
++static struct mtk_wed_hw *wed_assign(struct mtk_wed_device *dev)
++{
++	struct pci_host_bridge *bridge;
++	struct device_node *np;
++	int i;
++
++	if (dev->wlan.bus_type != MTK_WED_BUS_PCIE)
++		return NULL;
++
++	bridge = pci_find_host_bridge(dev->wlan.pci_dev->bus);
++	np = bridge->dev.parent ? bridge->dev.parent->of_node : NULL;
++	if (!np)
++		return NULL;
++
++	for (i = 0; i < ARRAY_SIZE(hw_list); i++) {
++		struct mtk_wed_hw *hw = hw_list[i];
++
++		if (hw && hw->pcie == np && !hw->wed_dev) {
++			hw->wed_dev = dev;
++			return hw;
++		}
++	}
++
++	return NULL;
++}
++
++static int airoha_wed_attach(struct mtk_wed_device *dev)
++	__releases(RCU)
++{
++	struct mtk_wed_hw *hw;
++	struct device *device;
++	int ret = 0;
++
++	RCU_LOCKDEP_WARN(!rcu_read_lock_held(),
++			 "airoha_wed_attach without holding the RCU read lock");
++
++	if (!try_module_get(THIS_MODULE))
++		ret = -ENODEV;
++
++	rcu_read_unlock();
++
++	if (ret)
++		return ret;
++
++	mutex_lock(&hw_lock);
++
++	hw = wed_assign(dev);
++	if (!hw) {
++		module_put(THIS_MODULE);
++		ret = -ENODEV;
++		goto unlock;
++	}
++	/* mt76 goes on without the WED */
++	if (hw->reset_failed) {
++		dev_err(hw->dev, "wed %d hung after a DMA reset, not attached\n",
++			hw->index);
++		hw->wed_dev = NULL;
++		module_put(THIS_MODULE);
++		ret = -EIO;
++		goto unlock;
++	}
++
++	device = &dev->wlan.pci_dev->dev;
++	dev_info(device, "attaching wed device %d\n", hw->index);
++
++	dev->hw = hw;
++	dev->dev = hw->dev;
++	dev->irq = hw->irq;
++	dev->wdma_idx = hw->index;
++	dev->version = 1;
++
++	ret = dma_set_mask_and_coherent(hw->dev, DMA_BIT_MASK(32));
++	if (ret)
++		goto out;
++
++	ret = wed_tx_buffer_alloc(dev);
++	if (ret)
++		goto out;
++
++	wed_hw_init_early(dev);
++	dev->rev_id = wed_r32(dev, WED_REV_ID);
++out:
++	if (ret) {
++		dev_err(dev->hw->dev, "failed to attach wed device\n");
++		__wed_detach(dev);
++	}
++unlock:
++	mutex_unlock(&hw_lock);
++
++	return ret;
++}
++
++/*
++ * Tx ring redirection: the Wi-Fi driver's ring is given to the WED
++ * (WED_RING_TX), the WED posts its own as the chip's TX ring and fills it
++ * with packets from the WDMA RX.
++ */
++static int airoha_wed_tx_ring_setup(struct mtk_wed_device *dev, int idx,
++				    void __iomem *regs, bool reset)
++{
++	struct mtk_wed_ring *ring = &dev->tx_ring[idx];
++
++	if (WARN_ON(idx >= ARRAY_SIZE(dev->tx_ring)))
++		return -EINVAL;
++
++	if (!reset && wed_ring_alloc(dev, ring, AIROHA_WED_TX_RING_SIZE,
++				     sizeof(*ring->desc), true))
++		return -ENOMEM;
++
++	if (wed_wdma_rx_ring_setup(dev, idx, AIROHA_WED_WDMA_RING_SIZE, reset))
++		return -ENOMEM;
++
++	ring->reg_base = WED_RING_TX(idx);
++	ring->wpdma = regs;
++
++	/* WED -> WPDMA */
++	wpdma_tx_w32(dev, idx, WED_RING_OFS_BASE, ring->desc_phys);
++	wpdma_tx_w32(dev, idx, WED_RING_OFS_COUNT, AIROHA_WED_TX_RING_SIZE);
++	wpdma_tx_w32(dev, idx, WED_RING_OFS_CPU_IDX, 0);
++
++	wed_w32(dev, WED_WPDMA_RING_TX(idx) + WED_RING_OFS_BASE, ring->desc_phys);
++	wed_w32(dev, WED_WPDMA_RING_TX(idx) + WED_RING_OFS_COUNT,
++		AIROHA_WED_TX_RING_SIZE);
++	wed_w32(dev, WED_WPDMA_RING_TX(idx) + WED_RING_OFS_CPU_IDX, 0);
++
++	return 0;
++}
++
++/*
++ * The tx free ring is shared: the WED reads it, the Wi-Fi driver reaches its
++ * index registers through the WED.  Its slot is RX 1 (the "RX1" of the
++ * vendor driver).
++ */
++static int airoha_wed_txfree_ring_setup(struct mtk_wed_device *dev,
++					void __iomem *regs)
++{
++	struct mtk_wed_ring *ring = &dev->txfree_ring;
++	int i;
++
++	ring->reg_base = WED_RING_RX(1);
++	ring->wpdma = regs;
++
++	for (i = 0; i < 12; i += 4) {
++		u32 val = readl(regs + i);
++
++		wed_w32(dev, WED_RING_RX(1) + i, val);
++		wed_w32(dev, WED_WPDMA_RING_RX(1) + i, val);
++	}
++
++	return 0;
++}
++
++static int airoha_wed_rx_ring_setup(struct mtk_wed_device *dev, int idx,
++				    void __iomem *regs, bool reset)
++{
++	return -EOPNOTSUPP;	/* the RX of the Wi-Fi chips is the NPU's */
++}
++
++/*
++ * There is no WO MCU behind this WED (the mainline v1 does the same): mt76
++ * sends its RX counters setup to it unconditionally and a failure would stop
++ * the DMA start.
++ */
++static int airoha_wed_msg_update(struct mtk_wed_device *dev, int cmd_id,
++				 void *data, int len)
++{
++	return 0;
++}
++
++/*
++ * @wcid is for the flow TID of netsys v3 (797-01, mtk_wed); this PPE has no
++ * TID field and binds the WED flows from airoha_ppe_check_skb().
++ */
++static void airoha_wed_ppe_check(struct mtk_wed_device *dev, struct sk_buff *skb,
++				 u32 reason, u32 hash, u16 wcid)
++{
++}
++
++static int airoha_wed_setup_tc(struct mtk_wed_device *wed,
++			       struct net_device *dev,
++			       enum tc_setup_type type, void *type_data)
++{
++	return -EOPNOTSUPP;
++}
++
++static u32 airoha_wed_irq_get(struct mtk_wed_device *dev, u32 mask)
++{
++	u32 val;
++
++	val = wed_r32(dev, WED_EXT_INT_STATUS);
++	wed_w32(dev, WED_EXT_INT_STATUS, val);
++	val &= WED_EXT_INT_STATUS_ERROR_MASK;
++	if (val && net_ratelimit())
++		pr_err("airoha_wed%d: error status=%08x\n", dev->hw->index, val);
++
++	val = wed_r32(dev, WED_INT_STATUS);
++	val &= mask;
++	wed_w32(dev, WED_INT_STATUS, val);	/* ACK */
++
++	return val;
++}
++
++static void airoha_wed_irq_set_mask(struct mtk_wed_device *dev, u32 mask)
++{
++	wed_set_ext_int(dev, !!mask);
++	wed_w32(dev, WED_INT_MASK, mask);
++}
++
++static const struct mtk_wed_ops airoha_wed_ops = {
++	.attach			= airoha_wed_attach,
++	.tx_ring_setup		= airoha_wed_tx_ring_setup,
++	.rx_ring_setup		= airoha_wed_rx_ring_setup,
++	.txfree_ring_setup	= airoha_wed_txfree_ring_setup,
++	.msg_update		= airoha_wed_msg_update,
++	.start			= airoha_wed_start,
++	.stop			= wed_stop,
++	.reset_dma		= airoha_wed_reset_dma,
++	.reg_read		= wed_r32,
++	.reg_write		= wed_w32,
++	.irq_get		= airoha_wed_irq_get,
++	.irq_set_mask		= airoha_wed_irq_set_mask,
++	.detach			= airoha_wed_detach,
++	.ppe_check		= airoha_wed_ppe_check,
++	.setup_tc		= airoha_wed_setup_tc,
++};
++
++/* ---- debugfs ---- */
++
++/* the registers worth looking at first, with their vendor names */
++static const struct {
++	const char *name;
++	u32 offset;
++} airoha_wed_regs[] = {
++	{ "WED_REV",		WED_REV_ID },
++	{ "WED_MOD_RST",	WED_RESET },
++	{ "WED_CTRL",		WED_CTRL },
++	{ "WED_EX_INT_STA",	WED_EXT_INT_STATUS },
++	{ "WED_EX_INT_MSK",	WED_EXT_INT_MASK },
++	{ "WED_TX_BM_CTRL",	WED_TX_BM_CTRL },
++	{ "WED_TX_BM_BASE",	WED_TX_BM_BASE },
++	{ "WED_TX_BM_TKID",	WED_TX_BM_TKID },
++	{ "WED_TX_BM_BLEN",	WED_TX_BM_BUF_LEN },
++	{ "WED_TX_BM_INTF",	WED_TX_BM_INTF },
++	{ "WED_TX_BM_DYN_TH",	WED_TX_BM_DYN_THR },
++	{ "WED_INT_STA",	WED_INT_STATUS },
++	{ "WED_INT_MSK",	WED_INT_MASK },
++	{ "WED_GLO_CFG",	WED_GLO_CFG },
++	{ "WED_RST_IDX",	WED_RESET_IDX },
++	{ "WED_WPDMA_INT_TRIG",	WED_WPDMA_INT_TRIGGER },
++	{ "WED_WPDMA_GLO_CFG",	WED_WPDMA_GLO_CFG },
++	{ "WED_WPDMA_INT_CTRL",	WED_WPDMA_INT_CTRL },
++	{ "WED_WPDMA_INT_MSK",	WED_WPDMA_INT_MASK },
++	{ "WED_PCIE_CFG_BASE",	WED_PCIE_CFG_BASE },
++	{ "WED_PCIE_INT_CTRL",	WED_PCIE_INT_CTRL },
++	{ "WED_WPDMA_CFG_BASE",	WED_WPDMA_CFG_BASE },
++	{ "WED_TX0_CTRL0",	WED_RING_TX(0) },
++	{ "WED_TX1_CTRL0",	WED_RING_TX(1) },
++	{ "WED_RX1_CTRL0",	WED_RING_RX(1) },
++	{ "WED_WPDMA_TX0_CTRL0", WED_WPDMA_RING_TX(0) },
++	{ "WED_WPDMA_TX1_CTRL0", WED_WPDMA_RING_TX(1) },
++	{ "WED_WPDMA_RX1_CTRL0", WED_WPDMA_RING_RX(1) },
++	{ "WED_WDMA_TX0_BASE",	WED_WDMA_RING_TX },
++	{ "WED_WDMA_RX0_BASE",	WED_WDMA_RING_RX(0) },
++	{ "WED_WDMA_RX1_BASE",	WED_WDMA_RING_RX(1) },
++	{ "WED_WDMA_GLO_CFG",	WED_WDMA_GLO_CFG },
++	{ "WED_WDMA_CFG_BASE",	WED_WDMA_CFG_BASE },
++	{ "WED_WDMA_OFST0",	WED_WDMA_OFFSET0 },
++	{ "WED_WDMA_OFST1",	WED_WDMA_OFFSET1 },
++};
++
++static const struct {
++	const char *name;
++	u32 offset;
++} airoha_wdma_regs[] = {
++	{ "WDMA_GLO_CFG",	WDMA_GLO_CFG },
++	{ "WDMA_RST_IDX",	WDMA_RESET_IDX },
++	{ "WDMA_INT_STA",	WDMA_INT_STATUS },
++	{ "WDMA_INT_MSK",	WDMA_INT_MASK },
++	{ "WDMA_INT_GRP2",	WDMA_INT_GRP2 },
++	{ "WDMA_RX_BASE_0",	WDMA_RING_RX(0) },
++	{ "WDMA_RX_MAX_CNT_0",	WDMA_RING_RX(0) + WED_RING_OFS_COUNT },
++	{ "WDMA_RX_CRX_IDX_0",	WDMA_RING_RX(0) + WED_RING_OFS_CPU_IDX },
++	{ "WDMA_RX_DRX_IDX_0",	WDMA_RING_RX(0) + WED_RING_OFS_DMA_IDX },
++	{ "WDMA_RX_BASE_1",	WDMA_RING_RX(1) },
++	{ "WDMA_RX_MAX_CNT_1",	WDMA_RING_RX(1) + WED_RING_OFS_COUNT },
++	{ "WDMA_RX_CRX_IDX_1",	WDMA_RING_RX(1) + WED_RING_OFS_CPU_IDX },
++	{ "WDMA_RX_DRX_IDX_1",	WDMA_RING_RX(1) + WED_RING_OFS_DMA_IDX },
++};
++
++static int airoha_wed_regs_show(struct seq_file *s, void *unused)
++{
++	struct mtk_wed_hw *hw = s->private;
++	int i;
++
++	seq_printf(s, "WED %d, WDMA at 0x%08x, PCIe at 0x%08x, attached: %s\n",
++		   hw->index, hw->wdma_phy, hw->pcie_base,
++		   hw->wed_dev ? "yes" : "no");
++	for (i = 0; i < ARRAY_SIZE(airoha_wed_regs); i++)
++		seq_printf(s, "%-24s 0x%03x = 0x%08x\n", airoha_wed_regs[i].name,
++			   airoha_wed_regs[i].offset,
++			   readl(hw->regs + airoha_wed_regs[i].offset));
++	for (i = 0; i < ARRAY_SIZE(airoha_wdma_regs); i++)
++		seq_printf(s, "%-24s 0x%03x = 0x%08x\n", airoha_wdma_regs[i].name,
++			   airoha_wdma_regs[i].offset,
++			   readl(hw->wdma + airoha_wdma_regs[i].offset));
++
++	return 0;
++}
++DEFINE_SHOW_ATTRIBUTE(airoha_wed_regs);
++
++/* ---- platform driver ---- */
++
++static int airoha_wed_probe(struct platform_device *pdev)
++{
++	struct device *dev = &pdev->dev;
++	struct device_node *np = dev->of_node, *wdma_np, *pcie_np;
++	struct of_phandle_args args;
++	struct resource res;
++	struct mtk_wed_hw *hw;
++	int ret;
++
++	hw = devm_kzalloc(dev, sizeof(*hw), GFP_KERNEL);
++	if (!hw)
++		return -ENOMEM;
++
++	hw->dev = dev;
++	hw->regs = devm_platform_ioremap_resource(pdev, 0);
++	if (IS_ERR(hw->regs))
++		return PTR_ERR(hw->regs);
++
++	hw->irq = platform_get_irq(pdev, 0);
++	if (hw->irq < 0)
++		return hw->irq;
++
++	/* airoha,wdma = <&wdma n>: the WDMA engine of this WED */
++	ret = of_parse_phandle_with_fixed_args(np, "airoha,wdma", 1, 0, &args);
++	if (ret)
++		return dev_err_probe(dev, ret, "no airoha,wdma\n");
++	wdma_np = args.np;
++	hw->index = args.args[0];
++	if (hw->index >= AIROHA_WED_MAX_HW) {
++		of_node_put(wdma_np);
++		return dev_err_probe(dev, -EINVAL, "bad airoha,wdma index\n");
++	}
++	ret = of_address_to_resource(wdma_np, hw->index, &res);
++	of_node_put(wdma_np);
++	if (ret || res.start > U32_MAX)
++		return dev_err_probe(dev, ret ? ret : -EINVAL,
++				     "bad airoha,wdma\n");
++	hw->wdma_phy = res.start;
++	hw->wdma = devm_ioremap(dev, res.start, resource_size(&res));
++	if (!hw->wdma)
++		return -ENOMEM;
++
++	/* airoha,pcie = <&pcie>: the controller of the card this WED serves */
++	pcie_np = of_parse_phandle(np, "airoha,pcie", 0);
++	if (!pcie_np)
++		return dev_err_probe(dev, -EINVAL, "no airoha,pcie\n");
++	ret = of_address_to_resource(pcie_np, 0, &res);
++	if (ret || res.start > U32_MAX) {
++		of_node_put(pcie_np);
++		return dev_err_probe(dev, ret ? ret : -EINVAL, "bad airoha,pcie\n");
++	}
++	hw->pcie = pcie_np;			/* released in remove */
++	hw->pcie_base = res.start;
++
++	mutex_lock(&hw_lock);
++	if (hw_list[hw->index]) {
++		mutex_unlock(&hw_lock);
++		of_node_put(pcie_np);
++		return dev_err_probe(dev, -EBUSY, "WDMA %d is taken\n", hw->index);
++	}
++	hw_list[hw->index] = hw;
++	rcu_assign_pointer(mtk_soc_wed_ops, &airoha_wed_ops);
++	mutex_unlock(&hw_lock);
++
++	hw->debugfs_dir = debugfs_create_dir(dev_name(dev), NULL);
++	debugfs_create_file("regs", 0400, hw->debugfs_dir, hw,
++			    &airoha_wed_regs_fops);
++
++	platform_set_drvdata(pdev, hw);
++	dev_info(dev, "WED %d, REV 0x%08x, WDMA at 0x%08x, PCIe at 0x%08x\n",
++		 hw->index, readl(hw->regs + WED_REV_ID), hw->wdma_phy,
++		 hw->pcie_base);
++
++	return 0;
++}
++
++static void airoha_wed_remove(struct platform_device *pdev)
++{
++	struct mtk_wed_hw *hw = platform_get_drvdata(pdev);
++	bool last = true;
++	int i;
++
++	mutex_lock(&hw_lock);
++	hw_list[hw->index] = NULL;
++	for (i = 0; i < ARRAY_SIZE(hw_list); i++)
++		if (hw_list[i])
++			last = false;
++	if (last)
++		rcu_assign_pointer(mtk_soc_wed_ops, NULL);
++	mutex_unlock(&hw_lock);
++
++	if (last)
++		synchronize_rcu();
++	debugfs_remove_recursive(hw->debugfs_dir);
++	of_node_put(hw->pcie);
++}
++
++static const struct of_device_id airoha_wed_of_match[] = {
++	{ .compatible = "airoha,an7552-wed" },
++	{ }
++};
++MODULE_DEVICE_TABLE(of, airoha_wed_of_match);
++
++static struct platform_driver airoha_wed_driver = {
++	.probe = airoha_wed_probe,
++	.remove = airoha_wed_remove,
++	.driver = {
++		.name = "airoha-wed",
++		.of_match_table = airoha_wed_of_match,
++		.suppress_bind_attrs = true,	/* hw must outlive an attached chip */
++	},
++};
++module_platform_driver(airoha_wed_driver);
++
++MODULE_DESCRIPTION("Airoha AN7552 Wi-Fi Ethernet Dispatch");
++MODULE_LICENSE("GPL");
+--- /dev/null
++++ b/drivers/net/ethernet/airoha/airoha_wed_regs.h
+@@ -0,0 +1,207 @@
++/* SPDX-License-Identifier: GPL-2.0-only */
++/*
++ * Registers of the AN7552/AN7563 WED and WDMA blocks.
++ *
++ * Offsets and fields are those of the vendor driver (whnat/wed_def.h,
++ * wdma.h and woe_hw.c of the MT7916 plug-in in the Airoha wireless SDK);
++ * where the mainline MediaTek WED v1 (mtk_wed_regs.h) differs, the vendor
++ * value is the one used and the difference is noted next to it.
++ */
++#ifndef __AIROHA_WED_REGS_H
++#define __AIROHA_WED_REGS_H
++
++#include <linux/bits.h>
++
++/* TX buffer descriptor and WDMA ring descriptor (wed.h whnat_txdmad, wdma.h) */
++struct mtk_wdma_desc {
++	__le32 buf0;
++	__le32 ctrl;
++	__le32 buf1;
++	__le32 info;
++} __packed __aligned(4);
++
++#define WED_DESC_SDL1			GENMASK(13, 0)	/* mainline v1: 14:0 */
++#define WED_DESC_LAST1			BIT(14)		/* mainline v1: bit 15 */
++#define WED_DESC_BURST			BIT(15)		/* mainline v1: bit 16 */
++#define WED_DESC_SDL0			GENMASK(29, 16)
++#define WED_DESC_LAST0			BIT(30)
++#define WED_DESC_DDONE			BIT(31)
++#define WED_DESC_TO_HOST		BIT(8)		/* RX ring of the Wi-Fi chip */
++
++/* WED, offsets from the WED block */
++#define WED_REV_ID			0x000		/* mainline v1: 0x004 */
++
++#define WED_RESET			0x008
++#define WED_RESET_TX_BM			BIT(0)
++#define WED_RESET_TX_FREE_AGENT		BIT(4)
++#define WED_RESET_WPDMA_TX_DRV		BIT(8)
++#define WED_RESET_WPDMA_RX_DRV		BIT(9)
++#define WED_RESET_WPDMA_INT_AGENT	BIT(11)
++#define WED_RESET_WED_TX_DMA		BIT(12)
++#define WED_RESET_WDMA_RX_DRV		BIT(17)
++#define WED_RESET_WDMA_INT_AGENT	BIT(19)
++#define WED_RESET_WED			BIT(31)
++
++#define WED_CTRL			0x00c
++#define WED_CTRL_WPDMA_INT_AGENT_EN	BIT(0)
++#define WED_CTRL_WPDMA_INT_AGENT_BUSY	BIT(1)
++#define WED_CTRL_WDMA_INT_AGENT_EN	BIT(2)
++#define WED_CTRL_WDMA_INT_AGENT_BUSY	BIT(3)
++#define WED_CTRL_TX_BM_EN		BIT(8)
++#define WED_CTRL_TX_BM_BUSY		BIT(9)
++#define WED_CTRL_TX_FREE_AGENT_EN	BIT(10)
++#define WED_CTRL_TX_FREE_AGENT_BUSY	BIT(11)
++
++#define WED_EXT_INT_STATUS		0x020
++#define WED_EXT_INT_STATUS_TF_LEN_ERR		BIT(0)
++#define WED_EXT_INT_STATUS_TKID_WO_PYLD		BIT(1)
++#define WED_EXT_INT_STATUS_TKID_TITO_INVALID	BIT(4)
++#define WED_EXT_INT_STATUS_TX_FBUF_LO_TH	BIT(8)
++#define WED_EXT_INT_STATUS_TX_FBUF_HI_TH	BIT(9)
++#define WED_EXT_INT_STATUS_RX_DRV_R_RESP_ERR	BIT(16)
++#define WED_EXT_INT_STATUS_RX_DRV_W_RESP_ERR	BIT(17)
++#define WED_EXT_INT_STATUS_RX_DRV_COHERENT	BIT(18)
++#define WED_EXT_INT_STATUS_RX_DRV_INIT_WDMA_EN	BIT(19)
++#define WED_EXT_INT_STATUS_TX_DMA_R_RESP_ERR	BIT(21)	/* mainline v1: 22 */
++#define WED_EXT_INT_STATUS_TX_DMA_W_RESP_ERR	BIT(22)	/* mainline v1: 23 */
++/* whnat_hal_eint_init() without the dynamic buffer manager (not built there) */
++#define WED_EXT_INT_MASK_ALL		(WED_EXT_INT_STATUS_TF_LEN_ERR | \
++					 WED_EXT_INT_STATUS_TKID_WO_PYLD | \
++					 WED_EXT_INT_STATUS_TKID_TITO_INVALID | \
++					 WED_EXT_INT_STATUS_RX_DRV_R_RESP_ERR | \
++					 WED_EXT_INT_STATUS_RX_DRV_W_RESP_ERR | \
++					 WED_EXT_INT_STATUS_RX_DRV_COHERENT | \
++					 WED_EXT_INT_STATUS_RX_DRV_INIT_WDMA_EN | \
++					 WED_EXT_INT_STATUS_TX_DMA_R_RESP_ERR | \
++					 WED_EXT_INT_STATUS_TX_DMA_W_RESP_ERR)
++/* what is reported as an error; RX_DRV_COHERENT is only a debug message there */
++#define WED_EXT_INT_STATUS_ERROR_MASK	(WED_EXT_INT_MASK_ALL & \
++					 ~WED_EXT_INT_STATUS_RX_DRV_COHERENT)
++
++#define WED_EXT_INT_MASK		0x028
++
++#define WED_TX_BM_CTRL			0x080
++#define WED_TX_BM_CTRL_VLD_GRP_NUM	GENMASK(6, 0)
++#define WED_TX_BM_CTRL_RSV_GRP_NUM	GENMASK(22, 16)
++#define WED_TX_BM_CTRL_PAUSE		BIT(28)
++#define WED_TX_BM_BASE			0x084
++#define WED_TX_BM_TKID			0x088
++#define WED_TX_BM_TKID_START		GENMASK(15, 0)
++#define WED_TX_BM_TKID_END		GENMASK(31, 16)
++#define WED_TX_BM_BUF_LEN		0x08c
++#define WED_TX_BM_BUF_LEN_MASK		GENMASK(13, 0)
++#define WED_TX_BM_INTF			0x09c
++#define WED_TX_BM_INTF_TKFIFO_FDEP	GENMASK(22, 16)	/* mainline v1: 23:16 */
++#define WED_TX_BM_INTF_TKFIFO_EMPTY	0x40		/* woe_hw.c reset_wed_tx_bm() */
++#define WED_TX_BM_DYN_THR		0x0a0
++#define WED_TX_BM_DYN_THR_LO		GENMASK(6, 0)
++#define WED_TX_BM_DYN_THR_HI		GENMASK(22, 16)
++
++#define WED_INT_STATUS			0x200
++#define WED_INT_MASK			0x204
++
++#define WED_GLO_CFG			0x208
++#define WED_GLO_CFG_TX_DMA_EN		BIT(0)
++#define WED_GLO_CFG_TX_DMA_BUSY		BIT(1)
++#define WED_GLO_CFG_RX_DMA_EN		BIT(2)
++#define WED_GLO_CFG_RX_DMA_BUSY		BIT(3)
++
++#define WED_RESET_IDX			0x20c
++#define WED_RESET_IDX_TX		GENMASK(1, 0)	/* DTX_IDX0/1 */
++#define WED_RESET_IDX_RX		BIT(17)		/* DRX_IDX1, the tx free ring */
++
++#define WED_RING_TX(n)			(0x300 + (n) * 0x10)
++#define WED_RING_RX(n)			(0x400 + (n) * 0x10)
++
++#define WED_WPDMA_INT_TRIGGER		0x504
++#define WED_WPDMA_INT_TRIGGER_RX_DONE	BIT(1)
++#define WED_WPDMA_INT_TRIGGER_TX_DONE	GENMASK(5, 4)
++
++#define WED_WPDMA_GLO_CFG		0x508
++#define WED_WPDMA_GLO_CFG_TX_DRV_EN	BIT(0)
++#define WED_WPDMA_GLO_CFG_TX_DRV_BUSY	BIT(1)
++#define WED_WPDMA_GLO_CFG_RX_DRV_EN	BIT(2)
++#define WED_WPDMA_GLO_CFG_RX_DRV_BUSY	BIT(3)
++
++#define WED_WPDMA_RESET_IDX		0x50c
++#define WED_WPDMA_RESET_IDX_TX		GENMASK(1, 0)	/* CTX_IDX0/1 */
++#define WED_WPDMA_RESET_IDX_RX		BIT(17)		/* CRX_IDX1, the tx free ring */
++
++#define WED_WPDMA_INT_CTRL		0x520
++#define WED_WPDMA_INT_CTRL_SUBRT_ADV	BIT(21)
++
++#define WED_WPDMA_INT_MASK		0x524
++
++#define WED_PCIE_CFG_BASE		0x560
++#define WED_PCIE_INT_TRIGGER		0x570
++#define WED_PCIE_INT_TRIGGER_STATUS	BIT(16)
++#define WED_PCIE_INT_CTRL		0x57c
++#define WED_PCIE_INT_CTRL_POLL_EN	GENMASK(13, 12)
++#define WED_PCIE_INT_CTRL_SRC_SEL	GENMASK(17, 16)
++#define WED_PCIE_POLL_ASSERT		1		/* woe_hw.h PCIE_POLL_MODE_ASSERT */
++
++#define WED_WPDMA_CFG_BASE		0x580
++
++#define WED_WPDMA_RING_TX(n)		(0x600 + (n) * 0x10)
++#define WED_WPDMA_RING_RX(n)		(0x700 + (n) * 0x10)
++
++#define WED_WDMA_RING_TX		0x800
++#define WED_WDMA_RING_RX(n)		(0x900 + (n) * 0x10)
++
++#define WED_WDMA_GLO_CFG		0xa04
++#define WED_WDMA_GLO_CFG_RX_DRV_EN	BIT(2)
++#define WED_WDMA_GLO_CFG_RX_DRV_BUSY	BIT(3)
++#define WED_WDMA_GLO_CFG_BT_SIZE	GENMASK(5, 4)
++#define WED_WDMA_GLO_CFG_RX_DIS_FSM_AUTO_IDLE	BIT(13)
++#define WED_WDMA_GLO_CFG_WCOMPLETE_SEL	BIT(16)		/* set here, not in mainline v1 */
++#define WED_WDMA_GLO_CFG_AXI_W_AFTER_AW	BIT(21)		/* set here, not in mainline v1 */
++#define WED_WDMA_GLO_CFG_IDLE_DMAD_SUPPLY	BIT(23)	/* cleared here */
++#define WED_WDMA_GLO_CFG_DYNAMIC_SKIP_DMAD_PREP	BIT(24)	/* cleared here */
++#define WED_WDMA_GLO_CFG_DYNAMIC_DMAD_RECYCLE	BIT(25)	/* cleared here */
++#define WED_WDMA_GLO_CFG_RST_INIT_COMPLETE	BIT(26)
++
++#define WED_WDMA_RESET_IDX		0xa08
++#define WED_WDMA_RESET_IDX_RX		GENMASK(17, 16)	/* CRX_IDX0/1 */
++#define WED_WDMA_RESET_IDX_DRV		GENMASK(25, 24)	/* DRV_IDX0/1 */
++
++#define WED_WDMA_INT_TRIGGER		0xa28
++#define WED_WDMA_INT_TRIGGER_RX_DONE	GENMASK(17, 16)
++#define WED_WDMA_INT_CTRL		0xa2c
++#define WED_WDMA_INT_CTRL_POLL_SRC_SEL	GENMASK(17, 16)
++
++/* the WDMA is reached by the WED through CFG_BASE plus 16 bit offsets */
++#define WED_WDMA_CFG_BASE		0xaa0
++#define WED_WDMA_OFFSET0		0xaa4
++#define WED_WDMA_OFFSET1		0xaa8
++#define WED_WDMA_OFST0_GLO_INTS		GENMASK(15, 0)
++#define WED_WDMA_OFST0_GLO_CFG		GENMASK(31, 16)
++#define WED_WDMA_OFST1_TX_CTRL		GENMASK(15, 0)
++#define WED_WDMA_OFST1_RX_CTRL		GENMASK(31, 16)
++
++#define WED_RING_OFS_BASE		0x00
++#define WED_RING_OFS_COUNT		0x04
++#define WED_RING_OFS_CPU_IDX		0x08
++#define WED_RING_OFS_DMA_IDX		0x0c
++
++/* WDMA, offsets from the WDMA block */
++#define WDMA_RING_TX(n)			(0x000 + (n) * 0x10)
++#define WDMA_RING_RX(n)			(0x100 + (n) * 0x10)
++
++#define WDMA_GLO_CFG			0x204
++#define WDMA_GLO_CFG_TX_DMA_EN		BIT(0)
++#define WDMA_GLO_CFG_TX_DMA_BUSY	BIT(1)
++#define WDMA_GLO_CFG_RX_DMA_EN		BIT(2)
++#define WDMA_GLO_CFG_RX_DMA_BUSY	BIT(3)
++#define WDMA_GLO_CFG_RX_INFO3_PRERES	BIT(26)
++#define WDMA_GLO_CFG_RX_INFO2_PRERES	BIT(27)
++#define WDMA_GLO_CFG_RX_INFO1_PRERES	BIT(28)
++
++#define WDMA_RESET_IDX			0x208
++#define WDMA_RESET_IDX_RX		GENMASK(17, 16)
++
++#define WDMA_INT_STATUS			0x220
++#define WDMA_INT_MASK			0x228
++#define WDMA_INT_MASK_RX_DONE		GENMASK(17, 16)
++#define WDMA_INT_GRP2			0x254
++
++#endif
