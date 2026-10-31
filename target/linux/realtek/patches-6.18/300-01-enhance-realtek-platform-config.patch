@@ -39,7 +39,7 @@ Submitted-by: Birger Koblitz <git@birger-koblitz.de>
  
  config SGI_IP22
  	bool "SGI IP22 (Indy/Indigo2)"
-@@ -1056,6 +1060,53 @@ config FIT_IMAGE_FDT_EPM5
+@@ -1056,6 +1060,54 @@ config FIT_IMAGE_FDT_EPM5
  	  from Mobileye in the FIT kernel image.
  	  This requires u-boot on the platform.
  
@@ -82,6 +82,7 @@ Submitted-by: Birger Koblitz <git@birger-koblitz.de>
 +	select MIPS_GIC
 +	select COMMON_CLK
 +	select CLKSRC_MIPS_GIC
++	select SWAP_IO_SPACE
 +	select SYS_SUPPORTS_VPE_LOADER
 +	select SYS_SUPPORTS_SMP
 +	select SYS_SUPPORTS_MIPS_CPS
