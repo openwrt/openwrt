@@ -50,7 +50,7 @@ define Host/Prepare
 	$(call toolchain_test,CONFIG_SOFT_FLOAT,softfloat)
 	$(call toolchain_test,CONFIG_IPV6,ipv6)
 	$(call toolchain_test,CONFIG_NLS,wchar)
-	$(call toolchain_test,CONFIG_PACKAGE_libpthread,threads)
+	$(call toolchain_test,CONFIG_PACKAGE_libc,threads)
 endef
 
 define Host/Configure

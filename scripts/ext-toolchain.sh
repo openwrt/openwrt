@@ -32,9 +32,7 @@ GCC_VERSION=""
 
 # Library specs
 LIB_SPECS="
-	c:        ld-* lib{anl,c,cidn,crypt,dl,m,nsl,nss_dns,nss_files,resolv,util}
-	rt:       librt-* librt
-	pthread:  libpthread-* libpthread
+	c:        ld-* lib{anl,c,cidn,crypt,dl,m,nsl,nss_dns,nss_files,pthread,resolv,rt,util}
 	stdcpp:   libstdc++
 	thread_db: libthread-db
 	gcc:      libgcc_s
@@ -419,7 +417,7 @@ print_config() {
 	fi
 
 	local lib
-	for lib in C RT PTHREAD GCC STDCPP SSP GFORTRAN GOMP ATOMIC QUADMATH ASAN TSAN LSAN UBSAN; do
+	for lib in C GCC STDCPP SSP GFORTRAN GOMP ATOMIC QUADMATH ASAN TSAN LSAN UBSAN; do
 		local file
 		local spec=""
 		local llib="$(echo "$lib" | sed -e 's#.*#\L&#')"
