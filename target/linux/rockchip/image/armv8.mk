@@ -59,7 +59,7 @@ define Device/armsom_sige7
   DEVICE_ALT0_VENDOR := Bananapi
   DEVICE_ALT0_MODEL := BPi-M7
   DEVICE_DTS := rk3588-armsom-sige7
-  DEVICE_PACKAGES := kmod-r8169
+  DEVICE_PACKAGES := kmod-phy-rockchip-samsung-hdptx kmod-r8169
 endef
 TARGET_DEVICES += armsom_sige7
 
@@ -69,6 +69,7 @@ define Device/firefly_roc-rk3328-cc
   DEVICE_MODEL := ROC-RK3328-CC
   DEVICE_DTS := rk3328-roc-cc
   UBOOT_DEVICE_NAME := roc-cc-rk3328
+  DEVICE_PACKAGES := kmod-phy-rockchip-inno-hdmi
 endef
 TARGET_DEVICES += firefly_roc-rk3328-cc
 
@@ -84,7 +85,7 @@ define Device/friendlyarm_nanopc-t6
   $(Device/rk3588)
   DEVICE_VENDOR := FriendlyARM
   DEVICE_MODEL := NanoPC T6
-  DEVICE_PACKAGES := kmod-button-hotplug kmod-input-adc-keys kmod-r8169
+  DEVICE_PACKAGES := kmod-button-hotplug kmod-input-adc-keys kmod-phy-rockchip-samsung-hdptx kmod-r8169
 endef
 TARGET_DEVICES += friendlyarm_nanopc-t6
 
@@ -92,7 +93,7 @@ define Device/friendlyarm_nanopi-m5
   $(Device/rk3576)
   DEVICE_VENDOR := FriendlyARM
   DEVICE_MODEL := NanoPi M5
-  DEVICE_PACKAGES := blkdiscard block-mount kmod-button-hotplug kmod-input-adc-keys kmod-nvme
+  DEVICE_PACKAGES := blkdiscard block-mount kmod-button-hotplug kmod-input-adc-keys kmod-nvme kmod-phy-rockchip-samsung-hdptx
 endef
 TARGET_DEVICES += friendlyarm_nanopi-m5
 
@@ -175,7 +176,7 @@ define Device/friendlyarm_nanopi-r6c
   $(Device/rk3588s)
   DEVICE_VENDOR := FriendlyARM
   DEVICE_MODEL := NanoPi R6C
-  DEVICE_PACKAGES := kmod-button-hotplug kmod-input-adc-keys kmod-r8169
+  DEVICE_PACKAGES := kmod-button-hotplug kmod-input-adc-keys kmod-phy-rockchip-samsung-hdptx kmod-r8169
 endef
 TARGET_DEVICES += friendlyarm_nanopi-r6c
 
@@ -183,7 +184,7 @@ define Device/friendlyarm_nanopi-r6s
   $(Device/rk3588s)
   DEVICE_VENDOR := FriendlyARM
   DEVICE_MODEL := NanoPi R6S
-  DEVICE_PACKAGES := kmod-button-hotplug kmod-input-adc-keys kmod-r8169
+  DEVICE_PACKAGES := kmod-button-hotplug kmod-input-adc-keys kmod-phy-rockchip-samsung-hdptx kmod-r8169
 endef
 TARGET_DEVICES += friendlyarm_nanopi-r6s
 
@@ -191,7 +192,7 @@ define Device/friendlyarm_nanopi-r76s
   $(Device/rk3576)
   DEVICE_VENDOR := FriendlyARM
   DEVICE_MODEL := NanoPi R76S
-  DEVICE_PACKAGES := kmod-r8169 kmod-rtw88-8822cs wpad-basic-mbedtls
+  DEVICE_PACKAGES := kmod-phy-rockchip-samsung-hdptx kmod-r8169 kmod-rtw88-8822cs wpad-basic-mbedtls
 endef
 TARGET_DEVICES += friendlyarm_nanopi-r76s
 
@@ -251,6 +252,7 @@ define Device/pine64_rock64
   $(Device/rk3328)
   DEVICE_VENDOR := Pine64
   DEVICE_MODEL := Rock64
+  DEVICE_PACKAGES := kmod-phy-rockchip-inno-hdmi
 endef
 TARGET_DEVICES += pine64_rock64
 
@@ -358,6 +360,7 @@ define Device/radxa_rock-4d
   $(Device/rk3576)
   DEVICE_VENDOR := Radxa
   DEVICE_MODEL := ROCK 4D
+  DEVICE_PACKAGES := kmod-phy-rockchip-samsung-hdptx
 endef
 TARGET_DEVICES += radxa_rock-4d
 
@@ -372,7 +375,7 @@ define Device/radxa_rock-5-itx
   $(Device/rk3588)
   DEVICE_VENDOR := Radxa
   DEVICE_MODEL := ROCK 5 ITX/ITX+
-  DEVICE_PACKAGES := blkdiscard block-mount kmod-ata-ahci kmod-button-hotplug kmod-hwmon-pwmfan kmod-input-adc-keys kmod-nvme kmod-r8169 kmod-rtw89-8852be wpad-basic-mbedtls
+  DEVICE_PACKAGES := blkdiscard block-mount kmod-ata-ahci kmod-button-hotplug kmod-hwmon-pwmfan kmod-input-adc-keys kmod-nvme kmod-phy-rockchip-samsung-hdptx kmod-r8169 kmod-rtw89-8852be wpad-basic-mbedtls
 endef
 TARGET_DEVICES += radxa_rock-5-itx
 
@@ -381,7 +384,7 @@ define Device/radxa_rock-5a
   DEVICE_VENDOR := Radxa
   DEVICE_MODEL := ROCK 5A
   UBOOT_DEVICE_NAME := rock5a-rk3588s
-  DEVICE_PACKAGES := blkdiscard block-mount kmod-ata-ahci kmod-hwmon-pwmfan kmod-nvme kmod-r8169 kmod-rtw89-8852be wpad-basic-mbedtls
+  DEVICE_PACKAGES := blkdiscard block-mount kmod-ata-ahci kmod-hwmon-pwmfan kmod-nvme kmod-phy-rockchip-samsung-hdptx kmod-r8169 kmod-rtw89-8852be wpad-basic-mbedtls
 endef
 TARGET_DEVICES += radxa_rock-5a
 
@@ -390,7 +393,7 @@ define Device/radxa_rock-5b
   DEVICE_VENDOR := Radxa
   DEVICE_MODEL := ROCK 5B
   UBOOT_DEVICE_NAME := rock5b-rk3588
-  DEVICE_PACKAGES := blkdiscard block-mount kmod-hwmon-pwmfan kmod-nvme kmod-r8169 kmod-rtw89-8852be wpad-basic-mbedtls
+  DEVICE_PACKAGES := blkdiscard block-mount kmod-hwmon-pwmfan kmod-nvme kmod-phy-rockchip-samsung-hdptx kmod-r8169 kmod-rtw89-8852be wpad-basic-mbedtls
 endef
 TARGET_DEVICES += radxa_rock-5b
 
@@ -400,7 +403,7 @@ define Device/radxa_rock-5b-plus
   DEVICE_MODEL := ROCK 5B+
   UBOOT_DEVICE_NAME := generic-rk3588
   DEVICE_DTS := rk3588-rock-5b-plus
-  DEVICE_PACKAGES := blkdiscard block-mount kmod-hwmon-pwmfan kmod-nvme kmod-r8169 kmod-rtw89-8852be wpad-basic-mbedtls
+  DEVICE_PACKAGES := blkdiscard block-mount kmod-hwmon-pwmfan kmod-nvme kmod-phy-rockchip-samsung-hdptx kmod-r8169 kmod-rtw89-8852be wpad-basic-mbedtls
 endef
 TARGET_DEVICES += radxa_rock-5b-plus
 
@@ -408,7 +411,7 @@ define Device/radxa_rock-5c
   $(Device/rk3588s)
   DEVICE_VENDOR := Radxa
   DEVICE_MODEL := ROCK 5C/5C Lite
-  DEVICE_PACKAGES := blkdiscard block-mount kmod-ata-ahci kmod-hwmon-pwmfan kmod-nvme kmod-r8169
+  DEVICE_PACKAGES := blkdiscard block-mount kmod-ata-ahci kmod-hwmon-pwmfan kmod-nvme kmod-phy-rockchip-samsung-hdptx kmod-r8169
 endef
 TARGET_DEVICES += radxa_rock-5c
 
@@ -418,7 +421,7 @@ define Device/radxa_rock-5t
   DEVICE_MODEL := ROCK 5T
   UBOOT_DEVICE_NAME := generic-rk3588
   DEVICE_DTS := rk3588-rock-5t
-  DEVICE_PACKAGES := blkdiscard block-mount iwlwifi-firmware-ax210 kmod-hwmon-pwmfan kmod-iwlwifi kmod-nvme kmod-r8169 wpad-basic-mbedtls
+  DEVICE_PACKAGES := blkdiscard block-mount iwlwifi-firmware-ax210 kmod-hwmon-pwmfan kmod-iwlwifi kmod-nvme kmod-phy-rockchip-samsung-hdptx kmod-r8169 wpad-basic-mbedtls
 endef
 TARGET_DEVICES += radxa_rock-5t
 
