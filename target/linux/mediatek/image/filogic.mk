@@ -354,6 +354,14 @@ $(call Device/adtran_smartrg)
 endef
 TARGET_DEVICES += smartrg_sdg-8712
 
+define Device/smartrg_sdg-8713
+$(call Device/adtran_smartrg)
+  DEVICE_MODEL := SDG-8713
+  DEVICE_DTS := mt7988a-smartrg-sdg-8713
+  DEVICE_PACKAGES += kmod-mt7992-firmware kmod-phy-realtek mt7988-wo-firmware
+endef
+TARGET_DEVICES += smartrg_sdg-8713
+
 define Device/smartrg_sdg-8732
 $(call Device/adtran_smartrg)
   DEVICE_MODEL := SDG-8732
