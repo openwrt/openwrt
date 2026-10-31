@@ -1,0 +1,66 @@
+From 999111e5c53a3b7627c75df483aa8657a9122da2 Mon Sep 17 00:00:00 2001
+From: David Mestre <dev@davidmestre.net>
+Date: Tue, 20 Oct 2026 00:51:18 +0200
+Subject: [PATCH] wifi: mt76: mt7996: handle station airtime counter resets
+
+Avoid charging reset counters as a large unsigned airtime delta.
+Keep the cached baseline when the hardware clear fails.
+
+Signed-off-by: David Mestre <dev@davidmestre.net>
+---
+ mt7996/mac.c | 28 ++++++++++++++++++++++------
+ 1 file changed, 22 insertions(+), 6 deletions(-)
+
+--- a/mt7996/mac.c
++++ b/mt7996/mac.c
+@@ -72,6 +72,22 @@ u32 mt7996_mac_wtbl_lmac_addr(struct mt7
+ 	return MT_WTBL_LMAC_OFFS(wcid, dw);
+ }
+ 
++static u32 mt7996_airtime_delta(u32 curr, u32 previous)
++{
++	u32 delta = curr - previous;
++
++	/*
++	 * WTBL counters can be cleared while the link's cached baseline
++	 * remains. Do not charge an unsigned underflow as airtime. Normal
++	 * counters are cleared at BIT(30); genuine wrap still has a small
++	 * modular delta and is preserved.
++	 */
++	if (curr < previous && delta > BIT(31))
++		return curr;
++
++	return delta;
++}
++
+ static void mt7996_mac_sta_poll(struct mt7996_dev *dev)
+ {
+ 	static const u8 ac_to_tid[] = {
+@@ -126,8 +142,10 @@ static void mt7996_mac_sta_poll(struct m
+ 			msta_link->airtime_ac[i] = mt76_rr(dev, addr);
+ 			msta_link->airtime_ac[i + 4] = mt76_rr(dev, addr + 4);
+ 
+-			tx_time[i] = msta_link->airtime_ac[i] - tx_last;
+-			rx_time[i] = msta_link->airtime_ac[i + 4] - rx_last;
++			tx_time[i] = mt7996_airtime_delta(msta_link->airtime_ac[i],
++							  tx_last);
++			rx_time[i] = mt7996_airtime_delta(msta_link->airtime_ac[i + 4],
++							  rx_last);
+ 
+ 			if ((tx_last | rx_last) & BIT(30))
+ 				clear = true;
+@@ -135,12 +153,10 @@ static void mt7996_mac_sta_poll(struct m
+ 			addr += 8;
+ 		}
+ 
+-		if (clear) {
+-			mt7996_mac_wtbl_update(dev, idx,
+-					       MT_WTBL_UPDATE_ADM_COUNT_CLEAR);
++		if (clear && mt7996_mac_wtbl_update(dev, idx,
++						    MT_WTBL_UPDATE_ADM_COUNT_CLEAR))
+ 			memset(msta_link->airtime_ac, 0,
+ 			       sizeof(msta_link->airtime_ac));
+-		}
+ 
+ 		if (!wcid->sta)
+ 			continue;
