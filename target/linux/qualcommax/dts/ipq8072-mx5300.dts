@@ -260,6 +260,10 @@
 					#address-cells = <1>;
 					#size-cells = <1>;
 
+					caldata_art_1000: calibration@1000 {
+						reg = <0x1000 0x20000>;
+					};
+
 					caldata_qca9984: caldata@33000 {
 						reg = <0x33000 0x2f20>;
 					};
@@ -549,4 +553,6 @@
 	status = "okay";
 
 	qcom,calibration-variant = "Linksys-MX5300";
+	nvmem-cells = <&caldata_art_1000>;
+	nvmem-cell-names = "calibration";
 };
