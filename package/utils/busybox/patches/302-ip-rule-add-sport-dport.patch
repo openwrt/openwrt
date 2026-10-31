@@ -1,0 +1,140 @@
+--- a/networking/libiproute/iprule.c
++++ b/networking/libiproute/iprule.c
+@@ -21,6 +21,8 @@
+ #define FRA_SUPPRESS_IFGROUP	13
+ #define FRA_SUPPRESS_PREFIXLEN	14
+ #define FRA_FWMASK		16
++#define FRA_SPORT_RANGE	23
++#define FRA_DPORT_RANGE	24
+ 
+ #include "ip_common.h"  /* #include "libbb.h" is inside */
+ #include "rt_names.h"
+@@ -36,6 +38,7 @@ static const char keywords[] ALIGN1 =
+ 	"from\0""to\0""preference\0""order\0""priority\0"
+ 	"tos\0""fwmark\0""realms\0""table\0""lookup\0"
+ 	"suppress_prefixlength\0""suppress_ifgroup\0"
++	"sport\0""dport\0"
+ 	"dev\0""iif\0""nat\0""map-to\0""type\0""help\0"
+ 	;
+ #define keyword_preference            (keywords           + sizeof("from") + sizeof("to"))
+@@ -43,10 +46,13 @@ static const char keywords[] ALIGN1 =
+ #define keyword_realms                (keyword_fwmark     + sizeof("fwmark"))
+ #define keyword_suppress_prefixlength (keyword_realms     + sizeof("realms") + sizeof("table") + sizeof("lookup"))
+ #define keyword_suppress_ifgroup      (keyword_suppress_prefixlength + sizeof("suppress_prefixlength"))
++#define keyword_sport                 (keyword_suppress_ifgroup + sizeof("suppress_ifgroup"))
++#define keyword_dport                 (keyword_sport + sizeof("sport"))
+ enum {
+ 	ARG_from = 1, ARG_to, ARG_preference, ARG_order, ARG_priority,
+ 	ARG_tos, ARG_fwmark, ARG_realms, ARG_table, ARG_lookup,
+ 	ARG_suppress_prefixlength, ARG_suppress_ifgroup,
++	ARG_sport, ARG_dport,
+ 	ARG_dev, ARG_iif, ARG_nat, ARG_map_to, ARG_type, ARG_help,
+ };
+ 
+@@ -155,6 +161,23 @@ static int FAST_FUNC print_rule(const st
+ 			printf("%s %d ", keyword_suppress_ifgroup, grp);
+ 	}
+ 
++    if (tb[FRA_SPORT_RANGE]) {
++        port_range *ports = (port_range*)RTA_DATA(tb[FRA_SPORT_RANGE]);
++        if (ports->start != ports->end) {
++            printf("%s %d-%d ", keyword_sport, ports->start, ports->end);
++        } else {
++            printf("%s %d ", keyword_sport, ports->start);
++        }
++    }
++    if (tb[FRA_DPORT_RANGE]) {
++        port_range *ports = (port_range*)RTA_DATA(tb[FRA_DPORT_RANGE]);
++        if (ports->start != ports->end) {
++            printf("%s %d-%d ", keyword_dport, ports->start, ports->end);
++        } else {
++            printf("%s %d ", keyword_dport, ports->start);
++        }
++    }
++
+ 	if (tb[RTA_FLOW]) {
+ 		uint32_t to = *(uint32_t*)RTA_DATA(tb[RTA_FLOW]);
+ 		uint32_t from = to>>16;
+@@ -313,6 +336,14 @@ static int iprule_modify(int cmd, char *
+ 			NEXT_ARG();
+ 			grp = get_u32(*argv, keyword_suppress_ifgroup);
+ 			addattr32(&req.n, sizeof(req), FRA_SUPPRESS_IFGROUP, grp);
++		} else if (key == ARG_sport || key == ARG_dport) {
++			port_range ports;
++			const char* keyword = key == ARG_sport ? keyword_sport : keyword_dport;
++			int fra = key == ARG_sport ? FRA_SPORT_RANGE : FRA_DPORT_RANGE;
++
++			NEXT_ARG();
++			get_port_range(*argv, &ports, keyword);
++			addattr_l(&req.n, sizeof(req), fra, &ports, sizeof(ports));
+ 		} else if (key == ARG_dev ||
+ 			   key == ARG_iif
+ 		) {
+--- a/networking/libiproute/utils.c
++++ b/networking/libiproute/utils.c
+@@ -79,6 +79,28 @@ uint16_t FAST_FUNC get_u16(char *arg, co
+ 	invarg_1_to_2(arg, errmsg); /* does not return */
+ }
+ 
++void FAST_FUNC get_port_range(char* arg, port_range* range, const char* errmsg)
++{
++	char *dash;
++
++	dash = strchr(arg, '-');
++	if (dash) {
++		if (dash == arg)
++			invarg_1_to_2(arg, errmsg);
++
++		*dash = '\0';
++		dash++;
++	}
++
++	range->start = get_u16(arg, errmsg);
++
++	if (dash) {
++		range->end = get_u16(dash, errmsg);
++	} else {
++		range->end = range->start;
++	}
++}
++
+ int FAST_FUNC get_addr_1(inet_prefix *addr, char *name, int family)
+ {
+ 	memset(addr, 0, sizeof(*addr));
+--- a/networking/libiproute/utils.h
++++ b/networking/libiproute/utils.h
+@@ -33,6 +33,11 @@ typedef struct {
+ 	uint32_t data[4];
+ } inet_prefix;
+ 
++typedef struct {
++    uint16_t start;
++    uint16_t end;
++} port_range;
++
+ #define PREFIXLEN_SPECIFIED 1
+ 
+ #define DN_MAXADDL 20
+@@ -60,6 +65,7 @@ int get_addr_1(inet_prefix *dst, char *a
+ /*void get_prefix_1(inet_prefix *dst, char *arg, int family) FAST_FUNC;*/
+ int get_addr(inet_prefix *dst, char *arg, int family) FAST_FUNC;
+ void get_prefix(inet_prefix *dst, char *arg, int family) FAST_FUNC;
++void get_port_range(char* arg, port_range* range, const char* errmsg) FAST_FUNC;
+ 
+ unsigned get_unsigned(char *arg, const char *errmsg) FAST_FUNC;
+ uint32_t get_u32(char *arg, const char *errmsg) FAST_FUNC;
+--- a/networking/ip.c
++++ b/networking/ip.c
+@@ -305,9 +305,12 @@
+ //usage:#define iprule_full_usage "\n\n"
+ //usage:       "	SELECTOR := [from PREFIX] [to PREFIX] [tos TOS] [fwmark FWMARK[/MASK]]\n"
+ //usage:       "			[dev IFACE] [pref NUMBER]\n"
++//usage:       "			[sport [NUMBER|NUMBER-NUMBER]] [dport [NUMBER|NUMBER-NUMBER]]\n"
+ //usage:       "	ACTION := [table TABLE_ID] [nat ADDR]\n"
+ //usage:       "			[prohibit|reject|unreachable]\n"
+ //usage:       "			[realms [SRCREALM/]DSTREALM]\n"
++//usage:       "			[suppress_prefixlength NUMBER]\n"
++//usage:       "			[suppress_ifgroup DEVGROUP]\n"
+ //usage:       "	TABLE_ID := [local|main|default|NUMBER]"
+ //usage:
+ //--------------123456789.123456789.123456789.123456789.123456789.123456789.123456789.123....79
