@@ -1,0 +1,85 @@
+// SPDX-License-Identifier: GPL-2.0-only OR MIT
+
+#include "mt7981b-haolian-hl3020p.dts"
+
+/ {
+	model = "Haolian HL3020P-LEDS";
+	compatible = "haolian,hl3020p-leds", "mediatek,mt7981";
+
+	aliases {
+		led-boot = &led_panel_power;
+		led-failsafe = &led_panel_power;
+		led-running = &led_panel_power;
+		led-upgrade = &led_panel_power;
+	};
+
+	leds {
+		/delete-node/ led-0;
+		/delete-node/ led-1;
+		/delete-node/ led-2;
+		/delete-node/ led-3;
+		/delete-node/ led-4;
+		/delete-node/ led-5;
+		/delete-node/ led-6;
+		/delete-node/ led-7;
+		/delete-node/ led-8;
+
+		wlan-5g {
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_WLAN_5GHZ;
+			gpios = <&pio 5 GPIO_ACTIVE_LOW>;
+		};
+
+		wan-red {
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_WAN;
+			gpios = <&pio 6 GPIO_ACTIVE_HIGH>;
+		};
+
+		led_panel_power: power {
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_POWER;
+			gpios = <&pio 7 GPIO_ACTIVE_LOW>;
+			default-state = "on";
+		};
+
+		p0 {
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <0>;
+			gpios = <&pio 9 GPIO_ACTIVE_LOW>;
+		};
+
+		p2 {
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <2>;
+			gpios = <&pio 10 GPIO_ACTIVE_LOW>;
+		};
+
+		p3 {
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <3>;
+			gpios = <&pio 11 GPIO_ACTIVE_LOW>;
+		};
+
+		wan-blue {
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_WAN;
+			gpios = <&pio 12 GPIO_ACTIVE_LOW>;
+		};
+
+		wlan-2g {
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_WLAN_2GHZ;
+			gpios = <&pio 34 GPIO_ACTIVE_LOW>;
+		};
+
+		mesh {
+			color = <LED_COLOR_ID_BLUE>;
+			function = "mesh";
+			gpios = <&pio 35 GPIO_ACTIVE_LOW>;
+		};
+	};
+};
