@@ -1,0 +1,34 @@
+From cf161e61329ebd9512fe8d45c65f659519bb650e Mon Sep 17 00:00:00 2001
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Date: Mon, 24 Aug 2026 15:38:03 +0200
+Subject: [PATCH ath-next v6 3/9] wifi: ath11k: report the pending tx MSDU
+ count in soc_dp_stats
+
+Nothing shows ar->dp.num_tx_pending, the MSDUs the hardware has not
+completed. Print it per radio in soc_dp_stats. Divided into the pending
+airtime in a station's aql file, it gives the airtime AQL charges per
+MSDU.
+
+Tested-on: IPQ8074 hw2.0 AHB WLAN.HK.2.9.0.1-02146-QCAHKSWPL_SILICONZ-1
+
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+
+--- a/drivers/net/wireless/ath/ath11k/debugfs.c
++++ b/drivers/net/wireless/ath/ath11k/debugfs.c
+@@ -714,6 +714,16 @@ static ssize_t ath11k_debugfs_dump_soc_d
+ 			 "\nMisc Transmit Failures: %d\n",
+ 			 atomic_read(&soc_stats->tx_err.misc_fail));
+ 
++	/* Descriptors the hardware has not completed. */
++	len += scnprintf(buf + len, size - len, "\nPending Tx MSDUs:\n");
++	for (i = 0; i < ab->num_radios; i++) {
++		struct ath11k *ar = ab->pdevs[i].ar;
++
++		if (ar)
++			len += scnprintf(buf + len, size - len, "radio%d: %d\n",
++					 i, atomic_read(&ar->dp.num_tx_pending));
++	}
++
+ 	len += ath11k_debugfs_dump_soc_ring_bp_stats(ab, buf + len, size - len);
+ 
+ 	if (len > size)
