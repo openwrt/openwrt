@@ -1,0 +1,31 @@
+#!/bin/sh
+# SPDX-License-Identifier: GPL-2.0-only
+
+. /lib/functions.sh
+. /lib/functions/uci-defaults.sh
+. /lib/functions/system.sh
+
+board_config_update
+
+case "$(board_name)" in
+hardkernel,odroid-u2|\
+hardkernel,odroid-u3|\
+hardkernel,odroid-x2)
+	# The only Ethernet port connects the board to an existing network
+	ucidef_set_interface_lan "eth0" "dhcp"
+	# The LAN9730 has no EEPROM, derive a stable MAC address from the
+	# first eMMC or SD card
+	lan_mac=""
+	for dev in /sys/block/mmcblk*; do
+		dev="${dev##*/}"
+		if [ -e "/sys/block/$dev/device/cid" ]; then
+			lan_mac=$(macaddr_generate_from_mmc_cid "$dev")
+			break
+		fi
+	done
+	[ -n "$lan_mac" ] && ucidef_set_interface_macaddr "lan" "$lan_mac"
+	;;
+esac
+
+board_config_flush
+exit 0
