@@ -873,6 +873,22 @@ endef
 
 $(eval $(call KernelPackage,dsa-mv88e6xxx))
 
+define KernelPackage/dsa-tag-rtl8-4
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=Realtek RTL8_4 DSA tag support
+  DEPENDS:=+kmod-dsa
+  KCONFIG:=CONFIG_NET_DSA_TAG_RTL8_4
+  FILES:=$(LINUX_DIR)/net/dsa/tag_rtl8_4.ko
+endef
+
+define KernelPackage/dsa-tag-rtl8-4/description
+  DSA tag driver for the Realtek RTL8_4 tag, used by the RTL8365MB and
+  RTL8372N switches.
+endef
+
+$(eval $(call KernelPackage,dsa-tag-rtl8-4))
+
+
 define KernelPackage/dsa-mxl862xx
   SUBMENU:=Network Devices
   TITLE:=MaxLinear MXL862 switch support
@@ -950,16 +966,32 @@ endef
 $(eval $(call KernelPackage,dsa-rtl8366rb))
 
 
+define KernelPackage/dsa-rtl8372n
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=Realtek RTL8372N switch DSA support
+  DEPENDS:=@LINUX_6_18 +kmod-dsa +kmod-dsa-tag-rtl8-4 +kmod-regmap-core
+  KCONFIG:= \
+	CONFIG_NET_DSA_REALTEK_RTL8372N \
+	CONFIG_NET_DSA_REALTEK_RTL8372N_DEBUGFS=n
+  FILES:=$(LINUX_DIR)/drivers/net/dsa/realtek/rtl837x/rtl8372n_dsa.ko
+  AUTOLOAD:=$(call AutoProbe,rtl8372n_dsa)
+endef
+
+define KernelPackage/dsa-rtl8372n/description
+  DSA driver for the Realtek RTL8372N 2.5G switch, as found in the
+  Ubiquiti UniFi Cloud Gateway Fiber.
+endef
+
+$(eval $(call KernelPackage,dsa-rtl8372n))
+
+
 define KernelPackage/dsa-rtl8365mb
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=Realtek RTL8365MB switch DSA support
-  DEPENDS:=+kmod-dsa-realtek @!TARGET_x86 @!TARGET_bcm47xx @!TARGET_uml
+  DEPENDS:=+kmod-dsa-realtek +kmod-dsa-tag-rtl8-4 @!TARGET_x86 @!TARGET_bcm47xx @!TARGET_uml
   KCONFIG:= \
-	CONFIG_NET_DSA_REALTEK_RTL8365MB \
-	CONFIG_NET_DSA_TAG_RTL8_4
-  FILES:= \
-	$(LINUX_DIR)/drivers/net/dsa/realtek/rtl8365mb.ko \
-	$(LINUX_DIR)/net/dsa/tag_rtl8_4.ko
+	CONFIG_NET_DSA_REALTEK_RTL8365MB
+  FILES:=$(LINUX_DIR)/drivers/net/dsa/realtek/rtl8365mb.ko
   AUTOLOAD:=$(call AutoLoad,42,rtl8365mb,1)
 endef
 

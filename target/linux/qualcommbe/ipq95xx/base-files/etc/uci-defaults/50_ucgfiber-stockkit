@@ -1,0 +1,11 @@
+#!/bin/sh
+# SPDX-License-Identifier: GPL-2.0-only
+# ucgfiber-stockkit is opt-in: off unless the user switched it on
+[ -n "$(uci -q get ucgfiber.stockkit)" ] && exit 0
+touch /etc/config/ucgfiber
+uci -q batch <<EOF
+set ucgfiber.stockkit=stockkit
+set ucgfiber.stockkit.enabled=0
+commit ucgfiber
+EOF
+exit 0

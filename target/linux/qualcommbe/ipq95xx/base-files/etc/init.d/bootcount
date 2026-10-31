@@ -30,8 +30,15 @@ ln6001_reset_bootcount() {
 }
 
 boot() {
-	[ "$(board_name)" = 'linksys,ln6001' ] || return 0
-	. /lib/upgrade/ln6001.sh
-	ln6001_active_slot >/dev/null || return 1
-	ln6001_reset_bootcount /dev/mmcblk0p22
+	case "$(board_name)" in
+	linksys,ln6001)
+		. /lib/upgrade/ln6001.sh
+		ln6001_active_slot >/dev/null || return 1
+		ln6001_reset_bootcount /dev/mmcblk0p22
+		;;
+	ubnt,ucgfiber)
+		. /lib/upgrade/ucgfiber.sh
+		ucgfiber_boot_done
+		;;
+	esac
 }

@@ -1,0 +1,50 @@
+#!/bin/sh
+# SPDX-License-Identifier: GPL-2.0-only
+#
+# Run ucgfiber-envset on the stock firmware of the UniFi Cloud Gateway Fiber,
+# from a copy of this image's env tools kept in stock's /opt/ucg-switch by
+# ucgfiber-stockkit (stock's kernel cannot read OpenWrt's squashfs or overlay):
+#   sh /opt/ucg-switch/usr/sbin/ucgfiber-stock-envset ucg_boot owrt_a
+# (or simply: sh /opt/ucg-switch/ucg-slot-switch.sh a). Stock has no musl, so
+# the programs run through the kit's own loader, started by its path.
+# ucgfiber-envset itself runs under the kit's busybox with only its applets in
+# PATH, as on OpenWrt. Writes: mtd9 (through fw_setenv) and a work dir in /tmp,
+# removed at the end.
+
+R="$(cd "$(dirname "$0")/../.." && pwd)"
+LD="$R/lib/ld-musl-aarch64.so.1"
+LP="$R/lib:$R/usr/lib"
+
+die() { echo "ucgfiber-stock-envset: $*" >&2; exit 1; }
+
+[ -f "$LD" ] && [ -f "$R/bin/busybox" ] && [ -f "$R/usr/sbin/fw_printenv" ] &&
+	[ -f "$R/usr/sbin/ucgfiber-envset" ] || die "run me from the kit folder (see the header)"
+
+T="$(mktemp -d /tmp/ucgfiber-stock.XXXXXX)" || die "cannot create a work dir in /tmp"
+trap 'rm -rf "$T"' EXIT
+mkdir "$T/bin"
+
+if [ -n "${UCG_ENV_CONFIG:-}" ]; then
+	cp "$UCG_ENV_CONFIG" "$T/fw_env.config"
+else
+	mtd="$(grep '"u-boot-env"' /proc/mtd | cut -d: -f1)"
+	[ -n "$mtd" ] || die "no MTD partition u-boot-env in /proc/mtd"
+	echo "/dev/$mtd 0x0 0x10000 0x10000" >"$T/fw_env.config"
+fi
+
+# one small script per busybox applet (the slot's busybox links) and for the env tools
+for l in "$R"/bin/* "$R"/sbin/* "$R"/usr/bin/* "$R"/usr/sbin/*; do
+	[ -L "$l" ] || continue
+	case "$(readlink "$l")" in *busybox) ;; *) continue ;; esac
+	a="$(basename "$l")"
+	printf '#!/bin/sh\nexec "%s" --library-path "%s" "%s" %s "$@"\n' "$LD" "$LP" "$R/bin/busybox" "$a" >"$T/bin/$a"
+done
+[ -f "$T/bin/sleep" ] || die "no busybox applets found in the slot"
+for t in fw_printenv fw_setenv; do
+	printf '#!/bin/sh\nexec "%s" --library-path "%s" "%s" -c "%s" -l "%s" "$@"\n' "$LD" "$LP" "$R/usr/sbin/$t" \
+		"$T/fw_env.config" "$T" >"$T/bin/$t"
+done
+chmod 755 "$T/bin/"*
+
+PATH="$T/bin" UCG_ENV_REF="$R/usr/share/ucgfiber/uboot-env.txt" \
+	"$LD" --library-path "$LP" "$R/bin/busybox" sh "$R/usr/sbin/ucgfiber-envset" "$@"
