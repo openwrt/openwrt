@@ -283,6 +283,25 @@ endef
 
 $(eval $(call KernelPackage,video-rockchip-isp2))
 
+define KernelPackage/video-rockchip-ispp
+  TITLE:=Rockchip rkispp Image Post-Processing unit
+  DEPENDS:=@TARGET_rockchip +kmod-video-rockchip-isp2 +kmod-video-mem2mem \
+	+kmod-video-dma-contig +kmod-video-fwnode +kmod-video-vmalloc
+  KCONFIG:=CONFIG_VIDEO_ROCKCHIP_ISPP \
+	CONFIG_VIDEO_ROCKCHIP_ISPP_FEC=y
+  FILES:=$(LINUX_DIR)/drivers/media/platform/rockchip/ispp/video-rkispp.ko
+  AUTOLOAD:=$(call AutoProbe,video-rkispp)
+  $(call AddDepends/video)
+endef
+
+define KernelPackage/video-rockchip-ispp/description
+  Driver for the Image Post-Processing unit of the Rockchip RV1126:
+  temporal and spatial noise reduction, sharpening, fisheye
+  correction and the scaled outputs fed by the rkisp2 ISP.
+endef
+
+$(eval $(call KernelPackage,video-rockchip-ispp))
+
 define KernelPackage/video-rockchip-rkvenc
   TITLE:=Rockchip RKVENC H.264/HEVC video encoder
   DEPENDS:=@TARGET_rockchip +kmod-video-mem2mem +kmod-video-dma-contig

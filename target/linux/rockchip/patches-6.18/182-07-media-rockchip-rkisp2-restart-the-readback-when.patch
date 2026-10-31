@@ -1,0 +1,251 @@
+From 5090c5db444cece3e195dacbc6d640b22e2941d3 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Wed, 28 Oct 2026 09:50:21 +0000
+Subject: [PATCH] media: rockchip: rkisp2: Restart the readback when its second
+ frame stalls
+
+The raw readback engine of the ISP 2.0 fails to start its second frame
+in roughly half of the streams fed from the VICAP: the frame never
+completes, no interrupt follows and the ISP input starves silently.
+Register level re-arms do not clear that state; only the full block
+reset of the stop path does.
+
+Count the completed readback frames and verify at stream start that a
+second frame completes within 400 ms before declaring the stream up.
+When it does not, stop and restart the ISP and the VICAP feed, up to
+four attempts. A 100 ms timer armed with every readback reports a frame
+in flight that never completes.
+
+Assisted-by: LLM
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ .../platform/rockchip/rkisp2/rkisp2-common.h  |  3 +
+ .../platform/rockchip/rkisp2/rkisp2-dmarx.c   | 50 ++++++++++++++++
+ .../platform/rockchip/rkisp2/rkisp2-isp.c     | 58 ++++++++++++++++++-
+ 3 files changed, 109 insertions(+), 2 deletions(-)
+
+--- a/drivers/media/platform/rockchip/rkisp2/rkisp2-common.h
++++ b/drivers/media/platform/rockchip/rkisp2/rkisp2-common.h
+@@ -281,6 +281,7 @@ struct rkisp2_dmarx_chan {
+ 	spinlock_t buf_lock;
+ 	struct list_head buf_queue;
+ 	struct rkisp2_buffer *curr_buf;
++	unsigned int done_count;
+ 	const struct rkisp2_dmarx_fmt *fmts;
+ 	unsigned int fmt_cnt;
+ 	const struct rkisp2_dmarx_fmt *fmt;
+@@ -292,6 +293,7 @@ struct rkisp2_dmarx_chan {
+ 	bool stopping;
+ 	bool busy;
+ 	wait_queue_head_t idle_wq;
++	struct timer_list arm_timer;
+ };
+ 
+ struct rkisp2_dmarx {
+@@ -649,6 +651,7 @@ bool rkisp2_dmarx_ext_queue(struct rkisp
+ 			    struct rkisp2_buffer *buf);
+ void rkisp2_dmarx_ext_drain(struct rkisp2_device *rkisp2);
+ void rkisp2_dmarx_ext_stop(struct rkisp2_device *rkisp2);
++bool rkisp2_rawrd_preflight_ok(struct rkisp2_device *rkisp2);
+ 
+ int rkisp2_vicap_register(struct rkisp2_device *rkisp2);
+ void rkisp2_vicap_unregister(struct rkisp2_device *rkisp2);
+--- a/drivers/media/platform/rockchip/rkisp2/rkisp2-dmarx.c
++++ b/drivers/media/platform/rockchip/rkisp2/rkisp2-dmarx.c
+@@ -5,8 +5,10 @@
+  * Rockchip ISP2 Driver - RAWRD support (memory input to ISP)
+  */
+ 
++#include <linux/jiffies.h>
+ #include <linux/module.h>
+ #include <linux/pm_runtime.h>
++#include <linux/timer.h>
+ #include <media/v4l2-fh.h>
+ #include <media/v4l2-ioctl.h>
+ #include <media/v4l2-mc.h>
+@@ -266,6 +268,9 @@ static void rkisp2_rawrd_program_buffer(
+ 		     buf->buff_addr[0]);
+ }
+ 
++/* a readback not complete this long after its arm has stalled */
++#define RKISP2_RAWRD_ARM_TIMEOUT_MS	100
++
+ static void rkisp2_rawrd_update_mi(struct rkisp2_dmarx_chan *chan,
+ 				   struct rkisp2_buffer *buf)
+ {
+@@ -278,10 +283,33 @@ static void rkisp2_rawrd_update_mi(struc
+ 		     rkisp2_read(chan->rkisp2, RKISP2_CIF_MIPI_CTRL) |
+ 			     RKISP2_CIF_MIPI_CTRL_OUTPUT_ENA);
+ 
++	mod_timer(&chan->arm_timer,
++		  jiffies + msecs_to_jiffies(RKISP2_RAWRD_ARM_TIMEOUT_MS));
++
+ 	dev_dbg(chan->rkisp2->dev, "%s: %s buffer %pad, output enabled\n",
+ 		__func__, chan->cfg->name, &buf->buff_addr[0]);
+ }
+ 
++static void rkisp2_rawrd_arm_watchdog(struct timer_list *t)
++{
++	struct rkisp2_dmarx_chan *chan =
++		container_of(t, struct rkisp2_dmarx_chan, arm_timer);
++	struct rkisp2_buffer *stuck;
++	unsigned long flags;
++
++	spin_lock_irqsave(&chan->buf_lock, flags);
++	stuck = chan->curr_buf;
++	if (chan->stopping || !stuck)
++		goto out;
++	dev_warn(chan->rkisp2->dev,
++		 "%s: readback of 0x%llx stalled, frame not complete after %d ms\n",
++		 chan->cfg->name,
++		 (unsigned long long)stuck->buff_addr[0],
++		 RKISP2_RAWRD_ARM_TIMEOUT_MS);
++out:
++	spin_unlock_irqrestore(&chan->buf_lock, flags);
++}
++
+ static void rkisp2_rawrd_return_all_buffers(struct rkisp2_dmarx_chan *chan,
+ 					    enum vb2_buffer_state state)
+ {
+@@ -344,6 +372,11 @@ void rkisp2_dmarx_isr(struct rkisp2_devi
+ 			list_del(&chan->curr_buf->queue);
+ 		}
+ 		chan->busy = chan->curr_buf;
++		if (done) {
++			timer_delete(&chan->arm_timer);
++			chan->done_count++;
++			wake_up(&chan->idle_wq);
++		}
+ 		spin_unlock(&chan->buf_lock);
+ 
+ 		if (chan->curr_buf)
+@@ -539,6 +572,19 @@ err_unlock:
+ 	return ret;
+ }
+ 
++/* the first frame lands ~180 ms after the feed start, the second ~56 ms later */
++#define RKISP2_RAWRD_PREFLIGHT_MS	400
++
++/* only the full ISP reset clears a readback engine that drops its second frame */
++bool rkisp2_rawrd_preflight_ok(struct rkisp2_device *rkisp2)
++{
++	struct rkisp2_dmarx_chan *chan = &rkisp2->dmarx.chan[RKISP2_RAWRD0];
++
++	return wait_event_timeout(chan->idle_wq,
++				  chan->done_count >= 2,
++				  msecs_to_jiffies(RKISP2_RAWRD_PREFLIGHT_MS)) > 0;
++}
++
+ int rkisp2_dmarx_ext_start(struct rkisp2_device *rkisp2, u32 fourcc,
+ 			   u32 width, u32 height)
+ {
+@@ -563,6 +609,7 @@ int rkisp2_dmarx_ext_start(struct rkisp2
+ 	spin_lock_irq(&chan->buf_lock);
+ 	chan->ext = true;
+ 	chan->stopping = false;
++	chan->done_count = 0;
+ 	spin_unlock_irq(&chan->buf_lock);
+ 
+ 	rkisp2_rawrd_hw_start(chan);
+@@ -600,8 +647,10 @@ void rkisp2_dmarx_ext_stop(struct rkisp2
+ 	chan->streaming = false;
+ 	chan->ext = false;
+ 	chan->stopping = false;
++	chan->done_count = 0;
+ 	spin_unlock_irq(&chan->buf_lock);
+ 
++	timer_delete_sync(&chan->arm_timer);
+ 	rkisp2_rawrd_hw_stop(rkisp2);
+ }
+ 
+@@ -806,6 +855,7 @@ int rkisp2_dmarx_register(struct rkisp2_
+ 		spin_lock_init(&chan->buf_lock);
+ 		init_waitqueue_head(&chan->idle_wq);
+ 		INIT_LIST_HEAD(&chan->buf_queue);
++		timer_setup(&chan->arm_timer, rkisp2_rawrd_arm_watchdog, 0);
+ 		rkisp2_rawrd_set_default_pix(chan);
+ 
+ 		ret = rkisp2_rawrd_media_init(chan);
+--- a/drivers/media/platform/rockchip/rkisp2/rkisp2-isp.c
++++ b/drivers/media/platform/rockchip/rkisp2/rkisp2-isp.c
+@@ -710,6 +710,38 @@ static int rkisp2_isp_source_find(struct
+ 	return 0;
+ }
+ 
++/* the second frame failure is a per-attempt coin flip */
++#define RKISP2_RAWRD_PREFLIGHT_ATTEMPTS	4
++
++static int rkisp2_pipeline_restart(struct rkisp2_device *rkisp2,
++				   struct v4l2_subdev *sd,
++				   struct rkisp2_isp *isp,
++				   const struct v4l2_mbus_framefmt *sink_fmt)
++{
++	struct v4l2_subdev_state *sd_state;
++	int ret;
++
++	rkisp2_isp_stop(isp);
++	rkisp2_vicap_stop(rkisp2);
++
++	isp->frame_sequence = -1;
++
++	sd_state = v4l2_subdev_lock_and_get_active_state(sd);
++	ret = rkisp2_config_cif(isp, sd_state);
++	if (!ret)
++		ret = rkisp2_isp_start(isp, sd_state, NULL);
++	if (!ret)
++		ret = rkisp2_vicap_start(rkisp2, sink_fmt);
++	v4l2_subdev_unlock_state(sd_state);
++
++	if (ret) {
++		rkisp2_isp_stop(isp);
++		rkisp2_vicap_stop(rkisp2);
++	}
++
++	return ret;
++}
++
+ static int rkisp2_isp_s_stream(struct v4l2_subdev *sd, int enable)
+ {
+ 	struct rkisp2_isp *isp = to_rkisp2_isp(sd);
+@@ -717,6 +749,7 @@ static int rkisp2_isp_s_stream(struct v4
+ 	struct v4l2_subdev_state *sd_state;
+ 	struct v4l2_mbus_framefmt sink_fmt;
+ 	struct media_pad *source_pad = NULL;
++	unsigned int attempt;
+ 	bool vicap;
+ 	int ret;
+ 
+@@ -767,10 +800,31 @@ out_unlock:
+ 		return ret;
+ 
+ 	ret = rkisp2_vicap_start(rkisp2, &sink_fmt);
+-	if (ret)
++	if (ret) {
+ 		rkisp2_isp_stop(isp);
++		return ret;
++	}
+ 
+-	return ret;
++	for (attempt = 0; attempt < RKISP2_RAWRD_PREFLIGHT_ATTEMPTS;
++	     attempt++) {
++		if (rkisp2_rawrd_preflight_ok(rkisp2))
++			return 0;
++
++		dev_warn(rkisp2->dev,
++			 "readback preflight: frame 2 not complete, restarting (%u)\n",
++			 attempt + 1);
++
++		ret = rkisp2_pipeline_restart(rkisp2, sd, isp, &sink_fmt);
++		if (ret)
++			return ret;
++	}
++
++	dev_err(rkisp2->dev, "readback preflight: giving up after %d attempts\n",
++		RKISP2_RAWRD_PREFLIGHT_ATTEMPTS);
++	rkisp2_isp_stop(isp);
++	rkisp2_vicap_stop(rkisp2);
++
++	return -ETIMEDOUT;
+ }
+ 
+ static int rkisp2_isp_subs_evt(struct v4l2_subdev *sd, struct v4l2_fh *fh,
