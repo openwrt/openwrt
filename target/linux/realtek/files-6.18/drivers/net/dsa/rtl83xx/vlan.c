@@ -270,7 +270,7 @@ void otto_vlan_838x_port_forward_on_inner(struct otto_dsa_priv *priv, int port, 
 }
 
 int
-otto_vlan_838x_profile_get(struct otto_dsa_priv *priv, int idx, struct rtldsa_vlan_profile *profile)
+otto_vlan_838x_profile_get(struct otto_dsa_priv *priv, int idx, struct otto_vlan_profile *profile)
 {
 	u32 p;
 
@@ -279,7 +279,7 @@ otto_vlan_838x_profile_get(struct otto_dsa_priv *priv, int idx, struct rtldsa_vl
 
 	regmap_read(priv->map, RTL838X_VLAN_PROFILE(idx), &p);
 
-	*profile = (struct rtldsa_vlan_profile) {
+	*profile = (struct otto_vlan_profile) {
 		.l2_learn = RTL838X_VLAN_L2_LEARN_EN_R(p),
 		.unkn_mc_fld.pmsks_idx = {
 			.l2 = RTL838X_VLAN_L2_UNKN_MC_FLD_PMSK(p),
@@ -359,7 +359,7 @@ void otto_vlan_838x_port_qinq_set(struct otto_dsa_priv *priv, int port, bool ena
 void
 otto_vlan_838x_profile_dump(struct otto_dsa_priv *priv, int idx)
 {
-	struct rtldsa_vlan_profile p;
+	struct otto_vlan_profile p;
 
 	if (otto_vlan_838x_profile_get(priv, idx, &p) < 0)
 		return;
@@ -440,7 +440,7 @@ void otto_vlan_839x_port_forward_on_inner(struct otto_dsa_priv *priv, int port, 
 }
 
 int
-otto_vlan_839x_profile_get(struct otto_dsa_priv *priv, int idx, struct rtldsa_vlan_profile *profile)
+otto_vlan_839x_profile_get(struct otto_dsa_priv *priv, int idx, struct otto_vlan_profile *profile)
 {
 	u32 p[2];
 
@@ -450,7 +450,7 @@ otto_vlan_839x_profile_get(struct otto_dsa_priv *priv, int idx, struct rtldsa_vl
 	regmap_read(priv->map, RTL839X_VLAN_PROFILE(idx), &p[0]);
 	regmap_read(priv->map, RTL839X_VLAN_PROFILE(idx) + 4, &p[1]);
 
-	*profile = (struct rtldsa_vlan_profile) {
+	*profile = (struct otto_vlan_profile) {
 		.l2_learn = RTL839X_VLAN_L2_LEARN_EN_R(p),
 		.unkn_mc_fld.pmsks_idx = {
 			.l2 = RTL839X_VLAN_L2_UNKN_MC_FLD_PMSK(p),
@@ -479,7 +479,7 @@ void otto_vlan_839x_profile_setup(struct otto_dsa_priv *priv, int profile)
 void
 otto_vlan_839x_profile_dump(struct otto_dsa_priv *priv, int idx)
 {
-	struct rtldsa_vlan_profile p;
+	struct otto_vlan_profile p;
 	u32 raw[2];
 
 	if (otto_vlan_839x_profile_get(priv, idx, &p) < 0)
@@ -593,7 +593,7 @@ void otto_vlan_930x_set_tagged(u32 vlan, struct otto_vlan_info *info)
 }
 
 int
-otto_vlan_930x_profile_get(struct otto_dsa_priv *priv, int idx, struct rtldsa_vlan_profile *profile)
+otto_vlan_930x_profile_get(struct otto_dsa_priv *priv, int idx, struct otto_vlan_profile *profile)
 {
 	u32 p[5];
 
@@ -603,7 +603,7 @@ otto_vlan_930x_profile_get(struct otto_dsa_priv *priv, int idx, struct rtldsa_vl
 	for (int i = 0; i < 5; i++)
 		regmap_read(priv->map, RTL930X_VLAN_PROFILE_SET(idx) + i * 4, &p[i]);
 
-	*profile = (struct rtldsa_vlan_profile) {
+	*profile = (struct otto_vlan_profile) {
 		.l2_learn = RTL930X_VLAN_L2_LEARN_EN_R(p),
 		.unkn_mc_fld.pmsks = {
 			.l2 = RTL930X_VLAN_L2_UNKN_MC_FLD_PMSK(p),
@@ -625,7 +625,7 @@ otto_vlan_930x_profile_get(struct otto_dsa_priv *priv, int idx, struct rtldsa_vl
 void
 otto_vlan_930x_profile_dump(struct otto_dsa_priv *priv, int idx)
 {
-	struct rtldsa_vlan_profile p;
+	struct otto_vlan_profile p;
 	u32 raw[5];
 
 	if (otto_vlan_930x_profile_get(priv, idx, &p) < 0)
@@ -768,7 +768,7 @@ void otto_vlan_930x_port_pvid_set(struct otto_dsa_priv *priv, int port, enum pbv
 
 /* RTL931x VLAN operations */
 int
-otto_vlan_931x_profile_get(struct otto_dsa_priv *priv, int idx, struct rtldsa_vlan_profile *profile)
+otto_vlan_931x_profile_get(struct otto_dsa_priv *priv, int idx, struct otto_vlan_profile *profile)
 {
 	u32 p[7];
 
@@ -778,7 +778,7 @@ otto_vlan_931x_profile_get(struct otto_dsa_priv *priv, int idx, struct rtldsa_vl
 	for (int i = 0; i < 7; i++)
 		regmap_read(priv->map, RTL931X_VLAN_PROFILE_SET(idx) + i * 4, &p[i]);
 
-	*profile = (struct rtldsa_vlan_profile) {
+	*profile = (struct otto_vlan_profile) {
 		.l2_learn = RTL931X_VLAN_L2_LEARN_EN_R(p),
 		.unkn_mc_fld.pmsks = {
 			.l2 = RTL931X_VLAN_L2_UNKN_MC_FLD_PMSK(p),
@@ -793,7 +793,7 @@ otto_vlan_931x_profile_get(struct otto_dsa_priv *priv, int idx, struct rtldsa_vl
 void
 otto_vlan_931x_profile_dump(struct otto_dsa_priv *priv, int idx)
 {
-	struct rtldsa_vlan_profile p;
+	struct otto_vlan_profile p;
 
 	if (otto_vlan_931x_profile_get(priv, idx, &p) < 0)
 		return;

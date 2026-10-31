@@ -400,7 +400,7 @@ struct rtldsa_config {
 	void (*vlan_set_tagged)(u32 vlan, struct otto_vlan_info *info);
 	void (*vlan_set_untagged)(u32 vlan, u64 portmask);
 	int (*vlan_profile_get)(struct otto_dsa_priv *priv, int index,
-				struct rtldsa_vlan_profile *profile);
+				struct otto_vlan_profile *profile);
 	void (*vlan_profile_dump)(struct otto_dsa_priv *priv, int index);
 	void (*vlan_profile_setup)(struct otto_dsa_priv *priv, int profile);
 	void (*vlan_port_pvidmode_set)(struct otto_dsa_priv *priv, int port, enum pbvlan_type type,
