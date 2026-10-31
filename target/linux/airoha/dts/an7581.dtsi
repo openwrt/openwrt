@@ -328,6 +328,14 @@
 				};
 			};
 		};
+
+		/* Read-only zone; trips stay on the main sensor zone above */
+		cpu_die_thermal: cpu-die-thermal {
+			polling-delay-passive = <0>;
+			polling-delay = <0>;
+
+			thermal-sensors = <&thermal 1>;
+		};
 	};
 
 	clk25m: oscillator {
@@ -627,7 +635,8 @@
 			interrupts = <GIC_SPI 23 IRQ_TYPE_LEVEL_HIGH>;
 			airoha,chip-scu = <&chip_scu>;
 
-			#thermal-sensor-cells = <0>;
+			/* Sensor: 0 main ADC, 1 CPU ADC */
+			#thermal-sensor-cells = <1>;
 		};
 
 		system-controller@1fbf0200 {
