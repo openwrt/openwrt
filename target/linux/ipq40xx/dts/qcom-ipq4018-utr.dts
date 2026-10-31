@@ -351,14 +351,14 @@
 	status = "okay";
 	nvmem-cell-names = "mac-address", "pre-calibration";
 	nvmem-cells = <&macaddr_gmac0 2>, <&precal_art_1000>;
-	qcom,ath10k-calibration-variant = "Ubiquiti-UniFi-Travel-Router";
+	qcom,calibration-variant = "Ubiquiti-UniFi-Travel-Router";
 };
 
 &wifi1 {
 	status = "okay";
 	nvmem-cell-names = "mac-address", "pre-calibration";
 	nvmem-cells = <&macaddr_gmac0 3>, <&precal_art_5000>;
-	qcom,ath10k-calibration-variant = "Ubiquiti-UniFi-Travel-Router";
+	qcom,calibration-variant = "Ubiquiti-UniFi-Travel-Router";
 };
 
 &usb2_hs_phy {
