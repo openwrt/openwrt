@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: GPL-2.0-only
 #
-# Copyright (C) 2007-2011 OpenWrt.org
+# Copyright (C) 2007-2023 OpenWrt.org
 
 include $(TOPDIR)/rules.mk
 
