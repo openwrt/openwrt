@@ -1,0 +1,56 @@
+From b55dfb173ce808ecc8c598f2c378a9b04c5ce241 Mon Sep 17 00:00:00 2001
+From: "Russell King (Oracle)" <rmk+kernel@armlinux.org.uk>
+Date: Wed, 1 Apr 2026 08:21:50 +0100
+Subject: [PATCH] net: stmmac: move check for hardware checksum supported
+
+Add a check in .ndo_features_check() to indicate whether hardware
+checksum can be performed on the skbuff. Where hardware checksum is
+not supported - either because the channel does not support Tx COE
+or the skb isn't suitable (stmmac uses a tighter test than
+can_checksum_protocol()) we also need to disable TSO, which will be
+done by harmonize_features() in net/core/dev.c
+
+This fixes a bug where a channel which has COE disabled may still
+receive TSO skbuffs.
+
+Signed-off-by: Russell King (Oracle) <rmk+kernel@armlinux.org.uk>
+Link: https://patch.msgid.link/E1w7pte-0000000EatU-0ILt@rmk-PC.armlinux.org.uk
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+[backport: only the .ndo_features_check() hunk is taken; the software
+ checksum fallback in stmmac_xmit() is left in place and simply becomes
+ a no-op for skbs that the stack has already checksummed]
+---
+ drivers/net/ethernet/stmicro/stmmac/stmmac_main.c | 20 +++++++++++++++++---
+ 1 file changed, 17 insertions(+), 3 deletions(-)
+
+--- a/drivers/net/ethernet/stmicro/stmmac/stmmac_main.c
++++ b/drivers/net/ethernet/stmicro/stmmac/stmmac_main.c
+@@ -4783,11 +4783,25 @@ static netdev_features_t stmmac_features_check(struct sk_buff *skb,
+ 					       struct net_device *dev,
+ 					       netdev_features_t features)
+ {
+-	u16 queue;
++	struct stmmac_priv *priv = netdev_priv(dev);
++	u16 queue = skb_get_queue_mapping(skb);
++
++	/* DWMAC IPs can be synthesized to support tx coe only for a few tx
++	 * queues. In that case, checksum offloading for those queues that don't
++	 * support tx coe needs to fallback to software checksum calculation.
++	 *
++	 * Packets that won't trigger the COE e.g. most DSA-tagged packets will
++	 * also have to be checksummed in software.
++	 *
++	 * Note that disabling hardware checksumming also disables TSO. See
++	 * harmonize_features() in net/core/dev.c
++	 */
++	if (priv->plat->tx_queues_cfg[queue].coe_unsupported ||
++	    !stmmac_has_ip_ethertype(skb))
++		features &= ~(NETIF_F_IP_CSUM | NETIF_F_IPV6_CSUM);
+ 
+ 	if (skb_is_gso(skb)) {
+-		queue = skb_get_queue_mapping(skb);
+-		if (!stmmac_tso_channel_permitted(netdev_priv(dev), queue) ||
++		if (!stmmac_tso_channel_permitted(priv, queue) ||
+ 		    !stmmac_tso_valid_packet(skb))
+ 			features &= ~NETIF_F_GSO_MASK;
+ 	}
