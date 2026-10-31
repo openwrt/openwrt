@@ -622,6 +622,38 @@
 			};
 		};
 
+		/*
+		 * Wi-Fi TX offload: one WED block, and two WDM engines.
+		 * Addresses and interrupts are those of the stock
+		 * board.dts (nodes wed, wdma; GIC SPI 0x43 and 0x44 for the
+		 * WED, 0x45..0x4a for the WDMA).  airoha,wdma names the WDMA
+		 * engine of a WED (its index is the reg entry of the wdma node),
+		 * airoha,pcie the PCIe controller of the card it serves.
+		 * Disabled here: a board enables them once the driver is meant
+		 * to touch the hardware.
+		 */
+		wed0: wed@1fa02000 {
+			compatible = "airoha,an7552-wed";
+			reg = <0x1fa02000 0xb00>;
+			interrupts = <GIC_SPI 67 IRQ_TYPE_LEVEL_HIGH>;
+			airoha,wdma = <&wdma 0>;
+			airoha,pcie = <&pcie0>;
+			status = "disabled";
+		};
+
+		wdma: wdma@1fa06000 {
+			compatible = "airoha,an7552-wdma";
+			reg = <0x1fa06000 0x400>,
+			      <0x1fa06400 0x400>;
+			interrupts = <GIC_SPI 69 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 70 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 71 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 72 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 73 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 74 IRQ_TYPE_LEVEL_HIGH>;
+			status = "disabled";
+		};
+
 		pcie0: pcie@1fa91000 {
 			compatible = "airoha,an7563-pcie", "mediatek,mt7622-pcie";
 			device_type = "pci";

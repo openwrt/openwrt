@@ -300,6 +300,31 @@
 	status = "okay";
 };
 
+/*
+ * One MT7916 (DBDC, MT7976 RF): pcie0 is the main interface, pcie1 its
+ * second HIF (device id 0x790a), which mt7915e picks up by itself.  Its
+ * node below only carries the NPU RX ring settings of the second band.
+ *
+ * EEPROM: the flash holds a per-unit 4 KiB image at tclinux + 0x420000 (MISC
+ * WiFi block).  It equals the generic /etc/MT7916_iPAiLNA_EEPROM.bin of the
+ * vendor rootfs except for 72 bytes (MAC 00:0c:43:26:60:18 at offset 4 and
+ * calibration values), so mt76 reads it from there through nvmem.
+ */
+/*
+ * Wi-Fi TX offload through the WED (patches 928-xx).  The Wi-Fi card is a
+ * single MT7916 DBDC on pcie0 (second HIF on pcie1), so one WED (WED0)
+ * serves both bands.  The WED
+ * is used only with "mt7915e wed_enable=1"; without it this just lets the
+ * driver probe and the FE set up the WDMA flow control (928-02).
+ */
+&wed0 {
+	status = "okay";
+};
+
+&wdma {
+	status = "okay";
+};
+
 &pcie0 {
 	pinctrl-names = "default";
 	pinctrl-0 = <&pcie0_rst_pins>;
