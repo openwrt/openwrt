@@ -1,0 +1,82 @@
+From: Ville Takio <ville+git@takio.fi>
+Subject: [PATCH] b43: AC-PHY: take the SROM RX gain context per 5 GHz sub-band
+
+The eLNA gain and TR isolation came from rxgains_5gl on every 5 GHz
+channel. Pick the set by pa5ga group as wl 7.14 does: 5gl below 5250
+MHz, 5gm below 5500, 5gh above. On the RT-AC66U B1 wl programs the 5gh
+TR isolation at ch100 and ch149, and with the 5gh set and that channel's
+gain table the AGC words of all three cores equal wl's there.
+
+--- a/drivers/net/wireless/broadcom/b43/phy_ac.c
++++ b/drivers/net/wireless/broadcom/b43/phy_ac.c
+@@ -339,6 +339,29 @@ static unsigned int b43_phy_ac_pa5g_grou
+ 	}
+ }
+ 
++/*
++ * The SROM's RX gain context (eLNA gain, TR isolation, eLNA bypass) for the
++ * current channel: rxgains_2g, or on 5 GHz the sub-band set of the pa5ga
++ * group, 5gl below 5250 MHz, 5gm below 5500 and 5gh above. wl 7.14 on the
++ * RT-AC66U B1 programs the 5gl TR isolation at ch36 and the 5gh one at
++ * ch100 and ch149 (0x06f9 per core, 7/9/8 and 8/7/8).
++ */
++static const struct ssb_sprom_rxgains *b43_phy_ac_rxgains(struct b43_wldev *dev)
++{
++	const struct ssb_sprom *sp = dev->dev->bus_sprom;
++
++	if (b43_current_band(dev->wl) == NL80211_BAND_2GHZ)
++		return &sp->rxgains_2g;
++	switch (b43_phy_ac_pa5g_group(dev, dev->phy.ac->cal_freq)) {
++	case 0:
++		return &sp->rxgains_5gl;
++	case 1:
++		return &sp->rxgains_5gm;
++	default:
++		return &sp->rxgains_5gh;
++	}
++}
++
+ static void b43_phy_ac_clip_det(struct b43_wldev *dev, bool enable);
+ static void b43_phy_ac_cca_pulse(struct b43_wldev *dev);
+ static void b43_phy_ac_rxgain_perchan_tail(struct b43_wldev *dev);
+@@ -4963,8 +4986,7 @@ b43_phy_ac_post_noise_shaping_rx_regprog
+ 	init_tbl = (u16)(c[1] | c[2] << 3 | c[3] << 6 | c[4] << 10 | c[5] << 13);
+ 	{
+ 		const struct ssb_sprom *sp = dev->dev->bus_sprom;
+-		const struct ssb_sprom_rxgains *rx =
+-			band_2g ? &sp->rxgains_2g : &sp->rxgains_5gl;
++		const struct ssb_sprom_rxgains *rx = b43_phy_ac_rxgains(dev);
+ 		bool elna = band_2g ? !!(sp->boardflags_lo & B43_BFL_EXTLNA) :
+ 				      !!(sp->boardflags_hi & B43_BFH_EXTLNA_5GHZ);
+ 		enum nl80211_chan_width cw = dev->phy.ac->cal_width;
+@@ -4994,8 +5016,7 @@ b43_phy_ac_post_noise_shaping_rx_regprog
+ 	 */
+ 	{
+ 		const struct ssb_sprom *sp = dev->dev->bus_sprom;
+-		const struct ssb_sprom_rxgains *rx =
+-			band_2g ? &sp->rxgains_2g : &sp->rxgains_5gl;
++		const struct ssb_sprom_rxgains *rx = b43_phy_ac_rxgains(dev);
+ 		bool elna = band_2g ? !!(sp->boardflags_lo & B43_BFL_EXTLNA) :
+ 				      !!(sp->boardflags_hi & B43_BFH_EXTLNA_5GHZ);
+ 		int e = (rx->triso[core] + 4) << 1;
+@@ -5900,8 +5921,7 @@ static void b43_phy_ac_chanspec_tail(str
+  * The core loop is the caller's; the stock driver emits this for every
+  * silicon core, 2x2 boards included.
+  *
+- * On 5 GHz it uses rxgains_5gl (U-NII-1); 5gm and 5gh need a per-sub-band
+- * selection. On 2.4 GHz rxgains_2g: the archer-t5e has elnagain 4 there and
++ * On 5 GHz the sub-band set comes from b43_phy_ac_rxgains(). On 2.4 GHz rxgains_2g: the archer-t5e has elnagain 4 there and
+  * 3 in 5gl, and writes the header as 0x0e on 2.4 GHz and 0x0c on 5 GHz.
+  * [capture-ref: router-data/d6220/cold-sweep.zip!cold01-ch36-bw20.txt;
+  *   10578-10621, 10738-10781, 10898-10941]
+@@ -5915,9 +5935,7 @@ static void b43_phy_ac_rxgain_init(struc
+ 	static const u16 fill_03[10] = { 3, 3, 3, 3, 3, 3, 3, 3, 3, 3 };
+ 	static const u16 fill_02[10] = { 2, 2, 2, 2, 2, 2, 2, 2, 2, 2 };
+ 	bool band_2g = b43_current_band(dev->wl) == NL80211_BAND_2GHZ;
+-	const struct ssb_sprom *sprom = dev->dev->bus_sprom;
+-	const struct ssb_sprom_rxgains *rxgains =
+-		band_2g ? &sprom->rxgains_2g : &sprom->rxgains_5gl;
++	const struct ssb_sprom_rxgains *rxgains = b43_phy_ac_rxgains(dev);
+ 	u16 ps = (u16)(core * 0x0200);
+ 	u16 ta = (u16)(0x0044 + core * 0x0020);
+ 	u16 tb = (u16)(0x0045 + core * 0x0020);

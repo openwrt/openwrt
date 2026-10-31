@@ -1,0 +1,41 @@
+From: Ville Takio <ville+git@takio.fi>
+Subject: [PATCH] b43: AC-PHY: apply pdoffset2g40ma on 2.4 GHz
+
+wl 7.14 puts the 2.4 GHz power-detector offset, pdoffset2g40ma[core]
+sign-extended from 4 bits, in entry 5 of the per-rate offset table 0x21,
+at 20 and 40 MHz alike, and zeros when pdoffset2g40mvalid is set. b43
+wrote zeros. The RT-AC66U B1 (8 on every core) now reads 0x00f8f8f8 as
+under wl on ch1, ch6 and ch11.
+
+--- a/drivers/net/wireless/broadcom/b43/phy_ac.c
++++ b/drivers/net/wireless/broadcom/b43/phy_ac.c
+@@ -2162,16 +2162,24 @@ static void b43_phy_ac_txpwrctrl_program
+ 	 * tg789vac-v2 has a different one per core and sub-band in both fields,
+ 	 * and all 129 writes of its 43 cold segments follow this formula.
+ 	 *
+-	 * On 2.4 GHz the MacBookAir6,1 and the archer-t5e write zeros. The 2.4
+-	 * GHz field, pdoffset2g40ma (SROM word 100), is not extracted; it is
+-	 * blank on the archer-t5e.
++	 * On 2.4 GHz only entry 5 is used, at 20 and 40 MHz alike: the 4-bit
++	 * pdoffset2g40ma[core] sign-extended to a byte, unless
++	 * pdoffset2g40mvalid is set, when wl 7.14 writes zeros. The RT-AC66U B1
++	 * has 8 on every core and reads 0x00f8f8f8 on ch1, ch6 and ch11 at 20
++	 * MHz and ch6 at 40; the MacBookAir6,1 and the archer-t5e write zeros
++	 * (blank field).
+ 	 */
+ 	for_each_set_bit(core, &dev->phy.ac->coremask, num_cores) {
+ 		const struct ssb_sprom *sp = dev->dev->bus_sprom;
+ 		u32 o40, o80;
+ 
+-		if (b43_current_band(dev->wl) == NL80211_BAND_2GHZ)
+-			break;
++		if (b43_current_band(dev->wl) == NL80211_BAND_2GHZ) {
++			if (sp->pdoffset2g40mvalid)
++				break;
++			ppr[5] |= (u32)(u8)sign_extend32(sp->pdoffset2g40ma[core],
++							 3) << (8 * core);
++			continue;
++		}
+ 
+ 		o40 = (sp->pdoffset40ma[core] >> (4 * grp)) & 0xf;
+ 		o80 = (sp->pdoffset80ma[core] >> (4 * grp)) & 0xf;
