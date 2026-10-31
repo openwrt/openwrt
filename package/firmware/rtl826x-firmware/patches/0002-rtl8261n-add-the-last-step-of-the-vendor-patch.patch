@@ -1,0 +1,89 @@
+From 392988d9345c0c4fc7662f7cde209163f9b1f112 Mon Sep 17 00:00:00 2001
+From: Alex Rau <alex@retroduction.org>
+Date: Sat, 31 Oct 2026 23:06:10 +0100
+Subject: [PATCH] rtl8261n: add the last step of the vendor patch
+
+The RTL8261N patch database in the stock firmware of the UniFi Cloud
+Gateway Fiber (Realtek's PHY SDK code, phy_rtl826xb_patch_*) ends with a
+step of type 24, which is RTK_PATCH_TYPE_FLOW(10) in the generator's
+numbering: two host SerDes writes, page 7 register 0x10 = 0x80aa and
+page 6 register 0x12 = 0x5078. The SerDes (SDS) table writes an interim
+value (0x03) to the low byte of page 7 register 0x10 that this flow
+replaces. Without it the PHY never completes USXGMII in-band
+auto-negotiation towards the MAC: on the UniFi Cloud Gateway Fiber
+(RTL8261BE on USXGMII to an RTL8372N switch) the copper link and the 10G
+line come up, the switch reports a link fault and no frame passes. The
+stock firmware of that device runs the flow; with it traffic passes at
+1G and 2.5G.
+
+Add it as RTK_PATCH_TYPE_FLOW(10) to the end of the RTL8261N and
+RTL8261N low-power databases. rtl8261n.bin and rtl8261n_lp.bin grow by
+the two PSDS0 entries; everything before them is unchanged.
+
+Assisted-by: Claude:claude-opus-5-5
+Signed-off-by: Alex Rau <alex@retroduction.org>
+---
+ rtl8261n_rtl8264b.c | 31 +++++++++++++++++++++++++++++++
+ 1 file changed, 31 insertions(+)
+
+--- a/rtl8261n_rtl8264b.c
++++ b/rtl8261n_rtl8264b.c
+@@ -156,6 +156,30 @@ static int _phy_rtl826x_flow_l2(struct p
+ 	return 0;
+ }
+ 
++/*
++ * Last step of the RTL8261N patch as Realtek's PHY SDK code applies it in
++ * the stock firmware of the UniFi Cloud Gateway Fiber: step type 24 there,
++ * which is RTK_PATCH_TYPE_FLOW(10) here. Two host SerDes writes; page 7
++ * register 0x10 replaces the interim value that the SDS table writes. Without
++ * them the PHY never completes USXGMII in-band auto-negotiation towards the
++ * MAC.
++ */
++static int _phy_rtl826x_flow_s(struct phy_device *phydev)
++{
++	int ret = 0;
++	rt_phy_patch_db_t *pPatchDb = NULL;
++
++	PHYPATCH_DB_GET(phydev, pPatchDb);
++
++	if ((ret = phy_patch_op(pPatchDb, phydev, RTK_PATCH_OP_PSDS0, 0xFF, 0x07, 0x10, 15, 0, 0x80aa)) < 0)
++		return ret;
++
++	if ((ret = phy_patch_op(pPatchDb, phydev, RTK_PATCH_OP_PSDS0, 0xFF, 0x06, 0x12, 15, 0, 0x5078)) < 0)
++		return ret;
++
++	return 0;
++}
++
+ static int _phy_rtl826x_flow_pi(struct phy_device *phydev)
+ {
+ 	int ret = 0;
+@@ -253,6 +277,11 @@ static int phy_patch_rtl826x_flow(struct
+         	// as this is a dynamic one, it's implemented in the driver
+                 return ret;
+ 
++        case RTK_PATCH_TYPE_FLOW(10):
++            if ((ret = _phy_rtl826x_flow_s(phydev)) < 0)
++                return ret;
++            break;
++
+         case RTK_PATCH_TYPE_FLOW(5):
+             if ((ret = _phy_rtl826x_flow_pi(phydev)) < 0)
+                 return ret;
+@@ -296,6 +325,7 @@ int phy_patch_rtl8261n_db_init(struct ph
+     PHYPATCH_TABLE_ASSIGN(patch_db, 15, PHY_PATCH_TYPE_RTCT, rtl8261n_c_rtct_conf);
+     PHYPATCH_TABLE_ASSIGN(patch_db, 16, RTK_PATCH_TYPE_FLOW(3), NULL);
+     PHYPATCH_TABLE_ASSIGN(patch_db, 17, RTK_PATCH_TYPE_FLOW(4), NULL);
++    PHYPATCH_TABLE_ASSIGN(patch_db, 18, RTK_PATCH_TYPE_FLOW(10), NULL);
+ 
+     *pPhy_patchDb = patch_db;
+     return ret;
+@@ -333,6 +363,7 @@ int phy_patch_rtl8261n_lp_db_init(struct
+     PHYPATCH_TABLE_ASSIGN(patch_db, 15, PHY_PATCH_TYPE_RTCT, rtl8261n_lp_c_rtct_conf);
+     PHYPATCH_TABLE_ASSIGN(patch_db, 16, RTK_PATCH_TYPE_FLOW(3), NULL);
+     PHYPATCH_TABLE_ASSIGN(patch_db, 17, RTK_PATCH_TYPE_FLOW(4), NULL);
++    PHYPATCH_TABLE_ASSIGN(patch_db, 18, RTK_PATCH_TYPE_FLOW(10), NULL);
+ 
+     *pPhy_patchDb = patch_db;
+     return ret;
