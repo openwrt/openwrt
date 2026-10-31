@@ -3648,6 +3648,9 @@ TARGET_DEVICES += xiaomi_mi-router-4a-gigabit-v2
 
 define Device/xiaomi_mi-router-ac2100
   $(Device/xiaomi_nand_separate)
+  DEVICE_COMPAT_VERSION := 1.1
+  DEVICE_COMPAT_MESSAGE := LAN port names have been corrected to match the \
+	case numbering; check port assignments in network configuration
   DEVICE_MODEL := Mi Router AC2100
   IMAGE_SIZE := 120320k
   DEVICE_PACKAGES += kmod-mt7603 kmod-mt7615-firmware
@@ -3685,6 +3688,9 @@ TARGET_DEVICES += xiaomi_mi-router-cr6609
 
 define Device/xiaomi_redmi-router-ac2100
   $(Device/xiaomi_nand_separate)
+  DEVICE_COMPAT_VERSION := 1.1
+  DEVICE_COMPAT_MESSAGE := LAN port names have been corrected to match the \
+	case numbering; check port assignments in network configuration
   DEVICE_MODEL := Redmi Router AC2100
   IMAGE_SIZE := 120320k
   DEVICE_PACKAGES += kmod-mt7603 kmod-mt7615-firmware
