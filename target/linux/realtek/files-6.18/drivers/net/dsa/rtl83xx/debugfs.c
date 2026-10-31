@@ -230,7 +230,7 @@ static const struct file_operations rtldsa_pmsks_table_fops = {
 static int rtldsa_vlan_profiles_show(struct seq_file *m, void *v)
 {
 	struct otto_dsa_priv *priv = m->private;
-	struct rtldsa_vlan_profile profile;
+	struct otto_vlan_profile profile;
 	int ret, profiles_max;
 
 	if (!priv->r->vlan_profile_get)
