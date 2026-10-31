@@ -1,10 +1,10 @@
 #!/bin/sh
 
-[ -e /lib/firmware/$FIRMWARE ] && exit 0
-
 . /lib/functions/caldata.sh
 
 board=$(board_name)
+
+[ "$board" != "linksys,ln6001" ] && [ -e "/lib/firmware/$FIRMWARE" ] && exit 0
 
 case "$FIRMWARE" in
 "ath12k/QCN9274/hw2.0/cal-pci-0001:01:00.0.bin")
@@ -16,7 +16,8 @@ case "$FIRMWARE" in
 	;;
 "ath12k/QCN9274/hw2.0/cal-pci-0002:01:00.0.bin")
 	case "$board" in
-	askey,sbe1v1k)
+	askey,sbe1v1k|\
+	linksys,ln6001)
 		caldata_extract_mmc "0:ART" 0x8a800 0x2d000
 		;;
 	esac
