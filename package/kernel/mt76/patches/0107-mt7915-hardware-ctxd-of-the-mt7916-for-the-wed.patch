@@ -24,7 +24,7 @@ Signed-off-by: Lukasz M <lukasz1992m+openwrt@gmail.com>
 ---
 --- a/mt7915/dma.c
 +++ b/mt7915/dma.c
-@@ -161,6 +161,40 @@ static void mt7915_dma_config(struct mt7
+@@ -166,6 +166,40 @@ static void mt7915_dma_config(struct mt7
  	}
  }
  
@@ -65,7 +65,7 @@ Signed-off-by: Lukasz M <lukasz1992m+openwrt@gmail.com>
  static void __mt7915_dma_prefetch(struct mt7915_dev *dev, u32 ofs)
  {
  #define PREFETCH(_base, _depth)	((_base) << 16 | (_depth))
-@@ -491,6 +525,9 @@ int mt7915_dma_init(struct mt7915_dev *d
+@@ -509,6 +543,9 @@ int mt7915_dma_init(struct mt7915_dev *d
  			if (is_mt7915(mdev))
  				mt76_rmw(dev, MT_WFDMA0_EXT0_CFG, MT_WFDMA0_EXT0_RXWB_KEEP,
  					 MT_WFDMA0_EXT0_RXWB_KEEP);
@@ -75,7 +75,7 @@ Signed-off-by: Lukasz M <lukasz1992m+openwrt@gmail.com>
  		}
  	} else {
  		mt76_clear(dev, MT_WFDMA_HOST_CONFIG, MT_WFDMA_HOST_CONFIG_WED);
-@@ -706,6 +743,11 @@ int mt7915_dma_reset(struct mt7915_dev *
+@@ -724,6 +761,11 @@ int mt7915_dma_reset(struct mt7915_dev *
  		mt76_rmw(dev, MT_WFDMA0_EXT0_CFG, MT_WFDMA0_EXT0_RXWB_KEEP,
  			 MT_WFDMA0_EXT0_RXWB_KEEP);
  

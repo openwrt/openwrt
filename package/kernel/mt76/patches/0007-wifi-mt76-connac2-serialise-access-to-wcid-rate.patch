@@ -1,0 +1,73 @@
+From c09503fe320487b916a6a5e593ca15a1268f28f7 Mon Sep 17 00:00:00 2001
+From: Lukasz M <lukasz1992m+openwrt@gmail.com>
+Date: Tue, 13 Oct 2026 21:00:00 +0200
+Subject: [PATCH] [PATCH 7/8] wifi: mt76: connac2: serialise access to wcid->rate
+
+mt76_connac2_mac_fill_txs() builds the reported rate in a local struct
+rate_info, samples RATE_INFO_FLAGS_SHORT_GI from wcid->rate, and finally
+stores the local back into wcid->rate. Every mode assigns rate.flags
+with a plain assignment first, so any bit that is not copied over is
+dropped and the store makes that loss permanent. The VHT case did not
+copy the flag at all, so a VHT station lost short GI on the first VHT
+TXS event.
+
+The station poll also writes wcid->rate, under sta_poll_lock. The sample
+and the store here happen under different locking, so a poll update can
+split them and the flag is still lost or spuriously added.
+
+Sample the flag and store the result in one short critical section at
+the end, and remember for the modes that use a short GI flag instead of
+reading it early. This also covers VHT, so it supersedes the standalone
+VHT propagation change.
+
+Signed-off-by: Lukasz M <lukasz1992m+openwrt@gmail.com>
+---
+ mt76_connac_mac.c | 16 +++++++++++++---
+ 1 file changed, 13 insertions(+), 3 deletions(-)
+
+--- a/mt76_connac_mac.c
++++ b/mt76_connac_mac.c
+@@ -634,7 +634,7 @@ bool mt76_connac2_mac_fill_txs(struct mt
+ 	struct ieee80211_supported_band *sband;
+ 	struct mt76_phy *mphy;
+ 	struct rate_info rate = {};
+-	bool cck = false;
++	bool cck = false, short_gi = false;
+ 	u32 txrate, txs, mode, stbc;
+ 
+ 	txs = le32_to_cpu(txs_data[0]);
+@@ -702,14 +702,14 @@ bool mt76_connac2_mac_fill_txs(struct mt
+ 			return false;
+ 
+ 		rate.flags = RATE_INFO_FLAGS_MCS;
+-		if (wcid->rate.flags & RATE_INFO_FLAGS_SHORT_GI)
+-			rate.flags |= RATE_INFO_FLAGS_SHORT_GI;
++		short_gi = true;
+ 		break;
+ 	case MT_PHY_TYPE_VHT:
+ 		if (rate.mcs > 9)
+ 			return false;
+ 
+ 		rate.flags = RATE_INFO_FLAGS_VHT_MCS;
++		short_gi = true;
+ 		break;
+ 	case MT_PHY_TYPE_HE_SU:
+ 	case MT_PHY_TYPE_HE_EXT_SU:
+@@ -746,7 +746,17 @@ bool mt76_connac2_mac_fill_txs(struct mt
+ 		stats->tx_bw[0]++;
+ 		break;
+ 	}
++
++	/* wcid->rate is also written by the station poll, under
++	 * sta_poll_lock. Sample the short GI flag and store the result in
++	 * one critical section, so the read and the store below cannot be
++	 * split by that update.
++	 */
++	spin_lock_bh(&dev->sta_poll_lock);
++	if (short_gi && (wcid->rate.flags & RATE_INFO_FLAGS_SHORT_GI))
++		rate.flags |= RATE_INFO_FLAGS_SHORT_GI;
+ 	wcid->rate = rate;
++	spin_unlock_bh(&dev->sta_poll_lock);
+ 
+ 	return true;
+ }

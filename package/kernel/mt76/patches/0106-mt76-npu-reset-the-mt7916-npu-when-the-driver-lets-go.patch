@@ -21,7 +21,7 @@ Signed-off-by: Lukasz M <lukasz1992m+openwrt@gmail.com>
 ---
 --- a/mt76.h
 +++ b/mt76.h
-@@ -1701,6 +1701,7 @@ void mt76_npu_queue_cleanup(struct mt76_
+@@ -1702,6 +1702,7 @@ void mt76_npu_queue_cleanup(struct mt76_
  void mt76_npu_disable_irqs(struct mt76_dev *dev);
  int mt76_npu_init(struct mt76_dev *dev, phys_addr_t phy_addr, int type);
  void mt76_npu_deinit(struct mt76_dev *dev);
@@ -29,7 +29,7 @@ Signed-off-by: Lukasz M <lukasz1992m+openwrt@gmail.com>
  void mt76_npu_queue_setup(struct mt76_dev *dev, struct mt76_queue *q);
  void mt76_npu_txdesc_cleanup(struct mt76_queue *q, int index);
  int mt76_npu_net_setup_tc(struct ieee80211_hw *hw, struct ieee80211_vif *vif,
-@@ -1748,6 +1749,10 @@ static inline int mt76_npu_init(struct m
+@@ -1749,6 +1750,10 @@ static inline int mt76_npu_init(struct m
  static inline void mt76_npu_deinit(struct mt76_dev *dev)
  {
  }
@@ -72,7 +72,7 @@ Signed-off-by: Lukasz M <lukasz1992m+openwrt@gmail.com>
  #endif
 --- a/mt7915/npu.c
 +++ b/mt7915/npu.c
-@@ -232,3 +232,16 @@ int mt7915_npu_hw_init(struct mt7915_dev
+@@ -237,3 +237,16 @@ int mt7915_npu_hw_init(struct mt7915_dev
  
  	return 0;
  }
@@ -102,7 +102,7 @@ Signed-off-by: Lukasz M <lukasz1992m+openwrt@gmail.com>
  #include <net/flow_offload.h>
  #include <net/pkt_cls.h>
  
-@@ -537,6 +540,59 @@ unlock:
+@@ -556,6 +559,59 @@ unlock:
  }
  EXPORT_SYMBOL_GPL(mt76_npu_disable_irqs);
  
@@ -162,7 +162,7 @@ Signed-off-by: Lukasz M <lukasz1992m+openwrt@gmail.com>
  int mt76_npu_init(struct mt76_dev *dev, phys_addr_t phy_addr, int type)
  {
  	struct airoha_ppe_dev *ppe_dev;
-@@ -567,6 +623,27 @@ int mt76_npu_init(struct mt76_dev *dev,
+@@ -586,6 +642,27 @@ int mt76_npu_init(struct mt76_dev *dev,
  		goto error_npu_put;
  	}
  
