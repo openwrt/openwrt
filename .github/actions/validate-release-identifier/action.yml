@@ -1,0 +1,66 @@
+name: Validate Release Identifier
+description: |
+  Checks if a string represents a known OpenWrt release (like SNAPSHOT, 23.05.2, 23.05.2-rc1).
+  If the string resembles a valid release, it will determine the associated git reference.
+  If the string is invalid, it will return an error message.
+
+  Requires the repository to be checked out in the workflow before running this action.
+
+inputs:
+  identifier:
+    description: String to validate
+    required: true
+  working-directory:
+    description: Directory to run the validation in
+    required: false
+    default: ${{ github.workspace }}
+
+outputs:
+  valid:
+    description: Whether the release is valid
+    value: ${{ steps.validate.outputs.valid }}
+  git_ref:
+    description: Git reference associated with the release
+    value: ${{ steps.validate.outputs.git_ref }}
+  error:
+    description: Error message if the identifier is invalid
+    value: ${{ steps.validate.outputs.error }}
+
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      id: validate
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        # Check for SNAPSHOT (case-insensitive)
+        shopt -s nocasematch
+        if [[ "${{ inputs.identifier }}" == "snapshot" ]]; then
+          echo "::notice::Found SNAPSHOT release"
+          echo "valid=true" >> $GITHUB_OUTPUT
+          echo "git_ref=refs/heads/main" >> $GITHUB_OUTPUT
+          exit 0
+        fi
+        shopt -u nocasematch
+
+        # Check format
+        if [[ ! "${{ inputs.identifier }}" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-rc[0-9]+)?$ ]]; then
+          echo "::notice::Invalid release format '${{ inputs.identifier }}'"
+          echo "valid=false" >> $GITHUB_OUTPUT
+          echo "error=Invalid release format" >> $GITHUB_OUTPUT
+          exit 0
+        fi
+
+        # Verify tag exists
+        git_ref="v${{ inputs.identifier }}"
+        tag_list=$(git ls-remote --refs --tags origin 'refs/tags/v*' | sed 's/.*refs\/tags\///')
+        if ! echo "$tag_list" | grep -q "^$git_ref\$"; then
+          echo "::notice::Tag '$git_ref' not found"
+          echo "valid=false" >> $GITHUB_OUTPUT
+          echo "error=Release tag not found" >> $GITHUB_OUTPUT
+          exit 0
+        fi
+
+        echo "::notice::Release validated successfully"
+        echo "valid=true" >> $GITHUB_OUTPUT
+        echo "git_ref=refs/tags/$git_ref" >> $GITHUB_OUTPUT
