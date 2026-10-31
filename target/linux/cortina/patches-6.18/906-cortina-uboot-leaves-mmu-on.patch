@@ -1,0 +1,52 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Fil Dunsky <filipp.dunsky@gmail.com>
+Date: Sat, 05 Sep 2026 07:30:20 +0300
+Subject: [PATCH] arm: cortina: cope with U-Boot entering the decompressor with the MMU on
+
+The U-Boot 2009.11 shipped on Cortina CS75xx boards jumps to the kernel
+with the MMU and caches still enabled and with dirty lines left in the
+data cache, which violates the ARM boot protocol and leaves the
+decompressor working on stale memory. Clean and invalidate the data
+cache, disable the MMU and caches, and invalidate the TLBs, I-cache and
+branch predictor before the normal entry path continues.
+
+Signed-off-by: Fil Dunsky <filipp.dunsky@gmail.com>
+---
+--- a/arch/arm/boot/compressed/head.S
++++ b/arch/arm/boot/compressed/head.S
+@@ -229,6 +229,35 @@ start:
+ 		mov	r7, r1			@ save architecture ID
+ 		mov	r8, r2			@ save atags pointer
+ 
++		/*
++		 * Cortina CS75xx U-Boot 2009.11 jumps here with the MMU still on
++		 * (identity tables with XN set everywhere, DACR = all manager)
++		 * and never cleans the data cache. Bring the CPU to the state the
++		 * boot protocol requires before touching the MMU ourselves.
++		 */
++		mrc	p15, 0, r0, c1, c0, 0
++		tst	r0, #1
++		beq	1f
++		mov	r0, #0
++		mov	r1, #0x08000000
++2:		mcr	p15, 0, r0, c7, c14, 1	@ clean+invalidate D line by MVA
++		add	r0, r0, #32
++		cmp	r0, r1
++		blo	2b
++		mov	r0, #0
++		mcr	p15, 0, r0, c7, c10, 4	@ DSB
++		mrc	p15, 0, r0, c1, c0, 0
++		bic	r0, r0, #0x1000		@ I-cache off
++		bic	r0, r0, #0x0005		@ MMU + D-cache off
++		mcr	p15, 0, r0, c1, c0, 0
++		mov	r0, #0
++		mcr	p15, 0, r0, c8, c7, 0	@ invalidate TLBs
++		mcr	p15, 0, r0, c7, c5, 0	@ invalidate I-cache
++		mcr	p15, 0, r0, c7, c5, 6	@ invalidate BTC
++		mcr	p15, 0, r0, c7, c10, 4	@ DSB
++		mcr	p15, 0, r0, c7, c5, 4	@ ISB
++1:
++
+ #ifndef CONFIG_CPU_V7M
+ 		/*
+ 		 * Booting from Angel - need to enter SVC mode and disable
