@@ -162,8 +162,7 @@ define KernelPackage/sound-soc-allo-digione
   FILES:= \
     $(LINUX_DIR)/sound/soc/codecs/snd-soc-wm8804.ko \
     $(LINUX_DIR)/sound/soc/codecs/snd-soc-wm8804-i2c.ko
-  AUTOLOAD:=$(call AutoLoad,68,snd-soc-wm8804-i2c snd-soc-wm8804 \
-    snd-soc-allo-digione)
+  AUTOLOAD:=$(call AutoLoad,68,snd-soc-wm8804-i2c snd-soc-wm8804)
   DEPENDS:= \
     kmod-sound-soc-bcm2835-i2s \
     +kmod-sound-soc-rpi-wm8804-soundcard \
@@ -293,8 +292,9 @@ define KernelPackage/sound-soc-audioinjector-isolated-soundcard
     CONFIG_SND_SOC_CS4271_I2C
   FILES:= \
     $(LINUX_DIR)/sound/soc/bcm/snd-soc-audioinjector-isolated-soundcard.ko \
-    $(LINUX_DIR)/sound/soc/codecs/snd-soc-wm8731.ko
-  AUTOLOAD:=$(call AutoLoad,68,snd-soc-cs4271.o \
+    $(LINUX_DIR)/sound/soc/codecs/snd-soc-cs4271.ko \
+    $(LINUX_DIR)/sound/soc/codecs/snd-soc-cs4271-i2c.ko
+  AUTOLOAD:=$(call AutoLoad,68,snd-soc-cs4271 \
     snd-soc-cs4271-i2c \
     snd-soc-audioinjector-isolated-soundcard)
   DEPENDS:= \
@@ -322,7 +322,7 @@ define KernelPackage/sound-soc-audioinjector-octo-soundcard
     $(LINUX_DIR)/sound/soc/bcm/snd-soc-audioinjector-octo-soundcard.ko \
     $(LINUX_DIR)/sound/soc/codecs/snd-soc-cs42xx8.ko \
     $(LINUX_DIR)/sound/soc/codecs/snd-soc-cs42xx8-i2c.ko
-  AUTOLOAD:=$(call AutoLoad,68,snd-soc- \
+  AUTOLOAD:=$(call AutoLoad,68,snd-soc-cs42xx8 snd-soc-cs42xx8-i2c \
     snd-soc-audioinjector-octo-soundcard)
   DEPENDS:= \
     kmod-sound-soc-bcm2835-i2s \
@@ -389,7 +389,8 @@ define KernelPackage/sound-soc-dacberry-soundcard
     CONFIG_SND_SOC_TLV320AIC3X_I2C
   FILES:= \
     $(LINUX_DIR)/sound/soc/bcm/snd-soc-dacberry400.ko \
-    $(LINUX_DIR)/sound/soc/codecs/snd-soc-tlv320aic3x.ko
+    $(LINUX_DIR)/sound/soc/codecs/snd-soc-tlv320aic3x.ko \
+    $(LINUX_DIR)/sound/soc/codecs/snd-soc-tlv320aic3x-i2c.ko
   AUTOLOAD:=$(call AutoLoad,68,snd-soc-tlv320aic3x-i2c snd-soc-dacberry400)
   DEPENDS:= \
     kmod-sound-soc-bcm2835-i2s \
