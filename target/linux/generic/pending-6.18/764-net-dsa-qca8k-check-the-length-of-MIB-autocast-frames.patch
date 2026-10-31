@@ -1,0 +1,46 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+Date: Thu, 22 Oct 2026 20:11:52 +0200
+From: Stanislaw Pal <kuncy7@gmail.com>
+Subject: [PATCH net 3/3] net: dsa: qca8k: check the length of MIB autocast
+ frames
+
+qca_tag_rcv() makes only the 2 byte tag linear before it hands a MIB
+frame to qca8k_mib_autocast_handler(). The handler then reads the
+counters that follow the Ethernet header, up to 164 bytes on QCA833x,
+straight from skb->data, without checking the frame length. A short or
+non-linear frame makes it read past the packet data.
+
+Pull the counters into the linear area before reading them. A frame
+that is too short is left uncounted, so the request times out and
+the caller reads the counters from the registers instead.
+
+Fixes: 5c957c7ca78c ("net: dsa: qca8k: add support for mib autocast in Ethernet packet")
+Assisted-by: Claude:claude-opus-5-5
+Signed-off-by: Stanislaw Pal <kuncy7@gmail.com>
+--- a/drivers/net/dsa/qca/qca8k-8xxx.c
++++ b/drivers/net/dsa/qca/qca8k-8xxx.c
+@@ -1640,6 +1640,7 @@ static void qca8k_mib_autocast_handler(s
+ 	struct qca8k_priv *priv = ds->priv;
+ 	const struct qca8k_mib_desc *mib;
+ 	struct mib_ethhdr *mib_ethhdr;
++	unsigned int len = 0;
+ 	__le32 *data2;
+ 	u8 port;
+ 	int i;
+@@ -1660,6 +1661,16 @@ static void qca8k_mib_autocast_handler(s
+ 	if (port != mib_eth_data->req_port)
+ 		goto exit;
+ 
++	/* Past the first 3, the counters follow the header. Leave a short
++	 * frame uncounted, so that the request times out and the caller
++	 * reads the registers instead.
++	 */
++	for (i = 3; i < priv->info->mib_count; i++)
++		len += ar8327_mib[i].size * sizeof(u32);
++	if (!pskb_may_pull(skb, len))
++		goto unlock;
++
++	mib_ethhdr = (struct mib_ethhdr *)skb_mac_header(skb);
+ 	data2 = (__le32 *)skb->data;
+ 
+ 	for (i = 0; i < priv->info->mib_count; i++) {

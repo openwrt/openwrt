@@ -1,0 +1,33 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+Date: Fri, 10 Oct 2026 18:23:10 +0200
+From: Stanislaw Pal <kuncy7@gmail.com>
+Subject: [PATCH] net: dsa: qca8k: read each register into its own word over MDIO
+
+qca8k_bulk_read() is the regmap read op. When the Ethernet management
+path is not available it falls back to reading the registers one by one
+over MDIO, but it stores register i at val_buf + i with val_buf a void
+pointer: the words land one byte apart and overwrite each other, and the
+last three bytes of a three-register read are never written.
+
+Every multi-register read over MDIO is garbage then - the ATU entry in
+qca8k_fdb_read() above all: the dump shows MACs made of the VID and the
+aging field, FDB_NEXT never moves past it, and a search reads a wrong
+status and port mask for the entry it found. With tag_qca the
+management frames carry these reads and the fallback is rarely taken;
+with a tagger that has no management frames it is taken every time.
+
+Store each register in its own u32.
+
+Signed-off-by: Stanislaw Pal <kuncy7@gmail.com>
+---
+--- a/drivers/net/dsa/qca/qca8k-8xxx.c
++++ b/drivers/net/dsa/qca/qca8k-8xxx.c
+@@ -514,7 +514,7 @@ qca8k_bulk_read(void *ctx, const void *r
+ 
+ 	/* loop count times and increment reg of 4 */
+ 	for (i = 0; i < count; i++, reg += sizeof(u32)) {
+-		ret = qca8k_read_mii(priv, reg, val_buf + i);
++		ret = qca8k_read_mii(priv, reg, (u32 *)val_buf + i);
+ 		if (ret < 0)
+ 			return ret;
+ 	}

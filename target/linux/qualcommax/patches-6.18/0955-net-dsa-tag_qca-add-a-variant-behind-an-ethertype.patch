@@ -36,17 +36,17 @@ Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
  #define DSA_TAG_PROTO_MXL862_VALUE		30
  #define DSA_TAG_PROTO_MXL862_8021Q_VALUE	31
 +#define DSA_TAG_PROTO_QCA_ETYPE_VALUE		32
+ #define DSA_TAG_PROTO_QCA_8021Q_VALUE		33
  
  enum dsa_tag_protocol {
- 	DSA_TAG_PROTO_NONE		= DSA_TAG_PROTO_NONE_VALUE,
-@@ -91,6 +92,7 @@ enum dsa_tag_protocol {
+@@ -92,6 +93,7 @@ enum dsa_tag_protocol {
  	DSA_TAG_PROTO_VSC73XX_8021Q	= DSA_TAG_PROTO_VSC73XX_8021Q_VALUE,
  	DSA_TAG_PROTO_MXL862		= DSA_TAG_PROTO_MXL862_VALUE,
  	DSA_TAG_PROTO_MXL862_8021Q	= DSA_TAG_PROTO_MXL862_8021Q_VALUE,
 +	DSA_TAG_PROTO_QCA_ETYPE		= DSA_TAG_PROTO_QCA_ETYPE_VALUE,
+ 	DSA_TAG_PROTO_QCA_8021Q		= DSA_TAG_PROTO_QCA_8021Q_VALUE,
  };
  
- struct dsa_switch;
 --- a/net/dsa/tag_qca.c
 +++ b/net/dsa/tag_qca.c
 @@ -11,17 +11,21 @@
