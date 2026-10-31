@@ -13,6 +13,7 @@
 #include <linux/string.h>
 #include <net/dsa.h>
 
+#include "l3.h"
 #include "pie.h"
 #include "rtl-otto.h"
 #include "stats.h"
@@ -948,16 +949,21 @@ int otto_stats_packet_cntr_alloc(struct otto_dsa_priv *priv)
 	 * allocator. Keep that range reserved so a route counter handed out
 	 * here cannot alias a flow's LOG entry.
 	 *
-	 * The offload is ingress-only, so PIE rule IDs currently populate
-	 * only the lower half of that range, and a route counter's LOG entry
-	 * (idx / 2) never dips below the upper half either. If egress PIE
-	 * rules are ever wired up, this reservation needs to grow so their
-	 * LOG entries stay clear of route counters too.
+	 * Ordinary ingress offload uses only the lower half of the PIE rule
+	 * IDs. Fasttrack also uses the upper half: reserve every implicit LOG
+	 * entry by skipping both packet-counter halves of each one. On RTL930x
+	 * that leaves no standalone counters; TC and flows use their own rule
+	 * IDs and ordinary routes use the separate L3 tables.
 	 */
-	if (priv->r->pie_rule_id_is_log_counter)
-		base = priv->r->n_pie_blocks * PIE_BLOCK_SIZE;
-
 	scoped_guard(mutex, &priv->reg_mutex) {
+		/* PIE preparation publishes its reservation under this same lock,
+		 * before changing any LOG entry or opening flow callbacks.
+		 */
+		if (priv->r->pie_rule_id_is_log_counter) {
+			base = priv->r->n_pie_blocks * PIE_BLOCK_SIZE;
+			if (READ_ONCE(priv->flow_pie_reserved))
+				base *= 2;
+		}
 		idx = find_next_bit(priv->packet_cntr_use_bm, priv->r->n_counters * 2, base);
 		if (idx >= priv->r->n_counters * 2) {
 			j = find_next_zero_bit(priv->octet_cntr_use_bm, priv->r->n_counters,

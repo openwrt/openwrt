@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
 #include <net/dsa.h>
+#include <linux/bitmap.h>
+#include <linux/debugfs.h>
 #include <linux/delay.h>
 #include <linux/etherdevice.h>
 #include <linux/math64.h>
@@ -8,6 +10,9 @@
 #include <linux/regmap.h>
 #include <net/flow_offload.h>
 #include <linux/rhashtable.h>
+#include <linux/seq_file.h>
+#include <linux/sort.h>
+#include <linux/vmalloc.h>
 #include <asm/mach-rtl-otto/mach-rtl-otto.h>
 
 #include "pie.h"
@@ -23,6 +28,8 @@ struct rtl83xx_flow {
 	struct otto_dsa_priv *priv;
 	struct pie_rule rule;
 	u32 flags;
+	u32 chain_index;
+	u32 priority;
 };
 
 #define RTL930X_BANDWIDTH_CTRL_EGRESS(port)	(0x7660 + (port * 16))
@@ -390,6 +397,295 @@ static const struct rhashtable_params tc_ht_params = {
 	.automatic_shrinking = true,
 };
 
+struct otto_tc_debug_entry {
+	struct pie_rule rule;
+	unsigned long cookie;
+	u32 chain_index, priority, packets;
+};
+
+struct otto_tc_debug_snapshot {
+	struct otto_pie_tc_status pie;
+	struct otto_tc_debug_entry *entries;
+	unsigned int count;
+	u8 cpu_port;
+};
+
+static int otto_tc_debug_entry_cmp(const void *a, const void *b)
+{
+	const struct otto_tc_debug_entry *left = a, *right = b;
+
+	return left->rule.id - right->rule.id;
+}
+
+/* Only open accesses the switch. The debugfs proxy pins the device data
+ * during open; subsequent reads and release use this independent snapshot.
+ * Never sleep inside the hash walker, which holds RCU. Deduplicate by PIE ID
+ * because a concurrent hash resize can restart the walk with -EAGAIN.
+ */
+static int otto_tc_debug_snapshot(struct otto_dsa_priv *priv,
+				  struct otto_tc_debug_snapshot *snapshot)
+{
+	DECLARE_BITMAP(seen, MAX_PIE_ENTRIES);
+	struct rhashtable_iter iter;
+	struct rtl83xx_flow *flow;
+	unsigned int capacity;
+	int err = 0;
+
+	guard(mutex)(&priv->tc_flow_lock);
+	if (!priv->tc_initialized)
+		return -ENODEV;
+	capacity = atomic_read(&priv->tc_ht.nelems);
+	if (capacity > MAX_PIE_ENTRIES)
+		return -EIO;
+	if (capacity) {
+		snapshot->entries = kvcalloc(capacity, sizeof(*snapshot->entries), GFP_KERNEL);
+		if (!snapshot->entries)
+			return -ENOMEM;
+		bitmap_zero(seen, MAX_PIE_ENTRIES);
+		rhashtable_walk_enter(&priv->tc_ht, &iter);
+		rhashtable_walk_start(&iter);
+		while ((flow = rhashtable_walk_next(&iter))) {
+			struct otto_tc_debug_entry *entry;
+
+			if (IS_ERR(flow)) {
+				err = PTR_ERR(flow);
+				if (err == -EAGAIN) {
+					err = 0;
+					continue;
+				}
+				break;
+			}
+			if (flow->rule.id < 0 ||
+			    flow->rule.id >= ARRAY_SIZE(snapshot->pie.blocks) * PIE_BLOCK_SIZE ||
+			    flow->rule.tid > 1 || flow->rule.n_rules > 2 ||
+			    (flow->rule.n_rules == 2 && (flow->rule.id & 1))) {
+				err = -EIO;
+				break;
+			}
+			if (test_and_set_bit(flow->rule.id, seen))
+				continue;
+			if (snapshot->count == capacity) {
+				err = -EOVERFLOW;
+				break;
+			}
+			entry = &snapshot->entries[snapshot->count++];
+			entry->rule = flow->rule;
+			entry->cookie = flow->cookie;
+			entry->chain_index = flow->chain_index;
+			entry->priority = flow->priority;
+		}
+		rhashtable_walk_stop(&iter);
+		rhashtable_walk_exit(&iter);
+		if (err)
+			return err;
+		sort(snapshot->entries, snapshot->count, sizeof(*snapshot->entries),
+		     otto_tc_debug_entry_cmp, NULL);
+	}
+	otto_pie_930x_tc_status(priv, &snapshot->pie);
+	snapshot->cpu_port = priv->r->cpu_port;
+	/* Read absolute counts without consuming the deltas reported to TC. */
+	guard(mutex)(&priv->reg_mutex);
+	for (unsigned int i = 0; i < snapshot->count; i++) {
+		struct otto_tc_debug_entry *entry = &snapshot->entries[i];
+
+		if (entry->rule.packet_cntr >= 0)
+			entry->packets = priv->r->packet_cntr_read(priv, entry->rule.packet_cntr);
+	}
+	return 0;
+}
+
+static int otto_tc_status_show(struct seq_file *s, void *unused)
+{
+	struct otto_tc_debug_snapshot *snapshot = s->private;
+	struct otto_pie_tc_status *pie = &snapshot->pie;
+	unsigned int total = 0, used = 0, conflicts = 0;
+
+	for (int block = 0; block < ARRAY_SIZE(pie->blocks); block++) {
+		struct otto_pie_tc_block *b = &pie->blocks[block];
+
+		if (block < ARRAY_SIZE(pie->blocks) / 2 && !b->reserved) {
+			total += PIE_BLOCK_SIZE;
+			used += b->used;
+		}
+		if (!pie->flow_reserved && block >= RTL930X_PIE_FLOW_FIRST / PIE_BLOCK_SIZE)
+			conflicts += b->used;
+	}
+	seq_printf(s, "enabled 1\nactive %u\nrules_total %u\nrules_used %u\nrules_available %u\n",
+		   snapshot->count, total, used, total - used);
+	seq_printf(s, "fasttrack_reserved %u\nfasttrack_hw_error %u\nfasttrack_conflicting_rows %u\n",
+		   pie->flow_reserved, pie->flow_failed, conflicts);
+	seq_puts(s, "block first last phase lookup template0 template1 owner used available tc_rules\n");
+	for (int block = 0; block < ARRAY_SIZE(pie->blocks); block++) {
+		struct otto_pie_tc_block *b = &pie->blocks[block];
+		bool ingress = block < ARRAY_SIZE(pie->blocks) / 2;
+		unsigned int active = 0;
+
+		for (unsigned int i = 0; i < snapshot->count; i++)
+			active += snapshot->entries[i].rule.id / PIE_BLOCK_SIZE == block;
+		seq_printf(s, "%d %d %d %s %u %u %u %s %u %u %u\n",
+			   block, block * PIE_BLOCK_SIZE, (block + 1) * PIE_BLOCK_SIZE - 1,
+			   b->phase ? "iacl" : "vacl", b->lookup,
+			   b->templates[0], b->templates[1],
+			   b->reserved ? "fasttrack" : ingress ? "tc" : "egress",
+			   b->used, ingress && !b->reserved ? PIE_BLOCK_SIZE - b->used : 0,
+			   active);
+	}
+	return 0;
+}
+
+static int otto_tc_mask_len(const u8 *mask, unsigned int bytes)
+{
+	unsigned int prefix = 0;
+	bool zero = false;
+
+	for (unsigned int bit = 0; bit < bytes * 8; bit++) {
+		if (mask[bit / 8] & BIT(7 - bit % 8)) {
+			if (zero)
+				return -1;
+			prefix++;
+		} else {
+			zero = true;
+		}
+	}
+	return prefix;
+}
+
+static void otto_tc_debug_address(struct seq_file *s, const char *name,
+				  const void *address, const void *mask, bool ipv6)
+{
+	int prefix = otto_tc_mask_len(mask, ipv6 ? 16 : 4);
+
+	if (!prefix)
+		return;
+	seq_printf(s, ipv6 ? " %s=%pI6c" : " %s=%pI4", name, address);
+	if (prefix >= 0)
+		seq_printf(s, "/%d", prefix);
+	else
+		seq_printf(s, ipv6 ? "/%pI6c" : "/%pI4", mask);
+}
+
+static const char *otto_tc_debug_action(const struct pie_rule *rule, u8 cpu_port)
+{
+	if (rule->drop)
+		return "drop";
+	if (rule->fwd_sel) {
+		if (rule->fwd_act == PIE_ACT_REDIRECT_TO_PORT)
+			return rule->fwd_data == cpu_port ? "trap" : "redirect";
+		if (rule->fwd_act == PIE_ACT_COPY_TO_PORT)
+			return "mirror";
+	}
+	return rule->mir_sel ? "mirror" : "none";
+}
+
+static int otto_tc_flows_show(struct seq_file *s, void *unused)
+{
+	struct otto_tc_debug_snapshot *snapshot = s->private;
+
+	seq_puts(s, "rule block template tid ingress family action target counter packets cookie chain pref match\n");
+	for (unsigned int i = 0; i < snapshot->count; i++) {
+		struct otto_tc_debug_entry *entry = &snapshot->entries[i];
+		struct pie_rule *r = &entry->rule;
+		unsigned int block = r->id / PIE_BLOCK_SIZE;
+		u8 template = snapshot->pie.blocks[block].templates[r->tid];
+		const char *family = "any";
+
+		if (r->frame_type_m == 3)
+			family = r->frame_type == 3 ? "ipv6" : r->frame_type == 2 ? "ipv4" :
+				 r->frame_type == 0 ? "arp" : "l2";
+		seq_printf(s, "%d %u %u %u %u %s %s ", r->id, block, template,
+			   r->tid, r->spn, family, otto_tc_debug_action(r, snapshot->cpu_port));
+		if (r->fwd_sel)
+			seq_printf(s, "%u ", r->fwd_data);
+		else if (r->mir_sel)
+			seq_printf(s, "mirror:%u ", r->mir_data);
+		else
+			seq_puts(s, "- ");
+		seq_printf(s, "%d %u %p %u %u", r->packet_cntr, entry->packets,
+			   (void *)entry->cookie, entry->chain_index, entry->priority);
+		otto_tc_debug_address(s, "src", r->is_ipv6 ? (void *)&r->sip6 : &r->sip,
+				      r->is_ipv6 ? (void *)&r->sip6_m : &r->sip_m, r->is_ipv6);
+		otto_tc_debug_address(s, "dst", r->is_ipv6 ? (void *)&r->dip6 : &r->dip,
+				      r->is_ipv6 ? (void *)&r->dip6_m : &r->dip_m, r->is_ipv6);
+		if (r->frame_type_l4_m)
+			seq_printf(s, " l4=%s", r->frame_type_l4 == 0 ? "udp" :
+				   r->frame_type_l4 == 1 ? "tcp" : r->frame_type_l4 == 2 ?
+				   (r->frame_type == 3 ? "icmpv6" : "icmp") : "igmp");
+		if (r->sport_m)
+			seq_printf(s, " sport=%u/%04x", ntohs(r->sport), ntohs(r->sport_m));
+		if (r->dport_m)
+			seq_printf(s, " dport=%u/%04x", ntohs(r->dport), ntohs(r->dport_m));
+		if (r->itag_m)
+			seq_printf(s, " vlan=%u/%03x", r->itag, r->itag_m);
+		if (r->ethertype_m)
+			seq_printf(s, " ethertype=%04x/%04x", r->ethertype, r->ethertype_m);
+		if (!is_zero_ether_addr(r->smac_m))
+			seq_printf(s, " smac=%pM/%pM", r->smac, r->smac_m);
+		if (!is_zero_ether_addr(r->dmac_m))
+			seq_printf(s, " dmac=%pM/%pM", r->dmac, r->dmac_m);
+		if (r->n_rules == 2)
+			seq_printf(s, " rows=2 companion=%d companion_template=%u", r->id + 1,
+				   snapshot->pie.blocks[block].templates[r->tid ^ 1]);
+		seq_putc(s, '\n');
+	}
+	return 0;
+}
+
+static int otto_tc_debug_open(struct inode *inode, struct file *file,
+			      int (*show)(struct seq_file *, void *))
+{
+	struct otto_tc_debug_snapshot *snapshot;
+	int err;
+
+	snapshot = kzalloc(sizeof(*snapshot), GFP_KERNEL);
+	if (!snapshot)
+		return -ENOMEM;
+	err = otto_tc_debug_snapshot(inode->i_private, snapshot);
+	if (!err)
+		err = single_open(file, show, snapshot);
+	if (err) {
+		kvfree(snapshot->entries);
+		kfree(snapshot);
+	}
+	return err;
+}
+
+static int otto_tc_status_open(struct inode *inode, struct file *file)
+{
+	return otto_tc_debug_open(inode, file, otto_tc_status_show);
+}
+
+static int otto_tc_flows_open(struct inode *inode, struct file *file)
+{
+	return otto_tc_debug_open(inode, file, otto_tc_flows_show);
+}
+
+static int otto_tc_debug_release(struct inode *inode, struct file *file)
+{
+	struct seq_file *seq = file->private_data;
+	struct otto_tc_debug_snapshot *snapshot = seq->private;
+	int err = single_release(inode, file);
+
+	kvfree(snapshot->entries);
+	kfree(snapshot);
+	return err;
+}
+
+static const struct file_operations otto_tc_status_fops = {
+	.owner = THIS_MODULE,
+	.open = otto_tc_status_open,
+	.read = seq_read,
+	.llseek = seq_lseek,
+	.release = otto_tc_debug_release,
+};
+
+static const struct file_operations otto_tc_flows_fops = {
+	.owner = THIS_MODULE,
+	.open = otto_tc_flows_open,
+	.read = seq_read,
+	.llseek = seq_lseek,
+	.release = otto_tc_debug_release,
+};
+
 int otto_tc_init(struct otto_dsa_priv *priv)
 {
 	int err;
@@ -403,6 +699,15 @@ int otto_tc_init(struct otto_dsa_priv *priv)
 
 	mutex_init(&priv->tc_flow_lock);
 	priv->tc_initialized = true;
+	if (priv->r->pie_rule_add == otto_pie_930x_rule_add) {
+		priv->tc_debugfs = debugfs_create_dir("realtek_otto_tc", NULL);
+		if (!IS_ERR_OR_NULL(priv->tc_debugfs)) {
+			debugfs_create_file("status", 0400, priv->tc_debugfs, priv,
+					    &otto_tc_status_fops);
+			debugfs_create_file("flows", 0400, priv->tc_debugfs, priv,
+					    &otto_tc_flows_fops);
+		}
+	}
 
 	return 0;
 }
@@ -449,6 +754,8 @@ void otto_tc_cleanup(struct otto_dsa_priv *priv)
 {
 	if (!priv->tc_initialized)
 		return;
+	debugfs_remove_recursive(priv->tc_debugfs);
+	priv->tc_debugfs = NULL;
 
 	/* Hold tc_flow_lock like the add/del/stats callbacks do: any
 	 * callback that slipped in before teardown must finish before the
@@ -504,6 +811,8 @@ static int otto_tc_configure_flower(struct otto_dsa_priv *priv,
 
 	flow->cookie = f->cookie;
 	flow->priv = priv;
+	flow->chain_index = f->common.chain_index;
+	flow->priority = f->common.prio;
 	/* kzalloc() leaves this at 0, a valid counter id; -1 means "none". */
 	flow->rule.packet_cntr = -1;
 
