@@ -209,7 +209,7 @@
 		ieee80211-freq-limit = <5170000 5350000>;
 		nvmem-cell-names = "pre-calibration";
 		nvmem-cells = <&precal_art_9000>;
-		qcom,ath10k-calibration-variant = "OM-A62";
+		qcom,calibration-variant = "OM-A62";
 	};
 };
 
@@ -243,7 +243,7 @@
 
 &wifi0 {
 	status = "okay";
-	qcom,ath10k-calibration-variant = "OM-A62";
+	qcom,calibration-variant = "OM-A62";
 
 	nvmem-cell-names = "pre-calibration";
 	nvmem-cells = <&precal_art_1000>;
@@ -251,7 +251,7 @@
 
 &wifi1 {
 	status = "okay";
-	qcom,ath10k-calibration-variant = "OM-A62";
+	qcom,calibration-variant = "OM-A62";
 	ieee80211-freq-limit = <5470000 5875000>;
 
 	nvmem-cell-names = "pre-calibration";
