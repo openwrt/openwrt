@@ -283,6 +283,7 @@ endef
 define KernelPackage/ath10k
   $(call KernelPackage/ath10k/Default)
   VARIANT:=regular
+  CONFLICTS:=kmod-ath10k-ct kmod-ath10k-ct-smallbuffers
   DEFAULT_VARIANT:=1
 endef
 
@@ -309,6 +310,7 @@ define KernelPackage/ath10k-smallbuffers
   $(call KernelPackage/ath10k/Default)
   TITLE+= (small buffers for low-RAM devices)
   VARIANT:=smallbuffers
+  CONFLICTS:=kmod-ath10k kmod-ath10k-ct kmod-ath10k-ct-smallbuffers
   PROVIDES:=@kmod-ath10k-any
 endef
 
