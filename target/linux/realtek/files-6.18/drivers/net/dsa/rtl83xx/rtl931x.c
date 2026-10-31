@@ -444,7 +444,7 @@ rtldsa_931x_mac_link_state_source_set(struct otto_dsa_priv *priv,
 const struct rtldsa_config rtldsa_931x_cfg = {
 	.switch_ops = &rtldsa_93xx_switch_ops,
 	.phylink_mac_ops = &rtldsa_93xx_phylink_mac_ops,
-	.stp_init = rtldsa_931x_stp_init,
+	.stp_init = otto_stp_931x_init,
 	.l2_bucket_size = 8,
 	.n_mst = 128,
 	.num_lag_ids = 16,
@@ -489,8 +489,8 @@ const struct rtldsa_config rtldsa_931x_cfg = {
 	.vlan_profile_dump = otto_vlan_931x_profile_dump,
 	.vlan_profile_setup = otto_vlan_931x_profile_setup,
 	.vlan_fwd_on_inner = otto_vlan_931x_port_forward_on_inner,
-	.stp_get = rtldsa_931x_stp_get,
-	.stp_set = rtl931x_stp_set,
+	.stp_get = otto_stp_931x_get,
+	.stp_set = otto_stp_931x_set,
 	.mac_force_mode = {
 		.force_en_mask = RTL931X_FORCE_LINK_EN |
 				 RTL931X_FORCE_DUPLEX_EN |

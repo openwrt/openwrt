@@ -14,27 +14,27 @@
 #define RTL930X_ST_CTRL				(0x8798)
 #define RTL931X_ST_CTRL				(0x8000)
 
-void rtldsa_838x_stp_init(void)
+void otto_stp_838x_init(void)
 {
 	sw_w32(0, RTL838X_VLAN_STP_CTRL);
 }
 
-void rtldsa_839x_stp_init(void)
+void otto_stp_839x_init(void)
 {
 	sw_w32(0, RTL839X_ST_CTRL);
 }
 
-void rtldsa_930x_stp_init(void)
+void otto_stp_930x_init(void)
 {
 	sw_w32(0, RTL930X_ST_CTRL);
 }
 
-void rtldsa_931x_stp_init(void)
+void otto_stp_931x_init(void)
 {
 	sw_w32(0, RTL931X_ST_CTRL);
 }
 
-int rtldsa_838x_stp_get(struct otto_dsa_priv *priv, u16 msti, int port)
+int otto_stp_838x_get(struct otto_dsa_priv *priv, u16 msti, int port)
 {
 	int idx = 1 - (port / 16);
 	int bit = 2 * (port % 16);
@@ -48,7 +48,7 @@ int rtldsa_838x_stp_get(struct otto_dsa_priv *priv, u16 msti, int port)
 	return state;
 }
 
-void rtl838x_stp_set(struct otto_dsa_priv *priv, u16 msti, int port, int state)
+void otto_stp_838x_set(struct otto_dsa_priv *priv, u16 msti, int port, int state)
 {
 	int tbl = otto_table_acquire(RTL8380_TBL_MSTI);
 	int idx = 1 - (port / 16);
@@ -62,7 +62,7 @@ void rtl838x_stp_set(struct otto_dsa_priv *priv, u16 msti, int port, int state)
 	otto_table_release(tbl);
 }
 
-int rtldsa_839x_stp_get(struct otto_dsa_priv *priv, u16 msti, int port)
+int otto_stp_839x_get(struct otto_dsa_priv *priv, u16 msti, int port)
 {
 	int idx = 3 - ((port + 12) / 16);
 	int bit = 2 * ((port + 12) % 16);
@@ -76,7 +76,7 @@ int rtldsa_839x_stp_get(struct otto_dsa_priv *priv, u16 msti, int port)
 	return state;
 }
 
-void rtl839x_stp_set(struct otto_dsa_priv *priv, u16 msti, int port, int state)
+void otto_stp_839x_set(struct otto_dsa_priv *priv, u16 msti, int port, int state)
 {
 	int tbl = otto_table_acquire(RTL8390_TBL_MSTI);
 	int idx = 3 - ((port + 12) / 16);
@@ -90,7 +90,7 @@ void rtl839x_stp_set(struct otto_dsa_priv *priv, u16 msti, int port, int state)
 	otto_table_release(tbl);
 }
 
-int rtldsa_930x_stp_get(struct otto_dsa_priv *priv, u16 msti, int port)
+int otto_stp_930x_get(struct otto_dsa_priv *priv, u16 msti, int port)
 {
 	int idx = 1 - ((port + 3) / 16);
 	int bit = 2 * ((port + 3) % 16);
@@ -104,7 +104,7 @@ int rtldsa_930x_stp_get(struct otto_dsa_priv *priv, u16 msti, int port)
 	return state;
 }
 
-void rtl930x_stp_set(struct otto_dsa_priv *priv, u16 msti, int port, int state)
+void otto_stp_930x_set(struct otto_dsa_priv *priv, u16 msti, int port, int state)
 {
 	int tbl = otto_table_acquire(RTL9300_TBL_MSTI);
 	int idx = 1 - ((port + 3) / 16);
@@ -118,7 +118,7 @@ void rtl930x_stp_set(struct otto_dsa_priv *priv, u16 msti, int port, int state)
 	otto_table_release(tbl);
 }
 
-int rtldsa_931x_stp_get(struct otto_dsa_priv *priv, u16 msti, int port)
+int otto_stp_931x_get(struct otto_dsa_priv *priv, u16 msti, int port)
 {
 	int idx = 3 - ((port + 8) / 16);
 	int bit = 2 * ((port + 8) % 16);
@@ -132,7 +132,7 @@ int rtldsa_931x_stp_get(struct otto_dsa_priv *priv, u16 msti, int port)
 	return state;
 }
 
-void rtl931x_stp_set(struct otto_dsa_priv *priv, u16 msti, int port, int state)
+void otto_stp_931x_set(struct otto_dsa_priv *priv, u16 msti, int port, int state)
 {
 	int tbl = otto_table_acquire(RTL9310_TBL_MSTI);
 	int idx = 3 - ((port + 8) / 16);
@@ -146,9 +146,9 @@ void rtl931x_stp_set(struct otto_dsa_priv *priv, u16 msti, int port, int state)
 	otto_table_release(tbl);
 }
 
-static void rtldsa_port_xstp_state_set(struct otto_dsa_priv *priv, int port,
-				       u8 state, u16 mst_slot)
-				       __must_hold(&priv->reg_mutex)
+static void otto_stp_port_slot_state_set(struct otto_dsa_priv *priv, int port,
+					 u8 state, u16 mst_slot)
+					 __must_hold(&priv->reg_mutex)
 {
 	int hw_state;
 
@@ -178,12 +178,12 @@ static void rtldsa_port_xstp_state_set(struct otto_dsa_priv *priv, int port,
 }
 
 /**
- * rtldsa_mst_init() - Initialize newly "allocated" MST HW slot
+ * otto_stp_slot_init() - Initialize newly "allocated" MST HW slot
  * @priv: private data of rtldsa switch
  * @mst_slot: MST slot of MSTI
  */
-static void rtldsa_mst_init(struct otto_dsa_priv *priv, u16 mst_slot)
-			    __must_hold(&priv->reg_mutex)
+static void otto_stp_slot_init(struct otto_dsa_priv *priv, u16 mst_slot)
+			       __must_hold(&priv->reg_mutex)
 {
 	struct dsa_port *dp;
 	unsigned int port;
@@ -197,19 +197,19 @@ static void rtldsa_mst_init(struct otto_dsa_priv *priv, u16 mst_slot)
 
 		port = dp->index;
 
-		rtldsa_port_xstp_state_set(priv, port, state, mst_slot);
+		otto_stp_port_slot_state_set(priv, port, state, mst_slot);
 	}
 }
 
 /**
- * rtldsa_mst_find() - Find HW MST slot for MSTI (without reference counting)
+ * otto_stp_slot_find() - Find HW MST slot for MSTI (without reference counting)
  * @priv: private data of rtldsa switch
  * @msti: MSTI to search
  *
  * Return: found HW slot (unmodified reference count) or negative encoded error value
  */
-static int rtldsa_mst_find(struct otto_dsa_priv *priv, u16 msti)
-			   __must_hold(&priv->reg_mutex)
+static int otto_stp_slot_find(struct otto_dsa_priv *priv, u16 msti)
+			      __must_hold(&priv->reg_mutex)
 {
 	unsigned int i;
 
@@ -232,19 +232,19 @@ static int rtldsa_mst_find(struct otto_dsa_priv *priv, u16 msti)
 }
 
 /**
- * rtldsa_mst_get() - Get (or allocate) HW MST slot for MSTI
+ * otto_stp_slot_get() - Get (or allocate) HW MST slot for MSTI
  * @priv: private data of rtldsa switch
  * @msti: MSTI for which a HW slot is needed
  *
  * Return: allocated slot (with increased reference count) or negative encoded error value
  */
-static int rtldsa_mst_get(struct otto_dsa_priv *priv, u16 msti)
-			  __must_hold(&priv->reg_mutex)
+static int otto_stp_slot_get(struct otto_dsa_priv *priv, u16 msti)
+			     __must_hold(&priv->reg_mutex)
 {
 	unsigned int i;
 	int ret;
 
-	ret = rtldsa_mst_find(priv, msti);
+	ret = otto_stp_slot_find(priv, msti);
 
 	/* CIST doesn't need reference counting */
 	if (ret == 0)
@@ -270,7 +270,7 @@ static int rtldsa_mst_get(struct otto_dsa_priv *priv, u16 msti)
 		kref_init(&priv->msts[i].refcount);
 		priv->msts[i].msti = msti;
 
-		rtldsa_mst_init(priv, i + 1);
+		otto_stp_slot_init(priv, i + 1);
 		return i + 1;
 	}
 
@@ -278,7 +278,7 @@ static int rtldsa_mst_get(struct otto_dsa_priv *priv, u16 msti)
 }
 
 /**
- * rtldsa_mst_recycle_slot() - Try to recycle old MST slot in case of -ENOSPC of rtldsa_mst_get()
+ * otto_stp_slot_recycle() - Reuse the old slot when no free slot is available
  * @priv: private data of rtldsa switch
  * @msti: MSTI for which a HW slot is needed
  * @old_mst_slot: old mst slot which will be released "soon"
@@ -288,14 +288,14 @@ static int rtldsa_mst_get(struct otto_dsa_priv *priv, u16 msti)
  * by a single VLAN anyway, it is not needed to really allocate a new slow - reassigning it to
  * the new MSTI is good enough.
  *
- * This is only allowed when holding the reg_mutex over both calls rtldsa_mst_get() and
- * rtldsa_mst_recycle(). After a rtldsa_mst_recycle() call, rtldsa_mst_put_slot() must no longer
+ * This is only allowed when holding the reg_mutex over both calls otto_stp_slot_get() and
+ * otto_stp_slot_recycle(). After otto_stp_slot_recycle(), otto_stp_slot_put() must no longer
  * be called for @old_mst_slot.
  *
  * Return: allocated slot (with increased reference count) or negative encoded error value
  */
-static int rtldsa_mst_recycle_slot(struct otto_dsa_priv *priv, u16 msti, u16 old_mst_slot)
-				   __must_hold(&priv->reg_mutex)
+static int otto_stp_slot_recycle(struct otto_dsa_priv *priv, u16 msti, u16 old_mst_slot)
+				 __must_hold(&priv->reg_mutex)
 {
 	u16 index;
 
@@ -314,7 +314,7 @@ static int rtldsa_mst_recycle_slot(struct otto_dsa_priv *priv, u16 msti, u16 old
 
 	index = old_mst_slot - 1;
 
-	/* this slot is unused - should not happen because rtldsa_mst_get() searches for it */
+	/* this slot is unused - should not happen because otto_stp_slot_get() searches for it */
 	if (priv->msts[index].msti == 0)
 		return -EINVAL;
 
@@ -326,7 +326,7 @@ static int rtldsa_mst_recycle_slot(struct otto_dsa_priv *priv, u16 msti, u16 old
 	return old_mst_slot;
 }
 
-static void rtldsa_mst_release_slot(struct kref *ref)
+static void otto_stp_slot_release(struct kref *ref)
 {
 	struct rtldsa_mst *slot = container_of(ref, struct rtldsa_mst, refcount);
 
@@ -334,15 +334,15 @@ static void rtldsa_mst_release_slot(struct kref *ref)
 }
 
 /**
- * rtldsa_mst_put_slot() - Decrement VLAN use counter for MST slot
+ * otto_stp_slot_put() - Decrement VLAN use counter for MST slot
  * @priv: private data of rtldsa switch
  * @mst_slot: MST slot which should be put
  *
  * Return: false when MST slot reference counter was only decreased or an invalid @mst_slot was
  * given, true when @mst_slot is now unused
  */
-bool rtldsa_mst_put_slot(struct otto_dsa_priv *priv, u16 mst_slot)
-				__must_hold(&priv->reg_mutex)
+bool otto_stp_slot_put(struct otto_dsa_priv *priv, u16 mst_slot)
+		       __must_hold(&priv->reg_mutex)
 {
 	unsigned int index;
 
@@ -359,46 +359,46 @@ bool rtldsa_mst_put_slot(struct otto_dsa_priv *priv, u16 mst_slot)
 	if (priv->msts[index].msti == 0)
 		return 0;
 
-	return kref_put(&priv->msts[index].refcount, rtldsa_mst_release_slot);
+	return kref_put(&priv->msts[index].refcount, otto_stp_slot_release);
 }
 
 /**
- * rtldsa_mst_replace() - Get HW slot for @msti and drop old HW slot
+ * otto_stp_slot_replace() - Get HW slot for @msti and drop old HW slot
  * @priv: private data of rtldsa switch
  * @msti: MSTI for which a HW slot is needed
  * @old_mst_slot: old mst slot which will no longer be assigned to VLAN
  *
  * Return: allocated slot (with increased reference count) or negative encoded error value
  */
-int rtldsa_mst_replace(struct otto_dsa_priv *priv, u16 msti, u16 old_mst_slot)
-			      __must_hold(&priv->reg_mutex)
+int otto_stp_slot_replace(struct otto_dsa_priv *priv, u16 msti, u16 old_mst_slot)
+			  __must_hold(&priv->reg_mutex)
 {
 	int mst_slot_new;
 
-	mst_slot_new = rtldsa_mst_get(priv, msti);
+	mst_slot_new = otto_stp_slot_get(priv, msti);
 	if (mst_slot_new == -ENOSPC)
-		return rtldsa_mst_recycle_slot(priv, msti, old_mst_slot);
+		return otto_stp_slot_recycle(priv, msti, old_mst_slot);
 
 	/* directly return errors and don't free old slot */
 	if (mst_slot_new < 0)
 		return mst_slot_new;
 
-	rtldsa_mst_put_slot(priv, old_mst_slot);
+	otto_stp_slot_put(priv, old_mst_slot);
 
 	return mst_slot_new;
 }
 
 /* Set non-CIST port states while the caller holds reg_mutex. */
-void rtldsa_port_non_cist_states_set(struct otto_dsa_priv *priv, int port, u8 state)
-			      __must_hold(&priv->reg_mutex)
+void otto_stp_port_non_cist_states_set(struct otto_dsa_priv *priv, int port, u8 state)
+				       __must_hold(&priv->reg_mutex)
 {
 	unsigned int i;
 
 	for (i = 1; i < priv->r->n_mst; i++)
-		rtldsa_port_xstp_state_set(priv, port, state, i);
+		otto_stp_port_slot_state_set(priv, port, state, i);
 }
 
-int rtldsa_port_get_stp_state(struct otto_dsa_priv *priv, int port)
+int otto_stp_port_state_get(struct otto_dsa_priv *priv, int port)
 {
 	u32 msti = 0;
 	int state;
@@ -413,36 +413,36 @@ int rtldsa_port_get_stp_state(struct otto_dsa_priv *priv, int port)
 	return state;
 }
 
-void rtldsa_port_stp_state_set(struct dsa_switch *ds, int port, u8 state)
+void otto_stp_port_state_set(struct dsa_switch *ds, int port, u8 state)
 {
 	struct otto_dsa_priv *priv = ds->priv;
 	struct dsa_port *dp = dsa_to_port(ds, port);
 
 	mutex_lock(&priv->reg_mutex);
-	rtldsa_port_xstp_state_set(priv, port, state, 0);
+	otto_stp_port_slot_state_set(priv, port, state, 0);
 
 	/* for unbridged ports, also force the same state to the MSTIs */
 	if (!dp->bridge)
-		rtldsa_port_non_cist_states_set(priv, port, state);
+		otto_stp_port_non_cist_states_set(priv, port, state);
 
 	mutex_unlock(&priv->reg_mutex);
 }
 
-int rtldsa_port_mst_state_set(struct dsa_switch *ds, int port,
-			      const struct switchdev_mst_state *st)
+int otto_stp_port_mst_state_set(struct dsa_switch *ds, int port,
+				const struct switchdev_mst_state *st)
 {
 	struct otto_dsa_priv *priv = ds->priv;
 	int mst_slot;
 
 	mutex_lock(&priv->reg_mutex);
 
-	mst_slot = rtldsa_mst_find(priv, st->msti);
+	mst_slot = otto_stp_slot_find(priv, st->msti);
 	if (mst_slot < 0) {
 		mutex_unlock(&priv->reg_mutex);
 		return mst_slot;
 	}
 
-	rtldsa_port_xstp_state_set(priv, port, st->state, mst_slot);
+	otto_stp_port_slot_state_set(priv, port, st->state, mst_slot);
 	mutex_unlock(&priv->reg_mutex);
 
 	return 0;

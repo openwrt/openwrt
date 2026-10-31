@@ -1119,7 +1119,7 @@ int otto_vlan_port_del(struct dsa_switch *ds, int port,
 
 		info.fid = 0;
 
-		rtldsa_mst_put_slot(priv, mst);
+		otto_stp_slot_put(priv, mst);
 	}
 
 	priv->r->vlan_set_untagged(vlan->vid, info.untagged_ports);
@@ -1161,7 +1161,7 @@ int otto_vlan_msti_set(struct dsa_switch *ds, struct dsa_bridge bridge,
 		mst_slot_old = info.fid;
 
 		/* find HW slot for MSTI */
-		mst_slot = rtldsa_mst_replace(priv, msti->msti, mst_slot_old);
+		mst_slot = otto_stp_slot_replace(priv, msti->msti, mst_slot_old);
 		if (mst_slot < 0)
 			return mst_slot;
 
