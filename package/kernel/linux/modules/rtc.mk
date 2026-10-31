@@ -257,6 +257,23 @@ endef
 
 $(eval $(call KernelPackage,rtc-rv3028))
 
+define KernelPackage/rtc-rx8010
+  SUBMENU:=$(RTC_MENU)
+  TITLE:=Epson RX-8010SJ RTC support
+  DEFAULT:=m if ALL_KMODS && RTC_SUPPORT
+  DEPENDS:=+kmod-i2c-core +kmod-regmap-i2c
+  KCONFIG:=CONFIG_RTC_DRV_RX8010 \
+	CONFIG_RTC_CLASS=y
+  FILES:=$(LINUX_DIR)/drivers/rtc/rtc-rx8010.ko
+  AUTOLOAD:=$(call AutoLoad,50,rtc-rx8010,1)
+endef
+
+define KernelPackage/rtc-rx8010/description
+ Kernel module for Epson RX-8010SJ I2C RTC chip.
+endef
+
+$(eval $(call KernelPackage,rtc-rx8010))
+
 define KernelPackage/rtc-rx8025
   SUBMENU:=$(RTC_MENU)
   TITLE:=Epson RX-8025 / RX-8035

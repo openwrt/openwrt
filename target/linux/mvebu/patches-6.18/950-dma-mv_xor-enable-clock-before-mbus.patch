@@ -1,0 +1,65 @@
+From ad905976ecca02abeceffc7d94d79a6ddf796972 Mon Sep 17 00:00:00 2001
+From: Kosuke Shibuya <kakiringopcneko@gmail.com>
+Date: Thu, 22 Oct 2026 15:13:46 +0900
+Subject: [PATCH] dmaengine: mv_xor: enable the clock before configuring MBUS
+
+Firmware may leave an XOR engine gated. Its MBUS window registers must
+be programmed after enabling the clock, otherwise a second engine can
+fail its DMA self-test on Armada 385.
+
+Use the optional clock API so platforms without a gate remain supported,
+propagate deferred lookup and enable errors, and release a clock whose
+enable failed before touching the MBUS registers.
+
+Signed-off-by: Kosuke Shibuya <kakiringopcneko@gmail.com>
+---
+ drivers/dma/mv_xor.c | 24 +++++++++++++-----------
+ 1 file changed, 13 insertions(+), 11 deletions(-)
+
+--- a/drivers/dma/mv_xor.c
++++ b/drivers/dma/mv_xor.c
+@@ -1348,6 +1348,17 @@ static int mv_xor_probe(struct platform_
+ 	if (pdev->dev.of_node)
+ 		xordev->xor_type = (uintptr_t)device_get_match_data(&pdev->dev);
+ 
++	/* A missing clock is valid on platforms without a clock gate. */
++	xordev->clk = clk_get_optional(&pdev->dev, NULL);
++	if (IS_ERR(xordev->clk))
++		return dev_err_probe(&pdev->dev, PTR_ERR(xordev->clk),
++				     "failed to get clock\n");
++	ret = clk_prepare_enable(xordev->clk);
++	if (ret) {
++		clk_put(xordev->clk);
++		return dev_err_probe(&pdev->dev, ret, "failed to enable clock\n");
++	}
++
+ 	/*
+ 	 * (Re-)program MBUS remapping windows if we are asked to.
+ 	 */
+@@ -1359,13 +1370,6 @@ static int mv_xor_probe(struct platform_
+ 			mv_xor_conf_mbus_windows(xordev, dram);
+ 	}
+ 
+-	/* Not all platforms can gate the clock, so it is not
+-	 * an error if the clock does not exists.
+-	 */
+-	xordev->clk = clk_get(&pdev->dev, NULL);
+-	if (!IS_ERR(xordev->clk))
+-		clk_prepare_enable(xordev->clk);
+-
+ 	/*
+ 	 * We don't want to have more than one channel per CPU in
+ 	 * order for async_tx to perform well. So we limit the number
+@@ -1452,10 +1456,8 @@ err_channel_add:
+ 				irq_dispose_mapping(xordev->channels[i]->irq);
+ 		}
+ 
+-	if (!IS_ERR(xordev->clk)) {
+-		clk_disable_unprepare(xordev->clk);
+-		clk_put(xordev->clk);
+-	}
++	clk_disable_unprepare(xordev->clk);
++	clk_put(xordev->clk);
+ 
+ 	return ret;
+ }
