@@ -6,6 +6,7 @@
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/interrupt-controller/irq.h>
 #include <dt-bindings/leds/common.h>
 
 / {
@@ -63,31 +64,45 @@
 		};
 	};
 
+	/*
+	 * The status light is an RGB LED on PWM channels 0, 1 and 2 (GPIO 44
+	 * red, GPIO 45 green, GPIO 56 blue), as in the vendor firmware, so it
+	 * can be dimmed and mixed. The green die is much brighter; the vendor
+	 * firmware limits it to about 18% duty, which is left to userspace.
+	 */
 	leds {
-		compatible = "gpio-leds";
+		compatible = "pwm-leds";
 
 		led_blue: led-blue {
 			color = <LED_COLOR_ID_BLUE>;
 			function = LED_FUNCTION_STATUS;
-			gpios = <&tlmm 56 GPIO_ACTIVE_HIGH>;
+			pwms = <&pwm 2 16000 0>;
+			max-brightness = <255>;
 		};
 
 		led_red: led-red {
 			color = <LED_COLOR_ID_RED>;
 			function = LED_FUNCTION_STATUS;
-			gpios = <&tlmm 44 GPIO_ACTIVE_HIGH>;
+			pwms = <&pwm 0 16000 0>;
+			max-brightness = <255>;
 		};
 
 		led-green {
 			color = <LED_COLOR_ID_GREEN>;
 			function = LED_FUNCTION_STATUS;
-			gpios = <&tlmm 45 GPIO_ACTIVE_HIGH>;
+			pwms = <&pwm 1 16000 0>;
+			max-brightness = <255>;
 		};
 	};
 
 	fan: pwm-fan {
 		compatible = "pwm-fan";
 		pwms = <&pwm 3 40000 0>;
+		/* tachometer on GPIO 40, two pulses per revolution */
+		pinctrl-0 = <&fan_tach_pins>;
+		pinctrl-names = "default";
+		interrupts-extended = <&tlmm 40 IRQ_TYPE_EDGE_FALLING>;
+		pulses-per-revolution = <2>;
 		#cooling-cells = <2>;
 		cooling-levels = <36 72 128 255>;
 	};
@@ -371,10 +386,17 @@
 
 	pwm_pins: pwm-pins {
 		pwm {
-			pins = "gpio53";
+			pins = "gpio44", "gpio45", "gpio53", "gpio56";
 			function = "pwm";
 			drive-strength = <8>;
 		};
+	};
+
+	fan_tach_pins: fan-tach-pins {
+		pins = "gpio40";
+		function = "gpio";
+		drive-strength = <8>;
+		bias-pull-up;
 	};
 };
 
