@@ -345,11 +345,6 @@ function iface_auth_type(config, band, eht) {
 			iface_accounting_server(config);
 		}
 
-		if (config.radius_das_client && config.radius_das_secret) {
-			set_default(config, 'radius_das_port', 3799);
-			config.radius_das_client = config.radius_das_client + ' ' + config.radius_das_secret;
-		}
-
 		set_default(config, 'eapol_version', config.wpa & 1);
 		if (!config.eapol_version)
 			config.eapol_version = null;
@@ -357,6 +352,16 @@ function iface_auth_type(config, band, eht) {
 		append('ieee8021x', '1');
 
 		break;
+	}
+
+	/* hostapd takes a DAS client only as "<address> <secret>", and refuses
+	 * the whole configuration for one without the secret */
+	if (config.radius_das_client && config.radius_das_secret) {
+		set_default(config, 'radius_das_port', 3799);
+		config.radius_das_client = config.radius_das_client + ' ' + config.radius_das_secret;
+	} else if (config.radius_das_client) {
+		warn(`radius_das_client needs radius_das_secret, DAS left off on ${config.ifname}`);
+		config.radius_das_client = null;
 	}
 
 	append_vars(config, [
@@ -381,6 +386,7 @@ function iface_ppsk(config) {
 
 	iface_authentication_server(config);
 	append('macaddr_acl', '2');
+	config.macaddr_acl = 2;
 }
 
 function iface_wps(config, band) {
@@ -439,7 +445,9 @@ function iface_macfilter(config) {
 
 	case 'deny':
 		append('deny_mac_file', path);
-		append('macaddr_acl', 0);
+		/* RADIUS MAC authentication (2) checks the deny list first */
+		if (config.macaddr_acl != 2)
+			append('macaddr_acl', 0);
 		break;
 
 	default:
