@@ -1,0 +1,13 @@
+#!/bin/sh
+
+[ "${ACTION}" = "released" ] || exit 0
+
+if [ "$(uci -q get ledbar.main.enabled)" = 0 ]; then
+	uci set ledbar.main.enabled=1
+else
+	uci set ledbar.main.enabled=0
+fi
+uci commit ledbar
+/etc/init.d/ledbar reload
+
+return 0
