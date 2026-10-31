@@ -1,0 +1,150 @@
+From: John Macias <dencity7@gmail.com>
+Date: Sun, 26 Oct 2026 02:00:00 +0000
+Subject: [PATCH] AP: Remove a STA from other radios before adding it to the
+ driver
+
+With FULL_AP_CLIENT_STATE drivers, hostapd adds a STA to the driver at
+authentication. A client that roams between the bands of one SSID
+authenticates on the new radio while it is still associated on the old
+one, so the driver has the same peer on two radios until
+hostapd_prune_associations() runs after the new association. On ath11k
+with IPQ8074 firmware WLAN.HK.2.0-01792, creating that second peer
+makes the firmware assert, and both radios stay down until a reboot.
+
+Do not add the STA to the driver at authentication while it has an
+entry on another radio of the same hostapd process. Remove that entry,
+with a Deauthentication frame, right before the STA is added to the
+driver in add_associated_sta(). A failed or spoofed authentication on
+the other band therefore no longer touches the existing association.
+
+Assisted-by: LLM
+---
+--- a/src/ap/hostapd.h
++++ b/src/ap/hostapd.h
+@@ -949,6 +949,8 @@ int hostapd_register_probereq_cb(struct
+ 					   const u8 *ie, size_t ie_len,
+ 					   int ssi_signal),
+ 				 void *ctx);
++bool hostapd_sta_on_other_iface(struct hostapd_data *hapd, const u8 *addr,
++				bool remove);
+ void hostapd_prune_associations(struct hostapd_data *hapd, const u8 *addr,
+ 				int mld_assoc_link_id);
+ 
+--- a/src/ap/ieee802_11.c
++++ b/src/ap/ieee802_11.c
+@@ -4693,12 +4693,16 @@ static void handle_auth(struct hostapd_d
+ 	 *
+ 	 * PASN authentication does not require adding/removing station to the
+ 	 * driver so skip this flow in case of PASN authentication.
++	 *
++	 * If the STA still has an entry on another radio, it is added to the
++	 * driver only at (re)association, after the old entry is removed.
+ 	 */
+ 	if (FULL_AP_CLIENT_STATE_SUPP(hapd->iface->drv_flags) &&
+ 	    (!(sta->flags & WLAN_STA_MFP) || !ap_sta_is_authorized(sta)) &&
+ 	    !(hapd->conf->mesh & MESH_ENABLED) &&
+ 	    (!sta->added_unassoc || link_addr_changed) &&
+-	    auth_alg != WLAN_AUTH_PASN) {
++	    auth_alg != WLAN_AUTH_PASN &&
++	    !hostapd_sta_on_other_iface(hapd, sta->addr, false)) {
+ 		if (ap_sta_re_add(hapd, sta) < 0) {
+ 			resp = WLAN_STATUS_AP_UNABLE_TO_HANDLE_NEW_STA;
+ 			goto fail;
+@@ -6765,6 +6769,9 @@ static int add_associated_sta(struct hos
+ 		   wpa_auth_sta_ft_tk_already_set(sta->wpa_sm),
+ 		   wpa_auth_sta_fils_tk_already_set(sta->wpa_sm));
+ 
++	if (!mld_link_sta)
++		hostapd_sta_on_other_iface(hapd, sta->addr, true);
++
+ 	if (!mld_link_sta && !sta->added_unassoc &&
+ 	    (!(sta->flags & WLAN_STA_AUTHORIZED) ||
+ 	     (reassoc && sta->ft_over_ds && sta->auth_alg == WLAN_AUTH_FT) ||
+--- a/src/ap/utils.c
++++ b/src/ap/utils.c
+@@ -13,6 +13,7 @@
+ #include "fst/fst.h"
+ #include "sta_info.h"
+ #include "hostapd.h"
++#include "ap_drv_ops.h"
+ 
+ 
+ int hostapd_register_probereq_cb(struct hostapd_data *hapd,
+@@ -87,6 +88,77 @@ static int prune_associations(struct hos
+ 	return 0;
+ }
+ 
++struct other_iface_sta_data {
++	struct hostapd_data *hapd;
++	const u8 *addr;
++	bool remove;
++	bool found;
++};
++
++
++static int sta_on_other_iface(struct hostapd_iface *iface, void *ctx)
++{
++	struct other_iface_sta_data *data = ctx;
++	struct hostapd_data *ohapd;
++	struct sta_info *osta;
++	size_t j;
++
++	if (iface == data->hapd->iface)
++		return 0;
++
++	for (j = 0; j < iface->num_bss; j++) {
++		ohapd = iface->bss[j];
++		osta = ap_get_sta(ohapd, data->addr);
++		if (!osta)
++			continue;
++
++		data->found = true;
++		if (!data->remove)
++			continue;
++
++		wpa_printf(MSG_INFO, "%s: Remove " MACSTR
++			   " before adding it to the driver on %s",
++			   ohapd->conf->iface, MAC2STR(osta->addr),
++			   data->hapd->conf->iface);
++		hostapd_drv_sta_deauth(ohapd, osta->addr,
++				       WLAN_REASON_PREV_AUTH_NOT_VALID);
++		ap_free_sta(ohapd, osta);
++	}
++
++	return 0;
++}
++
++
++/**
++ * hostapd_sta_on_other_iface - Find (and remove) a STA on other radios
++ * @hapd: Pointer to the BSS the STA is connecting to
++ * @addr: STA address
++ * @remove: Whether to remove the STA entries found on other radios
++ * Returns: true if the STA had an entry on another radio
++ *
++ * Some drivers cannot have the same peer address on two radios at the
++ * same time (ath11k on IPQ8074 crashes the firmware), so a STA moving to
++ * another band must be removed from the old radio before it is added to
++ * the driver on the new one.
++ */
++bool hostapd_sta_on_other_iface(struct hostapd_data *hapd, const u8 *addr,
++				bool remove)
++{
++	struct other_iface_sta_data data = {
++		.hapd = hapd,
++		.addr = addr,
++		.remove = remove,
++	};
++
++	if (hapd->iface->interfaces &&
++	    hapd->iface->interfaces->for_each_interface)
++		hapd->iface->interfaces->for_each_interface(
++			hapd->iface->interfaces, sta_on_other_iface, &data);
++
++	return data.found;
++}
++
++
+ /**
+  * hostapd_prune_associations - Remove extraneous associations
+  * @hapd: Pointer to BSS data for the most recent association
