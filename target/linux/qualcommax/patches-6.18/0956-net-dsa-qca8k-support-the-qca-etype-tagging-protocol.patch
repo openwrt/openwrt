@@ -92,7 +92,7 @@ Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
  	if (!read_skb) {
  		ret = -ENOMEM;
  		goto err_read_skb;
-@@ -1743,6 +1755,35 @@ qca8k_get_tag_protocol(struct dsa_switch
+@@ -1738,6 +1750,35 @@ qca8k_get_tag_protocol(struct dsa_switch
  	return DSA_TAG_PROTO_QCA;
  }
  
@@ -128,7 +128,7 @@ Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
  static struct dsa_port *
  qca8k_preferred_default_local_cpu_port(struct dsa_switch *ds)
  {
-@@ -1893,6 +1934,7 @@ static int qca8k_connect_tag_protocol(st
+@@ -1888,6 +1929,7 @@ static int qca8k_connect_tag_protocol(st
  
  	switch (proto) {
  	case DSA_TAG_PROTO_QCA:
@@ -136,7 +136,7 @@ Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
  		tagger_data = ds->tagger_data;
  
  		tagger_data->rw_reg_ack_handler = qca8k_rw_reg_ack_handler;
-@@ -2122,6 +2164,7 @@ static const struct phylink_mac_ops qca8
+@@ -2117,6 +2159,7 @@ static const struct phylink_mac_ops qca8
  
  static const struct dsa_switch_ops qca8k_switch_ops = {
  	.get_tag_protocol	= qca8k_get_tag_protocol,
