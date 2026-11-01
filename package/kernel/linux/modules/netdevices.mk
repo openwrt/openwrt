@@ -1636,7 +1636,7 @@ define KernelPackage/pcnet32
   DEPENDS:=@(PCI_SUPPORT||TARGET_malta) +kmod-mii
   KCONFIG:=CONFIG_PCNET32
   FILES:=$(LINUX_DIR)/drivers/net/ethernet/amd/pcnet32.ko
-  AUTOLOAD:=$(call AutoProbe,pcnet32)
+  AUTOLOAD:=$(call AutoProbe,pcnet32,1)
 endef
 
 define KernelPackage/pcnet32/description
