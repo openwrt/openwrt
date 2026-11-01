@@ -121,10 +121,11 @@
 
 			vbus-supply = <&reg_power_usb>;
 
-			port@1 {
+			hub@1 {
+				compatible = "usb5e3,608";
+				reg = <1>;
 				#address-cells = <1>;
 				#size-cells = <0>;
-				reg = <1>;
 				#trigger-source-cells = <0>;
 
 				hub_port1: port@1 {
