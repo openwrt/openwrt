@@ -1,0 +1,58 @@
+From 7f1df76712e5eb5154d1131e8ef8dae6ac5f73e4 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Andr=C3=A9=20Valentin?= <avalentin@marcant.net>
+Date: Thu, 29 Oct 2026 13:00:00 +0100
+Subject: [PATCH] clk: qcom: gcc-ipq6018: keep port 5 on uniphy1 at SGMII rates
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Port 5 can be clocked from uniphy1, which runs at 312.5 MHz with the
+PHY in 2500BASE-X and at 125 MHz in SGMII. The port 5 RX and TX
+frequency tables serve uniphy1 only at 312.5 MHz: 125 MHz lists
+uniphy1 / 2.5 and then uniphy0 / 1, 25 MHz lists uniphy1 / 12.5 and
+then uniphy0 / 5. __clk_rcg2_select_conf() takes the first config that
+gives the rate exactly, so once uniphy1 runs at 125 MHz, a 1G or 100M
+rate that reaches the RCG moves the port onto uniphy0 whenever uniphy0
+runs at 125 MHz, and otherwise leaves it on uniphy1 at 50 MHz (1G) or
+10 MHz (100M).
+
+Add uniphy1 / 1 to the 125 MHz configs and uniphy1 / 5 to the 25 MHz
+configs, after the 312.5 MHz ones so that 2500BASE-X keeps its divider
+and before uniphy0.
+
+Suggested-by: Julius Bairaktaris <julius@bairaktaris.de>
+Signed-off-by: André Valentin <avalentin@marcant.net>
+---
+ drivers/clk/qcom/gcc-ipq6018.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+--- a/drivers/clk/qcom/gcc-ipq6018.c
++++ b/drivers/clk/qcom/gcc-ipq6018.c
+@@ -513,11 +513,13 @@ static struct clk_rcg2 apss_ahb_clk_src
+ 
+ static const struct freq_conf ftbl_nss_port5_rx_clk_src_25[] = {
+ 	C(P_UNIPHY1_RX, 12.5, 0, 0),
++	C(P_UNIPHY1_RX, 5, 0, 0),
+ 	C(P_UNIPHY0_RX, 5, 0, 0),
+ };
+ 
+ static const struct freq_conf ftbl_nss_port5_rx_clk_src_125[] = {
+ 	C(P_UNIPHY1_RX, 2.5, 0, 0),
++	C(P_UNIPHY1_RX, 1, 0, 0),
+ 	C(P_UNIPHY0_RX, 1, 0, 0),
+ };
+ 
+@@ -568,11 +570,13 @@ static struct clk_rcg2 nss_port5_rx_clk_
+ 
+ static const struct freq_conf ftbl_nss_port5_tx_clk_src_25[] = {
+ 	C(P_UNIPHY1_TX, 12.5, 0, 0),
++	C(P_UNIPHY1_TX, 5, 0, 0),
+ 	C(P_UNIPHY0_TX, 5, 0, 0),
+ };
+ 
+ static const struct freq_conf ftbl_nss_port5_tx_clk_src_125[] = {
+ 	C(P_UNIPHY1_TX, 2.5, 0, 0),
++	C(P_UNIPHY1_TX, 1, 0, 0),
+ 	C(P_UNIPHY0_TX, 1, 0, 0),
+ };
+ 
