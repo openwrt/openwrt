@@ -329,6 +329,7 @@ config PACKAGE_B43_USE_BCMA
 
 	config PACKAGE_B43_PHY_AC
 		bool "Enable support for AC-PHYs"
+		depends on TARGET_bcm53xx
 		select DRIVER_11AC_SUPPORT
 		default n
 		help
@@ -336,7 +337,8 @@ config PACKAGE_B43_USE_BCMA
 		  the following devices:
 		  PCI: BCM4352, BCM4360
 
-		  Experimental.
+		  Experimental. Needs the bcma/ssb SROM rev 11 support, which
+		  only the bcm53xx target carries.
 
 		  If unsure, say N.
 
