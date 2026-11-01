@@ -1,0 +1,81 @@
+From 2cebbeca77ae9e30529cdbaebe937a8bfb35ee0e Mon Sep 17 00:00:00 2001
+From: Vít Kazík <catelixor@proton.me>
+Date: Thu, 30 Jul 2026 02:29:28 +0200
+Subject: [PATCH] MIPS: pci-ar724x: add Motorola NCAP-500 quirk
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Without this the card never comes up.
+
+Add a PCIe endpoint reset sequence and apply application
+control settings required to initialize the PCIe bus on the
+Atheros AR7242 SoC for the Motorola NCAP-500 board.
+
+Signed-off-by: Vít Kazík <catelixor@proton.me>
+---
+ arch/mips/pci/pci-ar724x.c | 39 ++++++++++++++++++++++++++++----------
+ 1 file changed, 29 insertions(+), 10 deletions(-)
+
+--- a/arch/mips/pci/pci-ar724x.c
++++ b/arch/mips/pci/pci-ar724x.c
+@@ -17,6 +17,7 @@
+ #include <asm/mach-ath79/ar71xx_regs.h>
+ #include <linux/of_irq.h>
+ #include <linux/of_pci.h>
++#include <linux/of.h>
+ 
+ #define AR724X_PCI_REG_APP		0x00
+ #define AR724X_PCI_REG_RESET		0x18
+@@ -371,15 +372,32 @@ static void ar724x_pci_hw_init(struct ar
+ 		ath79_pll_wr(AR724X_PLL_REG_PCIE_CONFIG, ppl);
+ 	}
+ 
+-	/* deassert the reset state of the PCIE endpoint */
+-	rst = __raw_readl(apc->ctrl_base + AR724X_PCI_REG_RESET);
+-	rst |= AR724X_PCI_RESET_EP_RESET_L;
+-	__raw_writel(rst, apc->ctrl_base + AR724X_PCI_REG_RESET);
+-
+-	/* set PCIE Application Control to ready */
+-	app = __raw_readl(apc->ctrl_base + AR724X_PCI_REG_APP);
+-	app |= AR724X_PCI_APP_LTSSM_ENABLE;
+-	__raw_writel(app, apc->ctrl_base + AR724X_PCI_REG_APP);
++	if (of_device_is_compatible(apc->np, "motorola,ncap-500-pci")) {
++		/* Motorola NCAP-500: PCIe endpoint reset sequence */
++		rst = __raw_readl(apc->ctrl_base + AR724X_PCI_REG_RESET);
++		rst &= ~AR724X_PCI_RESET_EP_RESET_L;
++		__raw_writel(rst, apc->ctrl_base + AR724X_PCI_REG_RESET);
++		msleep(100);
++		rst |= AR724X_PCI_RESET_EP_RESET_L;
++		__raw_writel(rst, apc->ctrl_base + AR724X_PCI_REG_RESET);
++		msleep(100);
++
++		/*
++		 * Motorola NCAP-500: apply PCIe application control settings
++		 * 0x1ffc1 is a value from the U-Boot.
++		 */
++		__raw_writel(0x1ffc1, apc->ctrl_base + AR724X_PCI_REG_APP);
++	} else {
++		/* deassert the reset state of the PCIE endpoint */
++		rst = __raw_readl(apc->ctrl_base + AR724X_PCI_REG_RESET);
++		rst |= AR724X_PCI_RESET_EP_RESET_L;
++		__raw_writel(rst, apc->ctrl_base + AR724X_PCI_REG_RESET);
++
++		/* set PCIE Application Control to ready */
++		app = __raw_readl(apc->ctrl_base + AR724X_PCI_REG_APP);
++		app |= AR724X_PCI_APP_LTSSM_ENABLE;
++		__raw_writel(app, apc->ctrl_base + AR724X_PCI_REG_APP);
++	}
+ 
+ 	/* wait up to 100ms for PHY link up */
+ 	do {
+@@ -436,7 +454,8 @@ static int ar724x_pci_probe(struct platf
+ 	 * Do the full PCIE Root Complex Initialization Sequence if the PCIe
+ 	 * host controller is in reset.
+ 	 */
+-	if (reset_control_status(apc->hc_reset))
++	if (reset_control_status(apc->hc_reset) ||
++	    of_device_is_compatible(apc->np, "motorola,ncap-500-pci"))
+ 		ar724x_pci_hw_init(apc);
+ 
+ 	apc->link_up = ar724x_pci_check_link(apc);
