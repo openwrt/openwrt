@@ -1,0 +1,289 @@
+From: Rosen Penev <rosenp@gmail.com>
+Subject: [PATCH] MIPS: ath79: move the bootstrap reference clock to setup
+
+The qca,ath79-pll binding requires the reference clock as an input, and a
+rate in the device tree already took precedence over the 25/40 MHz that
+the clock code read from the bootstrap pins. Many AR933x boards leave the
+rate out, though, and rely on the pins.
+
+Read the pins in plat_time_init() instead, and register the reference
+clock from them only when the device tree gives no rate. The clock code
+then takes the DT clock or this one through the clk API and no longer
+needs ath79_reset_base. When the device tree does give a rate, warn if
+it disagrees with the pins: a wrong rate leaves the CPU, DDR and AHB rates
+off, the UART baud rate included.
+
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+Assisted-by: LLM
+---
+--- a/arch/mips/ath79/clock.c
++++ b/arch/mips/ath79/clock.c
+@@ -25,9 +25,6 @@
+ #include <asm/mach-ath79/ar71xx_regs.h>
+ #include "common.h"
+ 
+-#define AR71XX_BASE_FREQ	40000000
+-#define AR724X_BASE_FREQ	40000000
+-
+ static struct clk *clks[ATH79_CLK_END];
+ static struct clk_onecell_data clk_data = {
+ 	.clks = clks,
+@@ -79,16 +76,12 @@ static struct clk * __init ath79_set_ff_
+ 	return clk;
+ }
+ 
+-static unsigned long __init ath79_setup_ref_clk(unsigned long rate)
++static unsigned long __init ath79_get_ref_rate(void)
+ {
+-	struct clk *clk = clks[ATH79_CLK_REF];
+-
+-	if (clk)
+-		rate = clk_get_rate(clk);
+-	else
+-		clk = ath79_set_clk(ATH79_CLK_REF, rate);
++	if (!clks[ATH79_CLK_REF])
++		panic("ath79: no reference clock");
+ 
+-	return rate;
++	return clk_get_rate(clks[ATH79_CLK_REF]);
+ }
+ 
+ static void __init ar71xx_clocks_init(void __iomem *pll_base)
+@@ -101,7 +94,7 @@ static void __init ar71xx_clocks_init(vo
+ 	u32 freq;
+ 	u32 div;
+ 
+-	ref_rate = ath79_setup_ref_clk(AR71XX_BASE_FREQ);
++	ref_rate = ath79_get_ref_rate();
+ 
+ 	pll = __raw_readl(pll_base + AR71XX_PLL_REG_CPU_CONFIG);
+ 
+@@ -127,7 +120,7 @@ static void __init ar724x_clocks_init(vo
+ 	u32 mult, div, ddr_div, ahb_div;
+ 	u32 pll;
+ 
+-	ath79_setup_ref_clk(AR71XX_BASE_FREQ);
++	ath79_get_ref_rate();
+ 
+ 	pll = __raw_readl(pll_base + AR724X_PLL_REG_CPU_CONFIG);
+ 
+@@ -144,7 +137,6 @@ static void __init ar724x_clocks_init(vo
+ 
+ static void __init ar933x_clocks_init(void __iomem *pll_base)
+ {
+-	unsigned long ref_rate;
+ 	u32 clock_ctrl;
+ 	u32 ref_div;
+ 	u32 ninit_mul;
+@@ -153,15 +145,8 @@ static void __init ar933x_clocks_init(vo
+ 	u32 cpu_div;
+ 	u32 ddr_div;
+ 	u32 ahb_div;
+-	u32 t;
+ 
+-	t = ath79_reset_rr(AR933X_RESET_REG_BOOTSTRAP);
+-	if (t & AR933X_BOOTSTRAP_REF_CLK_40)
+-		ref_rate = (40 * 1000 * 1000);
+-	else
+-		ref_rate = (25 * 1000 * 1000);
+-
+-	ath79_setup_ref_clk(ref_rate);
++	ath79_get_ref_rate();
+ 
+ 	clock_ctrl = __raw_readl(pll_base + AR933X_PLL_CLOCK_CTRL_REG);
+ 	if (clock_ctrl & AR933X_PLL_CLOCK_CTRL_BYPASS) {
+@@ -238,18 +223,11 @@ static void __init ar934x_clocks_init(vo
+ 	unsigned long ahb_rate;
+ 	u32 pll, out_div, ref_div, nint, nfrac, frac, clk_ctrl, postdiv;
+ 	u32 cpu_pll, ddr_pll;
+-	u32 bootstrap;
+ 	void __iomem *dpll_base;
+ 
+ 	dpll_base = ioremap(AR934X_SRIF_BASE, AR934X_SRIF_SIZE);
+ 
+-	bootstrap = ath79_reset_rr(AR934X_RESET_REG_BOOTSTRAP);
+-	if (bootstrap & AR934X_BOOTSTRAP_REF_CLK_40)
+-		ref_rate = 40 * 1000 * 1000;
+-	else
+-		ref_rate = 25 * 1000 * 1000;
+-
+-	ref_rate = ath79_setup_ref_clk(ref_rate);
++	ref_rate = ath79_get_ref_rate();
+ 
+ 	pll = __raw_readl(dpll_base + AR934X_SRIF_CPU_DPLL2_REG);
+ 	if (pll & AR934X_SRIF_DPLL2_LOCAL_PLL) {
+@@ -359,15 +337,8 @@ static void __init qca953x_clocks_init(v
+ 	unsigned long ahb_rate;
+ 	u32 pll, out_div, ref_div, nint, frac, clk_ctrl, postdiv;
+ 	u32 cpu_pll, ddr_pll;
+-	u32 bootstrap;
+-
+-	bootstrap = ath79_reset_rr(QCA953X_RESET_REG_BOOTSTRAP);
+-	if (bootstrap &	QCA953X_BOOTSTRAP_REF_CLK_40)
+-		ref_rate = 40 * 1000 * 1000;
+-	else
+-		ref_rate = 25 * 1000 * 1000;
+ 
+-	ref_rate = ath79_setup_ref_clk(ref_rate);
++	ref_rate = ath79_get_ref_rate();
+ 
+ 	pll = __raw_readl(pll_base + QCA953X_PLL_CPU_CONFIG_REG);
+ 	out_div = (pll >> QCA953X_PLL_CPU_CONFIG_OUTDIV_SHIFT) &
+@@ -442,15 +413,8 @@ static void __init qca955x_clocks_init(v
+ 	unsigned long ahb_rate;
+ 	u32 pll, out_div, ref_div, nint, frac, clk_ctrl, postdiv;
+ 	u32 cpu_pll, ddr_pll;
+-	u32 bootstrap;
+ 
+-	bootstrap = ath79_reset_rr(QCA955X_RESET_REG_BOOTSTRAP);
+-	if (bootstrap &	QCA955X_BOOTSTRAP_REF_CLK_40)
+-		ref_rate = 40 * 1000 * 1000;
+-	else
+-		ref_rate = 25 * 1000 * 1000;
+-
+-	ref_rate = ath79_setup_ref_clk(ref_rate);
++	ref_rate = ath79_get_ref_rate();
+ 
+ 	pll = __raw_readl(pll_base + QCA955X_PLL_CPU_CONFIG_REG);
+ 	out_div = (pll >> QCA955X_PLL_CPU_CONFIG_OUTDIV_SHIFT) &
+@@ -525,15 +489,8 @@ static void __init qca956x_clocks_init(v
+ 	unsigned long ahb_rate;
+ 	u32 pll, out_div, ref_div, nint, hfrac, lfrac, clk_ctrl, postdiv;
+ 	u32 cpu_pll, ddr_pll;
+-	u32 bootstrap;
+-
+-	bootstrap = ath79_reset_rr(QCA956X_RESET_REG_BOOTSTRAP);
+-	if (bootstrap &	QCA956X_BOOTSTRAP_REF_CLK_40)
+-		ref_rate = 40 * 1000 * 1000;
+-	else
+-		ref_rate = 25 * 1000 * 1000;
+ 
+-	ref_rate = ath79_setup_ref_clk(ref_rate);
++	ref_rate = ath79_get_ref_rate();
+ 
+ 	pll = __raw_readl(pll_base + QCA956X_PLL_CPU_CONFIG_REG);
+ 	out_div = (pll >> QCA956X_PLL_CPU_CONFIG_OUTDIV_SHIFT) &
+@@ -614,7 +571,13 @@ static void __init ath79_clocks_init_dt(
+ 	struct clk *ref_clk;
+ 	void __iomem *pll_base;
+ 
++	/*
++	 * The board's crystal. Without a rate in the device tree, the arch
++	 * code registers it from the bootstrap pins.
++	 */
+ 	ref_clk = of_clk_get(np, 0);
++	if (IS_ERR(ref_clk))
++		ref_clk = clk_get_sys(NULL, "ref");
+ 	if (!IS_ERR(ref_clk))
+ 		clks[ATH79_CLK_REF] = ref_clk;
+ 
+--- a/arch/mips/ath79/setup.c
++++ b/arch/mips/ath79/setup.c
+@@ -15,6 +15,9 @@
+ #include <linux/memblock.h>
+ #include <linux/err.h>
+ #include <linux/clk.h>
++#include <linux/clk-provider.h>
++#include <linux/clkdev.h>
++#include <linux/of.h>
+ #include <linux/of_clk.h>
+ #include <linux/of_fdt.h>
+ #include <linux/irqchip.h>
+@@ -235,6 +238,89 @@ void __init plat_mem_setup(void)
+ 	pm_power_off = ath79_halt;
+ }
+ 
++static const struct of_device_id ath79_pll_ids[] __initconst = {
++	{ .compatible = "qca,ar7100-pll" },
++	{ .compatible = "qca,ar7240-pll" },
++	{ .compatible = "qca,ar9130-pll" },
++	{ .compatible = "qca,ar9330-pll" },
++	{ .compatible = "qca,ar9340-pll" },
++	{ .compatible = "qca,qca9530-pll" },
++	{ .compatible = "qca,qca9550-pll" },
++	{ .compatible = "qca,qca9560-pll" },
++	{ /* sentinel */ }
++};
++
++/* the crystal that the bootstrap pins select */
++static unsigned long __init ath79_bootstrap_ref_rate(bool *strapped)
++{
++	unsigned int reg;
++	u32 bit;
++
++	*strapped = true;
++	if (soc_is_ar933x()) {
++		reg = AR933X_RESET_REG_BOOTSTRAP;
++		bit = AR933X_BOOTSTRAP_REF_CLK_40;
++	} else if (soc_is_ar934x()) {
++		reg = AR934X_RESET_REG_BOOTSTRAP;
++		bit = AR934X_BOOTSTRAP_REF_CLK_40;
++	} else if (soc_is_qca953x()) {
++		reg = QCA953X_RESET_REG_BOOTSTRAP;
++		bit = QCA953X_BOOTSTRAP_REF_CLK_40;
++	} else if (soc_is_qca955x()) {
++		reg = QCA955X_RESET_REG_BOOTSTRAP;
++		bit = QCA955X_BOOTSTRAP_REF_CLK_40;
++	} else if (soc_is_qca956x() || soc_is_tp9343()) {
++		reg = QCA956X_RESET_REG_BOOTSTRAP;
++		bit = QCA956X_BOOTSTRAP_REF_CLK_40;
++	} else {
++		/* no bootstrap pin for the crystal on AR71xx, AR724x, AR913x */
++		*strapped = false;
++		return 40000000;
++	}
++
++	return (ath79_reset_rr(reg) & bit) ? 40000000 : 25000000;
++}
++
++/*
++ * The clock code takes the reference clock from the device tree. Many
++ * AR933x boards leave its rate out and rely on the bootstrap pins, so
++ * register it from those for them. Otherwise warn if the device tree
++ * disagrees with the pins, as a wrong rate leaves every derived clock off,
++ * the UART baud rate included.
++ */
++static void __init ath79_setup_ref_clk(void)
++{
++	struct device_node *np, *ref_np;
++	unsigned long rate, strap_rate;
++	struct clk *clk;
++	bool strapped;
++	u32 dt_rate;
++
++	strap_rate = ath79_bootstrap_ref_rate(&strapped);
++
++	np = of_find_matching_node(NULL, ath79_pll_ids);
++	ref_np = np ? of_parse_phandle(np, "clocks", 0) : NULL;
++	of_node_put(np);
++
++	if (ref_np && !of_property_read_u32(ref_np, "clock-frequency", &dt_rate)) {
++		of_node_put(ref_np);
++		rate = dt_rate;
++		if (strapped && rate != strap_rate)
++			pr_warn("ath79: reference clock is %lu Hz in the device tree, but the bootstrap pins select %lu Hz\n",
++				rate, strap_rate);
++		return;
++	}
++	of_node_put(ref_np);
++
++	clk = clk_register_fixed_rate(NULL, "ref", NULL, 0, strap_rate);
++	if (IS_ERR(clk)) {
++		pr_err("ath79: failed to register the reference clock\n");
++		return;
++	}
++
++	clk_register_clkdev(clk, "ref", NULL);
++}
++
+ void __init plat_time_init(void)
+ {
+ 	struct device_node *np;
+@@ -254,6 +340,7 @@ void __init plat_time_init(void)
+ 		ath79_reset_wr(AR71XX_RESET_REG_MISC_INT_ENABLE, misc);
+ 	}
+ 
++	ath79_setup_ref_clk();
+ 	of_clk_init(NULL);
+ 
+ 	np = of_get_cpu_node(0, NULL);
