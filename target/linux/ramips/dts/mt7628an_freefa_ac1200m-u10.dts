@@ -1,0 +1,137 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+#include "mt7628an.dtsi"
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+
+/ {
+    compatible = "freefa,ac1200m-u10", "mediatek,mt7628an-soc";
+    model = "FREEFA AC1200M-U10";
+
+    aliases {
+        led-boot = &led_wps;
+        led-failsafe = &led_wps;
+        led-running = &led_wps;
+        led-upgrade = &led_wps;
+    };
+
+    leds {
+        compatible = "gpio-leds";
+        led_wps: wps {
+            label = "green:wps";
+            gpios = <&gpio 37 GPIO_ACTIVE_LOW>;
+        };
+        lan {
+            label = "green:lan";
+            gpios = <&gpio 42 GPIO_ACTIVE_LOW>;
+        };
+        wan {
+            label = "green:wan";
+            gpios = <&gpio 39 GPIO_ACTIVE_LOW>;
+        };
+        wifi2g {
+            label = "green:wifi2g";
+            gpios = <&gpio 44 GPIO_ACTIVE_LOW>;
+            linux,default-trigger = "phy0tpt";
+        };
+        rssi_top {
+            label = "green:rssi-top";
+            gpios = <&gpio 40 GPIO_ACTIVE_LOW>;
+        };
+        rssi_mid {
+            label = "green:rssi-mid";
+            gpios = <&gpio 41 GPIO_ACTIVE_LOW>;
+        };
+        rssi_bottom {
+            label = "green:rssi-bottom";
+            gpios = <&gpio 43 GPIO_ACTIVE_LOW>;
+        };
+    };
+
+    keys {
+        compatible = "gpio-keys";
+        wps {
+            label = "wps";
+            gpios = <&gpio 38 GPIO_ACTIVE_LOW>;
+            linux,code = <KEY_WPS_BUTTON>;
+        };
+        reset {
+            label = "reset";
+            gpios = <&gpio 45 GPIO_ACTIVE_LOW>;
+            linux,code = <KEY_RESTART>;
+        };
+    };
+};
+
+&state_default {
+    gpio {
+        groups = "gpio", "i2c", "i2s", "refclk", "uart1", "wdt", "wled_an", "p0led_an", "p2led_an", "p3led_an";
+        function = "gpio";
+    };
+};
+
+&pcie { status = "okay"; };
+&pcie0 {
+    wifi@0,0 {
+        compatible = "mediatek,mt76";
+        reg = <0x0000 0 0 0 0>;
+        nvmem-cells = <&eeprom_factory_8000>;
+        nvmem-cell-names = "eeprom";
+        ieee80211-freq-limit = <5000000 6000000>;
+        led {
+            led-sources = <2>;
+            led-active-low;
+        };
+    };
+};
+&wmac {
+    status = "okay";
+    nvmem-cells = <&eeprom_factory_0>;
+    nvmem-cell-names = "eeprom";
+};
+&ethernet {
+    nvmem-cells = <&macaddr_factory_4>;
+    nvmem-cell-names = "mac-address";
+};
+&spi0 {
+    status = "okay";
+    flash@0 {
+        compatible = "jedec,spi-nor";
+        reg = <0>;
+        spi-max-frequency = <40000000>;
+        #address-cells = <1>;
+        #size-cells = <1>;
+        partitions {
+            compatible = "fixed-partitions";
+            #address-cells = <1>;
+            #size-cells = <1>;
+            partition@0 {
+                label = "u-boot";
+                reg = <0x0 0x30000>;
+                read-only;
+            };
+            partition@30000 {
+                label = "config";
+                reg = <0x30000 0x10000>;
+                read-only;
+            };
+            factory: partition@40000 {
+                label = "factory";
+                reg = <0x40000 0x10000>;
+                read-only;
+                nvmem-layout {
+                    compatible = "fixed-layout";
+                    #address-cells = <1>;
+                    #size-cells = <1>;
+                    eeprom_factory_0: eeprom@0 { reg = <0x0 0x400>; };
+                    eeprom_factory_8000: eeprom@8000 { reg = <0x8000 0x200>; };
+                    macaddr_factory_4: macaddr@4 { reg = <0x4 0x6>; };
+                };
+            };
+            partition@50000 {
+                compatible = "denx,uimage";
+                label = "firmware";
+                reg = <0x50000 0x7b0000>;
+            };
+        };
+    };
+};
