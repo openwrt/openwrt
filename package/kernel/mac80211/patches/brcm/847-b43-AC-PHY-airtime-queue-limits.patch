@@ -1,0 +1,35 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Ville Takio <ville+git@takio.fi>
+Subject: [PATCH] b43: AC-PHY: airtime queue limits
+
+Now that the AC cores pull their frames from the mac80211 TX queues,
+let mac80211 limit the airtime each station has in flight (AQL): it
+estimates a frame's airtime when it hands it out and takes it back on
+the frame's status, which b43 gives every frame, so the DMA rings no
+longer fill with one station's backlog.
+
+On the RT-AC66U B1 (5 GHz ch36/80) with a OnePlus Nord 2 next to it,
+downlink TCP with pings from the router during it, alternating with
+mac80211's aql_enable: throughput 243/213/229 against 220/234/213
+Mbit/s, ping average 28/24/36 against 44/84/34 ms and worst 70/35/78
+against 105/179/80 ms.
+
+---
+--- a/drivers/net/wireless/broadcom/b43/main.c
++++ b/drivers/net/wireless/broadcom/b43/main.c
+@@ -7426,6 +7426,15 @@ static int b43_setup_bands(struct b43_wl
+ 		 */
+ 		ieee80211_hw_set(hw, TX_AMSDU);
+ 		ieee80211_hw_set(hw, SUPPORT_FAST_XMIT);
++		/*
++		 * Airtime queue limits: mac80211 estimates each frame's
++		 * airtime when it hands it out and takes it back on its
++		 * status, which every frame gets (b43_dma_handle_txstatus(),
++		 * free_descriptor_buffer()), and holds what a station has in
++		 * flight to its limit, so the rings do not fill with one
++		 * station's backlog.
++		 */
++		wiphy_ext_feature_set(hw->wiphy, NL80211_EXT_FEATURE_AQL);
+ 		hw->max_tx_aggregation_subframes = IEEE80211_MAX_AMPDU_BUF_HT;
+ 		hw->max_rx_aggregation_subframes = IEEE80211_MAX_AMPDU_BUF_HT;
+ 		if (have_5ghz_phy) {
