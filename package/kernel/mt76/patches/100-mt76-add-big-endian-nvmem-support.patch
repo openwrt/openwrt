@@ -1,0 +1,32 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Navid Ghahremani <ghahramani.navid@gmail.com>
+Date: Sat, 10 Oct 2026 03:25:00 +0100
+Subject: [PATCH] mt76: eeprom: add big-endian support for nvmem cells
+
+Support big-endian byte-swapping for EEPROM data read via NVMEM cells
+when the 'big-endian' property is present in the device tree node,
+matching the existing behavior of mediatek,mtd-eeprom.
+
+Signed-off-by: Navid Ghahremani <ghahramani.navid@gmail.com>
+---
+ eeprom.c | 9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+--- a/eeprom.c
++++ b/eeprom.c
+@@ -144,6 +144,15 @@ int mt76_get_of_data_from_nvmem(struct m
+
+ 	memcpy(eep, data, len);
+
++	if (of_property_read_bool(dev->dev->of_node, "big-endian")) {
++		u8 *buf = (u8 *)eep;
++		int i;
++
++		/* convert eeprom data in Little Endian */
++		for (i = 0; i < round_down(len, 2); i += 2)
++			put_unaligned_le16(get_unaligned_be16(&buf[i]), &buf[i]);
++	}
++
+ exit:
+ 	kfree(data);
+

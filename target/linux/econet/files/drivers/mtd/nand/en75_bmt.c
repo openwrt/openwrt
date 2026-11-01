@@ -327,6 +327,19 @@ static int reserve_block_count(const struct en75_bmt_m *ctx)
 	return ctx->mtk->total_blks - ctx->reserve_area_begin;
 }
 
+static bool is_block_in_bmt_or_bbt(const struct en75_bmt_m *ctx, u16 block)
+{
+	for (int i = 0; i < ctx->bmt.header.size; i++) {
+		if (ctx->bmt.table[i].from == block || ctx->bmt.table[i].to == block)
+			return true;
+	}
+	for (int i = 0; i < ctx->bbt.header.size; i++) {
+		if (ctx->bbt.table[i] == block)
+			return true;
+	}
+	return false;
+}
+
 /* return a block_info or error pointer */
 static struct block_info *find_available_block(const struct en75_bmt_m *ctx, bool start_from_end)
 {
@@ -343,7 +356,8 @@ static struct block_info *find_available_block(const struct en75_bmt_m *ctx, boo
 		d = -1;
 	}
 	for (; i < limit && i >= 0; i += d) {
-		if (ctx->rblocks[i].status == BS_AVAILABLE)
+		if (ctx->rblocks[i].status == BS_AVAILABLE &&
+		    !is_block_in_bmt_or_bbt(ctx, ctx->rblocks[i].index.index))
 			return &ctx->rblocks[i];
 	}
 	return ERR_PTR(-ENOSPC);
@@ -590,6 +604,7 @@ static int w_sync_tables(struct en75_bmt_m *ctx)
 			log_pfx, new_bmt_block->index.index);
 		mark_for_erasure(ctx, BS_BMT);
 		new_bmt_block->status = BS_BMT;
+		w_erase_pending(ctx);
 
 		ctx->bmt_dirty -= dirty;
 		WARN_ON(ctx->bmt_dirty);
@@ -1330,6 +1345,25 @@ static int w_init(struct en75_bmt_m *ctx, struct device_node *np)
 					      factory_badblocks_count);
 		if (ret)
 			return ret;
+	}
+
+	{
+		int rblocks = reserve_block_count(ctx);
+
+		for (int i = 0; i < ctx->bmt.header.size; i++) {
+			for (int j = 0; j < rblocks; j++) {
+				if (ctx->rblocks[j].index.index == ctx->bmt.table[i].to)
+					ctx->rblocks[j].status = BS_MAPPED;
+				if (ctx->rblocks[j].index.index == ctx->bmt.table[i].from)
+					ctx->rblocks[j].status = BS_BAD;
+			}
+		}
+		for (int i = 0; i < ctx->bbt.header.size; i++) {
+			for (int j = 0; j < rblocks; j++) {
+				if (ctx->rblocks[j].index.index == ctx->bbt.table[i])
+					ctx->rblocks[j].status = BS_BAD;
+			}
+		}
 	}
 
 	pr_info("%s: blocks: total: %d, user: %d, factory_bad: %d, worn: %d reserve: %d\n",
