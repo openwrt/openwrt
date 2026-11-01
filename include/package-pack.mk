@@ -256,14 +256,19 @@ endef
 #   This affects manual installation only, as the dependency resolution takes
 #   care of ABI versions.
 #
-# - otherwise return nothing, i.e. package will have the default priority 0.
+# - otherwise set it to 1. Every provider then defines a non-default
+#   (non-zero) priority: apk requires at least one non-zero
+#   provider-priority among the providers of the same virtual
+#   (non-versioned) name, otherwise it fails with
+#   "unable to select packages". With the lowest non-zero priority for
+#   such names, the lexicographically first provider is selected on a tie.
 #
 # 1: Default variant
 # 2: ABI version
 define GetProviderPriority
 $(strip
   $(if $(1),100,
-    $(if $(2),10)
+    $(if $(2),10,1)
   )
 )
 endef
