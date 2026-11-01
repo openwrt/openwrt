@@ -47,6 +47,12 @@
 		HASH_PSE_CELLS = <0>; \
 	};
 
+#define PSE_PI_CHIP(c, p) \
+	pse##c##_pi##p: pse-pi@p { \
+		reg = <p>; \
+		HASH_PSE_CELLS = <0>; \
+	};
+
 #define SWITCH_PORT(p, l, m) \
 	port##p: port@##p { \
 		reg = <##p>; \
