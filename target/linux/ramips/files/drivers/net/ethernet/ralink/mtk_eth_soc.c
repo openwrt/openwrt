@@ -1881,11 +1881,17 @@ static void fe_remove(struct platform_device *pdev)
 	platform_set_drvdata(pdev, NULL);
 }
 
+#ifdef CONFIG_NET_RALINK_MT7620
+#define FE_DRIVER_NAME "mtk_soc_eth_legacy"
+#else
+#define FE_DRIVER_NAME "mtk_soc_eth"
+#endif
+
 static struct platform_driver fe_driver = {
 	.probe = fe_probe,
 	.remove = fe_remove,
 	.driver = {
-		.name = "mtk_soc_eth",
+		.name = FE_DRIVER_NAME,
 		.of_match_table = of_fe_match,
 	},
 };
