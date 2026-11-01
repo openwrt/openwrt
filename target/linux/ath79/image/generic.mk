@@ -130,8 +130,9 @@ define Build/pisen_wmb001n-factory
   cp "bin/pisen_wmb001n_factory-header.bin" "$@" && \
   $(TAR) -cp --numeric-owner --owner=0 --group=0 --mode=a-s --sort=name \
     $(if $(SOURCE_DATE_EPOCH),--mtime="@$(SOURCE_DATE_EPOCH)") \
-    -C "$@.tmp" . | gzip -9n >> "$@" && \
-  rm -rf "$@.tmp"
+    -C "$@.tmp" -f "$@.tar" . && \
+  libdeflate-gzip -12 -n -c "$@.tar" >> "$@" && \
+  rm -rf "$@.tmp" "$@.tar"
 endef
 
 define Build/teltonika-fw-fake-checksum
