@@ -53,7 +53,7 @@
 		serial1 = &uart1;
 	};
 
-	chosen {
+	chosen: chosen {
 		bootargs = "earlycon";
 		stdout-path = "serial0:115200n8";
 	};
@@ -124,6 +124,9 @@
 
 			#address-cells = <1>;
 			#size-cells = <0>;
+
+			pinctrl-0 = <&pinmux_spi &pinmux_spi_qio>;
+			pinctrl-names = "default";
 		};
 
 		snand: spi@1a400 {
@@ -134,6 +137,9 @@
 			clocks = <&ccu CLK_LXB>;
 			#address-cells = <1>;
 			#size-cells = <0>;
+
+			pinctrl-0 = <&pinmux_spi &pinmux_spi_qio>;
+			pinctrl-names = "default";
 		};
 
 		watchdog0: watchdog@3260 {
@@ -157,6 +163,7 @@
 			gpio-controller;
 			#gpio-cells = <2>;
 			ngpios = <32>;
+			gpio-ranges = <&pinmux 0 0 32>;
 
 			interrupt-controller;
 			#interrupt-cells = <2>;
@@ -171,6 +178,7 @@
 			gpio-controller;
 			#gpio-cells = <2>;
 			ngpios = <32>;
+			gpio-ranges = <&pinmux 0 32 32>;
 
 			interrupt-controller;
 			#interrupt-cells = <2>;
@@ -185,6 +193,7 @@
 			gpio-controller;
 			#gpio-cells = <2>;
 			ngpios = <32>;
+			gpio-ranges = <&pinmux 0 64 32>;
 
 			interrupt-controller;
 			#interrupt-cells = <2>;
@@ -218,6 +227,9 @@
 			reg-shift = <2>;
 			fifo-size = <1>;
 			no-loopback-test;
+
+			pinctrl-0 = <&pinmux_uart0>;
+			pinctrl-names = "default";
 		};
 
 		uart1: uart@2100 {
@@ -234,6 +246,9 @@
 			reg-shift = <2>;
 			fifo-size = <1>;
 			no-loopback-test;
+
+			pinctrl-0 = <&pinmux_uart1>;
+			pinctrl-names = "default";
 
 			status = "disabled";
 		};
@@ -300,23 +315,29 @@
 		};
 
 		i2c_mst1: i2c@b4 {
-			compatible = "realtek,rtl9607-i2c";
+			compatible = "realtek,rtl9607c-i2c";
 			reg = <0xb4 0x4>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			clocks = <&i2cclock>;
 			realtek,scl = <0>;
 
+			pinctrl-0 = <&pinmux_i2c0>;
+			pinctrl-names = "default";
+
 			status = "disabled";
 		};
 
 		i2c_mst2: i2c@b8 {
-			compatible = "realtek,rtl9607-i2c";
+			compatible = "realtek,rtl9607c-i2c";
 			reg = <0xb8 0x4>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			clocks = <&i2cclock>;
 			realtek,scl = <1>;
+
+			pinctrl-0 = <&pinmux_i2c1>;
+			pinctrl-names = "default";
 
 			status = "disabled";
 		};
@@ -336,26 +357,37 @@
 			compatible = "realtek,rtl9607c-serdes-mdio";
 		};
 
+		pinmux: pinmux {
+			compatible = "realtek,rtl9607c-pinctrl";
+			pinmux_uart1: uart1 {
+				function = "uart1";
+				groups = "uart1";
+			};
+			pinmux_uart0: uart0 {
+				function = "uart0";
+				groups = "uart0";
+			};
+			pinmux_spi: spi {
+				function = "spi";
+				groups = "spi";
+			};
+			pinmux_i2c0: i2c0 {
+				function = "i2c0";
+				groups = "i2c0";
+			};
+			pinmux_i2c1: i2c1 {
+				function = "i2c1";
+				groups = "i2c1";
+			};
+
+			pinmux_spi_qio: spi_qio {
+				function = "spi_qio";
+				groups = "spi_qio";
+			};
+		};
+
 		table {
 			compatible = "realtek,rtl9607c-table", "realtek,otto-table";
-		};
-	};
-
-	pinmux: pinmux@1b000038 {
-		compatible = "pinctrl-single";
-		reg = <0x1b000038 0xc>;
-
-		pinctrl-single,bit-per-mux;
-		pinctrl-single,register-width = <32>;
-		pinctrl-single,function-mask = <0x1>;
-		#pinctrl-cells = <2>;
-
-		pinmux_pcie1_rst: pcie1-rst {
-			pinctrl-single,bits = <0x4 0x80 0x80>;
-		};
-
-		pinmux_pcie0_rst: pcie0-rst {
-			pinctrl-single,bits = <0x4 0x100 0x100>;
 		};
 	};
 
@@ -404,8 +436,6 @@
 		phys = <&pcie0_phy>;
 		phy-names = "pcie0-phy";
 
-		pinctrl-0 = <&pinmux_pcie0_rst>;
-		pinctrl-names = "default";
 		reset-gpios = <&gpio1 8 GPIO_ACTIVE_LOW>;
 
 		status = "disabled";
@@ -438,8 +468,6 @@
 		phys = <&pcie1_phy>;
 		phy-names = "pcie1-phy";
 
-		pinctrl-0 = <&pinmux_pcie1_rst>;
-		pinctrl-names = "default";
 		reset-gpios = <&gpio1 7 GPIO_ACTIVE_LOW>;
 
 		status = "disabled";

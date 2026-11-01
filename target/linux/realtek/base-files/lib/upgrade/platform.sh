@@ -85,6 +85,9 @@ platform_do_upgrade() {
 		PART_NAME="factory"
 		default_do_upgrade "$1"
 		;;
+	eltex,rg-5520)
+		platform_do_upgrade_dualboot_rtl9607c "$1"
+		;;
 	*)
 		default_do_upgrade "$1"
 		;;

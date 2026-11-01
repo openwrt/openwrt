@@ -24,7 +24,8 @@ realtek_setup_interfaces()
 	local lan_list="$2"
 
 	case $board in
-	bt-pon,bt-g711ax)
+	bt-pon,bt-g711ax|\
+	eltex,rg-5520)
 		ucidef_set_interface_lan "$lan_list"
 		;;
 	*)
@@ -188,6 +189,9 @@ realtek_setup_macs()
 		lan_mac_start=$lan_mac
 		eth0_mac=$lan_mac
 		;;
+	eltex,rg-5520)
+		lan_mac=$(mtd_get_mac_text factory 0x64)
+		eth0_mac=$lan_mac
 	esac
 
 	[ -n "$eth0_mac" ] && ucidef_set_network_device_mac eth0 $eth0_mac
