@@ -1,0 +1,47 @@
+From 224b12dd5d8d96212ae21c83f7a9f1bc63204d2b Mon Sep 17 00:00:00 2001
+From: Karsten Sperling <ksperling@apple.com>
+Date: Sat, 27 Jun 2026 22:25:45 +1200
+Subject: [PATCH] hostapd: Pass BSS tls_flags to tls_global_set_params
+
+The tls.h API accepts TLS_CONN_* flags both in tls_init
+(tls_config.tls_flags) and tls_global_set_params
+(tls_connection_params.flags), and also per connection in
+tls_connection_set_params (tls_connection_params.flags) and
+tls_connection_set_verify (flags).
+
+authsrv_init passes the BSS tls_flags to tls_init, but was passing flags
+== 0 in the subsequent tls_global_set_params call. Depending on how a
+particular backend implements flag handling in these 4 functions, this
+can have the effect of clobbering configuration that the tls_init call
+set up.
+
+For example, with the wolfSSL backend if the [SUITEB] tls_flag is set on
+the BSS but no explicit list of ciphers is configured, tls_init will
+configure the relevant Suite-B ciphers, but tls_global_set_params with
+flags = 0 will reset the cipher list back to default. The BSS tls_flags
+also make their way into tls_connection_set_verify, but wolfSSL doesn't
+happen to re-apply the ciphers based on the SUITEB flag at that point.
+
+The tls.h documentation does not document whether subsequent calls are
+intended to fully replace or only augment flags and other state, but
+given the variations between backends, passing (as much as possible) the
+same flags to all functions seems prudent.
+
+Note that on the OpenSSL backend this change has no impact, since
+tls_global_set_params ignores all flags other than
+DISABLE_SESSION_TICKET, which is later re-configured per connection in
+tls_connection_set_verify.
+
+Link: https://patchwork.ozlabs.org/project/hostap/patch/7D82EE78-32F5-40B4-9169-336E5A19A8F2@apple.com/
+Signed-off-by: Karsten Sperling <ksperling@apple.com>
+
+--- a/src/ap/authsrv.c
++++ b/src/ap/authsrv.c
+@@ -471,6 +471,7 @@ int authsrv_init(struct hostapd_data *ha
+ 		params.ocsp_stapling_response_multi =
+ 			hapd->conf->ocsp_stapling_response_multi;
+ 		params.check_cert_subject = hapd->conf->check_cert_subject;
++		params.flags = hapd->conf->tls_flags;
+ 
+ 		if (tls_global_set_params(hapd->ssl_ctx, &params)) {
+ 			wpa_printf(MSG_ERROR, "Failed to set TLS parameters");
