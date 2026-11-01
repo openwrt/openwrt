@@ -8,7 +8,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=odhcpd
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL=$(PROJECT_GIT)/project/odhcpd.git
@@ -56,6 +56,7 @@ define Package/odhcpd-ipv6only
   TITLE:=OpenWrt DHCPv6/NDP/RA server (without DHCPv4)
   VARIANT:=ipv6only
   DEFAULT_VARIANT:=1
+  CONFLICTS:=odhcpd
   DEPENDS+=@IPV6
 endef
 

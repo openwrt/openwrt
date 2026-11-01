@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=iproute2
 PKG_VERSION:=7.3.0
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
 PKG_SOURCE_URL:=@KERNEL/linux/utils/net/iproute2
@@ -38,7 +38,7 @@ $(call Package/iproute2/Default)
   TITLE:=Routing control utility (minimal)
   VARIANT:=iptiny
   DEFAULT_VARIANT:=1
-  PROVIDES:=ip
+  PROVIDES:=@ip
   ALTERNATIVES:=200:/sbin/ip:/usr/libexec/ip-tiny
   DEPENDS:=+libnl-tiny +(PACKAGE_devlink||PACKAGE_rdma||PACKAGE_dcb):libmnl
 endef
@@ -47,7 +47,7 @@ define Package/ip-full
 $(call Package/iproute2/Default)
   TITLE:=Routing control utility (full)
   VARIANT:=ipfull
-  PROVIDES:=ip
+  PROVIDES:=@ip
   ALTERNATIVES:=300:/sbin/ip:/usr/libexec/ip-full
   DEPENDS:=+libnl-tiny +libbpf +(PACKAGE_devlink||PACKAGE_rdma||PACKAGE_dcb):libmnl
 endef
@@ -57,7 +57,7 @@ $(call Package/iproute2/Default)
   TITLE:=Traffic control utility (minimal)
   VARIANT:=tctiny
   DEFAULT_VARIANT:=1
-  PROVIDES:=tc
+  PROVIDES:=@tc
   ALTERNATIVES:=200:/sbin/tc:/usr/libexec/tc-tiny
   DEPENDS:=+kmod-sched-core +(PACKAGE_devlink||PACKAGE_rdma||PACKAGE_dcb):libmnl
 endef
@@ -66,7 +66,7 @@ define Package/tc-bpf
 $(call Package/iproute2/Default)
   TITLE:=Traffic control utility (bpf)
   VARIANT:=tcbpf
-  PROVIDES:=tc
+  PROVIDES:=@tc
   ALTERNATIVES:=300:/sbin/tc:/usr/libexec/tc-bpf
   DEPENDS:=+kmod-sched-core +(PACKAGE_devlink||PACKAGE_rdma||PACKAGE_dcb):libmnl +libbpf
 endef
@@ -75,7 +75,7 @@ define Package/tc-full
 $(call Package/iproute2/Default)
   TITLE:=Traffic control utility (full)
   VARIANT:=tcfull
-  PROVIDES:=tc
+  PROVIDES:=@tc
   ALTERNATIVES:=400:/sbin/tc:/usr/libexec/tc-full
   DEPENDS:=+kmod-sched-core +(PACKAGE_devlink||PACKAGE_rdma||PACKAGE_dcb):libmnl +libbpf +libxtables
 endef

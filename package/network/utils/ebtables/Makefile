@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=ebtables
 PKG_SOURCE_DATE:=2018-06-27
-PKG_RELEASE:=2
+PKG_RELEASE:=3
 
 PKG_SOURCE_URL:=https://git.netfilter.org/ebtables
 PKG_MIRROR_HASH:=3039d73b167c41025b1b401b647743b9c6d786613c693eef34de325b30de6d47
@@ -28,7 +28,7 @@ define Package/ebtables-legacy
   DEPENDS:=+kmod-ebtables
   TITLE:=Ethernet bridge firewall administration utility
   URL:=https://ebtables.netfilter.org/
-  PROVIDES:=ebtables
+  PROVIDES:=@ebtables
   ALTERNATIVES:=\
     200:/usr/sbin/ebtables:/usr/sbin/ebtables-legacy
 endef
