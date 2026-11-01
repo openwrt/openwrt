@@ -22,6 +22,8 @@
 
 #define RTL931X_RMA_BPDU_FLD_PMSK		(0x8950)
 
+#define RTL931X_VLAN_PORT_AFT			(0x9400)
+
 /* IMR_GLB does not exit on RTL931X */
 #define RTL931X_IMR_PORT_LINK_STS_CHG		(0x126C)
 #define RTL931X_ISR_GLB_SRC			(0x12B4)
@@ -414,6 +416,7 @@ const struct rtldsa_config rtldsa_931x_cfg = {
 	.vlan_profile_dump = otto_vlan_931x_profile_dump,
 	.vlan_profile_setup = otto_vlan_931x_profile_setup,
 	.vlan_fwd_on_inner = otto_vlan_931x_port_forward_on_inner,
+	.vlan_port_aft = RTL931X_VLAN_PORT_AFT,
 	.stp_get = otto_stp_931x_get,
 	.stp_set = otto_stp_931x_set,
 	.mac_force_mode = {
