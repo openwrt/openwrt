@@ -1,0 +1,298 @@
+--- a/drivers/phy/realtek/phy-rtk-usb3.c
++++ b/drivers/phy/realtek/phy-rtk-usb3.c
+@@ -17,12 +17,14 @@
+ #include <linux/sys_soc.h>
+ #include <linux/mfd/syscon.h>
+ #include <linux/phy/phy.h>
++#include <linux/reset.h>
+ #include <linux/usb.h>
+ 
+ #define USB_MDIO_CTRL_PHY_BUSY BIT(7)
+ #define USB_MDIO_CTRL_PHY_WRITE BIT(0)
+ #define USB_MDIO_CTRL_PHY_ADDR_SHIFT 8
+ #define USB_MDIO_CTRL_PHY_DATA_SHIFT 16
++#define USB_MDIO_CTRL_9607_PHY_BUSY BIT(5)
+ 
+ #define MAX_USB_PHY_DATA_SIZE 0x30
+ #define PHY_ADDR_0X09 0x09
+@@ -51,8 +53,21 @@
+ #define PHY_ADDR_MAP_ARRAY_INDEX(addr) (addr)
+ #define ARRAY_INDEX_MAP_PHY_ADDR(index) (index)
+ 
++#define USB_U3_IPCFG 0x8
++#define USB_U3_IPCFG_HOST_ORDER BIT(6)
++#define USB_U3_IPCFG_U2_WAKE BIT(1)
++#define USB_U3_IPCFG_RX50T BIT(27)
++
++struct phy_reg_desc {
++	u32 busy_bit;
++	u32 poll_result;
++	u32 (*read)(void __iomem *reg);
++	void (*write)(u32 val, void __iomem *reg);
++};
++
+ struct phy_reg {
+ 	void __iomem *reg_mdio_ctl;
++	const struct phy_reg_desc *desc;
+ };
+ 
+ struct phy_data {
+@@ -69,6 +84,8 @@ struct phy_cfg {
+ 	bool do_toggle_once;
+ 	bool use_default_parameter;
+ 	bool check_rx_front_end_offset;
++	const struct phy_reg_desc *reg_desc;
++	bool do_ip_config;
+ };
+ 
+ struct phy_parameter {
+@@ -88,19 +105,41 @@ struct rtk_phy {
+ 	struct phy_cfg *phy_cfg;
+ 	int num_phy;
+ 	struct phy_parameter *phy_parameter;
++	struct reset_control *phy_rst;
+ 
+ 	struct dentry *debug_dir;
+ };
+ 
++static u32 rtk_usb2phy_read(void __iomem *reg)
++{
++	return readl(reg);
++}
++
++static void rtk_usb2phy_write(u32 val, void __iomem *reg)
++{
++	writel(val, reg);
++}
++
++static u32 rtk_usb2phy_read_raw(void __iomem *reg)
++{
++	return __raw_readl(reg);
++}
++
++static void rtk_usb2phy_write_raw(u32 val, void __iomem *reg)
++{
++	__raw_writel(val, reg);
++}
++
+ #define PHY_IO_TIMEOUT_USEC		(50000)
+ #define PHY_IO_DELAY_US			(100)
+ 
+-static inline int utmi_wait_register(void __iomem *reg, u32 mask, u32 result)
++static inline int utmi_wait_register(void __iomem *reg, u32 mask, u32 result,
++				     u32 (*read)(void __iomem *reg))
+ {
+ 	int ret;
+ 	unsigned int val;
+ 
+-	ret = read_poll_timeout(readl, val, ((val & mask) == result),
++	ret = read_poll_timeout(read, val, ((val & mask) == result),
+ 				PHY_IO_DELAY_US, PHY_IO_TIMEOUT_USEC, false, reg);
+ 	if (ret) {
+ 		pr_err("%s can't program USB phy\n", __func__);
+@@ -112,21 +151,25 @@ static inline int utmi_wait_register(voi
+ 
+ static int rtk_phy3_wait_vbusy(struct phy_reg *phy_reg)
+ {
+-	return utmi_wait_register(phy_reg->reg_mdio_ctl, USB_MDIO_CTRL_PHY_BUSY, 0);
++	const struct phy_reg_desc *reg_desc = phy_reg->desc;
++
++	return utmi_wait_register(phy_reg->reg_mdio_ctl, reg_desc->busy_bit,
++				  reg_desc->poll_result, reg_desc->read);
+ }
+ 
+ static u16 rtk_phy_read(struct phy_reg *phy_reg, char addr)
+ {
++	const struct phy_reg_desc *reg_desc = phy_reg->desc;
+ 	unsigned int tmp;
+ 	u32 value;
+ 
+ 	tmp = (addr << USB_MDIO_CTRL_PHY_ADDR_SHIFT);
+ 
+-	writel(tmp, phy_reg->reg_mdio_ctl);
++	reg_desc->write(tmp, phy_reg->reg_mdio_ctl);
+ 
+ 	rtk_phy3_wait_vbusy(phy_reg);
+ 
+-	value = readl(phy_reg->reg_mdio_ctl);
++	value = reg_desc->read(phy_reg->reg_mdio_ctl);
+ 	value = value >> USB_MDIO_CTRL_PHY_DATA_SHIFT;
+ 
+ 	return (u16)value;
+@@ -134,13 +177,14 @@ static u16 rtk_phy_read(struct phy_reg *
+ 
+ static int rtk_phy_write(struct phy_reg *phy_reg, char addr, u16 data)
+ {
++	const struct phy_reg_desc *reg_desc = phy_reg->desc;
+ 	unsigned int val;
+ 
+ 	val = USB_MDIO_CTRL_PHY_WRITE |
+ 		    (addr << USB_MDIO_CTRL_PHY_ADDR_SHIFT) |
+ 		    (data << USB_MDIO_CTRL_PHY_DATA_SHIFT);
+ 
+-	writel(val, phy_reg->reg_mdio_ctl);
++	reg_desc->write(val, phy_reg->reg_mdio_ctl);
+ 
+ 	rtk_phy3_wait_vbusy(phy_reg);
+ 
+@@ -185,11 +229,35 @@ static int do_rtk_phy_init(struct rtk_ph
+ 	struct phy_cfg *phy_cfg;
+ 	struct phy_reg *phy_reg;
+ 	struct phy_parameter *phy_parameter;
++	const struct phy_reg_desc *reg_desc;
+ 	int i = 0;
+ 
+ 	phy_cfg = rtk_phy->phy_cfg;
+ 	phy_parameter = &((struct phy_parameter *)rtk_phy->phy_parameter)[index];
+ 	phy_reg = &phy_parameter->phy_reg;
++	reg_desc = phy_reg->desc;
++
++	if (rtk_phy->phy_rst) {
++		reset_control_deassert(rtk_phy->phy_rst);
++
++		usleep_range(10000, 11000);
++	}
++
++
++	if (phy_cfg->do_ip_config) {
++		void __iomem *ipcfg_reg = phy_reg->reg_mdio_ctl + USB_U3_IPCFG;
++		u32 value;
++
++		value = reg_desc->read(ipcfg_reg);
++		value &= ~USB_U3_IPCFG_HOST_ORDER;
++		/* wake u2 && disable RX50T */
++		value |= USB_U3_IPCFG_U2_WAKE | USB_U3_IPCFG_RX50T;
++		reg_desc->write(value, ipcfg_reg);
++
++		usleep_range(10000, 11000);
++		/* put it back RX50T */
++		reg_desc->write(value & ~USB_U3_IPCFG_RX50T, ipcfg_reg);
++	}
+ 
+ 	if (phy_cfg->use_default_parameter)
+ 		goto do_toggle;
+@@ -523,6 +591,7 @@ static void update_amplitude_control_val
+ 
+ static int parse_phy_data(struct rtk_phy *rtk_phy)
+ {
++	struct phy_cfg *phy_cfg = rtk_phy->phy_cfg;
+ 	struct device *dev = rtk_phy->dev;
+ 	struct phy_parameter *phy_parameter;
+ 	int ret = 0;
+@@ -537,6 +606,7 @@ static int parse_phy_data(struct rtk_phy
+ 		phy_parameter = &((struct phy_parameter *)rtk_phy->phy_parameter)[index];
+ 
+ 		phy_parameter->phy_reg.reg_mdio_ctl = of_iomap(dev->of_node, 0) + index;
++		phy_parameter->phy_reg.desc = phy_cfg->reg_desc;
+ 
+ 		/* Amplitude control address 0x20 bit 0 to bit 7 */
+ 		if (of_property_read_u32(dev->of_node, "realtek,amplitude-control-coarse-tuning",
+@@ -584,6 +654,12 @@ static int rtk_usb3phy_probe(struct plat
+ 
+ 	rtk_phy->num_phy = 1;
+ 
++	rtk_phy->phy_rst = devm_reset_control_array_get_optional_exclusive(dev);
++	if (IS_ERR(rtk_phy->phy_rst)) {
++		dev_err(dev, "usb3 phy resets are not working\n");
++		return PTR_ERR(rtk_phy->phy_rst);
++	}
++
+ 	ret = parse_phy_data(rtk_phy);
+ 	if (ret)
+ 		goto err;
+@@ -613,6 +689,20 @@ static void rtk_usb3phy_remove(struct pl
+ 	remove_debug_files(rtk_phy);
+ }
+ 
++static const struct phy_reg_desc rtd_phy_reg_desc = {
++	.busy_bit = USB_MDIO_CTRL_PHY_BUSY,
++	.poll_result = 0,
++	.read = rtk_usb2phy_read,
++	.write = rtk_usb2phy_write,
++};
++
++static const struct phy_reg_desc rtl9607_phy_reg_desc = {
++	.busy_bit = USB_MDIO_CTRL_9607_PHY_BUSY,
++	.poll_result = 0,
++	.read = rtk_usb2phy_read_raw,
++	.write = rtk_usb2phy_write_raw,
++};
++
+ static const struct phy_cfg rtd1295_phy_cfg = {
+ 	.param_size = MAX_USB_PHY_DATA_SIZE,
+ 	.param = {  [0] = {0x01, 0x4008},  [1] = {0x01, 0xe046},
+@@ -644,6 +734,7 @@ static const struct phy_cfg rtd1295_phy_
+ 	.do_toggle_once = false,
+ 	.use_default_parameter = false,
+ 	.check_rx_front_end_offset = false,
++	.reg_desc = &rtd_phy_reg_desc,
+ };
+ 
+ static const struct phy_cfg rtd1619_phy_cfg = {
+@@ -656,6 +747,7 @@ static const struct phy_cfg rtd1619_phy_
+ 	.do_toggle_once = false,
+ 	.use_default_parameter = false,
+ 	.check_rx_front_end_offset = false,
++	.reg_desc = &rtd_phy_reg_desc,
+ };
+ 
+ static const struct phy_cfg rtd1319_phy_cfg = {
+@@ -676,6 +768,7 @@ static const struct phy_cfg rtd1319_phy_
+ 	.do_toggle_once = false,
+ 	.use_default_parameter = false,
+ 	.check_rx_front_end_offset = false,
++	.reg_desc = &rtd_phy_reg_desc,
+ };
+ 
+ static const struct phy_cfg rtd1619b_phy_cfg = {
+@@ -699,6 +792,7 @@ static const struct phy_cfg rtd1619b_phy
+ 	.do_toggle_once = true,
+ 	.use_default_parameter = false,
+ 	.check_rx_front_end_offset = false,
++	.reg_desc = &rtd_phy_reg_desc,
+ };
+ 
+ static const  struct phy_cfg rtd1319d_phy_cfg = {
+@@ -722,6 +816,34 @@ static const  struct phy_cfg rtd1319d_ph
+ 	.do_toggle_once = true,
+ 	.use_default_parameter = false,
+ 	.check_rx_front_end_offset = true,
++	.reg_desc = &rtd_phy_reg_desc,
++};
++
++static const  struct phy_cfg rtl9607_phy_cfg = {
++	.param_size = MAX_USB_PHY_DATA_SIZE,
++	.param = {  [1] = {0x01, 0xac89},
++		    [6] = {0x06, 0x0019},
++		    [7] = {0x07, 0x0600},
++		    [8] = {0x08, 0x3261},
++		    [9] = {0x09, 0x424c},
++		   [10] = {0x0a, 0xb210},
++		   [11] = {0x0b, 0xb90d},
++		   [13] = {0x0d, 0xe718},
++		   [14] = {0x0e, 0x1010},
++		   [15] = {0x0f, 0x8d50},
++		   [32] = {0x20, 0x7025},
++		   [33] = {0x21, 0x88a0},
++		   [35] = {0x23, 0x0b66},
++		   [39] = {0x27, 0x01e1},
++		   [41] = {0x29, 0xf0f2},
++		   [43] = {0x2b, 0x80a8}, },
++	.check_efuse = false,
++	.do_toggle = true,
++	.do_toggle_once = false,
++	.use_default_parameter = false,
++	.check_rx_front_end_offset = false,
++	.do_ip_config = true,
++	.reg_desc = &rtl9607_phy_reg_desc,
+ };
+ 
+ static const struct of_device_id usbphy_rtk_dt_match[] = {
+@@ -730,6 +852,7 @@ static const struct of_device_id usbphy_
+ 	{ .compatible = "realtek,rtd1319d-usb3phy", .data = &rtd1319d_phy_cfg },
+ 	{ .compatible = "realtek,rtd1619-usb3phy", .data = &rtd1619_phy_cfg },
+ 	{ .compatible = "realtek,rtd1619b-usb3phy", .data = &rtd1619b_phy_cfg },
++	{ .compatible = "realtek,rtl9607-usb3phy", .data = &rtl9607_phy_cfg },
+ 	{},
+ };
+ MODULE_DEVICE_TABLE(of, usbphy_rtk_dt_match);

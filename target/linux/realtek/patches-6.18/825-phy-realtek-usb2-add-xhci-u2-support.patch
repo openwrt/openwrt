@@ -1,0 +1,55 @@
+--- a/drivers/phy/realtek/phy-rtk-usb2.c
++++ b/drivers/phy/realtek/phy-rtk-usb2.c
+@@ -1151,6 +1151,14 @@ static const struct phy_reg_desc rtl9607
+ 	.write = rtk_usb2phy_write_be,
+ };
+ 
++static const struct phy_reg_desc rtl9607_xhci_phy_reg_desc = {
++	.vstatus_offset = 0,
++	.vstatus_busy = PHY_VSTS_BUSY,
++	.new_reg_req = PHY_NEW_REG_REQ,
++	.read = rtk_usb2phy_read_be,
++	.write = rtk_usb2phy_write_be,
++};
++
+ static const struct phy_cfg rtd1295_phy_cfg = {
+ 	.page0_size = MAX_USB_PHY_PAGE0_DATA_SIZE,
+ 	.page0 = { [0] = {0xe0, 0x90},
+@@ -1407,6 +1415,29 @@ static const struct phy_cfg rtl9607_phy_
+ 	.force_host_disconnect = true,
+ };
+ 
++static const struct phy_cfg rtl9607_xhci_phy_cfg = {
++	.page0_size = MAX_USB_PHY_PAGE0_DATA_SIZE,
++	.page0 = { [0] = {0xe0, 0x95},
++		   [4] = {0xe4, 0x6a},
++		  [11] = {0xf3, 0x31}, },
++	.page1_size = MAX_USB_PHY_PAGE1_DATA_SIZE,
++	.page1 = { [0] = {0xe0, 0x26}, },
++	.page2_size = MAX_USB_PHY_PAGE2_DATA_SIZE,
++	.page2 = { [7] = {0xe7, 0x33}, },
++	.num_phy = 1,
++	.check_efuse_version = CHECK_EFUSE_V2,
++	.efuse_dc_driving_rate = EFUS_USB_DC_CAL_RATE,
++	.dc_driving_mask = 0x1f,
++	.efuse_dc_disconnect_rate = EFUS_USB_DC_DIS_RATE,
++	.dc_disconnect_mask = 0xf,
++	.usb_dc_disconnect_at_page0 = true,
++	.do_toggle = true,
++	.driving_updated_for_dev_dis = 0x8,
++	.is_double_sensitivity_mode = true,
++	.reg_desc = &rtl9607_xhci_phy_reg_desc,
++	.force_host_disconnect = false,
++};
++
+ static const struct of_device_id usbphy_rtk_dt_match[] = {
+ 	{ .compatible = "realtek,rtd1295-usb2phy", .data = &rtd1295_phy_cfg },
+ 	{ .compatible = "realtek,rtd1312c-usb2phy", .data = &rtd1312c_phy_cfg },
+@@ -1418,6 +1449,7 @@ static const struct of_device_id usbphy_
+ 	{ .compatible = "realtek,rtd1619-usb2phy", .data = &rtd1619_phy_cfg },
+ 	{ .compatible = "realtek,rtd1619b-usb2phy", .data = &rtd1619b_phy_cfg },
+ 	{ .compatible = "realtek,rtl9607-usb2phy", .data = &rtl9607_phy_cfg },
++	{ .compatible = "realtek,rtl9607-xhci-usb2phy", .data = &rtl9607_xhci_phy_cfg },
+ 	{},
+ };
+ MODULE_DEVICE_TABLE(of, usbphy_rtk_dt_match);
