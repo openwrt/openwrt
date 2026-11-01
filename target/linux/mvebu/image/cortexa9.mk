@@ -511,3 +511,45 @@ define Device/zyxel_nas326
   KERNEL_INITRAMFS := kernel-bin | append-dtb | uImage none
 endef
 TARGET_DEVICES += zyxel_nas326
+# BEGIN RTX830 UBOOT SDBOOT
+# SPDX-License-Identifier: GPL-2.0-only
+# SPI U-Boot is installed separately and never included in either SD artifact.
+# Give this fixed-layout rootfs a distinct standard image.mk filesystem key.
+RTX830_ROOTFS := $(KDIR)/root.ext4+fs=rtx830
+RTX830_PKG_ROOTFS := $(RTX830_ROOTFS)+pkg=
+$(RTX830_ROOTFS): ROOTFS_PARTSIZE=536870912
+$(RTX830_ROOTFS): CONFIG_TARGET_EXT4_BLOCKSIZE=4096
+$(RTX830_PKG_ROOTFS)%: ROOTFS_PARTSIZE=536870912
+$(RTX830_PKG_ROOTFS)%: CONFIG_TARGET_EXT4_BLOCKSIZE=4096
+define Build/rtx830-boot-img
+	rm -f $@.boot
+	mkfs.fat --invariant -C -F 32 -s 1 -n RTX830BOOT -i 83002026 $@.boot 65536
+	TZ=UTC SOURCE_DATE_EPOCH=$(SOURCE_DATE_EPOCH) mcopy -i $@.boot $(IMAGE_KERNEL) ::zImage
+	TZ=UTC SOURCE_DATE_EPOCH=$(SOURCE_DATE_EPOCH) mcopy -i $@.boot $(KDIR)/image-$(DEVICE_DTS).dtb ::rtx830.dtb
+endef
+
+define Build/rtx830-sdcard-img
+	$(STAGING_DIR_HOST)/bin/python3 ./gen-rtx830-sdcard.py \
+		$@ $@.boot $(IMAGE_ROOTFS)
+endef
+
+define Device/yamaha_rtx830
+  DEVICE_VENDOR := Yamaha
+  DEVICE_MODEL := RTX830
+  DEVICE_DTS := armada-385-yamaha-rtx830
+  BOARD_NAME := yamaha_rtx830
+  SUPPORTED_DEVICES := yamaha,rtx830
+  KERNEL := kernel-bin
+  KERNEL_INSTALL := 1
+  FILESYSTEMS := ext4
+  FS_OPTIONS/ext4 := rtx830
+  DEVICE_PACKAGES := -uboot-envtools -kmod-gpio-button-hotplug \
+    kmod-rtx830-board kmod-eeprom-at24 kmod-rtc-rx8010 kmod-dsa-mv88e6xxx \
+    input-support kmod-input-gpio-keys kmod-input-evdev \
+    kmod-fs-vfat kmod-nls-cp437 kmod-nls-iso8859-1 \
+    kmod-crypto-md5 kmod-crypto-sha256
+  IMAGES := sdcard.img.gz sysupgrade.tar.gz
+  IMAGE/sdcard.img.gz := rtx830-boot-img | rtx830-sdcard-img | gzip | append-metadata
+  IMAGE/sysupgrade.tar.gz := sysupgrade-tar dtb=$$(KDIR)/image-$$(DEVICE_DTS).dtb | gzip | append-metadata
+endef
+TARGET_DEVICES += yamaha_rtx830
