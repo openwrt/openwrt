@@ -1,0 +1,46 @@
+From 1581837caac485821d6df312828eb28a19a9e241 Mon Sep 17 00:00:00 2001
+From: Navid Ghahremani <ghahramani.navid@gmail.com>
+Date: Mon, 12 Oct 2026 07:44:58 +0100
+Subject: [PATCH 03/24] ARM: zte: Add ZX279128S platform and CPU hotplug
+ support
+
+Support the dual Cortex-A9 platform, second-CPU startup through
+bootloader SRAM and CPU hotplug. Keep existing ZX297520V3 support
+intact.
+
+Signed-off-by: Navid Ghahremani <ghahramani.navid@gmail.com>
+---
+
+--- a/arch/arm/mach-zte/Kconfig
++++ b/arch/arm/mach-zte/Kconfig
+@@ -26,4 +26,21 @@ config SOC_ZX297520V3
+ 	  Please read Documentation/arch/arm/zte/zx297520v3.rst on how to boot
+ 	  the kernel.
+ 
++config SOC_ZX279128S
++	bool "zx279128s SoC"
++	default y
++	select ARM_AMBA
++	select ARM_GIC
++	select ARM_GLOBAL_TIMER
++	select CACHE_L2X0
++	select CACHE_L2X0_IO_LOCK
++	select CLKSRC_ARM_GLOBAL_TIMER_SCHED_CLOCK
++	select HAVE_ARM_SCU if SMP
++	select HAVE_ARM_TWD if SMP
++	help
++	  Support for the ZTE (Sanechips) zx279128s SoC, a dual-core
++	  Cortex-A9 with an L2C-310 cache controller, used in home gateways
++	  such as the ZTE ZXHN H3600. The second core is started through
++	  the on-chip SRAM, where the boot loader keeps it waiting.
++
+ endif
+--- a/arch/arm/mach-zte/Makefile
++++ b/arch/arm/mach-zte/Makefile
+@@ -1,2 +1,6 @@
+ # SPDX-License-Identifier: GPL-2.0-only
+ obj-$(CONFIG_SOC_ZX297520V3) += zx297520v3.o
++obj-$(CONFIG_SOC_ZX279128S) += zx279128s.o
++ifdef CONFIG_SMP
++obj-$(CONFIG_SOC_ZX279128S) += platsmp-zx279128s.o
++endif
