@@ -1,0 +1,109 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Ville Takio <ville+git@takio.fi>
+Subject: [PATCH] b43: AC-PHY: split the medium and low clip gains as wl does
+
+Extend the wl 7.14 gain split to the medium clip gain (0x06e0/0x06e1)
+and the two low clip gains (0x06e4/0x06e5, 0x06e2/0x06e3), which were
+d6220 constants. Their targets (35, 20 dB) and stage caps take the TR
+isolation (triso + 4) * 2 of the core on a band with an external LNA;
+the last pair always does. Validated against wl's registers on all
+three cores of both bands of the RT-AC66U B1.
+
+--- a/drivers/net/wireless/broadcom/b43/phy_ac.c
++++ b/drivers/net/wireless/broadcom/b43/phy_ac.c
+@@ -4822,7 +4822,7 @@ static void b43_phy_ac_agc_rows_read(str
+ }
+ 
+ static void b43_phy_ac_agc_split(const struct b43_phy_ac_agc_rows *rows,
+-				 const u8 *caps, int target,
++				 const u8 *caps, int cap_add, int target,
+ 				 u8 code[B43_PHY_AC_AGC_STAGES])
+ {
+ 	int left = target, sum = 0;
+@@ -4843,7 +4843,7 @@ static void b43_phy_ac_agc_split(const s
+ 		if (s < B43_PHY_AC_AGC_STAGES - 1)
+ 			for (k = s + 1; k < B43_PHY_AC_AGC_STAGES; k++)
+ 				allow -= rows->gain[k][0];
+-		cap = caps[s == 4 ? 4 : (s == 6 ? 5 : s)];
++		cap = caps[s == 4 ? 4 : (s == 6 ? 5 : s)] + cap_add;
+ 
+ 		code[s] = rows->code[s][0];
+ 		for (i = (int)n - 1; i >= 0; i--) {
+@@ -4893,6 +4893,8 @@ b43_phy_ac_post_noise_shaping_rx_regprog
+ 	struct b43_phy_ac_agc_rows rows;
+ 	u8 c[B43_PHY_AC_AGC_STAGES];
+ 	u16 init_lo, init_hi, init_tbl, clip_lo, clip_hi;
++	u16 md_lo, md_hi, lo1_lo, lo1_hi, lo2_lo, lo2_hi;
++	const u8 *caps = band_2g ? caps_2g : caps_5g;
+ 
+ 	/*
+ 	 * Init gain (69 dB) and high clip gain (48 dB) split as wl 7.14 does.
+@@ -4906,14 +4908,45 @@ b43_phy_ac_post_noise_shaping_rx_regprog
+ 	 * total.
+ 	 */
+ 	b43_phy_ac_agc_rows_read(dev, core, &rows);
+-	b43_phy_ac_agc_split(&rows, band_2g ? caps_2g : caps_5g, 69, c);
++	b43_phy_ac_agc_split(&rows, caps, 0, 69, c);
+ 	init_lo = (u16)(c[1] << 1 | c[2] << 4 | c[3] << 7);
+ 	init_hi = (u16)(0x0004 | c[4] << 4 | c[5] << 8);
+ 	init_tbl = (u16)(c[1] | c[2] << 3 | c[3] << 6 | c[4] << 10 | c[5] << 13);
+-	b43_phy_ac_agc_split(&rows, band_2g ? caps_2g : caps_5g, 48, c);
++	b43_phy_ac_agc_split(&rows, caps, 0, 48, c);
+ 	clip_lo = (u16)(c[1] << 1 | c[2] << 4 | c[3] << 7);
+ 	clip_hi = (u16)(0x0004 | c[4] << 4 | c[5] << 8);
+ 
++	/*
++	 * The three lower clip gains. E is the TR isolation in dB, the same
++	 * (triso + 4) * 2 that rxgain_init() programs (plus 2) as the gain
++	 * context; wl keeps it per core next to the eLNA gain. On a band with
++	 * an external LNA (boardflags) E raises the medium (35 dB) and low
++	 * (20 dB) targets and the stage caps; the last pair adds it on every
++	 * board. The flag nibble is 8 with an eLNA, 4 without. On the RT-AC66U
++	 * B1 (eLNA on both bands, E 34 on 2.4 GHz, 22/26/24 on 5 GHz) this
++	 * gives wl's words on all three cores of both bands.
++	 */
++	{
++		const struct ssb_sprom *sp = dev->dev->bus_sprom;
++		const struct ssb_sprom_rxgains *rx =
++			band_2g ? &sp->rxgains_2g : &sp->rxgains_5gl;
++		bool elna = band_2g ? !!(sp->boardflags_lo & B43_BFL_EXTLNA) :
++				      !!(sp->boardflags_hi & B43_BFH_EXTLNA_5GHZ);
++		int e = (rx->triso[core] + 4) << 1;
++		int ee = elna ? e : 0;
++		u16 flag = elna ? 0x0008 : 0x0004;
++
++		b43_phy_ac_agc_split(&rows, caps, ee, 35 + ee, c);
++		md_lo = (u16)(c[1] << 1 | c[2] << 4 | c[3] << 7);
++		md_hi = (u16)(flag | c[4] << 4 | c[5] << 8);
++		b43_phy_ac_agc_split(&rows, caps, ee, elna ? e + 20 : 27, c);
++		lo1_lo = (u16)(c[1] << 1 | c[2] << 4 | c[3] << 7);
++		lo1_hi = (u16)(flag | c[4] << 4 | c[5] << 8);
++		b43_phy_ac_agc_split(&rows, caps, e, e + 20, c);
++		lo2_lo = (u16)(c[1] << 1 | c[2] << 4 | c[3] << 7);
++		lo2_hi = (u16)(0x0008 | c[4] << 4 | c[5] << 8);
++	}
++
+ 	/* 0x06dc peeked first, as the stock driver does */
+ 	cur = b43_phy_read_log(dev, 0x06dc + stride);
+ 	(void)cur;
+@@ -4927,14 +4960,14 @@ b43_phy_ac_post_noise_shaping_rx_regprog
+ 	b43_phy_write(dev, 0x06de + stride, clip_lo);
+ 	b43_phy_write(dev, 0x06df + stride, clip_hi);
+ 	b43_phy_maskset(dev, 0x06e3 + stride, (u16)~0x0002, 0x0000);
+-	b43_phy_write(dev, 0x06e0 + stride, band_2g ? 0x014a : 0x016a);
+-	b43_phy_write(dev, 0x06e1 + stride, 0x0018);
++	b43_phy_write(dev, 0x06e0 + stride, md_lo);
++	b43_phy_write(dev, 0x06e1 + stride, md_hi);
+ 	b43_phy_maskset(dev, 0x06e3 + stride, (u16)~0x0002, 0x0000);
+-	b43_phy_write(dev, 0x06e4 + stride, 0x013a);
+-	b43_phy_write(dev, 0x06e5 + stride, 0x0008);
++	b43_phy_write(dev, 0x06e4 + stride, lo1_lo);
++	b43_phy_write(dev, 0x06e5 + stride, lo1_hi);
+ 	b43_phy_maskset(dev, 0x06e3 + stride, (u16)~0x0002, 0x0000);
+-	b43_phy_write(dev, 0x06e2 + stride, 0x013a);
+-	b43_phy_write(dev, 0x06e3 + stride, 0x0008);
++	b43_phy_write(dev, 0x06e2 + stride, lo2_lo);
++	b43_phy_write(dev, 0x06e3 + stride, lo2_hi);
+ 	b43_phy_maskset(dev, 0x06e3 + stride, (u16)~0x0002, 0x0000);
+ 
+ 	/* Five peeks of 0x06dc, three of 0x06dd. */

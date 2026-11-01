@@ -1,0 +1,164 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Ville Takio <ville+git@takio.fi>
+Subject: [PATCH] b43: AC-PHY: split the init and high clip gains as wl does
+
+The init gain (0x06dc/0x06dd, table 7 0xf9 + core) and the high clip
+gain (0x06de/0x06df) were constants from the d6220. wl 7.14 spreads a
+69 dB and a 48 dB target over seven gain stages from its AGC state,
+which on the RT-AC66U B1 (read from RAM under wl) is the gain tables b43
+already loads plus two fixed 3 dB ladders. Port that split. wl's extra
+per-core LNA gain, added under an external LNA flag and a desense state
+of its own, is not ported: on the RT-AC66U B1, which has the external LNA
+boardflags, wl's words are those of the plain targets, and the port gives
+them exactly at 20 MHz on both bands.
+
+--- a/drivers/net/wireless/broadcom/b43/phy_ac.c
++++ b/drivers/net/wireless/broadcom/b43/phy_ac.c
+@@ -4779,6 +4779,88 @@ static void b43_phy_ac_rx_evm_shaping_ov
+ }
+ 
+ /*
++ * RX gain split of wl 7.14: a target in dB spread over seven gain stages,
++ * stage by stage, taking the highest index whose gain fits both what is
++ * left after the later stages' minima and the stage's cumulative cap.
++ * Before stage 4 the remainder is rounded up off 2 mod 3 and clamped to 30.
++ * Stage rows are what wl keeps in its AGC state; on the RT-AC66U B1, read
++ * from RAM under wl, they are the gain tables b43 also loads (stages 0-3,
++ * table 0x44/0x45 + 0x20 * core at 0x00, 0x08, 0x10, 0x20), two 3 dB
++ * ladders (stages 4 and 5) and an empty stage 6.
++ */
++#define B43_PHY_AC_AGC_STAGES	7
++
++struct b43_phy_ac_agc_rows {
++	s8 gain[B43_PHY_AC_AGC_STAGES][12];
++	u8 code[B43_PHY_AC_AGC_STAGES][12];
++};
++
++static const u8 b43_phy_ac_agc_count[B43_PHY_AC_AGC_STAGES] = {
++	2, 6, 7, 10, 8, 8, 11
++};
++
++static void b43_phy_ac_agc_rows_read(struct b43_wldev *dev, unsigned int core,
++				     struct b43_phy_ac_agc_rows *rows)
++{
++	static const u8 off[4] = { 0x00, 0x08, 0x10, 0x20 };
++	u16 id = (u16)(0x44 + 0x20 * core);
++	unsigned int s, i;
++
++	memset(rows, 0, sizeof(*rows));
++	for (s = 0; s < 4; s++) {
++		b43_actab_read_bulk(dev, id, off[s], 8,
++				    b43_phy_ac_agc_count[s], rows->gain[s]);
++		b43_actab_read_bulk(dev, id + 1, off[s], 8,
++				    b43_phy_ac_agc_count[s], rows->code[s]);
++	}
++	for (s = 4; s < 6; s++) {
++		for (i = 0; i < b43_phy_ac_agc_count[s]; i++) {
++			rows->gain[s][i] = (s8)(3 * i);
++			rows->code[s][i] = (u8)i;
++		}
++	}
++}
++
++static void b43_phy_ac_agc_split(const struct b43_phy_ac_agc_rows *rows,
++				 const u8 *caps, int target,
++				 u8 code[B43_PHY_AC_AGC_STAGES])
++{
++	int left = target, sum = 0;
++	unsigned int s, k;
++
++	for (s = 0; s < B43_PHY_AC_AGC_STAGES; s++) {
++		unsigned int n = b43_phy_ac_agc_count[s];
++		int allow = left, cap;
++		int i;
++
++		if (s == 4) {
++			if (left % 3 == 2)
++				left++;
++			if (left > 29)
++				left = 30;
++			allow = left;
++		}
++		if (s < B43_PHY_AC_AGC_STAGES - 1)
++			for (k = s + 1; k < B43_PHY_AC_AGC_STAGES; k++)
++				allow -= rows->gain[k][0];
++		cap = caps[s == 4 ? 4 : (s == 6 ? 5 : s)];
++
++		code[s] = rows->code[s][0];
++		for (i = (int)n - 1; i >= 0; i--) {
++			int g = rows->gain[s][i];
++
++			if (rows->code[s][i] == rows->code[s][0] ||
++			    (g <= allow && g + sum <= cap)) {
++				left -= g;
++				sum += g;
++				code[s] = rows->code[s][i];
++				break;
++			}
++		}
++	}
++}
++
++/*
+  * Per-core body of the post-noise-shaping block, at a 0x200 stride: peek
+  * and write 0x06dc/0x06dd, write table 0x07 at 0xf9 + core = 0xc0b5, unlock
+  * the outer gate, five groups of (clear bit 1 of 0x06e3, two writes), eight
+@@ -4799,7 +4881,6 @@ b43_phy_ac_post_noise_shaping_rx_regprog
+ 	B43_AC_FN();
+ 	u16 stride = (u16)(core * 0x200);
+ 	u16 tbl_off = (u16)(0x00f9 + core);
+-	static const u16 tbl_val = 0xc0b5;
+ 	/*
+ 	 * 0x06de and 0x06e0 are 0x014a on 2.4 GHz on both cores of the
+ 	 * MacBookAir6,1 and the archer-t5e, 0x015a and 0x016a on 5 GHz. The
+@@ -4807,18 +4888,44 @@ b43_phy_ac_post_noise_shaping_rx_regprog
+ 	 * on 5 GHz too: board data, transcribed from the d6220.
+ 	 */
+ 	bool band_2g = b43_current_band(dev->wl) == NL80211_BAND_2GHZ;
++	static const u8 caps_2g[6] = { 43, 43, 43, 52, 52, 100 };
++	static const u8 caps_5g[6] = { 47, 47, 47, 52, 52, 100 };
++	struct b43_phy_ac_agc_rows rows;
++	u8 c[B43_PHY_AC_AGC_STAGES];
++	u16 init_lo, init_hi, init_tbl, clip_lo, clip_hi;
++
++	/*
++	 * Init gain (69 dB) and high clip gain (48 dB) split as wl 7.14 does.
++	 * wl adds a per-core LNA gain to both targets when the board's external
++	 * LNA flag and a desense state of its own are both set; that path is not
++	 * ported. The RT-AC66U B1 has the external LNA boardflags on both bands
++	 * and wl's words there are those of the plain targets, at 20 MHz on
++	 * both bands (2.4 GHz 0x013a/0x0624 and 0x013a/0x0014, 5 GHz
++	 * 0x016a/0x0614 and 0x015a/0x0014). At 40 and 80 MHz wl moves 3 dB of
++	 * the init gain from stage 4 to stage 5 in a later step (0x0704), same
++	 * total.
++	 */
++	b43_phy_ac_agc_rows_read(dev, core, &rows);
++	b43_phy_ac_agc_split(&rows, band_2g ? caps_2g : caps_5g, 69, c);
++	init_lo = (u16)(c[1] << 1 | c[2] << 4 | c[3] << 7);
++	init_hi = (u16)(0x0004 | c[4] << 4 | c[5] << 8);
++	init_tbl = (u16)(c[1] | c[2] << 3 | c[3] << 6 | c[4] << 10 | c[5] << 13);
++	b43_phy_ac_agc_split(&rows, band_2g ? caps_2g : caps_5g, 48, c);
++	clip_lo = (u16)(c[1] << 1 | c[2] << 4 | c[3] << 7);
++	clip_hi = (u16)(0x0004 | c[4] << 4 | c[5] << 8);
+ 
+-	/* 0x06dc written back as read, 0x06dd programmed */
++	/* 0x06dc peeked first, as the stock driver does */
+ 	cur = b43_phy_read_log(dev, 0x06dc + stride);
+-	b43_phy_write(dev, 0x06dc + stride, cur);
+-	b43_phy_write(dev, 0x06dd + stride, 0x0604);
++	(void)cur;
++	b43_phy_write(dev, 0x06dc + stride, init_lo);
++	b43_phy_write(dev, 0x06dd + stride, init_hi);
+ 
+-	b43_actab_write_bulk_scoped(dev, 0x07, tbl_off, 16, 1, &tbl_val);
++	b43_actab_write_bulk_scoped(dev, 0x07, tbl_off, 16, 1, &init_tbl);
+ 
+ 	/* Five groups: clear bit 1 of 0x06e3, then two writes. */
+ 	b43_phy_maskset(dev, 0x06e3 + stride, (u16)~0x0002, 0x0000);
+-	b43_phy_write(dev, 0x06de + stride, band_2g ? 0x014a : 0x015a);
+-	b43_phy_write(dev, 0x06df + stride, 0x0004);
++	b43_phy_write(dev, 0x06de + stride, clip_lo);
++	b43_phy_write(dev, 0x06df + stride, clip_hi);
+ 	b43_phy_maskset(dev, 0x06e3 + stride, (u16)~0x0002, 0x0000);
+ 	b43_phy_write(dev, 0x06e0 + stride, band_2g ? 0x014a : 0x016a);
+ 	b43_phy_write(dev, 0x06e1 + stride, 0x0018);

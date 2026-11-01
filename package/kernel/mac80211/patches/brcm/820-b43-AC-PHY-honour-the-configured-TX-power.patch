@@ -1,0 +1,31 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Ville Takio <ville+git@takio.fi>
+Subject: [PATCH] b43: AC-PHY: honour the configured TX power
+
+The power target was capped only by the SROM and the regulatory limit of
+the channel, so a lower TX power set from user space had no effect. Cap
+it by the power mac80211 configures as well, with the antenna gain
+taken off as for the regulatory limit.
+
+--- a/drivers/net/wireless/broadcom/b43/phy_ac.c
++++ b/drivers/net/wireless/broadcom/b43/phy_ac.c
+@@ -1948,6 +1948,19 @@ static u16 b43_phy_ac_reg_ceiling(struct
+ 			best = lim;
+ 	}
+ 
++	/*
++	 * The configured TX power, which mac80211 has already capped to the
++	 * channel's limit, so it is in the same units as max_power.
++	 */
++	if (dev->phy.desired_txpower > 0) {
++		int lim = B43_PHY_AC_QDB(dev->phy.desired_txpower) - antgain;
++
++		if (lim < 0)
++			lim = 0;
++		if (lim < best)
++			best = lim;
++	}
++
+ 	{
+ 		u16 locale = b43_phy_ac_locale_ceiling(ac);
+ 

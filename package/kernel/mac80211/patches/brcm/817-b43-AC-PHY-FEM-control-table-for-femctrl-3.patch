@@ -1,0 +1,93 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Ville Takio <ville+git@takio.fi>
+Subject: [PATCH] b43: AC-PHY: FEM control table for femctrl 3
+
+The Northstar boards with BCM4360 radios (ASUS RT-AC66U B1, Netgear
+R7000, Linksys EA6900) have femctrl 3, sub 3 on the 2.4 GHz radio and
+sub 0 on the 5 GHz one. Add the two per-core tables, read off
+wlc_phy_attach_acphy() of wl 7.14.164.18: the femctrl jump table sends
+3 to a femctrl_sub switch which picks them unless the boardtype is
+0xa9c6 or 0xaa52, which get another pair.
+
+The decoding was checked against the three tables already in the
+driver (femctrl 6, femctrl 1 sub 0, femctrl 2 sub 1), which the same
+switch points at.
+
+Without the table a station cannot associate with a 2.4 GHz AP on the
+RT-AC66U B1.
+
+--- a/drivers/net/wireless/broadcom/b43/phy_ac.c
++++ b/drivers/net/wireless/broadcom/b43/phy_ac.c
+@@ -3100,6 +3100,12 @@ static const u32 b43_acphy_txv_for_spexp
+  *                     The same 6.30.223 as the MacBook's sets that bit
+  *                     after its table; the routers never touch 0x040a.
+  *
++ *   femctrl 3, sub 3  fc3_sub3 per core (2.4 GHz radio), and
++ *   femctrl 3, sub 0  fc3_sub0 per core (5 GHz radio): the Northstar boards
++ *                     (RT-AC66U B1, R7000, EA6900). Read off the attach
++ *                     of wl 7.14.164.18, which takes another pair for
++ *                     boardtype 0xa9c6 and 0xaa52.
++ *
+  * TODO: femctrl 2 sub 2 (femctrl2_sub2_c0 on core 0, femctrl2_sub2_c12 on
+  * cores 1 and 2) needs a capture of a board with it.
+  */
+@@ -3130,6 +3136,36 @@ static const u8 b43_phy_ac_fem_x29c_c1_f
+  * What a board writes inside the table-write gate before its FEM table
+  * (@pre) and after it (@setup).
+  */
++static const u8 b43_phy_ac_fem_fc3_sub3[3][32] = {
++	{ 0x02, 0x04, 0x03, 0x02,  0x02, 0x04, 0x03, 0x02,
++	  0x22, 0x24, 0x23, 0x25,  0x22, 0x24, 0x23, 0x25,
++	  0x02, 0x04, 0x03, 0x02,  0x02, 0x04, 0x03, 0x02,
++	  0x22, 0x24, 0x23, 0x25,  0x22, 0x24, 0x23, 0x25 },
++	{ 0x02, 0x01, 0x06, 0x02,  0x02, 0x01, 0x06, 0x02,
++	  0x22, 0x21, 0x26, 0x25,  0x22, 0x21, 0x26, 0x25,
++	  0x02, 0x01, 0x06, 0x02,  0x02, 0x01, 0x06, 0x02,
++	  0x22, 0x21, 0x26, 0x25,  0x22, 0x21, 0x26, 0x25 },
++	{ 0x04, 0x01, 0x06, 0x04,  0x04, 0x01, 0x06, 0x04,
++	  0x24, 0x21, 0x26, 0x23,  0x24, 0x21, 0x26, 0x23,
++	  0x04, 0x01, 0x06, 0x04,  0x04, 0x01, 0x06, 0x04,
++	  0x24, 0x21, 0x26, 0x23,  0x24, 0x21, 0x26, 0x23 },
++};
++
++static const u8 b43_phy_ac_fem_fc3_sub0[3][32] = {
++	{ 0x00, 0x00, 0x00, 0x00,  0x00, 0x00, 0x00, 0x00,
++	  0x00, 0x00, 0x00, 0x00,  0x00, 0x00, 0x00, 0x00,
++	  0x02, 0x0c, 0x03, 0x0b,  0x02, 0x0c, 0x03, 0x0b,
++	  0x02, 0x2c, 0x03, 0x2d,  0x02, 0x2c, 0x03, 0x2d },
++	{ 0x00, 0x00, 0x00, 0x00,  0x00, 0x00, 0x00, 0x00,
++	  0x00, 0x00, 0x00, 0x00,  0x00, 0x00, 0x00, 0x00,
++	  0x02, 0x09, 0x06, 0x0e,  0x02, 0x09, 0x06, 0x0e,
++	  0x02, 0x29, 0x06, 0x2d,  0x02, 0x29, 0x06, 0x2d },
++	{ 0x00, 0x00, 0x00, 0x00,  0x00, 0x00, 0x00, 0x00,
++	  0x00, 0x00, 0x00, 0x00,  0x00, 0x00, 0x00, 0x00,
++	  0x04, 0x09, 0x06, 0x0e,  0x04, 0x09, 0x06, 0x0e,
++	  0x04, 0x29, 0x06, 0x2b,  0x04, 0x29, 0x06, 0x2b },
++};
++
+ struct b43_phy_ac_fem {
+ 	u8 femctrl, sub;
+ 	const u8 *tbl[3];
+@@ -3164,6 +3200,10 @@ static const struct b43_phy_ac_fem b43_p
+ 		  b43_phy_ac_fem_fem5516_fc1 }, NULL, b43_phy_ac_fem2_sub1_setup },
+ 	{ 1, 0, { b43_phy_ac_fem_fem5516_fc1, b43_phy_ac_fem_fem5516_fc1,
+ 		  b43_phy_ac_fem_fem5516_fc1 }, b43_phy_ac_fem_040a_set, NULL },
++	{ 3, 3, { b43_phy_ac_fem_fc3_sub3[0], b43_phy_ac_fem_fc3_sub3[1],
++		  b43_phy_ac_fem_fc3_sub3[2] }, NULL, NULL },
++	{ 3, 0, { b43_phy_ac_fem_fc3_sub0[0], b43_phy_ac_fem_fc3_sub0[1],
++		  b43_phy_ac_fem_fc3_sub0[2] }, NULL, NULL },
+ };
+ 
+ static const struct b43_phy_ac_fem *b43_phy_ac_fem_lookup(struct b43_wldev *dev)
+@@ -3172,6 +3212,11 @@ static const struct b43_phy_ac_fem *b43_
+ 	u8 sub = sprom->boardflags3 & B43_BFL3_FEMCTRL_SUB;
+ 	unsigned int i;
+ 
++	/* wl has other femctrl 3 tables for these boards, none known here */
++	if (sprom->femctrl == 3 &&
++	    (dev->dev->board_type == 0xa9c6 || dev->dev->board_type == 0xaa52))
++		return NULL;
++
+ 	for (i = 0; i < ARRAY_SIZE(b43_phy_ac_fems); i++)
+ 		if (b43_phy_ac_fems[i].femctrl == sprom->femctrl &&
+ 		    b43_phy_ac_fems[i].sub == sub)

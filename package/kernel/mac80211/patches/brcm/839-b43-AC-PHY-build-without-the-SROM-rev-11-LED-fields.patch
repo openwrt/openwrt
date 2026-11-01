@@ -1,0 +1,26 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Ville Takio <ville+git@takio.fi>
+Subject: [PATCH] b43: build without the SROM rev 11 LED fields
+
+ssb_sprom's gpio_ext[] (ledbh4-15) comes from the bcma/ssb SROM rev 11
+support that only the targets with the AC-PHY carry (bcm53xx 880). On
+every other kernel b43 failed to build. Read pins 4-15 only with the
+AC-PHY enabled; otherwise they have no source and stay unmapped (0xff),
+which leaves them alone, as before the port.
+
+--- a/drivers/net/wireless/broadcom/b43/leds.c
++++ b/drivers/net/wireless/broadcom/b43/leds.c
+@@ -224,8 +224,13 @@ static bool b43_led_get_sprominfo(struct
+ 	sprom[1] = bus_sprom->gpio1;
+ 	sprom[2] = bus_sprom->gpio2;
+ 	sprom[3] = bus_sprom->gpio3;
++#ifdef CPTCFG_B43_PHY_AC
+ 	BUILD_BUG_ON(sizeof(sprom) != 4 + sizeof(bus_sprom->gpio_ext));
+ 	memcpy(&sprom[4], bus_sprom->gpio_ext, sizeof(bus_sprom->gpio_ext));
++#else
++	/* Only the SROM rev 11 support of the AC-PHY targets has ledbh4-15. */
++	memset(&sprom[4], 0xff, sizeof(sprom) - 4);
++#endif
+ 
+ 	/* Pins 4 and up come from NVRAM only and have no default; the
+ 	 * fallback SPROM leaves an unset ledbh at 0, so 0 and 0xff both

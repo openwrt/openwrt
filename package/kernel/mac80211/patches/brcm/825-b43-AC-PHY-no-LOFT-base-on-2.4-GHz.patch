@@ -1,0 +1,31 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Ville Takio <ville+git@takio.fi>
+Subject: [PATCH] b43: AC-PHY: no LOFT LUT base on 2.4 GHz
+
+The LO leakage LUTs get a per-core base that follows the 5 GHz pa5g
+sub-band group. On 2.4 GHz the group was derived from a 5 GHz frequency
+made up from the channel number, which put the group 0 base on core 2.
+wl 7.14 has no base on 2.4 GHz: all three LUTs are zero on channels 1, 6
+and 11.
+
+--- a/drivers/net/wireless/broadcom/b43/phy_ac.c
++++ b/drivers/net/wireless/broadcom/b43/phy_ac.c
+@@ -7631,7 +7631,8 @@ static u16 b43_phy_ac_loft_add(u16 a, u1
+  *   3           0           f6fb, ec00 from 0x1b      fafb, f6f6 from 0x1d
+  *
+  * Why the base exists, why the step falls where it does and why it follows
+- * the pa5g partition is not known; only that it does.
++ * the pa5g partition is not known; only that it does. On 2.4 GHz there is
++ * none: wl 7.14 leaves all three LUTs at zero on channels 1, 6 and 11.
+  */
+ static u16 b43_phy_ac_loft_lut_base(struct b43_wldev *dev, unsigned int core,
+ 				    unsigned int off)
+@@ -7639,7 +7640,7 @@ static u16 b43_phy_ac_loft_lut_base(stru
+ 	unsigned int grp = b43_phy_ac_pa5g_group(dev,
+ 			5000 + 5 * dev->phy.ac->cal_channel);
+ 
+-	if (core == 0)
++	if (core == 0 || b43_current_band(dev->wl) == NL80211_BAND_2GHZ)
+ 		return 0x0000;
+ 	if (core == 1) {
+ 		if (grp < 3)

@@ -1,0 +1,169 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Ville Takio <ville+git@takio.fi>
+Subject: [PATCH] b43: take RX buffers from a page_pool
+
+An RX buffer with its skb_shared_info does not fit in a page: the AC
+core's holds 40 bytes of RX header, the PLCP and a 3895-byte MPDU, so
+__dev_alloc_skb() took 8 KiB from kmalloc for every received frame,
+and freed it again in the stack.
+
+With page pools in the kernel, take the buffers from one instead, three
+to an order-2 page, built into skbs with build_skb() and marked for
+recycling, so they come back to the pool when the stack is done with
+them. The driver keeps mapping each buffer itself; a buffer that needs
+GFP_DMA, and every buffer on a kernel without page pools, comes from
+__dev_alloc_skb() as before.
+
+On the RT-AC66U B1 (5 GHz ch36/80) with an rtl8821ae client at close
+range, alternating in a test build that switches the pool at run time:
+uplink 169 and 166 Mbit/s with the pool against 109 and 113 without,
+downlink 168 against 163.
+
+---
+--- a/drivers/net/wireless/broadcom/b43/dma.c
++++ b/drivers/net/wireless/broadcom/b43/dma.c
+@@ -23,6 +23,7 @@
+ #include "xmit.h"
+ 
+ #include <linux/dma-mapping.h>
++#include <net/page_pool/helpers.h>
+ #include <linux/pci.h>
+ #include <linux/delay.h>
+ #include <linux/skbuff.h>
+@@ -612,6 +613,82 @@ static void b43_poison_rx_buffer(struct
+ 	memset(frame, 0xFF, sizeof(struct b43_plcp_hdr6) + 2 /* padding */);
+ }
+ 
++/*
++ * An RX buffer with its skb_shared_info does not fit in a page: the AC
++ * core's takes 40 bytes of RX header, the PLCP and a 3895-byte MPDU, so
++ * __dev_alloc_skb() took 8 KiB from kmalloc for every received frame.
++ * A page pool hands out pieces of order-2 pages instead, three buffers a
++ * page, and gets them back when the stack frees the frame. The driver
++ * still maps each buffer itself.
++ */
++#if IS_ENABLED(CONFIG_PAGE_POOL)
++static unsigned int b43_rx_truesize(const struct b43_dmaring *ring)
++{
++	return SKB_DATA_ALIGN(NET_SKB_PAD + ring->rx_buffersize) +
++	       SKB_DATA_ALIGN(sizeof(struct skb_shared_info));
++}
++
++static void b43_rx_pool_create(struct b43_dmaring *ring)
++{
++	struct page_pool_params pp = {
++		.order = get_order(3 * b43_rx_truesize(ring)),
++		.pool_size = ring->nr_slots,
++		.nid = NUMA_NO_NODE,
++		.dev = ring->dev->dev->dma_dev,
++	};
++	struct page_pool *pool;
++
++	pool = page_pool_create(&pp);
++	if (IS_ERR(pool))
++		return;
++	ring->rx_pool = pool;
++}
++
++static void b43_rx_pool_destroy(struct b43_dmaring *ring)
++{
++	if (ring->rx_pool)
++		page_pool_destroy(ring->rx_pool);
++	ring->rx_pool = NULL;
++}
++
++static struct sk_buff *b43_rx_alloc_skb(struct b43_dmaring *ring,
++					gfp_t gfp_flags)
++{
++	unsigned int size = b43_rx_truesize(ring);
++	struct sk_buff *skb;
++	void *data;
++
++	if (!ring->rx_pool || (gfp_flags & GFP_DMA))
++		return __dev_alloc_skb(ring->rx_buffersize, gfp_flags);
++
++	data = page_pool_alloc_va(ring->rx_pool, &size, gfp_flags);
++	if (!data)
++		return NULL;
++	skb = build_skb(data, size);
++	if (!skb) {
++		page_pool_free_va(ring->rx_pool, data, false);
++		return NULL;
++	}
++	skb_mark_for_recycle(skb);
++	skb_reserve(skb, NET_SKB_PAD);
++	return skb;
++}
++#else
++static void b43_rx_pool_create(struct b43_dmaring *ring)
++{
++}
++
++static void b43_rx_pool_destroy(struct b43_dmaring *ring)
++{
++}
++
++static struct sk_buff *b43_rx_alloc_skb(struct b43_dmaring *ring,
++					gfp_t gfp_flags)
++{
++	return __dev_alloc_skb(ring->rx_buffersize, gfp_flags);
++}
++#endif
++
+ static int setup_rx_descbuffer(struct b43_dmaring *ring,
+ 			       struct b43_dmadesc_generic *desc,
+ 			       struct b43_dmadesc_meta *meta, gfp_t gfp_flags)
+@@ -621,7 +698,7 @@ static int setup_rx_descbuffer(struct b4
+ 
+ 	B43_WARN_ON(ring->tx);
+ 
+-	skb = __dev_alloc_skb(ring->rx_buffersize, gfp_flags);
++	skb = b43_rx_alloc_skb(ring, gfp_flags);
+ 	if (unlikely(!skb))
+ 		return -ENOMEM;
+ 	b43_poison_rx_buffer(ring, skb);
+@@ -632,7 +709,7 @@ static int setup_rx_descbuffer(struct b4
+ 
+ 		dev_kfree_skb_any(skb);
+ 
+-		skb = __dev_alloc_skb(ring->rx_buffersize, gfp_flags);
++		skb = b43_rx_alloc_skb(ring, gfp_flags);
+ 		if (unlikely(!skb))
+ 			return -ENOMEM;
+ 		b43_poison_rx_buffer(ring, skb);
+@@ -995,6 +1072,8 @@ struct b43_dmaring *b43_setup_dmaring(st
+ 				 DMA_TO_DEVICE);
+ 	}
+ 
++	if (!for_tx)
++		b43_rx_pool_create(ring);
+ 	err = alloc_ringmemory(ring);
+ 	if (err)
+ 		goto err_kfree_txhdr_cache;
+@@ -1008,6 +1087,7 @@ struct b43_dmaring *b43_setup_dmaring(st
+       err_free_ringmemory:
+ 	free_ringmemory(ring);
+       err_kfree_txhdr_cache:
++	b43_rx_pool_destroy(ring);
+ 	kfree(ring->txhdr_cache);
+       err_kfree_meta:
+ 	kfree(ring);
+@@ -1067,6 +1147,7 @@ static void b43_destroy_dmaring(struct b
+ 	dmacontroller_cleanup(ring);
+ 	free_all_descbuffers(ring);
+ 	free_ringmemory(ring);
++	b43_rx_pool_destroy(ring);
+ 
+ 	kfree(ring->txhdr_cache);
+ 	kfree(ring);
+--- a/drivers/net/wireless/broadcom/b43/dma.h
++++ b/drivers/net/wireless/broadcom/b43/dma.h
+@@ -245,6 +245,8 @@ enum b43_addrtype {
+ struct b43_dmaring {
+ 	/* Lowlevel DMA ops. */
+ 	const struct b43_dma_ops *ops;
++	/* RX buffers, when the kernel has page pools (b43_rx_pool_create()). */
++	struct page_pool *rx_pool;
+ 	/* Kernel virtual base address of the ring memory. */
+ 	void *descbase;
+ 	/* Cache of TX headers for each TX frame.

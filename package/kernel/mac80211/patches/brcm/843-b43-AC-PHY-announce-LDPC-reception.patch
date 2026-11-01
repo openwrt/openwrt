@@ -1,0 +1,50 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Ville Takio <ville+git@takio.fi>
+Subject: [PATCH] b43: AC-PHY: announce LDPC reception
+
+The AC PHY decodes LDPC with bit 6 of PHY register 0x01b0 set, the bit
+wl 7.14's wlc_phy_update_rxldpc_acphy() switches, and b43's PHY init
+leaves it set (0xa6cb on both radios, as under wl). Announce it on HT
+and VHT, as the stock driver does. mac80211 then also sends LDPC to a
+station that receives it, which b43 already lays out.
+
+With a OnePlus Nord 2 (two streams, RX LDPC) two rooms away on 5 GHz
+ch36/80 (-70 to -79 dBm): uplink 97-121 Mbit/s against 69-114 without,
+and the downlink 156-176 with LDPC against 126-156 with it switched off
+in a test build, alternating in the same position.
+
+--- a/drivers/net/wireless/broadcom/b43/main.c
++++ b/drivers/net/wireless/broadcom/b43/main.c
+@@ -7231,9 +7231,13 @@ static const struct ieee80211_iface_comb
+  *    and VHT MCS 0-9 go out on up to the txchain's, in the layout of the
+  *    stock drivers' descriptors (b43_txhdr_ac_ht(), b43_txhdr_ac_vht());
+  *  - the long MPDUs and A-MSDUs, beyond the receive buffer;
+- *  - LDPC reception, beamformee and the link adaptation the stock driver
+- *    announces on VHT: nothing configures or decodes them; SU beamformer
+- *    is announced and done (b43_txbf_link()). A VHT frame is
++ *  - beamformee and the link adaptation the stock driver announces on VHT:
++ *    nothing configures or decodes them; SU beamformer is announced and
++ *    done (b43_txbf_link()).
++ *
++ * LDPC reception is announced on HT and VHT, as the stock driver does: the
++ * PHY decodes it with bit 6 of 0x01b0 set (wlc_phy_update_rxldpc_acphy()
++ * of 7.14), which the PHY init leaves set (0xa6cb, as under wl). A VHT frame is
+  *    sent with LDPC when mac80211 asks, for a station that receives it, as
+  *    every VHT frame of the stock driver's is.
+  *
+@@ -7261,6 +7265,7 @@ static void b43_ac_set_ht_vht_cap(struct
+ 	memset(ht, 0, sizeof(*ht));
+ 	ht->ht_supported = true;
+ 	ht->cap = IEEE80211_HT_CAP_SUP_WIDTH_20_40 |
++		  IEEE80211_HT_CAP_LDPC_CODING |
+ 		  IEEE80211_HT_CAP_SGI_20 |
+ 		  IEEE80211_HT_CAP_SGI_40 |
+ 		  (WLAN_HT_CAP_SM_PS_DISABLED << IEEE80211_HT_CAP_SM_PS_SHIFT);
+@@ -7282,6 +7287,7 @@ static void b43_ac_set_ht_vht_cap(struct
+ 	memset(vht, 0, sizeof(*vht));
+ 	vht->vht_supported = true;
+ 	vht->cap = IEEE80211_VHT_CAP_MAX_MPDU_LENGTH_3895 |
++		   IEEE80211_VHT_CAP_RXLDPC |
+ 		   IEEE80211_VHT_CAP_SHORT_GI_80 |
+ 		   IEEE80211_VHT_CAP_MAX_A_MPDU_LENGTH_EXPONENT_MASK;
+ 	vht->vht_mcs.rx_mcs_map = cpu_to_le16(map);

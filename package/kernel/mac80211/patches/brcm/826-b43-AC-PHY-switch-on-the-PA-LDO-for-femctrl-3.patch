@@ -1,0 +1,47 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Ville Takio <ville+git@takio.fi>
+Subject: [PATCH] b43: AC-PHY: switch on the PA LDO on femctrl 3 boards
+
+The femctrl 3 boards (BCM4360 on the RT-AC66U B1, R7000, EA6900) feed
+their power amplifiers from the PA LDO, switched on by bit 2 of PMU
+regulator control 0. wl 7.14 sets it in its femctrl 3 setup; b43 did
+not. The bit survives a warm reboot from the stock firmware, so the
+port worked until the router was power cycled: then both radios
+transmitted about 60 dB below target, the power loop pinned at its
+maximum gain.
+
+Set the bit in the femctrl 3 FEM setup, as wl does.
+
+--- a/drivers/net/wireless/broadcom/b43/phy_ac.c
++++ b/drivers/net/wireless/broadcom/b43/phy_ac.c
+@@ -3206,6 +3206,18 @@ static void b43_phy_ac_fem2_sub1_setup(s
+ 	b43_phy_ac_chipctl_set(dev, 0x00000008);
+ }
+ 
++/*
++ * femctrl 3 boards (RT-AC66U B1, R7000, EA6900) feed their PAs from the PA
++ * LDO, which PMU regulator control 0 bit 2 switches on; wl 7.14 sets it in
++ * its femctrl 3 setup (wlc_phy_set_regtbl_on_femctrl). Nothing else does:
++ * the bit survives a warm reboot from the stock firmware, but after a
++ * power cycle both radios transmit some 60 dB below their target.
++ */
++static void b43_phy_ac_fem3_pre(struct b43_wldev *dev)
++{
++	bcma_chipco_regctl_maskset(&dev->dev->bdev->bus->drv_cc, 0, ~0x4, 0x4);
++}
++
+ static const struct b43_phy_ac_fem b43_phy_ac_fems[] = {
+ 	{ 6, 0, { b43_phy_ac_fem_femctrl6, b43_phy_ac_fem_femctrl6,
+ 		  b43_phy_ac_fem_femctrl6 }, NULL, NULL },
+@@ -3214,9 +3226,9 @@ static const struct b43_phy_ac_fem b43_p
+ 	{ 1, 0, { b43_phy_ac_fem_fem5516_fc1, b43_phy_ac_fem_fem5516_fc1,
+ 		  b43_phy_ac_fem_fem5516_fc1 }, b43_phy_ac_fem_040a_set, NULL },
+ 	{ 3, 3, { b43_phy_ac_fem_fc3_sub3[0], b43_phy_ac_fem_fc3_sub3[1],
+-		  b43_phy_ac_fem_fc3_sub3[2] }, NULL, NULL },
++		  b43_phy_ac_fem_fc3_sub3[2] }, b43_phy_ac_fem3_pre, NULL },
+ 	{ 3, 0, { b43_phy_ac_fem_fc3_sub0[0], b43_phy_ac_fem_fc3_sub0[1],
+-		  b43_phy_ac_fem_fc3_sub0[2] }, NULL, NULL },
++		  b43_phy_ac_fem_fc3_sub0[2] }, b43_phy_ac_fem3_pre, NULL },
+ };
+ 
+ static const struct b43_phy_ac_fem *b43_phy_ac_fem_lookup(struct b43_wldev *dev)
