@@ -1,0 +1,84 @@
+From e538f79812380b9a191942e0a6c072677b288f3d Mon Sep 17 00:00:00 2001
+From: Hyunwoo Kim <hwkim3330@gmail.com>
+Date: Wed, 12 Aug 2026 18:40:08 +0900
+Subject: [PATCH] wifi: mt76: mt7615: allow forcing DBDC from the device tree
+
+mt7615_eeprom_parse_hw_band_cap() derives the band configuration
+entirely from MT_EE_WIFI_CONF (EEPROM offset 0x3e, bits 5:4). Some
+boards are wired for DBDC yet report MT_EE_DUAL_BAND there, because
+their vendor driver enables DBDC unconditionally and never consults the
+EEPROM, so the mismatch is invisible in stock firmware. Under mt76 such
+a board registers a single dual-band phy and only one band is usable at
+a time.
+
+Add a "mediatek,dbdc" boolean so the device tree can correct the EEPROM.
+The override is applied before the switch, so everything downstream
+takes the ordinary DBDC path: dbdc_support is set at probe time,
+mt7615_mcu_init() applies the DBDC calibration cache, and
+mt7615_register_ext_phy() registers band 1 with mphy->chainmask =
+dev->chainmask & ~dev->mphy.chainmask. Devices that do not set the
+property are bit-for-bit unaffected.
+
+Alternatives considered:
+
+- Rewriting the EEPROM bytes on the way to the driver. There is no
+  mechanism to modify an nvmem cell in flight, and editing the factory
+  partition on the device would be destructive.
+- Enabling DBDC from userspace through the existing debugfs knob. That
+  works and is what affected boards do today, but the device still comes
+  up wrong on every boot and hardware description ends up in a startup
+  script.
+- A new compatible string. The chip is not different; only the board's
+  EEPROM contents are, which is what device tree properties describe.
+
+The affected device is the ipTIME A3004NS-M (MT7615D). In
+openwrt/openwrt#4915 ptpt52 identified the encoding of this field, and
+mans0n then dumped it on the hardware:
+
+  root@OpenWrt:~# hexdump -e '1/1 "%02x" "\n"' -s $((0x3e)) -n 1 /dev/mtd2
+  0a
+
+0x0a is band_sel 0, MT_EE_DUAL_BAND, on a board whose second phy works
+once DBDC is forced through debugfs. That pull request added this device
+and was then closed by its author, in his words, because "there is no
+way to override it in dts" and he considered shipping the debugfs
+workaround "a major flaw".
+
+If this is accepted, "mediatek,dbdc" should also be documented in
+Documentation/devicetree/bindings/net/wireless/mediatek,mt76.yaml in the
+kernel tree, which this repository does not carry.
+
+Signed-off-by: Hyunwoo Kim <hwkim3330@gmail.com>
+---
+ mt7615/eeprom.c | 14 ++++++++++++++
+ 1 file changed, 14 insertions(+)
+
+Carried here on purpose rather than waiting: the same change is proposed
+against openwrt/mt76 in openwrt/mt76#1119, and this patch should be dropped
+at whichever "mt76: update to Git HEAD" bump includes it.
+
+diff --git a/mt7615/eeprom.c b/mt7615/eeprom.c
+index d6828e1..622cf21 100644
+--- a/mt7615/eeprom.c
++++ b/mt7615/eeprom.c
+@@ -124,6 +124,20 @@ mt7615_eeprom_parse_hw_band_cap(struct mt7615_dev *dev)
+ 
+ 	val = FIELD_GET(MT_EE_NIC_WIFI_CONF_BAND_SEL,
+ 			eeprom[MT_EE_WIFI_CONF]);
++
++	/*
++	 * Some boards wire the chip up for DBDC but ship an EEPROM that still
++	 * describes it as a single dual-band phy. The vendor driver enables
++	 * DBDC unconditionally, so the mismatch goes unnoticed there; here it
++	 * means only one band is usable at a time. Let the device tree correct
++	 * it.
++	 *
++	 * Affected: ipTIME A3004NS-M (MT7615D), which reads 0x0a here, i.e.
++	 * MT_EE_DUAL_BAND. See openwrt/openwrt#4915.
++	 */
++	if (of_property_read_bool(dev_of_node(dev->mt76.dev), "mediatek,dbdc"))
++		val = MT_EE_DBDC;
++
+ 	switch (val) {
+ 	case MT_EE_5GHZ:
+ 		dev->mphy.cap.has_5ghz = true;
