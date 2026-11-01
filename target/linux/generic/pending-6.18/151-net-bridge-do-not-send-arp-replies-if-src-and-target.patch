@@ -21,7 +21,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  			    br_is_neigh_suppress_enabled(dst, vid)) {
 -				if (!vid)
 +				replied = true;
-+				if (!memcmp(n->ha, sha, dev->addr_len))
++				if (!memcmp(ha, sha, dev->addr_len))
 +					replied = false;
 +				else if (!vid)
  					br_arp_send(br, p, skb->dev, sip, tip,
