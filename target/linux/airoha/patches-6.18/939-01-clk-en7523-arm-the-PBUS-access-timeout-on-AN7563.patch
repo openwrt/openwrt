@@ -1,0 +1,124 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Lukasz M <lukasz1992@localhost>
+Date: Sat, 31 Oct 2026 12:00:00 +0100
+Subject: [PATCH] clk: en7523: arm the PBUS access timeout on AN7563
+
+A PBUS access that no block answers (in reset, without a clock, or an
+unmapped address) stalls the CPU for good unless the NP SCU's bus
+monitor timer is on.  The vendor SCU driver arms it at boot (ecnt_scu.c
+pbus_timeout_init(), the stock unit reads MON_TMR 0x50000000) and logs
+the address from PB_TO_ERR from its interrupt (SPI 47, "ScuPbusTout");
+the boot loader leaves it off (0x3fffffff).  Until now only the GPON
+driver armed it, from its own probe.
+
+Arm it in the SCU clock driver for AN7563 and, when the node has an
+interrupt, report the stalled address.  Such an access then ends and
+reads 0xdeadbeef.
+
+Signed-off-by: Lukasz M <lukasz1992@localhost>
+---
+--- a/drivers/clk/clk-en7523.c
++++ b/drivers/clk/clk-en7523.c
+@@ -3,6 +3,7 @@
+ #include <linux/bitfield.h>
+ #include <linux/delay.h>
+ #include <linux/clk-provider.h>
++#include <linux/interrupt.h>
+ #include <linux/io.h>
+ #include <linux/mfd/syscon.h>
+ #include <linux/of_platform.h>
+@@ -37,6 +38,14 @@
+ #define   REG_RESET_CONTROL_PCIE1	BIT(27)
+ #define   REG_RESET_CONTROL_PCIE2	BIT(26)
+ /* EN7581 */
++/* ecnt_scu.c of the vendor: the PBUS access timeout */
++#define REG_NP_SCU_PB_TO_ERR		0x3c
++#define REG_PB_TO_ERR_ADDR		GENMASK(29, 0)
++#define REG_NP_SCU_PRATIR		0x58
++#define REG_PRATIR_PBUS_TOUT		BIT(0)
++#define REG_NP_SCU_MON_TMR		0x60
++#define REG_MON_TMR_ASIC_PBUS_CLK	0x10000000	/* 235 MHz */
++#define REG_MON_TMR_PBUS_TOUT_EN	BIT(30)
+ #define REG_NP_SCU_PCIC			0x88
+ #define REG_PCIE_CTRL			GENMASK(7, 0)
+ #define REG_NP_SCU_SSTR			0x9c
+@@ -87,6 +96,8 @@ struct en_rst_data {
+ 
+ struct en_clk_soc_data {
+ 	bool probe_child;
++	/* arm the PBUS access timeout as the vendor SCU driver does */
++	bool pbus_timeout;
+ 	u32 num_clocks;
+ 	const struct en_clk_desc *base_clks;
+ 	const struct clk_ops pcie_ops;
+@@ -1125,6 +1136,52 @@ static int en7581_reset_register(struct
+ 	return devm_reset_controller_register(dev, &rst_data->rcdev);
+ }
+ 
++static irqreturn_t en7523_pbus_timeout_irq(int irq, void *data)
++{
++	struct regmap *map = data;
++	struct device *dev = regmap_get_device(map);
++	u32 status, addr;
++
++	regmap_read(map, REG_NP_SCU_PRATIR, &status);
++	regmap_write(map, REG_NP_SCU_PRATIR, REG_PRATIR_PBUS_TOUT);
++	regmap_read(map, REG_NP_SCU_PB_TO_ERR, &addr);
++
++	dev_err_ratelimited(dev, "%sPBUS timeout at %#010lx\n",
++			    status & REG_PRATIR_PBUS_TOUT ? "" : "unknown ",
++			    FIELD_GET(REG_PB_TO_ERR_ADDR, addr));
++
++	return IRQ_HANDLED;
++}
++
++/*
++ * ecnt_scu.c pbus_timeout_init() of the vendor, done at boot there (the
++ * stock unit reads MON_TMR 0x50000000; the boot loader leaves it off,
++ * 0x3fffffff): a PBUS access that no block answers ends after the timeout
++ * instead of stalling the CPU for good, reads 0xdeadbeef, and its address
++ * is left in PB_TO_ERR and reported by the SCU interrupt, if the node has
++ * one.
++ */
++static void en7523_pbus_timeout_init(struct platform_device *pdev,
++				     struct regmap *map)
++{
++	struct device *dev = &pdev->dev;
++	int irq, err;
++
++	regmap_write(map, REG_NP_SCU_PRATIR, REG_PRATIR_PBUS_TOUT);
++	regmap_write(map, REG_NP_SCU_MON_TMR, REG_MON_TMR_ASIC_PBUS_CLK);
++	regmap_write(map, REG_NP_SCU_MON_TMR,
++		     REG_MON_TMR_ASIC_PBUS_CLK | REG_MON_TMR_PBUS_TOUT_EN);
++
++	irq = platform_get_irq_optional(pdev, 0);
++	if (irq < 0)
++		return;
++
++	err = devm_request_irq(dev, irq, en7523_pbus_timeout_irq, 0,
++			       "pbus-timeout", map);
++	if (err)
++		dev_warn(dev, "no PBUS timeout interrupt: %d\n", err);
++}
++
+ static int en7581_clk_hw_init(struct platform_device *pdev,
+ 			      const struct en_clk_soc_data *soc_data,
+ 			      struct clk_hw_onecell_data *clk_data)
+@@ -1150,6 +1207,9 @@ static int en7581_clk_hw_init(struct pla
+ 	if (IS_ERR(clk_map))
+ 		return PTR_ERR(clk_map);
+ 
++	if (soc_data->pbus_timeout)
++		en7523_pbus_timeout_init(pdev, clk_map);
++
+ 	err = en75xx_register_clocks(&pdev->dev, soc_data, clk_data, map, clk_map);
+ 	if (err)
+ 		return err;
+@@ -1249,6 +1309,7 @@ static const struct en_clk_soc_data en75
+ };
+ 
+ static const struct en_clk_soc_data an7563_data = {
++	.pbus_timeout = true,
+ 	.base_clks = en7581_base_clks,
+ 	.num_clocks = ARRAY_SIZE(en7581_base_clks) + 1,
+ 	.pcie_ops = {

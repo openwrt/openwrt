@@ -1,0 +1,40 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: lukasz <lukasz@VM>
+Date: Sat, 17 Oct 2026 10:00:00 +0200
+Subject: [PATCH] pmdomain: airoha: Add AN7552 cpufreq compatible
+
+The cpufreq node in an7563.dtsi is named "airoha,an7552-cpufreq", but
+airoha_cpu_pmdomain_of_match only lists an7583 and en7581.  Nothing
+matches the node, so no genpd provider is registered for it and every
+power-domain lookup against it fails.  cpufreq-dt then returns
+-EPROBE_DEFER forever, because the deferral comes from the OPP table's
+required-opps resolving through that domain:
+
+    platform cpufreq-dt: deferred probe pending: (reason unknown)
+
+The "reason unknown" is the missing piece to look for: nothing in the
+deferred-probe machinery ever ran to attach an error to this device, so
+the record carries no reason to report.
+
+AN7563 and AN7552 are the same core with the cpufreq domain in the same
+place, so listing the compatible alongside the other two is all that is
+needed for the domain to probe and cpufreq-dt to come up.
+
+Signed-off-by: lukasz <lukasz@VM>
+---
+ drivers/pmdomain/mediatek/airoha-cpu-pmdomain.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/drivers/pmdomain/mediatek/airoha-cpu-pmdomain.c
++++ b/drivers/pmdomain/mediatek/airoha-cpu-pmdomain.c
+@@ -124,6 +124,7 @@ static void airoha_cpu_pmdomain_remove(struct p
+ }
+ 
+ static const struct of_device_id airoha_cpu_pmdomain_of_match[] = {
++	{ .compatible = "airoha,an7552-cpufreq" },
+ 	{ .compatible = "airoha,an7583-cpufreq" },
+ 	{ .compatible = "airoha,en7581-cpufreq" },
+ 	{ },
+ };
+-- 
+2.39.5

@@ -1,0 +1,833 @@
+// SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
+/*
+ * Airoha AN7563 / AN7552 SoC dtsi.
+ *
+ * AN7563 and AN7552 are the same die (SCU HIR 0xf); the vendor SDK only
+ * tells them apart by the package id the preloader leaves in SCU 0x284
+ * (0/1/2 = AN7552 CT/ST/FT, 3/4 = AN7563 CT/PT).  AN7552 adds the xPON
+ * MAC/PHY; the nodes are here, disabled, and are enabled by the board.
+ *
+ * AN7563 boots a dual Cortex-A53 cluster in 32-bit AArch32 mode, but
+ * its chip-SCU and SCU register windows match the EN7581 layout (the
+ * IOMUX_1 register sits at chip-SCU offset 0x214, not 0x210 as on
+ * EN7523). To share clk-en7523 / reset / pinctrl-airoha driver paths
+ * with EN7581, the SCU nodes carry an AN7563-specific compatible
+ * followed by the "airoha,en7581-{chip-,}scu" fallback compatible.
+ */
+
+#include <dt-bindings/interrupt-controller/irq.h>
+#include <dt-bindings/interrupt-controller/arm-gic.h>
+#include <dt-bindings/clock/en7523-clk.h>
+#include <dt-bindings/phy/phy.h>
+#include <dt-bindings/phy/airoha,an7581-usb-phy.h>
+#include <dt-bindings/soc/airoha,scu-ssr.h>
+#include <dt-bindings/reset/airoha,en7581-reset.h>
+#include <dt-bindings/leds/common.h>
+#include <dt-bindings/thermal/thermal.h>
+
+/ {
+	interrupt-parent = <&gic>;
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	reserved-memory {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		qdma0_buf: qdma0-buf {
+			no-map;
+			size = <0x00800000>;
+			alignment = <0x00010000>;
+		};
+
+		qdma1_buf: qdma1-buf {
+			no-map;
+			size = <0x00800000>;
+			alignment = <0x00010000>;
+		};
+
+		npu_binary: npu-binary@84000000 {
+			no-map;
+			reg = <0x84000000 0x00100000>;
+		};
+
+		npu_ba: npu-ba@84100000 {
+			no-map;
+			reg = <0x84100000 0x00100000>;
+		};
+
+		npu_pkt: npu-pkt@84200000 {
+			no-map;
+			reg = <0x84200000 0x01600000>;
+		};
+	};
+
+	psci {
+		compatible = "arm,psci-0.2";
+		method = "smc";
+	};
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu-map {
+			cluster0 {
+				core0 {
+					cpu = <&cpu0>;
+				};
+
+				core1 {
+					cpu = <&cpu1>;
+				};
+			};
+		};
+
+		cpu0: cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a53";
+			reg = <0x0>;
+			operating-points-v2 = <&cpu_opp_table>;
+			enable-method = "psci";
+			clocks = <&cpufreq>;
+			clock-names = "cpu";
+			power-domains = <&cpufreq>;
+			power-domain-names = "perf";
+			next-level-cache = <&l2>;
+			#cooling-cells = <2>;
+		};
+
+		cpu1: cpu@1 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a53";
+			reg = <0x1>;
+			operating-points-v2 = <&cpu_opp_table>;
+			enable-method = "psci";
+			clocks = <&cpufreq>;
+			clock-names = "cpu";
+			power-domains = <&cpufreq>;
+			power-domain-names = "perf";
+			next-level-cache = <&l2>;
+			#cooling-cells = <2>;
+		};
+
+		l2: l2-cache {
+			compatible = "cache";
+			cache-level = <2>;
+			cache-unified;
+		};
+	};
+
+	/*
+	 * The ATF (SIP call 0x82000301) changes the CPU clock; level = index of
+	 * its table, 500 MHz + level * 50 MHz up to 1000 MHz (the stock
+	 * en7552.dtsi stops at 950 MHz, but the bootloader leaves the CPU at
+	 * 1000 MHz).
+	 */
+	cpufreq: cpufreq {
+		compatible = "airoha,an7552-cpufreq";
+
+		operating-points-v2 = <&cpu_smcc_opp_table>;
+
+		#power-domain-cells = <0>;
+		#clock-cells = <0>;
+	};
+
+	/*
+	 * 750..1000 MHz.  The ATF waits udelay(1) for the PLL and does not
+	 * touch the voltage; 500 MHz hangs the CPU after a large jump, and
+	 * schedutil hung the CPU even with a 600 MHz floor.  Manual changes
+	 * through the userspace governor, 750..1000 MHz back to back, were
+	 * stable.  The default governor is schedutil on this 750 MHz floor
+	 * (untested; fall back to performance if it hangs).
+	 */
+	cpu_opp_table: opp-table {
+		compatible = "operating-points-v2";
+		opp-shared;
+
+		opp-750000000 {
+			opp-hz = /bits/ 64 <750000000>;
+			required-opps = <&smcc_opp5>;
+		};
+
+		opp-800000000 {
+			opp-hz = /bits/ 64 <800000000>;
+			required-opps = <&smcc_opp6>;
+		};
+
+		opp-850000000 {
+			opp-hz = /bits/ 64 <850000000>;
+			required-opps = <&smcc_opp7>;
+		};
+
+		opp-900000000 {
+			opp-hz = /bits/ 64 <900000000>;
+			required-opps = <&smcc_opp8>;
+		};
+
+		opp-950000000 {
+			opp-hz = /bits/ 64 <950000000>;
+			required-opps = <&smcc_opp9>;
+		};
+
+		opp-1000000000 {
+			opp-hz = /bits/ 64 <1000000000>;
+			required-opps = <&smcc_opp10>;
+		};
+	};
+
+	cpu_smcc_opp_table: opp-table-cpu-smcc {
+		compatible = "operating-points-v2";
+
+		smcc_opp0: opp0 {
+			opp-level = <0>;
+		};
+
+		smcc_opp1: opp1 {
+			opp-level = <1>;
+		};
+
+		smcc_opp2: opp2 {
+			opp-level = <2>;
+		};
+
+		smcc_opp3: opp3 {
+			opp-level = <3>;
+		};
+
+		smcc_opp4: opp4 {
+			opp-level = <4>;
+		};
+
+		smcc_opp5: opp5 {
+			opp-level = <5>;
+		};
+
+		smcc_opp6: opp6 {
+			opp-level = <6>;
+		};
+
+		smcc_opp7: opp7 {
+			opp-level = <7>;
+		};
+
+		smcc_opp8: opp8 {
+			opp-level = <8>;
+		};
+
+		smcc_opp9: opp9 {
+			opp-level = <9>;
+		};
+
+		smcc_opp10: opp10 {
+			opp-level = <10>;
+		};
+	};
+
+	thermal-zones {
+		cpu_thermal: cpu-thermal {
+			polling-delay-passive = <200>;
+			polling-delay = <1000>;
+
+			thermal-sensors = <&thermal>;
+
+			trips {
+				cpu_passive: cpu-passive {
+					temperature = <95000>;
+					hysteresis = <2000>;
+					type = "passive";
+				};
+
+				cpu-critical {
+					temperature = <120000>;
+					hysteresis = <1000>;
+					type = "critical";
+				};
+			};
+		};
+	};
+
+	timer {
+		compatible = "arm,armv8-timer";
+		interrupt-parent = <&gic>;
+		/* The vendor DTB sets it too; do not rely on ATF having set CNTFRQ. */
+		clock-frequency = <25000000>;
+		interrupts = <GIC_PPI 13 IRQ_TYPE_LEVEL_LOW>,
+			     <GIC_PPI 14 IRQ_TYPE_LEVEL_LOW>,
+			     <GIC_PPI 11 IRQ_TYPE_LEVEL_LOW>,
+			     <GIC_PPI 10 IRQ_TYPE_LEVEL_LOW>;
+	};
+
+	clk25m: oscillator {
+		compatible = "fixed-clock";
+		#clock-cells = <0>;
+		clock-frequency = <25000000>;
+		clock-output-names = "clkxtal";
+	};
+
+	sys_hclk: clk-oscillator-100mhz {
+		compatible = "fixed-clock";
+		#clock-cells = <0>;
+		clock-frequency = <100000000>;
+		clock-output-names = "sys_hclk";
+	};
+
+	soc {
+		compatible = "simple-bus";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		gic: interrupt-controller@9000000 {
+			compatible = "arm,gic-v3";
+			interrupt-controller;
+			#interrupt-cells = <3>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			reg = <0x09000000 0x20000>,
+			      <0x09080000 0x80000>,
+			      <0x09400000 0x2000>,
+			      <0x09500000 0x2000>,
+			      <0x09600000 0x20000>;
+			interrupts = <GIC_PPI 9 IRQ_TYPE_LEVEL_LOW>;
+		};
+
+		chip_scu: syscon@1fa20000 {
+			compatible = "airoha,an7563-chip-scu",
+				     "airoha,en7581-chip-scu", "syscon";
+			reg = <0x1fa20000 0x388>;
+		};
+
+		thermal: thermal-sensor@1efbd000 {
+			compatible = "airoha,an7552-thermal";
+			reg = <0x1efbd000 0x1000>;
+			airoha,chip-scu = <&chip_scu>;
+
+			#thermal-sensor-cells = <0>;
+		};
+
+		scu: system-controller@1fb00000 {
+			compatible = "airoha,an7563-scu",
+				     "airoha,en7581-scu", "syscon";
+			reg = <0x1fb00000 0x970>;
+			/* PBUS access timeout ("ScuPbusTout" on the stock unit) */
+			interrupts = <GIC_SPI 47 IRQ_TYPE_LEVEL_HIGH>;
+
+			#clock-cells = <1>;
+			#reset-cells = <1>;
+		};
+
+		system-controller@1fbf0200 {
+			compatible = "airoha,en7581-gpio-sysctl", "syscon",
+				     "simple-mfd";
+			reg = <0x1fbf0200 0xc0>;
+
+			an7563_pinctrl: pinctrl {
+				compatible = "airoha,an7563-pinctrl";
+				gpio-ranges = <&an7563_pinctrl 0 0 38>;
+
+				interrupt-parent = <&gic>;
+				interrupts = <GIC_SPI 26 IRQ_TYPE_LEVEL_HIGH>;
+
+				gpio-controller;
+				#gpio-cells = <2>;
+
+				interrupt-controller;
+				#interrupt-cells = <2>;
+			};
+
+			an7563_pwm: pwm {
+				compatible = "airoha,en7581-pwm";
+				#pwm-cells = <3>;
+			};
+		};
+
+		uart1: serial@1fbf0000 {
+			compatible = "ns16550";
+			reg = <0x1fbf0000 0x30>;
+			reg-io-width = <4>;
+			reg-shift = <2>;
+			interrupts = <GIC_SPI 18 IRQ_TYPE_LEVEL_HIGH>;
+			clock-frequency = <1843200>;
+		};
+
+		watchdog@1fbf0100 {
+			compatible = "airoha,en7581-wdt";
+			reg = <0x1fbf0100 0x40>;
+
+			clocks = <&sys_hclk>;
+			clock-names = "bus";
+		};
+
+		uart2: serial@1fbf0300 {
+			compatible = "airoha,en7523-uart";
+			reg = <0x1fbf0300 0x30>;
+			reg-io-width = <4>;
+			reg-shift = <2>;
+			interrupts = <GIC_SPI 32 IRQ_TYPE_LEVEL_HIGH>;
+			clock-frequency = <7372800>;
+			status = "disabled";
+		};
+
+		hsuart3: serial@1fbe1000 {
+			compatible = "airoha,en7523-uart";
+			reg = <0x1fbe1000 0x40>;
+			reg-io-width = <4>;
+			reg-shift = <2>;
+			interrupts = <GIC_SPI 54 IRQ_TYPE_LEVEL_HIGH>;
+			clock-frequency = <7372800>;
+			status = "disabled";
+		};
+
+		i2cclock: i2cclock@0 {
+			#clock-cells = <0>;
+			compatible = "fixed-clock";
+
+			/* 20 MHz */
+			clock-frequency = <20000000>;
+		};
+
+		i2c0: i2c0@1fbf8000 {
+			compatible = "mediatek,mt7621-i2c";
+			reg = <0x1fbf8000 0x100>;
+
+			clocks = <&i2cclock>;
+
+			/* 100 kHz */
+			clock-frequency = <100000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			status = "disabled";
+		};
+
+		snfi: spi@1fa10000 {
+			compatible = "airoha,en7523-snand", "airoha,en7581-snand";
+			reg = <0x1fa10000 0x140>,
+			      <0x1fa11000 0x160>;
+
+			clocks = <&scu EN7523_CLK_SPI>;
+			clock-names = "spi";
+
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			spi_nand: nand@0 {
+				compatible = "spi-nand";
+				reg = <0>;
+				spi-max-frequency = <50000000>;
+				spi-tx-bus-width = <1>;
+				spi-rx-bus-width = <2>;
+			};
+		};
+
+		/*
+		 * PON SerDes used as an Ethernet WAN (HSGMII/2500base-x, SFP).
+		 * For GPON the same SerDes is driven by &xpon instead,
+		 * and the two nodes overlap on 0x1faf3000-0x1faf4fff: a board
+		 * enables one or the other, never both.
+		 *
+		 * Addresses: en7552.dtsi xpon_xsgmii (PCS 0x1fa80a00/0x168,
+		 * AN 0x1fa80000/0x64, rate adaption 0x1fa86000/0x3ff) and
+		 * serdes_common_phy (ANA 0x1faf3000, PMA 0x1faf4000, multi-SGMII
+		 * 0x1fa84000/0x685); HSGMII AE MAC 0x1fa08000 (ecnt_xsi.c:55).
+		 * Names are the ones airoha_pcs_alloc_maps() looks up.
+		 *
+		 * pcs-airoha-common.c also requires a "usxgmii" region.  The
+		 * vendor AN7552 tree has no USXGMII block for the PON SerDes
+		 * (air_xpon_xsgmii.c: "USXGMII Not supported"), so there is
+		 * nothing verified to put here and the node cannot probe with
+		 * the AN7583 driver data until an AN7552 PCS variant exists.
+		 */
+		pon_pcs: pcs@1fa08000 {
+			compatible = "airoha,an7583-pcs-pon";
+			reg = <0x1fa08000 0x300>,
+			      <0x1fa80000 0x64>,
+			      <0x1fa80a00 0x168>,
+			      <0x1fa86000 0x400>,
+			      <0x1fa84000 0x685>,
+			      <0x1faf4000 0x1000>,
+			      <0x1faf3000 0x1000>;
+			reg-names = "pcs_mac", "hsgmii_an", "hsgmii_pcs",
+				    "hsgmii_rate_adp", "multi_sgmii",
+				    "pcs_pma", "pcs_ana";
+			resets = <&scu EN7581_XPON_MAC_RST>,
+				 <&scu EN7581_XPON_PHY_RST>;
+			reset-names = "mac", "phy";
+			airoha,scu = <&scu>;
+			#pcs-cells = <0>;
+			status = "disabled";
+		};
+
+		eth: ethernet@1fb50000 {
+			compatible = "airoha,an7563-eth", "airoha,an7583-eth";
+			reg = <0x1fb50000 0x2600>,
+			      <0x1fb54000 0x2000>,
+			      <0x1fb56000 0x2000>,
+			      <0x1fbf9000 0x84>;
+			reg-names = "fe", "qdma0", "qdma1", "gdmp";
+			resets = <&scu EN7581_FE_RST>,
+				 <&scu EN7581_FE_PDMA_RST>,
+				 <&scu EN7581_FE_QDMA_RST>;
+			reset-names = "fe", "pdma", "qdma";
+			airoha,scu = <&scu>;
+			interrupts = <GIC_SPI 37 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 55 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 56 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 57 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 38 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 58 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 59 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 60 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 49 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 64 IRQ_TYPE_LEVEL_HIGH>;
+			memory-region = <&qdma0_buf>, <&qdma1_buf>;
+			memory-region-names = "qdma0-buf", "qdma1-buf";
+			airoha,npu = <&npu>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			gdm1: ethernet@1 {
+				compatible = "airoha,eth-mac";
+				reg = <1>;
+				phy-mode = "internal";
+
+				fixed-link {
+					speed = <10000>;
+					full-duplex;
+					pause;
+				};
+			};
+
+			/*
+			 * WAN port.  For xPON the board sets phy-mode =
+			 * "internal" with a fixed-link (the xPON MAC is on-chip);
+			 * for an SFP on the PON SerDes it adds pcs-handle =
+			 * <&pon_pcs> and an Ethernet phy-mode.
+			 */
+			gdm2: ethernet@2 {
+				compatible = "airoha,eth-mac";
+				reg = <2>;
+				status = "disabled";
+			};
+		};
+
+		switch: switch@1fb58000 {
+			compatible = "mediatek,mt7530", "airoha,en7581-switch";
+			reg = <0x1fb58000 0x8000>;
+			resets = <&scu EN7581_GSW_RST>;
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 31 IRQ_TYPE_LEVEL_HIGH>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			ports {
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				/* not wired to a PHY on AN7563 boards */
+				port@0 {
+					reg = <0>;
+					label = "lan0";
+					phy-mode = "internal";
+					status = "disabled";
+				};
+
+				port@1 {
+					reg = <1>;
+					label = "lan1";
+					phy-mode = "internal";
+					phy-handle = <&gsw_phy1>;
+				};
+
+				port@2 {
+					reg = <2>;
+					label = "lan2";
+					phy-mode = "internal";
+					phy-handle = <&gsw_phy2>;
+				};
+
+				port@3 {
+					reg = <3>;
+					label = "lan3";
+					phy-mode = "internal";
+					phy-handle = <&gsw_phy3>;
+				};
+
+				port@4 {
+					reg = <4>;
+					label = "wan";
+					phy-mode = "internal";
+					phy-handle = <&gsw_phy4>;
+				};
+
+				/*
+				 * CPU port.  The EN7581 switch (mt7530
+				 * en7581_mac_port_get_caps()) has the SoC MAC on
+				 * port 6 only; port 5 has no interface and failed
+				 * the whole switch.  The internal PHYs sit at port
+				 * + 8 on the MDIO bus, hence the phy-handles.
+				 */
+				port@6 {
+					reg = <6>;
+					ethernet = <&gdm1>;
+					phy-mode = "internal";
+
+					fixed-link {
+						speed = <10000>;
+						full-duplex;
+						pause;
+					};
+				};
+			};
+
+			mdio: mdio {
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				gsw_phy1: ethernet-phy@9 {
+					reg = <9>;
+				};
+
+				gsw_phy2: ethernet-phy@a {
+					reg = <10>;
+				};
+
+				gsw_phy3: ethernet-phy@b {
+					reg = <11>;
+				};
+
+				gsw_phy4: ethernet-phy@c {
+					reg = <12>;
+				};
+			};
+		};
+
+		/*
+		 * Wi-Fi TX offload: one WED block, and two WDM engines.
+		 * Addresses and interrupts are those of the stock
+		 * board.dts (nodes wed, wdma; GIC SPI 0x43 and 0x44 for the
+		 * WED, 0x45..0x4a for the WDMA).  airoha,wdma names the WDMA
+		 * engine of a WED (its index is the reg entry of the wdma node),
+		 * airoha,pcie the PCIe controller of the card it serves.
+		 * Disabled here: a board enables them once the driver is meant
+		 * to touch the hardware.
+		 */
+		wed0: wed@1fa02000 {
+			compatible = "airoha,an7552-wed";
+			reg = <0x1fa02000 0xb00>;
+			interrupts = <GIC_SPI 67 IRQ_TYPE_LEVEL_HIGH>;
+			airoha,wdma = <&wdma 0>;
+			airoha,pcie = <&pcie0>;
+			status = "disabled";
+		};
+
+		wdma: wdma@1fa06000 {
+			compatible = "airoha,an7552-wdma";
+			reg = <0x1fa06000 0x400>,
+			      <0x1fa06400 0x400>;
+			interrupts = <GIC_SPI 69 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 70 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 71 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 72 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 73 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 74 IRQ_TYPE_LEVEL_HIGH>;
+			status = "disabled";
+		};
+
+		pcie0: pcie@1fa91000 {
+			compatible = "airoha,an7563-pcie", "mediatek,mt7622-pcie";
+			device_type = "pci";
+			/* pbus: the PBUS decoder window of this port */
+			reg = <0x1fa91000 0x1000>, <0x1fbe3400 0x8>;
+			reg-names = "port0", "pbus";
+			phys = <&pcie0_phy>;
+			phy-names = "pcie-phy0";
+			linux,pci-domain = <0>;
+			#address-cells = <3>;
+			#size-cells = <2>;
+			interrupts = <GIC_SPI 39 IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-names = "pcie_irq";
+			clocks = <&scu EN7523_CLK_PCIE>;
+			clock-names = "sys_ck0";
+			bus-range = <0x00 0xff>;
+			ranges = <0x82000000 0 0x20000000 0x20000000 0 0x4000000>;
+
+			#interrupt-cells = <1>;
+			interrupt-map-mask = <0 0 0 7>;
+			interrupt-map = <0 0 0 1 &pcie_intc0 0>,
+					<0 0 0 2 &pcie_intc0 1>,
+					<0 0 0 3 &pcie_intc0 2>,
+					<0 0 0 4 &pcie_intc0 3>;
+
+			pcie_intc0: interrupt-controller {
+				interrupt-controller;
+				#address-cells = <0>;
+				#interrupt-cells = <1>;
+			};
+		};
+
+		pcie1: pcie@1fa92000 {
+			compatible = "airoha,an7563-pcie", "mediatek,mt7622-pcie";
+			device_type = "pci";
+			/* pbus: the PBUS decoder window of this port */
+			reg = <0x1fa92000 0x1000>, <0x1fbe3408 0x8>;
+			reg-names = "port1", "pbus";
+			phys = <&pcie1_phy>;
+			phy-names = "pcie-phy1";
+			linux,pci-domain = <1>;
+			#address-cells = <3>;
+			#size-cells = <2>;
+			interrupts = <GIC_SPI 40 IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-names = "pcie_irq";
+			clocks = <&scu EN7523_CLK_PCIE>;
+			clock-names = "sys_ck1";
+			bus-range = <0x00 0xff>;
+			ranges = <0x82000000 0 0x24000000 0x24000000 0 0x4000000>;
+
+			#interrupt-cells = <1>;
+			interrupt-map-mask = <0 0 0 7>;
+			interrupt-map = <0 0 0 1 &pcie_intc1 0>,
+					<0 0 0 2 &pcie_intc1 1>,
+					<0 0 0 3 &pcie_intc1 2>,
+					<0 0 0 4 &pcie_intc1 3>;
+
+			pcie_intc1: interrupt-controller {
+				interrupt-controller;
+				#address-cells = <0>;
+				#interrupt-cells = <1>;
+			};
+		};
+
+		pcie0_phy: phy@1fa93700 {
+			compatible = "airoha,an7563-pcie-phy";
+			reg = <0x1fa93700 0x568>;
+			#phy-cells = <0>;
+		};
+
+		pcie1_phy: phy@1fa95700 {
+			compatible = "airoha,an7563-pcie-phy";
+			reg = <0x1fa95700 0x568>;
+			#phy-cells = <0>;
+		};
+
+		trng: trng@1faa1000 {
+			compatible = "airoha,en7581-trng";
+			reg = <0x1faa1000 0xc04>;
+			interrupts = <GIC_SPI 35 IRQ_TYPE_LEVEL_HIGH>;
+		};
+
+		/*
+		 * USB 3.0 host (same layout as the vendor DTB: xHCI at
+		 * 0x1fab0000, PHY window at 0x1fac0000, SPI 33).  The AN7581
+		 * PHY driver is used; the vendor PHY window is only 0x1400
+		 * long, so this has to be confirmed on the board.
+		 */
+		usb0: usb@1fab0000 {
+			compatible = "mediatek,mtk-xhci";
+			reg = <0x1fab0000 0x3e00>,
+			      <0x1fab3e00 0x100>;
+			reg-names = "mac", "ippc";
+			interrupts = <GIC_SPI 33 IRQ_TYPE_LEVEL_HIGH>;
+
+			phys = <&usb0_phy PHY_TYPE_USB2>, <&usb0_phy PHY_TYPE_USB3>;
+			status = "disabled";
+		};
+
+		/*
+		 * Vendor mtk-phy_7552.c: two USB2 ports (the second at +0x1000)
+		 * and a USB3 PHY with a serdes of its own, so no SCU and no
+		 * serdes-port here.  u2_slew_rate_cal() sets MONCLK_SEL to the
+		 * port number (0/1); the driver adds the port to this base.
+		 */
+		usb0_phy: phy@1fac0000 {
+			compatible = "airoha,an7563-usb-phy";
+			reg = <0x1fac0000 0x10000>;
+
+			airoha,usb2-monitor-clk-sel = <AIROHA_USB2_MONCLK_SEL0>;
+
+			#phy-cells = <1>;
+			status = "disabled";
+		};
+
+		npu: npu@1e900000 {
+			compatible = "airoha,an7552-npu";
+			reg = <0x1e900000 0x313000>;
+			interrupts = <GIC_SPI 125 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 134 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 135 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 118 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 119 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 120 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 121 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 122 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 123 IRQ_TYPE_LEVEL_HIGH>;
+			memory-region = <&npu_binary>, <&npu_pkt>, <&npu_ba>;
+			memory-region-names = "binary", "pkt", "ba";
+			firmware-name = "airoha/an7552_npu_rv32.bin",
+					"airoha/an7552_npu_data.bin";
+			airoha,scu = <&scu>;
+		};
+
+		/*
+		 * xPON: the GPON MAC and the PON SerDes PHY in one device,
+		 * driven by the an7552-gpon module (compatible
+		 * "airoha,an7552-gpon").  One node because there is no
+		 * layering between them any more: the MAC holds a pointer to
+		 * the PHY and drives it directly.
+		 *
+		 *   gpon  0x1fb64000/0x3e8   GPON MAC
+		 *                   (en7552.dtsi xpon_mac; ecnt_xpon.c:58).
+		 *                   The EPON block next to it (0x1fb66000)
+		 *                   is not used: the driver is GPON only.
+		 *                   The SDK builds this die with
+		 *                   TCSUPPORT_CPU_AN7552 and the
+		 *                   gpon_mac_reg_c_header_en7521.h layout.
+		 *
+		 *   csr   0x1faf0000/0x2000   digital PHY CSR
+		 *                   (en7552.dtsi pon_phy; phy_reg.h
+		 *                   REG_BASE_1..5)
+		 *   ana   0x1faf3000/0x1000   SerDes analog
+		 *                   (pon_hsgmii_ana_csr_c_header.h)
+		 *   pma   0x1faf4000/0x1000   SerDes digital
+		 *                   (pon_hsgmii_dig_csr_c_header.h)
+		 *
+		 * The vendor pon_phy node also lists 0x1fa2ff24
+		 * (PON_PHY_FPGA_RG_TX_OFF), an FPGA-only register that is not
+		 * mapped here.  The csr window overlaps &pon_pcs: enable one
+		 * of the two.
+		 */
+		xpon: xpon@1fb64000 {
+			compatible = "airoha,an7552-gpon";
+			reg = <0x1fb64000 0x3e8>,
+			      <0x1faf0000 0x2000>,
+			      <0x1faf3000 0x1000>,
+			      <0x1faf4000 0x1000>;
+			reg-names = "gpon", "csr", "ana", "pma";
+			interrupts = <GIC_SPI 42 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 34 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 43 IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-names = "mac", "dying-gasp", "phy";
+			resets = <&scu EN7581_XPON_MAC_RST>,
+				<&scu EN7581_XPON_PHY_RST>;
+			reset-names = "mac", "phy";
+			airoha,scu = <&scu>;
+			airoha,chip-scu = <&chip_scu>;
+			ethernet = <&gdm2>;
+			/*
+			 * The optical front end, the en7571 i2c driver.  The
+			 * transmitter enable line is the supply below; the driver
+			 * registers it as the "en7571-laser" regulator, which is
+			 * how this half turns the laser on and off.
+			 *
+			 * No phandle to the en7571 itself: the two drivers bind
+			 * by mutual call, the front end registering against this
+			 * MAC and both then naming it by the same pointer.  The
+			 * en7571 node describes only that part.
+			 */
+			laser-supply = <&en7571>;
+			status = "disabled";
+		};
+	};
+};

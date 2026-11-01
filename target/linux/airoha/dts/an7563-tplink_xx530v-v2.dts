@@ -1,0 +1,671 @@
+// SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
+/dts-v1/;
+
+/*
+ * TP-Link XX530v V2 (hw id "XX530vV2", vendor platform "JEDI"):
+ * Airoha AN7552CT (the xPON package of the AN7563 die), 2x Cortex-A53 in
+ * AArch32, 256 MiB PCDDR3, 128 MiB SPI-NAND (ESMT F50L1G41LB) with the
+ * EcoNet BMT, GPON with an EN7571 laser driver, 4-port internal switch,
+ * MT7916 (DBDC) on both PCIe links.
+ *
+ * The stock Econet U-Boot 2014.04 is kept and boots this board on its own.
+ * Its default bootcmd is
+ *
+ *     bootcmd=flash tpimg;bootm 81800200
+ *
+ * "flash tpimg" reads the 512-byte TP-Link image tag from MTD_OFS_KERNEL
+ * (0x620000), takes kernelLen from offset 0x78 of it and reloads
+ * tag + kernelLen bytes to CONFIG_SYS_LOAD_ADDR (0x81800000), so the FIT
+ * lands at 0x81800200 where "bootm" finds it.  The kernel is decompressed
+ * to 0x80088000.
+ *
+ * Consequently the "kernel" partition below must hold the tagged FIT as raw
+ * bytes - no UBI there - and the rootfs goes into the UBI partition that
+ * follows.  See the partition table at the bottom of this file.
+ */
+
+/* ATF / BL31 resident area set up by the bootloader */
+/memreserve/ 0x80000000 0x88000;
+
+#include <dt-bindings/leds/common.h>
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include "an7563.dtsi"
+
+/ {
+	model = "TP-Link XX530v V2";
+	compatible = "tplink,xx530v-v2", "airoha,an7552", "airoha,an7563";
+
+	aliases {
+		serial0 = &uart1;
+		led-boot = &led_power;
+		led-failsafe = &led_power;
+		led-running = &led_power;
+		led-upgrade = &led_power;
+		label-mac-device = &gdm1;
+	};
+
+	chosen {
+		/*
+		 * Inert on this board, but kept in sync with CONFIG_CMDLINE in
+		 * target/linux/airoha/an7563/config-6.18 so the intended
+		 * command line is documented in one place too.  The stock
+		 * bootloader overwrites this property unconditionally:
+		 * image_setup_libfdt() calls fdt_chosen() with force=1
+		 * (common/image-fdt.c:460), and fdt_chosen() then does
+		 * fdt_setprop() with getenv("bootargs") because of the
+		 * (path == NULL) || force test (common/fdt_support.c:265).
+		 * CONFIG_CMDLINE_FORCE is what actually decides it.
+		 */
+		bootargs = "console=ttyS0,115200n8 earlycon root=/dev/ubiblock0_0 rootfstype=squashfs";
+
+		/*
+		 * This one is ours.  The bootloader leaves /chosen alone when
+		 * the bootargs env variable is unset (the tftpboot/loady path),
+		 * and earlycon without an explicit port resolves the console
+		 * through of_chosen_stdout(), which reads exactly this.
+		 */
+		stdout-path = "serial0:115200n8";
+	};
+
+	memory@80000000 {
+		device_type = "memory";
+		reg = <0x80000000 0x10000000>;
+	};
+
+	/*
+	 * xhci-mtk asks for "vbus" and "vusb33" and falls back to a dummy
+	 * regulator for both.  The stock firmware has no USB power GPIO
+	 * (led.conf and the stock DTB list none), so both rails are taken
+	 * as always on: the 5 V VBUS of the port and the 3.3 V of the xHCI
+	 * PHY.  If a GPIO switches VBUS on the board, put it on reg_usb_5v.
+	 */
+	reg_usb_5v: regulator-usb-5v {
+		compatible = "regulator-fixed";
+		regulator-name = "usb-vbus-5v";
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		regulator-always-on;
+		regulator-boot-on;
+	};
+
+	reg_3p3v: regulator-3p3v {
+		compatible = "regulator-fixed";
+		regulator-name = "fixed-3.3V";
+		regulator-min-microvolt = <3300000>;
+		regulator-max-microvolt = <3300000>;
+		regulator-always-on;
+		regulator-boot-on;
+	};
+
+	gpio-keys {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "reset";
+			linux,code = <KEY_RESTART>;
+			gpios = <&an7563_pinctrl 0 GPIO_ACTIVE_LOW>;
+			debounce-interval = <100>;
+		};
+
+		wifi {
+			label = "wifi";
+			linux,code = <KEY_RFKILL>;
+			gpios = <&an7563_pinctrl 5 GPIO_ACTIVE_LOW>;
+			debounce-interval = <100>;
+		};
+	};
+
+	gpio-leds {
+		compatible = "gpio-leds";
+
+		led_power: power {
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&an7563_pinctrl 27 GPIO_ACTIVE_LOW>;
+			default-state = "on";
+		};
+
+		led_xpon: xpon {
+			color = <LED_COLOR_ID_GREEN>;
+			function = "pon";
+			gpios = <&an7563_pinctrl 7 GPIO_ACTIVE_LOW>;
+			/* an7552-gpon LED trigger */
+			linux,default-trigger = "xpon-pon";
+		};
+
+		led_los: los {
+			color = <LED_COLOR_ID_RED>;
+			function = "los";
+			gpios = <&an7563_pinctrl 3 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "xpon-los";
+		};
+
+		led_inet: inet {
+			function = LED_FUNCTION_WAN_ONLINE;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&an7563_pinctrl 20 GPIO_ACTIVE_HIGH>;
+		};
+
+		led_wl2g: wl2g {
+			function = LED_FUNCTION_WLAN_2GHZ;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&an7563_pinctrl 12 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy0tpt";
+		};
+
+		led_wl5g: wl5g {
+			function = LED_FUNCTION_WLAN_5GHZ;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&an7563_pinctrl 1 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy1tpt";
+		};
+
+		led_fxs: fxs {
+			color = <LED_COLOR_ID_GREEN>;
+			function = "phone";
+			gpios = <&an7563_pinctrl 2 GPIO_ACTIVE_LOW>;
+		};
+
+		led_fxsr: fxs-ring {
+			color = <LED_COLOR_ID_RED>;
+			function = "phone-ring";
+			gpios = <&an7563_pinctrl 4 GPIO_ACTIVE_LOW>;
+		};
+
+		led_usb: usb {
+			function = LED_FUNCTION_USB;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&an7563_pinctrl 21 GPIO_ACTIVE_LOW>;
+		};
+
+		led_lan: lan {
+			function = LED_FUNCTION_LAN;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&an7563_pinctrl 8 GPIO_ACTIVE_LOW>;
+		};
+	};
+};
+
+&an7563_pinctrl {
+	pcie0_rst_pins: pcie0-rst-pins {
+		conf {
+			pins = "pcie_reset0";
+			drive-open-drain = <1>;
+		};
+	};
+
+	pcie1_rst_pins: pcie1-rst-pins {
+		conf {
+			pins = "pcie_reset1";
+			drive-open-drain = <1>;
+		};
+	};
+};
+
+&gdm1 {
+	nvmem-cells = <&macaddr_lan 0>;
+	nvmem-cell-names = "mac-address";
+};
+
+/*
+ * GDM2 is the WAN port and is what makes airoha-eth touch QDMA1: the driver
+ * picks &eth->qdma[1] for every non-LAN GDM device, so bringing this port
+ * up starts the qdma1 rings, its four IRQ banks (SPI 38, 58, 59, 60) and the
+ * GDM2 stats counters.
+ *
+ * This board is a GPON ONU: GDM2 feeds the on-chip xPON MAC, so there is no
+ * PCS and no PHY behind it (phy-mode "internal", fixed-link; patch 925-04).
+ * &pon_pcs stays disabled because &xpon owns the PON SerDes.
+ *
+ * The MAC cell is what keeps this netdev's address stable across boots.
+ * Without it of_get_ethdev_address() finds nothing, the driver falls back to
+ * eth_hw_addr_random() and every reboot logs a different "generated random
+ * MAC address" line.  It is the &pon node's second cell (line below), and the
+ * same one gdm1 takes: one factory address, shared, and nothing to conflict
+ * over because neither address is ever sent - gdm1's goes to the frame engine
+ * for the LAN ports and this one stays local, the datapath putting the GEM in
+ * message header 0 so the OLT assigns what frames arrive with.  Only the low
+ * bytes ever reach a register (airoha_set_macaddr() writes the MSBs to
+ * REG_FE_WAN_MAC_H).
+ */
+&gdm2 {
+	status = "okay";
+	phy-mode = "internal";
+
+	nvmem-cells = <&macaddr_lan 0>;
+	nvmem-cell-names = "mac-address";
+
+	fixed-link {
+		speed = <2500>;
+		full-duplex;
+	};
+};
+
+&gsw_phy1 {
+	status = "okay";
+};
+
+&gsw_phy2 {
+	status = "okay";
+};
+
+&gsw_phy3 {
+	status = "okay";
+};
+
+&gsw_phy4 {
+	status = "okay";
+};
+
+&switch {
+	ports {
+		port@1 {
+			label = "lan4";
+			status = "okay";
+		};
+
+		port@2 {
+			label = "lan3";
+			status = "okay";
+		};
+
+		port@3 {
+			label = "lan2";
+			status = "okay";
+		};
+
+		port@4 {
+			label = "lan1";
+			status = "okay";
+		};
+
+	};
+};
+
+/*
+ * The port is a 4 pin USB 2.0 socket (no SuperSpeed pairs; a USB 3.0 stick
+ * links at 480 Mb/s on the stock unit too), so the USB3 side is left out:
+ * its PHY is not listed, and the xHCI's only U3 port is disabled.
+ */
+&usb0 {
+	phys = <&usb0_phy PHY_TYPE_USB2>;
+	mediatek,u3p-dis-msk = <0x1>;
+	vbus-supply = <&reg_usb_5v>;
+	vusb33-supply = <&reg_3p3v>;
+	status = "okay";
+};
+
+&usb0_phy {
+	status = "okay";
+};
+
+/*
+ * One MT7916 (DBDC, MT7976 RF): pcie0 is the main interface, pcie1 its
+ * second HIF (device id 0x790a), which mt7915e picks up by itself and which
+ * needs no node of its own.
+ *
+ * EEPROM: the flash holds a per-unit 4 KiB image at tclinux + 0x420000 (MISC
+ * WiFi block).  It equals the generic /etc/MT7916_iPAiLNA_EEPROM.bin of the
+ * vendor rootfs except for 72 bytes (MAC 00:0c:43:26:60:18 at offset 4 and
+ * calibration values), so mt76 reads it from there through nvmem.
+ */
+/*
+ * Wi-Fi TX offload through the WED (patches 928-xx).  The Wi-Fi card is a
+ * single MT7916 DBDC on pcie0 (second HIF on pcie1), so one WED (WED0)
+ * serves both bands.  The WED
+ * is used only with "mt7915e wed_enable=1"; without it this just lets the
+ * driver probe and the FE set up the WDMA flow control (928-02).
+ */
+&wed0 {
+	status = "okay";
+};
+
+&wdma {
+	status = "okay";
+};
+
+&pcie0 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pcie0_rst_pins>;
+	status = "okay";
+
+	pcie@0,0 {
+		reg = <0x0000 0 0 0 0>;
+		device_type = "pci";
+		#address-cells = <3>;
+		#size-cells = <2>;
+		ranges;
+
+		wifi@0,0 {
+			compatible = "mediatek,mt76";
+			reg = <0x0000 0 0 0 0>;
+			/*
+			 * WiFi RX through the NPU (mt76 patches 0102-0107).  The
+			 * NPU port type is 2, as on the stock unit (PCIe windows
+			 * 0x1fa90030..3c): band 1 (5 GHz) ring in the PCIe0
+			 * window, band 0 (2.4 GHz) in the PCIe1 one.  Without
+			 * the mt76 patches this property is ignored and wifi
+			 * runs on the host.
+			 */
+			airoha,npu = <&npu>;
+			airoha,eth = <&eth>;
+			/*
+			 * EEPROM is read by mt76 from tclinux + 0x420000
+			 * (4 KiB).  No firmware-file fallback on purpose: if
+			 * the cell cannot be read the failure has to be visible.
+			 */
+			nvmem-cells = <&eeprom_wifi>;
+			nvmem-cell-names = "eeprom";
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			/*
+			 * MACs as on the stock unit: 2.4 GHz (ra0) the board
+			 * MAC, 5 GHz (rai0) the board MAC + 2.  The EEPROM
+			 * holds the generic 00:0c:43:26:60:18.
+			 */
+			band@0 {
+				reg = <0>;
+				nvmem-cells = <&macaddr_lan 0>;
+				nvmem-cell-names = "mac-address";
+			};
+
+			band@1 {
+				reg = <1>;
+				nvmem-cells = <&macaddr_lan 2>;
+				nvmem-cell-names = "mac-address";
+			};
+		};
+	};
+};
+
+&pcie1 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pcie1_rst_pins>;
+	status = "okay";
+
+	pcie@0,0 {
+		reg = <0x0000 0 0 0 0>;
+		device_type = "pci";
+		#address-cells = <3>;
+		#size-cells = <2>;
+		ranges;
+
+		wifi@0,0 {
+			compatible = "mediatek,mt76";
+			reg = <0x0000 0 0 0 0>;
+			/*
+			 * WiFi RX through the NPU (mt76 patches 0102-0107).  The
+			 * NPU port type is 2, as on the stock unit (PCIe windows
+			 * 0x1fa90030..3c): band 1 (5 GHz) ring in the PCIe0
+			 * window, band 0 (2.4 GHz) in the PCIe1 one.  Without
+			 * the mt76 patches this property is ignored and wifi
+			 * runs on the host.
+			 */
+			airoha,npu = <&npu>;
+			airoha,eth = <&eth>;
+		};
+	};
+};
+
+&snfi {
+	status = "okay";
+};
+
+&i2c0 {
+	status = "okay";
+
+	/*
+	 * EN7571 laser driver / BOSA controller: the vendor driver reaches it
+	 * through the sif wrapper on I2C adapter 0 (the only master,
+	 * 0x1fbf8000), slave address 0x70.  There is no driver for this
+	 * compatible yet, so nothing probes it; the node is left enabled so
+	 * that adding the driver needs no DT change.
+	 *
+	 * en7571_init() programs bias/modulation current, so the driver must
+	 * not be loaded on a board sharing the PON tree until the ONU has
+	 * ranged: an ONU transmitting without ranging disturbs every other
+	 * ONU behind the same splitter.  Until then the two transmitter lines
+	 * below are requested asserted, which keeps the transmitter off.
+	 */
+	en7571: laser-driver@70 {
+		compatible = "airoha,en7571";
+		reg = <0x70>;
+		#optical-frontend-cells = <0>;
+		/*
+		 * Transmitter disable line.  Stock /userfs/led.conf maps
+		 * LED_PHY_TX_POWER_DISABLE (42) to GPIO 14, mode ONOFF, onoff 1
+		 * (high = transmitter off).  LED_PHY_VCC_DISABLE (102) is
+		 * "not used" (mode 0) on this board, so there is no BOSA VCC
+		 * line.  en7571 requests the line asserted at probe, which
+		 * keeps the laser off until the MAC enables it in O2.
+		 */
+		tx-disable-gpios = <&an7563_pinctrl 14 GPIO_ACTIVE_HIGH>;
+
+		/*
+		 * The BOSA calibration is a record at flash 0x4e0000 (magic
+		 * 0x07050701 at offset 0x94), i.e. "oem" + 0xc0000.  The cell
+		 * covers the whole matrix the driver uses, up to and including
+		 * the Ibias/Imod LUT at 0xa0..0xdf (BOB_MAX_LEN); the layout is
+		 * in package/kernel/en7571/src/en7571-hw.h.
+		 *
+		 * The cell is optional.  Without it (or with an unknown magic)
+		 * the driver only arms the LOS detector and does not bring up
+		 * the laser.  Stock instead falls back to the generic template
+		 * /etc/7570_bob.conf; that is deliberately not copied, as it
+		 * carries no trim of this BOSA.
+		 */
+		nvmem-cells = <&bosa_calibration>;
+		nvmem-cell-names = "calibration";
+	};
+};
+
+/*
+ * &xpon is the whole GPON datapath: the GPON MAC and the PON SerDes PHY in
+ * one node, one module (an7552-gpon).  The properties below are the
+ * contract the driver reads (DOC-drv/25-driving-mainline.md).
+ *
+ * It shares 0x1faf3000-0x1faf4fff and the XPON_MAC / XPON_PHY resets with
+ * pon_pcs, which therefore stays disabled on this board.
+ */
+&xpon {
+	status = "okay";
+	/*
+	 * PON mode, deliberately absent, so the driver default (GPON) stands.
+	 *
+	 * The vendor numbers these the way Mode_Config_7552() branches on,
+	 * (gpPhyPriv[0x58] & 0x7f) >> 3:
+	 *
+	 *   0  EPON (not supported by the driver)
+	 *   1  GPON
+	 *   10 GPON symmetric ("GPON_SYM_CONFIG")
+	 *   11 a second GPON variant the vendor groups with mode 1
+	 *
+	 * and phy_mode_config() accepts exactly {1, 0, 10, 0xa705} - on both
+	 * counts.  Writing 1 here was right and did not work: the driver
+	 * carries its own numbering, GPON_MODE_GPON = 0 and
+	 * GPON_MODE_GPON_SYM = 10 (uapi/gpon_genl.h), so 1 is not a mode
+	 * it knows and an7552_phy_probe() rejected the whole platform device
+	 * with -EOPNOTSUPP.  The two namespaces disagree about one value, and
+	 * the property is the only place they would meet, so it is better left
+	 * out than written in either.  This board is a GPON ONU either way.
+	 *
+	 * The SerDes sequence reads the mode for nine register values
+	 * (an7552_mode_config_7552()), so a board that is not GPON would have
+	 * to fix the enum rather than the DT - the driver would then take
+	 * "GPON_SYM" and this board, which needs nothing, keeps its default.
+	 */
+
+	/*
+	 * Delimiter and guard time.  Unlike the preamble this one is *not*
+	 * board specific: the vendor writes the constant 0xaaab5983 from code,
+	 * so the property is only here to make the value visible and
+	 * overridable.  Every other value is a different guard time pattern.
+	 */
+	airoha,guard-bit-delimiter = <0xaaab5983>;
+
+	/*
+	 * Preamble pattern and extended preamble.
+	 *
+	 * Both registers have no default anywhere in the vendor: they are only
+	 * written through the API call that carries whatever the OLT
+	 * negotiated.  With no such call they keep their reset value, so the
+	 * driver only touches them when a property is present here.  Omitting
+	 * a property leaves the register alone rather than writing zero over
+	 * the reset value, which is a different thing.
+	 *
+	 * phy_gpon_delimiter_guard() splits the guard register into a
+	 * delimiter pattern in bits 23:0 and a guard time in bits 31:24, which
+	 * is how the single value above is split.
+	 */
+	/* airoha,gpon-preamble / airoha,gpon-extend-preamble: not set */
+
+	/*
+	 * Bit delay.  The vendor accepts a value only below eight and writes it
+	 * into the low byte of the CDR register; anything larger is refused as
+	 * an error, so that is the range here too.  Zero leaves the register at
+	 * its reset value.
+	 */
+	airoha,digital-bit-delay = <0>;
+
+	/*
+	 * Read from a running stock unit (PHY_CSR_XPON_SETTING 0x1faf0138 =
+	 * 0x14f: RX SD/LOS inverted, PMA 0x1faf4100 bit 29 set; burst enable
+	 * not inverted, PMA 0x1faf4200 bit 24 clear) and its TX swing
+	 * (ANATXREG1 0x1faf01a0 [19:16] = 9).
+	 *
+	 * All four polarities are board wiring of this node and are read at
+	 * probe, whether or not an optical front end turns up; the driver does
+	 * not wait for one to learn them.  The stock unit shows the other three
+	 * at their non-inverted values, which is the base 0x10f the driver
+	 * writes when no property is present.
+	 */
+	airoha,rx-sd-inverted;
+	/* airoha,tx-sd-inverted / tx-fault-inverted / burst-en-inverted: not set */
+	airoha,tx-amplitude = <9>;
+
+	/*
+	 * Default GPON serial number from the OEM flash (stock "gpon_serial",
+	 * flash 0x50f201, 16 ASCII hex digits); gpon.global.sn in
+	 * /etc/config/gpon overrides it.  The flash has no ONU password.
+	 *
+	 * The second cell gives pon0 the same MAC as gdm1.  Without it
+	 * of_get_ethdev_address() finds nothing and the driver calls
+	 * eth_hw_addr_random(), so the address changes on every boot.  It is
+	 * never sent out: the datapath puts the GEM in message header 0 and
+	 * the OLT assigns the address frames are received to, so pon0 is not
+	 * a bridge port either and this shares nothing with gdm1's FDB entry.
+	 */
+	nvmem-cells = <&gpon_serial>, <&macaddr_lan 0>;
+	nvmem-cell-names = "gpon-serial-number", "mac-address";
+};
+
+&spi_nand {
+	/*
+	 * The stock bootloader manages a reserve pool at the end of the chip
+	 * (it logs "bmt pool size: 81") and refuses to come up if the kernel
+	 * computes a different one, so the pool size is asserted rather than
+	 * derived.
+	 */
+	econet,bmt;
+	econet,bbt-table-size = <250>;
+	econet,assert-reserve-size = <81>;
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/*
+		 * U-Boot 2014.04 with its environment at 0x7c000.  The
+		 * bootloader owns this area; nothing may rewrite it from
+		 * Linux, because that would drop the vendor environment and
+		 * with it the "flash tpimg" boot path.
+		 */
+		partition@0 {
+			label = "bootloader";
+			reg = <0x00000000 0x00080000>;
+			read-only;
+		};
+
+		/*
+		 * 0x80000..0x420000 is not mapped at all: the stock DTB's
+		 * table for it is stale and the area holds nothing this
+		 * needs.  Leaving it out means it cannot be written by
+		 * accident.
+		 *
+		 * MISC, read-only.  Every offset below is the one the vendor
+		 * code and U-Boot use, unchanged:
+		 *
+		 *   0x000000  config        (vendor web settings)
+		 *   0x080000  MT7916 EEPROM / radio calibration (4 KiB)
+		 *   0x0c0000  EN7571 BOSA calibration record
+		 *   0x0f100  LAN MAC           (OTHER_OFS_MAC)
+		 *   0x0f110  flashId + device key (OTHER_OFS_OEMID)
+		 *   0x0f1e0  label MAC, 0x0f1f0 its type word
+		 *   0x0f500  serial number
+		 *   0x0ef201 GPON serial number, 16 ASCII hex digits
+		 *
+		 * Read through nvmem from the kernel, so the MAC never has
+		 * to be fetched from userspace (mtdblock on a raw NAND
+		 * partition warns and bypasses the BMT mapping).
+		 */
+		partition@420000 {
+			label = "oem";
+			reg = <0x00420000 0x00200000>;
+			read-only;
+
+			nvmem-layout {
+				compatible = "fixed-layout";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				bosa_calibration: bosa-calibration@c0000 {
+					reg = <0xc0000 0xe0>;	/* flash 0x4e0000 */
+				};
+
+				macaddr_lan: macaddr@4f100 {
+					compatible = "mac-base";
+					reg = <0x4f100 0x6>;
+					#nvmem-cell-cells = <1>;
+				};
+
+				gpon_serial: gpon-serial@ef201 {
+					reg = <0xef201 0x10>;	/* flash 0x50f201 */
+				};
+
+				sn: sn@4f500 {
+					reg = <0x4f500 0xd>;
+				};
+
+				eeprom_wifi: eeprom@80000 {
+					reg = <0x80000 0x1000>;
+				};
+			};
+		};
+
+		/*
+		 * MTD_OFS_KERNEL: the one address the bootloader hardcodes.
+		 * "flash tpimg" reads the 512-byte TP-Link image tag here and
+		 * reloads tag + kernelLen bytes, so this partition holds the
+		 * tagged FIT and nothing else - no UBI, which would put an
+		 * erase counter header where the bootloader expects the tag.
+		 */
+		partition@620000 {
+			label = "kernel";
+			reg = <0x00620000 0x01000000>;
+		};
+
+		/*
+		 * Rootfs and overlay.  Starts at the erase block right after
+		 * the kernel and runs up to the BBT/BMT reserve pool at
+		 * 0x75e0000 (block 943 of 1024).
+		 */
+		partition@1620000 {
+			label = "ubi";
+			reg = <0x01620000 0x05fc0000>;
+			compatible = "linux,ubi";
+		};
+	};
+};

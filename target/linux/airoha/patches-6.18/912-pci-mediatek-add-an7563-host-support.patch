@@ -1,0 +1,241 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: X-WRT <dev@x-wrt.com>
+Date: Sun, 20 Sep 2026 00:00:00 +0800
+Subject: [PATCH] PCI: mediatek: add AN7563 host controller support
+
+AN7563 uses the MediaTek Gen2 PCIe controller programming model, but its
+root ports require SoC-specific settings:
+- Port setup as root complex, native PCIe-to-AXI window encoding,
+  and coherency workaround for Kite wireless devices.
+- Retrain AN7563 links after enumeration to raise speed from 2.5 GT/s
+  to 5 GT/s (Gen2), exporting pcie_retrain_link.
+- Configure the PBUS base/mask window for each port so MMIO access
+  to endpoint registers (such as port 1 for MT7916) works properly.
+
+Signed-off-by: X-WRT <dev@x-wrt.com>
+---
+--- a/drivers/pci/controller/pcie-mediatek.c
++++ b/drivers/pci/controller/pcie-mediatek.c
+@@ -84,6 +84,10 @@
+ #define INTX_MASK		GENMASK(19, 16)
+ #define INTX_SHIFT		16
+ #define PCIE_INT_STATUS		0x424
++#define AN7563_PCIE_GBL		0x000
++#define AN7563_PCIE_RC_MODE	0x804201
++#define AN7563_PCIE_MMIO_CTRL	0x564
++#define AN7563_PCIE_COHERENT	BIT(0)
+ #define MSI_STATUS		BIT(23)
+ #define PCIE_IMSI_STATUS	0x42c
+ #define PCIE_IMSI_ADDR		0x430
+@@ -146,6 +150,7 @@ struct mtk_pcie_port;
+ /**
+  * struct mtk_pcie_soc - differentiate between host generations
+  * @need_fix_class_id: whether this host's class ID needed to be fixed or not
++ * @is_an7563: whether the host requires AN7563-specific setup
+  * @need_fix_device_id: whether this host's device ID needed to be fixed or not
+  * @no_msi: Bridge has no MSI support, and relies on an external block
+  * @device_id: device ID which this host need to be fixed
+@@ -155,6 +160,7 @@ struct mtk_pcie_port;
+  */
+ struct mtk_pcie_soc {
+ 	bool need_fix_class_id;
++	bool is_an7563;
+ 	bool need_fix_device_id;
+ 	bool no_msi;
+ 	unsigned int device_id;
+@@ -221,6 +227,7 @@ struct mtk_pcie {
+ 	void __iomem *base;
+ 	struct regmap *cfg;
+ 	struct clk *free_ck;
++	void __iomem *pbus;
+ 
+ 	struct list_head ports;
+ 	const struct mtk_pcie_soc *soc;
+@@ -711,6 +718,11 @@ static int mtk_pcie_startup_port_v2(struct mtk_pcie_port *port)
+ 	       PCIE_MAC_SRSTB | PCIE_CRSTB;
+ 	writel(val, port->base + PCIE_RST_CTRL);
+ 
++	/* AN7563 requires the per-port block to be explicitly set to RC mode. */
++	if (soc->is_an7563)
++		writel(AN7563_PCIE_RC_MODE,
++		       port->base + AN7563_PCIE_GBL);
++
+ 	/* Set up vendor ID and class code */
+ 	if (soc->need_fix_class_id) {
+ 		val = PCI_VENDOR_ID_MEDIATEK;
+@@ -747,9 +759,32 @@ static int mtk_pcie_startup_port_v2(struct mtk_pcie_port *port)
+ 	writel(val, port->base + PCIE_AHB_TRANS_BASE0_H);
+ 
+ 	/* Set PCIe to AXI translation memory space.*/
+-	val = PCIE2AHB_SIZE | WIN_ENABLE;
++	val = WIN_ENABLE;
++	if (!soc->is_an7563)
++		val |= PCIE2AHB_SIZE;
+ 	writel(val, port->base + PCIE_AXI_WINDOW0);
+ 
++	/* AN7563 requires coherent endpoint DMA for Kite wireless devices. */
++	if (soc->is_an7563) {
++		val = readl(port->base + AN7563_PCIE_MMIO_CTRL);
++		val |= AN7563_PCIE_COHERENT;
++		writel(val, port->base + AN7563_PCIE_MMIO_CTRL);
++	}
++
++	/*
++	 * AN7563: the PBUS decoder routes CPU accesses to the port only inside
++	 * its own base/mask window (vendor pcie-ecnt.c, SET_PBUS_PCIE{0,1}_BASE
++	 * and _MASK).  The boot loader leaves port 1 at 0x21000000/16 MiB, so
++	 * every MMIO access to its endpoint (0x24000000) read 0xdeadbeef.  The
++	 * mask is the window's own size: AHB2PCIE_SIZE above is one power of
++	 * two larger and would make port 0 cover port 1's range.
++	 */
++	if (soc->is_an7563 && pcie->pbus) {
++		writel(lower_32_bits(mem->start), pcie->pbus);
++		writel(~(u32)(roundup_pow_of_two(resource_size(mem)) - 1),
++		       pcie->pbus + 4);
++	}
++
+ 	return 0;
+ }
+ 
+@@ -1101,6 +1136,81 @@ static int mtk_pcie_setup(struct mtk_pcie *pcie)
+ 	return 0;
+ }
+ 
++/*
++ * AN7563 trains its links at 2.5 GT/s although both ends can do more.  The
++ * vendor driver retrains after the enumeration: mt7512_pcie_rc0/1_retrain()
++ * (pcie-ecnt.c) reads the Link Capabilities of the root port and of the
++ * endpoint, gives up when either only supports 2.5 GT/s or when the root
++ * port already runs at its capable speed, and otherwise sets Retrain Link in
++ * the root port's Link Control and waits 1 s.  The stock unit then runs
++ * every link at 5 GT/s with Target Link Speed 5 GT/s (LnkCtl2 0x0002).
++ *
++ * The target is taken from the capabilities, as in the vendor code, and not
++ * from Target Link Speed, which the vendor does not look at.  The retrain
++ * has to come out right whatever that field holds, so it is raised to the
++ * capable speed when it is lower.  Everything is logged, because the first
++ * boot with the previous version could not tell whether the retrain ran or
++ * what it saw.
++ */
++static void mtk_pcie_retrain_links(struct mtk_pcie *pcie,
++				   struct pci_bus *bus)
++{
++	struct mtk_pcie_port *port;
++
++	list_for_each_entry(port, &pcie->ports, list) {
++		struct pci_dev *rc, *ep = NULL;
++		u32 rc_cap, ep_cap;
++		u16 lnkctl2, lnksta;
++		u8 target, cur;
++		int err;
++
++		rc = pci_get_slot(bus, PCI_DEVFN(port->slot, 0));
++		if (!rc)
++			continue;
++
++		if (rc->subordinate)
++			ep = pci_get_slot(rc->subordinate, PCI_DEVFN(0, 0));
++		if (!ep)
++			goto put_dev;
++
++		if (pcie_capability_read_dword(rc, PCI_EXP_LNKCAP, &rc_cap) ||
++		    pcie_capability_read_dword(ep, PCI_EXP_LNKCAP, &ep_cap) ||
++		    pcie_capability_read_word(rc, PCI_EXP_LNKSTA, &lnksta) ||
++		    pcie_capability_read_word(rc, PCI_EXP_LNKCTL2, &lnkctl2))
++			goto put_dev;
++
++		target = min(FIELD_GET(PCI_EXP_LNKCAP_SLS, rc_cap),
++			     FIELD_GET(PCI_EXP_LNKCAP_SLS, ep_cap));
++		cur = FIELD_GET(PCI_EXP_LNKSTA_CLS, lnksta);
++
++		pci_info(rc, "link: LnkCap speed %u/%u, LnkSta speed %u, LnkCtl2 target %u\n",
++			 FIELD_GET(PCI_EXP_LNKCAP_SLS, rc_cap),
++			 FIELD_GET(PCI_EXP_LNKCAP_SLS, ep_cap), cur,
++			 FIELD_GET(PCI_EXP_LNKCTL2_TLS, lnkctl2));
++
++		/* only 2.5 GT/s on one side, or already there: nothing to do */
++		if (target <= PCI_EXP_LNKCAP_SLS_2_5GB || cur >= target)
++			goto put_dev;
++
++		if (FIELD_GET(PCI_EXP_LNKCTL2_TLS, lnkctl2) < target)
++			pcie_capability_clear_and_set_word(rc, PCI_EXP_LNKCTL2,
++							   PCI_EXP_LNKCTL2_TLS,
++							   target);
++
++		err = pcie_retrain_link(rc, true);
++		if (err)
++			pci_warn(rc, "failed to retrain link: %d\n", err);
++
++		pcie_capability_read_word(rc, PCI_EXP_LNKSTA, &lnksta);
++		pci_info(rc, "link retrained to speed %u (LnkSta %#06x)\n",
++			 FIELD_GET(PCI_EXP_LNKSTA_CLS, lnksta), lnksta);
++
++put_dev:
++		pci_dev_put(ep);
++		pci_dev_put(rc);
++	}
++}
++
+ static int mtk_pcie_probe(struct platform_device *pdev)
+ {
+ 	struct device *dev = &pdev->dev;
+@@ -1119,6 +1229,13 @@ static int mtk_pcie_probe(struct platform_device *pdev)
+ 	platform_set_drvdata(pdev, pcie);
+ 	INIT_LIST_HEAD(&pcie->ports);
+ 
++	if (pcie->soc->is_an7563 &&
++	    platform_get_resource_byname(pdev, IORESOURCE_MEM, "pbus")) {
++		pcie->pbus = devm_platform_ioremap_resource_byname(pdev, "pbus");
++		if (IS_ERR(pcie->pbus))
++			return PTR_ERR(pcie->pbus);
++	}
++
+ 	err = mtk_pcie_setup(pcie);
+ 	if (err)
+ 		return err;
+@@ -1131,6 +1248,9 @@ static int mtk_pcie_probe(struct platform_device *pdev)
+ 	if (err)
+ 		goto put_resources;
+ 
++	if (pcie->soc->is_an7563)
++		mtk_pcie_retrain_links(pcie, host->bus);
++
+ 	return 0;
+ 
+ put_resources:
+@@ -1230,6 +1350,14 @@ static const struct mtk_pcie_soc mtk_pcie_soc_mt2712 = {
+ 	.setup_irq = mtk_pcie_setup_irq,
+ };
+ 
++static const struct mtk_pcie_soc mtk_pcie_soc_an7563 = {
++	.need_fix_class_id = true,
++	.is_an7563 = true,
++	.ops = &mtk_pcie_ops_v2,
++	.startup = mtk_pcie_startup_port_v2,
++	.setup_irq = mtk_pcie_setup_irq,
++};
++
+ static const struct mtk_pcie_soc mtk_pcie_soc_mt7622 = {
+ 	.need_fix_class_id = true,
+ 	.ops = &mtk_pcie_ops_v2,
+@@ -1247,6 +1375,7 @@ static const struct mtk_pcie_soc mtk_pcie_soc_mt7629 = {
+ };
+ 
+ static const struct of_device_id mtk_pcie_ids[] = {
++	{ .compatible = "airoha,an7563-pcie", .data = &mtk_pcie_soc_an7563 },
+ 	{ .compatible = "mediatek,mt2701-pcie", .data = &mtk_pcie_soc_v1 },
+ 	{ .compatible = "mediatek,mt7623-pcie", .data = &mtk_pcie_soc_v1 },
+ 	{ .compatible = "mediatek,mt2712-pcie", .data = &mtk_pcie_soc_mt2712 },
+--- a/drivers/pci/pci.c
++++ b/drivers/pci/pci.c
+@@ -4570,6 +4570,7 @@ int pcie_retrain_link(struct pci_dev *pdev, bool use_lt)
+ 
+ 	return rc;
+ }
++EXPORT_SYMBOL_GPL(pcie_retrain_link);
+ 
+ /**
+  * pcie_wait_for_link_delay - Wait until link is active or inactive
+-- 
+2.47.3
+
