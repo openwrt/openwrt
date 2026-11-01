@@ -576,7 +576,7 @@ define Package/eapol-test-mbedtls
   $(call Package/eapol-test/Default,$(1))
   TITLE+= (mbedTLS full)
   VARIANT:=supplicant-full-mbedtls
-  CONFLICTS:=$(filter-out eapol-test-openssl ,$(filter-out eapol-test-mbedtls ,$(EAPOL_TEST_PROVIDERS)))
+  CONFLICTS:=$(EAPOL_TEST_PROVIDERS)
   DEPENDS+=+PACKAGE_eapol-test-mbedtls:libmbedtls
   PROVIDES:=eapol-test
 endef
