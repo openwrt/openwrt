@@ -271,6 +271,21 @@ menu "Target Images"
 		help
 		  If you don't know, just leave it blank.
 
+	config GRUB_MICROCODE
+		string "Microcode to load before the kernel starts"
+		depends on TARGET_x86
+		depends on GRUB_IMAGES || GRUB_EFI_IMAGES
+		help
+		  Microcode files under /lib/firmware to hand to the kernel at
+		  boot, from the intel-microcode or amd64-microcode package, for
+		  example "intel-ucode/06-7a-08" for a Celeron J4125. Intel files
+		  are named after the CPU family, model and stepping in hex (see
+		  /proc/cpuinfo), AMD ones after the family. The boot partition
+		  then holds them in an early microcode archive, which the default
+		  boot entry loads as an initrd; the kernel refuses many updates
+		  later on. The failsafe entry boots without it.
+		  If you don't know, just leave it blank.
+
 	config GRUB_TIMEOUT
 		string "Seconds to wait before booting the default entry"
 		depends on GRUB_IMAGES || GRUB_EFI_IMAGES
