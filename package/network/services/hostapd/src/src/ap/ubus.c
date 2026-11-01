@@ -1280,7 +1280,11 @@ hostapd_vendor_elements(struct ubus_context *ctx, struct ubus_object *obj,
 	if (len == 0) {
 		wpabuf_free(bss->vendor_elements);
 		bss->vendor_elements = NULL;
-		return 0;
+
+		/* and out of the beacons, which would keep them otherwise */
+		if (ieee802_11_update_beacons(hapd->iface) != 0)
+			return UBUS_STATUS_NOT_SUPPORTED;
+		return UBUS_STATUS_OK;
 	}
 
 	elems = wpabuf_alloc(len);
@@ -3073,7 +3077,17 @@ ubus_event_cb(struct ubus_notify_request *req, int idx, int ret)
 {
 	struct ubus_event_req *ureq = container_of(req, struct ubus_event_req, nreq);
 
-	ureq->resp = ret;
+	/*
+	 * A subscriber that does not handle the notification has no say:
+	 * ubus answers NO_DATA for a handler that returned nothing and
+	 * METHOD_NOT_FOUND for one without a notify handler. Of the others,
+	 * the first refusal stands; a later 0 does not undo it.
+	 */
+	if (ret == UBUS_STATUS_NO_DATA || ret == UBUS_STATUS_METHOD_NOT_FOUND)
+		return;
+
+	if (!ureq->resp)
+		ureq->resp = ret;
 }
 
 int hostapd_ubus_handle_event(struct hostapd_data *hapd, struct hostapd_ubus_request *req)
