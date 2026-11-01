@@ -1204,6 +1204,17 @@ define Device/comfast_cf-wr632ax
 endef
 TARGET_DEVICES += comfast_cf-wr632ax
 
+define Device/comfast_cf-wr632axv2
+  $(call Device/comfast_cf-wr632ax-common)
+  DEVICE_MODEL := CF-WR632AX V2
+  DEVICE_DTS := mt7981b-comfast-cf-wr632axv2
+  DEVICE_PACKAGES += kmod-phy-airoha-en8811h airoha-en8811h-firmware
+  IMAGE_SIZE := 65536k
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  SUPPORTED_DEVICES += comfast,cf-wr632ax-v2
+endef
+TARGET_DEVICES += comfast_cf-wr632axv2
+
 define Device/comfast_cf-wr632ax-ubi
   DEVICE_VARIANT := (UBI)
   DEVICE_DTS := mt7981b-comfast-cf-wr632ax-ubi
