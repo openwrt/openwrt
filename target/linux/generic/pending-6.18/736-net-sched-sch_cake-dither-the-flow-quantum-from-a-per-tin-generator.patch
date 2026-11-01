@@ -1,0 +1,56 @@
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Subject: [PATCH] net/sched: sch_cake: dither the flow quantum from a per-tin generator
+
+CAKE adds a random 16-bit value to every flow quantum it hands out, so
+that the scaled quantum does not accumulate a rounding error. That is
+one get_random_u16() for nearly every packet dequeued, and the
+dithering needs no more than a uniform value.
+
+Draw it from a prandom state in the tin instead, seeded from
+get_random_u64() when the qdisc is created. The tin is only touched
+under the qdisc lock, so the state needs no locking of its own.
+
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+---
+--- a/net/sched/sch_cake.c
++++ b/net/sched/sch_cake.c
+@@ -60,6 +60,7 @@
+ #include <linux/init.h>
+ #include <linux/skbuff.h>
+ #include <linux/jhash.h>
++#include <linux/prandom.h>
+ #include <linux/slab.h>
+ #include <linux/vmalloc.h>
+ #include <linux/reciprocal_div.h>
+@@ -160,6 +161,7 @@ struct cake_tin_data {
+ 	u16	overflow_idx[CAKE_QUEUES];
+ 	struct cake_host hosts[CAKE_QUEUES]; /* for triple isolation */
+ 	u16	flow_quantum;
++	struct rnd_state dither;
+ 
+ 	struct cobalt_params cparams;
+ 	u32	drop_overlimit;
+@@ -733,11 +735,12 @@ static u16 cake_get_flow_quantum(struct
+ 				 struct cake_flow *flow,
+ 				 int flow_mode)
+ {
+-	/* The get_random_u16() is a way to apply dithering to avoid
+-	 * accumulating roundoff errors
++	/* The random addend is a way to apply dithering to avoid
++	 * accumulating roundoff errors. It only has to be uniform, so it
++	 * comes from the tin's own generator rather than the system's.
+ 	 */
+ 	return (q->flow_quantum * quantum_div[cake_host_load(q, flow, flow_mode)] +
+-		get_random_u16()) >> 16;
++		(u16)prandom_u32_state(&q->dither)) >> 16;
+ }
+ 
+ static u32 cake_hash(struct cake_tin_data *q, const struct sk_buff *skb,
+@@ -3175,6 +3178,7 @@ static int cake_init(struct Qdisc *sch,
+ 		INIT_LIST_HEAD(&b->new_flows);
+ 		INIT_LIST_HEAD(&b->old_flows);
+ 		INIT_LIST_HEAD(&b->decaying_flows);
++		prandom_seed_state(&b->dither, get_random_u64());
+ 		b->sparse_flow_count = 0;
+ 		b->bulk_flow_count = 0;
+ 		b->decaying_flow_count = 0;

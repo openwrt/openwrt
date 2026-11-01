@@ -1,0 +1,187 @@
+From 9f26257ed3db6c6b9722b0d3600c70cc8160b0ed Mon Sep 17 00:00:00 2001
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Date: Sun, 25 Oct 2026 01:10:05 +0200
+Subject: [PATCH] ppp: transmit data frames without the unit and channel
+ locks
+
+ppp_xmit_process() takes ppp->wlock and ppp_push() takes the channel's
+downl for every frame, so CPUs that transmit on one PPP unit at the same
+time run the channel's xmit and the lower device's transmit path one
+frame at a time. The device is already LLTX and, on a direct_xmit
+channel, IFF_NO_QUEUE, so these two locks are the only serialisation
+left.
+
+Send a data frame straight to the channel when none of the work done
+under those locks applies: no multilink, no transmit compressor, no VJ
+compression of the frame, no demand loopback, no filter and no backlog
+on ppp->file.xq. A channel opts in with the new lockless_xmit flag,
+which promises that its start_xmit can run concurrently and accepts
+every frame. The channel is looked up under RCU, and
+ppp_disconnect_channel() already waits for a grace period after it
+removes the channel from ppp->channels. ppp_set_compress() now also
+waits for one after it installs the first transmit compressor, so no
+frame bypasses compression once CCP has started it. Control protocol
+frames (protocol 0x8000 and above) keep the locked path, and last_xmit
+is only written when jiffies has changed.
+
+[6.18: ppp_unregister_channel() clears pch->chan before it disconnects
+ the channel, so read it with READ_ONCE() and take the locked path when
+ it is NULL; use ppp->dev.]
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+---
+--- a/drivers/net/ppp/ppp_generic.c
++++ b/drivers/net/ppp/ppp_generic.c
+@@ -833,7 +833,7 @@ static long ppp_ioctl(struct file *file,
+ 		if (!(ppp->flags & SC_MULTILINK) && (val & SC_MULTILINK))
+ 			ppp->nextseq = 0;
+ #endif
+-		ppp->flags = val & SC_FLAG_BITS;
++		WRITE_ONCE(ppp->flags, val & SC_FLAG_BITS);
+ 		ppp_unlock(ppp);
+ 		if (cflags & SC_CCP_OPEN)
+ 			ppp_ccp_closed(ppp);
+@@ -953,7 +953,7 @@ static long ppp_ioctl(struct file *file,
+ 		ppp_lock(ppp);
+ 		if (*which)
+ 			bpf_prog_destroy(*which);
+-		*which = filter;
++		WRITE_ONCE(*which, filter);
+ 		ppp_unlock(ppp);
+ 		err = 0;
+ 		break;
+@@ -1019,7 +1019,7 @@ static long ppp_compat_ioctl(struct file
+ 			ppp_lock(ppp);
+ 			if (*which)
+ 				bpf_prog_destroy(*which);
+-			*which = filter;
++			WRITE_ONCE(*which, filter);
+ 			ppp_unlock(ppp);
+ 			err = 0;
+ 			break;
+@@ -1574,7 +1574,7 @@ static void ppp_dev_uninit(struct net_de
+ 	struct ppp_net *pn = ppp_pernet(ppp->ppp_net);
+ 
+ 	ppp_lock(ppp);
+-	ppp->closing = 1;
++	WRITE_ONCE(ppp->closing, 1);
+ 	ppp_unlock(ppp);
+ 
+ 	mutex_lock(&pn->all_ppp_mutex);
+@@ -1674,8 +1674,74 @@ static void ppp_xmit_flush(struct ppp *p
+ 	netif_wake_queue(ppp->dev);
+ }
+ 
++/*
++ * Send a data frame straight to the channel, without ppp->wlock and
++ * pch->downl, when none of the work done under those locks applies:
++ * no multilink, transmit compressor, VJ compression of this frame,
++ * demand loopback, filters or transmit backlog, and a channel whose
++ * start_xmit may run concurrently.
++ *
++ * A frame that saw the old flags of a concurrent PPPIOCSFLAGS is sent
++ * as if it had been sent just before the update; none of these frames
++ * touches VJ or multilink state.  Compression cannot start before
++ * ppp_set_compress() has installed a compressor and waited for a grace
++ * period, so no frame bypasses a running compressor.  A channel being
++ * unregistered reads as NULL, and its owner tears it down only after
++ * ppp_disconnect_channel() has removed it from ppp->channels and waited
++ * for a grace period.
++ *
++ * Returns true if the frame was consumed.
++ */
++static bool ppp_xmit_lockless(struct ppp *ppp, struct sk_buff *skb)
++{
++	struct net_device *dev = ppp->dev;
++	unsigned int flags = READ_ONCE(ppp->flags);
++	unsigned long now = jiffies;
++	int proto = PPP_PROTO(skb);
++	struct ppp_channel *chan;
++	struct channel *pch;
++	bool ret = false;
++
++	if (proto >= 0x8000 ||
++	    (flags & (SC_MULTILINK | SC_LOOP_TRAFFIC)) ||
++	    (proto == PPP_IP && (flags & SC_COMP_TCP)) ||
++	    READ_ONCE(ppp->xc_state) || READ_ONCE(ppp->closing) ||
++	    !skb_queue_empty_lockless(&ppp->file.xq))
++		return false;
++#ifdef CONFIG_PPP_FILTER
++	if (READ_ONCE(ppp->pass_filter) || READ_ONCE(ppp->active_filter))
++		return false;
++#endif /* CONFIG_PPP_FILTER */
++
++	rcu_read_lock();
++	pch = list_first_or_null_rcu(&ppp->channels, struct channel, clist);
++	if (!pch)
++		goto out;
++	chan = READ_ONCE(pch->chan);
++	if (!chan || !chan->lockless_xmit)
++		goto out;
++
++	skb->dev = dev;
++	/* Do not dirty a cache line shared by all CPUs for every frame. */
++	if (READ_ONCE(ppp->last_xmit) != now)
++		WRITE_ONCE(ppp->last_xmit, now);
++	dev_sw_netstats_tx_add(dev, 1, skb->len - PPP_PROTO_LEN);
++
++	if (unlikely(!chan->direct_xmit && skb_linearize(skb)))
++		kfree_skb(skb);
++	else if (WARN_ON_ONCE(!chan->ops->start_xmit(chan, skb)))
++		kfree_skb(skb);
++	ret = true;
++out:
++	rcu_read_unlock();
++	return ret;
++}
++
+ static void __ppp_xmit_process(struct ppp *ppp, struct sk_buff *skb)
+ {
++	if (ppp_xmit_lockless(ppp, skb))
++		return;
++
+ 	ppp_xmit_lock(ppp);
+ 	if (unlikely(ppp->closing)) {
+ 		kfree_skb(skb);
+@@ -3123,11 +3189,17 @@ ppp_set_compress(struct ppp *ppp, struct
+ 			ocomp = ppp->xcomp;
+ 			ostate = ppp->xc_state;
+ 			ppp->xcomp = cp;
+-			ppp->xc_state = state;
++			WRITE_ONCE(ppp->xc_state, state);
+ 			ppp_xmit_unlock(ppp);
+ 			if (ostate) {
+ 				ocomp->comp_free(ostate);
+ 				module_put(ocomp->owner);
++			} else {
++				/* Compression can start with the next CCP
++				 * frame from pppd; let lockless senders that
++				 * saw no compressor finish first.
++				 */
++				synchronize_net();
+ 			}
+ 			err = 0;
+ 		} else
+@@ -3254,11 +3326,11 @@ ppp_ccp_closed(struct ppp *ppp)
+ 	struct compressor *xcomp, *rcomp;
+ 
+ 	ppp_lock(ppp);
+-	ppp->flags &= ~(SC_CCP_OPEN | SC_CCP_UP);
++	WRITE_ONCE(ppp->flags, ppp->flags & ~(SC_CCP_OPEN | SC_CCP_UP));
+ 	ppp->xstate = 0;
+ 	xcomp = ppp->xcomp;
+ 	xstate = ppp->xc_state;
+-	ppp->xc_state = NULL;
++	WRITE_ONCE(ppp->xc_state, NULL);
+ 	ppp->rstate = 0;
+ 	rcomp = ppp->rcomp;
+ 	rstate = ppp->rc_state;
+--- a/include/linux/ppp_channel.h
++++ b/include/linux/ppp_channel.h
+@@ -43,6 +43,7 @@ struct ppp_channel {
+ 	void		*ppp;		/* opaque to channel */
+ 	int		speed;		/* transfer rate (bytes/second) */
+ 	bool		direct_xmit;	/* no qdisc, xmit directly */
++	bool		lockless_xmit;	/* concurrent start_xmit, never 0 */
+ };
+ 
+ #ifdef __KERNEL__
