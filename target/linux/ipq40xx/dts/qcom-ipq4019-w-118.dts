@@ -1,0 +1,486 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+/dts-v1/;
+
+#include "qcom-ipq4019.dtsi"
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+#include <dt-bindings/soc/qcom,tcsr.h>
+
+/ {
+	model = "Arista W-118";
+	compatible = "arista,w-118", "qcom,ipq4019";
+
+	aliases {
+		label-mac-device = &swport5;
+		led-boot = &led_power_green;
+		led-failsafe = &led_power_red;
+		led-running = &led_power_green;
+		led-upgrade = &led_power_red;
+		serial0 = &blsp1_uart1;
+		serial1 = &blsp1_uart2;
+	};
+
+	chosen {
+		bootargs-append = " ubi.mtd=ubi root=/dev/ubiblock0_1";
+		stdout-path = "serial0:115200n8";
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		button-reset {
+			label = "reset";
+			gpios = <&tlmm 18 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		/* "Network 1/2/3": one LED for the three LAN ports */
+		led-lan {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_LAN;
+			gpios = <&tlmm 10 GPIO_ACTIVE_LOW>;
+		};
+
+		led_power_green: led-power-green {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_POWER;
+			gpios = <&tlmm 49 GPIO_ACTIVE_LOW>;
+		};
+
+		led_power_red: led-power-red {
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_POWER;
+			gpios = <&tlmm 50 GPIO_ACTIVE_LOW>;
+			panic-indicator;
+		};
+
+		led-uplink {
+			color = <LED_COLOR_ID_GREEN>;
+			function = "uplink";
+			gpios = <&tlmm 41 GPIO_ACTIVE_LOW>;
+		};
+
+		/* the QCA9882 */
+		led-wlan {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WLAN;
+			gpios = <&tlmm 32 GPIO_ACTIVE_LOW>;
+		};
+
+		led-wlan2g {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WLAN_2GHZ;
+			gpios = <&tlmm 23 GPIO_ACTIVE_LOW>;
+		};
+
+		led-wlan5g {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WLAN_5GHZ;
+			gpios = <&tlmm 22 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	/*
+	 * The power source, read by the PoE output's boot script; inputs,
+	 * whose direction userspace cannot change.
+	 */
+	gpio-export {
+		compatible = "gpio-export";
+
+		poe-af {
+			gpio-export,name = "poe-af";
+			gpio-export,input = <0>;
+			gpios = <&tlmm 29 GPIO_ACTIVE_HIGH>;
+		};
+
+		dc-in {
+			gpio-export,name = "dc-in";
+			gpio-export,input = <0>;
+			gpios = <&tlmm 43 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	/* the NXP BLE controller's reset, held released */
+	output-ble {
+		compatible = "regulator-output";
+		vout-supply = <&reg_ble>;
+	};
+
+	/*
+	 * PoE output on lan3 (GPIO 28, high = on), off at boot. GPIO 43 is
+	 * high on DC and low on PoE in; GPIO 29 is high on 802.3af and low on
+	 * 802.3at. An 802.3af supply leaves no power to share, so the boot
+	 * script turns the output on only from 802.3at or DC.
+	 */
+	output-poe {
+		compatible = "regulator-output";
+		vout-supply = <&reg_poe>;
+	};
+
+	reg_ble: regulator-ble {
+		compatible = "regulator-fixed";
+		enable-active-high;
+		gpios = <&tlmm 42 GPIO_ACTIVE_HIGH>;
+		regulator-boot-on;
+		regulator-name = "ble";
+	};
+
+	reg_poe: regulator-poe {
+		compatible = "regulator-fixed";
+		enable-active-high;
+		gpios = <&tlmm 28 GPIO_ACTIVE_HIGH>;
+		regulator-name = "poe-out";
+	};
+
+	soc {
+		tcsr@1949000 {
+			compatible = "qcom,tcsr";
+			reg = <0x1949000 0x100>;
+			qcom,wifi_glb_cfg = <TCSR_WIFI_GLB_CFG>;
+		};
+
+		ess_tcsr@1953000 {
+			qcom,ess-interface-select = <TCSR_ESS_PSGMII>;
+		};
+
+		tcsr@1957000 {
+			compatible = "qcom,tcsr";
+			reg = <0x1957000 0x100>;
+			qcom,wifi_noc_memtype_m0_m2 = <TCSR_WIFI_NOC_MEMTYPE_M0_M2>;
+		};
+	};
+};
+
+&blsp_dma {
+	status = "okay";
+};
+
+&blsp1_spi1 {
+	pinctrl-0 = <&spi_0_pins>;
+	pinctrl-names = "default";
+	cs-gpios = <&tlmm 12 GPIO_ACTIVE_LOW>;
+	status = "okay";
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <24000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "0:SBL1";
+				reg = <0x0 0x40000>;
+				read-only;
+			};
+
+			partition@40000 {
+				label = "0:MIBIB";
+				reg = <0x40000 0x20000>;
+				read-only;
+			};
+
+			partition@60000 {
+				label = "0:QSEE";
+				reg = <0x60000 0x60000>;
+				read-only;
+			};
+
+			partition@c0000 {
+				label = "0:CDT";
+				reg = <0xc0000 0x10000>;
+				read-only;
+			};
+
+			partition@d0000 {
+				label = "0:DDRPARAMS";
+				reg = <0xd0000 0x10000>;
+				read-only;
+			};
+
+			partition@e0000 {
+				label = "0:APPSBL";
+				reg = <0xe0000 0x80000>;
+				read-only;
+			};
+
+			partition@160000 {
+				label = "0:APPSBLENV";
+				reg = <0x160000 0x10000>;
+
+				nvmem-layout {
+					compatible = "u-boot,env";
+				};
+			};
+
+			partition@170000 {
+				label = "0:ART";
+				reg = <0x170000 0x10000>;
+				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_art_0: macaddr@0 {
+						reg = <0x0 0x6>;
+					};
+
+					macaddr_art_6: macaddr@6 {
+						reg = <0x6 0x6>;
+					};
+
+					serial-number@30 {
+						reg = <0x30 0xd>;
+					};
+
+					precal_art_1000: precal@1000 {
+						reg = <0x1000 0x2f20>;
+					};
+
+					precal_art_5000: precal@5000 {
+						reg = <0x5000 0x2f20>;
+					};
+
+					cal_art_9000: cal@9000 {
+						reg = <0x9000 0x844>;
+					};
+				};
+			};
+
+			/* the stock firmware's two kernel slots */
+			partition@180000 {
+				label = "0:HLOS";
+				reg = <0x180000 0x500000>;
+				read-only;
+			};
+
+			partition@680000 {
+				label = "0:HLOS1";
+				reg = <0x680000 0x500000>;
+				read-only;
+			};
+
+			partition@b80000 {
+				label = "0:UCONFIG";
+				reg = <0xb80000 0x400000>;
+				read-only;
+			};
+		};
+	};
+};
+
+&blsp1_uart1 {
+	pinctrl-0 = <&serial_0_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+/* the NXP BLE controller */
+&blsp1_uart2 {
+	pinctrl-0 = <&serial_1_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&crypto {
+	status = "okay";
+};
+
+&cryptobam {
+	status = "okay";
+};
+
+&gmac {
+	nvmem-cells = <&macaddr_art_6>;
+	nvmem-cell-names = "mac-address";
+	status = "okay";
+};
+
+&mdio {
+	pinctrl-0 = <&mdio_pins>;
+	pinctrl-names = "default";
+	reset-gpios = <&tlmm 47 GPIO_ACTIVE_LOW>;
+	reset-delay-us = <2000>;
+	status = "okay";
+};
+
+&nand {
+	pinctrl-0 = <&nand_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	nand@0 {
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			/*
+			 * The stock firmware's two root slots. Not labelled
+			 * "rootfs": OpenWrt would take that as its own root.
+			 */
+			partition@0 {
+				label = "arista_rootfs";
+				reg = <0x0 0x4000000>;
+				read-only;
+			};
+
+			partition@4000000 {
+				label = "arista_rootfs2";
+				reg = <0x4000000 0x4000000>;
+				read-only;
+			};
+
+			/* unused by the stock firmware */
+			partition@8000000 {
+				label = "ubi";
+				reg = <0x8000000 0x8000000>;
+			};
+		};
+	};
+};
+
+&pcie0 {
+	perst-gpios = <&tlmm 48 GPIO_ACTIVE_LOW>;
+	wake-gpios = <&tlmm 46 GPIO_ACTIVE_LOW>;
+	status = "okay";
+};
+
+&pcie_bridge0 {
+	wifi@0,0 {
+		compatible = "qcom,ath10k";
+		reg = <0x00010000 0 0 0 0>;
+		nvmem-cells = <&cal_art_9000>;
+		nvmem-cell-names = "calibration";
+	};
+};
+
+&prng {
+	status = "okay";
+};
+
+&qpic_bam {
+	status = "okay";
+};
+
+&switch {
+	status = "okay";
+};
+
+&swport2 {
+	label = "lan1";
+	status = "okay";
+};
+
+&swport3 {
+	label = "lan2";
+	status = "okay";
+};
+
+&swport4 {
+	label = "lan3";
+	status = "okay";
+};
+
+&swport5 {
+	label = "uplink";
+	nvmem-cells = <&macaddr_art_0>;
+	nvmem-cell-names = "mac-address";
+	status = "okay";
+};
+
+&tlmm {
+	mdio_pins: mdio_pinmux {
+		mux_1 {
+			pins = "gpio6";
+			function = "mdio";
+			bias-pull-up;
+		};
+
+		mux_2 {
+			pins = "gpio7";
+			function = "mdc";
+			bias-pull-up;
+		};
+	};
+
+	nand_pins: nand_pins {
+		pullups {
+			pins = "gpio52", "gpio53", "gpio58", "gpio59";
+			function = "qpic";
+			bias-pull-up;
+		};
+
+		pulldowns {
+			pins = "gpio54", "gpio55", "gpio56",
+				"gpio57", "gpio60", "gpio61",
+				"gpio62", "gpio63", "gpio64",
+				"gpio65", "gpio66", "gpio67",
+				"gpio68", "gpio69";
+			function = "qpic";
+			bias-pull-down;
+		};
+	};
+
+	serial_0_pins: serial_pinmux {
+		mux {
+			pins = "gpio16", "gpio17";
+			function = "blsp_uart0";
+			bias-disable;
+		};
+	};
+
+	serial_1_pins: serial1_pinmux {
+		mux {
+			pins = "gpio8", "gpio9";
+			function = "blsp_uart1";
+			bias-disable;
+		};
+	};
+
+	spi_0_pins: spi_0_pinmux {
+		pinmux {
+			function = "blsp_spi0";
+			pins = "gpio13", "gpio14", "gpio15";
+			drive-strength = <12>;
+			bias-disable;
+		};
+
+		pinmux_cs {
+			function = "gpio";
+			pins = "gpio12";
+			drive-strength = <2>;
+			bias-disable;
+			output-high;
+		};
+	};
+};
+
+&watchdog {
+	status = "okay";
+};
+
+&wifi0 {
+	nvmem-cells = <&precal_art_1000>;
+	nvmem-cell-names = "pre-calibration";
+	qcom,ath10k-calibration-variant = "Arista-W118";
+	status = "okay";
+};
+
+&wifi1 {
+	nvmem-cells = <&precal_art_5000>;
+	nvmem-cell-names = "pre-calibration";
+	qcom,ath10k-calibration-variant = "Arista-W118";
+	status = "okay";
+};

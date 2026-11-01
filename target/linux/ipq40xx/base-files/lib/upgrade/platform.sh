@@ -106,6 +106,7 @@ platform_do_upgrade_mikrotik_nand() {
 platform_do_upgrade() {
 	case "$(board_name)" in
 	8dev,jalapeno|\
+	arista,w-118|\
 	aruba,ap-303|\
 	aruba,ap-303h|\
 	aruba,ap-365|\
