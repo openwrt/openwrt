@@ -14,6 +14,8 @@ set_classless_routes() {
 }
 
 setup_interface () {
+	local action="$1"
+
 	proto_init_update "*" 1
 	proto_add_ipv4_address "$ip" "${subnet:-255.255.255.0}"
 	# TODO: apply $broadcast
@@ -59,7 +61,9 @@ setup_interface () {
 	[ -n "$hostname" ] && json_add_string hostname "$hostname"
 	[ -n "$message" ]  && json_add_string message "$message"
 	[ -n "$timezone" ] && json_add_int timezone "$timezone"
-	[ -n "$lease" ]    && json_add_int leasetime "$lease"
+	# A changed value in the interface data makes netifd send ifupdate, and the
+	# firewall reloads on it. Some servers vary the lease time at each renew.
+	[ -n "$lease" ] && [ "$action" != renew ] && json_add_int leasetime "$lease"
 	[ -n "$serverid" ] && json_add_string dhcpserver "$serverid"
 	proto_close_data
 
@@ -107,7 +111,7 @@ case "$1" in
 		deconfig_interface
 	;;
 	renew|bound)
-		setup_interface
+		setup_interface "$1"
 	;;
 esac
 
