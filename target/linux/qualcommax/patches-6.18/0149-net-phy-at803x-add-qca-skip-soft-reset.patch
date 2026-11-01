@@ -18,7 +18,7 @@ Signed-off-by: Vas <banoz@users.noreply.github.com>
 
 --- a/Documentation/devicetree/bindings/net/qca,ar803x.yaml
 +++ b/Documentation/devicetree/bindings/net/qca,ar803x.yaml
-@@ -92,6 +92,12 @@
+@@ -92,6 +92,12 @@ properties:
        valid clock.
      type: boolean
  
@@ -43,7 +43,7 @@ Signed-off-by: Vas <banoz@users.noreply.github.com>
  #define IPQ5018_PHY_FIFO_CONTROL		0x19
  #define IPQ5018_PHY_FIFO_RESET			GENMASK(1, 0)
  
-@@ -830,6 +833,9 @@
+@@ -830,6 +833,9 @@ static int at8031_parse_dt(struct phy_de
  	if (of_property_read_bool(node, "qca,keep-pll-enabled"))
  		priv->flags |= AT803X_KEEP_PLL_ENABLED;
  
@@ -53,7 +53,7 @@ Signed-off-by: Vas <banoz@users.noreply.github.com>
  	ret = at8031_register_regulators(phydev);
  	if (ret < 0)
  		return ret;
-@@ -889,6 +895,16 @@
+@@ -889,6 +895,16 @@ static int at8031_probe(struct phy_devic
  			      AT803X_WOL_EN, 0);
  }
  
@@ -70,7 +70,7 @@ Signed-off-by: Vas <banoz@users.noreply.github.com>
  static int at8031_config_init(struct phy_device *phydev)
  {
  	struct at803x_priv *priv = phydev->priv;
-@@ -1169,7 +1185,7 @@
+@@ -1169,7 +1185,7 @@ static struct phy_driver at803x_driver[]
  	.probe			= at8031_probe,
  	.config_init		= at8031_config_init,
  	.config_aneg		= at803x_config_aneg,
