@@ -1,0 +1,49 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Daniel Pawlik <pawlik.dan@gmail.com>
+Date: Tue, 20 Oct 2026 18:00:00 +0200
+Subject: [PATCH] net: airoha: npu: assign the coherent DMA pool
+
+NPU V2 can only address host DRAM at 0x80000000-0xbfffffff; higher
+addresses alias the lower 1 GiB. Coherent buffers dereferenced by the
+NPU, the mailbox buffers and the mt76 WLAN rings, must stay in that
+window.
+
+Assign the optional "dma" shared-dma-pool to the NPU device before the
+mailbox buffers are allocated. Streaming mappings are not affected:
+packet buffers are only passed through to the WLAN DMA engine.
+
+Co-authored-by: Gilly1970 <gilroyscott1970@gmail.com>
+Signed-off-by: Daniel Pawlik <pawlik.dan@gmail.com>
+---
+--- a/drivers/net/ethernet/airoha/airoha_npu.c
++++ b/drivers/net/ethernet/airoha/airoha_npu.c
+@@ -717,6 +717,11 @@ static const struct regmap_config regmap
+ 	.disable_locking	= true,
+ };
+ 
++static void airoha_npu_release_dma_pool(void *dev)
++{
++	of_reserved_mem_device_release(dev);
++}
++
+ static int airoha_npu_probe(struct platform_device *pdev)
+ {
+ 	struct device *dev = &pdev->dev;
+@@ -800,6 +805,17 @@ static int airoha_npu_probe(struct platf
+ 	if (err)
+ 		return err;
+ 
++	/*
++	 * NPU V2 can only address the first 1 GiB of DRAM: place coherent
++	 * buffers shared with the NPU in the "dma" pool, if provided.
++	 */
++	err = of_reserved_mem_device_init_by_name(dev, dev->of_node, "dma");
++	if (!err)
++		err = devm_add_action_or_reset(dev, airoha_npu_release_dma_pool,
++					       dev);
++	if (err && err != -ENODEV)
++		return err;
++
+ 	for (i = 0; i < ARRAY_SIZE(npu->cores); i++) {
+ 		struct airoha_npu_core *core = &npu->cores[i];
+ 
