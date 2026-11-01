@@ -1,0 +1,78 @@
+#!/bin/sh
+
+. /lib/functions/uci-defaults.sh
+. /lib/functions/system.sh
+
+ipq50xx_setup_interfaces()
+{
+	local board="$1"
+	case $board in
+	airtel,aap321nk)
+		# AAP321NK: only 2 of the QCA8337 ports are wired to jacks (+ GE-PHY WAN)
+		ucidef_set_interfaces_lan_wan "lan1 lan2" "wan"
+		;;
+	elecom,wrc-x3000gs2|\
+	elecom,wrc-x3000gst2|\
+	iodata,wn-dax3000gr|\
+	linksys,mr5500|\
+	zyxel,scr50axe)
+		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "wan"
+		;;
+	glinet,gl-b3000)
+		ucidef_set_interfaces_lan_wan "lan1 lan2" "wan"
+		;;
+	cmcc,mr3000d-ci|\
+	linksys,mx2000|\
+	linksys,mx5500|\
+	linksys,spnmx56|\
+	xiaomi,ax6000)
+		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" "wan"
+		;;
+	linksys,mx6200|\
+	yuncore,ax830|\
+	yuncore,ax850)
+		ucidef_set_interfaces_lan_wan "lan" "wan"
+		;;
+	cmcc,pz-l8|\
+	xiaomi,redmi-ax5400)
+		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" "wan"
+		ucidef_set_network_device_conduit "lan1" "eth1"
+		ucidef_set_network_device_conduit "lan2" "eth1"
+		ucidef_set_network_device_conduit "lan3" "eth1"
+		ucidef_set_network_device_conduit "wan" "eth0"
+		;;
+	esac
+}
+
+ipq50xx_setup_macs()
+{
+	local board="$1"
+	case $board in
+	airtel,aap321nk)
+		# Per-unit MACs are provisioned ONLY in the Nokia "cfg" partition, as an
+		# ASCII config string: macaddr 'AA:BB:CC:..'. 0:ART holds just the Atheros
+		# default 00:03:7f:.. so the DTS nvmem-cell yields a bogus MAC and netifd
+		# falls back to 00:11:22:33:44:55. Pull the real base from cfg and derive
+		# wan = base + 2 (base+1 is the wifi vap mac).
+		local part base lan wan last
+		part=$(find_mtd_part cfg)
+		[ -n "$part" ] && base=$(grep -a -o -m1 "macaddr .[0-9A-Fa-f:]*" "$part" | \
+			grep -o "[0-9A-Fa-f:]*$" | tr 'A-F' 'a-f')
+		if [ -n "$base" ]; then
+			lan="$base"
+			last=$(( (0x${base##*:} + 2) & 0xff ))
+			wan=$(printf '%s:%02x' "${base%:*}" "$last")
+			ucidef_set_interface_macaddr "lan" "$lan"
+			ucidef_set_interface_macaddr "wan" "$wan"
+		fi
+		;;
+	esac
+}
+
+board_config_update
+board=$(board_name)
+ipq50xx_setup_interfaces $board
+ipq50xx_setup_macs $board
+board_config_flush
+
+exit 0
