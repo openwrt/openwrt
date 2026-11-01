@@ -1,0 +1,182 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Ville Takio <ville+git@takio.fi>
+Subject: [PATCH] b43: AC-PHY: receive A-MSDUs
+
+The AC cores take a received A-MSDU apart before DMA: each piece comes
+in a buffer of its own with the A-MSDU bit of the MAC status and its
+place in the aggregation type (1 first, 0 middle, 2 last, 3 whole). The
+first piece carries the PLCP, the 802.11 and CCMP headers and the first
+subframe, already decrypted; a middle one a subframe; the last one the
+last subframe, the CCMP MIC and the FCS (seen in the uplink of a OnePlus
+Nord 2, which puts TCP ACKs and data in two-subframe A-MSDUs).
+
+b43 dropped every piece. Join them into the MPDU as it was sent and pass
+it on under the first piece's receive header, with any FCS or decrypt
+error of a piece on it, and announce A-MSDUs in A-MPDUs.
+
+With the Nord 2 two rooms away on 5 GHz ch36/80: uplink 112-134 Mbit/s
+and downlink 191-203 against 97-121 and 156-176 before.
+
+--- a/drivers/net/wireless/broadcom/b43/b43.h
++++ b/drivers/net/wireless/broadcom/b43/b43.h
+@@ -1025,6 +1025,10 @@ struct b43_wldev {
+ 	/* Word address of the microcode's beamforming block, 0 without. */
+ 	u16 txbf_base;
+ 	struct b43_txbf_link txbf[B43_TXBF_SLOTS];
++	/* The A-MSDU being put together from its pieces (b43_rx_amsdu()). */
++	struct sk_buff *rx_amsdu;
++	u8 rx_amsdu_hdr[40] __aligned(4);	/* Its first receive header */
++	u32 rx_amsdu_err;
+ 	bool radio_hw_enable;	/* saved state of radio hardware enabled state */
+ 	bool qos_enabled;		/* TRUE, if QoS is used. */
+ 	bool hwcrypto_enabled;		/* TRUE, if HW crypto acceleration is enabled. */
+--- a/drivers/net/wireless/broadcom/b43/main.c
++++ b/drivers/net/wireless/broadcom/b43/main.c
+@@ -6462,6 +6462,7 @@ static void b43_wireless_core_exit(struc
+ #endif
+ 	}
+ 
++	b43_rx_amsdu_free(dev);
+ 	b43_dma_free(dev);
+ 	b43_pio_free(dev);
+ 	if (dev->phy.type != B43_PHYTYPE_AC)
+@@ -7329,6 +7330,8 @@ static int b43_setup_bands(struct b43_wl
+ 		/* A rate and its fallbacks, a block each. */
+ 		hw->max_rates = B43_TXH_AC_RATES;
+ 		ieee80211_hw_set(hw, AMPDU_AGGREGATION);
++		/* A-MSDUs come in pieces, which b43_rx_amsdu() joins. */
++		ieee80211_hw_set(hw, SUPPORTS_AMSDU_IN_AMPDU);
+ 		hw->max_tx_aggregation_subframes = IEEE80211_MAX_AMPDU_BUF_HT;
+ 		hw->max_rx_aggregation_subframes = IEEE80211_MAX_AMPDU_BUF_HT;
+ 		if (have_5ghz_phy) {
+--- a/drivers/net/wireless/broadcom/b43/xmit.c
++++ b/drivers/net/wireless/broadcom/b43/xmit.c
+@@ -1328,6 +1328,76 @@ static int b43_rx_rate_ac(struct b43_plc
+ 	}
+ }
+ 
++/*
++ * The AC cores take an A-MSDU apart before it reaches the host, each piece
++ * in a buffer of its own with the A-MSDU bit and its place in the
++ * aggregation type: the first carries the PLCP, the 802.11 and CCMP
++ * headers and the first subframe, decrypted, a middle one a subframe, the
++ * last one the last subframe, the MIC and the FCS (a OnePlus Nord 2's
++ * uplink). Put together they are the MPDU as it was sent, which goes on
++ * under the first piece's receive header; a piece in error spoils it.
++ * Returns that MPDU, or NULL while it is incomplete or dropped.
++ */
++static struct sk_buff *b43_rx_amsdu(struct b43_wldev *dev,
++				    struct sk_buff *skb, const void **rxhdr)
++{
++	struct b43_rxhdr_fw4 *first = (struct b43_rxhdr_fw4 *)dev->rx_amsdu_hdr;
++	u32 macstat = le32_to_cpu(((const struct b43_rxhdr_fw4 *)*rxhdr)->
++				  format_598.mac_status);
++	unsigned int type = (macstat & B43_RX_MAC_AGGTYPE) >>
++			    B43_RX_MAC_AGGTYPE_SHIFT;
++	const u32 err = B43_RX_MAC_FCSERR | B43_RX_MAC_DECERR;
++	struct sk_buff *head = dev->rx_amsdu;
++	int need;
++
++	BUILD_BUG_ON(sizeof(*first) > sizeof(dev->rx_amsdu_hdr));
++	if (type == B43_RX_AGG_FIRST || type == B43_RX_AGG_SINGLE) {
++		if (head)
++			dev_kfree_skb_any(head);
++		dev->rx_amsdu = NULL;
++		memcpy(first, *rxhdr, sizeof(*first));
++		macstat &= ~(B43_RX_MAC_AMSDU | B43_RX_MAC_AGGTYPE);
++		first->format_598.mac_status = cpu_to_le32(macstat);
++		*rxhdr = first;
++		if (type == B43_RX_AGG_SINGLE)
++			return skb;
++		dev->rx_amsdu = skb;
++		dev->rx_amsdu_err = 0;
++		return NULL;
++	}
++
++	if (!head) {
++		dev_kfree_skb_any(skb);
++		return NULL;
++	}
++	dev->rx_amsdu_err |= macstat & err;
++	need = skb->len - skb_tailroom(head);
++	if (need > 0 && pskb_expand_head(head, 0, need, GFP_ATOMIC)) {
++		dev_kfree_skb_any(head);
++		dev_kfree_skb_any(skb);
++		dev->rx_amsdu = NULL;
++		return NULL;
++	}
++	skb_put_data(head, skb->data, skb->len);
++	dev_kfree_skb_any(skb);
++	if (type != B43_RX_AGG_LAST)
++		return NULL;
++
++	dev->rx_amsdu = NULL;
++	macstat = le32_to_cpu(first->format_598.mac_status) |
++		  dev->rx_amsdu_err;
++	first->format_598.mac_status = cpu_to_le32(macstat);
++	*rxhdr = first;
++	return head;
++}
++
++void b43_rx_amsdu_free(struct b43_wldev *dev)
++{
++	if (dev->rx_amsdu)
++		dev_kfree_skb_any(dev->rx_amsdu);
++	dev->rx_amsdu = NULL;
++}
++
+ void b43_rx(struct b43_wldev *dev, struct sk_buff *skb, const void *_rxhdr)
+ {
+ 	struct ieee80211_rx_status status;
+@@ -1345,6 +1415,14 @@ void b43_rx(struct b43_wldev *dev, struc
+ 
+ 	memset(&status, 0, sizeof(status));
+ 
++	if (dev->fw.hdr_format == B43_FW_HDR_AC &&
++	    (le32_to_cpu(rxhdr->format_598.mac_status) & B43_RX_MAC_AMSDU)) {
++		skb = b43_rx_amsdu(dev, skb, &_rxhdr);
++		if (!skb)
++			return;
++		rxhdr = _rxhdr;
++	}
++
+ 	/* Get metadata about the frame from the header. */
+ 	phystat0 = le16_to_cpu(rxhdr->phy_status0);
+ 	phystat3 = le16_to_cpu(rxhdr->phy_status3);
+@@ -1397,10 +1475,11 @@ void b43_rx(struct b43_wldev *dev, struc
+ 	    (dev->phy.type != B43_PHYTYPE_AC || (macstat & B43_RX_MAC_DEC)))
+ 		goto drop;
+ 	/*
+-	 * A frame with the A-MSDU bit is not a complete MPDU: the one seen had
+-	 * an intact 802.11 header and unrelated data from the QoS control on,
+-	 * so mac80211 would read a random CCMP PN from it and drop every later
+-	 * frame of that TID as a replay. Drop it, as brcmsmac does.
++	 * A piece of an A-MSDU on another core is not a complete MPDU: the one
++	 * seen had an intact 802.11 header and unrelated data from the QoS
++	 * control on, so mac80211 would read a random CCMP PN from it and drop
++	 * every later frame of that TID as a replay. Drop it, as brcmsmac
++	 * does; the AC's are put together above.
+ 	 */
+ 	if (unlikely(macstat & B43_RX_MAC_AMSDU))
+ 		goto drop;
+--- a/drivers/net/wireless/broadcom/b43/xmit.h
++++ b/drivers/net/wireless/broadcom/b43/xmit.h
+@@ -426,6 +426,10 @@ struct b43_rxhdr_fw4 {
+ #define B43_RX_MAC_TKIP_MICATT		0x00080000 /* TKIP MIC attempted */
+ #define B43_RX_MAC_AGGTYPE		0x00060000 /* Aggregation type */
+ #define B43_RX_MAC_AGGTYPE_SHIFT	17
++#define  B43_RX_AGG_MIDDLE		0	/* A-MSDU piece: a subframe */
++#define  B43_RX_AGG_FIRST		1	/* Header and first subframe */
++#define  B43_RX_AGG_LAST		2	/* Last subframe, MIC and FCS */
++#define  B43_RX_AGG_SINGLE		3	/* The whole A-MSDU */
+ #define B43_RX_MAC_AMSDU		0x00010000 /* A-MSDU mask */
+ #define B43_RX_MAC_BEACONSENT		0x00008000 /* Beacon sent flag */
+ #define B43_RX_MAC_KEYIDX		0x000007E0 /* Key index */
+@@ -451,6 +455,7 @@ void b43_generate_plcp_hdr(struct b43_pl
+ 			   const u16 octets, const u8 bitrate);
+ 
+ void b43_rx(struct b43_wldev *dev, struct sk_buff *skb, const void *_rxhdr);
++void b43_rx_amsdu_free(struct b43_wldev *dev);
+ 
+ void b43_txstatus_dump(struct b43_wldev *dev,
+ 		       const struct b43_txstatus *status);
