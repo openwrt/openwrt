@@ -339,6 +339,9 @@ define Image/Manifest
 	)
 ifneq ($(CONFIG_JSON_CYCLONEDX_SBOM),)
 	$(SCRIPT_DIR)/package-metadata.pl imgcyclonedxsbom \
+		--version-number="$(VERSION_NUMBER)" \
+		--version-code="$(VERSION_CODE)" \
+		--version-dist="$(VERSION_DIST)" \
 		$(if $(IB),$(TOPDIR)/.packageinfo, $(TMP_DIR)/.packageinfo) \
 		$(BIN_DIR)/$(IMG_PREFIX)$(if $(PROFILE_SANITIZED),-$(PROFILE_SANITIZED)).manifest > \
 		$(BIN_DIR)/$(IMG_PREFIX)$(if $(PROFILE_SANITIZED),-$(PROFILE_SANITIZED)).bom.cdx.json
