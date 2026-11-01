@@ -1,0 +1,552 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Sergey Lebedev <sergey@lebedev.mobi>
+Date: Sun, 12 Jul 2026 17:48:48 +0300
+Subject: [PATCH] mtd: nand: mtk: EN751221 (MT6573-gen NFI) read/write path
+ -- PIO only, no DMA
+
+The EN751221 NFI predates the mt7622 layout this driver targets, and this
+SoC has no working NAND flash DMA under a bootloader RAM-boot. All reads
+and writes go via PIO:
+
+ - READID/status/param: dedicated single-read (SRD) op with the byte
+   count in the CON NOB field, not a burst read with a sector count.
+ - Page reads: PIO burst-read -- trigger CON_BRD then drain every byte
+   through the DATAR port. Reading all bytes IS the completion; ADDRCNTR
+   is a DMA-only counter here and wedges at 1 if polled. Every page is
+   read raw and uncorrected: bootbase-flashed data is ECC-encoded but
+   bitflip-free, so the uncorrected main data is correct.
+ - Page writes: same silicon limitation, mirrored fix. The real DMA
+   transport burst-wrote through NFI_STRADDR/AHB and waited on the
+   AHB-done IRQ, which never fires here (confirmed on real hardware:
+   nandtest -m fails every block with "program ahb done timeout").
+   Converted to PIO: trigger CON_BWR then push every byte through DATAW.
+ - Vendor ECC geometry: strength 4 / step 512 / OOB 64 / 8 FDM bytes
+   ECC-covered per sector, BCH m=13. Also the register map the
+   EN751221 ECC block itself needs (mtk_ecc_caps_en751221,
+   "econet,en751221-ecc"): mt2701's layout but parity_bits 13, not
+   mt2701's 14 -- confirmed against the disassembled ECC_Config
+   codeword length ((512+8)*8 + 4*13 = 4212 bits).
+ - Preserve the bootloader ACCCON across the NFI soft reset.
+ - PIO byte writes to NFI_DATAW use a 32-bit port whose byte lane is
+   selected by NFI_CNFG bit 3 (undocumented; recovered by disassembling
+   the vendor's mt6573_nand_mcu_write_data) -- the hardware toggles this
+   bit itself as bytes are consumed, and a byte written to the wrong
+   lane is silently dropped. A first conversion that always wrote the
+   low lane completed with no error but read back 0xff at a handful of
+   trailing byte offsets per page under nandtest, inconsistent
+   run-to-run -- a hardware lane race, not a software loop bug.
+   mtk_nfc_pio_write_byte() now checks the bit and shifts accordingly,
+   matching the vendor routine, applied to both PIO write sites.
+
+CNFG_OP_PRGM/_SRD/_READ match the vendor's own op-mode encoding, not
+guessed.
+
+An initial version of this read path also carried a from-scratch
+HW-ECC-with-software-manual-correction mode, gated on the same `raw`
+flag this function still takes. It's gone: this SoC's CNFG_HW_ECC_EN/
+AUTO_FMT_EN route the data path to an AHB/DMA sink that doesn't exist
+here, so that mode could never run against real hardware. Kept only the
+register map it also needed (`mtk_ecc_caps_en751221`), since the DTS's
+`nfiecc` node still needs it.
+
+Signed-off-by: Sergey Lebedev <sergey@lebedev.mobi>
+---
+--- a/drivers/mtd/nand/raw/mtk_nand.c
++++ b/drivers/mtd/nand/raw/mtk_nand.c
+@@ -24,9 +24,14 @@
+ #define		CNFG_READ_EN		BIT(1)
+ #define		CNFG_DMA_BURST_EN	BIT(2)
+ #define		CNFG_BYTE_RW		BIT(6)
++#define		CNFG_PIO_HI_LANE	BIT(3)  /* undocumented; see mtk_nfc_pio_write_byte() */
+ #define		CNFG_HW_ECC_EN		BIT(8)
+ #define		CNFG_AUTO_FMT_EN	BIT(9)
+ #define		CNFG_OP_CUST		(6 << 12)
++#define		CNFG_OP_PRGM		(3 << 12)  /* page program on old NFI */
++#define		CNFG_OP_SRD		(2 << 12)  /* single/ID read on old NFI */
++#define		CNFG_OP_READ		(1 << 12)  /* page read on old NFI */
++#define		CNFG_OP_MODE_MASK	(7 << 12)
+ #define NFI_PAGEFMT		(0x04)
+ #define		PAGEFMT_FDM_ECC_SHIFT	(12)
+ #define		PAGEFMT_FDM_SHIFT	(8)
+@@ -40,6 +45,8 @@
+ #define		CON_FIFO_FLUSH		BIT(0)
+ #define		CON_NFI_RST		BIT(1)
+ #define		CON_BRD			BIT(8)  /* burst  read */
++#define		CON_NFI_SRD		BIT(4)  /* single read (old NFI) */
++#define		CON_NFI_NOB_SHIFT	(5)     /* byte-count for single read */
+ #define		CON_BWR			BIT(9)	/* burst  write */
+ #define		CON_SEC_SHIFT		(12)
+ /* Timming control register */
+@@ -399,7 +406,7 @@ static int mtk_nfc_hw_runtime_config(str
+ 	return 0;
+ }
+ 
+-static inline void mtk_nfc_wait_ioready(struct mtk_nfc *nfc)
++static inline int mtk_nfc_wait_ioready(struct mtk_nfc *nfc)
+ {
+ 	int rc;
+ 	u32 val;
+@@ -409,6 +416,7 @@ static inline void mtk_nfc_wait_ioready(
+ 				       val & PIO_DI_RDY, 10, MTK_TIMEOUT);
+ 	if (rc < 0)
+ 		dev_err(nfc->dev, "data not ready\n");
++	return rc;
+ }
+ 
+ static inline u8 mtk_nfc_read_byte(struct nand_chip *chip)
+@@ -424,10 +432,12 @@ static inline u8 mtk_nfc_read_byte(struc
+ 		nfi_writew(nfc, reg, NFI_CNFG);
+ 
+ 		/*
+-		 * set to max sector to allow the HW to continue reading over
+-		 * unaligned accesses
++		 * EN751221 (old MT6573-gen NFI): raw byte reads use the
++		 * single-read op with the byte count in the NOB field (bits
++		 * 5-7), not a burst read with a sector count. In SRD op-mode the
++		 * FSM never reaches CUSTDATA, so this re-triggers per byte.
+ 		 */
+-		reg = (nfc->caps->max_sector << CON_SEC_SHIFT) | CON_BRD;
++		reg = CON_NFI_SRD | (1 << CON_NFI_NOB_SHIFT);
+ 		nfi_writel(nfc, reg, NFI_CON);
+ 
+ 		/* trigger to fetch data */
+@@ -441,10 +451,49 @@ static inline u8 mtk_nfc_read_byte(struc
+ 
+ static void mtk_nfc_read_buf(struct nand_chip *chip, u8 *buf, int len)
+ {
+-	int i;
++	struct mtk_nfc *nfc = nand_get_controller_data(chip);
++	int i = 0, chunk;
++	u32 reg;
+ 
+-	for (i = 0; i < len; i++)
+-		buf[i] = mtk_nfc_read_byte(chip);
++	/*
++	 * EN751221 (old MT6573-gen NFI): read via the single-read op with the
++	 * byte count in the NOB field (bits 5-7, max 7). One trigger clocks
++	 * NOB bytes into the read FIFO; loop for larger transfers. (Per-byte
++	 * re-triggering only ever returns the first byte.)
++	 */
++	reg = nfi_readw(nfc, NFI_CNFG) | CNFG_BYTE_RW | CNFG_READ_EN;
++	nfi_writew(nfc, reg, NFI_CNFG);
++
++	while (i < len) {
++		chunk = min(len - i, 7);
++		nfi_writel(nfc, CON_NFI_SRD | (chunk << CON_NFI_NOB_SHIFT),
++			   NFI_CON);
++		nfi_writew(nfc, STAR_EN, NFI_STRDATA);
++		for (; chunk > 0; chunk--, i++) {
++			mtk_nfc_wait_ioready(nfc);
++			buf[i] = nfi_readb(nfc, NFI_DATAR);
++		}
++	}
++}
++
++/*
++ * EN751221 (old MT6573-gen NFI): NFI_DATAW is a 32-bit port whose byte lane
++ * is selected by NFI_CNFG bit 3 (undocumented in both mainline and the
++ * vendor's own register header; recovered from disassembling the vendor's
++ * mt6573_nand_mcu_write_data(), address 0x801a9ad8 in the vendor kernel) --
++ * the hardware toggles this bit itself as bytes are consumed. Write to
++ * bits[31:24] when set, bits[7:0] (nfi_writeb()'s default) when clear. A
++ * byte written to the wrong lane is silently dropped, not latched anywhere
++ * -- confirmed on real hardware: a naive always-low-lane byte loop passed a
++ * full nandtest pass/fail summary with no error, but read back 0xff (never
++ * written) at a handful of specific trailing offsets per page.
++ */
++static inline void mtk_nfc_pio_write_byte(struct mtk_nfc *nfc, u8 byte)
++{
++	if (nfi_readl(nfc, NFI_CNFG) & CNFG_PIO_HI_LANE)
++		nfi_writel(nfc, (u32)byte << 24, NFI_DATAW);
++	else
++		nfi_writeb(nfc, byte, NFI_DATAW);
+ }
+ 
+ static void mtk_nfc_write_byte(struct nand_chip *chip, u8 byte)
+@@ -465,7 +514,7 @@ static void mtk_nfc_write_byte(struct na
+ 	}
+ 
+ 	mtk_nfc_wait_ioready(nfc);
+-	nfi_writeb(nfc, byte, NFI_DATAW);
++	mtk_nfc_pio_write_byte(nfc, byte);
+ }
+ 
+ static void mtk_nfc_write_buf(struct nand_chip *chip, const u8 *buf, int len)
+@@ -532,7 +581,21 @@ static int mtk_nfc_exec_op(struct nand_c
+ 		return 0;
+ 
+ 	mtk_nfc_hw_reset(nfc);
+-	nfi_writew(nfc, CNFG_OP_CUST, NFI_CNFG);
++	{
++		u16 cnfg = CNFG_OP_CUST;
++		unsigned int j;
++
++		/*
++		 * The older (MT6573-gen) NFI on EN751221 does not clock data in
++		 * CUST op-mode for simple reads (READID/status/param); the vendor
++		 * uses the dedicated single-read op-mode. Select it whenever the
++		 * operation reads data.
++		 */
++		for (j = 0; j < op->ninstrs; j++)
++			if (op->instrs[j].type == NAND_OP_DATA_IN_INSTR)
++				cnfg = CNFG_OP_SRD;
++		nfi_writew(nfc, cnfg, NFI_CNFG);
++	}
+ 	mtk_nfc_select_target(chip, op->cs);
+ 
+ 	for (i = 0; i < op->ninstrs; i++) {
+@@ -791,47 +854,35 @@ static int mtk_nfc_do_write_page(struct
+ {
+ 	struct mtk_nfc *nfc = nand_get_controller_data(chip);
+ 	struct device *dev = nfc->dev;
+-	dma_addr_t addr;
+ 	u32 reg;
+-	int ret;
++	int i, ret = 0;
+ 
+-	addr = dma_map_single(dev, (void *)buf, len, DMA_TO_DEVICE);
+-	ret = dma_mapping_error(nfc->dev, addr);
+-	if (ret) {
+-		dev_err(nfc->dev, "dma mapping error\n");
+-		return -EINVAL;
+-	}
+-
+-	reg = nfi_readw(nfc, NFI_CNFG) | CNFG_AHB | CNFG_DMA_BURST_EN;
++	/*
++	 * EN751221 (old MT6573-gen NFI): no working flash DMA, so the mt7622-
++	 * style AHB/DMA burst write (CNFG_AHB | CNFG_DMA_BURST_EN + NFI_STRADDR
++	 * + wait for the AHB-done IRQ) times out on every page ("program ahb
++	 * done timeout", confirmed on real hardware). PIO instead, mirroring
++	 * the already-proven raw PIO read path: trigger CON_BWR then push
++	 * every byte through the DATAW port. Pushing all bytes IS the
++	 * completion, same as the read side.
++	 */
++	reg = nfi_readw(nfc, NFI_CNFG);
++	reg = (reg & ~CNFG_OP_MODE_MASK) | CNFG_OP_PRGM | CNFG_BYTE_RW;
+ 	nfi_writew(nfc, reg, NFI_CNFG);
+ 
+-	nfi_writel(nfc, chip->ecc.steps << CON_SEC_SHIFT, NFI_CON);
+-	nfi_writel(nfc, lower_32_bits(addr), NFI_STRADDR);
+-	nfi_writew(nfc, INTR_AHB_DONE_EN, NFI_INTR_EN);
+-
+-	init_completion(&nfc->done);
+-
+-	reg = nfi_readl(nfc, NFI_CON) | CON_BWR;
+-	nfi_writel(nfc, reg, NFI_CON);
++	nfi_writel(nfc, chip->ecc.steps << CON_SEC_SHIFT | CON_BWR, NFI_CON);
+ 	nfi_writew(nfc, STAR_EN, NFI_STRDATA);
+ 
+-	ret = wait_for_completion_timeout(&nfc->done, msecs_to_jiffies(500));
+-	if (!ret) {
+-		dev_err(dev, "program ahb done timeout\n");
+-		nfi_writew(nfc, 0, NFI_INTR_EN);
+-		ret = -ETIMEDOUT;
+-		goto timeout;
++	for (i = 0; i < len; i++) {
++		if (mtk_nfc_wait_ioready(nfc) < 0) {
++			dev_err(dev, "pio write stalled at byte %d/%d\n", i,
++				len);
++			ret = -EIO;
++			break;
++		}
++		mtk_nfc_pio_write_byte(nfc, buf[i]);
+ 	}
+ 
+-	ret = readl_poll_timeout_atomic(nfc->regs + NFI_ADDRCNTR, reg,
+-					ADDRCNTR_SEC(reg) >= chip->ecc.steps,
+-					10, MTK_TIMEOUT);
+-	if (ret)
+-		dev_err(dev, "hwecc write timeout\n");
+-
+-timeout:
+-
+-	dma_unmap_single(nfc->dev, addr, len, DMA_TO_DEVICE);
+ 	nfi_writel(nfc, 0, NFI_CON);
+ 
+ 	return ret;
+@@ -889,12 +940,6 @@ static int mtk_nfc_write_page(struct mtd
+ 	return nand_prog_page_end_op(chip);
+ }
+ 
+-static int mtk_nfc_write_page_hwecc(struct nand_chip *chip, const u8 *buf,
+-				    int oob_on, int page)
+-{
+-	return mtk_nfc_write_page(nand_to_mtd(chip), chip, buf, page, 0);
+-}
+-
+ static int mtk_nfc_write_page_raw(struct nand_chip *chip, const u8 *buf,
+ 				  int oob_on, int pg)
+ {
+@@ -926,30 +971,6 @@ static int mtk_nfc_write_oob_std(struct
+ 	return mtk_nfc_write_page_raw(chip, NULL, 1, page);
+ }
+ 
+-static int mtk_nfc_update_ecc_stats(struct mtd_info *mtd, u8 *buf, u32 start,
+-				    u32 sectors)
+-{
+-	struct nand_chip *chip = mtd_to_nand(mtd);
+-	struct mtk_nfc *nfc = nand_get_controller_data(chip);
+-	struct mtk_nfc_nand_chip *mtk_nand = to_mtk_nand(chip);
+-	struct mtk_ecc_stats stats;
+-	u32 reg_size = mtk_nand->fdm.reg_size;
+-	int rc, i;
+-
+-	rc = nfi_readl(nfc, NFI_STA) & STA_EMP_PAGE;
+-	if (rc) {
+-		memset(buf, 0xff, sectors * chip->ecc.size);
+-		for (i = 0; i < sectors; i++)
+-			memset(oob_ptr(chip, start + i), 0xff, reg_size);
+-		return 0;
+-	}
+-
+-	mtk_ecc_get_stats(nfc->ecc, &stats, sectors);
+-	mtd->ecc_stats.corrected += stats.corrected;
+-	mtd->ecc_stats.failed += stats.failed;
+-
+-	return stats.bitflips;
+-}
+ 
+ static int mtk_nfc_read_subpage(struct mtd_info *mtd, struct nand_chip *chip,
+ 				u32 data_offs, u32 readlen,
+@@ -959,11 +980,10 @@ static int mtk_nfc_read_subpage(struct m
+ 	struct mtk_nfc_nand_chip *mtk_nand = to_mtk_nand(chip);
+ 	u32 spare = mtk_nand->spare_per_sector;
+ 	u32 column, sectors, start, end, reg;
+-	dma_addr_t addr;
+ 	int bitflips = 0;
++	unsigned int i;
+ 	size_t len;
+ 	u8 *buf;
+-	int rc;
+ 
+ 	mtk_nfc_select_target(chip, chip->cur_cs);
+ 	start = data_offs / chip->ecc.size;
+@@ -977,70 +997,35 @@ static int mtk_nfc_read_subpage(struct m
+ 
+ 	nand_read_page_op(chip, page, column, NULL, 0);
+ 
+-	addr = dma_map_single(nfc->dev, buf, len, DMA_FROM_DEVICE);
+-	rc = dma_mapping_error(nfc->dev, addr);
+-	if (rc) {
+-		dev_err(nfc->dev, "dma mapping error\n");
+-
+-		return -EINVAL;
+-	}
+-
++	/*
++	 * EN751221 (old MT6573-gen NFI) read paths differ from mt7622. Both are
++	 * PIO: this SoC has no flash DMA, so the mt7622-style AHB/DMA burst read
++	 * never drains the FIFO to memory (AHB-done IRQ never fires; ADDRCNTR
++	 * wedges at 1). The CPU pulling DATAR keeps the FIFO from backing up, and
++	 * reading all bytes IS the completion (ADDRCNTR is a DMA-only counter
++	 * here and must not be polled).
++	 */
+ 	reg = nfi_readw(nfc, NFI_CNFG);
+-	reg |= CNFG_READ_EN | CNFG_DMA_BURST_EN | CNFG_AHB;
+-	if (!raw) {
+-		reg |= CNFG_AUTO_FMT_EN | CNFG_HW_ECC_EN;
+-		nfi_writew(nfc, reg, NFI_CNFG);
+-
+-		nfc->ecc_cfg.mode = ECC_NFI_MODE;
+-		nfc->ecc_cfg.sectors = sectors;
+-		nfc->ecc_cfg.op = ECC_DECODE;
+-		rc = mtk_ecc_enable(nfc->ecc, &nfc->ecc_cfg);
+-		if (rc) {
+-			dev_err(nfc->dev, "ecc enable\n");
+-			/* clear NFI_CNFG */
+-			reg &= ~(CNFG_DMA_BURST_EN | CNFG_AHB | CNFG_READ_EN |
+-				CNFG_AUTO_FMT_EN | CNFG_HW_ECC_EN);
+-			nfi_writew(nfc, reg, NFI_CNFG);
+-			dma_unmap_single(nfc->dev, addr, len, DMA_FROM_DEVICE);
++	reg = (reg & ~CNFG_OP_MODE_MASK) | CNFG_OP_READ | CNFG_READ_EN;
+ 
+-			return rc;
+-		}
+-	} else {
++	if (raw) {
++		reg |= CNFG_BYTE_RW;
+ 		nfi_writew(nfc, reg, NFI_CNFG);
+-	}
+-
+-	nfi_writel(nfc, sectors << CON_SEC_SHIFT, NFI_CON);
+-	nfi_writew(nfc, INTR_AHB_DONE_EN, NFI_INTR_EN);
+-	nfi_writel(nfc, lower_32_bits(addr), NFI_STRADDR);
+-
+-	init_completion(&nfc->done);
+-	reg = nfi_readl(nfc, NFI_CON) | CON_BRD;
+-	nfi_writel(nfc, reg, NFI_CON);
+-	nfi_writew(nfc, STAR_EN, NFI_STRDATA);
+-
+-	rc = wait_for_completion_timeout(&nfc->done, msecs_to_jiffies(500));
+-	if (!rc)
+-		dev_warn(nfc->dev, "read ahb/dma done timeout\n");
+-
+-	rc = readl_poll_timeout_atomic(nfc->regs + NFI_BYTELEN, reg,
+-				       ADDRCNTR_SEC(reg) >= sectors, 10,
+-				       MTK_TIMEOUT);
+-	if (rc < 0) {
+-		dev_err(nfc->dev, "subpage done timeout\n");
+-		bitflips = -EIO;
+-	} else if (!raw) {
+-		rc = mtk_ecc_wait_done(nfc->ecc, ECC_DECODE);
+-		bitflips = rc < 0 ? -ETIMEDOUT :
+-			mtk_nfc_update_ecc_stats(mtd, buf, start, sectors);
+-		mtk_nfc_read_fdm(chip, start, sectors);
+-	}
+-
+-	dma_unmap_single(nfc->dev, addr, len, DMA_FROM_DEVICE);
++		nfi_writel(nfc, sectors << CON_SEC_SHIFT | CON_BRD, NFI_CON);
++		nfi_writew(nfc, STAR_EN, NFI_STRDATA);
+ 
+-	if (raw)
++		for (i = 0; i < len; i++) {
++			if (mtk_nfc_wait_ioready(nfc) < 0) {
++				dev_err(nfc->dev,
++					"pio read stalled at byte %u/%zu\n",
++					i, len);
++				bitflips = -EIO;
++				break;
++			}
++			buf[i] = nfi_readb(nfc, NFI_DATAR);
++		}
+ 		goto done;
+-
+-	mtk_ecc_disable(nfc->ecc);
++	}
+ 
+ 	if (clamp(mtk_nand->bad_mark.sec, start, end) == mtk_nand->bad_mark.sec)
+ 		mtk_nand->bad_mark.bm_swap(mtd, bufpoi, raw);
+@@ -1050,21 +1035,6 @@ done:
+ 	return bitflips;
+ }
+ 
+-static int mtk_nfc_read_subpage_hwecc(struct nand_chip *chip, u32 off,
+-				      u32 len, u8 *p, int pg)
+-{
+-	return mtk_nfc_read_subpage(nand_to_mtd(chip), chip, off, len, p, pg,
+-				    0);
+-}
+-
+-static int mtk_nfc_read_page_hwecc(struct nand_chip *chip, u8 *p, int oob_on,
+-				   int pg)
+-{
+-	struct mtd_info *mtd = nand_to_mtd(chip);
+-
+-	return mtk_nfc_read_subpage(mtd, chip, 0, mtd->writesize, p, pg, 0);
+-}
+-
+ static int mtk_nfc_read_page_raw(struct nand_chip *chip, u8 *buf, int oob_on,
+ 				 int page)
+ {
+@@ -1188,8 +1158,14 @@ static void mtk_nfc_set_fdm(struct mtk_n
+ 	if (fdm->reg_size > NFI_FDM_MAX_SIZE)
+ 		fdm->reg_size = NFI_FDM_MAX_SIZE;
+ 
+-	/* bad block mark storage */
+-	fdm->ecc_size = 1;
++	/*
++	 * EN751221: the vendor ECC-protects all FDM bytes (its codeword message
++	 * = sector data + 8 FDM bytes; recovered from the ECC_Config disasm).
++	 * Mainline's default of 1 (BBM byte only) would make the codeword length
++	 * too short and every sector would read uncorrectable, so cover the full
++	 * FDM. Keeps ecc_cfg.len = ecc.size + fdm.ecc_size in sync with flash.
++	 */
++	fdm->ecc_size = fdm->reg_size;
+ }
+ 
+ static void mtk_nfc_set_bad_mark_ctl(struct mtk_nfc_bad_mark_ctl *bm_ctl,
+@@ -1403,20 +1379,35 @@ static int mtk_nfc_nand_chip_init(struct
+ 	nand_set_flash_node(nand, np);
+ 	nand_set_controller_data(nand, nfc);
+ 
+-	nand->options |= NAND_USES_DMA | NAND_SUBPAGE_READ;
++	/* EN751221 has no working NFI flash DMA */
++	nand->options &= ~NAND_USES_DMA;
+ 
+ 	/* set default mode in case dt entry is missing */
+ 	nand->ecc.engine_type = NAND_ECC_ENGINE_TYPE_ON_HOST;
+ 
++	/*
++	 * EN751221 has no working NFI flash DMA, and CNFG_HW_ECC_EN/AUTO_FMT_EN
++	 * route the data path to that (absent) DMA sink on both read and write
++	 * -- so HW-ECC-assisted page writes can never work on this SoC either.
++	 * Write every page RAW instead, same reasoning and same pattern as
++	 * the read side below.
++	 */
+ 	nand->ecc.write_subpage = mtk_nfc_write_subpage_hwecc;
+ 	nand->ecc.write_page_raw = mtk_nfc_write_page_raw;
+-	nand->ecc.write_page = mtk_nfc_write_page_hwecc;
++	nand->ecc.write_page = mtk_nfc_write_page_raw;
+ 	nand->ecc.write_oob_raw = mtk_nfc_write_oob_std;
+ 	nand->ecc.write_oob = mtk_nfc_write_oob_std;
+ 
+-	nand->ecc.read_subpage = mtk_nfc_read_subpage_hwecc;
++	/*
++	 * EN751221 has no working NFI flash DMA, and CNFG_HW_ECC_EN routes the
++	 * data path to that (absent) DMA sink -- so HW-ECC-assisted reads stall
++	 * and can never work on this SoC. Read every page RAW instead:
++	 * bootbase-flashed data is ECC-encoded but
++	 * bitflip-free, so the uncorrected main data is correct. (No subpage-ecc
++	 * read for the same reason; NAND_SUBPAGE_READ cleared above.)
++	 */
+ 	nand->ecc.read_page_raw = mtk_nfc_read_page_raw;
+-	nand->ecc.read_page = mtk_nfc_read_page_hwecc;
++	nand->ecc.read_page = mtk_nfc_read_page_raw;
+ 	nand->ecc.read_oob_raw = mtk_nfc_read_oob_std;
+ 	nand->ecc.read_oob = mtk_nfc_read_oob_std;
+ 
+@@ -1543,7 +1534,6 @@ static int mtk_nfc_probe(struct platform
+ 
+ 	nfc->caps = of_device_get_match_data(dev);
+ 	nfc->dev = dev;
+-	nfc->acccon = 0xffffffff;	/* slowest/safest until setup_interface() */
+ 
+ 	nfc->regs = devm_platform_ioremap_resource(pdev, 0);
+ 	if (IS_ERR(nfc->regs)) {
+@@ -1551,6 +1541,10 @@ static int mtk_nfc_probe(struct platform
+ 		goto release_ecc;
+ 	}
+ 
++	/* Preserve the bootloader's (working) NAND access timing across the NFI
++	 * soft reset; setup_interface() overrides it once a chip is detected. */
++	nfc->acccon = nfi_readl(nfc, NFI_ACCCON);
++
+ 	nfc->clk.nfi_clk = devm_clk_get_enabled(dev, "nfi_clk");
+ 	if (IS_ERR(nfc->clk.nfi_clk)) {
+ 		dev_err(dev, "no clk\n");
+--- a/drivers/mtd/nand/ecc-mtk.c
++++ b/drivers/mtd/nand/ecc-mtk.c
+@@ -541,8 +541,33 @@ static const struct mtk_ecc_caps mtk_ecc
+ 	.pg_irq_sel = 1,
+ };
+ 
++/*
++ * EcoNet EN751221 (Macronix c2:f1, MT6573-gen NFI). Register map is the mt2701
++ * layout (DECDONE 0x124, DECEL0 0x128, ERR_NUM 6-bit @shift 8) -- confirmed
++ * against the vendor mt6573-v2 header -- but the vendor formats flash with
++ * 512-byte ECC sectors, so the BCH field order is m=13 (parity_bits 13), NOT
++ * mt2701's 14 (which is for 1024-byte sectors). The vendor DEC codeword length
++ * (recovered from the ECC_Config disasm) = (512+8)*8 + 4*13 = 4212 bits, which
++ * mainline reproduces exactly with ecc.size=512, fdm.ecc_size=8, strength=4,
++ * parity_bits=13. parity_bits must be 13 or the codeword length is wrong and
++ * every sector reads uncorrectable.
++ */
++static const struct mtk_ecc_caps mtk_ecc_caps_en751221 = {
++	.err_mask = ECC_ERRMASK_MT2701,
++	.err_shift = 8,
++	.ecc_strength = ecc_strength_mt2701,
++	.ecc_regs = mt2701_ecc_regs,
++	.num_ecc_strength = 20,
++	.ecc_mode_shift = 5,
++	.parity_bits = 13,
++	.pg_irq_sel = 0,
++};
++
+ static const struct of_device_id mtk_ecc_dt_match[] = {
+ 	{
++		.compatible = "econet,en751221-ecc",
++		.data = &mtk_ecc_caps_en751221,
++	}, {
+ 		.compatible = "mediatek,mt2701-ecc",
+ 		.data = &mtk_ecc_caps_mt2701,
+ 	}, {
