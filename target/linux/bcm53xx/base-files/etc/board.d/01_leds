@@ -4,6 +4,9 @@
 board_config_update
 
 case "$(board_name)" in
+linksys,ea6900)
+	ucidef_set_led_netdev "wan" "WAN" "white:wan" "wan" "link"
+	;;
 meraki,mx64|\
 meraki,mx64-a0)
 	ucidef_set_led_netdev "wan" "WAN Port" "green:activity-9" "wan"
