@@ -819,6 +819,18 @@ define U-Boot/mt7981_teralink_tl3020-256mb
   DEPENDS:=+trusted-firmware-a-mt7981-spim-nand-ddr3-1866
 endef
 
+define U-Boot/mt7981_ubnt_unifi-6-plus
+  NAME:=Ubiquiti UniFi 6 Plus
+  BUILD_SUBTARGET:=filogic
+  BUILD_DEVICES:=ubnt_unifi-6-plus-ubootmod
+  UBOOT_CONFIG:=mt7981_ubnt_unifi-6-plus
+  UBOOT_IMAGE:=u-boot.fip
+  BL2_BOOTDEV:=emmc
+  BL2_SOC:=mt7981
+  BL2_DDRTYPE:=ddr3
+  DEPENDS:=+trusted-firmware-a-mt7981-emmc-ddr3
+endef
+
 define U-Boot/mt7981_wavlink_wl-wnt100x3
   NAME:=WAVLINK WL-WNT100X3
   BUILD_SUBTARGET:=filogic
@@ -1551,6 +1563,7 @@ UBOOT_TARGETS := \
 	mt7981_qihoo_360t7-ubi \
 	mt7981_snr_snr-cpe-ax2 \
 	mt7981_teralink_tl3020-256mb \
+	mt7981_ubnt_unifi-6-plus \
 	mt7981_wavlink_wl-wnt100x3 \
 	mt7981_xiaomi_mi-router-ax3000t \
 	mt7981_xiaomi_mi-router-wr30u \
