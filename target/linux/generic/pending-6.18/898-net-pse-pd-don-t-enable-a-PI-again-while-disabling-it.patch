@@ -1,0 +1,93 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Ross Cawston <ross@r-sc.ca>
+Date: Mon, 19 Oct 2026 15:04:49 -0700
+Subject: [PATCH] net: pse-pd: don't enable a PI again while disabling it
+
+With software power control, _pse_pi_disable() frees the power budget
+of the PI and then retries the power delivery of the PIs waiting for
+power in its power domain: those that are admin enabled, have a PD
+detected, and are not enabled in hardware. On an admin disable or a
+disconnection, the PI being disabled is one of them, as its admin state
+or PD detection is only cleared after _pse_pi_disable() returns, so it
+is enabled again right away:
+
+- an admin disable of a port with a PD keeps the port powered, and the
+  next admin enable allocates its budget a second time
+- a disconnection enables the now empty port again, with a new budget
+  allocation that is never freed: when the port reports the
+  disconnection again, its PD detection is already cleared
+
+Move the retry out of _pse_pi_disable() into its callers:
+pse_pi_disable() and the disconnection handling of pse_set_config_isr()
+retry after they clear the admin state or the PD detection, and
+pse_disable_pi_pol() retries as before.
+
+The problem was found while testing the budget on a switch with two
+Realtek RTL8239 PSE controllers, whose driver (not in mainline yet) uses
+the static budget strategy like the TPS23881. Before this change,
+"ethtool --set-pse <port> c33-pse-admin-control disable" left a port
+with a PD powered, and the budget allocated in the power domain grew
+with every disable and every unplug. With it, the port stays off, and
+the allocated budget is back to 0 after a disable and after an unplug.
+Tested on that switch with OpenWrt's 6.18 kernel; the change for
+mainline is the same apart from context and is build-tested.
+
+Fixes: ffef61d6d273 ("net: pse-pd: Add support for budget evaluation strategies")
+Link: https://patch.msgid.link/20261019220835.613-1-ross@r-sc.ca
+Signed-off-by: Ross Cawston <ross@r-sc.ca>
+---
+--- a/drivers/net/pse-pd/pse_core.c
++++ b/drivers/net/pse-pd/pse_core.c
+@@ -558,9 +558,6 @@ static int _pse_pi_disable(struct pse_co
+ 
+ 	pse_pi_deallocate_pw_budget(&pcdev->pi[id]);
+ 
+-	if (pse_pw_d_is_sw_pw_control(pcdev, pcdev->pi[id].pw_d))
+-		pse_pw_d_retry_power_delivery(pcdev, pcdev->pi[id].pw_d);
+-
+ 	return 0;
+ }
+ 
+@@ -582,6 +579,8 @@ static int pse_disable_pi_pol(struct pse
+ 	ret = _pse_pi_disable(pcdev, id);
+ 	if (ret)
+ 		notifs |= ETHTOOL_PSE_EVENT_SW_PW_CONTROL_ERROR;
++	else if (pse_pw_d_is_sw_pw_control(pcdev, pcdev->pi[id].pw_d))
++		pse_pw_d_retry_power_delivery(pcdev, pcdev->pi[id].pw_d);
+ 
+ 	ntf.notifs = notifs;
+ 	ntf.id = id;
+@@ -999,8 +998,12 @@ static int pse_pi_disable(struct regulat
+ 		return 0;
+ 	}
+ 	ret = _pse_pi_disable(pcdev, id);
+-	if (!ret)
++	if (!ret) {
+ 		pcdev->pi[id].admin_state_enabled = 0;
++		if (pse_pw_d_is_sw_pw_control(pcdev, pcdev->pi[id].pw_d))
++			pse_pw_d_retry_power_delivery(pcdev,
++						      pcdev->pi[id].pw_d);
++	}
+ 	pse_led_update(pcdev, id);
+ 
+ 	mutex_unlock(&pcdev->lock);
+@@ -1567,10 +1570,16 @@ static int pse_set_config_isr(struct pse
+ 				ret = 0;
+ 		}
+ 	} else if (notifs & ETHTOOL_C33_PSE_EVENT_DISCONNECTION) {
+-		if (pcdev->pi[id].admin_state_enabled &&
+-		    pcdev->pi[id].isr_pd_detected)
++		struct pse_pi *pi = &pcdev->pi[id];
++		bool disable = pi->admin_state_enabled && pi->isr_pd_detected;
++
++		/* Cleared first, so that the retry doesn't enable it again */
++		pi->isr_pd_detected = false;
++		if (disable) {
+ 			ret = _pse_pi_disable(pcdev, id);
+-		pcdev->pi[id].isr_pd_detected = false;
++			if (!ret)
++				pse_pw_d_retry_power_delivery(pcdev, pi->pw_d);
++		}
+ 	}
+ 
+ 	return ret;
