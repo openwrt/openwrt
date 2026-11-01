@@ -1,0 +1,95 @@
+From 7be7fc0621ec7c8f93f48f14925d2869d1186ac0 Mon Sep 17 00:00:00 2001
+From: Carlos Porrito <f01d0f3-3@yahoo.com>
+Date: Mon, 12 Oct 2026 17:50:19 +0800
+Subject: [PATCH] arm64: dts: mediatek: mt7986a-bpi-r3: fix pin and supply configuration
+
+Correct the MT7531 reset GPIO, remove the conflicting PCIe clock pin
+group, add the missing USB supply references, and configure the UART
+pin groups.
+
+The BPI-R3-MT7986A V1.1 schematic (sheet 4) connects SoC GPIO32
+(GbE_RESET) through 0-ohm resistor RG32 to MT7531 PAD_SYS_RSTB
+(LQFP-128 pin 85; package listing LCSC C45354771). Frank Wunderlich
+confirmed on the Banana Pi forum that GbE_RESET is the MT7531 reset
+line. The PCIe pin conflict is separate: the reset key uses GPIO9, so
+the conflicting pcie_clk mux group is removed.
+
+Signed-off-by: Carlos Porrito <f01d0f3-3@yahoo.com>
+---
+ .../dts/mediatek/mt7986a-bananapi-bpi-r3.dts  | 27 ++++++++++++++++---
+ 1 file changed, 24 insertions(+), 3 deletions(-)
+
+--- a/arch/arm64/boot/dts/mediatek/mt7986a-bananapi-bpi-r3.dts
++++ b/arch/arm64/boot/dts/mediatek/mt7986a-bananapi-bpi-r3.dts
+@@ -121,6 +121,16 @@
+ 		vin-supply = <&dcin>;
+ 	};
+ 
++	reg_5v: regulator-5v {
++		compatible = "regulator-fixed";
++		regulator-name = "5vd";
++		regulator-min-microvolt = <5000000>;
++		regulator-max-microvolt = <5000000>;
++		regulator-boot-on;
++		regulator-always-on;
++		vin-supply = <&dcin>;
++	};
++
+ 	/* left SFP cage (wan) */
+ 	sfp1: sfp-1 {
+ 		compatible = "sff,sfp";
+@@ -208,7 +218,7 @@
+ 		interrupt-parent = <&pio>;
+ 		interrupts = <66 IRQ_TYPE_LEVEL_HIGH>;
+ 		#interrupt-cells = <1>;
+-		reset-gpios = <&pio 5 GPIO_ACTIVE_HIGH>;
++		reset-gpios = <&pio 32 GPIO_ACTIVE_HIGH>;
+ 	};
+ };
+ 
+@@ -305,7 +315,7 @@
+ 	pcie_pins: pcie-pins {
+ 		mux {
+ 			function = "pcie";
+-			groups = "pcie_clk", "pcie_pereset";
++			groups = "pcie_pereset";
+ 		};
+ 	};
+ 
+@@ -330,10 +340,17 @@
+ 		};
+ 	};
+ 
++	uart0_pins: uart0-pins {
++		mux {
++			function = "uart";
++			groups = "uart0";
++		};
++	};
++
+ 	uart1_pins: uart1-pins {
+ 		mux {
+ 			function = "uart";
+-			groups = "uart1_rx_tx";
++			groups = "uart1";
+ 		};
+ 	};
+ 
+@@ -406,6 +423,8 @@
+ 
+ &ssusb {
+ 	status = "okay";
++	vbus-supply = <&reg_5v>;
++	vusb33-supply = <&reg_3p3v>;
+ };
+ 
+ &switch {
+@@ -466,6 +485,8 @@
+ };
+ 
+ &uart0 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&uart0_pins>;
+ 	status = "okay";
+ };
+ 
