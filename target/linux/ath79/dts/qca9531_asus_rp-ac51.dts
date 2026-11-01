@@ -40,24 +40,24 @@
 		led_power: power {
 			function = LED_FUNCTION_POWER;
 			color = <LED_COLOR_ID_BLUE>;
-			gpios = <&gpio 4 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpio 4 GPIO_ACTIVE_LOW>;
 		};
 
 		led_wps: wps {
 			function = LED_FUNCTION_WPS;
 			color = <LED_COLOR_ID_RED>;
-			gpios = <&gpio 15 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpio 15 GPIO_ACTIVE_LOW>;
 		};
 
 		lan {
 			function = LED_FUNCTION_LAN;
 			color = <LED_COLOR_ID_BLUE>;
-			gpios = <&gpio 1 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpio 1 GPIO_ACTIVE_LOW>;
 		};
 
 		wlan5g {
 			label = "blue:wlan5g";
-			gpios = <&gpio 2 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpio 2 GPIO_ACTIVE_LOW>;
 		};
 	};
 };
