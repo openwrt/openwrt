@@ -1,0 +1,393 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Ville Takio <ville+git@takio.fi>
+Subject: [PATCH] b43: AC-PHY: transmit beamforming
+
+SU transmit beamforming on the AC cores, behind the txbf module parameter
+(default off, as in the stock driver). The microcode b43 loads is the one
+of Broadcom's 6.30.163.46, whose wlc_txbf.c shows the interface:
+
+- the microcode publishes its beamforming block at shared 0x00B0; the
+  driver writes the sounding period (6250) at +0xE0 and clears bit 8 of
+  +0x6E0 (wlc_txbf_up());
+- a VHT station that announces SU beamformee gets one of five slots when
+  its pairwise key is installed: words 4-11 of the slot carry the BSS
+  width and streams and our address (wlc_txbf_upd_shm_blk()), and the
+  word of its key's address match row at 0x0668 gets 0x1000 | slot << 13
+  (wlc_txfbf_update_amt_idx()); the microcode then sounds it;
+- its VHT frames go out with the BFM bit of PHY control word 0, on every
+  TX chain, the slot in bits 15:12 of the RTS/CTS word (wlc_d11hdrs(),
+  wlc_acphy_txctl0_calc()) and the Beamformed bit of VHT-SIG-A2;
+- the 5 GHz band announces SU beamformer and the sounding dimensions.
+
+Tested on the RT-AC66U B1 (5 GHz ch36/80, three TX chains) with a
+OnePlus Nord 2 (MediaTek, two streams), which announces SU beamformee
+once the AP announces SU beamformer: the microcode updates the slot's
+status words, and the downlink averages 194 Mbit/s with beamforming
+against 190 without at about -73 dBm. Bit 0 of slot word 5, which the
+stock driver sets for a station of three space-time streams, is left
+clear: with it the downlink dropped to 117-145 Mbit/s at desk range.
+An rtl8821ae on rtlwifi announces SU beamformee without doing it and
+loses its link to the sounding, hence off by default.
+
+--- a/drivers/net/wireless/broadcom/b43/b43.h
++++ b/drivers/net/wireless/broadcom/b43/b43.h
+@@ -801,6 +801,30 @@ struct b43_stats {
+  */
+ struct b43_sta {
+ 	u8 ampdu_win[IEEE80211_NUM_TIDS];
++	/* Beamforming slot of the station plus one, 0 for none. */
++	u8 txbf_slot;
++};
++
++/*
++ * Transmit beamforming on the AC (6.30.163.46's wlc_txbf.c, whose microcode
++ * b43 loads): the microcode publishes the base of its beamforming block at
++ * shared 0x00B0, a word address. A beamformee takes one of five 16-word
++ * slots there, which the microcode sounds and keeps the steering matrix of;
++ * the station's key row in the per-row table at 0x0668 points at the slot.
++ */
++#define B43_SHM_SH_TXBF_BLK		0x00B0
++#define B43_SHM_SH_AMT_INFO		0x0668
++#define  B43_AMT_INFO_TXBF		0x1000
++#define  B43_AMT_INFO_TXBF_SLOT_SHIFT	13
++#define B43_TXBF_SLOTS			5
++#define B43_TXBF_SOUNDING		0x00E0	/* Sounding period, in the block */
++#define B43_TXBF_CTL			0x06E0	/* In the block, bit 8 cleared */
++#define B43_TXBF_SOUNDING_DEFAULT	6250
++
++struct b43_txbf_link {
++	struct b43_sta *bsta;
++	u8 row;				/* Address match row of the key */
++	u8 addr[ETH_ALEN];		/* Our address, of the station's BSS */
+ };
+ 
+ struct b43_key {
+@@ -998,6 +1022,9 @@ struct b43_wldev {
+ 
+ 	bool bad_frames_preempt;	/* Use "Bad Frames Preemption" (default off) */
+ 	bool dfq_valid;		/* Directed frame queue valid (IBSS PS mode, ATIM) */
++	/* Word address of the microcode's beamforming block, 0 without. */
++	u16 txbf_base;
++	struct b43_txbf_link txbf[B43_TXBF_SLOTS];
+ 	bool radio_hw_enable;	/* saved state of radio hardware enabled state */
+ 	bool qos_enabled;		/* TRUE, if QoS is used. */
+ 	bool hwcrypto_enabled;		/* TRUE, if HW crypto acceleration is enabled. */
+--- a/drivers/net/wireless/broadcom/b43/main.c
++++ b/drivers/net/wireless/broadcom/b43/main.c
+@@ -94,6 +94,16 @@ MODULE_PARM_DESC(hwpctl, "Enable hardwar
+ 
+ static int modparam_nohwcrypt;
+ module_param_named(nohwcrypt, modparam_nohwcrypt, int, 0444);
++
++/*
++ * Off by default, as the stock driver's: a station that announces SU
++ * beamformee without doing it (rtl8821ae on rtlwifi) loses its link and
++ * hangs to the sounding; one that does (MediaTek, OnePlus Nord 2) gains
++ * nothing measurable at one or two rooms.
++ */
++static int modparam_txbf;
++module_param_named(txbf, modparam_txbf, int, 0444);
++MODULE_PARM_DESC(txbf, "AC-PHY: beamform to VHT beamformees (default off)");
+ MODULE_PARM_DESC(nohwcrypt, "Disable hardware encryption.");
+ 
+ static int modparam_hwtkip;
+@@ -925,6 +935,151 @@ static void b43_shm_macaddr_set(struct b
+ 	}
+ }
+ 
++static u8 b43_txbf_txchain(struct b43_wldev *dev)
++{
++	u8 txchain = dev->dev->bus_sprom->txchain & 0x07;
++
++	return txchain ? : 0x03;
++}
++
++/*
++ * One beamformee's slot, as wlc_txbf_upd_shm_blk() fills it for a VHT
++ * station: words 4-11 of the slot, the width and the streams of the BSS,
++ * and our address. Written with the MAC suspended, as the stock driver does.
++ * The stock driver also sets bit 0 of word 5 for a station of three
++ * space-time streams on a three-chain board; with one (OnePlus Nord 2, two
++ * streams) the downlink is steadier without it (117-145 against 203-210
++ * Mbit/s at desk range), so it stays clear.
++ */
++static void b43_txbf_write_slot(struct b43_wldev *dev, unsigned int slot)
++{
++	const struct b43_txbf_link *l = &dev->txbf[slot];
++	enum nl80211_chan_width width = dev->wl->hw->conf.chandef.width;
++	unsigned int streams = hweight8(b43_txbf_txchain(dev));
++	u16 b = dev->txbf_base * 2 + slot * 0x20;
++	u16 w0a = 0x0002, w0c = 0x000d | slot << 5, w10;
++
++	w10 = ((streams - 1) & 0x7bef) | 0x8410;
++	if (width == NL80211_CHAN_WIDTH_80) {
++		w0c |= 0x4000;
++		w10 |= 0x0080;
++	} else if (width == NL80211_CHAN_WIDTH_40) {
++		w0c |= 0x2000;
++		w10 |= 0x0040;
++	}
++
++	b43_shm_write16(dev, B43_SHM_SHARED, b + 0x08, 0x0015);
++	b43_shm_write16(dev, B43_SHM_SHARED, b + 0x0a, w0a);
++	b43_shm_write16(dev, B43_SHM_SHARED, b + 0x0c, w0c);
++	b43_shm_write16(dev, B43_SHM_SHARED, b + 0x0e, 0x1001);
++	b43_shm_write16(dev, B43_SHM_SHARED, b + 0x10, w10);
++	b43_shm_write16(dev, B43_SHM_SHARED, b + 0x12,
++			l->addr[0] | l->addr[1] << 8);
++	b43_shm_write16(dev, B43_SHM_SHARED, b + 0x14,
++			l->addr[2] | l->addr[3] << 8);
++	b43_shm_write16(dev, B43_SHM_SHARED, b + 0x16,
++			l->addr[4] | l->addr[5] << 8);
++}
++
++static void b43_txbf_set_row(struct b43_wldev *dev, u8 row, int slot)
++{
++	u16 off = B43_SHM_SH_AMT_INFO + row * 2;
++	u16 v = b43_shm_read16(dev, B43_SHM_SHARED, off) & 0x0fff;
++
++	if (slot >= 0)
++		v |= B43_AMT_INFO_TXBF | slot << B43_AMT_INFO_TXBF_SLOT_SHIFT;
++	b43_shm_write16(dev, B43_SHM_SHARED, off, v);
++}
++
++/*
++ * The block, as wlc_txbf_up() sets it up: the sounding period and bit 8 of
++ * its control word cleared. Nothing when the board transmits on one chain.
++ * The slots of before go: the keys they hung on go with the core.
++ */
++static void b43_txbf_init(struct b43_wldev *dev)
++{
++	unsigned int i;
++	u16 base, v;
++
++	for (i = 0; i < B43_TXBF_SLOTS; i++) {
++		if (dev->txbf[i].bsta)
++			WRITE_ONCE(dev->txbf[i].bsta->txbf_slot, 0);
++		dev->txbf[i].bsta = NULL;
++	}
++	dev->txbf_base = 0;
++	if (!modparam_txbf || dev->phy.type != B43_PHYTYPE_AC ||
++	    dev->fw.hdr_format != B43_FW_HDR_AC ||
++	    hweight8(b43_txbf_txchain(dev)) < 2)
++		return;
++
++	base = b43_shm_read16(dev, B43_SHM_SHARED, B43_SHM_SH_TXBF_BLK);
++	if (!base || base >= 0x1000 - B43_TXBF_CTL / 2)
++		return;
++	b43_shm_write16(dev, B43_SHM_SHARED, base * 2 + B43_TXBF_SOUNDING,
++			B43_TXBF_SOUNDING_DEFAULT);
++	v = b43_shm_read16(dev, B43_SHM_SHARED, base * 2 + B43_TXBF_CTL);
++	b43_shm_write16(dev, B43_SHM_SHARED, base * 2 + B43_TXBF_CTL,
++			v & ~0x0100);
++	dev->txbf_base = base;
++	b43dbg(dev->wl, "TX beamforming block at 0x%04x\n", base);
++}
++
++/*
++ * A VHT station that takes a beamformed frame gets a slot when its pairwise
++ * key is in, as wlc_txbf_init_link() and wlc_txfbf_update_amt_idx() hang it
++ * on the key's address match row; frames to it are then beamformed
++ * (b43_txhdr_ac_txbf()).
++ */
++static void b43_txbf_link(struct b43_wldev *dev, struct ieee80211_vif *vif,
++			  struct ieee80211_sta *sta, u8 row)
++{
++	struct b43_sta *bsta = (struct b43_sta *)sta->drv_priv;
++	u32 cap = sta->deflink.vht_cap.cap;
++	unsigned int i;
++
++	if (!dev->txbf_base || !sta->deflink.vht_cap.vht_supported ||
++	    !(cap & IEEE80211_VHT_CAP_SU_BEAMFORMEE_CAPABLE) ||
++	    bsta->txbf_slot)
++		return;
++	for (i = 0; i < B43_TXBF_SLOTS; i++)
++		if (!dev->txbf[i].bsta)
++			break;
++	if (i == B43_TXBF_SLOTS)
++		return;
++
++	dev->txbf[i].bsta = bsta;
++	dev->txbf[i].row = row;
++	memcpy(dev->txbf[i].addr, vif->addr, ETH_ALEN);
++	b43_mac_suspend(dev);
++	b43_txbf_write_slot(dev, i);
++	b43_txbf_set_row(dev, row, i);
++	b43_mac_enable(dev);
++	WRITE_ONCE(bsta->txbf_slot, i + 1);
++	b43dbg(dev->wl, "TX beamforming to %pM in slot %u\n", sta->addr, i);
++}
++
++static void b43_txbf_unlink(struct b43_wldev *dev, struct ieee80211_sta *sta)
++{
++	struct b43_sta *bsta = (struct b43_sta *)sta->drv_priv;
++	unsigned int slot = bsta->txbf_slot;
++
++	if (!slot || slot > B43_TXBF_SLOTS || dev->txbf[slot - 1].bsta != bsta)
++		return;
++	WRITE_ONCE(bsta->txbf_slot, 0);
++	b43_txbf_set_row(dev, dev->txbf[slot - 1].row, -1);
++	dev->txbf[slot - 1].bsta = NULL;
++}
++
++/* A new width: the slots carry it. */
++static void b43_txbf_update_slots(struct b43_wldev *dev)
++{
++	unsigned int i;
++
++	for (i = 0; i < B43_TXBF_SLOTS; i++)
++		if (dev->txbf_base && dev->txbf[i].bsta)
++			b43_txbf_write_slot(dev, i);
++}
++
+ static int b43_mbss_slot(struct b43_wl *wl, const struct ieee80211_vif *vif)
+ {
+ 	unsigned int i;
+@@ -5415,8 +5570,10 @@ static int b43_op_config(struct ieee8021
+ 				b43_switch_channel(dev, phy->channel);
+ 			}
+ 			switched = true;
+-			if (ac)
++			if (ac) {
+ 				dev->tuned_chandef = conf->chandef;
++				b43_txbf_update_slots(dev);
++			}
+ 		}
+ 
+ 		if (ac && dev->cac_pending != cac_was)
+@@ -5691,6 +5848,9 @@ static int b43_op_set_key(struct ieee802
+ 			err = b43_key_write(dev, -1, algorithm,
+ 					    key->key, key->keylen,
+ 					    sta->addr, key);
++			if (!err && b43_amt_wide(dev))
++				b43_txbf_link(dev, vif, sta,
++					      key->hw_key_idx - B43_NR_GROUP_KEYS);
+ 		} else {
+ 			/* Group key */
+ 			err = b43_key_write(dev, index, algorithm,
+@@ -5720,6 +5880,8 @@ static int b43_op_set_key(struct ieee802
+ 			key->flags |= IEEE80211_KEY_FLAG_GENERATE_MMIC;
+ 		break;
+ 	case DISABLE_KEY: {
++		if (sta && (key->flags & IEEE80211_KEY_FLAG_PAIRWISE))
++			b43_txbf_unlink(dev, sta);
+ 		err = b43_key_clear(dev, key->hw_key_idx);
+ 		if (err)
+ 			goto out_unlock;
+@@ -6550,6 +6712,7 @@ static int b43_wireless_core_init(struct
+ 	b43dbg(dev->wl, "init: address match and keys\n");
+ 	b43_upload_card_macaddress(dev);
+ 	b43_security_init(dev);
++	b43_txbf_init(dev);
+ 
+ 	/* The AC PHY comes up after the MAC is set up, see b43_chip_init(). */
+ 	if (phy->type == B43_PHYTYPE_AC) {
+@@ -7068,8 +7231,9 @@ static const struct ieee80211_iface_comb
+  *    and VHT MCS 0-9 go out on up to the txchain's, in the layout of the
+  *    stock drivers' descriptors (b43_txhdr_ac_ht(), b43_txhdr_ac_vht());
+  *  - the long MPDUs and A-MSDUs, beyond the receive buffer;
+- *  - LDPC reception, beamforming and the link adaptation the stock driver
+- *    announces on VHT: nothing configures or decodes them. A VHT frame is
++ *  - LDPC reception, beamformee and the link adaptation the stock driver
++ *    announces on VHT: nothing configures or decodes them; SU beamformer
++ *    is announced and done (b43_txbf_link()). A VHT frame is
+  *    sent with LDPC when mac80211 asks, for a station that receives it, as
+  *    every VHT frame of the stock driver's is.
+  *
+@@ -7122,6 +7286,11 @@ static void b43_ac_set_ht_vht_cap(struct
+ 		   IEEE80211_VHT_CAP_MAX_A_MPDU_LENGTH_EXPONENT_MASK;
+ 	vht->vht_mcs.rx_mcs_map = cpu_to_le16(map);
+ 	vht->vht_mcs.tx_mcs_map = cpu_to_le16(tx_map);
++	/* Beamforming to a beamformee, on the chains (b43_txbf_link()). */
++	if (modparam_txbf && tx_nss > 1)
++		vht->cap |= IEEE80211_VHT_CAP_SU_BEAMFORMER_CAPABLE |
++			    (tx_nss - 1) <<
++			    IEEE80211_VHT_CAP_SOUNDING_DIMENSIONS_SHIFT;
+ }
+ 
+ static int b43_setup_bands(struct b43_wldev *dev,
+--- a/drivers/net/wireless/broadcom/b43/xmit.c
++++ b/drivers/net/wireless/broadcom/b43/xmit.c
+@@ -670,6 +670,52 @@ static unsigned int b43_sta_ampdu_exp(co
+ 			    IEEE80211_VHT_CAP_MAX_A_MPDU_LENGTH_EXPONENT_MASK);
+ }
+ 
++/*
++ * A frame to a station with a beamforming slot (b43_txbf_link()), as
++ * wlc_d11hdrs() and wlc_acphy_txctl0_calc() of 6.30.163.46 lay it out:
++ * on each VHT rate block every TX chain, the BFM bit of word 0 and the slot
++ * in bits 15:12 of the RTS/CTS word, and the Beamformed bit of VHT-SIG-A2.
++ */
++static void b43_txhdr_ac_txbf(struct b43_wldev *dev,
++			      struct b43_txhdr_ac *txhdr, unsigned int n,
++			      const struct ieee80211_tx_info *info,
++			      const struct ieee80211_hdr *hdr)
++{
++	u8 txchain = dev->dev->bus_sprom->txchain & 0x07;
++	struct ieee80211_sta *sta;
++	unsigned int slot = 0, i;
++
++	if (!dev->txbf_base || !info->control.vif ||
++	    !ieee80211_is_data(hdr->frame_control) ||
++	    is_multicast_ether_addr(hdr->addr1))
++		return;
++
++	rcu_read_lock();
++	sta = ieee80211_find_sta(info->control.vif, hdr->addr1);
++	if (sta)
++		slot = READ_ONCE(((struct b43_sta *)sta->drv_priv)->txbf_slot);
++	rcu_read_unlock();
++	if (!slot)
++		return;
++	if (!txchain)
++		txchain = 0x03;
++
++	for (i = 0; i < n; i++) {
++		struct b43_txhdr_ac_rate *r = &txhdr->rate[i];
++		u16 phy0 = le16_to_cpu(r->phy_ctl[0]);
++
++		if ((phy0 & B43_TXH_PHY_ENC) != B43_TXH_PHY_ENC_VHT)
++			continue;
++		phy0 &= ~B43_TXH_AC_PHY0_CORES;
++		phy0 |= txchain << B43_TXH_AC_PHY0_CORES_SHIFT |
++			B43_TXH_AC_PHY0_BFM;
++		r->phy_ctl[0] = cpu_to_le16(phy0);
++		r->rts_cts_ctl |= cpu_to_le16((slot - 1) <<
++					      B43_TXH_AC_RTS_TXBF_SLOT_SHIFT);
++		r->plcp.raw[4] |= 0x01;
++	}
++}
++
+ static bool b43_txhdr_ac_ampdu(struct b43_txhdr_ac *txhdr,
+ 			       const struct ieee80211_tx_info *info,
+ 			       struct ieee80211_hdr *hdr)
+@@ -823,6 +869,7 @@ static int b43_generate_txhdr_ac(struct
+ 	for (i = 0; i < n; i++)
+ 		txhdr->rate[i].rts_cts_ctl = cpu_to_le16(rts);
+ 	txhdr->rate[n - 1].rts_cts_ctl |= cpu_to_le16(B43_TXH_AC_RTS_LAST_RATE);
++	b43_txhdr_ac_txbf(dev, txhdr, n, info, wlhdr);
+ 
+ 	return 0;
+ }
+--- a/drivers/net/wireless/broadcom/b43/xmit.h
++++ b/drivers/net/wireless/broadcom/b43/xmit.h
+@@ -249,9 +249,11 @@ struct b43_txhdr_ac {
+ #define B43_TXH_AC_MAC_SVHT		0x0004	/* Single VHT MPDU A-MPDU */
+ /* PHY TX control word 0: B43_TXH_PHY_ENC in 1:0, then */
+ #define B43_TXH_AC_PHY0_NON_SOUNDING	0x0004
++#define B43_TXH_AC_PHY0_BFM		0x0008	/* Beamformed */
+ #define B43_TXH_AC_PHY0_SHORT_PREAMBLE	0x0010
+ #define B43_TXH_AC_PHY0_CORES_SHIFT	6
+ #define B43_TXH_AC_PHY0_BW_SHIFT	14	/* 0 20 MHz, 1 40, 2 80 */
++#define B43_TXH_AC_PHY0_CORES		0x01C0
+ /* PHY TX control word 1: primary 20 MHz subband, power offset */
+ #define B43_TXH_AC_PHY1_SUBBAND		0x0007
+ #define B43_TXH_AC_PHY1_TXPWR_OFFSET	0x01F8
+@@ -265,6 +267,7 @@ struct b43_txhdr_ac {
+ #define B43_TXH_AC_RTS_SHORT_PREAMBLE	0x0010
+ #define B43_TXH_AC_RTS_LAST_RATE	0x0020
+ #define B43_TXH_AC_RTS_RATE_SHIFT	8
++#define B43_TXH_AC_RTS_TXBF_SLOT_SHIFT	12	/* Beamforming slot */
+ 
+ static inline
+ size_t b43_txhdr_size(struct b43_wldev *dev)
