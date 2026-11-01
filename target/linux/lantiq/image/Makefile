@@ -79,6 +79,54 @@ define Build/prepend-loader-okli
 	mv "$@.new" "$@"
 endef
 
+# Bintec elmeg RS-series (BOSS bootmonitor, no U-Boot)
+#
+# The bootmonitor gunzips the image behind a 52-byte BOSS header into RAM and
+# jumps straight to it, so the kernel is wrapped in the lzma-loader.
+#
+# BOARD selects the watchdog quirk in lzma-loader/src/board-lantiq.c. It is
+# passed after loader-common's BOARD="$(BOARDNAME)" (= "Lantiq"), and the
+# later assignment wins.
+#
+# KERNEL_CMDLINE must be set. Without it the loader leaves a0-a3 exactly as the
+# bootmonitor left them and passes them straight to the kernel. lantiq's
+# prom_init() reads fw_arg0/fw_arg1 as argc/argv and walks them, which faults on
+# BOSS's leftover register values - and that happens before setup_early_printk(),
+# so the board just goes silent after "Starting kernel". Setting this makes the
+# loader hand over a proper argv instead.
+define Build/bintec-loader
+	$(call Build/loader-common, \
+		LOADER_DATA="$@" \
+		BOARD="bintec-boss" \
+		KERNEL_CMDLINE="console=ttyLTQ0$(comma)115200")
+endef
+
+# Wrap the image in a CEV container: a 16-byte header in front of the payload,
+# gzipped, behind a placeholder for the BOSS header that mkbossimg fills in.
+#
+# The bootmonitor checks the original file name recorded in the gzip header,
+# so the intermediate file must literally be named "boss.bin" and gzip must
+# not be given -n. Pin the mtime instead to keep the image reproducible.
+define Build/bintec-cev
+	rm -rf $@.cev
+	mkdir -p $@.cev
+	printf '\020\000\000\002\000\000\000\000\103\105\126\000\000\000\000\000' > $@.cev/boss.bin
+	cat $@ >> $@.cev/boss.bin
+	$(if $(SOURCE_DATE_EPOCH),touch -d @$(SOURCE_DATE_EPOCH) $@.cev/boss.bin)
+	gzip -f $@.cev/boss.bin
+	dd if=/dev/zero of=$@.cev/img bs=52 count=1 2>/dev/null
+	cat $@.cev/boss.bin.gz >> $@.cev/img
+	# pad to the flash sector size
+	dd if=$@.cev/img of=$@ bs=131072 conv=sync 2>/dev/null
+	rm -rf $@.cev
+endef
+
+define Build/bintec-boss-header
+	mkbossimg $(BINTEC_BOARD) $@ $@.new
+	mv $@.new $@
+endef
+
+DEVICE_VARS += BINTEC_BOARD
 DEVICE_VARS += SIGNATURE MAGIC CRC32_POLY LOADER_FLASH_OFFS
 
 DTS_DIR := ../dts
