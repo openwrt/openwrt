@@ -1,0 +1,93 @@
+From 06fe688df3fab876d1ed02bacc205fe28741eeaf Mon Sep 17 00:00:00 2001
+From: Til Kaiser <mail@tk154.de>
+Date: Wed, 30 Sep 2026 21:39:53 +0200
+Subject: [PATCH] net: ethernet: qualcomm: ppe: Add IPQ5332 scheduler
+ configuration
+
+IPQ5332 arbitrates BM and QM access among the CPU port and two Ethernet
+ports. Add its 32-slot BM and 10-slot QM arbitration tables and select
+them through the existing PPE type dispatch.
+
+Include the invalid final BM slot in the scheduler depth. QM arbitration
+uses the enqueue port directly, with no enqueue bitmap or backup dequeue
+port.
+
+The tables come from QSDK 14.0.1595.1665 qca-ssdk revision
+48484d531927b070b996685f1570aff3bccb9c32, src/init/ssdk_appe.c.
+
+Signed-off-by: Til Kaiser <mail@tk154.de>
+
+--- a/drivers/net/ethernet/qualcomm/ppe/ppe_config.c
++++ b/drivers/net/ethernet/qualcomm/ppe/ppe_config.c
+@@ -777,6 +777,58 @@ static const struct ppe_scheduler_qm_con
+ 	{0x0, 3, 0, false, 0},
+ };
+ 
++/* IPQ5332 BM arbitration, including the invalid final scheduler slot. */
++static const struct ppe_scheduler_bm_config ipq5332_ppe_sch_bm_config[] = {
++	{true,  PPE_SCH_INGRESS, 2, false, 0},
++	{true,  PPE_SCH_EGRESS,  0, false, 0},
++	{true,  PPE_SCH_INGRESS, 1, false, 0},
++	{true,  PPE_SCH_EGRESS,  1, false, 0},
++	{true,  PPE_SCH_INGRESS, 2, false, 0},
++	{true,  PPE_SCH_EGRESS,  2, false, 0},
++	{true,  PPE_SCH_INGRESS, 0, false, 0},
++	{true,  PPE_SCH_EGRESS,  0, false, 0},
++	{true,  PPE_SCH_INGRESS, 2, false, 0},
++	{true,  PPE_SCH_EGRESS,  1, false, 0},
++	{true,  PPE_SCH_INGRESS, 1, false, 0},
++	{true,  PPE_SCH_EGRESS,  2, false, 0},
++	{true,  PPE_SCH_INGRESS, 0, false, 0},
++	{true,  PPE_SCH_EGRESS,  0, false, 0},
++	{true,  PPE_SCH_INGRESS, 1, false, 0},
++	{true,  PPE_SCH_EGRESS,  1, false, 0},
++	{true,  PPE_SCH_INGRESS, 2, false, 0},
++	{true,  PPE_SCH_EGRESS,  2, false, 0},
++	{true,  PPE_SCH_INGRESS, 1, false, 0},
++	{true,  PPE_SCH_EGRESS,  0, false, 0},
++	{true,  PPE_SCH_INGRESS, 2, false, 0},
++	{true,  PPE_SCH_EGRESS,  1, false, 0},
++	{true,  PPE_SCH_INGRESS, 0, false, 0},
++	{true,  PPE_SCH_EGRESS,  2, false, 0},
++	{true,  PPE_SCH_INGRESS, 2, false, 0},
++	{true,  PPE_SCH_EGRESS,  0, false, 0},
++	{true,  PPE_SCH_INGRESS, 1, false, 0},
++	{true,  PPE_SCH_EGRESS,  1, false, 0},
++	{true,  PPE_SCH_INGRESS, 0, false, 0},
++	{true,  PPE_SCH_EGRESS,  2, false, 0},
++	{true,  PPE_SCH_INGRESS, 1, false, 0},
++	{false, PPE_SCH_INGRESS, 0, false, 0},
++};
++
++/* IPQ5332 QM arbitration uses the enqueue port with no enqueue bitmap
++ * or backup dequeue port.
++ */
++static const struct ppe_scheduler_qm_config ipq5332_ppe_sch_qm_config[] = {
++	{0x0, 2, 0, false, 0},
++	{0x0, 1, 2, false, 0},
++	{0x0, 0, 1, false, 0},
++	{0x0, 0, 2, false, 0},
++	{0x0, 1, 0, false, 0},
++	{0x0, 2, 1, false, 0},
++	{0x0, 0, 2, false, 0},
++	{0x0, 0, 1, false, 0},
++	{0x0, 0, 2, false, 0},
++	{0x0, 0, 1, false, 0},
++};
++
+ static const struct ppe_scheduler_port_config ppe_port_sch_config[] = {
+ 	{
+ 		.port		= 0,
+@@ -2271,6 +2323,12 @@ static int ppe_config_scheduler(struct p
+ 		qm_cfg = ipq5424_ppe_sch_qm_config;
+ 		qm_count = ARRAY_SIZE(ipq5424_ppe_sch_qm_config);
+ 		break;
++	case IPQ5332_PPE:
++		bm_cfg = ipq5332_ppe_sch_bm_config;
++		bm_count = ARRAY_SIZE(ipq5332_ppe_sch_bm_config);
++		qm_cfg = ipq5332_ppe_sch_qm_config;
++		qm_count = ARRAY_SIZE(ipq5332_ppe_sch_qm_config);
++		break;
+ 	default:
+ 		dev_err(ppe_dev->dev, "Invalid PPE type %d\n", ppe_dev->type);
+ 		return -EINVAL;
