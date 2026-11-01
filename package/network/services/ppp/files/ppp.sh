@@ -189,7 +189,7 @@ ppp_generic_setup() {
 			[ -c "$arg" ] && chown ppp "$arg"
 		done
 		for secret in chap-secrets pap-secrets; do
-			[ -f "/etc/ppp/$secret" ] || continue
+			grep -qs '^[[:space:]]*[^#[:space:]]' "/etc/ppp/$secret" || continue
 			ppp_install_file "/var/run/pppd/$config.$secret" ppp \
 				< "/etc/ppp/$secret" || continue
 			secrets="$secrets $secret /var/run/pppd/$config.$secret"
