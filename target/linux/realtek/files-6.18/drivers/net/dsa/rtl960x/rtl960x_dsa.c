@@ -8,6 +8,7 @@
 
 #include <linux/bitfield.h>
 #include <linux/if_bridge.h>
+#include <linux/if_vlan.h>
 #include <linux/mfd/syscon.h>
 #include <linux/module.h>
 #include <linux/of.h>
@@ -125,7 +126,11 @@
 #define RTL960X_STAT_RESET_CONFIG	0x3401c
 #define   STAT_RESET_CMD		BIT(5)
 
+#define RTL960X_ACCEPT_MAX_LEN(x)	(0x11028 + (x) * 4)
+#define   RTL960X_ACCEPT_MAX_LEN_MASK	GENMASK(13, 0)
 #define RTL960X_MAX_PACKET_LENGTH	0x3fff
+/* Ethernet header, two stacked VLAN tags (802.1ad QinQ) and FCS */
+#define RTL960X_FRAME_OVERHEAD		(ETH_HLEN + 2 * VLAN_HLEN + ETH_FCS_LEN)
 
 struct rtl960x_mib_counter {
 	u32 offset;
@@ -826,6 +831,28 @@ rtl960x_dsa_preferred_default_local_cpu_port(struct dsa_switch *ds)
 	return NULL;
 }
 
+static int rtl960x_port_change_mtu(struct dsa_switch *ds, int port,
+				   int new_mtu)
+{
+	struct rtl960x_dsa *priv = ds->priv;
+	int frame_size;
+
+	frame_size = new_mtu + RTL960X_FRAME_OVERHEAD;
+
+	dev_dbg(priv->dev, "port %d changing mtu to %d (frame size: %d)\n",
+		port, new_mtu, frame_size);
+
+	return regmap_update_bits(priv->map, RTL960X_ACCEPT_MAX_LEN(port),
+				  RTL960X_ACCEPT_MAX_LEN_MASK,
+				  FIELD_PREP(RTL960X_ACCEPT_MAX_LEN_MASK,
+					     frame_size));
+}
+
+static int rtl960x_port_max_mtu(struct dsa_switch *ds, int port)
+{
+	return RTL960X_MAX_PACKET_LENGTH - RTL960X_FRAME_OVERHEAD;
+}
+
 static void rtl960x_dsa_mac_config(struct phylink_config *config,
 				   unsigned int mode,
 				   const struct phylink_link_state *state)
@@ -884,6 +911,8 @@ static const struct dsa_switch_ops rtl960x_dsa_ops = {
 	.get_rmon_stats		= rtl960x_get_rmon_stats,
 	.get_stats64		= rtl960x_get_stats64,
 	.get_pause_stats	= rtl960x_get_pause_stats,
+	.port_change_mtu	= rtl960x_port_change_mtu,
+	.port_max_mtu		= rtl960x_port_max_mtu,
 };
 
 static int rtl960x_dsa_probe(struct platform_device *pdev)
