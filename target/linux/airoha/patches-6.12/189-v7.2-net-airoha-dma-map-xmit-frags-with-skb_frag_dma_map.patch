@@ -121,7 +121,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		list_move_tail(&e->list, &tx_list);
  		e->skb = i == nr_frags - 1 ? skb : NULL;
  		e->dma_addr = addr;
-@@ -2291,8 +2304,13 @@ static netdev_tx_t airoha_dev_xmit(struc
+@@ -2294,8 +2307,13 @@ static netdev_tx_t airoha_dev_xmit(struc
  		if (++i == nr_frags)
  			break;
  
@@ -134,9 +134,9 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
 +
 +		e->dma_type = AIROHA_DMA_MAP_PAGE;
  	}
- 	q->queued += i;
  
-@@ -2313,11 +2331,8 @@ static netdev_tx_t airoha_dev_xmit(struc
+ 	q->queued += i;
+@@ -2317,11 +2335,8 @@ static netdev_tx_t airoha_dev_xmit(struc
  	return NETDEV_TX_OK;
  
  error_unmap:

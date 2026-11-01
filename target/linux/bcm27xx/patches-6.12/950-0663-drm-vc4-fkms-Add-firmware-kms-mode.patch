@@ -190,16 +190,16 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  static int vc4_drm_bind(struct device *dev)
  {
  	struct platform_device *pdev = to_platform_device(dev);
-@@ -379,7 +391,7 @@ static int vc4_drm_bind(struct device *d
- 	if (ret)
+@@ -382,7 +394,7 @@ static int vc4_drm_bind(struct device *d
  		goto err;
+ 	}
  
 -	if (firmware) {
 +	if (firmware && !firmware_kms()) {
  		ret = rpi_firmware_property(firmware,
  					    RPI_FIRMWARE_NOTIFY_DISPLAY_DONE,
  					    NULL, 0);
-@@ -397,16 +409,20 @@ static int vc4_drm_bind(struct device *d
+@@ -400,16 +412,20 @@ static int vc4_drm_bind(struct device *d
  	if (ret)
  		goto err;
  
@@ -225,7 +225,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  
  	ret = drm_dev_register(drm, 0);
  	if (ret < 0)
-@@ -452,6 +468,7 @@ static struct platform_driver *const com
+@@ -455,6 +471,7 @@ static struct platform_driver *const com
  	&vc4_dsi_driver,
  	&vc4_txp_driver,
  	&vc4_crtc_driver,

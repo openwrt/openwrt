@@ -269,7 +269,7 @@ Fixes: 3b0213d56eb7 ("gpio: Add GPIO support for Broadcom STB SoCs")
  		if (flags & BGPIOF_NO_OUTPUT)
 --- a/include/linux/gpio/driver.h
 +++ b/include/linux/gpio/driver.h
-@@ -713,6 +713,7 @@ int bgpio_init(struct gpio_chip *gc, str
+@@ -723,6 +723,7 @@ int bgpio_init(struct gpio_chip *gc, str
  #define BGPIOF_READ_OUTPUT_REG_SET	BIT(4) /* reg_set stores output value */
  #define BGPIOF_NO_OUTPUT		BIT(5) /* only input */
  #define BGPIOF_NO_SET_ON_INPUT		BIT(6)
