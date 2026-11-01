@@ -1,0 +1,42 @@
+From 5ec6b493183c4706216347853d3446c36ed399d1 Mon Sep 17 00:00:00 2001
+From: Yunhui Cui <cuiyunhui@bytedance.com>
+Date: Tue, 22 Jul 2025 17:15:04 +0800
+Subject: riscv: introduce ioremap_wc()
+
+Compared with IO attributes, NC attributes can improve performance,
+specifically in these aspects: Relaxed Order, Gathering, Supports Read
+Speculation, Supports Unaligned Access.
+
+Signed-off-by: Yunhui Cui <cuiyunhui@bytedance.com>
+Signed-off-by: Qingfang Deng <qingfang.deng@siflower.com.cn>
+Reviewed-by: Alexandre Ghiti <alexghiti@rivosinc.com>
+Link: https://lore.kernel.org/r/20250722091504.45974-2-cuiyunhui@bytedance.com
+Signed-off-by: Alexandre Ghiti <alexghiti@rivosinc.com>
+---
+ arch/riscv/include/asm/io.h      | 4 ++++
+ arch/riscv/include/asm/pgtable.h | 1 +
+ 2 files changed, 5 insertions(+)
+
+--- a/arch/riscv/include/asm/io.h
++++ b/arch/riscv/include/asm/io.h
+@@ -28,6 +28,10 @@
+ #ifdef CONFIG_MMU
+ #define IO_SPACE_LIMIT		(PCI_IO_SIZE - 1)
+ #define PCI_IOBASE		((void __iomem *)PCI_IO_START)
++
++#define ioremap_wc(addr, size)	\
++	ioremap_prot((addr), (size), _PAGE_KERNEL_NC)
++
+ #endif /* CONFIG_MMU */
+ 
+ /*
+--- a/arch/riscv/include/asm/pgtable.h
++++ b/arch/riscv/include/asm/pgtable.h
+@@ -205,6 +205,7 @@ extern struct pt_alloc_ops pt_ops __init
+ 
+ #define PAGE_TABLE		__pgprot(_PAGE_TABLE)
+ 
++#define _PAGE_KERNEL_NC ((_PAGE_KERNEL & ~_PAGE_MTMASK) | _PAGE_NOCACHE)
+ #define _PAGE_IOREMAP	((_PAGE_KERNEL & ~_PAGE_MTMASK) | _PAGE_IO)
+ #define PAGE_KERNEL_IO		__pgprot(_PAGE_IOREMAP)
+ 
