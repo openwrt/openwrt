@@ -203,7 +203,7 @@ menu "Target Images"
 
 		choice
 			prompt "compression"
-			default TARGET_UBIFS_COMPRESSION_ZLIB
+			default TARGET_UBIFS_COMPRESSION_ZSTD
 			depends on TARGET_ROOTFS_UBIFS
 			help
 			  Select compression type
@@ -216,6 +216,9 @@ menu "Target Images"
 
 			config TARGET_UBIFS_COMPRESSION_ZLIB
 				bool "zlib"
+
+			config TARGET_UBIFS_COMPRESSION_ZSTD
+				bool "zstd"
 		endchoice
 
 		config TARGET_UBIFS_FREE_SPACE_FIXUP
