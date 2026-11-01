@@ -1,0 +1,342 @@
+From: Kenneth Kasilag <kenneth@kasilag.me>
+Date: Mon, 06 Jul 2026 00:05:00 +0000
+Subject: [PATCH] net: ethernet: qualcomm: ppe: harden virtual port RX and teardown
+
+Complete the virtual-port datapath transaction with source-VP-aware scatter
+assembly, an unexpected-punt circuit breaker, and teardown ordering which
+quiesces ingress callbacks before physical EDMA carriers disappear.
+
+Keep destination-VP delivery ahead of source-VP fallback. Handle
+multi-buffer frames without treating a VAP as an EDMA port, and disable
+injection after an unexpected CPU punt so the packet can safely return to
+software without an injection loop.
+
+Build single-buffer source-VP punts from the descriptor's page fragment
+when EDMA page mode is active, matching the ordinary RX path instead of
+dropping those packets for lack of linear data.
+
+Signed-off-by: Kenneth Kasilag <kenneth@kasilag.me>
+
+--- a/drivers/net/ethernet/qualcomm/ppe/edma_cfg_rx.c
++++ b/drivers/net/ethernet/qualcomm/ppe/edma_cfg_rx.c
+@@ -597,6 +597,7 @@ static int edma_cfg_rx_rings_setup(void)
+ 		rxdesc_ring = &edma_ctx->rx_rings[ring_idx];
+ 		rxdesc_ring->count = EDMA_RX_RING_SIZE;
+ 		rxdesc_ring->ring_id = rx->ring_start + ring_idx;
++		rxdesc_ring->vp_punt_src = -1;
+ 
+ 		if (queue_id > EDMA_CPU_PORT_QUEUE_MAX(EDMA_RX_QUEUE_START)) {
+ 			pr_err("Invalid queue_id: %d\n", queue_id);
+--- a/drivers/net/ethernet/qualcomm/ppe/edma_rx.c
++++ b/drivers/net/ethernet/qualcomm/ppe/edma_rx.c
+@@ -156,6 +156,72 @@ static inline uint8_t edma_rx_checksum_v
+ 	return skb->ip_summed;
+ }
+ 
++/* Reset the multi-buffer reassembly state of a ring: the accumulated head,
++ * its head descriptor and the virtual-port punt tag. Every path that
++ * completes or abandons a reassembly returns through here, so no field can
++ * survive into the next frame.
++ */
++static void edma_rx_scatter_reset(struct edma_rxdesc_ring *rxdesc_ring)
++{
++	rxdesc_ring->head = NULL;
++	rxdesc_ring->last = NULL;
++	rxdesc_ring->pdesc_head = NULL;
++	rxdesc_ring->vp_punt_src = -1;
++}
++
++/* Hand a source-virtual-port frame to its destination. A frame whose
++ * destination is also a virtual port is a forwarded wireless-to-wireless
++ * flow and transmits out that device; otherwise it is an anomalous uplink
++ * flow miss, which trips the VP's injection circuit breaker before the
++ * frame is returned to software.
++ */
++static void edma_rx_vp_punt_finish(struct edma_rxdesc_pri *rxdesc_pri,
++				   struct sk_buff *skb, int vp)
++{
++	if (edma_rx_deliver_vp(rxdesc_pri, skb))
++		return;
++
++	if (unlikely(!ppe_vp_rx_fallback(edma_ctx->ppe_dev, vp, skb)))
++		dev_kfree_skb_any(skb);
++}
++
++/* Deliver a reassembled multi-buffer frame whose source is a virtual
++ * port. The scatter reassembler built @skb_head exactly as it builds a
++ * physical port's frame, so only the head-descriptor data offset remains
++ * to be stripped; a page-mode head additionally needs its ethernet header
++ * pulled into the linear area. A frame whose destination is also a virtual
++ * port is a forwarded wireless-to-wireless flow and transmits out that
++ * device; otherwise it is an anomalous uplink flow miss. The fallback trips
++ * the VP's injection circuit breaker before returning the frame to software.
++ * Runs instead of the physical-port tail
++ * of edma_rx_process_last_segment(), which dereferences an edma_port_priv
++ * the source virtual port does not have.
++ */
++static void edma_rx_vp_punt_last_segment(struct edma_rxdesc_ring *rxdesc_ring,
++					 struct sk_buff *skb_head)
++{
++	struct edma_rxdesc_pri *pdesc_head = rxdesc_ring->pdesc_head;
++	bool page_mode = rxdesc_ring->rxfill->page_mode;
++	int vp = rxdesc_ring->vp_punt_src;
++
++	edma_rx_scatter_reset(rxdesc_ring);
++
++	if (unlikely(page_mode && !pskb_may_pull(skb_head, ETH_HLEN))) {
++		ppe_vp_miss_disable(edma_ctx->ppe_dev, vp);
++		dev_kfree_skb_any(skb_head);
++		return;
++	}
++
++	if (unlikely(!pskb_pull(skb_head,
++				EDMA_RXDESC_DATA_OFFSET_GET(pdesc_head)))) {
++		ppe_vp_miss_disable(edma_ctx->ppe_dev, vp);
++		dev_kfree_skb_any(skb_head);
++		return;
++	}
++
++	edma_rx_vp_punt_finish(pdesc_head, skb_head, vp);
++}
++
+ static void edma_rx_process_last_segment(struct edma_rxdesc_ring *rxdesc_ring,
+ 					 struct edma_rxdesc_pri *rxdesc_pri)
+ {
+@@ -170,6 +236,16 @@ static void edma_rx_process_last_segment
+ 	pkt_length = EDMA_RXDESC_PACKET_LEN_GET(rxdesc_pri);
+ 
+ 	skb_head = rxdesc_ring->head;
++
++	/* A reassembled frame whose source is a virtual port is delivered on
++	 * its bound device's behalf; it has no edma_port_priv, so it must be
++	 * dispatched before the physical-port checksum and statistics below.
++	 */
++	if (unlikely(rxdesc_ring->vp_punt_src >= 0)) {
++		edma_rx_vp_punt_last_segment(rxdesc_ring, skb_head);
++		return;
++	}
++
+ 	dev = skb_head->dev;
+ 
+ 	/* Check Rx checksum offload status. */
+@@ -187,9 +263,7 @@ static void edma_rx_process_last_segment
+ 			 * in addition to the SKB linked to current descriptor.
+ 			 */
+ 			dev_kfree_skb_any(skb_head);
+-			rxdesc_ring->head = NULL;
+-			rxdesc_ring->last = NULL;
+-			rxdesc_ring->pdesc_head = NULL;
++			edma_rx_scatter_reset(rxdesc_ring);
+ 
+ 			u64_stats_update_begin(&rx_stats->syncp);
+ 			rx_stats->rx_nr_frag_headroom_err++;
+@@ -201,9 +275,7 @@ static void edma_rx_process_last_segment
+ 
+ 	if (unlikely(!pskb_pull(skb_head, EDMA_RXDESC_DATA_OFFSET_GET(rxdesc_ring->pdesc_head)))) {
+ 		dev_kfree_skb_any(skb_head);
+-		rxdesc_ring->head = NULL;
+-		rxdesc_ring->last = NULL;
+-		rxdesc_ring->pdesc_head = NULL;
++		edma_rx_scatter_reset(rxdesc_ring);
+ 
+ 		u64_stats_update_begin(&rx_stats->syncp);
+ 		rx_stats->rx_nr_frag_headroom_err++;
+@@ -226,9 +298,7 @@ static void edma_rx_process_last_segment
+ 	 * bound device instead of being received up the stack.
+ 	 */
+ 	if (edma_rx_deliver_vp(rxdesc_ring->pdesc_head, skb_head)) {
+-		rxdesc_ring->head = NULL;
+-		rxdesc_ring->last = NULL;
+-		rxdesc_ring->pdesc_head = NULL;
++		edma_rx_scatter_reset(rxdesc_ring);
+ 		return;
+ 	}
+ 
+@@ -240,9 +310,7 @@ static void edma_rx_process_last_segment
+ 	else
+ 		netif_receive_skb(skb_head);
+ 
+-	rxdesc_ring->head = NULL;
+-	rxdesc_ring->last = NULL;
+-	rxdesc_ring->pdesc_head = NULL;
++	edma_rx_scatter_reset(rxdesc_ring);
+ }
+ 
+ static void edma_rx_handle_frag_list(struct edma_rxdesc_ring *rxdesc_ring,
+@@ -390,6 +458,49 @@ static bool edma_rx_deliver_vp(struct ed
+ 	return true;
+ }
+ 
++/* Deliver a single-buffer frame the hardware handed the CPU with a virtual
++ * port as its source: an uplink frame the ingress hook injected that
++ * missed its flow lookup, or a routed wireless-to-wireless flow. Such a
++ * frame cannot use the physical-port receive path, which reads the source
++ * port's edma_port_priv - a virtual port's bound device is a wireless VAP
++ * with a different private area. A frame forwarded to another virtual port
++ * transmits out that port's device; an anomalous uplink flow miss disables
++ * further injection for the VP and returns to software. The multi-buffer
++ * counterpart is edma_rx_vp_punt_last_segment(), reached through the
++ * scatter reassembler.
++ *
++ * Page mode stores the frame in the skb's first page fragment. Build the
++ * same fragment-backed skb as the physical receive path before dispatch.
++ */
++static void edma_rx_vp_punt_single(struct edma_rxdesc_ring *rxdesc_ring,
++				   struct edma_rxdesc_pri *rxdesc_pri,
++				   struct sk_buff *skb, int vp)
++{
++	u32 data_offset = EDMA_RXDESC_DATA_OFFSET_GET(rxdesc_pri);
++	u32 pkt_length = EDMA_RXDESC_PACKET_LEN_GET(rxdesc_pri);
++
++	if (unlikely(rxdesc_ring->rxfill->page_mode)) {
++		skb_frag_t *frag = &skb_shinfo(skb)->frags[0];
++
++		skb_add_rx_frag(skb, 0, skb_frag_page(frag), 0, pkt_length,
++				PAGE_SIZE);
++		if (unlikely(!pskb_may_pull(skb, data_offset + ETH_HLEN)))
++			goto drop;
++	} else {
++		skb_put(skb, pkt_length);
++	}
++
++	if (unlikely(!pskb_pull(skb, data_offset)))
++		goto drop;
++
++	edma_rx_vp_punt_finish(rxdesc_pri, skb, vp);
++	return;
++
++drop:
++	ppe_vp_miss_disable(edma_ctx->ppe_dev, vp);
++	dev_kfree_skb_any(skb);
++}
++
+ static bool edma_rx_handle_linear_packets(struct edma_rxdesc_ring *rxdesc_ring,
+ 					  struct edma_rxdesc_pri *rxdesc_pri,
+ 					  struct sk_buff *skb)
+@@ -458,10 +569,8 @@ send_to_stack:
+ }
+ 
+ static struct net_device *edma_rx_get_src_dev(struct edma_rxdesc_stats *rxdesc_stats,
+-					      struct edma_rxdesc_pri *rxdesc_pri,
+-					      struct sk_buff *skb)
++					      u32 src_info, struct sk_buff *skb)
+ {
+-	u32 src_info = EDMA_RXDESC_SRC_INFO_GET(rxdesc_pri);
+ 	struct edma_hw_info *hw_info = edma_ctx->hw_info;
+ 	struct net_device *ndev = NULL;
+ 	u8 src_port_num;
+@@ -589,32 +698,67 @@ static int edma_rx_reap(struct edma_rxde
+ 		/* Handle linear packets or initial segments first. */
+ 		if (likely(!(rxdesc_ring->head))) {
+ 			struct edma_port_priv *port_priv;
+-
+-			ndev = edma_rx_get_src_dev(rxdesc_stats, rxdesc_pri, skb);
+-			if (unlikely(!ndev)) {
+-				dev_kfree_skb_any(skb);
+-				goto next_rx_desc;
+-			}
+-
+-			/* Update skb fields for head skb. */
+-			skb->dev = ndev;
+-			skb->skb_iif = ndev->ifindex;
+-
+-			/* Packets from a port bridged in hardware were
+-			 * already forwarded to the other bridged ports,
+-			 * tell the software bridge not to do it again.
++			bool delivered;
++			int src_vp;
++			u32 src_info;
++
++			/* A frame the hardware handed the CPU with a virtual port
++			 * as its source - an anomalous injected-flow miss or a
++			 * routed wireless-to-wireless flow -
++			 * cannot take the physical-port path: its source is a
++			 * wireless VAP with no edma_port_priv. Deliver a
++			 * single-buffer frame now; tag a multi-buffer one and let
++			 * the scatter reassembler below build it, so its last
++			 * segment is delivered the same way instead of received up
++			 * the stack.
+ 			 */
+-			port_priv = netdev_priv(ndev);
+-			skb->offload_fwd_mark = READ_ONCE(port_priv->br_offload);
+-
+-			/* Handle linear packets. */
+-			if (likely(!EDMA_RXDESC_MORE_BIT_GET(rxdesc_pri))) {
+-				if (unlikely(!
+-					     edma_rx_handle_linear_packets(rxdesc_ring,
+-									   rxdesc_pri, skb)))
++			/* A punt tag without an accumulated head means the
++			 * previous reassembly was abandoned; clear it so it
++			 * cannot misroute this fresh frame into the punt
++			 * path. Conditional so the common case does not
++			 * dirty the ring state cache line per frame.
++			 */
++			if (unlikely(rxdesc_ring->vp_punt_src >= 0))
++				rxdesc_ring->vp_punt_src = -1;
++			src_info = EDMA_RXDESC_SRC_INFO_GET(rxdesc_pri);
++			src_vp = edma_rx_info_vp(src_info);
++			if (unlikely(src_vp >= 0)) {
++				if (likely(!EDMA_RXDESC_MORE_BIT_GET(rxdesc_pri))) {
++					edma_rx_vp_punt_single(rxdesc_ring,
++							       rxdesc_pri, skb,
++							       src_vp);
++					goto next_rx_desc;
++				}
++
++				rxdesc_ring->vp_punt_src = src_vp;
++			} else {
++				ndev = edma_rx_get_src_dev(rxdesc_stats,
++							   src_info, skb);
++				if (unlikely(!ndev)) {
+ 					dev_kfree_skb_any(skb);
++					goto next_rx_desc;
++				}
++
++				/* Update skb fields for head skb. */
++				skb->dev = ndev;
++				skb->skb_iif = ndev->ifindex;
++
++				/* Packets from a port bridged in hardware were
++				 * already forwarded to the other bridged ports,
++				 * tell the software bridge not to do it again.
++				 */
++				port_priv = netdev_priv(ndev);
++				skb->offload_fwd_mark = READ_ONCE(port_priv->br_offload);
++
++				/* Handle linear packets. */
++				if (likely(!EDMA_RXDESC_MORE_BIT_GET(rxdesc_pri))) {
++					delivered = edma_rx_handle_linear_packets(rxdesc_ring,
++										  rxdesc_pri, skb);
++					if (unlikely(!delivered))
++						dev_kfree_skb_any(skb);
+ 
+-				goto next_rx_desc;
++					goto next_rx_desc;
++				}
+ 			}
+ 		}
+ 
+--- a/drivers/net/ethernet/qualcomm/ppe/edma_rx.h
++++ b/drivers/net/ethernet/qualcomm/ppe/edma_rx.h
+@@ -279,6 +279,7 @@ struct edma_rxdesc_ring {
+ 	dma_addr_t sdma;
+ 	struct sk_buff *head;
+ 	struct sk_buff *last;
++	int vp_punt_src;	/* source VP of an in-progress punt reassembly, or -1 */
+ };
+ 
+ extern int edma_rx_napi_budget;
+--- a/drivers/net/ethernet/qualcomm/ppe/ppe.c
++++ b/drivers/net/ethernet/qualcomm/ppe/ppe.c
+@@ -272,6 +272,11 @@ static void qcom_ppe_remove(struct platf
+ 	struct ppe_device *ppe_dev;
+ 
+ 	ppe_dev = platform_get_drvdata(pdev);
++
++	/* Stop wireless injection before its borrowed carrier netdevs and TX
++	 * rings can be unregistered. Full VP teardown follows flow flushing.
++	 */
++	ppe_vp_inject_disable(ppe_dev);
+ 	ppe_port_mac_deinit(ppe_dev);
+ 
+ 	/* Netdevice teardown unbinds the flow blocks and quiesces their

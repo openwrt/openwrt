@@ -1,0 +1,225 @@
+From: Kenneth Kasilag <kenneth@kasilag.me>
+Date: Fri, 17 Jul 2026 00:00:00 +0800
+Subject: [PATCH] net: ip6_tunnel: publish flow offload parameters
+
+Flow offload drivers need a stable copy of an IPv6 tunnel's endpoints,
+underlay link, hop limit and MTU.  MAP-E makes the remote endpoint
+flow-dependent, so copying struct ip6_tnl is neither sufficient nor safe:
+the FMR list is replaced under RTNL and remains private to ip6_tunnel.
+
+Add a netdevice operation which snapshots the fixed parameters and derives
+the MAP-E remote endpoint from an inner IPv4 address and transport port.
+The generic wrapper requires RTNL, allowing the tunnel implementation to
+walk its FMR list without exposing its lifetime to hardware drivers.  A
+netdevice operation avoids a link-time dependency from a built-in offload
+driver to the possibly modular IPv6 tunnel implementation.
+
+Signed-off-by: Kenneth Kasilag <kenneth@kasilag.me>
+---
+--- a/include/linux/netdevice.h
++++ b/include/linux/netdevice.h
+@@ -61,6 +61,8 @@ struct kernel_hwtstamp_config;
+ struct phy_device;
+ struct dsa_port;
+ struct ip_tunnel_parm_kern;
++struct ip6_tnl_flow_offload_key;
++struct ip6_tnl_flow_offload_info;
+ struct macsec_context;
+ struct macsec_ops;
+ struct netdev_config;
+@@ -1390,6 +1392,11 @@ struct netdev_net_notifier {
+  *	The caller must be under RCU read context.
+  * int (*ndo_fill_forward_path)(struct net_device_path_ctx *ctx, struct net_device_path *path);
+  *     Get the forwarding path to reach the real device from the HW destination address
++ * int (*ndo_ip6_tnl_flow_offload)(struct net_device *dev,
++ *                                const struct ip6_tnl_flow_offload_key *key,
++ *                                struct ip6_tnl_flow_offload_info *info);
++ *     Snapshot an IPv6 tunnel's fixed parameters and resolve a per-flow
++ *     MAP-E remote endpoint. The caller holds RTNL.
+  * ktime_t (*ndo_get_tstamp)(struct net_device *dev,
+  *			     const struct skb_shared_hwtstamps *hwtstamps,
+  *			     bool cycles);
+@@ -1645,6 +1652,10 @@ struct net_device_ops {
+ 	struct net_device *	(*ndo_get_peer_dev)(struct net_device *dev);
+ 	int                     (*ndo_fill_forward_path)(struct net_device_path_ctx *ctx,
+                                                          struct net_device_path *path);
++	int			(*ndo_ip6_tnl_flow_offload)(
++					struct net_device *dev,
++					const struct ip6_tnl_flow_offload_key *key,
++					struct ip6_tnl_flow_offload_info *info);
+ 	ktime_t			(*ndo_get_tstamp)(struct net_device *dev,
+ 						  const struct skb_shared_hwtstamps *hwtstamps,
+ 						  bool cycles);
+@@ -3367,6 +3378,9 @@ int dev_get_iflink(const struct net_devi
+ int dev_fill_metadata_dst(struct net_device *dev, struct sk_buff *skb);
+ int dev_fill_forward_path(const struct net_device *dev, const u8 *daddr,
+ 			  struct net_device_path_stack *stack);
++int dev_ip6_tnl_flow_offload(struct net_device *dev,
++			     const struct ip6_tnl_flow_offload_key *key,
++			     struct ip6_tnl_flow_offload_info *info);
+ struct net_device *dev_get_by_name(struct net *net, const char *name);
+ struct net_device *dev_get_by_name_rcu(struct net *net, const char *name);
+ struct net_device *__dev_get_by_name(struct net *net, const char *name);
+--- a/include/net/ip6_tunnel.h
++++ b/include/net/ip6_tunnel.h
+@@ -30,6 +30,32 @@ struct __ip6_tnl_fmr {
+ 	__u8 offset;
+ };
+ 
++/**
++ * struct ip6_tnl_flow_offload_key - Inner flow fields used by MAP-E
++ * @addr: IPv4 address embedded in the remote MAP endpoint
++ * @port: Transport port from which the PSID is derived
++ */
++struct ip6_tnl_flow_offload_key {
++	__be32 addr;
++	__be16 port;
++};
++
++/**
++ * struct ip6_tnl_flow_offload_info - Stable IPv6 tunnel snapshot
++ * @local: Local outer IPv6 endpoint
++ * @remote: Fixed or MAP-E-derived remote outer IPv6 endpoint
++ * @link: Configured underlay ifindex
++ * @mtu: Tunnel netdevice MTU
++ * @hop_limit: Configured outer hop limit
++ */
++struct ip6_tnl_flow_offload_info {
++	struct in6_addr local;
++	struct in6_addr remote;
++	int link;
++	int mtu;
++	u8 hop_limit;
++};
++
+ struct __ip6_tnl_parm {
+ 	char name[IFNAMSIZ];	/* name of tunnel device */
+ 	int link;		/* ifindex of underlying L2 interface */
+--- a/net/core/dev.c
++++ b/net/core/dev.c
+@@ -734,6 +734,19 @@ int dev_fill_metadata_dst(struct net_dev
+ }
+ EXPORT_SYMBOL_GPL(dev_fill_metadata_dst);
+ 
++int dev_ip6_tnl_flow_offload(struct net_device *dev,
++			     const struct ip6_tnl_flow_offload_key *key,
++			     struct ip6_tnl_flow_offload_info *info)
++{
++	ASSERT_RTNL();
++
++	if (!dev->netdev_ops->ndo_ip6_tnl_flow_offload)
++		return -EOPNOTSUPP;
++
++	return dev->netdev_ops->ndo_ip6_tnl_flow_offload(dev, key, info);
++}
++EXPORT_SYMBOL_GPL(dev_ip6_tnl_flow_offload);
++
+ static struct net_device_path *dev_fwd_path(struct net_device_path_stack *stack)
+ {
+ 	int k = stack->num_paths++;
+--- a/net/ipv6/ip6_tunnel.c
++++ b/net/ipv6/ip6_tunnel.c
+@@ -920,6 +920,95 @@ static void ip4ip6_fmr_calc(struct in6_a
+ 	}
+ }
+ 
++static bool ip6_tnl_fmr_matches(__be32 addr,
++				const struct __ip6_tnl_fmr *fmr)
++{
++	u32 mask;
++
++	if (fmr->ip4_prefix_len > 32)
++		return false;
++
++	mask = fmr->ip4_prefix_len ?
++		htonl(~0U << (32 - fmr->ip4_prefix_len)) : 0;
++	return (addr & mask) == (fmr->ip4_prefix.s_addr & mask);
++}
++
++static bool ip6_tnl_fmr_remote(struct in6_addr *remote,
++			       const struct __ip6_tnl_fmr *fmrs,
++			       __be32 addr, __be16 port)
++{
++	const struct __ip6_tnl_fmr *fmr;
++
++	for (fmr = fmrs; fmr; fmr = fmr->next) {
++		unsigned int suffix, psid_len, frombyte, fromrem, bytes;
++		u16 psid_bits = 0;
++		u64 ea_bits, value = 0, mask;
++
++		if (!ip6_tnl_fmr_matches(addr, fmr) ||
++		    fmr->ip6_prefix_len > 64 || fmr->ea_len > 48 ||
++		    fmr->ip6_prefix_len + fmr->ea_len > 64)
++			continue;
++		suffix = 32 - fmr->ip4_prefix_len;
++		if (fmr->ea_len < suffix)
++			continue;
++		psid_len = fmr->ea_len - suffix;
++		if (psid_len > 16 || fmr->offset > 16 - psid_len)
++			continue;
++
++		ea_bits = fmr->ip4_prefix_len < 32 ?
++			(u64)ntohl(addr) << (32 + fmr->ip4_prefix_len) : 0;
++		if (psid_len) {
++			psid_bits = ntohs(port) >>
++				(16 - psid_len - fmr->offset);
++			psid_bits <<= 16 - psid_len;
++			ea_bits |= (u64)psid_bits <<
++				(48 - (fmr->ea_len - psid_len));
++		}
++
++		*remote = fmr->ip6_prefix;
++		memcpy(&remote->s6_addr[10], &addr, sizeof(addr));
++		remote->s6_addr16[7] =
++			htons(psid_len ? psid_bits >> (16 - psid_len) : 0);
++
++		frombyte = fmr->ip6_prefix_len / 8;
++		fromrem = fmr->ip6_prefix_len % 8;
++		bytes = min_t(unsigned int, sizeof(*remote) - frombyte,
++			      sizeof(value));
++		memcpy(&value, &remote->s6_addr[frombyte], bytes);
++		value = be64_to_cpu(value);
++		mask = fmr->ea_len ?
++			GENMASK_ULL(63 - fromrem,
++				    64 - fmr->ea_len - fromrem) : 0;
++		value = cpu_to_be64((value & ~mask) | (ea_bits >> fromrem));
++		memcpy(&remote->s6_addr[frombyte], &value, bytes);
++
++		return true;
++	}
++
++	return false;
++}
++
++static int ip6_tnl_flow_offload(struct net_device *dev,
++				const struct ip6_tnl_flow_offload_key *key,
++				struct ip6_tnl_flow_offload_info *info)
++{
++	const struct ip6_tnl *t = netdev_priv(dev);
++
++	ASSERT_RTNL();
++
++	info->local = t->parms.laddr;
++	info->remote = t->parms.raddr;
++	info->link = t->parms.link;
++	info->mtu = dev->mtu;
++	info->hop_limit = t->parms.hop_limit;
++
++	if (t->parms.fmrs &&
++	    !ip6_tnl_fmr_remote(&info->remote, t->parms.fmrs,
++				key->addr, key->port))
++		return -ENOENT;
++
++	return 0;
++}
+ 
+ static int __ip6_tnl_rcv(struct ip6_tnl *tunnel, struct sk_buff *skb,
+ 			 const struct tnl_ptk_info *tpi,
+@@ -2011,6 +2100,7 @@ static const struct net_device_ops ip6_t
+ 	.ndo_change_mtu = ip6_tnl_change_mtu,
+ 	.ndo_get_stats64 = dev_get_tstats64,
+ 	.ndo_get_iflink = ip6_tnl_get_iflink,
++	.ndo_ip6_tnl_flow_offload = ip6_tnl_flow_offload,
+ };
+ 
+ #define IPXIPX_FEATURES (NETIF_F_SG |		\
