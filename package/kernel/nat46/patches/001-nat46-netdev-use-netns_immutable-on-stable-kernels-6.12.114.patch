@@ -1,0 +1,27 @@
+From f181cff69e2bb3a2a79371f9b89194acf9f7b226 Mon Sep 17 00:00:00 2001
+From: Andrew Yourtchenko <ayourtch@gmail.com>
+Date: Mon, 26 Oct 2026 23:51:45 +0100
+Subject: [PATCH] nat46-netdev: use netns_immutable on stable kernels >=
+ 6.12.114
+
+The netns_local -> netns_immutable rename (upstream 0c493da86374) was
+backported to the 6.12.y stable series starting with 6.12.114, so kernels
+6.12.114 and later use netns_immutable even though their version code is
+below 6.15. Restructure the conditional so the field is picked per the
+actual kernel layout rather than the version range alone.
+---
+ nat46/modules/nat46-netdev.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+--- a/nat46/modules/nat46-netdev.c
++++ b/nat46/modules/nat46-netdev.c
+@@ -120,7 +120,8 @@ static void nat46_netdev_setup(struct ne
+ 	dev->mtu = 16384; /* iptables does reassembly. Rather than using ETH_DATA_LEN, let's try to get as much mileage as we can with the Linux stack */
+ #if LINUX_VERSION_CODE < KERNEL_VERSION(6,12,0)
+ 	dev->features = NETIF_F_NETNS_LOCAL;
+-#elif LINUX_VERSION_CODE < KERNEL_VERSION(6,15,0)
++#elif LINUX_VERSION_CODE < KERNEL_VERSION(6,12,114) || \
++      (LINUX_VERSION_CODE >= KERNEL_VERSION(6,13,0) && LINUX_VERSION_CODE < KERNEL_VERSION(6,15,0))
+ 	dev->netns_local = true;
+ #else
+ 	dev->netns_immutable = true;
