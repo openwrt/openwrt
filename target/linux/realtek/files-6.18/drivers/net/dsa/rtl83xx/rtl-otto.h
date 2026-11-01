@@ -646,9 +646,6 @@ void rtl9300_dump_debug(struct otto_dsa_priv *priv);
 extern const struct dsa_switch_ops rtldsa_83xx_switch_ops;
 extern const struct dsa_switch_ops rtldsa_93xx_switch_ops;
 
-extern const struct phylink_mac_ops rtldsa_83xx_phylink_mac_ops;
-extern const struct phylink_mac_ops rtldsa_93xx_phylink_mac_ops;
-
 extern const struct rtldsa_config rtldsa_838x_cfg;
 extern const struct rtldsa_config rtldsa_839x_cfg;
 extern const struct rtldsa_config rtldsa_930x_cfg;
