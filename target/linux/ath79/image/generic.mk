@@ -1318,6 +1318,15 @@ define Device/dlink_dir-842-c3
 endef
 TARGET_DEVICES += dlink_dir-842-c3
 
+define Device/doodlelabs_smartradio
+  SOC := qca9533
+  DEVICE_VENDOR := Doodle Labs
+  DEVICE_MODEL := Smart Radio
+  SUPPORTED_DEVICES += smartradio
+  IMAGE_SIZE := 32000k
+endef
+TARGET_DEVICES += doodlelabs_smartradio
+
 define Device/dragino2_common
   SOC := ar9330
   DEVICE_VENDOR := Dragino
