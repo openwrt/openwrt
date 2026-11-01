@@ -171,3 +171,13 @@ define Device/zyxel_gs1920-24hp-v2
   DEVICE_VARIANT := v2
 endef
 TARGET_DEVICES += zyxel_gs1920-24hp-v2
+
+define Device/zyxel_gs2210-24lp
+  $(Device/zyxel_gs1920)
+  DEVICE_MODEL := GS2210-24LP
+  DEVICE_PACKAGES += kmod-pse-realtek-mcu-i2c i2c-tools
+  SOC := rtl8392
+  FLASH_ADDR := 0xb40c0000
+  IMAGE_SIZE := 12144k
+endef
+TARGET_DEVICES += zyxel_gs2210-24lp
