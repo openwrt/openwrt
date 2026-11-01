@@ -1,0 +1,13 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+/dts-v1/;
+#include "mt7981b-huastlink-hc-g80.dtsi"
+
+/ {
+	model = "Huastlink HC-G80";
+	compatible = "huastlink,hc-g80", "mediatek,mt7981b";
+
+	chosen {
+		bootargs-override = "console=ttyS0,115200n8";
+		stdout-path = "serial0:115200n8";
+	};
+};
