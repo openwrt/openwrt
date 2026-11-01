@@ -32,6 +32,19 @@ define Package/uqmi/description
   the QMI-protocol.
 endef
 
+define Package/uqmid
+  SECTION:=net
+  CATEGORY:=Network
+  SUBMENU:=WWAN
+  DEPENDS:=+libubox +libubus +libblobmsg-json +libtalloc +kmod-usb-net +kmod-usb-net-qmi-wwan +wwan
+  TITLE:=Daemon controlling mobile broadband modems
+endef
+
+define Package/uqmid/description
+  uqmid is a daemon to control mobile broadband modems using
+  the QMI-protocol.
+endef
+
 TARGET_CFLAGS += \
 	-I$(STAGING_DIR)/usr/include \
 	-Wno-error=maybe-uninitialized
@@ -39,10 +52,25 @@ TARGET_CFLAGS += \
 CMAKE_OPTIONS += \
 	-DDEBUG=1
 
+CMAKE_OPTIONS += \
+	$(if $(CONFIG_PACKAGE_uqmid),-DBUILD_UQMID=ON)
+
 define Package/uqmi/install
 	$(INSTALL_DIR) $(1)/sbin
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/uqmi/uqmi $(1)/sbin/
 	$(CP) ./files/* $(1)/
 endef
 
+define Package/uqmid/install
+	$(INSTALL_DIR) $(1)/sbin
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/uqmid/uqmid $(1)/sbin/
+	$(INSTALL_DIR) $(1)/etc/init.d
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/uqmid/uqmid.init.sh $(1)/etc/init.d/uqmid
+	$(INSTALL_DIR) $(1)/lib/netifd/proto
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/uqmid/uqmid.proto.sh $(1)/lib/netifd/proto/uqmid.sh
+	$(INSTALL_DIR) $(1)/etc/hotplug.d/usbmisc
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/uqmid/uqmid.hotplug.sh $(1)/etc/hotplug.d/usbmisc/01_uqmid.sh
+endef
+
 $(eval $(call BuildPackage,uqmi))
+$(eval $(call BuildPackage,uqmid))
