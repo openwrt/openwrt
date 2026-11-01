@@ -27,6 +27,9 @@ realtek_setup_interfaces()
 	bt-pon,bt-g711ax)
 		ucidef_set_interface_lan "$lan_list"
 		;;
+	buffalo,wsr-1500ax2s)
+		ucidef_set_interfaces_lan_wan "$lan_list" "wan"
+		;;
 	*)
 		ucidef_set_bridge_device switch
 		ucidef_set_interface_lan "$lan_list"
@@ -44,6 +47,25 @@ realtek_setup_macs_lan()
 		[ -z "$lan_mac_end" ] || [ "$lan_mac_start" == "$lan_mac_end" ] && lan_mac_start=$(macaddr_setbit_la $lan_mac_start)
 		lan_mac_start=$(macaddr_add $lan_mac_start 1)
 	done
+}
+
+# Read a MAC stored as <Value Name="..." Value="001122334455"/> in the
+# XML file where the Realtek SDK keeps its hardware settings.
+realtek_get_mac_xml()
+{
+	local file="$1"
+	local name="$2"
+	local mac
+
+	mac=$(sed -n 's/.*Name="'"$name"'" Value="\([0-9A-Fa-f]*\)".*/\1/p' \
+		"$file" 2>/dev/null | head -n1)
+	mac=$(macaddr_canonicalize "$mac")
+	case "$mac" in
+	""|00:00:00:00:00:00) return ;;
+	esac
+	[ $((0x${mac%%:*} & 1)) -eq 0 ] || return
+
+	echo "$mac"
 }
 
 realtek_setup_macs()
@@ -134,6 +156,17 @@ realtek_setup_macs()
 		[ -z "$lan_mac" ] || [ "$mac_prefix" = "00:e0:4c:00:00" ] && lan_mac=$(macaddr_random)
 		lan_mac_start=$lan_mac
 		eth0_mac=$lan_mac
+		;;
+	buffalo,wsr-1500ax2s)
+		lan_mac=$(realtek_get_mac_xml /tmp/ubi_Config/config_hs.xml \
+			ELAN_MAC_ADDR)
+		[ -n "$lan_mac" ] || \
+			logger -t 02_network "$board: label MAC not found in ubi_Config"
+		eth0_mac=$lan_mac
+		label_mac=$lan_mac
+		for port in $lan_list wan; do
+			[ -n "$lan_mac" ] && ucidef_set_network_device_mac $port $lan_mac
+		done
 		;;
 	xikestor,sks8300-8x)
 		lan_mac=$(mtd_get_mac_binary board-info 0x1f1)

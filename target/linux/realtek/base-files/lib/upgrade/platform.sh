@@ -1,8 +1,7 @@
 PART_NAME=firmware
 REQUIRE_IMAGE_METADATA=1
 
-RAMFS_COPY_BIN='fw_printenv fw_setenv'
-RAMFS_COPY_DATA='/etc/fw_env.config /var/lock/fw_printenv.lock'
+RAMFS_COPY_BIN='ubicrc32'
 
 # The TP-Link bootloader gets its flash layout from "bootargs".
 # Use this to our advantage, and:
@@ -17,6 +16,48 @@ tplink_sg2xxx_fix_mtdparts() {
 	args="$args baudrate 115200"
 
 	echo -e "$args" | fw_setenv --script -
+}
+
+# For boards that want an additional rootfs_data storage
+realtek_remove_ubi_volume() {
+	local ubidev ubivol
+
+	ubidev="$(nand_find_ubi "$CI_UBIPART")"
+	ubivol="$(nand_find_volume "$ubidev" "$1")"
+	[ -z "$ubivol" ] || ubirmvol "/dev/$ubidev" -N "$1"
+}
+
+buffalo_wsr1500ax2s_crc32() {
+	local crc
+
+	crc="$(ubicrc32 "$1")" || return 1
+	printf '%08x' $(( (crc ^ 0xffffffff) & 0xffffffff ))
+}
+
+# The bootloader overwrites the kernel and rootfs volumes when they do
+# not match the size and CRC variables, so update the variables first.
+buffalo_wsr1500ax2s_prepare_slot0() {
+	local tar_file="$1"
+	local cmd board_dir kernel rootfs kernel_crc rootfs_crc
+
+	cmd="$(identify_if_gzip "$tar_file")cat"
+	board_dir="$($cmd < "$tar_file" | tar tf - | grep -m 1 '^sysupgrade-.*/$')"
+	board_dir="${board_dir%/}"
+	kernel="/tmp/wsr-kernel"
+	rootfs="/tmp/wsr-rootfs"
+	$cmd < "$tar_file" | tar xOf - "$board_dir/kernel" > "$kernel" || return 1
+	$cmd < "$tar_file" | tar xOf - "$board_dir/root" > "$rootfs" || return 1
+	kernel_crc="$(buffalo_wsr1500ax2s_crc32 "$kernel")" || return 1
+	rootfs_crc="$(buffalo_wsr1500ax2s_crc32 "$rootfs")" || return 1
+
+	realtek_remove_ubi_volume ubi_r1 || return 1
+
+	printf 'kernel_sz %x\nkernel0_crc %s\nrootfs_sz %x\nrootfs0_crc %s\n' \
+		"$(wc -c < "$kernel")" "$kernel_crc" \
+		"$(wc -c < "$rootfs")" "$rootfs_crc" > /tmp/wsr-env || return 1
+	printf 'sw_commit 0\nsw_tryactive 2\n' >> /tmp/wsr-env
+	fw_setenv --script /tmp/wsr-env || return 1
+	rm -f "$kernel" "$rootfs" /tmp/wsr-env
 }
 
 platform_check_image() {
@@ -52,6 +93,12 @@ platform_do_upgrade() {
 	local board=$(board_name)
 
 	case "$board" in
+	buffalo,wsr-1500ax2s)
+		CI_KERNPART="ubi_k0"
+		CI_ROOTPART="ubi_r0"
+		buffalo_wsr1500ax2s_prepare_slot0 "$1" || return 1
+		nand_do_upgrade "$1"
+		;;
 	draytek,g2282x)
 		draytek_g2282x_set_part_name || return 1
 		default_do_upgrade "$1"
