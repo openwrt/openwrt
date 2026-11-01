@@ -63,7 +63,7 @@ tar_print_member() {
 
 	# print content data, padded to multiple of 512 byte
 	printf "%s" "$content"
-	__tar_print_padding $((512 - (size % 512)))
+	__tar_print_padding $(((512 - (size % 512)) % 512))
 }
 
 tar_print_trailer() {
