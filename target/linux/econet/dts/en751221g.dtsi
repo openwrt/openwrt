@@ -1,0 +1,133 @@
+// SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
+/dts-v1/;
+
+#include "en751221.dtsi"
+
+/ {
+	compatible = "econet,en751221g", "econet,en751221";
+};
+
+/* MCM switch is present */
+&gport5 {
+	status = "okay";
+	link = <&mcm_port6>;
+};
+&switch0 {
+	/* Switch 1 is never matched by dsa_mtk  */
+	dsa,member = <0 1>;
+
+	mdio {
+		switch1: switch@1f {
+			compatible = "econet,en751221-gswitch";
+			reg = <0x1f>;
+			// mediatek,mcm; // TODO add MCM reset to en7523-clk
+			dsa,member = <0 0>;
+
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			ports {
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				gsw_port0: port@0 {
+					reg = <0>;
+					phy-mode = "gmii";
+					phy-handle = <&gsw_phy0>;
+					status = "disabled";
+				};
+
+				gsw_port1: port@1 {
+					reg = <1>;
+					phy-mode = "gmii";
+					phy-handle = <&gsw_phy1>;
+					status = "disabled";
+				};
+
+				gsw_port2: port@2 {
+					reg = <2>;
+					phy-mode = "gmii";
+					phy-handle = <&gsw_phy2>;
+					status = "disabled";
+				};
+
+				gsw_port3: port@3 {
+					reg = <3>;
+					phy-mode = "gmii";
+					phy-handle = <&gsw_phy3>;
+					status = "disabled";
+				};
+
+				gsw_port4: port@4 {
+					reg = <4>;
+					phy-mode = "gmii";
+					phy-handle = <&gsw_phy4>;
+					status = "disabled";
+				};
+
+				mcm_port6: port@6 {
+					reg = <6>;
+					phy-mode = "trgmii";
+					link = <&gport5>;
+
+					fixed-link {
+						speed = <1000>;
+						full-duplex;
+					};
+				};
+			};
+
+			mdio {
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				gsw_phy0: ethernet-phy@0 {
+					compatible = "ethernet-phy-ieee802.3-c22";
+					reg = <0>;
+					status = "disabled";
+				};
+
+				gsw_phy1: ethernet-phy@1 {
+					compatible = "ethernet-phy-ieee802.3-c22";
+					reg = <1>;
+					status = "disabled";
+				};
+
+				gsw_phy2: ethernet-phy@2 {
+					compatible = "ethernet-phy-ieee802.3-c22";
+					reg = <2>;
+					status = "disabled";
+				};
+
+				gsw_phy3: ethernet-phy@3 {
+					compatible = "ethernet-phy-ieee802.3-c22";
+					reg = <3>;
+					status = "disabled";
+				};
+
+				gsw_phy4: ethernet-phy@4 {
+					compatible = "ethernet-phy-ieee802.3-c22";
+					reg = <4>;
+					status = "disabled";
+				};
+			};
+		};
+	};
+};
+
+/* MCM switch PHYs are present */
+&gsw_phy0 {
+	status = "okay";
+};
+&gsw_phy1 {
+	status = "okay";
+};
+&gsw_phy2 {
+	status = "okay";
+};
+&gsw_phy3 {
+	status = "okay";
+};
+&gsw_phy4 {
+	status = "okay";
+};
