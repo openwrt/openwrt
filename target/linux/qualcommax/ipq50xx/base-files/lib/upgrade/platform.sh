@@ -338,6 +338,7 @@ platform_do_upgrade() {
 		CI_DATA_UBIPART="rootfs"
 		nand_do_upgrade "$1"
 		;;
+	davolink,dvw-632x|\
 	xunison,exigo-hub-d50-5g|\
 	yuncore,ax830|\
 	yuncore,ax850|\
