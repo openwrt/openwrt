@@ -1,0 +1,56 @@
+From ce6daab73be11a986e0defdd1d562164211edf94 Mon Sep 17 00:00:00 2001
+From: Rosen Penev <rosenp@gmail.com>
+Date: Thu, 15 Oct 2026 15:10:58 -0700
+Subject: [PATCH 835/846] wifi: b43: advertise the short guard interval for
+ HT20
+
+The TX path already sets the short guard interval bit in the HT-SIG and
+accounts for it in the L-SIG length, and RX reports it, but the band
+never advertises IEEE80211_HT_CAP_SGI_20. Rate control and stations
+therefore never use it.
+
+Advertise it. Like brcmsmac, which supports it on N-PHY rev 3 and
+later, enable HT only on those revisions; the earlier ones were never
+tested with HT.
+
+Tested on an ASUS RT-N16 (N-PHY rev 5) as an access point with an
+Intel 3168 client on channel 11 and hostapd's ht_capab set to
+[SHORT-GI-20]: both sides use MCS 7 with the short guard interval, and
+TCP from the router to the client goes from 34-35 to 39-41 Mbit/s.
+
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+---
+ drivers/net/wireless/broadcom/b43/main.c | 10 ++++++----
+ 1 file changed, 6 insertions(+), 4 deletions(-)
+
+--- a/drivers/net/wireless/broadcom/b43/main.c
++++ b/drivers/net/wireless/broadcom/b43/main.c
+@@ -365,10 +365,11 @@ static struct ieee80211_supported_band b
+ 	.n_bitrates	= b43_g_ratetable_size,
+ };
+ 
+-/* HT20 with one spatial stream, receiving A-MPDUs only */
++/* HT20 with one spatial stream */
+ #define B43_HT_CAP {							\
+ 	.ht_supported	= true,						\
+-	.cap		= IEEE80211_HT_CAP_SM_PS,			\
++	.cap		= IEEE80211_HT_CAP_SM_PS |			\
++			  IEEE80211_HT_CAP_SGI_20,			\
+ 	.ampdu_factor	= IEEE80211_HT_MAX_AMPDU_8K,			\
+ 	.ampdu_density	= IEEE80211_HT_MPDU_DENSITY_8,			\
+ 	.mcs = {							\
+@@ -398,11 +399,12 @@ static struct ieee80211_supported_band b
+ /*
+  * Whether b43 enables HT on the PHY of @dev. HT needs the 598 firmware TX
+  * header. The firmware is not loaded when the bands are set up: with an
+- * older one, b43_generate_txhdr() sends legacy rates.
++ * older one, b43_generate_txhdr() sends legacy rates. The short guard
++ * interval needs N-PHY rev 3 or later.
+  */
+ static bool b43_ht_supported(struct b43_wldev *dev)
+ {
+-	return dev->phy.type == B43_PHYTYPE_N;
++	return dev->phy.type == B43_PHYTYPE_N && dev->phy.rev >= 3;
+ }
+ 
+ static void b43_wireless_core_exit(struct b43_wldev *dev);

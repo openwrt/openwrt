@@ -1,0 +1,233 @@
+From: Rosen Penev <rosenp@gmail.com>
+Subject: [PATCH] wifi: b43: report airtime for airtime fairness
+
+mac80211 shares the airtime between stations when the driver reports
+the airtime each of them used. Report it and advertise
+NL80211_EXT_FEATURE_AIRTIME_FAIRNESS:
+
+- an A-MPDU counts as one PPDU of all its MPDUs at the rate it was
+  sent at, once for every time it was sent
+- any other frame counts with all attempts the TX status reports
+- a received data frame counts for its sender, with the PHY header
+  only once per A-MPDU
+
+On an Asus RT-N16 (BCM4716) sending UDP to two clients at once, one at
+HT MCS 2 (15.3 Mbit/s on its own) and one at 6 Mbit/s legacy (4.3
+Mbit/s on its own), with the airtime queue limits of the next patch,
+the clients get 7.8 and 2.1 Mbit/s, about half the airtime each. With
+the airtime accounting turned off in debugfs (airtime_flags = 0) they
+get 7.2-7.3 and 2.1-2.2 Mbit/s.
+
+Assisted-by: LLM
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+---
+--- a/drivers/net/wireless/broadcom/b43/dma.c
++++ b/drivers/net/wireless/broadcom/b43/dma.c
+@@ -1765,6 +1765,27 @@ static void b43_dma_ampdu_rate_status(st
+ 	ieee80211_tx_status_ext(dev->wl->hw, &status);
+ }
+ 
++/* Charge @sta with the airtime of an A-MPDU of @bytes sent at the rate of @first */
++static void b43_dma_ampdu_airtime(struct b43_wldev *dev,
++				  struct ieee80211_sta *sta,
++				  const struct ieee80211_tx_info *first,
++				  u8 tid, unsigned int bytes)
++{
++	struct ieee80211_tx_info info = {};
++	int i;
++
++	info.band = first->band;
++	for (i = 0; i < ARRAY_SIZE(info.status.rates); i++)
++		info.status.rates[i].idx = -1;
++	info.status.rates[0] = first->control.rates[0];
++	info.status.rates[0].count = 1;
++
++	ieee80211_sta_register_airtime(sta, tid,
++				       ieee80211_calc_tx_airtime(dev->wl->hw,
++								 &info, bytes),
++				       0);
++}
++
+ /* A-MPDUs per TX ring waiting for their TX status */
+ #define B43_AMPDU_INFLIGHT	2
+ 
+@@ -1878,8 +1899,9 @@ static void b43_dma_handle_ampdu_txstatu
+ 	struct sk_buff_head retry, *queue;
+ 	struct ieee80211_tx_info first = {};
+ 	struct ieee80211_sta *sta = NULL;
+-	unsigned int len = 0, acked = 0;
++	unsigned int len = 0, acked = 0, bytes = 0;
+ 	unsigned long flags;
++	u8 tid = 0;
+ 	bool last;
+ 
+ 	__skb_queue_head_init(&retry);
+@@ -1914,7 +1936,9 @@ static void b43_dma_handle_ampdu_txstatu
+ 			first = *IEEE80211_SKB_CB(meta->skb);
+ 			sta = ieee80211_find_sta_by_ifaddr(dev->wl->hw,
+ 							   hdr->addr1, NULL);
++			tid = b43_airtime_tid(hdr);
+ 		}
++		bytes += meta->skb->len;
+ 		if (b43_dma_complete_ampdu_frame(dev, ring, meta, status,
+ 						 &retry))
+ 			acked++;
+@@ -1922,8 +1946,10 @@ static void b43_dma_handle_ampdu_txstatu
+ 
+ 		slot = next_slot(ring, slot);
+ 	} while (!last && ring->used_slots);
+-	if (sta && first.control.rates[0].idx >= 0)
++	if (sta && first.control.rates[0].idx >= 0) {
+ 		b43_dma_ampdu_rate_status(dev, sta, &first, len, acked);
++		b43_dma_ampdu_airtime(dev, sta, &first, tid, bytes);
++	}
+ 	rcu_read_unlock();
+ 
+ 	if (skb_queue_empty(&retry))
+@@ -2056,6 +2082,7 @@ void b43_dma_handle_txstatus(struct b43_
+ 
+ 			frame_succeed = b43_fill_txstatus_report(dev, info,
+ 								 txstat);
++			b43_tx_airtime(dev, meta->skb);
+ #ifdef CPTCFG_B43_DEBUG
+ 			if (frame_succeed)
+ 				ring->nr_succeed_tx_packets++;
+--- a/drivers/net/wireless/broadcom/b43/main.c
++++ b/drivers/net/wireless/broadcom/b43/main.c
+@@ -6148,6 +6148,7 @@ static struct b43_wl *b43_wireless_init(
+ 	hw->wiphy->flags |= WIPHY_FLAG_IBSS_RSN;
+ 
+ 	wiphy_ext_feature_set(hw->wiphy, NL80211_EXT_FEATURE_CQM_RSSI_LIST);
++	wiphy_ext_feature_set(hw->wiphy, NL80211_EXT_FEATURE_AIRTIME_FAIRNESS);
+ 
+ 	hw->wiphy->available_antennas_rx = 0x3;
+ 	hw->wiphy->available_antennas_tx = 0x3;
+--- a/drivers/net/wireless/broadcom/b43/pio.c
++++ b/drivers/net/wireless/broadcom/b43/pio.c
+@@ -576,6 +576,7 @@ void b43_pio_handle_txstatus(struct b43_
+ 	info = IEEE80211_SKB_CB(pack->skb);
+ 
+ 	b43_fill_txstatus_report(dev, info, status);
++	b43_tx_airtime(dev, pack->skb);
+ 
+ 	total_len = pack->skb->len + b43_txhdr_size(dev);
+ 	total_len = roundup(total_len, 4);
+--- a/drivers/net/wireless/broadcom/b43/xmit.c
++++ b/drivers/net/wireless/broadcom/b43/xmit.c
+@@ -991,6 +991,46 @@ static s8 b43_rssi_postprocess(struct b4
+ 	return (s8) tmp;
+ }
+ 
++/* The TID whose access category the airtime of @hdr is charged to */
++u8 b43_airtime_tid(struct ieee80211_hdr *hdr)
++{
++	return ieee80211_is_data_qos(hdr->frame_control) ?
++	       ieee80211_get_tid(hdr) : 0;
++}
++
++/*
++ * Charge the sender of the data frame in @skb with its airtime, so that
++ * mac80211 shares the airtime fairly between the stations. The PHY header
++ * of a PPDU only counts for its first MPDU.
++ */
++static void b43_rx_airtime(struct b43_wldev *dev, struct sk_buff *skb,
++			   struct ieee80211_rx_status *status, bool ppdu_start)
++{
++	struct ieee80211_hdr *hdr = (struct ieee80211_hdr *)skb->data;
++	struct ieee80211_hw *hw = dev->wl->hw;
++	struct ieee80211_sta *sta;
++	u32 airtime;
++
++	if (!ieee80211_is_data(hdr->frame_control) ||
++	    (status->flag & (RX_FLAG_FAILED_FCS_CRC |
++			     RX_FLAG_FAILED_PLCP_CRC)))
++		return;
++	/* Not a rate mac80211 knows the airtime of */
++	if (status->encoding == RX_ENC_HT && status->rate_idx >= 32)
++		return;
++
++	rcu_read_lock();
++	sta = ieee80211_find_sta_by_ifaddr(hw, hdr->addr2, NULL);
++	if (sta) {
++		airtime = ieee80211_calc_rx_airtime(hw, status, skb->len);
++		if (!ppdu_start)
++			airtime -= ieee80211_calc_rx_airtime(hw, status, 0);
++		ieee80211_sta_register_airtime(sta, b43_airtime_tid(hdr), 0,
++					       airtime);
++	}
++	rcu_read_unlock();
++}
++
+ void b43_rx(struct b43_wldev *dev, struct sk_buff *skb, const void *_rxhdr)
+ {
+ 	struct ieee80211_rx_status status;
+@@ -1003,6 +1043,7 @@ void b43_rx(struct b43_wldev *dev, struc
+ 	u32 macstat;
+ 	u16 chanid;
+ 	int padding, rate_idx;
++	bool ppdu_start = true;
+ 
+ 	memset(&status, 0, sizeof(status));
+ 
+@@ -1130,6 +1171,7 @@ void b43_rx(struct b43_wldev *dev, struc
+ 			rate_idx = dev->rx_ppdu.rate_idx;
+ 			status.bw = dev->rx_ppdu.bw;
+ 			status.enc_flags = dev->rx_ppdu.enc_flags;
++			ppdu_start = false;
+ 			break;
+ 		}
+ 		rate_idx = plcp->raw[0] & 0x7f;
+@@ -1208,6 +1250,8 @@ void b43_rx(struct b43_wldev *dev, struc
+ 		goto drop;
+ 	}
+ 
++	b43_rx_airtime(dev, skb, &status, ppdu_start);
++
+ 	memcpy(IEEE80211_SKB_RXCB(skb), &status, sizeof(status));
+ 	ieee80211_rx_ni(dev->wl->hw, skb);
+ 
+@@ -1253,6 +1297,33 @@ void b43_handle_txstatus(struct b43_wlde
+ /* Fill out the mac80211 TXstatus report based on the b43-specific
+  * txstatus report data. This returns a boolean whether the frame was
+  * successfully transmitted. */
++/*
++ * Charge the receiver of the frame in @skb, which is not part of an A-MPDU,
++ * with the airtime of all its transmissions. The TX status must be filled
++ * in already.
++ */
++void b43_tx_airtime(struct b43_wldev *dev, struct sk_buff *skb)
++{
++	struct ieee80211_hdr *hdr = (struct ieee80211_hdr *)skb->data;
++	struct ieee80211_tx_info *info = IEEE80211_SKB_CB(skb);
++	struct ieee80211_sta *sta;
++	u32 airtime;
++
++	if (is_multicast_ether_addr(hdr->addr1))
++		return;
++
++	airtime = ieee80211_calc_tx_airtime(dev->wl->hw, info, skb->len);
++	if (!airtime)
++		return;
++
++	rcu_read_lock();
++	sta = ieee80211_find_sta_by_ifaddr(dev->wl->hw, hdr->addr1, NULL);
++	if (sta)
++		ieee80211_sta_register_airtime(sta, b43_airtime_tid(hdr),
++					       airtime, 0);
++	rcu_read_unlock();
++}
++
+ bool b43_fill_txstatus_report(struct b43_wldev *dev,
+ 			      struct ieee80211_tx_info *report,
+ 			      const struct b43_txstatus *status)
+--- a/drivers/net/wireless/broadcom/b43/xmit.h
++++ b/drivers/net/wireless/broadcom/b43/xmit.h
+@@ -368,6 +368,8 @@ void b43_handle_txstatus(struct b43_wlde
+ bool b43_fill_txstatus_report(struct b43_wldev *dev,
+ 			      struct ieee80211_tx_info *report,
+ 			      const struct b43_txstatus *status);
++u8 b43_airtime_tid(struct ieee80211_hdr *hdr);
++void b43_tx_airtime(struct b43_wldev *dev, struct sk_buff *skb);
+ 
+ void b43_tx_suspend(struct b43_wldev *dev);
+ void b43_tx_resume(struct b43_wldev *dev);

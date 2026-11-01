@@ -1,0 +1,47 @@
+From fc7fc7715ae7cb1feca23118bb960eba9db1347a Mon Sep 17 00:00:00 2001
+From: Erik Conijn <egc112@msn.com>
+Date: Sat, 17 Oct 2026 13:09:54 -0700
+Subject: [PATCH 828/846] wifi: b43: HT-PHY: read 32-bit table entries low half
+ first
+
+The PHY latches a 32-bit table entry on the access to the low data
+register, as b43's N-PHY table code and Broadcom's wlc_phy_read_table
+assume. The HT-PHY code read the high half first and got the stale high
+half of the previous access: TX gain table entry 0x1a/0xc0 0x10f90040
+read back as 0x10190040, so b43_phy_ht_tx_power_fix() programmed a
+corrupted radio gain word.
+
+Fixes: 1a9313923718 ("b43: HT-PHY: prepare place for HT-PHY tables")
+Signed-off-by: Erik Conijn <egc112@msn.com>
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+---
+ drivers/net/wireless/broadcom/b43/tables_phy_ht.c | 11 +++++------
+ 1 file changed, 5 insertions(+), 6 deletions(-)
+
+--- a/drivers/net/wireless/broadcom/b43/tables_phy_ht.c
++++ b/drivers/net/wireless/broadcom/b43/tables_phy_ht.c
+@@ -632,9 +632,9 @@ u32 b43_httab_read(struct b43_wldev *dev
+ 		break;
+ 	case B43_HTTAB_32BIT:
+ 		b43_phy_write(dev, B43_PHY_HT_TABLE_ADDR, offset);
+-		value = b43_phy_read(dev, B43_PHY_HT_TABLE_DATAHI);
+-		value <<= 16;
+-		value |= b43_phy_read(dev, B43_PHY_HT_TABLE_DATALO);
++		/* the low half latches the entry: read it first */
++		value = b43_phy_read(dev, B43_PHY_HT_TABLE_DATALO);
++		value |= b43_phy_read(dev, B43_PHY_HT_TABLE_DATAHI) << 16;
+ 		break;
+ 	default:
+ 		B43_WARN_ON(1);
+@@ -668,9 +668,8 @@ void b43_httab_read_bulk(struct b43_wlde
+ 			data += 2;
+ 			break;
+ 		case B43_HTTAB_32BIT:
+-			*((u32 *)data) = b43_phy_read(dev, B43_PHY_HT_TABLE_DATAHI);
+-			*((u32 *)data) <<= 16;
+-			*((u32 *)data) |= b43_phy_read(dev, B43_PHY_HT_TABLE_DATALO);
++			*((u32 *)data) = b43_phy_read(dev, B43_PHY_HT_TABLE_DATALO);
++			*((u32 *)data) |= b43_phy_read(dev, B43_PHY_HT_TABLE_DATAHI) << 16;
+ 			data += 4;
+ 			break;
+ 		default:
