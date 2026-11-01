@@ -144,7 +144,7 @@ endif
 
 ifeq ($(SSL_VARIANT),mbedtls)
   DRIVER_MAKEOPTS += CONFIG_TLS=mbedtls CONFIG_SAE=y
-  TARGET_LDFLAGS += -lmbedcrypto -lmbedx509 -lmbedtls
+  TARGET_LDFLAGS += -ltfpsacrypto -lmbedx509 -lmbedtls
 
   ifeq ($(LOCAL_VARIANT),basic)
     DRIVER_MAKEOPTS += CONFIG_OWE=y
