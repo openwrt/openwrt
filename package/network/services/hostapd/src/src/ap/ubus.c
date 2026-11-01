@@ -1280,7 +1280,11 @@ hostapd_vendor_elements(struct ubus_context *ctx, struct ubus_object *obj,
 	if (len == 0) {
 		wpabuf_free(bss->vendor_elements);
 		bss->vendor_elements = NULL;
-		return 0;
+
+		/* and out of the beacons, which would keep them otherwise */
+		if (ieee802_11_update_beacons(hapd->iface) != 0)
+			return UBUS_STATUS_NOT_SUPPORTED;
+		return UBUS_STATUS_OK;
 	}
 
 	elems = wpabuf_alloc(len);
