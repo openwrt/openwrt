@@ -1,0 +1,5 @@
+case "$ACTION" in
+	step|stratum)
+		touch /var/state/ntpd-synced
+	;;
+esac
