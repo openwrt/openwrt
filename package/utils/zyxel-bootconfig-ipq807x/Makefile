@@ -9,7 +9,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=zyxel-bootconfig-ipq807x
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 PKG_FLAGS:=nonshared
 
 include $(INCLUDE_DIR)/package.mk
