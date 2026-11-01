@@ -1,0 +1,154 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "ar7100_mikrotik_routerboard-4xx.dtsi"
+
+/ {
+	compatible = "mikrotik,routerboard-450g", "qca,ar7161";
+	model = "MikroTik RouterBOARD 450G";
+
+	aliases {
+		ethernet0 = &eth1;
+		ethernet1 = &eth0;
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "reset";
+			linux,code = <KEY_RESTART>;
+			gpios = <&gpio 7 GPIO_ACTIVE_LOW>;
+			debounce-interval = <60>;
+		};
+	};
+};
+
+&gpio {
+	gpio-line-names =
+		"",     "", "", "", "LED", "RDY",  "",  "reset",
+		"", "", "", "";
+};
+
+&pcie0 {
+	status = "disabled";
+};
+
+&hard_config {
+	nvmem-layout {
+		compatible = "mikrotik,routerboot-nvmem";
+
+		macaddr_hard: base-mac-address {
+			#nvmem-cell-cells = <1>;
+		};
+	};
+};
+
+&mdio0 {
+	/*
+	 * The AR8316 does not tolerate the fastest MII clock dividers: at
+	 * MII_CFG divider 0 and 2 the SMI data is sampled one bit early and
+	 * every register read and write is shifted, so the switch never gets
+	 * configured.  Divider 8 and slower are reliable, ask for a low
+	 * enough frequency to land there.
+	 */
+	qca,mdio-max-frequency = <100000>;
+
+	/* program the switch as soon as its PHY is probed */
+	qca,init-at-probe;
+
+	/* port 4 is used as the PHY of the WAN MAC */
+	qca,phy4-mii-enable;
+
+	phy4: ethernet-phy@4 {
+		reg = <4>;
+	};
+};
+
+/*
+ * GE0 is the LAN MAC and is wired to port 0 of the AR8316, the CPU port of
+ * the switch, so that link runs at gigabit no matter what the four copper
+ * ports negotiate.  Describe it as a fixed link: the PHY in front of it is
+ * the switch itself and there is no phylib client to follow.
+ */
+&eth0 {
+	status = "okay";
+
+	nvmem-cells = <&macaddr_hard 1>;
+	nvmem-cell-names = "mac-address";
+
+	/delete-property/ phy-handle;
+
+	fixed-link {
+		speed = <1000>;
+		full-duplex;
+	};
+};
+
+/*
+ * GE1 is the WAN MAC and is wired to port 4 of the AR8316, which is used as
+ * the PHY of the WAN port instead of as a switch port.  Its RGMII side
+ * therefore follows the speed negotiated on the copper line, so keep the PHY
+ * attached and let phylib program speed and duplex and report the carrier.
+ * The ar71xx port registered GE1 first, which is why the aliases above make
+ * this the netdev named eth0.
+ */
+&eth1 {
+	status = "okay";
+
+	nvmem-cells = <&macaddr_hard 0>;
+	nvmem-cell-names = "mac-address";
+
+	phy-handle = <&phy4>;
+};
+
+/*
+ * The front panel port LEDs of this board are driven by the switch itself;
+ * the five CPLD LED lines are not connected to them.  Drop the nodes that
+ * the shared 4xx dtsi inherits from the ar71xx board files, which registered
+ * them on every RB4xx device regardless of the hardware.
+ */
+&leds {
+	/delete-node/ led1;
+	/delete-node/ led2;
+	/delete-node/ led3;
+	/delete-node/ led4;
+	/delete-node/ led5;
+};
+
+&spi {
+	sdcard: mmc-slot@2 {
+		compatible = "mmc-spi-slot";
+
+		reg = <2>;
+		spi-max-frequency = <25000000>;
+	};
+};
+
+/*
+ * The NAND is twice as large as the one of the 493G, so the kernel and UBI
+ * partitions sit where RouterBOOT and the ar71xx based firmware expect them,
+ * as reported by /proc/mtd on a stock installation:
+ *
+ *   mtd4: 00040000 00020000 "booter"
+ *   mtd5: 003c0000 00020000 "kernel"
+ *   mtd6: 1fc00000 00020000 "ubi"
+ */
+&kernel_part {
+	reg = <0x0040000 0x03c0000>;
+};
+
+&ubi {
+	reg = <0x0400000 0x0>;
+};
+
+&nand {
+	/*
+	 * The controller has no ECC engine of its own, so ask for software
+	 * Hamming, which is what the ar71xx driver used.  The algorithm has to
+	 * come from the device tree: nand_scan_tail() overwrites
+	 * chip->ecc.algo from the user configuration, and without this the
+	 * probe fails with "Unsupported ECC algorithm!".  The RB493G shares
+	 * the same NAND controller and needs the same line.
+	 */
+	nand-ecc-mode = "soft";
+};
