@@ -7,6 +7,11 @@ board_config_update
 board=$(board_name)
 
 case "$board" in
+arista,ap-c200)
+	ucidef_set_led_netdev "lan" "LAN" "green:lan" "lan" "link"
+	ucidef_set_led_netdev "wlan2g" "WLAN2G" "green:wlan-0" "phy1-ap0" "link"
+	ucidef_set_led_netdev "wlan5g" "WLAN5G" "green:wlan-1" "phy0-ap0" "link"
+	;;
 linksys,mr7350)
 	ucidef_set_led_netdev "lan1-port-link" "LAN1-PORT-LINK" "90000.mdio-1:00:green:lan" "lan1" "link_10 link_100 link_1000"
 	ucidef_set_led_netdev "lan1-port-traffic" "LAN1-PORT-TRAFFIC" "90000.mdio-1:00:orange:lan" "lan1" "tx rx link_10 link_100 link_1000"
