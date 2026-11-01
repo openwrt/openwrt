@@ -1,0 +1,40 @@
+From a29794199190dee25a809210aad66ce5a18ef27f Mon Sep 17 00:00:00 2001
+From: Jonas Karlman <jonas@kwiboo.se>
+Date: Fri, 10 Jul 2026 10:05:13 +0000
+Subject: [PATCH] arm64: dts: rockchip: Add watchdog node for RK3528
+
+Add the node describing the watchdog on the RK3528 SoC.
+
+Signed-off-by: Jonas Karlman <jonas@kwiboo.se>
+Signed-off-by: Heiko Stuebner <heiko@sntech.de>
+Link: https://patch.msgid.link/20260506092804.3320931-1-heiko@sntech.de
+
+[ upstream commit: eb24b60553e0692cbbec2863ca31d2a56bff098d ]
+
+(cherry picked from commit 87fa1af25f01c71bd8cfc51920b3a6d51d38abe5)
+
+Signed-off-by: Jonas Karlman <jonas@kwiboo.se>
+Reviewed-by: Quentin Schulz <quentin.schulz@cherry.de>
+Link: https://patch.msgid.link/20260710100521.3677247-2-jonas@kwiboo.se
+Signed-off-by: Quentin Schulz <u-boot@0leil.net>
+---
+ dts/upstream/src/arm64/rockchip/rk3528.dtsi | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+--- a/dts/upstream/src/arm64/rockchip/rk3528.dtsi
++++ b/dts/upstream/src/arm64/rockchip/rk3528.dtsi
+@@ -983,6 +983,14 @@
+ 			status = "disabled";
+ 		};
+ 
++		wdt: watchdog@ffac0000 {
++			compatible = "rockchip,rk3528-wdt", "snps,dw-wdt";
++			reg = <0x0 0xffac0000 0x0 0x100>;
++			clocks = <&cru TCLK_WDT_NS>, <&cru PCLK_WDT_NS>;
++			clock-names = "tclk", "pclk";
++			interrupts = <GIC_SPI 28 IRQ_TYPE_LEVEL_HIGH>;
++		};
++
+ 		saradc: adc@ffae0000 {
+ 			compatible = "rockchip,rk3528-saradc";
+ 			reg = <0x0 0xffae0000 0x0 0x10000>;
