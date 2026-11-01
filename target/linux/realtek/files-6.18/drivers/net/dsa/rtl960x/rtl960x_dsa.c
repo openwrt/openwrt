@@ -32,6 +32,9 @@
 #define   RTL960X_FORCE_P_ABLTY_SPEED_1000	2
 #define RTL960X_ABLTY_FORCE_MODE_REG(_port)	(0x238 + (_port) * 4)
 
+#define RTL960X_CPU_TAG_INSERT_CTRL		(0x230f4)
+#define RTL960X_CPU_TAG_AWARE_CTRL		(0x230f8)
+
 /*
  * Preferred CPU port for the user ports when the device tree describes more
  * than one. Port 7 can also be a CPU port (GMAC2) but is muxed with the
@@ -178,7 +181,22 @@ enum rtl960x_stp_state {
 
 static int rtl960x_cpu_port_setup(struct rtl960x_dsa *priv, int port)
 {
+	u32 gmac_id;
 	int ret;
+
+	switch (port) {
+	case RTL960X_DEFAULT_CPU_PORT:
+		gmac_id = 0;
+		break;
+	case 10:
+		gmac_id = 1;
+		break;
+	case 7:
+		gmac_id = 2;
+		break;
+	default:
+		return -EINVAL;
+	}
 
 	/* Force the link to the GMAC up at 1000/full */
 	ret = regmap_write(priv->map, RTL960X_FORCE_P_ABLTY_REG(port),
@@ -190,8 +208,16 @@ static int rtl960x_cpu_port_setup(struct rtl960x_dsa *priv, int port)
 	if (ret)
 		return ret;
 
-	return regmap_write(priv->map, RTL960X_ABLTY_FORCE_MODE_REG(port),
-			    0xffff);
+	ret = regmap_write(priv->map, RTL960X_ABLTY_FORCE_MODE_REG(port),
+			   0xffff);
+	if (ret)
+		return ret;
+
+	ret = regmap_set_bits(priv->map, RTL960X_CPU_TAG_INSERT_CTRL, BIT(gmac_id));
+	if (ret)
+		return ret;
+
+	return regmap_set_bits(priv->map, RTL960X_CPU_TAG_AWARE_CTRL, BIT(gmac_id));
 }
 
 static int rtl960x_port_set_isolation(struct rtl960x_dsa *priv, int port,
@@ -636,7 +662,7 @@ static enum dsa_tag_protocol rtl960x_dsa_get_tag_protocol(struct dsa_switch *ds,
 							  int port,
 							  enum dsa_tag_protocol mp)
 {
-	return DSA_TAG_PROTO_RTL_OTTO;
+	return DSA_TAG_PROTO_RTL8_4AP;
 }
 
 static int rtl960x_dsa_setup(struct dsa_switch *ds)

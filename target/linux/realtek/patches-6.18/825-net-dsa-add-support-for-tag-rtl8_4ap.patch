@@ -1,0 +1,43 @@
+--- a/include/net/dsa.h
++++ b/include/net/dsa.h
+@@ -61,6 +61,7 @@ struct tc_action;
+ #define DSA_TAG_PROTO_YT922X_VALUE		33
+ #define DSA_TAG_PROTO_YT922X_4B_VALUE		34
+ #define DSA_TAG_PROTO_RTL_OTTO_VALUE		35
++#define DSA_TAG_PROTO_RTL8_4AP_VALUE		36
+ 
+ enum dsa_tag_protocol {
+ 	DSA_TAG_PROTO_NONE		= DSA_TAG_PROTO_NONE_VALUE,
+@@ -99,6 +100,7 @@ enum dsa_tag_protocol {
+ 	DSA_TAG_PROTO_YT922X		= DSA_TAG_PROTO_YT922X_VALUE,
+ 	DSA_TAG_PROTO_YT922X_4B		= DSA_TAG_PROTO_YT922X_4B_VALUE,
+ 	DSA_TAG_PROTO_RTL_OTTO		= DSA_TAG_PROTO_RTL_OTTO_VALUE,
++	DSA_TAG_PROTO_RTL8_4AP		= DSA_TAG_PROTO_RTL8_4AP_VALUE,
+ };
+ 
+ struct dsa_switch;
+--- a/net/dsa/Kconfig
++++ b/net/dsa/Kconfig
+@@ -164,6 +164,12 @@ config NET_DSA_TAG_RTL8_4
+ 	  Say Y or M if you want to enable support for tagging frames for Realtek
+ 	  switches with 8 byte protocol 4 tags, such as the Realtek RTL8365MB-VC.
+ 
++config NET_DSA_TAG_RTL8_4AP
++	tristate "Tag driver for Realtek 8 byte protocol 4 tag of RTL9607C"
++	help
++	  Say Y or M if you want to enable support for tagging frames for Realtek
++	  switches with 8 byte protocol 4 tags, such as the Realtek RTL9607C SoCs.
++
+ config NET_DSA_TAG_RZN1_A5PSW
+ 	tristate "Tag driver for Renesas RZ/N1 A5PSW switch"
+ 	help
+--- a/net/dsa/Makefile
++++ b/net/dsa/Makefile
+@@ -36,6 +36,7 @@ obj-$(CONFIG_NET_DSA_TAG_OCELOT_8021Q) +
+ obj-$(CONFIG_NET_DSA_TAG_QCA) += tag_qca.o
+ obj-$(CONFIG_NET_DSA_TAG_RTL4_A) += tag_rtl4_a.o
+ obj-$(CONFIG_NET_DSA_TAG_RTL8_4) += tag_rtl8_4.o
++obj-$(CONFIG_NET_DSA_TAG_RTL8_4AP) += tag_rtl8_4ap.o
+ obj-$(CONFIG_NET_DSA_TAG_RZN1_A5PSW) += tag_rzn1_a5psw.o
+ obj-$(CONFIG_NET_DSA_TAG_RTL_OTTO) += tag_rtl_otto.o
+ obj-$(CONFIG_NET_DSA_TAG_SJA1105) += tag_sja1105.o
