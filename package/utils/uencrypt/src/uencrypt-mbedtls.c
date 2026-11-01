@@ -61,22 +61,6 @@ static inline size_t mbedtls_cipher_info_get_block_size(
 }
 #endif
 
-unsigned char *hexstr2buf(const char *str, long *len)
-{
-    unsigned char *buf;
-    long inlen = strlen(str);
-
-    *len = 0;
-    if (inlen % 2)
-	return NULL;
-
-    *len = inlen >> 1;
-    buf = malloc(*len);
-    for  (long x = 0; x < *len; x++)
-	sscanf(str + x * 2, "%2hhx", buf + x);
-    return buf;
-}
-
 const cipher_t *get_default_cipher(void)
 {
     return mbedtls_cipher_info_from_type (MBEDTLS_CIPHER_AES_128_CBC);
