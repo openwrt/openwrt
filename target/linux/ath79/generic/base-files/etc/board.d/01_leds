@@ -183,6 +183,9 @@ comfast,cf-e314n-v2)
 	ucidef_set_led_rssi "rssimediumhigh" "RSSIMEDIUMHIGH" "green:rssimediumhigh" "wlan0" "51" "100"
 	ucidef_set_led_rssi "rssihigh" "RSSIHIGH" "green:rssihigh" "wlan0" "76" "100"
 	;;
+comfast,cf-e356a)
+	ucidef_set_led_netdev "lan" "LAN" "green:lan" "eth0"
+	;;
 comfast,cf-e375ac)
 	ucidef_set_led_switch "lan" "LAN" "green:lan" "switch0" "0x04"
 	ucidef_set_led_switch "wan" "WAN" "red:wan" "switch0" "0x02"
