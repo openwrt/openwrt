@@ -1,0 +1,27 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Ville Takio <ville+git@takio.fi>
+Subject: [PATCH] b43: AC-PHY: clear PHY 0x040a bit 8 on femctrl 3
+
+Before its femctrl 3 FEM table the R7000's wl 7.14.164.18 clears bit 8
+of PHY 0x040a (it writes 0x0090; record #6704 of the 5 GHz MMIO capture
+in aleferri/b43-ac-wip router-data/r7000), the bit the femctrl 1 and 2
+boards set. Clear it as well, so a value left by an earlier driver does
+not stay. At power-on it is already clear, so a cold start is unchanged.
+
+--- a/drivers/net/wireless/broadcom/b43/phy_ac.c
++++ b/drivers/net/wireless/broadcom/b43/phy_ac.c
+@@ -3243,9 +3243,14 @@ static void b43_phy_ac_fem2_sub1_setup(s
+  * its femctrl 3 setup (wlc_phy_set_regtbl_on_femctrl). Nothing else does:
+  * the bit survives a warm reboot from the stock firmware, but after a
+  * power cycle both radios transmit some 60 dB below their target.
++ *
++ * PHY 0x040a bit 8, which the femctrl 1 and 2 boards set, is cleared: the
++ * R7000 (wl 7.14.164.18) writes 0x0090 just before the table
++ * (aleferri/b43-ac-wip router-data/r7000/mmio-cold-5g36-80.zip, #6704).
+  */
+ static void b43_phy_ac_fem3_pre(struct b43_wldev *dev)
+ {
++	b43_phy_mask(dev, 0x040a, (u16)~0x0100);
+ 	bcma_chipco_regctl_maskset(&dev->dev->bdev->bus->drv_cc, 0, ~0x4, 0x4);
+ }
+ 
