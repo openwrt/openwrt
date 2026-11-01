@@ -1,0 +1,142 @@
+From ade7da14954a5d1003ceb316a230189c445ba357 Mon Sep 17 00:00:00 2001
+From: AngeloGioacchino Del Regno <angelogioacchino.delregno@collabora.com>
+Date: Mon, 4 Nov 2024 12:49:34 +0100
+Subject: [PATCH 1/2] PCI: mediatek-gen3: Add support for setting
+ max-link-speed limit
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Add support for respecting the max-link-speed devicetree property,
+forcing a maximum speed (Gen) for a PCI-Express port.
+
+Since the MediaTek PCIe Gen3 controllers also expose the maximum
+supported link speed in the PCIE_BASE_CFG register, if property
+max-link-speed is specified in devicetree, validate it against the
+controller capabilities and proceed setting the limitations only
+if the wanted Gen is lower than the maximum one that is supported
+by the controller itself (otherwise it makes no sense!).
+
+Link: https://lore.kernel.org/r/20241104114935.172908-2-angelogioacchino.delregno@collabora.com
+Signed-off-by: AngeloGioacchino Del Regno <angelogioacchino.delregno@collabora.com>
+[kwilczynski: change dev_dbg() to dev_info() and update message wording]
+Signed-off-by: Krzysztof Wilczyński <kwilczynski@kernel.org>
+Reviewed-by: Fei Shao <fshao@chromium.org>
+Reviewed-by: Manivannan Sadhasivam <manivannan.sadhasivam@linaro.org>
+---
+ drivers/pci/controller/pcie-mediatek-gen3.c | 55 ++++++++++++++++++++-
+ 1 file changed, 53 insertions(+), 2 deletions(-)
+
+--- a/drivers/pci/controller/pcie-mediatek-gen3.c
++++ b/drivers/pci/controller/pcie-mediatek-gen3.c
+@@ -30,7 +30,11 @@
+ 
+ #include "../pci.h"
+ 
++#define PCIE_BASE_CFG_REG		0x14
++#define PCIE_BASE_CFG_SPEED		GENMASK(15, 8)
++
+ #define PCIE_SETTING_REG		0x80
++#define PCIE_SETTING_GEN_SUPPORT	GENMASK(14, 12)
+ #define PCIE_PCI_IDS_1			0x9c
+ #define PCI_CLASS(class)		(class << 8)
+ #define PCIE_RC_MODE			BIT(0)
+@@ -136,6 +140,9 @@ enum mtk_gen3_pcie_flags {
+ 				   */
+ };
+ 
++#define PCIE_CONF_LINK2_CTL_STS		(PCIE_CFG_OFFSET_ADDR + 0xb0)
++#define PCIE_CONF_LINK2_LCR2_LINK_SPEED	GENMASK(3, 0)
++
+ /**
+  * struct mtk_gen3_pcie_pdata - differentiate between host generations
+  * @power_up: pcie power_up callback
+@@ -173,6 +180,7 @@ struct mtk_msi_set {
+  * @phy: PHY controller block
+  * @clks: PCIe clocks
+  * @num_clks: PCIe clocks count for this port
++ * @max_link_speed: Maximum link speed (PCIe Gen) for this port
+  * @irq: PCIe controller interrupt number
+  * @saved_irq_state: IRQ enable state saved at suspend time
+  * @irq_lock: lock protecting IRQ register access
+@@ -193,6 +201,7 @@ struct mtk_gen3_pcie {
+ 	struct phy *phy;
+ 	struct clk_bulk_data *clks;
+ 	int num_clks;
++	u8 max_link_speed;
+ 
+ 	int irq;
+ 	u32 saved_irq_state;
+@@ -394,11 +403,27 @@ static int mtk_pcie_startup_port(struct
+ 	int err;
+ 	u32 val;
+ 
+-	/* Set as RC mode */
++	/* Set as RC mode and set controller PCIe Gen speed restriction, if any */
+ 	val = readl_relaxed(pcie->base + PCIE_SETTING_REG);
+ 	val |= PCIE_RC_MODE;
++	if (pcie->max_link_speed) {
++		val &= ~PCIE_SETTING_GEN_SUPPORT;
++
++		/* Can enable link speed support only from Gen2 onwards */
++		if (pcie->max_link_speed >= 2)
++			val |= FIELD_PREP(PCIE_SETTING_GEN_SUPPORT,
++					  GENMASK(pcie->max_link_speed - 2, 0));
++	}
+ 	writel_relaxed(val, pcie->base + PCIE_SETTING_REG);
+ 
++	/* Set Link Control 2 (LNKCTL2) speed restriction, if any */
++	if (pcie->max_link_speed) {
++		val = readl_relaxed(pcie->base + PCIE_CONF_LINK2_CTL_STS);
++		val &= ~PCIE_CONF_LINK2_LCR2_LINK_SPEED;
++		val |= FIELD_PREP(PCIE_CONF_LINK2_LCR2_LINK_SPEED, pcie->max_link_speed);
++		writel_relaxed(val, pcie->base + PCIE_CONF_LINK2_CTL_STS);
++	}
++
+ 	/* Set class code */
+ 	val = readl_relaxed(pcie->base + PCIE_PCI_IDS_1);
+ 	val &= ~GENMASK(31, 8);
+@@ -1074,9 +1099,21 @@ static void mtk_pcie_power_down(struct m
+ 	reset_control_bulk_assert(pcie->soc->phy_resets.num_resets, pcie->phy_resets);
+ }
+ 
++static int mtk_pcie_get_controller_max_link_speed(struct mtk_gen3_pcie *pcie)
++{
++	u32 val;
++	int ret;
++
++	val = readl_relaxed(pcie->base + PCIE_BASE_CFG_REG);
++	val = FIELD_GET(PCIE_BASE_CFG_SPEED, val);
++	ret = fls(val);
++
++	return ret > 0 ? ret : -EINVAL;
++}
++
+ static int mtk_pcie_setup(struct mtk_gen3_pcie *pcie)
+ {
+-	int err;
++	int err, max_speed;
+ 
+ 	err = mtk_pcie_parse_port(pcie);
+ 	if (err)
+@@ -1093,6 +1130,20 @@ static int mtk_pcie_setup(struct mtk_gen
+ 	if (err)
+ 		return err;
+ 
++	err = of_pci_get_max_link_speed(pcie->dev->of_node);
++	if (err) {
++		/* Get the maximum speed supported by the controller */
++		max_speed = mtk_pcie_get_controller_max_link_speed(pcie);
++
++		/* Set max_link_speed only if the controller supports it */
++		if (max_speed >= 0 && max_speed <= err) {
++			pcie->max_link_speed = err;
++			dev_info(pcie->dev,
++				 "maximum controller link speed Gen%d, overriding to Gen%u",
++				 max_speed, pcie->max_link_speed);
++		}
++	}
++
+ 	/* Try link up */
+ 	err = mtk_pcie_startup_port(pcie);
+ 	if (err)
