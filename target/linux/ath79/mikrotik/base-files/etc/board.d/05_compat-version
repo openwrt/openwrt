@@ -6,7 +6,6 @@
 board_config_update
 
 case "$(board_name)" in
-	mikrotik,routerboard-2011uias-2hnd|\
 	mikrotik,routerboard-493g|\
 	mikrotik,routerboard-911g-5hpacd|\
 	mikrotik,routerboard-911g-xhpnd|\
@@ -17,6 +16,7 @@ case "$(board_name)" in
 	mikrotik,routerboard-sxt-5nd-r2)
 		ucidef_set_compat_version "1.1"
 		;;
+	mikrotik,routerboard-2011uias-2hnd|\
 	mikrotik,routerboard-951g-2hnd|\
 	mikrotik,routerboard-962uigs-5hact2hnt)
 		ucidef_set_compat_version "2.0"
