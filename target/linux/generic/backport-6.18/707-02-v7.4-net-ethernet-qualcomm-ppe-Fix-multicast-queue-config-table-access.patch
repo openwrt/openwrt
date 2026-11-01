@@ -1,0 +1,52 @@
+From 7baaa2bed6fd98d21729889fa55074b0bf9b82f8 Mon Sep 17 00:00:00 2001
+From: Luo Jie <jie.luo@oss.qualcomm.com>
+Date: Sun, 11 Oct 2026 06:02:08 -0700
+Subject: [PATCH] net: ethernet: qualcomm: ppe: Fix multicast queue config
+ table access
+
+PPE queues 0-255 are unicast queues and queues from 256 onwards are
+multicast queues. The multicast queue configuration table has its own
+index, starting from 0 for the first multicast queue, and each entry
+has 3 words.
+
+The driver uses the absolute queue ID as the index of this table, which
+is out of range for every multicast queue. As a result, the multicast
+queue thresholds are never configured, and unrelated QM registers are
+written instead. The driver also accesses 5 words per entry instead
+of 3.
+
+Fix it by converting the queue ID to the index of the multicast queue
+configuration table and accessing only the 3 words of the entry.
+
+Signed-off-by: Luo Jie <jie.luo@oss.qualcomm.com>
+Fixes: 806268dc7efd ("net: ethernet: qualcomm: Initialize PPE queue management for IPQ9574")
+Reviewed-by: Simon Horman <horms@kernel.org>
+Link: https://patch.msgid.link/20261011-qcom_ipq5424_ppe-v2-2-8c7b057e2c43@oss.qualcomm.com
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+
+--- a/drivers/net/ethernet/qualcomm/ppe/ppe_config.c
++++ b/drivers/net/ethernet/qualcomm/ppe/ppe_config.c
+@@ -1473,7 +1473,7 @@ static int ppe_config_qm(struct ppe_devi
+ {
+ 	const struct ppe_qm_queue_config *queue_cfg;
+ 	int ret, i, queue_id, queue_cfg_count;
+-	u32 reg, multicast_queue_cfg[5];
++	u32 reg, multicast_queue_cfg[3];
+ 	u32 unicast_queue_cfg[4];
+ 	u32 group_cfg[3];
+ 
+@@ -1529,8 +1529,13 @@ static int ppe_config_qm(struct ppe_devi
+ 				if (ret)
+ 					goto qm_config_fail;
+ 			} else {
++				/* The multicast queue table is indexed from 0 for
++				 * the first multicast queue, which follows the
++				 * unicast queues.
++				 */
+ 				reg = PPE_AC_MULTICAST_QUEUE_CFG_TBL_ADDR +
+-				      PPE_AC_MULTICAST_QUEUE_CFG_TBL_INC * queue_id;
++				      PPE_AC_MULTICAST_QUEUE_CFG_TBL_INC *
++				      (queue_id - PPE_AC_UNICAST_QUEUE_CFG_TBL_ENTRIES);
+ 
+ 				ret = regmap_bulk_read(ppe_dev->regmap, reg,
+ 						       multicast_queue_cfg,
