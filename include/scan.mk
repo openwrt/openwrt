@@ -54,8 +54,9 @@ define PackageDir
 			$(if $(findstring c,$(OPENWRT_VERBOSE)),,2>/dev/null) || { \
 			mkdir -p "$(TOPDIR)/logs/$(SCAN_DIR)/$(2)"; \
 			$(NO_TRACE_MAKE) --no-print-dir -r DUMP=1 FEED="$(call feedname,$(2))" -C $(SCAN_DIR)/$(2) $(SCAN_MAKEOPTS) > $(TOPDIR)/logs/$(SCAN_DIR)/$(2)/dump.txt 2>&1; \
-			$$(call progress,ERROR: please fix $(SCAN_DIR)/$(2)/Makefile - see logs/$(SCAN_DIR)/$(2)/dump.txt for details\n) \
-			rm -f $$@; \
+			printf '$(if $(filter 1,$(IS_TTY)),\n)%s\n' "ERROR: please fix $(SCAN_DIR)/$(2)/Makefile - see logs/$(SCAN_DIR)/$(2)/dump.txt for details" >&2; \
+			rm -f $$@ $$@.tmp; \
+			exit 1; \
 		}; \
 		echo; \
 	} > $$@.tmp
@@ -74,11 +75,21 @@ endif
 
 $(FILELIST): $(OVERRIDELIST)
 	rm -f $(TMP_DIR)/info/.files-$(SCAN_TARGET)-*
-	find -L $(SCAN_DIR) -mindepth 1 $(if $(SCAN_DEPTH),-maxdepth $(SCAN_DEPTH)) $(SCAN_EXTRA) -name Makefile | xargs grep -aHE 'call $(GREP_STRING)' | sed -e 's#^$(SCAN_DIR)/##' -e 's#/Makefile:.*##' | uniq | awk -v of=$(OVERRIDELIST) -f include/scan.awk > $@
+	set -o pipefail; \
+	trap 'rm -f $@.tmp $(OVERRIDELIST).tmp' EXIT; \
+	: > $(OVERRIDELIST).tmp || exit 1; \
+	find -L $(SCAN_DIR) -mindepth 1 $(if $(SCAN_DEPTH),-maxdepth $(SCAN_DEPTH)) $(SCAN_EXTRA) -name Makefile | \
+		xargs -r sh -c 'grep -aHE "$$@" || [ $$? -eq 1 ]' -- 'call $(GREP_STRING)' | \
+		sed -e 's#^$(SCAN_DIR)/##' -e 's#/Makefile:.*##' | uniq | \
+		awk -v of=$(OVERRIDELIST).tmp -f include/scan.awk > $@.tmp || exit 1; \
+	mv $(OVERRIDELIST).tmp $(OVERRIDELIST) && mv $@.tmp $@
 
 $(TMP_DIR)/info/.files-$(SCAN_TARGET).mk: $(FILELIST)
 	( \
-		cat $< | awk '{print "$(SCAN_DIR)/" $$0 "/Makefile" }' | xargs grep -HE '^ *SCAN_DEPS *= *' | awk -F: '{ gsub(/^.*DEPS *= */, "", $$2); print "DEPS_" $$1 "=" $$2 }'; \
+		set -o pipefail; \
+		awk '{print "$(SCAN_DIR)/" $$0 "/Makefile" }' $< | \
+			xargs -r sh -c 'grep -HE "$$@" || [ $$? -eq 1 ]' -- '^ *SCAN_DEPS *= *' | \
+			awk -F: '{ gsub(/^.*DEPS *= */, "", $$2); print "DEPS_" $$1 "=" $$2 }' || exit 1; \
 		awk -F/ -v deps="$$DEPS" -v of="$(OVERRIDELIST)" ' \
 		BEGIN { \
 			while (getline < (of)) \
@@ -94,16 +105,16 @@ $(TMP_DIR)/info/.files-$(SCAN_TARGET).mk: $(FILELIST)
 				pkg=override[$$NF]; \
 			print "$$(eval $$(call PackageDir," info "," dir "," pkg "))"; \
 		} ' < $<; \
-		true; \
-	) > $@.tmp
+	) > $@.tmp || { rm -f $@.tmp; exit 1; }
 	mv $@.tmp $@
 
--include $(TMP_DIR)/info/.files-$(SCAN_TARGET).mk
+include $(TMP_DIR)/info/.files-$(SCAN_TARGET).mk
 
 $(TARGET_STAMP)::
 	+( \
-		$(NO_TRACE_MAKE) $(FILELIST); \
-		MD5SUM=$$(cat $(FILELIST) $(OVERRIDELIST) | $(MKHASH) md5 | awk '{print $$1}'); \
+		set -o pipefail; \
+		$(NO_TRACE_MAKE) $(FILELIST) || exit 1; \
+		MD5SUM=$$(cat $(FILELIST) $(OVERRIDELIST) | $(MKHASH) md5 | awk '{print $$1}') || exit 1; \
 		[ -f "$@.$$MD5SUM" ] || { \
 			rm -f $@.*; \
 			touch $@.$$MD5SUM; \
@@ -113,7 +124,10 @@ $(TARGET_STAMP)::
 
 $(TMP_DIR)/.$(SCAN_TARGET): $(TARGET_STAMP)
 	$(call progress,Collecting $(SCAN_NAME) info: merging...)
-	-cat $(FILELIST) | awk '{gsub(/\//, "_", $$0);print "$(TMP_DIR)/info/.$(SCAN_TARGET)-" $$0}' | xargs cat > $@ 2>/dev/null
+	set -o pipefail; \
+	trap 'rm -f $@.tmp' EXIT; \
+	cat $(FILELIST) | awk '{gsub(/\//, "_", $$0);print "$(TMP_DIR)/info/.$(SCAN_TARGET)-" $$0}' | \
+		xargs -r cat > $@.tmp && mv $@.tmp $@
 	$(call progress,Collecting $(SCAN_NAME) info: done)
 	echo
 
