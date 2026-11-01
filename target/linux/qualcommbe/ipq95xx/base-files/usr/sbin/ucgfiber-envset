@@ -1,0 +1,181 @@
+#!/bin/sh
+# SPDX-License-Identifier: GPL-2.0-only
+#
+# Switch the system U-Boot boots on the UniFi Cloud Gateway Fiber.
+# usage: ucgfiber-envset ucg_boot <owrt_a|owrt_b|stock>
+#        ucgfiber-envset --trial <owrt_a|owrt_b>
+#
+# The only writer of the U-Boot environment (mtd9) after the install; also the
+# "set" command of luci-app-advanced-reboot, which calls it as "ucg_boot <v>".
+# "ucg_boot <v>" selects <v> and ends a trial boot (upgrade_available=0,
+# bootcount=0); the boot hook uses it to confirm a trial. "--trial <slot>"
+# (sysupgrade) selects the new slot for a trial: U-Boot counts its boots and
+# goes back to the other slot after bootlimit failed ones.
+# Each call is one write (fw_setenv -s) and changes only ucg_boot,
+# upgrade_available, bootcount:
+# - before writing, every other variable must equal the reference env shipped
+#   in the image (bootdelay, bootcmd, load lines, bootlimit); U-Boot's own
+#   runtime variables, which a saveenv during a trial boot also stores, are
+#   allowed (the console ones only as a serial port: "serial" or
+#   "serial@<address>", this U-Boot stores serial@78B1000); otherwise nothing
+#   is written
+# - an env that equals the previous reference (uboot-env-prev.txt, shipped by
+#   an image whose env changed: the env of the image before it) is brought to
+#   the current one in the same write
+# - ucg_boot=install (the install env, u-boot-env-install.bin: U-Boot RAM-boots
+#   /ucg/initramfs.itb from stock's p6) is accepted as the current value, so the
+#   installation can end with "ucg_boot owrt_a"; this tool never sets it
+# - owrt_a/owrt_b only when that slot's kernel partition is GPT partition 7/9
+#   (U-Boot reads it by number) and starts with a FIT header
+# - after writing, the env is read back and compared again
+# Exit code 0 only when the env reads back as wanted. Messages go to stderr:
+# stdout stays empty, as luci-app-advanced-reboot expects of its "set" command.
+# POSIX sh only (busybox ash on OpenWrt).
+
+REF="${UCG_ENV_REF:-/usr/share/ucgfiber/uboot-env.txt}"
+PREV="${UCG_ENV_PREV:-${REF%.txt}-prev.txt}"
+SYSBLOCK="${UCG_SYSBLOCK:-/sys/class/block}"
+DEVDIR="${UCG_DEVDIR:-/dev}"
+LOCK=/tmp/ucgfiber-envset.lock
+LOCKED=
+
+# written by this tool and by U-Boot (trial counter)
+MUTABLE='ucg_boot|upgrade_available|bootcount'
+# set by U-Boot at every start; stored too when U-Boot saves the env
+RUNTIME='ethact|ethaddr|fdt_high|fdtcontroladdr|flash_type|initrd_high|machid|soc_version_major|soc_version_minor|stdin|stdout|stderr'
+
+die() {
+	echo "ucgfiber-envset: $*" >&2
+	exit 1
+}
+
+cleanup() {
+	[ -n "$LOCKED" ] && rm -rf "$LOCK"
+}
+
+# one run at a time; a lock left by a process that no longer exists is taken over
+take_lock() {
+	local n=0 pid
+
+	while ! mkdir "$LOCK" 2>/dev/null; do
+		pid="$(cat "$LOCK/pid" 2>/dev/null)"
+		if [ -n "$pid" ] && ! kill -0 "$pid" 2>/dev/null; then
+			rm -rf "$LOCK"
+			continue
+		fi
+		n=$((n + 1))
+		[ "$n" -lt 30 ] || die "another run holds $LOCK"
+		sleep 1
+	done
+	echo $$ >"$LOCK/pid"
+	LOCKED=1
+}
+
+# every variable except the mutable and the runtime ones, sorted
+env_rest() { # <file>
+	grep -v -E "^($MUTABLE|$RUNTIME)=" "$1" | sort
+}
+
+# current env, sorted, into <file>
+read_env() { # <file>
+	fw_printenv 2>/dev/null | sort >"$1" && [ -s "$1" ]
+}
+
+# the env's mutable and runtime variables have values U-Boot and this tool use
+check_values() { # <file>
+	local bad
+
+	bad="$(grep -E "^($MUTABLE|$RUNTIME)=" "$1" | grep -v -E \
+		'^ucg_boot=(owrt_a|owrt_b|stock|install)$|^upgrade_available=[01]$|^bootcount=[0-9a-f]{1,2}$|^(stdin|stdout|stderr)=serial(@[0-9A-Fa-f]+)?$|^(ethact|ethaddr|fdt_high|fdtcontroladdr|flash_type|initrd_high|machid|soc_version_major|soc_version_minor)=')"
+	[ -z "$bad" ] || {
+		echo "$bad" | sed 's/^/unexpected: /' >&2
+		return 1
+	}
+}
+
+# GPT partition number and device of the partition named <label>
+find_part() { # <label>
+	local u
+
+	for u in "$SYSBLOCK"/*/uevent; do
+		grep -qx "PARTNAME=$1" "$u" 2>/dev/null || continue
+		echo "$(sed -n 's/^PARTN=//p' "$u") $DEVDIR/$(sed -n 's/^DEVNAME=//p' "$u")"
+		return 0
+	done
+	return 1
+}
+
+# the slot's kernel partition has the number U-Boot reads and holds a FIT
+check_slot() { # <a|b>
+	local label="owrt_kernel_$1" want part num dev magic
+
+	case "$1" in a) want=7 ;; b) want=9 ;; esac
+	part="$(find_part "$label")" || die "no partition named $label"
+	num="${part%% *}" dev="${part#* }"
+	[ "$num" = "$want" ] || die "$label is partition $num, U-Boot reads partition $want"
+	magic="$(hexdump -v -n 4 -e '1/1 "%02x"' "$dev" 2>/dev/null)"
+	[ "$magic" = d00dfeed ] || die "$label ($dev) holds no FIT image"
+}
+
+usage="usage: ucgfiber-envset ucg_boot <owrt_a|owrt_b|stock> | --trial <owrt_a|owrt_b>"
+[ "$#" = 2 ] || die "$usage"
+case "$1" in
+	ucg_boot)
+		case "$2" in owrt_a | owrt_b | stock) ;; *) die "unknown value '$2' (owrt_a, owrt_b, stock)" ;; esac
+		trial=0 ;;
+	--trial)
+		case "$2" in owrt_a | owrt_b) ;; *) die "a trial needs owrt_a or owrt_b, not '$2'" ;; esac
+		trial=1 ;;
+	*) die "$usage" ;;
+esac
+value="$2"
+[ -f "$REF" ] || die "reference env $REF missing"
+
+trap cleanup EXIT INT TERM
+take_lock
+tmp="$LOCK"
+
+read_env "$tmp/before" || die "cannot read the U-Boot env (fw_printenv)"
+env_rest "$REF" >"$tmp/ref"
+env_rest "$tmp/before" >"$tmp/rest"
+migrate=
+if ! cmp -s "$tmp/ref" "$tmp/rest"; then
+	if [ -f "$PREV" ] && env_rest "$PREV" | cmp -s - "$tmp/rest"; then
+		migrate=1
+	else
+		# no diff in OpenWrt's busybox
+		grep -vxF -f "$tmp/rest" "$tmp/ref" | sed 's/^/expected: /' >&2
+		grep -vxF -f "$tmp/ref" "$tmp/rest" | sed 's/^/found:    /' >&2
+		die "env differs from $REF (lines above), nothing written"
+	fi
+fi
+check_values "$tmp/before" || die "env has unexpected values (lines above), nothing written"
+
+case "$value" in
+	owrt_a) check_slot a ;;
+	owrt_b) check_slot b ;;
+esac
+
+# name=value: understood by U-Boot's tools/env (OpenWrt's fw_setenv) and by
+# libubootenv; a name alone deletes the variable
+: >"$tmp/script"
+if [ -n "$migrate" ]; then
+	# every reference variable; the previous reference's others deleted
+	cat "$tmp/ref" >>"$tmp/script"
+	cut -d= -f1 "$tmp/ref" >"$tmp/names"
+	env_rest "$PREV" | cut -d= -f1 | grep -vxF -f "$tmp/names" >>"$tmp/script"
+fi
+printf 'ucg_boot=%s\nupgrade_available=%s\nbootcount=0\n' "$value" "$trial" >>"$tmp/script"
+[ -z "$migrate" ] && grep -qx "ucg_boot=$value" "$tmp/before" && grep -qx "upgrade_available=$trial" "$tmp/before" &&
+	grep -qx "bootcount=0" "$tmp/before" && { echo "ucg_boot is already $value (trial $trial)" >&2; exit 0; }
+
+fw_setenv -s "$tmp/script" || die "fw_setenv failed"
+
+read_env "$tmp/after" || die "cannot read the env back after writing"
+env_rest "$tmp/after" >"$tmp/rest"
+cmp -s "$tmp/ref" "$tmp/rest" || die "after writing, the env differs from $REF"
+check_values "$tmp/after" || die "after writing, the env has unexpected values"
+[ -n "$migrate" ] && echo "env brought from $PREV to $REF" >&2
+grep -qx "ucg_boot=$value" "$tmp/after" && grep -qx "upgrade_available=$trial" "$tmp/after" &&
+	grep -qx "bootcount=0" "$tmp/after" || die "after writing, ucg_boot/upgrade_available/bootcount are not $value/$trial/0"
+echo "ucg_boot=$value upgrade_available=$trial" >&2
