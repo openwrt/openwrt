@@ -219,6 +219,7 @@ platform_do_upgrade() {
 	tplink,tl-xdr6086|\
 	tplink,tl-xdr6088|\
 	tplink,tl-xtr8488|\
+	unielec,u7986-06|\
 	wavlink,wl-wnt100x3-ubootmod|\
 	xiaomi,mi-router-ax3000t-ubootmod|\
 	xiaomi,redmi-router-ax6000-ubootmod|\
@@ -471,6 +472,7 @@ platform_check_image() {
 	tplink,tl-xdr6086|\
 	tplink,tl-xdr6088|\
 	tplink,tl-xtr8488|\
+	unielec,u7986-06|\
 	wavlink,wl-wnt100x3-ubootmod|\
 	xiaomi,mi-router-ax3000t-ubootmod|\
 	xiaomi,redmi-router-ax6000-ubootmod|\
@@ -514,7 +516,8 @@ platform_copy_config() {
 	bananapi,bpi-r4-pro-8x|\
 	cmcc,rax3000m|\
 	gatonetworks,gdsp|\
-	mediatek,mt7988a-rfb)
+	mediatek,mt7988a-rfb|\
+	unielec,u7986-06)
 		if [ "$CI_METHOD" = "emmc" ]; then
 			emmc_copy_config
 		fi
