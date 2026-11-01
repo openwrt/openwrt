@@ -69,6 +69,26 @@ ppp_opt_quote() {
 	printf '%s' "$1" | sed 's/\\/\\\\/g; s/"/\\"/g'
 }
 
+ppp_is_auth_peer_opt()
+{
+	case "$1" in
+		auth|require-pap|+pap|require-chap|+chap|require-mschap|+mschap|require-mschap-v2|+mschap-v2|require-eap)
+			return 0 ;;
+	esac
+	return 1
+}
+
+ppp_optfile_has_auth_peer()
+{
+	local arg
+
+	[ -r "$1" ] || return 1
+	for arg in $(sed 's/#.*//' "$1"); do
+		ppp_is_auth_peer_opt "$arg" && return 0
+	done
+	return 1
+}
+
 ppp_install_file() {
 	local file="$1" owner="$2" tmp
 
@@ -188,12 +208,31 @@ ppp_generic_setup() {
 		for arg in "$@"; do
 			[ -c "$arg" ] && chown ppp "$arg"
 		done
-		for secret in chap-secrets pap-secrets; do
-			[ -f "/etc/ppp/$secret" ] || continue
-			ppp_install_file "/var/run/pppd/$config.$secret" ppp \
-				< "/etc/ppp/$secret" || continue
-			secrets="$secrets $secret /var/run/pppd/$config.$secret"
+		local auth_peer prev
+		set -f
+		for arg in "$@" $pppd_options; do
+			if ppp_is_auth_peer_opt "$arg"; then
+				auth_peer=1
+				break
+			fi
+			if [ "$prev" = file ] && ppp_optfile_has_auth_peer "$arg"; then
+				auth_peer=1
+				break
+			fi
+			prev="$arg"
 		done
+		if [ -z "$auth_peer" ] && ppp_optfile_has_auth_peer /etc/ppp/options; then
+			auth_peer=1
+		fi
+		set +f
+		if [ -z "$username" ] || [ -z "$password" ] || [ -n "$auth_peer" ]; then
+			for secret in chap-secrets pap-secrets; do
+				[ -f "/etc/ppp/$secret" ] || continue
+				ppp_install_file "/var/run/pppd/$config.$secret" ppp \
+					< "/etc/ppp/$secret" || continue
+				secrets="$secrets $secret /var/run/pppd/$config.$secret"
+			done
+		fi
 	}
 
 	local optfile
