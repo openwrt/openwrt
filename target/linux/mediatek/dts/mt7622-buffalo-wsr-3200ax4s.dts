@@ -13,6 +13,23 @@
 		reg = <0 0x40000000 0 0x1f000000>;
 		device_type = "memory";
 	};
+
+	/* UBI over the UBI area of "firmware" and the 54 MiB WTB partition: 72 MiB */
+	virtual_flash {
+		compatible = "mtd-concat";
+		devices = <&ubi_fw &ubi_wtb>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "ubi";
+				reg = <0x0 0x4800000>;
+			};
+		};
+	};
 };
 
 &pio {
@@ -158,11 +175,26 @@
 				};
 			};
 
+			/*
+			 * "Image1" of the stock U-Boot: 6 MiB TRX image with the kernel, then the UBI.
+			 * It is not parsed as TRX any more, the partitions that the parser used to
+			 * create ("linux" and "ubi") are described below.
+			 */
 			partition@2c0000 {
-				compatible = "brcm,trx";
-				brcm,trx-magic = <0x33504844>;
 				label = "firmware";
 				reg = <0x2c0000 0x1800000>;
+			};
+
+			/* kernel: TRX header (28 bytes) is not part of it */
+			partition@2c001c {
+				label = "linux";
+				reg = <0x2c001c 0x5fffe4>;
+			};
+
+			/* the UBI area of "firmware"; first part of the "ubi" partition of virtual_flash */
+			ubi_fw: partition@8c0000 {
+				label = "ubi_fw";
+				reg = <0x8c0000 0x1200000>;
 			};
 
 			partition@1ac0000 {
@@ -182,10 +214,10 @@
 				read-only;
 			};
 
-			partition@36c0000 {
+			/* unused by OpenWrt, holds the stock "dpi" UBI; second part of "ubi" */
+			ubi_wtb: partition@36c0000 {
 				label = "WTB";
 				reg = <0x36c0000 0x3600000>;
-				read-only;
 			};
 		};
 	};
