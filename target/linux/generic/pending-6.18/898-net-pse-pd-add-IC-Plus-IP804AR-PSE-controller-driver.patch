@@ -1,0 +1,997 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Carlo Szelinsky <github@szelinsky.de>
+Date: Fri, 31 Oct 2026 10:00:00 +0100
+Subject: [PATCH] net: pse-pd: add IC Plus IP804AR PSE controller driver
+
+The IP804AR is a 4-port IEEE 802.3af/at PoE PSE controller with
+integrated power switches, found for example in the Cudy C200P PoE
+router. It is controlled over I2C and, when strapped to manual mode,
+leaves port enable/disable to the host. Ports come up disabled in that
+mode, so without a driver the PoE outputs are dead.
+
+Add a pse-pd driver that exposes admin state, power detection status,
+extended fault state, class, delivered power and the 802.3af/at power
+limit through ethtool, reports the supply voltage through the PI
+regulator, and reports power and fault events by polling the chip, as
+its interrupt line is not wired on known boards. Ports are described
+through pse-pis and left off at probe; enabling them is up to userspace.
+Port LEDs are driven by the chip itself.
+
+The event reporting relies on devm_pse_poll_helper(), which is pending
+upstream and carried in this tree as the 897 series.
+
+Signed-off-by: Carlo Szelinsky <github@szelinsky.de>
+---
+--- /dev/null
++++ b/Documentation/devicetree/bindings/net/pse-pd/icplus,ip804ar.yaml
+@@ -0,0 +1,128 @@
++# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
++%YAML 1.2
++---
++$id: http://devicetree.org/schemas/net/pse-pd/icplus,ip804ar.yaml#
++$schema: http://devicetree.org/meta-schemas/core.yaml#
++
++title: IC Plus IP804AR Power Sourcing Equipment controller
++
++maintainers:
++  - Carlo Szelinsky <github@szelinsky.de>
++
++description: |
++  The IP804AR is a 4-port IEEE 802.3af/at PSE controller with integrated
++  power switches, controlled over I2C. Host control of the ports requires
++  the chip to be strapped to manual operation mode.
++
++allOf:
++  - $ref: pse-controller.yaml#
++
++properties:
++  compatible:
++    const: icplus,ip804ar
++
++  reg:
++    maxItems: 1
++
++  reset-gpios:
++    description: GPIO connected to the active low RstN pin.
++    maxItems: 1
++
++  channels:
++    description: The four physical power delivery channels of the chip,
++      referenced by the PSE PIs through their pairsets property.
++    type: object
++    additionalProperties: false
++
++    properties:
++      "#address-cells":
++        const: 1
++
++      "#size-cells":
++        const: 0
++
++    patternProperties:
++      '^channel@[0-3]$':
++        type: object
++        additionalProperties: false
++
++        properties:
++          reg:
++            maxItems: 1
++
++        required:
++          - reg
++
++    required:
++      - "#address-cells"
++      - "#size-cells"
++
++required:
++  - compatible
++  - reg
++  - pse-pis
++
++unevaluatedProperties: false
++
++examples:
++  - |
++    #include <dt-bindings/gpio/gpio.h>
++
++    i2c {
++      #address-cells = <1>;
++      #size-cells = <0>;
++
++      ethernet-pse@74 {
++        compatible = "icplus,ip804ar";
++        reg = <0x74>;
++        reset-gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
++
++        channels {
++          #address-cells = <1>;
++          #size-cells = <0>;
++
++          phys0: channel@0 {
++            reg = <0>;
++          };
++          phys1: channel@1 {
++            reg = <1>;
++          };
++          phys2: channel@2 {
++            reg = <2>;
++          };
++          phys3: channel@3 {
++            reg = <3>;
++          };
++        };
++
++        pse-pis {
++          #address-cells = <1>;
++          #size-cells = <0>;
++
++          pse_pi0: pse-pi@0 {
++            reg = <0>;
++            #pse-cells = <0>;
++            pairset-names = "alternative-a";
++            pairsets = <&phys0>;
++          };
++          pse_pi1: pse-pi@1 {
++            reg = <1>;
++            #pse-cells = <0>;
++            pairset-names = "alternative-a";
++            pairsets = <&phys1>;
++          };
++          pse_pi2: pse-pi@2 {
++            reg = <2>;
++            #pse-cells = <0>;
++            pairset-names = "alternative-a";
++            pairsets = <&phys2>;
++          };
++          pse_pi3: pse-pi@3 {
++            reg = <3>;
++            #pse-cells = <0>;
++            pairset-names = "alternative-a";
++            pairsets = <&phys3>;
++          };
++        };
++      };
++    };
+--- a/drivers/net/pse-pd/Kconfig
++++ b/drivers/net/pse-pd/Kconfig
+@@ -52,4 +52,15 @@
+ 
+ 	  To compile this driver as a module, choose M here: the
+ 	  module will be called tps23881.
++
++config PSE_ICPLUS_IP804
++	tristate "IC Plus IP804AR PSE controller"
++	depends on I2C
++	help
++	  This module provides support for the IC Plus IP804AR 4-port
++	  IEEE 802.3af/at Ethernet Power Sourcing Equipment controller.
++
++	  To compile this driver as a module, choose M here: the
++	  module will be called icplus_ip804.
++
+ endif
+--- a/drivers/net/pse-pd/Makefile
++++ b/drivers/net/pse-pd/Makefile
+@@ -7,3 +7,4 @@
+ obj-$(CONFIG_PSE_PD692X0) += pd692x0.o
+ obj-$(CONFIG_PSE_SI3474) += si3474.o
+ obj-$(CONFIG_PSE_TPS23881) += tps23881.o
++obj-$(CONFIG_PSE_ICPLUS_IP804) += icplus_ip804.o
+--- /dev/null
++++ b/drivers/net/pse-pd/icplus_ip804.c
+@@ -0,0 +1,814 @@
++// SPDX-License-Identifier: GPL-2.0-only
++/* IC Plus IP804AR PoE PSE controller driver
++ *
++ * The IP804AR is a 4-port IEEE 802.3af/at PSE controller with integrated
++ * power switches, controlled over I2C through a paged 8-bit register map.
++ * It only accepts host control of the ports when strapped to manual mode;
++ * in auto mode it powers ports on its own.
++ *
++ * Copyright (c) 2026 Carlo Szelinsky <github@szelinsky.de>
++ */
++
++#include <linux/bitfield.h>
++#include <linux/delay.h>
++#include <linux/gpio/consumer.h>
++#include <linux/i2c.h>
++#include <linux/iopoll.h>
++#include <linux/math.h>
++#include <linux/module.h>
++#include <linux/mutex.h>
++#include <linux/of.h>
++#include <linux/property.h>
++#include <linux/pse-pd/pse.h>
++#include <linux/slab.h>
++#include <linux/unaligned.h>
++
++#define IP804_MAX_PORTS			4
++
++/* Three register pages are selected through bits 7:6 of register 0x00,
++ * which is mirrored in every page. Bits 5:4 hold the I2C bus timeout
++ * configuration and bits 2:0 the strapped address; neither is changed by
++ * the chip or this driver, so they are sampled once and replayed on every
++ * page switch. A regmap range would instead read-modify-write the selector
++ * on each switch. Registers are addressed below as page * 0x100 + offset.
++ */
++#define IP804_PAGE_SIZE			0x100
++#define IP804_REG(page, reg)		((page) * IP804_PAGE_SIZE + (reg))
++#define IP804_REG_PAGE(reg)		((reg) / IP804_PAGE_SIZE)
++#define IP804_REG_OFFSET(reg)		((reg) % IP804_PAGE_SIZE)
++
++#define IP804_REG_PAGE_SEL		0x00
++#define   IP804_PAGE_SEL_MASK		GENMASK(7, 6)
++
++/* Page 0: analog front end and measurements */
++#define IP804_P0_AFAT_MODE		IP804_REG(0, 0x25)	/* bit n: 1 = 802.3at */
++#define IP804_P0_CLASS_P10		IP804_REG(0, 0x88)	/* [2:0] port 0, [6:4] port 1 */
++#define IP804_P0_CLASS_P32		IP804_REG(0, 0x89)	/* [2:0] port 2, [6:4] port 3 */
++#define   IP804_CLASS_MASK		GENMASK(2, 0)
++#define   IP804_CLASS_SHIFT(n)		(((n) & 1) * 4)
++#define   IP804_CLASS_UNKNOWN		5
++#define IP804_P0_SUPPLY_V		IP804_REG(0, 0xe0)	/* 16-bit BE, 1/16 V */
++#define   IP804_SUPPLY_V_MASK		GENMASK(11, 0)
++#define IP804_P0_IVT_POLL		IP804_REG(0, 0xe3)
++#define   IP804_IVT_POLL_EN		BIT(5)
++#define   IP804_IVT_POLL_INTERVAL	GENMASK(3, 0)		/* 0.25 ms units */
++
++/* Page 1: system, status and port state machine */
++#define IP804_P1_SYS_CONFIG		IP804_REG(1, 0x01)
++#define   IP804_OP_MODE			GENMASK(7, 6)
++#define   IP804_OP_MODE_MANUAL		1
++#define IP804_P1_HW_REV_MSB		IP804_REG(1, 0x03)
++#define   IP804_HW_REV_MSB		0x04
++#define IP804_P1_HW_REV_LSB		IP804_REG(1, 0x04)
++#define IP804_P1_PORT_EVENT(n)		IP804_REG(1, 0x70 + (n))	/* W1C */
++#define   IP804_EV_ICUT			BIT(0)
++#define   IP804_EV_ILIM			BIT(1)
++#define   IP804_EV_MPS			BIT(2)
++#define   IP804_EV_THERMAL		BIT(4)
++#define   IP804_EV_ILIMIT		BIT(5)
++#define   IP804_EV_TRUNK_V		BIT(6)
++#define   IP804_EV_TEMP_LIMIT		BIT(7)
++#define   IP804_EV_OVER_CURRENT		(IP804_EV_ICUT | IP804_EV_ILIM | \
++					 IP804_EV_ILIMIT)
++#define   IP804_EV_OVER_TEMP		(IP804_EV_THERMAL | IP804_EV_TEMP_LIMIT)
++#define IP804_P1_PW_STATUS		IP804_REG(1, 0x82)	/* bit n: power on */
++#define IP804_P1_SYS_EVENT		IP804_REG(1, 0x84)	/* W1C */
++#define   IP804_SYS_INIT_DONE		BIT(0)
++#define IP804_P1_PORT_STATE(n)		IP804_REG(1, 0x90 + (n))
++#define   IP804_STATE_MASK		GENMASK(4, 0)
++#define   IP804_STATE_TEST_MODE		1
++#define   IP804_STATE_TEST_ERROR	2
++#define   IP804_STATE_POWER_DENIED	14
++#define   IP804_STATE_POWER_ON		16
++#define   IP804_STATE_ERROR_DELAY	19
++#define IP804_P1_PORT_CTRL(n)		IP804_REG(1, 0x98 + (n))
++#define   IP804_PSE_EN			GENMASK(1, 0)
++#define   IP804_PSE_EN_OFF		0
++#define   IP804_PSE_EN_ON		1
++
++/* Page 2: power budget */
++#define IP804_P2_PORT_POWER(n)		IP804_REG(2, 0x30 + 2 * (n))	/* 16-bit BE, 1/256 W */
++
++/* IEEE 802.3 PSE output power per type in mW */
++#define IP804_PW_AF			15400
++#define IP804_PW_AT			30000
++
++/* The core converts a requested limit mW -> uA -> mW using two independent
++ * supply voltage reads. The supply reading moves by a few LSB between
++ * them, so a 1 % window is needed to recognise the exact type values.
++ */
++#define IP804_PW_WINDOW(mw)		((mw) / 100)
++
++/* Unit conversions */
++#define IP804_UV_PER_LSB		62500	/* 1/16 V */
++#define IP804_MW_PER_W			1000
++#define IP804_PW_LSB_PER_W		256
++
++/* The datasheet gives no minimum reset pulse width and 100 ms from reset
++ * release to I2C readiness; the chip was seen to need longer.
++ */
++#define IP804_RESET_PULSE_US		10000
++#define IP804_READY_TIMEOUT_US		5000000
++#define IP804_READY_POLL_US		20000
++
++/* IVT poll interval written to IP804_P0_IVT_POLL, 8 * 0.25 ms = 2 ms */
++#define IP804_IVT_POLL_DEFAULT		8
++
++struct ip804_priv {
++	struct i2c_client *client;
++	struct pse_controller_dev pcdev;
++	/* Serialises the page selector with the register access behind it */
++	struct mutex lock;
++	unsigned int last_pw_status;
++	unsigned int last_ev[IP804_MAX_PORTS];
++	u8 chan[IP804_MAX_PORTS];	/* PI index to chip port */
++	u8 page_sel_low;		/* reg 0x00 bits outside the page field */
++	s8 cur_page;
++};
++
++static struct ip804_priv *to_ip804(struct pse_controller_dev *pcdev)
++{
++	return container_of(pcdev, struct ip804_priv, pcdev);
++}
++
++static int ip804_select_page(struct ip804_priv *priv, unsigned int page)
++{
++	int ret;
++
++	if (page == priv->cur_page)
++		return 0;
++
++	ret = i2c_smbus_write_byte_data(priv->client, IP804_REG_PAGE_SEL,
++					FIELD_PREP(IP804_PAGE_SEL_MASK, page) |
++					priv->page_sel_low);
++	if (ret) {
++		/* Unknown chip state, force a new selection next time */
++		priv->cur_page = -1;
++		return ret;
++	}
++
++	priv->cur_page = page;
++	return 0;
++}
++
++static int ip804_read(struct ip804_priv *priv, unsigned int reg,
++		      unsigned int *val)
++{
++	int ret;
++
++	mutex_lock(&priv->lock);
++	ret = ip804_select_page(priv, IP804_REG_PAGE(reg));
++	if (!ret)
++		ret = i2c_smbus_read_byte_data(priv->client,
++					       IP804_REG_OFFSET(reg));
++	if (ret < 0)
++		priv->cur_page = -1;
++	mutex_unlock(&priv->lock);
++	if (ret < 0)
++		return ret;
++
++	*val = ret;
++	return 0;
++}
++
++static int ip804_write(struct ip804_priv *priv, unsigned int reg,
++		       unsigned int val)
++{
++	int ret;
++
++	mutex_lock(&priv->lock);
++	ret = ip804_select_page(priv, IP804_REG_PAGE(reg));
++	if (!ret)
++		ret = i2c_smbus_write_byte_data(priv->client,
++						IP804_REG_OFFSET(reg), val);
++	if (ret)
++		priv->cur_page = -1;
++	mutex_unlock(&priv->lock);
++
++	return ret;
++}
++
++/* Not for write-1-to-clear registers: an unchanged value skips the write */
++static int ip804_update_bits(struct ip804_priv *priv, unsigned int reg,
++			     unsigned int mask, unsigned int val)
++{
++	unsigned int old;
++	int ret;
++
++	mutex_lock(&priv->lock);
++	ret = ip804_select_page(priv, IP804_REG_PAGE(reg));
++	if (ret)
++		goto out;
++
++	ret = i2c_smbus_read_byte_data(priv->client, IP804_REG_OFFSET(reg));
++	if (ret < 0)
++		goto out;
++
++	old = ret;
++	val = (old & ~mask) | (val & mask);
++	ret = 0;
++	if (val != old)
++		ret = i2c_smbus_write_byte_data(priv->client,
++						IP804_REG_OFFSET(reg), val);
++out:
++	if (ret < 0)
++		priv->cur_page = -1;
++	mutex_unlock(&priv->lock);
++	return ret;
++}
++
++/* 16-bit measurement registers must be read in one two byte transaction,
++ * MSB first, or the chip returns inconsistent halves.
++ */
++static int ip804_read_be16(struct ip804_priv *priv, unsigned int reg,
++			   unsigned int *val)
++{
++	u8 buf[2];
++	int ret;
++
++	mutex_lock(&priv->lock);
++	ret = ip804_select_page(priv, IP804_REG_PAGE(reg));
++	if (!ret)
++		ret = i2c_smbus_read_i2c_block_data(priv->client,
++						    IP804_REG_OFFSET(reg),
++						    sizeof(buf), buf);
++	if (ret < 0)
++		priv->cur_page = -1;
++	mutex_unlock(&priv->lock);
++	if (ret < 0)
++		return ret;
++	if (ret != sizeof(buf))
++		return -EIO;
++
++	*val = get_unaligned_be16(buf);
++	return 0;
++}
++
++static int ip804_pi_enable(struct pse_controller_dev *pcdev, int id)
++{
++	struct ip804_priv *priv = to_ip804(pcdev);
++
++	return ip804_update_bits(priv, IP804_P1_PORT_CTRL(priv->chan[id]),
++				 IP804_PSE_EN,
++				 FIELD_PREP(IP804_PSE_EN, IP804_PSE_EN_ON));
++}
++
++static int ip804_pi_disable(struct pse_controller_dev *pcdev, int id)
++{
++	struct ip804_priv *priv = to_ip804(pcdev);
++	unsigned int port = priv->chan[id];
++
++	/* A fault reported for a port the host switched off is stale */
++	priv->last_ev[port] = 0;
++
++	return ip804_update_bits(priv, IP804_P1_PORT_CTRL(port), IP804_PSE_EN,
++				 FIELD_PREP(IP804_PSE_EN, IP804_PSE_EN_OFF));
++}
++
++static int ip804_port_is_enabled(struct ip804_priv *priv, unsigned int port)
++{
++	unsigned int val;
++	int ret;
++
++	ret = ip804_read(priv, IP804_P1_PORT_CTRL(port), &val);
++	if (ret)
++		return ret;
++
++	return FIELD_GET(IP804_PSE_EN, val) != IP804_PSE_EN_OFF;
++}
++
++static int ip804_pi_get_admin_state(struct pse_controller_dev *pcdev, int id,
++				    struct pse_admin_state *admin_state)
++{
++	struct ip804_priv *priv = to_ip804(pcdev);
++	int ret;
++
++	ret = ip804_port_is_enabled(priv, priv->chan[id]);
++	if (ret < 0) {
++		admin_state->c33_admin_state =
++			ETHTOOL_C33_PSE_ADMIN_STATE_UNKNOWN;
++		return ret;
++	}
++
++	admin_state->c33_admin_state = ret ?
++		ETHTOOL_C33_PSE_ADMIN_STATE_ENABLED :
++		ETHTOOL_C33_PSE_ADMIN_STATE_DISABLED;
++
++	return 0;
++}
++
++static int ip804_pi_get_pw_status(struct pse_controller_dev *pcdev, int id,
++				  struct pse_pw_status *pw_status)
++{
++	struct ip804_priv *priv = to_ip804(pcdev);
++	enum ethtool_c33_pse_pw_d_status status;
++	unsigned int port = priv->chan[id];
++	unsigned int val;
++	int ret;
++
++	pw_status->c33_pw_status = ETHTOOL_C33_PSE_PW_D_STATUS_UNKNOWN;
++
++	ret = ip804_port_is_enabled(priv, port);
++	if (ret < 0)
++		return ret;
++	if (!ret) {
++		pw_status->c33_pw_status = ETHTOOL_C33_PSE_PW_D_STATUS_DISABLED;
++		return 0;
++	}
++
++	ret = ip804_read(priv, IP804_P1_PW_STATUS, &val);
++	if (ret)
++		return ret;
++	if (val & BIT(port)) {
++		pw_status->c33_pw_status =
++			ETHTOOL_C33_PSE_PW_D_STATUS_DELIVERING;
++		return 0;
++	}
++
++	ret = ip804_read(priv, IP804_P1_PORT_STATE(port), &val);
++	if (ret)
++		return ret;
++
++	switch (FIELD_GET(IP804_STATE_MASK, val)) {
++	case IP804_STATE_TEST_MODE:
++	case IP804_STATE_TEST_ERROR:
++		status = ETHTOOL_C33_PSE_PW_D_STATUS_TEST;
++		break;
++	case IP804_STATE_POWER_DENIED:
++		status = ETHTOOL_C33_PSE_PW_D_STATUS_OTHERFAULT;
++		break;
++	case IP804_STATE_ERROR_DELAY:
++		status = ETHTOOL_C33_PSE_PW_D_STATUS_FAULT;
++		break;
++	case IP804_STATE_POWER_ON:
++		status = ETHTOOL_C33_PSE_PW_D_STATUS_DELIVERING;
++		break;
++	default:
++		/* Idle, detection, classification and power-up states */
++		status = ETHTOOL_C33_PSE_PW_D_STATUS_SEARCHING;
++		break;
++	}
++
++	pw_status->c33_pw_status = status;
++	return 0;
++}
++
++static int ip804_pi_get_ext_state(struct pse_controller_dev *pcdev, int id,
++				  struct pse_ext_state_info *ext_state_info)
++{
++	struct ethtool_c33_pse_ext_state_info *info;
++	struct ip804_priv *priv = to_ip804(pcdev);
++	unsigned int port = priv->chan[id];
++	unsigned int val, ev;
++	int ret;
++
++	info = &ext_state_info->c33_ext_state_info;
++	ret = ip804_read(priv, IP804_P1_PORT_STATE(port), &val);
++	if (ret)
++		return ret;
++
++	/* The chip only denies power when its trunk or total budget is used up */
++	if (FIELD_GET(IP804_STATE_MASK, val) == IP804_STATE_POWER_DENIED) {
++		info->c33_pse_ext_state =
++			ETHTOOL_C33_PSE_EXT_STATE_POWER_NOT_AVAILABLE;
++		info->power_not_available =
++			ETHTOOL_C33_PSE_EXT_SUBSTATE_POWER_NOT_AVAILABLE_BUDGET_EXCEEDED;
++		return 0;
++	}
++
++	/* Faults are latched by the poll handler until the port recovers */
++	ev = priv->last_ev[port];
++	if (ev & IP804_EV_ILIM) {
++		info->c33_pse_ext_state =
++			ETHTOOL_C33_PSE_EXT_STATE_SHORT_DETECTED;
++		info->short_detected =
++			ETHTOOL_C33_PSE_EXT_SUBSTATE_SHORT_DETECTED_SHORT_CONDITION;
++	} else if (ev & (IP804_EV_ICUT | IP804_EV_ILIMIT)) {
++		info->c33_pse_ext_state =
++			ETHTOOL_C33_PSE_EXT_STATE_OVLD_DETECTED;
++		info->ovld_detected =
++			ETHTOOL_C33_PSE_EXT_SUBSTATE_OVLD_DETECTED_OVERLOAD;
++	} else if (ev & IP804_EV_OVER_TEMP) {
++		info->c33_pse_ext_state =
++			ETHTOOL_C33_PSE_EXT_STATE_ERROR_CONDITION;
++		info->error_condition =
++			ETHTOOL_C33_PSE_EXT_SUBSTATE_ERROR_CONDITION_DETECTED_OVER_TEMP;
++	}
++
++	return 0;
++}
++
++static int ip804_pi_get_pw_class(struct pse_controller_dev *pcdev, int id)
++{
++	struct ip804_priv *priv = to_ip804(pcdev);
++	unsigned int port = priv->chan[id];
++	unsigned int reg, val;
++	int ret;
++
++	reg = port < 2 ? IP804_P0_CLASS_P10 : IP804_P0_CLASS_P32;
++	ret = ip804_read(priv, reg, &val);
++	if (ret)
++		return ret;
++
++	/* 5 means no classification result. A negative return would fail the
++	 * whole status request, so report 0 like a port without a PD.
++	 */
++	val = (val >> IP804_CLASS_SHIFT(port)) & IP804_CLASS_MASK;
++	if (val >= IP804_CLASS_UNKNOWN)
++		return 0;
++
++	return val;
++}
++
++static int ip804_pi_get_actual_pw(struct pse_controller_dev *pcdev, int id)
++{
++	struct ip804_priv *priv = to_ip804(pcdev);
++	unsigned int port = priv->chan[id];
++	unsigned int val;
++	int ret;
++
++	ret = ip804_read(priv, IP804_P1_PW_STATUS, &val);
++	if (ret)
++		return ret;
++	if (!(val & BIT(port)))
++		return 0;
++
++	ret = ip804_read_be16(priv, IP804_P2_PORT_POWER(port), &val);
++	if (ret)
++		return ret;
++
++	return val * IP804_MW_PER_W / IP804_PW_LSB_PER_W;
++}
++
++static int ip804_pi_get_voltage(struct pse_controller_dev *pcdev, int id)
++{
++	struct ip804_priv *priv = to_ip804(pcdev);
++	unsigned int val;
++	int ret;
++
++	/* The per-port voltage registers are not populated on this silicon,
++	 * the shared supply is the voltage applied to a powered port.
++	 */
++	ret = ip804_read_be16(priv, IP804_P0_SUPPLY_V, &val);
++	if (ret)
++		return ret;
++
++	return FIELD_GET(IP804_SUPPLY_V_MASK, val) * IP804_UV_PER_LSB;
++}
++
++static int ip804_pi_get_pw_limit(struct pse_controller_dev *pcdev, int id)
++{
++	struct ip804_priv *priv = to_ip804(pcdev);
++	unsigned int val;
++	int ret;
++
++	ret = ip804_read(priv, IP804_P0_AFAT_MODE, &val);
++	if (ret)
++		return ret;
++
++	return val & BIT(priv->chan[id]) ? IP804_PW_AT : IP804_PW_AF;
++}
++
++static int ip804_pi_set_pw_limit(struct pse_controller_dev *pcdev, int id,
++				 int max_mW)
++{
++	struct ip804_priv *priv = to_ip804(pcdev);
++	unsigned int port = priv->chan[id];
++	unsigned int val;
++
++	/* Only the two type limits advertised in ip804_pw_limit_ranges exist */
++	if (abs(max_mW - IP804_PW_AT) <= IP804_PW_WINDOW(IP804_PW_AT))
++		val = BIT(port);
++	else if (abs(max_mW - IP804_PW_AF) <= IP804_PW_WINDOW(IP804_PW_AF))
++		val = 0;
++	else
++		return -ERANGE;
++
++	return ip804_update_bits(priv, IP804_P0_AFAT_MODE, BIT(port), val);
++}
++
++static const struct ethtool_c33_pse_pw_limit_range ip804_pw_limit_ranges[] = {
++	{ .min = IP804_PW_AF, .max = IP804_PW_AF },
++	{ .min = IP804_PW_AT, .max = IP804_PW_AT },
++};
++
++static int ip804_pi_get_pw_limit_ranges(struct pse_controller_dev *pcdev,
++					int id,
++					struct pse_pw_limit_ranges *pw_limit_ranges)
++{
++	struct ethtool_c33_pse_pw_limit_range *ranges;
++
++	ranges = kmemdup(ip804_pw_limit_ranges, sizeof(ip804_pw_limit_ranges),
++			 GFP_KERNEL);
++	if (!ranges)
++		return -ENOMEM;
++
++	pw_limit_ranges->c33_pw_limit_ranges = ranges;
++
++	return ARRAY_SIZE(ip804_pw_limit_ranges);
++}
++
++static int ip804_setup_pi_matrix(struct pse_controller_dev *pcdev)
++{
++	struct ip804_priv *priv = to_ip804(pcdev);
++	struct device *dev = pcdev->dev;
++	int i, ret;
++
++	for (i = 0; i < IP804_MAX_PORTS; i++) {
++		struct pse_pi *pi = &pcdev->pi[i];
++		u32 chan;
++
++		/* PIs without a description keep the identity mapping */
++		priv->chan[i] = i;
++		if (!pi->pairset[0].np)
++			continue;
++
++		if (pi->pairset[1].np) {
++			dev_err(dev, "PI %d: 4-pair operation is not supported\n",
++				i);
++			return -EOPNOTSUPP;
++		}
++
++		ret = of_property_read_u32(pi->pairset[0].np, "reg", &chan);
++		if (ret) {
++			dev_err(dev, "PI %d: missing channel reg property\n", i);
++			return ret;
++		}
++		if (chan >= IP804_MAX_PORTS) {
++			dev_err(dev, "PI %d: invalid channel %u\n", i, chan);
++			return -EINVAL;
++		}
++
++		priv->chan[i] = chan;
++	}
++
++	return 0;
++}
++
++static const struct pse_controller_ops ip804_ops = {
++	.setup_pi_matrix	= ip804_setup_pi_matrix,
++	.pi_enable		= ip804_pi_enable,
++	.pi_disable		= ip804_pi_disable,
++	.pi_get_admin_state	= ip804_pi_get_admin_state,
++	.pi_get_pw_status	= ip804_pi_get_pw_status,
++	.pi_get_ext_state	= ip804_pi_get_ext_state,
++	.pi_get_pw_class	= ip804_pi_get_pw_class,
++	.pi_get_actual_pw	= ip804_pi_get_actual_pw,
++	.pi_get_voltage		= ip804_pi_get_voltage,
++	.pi_get_pw_limit	= ip804_pi_get_pw_limit,
++	.pi_set_pw_limit	= ip804_pi_set_pw_limit,
++	.pi_get_pw_limit_ranges	= ip804_pi_get_pw_limit_ranges,
++};
++
++static unsigned int ip804_pi_of_port(struct ip804_priv *priv,
++				     unsigned int port)
++{
++	unsigned int i;
++
++	for (i = 0; i < IP804_MAX_PORTS; i++)
++		if (priv->chan[i] == port)
++			return i;
++
++	return port;
++}
++
++/* The chip has no usable interrupt line on known boards, so events are
++ * derived by polling: a change of the power delivery bitmap, or a latched
++ * (write-1-to-clear) port event, is reported for the affected PI.
++ *
++ * All registers are read before any event latch is cleared and the cached
++ * bitmap is only advanced at the end, so a failing register access loses
++ * nothing: the same state is seen again on the next poll.
++ */
++static int ip804_map_event(int irq, struct pse_controller_dev *pcdev,
++			   unsigned long *notifs, unsigned long *notifs_mask)
++{
++	unsigned int ev[IP804_MAX_PORTS], enabled[IP804_MAX_PORTS];
++	struct ip804_priv *priv = to_ip804(pcdev);
++	unsigned int pw_status, changed;
++	int ret, port;
++
++	ret = ip804_read(priv, IP804_P1_PW_STATUS, &pw_status);
++	if (ret)
++		return ret;
++
++	changed = pw_status ^ priv->last_pw_status;
++
++	for (port = 0; port < IP804_MAX_PORTS; port++) {
++		ret = ip804_read(priv, IP804_P1_PORT_EVENT(port), &ev[port]);
++		if (ret)
++			return ret;
++
++		/* Power removed by the host is not a PD disconnection */
++		enabled[port] = 1;
++		if ((changed & BIT(port)) && !(pw_status & BIT(port)) &&
++		    !(ev[port] & IP804_EV_MPS)) {
++			ret = ip804_port_is_enabled(priv, port);
++			if (ret < 0)
++				return ret;
++			enabled[port] = ret;
++		}
++	}
++
++	for (port = 0; port < IP804_MAX_PORTS; port++) {
++		if (!ev[port])
++			continue;
++
++		ret = ip804_write(priv, IP804_P1_PORT_EVENT(port), ev[port]);
++		if (ret)
++			return ret;
++	}
++
++	for (port = 0; port < IP804_MAX_PORTS; port++) {
++		unsigned int id = ip804_pi_of_port(priv, port);
++		unsigned long n = 0;
++
++		if (ev[port] & IP804_EV_OVER_CURRENT)
++			n |= ETHTOOL_PSE_EVENT_OVER_CURRENT;
++		if (ev[port] & IP804_EV_OVER_TEMP)
++			n |= ETHTOOL_PSE_EVENT_OVER_TEMP;
++		/* The trunk voltage limiter sheds ports when the supply sags
++		 * under the total load, which is the chip's budget mechanism.
++		 */
++		if (ev[port] & IP804_EV_TRUNK_V)
++			n |= ETHTOOL_PSE_EVENT_OVER_BUDGET;
++		if (ev[port] & IP804_EV_MPS)
++			n |= ETHTOOL_C33_PSE_EVENT_DISCONNECTION;
++
++		if (changed & BIT(port)) {
++			if (pw_status & BIT(port)) {
++				/* Power is only applied after detection and
++				 * classification succeeded, both are reported
++				 * on the power-on edge.
++				 */
++				n |= ETHTOOL_C33_PSE_EVENT_DETECTION |
++				     ETHTOOL_C33_PSE_EVENT_CLASSIFICATION;
++				priv->last_ev[port] = 0;
++			} else if (!(ev[port] & IP804_EV_MPS) && enabled[port]) {
++				n |= ETHTOOL_C33_PSE_EVENT_DISCONNECTION;
++			}
++		}
++
++		priv->last_ev[port] |= ev[port];
++		if (n) {
++			notifs[id] |= n;
++			__set_bit(id, notifs_mask);
++		}
++	}
++
++	priv->last_pw_status = pw_status;
++
++	return 0;
++}
++
++static const struct pse_irq_desc ip804_poll_desc = {
++	.name = "ip804-poll",
++	.map_event = ip804_map_event,
++};
++
++static int ip804_reset(struct ip804_priv *priv, struct gpio_desc *reset)
++{
++	struct i2c_client *client = priv->client;
++	int ret, val;
++
++	if (reset) {
++		usleep_range(IP804_RESET_PULSE_US, 2 * IP804_RESET_PULSE_US);
++		gpiod_set_value_cansleep(reset, 0);
++	}
++
++	/* Register 0x00 is readable in every page and answers as soon as the
++	 * chip has finished its start-up sequence.
++	 */
++	ret = read_poll_timeout(i2c_smbus_read_byte_data, val, val >= 0,
++				IP804_READY_POLL_US, IP804_READY_TIMEOUT_US,
++				false, client, IP804_REG_PAGE_SEL);
++	if (ret)
++		return val < 0 ? val : ret;
++
++	priv->page_sel_low = val & ~IP804_PAGE_SEL_MASK;
++	priv->cur_page = FIELD_GET(IP804_PAGE_SEL_MASK, val);
++
++	return 0;
++}
++
++static int ip804_hw_init(struct ip804_priv *priv)
++{
++	struct device *dev = priv->pcdev.dev;
++	unsigned int msb, lsb, val;
++	int ret;
++
++	ret = ip804_read(priv, IP804_P1_HW_REV_MSB, &msb);
++	if (ret)
++		return ret;
++	ret = ip804_read(priv, IP804_P1_HW_REV_LSB, &lsb);
++	if (ret)
++		return ret;
++	if (msb != IP804_HW_REV_MSB) {
++		dev_err(dev, "unexpected hardware revision %02x%02x, expected %02xxx\n",
++			msb, lsb, IP804_HW_REV_MSB);
++		return -ENODEV;
++	}
++	dev_info(dev, "hardware revision %02x%02x\n", msb, lsb);
++
++	ret = ip804_read(priv, IP804_P1_SYS_CONFIG, &val);
++	if (ret)
++		return ret;
++	if (FIELD_GET(IP804_OP_MODE, val) != IP804_OP_MODE_MANUAL)
++		dev_warn(dev, "not strapped to manual mode, port control may not work\n");
++
++	ret = ip804_write(priv, IP804_P1_SYS_EVENT, IP804_SYS_INIT_DONE);
++	if (ret)
++		return ret;
++
++	/* Current, voltage and temperature are only sampled while polling */
++	ret = ip804_update_bits(priv, IP804_P0_IVT_POLL,
++				IP804_IVT_POLL_EN | IP804_IVT_POLL_INTERVAL,
++				IP804_IVT_POLL_EN |
++				FIELD_PREP(IP804_IVT_POLL_INTERVAL,
++					   IP804_IVT_POLL_DEFAULT));
++	if (ret)
++		return ret;
++
++	return ip804_read(priv, IP804_P1_PW_STATUS, &priv->last_pw_status);
++}
++
++static int ip804_i2c_probe(struct i2c_client *client)
++{
++	struct device *dev = &client->dev;
++	struct gpio_desc *reset;
++	struct ip804_priv *priv;
++	int ret;
++
++	if (!i2c_check_functionality(client->adapter,
++				     I2C_FUNC_SMBUS_BYTE_DATA |
++				     I2C_FUNC_SMBUS_READ_I2C_BLOCK))
++		return -ENXIO;
++
++	priv = devm_kzalloc(dev, sizeof(*priv), GFP_KERNEL);
++	if (!priv)
++		return -ENOMEM;
++
++	priv->client = client;
++	priv->pcdev.dev = dev;
++	ret = devm_mutex_init(dev, &priv->lock);
++	if (ret)
++		return ret;
++
++	reset = devm_gpiod_get_optional(dev, "reset", GPIOD_OUT_HIGH);
++	if (IS_ERR(reset))
++		return dev_err_probe(dev, PTR_ERR(reset),
++				     "failed to get reset GPIO\n");
++
++	ret = ip804_reset(priv, reset);
++	if (ret)
++		return dev_err_probe(dev, ret, "chip not responding\n");
++
++	ret = ip804_hw_init(priv);
++	if (ret)
++		return dev_err_probe(dev, ret, "failed to init hardware\n");
++
++	priv->pcdev.ops = &ip804_ops;
++	priv->pcdev.owner = THIS_MODULE;
++	priv->pcdev.nr_lines = IP804_MAX_PORTS;
++	priv->pcdev.types = ETHTOOL_PSE_C33;
++	device_property_read_u32(dev, "poll-interval-ms",
++				 &priv->pcdev.poll_interval_ms);
++
++	/* Must precede registration, which arms the poll work */
++	ret = devm_pse_poll_helper(&priv->pcdev, &ip804_poll_desc);
++	if (ret)
++		return dev_err_probe(dev, ret, "failed to setup polling\n");
++
++	ret = devm_pse_controller_register(dev, &priv->pcdev);
++	if (ret)
++		return dev_err_probe(dev, ret,
++				     "failed to register PSE controller\n");
++
++	return 0;
++}
++
++static const struct of_device_id ip804_of_match[] = {
++	{ .compatible = "icplus,ip804ar" },
++	{ }
++};
++MODULE_DEVICE_TABLE(of, ip804_of_match);
++
++static const struct i2c_device_id ip804_i2c_id[] = {
++	{ "ip804ar" },
++	{ }
++};
++MODULE_DEVICE_TABLE(i2c, ip804_i2c_id);
++
++static struct i2c_driver ip804_driver = {
++	.probe = ip804_i2c_probe,
++	.id_table = ip804_i2c_id,
++	.driver = {
++		.name = "icplus_ip804",
++		.of_match_table = ip804_of_match,
++	},
++};
++module_i2c_driver(ip804_driver);
++
++MODULE_AUTHOR("Carlo Szelinsky <github@szelinsky.de>");
++MODULE_DESCRIPTION("IC Plus IP804AR PoE PSE controller driver");
++MODULE_LICENSE("GPL");
