@@ -29,7 +29,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 ---
 --- a/wpa_supplicant/events.c
 +++ b/wpa_supplicant/events.c
-@@ -6773,6 +6773,7 @@ static void wpas_removed_links_forget(st
+@@ -6774,6 +6774,7 @@ static void wpas_removed_links_forget(st
  static void wpas_link_reconfig(struct wpa_supplicant *wpa_s)
  {
  	u16 old_links = wpa_s->valid_links;
@@ -37,7 +37,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	u8 bssid[ETH_ALEN];
  
  	if (wpa_drv_get_bssid(wpa_s, bssid) < 0) {
-@@ -6808,6 +6809,16 @@ static void wpas_link_reconfig(struct wp
+@@ -6809,6 +6810,16 @@ static void wpas_link_reconfig(struct wp
  	    wpa_s->links[wpa_s->mlo_assoc_link_id].freq)
  		wpa_s->assoc_freq = wpa_s->links[wpa_s->mlo_assoc_link_id].freq;
  

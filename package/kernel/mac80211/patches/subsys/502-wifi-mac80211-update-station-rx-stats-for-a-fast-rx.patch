@@ -23,7 +23,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 ---
 --- a/net/mac80211/rx.c
 +++ b/net/mac80211/rx.c
-@@ -4991,27 +4991,13 @@ void ieee80211_check_fast_rx_iface(struc
+@@ -5007,27 +5007,13 @@ void ieee80211_check_fast_rx_iface(struc
  	__ieee80211_check_fast_rx_iface(sdata);
  }
  
@@ -56,7 +56,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	stats = &link_sta->rx_stats;
  	if (fast_rx->uses_rss)
-@@ -5049,6 +5035,38 @@ static void ieee80211_rx_8023(struct iee
+@@ -5065,6 +5051,38 @@ static void ieee80211_rx_8023(struct iee
  	stats->fragments++;
  	stats->packets++;
  
@@ -95,7 +95,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	skb->dev = fast_rx->dev;
  
  	dev_sw_netstats_rx_add(fast_rx->dev, skb->len);
-@@ -5060,7 +5078,6 @@ static void ieee80211_rx_8023(struct iee
+@@ -5076,7 +5094,6 @@ static void ieee80211_rx_8023(struct iee
  	 */
  	u64_stats_update_begin(&stats->syncp);
  	u64_stats_inc(&stats->msdu[rx->seqno_idx]);
@@ -103,7 +103,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	u64_stats_update_end(&stats->syncp);
  
  	ieee80211_flow_learn(rx);
-@@ -5201,6 +5218,9 @@ static bool ieee80211_invoke_fast_rx(str
+@@ -5217,6 +5234,9 @@ static bool ieee80211_invoke_fast_rx(str
  		goto drop;
  
  	if (status->rx_flags & IEEE80211_RX_AMSDU) {
