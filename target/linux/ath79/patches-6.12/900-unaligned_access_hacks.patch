@@ -322,9 +322,9 @@ SVN-Revision: 35130
  					 SKB_DROP_REASON_IP_INHDR);
 --- a/include/linux/types.h
 +++ b/include/linux/types.h
-@@ -248,5 +248,11 @@ typedef void (*swap_func_t)(void *a, voi
- typedef int (*cmp_r_func_t)(const void *a, const void *b, const void *priv);
- typedef int (*cmp_func_t)(const void *a, const void *b);
+@@ -260,5 +260,11 @@ struct rcuwait {
+ 	struct task_struct __rcu *task;
+ };
  
 +struct net_hdr_word {
 +       u32 words[1];

@@ -17,15 +17,15 @@ Signed-off-by: Minda Chen <minda.chen@starfivetech.com>
 
 --- a/drivers/tty/serial/8250/8250_core.c
 +++ b/drivers/tty/serial/8250/8250_core.c
-@@ -810,6 +810,8 @@ int serial8250_register_8250_port(const
- 			uart->dl_read = up->dl_read;
- 		if (up->dl_write)
- 			uart->dl_write = up->dl_write;
-+		if (up->probe)
-+			uart->probe = up->probe;
+@@ -812,6 +812,8 @@ int serial8250_register_8250_port(const
+ 		uart->dl_read = up->dl_read;
+ 	if (up->dl_write)
+ 		uart->dl_write = up->dl_write;
++	if (up->probe)
++		uart->probe = up->probe;
  
- 		if (uart->port.type != PORT_8250_CIR) {
- 			if (uart_console_registered(&uart->port))
+ 	if (uart->port.type != PORT_8250_CIR) {
+ 		if (uart_console_registered(&uart->port))
 --- a/drivers/tty/serial/8250/8250_dw.c
 +++ b/drivers/tty/serial/8250/8250_dw.c
 @@ -594,6 +594,9 @@ static int dw8250_probe(struct platform_

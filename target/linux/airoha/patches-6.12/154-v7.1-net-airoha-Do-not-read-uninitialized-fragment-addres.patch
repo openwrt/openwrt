@@ -24,7 +24,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
 
 --- a/drivers/net/ethernet/airoha/airoha_eth.c
 +++ b/drivers/net/ethernet/airoha/airoha_eth.c
-@@ -2007,8 +2007,8 @@ static netdev_tx_t airoha_dev_xmit(struc
+@@ -1998,8 +1998,8 @@ static netdev_tx_t airoha_dev_xmit(struc
  	struct netdev_queue *txq;
  	struct airoha_queue *q;
  	LIST_HEAD(tx_list);
@@ -34,7 +34,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	u16 index;
  	u8 fport;
  
-@@ -2067,7 +2067,7 @@ static netdev_tx_t airoha_dev_xmit(struc
+@@ -2058,7 +2058,7 @@ static netdev_tx_t airoha_dev_xmit(struc
  			     list);
  	index = e - q->entry;
  
@@ -43,7 +43,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		struct airoha_qdma_desc *desc = &q->desc[index];
  		skb_frag_t *frag = &skb_shinfo(skb)->frags[i];
  		dma_addr_t addr;
-@@ -2079,7 +2079,7 @@ static netdev_tx_t airoha_dev_xmit(struc
+@@ -2070,7 +2070,7 @@ static netdev_tx_t airoha_dev_xmit(struc
  			goto error_unmap;
  
  		list_move_tail(&e->list, &tx_list);
@@ -52,9 +52,9 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		e->dma_addr = addr;
  		e->dma_len = len;
  
-@@ -2098,6 +2098,9 @@ static netdev_tx_t airoha_dev_xmit(struc
- 		WRITE_ONCE(desc->msg1, cpu_to_le32(msg1));
- 		WRITE_ONCE(desc->msg2, cpu_to_le32(0xffff));
+@@ -2092,6 +2092,9 @@ static netdev_tx_t airoha_dev_xmit(struc
+ 		if (i == nr_frags - 1)
+ 			continue;
  
 +		if (++i == nr_frags)
 +			break;

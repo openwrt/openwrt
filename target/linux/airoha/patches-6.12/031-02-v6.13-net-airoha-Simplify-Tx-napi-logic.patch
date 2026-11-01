@@ -41,16 +41,12 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		if (qid >= ARRAY_SIZE(qdma->q_tx))
  			continue;
  
-@@ -1754,46 +1756,53 @@ static int airoha_qdma_tx_napi_poll(stru
+@@ -1754,45 +1756,52 @@ static int airoha_qdma_tx_napi_poll(stru
  		if (!q->ndesc)
  			continue;
  
-+		index = FIELD_GET(IRQ_DESC_IDX_MASK, val);
-+		if (index >= q->ndesc)
-+			continue;
-+
- 		spin_lock_bh(&q->lock);
- 
+-		spin_lock_bh(&q->lock);
+-
 -		while (q->queued > 0) {
 -			struct airoha_qdma_desc *desc = &q->desc[q->tail];
 -			struct airoha_queue_entry *e = &q->entry[q->tail];
@@ -61,19 +57,26 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
 -			if (!(desc_ctrl & QDMA_DESC_DONE_MASK) &&
 -			    !(desc_ctrl & QDMA_DESC_DROP_MASK))
 -				break;
-+		if (!q->queued)
-+			goto unlock;
++		index = FIELD_GET(IRQ_DESC_IDX_MASK, val);
++		if (index >= q->ndesc)
++			continue;
  
 -			q->tail = (q->tail + 1) % q->ndesc;
 -			q->queued--;
-+		desc = &q->desc[index];
-+		desc_ctrl = le32_to_cpu(desc->ctrl);
++		spin_lock_bh(&q->lock);
  
 -			dma_unmap_single(eth->dev, e->dma_addr, e->dma_len,
 -					 DMA_TO_DEVICE);
--
++		if (!q->queued)
++			goto unlock;
+ 
 -			WRITE_ONCE(desc->msg0, 0);
 -			WRITE_ONCE(desc->msg1, 0);
++		desc = &q->desc[index];
++		desc_ctrl = le32_to_cpu(desc->ctrl);
+ 
+-			if (skb) {
+-				struct netdev_queue *txq;
 +		if (!(desc_ctrl & QDMA_DESC_DONE_MASK) &&
 +		    !(desc_ctrl & QDMA_DESC_DROP_MASK))
 +			goto unlock;
@@ -96,24 +99,18 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
 +		while (q->tail != q->head && !q->entry[q->tail].dma_addr)
 +			q->tail = (q->tail + 1) % q->ndesc;
  
--			if (skb) {
--				u16 queue = skb_get_queue_mapping(skb);
--				struct netdev_queue *txq;
--
--				txq = netdev_get_tx_queue(skb->dev, queue);
+-				txq = skb_get_tx_queue(skb->dev, skb);
 -				netdev_tx_completed_queue(txq, 1, skb->len);
 -				if (netif_tx_queue_stopped(txq) &&
 -				    q->ndesc - q->queued >= q->free_thr)
 -					netif_tx_wake_queue(txq);
--
++		if (skb) {
++			struct netdev_queue *txq;
+ 
 -				dev_kfree_skb_any(skb);
 -				e->skb = NULL;
 -			}
-+		if (skb) {
-+			u16 queue = skb_get_queue_mapping(skb);
-+			struct netdev_queue *txq;
-+
-+			txq = netdev_get_tx_queue(skb->dev, queue);
++			txq = skb_get_tx_queue(skb->dev, skb);
 +			netdev_tx_completed_queue(txq, 1, skb->len);
 +			if (netif_tx_queue_stopped(txq) &&
 +			    q->ndesc - q->queued >= q->free_thr)
