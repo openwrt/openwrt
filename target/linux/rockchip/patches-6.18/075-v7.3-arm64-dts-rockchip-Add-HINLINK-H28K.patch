@@ -1,9 +1,9 @@
-From dca5896703826d0d5fadcc11ee755b83db705571 Mon Sep 17 00:00:00 2001
+From 5fd91b4f3ef20ecdc6db7a9e5c831209c7042c08 Mon Sep 17 00:00:00 2001
 From: Chukun Pan <amadeus@jmu.edu.cn>
-Date: Mon,  1 Dec 2025 18:00:06 +0800
+Date: Wed, 10 Jun 2026 18:00:06 +0800
 Subject: [PATCH] arm64: dts: rockchip: Add HINLINK H28K
 
-The HINLINK H28K is a development board with the
+The HINLINK H28K (LinkStar H28K) is a SBC with the
 Rockchip RK3528 SoC. It has the following features:
 
 - 1x USB 2.0
@@ -14,10 +14,12 @@ Rockchip RK3528 SoC. It has the following features:
 - 1x 1GbE RTL8211F Ethernet
 
 Signed-off-by: Chukun Pan <amadeus@jmu.edu.cn>
+Link: https://patch.msgid.link/20260610100006.366963-3-amadeus@jmu.edu.cn
+Signed-off-by: Heiko Stuebner <heiko@sntech.de>
 ---
  arch/arm64/boot/dts/rockchip/Makefile         |   1 +
- .../boot/dts/rockchip/rk3528-hinlink-h28k.dts | 301 ++++++++++++++++++
- 2 files changed, 302 insertions(+)
+ .../boot/dts/rockchip/rk3528-hinlink-h28k.dts | 318 ++++++++++++++++++
+ 2 files changed, 319 insertions(+)
  create mode 100644 arch/arm64/boot/dts/rockchip/rk3528-hinlink-h28k.dts
 
 --- a/arch/arm64/boot/dts/rockchip/Makefile

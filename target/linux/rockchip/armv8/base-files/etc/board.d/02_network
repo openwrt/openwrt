@@ -30,7 +30,8 @@ rockchip_setup_interfaces()
 	lunzn,fastrhino-r66s|\
 	radxa,e20c|\
 	radxa,e25|\
-	radxa,rock-3b)
+	radxa,rock-3b|\
+	widora,mangopi-m28k)
 		ucidef_set_interfaces_lan_wan 'eth0' 'eth1'
 		;;
 	friendlyarm,nanopi-r5s)
@@ -104,7 +105,8 @@ rockchip_setup_macs()
 	friendlyarm,nanopi-r3s|\
 	friendlyarm,nanopi-r5c|\
 	friendlyarm,nanopi-r6c|\
-	friendlyarm,nanopi-r6s)
+	friendlyarm,nanopi-r6s|\
+	widora,mangopi-m28k)
 		wan_mac=$(macaddr_generate_from_mmc_cid mmcblk*)
 		lan_mac=$(macaddr_add "$wan_mac" 1)
 		;;
