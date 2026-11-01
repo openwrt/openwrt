@@ -18,7 +18,8 @@
 
 #define RTPCS_SDS_CNT				14
 #define RTPCS_MAX_LINKS_PER_SDS			8
-#define RTPCS_RXCAL_START_MS			1000
+#define RTPCS_930X_RXCAL_START_MS			200
+#define RTPCS_931X_RXCAL_START_MS			50
 #define RTPCS_RXCAL_POLL_MS			500
 #define RTPCS_RXCAL_MAX_TRIES			3
 #define RTPCS_RXCAL_RETRY_MS			1000
@@ -198,6 +199,11 @@ enum rtpcs_page {
 #define FIB_EXT_REG19			0x13
 #define  RTL931X_CFG_TX_MODE		GENMASK(15, 14)
 
+/* PAGE_TGR_STD_0 */
+
+#define TGR_STD_0_REG01			0x01
+#define  RTL93XX_RX_LINK_LATCH		BIT(2)
+
 /* PAGE_TGR_STD_1 */
 
 #define TGR_STD_1_REG00			0x00
@@ -376,6 +382,8 @@ enum rtpcs_page {
 #define ANA_SPD_REG20			0x14
 #define  RTL931X_RX_COEF_SEL		GENMASK(10, 5)
 #define   RTL931X_RX_COEF_SEL_VTH	0x0c
+#define   RTL931X_RX_COEF_SEL_TAP_EVEN(t)	(t)
+#define   RTL931X_RX_COEF_SEL_TAP_ODD(t)	((t) + 5)
 
 #define ANA_SPD_REG21			0x15
 #define  RTL930X_RXCAL_OFFSET_RANGE	GENMASK(15, 14)
@@ -566,6 +574,7 @@ struct rtpcs_serdes {
 	u8 id;
 	u8 num_of_links;
 	bool first_start;
+	bool attachment_changed;
 	struct delayed_work cali_work;
 	bool rxcal_pending;
 	u8 rxcal_tries;
@@ -591,6 +600,7 @@ struct rtpcs_link {
 	struct rtpcs_ctrl *ctrl;
 	struct phylink_pcs pcs;
 	struct rtpcs_serdes *sds;
+	u64 media_generation;
 	int port;
 };
 
@@ -879,31 +889,23 @@ static int rtpcs_sds_select_hw_mode(struct rtpcs_serdes *sds, phy_interface_t if
 	return 0;
 }
 
-static int rtpcs_sds_select_attachment(enum rtpcs_sds_mode hw_mode,
-				       enum rtpcs_sds_attachment *attachment)
+static enum rtpcs_sds_attachment
+rtpcs_media_attachment(const struct phylink_media *media)
 {
-	switch (hw_mode) {
-	case RTPCS_SDS_MODE_OFF:
-		*attachment = RTPCS_SDS_ATTACH_NONE;
-		break;
-	case RTPCS_SDS_MODE_100BASEX:
-	case RTPCS_SDS_MODE_1000BASEX:
-	case RTPCS_SDS_MODE_2500BASEX:
-	case RTPCS_SDS_MODE_10GBASER:
-		*attachment = RTPCS_SDS_ATTACH_FIBER;
-		break;
+	switch (media->type) {
+	case PHYLINK_MEDIA_NONE:
+		return RTPCS_SDS_ATTACH_NONE;
+	case PHYLINK_MEDIA_UNSPEC:
+	case PHYLINK_MEDIA_PHY:
+		return RTPCS_SDS_ATTACH_PHY;
+	case PHYLINK_MEDIA_DAC_PASSIVE:
+		/* An unspecified length uses the long-cable profile. */
+		return media->cable_len_m && media->cable_len_m < 3 ?
+			RTPCS_SDS_ATTACH_DAC_SHORT : RTPCS_SDS_ATTACH_DAC_LONG;
 	default:
-		/*
-		 * SGMII, QSGMII, XSGMII and USXGMII always run into a PHY, be
-		 * it on-board or embedded in an SFP copper module; either way
-		 * the SerDes-to-PHY trace is short and the PHY equalizes for
-		 * itself on the far end.
-		 */
-		*attachment = RTPCS_SDS_ATTACH_PHY;
-		break;
+		/* Active cables and optics use the ordinary module profile. */
+		return RTPCS_SDS_ATTACH_FIBER;
 	}
-
-	return 0;
 }
 
 /* Generic auto-negotiation config */
@@ -1587,18 +1589,21 @@ static int rtpcs_93xx_sds_rxcal_ready(struct rtpcs_serdes *sds)
 	return !ret;
 }
 
-static int rtpcs_93xx_sds_10gr_link_status(struct rtpcs_serdes *sds)
+static int rtpcs_93xx_sds_10gr_link_status(struct rtpcs_serdes *sds, bool *latch_sts)
 {
-	int link;
-
-	/* Link status may be latched low; the second read is current state. */
-	link = rtpcs_sds_read(sds, PAGE_TGR_STD_1, TGR_STD_1_REG00);
-	if (link < 0)
-		return link;
+	int latch, link;
 
 	link = rtpcs_sds_read(sds, PAGE_TGR_STD_1, TGR_STD_1_REG00);
 	if (link < 0)
 		return link;
+
+	/* Reading latched status clears any recorded link loss. */
+	latch = rtpcs_sds_read(sds, PAGE_TGR_STD_0, TGR_STD_0_REG01);
+	if (latch < 0)
+		return latch;
+
+	if (latch_sts)
+		*latch_sts = !!(latch & RTL93XX_RX_LINK_LATCH);
 
 	return (link & RTL93XX_10GBASE_R_T_RX_LINK) == RTL93XX_10GBASE_R_T_RX_LINK;
 }
@@ -2093,7 +2098,7 @@ static bool rtpcs_930x_sds_rx_link_up(struct rtpcs_serdes *sds)
 	switch (sds->hw_mode) {
 	case RTPCS_SDS_MODE_10GBASER:
 	case RTPCS_SDS_MODE_USXGMII:
-		val = rtpcs_93xx_sds_10gr_link_status(sds);
+		val = rtpcs_93xx_sds_10gr_link_status(sds, NULL);
 		if (val < 0) {
 			dev_err(sds->ctrl->dev, "SerDes %u: RX link-status read failed: %d\n",
 				sds->id, val);
@@ -2324,7 +2329,7 @@ static int rtpcs_930x_sds_init_state_machine(struct rtpcs_serdes *sds,
 	while (cnt-- && ret) {
 		rtpcs_930x_sds_reset_state_machine(sds);
 
-		link = rtpcs_93xx_sds_10gr_link_status(sds);
+		link = rtpcs_93xx_sds_10gr_link_status(sds, NULL);
 		if (link < 0) {
 			ret = link;
 			break;
@@ -2766,6 +2771,7 @@ static int rtpcs_930x_sds_rxeq_tap_get(struct rtpcs_serdes *sds, unsigned int ta
 
 static void rtpcs_930x_sds_rxcal_init(struct rtpcs_serdes *sds, enum rtpcs_sds_mode hw_mode)
 {
+	bool fiber = sds->attachment == RTPCS_SDS_ATTACH_FIBER;
 	int tap0_init_val = 0x1f; /* initial DFE TAP0 */
 	int vth_min = 0x1;
 
@@ -2817,12 +2823,10 @@ static void rtpcs_930x_sds_rxcal_init(struct rtpcs_serdes *sds, enum rtpcs_sds_m
 
 	/* LEQ and DFE setting */
 
-	/* assume this is equivalent with (PHY_TYPE == SERDES && MEDIA == FIBER_10G) for now */
 	if (hw_mode == RTPCS_SDS_MODE_10GBASER) {
-		rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0x03, 13, 8, 0x1f);
-		rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0x00, 13, 13, 0x01);
-		/* FILTER_OUT */
-		rtpcs_sds_write_bits(sds, PAGE_ANA_10G, ANA_SPD_REG22, 14, 8, 0x00);
+		/* Restore the ordinary values when replacing fiber with a DAC. */
+		rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0x03, 13, 8, fiber ? 0x1f : 0x0a);
+		rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0x00, 13, 13, fiber);
 	}
 
 	/* REG0_LEQ_DC_GAIN, 0x01 for short DACs */
@@ -3139,9 +3143,9 @@ static int rtpcs_930x_sds_check_calibration(struct rtpcs_serdes *sds,
 static void rtpcs_930x_rx_cali_work_handler(struct work_struct *work)
 {
 	unsigned long lock_start, attempt_start;
+	bool calib_failed, latch_sts;
 	struct rtpcs_serdes *sds;
-	int latch_sts, ret;
-	bool calib_failed;
+	int ret;
 
 	sds = container_of(to_delayed_work(work), struct rtpcs_serdes, cali_work);
 
@@ -3185,14 +3189,14 @@ static void rtpcs_930x_rx_cali_work_handler(struct work_struct *work)
 		rtpcs_930x_sds_rxeq_dfe_taps_adapt(sds);
 		msleep(20);
 
-		latch_sts = rtpcs_sds_read_bits(sds, PAGE_TGR_STD_0, 1, 2, 2);
-		if (latch_sts >= 0) {
+		ret = rtpcs_93xx_sds_10gr_link_status(sds, &latch_sts);
+		if (ret >= 0) {
 			usleep_range(1000, 2000);
-			latch_sts = rtpcs_sds_read_bits(sds, PAGE_TGR_STD_0, 1, 2, 2);
+			ret = rtpcs_93xx_sds_10gr_link_status(sds, &latch_sts);
 		}
-		if (latch_sts < 0) {
-			dev_err(sds->ctrl->dev, "SerDes %u: RX latch read failed: %d\n",
-				sds->id, latch_sts);
+		if (ret < 0) {
+			dev_err(sds->ctrl->dev, "SerDes %u: RX link-status read failed: %d\n",
+				sds->id, ret);
 			goto terminate;
 		}
 		if (latch_sts) {
@@ -3235,6 +3239,8 @@ static void rtpcs_sds_cancel_rx_work(void *data)
 	scoped_guard(mutex, &sds->ctrl->lock) {
 		sds->rxcal_pending = false;
 		sds->rxmon_active = false;
+		sds->rxmon_down = 0;
+		sds->rxmon_recovery_after = 0;
 	}
 
 	/* Unused work items remain zeroed in the SerDes allocation. */
@@ -3492,12 +3498,7 @@ static int rtpcs_930x_sds_config_attachment(struct rtpcs_serdes *sds,
 		tx_cfg = &rtpcs_930x_sds_tx_config_2g5;
 		break;
 	case RTPCS_SDS_PLL_SPD_10000:
-		/*
-		 * PHY-attached links equalize on the PHY's own far-end
-		 * receiver, less amp drive needed. Real DAC-vs-fiber
-		 * detection doesn't exist yet, so both of those share
-		 * the same config for now.
-		 */
+		/* PHY-attached links need less drive than direct module connections. */
 		tx_cfg = (attachment == RTPCS_SDS_ATTACH_PHY) ? &rtpcs_930x_sds_tx_config_phy
 							      : &rtpcs_930x_sds_tx_config_10g;
 		break;
@@ -3510,6 +3511,8 @@ static int rtpcs_930x_sds_config_attachment(struct rtpcs_serdes *sds,
 
 static int rtpcs_930x_sds_post_config(struct rtpcs_serdes *sds, enum rtpcs_sds_mode hw_mode)
 {
+	if (sds->attachment == RTPCS_SDS_ATTACH_NONE)
+		return 0;
 	if (hw_mode != RTPCS_SDS_MODE_10GBASER &&
 	    hw_mode != RTPCS_SDS_MODE_XSGMII &&
 	    hw_mode != RTPCS_SDS_MODE_USXGMII)
@@ -3521,7 +3524,7 @@ static int rtpcs_930x_sds_post_config(struct rtpcs_serdes *sds, enum rtpcs_sds_m
 		sds->id, hw_mode);
 	sds->rxcal_tries = 0;
 	sds->rxcal_pending = true;
-	mod_delayed_work(system_wq, &sds->cali_work, msecs_to_jiffies(RTPCS_RXCAL_START_MS));
+	mod_delayed_work(system_wq, &sds->cali_work, msecs_to_jiffies(RTPCS_930X_RXCAL_START_MS));
 	return 0;
 }
 
@@ -3697,6 +3700,49 @@ static int rtpcs_931x_sds_rxeq_leq_get_coef(struct rtpcs_serdes *sds)
 		return gray;
 
 	return rtpcs_gray_to_binary(FIELD_GET(RTL93XX_RXEQ_COEF_LEQ_GRAY, gray));
+}
+
+static int rtpcs_931x_sds_rxeq_tap_get(struct rtpcs_serdes *sds, unsigned int tap_id,
+				       int *tap_even, int *tap_odd)
+{
+	int ret, val;
+	u16 sel;
+
+	if (tap_id > 4)
+		return -EINVAL;
+
+	ret = rtpcs_931x_sds_rxeq_set_debug(sds, RTL931X_RX_DEBUG_SEL_COEF);
+	if (ret < 0)
+		return ret;
+
+	sel = FIELD_PREP(RTL931X_RX_COEF_SEL, RTL931X_RX_COEF_SEL_TAP_EVEN(tap_id));
+	ret = rtpcs_sds_write_mask(sds, PAGE_ANA_10G, ANA_SPD_REG20, RTL931X_RX_COEF_SEL, sel);
+	if (ret < 0)
+		return ret;
+	usleep_range(1000, 2000);
+
+	val = rtpcs_sds_read(sds, PAGE_WDIG, WDIG_REG20);
+	if (val < 0)
+		return val;
+
+	*tap_even = rtpcs_sign_mag_decode(FIELD_GET(RTL93XX_RXEQ_COEF_TAPX, val), 5);
+
+	if (tap_id > 0) {
+		sel = FIELD_PREP(RTL931X_RX_COEF_SEL, RTL931X_RX_COEF_SEL_TAP_ODD(tap_id));
+		ret = rtpcs_sds_write_mask(sds, PAGE_ANA_10G, ANA_SPD_REG20,
+					   RTL931X_RX_COEF_SEL, sel);
+		if (ret < 0)
+			return ret;
+		usleep_range(1000, 2000);
+
+		val = rtpcs_sds_read(sds, PAGE_WDIG, WDIG_REG20);
+		if (val < 0)
+			return val;
+
+		*tap_odd = rtpcs_sign_mag_decode(FIELD_GET(RTL93XX_RXEQ_COEF_TAPX, val), 5);
+	}
+
+	return 0;
 }
 
 static int rtpcs_931x_sds_rxeq_tap_set_value(struct rtpcs_serdes *sds, unsigned int tap_id,
@@ -4064,7 +4110,7 @@ static int rtpcs_931x_sds_rxcal_fiber_adapt(struct rtpcs_serdes *sds)
 				sds->id, symerr);
 			return symerr;
 		}
-		link = rtpcs_93xx_sds_10gr_link_status(sds);
+		link = rtpcs_93xx_sds_10gr_link_status(sds, NULL);
 		if (link < 0) {
 			dev_err(dev, "SerDes %u: RX calibration link-status read failed: %d\n",
 				sds->id, link);
@@ -4085,6 +4131,109 @@ static int rtpcs_931x_sds_rxcal_fiber_adapt(struct rtpcs_serdes *sds)
 
 	dev_warn(dev, "SerDes %u fiber RX calibration failed after %d checks: linkUp=%d symErr=0x%x\n",
 		 sds->id, i, link, symerr);
+	return link ? -EIO : -ENOLINK;
+}
+
+/*
+ * rtpcs_931x_sds_rxcal_dac_adapt() - RX calibration for 10G DAC.
+ *
+ * LEQ and DFE TAP1-4 remain adaptive, while VTH is selected using the
+ * adapted TAP0 value and TAP0 is finally forced to 31. Run the sweep
+ * before requiring link, so a cable needing VTH/TAP0 training can acquire
+ * it. Only a stable, clean receive interval qualifies; the worker restores
+ * the baseline on failure.
+ */
+static int rtpcs_931x_sds_rxcal_dac_adapt(struct rtpcs_serdes *sds)
+{
+	int i, leq = 0, link = 0, ret, symerr = -1, tap0, vth = 0xa;
+	struct device *dev = sds->ctrl->dev;
+	bool latch_sts = false;
+
+	dev_dbg(dev, "SerDes %u DAC RX calibration...\n", sds->id);
+
+	/* Undocumented setting applied before releasing LEQ adaptation. */
+	ret = rtpcs_sds_write_bits(sds, PAGE_ANA_10G, ANA_SPD_REG13, 13, 13, 0x0);
+	if (ret < 0)
+		return ret;
+
+	rtpcs_931x_sds_rx_reset(sds);
+
+	ret = rtpcs_931x_sds_rxeq_leq_set_adapt(sds, true);
+	if (ret < 0)
+		return ret;
+	msleep(200);
+
+	for (i = 5; i <= 10; i++) {
+		ret = rtpcs_931x_sds_rxeq_vth_set_value(sds, i, i);
+		if (ret < 0)
+			return ret;
+
+		ret = rtpcs_931x_sds_rxeq_tap_set_adapt(sds, 0, true);
+		if (ret < 0)
+			return ret;
+
+		/* Allow TAP0 adaptation to settle before readback. */
+		usleep_range(5000, 6000);
+		ret = rtpcs_931x_sds_rxeq_tap_get(sds, 0, &tap0, NULL);
+		if (ret < 0)
+			return ret;
+
+		vth = i;
+		dev_dbg(dev, "SerDes %u DAC VTH = %#x, TAP0 = %d\n", sds->id, vth, tap0);
+		if (tap0 >= 15 && tap0 <= 31)
+			break;
+	}
+
+	ret = rtpcs_931x_sds_rxeq_tap_set_value(sds, 0, 31, 0);
+	if (ret < 0)
+		return ret;
+	ret = rtpcs_931x_sds_rxeq_tap_set_adapt(sds, 0, false);
+	if (ret < 0)
+		return ret;
+
+	rtpcs_931x_sds_rx_reset(sds);
+
+	/* Keep DFE TAP1-4 adapting continuously. */
+	for (i = 1; i <= 4; i++) {
+		ret = rtpcs_931x_sds_rxeq_tap_set_adapt(sds, i, true);
+		if (ret < 0)
+			return ret;
+	}
+
+	/* Clear historical latched-low status before the first observation window. */
+	ret = rtpcs_93xx_sds_10gr_link_status(sds, NULL);
+	if (ret < 0)
+		return ret;
+
+	for (i = 0; i < 8; i++) {
+		rtpcs_931x_sds_clear_symerr(sds, RTPCS_SDS_MODE_10GBASER);
+		msleep(300);
+		symerr = rtpcs_931x_sds_fiber_get_symerr(sds, RTPCS_SDS_MODE_10GBASER);
+		if (symerr < 0)
+			return symerr;
+
+		link = rtpcs_93xx_sds_10gr_link_status(sds, &latch_sts);
+		if (link < 0)
+			return link;
+
+		leq = rtpcs_931x_sds_rxeq_leq_get_coef(sds);
+		if (leq < 0)
+			return leq;
+
+		dev_dbg(dev,
+			"SerDes %u DAC check %d: linkUp=%d latch_sts=%d LEQ=%d symErr=0x%x\n",
+			sds->id, i + 1, link, latch_sts, leq, symerr);
+		if (latch_sts && link && leq < 20 && symerr <= 5) {
+			dev_dbg(dev,
+				"SerDes %u DAC RX calibration OK: LEQ=%#x VTH=%#x\n",
+				sds->id, leq, vth);
+			return 0;
+		}
+	}
+
+	dev_dbg(dev,
+		"SerDes %u DAC RX calibration did not pass: linkUp=%d latch_sts=%d LEQ=%d symErr=0x%x\n",
+		sds->id, link, latch_sts, leq, symerr);
 	return link ? -EIO : -ENOLINK;
 }
 
@@ -4249,7 +4398,9 @@ static int rtpcs_931x_sds_config_attachment(struct rtpcs_serdes *sds,
 	if (attachment == RTPCS_SDS_ATTACH_NONE)
 		return 0;
 
-	is_dac = (attachment == RTPCS_SDS_ATTACH_DAC_SHORT ||
+	/* DAC-specific tuning only covers 10GBase-R; slower DACs use the ordinary settings. */
+	is_dac = hw_mode == RTPCS_SDS_MODE_10GBASER &&
+		 (attachment == RTPCS_SDS_ATTACH_DAC_SHORT ||
 		  attachment == RTPCS_SDS_ATTACH_DAC_LONG);
 	is_10g = (hw_mode == RTPCS_SDS_MODE_10GBASER ||
 		  hw_mode == RTPCS_SDS_MODE_XSGMII ||
@@ -4261,22 +4412,16 @@ static int rtpcs_931x_sds_config_attachment(struct rtpcs_serdes *sds,
 	rtpcs_sds_write_mask(sds, PAGE_ANA_MISC, ANA_MISC_REG00, RTL93XX_FRC_CMU_EN,
 			     RTL93XX_FRC_CMU_EN_FORCE_ON);
 
-	switch (attachment) {
-	case RTPCS_SDS_ATTACH_DAC_SHORT:
-	case RTPCS_SDS_ATTACH_DAC_LONG:
+	if (is_dac) {
 		tx_cfg = (attachment == RTPCS_SDS_ATTACH_DAC_SHORT) ? &rtpcs_931x_sds_tx_cfg_sdac :
 								      &rtpcs_931x_sds_tx_cfg_ldac;
 
 		rtpcs_sds_write(sds, PAGE_ANA_COM, 0x19, 0xf0a5);
 		rtpcs_sds_write(even_sds, PAGE_ANA_10G, 0x8, 0x02a0); /* [10:7] TX impedance */
-		break;
-
-	case RTPCS_SDS_ATTACH_FIBER:
-		if (is_10g)
+	} else {
+		if (attachment == RTPCS_SDS_ATTACH_FIBER && is_10g)
 			rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0xf, 5, 0, 0x2);
 
-		fallthrough;
-	default:
 		if (sds->ctrl->chip_version == RTPCS_CHIP_V2)
 			tx_cfg = &rtpcs_931x_sds_tx_cfg_v2[sds->id - 2];
 		else
@@ -4284,7 +4429,6 @@ static int rtpcs_931x_sds_config_attachment(struct rtpcs_serdes *sds,
 
 		rtpcs_sds_write(sds, PAGE_ANA_COM, 0x19, 0xf0f0);
 		rtpcs_sds_write(even_sds, PAGE_ANA_10G, 0x8, 0x0294); /* [10:7] TX impedance */
-		break;
 	}
 
 	ret = rtpcs_931x_sds_config_tx_amps(sds, tx_cfg->pre_amp, tx_cfg->main_amp,
@@ -4352,9 +4496,20 @@ static void rtpcs_931x_rx_cali_work_handler(struct work_struct *work)
 		ret = rtpcs_931x_sds_rxcal_fiber_adapt(sds);
 		break;
 
+	case RTPCS_SDS_ATTACH_DAC_SHORT:
+	case RTPCS_SDS_ATTACH_DAC_LONG:
+		ret = rtpcs_sds_write_mask(sds, PAGE_ANA_10G, ANA_SPD_REG14,
+					   RTL931X_RXCAL_SEL, RTL931X_RXCAL_SEL_DAC);
+		if (ret < 0) {
+			dev_err(sds->ctrl->dev, "SerDes %u: DAC RX calibration selection failed: %d\n",
+				sds->id, ret);
+			break;
+		}
+		ret = rtpcs_931x_sds_rxcal_dac_adapt(sds);
+		break;
+
 	default:
 		sds->rxcal_pending = false;
-		/* TODO: DAC RX calibration */
 		goto unlock;
 	}
 
@@ -4386,7 +4541,7 @@ unlock:
 /* Apply acquisition defaults and defer calibration until RX is ready. */
 static int rtpcs_931x_sds_post_config(struct rtpcs_serdes *sds, enum rtpcs_sds_mode hw_mode)
 {
-	if (sds->type != RTPCS_SDS_TYPE_10G)
+	if (sds->type != RTPCS_SDS_TYPE_10G || sds->attachment == RTPCS_SDS_ATTACH_NONE)
 		return 0;
 	if (hw_mode != RTPCS_SDS_MODE_10GBASER &&
 	    hw_mode != RTPCS_SDS_MODE_XSGMII &&
@@ -4404,7 +4559,7 @@ static int rtpcs_931x_sds_post_config(struct rtpcs_serdes *sds, enum rtpcs_sds_m
 
 	sds->rxcal_tries = 0;
 	sds->rxcal_pending = true;
-	mod_delayed_work(system_wq, &sds->cali_work, msecs_to_jiffies(RTPCS_RXCAL_START_MS));
+	mod_delayed_work(system_wq, &sds->cali_work, msecs_to_jiffies(RTPCS_931X_RXCAL_START_MS));
 
 	return 0;
 }
@@ -4421,7 +4576,7 @@ static void rtpcs_931x_rx_linkmon_work_handler(struct work_struct *work)
 	    sds->hw_mode != RTPCS_SDS_MODE_10GBASER)
 		goto unlock;
 
-	link = rtpcs_93xx_sds_10gr_link_status(sds);
+	link = rtpcs_93xx_sds_10gr_link_status(sds, NULL);
 	if (link < 0) {
 		sds->rxmon_down = 0;
 		dev_err_ratelimited(sds->ctrl->dev, "SerDes %u: RX link monitor read failed: %d\n",
@@ -4752,18 +4907,70 @@ static void rtpcs_pcs_an_restart(struct phylink_pcs *pcs)
 	mutex_unlock(&ctrl->lock);
 }
 
-static int rtpcs_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
-			    phy_interface_t interface, const unsigned long *advertising,
-			    bool permit_pause_to_mac)
+static void rtpcs_pcs_disable(struct phylink_pcs *pcs)
 {
 	struct rtpcs_link *link = rtpcs_phylink_pcs_to_link(pcs);
+	struct rtpcs_serdes *sds = link->sds;
+
+	/* Disabling one MAC must not interrupt a shared SerDes. */
+	if (sds->num_of_links > 1)
+		return;
+
+	rtpcs_sds_cancel_rx_work(sds);
+
+	scoped_guard(mutex, &link->ctrl->lock) {
+		sds->attachment_changed = true;
+	}
+}
+
+static int rtpcs_sds_reconfigure_attachment(struct rtpcs_serdes *sds)
+{
+	int power_ret, ret;
+
+	if (!sds->ops->config_attachment || sds->hw_mode == RTPCS_SDS_MODE_OFF)
+		return 0;
+
+	/* Preserve the interface mode while changing the analog attachment settings. */
+	ret = sds->ops->set_power(sds, false);
+	if (ret < 0)
+		return ret;
+
+	ret = sds->ops->config_attachment(sds, sds->attachment, sds->hw_mode);
+	power_ret = sds->ops->set_power(sds, true);
+
+	return ret < 0 ? ret : power_ret;
+}
+
+static int rtpcs_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
+			    phy_interface_t interface, const unsigned long *advertising,
+			    bool permit_pause_to_mac, const struct phylink_media *media)
+{
+	struct rtpcs_link *link = rtpcs_phylink_pcs_to_link(pcs);
+	enum rtpcs_sds_usxgmii_submode submode;
+	bool mode_changed, attachment_changed;
 	struct rtpcs_ctrl *ctrl = link->ctrl;
 	struct rtpcs_serdes *sds = link->sds;
 	enum rtpcs_sds_attachment attachment;
-	enum rtpcs_sds_usxgmii_submode submode;
 	enum rtpcs_sds_mode hw_mode;
-	bool mode_changed;
 	int changed, ret;
+
+	attachment = rtpcs_media_attachment(media);
+	scoped_guard(mutex, &ctrl->lock)
+		attachment_changed = sds->attachment != attachment ||
+				     link->media_generation != media->generation;
+	if (attachment_changed || attachment == RTPCS_SDS_ATTACH_NONE) {
+		rtpcs_sds_cancel_rx_work(sds);
+		scoped_guard(mutex, &ctrl->lock) {
+			sds->attachment = attachment;
+			sds->attachment_changed = true;
+		}
+	}
+
+	/* Media removal only stops attachment work; do not reactivate the lane. */
+	if (attachment == RTPCS_SDS_ATTACH_NONE) {
+		link->media_generation = media->generation;
+		return 0;
+	}
 
 	ret = rtpcs_sds_select_hw_mode(sds, interface, &hw_mode, &submode);
 	if (ret < 0) {
@@ -4774,14 +4981,17 @@ static int rtpcs_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
 
 	scoped_guard(mutex, &ctrl->lock) {
 		mode_changed = sds->hw_mode != hw_mode || sds->usxgmii_submode != submode;
-		if (mode_changed) {
+		attachment_changed = sds->attachment_changed;
+		if (mode_changed || attachment_changed) {
 			if (sds->rxcal_pending)
-				dev_dbg(ctrl->dev, "SerDes %u: invalidating pending RX calibration for mode change\n",
+				dev_dbg(ctrl->dev, "SerDes %u: invalidating pending RX calibration for configuration change\n",
 					sds->id);
 			sds->rxcal_pending = false;
 			sds->rxmon_active = false;
 			sds->rxmon_down = 0;
+		}
 
+		if (mode_changed) {
 			ret = rtpcs_sds_config_polarity(sds, interface);
 			if (ret < 0) {
 				dev_err(ctrl->dev, "failed to configure polarity of SerDes %u\n",
@@ -4797,16 +5007,10 @@ static int rtpcs_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
 			if (ret < 0)
 				return ret;
 
-			if (sds->ops->config_attachment) {
-				ret = rtpcs_sds_select_attachment(hw_mode, &attachment);
+			if (sds->ops->config_attachment && hw_mode != RTPCS_SDS_MODE_OFF) {
+				ret = sds->ops->config_attachment(sds, sds->attachment, hw_mode);
 				if (ret < 0)
 					return ret;
-
-				ret = sds->ops->config_attachment(sds, attachment, hw_mode);
-				if (ret < 0)
-					return ret;
-
-				sds->attachment = attachment;
 			}
 
 			ret = sds->ops->set_hw_mode(sds, hw_mode, submode);
@@ -4819,6 +5023,10 @@ static int rtpcs_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
 			ret = sds->ops->activate(sds);
 			if (ret < 0)
 				return ret;
+		} else if (attachment_changed) {
+			ret = rtpcs_sds_reconfigure_attachment(sds);
+			if (ret < 0)
+				return ret;
 		} else {
 			dev_dbg(ctrl->dev, "SerDes %u already in mode %s, no change\n",
 				sds->id, phy_modes(interface));
@@ -4828,7 +5036,7 @@ static int rtpcs_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
 		if (changed < 0)
 			return changed;
 
-		if (mode_changed) {
+		if (mode_changed || attachment_changed) {
 			if (sds->ops->post_config) {
 				ret = sds->ops->post_config(sds, hw_mode);
 				if (ret < 0)
@@ -4836,17 +5044,19 @@ static int rtpcs_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
 			}
 
 			sds->first_start = false;
+			sds->attachment_changed = false;
 
 			dev_info(ctrl->dev, "SerDes %u configured for %s mode\n",
 				 sds->id, phy_modes(interface));
 		}
 	}
+	link->media_generation = media->generation;
 
 	/* Forced SGMII links cannot report PCS changes through MAC link IRQs. */
 	pcs->poll = interface == PHY_INTERFACE_MODE_SGMII &&
 		    neg_mode == PHYLINK_PCS_NEG_INBAND_ENABLED;
 
-	return changed;
+	return changed || attachment_changed;
 }
 
 static void rtpcs_mdio_bus_put(void *data)
@@ -5003,6 +5213,7 @@ static struct phylink_pcs *rtpcs_pcs_get(struct fwnode_reference_args *pcsspec, 
 		link->port = sds->link_port[link_idx];
 		link->sds = sds;
 		link->pcs.ops = sds->ctrl->cfg->pcs_ops;
+		link->pcs.media_teardown = true;
 
 		sds->link[link_idx] = link;
 	}
@@ -5041,6 +5252,7 @@ static int rtpcs_probe(struct platform_device *pdev)
 		sds = &ctrl->serdes[i];
 
 		sds->ctrl = ctrl;
+		sds->attachment = RTPCS_SDS_ATTACH_PHY;
 		sds->first_start = true;
 		sds->id = i;
 		sds->ops = ctrl->cfg->sds_ops;
@@ -5097,6 +5309,7 @@ static int rtpcs_probe(struct platform_device *pdev)
 }
 
 static const struct phylink_pcs_ops rtpcs_pcs_ops = {
+	.pcs_disable		= rtpcs_pcs_disable,
 	.pcs_an_restart		= rtpcs_pcs_an_restart,
 	.pcs_config		= rtpcs_pcs_config,
 	.pcs_get_state		= rtpcs_pcs_get_state,
