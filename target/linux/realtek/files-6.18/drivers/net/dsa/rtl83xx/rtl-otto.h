@@ -424,6 +424,7 @@ struct rtldsa_config {
 	void (*stp_set)(struct otto_dsa_priv *priv, u16 msti, int port, int state);
 	int mac_link_sts;
 	struct rtldsa_mac_force_mode_cfg mac_force_mode;
+	u32 mac_force_mode_eee_mask;
 	int  (*mac_force_mode_ctrl)(int port);
 	int  (*mac_port_ctrl)(int port);
 	int (*mac_link_state_source_set)(struct otto_dsa_priv *priv,
