@@ -187,6 +187,26 @@ define Device/horaco_zx-swtgw2c8f
 endef
 TARGET_DEVICES += horaco_zx-swtgw2c8f
 
+define Device/horaco_zx510s-7t1xs
+  SOC := rtl9303
+  UIMAGE_MAGIC := 0x83800000
+  DEVICE_VENDOR := Horaco
+  DEVICE_MODEL := ZX510S-7T1XS
+  DEVICE_ALT0_VENDOR := Lianguo
+  DEVICE_ALT0_MODEL := LG510S-7T1XS
+  DEVICE_PACKAGES := kmod-hwmon-adt7475 rtl826x-firmware
+  IMAGE_SIZE := 12288k
+  $(Device/kernel-lzma)
+  IMAGES += factory.bix
+  IMAGE/factory.bix := \
+	append-kernel | \
+	pad-to 64k | \
+	append-rootfs | \
+	pad-rootfs | \
+	check-size
+endef
+TARGET_DEVICES += horaco_zx510s-7t1xs
+
 define Device/keeplink_kp-9000-8xm
   SOC := rtl9303
   UIMAGE_MAGIC := 0x93000000
