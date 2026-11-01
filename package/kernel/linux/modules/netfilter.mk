@@ -185,7 +185,7 @@ define KernelPackage/nf-flow
 	CONFIG_NF_FLOW_TABLE
   DEPENDS:=+kmod-nf-conntrack +kmod-nft-core
   FILES:= $(LINUX_DIR)/net/netfilter/nf_flow_table.ko
-  AUTOLOAD:=$(call AutoProbe,nf_flow_table nf_flow_table_hw)
+  AUTOLOAD:=$(call AutoProbe,nf_flow_table)
 endef
 
 $(eval $(call KernelPackage,nf-flow))
@@ -880,7 +880,7 @@ define KernelPackage/ipt-tee
   DEPENDS:=+kmod-ipt-conntrack +kmod-nf-dup-inet
   KCONFIG:=$(KCONFIG_IPT_TEE)
   FILES:=$(foreach mod,$(IPT_TEE-m),$(LINUX_DIR)/net/$(mod).ko)
-  AUTOLOAD:=$(call AutoProbe,$(notdir nf_tee $(IPT_TEE-m)))
+  AUTOLOAD:=$(call AutoProbe,$(notdir $(IPT_TEE-m)))
   $(call AddDepends/ipt)
 endef
 
@@ -895,7 +895,7 @@ define KernelPackage/ipt-u32
   TITLE:=U32 support
   KCONFIG:=$(KCONFIG_IPT_U32)
   FILES:=$(foreach mod,$(IPT_U32-m),$(LINUX_DIR)/net/$(mod).ko)
-  AUTOLOAD:=$(call AutoProbe,$(notdir nf_tee $(IPT_U32-m)))
+  AUTOLOAD:=$(call AutoProbe,$(notdir $(IPT_U32-m)))
   $(call AddDepends/ipt)
 endef
 
@@ -1382,7 +1382,7 @@ define KernelPackage/nft-netdev
 	$(LINUX_DIR)/net/netfilter/nf_dup_netdev.ko \
 	$(LINUX_DIR)/net/netfilter/nft_dup_netdev.ko \
 	$(LINUX_DIR)/net/netfilter/nft_fwd_netdev.ko
-  AUTOLOAD:=$(call AutoProbe,nf_tables_netdev nf_dup_netdev nft_dup_netdev nft_fwd_netdev)
+  AUTOLOAD:=$(call AutoProbe,nf_dup_netdev nft_dup_netdev nft_fwd_netdev)
 endef
 
 $(eval $(call KernelPackage,nft-netdev))
