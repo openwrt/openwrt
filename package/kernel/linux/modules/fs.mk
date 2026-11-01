@@ -484,15 +484,7 @@ define KernelPackage/fs-nfs-common-rpcsec
   TITLE:=NFS Secure RPC
   DEPENDS:= \
 	+kmod-fs-nfs-common \
-	+kmod-crypto-manager \
-	+kmod-crypto-authenc \
-	+kmod-crypto-hmac \
-	+kmod-crypto-cmac \
-	+kmod-crypto-sha1 \
-	+kmod-crypto-sha256 \
-	+kmod-crypto-sha512 \
-	+kmod-crypto-cbc \
-	+kmod-crypto-cts
+	+kmod-crypto-krb5
   KCONFIG:= \
 	CONFIG_SUNRPC_GSS \
 	CONFIG_RPCSEC_GSS_KRB5

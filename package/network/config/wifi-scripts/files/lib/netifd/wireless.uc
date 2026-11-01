@@ -18,6 +18,10 @@ let wireless = netifd.wireless = {
 	path: realpath(netifd.main_path + "/wireless"),
 };
 
+// netifd runs config_init before it adds the interfaces of the reload: set
+// up no radio until config_start, which it calls after interface_start_pending()
+let config_pending;
+
 function wpad_update_mlo(service, mode)
 {
 	let config = {};
@@ -26,9 +30,13 @@ function wpad_update_mlo(service, mode)
 		if (data.mode != mode)
 			continue;
 
-		data.phy = find_phy(data.radio_config[0], true);
-		if (!data.phy)
+		let radio = data.radio_config[0];
+		data.phy = radio ? find_phy(radio, true) : null;
+		if (!data.phy) {
+			let reason = radio ? "no phy for its first radio" : "its first radio is not a known device";
+			netifd.log(netifd.L_WARNING, `wireless: ${ifname}: MLD skipped, ${reason}\n`);
 			continue;
+		}
 
 		let entry = { ...data };
 		delete entry.radio_config;
@@ -169,6 +177,8 @@ function update_config(new_devices, mlo_vifs)
 
 function config_init(uci)
 {
+	config_pending = true;
+
 	let config = uci.get_all("wireless");
 
 	let handlers = {};
@@ -414,14 +424,24 @@ function config_init(uci)
 
 function config_start()
 {
-	for (let name, dev in wireless.devices)
-		if (dev.autostart)
-			dev.start();
+	config_pending = false;
 
+	for (let name, dev in wireless.devices) {
+		if (!dev.autostart)
+			continue;
+
+		dev.start();
+		dev.check();
+	}
+
+	wdev.mld_start_idle();
 }
 
 function check_interfaces()
 {
+	if (config_pending)
+		return;
+
 	for (let name, dev in wireless.devices)
 		if (dev.autostart)
 			dev.check();
@@ -561,6 +581,7 @@ const ubus_obj = {
 
 			return wdev_call(req, (dev) => {
 				dev.update();
+				dev.check();
 				return 0;
 			});
 		}
@@ -715,6 +736,7 @@ function wifi_reset()
 }
 
 wifi_reset();
+wdev.round_start_set(supplicant_update_mlo);
 
 wireless.obj = ubus.publish("network.wireless", ubus_obj);
 wireless.listener = ubus.listener("ubus.object.add", (event, msg) => {

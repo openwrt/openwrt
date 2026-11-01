@@ -1,0 +1,68 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Sat, 24 Oct 2026 22:00:00 +0200
+Subject: [PATCH] AP MLD: delete the keys of a freed VLAN group
+
+Upstream fix: hostap main 741d70dd8e32 has the same code; to be
+reported upstream.
+
+The AP_VLAN netdev of an AP MLD is shared by its links and stays while
+any link has a station on the VLAN. When the last station of the VLAN
+leaves one link, for example by a Link Reconfiguration delete, that
+link's VLAN group is freed, but its GTK and IGTK stay installed on the
+AP_VLAN netdev for the link. A later group of the same VLAN on that link
+installs its keys with the same key indexes, and the driver replaces the
+stale keys. In mac80211 each replacement waits for an RCU grace period,
+so making the group again for a link added by Link Reconfiguration
+delayed the Link Reconfiguration Response beyond the 100 ms that a
+mac80211 station waits for it.
+
+Delete the group keys of a VLAN group of an MLD authenticator when the
+group is freed.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/src/ap/wpa_auth.c
++++ b/src/ap/wpa_auth.c
+@@ -7131,6 +7131,31 @@ void wpa_auth_pmksa_set_to_sm(struct rsn
+ }
+ 
+ 
++#ifdef CONFIG_IEEE80211BE
++/* The AP_VLAN netdev of an AP MLD outlives the VLAN group of one link while
++ * other links use it, so the keys of that group go with the group. */
++static void wpa_group_del_vlan_keys(struct wpa_authenticator *wpa_auth,
++				    struct wpa_group *group)
++{
++	int idx;
++
++	if (!wpa_auth->is_ml || group->vlan_id <= 0)
++		return;
++
++	for (idx = 1; idx <= 2; idx++)
++		wpa_auth_set_key(wpa_auth, group->vlan_id, WPA_ALG_NONE, NULL,
++				 idx, NULL, 0, KEY_FLAG_GROUP);
++
++	if (!wpa_auth_pmf_enabled(&wpa_auth->conf))
++		return;
++
++	for (idx = 4; idx <= 5; idx++)
++		wpa_auth_set_key(wpa_auth, group->vlan_id, WPA_ALG_NONE, NULL,
++				 idx, NULL, 0, KEY_FLAG_GROUP);
++}
++#endif /* CONFIG_IEEE80211BE */
++
++
+ /*
+  * Remove and free the group from wpa_authenticator. This is triggered by a
+  * callback to make sure nobody is currently iterating the group list while it
+@@ -7144,6 +7169,10 @@ static void wpa_group_free(struct wpa_au
+ 	wpa_printf(MSG_DEBUG, "WPA: Remove group state machine for VLAN-ID %d",
+ 		   group->vlan_id);
+ 
++#ifdef CONFIG_IEEE80211BE
++	wpa_group_del_vlan_keys(wpa_auth, group);
++#endif /* CONFIG_IEEE80211BE */
++
+ 	while (prev) {
+ 		if (prev->next == group) {
+ 			/* This never frees the special first group as needed */

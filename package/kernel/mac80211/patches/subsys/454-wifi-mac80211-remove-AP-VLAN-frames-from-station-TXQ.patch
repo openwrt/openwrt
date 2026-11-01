@@ -1,0 +1,202 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Fri, 23 Oct 2026 11:40:33 +0200
+Subject: [PATCH] wifi: mac80211: remove AP VLAN frames from station TXQs on
+ ifdown
+
+Since commit 531682159092 ("mac80211: fix VLAN handling with TXQs"), a
+queued frame keeps its AP VLAN in info->control.vif, and
+ieee80211_tx_dequeue() maps it to the AP through sdata->bss. When an AP
+VLAN goes down, ieee80211_txq_remove_vlan() removes its frames from the
+TXQ of the AP alone. A station that left the VLAN keeps the frames that
+were queued through it in its own TXQs, and ieee80211_do_stop() does not
+flush that station. hostapd does this when it removes a 4-address
+station: it moves the station back to the BSS interface, then deletes
+the VLAN. ieee80211_do_stop() then sets sdata->bss to NULL, and the next
+dequeue of such a frame dereferences it:
+
+  Unable to handle kernel read from unreadable memory at virtual address 00000000000011a0
+  pc : ieee80211_calc_expected_tx_airtime+0x8/0xd0 [mac80211]
+  lr : ieee80211_tx_dequeue+0xa70/0x191c [mac80211]
+  Call trace:
+   ieee80211_calc_expected_tx_airtime+0x8/0xd0 [mac80211] (P)
+   mt76_txq_send_burst+0xa8/0x2d0 [mt76]
+   mt76_txq_schedule.part.0+0x210/0x268 [mt76]
+   mt76_tx_worker+0x60/0xf0 [mt76]
+
+When an AP VLAN goes down, remove its frames from the TXQs of the AP and
+of every station of the BSS, fragment queues included, and from the
+power save and filtered frame buffers of those stations. Then wait for
+an RCU grace period before sdata->bss is cleared, since a dequeue that
+took a frame of the VLAN before the removal still reads sdata->bss.
+Such a dequeue can also queue the further fragments of the frame, so
+remove the frames of the VLAN again after the grace period.
+
+Fixes: 531682159092 ("mac80211: fix VLAN handling with TXQs")
+Cc: stable@vger.kernel.org
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+
+--- a/net/mac80211/iface.c
++++ b/net/mac80211/iface.c
+@@ -712,8 +712,15 @@ static void ieee80211_do_stop(struct iee
+ 		ieee80211_free_txskb(&local->hw, skb);
+ 	}
+ 
+-	if (sdata->vif.type == NL80211_IFTYPE_AP_VLAN)
++	if (sdata->vif.type == NL80211_IFTYPE_AP_VLAN) {
+ 		ieee80211_txq_remove_vlan(local, sdata);
++		/*
++		 * A TXQ dequeue can hold a frame of this VLAN, read sdata->bss
++		 * and queue the further fragments of the frame.
++		 */
++		synchronize_rcu();
++		ieee80211_txq_remove_vlan(local, sdata);
++	}
+ 
+ 	if (sdata->vif.txq)
+ 		ieee80211_txq_purge(sdata->local, to_txq_info(sdata->vif.txq));
+--- a/net/mac80211/tx.c
++++ b/net/mac80211/tx.c
+@@ -1506,38 +1506,129 @@ static void ieee80211_txq_enqueue(struct
+ 	spin_unlock_bh(&fq->lock);
+ }
+ 
++static bool ieee80211_skb_is_vlan(struct sk_buff *skb,
++				  struct ieee80211_vif *vlan)
++{
++	struct ieee80211_tx_info *info = IEEE80211_SKB_CB(skb);
++
++	return info->control.vif == vlan;
++}
++
+ static bool fq_vlan_filter_func(struct fq *fq, struct fq_tin *tin,
+ 				struct fq_flow *flow, struct sk_buff *skb,
+ 				void *data)
+ {
+-	struct ieee80211_tx_info *info = IEEE80211_SKB_CB(skb);
++	return ieee80211_skb_is_vlan(skb, data);
++}
+ 
+-	return info->control.vif == data;
++static void ieee80211_txqi_remove_vlan(struct ieee80211_local *local,
++				       struct txq_info *txqi,
++				       struct ieee80211_vif *vlan)
++{
++	struct fq *fq = &local->fq;
++	struct sk_buff *skb, *tmp;
++
++	spin_lock_bh(&fq->lock);
++	fq_tin_filter(fq, &txqi->tin, fq_vlan_filter_func, vlan,
++		      fq_skb_free_func);
++	skb_queue_walk_safe(&txqi->frags, skb, tmp) {
++		if (!ieee80211_skb_is_vlan(skb, vlan))
++			continue;
++
++		__skb_unlink(skb, &txqi->frags);
++		ieee80211_free_txskb(&local->hw, skb);
++	}
++	spin_unlock_bh(&fq->lock);
++}
++
++static int ieee80211_skb_queue_remove_vlan(struct ieee80211_local *local,
++					   struct sk_buff_head *queue,
++					   struct ieee80211_vif *vlan)
++{
++	struct sk_buff_head freeq;
++	struct sk_buff *skb, *tmp;
++	unsigned long flags;
++	int removed;
++
++	__skb_queue_head_init(&freeq);
++
++	spin_lock_irqsave(&queue->lock, flags);
++	skb_queue_walk_safe(queue, skb, tmp) {
++		if (!ieee80211_skb_is_vlan(skb, vlan))
++			continue;
++
++		__skb_unlink(skb, queue);
++		__skb_queue_tail(&freeq, skb);
++	}
++	spin_unlock_irqrestore(&queue->lock, flags);
++
++	removed = skb_queue_len(&freeq);
++	while ((skb = __skb_dequeue(&freeq)))
++		ieee80211_free_txskb(&local->hw, skb);
++
++	return removed;
++}
++
++static void ieee80211_sta_remove_vlan(struct ieee80211_local *local,
++				      struct sta_info *sta,
++				      struct ieee80211_vif *vlan)
++{
++	bool buffered_removed = false;
++	int i, ac, removed;
++
++	for (i = 0; i < ARRAY_SIZE(sta->sta.txq); i++) {
++		if (!sta->sta.txq[i])
++			continue;
++
++		ieee80211_txqi_remove_vlan(local, to_txq_info(sta->sta.txq[i]),
++					   vlan);
++	}
++
++	for (ac = 0; ac < IEEE80211_NUM_ACS; ac++) {
++		removed = ieee80211_skb_queue_remove_vlan(local,
++							  &sta->ps_tx_buf[ac],
++							  vlan);
++		local->total_ps_buffered -= removed;
++		if (removed)
++			buffered_removed = true;
++
++		if (ieee80211_skb_queue_remove_vlan(local, &sta->tx_filtered[ac],
++						    vlan))
++			buffered_removed = true;
++	}
++
++	if (buffered_removed)
++		sta_info_recalc_tim(sta);
+ }
+ 
+ void ieee80211_txq_remove_vlan(struct ieee80211_local *local,
+ 			       struct ieee80211_sub_if_data *sdata)
+ {
+-	struct fq *fq = &local->fq;
+-	struct txq_info *txqi;
+-	struct fq_tin *tin;
+ 	struct ieee80211_sub_if_data *ap;
++	struct sta_info *sta;
++
++	lockdep_assert_wiphy(local->hw.wiphy);
+ 
+ 	if (WARN_ON(sdata->vif.type != NL80211_IFTYPE_AP_VLAN))
+ 		return;
+ 
+ 	ap = container_of(sdata->bss, struct ieee80211_sub_if_data, u.ap);
+ 
+-	if (!ap->vif.txq)
+-		return;
+-
+-	txqi = to_txq_info(ap->vif.txq);
+-	tin = &txqi->tin;
++	if (ap->vif.txq)
++		ieee80211_txqi_remove_vlan(local, to_txq_info(ap->vif.txq),
++					   &sdata->vif);
++
++	if (ap->vif.txq_mgmt)
++		ieee80211_txqi_remove_vlan(local, to_txq_info(ap->vif.txq_mgmt),
++					   &sdata->vif);
++
++	/* a station that left this VLAN keeps the frames queued through it */
++	list_for_each_entry(sta, &local->sta_list, list) {
++		if (sta->sdata->bss != sdata->bss)
++			continue;
+ 
+-	spin_lock_bh(&fq->lock);
+-	fq_tin_filter(fq, tin, fq_vlan_filter_func, &sdata->vif,
+-		      fq_skb_free_func);
+-	spin_unlock_bh(&fq->lock);
++		ieee80211_sta_remove_vlan(local, sta, &sdata->vif);
++	}
+ }
+ 
+ void ieee80211_txq_init(struct ieee80211_sub_if_data *sdata,

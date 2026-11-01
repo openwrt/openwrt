@@ -1,0 +1,74 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Fri, 23 Oct 2026 23:00:00 +0200
+Subject: [PATCH] AP MLD: refuse a link whose removal runs
+
+Depends on 602, 603 and 822.
+
+IEEE 802.11be-2024 35.3.6.3 removes the affiliated AP at the TBTT that
+the AP Removal Timer names. A non-AP MLD that sets up a link to that AP
+during the countdown loses the link at that TBTT. hostapd accepted such
+a link in a multi-link association and in a Link Reconfiguration
+Request that adds it. A driver that moved the station TX off the link
+at the start of the removal (mt7996) then puts the new link station
+on that link again.
+
+Refuse a link whose removal runs with the per-link status
+UNSPECIFIED_FAILURE, as the other refused links. The association or
+the reconfiguration goes on over the other links. Refuse a multi-link
+association that a link in removal receives, as that link would be
+the association link of the station.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/src/ap/hostapd.c
++++ b/src/ap/hostapd.c
+@@ -631,7 +631,7 @@ u64 hostapd_link_remove_ms(struct hostap
+ }
+ 
+ 
+-static bool hostapd_link_remove_pending(struct hostapd_data *hapd)
++bool hostapd_link_remove_pending(struct hostapd_data *hapd)
+ {
+ 	return hapd->eht_mld_link_removal_count ||
+ 		hapd->eht_mld_link_removal_offload ||
+--- a/src/ap/hostapd.h
++++ b/src/ap/hostapd.h
+@@ -1043,6 +1043,7 @@ void hostapd_link_remove_tx_status(struc
+ void hostapd_link_remove_expired(struct hostapd_data *hapd, u16 links);
+ bool hostapd_link_remove_beacon_held(struct hostapd_data *hapd);
+ void hostapd_link_remove_beacon_set(struct hostapd_data *hapd);
++bool hostapd_link_remove_pending(struct hostapd_data *hapd);
+ bool hostapd_is_ml_partner(struct hostapd_data *hapd1,
+ 			   struct hostapd_data *hapd2);
+ u8 hostapd_get_mld_id(struct hostapd_data *hapd);
+--- a/src/ap/ieee802_11.c
++++ b/src/ap/ieee802_11.c
+@@ -6565,6 +6565,13 @@ int ieee80211_ml_process_link(struct hos
+ 		goto out;
+ 	}
+ 
++	if (hostapd_link_remove_pending(hapd)) {
++		wpa_printf(MSG_DEBUG, "MLD: link: link_id=%u is being removed",
++			   hapd->mld_link_id);
++		status = WLAN_STATUS_UNSPECIFIED_FAILURE;
++		goto out;
++	}
++
+ 	sta = ap_get_sta(hapd, origin_sta->addr);
+ 	if (sta || TEST_FAIL()) {
+ 		wpa_printf(MSG_INFO, "MLD: link: Station already exists");
+--- a/src/ap/ieee802_11_eht.c
++++ b/src/ap/ieee802_11_eht.c
+@@ -1186,6 +1186,12 @@ static u16 hostapd_mld_validate_assoc_in
+ 		return WLAN_STATUS_SUCCESS;
+ 	}
+ 
++	if (hostapd_link_remove_pending(hapd)) {
++		wpa_printf(MSG_DEBUG, "MLD: Link ID=%u is being removed",
++			   hapd->mld_link_id);
++		return WLAN_STATUS_UNSPECIFIED_FAILURE;
++	}
++
+ 	/*
+ 	 * Iterate over the links negotiated in the (Re)Association Request
+ 	 * frame and validate that they are indeed valid links in the local AP

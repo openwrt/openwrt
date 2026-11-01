@@ -1,0 +1,97 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Mon, 26 Oct 2026 14:10:00 +0100
+Subject: [PATCH] AP: free a non-AP MLD on all its links at a drop without a
+ frame
+
+Depends on 878-AP-add-hostapd_bss_stop_ap-for-a-stop-that-keeps-the.patch.
+
+DEAUTHENTICATE and DISASSOCIATE with tx=0 on the control interface
+remove the station from the driver and free its entry on the BSS of the
+command. For a non-AP MLD, the driver removes the station with all its
+links, but hostapd kept the STA on its other links: the link STA after
+the command on the association link, and the STA of the association
+link, associated and authorized, after the command on another link.
+A frame from the station on such a link then found the stale entry,
+and the next association of the station could not set up that link
+("MLD: link: Station already exists").
+
+Add ap_free_sta_all_links(), which frees the non-AP MLD on all its
+links, and use it for tx=0 and in hostapd_free_link_sta_mlds().
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/src/ap/ctrl_iface_ap.c
++++ b/src/ap/ctrl_iface_ap.c
+@@ -676,7 +676,7 @@ int hostapd_ctrl_iface_deauthenticate(st
+ 	if (os_strstr(txtaddr, " tx=0")) {
+ 		hostapd_drv_sta_remove(hapd, addr);
+ 		if (sta)
+-			ap_free_sta(hapd, sta);
++			ap_free_sta_all_links(hapd, sta);
+ 	} else {
+ 		hostapd_drv_sta_deauth(hapd, addr, reason);
+ 		if (sta)
+@@ -741,7 +741,7 @@ int hostapd_ctrl_iface_disassociate(stru
+ 	if (os_strstr(txtaddr, " tx=0")) {
+ 		hostapd_drv_sta_remove(hapd, addr);
+ 		if (sta)
+-			ap_free_sta(hapd, sta);
++			ap_free_sta_all_links(hapd, sta);
+ 	} else {
+ 		hostapd_drv_sta_disassoc(hapd, addr, reason);
+ 		if (sta)
+--- a/src/ap/sta_info.c
++++ b/src/ap/sta_info.c
+@@ -2407,23 +2407,33 @@ void hostapd_free_mld_partner_stas(struc
+  * its links, so free the non-AP MLDs whose association link is another one. */
+ void hostapd_free_link_sta_mlds(struct hostapd_data *hapd)
+ {
+-	struct sta_info *sta, *next, *assoc_sta;
+-	struct hostapd_data *assoc_hapd;
++	struct sta_info *sta, *next;
+ 
+ 	for (sta = hapd->sta_list; sta; sta = next) {
+ 		next = sta->next;
+-		if (!hostapd_sta_is_link_sta(hapd, sta))
+-			continue;
++		if (hostapd_sta_is_link_sta(hapd, sta))
++			ap_free_sta_all_links(hapd, sta);
++	}
++}
++#endif /* CONFIG_IEEE80211BE */
+ 
+-		assoc_sta = hostapd_ml_get_assoc_sta(hapd, sta, &assoc_hapd);
+-		if (!assoc_sta || assoc_sta == sta)
+-			continue;
+ 
++/* The driver station of a non-AP MLD holds all its links. */
++void ap_free_sta_all_links(struct hostapd_data *hapd, struct sta_info *sta)
++{
++#ifdef CONFIG_IEEE80211BE
++	struct hostapd_data *assoc_hapd;
++	struct sta_info *assoc_sta;
++
++	assoc_sta = hostapd_ml_get_assoc_sta(hapd, sta, &assoc_hapd);
++	if (assoc_sta) {
+ 		ap_sta_remove_link_sta(assoc_hapd, assoc_sta);
+-		ap_free_sta(assoc_hapd, assoc_sta);
++		hapd = assoc_hapd;
++		sta = assoc_sta;
+ 	}
+-}
+ #endif /* CONFIG_IEEE80211BE */
++	ap_free_sta(hapd, sta);
++}
+ 
+ 
+ int ap_sta_re_add(struct hostapd_data *hapd, struct sta_info *sta)
+--- a/src/ap/sta_info.h
++++ b/src/ap/sta_info.h
+@@ -440,6 +440,7 @@ struct sta_info * ap_get_sta_p2p(struct
+ void ap_sta_hash_add(struct hostapd_data *hapd, struct sta_info *sta);
+ void ap_sta_clear_sae_pt(struct sta_info *sta);
+ void ap_free_sta(struct hostapd_data *hapd, struct sta_info *sta);
++void ap_free_sta_all_links(struct hostapd_data *hapd, struct sta_info *sta);
+ void ap_sta_ip6addr_del(struct hostapd_data *hapd, struct sta_info *sta);
+ void hostapd_free_stas(struct hostapd_data *hapd);
+ void ap_handle_timer(void *eloop_ctx, void *timeout_ctx);

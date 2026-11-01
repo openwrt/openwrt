@@ -1,0 +1,29 @@
+From a48daf145fed445d41ef422573411500785415c8 Mon Sep 17 00:00:00 2001
+From: Johannes Berg <johannes.berg@intel.com>
+Date: Sun, 2 Aug 2026 10:57:20 +0200
+Subject: [PATCH] wifi: mac80211: don't send encap offload frames unencrypted
+
+For 802.11 frames, ieee80211_tx_h_select_key() drops a data frame
+that ended up without a key if the station requires encryption, so
+that traffic can never leak out unprotected. Encapsulation offload
+erroneously didn't get this code path. Fix that.
+
+Fixes: 50ff477a8639 ("mac80211: add 802.11 encapsulation offloading support")
+Link: https://patch.msgid.link/20260802085818.1336616-7-johannes@sipsolutions.net
+Signed-off-by: Johannes Berg <johannes.berg@intel.com>
+---
+ net/mac80211/tx.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+--- a/net/mac80211/tx.c
++++ b/net/mac80211/tx.c
+@@ -607,6 +607,9 @@ ieee80211_select_key_8023(struct ieee802
+ 		tx->key = rcu_dereference(tx->sta->ptk[tx->sta->ptk_idx]);
+ 		if (!tx->key)
+ 			tx->key = rcu_dereference(tx->sdata->default_unicast_key);
++
++		if (!tx->key && test_sta_flag(tx->sta, WLAN_STA_USES_ENCRYPTION))
++			return TX_DROP;
+ 	} else if (!ieee80211_vif_is_mld(&tx->sdata->vif)) {
+ 		tx->key = rcu_dereference(tx->sdata->deflink.default_multicast_key);
+ 	}

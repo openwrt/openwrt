@@ -86,19 +86,19 @@ static void rtldsa_83xx_mc_pmasks_setup(struct otto_dsa_priv *priv)
 static void rtldsa_setup_bpdu_traps(struct otto_dsa_priv *priv)
 {
 	for (int i = 0; i < priv->r->cpu_port; i++)
-		priv->r->set_receive_management_action(i, BPDU, TRAP2CPU);
+		priv->r->set_receive_management_action(priv, i, BPDU, TRAP2CPU);
 }
 
 static void rtldsa_setup_lldp_traps(struct otto_dsa_priv *priv)
 {
 	for (int i = 0; i < priv->r->cpu_port; i++)
-		priv->r->set_receive_management_action(i, LLDP, TRAP2CPU);
+		priv->r->set_receive_management_action(priv, i, LLDP, TRAP2CPU);
 }
 
 static void rtldsa_setup_eapol_traps(struct otto_dsa_priv *priv)
 {
 	for (int i = 0; i < priv->r->cpu_port; i++)
-		priv->r->set_receive_management_action(i, EAPOL, TRAP2CPU);
+		priv->r->set_receive_management_action(priv, i, EAPOL, TRAP2CPU);
 }
 
 static void rtldsa_port_set_salrn(struct otto_dsa_priv *priv,
@@ -128,10 +128,10 @@ static int rtldsa_83xx_setup(struct dsa_switch *ds)
 	for (int i = 0; i < priv->r->cpu_port; i++) {
 		if (priv->ports[i].phy || priv->ports[i].has_pcs) {
 			priv->ports[i].pm = BIT_ULL(priv->r->cpu_port);
-			priv->r->traffic_set(i, BIT_ULL(i));
+			priv->r->traffic_set(priv, i, BIT_ULL(i));
 		}
 	}
-	priv->r->traffic_set(priv->r->cpu_port, BIT_ULL(priv->r->cpu_port));
+	priv->r->traffic_set(priv, priv->r->cpu_port, BIT_ULL(priv->r->cpu_port));
 
 	/* For standalone ports, forward packets even if a static fdb
 	 * entry for the source address exists on another port.
@@ -141,7 +141,7 @@ static int rtldsa_83xx_setup(struct dsa_switch *ds)
 			priv->r->set_static_move_action(priv, i, true);
 	}
 
-	priv->r->print_matrix();
+	priv->r->print_matrix(priv);
 	otto_stats_init(priv);
 	otto_stats_init_counters(priv);
 
@@ -192,11 +192,11 @@ static int rtldsa_93xx_setup(struct dsa_switch *ds)
 	for (int i = 0; i < priv->r->cpu_port; i++) {
 		if (priv->ports[i].phy || priv->ports[i].has_pcs) {
 			priv->ports[i].pm = BIT_ULL(priv->r->cpu_port);
-			priv->r->traffic_set(i, BIT_ULL(i));
+			priv->r->traffic_set(priv, i, BIT_ULL(i));
 		}
 	}
-	priv->r->traffic_set(priv->r->cpu_port, BIT_ULL(priv->r->cpu_port));
-	priv->r->print_matrix();
+	priv->r->traffic_set(priv, priv->r->cpu_port, BIT_ULL(priv->r->cpu_port));
+	priv->r->print_matrix(priv);
 
 	otto_stats_init(priv);
 	otto_stats_init_counters(priv);
@@ -631,10 +631,10 @@ static int rtldsa_port_enable(struct dsa_switch *ds, int port, struct phy_device
 		return 0;
 
 	/* add port to switch mask of CPU_PORT */
-	priv->r->traffic_enable(priv->r->cpu_port, port);
+	priv->r->traffic_enable(priv, priv->r->cpu_port, port);
 
 	/* add all other ports in the same bridge to switch mask of port */
-	priv->r->traffic_set(port, priv->ports[port].pm);
+	priv->r->traffic_set(priv, port, priv->ports[port].pm);
 
 	/* TODO: Figure out if this is necessary */
 	if (priv->family_id == RTL9300_FAMILY_ID) {
@@ -656,10 +656,10 @@ static void rtldsa_port_disable(struct dsa_switch *ds, int port)
 
 	/* BUG: This does not work on RTL931X */
 	/* remove port from switch mask of CPU_PORT */
-	priv->r->traffic_disable(priv->r->cpu_port, port);
+	priv->r->traffic_disable(priv, priv->r->cpu_port, port);
 
 	/* remove all other ports from switch mask of port */
-	priv->r->traffic_set(port, 0);
+	priv->r->traffic_set(priv, port, 0);
 
 	priv->ports[port].enable = false;
 }
@@ -804,13 +804,13 @@ static void rtldsa_update_port_member(struct otto_dsa_priv *priv, int port,
 		}
 
 		if (other_p->enable)
-			priv->r->traffic_set(other_port, other_p->pm);
+			priv->r->traffic_set(priv, other_port, other_p->pm);
 	}
 
 	p->pm = port_mask;
 
 	if (p->enable)
-		priv->r->traffic_set(port, port_mask);
+		priv->r->traffic_set(priv, port, port_mask);
 }
 
 static int rtldsa_port_bridge_join(struct dsa_switch *ds, int port, struct dsa_bridge bridge,
@@ -847,7 +847,7 @@ static int rtldsa_port_bridge_join(struct dsa_switch *ds, int port, struct dsa_b
 		priv->r->set_static_move_action(priv, port, false);
 
 	/* Set to disabled in all MSTs, common code will take care of CIST */
-	rtldsa_port_non_cist_states_set(priv, port, BR_STATE_DISABLED);
+	otto_stp_port_non_cist_states_set(priv, port, BR_STATE_DISABLED);
 
 	mutex_unlock(&priv->reg_mutex);
 
@@ -876,7 +876,7 @@ static void rtldsa_port_bridge_leave(struct dsa_switch *ds, int port, struct dsa
 		priv->r->set_static_move_action(priv, port, true);
 
 	/* Set to forwarding in all MSTs, common code will take care of CIST */
-	rtldsa_port_non_cist_states_set(priv, port, BR_STATE_FORWARDING);
+	otto_stp_port_non_cist_states_set(priv, port, BR_STATE_FORWARDING);
 
 	mutex_unlock(&priv->reg_mutex);
 }
@@ -1420,9 +1420,9 @@ const struct dsa_switch_ops rtldsa_83xx_switch_ops = {
 	.set_ageing_time	= rtldsa_set_ageing_time,
 	.port_bridge_join	= rtldsa_port_bridge_join,
 	.port_bridge_leave	= rtldsa_port_bridge_leave,
-	.port_stp_state_set	= rtldsa_port_stp_state_set,
+	.port_stp_state_set	= otto_stp_port_state_set,
 	.port_fast_age		= rtldsa_port_fast_age,
-	.port_mst_state_set	= rtldsa_port_mst_state_set,
+	.port_mst_state_set	= otto_stp_port_mst_state_set,
 
 	.port_vlan_filtering	= otto_vlan_port_filtering,
 	.port_vlan_protocol	= rtldsa_port_vlan_protocol,
@@ -1487,9 +1487,9 @@ const struct dsa_switch_ops rtldsa_93xx_switch_ops = {
 	.set_ageing_time	= rtldsa_set_ageing_time,
 	.port_bridge_join	= rtldsa_port_bridge_join,
 	.port_bridge_leave	= rtldsa_port_bridge_leave,
-	.port_stp_state_set	= rtldsa_port_stp_state_set,
+	.port_stp_state_set	= otto_stp_port_state_set,
 	.port_fast_age		= rtldsa_port_fast_age,
-	.port_mst_state_set	= rtldsa_port_mst_state_set,
+	.port_mst_state_set	= otto_stp_port_mst_state_set,
 
 	.port_vlan_filtering	= otto_vlan_port_filtering,
 	.port_vlan_protocol	= rtldsa_port_vlan_protocol,

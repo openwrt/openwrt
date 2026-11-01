@@ -29,6 +29,11 @@ that TBTT. At the expiry, in this order:
 - free the link stations of the non-AP MLDs that keep another link
   (REMOVE_LINK_STA), so that the link STOP_AP flushes only the stations
   the link alone holds;
+- clear the authorized flag of each station associated over the link in
+  hostapd and in the driver, before the frame below ends its State 3
+  or 4 (IEEE 802.11-2024 11.3.3). mac80211 then drops new data for the
+  station. Data frames already queued in mac80211 (with 802.3 encap
+  offload) and in the driver can still go out;
 - send each station associated over the link a Disassociation where it
   is not an MLD, and a Deauthentication where it is: hostapd cannot
   move an association to another link, so it associates again. The
@@ -97,11 +102,11 @@ The limits of this timing:
 Signed-off-by: Felix Fietkau <nbd@nbd.name>
 ---
  src/ap/beacon.c     |    9 ++
- src/ap/hostapd.c    |  267 ++++++++++++++++++++++++++++++++++++++++++++++++++-
+ src/ap/hostapd.c    |  272 ++++++++++++++++++++++++++++++++++++++++++++++++++-
  src/ap/hostapd.h    |    6 +
  src/ap/ieee802_11.c |    6 +
  src/ap/sta_info.h   |    1 
- 5 files changed, 283 insertions(+), 6 deletions(-)
+ 5 files changed, 288 insertions(+), 6 deletions(-)
 
 --- a/src/ap/beacon.c
 +++ b/src/ap/beacon.c
@@ -123,7 +128,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		return -1;
 --- a/src/ap/hostapd.c
 +++ b/src/ap/hostapd.c
-@@ -497,6 +497,240 @@ static void hostapd_link_remove_timeout_
+@@ -497,6 +497,245 @@ static void hostapd_link_remove_timeout_
  }
  
  
@@ -306,6 +311,11 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +		if (!(sta->flags & WLAN_STA_ASSOC))
 +			continue;
 +
++		/* Stop new data before the frame ends State 3 or 4 (IEEE Std
++		 * 802.11-2024, 11.3.3) */
++		ap_sta_set_authorized(hapd, sta, 0);
++		hostapd_set_sta_flags(hapd, sta);
++
 +		if (ap_sta_is_mld(hapd, sta)) {
 +			tx_hapd = hostapd_link_remove_partner(hapd, sta);
 +			if (!tx_hapd)
@@ -364,7 +374,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  static void hostapd_link_remove_timeout_handler(void *eloop_data,
  						void *user_ctx)
  {
-@@ -510,13 +744,12 @@ static void hostapd_link_remove_timeout_
+@@ -510,13 +749,12 @@ static void hostapd_link_remove_timeout_
  		   hapd->mld_link_id,
  		   hapd->eht_mld_link_removal_count);
  
@@ -380,7 +390,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	hostapd_link_remove_timeout_register(hapd);
  }
  
-@@ -529,9 +762,29 @@ int hostapd_link_remove(struct hostapd_d
+@@ -529,9 +767,29 @@ int hostapd_link_remove(struct hostapd_d
  	    count > 0xffff)
  		return -1;
  
@@ -411,7 +421,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	wpa_printf(MSG_DEBUG,
  		   "MLD: Remove link_id=%u in %u beacons",
  		   hapd->mld_link_id, count);
-@@ -542,10 +795,9 @@ int hostapd_link_remove(struct hostapd_d
+@@ -542,10 +800,9 @@ int hostapd_link_remove(struct hostapd_d
  	if (hapd->eht_mld_bss_param_change == 255)
  		hapd->eht_mld_bss_param_change = 0;
  
@@ -423,7 +433,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	return 0;
  }
  
-@@ -556,7 +808,10 @@ void hostapd_free_hapd_data(struct hosta
+@@ -556,7 +813,10 @@ void hostapd_free_hapd_data(struct hosta
  {
  #ifdef CONFIG_IEEE80211BE
  	eloop_cancel_timeout(hostapd_link_remove_timeout_handler, hapd, NULL);

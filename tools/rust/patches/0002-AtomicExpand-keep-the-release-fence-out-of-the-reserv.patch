@@ -1,0 +1,85 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Josef Schlehofer <pepe.schlehofer@gmail.com>
+Date: Sat, 9 Aug 2026 09:15:00 +0000
+Subject: [PATCH] AtomicExpand: keep the release fence out of the reservation
+
+AtomicExpandPass sinks the leading fence of a cmpxchg between the
+load-linked and the store-conditional. On e500v2, the core in mpc85xx, a
+sync there clears the reservation and the store-conditional fails. The
+strong form recovers, because its retry re-reserves after the fence; the
+weak form has no retry and so can never succeed.
+
+fetch_update in core is a compare_exchange_weak retry loop, so on this
+subtarget it spins forever and anything built on it hangs. A tokio reactor
+livelocks on the first I/O event it receives, burning CPU and issuing no
+syscalls.
+
+Add a TargetLowering hook, defaulting to false, and hoist the fence for a
+weak cmpxchg only where the target says a fence can clear its reservation.
+PowerPC says so. For every other target the condition is unchanged, so
+their fence placement and codegen are preserved.
+
+Verified against LLVM built for PowerPC, ARM, AArch64, RISCV, Mips and
+Sparc: the same 75 pre-existing test failures with the change and without
+it, identical lists.
+
+Only the three source files are carried here. The upstream change also adds
+tests, which OpenWrt does not build.
+
+Upstream-Status: Submitted [https://github.com/llvm/llvm-project/pull/214867]
+
+Signed-off-by: Josef Schlehofer <pepe.schlehofer@gmail.com>
+---
+--- a/src/llvm-project/llvm/include/llvm/CodeGen/TargetLowering.h
++++ b/src/llvm-project/llvm/include/llvm/CodeGen/TargetLowering.h
+@@ -2305,6 +2305,13 @@ public:
+     return false;
+   }
+ 
++  /// Whether a fence placed between the load-linked and the store-conditional
++  /// can clear the reservation on this target. When it can, AtomicExpandPass
++  /// must not sink the leading fence of a weak cmpxchg into the reservation
++  /// window: the store-conditional would fail, and a weak cmpxchg has no retry
++  /// to re-reserve and recover with. Defaults to false.
++  virtual bool fenceClearsLoadLinkedReservation() const { return false; }
++
+   /// Whether AtomicExpandPass should automatically insert a seq_cst trailing
+   /// fence without reducing the ordering for this atomic store. Defaults to
+   /// false.
+--- a/src/llvm-project/llvm/lib/CodeGen/AtomicExpandPass.cpp
++++ b/src/llvm-project/llvm/lib/CodeGen/AtomicExpandPass.cpp
+@@ -1492,7 +1492,17 @@ bool AtomicExpandImpl::expandAtomicCmpXc
+ 
+   // There's no overhead for sinking the release barrier in a weak cmpxchg, so
+   // do it even on minsize.
+-  bool UseUnconditionalReleaseBarrier = F->hasMinSize() && !CI->isWeak();
++  //
++  // Except where a fence can clear the reservation. Sinking puts the fence
++  // between the load-linked and the store-conditional, and there the
++  // store-conditional fails; the strong form recovers because its retry
++  // re-reserves afterwards, but a weak cmpxchg has no retry and so could never
++  // succeed. Hoisting is valid because the fence is only needed to provide the
++  // release ordering of a successful store, and executing it on an attempt
++  // that fails before the store has no additional ordering effect.
++  bool UseUnconditionalReleaseBarrier =
++      (F->hasMinSize() && !CI->isWeak()) ||
++      (CI->isWeak() && TLI->fenceClearsLoadLinkedReservation());
+ 
+   // Given: cmpxchg some_op iN* %addr, iN %desired, iN %new success_ord fail_ord
+   //
+--- a/src/llvm-project/llvm/lib/Target/PowerPC/PPCISelLowering.h
++++ b/src/llvm-project/llvm/lib/Target/PowerPC/PPCISelLowering.h
+@@ -338,6 +338,13 @@ namespace llvm {
+       return true;
+     }
+ 
++    /// The Power ISA lets an implementation clear a reservation for reasons of
++    /// its own, and e500v2 does so for a sync between the lwarx and the
++    /// stwcx., which leaves a weak cmpxchg unable to ever succeed. Gating on
++    /// isE500() would miss generic powerpc builds, where nothing enables it;
++    /// the cost elsewhere is one fence on the comparison-failed path.
++    bool fenceClearsLoadLinkedReservation() const override { return true; }
++
+     Value *emitLoadLinked(IRBuilderBase &Builder, Type *ValueTy, Value *Addr,
+                           AtomicOrdering Ord) const override;
+ 

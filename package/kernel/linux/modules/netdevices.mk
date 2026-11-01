@@ -183,6 +183,22 @@ endef
 $(eval $(call KernelPackage,libeth))
 
 
+define KernelPackage/libeth-xdp
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=Common Intel Ethernet XDP library
+  DEPENDS:=+kmod-libeth
+  KCONFIG:=CONFIG_LIBETH_XDP
+  HIDDEN:=1
+  FILES:=$(LINUX_DIR)/drivers/net/ethernet/intel/libeth/libeth_xdp.ko
+endef
+
+define KernelPackage/libeth-xdp/description
+ Common Intel Ethernet XDP library
+endef
+
+$(eval $(call KernelPackage,libeth-xdp))
+
+
 define KernelPackage/libphy
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=PHY library
@@ -378,6 +394,7 @@ define KernelPackage/phy-ax88796b
    DEPENDS:=+kmod-libphy
    FILES:=$(LINUX_DIR)/drivers/net/phy/ax88796b.ko
    AUTOLOAD:=$(call AutoProbe,ax88796b)
+   DEFAULT_VARIANT:=1
 endef
 
 define KernelPackage/phy-ax88796b/description
@@ -386,6 +403,27 @@ define KernelPackage/phy-ax88796b/description
 endef
 
 $(eval $(call KernelPackage,phy-ax88796b))
+
+
+define KernelPackage/phy-ax88796b-rust
+   SUBMENU:=$(NETWORK_DEVICES_MENU)
+   TITLE:=Asix PHY driver written in Rust
+   KCONFIG:= \
+	CONFIG_AX88796B_RUST_PHY \
+	CONFIG_PHYLIB=y \
+	CONFIG_RUST_PHYLIB_ABSTRACTIONS=y
+   DEPENDS:=@KERNEL_RUST
+   PROVIDES:=kmod-phy-ax88796b
+   FILES:=$(LINUX_DIR)/drivers/net/phy/ax88796b_rust.ko
+   AUTOLOAD:=$(call AutoProbe,ax88796b_rust)
+endef
+
+define KernelPackage/phy-ax88796b-rust/description
+   The Rust reference driver for the Asix Electronics PHYs, equivalent to
+   kmod-phy-ax88796b and installable in its place.
+endef
+
+$(eval $(call KernelPackage,phy-ax88796b-rust))
 
 
 define KernelPackage/phy-broadcom
@@ -1517,7 +1555,7 @@ $(eval $(call KernelPackage,i40e))
 define KernelPackage/ice
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=Intel(R) Ethernet Controller E810 Series support
-  DEPENDS:=@PCI_SUPPORT +kmod-ptp +kmod-hwmon-core +kmod-libie +kmod-libie-adminq +kmod-libie-fwlog
+  DEPENDS:=@PCI_SUPPORT +kmod-ptp +kmod-hwmon-core +kmod-libie +kmod-libie-adminq +kmod-libie-fwlog +kmod-libeth-xdp
   KCONFIG:=CONFIG_ICE \
     CONFIG_ICE_HWMON=y \
     CONFIG_ICE_HWTS=n \

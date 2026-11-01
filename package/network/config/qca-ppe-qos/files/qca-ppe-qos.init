@@ -19,11 +19,12 @@ PARAM_DIR=/sys/module/qca_ppe/parameters
 # shared ingress block and leaves anything else alone. The switch ranks a rule
 # by the preference it was given and holds nine bits of it, so the range sits
 # inside that and high, where a rule this script installs by default yields to
-# anything the user placed deliberately. It stops one short of the last
-# preference the switch holds, so a rule placed there - a download mark from
-# whatever owns the shaper - outranks every rule here.
+# anything the user placed deliberately: the driver ranks a lower preference
+# higher. It stops at 509, below the small-packet rule's rank and the 511 that
+# hw_ppe.qos marks its download band with, which therefore ranks below every
+# rule here.
 PREF_BASE=256
-PREF_MAX=510
+PREF_MAX=509
 
 # The classifier holds 512 entries for the whole switch. A rule's address and
 # port lists become a filter per combination, so the product of four lists can
@@ -249,7 +250,8 @@ flush_filters() {
 	for p in $(switch_ports); do
 		for n in $(tc filter show dev "$p" parent ffff: 2>/dev/null |
 			   sed -n 's/.* pref \([0-9]*\) .*/\1/p' | sort -u); do
-			[ "$n" -ge $PREF_BASE ] && [ "$n" -le $PREF_MAX ] &&
+			# 510 too: an earlier version installed up to it.
+			[ "$n" -ge $PREF_BASE ] && [ "$n" -le 510 ] &&
 				tc filter del dev "$p" parent ffff: pref "$n" \
 					>/dev/null 2>&1
 		done
@@ -277,6 +279,16 @@ wifi_small_pkt() {
 	# from growing the block.
 	wifi_clear "$dev"
 
+	# A short TCP segment with PSH ends a write of a flow whose other
+	# segments are full size; in a higher access category it would overtake
+	# them and reorder the flow on every write, so it leaves before the stamp.
+	# Fixed offsets: IPv4 without options, IPv6 without extension headers.
+	tc filter add dev "$dev" egress pref $((PREF_BASE - 2)) protocol ip u32 \
+		match u8 0x45 0xff at 0 match u8 0x06 0xff at 9 \
+		match u8 0x08 0x08 at 33 action ok 2>/dev/null
+	tc filter add dev "$dev" egress pref $((PREF_BASE - 1)) \
+		protocol ipv6 u32 match u8 0x06 0xff at 6 \
+		match u8 0x08 0x08 at 53 action ok 2>/dev/null
 	tc filter add dev "$dev" egress pref $PREF_BASE protocol ip u32 \
 		match u16 0x0000 0xff00 at 2 \
 		action skbedit priority $(printf '%x' $((256 + prio))) 2>/dev/null
@@ -286,6 +298,8 @@ wifi_small_pkt() {
 }
 
 wifi_clear() {
+	tc filter del dev "$1" egress pref $((PREF_BASE - 2)) >/dev/null 2>&1
+	tc filter del dev "$1" egress pref $((PREF_BASE - 1)) >/dev/null 2>&1
 	tc filter del dev "$1" egress pref $PREF_BASE >/dev/null 2>&1
 	tc filter del dev "$1" egress pref $((PREF_BASE + 1)) >/dev/null 2>&1
 }
@@ -300,7 +314,8 @@ apply() {
 
 	# Everything below arms a classifier, so an off config takes the same
 	# path as stop rather than programming half of it.
-	[ "$ENABLED" = 1 ] || { teardown; return 0; }
+	# 'enabled' switches the marking rules only: the DSCP maps and the
+	# small-packet priority below stay, as the LuCI page says.
 
 	if [ -w "$PARAM_DIR/small_pkt_len" ]; then
 		echo "$prio" > "$PARAM_DIR/small_pkt_prio"
@@ -386,7 +401,11 @@ apply() {
 	PREF_N=0
 	INSTALLED=0
 	SKIPPED=0
-	config_foreach apply_rule rule
+	if [ "$ENABLED" = 1 ]; then
+		config_foreach apply_rule rule
+	else
+		flush_filters
+	fi
 
 	# The classifier is a fixed 512 entries shared by every port, and a rule
 	# costs four entries per port it is installed on, one per ECN codepoint -
@@ -413,10 +432,9 @@ wifi_dev() {
 
 	[ -n "$dev" ] || return 1
 	config_load qca-ppe-qos
-	config_get_bool ENABLED global enabled 1
 	config_get len global small_pkt_len 1000
 	config_get prio global small_pkt_prio 5
-	[ "$ENABLED" = 1 ] && [ "$len" -gt 0 ] || return 0
+	[ "$len" -gt 0 ] || return 0
 	wifi_small_pkt "$dev" "$prio"
 }
 

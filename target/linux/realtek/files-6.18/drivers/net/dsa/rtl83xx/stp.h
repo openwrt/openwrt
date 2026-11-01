@@ -18,27 +18,27 @@ struct rtldsa_mst {
 	struct kref refcount;
 };
 
-bool rtldsa_mst_put_slot(struct otto_dsa_priv *priv, u16 mst_slot);
-int rtldsa_mst_replace(struct otto_dsa_priv *priv, u16 msti, u16 old_mst_slot);
-int rtldsa_port_get_stp_state(struct otto_dsa_priv *priv, int port);
-void rtldsa_port_stp_state_set(struct dsa_switch *ds, int port, u8 state);
-int rtldsa_port_mst_state_set(struct dsa_switch *ds, int port,
-			      const struct switchdev_mst_state *st);
+bool otto_stp_slot_put(struct otto_dsa_priv *priv, u16 mst_slot);
+int otto_stp_slot_replace(struct otto_dsa_priv *priv, u16 msti, u16 old_mst_slot);
+int otto_stp_port_state_get(struct otto_dsa_priv *priv, int port);
+void otto_stp_port_state_set(struct dsa_switch *ds, int port, u8 state);
+int otto_stp_port_mst_state_set(struct dsa_switch *ds, int port,
+				const struct switchdev_mst_state *st);
 
 /* Caller must hold priv->reg_mutex. */
-void rtldsa_port_non_cist_states_set(struct otto_dsa_priv *priv, int port, u8 state);
+void otto_stp_port_non_cist_states_set(struct otto_dsa_priv *priv, int port, u8 state);
 
-int rtldsa_838x_stp_get(struct otto_dsa_priv *priv, u16 msti, int port);
-void rtl838x_stp_set(struct otto_dsa_priv *priv, u16 msti, int port, int state);
-void rtldsa_838x_stp_init(void);
-int rtldsa_839x_stp_get(struct otto_dsa_priv *priv, u16 msti, int port);
-void rtl839x_stp_set(struct otto_dsa_priv *priv, u16 msti, int port, int state);
-void rtldsa_839x_stp_init(void);
-int rtldsa_930x_stp_get(struct otto_dsa_priv *priv, u16 msti, int port);
-void rtl930x_stp_set(struct otto_dsa_priv *priv, u16 msti, int port, int state);
-void rtldsa_930x_stp_init(void);
-int rtldsa_931x_stp_get(struct otto_dsa_priv *priv, u16 msti, int port);
-void rtl931x_stp_set(struct otto_dsa_priv *priv, u16 msti, int port, int state);
-void rtldsa_931x_stp_init(void);
+int otto_stp_838x_get(struct otto_dsa_priv *priv, u16 msti, int port);
+void otto_stp_838x_set(struct otto_dsa_priv *priv, u16 msti, int port, int state);
+void otto_stp_838x_init(void);
+int otto_stp_839x_get(struct otto_dsa_priv *priv, u16 msti, int port);
+void otto_stp_839x_set(struct otto_dsa_priv *priv, u16 msti, int port, int state);
+void otto_stp_839x_init(void);
+int otto_stp_930x_get(struct otto_dsa_priv *priv, u16 msti, int port);
+void otto_stp_930x_set(struct otto_dsa_priv *priv, u16 msti, int port, int state);
+void otto_stp_930x_init(void);
+int otto_stp_931x_get(struct otto_dsa_priv *priv, u16 msti, int port);
+void otto_stp_931x_set(struct otto_dsa_priv *priv, u16 msti, int port, int state);
+void otto_stp_931x_init(void);
 
 #endif /* _OTTO_STP_H */

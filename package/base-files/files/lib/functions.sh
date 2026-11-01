@@ -404,6 +404,8 @@ default_postinst() {
 		else
 			if [ "$PKG_UPGRADE" != "1" ]; then
 				"$i" enable
+			elif ! "$i" enabled; then
+				continue
 			fi
 			"$i" start
 		fi

@@ -1,0 +1,115 @@
+From e3640d035f23802b42a4f1d329c9148a07176e95 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Tue, 20 Oct 2026 22:59:41 +0000
+Subject: [PATCH] loongarch: add support for complex types
+
+The LoongArch psABI passes a complex floating-point number, and a struct
+containing just one, as though it were a struct of two floating-point
+reals.  That is exactly the rule libffi already implements for structs
+in struct_passed_as_elements(): two floats go in two FPRs if two are
+free, otherwise the value follows the integer convention, in up to two
+GPRs or by reference if larger than 2*GRLEN.
+
+Flatten an FFI_TYPE_COMPLEX into two elements of its base type, let the
+float struct handling in marshal(), unmarshal() and passed_by_ref()
+accept complex types, and define FFI_TARGET_HAS_COMPLEX_TYPE.  Everything
+else follows from the existing struct code:
+
+  - float and double _Complex use $f0/$f1 when two FPRs are left, and
+    one or two GPRs otherwise, never one FPR and one GPR;
+  - variadic complex arguments use the integer convention;
+  - long double _Complex (32 bytes) is passed by reference and returned
+    through a hidden pointer;
+  - integer complex types are packed into GPRs like a small struct;
+  - a struct holding a single complex value flattens to the same two
+    reals and is passed the same way.
+
+This matches GCC's code generation for lp64d.  On the single-float and
+soft-float ABIs the parts that are not IS_FLOAT fall back to the integer
+convention, again as the psABI requires.
+Assisted-by: LLM
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ src/loongarch/ffi.c       | 25 ++++++++++++++++++-------
+ src/loongarch/ffitarget.h |  1 +
+ 2 files changed, 19 insertions(+), 7 deletions(-)
+
+--- a/src/loongarch/ffi.c
++++ b/src/loongarch/ffi.c
+@@ -92,6 +92,9 @@ typedef struct float_struct_info
+   char type2;
+ } float_struct_info;
+ 
++#define IS_AGGREGATE(type) \
++  ((type) == FFI_TYPE_STRUCT || (type) == FFI_TYPE_COMPLEX)
++
+ #if ABI_FRLEN >= 64
+ # define IS_FLOAT(type) ((type) >= FFI_TYPE_FLOAT && (type) <= FFI_TYPE_DOUBLE)
+ #else
+@@ -105,7 +108,15 @@ flatten_struct (ffi_type *in, ffi_type *
+ 
+   if (out == out_end)
+     return out;
+-  if (in->type != FFI_TYPE_STRUCT)
++  if (in->type == FFI_TYPE_COMPLEX)
++    {
++      /* The psABI passes a complex number like a struct of two reals.  */
++      *(out++) = in->elements[0];
++      if (out == out_end)
++	return out;
++      *(out++) = in->elements[0];
++    }
++  else if (in->type != FFI_TYPE_STRUCT)
+     *(out++) = in;
+   else
+     for (i = 0; in->elements[i]; i++)
+@@ -113,9 +124,9 @@ flatten_struct (ffi_type *in, ffi_type *
+   return out;
+ }
+ 
+-/* Structs with at most two fields after flattening, one of which is of
+-   floating point type, are passed in multiple registers if sufficient
+-   registers are available.  */
++/* Structs and complex numbers with at most two fields after flattening,
++   one of which is of floating point type, are passed in multiple registers
++   if sufficient registers are available.  */
+ static float_struct_info
+ struct_passed_as_elements (call_builder *cb, ffi_type *top)
+ {
+@@ -278,7 +289,7 @@ marshal (call_builder *cb, ffi_type *typ
+   size_t realign[2];
+ 
+ #if ABI_FRLEN
+-  if (!var && type->type == FFI_TYPE_STRUCT)
++  if (!var && IS_AGGREGATE (type->type))
+     {
+       float_struct_info fsi = struct_passed_as_elements (cb, type);
+       if (fsi.as_elements)
+@@ -347,7 +358,7 @@ unmarshal (call_builder *cb, ffi_type *t
+   void *pointer;
+ 
+ #if ABI_FRLEN
+-  if (!var && type->type == FFI_TYPE_STRUCT)
++  if (!var && IS_AGGREGATE (type->type))
+     {
+       float_struct_info fsi = struct_passed_as_elements (cb, type);
+       if (fsi.as_elements)
+@@ -413,7 +424,7 @@ static int
+ passed_by_ref (call_builder *cb, ffi_type *type, int var)
+ {
+ #if ABI_FRLEN
+-  if (!var && type->type == FFI_TYPE_STRUCT)
++  if (!var && IS_AGGREGATE (type->type))
+     {
+       float_struct_info fsi = struct_passed_as_elements (cb, type);
+       if (fsi.as_elements)
+--- a/src/loongarch/ffitarget.h
++++ b/src/loongarch/ffitarget.h
+@@ -83,6 +83,7 @@ typedef enum ffi_abi
+ #endif /* LIBFFI_ASM */
+ 
+ #define FFI_TARGET_HAS_INT128
++#define FFI_TARGET_HAS_COMPLEX_TYPE
+ 
+ /* ---- Definitions for closures ----------------------------------------- */
+ 

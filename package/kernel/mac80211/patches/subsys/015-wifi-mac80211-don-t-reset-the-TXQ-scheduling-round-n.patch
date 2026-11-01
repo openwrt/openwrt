@@ -1,0 +1,71 @@
+From 8ea81827d3537db7cfcc82c008f052bb1bbe7567 Mon Sep 17 00:00:00 2001
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Date: Tue, 8 Sep 2026 16:41:55 +0200
+Subject: [PATCH] wifi: mac80211: don't reset the TXQ scheduling round number
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+A round is ended when ieee80211_next_txq() meets a txq whose remembered
+round number is the current one, meaning it has gone full circle.
+
+When the AC exceeds the airtime limit, ieee80211_txq_schedule_start()
+sets the round number to 0 to close the round. The next open round is
+1. A txq from an earlier round 1 still remembers the "1", so the next
+round stops on it and serves nothing.
+
+Fix: use a separate open/closed flag and let the round number keep
+counting.
+
+Testing: ~4200 skipped selections per 20s without the fix and 20
+skipped selections per 20s with the fix on ath11k (with my AQL series
+applied) at BE 500/1000.
+
+Fixes: 8e4bac067105 ("wifi: mac80211: add a per-PHY AQL limit to improve fairness")
+Assisted-by: Claude:claude-opus-5
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+Reviewed-by: Toke Høiland-Jørgensen <toke@toke.dk>
+Link: https://patch.msgid.link/20260908144155.756569-1-julius@bairaktaris.de
+Signed-off-by: Johannes Berg <johannes.berg@intel.com>
+---
+ net/mac80211/ieee80211_i.h | 1 +
+ net/mac80211/tx.c          | 8 ++++----
+ 2 files changed, 5 insertions(+), 4 deletions(-)
+
+--- a/net/mac80211/ieee80211_i.h
++++ b/net/mac80211/ieee80211_i.h
+@@ -1459,6 +1459,7 @@ struct ieee80211_local {
+ 	spinlock_t active_txq_lock[IEEE80211_NUM_ACS];
+ 	struct list_head active_txqs[IEEE80211_NUM_ACS];
+ 	u16 schedule_round[IEEE80211_NUM_ACS];
++	bool schedule_open[IEEE80211_NUM_ACS];
+ 
+ 	/* serializes ieee80211_handle_wake_tx_queue */
+ 	spinlock_t handle_wake_tx_queue_lock;
+--- a/net/mac80211/tx.c
++++ b/net/mac80211/tx.c
+@@ -4176,7 +4176,7 @@ struct ieee80211_txq *ieee80211_next_txq
+ 
+ 	spin_lock_bh(&local->active_txq_lock[ac]);
+ 
+-	if (!local->schedule_round[ac])
++	if (!local->schedule_open[ac])
+ 		goto out;
+ 
+  begin:
+@@ -4380,12 +4380,12 @@ void ieee80211_txq_schedule_start(struct
+ 
+ 	spin_lock_bh(&local->active_txq_lock[ac]);
+ 
+-	if (ieee80211_txq_schedule_airtime_check(local, ac)) {
++	local->schedule_open[ac] =
++		ieee80211_txq_schedule_airtime_check(local, ac);
++	if (local->schedule_open[ac]) {
+ 		local->schedule_round[ac]++;
+ 		if (!local->schedule_round[ac])
+ 			local->schedule_round[ac]++;
+-	} else {
+-		local->schedule_round[ac] = 0;
+ 	}
+ 
+ 	spin_unlock_bh(&local->active_txq_lock[ac]);

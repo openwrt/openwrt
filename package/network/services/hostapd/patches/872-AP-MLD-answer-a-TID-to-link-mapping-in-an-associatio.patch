@@ -1,0 +1,164 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Sun, 25 Oct 2026 07:00:00 +0200
+Subject: [PATCH] AP MLD: answer a TID-to-link mapping in an association
+ request
+
+A non-AP MLD can ask for a TID-to-link mapping in its (Re)Association
+Request frame once the AP MLD declares TID-To-Link Mapping Negotiation
+Support. The AP MLD ignores the element, and a Response frame without a
+TID-To-Link Mapping element means that the AP MLD accepted the mapping
+(IEEE Std 802.11be-2024, 35.3.7.2.3), so the station would use a
+mapping that the driver does not know.
+
+Check the element as a request where the AP MLD supports the
+negotiation; otherwise the Response frame carries no TID-To-Link
+Mapping element for it (order 84 of the frame body). Set an accepted
+mapping in the driver once the Response frame is acknowledged. Answer a
+rejected mapping with the default mapping as the preferred one, which
+the station then uses.
+While an established advertised mapping is in the Response frame, that
+element answers the request, so the request is rejected without a
+second element.
+
+A mapping that names a link the response refuses is rejected with the
+default mapping as the preferred one, since the link status is known
+only when the response is built.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+
+--- a/src/ap/ieee802_11.c
++++ b/src/ap/ieee802_11.c
+@@ -5713,6 +5713,9 @@ static int __check_assoc_ies(struct host
+ 			resp = hostapd_process_ml_assoc_req(hapd, elems, sta);
+ 			if (resp != WLAN_STATUS_SUCCESS)
+ 				goto out;
++
++			if (ap_sta_is_mld(hapd, sta))
++				hostapd_neg_ttlm_assoc_req(hapd, sta, elems);
+ 		}
+ 	}
+ #endif /* CONFIG_IEEE80211BE */
+@@ -7163,10 +7166,12 @@ rsnxe_done:
+ 			p = hostapd_eid_eht_ml_assoc(hapd, sta, p);
+ 		p = hostapd_eid_eht_capab(hapd, p, IEEE80211_MODE_AP);
+ 		p = hostapd_eid_eht_operation(hapd, p);
+-		if (ap_sta_is_mld(hapd, sta))
++		if (ap_sta_is_mld(hapd, sta)) {
+ 			p = hostapd_eid_eht_ml_tid_to_link_map(
+ 				hapd, p, reassoc ? WLAN_FC_STYPE_REASSOC_RESP :
+ 				WLAN_FC_STYPE_ASSOC_RESP);
++			p = hostapd_eid_neg_ttlm_assoc(hapd, sta, p);
++		}
+ 	}
+ #endif /* CONFIG_IEEE80211BE */
+ 
+--- a/src/ap/ieee802_11.h
++++ b/src/ap/ieee802_11.h
+@@ -345,6 +345,11 @@ void hostapd_neg_ttlm_teardown(struct ho
+ 			       struct sta_info *sta);
+ void hostapd_neg_ttlm_assoc_cb(struct hostapd_data *hapd,
+ 			       struct sta_info *sta);
++void hostapd_neg_ttlm_assoc_req(struct hostapd_data *hapd,
++				struct sta_info *sta,
++				const struct ieee802_11_elems *elems);
++u8 * hostapd_eid_neg_ttlm_assoc(struct hostapd_data *hapd,
++				struct sta_info *sta, u8 *eid);
+ void hostapd_neg_ttlm_adv_request(struct hostapd_data *hapd, u16 links);
+ 
+ size_t hostapd_eid_eht_ml_tid_to_link_map_len(struct hostapd_data *hapd);
+--- a/src/ap/ieee802_11_eht.c
++++ b/src/ap/ieee802_11_eht.c
+@@ -3103,12 +3103,80 @@ void hostapd_neg_ttlm_resp_tx_status(str
+ }
+ 
+ 
++/* A TID-To-Link Mapping element in a (Re)Association Request frame
++ * (35.3.7.2.3). While an established advertised mapping is in the Response
++ * frame, that element answers the request. */
++void hostapd_neg_ttlm_assoc_req(struct hostapd_data *hapd,
++				struct sta_info *sta,
++				const struct ieee802_11_elems *elems)
++{
++	sta->neg_ttlm_assoc = false;
++	sta->neg_ttlm_assoc_reject = false;
++	if (!elems->ttlm_num || !hostapd_mld_neg_ttlm_capa(hapd))
++		return;
++
++	if (hapd->mld->adv_ttlm_state != HOSTAPD_ADV_TTLM_ESTABLISHED &&
++	    hostapd_neg_ttlm_parse(hapd, sta, elems, &sta->neg_ttlm_req,
++				   &sta->neg_ttlm_req_dflt) ==
++	    WLAN_STATUS_SUCCESS)
++		sta->neg_ttlm_assoc = true;
++	else
++		sta->neg_ttlm_assoc_reject = true;
++
++	wpa_printf(MSG_DEBUG,
++		   "MLD: TTLM in the association request of " MACSTR " %s",
++		   MAC2STR(sta->addr),
++		   sta->neg_ttlm_assoc ? "accepted" : "rejected");
++}
++
++
++/* A rejected mapping is answered with the default mapping as the preferred
++ * one, which the station uses during the association (35.3.7.2.3). The links
++ * that the response refuses are known only once the request is processed. */
++u8 * hostapd_eid_neg_ttlm_assoc(struct hostapd_data *hapd,
++				struct sta_info *sta, u8 *eid)
++{
++	if (sta && sta->neg_ttlm_assoc && !sta->neg_ttlm_req_dflt &&
++	    (hostapd_neg_ttlm_links(&sta->neg_ttlm_req) &
++	     ~hostapd_sta_setup_links(sta))) {
++		sta->neg_ttlm_assoc = false;
++		sta->neg_ttlm_assoc_reject = true;
++		wpa_printf(MSG_DEBUG,
++			   "MLD: TTLM in the association request of " MACSTR
++			   " rejected for a refused link", MAC2STR(sta->addr));
++	}
++
++	if (!sta || !sta->neg_ttlm_assoc_reject ||
++	    hapd->mld->adv_ttlm_state == HOSTAPD_ADV_TTLM_ESTABLISHED)
++		return eid;
++
++	*eid++ = WLAN_EID_EXTENSION;
++	*eid++ = 2;
++	*eid++ = WLAN_EID_EXT_TID_TO_LINK_MAPPING;
++	*eid++ = EHT_TID_TO_LINK_MAP_DIRECTION_BOTH |
++		EHT_TID_TO_LINK_MAP_DEFAULT;
++
++	return eid;
++}
++
++
+ /* A (re)association sets up the links again under the default mapping
+- * (35.3.7.2.2) */
++ * (35.3.7.2.2), or under the one that its request asked for */
+ void hostapd_neg_ttlm_assoc_cb(struct hostapd_data *hapd,
+ 			       struct sta_info *sta)
+ {
++	bool assoc = sta->neg_ttlm_assoc;
++
+ 	sta->neg_ttlm_req_pending = false;
++	sta->neg_ttlm_assoc = false;
++	sta->neg_ttlm_assoc_reject = false;
++
++	if (assoc && !sta->neg_ttlm_req_dflt) {
++		if (hostapd_neg_ttlm_apply(hapd, sta, &sta->neg_ttlm_req))
++			hostapd_neg_ttlm_teardown(hapd, sta);
++		return;
++	}
++
+ 	if (sta->neg_ttlm_valid)
+ 		hostapd_neg_ttlm_apply(hapd, sta, NULL);
+ }
+--- a/src/ap/sta_info.h
++++ b/src/ap/sta_info.h
+@@ -373,6 +373,9 @@ struct sta_info {
+ 	bool neg_ttlm_req_dflt;
+ 	u8 neg_ttlm_req_token;
+ 	struct eht_neg_ttlm neg_ttlm_req;
++	/* The (Re)Association Request frame asked for a mapping */
++	bool neg_ttlm_assoc;
++	bool neg_ttlm_assoc_reject;
+ #endif /* CONFIG_IEEE80211BE */
+ 
+ 	u16 max_idle_period; /* if nonzero, the granted BSS max idle period in

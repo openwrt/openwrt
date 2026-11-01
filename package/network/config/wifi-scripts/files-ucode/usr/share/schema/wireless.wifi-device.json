@@ -593,6 +593,12 @@
 			"description": "Name of the phy, as described in board.json",
 			"type": "string"
 		},
+		"punct_bitmap": {
+			"description": "EHT disabled subchannel bitmap: bit n punctures the nth 20 MHz subchannel from the lowest frequency",
+			"type": "number",
+			"minimum": 0,
+			"maximum": 65535
+		},
 		"radio": {
 			"description": "Index of the phy radio (for multi-radio PHYs)",
 			"type": "number",

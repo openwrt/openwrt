@@ -504,18 +504,22 @@ static bool otto_l3_930x_host_route_decode(const u32 *data, struct otto_l3_route
 }
 
 /* Read a host route entry from the table using its index. Only IPv4 and IPv6 unicast supported */
-static void otto_l3_930x_host_route_read(struct otto_l3_ctrl *ctrl, int idx, struct otto_l3_route *rt)
+static int otto_l3_930x_host_route_read(struct otto_l3_ctrl *ctrl, int idx,
+					struct otto_l3_route *rt)
 {
 	/* Only the unicast layout is handled below */
 	u32 data[5];
+	int err;
 
 	idx = ((idx / 6) * 8) + (idx % 6);
 
-	otto_table_read(RTL9300_TBL_L3_HOST_ROUTE_IPUC, idx, &data);
+	err = otto_table_read(RTL9300_TBL_L3_HOST_ROUTE_IPUC, idx, &data);
+	if (err)
+		return err;
 	if (!otto_l3_930x_host_route_decode(data, rt)) {
 		if (rt->attr.valid)
 			dev_warn(ctrl->dev, "route type not supported\n");
-		return;
+		return 0;
 	}
 
 	dev_dbg(ctrl->dev, "index %d is valid: %d\n", idx, rt->attr.valid);
@@ -523,10 +527,13 @@ static void otto_l3_930x_host_route_read(struct otto_l3_ctrl *ctrl, int idx, str
 		rt->nh.id, rt->attr.hit, rt->attr.action, rt->attr.ttl_dec, rt->attr.ttl_check,
 		rt->attr.dst_null);
 	dev_dbg(ctrl->dev, "Destination: %pI4\n", &rt->dst_ip);
+
+	return 0;
 }
 
 /* Write a host route entry from the table using its index. Only unicast routes supported */
-static void otto_l3_930x_host_route_write(struct otto_l3_ctrl *ctrl, int idx, struct otto_l3_route *rt)
+static int otto_l3_930x_host_route_write(struct otto_l3_ctrl *ctrl, int idx,
+					 struct otto_l3_route *rt)
 {
 	/* Only the unicast layout is handled below */
 	u32 data[5];
@@ -568,10 +575,10 @@ static void otto_l3_930x_host_route_write(struct otto_l3_ctrl *ctrl, int idx, st
 	case ROUTE_TYPE_IP4MC:
 	case ROUTE_TYPE_IP6MC:
 		dev_warn(ctrl->dev, "route type not supported\n");
-		return;
+		return -EOPNOTSUPP;
 	}
 
-	otto_table_write(RTL9300_TBL_L3_HOST_ROUTE_IPUC, idx, &data);
+	return otto_table_write(RTL9300_TBL_L3_HOST_ROUTE_IPUC, idx, &data);
 }
 
 /* Slots one entry occupies, by type: IPv4 unicast, IPv4 multicast, IPv6
@@ -580,9 +587,10 @@ static void otto_l3_930x_host_route_write(struct otto_l3_ctrl *ctrl, int idx, st
  */
 static const u8 otto_l3_930x_slot_widths[] = { 1, 2, 3, 6 };
 
+/* Return a logical slot, -ENOENT for a missing route, or -ENOSPC if full. */
 static int otto_l3_930x_find_slot(struct otto_l3_ctrl *ctrl, struct otto_l3_route *rt, bool must_exist)
 {
-	int slot_width, algorithm, addr, idx;
+	int slot_width, algorithm, addr, idx, err;
 	struct otto_l3_route route_entry;
 	u32 hash;
 
@@ -600,7 +608,9 @@ static int otto_l3_930x_find_slot(struct otto_l3_ctrl *ctrl, struct otto_l3_rout
 			idx = ((addr / 8) * 6) + (addr % 8);
 			dev_dbg(ctrl->dev, "logical address %d\n", idx);
 
-			otto_l3_930x_host_route_read(ctrl, idx, &route_entry);
+			err = otto_l3_930x_host_route_read(ctrl, idx, &route_entry);
+			if (err)
+				return err;
 			dev_dbg(ctrl->dev, "route valid %d, route dest: %pI4, hit %d\n",
 				rt->attr.valid, &rt->dst_ip, rt->attr.hit);
 			if (!must_exist && !route_entry.attr.valid)
@@ -622,7 +632,7 @@ static int otto_l3_930x_find_slot(struct otto_l3_ctrl *ctrl, struct otto_l3_rout
 		}
 	}
 
-	return -1;
+	return must_exist ? -ENOENT : -ENOSPC;
 }
 
 /*
@@ -1080,15 +1090,26 @@ static int otto_l3_alloc_router_mac(struct otto_l3_ctrl *ctrl, u64 mac)
 		return -1;
 	}
 
-	m.valid = true;
-	m.mac = mac;
-	m.p_type = 0; /* An individual port, not a trunk port */
-	m.p_id = 0x3f;			/* Listen on any port */
-	m.p_id_mask = 0;
-	m.vid = 0;			/* Listen on any VLAN... */
-	m.vid_mask = 0;			/* ... so mask needs to be 0 */
-	m.mac_mask = 0xffffffffffffULL;	/* We want an exact match of the interface MAC */
-	m.action = ROUTE_ACT_FORWARD;	/* Route the packet */
+	/* Written whole rather than field by field, because the scan above left
+	 * m holding whatever the last entry it read did, and a mask carried
+	 * over from another entry narrows what this one matches. p_mask is the
+	 * one that bites: on a family that programs it, such as the RTL931x, a
+	 * leftover 1 turns "any port" into a particular port type. Nothing
+	 * clears L3_ROUTER_MAC at setup, so the leftover can be the
+	 * bootloader's.
+	 */
+	m = (struct otto_l3_router_mac){
+		.valid = true,
+		.mac = mac,
+		.p_type = 0,		/* An individual port, not a trunk port */
+		.p_mask = false,	/* ... and do not match on that at all */
+		.p_id = 0x3f,		/* Listen on any port */
+		.p_id_mask = 0,
+		.vid = 0,		/* Listen on any VLAN... */
+		.vid_mask = 0,		/* ... so mask needs to be 0 */
+		.mac_mask = 0xffffffffffffULL,	/* Exact match of the interface MAC */
+		.action = ROUTE_ACT_FORWARD,	/* Route the packet */
+	};
 	ctrl->cfg->set_router_mac(ctrl, free_mac, &m);
 	set_bit(free_mac, ctrl->router_mac_bm);
 
@@ -1273,7 +1294,8 @@ static void otto_l3_930x_get_egress_intf(struct otto_l3_ctrl *ctrl, int idx,
  * 0: FORWARD, 1: DROP, 2: TRAP2CPU, 3: COPY2CPU, 4: TRAP2MASTERCPU, 5: COPY2MASTERCPU,  6: HARDDROP
  * idx is the index in the HW interface table: idx < 0x80
  */
-static void otto_l3_930x_set_egress_intf(struct otto_l3_ctrl *ctrl, int idx, struct otto_l3_intf *intf)
+static int otto_l3_930x_set_egress_intf(struct otto_l3_ctrl *ctrl, int idx,
+					struct otto_l3_intf *intf)
 {
 	u32 data[2];
 
@@ -1290,7 +1312,7 @@ static void otto_l3_930x_set_egress_intf(struct otto_l3_ctrl *ctrl, int idx, str
 	data[1] |= (intf->ip6_pbr_icmp_redirect & 0x7);
 
 	dev_dbg(ctrl->dev, "writing to index %d: %08x %08x\n", idx, data[0], data[1]);
-	otto_table_write(RTL9300_TBL_L3_EGR_INTF, idx & 0x7f, &data);
+	return otto_table_write(RTL9300_TBL_L3_EGR_INTF, idx & 0x7f, &data);
 }
 
 /* Configure L3 routing settings of the device:
@@ -1405,7 +1427,11 @@ static int otto_l3_alloc_egress_intf(struct otto_l3_ctrl *ctrl, u64 mac, int vla
 	intf.ip4_icmp_redirect = intf.ip6_icmp_redirect = 2;  /* FORWARD */
 	intf.ip4_pbr_icmp_redirect = intf.ip6_pbr_icmp_redirect = 2; /* FORWARD; */
 	dev_dbg(ctrl->dev, "new egress interface %d for VLAN %d\n", free_mac, vlan);
-	ctrl->cfg->set_egress_intf(ctrl, free_mac, &intf);
+	err = ctrl->cfg->set_egress_intf(ctrl, free_mac, &intf);
+	if (err) {
+		mutex_unlock(ctrl->lock);
+		return err;
+	}
 	ctrl->interfaces[free_mac] = intf;
 
 	/* An interface whose source MAC was not written stays free */
@@ -1618,7 +1644,8 @@ static void otto_l3_route_compact(struct otto_l3_ctrl *ctrl, struct otto_l3_rout
 
 	/* The tail now holds a copy of the row the block has pulled up. */
 	r->attr.valid = false;
-	ctrl->cfg->route_write(ctrl, last, r);
+	if (ctrl->cfg->route_write(ctrl, last, r))
+		otto_l3_rows_stale(ctrl, r, last);
 }
 
 /* %pI4 and %pI6c take arguments of different types, so a message that can
@@ -1783,7 +1810,7 @@ static bool otto_l3_row_frozen(struct otto_l3_ctrl *ctrl, struct otto_l3_route *
 static int otto_l3_route_install(struct otto_l3_ctrl *ctrl, struct otto_l3_route *r)
 {
 	char dst[INET6_ADDRSTRLEN + sizeof("/128")];
-	int slot;
+	int slot, err;
 
 	if (otto_l3_host_shadowed(ctrl, r)) {
 		dev_dbg(ctrl->dev, "%pI4 is an address of the switch, its entry stays\n",
@@ -1793,28 +1820,31 @@ static int otto_l3_route_install(struct otto_l3_ctrl *ctrl, struct otto_l3_route
 
 	if (r->is_host_route) {
 		slot = ctrl->cfg->find_slot(ctrl, r, true);
-		if (slot < 0)
+		if (slot == -ENOENT)
 			slot = ctrl->cfg->find_slot(ctrl, r, false);
-		if (slot < 0) {
+		if (slot == -ENOSPC)
 			dev_err(ctrl->dev, "no slot for host route %pI4\n", &r->dst_ip);
-			return -ENOSPC;
-		}
+		if (slot < 0)
+			return slot;
 
 		dev_dbg(ctrl->dev, "Got slot for route: %d\n", slot);
-		ctrl->cfg->host_route_write(ctrl, slot, r);
-		return 0;
+		return ctrl->cfg->host_route_write(ctrl, slot, r);
 	}
 
-	if (r->row < 0)
+	if (r->row < 0) {
 		r->row = otto_l3_route_place(ctrl, r);
+		r->row_reserved = r->row >= FIRST_PREFIX_ROW;
+	}
 	if (r->row < 0) {
 		dev_err(ctrl->dev, "no row for prefix route %s\n",
 			otto_l3_route_dst(r, dst, sizeof(dst)));
 		return -ENOSPC;
 	}
 
-	ctrl->cfg->route_write(ctrl, r->row, r);
-	return 0;
+	err = ctrl->cfg->route_write(ctrl, r->row, r);
+	if (!err)
+		r->row_reserved = false;
+	return err;
 }
 
 /* Writes what a route now says where it already is */
@@ -2652,6 +2682,24 @@ static void otto_l3_route_remove(struct otto_l3_ctrl *ctrl, struct otto_l3_route
 	} else {
 		/* If there is a HW representation of the route, delete it */
 		if (r->row >= FIRST_PREFIX_ROW) {
+			/* Placement reserved this slot even if the initial write
+			 * failed. It may hold an old row's duplicate, or a write
+			 * that completed late. Clear it before closing the gap;
+			 * a completed table write also drains preceding commands.
+			 * Once rows are stale, only the readback path below can
+			 * establish which row still belongs to this route.
+			 */
+			if (r->row_reserved && !ctrl->prefix_rows_stale) {
+				r->attr.valid = false;
+				if (ctrl->cfg->route_write(ctrl, r->row, r)) {
+					otto_l3_rows_stale(ctrl, r, r->row);
+					return;
+				}
+				r->row_reserved = false;
+				otto_l3_route_compact(ctrl, r);
+				return;
+			}
+
 			/* The route was written at the row we recorded, and one
 			 * that could not be placed has none. A row is only
 			 * cleared while it reads back as the route; where the
@@ -2846,7 +2894,11 @@ static void otto_l3_fib_trap_v4(struct otto_l3_ctrl *ctrl, struct fib_entry_noti
 	route->fib_type = info->type;
 
 	if (otto_l3_route_install(ctrl, route)) {
-		otto_l3_route_free(ctrl, route);
+		/* Placement may already have shifted other routes. Keep its
+		 * reserved row in the count until removal can close the gap.
+		 */
+		if (route->row < FIRST_PREFIX_ROW)
+			otto_l3_route_free(ctrl, route);
 		otto_l3_fib4_info_failed(info);
 		return;
 	}
@@ -2923,11 +2975,16 @@ static int otto_l3_fib_add_v4(struct otto_l3_ctrl *ctrl, struct fib_entry_notifi
 	}
 
 	/* A route through a device outside the switch is the CPU's, and so is
-	 * an address of the box on such a device
+	 * an address of the box on such a device. Neither is a failure:
+	 * otto_l3_fib_trap_v4() gives the destination a row that traps, so the
+	 * CPU gets the traffic. An address put straight on a port rather than
+	 * on a bridge over it looks like this, which every boot does before the
+	 * bridge exists.
 	 */
 	port = otto_l3_port_dev_lower_find(ndev, ctrl);
 	if (port < 0) {
-		dev_err(ctrl->dev, "lower interface %s not found\n", ndev->name);
+		dev_dbg(ctrl->dev, "no switch port under %s, trapping instead\n",
+			ndev->name);
 		otto_l3_fib_trap_v4(ctrl, info);
 		return -ENODEV;
 	}
@@ -3354,6 +3411,7 @@ static int otto_l3_fib_del_v6_src(struct otto_l3_ctrl *ctrl, struct fib6_info *r
 static int otto_l3_add_catch_all(struct otto_l3_ctrl *ctrl, u8 type)
 {
 	struct otto_l3_route *route;
+	int err;
 
 	route = otto_l3_route_alloc(ctrl, &in6addr_any, ROUTE_PREFIX);
 	if (!route)
@@ -3369,7 +3427,11 @@ static int otto_l3_add_catch_all(struct otto_l3_ctrl *ctrl, u8 type)
 		return -ENOSPC;
 	}
 
-	ctrl->cfg->route_write(ctrl, route->row, route);
+	err = ctrl->cfg->route_write(ctrl, route->row, route);
+	if (err) {
+		otto_l3_route_teardown(ctrl, route);
+		return err;
+	}
 
 	return 0;
 }
@@ -3765,8 +3827,15 @@ static void otto_l3_fib_event_work_do(struct work_struct *work)
 	case FIB_EVENT_ENTRY_REPLACE:
 	case FIB_EVENT_ENTRY_APPEND:
 		err = otto_l3_fib_add_v4(ctrl, &fib_work->fen_info);
-		if (err)
-			dev_err(ctrl->dev, "fib_add() failed\n");
+		/* A route the driver will not take is not a failure, and it
+		 * says so with -ENODEV or -EOPNOTSUPP: the destination gets a
+		 * row that traps and the CPU routes it. Anything else means
+		 * the hardware would not take what the driver did want.
+		 */
+		if (err && err != -ENODEV && err != -EOPNOTSUPP)
+			dev_err(ctrl->dev, "fib_add() failed: %d\n", err);
+		else if (err)
+			dev_dbg(ctrl->dev, "route left to the CPU: %d\n", err);
 
 		otto_l3_local_prefix_check(ctrl, &fib_work->fen_info.info);
 		fib_info_put(fib_work->fen_info.fi);

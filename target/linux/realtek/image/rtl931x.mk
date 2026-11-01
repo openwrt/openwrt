@@ -145,6 +145,19 @@ define Device/xikestor_sks8300-12x-v2
 endef
 TARGET_DEVICES += xikestor_sks8300-12x-v2
 
+define Device/zyxel_xgs2220-30hp
+  SOC := rtl9311
+  DEVICE_VENDOR := Zyxel
+  DEVICE_MODEL := XGS2220-30HP
+  DEVICE_PACKAGES := kmod-hwmon-lm85 kmod-hwmon-gpiofan kmod-i2c-mux-pca954x \
+	kmod-pse-realtek-mcu-uart kmod-seg-led-gpio
+  FLASH_ADDR := 0xb4290000
+  IMAGE_SIZE := 30208k
+  ZYNFW_ALIGN := 0x10000
+  $(Device/zyxel_zynos)
+endef
+TARGET_DEVICES += zyxel_xgs2220-30hp
+
 define Device/zyxel_xs1930
   SOC := rtl9313
   DEVICE_PACKAGES := kmod-hwmon-lm85 kmod-hwmon-gpiofan

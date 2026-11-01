@@ -180,6 +180,10 @@ static const struct otto_table_map otto_table_maps[OTTO_TBL_COUNT] = {
 	TBL_MAP(RTL8390_TBL_UNTAG, OTTO_REG_8390_1, 0, 2, 4096, 0),
 	TBL_MAP(RTL8390_TBL_ROUTING, OTTO_REG_8390_1, 2, 2, 2048, 0),
 
+	TBL_MAP(RTL8390_TBL_SCHED, OTTO_REG_8390_2, 0, 9, 53, 0),
+	TBL_MAP(RTL8390_TBL_SPG_PORT, OTTO_REG_8390_2, 1, 7, 52, 0),
+	TBL_MAP(RTL8390_TBL_OUT_Q, OTTO_REG_8390_2, 2, 8, 53, 0),
+
 	TBL_MAP(RTL9300_TBL_L2_UC, OTTO_REG_9300_L2, 0, 3, 16384, 0),
 	TBL_MAP(RTL9300_TBL_L2_MC, OTTO_REG_9300_L2, 0, 3, 16384, 0),
 	TBL_MAP(RTL9300_TBL_L2_CAM_UC, OTTO_REG_9300_L2, 1, 3, 64, 0),
@@ -256,6 +260,24 @@ static const struct otto_table_map otto_table_maps[OTTO_TBL_COUNT] = {
 
 	TBL_MAP(RTL9310_TBL_LAG, OTTO_REG_9310_2, 0, 3, 128, 0),
 	TBL_MAP(RTL9310_TBL_PORT_ISO_CTRL, OTTO_REG_9310_2, 1, 2, 1024, 0),
+
+	/* The L3 tables share this access register with the two above. Their
+	 * row counts are address spaces, not entry counts: the host and prefix
+	 * route tables overlay the flow table (Realtek GPL SDK,
+	 * rtk_mango_table_list).
+	 *
+	 * Both route tables implement six of every eight addresses, so the
+	 * SDK's 12288 entries span 12288 / 6 * 8 = 16384 addresses, which is
+	 * also the whole of the access register's 14 bit address field. The
+	 * RTL9300 host route table above is the same conversion: 6144 entries
+	 * in the SDK's array against the 8192 recorded here.
+	 */
+	TBL_MAP(RTL9310_TBL_L3_ROUTER_MAC, OTTO_REG_9310_2, 2, 5, 1024, 0),
+	TBL_MAP(RTL9310_TBL_L3_HOST_ROUTE_IPUC, OTTO_REG_9310_2, 3, 4, 16384, 0),
+	TBL_MAP(RTL9310_TBL_L3_PREFIX_ROUTE_IPUC, OTTO_REG_9310_2, 4, 6, 16384, 0),
+	TBL_MAP(RTL9310_TBL_L3_NEXTHOP, OTTO_REG_9310_2, 6, 1, 8192, 0),
+	TBL_MAP(RTL9310_TBL_L3_IGR_INTF, OTTO_REG_9310_2, 7, 2, 1024, 0),
+	TBL_MAP(RTL9310_TBL_L3_EGR_INTF, OTTO_REG_9310_2, 8, 4, 1024, 0),
 
 	TBL_MAP(RTL9310_TBL_VLAN_UNTAG, OTTO_REG_9310_3, 0, 2, 4096, 0),
 

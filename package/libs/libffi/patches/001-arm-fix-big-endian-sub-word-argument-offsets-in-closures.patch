@@ -1,0 +1,51 @@
+From 2b53369681cc85094e936efe18e27bff2d63f4c0 Mon Sep 17 00:00:00 2001
+From: Janis Gertulla <coffeeimpliescode@proton.me>
+Date: Tue, 18 Aug 2026 06:46:29 +0200
+Subject: [PATCH] arm: fix big-endian sub-word argument offsets in closures
+
+Sub-4-byte integer args passed in 32-bit registers or on the stack sit
+in the LSB of the 4-byte slot, which on big-endian ARM is at offset
+4 - size. Previously assumed little-endian (offset 0). Adjust in
+ffi_prep_incoming_args_SYSV and ffi_prep_incoming_args_VFP.
+---
+ src/arm/ffi.c | 15 +++++++++++++++
+ 1 file changed, 15 insertions(+)
+
+--- a/src/arm/ffi.c
++++ b/src/arm/ffi.c
+@@ -467,6 +467,11 @@ ffi_prep_incoming_args_SYSV (ffi_cif *ci
+       size_t z = ty->size;
+ 
+       argp = ffi_align (ty, argp);
++#ifdef __ARMEB__
++      if (z < 4 && ty->type != FFI_TYPE_STRUCT)
++	avalue[i] = (void *) (argp + 4 - z);
++      else
++#endif
+       avalue[i] = (void *) argp;
+       argp += z;
+     }
+@@ -515,6 +520,11 @@ ffi_prep_incoming_args_VFP (ffi_cif *cif
+ 	  if (tregp + z <= eo_regp || !stack_used)
+ 	    {
+ 	      /* Because we're little endian, this is what it turns into.  */
++#ifdef __ARMEB__
++	      if (z < 4 && ty->type != FFI_TYPE_STRUCT)
++		avalue[i] = (void *) (tregp + 4 - z);
++	      else
++#endif
+ 	      avalue[i] = (void *) tregp;
+ 	      regp = tregp + z;
+ 
+@@ -537,6 +547,11 @@ ffi_prep_incoming_args_VFP (ffi_cif *cif
+ 
+       stack_used = 1;
+       argp = ffi_align (ty, argp);
++#ifdef __ARMEB__
++      if (z < 4 && ty->type != FFI_TYPE_STRUCT)
++	avalue[i] = (void *) (argp + 4 - z);
++      else
++#endif
+       avalue[i] = (void *) argp;
+       argp += z;
+     }

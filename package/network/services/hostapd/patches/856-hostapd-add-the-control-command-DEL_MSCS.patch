@@ -1,0 +1,135 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Tue, 27 Oct 2026 13:29:58 +0000
+Subject: [PATCH] hostapd: add the control command DEL_MSCS
+
+Remove the MSCS of an associated station and tell the station with an
+unsolicited MSCS Response, Dialog Token 0 and status
+TCLAS_PROCESSING_TERMINATED (IEEE Std 802.11-2024, 11.25.3). The
+MediaTek patch names test case 4.4.2 of the QoS Management program as
+its user.
+
+Usage: hostapd_cli -i <intf> del_mscs <sta mac addr>
+
+Based on "mtk: hostapd: support delete mscs policy for the specific
+sta" of the MediaTek feed. The rework removes the MSCS through the
+set_mscs() driver operation, sends the response only where the driver
+removed it, and fails for a station that is not associated.
+
+The command fails for a station without an MSCS, since the driver
+reports a removal as TCLAS_PROCESSING_TERMINATED also when no MSCS
+exists.
+
+Co-developed-by: Howard Hsu <howard-yh.hsu@mediatek.com>
+Signed-off-by: Howard Hsu <howard-yh.hsu@mediatek.com>
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/hostapd/ctrl_iface.c
++++ b/hostapd/ctrl_iface.c
+@@ -67,6 +67,7 @@
+ #include "ap/dfs.h"
+ #include "ap/nan_usd_ap.h"
+ #include "ap/robust_av.h"
++#include "ap/scs.h"
+ #include "wps/wps_defs.h"
+ #include "wps/wps.h"
+ #include "fst/fst_ctrl_iface.h"
+@@ -919,6 +920,18 @@ static int hostapd_ctrl_send_unsolicited
+ 	return ret;
+ }
+ 
++
++static int hostapd_ctrl_iface_del_mscs(struct hostapd_data *hapd,
++				       const char *cmd)
++{
++	u8 addr[ETH_ALEN];
++
++	if (hwaddr_aton(cmd, addr))
++		return -1;
++
++	return hostapd_del_mscs(hapd, addr);
++}
++
+ #endif /* CONFIG_ROBUST_AV */
+ 
+ 
+@@ -4863,6 +4876,9 @@ static int hostapd_ctrl_iface_receive_pr
+ 	} else if (os_strncmp(buf, "SEND_UNSOLICITED_DSCP_REQ ", 26) == 0) {
+ 		if (hostapd_ctrl_send_unsolicited_dscp_req(hapd, buf + 26))
+ 			reply_len = -1;
++	} else if (os_strncmp(buf, "DEL_MSCS ", 9) == 0) {
++		if (hostapd_ctrl_iface_del_mscs(hapd, buf + 9))
++			reply_len = -1;
+ #endif /* CONFIG_ROBUST_AV */
+ 	} else {
+ 		os_memcpy(reply, "UNKNOWN COMMAND\n", 16);
+--- a/hostapd/hostapd_cli.c
++++ b/hostapd/hostapd_cli.c
+@@ -947,6 +947,13 @@ static int hostapd_cli_cmd_send_unsolici
+ 	return wpa_ctrl_command(ctrl, cmd);
+ }
+ 
++
++static int hostapd_cli_cmd_del_mscs(struct wpa_ctrl *ctrl, int argc,
++				    char *argv[])
++{
++	return hostapd_cli_cmd(ctrl, "DEL_MSCS", 1, argc, argv);
++}
++
+ #endif /* CONFIG_ROBUST_AV */
+ 
+ 
+@@ -2038,6 +2045,8 @@ static const struct hostapd_cli_cmd host
+ 	{"send_unsolicited_dscp_req", hostapd_cli_cmd_send_unsolicited_dscp_req,
+ 	 NULL,
+ 	 "<addr>, [reset=], [policy_id_list=], Send unsolicited DSCP request"},
++	{ "del_mscs", hostapd_cli_cmd_del_mscs, NULL,
++	  "<addr> = Remove the MSCS of a station" },
+ #endif /* CONFIG_ROBUST_AV */
+ 	{ NULL, NULL, NULL, NULL }
+ };
+--- a/src/ap/scs.c
++++ b/src/ap/scs.c
+@@ -290,6 +290,34 @@ out:
+ }
+ 
+ 
++/* Remove the MSCS of a station and tell it with an unsolicited MSCS Response */
++int hostapd_del_mscs(struct hostapd_data *hapd, const u8 *addr)
++{
++	struct hostapd_mscs_desc desc;
++	struct sta_info *sta;
++	u16 status;
++
++	sta = ap_get_sta(hapd, addr);
++	if (!sta || !(sta->flags & WLAN_STA_ASSOC))
++		return -1;
++
++	sta = robust_av_sta(&hapd, sta);
++	if (!sta->mscs_active)
++		return -1;
++
++	os_memset(&desc, 0, sizeof(desc));
++	desc.req_type = SCS_REQ_REMOVE;
++	if (hostapd_drv_set_mscs(hapd, sta->addr, &desc, &status) ||
++	    status != WLAN_STATUS_TCLAS_PROCESSING_TERMINATED)
++		return -1;
++
++	sta->mscs_active = false;
++	send_mscs_response(hapd, sta->addr, 0, status);
++
++	return 0;
++}
++
++
+ /*
+  * The MSCS Descriptor element of a (Re)Association Request: the response
+  * carries the outcome in the MSCS Status subelement of an MSCS Descriptor
+--- a/src/ap/scs.h
++++ b/src/ap/scs.h
+@@ -13,5 +13,6 @@ void hostapd_handle_robust_av_streaming(
+ 					const u8 *buf, size_t len);
+ u8 * hostapd_eid_mscs_assoc(struct hostapd_data *hapd, struct sta_info *sta,
+ 			    const u8 *ies, size_t ies_len, u8 *eid);
++int hostapd_del_mscs(struct hostapd_data *hapd, const u8 *addr);
+ 
+ #endif /* SCS_H */

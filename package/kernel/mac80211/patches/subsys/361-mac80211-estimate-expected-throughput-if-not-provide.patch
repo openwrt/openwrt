@@ -27,7 +27,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +	u32 duration;
 +	u8 band = 0;
 +
-+	conf = rcu_dereference(sdata->vif.bss_conf.chanctx_conf);
++	conf = sdata_dereference(sdata->vif.bss_conf.chanctx_conf, sdata);
 +	if (conf)
 +			band = conf->def.chan->band;
 +

@@ -11,6 +11,7 @@
 #include <linux/inetdevice.h>
 #include <linux/mfd/syscon.h>
 #include <linux/platform_device.h>
+#include <linux/regmap.h>
 #include <linux/rhashtable.h>
 #include <linux/of_net.h>
 #include <asm/mach-rtl-otto/mach-rtl-otto.h>
@@ -294,6 +295,18 @@ static irqreturn_t rtldsa_switch_irq(int irq, void *dev_id)
 	return IRQ_HANDLED;
 }
 
+static void rtldsa_switch_irq_disable(struct otto_dsa_priv *priv)
+{
+	const u32 masks[2] = { 0 };
+
+	/* Stop the device from asserting the shared IRQ before releasing it. */
+	regmap_bulk_write(priv->map, priv->r->imr_port_link_sts_chg, masks,
+			  DIV_ROUND_UP(priv->r->cpu_port + 1, 32));
+
+	if (priv->r->imr_glb)
+		regmap_write(priv->map, priv->r->imr_glb, 0);
+}
+
 /*
  * TODO: This check is usually built into the DSA initialization functions. After carving
  * out the mdio driver from the ethernet driver, there are two drivers that must be loaded
@@ -436,11 +449,13 @@ static int rtl83xx_sw_probe(struct platform_device *pdev)
 	if (err) {
 		dev_err(dev, "Error setting up switch interrupt.\n");
 		/* Need to free allocated switch here */
+	} else {
+		priv->link_state_irq_requested = true;
 	}
 
-	/* Enable interrupts for switch, on RTL931x, the IRQ is always on globally */
-	if (soc_info.family != RTL9310_FAMILY_ID)
-		sw_w32(0x1, priv->r->imr_glb);
+	/* Enable the global interrupt mask where one exists. */
+	if (priv->r->imr_glb)
+		regmap_write(priv->map, priv->r->imr_glb, 1);
 
 	otto_l2_get_ageing_time(priv);
 
@@ -483,7 +498,11 @@ static int rtl83xx_sw_probe(struct platform_device *pdev)
 	return 0;
 
 err_register_l3:
-	dsa_switch_shutdown(priv->ds);
+	rtldsa_switch_irq_disable(priv);
+	if (priv->link_state_irq_requested)
+		free_irq(priv->link_state_irq, priv->ds);
+	cancel_delayed_work_sync(&priv->counters_work);
+	dsa_unregister_switch(priv->ds);
 err_register_switch:
 	otto_tc_cleanup(priv);
 	destroy_workqueue(priv->wq);
@@ -498,7 +517,6 @@ static void rtl83xx_sw_remove(struct platform_device *pdev)
 	if (!priv)
 		return;
 
-	/* TODO: */
 	pr_debug("Removing platform driver for rtl83xx-sw\n");
 
 	/* Stop debugfs readers before tearing down the switch. */
@@ -512,7 +530,10 @@ static void rtl83xx_sw_remove(struct platform_device *pdev)
 	otto_l3_remove(priv);
 	cancel_delayed_work_sync(&priv->counters_work);
 
-	dsa_switch_shutdown(priv->ds);
+	rtldsa_switch_irq_disable(priv);
+	if (priv->link_state_irq_requested)
+		free_irq(priv->link_state_irq, priv->ds);
+	dsa_unregister_switch(priv->ds);
 
 	otto_tc_cleanup(priv);
 

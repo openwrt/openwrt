@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later OR MIT
 
 #include <linux/delay.h>
+#include <linux/qca_edma.h>
 #include <linux/clk.h>
 #include <linux/module.h>
 #include <linux/of_device.h>
@@ -381,20 +382,19 @@ static int ppe_fdb_op_wait(struct qca_ppe_priv *priv, u32 rslt_reg,
 	u32 val;
 	int i;
 
+	/* The results queue up, the data registers show the oldest, and reading
+	 * the result register retires it, so the data is read first: once the
+	 * result names this operation, the data read before it is its entry.
+	 */
 	for (i = 0; i < PPE_FDB_OP_RETRIES; i++) {
-		regmap_read(priv->regmap, rslt_reg, &val);
-		if (FIELD_GET(PPE_FDB_RSLT_CMD_ID, val) == cmd_id) {
-			if (data) {
-				regmap_read(priv->regmap,
-					    PPE_FDB_RD_RSLT_DATA0, &data[0]);
-				regmap_read(priv->regmap,
-					    PPE_FDB_RD_RSLT_DATA1, &data[1]);
-				regmap_read(priv->regmap,
-					    PPE_FDB_RD_RSLT_DATA2, &data[2]);
-			}
-
-			return 0;
+		if (data) {
+			regmap_read(priv->regmap, PPE_FDB_RD_RSLT_DATA0, &data[0]);
+			regmap_read(priv->regmap, PPE_FDB_RD_RSLT_DATA1, &data[1]);
+			regmap_read(priv->regmap, PPE_FDB_RD_RSLT_DATA2, &data[2]);
 		}
+		regmap_read(priv->regmap, rslt_reg, &val);
+		if (FIELD_GET(PPE_FDB_RSLT_CMD_ID, val) == cmd_id)
+			return 0;
 		udelay(1);
 	}
 
@@ -412,35 +412,25 @@ static u32 ppe_fdb_next_cmd_id(u32 *counter)
 	return *counter;
 }
 
-static void ppe_fdb_encode(const unsigned char *addr, int port, u32 vsi,
-			   bool is_static, u32 *data0, u32 *data1, u32 *data2)
+static void ppe_fdb_mac_words(const unsigned char *addr, u32 *data0,
+			      u32 *data1)
 {
 	*data0 = (addr[2] << 24) | (addr[3] << 16) | (addr[4] << 8) | addr[5];
-
 	*data1 = (addr[0] << 8) | addr[1];
-	*data1 |= PPE_FDB_DATA1_VALID | PPE_FDB_DATA1_LKP_VALID;
-	*data1 |= FIELD_PREP(PPE_FDB_DATA1_VSI, vsi);
-	*data1 |= FIELD_PREP(PPE_FDB_DATA1_DST_LO, port);
-
-	*data2 = FIELD_PREP(PPE_FDB_DATA2_DST_TYPE, PPE_FDB_DST_PORT) |
-		 FIELD_PREP(PPE_FDB_DATA2_HIT_AGE,
-			    is_static ? PPE_FDB_AGE_STATIC : 2);
 }
 
-static int ppe_fdb_op(struct qca_ppe_priv *priv, const unsigned char *addr,
-		      int port, u32 vsi, u32 op_type)
+/* One add or delete through the op engine, of an entry already encoded. */
+static int ppe_fdb_write(struct qca_ppe_priv *priv, const u32 *data,
+			 u32 op_type)
 {
-	u32 data0, data1, data2, cmd_id;
+	u32 cmd_id;
 	int ret;
-
-	ppe_fdb_encode(addr, port, vsi, op_type == PPE_FDB_OP_ADD,
-		       &data0, &data1, &data2);
 
 	spin_lock_bh(&priv->fdb_lock);
 
-	regmap_write(priv->regmap, PPE_FDB_OP_DATA0, data0);
-	regmap_write(priv->regmap, PPE_FDB_OP_DATA1, data1);
-	regmap_write(priv->regmap, PPE_FDB_OP_DATA2, data2);
+	regmap_write(priv->regmap, PPE_FDB_OP_DATA0, data[0]);
+	regmap_write(priv->regmap, PPE_FDB_OP_DATA1, data[1]);
+	regmap_write(priv->regmap, PPE_FDB_OP_DATA2, data[2]);
 
 	cmd_id = ppe_fdb_next_cmd_id(&priv->fdb_cmd_id);
 	regmap_write(priv->regmap, PPE_FDB_OP,
@@ -453,6 +443,30 @@ static int ppe_fdb_op(struct qca_ppe_priv *priv, const unsigned char *addr,
 	spin_unlock_bh(&priv->fdb_lock);
 
 	return ret;
+}
+
+static void ppe_fdb_encode(const unsigned char *addr, int port, u32 vsi,
+			   bool is_static, u32 *data0, u32 *data1, u32 *data2)
+{
+	ppe_fdb_mac_words(addr, data0, data1);
+	*data1 |= PPE_FDB_DATA1_VALID | PPE_FDB_DATA1_LKP_VALID;
+	*data1 |= FIELD_PREP(PPE_FDB_DATA1_VSI, vsi);
+	*data1 |= FIELD_PREP(PPE_FDB_DATA1_DST_LO, port);
+
+	*data2 = FIELD_PREP(PPE_FDB_DATA2_DST_TYPE, PPE_FDB_DST_PORT) |
+		 FIELD_PREP(PPE_FDB_DATA2_HIT_AGE,
+			    is_static ? PPE_FDB_AGE_STATIC : 2);
+}
+
+static int ppe_fdb_op(struct qca_ppe_priv *priv, const unsigned char *addr,
+		      int port, u32 vsi, u32 op_type)
+{
+	u32 data[3];
+
+	ppe_fdb_encode(addr, port, vsi, op_type == PPE_FDB_OP_ADD,
+		       &data[0], &data[1], &data[2]);
+
+	return ppe_fdb_write(priv, data, op_type);
 }
 
 static int ppe_fdb_read_raw(struct qca_ppe_priv *priv, u32 index, u32 *data)
@@ -536,9 +550,7 @@ static int ppe_fdb_flush(struct qca_ppe_priv *priv)
 static void ppe_fdb_encode_mcast(const unsigned char *addr, u32 portmap,
 				 u32 vsi, u32 *data0, u32 *data1, u32 *data2)
 {
-	*data0 = (addr[2] << 24) | (addr[3] << 16) | (addr[4] << 8) | addr[5];
-
-	*data1 = (addr[0] << 8) | addr[1];
+	ppe_fdb_mac_words(addr, data0, data1);
 	*data1 |= PPE_FDB_DATA1_VALID | PPE_FDB_DATA1_LKP_VALID;
 	*data1 |= FIELD_PREP(PPE_FDB_DATA1_VSI, vsi);
 	*data1 |= FIELD_PREP(PPE_FDB_DATA1_DST_LO, portmap);
@@ -556,11 +568,10 @@ static int ppe_fdb_lookup(struct qca_ppe_priv *priv,
 
 	spin_lock_bh(&priv->fdb_lock);
 
-	regmap_write(priv->regmap, PPE_FDB_RD_OP_DATA0,
-		     (addr[2] << 24) | (addr[3] << 16) | (addr[4] << 8) | addr[5]);
+	ppe_fdb_mac_words(addr, &data[0], &data[1]);
+	regmap_write(priv->regmap, PPE_FDB_RD_OP_DATA0, data[0]);
 	regmap_write(priv->regmap, PPE_FDB_RD_OP_DATA1,
-		     ((addr[0] << 8) | addr[1]) |
-		     FIELD_PREP(PPE_FDB_DATA1_VSI, vsi));
+		     data[1] | FIELD_PREP(PPE_FDB_DATA1_VSI, vsi));
 	regmap_write(priv->regmap, PPE_FDB_RD_OP_DATA2, 0);
 
 	cmd_id = ppe_fdb_next_cmd_id(&priv->fdb_rd_cmd_id);
@@ -595,35 +606,18 @@ static int ppe_fdb_mcast_op(struct qca_ppe_priv *priv,
 			    const unsigned char *addr, u32 portmap,
 			    u32 vsi, u32 op_type)
 {
-	u32 data0, data1, data2, cmd_id;
-	int ret;
+	u32 data[3];
 
-	ppe_fdb_encode_mcast(addr, portmap, vsi, &data0, &data1, &data2);
+	ppe_fdb_encode_mcast(addr, portmap, vsi, &data[0], &data[1], &data[2]);
 
-	spin_lock_bh(&priv->fdb_lock);
-
-	regmap_write(priv->regmap, PPE_FDB_OP_DATA0, data0);
-	regmap_write(priv->regmap, PPE_FDB_OP_DATA1, data1);
-	regmap_write(priv->regmap, PPE_FDB_OP_DATA2, data2);
-
-	cmd_id = ppe_fdb_next_cmd_id(&priv->fdb_cmd_id);
-	regmap_write(priv->regmap, PPE_FDB_OP,
-		     FIELD_PREP(PPE_FDB_OP_CMD_ID, cmd_id) |
-		     FIELD_PREP(PPE_FDB_OP_TYPE, op_type) |
-		     FIELD_PREP(PPE_FDB_OP_HASH_BLOCK, 3));
-
-	ret = ppe_fdb_op_wait(priv, PPE_FDB_OP_RSLT, cmd_id, NULL);
-
-	spin_unlock_bh(&priv->fdb_lock);
-
-	return ret;
+	return ppe_fdb_write(priv, data, op_type);
 }
 
 static enum dsa_tag_protocol
 qca_ppe_get_tag_protocol(struct dsa_switch *ds, int port,
 			 enum dsa_tag_protocol mprot)
 {
-	return DSA_TAG_PROTO_OOB;
+	return DSA_TAG_PROTO_QCA;
 }
 
 /* The hardware counts none of its table entries, so occupancy is the driver's
@@ -636,6 +630,9 @@ enum ppe_devlink_resource_id {
 	PPE_RESOURCE_FDB,
 	PPE_RESOURCE_VSI,
 	PPE_RESOURCE_VLAN_XLT,
+	PPE_RESOURCE_FLOW,
+	PPE_RESOURCE_PPPOE,
+	PPE_RESOURCE_ACL_METER,
 };
 
 static u64 ppe_devlink_fdb_occ(void *p)
@@ -682,6 +679,36 @@ static u64 ppe_devlink_acl_occ(void *p)
 		free += hweight8(priv->acl_free[i]);
 
 	return PPE_ACL_LISTS * PPE_ACL_LIST_ENTRIES - free;
+}
+
+static u64 ppe_devlink_flow_occ(void *p)
+{
+	struct qca_ppe_priv *priv = p;
+
+	return atomic_read(&priv->flow_table.nelems);
+}
+
+static u64 ppe_devlink_pppoe_occ(void *p)
+{
+	struct qca_ppe_priv *priv = p;
+	u64 n = 0;
+	int i;
+
+	guard(mutex)(&priv->flow_lock);
+
+	for (i = 0; i < PPE_PPPOE_SESSIONS; i++)
+		n += !!priv->pppoe[i].ref;
+
+	return n;
+}
+
+static u64 ppe_devlink_acl_meter_occ(void *p)
+{
+	struct qca_ppe_priv *priv = p;
+
+	guard(mutex)(&priv->acl_lock);
+
+	return bitmap_weight(priv->acl_meter_used, PPE_ACL_METER_ENTRIES);
 }
 
 static int ppe_devlink_resource(struct dsa_switch *ds, const char *name,
@@ -835,6 +862,20 @@ static int ppe_devlink_setup(struct dsa_switch *ds)
 					   PPE_RESOURCE_VLAN_XLT,
 					   ppe_devlink_xlt_occ);
 	if (!ret)
+		ret = ppe_devlink_resource(ds, "flow",
+					   priv->data->num_flow_entries,
+					   PPE_RESOURCE_FLOW,
+					   ppe_devlink_flow_occ);
+	if (!ret)
+		ret = ppe_devlink_resource(ds, "pppoe", PPE_PPPOE_SESSIONS,
+					   PPE_RESOURCE_PPPOE,
+					   ppe_devlink_pppoe_occ);
+	if (!ret)
+		ret = ppe_devlink_resource(ds, "acl_meter",
+					   PPE_ACL_METER_ENTRIES,
+					   PPE_RESOURCE_ACL_METER,
+					   ppe_devlink_acl_meter_occ);
+	if (!ret)
 		ret = qca_ppe_devlink_sb_setup(ds);
 	if (ret) {
 		dsa_devlink_resources_unregister(ds);
@@ -904,7 +945,7 @@ static int qca_ppe_setup(struct dsa_switch *ds)
 	frame_size = PPE_DEFAULT_MTU + 2 * VLAN_HLEN;
 
 	for (i = 0; i < num_ports; i++)
-		priv->port_vsi[i] = PPE_VSI_INVALID;
+		priv->port_vsi[i] = 0;
 
 	regmap_write(priv->regmap, PPE_FDB_OP, 0);
 
@@ -1067,6 +1108,7 @@ static void bridge_vsi_put(struct qca_ppe_priv *priv,
 	if (bvsi->refcount > 0)
 		return;
 
+	ppe_flow_purge_vsi(priv, bvsi->vsi);
 	ppe_vsi_free(priv, bvsi->vsi);
 	bvsi->br_dev = NULL;
 }
@@ -1094,6 +1136,7 @@ static int qca_ppe_port_bridge_join(struct dsa_switch *ds, int port,
 	struct qca_ppe_priv *priv = ds_to_priv(ds);
 	struct qca_ppe_bridge_vsi *bvsi;
 
+	guard(mutex)(&priv->flow_lock);
 	guard(mutex)(&priv->vlan_lock);
 
 	bvsi = bridge_vsi_find(priv, bridge.dev);
@@ -1119,13 +1162,14 @@ static void qca_ppe_port_bridge_leave(struct dsa_switch *ds, int port,
 	struct qca_ppe_priv *priv = ds_to_priv(ds);
 	struct qca_ppe_bridge_vsi *bvsi;
 
+	guard(mutex)(&priv->flow_lock);
 	guard(mutex)(&priv->vlan_lock);
 
 	bvsi = bridge_vsi_find(priv, bridge.dev);
 	if (!bvsi)
 		return;
 
-	priv->port_vsi[port] = PPE_VSI_INVALID;
+	priv->port_vsi[port] = 0;
 	priv->port_br_dev[port] = NULL;
 	ppe_port_vsi_set(priv, port, 0);
 	bridge_vsi_members_update(priv, bvsi);
@@ -1172,9 +1216,12 @@ static u16 ppe_fdb_vid(struct qca_ppe_priv *priv, u32 vsi)
 	return 0;
 }
 
-static int qca_ppe_port_fdb_add(struct dsa_switch *ds, int port,
-				const unsigned char *addr, u16 vid,
-				struct dsa_db db)
+/* A trunk is named in the destination field of an ordinary entry, so a LAG's
+ * addresses differ from a port's only in the value written there.
+ */
+static int ppe_fdb_set(struct dsa_switch *ds, int dst,
+		       const unsigned char *addr, u16 vid, struct dsa_db db,
+		       u32 op_type)
 {
 	struct qca_ppe_priv *priv = ds_to_priv(ds);
 	u32 vsi;
@@ -1185,23 +1232,21 @@ static int qca_ppe_port_fdb_add(struct dsa_switch *ds, int port,
 	if (vsi == PPE_VSI_INVALID)
 		return -EOPNOTSUPP;
 
-	return ppe_fdb_op(priv, addr, port, vsi, PPE_FDB_OP_ADD);
+	return ppe_fdb_op(priv, addr, dst, vsi, op_type);
+}
+
+static int qca_ppe_port_fdb_add(struct dsa_switch *ds, int port,
+				const unsigned char *addr, u16 vid,
+				struct dsa_db db)
+{
+	return ppe_fdb_set(ds, port, addr, vid, db, PPE_FDB_OP_ADD);
 }
 
 static int qca_ppe_port_fdb_del(struct dsa_switch *ds, int port,
 				const unsigned char *addr, u16 vid,
 				struct dsa_db db)
 {
-	struct qca_ppe_priv *priv = ds_to_priv(ds);
-	u32 vsi;
-
-	guard(mutex)(&priv->vlan_lock);
-
-	vsi = ppe_fdb_vsi(priv, vid, db);
-	if (vsi == PPE_VSI_INVALID)
-		return -EOPNOTSUPP;
-
-	return ppe_fdb_op(priv, addr, port, vsi, PPE_FDB_OP_DEL);
+	return ppe_fdb_set(ds, port, addr, vid, db, PPE_FDB_OP_DEL);
 }
 
 static int qca_ppe_port_fdb_dump(struct dsa_switch *ds, int port,
@@ -1247,8 +1292,10 @@ static int qca_ppe_port_mdb_add(struct dsa_switch *ds, int port,
 		return -EOPNOTSUPP;
 
 	ret = ppe_fdb_lookup(priv, mdb->addr, vsi, &portmap);
-	if (ret)
+	if (ret == -ENOENT)
 		portmap = BIT(QCA_PPE_CPU_PORT);
+	else if (ret)
+		return ret;
 
 	portmap |= BIT(port);
 
@@ -2053,7 +2100,10 @@ static void ppe_mib_work(struct work_struct *work)
 						 mib_work);
 	struct dsa_port *dp;
 
-	dsa_switch_for_each_user_port(dp, &priv->ds) {
+	/* The CPU port has no MIB to fold, but its queue counters wrap like
+	 * any other port's.
+	 */
+	dsa_switch_for_each_available_port(dp, &priv->ds) {
 		spin_lock_bh(&priv->mib_lock);
 		ppe_mib_fold(priv, dp->index);
 		ppe_port_qstats(priv, dp->index, NULL,
@@ -2169,7 +2219,7 @@ static void qca_ppe_get_eth_mac_stats(struct dsa_switch *ds, int port,
 	struct qca_ppe_priv *priv = ds_to_priv(ds);
 	struct qca_ppe_mib_stats *stats;
 
-	if (port < 1 || port >= ds->num_ports)
+	if (port < 1)
 		return;
 
 	stats = ppe_port_mib(priv, port);
@@ -2206,7 +2256,7 @@ static void qca_ppe_get_eth_ctrl_stats(struct dsa_switch *ds, int port,
 	struct qca_ppe_priv *priv = ds_to_priv(ds);
 	struct qca_ppe_mib_stats *stats;
 
-	if (port < 1 || port >= ds->num_ports)
+	if (port < 1)
 		return;
 
 	stats = ppe_port_mib(priv, port);
@@ -2243,7 +2293,7 @@ qca_ppe_get_rmon_stats(struct dsa_switch *ds, int port,
 
 	*ranges = qca_ppe_rmon_ranges;
 
-	if (port < 1 || port >= ds->num_ports)
+	if (port < 1)
 		return;
 
 	stats = ppe_port_mib(priv, port);
@@ -2279,7 +2329,7 @@ static void qca_ppe_get_pause_stats(struct dsa_switch *ds, int port,
 	struct qca_ppe_priv *priv = ds_to_priv(ds);
 	struct qca_ppe_mib_stats *stats;
 
-	if (port < 1 || port >= ds->num_ports)
+	if (port < 1)
 		return;
 
 	stats = ppe_port_mib(priv, port);
@@ -2309,6 +2359,10 @@ static void qca_ppe_teardown(struct dsa_switch *ds)
 {
 	struct qca_ppe_priv *priv = ds_to_priv(ds);
 
+	struct dsa_port *cpu_dp;
+
+	dsa_switch_for_each_cpu_port(cpu_dp, ds)
+		qca_edma_switch_unregister(cpu_dp->conduit);
 	cancel_delayed_work_sync(&priv->mib_work);
 	ppe_devlink_teardown(ds);
 }
@@ -2672,43 +2726,20 @@ static int qca_ppe_port_lag_change(struct dsa_switch *ds, int port)
 	return 0;
 }
 
-/* A trunk is named in the destination field of an ordinary entry, so the only
- * difference from a per-port address is the value written there.
- */
 static int qca_ppe_lag_fdb_add(struct dsa_switch *ds, struct dsa_lag lag,
 			       const unsigned char *addr, u16 vid,
 			       struct dsa_db db)
 {
-	struct qca_ppe_priv *priv = ds_to_priv(ds);
-	u32 vsi;
-
-	guard(mutex)(&priv->flow_lock);
-	guard(mutex)(&priv->vlan_lock);
-
-	vsi = ppe_fdb_vsi(priv, vid, db);
-	if (vsi == PPE_VSI_INVALID)
-		return -EOPNOTSUPP;
-
-	return ppe_fdb_op(priv, addr, PPE_FDB_DST_TRUNK(lag.id - 1), vsi,
-			  PPE_FDB_OP_ADD);
+	return ppe_fdb_set(ds, PPE_FDB_DST_TRUNK(lag.id - 1), addr, vid, db,
+			   PPE_FDB_OP_ADD);
 }
 
 static int qca_ppe_lag_fdb_del(struct dsa_switch *ds, struct dsa_lag lag,
 			       const unsigned char *addr, u16 vid,
 			       struct dsa_db db)
 {
-	struct qca_ppe_priv *priv = ds_to_priv(ds);
-	u32 vsi;
-
-	guard(mutex)(&priv->flow_lock);
-	guard(mutex)(&priv->vlan_lock);
-
-	vsi = ppe_fdb_vsi(priv, vid, db);
-	if (vsi == PPE_VSI_INVALID)
-		return -EOPNOTSUPP;
-
-	return ppe_fdb_op(priv, addr, PPE_FDB_DST_TRUNK(lag.id - 1), vsi,
-			  PPE_FDB_OP_DEL);
+	return ppe_fdb_set(ds, PPE_FDB_DST_TRUNK(lag.id - 1), addr, vid, db,
+			   PPE_FDB_OP_DEL);
 }
 
 /* No hardware op deletes by port - the vendor walks the table too - so every
@@ -2844,6 +2875,29 @@ void qca_ppe_port_mirror_del(struct dsa_switch *ds, int port,
 	ppe_mirror_put(priv, BIT(mirror->ingress));
 }
 
+static const struct qca_edma_switch_ops qca_ppe_edma_ops = {
+	.flow_xmit = ppe_flow_xmit,
+};
+
+/* The QCA tag is what DSA and the conduit pass a port by; a frame the switch
+ * routed for a flow reaches this driver through the conduit, which it is
+ * registered with.
+ */
+static int qca_ppe_connect_tag_protocol(struct dsa_switch *ds,
+					enum dsa_tag_protocol proto)
+{
+	struct dsa_port *cpu_dp;
+
+	if (proto != DSA_TAG_PROTO_QCA)
+		return -EPROTONOSUPPORT;
+
+	dsa_switch_for_each_cpu_port(cpu_dp, ds)
+		return qca_edma_switch_register(cpu_dp->conduit, ds,
+						&qca_ppe_edma_ops);
+
+	return -ENODEV;
+}
+
 static const struct dsa_switch_ops qca_ppe_ops = {
 	.port_setup_tc		= qca_ppe_setup_tc,
 	.cls_flower_add		= qca_ppe_cls_flower_add,
@@ -2861,6 +2915,7 @@ static const struct dsa_switch_ops qca_ppe_ops = {
 	.port_get_apptrust	= qca_ppe_port_get_apptrust,
 	.port_set_apptrust	= qca_ppe_port_set_apptrust,
 	.get_tag_protocol	= qca_ppe_get_tag_protocol,
+	.connect_tag_protocol	= qca_ppe_connect_tag_protocol,
 	.setup			= qca_ppe_setup,
 	.teardown		= qca_ppe_teardown,
 	.set_ageing_time	= qca_ppe_set_ageing_time,
@@ -2989,6 +3044,13 @@ static void ppe_ctrlpkt_init(struct qca_ppe_priv *priv)
 	regmap_write(priv->regmap, PPE_APP_CTRL(1) + 8, trap);
 }
 
+/* The binding allows either name, as the DSA core does. */
+static struct device_node *ppe_ports_node(struct device_node *np)
+{
+	return of_get_child_by_name(np, "ports") ?:
+	       of_get_child_by_name(np, "ethernet-ports");
+}
+
 static void ppe_ipq6018_mux_setup(struct qca_ppe_priv *priv)
 {
 	struct device_node *ports_np, *port_np;
@@ -2997,7 +3059,7 @@ static void ppe_ipq6018_mux_setup(struct qca_ppe_priv *priv)
 	u32 port;
 	int ret;
 
-	ports_np = of_get_child_by_name(priv->ds.dev->of_node, "ports");
+	ports_np = ppe_ports_node(priv->ds.dev->of_node);
 
 	for_each_available_child_of_node(ports_np, port_np) {
 		ret = of_property_read_u32(port_np, "reg", &port);
@@ -3018,7 +3080,7 @@ static void ppe_ipq6018_mux_setup(struct qca_ppe_priv *priv)
 
 	of_node_put(ports_np);
 
-	/* FIXME: better investigate this */
+	/* Port 3 reaches channel 4 of PCS0 only through the mux. */
 	if (port3_ch == 4)
 		regmap_update_bits(priv->regmap, PPE_PORT_MUX_CTRL,
 				   CPPE_PORT3_PCS_SEL | CPPE_PCS0_CH4_SEL,
@@ -3050,7 +3112,7 @@ static int qca_ppe_probe(struct platform_device *pdev)
 	if (!data)
 		return -ENODEV;
 
-	ports = of_get_child_by_name(pdev->dev.of_node, "ports");
+	ports = ppe_ports_node(pdev->dev.of_node);
 	if (!ports)
 		return -ENODEV;
 	of_node_put(ports);
@@ -3155,26 +3217,34 @@ static int qca_ppe_probe(struct platform_device *pdev)
 
 	ppe_mac_hw_init(priv);
 	ppe_ctrlpkt_init(priv);
+	ppe_flow_init(priv);
 	ppe_acl_init(priv);
+
+	ret = ppe_flow_offload_init(priv);
+	if (ret)
+		goto err_acl;
 
 	if (data->type == PPE_TYPE_IPQ6018)
 		ppe_ipq6018_mux_setup(priv);
 
 	ret = dsa_register_switch(ds);
 	if (ret)
-		goto err_acl;
+		goto err_flow;
 
 	ret = ppe_scheduler_ready(priv);
 	if (ret) {
 		dsa_unregister_switch(ds);
-		goto err_acl;
+		goto err_flow;
 	}
 	ppe_debugfs_init(priv);
+	ppe_flow_debugfs_init(priv);
 
 	platform_set_drvdata(pdev, priv);
 
 	return 0;
 
+err_flow:
+	ppe_flow_offload_exit(priv);
 err_acl:
 	ppe_acl_exit(priv);
 	ppe_scheduler_exit(priv);
@@ -3188,6 +3258,10 @@ static void qca_ppe_remove(struct platform_device *pdev)
 	ppe_debugfs_exit(priv);
 	ppe_scheduler_unready(priv);
 	dsa_unregister_switch(&priv->ds);
+	/* After the switch is gone: unregistering its ports unbinds the
+	 * flowtable blocks, and the block release walks the flow table.
+	 */
+	ppe_flow_offload_exit(priv);
 	ppe_acl_exit(priv);
 	ppe_scheduler_exit(priv);
 }
@@ -3205,6 +3279,9 @@ static const struct ppe_data ipq6018_ppe_data = {
 	.qm_total_buf		= 1506,
 	.qm_ceiling		= 216,
 	.qm_green_max		= 144,
+	.num_flow_entries	= 2048,
+	.num_host_entries	= 768,
+	.num_nexthop_entries	= 768,
 	.psch_tdm		= &cppe_psch_tdm_data,
 	.bm_tdm			= &cppe_bm_tdm_data,
 };
@@ -3222,6 +3299,9 @@ static const struct ppe_data ipq8074_ppe_data = {
 	.qm_total_buf		= 2000,
 	.qm_ceiling		= 400,
 	.qm_green_max		= 250,
+	.num_flow_entries	= 4096,
+	.num_host_entries	= 6144,
+	.num_nexthop_entries	= 2560,
 	.psch_tdm		= &hppe_psch_tdm_data,
 	.bm_tdm			= &hppe_bm_tdm_data,
 };

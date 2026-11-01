@@ -87,6 +87,11 @@ tools-$(if $(CONFIG_BUILD_ALL_HOST_TOOLS)$(CONFIG_USES_MINOR),y) += yafut
 tools-$(if $(CONFIG_BUILD_ALL_HOST_TOOLS)$(CONFIG_USE_SPARSE),y) += sparse
 tools-$(if $(CONFIG_BUILD_ALL_HOST_TOOLS)$(CONFIG_USE_LLVM_BUILD),y) += llvm-bpf
 tools-$(if $(CONFIG_BUILD_ALL_HOST_TOOLS)$(CONFIG_USE_MOLD),y) += mold
+tools-$(CONFIG_USE_RUST_TOOLCHAIN) += rust
+tools-$(CONFIG_BUILD_BINDGEN) += bindgen
+tools-$(CONFIG_USE_CBINDGEN) += cbindgen
+tools-$(CONFIG_USE_CORROSION) += corrosion
+tools-$(if $(CONFIG_USE_RUST_TOOLCHAIN),$(CONFIG_RUST_SCCACHE)) += sccache
 
 # builddir dependencies
 $(curdir)/autoconf/compile := $(curdir)/m4/compile
@@ -117,6 +122,10 @@ $(curdir)/lz4/compile := $(curdir)/meson/compile
 $(curdir)/lzma-old/compile := $(curdir)/zlib/compile
 $(curdir)/lzop/compile := $(curdir)/cmake/compile $(curdir)/liblzo/compile
 $(curdir)/llvm-bpf/compile := $(curdir)/cmake/compile
+$(curdir)/rust/compile := $(curdir)/cmake/compile $(curdir)/libdeflate/compile $(curdir)/xz/compile
+$(curdir)/bindgen/compile := $(curdir)/rust/compile $(if $(CONFIG_USE_LLVM_BUILD),$(curdir)/llvm-bpf/compile) $(if $(CONFIG_RUST_SCCACHE),$(curdir)/sccache/compile)
+$(curdir)/cbindgen/compile := $(curdir)/rust/compile $(if $(CONFIG_RUST_SCCACHE),$(curdir)/sccache/compile)
+$(curdir)/corrosion/compile := $(curdir)/rust/compile $(curdir)/cmake/compile
 $(curdir)/make-ext4fs/compile := $(curdir)/zlib/compile
 $(curdir)/meson/compile := $(curdir)/ninja/compile
 $(curdir)/missing-macros/compile := $(curdir)/autoconf/compile
@@ -130,6 +139,7 @@ $(curdir)/padjffs2/compile := $(curdir)/findutils/compile
 $(curdir)/patchelf/compile := $(curdir)/libtool/compile
 $(curdir)/pkgconf/compile := $(curdir)/meson/compile
 $(curdir)/quilt/compile := $(curdir)/autoconf/compile $(curdir)/findutils/compile
+$(curdir)/sccache/compile := $(curdir)/rust/compile
 $(curdir)/sdcc/compile := $(curdir)/bison/compile
 $(curdir)/squashfs3-lzma/compile := $(curdir)/lzma-old/compile
 $(curdir)/squashfs4/compile := $(curdir)/xz/compile $(curdir)/zlib/compile
@@ -236,6 +246,9 @@ $(curdir)/ := .config prereq
 $(curdir)/install: $(curdir)/compile
 
 tools_enabled = $(foreach tool,$(sort $(tools-y) $(tools-)),$(if $(filter $(tool),$(tools-y)),y,n))
-$(eval $(call stampfile,$(curdir),tools,compile,,_$(subst $(space),,$(tools_enabled)),$(STAGING_DIR_HOST)))
+# The Rust toolchain choice changes what tools/rust installs, not the tool list.
+tools_config = $(if $(CONFIG_USE_RUST_TOOLCHAIN),_$(call confvar,CONFIG_USE_RUST_BUILD \
+	CONFIG_USE_RUST_PREBUILT CONFIG_USE_RUST_HOST CONFIG_RUST_TOOLCHAIN_HOST_PATH))
+$(eval $(call stampfile,$(curdir),tools,compile,,_$(subst $(space),,$(tools_enabled))$(tools_config),$(STAGING_DIR_HOST)))
 $(eval $(call stampfile,$(curdir),tools,check,$(TMP_DIR)/.build,,$(STAGING_DIR_HOST)))
 $(eval $(call subdir,$(curdir)))

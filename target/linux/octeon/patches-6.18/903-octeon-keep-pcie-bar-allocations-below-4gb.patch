@@ -1,0 +1,74 @@
+FROM: Andrew LaMarche <andrewjlamarche@gmail.com>
+Date: Wed, 28 Oct 2026 00:00:00 -0400
+Subject: [PATCH] octeon: keep PCIe BAR allocations below 4GB
+
+The root-complex memory windows registered by octeon_pcie_setup()
+span 64 bits of bus address (mem_resource covers 4GB-256MB up to
+mem_base + 2^36), so the PCI core places 64-bit BARs above 4GB. On
+a CN7030 board with two QCA9984 wifi chips each BAR0 landed at bus
+address 0x100000000 -- low half 0x00000000, high half 0x1.
+
+That placement is fatal for endpoints whose inbound memory window is
+32-bit internally even though their PCIe config space advertises a
+64-bit BAR. The QCA9984 routes inbound memory requests through a
+32-bit CORE_CTRL/BAR0-start register (see the "target writes BAR to
+CORE_CTRL" comment in the ath10k driver), and after the chip's
+SOC_GLOBAL_RESET -- which ath10k issues unconditionally during
+probe -- its boot ROM re-establishes that window from the low half
+of the BAR only. The chip then stops decoding the address the host
+maps it at, while config space keeps working: setpci shows the full
+BAR and command register intact, but every MMIO read is a failed
+completion (devmem of the hardwired chip ID at BAR0+0xec returns
+0xffffffff) and ath10k times out waiting for the firmware indicator
+forever:
+
+  ath10k_pci 0000:01:00.0: failed to receive initialized event from target: 00000000
+  ath10k_pci 0000:01:00.0: failed to wait for target after cold reset: -145
+
+The vendor SDK kernel avoids this by keeping the bootloader's 32-bit
+BAR assignment (0xe0000000). Cap the controller memory windows at
+the end of 32-bit bus address space so every device BAR is placed
+where 32-bit-only endpoints can decode it. The window start already
+sits at 4GB-256MB -- the x86 "big BAR" convention this code
+emulates -- so each port keeps 256MB of device address space, ample
+for the wifi and switch cards these SoCs ship with, and matching
+what x86 BIOSes do by default. Device DMA (inbound) is unaffected:
+it is translated by the BAR2 window, not by these resources.
+
+Signed-off-by: Andrew LaMarche <andrewjlamarche@gmail.com>
+
+--- a/arch/mips/pci/pcie-octeon.c
++++ b/arch/mips/pci/pcie-octeon.c
+@@ -2089,9 +2089,22 @@ static int __init octeon_pcie_setup(void
+ 			octeon_pcie0_controller.mem_resource->start =
+ 				cvmx_pcie_get_mem_base_address(0) +
+ 				(4ul << 30) - (OCTEON_PCI_BAR1_HOLE_SIZE << 20);
++			/*
++			 * Keep the window inside the first 4GB of bus
++			 * address space. Some endpoints with 64-bit
++			 * BARs (e.g. the QCA9984 wifi chip) decode
++			 * inbound memory through a 32-bit internal
++			 * window that their boot ROM restores from the
++			 * low half of the BAR after a chip reset; a BAR
++			 * placed above 4GB stops being decoded as soon
++			 * as the driver resets the chip, while config
++			 * space keeps working. Capping the end forces
++			 * 32-bit BAR placement, like the x86 BIOS
++			 * behavior this window already emulates.
++			 */
+ 			octeon_pcie0_controller.mem_resource->end =
+ 				cvmx_pcie_get_mem_base_address(0) +
+-				cvmx_pcie_get_mem_size(0) - 1;
++				(4ull << 30) - 1;
+ 			/*
+ 			 * Ports must be above 16KB for the ISA bus
+ 			 * filtering in the PCI-X to PCI bridge.
+@@ -2171,7 +2184,7 @@ static int __init octeon_pcie_setup(void
+ 				(OCTEON_PCI_BAR1_HOLE_SIZE << 20);
+ 			octeon_pcie1_controller.mem_resource->end =
+ 				cvmx_pcie_get_mem_base_address(1) +
+-				cvmx_pcie_get_mem_size(1) - 1;
++				(4ull << 30) - 1;
+ 			/*
+ 			 * Ports must be above 16KB for the ISA bus filtering
+ 			 * in the PCI-X to PCI bridge.

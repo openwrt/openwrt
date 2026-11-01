@@ -6,11 +6,13 @@
 #ifndef __QCA_EDMA_H__
 #define __QCA_EDMA_H__
 
-#include <linux/dsa/oob.h>
+#include <linux/dsa/tag_qca.h>
+#include <linux/qca_edma.h>
 #include <linux/etherdevice.h>
 #include <linux/if_vlan.h>
 #include <linux/netdevice.h>
 #include <linux/platform_device.h>
+#include <net/dsa.h>
 #include <net/page_pool/helpers.h>
 
 #define EDMA_HW_RESET_ID "edma_rst"
@@ -137,8 +139,8 @@
 #define EDMA_REG_RX_INT_CTRL(n)		(0x4900c + (0x1000 * (n)))
 
 #define EDMA_RXDESC_INT_MASK_PKT_INT	0x1
-/* Default moderation: an interrupt per 16 frames, or after 25 us on RX. */
-#define EDMA_RX_COAL_US			25
+/* Default moderation: an interrupt per 16 frames, or after 100 us on RX. */
+#define EDMA_RX_COAL_US			100
 #define EDMA_COAL_FRAMES		16
 
 /* A moderation timer counts 128 cycles of the EDMA clock. */
@@ -165,11 +167,16 @@
 #define EDMA_RXPH_HASH_FLAG_MASK	0x7
 #define EDMA_RXPH_HASH_5TUPLE		1
 #define EDMA_RXPH_HASH_3TUPLE		2
+#define EDMA_RXPH_HASH_FLOW		7
 /* Where a stripped tag is reported: the tag flags in pre2 and the S-tag and
  * C-tag TCIs in the high and low halves of pre3.
  */
 #define EDMA_RXPH_CTAG_FLAG		BIT(30)
 #define EDMA_RXPH_CTAG_TCI		GENMASK(15, 0)
+/* Why the switch sent the frame to the CPU: zero for a frame it forwarded or
+ * flooded there, the reason for one it trapped or redirected.
+ */
+#define EDMA_RXPH_CPU_CODE		GENMASK(31, 24)
 #define EDMA_RXPH_L3_OFFSET_SHIFT	16
 #define EDMA_RXPH_L3_OFFSET_MASK	0xff
 #define EDMA_RXPH_L4_OFFSET_SHIFT	8
@@ -249,6 +256,7 @@
 #define EDMA_DST_PORT_TYPE			0x20
 #define EDMA_DST_PORT_ID_MASK			0x1f
 #define EDMA_SRC_PORT_MASK			0x0fff
+#define EDMA_PORTS				8
 #define EDMA_PREHDR_DSTINFO_PORTID_IND		0x20
 #define EDMA_RXPH_SRC_INFO_TYPE_GET(rxph)	(((rxph)->src_info >> 8) & 0xf0)
 
@@ -348,6 +356,19 @@ struct edma_queue {
 	struct edma_ring rxfill_ring;
 	struct edma_ring rxdesc_ring;
 
+	/* The ring indices only the driver moves, kept here so that the data
+	 * path reads from the engine only what the engine moves: its consumer
+	 * index of a ring the driver fills and its producer index of a ring
+	 * the driver drains. tx_cons is the last consumer index read and is
+	 * read again only when it reports too little room.
+	 */
+	u16 tx_prod;
+	u16 tx_cons;
+	u16 txcmpl_cons;
+	u16 rxfill_prod;
+	u16 rxdesc_cons;
+	bool tx_kick;
+
 	spinlock_t tx_lock;
 
 	/* Counted here rather than in netdev->stats, which cannot say which of
@@ -374,8 +395,10 @@ struct edma_priv {
 	struct net_device *netdev;
 	struct platform_device *pdev;
 	struct regmap *regmap;
+	void __iomem *base;
 	struct reset_control *rst;
 	u32 rx_buffer_size;
+	u32 rx_frame_len;
 	u8 rx_page_order;
 	u16 tx_ring_size;
 	u16 rx_ring_size;
@@ -394,9 +417,18 @@ struct edma_priv {
 	 * from each of the bases 0, 4 and 8.
 	 */
 	u8 rss_indir[EDMA_RSS_QUEUES];
-	bool threaded_set;
 
 	int misc_irq;
+
+	/* Names the user port of a frame the switch forwarded itself, which
+	 * the bridge then does not forward again.
+	 */
+	struct metadata_dst *port_md[EDMA_PORTS];
+	/* The switch behind the conduit and what it provides, set while it
+	 * is bound; read locklessly on the receive path.
+	 */
+	struct dsa_switch *sw_ds;
+	const struct qca_edma_switch_ops *sw_ops;
 };
 
 #endif /* __QCA_EDMA_H__ */

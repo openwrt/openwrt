@@ -1,0 +1,73 @@
+From c043378d261d0a32e966fb5622ff36fbf9eaed95 Mon Sep 17 00:00:00 2001
+From: Anthony Green <green@moxielogic.com>
+Date: Tue, 15 Sep 2026 07:34:00 -0400
+Subject: [PATCH] powerpc64: fix _Complex long double when long double is 64
+ bits
+
+PR #1003 added _Complex long double support for the IBM-128 and IEEE-128
+formats, but it read "not IEEE-128" as "IBM-128" and so assumed
+sizeof(long double) == 16 wherever FFI_TYPE_LONGDOUBLE != FFI_TYPE_DOUBLE.
+On powerpc that condition says nothing about the width: HAVE_LONG_DOUBLE_VARIANT
+forces HAVE_LONG_DOUBLE on, and the actual width comes from the
+FFI_LINUX_LONG_DOUBLE_128 bit of the ABI at runtime.
+
+Targets with a distinct but 64-bit long double -- musl ppc64le, or any build
+with -mlong-double-64 -- therefore counted 4 FPRs and 4 GPR shadow slots for
+each _Complex long double argument and read four doubles out of a 16-byte
+value, crashing complex_longdouble, return_complex1_longdouble,
+return_complex2_longdouble and cls_complex_va_longdouble.
+
+Normalize the complex element type to FFI_TYPE_DOUBLE when the ABI says long
+double is 64 bits, as discover_homogeneous_aggregate and both _Complex return
+paths already do, letting the existing double code handle those values.  The
+three argument paths fixed here were the only ones that hardcoded the IBM-128
+width; the rest are driven by rtype->size or by the element count from
+discover_homogeneous_aggregate and were already correct.
+
+Reported and diagnosed by Janis Gertulla, who also proposed a fix.
+
+Fixes #1013
+
+Co-authored-by: Janis Gertulla <coffeeimpliescode@proton.me>
+Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>
+---
+ src/powerpc/ffi_linux64.c | 14 ++++++++++++++
+ 1 file changed, 14 insertions(+)
+
+--- a/src/powerpc/ffi_linux64.c
++++ b/src/powerpc/ffi_linux64.c
+@@ -393,6 +393,12 @@ homogeneous:
+ 	     under ELFv2, and is what differentiates _Complex from a
+ 	     same-sized struct{T;T;} which uses fewer GPR shadow slots.  */
+ 	  elt = (*ptr)->elements[0]->type;
++#if FFI_TYPE_LONGDOUBLE != FFI_TYPE_DOUBLE
++	  /* A 64-bit long double is passed exactly like a double.  */
++	  if (elt == FFI_TYPE_LONGDOUBLE
++	      && (cif->abi & FFI_LINUX_LONG_DOUBLE_128) == 0)
++	    elt = FFI_TYPE_DOUBLE;
++#endif
+ 	  switch (elt)
+ 	    {
+ 	    case FFI_TYPE_FLOAT:
+@@ -776,6 +782,10 @@ ffi_prep_args64 (extended_cif *ecif, uns
+ 	case FFI_TYPE_COMPLEX:
+ 	  elt = (*ptr)->elements[0]->type;
+ #if FFI_TYPE_LONGDOUBLE != FFI_TYPE_DOUBLE
++	  /* A 64-bit long double is passed exactly like a double.  */
++	  if (elt == FFI_TYPE_LONGDOUBLE
++	      && (ecif->cif->abi & FFI_LINUX_LONG_DOUBLE_128) == 0)
++	    elt = FFI_TYPE_DOUBLE;
+ 	  if (elt == FFI_TYPE_LONGDOUBLE
+ 	      && (ecif->cif->abi & FFI_LINUX_LONG_DOUBLE_IEEE128) != 0)
+ 	    {
+@@ -1398,6 +1408,10 @@ ffi_closure_helper_LINUX64 (ffi_cif *cif
+ 	    unsigned int j;
+ 	    elt = arg_types[i]->elements[0]->type;
+ #if FFI_TYPE_LONGDOUBLE != FFI_TYPE_DOUBLE
++	    /* A 64-bit long double arrives exactly like a double.  */
++	    if (elt == FFI_TYPE_LONGDOUBLE
++		&& (cif->abi & FFI_LINUX_LONG_DOUBLE_128) == 0)
++	      elt = FFI_TYPE_DOUBLE;
+ 	    if (elt == FFI_TYPE_LONGDOUBLE
+ 		&& (cif->abi & FFI_LINUX_LONG_DOUBLE_IEEE128) != 0)
+ 	      {

@@ -1,0 +1,458 @@
+From: Aishwarya R <aishwarya.r@oss.qualcomm.com>
+Date: Tue, 12 May 2026 10:54:53 +0530
+Subject: [PATCH] DSCP: Building and sending Unsolicited DSCP policy request
+
+Add support to construct and transmit unsolicited DSCP Policy Request
+frames to connected STAs. This includes:
+
+Construction of a QoS Policy element for a given DSCP policy, including
+QoS management attributes like classifier, domain name, and port range.
+
+Building and sending one or more DSCP Policy Request frames to a STA,
+handling fragmentation if the total size exceeds the maximum allowed.
+
+Batching multiple policies and setting the More bit when additional
+frames are needed.
+
+Backport of hostap commit 241f79bbcf75.
+
+Signed-off-by: Aishwarya R <aishwarya.r@oss.qualcomm.com>
+---
+--- a/hostapd/ctrl_iface.c
++++ b/hostapd/ctrl_iface.c
+@@ -774,6 +774,7 @@ static int hostapd_ctrl_iface_send_qos_m
+ 
+ 
+ #ifdef CONFIG_ROBUST_AV
++
+ static int hostapd_ctrl_iface_set_dscp_policy(struct hostapd_data *hapd,
+ 					      const char *cmd)
+ {
+@@ -829,6 +830,95 @@ static int hostapd_ctrl_iface_set_dscp_p
+ 	free_dscp_policy(&policy);
+ 	return 0;
+ }
++
++
++static int hostapd_ctrl_send_unsolicited_dscp_req(struct hostapd_data *hapd,
++						  const char *cmd)
++{
++	struct sta_info *sta;
++	u8 addr[ETH_ALEN];
++	int reset = 0;
++	int *policy_ids = NULL;
++	size_t num_policies = 0;
++	char *buf, *p, *end;
++	int ret;
++
++	if (!hapd->conf->enable_dscp_policy_capa)
++		return -1;
++
++	buf = os_strdup(cmd);
++	if (!buf)
++		return -1;
++
++	p = buf;
++	end = os_strchr(p, ' ');
++	if (!end || hwaddr_aton(p, addr)) {
++		os_free(buf);
++		return -1;
++	}
++
++	*end = '\0';
++	p = end + 1;
++	end = os_strchr(p, ' ');
++	if (!end || os_strncmp(p, "reset=", 6) != 0) {
++		os_free(buf);
++		return -1;
++	}
++
++	*end = '\0';
++	reset = atoi(p + 6);
++	p = end + 1;
++
++	if (os_strncmp(p, "policy_id_list=", 15) != 0) {
++		os_free(buf);
++		return -1;
++	}
++	p += 15;
++
++	while (*p && num_policies < 255) {
++		int val = strtol(p, &end, 10);
++
++		if (p == end)
++			break;
++
++		if (num_policies == 0) {
++			policy_ids = os_malloc(sizeof(int));
++			if (!policy_ids)
++				break;
++		} else {
++			int *tmp;
++
++			tmp = os_realloc_array(policy_ids, num_policies + 1,
++					       sizeof(int));
++			if (!tmp)
++				break;
++			policy_ids = tmp;
++		}
++		policy_ids[num_policies++] = val;
++		if (*end == '_')
++			p = end + 1;
++		else
++			break;
++	}
++	os_free(buf);
++
++	if (num_policies == 0) {
++		wpa_printf(MSG_INFO, "DSCP: No valid policy IDs found");
++		os_free(policy_ids);
++		return -1;
++	}
++
++	sta = ap_get_sta(hapd, addr);
++	if (!sta)
++		return -1;
++
++	ret = hostapd_send_unsolicited_dscp_policy_request(hapd, sta, reset,
++							   policy_ids,
++							   num_policies);
++	os_free(policy_ids);
++	return ret;
++}
++
+ #endif /* CONFIG_ROBUST_AV */
+ 
+ 
+@@ -4770,6 +4860,9 @@ static int hostapd_ctrl_iface_receive_pr
+ 	} else if (os_strncmp(buf, "DSCP_POLICY ", 12) == 0) {
+ 		if (hostapd_ctrl_iface_set_dscp_policy(hapd, buf + 12))
+ 			reply_len = -1;
++	} else if (os_strncmp(buf, "SEND_UNSOLICITED_DSCP_REQ ", 26) == 0) {
++		if (hostapd_ctrl_send_unsolicited_dscp_req(hapd, buf + 26))
++			reply_len = -1;
+ #endif /* CONFIG_ROBUST_AV */
+ 	} else {
+ 		os_memcpy(reply, "UNKNOWN COMMAND\n", 16);
+--- a/hostapd/hostapd_cli.c
++++ b/hostapd/hostapd_cli.c
+@@ -880,6 +880,7 @@ static int hostapd_cli_cmd_send_qos_map_
+ 
+ 
+ #ifdef CONFIG_ROBUST_AV
++
+ static int hostapd_cli_cmd_set_dscp_policy(struct wpa_ctrl *ctrl,
+ 					   int argc, char *argv[])
+ {
+@@ -914,6 +915,38 @@ static int hostapd_cli_cmd_set_dscp_poli
+ 
+ 	return wpa_ctrl_command(ctrl, cmd);
+ }
++
++
++static int hostapd_cli_cmd_send_unsolicited_dscp_req(struct wpa_ctrl *ctrl,
++						     int argc, char *argv[])
++{
++	char cmd[512];
++	int res;
++	int i;
++	size_t total;
++
++	if (argc < 3) {
++		printf("Invalid send_unsolicited_dscp_req command\n"
++		       "usage: sta_addr=<addr> [reset=] [policy_id_list=]\n");
++		return -1;
++	}
++
++	res = os_snprintf(cmd, sizeof(cmd), "SEND_UNSOLICITED_DSCP_REQ");
++	if (os_snprintf_error(sizeof(cmd), res))
++		return -1;
++
++	total = res;
++	for (i = 0; i < argc; i++) {
++		res = os_snprintf(cmd + total, sizeof(cmd) - total, " %s",
++				  argv[i]);
++		if (os_snprintf_error(sizeof(cmd) - total, res))
++			return -1;
++		total += res;
++	}
++
++	return wpa_ctrl_command(ctrl, cmd);
++}
++
+ #endif /* CONFIG_ROBUST_AV */
+ 
+ 
+@@ -2002,6 +2035,9 @@ static const struct hostapd_cli_cmd host
+ 	 "<sta_addr> <policy_id=> <request_type=> <dscp=> [classifier_mask=]\n"
+ 	 "[ip_version=] [src_ip=] [dst_ip=] [src_port=] [dst_port=]\n"
+ 	 "[protocol=] [domain_name=] [reset=] = Set DSCP policy"},
++	{"send_unsolicited_dscp_req", hostapd_cli_cmd_send_unsolicited_dscp_req,
++	 NULL,
++	 "<addr>, [reset=], [policy_id_list=], Send unsolicited DSCP request"},
+ #endif /* CONFIG_ROBUST_AV */
+ 	{ NULL, NULL, NULL, NULL }
+ };
+--- a/src/ap/ieee802_11.c
++++ b/src/ap/ieee802_11.c
+@@ -9213,6 +9213,27 @@ skip_update:
+ 		sta->pending_eapol_rx = NULL;
+ 	}
+ 
++#ifdef CONFIG_ROBUST_AV
++	if (hapd->conf->enable_dscp_policy_capa && sta &&
++	    (sta->flags & WLAN_STA_DSCP_POLICY) && sta->num_dscp_policies > 0) {
++		int *policy_ids = NULL;
++		size_t num_policies = 0;
++		unsigned int i;
++
++		policy_ids = os_calloc(sta->num_dscp_policies, sizeof(int));
++		if (!policy_ids)
++			return;
++
++		for (i = 0; i < sta->num_dscp_policies; i++)
++			policy_ids[num_policies++] =
++				sta->policies[i]->policy_id;
++
++		hostapd_send_unsolicited_dscp_policy_request(
++			hapd, sta, 0, policy_ids, num_policies);
++		os_free(policy_ids);
++	}
++#endif /* CONFIG_ROBUST_AV */
++
+ handle_ml:
+ 	hostapd_ml_handle_assoc_cb(hapd, sta, ok);
+ }
+--- a/src/ap/robust_av.c
++++ b/src/ap/robust_av.c
+@@ -483,3 +483,183 @@ void free_dscp_policies(struct sta_info
+ 	sta->policies = NULL;
+ 	sta->num_dscp_policies = 0;
+ }
++
++
++static u8 get_next_unsolicited_dialog_token(struct sta_info *sta)
++{
++	sta->unsolicited_dialog_token++;
++	if (sta->unsolicited_dialog_token == 0)
++		sta->unsolicited_dialog_token = 1;
++	return sta->unsolicited_dialog_token;
++}
++
++
++static struct hostapd_dscp_policy *
++hostapd_get_dscp_policy_by_id(struct sta_info *sta, int id)
++{
++	unsigned int i;
++
++	for (i = 0; i < sta->num_dscp_policies; i++) {
++		if (sta->policies[i] && sta->policies[i]->policy_id == id)
++			return sta->policies[i];
++	}
++
++	return NULL;
++}
++
++
++static struct wpabuf *
++hostapd_build_qos_element(struct hostapd_dscp_policy *policy)
++{
++	struct wpabuf *elem;
++	size_t domain_len;
++
++	elem = wpabuf_alloc(512);
++	if (!elem)
++		return NULL;
++
++	wpabuf_put_be32(elem, QM_IE_VENDOR_TYPE);
++	wpabuf_put_u8(elem, QM_ATTR_DSCP_POLICY);
++	wpabuf_put_u8(elem, QM_ATTR_DSCP_POLICY_LEN);
++	wpabuf_put_u8(elem, policy->policy_id);
++	wpabuf_put_u8(elem, policy->req_type);
++	wpabuf_put_u8(elem, policy->req_type == DSCP_POLICY_REQ_REMOVE ?
++		      255 : policy->dscp);
++
++	if (policy->frame_classifier && policy->frame_classifier_len > 0) {
++		wpabuf_put_u8(elem, QM_ATTR_TCLAS);
++		wpabuf_put_u8(elem, policy->frame_classifier_len);
++		wpabuf_put_data(elem, policy->frame_classifier,
++				policy->frame_classifier_len);
++	}
++
++	if (policy->domain_name) {
++		domain_len = os_strlen(policy->domain_name);
++		if (domain_len < 256) {
++			wpabuf_put_u8(elem, QM_ATTR_DOMAIN_NAME);
++			wpabuf_put_u8(elem, domain_len);
++			wpabuf_put_data(elem, policy->domain_name, domain_len);
++		}
++	}
++
++	if (policy->port_range_info) {
++		wpabuf_put_u8(elem, QM_ATTR_PORT_RANGE);
++		wpabuf_put_u8(elem, 4);
++		wpabuf_put_be16(elem, policy->start_port);
++		wpabuf_put_be16(elem, policy->end_port);
++	}
++
++	return elem;
++}
++
++
++static struct wpabuf * new_dscp_policy_req_frame(struct hostapd_data *hapd,
++						 struct sta_info *sta,
++						 u8 dialog_token,
++						 u8 reset, u8 more)
++{
++	u8 request_control = 0;
++	struct wpabuf *frame;
++
++	frame = wpabuf_alloc(MAX_DSCP_REQ_SIZE);
++	if (!frame)
++		return NULL;
++
++	wpabuf_put_u8(frame, WLAN_ACTION_VENDOR_SPECIFIC_PROTECTED);
++	wpabuf_put_be32(frame, QM_ACTION_VENDOR_TYPE);
++	wpabuf_put_u8(frame, QM_DSCP_POLICY_REQ);
++	wpabuf_put_u8(frame, dialog_token);
++
++	if (reset)
++		request_control |= DSCP_POLICY_CTRL_RESET;
++	if (more)
++		request_control |= DSCP_POLICY_CTRL_MORE;
++
++	wpabuf_put_u8(frame, request_control);
++
++	return frame;
++}
++
++
++int hostapd_send_unsolicited_dscp_policy_request(struct hostapd_data *hapd,
++						 struct sta_info *sta,
++						 u8 reset,
++						 const int *policy_ids,
++						 unsigned int num_policies)
++{
++	struct wpabuf *frame = NULL;
++	u8 dialog_token;
++	size_t i;
++	size_t frame_len;
++	bool more = false;
++
++	/* TODO: When sending a request, if this is not a resync (reset == 0),
++	 * start a response timer bound to dialog_token. If no DSCP Policy
++	 * Response frame with the same token is received before timeout, set a
++	 * per-STA flag (e.g, sta->dscp_state.force_reset = 1). The next time
++	 * this function is called for this STA, force reset = 1 and include all
++	 * policies relevant to the STA to resynchronize state.
++	 */
++
++	if (!(sta->flags & WLAN_STA_DSCP_POLICY))
++		return -1;
++
++	dialog_token = get_next_unsolicited_dialog_token(sta);
++	frame = new_dscp_policy_req_frame(hapd, sta, dialog_token, reset, more);
++	if (!frame)
++		return -1;
++
++	frame_len = wpabuf_len(frame);
++
++	for (i = 0; i < num_policies; i++) {
++		struct hostapd_dscp_policy *policy;
++		struct wpabuf *elem;
++
++		policy = hostapd_get_dscp_policy_by_id(sta, policy_ids[i]);
++		if (!policy)
++			continue;
++
++		if (reset && policy->req_type == DSCP_POLICY_REQ_REMOVE)
++			continue;
++
++		elem = hostapd_build_qos_element(policy);
++		if (!elem)
++			continue;
++
++		if (frame_len + 2 + wpabuf_len(elem) > MAX_DSCP_REQ_SIZE) {
++			more = true;
++			wpabuf_free(elem);
++			break;
++		}
++
++		wpabuf_put_u8(frame, WLAN_EID_VENDOR_SPECIFIC);
++		wpabuf_put_u8(frame, wpabuf_len(elem));
++		wpabuf_put_buf(frame, elem);
++		wpabuf_free(elem);
++		frame_len = wpabuf_len(frame);
++	}
++
++	if (more) {
++		u8 *buf = wpabuf_mhead_u8(frame);
++
++		buf[7] |= DSCP_POLICY_CTRL_MORE;
++	}
++
++	/* Only send if the frame contains at least one QoS element beyond the
++	 * header */
++	if (frame && wpabuf_len(frame) > 5 &&
++	    hostapd_drv_send_action(hapd, hapd->iface->freq, 0, sta->addr,
++				    wpabuf_head(frame), wpabuf_len(frame))) {
++		wpa_printf(MSG_DEBUG, "DSCP: Failed to send policy request to "
++			   MACSTR, MAC2STR(sta->addr));
++		wpabuf_free(frame);
++		return -1;
++	}
++
++	wpabuf_free(frame);
++
++	sta->dscp_state.offset = i;
++	sta->dscp_state.last_dialog_token = dialog_token;
++	sta->dscp_state.pending_more = more;
++	return 0;
++}
+--- a/src/ap/robust_av.h
++++ b/src/ap/robust_av.h
+@@ -30,6 +30,9 @@ struct sta_info;
+ #define PROTOCOL_LEN	1
+ #define HEADER_LEN	3
+ 
++#define MAX_DSCP_REQ_SIZE 1500
++
++#define QM_ATTR_DSCP_POLICY_LEN 3
+ 
+ enum ip_version {
+ 	IPV4 = 4,
+@@ -114,5 +117,10 @@ int parse_dscp_policy_string(struct sta_
+ int build_frame_classifier(struct hostapd_dscp_policy *policy);
+ int add_dscp_policy_to_sta(struct sta_info *sta,
+ 			   const struct hostapd_dscp_policy *new_policy);
++int hostapd_send_unsolicited_dscp_policy_request(struct hostapd_data *hapd,
++						 struct sta_info *sta,
++						 u8 reset,
++						 const int *policy_ids,
++						 unsigned int num_policies);
+ 
+ #endif /* ROBUST_AV_H */
+--- a/src/ap/sta_info.h
++++ b/src/ap/sta_info.h
+@@ -101,6 +101,12 @@ struct mld_info {
+ 	struct mld_link_info links[MAX_NUM_MLD_LINKS];
+ };
+ 
++struct dscp_policy_state {
++	size_t offset;
++	u8 last_dialog_token;
++	bool pending_more;
++};
++
+ struct sta_info {
+ 	struct sta_info *next; /* next entry in sta list */
+ 	struct sta_info *hnext; /* next entry in hash table list */
+@@ -380,6 +386,8 @@ struct sta_info {
+ 	struct hostapd_dscp_policy **policies;
+ 	unsigned int num_dscp_policies;
+ 	bool dscp_reset;
++	u8 unsolicited_dialog_token;
++	struct dscp_policy_state dscp_state;
+ #endif /* CONFIG_ROBUST_AV */
+ };
+ 

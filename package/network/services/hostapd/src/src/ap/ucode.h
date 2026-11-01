@@ -24,6 +24,7 @@ int hostapd_ucode_init(struct hapd_interfaces *ifaces);
 void hostapd_ucode_free(void);
 void hostapd_ucode_free_iface(struct hostapd_iface *iface);
 void hostapd_ucode_free_bss(struct hostapd_data *hapd);
+void hostapd_ucode_forget_bss(struct hostapd_data *hapd);
 void hostapd_ucode_bss_cb(struct hostapd_data *hapd, const char *type);
 int hostapd_ucode_sta_auth(struct hostapd_data *hapd, struct sta_info *sta);
 void hostapd_ucode_sta_connected(struct hostapd_data *hapd, struct sta_info *sta);
@@ -69,6 +70,9 @@ static inline void hostapd_ucode_sta_connected(struct hostapd_data *hapd, struct
 {
 }
 static inline void hostapd_ucode_free_bss(struct hostapd_data *hapd)
+{
+}
+static inline void hostapd_ucode_forget_bss(struct hostapd_data *hapd)
 {
 }
 static inline void hostapd_ucode_wps_m7_rx(struct hostapd_data *hapd,

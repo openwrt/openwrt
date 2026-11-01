@@ -1,0 +1,121 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Thu, 22 Oct 2026 20:00:00 +0200
+Subject: [PATCH] wifi: mac80211: let a driver report the expiry of an AP
+ Removal Timer
+
+A driver with NL80211_EXT_FEATURE_AP_REMOVAL_TIMER_OFFLOAD learns of the
+expiry from a device event, which can come in atomic context, while
+cfg80211_links_removed() needs the wiphy mutex.
+
+Add ieee80211_links_removed(), which reports the links from a wiphy
+work. A link that user space removed before the work runs is left out,
+since cfg80211 no longer holds it. The driver can report links until it
+removes the interface, which comes after the stop of the interface, so
+the teardown of the interface cancels the work as well.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/include/net/mac80211.h
++++ b/include/net/mac80211.h
+@@ -6126,6 +6126,21 @@ void ieee80211_crit_update_done(struct i
+ 				unsigned int link_id, u32 crit_update_id);
+ 
+ /**
++ * ieee80211_links_removed - notify mac80211 that an AP Removal Timer expired
++ * @vif: &struct ieee80211_vif pointer from the add_interface callback.
++ * @links: bitmap of the link IDs of the affiliated APs whose timer expired
++ *
++ * A driver with %NL80211_EXT_FEATURE_AP_REMOVAL_TIMER_OFFLOAD calls this for
++ * an AP MLD when the AP Removal Timer that the Reconfiguration Multi-Link
++ * element of its beacon templates announces expired. mac80211 reports it with
++ * %NL80211_CMD_LINKS_REMOVED, leaves the links running and ignores a link that
++ * user space removed before the report.
++ *
++ * This function can be called from any context.
++ */
++void ieee80211_links_removed(struct ieee80211_vif *vif, u16 links);
++
++/**
+  * ieee80211_proberesp_get - retrieve a Probe Response template
+  * @hw: pointer obtained from ieee80211_alloc_hw().
+  * @vif: &struct ieee80211_vif pointer from the add_interface callback.
+--- a/net/mac80211/ieee80211_i.h
++++ b/net/mac80211/ieee80211_i.h
+@@ -1293,6 +1293,10 @@ struct ieee80211_sub_if_data {
+ 	struct wiphy_work activate_links_work;
+ 	u16 desired_active_links;
+ 
++	/* for ieee80211_links_removed() */
++	struct wiphy_work links_removed_work;
++	atomic_t links_removed;
++
+ 	u16 restart_active_links;
+ 
+ #ifdef CPTCFG_MAC80211_DEBUGFS
+--- a/net/mac80211/iface.c
++++ b/net/mac80211/iface.c
+@@ -877,6 +877,8 @@ static int ieee80211_stop(struct net_dev
+ 	guard(wiphy)(sdata->local->hw.wiphy);
+ 
+ 	wiphy_work_cancel(sdata->local->hw.wiphy, &sdata->activate_links_work);
++	wiphy_work_cancel(sdata->local->hw.wiphy, &sdata->links_removed_work);
++	atomic_set(&sdata->links_removed, 0);
+ 
+ 	/* Close the dependent MBSSID interfaces with wiphy lock as we may be
+ 	 * terminating its partner links too in case of MLD.
+@@ -921,6 +923,9 @@ static void ieee80211_teardown_sdata(str
+ 	if (WARN_ON(!list_empty(&sdata->work.entry)))
+ 		wiphy_work_cancel(sdata->local->hw.wiphy, &sdata->work);
+ 
++	/* the driver can report links until it removes the interface */
++	wiphy_work_cancel(sdata->local->hw.wiphy, &sdata->links_removed_work);
++
+ 	/* free extra data */
+ 	ieee80211_free_keys(sdata, false);
+ 
+@@ -1909,6 +1914,35 @@ static void ieee80211_activate_links_wor
+ 	sdata->desired_active_links = 0;
+ }
+ 
++static void ieee80211_links_removed_work(struct wiphy *wiphy,
++					 struct wiphy_work *work)
++{
++	struct ieee80211_sub_if_data *sdata =
++		container_of(work, struct ieee80211_sub_if_data,
++			     links_removed_work);
++	u16 links = atomic_xchg(&sdata->links_removed, 0);
++	u16 valid_links = sdata->wdev.valid_links;
++
++	/* a link that user space removed meanwhile is gone already */
++	links &= valid_links;
++	if (!ieee80211_sdata_running(sdata) || !links || links == valid_links)
++		return;
++
++	cfg80211_links_removed(sdata->dev, links);
++}
++
++void ieee80211_links_removed(struct ieee80211_vif *vif, u16 links)
++{
++	struct ieee80211_sub_if_data *sdata = vif_to_sdata(vif);
++
++	if (WARN_ON(vif->type != NL80211_IFTYPE_AP || !links))
++		return;
++
++	atomic_or(links, &sdata->links_removed);
++	wiphy_work_queue(sdata->local->hw.wiphy, &sdata->links_removed_work);
++}
++EXPORT_SYMBOL_GPL(ieee80211_links_removed);
++
+ /*
+  * Helper function to initialise an interface to a specific type.
+  */
+@@ -1947,6 +1981,9 @@ static void ieee80211_setup_sdata(struct
+ 	wiphy_work_init(&sdata->work, ieee80211_iface_work);
+ 	wiphy_work_init(&sdata->activate_links_work,
+ 			ieee80211_activate_links_work);
++	wiphy_work_init(&sdata->links_removed_work,
++			ieee80211_links_removed_work);
++	atomic_set(&sdata->links_removed, 0);
+ 
+ 	switch (type) {
+ 	case NL80211_IFTYPE_P2P_GO:

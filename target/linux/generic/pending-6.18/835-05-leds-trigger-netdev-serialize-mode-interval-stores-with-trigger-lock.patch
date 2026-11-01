@@ -1,0 +1,188 @@
+From: "A. Sverdlin" <alexander.sverdlin@siemens.com>
+Date: Tue, 27 Oct 2026 12:33:45 +0100
+Subject: [PATCH] leds: trigger: netdev: Serialize mode/interval stores with trigger lock
+
+netdev_led_attr_store() and interval_store() update ->mode and run
+set_baseline_state() without trigger_data->lock. kernfs only serializes
+writes to the same file, so two attribute writes race on the non-atomic
+read-modify-write of ->mode:
+
+  CPU0 (echo 1 > link_10)       CPU1 (echo 1 > link_100)
+  -----------------------       ------------------------
+  mode = trigger_data->mode;
+                                mode = trigger_data->mode;
+  set_bit(LINK_10, &mode);
+                                set_bit(LINK_100, &mode);
+  trigger_data->mode = mode;
+                                trigger_data->mode = mode;  // LINK_10 lost
+
+They also race the notifier's link-state and ->hw_control updates.
+
+Take trigger_data->lock in both stores. netdev_trig_work() also holds it,
+so use the async cancel_delayed_work(). interval_store() now tests
+->hw_control under the lock too, so it can no longer sample a stale value
+and change the interval while a concurrent store enables offload.
+
+The async cancel cannot stop a worker already blocked on the lock: it may
+resume after a store enabled hw_control and keep software-blinking and
+rescheduling itself. Gate the worker and its arming in set_baseline_state()
+on a shared netdev_trig_sw_blink() helper, so it stops once offload is
+active or RX/TX monitoring is off.
+
+set_baseline_state() can also re-arm the worker from a store that acquires
+trigger_data->lock in the window between a notifier's
+cancel_delayed_work_sync() and the notifier taking the same lock. The
+notifier then sets carrier_link_up = false but does not cancel the re-armed
+work. Gate netdev_trig_sw_blink() on carrier_link_up as well, so a worker
+left armed across a link-down stops instead of blinking.
+
+Cc: stable@vger.kernel.org
+Closes: https://lore.kernel.org/all/sashiko-outbox-178980@kernel.org/
+Fixes: d5e01266e7f5 ("leds: trigger: netdev: add additional specific link speed mode")
+Signed-off-by: Alexander Sverdlin <alexander.sverdlin@siemens.com>
+Link: https://lore.kernel.org/linux-leds/20261027113349.383147-6-alexander.sverdlin@siemens.com/
+---
+Changelog:
+v6:
+- fixed unlocked hw_control check in interval_store()
+- added missing carrier_link_up check in netdev_trig_sw_blink()
+v4:
+- introduced netdev_trig_sw_blink() and used it in netdev_trig_work()
+v3:
+- explicit mutex_lock()/mutex_unlock() instead of guard()
+v2:
+- reduced verbosity both in the comments and in commit message
+- dropped sync from cancel_delayed_work() (worker now takes the lock)
+
+ drivers/leds/trigger/ledtrig-netdev.c | 56 +++++++++++++++++++--------
+ 1 file changed, 39 insertions(+), 17 deletions(-)
+
+--- a/drivers/leds/trigger/ledtrig-netdev.c
++++ b/drivers/leds/trigger/ledtrig-netdev.c
+@@ -80,6 +80,17 @@ struct led_netdev_data {
+ 
+ static const struct attribute_group netdev_trig_link_speed_attrs_group;
+ 
++/* True while the software activity worker should keep polling and blinking. */
++static bool netdev_trig_sw_blink(struct led_netdev_data *trigger_data)
++{
++	return trigger_data->net_dev && !trigger_data->hw_control &&
++	       trigger_data->carrier_link_up &&
++	       (test_bit(TRIGGER_NETDEV_TX, &trigger_data->mode) ||
++		test_bit(TRIGGER_NETDEV_RX, &trigger_data->mode) ||
++		test_bit(TRIGGER_NETDEV_TX_ERR, &trigger_data->mode) ||
++		test_bit(TRIGGER_NETDEV_RX_ERR, &trigger_data->mode));
++}
++
+ static void set_baseline_state(struct led_netdev_data *trigger_data)
+ {
+ 	int current_brightness;
+@@ -147,10 +158,7 @@ static void set_baseline_state(struct le
+ 		/* If we are looking for RX/TX start periodically
+ 		 * checking stats
+ 		 */
+-		if (test_bit(TRIGGER_NETDEV_TX, &trigger_data->mode) ||
+-		    test_bit(TRIGGER_NETDEV_RX, &trigger_data->mode) ||
+-		    test_bit(TRIGGER_NETDEV_TX_ERR, &trigger_data->mode) ||
+-		    test_bit(TRIGGER_NETDEV_RX_ERR, &trigger_data->mode))
++		if (netdev_trig_sw_blink(trigger_data))
+ 			schedule_delayed_work(&trigger_data->work, 0);
+ 	}
+ }
+@@ -360,7 +368,7 @@ static ssize_t netdev_led_attr_store(str
+ {
+ 	struct led_netdev_data *trigger_data = led_trigger_get_drvdata(dev);
+ 	struct led_classdev *led_cdev = trigger_data->led_cdev;
+-	unsigned long state, mode = trigger_data->mode;
++	unsigned long state, mode;
+ 	int ret;
+ 	int bit;
+ 
+@@ -388,6 +396,10 @@ static ssize_t netdev_led_attr_store(str
+ 		return -EINVAL;
+ 	}
+ 
++	/* async cancel: the worker takes this lock */
++	mutex_lock(&trigger_data->lock);
++
++	mode = trigger_data->mode;
+ 	if (state)
+ 		set_bit(bit, &mode);
+ 	else
+@@ -399,20 +411,26 @@ static ssize_t netdev_led_attr_store(str
+ 	     test_bit(TRIGGER_NETDEV_LINK_1000, &mode) ||
+ 	     test_bit(TRIGGER_NETDEV_LINK_2500, &mode) ||
+ 	     test_bit(TRIGGER_NETDEV_LINK_5000, &mode) ||
+-	     test_bit(TRIGGER_NETDEV_LINK_10000, &mode)))
++	     test_bit(TRIGGER_NETDEV_LINK_10000, &mode))) {
++		mutex_unlock(&trigger_data->lock);
+ 		return -EINVAL;
++	}
+ 
+-	cancel_delayed_work_sync(&trigger_data->work);
++	cancel_delayed_work(&trigger_data->work);
+ 
+ 	trigger_data->mode = mode;
+ 	trigger_data->hw_control = can_hw_control(trigger_data);
+ 
+ 	if (!led_cdev->brightness_set && !led_cdev->brightness_set_blocking &&
+-	    !trigger_data->hw_control)
++	    !trigger_data->hw_control) {
++		mutex_unlock(&trigger_data->lock);
+ 		return -EOPNOTSUPP;
++	}
+ 
+ 	set_baseline_state(trigger_data);
+ 
++	mutex_unlock(&trigger_data->lock);
++
+ 	return size;
+ }
+ 
+@@ -460,9 +478,6 @@ static ssize_t interval_store(struct dev
+ 	unsigned long value;
+ 	int ret;
+ 
+-	if (trigger_data->hw_control)
+-		return -EINVAL;
+-
+ 	ret = kstrtoul(buf, 0, &value);
+ 	if (ret)
+ 		return ret;
+@@ -471,11 +486,21 @@ static ssize_t interval_store(struct dev
+ 	if (value < 5 || value > 10000)
+ 		return -EINVAL;
+ 
+-	cancel_delayed_work_sync(&trigger_data->work);
++	/* async cancel: the worker takes this lock */
++	mutex_lock(&trigger_data->lock);
++
++	if (trigger_data->hw_control) {
++		mutex_unlock(&trigger_data->lock);
++		return -EINVAL;
++	}
++
++	cancel_delayed_work(&trigger_data->work);
+ 
+ 	atomic_set(&trigger_data->interval, msecs_to_jiffies(value));
+ 	set_baseline_state(trigger_data);	/* resets timer */
+ 
++	mutex_unlock(&trigger_data->lock);
++
+ 	return size;
+ }
+ 
+@@ -649,11 +674,8 @@ static void netdev_trig_work(struct work
+ 		return;
+ 	}
+ 
+-	/* If we are not looking for RX/TX then return  */
+-	if (!test_bit(TRIGGER_NETDEV_TX, &trigger_data->mode) &&
+-	    !test_bit(TRIGGER_NETDEV_RX, &trigger_data->mode) &&
+-	    !test_bit(TRIGGER_NETDEV_TX_ERR, &trigger_data->mode) &&
+-	    !test_bit(TRIGGER_NETDEV_RX_ERR, &trigger_data->mode)) {
++	/* Nothing to do under hw offload or without RX/TX monitoring */
++	if (!netdev_trig_sw_blink(trigger_data)) {
+ 		mutex_unlock(&trigger_data->lock);
+ 		return;
+ 	}

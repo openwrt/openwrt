@@ -1,0 +1,59 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Fri, 23 Oct 2026 23:30:00 +0200
+Subject: [PATCH] AP MLD: Keep the shared wpa_sm of the partner links for a
+ refused link
+
+__check_assoc_ies() runs for a new link STA of a non-AP MLD with
+assoc_wpa_sm set to the wpa_sm of the association link. Its out: path
+frees the temporary per-link wpa_sm of the link STA, and it also clears
+sta->wpa_sm of every partner link entry of the MLD address. Those
+entries, the association link STA among them, hold assoc_wpa_sm and not
+the freed instance. On success the partner links get assoc_wpa_sm back;
+on failure they keep NULL. This has two effects:
+
+- After a Link Reconfiguration Request whose added link the element
+  check refuses, the station stays associated with no wpa_sm on its
+  other links. A later valid add of the link crashes hostapd with a
+  NULL dereference in wpa_auth_set_ml_info(), called from
+  hostapd_ml_process_reconf_link().
+- In an association where __check_assoc_ies() refuses a partner link,
+  the association goes on over the other links with no wpa_sm, so the
+  4-way handshake never starts and the station times out.
+
+Upstream commits 0435c06fc270 ("AP MLD: Update partner link wpa_sm
+pointers more consistently") and 3c98f62ac942 ("AP MLD: Clear wpa_sm
+entries for all STAs more thoroughly") added the partner clears to
+remove pointers to the wpa_sm that is freed. That holds only where the
+STA owns the shared wpa_sm. Upstream main 741d70dd8e32 has the same
+code.
+
+Clear the partner links only where assoc_wpa_sm is NULL. A link STA
+frees its own temporary wpa_sm, and on success still sets assoc_wpa_sm
+on its partner links.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/src/ap/ieee802_11.c
++++ b/src/ap/ieee802_11.c
+@@ -6277,7 +6277,10 @@ out:
+ 		struct wpa_state_machine *sm = sta->wpa_sm;
+ 
+ #ifdef CONFIG_IEEE80211BE
+-		clear_wpa_sm_for_each_partner_link(hapd, sta);
++		/* The partner links of a link STA hold assoc_wpa_sm, not the
++		 * temporary per-link instance freed here. */
++		if (!assoc_wpa_sm)
++			clear_wpa_sm_for_each_partner_link(hapd, sta);
+ 		clear_wpa_sm_for_all_sta(hapd, sm);
+ #endif /* CONFIG_IEEE80211BE */
+ 
+@@ -6296,7 +6299,8 @@ out:
+ 		} else {
+ 			sta->wpa_sm = NULL;
+ #ifdef CONFIG_IEEE80211BE
+-			clear_wpa_sm_for_each_partner_link(hapd, sta);
++			if (!assoc_wpa_sm)
++				clear_wpa_sm_for_each_partner_link(hapd, sta);
+ #endif /* CONFIG_IEEE80211BE */
+ 		}
+ 	}

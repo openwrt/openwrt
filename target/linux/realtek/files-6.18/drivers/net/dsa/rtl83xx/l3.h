@@ -97,6 +97,7 @@ struct otto_l3_route {
 	bool replaced;			/* torn down for a route to the same destination */
 	int id;				/* ID number of this route */
 	int row;			/* Row it occupies in the prefix route table */
+	bool row_reserved;		/* Placed prefix row without a confirmed write */
 	unsigned int members;		/* FIB entries a trap row stands for */
 	struct list_head srcs;		/* source-specific routes a trap row stands for */
 	bool srcs_incomplete;		/* a source could not be tracked */
@@ -137,7 +138,7 @@ struct otto_l3_config {
 	bool smac_per_route;
 	int (*find_slot)(struct otto_l3_ctrl *ctrl, struct otto_l3_route *rt, bool must_exist);
 	void (*get_egress_intf)(struct otto_l3_ctrl *ctrl, int idx, struct otto_l3_intf *intf);
-	void (*set_egress_intf)(struct otto_l3_ctrl *ctrl, int idx, struct otto_l3_intf *intf);
+	int (*set_egress_intf)(struct otto_l3_ctrl *ctrl, int idx, struct otto_l3_intf *intf);
 	/* Source MAC entries by their index: on RTL839x those of
 	 * ROUTING_SA_CTRL, on RTL930x the source MAC rows of the egress MAC
 	 * table
@@ -146,7 +147,7 @@ struct otto_l3_config {
 	int (*set_smac)(struct otto_l3_ctrl *ctrl, u32 idx, u64 mac);
 	int (*get_dmac)(struct otto_l3_ctrl *ctrl, u32 idx, struct otto_l3_dmac *dmac);
 	int (*set_dmac)(struct otto_l3_ctrl *ctrl, u32 idx, const struct otto_l3_dmac *dmac);
-	void (*host_route_write)(struct otto_l3_ctrl *ctrl, int idx, struct otto_l3_route *rt);
+	int (*host_route_write)(struct otto_l3_ctrl *ctrl, int idx, struct otto_l3_route *rt);
 	void (*get_router_mac)(struct otto_l3_ctrl *ctrl, u32 idx, struct otto_l3_router_mac *m);
 	void (*set_router_mac)(struct otto_l3_ctrl *ctrl, u32 idx, struct otto_l3_router_mac *m);
 	void (*get_nexthop)(struct otto_l3_ctrl *ctrl, int idx, u16 *dmac_id, u16 *interface);

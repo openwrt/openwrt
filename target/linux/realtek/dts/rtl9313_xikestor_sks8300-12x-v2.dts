@@ -169,6 +169,8 @@
 
 	i2c1_sda0: i2c@0 {
 		reg = <0>;
+		#address-cells = <1>;
+		#size-cells = <0>;
 
 		fan_controller: fan-controller@48 {
 			compatible = "maxim,max6651";

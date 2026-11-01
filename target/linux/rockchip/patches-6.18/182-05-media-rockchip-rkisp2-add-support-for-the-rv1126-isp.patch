@@ -1,4 +1,4 @@
-From 8e262f302c977cc5e603439cdee58d5b83ce6bc9 Mon Sep 17 00:00:00 2001
+From 5a4aba46d32afc879ed06abf846a09f140ec80a2 Mon Sep 17 00:00:00 2001
 From: Daniel Golle <daniel@makrotopia.org>
 Date: Fri, 16 Oct 2026 23:54:05 +0100
 Subject: [PATCH] media: rockchip: rkisp2: Add support for the RV1126 ISP
@@ -137,9 +137,9 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  irqreturn_t rkisp2_mipi_isr(int irq, void *ctx);
 -void rkisp2_dmarx_isr(struct rkisp2_device *rkisp2, u32 status);
 +void rkisp2_dmarx_isr(struct rkisp2_device *rkisp2);
+ bool rkisp2_dmarx_input_idle(struct rkisp2_device *rkisp2);
  void rkisp2_params_isr(struct rkisp2_params *params);
  irqreturn_t rkisp2_stats_isr_eof(struct rkisp2_stats *stats);
- 
 --- a/drivers/media/platform/rockchip/rkisp2/rkisp2-dev.c
 +++ b/drivers/media/platform/rockchip/rkisp2/rkisp2-dev.c
 @@ -20,6 +20,7 @@
@@ -299,8 +299,8 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  
  	if (chan->cfg->length_reg)
  		rkisp2_write(rkisp2, chan->cfg->length_reg, stride);
-@@ -296,19 +298,15 @@ static void rkisp2_rawrd_return_all_buff
- 	spin_unlock_irq(&chan->buf_lock);
+@@ -318,19 +320,15 @@ bool rkisp2_dmarx_input_idle(struct rkis
+ 	return streaming && idle;
  }
  
 -void rkisp2_dmarx_isr(struct rkisp2_device *rkisp2, u32 status)

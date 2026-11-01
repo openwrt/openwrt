@@ -1,0 +1,1029 @@
+From e26da203a4d12109118a18a4f49cb7eae790b49f Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Fri, 16 Oct 2026 23:54:17 +0100
+Subject: [PATCH] media: rockchip: rkisp2: Read raw frames from VICAP on the
+ RV1126
+
+The raw readback input of the ISP is a video output node that user
+space has to fill. On the RV1126 the VICAP driver offers its MIPI
+stream to a consumer through a V4L2 subdevice, so the frames can be
+passed on without user space.
+
+Move the readback start and stop sequence and the buffer queueing into
+helpers, bind the VICAP subdevice with an async notifier and feed every
+completed frame to the first readback channel when the first capture
+stream starts. Let the link from the first readback node to the ISP
+decide who supplies the frames: the link is created disabled on SoCs
+with a VICAP frame source and takes the VICAP input as long as it stays
+disabled. Select the readback input before the first trigger, as the
+hardware drops the trigger of the write that changes the input mode in
+about 7 % of the stream starts.
+
+The readback engine takes the physical address the VICAP DMA writes the
+frame to. While the ISP IOMMU is on the identity domain that base
+translates 1:1, but a translated domain attached to the ISP faults on
+it, so every shared buffer is mapped into the current domain at its own
+physical address and unmapped at release while the group is still on
+that domain. Detaching or re-attaching the domain instead would
+reprogram the SMMU while the ISP is streaming.
+
+The readback input selection is normally made when the first capture
+output starts streaming, and the in-kernel feed can run without any
+capture output, so the VICAP start selects the readback input as well
+and latches it with the soft update the capture path uses. A mi_raw
+debugfs dump shows the readback configuration.
+
+Assisted-by: LLM
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ .../media/platform/rockchip/rkisp2/Makefile   |   3 +-
+ .../platform/rockchip/rkisp2/rkisp2-capture.c |   4 +-
+ .../platform/rockchip/rkisp2/rkisp2-common.h  |  37 ++
+ .../platform/rockchip/rkisp2/rkisp2-debug.c   |  22 +-
+ .../platform/rockchip/rkisp2/rkisp2-dev.c     |   9 +-
+ .../platform/rockchip/rkisp2/rkisp2-dmarx.c   | 183 ++++++++--
+ .../platform/rockchip/rkisp2/rkisp2-isp.c     |  91 +++--
+ .../platform/rockchip/rkisp2/rkisp2-vicap.c   | 322 ++++++++++++++++++
+ 8 files changed, 608 insertions(+), 63 deletions(-)
+ create mode 100644 drivers/media/platform/rockchip/rkisp2/rkisp2-vicap.c
+
+--- a/drivers/media/platform/rockchip/rkisp2/Makefile
++++ b/drivers/media/platform/rockchip/rkisp2/Makefile
+@@ -7,7 +7,8 @@ rockchip-isp2-y := rkisp2-capture.o \
+            rkisp2-isp.o \
+            rkisp2-params.o \
+ 	   rkisp2-resizer.o \
+-           rkisp2-stats.o
++           rkisp2-stats.o \
++	   rkisp2-vicap.o
+ 
+ rockchip-isp2-$(CONFIG_DEBUG_FS) += rkisp2-debug.o
+ 
+--- a/drivers/media/platform/rockchip/rkisp2/rkisp2-capture.c
++++ b/drivers/media/platform/rockchip/rkisp2/rkisp2-capture.c
+@@ -912,6 +912,8 @@ static void rkisp2_cap_stream_enable(str
+ 	if (!other->is_streaming) {
+ 		u32 reg;
+ 
++		rkisp2_dmarx_select_input(rkisp2);
++
+ 		/* Force cfg update.  */
+ 		reg = rkisp2_read(rkisp2, RKISP2_CIF_MI_INIT)
+ 		    & RKISP2_CIF_MI_INIT_MP_OUTPUT_MASK;
+@@ -968,7 +970,7 @@ static void rkisp2_pipeline_stream_disab
+ 	 * If the other capture is streaming, isp and sensor nodes shouldn't
+ 	 * be disabled, skip them.
+ 	 */
+-	if (rkisp2->pipe.start_count < (rkisp2->source ? 2 : 3))
++	if (rkisp2->pipe.start_count < (rkisp2->source || rkisp2->vicap.active ? 2 : 3))
+ 		v4l2_subdev_call(&rkisp2->isp.sd, video, s_stream, false);
+ 
+ }
+--- a/drivers/media/platform/rockchip/rkisp2/rkisp2-common.h
++++ b/drivers/media/platform/rockchip/rkisp2/rkisp2-common.h
+@@ -17,6 +17,7 @@
+ #include <linux/list.h>
+ #include <linux/mutex.h>
+ #include <linux/spinlock.h>
++#include <linux/wait.h>
+ #include <linux/media/rockchip/rkisp2-config.h>
+ #include <media/media-device.h>
+ #include <media/media-entity.h>
+@@ -157,6 +158,7 @@ enum rkisp2_feature {
+  * @max_width: maximum input frame width
+  * @max_height: maximum input frame height
+  * @rdbk_extra_lines: lines added to the raw readback frame
++ * @vicap_compatible: compatible of the VICAP node that feeds the readback
+  *
+  * This structure contains information about the ISP specific to a particular
+  * ISP model, version, or integration in a particular SoC.
+@@ -171,6 +173,7 @@ struct rkisp2_info {
+ 	unsigned int max_width;
+ 	unsigned int max_height;
+ 	unsigned int rdbk_extra_lines;
++	const char *vicap_compatible;
+ };
+ 
+ /*
+@@ -214,11 +217,13 @@ struct rkisp2_vdev_node {
+  * @vb:		vb2 buffer
+  * @queue:	entry of the buffer in the queue
+  * @buff_addr:	dma addresses of each plane, used only by the capture devices: selfpath, mainpath
++ * @ext_cookie:	handle of a frame owned by the VICAP driver, NULL for vb2 buffers
+  */
+ struct rkisp2_buffer {
+ 	struct vb2_v4l2_buffer vb;
+ 	struct list_head queue;
+ 	dma_addr_t buff_addr[VIDEO_MAX_PLANES];
++	void *ext_cookie;
+ };
+ 
+ /*
+@@ -283,6 +288,10 @@ struct rkisp2_dmarx_chan {
+ 	const struct rkisp2_rawrd_cfg *cfg;
+ 	enum rkisp2_rawrd_id id;
+ 	bool streaming;
++	bool ext;
++	bool stopping;
++	bool busy;
++	wait_queue_head_t idle_wq;
+ };
+ 
+ struct rkisp2_dmarx {
+@@ -290,6 +299,14 @@ struct rkisp2_dmarx {
+ 	unsigned int num_chans;
+ };
+ 
++struct rkisp2_vicap {
++	struct rkisp2_device *rkisp2;
++	struct v4l2_async_notifier nf;
++	struct v4l2_subdev *sd;
++	struct list_head bufs;
++	bool active;
++};
++
+ /*
+  * struct rkisp2_capture - ISP capture video device
+  *
+@@ -479,6 +496,7 @@ struct rkisp2_debug {
+  * @resizer_devs:  resizer sub-devices
+  * @capture_devs:  capture devices
+  * @dmarx:	   ISP memory read device
++ * @vicap:	   frame source bound from the VICAP driver
+  * @params:	   ISP parameters metadata output device
+  * @stats:	   ISP statistics metadata capture device
+  * @pipe:	   media pipeline
+@@ -505,6 +523,7 @@ struct rkisp2_device {
+ 	struct rkisp2_resizer resizer_devs[2];
+ 	struct rkisp2_capture capture_devs[2];
+ 	struct rkisp2_dmarx dmarx;
++	struct rkisp2_vicap vicap;
+ 	struct rkisp2_params params;
+ 	struct rkisp2_stats stats;
+ 	struct media_pipeline pipe;
+@@ -612,6 +631,7 @@ irqreturn_t rkisp2_capture_isr(int irq,
+ irqreturn_t rkisp2_mipi_isr(int irq, void *ctx);
+ void rkisp2_dmarx_isr(struct rkisp2_device *rkisp2);
+ bool rkisp2_dmarx_input_idle(struct rkisp2_device *rkisp2);
++void rkisp2_dmarx_select_input(struct rkisp2_device *rkisp2);
+ void rkisp2_params_isr(struct rkisp2_params *params);
+ irqreturn_t rkisp2_stats_isr_eof(struct rkisp2_stats *stats);
+ 
+@@ -623,6 +643,23 @@ int rkisp2_isp_register(struct rkisp2_de
+ void rkisp2_isp_unregister(struct rkisp2_device *rkisp2);
+ int rkisp2_dmarx_register(struct rkisp2_device *rkisp2);
+ void rkisp2_dmarx_unregister(struct rkisp2_device *rkisp2);
++int rkisp2_dmarx_ext_start(struct rkisp2_device *rkisp2, u32 fourcc,
++			   u32 width, u32 height);
++bool rkisp2_dmarx_ext_queue(struct rkisp2_device *rkisp2,
++			    struct rkisp2_buffer *buf);
++void rkisp2_dmarx_ext_drain(struct rkisp2_device *rkisp2);
++void rkisp2_dmarx_ext_stop(struct rkisp2_device *rkisp2);
++
++int rkisp2_vicap_register(struct rkisp2_device *rkisp2);
++void rkisp2_vicap_unregister(struct rkisp2_device *rkisp2);
++bool rkisp2_vicap_available(struct rkisp2_device *rkisp2);
++bool rkisp2_isp_dma_linked(struct rkisp2_isp *isp);
++int rkisp2_vicap_start(struct rkisp2_device *rkisp2,
++		       const struct v4l2_mbus_framefmt *fmt);
++void rkisp2_vicap_drain(struct rkisp2_device *rkisp2);
++void rkisp2_vicap_stop(struct rkisp2_device *rkisp2);
++void rkisp2_vicap_frame_put(struct rkisp2_device *rkisp2,
++			    struct rkisp2_buffer *buf);
+ 
+ int rkisp2_params_register(struct rkisp2_device *rkisp2);
+ void rkisp2_params_unregister(struct rkisp2_device *rkisp2);
+--- a/drivers/media/platform/rockchip/rkisp2/rkisp2-debug.c
++++ b/drivers/media/platform/rockchip/rkisp2/rkisp2-debug.c
+@@ -31,7 +31,7 @@ struct rkisp2_debug_register {
+ }
+ 
+ /* Keep this up-to-date when adding new registers. */
+-#define RKISP2_MAX_REG_LENGTH		21
++#define RKISP2_MAX_REG_LENGTH		22
+ 
+ static int rkisp2_debug_dump_regs(struct rkisp2_device *rkisp2,
+ 				  struct seq_file *m, unsigned int offset,
+@@ -103,6 +103,24 @@ static int rkisp2_debug_dump_isp_regs_sh
+ }
+ DEFINE_SHOW_ATTRIBUTE(rkisp2_debug_dump_isp_regs);
+ 
++static int rkisp2_debug_dump_mi_raw_show(struct seq_file *m, void *p)
++{
++	static const struct rkisp2_debug_register registers[] = {
++		{ CSI2RX_CTRL0, 0, "CSI2RX_CTRL0" },
++		{ CSI2RX_DATA_IDS_1, 0, "CSI2RX_DATA_IDS_1" },
++		{ CSI2RX_RAW_RD_CTRL, 0, "CSI2RX_RAW_RD_CTRL" },
++		{ CSI2RX_RAW_RD_PIC_SIZE, 0, "CSI2RX_RAW_RD_PIC_SIZE" },
++		{ MI_RAW2_RD_BASE, MI_RAW2_RD_BASE_SHD, "MI_RAW2_RD_BASE" },
++		{ MI_RAW2_RD_LENGTH, 0, "MI_RAW2_RD_LENGTH" },
++		{ MI_RD_CTRL2, 0, "MI_RD_CTRL2" },
++		{ /* Sentinel */ },
++	};
++	struct rkisp2_device *rkisp2 = m->private;
++
++	return rkisp2_debug_dump_regs(rkisp2, m, 0, registers);
++}
++DEFINE_SHOW_ATTRIBUTE(rkisp2_debug_dump_mi_raw);
++
+ static int rkisp2_debug_dump_mi_mp_show(struct seq_file *m, void *p)
+ {
+ 	static const struct rkisp2_debug_register registers[] = {
+@@ -226,6 +244,8 @@ void rkisp2_debug_init(struct rkisp2_dev
+ 			    &rkisp2_debug_dump_isp_regs_fops);
+ 	debugfs_create_file("mi_mp", 0444, regs_dir, rkisp2,
+ 			    &rkisp2_debug_dump_mi_mp_fops);
++	debugfs_create_file("mi_raw", 0444, regs_dir, rkisp2,
++			    &rkisp2_debug_dump_mi_raw_fops);
+ }
+ 
+ void rkisp2_debug_cleanup(struct rkisp2_device *rkisp2)
+--- a/drivers/media/platform/rockchip/rkisp2/rkisp2-dev.c
++++ b/drivers/media/platform/rockchip/rkisp2/rkisp2-dev.c
+@@ -115,7 +115,8 @@ static int rkisp2_create_links(struct rk
+ 	for (i = 0; i < rkisp2->dmarx.num_chans; i++) {
+ 		struct media_entity *source =
+ 			&rkisp2->dmarx.chan[i].vnode.vdev.entity;
+-		u32 flags = (i == RKISP2_RAWRD0 ?  MEDIA_LNK_FL_ENABLED : 0);
++		u32 flags = (i == RKISP2_RAWRD0 && !rkisp2->info->vicap_compatible ?
++			     MEDIA_LNK_FL_ENABLED : 0);
+ 
+ 		ret = media_create_pad_link(source, 0,
+ 					    &rkisp2->isp.sd.entity,
+@@ -150,6 +151,7 @@ static void rkisp2_entities_unregister(s
+ {
+ 	rkisp2_stats_unregister(rkisp2);
+ 	rkisp2_params_unregister(rkisp2);
++	rkisp2_vicap_unregister(rkisp2);
+ 	rkisp2_dmarx_unregister(rkisp2);
+ 	rkisp2_capture_devs_unregister(rkisp2);
+ 	rkisp2_isp_unregister(rkisp2);
+@@ -173,6 +175,10 @@ static int rkisp2_entities_register(stru
+ 	if (ret)
+ 		goto error;
+ 
++	ret = rkisp2_vicap_register(rkisp2);
++	if (ret)
++		goto error;
++
+ 	ret = rkisp2_params_register(rkisp2);
+ 	if (ret)
+ 		goto error;
+@@ -228,6 +234,7 @@ static const struct rkisp2_info rv1126_i
+ 	.max_width = 4416,
+ 	.max_height = 3312,
+ 	.rdbk_extra_lines = RKISP2_ISP20_RDBK_EXTRA_LINES,
++	.vicap_compatible = "rockchip,rv1126-vicap",
+ };
+ 
+ static const struct rkisp2_info rk3588_isp_info = {
+--- a/drivers/media/platform/rockchip/rkisp2/rkisp2-dmarx.c
++++ b/drivers/media/platform/rockchip/rkisp2/rkisp2-dmarx.c
+@@ -19,6 +19,9 @@
+ #define RKISP2_RAWRD1_NAME	RKISP2_DRIVER_NAME "_rawrd1"
+ #define RKISP2_RAWRD2_NAME	RKISP2_DRIVER_NAME "_rawrd2"
+ 
++/* Longest wait for the readback frame in flight when the stream stops. */
++#define RKISP2_RAWRD_DRAIN_TIMEOUT_MS	100
++
+ static const struct rkisp2_dmarx_fmt rkisp2_rawrd_formats[] = {
+ 	{
+ 		.fourcc = V4L2_PIX_FMT_SRGGB8,
+@@ -335,19 +338,25 @@ void rkisp2_dmarx_isr(struct rkisp2_devi
+ 		spin_lock(&chan->buf_lock);
+ 		done = chan->curr_buf;
+ 		chan->curr_buf = NULL;
+-		if (!list_empty(&chan->buf_queue)) {
++		if (!chan->stopping && !list_empty(&chan->buf_queue)) {
+ 			chan->curr_buf = list_first_entry(&chan->buf_queue,
+ 					struct rkisp2_buffer, queue);
+ 			list_del(&chan->curr_buf->queue);
+ 		}
++		chan->busy = chan->curr_buf;
+ 		spin_unlock(&chan->buf_lock);
+ 
+ 		if (chan->curr_buf)
+ 			rkisp2_rawrd_update_mi(chan, chan->curr_buf);
+ 
+-		if (done)
++		if (done && done->ext_cookie)
++			rkisp2_vicap_frame_put(rkisp2, done);
++		else if (done)
+ 			vb2_buffer_done(&done->vb.vb2_buf, VB2_BUF_STATE_DONE);
+ 
++		if (!chan->busy)
++			wake_up(&chan->idle_wq);
++
+ 		dev_dbg(rkisp2->dev, "%s: %s buffer %pad done\n",
+ 			__func__, chan->cfg->name, &done->buff_addr[0]);
+ 	}
+@@ -394,36 +403,53 @@ static int rkisp2_rawrd_buf_init(struct
+ 	return 0;
+ }
+ 
+-static void rkisp2_rawrd_buf_queue(struct vb2_buffer *vb)
++/* Latched by the MI config update; a mode-switching trigger may be dropped. */
++void rkisp2_dmarx_select_input(struct rkisp2_device *rkisp2)
+ {
+-	struct rkisp2_dmarx_chan *chan = vb->vb2_queue->drv_priv;
+-	struct vb2_v4l2_buffer *vbuf = to_vb2_v4l2_buffer(vb);
+-	struct rkisp2_buffer *buf = container_of(vbuf, struct rkisp2_buffer, vb);
++	u32 val;
++
++	val = rkisp2_read(rkisp2, CSI2RX_CTRL0);
++	val &= ~(SW_IBUF_OP_MODE(0xf) | SW_CSI2RX_EN);
++	val |= SW_IBUF_OP_MODE(4) | SW_DMA_2FRM_MODE(0);
++	rkisp2_write(rkisp2, CSI2RX_CTRL0, val);
++}
++
++static bool rkisp2_rawrd_buf_add(struct rkisp2_dmarx_chan *chan,
++				 struct rkisp2_buffer *buf)
++{
++	unsigned long flags;
+ 	bool start = false;
+ 
+-	spin_lock_irq(&chan->buf_lock);
++	spin_lock_irqsave(&chan->buf_lock, flags);
++	if (buf->ext_cookie && (!chan->ext || chan->stopping)) {
++		spin_unlock_irqrestore(&chan->buf_lock, flags);
++		return false;
++	}
+ 	if (chan->streaming && !chan->curr_buf) {
+ 		chan->curr_buf = buf;
++		chan->busy = true;
+ 		start = true;
+ 	} else {
+ 		list_add_tail(&buf->queue, &chan->buf_queue);
+ 	}
+-	spin_unlock_irq(&chan->buf_lock);
++	spin_unlock_irqrestore(&chan->buf_lock, flags);
+ 
+ 	if (start)
+ 		rkisp2_rawrd_update_mi(chan, buf);
++
++	return true;
+ }
+ 
+-static void rkisp2_rawrd_stop_streaming(struct vb2_queue *queue)
++static void rkisp2_rawrd_buf_queue(struct vb2_buffer *vb)
+ {
+-	struct rkisp2_dmarx_chan *chan = queue->drv_priv;
+-	struct rkisp2_device *rkisp2 = chan->rkisp2;
+-	struct media_entity *entity = &chan->vnode.vdev.entity;
++	struct rkisp2_dmarx_chan *chan = vb->vb2_queue->drv_priv;
++	struct vb2_v4l2_buffer *vbuf = to_vb2_v4l2_buffer(vb);
+ 
+-	mutex_lock(&rkisp2->stream_lock);
+-	chan->streaming = false;
+-	rkisp2_rawrd_return_all_buffers(chan, VB2_BUF_STATE_ERROR);
++	rkisp2_rawrd_buf_add(chan, container_of(vbuf, struct rkisp2_buffer, vb));
++}
+ 
++static void rkisp2_rawrd_hw_stop(struct rkisp2_device *rkisp2)
++{
+ 	/*
+ 	 * TODO Use stream counter to stop/start all video nodes when all are
+ 	 * started / one is stopped
+@@ -431,6 +457,19 @@ static void rkisp2_rawrd_stop_streaming(
+ 	 * writing 0 is ok for now
+ 	 */
+ 	rkisp2_write(rkisp2, MI_RD_CTRL2, 0);
++}
++
++static void rkisp2_rawrd_stop_streaming(struct vb2_queue *queue)
++{
++	struct rkisp2_dmarx_chan *chan = queue->drv_priv;
++	struct rkisp2_device *rkisp2 = chan->rkisp2;
++	struct media_entity *entity = &chan->vnode.vdev.entity;
++
++	mutex_lock(&rkisp2->stream_lock);
++	chan->streaming = false;
++	rkisp2_rawrd_return_all_buffers(chan, VB2_BUF_STATE_ERROR);
++
++	rkisp2_rawrd_hw_stop(rkisp2);
+ 
+ 	v4l2_pipeline_pm_put(entity);
+ 	pm_runtime_put(rkisp2->dev);
+@@ -438,18 +477,41 @@ static void rkisp2_rawrd_stop_streaming(
+ 	mutex_unlock(&rkisp2->stream_lock);
+ }
+ 
++static void rkisp2_rawrd_hw_start(struct rkisp2_dmarx_chan *chan)
++{
++	struct rkisp2_buffer *buf = NULL;
++
++	rkisp2_rawrd_config_mi(chan);
++	chan->streaming = true;
++
++	spin_lock_irq(&chan->buf_lock);
++	if (!list_empty(&chan->buf_queue)) {
++		buf = list_first_entry(&chan->buf_queue,
++				       struct rkisp2_buffer, queue);
++		list_del(&buf->queue);
++	}
++	chan->curr_buf = buf;
++	chan->busy = buf;
++	spin_unlock_irq(&chan->buf_lock);
++
++	rkisp2_rawrd_update_mi(chan, buf);
++}
++
+ static int rkisp2_rawrd_start_streaming(struct vb2_queue *queue,
+ 					unsigned int count)
+ {
+ 	struct rkisp2_dmarx_chan *chan = queue->drv_priv;
+ 	struct rkisp2_device *rkisp2 = chan->rkisp2;
+ 	struct media_entity *entity = &chan->vnode.vdev.entity;
+-	struct rkisp2_buffer *buf = NULL;
+ 	int ret;
+-	u32 val;
+ 
+ 	mutex_lock(&rkisp2->stream_lock);
+ 
++	if (chan->ext) {
++		ret = -EBUSY;
++		goto err_unlock;
++	}
++
+ 	ret = video_device_pipeline_start(&chan->vnode.vdev, &rkisp2->pipe);
+ 	if (ret)
+ 		goto err_unlock;
+@@ -462,25 +524,7 @@ static int rkisp2_rawrd_start_streaming(
+ 	if (ret)
+ 		goto err_pm_put;
+ 
+-	rkisp2_rawrd_config_mi(chan);
+-	chan->streaming = true;
+-
+-	spin_lock_irq(&chan->buf_lock);
+-	if (!list_empty(&chan->buf_queue)) {
+-		buf = list_first_entry(&chan->buf_queue,
+-				       struct rkisp2_buffer, queue);
+-		list_del(&buf->queue);
+-	}
+-	chan->curr_buf = buf;
+-	spin_unlock_irq(&chan->buf_lock);
+-
+-	rkisp2_rawrd_update_mi(chan, buf);
+-
+-	// Enable CSI2 Receiver
+-	val = rkisp2_read(rkisp2,  CSI2RX_CTRL0);
+-	val &= ~SW_IBUF_OP_MODE(0xf);
+-	val |= SW_IBUF_OP_MODE(4) | SW_CSI2RX_EN | SW_DMA_2FRM_MODE(0);
+-	rkisp2_write(rkisp2, CSI2RX_CTRL0, val);
++	rkisp2_rawrd_hw_start(chan);
+ 
+ 	mutex_unlock(&rkisp2->stream_lock);
+ 	return 0;
+@@ -495,6 +539,72 @@ err_unlock:
+ 	return ret;
+ }
+ 
++int rkisp2_dmarx_ext_start(struct rkisp2_device *rkisp2, u32 fourcc,
++			   u32 width, u32 height)
++{
++	struct rkisp2_dmarx_chan *chan = &rkisp2->dmarx.chan[RKISP2_RAWRD0];
++	struct v4l2_pix_format_mplane pix = {
++		.pixelformat = fourcc,
++		.width = width,
++		.height = height,
++	};
++
++	if (chan->streaming || vb2_is_busy(&chan->vnode.buf_queue))
++		return -EBUSY;
++
++	rkisp2_rawrd_try_fmt(chan, &pix);
++	if (pix.pixelformat != fourcc || pix.width != width ||
++	    pix.height != height)
++		return -EINVAL;
++
++	chan->pix = pix;
++	chan->fmt = rkisp2_rawrd_find_fmt(chan, fourcc);
++
++	spin_lock_irq(&chan->buf_lock);
++	chan->ext = true;
++	chan->stopping = false;
++	spin_unlock_irq(&chan->buf_lock);
++
++	rkisp2_rawrd_hw_start(chan);
++
++	return 0;
++}
++
++bool rkisp2_dmarx_ext_queue(struct rkisp2_device *rkisp2,
++			    struct rkisp2_buffer *buf)
++{
++	return rkisp2_rawrd_buf_add(&rkisp2->dmarx.chan[RKISP2_RAWRD0], buf);
++}
++
++void rkisp2_dmarx_ext_drain(struct rkisp2_device *rkisp2)
++{
++	struct rkisp2_dmarx_chan *chan = &rkisp2->dmarx.chan[RKISP2_RAWRD0];
++
++	spin_lock_irq(&chan->buf_lock);
++	chan->stopping = true;
++	spin_unlock_irq(&chan->buf_lock);
++
++	if (!wait_event_timeout(chan->idle_wq, !READ_ONCE(chan->busy),
++				msecs_to_jiffies(RKISP2_RAWRD_DRAIN_TIMEOUT_MS)))
++		dev_warn(rkisp2->dev, "readback frame did not complete\n");
++}
++
++void rkisp2_dmarx_ext_stop(struct rkisp2_device *rkisp2)
++{
++	struct rkisp2_dmarx_chan *chan = &rkisp2->dmarx.chan[RKISP2_RAWRD0];
++
++	spin_lock_irq(&chan->buf_lock);
++	chan->curr_buf = NULL;
++	INIT_LIST_HEAD(&chan->buf_queue);
++	chan->busy = false;
++	chan->streaming = false;
++	chan->ext = false;
++	chan->stopping = false;
++	spin_unlock_irq(&chan->buf_lock);
++
++	rkisp2_rawrd_hw_stop(rkisp2);
++}
++
+ static const struct vb2_ops rkisp2_rawrd_vb2_ops = {
+ 	.queue_setup = rkisp2_rawrd_queue_setup,
+ 	.buf_prepare = rkisp2_rawrd_buf_prepare,
+@@ -694,6 +804,7 @@ int rkisp2_dmarx_register(struct rkisp2_
+ 		chan->fmt_cnt = ARRAY_SIZE(rkisp2_rawrd_formats);
+ 		chan->id = i;
+ 		spin_lock_init(&chan->buf_lock);
++		init_waitqueue_head(&chan->idle_wq);
+ 		INIT_LIST_HEAD(&chan->buf_queue);
+ 		rkisp2_rawrd_set_default_pix(chan);
+ 
+--- a/drivers/media/platform/rockchip/rkisp2/rkisp2-isp.c
++++ b/drivers/media/platform/rockchip/rkisp2/rkisp2-isp.c
+@@ -31,7 +31,7 @@
+ #define RKISP2_RESET_CLK_SETTLE_US	100
+ #define RKISP2_RESET_PULSE_US		10
+ 
+-static u16 rkisp2_isp_get_active_sink_pad(struct rkisp2_isp *isp)
++static int rkisp2_isp_find_dma_pad(struct rkisp2_isp *isp)
+ {
+ 	struct media_entity *entity = &isp->sd.entity;
+ 	struct media_link *link;
+@@ -50,8 +50,23 @@ static u16 rkisp2_isp_get_active_sink_pa
+ 		}
+ 	}
+ 
++	return -ENOLINK;
++}
++
++bool rkisp2_isp_dma_linked(struct rkisp2_isp *isp)
++{
++	return rkisp2_isp_find_dma_pad(isp) >= 0;
++}
++
++static u16 rkisp2_isp_get_active_sink_pad(struct rkisp2_isp *isp)
++{
++	int pad = rkisp2_isp_find_dma_pad(isp);
++
+ 	/* Default to 0th DMA if no link is active */
+-	return RKISP2_ISP_PAD_SINK_VIDEO_DMA_0;
++	if (pad < 0)
++		return RKISP2_ISP_PAD_SINK_VIDEO_DMA_0;
++
++	return pad;
+ }
+ 
+ /* ----------------------------------------------------------------------------
+@@ -666,41 +681,62 @@ static const struct v4l2_subdev_pad_ops
+  * Stream operations
+  */
+ 
++static int rkisp2_isp_source_find(struct rkisp2_isp *isp,
++				  struct media_pad **source_pad)
++{
++	struct rkisp2_device *rkisp2 = isp->rkisp2;
++	struct media_pad *sink_pad;
++
++	sink_pad = &isp->pads[rkisp2_isp_get_active_sink_pad(isp)];
++	*source_pad = media_pad_remote_pad_unique(sink_pad);
++	if (IS_ERR(*source_pad)) {
++		dev_dbg(rkisp2->dev, "Failed to get source for ISP: %ld\n",
++			PTR_ERR(*source_pad));
++		return -EPIPE;
++	}
++
++	if (is_media_entity_v4l2_subdev((*source_pad)->entity)) {
++		rkisp2->source =
++			media_entity_to_v4l2_subdev((*source_pad)->entity);
++		if (!rkisp2->source) {
++			/* This should really not happen, so is not worth a message. */
++			return -EPIPE;
++		}
++	} else {
++		dev_dbg(rkisp2->dev, "ISP source is not a v4l2 subdev\n");
++		rkisp2->source = NULL;
++	}
++
++	return 0;
++}
++
+ static int rkisp2_isp_s_stream(struct v4l2_subdev *sd, int enable)
+ {
+ 	struct rkisp2_isp *isp = to_rkisp2_isp(sd);
+ 	struct rkisp2_device *rkisp2 = isp->rkisp2;
+ 	struct v4l2_subdev_state *sd_state;
++	struct v4l2_mbus_framefmt sink_fmt;
+ 	struct media_pad *source_pad = NULL;
+-	struct media_pad *sink_pad = NULL;
++	bool vicap;
+ 	int ret;
+ 
+ 	if (!enable) {
+ 		if (rkisp2->source)
+ 			v4l2_subdev_call(rkisp2->source, video, s_stream,
+ 					 false);
++		rkisp2_vicap_drain(rkisp2);
+ 		rkisp2_isp_stop(isp);
++		rkisp2_vicap_stop(rkisp2);
+ 		return 0;
+ 	}
+ 
+-	sink_pad = &isp->pads[rkisp2_isp_get_active_sink_pad(isp)];
+-	source_pad = media_pad_remote_pad_unique(sink_pad);
+-	if (IS_ERR(source_pad)) {
+-		dev_dbg(rkisp2->dev, "Failed to get source for ISP: %ld\n",
+-			PTR_ERR(source_pad));
+-		return -EPIPE;
+-	}
+-
+-	if (is_media_entity_v4l2_subdev(source_pad->entity)) {
+-		rkisp2->source =
+-			media_entity_to_v4l2_subdev(source_pad->entity);
+-		if (!rkisp2->source) {
+-			/* This should really not happen, so is not worth a message. */
+-			return -EPIPE;
+-		}
+-	} else {
+-		dev_dbg(rkisp2->dev, "ISP source is not a v4l2 subdev\n");
++	vicap = rkisp2_vicap_available(rkisp2);
++	if (vicap) {
+ 		rkisp2->source = NULL;
++	} else {
++		ret = rkisp2_isp_source_find(isp, &source_pad);
++		if (ret)
++			return ret;
+ 	}
+ 
+ 	isp->frame_sequence = -1;
+@@ -715,16 +751,25 @@ static int rkisp2_isp_s_stream(struct v4
+ 	if (ret)
+ 		goto out_unlock;
+ 
++	sink_fmt = *v4l2_subdev_state_get_format(sd_state,
++						 RKISP2_ISP_PAD_SINK_VIDEO_DMA_0);
++
+ 	if (rkisp2->source) {
+ 		ret = v4l2_subdev_call(rkisp2->source, video, s_stream, true);
+-		if (ret) {
++		if (ret)
+ 			rkisp2_isp_stop(isp);
+-			goto out_unlock;
+-		}
+ 	}
+ 
+ out_unlock:
+ 	v4l2_subdev_unlock_state(sd_state);
++
++	if (ret || !vicap)
++		return ret;
++
++	ret = rkisp2_vicap_start(rkisp2, &sink_fmt);
++	if (ret)
++		rkisp2_isp_stop(isp);
++
+ 	return ret;
+ }
+ 
+--- /dev/null
++++ b/drivers/media/platform/rockchip/rkisp2/rkisp2-vicap.c
+@@ -0,0 +1,322 @@
++// SPDX-License-Identifier: (GPL-2.0-or-later OR MIT)
++/*
++ * Rockchip ISP2 Driver - raw frames from the VICAP driver
++ */
++
++#include <linux/iommu.h>
++#include <linux/of.h>
++#include <linux/platform_data/media/rkcif-toisp.h>
++#include <linux/slab.h>
++#include <media/v4l2-async.h>
++#include <media/v4l2-subdev.h>
++
++#include "rkisp2-common.h"
++
++struct rkisp2_vicap_buf {
++	struct list_head entry;
++	struct rkisp2_buffer rbuf;
++	/* the iommu domain the buffer is mapped into, if any */
++	struct iommu_domain *iommu;
++	size_t iommu_size;
++};
++
++static const struct {
++	u32 mbus_code;
++	u32 fourcc;
++} rkisp2_vicap_fmts[] = {
++	{ MEDIA_BUS_FMT_SRGGB8_1X8, V4L2_PIX_FMT_SRGGB8 },
++	{ MEDIA_BUS_FMT_SBGGR8_1X8, V4L2_PIX_FMT_SBGGR8 },
++	{ MEDIA_BUS_FMT_SGRBG8_1X8, V4L2_PIX_FMT_SGRBG8 },
++	{ MEDIA_BUS_FMT_SGBRG8_1X8, V4L2_PIX_FMT_SGBRG8 },
++	{ MEDIA_BUS_FMT_SRGGB10_1X10, V4L2_PIX_FMT_SRGGB10 },
++	{ MEDIA_BUS_FMT_SBGGR10_1X10, V4L2_PIX_FMT_SBGGR10 },
++	{ MEDIA_BUS_FMT_SGRBG10_1X10, V4L2_PIX_FMT_SGRBG10 },
++	{ MEDIA_BUS_FMT_SGBRG10_1X10, V4L2_PIX_FMT_SGBRG10 },
++	{ MEDIA_BUS_FMT_SRGGB12_1X12, V4L2_PIX_FMT_SRGGB12 },
++	{ MEDIA_BUS_FMT_SBGGR12_1X12, V4L2_PIX_FMT_SBGGR12 },
++	{ MEDIA_BUS_FMT_SGRBG12_1X12, V4L2_PIX_FMT_SGRBG12 },
++	{ MEDIA_BUS_FMT_SGBRG12_1X12, V4L2_PIX_FMT_SGBRG12 },
++};
++
++static int rkisp2_vicap_call(struct rkisp2_vicap *vicap, unsigned int cmd,
++			     void *arg)
++{
++	if (!vicap->sd)
++		return -ENODEV;
++
++	return v4l2_subdev_call(vicap->sd, core, ioctl, cmd, arg);
++}
++
++void rkisp2_vicap_frame_put(struct rkisp2_device *rkisp2,
++			    struct rkisp2_buffer *buf)
++{
++	rkisp2_vicap_call(&rkisp2->vicap, RKCIF_TOISP_CMD_PUT_FRAME,
++			  buf->ext_cookie);
++}
++
++static int rkisp2_vicap_buffer(void *priv,
++			       const struct rkcif_toisp_frame *frame)
++{
++	struct rkisp2_vicap *vicap = priv;
++	struct rkisp2_vicap_buf *buf;
++	struct iommu_domain *dom;
++
++	buf = kzalloc(sizeof(*buf), GFP_KERNEL);
++	if (!buf)
++		return -ENOMEM;
++
++	/*
++	 * The readback engine programs the physical buffer base (the
++	 * address the CIF DMA writes the frame to), the same scheme
++	 * the capture path uses. While the ISP's IOMMU is in the
++	 * default identity (passthrough) domain, the base translates
++	 * 1:1. If a translated domain has been attached to the ISP
++	 * instead, the physical address is not mapped and the
++	 * readback faults. Map the buffer into the current domain at
++	 * its own physical address so the base is valid in both
++	 * cases. The domain must not be detached or re-attached here:
++	 * that reprograms the SMMU while the ISP is streaming.
++	 */
++	dom = iommu_get_domain_for_dev(vicap->rkisp2->dev);
++	if (dom && (dom->type & __IOMMU_DOMAIN_PAGING) &&
++	    dom->ops && dom->ops->map_pages) {
++		buf->iommu = dom;
++		buf->iommu_size = frame->sgt->sgl[0].length;
++		if (iommu_map(dom, frame->addr, frame->addr,
++			      buf->iommu_size, IOMMU_READ | IOMMU_WRITE,
++			      GFP_KERNEL)) {
++			dev_warn(vicap->rkisp2->dev,
++				 "VICAP: could not map readback buf 0x%llx\n",
++				 (unsigned long long)frame->addr);
++			buf->iommu = NULL;
++		}
++	}
++
++	buf->rbuf.ext_cookie = frame->cookie;
++	buf->rbuf.buff_addr[0] = frame->addr;
++	INIT_LIST_HEAD(&buf->rbuf.queue);
++	list_add_tail(&buf->entry, &vicap->bufs);
++
++	return 0;
++}
++
++static void rkisp2_vicap_release(void *priv)
++{
++	struct rkisp2_vicap *vicap = priv;
++	struct rkisp2_vicap_buf *buf, *tmp;
++
++	list_for_each_entry_safe(buf, tmp, &vicap->bufs, entry) {
++		/*
++		 * Only unmap if the domain is still the one the buffer
++		 * was mapped into; the group may have been switched to
++		 * a different domain (or back to the default) in the
++		 * meantime, in which case the mapping is gone with it.
++		 */
++		if (buf->iommu &&
++		    buf->iommu == iommu_get_domain_for_dev(vicap->rkisp2->dev))
++			iommu_unmap(buf->iommu, buf->rbuf.buff_addr[0],
++				    buf->iommu_size);
++		list_del(&buf->entry);
++		kfree(buf);
++	}
++}
++
++static void rkisp2_vicap_frame(void *priv,
++			       const struct rkcif_toisp_frame *frame)
++{
++	struct rkisp2_vicap *vicap = priv;
++	struct rkisp2_vicap_buf *buf;
++
++	list_for_each_entry(buf, &vicap->bufs, entry) {
++		if (buf->rbuf.ext_cookie != frame->cookie)
++			continue;
++		if (rkisp2_dmarx_ext_queue(vicap->rkisp2, &buf->rbuf))
++			return;
++		break;
++	}
++
++	rkisp2_vicap_call(vicap, RKCIF_TOISP_CMD_PUT_FRAME, frame->cookie);
++}
++
++static const struct rkcif_toisp_ops rkisp2_vicap_ops = {
++	.buffer = rkisp2_vicap_buffer,
++	.release = rkisp2_vicap_release,
++	.frame = rkisp2_vicap_frame,
++};
++
++static u32 rkisp2_vicap_fourcc(u32 mbus_code)
++{
++	unsigned int i;
++
++	for (i = 0; i < ARRAY_SIZE(rkisp2_vicap_fmts); i++)
++		if (rkisp2_vicap_fmts[i].mbus_code == mbus_code)
++			return rkisp2_vicap_fmts[i].fourcc;
++
++	return 0;
++}
++
++bool rkisp2_vicap_available(struct rkisp2_device *rkisp2)
++{
++	struct rkisp2_dmarx_chan *chan = &rkisp2->dmarx.chan[RKISP2_RAWRD0];
++
++	return rkisp2->vicap.sd && !rkisp2_isp_dma_linked(&rkisp2->isp) &&
++	       !chan->streaming && !vb2_is_busy(&chan->vnode.buf_queue);
++}
++
++int rkisp2_vicap_start(struct rkisp2_device *rkisp2,
++		       const struct v4l2_mbus_framefmt *fmt)
++{
++	struct rkisp2_dmarx_chan *chan = &rkisp2->dmarx.chan[RKISP2_RAWRD0];
++	struct rkisp2_vicap *vicap = &rkisp2->vicap;
++	struct rkcif_toisp_start start = {
++		.ops = &rkisp2_vicap_ops,
++		.priv = vicap,
++	};
++	struct rkcif_toisp_format format;
++	u32 fourcc;
++	u32 reg;
++	int ret;
++
++	ret = rkisp2_vicap_call(vicap, RKCIF_TOISP_CMD_FORMAT_GET, &format);
++	if (ret)
++		return ret;
++
++	fourcc = rkisp2_vicap_fourcc(format.mbus_code);
++	if (!fourcc || format.mbus_code != fmt->code ||
++	    format.width != fmt->width || format.height != fmt->height) {
++		dev_err(rkisp2->dev,
++			"VICAP provides %ux%u code 0x%04x, ISP sink is %ux%u code 0x%04x\n",
++			format.width, format.height, format.mbus_code,
++			fmt->width, fmt->height, fmt->code);
++		return -EPIPE;
++	}
++
++	ret = rkisp2_dmarx_ext_start(rkisp2, fourcc, format.width,
++				     format.height);
++	if (ret)
++		return ret;
++
++	/*
++	 * The feed can run without a capture output, which is where the
++	 * readback input is normally selected; the soft update latches
++	 * the selection like the capture path does.
++	 */
++	rkisp2_dmarx_select_input(rkisp2);
++	reg = rkisp2_read(rkisp2, RKISP2_CIF_MI_INIT) &
++	      RKISP2_CIF_MI_INIT_MP_OUTPUT_MASK;
++	reg |= RKISP2_CIF_MI_INIT_SOFT_UPD;
++	rkisp2_write(rkisp2, RKISP2_CIF_MI_INIT, reg);
++
++	start.cfg.pixelformat = fourcc;
++	start.cfg.width = format.width;
++	start.cfg.height = format.height;
++	start.cfg.extra_lines = rkisp2->info->rdbk_extra_lines;
++	ret = rkisp2_vicap_call(vicap, RKCIF_TOISP_CMD_START, &start);
++	if (!ret && start.cfg.bytesperline != chan->pix.plane_fmt[0].bytesperline) {
++		rkisp2_vicap_call(vicap, RKCIF_TOISP_CMD_STOP, NULL);
++		ret = -EINVAL;
++	}
++	if (ret) {
++		rkisp2_dmarx_ext_stop(rkisp2);
++		return ret;
++	}
++
++	vicap->active = true;
++
++	return 0;
++}
++
++void rkisp2_vicap_drain(struct rkisp2_device *rkisp2)
++{
++	if (rkisp2->vicap.active)
++		rkisp2_dmarx_ext_drain(rkisp2);
++}
++
++void rkisp2_vicap_stop(struct rkisp2_device *rkisp2)
++{
++	struct rkisp2_vicap *vicap = &rkisp2->vicap;
++
++	if (!vicap->active)
++		return;
++
++	rkisp2_dmarx_ext_stop(rkisp2);
++	rkisp2_vicap_call(vicap, RKCIF_TOISP_CMD_STOP, NULL);
++	vicap->active = false;
++}
++
++static int rkisp2_vicap_bound(struct v4l2_async_notifier *nf,
++			      struct v4l2_subdev *sd,
++			      struct v4l2_async_connection *asd)
++{
++	struct rkisp2_vicap *vicap = container_of(nf, struct rkisp2_vicap, nf);
++
++	vicap->sd = sd;
++
++	return 0;
++}
++
++static void rkisp2_vicap_unbind(struct v4l2_async_notifier *nf,
++				struct v4l2_subdev *sd,
++				struct v4l2_async_connection *asd)
++{
++	struct rkisp2_vicap *vicap = container_of(nf, struct rkisp2_vicap, nf);
++
++	vicap->sd = NULL;
++}
++
++static const struct v4l2_async_notifier_operations rkisp2_vicap_nf_ops = {
++	.bound = rkisp2_vicap_bound,
++	.unbind = rkisp2_vicap_unbind,
++};
++
++int rkisp2_vicap_register(struct rkisp2_device *rkisp2)
++{
++	struct rkisp2_vicap *vicap = &rkisp2->vicap;
++	struct v4l2_async_connection *asd;
++	struct device_node *np;
++	int ret;
++
++	if (!rkisp2->info->vicap_compatible)
++		return 0;
++
++	np = of_find_compatible_node(NULL, NULL,
++				     rkisp2->info->vicap_compatible);
++	if (!np)
++		return 0;
++
++	vicap->rkisp2 = rkisp2;
++	INIT_LIST_HEAD(&vicap->bufs);
++	v4l2_async_nf_init(&vicap->nf, &rkisp2->v4l2_dev);
++	vicap->nf.ops = &rkisp2_vicap_nf_ops;
++
++	asd = v4l2_async_nf_add_fwnode(&vicap->nf, of_fwnode_handle(np),
++				       struct v4l2_async_connection);
++	of_node_put(np);
++	if (IS_ERR(asd)) {
++		ret = PTR_ERR(asd);
++		goto err_cleanup;
++	}
++
++	ret = v4l2_async_nf_register(&vicap->nf);
++	if (ret)
++		goto err_cleanup;
++
++	return 0;
++
++err_cleanup:
++	v4l2_async_nf_cleanup(&vicap->nf);
++	vicap->nf.ops = NULL;
++	return ret;
++}
++
++void rkisp2_vicap_unregister(struct rkisp2_device *rkisp2)
++{
++	struct rkisp2_vicap *vicap = &rkisp2->vicap;
++
++	if (!vicap->nf.ops)
++		return;
++
++	v4l2_async_nf_unregister(&vicap->nf);
++	v4l2_async_nf_cleanup(&vicap->nf);
++	vicap->nf.ops = NULL;
++}

@@ -1,0 +1,134 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Mon, 26 Oct 2026 16:00:00 +0100
+Subject: [PATCH] AP MLD: take the EAPOL frames of a non-AP MLD on its
+ association STA
+
+A non-AP MLD can send an EAPOL frame on any of its links.
+hostapd_event_eapol_rx() hands the frame to the BSS of the link that
+received it, and ieee802_1x_receive() looks up the STA of that link.
+Only the association STA has an EAPOL state machine, so a frame on
+another link allocates a second state machine on that link STA.
+
+An EAPOL-Start on a link that is not the association link then starts
+an EAP authentication on the link STA, and only the responses that take
+that link reach it; the responses on the association link go to the
+state machine of the association STA, which ignores them. A
+reauthentication that the station starts stalls until a retransmission
+takes the right link. A reauthentication that the AP starts at
+eap_reauth_period stalls in the same way for each response that takes
+the other link.
+
+Take each EAPOL frame of a non-AP MLD on its association STA and the
+BSS of the association link, as the SCS and MSCS handlers do. Their
+helper robust_av_sta() becomes ap_get_assoc_link_sta() in sta_info.c.
+
+Depends on 854-hostapd-handle-SCS-Requests-in-AP-mode.patch.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/src/ap/ieee802_1x.c
++++ b/src/ap/ieee802_1x.c
+@@ -1153,6 +1153,8 @@ void ieee802_1x_receive(struct hostapd_d
+ 		   " (encrypted=%d)",
+ 		   (unsigned long) len, MAC2STR(sa), encrypted);
+ 	sta = ap_get_sta(hapd, sa);
++	if (sta)
++		sta = ap_get_assoc_link_sta(&hapd, sta);
+ 	if (!sta || (!(sta->flags & (WLAN_STA_ASSOC | WLAN_STA_PREAUTH)) &&
+ #ifdef CONFIG_IEEE8021X_AUTH
+ 		     !sta->epp_sta &&
+--- a/src/ap/scs.c
++++ b/src/ap/scs.c
+@@ -18,25 +18,6 @@
+ /* Element ID Extension, Request Type, User Priority Control, Stream Timeout */
+ #define MSCS_DESCRIPTOR_FIXED_LEN 8
+ 
+-/*
+- * The links of an AP MLD each hold a station entry of a non-AP MLD; the entry
+- * of the association link holds the streams, whichever link a request takes.
+- */
+-static struct sta_info * robust_av_sta(struct hostapd_data **hapd,
+-				       struct sta_info *sta)
+-{
+-	struct hostapd_data *assoc_hapd = *hapd;
+-	struct sta_info *assoc_sta;
+-
+-	assoc_sta = hostapd_ml_get_assoc_sta(*hapd, sta, &assoc_hapd);
+-	if (!assoc_sta)
+-		return sta;
+-
+-	*hapd = assoc_hapd;
+-	return assoc_sta;
+-}
+-
+-
+ bool hostapd_is_robust_av_scs_disabled(struct hostapd_data *hapd)
+ {
+ #ifdef CONFIG_IEEE80211BE
+@@ -460,7 +441,7 @@ static struct sta_info * robust_av_assoc
+ 	if (!sta)
+ 		return NULL;
+ 
+-	return robust_av_sta(hapd, sta);
++	return ap_get_assoc_link_sta(hapd, sta);
+ }
+ 
+ 
+@@ -536,7 +517,7 @@ u8 * hostapd_eid_mscs_assoc(struct hosta
+ 	if (!req || hostapd_is_robust_av_scs_disabled(hapd))
+ 		return eid;
+ 
+-	sta = robust_av_sta(&hapd, sta);
++	sta = ap_get_assoc_link_sta(&hapd, sta);
+ 	status = hostapd_set_mscs(hapd, sta, &req[2], req[1]);
+ 	if (req[1] >= MSCS_DESCRIPTOR_FIXED_LEN)
+ 		robust_av_notify(hapd, sta, HOSTAPD_ROBUST_AV_MSCS, req[3], req,
+@@ -760,7 +741,7 @@ void hostapd_handle_robust_av_streaming(
+ 		return;
+ 	}
+ 
+-	sta = robust_av_sta(&sta_hapd, sta);
++	sta = ap_get_assoc_link_sta(&sta_hapd, sta);
+ 
+ 	switch (body[1]) {
+ 	case ROBUST_AV_SCS_REQ:
+--- a/src/ap/sta_info.c
++++ b/src/ap/sta_info.c
+@@ -122,6 +122,26 @@ struct sta_info * ap_get_sta_mld_links(s
+ }
+ 
+ 
++/*
++ * The links of an AP MLD each hold a station entry of a non-AP MLD; the entry
++ * of the association link holds the state of the MLD, whichever link a frame
++ * takes.
++ */
++struct sta_info * ap_get_assoc_link_sta(struct hostapd_data **hapd,
++					struct sta_info *sta)
++{
++	struct hostapd_data *assoc_hapd = *hapd;
++	struct sta_info *assoc_sta;
++
++	assoc_sta = hostapd_ml_get_assoc_sta(*hapd, sta, &assoc_hapd);
++	if (!assoc_sta)
++		return sta;
++
++	*hapd = assoc_hapd;
++	return assoc_sta;
++}
++
++
+ #ifdef CONFIG_IEEE80211BE
+ struct sta_info * ap_get_link_sta(struct hostapd_data *hapd,
+ 				  const u8 *link_addr)
+--- a/src/ap/sta_info.h
++++ b/src/ap/sta_info.h
+@@ -433,6 +433,8 @@ struct sta_info * ap_get_sta_mld_links(s
+ 				       const u8 *addr,
+ 				       bool (*match)(struct hostapd_data *hapd,
+ 						     struct sta_info *sta));
++struct sta_info * ap_get_assoc_link_sta(struct hostapd_data **hapd,
++					struct sta_info *sta);
+ struct sta_info * ap_get_link_sta(struct hostapd_data *hapd,
+ 				  const u8 *link_addr);
+ const u8 * ap_sta_link_addr(struct hostapd_data *hapd, struct sta_info *sta);

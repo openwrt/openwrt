@@ -1,0 +1,40 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Fri, 23 Oct 2026 23:46:03 +0200
+Subject: [PATCH] wifi: mac80211: use the AP interface for link changes of a VLAN
+ station
+
+ieee80211_sta_activate_link() and ieee80211_sta_remove_link() pass
+sta->sdata to drv_change_sta_links(). For a station on an AP VLAN this
+is the VLAN, which is never added to the driver, so
+check_sdata_in_driver() fails and the call returns -EIO:
+
+  wlan7.sta1: Failed check-sdata-in-driver check, flags: 0x0
+  WARNING: net/mac80211/driver-ops.c:596 at drv_change_sta_links+0x189/0x1c0
+  Call Trace:
+   ieee80211_sta_remove_link+0x56/0x70
+   ieee80211_del_link_station+0x43/0x70
+   nl80211_remove_link_station+0x8a/0xc0
+
+mac80211 then drops the link while the driver keeps it, and a link
+addition for such a station fails. Reachable via
+ieee80211_add_link_station() and ieee80211_del_link_station() for a
+4-address non-AP MLD that hostapd keeps on its WDS VLAN while it adds
+or removes one of its links.
+
+Map an AP VLAN to its AP before the check, as drv_sta_state() and the
+other station operations already do.
+
+Fixes: cb71f1d136a6 ("wifi: mac80211: add sta link addition/removal")
+Cc: stable@vger.kernel.org
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+
+--- a/net/mac80211/driver-ops.c
++++ b/net/mac80211/driver-ops.c
+@@ -597,6 +597,7 @@ int drv_change_sta_links(struct ieee8021
+ 	might_sleep();
+ 	lockdep_assert_wiphy(local->hw.wiphy);
+ 
++	sdata = get_bss_sdata(sdata);
+ 	if (!check_sdata_in_driver(sdata))
+ 		return -EIO;
+ 

@@ -29,6 +29,7 @@ Initiate an 802.11v transition request.
 | neighbors | array | no | BSS Transition Candidate List |
 | abridged | bool | no | prefer APs in the BSS Transition Candidate List |
 | dialog_token | int32 | no | identifier for the request/report transaction |
+| link_removal_imminent | bool | no | set Link Removal Imminent bit; sent as 0 unless the BSS is a link of an AP MLD of two or more links (IEEE 802.11be-2024 9.6.13.9); with the bit sent, a client MLD of two or more links is not disassociated at the end of disassociation_timer |
 | mbo_reason | int32 | no | MBO Transition Reason Code Attribute |
 | cell_pref | int32 | no | MBO Cellular Data Connection Preference Attribute |
 | reassoc_delay | int32 | no | MBO Re-association retry delay |

@@ -546,13 +546,13 @@
 			/* ath11k has no DT compatible for PCI cards */
 			compatible = "pci17cb,1104";
 			reg = <0x00010000 0 0 0 0>;
-			qcom,ath11k-calibration-variant = "Linksys-MR7500";
+			qcom,calibration-variant = "Linksys-MR7500";
 		};
 	};
 };
 
 &wifi {
 	status = "okay";
-	qcom,ath11k-calibration-variant = "Linksys-MR7500";
+	qcom,calibration-variant = "Linksys-MR7500";
 	qcom,ath11k-fw-memory-mode = <1>;
 };
