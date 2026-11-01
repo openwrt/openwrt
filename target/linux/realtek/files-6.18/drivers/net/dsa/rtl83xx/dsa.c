@@ -1290,7 +1290,7 @@ static int rtldsa_port_pre_bridge_flags(struct dsa_switch *ds, int port,
 	if (priv->r->enable_flood)
 		features |= BR_FLOOD;
 
-	if (priv->r->enable_l2_new_sa_fwd)
+	if (priv->r->set_l2_new_sa_trap)
 		features |= BR_PORT_LOCKED;
 
 	if (priv->r->enable_mcast_flood)
@@ -1326,7 +1326,6 @@ static int rtldsa_port_bridge_flags(struct dsa_switch *ds, int port,
 {
 	struct otto_dsa_priv *priv = ds->priv;
 	struct dsa_port *dp = dsa_to_port(ds, port);
-	enum rtldsa_flood_type new_sa_fwd;
 	unsigned long cached_flags;
 
 	pr_debug("%s: %d %lX\n", __func__, port, flags.val);
@@ -1348,21 +1347,14 @@ static int rtldsa_port_bridge_flags(struct dsa_switch *ds, int port,
 		rtldsa_port_set_salrn(priv, port, !!(cached_flags & BR_LEARNING));
 	}
 
-	priv->ports[port].flood_type = (cached_flags & BR_FLOOD) ?
-				       RTLDSA_FLOOD_TYPE_FORWARD :
-				       RTLDSA_FLOOD_TYPE_DROP;
-
 	if (priv->r->enable_flood)
-		priv->r->enable_flood(priv, port, priv->ports[port].flood_type);
+		priv->r->enable_flood(priv, port, !!(cached_flags & BR_FLOOD));
 
 	/* Trap frames with an unknown source address on a locked port to the
 	 * CPU, so that an authenticator can inspect them and add an FDB entry.
 	 */
-	new_sa_fwd = (cached_flags & BR_PORT_LOCKED) ? RTLDSA_FLOOD_TYPE_TRAP2CPU :
-						       RTLDSA_FLOOD_TYPE_FORWARD;
-
-	if (priv->r->enable_l2_new_sa_fwd)
-		priv->r->enable_l2_new_sa_fwd(priv, port, new_sa_fwd);
+	if (priv->r->set_l2_new_sa_trap)
+		priv->r->set_l2_new_sa_trap(priv, port, !!(cached_flags & BR_PORT_LOCKED));
 
 	if (priv->r->enable_learning)
 		priv->r->enable_learning(priv, port, !!(cached_flags & BR_LEARNING));
