@@ -294,6 +294,10 @@ case "$board" in
 		addr=$(mtd_get_mac_binary "Factory" 0x4)
 		[ "$PHYNBR" = "1" ] && macaddr_add $addr 1 > /sys${DEVPATH}/macaddress
 		;;
+	zbtlink,zbt-z8102ax-v2-emmc)
+		addr=$(mmc_get_mac_binary factory 0x4)
+		[ "$PHYNBR" = "1" ] && macaddr_add $addr 1 > /sys${DEVPATH}/macaddress
+		;;
 	ruijie,rg-x60-pro)
 		addr=$(mtd_get_mac_ascii product_info ethaddr)
 		[ "$PHYNBR" = "0" ] && macaddr_add $addr 2 > /sys${DEVPATH}/macaddress
