@@ -292,6 +292,15 @@ macaddr_unsetbit_mc() {
 	printf "%02x:%s" $((0x${mac%%:*} & ~0x01)) ${mac#*:}
 }
 
+macaddr_xorbit() {
+	local mac="$1"
+	local bit=${2:-0}
+
+	[ $bit -gt 0 -a $bit -le 48 ] || return
+
+	printf "%012x" $(( 0x${mac//:/} ^ 2**(48-bit) )) | sed -e 's/\(.\{2\}\)/\1:/g' -e 's/:$//'
+}
+
 macaddr_random() {
 	local randsrc=$(get_mac_binary /dev/urandom 0)
 	
