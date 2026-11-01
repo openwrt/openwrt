@@ -61,6 +61,7 @@ start_service() {
 	procd_close_trigger
 	[ "$(uci get umdns.@umdns[-1].jail)" = 1 ] && {
 		procd_add_jail umdns ubus log udebug
+		procd_set_param capabilities /etc/capabilities/umdns.json
 		[ -d /etc/umdns ] && procd_add_jail_mount "/etc/umdns"
 	}
 	procd_close_instance

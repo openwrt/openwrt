@@ -8,7 +8,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=umdns
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE_URL=$(PROJECT_GIT)/project/mdnsd.git
 PKG_SOURCE_PROTO:=git
@@ -39,6 +39,7 @@ endef
 define Package/umdns/install
 	$(INSTALL_DIR) \
 		$(1)/usr/sbin \
+		$(1)/etc/capabilities \
 		$(1)/etc/init.d \
 		$(1)/etc/config \
 		$(1)/usr/share/ucode/cli/modules
@@ -46,6 +47,7 @@ define Package/umdns/install
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/umdns $(1)/usr/sbin/
 	$(INSTALL_BIN) ./files/umdns.init $(1)/etc/init.d/umdns
 	$(INSTALL_CONF) ./files/umdns.config $(1)/etc/config/umdns
+	$(INSTALL_DATA) ./files/umdns.capabilities $(1)/etc/capabilities/umdns.json
 	$(call InstallSeccomp,$(1),./files/umdns.json)
 endef
 
