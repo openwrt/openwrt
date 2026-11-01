@@ -1,0 +1,152 @@
+From f878fe82973b6400f356a59826829eadadac74ff Mon Sep 17 00:00:00 2001
+From: Sean Anderson <sean.anderson@seco.com>
+Date: Fri, 16 Dec 2022 13:20:16 -0500
+Subject: [PATCH] fastboot: Add OEM run command
+
+This adds the UUU UCmd functionality as an OEM command. While the
+fastboot tool allows sending arbitrary commands as long as they are
+prefixed with "oem". This allows running generic U-Boot commands over
+fastboot without UUU, which is especially useful when not using USB.
+This is really the route we should have gone in the first place when
+adding these commands.
+
+While we're here, clean up the UUU Kconfig a bit.
+
+Signed-off-by: Sean Anderson <sean.anderson@seco.com>
+Reviewed-by: Heiko Schocher <hs@denx.de>
+(cherry picked from commit f3d914cfdd5ac611d99f04096497f4cd13dd6aaa)
+---
+ doc/android/fastboot.rst      | 18 ++++++++++++++++++
+ drivers/fastboot/Kconfig      | 19 ++++++++++++++-----
+ drivers/fastboot/fb_command.c | 14 ++++++++++++--
+ include/fastboot.h            |  3 +++
+ 4 files changed, 47 insertions(+), 7 deletions(-)
+
+--- a/doc/android/fastboot.rst
++++ b/doc/android/fastboot.rst
+@@ -28,6 +28,7 @@ The following OEM commands are supported
+ - ``oem partconf`` - this executes ``mmc partconf %x <arg> 0`` to configure eMMC
+   with <arg> = boot_ack boot_partition
+ - ``oem bootbus``  - this executes ``mmc bootbus %x %s`` to configure eMMC
++- ``oem run`` - this executes an arbitrary U-Boot command
+ 
+ Support for both eMMC and NAND devices is included.
+ 
+@@ -227,6 +228,23 @@ and on the U-Boot side you should see::
+ 
+    Starting kernel ...
+ 
++Running Shell Commands
++^^^^^^^^^^^^^^^^^^^^^^
++
++Normally, arbitrary U-Boot command execution is not enabled. This is so
++fastboot can be used to update systems using verified boot. However, such
++functionality can be useful for production or when verified boot is not in use.
++Enable ``CONFIG_FASTBOOT_OEM_RUN`` to use this functionality. This will enable
++``oem run`` command, which can be used with the fastboot client. For example,
++to print "Hello at 115200 baud" (or whatever ``CONFIG_BAUDRATE`` is), run::
++
++    $ fastboot oem run:'echo Hello at $baudrate baud'
++
++You can run any command you would normally run on the U-Boot command line,
++including multiple commands (using e.g. ``;`` or ``&&``) and control structures
++(``if``, ``while``, etc.). The exit code of ``fastboot`` will reflect the exit
++code of the command you ran.
++
+ References
+ ----------
+ 
+--- a/drivers/fastboot/Kconfig
++++ b/drivers/fastboot/Kconfig
+@@ -80,12 +80,13 @@ config FASTBOOT_FLASH
+ 	  this to enable the "fastboot flash" command.
+ 
+ config FASTBOOT_UUU_SUPPORT
+-	bool "Enable FASTBOOT i.MX UUU special command"
++	bool "Enable UUU support"
+ 	help
+-	  The fastboot protocol includes "UCmd" and "ACmd" command.
+-	  Be aware that you provide full access to any U-Boot command,
+-	  including working with memory and may open a huge backdoor,
+-	  when enabling this option.
++	  This extends the fastboot protocol with the "UCmd" and "ACmd"
++	  commands, which are used by NXP's "universal update utility" (UUU).
++	  These commands allow running any shell command. Do not enable this
++	  feature if you are using verified boot, as it will allow an attacker
++	  to bypass any restrictions you have in place.
+ 
+ config FASTBOOT_MULTI_FLASH_OPTION
+ 	bool "Enable FASTBOOT flash multi option"
+@@ -314,6 +315,14 @@ config SPL_FASTBOOT_CMD_OEM_ENV_ACCESS
+ 	  Add support for the "oem env:get/set" command from a fastboot client. This command
+ 	  include read, write env variabes in SPL stage.
+ 
++config FASTBOOT_OEM_RUN
++	bool "Enable the 'oem run' command"
++	help
++	  This extends the fastboot protocol with an "oem run" command. This
++	  command allows running arbitrary U-Boot shell commands. Do not enable
++	  this feature if you are using verified boot, as it will allow an
++	  attacker to bypass any restrictions you have in place.
++
+ endif # FASTBOOT
+ 
+ endmenu
+--- a/drivers/fastboot/fb_command.c
++++ b/drivers/fastboot/fb_command.c
+@@ -78,8 +78,10 @@ static void oem_erase(char *cmd_paramete
+ static void oem_env(char *cmd_parameter, char *response);
+ #endif
+ 
+-#if CONFIG_IS_ENABLED(FASTBOOT_UUU_SUPPORT)
++#if CONFIG_IS_ENABLED(FASTBOOT_UUU_SUPPORT) || CONFIG_IS_ENABLED(FASTBOOT_OEM_RUN)
+ static void run_ucmd(char *, char *);
++#endif
++#if CONFIG_IS_ENABLED(FASTBOOT_UUU_SUPPORT)
+ static void run_acmd(char *, char *);
+ #endif
+ 
+@@ -198,6 +200,12 @@ static const struct {
+ 		.dispatch = run_acmd,
+ 	},
+ #endif
++#if CONFIG_IS_ENABLED(FASTBOOT_OEM_RUN)
++	[FASTBOOT_COMMAND_OEM_RUN] = {
++		.command = "oem run",
++		.dispatch = run_ucmd,
++	},
++#endif
+ };
+ 
+ /**
+@@ -540,7 +548,7 @@ static void erase(char *cmd_parameter, c
+ }
+ #endif
+ 
+-#if CONFIG_IS_ENABLED(FASTBOOT_UUU_SUPPORT)
++#if CONFIG_IS_ENABLED(FASTBOOT_UUU_SUPPORT) || CONFIG_IS_ENABLED(FASTBOOT_OEM_RUN)
+ /**
+  * run_ucmd() - Execute the UCmd command
+  *
+@@ -560,7 +568,9 @@ static void run_ucmd(char *cmd_parameter
+ 	else
+ 		fastboot_okay(NULL, response);
+ }
++#endif
+ 
++#if CONFIG_IS_ENABLED(FASTBOOT_UUU_SUPPORT)
+ static char g_a_cmd_buff[64];
+ 
+ void fastboot_acmd_complete(void)
+--- a/include/fastboot.h
++++ b/include/fastboot.h
+@@ -62,6 +62,9 @@ enum {
+ 	FASTBOOT_COMMAND_ACMD,
+ 	FASTBOOT_COMMAND_UCMD,
+ #endif
++#if CONFIG_IS_ENABLED(FASTBOOT_OEM_RUN)
++	FASTBOOT_COMMAND_OEM_RUN,
++#endif
+ 	FASTBOOT_COMMAND_COUNT
+ };
+ 
