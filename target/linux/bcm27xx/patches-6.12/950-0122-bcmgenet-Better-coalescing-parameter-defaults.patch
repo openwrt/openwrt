@@ -18,7 +18,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
 
 --- a/drivers/net/ethernet/broadcom/genet/bcmgenet.c
 +++ b/drivers/net/ethernet/broadcom/genet/bcmgenet.c
-@@ -2672,7 +2672,7 @@ static void bcmgenet_init_tx_ring(struct
+@@ -2682,7 +2682,7 @@ static void bcmgenet_init_tx_ring(struct
  
  	bcmgenet_tdma_ring_writel(priv, index, 0, TDMA_PROD_INDEX);
  	bcmgenet_tdma_ring_writel(priv, index, 0, TDMA_CONS_INDEX);
@@ -27,7 +27,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
  	/* Disable rate control for now */
  	bcmgenet_tdma_ring_writel(priv, index, flow_period_val,
  				  TDMA_FLOW_PERIOD);
-@@ -4079,6 +4079,7 @@ static int bcmgenet_probe(struct platfor
+@@ -4089,6 +4089,7 @@ static int bcmgenet_probe(struct platfor
  		priv->rx_rings[i].priv = priv;
  		priv->rx_rings[i].index = i;
  		priv->rx_rings[i].rx_max_coalesced_frames = 1;
