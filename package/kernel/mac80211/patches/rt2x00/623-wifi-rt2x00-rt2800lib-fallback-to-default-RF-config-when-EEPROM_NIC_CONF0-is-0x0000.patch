@@ -1,0 +1,44 @@
+From 3ba17a56dba6912aa4a1f8622799b60eca05c383 Mon Sep 17 00:00:00 2001
+From: Alessandro Petrozzelli <apetrozzelli@gmail.com>
+Date: Sat, 31 Oct 2026 00:46:36 +0100
+Subject: [PATCH] wifi: rt2x00: rt2800lib: fallback to default RF config when
+ EEPROM_NIC_CONF0 is 0x0000
+
+On some Ralink PCI/PCIe wireless cards, such as the AzureWave AW-NE766
+(Ralink RT2790 / RT2872, PCI ID 1814:0781, subsystem 1814:2790) bundled
+in the ASUS EeeBox PC B202, reading EEPROM_NIC_CONF0 returns 0x0000
+instead of 0xffff when the EEPROM word is uninitialized.
+
+Currently, rt2800_validate_eeprom() only triggers the default RF2820
+(1T2R) configuration fallback when EEPROM_NIC_CONF0 is 0xffff, unlike
+other EEPROM validation checks in the same function (such as LNA gain
+fields) which already check for both 0x00 and 0xff. As a result,
+EEPROM_NIC_CONF0_RF_TYPE remains 0x0000 and rt2800_init_eeprom() aborts
+device initialization with -ENODEV:
+
+  rt2x00_set_rt: Info - RT chipset 2872, rev 0200 detected
+  rt2800_init_eeprom: Error - Invalid RF chipset 0x0000 detected
+  rt2x00lib_probe_dev: Error - Failed to allocate device
+
+Since 0x0000 is never a valid RF_TYPE (valid chipsets start at
+RF2820 = 0x0001), extend the EEPROM_NIC_CONF0 fallback check to also
+handle 0x0000 so that these cards initialize and operate properly.
+
+Link: https://lore.kernel.org/r/20261031-fix-rt2800-eeprom-nic-conf0-zero-v1-1-a118ee775fcb@gmail.com
+Acked-by: Stanislaw Gruszka <stf_xl@wp.pl>
+Signed-off-by: Alessandro Petrozzelli <apetrozzelli@gmail.com>
+---
+ drivers/net/wireless/ralink/rt2x00/rt2800lib.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
++++ b/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
+@@ -11127,7 +11127,7 @@ static int rt2800_validate_eeprom(struct
+ 		return retval;
+ 
+ 	word = rt2800_eeprom_read(rt2x00dev, EEPROM_NIC_CONF0);
+-	if (word == 0xffff) {
++	if (word == 0xffff || word == 0x0000) {
+ 		rt2x00_set_field16(&word, EEPROM_NIC_CONF0_RXPATH, 2);
+ 		rt2x00_set_field16(&word, EEPROM_NIC_CONF0_TXPATH, 1);
+ 		rt2x00_set_field16(&word, EEPROM_NIC_CONF0_RF_TYPE, RF2820);
