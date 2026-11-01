@@ -69,10 +69,10 @@
 	keys {
 		compatible = "gpio-keys";
 
-		mode {
-			label = "restore";
+		button-reset {
+			label = "reset";
 			gpios = <&gpio0 22 GPIO_ACTIVE_LOW>;
-			linux,code = <BTN_0>;
+			linux,code = <KEY_RESTART>;
 		};
 	};
 
