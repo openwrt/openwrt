@@ -7,6 +7,15 @@ board=$(board_name)
 board_config_update
 
 case $board in
+cudy,wr1300-v4)
+	ucidef_set_led_netdev "wan" "WAN" "green:wan" "wan" "link tx rx"
+	ucidef_set_led_netdev "lan1" "LAN1" "green:lan1" "lan1" "link tx rx"
+	ucidef_set_led_netdev "lan2" "LAN2" "green:lan2" "lan2" "link tx rx"
+	ucidef_set_led_netdev "lan3" "LAN3" "green:lan3" "lan3" "link tx rx"
+	ucidef_set_led_netdev "lan4" "LAN4" "green:lan4" "lan4" "link tx rx"
+	ucidef_set_led_wlan "wlan2g" "WiFi 2.4GHz" "green:wlan2g" "phy0tpt"
+	ucidef_set_led_wlan "wlan5g" "WiFi 5GHz" "green:wlan5g" "phy1tpt"
+	;;
 alfa-network,ax1800rm)
 	ucidef_set_led_netdev "lan1" "lan1" "green:lan1" "lan1"
 	ucidef_set_led_netdev "lan2" "lan2" "green:lan2" "lan2"
