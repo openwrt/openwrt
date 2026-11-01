@@ -13,6 +13,16 @@
 #include "l3.h"
 #include "rtl-otto.h"
 
+/* Hardware encodings for L2 action fields. */
+enum otto_l2_action {
+	OTTO_L2_ACTION_FORWARD = 0,
+	OTTO_L2_ACTION_DROP = 1,
+	OTTO_L2_ACTION_TRAP2CPU = 2,
+	OTTO_L2_ACTION_COPY2CPU = 3,
+	OTTO_L2_ACTION_TRAP2MASTER = 4,
+	OTTO_L2_ACTION_COPY2MASTER = 5,
+};
+
 #define RTL838X_L2_LRN_CONSTRT			(0x329C)
 #define RTL839X_L2_LRN_CONSTRT			(0x3910)
 #define RTL930X_L2_LRN_CONSTRT_CTRL		(0x909c)
@@ -649,17 +659,17 @@ void otto_l2_838x_enable_learning(struct otto_dsa_priv *priv, int port, bool ena
 			  0x3fff << 2, enable ? (0x3fff << 2) : 0);
 }
 
-void otto_l2_838x_enable_flood(struct otto_dsa_priv *priv,
-			       int port, enum rtldsa_flood_type mode)
+void otto_l2_838x_enable_flood(struct otto_dsa_priv *priv, int port, bool enable)
 {
+	enum otto_l2_action action = enable ? OTTO_L2_ACTION_FORWARD : OTTO_L2_ACTION_DROP;
+
 	/* 0: Forward
 	 * 1: Disable
 	 * 2: to CPU
 	 * 3: Copy to CPU
 	 */
-	/* Preserve (old & ~clear) | set, including set bits outside clear. */
 	regmap_write_bits(priv->map, RTL838X_L2_PORT_LRN_CONSTRT + (port << 2),
-			  0x3 | mode, mode);
+			  GENMASK(1, 0), action);
 }
 
 void otto_l2_838x_enable_mcast_flood(struct otto_dsa_priv *priv, int port, bool enable)
@@ -985,16 +995,17 @@ void otto_l2_839x_enable_learning(struct otto_dsa_priv *priv, int port, bool ena
 			  0x7fff << 2, enable ? (0x7fff << 2) : 0);
 }
 
-void otto_l2_839x_enable_flood(struct otto_dsa_priv *priv,
-			       int port, enum rtldsa_flood_type mode)
+void otto_l2_839x_enable_flood(struct otto_dsa_priv *priv, int port, bool enable)
 {
+	enum otto_l2_action action = enable ? OTTO_L2_ACTION_FORWARD : OTTO_L2_ACTION_DROP;
+
 	/* 0: Forward
 	 * 1: Disable
 	 * 2: to CPU
 	 * 3: Copy to CPU
 	 */
 	regmap_write_bits(priv->map, RTL839X_L2_PORT_LRN_CONSTRT + (port << 2),
-			  0x3 | mode, mode);
+			  GENMASK(1, 0), action);
 }
 
 void otto_l2_839x_enable_mcast_flood(struct otto_dsa_priv *priv, int port, bool enable)
@@ -1087,26 +1098,26 @@ void otto_l2_930x_enable_learning(struct otto_dsa_priv *priv, int port, bool ena
 			  GENMASK(17, 3), enable ? (0x7ffe << 3) : 0);
 }
 
-void otto_l2_930x_set_port_new_sa_fwd(struct otto_dsa_priv *priv,
-				      int port, enum rtldsa_flood_type mode)
+void otto_l2_930x_set_port_new_sa_trap(struct otto_dsa_priv *priv, int port, bool trap)
 {
+	enum otto_l2_action action = trap ? OTTO_L2_ACTION_TRAP2CPU : OTTO_L2_ACTION_FORWARD;
 	u32 new_sa_fwd_shift = (port % 10) * 3;
-	u32 val = mode << new_sa_fwd_shift;
+	u32 val = action << new_sa_fwd_shift;
 
 	regmap_write_bits(priv->map, otto_l2_930x_port_new_sa_fwd(port),
-			  GENMASK(new_sa_fwd_shift + 2, new_sa_fwd_shift) | val, val);
+			  GENMASK(new_sa_fwd_shift + 2, new_sa_fwd_shift), val);
 }
 
-void otto_l2_930x_enable_flood(struct otto_dsa_priv *priv,
-			       int port, enum rtldsa_flood_type mode)
+void otto_l2_930x_enable_flood(struct otto_dsa_priv *priv, int port, bool enable)
 {
+	enum otto_l2_action action = enable ? OTTO_L2_ACTION_FORWARD : OTTO_L2_ACTION_DROP;
 	u32 port_mask = BIT(port);
 	u32 val;
 
-	val = (mode == RTLDSA_FLOOD_TYPE_FORWARD) ? port_mask : 0;
+	val = enable ? port_mask : 0;
 
 	regmap_write_bits(priv->map, RTL930X_L2_LRN_PORT_CONSTRT_CTRL + port * 4,
-			  GENMASK(2, 0) | mode, mode);
+			  GENMASK(2, 0), action);
 
 	regmap_write_bits(priv->map, RTL930X_L2_UNKN_UC_FLD_PMSK,
 			  port_mask, val);
@@ -1803,28 +1814,28 @@ void otto_l2_931x_enable_learning(struct otto_dsa_priv *priv, int port, bool ena
 			  GENMASK(18, 3), enable ? (0xfffe << 3) : 0);
 }
 
-void otto_l2_931x_set_port_new_sa_fwd(struct otto_dsa_priv *priv,
-				      int port, enum rtldsa_flood_type mode)
+void otto_l2_931x_set_port_new_sa_trap(struct otto_dsa_priv *priv, int port, bool trap)
 {
+	enum otto_l2_action action = trap ? OTTO_L2_ACTION_TRAP2CPU : OTTO_L2_ACTION_FORWARD;
 	u32 new_sa_fwd_shift = (port % 10) * 3;
-	u32 val = mode << new_sa_fwd_shift;
+	u32 val = action << new_sa_fwd_shift;
 
 	regmap_write_bits(priv->map, otto_l2_931x_port_new_sa_fwd(port),
-			  GENMASK(new_sa_fwd_shift + 2, new_sa_fwd_shift) | val, val);
+			  GENMASK(new_sa_fwd_shift + 2, new_sa_fwd_shift), val);
 }
 
-void otto_l2_931x_enable_flood(struct otto_dsa_priv *priv,
-			       int port, enum rtldsa_flood_type mode)
+void otto_l2_931x_enable_flood(struct otto_dsa_priv *priv, int port, bool enable)
 {
+	enum otto_l2_action action = enable ? OTTO_L2_ACTION_FORWARD : OTTO_L2_ACTION_DROP;
 	/* RTL931X_L2_UNKN_UC_FLD_PMSK is big-endian */
 	u32 port_offset = ((63 - port) / 32) * 4;
 	u32 port_mask = BIT(port % 32);
 	u32 val;
 
-	val = (mode == RTLDSA_FLOOD_TYPE_FORWARD) ? port_mask : 0;
+	val = enable ? port_mask : 0;
 
 	regmap_write_bits(priv->map, RTL931X_L2_LRN_PORT_CONSTRT_CTRL + port * 4,
-			  GENMASK(2, 0) | mode, mode);
+			  GENMASK(2, 0), action);
 
 	regmap_write_bits(priv->map, RTL931X_L2_UNKN_UC_FLD_PMSK + port_offset,
 			  port_mask, val);
