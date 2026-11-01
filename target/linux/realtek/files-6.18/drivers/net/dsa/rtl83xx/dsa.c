@@ -847,7 +847,7 @@ static int rtldsa_port_bridge_join(struct dsa_switch *ds, int port, struct dsa_b
 		priv->r->set_static_move_action(priv, port, false);
 
 	/* Set to disabled in all MSTs, common code will take care of CIST */
-	rtldsa_port_non_cist_states_set(priv, port, BR_STATE_DISABLED);
+	otto_stp_port_non_cist_states_set(priv, port, BR_STATE_DISABLED);
 
 	mutex_unlock(&priv->reg_mutex);
 
@@ -876,7 +876,7 @@ static void rtldsa_port_bridge_leave(struct dsa_switch *ds, int port, struct dsa
 		priv->r->set_static_move_action(priv, port, true);
 
 	/* Set to forwarding in all MSTs, common code will take care of CIST */
-	rtldsa_port_non_cist_states_set(priv, port, BR_STATE_FORWARDING);
+	otto_stp_port_non_cist_states_set(priv, port, BR_STATE_FORWARDING);
 
 	mutex_unlock(&priv->reg_mutex);
 }
@@ -1420,9 +1420,9 @@ const struct dsa_switch_ops rtldsa_83xx_switch_ops = {
 	.set_ageing_time	= rtldsa_set_ageing_time,
 	.port_bridge_join	= rtldsa_port_bridge_join,
 	.port_bridge_leave	= rtldsa_port_bridge_leave,
-	.port_stp_state_set	= rtldsa_port_stp_state_set,
+	.port_stp_state_set	= otto_stp_port_state_set,
 	.port_fast_age		= rtldsa_port_fast_age,
-	.port_mst_state_set	= rtldsa_port_mst_state_set,
+	.port_mst_state_set	= otto_stp_port_mst_state_set,
 
 	.port_vlan_filtering	= otto_vlan_port_filtering,
 	.port_vlan_protocol	= rtldsa_port_vlan_protocol,
@@ -1487,9 +1487,9 @@ const struct dsa_switch_ops rtldsa_93xx_switch_ops = {
 	.set_ageing_time	= rtldsa_set_ageing_time,
 	.port_bridge_join	= rtldsa_port_bridge_join,
 	.port_bridge_leave	= rtldsa_port_bridge_leave,
-	.port_stp_state_set	= rtldsa_port_stp_state_set,
+	.port_stp_state_set	= otto_stp_port_state_set,
 	.port_fast_age		= rtldsa_port_fast_age,
-	.port_mst_state_set	= rtldsa_port_mst_state_set,
+	.port_mst_state_set	= otto_stp_port_mst_state_set,
 
 	.port_vlan_filtering	= otto_vlan_port_filtering,
 	.port_vlan_protocol	= rtldsa_port_vlan_protocol,

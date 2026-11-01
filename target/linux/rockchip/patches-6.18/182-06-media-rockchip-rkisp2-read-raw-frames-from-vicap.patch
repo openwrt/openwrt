@@ -1,4 +1,4 @@
-From ffc2ce81ff682865265804a39cf7887a85dcc5a1 Mon Sep 17 00:00:00 2001
+From e26da203a4d12109118a18a4f49cb7eae790b49f Mon Sep 17 00:00:00 2001
 From: Daniel Golle <daniel@makrotopia.org>
 Date: Fri, 16 Oct 2026 23:54:17 +0100
 Subject: [PATCH] media: rockchip: rkisp2: Read raw frames from VICAP on the
@@ -19,17 +19,32 @@ disabled. Select the readback input before the first trigger, as the
 hardware drops the trigger of the write that changes the input mode in
 about 7 % of the stream starts.
 
+The readback engine takes the physical address the VICAP DMA writes the
+frame to. While the ISP IOMMU is on the identity domain that base
+translates 1:1, but a translated domain attached to the ISP faults on
+it, so every shared buffer is mapped into the current domain at its own
+physical address and unmapped at release while the group is still on
+that domain. Detaching or re-attaching the domain instead would
+reprogram the SMMU while the ISP is streaming.
+
+The readback input selection is normally made when the first capture
+output starts streaming, and the in-kernel feed can run without any
+capture output, so the VICAP start selects the readback input as well
+and latches it with the soft update the capture path uses. A mi_raw
+debugfs dump shows the readback configuration.
+
 Assisted-by: LLM
 Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 ---
  .../media/platform/rockchip/rkisp2/Makefile   |   3 +-
  .../platform/rockchip/rkisp2/rkisp2-capture.c |   4 +-
- .../platform/rockchip/rkisp2/rkisp2-common.h  |  37 +++
+ .../platform/rockchip/rkisp2/rkisp2-common.h  |  37 ++
+ .../platform/rockchip/rkisp2/rkisp2-debug.c   |  22 +-
  .../platform/rockchip/rkisp2/rkisp2-dev.c     |   9 +-
- .../platform/rockchip/rkisp2/rkisp2-dmarx.c   | 183 +++++++++---
- .../platform/rockchip/rkisp2/rkisp2-isp.c     |  91 ++++--
- .../platform/rockchip/rkisp2/rkisp2-vicap.c   | 279 ++++++++++++++++++
- 7 files changed, 544 insertions(+), 62 deletions(-)
+ .../platform/rockchip/rkisp2/rkisp2-dmarx.c   | 183 ++++++++--
+ .../platform/rockchip/rkisp2/rkisp2-isp.c     |  91 +++--
+ .../platform/rockchip/rkisp2/rkisp2-vicap.c   | 322 ++++++++++++++++++
+ 8 files changed, 608 insertions(+), 63 deletions(-)
  create mode 100644 drivers/media/platform/rockchip/rkisp2/rkisp2-vicap.c
 
 --- a/drivers/media/platform/rockchip/rkisp2/Makefile
@@ -55,7 +70,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  		/* Force cfg update.  */
  		reg = rkisp2_read(rkisp2, RKISP2_CIF_MI_INIT)
  		    & RKISP2_CIF_MI_INIT_MP_OUTPUT_MASK;
-@@ -961,7 +963,7 @@ static void rkisp2_pipeline_stream_disab
+@@ -968,7 +970,7 @@ static void rkisp2_pipeline_stream_disab
  	 * If the other capture is streaming, isp and sensor nodes shouldn't
  	 * be disabled, skip them.
  	 */
@@ -146,15 +161,15 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	struct rkisp2_params params;
  	struct rkisp2_stats stats;
  	struct media_pipeline pipe;
-@@ -611,6 +630,7 @@ irqreturn_t rkisp2_isp_isr(int irq, void
- irqreturn_t rkisp2_capture_isr(int irq, void *ctx);
+@@ -612,6 +631,7 @@ irqreturn_t rkisp2_capture_isr(int irq,
  irqreturn_t rkisp2_mipi_isr(int irq, void *ctx);
  void rkisp2_dmarx_isr(struct rkisp2_device *rkisp2);
+ bool rkisp2_dmarx_input_idle(struct rkisp2_device *rkisp2);
 +void rkisp2_dmarx_select_input(struct rkisp2_device *rkisp2);
  void rkisp2_params_isr(struct rkisp2_params *params);
  irqreturn_t rkisp2_stats_isr_eof(struct rkisp2_stats *stats);
  
-@@ -622,6 +642,23 @@ int rkisp2_isp_register(struct rkisp2_de
+@@ -623,6 +643,23 @@ int rkisp2_isp_register(struct rkisp2_de
  void rkisp2_isp_unregister(struct rkisp2_device *rkisp2);
  int rkisp2_dmarx_register(struct rkisp2_device *rkisp2);
  void rkisp2_dmarx_unregister(struct rkisp2_device *rkisp2);
@@ -178,6 +193,51 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  
  int rkisp2_params_register(struct rkisp2_device *rkisp2);
  void rkisp2_params_unregister(struct rkisp2_device *rkisp2);
+--- a/drivers/media/platform/rockchip/rkisp2/rkisp2-debug.c
++++ b/drivers/media/platform/rockchip/rkisp2/rkisp2-debug.c
+@@ -31,7 +31,7 @@ struct rkisp2_debug_register {
+ }
+ 
+ /* Keep this up-to-date when adding new registers. */
+-#define RKISP2_MAX_REG_LENGTH		21
++#define RKISP2_MAX_REG_LENGTH		22
+ 
+ static int rkisp2_debug_dump_regs(struct rkisp2_device *rkisp2,
+ 				  struct seq_file *m, unsigned int offset,
+@@ -103,6 +103,24 @@ static int rkisp2_debug_dump_isp_regs_sh
+ }
+ DEFINE_SHOW_ATTRIBUTE(rkisp2_debug_dump_isp_regs);
+ 
++static int rkisp2_debug_dump_mi_raw_show(struct seq_file *m, void *p)
++{
++	static const struct rkisp2_debug_register registers[] = {
++		{ CSI2RX_CTRL0, 0, "CSI2RX_CTRL0" },
++		{ CSI2RX_DATA_IDS_1, 0, "CSI2RX_DATA_IDS_1" },
++		{ CSI2RX_RAW_RD_CTRL, 0, "CSI2RX_RAW_RD_CTRL" },
++		{ CSI2RX_RAW_RD_PIC_SIZE, 0, "CSI2RX_RAW_RD_PIC_SIZE" },
++		{ MI_RAW2_RD_BASE, MI_RAW2_RD_BASE_SHD, "MI_RAW2_RD_BASE" },
++		{ MI_RAW2_RD_LENGTH, 0, "MI_RAW2_RD_LENGTH" },
++		{ MI_RD_CTRL2, 0, "MI_RD_CTRL2" },
++		{ /* Sentinel */ },
++	};
++	struct rkisp2_device *rkisp2 = m->private;
++
++	return rkisp2_debug_dump_regs(rkisp2, m, 0, registers);
++}
++DEFINE_SHOW_ATTRIBUTE(rkisp2_debug_dump_mi_raw);
++
+ static int rkisp2_debug_dump_mi_mp_show(struct seq_file *m, void *p)
+ {
+ 	static const struct rkisp2_debug_register registers[] = {
+@@ -226,6 +244,8 @@ void rkisp2_debug_init(struct rkisp2_dev
+ 			    &rkisp2_debug_dump_isp_regs_fops);
+ 	debugfs_create_file("mi_mp", 0444, regs_dir, rkisp2,
+ 			    &rkisp2_debug_dump_mi_mp_fops);
++	debugfs_create_file("mi_raw", 0444, regs_dir, rkisp2,
++			    &rkisp2_debug_dump_mi_raw_fops);
+ }
+ 
+ void rkisp2_debug_cleanup(struct rkisp2_device *rkisp2)
 --- a/drivers/media/platform/rockchip/rkisp2/rkisp2-dev.c
 +++ b/drivers/media/platform/rockchip/rkisp2/rkisp2-dev.c
 @@ -115,7 +115,8 @@ static int rkisp2_create_links(struct rk
@@ -229,7 +289,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  static const struct rkisp2_dmarx_fmt rkisp2_rawrd_formats[] = {
  	{
  		.fourcc = V4L2_PIX_FMT_SRGGB8,
-@@ -313,19 +316,25 @@ void rkisp2_dmarx_isr(struct rkisp2_devi
+@@ -335,19 +338,25 @@ void rkisp2_dmarx_isr(struct rkisp2_devi
  		spin_lock(&chan->buf_lock);
  		done = chan->curr_buf;
  		chan->curr_buf = NULL;
@@ -257,7 +317,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  		dev_dbg(rkisp2->dev, "%s: %s buffer %pad done\n",
  			__func__, chan->cfg->name, &done->buff_addr[0]);
  	}
-@@ -372,36 +381,53 @@ static int rkisp2_rawrd_buf_init(struct
+@@ -394,36 +403,53 @@ static int rkisp2_rawrd_buf_init(struct
  	return 0;
  }
  
@@ -324,7 +384,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	/*
  	 * TODO Use stream counter to stop/start all video nodes when all are
  	 * started / one is stopped
-@@ -409,6 +435,19 @@ static void rkisp2_rawrd_stop_streaming(
+@@ -431,6 +457,19 @@ static void rkisp2_rawrd_stop_streaming(
  	 * writing 0 is ok for now
  	 */
  	rkisp2_write(rkisp2, MI_RD_CTRL2, 0);
@@ -344,7 +404,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  
  	v4l2_pipeline_pm_put(entity);
  	pm_runtime_put(rkisp2->dev);
-@@ -416,18 +455,41 @@ static void rkisp2_rawrd_stop_streaming(
+@@ -438,18 +477,41 @@ static void rkisp2_rawrd_stop_streaming(
  	mutex_unlock(&rkisp2->stream_lock);
  }
  
@@ -388,7 +448,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	ret = video_device_pipeline_start(&chan->vnode.vdev, &rkisp2->pipe);
  	if (ret)
  		goto err_unlock;
-@@ -440,25 +502,7 @@ static int rkisp2_rawrd_start_streaming(
+@@ -462,25 +524,7 @@ static int rkisp2_rawrd_start_streaming(
  	if (ret)
  		goto err_pm_put;
  
@@ -415,7 +475,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  
  	mutex_unlock(&rkisp2->stream_lock);
  	return 0;
-@@ -473,6 +517,72 @@ err_unlock:
+@@ -495,6 +539,72 @@ err_unlock:
  	return ret;
  }
  
@@ -488,7 +548,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  static const struct vb2_ops rkisp2_rawrd_vb2_ops = {
  	.queue_setup = rkisp2_rawrd_queue_setup,
  	.buf_prepare = rkisp2_rawrd_buf_prepare,
-@@ -672,6 +782,7 @@ int rkisp2_dmarx_register(struct rkisp2_
+@@ -694,6 +804,7 @@ int rkisp2_dmarx_register(struct rkisp2_
  		chan->fmt_cnt = ARRAY_SIZE(rkisp2_rawrd_formats);
  		chan->id = i;
  		spin_lock_init(&chan->buf_lock);
@@ -644,13 +704,13 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  
 --- /dev/null
 +++ b/drivers/media/platform/rockchip/rkisp2/rkisp2-vicap.c
-@@ -0,0 +1,279 @@
+@@ -0,0 +1,322 @@
 +// SPDX-License-Identifier: (GPL-2.0-or-later OR MIT)
 +/*
 + * Rockchip ISP2 Driver - raw frames from the VICAP driver
 + */
 +
-+#include <linux/dma-mapping.h>
++#include <linux/iommu.h>
 +#include <linux/of.h>
 +#include <linux/platform_data/media/rkcif-toisp.h>
 +#include <linux/slab.h>
@@ -662,7 +722,9 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +struct rkisp2_vicap_buf {
 +	struct list_head entry;
 +	struct rkisp2_buffer rbuf;
-+	struct sg_table *sgt;
++	/* the iommu domain the buffer is mapped into, if any */
++	struct iommu_domain *iommu;
++	size_t iommu_size;
 +};
 +
 +static const struct {
@@ -704,21 +766,41 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +{
 +	struct rkisp2_vicap *vicap = priv;
 +	struct rkisp2_vicap_buf *buf;
-+	int ret;
++	struct iommu_domain *dom;
 +
 +	buf = kzalloc(sizeof(*buf), GFP_KERNEL);
 +	if (!buf)
 +		return -ENOMEM;
 +
-+	ret = dma_map_sgtable(vicap->rkisp2->dev, frame->sgt, DMA_TO_DEVICE, 0);
-+	if (ret) {
-+		kfree(buf);
-+		return ret;
++	/*
++	 * The readback engine programs the physical buffer base (the
++	 * address the CIF DMA writes the frame to), the same scheme
++	 * the capture path uses. While the ISP's IOMMU is in the
++	 * default identity (passthrough) domain, the base translates
++	 * 1:1. If a translated domain has been attached to the ISP
++	 * instead, the physical address is not mapped and the
++	 * readback faults. Map the buffer into the current domain at
++	 * its own physical address so the base is valid in both
++	 * cases. The domain must not be detached or re-attached here:
++	 * that reprograms the SMMU while the ISP is streaming.
++	 */
++	dom = iommu_get_domain_for_dev(vicap->rkisp2->dev);
++	if (dom && (dom->type & __IOMMU_DOMAIN_PAGING) &&
++	    dom->ops && dom->ops->map_pages) {
++		buf->iommu = dom;
++		buf->iommu_size = frame->sgt->sgl[0].length;
++		if (iommu_map(dom, frame->addr, frame->addr,
++			      buf->iommu_size, IOMMU_READ | IOMMU_WRITE,
++			      GFP_KERNEL)) {
++			dev_warn(vicap->rkisp2->dev,
++				 "VICAP: could not map readback buf 0x%llx\n",
++				 (unsigned long long)frame->addr);
++			buf->iommu = NULL;
++		}
 +	}
 +
-+	buf->sgt = frame->sgt;
 +	buf->rbuf.ext_cookie = frame->cookie;
-+	buf->rbuf.buff_addr[0] = sg_dma_address(frame->sgt->sgl);
++	buf->rbuf.buff_addr[0] = frame->addr;
 +	INIT_LIST_HEAD(&buf->rbuf.queue);
 +	list_add_tail(&buf->entry, &vicap->bufs);
 +
@@ -731,7 +813,16 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	struct rkisp2_vicap_buf *buf, *tmp;
 +
 +	list_for_each_entry_safe(buf, tmp, &vicap->bufs, entry) {
-+		dma_unmap_sgtable(vicap->rkisp2->dev, buf->sgt, DMA_TO_DEVICE, 0);
++		/*
++		 * Only unmap if the domain is still the one the buffer
++		 * was mapped into; the group may have been switched to
++		 * a different domain (or back to the default) in the
++		 * meantime, in which case the mapping is gone with it.
++		 */
++		if (buf->iommu &&
++		    buf->iommu == iommu_get_domain_for_dev(vicap->rkisp2->dev))
++			iommu_unmap(buf->iommu, buf->rbuf.buff_addr[0],
++				    buf->iommu_size);
 +		list_del(&buf->entry);
 +		kfree(buf);
 +	}
@@ -790,6 +881,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	};
 +	struct rkcif_toisp_format format;
 +	u32 fourcc;
++	u32 reg;
 +	int ret;
 +
 +	ret = rkisp2_vicap_call(vicap, RKCIF_TOISP_CMD_FORMAT_GET, &format);
@@ -810,6 +902,17 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +				     format.height);
 +	if (ret)
 +		return ret;
++
++	/*
++	 * The feed can run without a capture output, which is where the
++	 * readback input is normally selected; the soft update latches
++	 * the selection like the capture path does.
++	 */
++	rkisp2_dmarx_select_input(rkisp2);
++	reg = rkisp2_read(rkisp2, RKISP2_CIF_MI_INIT) &
++	      RKISP2_CIF_MI_INIT_MP_OUTPUT_MASK;
++	reg |= RKISP2_CIF_MI_INIT_SOFT_UPD;
++	rkisp2_write(rkisp2, RKISP2_CIF_MI_INIT, reg);
 +
 +	start.cfg.pixelformat = fourcc;
 +	start.cfg.width = format.width;

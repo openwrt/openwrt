@@ -39,8 +39,8 @@ Signed-off-by: Dom Cobley <popcornmix@gmail.com>
  	clk_disable_unprepare(vc4_hdmi->pixel_bvb_clock);
  	clk_disable_unprepare(vc4_hdmi->pixel_clock);
  
-@@ -3101,6 +3103,8 @@ static int vc4_hdmi_runtime_suspend(stru
- 	struct vc4_hdmi *vc4_hdmi = dev_get_drvdata(dev);
+@@ -3100,6 +3102,8 @@ static int vc4_hdmi_runtime_suspend(stru
+ 	spin_unlock_irqrestore(&vc4_hdmi->hw_lock, flags);
  
  	clk_disable_unprepare(vc4_hdmi->audio_clock);
 +	/* we no longer require a minimum clock rate */
@@ -63,7 +63,7 @@ Signed-off-by: Dom Cobley <popcornmix@gmail.com>
  	vc4->hvs = NULL;
 --- a/drivers/gpu/drm/vc4/vc4_v3d.c
 +++ b/drivers/gpu/drm/vc4/vc4_v3d.c
-@@ -376,6 +376,8 @@ static int vc4_v3d_runtime_suspend(struc
+@@ -373,6 +373,8 @@ static int vc4_v3d_runtime_suspend(struc
  
  	vc4_irq_disable(&vc4->base);
  

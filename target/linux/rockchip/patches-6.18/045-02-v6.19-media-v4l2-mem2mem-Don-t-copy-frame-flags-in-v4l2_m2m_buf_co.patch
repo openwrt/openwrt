@@ -71,7 +71,7 @@ Signed-off-by: Hans Verkuil <hverkuil+cisco@kernel.org>
  void rkvdec_run_postamble(struct rkvdec_ctx *ctx, struct rkvdec_run *run)
 --- a/drivers/media/platform/verisilicon/hantro_drv.c
 +++ b/drivers/media/platform/verisilicon/hantro_drv.c
-@@ -183,7 +183,7 @@ static void device_run(void *priv)
+@@ -184,7 +184,7 @@ static void device_run(void *priv)
  	if (ret)
  		goto err_cancel_job;
  
@@ -82,7 +82,7 @@ Signed-off-by: Hans Verkuil <hverkuil+cisco@kernel.org>
  		goto err_cancel_job;
 --- a/drivers/media/v4l2-core/v4l2-mem2mem.c
 +++ b/drivers/media/v4l2-core/v4l2-mem2mem.c
-@@ -1288,14 +1288,9 @@ void v4l2_m2m_buf_queue(struct v4l2_m2m_
+@@ -1311,14 +1311,9 @@ void v4l2_m2m_buf_queue(struct v4l2_m2m_
  EXPORT_SYMBOL_GPL(v4l2_m2m_buf_queue);
  
  void v4l2_m2m_buf_copy_metadata(const struct vb2_v4l2_buffer *out_vb,
@@ -101,7 +101,7 @@ Signed-off-by: Hans Verkuil <hverkuil+cisco@kernel.org>
  
 --- a/include/media/v4l2-mem2mem.h
 +++ b/include/media/v4l2-mem2mem.h
-@@ -845,19 +845,13 @@ v4l2_m2m_dst_buf_remove_by_idx(struct v4
+@@ -866,19 +866,13 @@ v4l2_m2m_dst_buf_remove_by_idx(struct v4
   *
   * @out_vb: the output buffer that is the source of the metadata.
   * @cap_vb: the capture buffer that will receive the metadata.

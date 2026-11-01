@@ -252,6 +252,9 @@ define Device/netgear_wax214
 	$(call Device/UbiFit)
 	DEVICE_VENDOR := Netgear
 	DEVICE_MODEL := WAX214
+	DEVICE_ALT0_VENDOR := EnGenius
+	DEVICE_ALT0_MODEL := EWS357AP
+	DEVICE_ALT0_VARIANT := v3
 	BLOCKSIZE := 128k
 	PAGESIZE := 2048
 	DEVICE_DTS_CONFIG := config@cp03-c1

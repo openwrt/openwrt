@@ -1,4 +1,4 @@
-From 17b3869111860a9ce560f1fcade4a91de450f2ab Mon Sep 17 00:00:00 2001
+From ed06f017dafd19ba06af47a9c954b3e7b2c43aa6 Mon Sep 17 00:00:00 2001
 From: Daniel Golle <daniel@makrotopia.org>
 Date: Mon, 19 Oct 2026 11:56:45 +0100
 Subject: [PATCH] media: rockchip: rkisp2: Preserve the requested stride
@@ -11,6 +11,7 @@ consumers can share the capture buffers.
 Fixes: 47b5dfdf35d07 ("media: rockchip: rkisp2: Add rkisp2 driver")
 
 Assisted-by: LLM
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 ---
  drivers/media/platform/rockchip/rkisp2/rkisp2-capture.c | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)

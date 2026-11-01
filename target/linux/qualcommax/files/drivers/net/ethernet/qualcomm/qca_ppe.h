@@ -1715,6 +1715,7 @@ int ppe_scheduler_ready(struct qca_ppe_priv *priv);
 void ppe_scheduler_unready(struct qca_ppe_priv *priv);
 void ppe_scheduler_exit(struct qca_ppe_priv *priv);
 void ppe_port_queues_enable(struct qca_ppe_priv *priv, int port, bool en);
+bool ppe_port_shaped(struct qca_ppe_priv *priv, int port);
 void ppe_pause_update(struct qca_ppe_priv *priv);
 u32 ppe_port_queue_drops(struct qca_ppe_priv *priv, int port);
 struct seq_file;
