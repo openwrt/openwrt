@@ -1,0 +1,341 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Andrey Korshunov <razor1702@gmail.com>
+Subject: [PATCH] an7581: add uboot chainloader for Gemtek XR1710G
+
+The Gemtek XR1710G ships the same AXON vendor bootloader with
+Airoha BMT/BBT handling as the Gemtek W1700K, so it needs the same
+chainloader: the vendor bootloader only ever loads this U-Boot from the
+"chainloader" partition, and everything else lives in UBI.
+
+The board differs from the W1700K only in parts U-Boot does not use, so
+the configuration is a copy of the W1700K one with the names changed.
+
+On top of that:
+
+- CONFIG_PINCONF is replaced by CONFIG_PINCTRL_AIROHA_AN7581, as for
+  the AN7581 reference board. The W1700K configuration lacks the pin
+  controller driver, so the reset button and the status LEDs do not
+  work there.
+- The reset button is read: holding it while the chainloader starts
+  boots the recovery image via TFTP, retrying until a TFTP server
+  answers, so a device can be recovered without a serial console.
+- The default menu entry runs boot_ubi, so a broken production volume
+  falls back to the recovery volume, and when neither boots the
+  recovery image is loaded via TFTP until a server answers.
+- As on the Nokia boards, a ubi partition that does not attach is
+  formatted, missing ubootenv, ubootenv2 and factory volumes are
+  created, and the environment is saved once, so fw_printenv and
+  fw_setenv work. CONFIG_ENV_SIZE is the ubootenv volume size that
+  uboot-envtools uses. The factory volume holds the Wi-Fi EEPROM and
+  the MAC addresses and is filled by sysupgrade from the vendor
+  partition; created empty here, it lets the kernel fall back to random
+  MAC addresses instead of deferring the Ethernet probe, so the recovery
+  image has a working network.
+- MMC support is disabled, as on the Nokia boards: the board has no
+  eMMC, and with the environment in MMC and UBI the saveenv right after
+  a format went to MMC, because env_load() picks the first location when
+  none of them holds an environment.
+- The installer entries of the W1700K are dropped: the device is
+  installed by booting the recovery image and running sysupgrade.
+
+Based on the XR1710G chainloader by Kenneth Kasilag.
+
+Signed-off-by: Andrey Korshunov <razor1702@gmail.com>
+---
+ configs/an7581_xr1710g_defconfig                     | 106 ++++++++++++++++++++++++++++++++++++++++
+ defenvs/an7581_xr1710g_env                           |  31 +++++++++++++++++++++++++++++++
+ dts/upstream/src/arm64/airoha/an7581-xr1710g-ubi.dts | 131 ++++++++++++++++++++++++++++++++++++++++
+ arch/arm/dts/an7581-xr1710g-ubi-u-boot.dtsi          |   7 +++++++
+ 4 files changed, 275 insertions(+)
+ create mode 100644 configs/an7581_xr1710g_defconfig
+ create mode 100644 defenvs/an7581_xr1710g_env
+ create mode 100644 dts/upstream/src/arm64/airoha/an7581-xr1710g-ubi.dts
+ create mode 100644 arch/arm/dts/an7581-xr1710g-ubi-u-boot.dtsi
+
+--- /dev/null
++++ b/configs/an7581_xr1710g_defconfig
+@@ -0,0 +1,106 @@
++CONFIG_ARM=y
++CONFIG_ARCH_AIROHA=y
++CONFIG_AUTOBOOT_KEYED=y
++CONFIG_AUTOBOOT_MENU_SHOW=y
++CONFIG_POSITION_INDEPENDENT=y
++CONFIG_TARGET_AN7581=y
++CONFIG_TEXT_BASE=0x81e00000
++CONFIG_SYS_MALLOC_F_LEN=0x4000
++CONFIG_NR_DRAM_BANKS=1
++CONFIG_ENV_SIZE=0x1f000
++CONFIG_DM_GPIO=y
++CONFIG_DEFAULT_DEVICE_TREE="airoha/an7581-xr1710g-ubi"
++CONFIG_SYS_LOAD_ADDR=0x81800000
++CONFIG_BUILD_TARGET="u-boot.bin"
++# CONFIG_EFI_LOADER is not set
++CONFIG_FIT=y
++CONFIG_FIT_VERBOSE=y
++CONFIG_BOOTDELAY=30
++CONFIG_USE_PREBOOT=y
++CONFIG_DEFAULT_FDT_FILE="an7581-xr1710g-ubi"
++CONFIG_SYS_PBSIZE=1049
++CONFIG_SYS_CONSOLE_IS_IN_ENV=y
++# CONFIG_DISPLAY_BOARDINFO is not set
++CONFIG_HUSH_PARSER=y
++CONFIG_SYS_PROMPT="U-Boot> "
++CONFIG_SYS_MAXARGS=8
++CONFIG_CMD_BOOTZ=y
++CONFIG_CMD_BOOTMENU=y
++# CONFIG_CMD_ELF is not set
++# CONFIG_CMD_XIMG is not set
++CONFIG_CMD_BIND=y
++CONFIG_CMD_GPIO=y
++CONFIG_CMD_MTD=y
++CONFIG_CMD_SF_TEST=y
++CONFIG_CMD_SPI=y
++# CONFIG_CMD_SETEXPR is not set
++CONFIG_CMD_PING=y
++CONFIG_CMD_EXT4=y
++CONFIG_CMD_FAT=y
++CONFIG_CMD_FS_GENERIC=y
++CONFIG_CMD_MTDPARTS=y
++CONFIG_CMD_LOG=y
++CONFIG_OF_UPSTREAM=y
++CONFIG_ENV_OVERWRITE=y
++# CONFIG_ENV_IS_IN_MTD is not set
++CONFIG_ENV_RELOC_GD_ENV_ADDR=y
++CONFIG_ENV_VARS_UBOOT_RUNTIME_CONFIG=y
++CONFIG_NET_RANDOM_ETHADDR=y
++CONFIG_SYS_RX_ETH_BUFFER=8
++CONFIG_REGMAP=y
++CONFIG_SYSCON=y
++CONFIG_BUTTON=y
++CONFIG_BUTTON_GPIO=y
++CONFIG_CLK=y
++CONFIG_DMA=y
++CONFIG_LED=y
++CONFIG_LED_GPIO=y
++# CONFIG_MMC is not set
++CONFIG_MTD=y
++CONFIG_DM_MTD=y
++CONFIG_MTD_SPI_NAND=y
++CONFIG_DM_SPI_FLASH=y
++CONFIG_SPI_FLASH_EON=y
++CONFIG_SPI_FLASH_GIGADEVICE=y
++CONFIG_SPI_FLASH_ISSI=y
++CONFIG_SPI_FLASH_MACRONIX=y
++CONFIG_SPI_FLASH_SPANSION=y
++CONFIG_SPI_FLASH_STMICRO=y
++CONFIG_SPI_FLASH_WINBOND=y
++CONFIG_SPI_FLASH_MTD=y
++CONFIG_AIROHA_ETH=y
++CONFIG_DM_MDIO=y
++CONFIG_CMD_MII=y
++CONFIG_CMD_MDIO=y
++CONFIG_PHY=y
++CONFIG_PINCTRL=y
++CONFIG_PINCTRL_AIROHA_AN7581=y
++CONFIG_POWER_DOMAIN=y
++CONFIG_DM_REGULATOR=y
++CONFIG_DM_REGULATOR_FIXED=y
++CONFIG_RAM=y
++CONFIG_DM_SERIAL=y
++CONFIG_SYS_NS16550=y
++CONFIG_SPI=y
++CONFIG_DM_SPI=y
++CONFIG_AIROHA_SNFI_SPI=y
++CONFIG_CMD_UBI=y
++# CONFIG_CMD_UBI_RENAME is not set
++CONFIG_CMD_UBIFS=y
++CONFIG_ENV_IS_IN_UBI=y
++CONFIG_ENV_REDUNDANT=y
++CONFIG_ENV_UBI_PART="ubi"
++CONFIG_ENV_UBI_VOLUME="ubootenv"
++CONFIG_ENV_UBI_VOLUME_REDUND="ubootenv2"
++CONFIG_ENV_UBI_VID_OFFSET=0
++CONFIG_MTD_UBI=y
++CONFIG_MTD_UBI_MODULE=y
++CONFIG_MTD_UBI_WL_THRESHOLD=4096
++CONFIG_MTD_UBI_BEB_LIMIT=20
++# CONFIG_MTD_UBI_FASTMAP is not set
++CONFIG_UBI_BLOCK=y
++# CONFIG_UBIFS_SILENCE_MSG is not set
++# CONFIG_UBIFS_SILENCE_DEBUG_DUMP is not set
++CONFIG_ENV_USE_DEFAULT_ENV_TEXT_FILE=y
++CONFIG_ENV_DEFAULT_ENV_TEXT_FILE="defenvs/an7581_xr1710g_env"
++CONFIG_SHA512=y
+--- /dev/null
++++ b/defenvs/an7581_xr1710g_env
+@@ -0,0 +1,31 @@
++loadaddr=0x81800000
++initaddr=0x89000000
++ipaddr=192.168.1.1
++serverip=192.168.1.254
++bootfile=openwrt-airoha-an7581-gemtek_xr1710g-ubi-initramfs-recovery.itb
++bootled_pwr=status:red
++bootled_rec=status:blue
++boot_ubi=run ubi_prepare ; run boot_production ; run boot_recovery ; run boot_tftp_forever
++boot_production=led $bootled_pwr on ; run ubi_read_production && bootm $loadaddr#$bootconf ; led $bootled_pwr off
++boot_recovery=led $bootled_rec on ; run ubi_read_recovery && bootm $initaddr#$bootconf ; led $bootled_rec off
++boot_tftp=tftpboot $initaddr $bootfile && bootm $initaddr#$bootconf
++boot_tftp_forever=led $bootled_rec on ; while true ; do run boot_tftp ; sleep 1 ; done
++bootconf=config-1
++bootcmd=run boot_ubi
++bootdelay=3
++bootmenu_confirm_return=askenv - Press ENTER to return to menu ; bootmenu 60
++bootmenu_default=0
++bootmenu_delay=3
++bootmenu_title=      34m( ( ( mOpenWrt34m ) ) )
++bootmenu_0=Run default boot command.=run bootcmd
++bootmenu_1=Boot system via TFTP.=run boot_tftp ; run bootmenu_confirm_return
++bootmenu_2=Boot recovery system from flash.=run boot_recovery ; run bootmenu_confirm_return
++bootmenu_3=Reboot.=reset
++check_buttons=if button reset ; then run boot_tftp_forever ; fi
++preboot=run check_buttons
++ubi_read_production=ubi read $loadaddr fit && iminfo $loadaddr
++ubi_read_recovery=ubi check recovery && ubi read $initaddr recovery
++ubi_prepare=ubi part ubi || run ubi_format ; run ubi_create_vols ; env exists _init_env && run _init_env
++ubi_format=ubi detach ; mtd erase ubi && ubi part ubi ; reset
++ubi_create_vols=ubi check ubootenv || ubi create ubootenv 0x1f000 dynamic ; ubi check ubootenv2 || ubi create ubootenv2 0x1f000 dynamic ; ubi check factory || ubi create factory 0x10000 static
++_init_env=setenv _init_env ; saveenv ; saveenv
+--- /dev/null
++++ b/dts/upstream/src/arm64/airoha/an7581-xr1710g-ubi.dts
+@@ -0,0 +1,131 @@
++// SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
++/dts-v1/;
++
++/* Bootloader installs ATF here */
++/memreserve/ 0x80000000 0x200000;
++
++#include <dt-bindings/input/linux-event-codes.h>
++#include <dt-bindings/gpio/gpio.h>
++#include "en7581.dtsi"
++
++/ {
++	model = "Gemtek XR1710G (UBI)";
++	compatible = "gemtek,xr1710g-ubi", "airoha,an7581", "airoha,en7581";
++
++	aliases {
++		serial0 = &uart1;
++	};
++
++	chosen {
++		stdout-path = "serial0:115200n8";
++		linux,usable-memory-range = <0x0 0x80200000 0x0 0x7fe00000>;
++	};
++
++	memory@80000000 {
++		device_type = "memory";
++		reg = <0x0 0x80000000 0x0 0x80000000>;
++	};
++
++	gpio-keys {
++		compatible = "gpio-keys";
++
++		key-restart {
++			label = "reset";
++			gpios = <&en7581_pinctrl 0 GPIO_ACTIVE_LOW>;
++			linux,code = <KEY_RESTART>;
++		};
++	};
++
++	gpio-leds {
++		compatible = "gpio-leds";
++
++		led_status_green {
++			label = "status:green";
++			gpios = <&en7581_pinctrl 17 GPIO_ACTIVE_LOW>;
++			default-state = "off";
++		};
++
++		led_status_blue {
++			label = "status:blue";
++			gpios = <&en7581_pinctrl 19 GPIO_ACTIVE_LOW>;
++			default-state = "off";
++		};
++
++		led_status_white {
++			label = "status:white";
++			gpios = <&en7581_pinctrl 20 GPIO_ACTIVE_LOW>;
++			default-state = "off";
++		};
++
++		led_status_red {
++			label = "status:red";
++			gpios = <&en7581_pinctrl 29 GPIO_ACTIVE_LOW>;
++			default-state = "off";
++		};
++	};
++};
++
++&snfi {
++	status = "okay";
++};
++
++&spi_nand {
++	partitions {
++		compatible = "fixed-partitions";
++		#address-cells = <1>;
++		#size-cells = <1>;
++
++		vendor@0 {
++			label = "vendor";
++			reg = <0x0 0x600000>;
++			read-only;
++		};
++
++		chainloader@600000 {
++			label = "chainloader";
++			reg = <0x600000 0x100000>;
++			read-only;
++		};
++
++		ubi@700000 {
++			label = "ubi";
++			reg = <0x700000 0x1b700000>;
++		};
++
++		/* reserved for bad block table */
++		reserved_bmt@1be00000 {
++			label = "reserved_bmt";
++			reg = <0x1be00000 0x4200000>;
++			read-only;
++		};
++	};
++};
++
++&en7581_pinctrl {
++	gpio-ranges = <&en7581_pinctrl 0 13 47>;
++
++	pcie0_rst_pins: pcie0-rst-pins {
++		conf {
++			pins = "pcie_reset0";
++			drive-open-drain = <1>;
++		};
++	};
++};
++
++&pcie0 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&pcie0_rst_pins>;
++	status = "okay";
++};
++
++&i2c0 {
++	status = "okay";
++};
++
++&eth {
++	status = "okay";
++};
++
++&gdm1 {
++	status = "okay";
++};
+--- /dev/null
++++ b/arch/arm/dts/an7581-xr1710g-ubi-u-boot.dtsi
+@@ -0,0 +1,7 @@
++// SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
++
++#include "an7581-u-boot.dtsi"
++
++&gdm1 {
++	status = "okay";
++};
