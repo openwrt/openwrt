@@ -18,36 +18,6 @@
 #include "vlan.h"
 #include "stp.h"
 
-/* Register definition */
-#define RTL838X_MAC_PORT_CTRL(port)		(0xd560 + (((port) << 7)))
-
-/* MAC maximum packet length (jumbo frame) control.
- *
- * The switch MAC drops frames whose L2 length exceeds the configured maximum.
- * A family holds either one register per user port or a single one for the
- * whole switch. The length is a direct byte value held in two 14-bit fields
- * (high-speed links in [13:0], 10/100M links in [27:14]); bit 28 selects
- * whether VLAN tag bytes count towards the limit.
- */
-
-/* RTL838x and RTL839x hold one limit for the whole switch instead, bounding
- * the CPU port with it. RTL838x mirrors it in a second register, and the
- * vendor SDK writes both (dal_maple_switch_maxPktLenLinkSpeed_set()).
- */
-#define RTL838X_MAC_MAX_LEN_CTRL		(0xa9e0)
-#define RTL838X_MAC_MAX_LEN_CTRL_DUP		(0x6b00)
-
-/* RTL838x stops at what its datasheet gives, below the vendor SDK value */
-#define RTL838X_MAX_FRAME			10000
-
-/* MAC handling */
-#define RTL838X_MAC_LINK_STS			(0xa188)
-
-#define RTL838X_EEE_PORT_TX_EN			(0x014c)
-#define RTL838X_EEE_PORT_RX_EN			(0x0150)
-#define RTL838X_EEE_TX_TIMER_GIGA_CTRL		(0xaa04)
-#define RTL838X_EEE_TX_TIMER_GELITE_CTRL	(0xaa08)
-
 /* L2 functionality */
 #define RTL838X_L2_CTRL_0			(0x3200)
 
@@ -65,8 +35,6 @@
 #define RTL838X_IMR_PORT_LINK_STS_CHG		(0x1104)
 #define RTL838X_ISR_GLB_SRC			(0x1148)
 #define RTL838X_ISR_PORT_LINK_STS_CHG		(0x114C)
-
-#define RTL838X_SMI_GLB_CTRL			(0xa100) /* used by RTL838x EEE setup */
 
 #define RTL838X_RMA_BPDU_CTRL			(0x4330)
 
@@ -103,16 +71,6 @@ static inline int rtl838x_port_iso_ctrl(int p)
 	return RTL838X_PORT_ISO_CTRL(p);
 }
 
-static inline int rtl838x_mac_force_mode_ctrl(int p)
-{
-	return RTL838X_MAC_FORCE_MODE_CTRL + (p << 2);
-}
-
-static inline int rtl838x_mac_port_ctrl(int p)
-{
-	return RTL838X_MAC_PORT_CTRL(p);
-}
-
 static void rtl838x_traffic_set(struct otto_dsa_priv *priv, int source, u64 dest_matrix)
 {
 	regmap_write(priv->map, rtl838x_port_iso_ctrl(source), (u32)dest_matrix);
@@ -126,49 +84,6 @@ static void rtl838x_traffic_enable(struct otto_dsa_priv *priv, int source, int d
 static void rtl838x_traffic_disable(struct otto_dsa_priv *priv, int source, int dest)
 {
 	regmap_write_bits(priv->map, rtl838x_port_iso_ctrl(source), BIT(dest), 0);
-}
-
-/* Enables or disables the EEE/EEEP capability of a port */
-static void rtldsa_838x_set_mac_eee(struct otto_dsa_priv *priv, int port, bool enable)
-{
-	u32 v;
-
-	/* This works only for Ethernet ports, and on the RTL838X, ports from 24 are SFP */
-	if (port >= 24)
-		return;
-
-	pr_debug("In %s: setting port %d to %d\n", __func__, port, enable);
-	v = enable ? 0x3 : 0x0;
-
-	/* Set EEE state for 100 (bit 9) & 1000MBit (bit 10) */
-	regmap_write_bits(priv->map, priv->r->mac_force_mode_ctrl(port), GENMASK(10, 9), v << 9);
-
-	/* Set TX/RX EEE state */
-	if (enable) {
-		regmap_write_bits(priv->map, RTL838X_EEE_PORT_TX_EN, BIT(port), BIT(port));
-		regmap_write_bits(priv->map, RTL838X_EEE_PORT_RX_EN, BIT(port), BIT(port));
-	} else {
-		regmap_write_bits(priv->map, RTL838X_EEE_PORT_TX_EN, BIT(port), 0);
-		regmap_write_bits(priv->map, RTL838X_EEE_PORT_RX_EN, BIT(port), 0);
-	}
-	priv->ports[port].eee_enabled = enable;
-}
-
-static void rtl838x_init_eee(struct otto_dsa_priv *priv, bool enable)
-{
-	pr_debug("Setting up EEE, state: %d\n", enable);
-	regmap_write_bits(priv->map, RTL838X_SMI_GLB_CTRL, BIT(2), 0);
-
-	/* Set timers for EEE */
-	regmap_write(priv->map, RTL838X_EEE_TX_TIMER_GIGA_CTRL, 0x5001411);
-	regmap_write(priv->map, RTL838X_EEE_TX_TIMER_GELITE_CTRL, 0x5001417);
-
-	/* Enable EEE MAC support on ports */
-	for (int i = 0; i < priv->r->cpu_port; i++) {
-		if (priv->ports[i].phy)
-			priv->r->set_mac_eee(priv, i, enable);
-	}
-	priv->eee_enabled = enable;
 }
 
 static void rtl838x_set_igr_filter(struct otto_dsa_priv *priv, int port, enum igr_filter state)
