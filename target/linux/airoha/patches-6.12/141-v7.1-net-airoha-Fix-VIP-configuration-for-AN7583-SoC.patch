@@ -43,7 +43,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  	if (enable) {
  		airoha_fe_set(eth, REG_FE_VIP_PORT_EN, vip_port);
  		airoha_fe_set(eth, REG_FE_IFC_PORT_EN, vip_port);
-@@ -1738,7 +1726,7 @@ static int airoha_dev_set_macaddr(struct
+@@ -1756,7 +1744,7 @@ static int airoha_dev_set_macaddr(struct
  static int airhoha_set_gdm2_loopback(struct airoha_gdm_port *port)
  {
  	struct airoha_eth *eth = port->qdma->eth;
@@ -52,7 +52,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  	int src_port;
  
  	/* Forward the traffic to the proper GDM port */
-@@ -1768,9 +1756,7 @@ static int airhoha_set_gdm2_loopback(str
+@@ -1786,9 +1774,7 @@ static int airhoha_set_gdm2_loopback(str
  	airoha_fe_clear(eth, REG_FE_VIP_PORT_EN, BIT(AIROHA_GDM2_IDX));
  	airoha_fe_clear(eth, REG_FE_IFC_PORT_EN, BIT(AIROHA_GDM2_IDX));
  
@@ -63,7 +63,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  	if (src_port < 0)
  		return src_port;
  
-@@ -1784,7 +1770,7 @@ static int airhoha_set_gdm2_loopback(str
+@@ -1802,7 +1788,7 @@ static int airhoha_set_gdm2_loopback(str
  		      __field_prep(SP_CPORT_MASK(val), FE_PSE_PORT_CDM2));
  
  	if (port->id == AIROHA_GDM4_IDX && airoha_is_7581(eth)) {
@@ -72,7 +72,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  
  		airoha_fe_rmw(eth, REG_SRC_PORT_FC_MAP6, mask,
  			      __field_prep(mask, AIROHA_GDM2_IDX));
-@@ -2961,6 +2947,8 @@ static int airoha_alloc_gdm_port(struct
+@@ -2983,6 +2969,8 @@ static int airoha_alloc_gdm_port(struct
  	port->eth = eth;
  	port->dev = dev;
  	port->id = id;
@@ -81,7 +81,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  	eth->ports[p] = port;
  
  	return airoha_metadata_dst_alloc(port);
-@@ -3157,6 +3145,28 @@ static int airoha_en7581_get_src_port_id
+@@ -3179,6 +3167,28 @@ static int airoha_en7581_get_src_port_id
  	return -EINVAL;
  }
  
@@ -110,7 +110,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  static const char * const an7583_xsi_rsts_names[] = {
  	"xsi-mac",
  	"hsi0-mac",
-@@ -3186,6 +3196,26 @@ static int airoha_an7583_get_src_port_id
+@@ -3208,6 +3218,26 @@ static int airoha_an7583_get_src_port_id
  	return -EINVAL;
  }
  
@@ -137,7 +137,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  static const struct airoha_eth_soc_data en7581_soc_data = {
  	.version = 0x7581,
  	.xsi_rsts_names = en7581_xsi_rsts_names,
-@@ -3193,6 +3223,7 @@ static const struct airoha_eth_soc_data
+@@ -3215,6 +3245,7 @@ static const struct airoha_eth_soc_data
  	.num_ppe = 2,
  	.ops = {
  		.get_src_port_id = airoha_en7581_get_src_port_id,
@@ -145,7 +145,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  	},
  };
  
-@@ -3203,6 +3234,7 @@ static const struct airoha_eth_soc_data
+@@ -3225,6 +3256,7 @@ static const struct airoha_eth_soc_data
  	.num_ppe = 1,
  	.ops = {
  		.get_src_port_id = airoha_an7583_get_src_port_id,

@@ -22,7 +22,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
 
 --- a/drivers/net/ethernet/airoha/airoha_eth.c
 +++ b/drivers/net/ethernet/airoha/airoha_eth.c
-@@ -1020,8 +1020,6 @@ static int airoha_qdma_tx_irq_init(struc
+@@ -1019,8 +1019,6 @@ static int airoha_qdma_tx_irq_init(struc
  	struct airoha_eth *eth = qdma->eth;
  	dma_addr_t dma_addr;
  
@@ -31,7 +31,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  	irq_q->q = dmam_alloc_coherent(eth->dev, size * sizeof(u32),
  				       &dma_addr, GFP_KERNEL);
  	if (!irq_q->q)
-@@ -1031,6 +1029,9 @@ static int airoha_qdma_tx_irq_init(struc
+@@ -1030,6 +1028,9 @@ static int airoha_qdma_tx_irq_init(struc
  	irq_q->size = size;
  	irq_q->qdma = qdma;
  
@@ -41,7 +41,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  	airoha_qdma_wr(qdma, REG_TX_IRQ_BASE(id), dma_addr);
  	airoha_qdma_rmw(qdma, REG_TX_IRQ_CFG(id), TX_IRQ_DEPTH_MASK,
  			FIELD_PREP(TX_IRQ_DEPTH_MASK, size));
-@@ -1450,8 +1451,12 @@ static void airoha_qdma_cleanup(struct a
+@@ -1440,8 +1441,12 @@ static void airoha_qdma_cleanup(struct a
  		}
  	}
  
