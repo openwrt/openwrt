@@ -15,17 +15,8 @@
 #include <linux/regmap.h>
 #include <linux/reset.h>
 #include <linux/timer.h>
-#include <net/dsa.h>
-#include <net/dst_metadata.h>
 
 #include "rtl960x_gmac.h"
-
-#define RTL9607C_CPUTAG_CONFIG							\
-	(FIELD_PREP(CPUTAGCR_TSIZE, CPUTAGCR_SIZE_8B) |			\
-	 FIELD_PREP(CPUTAGCR_SWITCH, CPUTAGCR_FMT_APOLLOPRO) |		\
-	 FIELD_PREP(CPUTAGCR_RSIZE_L, CPUTAGCR_SIZE_8B) |		\
-	 FIELD_PREP(CPUTAGCR_PROTOCOL_MASK, CPUTAGCR_PROTO_MASK_8370) | \
-	 FIELD_PREP(CPUTAGCR_PROTOCOL_VAL, CPUTAGCR_PROTO_8370))
 
 #define RTL9607C_IO_CMD_CONFIG							\
 	(IO_CMD_MAX_DMA_128B |						\
@@ -42,14 +33,6 @@
 #define RTL9607C_IO_CMD1_CONFIG							\
 	(FIELD_PREP(IO_CMD1_DESC_FMT_EXTRA, IO_CMD1_DESC_FMT_APOLLO) | \
 	 IO_CMD1_RX_RING1)
-
-/*
- * DSA glue. Convert the rtl_otto TX trailer to descriptor port steering, and
- * pass the RX descriptor's source port through METADATA_HW_PORT_MUX. The DSA
- * core derives skb->offload_fwd_mark from bridge membership, so this path
- * cannot preserve the descriptor's per-frame trap reason.
- */
-#define DSA_TRAILER_LEN		4
 
 /* Datapath sizing */
 #define RX_RING_SIZE		1024	/* must be a power of two, from 16 to 4096 */
@@ -87,7 +70,6 @@ struct rtl960x_gmac {
 	u32 tx_tail;			/* next slot to reclaim */
 	spinlock_t tx_lock;		/* protects tx_head/tx_tail and the ring */
 	struct timer_list tx_timer;	/* TX completion failure backstop */
-	struct metadata_dst *dsa_meta[RTL960X_CPU_PORT];
 };
 
 /*
@@ -239,10 +221,12 @@ static void rtl960x_gmac_init_hw(struct rtl960x_gmac *priv)
 	regmap_update_bits(priv->map32, GMAC_CFG, CFG_RFIFO_SIZE,
 			   FIELD_PREP(CFG_RFIFO_SIZE, CFG_RFIFO_SIZE_2KB));
 
-	/* CPU tag: parsed into the descriptor opts fields, not inline. */
-	regmap_write(priv->map32, GMAC_CPUTAGCR,
-		     RTL9607C_CPUTAG_CONFIG | CPUTAGCR_EN_RX);
-	regmap_write(priv->map32, GMAC_CPUTAG1CR, CPUTAG1CR_SID);
+	/* CPUTAGCR_EN_RX bit of GMAC_CPUTAGCR register and TX_OPTS2_CPUTAG of
+	 * TX field descriptor make the CPU NIC itself handle the cpu tag frames,
+	 * from removing on switch->CPU and adding on CPU->switch respectively.
+	 * That is not needed as NET_DSA_TAG_RTL8_4_RTL9607C now handles it.
+	 */
+	regmap_write(priv->map32, GMAC_CPUTAGCR, 0);
 
 	/* Program the RX/TX ring bases. */
 	regmap_write(priv->map32, GMAC_RXFDP, priv->rx_ring_dma);
@@ -299,25 +283,20 @@ static void rtl960x_gmac_unmask_irqs(struct rtl960x_gmac *priv)
 static int rtl960x_gmac_rx(struct rtl960x_gmac *priv, int budget)
 {
 	struct net_device *dev = priv->dev;
-	bool dsa = netdev_uses_dsa(dev);
 	int done = 0;
 
 	while (done < budget) {
 		struct rtl960x_rx_desc *d = &priv->rx_ring[priv->rx_head];
 		bool last = (priv->rx_head == RX_RING_SIZE - 1);
 		struct sk_buff *skb, *new_skb;
-		u32 opts1, opts3;
+		u32 opts1;
 		dma_addr_t new_dma;
-		u8 src_port;
 		int len;
 
 		opts1 = d->opts1;
 		if (opts1 & DESC_OWN)		/* still owned by HW */
 			break;
 		dma_rmb();
-
-		opts3 = d->opts3;
-		src_port = FIELD_GET(RX_OPTS3_SRC_PORT, opts3);
 
 		/*
 		 * This single-buffer datapath only handles whole frames: each
@@ -358,9 +337,6 @@ static int rtl960x_gmac_rx(struct rtl960x_gmac *priv, int budget)
 
 		skb_reserve(skb, RX_SHIFT);	/* HW wrote the frame at buf + 2 */
 		skb_put(skb, len);
-		if (dsa && src_port < RTL960X_CPU_PORT)
-			skb_dst_set_noref(skb,
-					  &priv->dsa_meta[src_port]->dst);
 		skb->protocol = eth_type_trans(skb, dev);
 		dev->stats.rx_packets++;
 		dev->stats.rx_bytes += len;
@@ -371,8 +347,6 @@ static int rtl960x_gmac_rx(struct rtl960x_gmac *priv, int budget)
 		d->addr = new_dma;
 
 rearm_same:
-		d->opts2 = 0;
-		d->opts3 = 0;
 		dma_wmb();
 		d->opts1 = DESC_OWN | FIELD_PREP(DESC_LEN_MASK, RX_BUF_SIZE) |
 			   (last ? DESC_EOR : 0);
@@ -468,7 +442,6 @@ static netdev_tx_t rtl960x_gmac_start_xmit(struct sk_buff *skb,
 	struct rtl960x_gmac *priv = netdev_priv(dev);
 	struct rtl960x_tx_desc *d;
 	bool tx_empty, last;
-	int dest_port = -1;
 	u32 opts1, next;
 	dma_addr_t dma;
 	int len;
@@ -488,17 +461,6 @@ static netdev_tx_t rtl960x_gmac_start_xmit(struct sk_buff *skb,
 			return NETDEV_TX_BUSY;
 		}
 
-		/* Convert the rtl_otto trailer to descriptor port steering. */
-		if (netdev_uses_dsa(dev) && skb->len >= DSA_TRAILER_LEN) {
-			const u8 *t = skb->data + skb->len - DSA_TRAILER_LEN;
-
-			if (t[0] < RTL960X_CPU_PORT && t[1] == 0xab &&
-			    t[2] == 0xcd && t[3] == 0xef) {
-				dest_port = t[0];
-				skb_trim(skb, skb->len - DSA_TRAILER_LEN);
-			}
-		}
-
 		if (skb_put_padto(skb, TX_MIN_LEN))
 			return NETDEV_TX_OK;	/* skb freed by skb_put_padto */
 		len = skb->len;
@@ -516,14 +478,6 @@ static netdev_tx_t rtl960x_gmac_start_xmit(struct sk_buff *skb,
 		d = &priv->tx_ring[priv->tx_head];
 		priv->tx_skb[priv->tx_head] = skb;
 		d->addr = dma;
-		if (dest_port >= 0) {
-			d->opts2 = TX_OPTS2_CPUTAG |
-				   FIELD_PREP(TX_OPTS2_PORTMASK, BIT(dest_port));
-			d->opts3 = TX_OPTS3_KEEP | TX_OPTS3_DISLRN | TX_OPTS3_L34_KEEP;
-		} else {
-			d->opts2 = 0;
-			d->opts3 = 0;
-		}
 		d->opts4 = 0;
 		opts1 = DESC_OWN | DESC_FS | DESC_LS | TX_DESC_CRC |
 			FIELD_PREP(DESC_LEN_MASK, len) | (last ? DESC_EOR : 0);
@@ -671,36 +625,6 @@ static void rtl960x_gmac_assert_reset(void *gmac_rst)
 	reset_control_assert(gmac_rst);
 }
 
-static void rtl960x_gmac_free_metadata_dst(void *gmac)
-{
-	struct rtl960x_gmac *priv = gmac;
-
-	for (int i = 0; i < ARRAY_SIZE(priv->dsa_meta); i++) {
-		if (!priv->dsa_meta[i])
-			continue;
-
-		metadata_dst_free(priv->dsa_meta[i]);
-		priv->dsa_meta[i] = NULL;
-	}
-}
-
-static int rtl960x_gmac_alloc_metadata_dst(struct rtl960x_gmac *priv)
-{
-	for (int i = 0; i < ARRAY_SIZE(priv->dsa_meta); i++) {
-		struct metadata_dst *md_dst;
-
-		md_dst = metadata_dst_alloc(0, METADATA_HW_PORT_MUX,
-					    GFP_KERNEL);
-		if (!md_dst)
-			return -ENOMEM;
-
-		md_dst->u.port_info.port_id = i;
-		priv->dsa_meta[i] = md_dst;
-	}
-
-	return 0;
-}
-
 static int rtl960x_gmac_probe(struct platform_device *pdev)
 {
 	struct rtl960x_gmac *priv;
@@ -733,16 +657,6 @@ static int rtl960x_gmac_probe(struct platform_device *pdev)
 	priv->dma_dev = &pdev->dev;
 	spin_lock_init(&priv->tx_lock);
 	timer_setup(&priv->tx_timer, rtl960x_gmac_tx_timer, 0);
-
-	ret = rtl960x_gmac_alloc_metadata_dst(priv);
-	if (ret) {
-		rtl960x_gmac_free_metadata_dst(priv);
-		return ret;
-	}
-	ret = devm_add_action_or_reset(&pdev->dev,
-				       rtl960x_gmac_free_metadata_dst, priv);
-	if (ret)
-		return ret;
 
 	base = devm_platform_get_and_ioremap_resource(pdev, 0, &res);
 	if (IS_ERR(base))
