@@ -52,6 +52,10 @@ mikrotik,routerboard-map-2nd)
 	ucidef_set_led_switch "eth_2" "eth_2" "green:eth_2" "switch0" "0x4"
 	ucidef_set_led_gpio "poe" "poe" "red:poe_out" "14" "0"
 	;;
+mikrotik,routerboard-953gs-5hnt)
+	ucidef_set_led_netdev "sfp1" "sfp1" "mdio.0:04:green:sfp1" "sfp1"
+	ucidef_set_led_netdev "sfp2" "sfp2" "green:sfp2" "sfp2"
+	;;
 mikrotik,routerboard-wapr-2nd)
 	ucidef_set_rssimon "wlan0" "200000" "1"
 	ucidef_set_led_rssi "rssilow" "rssilow" "green:rssilow" "wlan0" "1" "100"
