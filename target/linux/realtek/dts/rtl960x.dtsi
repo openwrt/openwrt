@@ -324,6 +324,24 @@
 		reset-names = "p1-host";
 	};
 
+	usb3_phy: usb-phy@18140100 {
+		compatible = "realtek,rtl9607-usb3phy";
+		reg = <0x18140100 0x10>;
+		#phy-cells = <0>;
+		resets = <&ip_en_rst1 31>, <&ip_en_rst1 26>, <&ip_en_rst 29>;
+		reset-names = "usb3-sel-axi", "usb3-axi", "usb3-phy";
+	};
+
+	xhci: xhci@18060000 {
+		compatible = "generic-xhci";
+		reg = <0x18060000 0xf000>;
+		phys = <&xhci_usb2_phy>, <&usb3_phy>;
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_SHARED 52 IRQ_TYPE_LEVEL_HIGH>;
+		resets = <&ip_en_rst1 30>, <&ip_en_rst 4>, <&ip_en_rst 5>;
+		reset-names = "usb2host-mux", "p0-usbhost0", "p0-usbhost1";
+	};
+
 	i2cclock: i2cclock {
 		#clock-cells = <0>;
 		compatible = "fixed-clock";
