@@ -1,0 +1,84 @@
+From 88c810f35ed543dc3ddc3e4d888d89f9e8ecd7cb Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Thu, 10 Apr 2025 18:30:14 +0200
+Subject: [PATCH 6/6] net: dsa: mt7530: implement .get_stats64
+
+It was reported that the internally calculated counter might differ from
+the real one from the Switch MIB. This can happen if the switch directly
+forward packets between the ports or offload small packets like ARP
+request. In such case, the kernel counter will desync compared to the
+real one transmitted and received by the Switch.
+
+To correctly provide the real info to the kernel, implement .get_stats64
+that will directly read the current MIB counter from the switch
+register.
+
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+Link: https://patch.msgid.link/20250410163022.3695-7-ansuelsmth@gmail.com
+Signed-off-by: Paolo Abeni <pabeni@redhat.com>
+---
+ drivers/net/dsa/mt7530.c | 46 ++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 46 insertions(+)
+
+--- a/drivers/net/dsa/mt7530.c
++++ b/drivers/net/dsa/mt7530.c
+@@ -887,6 +887,51 @@ static void mt7530_get_rmon_stats(struct
+ 	*ranges = mt7530_rmon_ranges;
+ }
+ 
++static void mt7530_get_stats64(struct dsa_switch *ds, int port,
++			       struct rtnl_link_stats64 *storage)
++{
++	struct mt7530_priv *priv = ds->priv;
++	uint64_t data;
++
++	/* MIB counter doesn't provide a FramesTransmittedOK but instead
++	 * provide stats for Unicast, Broadcast and Multicast frames separately.
++	 * To simulate a global frame counter, read Unicast and addition Multicast
++	 * and Broadcast later
++	 */
++	mt7530_read_port_stats(priv, port, MT7530_PORT_MIB_RX_UNICAST, 1,
++			       &storage->rx_packets);
++	mt7530_read_port_stats(priv, port, MT7530_PORT_MIB_RX_MULTICAST, 1,
++			       &storage->multicast);
++	storage->rx_packets += storage->multicast;
++	mt7530_read_port_stats(priv, port, MT7530_PORT_MIB_RX_BROADCAST, 1,
++			       &data);
++	storage->rx_packets += data;
++
++	mt7530_read_port_stats(priv, port, MT7530_PORT_MIB_TX_UNICAST, 1,
++			       &storage->tx_packets);
++	mt7530_read_port_stats(priv, port, MT7530_PORT_MIB_TX_MULTICAST, 1,
++			       &data);
++	storage->tx_packets += data;
++	mt7530_read_port_stats(priv, port, MT7530_PORT_MIB_TX_BROADCAST, 1,
++			       &data);
++	storage->tx_packets += data;
++
++	mt7530_read_port_stats(priv, port, MT7530_PORT_MIB_RX_BYTES, 2,
++			       &storage->rx_bytes);
++
++	mt7530_read_port_stats(priv, port, MT7530_PORT_MIB_TX_BYTES, 2,
++			       &storage->tx_bytes);
++
++	mt7530_read_port_stats(priv, port, MT7530_PORT_MIB_RX_DROP, 1,
++			       &storage->rx_dropped);
++
++	mt7530_read_port_stats(priv, port, MT7530_PORT_MIB_TX_DROP, 1,
++			       &storage->tx_dropped);
++
++	mt7530_read_port_stats(priv, port, MT7530_PORT_MIB_RX_CRC_ERR, 1,
++			       &storage->rx_crc_errors);
++}
++
+ static void mt7530_get_eth_ctrl_stats(struct dsa_switch *ds, int port,
+ 				      struct ethtool_eth_ctrl_stats *ctrl_stats)
+ {
+@@ -3265,6 +3310,7 @@ const struct dsa_switch_ops mt7530_switc
+ 	.get_eth_mac_stats	= mt7530_get_eth_mac_stats,
+ 	.get_rmon_stats		= mt7530_get_rmon_stats,
+ 	.get_eth_ctrl_stats	= mt7530_get_eth_ctrl_stats,
++	.get_stats64		= mt7530_get_stats64,
+ 	.set_ageing_time	= mt7530_set_ageing_time,
+ 	.port_enable		= mt7530_port_enable,
+ 	.port_disable		= mt7530_port_disable,
