@@ -1,0 +1,50 @@
+From 7a282c53f0e152d8ad3542807dda64f8795918c4 Mon Sep 17 00:00:00 2001
+From: David Bauer <mail@david-bauer.net>
+Date: Sat, 25 Jul 2026 20:23:10 +0200
+Subject: [PATCH] pppd: write auth-ack message to file
+
+This is required to extract bandwidth-information from PPPoE sessions,
+which is common practice (at least) in Germany with Deutsche Telekom and
+1&1.
+
+Link: https://fritz.support/resources/PPP-Controlled_Settings_for_FRITZOS_v1.3.pdf
+
+Signed-off-by: David Bauer <mail@david-bauer.net>
+---
+ pppd/upap.c | 13 +++++++++++++
+ 1 file changed, 13 insertions(+)
+
+diff --git a/pppd/upap.c b/pppd/upap.c
+index 822fb0a..9bf036c 100644
+--- a/pppd/upap.c
++++ b/pppd/upap.c
+@@ -50,6 +50,7 @@
+ 
+ #include <stdio.h>
+ #include <string.h>
++#include <sys/param.h>
+ 
+ #include "pppd-private.h"
+ #include "options.h"
+@@ -478,6 +479,18 @@ upap_rauthack(upap_state *u, u_char *inp, int id, int len)
+ 	}
+     }
+ 
++    if (msg && ifname[0]) {
++	char aam_path[MAXPATHLEN];
++	snprintf(aam_path, sizeof(aam_path), "/var/run/pppd/%s.authackmsg", ifname);
++	FILE *f = fopen(aam_path, "w");
++	if (f) {
++	    fwrite(msg, 1, msglen, f);
++	    fclose(f);
++	} else {
++	    warn("Could not write auth-ack message to %s: %m", aam_path);
++	}
++    }
++
+     u->us_clientstate = UPAPCS_OPEN;
+ 
+     auth_withpeer_success(u->us_unit, PPP_PAP, 0);
+-- 
+2.53.0
+
