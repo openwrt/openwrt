@@ -811,7 +811,7 @@ static int rtldsa_port_pre_bridge_flags(struct dsa_switch *ds, int port,
 					struct netlink_ext_ack *extack)
 {
 	struct otto_dsa_priv *priv = ds->priv;
-	unsigned long features = BR_ISOLATED;
+	unsigned long features = BR_ISOLATED | BR_PORT_LOCKED;
 
 	pr_debug("%s: %d %lX\n", __func__, port, flags.val);
 	if (priv->r->enable_learning)
@@ -819,9 +819,6 @@ static int rtldsa_port_pre_bridge_flags(struct dsa_switch *ds, int port,
 
 	if (priv->r->enable_flood)
 		features |= BR_FLOOD;
-
-	if (priv->r->set_l2_new_sa_trap)
-		features |= BR_PORT_LOCKED;
 
 	if (priv->r->enable_mcast_flood)
 		features |= BR_MCAST_FLOOD;
@@ -883,8 +880,7 @@ static int rtldsa_port_bridge_flags(struct dsa_switch *ds, int port,
 	/* Trap frames with an unknown source address on a locked port to the
 	 * CPU, so that an authenticator can inspect them and add an FDB entry.
 	 */
-	if (priv->r->set_l2_new_sa_trap)
-		priv->r->set_l2_new_sa_trap(priv, port, !!(cached_flags & BR_PORT_LOCKED));
+	priv->r->set_l2_new_sa_trap(priv, port, !!(cached_flags & BR_PORT_LOCKED));
 
 	if (priv->r->enable_learning)
 		priv->r->enable_learning(priv, port, !!(cached_flags & BR_LEARNING));

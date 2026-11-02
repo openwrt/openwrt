@@ -659,6 +659,16 @@ void otto_l2_838x_enable_learning(struct otto_dsa_priv *priv, int port, bool ena
 			  0x3fff << 2, enable ? (0x3fff << 2) : 0);
 }
 
+void otto_l2_838x_set_port_new_sa_trap(struct otto_dsa_priv *priv, int port, bool trap)
+{
+	enum otto_l2_action action = trap ? OTTO_L2_ACTION_TRAP2CPU : OTTO_L2_ACTION_FORWARD;
+	u32 new_sa_fwd_shift = (port % 16) * 2;
+	u32 val = action << new_sa_fwd_shift;
+
+	regmap_write_bits(priv->map, otto_l2_838x_port_new_sa_fwd(port),
+			  GENMASK(new_sa_fwd_shift + 1, new_sa_fwd_shift), val);
+}
+
 void otto_l2_838x_enable_flood(struct otto_dsa_priv *priv, int port, bool enable)
 {
 	enum otto_l2_action action = enable ? OTTO_L2_ACTION_FORWARD : OTTO_L2_ACTION_DROP;
@@ -988,6 +998,16 @@ void otto_l2_839x_enable_learning(struct otto_dsa_priv *priv, int port, bool ena
 
 	regmap_write_bits(priv->map, RTL839X_L2_PORT_LRN_CONSTRT + (port << 2),
 			  0x7fff << 2, enable ? (0x7fff << 2) : 0);
+}
+
+void otto_l2_839x_set_port_new_sa_trap(struct otto_dsa_priv *priv, int port, bool trap)
+{
+	enum otto_l2_action action = trap ? OTTO_L2_ACTION_TRAP2CPU : OTTO_L2_ACTION_FORWARD;
+	u32 new_sa_fwd_shift = (port % 16) * 2;
+	u32 val = action << new_sa_fwd_shift;
+
+	regmap_write_bits(priv->map, otto_l2_839x_port_new_sa_fwd(port),
+			  GENMASK(new_sa_fwd_shift + 1, new_sa_fwd_shift), val);
 }
 
 void otto_l2_839x_enable_flood(struct otto_dsa_priv *priv, int port, bool enable)

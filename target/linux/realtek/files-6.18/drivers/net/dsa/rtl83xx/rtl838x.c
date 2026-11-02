@@ -191,6 +191,7 @@ const struct rtldsa_config rtldsa_838x_cfg = {
 	.set_vlan_igr_filter = rtl838x_set_igr_filter,
 	.set_vlan_egr_filter = rtl838x_set_egr_filter,
 	.enable_learning = otto_l2_838x_enable_learning,
+	.set_l2_new_sa_trap = otto_l2_838x_set_port_new_sa_trap,
 	.enable_flood = otto_l2_838x_enable_flood,
 	.enable_mcast_flood = otto_l2_838x_enable_mcast_flood,
 	.enable_bcast_flood = otto_l2_838x_enable_bcast_flood,
