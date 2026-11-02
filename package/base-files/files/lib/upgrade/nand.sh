@@ -464,6 +464,8 @@ nand_do_upgrade_success() {
 	if nand_do_restore_config && sync; then
 		echo "sysupgrade successful"
 		umount -a
+		# upgraded (PID 1) stops feeding the watchdog: a stalled reboot is reset
+		kill -HUP 1 2>/dev/null
 		reboot -f
 	fi
 	nand_do_upgrade_failed
@@ -474,6 +476,8 @@ nand_do_upgrade_failed() {
 	echo "sysupgrade failed"
 	# Should we reboot or bring up some failsafe mode instead?
 	umount -a
+	# upgraded (PID 1) stops feeding the watchdog: a stalled reboot is reset
+	kill -HUP 1 2>/dev/null
 	reboot -f
 }
 
