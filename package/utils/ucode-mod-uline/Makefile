@@ -1,7 +1,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=ucode-mod-uline
-PKG_RELEASE:=8
+PKG_RELEASE:=9
 PKG_LICENSE:=GPL-2.0-or-later
 PKG_MAINTAINER:=Felix Fietkau <nbd@nbd.name>
 
