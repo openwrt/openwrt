@@ -28,6 +28,7 @@ ipq50xx_setup_interfaces()
 	h3c,magic-nx30|\
 	h3c,magic-rc3000-v1|\
 	h3c,magic-rc3000-v2|\
+	h3c,magic-rc3000-v3|\
 	linksys,mx2000|\
 	linksys,mx5500|\
 	linksys,spnmx56|\
@@ -80,7 +81,8 @@ ipq50xx_setup_macs()
 		;;
 	h3c,magic-nx30|\
 	h3c,magic-rc3000-v1|\
-	h3c,magic-rc3000-v2)
+	h3c,magic-rc3000-v2|\
+	h3c,magic-rc3000-v3)
 		label_mac=$(mtd_get_mac_ascii 0:appsblenv ethaddr)
 		[ -n "$label_mac" ] || return
 		ucidef_set_interface_macaddr "wan" "$label_mac"
