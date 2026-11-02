@@ -49,6 +49,7 @@ ALLWIFIBOARDS:= \
 	glinet_gl-b3000 \
 	glinet_gl-x2000 \
 	h3c_magic-nx30 \
+	h3c_magic-rc3000-v1 \
 	huawei_ap4050dn \
 	ignitenet_ss-w2-ac2600 \
 	iodata_wn-dax3000gr \
@@ -265,6 +266,7 @@ $(eval $(call generate-ipq-wifi-package,glinet_gl-axt1800,GL.iNet GL-AXT1800))
 $(eval $(call generate-ipq-wifi-package,glinet_gl-b3000,GL.iNet GL-B3000))
 $(eval $(call generate-ipq-wifi-package,glinet_gl-x2000,GL.iNet GL-X2000))
 $(eval $(call generate-ipq-wifi-package,h3c_magic-nx30,H3C Magic NX30))
+$(eval $(call generate-ipq-wifi-package,h3c_magic-rc3000-v1,H3C Magic RC3000 v1))
 $(eval $(call generate-ipq-wifi-package,huawei_ap4050dn,Huawei AP4050DN))
 $(eval $(call generate-ipq-wifi-package,ignitenet_ss-w2-ac2600,Ignitenet SS-W2-AC2600))
 $(eval $(call generate-ipq-wifi-package,iodata_wn-dax3000gr,I-O DATA WN-DAX3000GR))
