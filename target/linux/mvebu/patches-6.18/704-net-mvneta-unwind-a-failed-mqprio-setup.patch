@@ -1,0 +1,92 @@
+From c1d198f4fbb91f466f3323393b286d61902eb6a7 Mon Sep 17 00:00:00 2001
+From: Josef Schlehofer <pepe.schlehofer@gmail.com>
+Date: Mon, 2 Nov 2026 10:45:38 +0100
+Subject: [PATCH net v3 3/5] net: mvneta: unwind a failed mqprio setup
+
+A failed mqprio offload setup leaves part of its configuration in the
+hardware. For example, when one max_rate is not a multiple of
+10 kbit/s, the command fails but the TX queues set up before it stay
+rate limited.
+
+mvneta_setup_mqprio() returns on an invalid queue range or rate after
+it has already mapped RX queues, switched the rate limit mode and set
+the rates of some TX queues. The qdisc then fails to attach and the
+driver is not called again, so nothing removes them.
+
+Undo the RX queue mapping, the rate limits and the traffic classes
+when the setup fails.
+
+Tested on a Turris Omnia (Armada 385). After mqprio failed on a
+max_rate of 10001kbit, TX queues 0-3 stayed limited to 10 Mbit/s and
+the VLAN priority map stayed set. With this patch neither is left
+behind.
+
+Fixes: e9f7099d0730 ("net: mvneta: Allow having more than one queue per TC")
+Fixes: 2551dc9e398c ("net: mvneta: Add TC traffic shaping offload")
+Signed-off-by: Josef Schlehofer <pepe.schlehofer@gmail.com>
+Reviewed-by: Maxime Chevallier <maxime.chevallier@bootlin.com>
+---
+ drivers/net/ethernet/marvell/mvneta.c | 28 +++++++++++++++++++--------
+ 1 file changed, 20 insertions(+), 8 deletions(-)
+
+--- a/drivers/net/ethernet/marvell/mvneta.c
++++ b/drivers/net/ethernet/marvell/mvneta.c
+@@ -5285,8 +5285,10 @@ static int mvneta_setup_mqprio(struct ne
+ 		for (rxq = mqprio->qopt.offset[tc];
+ 		     rxq < mqprio->qopt.count[tc] + mqprio->qopt.offset[tc];
+ 		     rxq++) {
+-			if (rxq >= rxq_number)
+-				return -EINVAL;
++			if (rxq >= rxq_number) {
++				ret = -EINVAL;
++				goto err;
++			}
+ 
+ 			mvneta_map_vlan_prio_to_rxq(pp, tc, rxq);
+ 		}
+@@ -5297,29 +5299,39 @@ static int mvneta_setup_mqprio(struct ne
+ 		return 0;
+ 	}
+ 
+-	if (mqprio->qopt.num_tc > txq_number)
+-		return -EINVAL;
++	if (mqprio->qopt.num_tc > txq_number) {
++		ret = -EINVAL;
++		goto err;
++	}
+ 
+ 	ret = mvneta_enable_per_queue_rate_limit(pp);
+ 	if (ret)
+-		return ret;
++		goto err;
+ 
+ 	for (tc = 0; tc < mqprio->qopt.num_tc; tc++) {
+ 		for (txq = mqprio->qopt.offset[tc];
+ 		     txq < mqprio->qopt.count[tc] + mqprio->qopt.offset[tc];
+ 		     txq++) {
+-			if (txq >= txq_number)
+-				return -EINVAL;
++			if (txq >= txq_number) {
++				ret = -EINVAL;
++				goto err;
++			}
+ 
+ 			ret = mvneta_setup_queue_rates(pp, txq,
+ 						       mqprio->min_rate[tc],
+ 						       mqprio->max_rate[tc]);
+ 			if (ret)
+-				return ret;
++				goto err;
+ 		}
+ 	}
+ 
+ 	return 0;
++
++err:
++	mvneta_clear_rx_prio_map(pp);
++	mvneta_disable_per_queue_rate_limit(pp);
++	netdev_reset_tc(dev);
++	return ret;
+ }
+ 
+ static int mvneta_setup_tc(struct net_device *dev, enum tc_setup_type type,
