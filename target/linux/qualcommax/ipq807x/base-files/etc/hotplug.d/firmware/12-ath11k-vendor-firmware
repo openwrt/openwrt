@@ -33,7 +33,10 @@ vendor_firmware_extract() {
 		unsquashfs -n -d "$tmp" "$node" \
 			$(for f in "$@"; do echo "$src/$f"; done) > /dev/null 2>&1
 		mkdir -p "/lib/firmware/${FIRMWARE%/*}"
+		# a file already there stays: one kept across a sysupgrade, or put
+		# there by hand, is the one wanted
 		for f in "$@"; do
+			[ -e "/lib/firmware/${FIRMWARE%/*}/$f" ] && continue
 			[ -s "$tmp/$src/$f" ] && cp "$tmp/$src/$f" "/lib/firmware/${FIRMWARE%/*}/$f"
 		done
 		rm -rf "$tmp"
