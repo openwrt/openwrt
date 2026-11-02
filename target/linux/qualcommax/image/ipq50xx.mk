@@ -280,6 +280,34 @@ define Device/h3c_magic-rc3000-v1
 endef
 TARGET_DEVICES += h3c_magic-rc3000-v1
 
+define Device/h3c_magic-rc3000-v2
+	$(call Device/h3c_magic-qsdk)
+	DEVICE_MODEL := Magic RC3000
+	DEVICE_VARIANT := v2
+	DEVICE_ALT0_VENDOR := H3C
+	DEVICE_ALT0_MODEL := Magic RT3000
+	DEVICE_ALT0_VARIANT := v2
+	DEVICE_ALT1_VENDOR := H3C
+	DEVICE_ALT1_MODEL := Magic RW3000
+	DEVICE_ALT1_VARIANT := v2
+	DEVICE_DTS_CONFIG := config@mp03.1
+	IMAGES += factory-rc3000.bin
+	IMAGE/factory-rc3000.bin := append-ubi | h3c-web-fit | \
+		h3c-web-header RC3000V100R999 D999
+	IMAGES += factory-rt3000.bin
+	IMAGE/factory-rt3000.bin := append-ubi | h3c-web-fit | \
+		h3c-web-header RT3000V100R999 D999
+	IMAGES += factory-rw3000.bin
+	IMAGE/factory-rw3000.bin := append-ubi | h3c-web-fit | \
+		h3c-web-header RW3000V100R999 D999
+	IMAGES += factory-rx3000.bin
+	IMAGE/factory-rx3000.bin := append-ubi | h3c-web-fit | \
+		h3c-web-header NX30V100R999 D999
+	DEVICE_PACKAGES := ath11k-firmware-ipq5018-qcn6122 \
+		ipq-wifi-h3c_magic-rc3000-v2
+endef
+TARGET_DEVICES += h3c_magic-rc3000-v2
+
 define Device/iodata_wn-dax3000gr
 	$(call Device/FitImageLzma)
 	DEVICE_VENDOR := I-O DATA
