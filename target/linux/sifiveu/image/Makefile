@@ -32,6 +32,7 @@ define Device/Default
   PROFILES := Default
   KERNEL_NAME := Image
   KERNEL := kernel-bin | libdeflate-gzip
+  KERNEL_INITRAMFS := kernel-bin
   IMAGES := sdcard.img.gz
   IMAGE/sdcard.img.gz := riscv-sdcard | append-metadata | gzip
 endef
