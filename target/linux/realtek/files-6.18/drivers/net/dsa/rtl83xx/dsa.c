@@ -7,6 +7,7 @@
 #include <linux/if_vlan.h>
 #include <asm/mach-rtl-otto/mach-rtl-otto.h>
 
+#include "fdb.h"
 #include "lag.h"
 #include "mirror.h"
 #include "mac.h"
@@ -17,8 +18,6 @@
 #include "tc.h"
 #include "vlan.h"
 #include "stp.h"
-
-#define RTL930X_PORT_IGNORE 0x3f
 
 static const u8 ipv4_ll_mcast_addr_base[ETH_ALEN] = {
 	0x01, 0x00, 0x5e, 0x00, 0x00, 0x00
@@ -435,33 +434,6 @@ void rtldsa_port_fast_age(struct dsa_switch *ds, int port)
 	mutex_unlock(&priv->reg_mutex);
 }
 
-static void rtldsa_setup_l2_uc_entry(struct rtl838x_l2_entry *e, int port,
-				     int vid, u64 mac)
-{
-	bool next_hop = e->valid && e->next_hop;
-	u16 nh_route_id = next_hop ? e->nh_route_id : 0;
-
-	memset(e, 0, sizeof(*e));
-
-	e->type = L2_UNICAST;
-	e->valid = true;
-
-	/* A route may be forwarding through this address already, and the id
-	 * it is known by lives nowhere else.
-	 */
-	e->next_hop = next_hop;
-	e->nh_route_id = nh_route_id;
-
-	e->age = 3;
-	e->is_static = true;
-
-	e->port = port;
-
-	e->rvid = e->vid = vid;
-	e->is_ip_mc = e->is_ipv6_mc = false;
-	u64_to_ether_addr(mac, e->mac);
-}
-
 static void rtldsa_setup_l2_mc_entry(struct rtl838x_l2_entry *e, int vid, u64 mac, int mc_group)
 {
 	memset(e, 0, sizeof(*e));
@@ -474,173 +446,6 @@ static void rtldsa_setup_l2_mc_entry(struct rtl838x_l2_entry *e, int vid, u64 ma
 	e->rvid = e->vid = vid;
 	e->is_ip_mc = e->is_ipv6_mc = false;
 	u64_to_ether_addr(mac, e->mac);
-}
-
-static int rtldsa_port_fdb_add(struct dsa_switch *ds, int port,
-			       const unsigned char *addr, u16 vid,
-			       const struct dsa_db db)
-{
-	struct otto_dsa_priv *priv = ds->priv;
-	u64 mac = ether_addr_to_u64(addr);
-	struct rtl838x_l2_entry e;
-	int err = 0, idx;
-	u64 seed = priv->r->l2_hash_seed(mac, vid);
-	int lag_group = otto_lag_find_group_from_port(priv, port);
-
-	if (lag_group >= 0 && priv->r->prepare_lag_fdb) {
-		priv->r->prepare_lag_fdb(&e, lag_group);
-	} else {
-		if (priv->lag_non_primary & BIT_ULL(port)) {
-			pr_debug("%s: %d is lag slave but prepare_lag_fdb is not supported. ignore\n",
-				 __func__, port);
-			return 0;
-		}
-	}
-
-	mutex_lock(&priv->reg_mutex);
-
-	idx = otto_l2_find_hash_entry(priv, seed, false, &e);
-
-	/* Found an existing or empty entry */
-	if (idx >= 0) {
-		struct rtldsa_l2_uc *m = otto_l2_uc_lookup(priv, idx);
-
-		if (m) {
-			/* A slot nobody had claimed carries whatever its last
-			 * owner left behind.
-			 */
-			if (!e.valid)
-				*m = (struct rtldsa_l2_uc){};
-			m->fdb_ref = true;
-		}
-
-		rtldsa_setup_l2_uc_entry(&e, port, vid, mac);
-		priv->r->write_l2_entry_using_hash(priv, idx >> 2, idx & 0x3, &e);
-		goto out;
-	}
-
-	/* Hash buckets full, try CAM */
-	idx = otto_l2_find_cam_entry(priv, seed, false, &e);
-
-	if (idx >= 0) {
-		rtldsa_setup_l2_uc_entry(&e, port, vid, mac);
-		priv->r->write_cam(idx, &e);
-		goto out;
-	}
-
-	err = -ENOTSUPP;
-
-out:
-	mutex_unlock(&priv->reg_mutex);
-
-	return err;
-}
-
-static int rtldsa_port_fdb_del(struct dsa_switch *ds, int port,
-			       const unsigned char *addr, u16 vid,
-			       const struct dsa_db db)
-{
-	struct otto_dsa_priv *priv = ds->priv;
-	u64 mac = ether_addr_to_u64(addr);
-	struct rtl838x_l2_entry e;
-	int err = 0, idx;
-	u64 seed = priv->r->l2_hash_seed(mac, vid);
-	int lag_group = otto_lag_find_group_from_port(priv, port);
-
-	if (lag_group >= 0 && priv->r->prepare_lag_fdb)
-		priv->r->prepare_lag_fdb(&e, lag_group);
-
-	pr_debug("In %s, mac %llx, vid: %d\n", __func__, mac, vid);
-
-	mutex_lock(&priv->reg_mutex);
-
-	idx = otto_l2_find_hash_entry(priv, seed, true, &e);
-
-	if (idx >= 0) {
-		struct rtldsa_l2_uc *m = otto_l2_uc_lookup(priv, idx);
-
-		pr_debug("Found entry index %d, key %d and bucket %d\n", idx, idx >> 2, idx & 3);
-
-		if (m)
-			m->fdb_ref = false;
-
-		/* A route still forwarding through this address keeps it, as
-		 * the next hop it already is, reachable through no port of its
-		 * own.
-		 */
-		if (m && m->l3_refcount && e.next_hop) {
-			e.port = priv->r->port_ignore;
-			e.age = 0;
-		} else {
-			e.valid = false;
-		}
-
-		priv->r->write_l2_entry_using_hash(priv, idx >> 2, idx & 0x3, &e);
-		goto out;
-	}
-
-	/* Check CAM for spillover from hash buckets */
-	idx = otto_l2_find_cam_entry(priv, seed, true, &e);
-
-	if (idx >= 0) {
-		e.valid = false;
-		priv->r->write_cam(idx, &e);
-		goto out;
-	}
-	err = -ENOENT;
-
-out:
-	mutex_unlock(&priv->reg_mutex);
-
-	return err;
-}
-
-static int rtldsa_port_fdb_dump(struct dsa_switch *ds, int port,
-				dsa_fdb_dump_cb_t *cb, void *data)
-{
-	struct otto_dsa_priv *priv = ds->priv;
-	int uc_rows, cam_rows;
-
-	uc_rows = otto_table_rows(priv->r->l2_uc_tbl);
-	if (uc_rows < 0)
-		return uc_rows;
-
-	cam_rows = otto_table_rows(priv->r->l2_cam_tbl);
-	if (cam_rows < 0)
-		return cam_rows;
-
-	mutex_lock(&priv->reg_mutex);
-
-	for (int i = 0; i < uc_rows; i++) {
-		struct rtl838x_l2_entry e = {};
-
-		if (!((i + 1) % 64))
-			cond_resched();
-
-		priv->r->read_l2_entry_using_hash(i >> 2, i & 0x3, &e);
-
-		if (!e.valid || e.type != L2_UNICAST || e.is_trunk)
-			continue;
-
-		if (e.port == port || e.port == RTL930X_PORT_IGNORE)
-			cb(e.mac, e.rvid, e.is_static, data);
-	}
-
-	for (int i = 0; i < cam_rows; i++) {
-		struct rtl838x_l2_entry e = {};
-
-		priv->r->read_cam(i, &e);
-
-		if (!e.valid || e.type != L2_UNICAST || e.is_trunk)
-			continue;
-
-		if (e.port == port)
-			cb(e.mac, e.rvid, e.is_static, data);
-	}
-
-	mutex_unlock(&priv->reg_mutex);
-
-	return 0;
 }
 
 static bool rtldsa_mac_is_unsnoop(const unsigned char *addr)

@@ -7,8 +7,6 @@
 
 struct otto_dsa_priv;
 struct rtl838x_l2_entry;
-struct rtldsa_l2_uc;
-struct otto_l3_nexthop;
 
 #define RTL838X_PORT_ISO_CTRL(port)		(0x4100 + ((port) << 2))
 
@@ -48,19 +46,12 @@ struct otto_l3_nexthop;
 #define RTL931X_MC_PMASK_ALL_PORTS (GENMASK_ULL(RTL931X_CPU_PORT, 0))
 #define MC_PMASK_ALL_PORTS_IDX	((MAX_MC_PMASKS - 1))
 
-#define RTLDSA_L2_L3_REFCOUNT_MAX	0x7fff
-
 /* Returns the L2 ageing time in seconds. */
 int otto_l2_get_ageing_time(struct otto_dsa_priv *priv);
 int otto_l2_find_hash_entry(struct otto_dsa_priv *priv, u64 seed,
 			    bool must_exist, struct rtl838x_l2_entry *e);
 int otto_l2_find_cam_entry(struct otto_dsa_priv *priv, u64 seed,
 			   bool must_exist, struct rtl838x_l2_entry *e);
-struct rtldsa_l2_uc *otto_l2_uc_lookup(struct otto_dsa_priv *priv, int idx);
-
-int otto_l2_nexthop_add(struct otto_dsa_priv *priv, struct otto_l3_nexthop *nh);
-int otto_l2_nexthop_del(struct otto_dsa_priv *priv, struct otto_l3_nexthop *nh);
-bool otto_l2_nexthop_current(struct otto_dsa_priv *priv, struct otto_l3_nexthop *nh);
 
 u64 otto_l2_838x_hash_seed(u64 mac, u32 vid);
 u32 otto_l2_838x_hash_key(struct otto_dsa_priv *priv, u64 seed);
@@ -140,7 +131,5 @@ u64 otto_l2_931x_read_mcast_pmask(int idx);
 void otto_l2_931x_write_mcast_pmask(int idx, u64 portmask);
 int otto_l2_931x_set_ageing_time(struct otto_dsa_priv *priv, unsigned long msec);
 int otto_l2_931x_fast_age(struct otto_dsa_priv *priv, int port, int vid);
-
-void otto_l2_dbgfs_init(struct otto_dsa_priv *priv);
 
 #endif /* _OTTO_L2_H */

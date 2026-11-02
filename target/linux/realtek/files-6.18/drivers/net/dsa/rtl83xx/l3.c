@@ -94,6 +94,7 @@
 #include <net/nexthop.h>
 #include <uapi/linux/rtnetlink.h>
 
+#include "fdb.h"
 #include "l2.h"
 #include "l3.h"
 #include "pie.h"

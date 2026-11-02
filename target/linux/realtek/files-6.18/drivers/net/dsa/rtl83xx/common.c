@@ -16,6 +16,7 @@
 #include <linux/of_net.h>
 #include <asm/mach-rtl-otto/mach-rtl-otto.h>
 
+#include "fdb.h"
 #include "l2.h"
 #include "l3.h"
 #include "pie.h"
