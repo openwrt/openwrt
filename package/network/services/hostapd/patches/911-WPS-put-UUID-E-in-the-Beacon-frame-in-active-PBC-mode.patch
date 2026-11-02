@@ -1,0 +1,30 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Mon, 2 Nov 2026 14:30:00 +0000
+Subject: [PATCH] WPS: put UUID-E in the Beacon frame in active PBC mode
+
+wpas_wps_scan_pbc_overlap() reads a session overlap where two BSSs in
+active PBC mode have UUID-E values that differ, and it takes a missing
+UUID-E as one that differs. The registrar put UUID-E into the Beacon frame
+only for a dual-band AP. A station that read two BSSs of one single-band
+registrar from Beacon frames alone, with no Probe Response, so saw two
+registrars and aborted the press.
+
+Put UUID-E into the Beacon frame whenever the registrar is in active PBC
+mode. WPS 2.0.10 Table 3 makes UUID-E in the Beacon frame mandatory for a
+dual-band AP in Pushbutton mode on both radios and states no other case;
+it does not forbid the attribute elsewhere. The Probe Response already holds
+UUID-E in every case.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/src/wps/wps_registrar.c
++++ b/src/wps/wps_registrar.c
+@@ -560,7 +560,7 @@ static int wps_build_sel_pbc_reg_uuid_e(
+ 		return 0;
+ 	if (reg->sel_reg_dev_password_id_override >= 0)
+ 		id = reg->sel_reg_dev_password_id_override;
+-	if (id != DEV_PW_PUSHBUTTON || !reg->dualband)
++	if (id != DEV_PW_PUSHBUTTON)
+ 		return 0;
+ 	return wps_build_uuid_e(msg, reg->wps->uuid);
+ }
