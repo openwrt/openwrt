@@ -20,5 +20,11 @@ int rtl960x_port_fdb_del(struct dsa_switch *ds, int port,
 			 const struct dsa_db db);
 int rtl960x_port_fdb_dump(struct dsa_switch *ds, int port,
 			  dsa_fdb_dump_cb_t *cb, void *data);
+int rtl960x_port_mdb_add(struct dsa_switch *ds, int port,
+			 const struct switchdev_obj_port_mdb *mdb,
+			 struct dsa_db db);
+int rtl960x_port_mdb_del(struct dsa_switch *ds, int port,
+			 const struct switchdev_obj_port_mdb *mdb,
+			 struct dsa_db db);
 
 #endif /* __RTL960X_L2_H */

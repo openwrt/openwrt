@@ -52,6 +52,23 @@
 #define RTL960X_L2_UC_D2_EXT_SPA_MSK		GENMASK(14, 12)
 #define RTL960X_L2_UC_D2_VALID_MSK		BIT(15)
 
+#define RTL960X_L2_MC_D0_MAC5_MSK		GENMASK(7, 0)
+#define RTL960X_L2_MC_D0_MAC4_MSK		GENMASK(15, 8)
+#define RTL960X_L2_MC_D0_MAC3_MSK		GENMASK(23, 16)
+#define RTL960X_L2_MC_D0_MAC2_MSK		GENMASK(31, 24)
+#define RTL960X_L2_MC_D1_MAC1_MSK		GENMASK(7, 0)
+#define RTL960X_L2_MC_D1_MAC0_MSK		GENMASK(15, 8)
+#define RTL960X_L2_MC_D1_VID_MSK		GENMASK(27, 16)
+#define RTL960X_L2_MC_D1_L3LOOKUP_MSK		BIT(28)
+#define RTL960X_L2_MC_D1_NOT_SALEARN_MSK	BIT(29)
+#define RTL960X_L2_MC_D1_IVL_MSK		BIT(30)
+#define RTL960X_L2_MC_D1_MBR_LO_MSK		BIT(31)
+#define   RTL960X_L2_MC_MBR_LO_MSK		BIT(0)
+#define RTL960X_L2_MC_D2_MBR_HI_MSK		GENMASK(9, 0)
+#define   RTL960X_L2_MC_MBR_HI_MSK		GENMASK(10, 1)
+#define RTL960X_L2_MC_D2_EXT_MBR_MSK		GENMASK(14, 10)
+#define RTL960X_L2_MC_D2_VALID_MSK		BIT(15)
+
 /*
  * L2 flush command registers. Writing the control register with a port mode
  * flush starts it for the ports set in the enable register; completion is
@@ -86,6 +103,25 @@ struct rtl960x_l2_uc {
 	bool arp_usage;
 	bool l3lookup;
 	bool ctag_if;
+};
+
+struct rtl960x_l2_mc_key {
+	u8 mac_addr[ETH_ALEN];
+	union {
+		u16 vid; /* IVL */
+		u16 fid; /* SVL */
+	};
+	bool ivl;
+};
+
+struct rtl960x_l2_mc {
+	struct rtl960x_l2_mc_key key;
+	u16 member;
+	u16 ext_mbr;
+
+	bool valid;
+	bool is_static;
+	bool l3lookup;
 };
 
 static void rtl960x_l2_data_to_uc(const u32 *data, struct rtl960x_l2_uc *uc)
@@ -147,6 +183,56 @@ static void rtl960x_l2_uc_to_data(const struct rtl960x_l2_uc *uc, u32 *data)
 	data[2] |= FIELD_PREP(RTL960X_L2_UC_D2_ARP_USAGE_MSK, uc->arp_usage);
 	data[2] |= FIELD_PREP(RTL960X_L2_UC_D2_EXT_SPA_MSK, uc->ext_port);
 	data[2] |= FIELD_PREP(RTL960X_L2_UC_D2_VALID_MSK, uc->valid);
+}
+
+static void rtl960x_l2_data_to_mc(const u32 *data, struct rtl960x_l2_mc *mc)
+{
+	u32 val;
+
+	mc->key.mac_addr[5] = FIELD_GET(RTL960X_L2_MC_D0_MAC5_MSK, data[0]);
+	mc->key.mac_addr[4] = FIELD_GET(RTL960X_L2_MC_D0_MAC4_MSK, data[0]);
+	mc->key.mac_addr[3] = FIELD_GET(RTL960X_L2_MC_D0_MAC3_MSK, data[0]);
+	mc->key.mac_addr[2] = FIELD_GET(RTL960X_L2_MC_D0_MAC2_MSK, data[0]);
+	mc->key.mac_addr[1] = FIELD_GET(RTL960X_L2_MC_D1_MAC1_MSK, data[1]);
+	mc->key.mac_addr[0] = FIELD_GET(RTL960X_L2_MC_D1_MAC0_MSK, data[1]);
+	/* key.vid,key.fid shares the same memory space */
+	mc->key.vid = FIELD_GET(RTL960X_L2_MC_D1_VID_MSK, data[1]);
+	mc->key.ivl = FIELD_GET(RTL960X_L2_MC_D1_IVL_MSK, data[1]);
+	mc->l3lookup = FIELD_GET(RTL960X_L2_MC_D1_L3LOOKUP_MSK, data[1]);
+	mc->is_static = FIELD_GET(RTL960X_L2_MC_D1_NOT_SALEARN_MSK, data[1]);
+
+	val = FIELD_GET(RTL960X_L2_MC_D1_MBR_LO_MSK, data[1]);
+	mc->member = FIELD_PREP(RTL960X_L2_MC_MBR_LO_MSK, val);
+	val = FIELD_GET(RTL960X_L2_MC_D2_MBR_HI_MSK, data[2]);
+	mc->member |= FIELD_PREP(RTL960X_L2_MC_MBR_HI_MSK, val);
+
+	mc->ext_mbr = FIELD_GET(RTL960X_L2_MC_D2_EXT_MBR_MSK, data[2]);
+	mc->valid = FIELD_GET(RTL960X_L2_MC_D2_VALID_MSK, data[2]);
+}
+
+static void rtl960x_l2_mc_to_data(const struct rtl960x_l2_mc *mc, u32 *data)
+{
+	u32 val;
+
+	memset(data, 0, RTL960X_L2_ENTRY_SIZE * sizeof(*data));
+	data[0] |= FIELD_PREP(RTL960X_L2_MC_D0_MAC5_MSK, mc->key.mac_addr[5]);
+	data[0] |= FIELD_PREP(RTL960X_L2_MC_D0_MAC4_MSK, mc->key.mac_addr[4]);
+	data[0] |= FIELD_PREP(RTL960X_L2_MC_D0_MAC3_MSK, mc->key.mac_addr[3]);
+	data[0] |= FIELD_PREP(RTL960X_L2_MC_D0_MAC2_MSK, mc->key.mac_addr[2]);
+	data[1] |= FIELD_PREP(RTL960X_L2_MC_D1_MAC1_MSK, mc->key.mac_addr[1]);
+	data[1] |= FIELD_PREP(RTL960X_L2_MC_D1_MAC0_MSK, mc->key.mac_addr[0]);
+	data[1] |= FIELD_PREP(RTL960X_L2_MC_D1_VID_MSK, mc->key.vid);
+	data[1] |= FIELD_PREP(RTL960X_L2_MC_D1_L3LOOKUP_MSK, mc->l3lookup);
+	data[1] |= FIELD_PREP(RTL960X_L2_MC_D1_NOT_SALEARN_MSK, mc->is_static);
+	data[1] |= FIELD_PREP(RTL960X_L2_MC_D1_IVL_MSK, mc->key.ivl);
+
+	val = FIELD_GET(RTL960X_L2_MC_MBR_LO_MSK, mc->member);
+	data[1] |= FIELD_PREP(RTL960X_L2_MC_D1_MBR_LO_MSK, val);
+	val = FIELD_GET(RTL960X_L2_MC_MBR_HI_MSK, mc->member);
+	data[2] |= FIELD_PREP(RTL960X_L2_MC_D2_MBR_HI_MSK, val);
+
+	data[2] |= FIELD_PREP(RTL960X_L2_MC_D2_EXT_MBR_MSK, mc->ext_mbr);
+	data[2] |= FIELD_PREP(RTL960X_L2_MC_D2_VALID_MSK, mc->valid);
 }
 
 /* DSA VID 0 is the VLAN-unaware database, shared by all bridges as FID 1. */
@@ -454,5 +540,159 @@ int rtl960x_port_fdb_dump(struct dsa_switch *ds, int port,
 	}
 	mutex_unlock(&priv->l2_lock);
 
+	return ret;
+}
+
+static int rtl960x_l2_add_mc(struct rtl960x_dsa *priv, int port,
+			     const unsigned char mac_addr[static ETH_ALEN],
+			     u16 vid)
+{
+	u32 data[RTL960X_L2_ENTRY_SIZE] = { 0 };
+	struct rtl960x_l2_mc mc = { 0 };
+	int ret;
+
+	memcpy(mc.key.mac_addr, mac_addr, ETH_ALEN);
+	mc.key.ivl = !!vid;
+	mc.key.vid = mc.key.ivl ? vid : 1;
+	/* Already set the port and is_static, although not used in OP_READ,
+	 * data will be ready for OP_WRITE if it is a new entry.
+	 */
+	mc.member |= BIT(port);
+	mc.is_static = 1;
+	mc.valid = true;
+	rtl960x_l2_mc_to_data(&mc, data);
+
+	/* First look for an existing entry (to get existing port members) */
+	ret = otto_table_l2_read(RTL9607C_TBL_L2_MC_DSL, 0, &data, 0,
+				 OTTO_TABLE_L2_METHOD_MAC);
+	if (ret >= 0) {
+		/* There is already an entry... */
+		rtl960x_l2_data_to_mc(data, &mc);
+		dev_dbg(priv->dev, "%s: found %pM addr=%d member=0x%x %s\n",
+			__func__, mac_addr, ret, mc.member,
+			mc.is_static ? "static" : "dynamic");
+		/* the port must be added as a member */
+		mc.member |= BIT(port);
+
+		if (!mc.is_static) {
+			dev_dbg(priv->dev,
+				"%s: promoting addr=%d group to static\n",
+				__func__, ret);
+			mc.is_static = 1;
+		}
+
+		rtl960x_l2_mc_to_data(&mc, data);
+	} else if (ret == -ENOENT) {
+		/* New entry, no need to update data again as it already
+		 * includes the member.
+		 *
+		 * Multicast hardware entries do not support EFID (bridge
+		 * isolation). However, traffic isolation is still maintained
+		 * because the hardware applies the port isolation masks
+		 * (pmasks) configured in bridge_join after the L2 lookup.
+		 * Entries from different bridges will collide on the same
+		 * MAC+VID slot with an OR'ed member mask, but packets will
+		 * only exit through ports allowed by the source port's pmask.
+		 */
+	} else {
+		return ret;
+	}
+
+	/* add the new entry or update an existing one */
+	ret = otto_table_l2_write(RTL9607C_TBL_L2_MC_DSL, 0, &data, 0, 0);
+
+	return ret < 0 ? ret : 0;
+}
+
+static int rtl960x_l2_del_mc(struct rtl960x_dsa *priv, int port,
+			     const unsigned char mac_addr[static ETH_ALEN],
+			     u16 vid)
+{
+	u32 data[RTL960X_L2_ENTRY_SIZE] = { 0 };
+	struct rtl960x_l2_mc mc = { 0 };
+	int ret;
+
+	memcpy(mc.key.mac_addr, mac_addr, ETH_ALEN);
+	mc.key.ivl = !!vid;
+	mc.key.vid = mc.key.ivl ? vid : 1;
+	rtl960x_l2_mc_to_data(&mc, data);
+
+	/* First look for an existing entry (to get existing port members) */
+	ret = otto_table_l2_read(RTL9607C_TBL_L2_MC_DSL, 0, &data, 0,
+				 OTTO_TABLE_L2_METHOD_MAC);
+
+	if (ret == -ENOENT) {
+		dev_dbg(priv->dev, "%s: %pM vid=%d missing\n",
+			__func__, mac_addr, vid);
+		/* Silently return success */
+		return 0;
+	}
+
+	if (ret < 0)
+		/* Return on any other error */
+		return ret;
+
+	rtl960x_l2_data_to_mc(data, &mc);
+	dev_dbg(priv->dev, "%s: found %pM addr=%d member=0x%x %s\n",
+		__func__, mac_addr, ret, mc.member,
+		mc.is_static ? "static" : "dynamic");
+	/* the port must be removed as a member */
+	mc.member &= ~BIT(port);
+	if (!mc.member)
+		/* Unlike on rtl8365mb only valid bit needs to be cleared */
+		mc.valid = 0;
+	rtl960x_l2_mc_to_data(&mc, data);
+
+	/* update the existing entry. */
+	ret = otto_table_l2_write(RTL9607C_TBL_L2_MC_DSL, 0, &data, 0, 0);
+
+	return ret < 0 ? ret : 0;
+}
+
+int rtl960x_port_mdb_add(struct dsa_switch *ds, int port,
+			 const struct switchdev_obj_port_mdb *mdb,
+			 struct dsa_db db)
+{
+	struct rtl960x_dsa *priv = ds->priv;
+	const unsigned char *addr = mdb->addr;
+	u16 vid = mdb->vid;
+	int ret;
+
+	if (db.type != DSA_DB_PORT && db.type != DSA_DB_BRIDGE)
+		return -EOPNOTSUPP;
+
+	dev_dbg(priv->dev, "%s: port:%d addr:%pM vid:%d dbtype:%d\n",
+		__func__, port, addr, vid, db.type);
+
+	mutex_lock(&priv->l2_lock);
+	ret = rtl960x_l2_add_mc(priv, port, addr, vid);
+	mutex_unlock(&priv->l2_lock);
+
+	if (ret)
+		dev_err(priv->dev, "mdb_add ERROR %pe\n", ERR_PTR(ret));
+	return ret;
+}
+
+int rtl960x_port_mdb_del(struct dsa_switch *ds, int port,
+			 const struct switchdev_obj_port_mdb *mdb,
+			 struct dsa_db db)
+{
+	struct rtl960x_dsa *priv = ds->priv;
+	const unsigned char *addr = mdb->addr;
+	u16 vid = mdb->vid;
+	int ret;
+
+	if (db.type != DSA_DB_PORT && db.type != DSA_DB_BRIDGE)
+		return -EOPNOTSUPP;
+
+	dev_dbg(priv->dev, "%s: port:%d addr:%pM vid:%d dbtype:%d\n",
+		__func__, port, addr, vid, db.type);
+
+	mutex_lock(&priv->l2_lock);
+	ret = rtl960x_l2_del_mc(priv, port, addr, vid);
+	mutex_unlock(&priv->l2_lock);
+
+	if (ret)
+		dev_err(priv->dev, "mdb_del ERROR %pe\n", ERR_PTR(ret));
 	return ret;
 }
