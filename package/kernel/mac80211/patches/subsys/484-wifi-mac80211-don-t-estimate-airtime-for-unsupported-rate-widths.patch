@@ -1,0 +1,90 @@
+From f394cbd0980c95c9173f8551a5eb4c4f28d598eb Mon Sep 17 00:00:00 2001
+From: François Roux <franzelfranzel@gmail.com>
+Date: Tue, 6 Oct 2026 10:37:51 +0200
+Subject: wifi: mac80211: don't estimate airtime for unsupported rate widths
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+ieee80211_fill_rate_info() copies the driver's rate_info bandwidth into
+the rx_status as is, but ieee80211_get_rate_duration() only handles
+20/40/80/160/320 MHz. When a driver reports another width, e.g. an
+HE/EHT RU allocation, it hits WARN_ON_ONCE() and returns 0 without
+setting *overhead. ieee80211_rate_expected_tx_airtime() then goes on
+using the uninitialized overhead, as Dan's static checker report
+points out.
+
+Seen on a Microsoft Surface Pro 11 (WCN7850, ath12k) while
+NetworkManager dumps station info:
+
+  WARNING: net/mac80211/airtime.c:532 at ieee80211_get_rate_duration.isra.0+0xc0/0x180 [mac80211]
+   ieee80211_get_rate_duration.isra.0+0xc0/0x180 [mac80211]
+   sta_estimate_expected_throughput.isra.0+0x38/0x64 [mac80211]
+   sta_set_sinfo+0x7fc/0x8e4 [mac80211]
+   ieee80211_dump_station+0x4c/0x84 [mac80211]
+   nl80211_dump_station+0x594/0x7e8 [cfg80211]
+
+Only accept widths that ieee80211_get_rate_duration() handles in
+ieee80211_fill_rate_info(). Other widths then give no estimate instead
+of a warning. Also return 0 from ieee80211_rate_expected_tx_airtime()
+when no duration could be computed, as ieee80211_calc_rx_airtime()
+already does.
+
+Tested on the Surface Pro 11 with next-20260929: Wi-Fi works and
+"expected throughput" is still reported (about 1049 Mbit/s for a
+1297 Mbit/s HE 160 MHz tx rate). The warning itself is rare (twice in
+several days of use), so this does not prove it is gone, only that the
+change does not break the normal path.
+
+Fixes: 094dc1619cb0 ("wifi: mac80211: factor out part of ieee80211_calc_expected_tx_airtime")
+Reported-by: Dan Carpenter <error27@gmail.com>
+Closes: https://lore.kernel.org/all/aneGlCMVnqRhlf6p@stanley.mountain/
+Assisted-by: LLM
+Signed-off-by: François Roux <franzelfranzel@gmail.com>
+Link: https://patch.msgid.link/20261006083751.4015-1-franzelfranzel@gmail.com
+Signed-off-by: Johannes Berg <johannes.berg@intel.com>
+---
+ net/mac80211/airtime.c | 18 ++++++++++++++++++
+ 1 file changed, 18 insertions(+)
+
+diff --git a/net/mac80211/airtime.c b/net/mac80211/airtime.c
+index 0c54cdbd753cd..a4e1f33c03779 100644
+--- a/net/mac80211/airtime.c
++++ b/net/mac80211/airtime.c
+@@ -632,6 +632,22 @@ static bool ieee80211_fill_rate_info(struct ieee80211_hw *hw,
+ 	if (!ri || !sband)
+ 	    return false;
+ 
++	/*
++	 * ieee80211_get_rate_duration() only handles these widths. Drivers
++	 * may also report e.g. HE/EHT RU allocations, which cannot be used
++	 * to estimate airtime here.
++	 */
++	switch (ri->bw) {
++	case RATE_INFO_BW_20:
++	case RATE_INFO_BW_40:
++	case RATE_INFO_BW_80:
++	case RATE_INFO_BW_160:
++	case RATE_INFO_BW_320:
++		break;
++	default:
++		return false;
++	}
++
+ 	stat->bw = ri->bw;
+ 	stat->nss = ri->nss;
+ 	stat->rate_idx = ri->mcs;
+@@ -770,6 +786,8 @@ u32 ieee80211_rate_expected_tx_airtime(struct ieee80211_hw *hw,
+ 		return ieee80211_calc_rx_airtime(hw, &stat, len) * 1024;
+ 
+ 	duration = ieee80211_get_rate_duration(hw, &stat, &overhead);
++	if (!duration)
++		return 0;
+ 
+ 	/*
+ 	 * Assume that HT/VHT transmission on any AC except VO will
+-- 
+cgit 1.3.1-korg
+
+-- 
+2.43.0
