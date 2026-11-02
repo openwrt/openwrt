@@ -215,6 +215,34 @@ define Device/lianguo_lg-swtgw3c8f
 endef
 TARGET_DEVICES += lianguo_lg-swtgw3c8f
 
+define Device/lianguo_lg510s-4t2xs
+  SOC := rtl9303
+  UIMAGE_MAGIC := 0x83800000
+  DEVICE_VENDOR := Lianguo
+  DEVICE_MODEL := LG510S-4T2XS
+  DEVICE_ALT0_VENDOR := GoodTop
+  DEVICE_ALT0_MODEL := LG510S-4T2XS
+  DEVICE_ALT1_VENDOR := Horaco
+  DEVICE_ALT1_MODEL := ZX510S-4T2XS
+  DEVICE_ALT2_VENDOR := HRUI
+  DEVICE_ALT2_MODEL := HR510S-4T2XS
+  DEVICE_ALT3_VENDOR := MokerLink
+  DEVICE_ALT3_MODEL := 10G04210GSM
+  DEVICE_ALT4_VENDOR := Sodola
+  DEVICE_ALT4_MODEL := SL510S-4T2XS
+  DEVICE_PACKAGES := rtl826x-firmware
+  IMAGE_SIZE := 12288k
+  $(Device/kernel-lzma)
+  IMAGES += factory.bix
+  IMAGE/factory.bix := \
+	append-kernel | \
+	pad-to 64k | \
+	append-rootfs | \
+	pad-rootfs | \
+	check-size
+endef
+TARGET_DEVICES += lianguo_lg510s-4t2xs
+
 define Device/mokerlink_2g080gm
   SOC := rtl9303
   UIMAGE_MAGIC := 0x83800000
