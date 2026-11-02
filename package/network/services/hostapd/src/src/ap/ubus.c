@@ -1194,6 +1194,15 @@ hostapd_switch_chan(struct ubus_context *ctx, struct ubus_object *obj,
 	if (!css.freq_params.channel)
 		return UBUS_STATUS_NOT_SUPPORTED;
 
+	/* hostapd_set_freq_params() takes the center frequencies as channel
+	 * indexes and sets center_freq1 from them; without them it derives
+	 * an 80 or 160 MHz center only on 5 GHz, and a 6 GHz switch wider than
+	 * 20 MHz went to the driver with a 40 MHz center */
+	if (css.freq_params.center_freq1)
+		ieee80211_freq_to_chan(css.freq_params.center_freq1, &seg0);
+	if (css.freq_params.center_freq2)
+		ieee80211_freq_to_chan(css.freq_params.center_freq2, &seg1);
+
 	switch (css.freq_params.bandwidth) {
 	case 160:
 		chwidth = CHANWIDTH_160MHZ;
