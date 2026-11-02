@@ -1,0 +1,68 @@
+From 64dfff041c6ba7898ac0b6ff54fdf8965fe9df61 Mon Sep 17 00:00:00 2001
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Date: Sat, 17 Oct 2026 12:53:25 +0200
+Subject: [PATCH] wifi: ath11k: clear CRASH_FLUSH only after recovery rebuilds
+ the rings
+
+ath11k_core_reconfigure_on_crash() clears ATH11K_FLAG_CRASH_FLUSH right
+after ath11k_hal_srng_clear() zeroes the rings, but
+ath11k_ce_init_pipes() and ath11k_dp_alloc() rebuild them only later. A
+WMI command sent in between passes the CRASH_FLUSH check in
+ath11k_ce_send() and dereferences the NULL tail pointer of the cleared
+ring:
+
+  Unable to handle kernel read from unreadable memory at virtual address 0
+  pc : ath11k_hal_srng_access_begin+0xc/0x60 [ath11k]
+  lr : ath11k_ce_send+0x114/0x350 [ath11k]
+  Call trace:
+   ath11k_hal_srng_access_begin+0xc/0x60 [ath11k] (P)
+   ath11k_htc_send+0x188/0x3c8 [ath11k]
+   ath11k_wmi_cmd_send+0xc8/0x2f4 [ath11k]
+   ath11k_wmi_send_peer_create_cmd+0x78/0xe0 [ath11k]
+   ath11k_peer_create+0x138/0x500 [ath11k]
+
+Clear the flag once the rings are rebuilt, before ath11k_core_start()
+sends the first HTC message.
+
+If ath11k_core_start() or ath11k_core_pdev_create() then fails, the error
+path frees the data path rings with the flag clear. The stations stay in
+ab->peers, so removing one later, or removing the driver, makes
+ath11k_dp_tx_send_reo_cmd() write a REO command into the freed REO
+command ring. Set the flag again before ath11k_dp_free().
+
+Tested-on: IPQ8074 hw2.0 AHB WLAN.HK.2.9.0.1-02146-QCAHKSWPL_SILICONZ-1
+
+Fixes: d5c65159f289 ("ath11k: driver for Qualcomm IEEE 802.11ax devices")
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+---
+ drivers/net/wireless/ath/ath11k/core.c | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+--- a/drivers/net/wireless/ath/ath11k/core.c
++++ b/drivers/net/wireless/ath/ath11k/core.c
+@@ -2439,6 +2439,8 @@ int ath11k_core_qmi_firmware_ready(struc
+ 		goto err_firmware_stop;
+ 	}
+ 
++	clear_bit(ATH11K_FLAG_CRASH_FLUSH, &ab->dev_flags);
++
+ 	if (ath11k_frame_mode == ATH11K_HW_TXRX_RAW)
+ 		set_bit(ATH11K_FLAG_RAW_MODE, &ab->dev_flags);
+ 
+@@ -2464,6 +2466,7 @@ err_core_stop:
+ 	if (!test_bit(ATH11K_FLAG_REGISTERED, &ab->dev_flags))
+ 		ath11k_mac_destroy(ab);
+ err_dp_free:
++	set_bit(ATH11K_FLAG_CRASH_FLUSH, &ab->dev_flags);
+ 	ath11k_dp_free(ab);
+ 	mutex_unlock(&ab->core_lock);
+ err_firmware_stop:
+@@ -2501,8 +2504,6 @@ static int ath11k_core_reconfigure_on_cr
+ 
+ 	ab->free_vdev_map = (1LL << (ab->num_radios * TARGET_NUM_VDEVS(ab))) - 1;
+ 
+-	clear_bit(ATH11K_FLAG_CRASH_FLUSH, &ab->dev_flags);
+-
+ 	ret = ath11k_core_qmi_firmware_ready(ab);
+ 	if (ret)
+ 		return ret;
