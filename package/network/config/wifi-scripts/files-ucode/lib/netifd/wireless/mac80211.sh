@@ -70,7 +70,12 @@ function setup_phy(phy, config, data) {
 	config.channel = +config.channel;
 	config.frequency = get_channel_frequency(config.band, config.channel);
 
-	if (config.country_code) {
+	/* the regulatory domain is the whole system's: a disabled radio does not
+	 * set it, and it is not set again to what it already is (each change goes
+	 * to the drivers, and ath11k firmware refuses the world domain, which
+	 * then breaks DFS on the radios in use) */
+	let reg = nl80211.request(nl80211.const.NL80211_CMD_GET_REG);
+	if (config.country_code && !config.disabled && config.country_code != reg?.reg_alpha2) {
 		log(`Setting country code to ${config.country_code}`);
 		system(`iw reg set ${config.country_code}`);
 	}
