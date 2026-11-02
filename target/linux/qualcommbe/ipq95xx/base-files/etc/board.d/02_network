@@ -20,6 +20,9 @@ ipq95xx_setup_interfaces()
 	linksys,ln6001)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "wan"
 		;;
+	nokia,beacon-10)
+		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" "wan"
+		;;
 	qcom,ipq9574-ap-al02-c7)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4 lan5" "wan"
 		;;
@@ -29,6 +32,7 @@ ipq95xx_setup_interfaces()
 	esac
 }
 
+DEV_PATH_AHB=platform/soc@0/c000000.wifi
 DEV_PATH_PCIE0=soc@0/10000000.pcie/pci0001:00/0001:00:00.0/0001:01:00.0
 DEV_PATH_PCIE1=soc@0/18000000.pcie/pci0003:00/0003:00:00.0/0003:01:00.0
 DEV_PATH_PCIE2=soc@0/20000000.pcie/pci0002:00/0002:00:00.0/0002:01:00.0
@@ -40,6 +44,11 @@ ipq95xx_setup_wlan()
 	case "$board" in
 	askey,sbe1v1k)
 		ucidef_add_wlan "$DEV_PATH_PCIE0" "$DEV_PATH_PCIE1" "$DEV_PATH_PCIE2"
+		;;
+	nokia,beacon-10)
+		ucidef_add_wlan "$DEV_PATH_AHB"
+		ucidef_add_wlan "$DEV_PATH_PCIE2"
+		ucidef_add_wlan "$DEV_PATH_PCIE1"
 		;;
 	esac
 }
