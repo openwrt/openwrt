@@ -1,0 +1,36 @@
+From 5f6bd2e1a81c51c9f2506b653937923eb78df90c Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Fri, 23 Oct 2026 00:09:20 +0100
+Subject: [PATCH] iommu/vsi: drop the old domain from attach_dev on 6.18
+
+The driver was written against the attach_dev callback which receives
+the previously attached domain, from commit fd714986e4e4 ("iommu: Pass
+in old domain to attach_dev callback functions"). Linux 6.18 calls
+attach_dev with the domain and the device only. Neither callback uses
+the old domain, so drop the argument.
+
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ drivers/iommu/vsi-iommu.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/drivers/iommu/vsi-iommu.c
++++ b/drivers/iommu/vsi-iommu.c
+@@ -497,7 +497,7 @@ static void vsi_iommu_disable(struct vsi
+ }
+ 
+ static int vsi_iommu_identity_attach(struct iommu_domain *domain,
+-				     struct device *dev, struct iommu_domain *old)
++				     struct device *dev)
+ {
+ 	struct vsi_iommu *iommu = dev_iommu_priv_get(dev);
+ 	struct vsi_iommu_domain *vsi_domain = to_vsi_domain(domain);
+@@ -549,7 +549,7 @@ static void vsi_iommu_enable(struct vsi_
+ }
+ 
+ static int vsi_iommu_attach_device(struct iommu_domain *domain,
+-				   struct device *dev, struct iommu_domain *old)
++				   struct device *dev)
+ {
+ 	struct vsi_iommu *iommu = dev_iommu_priv_get(dev);
+ 	struct vsi_iommu_domain *vsi_domain = to_vsi_domain(domain);
