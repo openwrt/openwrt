@@ -395,6 +395,9 @@ struct rtldsa_config {
 	enum otto_table_id l2_cam_tbl;
 	int trk_ctrl;
 	int trk_hash_ctrl;
+	int pri_sel_port_pri;
+	int pri_sel_remap_dscp;
+	int pri_sel_port_tbl_idx;
 	void (*stp_init)(void);
 	void (*vlan_tables_read)(u32 vlan, struct otto_vlan_info *info);
 	void (*vlan_set_tagged)(u32 vlan, struct otto_vlan_info *info);
