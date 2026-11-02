@@ -4721,6 +4721,9 @@ static void rtpcs_pcs_get_state(struct phylink_pcs *pcs, unsigned int neg_mode,
 	}
 
 	mutex_lock(&ctrl->lock);
+	if (sds->rx_phase == RTPCS_RX_PHASE_CALIBRATION)
+		goto unlock;
+
 	switch (sds->hw_mode) {
 	case RTPCS_SDS_MODE_SGMII:
 	case RTPCS_SDS_MODE_1000BASEX:
@@ -4731,6 +4734,7 @@ static void rtpcs_pcs_get_state(struct phylink_pcs *pcs, unsigned int neg_mode,
 		rtpcs_pcs_get_state_mac(link, state);
 		break;
 	}
+unlock:
 	mutex_unlock(&ctrl->lock);
 }
 
@@ -4834,9 +4838,15 @@ static int rtpcs_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
 		}
 	}
 
-	/* Forced SGMII links cannot report PCS changes through MAC link IRQs. */
-	pcs->poll = interface == PHY_INTERFACE_MODE_SGMII &&
-		    neg_mode == PHYLINK_PCS_NEG_INBAND_ENABLED;
+	/*
+	 * Calibration completion may not generate a MAC link IRQ.
+	 * Forced SGMII links also require polling instead of MAC link IRQs.
+	 */
+	pcs->poll = hw_mode == RTPCS_SDS_MODE_10GBASER ||
+		    hw_mode == RTPCS_SDS_MODE_USXGMII ||
+		    hw_mode == RTPCS_SDS_MODE_XSGMII ||
+		    (interface == PHY_INTERFACE_MODE_SGMII &&
+		     neg_mode == PHYLINK_PCS_NEG_INBAND_ENABLED);
 
 	return changed;
 }
