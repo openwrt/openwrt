@@ -1,0 +1,388 @@
+From 9c3dc65410a4a3ed37496a7c78c77c3bd356a5fa Mon Sep 17 00:00:00 2001
+From: Semih Baskan <strst.gs@gmail.com>
+Date: Sat, 5 Sep 2026 19:55:57 +0300
+Subject: [PATCH] net: dsa: b53: program 8021q uppers of standalone ports from
+ port_prechangeupper
+
+On bcm5301x boards with the in-tree device trees, the switch
+management port is IMP0 (port 8), which those device trees leave
+disabled, and the CPU connects through port 5. b53 keeps the hardware
+VID lookup enabled at all times, so a tagged frame whose VID is absent
+from the VLAN table is forwarded only toward the disabled IMP0 and
+never reaches the CPU.
+
+Since commit 06cfb2df7eb0 ("net: dsa: don't advertise 'rx-vlan-filter'
+when not needed") standalone ports do not advertise
+NETIF_F_HW_VLAN_CTAG_FILTER, so creating an 8021q upper on one never
+reaches .ndo_vlan_rx_add_vid, and commit f089652b6b16 ("net: dsa: b53:
+do not program vlans when vlan filtering is off") made .port_vlan_add
+skip the hardware write while not filtering. On this topology the two
+together leave a standalone port unable to receive its own tagged
+traffic. The common victim is a VLAN-tagged PPPoE WAN: the PADI goes
+out, the tagged PADO never arrives.
+
+The proper fix is a device tree rework that makes port 8 the
+management port. That rework moves the conduit and renames every ethN
+userspace knows about, so it will take a while. Until it lands,
+program the upper VIDs from the driver.
+
+DSA calls .port_prechangeupper for every upper of a user port, linking
+and unlinking alike, and the notifier info carries the VLAN device.
+Record the VIDs of 802.1Q uppers per port in the VLAN cache, and let
+an entry carry a port for as long as the upper exists, whatever the
+core does with .port_vlan_add and .port_vlan_del for the same VID.
+That keeps the entry across a vlan_filtering 1->0 transition, where
+the core deletes the VIDs of every upper on the switch.
+
+The overlay covers the uppers of standalone ports only, in both modes,
+as tagged members together with their CPU ports. A bridged port keeps
+what its bridge configured; under a VLAN-aware bridge the core programs
+the upper VIDs of that port itself. While filtering, the cached entry is
+written with the overlay on top, so that a restore from
+b53_configure_vlan() covers the standalone uppers before the core has
+replayed them. While not filtering, only the overlaid entries are
+written, so bridge VLANs committed while inactive stay inactive as
+Documentation/networking/switchdev.rst requires, and the PVID writes
+stay gated on vlan_filtering for the same reason. While not filtering,
+bridge join and leave rewrite the moved port's upper entries, because
+its standalone state is part of that decision; while filtering, the core
+programs the upper VIDs of every port itself. The leave path names the
+leaving port instead of reading dp->bridge, because a failed join is
+rolled back with the bridge still attached: dsa_port_bridge_join()
+broadcasts the leave before dsa_port_bridge_destroy(). Without that, the
+port's entries would stay empty until the next link or unlink of that
+VID. When the last upper of a VID goes away the entry is written back
+empty.
+
+The hook refuses a tagged upper on BCM7278 port 7, which cannot receive
+tagged frames. It does not record an upper the core is about to refuse,
+a VID the port's VLAN-aware bridge already has. The default PVID entry
+is left alone because b53_configure_vlan() owns it. The hook also skips
+BCM5325 and BCM5365. On those chips port 5 is the only port that can
+carry the Broadcom tag and it is also the IMP port, so they cannot end
+up in the topology this works around, where the device tree leaves the
+management port disabled and the CPU sits on another port. No such board
+has reported the problem either. The devlink VLAN table occupancy count
+includes the entries written for uppers.
+
+Known limits, none fixable from the driver: an ARL entry learned for the
+same VID and MAC on another port still steers the frame away from the
+CPU; trap-classed frames such as STP and LLDP still aim at the disabled
+IMP0; a VID reaching the port through a bond upper is not seen by the
+hook; and an upper link that fails after the hook leaves the VID
+accepted toward the CPU until the next link or unlink of that VID on the
+port. The hook does not program the uppers of a port that sits in a
+VLAN-unaware bridge. An entry for them would have to copy the bridge's
+membership, so that case stays with the device tree fix.
+
+Fixes: 06cfb2df7eb0 ("net: dsa: don't advertise 'rx-vlan-filter' when not needed")
+Signed-off-by: Semih Baskan <strst.gs@gmail.com>
+---
+ drivers/net/dsa/b53/b53_common.c | 170 +++++++++++++++++++++++++++----
+ drivers/net/dsa/b53/b53_priv.h   |   3 +
+ drivers/net/dsa/bcm_sf2.c        |   1 +
+ 3 files changed, 155 insertions(+), 19 deletions(-)
+
+--- a/drivers/net/dsa/b53/b53_common.c
++++ b/drivers/net/dsa/b53/b53_common.c
+@@ -893,10 +893,40 @@ static bool b53_vlan_port_may_join_untag
+ 	return dp->bridge == NULL;
+ }
+ 
++static bool b53_vlan_hw_entry(struct dsa_switch *ds, const struct b53_vlan *vl,
++			      struct b53_vlan *hw, u16 leaving)
++{
++	struct b53_device *dev = ds->priv;
++	struct dsa_port *dp;
++	unsigned int port;
++	u16 pair;
++
++	if (dev->vlan_filtering)
++		*hw = *vl;
++	else
++		memset(hw, 0, sizeof(*hw));
++
++	b53_for_each_port(dev, port) {
++		if (!(vl->uppers & BIT(port)))
++			continue;
++
++		dp = dsa_to_port(ds, port);
++		if (dp->bridge && !(leaving & BIT(port)))
++			continue;
++
++		pair = BIT(port) | BIT(dp->cpu_dp->index);
++		hw->members |= pair;
++		hw->untag &= ~pair;
++	}
++
++	return dev->vlan_filtering || hw->members;
++}
++
+ int b53_configure_vlan(struct dsa_switch *ds)
+ {
+ 	struct b53_device *dev = ds->priv;
+ 	struct b53_vlan vl = { 0 };
++	struct b53_vlan hw;
+ 	struct b53_vlan *v;
+ 	int i, def_vid;
+ 	u16 vid;
+@@ -932,20 +962,23 @@ int b53_configure_vlan(struct dsa_switch
+ 	}
+ 	b53_set_vlan_entry(dev, def_vid, &vl);
+ 
+-	if (dev->vlan_filtering) {
+-		/* Upon initial call we have not set-up any VLANs, but upon
+-		 * system resume, we need to restore all VLAN entries.
+-		 */
+-		for (vid = def_vid + 1; vid < dev->num_vlans; vid++) {
+-			v = &dev->vlans[vid];
++	/* Upon initial call we have not set-up any VLANs, but upon
++	 * system resume, we need to restore all VLAN entries.
++	 */
++	for (vid = def_vid + 1; vid < dev->num_vlans; vid++) {
++		v = &dev->vlans[vid];
++
++		if (!v->members && !v->uppers)
++			continue;
+ 
+-			if (!v->members)
+-				continue;
++		if (!b53_vlan_hw_entry(ds, v, &hw, 0))
++			continue;
+ 
+-			b53_set_vlan_entry(dev, vid, v);
+-			b53_fast_age_vlan(dev, vid);
+-		}
++		b53_set_vlan_entry(dev, vid, &hw);
++		b53_fast_age_vlan(dev, vid);
++	}
+ 
++	if (dev->vlan_filtering) {
+ 		b53_for_each_port(dev, i) {
+ 			if (!dsa_is_cpu_port(ds, i))
+ 				b53_write16(dev, B53_VLAN_PAGE,
+@@ -1227,12 +1260,14 @@ static u64 b53_devlink_vlan_table_get(vo
+ {
+ 	struct b53_device *dev = priv;
+ 	struct b53_vlan *vl;
++	struct b53_vlan hw;
+ 	unsigned int i;
+ 	u64 count = 0;
+ 
+ 	for (i = 0; i < dev->num_vlans; i++) {
+ 		vl = &dev->vlans[i];
+-		if (vl->members)
++		if (vl->members ||
++		    (b53_vlan_hw_entry(dev->ds, vl, &hw, 0) && hw.members))
+ 			count++;
+ 	}
+ 
+@@ -1715,6 +1750,7 @@ int b53_vlan_add(struct dsa_switch *ds,
+ 	bool untagged = vlan->flags & BRIDGE_VLAN_INFO_UNTAGGED;
+ 	bool pvid = vlan->flags & BRIDGE_VLAN_INFO_PVID;
+ 	struct b53_vlan *vl;
++	struct b53_vlan hw;
+ 	u16 old_pvid, new_pvid;
+ 	int err;
+ 
+@@ -1745,13 +1781,14 @@ int b53_vlan_add(struct dsa_switch *ds,
+ 	else
+ 		vl->untag &= ~BIT(port);
+ 
+-	if (!dev->vlan_filtering)
++	if (!b53_vlan_hw_entry(ds, vl, &hw, 0))
+ 		return 0;
+ 
+-	b53_set_vlan_entry(dev, vlan->vid, vl);
++	b53_set_vlan_entry(dev, vlan->vid, &hw);
+ 	b53_fast_age_vlan(dev, vlan->vid);
+ 
+-	if (!dsa_is_cpu_port(ds, port) && new_pvid != old_pvid) {
++	if (dev->vlan_filtering &&
++	    !dsa_is_cpu_port(ds, port) && new_pvid != old_pvid) {
+ 		b53_write16(dev, B53_VLAN_PAGE, B53_VLAN_PORT_DEF_TAG(port),
+ 			    new_pvid);
+ 		b53_fast_age_vlan(dev, old_pvid);
+@@ -1767,6 +1804,7 @@ int b53_vlan_del(struct dsa_switch *ds,
+ 	struct b53_device *dev = ds->priv;
+ 	bool untagged = vlan->flags & BRIDGE_VLAN_INFO_UNTAGGED;
+ 	struct b53_vlan *vl;
++	struct b53_vlan hw;
+ 	u16 pvid;
+ 
+ 	if (vlan->vid == 0)
+@@ -1785,19 +1823,85 @@ int b53_vlan_del(struct dsa_switch *ds,
+ 	if (untagged && !b53_vlan_port_needs_forced_tagged(ds, port))
+ 		vl->untag &= ~(BIT(port));
+ 
+-	if (!dev->vlan_filtering)
++	if (!b53_vlan_hw_entry(ds, vl, &hw, 0))
+ 		return 0;
+ 
+-	b53_set_vlan_entry(dev, vlan->vid, vl);
++	b53_set_vlan_entry(dev, vlan->vid, &hw);
+ 	b53_fast_age_vlan(dev, vlan->vid);
+ 
+-	b53_write16(dev, B53_VLAN_PAGE, B53_VLAN_PORT_DEF_TAG(port), pvid);
+-	b53_fast_age_vlan(dev, pvid);
++	if (dev->vlan_filtering) {
++		b53_write16(dev, B53_VLAN_PAGE, B53_VLAN_PORT_DEF_TAG(port),
++			    pvid);
++		b53_fast_age_vlan(dev, pvid);
++	}
+ 
+ 	return 0;
+ }
+ EXPORT_SYMBOL(b53_vlan_del);
+ 
++static bool b53_vlan_upper_refused(struct dsa_switch *ds, int port, u16 vid)
++{
++	struct net_device *br = dsa_port_bridge_dev_get(dsa_to_port(ds, port));
++	struct bridge_vlan_info br_info;
++
++	return br && br_vlan_enabled(br) && !br_vlan_get_info(br, vid, &br_info);
++}
++
++int b53_port_prechangeupper(struct dsa_switch *ds, int port,
++			    struct netdev_notifier_changeupper_info *info)
++{
++	struct netlink_ext_ack *extack = netdev_notifier_info_to_extack(&info->info);
++	struct net_device *upper = info->upper_dev;
++	struct b53_device *dev = ds->priv;
++	struct b53_vlan *vl;
++	struct b53_vlan hw;
++	bool was, now;
++	u16 vid;
++
++	if (!is_vlan_dev(upper) ||
++	    vlan_dev_vlan_proto(upper) != htons(ETH_P_8021Q))
++		return 0;
++
++	if (is5325(dev) || is5365(dev))
++		return 0;
++
++	if (info->linking && dev->chip_id == BCM7278_DEVICE_ID && port == 7) {
++		NL_SET_ERR_MSG_MOD(extack,
++				   "Port cannot receive VLAN tagged frames");
++		return -EINVAL;
++	}
++
++	vid = vlan_dev_vlan_id(upper);
++	if (vid == 0 || vid == b53_default_pvid(dev) || vid >= dev->num_vlans)
++		return 0;
++
++	vl = &dev->vlans[vid];
++
++	if (info->linking) {
++		if (b53_vlan_upper_refused(ds, port, vid))
++			return 0;
++	} else if (!(vl->uppers & BIT(port))) {
++		return 0;
++	}
++
++	was = b53_vlan_hw_entry(ds, vl, &hw, 0);
++
++	if (info->linking)
++		vl->uppers |= BIT(port);
++	else
++		vl->uppers &= ~BIT(port);
++
++	now = b53_vlan_hw_entry(ds, vl, &hw, 0);
++	if (!was && !now)
++		return 0;
++
++	b53_set_vlan_entry(dev, vid, &hw);
++	b53_fast_age_vlan(dev, vid);
++
++	return 0;
++}
++EXPORT_SYMBOL(b53_port_prechangeupper);
++
+ /* Address Resolution Logic routines. Caller must hold &dev->arl_mutex. */
+ static int b53_arl_op_wait(struct b53_device *dev)
+ {
+@@ -2255,6 +2359,29 @@ int b53_mdb_del(struct dsa_switch *ds, i
+ }
+ EXPORT_SYMBOL(b53_mdb_del);
+ 
++static void b53_standalone_vlan_resync(struct dsa_switch *ds, int port,
++				       u16 leaving)
++{
++	struct b53_device *dev = ds->priv;
++	struct b53_vlan *vl;
++	struct b53_vlan hw;
++	u16 vid;
++
++	if (dev->vlan_filtering)
++		return;
++
++	for (vid = b53_default_pvid(dev) + 1; vid < dev->num_vlans; vid++) {
++		vl = &dev->vlans[vid];
++
++		if (!(vl->uppers & BIT(port)))
++			continue;
++
++		b53_vlan_hw_entry(ds, vl, &hw, leaving);
++		b53_set_vlan_entry(dev, vid, &hw);
++		b53_fast_age_vlan(dev, vid);
++	}
++}
++
+ int b53_br_join(struct dsa_switch *ds, int port, struct dsa_bridge bridge,
+ 		bool *tx_fwd_offload, struct netlink_ext_ack *extack)
+ {
+@@ -2318,6 +2445,8 @@ int b53_br_join(struct dsa_switch *ds, i
+ 	b53_write16(dev, B53_PVLAN_PAGE, B53_PVLAN_PORT_MASK(port), pvlan);
+ 	dev->ports[port].vlan_ctl_mask = pvlan;
+ 
++	b53_standalone_vlan_resync(ds, port, 0);
++
+ 	return 0;
+ }
+ EXPORT_SYMBOL(b53_br_join);
+@@ -2370,6 +2499,8 @@ void b53_br_leave(struct dsa_switch *ds,
+ 		vl->members |= BIT(port);
+ 		b53_set_vlan_entry(dev, pvid, vl);
+ 	}
++
++	b53_standalone_vlan_resync(ds, port, BIT(port));
+ }
+ EXPORT_SYMBOL(b53_br_leave);
+ 
+@@ -2706,6 +2837,7 @@ static const struct dsa_switch_ops b53_s
+ 	.support_eee		= b53_support_eee,
+ 	.set_mac_eee		= b53_set_mac_eee,
+ 	.set_ageing_time	= b53_set_ageing_time,
++	.port_prechangeupper	= b53_port_prechangeupper,
+ 	.port_bridge_join	= b53_br_join,
+ 	.port_bridge_leave	= b53_br_leave,
+ 	.port_pre_bridge_flags	= b53_br_flags_pre,
+--- a/drivers/net/dsa/b53/b53_priv.h
++++ b/drivers/net/dsa/b53/b53_priv.h
+@@ -126,6 +126,7 @@ struct b53_port {
+ struct b53_vlan {
+ 	u16 members;
+ 	u16 untag;
++	u16 uppers;
+ 	bool valid;
+ };
+ 
+@@ -516,6 +517,8 @@ int b53_vlan_add(struct dsa_switch *ds,
+ 		 struct netlink_ext_ack *extack);
+ int b53_vlan_del(struct dsa_switch *ds, int port,
+ 		 const struct switchdev_obj_port_vlan *vlan);
++int b53_port_prechangeupper(struct dsa_switch *ds, int port,
++			    struct netdev_notifier_changeupper_info *info);
+ int b53_fdb_add(struct dsa_switch *ds, int port,
+ 		const unsigned char *addr, u16 vid,
+ 		struct dsa_db db);
+--- a/drivers/net/dsa/bcm_sf2.c
++++ b/drivers/net/dsa/bcm_sf2.c
+@@ -1240,6 +1240,7 @@ static const struct dsa_switch_ops bcm_s
+ 	.support_eee		= b53_support_eee,
+ 	.set_mac_eee		= b53_set_mac_eee,
+ 	.set_ageing_time	= b53_set_ageing_time,
++	.port_prechangeupper	= b53_port_prechangeupper,
+ 	.port_bridge_join	= b53_br_join,
+ 	.port_bridge_leave	= b53_br_leave,
+ 	.port_pre_bridge_flags	= b53_br_flags_pre,
