@@ -336,19 +336,6 @@ void rtl9300_dump_debug(struct otto_dsa_priv *priv)
 // 	return mtu_id;
 // }
 
-static void rtl930x_set_igr_filter(struct otto_dsa_priv *priv, int port, enum igr_filter state)
-{
-	regmap_write_bits(priv->map, RTL930X_VLAN_PORT_IGR_FLTR + (((port >> 4) << 2)),
-			  GENMASK(1, 0) << ((port & 0xf) << 1),
-			  (u32)(state & 0x3) << ((port & 0xf) << 1));
-}
-
-static void rtl930x_set_egr_filter(struct otto_dsa_priv *priv, int port, enum egr_filter state)
-{
-	regmap_write_bits(priv->map, RTL930X_VLAN_PORT_EGR_FLTR + (((port / 29) << 2)),
-			  BIT(port % 0x1D), (u32)(state & 0x1) << (port % 0x1D));
-}
-
 static void rtldsa_930x_led_get_forced(const struct device_node *node,
 				       const u8 leds_in_set[4],
 				       u8 forced_leds_per_port[RTL930X_CPU_PORT])
@@ -558,8 +545,8 @@ const struct rtldsa_config rtldsa_930x_cfg = {
 	.vlan_fwd_on_inner = otto_vlan_930x_port_forward_on_inner,
 	.vlan_qinq_setup = otto_vlan_930x_qinq_setup,
 	.vlan_port_qinq_set = otto_vlan_930x_port_qinq_set,
-	.set_vlan_igr_filter = rtl930x_set_igr_filter,
-	.set_vlan_egr_filter = rtl930x_set_egr_filter,
+	.vlan_set_igr_filter = otto_vlan_930x_set_igr_filter,
+	.vlan_set_egr_filter = otto_vlan_930x_set_egr_filter,
 	.stp_get = otto_stp_930x_get,
 	.stp_set = otto_stp_930x_set,
 	.mac_link_sts = RTL930X_MAC_LINK_STS,

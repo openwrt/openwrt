@@ -86,19 +86,6 @@ static void rtl838x_traffic_disable(struct otto_dsa_priv *priv, int source, int 
 	regmap_write_bits(priv->map, rtl838x_port_iso_ctrl(source), BIT(dest), 0);
 }
 
-static void rtl838x_set_igr_filter(struct otto_dsa_priv *priv, int port, enum igr_filter state)
-{
-	regmap_write_bits(priv->map, RTL838X_VLAN_PORT_IGR_FLTR + (((port >> 4) << 2)),
-			  GENMASK(1, 0) << ((port & 0xf) << 1),
-			  (u32)(state & 0x3) << ((port & 0xf) << 1));
-}
-
-static void rtl838x_set_egr_filter(struct otto_dsa_priv *priv, int port, enum egr_filter state)
-{
-	regmap_write_bits(priv->map, RTL838X_VLAN_PORT_EGR_FLTR + (((port / 29) << 2)),
-			  BIT(port % 0x1d), (u32)(state & 0x1) << (port % 0x1d));
-}
-
 static void rtl838x_set_receive_management_action(struct otto_dsa_priv *priv,
 						int port, rma_ctrl_t type,
 						action_type_t action)
@@ -188,8 +175,8 @@ const struct rtldsa_config rtldsa_838x_cfg = {
 	.vlan_profile_setup = otto_vlan_838x_profile_setup,
 	.vlan_port_aft = RTL838X_VLAN_PORT_AFT,
 	.vlan_fwd_on_inner = otto_vlan_838x_port_forward_on_inner,
-	.set_vlan_igr_filter = rtl838x_set_igr_filter,
-	.set_vlan_egr_filter = rtl838x_set_egr_filter,
+	.vlan_set_igr_filter = otto_vlan_838x_set_igr_filter,
+	.vlan_set_egr_filter = otto_vlan_838x_set_egr_filter,
 	.enable_learning = otto_l2_838x_enable_learning,
 	.set_l2_new_sa_trap = otto_l2_838x_set_port_new_sa_trap,
 	.enable_flood = otto_l2_838x_enable_flood,

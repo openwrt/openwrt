@@ -214,6 +214,19 @@ void otto_vlan_setup(struct otto_dsa_priv *priv)
 }
 
 /* RTL838x VLAN operations */
+void otto_vlan_838x_set_igr_filter(struct otto_dsa_priv *priv, int port, enum igr_filter state)
+{
+	regmap_write_bits(priv->map, RTL838X_VLAN_PORT_IGR_FLTR + (((port >> 4) << 2)),
+			  GENMASK(1, 0) << ((port & 0xf) << 1),
+			  (u32)(state & 0x3) << ((port & 0xf) << 1));
+}
+
+void otto_vlan_838x_set_egr_filter(struct otto_dsa_priv *priv, int port, enum egr_filter state)
+{
+	regmap_write_bits(priv->map, RTL838X_VLAN_PORT_EGR_FLTR + (((port / 29) << 2)),
+			  BIT(port % 0x1d), (u32)(state & 0x1) << (port % 0x1d));
+}
+
 void otto_vlan_838x_tables_read(u32 vlan, struct otto_vlan_info *info)
 {
 	u32 buf[2];
@@ -371,6 +384,19 @@ otto_vlan_838x_profile_dump(struct otto_dsa_priv *priv, int idx)
 }
 
 /* RTL839x VLAN operations */
+void otto_vlan_839x_set_igr_filter(struct otto_dsa_priv *priv, int port, enum igr_filter state)
+{
+	regmap_write_bits(priv->map, RTL839X_VLAN_PORT_IGR_FLTR + (((port >> 4) << 2)),
+			  GENMASK(1, 0) << ((port & 0xf) << 1),
+			  (u32)(state & 0x3) << ((port & 0xf) << 1));
+}
+
+void otto_vlan_839x_set_egr_filter(struct otto_dsa_priv *priv, int port, enum egr_filter state)
+{
+	regmap_write_bits(priv->map, RTL839X_VLAN_PORT_EGR_FLTR + (((port >> 5) << 2)),
+			  BIT(port % 0x20), (u32)(state & 0x1) << (port % 0x20));
+}
+
 void otto_vlan_839x_tables_read(u32 vlan, struct otto_vlan_info *info)
 {
 	u32 buf[3], untag[2];
@@ -549,6 +575,19 @@ void otto_vlan_839x_port_qinq_set(struct otto_dsa_priv *priv, int port, bool ena
 }
 
 /* RTL930x VLAN operations */
+void otto_vlan_930x_set_igr_filter(struct otto_dsa_priv *priv, int port, enum igr_filter state)
+{
+	regmap_write_bits(priv->map, RTL930X_VLAN_PORT_IGR_FLTR + (((port >> 4) << 2)),
+			  GENMASK(1, 0) << ((port & 0xf) << 1),
+			  (u32)(state & 0x3) << ((port & 0xf) << 1));
+}
+
+void otto_vlan_930x_set_egr_filter(struct otto_dsa_priv *priv, int port, enum egr_filter state)
+{
+	regmap_write_bits(priv->map, RTL930X_VLAN_PORT_EGR_FLTR + (((port / 29) << 2)),
+			  BIT(port % 0x1D), (u32)(state & 0x1) << (port % 0x1D));
+}
+
 void otto_vlan_930x_tables_read(u32 vlan, struct otto_vlan_info *info)
 {
 	u32 buf[2];
@@ -767,6 +806,19 @@ void otto_vlan_930x_port_pvid_set(struct otto_dsa_priv *priv, int port, enum pbv
 }
 
 /* RTL931x VLAN operations */
+void otto_vlan_931x_set_igr_filter(struct otto_dsa_priv *priv, int port, enum igr_filter state)
+{
+	regmap_write_bits(priv->map, RTL931X_VLAN_PORT_IGR_FLTR + (((port >> 4) << 2)),
+			  GENMASK(1, 0) << ((port & 0xf) << 1),
+			  (u32)(state & 0x3) << ((port & 0xf) << 1));
+}
+
+void otto_vlan_931x_set_egr_filter(struct otto_dsa_priv *priv, int port, enum egr_filter state)
+{
+	regmap_write_bits(priv->map, RTL931X_VLAN_PORT_EGR_FLTR + (((port >> 5) << 2)),
+			  BIT(port % 0x20), (u32)(state & 0x1) << (port % 0x20));
+}
+
 int
 otto_vlan_931x_profile_get(struct otto_dsa_priv *priv, int idx, struct otto_vlan_profile *profile)
 {
@@ -959,19 +1011,19 @@ int otto_vlan_port_filtering(struct dsa_switch *ds, int port,
 		 * The Egress filter used 1 bit per state (0: DISABLED, 1: ENABLED)
 		 */
 		if (port != priv->r->cpu_port) {
-			priv->r->set_vlan_igr_filter(priv, port, IGR_DROP);
-			priv->r->set_vlan_egr_filter(priv, port, EGR_ENABLE);
+			priv->r->vlan_set_igr_filter(priv, port, IGR_DROP);
+			priv->r->vlan_set_egr_filter(priv, port, EGR_ENABLE);
 		} else {
-			priv->r->set_vlan_igr_filter(priv, port, IGR_TRAP);
-			priv->r->set_vlan_egr_filter(priv, port, EGR_DISABLE);
+			priv->r->vlan_set_igr_filter(priv, port, IGR_TRAP);
+			priv->r->vlan_set_egr_filter(priv, port, EGR_DISABLE);
 		}
 
 	} else {
 		/* Disable ingress and egress filtering */
 		if (port != priv->r->cpu_port)
-			priv->r->set_vlan_igr_filter(priv, port, IGR_FORWARD);
+			priv->r->vlan_set_igr_filter(priv, port, IGR_FORWARD);
 
-		priv->r->set_vlan_egr_filter(priv, port, EGR_DISABLE);
+		priv->r->vlan_set_egr_filter(priv, port, EGR_DISABLE);
 	}
 
 	priv->ports[port].vlan_filtering = vlan_filtering;
