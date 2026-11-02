@@ -929,6 +929,8 @@ static void rteth_839x_set_rx_mode(struct net_device *dev)
 static void rteth_930x_set_rx_mode(struct net_device *dev)
 {
 	struct rteth_ctrl *ctrl = netdev_priv(dev);
+	u32 rma_actions = 0;
+	u32 rma0;
 
 	/* Trap all classes of RMA addresses (01-80-C2-00-00-{01..2F}) to the
 	 * CPU. On RTL93xx, 3 in an RMA action field traps to the master CPU,
@@ -938,20 +940,27 @@ static void rteth_930x_set_rx_mode(struct net_device *dev)
 	 * Lower two bits are reserved, corresponding to RMA 01-80-C2-00-00-00
 	 * CTRL_1_FULL = CTRL_2_FULL = GENMASK(31, 0)
 	 */
-	if (dev->flags & (IFF_ALLMULTI | IFF_PROMISC)) {
-		regmap_write(ctrl->map, RTETH_930X_RMA_CTRL_0, GENMASK(31, 2));
-		regmap_write(ctrl->map, RTETH_930X_RMA_CTRL_1, GENMASK(31, 0));
-		regmap_write(ctrl->map, RTETH_930X_RMA_CTRL_2, GENMASK(31, 0));
-	} else {
-		regmap_write(ctrl->map, RTETH_930X_RMA_CTRL_0, 0);
-		regmap_write(ctrl->map, RTETH_930X_RMA_CTRL_1, 0);
-		regmap_write(ctrl->map, RTETH_930X_RMA_CTRL_2, 0);
-	}
+	if (dev->flags & (IFF_ALLMULTI | IFF_PROMISC))
+		rma_actions = GENMASK(31, 0);
+
+	/*
+	 * Always trap slow protocols (01-80-C2-00-00-02, e.g. LACP) to the
+	 * CPU. A trapped slow-protocol frame bypasses STP and VLAN filtering.
+	 * Bits 1:0 of RMA_CTRL_0 are reserved.
+	 */
+	rma0 = (rma_actions & GENMASK(31, 2) & ~RTETH_93XX_RMA_02_ACT) |
+	       RTETH_93XX_RMA_CTRL_0_SLOW_TRAP;
+
+	regmap_update_bits(ctrl->map, RTETH_930X_RMA_CTRL_0, GENMASK(31, 2), rma0);
+	regmap_write(ctrl->map, RTETH_930X_RMA_CTRL_1, rma_actions);
+	regmap_write(ctrl->map, RTETH_930X_RMA_CTRL_2, rma_actions);
 }
 
 static void rteth_931x_set_rx_mode(struct net_device *dev)
 {
 	struct rteth_ctrl *ctrl = netdev_priv(dev);
+	u32 rma_actions = 0;
+	u32 rma0;
 
 	/* Trap all classes of RMA addresses (01-80-C2-00-00-{01..2F}) to the
 	 * CPU. On RTL93xx, 3 in an RMA action field traps to the master CPU,
@@ -961,15 +970,20 @@ static void rteth_931x_set_rx_mode(struct net_device *dev)
 	 * Lower two bits are reserved, corresponding to RMA 01-80-C2-00-00-00.
 	 * CTRL_1_FULL = CTRL_2_FULL = GENMASK(31, 0)
 	 */
-	if (dev->flags & (IFF_ALLMULTI | IFF_PROMISC)) {
-		regmap_write(ctrl->map, RTETH_931X_RMA_CTRL_0, GENMASK(31, 2));
-		regmap_write(ctrl->map, RTETH_931X_RMA_CTRL_1, GENMASK(31, 0));
-		regmap_write(ctrl->map, RTETH_931X_RMA_CTRL_2, GENMASK(31, 0));
-	} else {
-		regmap_write(ctrl->map, RTETH_931X_RMA_CTRL_0, 0);
-		regmap_write(ctrl->map, RTETH_931X_RMA_CTRL_1, 0);
-		regmap_write(ctrl->map, RTETH_931X_RMA_CTRL_2, 0);
-	}
+	if (dev->flags & (IFF_ALLMULTI | IFF_PROMISC))
+		rma_actions = GENMASK(31, 0);
+
+	/*
+	 * Always trap slow protocols (01-80-C2-00-00-02, e.g. LACP) to the
+	 * CPU. A trapped slow-protocol frame bypasses STP and VLAN filtering.
+	 * Bits 1:0 of RMA_CTRL_0 are reserved.
+	 */
+	rma0 = (rma_actions & GENMASK(31, 2) & ~RTETH_93XX_RMA_02_ACT) |
+	       RTETH_93XX_RMA_CTRL_0_SLOW_TRAP;
+
+	regmap_update_bits(ctrl->map, RTETH_931X_RMA_CTRL_0, GENMASK(31, 2), rma0);
+	regmap_write(ctrl->map, RTETH_931X_RMA_CTRL_1, rma_actions);
+	regmap_write(ctrl->map, RTETH_931X_RMA_CTRL_2, rma_actions);
 }
 
 static void rteth_reset_work(struct work_struct *work)

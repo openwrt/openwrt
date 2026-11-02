@@ -93,6 +93,10 @@
 #define RTETH_931X_RMA_CTRL_1			(0x8804)
 #define RTETH_931X_RMA_CTRL_2			(0x8808)
 
+/* RMA_CTRL_0 action for 01-80-C2-00-00-02 (slow protocols) on RTL93xx */
+#define RTETH_93XX_RMA_02_ACT			GENMASK(5, 4)
+#define RTETH_93XX_RMA_CTRL_0_SLOW_TRAP		(2 << 4)
+
 /*
  * Reset
  */
