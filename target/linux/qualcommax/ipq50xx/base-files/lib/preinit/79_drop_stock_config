@@ -1,0 +1,26 @@
+# The H3C Magic stock firmware always keeps its settings when it installs
+# an image: it copies its own sysupgrade.tgz into the new rootfs_data.
+# Those QSDK settings do not apply to OpenWrt, so drop them before they
+# get restored.
+
+. /lib/functions.sh
+
+drop_stock_config() {
+	case "$(board_name)" in
+	h3c,magic-nx30)
+		;;
+	*)
+		return 0
+		;;
+	esac
+
+	[ -f /sysupgrade.tgz ] || return 0
+	tar -tzf /sysupgrade.tgz 2>/dev/null | \
+		grep -qE '^(\./)?(etc/config/(qcacfg80211|wsplcd|repacd)|lib/wifi/wifi_nss_)' || \
+		return 0
+
+	echo "- dropping settings of the stock firmware -"
+	rm -f /sysupgrade.tgz
+}
+
+boot_hook_add preinit_mount_root drop_stock_config

@@ -228,6 +228,19 @@ platform_do_upgrade() {
 		remove_oem_ubi_volume wifi_fw
 		glinet_do_upgrade "$1"
 		;;
+	h3c,magic-nx30)
+		# Two rootfs slots; the other one usually keeps the stock
+		# firmware and must not be touched. Rewrite the running slot,
+		# which the boot loader names on the command line (the SBL
+		# renames the SMEM partitions after a slot switch, so the
+		# running slot is not always "rootfs").
+		CI_UBIPART="$(sed -n 's/.*ubi\.mtd=\([^ ]*\).*/\1/p' /proc/cmdline)"
+		[ -n "$CI_UBIPART" ] || {
+			echo "cannot tell the running slot (no ubi.mtd= on the command line)"
+			nand_do_upgrade_failed
+		}
+		nand_do_upgrade "$1"
+		;;
 	linksys,mr2000|\
 	linksys,mr5500|\
 	linksys,mx2000|\

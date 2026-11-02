@@ -24,6 +24,37 @@ define Build/avm-container
 	@mv $@.new $@
 endef
 
+# H3C web upgrade image: a FIT whose only image is the UBI ("ubi-*"),
+# behind the header checked by the stock web interface.
+define Build/h3c-web-fit
+	echo '/dts-v1/; / { description = "OpenWrt"; #address-cells = <1>; \
+		images { ubi-openwrt { description = "OpenWrt UBI"; \
+		data = /incbin/("$@"); type = "firmware"; arch = "arm"; \
+		compression = "none"; hash@1 { algo = "crc32"; }; \
+		hash@2 { algo = "sha1"; }; }; }; \
+		configurations { default = "conf-1"; \
+		conf-1 { firmware = "ubi-openwrt"; }; }; };' > $@.its
+	PATH=$(LINUX_DIR)/scripts/dtc:$(PATH) mkimage -f $@.its $@.new
+	@mv $@.new $@
+endef
+
+define Build/h3c-web-header
+	$(STAGING_DIR_HOST)/bin/mkh3cqca -i $@ -o $@.new \
+		-v $(word 1,$(1)) -d $(word 2,$(1))
+	@mv $@.new $@
+endef
+
+define Device/h3c_magic-qsdk
+	$(call Device/FitImage)
+	$(call Device/UbiFit)
+	DEVICE_VENDOR := H3C
+	SOC := ipq5018
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	IMAGE_SIZE := 40960k
+	NAND_SIZE := 128m
+endef
+
 define Build/mstc-header
 	$(eval version=$(word 1,$(1)))
 	$(eval hdrlen=$(if $(word 2,$(1)),$(word 2,$(1)),0x400))
@@ -208,6 +239,18 @@ define Device/glinet_gl-x2000
 		dumpimage
 endef
 TARGET_DEVICES += glinet_gl-x2000
+
+define Device/h3c_magic-nx30
+	$(call Device/h3c_magic-qsdk)
+	DEVICE_MODEL := Magic NX30
+	DEVICE_DTS_CONFIG := config@mp02.1
+	IMAGES += factory-nx30.bin
+	IMAGE/factory-nx30.bin := append-ubi | h3c-web-fit | \
+		h3c-web-header NX30V100R999 D999
+	DEVICE_PACKAGES := ath11k-firmware-ipq5018-qcn6122 \
+		ipq-wifi-h3c_magic-nx30
+endef
+TARGET_DEVICES += h3c_magic-nx30
 
 define Device/iodata_wn-dax3000gr
 	$(call Device/FitImageLzma)
