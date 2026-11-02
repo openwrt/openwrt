@@ -381,7 +381,7 @@ static void rtldsa_931x_led_init(struct otto_dsa_priv *priv)
 
 const struct rtldsa_config rtldsa_931x_cfg = {
 	.switch_ops = &rtldsa_93xx_switch_ops,
-	.phylink_mac_ops = &rtldsa_93xx_phylink_mac_ops,
+	.phylink_mac_ops = &otto_mac_93xx_phylink_ops,
 	.stp_init = otto_stp_931x_init,
 	.l2_bucket_size = 8,
 	.n_mst = 128,
@@ -440,13 +440,13 @@ const struct rtldsa_config rtldsa_931x_cfg = {
 		.tx_pause_mask = RTL931X_TX_PAUSE_EN,
 		.rx_pause_mask = RTL931X_RX_PAUSE_EN,
 	},
-	.mac_force_mode_ctrl = rtl931x_mac_force_mode_ctrl,
-	.mac_link_state_source_set = rtldsa_931x_mac_link_state_source_set,
+	.mac_force_mode_ctrl = otto_mac_931x_force_mode_ctrl,
+	.mac_link_state_source_set = otto_mac_931x_link_state_source_set,
 	.mac_link_sts = RTL931X_MAC_LINK_STS,
-	.mac_port_ctrl = rtl931x_mac_port_ctrl,
+	.mac_port_ctrl = otto_mac_931x_port_ctrl,
 	.mac_capabilities = MAC_ASYM_PAUSE | MAC_SYM_PAUSE | MAC_10 | MAC_100 |
 			    MAC_1000FD | MAC_2500FD | MAC_5000FD | MAC_10000FD,
-	.mac_max_len_reg = rtl931x_mac_max_len_reg,
+	.mac_max_len_reg = otto_mac_931x_max_len_reg,
 	.max_frame = RTL931X_MAX_FRAME,
 	.l2_port_new_salrn = otto_l2_931x_port_new_salrn,
 	.get_mirror_config = rtldsa_931x_get_mirror_config,

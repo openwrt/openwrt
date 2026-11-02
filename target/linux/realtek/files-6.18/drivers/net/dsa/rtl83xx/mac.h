@@ -114,40 +114,40 @@ struct rtldsa_mac_force_mode_cfg {
 	u32 media_mask;
 };
 
-int rtl838x_mac_force_mode_ctrl(int p);
-int rtl838x_mac_port_ctrl(int p);
-void rtldsa_838x_set_mac_eee(struct otto_dsa_priv *priv, int port, bool enable);
-void rtl838x_init_eee(struct otto_dsa_priv *priv, bool enable);
+int otto_mac_838x_force_mode_ctrl(int p);
+int otto_mac_838x_port_ctrl(int p);
+void otto_mac_838x_set_eee(struct otto_dsa_priv *priv, int port, bool enable);
+void otto_mac_838x_init_eee(struct otto_dsa_priv *priv, bool enable);
 
-int rtl839x_mac_force_mode_ctrl(int p);
-int rtl839x_mac_port_ctrl(int p);
-void rtldsa_839x_set_mac_eee(struct otto_dsa_priv *priv, int port, bool enable);
-void rtl839x_init_eee(struct otto_dsa_priv *priv, bool enable);
+int otto_mac_839x_force_mode_ctrl(int p);
+int otto_mac_839x_port_ctrl(int p);
+void otto_mac_839x_set_eee(struct otto_dsa_priv *priv, int port, bool enable);
+void otto_mac_839x_init_eee(struct otto_dsa_priv *priv, bool enable);
 
-int rtl930x_mac_force_mode_ctrl(int p);
-int rtl930x_mac_port_ctrl(int p);
-int rtl930x_mac_max_len_reg(int p);
-void rtldsa_930x_set_mac_eee(struct otto_dsa_priv *priv, int port, bool enable);
-void rtl930x_init_eee(struct otto_dsa_priv *priv, bool enable);
-int rtldsa_930x_mac_link_state_source_set(struct otto_dsa_priv *priv, int port,
-					 enum rtldsa_mac_link_state_source source,
-					 phy_interface_t interface);
+int otto_mac_930x_force_mode_ctrl(int p);
+int otto_mac_930x_port_ctrl(int p);
+int otto_mac_930x_max_len_reg(int p);
+void otto_mac_930x_set_eee(struct otto_dsa_priv *priv, int port, bool enable);
+void otto_mac_930x_init_eee(struct otto_dsa_priv *priv, bool enable);
+int otto_mac_930x_link_state_source_set(struct otto_dsa_priv *priv, int port,
+					enum rtldsa_mac_link_state_source source,
+					phy_interface_t interface);
 
-int rtl931x_mac_force_mode_ctrl(int p);
-int rtl931x_mac_port_ctrl(int p);
-int rtl931x_mac_max_len_reg(int p);
-int rtldsa_931x_mac_link_state_source_set(struct otto_dsa_priv *priv, int port,
-					 enum rtldsa_mac_link_state_source source,
-					 phy_interface_t interface);
+int otto_mac_931x_force_mode_ctrl(int p);
+int otto_mac_931x_port_ctrl(int p);
+int otto_mac_931x_max_len_reg(int p);
+int otto_mac_931x_link_state_source_set(struct otto_dsa_priv *priv, int port,
+					enum rtldsa_mac_link_state_source source,
+					phy_interface_t interface);
 
-void rtldsa_phylink_get_caps(struct dsa_switch *ds, int port,
-			    struct phylink_config *config);
-int rtldsa_port_max_mtu(struct dsa_switch *ds, int port);
-int rtldsa_port_change_mtu(struct dsa_switch *ds, int port, int new_mtu);
-bool rtldsa_support_eee(struct dsa_switch *ds, int port);
-int rtldsa_set_mac_eee(struct dsa_switch *ds, int port, struct ethtool_keee *e);
+void otto_mac_phylink_get_caps(struct dsa_switch *ds, int port,
+			       struct phylink_config *config);
+int otto_mac_port_max_mtu(struct dsa_switch *ds, int port);
+int otto_mac_port_change_mtu(struct dsa_switch *ds, int port, int new_mtu);
+bool otto_mac_support_eee(struct dsa_switch *ds, int port);
+int otto_mac_set_eee(struct dsa_switch *ds, int port, struct ethtool_keee *e);
 
-extern const struct phylink_mac_ops rtldsa_83xx_phylink_mac_ops;
-extern const struct phylink_mac_ops rtldsa_93xx_phylink_mac_ops;
+extern const struct phylink_mac_ops otto_mac_83xx_phylink_ops;
+extern const struct phylink_mac_ops otto_mac_93xx_phylink_ops;
 
 #endif /* _OTTO_MAC_H */

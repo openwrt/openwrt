@@ -109,18 +109,18 @@
 #define RTL931X_SMI_PHY_ABLTY_SDS		0x2
 #define RTL931X_SMI_PHY_ABLTY_MASK(port)	(GENMASK(1, 0) << (((port) % 16) * 2))
 
-int rtl838x_mac_force_mode_ctrl(int p)
+int otto_mac_838x_force_mode_ctrl(int p)
 {
 	return RTL838X_MAC_FORCE_MODE_CTRL + (p << 2);
 }
 
-int rtl838x_mac_port_ctrl(int p)
+int otto_mac_838x_port_ctrl(int p)
 {
 	return RTL838X_MAC_PORT_CTRL(p);
 }
 
 /* Enables or disables the EEE/EEEP capability of a port */
-void rtldsa_838x_set_mac_eee(struct otto_dsa_priv *priv, int port, bool enable)
+void otto_mac_838x_set_eee(struct otto_dsa_priv *priv, int port, bool enable)
 {
 	u32 v;
 
@@ -145,7 +145,7 @@ void rtldsa_838x_set_mac_eee(struct otto_dsa_priv *priv, int port, bool enable)
 	priv->ports[port].eee_enabled = enable;
 }
 
-void rtl838x_init_eee(struct otto_dsa_priv *priv, bool enable)
+void otto_mac_838x_init_eee(struct otto_dsa_priv *priv, bool enable)
 {
 	pr_debug("Setting up EEE, state: %d\n", enable);
 	regmap_write_bits(priv->map, RTL838X_SMI_GLB_CTRL, BIT(2), 0);
@@ -162,18 +162,18 @@ void rtl838x_init_eee(struct otto_dsa_priv *priv, bool enable)
 	priv->eee_enabled = enable;
 }
 
-int rtl839x_mac_force_mode_ctrl(int p)
+int otto_mac_839x_force_mode_ctrl(int p)
 {
 	return RTL839X_MAC_FORCE_MODE_CTRL + (p << 2);
 }
 
-int rtl839x_mac_port_ctrl(int p)
+int otto_mac_839x_port_ctrl(int p)
 {
 	return RTL839X_MAC_PORT_CTRL(p);
 }
 
 /* Enables or disables the EEE/EEEP capability of a port */
-void rtldsa_839x_set_mac_eee(struct otto_dsa_priv *priv, int port, bool enable)
+void otto_mac_839x_set_eee(struct otto_dsa_priv *priv, int port, bool enable)
 {
 	u32 v;
 
@@ -186,7 +186,7 @@ void rtldsa_839x_set_mac_eee(struct otto_dsa_priv *priv, int port, bool enable)
 	v = enable ? 0xf : 0x0;
 
 	/* Set EEE for 100, 500, 1000MBit and 10GBit */
-	regmap_write_bits(priv->map, rtl839x_mac_force_mode_ctrl(port), GENMASK(11, 8), v << 8);
+	regmap_write_bits(priv->map, otto_mac_839x_force_mode_ctrl(port), GENMASK(11, 8), v << 8);
 
 	/* Set TX/RX EEE state */
 	v = enable ? 0x3 : 0x0;
@@ -195,7 +195,7 @@ void rtldsa_839x_set_mac_eee(struct otto_dsa_priv *priv, int port, bool enable)
 	priv->ports[port].eee_enabled = enable;
 }
 
-void rtl839x_init_eee(struct otto_dsa_priv *priv, bool enable)
+void otto_mac_839x_init_eee(struct otto_dsa_priv *priv, bool enable)
 {
 	pr_debug("Setting up EEE, state: %d\n", enable);
 
@@ -215,23 +215,23 @@ void rtl839x_init_eee(struct otto_dsa_priv *priv, bool enable)
 	priv->eee_enabled = enable;
 }
 
-int rtl930x_mac_force_mode_ctrl(int p)
+int otto_mac_930x_force_mode_ctrl(int p)
 {
 	return RTL930X_MAC_FORCE_MODE_CTRL + (p << 2);
 }
 
-int rtl930x_mac_port_ctrl(int p)
+int otto_mac_930x_port_ctrl(int p)
 {
 	return RTL930X_MAC_L2_PORT_CTRL(p);
 }
 
-int rtl930x_mac_max_len_reg(int p)
+int otto_mac_930x_max_len_reg(int p)
 {
 	return RTL930X_MAC_L2_PORT_MAX_LEN_CTRL(p);
 }
 
 /* Enables or disables the EEE/EEEP capability of a port */
-void rtldsa_930x_set_mac_eee(struct otto_dsa_priv *priv, int port, bool enable)
+void otto_mac_930x_set_eee(struct otto_dsa_priv *priv, int port, bool enable)
 {
 	u32 v;
 
@@ -243,7 +243,7 @@ void rtldsa_930x_set_mac_eee(struct otto_dsa_priv *priv, int port, bool enable)
 	v = enable ? 0x3f : 0x0;
 
 	/* Set EEE/EEEP state for 100, 500, 1000MBit and 2.5, 5 and 10GBit */
-	regmap_write_bits(priv->map, rtl930x_mac_force_mode_ctrl(port), v << 10, v << 10);
+	regmap_write_bits(priv->map, otto_mac_930x_force_mode_ctrl(port), v << 10, v << 10);
 
 	/* Set TX/RX EEE state */
 	v = enable ? 0x3 : 0x0;
@@ -252,7 +252,7 @@ void rtldsa_930x_set_mac_eee(struct otto_dsa_priv *priv, int port, bool enable)
 	priv->ports[port].eee_enabled = enable;
 }
 
-void rtl930x_init_eee(struct otto_dsa_priv *priv, bool enable)
+void otto_mac_930x_init_eee(struct otto_dsa_priv *priv, bool enable)
 {
 	pr_debug("Setting up EEE, state: %d\n", enable);
 
@@ -266,10 +266,10 @@ void rtl930x_init_eee(struct otto_dsa_priv *priv, bool enable)
 }
 
 int
-rtldsa_930x_mac_link_state_source_set(struct otto_dsa_priv *priv,
-				      int port,
-				      enum rtldsa_mac_link_state_source source,
-				      phy_interface_t interface)
+otto_mac_930x_link_state_source_set(struct otto_dsa_priv *priv,
+				    int port,
+				    enum rtldsa_mac_link_state_source source,
+				    phy_interface_t interface)
 {
 	u32 mask, src_val;
 
@@ -294,26 +294,26 @@ rtldsa_930x_mac_link_state_source_set(struct otto_dsa_priv *priv,
 				  mask, field_prep(mask, src_val));
 }
 
-int rtl931x_mac_force_mode_ctrl(int p)
+int otto_mac_931x_force_mode_ctrl(int p)
 {
 	return RTL931X_MAC_FORCE_MODE_CTRL + (p << 2);
 }
 
-int rtl931x_mac_port_ctrl(int p)
+int otto_mac_931x_port_ctrl(int p)
 {
 	return RTL931X_MAC_L2_PORT_CTRL + (p << 7);
 }
 
-int rtl931x_mac_max_len_reg(int p)
+int otto_mac_931x_max_len_reg(int p)
 {
 	return RTL931X_MAC_L2_PORT_MAX_LEN_CTRL + (p << 2);
 }
 
 int
-rtldsa_931x_mac_link_state_source_set(struct otto_dsa_priv *priv,
-				      int port,
-				      enum rtldsa_mac_link_state_source source,
-				      phy_interface_t interface)
+otto_mac_931x_link_state_source_set(struct otto_dsa_priv *priv,
+				    int port,
+				    enum rtldsa_mac_link_state_source source,
+				    phy_interface_t interface)
 {
 	u32 mask, src_val;
 
@@ -331,9 +331,9 @@ rtldsa_931x_mac_link_state_source_set(struct otto_dsa_priv *priv,
 				  mask, field_prep(mask, src_val));
 }
 
-static int rtldsa_phylink_fill_available_pcs(struct phylink_config *config,
-					     struct phylink_pcs **available_pcs,
-					     unsigned int num_possible_pcs)
+static int otto_mac_phylink_fill_available_pcs(struct phylink_config *config,
+					       struct phylink_pcs **available_pcs,
+					       unsigned int num_possible_pcs)
 {
 	struct dsa_port *dp = dsa_phylink_to_port(config);
 
@@ -341,8 +341,8 @@ static int rtldsa_phylink_fill_available_pcs(struct phylink_config *config,
 					available_pcs, num_possible_pcs);
 }
 
-void rtldsa_phylink_get_caps(struct dsa_switch *ds, int port,
-				    struct phylink_config *config)
+void otto_mac_phylink_get_caps(struct dsa_switch *ds, int port,
+			       struct phylink_config *config)
 {
 	struct dsa_port *dp = dsa_to_port(ds, port);
 	struct otto_dsa_priv *priv = ds->priv;
@@ -367,7 +367,7 @@ void rtldsa_phylink_get_caps(struct dsa_switch *ds, int port,
 
 	config->num_possible_pcs = fwnode_phylink_pcs_count(of_fwnode_handle(dp->dn));
 	if (config->num_possible_pcs) {
-		config->fill_available_pcs = rtldsa_phylink_fill_available_pcs;
+		config->fill_available_pcs = otto_mac_phylink_fill_available_pcs;
 		bitmap_copy(config->pcs_interfaces, config->supported_interfaces,
 			    PHY_INTERFACE_MODE_MAX);
 	}
@@ -375,9 +375,9 @@ void rtldsa_phylink_get_caps(struct dsa_switch *ds, int port,
 	__set_bit(PHY_INTERFACE_MODE_INTERNAL, config->supported_interfaces);
 }
 
-static void rtldsa_83xx_phylink_mac_config(struct phylink_config *config,
-					   unsigned int mode,
-					   const struct phylink_link_state *state)
+static void otto_mac_83xx_phylink_config(struct phylink_config *config,
+					 unsigned int mode,
+					 const struct phylink_link_state *state)
 {
 	struct dsa_port *dp = dsa_phylink_to_port(config);
 	struct otto_dsa_priv *priv = dp->ds->priv;
@@ -409,9 +409,9 @@ static void rtldsa_83xx_phylink_mac_config(struct phylink_config *config,
 }
 
 static void
-rtldsa_mac_link_state_source_set(struct otto_dsa_priv *priv, int port,
-				 enum rtldsa_mac_link_state_source source,
-				 phy_interface_t interface)
+otto_mac_link_state_source_set(struct otto_dsa_priv *priv, int port,
+			       enum rtldsa_mac_link_state_source source,
+			       phy_interface_t interface)
 {
 	int err;
 
@@ -425,9 +425,9 @@ rtldsa_mac_link_state_source_set(struct otto_dsa_priv *priv, int port,
 			port, err);
 }
 
-static void rtldsa_93xx_phylink_mac_config(struct phylink_config *config,
-					   unsigned int mode,
-					   const struct phylink_link_state *state)
+static void otto_mac_93xx_phylink_config(struct phylink_config *config,
+					 unsigned int mode,
+					 const struct phylink_link_state *state)
 {
 	struct dsa_port *dp = dsa_phylink_to_port(config);
 	struct otto_dsa_priv *priv = dp->ds->priv;
@@ -446,27 +446,27 @@ static void rtldsa_93xx_phylink_mac_config(struct phylink_config *config,
 	/* Select PCS before dropping force mode to avoid a transient link down. */
 	if (!priv->ports[port].phy && phylink_autoneg_inband(mode) &&
 	    !force_dynamic_phy)
-		rtldsa_mac_link_state_source_set(priv, port,
-					 RTLDSA_MAC_LINK_STATE_SOURCE_PCS,
-					 state->interface);
+		otto_mac_link_state_source_set(priv, port,
+					       RTLDSA_MAC_LINK_STATE_SOURCE_PCS,
+					       state->interface);
 
 	if (mode == MLO_AN_FIXED || force_dynamic_phy) {
 		/* Keep links that require force mode forced down. */
 		regmap_write(priv->map, priv->r->mac_force_mode_ctrl(port),
 			     cfg->force_en_mask | cfg->fc_force_en_mask);
 		if (force_dynamic_phy)
-			rtldsa_mac_link_state_source_set(priv, port,
-						 RTLDSA_MAC_LINK_STATE_SOURCE_PHY,
-						 state->interface);
+			otto_mac_link_state_source_set(priv, port,
+						       RTLDSA_MAC_LINK_STATE_SOURCE_PHY,
+						       state->interface);
 	} else {
 		/* Disable MAC completely */
 		regmap_write(priv->map, priv->r->mac_force_mode_ctrl(port), 0);
 	}
 }
 
-static void rtldsa_83xx_phylink_mac_link_down(struct phylink_config *config,
-					      unsigned int mode,
-					      phy_interface_t interface)
+static void otto_mac_83xx_phylink_link_down(struct phylink_config *config,
+					    unsigned int mode,
+					    phy_interface_t interface)
 {
 	struct dsa_port *dp = dsa_phylink_to_port(config);
 	struct otto_dsa_priv *priv = dp->ds->priv;
@@ -483,9 +483,9 @@ static void rtldsa_83xx_phylink_mac_link_down(struct phylink_config *config,
 			   cfg->force_en_mask | cfg->link_up_mask, 0);
 }
 
-static void rtldsa_93xx_phylink_mac_link_down(struct phylink_config *config,
-					      unsigned int mode,
-					      phy_interface_t interface)
+static void otto_mac_93xx_phylink_link_down(struct phylink_config *config,
+					    unsigned int mode,
+					    phy_interface_t interface)
 {
 	struct dsa_port *dp = dsa_phylink_to_port(config);
 	struct otto_dsa_priv *priv = dp->ds->priv;
@@ -502,18 +502,18 @@ static void rtldsa_93xx_phylink_mac_link_down(struct phylink_config *config,
 
 	if (!priv->ports[port].phy && phylink_autoneg_inband(mode) &&
 	    !force_dynamic_phy)
-		rtldsa_mac_link_state_source_set(priv, port,
-					 RTLDSA_MAC_LINK_STATE_SOURCE_PCS,
-					 interface);
+		otto_mac_link_state_source_set(priv, port,
+					       RTLDSA_MAC_LINK_STATE_SOURCE_PCS,
+					       interface);
 
 	if (dsa_port_is_cpu(dp) || mode == MLO_AN_FIXED || force_dynamic_phy) {
 		/* Preserve force mode while forcing the link down. */
 		regmap_update_bits(priv->map, priv->r->mac_force_mode_ctrl(port),
 				   cfg->link_up_mask, 0);
 		if (force_dynamic_phy)
-			rtldsa_mac_link_state_source_set(priv, port,
-						 RTLDSA_MAC_LINK_STATE_SOURCE_PHY,
-						 interface);
+			otto_mac_link_state_source_set(priv, port,
+						       RTLDSA_MAC_LINK_STATE_SOURCE_PHY,
+						       interface);
 	} else {
 		/* No longer force link */
 		regmap_update_bits(priv->map, priv->r->mac_force_mode_ctrl(port),
@@ -522,12 +522,12 @@ static void rtldsa_93xx_phylink_mac_link_down(struct phylink_config *config,
 	}
 }
 
-static void rtldsa_83xx_phylink_mac_link_up(struct phylink_config *config,
-					    struct phy_device *phydev,
-					    unsigned int mode,
-					    phy_interface_t interface,
-					    int speed, int duplex,
-					    bool tx_pause, bool rx_pause)
+static void otto_mac_83xx_phylink_link_up(struct phylink_config *config,
+					  struct phy_device *phydev,
+					  unsigned int mode,
+					  phy_interface_t interface,
+					  int speed, int duplex,
+					  bool tx_pause, bool rx_pause)
 {
 	struct dsa_port *dp = dsa_phylink_to_port(config);
 	struct otto_dsa_priv *priv = dp->ds->priv;
@@ -566,12 +566,12 @@ static void rtldsa_83xx_phylink_mac_link_up(struct phylink_config *config,
 	regmap_update_bits(priv->map, priv->r->mac_port_ctrl(port), 0x3, 0x3);
 }
 
-static void rtldsa_93xx_phylink_mac_link_up(struct phylink_config *config,
-					    struct phy_device *phydev,
-					    unsigned int mode,
-					    phy_interface_t interface,
-					    int speed, int duplex,
-					    bool tx_pause, bool rx_pause)
+static void otto_mac_93xx_phylink_link_up(struct phylink_config *config,
+					  struct phy_device *phydev,
+					  unsigned int mode,
+					  phy_interface_t interface,
+					  int speed, int duplex,
+					  bool tx_pause, bool rx_pause)
 {
 	struct dsa_port *dp = dsa_phylink_to_port(config);
 	struct otto_dsa_priv *priv = dp->ds->priv;
@@ -628,9 +628,9 @@ static void rtldsa_93xx_phylink_mac_link_up(struct phylink_config *config,
 
 	if (!keep_forced && !dynamic_phy) {
 		if (!priv->ports[port].phy)
-			rtldsa_mac_link_state_source_set(priv, port,
-							 RTLDSA_MAC_LINK_STATE_SOURCE_PCS,
-							 interface);
+			otto_mac_link_state_source_set(priv, port,
+						       RTLDSA_MAC_LINK_STATE_SOURCE_PCS,
+						       interface);
 		mcr &= ~cfg->force_en_mask;
 		regmap_write(priv->map, priv->r->mac_force_mode_ctrl(port), mcr);
 		goto restart;
@@ -669,16 +669,16 @@ static void rtldsa_93xx_phylink_mac_link_up(struct phylink_config *config,
 
 	/* Keep force mode active while switching hardware link sources. */
 	if (force_dynamic_phy)
-		rtldsa_mac_link_state_source_set(priv, port,
-					 RTLDSA_MAC_LINK_STATE_SOURCE_PHY,
-					 interface);
+		otto_mac_link_state_source_set(priv, port,
+					       RTLDSA_MAC_LINK_STATE_SOURCE_PHY,
+					       interface);
 
 restart:
 	/* Restart TX/RX to port */
 	regmap_update_bits(priv->map, priv->r->mac_port_ctrl(port), 0x3, 0x3);
 }
 
-int rtldsa_port_max_mtu(struct dsa_switch *ds, int port)
+int otto_mac_port_max_mtu(struct dsa_switch *ds, int port)
 {
 	struct otto_dsa_priv *priv = ds->priv;
 
@@ -691,7 +691,7 @@ int rtldsa_port_max_mtu(struct dsa_switch *ds, int port)
 	return priv->r->max_frame - RTLDSA_FRAME_OVERHEAD - RTLDSA_TAG_OVERHEAD;
 }
 
-static int rtldsa_largest_mtu(struct dsa_switch *ds, int port, int new_mtu)
+static int otto_mac_largest_mtu(struct dsa_switch *ds, int port, int new_mtu)
 {
 	struct dsa_port *dp;
 	int mtu = new_mtu;
@@ -706,7 +706,7 @@ static int rtldsa_largest_mtu(struct dsa_switch *ds, int port, int new_mtu)
 	return mtu;
 }
 
-int rtldsa_port_change_mtu(struct dsa_switch *ds, int port, int new_mtu)
+int otto_mac_port_change_mtu(struct dsa_switch *ds, int port, int new_mtu)
 {
 	struct otto_dsa_priv *priv = ds->priv;
 	int frame_size;
@@ -738,7 +738,7 @@ int rtldsa_port_change_mtu(struct dsa_switch *ds, int port, int new_mtu)
 	}
 
 	/* One register for all ports, so it has to fit the largest of them */
-	frame_size = rtldsa_largest_mtu(ds, port, new_mtu) + RTLDSA_FRAME_OVERHEAD;
+	frame_size = otto_mac_largest_mtu(ds, port, new_mtu) + RTLDSA_FRAME_OVERHEAD;
 
 	sw_w32_mask(RTLDSA_MAC_MAX_LEN_MASK, RTLDSA_MAC_MAX_LEN_VAL(frame_size),
 		    priv->r->mac_max_len_ctrl);
@@ -751,7 +751,7 @@ int rtldsa_port_change_mtu(struct dsa_switch *ds, int port, int new_mtu)
 	return 0;
 }
 
-bool rtldsa_support_eee(struct dsa_switch *ds, int port)
+bool otto_mac_support_eee(struct dsa_switch *ds, int port)
 {
 	struct otto_dsa_priv *priv = ds->priv;
 
@@ -759,7 +759,7 @@ bool rtldsa_support_eee(struct dsa_switch *ds, int port)
 	return (priv->ports[port].phy != 0);
 }
 
-int rtldsa_set_mac_eee(struct dsa_switch *ds, int port, struct ethtool_keee *e)
+int otto_mac_set_eee(struct dsa_switch *ds, int port, struct ethtool_keee *e)
 {
 	struct otto_dsa_priv *priv = ds->priv;
 
@@ -778,14 +778,14 @@ int rtldsa_set_mac_eee(struct dsa_switch *ds, int port, struct ethtool_keee *e)
 	return 0;
 }
 
-const struct phylink_mac_ops rtldsa_83xx_phylink_mac_ops = {
-	.mac_config		= rtldsa_83xx_phylink_mac_config,
-	.mac_link_down		= rtldsa_83xx_phylink_mac_link_down,
-	.mac_link_up		= rtldsa_83xx_phylink_mac_link_up,
+const struct phylink_mac_ops otto_mac_83xx_phylink_ops = {
+	.mac_config		= otto_mac_83xx_phylink_config,
+	.mac_link_down		= otto_mac_83xx_phylink_link_down,
+	.mac_link_up		= otto_mac_83xx_phylink_link_up,
 };
 
-const struct phylink_mac_ops rtldsa_93xx_phylink_mac_ops = {
-	.mac_config		= rtldsa_93xx_phylink_mac_config,
-	.mac_link_down		= rtldsa_93xx_phylink_mac_link_down,
-	.mac_link_up		= rtldsa_93xx_phylink_mac_link_up,
+const struct phylink_mac_ops otto_mac_93xx_phylink_ops = {
+	.mac_config		= otto_mac_93xx_phylink_config,
+	.mac_link_down		= otto_mac_93xx_phylink_link_down,
+	.mac_link_up		= otto_mac_93xx_phylink_link_up,
 };

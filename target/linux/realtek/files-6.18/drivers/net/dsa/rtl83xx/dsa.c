@@ -908,7 +908,7 @@ const struct dsa_switch_ops rtldsa_83xx_switch_ops = {
 	.get_tag_protocol	= rtldsa_get_tag_protocol,
 	.setup			= rtldsa_83xx_setup,
 
-	.phylink_get_caps	= rtldsa_phylink_get_caps,
+	.phylink_get_caps	= otto_mac_phylink_get_caps,
 
 	.get_strings		= otto_stats_get_strings,
 	.get_ethtool_stats	= otto_stats_get_ethtool,
@@ -923,11 +923,11 @@ const struct dsa_switch_ops rtldsa_83xx_switch_ops = {
 	.port_enable		= rtldsa_port_enable,
 	.port_disable		= rtldsa_port_disable,
 
-	.port_change_mtu	= rtldsa_port_change_mtu,
-	.port_max_mtu		= rtldsa_port_max_mtu,
+	.port_change_mtu	= otto_mac_port_change_mtu,
+	.port_max_mtu		= otto_mac_port_max_mtu,
 
-	.support_eee		= rtldsa_support_eee,
-	.set_mac_eee		= rtldsa_set_mac_eee,
+	.support_eee		= otto_mac_support_eee,
+	.set_mac_eee		= otto_mac_set_eee,
 
 	.set_ageing_time	= rtldsa_set_ageing_time,
 	.port_bridge_join	= rtldsa_port_bridge_join,
@@ -969,7 +969,7 @@ const struct dsa_switch_ops rtldsa_93xx_switch_ops = {
 	.get_tag_protocol	= rtldsa_get_tag_protocol,
 	.setup			= rtldsa_93xx_setup,
 
-	.phylink_get_caps	= rtldsa_phylink_get_caps,
+	.phylink_get_caps	= otto_mac_phylink_get_caps,
 
 	.get_strings		= otto_stats_get_strings,
 	.get_ethtool_stats	= otto_stats_get_ethtool,
@@ -984,11 +984,11 @@ const struct dsa_switch_ops rtldsa_93xx_switch_ops = {
 	.port_enable		= rtldsa_port_enable,
 	.port_disable		= rtldsa_port_disable,
 
-	.port_change_mtu	= rtldsa_port_change_mtu,
-	.port_max_mtu		= rtldsa_port_max_mtu,
+	.port_change_mtu	= otto_mac_port_change_mtu,
+	.port_max_mtu		= otto_mac_port_max_mtu,
 
-	.support_eee		= rtldsa_support_eee,
-	.set_mac_eee		= rtldsa_set_mac_eee,
+	.support_eee		= otto_mac_support_eee,
+	.set_mac_eee		= otto_mac_set_eee,
 
 	.set_ageing_time	= rtldsa_set_ageing_time,
 	.port_bridge_join	= rtldsa_port_bridge_join,
