@@ -106,6 +106,52 @@ xiaomi_initial_setup()
 	esac
 }
 
+RAMFS_COPY_BIN="$RAMFS_COPY_BIN fw_printenv fw_setenv ubiformat ubiattach ubidetach ubimkvol ubiupdatevol ubinfo"
+RAMFS_COPY_DATA="$RAMFS_COPY_DATA /etc/fw_env.config"
+
+aap4221zy_fix_mtdparts() {
+	local want='nmbm0:1024k(bl2),512k(u-boot-env),2048k(factory),1792k(fip),256k(zloader),465408k(ubi),20480k(zyubi)'
+	local cur="$(fw_printenv -n mtdparts 2>/dev/null)"
+
+	# do not write the env if it could not be read
+	case "$cur" in
+	nmbm0:*) ;;
+	*) return 1 ;;
+	esac
+
+	[ "$cur" = "$want" ] && return 0
+
+	mkdir -p /var/lock
+	fw_setenv mtdparts "$want" || return 1
+	[ "$(fw_printenv -n mtdparts 2>/dev/null)" = "$want" ]
+}
+
+# zloader reads "poeconf" from zyubi, recreate it if zyubi was resized
+aap4221zy_prepare_zyubi() {
+	local zmtd="$(find_mtd_index zyubi)"
+	local umtd="$(find_mtd_index ubi)"
+
+	[ -n "$zmtd" ] && [ -n "$umtd" ] || return 1
+
+	ubidetach -m "$zmtd" 2>/dev/null
+	if ubiattach -m "$zmtd" -d 8 2>/dev/null &&
+	   ubinfo -d 8 -N poeconf >/dev/null 2>&1; then
+		ubidetach -d 8
+		return 0
+	fi
+	ubidetach -d 8 2>/dev/null
+
+	printf 'MSTCn.\201fpoeconf=0\n' > /tmp/poeconf.bin
+
+	ubidetach -m "$umtd" 2>/dev/null
+	ubiformat /dev/mtd$umtd -y || return 1
+	ubiformat /dev/mtd$zmtd -y || return 1
+	ubiattach -m "$zmtd" -d 8 || return 1
+	ubimkvol /dev/ubi8 -n 4 -N poeconf -s 1269760 -t static || return 1
+	ubiupdatevol /dev/ubi8_4 /tmp/poeconf.bin || return 1
+	ubidetach -d 8
+}
+
 update_oem_ubi_volume() {
 	local oem_volume_name="$1"
 	local oem_volume_part="${2:-$CI_UBIPART}"
@@ -255,6 +301,8 @@ platform_do_upgrade() {
 		emmc_do_upgrade "$1"
 		;;
 	airtel,aap4221zy)
+		aap4221zy_fix_mtdparts || nand_do_upgrade_failed
+		aap4221zy_prepare_zyubi || nand_do_upgrade_failed
 		# ZyXEL zloader requires a "zyfwinfo" UBI volume with valid
 		# metadata (magic + checksum) to select the boot partition.
 		# Without it, zloader refuses to boot the firmware. It has to be
