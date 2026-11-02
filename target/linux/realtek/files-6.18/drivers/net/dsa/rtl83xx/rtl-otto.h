@@ -466,7 +466,6 @@ struct rtldsa_config {
 	int max_frame;
 
 	int  (*l2_port_new_salrn)(int port);
-	int  (*l2_port_new_sa_fwd)(int port);
 	int (*set_ageing_time)(struct otto_dsa_priv *priv, unsigned long msec);
 	int (*get_mirror_config)(struct rtldsa_mirror_config *config, int group, int port);
 	int (*port_rate_police_add)(struct dsa_switch *ds, int port,

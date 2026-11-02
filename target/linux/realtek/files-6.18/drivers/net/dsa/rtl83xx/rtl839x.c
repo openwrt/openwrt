@@ -216,7 +216,6 @@ const struct rtldsa_config rtldsa_839x_cfg = {
 	.mac_max_len_ctrl = RTL839X_MAC_MAX_LEN_CTRL,
 	.max_frame = RTL839X_MAX_FRAME,
 	.l2_port_new_salrn = otto_l2_839x_port_new_salrn,
-	.l2_port_new_sa_fwd = otto_l2_839x_port_new_sa_fwd,
 	.get_mirror_config = rtldsa_839x_get_mirror_config,
 	.print_matrix = rtldsa_839x_print_matrix,
 	.read_l2_entry_using_hash = otto_l2_839x_read_entry_using_hash,

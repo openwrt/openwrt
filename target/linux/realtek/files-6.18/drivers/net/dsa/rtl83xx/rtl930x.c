@@ -581,7 +581,6 @@ const struct rtldsa_config rtldsa_930x_cfg = {
 	.mac_max_len_reg = rtl930x_mac_max_len_reg,
 	.max_frame = RTL930X_MAX_FRAME,
 	.l2_port_new_salrn = otto_l2_930x_port_new_salrn,
-	.l2_port_new_sa_fwd = otto_l2_930x_port_new_sa_fwd,
 	.get_mirror_config = rtldsa_930x_get_mirror_config,
 	.port_rate_police_add = otto_tc_930x_port_rate_police_add,
 	.port_rate_police_del = otto_tc_930x_port_rate_police_del,
