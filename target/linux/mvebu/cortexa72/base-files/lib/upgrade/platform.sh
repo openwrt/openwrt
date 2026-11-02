@@ -10,7 +10,8 @@ REQUIRE_IMAGE_METADATA=1
 platform_check_image() {
 	case "$(board_name)" in
 	checkpoint,v-80|\
-	checkpoint,v-81)
+	checkpoint,v-81|\
+	checkpoint,v-81wd)
 		local root="$(cmdline_get_var root)"
 		case "$root" in
 		PARTUUID=????????-02) # USB or SD
@@ -57,7 +58,8 @@ platform_check_image() {
 platform_do_upgrade() {
 	case "$(board_name)" in
 	checkpoint,v-80|\
-	checkpoint,v-81)
+	checkpoint,v-81|\
+	checkpoint,v-81wd)
 		local root="$(cmdline_get_var root)"
 		case "$root" in
 		PARTUUID=????????-02) # USB or SD
@@ -95,7 +97,8 @@ platform_do_upgrade() {
 platform_copy_config() {
 	case "$(board_name)" in
 	checkpoint,v-80|\
-	checkpoint,v-81)
+	checkpoint,v-81|\
+	checkpoint,v-81wd)
 		local root="$(cmdline_get_var root)"
 		case "$root" in
 		PARTUUID=????????-02) # USB or SD
