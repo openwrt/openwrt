@@ -2039,7 +2039,7 @@ static void otto_l3_route_update_hw(struct otto_l3_ctrl *ctrl, struct otto_l3_ro
 
 	/* A route that forwards and gets a new gateway MAC traps while its
 	 * next hop moves over, or it would forward through the L2 entry
-	 * otto_l2_nexthop_add() releases.
+	 * otto_fdb_nexthop_add() releases.
 	 */
 	if (!first && mac != r->nh.mac && r->attr.action == ROUTE_ACT_FORWARD) {
 		r->attr.action = ROUTE_ACT_TRAP2CPU;
@@ -2104,7 +2104,7 @@ static void otto_l3_route_update_hw(struct otto_l3_ctrl *ctrl, struct otto_l3_ro
 	r->nh.dmac_id = dmac;
 
 	/* Update ROUTING table: map gateway-mac and switch-mac id to route id */
-	no_l2 = otto_l2_nexthop_add(priv, &r->nh);
+	no_l2 = otto_fdb_nexthop_add(priv, &r->nh);
 	if (!no_l2)
 		r->nh.l2_installed = true;
 
@@ -2261,7 +2261,7 @@ static int otto_l3_nexthop_update(struct otto_l3_ctrl *ctrl, u8 type, int ifinde
 			continue;
 
 		if (valid && r->hw_forward && r->nh.mac == mac &&
-		    otto_l2_nexthop_current(ctrl->priv, &r->nh))
+		    otto_fdb_nexthop_current(ctrl->priv, &r->nh))
 			continue;
 
 		if (valid)
@@ -2774,7 +2774,7 @@ static void otto_l3_route_teardown(struct otto_l3_ctrl *ctrl, struct otto_l3_rou
 	 */
 	if (r->is_host_route || !ctrl->prefix_rows_stale) {
 		if (r->nh.l2_installed)
-			otto_l2_nexthop_del(priv, &r->nh);
+			otto_fdb_nexthop_del(priv, &r->nh);
 
 		dev_dbg(ctrl->dev, "releasing packet counter %d\n", r->pr.packet_cntr);
 		otto_stats_packet_cntr_free(priv, r->pr.packet_cntr);

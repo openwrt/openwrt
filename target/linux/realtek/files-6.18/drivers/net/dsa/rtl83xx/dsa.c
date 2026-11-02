@@ -748,9 +748,9 @@ const struct dsa_switch_ops rtldsa_83xx_switch_ops = {
 	.port_vlan_fast_age	= otto_vlan_port_fast_age,
 	.vlan_msti_set		= otto_vlan_msti_set,
 
-	.port_fdb_add		= rtldsa_port_fdb_add,
-	.port_fdb_del		= rtldsa_port_fdb_del,
-	.port_fdb_dump		= rtldsa_port_fdb_dump,
+	.port_fdb_add		= otto_fdb_port_add,
+	.port_fdb_del		= otto_fdb_port_del,
+	.port_fdb_dump		= otto_fdb_port_dump,
 
 	.port_mdb_add		= rtldsa_83xx_port_mdb_add,
 	.port_mdb_del		= rtldsa_port_mdb_del,
@@ -809,9 +809,9 @@ const struct dsa_switch_ops rtldsa_93xx_switch_ops = {
 	.port_vlan_fast_age	= otto_vlan_port_fast_age,
 	.vlan_msti_set		= otto_vlan_msti_set,
 
-	.port_fdb_add		= rtldsa_port_fdb_add,
-	.port_fdb_del		= rtldsa_port_fdb_del,
-	.port_fdb_dump		= rtldsa_port_fdb_dump,
+	.port_fdb_add		= otto_fdb_port_add,
+	.port_fdb_del		= otto_fdb_port_del,
+	.port_fdb_dump		= otto_fdb_port_dump,
 
 	.port_mdb_add		= rtldsa_93xx_port_mdb_add,
 	.port_mdb_del		= rtldsa_port_mdb_del,

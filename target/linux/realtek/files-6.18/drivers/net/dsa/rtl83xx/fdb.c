@@ -15,12 +15,12 @@
 #include "rtl-otto.h"
 
 #define RTL930X_PORT_IGNORE 0x3f
-#define RTLDSA_L2_L3_REFCOUNT_MAX	0x7fff
+#define OTTO_FDB_L3_REFCOUNT_MAX	0x7fff
 
 /* RTL931x hashes its second block into rows the fib_entries count does not
  * reach, so an index can fall outside the map and is simply not tracked.
  */
-struct rtldsa_l2_uc *otto_l2_uc_lookup(struct otto_dsa_priv *priv, int idx)
+struct rtldsa_l2_uc *otto_fdb_uc_lookup(struct otto_dsa_priv *priv, int idx)
 {
 	if (idx < 0 || idx >= priv->r->fib_entries)
 		return NULL;
@@ -32,14 +32,14 @@ struct rtldsa_l2_uc *otto_l2_uc_lookup(struct otto_dsa_priv *priv, int idx)
  * is never freed by the driver again, which leaks a row but never hands a live
  * one to somebody else.
  */
-static void otto_l2_uc_get(struct otto_dsa_priv *priv, int idx)
+static void otto_fdb_uc_get(struct otto_dsa_priv *priv, int idx)
 {
-	struct rtldsa_l2_uc *m = otto_l2_uc_lookup(priv, idx);
+	struct rtldsa_l2_uc *m = otto_fdb_uc_lookup(priv, idx);
 
 	if (!m)
 		return;
 
-	if (m->l3_refcount == RTLDSA_L2_L3_REFCOUNT_MAX) {
+	if (m->l3_refcount == OTTO_FDB_L3_REFCOUNT_MAX) {
 		dev_warn_once(priv->dev, "L2 entry %d has too many routes to count\n", idx);
 		return;
 	}
@@ -47,11 +47,11 @@ static void otto_l2_uc_get(struct otto_dsa_priv *priv, int idx)
 	m->l3_refcount++;
 }
 
-static void otto_l2_uc_put(struct otto_dsa_priv *priv, int idx)
+static void otto_fdb_uc_put(struct otto_dsa_priv *priv, int idx)
 {
-	struct rtldsa_l2_uc *m = otto_l2_uc_lookup(priv, idx);
+	struct rtldsa_l2_uc *m = otto_fdb_uc_lookup(priv, idx);
 
-	if (!m || !m->l3_refcount || m->l3_refcount == RTLDSA_L2_L3_REFCOUNT_MAX)
+	if (!m || !m->l3_refcount || m->l3_refcount == OTTO_FDB_L3_REFCOUNT_MAX)
 		return;
 
 	m->l3_refcount--;
@@ -60,11 +60,11 @@ static void otto_l2_uc_put(struct otto_dsa_priv *priv, int idx)
 /* Give the row back once nothing forwards through it any more. @e has to be a
  * fresh read of the row at nh->l2_id.
  */
-static void otto_l2_uc_release_row(struct otto_dsa_priv *priv,
-				   struct otto_l3_nexthop *nh,
-				   struct rtl838x_l2_entry *e)
+static void otto_fdb_uc_release_row(struct otto_dsa_priv *priv,
+				    struct otto_l3_nexthop *nh,
+				    struct rtl838x_l2_entry *e)
 {
-	struct rtldsa_l2_uc *m = otto_l2_uc_lookup(priv, nh->l2_id);
+	struct rtldsa_l2_uc *m = otto_fdb_uc_lookup(priv, nh->l2_id);
 
 	/* Another route is still forwarding through this entry: it has to stay
 	 * exactly as it is, next hop and route id included.
@@ -93,8 +93,8 @@ static void otto_l2_uc_release_row(struct otto_dsa_priv *priv,
  * spend. Search on the seed the reference was taken on, because the caller has
  * already overwritten the address.
  */
-static void otto_l2_uc_put_row(struct otto_dsa_priv *priv,
-			       struct otto_l3_nexthop *nh)
+static void otto_fdb_uc_put_row(struct otto_dsa_priv *priv,
+				struct otto_l3_nexthop *nh)
 {
 	struct rtl838x_l2_entry e = {};
 
@@ -104,8 +104,8 @@ static void otto_l2_uc_put_row(struct otto_dsa_priv *priv,
 	if (!e.next_hop)
 		return;
 
-	otto_l2_uc_put(priv, nh->l2_id);
-	otto_l2_uc_release_row(priv, nh, &e);
+	otto_fdb_uc_put(priv, nh->l2_id);
+	otto_fdb_uc_release_row(priv, nh, &e);
 }
 
 /* Add an L2 nexthop entry for the L3 routing system / PIE forwarding in the SoC
@@ -114,7 +114,7 @@ static void otto_l2_uc_put_row(struct otto_dsa_priv *priv,
  * Called from the L3 layer
  * The index in the L2 hash table is filled into nh->l2_id;
  */
-int otto_l2_nexthop_add(struct otto_dsa_priv *priv, struct otto_l3_nexthop *nh)
+int otto_fdb_nexthop_add(struct otto_dsa_priv *priv, struct otto_l3_nexthop *nh)
 {
 	struct rtl838x_l2_entry e = {};
 	u64 seed = priv->r->l2_hash_seed(nh->mac, nh->rvid);
@@ -144,17 +144,17 @@ int otto_l2_nexthop_add(struct otto_dsa_priv *priv, struct otto_l3_nexthop *nh)
 	 */
 	if (!e.valid) {
 		if (nh->l2_installed)
-			otto_l2_uc_put_row(priv, nh);
+			otto_fdb_uc_put_row(priv, nh);
 		nh->l2_installed = false;
 		return -ENOENT;
 	}
 
 	/* Found an existing entry, make it a nexthop entry */
 	if (nh->l2_installed && nh->l2_id != idx)
-		otto_l2_uc_put_row(priv, nh);
+		otto_fdb_uc_put_row(priv, nh);
 
 	if (!nh->l2_installed || nh->l2_id != idx)
-		otto_l2_uc_get(priv, idx);
+		otto_fdb_uc_get(priv, idx);
 
 	nh->l2_id = idx;
 	nh->l2_seed = seed;
@@ -182,7 +182,7 @@ int otto_l2_nexthop_add(struct otto_dsa_priv *priv, struct otto_l3_nexthop *nh)
 	return 0;
 }
 
-bool otto_l2_nexthop_current(struct otto_dsa_priv *priv, struct otto_l3_nexthop *nh)
+bool otto_fdb_nexthop_current(struct otto_dsa_priv *priv, struct otto_l3_nexthop *nh)
 {
 	struct rtl838x_l2_entry e = {};
 
@@ -199,7 +199,7 @@ bool otto_l2_nexthop_current(struct otto_dsa_priv *priv, struct otto_l3_nexthop 
  * If it was static, the entire entry is removed, otherwise the nexthop bit is cleared
  * and we wait until the entry ages out
  */
-int otto_l2_nexthop_del(struct otto_dsa_priv *priv, struct otto_l3_nexthop *nh)
+int otto_fdb_nexthop_del(struct otto_dsa_priv *priv, struct otto_l3_nexthop *nh)
 {
 	struct rtl838x_l2_entry e = {};
 	u32 key = nh->l2_id >> 2;
@@ -229,14 +229,14 @@ int otto_l2_nexthop_del(struct otto_dsa_priv *priv, struct otto_l3_nexthop *nh)
 		return -ESTALE;
 	}
 
-	otto_l2_uc_put(priv, nh->l2_id);
-	otto_l2_uc_release_row(priv, nh, &e);
+	otto_fdb_uc_put(priv, nh->l2_id);
+	otto_fdb_uc_release_row(priv, nh, &e);
 
 	return 0;
 }
 
-static void rtldsa_setup_l2_uc_entry(struct rtl838x_l2_entry *e, int port,
-				     int vid, u64 mac)
+static void otto_fdb_uc_entry_setup(struct rtl838x_l2_entry *e, int port,
+				    int vid, u64 mac)
 {
 	bool next_hop = e->valid && e->next_hop;
 	u16 nh_route_id = next_hop ? e->nh_route_id : 0;
@@ -262,9 +262,9 @@ static void rtldsa_setup_l2_uc_entry(struct rtl838x_l2_entry *e, int port,
 	u64_to_ether_addr(mac, e->mac);
 }
 
-int rtldsa_port_fdb_add(struct dsa_switch *ds, int port,
-			       const unsigned char *addr, u16 vid,
-			       const struct dsa_db db)
+int otto_fdb_port_add(struct dsa_switch *ds, int port,
+		      const unsigned char *addr, u16 vid,
+		      const struct dsa_db db)
 {
 	struct otto_dsa_priv *priv = ds->priv;
 	u64 mac = ether_addr_to_u64(addr);
@@ -289,7 +289,7 @@ int rtldsa_port_fdb_add(struct dsa_switch *ds, int port,
 
 	/* Found an existing or empty entry */
 	if (idx >= 0) {
-		struct rtldsa_l2_uc *m = otto_l2_uc_lookup(priv, idx);
+		struct rtldsa_l2_uc *m = otto_fdb_uc_lookup(priv, idx);
 
 		if (m) {
 			/* A slot nobody had claimed carries whatever its last
@@ -300,7 +300,7 @@ int rtldsa_port_fdb_add(struct dsa_switch *ds, int port,
 			m->fdb_ref = true;
 		}
 
-		rtldsa_setup_l2_uc_entry(&e, port, vid, mac);
+		otto_fdb_uc_entry_setup(&e, port, vid, mac);
 		priv->r->write_l2_entry_using_hash(priv, idx >> 2, idx & 0x3, &e);
 		goto out;
 	}
@@ -309,7 +309,7 @@ int rtldsa_port_fdb_add(struct dsa_switch *ds, int port,
 	idx = otto_l2_find_cam_entry(priv, seed, false, &e);
 
 	if (idx >= 0) {
-		rtldsa_setup_l2_uc_entry(&e, port, vid, mac);
+		otto_fdb_uc_entry_setup(&e, port, vid, mac);
 		priv->r->write_cam(idx, &e);
 		goto out;
 	}
@@ -322,9 +322,9 @@ out:
 	return err;
 }
 
-int rtldsa_port_fdb_del(struct dsa_switch *ds, int port,
-			       const unsigned char *addr, u16 vid,
-			       const struct dsa_db db)
+int otto_fdb_port_del(struct dsa_switch *ds, int port,
+		      const unsigned char *addr, u16 vid,
+		      const struct dsa_db db)
 {
 	struct otto_dsa_priv *priv = ds->priv;
 	u64 mac = ether_addr_to_u64(addr);
@@ -343,7 +343,7 @@ int rtldsa_port_fdb_del(struct dsa_switch *ds, int port,
 	idx = otto_l2_find_hash_entry(priv, seed, true, &e);
 
 	if (idx >= 0) {
-		struct rtldsa_l2_uc *m = otto_l2_uc_lookup(priv, idx);
+		struct rtldsa_l2_uc *m = otto_fdb_uc_lookup(priv, idx);
 
 		pr_debug("Found entry index %d, key %d and bucket %d\n", idx, idx >> 2, idx & 3);
 
@@ -381,8 +381,8 @@ out:
 	return err;
 }
 
-int rtldsa_port_fdb_dump(struct dsa_switch *ds, int port,
-				dsa_fdb_dump_cb_t *cb, void *data)
+int otto_fdb_port_dump(struct dsa_switch *ds, int port,
+		       dsa_fdb_dump_cb_t *cb, void *data)
 {
 	struct otto_dsa_priv *priv = ds->priv;
 	int uc_rows, cam_rows;
@@ -429,8 +429,8 @@ int rtldsa_port_fdb_dump(struct dsa_switch *ds, int port,
 	return 0;
 }
 
-static void otto_l2_dump_entry(struct seq_file *m, struct otto_dsa_priv *priv,
-			       struct rtl838x_l2_entry *e)
+static void otto_fdb_dump_entry(struct seq_file *m, struct otto_dsa_priv *priv,
+				struct rtl838x_l2_entry *e)
 {
 	u64 portmask;
 
@@ -493,7 +493,7 @@ static void otto_l2_dump_entry(struct seq_file *m, struct otto_dsa_priv *priv,
 	seq_puts(m, "\n");
 }
 
-static int otto_l2_fdb_show(struct seq_file *m, void *v)
+static int otto_fdb_show(struct seq_file *m, void *v)
 {
 	struct otto_dsa_priv *priv = m->private;
 	int uc_rows, cam_rows;
@@ -519,7 +519,7 @@ static int otto_l2_fdb_show(struct seq_file *m, void *v)
 
 		if (e.valid) {
 			seq_printf(m, "Hash table bucket %d index %d ", i >> 2, i & 0x3);
-			otto_l2_dump_entry(m, priv, &e);
+			otto_fdb_dump_entry(m, priv, &e);
 		}
 
 		if (!((i + 1) % 64))
@@ -535,36 +535,36 @@ static int otto_l2_fdb_show(struct seq_file *m, void *v)
 			continue;
 
 		seq_printf(m, "CAM index %d ", i);
-		otto_l2_dump_entry(m, priv, &e);
+		otto_fdb_dump_entry(m, priv, &e);
 	}
 
 	return 0;
 }
-DEFINE_SHOW_ATTRIBUTE(otto_l2_fdb);
+DEFINE_SHOW_ATTRIBUTE(otto_fdb);
 
-static void otto_l2_dbgfs_remove(void *data)
+static void otto_fdb_dbgfs_remove(void *data)
 {
 	debugfs_remove_recursive(data);
 }
 
-#define RTLDSA_L2_DBG_ROOT_DIR	"realtek_otto_l2"
+#define OTTO_FDB_DBG_ROOT_DIR	"realtek_otto_fdb"
 
-void otto_l2_dbgfs_init(struct otto_dsa_priv *priv)
+void otto_fdb_dbgfs_init(struct otto_dsa_priv *priv)
 {
 	struct device *dev = priv->dev;
 	struct dentry *root;
 
-	root = debugfs_create_dir(RTLDSA_L2_DBG_ROOT_DIR, NULL);
+	root = debugfs_create_dir(OTTO_FDB_DBG_ROOT_DIR, NULL);
 	if (IS_ERR(root)) {
 		/* -ENODEV is a kernel built without debugfs, not a failure */
 		if (PTR_ERR(root) != -ENODEV)
 			dev_warn(dev, "could not create %s debugfs directory\n",
-				 RTLDSA_L2_DBG_ROOT_DIR);
+				 OTTO_FDB_DBG_ROOT_DIR);
 		return;
 	}
 
-	if (devm_add_action_or_reset(dev, otto_l2_dbgfs_remove, root))
+	if (devm_add_action_or_reset(dev, otto_fdb_dbgfs_remove, root))
 		return;
 
-	debugfs_create_file("fdb", 0400, root, priv, &otto_l2_fdb_fops);
+	debugfs_create_file("fdb", 0400, root, priv, &otto_fdb_fops);
 }
