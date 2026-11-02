@@ -1,0 +1,52 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Mon, 2 Nov 2026 12:00:00 +0100
+Subject: [PATCH] wifi: mac80211: convert long TU delays in 64 bits
+
+ieee80211_tu_to_usec() takes and returns an unsigned long, which wraps
+on a 32-bit system above 4194303 TU. The delay of an AP removal is the
+Beacon interval times the AP Removal Timer minus 1, and both are 16-bit
+fields, so a valid element can exceed that. The work then runs early and
+removes the link while the AP still serves it. The CSA timeout of a
+station has the same overflow with a Channel Switch Count of up to 255.
+
+Convert both delays to ktime in 64 bits.
+
+Fixes: 8eb8dd2ffbbb ("wifi: mac80211: Support link removal using Reconfiguration ML element")
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/net/mac80211/ieee80211_i.h
++++ b/net/mac80211/ieee80211_i.h
+@@ -2532,6 +2532,13 @@ static inline int __ieee80211_resume(str
+ 
+ /* utility functions/constants */
+ extern const void *const mac80211_wiphy_privid; /* for wiphy privid */
++
++/* ieee80211_tu_to_usec() wraps above 4194303 TU on 32-bit */
++static inline ktime_t ieee80211_tu_to_ktime(u64 tu)
++{
++	return us_to_ktime(tu * 1024);
++}
++
+ const char *ieee80211_conn_mode_str(enum ieee80211_conn_mode mode);
+ enum ieee80211_conn_bw_limit
+ ieee80211_min_bw_limit_from_chandef(struct cfg80211_chan_def *chandef);
+--- a/net/mac80211/mlme.c
++++ b/net/mac80211/mlme.c
+@@ -3513,7 +3513,7 @@ ieee80211_sta_process_chanswitch(struct
+ 	/* we may have to handle timeout for deactivated link in software */
+ 	now = ktime_get_boottime();
+ 	csa_time_tu = (max_t(int, csa_ie.count, 1) - 1) * link->conf->beacon_int;
+-	link->u.mgd.csa.time = now + us_to_ktime(ieee80211_tu_to_usec(csa_time_tu));
++	link->u.mgd.csa.time = now + ieee80211_tu_to_ktime(csa_time_tu);
+ 
+ 	if (ieee80211_vif_link_active(&sdata->vif, link->link_id) &&
+ 	    local->ops->channel_switch) {
+@@ -7834,7 +7834,7 @@ static void ieee80211_ml_reconfiguration
+ 	sdata->u.mgd.removed_links |= removed_links;
+ 	wiphy_hrtimer_work_queue(sdata->local->hw.wiphy,
+ 				 &sdata->u.mgd.ml_reconf_work,
+-				 us_to_ktime(ieee80211_tu_to_usec(delay)));
++				 ieee80211_tu_to_ktime(delay));
+ }
+ 
+ static int ieee80211_ttlm_set_links(struct ieee80211_sub_if_data *sdata,
