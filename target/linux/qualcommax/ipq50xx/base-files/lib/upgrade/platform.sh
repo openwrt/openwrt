@@ -230,7 +230,8 @@ platform_do_upgrade() {
 		;;
 	h3c,magic-nx30|\
 	h3c,magic-rc3000-v1|\
-	h3c,magic-rc3000-v2)
+	h3c,magic-rc3000-v2|\
+	h3c,magic-rc3000-v3)
 		# Two rootfs slots; the other one usually keeps the stock
 		# firmware and must not be touched. Rewrite the running slot,
 		# which the boot loader names on the command line (the SBL
