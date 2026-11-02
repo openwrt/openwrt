@@ -117,7 +117,7 @@ static int osafeloader_info(int argc, char **argv) {
 	/* Skip header & vendor info */
 	fseek(safeloader, 0x1014, SEEK_SET);
 
-	while (fscanf(safeloader, "fwup-ptn %s base 0x%x size 0x%x\t\r\n", name, &base, &size) == 3) {
+	while (fscanf(safeloader, "fwup-ptn %31s base 0x%x size 0x%x\t\r\n", name, &base, &size) == 3) {
 		printf("%10s: %s (0x%x - 0x%x)\n", "Partition", name, base, base + size);
 	}
 
@@ -199,7 +199,7 @@ static int osafeloader_extract(int argc, char **argv) {
 	fseek(safeloader, 0x1000, SEEK_CUR);
 
 	err = -ENOENT;
-	while (fscanf(safeloader, "fwup-ptn %s base 0x%x size 0x%x\t\r\n", name, &base, &size) == 3) {
+	while (fscanf(safeloader, "fwup-ptn %31s base 0x%x size 0x%x\t\r\n", name, &base, &size) == 3) {
 		uint8_t buf[1024];
 
 		if (strcmp(name, partition_name))
