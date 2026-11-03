@@ -1,0 +1,90 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Rosen Penev <rosenp@gmail.com>
+Date: Wed, 21 Oct 2026 15:59:50 -0700
+Subject: [PATCH] wifi: b43: apply the TX power limit set on the interface
+
+A TX power limit set with "iw dev <dev> set txpower" never reaches the
+hardware. mac80211 keeps such a limit per interface and only passes it
+to the driver as BSS_CHANGED_TXPOWER. The power level of the hardware
+configuration, which b43_op_config() turns into the desired TX power,
+is only recalculated for a limit set on the whole wiphy, or when the
+channel changes, so it may also still hold an old limit of the
+interface.
+
+With an interface, take its TX power as the desired TX power, on
+BSS_CHANGED_TXPOWER and in b43_op_config() alike, so that an unrelated
+change of the hardware configuration, such as adding a monitor
+interface, does not put the old power level back. It includes a limit
+set on the whole wiphy, and the channel being scanned can only lower
+it. Without an interface, keep the power level of the hardware
+configuration. Recheck the TX power right away, as b43_op_config()
+does.
+
+Fixes: 1ea6f9c0d48b ("mac80211: handle TX power per virtual interface")
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+---
+ drivers/net/wireless/broadcom/b43/main.c | 39 +++++++++++++++++++-----
+ 1 file changed, 32 insertions(+), 7 deletions(-)
+
+--- a/drivers/net/wireless/broadcom/b43/main.c
++++ b/drivers/net/wireless/broadcom/b43/main.c
+@@ -4019,6 +4019,34 @@ static void b43_set_retry_limits(struct
+ 			long_retry);
+ }
+ 
++/*
++ * Take the TX power limit of the hardware configuration, or that of the
++ * interface if there is one. mac80211 passes a limit set on the interface
++ * only in the latter (BSS_CHANGED_TXPOWER): it recalculates the former,
++ * the minimum over the interfaces, only when the channel changes, so it
++ * may still hold an old limit of the interface. The limit of the
++ * interface is that of the operating channel, which the channel being
++ * scanned can only lower.
++ */
++static void b43_update_desired_txpower(struct b43_wldev *dev)
++{
++	struct ieee80211_conf *conf = &dev->wl->hw->conf;
++	struct ieee80211_vif *vif = dev->wl->vif;
++	int power = conf->power_level;
++
++	if (vif && vif->bss_conf.txpower > 0) {
++		power = vif->bss_conf.txpower;
++		if (conf->chandef.chan)
++			power = min(power, conf->chandef.chan->max_power);
++	}
++	if (power <= 0 || power == dev->phy.desired_txpower)
++		return;
++
++	dev->phy.desired_txpower = power;
++	b43_phy_txpower_check(dev, B43_TXPWR_IGNORE_TIME |
++				   B43_TXPWR_IGNORE_TSSI);
++}
++
+ static int b43_op_config(struct ieee80211_hw *hw, int radio_idx, u32 changed)
+ {
+ 	struct b43_wl *wl = hw_to_b43_wl(hw);
+@@ -4058,13 +4086,7 @@ static int b43_op_config(struct ieee8021
+ 	dev->wl->radiotap_enabled = !!(conf->flags & IEEE80211_CONF_MONITOR);
+ 
+ 	/* Adjust the desired TX power level. */
+-	if (conf->power_level != 0) {
+-		if (conf->power_level != phy->desired_txpower) {
+-			phy->desired_txpower = conf->power_level;
+-			b43_phy_txpower_check(dev, B43_TXPWR_IGNORE_TIME |
+-						   B43_TXPWR_IGNORE_TSSI);
+-		}
+-	}
++	b43_update_desired_txpower(dev);
+ 
+ 	/* Antennas for RX and management frame TX. */
+ 	b43_mgmtframe_txantenna(dev, dev->tx_antenna);
+@@ -4193,6 +4215,9 @@ static void b43_op_bss_info_changed(stru
+ 	}
+ 
+ 	b43_mac_enable(dev);
++
++	if (changed & BSS_CHANGED_TXPOWER)
++		b43_update_desired_txpower(dev);
+ out_unlock_mutex:
+ 	mutex_unlock(&wl->mutex);
+ }

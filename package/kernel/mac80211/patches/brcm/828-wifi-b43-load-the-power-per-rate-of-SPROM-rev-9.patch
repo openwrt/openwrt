@@ -1,0 +1,118 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Rosen Penev <rosenp@gmail.com>
+Date: Sat, 24 Oct 2026 16:47:14 -0700
+Subject: [PATCH] wifi: b43: load the power per rate of SPROM rev 9
+
+b43_ppr_load_max_from_sprom() takes the per-rate power offsets from the
+rev 8 SPROM fields (cck2gpo, ofdm*po, mcs*po, cddpo, stbcpo). A rev 9
+SPROM keeps its offsets elsewhere, in one offset per CCK, legacy OFDM
+and MCS 0-7 rate for each band, so the rev 8 fields hold unrelated
+bytes and the per-rate targets come out wrong.
+
+With a rev 9 SPROM, compute the targets from the rev 9 fields instead.
+They are in 0.5 dB steps below the maximum power, as the rev 8 ones,
+and the MCS offsets apply to SISO, CDD, STBC and SDM alike. At 20 MHz,
+N-PHY sends MCS 0-7 on one stream at the power of the legacy OFDM rate
+with the same modulation and coding, so take the larger backoff of the
+two for that rate.
+
+This affects N-PHY boards with a rev 9 SPROM too, which now get the
+per-rate backoff their SPROM asks for; that is untested on N-PHY.
+
+Fixes: ec76643b0057 ("b43: implement PPR (Power Per Rate) management/API")
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+---
+ drivers/net/wireless/broadcom/b43/ppr.c | 75 +++++++++++++++++++++++++
+ 1 file changed, 75 insertions(+)
+
+--- a/drivers/net/wireless/broadcom/b43/ppr.c
++++ b/drivers/net/wireless/broadcom/b43/ppr.c
+@@ -65,6 +65,77 @@ u8 b43_ppr_get_max(struct b43_wldev *dev
+ 	return res;
+ }
+ 
++/*
++ * SPROM rev 9 has an offset for each CCK, legacy OFDM and MCS 0-7 rate in
++ * each band, in 0.5 dB steps below the maximum power. The MCS offsets
++ * apply to every way of sending the MCS (SISO, CDD, STBC and SDM).
++ */
++static bool b43_ppr_load_max_from_sprom_r9(struct b43_wldev *dev,
++					   struct b43_ppr *ppr,
++					   enum b43_band band, u8 maxpwr)
++{
++	struct b43_ppr_rates *rates = &ppr->rates;
++	struct ssb_sprom *sprom = dev->dev->bus_sprom;
++	u32 ofdm_po, mcs_po;
++	int i;
++
++	switch (band) {
++	case B43_BAND_2G:
++		ofdm_po = sprom->legofdmbw202gpo;
++		mcs_po = sprom->mcsbw202gpo;
++		break;
++	case B43_BAND_5G_LO:
++		ofdm_po = sprom->legofdmbw205glpo;
++		mcs_po = sprom->mcsbw205glpo;
++		break;
++	case B43_BAND_5G_MI:
++		ofdm_po = sprom->legofdmbw205gmpo;
++		mcs_po = sprom->mcsbw205gmpo;
++		break;
++	case B43_BAND_5G_HI:
++		ofdm_po = sprom->legofdmbw205ghpo;
++		mcs_po = sprom->mcsbw205ghpo;
++		break;
++	default:
++		return false;
++	}
++
++	if (band == B43_BAND_2G) {
++		for (i = 0; i < 4; i++)
++			rates->cck[i] = maxpwr -
++					((sprom->cckbw202gpo >> (i * 4)) & 0xf) * 2;
++	}
++
++	for (i = 0; i < 8; i++) {
++		u8 ofdm = maxpwr - ((ofdm_po >> (i * 4)) & 0xf) * 2;
++		u8 mcs = maxpwr - ((mcs_po >> (i * 4)) & 0xf) * 2;
++
++		rates->ofdm[i] = ofdm;
++		rates->ofdm_20_cdd[i] = ofdm;
++		rates->mcs_20[i] = mcs;
++		rates->mcs_20_cdd[i] = mcs;
++		rates->mcs_20_stbc[i] = mcs;
++		rates->mcs_20_sdm[i] = mcs;
++	}
++
++	/*
++	 * At 20 MHz, N-PHY sends MCS 0-7 on one stream at the power of the
++	 * legacy OFDM rate with the same modulation and coding, MCS 7 at that
++	 * of 54 Mbit/s (b43_nphy_tx_prepare_adjusted_power_table()). Back
++	 * such a rate off as far as the more limited of the two needs.
++	 */
++	if (dev->phy.type == B43_PHYTYPE_N) {
++		static const u8 ofdm_of_mcs[] = { 0, 2, 3, 4, 5, 6, 7, 7 };
++
++		for (i = 0; i < ARRAY_SIZE(ofdm_of_mcs); i++)
++			rates->ofdm[ofdm_of_mcs[i]] =
++				min(rates->ofdm[ofdm_of_mcs[i]],
++				    rates->mcs_20[i]);
++	}
++
++	return true;
++}
++
+ bool b43_ppr_load_max_from_sprom(struct b43_wldev *dev, struct b43_ppr *ppr,
+ 				 enum b43_band band)
+ {
+@@ -116,6 +187,10 @@ bool b43_ppr_load_max_from_sprom(struct
+ 		return false;
+ 	}
+ 
++	/* Rev 9 replaced the offsets read above by per rate ones */
++	if (sprom->revision >= 9)
++		return b43_ppr_load_max_from_sprom_r9(dev, ppr, band, maxpwr);
++
+ 	if (band == B43_BAND_2G) {
+ 		for (i = 0; i < 4; i++) {
+ 			off = ((sprom->cck2gpo >> (i * 4)) & 0xf) * 2;
