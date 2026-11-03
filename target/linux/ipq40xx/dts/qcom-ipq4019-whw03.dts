@@ -117,14 +117,14 @@
 };
 
 &wifi0 {
-	qcom,ath10k-calibration-variant = "linksys-whw03";
+	qcom,calibration-variant = "linksys-whw03";
 
 	nvmem-cells = <&precal_art_1000>, <&hw_mac_addr 1>;
 	nvmem-cell-names = "pre-calibration", "mac-address";
 };
 
 &wifi1 {
-	qcom,ath10k-calibration-variant = "linksys-whw03";
+	qcom,calibration-variant = "linksys-whw03";
 
 	nvmem-cells = <&precal_art_5000>, <&hw_mac_addr 2>;
 	nvmem-cell-names = "pre-calibration", "mac-address";
@@ -135,7 +135,7 @@
 		compatible = "qcom,ath10k";
 		reg = <0x00010000 0 0 0 0>;
 		ieee80211-freq-limit = <5490000 5835000>;
-		qcom,ath10k-calibration-variant = "linksys-whw03";
+		qcom,calibration-variant = "linksys-whw03";
 		nvmem-cells = <&precal_art_9000>, <&hw_mac_addr 3>;
 		nvmem-cell-names = "pre-calibration", "mac-address";
 	};

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
 #include <asm/mach-rtl-otto/mach-rtl-otto.h>
+#include <linux/bitfield.h>
 #include <linux/etherdevice.h>
 #include <linux/inetdevice.h>
 #include <linux/regmap.h>
@@ -18,33 +19,9 @@
 #include "vlan.h"
 #include "stp.h"
 
-#define RTL930X_MAC_L2_PORT_CTRL(port)		(0x3268 + (((port) << 6)))
-
-/* MAC maximum packet length (jumbo frame) control.
- *
- * The switch MAC drops frames whose L2 length exceeds the configured maximum.
- * A family holds either one register per user port or a single one for the
- * whole switch. The length is a direct byte value held in two 14-bit fields
- * (high-speed links in [13:0], 10/100M links in [27:14]); bit 28 selects
- * whether VLAN tag bytes count towards the limit.
- */
-
-/* RTL930x holds one register per user port, inside the 64-byte MAC block of
- * the port. The CPU port has a row of its own, which the ethernet driver owns
- * and programs from the conduit MTU. Register offsets taken from the
- * reverse-engineered Realtek register maps at https://svanheule.net/realtek/
- */
-#define RTL930X_MAC_L2_PORT_MAX_LEN_CTRL(port)	(0x326C + (((port) << 6)))
-
-/* Largest frame each family switches; the length field would allow 16383 */
-#define RTL930X_MAX_FRAME			12288
-
-#define RTL930X_MAC_FORCE_MODE_CTRL		(0xCA1C)
-
-#define RTL930X_MAC_LINK_STS			(0xCB10)
-
-#define RTL930X_EEE_CTRL(p)			(0x3274 + ((p) << 6))
 #define RTL930X_VLAN_PORT_AFT			(0x8260)
+
+#define RTL930X_PRI_SEL_PORT_PRI(p)		(0x9AE8 + (((p) / 10) * 4))
 
 #define RTL930X_TRK_HASH_CTRL			(0x9F80)
 #define RTL930X_TRK_CTRL			(0x9F88)
@@ -92,13 +69,6 @@
 /* get shift for given led in any set */
 #define RTL930X_LED_SET_LEDX_SHIFT(x) (16 * (x % 2))
 
-#define RTL930X_SMI_MAC_TYPE_CTRL		0xca04
-#define RTL930X_SMI_MAC_TYPE_P0_23(pn)		(GENMASK(1, 0) << (((pn) / 4) * 2))
-#define RTL930X_SMI_MAC_TYPE_P24_27(pn)		(GENMASK(2, 0) << (((pn) - 24) * 3 + 12))
-#define RTL930X_SMI_MAC_TYPE_PCS		0x0
-#define RTL930X_SMI_MAC_TYPE_MULTIGIG_PHY	0x1
-#define RTL930X_SMI_MAC_TYPE_1G_PHY		0x3
-
 void rtldsa_930x_print_matrix(struct otto_dsa_priv *priv)
 {
 	int tbl = otto_table_acquire(RTL9300_TBL_PORT_ISO_CTRL);
@@ -109,21 +79,6 @@ void rtldsa_930x_print_matrix(struct otto_dsa_priv *priv)
 		pr_debug("> %08x\n", v);
 	}
 	otto_table_release(tbl);
-}
-
-static inline int rtl930x_mac_force_mode_ctrl(int p)
-{
-	return RTL930X_MAC_FORCE_MODE_CTRL + (p << 2);
-}
-
-static inline int rtl930x_mac_port_ctrl(int p)
-{
-	return RTL930X_MAC_L2_PORT_CTRL(p);
-}
-
-static inline int rtl930x_mac_max_len_reg(int p)
-{
-	return RTL930X_MAC_L2_PORT_MAX_LEN_CTRL(p);
 }
 
 static void rtldsa_930x_set_receive_management_action(struct otto_dsa_priv *priv,
@@ -276,41 +231,6 @@ void rtl9300_dump_debug(struct otto_dsa_priv *priv)
 	pr_debug("RTL930X_L2_PORT_SABLK_CTRL: %08x, RTL930X_L2_PORT_DABLK_CTRL %08x\n",
 		 rtl930x_read_debug_reg(priv, RTL930X_L2_PORT_SABLK_CTRL),
 		 rtl930x_read_debug_reg(priv, RTL930X_L2_PORT_DABLK_CTRL));
-}
-
-/* Enables or disables the EEE/EEEP capability of a port */
-static void rtldsa_930x_set_mac_eee(struct otto_dsa_priv *priv, int port, bool enable)
-{
-	u32 v;
-
-	/* This works only for Ethernet ports, and on the RTL930X, ports from 26 are SFP */
-	if (port >= 26)
-		return;
-
-	pr_debug("In %s: setting port %d to %d\n", __func__, port, enable);
-	v = enable ? 0x3f : 0x0;
-
-	/* Set EEE/EEEP state for 100, 500, 1000MBit and 2.5, 5 and 10GBit */
-	regmap_write_bits(priv->map, rtl930x_mac_force_mode_ctrl(port), v << 10, v << 10);
-
-	/* Set TX/RX EEE state */
-	v = enable ? 0x3 : 0x0;
-	regmap_write(priv->map, RTL930X_EEE_CTRL(port), v);
-
-	priv->ports[port].eee_enabled = enable;
-}
-
-static void rtl930x_init_eee(struct otto_dsa_priv *priv, bool enable)
-{
-	pr_debug("Setting up EEE, state: %d\n", enable);
-
-	/* Setup EEE on all ports */
-	for (int i = 0; i < priv->r->cpu_port; i++) {
-		if (priv->ports[i].phy)
-			priv->r->set_mac_eee(priv, i, enable);
-	}
-
-	priv->eee_enabled = enable;
 }
 
 // Currently not used
@@ -584,38 +504,9 @@ static void rtl930x_led_init(struct otto_dsa_priv *priv)
 			rtl930x_read_debug_reg(priv, 0xcc00 + i * 4));
 }
 
-static int
-rtldsa_930x_mac_link_state_source_set(struct otto_dsa_priv *priv,
-				      int port,
-				      enum rtldsa_mac_link_state_source source,
-				      phy_interface_t interface)
-{
-	u32 mask, src_val;
-
-	if (port < 24)
-		mask = RTL930X_SMI_MAC_TYPE_P0_23(port);
-	else if (port < 28)
-		mask = RTL930X_SMI_MAC_TYPE_P24_27(port);
-	else
-		return 0;
-
-	if (source == RTLDSA_MAC_LINK_STATE_SOURCE_PCS)
-		src_val = RTL930X_SMI_MAC_TYPE_PCS;
-	else if (interface == PHY_INTERFACE_MODE_2500BASEX ||
-		 interface == PHY_INTERFACE_MODE_10GBASER ||
-		 interface == PHY_INTERFACE_MODE_USXGMII ||
-		 interface == PHY_INTERFACE_MODE_10G_QXGMII)
-		src_val = RTL930X_SMI_MAC_TYPE_MULTIGIG_PHY;
-	else
-		src_val = RTL930X_SMI_MAC_TYPE_1G_PHY;
-
-	return regmap_update_bits(priv->map, RTL930X_SMI_MAC_TYPE_CTRL,
-				  mask, field_prep(mask, src_val));
-}
-
 const struct rtldsa_config rtldsa_930x_cfg = {
 	.switch_ops = &rtldsa_93xx_switch_ops,
-	.phylink_mac_ops = &rtldsa_93xx_phylink_mac_ops,
+	.phylink_mac_ops = &otto_mac_93xx_phylink_ops,
 	.stp_init = otto_stp_930x_init,
 	.l2_bucket_size = 8,
 	.n_mst = 64,
@@ -682,15 +573,14 @@ const struct rtldsa_config rtldsa_930x_cfg = {
 		.rx_pause_mask = RTL930X_RX_PAUSE_EN,
 		.media_mask = RTL930X_MEDIA_SEL,
 	},
-	.mac_force_mode_ctrl = rtl930x_mac_force_mode_ctrl,
-	.mac_link_state_source_set = rtldsa_930x_mac_link_state_source_set,
-	.mac_port_ctrl = rtl930x_mac_port_ctrl,
+	.mac_force_mode_ctrl = otto_mac_930x_force_mode_ctrl,
+	.mac_link_state_source_set = otto_mac_930x_link_state_source_set,
+	.mac_port_ctrl = otto_mac_930x_port_ctrl,
 	.mac_capabilities = MAC_ASYM_PAUSE | MAC_SYM_PAUSE | MAC_10 | MAC_100 |
 			    MAC_1000FD | MAC_2500FD | MAC_5000FD | MAC_10000FD,
-	.mac_max_len_reg = rtl930x_mac_max_len_reg,
+	.mac_max_len_reg = otto_mac_930x_max_len_reg,
 	.max_frame = RTL930X_MAX_FRAME,
 	.l2_port_new_salrn = otto_l2_930x_port_new_salrn,
-	.l2_port_new_sa_fwd = otto_l2_930x_port_new_sa_fwd,
 	.get_mirror_config = rtldsa_930x_get_mirror_config,
 	.port_rate_police_add = otto_tc_930x_port_rate_police_add,
 	.port_rate_police_del = otto_tc_930x_port_rate_police_del,
@@ -705,8 +595,8 @@ const struct rtldsa_config rtldsa_930x_cfg = {
 	.fast_age = otto_l2_930x_fast_age,
 	.trk_mbr_ctr = otto_lag_930x_trk_mbr_ctr,
 	.rma_bpdu_fld_pmask = RTL930X_RMA_BPDU_FLD_PMSK,
-	.init_eee = rtl930x_init_eee,
-	.set_mac_eee = rtldsa_930x_set_mac_eee,
+	.init_eee = otto_mac_930x_init_eee,
+	.set_mac_eee = otto_mac_930x_set_eee,
 	.l2_hash_seed = otto_l2_930x_hash_seed,
 	.l2_hash_key = otto_l2_930x_hash_key,
 	.read_mcast_pmask = otto_l2_930x_read_mcast_pmask,
@@ -720,13 +610,16 @@ const struct rtldsa_config rtldsa_930x_cfg = {
 	.packet_cntr_clear = otto_stats_930x_packet_cntr_clear,
 	.led_init = rtl930x_led_init,
 	.enable_learning = otto_l2_930x_enable_learning,
-	.enable_l2_new_sa_fwd = otto_l2_930x_set_port_new_sa_fwd,
+	.set_l2_new_sa_trap = otto_l2_930x_set_port_new_sa_trap,
 	.enable_flood = otto_l2_930x_enable_flood,
 	.enable_bcast_flood = otto_l2_930x_enable_bcast_flood,
 	.set_receive_management_action = rtldsa_930x_set_receive_management_action,
 	.queue_sched_set = otto_qos_930x_queue_sched_set,
 	.egress_shaper_set = otto_tc_930x_egress_shaper_set,
 	.qos_init = otto_qos_930x_init,
+	.pri_sel_port_pri = RTL930X_PRI_SEL_PORT_PRI(0),
+	.pri_sel_remap_dscp = RTL930X_REMAP_DSCP(0),
+	.pri_sel_port_tbl_idx = RTL930X_PORT_TBL_IDX_CTRL(0),
 	.trk_ctrl = RTL930X_TRK_CTRL,
 	.trk_hash_ctrl = RTL930X_TRK_HASH_CTRL,
 	.prepare_lag_fdb = otto_lag_93xx_prepare_fdb,

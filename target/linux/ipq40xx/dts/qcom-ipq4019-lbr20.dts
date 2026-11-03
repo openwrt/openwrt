@@ -472,7 +472,7 @@
 		ieee80211-freq-limit = <5170000 5350000>;
 		nvmem-cell-names = "pre-calibration", "mac-address";
 		nvmem-cells = <&precal_art_9000>, <&mac_address_wlan_2nd5g 0>;
-		qcom,ath10k-calibration-variant = "Netgear-LBR20";
+		qcom,calibration-variant = "Netgear-LBR20";
 	};
 };
 
@@ -480,7 +480,7 @@
 	status = "okay";
 	nvmem-cell-names = "pre-calibration", "mac-address";
 	nvmem-cells = <&precal_art_1000>, <&mac_address_lan 0>;
-	qcom,ath10k-calibration-variant = "Netgear-LBR20";
+	qcom,calibration-variant = "Netgear-LBR20";
 };
 
 &wifi1 {
@@ -488,5 +488,5 @@
 	ieee80211-freq-limit = <5470000 5815000>;
 	nvmem-cell-names = "pre-calibration", "mac-address";
 	nvmem-cells = <&precal_art_5000>, <&mac_address_wlan_5g 0>;
-	qcom,ath10k-calibration-variant = "Netgear-LBR20";
+	qcom,calibration-variant = "Netgear-LBR20";
 };

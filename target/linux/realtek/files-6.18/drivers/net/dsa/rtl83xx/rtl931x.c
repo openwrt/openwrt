@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
 #include <asm/mach-rtl-otto/mach-rtl-otto.h>
+#include <linux/bitfield.h>
 #include <linux/etherdevice.h>
 #include <linux/regmap.h>
 
@@ -9,33 +10,12 @@
 #include "pie.h"
 #include "qos.h"
 #include "mirror.h"
+#include "mac.h"
 #include "rtl-otto.h"
 #include "stats.h"
 #include "tc.h"
 #include "vlan.h"
 #include "stp.h"
-
-#define RTL931X_MAC_L2_PORT_CTRL		(0x6000)
-
-/* MAC maximum packet length (jumbo frame) control.
- *
- * The switch MAC drops frames whose L2 length exceeds the configured maximum.
- * A family holds either one register per user port or a single one for the
- * whole switch. The length is a direct byte value held in two 14-bit fields
- * (high-speed links in [13:0], 10/100M links in [27:14]); bit 28 selects
- * whether VLAN tag bytes count towards the limit.
- */
-
-/* RTL931x covers ports 0 to 55 only, one word each. The CPU port has no row:
- * the word that would follow the array is MAC_DBG_SEL_CTRL.
- */
-#define RTL931X_MAC_L2_PORT_MAX_LEN_CTRL	(0x5554)
-
-#define RTL931X_MAX_FRAME			12288
-
-#define RTL931X_MAC_FORCE_MODE_CTRL		(0x0DCC)
-
-#define RTL931X_MAC_LINK_STS			(0x0EC0)
 
 #define RTL931X_TRK_HASH_CTRL			(0xBA70)
 #define RTL931X_TRK_CTRL			(0xBA78)
@@ -82,26 +62,6 @@
 #define RTL931X_LED_CLK_SEL_400NS				1
 #define RTL931X_LED_CLK_SEL_200NS				2
 #define RTL931X_LED_CLK_SEL_100NS				3
-
-#define RTL931X_SMI_PHY_ABLTY_GET_SEL(port)	(0x0cac + ((port) / 16) * 4)
-#define RTL931X_SMI_PHY_ABLTY_MDIO		0x0
-#define RTL931X_SMI_PHY_ABLTY_SDS		0x2
-#define RTL931X_SMI_PHY_ABLTY_MASK(port)	(GENMASK(1, 0) << (((port) % 16) * 2))
-
-static inline int rtl931x_mac_force_mode_ctrl(int p)
-{
-	return RTL931X_MAC_FORCE_MODE_CTRL + (p << 2);
-}
-
-static inline int rtl931x_mac_port_ctrl(int p)
-{
-	return RTL931X_MAC_L2_PORT_CTRL + (p << 7);
-}
-
-static inline int rtl931x_mac_max_len_reg(int p)
-{
-	return RTL931X_MAC_L2_PORT_MAX_LEN_CTRL + (p << 2);
-}
 
 void rtldsa_931x_print_matrix(struct otto_dsa_priv *priv)
 {
@@ -419,31 +379,9 @@ static void rtldsa_931x_led_init(struct otto_dsa_priv *priv)
 			 rtl931x_read_debug_reg(priv, 0x0600 + i * 4));
 }
 
-static int
-rtldsa_931x_mac_link_state_source_set(struct otto_dsa_priv *priv,
-				      int port,
-				      enum rtldsa_mac_link_state_source source,
-				      phy_interface_t interface)
-{
-	u32 mask, src_val;
-
-	if (port >= RTL931X_CPU_PORT)
-		return 0;
-
-	mask = RTL931X_SMI_PHY_ABLTY_MASK(port);
-	if (source == RTLDSA_MAC_LINK_STATE_SOURCE_PCS)
-		src_val = RTL931X_SMI_PHY_ABLTY_SDS;
-	else
-		src_val = RTL931X_SMI_PHY_ABLTY_MDIO;
-
-	return regmap_update_bits(priv->map,
-				  RTL931X_SMI_PHY_ABLTY_GET_SEL(port),
-				  mask, field_prep(mask, src_val));
-}
-
 const struct rtldsa_config rtldsa_931x_cfg = {
 	.switch_ops = &rtldsa_93xx_switch_ops,
-	.phylink_mac_ops = &rtldsa_93xx_phylink_mac_ops,
+	.phylink_mac_ops = &otto_mac_93xx_phylink_ops,
 	.stp_init = otto_stp_931x_init,
 	.l2_bucket_size = 8,
 	.n_mst = 128,
@@ -502,16 +440,15 @@ const struct rtldsa_config rtldsa_931x_cfg = {
 		.tx_pause_mask = RTL931X_TX_PAUSE_EN,
 		.rx_pause_mask = RTL931X_RX_PAUSE_EN,
 	},
-	.mac_force_mode_ctrl = rtl931x_mac_force_mode_ctrl,
-	.mac_link_state_source_set = rtldsa_931x_mac_link_state_source_set,
+	.mac_force_mode_ctrl = otto_mac_931x_force_mode_ctrl,
+	.mac_link_state_source_set = otto_mac_931x_link_state_source_set,
 	.mac_link_sts = RTL931X_MAC_LINK_STS,
-	.mac_port_ctrl = rtl931x_mac_port_ctrl,
+	.mac_port_ctrl = otto_mac_931x_port_ctrl,
 	.mac_capabilities = MAC_ASYM_PAUSE | MAC_SYM_PAUSE | MAC_10 | MAC_100 |
 			    MAC_1000FD | MAC_2500FD | MAC_5000FD | MAC_10000FD,
-	.mac_max_len_reg = rtl931x_mac_max_len_reg,
+	.mac_max_len_reg = otto_mac_931x_max_len_reg,
 	.max_frame = RTL931X_MAX_FRAME,
 	.l2_port_new_salrn = otto_l2_931x_port_new_salrn,
-	.l2_port_new_sa_fwd = otto_l2_931x_port_new_sa_fwd,
 	.get_mirror_config = rtldsa_931x_get_mirror_config,
 	.port_rate_police_add = otto_tc_931x_port_rate_police_add,
 	.port_rate_police_del = otto_tc_931x_port_rate_police_del,
@@ -539,7 +476,7 @@ const struct rtldsa_config rtldsa_931x_cfg = {
 	.l2_learning_setup = otto_l2_931x_learning_setup,
 	.led_init = rtldsa_931x_led_init,
 	.enable_learning = otto_l2_931x_enable_learning,
-	.enable_l2_new_sa_fwd = otto_l2_931x_set_port_new_sa_fwd,
+	.set_l2_new_sa_trap = otto_l2_931x_set_port_new_sa_trap,
 	.enable_flood = otto_l2_931x_enable_flood,
 	.enable_bcast_flood = otto_l2_931x_enable_bcast_flood,
 	.set_receive_management_action = rtldsa_931x_set_receive_management_action,
