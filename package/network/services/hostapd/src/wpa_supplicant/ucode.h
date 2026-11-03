@@ -1,7 +1,9 @@
 #ifndef __WPAS_UCODE_H
 #define __WPAS_UCODE_H
 
+#ifdef UCODE_SUPPORT
 #include "utils/ucode.h"
+#endif
 
 struct wpa_bss;
 struct wpa_global;
