@@ -1,0 +1,103 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Rosen Penev <rosenp@gmail.com>
+Date: Tue, 27 Oct 2026 19:06:48 -0700
+Subject: [PATCH] wifi: b43: HT-PHY: load the 5 GHz TX gain table at 5 GHz
+
+The TX gain table, entries 0xc0-0x13f of table 0x1a, is the same for
+both bands in b43: b43_httab_0x1a_0xc0_late, which is what Broadcom's
+driver loads at 2.4 GHz. At 5 GHz Broadcom's driver loads a different
+table (traced with mmiotrace on an Apple AirPort Extreme BCM4331 card),
+so b43 drives the 5 GHz transmitter with the gains meant for 2.4 GHz.
+
+Add Broadcom's 5 GHz table and load the table of the current band. The
+PHY init runs again on every band switch, so the table follows the band.
+
+On that card at 5 GHz, channel 36, HT20, with an MT7612U AP, TCP upload
+at MCS 15 goes from 35.6 to 42.5 Mbit/s (still 41% of the frames with a
+bad FCS at the AP) and with rate control from 41.7 to 46.6 Mbit/s. The
+calibration of the TX I/Q imbalance and LO leakage needs the right
+table to work at 5 GHz.
+
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+---
+ drivers/net/wireless/broadcom/b43/phy_ht.c    |  4 +-
+ .../net/wireless/broadcom/b43/tables_phy_ht.c | 38 +++++++++++++++++++
+ .../net/wireless/broadcom/b43/tables_phy_ht.h |  1 +
+ 3 files changed, 42 insertions(+), 1 deletion(-)
+
+--- a/drivers/net/wireless/broadcom/b43/phy_ht.c
++++ b/drivers/net/wireless/broadcom/b43/phy_ht.c
+@@ -1231,7 +1231,9 @@ static int b43_phy_ht_op_init(struct b43
+ 		b43_phy_ht_bphy_init(dev);
+ 
+ 	b43_httab_write_bulk(dev, B43_HTTAB32(0x1a, 0xc0),
+-			B43_HTTAB_1A_C0_LATE_SIZE, b43_httab_0x1a_0xc0_late);
++			B43_HTTAB_1A_C0_LATE_SIZE,
++			b43_current_band(dev->wl) == NL80211_BAND_5GHZ ?
++			b43_httab_0x1a_0xc0_late_5g : b43_httab_0x1a_0xc0_late);
+ 
+ 	b43_phy_ht_ext_fem_setup(dev);
+ 
+--- a/drivers/net/wireless/broadcom/b43/tables_phy_ht.c
++++ b/drivers/net/wireless/broadcom/b43/tables_phy_ht.c
+@@ -609,6 +609,42 @@ const u32 b43_httab_0x1a_0xc0_late[] = {
+ 	0x10090001, 0x10090001, 0x10090001, 0x10090001,
+ };
+ 
++/* The same at 5 GHz, as Broadcom's driver loads it on a BCM4331 */
++const u32 b43_httab_0x1a_0xc0_late_5g[] = {
++	0x2f690044, 0x2f690040, 0x2f69003c, 0x2f690039,
++	0x2f690036, 0x2f690033, 0x2f690030, 0x2e690039,
++	0x2e690036, 0x2e690033, 0x2d69003a, 0x2d690037,
++	0x2d690034, 0x2d690031, 0x2c69003b, 0x2c690038,
++	0x2c690035, 0x2b690039, 0x2b690036, 0x2b690033,
++	0x2b690030, 0x2a690039, 0x2a690036, 0x2a690033,
++	0x2969003c, 0x29690038, 0x29690035, 0x29690032,
++	0x2869003a, 0x28690036, 0x28690033, 0x28690030,
++	0x28590035, 0x28590032, 0x2859002f, 0x28490035,
++	0x28490032, 0x2849002f, 0x28390032, 0x2839002f,
++	0x2839002d, 0x2839002a, 0x28290035, 0x28290032,
++	0x2829002f, 0x2829002c, 0x2829002a, 0x28290027,
++	0x28290025, 0x28190035, 0x28190032, 0x2819002f,
++	0x2819002d, 0x2819002a, 0x28190028, 0x28190026,
++	0x28190024, 0x28190022, 0x28190020, 0x2819001e,
++	0x28090036, 0x28090033, 0x28090031, 0x2809002e,
++	0x2809002b, 0x28090029, 0x28090027, 0x28090024,
++	0x28090022, 0x28090020, 0x2809001f, 0x2809001d,
++	0x2809001b, 0x2809001a, 0x28090018, 0x28090017,
++	0x28090016, 0x28090014, 0x28090013, 0x28090012,
++	0x28090011, 0x28090010, 0x2809000f, 0x2809000e,
++	0x2809000e, 0x2809000d, 0x2809000c, 0x2809000c,
++	0x2809000b, 0x2809000a, 0x2809000a, 0x28090009,
++	0x28090009, 0x28090008, 0x28090008, 0x28090007,
++	0x28090007, 0x28090006, 0x28090006, 0x28090006,
++	0x28090005, 0x28090005, 0x28090005, 0x28090005,
++	0x28090004, 0x28090004, 0x28090004, 0x28090004,
++	0x28090003, 0x28090003, 0x28090003, 0x28090003,
++	0x28090003, 0x28090003, 0x28090002, 0x28090002,
++	0x28090002, 0x28090002, 0x28090002, 0x28090002,
++	0x28090002, 0x28090002, 0x28090002, 0x28090001,
++	0x28090001, 0x28090001, 0x28090001, 0x28090001,
++};
++
+ /**************************************************
+  * R/W ops.
+  **************************************************/
+@@ -804,6 +840,8 @@ void b43_phy_ht_tables_init(struct b43_w
+ {
+ 	BUILD_BUG_ON(ARRAY_SIZE(b43_httab_0x1a_0xc0_late) !=
+ 			B43_HTTAB_1A_C0_LATE_SIZE);
++	BUILD_BUG_ON(ARRAY_SIZE(b43_httab_0x1a_0xc0_late_5g) !=
++			B43_HTTAB_1A_C0_LATE_SIZE);
+ 
+ 	httab_upload(dev, B43_HTTAB16(0x09, 0), b43_httab_0x09);
+ 	httab_upload(dev, B43_HTTAB16(0x12, 0), b43_httab_0x12);
+--- a/drivers/net/wireless/broadcom/b43/tables_phy_ht.h
++++ b/drivers/net/wireless/broadcom/b43/tables_phy_ht.h
+@@ -23,5 +23,6 @@ void b43_phy_ht_tables_init(struct b43_w
+ 
+ #define B43_HTTAB_1A_C0_LATE_SIZE		128
+ extern const u32 b43_httab_0x1a_0xc0_late[];
++extern const u32 b43_httab_0x1a_0xc0_late_5g[];
+ 
+ #endif /* B43_TABLES_PHY_HT_H_ */

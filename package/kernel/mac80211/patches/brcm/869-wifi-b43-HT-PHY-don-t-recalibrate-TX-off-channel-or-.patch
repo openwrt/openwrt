@@ -1,0 +1,89 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Rosen Penev <rosenp@gmail.com>
+Date: Mon, 2 Nov 2026 00:32:08 -0800
+Subject: [PATCH] wifi: b43: HT-PHY: don't recalibrate TX off-channel or on the
+ same channel
+
+Every HT-PHY channel switch runs the TX I/Q and LO calibration, about
+17 ms of the 26 ms a switch takes. During a scan that is spent on every
+channel visited, although off the operating channel only probe requests
+go out, at robust rates, and again on the way back to the operating
+channel, whose coefficients are still in place: the channel setup does
+not touch table 13 nor the radio's coarse LO.
+
+Remember the channel the coefficients were found on. Skip the
+calibration with IEEE80211_CONF_OFFCHANNEL and when tuning to that
+channel again. PHY init reloads table 13 and radio init resets the
+coarse LO, so forget the channel at both.
+
+On a BCM4331 associated on channel 36, a channel switch now takes about
+10 ms. A full scan takes 14.9 s instead of 17.6 s, ping loss during it
+drops from 12% to 7% and its 95th percentile from about 350 to 210 ms.
+Throughput after scans is unchanged.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01S2DU22Uxo4LiJPr66K7TVt
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+---
+ drivers/net/wireless/broadcom/b43/phy_ht.c | 16 +++++++++++++++-
+ drivers/net/wireless/broadcom/b43/phy_ht.h |  3 +++
+ 2 files changed, 18 insertions(+), 1 deletion(-)
+
+--- a/drivers/net/wireless/broadcom/b43/phy_ht.c
++++ b/drivers/net/wireless/broadcom/b43/phy_ht.c
+@@ -1271,6 +1271,7 @@ static int b43_phy_ht_set_channel(struct
+ 				  enum nl80211_channel_type channel_type)
+ {
+ 	struct b43_phy *phy = &dev->phy;
++	struct b43_phy_ht *phy_ht = phy->ht;
+ 
+ 	const struct b43_phy_ht_channeltab_e_radio2059 *chent_r2059 = NULL;
+ 
+@@ -1293,7 +1294,17 @@ static int b43_phy_ht_set_channel(struct
+ 		return -ESRCH;
+ 	}
+ 
+-	b43_phy_ht_cal_tx_iq_lo(dev);
++	/*
++	 * Off the operating channel (scanning, remain-on-channel) only short
++	 * management frames are sent, at robust rates; keep the coefficients
++	 * of the operating channel instead of spending ~17 ms per channel.
++	 * Coming back to the channel they were found on, they still apply.
++	 */
++	if (!(dev->wl->hw->conf.flags & IEEE80211_CONF_OFFCHANNEL) &&
++	    phy_ht->txcal_freq != channel->center_freq) {
++		b43_phy_ht_cal_tx_iq_lo(dev);
++		phy_ht->txcal_freq = channel->center_freq;
++	}
+ 
+ 	return 0;
+ }
+@@ -1394,6 +1405,7 @@ static int b43_phy_ht_op_init(struct b43
+ 	}
+ 
+ 	b43_phy_ht_tables_init(dev);
++	phy_ht->txcal_freq = 0;
+ 
+ 	b43_phy_mask(dev, 0x0be, ~0x2);
+ 	b43_phy_set(dev, 0x23f, 0x7ff);
+@@ -1548,6 +1560,8 @@ static void b43_phy_ht_op_software_rfkil
+ 			b43_radio_2059_init(dev);
+ 		else
+ 			B43_WARN_ON(1);
++		/* Radio init resets the coarse LO the calibration set */
++		dev->phy.ht->txcal_freq = 0;
+ 
+ 		/*
+ 		 * b43_phy_init() tunes the channel once the PHY is set up;
+--- a/drivers/net/wireless/broadcom/b43/phy_ht.h
++++ b/drivers/net/wireless/broadcom/b43/phy_ht.h
+@@ -142,6 +142,9 @@ struct b43_phy_ht {
+ 
+ 	/* 2.4 GHz CCK (802.11b) reception is off */
+ 	bool cck_rx_off;
++
++	/* Channel the TX I/Q and LO coefficients in use were found on, or 0 */
++	u16 txcal_freq;
+ };
+ 
+ 

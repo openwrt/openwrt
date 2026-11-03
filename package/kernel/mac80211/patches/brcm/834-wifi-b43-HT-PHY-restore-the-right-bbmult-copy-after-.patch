@@ -1,0 +1,38 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Rosen Penev <rosenp@gmail.com>
+Date: Tue, 27 Oct 2026 17:15:35 -0700
+Subject: [PATCH] wifi: b43: HT-PHY: restore the right bbmult copy after sample
+ playback
+
+b43_phy_ht_run_samples() saves the baseband multiplier of each core,
+table 13 entry 0x63 + 4 * core, and b43_phy_ht_stop_playback() writes it
+back. The second copy of that value is at 0x73 + 4 * core, where
+b43_phy_ht_tx_power_fix() writes it and where Broadcom's driver restores
+it, but stop_playback wrote it to 0x67 + 4 * core, the first copy of the
+next core. So stopping a playback set core 2 and 3 to the multiplier of
+core 1 and 2.
+
+The saved values also stayed valid after the restore. run_samples() only
+saves when there is no saved value, so every later playback restored the
+multiplier saved by the first one, however the TX gain had changed since.
+Forget the saved value once it is restored.
+
+Fixes: 371ec465a358 ("b43: HT-PHY: implement stopping sample tone playback")
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+---
+ drivers/net/wireless/broadcom/b43/phy_ht.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+--- a/drivers/net/wireless/broadcom/b43/phy_ht.c
++++ b/drivers/net/wireless/broadcom/b43/phy_ht.c
+@@ -386,8 +386,9 @@ static void b43_phy_ht_stop_playback(str
+ 		if (phy_ht->bb_mult_save[i] >= 0) {
+ 			b43_httab_write(dev, B43_HTTAB16(13, 0x63 + i * 4),
+ 					phy_ht->bb_mult_save[i]);
+-			b43_httab_write(dev, B43_HTTAB16(13, 0x67 + i * 4),
++			b43_httab_write(dev, B43_HTTAB16(13, 0x73 + i * 4),
+ 					phy_ht->bb_mult_save[i]);
++			phy_ht->bb_mult_save[i] = -1;
+ 		}
+ 	}
+ }

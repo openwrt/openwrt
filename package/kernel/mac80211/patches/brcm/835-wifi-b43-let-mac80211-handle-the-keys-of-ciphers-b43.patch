@@ -1,0 +1,35 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Rosen Penev <rosenp@gmail.com>
+Date: Sat, 24 Oct 2026 15:49:19 -0700
+Subject: [PATCH] wifi: b43: let mac80211 handle the keys of ciphers b43 can't
+ offload
+
+b43_op_set_key() returns -EINVAL, after a B43_WARN_ON(), for every
+cipher other than WEP, TKIP and CCMP. mac80211 still falls back to
+software crypto for CCMP-256, GCMP, GCMP-256 and the BIP ciphers, but
+logs "failed to set key ... to hardware (-22)" for each such key.
+
+Return -EOPNOTSUPP, which tells mac80211 the cipher is not offloaded,
+and drop the warning: these keys are expected.
+
+Tested with WPA2 GCMP-256, PMF with BIP-GMAC-256, SAE and CCMP: the
+links pass traffic and nothing is logged.
+
+Fixes: e4d6b7951812 ("[B43]: add mac80211-based driver for modern BCM43xx devices")
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+---
+ drivers/net/wireless/broadcom/b43/main.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+--- a/drivers/net/wireless/broadcom/b43/main.c
++++ b/drivers/net/wireless/broadcom/b43/main.c
+@@ -4254,7 +4254,8 @@ static int b43_op_set_key(struct ieee802
+ 		algorithm = B43_SEC_ALGO_AES;
+ 		break;
+ 	default:
+-		B43_WARN_ON(1);
++		/* CCMP-256, GCMP and BIP keys are handled by mac80211 */
++		err = -EOPNOTSUPP;
+ 		goto out_unlock;
+ 	}
+ 	index = (u8) (key->keyidx);

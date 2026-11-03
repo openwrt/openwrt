@@ -1,0 +1,71 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Rosen Penev <rosenp@gmail.com>
+Date: Fri, 23 Oct 2026 11:43:51 -0700
+Subject: [PATCH] wifi: b43: map the RX buffers DMA_BIDIRECTIONAL
+
+b43 poisons each RX buffer before it hands it to the device, and drops
+a buffer that still carries the poison, as the device sometimes skips
+one. The RX buffers are mapped and synced DMA_FROM_DEVICE. On a
+non-coherent CPU like the BCM4716 or the BCM4708, the map and the sync
+for the device then only invalidate the cache, so the poison written
+just before never reaches memory. A skipped buffer is read as whatever
+the memory held before, for a recycled buffer the data of its previous
+use: garbage frames, or a length that sends dma_rx() into its path for
+frames spanning several buffers.
+
+Map, sync and unmap the RX buffers DMA_BIDIRECTIONAL, so that the
+poison is written back before the device gets the buffer.
+
+Reported on a Netgear R6400 (BCM4708, BCM4331).
+
+Fixes: cf68636a9773 ("b43: Refresh RX poison on buffer recycling")
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+---
+ drivers/net/wireless/broadcom/b43/dma.c | 14 ++++++++++----
+ 1 file changed, 10 insertions(+), 4 deletions(-)
+
+--- a/drivers/net/wireless/broadcom/b43/dma.c
++++ b/drivers/net/wireless/broadcom/b43/dma.c
+@@ -353,8 +353,14 @@ static inline
+ 		dmaaddr = dma_map_single(ring->dev->dev->dma_dev,
+ 					 buf, len, DMA_TO_DEVICE);
+ 	} else {
++		/*
++		 * Not DMA_FROM_DEVICE: on a non-coherent CPU, the map and
++		 * the sync for the device would then only invalidate the
++		 * cache, and the poison of b43_poison_rx_buffer() would
++		 * never reach memory.
++		 */
+ 		dmaaddr = dma_map_single(ring->dev->dev->dma_dev,
+-					 buf, len, DMA_FROM_DEVICE);
++					 buf, len, DMA_BIDIRECTIONAL);
+ 	}
+ 
+ 	return dmaaddr;
+@@ -369,7 +375,7 @@ static inline
+ 				 addr, len, DMA_TO_DEVICE);
+ 	} else {
+ 		dma_unmap_single(ring->dev->dev->dma_dev,
+-				 addr, len, DMA_FROM_DEVICE);
++				 addr, len, DMA_BIDIRECTIONAL);
+ 	}
+ }
+ 
+@@ -379,7 +385,7 @@ static inline
+ {
+ 	B43_WARN_ON(ring->tx);
+ 	dma_sync_single_for_cpu(ring->dev->dev->dma_dev,
+-				    addr, len, DMA_FROM_DEVICE);
++				    addr, len, DMA_BIDIRECTIONAL);
+ }
+ 
+ static inline
+@@ -388,7 +394,7 @@ static inline
+ {
+ 	B43_WARN_ON(ring->tx);
+ 	dma_sync_single_for_device(ring->dev->dev->dma_dev,
+-				   addr, len, DMA_FROM_DEVICE);
++				   addr, len, DMA_BIDIRECTIONAL);
+ }
+ 
+ static inline
