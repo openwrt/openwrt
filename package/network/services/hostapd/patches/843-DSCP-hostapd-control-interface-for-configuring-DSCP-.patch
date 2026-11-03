@@ -108,7 +108,7 @@ Signed-off-by: Aishwarya R <aishwarya.r@oss.qualcomm.com>
  #ifdef CONFIG_WNM_AP
  
  static int hostapd_ctrl_iface_coloc_intf_req(struct hostapd_data *hapd,
-@@ -4706,6 +4756,11 @@ static int hostapd_ctrl_iface_receive_pr
+@@ -4708,6 +4758,11 @@ static int hostapd_ctrl_iface_receive_pr
  		if (hostapd_ctrl_afc_send_request(hapd, buf + 16) < 0)
  			reply_len = -1;
  #endif /* CONFIG_AFC */
