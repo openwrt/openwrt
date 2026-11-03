@@ -407,7 +407,7 @@ static int rtl83xx_sw_probe(struct platform_device *pdev)
 		return err;
 
 	priv->family_id = soc_info.family;
-	priv->r->stp_init();
+	priv->r->stp_init(priv);
 	priv->irq_mask = GENMASK_ULL(priv->r->cpu_port - 1, 0);
 
 	err = rtldsa_mdio_loaded();

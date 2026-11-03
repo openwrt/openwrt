@@ -397,7 +397,7 @@ struct rtldsa_config {
 	int pri_sel_port_pri;
 	int pri_sel_remap_dscp;
 	int pri_sel_port_tbl_idx;
-	void (*stp_init)(void);
+	void (*stp_init)(struct otto_dsa_priv *priv);
 	void (*vlan_tables_read)(u32 vlan, struct otto_vlan_info *info);
 	void (*vlan_set_tagged)(u32 vlan, struct otto_vlan_info *info);
 	void (*vlan_set_untagged)(u32 vlan, u64 portmask);

@@ -3,6 +3,7 @@
 #include <linux/if_bridge.h>
 #include <linux/kref.h>
 #include <linux/mutex.h>
+#include <linux/regmap.h>
 #include <net/dsa.h>
 #include <net/switchdev.h>
 
@@ -14,24 +15,24 @@
 #define RTL930X_ST_CTRL				(0x8798)
 #define RTL931X_ST_CTRL				(0x8000)
 
-void otto_stp_838x_init(void)
+void otto_stp_838x_init(struct otto_dsa_priv *priv)
 {
-	sw_w32(0, RTL838X_VLAN_STP_CTRL);
+	regmap_write(priv->map, RTL838X_VLAN_STP_CTRL, 0);
 }
 
-void otto_stp_839x_init(void)
+void otto_stp_839x_init(struct otto_dsa_priv *priv)
 {
-	sw_w32(0, RTL839X_ST_CTRL);
+	regmap_write(priv->map, RTL839X_ST_CTRL, 0);
 }
 
-void otto_stp_930x_init(void)
+void otto_stp_930x_init(struct otto_dsa_priv *priv)
 {
-	sw_w32(0, RTL930X_ST_CTRL);
+	regmap_write(priv->map, RTL930X_ST_CTRL, 0);
 }
 
-void otto_stp_931x_init(void)
+void otto_stp_931x_init(struct otto_dsa_priv *priv)
 {
-	sw_w32(0, RTL931X_ST_CTRL);
+	regmap_write(priv->map, RTL931X_ST_CTRL, 0);
 }
 
 int otto_stp_838x_get(struct otto_dsa_priv *priv, u16 msti, int port)
