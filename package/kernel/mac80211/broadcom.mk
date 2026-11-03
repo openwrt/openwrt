@@ -35,39 +35,12 @@ config-$(CONFIG_PACKAGE_BRCM80211_DEBUG) += BRCMDBG
 config-$(CONFIG_LEDS_TRIGGERS) += B43_LEDS B43LEGACY_LEDS
 
 #Broadcom firmware
-ifneq ($(CONFIG_B43_FW_5_10),)
-  PKG_B43_FWV4_NAME:=broadcom-wl
-  PKG_B43_FWV4_VERSION:=5.10.56.27.3
-  PKG_B43_FWV4_OBJECT:=$(PKG_B43_FWV4_NAME)-$(PKG_B43_FWV4_VERSION)/driver/wl_apsta/wl_prebuilt.o
-  PKG_B43_FWV4_SOURCE:=$(PKG_B43_FWV4_NAME)-$(PKG_B43_FWV4_VERSION)_mipsel.tar.bz2
-  PKG_B43_FWV4_SOURCE_URL:=@OPENWRT
-  PKG_B43_FWV4_HASH:=26a8c370f48fc129d0731cfd751c36cae1419b0bc8ca35781126744e60eae009
-else
-ifneq ($(CONFIG_B43_FW_4_178),)
-  PKG_B43_FWV4_NAME:=broadcom-wl
-  PKG_B43_FWV4_VERSION:=4.178.10.4
-  PKG_B43_FWV4_OBJECT:=$(PKG_B43_FWV4_NAME)-$(PKG_B43_FWV4_VERSION)/linux/wl_apsta.o
-  PKG_B43_FWV4_SOURCE:=$(PKG_B43_FWV4_NAME)-$(PKG_B43_FWV4_VERSION).tar.bz2
-  PKG_B43_FWV4_SOURCE_URL:=@OPENWRT
-  PKG_B43_FWV4_HASH:=32f6ad98facbb9045646fdc8b54bb03086d204153253f9c65d0234a5d90ae53f
-else
-ifneq ($(CONFIG_B43_FW_5_100_138),)
-  PKG_B43_FWV4_NAME:=broadcom-wl
-  PKG_B43_FWV4_VERSION:=5.100.138
-  PKG_B43_FWV4_OBJECT:=$(PKG_B43_FWV4_NAME)-$(PKG_B43_FWV4_VERSION)/linux/wl_apsta.o
-  PKG_B43_FWV4_SOURCE:=$(PKG_B43_FWV4_NAME)-$(PKG_B43_FWV4_VERSION).tar.bz2
-  PKG_B43_FWV4_SOURCE_URL:=@OPENWRT
-  PKG_B43_FWV4_HASH:=f1e7067aac5b62b67b8b6e4c517990277804339ac16065eb13c731ff909ae46f
-else
-  PKG_B43_FWV4_NAME:=broadcom-wl
-  PKG_B43_FWV4_VERSION:=4.150.10.5
-  PKG_B43_FWV4_OBJECT:=$(PKG_B43_FWV4_NAME)-$(PKG_B43_FWV4_VERSION)/driver/wl_apsta_mimo.o
-  PKG_B43_FWV4_SOURCE:=$(PKG_B43_FWV4_NAME)-$(PKG_B43_FWV4_VERSION).tar.bz2
-  PKG_B43_FWV4_SOURCE_URL:=@OPENWRT
-  PKG_B43_FWV4_HASH:=a9f4e276a4d8d3a1cd0f2eb87080ae89b77f0a7140f06d4e9e2135fc44fdd533
-endif
-endif
-endif
+PKG_B43_FWV4_NAME:=broadcom-wl
+PKG_B43_FWV4_VERSION:=6.30.163.46
+PKG_B43_FWV4_OBJECT:=$(PKG_B43_FWV4_NAME)-$(PKG_B43_FWV4_VERSION).wl_apsta.o
+PKG_B43_FWV4_SOURCE:=$(PKG_B43_FWV4_NAME)-$(PKG_B43_FWV4_VERSION).tar.bz2
+PKG_B43_FWV4_SOURCE_URL:=@SF/b43-firmware
+PKG_B43_FWV4_HASH:=a07c3b6b277833c7dbe61daa511f908cd66c5e2763eb7a0859abc36cd9335c2d
 ifneq ($(CONFIG_B43_OPENFIRMWARE),)
   PKG_B43_FWV4_NAME:=broadcom-wl
   PKG_B43_FWV4_VERSION:=5.2
@@ -121,39 +94,16 @@ config PACKAGE_B43_USE_BCMA
 
 	choice
 		prompt "b43 firmware version"
-		default B43_FW_5_100_138
+		default B43_FW_6_30
 		help
 		  This option allows you to select the version of the b43 firmware.
 
-	config B43_FW_4_150
-		bool "Firmware 410.2160 from driver 4.150.10.5 (old stable)"
+	config B43_FW_6_30
+		bool "Firmware 784.2 from driver 6.30.163.46 (stable)"
 		help
-		  Old stable firmware for BCM43xx devices.
+		  The default firmware for BCM43xx devices.
 
-		  If unsure, select this.
-
-	config B43_FW_4_178
-		bool "Firmware 478.104 from driver 4.178.10.4"
-		help
-		  Older firmware for BCM43xx devices.
-
-		  If unsure, select the "stable" firmware.
-
-	config B43_FW_5_10
-		bool "Firmware 508.1084 from driver 5.10.56.27"
-		help
-		  Older firmware for BCM43xx devices.
-
-		  If unsure, select the "stable" firmware.
-
-	config B43_FW_5_100_138
-		bool "Firmware 666.2 from driver 5.100.138 (stable)"
-		help
-		  The currently default firmware for BCM43xx devices.
-
-		  This firmware currently gets most of the testing and is needed for some N-PHY devices.
-
-		  If unsure, select the this firmware.
+		  If unsure, select this firmware.
 
 	config B43_OPENFIRMWARE
 		bool "Open FirmWare for WiFi networks"
