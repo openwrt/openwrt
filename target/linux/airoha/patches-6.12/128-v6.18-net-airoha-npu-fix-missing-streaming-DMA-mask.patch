@@ -1,0 +1,37 @@
+From 6fe7e31a45e3418a39e6343a85126124feec1c2f Mon Sep 17 00:00:00 2001
+From: Daniel Pawlik <pawlik.dan@gmail.com>
+Date: Thu, 20 Aug 2026 10:59:40 +0200
+Subject: [PATCH 1/1] net: airoha: npu: fix missing streaming DMA mask
+
+The driver calls dma_set_coherent_mask() but never dma_set_mask(),
+leaving the streaming DMA mask at the bus default. On the non-coherent
+EN7581 platform (Cortex-A53), this causes the NPU mailbox to hang
+after approximately 41 calls when using streaming DMA mappings.
+
+Replace dma_set_coherent_mask() with dma_set_mask_and_coherent() to
+set both the streaming and coherent DMA masks, matching standard
+driver practice.
+
+Fixes: 6f884eb87a79 ("net: airoha: Fix DMA direction for NPU mailbox buffer")
+Link: https://patchwork.kernel.org/project/linux-mediatek/patch/20260814110017.2795022-1-pawlik.dan@gmail.com/
+Link: https://patchwork.kernel.org/project/linux-mediatek/patch/20260809152813.585797-1-pawlik.dan@gmail.com/
+Link: https://patchwork.kernel.org/project/linux-mediatek/patch/20260805070851.2885888-1-pawlik.dan@gmail.com/
+Signed-off-by: Daniel Pawlik <pawlik.dan@gmail.com>
+Acked-by: Lorenzo Bianconi <lorenzo@kernel.org>
+Link: https://patch.msgid.link/20260820085941.380401-1-pawlik.dan@gmail.com
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ drivers/net/ethernet/airoha/airoha_npu.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/net/ethernet/airoha/airoha_npu.c
++++ b/drivers/net/ethernet/airoha/airoha_npu.c
+@@ -773,7 +773,7 @@ static int airoha_npu_probe(struct platf
+ 		npu->irqs[i] = irq;
+ 	}
+ 
+-	err = dma_set_coherent_mask(dev, DMA_BIT_MASK(32));
++	err = dma_set_mask_and_coherent(dev, DMA_BIT_MASK(32));
+ 	if (err)
+ 		return err;
+ 
