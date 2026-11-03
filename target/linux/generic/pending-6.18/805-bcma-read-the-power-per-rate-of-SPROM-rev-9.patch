@@ -1,0 +1,101 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Rosen Penev <rosenp@gmail.com>
+Date: Sat, 24 Oct 2026 16:28:36 -0700
+Subject: [PATCH] bcma: read the power per rate of SPROM rev 9
+
+SPROM rev 9 replaces the rev 8 power offsets (cck2gpo, ofdm*po,
+mcs*po, cddpo, stbcpo, bw40po, bwduppo) with a new layout of per-rate
+offsets for CCK, legacy OFDM and MCS in each band. struct ssb_sprom has
+fields for them, filled only from bcm47xx NVRAM. bcma reads a rev 9
+SPROM with the rev 8 offsets, so those fields stay zero and the rev 8
+ones hold unrelated bytes.
+
+Read the rev 9 offsets into their fields. The word offsets are those of
+Broadcom's bcmsrom_fmt.h (SROM9_2GPO_CCKBW20 to SROM9_PO_LOFDM40DUP).
+
+On a BCM4331 card (SPROM rev 9) this reads mcsbw202gpo 0x33300000 and
+legofdmbw202gpo 0x22000000: 1.5 dB less for MCS 5-7 and 1 dB less for
+48 and 54 Mbit/s at 2.4 GHz, and up to 4 dB less for MCS 5-7 at the top
+of the 5 GHz band. The rev 8 fields read 0x6600 0x0000 0x5500 ... as
+mcs2gpo and 0x8884 as cddpo from the same SPROM.
+
+Fixes: c54dcd197c3f ("bcma: extract SPROM rev 9 the same way as rev 8")
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+---
+ drivers/bcma/sprom.c         | 29 +++++++++++++++++++++++++++++
+ include/linux/ssb/ssb_regs.h | 26 ++++++++++++++++++++++++++
+ 2 files changed, 55 insertions(+)
+
+--- a/drivers/bcma/sprom.c
++++ b/drivers/bcma/sprom.c
+@@ -472,6 +472,35 @@ static void bcma_sprom_extract_r8(struct
+ 	SPEX(temps_hysteresis, SSB_SPROM8_TEMPDELTA,
+ 	     SSB_SPROM8_TEMPDELTA_HYSTERESIS,
+ 	     SSB_SPROM8_TEMPDELTA_HYSTERESIS_SHIFT);
++
++	if (bus->sprom.revision < 9)
++		return;
++
++	/* Rev 9 keeps its power per rate where rev 8 has the offsets above */
++	SPEX(cckbw202gpo, SSB_SPROM9_2GPO_CCKBW20, ~0, 0);
++	SPEX(cckbw20ul2gpo, SSB_SPROM9_2GPO_CCKBW20UL, ~0, 0);
++	SPEX32(legofdmbw202gpo, SSB_SPROM9_2GPO_LOFDMBW20, ~0, 0);
++	SPEX32(legofdmbw20ul2gpo, SSB_SPROM9_2GPO_LOFDMBW20UL, ~0, 0);
++	SPEX32(legofdmbw205glpo, SSB_SPROM9_5GLPO_LOFDMBW20, ~0, 0);
++	SPEX32(legofdmbw20ul5glpo, SSB_SPROM9_5GLPO_LOFDMBW20UL, ~0, 0);
++	SPEX32(legofdmbw205gmpo, SSB_SPROM9_5GMPO_LOFDMBW20, ~0, 0);
++	SPEX32(legofdmbw20ul5gmpo, SSB_SPROM9_5GMPO_LOFDMBW20UL, ~0, 0);
++	SPEX32(legofdmbw205ghpo, SSB_SPROM9_5GHPO_LOFDMBW20, ~0, 0);
++	SPEX32(legofdmbw20ul5ghpo, SSB_SPROM9_5GHPO_LOFDMBW20UL, ~0, 0);
++	SPEX32(mcsbw202gpo, SSB_SPROM9_2GPO_MCSBW20, ~0, 0);
++	SPEX32(mcsbw20ul2gpo, SSB_SPROM9_2GPO_MCSBW20UL, ~0, 0);
++	SPEX32(mcsbw402gpo, SSB_SPROM9_2GPO_MCSBW40, ~0, 0);
++	SPEX32(mcsbw205glpo, SSB_SPROM9_5GLPO_MCSBW20, ~0, 0);
++	SPEX32(mcsbw20ul5glpo, SSB_SPROM9_5GLPO_MCSBW20UL, ~0, 0);
++	SPEX32(mcsbw405glpo, SSB_SPROM9_5GLPO_MCSBW40, ~0, 0);
++	SPEX32(mcsbw205gmpo, SSB_SPROM9_5GMPO_MCSBW20, ~0, 0);
++	SPEX32(mcsbw20ul5gmpo, SSB_SPROM9_5GMPO_MCSBW20UL, ~0, 0);
++	SPEX32(mcsbw405gmpo, SSB_SPROM9_5GMPO_MCSBW40, ~0, 0);
++	SPEX32(mcsbw205ghpo, SSB_SPROM9_5GHPO_MCSBW20, ~0, 0);
++	SPEX32(mcsbw20ul5ghpo, SSB_SPROM9_5GHPO_MCSBW20UL, ~0, 0);
++	SPEX32(mcsbw405ghpo, SSB_SPROM9_5GHPO_MCSBW40, ~0, 0);
++	SPEX(mcs32po, SSB_SPROM9_PO_MCS32, ~0, 0);
++	SPEX(legofdm40duppo, SSB_SPROM9_PO_LOFDM40DUP, ~0, 0);
+ }
+ 
+ /*
+--- a/include/linux/ssb/ssb_regs.h
++++ b/include/linux/ssb/ssb_regs.h
+@@ -606,6 +606,32 @@
+ #define SSB_SPROM8_BW40PO		0x0196
+ #define SSB_SPROM8_BWDUPPO		0x0198
+ 
++/* SPROM rev 9 power per rate offsets, replacing the rev 8 ones above */
++#define SSB_SPROM9_2GPO_CCKBW20		0x0140
++#define SSB_SPROM9_2GPO_CCKBW20UL	0x0142
++#define SSB_SPROM9_2GPO_LOFDMBW20	0x0144
++#define SSB_SPROM9_2GPO_LOFDMBW20UL	0x0148
++#define SSB_SPROM9_5GLPO_LOFDMBW20	0x014C
++#define SSB_SPROM9_5GLPO_LOFDMBW20UL	0x0150
++#define SSB_SPROM9_5GMPO_LOFDMBW20	0x0154
++#define SSB_SPROM9_5GMPO_LOFDMBW20UL	0x0158
++#define SSB_SPROM9_5GHPO_LOFDMBW20	0x015C
++#define SSB_SPROM9_5GHPO_LOFDMBW20UL	0x0160
++#define SSB_SPROM9_2GPO_MCSBW20		0x0164
++#define SSB_SPROM9_2GPO_MCSBW20UL	0x0168
++#define SSB_SPROM9_2GPO_MCSBW40		0x016C
++#define SSB_SPROM9_5GLPO_MCSBW20	0x0170
++#define SSB_SPROM9_5GLPO_MCSBW20UL	0x0174
++#define SSB_SPROM9_5GLPO_MCSBW40	0x0178
++#define SSB_SPROM9_5GMPO_MCSBW20	0x017C
++#define SSB_SPROM9_5GMPO_MCSBW20UL	0x0180
++#define SSB_SPROM9_5GMPO_MCSBW40	0x0184
++#define SSB_SPROM9_5GHPO_MCSBW20	0x0188
++#define SSB_SPROM9_5GHPO_MCSBW20UL	0x018C
++#define SSB_SPROM9_5GHPO_MCSBW40	0x0190
++#define SSB_SPROM9_PO_MCS32		0x0194
++#define SSB_SPROM9_PO_LOFDM40DUP	0x0196
++
+ /* Values for boardflags_lo read from SPROM */
+ #define SSB_BFL_BTCOEXIST		0x0001	/* implements Bluetooth coexistance */
+ #define SSB_BFL_PACTRL			0x0002	/* GPIO 9 controlling the PA */
