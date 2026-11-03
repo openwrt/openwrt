@@ -383,7 +383,7 @@ const struct otto_stats_mib_desc otto_stats_931x_mib_desc = {
 void otto_stats_838x_init(struct otto_dsa_priv *priv)
 {
 	/* Enable statistics module: all counters plus debug */
-	sw_w32_mask(0, 3, RTL838X_STAT_CTRL);
+	regmap_write_bits(priv->map, RTL838X_STAT_CTRL, 3, 3);
 }
 
 u64 otto_stats_931x_port_table_read(int port, unsigned int mib_size,
@@ -424,7 +424,7 @@ void otto_stats_init(struct otto_dsa_priv *priv)
 		priv->r->stat_init(priv);
 
 	/* Reset statistics counters */
-	sw_w32_mask(0, 1, priv->r->stat_rst);
+	regmap_write_bits(priv->map, priv->r->stat_rst, 1, 1);
 
 	mutex_unlock(&priv->reg_mutex);
 }
@@ -433,7 +433,7 @@ static bool otto_stats_read_mib_item(struct otto_dsa_priv *priv, int port,
 				     const struct otto_stats_mib_item *mib_item,
 				     u64 *data)
 {
-	u32 high1, high2;
+	u32 low, high1, high2;
 	int reg, reg_offset, addr_low;
 
 	switch (mib_item->reg) {
@@ -461,16 +461,22 @@ static bool otto_stats_read_mib_item(struct otto_dsa_priv *priv, int port,
 	addr_low = reg + (port + 1) * reg_offset - 4 - mib_item->offset;
 
 	if (mib_item->size == 2) {
-		high1 = sw_r32(addr_low - 4);
-		*data = sw_r32(addr_low);
-		high2 = sw_r32(addr_low - 4);
+		if (regmap_read(priv->map, addr_low - 4, &high1))
+			return false;
+		if (regmap_read(priv->map, addr_low, &low))
+			return false;
+		if (regmap_read(priv->map, addr_low - 4, &high2))
+			return false;
 		if (high1 != high2) {
 			/* Low must have wrapped and overflowed into high, read again */
-			*data = sw_r32(addr_low);
+			if (regmap_read(priv->map, addr_low, &low))
+				return false;
 		}
-		*data |= (u64)high2 << 32;
+		*data = (u64)high2 << 32 | low;
 	} else {
-		*data = sw_r32(addr_low);
+		if (regmap_read(priv->map, addr_low, &low))
+			return false;
+		*data = low;
 	}
 
 	return true;
