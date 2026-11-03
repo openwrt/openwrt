@@ -52,6 +52,7 @@ define Package/dnsmasq
 $(call Package/dnsmasq/Default)
   VARIANT:=nodhcpv6
   DEFAULT_VARIANT:=1
+  CONFLICTS:=dnsmasq-dhcpv6 dnsmasq-full
 endef
 
 define Package/dnsmasq-dhcpv6
@@ -60,6 +61,7 @@ $(call Package/dnsmasq/Default)
   DEPENDS+=@IPV6
   VARIANT:=dhcpv6
   PROVIDES:=dnsmasq
+  CONFLICTS:=dnsmasq-full
 endef
 
 define Package/dnsmasq-full
