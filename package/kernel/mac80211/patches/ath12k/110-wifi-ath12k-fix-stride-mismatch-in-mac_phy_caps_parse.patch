@@ -31,11 +31,9 @@ Signed-off-by: Jeff Johnson <jeff.johnson@oss.qualcomm.com>
  drivers/net/wireless/ath/ath12k/wmi.c | 8 +++++---
  1 file changed, 5 insertions(+), 3 deletions(-)
 
-diff --git a/drivers/net/wireless/ath/ath12k/wmi.c b/drivers/net/wireless/ath/ath12k/wmi.c
-index e9e7566e0f..d5160af60e 100644
 --- a/drivers/net/wireless/ath/ath12k/wmi.c
 +++ b/drivers/net/wireless/ath/ath12k/wmi.c
-@@ -4774,14 +4774,16 @@ static int ath12k_wmi_mac_phy_caps_parse(struct ath12k_base *soc,
+@@ -4754,14 +4754,16 @@ static int ath12k_wmi_mac_phy_caps_parse
  	if (svc_rdy_ext->n_mac_phy_caps >= svc_rdy_ext->tot_phy_id)
  		return -ENOBUFS;
  
@@ -55,6 +53,3 @@ index e9e7566e0f..d5160af60e 100644
  	memcpy(svc_rdy_ext->mac_phy_caps + svc_rdy_ext->n_mac_phy_caps, ptr, len);
  	svc_rdy_ext->n_mac_phy_caps++;
  	return 0;
--- 
-2.47.3
-
