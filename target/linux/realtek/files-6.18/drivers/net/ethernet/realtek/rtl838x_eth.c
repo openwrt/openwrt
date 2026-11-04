@@ -491,6 +491,13 @@ static void rteth_930x_hw_en_rxtx(struct rteth_ctrl *ctrl)
 
 	regmap_set_bits(ctrl->map, RTETH_930X_L2_UNKN_UC_FLD_PMSK, BIT(ctrl->cfg->cpu_port));
 	regmap_write(ctrl->map, ctrl->cfg->mac_force_mode_ctrl, 0x217);
+
+	/*
+	 * The ethernet driver hands over an uncomputed layer 2 FCS in its
+	 * transmit path. Force FCS recalculation in hardware (CRC_CPU_RC_EN).
+	 */
+	regmap_update_bits(ctrl->map, RTETH_930X_MAC_L2_GLOBAL_CTRL0, RTETH_930X_CRC_CPU_RC_EN,
+			   FIELD_PREP(RTETH_930X_CRC_CPU_RC_EN, 1));
 }
 
 static void rteth_931x_hw_en_rxtx(struct rteth_ctrl *ctrl)
