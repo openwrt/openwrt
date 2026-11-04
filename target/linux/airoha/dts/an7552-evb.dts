@@ -3,57 +3,9 @@
 
 /memreserve/ 0x80000000 0x200000;
 
-#include "an7552.dtsi"
+#include "an7563-evb.dts"
 
 / {
 	model = "Airoha AN7552 Ethernet Evaluation Board";
 	compatible = "airoha,an7552-evb", "airoha,an7552";
-};
-
-&eth {
-	status = "okay";
-};
-
-&gdm1 {
-	status = "okay";
-};
-
-&switch {
-	status = "okay";
-};
-
-&gsw_port1 {
-	label = "lan1";
-	status = "okay";
-};
-
-&gsw_phy1 {
-	status = "okay";
-};
-
-&gsw_port2 {
-	label = "lan2";
-	status = "okay";
-};
-
-&gsw_phy2 {
-	status = "okay";
-};
-
-&gsw_port3 {
-	label = "lan3";
-	status = "okay";
-};
-
-&gsw_phy3 {
-	status = "okay";
-};
-
-&gsw_port4 {
-	label = "lan4";
-	status = "okay";
-};
-
-&gsw_phy4 {
-	status = "okay";
 };

@@ -6,6 +6,7 @@
 #include <dt-bindings/reset/airoha,en7523-reset.h>
 #include <dt-bindings/leds/common.h>
 #include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
 #include <dt-bindings/soc/airoha,scu-ssr.h>
 #include <dt-bindings/thermal/thermal.h>
 #include <dt-bindings/phy/phy.h>
@@ -77,7 +78,7 @@
 			opp-supported-hw = <AIROHA_CPU_HW_1G>;
 		};
 
-		opp-7000000000 {
+		opp-700000000 {
 			opp-hz = /bits/ 64 <700000000>;
 			opp-supported-hw = <AIROHA_CPU_HW_1G>;
 		};
@@ -218,7 +219,7 @@
 		its: gic-its@09020000 {
 			compatible = "arm,gic-v3-its";
 			msi-controller;
-			#msi-cell = <1>;
+			#msi-cells = <1>;
 			reg = <0x090200000 0x20000>;
 		};
 	};
@@ -662,7 +663,7 @@
 		      <0x1fa95700 0x568>;
 		reg-names = "pcie0", "pcie1";
 		#phy-cells = <0>;
-		airoha,chip_scu = <&chip_scu>;
+		airoha,chip-scu = <&chip_scu>;
 	};
 
 	pcie0: pcie@1fa91000 {

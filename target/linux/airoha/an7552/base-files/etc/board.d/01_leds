@@ -12,15 +12,15 @@ board=$(board_name)
 case "$board" in
   airoha,an7552-evb |\
   airoha,an7563-evb)
-    "internet"
-    "power"
-    "usb2"
-    "usb_0"
-    "voip_hook"
-    "wlan"
-    "wps"
-    "xponLos"
-    "xponStatus"
+    ucidef_set_led_default "internet" "Internet" "green:wan-online-20" "0"
+    ucidef_set_led_default "usb2" "USB 2" "green:usb-21" "0"
+    ucidef_set_led_default "usb0" "USB 0" "green:usb-1" "0"
+    ucidef_set_led_default "voip" "VoIP" "green:voip-2" "0"
+    ucidef_set_led_netdev "wlan" "WLAN" "green:wlan-12" "phy0-ap0" "link tx rx"
+    ucidef_set_led_default "wps" "WPS" "green:wps-4" "0"
+    ucidef_set_led_default "los" "LOS" "green:xpon-los-3" "0"
+    ucidef_set_led_default "pon" "PON" "green:xpon-7" "0"
+    ucidef_set_led_netdev "internet" "Internet" "green:wan-online-20" "pon0" "link tx rx"
     ;;
 esac
 

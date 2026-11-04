@@ -9,81 +9,102 @@
 	model = "Airoha AN7563 Ethernet Evaluation Board";
 	compatible = "airoha,an7563-evb", "airoha,an7552";
 
+	aliases {
+		serial0 = &uart1;
+		led-boot = &led_power;
+		led-failsafe = &led_power;
+		led-upgrade = &led_power;
+		led-running = &led_power;
+	};
+	
 	memory@80000000 {
 		device_type = "memory";
 		reg = <0x80000000 0x20000000>;
 	};
 
+	keys {
+		compatible = "gpio-keys-polled";
+		poll-interval = <100>;
+
+		reset {
+			label = "reset";
+			linux,code = <KEY_RESTART>;
+			gpios = <&pinctrl 0 GPIO_ACTIVE_LOW>;
+			debounce-interval = <60>;
+		};
+
+		wps {
+			label = "wps";
+			linux,code = <KEY_WPS_BUTTON>;
+			gpios = <&pinctrl 5 GPIO_ACTIVE_LOW>;
+			debounce-interval = <60>;
+		};
+	};
+	
 	leds {
 		compatible = "gpio-leds";
 
 		internet {
-			label = "internet";
 			gpios = <&pinctrl 20 GPIO_ACTIVE_HIGH>;
-			linux,default-trigger = "timer";
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WAN_ONLINE;
+			function-enumerator = <20>;
 		};
 
-		power {
-			label = "power";
+		led_power: power {
 			gpios = <&pinctrl 27 GPIO_ACTIVE_LOW>;
-			linux,default-trigger = "timer";
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_POWER;
+			function-enumerator = <27>;
 		};
 
 		usb2 {
-			label = "usb2";
 			gpios = <&pinctrl 21 GPIO_ACTIVE_LOW>;
-			linux,default-trigger = "usbport";
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_USB;
+			function-enumerator = <21>;
 		};
 
 		usb_0 {
-			label = "usb_0";
 			gpios = <&pinctrl 1 GPIO_ACTIVE_LOW>;
-			linux,default-trigger = "usbport";
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_USB;
+			function-enumerator = <1>;
 		};
 
 		voip_hook {
-			label = "voip_hook";
 			gpios = <&pinctrl 2 GPIO_ACTIVE_LOW>;
-			linux,default-trigger = "timer";
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_VOIP;
+			function-enumerator = <2>;
 		};
 
 		wlan {
-			label = "wlan";
 			gpios = <&pinctrl 12 GPIO_ACTIVE_LOW>;
-			linux,default-trigger = "timer";
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WLAN;
+			function-enumerator = <12>;
 		};
 
 		wps {
-			label = "wps";
 			gpios = <&pinctrl 4 GPIO_ACTIVE_LOW>;
-			linux,default-trigger = "timer";
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WPS;
+			function-enumerator = <4>;
 		};
 
 		xponLos {
-			label = "xponLos";
 			gpios = <&pinctrl 3 GPIO_ACTIVE_LOW>;
-			linux,default-trigger = "timer";
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_XPON_LOS;
+			function-enumerator = <3>;
 		};
 
 		xponStatus {
-			label = "xponStatus";
 			gpios = <&pinctrl 7 GPIO_ACTIVE_LOW>;
-			linux,default-trigger = "timer";
-		};
-	};
-
-	gpio-keys-polled {
-		compatible = "gpio-keys-polled";
-		poll-interval = <100>;
-
-		reset_ {
-			label = "reset";
-			gpios = <&pinctrl 0 GPIO_ACTIVE_LOW>;
-		};
-
-		wps {
-			label = "wps";
-			gpios = <&pinctrl 5 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_XPON;
+			function-enumerator = <7>;
 		};
 	};
 };

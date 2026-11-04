@@ -37,7 +37,7 @@ define Device/tplink_xc220-g3v
   DEVICE_VENDOR := TP-Link
   DEVICE_MODEL := XC220
   DEVICE_VARIANT := G3v
-  DEVICE_PACKAGES += hostapd-mbedtls wpad-mbedtls wpa-supplicant-mbedtls \
+  DEVICE_PACKAGES += hostapd-mbedtls wpa-supplicant-mbedtls \
                      kmod-mt7603 kmod-mt7615e kmod-mt7663-firmware-ap kmod-mt7663-firmware-sta \
                      omci-agent airoha-en7571-firmware
 endef

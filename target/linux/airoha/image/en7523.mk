@@ -14,7 +14,7 @@ define Device/askey_rtf8225vw
   $(Device/Uboot-FitImage)
   DEVICE_VENDOR := Askey
   DEVICE_MODEL := RTF8225VW
-  DEVICE_PACKAGES += hostapd-mbedtls wpad-mbedtls wpa-supplicant-mbedtls \
+  DEVICE_PACKAGES += hostapd-mbedtls wpa-supplicant-mbedtls \
                      kmod-mt7915e kmod-mt7915-firmware kmod-mt7916-firmware \
                      airoha-en7571-firmware
 endef
@@ -28,7 +28,7 @@ define Device/genexis_arcee
   DEVICE_ALT0_MODEL := CX20
   DEVICE_ALT1_VENDOR := Genexis
   DEVICE_ALT1_MODEL := Arcee
-  DEVICE_PACKAGES += hostapd-mbedtls wpad-mbedtls wpa-supplicant-mbedtls \
+  DEVICE_PACKAGES += hostapd-mbedtls wpa-supplicant-mbedtls \
                      kmod-mt7915e kmod-mt7916-firmware
 endef
 TARGET_DEVICES += genexis_arcee
@@ -38,7 +38,7 @@ define Device/genexis_e650
   DEVICE_VENDOR := Genexis
   DEVICE_MODEL := Aura E650
   DEVICE_PACKAGES += kmod-usb-ohci kmod-usb2 \
-                     hostapd-mbedtls wpad-mbedtls wpa-supplicant-mbedtls \
+                     hostapd-mbedtls wpa-supplicant-mbedtls \
                      kmod-mt7915e kmod-mt7916-firmware \
                      kmod-mdio-gpio kmod-phy-realtek mdio-tools
 endef
@@ -51,7 +51,7 @@ define Device/genexis_laxy
   DEVICE_ALT0_VENDOR := Genexis
   DEVICE_ALT0_MODEL := Laxy
   DEVICE_PACKAGES += kmod-usb-ohci kmod-usb2 \
-                     hostapd-mbedtls wpad-mbedtls wpa-supplicant-mbedtls \
+                     hostapd-mbedtls wpa-supplicant-mbedtls \
                      kmod-mt7915e kmod-mt7916-firmware
 endef
 TARGET_DEVICES += genexis_laxy
@@ -64,7 +64,7 @@ define Device/genexis_pixly_r1
   DEVICE_ALT0_MODEL := CX30
   DEVICE_ALT1_VENDOR := Heimgard
   DEVICE_ALT1_MODEL := Pixly R1
-  DEVICE_PACKAGES += hostapd-mbedtls wpad-mbedtls wpa-supplicant-mbedtls \
+  DEVICE_PACKAGES += hostapd-mbedtls wpa-supplicant-mbedtls \
                      kmod-mt7915e kmod-mt7916-firmware
 endef
 TARGET_DEVICES += genexis_pixly_r1
@@ -78,7 +78,7 @@ define Device/genexis_rodimus_r1
   DEVICE_ALT1_VENDOR := Genexis
   DEVICE_ALT1_MODEL := Rodimus R1
   DEVICE_PACKAGES += kmod-usb-ohci kmod-usb2 \
-                     hostapd-mbedtls wpad-mbedtls wpa-supplicant-mbedtls \
+                     hostapd-mbedtls wpa-supplicant-mbedtls \
                      kmod-mt7915e kmod-mt7916-firmware \
                      kmod-mdio-gpio kmod-phy-realtek
 endef
@@ -93,7 +93,7 @@ define Device/genexis_zephyr
   DEVICE_ALT1_VENDOR := Genexis
   DEVICE_ALT1_MODEL := Zephyr
   DEVICE_PACKAGES += kmod-usb-ohci kmod-usb2 \
-                     hostapd-mbedtls wpad-mbedtls wpa-supplicant-mbedtls \
+                     hostapd-mbedtls wpa-supplicant-mbedtls \
                      kmod-mt7915e kmod-mt7916-firmware \
                      kmod-mdio-gpio kmod-phy-realtek
 endef
@@ -128,7 +128,7 @@ define Device/mitrastar_gpt-2742gx4x5v6
   $(Device/Uboot-FitImage)
   DEVICE_VENDOR := MitraStar
   DEVICE_MODEL := GPT-2742GX4X5v6
-  DEVICE_PACKAGES += hostapd-mbedtls wpad-mbedtls wpa-supplicant-mbedtls \
+  DEVICE_PACKAGES += hostapd-mbedtls wpa-supplicant-mbedtls \
                      kmod-mt7915e kmod-mt7915-firmware kmod-mt7916-firmware \
                      airoha-en7571-firmware
 endef
@@ -140,7 +140,7 @@ define Device/tplink_ex530v-v1
   DEVICE_MODEL := ex530v
   DEVICE_VARIANT := v1
   DEVICE_PACKAGES += kmod-usb-ohci kmod-usb3 \
-                     hostapd-mbedtls wpad-mbedtls wpa-supplicant-mbedtls \
+                     hostapd-mbedtls wpa-supplicant-mbedtls \
                      kmod-mt7915e kmod-mt7916-firmware
 endef
 TARGET_DEVICES += tplink_ex530v-v1
@@ -154,7 +154,7 @@ define Device/tplink_xx230v-v1
   DEVICE_ALT0_MODEL := xx530v
   DEVICE_ALT0_VARIANT := v1
   DEVICE_PACKAGES += kmod-usb-ohci kmod-usb2 \
-                     hostapd-mbedtls wpad-mbedtls wpa-supplicant-mbedtls \
+                     hostapd-mbedtls wpa-supplicant-mbedtls \
                      kmod-mt7915e kmod-mt7915-firmware kmod-mt7916-firmware \
                      airoha-en7571-firmware
 endef

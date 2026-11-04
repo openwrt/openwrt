@@ -301,7 +301,9 @@ New Maping:
 
 &xpon {
 	status = "okay";
-	gpon-serial-number = <&gponsn>;
+
+	nvmem-cells = <&gponsn 0>;
+	nvmem-cell-names = "gpon-serial-number";
 
 	optical-frontends = <&en7571>;
 	optical-frontend-names = "pon";

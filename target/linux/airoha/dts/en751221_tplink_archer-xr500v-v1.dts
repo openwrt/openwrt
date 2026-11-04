@@ -51,50 +51,66 @@
 		 * OpenWrt's U-Boot uses it as its boot LED. Keep it on.
 		 */
 		led_power: led-power {
-			label = "green:power";
 			gpios = <&pinctrl 6 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_POWER;
+			function-enumerator = <6>;
 			default-state = "on";
 		};
 
 		led_pon: led-pon {
-			label = "green:pon";
 			gpios = <&pinctrl 2 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_XPON;
+			function-enumerator = <2>;
 			default-state = "off";
 		};
 
 		led-wps {
-			label = "green:wps";
 			gpios = <&pinctrl 7 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WPS;
+			function-enumerator = <7>;
 			default-state = "off";
 		};
 
 		led-usb {
-			label = "green:usb";
 			gpios = <&pinctrl 11 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_USB;
+			function-enumerator = <11>;
 			default-state = "off";
 		};
 
 		led_los: led-los {
-			label = "red:los";
 			gpios = <&pinctrl 24 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_XPON_LOS;
+			function-enumerator = <24>;
 			default-state = "off";
 		};
 
 		led-phone1 {
-			label = "green:phone1";
 			gpios = <&pinctrl 25 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_VOIP;
+			function-enumerator = <25>;
 			default-state = "off";
 		};
 
 		led-phone2 {
-			label = "green:phone2";
 			gpios = <&pinctrl 26 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_VOIP;
+			function-enumerator = <26>;
 			default-state = "off";
 		};
 
 		led-internet {
-			label = "green:internet";
 			gpios = <&pinctrl 28 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WAN_ONLINE;
+			function-enumerator = <6>;
 			default-state = "off";
 		};
 	};

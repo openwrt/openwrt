@@ -92,14 +92,14 @@ define Device/huawei_hg2821t-u
 endef
 TARGET_DEVICES += huawei_hg2821t-u
 
-define Device/mitrarstar_gpt-2741gnac-n1
+define Device/mitrastar_gpt-2741gnac-n1
   $(Device/FitVmlinux)
-  DEVICE_VENDOR := Mitrastar
+  DEVICE_VENDOR := MitraStar
   DEVICE_MODEL := GPT-2741GNAC-N1
-  DEVICE_DTS := en751221-mitrarstar_gpt-2741gnac-n1
+  DEVICE_DTS := en751221-mitrastar_gpt-2741gnac-n1
   DEVICE_PACKAGES := kmod-usb3 semtech-gn25l96-firmware semtech-gn25l98-firmware
 endef
-TARGET_DEVICES += mitrarstar_gpt-2741gnac-n1
+TARGET_DEVICES += mitrastar_gpt-2741gnac-n1
 
 define Device/nokia_g240g-e
   $(Device/FitVmlinux)
