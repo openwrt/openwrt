@@ -1,0 +1,336 @@
+From: Andrew LaMarche <andrewjlamarche@gmail.com>
+Subject: [PATCH] octeon: add CN7xxx AGL (RGMII) support
+
+Implement the CN7xxx AGL interface (interface 4, AGL_GMX_* CSRs) so the
+Octeon III RGMII port enumerates as a normal RGMII interface and gets a
+netdev ("agl0"). Ported from the Cavium OCTEON SDK 3.1.2
+(cvmx-helper-agl.c / cvmx-agl.c).
+
+Signed-off-by: Andrew LaMarche <andrewjlamarche@gmail.com>
+
+--- a/arch/mips/cavium-octeon/executive/cvmx-helper.c
++++ b/arch/mips/cavium-octeon/executive/cvmx-helper.c
+@@ -45,6 +45,7 @@
+ 
+ #include <asm/octeon/cvmx-pip-defs.h>
+ #include <asm/octeon/cvmx-asxx-defs.h>
++#include <asm/octeon/cvmx-agl-defs.h>
+ 
+ /* Port count per interface */
+ static int interface_port_count[9];
+@@ -271,9 +272,14 @@ static cvmx_helper_interface_mode_t __cv
+ 		return CVMX_HELPER_INTERFACE_MODE_NPI;
+ 	case 3:
+ 		return CVMX_HELPER_INTERFACE_MODE_LOOP;
+-	case 4:
+-		/* TODO: Implement support for AGL (RGMII). */
++	case 4: {
++		union cvmx_agl_prtx_ctl prtx_ctl;
++
++		prtx_ctl.u64 = cvmx_read_csr(CVMX_AGL_PRTX_CTL(0));
++		if (prtx_ctl.s.mode == 0)	/* 0 = RGMII */
++			return CVMX_HELPER_INTERFACE_MODE_RGMII;
+ 		return CVMX_HELPER_INTERFACE_MODE_DISABLED;
++	}
+ 	default:
+ 		return CVMX_HELPER_INTERFACE_MODE_DISABLED;
+ 	}
+--- a/arch/mips/cavium-octeon/executive/cvmx-helper-rgmii.c
++++ b/arch/mips/cavium-octeon/executive/cvmx-helper-rgmii.c
+@@ -29,6 +29,7 @@
+  * Functions for RGMII/GMII/MII initialization, configuration,
+  * and monitoring.
+  */
++#include <linux/delay.h>
+ #include <asm/octeon/octeon.h>
+ 
+ #include <asm/octeon/cvmx-config.h>
+@@ -39,6 +40,7 @@
+ 
+ #include <asm/octeon/cvmx-npi-defs.h>
+ #include <asm/octeon/cvmx-gmxx-defs.h>
++#include <asm/octeon/cvmx-agl-defs.h>
+ #include <asm/octeon/cvmx-asxx-defs.h>
+ #include <asm/octeon/cvmx-dbg-defs.h>
+ 
+@@ -49,8 +51,228 @@
+  *
+  * Returns Number of RGMII/GMII/MII ports (0-4).
+  */
++
++/*
++ * CN7xxx AGL (RGMII) support.
++ *
++ * On Octeon III the 10/100/1000 RGMII port is implemented by the AGL
++ * block (AGL_GMX_* CSRs) instead of the classic per-interface GMX.
++ * Ported from the Cavium OCTEON SDK 3.1.2 (cvmx-helper-agl.c and
++ * cvmx-agl.c).
++ */
++static bool agl_prtx_ctl_mode_rgmii(int port)
++{
++	union cvmx_agl_prtx_ctl prtx_ctl;
++
++	prtx_ctl.u64 = cvmx_read_csr(CVMX_AGL_PRTX_CTL(port));
++	return prtx_ctl.s.mode == 0;
++}
++
++static int cvmx_agl_get_port(int interface)
++{
++	if (OCTEON_IS_MODEL(OCTEON_CN7XXX))
++		return interface - 4;
++	return -1;
++}
++
++static int __cvmx_helper_agl_probe(int interface)
++{
++	union cvmx_agl_prtx_ctl agl_prtx_ctl;
++	union cvmx_agl_gmx_bist gmx_bist;
++	union cvmx_agl_gmx_prtx_cfg gmx_prtx_cfg;
++	int port = cvmx_agl_get_port(interface);
++
++	if (port < 0)
++		return 0;
++
++	agl_prtx_ctl.u64 = cvmx_read_csr(CVMX_AGL_PRTX_CTL(port));
++	if (agl_prtx_ctl.s.mode != 0)	/* 0 = RGMII */
++		return 0;
++
++	gmx_bist.u64 = cvmx_read_csr(CVMX_AGL_GMX_BIST);
++	if (gmx_bist.u64)
++		pr_warn("AGL%d: failed BIST (0x%016llx)\n",
++			port, gmx_bist.u64);
++
++	/* Disable the port while configuring. */
++	gmx_prtx_cfg.u64 = cvmx_read_csr(CVMX_AGL_GMX_PRTX_CFG(port));
++	gmx_prtx_cfg.s.en = 0;
++	cvmx_write_csr(CVMX_AGL_GMX_PRTX_CFG(port), gmx_prtx_cfg.u64);
++
++	/*
++	 * DLL / clock setup. The SDK sources skew and delay values from
++	 * the bootloader-exported app config; until DT knobs exist, run
++	 * the delay lines with zero taps (bypass deasserted), matching
++	 * the SDK's zero-initialized config. refclk_sel keeps its reset
++	 * default of 0 (RGMII REFCLK).
++	 */
++	agl_prtx_ctl.u64 = cvmx_read_csr(CVMX_AGL_PRTX_CTL(port));
++	agl_prtx_ctl.s.clkrst = 0;
++	agl_prtx_ctl.s.dllrst = 0;
++	agl_prtx_ctl.s.clktx_byp = 0;
++	agl_prtx_ctl.s.clkrx_set = 0;
++	agl_prtx_ctl.s.clkrx_byp = 0;
++	agl_prtx_ctl.s.clktx_set = 0;
++	cvmx_write_csr(CVMX_AGL_PRTX_CTL(port), agl_prtx_ctl.u64);
++	cvmx_read_csr(CVMX_AGL_PRTX_CTL(port));	/* force write out */
++	udelay(3);	/* DLL lock: 256 cycles at 125 MHz */
++
++	/* Enable the compensation controller. */
++	agl_prtx_ctl.u64 = cvmx_read_csr(CVMX_AGL_PRTX_CTL(port));
++	agl_prtx_ctl.s.drv_byp = 0;
++	cvmx_write_csr(CVMX_AGL_PRTX_CTL(port), agl_prtx_ctl.u64);
++	cvmx_read_csr(CVMX_AGL_PRTX_CTL(port));
++
++	agl_prtx_ctl.u64 = cvmx_read_csr(CVMX_AGL_PRTX_CTL(port));
++	agl_prtx_ctl.s.comp = 1;
++	cvmx_write_csr(CVMX_AGL_PRTX_CTL(port), agl_prtx_ctl.u64);
++	cvmx_read_csr(CVMX_AGL_PRTX_CTL(port));
++	udelay(10);	/* compensation lock: 1024 cycles at 125 MHz */
++
++	return 1;
++}
++
++static int __cvmx_helper_agl_enable(int interface)
++{
++	union cvmx_pko_mem_port_ptrs pko_mem_port_ptrs;
++	union cvmx_pko_reg_read_idx read_idx;
++	union cvmx_agl_gmx_rxx_frm_ctl rxx_frm_ctl;
++	int port = cvmx_agl_get_port(interface);
++	int i;
++
++	/* Setup PKO for the AGL interface. Back pressure is not
++	 * supported: map the AGL port (pid 24) to its eid with the
++	 * no-backpressure port. */
++	read_idx.u64 = 0;
++	read_idx.s.inc = 1;
++	cvmx_write_csr(CVMX_PKO_REG_READ_IDX, read_idx.u64);
++	for (i = 0; i < 40; i++) {
++		pko_mem_port_ptrs.u64 =
++			cvmx_read_csr(CVMX_PKO_MEM_PORT_PTRS);
++		if (pko_mem_port_ptrs.s.pid == 24) {
++			pko_mem_port_ptrs.s.eid = 10;
++			pko_mem_port_ptrs.s.bp_port = 40;
++			cvmx_write_csr(CVMX_PKO_MEM_PORT_PTRS,
++				       pko_mem_port_ptrs.u64);
++			break;
++		}
++	}
++
++	rxx_frm_ctl.u64 = 0;
++	rxx_frm_ctl.s.pre_align = 1;
++	rxx_frm_ctl.s.pad_len = 1;	/* no length check for padded pkts */
++	rxx_frm_ctl.s.vlan_len = 1;	/* no length check for VLAN pkts */
++	rxx_frm_ctl.s.pre_free = 1;	/* relaxed preamble check */
++	rxx_frm_ctl.s.ctl_smac = 0;
++	rxx_frm_ctl.s.ctl_mcst = 1;
++	rxx_frm_ctl.s.ctl_bck = 1;	/* forward pause info to TX block */
++	rxx_frm_ctl.s.ctl_drp = 1;	/* drop control pause frames */
++	rxx_frm_ctl.s.pre_strp = 1;	/* strip preamble */
++	rxx_frm_ctl.s.pre_chk = 1;	/* check preamble was sent correctly */
++	cvmx_write_csr(CVMX_AGL_GMX_RXX_FRM_CTL(port), rxx_frm_ctl.u64);
++
++	return 0;
++}
++
++static int __cvmx_helper_agl_link_set(int ipd_port,
++				      union cvmx_helper_link_info link_info)
++{
++	int interface = cvmx_helper_get_interface_num(ipd_port);
++	int port = cvmx_agl_get_port(interface);
++	union cvmx_agl_gmx_prtx_cfg agl_gmx_prtx;
++	union cvmx_agl_gmx_txx_clk agl_clk;
++	union cvmx_agl_prtx_ctl agl_prtx_ctl;
++
++	/* Disable the GMX before we make any changes. */
++	agl_gmx_prtx.u64 = cvmx_read_csr(CVMX_AGL_GMX_PRTX_CFG(port));
++	agl_gmx_prtx.s.en = 0;
++	agl_gmx_prtx.s.tx_en = 0;
++	agl_gmx_prtx.s.rx_en = 0;
++	cvmx_write_csr(CVMX_AGL_GMX_PRTX_CFG(port), agl_gmx_prtx.u64);
++
++	/* Wait for GMX to be idle. */
++	if (CVMX_WAIT_FOR_FIELD64(CVMX_AGL_GMX_PRTX_CFG(port),
++				  union cvmx_agl_gmx_prtx_cfg, rx_idle,
++				  ==, 1, 1000000) ||
++	    CVMX_WAIT_FOR_FIELD64(CVMX_AGL_GMX_PRTX_CFG(port),
++				  union cvmx_agl_gmx_prtx_cfg, tx_idle,
++				  ==, 1, 1000000)) {
++		pr_err("AGL%d: Timeout waiting for GMX to be idle\n", port);
++		return -1;
++	}
++
++	agl_gmx_prtx.u64 = cvmx_read_csr(CVMX_AGL_GMX_PRTX_CFG(port));
++
++	if (!link_info.s.link_up)
++		agl_gmx_prtx.s.duplex = 1;	/* full duplex when down */
++	else
++		agl_gmx_prtx.s.duplex = link_info.s.full_duplex;
++
++	switch (link_info.s.speed) {
++	case 10:
++		agl_gmx_prtx.s.speed = 0;
++		agl_gmx_prtx.s.speed_msb = 1;
++		agl_gmx_prtx.s.slottime = 0;
++		agl_gmx_prtx.s.burst = 1;
++		break;
++	case 100:
++		agl_gmx_prtx.s.speed = 0;
++		agl_gmx_prtx.s.speed_msb = 0;
++		agl_gmx_prtx.s.slottime = 0;
++		agl_gmx_prtx.s.burst = 1;
++		break;
++	case 1000:
++		agl_gmx_prtx.s.speed = 1;
++		agl_gmx_prtx.s.speed_msb = 0;
++		agl_gmx_prtx.s.slottime = 1;	/* only matters half-duplex */
++		agl_gmx_prtx.s.burst = agl_gmx_prtx.s.duplex;
++		break;
++	case 0:
++	default:
++		break;
++	}
++
++	/* Write the new GMX setting with the port still disabled. */
++	cvmx_write_csr(CVMX_AGL_GMX_PRTX_CFG(port), agl_gmx_prtx.u64);
++	/* Read GMX CFG again to make sure the config is completed. */
++	agl_gmx_prtx.u64 = cvmx_read_csr(CVMX_AGL_GMX_PRTX_CFG(port));
++
++	agl_clk.u64 = cvmx_read_csr(CVMX_AGL_GMX_TXX_CLK(port));
++	agl_clk.s.clk_cnt = 1;	/* MII (both speeds) and RGMII 1000 */
++	if (agl_prtx_ctl_mode_rgmii(port)) {
++		if (link_info.s.speed == 10)
++			agl_clk.s.clk_cnt = 50;
++		else if (link_info.s.speed == 100)
++			agl_clk.s.clk_cnt = 5;
++	}
++	cvmx_write_csr(CVMX_AGL_GMX_TXX_CLK(port), agl_clk.u64);
++
++	/* Enable transmit and receive ports. */
++	agl_gmx_prtx.s.tx_en = 1;
++	agl_gmx_prtx.s.rx_en = 1;
++	cvmx_write_csr(CVMX_AGL_GMX_PRTX_CFG(port), agl_gmx_prtx.u64);
++
++	/* Enable the link. */
++	agl_gmx_prtx.s.en = 1;
++	cvmx_write_csr(CVMX_AGL_GMX_PRTX_CFG(port), agl_gmx_prtx.u64);
++
++	/* Enable the interface clock. */
++	agl_prtx_ctl.u64 = cvmx_read_csr(CVMX_AGL_PRTX_CTL(port));
++	agl_prtx_ctl.s.clkrst = 1;
++	cvmx_write_csr(CVMX_AGL_PRTX_CTL(port), agl_prtx_ctl.u64);
++	cvmx_read_csr(CVMX_AGL_PRTX_CTL(port));	/* force write out */
++	agl_prtx_ctl.s.enable = 1;
++	cvmx_write_csr(CVMX_AGL_PRTX_CTL(port), agl_prtx_ctl.u64);
++	cvmx_read_csr(CVMX_AGL_PRTX_CTL(port));
++
++	return 0;
++}
++
+ int __cvmx_helper_rgmii_probe(int interface)
+ {
++	if (OCTEON_IS_MODEL(OCTEON_CN7XXX))
++		return __cvmx_helper_agl_probe(interface);
++
+ 	int num_ports = 0;
+ 	union cvmx_gmxx_inf_mode mode;
+ 	mode.u64 = cvmx_read_csr(CVMX_GMXX_INF_MODE(interface));
+@@ -158,6 +380,9 @@ static int __cvmx_helper_errata_asx_pass
+  */
+ int __cvmx_helper_rgmii_enable(int interface)
+ {
++	if (OCTEON_IS_MODEL(OCTEON_CN7XXX))
++		return __cvmx_helper_agl_enable(interface);
++
+ 	int num_ports = cvmx_helper_ports_on_interface(interface);
+ 	int port;
+ 	struct cvmx_sysinfo *sys_info_ptr = cvmx_sysinfo_get();
+@@ -294,6 +519,9 @@ union cvmx_helper_link_info __cvmx_helpe
+ int __cvmx_helper_rgmii_link_set(int ipd_port,
+ 				 union cvmx_helper_link_info link_info)
+ {
++	if (OCTEON_IS_MODEL(OCTEON_CN7XXX))
++		return __cvmx_helper_agl_link_set(ipd_port, link_info);
++
+ 	int result = 0;
+ 	int interface = cvmx_helper_get_interface_num(ipd_port);
+ 	int index = cvmx_helper_get_interface_index_num(ipd_port);
+--- a/drivers/staging/octeon/ethernet.c
++++ b/drivers/staging/octeon/ethernet.c
+@@ -927,10 +927,25 @@ static int cvm_oct_probe(struct platform
+ 				break;
+ 
+ 			case CVMX_HELPER_INTERFACE_MODE_RGMII:
+-				dev->netdev_ops = &cvm_oct_rgmii_netdev_ops;
+-				strscpy(dev->name, "eth%d", sizeof(dev->name));
+-				cvm_set_rgmii_delay(priv, interface,
+-						    port_index);
++				if (OCTEON_IS_MODEL(OCTEON_CN7XXX)) {
++					/*
++					 * Octeon III AGL port. The RGMII
++					 * ops poke CN5xxx/CN6xxx GMXX CSRs
++					 * (preamble workaround) that do not
++					 * exist here; the AGL port rides
++					 * the phylib-driven path used by
++					 * SGMII instead.
++					 */
++					priv->phy_mode = PHY_INTERFACE_MODE_RGMII;
++					dev->netdev_ops = &cvm_oct_sgmii_netdev_ops;
++					strscpy(dev->name, "agl%d",
++						sizeof(dev->name));
++				} else {
++					dev->netdev_ops = &cvm_oct_rgmii_netdev_ops;
++					strscpy(dev->name, "eth%d", sizeof(dev->name));
++					cvm_set_rgmii_delay(priv, interface,
++							    port_index);
++				}
+ 				break;
+ 			}
+ 
