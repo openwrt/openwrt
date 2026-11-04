@@ -22,7 +22,7 @@
 
 #include <ucode/module.h>
 
-#include "include/linux/omci.h"
+#include <linux/omci.h>
 
 #include "nl_transport.h"
 

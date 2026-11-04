@@ -109,13 +109,32 @@ const profiles = [
 		name: 'Vivo SP1 - Mitrastar GPT-2741GNAC-N1',
 		description: 'Vivo São Paulo capital profile using the MitraStar identity.',
 		inputs: [
-			{ name: 'serial', label: 'GPON SN', required: true },
-			{ name: 'password', label: 'SLID / GPON password', required: true }
+			{
+				name: 'serial',
+				label: 'GPON SN',
+				required: true
+			},
+			{
+				name: 'password',
+				label: 'SLID / GPON password',
+				required: true
+			}
 		],
 		values: {
-			enabled: '1', permissive: '1', fake_omci: '0', dying_gasp: '1',
-			vendor_id: 'MSTC', equipment_id: 'GPT-2741GNAC-N1-SV',
-			olt_profile: 'nokia-alcl', olt_profile_force: 'nokia-alcl'
+			enabled: '1',
+			permissive: '1',
+			fake_omci: '1',
+			dying_gasp: '1',
+			vendor_id: 'MSTC',
+			equipment_id: 'GPT-2741GNAC-N1-SV',
+			olt_profile: 'nokia-alcl',
+			olt_profile_force: 'nokia-alcl',
+			hardware_version: 'GG-GAPL100v02',
+			software_version_0: 'GG-11000-C003',
+			software_version_1: 'GG-11000-C003',
+			omcc_version: '0x80',
+			onu_type: '2',
+			reboot: '0'
 		}
 	},
 	{
@@ -123,16 +142,34 @@ const profiles = [
 		name: 'Vivo 2 - Askey RTF8225VW',
 		description: 'TLCM/RTF8225VW identity. Vivo 2 does not require a SLID.',
 		inputs: [
-			{ name: 'serial', label: 'GPON SN', required: true }
+			{
+				name: 'serial',
+				label: 'GPON SN',
+				required: true
+			},
+			// {
+			// 	name: 'password',
+			// 	label: 'SLID / GPON password',
+			// 	required: false,
+			// 	default: '00000000000000000000'
+			// }
 		],
 		values: {
-			enabled: '1', permissive: '1', fake_omci: '0', dying_gasp: '1',
-			vendor_id: 'TLCM', hardware_version: 'RTF8225VW',
+			enabled: '1',
+			permissive: '1',
+			fake_omci: '1',
+			dying_gasp: '1',
+			vendor_id: 'TLCM',
+			hardware_version: 'RTF8225VW',
 			software_version_0: 'R8225VWTEF004',
 			software_version_1: 'P8225VWTEF004',
-			equipment_id: 'RTF8225VW-SV', password: '00000000000000000000',
-			traffic_management_option: '2', omcc_version: '161',
-			olt_profile: 'nokia-alcl', olt_profile_force: 'nokia-alcl'
+			equipment_id: 'RTF8225VW-SV',
+			omcc_version: '0xA1',
+			olt_profile: 'nokia-alcl',
+			olt_profile_force: 'nokia-alcl',
+			onu_type: '2',
+			reboot: '0',
+			traffic_management_option: '2'
 		}
 	}
 ];

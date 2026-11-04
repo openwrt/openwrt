@@ -24,14 +24,6 @@ define Package/xpon-agent/description
  applies local configuration and reads runtime state without helper processes.
 endef
 
-define Package/omci-agent
-  SECTION:=utils
-  CATEGORY:=Utilities
-  SUBMENU:=Airoha
-  TITLE:=Compatibility package for xpon-agent
-  DEPENDS:=+xpon-agent
-endef
-
 define Build/Prepare
 	rm -rf $(PKG_BUILD_DIR)
 	mkdir -p $(PKG_BUILD_DIR)
@@ -40,11 +32,13 @@ endef
 
 define Build/Compile
 	$(TARGET_CC) $(TARGET_CFLAGS) $(TARGET_CPPFLAGS) \
-		-fPIC -Wall -Wextra -Werror -I$(STAGING_DIR)/usr/include \
+		-fPIC -Wall -Wextra -Werror \
+		-I$(STAGING_DIR)/usr/include -I$(LINUX_DIR)/include \
 		-o $(PKG_BUILD_DIR)/xpon_omci.so $(PKG_BUILD_DIR)/omci_ucode.c \
 		-shared $(TARGET_LDFLAGS) -lucode
 	$(TARGET_CC) $(TARGET_CFLAGS) $(TARGET_CPPFLAGS) \
-		-fPIC -Wall -Wextra -Werror -I$(STAGING_DIR)/usr/include \
+		-fPIC -Wall -Wextra -Werror \
+		-I$(STAGING_DIR)/usr/include -I$(LINUX_DIR)/include \
 		-o $(PKG_BUILD_DIR)/xpon.so $(PKG_BUILD_DIR)/xpon_ucode.c \
 		-shared $(TARGET_LDFLAGS) -lucode
 endef
@@ -63,13 +57,6 @@ define Package/xpon-agent/install
 	$(INSTALL_BIN) ./files/etc/uci-defaults/90-xpon-config $(1)/etc/uci-defaults/
 endef
 
-define Package/omci-agent/install
-	$(INSTALL_DIR) $(1)/usr/sbin $(1)/usr/lib/ucode $(1)/usr/share/rpcd/ucode
-	$(INSTALL_BIN) ./files/usr/sbin/omcictl $(1)/usr/sbin/
-	$(INSTALL_BIN) ./files/usr/share/rpcd/ucode/omci.agent $(1)/usr/share/rpcd/ucode/
-	$(LN) xpon_omci.so $(1)/usr/lib/ucode/omci.so
-endef
-
 define Package/xpon-agent/conffiles
 /etc/config/xpon
 endef
@@ -83,4 +70,3 @@ fi
 endef
 
 $(eval $(call BuildPackage,xpon-agent))
-$(eval $(call BuildPackage,omci-agent))

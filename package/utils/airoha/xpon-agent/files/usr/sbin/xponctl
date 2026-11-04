@@ -172,10 +172,10 @@ function print_classes(classes) {
 }
 
 function print_mib(objects) {
-	printf('%-6s %-8s %-36s %-10s %-8s %s\n',
+	printf('%-6s %-8s %-60s %-10s %-8s %s\n',
 		'class', 'entity', 'name', 'origin', 'mask', 'data');
 	for (let item in (objects || []))
-		printf('%-6d 0x%04x   %-36s %-10s 0x%04x   %s\n',
+		printf('%-6d 0x%04x   %-60s %-10s 0x%04x   %s\n',
 			item.class_id, item.entity_id, item.name || '-',
 			item.origin_name || '-', item.attr_mask || 0, item.data || '');
 }

@@ -6,7 +6,7 @@
 #include <stdlib.h>
 #include <ucode/module.h>
 
-#include "include/linux/xpon.h"
+#include <linux/xpon.h>
 #include "nl_transport.h"
 
 struct field {
