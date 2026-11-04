@@ -1,0 +1,67 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Kosuke Shibuya <kakiringopcneko@gmail.com>
+Date: Wed, 4 Nov 2026 17:49:33 +0900
+Subject: [PATCH] powerpc: 85xx: add NEC IX2106 machine support
+
+Add the P1010 machine and simpleImage wrapper used with the existing
+NEC Bootstrap hardware initialization.
+
+Signed-off-by: Kosuke Shibuya <kakiringopcneko@gmail.com>
+---
+--- a/arch/powerpc/platforms/85xx/Kconfig
++++ b/arch/powerpc/platforms/85xx/Kconfig
+@@ -185,6 +185,12 @@ config P1010_RDB
+ 	  MHz and 1600 DMIPS, additional functionality and faster interfaces
+ 	  (DDR3/3L, SATA II, and PCI  Express).
+ 
++config IX2106
++	bool "NEC IX2106"
++	select DEFAULT_UIMAGE
++	help
++	  Support for the NEC IX2106 router based on the Freescale P1010.
++
+ config P1022_DS
+ 	bool "Freescale P1022 DS"
+ 	select DEFAULT_UIMAGE
+--- a/arch/powerpc/platforms/85xx/Makefile
++++ b/arch/powerpc/platforms/85xx/Makefile
+@@ -14,6 +14,7 @@ obj-$(CONFIG_BSC9132_QDS) += bsc913x_qds
+ obj-$(CONFIG_C293_PCIE)   += c293pcie.o
+ obj-$(CONFIG_BR200_WP) += br200-wp.o
+ obj-$(CONFIG_HIVEAP_330) += hiveap-330.o
++obj-$(CONFIG_IX2106) += ix2106.o
+ obj-$(CONFIG_MPC8536_DS)  += mpc8536_ds.o
+ obj8259-$(CONFIG_PPC_I8259)   += mpc85xx_8259.o
+ obj-$(CONFIG_MPC85xx_DS)  += mpc85xx_ds.o $(obj8259-y)
+--- a/arch/powerpc/boot/Makefile
++++ b/arch/powerpc/boot/Makefile
+@@ -178,6 +178,7 @@ src-plat-$(CONFIG_PPC_POWERNV) += pserie
+ src-plat-$(CONFIG_MVME7100) += motload-head.S mvme7100.c
+ src-plat-$(CONFIG_BR200_WP) += simpleboot.c fixed-head.S
+ src-plat-$(CONFIG_HIVEAP_330) += simpleboot.c fixed-head.S
++src-plat-$(CONFIG_IX2106) += simpleboot.c fixed-head.S
+ src-plat-$(CONFIG_TL_WDR4900_V1) += simpleboot.c fixed-head.S
+ src-plat-$(CONFIG_WS_AP3710I) += simpleboot.c fixed-head.S
+ src-plat-$(CONFIG_WS_AP3715I) += simpleboot.c fixed-head.S
+@@ -348,6 +349,7 @@ image-$(CONFIG_TQM8560)			+= cuImage.tqm
+ image-$(CONFIG_KSI8560)			+= cuImage.ksi8560
+ image-$(CONFIG_BR200_WP)		+= simpleImage.br200-wp
+ image-$(CONFIG_HIVEAP_330)		+= simpleImage.hiveap-330
++image-$(CONFIG_IX2106)			+= simpleImage.ix2106
+ image-$(CONFIG_TL_WDR4900_V1)		+= simpleImage.tl-wdr4900-v1
+ image-$(CONFIG_WS_AP3710I)		+= simpleImage.ws-ap3710i
+ image-$(CONFIG_WS_AP3715I)		+= simpleImage.ws-ap3715i
+--- a/arch/powerpc/boot/wrapper
++++ b/arch/powerpc/boot/wrapper
+@@ -349,6 +349,11 @@ simpleboot-ws-ap3825i)
+     link_address='0x3000000'
+     binary=y
+     ;;
++simpleboot-ix2106)
++    platformo="$object/fixed-head.o $object/simpleboot.o"
++    link_address='0x2000000'
++    binary=y
++    ;;
+ simpleboot-*)
+     platformo="$object/fixed-head.o $object/simpleboot.o"
+     binary=y
