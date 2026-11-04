@@ -755,8 +755,8 @@ const struct dsa_switch_ops rtldsa_83xx_switch_ops = {
 	.port_mdb_add		= rtldsa_83xx_port_mdb_add,
 	.port_mdb_del		= rtldsa_port_mdb_del,
 
-	.port_mirror_add	= rtldsa_port_mirror_add,
-	.port_mirror_del	= rtldsa_port_mirror_del,
+	.port_mirror_add	= otto_mirror_port_add,
+	.port_mirror_del	= otto_mirror_port_del,
 
 	.port_lag_change	= otto_lag_port_change,
 	.port_lag_join		= otto_lag_port_join,
@@ -816,8 +816,8 @@ const struct dsa_switch_ops rtldsa_93xx_switch_ops = {
 	.port_mdb_add		= rtldsa_93xx_port_mdb_add,
 	.port_mdb_del		= rtldsa_port_mdb_del,
 
-	.port_mirror_add	= rtldsa_port_mirror_add,
-	.port_mirror_del	= rtldsa_port_mirror_del,
+	.port_mirror_add	= otto_mirror_port_add,
+	.port_mirror_del	= otto_mirror_port_del,
 
 	.port_lag_change	= otto_lag_port_change,
 	.port_lag_join		= otto_lag_port_join,

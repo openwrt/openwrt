@@ -467,7 +467,7 @@ struct rtldsa_config {
 
 	int  (*l2_port_new_salrn)(int port);
 	int (*set_ageing_time)(struct otto_dsa_priv *priv, unsigned long msec);
-	int (*get_mirror_config)(struct rtldsa_mirror_config *config, int group, int port);
+	int (*get_mirror_config)(struct otto_mirror_config *config, int group, int port);
 	int (*port_rate_police_add)(struct dsa_switch *ds, int port,
 				    const struct flow_action_entry *act, bool ingress);
 	int (*port_rate_police_del)(struct dsa_switch *ds, int port, struct flow_cls_offload *cls,

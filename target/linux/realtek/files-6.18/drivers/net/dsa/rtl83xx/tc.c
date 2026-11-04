@@ -10,6 +10,7 @@
 #include <linux/rhashtable.h>
 #include <asm/mach-rtl-otto/mach-rtl-otto.h>
 
+#include "mirror.h"
 #include "pie.h"
 #include "qos.h"
 #include "rtl-otto.h"
@@ -363,7 +364,7 @@ static int otto_tc_add_flow(struct otto_dsa_priv *priv, struct flow_cls_offload 
 			/* A copy through the forwarding action would take over the
 			 * forwarding decision of the L3 rules in later blocks.
 			 */
-			err = rtldsa_mirror_group_get(priv, port);
+			err = otto_mirror_group_get(priv, port);
 			if (err < 0) {
 				if (err == -ENOSPC)
 					NL_SET_ERR_MSG_MOD(f->common.extack,
@@ -437,7 +438,7 @@ static void otto_tc_flow_free(void *ptr, void *arg)
 	priv->r->pie_rule_rm(priv, &flow->rule);
 	otto_tc_packet_cntr_put(priv, flow->rule.packet_cntr);
 	if (flow->rule.mir_sel)
-		rtldsa_mirror_group_put(priv, flow->rule.mir_data);
+		otto_mirror_group_put(priv, flow->rule.mir_data);
 
 	/* Readers may still hold an RCU-protected reference after the
 	 * object has been removed from the hash table.
@@ -552,7 +553,7 @@ out_remove:
 	rhashtable_remove_fast(&priv->tc_ht, &flow->node, tc_ht_params);
 	otto_tc_packet_cntr_put(priv, flow->rule.packet_cntr);
 	if (flow->rule.mir_sel)
-		rtldsa_mirror_group_put(priv, flow->rule.mir_data);
+		otto_mirror_group_put(priv, flow->rule.mir_data);
 	/* published in tc_ht above; a concurrent reader may still hold a ref */
 	kfree_rcu(flow, rcu_head);
 	goto out_err;
@@ -595,7 +596,7 @@ static int otto_tc_delete_flower(struct otto_dsa_priv *priv,
 	priv->r->pie_rule_rm(priv, &flow->rule);
 	otto_tc_packet_cntr_put(priv, flow->rule.packet_cntr);
 	if (flow->rule.mir_sel)
-		rtldsa_mirror_group_put(priv, flow->rule.mir_data);
+		otto_mirror_group_put(priv, flow->rule.mir_data);
 
 	kfree_rcu(flow, rcu_head);
 
