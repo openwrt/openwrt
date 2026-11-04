@@ -11,6 +11,10 @@ platform_check_image() {
 		turris1x_check_image "$1"
 		return $?
 		;;
+	nec,ix2106)
+		ix2106_check_image "$1"
+		return $?
+		;;
 	esac
 
 	return 0
@@ -30,6 +34,9 @@ platform_do_upgrade() {
 	watchguard,firebox-t15|\
 	watchguard,xtm330)
 		nand_do_upgrade "$1"
+		;;
+	nec,ix2106)
+		ix2106_do_upgrade "$1" || exit 1
 		;;
 	*)
 		default_do_upgrade "$1"
