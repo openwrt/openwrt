@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=bzip2
 PKG_VERSION:=1.0.8
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=https://sourceware.org/pub/bzip2
@@ -27,6 +27,18 @@ include $(INCLUDE_DIR)/cmake.mk
 HOSTCC := $(HOSTCC_NOCACHE)
 HOST_CFLAGS += $(HOST_FPIC)
 
-CMAKE_HOST_OPTIONS += -DENABLE_EXAMPLES=off
+CMAKE_HOST_OPTIONS += \
+	-DENABLE_EXAMPLES=off \
+	-DENABLE_SHARED_LIB=off \
+	-DENABLE_STATIC_LIB=on
+
+define Host/Install
+	rm -f $(STAGING_DIR_HOST)/lib/libbz2*
+	$(call Host/Install/Default)
+endef
+
+define Host/Uninstall
+	rm -f $(STAGING_DIR_HOST)/lib/libbz2*
+endef
 
 $(eval $(call HostBuild))
