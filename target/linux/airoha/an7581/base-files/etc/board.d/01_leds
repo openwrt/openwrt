@@ -23,6 +23,12 @@ gemtek,w1700k-ubi)
 	ucidef_set_led_netdev "lan4-yellow" "lan4" "yellow:lan-4" "lan4" "link_10 link_100"
 	ucidef_set_led_netdev "lan4-green" "lan4" "green:lan-4" "lan4" "link_1000 tx rx"
 	;;
+gemtek,xr1710g-ubi)
+	ucidef_set_led_netdev "lan3-amber" "lan3" "mt7530-0:09:amber:lan-3" "lan3" "link_10 link_100"
+	ucidef_set_led_netdev "lan3-green" "lan3" "mt7530-0:09:green:lan-3" "lan3" "link_1000 tx rx"
+	ucidef_set_led_netdev "lan4-amber" "lan4" "mt7530-0:0a:amber:lan-4" "lan4" "link_10 link_100"
+	ucidef_set_led_netdev "lan4-green" "lan4" "mt7530-0:0a:green:lan-4" "lan4" "link_1000 tx rx"
+	;;
 nokia,xg-040g-md|\
 nokia,xg-040g-md-ubi)
 	ucidef_set_led_netdev "lan2" "lan2" "mt7530-0:0a:green:lan-2" "lan2" "link tx rx"
