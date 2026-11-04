@@ -390,12 +390,8 @@ static void otto_mac_83xx_phylink_config(struct phylink_config *config,
 	if (priv->family_id != RTL8380_FAMILY_ID)
 		return;
 
-	if (dsa_port_is_cpu(dp)) {
-		/* allow CRC errors on CPU-port */
-		regmap_update_bits(priv->map, priv->r->mac_port_ctrl(port),
-				   0x8, 0x8);
+	if (dsa_port_is_cpu(dp))
 		return;
-	}
 
 	regmap_read(priv->map, priv->r->mac_force_mode_ctrl(port), &mcr);
 	if (mode == MLO_AN_PHY || phylink_autoneg_inband(mode)) {

@@ -452,8 +452,14 @@ static void rteth_838x_hw_en_rxtx(struct rteth_ctrl *ctrl)
 	 */
 	regmap_write(ctrl->map, ctrl->cfg->mac_force_mode_ctrl, 0x6192F);
 
-	/* Enable CRC checks on CPU-port */
-	regmap_update_bits(ctrl->map, ctrl->cfg->mac_l2_port_ctrl, BIT(3), BIT(3));
+	/*
+	 * Forward packets received on the CPU port even if the ethernet driver
+	 * hands over an uncomputed layer 2 FCS in its transmit path
+	 * (RX_CHK_CRC_EN). Force FCS recalculation in hardware (CRC_CPU_RC_EN).
+	 */
+	regmap_update_bits(ctrl->map, RTETH_838X_CRC_CPU_RC_CTRL, RTETH_838X_CRC_CPU_RC_EN, 1);
+	regmap_update_bits(ctrl->map, ctrl->cfg->mac_l2_port_ctrl,
+			   RTETH_838X_RX_CHK_CRC_EN, RTETH_838X_RX_CHK_CRC_EN);
 }
 
 static void rteth_839x_hw_en_rxtx(struct rteth_ctrl *ctrl)
