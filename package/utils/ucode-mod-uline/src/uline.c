@@ -604,7 +604,8 @@ linebuf_reset(struct linebuf *line)
 {
 	line->pos = 0;
 	line->len = 0;
-	line->buf[0] = 0;
+	if (line->buf)
+		line->buf[0] = 0;
 	line->update_pos = 0;
 }
 
