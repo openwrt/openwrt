@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=lzo
 PKG_VERSION:=2.10
-PKG_RELEASE:=4
+PKG_RELEASE:=5
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=https://www.oberhumer.com/opensource/lzo/download/
@@ -25,18 +25,19 @@ include $(INCLUDE_DIR)/host-build.mk
 include $(INCLUDE_DIR)/cmake.mk
 
 CMAKE_HOST_OPTIONS += \
-	-DENABLE_SHARED=ON \
 	-DENABLE_TESTS=OFF \
 	-DENABLE_EXAMPLES=OFF \
 	-DENABLE_DOCS=ON \
 	-DBUILD_TESTING=OFF
 
+define Host/Install
+	rm -f  $(HOST_BUILD_PREFIX)/lib/liblzo2.*
+	$(call Host/Install/Default)
+endef
+
 define Host/Uninstall
 	rm -rf $(HOST_BUILD_PREFIX)/include/lzo
-	rm -f  $(HOST_BUILD_PREFIX)/lib/liblzo2.a
-	rm -f  $(HOST_BUILD_PREFIX)/lib/liblzo2.so.2.0.0
-	rm -f  $(HOST_BUILD_PREFIX)/lib/liblzo2.so.2
-	rm -f  $(HOST_BUILD_PREFIX)/lib/liblzo2.so
+	rm -f  $(HOST_BUILD_PREFIX)/lib/liblzo2.*
 	rm -f  $(HOST_BUILD_PREFIX)/lib/pkgconfig/lzo2.pc
 endef
 
