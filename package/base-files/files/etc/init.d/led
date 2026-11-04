@@ -18,11 +18,11 @@ led_color_set() {
 	local value
 	local write
 
-	[ -e /sys/class/leds/${sysfs}/multi_intensity ] || return
-	[ -e /sys/class/leds/${sysfs}/multi_index ] || return
+	[ -e "/sys/class/leds/${sysfs}/multi_intensity" ] || return
+	[ -e "/sys/class/leds/${sysfs}/multi_index" ] || return
 
-	max_b="$(cat /sys/class/leds/${sysfs}/max_brightness)"
-	colors="$(cat /sys/class/leds/${sysfs}/multi_index | tr " " "\n")"
+	max_b="$(cat "/sys/class/leds/${sysfs}/max_brightness")"
+	colors="$(cat "/sys/class/leds/${sysfs}/multi_index" | tr " " "\n")"
 	multi_intensity=""
 	for color in $colors; do
 		config_get value $1 "color_${color}" "0"
@@ -37,7 +37,7 @@ led_color_set() {
 	multi_intensity="${multi_intensity:0:-1}"
 
 	echo "setting '${name}' led color to '${multi_intensity}'"
-	echo "${multi_intensity}" > /sys/class/leds/${sysfs}/multi_intensity
+	echo "${multi_intensity}" > "/sys/class/leds/${sysfs}/multi_intensity"
 }
 
 load_led() {
@@ -87,33 +87,33 @@ load_led() {
 		[ -z "$ports" ] && ports=$(echo "$dev" | sed -n 's/\./-port/p')
 	}
 
-	[ -e /sys/class/leds/${sysfs}/brightness ] && {
+	[ -e "/sys/class/leds/${sysfs}/brightness" ] && {
 		echo "setting up led ${name}"
 
-		printf "%s %s %d" \
+		printf "%s\t%s\t%d" \
 			"$sysfs" \
-			"$(sed -ne 's/^.*\[\(.*\)\].*$/\1/p' /sys/class/leds/${sysfs}/trigger)" \
-			"$(cat /sys/class/leds/${sysfs}/brightness)" \
+			"$(sed -ne 's/^.*\[\(.*\)\].*$/\1/p' "/sys/class/leds/${sysfs}/trigger")" \
+			"$(cat "/sys/class/leds/${sysfs}/brightness")" \
 				>> /var/run/led.state
 		# Save default color if supported
-		[ -e /sys/class/leds/${sysfs}/multi_intensity ] && {
-			printf " %s" \
-				"$(sed 's/\ /:/g' /sys/class/leds/${sysfs}/multi_intensity)" \
+		[ -e "/sys/class/leds/${sysfs}/multi_intensity" ] && {
+			printf "\t%s" \
+				"$(sed 's/\ /:/g' "/sys/class/leds/${sysfs}/multi_intensity")" \
 				>> /var/run/led.state
 		}
 		printf "\n" >> /var/run/led.state
 
 		[ "$default" = 0 ] &&
-			echo 0 >/sys/class/leds/${sysfs}/brightness
+			echo 0 > "/sys/class/leds/${sysfs}/brightness"
 
 		[ "$default" = 1 ] && {
-			[ -z "$brightness" ] && brightness="$(cat /sys/class/leds/${sysfs}/max_brightness)"
-			echo "$brightness" > /sys/class/leds/${sysfs}/brightness
+			[ -z "$brightness" ] && brightness="$(cat "/sys/class/leds/${sysfs}/max_brightness")"
+			echo "$brightness" > "/sys/class/leds/${sysfs}/brightness"
 		}
 
 		led_color_set "$1" "$sysfs"
 
-		echo $trigger > /sys/class/leds/${sysfs}/trigger 2> /dev/null
+		echo $trigger > "/sys/class/leds/${sysfs}/trigger" 2> /dev/null
 		ret="$?"
 		[ $ret = 0 ] || {
 			echo >&2 "Skipping trigger '$trigger' for led '$name' due to missing kernel module"
@@ -126,38 +126,38 @@ load_led() {
 
 		"netdev")
 			[ -n "$dev" ] && {
-				echo $dev > /sys/class/leds/${sysfs}/device_name
+				echo $dev > "/sys/class/leds/${sysfs}/device_name"
 				for m in $mode; do
 					[ -e "/sys/class/leds/${sysfs}/$m" ] && \
-						echo 1 > /sys/class/leds/${sysfs}/$m
+						echo 1 > "/sys/class/leds/${sysfs}/$m"
 				done
-				echo $interval > /sys/class/leds/${sysfs}/interval 2>/dev/null
+				echo $interval > "/sys/class/leds/${sysfs}/interval" 2>/dev/null
 			}
 			;;
 
 		"timer"|"oneshot")
 			[ -n "$delayon" ] && \
-				echo $delayon > /sys/class/leds/${sysfs}/delay_on
+				echo $delayon > "/sys/class/leds/${sysfs}/delay_on"
 			[ -n "$delayoff" ] && \
-				echo $delayoff > /sys/class/leds/${sysfs}/delay_off
+				echo $delayoff > "/sys/class/leds/${sysfs}/delay_off"
 			;;
 
 		"usbport")
 			local p
 
 			for p in $ports; do
-				echo 1 > /sys/class/leds/${sysfs}/ports/$p
+				echo 1 > "/sys/class/leds/${sysfs}/ports/$p"
 			done
 			;;
 
 		"port_state")
 			[ -n "$port_state" ] && \
-				echo $port_state > /sys/class/leds/${sysfs}/port_state
+				echo $port_state > "/sys/class/leds/${sysfs}/port_state"
 			;;
 
 		"gpio")
-			echo $gpio > /sys/class/leds/${sysfs}/gpio
-			echo $inverted > /sys/class/leds/${sysfs}/inverted
+			echo $gpio > "/sys/class/leds/${sysfs}/gpio"
+			echo $inverted > "/sys/class/leds/${sysfs}/inverted"
 			;;
 
 		switch[0-9]*)
@@ -165,20 +165,21 @@ load_led() {
 
 			config_get port_mask $1 port_mask
 			[ -n "$port_mask" ] && \
-				echo $port_mask > /sys/class/leds/${sysfs}/port_mask
+				echo $port_mask > "/sys/class/leds/${sysfs}/port_mask"
 			config_get speed_mask $1 speed_mask
 			[ -n "$speed_mask" ] && \
-				echo $speed_mask > /sys/class/leds/${sysfs}/speed_mask
+				echo $speed_mask > "/sys/class/leds/${sysfs}/speed_mask"
 			[ -n "$mode" ] && \
-				echo "$mode" > /sys/class/leds/${sysfs}/mode
+				echo "$mode" > "/sys/class/leds/${sysfs}/mode"
 			;;
 		esac
 	}
 }
 
 turnoff() {
-	for led in `ls /sys/class/leds/`; do
-		echo 0 > /sys/class/leds/$led/brightness
+	for led in /sys/class/leds/*; do
+		[ -e "$led/brightness" ] || continue
+		echo 0 > "$led/brightness"
 	done
 }
 
@@ -190,9 +191,10 @@ turnon() {
 }
 
 blink() {
-	for led in `ls /sys/class/leds/`; do
-		echo 0 > /sys/class/leds/$led/brightness
-		echo timer > /sys/class/leds/$led/trigger
+	for led in /sys/class/leds/*; do
+		[ -e "$led/brightness" ] || continue
+		echo 0 > "$led/brightness"
+		echo timer > "$led/trigger"
 	done
 }
 
@@ -204,7 +206,13 @@ start() {
 	[ -e /sys/class/leds/ ] && {
 		[ -s /var/run/led.state ] && {
 			local led trigger brightness color
-			while read led trigger brightness color; do
+			while IFS="$(printf '\t')" read -r led trigger brightness color; do
+				# Read state saved by older versions with space-separated fields.
+				[ -n "$trigger" ] || {
+					read -r led trigger brightness color <<-EOF
+					$led
+					EOF
+				}
 				[ "$1" ] && [ "$1" != "$led" ] && continue
 				[ -e "/sys/class/leds/$led/trigger" ] && \
 					echo "$trigger" > "/sys/class/leds/$led/trigger"
@@ -217,7 +225,10 @@ start() {
 						"/sys/class/leds/$led/multi_intensity"
 			done < /var/run/led.state
 			if [ "$1" ]; then
-				grep -v "^$1 " /var/run/led.state > /var/run/led.state.new
+				awk -F '\t' -v led="$1" '
+					NF > 1 { if ($1 != led) print; next }
+					index($0, led " ") != 1
+				' /var/run/led.state > /var/run/led.state.new
 				mv /var/run/led.state.new /var/run/led.state
 			else
 				rm /var/run/led.state
