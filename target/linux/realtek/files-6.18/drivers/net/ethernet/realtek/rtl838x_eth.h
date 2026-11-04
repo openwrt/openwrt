@@ -339,7 +339,6 @@ struct rteth_cfg {
 	void (*set_max_packet_length)(struct rteth_ctrl *ctrl, int len);
 	void (*update_counter)(struct rteth_ctrl *ctrl, int ring, int released);
 	void (*set_rx_mode)(struct net_device *dev);
-	u32 rx_csum_mask;
 };
 
 
