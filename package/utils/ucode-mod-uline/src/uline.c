@@ -289,6 +289,7 @@ static void
 __pos_add_string(struct uline_state *s, struct pos *pos, const char *str, size_t len)
 {
 	const char *next;
+	const char *end = str + len;
 
 	while ((next = memchr(str, KEY_ESC, len)) != NULL) {
 		size_t cur_len = next - str;
@@ -296,13 +297,14 @@ __pos_add_string(struct uline_state *s, struct pos *pos, const char *str, size_t
 		pos_add_ofs(s, pos, nsyms(s, str, cur_len));
 		next++;
 
-		if (*next == '[' || *next == 'O') {
+		if (next < end && (*next == '[' || *next == 'O')) {
 			next++;
-			while (*next <= 63)
+			while (next < end && *next <= 63)
 				next++;
 		}
-		next++;
-		len -= next - str;
+		if (next < end)
+			next++;
+		len = end - next;
 		str = next;
 	}
 
