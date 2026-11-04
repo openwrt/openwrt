@@ -12,6 +12,14 @@ case "$board" in
 askey,sbe1v1k)
 	ubootenv_add_mmc "0:APPSBLENV" "" "0x0" "0x40000" "0x40000"
 	;;
+jiorouter,ax6000-jidu6111|\
+jiorouter,ax6000-jidu6411|\
+jiorouter,ax6000-jidu6611|\
+jiorouter,ax6000-jidu6711|\
+jiorouter,ax6000-jidu6811|\
+jiorouter,ax6000-jidu6911)
+	ubootenv_add_mtd "0:APPSBLENV" "0x0" "0x40000" "0x20000"
+	;;
 linksys,ln6001)
 	ubootenv_add_mmc "u_env" "" "0x0" "0x40000" "0x40000"
 	;;
