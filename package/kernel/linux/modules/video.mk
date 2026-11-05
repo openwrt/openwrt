@@ -673,6 +673,23 @@ endef
 $(eval $(call KernelPackage,drm-dw-mipi-dsi2))
 
 
+define KernelPackage/drm-panfrost
+  SUBMENU:=$(VIDEO_MENU)
+  TITLE:=Panfrost (ARM Mali Midgard/Bifrost GPU) DRM support
+  DEPENDS:=video-support @TARGET_rockchip_armv8 +kmod-drm-sched +kmod-drm-shmem-helper
+  KCONFIG:=CONFIG_DRM_PANFROST
+  FILES:=$(LINUX_DIR)/drivers/gpu/drm/panfrost/panfrost.ko
+  AUTOLOAD:=$(call AutoProbe,panfrost)
+endef
+
+define KernelPackage/drm-panfrost/description
+  Direct Rendering Manager (DRM) support for ARM Mali Midgard (T6xx, T7xx,
+  T8xx) and Bifrost (G3x, G5x, G7x) GPUs.
+endef
+
+$(eval $(call KernelPackage,drm-panfrost))
+
+
 define KernelPackage/drm-panthor
   SUBMENU:=$(VIDEO_MENU)
   TITLE:=Panthor (ARM Mali CSF GPU) DRM support
