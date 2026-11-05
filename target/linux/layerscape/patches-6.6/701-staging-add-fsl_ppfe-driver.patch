@@ -891,7 +891,7 @@ Signed-off-by: Dong Aisheng <aisheng.dong@nxp.com>
 +};
 --- a/MAINTAINERS
 +++ b/MAINTAINERS
-@@ -8368,6 +8368,14 @@ F:	drivers/ptp/ptp_qoriq.c
+@@ -8370,6 +8370,14 @@ F:	drivers/ptp/ptp_qoriq.c
  F:	drivers/ptp/ptp_qoriq_debugfs.c
  F:	include/linux/fsl/ptp_qoriq.h
  
@@ -2619,7 +2619,7 @@ Signed-off-by: Dong Aisheng <aisheng.dong@nxp.com>
 +		 */
 +		writel_relaxed(int_enable_mask, HIF_INT_ENABLE);
 +
-+		eventfd_signal(trigger, 1);
++		eventfd_signal(trigger);
 +	}
 +
 +	return IRQ_HANDLED;

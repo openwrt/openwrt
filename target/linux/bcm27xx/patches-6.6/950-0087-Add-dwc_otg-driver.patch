@@ -1189,7 +1189,7 @@ Signed-off-by: Alexander Winkowski <dereference23@outlook.com>
  }
 --- a/drivers/usb/core/hub.c
 +++ b/drivers/usb/core/hub.c
-@@ -5756,7 +5756,7 @@ static void port_event(struct usb_hub *h
+@@ -5761,7 +5761,7 @@ static void port_event(struct usb_hub *h
  		port_dev->over_current_count++;
  		port_over_current_notify(port_dev);
  
@@ -1200,7 +1200,7 @@ Signed-off-by: Alexander Winkowski <dereference23@outlook.com>
  				USB_PORT_FEAT_C_OVER_CURRENT);
 --- a/drivers/usb/core/message.c
 +++ b/drivers/usb/core/message.c
-@@ -2235,6 +2235,85 @@ free_interfaces:
+@@ -2241,6 +2241,85 @@ free_interfaces:
  	if (cp->string == NULL &&
  			!(dev->quirks & USB_QUIRK_CONFIG_INTF_STRINGS))
  		cp->string = usb_cache_string(dev, cp->desc.iConfiguration);

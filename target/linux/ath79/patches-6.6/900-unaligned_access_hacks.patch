@@ -259,7 +259,7 @@ SVN-Revision: 35130
  #include <linux/uaccess.h>
  #include <linux/ipv6.h>
  #include <linux/icmpv6.h>
-@@ -886,10 +887,10 @@ static void tcp_v6_send_response(const s
+@@ -883,10 +884,10 @@ static void tcp_v6_send_response(const s
  	topt = (__be32 *)(t1 + 1);
  
  	if (tsecr) {
@@ -312,7 +312,7 @@ SVN-Revision: 35130
  		case IPV6_2292HOPOPTS:
 --- a/net/ipv6/exthdrs.c
 +++ b/net/ipv6/exthdrs.c
-@@ -1012,7 +1012,7 @@ static bool ipv6_hop_jumbo(struct sk_buf
+@@ -1008,7 +1008,7 @@ static bool ipv6_hop_jumbo(struct sk_buf
  		goto drop;
  	}
  
@@ -323,9 +323,9 @@ SVN-Revision: 35130
  					 SKB_DROP_REASON_IP_INHDR);
 --- a/include/linux/types.h
 +++ b/include/linux/types.h
-@@ -245,5 +245,11 @@ typedef void (*swap_func_t)(void *a, voi
- typedef int (*cmp_r_func_t)(const void *a, const void *b, const void *priv);
- typedef int (*cmp_func_t)(const void *a, const void *b);
+@@ -257,5 +257,11 @@ struct rcuwait {
+ 	struct task_struct __rcu *task;
+ };
  
 +struct net_hdr_word {
 +       u32 words[1];
@@ -702,7 +702,7 @@ SVN-Revision: 35130
 +#include <linux/in6.h>
  
  struct net;
- 
+ extern struct net init_net;
 --- a/include/uapi/linux/in.h
 +++ b/include/uapi/linux/in.h
 @@ -91,7 +91,7 @@ enum {
@@ -740,7 +740,7 @@ SVN-Revision: 35130
  EXPORT_SYMBOL(xfrm_parse_spi);
 --- a/net/ipv4/tcp_input.c
 +++ b/net/ipv4/tcp_input.c
-@@ -4313,14 +4313,16 @@ static bool tcp_parse_aligned_timestamp(
+@@ -4319,14 +4319,16 @@ static bool tcp_parse_aligned_timestamp(
  {
  	const __be32 *ptr = (const __be32 *)(th + 1);
  
