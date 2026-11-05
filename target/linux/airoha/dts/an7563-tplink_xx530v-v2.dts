@@ -368,6 +368,54 @@
 	status = "okay";
 };
 
+&i2c0 {
+	status = "okay";
+
+	/*
+	 * EN7571 laser driver / BOSA controller: the vendor driver reaches it
+	 * through the sif wrapper on I2C adapter 0 (the only master,
+	 * 0x1fbf8000), slave address 0x70.  It is probed by the en7571 driver
+	 * (package/kernel/en7571, "airoha,en7571"), which registers the laser
+	 * with the xPON MAC as its optical front end.
+	 *
+	 * The transmitter is programmed (bias/modulation current) and enabled
+	 * only on request of the MAC in O2, once the ONU may transmit: an ONU
+	 * transmitting without ranging disturbs every other ONU behind the
+	 * same splitter.  Until then the transmitter disable line below is
+	 * requested asserted, which keeps the transmitter off.
+	 */
+	en7571: laser-driver@70 {
+		compatible = "airoha,en7571";
+		reg = <0x70>;
+		#optical-frontend-cells = <0>;
+		/*
+		 * Transmitter disable line.  Stock /userfs/led.conf maps
+		 * LED_PHY_TX_POWER_DISABLE (42) to GPIO 14, mode ONOFF, onoff 1
+		 * (high = transmitter off).  LED_PHY_VCC_DISABLE (102) is
+		 * "not used" (mode 0) on this board, so there is no BOSA VCC
+		 * line.  en7571 requests the line asserted at probe, which
+		 * keeps the laser off until the MAC enables it in O2.
+		 */
+		tx-disable-gpios = <&an7563_pinctrl 14 GPIO_ACTIVE_HIGH>;
+
+		/*
+		 * The BOSA calibration is a record at flash 0x4e0000 (magic
+		 * 0x07050701 at offset 0x94), i.e. "oem" + 0xc0000.  The cell
+		 * covers the whole matrix the driver uses, up to and including
+		 * the Ibias/Imod LUT at 0xa0..0xdf (BOB_MAX_LEN); the layout is
+		 * in package/kernel/en7571/src/en7571-hw.h.
+		 *
+		 * The cell is optional.  Without it (or with an unknown magic)
+		 * the driver only arms the LOS detector and does not bring up
+		 * the laser.  Stock instead falls back to the generic template
+		 * /etc/7570_bob.conf; that is deliberately not copied, as it
+		 * carries no trim of this BOSA.
+		 */
+		nvmem-cells = <&bosa_calibration>;
+		nvmem-cell-names = "calibration";
+	};
+};
+
 /*
  * &xpon is the whole GPON datapath: the GPON MAC and the PON SerDes PHY in
  * one node, one module (an7552-gpon).  The properties below are the

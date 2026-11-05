@@ -761,6 +761,18 @@
 			airoha,scu = <&scu>;
 			airoha,chip-scu = <&chip_scu>;
 			ethernet = <&gdm2>;
+			/*
+			 * The optical front end, the en7571 i2c driver.  The
+			 * transmitter enable line is the supply below; the driver
+			 * registers it as the "en7571-laser" regulator, which is
+			 * how this half turns the laser on and off.
+			 *
+			 * No phandle to the en7571 itself: the two drivers bind
+			 * by mutual call, the front end registering against this
+			 * MAC and both then naming it by the same pointer.  The
+			 * en7571 node describes only that part.
+			 */
+			laser-supply = <&en7571>;
 			status = "disabled";
 		};
 	};

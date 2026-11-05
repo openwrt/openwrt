@@ -22,7 +22,7 @@ define Device/tplink_xx530v-v2
   DEVICE_DTS := an7563-tplink_xx530v-v2
   DEVICE_PACKAGES := kmod-mt7915e kmod-mt7916-firmware wpad-basic-mbedtls \
 	kmod-usb3 kmod-usb-xhci-mtk kmod-usb-ledtrig-usbport \
-	kmod-an7552-gpon gpond
+	kmod-an7552-gpon gpond kmod-en7571
 
   UBINIZE_OPTS := -E 5
   BLOCKSIZE := 128k
