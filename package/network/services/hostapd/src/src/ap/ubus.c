@@ -797,6 +797,7 @@ enum {
 	DEL_CLIENT_DEAUTH,
 	DEL_CLIENT_BAN_TIME,
 	DEL_CLIENT_BAN_STATUS,
+	DEL_CLIENT_BAN_ONLY,
 	__DEL_CLIENT_MAX
 };
 
@@ -864,7 +865,32 @@ static const struct blobmsg_policy del_policy[__DEL_CLIENT_MAX] = {
 	[DEL_CLIENT_DEAUTH] = { "deauth", BLOBMSG_TYPE_INT8 },
 	[DEL_CLIENT_BAN_TIME] = { "ban_time", BLOBMSG_TYPE_INT32 },
 	[DEL_CLIENT_BAN_STATUS] = { "ban_status", BLOBMSG_TYPE_INT32 },
+	[DEL_CLIENT_BAN_ONLY] = { "ban_only", BLOBMSG_TYPE_INT8 },
 };
+
+static void
+hostapd_bss_client_disconnect(struct hostapd_data *hapd, const u8 *addr,
+			      int reason, bool deauth)
+{
+	const u8 bcast[ETH_ALEN] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
+	struct hostapd_data *sta_bss;
+	struct sta_info *sta;
+
+	if (deauth)
+		hostapd_drv_sta_deauth(hapd, addr, reason);
+	else
+		hostapd_drv_sta_disassoc(hapd, addr, reason);
+
+	sta_bss = hostapd_ubus_sta_bss(hapd, addr, &sta);
+	if (sta) {
+		if (deauth)
+			ap_sta_deauthenticate(sta_bss, sta, reason);
+		else
+			ap_sta_disassociate(sta_bss, sta, reason);
+	} else if (memcmp(addr, bcast, ETH_ALEN) == 0) {
+		hostapd_free_stas_all_links(hapd);
+	}
+}
 
 static int
 hostapd_bss_del_client(struct ubus_context *ctx, struct ubus_object *obj,
@@ -872,10 +898,7 @@ hostapd_bss_del_client(struct ubus_context *ctx, struct ubus_object *obj,
 			struct blob_attr *msg)
 {
 	struct blob_attr *tb[__DEL_CLIENT_MAX];
-	const u8 bcast[ETH_ALEN] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
 	struct hostapd_data *hapd = get_hapd_from_object(obj);
-	struct hostapd_data *sta_bss;
-	struct sta_info *sta;
 	bool deauth = false;
 	int reason = WLAN_REASON_UNSPECIFIED;
 	u32 ban_status = WLAN_STATUS_AP_UNABLE_TO_HANDLE_NEW_STA;
@@ -902,20 +925,8 @@ hostapd_bss_del_client(struct ubus_context *ctx, struct ubus_object *obj,
 	if (tb[DEL_CLIENT_DEAUTH])
 		deauth = blobmsg_get_bool(tb[DEL_CLIENT_DEAUTH]);
 
-	if (deauth)
-		hostapd_drv_sta_deauth(hapd, addr, reason);
-	else
-		hostapd_drv_sta_disassoc(hapd, addr, reason);
-
-	sta_bss = hostapd_ubus_sta_bss(hapd, addr, &sta);
-	if (sta) {
-		if (deauth)
-			ap_sta_deauthenticate(sta_bss, sta, reason);
-		else
-			ap_sta_disassociate(sta_bss, sta, reason);
-	} else if (memcmp(addr, bcast, ETH_ALEN) == 0) {
-		hostapd_free_stas_all_links(hapd);
-	}
+	if (!tb[DEL_CLIENT_BAN_ONLY] || !blobmsg_get_bool(tb[DEL_CLIENT_BAN_ONLY]))
+		hostapd_bss_client_disconnect(hapd, addr, reason, deauth);
 
 	if (tb[DEL_CLIENT_BAN_TIME])
 		hostapd_bss_ban_client(hostapd_ubus_obj_state(obj), addr,

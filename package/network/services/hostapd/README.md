@@ -58,7 +58,7 @@ Dynamically remove a BSS configuration.
 
 
 ## del_client
-Kick a client off the network.
+Kick a client off the network, or with `ban_only` change its ban alone.
 
 ### arguments
 | Name | Type | Required | Description |
@@ -68,6 +68,7 @@ Kick a client off the network.
 | deauth | bool | no | deauthenticates client instead of disassociating |
 | ban_time | int32 | no | ban client for N milliseconds; a ban of the MLD address of a client MLD refuses it on each link, and a ban of a link address refuses that link address |
 | ban_status | int32 | no | Status Code the ban answers the client's authentication and association with, 1 to 65535 (default 17) |
+| ban_only | bool | no | sends no frame and leaves an associated client connected; only ban_time and ban_status apply, and a ban_time of 0 ends a ban |
 
 ### example
 `ubus call hostapd.wl5-fb del_client '{ "addr": "68:2f:67:8b:98:ed", "reason": 5, "deauth": true, "ban_time": 10000 }'`
