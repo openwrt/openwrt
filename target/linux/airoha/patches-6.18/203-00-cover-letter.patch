@@ -1,0 +1,127 @@
+From 6a61aebf879ce5090117800cc4574bedaafd273e Mon Sep 17 00:00:00 2001
+From: Zhengping Zhang <zhengping.zhang@airoha.com>
+Date: Thu, 5 Nov 2026 18:29:09 +0800
+Subject: [PATCH 00/12]  pinctrl: airoha: configure GPIO muxes explicitly and fix pad mappings
+
+This series makes GPIO mode selection explicit on AN7581, AN7583 and
+EN7523, and fixes related GPIO direction, LED group and SPI/eMMC mux
+configuration issues.
+
+Background
+----------
+GPIO direction and data register programming is separate from pad mux
+selection on these SoCs. The current GPIO request path does not select
+the GPIO function, relying on the pads already being in an appropriate
+state. If the bootloader leaves a pad configured for an alternate
+function, a GPIO request can succeed without connecting the GPIO
+controller to the pad. Output writes may then fail to drive the pin,
+and input reads may not reflect the external signal.
+The problem also affects the opposite transition. Once a pad has been
+forced to GPIO mode, selecting its peripheral mux without releasing
+the GPIO override can leave the peripheral disconnected from the pad.
+While addressing these transitions, the series also corrects GPIO
+direction programming, AN7581 PHY LED group assignments, AN7583 SPI/eMMC
+mux configuration and the EN7523 128-pin PCM SPI CS2 pad assignment.
+
+Implementation
+--------------
+On these SoCs, shared GPIO pads can be routed to peripheral functions
+through mux control bits in the SCU registers. In the absence of an
+enabled alternate function, these shared pads normally operate as
+GPIOs. Dedicated peripheral pads have separate selectors for GPIO
+operation, so clearing all mux bits is not a universal way to select
+GPIO mode.
+
+Per-pad force GPIO controls allow individual shared pads to operate
+as GPIOs while leaving shared peripheral mode settings intact for
+other pads. GPIO-controller PWM output also requires the appropriate
+pad routing: selecting ordinary GPIO operation clears the pad's PWM
+selection, while PWM operation uses the PWM selection together with
+the applicable GPIO routing controls.
+
+The series uses these per-pad controls to configure GPIO mode on
+demand. Resetting the IOMUX registers at probe could disrupt interfaces
+still using bootloader settings, while clearing shared peripheral
+mode bits could affect pads outside the requested group.
+
+The common driver gains a gpio_request_enable callback and identifies
+GPIO-category functions through the pinmux core. It finds the matching
+single-pin GPIO group using pinctrl pin numbers, including controllers
+whose GPIO ranges have a nonzero pin base. GPIO requests and explicit
+GPIO pinctrl states apply the same SoC-specific group configuration.
+
+The common code checks for incompatible values of shared mux bits
+against GPIO owners and claimed mux groups. Validation and register
+updates are serialized, and register update failures are returned to
+the caller. GPIO request handling and conflict checks are enabled
+through SoC match data.
+
+The SoC-specific changes select GPIO mode as follows:
+
+  - AN7581: GPIO1-31 use SCU 0x228, and GPIO32-46 use 0x22c.
+    GPIO47-49 retain their PCIe reset GPIO selectors at 0x21c.
+    GPIO1/2 additionally require the I2C/MDIO routing to be disabled.
+
+  - AN7583: GPIO1-31 use SCU 0x228, and GPIO32-38 use 0x22c.
+    GPIO39-52 use the dedicated-pad GPIO selectors at 0x21c.
+
+  - EN7523: GPIO0-29 use SCU 0x224. GPIO28/29 also retain their
+    existing PCIe reset GPIO selector settings at 0x218.
+
+AN7581 and AN7583 have no documented force GPIO bit for GPIO0; their
+GPIO0 configuration clears the existing PWM selection only.
+
+Peripheral group configurations release the corresponding GPIO
+overrides when selecting their functions. AN7581 retains its existing
+MDIO and PWM configurations; AN7583 and EN7523 also enable the required
+GPIO overrides when selecting GPIO-controller PWM output.
+
+The AN7583 and EN7523 PON groups exclude the software-controlled
+TX_DIS/RX_DIS pads so they can be requested independently as GPIOs by
+the PON PHY driver, avoiding ownership conflicts with PON mux selection.
+
+The bindings describe the expanded GPIO groups and corrected pad
+assignments. GPIO numbering and existing compatible strings are retained.
+The final patch adds an Airoha co-maintainer and extends the maintained
+file patterns to cover the SoC-specific drivers and bindings.
+
+Validation
+----------
+Tested the PINCTRL functionality on AN7581, AN7583 and EN7523 using OpenWrt
+master (backport to kernel 6.18), including build tests and explicit GPIO
+requests, with particular attention to GPIO-controlled LEDs.
+
+Daniel Schwierzeck (2):
+  pinctrl: airoha: fix setting of GPIO direction
+  pinctrl: airoha: an7583: fix SPI pin mux config
+
+Robert Marko (1):
+  pinctrl: airoha: an7583: fix eMMC pin mux config
+
+Zhengping Zhang (9):
+  pinctrl: airoha: configure pin muxes on GPIO requests
+  dt-bindings: pinctrl: airoha: describe all EN7581 GPIO mux groups
+  pinctrl: airoha: an7581: fix PHY LED GPIO group assignments
+  pinctrl: airoha: an7581: select force GPIO mode on GPIO requests
+  dt-bindings: pinctrl: airoha: describe all AN7583 GPIO mux groups
+  pinctrl: airoha: an7583: use force GPIO mode for GPIO requests
+  dt-bindings: pinctrl: airoha: describe all EN7523 GPIO mux groups
+  pinctrl: airoha: en7523: use force GPIO mode for GPIO requests
+  MAINTAINERS: add myself as Airoha pinctrl co-maintainer
+
+ .../pinctrl/airoha,an7583-pinctrl.yaml        |  18 +-
+ .../pinctrl/airoha,en7523-pinctrl.yaml        |   9 +-
+ .../pinctrl/airoha,en7581-pinctrl.yaml        |  28 +-
+ MAINTAINERS                                   |   5 +-
+ drivers/pinctrl/airoha/airoha-common.h        |  15 +-
+ drivers/pinctrl/airoha/pinctrl-airoha.c       | 263 ++++++-
+ drivers/pinctrl/airoha/pinctrl-an7581.c       | 629 ++++++++++++---
+ drivers/pinctrl/airoha/pinctrl-an7583.c       | 736 ++++++++++++++----
+ drivers/pinctrl/airoha/pinctrl-en7523.c       | 579 +++++++++++---
+ 9 files changed, 1855 insertions(+), 427 deletions(-)
+
+
+base-commit: 05441d697f7f9a927264f4058cbbc6a03dfcac9d
+-- 
+2.43.0
+

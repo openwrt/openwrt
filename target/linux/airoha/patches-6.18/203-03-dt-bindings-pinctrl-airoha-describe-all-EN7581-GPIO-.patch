@@ -1,0 +1,118 @@
+From ca3c758843eebf4b8db267593b810d6b96916028 Mon Sep 17 00:00:00 2001
+From: Zhengping Zhang <zhengping.zhang@airoha.com>
+Date: Thu, 5 Nov 2026 16:49:01 +0800
+Subject: [PATCH 03/12] dt-bindings: pinctrl: airoha: describe all EN7581 GPIO
+ mux groups
+
+Expand the GPIO mux groups from GPIO47-49 to GPIO0-49 to describe
+explicit GPIO mode selection across the controller's GPIO range.
+Allow multiple GPIO groups in a single mux state.
+
+Correct the PHY LED pin groups to match the EN7581 pad assignments:
+LED0 uses GPIO43-46, while LED1 uses GPIO33-35 and GPIO42.
+
+The corresponding driver support is added in subsequent patches.
+
+Signed-off-by: Zhengping Zhang <zhengping.zhang@airoha.com>
+---
+ .../pinctrl/airoha,en7581-pinctrl.yaml        | 28 +++++++++++++------
+ 1 file changed, 19 insertions(+), 9 deletions(-)
+
+diff --git a/Documentation/devicetree/bindings/pinctrl/airoha,en7581-pinctrl.yaml b/Documentation/devicetree/bindings/pinctrl/airoha,en7581-pinctrl.yaml
+index 0cf1826c691fc..fa7b3dc58a3ea 100644
+--- a/Documentation/devicetree/bindings/pinctrl/airoha,en7581-pinctrl.yaml
++++ b/Documentation/devicetree/bindings/pinctrl/airoha,en7581-pinctrl.yaml
+@@ -194,7 +194,17 @@ patternProperties:
+             then:
+               properties:
+                 groups:
+-                  enum: [gpio47, gpio48, gpio49]
++                  items:
++                    enum: [gpio0, gpio1, gpio2, gpio3, gpio4, gpio5, gpio6,
++                           gpio7, gpio8, gpio9, gpio10, gpio11, gpio12, gpio13,
++                           gpio14, gpio15, gpio16, gpio17, gpio18, gpio19, gpio20,
++                           gpio21, gpio22, gpio23, gpio24, gpio25, gpio26, gpio27,
++                           gpio28, gpio29, gpio30, gpio31, gpio32, gpio33, gpio34,
++                           gpio35, gpio36, gpio37, gpio38, gpio39, gpio40, gpio41,
++                           gpio42, gpio43, gpio44, gpio45, gpio46, gpio47, gpio48,
++                           gpio49]
++                  minItems: 1
++                  maxItems: 50
+           - if:
+               properties:
+                 function:
+@@ -225,7 +235,7 @@ patternProperties:
+             then:
+               properties:
+                 groups:
+-                  enum: [gpio33, gpio34, gpio35, gpio42]
++                  enum: [gpio43, gpio44, gpio45, gpio46]
+           - if:
+               properties:
+                 function:
+@@ -233,7 +243,7 @@ patternProperties:
+             then:
+               properties:
+                 groups:
+-                  enum: [gpio33, gpio34, gpio35, gpio42]
++                  enum: [gpio43, gpio44, gpio45, gpio46]
+           - if:
+               properties:
+                 function:
+@@ -241,7 +251,7 @@ patternProperties:
+             then:
+               properties:
+                 groups:
+-                  enum: [gpio33, gpio34, gpio35, gpio42]
++                  enum: [gpio43, gpio44, gpio45, gpio46]
+           - if:
+               properties:
+                 function:
+@@ -249,7 +259,7 @@ patternProperties:
+             then:
+               properties:
+                 groups:
+-                  enum: [gpio33, gpio34, gpio35, gpio42]
++                  enum: [gpio43, gpio44, gpio45, gpio46]
+           - if:
+               properties:
+                 function:
+@@ -257,7 +267,7 @@ patternProperties:
+             then:
+               properties:
+                 groups:
+-                  enum: [gpio43, gpio44, gpio45, gpio46]
++                  enum: [gpio33, gpio34, gpio35, gpio42]
+           - if:
+               properties:
+                 function:
+@@ -265,7 +275,7 @@ patternProperties:
+             then:
+               properties:
+                 groups:
+-                  enum: [gpio43, gpio44, gpio45, gpio46]
++                  enum: [gpio33, gpio34, gpio35, gpio42]
+           - if:
+               properties:
+                 function:
+@@ -273,7 +283,7 @@ patternProperties:
+             then:
+               properties:
+                 groups:
+-                  enum: [gpio43, gpio44, gpio45, gpio46]
++                  enum: [gpio33, gpio34, gpio35, gpio42]
+           - if:
+               properties:
+                 function:
+@@ -281,7 +291,7 @@ patternProperties:
+             then:
+               properties:
+                 groups:
+-                  enum: [gpio43, gpio44, gpio45, gpio46]
++                  enum: [gpio33, gpio34, gpio35, gpio42]
+ 
+         additionalProperties: false
+ 
+-- 
+2.43.0
+
