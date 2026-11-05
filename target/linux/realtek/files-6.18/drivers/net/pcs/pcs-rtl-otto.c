@@ -312,6 +312,8 @@ enum rtpcs_page {
 #define WDIG_REG20			0x14
 #define  RTL93XX_RX_IDLE_EVEN_LANE	BIT(0)
 #define  RTL93XX_RX_IDLE_ODD_LANE	BIT(1)
+#define  RTL930X_CLK_READY_EVEN_LANE	BIT(4)
+#define  RTL930X_CLK_READY_ODD_LANE	BIT(5)
 #define  RTL93XX_RXEQ_COEF_LEQ_GRAY	GENMASK(7, 3)
 #define  RTL93XX_RXEQ_COEF_TAPX		GENMASK(5, 0)
 #define  RTL930X_RXEQ_COEF_DCVS		GENMASK(4, 0)
@@ -2326,7 +2328,8 @@ static int rtpcs_930x_sds_reset_cmu(struct rtpcs_serdes *sds, enum rtpcs_sds_pll
 static int rtpcs_930x_sds_wait_clock_ready(struct rtpcs_serdes *sds)
 {
 	struct rtpcs_serdes *even_sds = rtpcs_sds_get_even(sds);
-	int i, ready, ret, ready_cnt = 0, bit = (sds == even_sds) ? 4 : 5;
+	int i, ready, ret, ready_cnt = 0;
+	u16 clk_ready_mask;
 
 	/*
 	 * While reconfiguring a SerDes it might take some time until its clock is in sync with
@@ -2334,6 +2337,8 @@ static int rtpcs_930x_sds_wait_clock_ready(struct rtpcs_serdes *sds)
 	 * GPL sources it is enough to verify that 3 consecutive clock ready checks say "ok".
 	 */
 
+	clk_ready_mask = (sds == even_sds) ? RTL930X_CLK_READY_EVEN_LANE :
+					     RTL930X_CLK_READY_ODD_LANE;
 	for (i = 0; i < 20; i++) {
 		usleep_range(10000, 15000);
 
@@ -2342,11 +2347,11 @@ static int rtpcs_930x_sds_wait_clock_ready(struct rtpcs_serdes *sds)
 		if (ret)
 			return ret;
 
-		ready = rtpcs_sds_read_bits(even_sds, PAGE_WDIG, 0x14, bit, bit);
+		ready = rtpcs_sds_read(even_sds, PAGE_WDIG, WDIG_REG20);
 		if (ready < 0)
 			return ready;
 
-		ready_cnt = ready ? ready_cnt + 1 : 0;
+		ready_cnt = (ready & clk_ready_mask) ? ready_cnt + 1 : 0;
 		if (ready_cnt >= 3)
 			return 0;
 	}
