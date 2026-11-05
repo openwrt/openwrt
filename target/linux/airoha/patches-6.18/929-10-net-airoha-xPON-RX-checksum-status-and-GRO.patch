@@ -1,0 +1,86 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Lukasz M <lukasz1992m+openwrt@gmail.com>
+Date: Sat, 31 Oct 2026 12:00:00 +0100
+Subject: [PATCH] net airoha xPON RX checksum status and GRO
+
+The xPON client got its downstream frames with ip_summed CHECKSUM_NONE
+and no way into GRO: the stack checked every checksum again and passed
+every segment through the VLAN, PPPoE, conntrack and forwarding path on
+its own.
+
+Hand the client what the GDM found in RX message word 1 (IP4/IP4F,
+L4_VALID/L4F): csum_ok only when the L4 checksum was checked and both it
+and an IPv4 header checksum are good, so a frame the GDM did not parse
+(e.g. beyond a header it does not know) stays unchecked.  Hand it the
+NAPI the frame came from as well, so it can use napi_gro_receive(); the
+GRO list is flushed at the end of the same poll.
+
+Signed-off-by: Lukasz M <lukasz1992m+openwrt@gmail.com>
+---
+--- a/drivers/net/ethernet/airoha/airoha_eth.c
++++ b/drivers/net/ethernet/airoha/airoha_eth.c
+@@ -44,7 +44,8 @@
+ 
+ static struct airoha_gdm_dev *airoha_xpon_gdm_dev(struct airoha_qdma *qdma);
+ static bool airoha_xpon_owns_netdev(struct net_device *netdev);
+-static bool airoha_xpon_deliver(struct sk_buff *skb, u32 msg0, u32 msg1);
++static bool airoha_xpon_deliver(struct sk_buff *skb, u32 msg0, u32 msg1,
++				struct napi_struct *napi);
+ 
+ u32 airoha_rr(void __iomem *base, u32 offset)
+ {
+@@ -1138,7 +1139,8 @@ static int airoha_qdma_rx_process(struct
+ 
+ 		if (airoha_xpon_deliver(q->skb,
+ 					le32_to_cpu(READ_ONCE(desc->msg0)),
+-					le32_to_cpu(READ_ONCE(desc->msg1)))) {
++					le32_to_cpu(READ_ONCE(desc->msg1)),
++					&q->napi)) {
+ 			done++;
+ 			q->skb = NULL;
+ 			continue;
+@@ -4188,8 +4190,10 @@ static void airoha_xpon_rx_ppe(struct ai
+ 	}
+ }
+ 
+-static bool airoha_xpon_deliver(struct sk_buff *skb, u32 msg0, u32 msg1)
++static bool airoha_xpon_deliver(struct sk_buff *skb, u32 msg0, u32 msg1,
++				struct napi_struct *napi)
+ {
++	bool ip4_bad, l4_checked;
+ 	void (*rx)(void *priv, struct sk_buff *skb,
+ 		   const struct airoha_xpon_rx_info *info);
+ 	struct airoha_xpon_rx_info info;
+@@ -4217,6 +4221,13 @@ static bool airoha_xpon_deliver(struct s
+ 	info.channel = FIELD_GET(QDMA_ETH_RXMSG_CHAN_MASK, msg0);
+ 	info.oam = !!(msg0 & QDMA_ETH_RXMSG_OAM_MASK);
+ 	info.crc_err = !!(msg0 & QDMA_ETH_RXMSG_CRCER_MASK);
++	ip4_bad = (msg1 & QDMA_ETH_RXMSG_IP4_MASK) &&
++		  (msg1 & QDMA_ETH_RXMSG_IP4F_MASK);
++	l4_checked = !!(msg1 & QDMA_ETH_RXMSG_L4_VALID_MASK);
++	info.csum_bad = ip4_bad ||
++			(l4_checked && (msg1 & QDMA_ETH_RXMSG_L4F_MASK));
++	info.csum_ok = l4_checked && !info.csum_bad;
++	info.napi = napi;
+ 	if (eth && !info.oam)
+ 		airoha_xpon_rx_ppe(eth, skb, msg1);
+ 	rx(priv, skb, &info);
+--- a/include/linux/soc/airoha/airoha_xpon.h
++++ b/include/linux/soc/airoha/airoha_xpon.h
+@@ -42,6 +42,16 @@ struct airoha_xpon_rx_info {
+ 	u8 channel;
+ 	bool oam;
+ 	bool crc_err;
++	/*
++	 * Checksums as the GDM parsed the frame (RX message word 1):
++	 * @csum_ok the L4 checksum (and the IPv4 header one) were checked
++	 * and are good, @csum_bad one of them was checked and is wrong;
++	 * neither: not checked (header the GDM does not parse).
++	 */
++	bool csum_ok;
++	bool csum_bad;
++	/* NAPI the frame came from, for napi_gro_receive() */
++	struct napi_struct *napi;
+ };
+ 
+ /**
