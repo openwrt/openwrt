@@ -611,6 +611,23 @@ endef
 
 $(eval $(call KernelPackage,drm-dw-hdmi))
 
+define KernelPackage/drm-dw-hdmi-i2s-audio
+  SUBMENU:=$(VIDEO_MENU)
+  TITLE:=Synopsys DesignWare HDMI I2S audio interface
+  DEPENDS:=+kmod-drm-dw-hdmi +kmod-sound-soc-hdmi-codec
+  KCONFIG:=CONFIG_DRM_DW_HDMI_I2S_AUDIO
+  FILES:=$(LINUX_DIR)/drivers/gpu/drm/bridge/synopsys/dw-hdmi-i2s-audio.ko
+  AUTOLOAD:=$(call AutoProbe,dw-hdmi-i2s-audio)
+endef
+
+define KernelPackage/drm-dw-hdmi-i2s-audio/description
+  I2S audio interface of the Synopsys DesignWare HDMI transmitter, which
+  plays the audio an I2S controller of the SoC sends, as on RK3288,
+  RK3399 and RK3568.
+endef
+
+$(eval $(call KernelPackage,drm-dw-hdmi-i2s-audio))
+
 define KernelPackage/drm-dw-mipi-dsi
   SUBMENU:=$(VIDEO_MENU)
   TITLE:=Synopsys DesignWare MIPI DSI bridge support
