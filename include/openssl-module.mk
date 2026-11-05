@@ -22,11 +22,13 @@ endef
 # 2 = module name
 # 3 = directory to save .so file
 # 4 = [ package name, defaults to libopenssl-$(2) ]
+# 5 = [ initial value of the 'enabled' UCI option, defaults to 1 ]
 define Package/openssl/add-module
   $(eval MOD_TYPE:=$(1))
   $(eval MOD_NAME:=$(2))
   $(eval MOD_DIR:=$(3))
   $(eval OSSL_PKG:=$(if $(4),$(4),libopenssl-$(MOD_NAME)))
+  $(eval MOD_ENABLED:=$(if $(5),$(5),1))
   $(info Package/openssl/add-module 1='$(1)'; 2='$(2)'; 3='$(3)' 4='$(4)')
   $(info MOD_TYPE='$(MOD_TYPE)'; MOD_NAME='$(MOD_NAME)'; MOD_DIR='$(MOD_DIR)' OSSL_PKG='$(OSSL_PKG)')
   Package/$(OSSL_PKG)/conffiles:=/etc/ssl/modules.cnf.d/$(MOD_NAME).cnf
@@ -50,7 +52,7 @@ OPENSSL_UCI="$$$${IPKG_INSTROOT}/etc/config/openssl"
 cat << EOF >> "$$$${OPENSSL_UCI}"
 
 config $(MOD_TYPE) '$(MOD_NAME)'
-	option enabled '1'
+	option enabled '$(MOD_ENABLED)'
 EOF
 
 [ -n "$$$${IPKG_INSTROOT}" ] || /etc/init.d/openssl reload
@@ -68,8 +70,9 @@ endef
 
 # 1 = engine name
 # 2 - package name, defaults to libopenssl-$(1)
+# 3 = [ initial value of the 'enabled' UCI option, defaults to 1 ]
 define Package/openssl/add-engine
-  $(call Package/openssl/add-module,engine,$(1),/usr/lib/$(ENGINES_DIR),$(2))
+  $(call Package/openssl/add-module,engine,$(1),/usr/lib/$(ENGINES_DIR),$(2),$(3))
 endef
 
 # 1 = provider name
