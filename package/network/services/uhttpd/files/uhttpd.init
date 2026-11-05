@@ -164,6 +164,7 @@ start_instance()
 	append_arg "$cfg" tcp_keepalive "-A"
 	append_arg "$cfg" error_page "-E"
 	append_arg "$cfg" max_requests "-n" 3
+	append_arg "$cfg" max_requests_per_source "-W"
 	append_arg "$cfg" max_connections "-N"
 
 	append_bool "$cfg" no_ubusauth "-a" 0
