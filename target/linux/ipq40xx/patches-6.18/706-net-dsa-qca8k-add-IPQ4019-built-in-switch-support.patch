@@ -58,7 +58,7 @@ Signed-off-by: Robert Marko <robert.marko@sartura.hr>
 +obj-$(CONFIG_NET_DSA_QCA8K_IPQ4019)	+= qca8k-ipq4019.o qca8k-common.o
 --- a/drivers/net/dsa/qca/qca8k-common.c
 +++ b/drivers/net/dsa/qca/qca8k-common.c
-@@ -442,7 +442,7 @@ static int qca8k_vlan_del(struct qca8k_p
+@@ -444,7 +444,7 @@ static int qca8k_vlan_del(struct qca8k_p
  
  	/* Check if we're the last member to be removed */
  	del = true;
@@ -67,7 +67,7 @@ Signed-off-by: Robert Marko <robert.marko@sartura.hr>
  		mask = QCA8K_VTU_FUNC0_EG_MODE_PORT_NOT(i);
  
  		if ((reg & mask) != mask) {
-@@ -646,7 +646,7 @@ static int qca8k_update_port_member(stru
+@@ -673,7 +673,7 @@ static int qca8k_update_port_member(stru
  	u32 port_mask = BIT(dp->cpu_dp->index);
  	int i, ret;
  
@@ -1061,7 +1061,7 @@ Signed-off-by: Robert Marko <robert.marko@sartura.hr>
  
  #define QCA8K_QCA832X_MIB_COUNT				39
  #define QCA8K_QCA833X_MIB_COUNT				41
-@@ -266,6 +270,7 @@
+@@ -269,6 +273,7 @@
  #define   QCA8K_PORT_LOOKUP_STATE_LEARNING		QCA8K_PORT_LOOKUP_STATE(0x3)
  #define   QCA8K_PORT_LOOKUP_STATE_FORWARD		QCA8K_PORT_LOOKUP_STATE(0x4)
  #define   QCA8K_PORT_LOOKUP_LEARN			BIT(20)
@@ -1069,7 +1069,7 @@ Signed-off-by: Robert Marko <robert.marko@sartura.hr>
  #define   QCA8K_PORT_LOOKUP_ING_MIRROR_EN		BIT(25)
  
  #define QCA8K_REG_GOL_TRUNK_CTRL0			0x700
-@@ -342,6 +347,53 @@
+@@ -345,6 +350,53 @@
  #define MII_ATH_MMD_ADDR				0x0d
  #define MII_ATH_MMD_DATA				0x0e
  
@@ -1123,10 +1123,10 @@ Signed-off-by: Robert Marko <robert.marko@sartura.hr>
  enum {
  	QCA8K_PORT_SPEED_10M = 0,
  	QCA8K_PORT_SPEED_100M = 1,
-@@ -469,6 +521,10 @@ struct qca8k_priv {
- 	struct qca8k_pcs pcs_port_6;
+@@ -540,6 +592,10 @@ struct qca8k_priv {
  	const struct qca8k_match_data *info;
  	struct qca8k_led ports_led[QCA8K_LED_COUNT];
+ 	struct qca8k_mib_stats mib_stats;
 +	/* IPQ4019 specific */
 +	struct regmap *psgmii;
 +	struct phy_device *psgmii_ethphy;
