@@ -1,0 +1,18 @@
+#!/bin/sh
+# SPDX-License-Identifier: GPL-2.0
+#
+# Open eth1, the frame engine MAC pon0 rides on, as soon as pon0 appears:
+# opening it brings the PON SerDes up, and a pon0 that netifd opens before
+# that stays in O1.  This runs at the registration of pon0, which normally
+# comes before netifd starts; procd runs hotplug scripts asynchronously, so
+# that is the usual order, not a guaranteed one.
+#
+# Left up for good: taking eth1 down would drop the SerDes under a running
+# link.
+
+[ "$ACTION" = add ] || exit 0
+[ "$DEVICENAME" = "pon0" ] || exit 0
+
+ifconfig eth1 up
+
+exit 0
