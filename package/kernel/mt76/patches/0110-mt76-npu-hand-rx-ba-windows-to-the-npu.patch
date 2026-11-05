@@ -1,0 +1,231 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Lukasz M <lukasz1992m+openwrt@gmail.com>
+Date: Sat, 14 Nov 2026 12:00:00 +0100
+Subject: [PATCH] mt7915 npu hand the mt7916 rx ba windows to the npu
+
+The MT7916 has no hardware reorder, unlike the mt799x macs: its
+firmware keeps the ba windows in the wtbl and marks old and repeated
+mpdus in the rxd, but it does not hold out-of-order mpdus.  The NPU
+does: once the host tells it the window of a (wcid, tid) pair, the npu
+buffers the mpdus arriving behind a gap in its ba node tables and only
+hands frames on to the host once they are in order.
+
+A window is one mailbox word packed the way wifi_mail.h packs it:
+(sn << 20) | (win_size << 11) | (wcid << 3) | tid.  A window with a
+zero win_size and a zero ssn releases the frames held so far and closes
+the window of just that tid (rx ba stop), SET_WAIT_DEL_STA releases
+every window of a wcid when the station goes away.
+
+The npu reads the wcid out of the rxd as 8 bits, so its windows reach
+no further than wcid 255.  While the npu is there the station wcid
+allocation stops at 255 as well: a further entity gets an honest
+-ENOSPC instead of a silently aliased rxd wcid, and every station
+window fits the npu.  wcid 0 is the broadcast wcid: the npu drops its
+frames and it never has a window, no offload is sent for it.  When the
+npu is not there the limit does not apply and the full station pool is
+used.
+While the npu is there the wed wds wcid range (256..272) is left
+unused as well: a 4addr station keeps a low wcid and its window.
+mac80211 keeps no reorder buffer for mt76 (SUPPORTS_REORDERING_BUFFER
+is set), so the reorder lives either in the hardware below or in the
+mt76 buffer.  mt76_rx_poll_complete picks per frame: the wed reorders
+when it has rx capability, the npu reorders the frames it can see, and
+the mt76 buffer takes the rest, so the fallback to cpu keeps working.
+If the npu cannot take a window of a wcid it covers, the addba is
+failed and the peer does not aggregate.  Only the mt7916 is told about
+windows; nothing changes for the other chips.  The flush timeouts stay at the
+firmware defaults (100 ms), the same as the mac80211 reorder timeout,
+so the reorder latency does not move until the windows are seen
+working.
+
+Signed-off-by: Lukasz M <lukasz1992m+openwrt@gmail.com>
+---
+--- a/mac80211.c
++++ b/mac80211.c
+@@ -1659,9 +1659,21 @@
+ 	__skb_queue_head_init(&frames);
+ 
+ 	while ((skb = __skb_dequeue(&dev->rx_skb[q])) != NULL) {
++		struct mt76_rx_status *status = (struct mt76_rx_status *)skb->cb;
++		bool hw_reorder;
++
+ 		mt76_check_sta(dev, skb);
+-		if (mtk_wed_device_active(&dev->mmio.wed) ||
+-		    mt76_npu_device_active(dev))
++		/* reorder in the hardware only what the hardware can
++		 * see: the airoha wed is tx only (no rx capa) and the
++		 * npu reads the wcid out of the rxd as 8 bits, so its
++		 * windows reach no further than wcid 255.  the frames
++		 * of larger wcids, and every frame when the npu is
++		 * not there, stay with the mt76 reorder buffer. */
++		hw_reorder = (mtk_wed_device_active(&dev->mmio.wed) &&
++			      mtk_wed_get_rx_capa(&dev->mmio.wed)) ||
++			     (mt76_npu_device_active(dev) &&
++			      (!status->wcid || status->wcid->idx < 256));
++		if (hw_reorder)
+ 			__skb_queue_tail(&frames, skb);
+ 		else
+ 			mt76_rx_aggr_reorder(skb, &frames);
+--- a/mt7915/mt7915.h
++++ b/mt7915/mt7915.h
+@@ -702,6 +702,9 @@
+ int mt7915_npu_hw_init(struct mt7915_dev *dev);
+ bool mt7915_npu_rx_setup(struct mt7915_dev *dev);
+ void mt7915_npu_stop(struct mt7915_dev *dev);
++int mt7916_npu_set_rx_ba(struct mt7915_dev *dev, int band, u16 wcid, u8 tid,
++			 u16 win_size, u16 ssn);
++int mt7916_npu_del_sta(struct mt7915_dev *dev, int band, u16 wcid);
+ #else
+ static inline int __mt7915_npu_hw_init(struct mt7915_dev *dev)
+ {
+@@ -718,6 +721,17 @@
+ static inline void mt7915_npu_stop(struct mt7915_dev *dev)
+ {
+ }
++static inline int mt7916_npu_set_rx_ba(struct mt7915_dev *dev, int band,
++				       u16 wcid, u8 tid, u16 win_size,
++				       u16 ssn)
++{
++	return -EOPNOTSUPP;
++}
++static inline int mt7916_npu_del_sta(struct mt7915_dev *dev, int band,
++				     u16 wcid)
++{
++	return -EOPNOTSUPP;
++}
+ #endif
+ 
+ #endif
+--- a/mt7915/npu.c
++++ b/mt7915/npu.c
+@@ -250,3 +250,64 @@
+ 	if (err)
+ 		dev_warn(dev->mt76.dev, "NPU reset failed: %d\n", err);
+ }
++
++/*
++ * The MT7916 firmware has no hardware reorder: it marks old and repeated
++ * mpdus in the rxd, but only the NPU holds the mpdus arriving behind a
++ * gap.  wifi_mail.h packs the window into one word,
++ * (sn << 20) | (win_size << 11) | (wcid << 3) | tid; a zero win_size
++ * with a zero ssn releases the frames held so far and closes the window
++ * of just that tid.  The npu reads the wcid out of the rxd as 8 bits, so
++ * nothing above 255 can be addressed, and wcid 0 is the broadcast wcid
++ * whose frames the npu drops.
++ */
++#define MT7916_NPU_BA_TID	GENMASK(2, 0)
++#define MT7916_NPU_BA_WCID	GENMASK(10, 3)
++#define MT7916_NPU_BA_WIN_SIZE	GENMASK(19, 11)
++#define MT7916_NPU_BA_SSN	GENMASK(31, 20)
++
++int mt7916_npu_set_rx_ba(struct mt7915_dev *dev, int band, u16 wcid, u8 tid,
++			 u16 win_size, u16 ssn)
++{
++	struct airoha_npu *npu;
++	u32 info;
++
++	if (!is_mt7916(&dev->mt76))
++		return -EOPNOTSUPP;
++
++	if (wcid == 0 || wcid > 255)
++		return -EINVAL;
++
++	npu = rcu_dereference_protected(dev->mt76.mmio.npu, &dev->mt76.mutex);
++	if (!npu)
++		return -ENODEV;
++
++	info = FIELD_PREP(MT7916_NPU_BA_SSN, ssn) |
++	       FIELD_PREP(MT7916_NPU_BA_WIN_SIZE, win_size) |
++	       FIELD_PREP(MT7916_NPU_BA_WCID, wcid) |
++	       FIELD_PREP(MT7916_NPU_BA_TID, tid);
++
++	return airoha_npu_wlan_send_msg(npu, band,
++					WLAN_FUNC_SET_WAIT_BA_WIN_SIZE,
++					&info, sizeof(info), GFP_KERNEL);
++}
++
++/* release every ba window the station holds in the npu */
++int mt7916_npu_del_sta(struct mt7915_dev *dev, int band, u16 wcid)
++{
++	struct airoha_npu *npu;
++	u32 info = wcid;
++
++	if (!is_mt7916(&dev->mt76))
++		return -EOPNOTSUPP;
++
++	if (wcid == 0 || wcid > 255)
++		return -EINVAL;
++
++	npu = rcu_dereference_protected(dev->mt76.mmio.npu, &dev->mt76.mutex);
++	if (!npu)
++		return -ENODEV;
++
++	return airoha_npu_wlan_send_msg(npu, band, WLAN_FUNC_SET_WAIT_DEL_STA,
++					&info, sizeof(info), GFP_KERNEL);
++}
+--- a/mt7915/main.c
++++ b/mt7915/main.c
+@@ -765,9 +765,15 @@
+ 
+ 	if (mtk_wed_device_active(&dev->mt76.mmio.wed) &&
+ 	    !is_mt7915(&dev->mt76) &&
++	    !mt76_npu_device_active(&dev->mt76) &&
+ 	    test_bit(MT_WCID_FLAG_4ADDR, &msta->wcid.flags))
+ 		idx = __mt76_wcid_alloc(mdev->wcid_mask, MT76_WED_WDS_MIN,
+ 					MT76_WED_WDS_MAX);
++	else if (mt76_npu_device_active(&dev->mt76))
++		/* the npu reads the wcid out of the rxd as 8 bits: keep
++		 * every station within 255 so every window fits the npu
++		 * and no rxd wcid aliases onto another station */
++		idx = mt76_wcid_alloc(mdev->wcid_mask, 256);
+ 	else
+ 		idx = mt76_wcid_alloc(mdev->wcid_mask, MT7915_WTBL_STA);
+ 
+@@ -919,6 +925,9 @@
+ 	mt7915_mac_wtbl_update(dev, msta->wcid.idx,
+ 			       MT_WTBL_UPDATE_ADM_COUNT_CLEAR);
+ 
++	/* let the npu release the ba windows of the station */
++	mt7916_npu_del_sta(dev, msta->wcid.phy_idx, msta->wcid.idx);
++
+ 	spin_lock_bh(&mdev->sta_poll_lock);
+ 	if (!list_empty(&msta->wcid.poll_list))
+ 		list_del_init(&msta->wcid.poll_list);
+@@ -994,10 +1003,37 @@
+ 		mt76_rx_aggr_start(&dev->mt76, &msta->wcid, tid, ssn,
+ 				   params->buf_size);
+ 		ret = mt7915_mcu_add_rx_ba(dev, params, true);
++		if (ret)
++			break;
++		/* stations stay within 255 while the npu is there, so
++		 * this normally hands every window over; the wcid guard
++		 * only keeps an unexpected larger wcid off the npu,
++		 * where it could alias onto another station, and every
++		 * session when the npu is not there stays with the
++		 * mt76 reorder buffer armed above */
++		if (!is_mt7916(&dev->mt76) ||
++		    !mt76_npu_device_active(&dev->mt76) ||
++		    msta->wcid.idx > 255)
++			break;
++		/* for those wcids the host does not reorder while the
++		 * npu is active: if the npu cannot take the window,
++		 * fail the addba so the peer does not aggregate into a
++		 * pipe nobody reorders */
++		ret = mt7916_npu_set_rx_ba(dev, msta->wcid.phy_idx,
++					   msta->wcid.idx, tid,
++					   params->buf_size, ssn);
++		if (ret) {
++			mt76_rx_aggr_stop(&dev->mt76, &msta->wcid, tid);
++			mt7915_mcu_add_rx_ba(dev, params, false);
++		}
+ 		break;
+ 	case IEEE80211_AMPDU_RX_STOP:
+ 		mt76_rx_aggr_stop(&dev->mt76, &msta->wcid, tid);
+ 		ret = mt7915_mcu_add_rx_ba(dev, params, false);
++		/* win_size 0 with ssn 0 releases the frames held so far
++		 * and closes the window of just this tid */
++		mt7916_npu_set_rx_ba(dev, msta->wcid.phy_idx,
++				     msta->wcid.idx, tid, 0, 0);
+ 		break;
+ 	case IEEE80211_AMPDU_TX_OPERATIONAL:
+ 		mtxq->aggr = true;

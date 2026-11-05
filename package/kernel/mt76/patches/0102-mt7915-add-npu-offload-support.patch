@@ -1,0 +1,525 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Lukasz M <lukasz1992m+openwrt@gmail.com>
+Date: Sat, 31 Oct 2026 12:00:00 +0100
+Subject: [PATCH] mt7915 add npu offload support
+
+Add support for offloading WiFi RX packet processing to the Kite NPU
+(RV32) on Airoha AN7552/AN7563 SoCs paired with MT7916 PCIe wireless chips.
+
+The NPU is given the registers of the band's own rx ring (ring base +
+ring id * MT_RING_SIZE), not the start of the rx ring block, and the NPU
+version request is optional (the MT7916 firmware does not have it).
+
+Frames handed over by the NPU are trimmed to the length in their RXD
+(pskb_trim(): a frame of several segments comes with frags).
+
+When the NPU rx queues cannot be had, or the NPU does not answer, the
+driver says "... Fallback to CPU", drops the NPU and gives the data rx
+rings and their interrupts back to the host instead of failing the probe.
+The chip's rings are pointed at the NPU's only as the last step, so until
+then they still hold the host's buffers.
+
+Signed-off-by: Lukasz M <lukasz1992m+openwrt@gmail.com>
+---
+--- a/mt7915/Makefile
++++ b/mt7915/Makefile
+@@ -9,3 +9,4 @@ mt7915e-y := pci.o init.o dma.o eeprom.o
+ mt7915e-$(CONFIG_NL80211_TESTMODE) += testmode.o
+ mt7915e-$(CONFIG_MT798X_WMAC) += soc.o
+ mt7915e-$(CONFIG_DEV_COREDUMP) += coredump.o
++mt7915e-$(CONFIG_MT76_NPU) += npu.o
+--- a/mt7915/dma.c
++++ b/mt7915/dma.c
+@@ -104,14 +104,25 @@ static void mt7915_dma_config(struct mt7
+ 			TXQ_CONFIG(1, WFDMA0, MT_INT_WED_TX_DONE_BAND1,
+ 				   MT7915_TXQ_BAND1);
+ 		} else {
+-			RXQ_CONFIG(MT_RXQ_MAIN, WFDMA0, MT_INT_RX_DONE_BAND0_MT7916,
+-				   MT7916_RXQ_BAND0);
+-			RXQ_CONFIG(MT_RXQ_MCU_WA, WFDMA0, MT_INT_RX_DONE_WA,
+-				   MT7916_RXQ_MCU_WA);
+-			RXQ_CONFIG(MT_RXQ_BAND1, WFDMA0, MT_INT_RX_DONE_BAND1_MT7916,
+-				   MT7916_RXQ_BAND1);
+-			RXQ_CONFIG(MT_RXQ_MAIN_WA, WFDMA0, MT_INT_RX_DONE_WA_MAIN_MT7916,
+-				   MT7916_RXQ_MCU_WA_MAIN);
++			if (mt76_npu_device_active(&dev->mt76)) {
++				RXQ_CONFIG(MT_RXQ_MAIN, WFDMA0, 0,
++					   MT7916_RXQ_BAND0);
++				RXQ_CONFIG(MT_RXQ_MCU_WA, WFDMA0, MT_INT_RX_DONE_WA,
++					   MT7916_RXQ_MCU_WA);
++				RXQ_CONFIG(MT_RXQ_BAND1, WFDMA0, 0,
++					   MT7916_RXQ_BAND1);
++				RXQ_CONFIG(MT_RXQ_MAIN_WA, WFDMA0, MT_INT_RX_DONE_WA_MAIN_MT7916,
++					   MT7916_RXQ_MCU_WA_MAIN);
++			} else {
++				RXQ_CONFIG(MT_RXQ_MAIN, WFDMA0, MT_INT_RX_DONE_BAND0_MT7916,
++					   MT7916_RXQ_BAND0);
++				RXQ_CONFIG(MT_RXQ_MCU_WA, WFDMA0, MT_INT_RX_DONE_WA,
++					   MT7916_RXQ_MCU_WA);
++				RXQ_CONFIG(MT_RXQ_BAND1, WFDMA0, MT_INT_RX_DONE_BAND1_MT7916,
++					   MT7916_RXQ_BAND1);
++				RXQ_CONFIG(MT_RXQ_MAIN_WA, WFDMA0, MT_INT_RX_DONE_WA_MAIN_MT7916,
++					   MT7916_RXQ_MCU_WA_MAIN);
++			}
+ 			TXQ_CONFIG(0, WFDMA0, MT_INT_TX_DONE_BAND0,
+ 				   MT7915_TXQ_BAND0);
+ 			TXQ_CONFIG(1, WFDMA0, MT_INT_TX_DONE_BAND1,
+@@ -405,6 +416,21 @@ static int mt7915_dma_enable(struct mt79
+ 	return mt7915_dma_start(dev, reset, true);
+ }
+ 
++/* The NPU was dropped: the data rx rings and their interrupts are the host's */
++void mt7915_dma_npu_fallback(struct mt7915_dev *dev)
++{
++	u32 mask = 0;
++
++	mt7915_dma_config(dev);
++
++	if (dev->mt76.q_rx[MT_RXQ_MAIN].ndesc)
++		mask |= MT_INT_RX(MT_RXQ_MAIN);
++	if (dev->mt76.q_rx[MT_RXQ_BAND1].ndesc)
++		mask |= MT_INT_RX(MT_RXQ_BAND1);
++	if (mask)
++		mt7915_irq_enable(dev, mask);
++}
++
+ int mt7915_dma_init(struct mt7915_dev *dev, struct mt7915_phy *phy2)
+ {
+ 	struct mt76_dev *mdev = &dev->mt76;
+@@ -578,6 +604,14 @@ int mt7915_dma_init(struct mt7915_dev *d
+ 	if (ret < 0)
+ 		return ret;
+ 
++	/*
++	 * After mt76_init_queues(): the NPU queues need its napi_dev and must
++	 * not get the generic rx NAPI.  If they cannot be had the NPU is
++	 * dropped and the data rx rings are the host's again.
++	 */
++	if (mt7915_npu_rx_setup(dev))
++		mt7915_dma_config(dev);
++
+ 	netif_napi_add_tx(dev->mt76.tx_napi_dev, &dev->mt76.tx_napi,
+ 			  mt7915_poll_tx);
+ 	napi_enable(&dev->mt76.tx_napi);
+--- a/mt7915/init.c
++++ b/mt7915/init.c
+@@ -1328,6 +1328,10 @@ int mt7915_register_device(struct mt7915
+ 
+ 	mt7915_init_wiphy(&dev->phy);
+ 
++	ret = mt7915_npu_hw_init(dev);
++	if (ret)
++		goto stop_hw;
++
+ #ifdef CONFIG_NL80211_TESTMODE
+ 	dev->mt76.test_ops = &mt7915_testmode_ops;
+ #endif
+--- a/mt7915/mac.c
++++ b/mt7915/mac.c
+@@ -536,6 +536,7 @@ mt7915_mac_fill_rx(struct mt7915_dev *de
+ 		status->flag |= RX_FLAG_8023;
+ 		mt7915_wed_check_ppe(dev, &dev->mt76.q_rx[q], msta, skb,
+ 				     *info);
++		mt76_npu_check_ppe(&dev->mt76, skb, *info);
+ 	}
+ 
+ 	if (rxv && mode >= MT_PHY_TYPE_HE_SU && !(status->flag & RX_FLAG_8023))
+@@ -1066,6 +1067,19 @@ void mt7915_queue_rx_skb(struct mt76_dev
+ 
+ 	type = le32_get_bits(rxd[0], MT_RXD0_PKT_TYPE);
+ 
++	/*
++	 * The NPU hands some frames over longer than the frame: the RXD has
++	 * the real length.  The skb can carry segments as frags.
++	 */
++	if (q == MT_RXQ_NPU0 || q == MT_RXQ_NPU1) {
++		u32 len = le32_get_bits(rxd[0], MT_RXD0_LENGTH);
++
++		if (len && len < skb->len && pskb_trim(skb, len)) {
++			dev_kfree_skb(skb);
++			return;
++		}
++	}
++
+ 	switch (type) {
+ 	case PKT_TYPE_TXRX_NOTIFY:
+ 		mt7915_mac_tx_free(dev, skb->data, skb->len);
+@@ -1570,6 +1584,8 @@ void mt7915_mac_reset_work(struct work_s
+ 	/* enable DMA Tx/Rx and interrupt */
+ 	mt7915_dma_start(dev, false, false);
+ 
++	__mt7915_npu_hw_init(dev);
++
+ 	clear_bit(MT76_MCU_RESET, &dev->mphy.state);
+ 	clear_bit(MT76_RESET, &dev->mphy.state);
+ 	if (phy2)
+--- a/mt7915/main.c
++++ b/mt7915/main.c
+@@ -1840,6 +1840,27 @@ mt7915_reconfig_complete(struct ieee8021
+ 				     MT7915_WATCHDOG_TIME);
+ }
+ 
++#if defined(CONFIG_NET_MEDIATEK_SOC_WED) || defined(CONFIG_MT76_NPU)
++static int
++mt7915_net_setup_tc(struct ieee80211_hw *hw, struct ieee80211_vif *vif,
++		    struct net_device *netdev, enum tc_setup_type type,
++		    void *type_data)
++{
++	struct mt7915_dev *dev = mt7915_hw_dev(hw);
++	struct mtk_wed_device *wed = &dev->mt76.mmio.wed;
++
++	/*
++	 * The ingress block of the wlan netdev belongs to whoever receives
++	 * Wi-Fi: a WED with RX, else the NPU.  A TX-only WED (MT7916 on
++	 * AN7552) has no RX hook and would only refuse it.
++	 */
++	if (mtk_wed_device_active(wed) && mtk_wed_get_rx_capa(wed))
++		return mt76_wed_net_setup_tc(hw, vif, netdev, type, type_data);
++
++	return mt76_npu_net_setup_tc(hw, vif, netdev, type, type_data);
++}
++#endif
++
+ const struct ieee80211_ops mt7915_ops = {
+ 	.add_chanctx = ieee80211_emulate_add_chanctx,
+ 	.remove_chanctx = ieee80211_emulate_remove_chanctx,
+@@ -1896,7 +1917,9 @@ const struct ieee80211_ops mt7915_ops =
+ 	.set_radar_background = mt7915_set_radar_background,
+ #ifdef CONFIG_NET_MEDIATEK_SOC_WED
+ 	.net_fill_forward_path = mt7915_net_fill_forward_path,
+-	.net_setup_tc = mt76_wed_net_setup_tc,
++#endif
++#if defined(CONFIG_NET_MEDIATEK_SOC_WED) || defined(CONFIG_MT76_NPU)
++	.net_setup_tc = mt7915_net_setup_tc,
+ #endif
+ 	.reconfig_complete = mt7915_reconfig_complete,
+ };
+--- a/mt7915/mmio.c
++++ b/mt7915/mmio.c
+@@ -819,6 +819,15 @@ static void mt7915_rx_poll_complete(stru
+ {
+ 	struct mt7915_dev *dev = container_of(mdev, struct mt7915_dev, mt76);
+ 
++	if (q == MT_RXQ_NPU0 || q == MT_RXQ_NPU1) {
++		struct airoha_npu *npu;
++
++		npu = rcu_dereference(mdev->mmio.npu);
++		if (npu)
++			airoha_npu_wlan_enable_irq(npu, q - MT_RXQ_NPU0);
++		return;
++	}
++
+ 	mt7915_irq_enable(dev, MT_INT_RX(q));
+ }
+ 
+--- a/mt7915/mt7915.h
++++ b/mt7915/mt7915.h
+@@ -262,6 +262,9 @@ struct mt7915_dev {
+ 	};
+ 
+ 	struct mt7915_hif *hif2;
++#ifdef CONFIG_MT76_NPU
++	u32 npu_rxd_base[2];
++#endif
+ 	struct mt7915_reg_desc reg;
+ 	u8 q_id[MT7915_MAX_QUEUE];
+ 	u32 q_int_mask[MT7915_MAX_QUEUE];
+@@ -475,6 +478,7 @@ int mt7915_eeprom_get_target_power(struc
+ s8 mt7915_eeprom_get_power_delta(struct mt7915_dev *dev, int band);
+ bool mt7915_eeprom_has_background_radar(struct mt7915_dev *dev);
+ int mt7915_dma_init(struct mt7915_dev *dev, struct mt7915_phy *phy2);
++void mt7915_dma_npu_fallback(struct mt7915_dev *dev);
+ void mt7915_dma_prefetch(struct mt7915_dev *dev);
+ void mt7915_dma_cleanup(struct mt7915_dev *dev);
+ int mt7915_dma_reset(struct mt7915_dev *dev, bool force);
+@@ -670,4 +674,23 @@ void mt7915_sta_add_debugfs(struct ieee8
+ int mt7915_mmio_wed_init(struct mt7915_dev *dev, void *pdev_ptr,
+ 			 bool pci, int *irq);
+ 
++#ifdef CONFIG_MT76_NPU
++int __mt7915_npu_hw_init(struct mt7915_dev *dev);
++int mt7915_npu_hw_init(struct mt7915_dev *dev);
++bool mt7915_npu_rx_setup(struct mt7915_dev *dev);
++#else
++static inline int __mt7915_npu_hw_init(struct mt7915_dev *dev)
++{
++	return 0;
++}
++static inline int mt7915_npu_hw_init(struct mt7915_dev *dev)
++{
++	return 0;
++}
++static inline bool mt7915_npu_rx_setup(struct mt7915_dev *dev)
++{
++	return false;
++}
++#endif
++
+ #endif
+--- /dev/null
++++ b/mt7915/npu.c
+@@ -0,0 +1,234 @@
++// SPDX-License-Identifier: GPL-2.0-only
++/*
++ * Copyright (c) 2026 AIROHA Inc
++ */
++#include <linux/kernel.h>
++#include <linux/soc/airoha/airoha_offload.h>
++
++#include "mt7915.h"
++#include "../dma.h"
++
++#define MT7916_DRIVER_MODEL_D	2
++
++/* The NPU's ring for each band, programmed into the chip's rx data rings */
++static int mt7915_npu_rxd_get(struct mt7915_dev *dev, struct airoha_npu *npu)
++{
++	int err;
++
++	if (!dev->phy.mt76->band_idx) {
++		err = mt76_npu_get_msg(npu, 0, WLAN_FUNC_GET_WAIT_RXDESC_BASE,
++				       &dev->npu_rxd_base[0], GFP_KERNEL);
++		if (err) {
++			dev_warn(dev->mt76.dev,
++				 "failed retrieving NPU wlan rx ring0 addr\n");
++			return err;
++		}
++	}
++
++	if (dev->dbdc_support || dev->phy.mt76->band_idx) {
++		err = mt76_npu_get_msg(npu, 1, WLAN_FUNC_GET_WAIT_RXDESC_BASE,
++				       &dev->npu_rxd_base[1], GFP_KERNEL);
++		if (err) {
++			dev_warn(dev->mt76.dev,
++				 "failed retrieving NPU wlan rx ring1 addr\n");
++			return err;
++		}
++	}
++
++	return 0;
++}
++
++static void mt7915_npu_rxd_set(struct mt7915_dev *dev)
++{
++	if (!dev->phy.mt76->band_idx)
++		writel(dev->npu_rxd_base[0],
++		       &dev->mt76.q_rx[MT_RXQ_MAIN].regs->desc_base);
++
++	if (dev->dbdc_support || dev->phy.mt76->band_idx)
++		writel(dev->npu_rxd_base[1],
++		       &dev->mt76.q_rx[MT_RXQ_BAND1].regs->desc_base);
++}
++
++static int mt7915_npu_offload_init(struct mt7915_dev *dev,
++				   struct airoha_npu *npu)
++{
++	dma_addr_t phy_addr = dev->mt76.mmio.phy_addr;
++	u32 val, dma_addr, port_type = dev->mt76.mmio.npu_type;
++	int err;
++
++	/*
++	 * Informational only, and not every NPU firmware has it: the MT7916
++	 * one answers "func not support".  Say nothing when it is missing.
++	 */
++	if (!mt76_npu_get_msg(npu, 0, WLAN_FUNC_GET_WAIT_NPU_VERSION,
++			      &val, GFP_KERNEL))
++		dev_info(dev->mt76.dev, "NPU version: %0d.%d\n",
++			 (val >> 16) & 0xffff, val & 0xffff);
++
++	/* Set driver model to MT7916_D (2) */
++	err = mt76_npu_send_msg(npu, 0, WLAN_FUNC_SET_WAIT_DRIVER_MODEL,
++				MT7916_DRIVER_MODEL_D, GFP_KERNEL);
++	if (err) {
++		dev_warn(dev->mt76.dev,
++			 "failed setting NPU driver model\n");
++		return err;
++	}
++
++	err = mt76_npu_send_msg(npu, 0, WLAN_FUNC_SET_WAIT_PCIE_PORT_TYPE,
++				dev->hif2 ? port_type : (port_type & 1),
++				GFP_KERNEL);
++	if (err) {
++		dev_warn(dev->mt76.dev,
++			 "failed setting NPU wlan PCIe port type\n");
++		return err;
++	}
++
++	/* Band 0 RX ring base */
++	if (!dev->phy.mt76->band_idx) {
++		err = mt76_npu_send_msg(npu, 0, WLAN_FUNC_SET_WAIT_DESC,
++					MT7915_RX_RING_SIZE, GFP_KERNEL);
++		if (err)
++			return err;
++
++		/*
++		 * The ring's own registers: MT_RXQ_RING_BASE() is the start of
++		 * the RX ring block (ring 0, the MCU WM events), the NPU writes
++		 * the CIDX at +8 of what it is given (as mt76_queue_alloc()).
++		 */
++		dma_addr = phy_addr + MT_RXQ_RING_BASE(MT_RXQ_MAIN) +
++			   MT_RXQ_ID(MT_RXQ_MAIN) * MT_RING_SIZE;
++		err = mt76_npu_send_msg(npu, 0, WLAN_FUNC_SET_WAIT_PCIE_ADDR,
++					dma_addr, GFP_KERNEL);
++		if (err)
++			return err;
++	}
++
++	/* Band 1 RX ring base */
++	if (dev->dbdc_support || dev->phy.mt76->band_idx) {
++		u32 hif1_ofs = dev->hif2 ? MT_WFDMA0_PCIE1(0) - MT_WFDMA0(0) : 0;
++
++		err = mt76_npu_send_msg(npu, 1, WLAN_FUNC_SET_WAIT_DESC,
++					MT7915_RX_RING_SIZE, GFP_KERNEL);
++		if (err)
++			return err;
++
++		dma_addr = phy_addr + MT_RXQ_RING_BASE(MT_RXQ_BAND1) +
++			   MT_RXQ_ID(MT_RXQ_BAND1) * MT_RING_SIZE + hif1_ofs;
++		err = mt76_npu_send_msg(npu, 1, WLAN_FUNC_SET_WAIT_PCIE_ADDR,
++					dma_addr, GFP_KERNEL);
++		if (err)
++			return err;
++	}
++
++	return 0;
++}
++
++static int mt7915_npu_rx_queues_init(struct mt7915_dev *dev)
++{
++	int err;
++
++	err = mt76_npu_rx_queue_init(&dev->mt76,
++				     &dev->mt76.q_rx[MT_RXQ_NPU0]);
++	if (err)
++		return err;
++
++	return mt76_npu_rx_queue_init(&dev->mt76,
++				      &dev->mt76.q_rx[MT_RXQ_NPU1]);
++}
++
++/* Drop the NPU again and leave the device to the host path */
++static void mt7915_npu_disable(struct mt7915_dev *dev)
++{
++	struct mt76_dev *mdev = &dev->mt76;
++	struct airoha_npu *npu = rcu_access_pointer(mdev->mmio.npu);
++	/* the WED, when there is one, has taken dma_dev over already */
++	bool npu_dma = npu && mdev->dma_dev == npu->dev;
++	int i;
++
++	for (i = MT_RXQ_NPU0; i <= MT_RXQ_NPU1; i++) {
++		struct napi_struct *napi = &mdev->napi[i];
++
++		if (test_bit(NAPI_STATE_LISTED, &napi->state)) {
++			napi_disable(napi);
++			netif_napi_del(napi);
++		}
++	}
++
++	mt76_npu_deinit(mdev);
++
++	for (i = MT_RXQ_NPU0; i <= MT_RXQ_NPU1; i++)
++		mdev->q_rx[i].ndesc = 0;
++
++	if (npu_dma)
++		mdev->dma_dev = mdev->dev;
++	mdev->hwrro_mode = MT76_HWRRO_OFF;
++}
++
++/* The NPU rx queues; true when the NPU had to be dropped */
++bool mt7915_npu_rx_setup(struct mt7915_dev *dev)
++{
++	int err;
++
++	if (!mt76_npu_device_active(&dev->mt76))
++		return false;
++
++	err = mt7915_npu_rx_queues_init(dev);
++	if (!err)
++		return false;
++
++	dev_warn(dev->mt76.dev,
++		 "NPU rx queues failed (%d)! Fallback to CPU\n", err);
++	mt7915_npu_disable(dev);
++
++	return true;
++}
++
++/* After a reset: the NPU is told everything again */
++int __mt7915_npu_hw_init(struct mt7915_dev *dev)
++{
++	struct airoha_npu *npu;
++	int i, err;
++
++	npu = rcu_dereference_protected(dev->mt76.mmio.npu, &dev->mt76.mutex);
++	if (!npu)
++		return 0;
++
++	err = mt7915_npu_offload_init(dev, npu);
++	if (err)
++		return err;
++
++	err = mt7915_npu_rxd_get(dev, npu);
++	if (err)
++		return err;
++
++	mt7915_npu_rxd_set(dev);
++
++	for (i = MT_RXQ_NPU0; i <= MT_RXQ_NPU1; i++)
++		airoha_npu_wlan_enable_irq(npu, i - MT_RXQ_NPU0);
++
++	return 0;
++}
++
++/*
++ * Probe, after the DMA has started (the order the NPU firmware was proven
++ * with): tell the NPU everything, then point the chip's data rx rings at
++ * the NPU's.  On a failure before that last step the rings still hold the
++ * host's buffers: drop the NPU and let the host take the rx.
++ */
++int mt7915_npu_hw_init(struct mt7915_dev *dev)
++{
++	int err;
++
++	mutex_lock(&dev->mt76.mutex);
++	err = __mt7915_npu_hw_init(dev);
++	mutex_unlock(&dev->mt76.mutex);
++	if (!err)
++		return 0;
++
++	dev_warn(dev->mt76.dev,
++		 "NPU initialization failed (%d)! Fallback to CPU\n", err);
++	mt7915_npu_disable(dev);
++	mt7915_dma_npu_fallback(dev);
++
++	return 0;
++}
+--- a/mt7915/pci.c
++++ b/mt7915/pci.c
+@@ -6,6 +6,7 @@
+ 
+ #include <linux/kernel.h>
+ #include <linux/module.h>
++#include <linux/of.h>
+ #include <linux/pci.h>
+ 
+ #include "mt7915.h"
+@@ -136,6 +137,12 @@ static int mt7915_pci_probe(struct pci_d
+ 	mdev = &dev->mt76;
+ 	mt7915_wfsys_reset(dev);
+ 
++	if (mt76_npu_init(mdev, pci_resource_start(pdev, 0),
++			  pci_domain_nr(pdev->bus) ? 3 : 2) &&
++	    of_property_present(pdev->dev.of_node, "airoha,npu"))
++		dev_warn(&pdev->dev,
++			 "NPU initialization failed! Fallback to CPU\n");
++
+ 	ret = mt7915_mmio_wed_init(dev, pdev, true, &irq);
+ 	if (ret < 0)
+ 		goto free_wed_or_irq_vector;
+--- a/npu.c
++++ b/npu.c
+@@ -527,3 +527,4 @@ void mt76_npu_deinit(struct mt76_dev *de
+ 	mt76_npu_queue_cleanup(dev, &dev->q_rx[MT_RXQ_NPU0]);
+ 	mt76_npu_queue_cleanup(dev, &dev->q_rx[MT_RXQ_NPU1]);
+ }
++EXPORT_SYMBOL_GPL(mt76_npu_deinit);
