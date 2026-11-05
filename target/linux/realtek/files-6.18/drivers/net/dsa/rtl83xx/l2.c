@@ -19,6 +19,11 @@ enum otto_l2_action {
 	OTTO_L2_ACTION_COPY2MASTER = 5,
 };
 
+#define RTL838X_L2_CTRL_0			(0x3200)
+#define RTL839X_L2_CTRL_0			(0x3800)
+#define RTL930X_L2_CTRL				(0x8FD8)
+#define RTL931X_L2_CTRL				(0xC800)
+
 #define RTL838X_L2_LRN_CONSTRT			(0x329C)
 #define RTL839X_L2_LRN_CONSTRT			(0x3910)
 #define RTL930X_L2_LRN_CONSTRT_CTRL		(0x909c)
@@ -188,7 +193,7 @@ u32 otto_l2_838x_hash_key(struct otto_dsa_priv *priv, u64 seed)
 	u32 ctrl = 0;
 	u32 h1, h2, h3, h;
 
-	regmap_read(priv->map, priv->r->l2_ctrl_0, &ctrl);
+	regmap_read(priv->map, RTL838X_L2_CTRL_0, &ctrl);
 
 	if (ctrl & 1) {
 		h1 = (seed >> 11) & 0x7ff;
@@ -534,7 +539,7 @@ u32 otto_l2_839x_hash_key(struct otto_dsa_priv *priv, u64 seed)
 	u32 ctrl = 0;
 	u32 h1, h2, h;
 
-	regmap_read(priv->map, priv->r->l2_ctrl_0, &ctrl);
+	regmap_read(priv->map, RTL839X_L2_CTRL_0, &ctrl);
 
 	if (ctrl & 1) {
 		h1 = (u32)(((seed >> 60) & 0x3f) ^ ((seed >> 54) & 0x3f) ^

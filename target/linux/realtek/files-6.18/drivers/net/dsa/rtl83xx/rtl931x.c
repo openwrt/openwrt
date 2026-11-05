@@ -397,7 +397,6 @@ const struct rtldsa_config rtldsa_931x_cfg = {
 	.traffic_enable = rtl931x_traffic_enable,
 	.traffic_disable = rtl931x_traffic_disable,
 	.traffic_set = rtl931x_traffic_set,
-	.l2_ctrl_0 = RTL931X_L2_CTRL,
 	.l2_ctrl_1 = RTL931X_L2_AGE_CTRL,
 	.l2_port_aging_out = RTL931X_L2_PORT_AGE_CTRL,
 	.set_ageing_time = otto_l2_931x_set_ageing_time,

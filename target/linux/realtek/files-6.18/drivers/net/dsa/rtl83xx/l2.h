@@ -10,8 +10,6 @@ struct rtl838x_l2_entry;
 
 #define RTL838X_PORT_ISO_CTRL(port)		(0x4100 + ((port) << 2))
 
-#define RTL930X_L2_CTRL				(0x8FD8)
-#define RTL931X_L2_CTRL				(0xC800)
 #define RTL838X_L2_CTRL_1			(0x3204)
 #define RTL839X_L2_CTRL_1			(0x3804)
 #define RTL930X_L2_AGE_CTRL			(0x8FDC)

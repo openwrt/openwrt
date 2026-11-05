@@ -18,8 +18,6 @@
 
 #define RTL839X_PORT_ISO_CTRL(port)		(0x1400 + ((port) << 3))
 
-#define RTL839X_L2_CTRL_0			(0x3800)
-
 #define RTL839X_L2_TBL_FLUSH_CTRL		(0x3ba0)
 
 #define RTL839X_RMA_BPDU_FLD_PMSK		(0x125C)
@@ -151,7 +149,6 @@ const struct rtldsa_config rtldsa_839x_cfg = {
 	.traffic_disable = rtl839x_traffic_disable,
 	.traffic_set = rtl839x_traffic_set,
 	.port_iso_ctrl = rtl839x_port_iso_ctrl,
-	.l2_ctrl_0 = RTL839X_L2_CTRL_0,
 	.l2_ctrl_1 = RTL839X_L2_CTRL_1,
 	.self_mac_trap_ctrl = RTL839X_SPCL_TRAP_SWITCH_MAC_CTRL,
 	.l2_port_aging_out = RTL839X_L2_PORT_AGING_OUT,

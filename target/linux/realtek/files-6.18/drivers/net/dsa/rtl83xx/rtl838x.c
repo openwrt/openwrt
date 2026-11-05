@@ -19,8 +19,6 @@
 #include "stp.h"
 
 /* L2 functionality */
-#define RTL838X_L2_CTRL_0			(0x3200)
-
 #define RTL838X_L2_TBL_FLUSH_CTRL		(0x3370)
 
 /* 802.1X */
@@ -142,7 +140,6 @@ const struct rtldsa_config rtldsa_838x_cfg = {
 	.traffic_enable = rtl838x_traffic_enable,
 	.traffic_disable = rtl838x_traffic_disable,
 	.traffic_set = rtl838x_traffic_set,
-	.l2_ctrl_0 = RTL838X_L2_CTRL_0,
 	.l2_ctrl_1 = RTL838X_L2_CTRL_1,
 	.high_res_l2_age = true,
 	.self_mac_trap_ctrl = RTL838X_SPCL_TRAP_SWITCH_MAC_CTRL,
