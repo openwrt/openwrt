@@ -356,10 +356,7 @@ function complete_arg_list(e, ctx, arg_info, args, base_args, named_args)
 {
 	let cur_idx = length(args) - 1;
 	let cur = arg_info[cur_idx];
-	let val;
-
-	for (let i = 0; i <= cur_idx; i++)
-		val = shift(args);
+	let val = args[cur_idx];
 
 	let ret = complete_param(e, ctx, cur, val, base_args, named_args);
 	if (!cur.prefix_separator)
@@ -470,8 +467,8 @@ function default_complete(ctx, args)
 			named_args[name] = shift(args);
 			val = [ named_args[name] ];
 		} else {
-			let num_args = length(cur_spec);
-			let val = [];
+			let num_args = min(length(cur_spec), length(args));
+			val = [];
 			for (let i = 0; i < num_args; i++)
 				push(val, shift(args));
 			named_args[name] = val;
