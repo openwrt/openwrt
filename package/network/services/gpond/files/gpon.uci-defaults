@@ -1,0 +1,29 @@
+#!/bin/sh
+# SPDX-License-Identifier: GPL-2.0
+#
+# IPTV: IGMP snooping on the LAN bridge by default, so that multicast
+# reaches only the ports that asked for it.  An ordinary setting of
+# /etc/config/network that gpond neither writes nor removes (not even on
+# "factory"); an option that is already there is left alone.
+
+. /lib/functions.sh
+
+lan_igmp() {
+	local cfg="$1" name
+
+	config_get name "$cfg" name
+	[ "$name" = "br-lan" ] || return 0
+	config_get snooping "$cfg" igmp_snooping
+	[ -n "$snooping" ] && return 0
+
+	uci -q set "network.$cfg.igmp_snooping=1"
+	uci -q set "network.$cfg.multicast_querier=0"
+	changed=1
+}
+
+config_load network
+changed=
+config_foreach lan_igmp device
+[ -n "$changed" ] && uci -q commit network
+
+exit 0
