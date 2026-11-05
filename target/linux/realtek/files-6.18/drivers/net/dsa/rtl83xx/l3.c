@@ -134,6 +134,7 @@
 
 #define DEFAULT_MTU 1536
 #define L3_EGRESS_DMACS 2048
+#define ROUTE_MTU_ID 1
 
 struct otto_l3_net_event_work {
 	struct work_struct work;
@@ -1482,7 +1483,8 @@ static int otto_l3_930x_setup(struct otto_l3_ctrl *ctrl)
 	return 0;
 }
 
-static int otto_l3_alloc_egress_intf(struct otto_l3_ctrl *ctrl, u64 mac, int vlan)
+static int otto_l3_alloc_egress_intf(struct otto_l3_ctrl *ctrl, u64 mac, int vlan,
+				    u8 mtu_id)
 {
 	struct otto_l3_intf intf = {};
 	int free_mac = -1, err;
@@ -1497,7 +1499,8 @@ static int otto_l3_alloc_egress_intf(struct otto_l3_ctrl *ctrl, u64 mac, int vla
 			free_mac = i;
 			continue;
 		}
-		if (m == mac && ctrl->interfaces[i].vid == vlan) {
+		if (m == mac && ctrl->interfaces[i].vid == vlan &&
+		    ctrl->interfaces[i].ip4_mtu_id == mtu_id) {
 			dev_dbg(ctrl->dev, "reusing egress interface %d for VLAN %d\n",
 				i, vlan);
 			ctrl->intf_refs[i]++;
@@ -1515,8 +1518,7 @@ static int otto_l3_alloc_egress_intf(struct otto_l3_ctrl *ctrl, u64 mac, int vla
 	/* Set up default egress interface 1 */
 	intf.vid = vlan;
 	intf.smac_idx = free_mac;
-	intf.ip4_mtu_id = 1;
-	intf.ip6_mtu_id = 1;
+	intf.ip4_mtu_id = intf.ip6_mtu_id = mtu_id;
 	intf.ttl_scope = 1; /* TTL */
 	intf.hl_scope = 1;  /* Hop Limit */
 	intf.ip4_icmp_redirect = intf.ip6_icmp_redirect = 2;  /* FORWARD */
@@ -2652,7 +2654,8 @@ static void otto_l3_egress_sync(struct work_struct *work)
 			continue;
 		}
 
-		if_id = otto_l3_alloc_egress_intf(ctrl, mac, r->nh.rvid);
+		if_id = otto_l3_alloc_egress_intf(ctrl, mac, r->nh.rvid,
+					       ctrl->interfaces[old].ip4_mtu_id);
 		if (if_id < 0) {
 			kept = true;
 			continue;
@@ -3126,7 +3129,7 @@ static int otto_l3_fib_add_v4(struct otto_l3_ctrl *ctrl, struct fib_entry_notifi
 			goto out_free_rt;
 
 		/* vid = 0: Do not care about VID */
-		route->nh.if_id = otto_l3_alloc_egress_intf(ctrl, mac, vlan);
+		route->nh.if_id = otto_l3_alloc_egress_intf(ctrl, mac, vlan, ROUTE_MTU_ID);
 		if (route->nh.if_id < 0)
 			goto out_free_rmac;
 
@@ -3608,7 +3611,7 @@ static int otto_l3_fib_add_v6(struct otto_l3_ctrl *ctrl, struct fib6_entry_notif
 		if (otto_l3_router_mac_get(ctrl, ndev))
 			goto out_failed;
 
-		route->nh.if_id = otto_l3_alloc_egress_intf(ctrl, mac, vlan);
+		route->nh.if_id = otto_l3_alloc_egress_intf(ctrl, mac, vlan, ROUTE_MTU_ID);
 		if (route->nh.if_id < 0)
 			goto out_failed;
 	}
