@@ -1,0 +1,208 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Lukasz M <lukasz1992m+openwrt@gmail.com>
+Date: Sat, 31 Oct 2026 12:00:00 +0100
+Subject: [PATCH] mt76 npu rx buffers segments and length for mt7916
+
+The AN7552 NPU firmware for the MT7916 copies a received frame into the
+host buffer of a host adaptor ring entry and is not told how long that
+buffer is: it copies up to HOSTADPT_BUFFER_LEN, 3500 bytes (ClankerNPU
+npu_hostadpt.c).  The host buffers are 1800 bytes, so every longer frame
+runs over the skb_shared_info into the next buffer or page.
+
+Also cap a segment length from the NPU at the buffer it was copied into,
+with a warning: __skb_put() and skb_add_rx_frag() do not check it.
+
+Read the segment length of an MT7916 entry from bits 13:1: its firmware
+puts the frame length at bits 26:14, so the MT7996 mask (14:1) added 8192
+to every frame of odd length (361 bytes read as 8553).
+
+Take a frame only once all its entries are done.  mt76_npu_dequeue()
+freed a half built skb when a later segment was not ready yet: the first
+buffer went back to the page pool while the ring entry still pointed at
+it, and the next poll built the frame again from a page that could belong
+to someone else by then (crashes freeing skbs under 5 GHz traffic, whose
+large frames come in segments).  The MT7916 firmware splits such a frame
+over entries until the segment lengths add up to the frame length; the
+info word does not count them as with the MT7996.  A buffer that cannot be
+used goes back to the page pool instead of leaking.
+
+Size the buffers for 3500 bytes with an MT7916 (the only chip the mt7915
+NPU path runs with); every other NPU keeps 1800.
+
+Signed-off-by: Lukasz M <lukasz1992m+openwrt@gmail.com>
+---
+--- a/npu.c
++++ b/npu.c
+@@ -11,8 +11,41 @@
+ #include "dma.h"
+ #include "mt76_connac.h"
+ 
+-#define MT76_NPU_RX_BUF_SIZE	(1800 + \
+-				 SKB_DATA_ALIGN(sizeof(struct skb_shared_info)))
++#define MT76_NPU_RX_FRAME_LEN		1800
++/*
++ * The NPU firmware for the MT7916 copies a received frame into the
++ * host buffer of a ring entry without being told how long the buffer is,
++ * up to its HOSTADPT_BUFFER_LEN of 3500 bytes (ClankerNPU npu_hostadpt.c).
++ * A shorter buffer is overrun by every longer frame, into the next buffer
++ * or page.
++ */
++#define MT76_NPU_RX_FRAME_LEN_MT7916	3500
++
++static int mt76_npu_rx_buf_size(struct mt76_dev *dev)
++{
++	int len = MT76_NPU_RX_FRAME_LEN;
++
++	if (is_mt7916(dev))
++		len = MT76_NPU_RX_FRAME_LEN_MT7916;
++
++	return len + SKB_DATA_ALIGN(sizeof(struct skb_shared_info));
++}
++
++/*
++ * Segment length of a host adaptor ring entry.  The MT7916 firmware packs
++ * the word as bit 0 done, bits 13:1 segment length, bits 26:14 frame length
++ * and flags above (seen on an AN7552: a 361 byte frame comes as 0x085a42d3);
++ * the NPU_RX_DMA_DESC_* masks are the MT7996 layout and read bit 14, the
++ * low bit of the frame length, as bit 13 of the segment: +8192 for every
++ * frame of odd length.
++ */
++static int mt76_npu_rx_seg_len(struct mt76_dev *dev, u32 ctrl)
++{
++	if (is_mt7916(dev))
++		return FIELD_GET(GENMASK(13, 1), ctrl);
++
++	return FIELD_GET(NPU_RX_DMA_DESC_CUR_LEN_MASK, ctrl);
++}
+ 
+ int mt76_npu_fill_rx_queue(struct mt76_dev *dev, struct mt76_queue *q)
+ {
+@@ -59,6 +92,49 @@ void mt76_npu_queue_cleanup(struct mt76_
+ 	spin_unlock_bh(&q->lock);
+ }
+ 
++/*
++ * How many entries the frame at @index takes, 0 while one of them is not
++ * done yet.  Nothing is built before the whole frame is there: an skb freed
++ * half way would hand its first buffer back to the page pool while the ring
++ * entry still points at it.
++ *
++ * The MT7916 firmware splits a frame longer than its buffer over entries
++ * that carry the segment length (bits 13:1) and the frame length (bits
++ * 26:14) and keeps the info word for the rx info: walk the segments.  The
++ * other firmware counts the entries in the info word.
++ */
++static int mt76_npu_rx_nframes(struct mt76_dev *dev, struct mt76_queue *q,
++			       int index)
++{
++	struct airoha_npu_rx_dma_desc *desc = (void *)q->desc;
++	int i, n, total = 0, sum = 0;
++
++	if (is_mt7916(dev))
++		total = FIELD_GET(GENMASK(26, 14), desc[index].ctrl);
++
++	n = max_t(int, FIELD_GET(NPU_RX_DMA_PKT_COUNT_MASK, desc[index].info),
++		  1);
++
++	for (i = 0; i < q->queued; i++) {
++		int idx = (index + i) % q->ndesc;
++
++		if (!FIELD_GET(NPU_RX_DMA_DESC_DONE_MASK, desc[idx].ctrl))
++			return 0;
++
++		if (!total) {
++			if (i + 1 == n)
++				return n;
++			continue;
++		}
++
++		sum += mt76_npu_rx_seg_len(dev, desc[idx].ctrl);
++		if (sum >= total || i + 1 > MAX_SKB_FRAGS)
++			return i + 1;
++	}
++
++	return 0;
++}
++
+ static struct sk_buff *mt76_npu_dequeue(struct mt76_dev *dev,
+ 					struct mt76_queue *q,
+ 					u32 *info)
+@@ -66,32 +142,46 @@ static struct sk_buff *mt76_npu_dequeue(
+ 	struct airoha_npu_rx_dma_desc *desc = (void *)q->desc;
+ 	int i, nframes, index = q->tail;
+ 	struct sk_buff *skb = NULL;
++	bool drop = false;
+ 
+-	nframes = FIELD_GET(NPU_RX_DMA_PKT_COUNT_MASK, desc[index].info);
+-	nframes = max_t(int, nframes, 1);
++	nframes = mt76_npu_rx_nframes(dev, q, index);
++	if (!nframes)
++		return NULL;
+ 
+ 	for (i = 0; i < nframes; i++) {
+ 		struct mt76_queue_entry *e = &q->entry[index];
+-		int len = FIELD_GET(NPU_RX_DMA_DESC_CUR_LEN_MASK,
+-				    desc[index].ctrl);
++		int len = mt76_npu_rx_seg_len(dev, desc[index].ctrl);
+ 
+-		if (!FIELD_GET(NPU_RX_DMA_DESC_DONE_MASK, desc[index].ctrl)) {
+-			dev_kfree_skb(skb);
+-			return NULL;
++		/*
++		 * Never trust the length past the buffer: __skb_put() and
++		 * skb_add_rx_frag() do not check it, and a tail beyond the
++		 * buffer is written over the shared info and what follows.
++		 */
++		if (unlikely(len > e->dma_len[0])) {
++			dev_warn_ratelimited(dev->dev,
++					     "NPU rx: segment of %d bytes in a %d byte buffer (ctrl %08x info %08x)\n",
++					     len, e->dma_len[0],
++					     desc[index].ctrl, desc[index].info);
++			len = e->dma_len[0];
+ 		}
+ 
+ 		dma_sync_single_for_cpu(dev->dma_dev, e->dma_addr[0],
+ 					e->dma_len[0],
+ 					page_pool_get_dma_dir(q->page_pool));
+ 
+-		if (!skb) {
++		if (drop) {
++			mt76_put_page_pool_buf(e->buf, false);
++		} else if (!skb) {
+ 			skb = napi_build_skb(e->buf, q->buf_size);
+-			if (!skb)
+-				return NULL;
+-
+-			__skb_put(skb, len);
+-			skb_reset_mac_header(skb);
+-			skb_mark_for_recycle(skb);
++			if (!skb) {
++				/* the whole frame goes, its buffers back */
++				mt76_put_page_pool_buf(e->buf, false);
++				drop = true;
++			} else {
++				__skb_put(skb, len);
++				skb_reset_mac_header(skb);
++				skb_mark_for_recycle(skb);
++			}
+ 		} else {
+ 			struct skb_shared_info *shinfo = skb_shinfo(skb);
+ 			struct page *page = virt_to_head_page(e->buf);
+@@ -101,6 +191,8 @@ static struct sk_buff *mt76_npu_dequeue(
+ 				skb_add_rx_frag(skb, nr_frags, page,
+ 						e->buf - page_address(page),
+ 						len, q->buf_size);
++			else
++				mt76_put_page_pool_buf(e->buf, false);
+ 		}
+ 
+ 		*info = desc[index].info;
+@@ -275,7 +367,7 @@ int mt76_npu_rx_queue_init(struct mt76_d
+ 	q->flags = MT_NPU_Q_RX(index);
+ 	size = qid == MT_RXQ_NPU1 ? NPU_RX1_DESC_NUM : NPU_RX0_DESC_NUM;
+ 	err = dev->queue_ops->alloc(dev, q, 0, size,
+-				    MT76_NPU_RX_BUF_SIZE, 0);
++				    mt76_npu_rx_buf_size(dev), 0);
+ 	if (err)
+ 		goto out;
+ 

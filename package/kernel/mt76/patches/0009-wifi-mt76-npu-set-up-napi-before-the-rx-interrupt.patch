@@ -1,0 +1,46 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Lukasz M <lukasz1992m+openwrt@gmail.com>
+Date: Sat, 31 Oct 2026 12:00:00 +0100
+Subject: [PATCH] wifi mt76 npu set up napi before the rx interrupt
+
+mt76_npu_rx_queue_init() requested the NPU rx interrupt and only then
+added the NAPI the handler schedules.  The NPU keeps running across a
+driver reload, so its interrupt can be pending when the irq is requested:
+the handler then schedules a NAPI with no poll function and the kernel
+jumps to 0 in net_rx_action (seen on an AN7552 reloading mt7915e).
+
+Add, fill and enable the NAPI first, and take it down again if the
+interrupt cannot be had.
+
+Signed-off-by: Lukasz M <lukasz1992m+openwrt@gmail.com>
+---
+--- a/npu.c
++++ b/npu.c
+@@ -285,14 +285,22 @@ int mt76_npu_rx_queue_init(struct mt76_d
+ 		goto out;
+ 	}
+ 
+-	err = devm_request_irq(dev->dev, irq, mt76_npu_irq_handler,
+-			       IRQF_SHARED, name, q);
+-	if (err)
+-		goto out;
+-
++	/*
++	 * NAPI first: the NPU keeps running across a driver reload and its
++	 * interrupt can be pending already, and the handler schedules
++	 * dev->napi[qid] straight away.
++	 */
+ 	netif_napi_add(dev->napi_dev, &dev->napi[qid], mt76_npu_rx_poll);
+ 	mt76_npu_fill_rx_queue(dev, q);
+ 	napi_enable(&dev->napi[qid]);
++
++	err = devm_request_irq(dev->dev, irq, mt76_npu_irq_handler,
++			       IRQF_SHARED, name, q);
++	if (err) {
++		napi_disable(&dev->napi[qid]);
++		netif_napi_del(&dev->napi[qid]);
++		mt76_npu_queue_cleanup(dev, q);
++	}
+ out:
+ 	mutex_unlock(&dev->mutex);
+ 
