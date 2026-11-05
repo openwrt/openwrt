@@ -292,10 +292,8 @@ enum rtpcs_page {
 
 #define WDIG_REG01			0x01
 /*
- * Gates a digital clock inside the SerDes. The exact block is unknown; it
- * appears to be used by all modes except USXGMII and 10GBASE-R. The bit name
- * is inherited from an earlier SerDes generation and has not been verified
- * on RTL931x. GLI could mean "GMII Line Interface" or "Gigabit Line Interface".
+ * Digital clock gate; the inherited GLI name is unverified on RTL931x.
+ * GLI could mean "GMII Line Interface" or "Gigabit Line Interface".
  */
 #define  RTL931X_STOP_GLI_CLK		BIT(0) /* Only used on DIGI_1(). */
 
@@ -577,7 +575,7 @@ struct rtpcs_serdes {
 	s16 link_port[RTPCS_MAX_LINKS_PER_SDS];
 
 	enum rtpcs_sds_mode hw_mode;
-	enum rtpcs_sds_usxgmii_submode usxgmii_submode;	/* only valid if hw_mode == RTPCS_SDS_MODE_USXGMII */
+	enum rtpcs_sds_usxgmii_submode usxgmii_submode;
 	enum rtpcs_sds_attachment attachment;
 	u8 id;
 	u8 num_of_links;
@@ -643,8 +641,6 @@ struct rtpcs_sds_tx_config {
 	u8 impedance;
 };
 
-/* Calculation helpers */
-
 static int rtpcs_sds_to_mmd(enum rtpcs_page sds_page, int sds_regnum)
 {
 	return (sds_page << 8) + sds_regnum;
@@ -673,12 +669,7 @@ static u32 rtpcs_gray_to_binary(u32 gray_code)
 	return binary;
 }
 
-/*
- * Basic helpers
- *
- * These work on the plain SerDes ID. They shouldn't be used except for
- * implementing the SerDes read/write ops.
- */
+/* Raw SerDes-ID accessors for implementing register operations. */
 
 static int __rtpcs_sds_read_raw(struct rtpcs_ctrl *ctrl, int sds_id, enum rtpcs_page page,
 				int regnum, int bithigh, int bitlow)
@@ -839,7 +830,6 @@ static int rtpcs_sds_select_hw_mode(struct rtpcs_serdes *sds, phy_interface_t if
 
 	*submode = RTPCS_SDS_USXGMII_SM_NONE;
 
-	/* turn off SerDes when there are no links */
 	if (!n_links) {
 		*hw_mode = RTPCS_SDS_MODE_OFF;
 		return 0;
@@ -914,8 +904,6 @@ rtpcs_media_attachment(const struct phylink_media *media)
 		return RTPCS_SDS_ATTACH_FIBER;
 	}
 }
-
-/* Generic auto-negotiation config */
 
 static int rtpcs_generic_sds_set_autoneg(struct rtpcs_serdes *sds, unsigned int neg_mode,
 					 const unsigned long *advertising)
@@ -1012,14 +1000,6 @@ static int rtpcs_sds_apply_config(struct rtpcs_serdes *sds,
 	return 0;
 }
 
-/*
- * Allocate a regmap_field on the SoC-side register map for this SerDes and
- * store the resulting pointer in *dst. Convenience helper for per-SerDes
- * register fields computed from the SerDes ID. Taking reg/lsb/msb as
- * integer arguments (rather than a struct reg_field) keeps callers free of
- * either local reg_field declarations or compound-literal casts, since
- * REG_FIELD() is a brace-initializer and not a usable expression.
- */
 static int rtpcs_sds_alloc_field(struct rtpcs_serdes *sds, struct regmap_field **dst,
 				 u32 reg, u8 lsb, u8 msb)
 {
@@ -1029,11 +1009,6 @@ static int rtpcs_sds_alloc_field(struct rtpcs_serdes *sds, struct regmap_field *
 	return PTR_ERR_OR_ZERO(*dst);
 }
 
-/*
- * Write the SerDes MAC mode register. This is the common minimum shared by
- * all variants. Variant-specific extras (force bit, companion registers,
- * USXGMII submode, post-write delay) live in per-variant wrappers.
- */
 static int rtpcs_sds_set_mac_mode(struct rtpcs_serdes *sds, enum rtpcs_sds_mode hw_mode)
 {
 	const struct rtpcs_config *cfg = sds->ctrl->cfg;
@@ -1177,12 +1152,6 @@ static int rtpcs_838x_sds_activate(struct rtpcs_serdes *sds)
 	return rtpcs_838x_sds_power(sds, true);
 }
 
-/*
- * RTL838X wrapper: after setting the MAC mode, SerDes 4-5 also need the
- * companion INT_MODE_CTRL field written.
- *
- * RTL838X doesn't support USXGMII, thus no submodes.
- */
 static int rtpcs_838x_sds_set_mode(struct rtpcs_serdes *sds, enum rtpcs_sds_mode hw_mode,
 				   enum rtpcs_sds_usxgmii_submode submode)
 {
@@ -1513,10 +1482,6 @@ static int rtpcs_839x_init(struct rtpcs_ctrl *ctrl)
 	return 0;
 }
 
-/*
- * These no-op stubs satisfy the mandatory activate/deactivate contract until
- * real power sequencing is implemented.
- */
 static int rtpcs_839x_sds_deactivate(struct rtpcs_serdes *sds)
 {
 	return rtpcs_sds_write_mask(sds, PAGE_FIB, MII_BMCR, BMCR_PDOWN, BMCR_PDOWN);
@@ -1528,10 +1493,6 @@ static int rtpcs_839x_sds_activate(struct rtpcs_serdes *sds)
 	return rtpcs_sds_write_mask(sds, PAGE_FIB, MII_BMCR, BMCR_PDOWN, 0);
 }
 
-/*
- * Keep this as a no-op stub until RTL839x is extended to do proper configuration
- * here. E.g., the still missing SGMII, 100BASEX and 1000BASEX setup should go here.
- */
 static int rtpcs_839x_sds_config_hw_mode(struct rtpcs_serdes *sds, enum rtpcs_sds_mode hw_mode)
 {
 	/* TODO: proper setup of 100Base-X, 1000Base-X and SGMII needed */
@@ -1941,14 +1902,6 @@ static int rtpcs_93xx_sds_apply_usxgmii_submode(struct rtpcs_serdes *sds,
 	return regmap_field_write(sds->swcore_regs.usxgmii_submode, val);
 }
 
-/*
- * RTL93XX wrapper: set MAC mode, then handle variant-specific extras:
- * - post-write delay (required on 930x)
- * - force-mode bit (931x only; nullable field)
- *
- * Each extra no-ops on the variant that doesn't need it — either because
- * the corresponding regmap_field is NULL, or because the mode doesn't match.
- */
 static int rtpcs_93xx_sds_set_mac_mode(struct rtpcs_serdes *sds, enum rtpcs_sds_mode hw_mode)
 {
 	int ret;
@@ -1967,11 +1920,6 @@ static int rtpcs_93xx_sds_set_mac_mode(struct rtpcs_serdes *sds, enum rtpcs_sds_
 	return 0;
 }
 
-/*
- * Bring up a MAC-driven mode: release the IP mode force-lock so the MAC
- * side takes over (deactivate forces IP=OFF; this undoes that), set the
- * MAC mode, then apply the USXGMII submode if the mode needs one.
- */
 static int rtpcs_93xx_sds_set_mac_driven_mode(struct rtpcs_serdes *sds,
 					      enum rtpcs_sds_mode hw_mode,
 					      enum rtpcs_sds_usxgmii_submode submode)
@@ -2042,7 +1990,6 @@ static int rtpcs_93xx_sds_get_cmu_page(enum rtpcs_sds_mode hw_mode)
 		return PAGE_ANA_3G1;
 	case RTPCS_SDS_MODE_QSGMII:
 		return PAGE_ANA_5G0;
-	//	return PAGE_ANA_6G0;
 	case RTPCS_SDS_MODE_XSGMII:
 	case RTPCS_SDS_MODE_USXGMII:
 	case RTPCS_SDS_MODE_10GBASER:
@@ -2279,12 +2226,6 @@ static int rtpcs_930x_sds_op_write_mask(struct rtpcs_serdes *sds, enum rtpcs_pag
 	return __rtpcs_sds_write_mask(sds->ctrl, sds_id, page, regnum, mask, value);
 }
 
-/*
- * Realtek uses some nasty logic for digital parts of SerDes 2 and 3.
- *
- * This implements 'dal_longan_sds_xsg_field_write' and a combination of
- * '_rtl9300_serdes_index_to_physical' and '_rtl9300_serdes_reg_write' from the SDK.
- */
 static int rtpcs_930x_sds_op_xsg_write(struct rtpcs_serdes *sds, enum rtpcs_page page, int regnum,
 				       int bithigh, int bitlow, u16 value)
 {
@@ -2967,19 +2908,14 @@ static void rtpcs_930x_sds_rxcal_fgcal(struct rtpcs_serdes *sds)
 
 	rtpcs_930x_sds_rx_reset(sds, RTPCS_SDS_MODE_10GBASER);
 
-	/* ForegroundOffsetCal_Manual */
-
 	/* Gray config endis to 1 */
 	rtpcs_sds_write_bits(sds, PAGE_ANA_10G_EXT, 0x02, 2, 2, 0x01);
 
 	/* ForegroundOffsetCal_Manual(auto mode) */
 	rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0x01, 14, 14, 0x00);
 
-	/* Force Rx-Run = 0 */
 	rtpcs_sds_write_mask(sds, PAGE_ANA_10G, ANA_SPD_REG21, RTL930X_RX_RUN, 0);
 	rtpcs_930x_sds_rx_reset(sds, RTPCS_SDS_MODE_10GBASER);
-
-	/* Foreground Calibration --- */
 
 	for (int run = 0; run < 10; run++) {
 		ret = rtpcs_930x_sds_rxeq_set_debug(sds, RTL930X_RX_DEBUG_SEL_COEF);
@@ -3020,7 +2956,6 @@ static void rtpcs_930x_sds_rxcal_fgcal(struct rtpcs_serdes *sds)
 				     RTL930X_RXCAL_OFFSET_RANGE,
 				     FIELD_PREP(RTL930X_RXCAL_OFFSET_RANGE, offset_range));
 
-		/* Force Rx-Run = 0 */
 		rtpcs_sds_write_mask(sds, PAGE_ANA_10G, ANA_SPD_REG21, RTL930X_RX_RUN, 0);
 		rtpcs_930x_sds_rx_reset(sds, RTPCS_SDS_MODE_10GBASER);
 	}
@@ -3100,12 +3035,10 @@ static void rtpcs_930x_sds_rxcal_vth_tap0_adapt_lock(struct rtpcs_serdes *sds)
 	unsigned int vth_p, vth_n;
 	int tap0;
 
-	/* run VTH/TAP auto-adapt */
 	rtpcs_930x_sds_rxeq_vth_set_adapt(sds, true);
 	rtpcs_930x_sds_rxeq_tap_set_adapt(sds, 0, true);
 	msleep(200);
 
-	/* manually set learned VTH */
 	if (rtpcs_930x_sds_rxeq_vth_get(sds, &vth_p, &vth_n) < 0)
 		return;
 	rtpcs_930x_sds_rxeq_vth_set_value(sds, vth_p, vth_n);
@@ -3113,7 +3046,6 @@ static void rtpcs_930x_sds_rxcal_vth_tap0_adapt_lock(struct rtpcs_serdes *sds)
 
 	msleep(100);
 
-	/* manually set learned TAP0 */
 	if (rtpcs_930x_sds_rxeq_tap_get(sds, 0, &tap0, NULL) < 0)
 		return;
 	rtpcs_930x_sds_rxeq_tap_set_value(sds, 0, tap0, 0);
@@ -3122,7 +3054,6 @@ static void rtpcs_930x_sds_rxcal_vth_tap0_adapt_lock(struct rtpcs_serdes *sds)
 
 static void rtpcs_930x_sds_rxeq_dfe_taps_adapt(struct rtpcs_serdes *sds)
 {
-	/* dfeTap1_4Enable true */
 	for (int i = 1; i <= 4; i++)
 		rtpcs_930x_sds_rxeq_tap_set_adapt(sds, i, true);
 
@@ -3226,7 +3157,6 @@ static int rtpcs_930x_sds_check_calibration(struct rtpcs_serdes *sds,
 	rtpcs_930x_sds_sym_err_reset(sds, hw_mode);
 	rtpcs_930x_sds_sym_err_reset(sds, hw_mode);
 
-	/* Count errors during 1ms */
 	errors1 = rtpcs_930x_sds_sym_err_get(sds, hw_mode);
 	usleep_range(1000, 2000);
 	errors2 = rtpcs_930x_sds_sym_err_get(sds, hw_mode);
@@ -3729,17 +3659,7 @@ static void rtpcs_931x_sds_clear_symerr(struct rtpcs_serdes *sds,
 	}
 }
 
-/*
- * rtpcs_931x_sds_rxeq_set_debug() - Route a coefficient's debug readback.
- *
- * Vendor SDK: _phy_rtl9310_dbg_set(). Selects which lane of the even/odd
- * pair feeds the shared WDIG debug readback register, then selects
- * dbg_sel within that lane. Must run before reading any rxeq_*_get().
- *
- * Note: This needs to be locked to avoid adjacent SerDes interfering with
- * 	 those settings and produce inconsistent results. Currently, this is
- * 	 achieved by the global PCS lock.
- */
+/* Hold the controller mutex across shared debug selection and readback. */
 static int rtpcs_931x_sds_rxeq_set_debug(struct rtpcs_serdes *sds, unsigned int dbg_sel)
 {
 	struct rtpcs_serdes *even_sds = rtpcs_sds_get_even(sds);
@@ -3926,21 +3846,7 @@ static int rtpcs_931x_sds_rxeq_vth_get(struct rtpcs_serdes *sds, unsigned int *v
 	return 0;
 }
 
-/**
- * rtpcs_931x_sds_reset_leq_dfe() - Reset LEQ + DFE to a baseline.
- *
- * @sds: Reference to SerDes instance
- *
- * Reset both LEQ and DFE in the RX path to baseline configuration. I.e.
- * sets LEQ and DFE to manual mode and sets certain values (mostly 0) for
- * LEQ and DFE coefficients/parameters.
- * Also restore the default RX calibration selection.
- *
- * LEQ and DFE can run in two modes:
- * * manual: specific values are set and used
- * * auto: both adapt their parameters automatically
- *
- */
+/* Restore the default calibration selection and manual LEQ/DFE baseline. */
 static int rtpcs_931x_sds_reset_leq_dfe(struct rtpcs_serdes *sds)
 {
 	rtpcs_sds_write_mask(sds, PAGE_ANA_10G, ANA_SPD_REG14,
@@ -3951,11 +3857,7 @@ static int rtpcs_931x_sds_reset_leq_dfe(struct rtpcs_serdes *sds)
 	/* bits [1:0] are undocumented but part of the known-good reset value */
 	rtpcs_sds_write_bits(sds, PAGE_ANA_10G, ANA_SPD_REG13, 1, 0, 0x0);
 
-	/*
-	 * Force manual mode before writing values - not after like the vendor
-	 * SDK does - to prevent the adapt engine from overwriting '0' in the
-	 * short timeframe.
-	 */
+	/* Force manual mode before loading coefficients so adaptation cannot overwrite them. */
 	rtpcs_sds_write_mask(sds, PAGE_ANA_10G, ANA_SPD_REG15,
 			     RTL931X_LOAD_IN_INIT_ALL, RTL931X_LOAD_IN_INIT_ALL);
 
@@ -3993,16 +3895,11 @@ static int rtpcs_931x_sds_power(struct rtpcs_serdes *sds, bool power_on)
 				 BIT(sds->id), en_val);
 }
 
-/*
- * Set the SerDes mode in the SerDes IP block's registers, after clearing
- * the symbol error counter and forcing the MAC mode off.
- */
 static int rtpcs_931x_sds_apply_ip_mode(struct rtpcs_serdes *sds,
 					enum rtpcs_sds_mode hw_mode)
 {
 	int ret;
 
-	/* clear symbol error count before changing mode */
 	rtpcs_931x_sds_clear_symerr(sds, hw_mode);
 	ret = rtpcs_93xx_sds_set_mac_mode(sds, RTPCS_SDS_MODE_OFF);
 	if (ret)
@@ -4425,14 +4322,6 @@ static const struct rtpcs_sds_tx_config rtpcs_931x_sds_tx_cfg_ldac = { /* long D
 	.pre_amp = 0x00, .main_amp = 0x10, .post_amp = 0x14
 };
 
-/**
- * rtpcs_931x_sds_config_tx_amps - Configure SerDes TX amplifiers
- *
- * A SerDes has three amplifiers (pre, main, post) in the TX path that allow to tune the signal,
- * usually based on eye diagrams. This is needed to account for different tx media, i.e. PCB
- * trace, fiber, DAC. Using the amplifier coefficients, one can precondition the signal in such
- * a way so that it arrives "clean" at the partner.
- */
 static int rtpcs_931x_sds_config_tx_amps(struct rtpcs_serdes *sds, u8 pre_amp, u8 main_amp,
 					 u8 post_amp)
 {
@@ -4662,18 +4551,11 @@ static int rtpcs_931x_sds_config_hw_mode(struct rtpcs_serdes *sds,
 	return rtpcs_93xx_sds_config_cmu(sds, hw_mode);
 }
 
-/**
- * rtpcs_931x_init_mac_groups - Initialize MAC groups
- *
- * RTL931x organizes MACs into 12 groups (one per SerDes) that must be explicitly
- * enabled before link establishment. Without initialization, link may fail or
- * packets may be corrupted, especially in USXGMII/XSGMII modes.
- *
- * Simply enable all MACs by writing 0xffffffff to all group registers. Unused
- * MACs and reserved bits are harmless, avoiding complex per-SerDes logic.
- *
- * This lives in the PCS driver since groups are tied to SerDes, and the DSA
- * driver has no SerDes awareness.
+/*
+ * RTL931x MAC groups follow the SerDes and must be enabled before link-up
+ * to avoid link failures or packet corruption, especially with USXGMII/XSGMII.
+ * Enable all groups; unused MACs/reserved bits are harmless. Initialization
+ * lives here because the DSA driver has no SerDes awareness.
  */
 static int rtpcs_931x_init_mac_groups(struct rtpcs_ctrl *ctrl)
 {
@@ -5132,13 +5014,8 @@ static struct rtpcs_serdes *rtpcs_find_serdes(struct rtpcs_ctrl *ctrl,
 }
 
 /*
- * Walk the sibling switch's ethernet-ports subtree to learn which MAC port
- * each (SerDes, link_idx) pair serves. Same "backwards" topology lookup the
- * sibling MDIO driver does for phy-handle: the DT already encodes the
- * mapping via per-port pcs-handle properties, so the driver doesn't need a
- * parallel per-SoC table. pcs_get_state still needs the port number to
- * index MAC-side link status registers; it reads link_port[] populated
- * here.
+ * Map each (SerDes, link index) to its MAC port through pcs-handle properties.
+ * The port number indexes the MAC link-status registers.
  */
 static int rtpcs_map_links(struct device *dev, struct rtpcs_ctrl *ctrl)
 {
