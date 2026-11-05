@@ -4277,8 +4277,10 @@ static int rtpcs_931x_sds_config_polarity(struct rtpcs_serdes *sds, unsigned int
 	int ret;
 
 	/* 10gr_*_inv */
-	val = (tx_val << 1) | rx_val;
-	ret = rtpcs_sds_write_bits(sds, PAGE_TGR_PRO_0, 0x2, 14, 13, val);
+	val = FIELD_PREP(RTL93XX_TGR2_CFG_INV_HSO, tx_val) |
+	      FIELD_PREP(RTL93XX_TGR2_CFG_INV_HSI, rx_val);
+	ret = rtpcs_sds_write_mask(sds, PAGE_TGR_PRO_0, TGR_PRO_0_REG02,
+				   RTL93XX_TGR2_CFG_INV_HSO | RTL93XX_TGR2_CFG_INV_HSI, val);
 	if (ret)
 		return ret;
 
