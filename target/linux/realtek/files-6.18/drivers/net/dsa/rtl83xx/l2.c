@@ -24,6 +24,11 @@ enum otto_l2_action {
 #define RTL930X_L2_CTRL				(0x8FD8)
 #define RTL931X_L2_CTRL				(0xC800)
 
+#define RTL838X_L2_TBL_FLUSH_CTRL		(0x3370)
+#define RTL839X_L2_TBL_FLUSH_CTRL		(0x3ba0)
+#define RTL930X_L2_TBL_FLUSH_CTRL		(0x9404)
+#define RTL931X_L2_TBL_FLUSH_CTRL		(0xCD9C)
+
 #define RTL838X_L2_LRN_CONSTRT			(0x329C)
 #define RTL839X_L2_LRN_CONSTRT			(0x3910)
 #define RTL930X_L2_LRN_CONSTRT_CTRL		(0x909c)
@@ -487,11 +492,11 @@ int otto_l2_838x_fast_age(struct otto_dsa_priv *priv, int port, int vid)
 	if (vid >= 0)
 		val |= BIT(24) | (vid << 10);
 
-	err = regmap_write(priv->map, priv->r->l2_tbl_flush_ctrl, val);
+	err = regmap_write(priv->map, RTL838X_L2_TBL_FLUSH_CTRL, val);
 	if (err)
 		return err;
 
-	return regmap_read_poll_timeout(priv->map, priv->r->l2_tbl_flush_ctrl,
+	return regmap_read_poll_timeout(priv->map, RTL838X_L2_TBL_FLUSH_CTRL,
 					val, !(val & BIT(26)), 0, 0);
 }
 
@@ -828,11 +833,11 @@ int otto_l2_839x_fast_age(struct otto_dsa_priv *priv, int port, int vid)
 	if (vid >= 0)
 		val |= BIT(26) | (vid << 12);
 
-	err = regmap_write(priv->map, priv->r->l2_tbl_flush_ctrl, val);
+	err = regmap_write(priv->map, RTL839X_L2_TBL_FLUSH_CTRL, val);
 	if (err)
 		return err;
 
-	return regmap_read_poll_timeout(priv->map, priv->r->l2_tbl_flush_ctrl,
+	return regmap_read_poll_timeout(priv->map, RTL839X_L2_TBL_FLUSH_CTRL,
 					val, !(val & BIT(28)), 0, 0);
 }
 
@@ -1278,7 +1283,7 @@ int otto_l2_930x_fast_age(struct otto_dsa_priv *priv, int port, int vid)
 	if (err)
 		return err;
 
-	return regmap_read_poll_timeout(priv->map, priv->r->l2_tbl_flush_ctrl,
+	return regmap_read_poll_timeout(priv->map, RTL930X_L2_TBL_FLUSH_CTRL,
 					val, !(val & BIT(30)), 0, 0);
 }
 

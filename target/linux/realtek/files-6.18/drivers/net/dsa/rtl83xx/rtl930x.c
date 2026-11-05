@@ -421,7 +421,6 @@ const struct rtldsa_config rtldsa_930x_cfg = {
 	.l2_ctrl_1 = RTL930X_L2_AGE_CTRL,
 	.l2_port_aging_out = RTL930X_L2_PORT_AGE_CTRL,
 	.set_ageing_time = otto_l2_930x_set_ageing_time,
-	.l2_tbl_flush_ctrl = RTL930X_L2_TBL_FLUSH_CTRL,
 	.isr_glb_src = RTL930X_ISR_GLB,
 	.isr_port_link_sts_chg = RTL930X_ISR_PORT_LINK_STS_CHG,
 	.imr_port_link_sts_chg = RTL930X_IMR_PORT_LINK_STS_CHG,

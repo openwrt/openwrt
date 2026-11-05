@@ -400,7 +400,6 @@ const struct rtldsa_config rtldsa_931x_cfg = {
 	.l2_ctrl_1 = RTL931X_L2_AGE_CTRL,
 	.l2_port_aging_out = RTL931X_L2_PORT_AGE_CTRL,
 	.set_ageing_time = otto_l2_931x_set_ageing_time,
-	.l2_tbl_flush_ctrl = RTL931X_L2_TBL_FLUSH_CTRL,
 	.isr_glb_src = RTL931X_ISR_GLB_SRC,
 	.isr_port_link_sts_chg = RTL931X_ISR_PORT_LINK_STS_CHG,
 	.imr_port_link_sts_chg = RTL931X_IMR_PORT_LINK_STS_CHG,

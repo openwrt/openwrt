@@ -19,9 +19,6 @@ struct rtl838x_l2_entry;
 #define	RTL930X_L2_PORT_AGE_CTRL		(0x8FE0)
 #define	RTL931X_L2_PORT_AGE_CTRL		(0xc808)
 
-#define RTL930X_L2_TBL_FLUSH_CTRL		(0x9404)
-#define RTL931X_L2_TBL_FLUSH_CTRL		(0xCD9C)
-
 #define SALRN_PORT_SHIFT(p)			((p % 16) * 2)
 #define SALRN_MODE_MASK				0x3
 #define SALRN_MODE_HARDWARE			0
