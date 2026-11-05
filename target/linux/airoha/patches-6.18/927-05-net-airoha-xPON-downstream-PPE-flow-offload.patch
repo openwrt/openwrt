@@ -1,0 +1,328 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Lukasz M <lukasz1992m+openwrt@gmail.com>
+Date: Sat, 31 Oct 2026 12:00:00 +0100
+Subject: [PATCH] net airoha xPON downstream PPE flow offload
+
+The binding of downstream flows itself is in the xPON client API
+(airoha_xpon_deliver()); this adds what the client drives at runtime:
+- airoha_xpon_set_ppe_downstream()/airoha_xpon_get_ppe_downstream():
+  switch the binding while the client is registered.  Turning it off only
+  stops binding new flows; bound PPE entries are shared with the GDM
+  net_devices and age out.
+- airoha_xpon_mtu_changed(): recompute the PPE egress MTU of the client's
+  GDM on an MTU change of its net_device.
+- airoha_xpon_setup_tc(): ndo_setup_tc for the client's net_device:
+  * TC_SETUP_QDISC_ETS / TC_SETUP_QDISC_HTB: per-T-CONT channel SP/WRR
+    scheduler (reusing airoha_qdma_set_tx_ets_sched() and
+    airoha_qdma_set_tx_prio_sched()) and trTCM shaper.
+  * TC_SETUP_BLOCK / TC_SETUP_FT: flower rules and flowtable entries go
+    to the PPE as for a GDM net_device, and a clsact ingress "matchall
+    action police" is offloaded to the QDMA RX meter (ingress trTCM of
+    the WAN QDMA RX rings, shared by everything they deliver, OMCC
+    included).  airoha_dev_tc_matchall() takes the GDM device for that.
+
+Signed-off-by: Lukasz M <lukasz1992m+openwrt@gmail.com>
+---
+--- a/drivers/net/ethernet/airoha/airoha_eth.c
++++ b/drivers/net/ethernet/airoha/airoha_eth.c
+@@ -3492,11 +3492,10 @@ static int airoha_tc_matchall_act_valida
+ 	return 0;
+ }
+ 
+-static int airoha_dev_tc_matchall(struct net_device *netdev,
++static int airoha_dev_tc_matchall(struct airoha_gdm_dev *dev,
+ 				  struct tc_cls_matchall_offload *f)
+ {
+ 	enum trtcm_unit_type unit_type = TRTCM_BYTE_UNIT;
+-	struct airoha_gdm_dev *dev = netdev_priv(netdev);
+ 	u32 rate = 0, bucket_size = 0;
+ 
+ 	switch (f->command) {
+@@ -3542,7 +3541,7 @@ static int airoha_dev_setup_tc_block_cb(
+ 	case TC_SETUP_CLSFLOWER:
+ 		return airoha_ppe_setup_tc_block_cb(&eth->ppe->dev, type_data);
+ 	case TC_SETUP_CLSMATCHALL:
+-		return airoha_dev_tc_matchall(netdev, type_data);
++		return airoha_dev_tc_matchall(dev, type_data);
+ 	default:
+ 		return -EOPNOTSUPP;
+ 	}
+@@ -3946,6 +3945,28 @@ u32 airoha_xpon_mtu(struct airoha_gdm_de
+ }
+ 
+ /*
++ * The MTU of the client's net_device changed: update the PPE egress MTU of
++ * its GDM (airoha_ppe_set_xmit_frame_size() reads it through airoha_xpon_mtu()).
++ * Called under RTNL.
++ */
++void airoha_xpon_mtu_changed(struct net_device *tx_dev)
++{
++	struct airoha_gdm_dev *gdm = NULL;
++	unsigned long flags;
++
++	ASSERT_RTNL();
++
++	spin_lock_irqsave(&airoha_xpon_lock, flags);
++	if (airoha_xpon_client.tx_dev == tx_dev)
++		gdm = airoha_xpon_client.gdm;
++	spin_unlock_irqrestore(&airoha_xpon_lock, flags);
++
++	if (gdm)
++		airoha_ppe_set_xmit_frame_size(gdm);
++}
++EXPORT_SYMBOL_GPL(airoha_xpon_mtu_changed);
++
++/*
+  * GDM2 is not opened as a net_device by the xPON client, so set up its
+  * forwarding here as airoha_dev_open()/airoha_dev_stop() would: all
+  * frames go through PPE1, whose default CPU port for GDM2 is the QDMA of
+@@ -4090,6 +4111,234 @@ static void airoha_xpon_put(void)
+ }
+ 
+ /*
++ * Switch the binding of downstream flows in the PPE (airoha_xpon_ops.
++ * ppe_downstream) while the client is registered.  The flag is read by
++ * airoha_xpon_deliver() under airoha_xpon_lock, so it is changed under the
++ * same lock; a frame already on its way keeps the value it saw.
++ *
++ * Turning it off only stops binding new flows.  The PPE entries that are
++ * already bound are not tracked per client (they belong to the flowtable
++ * and flower offloads of the PPE and are shared with the GDM net_devices),
++ * there is no function that removes just the downstream ones and flushing
++ * the whole table would also drop unrelated flows, so they are left to the
++ * PPE to age out.
++ */
++void airoha_xpon_set_ppe_downstream(bool on)
++{
++	unsigned long flags;
++
++	spin_lock_irqsave(&airoha_xpon_lock, flags);
++	if (airoha_xpon_client.dev)
++		airoha_xpon_client.ppe_downstream = on;
++	spin_unlock_irqrestore(&airoha_xpon_lock, flags);
++}
++EXPORT_SYMBOL_GPL(airoha_xpon_set_ppe_downstream);
++
++bool airoha_xpon_get_ppe_downstream(void)
++{
++	unsigned long flags;
++	bool on;
++
++	spin_lock_irqsave(&airoha_xpon_lock, flags);
++	on = airoha_xpon_client.dev && airoha_xpon_client.ppe_downstream;
++	spin_unlock_irqrestore(&airoha_xpon_lock, flags);
++
++	return on;
++}
++EXPORT_SYMBOL_GPL(airoha_xpon_get_ppe_downstream);
++
++static int airoha_xpon_tc_block_cb(enum tc_setup_type type, void *type_data,
++				   void *cb_priv)
++{
++	struct net_device *netdev = cb_priv;
++	struct airoha_gdm_dev *gdm = NULL;
++	unsigned long flags;
++
++	if (!tc_can_offload(netdev) ||
++	    (type != TC_SETUP_CLSFLOWER && type != TC_SETUP_CLSMATCHALL))
++		return -EOPNOTSUPP;
++
++	spin_lock_irqsave(&airoha_xpon_lock, flags);
++	if (airoha_xpon_client.gdm && airoha_xpon_client.tx_dev == netdev)
++		gdm = airoha_xpon_client.gdm;
++	spin_unlock_irqrestore(&airoha_xpon_lock, flags);
++
++	if (!gdm)
++		return -ENODEV;
++
++	/* matchall + police: the ingress trTCM of the WAN QDMA RX rings */
++	if (type == TC_SETUP_CLSMATCHALL)
++		return airoha_dev_tc_matchall(gdm, type_data);
++
++	return airoha_ppe_setup_tc_block_cb(&gdm->eth->ppe->dev, type_data);
++}
++
++/*
++ * TC_SETUP_BLOCK / TC_SETUP_FT on the xPON client's net_device (its
++ * @tx_dev): flower rules and flowtable entries go to the PPE as for a GDM
++ * net_device (airoha_dev_setup_tc_block()).  A flowtable shares one block
++ * among its devices, so the GDM net_devices see the same rules; binding
++ * here lets an offloaded flowtable include the client's net_device.
++ * A matchall rule with a police action limits the ingress trTCM of the RX
++ * rings of the WAN QDMA, as on a GDM net_device; the limit is shared by
++ * everything the rings deliver, the OMCC frames included.
++ */
++static int airoha_xpon_setup_tc_block(struct net_device *netdev,
++				      struct flow_block_offload *f)
++{
++	flow_setup_cb_t *cb = airoha_xpon_tc_block_cb;
++	static LIST_HEAD(block_cb_list);
++	struct flow_block_cb *block_cb;
++
++	if (f->binder_type != FLOW_BLOCK_BINDER_TYPE_CLSACT_INGRESS)
++		return -EOPNOTSUPP;
++
++	f->driver_block_list = &block_cb_list;
++	switch (f->command) {
++	case FLOW_BLOCK_BIND:
++		block_cb = flow_block_cb_lookup(f->block, cb, netdev);
++		if (block_cb) {
++			flow_block_cb_incref(block_cb);
++			return 0;
++		}
++		block_cb = flow_block_cb_alloc(cb, netdev, netdev, NULL);
++		if (IS_ERR(block_cb))
++			return PTR_ERR(block_cb);
++
++		flow_block_cb_incref(block_cb);
++		flow_block_cb_add(block_cb, f);
++		list_add_tail(&block_cb->driver_list, &block_cb_list);
++		return 0;
++	case FLOW_BLOCK_UNBIND:
++		block_cb = flow_block_cb_lookup(f->block, cb, netdev);
++		if (!block_cb)
++			return -ENOENT;
++
++		if (!flow_block_cb_decref(block_cb)) {
++			flow_block_cb_remove(block_cb, f);
++			list_del(&block_cb->driver_list);
++		}
++		return 0;
++	default:
++		return -EOPNOTSUPP;
++	}
++}
++
++/* TX queue 0 is the default one, 1 + channel the HTB leaves */
++#define AIROHA_XPON_TC_QID(_ch)		(1 + (_ch))
++
++static unsigned long airoha_xpon_htb_channels;
++
++static int airoha_xpon_tc_ets(struct tc_ets_qopt_offload *opt)
++{
++	struct net_device *dev;
++	unsigned long flags;
++	int channel;
++
++	if (opt->parent == TC_H_ROOT)
++		return -EINVAL;
++	channel = TC_H_MIN(opt->parent);
++	if (channel > AIROHA_XPON_MAX_CHANNEL)
++		return -EINVAL;
++
++	spin_lock_irqsave(&airoha_xpon_lock, flags);
++	dev = airoha_xpon_client.dev;
++	spin_unlock_irqrestore(&airoha_xpon_lock, flags);
++
++	switch (opt->command) {
++	case TC_ETS_REPLACE:
++		return dev ? airoha_qdma_set_tx_ets_sched(dev, channel, opt) :
++			     -ENODEV;
++	case TC_ETS_DESTROY:
++		/* back to the default strict priority */
++		return dev ? airoha_qdma_set_tx_prio_sched(dev, channel) :
++			     -ENODEV;
++	case TC_ETS_STATS:
++		return 0;
++	default:
++		return -EOPNOTSUPP;
++	}
++}
++
++/* bytes/s from tc -> kbit/s for the trTCM, as airoha_tc_htb_modify_queue() */
++static int airoha_xpon_tc_htb(struct net_device *netdev,
++			      struct tc_htb_qopt_offload *opt)
++{
++	int channel = TC_H_MIN(opt->classid), ret, ch;
++
++	switch (opt->command) {
++	case TC_HTB_CREATE:
++		return 0;
++	case TC_HTB_DESTROY:
++		for_each_set_bit(ch, &airoha_xpon_htb_channels, BITS_PER_LONG)
++			airoha_xpon_set_chan_rate(ch, 0, 0);
++		airoha_xpon_htb_channels = 0;
++		return 0;
++	case TC_HTB_NODE_MODIFY:
++	case TC_HTB_LEAF_ALLOC_QUEUE:
++		if (opt->parent_classid != TC_HTB_CLASSID_ROOT) {
++			NL_SET_ERR_MSG_MOD(opt->extack,
++					   "only leaves of the root class");
++			return -EINVAL;
++		}
++		if (channel > AIROHA_XPON_MAX_CHANNEL) {
++			NL_SET_ERR_MSG_MOD(opt->extack,
++					   "classid minor must be a T-CONT channel");
++			return -EINVAL;
++		}
++		ret = airoha_xpon_set_chan_rate(channel,
++						div_u64(opt->rate, 1000) << 3,
++						opt->quantum);
++		if (ret || opt->command == TC_HTB_NODE_MODIFY)
++			return ret;
++		if (AIROHA_XPON_TC_QID(channel) + 1 >
++		    netdev->real_num_tx_queues) {
++			ret = netif_set_real_num_tx_queues(netdev,
++					AIROHA_XPON_TC_QID(channel) + 1);
++			if (ret) {
++				airoha_xpon_set_chan_rate(channel, 0, 0);
++				return ret;
++			}
++		}
++		set_bit(channel, &airoha_xpon_htb_channels);
++		opt->qid = AIROHA_XPON_TC_QID(channel);
++		return 0;
++	case TC_HTB_LEAF_DEL:
++	case TC_HTB_LEAF_DEL_LAST:
++	case TC_HTB_LEAF_DEL_LAST_FORCE:
++		if (channel > AIROHA_XPON_MAX_CHANNEL)
++			return -EINVAL;
++		clear_bit(channel, &airoha_xpon_htb_channels);
++		return airoha_xpon_set_chan_rate(channel, 0, 0);
++	case TC_HTB_LEAF_QUERY_QUEUE:
++		if (channel > AIROHA_XPON_MAX_CHANNEL ||
++		    !test_bit(channel, &airoha_xpon_htb_channels))
++			return -EINVAL;
++		opt->qid = AIROHA_XPON_TC_QID(channel);
++		return 0;
++	default:
++		return -EOPNOTSUPP;
++	}
++}
++
++int airoha_xpon_setup_tc(struct net_device *netdev, enum tc_setup_type type,
++			 void *type_data)
++{
++	switch (type) {
++	case TC_SETUP_QDISC_ETS:
++		return airoha_xpon_tc_ets(type_data);
++	case TC_SETUP_QDISC_HTB:
++		return airoha_xpon_tc_htb(netdev, type_data);
++	case TC_SETUP_BLOCK:
++	case TC_SETUP_FT:
++		return airoha_xpon_setup_tc_block(netdev, type_data);
++	default:
++		return -EOPNOTSUPP;
++	}
++}
++EXPORT_SYMBOL_GPL(airoha_xpon_setup_tc);
++
++/*
+  * Frames still in the rings stop referring to the client's net_device, so
+  * a late TX completion does not touch it once the client is gone.
+  */
+--- a/include/linux/soc/airoha/airoha_xpon.h
++++ b/include/linux/soc/airoha/airoha_xpon.h
+@@ -81,6 +81,12 @@ enum airoha_xpon_sched {
+ int airoha_xpon_register(struct net_device *netdev,
+ 			 const struct airoha_xpon_ops *ops);
+ void airoha_xpon_unregister(struct net_device *netdev);
++void airoha_xpon_set_ppe_downstream(bool on);
++bool airoha_xpon_get_ppe_downstream(void);
++void airoha_xpon_mtu_changed(struct net_device *tx_dev);
++enum tc_setup_type;
++int airoha_xpon_setup_tc(struct net_device *netdev, enum tc_setup_type type,
++			 void *type_data);
+ int airoha_xpon_tx(struct sk_buff *skb,
+ 		   const struct airoha_xpon_tx_info *info);
+ int airoha_xpon_gdm_stop(bool stop);
