@@ -1,0 +1,45 @@
+From: Felix Fietkau <nbd@nbd.name>
+Subject: [PATCH] MLD STA: ignore the maximum number of links in the neighbour check
+
+wpa_bss_get_usable_links() compares the whole MLD Capabilities And
+Operations field of a neighbour link with that of the selected BSS. The
+Maximum Number Of Simultaneous Links subfield of an AP MLD changes when
+the AP MLD adds affiliated APs, so two scan entries of one AP MLD can
+differ in it. A link whose entry dates from the start of the AP MLD is
+then left out of the association, and no scan refreshes it.
+
+Ignore that subfield in the compare, like the Recommended Max
+Simultaneous Links subfield of the Extended MLD Capabilities. The kernel
+needs the same change in cfg80211_mlme_check_mlo_compat(), since it
+refuses the association otherwise.
+
+--- a/wpa_supplicant/bss.c
++++ b/wpa_supplicant/bss.c
+@@ -1931,7 +1931,7 @@ u16 wpa_bss_get_usable_links(struct wpa_
+ 
+ 	for_each_link(bss->valid_links, link_id) {
+ 		struct wpa_bss *neigh_bss;
+-		u16 ext_mld_capa_mask;
++		u16 mld_capa_ignored, ext_mld_capa_mask;
+ 
+ 		if (link_id == bss->mld_link_id)
+ 			continue;
+@@ -2000,8 +2000,16 @@ u16 wpa_bss_get_usable_links(struct wpa_
+ 			continue;
+ 		}
+ 
+-		if ((bss->mld_capa & ~EHT_ML_MLD_CAPA_RESERVED) !=
+-		    (neigh_bss->mld_capa & ~EHT_ML_MLD_CAPA_RESERVED)) {
++		/*
++		 * The Maximum Number Of Simultaneous Links subfield changes
++		 * when the AP MLD adds affiliated APs, so entries of one AP MLD
++		 * can hold different values.
++		 * See IEEE Std 802.11be-2024, 35.3.6.2 and 35.3.16.2.
++		 */
++		mld_capa_ignored = EHT_ML_MLD_CAPA_RESERVED |
++			EHT_ML_MLD_CAPA_MAX_NUM_SIM_LINKS_MASK;
++		if ((bss->mld_capa & ~mld_capa_ignored) !=
++		    (neigh_bss->mld_capa & ~mld_capa_ignored)) {
+ 			wpa_dbg(wpa_s, MSG_DEBUG,
+ 				"MLD: Neighbor's MLD Capabilities do not match (0x%04x != 0x%04x)",
+ 				neigh_bss->mld_capa, bss->mld_capa);
