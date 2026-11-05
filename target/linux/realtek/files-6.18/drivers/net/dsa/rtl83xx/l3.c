@@ -2622,6 +2622,7 @@ static void otto_l3_egress_sync(struct work_struct *work)
 	u64 mac, m;
 
 	rtnl_lock();
+	mutex_lock(&ctrl->resource_lock);
 
 	/* A source MAC of zero is how a free interface is told apart */
 	dev = __dev_get_by_index(&init_net, ew->ifindex);
@@ -2671,6 +2672,7 @@ static void otto_l3_egress_sync(struct work_struct *work)
 		dev_err(ctrl->dev, "routes out of %s keep their old source MAC\n", dev->name);
 
 out:
+	mutex_unlock(&ctrl->resource_lock);
 	rtnl_unlock();
 	kfree(ew);
 }
@@ -3919,6 +3921,7 @@ static void otto_l3_fib_event_work_do(struct work_struct *work)
 
 	/* Protect internal structures from changes */
 	rtnl_lock();
+	mutex_lock(&ctrl->resource_lock);
 	dev_dbg(ctrl->dev, "doing work, event %ld\n", fib_work->event);
 	switch (fib_work->event) {
 	case FIB_EVENT_ENTRY_ADD:
@@ -3953,6 +3956,7 @@ static void otto_l3_fib_event_work_do(struct work_struct *work)
 		fib_rule_put(rule);
 		break;
 	}
+	mutex_unlock(&ctrl->resource_lock);
 	rtnl_unlock();
 	kfree(fib_work);
 }
@@ -3966,6 +3970,7 @@ static void otto_l3_fib6_event_work_do(struct work_struct *work)
 
 	/* Protect internal structures from changes */
 	rtnl_lock();
+	mutex_lock(&ctrl->resource_lock);
 	switch (fib_work->event) {
 	case FIB_EVENT_ENTRY_REPLACE:
 	case FIB_EVENT_ENTRY_APPEND:
@@ -3979,6 +3984,7 @@ static void otto_l3_fib6_event_work_do(struct work_struct *work)
 	}
 	if (err)
 		dev_err(ctrl->dev, "FIB6 event %ld failed: %d\n", fib_work->event, err);
+	mutex_unlock(&ctrl->resource_lock);
 	rtnl_unlock();
 
 	fib6_info_release(fib_work->fen6_info.rt);
@@ -4111,8 +4117,10 @@ static void otto_l3_net_event_work_do(struct work_struct *work)
 	struct otto_l3_net_event_work *net_work =
 		container_of(work, struct otto_l3_net_event_work, work);
 
+	mutex_lock(&net_work->ctrl->resource_lock);
 	otto_l3_nexthop_update(net_work->ctrl, net_work->type, net_work->ifindex,
 			       &net_work->gw_addr, net_work->mac, net_work->valid);
+	mutex_unlock(&net_work->ctrl->resource_lock);
 
 	kfree(net_work);
 }
@@ -4867,12 +4875,14 @@ void otto_l3_remove(struct otto_dsa_priv *priv)
 	 * be kept alive by it.
 	 */
 	rtnl_lock();
+	mutex_lock(&ctrl->resource_lock);
 	list_for_each_entry_safe(r, tmp, &ctrl->routes_list, list)
 		otto_l3_route_free(ctrl, r);
 	list_for_each_entry_safe(d, dtmp, &ctrl->rmac_devs, list) {
 		list_del(&d->list);
 		kfree(d);
 	}
+	mutex_unlock(&ctrl->resource_lock);
 	rtnl_unlock();
 }
 
@@ -4884,12 +4894,15 @@ struct otto_l3_flush_work {
 static void otto_l3_fib_flush_work_do(struct work_struct *work)
 {
 	struct otto_l3_flush_work *fw = container_of(work, struct otto_l3_flush_work, work);
+	struct otto_l3_ctrl *ctrl = fw->ctrl;
 	struct otto_l3_route *r, *tmp;
 
 	rtnl_lock();
+	mutex_lock(&ctrl->resource_lock);
 	list_for_each_entry_safe(r, tmp, &fw->ctrl->routes_list, list)
 		if (r->tb_id)
 			otto_l3_route_teardown(fw->ctrl, r);
+	mutex_unlock(&ctrl->resource_lock);
 	rtnl_unlock();
 }
 
@@ -4962,6 +4975,7 @@ int otto_l3_probe(struct device *dev, struct otto_dsa_priv *priv)
 	ctrl->dev = priv->dev;
 	/* For now share the register access lock with the DSA driver */
 	ctrl->lock = &priv->reg_mutex;
+	mutex_init(&ctrl->resource_lock);
 	/* Until the FIB notifier is in place there is nothing to replay */
 	INIT_DELAYED_WORK(&ctrl->resync_work, otto_l3_resync_work_do);
 	disable_delayed_work(&ctrl->resync_work);
