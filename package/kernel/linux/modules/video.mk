@@ -628,6 +628,22 @@ endef
 
 $(eval $(call KernelPackage,drm-dw-hdmi-i2s-audio))
 
+define KernelPackage/drm-dw-hdmi-ahb-audio
+  SUBMENU:=$(VIDEO_MENU)
+  TITLE:=Synopsys DesignWare HDMI AHB audio interface
+  DEPENDS:=+kmod-drm-dw-hdmi +kmod-sound-core
+  KCONFIG:=CONFIG_DRM_DW_HDMI_AHB_AUDIO
+  FILES:=$(LINUX_DIR)/drivers/gpu/drm/bridge/synopsys/dw-hdmi-ahb-audio.ko
+  AUTOLOAD:=$(call AutoProbe,dw-hdmi-ahb-audio)
+endef
+
+define KernelPackage/drm-dw-hdmi-ahb-audio/description
+  AHB audio interface of the Synopsys DesignWare HDMI transmitter, which
+  fetches the audio from memory by DMA, as on i.MX6.
+endef
+
+$(eval $(call KernelPackage,drm-dw-hdmi-ahb-audio))
+
 define KernelPackage/drm-dw-mipi-dsi
   SUBMENU:=$(VIDEO_MENU)
   TITLE:=Synopsys DesignWare MIPI DSI bridge support
@@ -789,15 +805,10 @@ $(eval $(call KernelPackage,drm-imx))
 define KernelPackage/drm-imx-hdmi
   SUBMENU:=$(VIDEO_MENU)
   TITLE:=Freescale i.MX HDMI DRM support
-  DEPENDS:=+kmod-sound-core kmod-drm-imx +kmod-drm-display-helper
-  KCONFIG:=CONFIG_DRM_IMX_HDMI \
-	CONFIG_DRM_DW_HDMI_AHB_AUDIO \
-	CONFIG_DRM_DW_HDMI_I2S_AUDIO
-  FILES:= \
-	$(LINUX_DIR)/drivers/gpu/drm/bridge/synopsys/dw-hdmi.ko \
-	$(LINUX_DIR)/drivers/gpu/drm/bridge/synopsys/dw-hdmi-ahb-audio.ko \
-	$(LINUX_DIR)/drivers/gpu/drm/imx/ipuv3/dw_hdmi-imx.ko
-  AUTOLOAD:=$(call AutoLoad,08,dw-hdmi dw-hdmi-ahb-audio dw_hdmi-imx)
+  DEPENDS:=kmod-drm-imx +kmod-drm-dw-hdmi +kmod-drm-dw-hdmi-ahb-audio
+  KCONFIG:=CONFIG_DRM_IMX_HDMI
+  FILES:=$(LINUX_DIR)/drivers/gpu/drm/imx/ipuv3/dw_hdmi-imx.ko
+  AUTOLOAD:=$(call AutoLoad,08,dw_hdmi-imx)
 endef
 
 define KernelPackage/drm-imx-hdmi/description
