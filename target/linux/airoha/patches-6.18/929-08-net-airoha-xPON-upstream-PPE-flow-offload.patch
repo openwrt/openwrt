@@ -1,0 +1,410 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Lukasz M <lukasz1992m+openwrt@gmail.com>
+Date: Sat, 31 Oct 2026 12:00:00 +0100
+Subject: [PATCH] net airoha xPON upstream PPE flow offload
+
+Upstream flows leaving through the xPON client's net_device (pon0) were
+refused: pon0 is not a GDM device, so the flowtable left them on the CPU.
+The client now gets an ops.ppe_upstream callback that says where its xmit
+would send the flow - VID and P-bit on the fibre, GEM port, T-CONT,
+queue - and the FOE entry is written as hw_nat does for FOE_MAGIC_GPON
+(ra_nat_entry.c:5136-5145, 5991): the QDMA hardware forward port 2 with
+the PSE QoS bit, the T-CONT as channel and NBQ (gpon_wan.c:453-456), the
+queue as qid, the GEM port in the etype field and the whole outer TCI in
+vlan1 (ra_nat_entry.c:1709, 2893).  The PPPoE header still comes from IB1.
+
+The P-bit handed to the client is the one the CPU path writes: ip_forward()
+sets skb->priority from the TOS (net.ipv4.ip_forward_update_priority) and
+the VLAN device on pon0 maps it through its egress_qos_map.  The flowtable
+carries the DSCP in the tuple, so a DSCP change is a new flow.  A priority
+the flowtable carries (FLOW_ACTION_PRIORITY, 708) wins over the DSCP;
+without one the DSCP is used for IPv6 as well, whose forwarding leaves
+skb->priority 0, so its traffic class still sets the P-bit.
+
+airoha_xpon_ppe_flush() unbinds these flows when the client's
+classification changes (rules, VID map, GEMs, T-CONTs) and on unregister;
+as for a WED detach the software entries stay, marked stale, and the
+flowtable's next REPLACE of a flow that still has traffic rebuilds it.
+Bridged flows and double tags stay on the CPU.  Unverified on hardware:
+how the etype reaches the GEM field of the QDMA descriptor
+(SUPPORT_STAG_FROM_INFO).
+
+Signed-off-by: Lukasz M <lukasz1992m+openwrt@gmail.com>
+---
+--- a/drivers/net/ethernet/airoha/airoha_eth.c
++++ b/drivers/net/ethernet/airoha/airoha_eth.c
+@@ -4116,6 +4116,7 @@ static struct {
+ 	void *rx_priv;
+ 	struct net_device *tx_dev;
+ 	bool ppe_downstream;
++	int (*ppe_upstream)(void *priv, struct airoha_xpon_ppe_us *us);
+ } airoha_xpon_client;
+ 
+ static struct airoha_gdm_dev *airoha_xpon_gdm_dev(struct airoha_qdma *qdma)
+@@ -4348,6 +4349,7 @@ int airoha_xpon_register(struct net_devi
+ 		airoha_xpon_client.rx_priv = ops->priv;
+ 		airoha_xpon_client.tx_dev = ops->tx_dev;
+ 		airoha_xpon_client.ppe_downstream = ops->ppe_downstream;
++		airoha_xpon_client.ppe_upstream = ops->ppe_upstream;
+ 	}
+ 	spin_unlock_irqrestore(&airoha_xpon_lock, flags);
+ 
+@@ -4427,6 +4429,101 @@ bool airoha_xpon_get_ppe_downstream(void
+ }
+ EXPORT_SYMBOL_GPL(airoha_xpon_get_ppe_downstream);
+ 
++/*
++ * An upstream flow is to leave through the client's net_device (@odev, the
++ * lowest device of the flow, @vid its outer VLAN or 0): the client says
++ * which VID, GEM port, T-CONT and queue its frames get.  @skprio is the
++ * priority the flowtable carried (FLOW_ACTION_PRIORITY, "meta priority
++ * set"); without one the P-bit follows the DSCP: as ip_forward() does for
++ * IPv4 (net.ipv4.ip_forward_update_priority) and for IPv6 too, whose
++ * forwarding leaves skb->priority 0.  The VLAN device on @odev maps it
++ * through its egress_qos_map.
++ * Returns the GDM device of the client, an ERR_PTR when the flow stays on
++ * the CPU, NULL when @odev is not the client's.
++ */
++struct airoha_gdm_dev *airoha_xpon_ppe_upstream(struct net_device *odev,
++						u16 vid, u8 dsfield, bool ipv4,
++						u32 skprio,
++						struct airoha_xpon_ppe_us *us)
++{
++	int (*cb)(void *priv, struct airoha_xpon_ppe_us *us) = NULL;
++	struct airoha_gdm_dev *gdm = NULL;
++	struct net_device *vdev;
++	unsigned long flags;
++	void *priv = NULL;
++	int err;
++
++	spin_lock_irqsave(&airoha_xpon_lock, flags);
++	if (odev && airoha_xpon_client.tx_dev == odev) {
++		gdm = airoha_xpon_client.gdm;
++		cb = airoha_xpon_client.ppe_upstream;
++		priv = airoha_xpon_client.rx_priv;
++		if (cb)
++			airoha_xpon_inflight++;
++	}
++	spin_unlock_irqrestore(&airoha_xpon_lock, flags);
++
++	if (!gdm)
++		return NULL;
++	if (!cb)
++		return ERR_PTR(-EOPNOTSUPP);
++
++	if (!skprio &&
++	    (!ipv4 || READ_ONCE(dev_net(odev)->ipv4.sysctl_ip_fwd_update_priority)))
++		skprio = rt_tos2priority(dsfield);
++
++	memset(us, 0, sizeof(*us));
++	us->vid = vid;
++	us->dscp = dsfield >> 2;
++	if (vid) {
++		rcu_read_lock();
++		vdev = __vlan_find_dev_deep_rcu(odev, htons(ETH_P_8021Q), vid);
++		if (vdev)
++			us->pcp = vlan_dev_get_egress_qos_mask(vdev, skprio) >>
++				  VLAN_PRIO_SHIFT;
++		rcu_read_unlock();
++	}
++
++	err = cb(priv, us);
++
++	spin_lock_irqsave(&airoha_xpon_lock, flags);
++	airoha_xpon_inflight--;
++	if (!airoha_xpon_inflight)
++		wake_up_all(&airoha_xpon_wq);
++	spin_unlock_irqrestore(&airoha_xpon_lock, flags);
++
++	if (err)
++		return ERR_PTR(err);
++	if (us->channel > AIROHA_XPON_MAX_CHANNEL ||
++	    us->queue > AIROHA_XPON_MAX_QUEUE || us->pcp > 7 ||
++	    us->vid >= VLAN_N_VID)
++		return ERR_PTR(-EINVAL);
++
++	return gdm;
++}
++
++/*
++ * The client's upstream classification changed (rules, VID map, GEMs,
++ * T-CONTs): unbind the upstream flows of the PPE, they carry the old GEM
++ * port and channel.  They go through the CPU until the flowtable's next
++ * REPLACE for them (about once a second while they have traffic) binds
++ * them again with the new classification.  Process context.
++ */
++void airoha_xpon_ppe_flush(void)
++{
++	struct airoha_eth *eth = NULL;
++	unsigned long flags;
++
++	spin_lock_irqsave(&airoha_xpon_lock, flags);
++	if (airoha_xpon_client.gdm)
++		eth = airoha_xpon_client.gdm->eth;
++	spin_unlock_irqrestore(&airoha_xpon_lock, flags);
++
++	if (eth)
++		airoha_ppe_xpon_flush(eth);
++}
++EXPORT_SYMBOL_GPL(airoha_xpon_ppe_flush);
++
+ static int airoha_xpon_tc_block_cb(enum tc_setup_type type, void *type_data,
+ 				   void *cb_priv)
+ {
+@@ -4679,14 +4776,18 @@ void airoha_xpon_unregister(struct net_d
+ 		airoha_xpon_client.tx_dev = NULL;
+ 		airoha_xpon_client.rx = NULL;
+ 		airoha_xpon_client.rx_priv = NULL;
++		airoha_xpon_client.ppe_upstream = NULL;
+ 		airoha_xpon_client.qdma = NULL;
+ 		airoha_xpon_client.gdm = NULL;
+ 		airoha_xpon_client.dev = NULL;
+ 	}
+ 	spin_unlock_irqrestore(&airoha_xpon_lock, flags);
+ 
+-	if (gdm)
++	if (gdm) {
+ 		airoha_xpon_gdm_fwd(gdm, false);
++		/* nothing may go on sending to the stopped WAN QDMA */
++		airoha_ppe_xpon_flush(gdm->eth);
++	}
+ 	if (qdma) {
+ 		wait_event(airoha_xpon_wq, !READ_ONCE(airoha_xpon_inflight));
+ 		if (tx_dev)
+--- a/drivers/net/ethernet/airoha/airoha_eth.h
++++ b/drivers/net/ethernet/airoha/airoha_eth.h
+@@ -558,6 +558,8 @@ struct airoha_flow_table_entry {
+ 	 * traffic, builds it anew instead of failing with -EEXIST
+ 	 */
+ 	bool stale;
++	/* upstream flow to the xPON client (GEM port and T-CONT in the entry) */
++	bool xpon;
+ 
+ 	/* Must be last --ends in a flexible-array member. */
+ 	struct airoha_foe_entry data;
+@@ -903,6 +905,12 @@ airoha_qdma_deref(struct airoha_gdm_dev
+ 
+ void airoha_ppe_set_xmit_frame_size(struct airoha_gdm_dev *dev);
+ u32 airoha_xpon_mtu(struct airoha_gdm_dev *dev);
++struct airoha_xpon_ppe_us;
++struct airoha_gdm_dev *airoha_xpon_ppe_upstream(struct net_device *odev,
++						u16 vid, u8 dsfield, bool ipv4,
++						u32 skprio,
++						struct airoha_xpon_ppe_us *us);
++void airoha_ppe_xpon_flush(struct airoha_eth *eth);
+ void airoha_ppe_set_cpu_port(struct airoha_gdm_dev *dev, u8 ppe_id, u8 fport);
+ bool airoha_ppe_is_enabled(struct airoha_eth *eth, int index);
+ void airoha_ppe_check_skb(struct airoha_ppe_dev *dev, struct sk_buff *skb,
+--- a/drivers/net/ethernet/airoha/airoha_ppe.c
++++ b/drivers/net/ethernet/airoha/airoha_ppe.c
+@@ -10,6 +10,7 @@
+ #include <linux/platform_device.h>
+ #include <linux/rhashtable.h>
+ #include <linux/soc/airoha/airoha_wed.h>
++#include <linux/soc/airoha/airoha_xpon.h>
+ #include <net/ipv6.h>
+ #include <net/pkt_cls.h>
+ #include <net/route.h>
+@@ -98,6 +99,33 @@ out:
+ }
+ EXPORT_SYMBOL_GPL(airoha_ppe_wed_detach);
+ 
++/*
++ * Unbind the upstream flows of the xPON client (airoha_xpon_ppe_flush());
++ * as for a WED detach their software entries stay, marked stale, and a
++ * flow that still has traffic is rebuilt by the flowtable's next REPLACE
++ * with what the client says then.
++ */
++void airoha_ppe_xpon_flush(struct airoha_eth *eth)
++{
++	struct airoha_flow_table_entry *e;
++	struct rhashtable_iter iter;
++
++	mutex_lock(&flow_offload_mutex);
++	rhashtable_walk_enter(&eth->flow_table, &iter);
++	rhashtable_walk_start(&iter);
++	while ((e = rhashtable_walk_next(&iter))) {
++		if (IS_ERR(e) || !e->xpon)
++			continue;
++
++		airoha_ppe_foe_flow_remove_entry(eth->ppe, e);
++		e->xpon = false;
++		e->stale = true;
++	}
++	rhashtable_walk_stop(&iter);
++	rhashtable_walk_exit(&iter);
++	mutex_unlock(&flow_offload_mutex);
++}
++
+ static int airoha_ppe_wed_flow_add(int idx)
+ {
+ 	int err = -ENODEV;
+@@ -478,11 +506,13 @@ static int airoha_ppe_foe_entry_prepare(
+ 					struct airoha_foe_entry *hwe,
+ 					struct net_device *netdev, int type,
+ 					struct airoha_flow_data *data,
+-					int l4proto, u8 dsfield, int *wed_idx)
++					int l4proto, u8 dsfield, int *wed_idx,
++					bool *xpon, u32 skprio)
+ {
+ 	u32 qdata = FIELD_PREP(AIROHA_FOE_SHAPER_ID, 0x7f), ports_pad, val;
+ 	int wlan_etype = -EINVAL, dsa_port = airoha_get_dsa_port(&netdev);
+ 	struct airoha_foe_mac_info_common *l2;
++	int gem_etype = -EINVAL;
+ 	u8 smac_id = 0xf;
+ 
+ 	memset(hwe, 0, sizeof(*hwe));
+@@ -499,9 +529,49 @@ static int airoha_ppe_foe_entry_prepare(
+ 	val = FIELD_PREP(AIROHA_FOE_IB2_PORT_AG, 0x1f);
+ 	if (netdev) {
+ 		struct airoha_wdma_info info = {};
++		struct airoha_xpon_ppe_us us;
++		struct airoha_gdm_dev *xdev;
+ 
+-		if (!airoha_ppe_get_wdma_info(netdev, data->eth.h_dest,
+-					      &info)) {
++		xdev = airoha_xpon_ppe_upstream(netdev,
++						data->vlan.num ?
++						data->vlan.hdr[0].id : 0,
++						dsfield,
++						type < PPE_PKT_TYPE_IPV6_ROUTE_3T,
++						skprio, &us);
++		if (IS_ERR(xdev))
++			return PTR_ERR(xdev);
++
++		if (xdev) {
++			/*
++			 * Upstream to the xPON client, as hw_nat writes it for
++			 * FOE_MAGIC_GPON (ra_nat_entry.c:5136-5145, 5991): the
++			 * QDMA hardware forward port (FP_QDMA_HW, 2) with the
++			 * PSE QoS bit, the T-CONT as channel and NBQ
++			 * (gpon_wan.c:453-456), the queue as qid and the GEM
++			 * port in the etype field.  The outer tag is the one
++			 * the client's tc rules leave on the fibre, P-bit
++			 * included, as hw_nat copies the whole TCI
++			 * (ra_nat_entry.c:1709, 2893).
++			 */
++			if (type == PPE_PKT_TYPE_BRIDGE || data->vlan.num > 1 ||
++			    !!data->vlan.num != !!us.vid)
++				return -EOPNOTSUPP;
++
++			qdata |= FIELD_PREP(AIROHA_FOE_CHANNEL, us.channel) |
++				 FIELD_PREP(AIROHA_FOE_QID, us.queue);
++			val |= FIELD_PREP(AIROHA_FOE_IB2_PSE_PORT,
++					  FE_PSE_PORT_GDM2) |
++			       FIELD_PREP(AIROHA_FOE_IB2_NBQ, us.channel) |
++			       FIELD_PREP(AIROHA_FOE_IB2_DSCP, dsfield) |
++			       AIROHA_FOE_IB2_PSE_QOS;
++			if (data->vlan.num)
++				data->vlan.hdr[0].id = us.vid |
++					(us.pcp << VLAN_PRIO_SHIFT);
++			gem_etype = us.gem_port;
++			smac_id = xdev->port->id;
++			*xpon = true;
++		} else if (!airoha_ppe_get_wdma_info(netdev, data->eth.h_dest,
++						     &info)) {
+ 			if (eth->soc->wed_cdm4_queues) {
+ 				/*
+ 				 * AN7552/AN7563, entry as the vendor hw_nat
+@@ -636,6 +706,9 @@ static int airoha_ppe_foe_entry_prepare(
+ 
+ 	if (wlan_etype >= 0) {
+ 		l2->etype = wlan_etype;
++	} else if (gem_etype >= 0) {
++		/* the PPPoE header comes from IB1, not from this field */
++		l2->etype = gem_etype;
+ 	} else if (dsa_port >= 0) {
+ 		l2->etype = BIT(dsa_port);
+ 		l2->etype |= !data->vlan.num ? BIT(15) : 0;
+@@ -1276,6 +1349,8 @@ static int airoha_ppe_flow_offload_repla
+ 	struct airoha_foe_entry hwe;
+ 	int err, i, offload_type, wed_idx = -1;
+ 	u16 addr_type = 0;
++	u32 skprio = 0;
++	bool xpon = false;
+ 
+ 	e = rhashtable_lookup(&eth->flow_table, &f->cookie,
+ 			      airoha_flow_table_params);
+@@ -1355,6 +1430,8 @@ static int airoha_ppe_flow_offload_repla
+ 			odev = act->dev;
+ 			break;
+ 		case FLOW_ACTION_PRIORITY:
++			skprio = act->priority;
++			break;
+ 		case FLOW_ACTION_CSUM:
+ 			break;
+ 		case FLOW_ACTION_VLAN_PUSH:
+@@ -1385,7 +1462,8 @@ static int airoha_ppe_flow_offload_repla
+ 		return -EINVAL;
+ 
+ 	err = airoha_ppe_foe_entry_prepare(eth, &hwe, odev, offload_type,
+-					   &data, l4proto, dsfield, &wed_idx);
++					   &data, l4proto, dsfield, &wed_idx,
++					   &xpon, skprio);
+ 	if (err)
+ 		return err;
+ 
+@@ -1469,6 +1547,7 @@ static int airoha_ppe_flow_offload_repla
+ 	e->cookie = f->cookie;
+ 	e->wed = wed_idx >= 0;
+ 	e->wed_idx = max(wed_idx, 0);
++	e->xpon = xpon;
+ 	memcpy(&e->data, &hwe, sizeof(e->data));
+ 
+ 	err = airoha_ppe_foe_flow_commit_entry(eth->ppe, e);
+--- a/include/linux/soc/airoha/airoha_xpon.h
++++ b/include/linux/soc/airoha/airoha_xpon.h
+@@ -45,14 +45,36 @@ struct airoha_xpon_rx_info {
+ };
+ 
+ /**
++ * struct airoha_xpon_ppe_us - an upstream flow the PPE would send to @tx_dev
++ * @vid: in: outer VID the router side sends (0: untagged); out: the VID
++ *	the frames carry on the fibre
++ * @pcp: in: P-bit of that tag on the CPU path; out: the P-bit on the fibre
++ * @dscp: in: DSCP of the flow (IPv4 TOS or IPv6 traffic class)
++ * @gem_port: out: GEM port id
++ * @channel: out: T-CONT channel
++ * @queue: out: queue inside @channel
++ */
++struct airoha_xpon_ppe_us {
++	u16 vid;
++	u8 pcp;
++	u8 dscp;
++	u16 gem_port;
++	u8 channel;
++	u8 queue;
++};
++
++/**
+  * struct airoha_xpon_ops - xPON client callbacks
+  * @rx: called from the airoha-eth NAPI context for every downstream frame,
+  *	must not sleep; the callback owns @skb
+- * @priv: opaque pointer handed back to @rx
++ * @priv: opaque pointer handed back to @rx and @ppe_upstream
+  * @tx_dev: net_device the client's data frames are sent from; when set,
+  *	frames without @oam are charged to its TX queue (BQL) and the queue
+  *	is stopped/woken with the QDMA ring
+  * @ppe_downstream: bind downstream flows (entering on @tx_dev) in the PPE
++ * @ppe_upstream: where an upstream flow to @tx_dev goes, as the client's
++ *	xmit would send its frames; 0 binds it in the PPE, an error leaves it
++ *	to the CPU.  Must not sleep.  NULL: no upstream flows in the PPE.
+  */
+ struct airoha_xpon_ops {
+ 	void (*rx)(void *priv, struct sk_buff *skb,
+@@ -60,6 +82,7 @@ struct airoha_xpon_ops {
+ 	void *priv;
+ 	struct net_device *tx_dev;
+ 	bool ppe_downstream;
++	int (*ppe_upstream)(void *priv, struct airoha_xpon_ppe_us *us);
+ };
+ 
+ #define AIROHA_XPON_MAX_CHANNEL		31
+@@ -83,6 +106,7 @@ int airoha_xpon_register(struct net_devi
+ void airoha_xpon_unregister(struct net_device *netdev);
+ void airoha_xpon_set_ppe_downstream(bool on);
+ bool airoha_xpon_get_ppe_downstream(void);
++void airoha_xpon_ppe_flush(void);
+ void airoha_xpon_mtu_changed(struct net_device *tx_dev);
+ enum tc_setup_type;
+ int airoha_xpon_setup_tc(struct net_device *netdev, enum tc_setup_type type,
