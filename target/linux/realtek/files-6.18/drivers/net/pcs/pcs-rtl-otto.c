@@ -336,6 +336,9 @@ enum rtpcs_page {
 #define   RTL93XX_FRC_V2ANALOG_UNFORCED	FIELD_PREP(RTL93XX_FRC_V2ANALOG, 0x0)
 #define   RTL93XX_FRC_V2ANALOG_FORCE_OFF	FIELD_PREP(RTL93XX_FRC_V2ANALOG, 0x1)
 
+#define ANA_MISC_REG02			0x02
+#define  RTL930X_FRC_BER_NOTIFY_ON	BIT(12)
+
 /* PAGE_ANA_COM */
 
 #define ANA_COM_REG06			0x06
@@ -2476,7 +2479,8 @@ static int rtpcs_930x_sds_activate(struct rtpcs_serdes *sds)
 	rtpcs_930x_sds_rx_reset(sds, sds->hw_mode);
 
 	/* Release any inherited BER-notify override. */
-	ret = rtpcs_sds_write_bits(sds, PAGE_ANA_MISC, 2, 12, 12, 0);
+	ret = rtpcs_sds_write_mask(sds, PAGE_ANA_MISC, ANA_MISC_REG02,
+				   RTL930X_FRC_BER_NOTIFY_ON, 0);
 	if (ret)
 		return ret;
 
