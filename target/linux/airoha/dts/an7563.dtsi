@@ -715,5 +715,53 @@
 			#phy-cells = <1>;
 			status = "disabled";
 		};
+
+		/*
+		 * xPON: the GPON MAC and the PON SerDes PHY in one device,
+		 * driven by the an7552-gpon module (compatible
+		 * "airoha,an7552-gpon").  One node because there is no
+		 * layering between them any more: the MAC holds a pointer to
+		 * the PHY and drives it directly.
+		 *
+		 *   gpon  0x1fb64000/0x3e8   GPON MAC
+		 *                   (en7552.dtsi xpon_mac; ecnt_xpon.c:58).
+		 *                   The EPON block next to it (0x1fb66000)
+		 *                   is not used: the driver is GPON only.
+		 *                   The SDK builds this die with
+		 *                   TCSUPPORT_CPU_AN7552 and the
+		 *                   gpon_mac_reg_c_header_en7521.h layout.
+		 *
+		 *   csr   0x1faf0000/0x2000   digital PHY CSR
+		 *                   (en7552.dtsi pon_phy; phy_reg.h
+		 *                   REG_BASE_1..5)
+		 *   ana   0x1faf3000/0x1000   SerDes analog
+		 *                   (pon_hsgmii_ana_csr_c_header.h)
+		 *   pma   0x1faf4000/0x1000   SerDes digital
+		 *                   (pon_hsgmii_dig_csr_c_header.h)
+		 *
+		 * The vendor pon_phy node also lists 0x1fa2ff24
+		 * (PON_PHY_FPGA_RG_TX_OFF), an FPGA-only register that is not
+		 * mapped here.  The csr window overlaps &pon_pcs: enable one
+		 * of the two.
+		 */
+		xpon: xpon@1fb64000 {
+			compatible = "airoha,an7552-gpon";
+			reg = <0x1fb64000 0x3e8>,
+			      <0x1faf0000 0x2000>,
+			      <0x1faf3000 0x1000>,
+			      <0x1faf4000 0x1000>;
+			reg-names = "gpon", "csr", "ana", "pma";
+			interrupts = <GIC_SPI 42 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 34 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 43 IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-names = "mac", "dying-gasp", "phy";
+			resets = <&scu EN7581_XPON_MAC_RST>,
+				<&scu EN7581_XPON_PHY_RST>;
+			reset-names = "mac", "phy";
+			airoha,scu = <&scu>;
+			airoha,chip-scu = <&chip_scu>;
+			ethernet = <&gdm2>;
+			status = "disabled";
+		};
 	};
 };
