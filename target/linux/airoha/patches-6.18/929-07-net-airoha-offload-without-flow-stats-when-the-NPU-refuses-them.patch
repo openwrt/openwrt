@@ -1,0 +1,66 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Lukasz M <lukasz1992m+openwrt@gmail.com>
+Date: Sat, 31 Oct 2026 12:00:00 +0100
+Subject: [PATCH] net airoha offload without flow stats when the NPU refuses them
+
+airoha_ppe_offload_setup() failed the whole flow offload setup when the
+NPU refused the flow stats area (npu->ops.ppe_init_stats()), so a
+missing counter feature cost the hardware offload itself.  Log it once
+and go on without stats: a flag makes airoha_ppe_get_total_num_stats_entries()
+report none from then on, and every stats path (reset, update on commit,
+the reads for the flowtable) already checks that number, so the area the
+NPU did not take is never touched.  The SRAM layout programmed by
+airoha_ppe_hw_init() still reserves the stats entries, as the NPU was set
+up with them.  The stats read path keeps reporting its errors as before.
+
+Generic on purpose: only SoCs whose NPU runs the PPE reach this code (on
+AN7563 the host runs the PPE and has no flow stats), and for them the
+change is only that offload keeps working with the counters at 0 instead
+of not working at all.
+
+Signed-off-by: Lukasz M <lukasz1992m+openwrt@gmail.com>
+---
+--- a/drivers/net/ethernet/airoha/airoha_eth.h
++++ b/drivers/net/ethernet/airoha/airoha_eth.h
+@@ -666,6 +666,8 @@ struct airoha_ppe {
+ 
+ 	struct airoha_foe_stats *foe_stats;
+ 	dma_addr_t foe_stats_dma;
++	/* the NPU did not take the flow stats area: offload runs without */
++	bool stats_off;
+ 
+ 	/* PPE configured by the host, without the NPU (soc->ppe_host) */
+ 	bool host_ready;
+--- a/drivers/net/ethernet/airoha/airoha_ppe.c
++++ b/drivers/net/ethernet/airoha/airoha_ppe.c
+@@ -155,6 +155,9 @@ static int airoha_ppe_get_total_num_stat
+ {
+ 	int num_stats = airoha_ppe_get_num_stats_entries(ppe);
+ 
++	if (ppe->stats_off)
++		return -EOPNOTSUPP;
++
+ 	if (num_stats > 0) {
+ 		struct airoha_eth *eth = ppe->eth;
+ 
+@@ -1711,8 +1714,18 @@ static int airoha_ppe_offload_setup(stru
+ 	if (ppe_num_stats_entries > 0) {
+ 		err = npu->ops.ppe_init_stats(npu, ppe->foe_stats_dma,
+ 					      ppe_num_stats_entries);
+-		if (err)
+-			goto error_npu_put;
++		/*
++		 * Offload without the flow counters rather than none at all:
++		 * every stats path checks the number of stats entries, which
++		 * is none from here on, so the area the NPU did not take is
++		 * never read or written.
++		 */
++		if (err) {
++			dev_warn(eth->dev,
++				 "NPU flow stats unavailable (%d), offload without\n",
++				 err);
++			ppe->stats_off = true;
++		}
+ 	}
+ 
+ 	airoha_ppe_hw_init(ppe);

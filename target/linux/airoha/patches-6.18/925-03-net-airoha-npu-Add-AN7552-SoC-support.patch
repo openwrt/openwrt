@@ -1,0 +1,420 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Lukasz M <lukasz1992m+openwrt@gmail.com>
+Date: Sat, 31 Oct 2026 12:00:00 +0100
+Subject: [PATCH] net airoha npu Add AN7552 SoC support
+
+Introduce support for Airoha AN7552/AN7563 SoC NPU (NPU_V2_S):
+- Firmware selection (an7552_npu_rv32.bin / an7552_npu_data.bin).
+- Core count (2 cores) and L2C SRAM size (128 KB).
+- AN7552 shared watchdog timer layout and interrupt mapping.
+- Restrict TX buffer memory allocation (tx-bufid / tx-pkt) to > 2 cores.
+- Defer NPU start until requested on demand by the Wi-Fi driver (airoha_npu_start).
+
+Signed-off-by: Lukasz M <lukasz1992m+openwrt@gmail.com>
+---
+--- a/drivers/net/ethernet/airoha/airoha_npu.c
++++ b/drivers/net/ethernet/airoha/airoha_npu.c
+@@ -21,6 +21,8 @@
+ #define NPU_EN7581_7996_FIRMWARE_RV32		"airoha/en7581_MT7996_npu_rv32.bin"
+ #define NPU_AN7583_FIRMWARE_DATA		"airoha/an7583_npu_data.bin"
+ #define NPU_AN7583_FIRMWARE_RV32		"airoha/an7583_npu_rv32.bin"
++#define NPU_AN7552_FIRMWARE_DATA		"airoha/an7552_npu_data.bin"
++#define NPU_AN7552_FIRMWARE_RV32		"airoha/an7552_npu_rv32.bin"
+ #define NPU_EN7581_FIRMWARE_RV32_MAX_SIZE	0x200000
+ #define NPU_EN7581_FIRMWARE_DATA_MAX_SIZE	0x10000
+ #define NPU_DUMP_SIZE				512
+@@ -63,7 +65,6 @@
+ #define REG_RX_DMA_IDX(_n)		(NPU_WLAN_BASE_ADDR + ((_n) << 4) + 0x18c)
+ 
+ #define NPU_TIMER_BASE_ADDR		0x310100
+-#define REG_WDT_TIMER_CTRL(_n)		(NPU_TIMER_BASE_ADDR + ((_n) * 0x100))
+ #define WDT_EN_MASK			BIT(25)
+ #define WDT_INTR_MASK			BIT(21)
+ 
+@@ -116,6 +117,28 @@ struct airoha_npu_fw {
+ struct airoha_npu_soc_data {
+ 	struct airoha_npu_fw fw_rv32;
+ 	struct airoha_npu_fw fw_data;
++	/* L2C SRAM size, NPU_MIB11 */
++	u32 l2c_sram_size;
++	/* number of NPU cores, and thus of watchdogs */
++	u16 num_cores;
++	/*
++	 * Watchdog timer layout.  On the 8-core NPU every core owns a timer
++	 * block holding 3 counters and a single watchdog, so the blocks are
++	 * one 0x100 apart and the watchdog bits do not move.  On the 2-core
++	 * NPU a single timer block holds 4 counters and 4 watchdogs, so all
++	 * cores share it and every watchdog sits one bit further up.
++	 */
++	u32 wdt_timer_base;
++	u32 wdt_reg_step;
++	u8 wdt_bit_step;
++	/*
++	 * Shared timer block: the enable bits, the only ones the interrupt
++	 * handler writes back; the others are write-1-to-clear interrupt
++	 * bits of the other cores and counters.  0: one block per core.
++	 */
++	u32 wdt_keep_mask;
++	/* the WiFi driver starts the cores, airoha_npu_start() */
++	bool defer_start;
+ };
+ 
+ #define MBOX_MSG_FUNC_ID	GENMASK(14, 11)
+@@ -316,16 +339,38 @@ static void airoha_npu_wdt_work(struct w
+ 	dev_coredumpv(npu->dev, dump, NPU_DUMP_SIZE, GFP_KERNEL);
+ }
+ 
++static u32 airoha_npu_wdt_reg(struct airoha_npu *npu, int core)
++{
++	return npu->soc->wdt_timer_base + core * npu->soc->wdt_reg_step;
++}
++
++static u32 airoha_npu_wdt_mask(struct airoha_npu *npu, int core, u32 mask)
++{
++	return mask << (core * npu->soc->wdt_bit_step);
++}
++
+ static irqreturn_t airoha_npu_wdt_handler(int irq, void *core_instance)
+ {
+ 	struct airoha_npu_core *core = core_instance;
+ 	struct airoha_npu *npu = core->npu;
+ 	int c = core - &npu->cores[0];
++	u32 intr = airoha_npu_wdt_mask(npu, c, WDT_INTR_MASK);
++	u32 reg = airoha_npu_wdt_reg(npu, c);
+ 	u32 val;
+ 
+-	regmap_set_bits(npu->regmap, REG_WDT_TIMER_CTRL(c), WDT_INTR_MASK);
+-	if (!regmap_read(npu->regmap, REG_WDT_TIMER_CTRL(c), &val) &&
+-	    FIELD_GET(WDT_EN_MASK, val))
++	/*
++	 * ecnt_npu.c:1286-1293: in the shared block a read-modify-write
++	 * would clear the pending interrupts of the other core as well
++	 */
++	if (npu->soc->wdt_keep_mask) {
++		if (!regmap_read(npu->regmap, reg, &val))
++			regmap_write(npu->regmap, reg,
++				     (val & npu->soc->wdt_keep_mask) | intr);
++	} else {
++		regmap_set_bits(npu->regmap, reg, intr);
++	}
++	if (!regmap_read(npu->regmap, reg, &val) &&
++	    (val & airoha_npu_wdt_mask(npu, c, WDT_EN_MASK)))
+ 		schedule_work(&core->wdt_work);
+ 
+ 	return IRQ_HANDLED;
+@@ -542,20 +587,24 @@ static int airoha_npu_wlan_init_memory(s
+ 	if (err)
+ 		return err;
+ 
+-	cmd = WLAN_FUNC_SET_WAIT_TX_BUF_CHECK_ADDR;
+-	err = airoha_npu_wlan_set_reserved_memory(npu, 0, "tx-bufid", cmd);
+-	if (err)
+-		return err;
++	if (npu->soc->num_cores > 2) {
++		cmd = WLAN_FUNC_SET_WAIT_TX_BUF_CHECK_ADDR;
++		err = airoha_npu_wlan_set_reserved_memory(npu, 0, "tx-bufid", cmd);
++		if (err)
++			return err;
++	}
+ 
+ 	cmd = WLAN_FUNC_SET_WAIT_PKT_BUF_ADDR;
+ 	err = airoha_npu_wlan_set_reserved_memory(npu, 0, "pkt", cmd);
+ 	if (err)
+ 		return err;
+ 
+-	cmd = WLAN_FUNC_SET_WAIT_TX_PKT_BUF_ADDR;
+-	err = airoha_npu_wlan_set_reserved_memory(npu, 0, "tx-pkt", cmd);
+-	if (err)
+-		return err;
++	if (npu->soc->num_cores > 2) {
++		cmd = WLAN_FUNC_SET_WAIT_TX_PKT_BUF_ADDR;
++		err = airoha_npu_wlan_set_reserved_memory(npu, 0, "tx-pkt", cmd);
++		if (err)
++			return err;
++	}
+ 
+ 	if (of_property_match_string(npu->dev->of_node, "memory-region-names",
+ 				     "ba") >= 0) {
+@@ -668,6 +717,11 @@ static const struct airoha_npu_soc_data
+ 		.name = NPU_EN7581_FIRMWARE_DATA,
+ 		.max_size = NPU_EN7581_FIRMWARE_DATA_MAX_SIZE,
+ 	},
++	.l2c_sram_size = 0x40000, /* 256K */
++	.num_cores = 8,
++	.wdt_timer_base = NPU_TIMER_BASE_ADDR,
++	.wdt_reg_step = 0x100,
++	.wdt_bit_step = 0,
+ };
+ 
+ static const struct airoha_npu_soc_data an7583_npu_soc_data = {
+@@ -679,10 +733,35 @@ static const struct airoha_npu_soc_data
+ 		.name = NPU_AN7583_FIRMWARE_DATA,
+ 		.max_size = NPU_EN7581_FIRMWARE_DATA_MAX_SIZE,
+ 	},
++	.l2c_sram_size = 0x40000, /* 256K */
++	.num_cores = 8,
++	.wdt_timer_base = NPU_TIMER_BASE_ADDR,
++	.wdt_reg_step = 0x100,
++	.wdt_bit_step = 0,
++};
++
++static const struct airoha_npu_soc_data an7552_npu_soc_data = {
++	.fw_rv32 = {
++		.name = NPU_AN7552_FIRMWARE_RV32,
++		.max_size = NPU_EN7581_FIRMWARE_RV32_MAX_SIZE,
++	},
++	.fw_data = {
++		.name = NPU_AN7552_FIRMWARE_DATA,
++		.max_size = NPU_EN7581_FIRMWARE_DATA_MAX_SIZE,
++	},
++	.l2c_sram_size = 0x20000, /* 128K */
++	.num_cores = 2,
++	.wdt_timer_base = NPU_TIMER_BASE_ADDR,
++	.wdt_reg_step = 0,
++	.wdt_bit_step = 1,
++	/* ecnt_npu.c:140-142 TMR_EN_BITS: 4 counters + 4 watchdogs */
++	.wdt_keep_mask = 0x1e0001ef,
++	.defer_start = true,
+ };
+ 
+ static const struct of_device_id of_airoha_npu_match[] = {
+ 	{ .compatible = "airoha,en7581-npu", .data = &en7581_npu_soc_data },
++	{ .compatible = "airoha,an7552-npu", .data = &an7552_npu_soc_data },
+ 	{ .compatible = "airoha,an7583-npu", .data = &an7583_npu_soc_data },
+ 	{ /* sentinel */ }
+ };
+@@ -696,15 +775,68 @@ static const struct regmap_config regmap
+ 	.disable_locking	= true,
+ };
+ 
++/*
++ * Start the cores unless they run: after the WiFi driver reset the NPU (its
++ * firmware takes the host rings once), or the first time on an NPU that is
++ * not started at probe.  The same steps as the probe, DT firmware only.
++ */
++static int airoha_npu_do_start(struct airoha_npu *npu)
++{
++	const struct airoha_npu_soc_data *soc = npu->soc;
++	u32 val = 0;
++	int i, err, ret;
++
++	regmap_read(npu->regmap, REG_CR_BOOT_CONFIG, &val);
++	if ((val & GENMASK(soc->num_cores - 1, 0)) || !npu->fw_base)
++		return 0;
++
++	err = airoha_npu_load_firmware_from_dts(npu->dev, npu->fw_base,
++						npu->base);
++	if (err)
++		return err;
++
++	regmap_write(npu->regmap, REG_CR_NPU_MIB(10),
++		     npu->fw_start + NPU_EN7581_FIRMWARE_RV32_MAX_SIZE);
++	regmap_write(npu->regmap, REG_CR_NPU_MIB(11), soc->l2c_sram_size);
++	regmap_write(npu->regmap, REG_CR_NPU_MIB(12), 0);
++	regmap_write(npu->regmap, REG_CR_NPU_MIB(21), 1);
++	msleep(100);
++
++	for (i = 0; i < soc->num_cores; i++)
++		regmap_write(npu->regmap, REG_CR_BOOT_BASE(i), npu->fw_start);
++	usleep_range(1000, 2000);
++
++	/* the trigger acts on its 0 -> 1 edge, as in the vendor kernel */
++	regmap_write(npu->regmap, REG_CR_BOOT_CONFIG,
++		     GENMASK(soc->num_cores - 1, 0));
++	regmap_write(npu->regmap, REG_CR_BOOT_TRIGGER, 0);
++	usleep_range(1000, 2000);
++	regmap_write(npu->regmap, REG_CR_BOOT_TRIGGER, 0x1);
++	/* measured: core 0 waits for the host rings 30 ms after the trigger */
++	msleep(100);
++
++	/* any answer of the firmware, an error status included, will do */
++	return read_poll_timeout(airoha_npu_wlan_msg_get, ret,
++				 ret != -ETIMEDOUT, 10 * USEC_PER_MSEC,
++				 2 * USEC_PER_SEC, false, npu, 0,
++				 WLAN_FUNC_GET_WAIT_NPU_INFO, &val,
++				 sizeof(val), GFP_KERNEL);
++}
++
+ static int airoha_npu_probe(struct platform_device *pdev)
+ {
++	const struct airoha_npu_soc_data *soc;
+ 	struct device *dev = &pdev->dev;
+ 	struct airoha_npu *npu;
+ 	struct resource res;
+ 	void __iomem *base;
+-	int i, irq, err;
++	int i, irq, err, num_irqs;
+ 	u32 val;
+ 
++	soc = of_device_get_match_data(dev);
++	if (!soc)
++		return -EINVAL;
++
+ 	base = devm_platform_ioremap_resource(pdev, 0);
+ 	if (IS_ERR(base))
+ 		return PTR_ERR(base);
+@@ -714,6 +846,7 @@ static int airoha_npu_probe(struct platf
+ 		return -ENOMEM;
+ 
+ 	npu->dev = dev;
++	npu->soc = soc;
+ 	npu->ops.ppe_init = airoha_npu_ppe_init;
+ 	npu->ops.ppe_deinit = airoha_npu_ppe_deinit;
+ 	npu->ops.ppe_init_stats = airoha_npu_ppe_stats_setup;
+@@ -727,6 +860,7 @@ static int airoha_npu_probe(struct platf
+ 	npu->ops.wlan_get_irq_status = airoha_npu_wlan_irq_status_get;
+ 	npu->ops.wlan_enable_irq = airoha_npu_wlan_irq_enable;
+ 	npu->ops.wlan_disable_irq = airoha_npu_wlan_irq_disable;
++	npu->ops.start = airoha_npu_do_start;
+ 
+ 	npu->regmap = devm_regmap_init_mmio(dev, base, &regmap_config);
+ 	if (IS_ERR(npu->regmap))
+@@ -736,6 +870,20 @@ static int airoha_npu_probe(struct platf
+ 	if (err)
+ 		return err;
+ 
++	/*
++	 * The node lists the mailbox, one watchdog per NPU core and the
++	 * wlan band rings, in that order.
++	 */
++	num_irqs = platform_irq_count(pdev);
++	if (num_irqs < 0)
++		return num_irqs;
++	if (soc->defer_start &&
++	    num_irqs != 1 + soc->num_cores + NPU_NUM_IRQ)
++		return dev_err_probe(dev, -EINVAL,
++				     "expected %d interrupts, found %d\n",
++				     1 + soc->num_cores + NPU_NUM_IRQ,
++				     num_irqs);
++
+ 	irq = platform_get_irq(pdev, 0);
+ 	if (irq < 0)
+ 		return irq;
+@@ -745,7 +893,7 @@ static int airoha_npu_probe(struct platf
+ 	if (err)
+ 		return err;
+ 
+-	for (i = 0; i < ARRAY_SIZE(npu->cores); i++) {
++	for (i = 0; i < soc->num_cores; i++) {
+ 		struct airoha_npu_core *core = &npu->cores[i];
+ 
+ 		spin_lock_init(&core->lock);
+@@ -768,7 +916,7 @@ static int airoha_npu_probe(struct platf
+ 
+ 	/* wlan IRQ lines */
+ 	for (i = 0; i < ARRAY_SIZE(npu->irqs); i++) {
+-		irq = platform_get_irq(pdev, i + ARRAY_SIZE(npu->cores) + 1);
++		irq = platform_get_irq(pdev, i + soc->num_cores + 1);
+ 		if (irq < 0)
+ 			return irq;
+ 
+@@ -779,24 +927,36 @@ static int airoha_npu_probe(struct platf
+ 	if (err)
+ 		return err;
+ 
++	if (soc->defer_start) {
++		npu->base = base;
++		npu->fw_start = res.start;
++		npu->fw_base = devm_ioremap_resource(dev, &res);
++		if (IS_ERR(npu->fw_base))
++			return PTR_ERR(npu->fw_base);
++
++		platform_set_drvdata(pdev, npu);
++		return 0;
++	}
++
+ 	err = airoha_npu_run_firmware(dev, base, &res);
+ 	if (err)
+ 		return err;
+ 
+ 	regmap_write(npu->regmap, REG_CR_NPU_MIB(10),
+ 		     res.start + NPU_EN7581_FIRMWARE_RV32_MAX_SIZE);
+-	regmap_write(npu->regmap, REG_CR_NPU_MIB(11), 0x40000); /* SRAM 256K */
++	regmap_write(npu->regmap, REG_CR_NPU_MIB(11), soc->l2c_sram_size);
+ 	regmap_write(npu->regmap, REG_CR_NPU_MIB(12), 0);
+ 	regmap_write(npu->regmap, REG_CR_NPU_MIB(21), 1);
+ 	msleep(100);
+ 
+ 	/* setting booting address */
+-	for (i = 0; i < NPU_NUM_CORES; i++)
++	for (i = 0; i < soc->num_cores; i++)
+ 		regmap_write(npu->regmap, REG_CR_BOOT_BASE(i), res.start);
+ 	usleep_range(1000, 2000);
+ 
+ 	/* enable NPU cores */
+-	regmap_write(npu->regmap, REG_CR_BOOT_CONFIG, 0xff);
++	regmap_write(npu->regmap, REG_CR_BOOT_CONFIG,
++		     GENMASK(soc->num_cores - 1, 0));
+ 	regmap_write(npu->regmap, REG_CR_BOOT_TRIGGER, 0x1);
+ 	msleep(100);
+ 
+@@ -825,6 +985,8 @@ MODULE_FIRMWARE(NPU_EN7581_7996_FIRMWARE
+ MODULE_FIRMWARE(NPU_EN7581_7996_FIRMWARE_RV32);
+ MODULE_FIRMWARE(NPU_AN7583_FIRMWARE_DATA);
+ MODULE_FIRMWARE(NPU_AN7583_FIRMWARE_RV32);
++MODULE_FIRMWARE(NPU_AN7552_FIRMWARE_DATA);
++MODULE_FIRMWARE(NPU_AN7552_FIRMWARE_RV32);
+ MODULE_LICENSE("GPL v2");
+ MODULE_AUTHOR("Lorenzo Bianconi <lorenzo@kernel.org>");
+ MODULE_DESCRIPTION("Airoha Network Processor Unit driver");
+--- a/include/linux/soc/airoha/airoha_offload.h
++++ b/include/linux/soc/airoha/airoha_offload.h
+@@ -163,10 +163,13 @@ enum airoha_npu_wlan_get_cmd {
+ 	WLAN_FUNC_GET_WAIT_NPU_VERSION,
+ };
+ 
++struct airoha_npu_soc_data;
++
+ struct airoha_npu {
+ #if (IS_BUILTIN(CONFIG_NET_AIROHA_NPU) || IS_MODULE(CONFIG_NET_AIROHA_NPU))
+ 	struct device *dev;
+ 	struct regmap *regmap;
++	const struct airoha_npu_soc_data *soc;
+ 
+ 	struct airoha_npu_core {
+ 		struct airoha_npu *npu;
+@@ -180,6 +183,11 @@ struct airoha_npu {
+ 	u8 wan_mode;
+ 	struct airoha_foe_stats __iomem *stats;
+ 
++	/* for airoha_npu_start() */
++	void __iomem *base;
++	void __iomem *fw_base;
++	phys_addr_t fw_start;
++
+ 	struct {
+ 		int (*ppe_init)(struct airoha_npu *npu);
+ 		int (*ppe_deinit)(struct airoha_npu *npu);
+@@ -205,6 +213,7 @@ struct airoha_npu {
+ 		u32 (*wlan_get_irq_status)(struct airoha_npu *npu, int q);
+ 		void (*wlan_enable_irq)(struct airoha_npu *npu, int q);
+ 		void (*wlan_disable_irq)(struct airoha_npu *npu, int q);
++		int (*start)(struct airoha_npu *npu);
+ 	} ops;
+ #endif
+ };
+@@ -239,6 +248,12 @@ static inline u32 airoha_npu_wlan_get_qu
+ 	return npu->ops.wlan_get_queue_addr(npu, qid, xmit);
+ }
+ 
++/* start the cores of an NPU that was not started at probe, or was reset */
++static inline int airoha_npu_start(struct airoha_npu *npu)
++{
++	return npu->ops.start(npu);
++}
++
+ static inline void airoha_npu_wlan_set_irq_status(struct airoha_npu *npu,
+ 						  u32 val)
+ {
+@@ -295,6 +310,11 @@ static inline u32 airoha_npu_wlan_get_qu
+ 	return 0;
+ }
+ 
++static inline int airoha_npu_start(struct airoha_npu *npu)
++{
++	return -EOPNOTSUPP;
++}
++
+ static inline void airoha_npu_wlan_set_irq_status(struct airoha_npu *npu,
+ 						  u32 val)
+ {

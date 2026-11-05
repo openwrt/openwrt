@@ -1,0 +1,39 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Lukasz M <lukasz1992m+openwrt@gmail.com>
+Date: Mon, 13 Oct 2025 15:58:51 +0200
+Subject: [PATCH] net: airoha: npu: Add PON WAN mode support for PPE init
+
+Allow NPU PPE initialization to support both Ethernet (QDMA_WAN_ETHER)
+and PON/XDSL (QDMA_WAN_PON_XDSL) WAN modes. The WAN mode is now
+configurable via npu->wan_mode set by the caller before ppe_init().
+
+Signed-off-by: Lukasz M <lukasz1992m+openwrt@gmail.com>
+---
+ drivers/net/ethernet/airoha/airoha_npu.c  | 5 ++++-
+ include/linux/soc/airoha/airoha_offload.h | 1 +
+ 2 files changed, 5 insertions(+), 1 deletion(-)
+
+--- a/drivers/net/ethernet/airoha/airoha_npu.c
++++ b/drivers/net/ethernet/airoha/airoha_npu.c
+@@ -343,7 +343,10 @@ static int airoha_npu_ppe_init(struct ai
+ 	ppe_data->func_type = NPU_OP_SET;
+ 	ppe_data->func_id = PPE_FUNC_SET_WAIT_HWNAT_INIT;
+ 	ppe_data->init_info.ppe_type = PPE_TYPE_L2B_IPV4_IPV6;
+-	ppe_data->init_info.wan_mode = QDMA_WAN_ETHER;
++	if (npu->wan_mode)
++		ppe_data->init_info.wan_mode = npu->wan_mode;
++	else
++		ppe_data->init_info.wan_mode = QDMA_WAN_ETHER;
+ 
+ 	err = airoha_npu_send_msg(npu, NPU_FUNC_PPE, ppe_data,
+ 				  sizeof(*ppe_data));
+--- a/include/linux/soc/airoha/airoha_offload.h
++++ b/include/linux/soc/airoha/airoha_offload.h
+@@ -177,6 +177,7 @@ struct airoha_npu {
+ 
+ 	int irqs[NPU_NUM_IRQ];
+ 
++	u8 wan_mode;
+ 	struct airoha_foe_stats __iomem *stats;
+ 
+ 	struct {
