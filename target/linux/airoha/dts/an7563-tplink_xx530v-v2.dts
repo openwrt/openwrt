@@ -212,7 +212,7 @@
  * GDM2 stats counters.
  *
  * This board is a GPON ONU: GDM2 feeds the on-chip xPON MAC, so there is no
- * PCS and no PHY behind it (phy-mode "internal", fixed-link).
+ * PCS and no PHY behind it (phy-mode "internal", fixed-link; patch 925-04).
  *
  * The MAC cell is what keeps this netdev's address stable across boots.
  * Without it of_get_ethdev_address() finds nothing, the driver falls back to
