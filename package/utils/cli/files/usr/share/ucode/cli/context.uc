@@ -387,7 +387,7 @@ function complete_arg_list(e, ctx, arg_info, args, base_args, named_args)
 	return ret;
 }
 
-function handle_empty_param(entry, spec, name, argv, named_args)
+function handle_empty_param(ctx, entry, spec, name, argv, named_args)
 {
 	if (substr(name, 0, 1) != "-")
 		return;
@@ -403,7 +403,7 @@ function handle_empty_param(entry, spec, name, argv, named_args)
 
 	if (cur.required) {
 		cur = { ...cur };
-		prepare_default(e, ctx, cur, argv, named_args, cur);
+		prepare_default(entry, ctx, cur, argv, named_args);
 		named_args[name] = cur.default;
 	} else {
 		named_args[name] = null;
@@ -438,7 +438,7 @@ function default_complete(ctx, args)
 		shift(args);
 		let cur = spec[name];
 		if (!cur) {
-			if (handle_empty_param(this, spec, name, base_args, named_args))
+			if (handle_empty_param(ctx, this, spec, name, base_args, named_args))
 				continue;
 			return;
 		}
@@ -606,7 +606,7 @@ function context_call(args)
 		}
 
 		if (!cur) {
-			if (handle_empty_param(entry, spec, name, argv, named_args))
+			if (handle_empty_param(ctx, entry, spec, name, argv, named_args))
 				continue;
 			ctx.invalid_argument("Invalid argument: %s", name);
 			return ctx.result;
