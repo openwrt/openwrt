@@ -1,0 +1,42 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Lukasz M <lukasz1992m+openwrt@gmail.com>
+Date: Sat, 31 Oct 2026 12:00:00 +0100
+Subject: [PATCH] wifi mt76 dma npu tx path only for npu tx queues
+
+mt76_dma_tx_queue_skb() sent every frame through mt76_npu_dma_add_buf()
+as soon as an NPU was attached.  That is the TX of the MT7996/MT7992 NPU
+firmware, whose TX queues carry MT_NPU_Q_TX.  The MT7916 one (Airoha
+AN7552) does RX only and leaves the TX rings to the host: there the frames
+were written in the NPU descriptor format into a plain WFDMA ring, the
+card read garbage, its TX DMA stalled on the first frame and nothing,
+not even a probe or an authentication response, went out.
+
+Decide by the queue, as the rest of the NPU code does.
+
+Signed-off-by: Lukasz M <lukasz1992m+openwrt@gmail.com>
+---
+--- a/dma.c
++++ b/dma.c
+@@ -686,7 +686,7 @@ mt76_dma_tx_queue_skb(struct mt76_phy *p
+ 		goto free_skb;
+ 
+ 	/* TODO: Take into account unlinear skbs */
+-	if (mt76_npu_device_active(dev) && skb_linearize(skb))
++	if (mt76_queue_is_npu_tx(q) && skb_linearize(skb))
+ 		goto free_skb;
+ 
+ 	t = mt76_get_txwi(dev);
+@@ -738,7 +738,12 @@ mt76_dma_tx_queue_skb(struct mt76_phy *p
+ 	if (ret < 0)
+ 		goto unmap;
+ 
+-	if (mt76_npu_device_active(dev))
++	/*
++	 * Only a queue the NPU transmits from (MT7996/MT7992) takes the NPU
++	 * descriptor format.  The MT7916 NPU firmware does RX only: its TX
++	 * rings are the host's, in the plain WFDMA format.
++	 */
++	if (mt76_queue_is_npu_tx(q))
+ 		return mt76_npu_dma_add_buf(phy, q, skb, &tx_info.buf[1], txwi);
+ 
+ 	return mt76_dma_add_buf(dev, q, tx_info.buf, tx_info.nbuf,

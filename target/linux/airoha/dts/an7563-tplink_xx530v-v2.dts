@@ -316,6 +316,16 @@
 			compatible = "mediatek,mt76";
 			reg = <0x0000 0 0 0 0>;
 			/*
+			 * WiFi RX through the NPU (mt76 patches 0102-0107).  The
+			 * NPU port type is 2, as on the stock unit (PCIe windows
+			 * 0x1fa90030..3c): band 1 (5 GHz) ring in the PCIe0
+			 * window, band 0 (2.4 GHz) in the PCIe1 one.  Without
+			 * the mt76 patches this property is ignored and wifi
+			 * runs on the host.
+			 */
+			airoha,npu = <&npu>;
+			airoha,eth = <&eth>;
+			/*
 			 * EEPROM is read by mt76 from tclinux + 0x420000
 			 * (4 KiB).  No firmware-file fallback on purpose: if
 			 * the cell cannot be read the failure has to be visible.
@@ -360,6 +370,16 @@
 		wifi@0,0 {
 			compatible = "mediatek,mt76";
 			reg = <0x0000 0 0 0 0>;
+			/*
+			 * WiFi RX through the NPU (mt76 patches 0102-0107).  The
+			 * NPU port type is 2, as on the stock unit (PCIe windows
+			 * 0x1fa90030..3c): band 1 (5 GHz) ring in the PCIe0
+			 * window, band 0 (2.4 GHz) in the PCIe1 one.  Without
+			 * the mt76 patches this property is ignored and wifi
+			 * runs on the host.
+			 */
+			airoha,npu = <&npu>;
+			airoha,eth = <&eth>;
 		};
 	};
 };

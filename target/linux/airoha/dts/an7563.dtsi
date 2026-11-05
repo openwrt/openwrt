@@ -46,10 +46,25 @@
 			alignment = <0x00010000>;
 		};
 
+		npu_binary: npu-binary@84000000 {
+			no-map;
+			reg = <0x84000000 0x00100000>;
+		};
+
 		/*
-		 * pstore for oops/panic logs.  DRAM keeps its content over a
-		 * warm reset and the bootloader loads the FIT at 0x81800000,
-		 * below this range.
+		 * NPU BA reorder nodes, kite (MT7916): 5000 nodes x 36 bytes
+		 * = 0x2bf20 (ClankerNPU npu_wifi.h REORDER_SEC_POOL_SIZE,
+		 * npu_wifi_ba.c REORDER_NODE_SIZE).
+		 */
+		npu_ba: npu-ba@84100000 {
+			no-map;
+			reg = <0x84100000 0x000c0000>;
+		};
+
+		/*
+		 * pstore for oops/panic logs, cut from the former 1M npu-ba
+		 * window.  DRAM keeps its content over a warm reset and the
+		 * bootloader loads the FIT at 0x81800000, below this range.
 		 */
 		ramoops@841c0000 {
 			compatible = "ramoops";
@@ -58,6 +73,11 @@
 			record-size = <0x10000>;
 			console-size = <0x10000>;
 			pmsg-size = <0x10000>;
+		};
+
+		npu_pkt: npu-pkt@84200000 {
+			no-map;
+			reg = <0x84200000 0x01600000>;
 		};
 	};
 
@@ -482,6 +502,7 @@
 				     <GIC_SPI 64 IRQ_TYPE_LEVEL_HIGH>;
 			memory-region = <&qdma0_buf>, <&qdma1_buf>;
 			memory-region-names = "qdma0-buf", "qdma1-buf";
+			airoha,npu = <&npu>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 
@@ -714,6 +735,25 @@
 
 			#phy-cells = <1>;
 			status = "disabled";
+		};
+
+		npu: npu@1e900000 {
+			compatible = "airoha,an7552-npu";
+			reg = <0x1e900000 0x313000>;
+			interrupts = <GIC_SPI 125 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 134 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 135 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 118 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 119 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 120 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 121 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 122 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 123 IRQ_TYPE_LEVEL_HIGH>;
+			memory-region = <&npu_binary>, <&npu_pkt>, <&npu_ba>;
+			memory-region-names = "binary", "pkt", "ba";
+			firmware-name = "airoha/an7552_npu_rv32.bin",
+					"airoha/an7552_npu_data.bin";
+			airoha,scu = <&scu>;
 		};
 
 		/*
