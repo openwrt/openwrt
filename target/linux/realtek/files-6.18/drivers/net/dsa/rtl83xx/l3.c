@@ -113,6 +113,9 @@
 #define ROUTE_ACT_COPY2CPU	2
 #define ROUTE_ACT_DROP		3
 
+/* Next hop destination that traps to the CPU instead of naming an L2 entry */
+#define NEXTHOP_TRAP2CPU	0x7ffe
+
 /* Route kinds */
 #define ROUTE_PREFIX		0
 #define ROUTE_HOST		1
@@ -135,6 +138,12 @@
 #define DEFAULT_MTU 1536
 #define L3_EGRESS_DMACS 2048
 #define ROUTE_MTU_ID 1
+#define FLOW_MTU_ID 2
+
+bool otto_l3_fasttrack(struct otto_dsa_priv *priv)
+{
+	return priv->l3_ctrl && READ_ONCE(priv->l3_ctrl->fasttrack);
+}
 
 struct otto_l3_net_event_work {
 	struct work_struct work;
@@ -747,8 +756,8 @@ static void otto_l3_930x_get_nexthop(struct otto_l3_ctrl *ctrl,
  * 0x7ffd: TRAP2MASTERCPU
  * 0x7fff: DMAC_ID_DROP
  */
-static void otto_l3_930x_set_nexthop(struct otto_l3_ctrl *ctrl,
-				     int idx, u16 dmac_id, u16 interface)
+static int otto_l3_930x_set_nexthop(struct otto_l3_ctrl *ctrl,
+				    int idx, u16 dmac_id, u16 interface)
 {
 	u32 v = ((dmac_id & 0x7fff) << 7) | (interface & 0x7f);
 
@@ -756,7 +765,7 @@ static void otto_l3_930x_set_nexthop(struct otto_l3_ctrl *ctrl,
 		idx, dmac_id, interface);
 
 	dev_dbg(ctrl->dev, "value at index 0: %08x\n", v);
-	otto_table_write(RTL9300_TBL_L3_NEXTHOP, idx, &v);
+	return otto_table_write(RTL9300_TBL_L3_NEXTHOP, idx, &v);
 }
 
 /* Prefix length of an IPv6 mask, i.e. how many leading bits are set */
@@ -2473,6 +2482,127 @@ static void otto_l3_intf_put(struct otto_l3_ctrl *ctrl, int if_id)
 		dev_err(ctrl->dev, "egress interface %d not freed\n", if_id);
 
 	mutex_unlock(ctrl->lock);
+}
+
+/* The PIE rule has already been removed, so no packet can use this next hop.
+ * Reset its stale contents before returning the row and shared resources.
+ */
+static void otto_l3_flow_nexthop_release(struct otto_l3_ctrl *ctrl,
+					 struct otto_l3_nexthop *nh)
+{
+	int err;
+
+	if (nh->id < MAX_ROUTES || nh->id >= MAX_ROUTES + MAX_HOST_ROUTES)
+		return;
+
+	mutex_lock(ctrl->lock);
+	err = ctrl->cfg->set_nexthop(ctrl, nh->id, NEXTHOP_TRAP2CPU, 0);
+	mutex_unlock(ctrl->lock);
+	if (err)
+		dev_warn(ctrl->dev, "unused flow next hop %u not reset: %d\n", nh->id, err);
+
+	if (nh->l2_installed)
+		otto_fdb_nexthop_del(ctrl->priv, nh);
+	otto_l3_intf_put(ctrl, nh->if_id);
+	otto_l3_dmac_put(ctrl, nh->dmac_id);
+	clear_bit(nh->id - MAX_ROUTES, ctrl->host_route_use_bm);
+	memset(nh, 0, sizeof(*nh));
+	nh->if_id = -1;
+	nh->dmac_id = -1;
+}
+
+/* A flow owns a next-hop row without installing any destination route. This
+ * also handles on-link hosts and default routes, which the FIB offload traps.
+ * RTNL protects the output port topology; resource_lock serializes allocations
+ * against the FIB and neighbour workers and flow deletion, which needs no RTNL.
+ */
+int otto_l3_flow_nexthop_get(struct otto_dsa_priv *priv, struct otto_l3_nexthop *nh,
+			     u64 smac, u64 dmac, u16 vlan, int port)
+{
+	struct otto_l3_dmac key = { .mac = dmac };
+	struct otto_l3_ctrl *ctrl = priv->l3_ctrl;
+	struct rtl838x_l2_entry e = {};
+	u8 mac[ETH_ALEN];
+	int idx, err;
+
+	ASSERT_RTNL();
+	if (!otto_l3_fasttrack(priv) || !ctrl->cfg->set_nexthop)
+		return -EOPNOTSUPP;
+	if (port < 0 || port >= priv->ds->num_ports || !dsa_is_user_port(priv->ds, port) ||
+	    (priv->lagmembers & BIT_ULL(port)) || vlan >= VLAN_VID_MASK ||
+	    smac >> 48 || dmac >> 48)
+		return -EOPNOTSUPP;
+	u64_to_ether_addr(smac, mac);
+	if (!is_valid_ether_addr(mac))
+		return -EINVAL;
+	u64_to_ether_addr(dmac, mac);
+	if (!is_valid_ether_addr(mac))
+		return -EINVAL;
+
+	mutex_lock(&ctrl->resource_lock);
+	memset(nh, 0, sizeof(*nh));
+	nh->if_id = -1;
+	nh->dmac_id = -1;
+	mutex_lock(ctrl->lock);
+	idx = find_first_zero_bit(ctrl->host_route_use_bm, MAX_HOST_ROUTES);
+	if (idx < MAX_HOST_ROUTES)
+		set_bit(idx, ctrl->host_route_use_bm);
+	mutex_unlock(ctrl->lock);
+	if (idx == MAX_HOST_ROUTES) {
+		err = -ENOSPC;
+		goto unlock;
+	}
+	nh->id = MAX_ROUTES + idx;
+	nh->mac = nh->gw = dmac;
+	nh->rvid = vlan;
+	nh->if_id = otto_l3_alloc_egress_intf(ctrl, smac, vlan, FLOW_MTU_ID);
+	if (nh->if_id < 0) {
+		err = nh->if_id;
+		goto release;
+	}
+	nh->dmac_id = otto_l3_dmac_get(ctrl, &key);
+	if (nh->dmac_id < 0) {
+		err = nh->dmac_id;
+		goto release;
+	}
+	err = otto_fdb_nexthop_add(priv, nh);
+	if (err)
+		goto release;
+	nh->l2_installed = true;
+
+	/* The hardware, rather than a CPU-port fallback, must have learnt the
+	 * neighbour on exactly the physical port selected by the flowtable.
+	 */
+	mutex_lock(ctrl->lock);
+	idx = otto_l2_find_hash_entry(priv, nh->l2_seed, true, &e);
+	if (idx != nh->l2_id || !e.next_hop || e.port != port || e.is_trunk ||
+	    e.stack_dev || e.block_da || e.suspended) {
+		err = -EAGAIN;
+	} else {
+		err = ctrl->cfg->set_nexthop(ctrl, nh->id, nh->l2_id, nh->if_id);
+	}
+	mutex_unlock(ctrl->lock);
+	if (err)
+		goto release;
+	mutex_unlock(&ctrl->resource_lock);
+	return 0;
+
+release:
+	otto_l3_flow_nexthop_release(ctrl, nh);
+unlock:
+	mutex_unlock(&ctrl->resource_lock);
+	return err;
+}
+
+void otto_l3_flow_nexthop_put(struct otto_dsa_priv *priv, struct otto_l3_nexthop *nh)
+{
+	struct otto_l3_ctrl *ctrl = priv->l3_ctrl;
+
+	if (!ctrl)
+		return;
+	mutex_lock(&ctrl->resource_lock);
+	otto_l3_flow_nexthop_release(ctrl, nh);
+	mutex_unlock(&ctrl->resource_lock);
 }
 
 static void otto_l3_route_put_intf(struct otto_l3_ctrl *ctrl, struct otto_l3_route *r)
