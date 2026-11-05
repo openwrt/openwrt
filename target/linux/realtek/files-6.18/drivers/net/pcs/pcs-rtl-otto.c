@@ -343,6 +343,12 @@ enum rtpcs_page {
 #define ANA_MISC_REG02			0x02
 #define  RTL930X_FRC_BER_NOTIFY_ON	BIT(12)
 
+#define ANA_MISC_REG18			0x12
+#define  RTL931X_FRC_LC_MODE_EVEN	BIT(4)
+#define  RTL931X_FRC_LC_MODE_VAL_EVEN	BIT(5)
+#define  RTL931X_FRC_LC_MODE_ODD	BIT(6)
+#define  RTL931X_FRC_LC_MODE_VAL_ODD	BIT(7)
+
 /* PAGE_ANA_COM */
 
 #define ANA_COM_REG06			0x06
@@ -360,6 +366,9 @@ enum rtpcs_page {
 #define  RTL931X_POST_AMP		GENMASK(14, 10)
 #define  RTL931X_MAIN_AMP		GENMASK(9, 5)
 #define  RTL931X_PRE_AMP		GENMASK(4, 0)
+
+#define ANA_SPD_REG07			0x07
+#define  RTL931X_CMU_SEL		BIT(15)
 
 #define ANA_SPD_REG13			0x0d
 #define  RTL931X_RXEQ_LEQ_MANUAL_EN	BIT(7)
@@ -4238,11 +4247,11 @@ static int rtpcs_931x_sds_get_pll_select(struct rtpcs_serdes *sds, enum rtpcs_sd
 	if (cmu_page < 0)
 		return cmu_page;
 
-	pll_sel = rtpcs_sds_read_bits(sds, cmu_page, 0x7, 15, 15);
+	pll_sel = rtpcs_sds_read(sds, cmu_page, ANA_SPD_REG07);
 	if (pll_sel < 0)
 		return pll_sel;
 
-	*pll = (enum rtpcs_sds_pll_type)pll_sel;
+	*pll = (enum rtpcs_sds_pll_type)FIELD_GET(RTL931X_CMU_SEL, pll_sel);
 	return 0;
 }
 
@@ -4250,30 +4259,32 @@ static int rtpcs_931x_sds_set_pll_select(struct rtpcs_serdes *sds, enum rtpcs_sd
 					 enum rtpcs_sds_pll_type pll)
 {
 	struct rtpcs_serdes *even_sds = rtpcs_sds_get_even(sds);
-	int cmu_page, ret, val;
-	int frc_lc_mode_bit;
+	u16 force_mask, value_mask, val;
+	int cmu_page, ret;
 
 	cmu_page = rtpcs_93xx_sds_get_cmu_page(hw_mode);
 	if (cmu_page < 0)
 		return cmu_page;
 
 	/*
-	 * bits [5:4] (even) / [7:6] (odd) are used by RTL930x as selector. The selector
-	 * for RTL931x SerDes is in the CMU page of each SerDes, depending on the hardware
-	 * mode.
-	 *
-	 * Here, the SDK calls them 'frc_lc_mode' and 'frc_lc_mode_val'. However, they don't
-	 * seem to have any effect and thus their purpose is unknown. So just set them as
-	 * the SDK does.
+	 * Preserve the SDK's shared frc_lc_mode controls; their role on RTL931x
+	 * is unclear. The actual PLL selector is in the per-lane CMU page.
 	 */
-	val = (pll == RTPCS_SDS_PLL_TYPE_LC) ? 0x3 : 0x1;
-	frc_lc_mode_bit = (sds == even_sds) ? 4 : 6;
-	ret = rtpcs_sds_write_bits(even_sds, PAGE_ANA_MISC, 0x12, frc_lc_mode_bit + 1,
-				   frc_lc_mode_bit, val);
+	force_mask = (sds == even_sds) ? RTL931X_FRC_LC_MODE_EVEN :
+					 RTL931X_FRC_LC_MODE_ODD;
+	value_mask = (sds == even_sds) ? RTL931X_FRC_LC_MODE_VAL_EVEN :
+					 RTL931X_FRC_LC_MODE_VAL_ODD;
+	val = force_mask;
+	if (pll == RTPCS_SDS_PLL_TYPE_LC)
+		val |= value_mask;
+
+	ret = rtpcs_sds_write_mask(even_sds, PAGE_ANA_MISC, ANA_MISC_REG18,
+				   force_mask | value_mask, val);
 	if (ret < 0)
 		return ret;
 
-	return rtpcs_sds_write_bits(sds, cmu_page, 0x7, 15, 15, pll);
+	return rtpcs_sds_write_mask(sds, cmu_page, ANA_SPD_REG07, RTL931X_CMU_SEL,
+				    FIELD_PREP(RTL931X_CMU_SEL, pll));
 }
 
 static int rtpcs_931x_sds_config_polarity(struct rtpcs_serdes *sds, unsigned int tx_pol,
