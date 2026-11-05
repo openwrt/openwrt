@@ -127,6 +127,16 @@ setup_interface () {
 		entry="${entry#*,}"
 		local metric="${entry%%,*}"
 
+		# The interface metric replaces the RA range 256-640, keeping its order
+		# as +0 to +3; the fakeroute/4096 is added on top, staying last
+		if [ -n "$METRIC" ] && [ "$metric" -ge 256 ] 2>/dev/null; then
+			if [ "$metric" -le 640 ]; then
+				metric=$((METRIC + (metric - 256) / 128))
+			else
+				metric=$((METRIC + metric))
+			fi
+		fi
+
 		for xentry in $RA_ROUTES; do
 			local xprefix="${xentry%%,*}"
 			xentry="${xentry#*,}"
