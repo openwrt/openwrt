@@ -31,7 +31,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
 
 --- a/net/ipv4/udp.c
 +++ b/net/ipv4/udp.c
-@@ -952,8 +952,10 @@ static int udp_send_skb(struct sk_buff *
+@@ -1008,8 +1008,10 @@ static int udp_send_skb(struct sk_buff *
  			skb_shinfo(skb)->gso_type = SKB_GSO_UDP_L4;
  			skb_shinfo(skb)->gso_segs = DIV_ROUND_UP(datalen,
  								 cork->gso_size);
@@ -45,7 +45,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	if (is_udplite)  				 /*     UDP-Lite      */
 --- a/net/ipv6/udp.c
 +++ b/net/ipv6/udp.c
-@@ -1268,8 +1268,10 @@ static int udp_v6_send_skb(struct sk_buf
+@@ -1318,8 +1318,10 @@ static int udp_v6_send_skb(struct sk_buf
  			skb_shinfo(skb)->gso_type = SKB_GSO_UDP_L4;
  			skb_shinfo(skb)->gso_segs = DIV_ROUND_UP(datalen,
  								 cork->gso_size);
