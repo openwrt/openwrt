@@ -279,7 +279,7 @@ function param_available(ctx, spec, argv, named_args)
 	       call(spec.available, spec, ctx.model.scope, ctx, argv, named_args);
 }
 
-function complete_named_params(ctx, entry, obj, name, argv, named_params)
+function complete_named_params(ctx, entry, obj, name, argv, named_params, defaults)
 {
 	let data = [];
 	let empty = "";
@@ -289,8 +289,6 @@ function complete_named_params(ctx, entry, obj, name, argv, named_params)
 		name = substr(name, 1);
 	}
 
-	let defaults = {};
-	callctx.new(ctx.model, ctx).apply_defaults(obj, defaults);
 	for (let cur_name in sort(keys(obj))) {
 		let val = obj[cur_name];
 
@@ -303,7 +301,7 @@ function complete_named_params(ctx, entry, obj, name, argv, named_params)
 		if (!val.multiple && named_params[cur_name] != null)
 			continue;
 
-		if (!param_available(ctx, val, argv, named_params))
+		if (!param_available(ctx, val, argv, { ...defaults, ...named_params }))
 			continue;
 
 		val = {
@@ -441,7 +439,7 @@ function default_complete(ctx, args)
 		let name = args[0];
 
 		if (length(args) == 1)
-			return complete_named_params(ctx, this, spec, name, base_args, named_args);
+			return complete_named_params(ctx, this, spec, name, base_args, named_args, defaults);
 
 		shift(args);
 		let cur = spec[name];
