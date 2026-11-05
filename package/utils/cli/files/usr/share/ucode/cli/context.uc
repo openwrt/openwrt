@@ -273,6 +273,12 @@ function context_select(args, completion)
 	return ctx;
 }
 
+function param_available(ctx, spec, argv, named_args)
+{
+	return type(spec.available) != "function" ||
+	       call(spec.available, spec, ctx.model.scope, ctx, argv, named_args);
+}
+
 function complete_named_params(ctx, entry, obj, name, argv, named_params)
 {
 	let data = [];
@@ -297,8 +303,7 @@ function complete_named_params(ctx, entry, obj, name, argv, named_params)
 		if (!val.multiple && named_params[cur_name] != null)
 			continue;
 
-		if (type(val.available) == "function" &&
-		    !call(val.available, val, ctx.model.scope, ctx, argv, named_params))
+		if (!param_available(ctx, val, argv, named_params))
 			continue;
 
 		val = {
@@ -388,7 +393,7 @@ function complete_arg_list(e, ctx, arg_info, args, base_args, named_args)
 	return ret;
 }
 
-function handle_empty_param(ctx, entry, spec, name, argv, named_args)
+function handle_empty_param(ctx, entry, spec, name, argv, named_args, defaults)
 {
 	if (substr(name, 0, 1) != "-")
 		return;
@@ -400,6 +405,9 @@ function handle_empty_param(ctx, entry, spec, name, argv, named_args)
 
 	if (cur.default == null &&
 	    !(cur.allow_empty ?? entry.allow_empty))
+		return;
+
+	if (!param_available(ctx, cur, argv, { ...defaults, ...named_args }))
 		return;
 
 	if (cur.required) {
@@ -430,6 +438,8 @@ function default_complete(ctx, args)
 	for (let i = 0; i < num_args; i++)
 		shift(args);
 
+	let defaults = {};
+	callctx.new(ctx.model, ctx).apply_defaults(spec, defaults);
 	while (length(args) > 0) {
 		let name = args[0];
 
@@ -439,7 +449,7 @@ function default_complete(ctx, args)
 		shift(args);
 		let cur = spec[name];
 		if (!cur) {
-			if (handle_empty_param(ctx, this, spec, name, base_args, named_args))
+			if (handle_empty_param(ctx, this, spec, name, base_args, named_args, defaults))
 				continue;
 			return;
 		}
@@ -598,17 +608,16 @@ function context_call(args)
 		let name = shift(args);
 		let cur = spec[name];
 		try {
-			if (cur && type(cur.available) == "function" &&
-				!call(cur.available, cur, ctx.model.scope, ctx, argv, { ...defaults, ...named_args }))
-					cur = null;
+			if (cur && !param_available(ctx, cur, argv, { ...defaults, ...named_args }))
+				cur = null;
+			if (!cur && handle_empty_param(ctx, entry, spec, name, argv, named_args, defaults))
+				continue;
 		} catch (e) {
 			ctx.model.exception(e);
 			continue;
 		}
 
 		if (!cur) {
-			if (handle_empty_param(ctx, entry, spec, name, argv, named_args))
-				continue;
 			ctx.invalid_argument("Invalid argument: %s", name);
 			return ctx.result;
 		}
@@ -649,8 +658,7 @@ function context_call(args)
 			continue;
 
 		try {
-			if (type(arg.available) == "function" &&
-				!call(arg.available, arg, ctx.model.scope, ctx, argv, named_args))
+			if (!param_available(ctx, arg, argv, named_args))
 				continue;
 		} catch (e) {
 			ctx.model.exception(e);
