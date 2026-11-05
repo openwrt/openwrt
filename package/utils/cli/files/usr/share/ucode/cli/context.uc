@@ -151,7 +151,8 @@ function prepare_default(e, ctx, spec, argv, named_args)
 	try {
 		spec.default = call(spec.default, e, ctx.model.scope, ctx, argv, named_args, spec);
 	} catch (e) {
-		model.exception(e);
+		ctx.model.exception(e);
+		spec.default = null;
 	}
 }
 
