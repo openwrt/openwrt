@@ -53,7 +53,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
 
 --- a/net/ipv4/udp.c
 +++ b/net/ipv4/udp.c
-@@ -998,8 +998,7 @@ static int udp_send_skb(struct sk_buff *
+@@ -1007,8 +1007,7 @@ static int udp_send_skb(struct sk_buff *
  			kfree_skb(skb);
  			return -EINVAL;
  		}
