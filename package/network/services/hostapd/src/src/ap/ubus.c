@@ -256,7 +256,8 @@ hostapd_bss_ban_client(struct hostapd_ubus_bss *ubus, u8 *addr, int time,
 	}
 
 	ban->status = status;
-	eloop_register_timeout(0, time * 1000, hostapd_bss_del_ban, ban, ubus);
+	eloop_register_timeout(time / 1000, (time % 1000) * 1000,
+			       hostapd_bss_del_ban, ban, ubus);
 }
 
 static int
