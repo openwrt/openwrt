@@ -1,0 +1,48 @@
+From 30efa78772c4fc9f93e86912c36004d0fb84e3cf Mon Sep 17 00:00:00 2001
+From: Stanislaw Pal <kuncy7@gmail.com>
+Date: Wed, 4 Nov 2026 20:25:01 +0100
+Subject: [PATCH net-next v2 1/4] net: dsa: qca8k: read each register into its own word
+ over MDIO
+
+qca8k_bulk_read() is the regmap read op. When the Ethernet management
+path is not available it falls back to reading the registers one by one
+over MDIO, but it stores register i at val_buf + i with val_buf a void
+pointer: the words land one byte apart and overwrite each other, and the
+last three bytes of a three-register read are never written.
+
+Every multi-register read over MDIO is garbage then. qca8k_fdb_read()
+reads the three ATU registers this way, so the FDB dump shows MAC
+addresses made of the VID and the aging field, the search reads a wrong
+status and port mask for the entry it found, and qca8k_port_mdb_add()
+and qca8k_port_mdb_del() write that port mask back into the ATU. With
+tag_qca the management frames carry these reads and the fallback is
+rarely taken; it is taken every time when the management conduit is
+down, when a management read fails, and on boards whose CPU port is not
+port 0, where qca8k_conduit_change() never sets up the management
+conduit.
+
+Store each register in its own u32.
+
+The bug was found while bringing up a tagger without management frames;
+an LLM assistant (Claude, claude-fable-5-1) helped write the fix and
+this description. I reviewed both and tested the fix on a QCA8337 behind
+an IPQ5018 (GL.iNet GL-B3000), where bridge fdb show returns the right
+entries with it and garbage without.
+
+Fixes: c766e077d927 ("net: dsa: qca8k: convert to regmap read/write API")
+Signed-off-by: Stanislaw Pal <kuncy7@gmail.com>
+---
+ drivers/net/dsa/qca/qca8k-8xxx.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/net/dsa/qca/qca8k-8xxx.c
++++ b/drivers/net/dsa/qca/qca8k-8xxx.c
+@@ -514,7 +514,7 @@ qca8k_bulk_read(void *ctx, const void *r
+ 
+ 	/* loop count times and increment reg of 4 */
+ 	for (i = 0; i < count; i++, reg += sizeof(u32)) {
+-		ret = qca8k_read_mii(priv, reg, val_buf + i);
++		ret = qca8k_read_mii(priv, reg, (u32 *)val_buf + i);
+ 		if (ret < 0)
+ 			return ret;
+ 	}
