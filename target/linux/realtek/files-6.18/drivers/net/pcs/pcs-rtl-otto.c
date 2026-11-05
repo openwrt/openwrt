@@ -310,6 +310,8 @@ enum rtpcs_page {
 #define  RTL93XX_FRC_SDS_MD_ON		BIT(6)
 
 #define WDIG_REG20			0x14
+#define  RTL93XX_RX_IDLE_EVEN_LANE	BIT(0)
+#define  RTL93XX_RX_IDLE_ODD_LANE	BIT(1)
 #define  RTL93XX_RXEQ_COEF_LEQ_GRAY	GENMASK(7, 3)
 #define  RTL93XX_RXEQ_COEF_TAPX		GENMASK(5, 0)
 #define  RTL930X_RXEQ_COEF_DCVS		GENMASK(4, 0)
@@ -1535,7 +1537,8 @@ static const s16 rtpcs_93xx_sds_hw_mode_vals[RTPCS_SDS_MODE_MAX] = {
 static int rtpcs_93xx_sds_rxcal_ready(struct rtpcs_serdes *sds)
 {
 	struct rtpcs_serdes *even_sds = rtpcs_sds_get_even(sds);
-	int bit, ret;
+	u16 rx_idle_mask;
+	int ret;
 
 	switch (sds->hw_mode) {
 	case RTPCS_SDS_MODE_10GBASER:
@@ -1546,15 +1549,16 @@ static int rtpcs_93xx_sds_rxcal_ready(struct rtpcs_serdes *sds)
 		return -EOPNOTSUPP;
 	}
 
-	bit = sds == even_sds ? 0 : 1;
+	rx_idle_mask = (sds == even_sds) ? RTL93XX_RX_IDLE_EVEN_LANE : RTL93XX_RX_IDLE_ODD_LANE;
 	ret = rtpcs_sds_write_mask(even_sds, PAGE_WDIG, WDIG_REG02,
 				   RTL93XX_DBGO_SEL_0, RTL93XX_DBGO_SEL_0_RX_STATUS);
 	if (ret < 0)
 		return ret;
 
-	ret = rtpcs_sds_read_bits(even_sds, PAGE_WDIG, WDIG_REG20, bit, bit);
+	ret = rtpcs_sds_read(even_sds, PAGE_WDIG, WDIG_REG20);
 	if (ret < 0)
 		return ret;
+	ret = !!(ret & rx_idle_mask);
 	dev_dbg(sds->ctrl->dev, "SerDes %u: RX readiness: mode=%u RX_IDLE=%d (%s)\n",
 		sds->id, sds->hw_mode, ret, ret ? "waiting" : "ready");
 	return !ret;
