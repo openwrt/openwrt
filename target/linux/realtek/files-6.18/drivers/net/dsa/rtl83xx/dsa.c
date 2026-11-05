@@ -265,12 +265,6 @@ static int rtldsa_port_enable(struct dsa_switch *ds, int port, struct phy_device
 	/* add all other ports in the same bridge to switch mask of port */
 	priv->r->traffic_set(priv, port, priv->ports[port].pm);
 
-	/* TODO: Figure out if this is necessary */
-	if (priv->family_id == RTL9300_FAMILY_ID) {
-		sw_w32_mask(0, BIT(port), RTL930X_L2_PORT_SABLK_CTRL);
-		sw_w32_mask(0, BIT(port), RTL930X_L2_PORT_DABLK_CTRL);
-	}
-
 	return 0;
 }
 

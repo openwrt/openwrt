@@ -877,6 +877,10 @@ void otto_l2_930x_learning_setup(struct otto_dsa_priv *priv)
 
 	/* Limit learning to maximum: 32k entries, after that just flood (bits 0-1) */
 	regmap_write(priv->map, RTL930X_L2_LRN_CONSTRT_CTRL, (0x7fff << 2) | 0);
+
+	/* TODO: Figure out if this is necessary */
+	regmap_set_bits(priv->map, RTL930X_L2_PORT_SABLK_CTRL, GENMASK(priv->r->cpu_port - 1, 0));
+	regmap_set_bits(priv->map, RTL930X_L2_PORT_DABLK_CTRL, GENMASK(priv->r->cpu_port - 1, 0));
 }
 
 void otto_l2_930x_enable_learning(struct otto_dsa_priv *priv, int port, bool enable)
