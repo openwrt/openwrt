@@ -171,7 +171,7 @@ Signed-off-by: Maíra Canal <mcanal@igalia.com>
  	for_each_subsys(ss, ssid) {
  		if (ss->early_init) {
  			struct cgroup_subsys_state *css =
-@@ -6803,10 +6794,6 @@ static int __init cgroup_disable(char *s
+@@ -6801,10 +6792,6 @@ static int __init cgroup_disable(char *s
  			    strcmp(token, ss->legacy_name))
  				continue;
  
@@ -182,7 +182,7 @@ Signed-off-by: Maíra Canal <mcanal@igalia.com>
  			static_branch_disable(cgroup_subsys_enabled_key[i]);
  			pr_info("Disabling %s control group subsystem\n",
  				ss->name);
-@@ -6840,7 +6827,7 @@ static int __init cgroup_enable(char *st
+@@ -6838,7 +6825,7 @@ static int __init cgroup_enable(char *st
  			    strcmp(token, ss->legacy_name))
  				continue;
  

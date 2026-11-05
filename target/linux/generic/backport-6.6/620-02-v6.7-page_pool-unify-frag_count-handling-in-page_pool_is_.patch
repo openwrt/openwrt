@@ -180,4 +180,4 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
 +	if (WARN_ON(size > max_size))
  		return NULL;
  
- 	size = ALIGN(size, dma_get_cache_alignment());
+ 	size = ALIGN(size, max_t(unsigned int, dma_get_cache_alignment(),
