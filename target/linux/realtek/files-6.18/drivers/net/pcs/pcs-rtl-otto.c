@@ -180,6 +180,11 @@ enum rtpcs_page {
 #define  RTL838X_SDS_EN_RX		BIT(1)
 #define  RTL838X_SDS_EN_TX		BIT(0)
 
+#define SDS_REG02			0x02
+#define  RTL93XX_SDS_FRC_AN		GENMASK(9, 8)
+#define   RTL93XX_SDS_FRC_AN_UNFORCED	FIELD_PREP(RTL93XX_SDS_FRC_AN, 0x0)
+#define   RTL93XX_SDS_FRC_AN_FORCE_OFF	FIELD_PREP(RTL93XX_SDS_FRC_AN, 0x1)
+
 #define SDS_REG03			0x03
 #define  RTL83XX_SOFT_RST		BIT(6)
 
@@ -1623,10 +1628,11 @@ static int rtpcs_93xx_sds_set_autoneg(struct rtpcs_serdes *sds, unsigned int neg
 
 	switch (sds->hw_mode) {
 	case RTPCS_SDS_MODE_XSGMII:
-		en_val = neg_mode == PHYLINK_PCS_NEG_INBAND_ENABLED ? 0x0 : 0x1;
+		en_val = (neg_mode == PHYLINK_PCS_NEG_INBAND_ENABLED) ?
+			 RTL93XX_SDS_FRC_AN_UNFORCED : RTL93XX_SDS_FRC_AN_FORCE_OFF;
 
-		return rtpcs_sds_xsg_write_mask(sds, PAGE_SDS, 0x2, GENMASK(9, 8),
-						FIELD_PREP(GENMASK(9, 8), en_val));
+		return rtpcs_sds_xsg_write_mask(sds, PAGE_SDS, SDS_REG02,
+						RTL93XX_SDS_FRC_AN, en_val);
 
 	case RTPCS_SDS_MODE_USXGMII:
 		/* forced USXGMII link not supported yet, always turn on USXGMII-AN */
