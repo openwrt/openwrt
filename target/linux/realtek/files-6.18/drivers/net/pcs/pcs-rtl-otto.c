@@ -4412,12 +4412,6 @@ static int rtpcs_931x_sds_config_attachment(struct rtpcs_serdes *sds,
 	else
 		tx_cfg = &rtpcs_931x_sds_tx_cfg_v1[sds->id - 2];
 
-	rtpcs_sds_write_mask(sds, PAGE_ANA_MISC, ANA_MISC_REG00, RTL93XX_FRC_CMU_EN,
-			     RTL93XX_FRC_CMU_EN_UNFORCED);
-	rtpcs_sds_write_bits(sds, PAGE_ANA_5G0, 0x7, 15, 15, use_dac_tuning ? 0x1 : 0x0);
-	rtpcs_sds_write_mask(sds, PAGE_ANA_MISC, ANA_MISC_REG00, RTL93XX_FRC_CMU_EN,
-			     RTL93XX_FRC_CMU_EN_FORCE_ON);
-
 	if (attachment == RTPCS_SDS_ATTACH_FIBER && is_10g_mode)
 		rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0xf, 5, 0, 0x2);
 
