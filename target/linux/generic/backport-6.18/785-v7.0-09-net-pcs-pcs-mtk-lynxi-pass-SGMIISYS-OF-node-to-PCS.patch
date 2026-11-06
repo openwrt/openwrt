@@ -96,7 +96,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  };
  
  static struct mtk_pcs_lynxi *pcs_to_mtk_pcs_lynxi(struct phylink_pcs *pcs)
-@@ -166,7 +167,7 @@ static int mtk_pcs_lynxi_config(struct p
+@@ -169,7 +170,7 @@ static int mtk_pcs_lynxi_config(struct p
  		regmap_set_bits(mpcs->regmap, SGMSYS_RESERVED_0,
  				SGMII_SW_RESET);
  
@@ -105,7 +105,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  			regmap_update_bits(mpcs->regmap, SGMSYS_QPHY_WRAP_CTRL,
  					   SGMII_PN_SWAP_MASK,
  					   SGMII_PN_SWAP_TX_RX);
-@@ -266,8 +267,8 @@ static const struct phylink_pcs_ops mtk_
+@@ -269,8 +270,8 @@ static const struct phylink_pcs_ops mtk_
  };
  
  struct phylink_pcs *mtk_pcs_lynxi_create(struct device *dev,
@@ -116,7 +116,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  {
  	struct mtk_pcs_lynxi *mpcs;
  	u32 id, ver;
-@@ -301,10 +302,10 @@ struct phylink_pcs *mtk_pcs_lynxi_create
+@@ -304,10 +305,10 @@ struct phylink_pcs *mtk_pcs_lynxi_create
  
  	mpcs->ana_rgc3 = ana_rgc3;
  	mpcs->regmap = regmap;
@@ -128,7 +128,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  
  	__set_bit(PHY_INTERFACE_MODE_SGMII, mpcs->pcs.supported_interfaces);
  	__set_bit(PHY_INTERFACE_MODE_1000BASEX, mpcs->pcs.supported_interfaces);
-@@ -316,10 +317,14 @@ EXPORT_SYMBOL(mtk_pcs_lynxi_create);
+@@ -319,10 +320,14 @@ EXPORT_SYMBOL(mtk_pcs_lynxi_create);
  
  void mtk_pcs_lynxi_destroy(struct phylink_pcs *pcs)
  {
