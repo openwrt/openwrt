@@ -93,7 +93,18 @@ struct otto_l3_route {
 	u32 dst_ip;			/* IP of the destination net */
 	struct in6_addr dst_ip6;
 	int prefix_len;			/* Network prefix len of the destination net */
+	/* In the exact match table rather than the prefix table. Cleared when a
+	 * route meant for it finds its hash bucket full and is placed as a
+	 * prefix route instead, so that everything keyed on this - row
+	 * bookkeeping, placement, teardown, what the FIB is told - treats it as
+	 * what it actually became.
+	 */
 	bool is_host_route;
+	/* Which pool its id came from, which is not the same question: a route
+	 * that fell back keeps the id it was allocated, and only the pool that
+	 * handed it out may take it back.
+	 */
+	bool host_id;
 	bool replaced;			/* torn down for a route to the same destination */
 	int id;				/* ID number of this route */
 	int row;			/* Row it occupies in the prefix route table */
@@ -136,9 +147,24 @@ struct otto_l3_config {
 	 * through the egress interface of a next hop instead.
 	 */
 	bool smac_per_route;
+	/* Rows a move has to copy for one IPv6 prefix entry. One where a single
+	 * access reads and writes the whole entry, which is the RTL930x and
+	 * the default when this is left unset; three on the RTL931x, whose
+	 * prefix table is too narrow to hold an entry in one row.
+	 */
+	u8 v6_move_rows;
 	int (*find_slot)(struct otto_l3_ctrl *ctrl, struct otto_l3_route *rt, bool must_exist);
 	void (*get_egress_intf)(struct otto_l3_ctrl *ctrl, int idx, struct otto_l3_intf *intf);
 	int (*set_egress_intf)(struct otto_l3_ctrl *ctrl, int idx, struct otto_l3_intf *intf);
+	/* Write one slot of the MTU tables, which an egress interface names by
+	 * index. Both families' tables take the same value, because a device
+	 * has one MTU. The hardware compares it against the IP total length and
+	 * not against the frame: measured on an S1300WP, a slot holding 100
+	 * forwards a 100 byte packet and drops a 101 byte one. So the value is
+	 * the device's MTU as the device reports it. Families without the
+	 * tables leave this unset and route everything with the default.
+	 */
+	int (*set_intf_mtu)(struct otto_l3_ctrl *ctrl, int id, u16 mtu);
 	/* Source MAC entries by their index: on RTL839x those of
 	 * ROUTING_SA_CTRL, on RTL930x the source MAC rows of the egress MAC
 	 * table
