@@ -19,6 +19,31 @@ extreme-networks,ws-ap3825i)
 hpe,msm460)
 	ucidef_set_led_netdev "lan" "LAN" "green:lan" "eth0"
 	;;
+nec,ix2106)
+	ucidef_set_led_netdev "wan_100m" "WAN 100M" "green:speed-wan" "wan" "link_100"
+	ucidef_set_led_netdev "wan_1g" "WAN 1G" "amber:speed-wan" "wan" "link_1000"
+	ucidef_set_led_netdev "lan1_100m" "LAN1 100M" "green:speed-lan-1" "lan1" "link_100"
+	ucidef_set_led_netdev "lan1_1g" "LAN1 1G" "amber:speed-lan-1" "lan1" "link_1000"
+	ucidef_set_led_netdev "lan2_100m" "LAN2 100M" "green:speed-lan-2" "lan2" "link_100"
+	ucidef_set_led_netdev "lan2_1g" "LAN2 1G" "amber:speed-lan-2" "lan2" "link_1000"
+	ucidef_set_led_netdev "lan3_100m" "LAN3 100M" "green:speed-lan-3" "lan3" "link_100"
+	ucidef_set_led_netdev "lan3_1g" "LAN3 1G" "amber:speed-lan-3" "lan3" "link_1000"
+	ucidef_set_led_netdev "lan4_100m" "LAN4 100M" "green:speed-lan-4" "lan4" "link_100"
+	ucidef_set_led_netdev "lan4_1g" "LAN4 1G" "amber:speed-lan-4" "lan4" "link_1000"
+	for port in 0 1 2 3 4; do
+		if [ "$port" = 0 ]; then
+			name="wan"
+			function="wan"
+		else
+			name="lan$port"
+			function="lan-$port"
+		fi
+		ucidef_set_led_netdev "${name}_activity_green" "$name activity green" \
+			"Marvell 88E6352:0${port}:00:green:$function" "$name" "link"
+		ucidef_set_led_netdev "${name}_activity_amber" "$name activity amber" \
+			"Marvell 88E6352:0${port}:01:amber:$function" "$name" "link"
+	done
+	;;
 esac
 
 board_config_flush
