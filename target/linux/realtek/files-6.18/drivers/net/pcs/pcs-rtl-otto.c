@@ -4392,7 +4392,6 @@ static int rtpcs_931x_sds_config_attachment(struct rtpcs_serdes *sds,
 		rtpcs_sds_write_mask(sds, PAGE_ANA_10G, ANA_SPD_REG14,
 				     RTL931X_RXCAL_SEL, RTL931X_RXCAL_SEL_DEFAULT);
 
-		/* SDK media-none analog setup, applied regardless of attachment. */
 		rtpcs_931x_sds_10g_ana_pre(sds);
 
 		rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0xf, 5, 0,
@@ -4421,7 +4420,7 @@ static int rtpcs_931x_sds_config_attachment(struct rtpcs_serdes *sds,
 			tx_cfg = &rtpcs_931x_sds_tx_cfg_v1[sds->id - 2];
 
 		rtpcs_sds_write(even_sds, PAGE_ANA_10G, 0x8,
-				use_dac_tuning ? 0x02a0 : 0x0294); /* [10:7] TX impedance */
+				use_dac_tuning ? 0x02a0 : 0x0294);
 
 		ret = rtpcs_931x_sds_config_tx_amps(sds, tx_cfg->pre_amp, tx_cfg->main_amp,
 						    tx_cfg->post_amp);
