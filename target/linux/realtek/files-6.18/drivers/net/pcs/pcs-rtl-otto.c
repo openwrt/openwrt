@@ -235,10 +235,10 @@ enum rtpcs_page {
 #define   RTL93XX_CFG_LINKDW_SEL_NON_DAC	RTL93XX_CFG_LINKDW_SEL
 
 #define TGR_PRO_0_REG14			0x0e
-#define  RTL93XX_USXG_AN_ENABLE		BIT(10)
+#define  RTL93XX_USXG_AN_TABLE		BIT(10)
 
 #define TGR_PRO_0_REG18			0x12
-#define  RTL93XX_CFG_AM_INSERT_PD	GENMASK(15, 0)
+#define  RTL93XX_CFG_AM_INSERT_PERIOD	GENMASK(15, 0)
 
 #define TGR_PRO_0_REG19			0x13
 #define  RTL93XX_CFG_AM0_M1		GENMASK(15, 8)
@@ -265,8 +265,7 @@ enum rtpcs_page {
 #define  RTL93XX_CFG_AM3_M1		GENMASK(7, 0)
 
 #define TGR_PRO_0_REG29			0x1d
-#define  RTL93XX_SW_AM_PD		BIT(11)
-#define  RTL93XX_USXG_INTF_CH3_RX	BIT(10)
+#define  RTL93XX_USXG_SYNC_HEADER	GENMASK(11, 10)
 
 /* PAGE_TGR_PRO_1 */
 
@@ -1649,8 +1648,8 @@ static int rtpcs_93xx_sds_set_autoneg(struct rtpcs_serdes *sds, unsigned int neg
 static void rtpcs_93xx_sds_usxgmii_config(struct rtpcs_serdes *sds)
 {
 	/*
-	 * Some USXGMII settings are labelled QHSG, presumably because USXGMII and
-	 * (Realtek-proprietary) QHSGMII share a functional block.
+	 * USXGMII and QHSGMII presumably share a functional block, hence the
+	 * QHSG-named controls used here.
 	 */
 
 	/* undocumented; part of USXGMII patch sequences in the SDK */
@@ -1670,10 +1669,10 @@ static void rtpcs_93xx_sds_usxgmii_config(struct rtpcs_serdes *sds)
 	/* USXGMII AN mode */
 	rtpcs_sds_write_mask(sds, PAGE_TGR_PRO_1, TGR_PRO_1_REG16, RTL93XX_CFG_QHSG_AN_OPC,
 			     RTL93XX_CFG_QHSG_AN_OPC_STD);
-	rtpcs_sds_write_mask(sds, PAGE_TGR_PRO_0, TGR_PRO_0_REG18, RTL93XX_CFG_AM_INSERT_PD,
+	rtpcs_sds_write_mask(sds, PAGE_TGR_PRO_0, TGR_PRO_0_REG18, RTL93XX_CFG_AM_INSERT_PERIOD,
 			     0xa4);
 
-	/* clear alignment markers */
+	/* Clear alignment-marker configuration registers. */
 	rtpcs_sds_write_mask(sds, PAGE_TGR_PRO_0, TGR_PRO_0_REG19,
 			     RTL93XX_CFG_AM0_M1 | RTL93XX_CFG_AM0_M0, 0x0);
 	rtpcs_sds_write_mask(sds, PAGE_TGR_PRO_0, TGR_PRO_0_REG20,
@@ -1687,11 +1686,11 @@ static void rtpcs_93xx_sds_usxgmii_config(struct rtpcs_serdes *sds)
 	rtpcs_sds_write_mask(sds, PAGE_TGR_PRO_0, TGR_PRO_0_REG24,
 			     RTL93XX_CFG_AM3_M2 | RTL93XX_CFG_AM3_M1, 0x0);
 
-	rtpcs_sds_write_mask(sds, PAGE_TGR_PRO_0, TGR_PRO_0_REG14, RTL93XX_USXG_AN_ENABLE,
-			     RTL93XX_USXG_AN_ENABLE);
+	rtpcs_sds_write_mask(sds, PAGE_TGR_PRO_0, TGR_PRO_0_REG14, RTL93XX_USXG_AN_TABLE,
+			     RTL93XX_USXG_AN_TABLE);
 	rtpcs_sds_write_mask(sds, PAGE_TGR_PRO_0, TGR_PRO_0_REG29,
-			     RTL93XX_SW_AM_PD | RTL93XX_USXG_INTF_CH3_RX,
-			     RTL93XX_USXG_INTF_CH3_RX);
+			     RTL93XX_USXG_SYNC_HEADER,
+			     FIELD_PREP(RTL93XX_USXG_SYNC_HEADER, 0x1));
 
 	rtpcs_sds_write_mask(sds, PAGE_TGR_PRO_0, TGR_PRO_0_REG03, RTL93XX_CFG_EEE_EN,
 			     RTL93XX_CFG_EEE_EN);
