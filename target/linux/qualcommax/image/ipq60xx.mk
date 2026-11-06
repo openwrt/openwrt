@@ -173,6 +173,12 @@ endef
 define Device/linksys_mr7350
 	$(call Device/linksys_mr)
 	DEVICE_MODEL := MR7350
+  	DEVICE_ALT0_VENDOR := Linksys
+  	DEVICE_ALT0_MODEL := MR7310
+  	DEVICE_ALT1_VENDOR := Linksys
+  	DEVICE_ALT1_MODEL := MR7320
+  	DEVICE_ALT2_VENDOR := Linksys
+  	DEVICE_ALT2_MODEL := MR7340
 	NAND_SIZE := 256m
 	IMAGE_SIZE := 75776k
 	SOC := ipq6000
