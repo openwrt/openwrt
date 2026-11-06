@@ -348,10 +348,18 @@ enum rtpcs_page {
 #define  RTL930X_FRC_BER_NOTIFY_ON	BIT(12)
 
 #define ANA_MISC_REG18			0x12
+#define  RTL93XX_FRC_CMU_EN_LC		GENMASK(1, 0)
+#define   RTL93XX_FRC_CMU_EN_LC_FORCE_ON	FIELD_PREP(RTL93XX_FRC_CMU_EN_LC, 0x3)
+#define  RTL93XX_FRC_CMU_EN_RING	GENMASK(3, 2)
+#define   RTL93XX_FRC_CMU_EN_RING_FORCE_ON	FIELD_PREP(RTL93XX_FRC_CMU_EN_RING, 0x3)
 #define  RTL93XX_FRC_LC_MODE_EVEN	BIT(4)
 #define  RTL93XX_FRC_LC_MODE_VAL_EVEN	BIT(5)
 #define  RTL93XX_FRC_LC_MODE_ODD	BIT(6)
 #define  RTL93XX_FRC_LC_MODE_VAL_ODD	BIT(7)
+#define  RTL93XX_FRC_CMU_SPD_LC_ON	BIT(8)
+#define  RTL93XX_FRC_CMU_SPD_LC_VAL	GENMASK(11, 9)
+#define  RTL93XX_FRC_CMU_SPD_RING_ON	BIT(12)
+#define  RTL93XX_FRC_CMU_SPD_RING_VAL	GENMASK(15, 13)
 
 /* PAGE_ANA_COM */
 
@@ -1724,20 +1732,22 @@ static int rtpcs_93xx_sds_get_pll_config(struct rtpcs_serdes *sds, enum rtpcs_sd
 					 enum rtpcs_sds_pll_speed *speed)
 {
 	struct rtpcs_serdes *even_sds = rtpcs_sds_get_even(sds);
-	int sbit, speed_val;
+	int speed_val;
 
 	/*
 	 * PLL config is shared between adjacent SerDes in the even lane. Each SerDes defines
 	 * what PLL it needs (ring or LC) while the PLL itself stores the current speed.
 	 */
 
-	sbit = pll == RTPCS_SDS_PLL_TYPE_LC ? 8 : 12;
-	speed_val = rtpcs_sds_read_bits(even_sds, PAGE_ANA_MISC, 0x12, sbit + 3, sbit);
+	speed_val = rtpcs_sds_read(even_sds, PAGE_ANA_MISC, ANA_MISC_REG18);
 	if (speed_val < 0)
 		return speed_val;
 
-	/* bit 0 is force-bit, bits [3:1] are speed selector */
-	*speed = (enum rtpcs_sds_pll_speed)(speed_val >> 1);
+	if (pll == RTPCS_SDS_PLL_TYPE_LC)
+		speed_val = FIELD_GET(RTL93XX_FRC_CMU_SPD_LC_VAL, speed_val);
+	else
+		speed_val = FIELD_GET(RTL93XX_FRC_CMU_SPD_RING_VAL, speed_val);
+	*speed = (enum rtpcs_sds_pll_speed)speed_val;
 	return 0;
 }
 
@@ -1745,7 +1755,7 @@ static int rtpcs_93xx_sds_set_pll_config(struct rtpcs_serdes *sds, enum rtpcs_sd
 					 enum rtpcs_sds_pll_speed speed)
 {
 	struct rtpcs_serdes *even_sds = rtpcs_sds_get_even(sds);
-	int sbit = pll == RTPCS_SDS_PLL_TYPE_LC ? 8 : 12;
+	u16 mask, val;
 	int ret;
 
 	if (speed >= RTPCS_SDS_PLL_SPD_END)
@@ -1762,13 +1772,22 @@ static int rtpcs_93xx_sds_set_pll_config(struct rtpcs_serdes *sds, enum rtpcs_sd
 	 * LC PLL. As it is unclear if disabling PLLs has any positive or negative effect,
 	 * always activate both.
 	 */
-	ret = rtpcs_sds_write_bits(even_sds, PAGE_ANA_MISC, 0x12, 3, 0, 0xf);
+	mask = RTL93XX_FRC_CMU_EN_LC | RTL93XX_FRC_CMU_EN_RING;
+	val = RTL93XX_FRC_CMU_EN_LC_FORCE_ON | RTL93XX_FRC_CMU_EN_RING_FORCE_ON;
+	ret = rtpcs_sds_write_mask(even_sds, PAGE_ANA_MISC, ANA_MISC_REG18, mask, val);
 	if (ret < 0)
 		return ret;
 
-	/* bit 0 is force-bit, bits [3:1] are speed selector */
-	ret = rtpcs_sds_write_bits(even_sds, PAGE_ANA_MISC, 0x12, sbit + 3, sbit,
-				   (speed << 1) | BIT(0));
+	if (pll == RTPCS_SDS_PLL_TYPE_LC) {
+		mask = RTL93XX_FRC_CMU_SPD_LC_ON | RTL93XX_FRC_CMU_SPD_LC_VAL;
+		val = RTL93XX_FRC_CMU_SPD_LC_ON |
+		      FIELD_PREP(RTL93XX_FRC_CMU_SPD_LC_VAL, speed);
+	} else {
+		mask = RTL93XX_FRC_CMU_SPD_RING_ON | RTL93XX_FRC_CMU_SPD_RING_VAL;
+		val = RTL93XX_FRC_CMU_SPD_RING_ON |
+		      FIELD_PREP(RTL93XX_FRC_CMU_SPD_RING_VAL, speed);
+	}
+	ret = rtpcs_sds_write_mask(even_sds, PAGE_ANA_MISC, ANA_MISC_REG18, mask, val);
 	if (ret < 0)
 		return ret;
 
