@@ -29,10 +29,10 @@ Signed-off-by: Tim Harvey <tharvey@gateworks.com>
  #define IMX6_PCIE_FLAG_IMX6_SPEED_CHANGE	BIT(1)
  #define IMX6_PCIE_FLAG_SUPPORTS_SUSPEND		BIT(2)
 +#define IMX6_PCIE_FLAG_GEN1_LAST		BIT(3)
- 
- #define IMX6_PCIE_MAX_CLKS       6
- 
-@@ -836,26 +837,28 @@ static int imx6_pcie_start_link(struct d
+ /*
+  * Because of ERR005723 (PCIe does not support L2 power down) we need to
+  * workaround suspend resume on some devices which are affected by this errata.
+@@ -841,26 +842,28 @@ static int imx6_pcie_start_link(struct d
  	u32 tmp;
  	int ret;
  
@@ -76,7 +76,7 @@ Signed-off-by: Tim Harvey <tharvey@gateworks.com>
  		/* Allow faster modes after the link is up */
  		dw_pcie_dbi_ro_wr_en(pci);
  		tmp = dw_pcie_readl_dbi(pci, offset + PCI_EXP_LNKCAP);
-@@ -889,18 +892,14 @@ static int imx6_pcie_start_link(struct d
+@@ -894,18 +897,14 @@ static int imx6_pcie_start_link(struct d
  				goto err_reset_phy;
  			}
  		}
@@ -100,7 +100,7 @@ Signed-off-by: Tim Harvey <tharvey@gateworks.com>
  	return 0;
  
  err_reset_phy:
-@@ -1458,14 +1457,16 @@ static const struct imx6_pcie_drvdata dr
+@@ -1493,14 +1492,16 @@ static const struct imx6_pcie_drvdata dr
  	},
  	[IMX8MM] = {
  		.variant = IMX8MM,

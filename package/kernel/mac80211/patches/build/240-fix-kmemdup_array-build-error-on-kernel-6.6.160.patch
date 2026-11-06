@@ -1,0 +1,33 @@
+From: Andreas Ziegler <dev@andreas-ziegler.de>
+Date: Thu, 5 Nov 2026 12:00:00 +0100
+Subject: [PATCH] fix kmemdup_array() build error on kernel 6.6.160
+X-OpenWrt-Commit-Ref: ff9ecefd488a4c02feadbbf08d2b8b713f0c16e7
+
+backport-include/linux/string.h defines a static inline kmemdup_array()
+for kernels older than 6.9. Linux 6.6.160 backported the symbol
+upstream, which makes the build fail with:
+
+  backport-include/linux/string.h:52:1: error: static declaration of
+  'kmemdup_array' follows non-static declaration
+
+Only use the backports definition on kernels that do not provide the
+symbol themselves.
+
+Upstream-Reference: https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git/commit?id=ff9ecefd488a4c02feadbbf08d2b8b713f0c16e7
+
+--- a/backport-include/linux/string.h
++++ b/backport-include/linux/string.h
+@@ -48,11 +48,13 @@
+ #define strscpy_pad(dst, src, ...)	\
+ 	CONCATENATE(__strscpy_pad, COUNT_ARGS(__VA_ARGS__))(dst, src, __VA_ARGS__)
+ 
++#if !LINUX_VERSION_IN_RANGE(6,6,160, 6,7,0)
+ static inline void *
+ kmemdup_array(const void *src, size_t count, size_t element_size, gfp_t gfp)
+ {
+ 	return kmemdup(src, size_mul(element_size, count), gfp);
+ }
++#endif
+ 
+ #endif /* <6.9 */
+ 
