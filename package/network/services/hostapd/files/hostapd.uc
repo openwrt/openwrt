@@ -2614,6 +2614,7 @@ let main_obj = {
 				let is_pending = !!hostapd.data.pending_config[phy_name];
 				let iface = hostapd.interfaces[phy_name];
 				let state = iface?.state();
+				let cac = iface?.cac();
 				let is_running = iface && state == "ENABLED" && !is_pending;
 
 				for (let bss in config.bss) {
@@ -2635,6 +2636,7 @@ let main_obj = {
 							running: is_running,
 							pending: is_pending,
 							state,
+							cac,
 						};
 					} else {
 						entry = {
@@ -2643,6 +2645,7 @@ let main_obj = {
 							running: is_running,
 							pending: is_pending,
 							state,
+							cac,
 						};
 						if (config.radio_idx != null && config.radio_idx >= 0)
 							entry.radio = config.radio_idx;
@@ -2723,6 +2726,11 @@ return {
 	bss_link_removed: function(phy, name, obj) {
 		if (!iface_link_reload_expired(phy, name))
 			mld_link_bss_remove(phy, name, obj);
+	},
+	cac_start: function(phy, cac) {
+		hostapd.data.obj?.notify("cac_start",
+			{ wiphy: hostapd.data.config[phy]?.phy, ...cac },
+			null, null, null, -1);
 	},
 	sta_auth: function(iface, sta) {
 		let msg = { iface, sta };
