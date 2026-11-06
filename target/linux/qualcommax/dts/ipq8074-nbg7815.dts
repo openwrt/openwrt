@@ -768,8 +768,6 @@
 
 
 /* use the second I2C bus for the second temperature sensor */
-/delete-node/ &blsp1_spi4;
-
 &soc {
 	i2c@78b8000 {
 		compatible = "qcom,i2c-qup-v2.2.1";
