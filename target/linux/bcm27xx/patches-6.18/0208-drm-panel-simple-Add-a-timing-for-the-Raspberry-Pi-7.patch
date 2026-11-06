@@ -439,7 +439,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  		.compatible = "innolux,at070tn92",
  		.data = &innolux_at070tn92,
  	}, {
-@@ -5375,6 +5445,9 @@ static const struct of_device_id platfor
+@@ -5378,6 +5448,9 @@ static const struct of_device_id platfor
  		.compatible = "rocktech,rk043fn48h",
  		.data = &rocktech_rk043fn48h,
  	}, {
@@ -449,7 +449,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  		.compatible = "rocktech,rk070er9427",
  		.data = &rocktech_rk070er9427,
  	}, {
-@@ -5737,6 +5810,9 @@ static const struct panel_desc_dsi osd10
+@@ -5740,6 +5813,9 @@ static const struct panel_desc_dsi osd10
  	.lanes = 4,
  };
  
@@ -459,7 +459,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  static const struct of_device_id dsi_of_match[] = {
  	{
  		.compatible = "auo,b080uan01",
-@@ -5760,11 +5836,112 @@ static const struct of_device_id dsi_of_
+@@ -5763,11 +5839,112 @@ static const struct of_device_id dsi_of_
  		.compatible = "osddisplays,osd101t2045-53ts",
  		.data = &osd101t2045_53ts
  	}, {
@@ -572,7 +572,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  static int panel_simple_dsi_probe(struct mipi_dsi_device *dsi)
  {
  	const struct panel_desc_dsi *desc;
-@@ -5776,6 +5953,21 @@ static int panel_simple_dsi_probe(struct
+@@ -5779,6 +5956,21 @@ static int panel_simple_dsi_probe(struct
  		return PTR_ERR(panel);
  
  	desc = container_of(panel->desc, struct panel_desc_dsi, desc);
