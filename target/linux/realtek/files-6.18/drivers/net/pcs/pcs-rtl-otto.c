@@ -4902,9 +4902,7 @@ static int rtpcs_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
 	scoped_guard(mutex, &ctrl->lock) {
 		mode_changed = sds->hw_mode != hw_mode || sds->usxgmii_submode != submode;
 		if (mode_changed || attachment_changed) {
-			if (sds->rx_phase == RTPCS_RX_PHASE_CALIBRATION)
-				dev_dbg(ctrl->dev, "SerDes %u: invalidating pending RX calibration for configuration change\n",
-					sds->id);
+			/* invalidating run due to configuration change */
 			WRITE_ONCE(sds->rx_phase, RTPCS_RX_PHASE_IDLE);
 			sds->rxmon_down = 0;
 		}
