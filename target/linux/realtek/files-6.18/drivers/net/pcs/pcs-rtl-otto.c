@@ -2455,11 +2455,6 @@ static int rtpcs_930x_sds_deactivate(struct rtpcs_serdes *sds)
 	if (ret)
 		return ret;
 
-	/* Disable fiber RX. */
-	ret = rtpcs_sds_write_bits(sds, PAGE_ANA_MISC, 2, 12, 12, 1);
-	if (ret)
-		return ret;
-
 	/* Power down the 1G PHY block. */
 	ret = rtpcs_sds_write_mask(sds, PAGE_FIB, MII_BMCR, BMCR_PDOWN, BMCR_PDOWN);
 	if (ret)
@@ -2480,7 +2475,7 @@ static int rtpcs_930x_sds_activate(struct rtpcs_serdes *sds)
 
 	rtpcs_930x_sds_rx_reset(sds, sds->hw_mode);
 
-	/* Enable fiber RX. */
+	/* Release any inherited BER-notify override. */
 	ret = rtpcs_sds_write_bits(sds, PAGE_ANA_MISC, 2, 12, 12, 0);
 	if (ret)
 		return ret;
