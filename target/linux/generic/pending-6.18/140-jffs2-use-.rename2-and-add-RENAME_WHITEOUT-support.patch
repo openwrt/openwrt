@@ -19,20 +19,22 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  {
  	struct jffs2_inode_info *f, *dir_f;
  	struct jffs2_sb_info *c;
-@@ -761,7 +761,11 @@ static int jffs2_mknod (struct mnt_idmap
+@@ -761,7 +761,13 @@ static int jffs2_mknod (struct mnt_idmap
  	mutex_unlock(&dir_f->sem);
  	jffs2_complete_reservation(c);
  
 -	d_instantiate_new(dentry, inode);
-+	if (!whiteout)
++	if (!whiteout) {
 +		d_instantiate_new(dentry, inode);
-+	else
++	} else {
 +		unlock_new_inode(inode);
++		iput(inode);
++	}
 +
  	return 0;
  
   fail:
-@@ -769,6 +773,19 @@ static int jffs2_mknod (struct mnt_idmap
+@@ -769,6 +775,19 @@ static int jffs2_mknod (struct mnt_idmap
  	return ret;
  }
  
@@ -52,7 +54,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  static int jffs2_rename (struct mnt_idmap *idmap,
  			 struct inode *old_dir_i, struct dentry *old_dentry,
  			 struct inode *new_dir_i, struct dentry *new_dentry,
-@@ -780,7 +797,7 @@ static int jffs2_rename (struct mnt_idma
+@@ -780,7 +799,7 @@ static int jffs2_rename (struct mnt_idma
  	uint8_t type;
  	uint32_t now;
  
@@ -61,7 +63,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		return -EINVAL;
  
  	/* The VFS will check for us and prevent trying to rename a
-@@ -846,9 +863,14 @@ static int jffs2_rename (struct mnt_idma
+@@ -846,9 +865,14 @@ static int jffs2_rename (struct mnt_idma
  	if (d_is_dir(old_dentry) && !victim_f)
  		inc_nlink(new_dir_i);
  
