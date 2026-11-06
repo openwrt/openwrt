@@ -564,7 +564,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  static netdev_tx_t airoha_dev_xmit(struct sk_buff *skb,
  				   struct net_device *netdev)
  {
-@@ -3219,7 +3539,7 @@ static int airoha_enable_qos_for_gdm34(s
+@@ -3223,7 +3543,7 @@ static int airoha_enable_qos_for_gdm34(s
  	struct airoha_gdm_dev *wan_dev, *dev = netdev_priv(netdev);
  	struct airoha_gdm_port *port = dev->port;
  	struct airoha_eth *eth = dev->eth;
@@ -573,7 +573,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  
  	if (port->id != AIROHA_GDM3_IDX &&
  	    port->id != AIROHA_GDM4_IDX) {
-@@ -3238,6 +3558,7 @@ static int airoha_enable_qos_for_gdm34(s
+@@ -3242,6 +3562,7 @@ static int airoha_enable_qos_for_gdm34(s
  		    wan_dev->port->id == AIROHA_GDM2_IDX) {
  			NL_SET_ERR_MSG_MOD(extack,
  					   "QoS configured for WAN device");
@@ -581,7 +581,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  			goto error_unlock;
  		}
  		airoha_disable_qos_for_gdm34(netdev_from_priv(wan_dev));
-@@ -3363,6 +3684,8 @@ static const struct net_device_ops airoh
+@@ -3367,6 +3688,8 @@ static const struct net_device_ops airoh
  	.ndo_stop		= airoha_dev_stop,
  	.ndo_change_mtu		= airoha_dev_change_mtu,
  	.ndo_select_queue	= airoha_dev_select_queue,
@@ -590,7 +590,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	.ndo_start_xmit		= airoha_dev_xmit,
  	.ndo_get_stats64        = airoha_dev_get_stats64,
  	.ndo_set_mac_address	= airoha_dev_set_macaddr,
-@@ -3450,11 +3773,9 @@ static int airoha_alloc_gdm_device(struc
+@@ -3454,11 +3777,9 @@ static int airoha_alloc_gdm_device(struc
  	netdev->ethtool_ops = &airoha_ethtool_ops;
  	netdev->max_mtu = AIROHA_MAX_MTU;
  	netdev->watchdog_timeo = 5 * HZ;

@@ -44,9 +44,9 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
 -			q->tail = (q->tail + 1) % q->ndesc;
 -
  		if (skb) {
- 			u16 queue = skb_get_queue_mapping(skb);
  			struct netdev_queue *txq;
-@@ -970,6 +964,7 @@ static int airoha_qdma_init_tx_queue(str
+ 
+@@ -969,6 +963,7 @@ static int airoha_qdma_init_tx_queue(str
  	q->ndesc = size;
  	q->qdma = qdma;
  	q->free_thr = 1 + MAX_SKB_FRAGS;
@@ -54,7 +54,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  
  	q->entry = devm_kzalloc(eth->dev, q->ndesc * sizeof(*q->entry),
  				GFP_KERNEL);
-@@ -982,9 +977,9 @@ static int airoha_qdma_init_tx_queue(str
+@@ -981,9 +976,9 @@ static int airoha_qdma_init_tx_queue(str
  		return -ENOMEM;
  
  	for (i = 0; i < q->ndesc; i++) {
@@ -66,7 +66,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		WRITE_ONCE(q->desc[i].ctrl, cpu_to_le32(val));
  	}
  
-@@ -994,9 +989,9 @@ static int airoha_qdma_init_tx_queue(str
+@@ -993,9 +988,9 @@ static int airoha_qdma_init_tx_queue(str
  
  	airoha_qdma_wr(qdma, REG_TX_RING_BASE(qid), dma_addr);
  	airoha_qdma_rmw(qdma, REG_TX_CPU_IDX(qid), TX_RING_CPU_IDX_MASK,
@@ -78,18 +78,15 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  
  	return 0;
  }
-@@ -1052,17 +1047,21 @@ static int airoha_qdma_init_tx(struct ai
- static void airoha_qdma_cleanup_tx_queue(struct airoha_queue *q)
- {
- 	struct airoha_eth *eth = q->qdma->eth;
-+	int i;
+@@ -1055,13 +1050,16 @@ static void airoha_qdma_cleanup_tx_queue
+ 	int qid = q - &qdma->q_tx[0];
  
  	spin_lock_bh(&q->lock);
 -	while (q->queued) {
 -		struct airoha_queue_entry *e = &q->entry[q->tail];
 +	for (i = 0; i < q->ndesc; i++) {
 +		struct airoha_queue_entry *e = &q->entry[i];
-+
+ 		struct airoha_qdma_desc *desc = &q->desc[q->tail];
 +		if (!e->dma_addr)
 +			continue;
  
@@ -98,13 +95,18 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		dev_kfree_skb_any(e->skb);
 +		e->dma_addr = 0;
  		e->skb = NULL;
--
+ 
+ 		/* Reset DMA descriptor */
+@@ -1072,7 +1070,7 @@ static void airoha_qdma_cleanup_tx_queue
+ 		WRITE_ONCE(desc->msg1, 0);
+ 		WRITE_ONCE(desc->msg2, 0);
+ 
 -		q->tail = (q->tail + 1) % q->ndesc;
 +		list_add_tail(&e->list, &q->tx_list);
  		q->queued--;
  	}
- 	spin_unlock_bh(&q->lock);
-@@ -1904,20 +1903,6 @@ static u32 airoha_get_dsa_tag(struct sk_
+ 
+@@ -1923,20 +1921,6 @@ static u32 airoha_get_dsa_tag(struct sk_
  #endif
  }
  
@@ -125,7 +127,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  static int airoha_get_fe_port(struct airoha_gdm_port *port)
  {
  	struct airoha_qdma *qdma = port->qdma;
-@@ -1940,8 +1925,10 @@ static netdev_tx_t airoha_dev_xmit(struc
+@@ -1959,8 +1943,10 @@ static netdev_tx_t airoha_dev_xmit(struc
  	struct airoha_gdm_port *port = netdev_priv(dev);
  	struct airoha_qdma *qdma = port->qdma;
  	u32 nr_frags, tag, msg0, msg1, len;
@@ -136,8 +138,8 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	void *data;
  	int i, qid;
  	u16 index;
-@@ -1987,7 +1974,7 @@ static netdev_tx_t airoha_dev_xmit(struc
- 	txq = netdev_get_tx_queue(dev, qid);
+@@ -2006,7 +1992,7 @@ static netdev_tx_t airoha_dev_xmit(struc
+ 	txq = skb_get_tx_queue(dev, skb);
  	nr_frags = 1 + skb_shinfo(skb)->nr_frags;
  
 -	if (airoha_dev_tx_queue_busy(q, nr_frags)) {
@@ -145,7 +147,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		/* not enough space in the queue */
  		netif_tx_stop_queue(txq);
  		spin_unlock_bh(&q->lock);
-@@ -1996,11 +1983,13 @@ static netdev_tx_t airoha_dev_xmit(struc
+@@ -2015,11 +2001,13 @@ static netdev_tx_t airoha_dev_xmit(struc
  
  	len = skb_headlen(skb);
  	data = skb->data;
@@ -161,7 +163,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		skb_frag_t *frag = &skb_shinfo(skb)->frags[i];
  		dma_addr_t addr;
  		u32 val;
-@@ -2010,7 +1999,14 @@ static netdev_tx_t airoha_dev_xmit(struc
+@@ -2029,7 +2017,14 @@ static netdev_tx_t airoha_dev_xmit(struc
  		if (unlikely(dma_mapping_error(dev->dev.parent, addr)))
  			goto error_unmap;
  
@@ -177,23 +179,26 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  
  		val = FIELD_PREP(QDMA_DESC_LEN_MASK, len);
  		if (i < nr_frags - 1)
-@@ -2023,15 +2019,9 @@ static netdev_tx_t airoha_dev_xmit(struc
+@@ -2042,10 +2037,6 @@ static netdev_tx_t airoha_dev_xmit(struc
  		WRITE_ONCE(desc->msg1, cpu_to_le32(msg1));
  		WRITE_ONCE(desc->msg2, cpu_to_le32(0xffff));
  
--		e->skb = i ? NULL : skb;
+-		e->skb = i == nr_frags - 1 ? skb : NULL;
 -		e->dma_addr = addr;
 -		e->dma_len = len;
 -
- 		data = skb_frag_address(frag);
+ 		if (i == nr_frags - 1)
+ 			continue;
+ 
+@@ -2053,7 +2044,6 @@ static netdev_tx_t airoha_dev_xmit(struc
  		len = skb_frag_size(frag);
  	}
--
+ 
 -	q->head = index;
  	q->queued += i;
  
  	skb_tx_timestamp(skb);
-@@ -2040,7 +2030,7 @@ static netdev_tx_t airoha_dev_xmit(struc
+@@ -2062,7 +2052,7 @@ static netdev_tx_t airoha_dev_xmit(struc
  	if (netif_xmit_stopped(txq) || !netdev_xmit_more())
  		airoha_qdma_rmw(qdma, REG_TX_CPU_IDX(qid),
  				TX_RING_CPU_IDX_MASK,
@@ -202,7 +207,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  
  	if (q->ndesc - q->queued < q->free_thr)
  		netif_tx_stop_queue(txq);
-@@ -2050,10 +2040,13 @@ static netdev_tx_t airoha_dev_xmit(struc
+@@ -2072,10 +2062,13 @@ static netdev_tx_t airoha_dev_xmit(struc
  	return NETDEV_TX_OK;
  
  error_unmap:

@@ -91,7 +91,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +#endif
 --- a/include/linux/gpio/consumer.h
 +++ b/include/linux/gpio/consumer.h
-@@ -628,7 +628,10 @@ static inline int devm_acpi_dev_add_driv
+@@ -632,7 +632,10 @@ static inline int devm_acpi_dev_add_driv
  
  #if IS_ENABLED(CONFIG_GPIOLIB) && IS_ENABLED(CONFIG_GPIO_SYSFS)
  
@@ -102,7 +102,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  int gpiod_export_link(struct device *dev, const char *name,
  		      struct gpio_desc *desc);
  void gpiod_unexport(struct gpio_desc *desc);
-@@ -637,11 +640,25 @@ void gpiod_unexport(struct gpio_desc *de
+@@ -641,11 +644,25 @@ void gpiod_unexport(struct gpio_desc *de
  
  #include <asm/errno.h>
  

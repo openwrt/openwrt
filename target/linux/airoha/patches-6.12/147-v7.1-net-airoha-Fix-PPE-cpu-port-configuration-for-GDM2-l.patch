@@ -24,7 +24,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
 
 --- a/drivers/net/ethernet/airoha/airoha_eth.c
 +++ b/drivers/net/ethernet/airoha/airoha_eth.c
-@@ -1755,7 +1755,7 @@ static int airoha_set_gdm2_loopback(stru
+@@ -1745,7 +1745,7 @@ static int airoha_set_gdm2_loopback(stru
  {
  	struct airoha_eth *eth = port->qdma->eth;
  	u32 val, pse_port, chan;
@@ -33,7 +33,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  
  	/* Forward the traffic to the proper GDM port */
  	pse_port = port->id == AIROHA_GDM3_IDX ? FE_PSE_PORT_GDM3
-@@ -1797,6 +1797,9 @@ static int airoha_set_gdm2_loopback(stru
+@@ -1787,6 +1787,9 @@ static int airoha_set_gdm2_loopback(stru
  		      SP_CPORT_MASK(val),
  		      __field_prep(SP_CPORT_MASK(val), FE_PSE_PORT_CDM2));
  
@@ -43,7 +43,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  	if (port->id == AIROHA_GDM4_IDX && airoha_is_7581(eth)) {
  		u32 mask = FC_ID_OF_SRC_PORT_MASK(port->nbq);
  
-@@ -1835,7 +1838,8 @@ static int airoha_dev_init(struct net_de
+@@ -1825,7 +1828,8 @@ static int airoha_dev_init(struct net_de
  	}
  
  	for (i = 0; i < eth->soc->num_ppe; i++)

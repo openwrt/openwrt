@@ -32,7 +32,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
 
 --- a/drivers/net/ethernet/airoha/airoha_eth.c
 +++ b/drivers/net/ethernet/airoha/airoha_eth.c
-@@ -2672,14 +2672,34 @@ static int airoha_qdma_set_trtcm_param(s
+@@ -2667,14 +2667,34 @@ static int airoha_qdma_set_trtcm_param(s
  		     FIELD_PREP(TRTCM_METER_GROUP_MASK, group) |
  		     FIELD_PREP(TRTCM_PARAM_INDEX_MASK, idx) |
  		     FIELD_PREP(TRTCM_PARAM_RATE_TYPE_MASK, mode);

@@ -16,7 +16,7 @@ Signed-off-by: Andrew Lunn <andrew@lunn.ch>
 
 --- a/drivers/net/ethernet/airoha/airoha_eth.c
 +++ b/drivers/net/ethernet/airoha/airoha_eth.c
-@@ -2489,7 +2489,7 @@ static int airoha_dev_stop(struct net_de
+@@ -2508,7 +2508,7 @@ static int airoha_dev_stop(struct net_de
  {
  	struct airoha_gdm_port *port = netdev_priv(dev);
  	struct airoha_qdma *qdma = port->qdma;
@@ -25,7 +25,7 @@ Signed-off-by: Andrew Lunn <andrew@lunn.ch>
  
  	netif_tx_disable(dev);
  	err = airoha_set_gdm_ports(qdma->eth, false);
-@@ -2500,6 +2500,14 @@ static int airoha_dev_stop(struct net_de
+@@ -2519,6 +2519,14 @@ static int airoha_dev_stop(struct net_de
  			  GLOBAL_CFG_TX_DMA_EN_MASK |
  			  GLOBAL_CFG_RX_DMA_EN_MASK);
  
