@@ -47,7 +47,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  
  static const struct sfp_quirk sfp_quirks[] = {
  	// Alcatel Lucent G-010S-P can operate at 2500base-X, but incorrectly
-@@ -628,13 +637,16 @@ static size_t sfp_strlen(const char *str
+@@ -631,13 +640,16 @@ static size_t sfp_strlen(const char *str
  	return size;
  }
  
@@ -67,7 +67,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  }
  
  static const struct sfp_quirk *sfp_lookup_quirk(const struct sfp_eeprom_id *id)
-@@ -647,8 +659,9 @@ static const struct sfp_quirk *sfp_looku
+@@ -650,8 +662,9 @@ static const struct sfp_quirk *sfp_looku
  	ps = sfp_strlen(id->base.vendor_pn, ARRAY_SIZE(id->base.vendor_pn));
  
  	for (i = 0, q = sfp_quirks; i < ARRAY_SIZE(sfp_quirks); i++, q++)

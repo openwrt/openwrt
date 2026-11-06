@@ -75,7 +75,7 @@ Signed-off-by: Bo-Cun Chen <bc-bocun.chen@mediatek.com>
  
  	/* Release PHYA power down state
  	 * Only removing bit SGMII_PHYA_PWD isn't enough.
-@@ -453,7 +465,7 @@ static struct phylink_pcs *mtk_pcs_lynxi
+@@ -456,7 +468,7 @@ static struct phylink_pcs *mtk_pcs_lynxi
  					      struct mtk_pcs_lynxi *prealloc)
  {
  	struct mtk_pcs_lynxi *mpcs;
@@ -84,7 +84,7 @@ Signed-off-by: Bo-Cun Chen <bc-bocun.chen@mediatek.com>
  	int ret;
  
  	ret = regmap_read(regmap, SGMSYS_PCS_DEVICE_ID, &id);
-@@ -475,6 +487,9 @@ static struct phylink_pcs *mtk_pcs_lynxi
+@@ -478,6 +490,9 @@ static struct phylink_pcs *mtk_pcs_lynxi
  		return ERR_PTR(-ENODEV);
  	}
  
@@ -94,7 +94,7 @@ Signed-off-by: Bo-Cun Chen <bc-bocun.chen@mediatek.com>
  	dev_dbg(dev, "MediaTek LynxI SGMII PCS (id 0x%08x, ver 0x%04x)\n", id,
  		ver);
  
-@@ -491,6 +506,7 @@ static struct phylink_pcs *mtk_pcs_lynxi
+@@ -494,6 +509,7 @@ static struct phylink_pcs *mtk_pcs_lynxi
  	mpcs->pcs.ops = &mtk_pcs_lynxi_ops;
  	mpcs->pcs.poll = true;
  	mpcs->interface = PHY_INTERFACE_MODE_NA;
