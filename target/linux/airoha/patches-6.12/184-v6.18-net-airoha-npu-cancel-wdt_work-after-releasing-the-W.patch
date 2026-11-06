@@ -43,7 +43,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  #include <linux/firmware.h>
  #include <linux/platform_device.h>
  #include <linux/of_net.h>
-@@ -756,12 +757,15 @@ static int airoha_npu_probe(struct platf
+@@ -758,12 +759,15 @@ static int airoha_npu_probe(struct platf
  		if (irq < 0)
  			return irq;
  
@@ -61,7 +61,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	}
  
  	/* wlan IRQ lines */
-@@ -808,18 +812,8 @@ static int airoha_npu_probe(struct platf
+@@ -810,18 +814,8 @@ static int airoha_npu_probe(struct platf
  	return 0;
  }
  
