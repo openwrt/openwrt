@@ -4401,9 +4401,6 @@ static int rtpcs_931x_sds_config_attachment(struct rtpcs_serdes *sds,
 
 	rtpcs_sds_write_bits(sds, PAGE_ANA_5G0, 0x12, 7, 6, 0x1);
 
-	if (attachment == RTPCS_SDS_ATTACH_NONE)
-		return 0;
-
 	/* DAC-specific tuning is only defined for 10GBase-R. */
 	use_dac_tuning = hw_mode == RTPCS_SDS_MODE_10GBASER &&
 			 (attachment == RTPCS_SDS_ATTACH_DAC_SHORT ||
