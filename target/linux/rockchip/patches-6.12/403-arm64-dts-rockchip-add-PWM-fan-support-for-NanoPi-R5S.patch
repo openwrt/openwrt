@@ -1,0 +1,83 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Wang Lei <ctowl2018@gmail.com>
+Date: Thu, 22 Oct 2026 14:40:00 +0800
+Subject: [PATCH] arm64: dts: rockchip: add PWM fan support for NanoPi R5S
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+The NanoPi R5S has a PWM controlled fan wired to PWM0 and powered from
+the always-on 5 V rail, but the board device tree never described it.
+
+Describe it as a pwm-fan cooling device with five cooling levels, and add
+two active trips (55 °C / 65 °C) driving it, so the thermal core spins the
+fan up before the generic passive trips start cooling the CPU by
+throttling it.
+
+Keep this in the board file rather than the shared rk3568-nanopi-r5s.dtsi:
+the NanoPi R5C includes that .dtsi and uses GPIO0_B7, PWM0's default pin,
+as its reset button.
+
+Signed-off-by: Wang Lei <ctowl2018@gmail.com>
+---
+
+--- a/arch/arm64/boot/dts/rockchip/rk3568-nanopi-r5s.dts
++++ b/arch/arm64/boot/dts/rockchip/rk3568-nanopi-r5s.dts
+@@ -17,6 +17,14 @@
+ 		ethernet0 = &gmac0;
+ 	};
+ 
++	fan: pwm-fan {
++		compatible = "pwm-fan";
++		#cooling-cells = <2>;
++		cooling-levels = <0 18 102 170 255>;
++		fan-supply = <&vcc5v0_sys>;
++		pwms = <&pwm0 0 50000 0>;
++	};
++
+ 	gpio-leds {
+ 		compatible = "gpio-leds";
+ 		pinctrl-names = "default";
+@@ -50,6 +58,34 @@
+ 	};
+ };
+ 
++&cpu_thermal {
++	trips {
++		cpu_warm: cpu-warm {
++			temperature = <55000>;
++			hysteresis = <2000>;
++			type = "active";
++		};
++
++		cpu_hot: cpu-hot {
++			temperature = <65000>;
++			hysteresis = <2000>;
++			type = "active";
++		};
++	};
++
++	cooling-maps {
++		map2 {
++			trip = <&cpu_warm>;
++			cooling-device = <&fan THERMAL_NO_LIMIT 1>;
++		};
++
++		map3 {
++			trip = <&cpu_hot>;
++			cooling-device = <&fan 2 THERMAL_NO_LIMIT>;
++		};
++	};
++};
++
+ &gmac0 {
+ 	assigned-clocks = <&cru SCLK_GMAC0_RX_TX>, <&cru SCLK_GMAC0>;
+ 	assigned-clock-parents = <&cru SCLK_GMAC0_RGMII_SPEED>, <&cru CLK_MAC0_2TOP>;
+@@ -133,3 +169,7 @@
+ 		};
+ 	};
+ };
++
++&pwm0 {
++	status = "okay";
++};
