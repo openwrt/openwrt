@@ -82,9 +82,9 @@
 #include <linux/if_vlan.h>
 #include <linux/inet.h>
 #include <linux/inetdevice.h>
-#include <linux/iopoll.h>
 #include <linux/notifier.h>
 #include <linux/of.h>
+#include <linux/regmap.h>
 #include <linux/seq_file.h>
 #include <net/arp.h>
 #include <net/fib_notifier.h>
@@ -202,18 +202,32 @@ static int otto_l3_839x_set_dmac(struct otto_l3_ctrl *ctrl, u32 idx,
  */
 static int otto_l3_839x_get_smac(struct otto_l3_ctrl *ctrl, u32 idx, u64 *mac)
 {
-	*mac = (u64)(sw_r32(RTL839X_ROUTING_SA_CTRL + idx * 8) & 0xffff) << 32 |
-	       sw_r32(RTL839X_ROUTING_SA_CTRL + idx * 8 + 4);
+	struct otto_dsa_priv *priv = ctrl->priv;
+	u32 hi = 0, lo = 0;
+	int err;
+
+	err = regmap_read(priv->map, RTL839X_ROUTING_SA_CTRL + idx * 8, &hi);
+	if (err)
+		return err;
+	err = regmap_read(priv->map, RTL839X_ROUTING_SA_CTRL + idx * 8 + 4, &lo);
+	if (err)
+		return err;
+
+	*mac = (u64)(hi & 0xffff) << 32 | lo;
 
 	return 0;
 }
 
 static int otto_l3_839x_set_smac(struct otto_l3_ctrl *ctrl, u32 idx, u64 mac)
 {
-	sw_w32(mac >> 32, RTL839X_ROUTING_SA_CTRL + idx * 8);
-	sw_w32(mac, RTL839X_ROUTING_SA_CTRL + idx * 8 + 4);
+	struct otto_dsa_priv *priv = ctrl->priv;
+	int err;
 
-	return 0;
+	err = regmap_write(priv->map, RTL839X_ROUTING_SA_CTRL + idx * 8, mac >> 32);
+	if (err)
+		return err;
+
+	return regmap_write(priv->map, RTL839X_ROUTING_SA_CTRL + idx * 8 + 4, mac);
 }
 
 /* The prefix rows of an RTL839x are the PIE rules L3 keeps for itself. A rule
@@ -345,10 +359,11 @@ static int otto_l3_839x_route_matches(struct otto_l3_ctrl *ctrl, int row,
 	       pr.dip_m == inet_make_mask(rt->prefix_len);
 }
 
-static void otto_l3_839x_setup_port_macs(struct otto_l3_ctrl *ctrl)
+static int otto_l3_839x_setup_port_macs(struct otto_l3_ctrl *ctrl)
 {
 	struct otto_dsa_priv *priv = ctrl->priv;
 	struct net_device *dev;
+	int err;
 	u64 mac;
 
 	/* Configure the switch's own MAC addresses used when routing packets */
@@ -360,35 +375,44 @@ static void otto_l3_839x_setup_port_macs(struct otto_l3_ctrl *ctrl)
 	 * MAC of its own (otto_l3_switch_mac_get())
 	 */
 	ctrl->switch_macs[0] = mac;
-	otto_l3_839x_set_smac(ctrl, 0, mac);
-	for (int i = 1; i < MAX_SWITCH_MACS; i++)
-		otto_l3_839x_set_smac(ctrl, i, SWITCH_MAC_FREE);
+	err = otto_l3_839x_set_smac(ctrl, 0, mac);
+	for (int i = 1; i < MAX_SWITCH_MACS && !err; i++)
+		err = otto_l3_839x_set_smac(ctrl, i, SWITCH_MAC_FREE);
+
+	return err;
 }
 
 static int otto_l3_839x_setup(struct otto_l3_ctrl *ctrl)
 {
-	otto_l3_839x_setup_port_macs(ctrl);
+	struct otto_dsa_priv *priv = ctrl->priv;
+	int err;
+
+	err = otto_l3_839x_setup_port_macs(ctrl);
+	if (err)
+		return err;
 
 	/* A routed packet whose TTL runs out goes to the CPU, which answers
 	 * it with Time Exceeded, instead of being dropped. IP4_TTL_EXECEED,
 	 * bits 3:2: 0 drop, 1 forward, 2 trap (Realtek GPL SDK,
 	 * dal_cypress_trap.c).
 	 */
-	sw_w32_mask(0x3 << 2, 2 << 2, RTL839X_ROUTING_EXCPT_CTRL);
+	err = regmap_write_bits(priv->map, RTL839X_ROUTING_EXCPT_CTRL, 0x3 << 2, 2 << 2);
+	if (err)
+		return err;
 
 	/* The same for an IPv6 packet whose hop limit runs out, answered with
 	 * Time Exceeded: IP6_HL_EXCEED, bits 9:8.
 	 */
-	sw_w32_mask(0x3 << 8, 2 << 8, RTL839X_ROUTING_EXCPT_CTRL);
+	err = regmap_write_bits(priv->map, RTL839X_ROUTING_EXCPT_CTRL, 0x3 << 8, 2 << 8);
+	if (err)
+		return err;
 
 	/* A packet routed through a gateway whose L2 entry has aged out goes
 	 * to the CPU alone. Forwarded, the default, it is routed and reaches
 	 * the CPU as well, which routes it a second time. ROUTING_AGE, bits
 	 * 15:14, same encoding.
 	 */
-	sw_w32_mask(0x3 << 14, 2 << 14, RTL839X_ROUTING_EXCPT_CTRL);
-
-	return 0;
+	return regmap_write_bits(priv->map, RTL839X_ROUTING_EXCPT_CTRL, 0x3 << 14, 2 << 14);
 }
 
 static u32 otto_l3_930x_hash4(u32 ip, int algorithm, bool move_dip)
@@ -591,14 +615,18 @@ static const u8 otto_l3_930x_slot_widths[] = { 1, 2, 3, 6 };
 /* Return a logical slot, -ENOENT for a missing route, or -ENOSPC if full. */
 static int otto_l3_930x_find_slot(struct otto_l3_ctrl *ctrl, struct otto_l3_route *rt, bool must_exist)
 {
+	struct otto_dsa_priv *priv = ctrl->priv;
 	int slot_width, algorithm, addr, idx, err;
 	struct otto_l3_route route_entry;
-	u32 hash;
+	u32 hash, v;
 
 	slot_width = otto_l3_930x_slot_widths[rt->attr.type & 0x3];
 
 	for (int t = 0; t < 2; t++) {
-		algorithm = (sw_r32(RTL930X_L3_HOST_TBL_CTRL) >> (2 + t)) & 0x1;
+		err = regmap_read(priv->map, RTL930X_L3_HOST_TBL_CTRL, &v);
+		if (err)
+			return err;
+		algorithm = (v >> (2 + t)) & 0x1;
 		hash = otto_l3_930x_hash4(rt->dst_ip, algorithm, false);
 
 		dev_dbg(ctrl->dev, "table %d, algorithm %d, hash %04x\n", t, algorithm, hash);
@@ -847,41 +875,61 @@ static void otto_l3_930x_net6_mask(int prefix_len, struct in6_addr *ip6_m)
 		ip6_m->s6_addr[o] = 0xff00 >> b;
 }
 
+/* Load the destination of a unicast route into the key of the hardware lookup */
+static int otto_l3_930x_lookup_key_write(struct otto_l3_ctrl *ctrl, struct otto_l3_route *rt)
+{
+	struct otto_dsa_priv *priv = ctrl->priv;
+	u32 key[4] = {};
+	int err;
+
+	err = regmap_write_bits(priv->map, RTL930X_L3_HW_LU_KEY_CTRL, 0x3 << 19,
+				rt->attr.type << 19);
+	if (err)
+		return err;
+
+	if (rt->attr.type) { /* IPv6 */
+		struct in6_addr ip6;
+
+		ipv6_addr_prefix(&ip6, &rt->dst_ip6, rt->prefix_len);
+		for (int i = 0; i < 4; i++)
+			key[i] = (__force u32)ip6.s6_addr32[i];
+	} else { /* IPv4 */
+		key[3] = rt->dst_ip & inet_make_mask(rt->prefix_len);
+		dev_dbg(ctrl->dev, "searching for %pI4\n", &key[3]);
+	}
+
+	for (int i = 0; i < 4; i++) {
+		err = regmap_write(priv->map, RTL930X_L3_HW_LU_KEY_IP_CTRL + (i << 2), key[i]);
+		if (err)
+			return err;
+	}
+
+	return 0;
+}
+
 /*
  * Look up the index of a prefix route in the routing table CAM for unicast IPv4/6 routes
- * using hardware offload.
+ * using hardware offload. A lookup whose registers cannot be accessed did not
+ * complete, and returns -ETIMEDOUT like one that times out.
  */
 static int otto_l3_930x_route_lookup_hw(struct otto_l3_ctrl *ctrl, struct otto_l3_route *rt)
 {
-	u32 ip4_m, v;
+	struct otto_dsa_priv *priv = ctrl->priv;
+	u32 v;
 
 	if (rt->attr.type == ROUTE_TYPE_IP4MC || rt->attr.type == ROUTE_TYPE_IP6MC)
 		return -1;
 
-	sw_w32_mask(0x3 << 19, rt->attr.type << 19, RTL930X_L3_HW_LU_KEY_CTRL);
-	if (rt->attr.type) { /* IPv6 */
-		struct in6_addr key;
-
-		ipv6_addr_prefix(&key, &rt->dst_ip6, rt->prefix_len);
-		for (int i = 0; i < 4; i++)
-			sw_w32(key.s6_addr32[i],
-			       RTL930X_L3_HW_LU_KEY_IP_CTRL + (i << 2));
-	} else { /* IPv4 */
-		ip4_m = inet_make_mask(rt->prefix_len);
-		sw_w32(0, RTL930X_L3_HW_LU_KEY_IP_CTRL);
-		sw_w32(0, RTL930X_L3_HW_LU_KEY_IP_CTRL + 4);
-		sw_w32(0, RTL930X_L3_HW_LU_KEY_IP_CTRL + 8);
-		v = rt->dst_ip & ip4_m;
-		dev_dbg(ctrl->dev, "searching for %pI4\n", &v);
-		sw_w32(v, RTL930X_L3_HW_LU_KEY_IP_CTRL + 12);
-	}
+	if (otto_l3_930x_lookup_key_write(ctrl, rt))
+		return -ETIMEDOUT;
 
 	/* Execute CAM lookup in SoC */
-	sw_w32(BIT(15), RTL930X_L3_HW_LU_CTRL);
+	if (regmap_write(priv->map, RTL930X_L3_HW_LU_CTRL, BIT(15)))
+		return -ETIMEDOUT;
 
 	/* Wait until execute bit clears and result is ready */
-	if (readx_poll_timeout(sw_r32, RTL930X_L3_HW_LU_CTRL, v, !(v & BIT(15)),
-			       20, 10000))
+	if (regmap_read_poll_timeout(priv->map, RTL930X_L3_HW_LU_CTRL, v, !(v & BIT(15)),
+				     20, 10000))
 		return -ETIMEDOUT;
 
 	dev_dbg(ctrl->dev, "found: %d, index: %d\n", !!(v & BIT(14)), v & 0x1ff);
@@ -1316,6 +1364,19 @@ static int otto_l3_930x_set_egress_intf(struct otto_l3_ctrl *ctrl, int idx,
 	return otto_table_write(RTL9300_TBL_L3_EGR_INTF, idx & 0x7f, &data);
 }
 
+static void otto_l3_930x_dump_route_ctrl(struct otto_dsa_priv *priv)
+{
+	u32 ipuc = 0, ipmc = 0, ip6uc = 0, ip6mc = 0;
+
+	regmap_read(priv->map, RTL930X_L3_IPUC_ROUTE_CTRL, &ipuc);
+	regmap_read(priv->map, RTL930X_L3_IPMC_ROUTE_CTRL, &ipmc);
+	regmap_read(priv->map, RTL930X_L3_IP6UC_ROUTE_CTRL, &ip6uc);
+	regmap_read(priv->map, RTL930X_L3_IP6MC_ROUTE_CTRL, &ip6mc);
+
+	pr_debug("L3_IPUC_ROUTE_CTRL %08x, IPMC_ROUTE %08x, IP6UC_ROUTE %08x, IP6MC_ROUTE %08x\n",
+		 ipuc, ipmc, ip6uc, ip6mc);
+}
+
 /* Configure L3 routing settings of the device:
  * - MTUs
  * - Egress interface
@@ -1326,6 +1387,8 @@ static int otto_l3_930x_setup(struct otto_l3_ctrl *ctrl)
 {
 	struct otto_dsa_priv *priv = ctrl->priv;
 	int uncleared = 0;
+	u32 v = 0;
+	int err;
 
 	/* Setup MTU with id 0 for default interface */
 	for (int i = 0; i < MAX_INTF_MTUS; i++)
@@ -1333,16 +1396,36 @@ static int otto_l3_930x_setup(struct otto_l3_ctrl *ctrl)
 
 	priv->intf_mtu_count[0] = 0; /* Needs to stay forever */
 	priv->intf_mtus[0] = DEFAULT_MTU;
-	sw_w32_mask(0xffff, DEFAULT_MTU, RTL930X_L3_IP_MTU_CTRL(0));
-	sw_w32_mask(0xffff, DEFAULT_MTU, RTL930X_L3_IP6_MTU_CTRL(0));
+	err = regmap_write_bits(priv->map, RTL930X_L3_IP_MTU_CTRL(0), 0xffff, DEFAULT_MTU);
+	if (err)
+		return err;
+	err = regmap_write_bits(priv->map, RTL930X_L3_IP6_MTU_CTRL(0), 0xffff, DEFAULT_MTU);
+	if (err)
+		return err;
 	priv->intf_mtus[1] = DEFAULT_MTU;
-	sw_w32_mask(0xffff0000, DEFAULT_MTU << 16, RTL930X_L3_IP_MTU_CTRL(0));
-	sw_w32_mask(0xffff0000, DEFAULT_MTU << 16, RTL930X_L3_IP6_MTU_CTRL(0));
+	err = regmap_write_bits(priv->map, RTL930X_L3_IP_MTU_CTRL(0), 0xffff0000,
+				DEFAULT_MTU << 16);
+	if (err)
+		return err;
+	err = regmap_write_bits(priv->map, RTL930X_L3_IP6_MTU_CTRL(0), 0xffff0000,
+				DEFAULT_MTU << 16);
+	if (err)
+		return err;
 
-	sw_w32_mask(0xffff, DEFAULT_MTU, RTL930X_L3_IP_MTU_CTRL(1));
-	sw_w32_mask(0xffff, DEFAULT_MTU, RTL930X_L3_IP6_MTU_CTRL(1));
-	sw_w32_mask(0xffff0000, DEFAULT_MTU << 16, RTL930X_L3_IP_MTU_CTRL(1));
-	sw_w32_mask(0xffff0000, DEFAULT_MTU << 16, RTL930X_L3_IP6_MTU_CTRL(1));
+	err = regmap_write_bits(priv->map, RTL930X_L3_IP_MTU_CTRL(1), 0xffff, DEFAULT_MTU);
+	if (err)
+		return err;
+	err = regmap_write_bits(priv->map, RTL930X_L3_IP6_MTU_CTRL(1), 0xffff, DEFAULT_MTU);
+	if (err)
+		return err;
+	err = regmap_write_bits(priv->map, RTL930X_L3_IP_MTU_CTRL(1), 0xffff0000,
+				DEFAULT_MTU << 16);
+	if (err)
+		return err;
+	err = regmap_write_bits(priv->map, RTL930X_L3_IP6_MTU_CTRL(1), 0xffff0000,
+				DEFAULT_MTU << 16);
+	if (err)
+		return err;
 
 	/* Clear all source port MACs. One that cannot be cleared is only
 	 * logged: a failed setup fails the switch probe.
@@ -1353,13 +1436,15 @@ static int otto_l3_930x_setup(struct otto_l3_ctrl *ctrl)
 	if (uncleared)
 		dev_err(ctrl->dev, "%d source MACs not cleared\n", uncleared);
 
-	/* Configure the default L3 hash algorithm */
-	sw_w32_mask(BIT(2), 0, RTL930X_L3_HOST_TBL_CTRL);  /* Algorithm selection 0 = 0 */
-	sw_w32_mask(0, BIT(3), RTL930X_L3_HOST_TBL_CTRL);  /* Algorithm selection 1 = 1 */
+	/* Configure the default L3 hash algorithm: selection 0 = 0, selection 1 = 1 */
+	err = regmap_write_bits(priv->map, RTL930X_L3_HOST_TBL_CTRL, BIT(2), 0);
+	if (err)
+		return err;
+	err = regmap_write_bits(priv->map, RTL930X_L3_HOST_TBL_CTRL, BIT(3), BIT(3));
+	if (err)
+		return err;
 
-	pr_debug("L3_IPUC_ROUTE_CTRL %08x, IPMC_ROUTE %08x, IP6UC_ROUTE %08x, IP6MC_ROUTE %08x\n",
-		 sw_r32(RTL930X_L3_IPUC_ROUTE_CTRL), sw_r32(RTL930X_L3_IPMC_ROUTE_CTRL),
-		 sw_r32(RTL930X_L3_IP6UC_ROUTE_CTRL), sw_r32(RTL930X_L3_IP6MC_ROUTE_CTRL));
+	otto_l3_930x_dump_route_ctrl(priv);
 	/* A packet whose hop count runs out is answered, not dropped: the
 	 * action for it is TTL_FAIL_ACT at bit 17 and HL_FAIL_ACT at bit
 	 * 21, two bits each, and the Realtek GPL SDK lists the values as
@@ -1367,18 +1452,27 @@ static int otto_l3_930x_setup(struct otto_l3_ctrl *ctrl)
 	 * (dal_longan_l3.c, _actIpucRouteCtrlTtlFail and
 	 * _actIp6ucRouteCtrlHlFail).
 	 */
-	sw_w32(0x00022001, RTL930X_L3_IPUC_ROUTE_CTRL);
-	sw_w32(0x00214581, RTL930X_L3_IP6UC_ROUTE_CTRL);
-	sw_w32(0x00000501, RTL930X_L3_IPMC_ROUTE_CTRL);
-	sw_w32(0x00012881, RTL930X_L3_IP6MC_ROUTE_CTRL);
+	err = regmap_write(priv->map, RTL930X_L3_IPUC_ROUTE_CTRL, 0x00022001);
+	if (err)
+		return err;
+	err = regmap_write(priv->map, RTL930X_L3_IP6UC_ROUTE_CTRL, 0x00214581);
+	if (err)
+		return err;
+	err = regmap_write(priv->map, RTL930X_L3_IPMC_ROUTE_CTRL, 0x00000501);
+	if (err)
+		return err;
+	err = regmap_write(priv->map, RTL930X_L3_IP6MC_ROUTE_CTRL, 0x00012881);
+	if (err)
+		return err;
 
-	pr_debug("L3_IPUC_ROUTE_CTRL %08x, IPMC_ROUTE %08x, IP6UC_ROUTE %08x, IP6MC_ROUTE %08x\n",
-		 sw_r32(RTL930X_L3_IPUC_ROUTE_CTRL), sw_r32(RTL930X_L3_IPMC_ROUTE_CTRL),
-		 sw_r32(RTL930X_L3_IP6UC_ROUTE_CTRL), sw_r32(RTL930X_L3_IP6MC_ROUTE_CTRL));
+	otto_l3_930x_dump_route_ctrl(priv);
 
 	/* Trap non-ip traffic to the CPU-port (e.g. ARP so we stay reachable) */
-	sw_w32_mask(0x3 << 8, 0x1 << 8, RTL930X_L3_IP_ROUTE_CTRL);
-	pr_debug("L3_IP_ROUTE_CTRL %08x\n", sw_r32(RTL930X_L3_IP_ROUTE_CTRL));
+	err = regmap_write_bits(priv->map, RTL930X_L3_IP_ROUTE_CTRL, 0x3 << 8, 0x1 << 8);
+	if (err)
+		return err;
+	regmap_read(priv->map, RTL930X_L3_IP_ROUTE_CTRL, &v);
+	pr_debug("L3_IP_ROUTE_CTRL %08x\n", v);
 
 	/* PORT_ISO_RESTRICT_ROUTE_CTRL? */
 
