@@ -4379,57 +4379,60 @@ static int rtpcs_931x_sds_config_attachment(struct rtpcs_serdes *sds,
 	if (sds->type != RTPCS_SDS_TYPE_10G)
 		return 0;
 
-	rtpcs_sds_write_mask(sds, PAGE_ANA_10G, ANA_SPD_REG14,
-			     RTL931X_RXCAL_SEL, RTL931X_RXCAL_SEL_DEFAULT);
-
-	/* SDK media-none analog setup, applied regardless of attachment. */
-	rtpcs_931x_sds_10g_ana_pre(sds);
+	is_10g_mode = hw_mode == RTPCS_SDS_MODE_10GBASER ||
+		      hw_mode == RTPCS_SDS_MODE_XSGMII ||
+		      hw_mode == RTPCS_SDS_MODE_USXGMII;
 
 	rtpcs_sds_write_mask(sds, PAGE_ANA_MISC, ANA_MISC_REG00, RTL93XX_FRC_CMU_EN,
 			     RTL93XX_FRC_CMU_EN_FORCE_ON);
 	rtpcs_sds_write_mask(sds, PAGE_ANA_MISC, ANA_MISC_REG00, RTL93XX_FRC_V2ANALOG,
 			     RTL93XX_FRC_V2ANALOG_FORCE_OFF);
 
-	rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0xf, 5, 0, 0x4);
+	if (is_10g_mode) {
+		rtpcs_sds_write_mask(sds, PAGE_ANA_10G, ANA_SPD_REG14,
+				     RTL931X_RXCAL_SEL, RTL931X_RXCAL_SEL_DEFAULT);
+
+		/* SDK media-none analog setup, applied regardless of attachment. */
+		rtpcs_931x_sds_10g_ana_pre(sds);
+
+		rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0xf, 5, 0,
+				     (attachment == RTPCS_SDS_ATTACH_FIBER) ? 0x2 : 0x4);
+	}
+
 	rtpcs_sds_write_bits(sds, PAGE_ANA_5G0, 0x12, 7, 6, 0x1);
 
 	if (attachment == RTPCS_SDS_ATTACH_NONE)
 		return 0;
 
-	/* DAC-specific tuning only covers 10GBase-R; slower DACs use the ordinary settings. */
+	/* DAC-specific tuning is only defined for 10GBase-R. */
 	use_dac_tuning = hw_mode == RTPCS_SDS_MODE_10GBASER &&
 			 (attachment == RTPCS_SDS_ATTACH_DAC_SHORT ||
 			  attachment == RTPCS_SDS_ATTACH_DAC_LONG);
-	is_10g_mode = hw_mode == RTPCS_SDS_MODE_10GBASER ||
-		      hw_mode == RTPCS_SDS_MODE_XSGMII ||
-		      hw_mode == RTPCS_SDS_MODE_USXGMII;
-
-	if (use_dac_tuning)
-		tx_cfg = (attachment == RTPCS_SDS_ATTACH_DAC_SHORT) ?
-			 &rtpcs_931x_sds_tx_cfg_sdac : &rtpcs_931x_sds_tx_cfg_ldac;
-	else if (sds->ctrl->chip_version == RTPCS_CHIP_V2)
-		tx_cfg = &rtpcs_931x_sds_tx_cfg_v2[sds->id - 2];
-	else
-		tx_cfg = &rtpcs_931x_sds_tx_cfg_v1[sds->id - 2];
-
-	if (attachment == RTPCS_SDS_ATTACH_FIBER && is_10g_mode)
-		rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0xf, 5, 0, 0x2);
 
 	rtpcs_sds_write(sds, PAGE_ANA_COM, 0x19, use_dac_tuning ? 0xf0a5 : 0xf0f0);
-	rtpcs_sds_write(even_sds, PAGE_ANA_10G, 0x8,
-			use_dac_tuning ? 0x02a0 : 0x0294); /* [10:7] TX impedance */
-
-	ret = rtpcs_931x_sds_config_tx_amps(sds, tx_cfg->pre_amp, tx_cfg->main_amp,
-					    tx_cfg->post_amp);
-	if (ret)
-		return ret;
-
 	rtpcs_sds_write_mask(sds, PAGE_TGR_PRO_0, TGR_PRO_0_REG13, RTL93XX_CFG_LINKDW_SEL,
 			     use_dac_tuning ? RTL93XX_CFG_LINKDW_SEL_DAC :
 					      RTL93XX_CFG_LINKDW_SEL_NON_DAC);
 
-	if (is_10g_mode)
+	if (is_10g_mode) {
+		if (use_dac_tuning)
+			tx_cfg = (attachment == RTPCS_SDS_ATTACH_DAC_SHORT) ?
+				 &rtpcs_931x_sds_tx_cfg_sdac : &rtpcs_931x_sds_tx_cfg_ldac;
+		else if (sds->ctrl->chip_version == RTPCS_CHIP_V2)
+			tx_cfg = &rtpcs_931x_sds_tx_cfg_v2[sds->id - 2];
+		else
+			tx_cfg = &rtpcs_931x_sds_tx_cfg_v1[sds->id - 2];
+
+		rtpcs_sds_write(even_sds, PAGE_ANA_10G, 0x8,
+				use_dac_tuning ? 0x02a0 : 0x0294); /* [10:7] TX impedance */
+
+		ret = rtpcs_931x_sds_config_tx_amps(sds, tx_cfg->pre_amp, tx_cfg->main_amp,
+						    tx_cfg->post_amp);
+		if (ret)
+			return ret;
+
 		rtpcs_931x_sds_10g_ana_post(sds);
+	}
 
 	rtpcs_sds_write_mask(sds, PAGE_ANA_MISC, ANA_MISC_REG00, RTL93XX_FRC_V2ANALOG,
 			     RTL93XX_FRC_V2ANALOG_UNFORCED);
