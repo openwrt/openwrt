@@ -14,7 +14,6 @@
 #include "lag.h"
 #include "rtl-otto.h"
 
-#define RTL930X_PORT_IGNORE 0x3f
 #define OTTO_FDB_L3_REFCOUNT_MAX	0x7fff
 
 /* RTL931x hashes its second block into rows the fib_entries count does not
@@ -408,7 +407,7 @@ int otto_fdb_port_dump(struct dsa_switch *ds, int port,
 		if (!e.valid || e.type != L2_UNICAST || e.is_trunk)
 			continue;
 
-		if (e.port == port || e.port == RTL930X_PORT_IGNORE)
+		if (e.port == port || e.port == priv->r->port_ignore)
 			cb(e.mac, e.rvid, e.is_static, data);
 	}
 
