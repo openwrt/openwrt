@@ -167,7 +167,7 @@ enum rtpcs_page {
 
 /*
  * RTL931X only: the digital SDS 1/2 register pages mirror an analog page at a
- * fixed +0x40 / +0x80 region offset. See rtpcs_931x_sds_op_xsg_write().
+ * fixed +0x40 / +0x80 region offset. See rtpcs_931x_sds_op_xsg_write_mask().
  */
 #define DIGI_1(page)	((page) + 0x40)
 #define DIGI_2(page)	((page) + 0x80)
@@ -547,8 +547,8 @@ struct rtpcs_sds_ops {
 			  u16 mask, u16 value);
 
 	/* optional */
-	int (*xsg_write)(struct rtpcs_serdes *sds, enum rtpcs_page page, int regnum,
-			 int bithigh, int bitlow, u16 value);
+	int (*xsg_write_mask)(struct rtpcs_serdes *sds, enum rtpcs_page page, int regnum,
+			      u16 mask, u16 value);
 	int (*get_xsgmii_link)(struct rtpcs_serdes *sds);
 	int (*rx_calibrate)(struct rtpcs_serdes *sds);
 
@@ -788,22 +788,19 @@ static int rtpcs_sds_write(struct rtpcs_serdes *sds, enum rtpcs_page page, int r
 	return sds->ops->write(sds, page, regnum, 15, 0, value);
 }
 
-static int rtpcs_sds_xsg_write_bits(struct rtpcs_serdes *sds, enum rtpcs_page page, int regnum,
-				    int bithigh, int bitlow, u16 value)
+static int rtpcs_sds_xsg_write_mask(struct rtpcs_serdes *sds, enum rtpcs_page page, int regnum,
+				    u16 mask, u16 value)
 {
-	if (!sds->ops->xsg_write)
+	if (!sds->ops->xsg_write_mask)
 		return -ENOTSUPP;
 
-	return sds->ops->xsg_write(sds, page, regnum, bithigh, bitlow, value);
+	return sds->ops->xsg_write_mask(sds, page, regnum, mask, value);
 }
 
 static int rtpcs_sds_xsg_write(struct rtpcs_serdes *sds, enum rtpcs_page page, int regnum,
 			       u16 value)
 {
-	if (!sds->ops->xsg_write)
-		return -ENOTSUPP;
-
-	return sds->ops->xsg_write(sds, page, regnum, 15, 0, value);
+	return rtpcs_sds_xsg_write_mask(sds, page, regnum, 0xffff, value);
 }
 
 /* Other helpers */
@@ -1628,7 +1625,8 @@ static int rtpcs_93xx_sds_set_autoneg(struct rtpcs_serdes *sds, unsigned int neg
 	case RTPCS_SDS_MODE_XSGMII:
 		en_val = neg_mode == PHYLINK_PCS_NEG_INBAND_ENABLED ? 0x0 : 0x1;
 
-		return rtpcs_sds_xsg_write_bits(sds, PAGE_SDS, 0x2, 9, 8, en_val);
+		return rtpcs_sds_xsg_write_mask(sds, PAGE_SDS, 0x2, GENMASK(9, 8),
+						FIELD_PREP(GENMASK(9, 8), en_val));
 
 	case RTPCS_SDS_MODE_USXGMII:
 		/* forced USXGMII link not supported yet, always turn on USXGMII-AN */
@@ -2250,8 +2248,8 @@ static int rtpcs_930x_sds_op_write_mask(struct rtpcs_serdes *sds, enum rtpcs_pag
 	return __rtpcs_sds_write_mask(sds->ctrl, sds_id, page, regnum, mask, value);
 }
 
-static int rtpcs_930x_sds_op_xsg_write(struct rtpcs_serdes *sds, enum rtpcs_page page, int regnum,
-				       int bithigh, int bitlow, u16 value)
+static int rtpcs_930x_sds_op_xsg_write_mask(struct rtpcs_serdes *sds, enum rtpcs_page page,
+					    int regnum, u16 mask, u16 value)
 {
 	int phys_sds_id, ret;
 
@@ -2259,13 +2257,11 @@ static int rtpcs_930x_sds_op_xsg_write(struct rtpcs_serdes *sds, enum rtpcs_page
 		return -ENOTSUPP;
 
 	phys_sds_id = rtpcs_930x_sds_get_phys_sds_id(sds->id, page);
-	ret = __rtpcs_sds_write_raw(sds->ctrl, phys_sds_id, page, regnum, bithigh, bitlow,
-				    value);
+	ret = __rtpcs_sds_write_mask(sds->ctrl, phys_sds_id, page, regnum, mask, value);
 	if (ret)
 		return ret;
 
-	return __rtpcs_sds_write_raw(sds->ctrl, phys_sds_id + 1, page, regnum, bithigh, bitlow,
-				     value);
+	return __rtpcs_sds_write_mask(sds->ctrl, phys_sds_id + 1, page, regnum, mask, value);
 }
 
 static void rtpcs_930x_sds_rx_reset(struct rtpcs_serdes *sds,
@@ -3133,9 +3129,9 @@ static int rtpcs_930x_sds_sym_err_reset(struct rtpcs_serdes *sds,
 
 	for (channel = 0; channel < channels; channel++) {
 		if (hw_mode == RTPCS_SDS_MODE_XSGMII) {
-			rtpcs_sds_xsg_write_bits(sds, PAGE_SDS_EXT, 0x18, 2, 0, channel);
-			rtpcs_sds_xsg_write_bits(sds, PAGE_SDS_EXT, 0x3, 15, 8, 0x0);
-			rtpcs_sds_xsg_write_bits(sds, PAGE_SDS_EXT, 0x2, 15, 0, 0x0);
+			rtpcs_sds_xsg_write_mask(sds, PAGE_SDS_EXT, 0x18, GENMASK(2, 0), channel);
+			rtpcs_sds_xsg_write_mask(sds, PAGE_SDS_EXT, 0x3, GENMASK(15, 8), 0x0);
+			rtpcs_sds_xsg_write(sds, PAGE_SDS_EXT, 0x2, 0x0);
 		} else {
 			rtpcs_sds_write_bits(sds, PAGE_SDS_EXT, 0x18, 2, 0, channel);
 			rtpcs_sds_write_bits(sds, PAGE_SDS_EXT, 0x3, 15, 8, 0x0);
@@ -3145,8 +3141,8 @@ static int rtpcs_930x_sds_sym_err_reset(struct rtpcs_serdes *sds,
 
 	if (channels > 1) {
 		if (hw_mode == RTPCS_SDS_MODE_XSGMII) {
-			rtpcs_sds_xsg_write_bits(sds, PAGE_SDS_EXT, 0x0, 15, 0, 0x0);
-			rtpcs_sds_xsg_write_bits(sds, PAGE_SDS_EXT, 0x1, 15, 8, 0x0);
+			rtpcs_sds_xsg_write(sds, PAGE_SDS_EXT, 0x0, 0x0);
+			rtpcs_sds_xsg_write_mask(sds, PAGE_SDS_EXT, 0x1, GENMASK(15, 8), 0x0);
 		} else {
 			rtpcs_sds_write_bits(sds, PAGE_SDS_EXT, 0x0, 15, 0, 0x0);
 			rtpcs_sds_write_bits(sds, PAGE_SDS_EXT, 0x1, 15, 8, 0x0);
@@ -3623,18 +3619,16 @@ static int rtpcs_931x_sds_get_xsgmii_link(struct rtpcs_serdes *sds)
  * An XSG write operates on digital SDS 1 and digital SDS 2. Map that to the
  * page ranges accordingly.
  */
-static int rtpcs_931x_sds_op_xsg_write(struct rtpcs_serdes *sds, enum rtpcs_page page, int regnum,
-				       int bithigh, int bitlow, u16 value)
+static int rtpcs_931x_sds_op_xsg_write_mask(struct rtpcs_serdes *sds, enum rtpcs_page page,
+					    int regnum, u16 mask, u16 value)
 {
 	int ret;
 
-	ret = __rtpcs_sds_write_raw(sds->ctrl, sds->id, DIGI_1(page), regnum, bithigh, bitlow,
-				    value);
+	ret = __rtpcs_sds_write_mask(sds->ctrl, sds->id, DIGI_1(page), regnum, mask, value);
 	if (ret)
 		return ret;
 
-	return __rtpcs_sds_write_raw(sds->ctrl, sds->id, DIGI_2(page), regnum, bithigh, bitlow,
-				     value);
+	return __rtpcs_sds_write_mask(sds->ctrl, sds->id, DIGI_2(page), regnum, mask, value);
 }
 
 static int rtpcs_931x_sds_fiber_get_symerr(struct rtpcs_serdes *sds,
@@ -3668,13 +3662,13 @@ static void rtpcs_931x_sds_clear_symerr(struct rtpcs_serdes *sds,
 	case RTPCS_SDS_MODE_SGMII:
 	case RTPCS_SDS_MODE_XSGMII:
 		for (int i = 0; i < 4; ++i) {
-			rtpcs_sds_xsg_write_bits(sds, PAGE_SDS_EXT, 0x18, 2, 0, i);
-			rtpcs_sds_xsg_write_bits(sds, PAGE_SDS_EXT, 0x3, 15, 8, 0x0);
+			rtpcs_sds_xsg_write_mask(sds, PAGE_SDS_EXT, 0x18, GENMASK(2, 0), i);
+			rtpcs_sds_xsg_write_mask(sds, PAGE_SDS_EXT, 0x3, GENMASK(15, 8), 0x0);
 			rtpcs_sds_xsg_write(sds, PAGE_SDS_EXT, 0x2, 0x0);
 		}
 
 		rtpcs_sds_xsg_write(sds, PAGE_SDS_EXT, 0x0, 0x0);
-		rtpcs_sds_xsg_write_bits(sds, PAGE_SDS_EXT, 0x1, 15, 8, 0x0);
+		rtpcs_sds_xsg_write_mask(sds, PAGE_SDS_EXT, 0x1, GENMASK(15, 8), 0x0);
 		break;
 	case RTPCS_SDS_MODE_100BASEX:
 	case RTPCS_SDS_MODE_1000BASEX:
@@ -4320,8 +4314,9 @@ static int rtpcs_931x_sds_config_polarity(struct rtpcs_serdes *sds, unsigned int
 		return ret;
 
 	/* xsg_*_inv */
-	val = (rx_val << 1) | tx_val;
-	return rtpcs_sds_xsg_write_bits(sds, PAGE_SDS, 0x0, 9, 8, val);
+	val = FIELD_PREP(RTL_OTTO_INV_HSI, rx_val) | FIELD_PREP(RTL_OTTO_INV_HSO, tx_val);
+	return rtpcs_sds_xsg_write_mask(sds, PAGE_SDS, SDS_REG00,
+					RTL_OTTO_INV_HSI | RTL_OTTO_INV_HSO, val);
 }
 
 static const struct rtpcs_sds_tx_config rtpcs_931x_sds_tx_cfg_v1[] = {
@@ -4563,7 +4558,7 @@ static int rtpcs_931x_sds_config_hw_mode(struct rtpcs_serdes *sds,
 		break;
 
 	case RTPCS_SDS_MODE_XSGMII:
-		rtpcs_sds_xsg_write_bits(sds, PAGE_SDS, 0xe, 12, 12, 0x1);
+		rtpcs_sds_xsg_write_mask(sds, PAGE_SDS, 0xe, BIT(12), BIT(12));
 		break;
 
 	case RTPCS_SDS_MODE_USXGMII:
@@ -5317,7 +5312,7 @@ static const struct rtpcs_sds_ops rtpcs_930x_sds_ops = {
 	.read			= rtpcs_930x_sds_op_read,
 	.write			= rtpcs_930x_sds_op_write,
 	.write_mask		= rtpcs_930x_sds_op_write_mask,
-	.xsg_write		= rtpcs_930x_sds_op_xsg_write,
+	.xsg_write_mask		= rtpcs_930x_sds_op_xsg_write_mask,
 	.get_xsgmii_link		= rtpcs_930x_sds_get_xsgmii_link,
 	.rx_calibrate		= rtpcs_930x_sds_rx_calibrate,
 	.set_autoneg		= rtpcs_93xx_sds_set_autoneg,
@@ -5356,7 +5351,7 @@ static const struct rtpcs_sds_ops rtpcs_931x_sds_ops = {
 	.read			= rtpcs_generic_sds_op_read,
 	.write			= rtpcs_generic_sds_op_write,
 	.write_mask		= rtpcs_generic_sds_op_write_mask,
-	.xsg_write		= rtpcs_931x_sds_op_xsg_write,
+	.xsg_write_mask		= rtpcs_931x_sds_op_xsg_write_mask,
 	.get_xsgmii_link		= rtpcs_931x_sds_get_xsgmii_link,
 	.rx_calibrate		= rtpcs_931x_sds_rx_calibrate,
 	.set_autoneg		= rtpcs_93xx_sds_set_autoneg,
