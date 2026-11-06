@@ -3864,7 +3864,7 @@ static int rtpcs_931x_sds_rxeq_vth_get(struct rtpcs_serdes *sds, unsigned int *v
 }
 
 /* Restore the default calibration selection and manual LEQ/DFE baseline. */
-static int rtpcs_931x_sds_reset_leq_dfe(struct rtpcs_serdes *sds)
+static int rtpcs_931x_sds_rxcal_init(struct rtpcs_serdes *sds)
 {
 	rtpcs_sds_write_mask(sds, PAGE_ANA_10G, ANA_SPD_REG14,
 			     RTL931X_RXCAL_SEL, RTL931X_RXCAL_SEL_DEFAULT);
@@ -4449,7 +4449,7 @@ static int rtpcs_931x_sds_rx_calibrate(struct rtpcs_serdes *sds)
 	int ret;
 
 	if (sds->hw_mode != RTPCS_SDS_MODE_XSGMII)
-		rtpcs_931x_sds_reset_leq_dfe(sds);
+		rtpcs_931x_sds_rxcal_init(sds);
 
 	switch (sds->attachment) {
 	case RTPCS_SDS_ATTACH_PHY:
@@ -4484,7 +4484,7 @@ static int rtpcs_931x_sds_rx_calibrate(struct rtpcs_serdes *sds)
 	}
 
 	if (ret < 0 && sds->hw_mode != RTPCS_SDS_MODE_XSGMII)
-		rtpcs_931x_sds_reset_leq_dfe(sds);
+		rtpcs_931x_sds_rxcal_init(sds);
 	return ret;
 }
 
@@ -4506,7 +4506,7 @@ static int rtpcs_931x_sds_post_config(struct rtpcs_serdes *sds, enum rtpcs_sds_m
 		WRITE_ONCE(sds->rx_phase, RTPCS_RX_PHASE_CALIBRATION);
 
 	if (hw_mode != RTPCS_SDS_MODE_XSGMII)
-		rtpcs_931x_sds_reset_leq_dfe(sds);
+		rtpcs_931x_sds_rxcal_init(sds);
 
 	if (!needs_rxcal)
 		return 0;
