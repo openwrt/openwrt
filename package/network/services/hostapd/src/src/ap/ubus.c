@@ -3343,10 +3343,15 @@ void hostapd_ubus_notify_sta(struct hostapd_data *hapd, const char *type,
 	hostapd_ubus_notify(hapd, type, sta->addr);
 }
 
-/* `frame`: the body of the frame that rsn_error names */
-void hostapd_ubus_notify_key_mismatch(struct hostapd_data *hapd, const u8 *addr,
-				      enum hostapd_ubus_rsn_error rsn_error,
-				      const u8 *frame, size_t len)
+/* `frame`: the body of the frame that rsn_error names. `status`: the Status
+ * Code of the reply to the station, 0 where it gets none. `reason`: the Reason
+ * Code of the frame that ends the connection where a driver with its own SME
+ * accepted it, 0 otherwise. */
+static void
+hostapd_ubus_notify_connect_failure(struct hostapd_data *hapd, const char *type,
+				    const u8 *addr, u16 status, u16 reason,
+				    enum hostapd_ubus_rsn_error rsn_error,
+				    const u8 *frame, size_t len)
 {
 	struct ubus_object *obj = hostapd_ubus_notify_obj(hapd);
 
@@ -3364,12 +3369,36 @@ void hostapd_ubus_notify_key_mismatch(struct hostapd_data *hapd, const u8 *addr,
 	if (hapd->conf->mld_ap)
 		blobmsg_add_u32(&b, "link_id", hapd->mld_link_id);
 #endif /* CONFIG_IEEE80211BE */
+	if (status)
+		blobmsg_add_u32(&b, "status", status);
+	if (reason)
+		blobmsg_add_u32(&b, "reason", reason);
 	if (rsn_error != HOSTAPD_UBUS_RSN_ERROR_NONE)
 		blobmsg_add_u32(&b, "rsn_error", rsn_error);
 	if (frame && len && blobmsg_add_hex(&b, "frame", frame, len))
 		return;
 
-	ubus_notify(ctx, obj, "key-mismatch", b.head, -1);
+	ubus_notify(ctx, obj, type, b.head, -1);
+}
+
+void hostapd_ubus_notify_key_mismatch(struct hostapd_data *hapd, const u8 *addr,
+				      u16 status,
+				      enum hostapd_ubus_rsn_error rsn_error,
+				      const u8 *frame, size_t len)
+{
+	hostapd_ubus_notify_connect_failure(hapd, "key-mismatch", addr, status,
+					    0, rsn_error, frame, len);
+}
+
+void hostapd_ubus_notify_connect_refused(struct hostapd_data *hapd,
+					 const u8 *addr, u16 status,
+					 u16 reason,
+					 enum hostapd_ubus_rsn_error rsn_error,
+					 const u8 *frame, size_t len)
+{
+	hostapd_ubus_notify_connect_failure(hapd, "connect-refused", addr,
+					    status, reason, rsn_error, frame,
+					    len);
 }
 
 /* A non-AP MLD is known by its MLD MAC address, which is what get_clients and

@@ -18,7 +18,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 ---
 --- a/src/ap/ieee802_11.c
 +++ b/src/ap/ieee802_11.c
-@@ -4395,6 +4395,7 @@ static void handle_auth(struct hostapd_d
+@@ -4424,6 +4424,7 @@ static void handle_auth(struct hostapd_d
  		.type = HOSTAPD_UBUS_AUTH_REQ,
  		.mgmt_frame = mgmt,
  		.ssi_signal = rssi,
@@ -26,7 +26,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	};
  
  	auth_alg = le_to_host16(mgmt->u.auth.auth_alg);
-@@ -7877,6 +7878,7 @@ static void handle_assoc(struct hostapd_
+@@ -7910,6 +7911,7 @@ static void handle_assoc(struct hostapd_
  		.type = HOSTAPD_UBUS_ASSOC_REQ,
  		.mgmt_frame = mgmt,
  		.ssi_signal = rssi,

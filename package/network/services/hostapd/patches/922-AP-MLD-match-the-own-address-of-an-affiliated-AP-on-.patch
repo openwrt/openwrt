@@ -41,7 +41,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 ---
 --- a/src/ap/drv_callbacks.c
 +++ b/src/ap/drv_callbacks.c
-@@ -1924,6 +1924,21 @@ switch_link_scan(struct hostapd_data *ha
+@@ -1937,6 +1937,21 @@ switch_link_scan(struct hostapd_data *ha
  
  #define HAPD_BROADCAST ((struct hostapd_data *) -1)
  
@@ -63,7 +63,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  static struct hostapd_data * get_hapd_bssid(struct hostapd_iface *iface,
  					    const u8 *bssid, int link_id)
  {
-@@ -1947,14 +1962,13 @@ static struct hostapd_data * get_hapd_bs
+@@ -1960,14 +1975,13 @@ static struct hostapd_data * get_hapd_bs
  #endif /* CONFIG_IEEE80211BE */
  
  		hapd = iface->bss[i];
@@ -82,7 +82,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  			return hapd;
  
  		if (!hapd->conf->mld_ap)
-@@ -1964,7 +1978,7 @@ static struct hostapd_data * get_hapd_bs
+@@ -1977,7 +1991,7 @@ static struct hostapd_data * get_hapd_bs
  			if (p_hapd == hapd)
  				continue;
  
@@ -91,7 +91,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  			    (ether_addr_equal(bssid, p_hapd->mld->mld_addr) &&
  			     link_id == p_hapd->mld_link_id))
  				return p_hapd;
-@@ -1976,11 +1990,38 @@ static struct hostapd_data * get_hapd_bs
+@@ -1989,11 +2003,38 @@ static struct hostapd_data * get_hapd_bs
  }
  
  
@@ -131,7 +131,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	if (hapd == NULL || hapd == HAPD_BROADCAST)
  		return;
  
-@@ -2021,7 +2062,7 @@ static int hostapd_mgmt_rx(struct hostap
+@@ -2034,7 +2075,7 @@ static int hostapd_mgmt_rx(struct hostap
  	if (bssid == NULL)
  		return 0;
  

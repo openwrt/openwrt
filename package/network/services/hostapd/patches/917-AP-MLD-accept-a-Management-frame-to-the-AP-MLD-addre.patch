@@ -16,7 +16,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 ---
 --- a/src/ap/ieee802_11.c
 +++ b/src/ap/ieee802_11.c
-@@ -8783,7 +8783,8 @@ int ieee802_11_mgmt(struct hostapd_data
+@@ -8820,7 +8820,8 @@ int ieee802_11_mgmt(struct hostapd_data
  	     stype != WLAN_FC_STYPE_ACTION) &&
  #ifdef CONFIG_IEEE80211BE
  	    !(hapd->conf->mld_ap &&
