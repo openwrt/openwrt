@@ -1,0 +1,77 @@
+#!/bin/sh
+# SPDX-License-Identifier: GPL-2.0-only
+#
+# Mirror an OpenWrt Ethernet interface state to the modem-controlled HH70 LAN
+# indicator. The stock firmware reports this state through the JRD method
+# ethWanStatus using the ethlan_status parameter.
+#
+# This intentionally does NOT send ethwan_status. Stock firmware appears to use
+# that separate state as part of Ethernet-WAN selection/failover, which is not
+# reproduced by jrd-modem yet.
+
+[ "$ACTION" = "ifup" ] || [ "$ACTION" = "ifdown" ] || exit 0
+[ -n "$INTERFACE" ] || exit 0
+[ -x /usr/bin/jrdctl ] || exit 0
+
+uci_get() {
+	uci -q get "$1" 2>/dev/null
+}
+
+profile_value() {
+	local section="$1"
+	local option="$2"
+	local value profile
+
+	value="$(uci_get "network.$section.$option")"
+	if [ -n "$value" ]; then
+		printf '%s\n' "$value"
+		return 0
+	fi
+
+	profile="$(uci_get "network.$section.profile")"
+	[ -n "$profile" ] || profile="$(uci_get 'jrd.globals.default_profile')"
+	[ -n "$profile" ] || return 1
+
+	uci_get "jrd.$profile.$option"
+}
+
+report_lan_state() {
+	local section="$1"
+	local state="$2"
+	local host port timeout
+
+	host="$(profile_value "$section" modem_ip)"
+	port="$(profile_value "$section" port)"
+	timeout="$(profile_value "$section" rpc_timeout)"
+	[ -n "$timeout" ] || timeout=3
+
+	[ -n "$host" ] && [ -n "$port" ] || return 0
+
+	if ! /usr/bin/jrdctl \
+		-H "$host" \
+		-p "$port" \
+		-T "$timeout" \
+		rpc ethWanStatus "{\"ethlan_status\":$state}" \
+		>/dev/null 2>&1; then
+		logger -t jrd-modem \
+			"failed to report ethlan_status=$state for $INTERFACE through JRD interface $section"
+	fi
+}
+
+# A system can have more than one JRD interface, so notify every JRD interface
+# whose configured Ethernet companion matches this logical network interface.
+for section in $(uci -q show network 2>/dev/null | \
+	sed -n 's/^network\.\([^.=]*\)=interface$/\1/p'); do
+	[ "$(uci_get "network.$section.proto")" = "jrd" ] || continue
+
+	ethernet_interface="$(profile_value "$section" ethernet_interface)"
+	[ -n "$ethernet_interface" ] || continue
+	[ "$INTERFACE" = "$ethernet_interface" ] || continue
+
+	case "$ACTION" in
+		ifup)   report_lan_state "$section" 1 ;;
+		ifdown) report_lan_state "$section" 0 ;;
+	esac
+done
+
+exit 0
