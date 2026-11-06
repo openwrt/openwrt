@@ -1304,8 +1304,6 @@ uc_hostapd_bss_dpp_send_gas_resp(uc_vm_t *vm, size_t nargs)
 		return NULL;
 
 	dialog_token = ucv_int64_get(token_arg);
-	if (dialog_token == 0)
-		return NULL;
 
 	data_b64 = ucv_string_get(data_arg);
 	data = base64_decode(data_b64, os_strlen(data_b64), &data_len);
