@@ -1,0 +1,26 @@
+From 4d5001d1765ca1fd138938b8f17ba3a80ebe44d2 Mon Sep 17 00:00:00 2001
+From: Matt Johnston <matt@ucc.asn.au>
+Date: Fri, 3 Jul 2026 22:44:41 +0800
+Subject: [PATCH 14/23] Require valid port for authorized_keys permitopen
+
+A permitopen option specified in authorized_keys could be written with
+an invalid port value. 4294967295 or -1 would be accepted as "any port".
+Avoid any confusion by checking it's a valid TCP port number.
+
+(cherry picked from commit 10d1b725f0fc8171b10b31c4768f661c9db60acb)
+---
+ src/svr-authpubkeyoptions.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+--- a/src/svr-authpubkeyoptions.c
++++ b/src/svr-authpubkeyoptions.c
+@@ -276,7 +276,8 @@ svr_parse_pubkey_options(buffer *options
+ 							valid_option = 1;
+ 							entry->port = PUBKEY_OPTIONS_ANY_PORT;
+ 							TRACE(("local port forwarding allowed to host '%s'", entry->host));
+-						} else if (m_str_to_uint(portstring, &entry->port) == DROPBEAR_SUCCESS) {
++						} else if (m_str_to_uint(portstring, &entry->port) == DROPBEAR_SUCCESS
++							&& entry->port <= 65535) {
+ 							valid_option = 1;
+ 							TRACE(("local port forwarding allowed to host '%s' and port '%u'",
+ 									entry->host, entry->port));

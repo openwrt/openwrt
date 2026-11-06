@@ -1,0 +1,123 @@
+From 9ad2f8bd3741cc23d7b053e39e6b1840b3b7e1e5 Mon Sep 17 00:00:00 2001
+From: Matt Johnston <matt@ucc.asn.au>
+Date: Sun, 5 Jul 2026 19:04:54 +0800
+Subject: [PATCH 17/23] Avoid splitting long authorized_keys lines
+
+When reading text files, a long line would finish parsing then the
+next iteration would continue with the tail of the line.
+Instead the line should be skipped entirely.
+Line lengths are now limited to 10000 characters, file parsing will
+stop if that limit is hit.
+
+Previously if external programs created authorized_keys entries from
+untrusted sources, that could have allowed bypass of public key
+restrictions or other confusion.
+
+(cherry picked from commit 8d8e1930b866eb44135ae393a793cbeb03b6b9d6)
+---
+ src/dbutil.c         | 44 +++++++++++++++++++++++---------------------
+ src/svr-authpubkey.c |  8 ++++++--
+ src/sysoptions.h     |  3 +++
+ 3 files changed, 32 insertions(+), 23 deletions(-)
+
+--- a/src/dbutil.c
++++ b/src/dbutil.c
+@@ -520,46 +520,48 @@ out:
+ 	return ret;
+ }
+ 
+-/* get a line from the file into buffer in the style expected for an
++/* Get a line from the file into buffer in the style expected for an
+  * authkeys file.
+- * Will return DROPBEAR_SUCCESS if data is read, or DROPBEAR_FAILURE on EOF.*/
+-/* Only used for ~/.ssh/known_hosts and ~/.ssh/authorized_keys */
+-#if DROPBEAR_CLIENT || DROPBEAR_SVR_PUBKEY_AUTH
++ * Will return DROPBEAR_SUCCESS if data is read, or DROPBEAR_FAILURE on EOF/error.*/
++/* Returns failure if lines are longer than DROPBEAR_MAX_LINE_LENGTH.
++ * A line that doesn't fit in the buffer returns DROPBEAR_SUCCESS with an empty buffer */
+ int buf_getline(buffer * line, FILE * authfile) {
+ 
+ 	int c = EOF;
++	unsigned int pos;
++	int truncated = 0;
+ 
+-	buf_setpos(line, 0);
+ 	buf_setlen(line, 0);
+ 
+-	while (line->pos < line->size) {
+-
++	for (pos = 0; pos < DROPBEAR_MAX_LINE_LENGTH; pos++) {
+ 		c = fgetc(authfile); /*getc() is weird with some uClibc systems*/
+ 		if (c == EOF || c == '\n' || c == '\r') {
+-			goto out;
++			break;
+ 		}
+ 
+-		buf_putbyte(line, (unsigned char)c);
++		if (!truncated && line->len < line->size) {
++			buf_putbyte(line, (unsigned char)c);
++		} else {
++			/* buffer is full, read to EOL and return an empty buffer */
++			truncated = 1;
++			buf_setlen(line, 0);
++		}
+ 	}
+ 
+-	TRACE(("leave getauthline: line too long"))
+-	/* We return success, but the line length will be zeroed - ie we just
+-	 * ignore that line */
+-	buf_setlen(line, 0);
+-
+-out:
+-
++	if (pos >= DROPBEAR_MAX_LINE_LENGTH) {
++		/* Didn't reach end of line, the caller shouldn't continue since
++		 * it will still be mid-line */
++		return DROPBEAR_FAILURE;
++	}
+ 
+-	/* if we didn't read anything before EOF or error, exit */
+ 	if (c == EOF && line->pos == 0) {
++		/* Reached EOF, no buffer data */
+ 		return DROPBEAR_FAILURE;
+-	} else {
+-		buf_setpos(line, 0);
+-		return DROPBEAR_SUCCESS;
+ 	}
+ 
++	buf_setpos(line, 0);
++	return DROPBEAR_SUCCESS;
+ }	
+-#endif
+ 
+ /* make sure that the socket closes */
+ void m_close(int fd) {
+--- a/src/svr-authpubkey.c
++++ b/src/svr-authpubkey.c
+@@ -68,8 +68,12 @@
+ 
+ #if DROPBEAR_SVR_PUBKEY_AUTH
+ 
+-#define MIN_AUTHKEYS_LINE 10 /* "ssh-rsa AB" - short but doesn't matter */
+-#define MAX_AUTHKEYS_LINE 4200 /* max length of a line in authkeys */
++/* "ssh-rsa AB" - short but doesn't matter */
++#define MIN_AUTHKEYS_LINE 10
++/* Max length of a valid key line in authkeys. A 16384 bit RSA key (ridiculous) is
++ * 2786 bytes.
++ * An addition limit DROPBEAR_MAX_LINE_LENGTH (10000) will stop file parsing entirely */
++#define MAX_AUTHKEYS_LINE 3000
+ 
+ static char * authorized_keys_filepath(void);
+ static int checkpubkey(const char* keyalgo, unsigned int keyalgolen,
+--- a/src/sysoptions.h
++++ b/src/sysoptions.h
+@@ -452,6 +452,9 @@
+ #define DROPBEAR_MULTI 0
+ #endif
+ 
++/* To avoid denial of service */
++#define DROPBEAR_MAX_LINE_LENGTH 10000
++
+ #if !DROPBEAR_SVR_MULTIUSER && DROPBEAR_SVR_DROP_PRIVS
+ #error DROPBEAR_SVR_DROP_PRIVS needs DROPBEAR_SVR_MULTIUSER
+ #endif

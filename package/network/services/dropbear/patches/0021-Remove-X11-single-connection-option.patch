@@ -1,0 +1,75 @@
+From 9b154bd221fbf7a9a72edd1c2c14804f0f8a0895 Mon Sep 17 00:00:00 2001
+From: Matt Johnston <matt@ucc.asn.au>
+Date: Mon, 13 Jul 2026 23:38:45 +0800
+Subject: [PATCH 21/23] Remove X11 single connection option
+
+This has a use after free. I don't know any implementation that requests
+single x11 connections.
+
+handle_listeners()
+ -> listener->acceptor() -> x11accept()
+ -> if (chansess->x11singleconn)
+ -> x11cleanup(chansess)
+ -> remove_listener()
+Next iteration of handle_listeners uses listener.
+
+Reported by @peter-pe
+
+Closes #466 on github.
+
+(cherry picked from commit 882f83806d5e133037cd28e954a878984ef7b9c4)
+---
+ src/chansession.h |  1 -
+ src/svr-x11fwd.c  | 13 +++++++------
+ 2 files changed, 7 insertions(+), 7 deletions(-)
+
+--- a/src/chansession.h
++++ b/src/chansession.h
+@@ -67,7 +67,6 @@ struct ChanSess {
+ 	char * x11authprot;
+ 	char * x11authcookie;
+ 	unsigned int x11screennum;
+-	unsigned char x11singleconn;
+ #endif
+ 
+ #if DROPBEAR_SVR_AGENTFWD
+--- a/src/svr-x11fwd.c
++++ b/src/svr-x11fwd.c
+@@ -65,6 +65,7 @@ xauth_valid_string(const char *s)
+ int x11req(struct ChanSess * chansess) {
+ 
+ 	int fd = -1;
++	int x11singleconn;
+ 
+ 	if (!svr_pubkey_allows_x11fwd()) {
+ 		return DROPBEAR_FAILURE;
+@@ -75,11 +76,16 @@ int x11req(struct ChanSess * chansess) {
+ 		return DROPBEAR_FAILURE;
+ 	}
+ 
+-	chansess->x11singleconn = buf_getbool(ses.payload);
++	x11singleconn = buf_getbool(ses.payload);
+ 	chansess->x11authprot = buf_getstring(ses.payload, NULL);
+ 	chansess->x11authcookie = buf_getstring(ses.payload, NULL);
+ 	chansess->x11screennum = buf_getint(ses.payload);
+ 
++	if (x11singleconn) {
++		TRACE(("singleconn not supported"));
++		goto fail;
++	}
++
+ 	if (xauth_valid_string(chansess->x11authprot) == DROPBEAR_FAILURE ||
+ 		xauth_valid_string(chansess->x11authcookie) == DROPBEAR_FAILURE) {
+ 		dropbear_log(LOG_WARNING, "Bad xauth request");
+@@ -141,11 +147,6 @@ static void x11accept(const struct Liste
+ 		return;
+ 	}
+ 
+-	/* if single-connection we close it up */
+-	if (chansess->x11singleconn) {
+-		x11cleanup(chansess);
+-	}
+-
+ 	ret = send_msg_channel_open_x11(fd, &addr);
+ 	if (ret == DROPBEAR_FAILURE) {
+ 		close(fd);
