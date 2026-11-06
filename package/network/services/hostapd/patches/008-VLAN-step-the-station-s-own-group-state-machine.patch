@@ -1,0 +1,40 @@
+From f9e614024d120882c77a9a3c31550630b65309cd Mon Sep 17 00:00:00 2001
+From: Christopher Hill <ch6574@gmail.com>
+Date: Sun, 01 Nov 2026 19:36:15 +0000
+Subject: [PATCH] VLAN: step the station's own group state machine
+
+Minimal backport of the non-MLO part of upstream hostap commit
+ace76dd0f9dcc ("VLAN: Use appropriate group instead of the default VLAN
+group").
+
+wpa_group_sm_step_links() stepped the default (VLAN 0) group state
+machine instead of the group of the VLAN the station is bound to. After a
+GTK rekey on a non-zero VLAN, the VLAN group therefore stayed in SETKEYS
+once all stations had acknowledged group key message 2, and the new GTK
+was only installed as the TX key at the next rekey. Stations that
+(re)associated in between received the new GTK in the 4-way handshake and
+could not decrypt group-addressed frames (mDNS, IPv6 RA/ND, ARP).
+
+The MLO partner-link hunks of the upstream commit are not included, as
+they depend on wpa_select_vlan_wpa_group() (upstream commit dd65e53c9 and
+follow-ups), which is not present in this hostapd version.
+
+OpenWrt main already contains this logic: commit 4abffae9b4e8
+("hostapd: update to 2.12") moved hostapd to hostap_2_12, which includes
+ace76dd0f9dcc, so wpa_group_sm_step_links() there uses sm->group. This
+patch brings the same behaviour to openwrt-25.12 for non-MLO BSSs.
+
+Signed-off-by: Christopher Hill <ch6574@gmail.com>
+---
+
+--- a/src/ap/wpa_auth.c
++++ b/src/ap/wpa_auth.c
+@@ -6118,7 +6118,7 @@ static void wpa_group_sm_step_links(stru
+ 
+ 	if (!sm || !sm->wpa_auth)
+ 		return;
+-	wpa_group_sm_step(sm->wpa_auth, sm->wpa_auth->group);
++	wpa_group_sm_step(sm->wpa_auth, sm->group);
+ 
+ #ifdef CONFIG_IEEE80211BE
+ 	for_each_sm_auth(sm, link_id) {
