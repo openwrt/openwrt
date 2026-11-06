@@ -1,0 +1,47 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Patrick Lawler <patricktlawler@gmail.com>
+Date: Thu, 1 Oct 2026 12:41:39 -0400
+Subject: [PATCH] wifi: ath11k: require unique station addresses per radio
+
+Commit 1e744bf218b5 ("ath11k: fix duplication peer create on same
+radio") made ath11k_peer_create() refuse a peer whose address already
+exists on the same radio, because the firmware asserts when asked to
+create it. Commit d673cb6fe6c0 ("wifi: ath11k: fix peer
+addition/deletion error on sta band migration") reduced that check to
+the same vdev, so a second peer with the same address on another vdev
+of the same radio is sent to the firmware again.
+
+This happens with several BSSes on one radio: hostapd adds a station
+to the driver when it receives an Authentication frame and only
+removes it from the other BSSes once it associates. On an IPQ9574 with
+four BSSes on the 2.4 GHz radio, Tuya Wi-Fi devices trigger it while
+they are being set up: the firmware asserts, ath11k logs "failed to
+find peer ... after creation" and every following WMI command fails
+with -ESHUTDOWN. Any station in range can do the same with
+Authentication frames from one address to two BSSes of the radio.
+
+ath11k registers one ieee80211_hw per radio, so set
+IEEE80211_HW_NEEDS_UNIQUE_STA_ADDR: mac80211 then refuses the second
+station with -ENOTUNIQ before the driver or the firmware is involved,
+and hostapd rejects that authentication. A client moving between BSSes
+of the same radio has to leave the first one before it can join the
+second, as before d673cb6fe6c0 and as with ath12k. Stations on another
+radio, the case d673cb6fe6c0 was about, are not affected.
+
+Tested-on: IPQ9574 hw1.0 AHB WLAN.HK.2.9.0.1-01977-QCAHKSWPL_SILICONZ-1
+
+Fixes: d673cb6fe6c0 ("wifi: ath11k: fix peer addition/deletion error on sta band migration")
+Cc: stable@vger.kernel.org
+Link: https://lore.kernel.org/r/20261001164139.370144-1-patricktlawler@gmail.com
+Signed-off-by: Patrick Lawler <patricktlawler@gmail.com>
+---
+--- a/drivers/net/wireless/ath/ath11k/mac.c
++++ b/drivers/net/wireless/ath/ath11k/mac.c
+@@ -10525,6 +10525,7 @@ static int __ath11k_mac_register(struct
+ 	ieee80211_hw_set(ar->hw, QUEUE_CONTROL);
+ 	ieee80211_hw_set(ar->hw, SUPPORTS_TX_FRAG);
+ 	ieee80211_hw_set(ar->hw, REPORTS_LOW_ACK);
++	ieee80211_hw_set(ar->hw, NEEDS_UNIQUE_STA_ADDR);
+ 
+ 	if (ath11k_frame_mode == ATH11K_HW_TXRX_ETHERNET) {
+ 		ieee80211_hw_set(ar->hw, SUPPORTS_TX_ENCAP_OFFLOAD);
