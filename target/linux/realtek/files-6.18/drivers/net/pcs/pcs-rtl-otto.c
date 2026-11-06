@@ -320,7 +320,6 @@ enum rtpcs_page {
 #define  RTL930X_CLK_READY_ODD_LANE	BIT(5)
 #define  RTL93XX_RXEQ_COEF_LEQ_GRAY	GENMASK(7, 3)
 #define  RTL93XX_RXEQ_COEF_TAPX		GENMASK(5, 0)
-#define  RTL930X_RXEQ_COEF_DCVS		GENMASK(4, 0)
 #define  RTL930X_RXEQ_COEF_VTHN		GENMASK(5, 3)
 #define  RTL930X_RXEQ_COEF_VTHP		GENMASK(2, 0)
 #define  RTL930X_RXCAL_FGCAL_BIN	GENMASK(5, 0)
@@ -2625,45 +2624,6 @@ static int rtpcs_930x_sds_rxeq_dcvs_set_coef(struct rtpcs_serdes *sds, unsigned 
 
 	return rtpcs_sds_write_bits(sds, PAGE_ANA_10G, reg[dcvs_id], lbit[dcvs_id] + 4,
 				    lbit[dcvs_id], rtpcs_sign_mag_encode(dcvs_coef, 4));
-}
-
-__maybe_unused
-static int rtpcs_930x_sds_rxeq_dcvs_get_coef(struct rtpcs_serdes *sds, unsigned int dcvs_id,
-					     int *dcvs_coef)
-{
-	u8 manual_reg[6] = { 0x1e, 0x1e, 0x1e, 0x1e, 0x01, 0x02 };
-	u8 coeff_sel[6] = { 0x22, 0x23, 0x24, 0x25, 0x2c, 0x2d };
-	u8 manual_bit[6] = { 14, 13, 12, 11, 15, 11 };
-	int ret, val;
-
-	if (dcvs_id > 5)
-		return -EINVAL;
-
-	ret = rtpcs_930x_sds_rxeq_set_debug(sds, RTL930X_RX_DEBUG_SEL_COEF);
-	if (ret < 0)
-		return ret;
-
-	ret = rtpcs_sds_write_mask(sds, PAGE_ANA_10G_EXT, ANA_SPD_EXT_REG12,
-				   RTL930X_RX_COEF_SEL,
-				   FIELD_PREP(RTL930X_RX_COEF_SEL, coeff_sel[dcvs_id]));
-	if (ret < 0)
-		return ret;
-	usleep_range(1000, 2000);
-
-	val = rtpcs_sds_read(sds, PAGE_WDIG, WDIG_REG20);
-	if (val < 0)
-		return val;
-
-	*dcvs_coef = rtpcs_sign_mag_decode(FIELD_GET(RTL930X_RXEQ_COEF_DCVS, val), 4);
-	val = rtpcs_sds_read_bits(sds, PAGE_ANA_10G, manual_reg[dcvs_id], manual_bit[dcvs_id],
-				  manual_bit[dcvs_id]);
-	if (val < 0)
-		return val;
-
-	dev_dbg(sds->ctrl->dev, "SerDes %u: DCVS %u, manual = %u, coefficient = %d\n",
-		sds->id, dcvs_id, val, *dcvs_coef);
-
-	return 0;
 }
 
 static int rtpcs_930x_sds_rxeq_leq_set_adapt(struct rtpcs_serdes *sds, bool enable)
