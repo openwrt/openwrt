@@ -1,0 +1,26 @@
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Subject: [PATCH] remoteproc: qcom: wcss-sec: do not wait for a coredump reader
+
+An inline coredump makes recovery wait until userspace reads the dump,
+or until the devcoredump timeout of five minutes runs out. With no
+reader, the WCSS stays stopped that long after every firmware crash,
+and Wi-Fi with it. Default to no coredump; it can still be enabled
+through the remoteproc coredump sysfs attribute.
+
+On an IPQ8074, a simulated firmware assert under a 900 Mbit/s Wi-Fi
+downlink now recovers both radios in 1.2 s and the stations stay
+associated; with the inline dump the WCSS was not restarted within 54 s.
+
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+---
+--- a/drivers/remoteproc/qcom_q6v5_wcss_sec.c
++++ b/drivers/remoteproc/qcom_q6v5_wcss_sec.c
+@@ -364,7 +364,7 @@ static int wcss_sec_probe(struct platfor
+ 	qcom_add_ssr_subdev(rproc, &wcss->ssr_subdev, desc->ss_name);
+ 
+ 	rproc->auto_boot = false;
+-	rproc->dump_conf = RPROC_COREDUMP_INLINE;
++	rproc->dump_conf = RPROC_COREDUMP_DISABLED;
+ 	rproc_coredump_set_elf_info(rproc, ELFCLASS32, EM_NONE);
+ 
+ 	if (desc->use_tmelcom) {

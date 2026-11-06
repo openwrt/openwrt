@@ -1,0 +1,72 @@
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Subject: [PATCH] wifi: ath11k: push TXQs from BH work
+
+Each frame that the network stack queues from a receive poll wakes its
+TXQ on its own, and the wake ran a scheduling round at once, so a round
+handed the hardware a single frame and paid for the ring access, the
+locks and the scheduler per frame. Record the woken access categories
+and run their rounds from BH work, which runs after the poll and takes
+every frame it queued in one round.
+
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+--- a/drivers/net/wireless/ath/ath11k/core.h
++++ b/drivers/net/wireless/ath/ath11k/core.h
+@@ -721,6 +721,9 @@ struct ath11k {
+ 	spinlock_t txq_lock[IEEE80211_NUM_ACS];
+ 	/* access categories whose round ended for lack of room */
+ 	unsigned long txq_starved;
++	/* access categories woken since txq_work last ran */
++	unsigned long txq_woken;
++	struct work_struct txq_work;
+ 
+ 	struct list_head arvifs;
+ 	/* should never be NULL; needed for regular htt rx */
+--- a/drivers/net/wireless/ath/ath11k/mac.c
++++ b/drivers/net/wireless/ath/ath11k/mac.c
+@@ -6781,6 +6781,7 @@ static void ath11k_mac_op_stop(struct ie
+ 	cancel_work_sync(&ar->channel_update_work);
+ 	cancel_work_sync(&ar->regd_update_work);
+ 	cancel_work_sync(&ar->ab->update_11d_work);
++	cancel_work_sync(&ar->txq_work);
+ 
+ 	if (ar->state_11d == ATH11K_11D_PREPARING) {
+ 		ar->state_11d = ATH11K_11D_IDLE;
+@@ -10222,10 +10223,29 @@ static void ath11k_mac_schedule_txq(stru
+ 	spin_unlock_bh(&ar->txq_lock[ac]);
+ }
+ 
++/* A frame queued from a receive poll wakes its TXQ on its own, so pushing
++ * from the wake would hand the hardware one frame per round. The rounds run
++ * from BH work instead, after the poll, and take every frame it queued.
++ */
++static void ath11k_mac_txq_work(struct work_struct *work)
++{
++	struct ath11k *ar = container_of(work, struct ath11k, txq_work);
++	unsigned long woken = xchg(&ar->txq_woken, 0);
++	u8 ac;
++
++	rcu_read_lock();
++	for_each_set_bit(ac, &woken, IEEE80211_NUM_ACS)
++		ath11k_mac_schedule_txq(ar, ac);
++	rcu_read_unlock();
++}
++
+ static void ath11k_mac_op_wake_tx_queue(struct ieee80211_hw *hw,
+ 					struct ieee80211_txq *txq)
+ {
+-	ath11k_mac_schedule_txq(hw->priv, txq->ac);
++	struct ath11k *ar = hw->priv;
++
++	set_bit(txq->ac, &ar->txq_woken);
++	queue_work(system_bh_wq, &ar->txq_work);
+ }
+ 
+ void ath11k_mac_tx_push_pending(struct ath11k *ar, u8 ac)
+@@ -10965,6 +10985,7 @@ int ath11k_mac_allocate(struct ath11k_ba
+ 
+ 		for (j = 0; j < IEEE80211_NUM_ACS; j++)
+ 			spin_lock_init(&ar->txq_lock[j]);
++		INIT_WORK(&ar->txq_work, ath11k_mac_txq_work);
+ 		INIT_LIST_HEAD(&ar->arvifs);
+ 		INIT_LIST_HEAD(&ar->ppdu_stats_info);
+ 		mutex_init(&ar->conf_mutex);

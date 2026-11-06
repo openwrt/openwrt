@@ -1,0 +1,86 @@
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Date: Sun, 11 Oct 2026 12:29:20 +0200
+Subject: [PATCH] wifi: ath11k: apply the 160 MHz NSS ratio to the radio
+
+The firmware reports the NSS a radio supports at 160 MHz as a ratio of
+its 80 MHz NSS. Peer assoc applies that ratio to the peer's NSS instead,
+so on a radio with a 1:2 ratio a two-stream peer is sent one stream at
+160 MHz. The HE 160 and 80+80 MCS maps copy the 80 MHz map, so a
+4-chain radio with that ratio offers 4 streams at 160 MHz where it
+supports 2.
+
+Take the 160 MHz NSS from the radio's TX chains, as ath12k does since
+commit a82ce08775bc ("wifi: ath12k: add extended NSS bandwidth support
+for 160 MHz"), and limit the 160 and 80+80 MCS maps to the ratio when
+the firmware reports one.
+
+Tested-on: IPQ8074 hw2.0 AHB WLAN.HK.2.9.0.1-02146-QCAHKSWPL_SILICONZ-1
+
+Link: https://lore.kernel.org/all/20261011123631.1664734-1-julius@bairaktaris.de/
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+---
+ drivers/net/wireless/ath/ath11k/mac.c |   24 +++++++++++++++++-------
+ 1 file changed, 17 insertions(+), 7 deletions(-)
+
+--- a/drivers/net/wireless/ath/ath11k/mac.c
++++ b/drivers/net/wireless/ath/ath11k/mac.c
+@@ -2261,7 +2261,7 @@ static void ath11k_peer_assoc_h_vht(stru
+ 
+ 	if (arg->peer_phymode == MODE_11AC_VHT160 ||
+ 	    arg->peer_phymode == MODE_11AC_VHT80_80) {
+-		tx_nss = ath11k_get_nss_160mhz(ar, max_nss);
++		tx_nss = ath11k_get_nss_160mhz(ar, ar->num_tx_chains);
+ 		rx_nss = min(arg->peer_nss, tx_nss);
+ 		arg->peer_bw_rxnss_override = ATH11K_BW_NSS_MAP_ENABLE;
+ 
+@@ -2571,7 +2571,7 @@ static void ath11k_peer_assoc_h_he(struc
+ 
+ 	if (arg->peer_phymode == MODE_11AX_HE160 ||
+ 	    arg->peer_phymode == MODE_11AX_HE80_80) {
+-		tx_nss = ath11k_get_nss_160mhz(ar, max_nss);
++		tx_nss = ath11k_get_nss_160mhz(ar, ar->num_tx_chains);
+ 		rx_nss = min(arg->peer_nss, tx_nss);
+ 		arg->peer_bw_rxnss_override = ATH11K_BW_NSS_MAP_ENABLE;
+ 
+@@ -5923,7 +5923,7 @@ static void ath11k_mac_set_hemcsmap(stru
+ 				    struct ieee80211_sta_he_cap *he_cap,
+ 				    int band)
+ {
+-	u16 txmcs_map, rxmcs_map;
++	u16 txmcs_map, rxmcs_map, txmcs_map_160, rxmcs_map_160;
+ 	u32 i;
+ 
+ 	rxmcs_map = 0;
+@@ -5941,18 +5941,28 @@ static void ath11k_mac_set_hemcsmap(stru
+ 		else
+ 			rxmcs_map |= IEEE80211_HE_MCS_NOT_SUPPORTED << (i * 2);
+ 	}
++
++	txmcs_map_160 = txmcs_map;
++	rxmcs_map_160 = rxmcs_map;
++	if (cap->nss_ratio_enabled) {
++		for (i = ath11k_get_nss_160mhz(ar, ar->num_tx_chains); i < 8; i++)
++			txmcs_map_160 |= IEEE80211_HE_MCS_NOT_SUPPORTED << (i * 2);
++		for (i = ath11k_get_nss_160mhz(ar, ar->num_rx_chains); i < 8; i++)
++			rxmcs_map_160 |= IEEE80211_HE_MCS_NOT_SUPPORTED << (i * 2);
++	}
++
+ 	he_cap->he_mcs_nss_supp.rx_mcs_80 =
+ 		cpu_to_le16(rxmcs_map & 0xffff);
+ 	he_cap->he_mcs_nss_supp.tx_mcs_80 =
+ 		cpu_to_le16(txmcs_map & 0xffff);
+ 	he_cap->he_mcs_nss_supp.rx_mcs_160 =
+-		cpu_to_le16(rxmcs_map & 0xffff);
++		cpu_to_le16(rxmcs_map_160);
+ 	he_cap->he_mcs_nss_supp.tx_mcs_160 =
+-		cpu_to_le16(txmcs_map & 0xffff);
++		cpu_to_le16(txmcs_map_160);
+ 	he_cap->he_mcs_nss_supp.rx_mcs_80p80 =
+-		cpu_to_le16(rxmcs_map & 0xffff);
++		cpu_to_le16(rxmcs_map_160);
+ 	he_cap->he_mcs_nss_supp.tx_mcs_80p80 =
+-		cpu_to_le16(txmcs_map & 0xffff);
++		cpu_to_le16(txmcs_map_160);
+ }
+ 
+ static int ath11k_mac_copy_he_cap(struct ath11k *ar,

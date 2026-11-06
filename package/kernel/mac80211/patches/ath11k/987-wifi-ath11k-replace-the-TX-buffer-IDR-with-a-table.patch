@@ -1,0 +1,271 @@
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Subject: [PATCH] wifi: ath11k: replace the TX buffer IDR with a table
+
+Every transmitted frame took a buffer id from an IDR when it was queued
+and gave it back on completion. Keep the ids of each TCL ring in a table
+indexed by id with a stack of the free ones, as the RX rings do, so both
+steps take constant time. The id range stays the one the IDR handed out.
+The recovery path that returns the frames a crashed firmware holds walks
+the table as well.
+
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+--- a/drivers/net/wireless/ath/ath11k/dp.c
++++ b/drivers/net/wireless/ath/ath11k/dp.c
+@@ -1010,17 +1010,21 @@ void ath11k_dp_vdev_tx_attach(struct ath
+ 	ath11k_dp_update_vdev_search(arvif);
+ }
+ 
+-static int ath11k_dp_tx_pending_cleanup(int buf_id, void *skb, void *ctx)
++static void ath11k_dp_tx_pending_cleanup(struct ath11k_base *ab,
++					 struct dp_tx_ring *tx_ring)
+ {
+-	struct ath11k_base *ab = ctx;
+-	struct sk_buff *msdu = skb;
++	struct sk_buff *msdu;
++	u32 id;
+ 
+-	dma_unmap_single(ab->dev, ATH11K_SKB_CB(msdu)->paddr, msdu->len,
+-			 DMA_TO_DEVICE);
+-
+-	dev_kfree_skb_any(msdu);
+-
+-	return 0;
++	for (id = 0; tx_ring->bufs && id < DP_TX_IDR_SIZE - 1; id++) {
++		msdu = tx_ring->bufs[id];
++		if (!msdu)
++			continue;
++
++		dma_unmap_single(ab->dev, ATH11K_SKB_CB(msdu)->paddr,
++				 msdu->len, DMA_TO_DEVICE);
++		dev_kfree_skb_any(msdu);
++	}
+ }
+ 
+ void ath11k_dp_free(struct ath11k_base *ab)
+@@ -1037,9 +1041,8 @@ void ath11k_dp_free(struct ath11k_base *
+ 
+ 	for (i = 0; i < ab->hw_params.hal_params->num_tx_rings; i++) {
+ 		spin_lock_bh(&dp->tx_ring[i].tx_idr_lock);
+-		idr_for_each(&dp->tx_ring[i].txbuf_idr,
+-			     ath11k_dp_tx_pending_cleanup, ab);
+-		idr_destroy(&dp->tx_ring[i].txbuf_idr);
++		ath11k_dp_tx_pending_cleanup(ab, &dp->tx_ring[i]);
++		ath11k_dp_tx_bufs_free(&dp->tx_ring[i]);
+ 		spin_unlock_bh(&dp->tx_ring[i].tx_idr_lock);
+ 		kfree(dp->tx_ring[i].tx_status);
+ 		dp->tx_ring[i].tx_status = NULL;
+@@ -1088,7 +1091,9 @@ int ath11k_dp_alloc(struct ath11k_base *
+ 	size = sizeof(struct hal_wbm_release_ring) * DP_TX_COMP_RING_SIZE;
+ 
+ 	for (i = 0; i < ab->hw_params.hal_params->num_tx_rings; i++) {
+-		idr_init(&dp->tx_ring[i].txbuf_idr);
++		ret = ath11k_dp_tx_bufs_init(&dp->tx_ring[i]);
++		if (ret)
++			goto fail_cmn_srng_cleanup;
+ 		spin_lock_init(&dp->tx_ring[i].tx_idr_lock);
+ 		spin_lock_init(&dp->tx_ring[i].wake_tx_lock);
+ 		dp->tx_ring[i].tcl_data_ring_id = i;
+--- a/drivers/net/wireless/ath/ath11k/dp.h
++++ b/drivers/net/wireless/ath/ath11k/dp.h
+@@ -89,8 +89,11 @@ struct dp_tx_ring {
+ 	u8 tcl_data_ring_id;
+ 	struct dp_srng tcl_data_ring;
+ 	struct dp_srng tcl_comp_ring;
+-	struct idr txbuf_idr;
+-	/* Protects txbuf_idr and num_pending */
++	/* Buffers by the id their descriptor carries, and the ids not in use */
++	struct sk_buff **bufs;
++	u32 *free_ids;
++	u32 num_free;
++	/* Protects bufs and free_ids */
+ 	spinlock_t tx_idr_lock;
+ 	/* Serializes wake_tx_queue operations for this ring */
+ 	spinlock_t wake_tx_lock;
+--- a/drivers/net/wireless/ath/ath11k/dp_tx.c
++++ b/drivers/net/wireless/ath/ath11k/dp_tx.c
+@@ -79,6 +79,71 @@ enum hal_encrypt_type ath11k_dp_tx_get_e
+ 	}
+ }
+ 
++/* The ids a ring hands out, as a table indexed by id with a stack of the free
++ * ones: the completion's cookie names the buffer directly. Callers of the id
++ * helpers hold tx_idr_lock.
++ */
++int ath11k_dp_tx_bufs_init(struct dp_tx_ring *tx_ring)
++{
++	u32 id;
++
++	tx_ring->bufs = kvcalloc(DP_TX_IDR_SIZE - 1, sizeof(*tx_ring->bufs),
++				 GFP_KERNEL);
++	tx_ring->free_ids = kvcalloc(DP_TX_IDR_SIZE - 1,
++				     sizeof(*tx_ring->free_ids), GFP_KERNEL);
++	if (!tx_ring->bufs || !tx_ring->free_ids) {
++		ath11k_dp_tx_bufs_free(tx_ring);
++		return -ENOMEM;
++	}
++
++	tx_ring->num_free = 0;
++	for (id = DP_TX_IDR_SIZE - 1; id--;)
++		tx_ring->free_ids[tx_ring->num_free++] = id;
++
++	return 0;
++}
++
++void ath11k_dp_tx_bufs_free(struct dp_tx_ring *tx_ring)
++{
++	kvfree(tx_ring->bufs);
++	kvfree(tx_ring->free_ids);
++	tx_ring->bufs = NULL;
++	tx_ring->free_ids = NULL;
++	tx_ring->num_free = 0;
++}
++
++static int ath11k_dp_tx_buf_get_id(struct dp_tx_ring *tx_ring,
++				   struct sk_buff *skb)
++{
++	u32 id;
++
++	if (unlikely(!tx_ring->num_free))
++		return -ENOSPC;
++
++	id = tx_ring->free_ids[--tx_ring->num_free];
++	tx_ring->bufs[id] = skb;
++
++	return id;
++}
++
++static struct sk_buff *ath11k_dp_tx_buf_put_id(struct dp_tx_ring *tx_ring,
++					       u32 id)
++{
++	struct sk_buff *skb;
++
++	if (unlikely(id >= DP_TX_IDR_SIZE - 1))
++		return NULL;
++
++	skb = tx_ring->bufs[id];
++	if (unlikely(!skb))
++		return NULL;
++
++	tx_ring->bufs[id] = NULL;
++	tx_ring->free_ids[tx_ring->num_free++] = id;
++
++	return skb;
++}
++
+ /* A caller that passes @held_ring holds that TCL ring's lock with an access
+  * open, and ends the access itself once it has queued its last frame; the frame
+  * goes on that ring or not at all.
+@@ -128,8 +193,7 @@ tcl_ring_sel:
+ 	tx_ring = &dp->tx_ring[ti.ring_id];
+ 
+ 	spin_lock_bh(&tx_ring->tx_idr_lock);
+-	ret = idr_alloc(&tx_ring->txbuf_idr, skb, 0,
+-			DP_TX_IDR_SIZE - 1, GFP_ATOMIC);
++	ret = ath11k_dp_tx_buf_get_id(tx_ring, skb);
+ 	spin_unlock_bh(&tx_ring->tx_idr_lock);
+ 
+ 	if (unlikely(ret < 0)) {
+@@ -288,8 +352,8 @@ fail_unmap_dma:
+ 
+ fail_remove_idr:
+ 	spin_lock_bh(&tx_ring->tx_idr_lock);
+-	idr_remove(&tx_ring->txbuf_idr,
+-		   FIELD_GET(DP_TX_DESC_ID_MSDU_ID, ti.desc_id));
++	ath11k_dp_tx_buf_put_id(tx_ring,
++				FIELD_GET(DP_TX_DESC_ID_MSDU_ID, ti.desc_id));
+ 	spin_unlock_bh(&tx_ring->tx_idr_lock);
+ 
+ 	if (tcl_ring_retry)
+@@ -308,7 +372,7 @@ static void ath11k_dp_tx_free_txbuf(stru
+ 	struct ath11k_skb_cb *skb_cb;
+ 
+ 	spin_lock(&tx_ring->tx_idr_lock);
+-	msdu = idr_remove(&tx_ring->txbuf_idr, msdu_id);
++	msdu = ath11k_dp_tx_buf_put_id(tx_ring, msdu_id);
+ 	spin_unlock(&tx_ring->tx_idr_lock);
+ 
+ 	if (unlikely(!msdu)) {
+@@ -351,9 +415,11 @@ void ath11k_dp_tx_free_pending(struct at
+ 		tx_ring = &ab->dp.tx_ring[i];
+ 
+ 		spin_lock_bh(&tx_ring->tx_idr_lock);
+-		idr_for_each_entry(&tx_ring->txbuf_idr, msdu, msdu_id) {
+-			idr_remove(&tx_ring->txbuf_idr, msdu_id);
+-			__skb_queue_tail(&pending, msdu);
++		for (msdu_id = 0; tx_ring->bufs && msdu_id < DP_TX_IDR_SIZE - 1;
++		     msdu_id++) {
++			msdu = ath11k_dp_tx_buf_put_id(tx_ring, msdu_id);
++			if (msdu)
++				__skb_queue_tail(&pending, msdu);
+ 		}
+ 		spin_unlock_bh(&tx_ring->tx_idr_lock);
+ 	}
+@@ -380,7 +446,7 @@ ath11k_dp_tx_htt_tx_complete_buf(struct
+ 	struct ath11k_peer *peer;
+ 
+ 	spin_lock(&tx_ring->tx_idr_lock);
+-	msdu = idr_remove(&tx_ring->txbuf_idr, ts->msdu_id);
++	msdu = ath11k_dp_tx_buf_put_id(tx_ring, ts->msdu_id);
+ 	spin_unlock(&tx_ring->tx_idr_lock);
+ 
+ 	if (unlikely(!msdu)) {
+@@ -829,7 +895,7 @@ int ath11k_dp_tx_completion_handler(stru
+ 		}
+ 
+ 		spin_lock(&tx_ring->tx_idr_lock);
+-		msdu = idr_remove(&tx_ring->txbuf_idr, msdu_id);
++		msdu = ath11k_dp_tx_buf_put_id(tx_ring, msdu_id);
+ 		if (unlikely(!msdu)) {
+ 			ath11k_warn(ab, "tx completion for unknown msdu_id %d\n",
+ 				    msdu_id);
+--- a/drivers/net/wireless/ath/ath11k/dp_tx.h
++++ b/drivers/net/wireless/ath/ath11k/dp_tx.h
+@@ -21,6 +21,8 @@ void ath11k_dp_tx_update_txcompl(struct
+ int ath11k_dp_tx_htt_h2t_ver_req_msg(struct ath11k_base *ab);
+ int ath11k_dp_tx(struct ath11k *ar, struct ath11k_vif *arvif,
+ 		 struct ath11k_sta *arsta, struct sk_buff *skb, int held_ring);
++int ath11k_dp_tx_bufs_init(struct dp_tx_ring *tx_ring);
++void ath11k_dp_tx_bufs_free(struct dp_tx_ring *tx_ring);
+ int ath11k_dp_tx_completion_handler(struct ath11k_base *ab, int ring_id,
+ 				    int budget);
+ void ath11k_dp_tx_free_pending(struct ath11k_base *ab);
+--- a/drivers/net/wireless/ath/ath11k/mac.c
++++ b/drivers/net/wireless/ath/ath11k/mac.c
+@@ -7351,15 +7351,20 @@ err:
+ 	return ret;
+ }
+ 
+-static int ath11k_mac_vif_unref(int buf_id, void *skb, void *ctx)
++static void ath11k_mac_vif_unref(struct dp_tx_ring *tx_ring,
++				 struct ieee80211_vif *vif)
+ {
+-	struct ieee80211_vif *vif = ctx;
+-	struct ath11k_skb_cb *skb_cb = ATH11K_SKB_CB(skb);
++	struct ath11k_skb_cb *skb_cb;
++	u32 id;
+ 
+-	if (skb_cb->vif == vif)
+-		skb_cb->vif = NULL;
+-
+-	return 0;
++	for (id = 0; id < DP_TX_IDR_SIZE - 1; id++) {
++		if (!tx_ring->bufs[id])
++			continue;
++
++		skb_cb = ATH11K_SKB_CB(tx_ring->bufs[id]);
++		if (skb_cb->vif == vif)
++			skb_cb->vif = NULL;
++	}
+ }
+ 
+ static void ath11k_mac_op_remove_interface(struct ieee80211_hw *hw,
+@@ -7425,8 +7430,7 @@ err_vdev_del:
+ 
+ 	for (i = 0; i < ab->hw_params.hal_params->num_tx_rings; i++) {
+ 		spin_lock_bh(&ab->dp.tx_ring[i].tx_idr_lock);
+-		idr_for_each(&ab->dp.tx_ring[i].txbuf_idr,
+-			     ath11k_mac_vif_unref, vif);
++		ath11k_mac_vif_unref(&ab->dp.tx_ring[i], vif);
+ 		spin_unlock_bh(&ab->dp.tx_ring[i].tx_idr_lock);
+ 	}
+ 

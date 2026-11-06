@@ -1,0 +1,54 @@
+From d80d960f54e7deb7811778e126678d21a946ec48 Mon Sep 17 00:00:00 2001
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Date: Sat, 17 Oct 2026 04:04:06 +0200
+Subject: [PATCH ath-next] wifi: ath11k: report TX retries in station
+ statistics
+
+ath11k does not fill NL80211_STA_INFO_TX_RETRIES, and mac80211's TX
+status accounting leaves it at zero because the driver reports no
+per-rate try counts. The HTT PPDU statistics carry the MPDUs tried and
+acknowledged per user. Report the unacknowledged MPDUs per station as TX
+retries and leave TX failures to mac80211. Over 6 runs of 30 s the
+station's TX retries track the firmware's pdev mpdu_requeued counter to
+within 57 MPDUs.
+
+Tested-on: IPQ8074 hw2.0 AHB WLAN.HK.2.9.0.1-02146-QCAHKSWPL_SILICONZ-1
+
+Link: https://lore.kernel.org/all/20261018171803.1545946-1-julius@bairaktaris.de/
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+--- a/drivers/net/wireless/ath/ath11k/core.h
++++ b/drivers/net/wireless/ath/ath11k/core.h
+@@ -556,6 +556,7 @@ struct ath11k_sta {
+ 	struct rate_info last_txrate;
+ 	u64 rx_duration;
+ 	u64 tx_duration;
++	u32 tx_retries;
+ 	u8 rssi_comb;
+ 	struct ewma_avg_rssi avg_rssi;
+ 	s8 rssi_beacon;
+--- a/drivers/net/wireless/ath/ath11k/dp_rx.c
++++ b/drivers/net/wireless/ath/ath11k/dp_rx.c
+@@ -1449,6 +1449,11 @@ ath11k_update_per_peer_tx_stats(struct a
+ 	sta = peer->sta;
+ 	arsta = ath11k_sta_to_arsta(sta);
+ 
++	if (usr_stats->cmpltn_cmn.mpdu_tried >
++	    usr_stats->cmpltn_cmn.mpdu_success)
++		arsta->tx_retries += usr_stats->cmpltn_cmn.mpdu_tried -
++				     usr_stats->cmpltn_cmn.mpdu_success;
++
+ 	memset(&arsta->txrate, 0, sizeof(arsta->txrate));
+ 
+ 	switch (flags) {
+--- a/drivers/net/wireless/ath/ath11k/mac.c
++++ b/drivers/net/wireless/ath/ath11k/mac.c
+@@ -9416,6 +9416,9 @@ static void ath11k_mac_op_sta_statistics
+ 	sinfo->tx_duration = arsta->tx_duration;
+ 	sinfo->filled |= BIT_ULL(NL80211_STA_INFO_TX_DURATION);
+ 
++	sinfo->tx_retries = arsta->tx_retries;
++	sinfo->filled |= BIT_ULL(NL80211_STA_INFO_TX_RETRIES);
++
+ 	if (arsta->txrate.legacy || arsta->txrate.nss) {
+ 		if (arsta->txrate.legacy) {
+ 			sinfo->txrate.legacy = arsta->txrate.legacy;
