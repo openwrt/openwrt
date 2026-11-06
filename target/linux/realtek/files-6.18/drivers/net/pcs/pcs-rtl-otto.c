@@ -356,6 +356,12 @@ enum rtpcs_page {
 #define   RTL930X_RX_DEBUG_SEL_LEQ	0x10
 #define   RTL930X_RX_DEBUG_SEL_COEF	0x20
 
+#define ANA_COM_REG11			0x0b
+#define  RTL930X_FRC_CMU_EN_LC_ON	BIT(3)
+#define  RTL930X_FRC_CMU_EN_LC_VAL	BIT(2)
+#define  RTL930X_FRC_CMU_EN_RING_ON	BIT(1)
+#define  RTL930X_FRC_CMU_EN_RING_VAL	BIT(0)
+
 /* PAGE_ANA_SPD - all ANA_SPD_XXXX pages share common layout */
 
 #define ANA_SPD_REG00			0x00
@@ -2322,20 +2328,22 @@ static int rtpcs_930x_sds_set_pll_select(struct rtpcs_serdes *sds, enum rtpcs_sd
 static int rtpcs_930x_sds_reset_cmu(struct rtpcs_serdes *sds, enum rtpcs_sds_pll_type pll)
 {
 	struct rtpcs_serdes *even_sds = rtpcs_sds_get_even(sds);
-	int reset_sequence[4] = { 3, 2, 3, 1 };
-	int bit, i, ret;
+	u16 enable_mask = (pll == RTPCS_SDS_PLL_TYPE_LC) ?
+			  RTL930X_FRC_CMU_EN_LC_VAL : RTL930X_FRC_CMU_EN_RING_VAL;
+	u16 force_mask = (pll == RTPCS_SDS_PLL_TYPE_LC) ?
+			 RTL930X_FRC_CMU_EN_LC_ON : RTL930X_FRC_CMU_EN_RING_ON;
+	const u16 reset_sequence[] = {
+		force_mask | enable_mask,
+		force_mask,
+		force_mask | enable_mask,
+		enable_mask,
+	};
+	int i, ret;
 
-	/*
-	 * After the PLL speed has changed, the CMU must take over the new values. The models
-	 * of the Otto platform have different reset sequences. Luckily it always boils down
-	 * to flipping two bits in a special sequence.
-	 */
-
-	bit = pll == RTPCS_SDS_PLL_TYPE_LC ? 2 : 0;
-
+	/* Toggle the selected CMU after changing the PLL speed. */
 	for (i = 0; i < ARRAY_SIZE(reset_sequence); i++) {
-		ret = rtpcs_sds_write_bits(even_sds, PAGE_ANA_COM, 0x0b, bit + 1, bit,
-					   reset_sequence[i]);
+		ret = rtpcs_sds_write_mask(even_sds, PAGE_ANA_COM, ANA_COM_REG11,
+					   force_mask | enable_mask, reset_sequence[i]);
 		if (ret < 0)
 			return ret;
 	}
