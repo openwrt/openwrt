@@ -513,7 +513,7 @@ define KernelPackage/phy-marvell
    KCONFIG:=CONFIG_MARVELL_PHY
    DEPENDS:=+kmod-libphy
    FILES:=$(LINUX_DIR)/drivers/net/phy/marvell.ko
-   AUTOLOAD:=$(call AutoLoad,18,marvell)
+   AUTOLOAD:=$(call AutoLoad,18,marvell,1)
 endef
 
 define KernelPackage/phy-marvell/description
