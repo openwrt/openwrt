@@ -97,6 +97,8 @@ const SystemService = {
 		args: service_args,
 		named_args: service_settings,
 		call: function(ctx, argv, param) {
+			let name = shift(argv);
+
 			if (!length(param))
 				return ctx.invalid_argument("No settings provided");
 
@@ -104,10 +106,10 @@ const SystemService = {
 				return ctx.invalid_argument("enabled and disabled cannot be set at the same time");
 
 			if (param.enabled && !__service_cmd(name, "enable"))
-				ctx.command_failed("Command failed: %s", "enable");
+				return ctx.command_failed("Command failed: %s", "enable");
 
 			if (param.disabled && !__service_cmd(name, "disable"))
-				ctx.command_failed("Command failed: %s", "disable");
+				return ctx.command_failed("Command failed: %s", "disable");
 
 			return ctx.ok("Settings changed");
 		}
