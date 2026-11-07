@@ -5,6 +5,17 @@ define Build/mkrtn56uimg
 	$(STAGING_DIR_HOST)/bin/mkrtn56uimg $(1) $@
 endef
 
+define Device/asus_dsl-n55u
+  SOC := rt3662
+  IMAGE_SIZE := 7872k
+  IMAGE/sysupgrade.bin := $$(sysupgrade_bin) | check-size | \
+	mkrtn56uimg -s | append-metadata
+  DEVICE_VENDOR := ASUS
+  DEVICE_MODEL := DSL-N55U
+  DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2
+endef
+TARGET_DEVICES += asus_dsl-n55u
+
 define Device/asus_rt-n56u
   SOC := rt3662
   IMAGE_SIZE := 7872k
