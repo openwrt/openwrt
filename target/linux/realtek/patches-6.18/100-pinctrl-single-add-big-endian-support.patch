@@ -1,0 +1,92 @@
+From f09f744d49619cd859f19ed4d15b44ca621ab9fd Mon Sep 17 00:00:00 2001
+From: Rustam Adilov <adilov@disroot.org>
+Date: Sat, 10 Oct 2026 20:46:27 +0500
+Subject: [PATCH v2] pinctrl: single: add big endian support
+
+Add support for big endian pin controllers by taking into account
+a big-endian device tree property.
+
+This is needed on big endian MIPS platforms like RTL930X, RTL931X
+and RTL9607C who use pinctrl-single, because when SWAP_IO_SPACE is
+enabled, the mmio accessors in pinctrl-single perform a byte swap.
+
+Signed-off-by: Rustam Adilov <adilov@disroot.org>
+---
+Change in v2:
+- Change to generic big endian io read/write functions.
+
+ drivers/pinctrl/pinctrl-single.c | 41 ++++++++++++++++++++++++++++----
+ 1 file changed, 37 insertions(+), 4 deletions(-)
+
+--- a/drivers/pinctrl/pinctrl-single.c
++++ b/drivers/pinctrl/pinctrl-single.c
+@@ -265,6 +265,26 @@ static void pcs_writel(unsigned int val,
+ 	writel(val, reg);
+ }
+ 
++static unsigned int pcs_readw_be(void __iomem *reg)
++{
++	return ioread16be(reg);
++}
++
++static unsigned int pcs_readl_be(void __iomem *reg)
++{
++	return ioread32be(reg);
++}
++
++static void pcs_writew_be(unsigned int val, void __iomem *reg)
++{
++	iowrite16be(val, reg);
++}
++
++static void pcs_writel_be(unsigned int val, void __iomem *reg)
++{
++	iowrite32be(val, reg);
++}
++
+ static unsigned int pcs_pin_reg_offset_get(struct pcs_device *pcs,
+ 					   unsigned int pin)
+ {
+@@ -1784,6 +1804,7 @@ static int pcs_probe(struct platform_dev
+ 	struct resource *res;
+ 	struct pcs_device *pcs;
+ 	const struct pcs_soc_data *soc;
++	bool byte_be;
+ 	int ret;
+ 
+ 	soc = of_device_get_match_data(&pdev->dev);
+@@ -1859,18 +1880,30 @@ static int pcs_probe(struct platform_dev
+ 
+ 	platform_set_drvdata(pdev, pcs);
+ 
++	byte_be = device_is_big_endian(pcs->dev);
++
+ 	switch (pcs->width) {
+ 	case 8:
+ 		pcs->read = pcs_readb;
+ 		pcs->write = pcs_writeb;
+ 		break;
+ 	case 16:
+-		pcs->read = pcs_readw;
+-		pcs->write = pcs_writew;
++		if (byte_be) {
++			pcs->read = pcs_readw_be;
++			pcs->write = pcs_writew_be;
++		} else {
++			pcs->read = pcs_readw;
++			pcs->write = pcs_writew;
++		}
+ 		break;
+ 	case 32:
+-		pcs->read = pcs_readl;
+-		pcs->write = pcs_writel;
++		if (byte_be) {
++			pcs->read = pcs_readl_be;
++			pcs->write = pcs_writel_be;
++		} else {
++			pcs->read = pcs_readl;
++			pcs->write = pcs_writel;
++		}
+ 		break;
+ 	default:
+ 		break;
