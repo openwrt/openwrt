@@ -202,6 +202,27 @@ SUBMAKE:=$(NO_TRACE_MAKE) $(if $(CUR_MAKEFILE),-f $(CUR_MAKEFILE))
 PKG_CONFIG_PATH=$(STAGING_DIR)/usr/lib/pkgconfig:$(STAGING_DIR)/usr/share/pkgconfig
 unexport QUIET CONFIG_SITE CONFIG_SITE_BASE
 
+# Build sandbox: restrict Build/Configure, Build/Compile and Build/Install
+# to only write inside PKG_BUILD_DIR, with no network access.
+ifneq ($(CONFIG_BUILD_SANDBOX),)
+  # Each package gets its own, freshly emptied TMPDIR and its own ccache
+  # directory, so one package cannot plant files that another one picks up.
+  # TMP_DIR itself (package metadata) stays read-only.
+  SANDBOX_ID := $(subst /,_,$(patsubst $(TOPDIR)/%,%,$(PKG_BUILD_DIR)))
+  SANDBOX_TMPDIR := $(TMP_DIR)/sandbox/$(SANDBOX_ID)
+  SANDBOX_CCACHE_DIR := $(if $(CONFIG_CCACHE),$(CCACHE_DIR)/sandbox/$(SANDBOX_ID))
+  # Paths outside TOPDIR that a build may legitimately read or write.
+  SANDBOX_RO_PATHS := $(DL_DIR) $(if $(CONFIG_EXTERNAL_TOOLCHAIN),$(TOOLCHAIN_ROOT_DIR))
+  SANDBOX_RW_PATHS := $(SANDBOX_TMPDIR) $(SANDBOX_CCACHE_DIR) \
+	$(if $(and $(CONFIGURE_CACHE_BASE),$(PKG_CONFIGURE_CACHE)),$(patsubst %/,%,$(dir $(PKG_CONFIGURE_CACHE_FILE))))
+  SANDBOX_RUN := \
+	rm -rf $(SANDBOX_TMPDIR); mkdir -p $(SANDBOX_RW_PATHS); \
+	SANDBOX_EXTRA_RO='$(subst $(space),:,$(strip $(SANDBOX_RO_PATHS)))' \
+	SANDBOX_EXTRA_RW='$(subst $(space),:,$(strip $(SANDBOX_RW_PATHS)))' \
+	$(SCRIPT_DIR)/build-sandbox.sh $(PKG_BUILD_DIR) $(SUBMAKE) \
+	TMPDIR=$(SANDBOX_TMPDIR) $(if $(SANDBOX_CCACHE_DIR),CCACHE_DIR=$(SANDBOX_CCACHE_DIR))
+endif
+
 ifeq ($(DUMP)$(filter prereq clean refresh update,$(MAKECMDGOALS)),)
   ifneq ($(if $(QUILT),,$(CONFIG_AUTOREBUILD)),)
     define Build/Autoclean
@@ -268,25 +289,55 @@ define Build/CoreTargets
 
   $(call Build/Exports,$(STAMP_CONFIGURED))
   $(if $(and $(CONFIGURE_CACHE_BASE),$(PKG_CONFIGURE_CACHE)),$(STAMP_CONFIGURED) : export CONFIGURE_CACHE_FILE:=$(PKG_CONFIGURE_CACHE_FILE))
+ifneq ($(CONFIG_BUILD_SANDBOX),)
+  $(call Build/Exports,$(STAMP_CONFIGURED)_configure)
+  $(if $(and $(CONFIGURE_CACHE_BASE),$(PKG_CONFIGURE_CACHE)),$(STAMP_CONFIGURED)_configure : export CONFIGURE_CACHE_FILE:=$(PKG_CONFIGURE_CACHE_FILE))
+  .PHONY: $(STAMP_CONFIGURED)_configure
+  $(STAMP_CONFIGURED)_configure:
+	$(Build/Configure)
+endif
   $(STAMP_CONFIGURED): $(STAMP_PREPARED) $(STAMP_CONFIGURED_DEPENDS)
 	$(call BuildTimeLog,begin,configure)
 	rm -f $(STAMP_CONFIGURED_WILDCARD)
 	$(CleanStaging)
 	$(foreach hook,$(Hooks/Configure/Pre),$(call $(hook))$(sep))
+ifneq ($(CONFIG_BUILD_SANDBOX),)
+	+$(SANDBOX_RUN) $(STAMP_CONFIGURED)_configure
+else
 	$(Build/Configure)
+endif
 	$(foreach hook,$(Hooks/Configure/Post),$(call $(hook))$(sep))
 	touch $$@
 	$(call BuildTimeLog,end,configure)
 
   $(call Build/Exports,$(STAMP_BUILT))
+ifneq ($(CONFIG_BUILD_SANDBOX),)
+  $(call Build/Exports,$(STAMP_BUILT)_compile)
+  .PHONY: $(STAMP_BUILT)_compile
+  $(STAMP_BUILT)_compile:
+	$(Build/Compile)
+
+  $(call Build/Exports,$(STAMP_BUILT)_install)
+  .PHONY: $(STAMP_BUILT)_install
+  $(STAMP_BUILT)_install:
+	$(Build/Install)
+endif
   $(STAMP_BUILT): $(STAMP_CONFIGURED) $(STAMP_BUILT_DEPENDS)
 	$(call BuildTimeLog,begin,compile)
 	rm -f $$@
 	touch $$@_check
 	$(foreach hook,$(Hooks/Compile/Pre),$(call $(hook))$(sep))
+ifneq ($(CONFIG_BUILD_SANDBOX),)
+	+$(SANDBOX_RUN) $(STAMP_BUILT)_compile
+else
 	$(Build/Compile)
+endif
 	$(foreach hook,$(Hooks/Compile/Post),$(call $(hook))$(sep))
+ifneq ($(CONFIG_BUILD_SANDBOX),)
+	+$(SANDBOX_RUN) $(STAMP_BUILT)_install
+else
 	$(Build/Install)
+endif
 	$(foreach hook,$(Hooks/Install/Post),$(call $(hook))$(sep))
 	touch $$@
 	$(call BuildTimeLog,end,compile)
