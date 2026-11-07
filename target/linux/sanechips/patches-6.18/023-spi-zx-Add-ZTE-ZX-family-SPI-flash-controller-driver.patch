@@ -1,0 +1,50 @@
+From 64fa106a17114bec9000caa97ee1e32f07c8a8aa Mon Sep 17 00:00:00 2001
+From: Navid Ghahremani <ghahramani.navid@gmail.com>
+Date: Mon, 12 Oct 2026 07:51:13 +0100
+Subject: [PATCH 20/24] spi: zx: Add ZTE ZX family SPI flash controller driver
+
+Add support for the SPI flash controller found on ZTE ZX family SoCs
+(ZX297520V3, ZX279128S). Implement tuned PIO to avoid redundant FIFO
+depth reads, dynamic CCF clock scaling, 4KB operation chunking, and
+optional DMA support.
+
+Signed-off-by: Navid Ghahremani <ghahramani.navid@gmail.com>
+---
+ drivers/spi/Kconfig  | 15 +++++++++++++++
+ drivers/spi/Makefile |  1 +
+ 2 files changed, 16 insertions(+)
+
+--- a/drivers/spi/Kconfig
++++ b/drivers/spi/Kconfig
+@@ -1288,6 +1288,21 @@ config SPI_XTENSA_XTFPGA
+ 	  16 bit words in SPI mode 0, automatically asserting CS on transfer
+ 	  start and deasserting on end.
+ 
++config SPI_ZX
++	tristate "ZTE ZX family SPI flash controller"
++	depends on ARCH_ZTE || COMPILE_TEST
++	depends on OF && HAS_IOMEM
++	depends on SPI_MEM
++	help
++	  This enables support for the SPI flash controller found on ZTE ZX
++	  family SoCs (ZX297520V3, ZX279128S, etc.), through which they reach
++	  boot flash (such as SPI NAND on the ZTE ZXHN H3600).
++	  This controller operates flash transactions through a hardware FIFO
++	  or optional DMA engine.
++	  This driver does not support generic SPI. It only implements the
++	  spi-mem interface.
++
++
+ config SPI_ZYNQ_QSPI
+ 	tristate "Xilinx Zynq QSPI controller"
+ 	depends on ARCH_ZYNQ || COMPILE_TEST
+--- a/drivers/spi/Makefile
++++ b/drivers/spi/Makefile
+@@ -164,6 +164,7 @@ obj-$(CONFIG_SPI_XCOMM)		+= spi-xcomm.o
+ obj-$(CONFIG_SPI_XILINX)		+= spi-xilinx.o
+ obj-$(CONFIG_SPI_XLP)			+= spi-xlp.o
+ obj-$(CONFIG_SPI_XTENSA_XTFPGA)		+= spi-xtensa-xtfpga.o
++obj-$(CONFIG_SPI_ZX)			+= spi-zx.o
+ obj-$(CONFIG_SPI_ZYNQ_QSPI)		+= spi-zynq-qspi.o
+ obj-$(CONFIG_SPI_ZYNQMP_GQSPI)		+= spi-zynqmp-gqspi.o
+ obj-$(CONFIG_SPI_AMD)			+= spi-amd.o spi-amd-pci.o
