@@ -481,8 +481,8 @@
 		interrupt-parent = <&cpuintc>;
 		interrupts = <5>;
 
-		resets = <&sysc 21>, <&sysc 23>;
-		reset-names = "fe", "esw";
+		resets = <&sysc 21>, <&sysc 23>, <&sysc 31>;
+		reset-names = "fe", "esw", "ppe";
 
 		mediatek,switch = <&gsw>;
 
