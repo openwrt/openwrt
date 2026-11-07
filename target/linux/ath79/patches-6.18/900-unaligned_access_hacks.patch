@@ -862,10 +862,10 @@ SVN-Revision: 35130
  
 -	if (!(*(const u32 *)&th->source ^ *(const u32 *)&th2->source) &&
 +	if (!(net_hdr_word(&th->source) ^ net_hdr_word(&th2->source)) &&
- 	    iph->daddr == iph2->daddr && iph->saddr == iph2->saddr)
+ 	    iph->daddr == iph2->daddr && iph->saddr == iph2->saddr &&
+ 	    iph->ttl == iph2->ttl && iph->tos == iph2->tos)
  		return segs;
- 
-@@ -272,7 +272,7 @@ struct sk_buff *tcp_gro_lookup(struct li
+@@ -278,7 +278,7 @@ struct sk_buff *tcp_gro_lookup(struct li
  			continue;
  
  		th2 = tcp_hdr(p);
@@ -874,7 +874,7 @@ SVN-Revision: 35130
  			NAPI_GRO_CB(p)->same_flow = 0;
  			continue;
  		}
-@@ -336,8 +336,8 @@ struct sk_buff *tcp_gro_receive(struct l
+@@ -342,8 +342,8 @@ struct sk_buff *tcp_gro_receive(struct l
  		  ~(TCP_FLAG_FIN | TCP_FLAG_PSH));
  	flush |= (__force int)(th->ack_seq ^ th2->ack_seq);
  	for (i = sizeof(*th); i < thlen; i += 4)
