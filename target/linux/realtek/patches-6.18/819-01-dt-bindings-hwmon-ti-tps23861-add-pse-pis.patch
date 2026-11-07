@@ -1,0 +1,20 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Roman Kuzmitskii <roman@damex.org>
+Subject: [PATCH] dt-bindings: hwmon: ti,tps23861: add pse-pis
+
+pse-pis child allowed, ports managed by PSE framework.
+
+Signed-off-by: Roman Kuzmitskii <roman@damex.org>
+---
+--- a/Documentation/devicetree/bindings/hwmon/ti,tps23861.yaml
++++ b/Documentation/devicetree/bindings/hwmon/ti,tps23861.yaml
+@@ -30,6 +30,9 @@ properties:
+     minimum: 250000
+     maximum: 255000
+ 
++  pse-pis:
++    $ref: /schemas/net/pse-pd/pse-controller.yaml#/properties/pse-pis
++
+ required:
+   - compatible
+   - reg
