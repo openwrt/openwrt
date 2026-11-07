@@ -29,17 +29,6 @@
 		always-running;
 	};
 
-	gpio-export {
-		compatible = "gpio-export";
-		#size-cells = <0>;
-
-		pse {
-			gpio-export,name = "pse";
-			gpio-export,output = <1>;
-			gpios = <&gpio 14 GPIO_ACTIVE_HIGH>;
-		};
-	};
-
 	keys {
 		compatible = "gpio-keys";
 
@@ -75,6 +64,66 @@
 
 &i2c {
 	status = "okay";
+
+	ethernet-pse@74 {
+		compatible = "icplus,ip804ar";
+		reg = <0x74>;
+		reset-gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
+
+		channels {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			pse_ch0: channel@0 {
+				reg = <0>;
+			};
+
+			pse_ch1: channel@1 {
+				reg = <1>;
+			};
+
+			pse_ch2: channel@2 {
+				reg = <2>;
+			};
+
+			pse_ch3: channel@3 {
+				reg = <3>;
+			};
+		};
+
+		pse-pis {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			pse_pi0: pse-pi@0 {
+				reg = <0>;
+				#pse-cells = <0>;
+				pairset-names = "alternative-a";
+				pairsets = <&pse_ch0>;
+			};
+
+			pse_pi1: pse-pi@1 {
+				reg = <1>;
+				#pse-cells = <0>;
+				pairset-names = "alternative-a";
+				pairsets = <&pse_ch1>;
+			};
+
+			pse_pi2: pse-pi@2 {
+				reg = <2>;
+				#pse-cells = <0>;
+				pairset-names = "alternative-a";
+				pairsets = <&pse_ch2>;
+			};
+
+			pse_pi3: pse-pi@3 {
+				reg = <3>;
+				#pse-cells = <0>;
+				pairset-names = "alternative-a";
+				pairsets = <&pse_ch3>;
+			};
+		};
+	};
 };
 
 &gmac0 {
@@ -154,6 +203,22 @@
 
 	nvmem-cells = <&macaddr_bdinfo_de00 1>;
 	nvmem-cell-names = "mac-address";
+};
+
+&ethphy0 {
+	pses = <&pse_pi0>;
+};
+
+&ethphy1 {
+	pses = <&pse_pi1>;
+};
+
+&ethphy2 {
+	pses = <&pse_pi2>;
+};
+
+&ethphy3 {
+	pses = <&pse_pi3>;
 };
 
 &ethphy4 {
