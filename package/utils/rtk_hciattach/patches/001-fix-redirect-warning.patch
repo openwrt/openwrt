@@ -1,0 +1,20 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Ivan Belokobylskiy <belokobylskij@gmail.com>
+Subject: [PATCH] rtk_hciattach: fix redirect warning
+
+Include <poll.h> instead of <sys/poll.h> to avoid the
+redirect warning with musl.
+
+Signed-off-by: Ivan Belokobylskiy <belokobylskij@gmail.com>
+---
+--- a/hciattach.c
++++ b/hciattach.c
+@@ -39,7 +39,7 @@
+ #include <termios.h>
+ #include <time.h>
+ #include <sys/time.h>
+-#include <sys/poll.h>
++#include <poll.h>
+ #include <sys/param.h>
+ #include <sys/ioctl.h>
+ #include <sys/socket.h>
