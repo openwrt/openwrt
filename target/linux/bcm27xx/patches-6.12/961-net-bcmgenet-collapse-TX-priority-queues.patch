@@ -1,0 +1,79 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Nicolai Buchwitz <nb@tipi-net.de>
+Date: Fri, 12 Jun 2026 20:59:15 +0000
+Subject: [PATCH] net: bcmgenet: collapse TX priority queues to a single queue
+
+The strict-priority TX queues can starve under multi-queue load and
+trip NETDEV WATCHDOG. The multi-queue design was originally used for
+STB use cases that are no longer needed (confirmed by Justin Chen at
+Broadcom). GENET v1 already exercises a single-queue path. Point v2-v5
+at the same configuration: ring 0 takes the full BD pool.
+
+Posted to net-next (reviewed by Justin Chen and Florian Fainelli):
+  https://lore.kernel.org/netdev/20260612205915.3156127-2-nb@tipi-net.de/
+
+That series only changes bcmgenet_hw_params_v2/v3/v4 because later
+kernels share the v4 table with v5. Linux 6.12 still has a separate
+GENET_V5 array slot, so this backport also sets v5 (Raspberry Pi 4 /
+CM4 / BCM2711).
+
+Tested upstream on Raspberry Pi CM4 (BCM2711). Baseline kernel trips
+NETDEV WATCHDOG within seconds under iperf3 UDP saturation
+(-u -b0 -P16 -t60). After the change the same test completes without a
+watchdog.
+
+Fixes: https://github.com/openwrt/openwrt/issues/20570
+
+Signed-off-by: Nicolai Buchwitz <nb@tipi-net.de>
+[6.12: hw_params is still an array; also set GENET_V5]
+Signed-off-by: Stuart Johnson <stuart@stu.org.uk>
+---
+ drivers/net/ethernet/broadcom/genet/bcmgenet.c | 16 ++++++++--------
+ 1 file changed, 8 insertions(+), 8 deletions(-)
+
+--- a/drivers/net/ethernet/broadcom/genet/bcmgenet.c
++++ b/drivers/net/ethernet/broadcom/genet/bcmgenet.c
+@@ -3743,8 +3743,8 @@ static struct bcmgenet_hw_params bcmgenet_hw_params[] = {
+ 		.words_per_bd = 2,
+ 	},
+ 	[GENET_V2] = {
+-		.tx_queues = 4,
+-		.tx_bds_per_q = 32,
++		.tx_queues = 0,
++		.tx_bds_per_q = 0,
+ 		.rx_queues = 0,
+ 		.rx_bds_per_q = 0,
+ 		.bp_in_en_shift = 16,
+@@ -3760,8 +3760,8 @@
+ 		.flags = GENET_HAS_EXT,
+ 	},
+ 	[GENET_V3] = {
+-		.tx_queues = 4,
+-		.tx_bds_per_q = 32,
++		.tx_queues = 0,
++		.tx_bds_per_q = 0,
+ 		.rx_queues = 0,
+ 		.rx_bds_per_q = 0,
+ 		.bp_in_en_shift = 17,
+@@ -3779,8 +3779,8 @@
+ 			 GENET_HAS_MOCA_LINK_DET,
+ 	},
+ 	[GENET_V4] = {
+-		.tx_queues = 4,
+-		.tx_bds_per_q = 32,
++		.tx_queues = 0,
++		.tx_bds_per_q = 0,
+ 		.rx_queues = 0,
+ 		.rx_bds_per_q = 0,
+ 		.bp_in_en_shift = 17,
+@@ -3798,8 +3798,8 @@
+ 			 GENET_HAS_MDIO_INTR | GENET_HAS_MOCA_LINK_DET,
+ 	},
+ 	[GENET_V5] = {
+-		.tx_queues = 4,
+-		.tx_bds_per_q = 32,
++		.tx_queues = 0,
++		.tx_bds_per_q = 0,
+ 		.rx_queues = 0,
+ 		.rx_bds_per_q = 0,
+ 		.bp_in_en_shift = 17,
