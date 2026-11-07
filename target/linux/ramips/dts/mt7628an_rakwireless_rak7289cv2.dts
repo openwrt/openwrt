@@ -1,0 +1,62 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "mt7628an_rakwireless_rak636.dtsi"
+
+/ {
+	compatible = "rakwireless,rak7289cv2", "mediatek,mt7628an-soc";
+	model = "RAKwireless RAK7289CV2";
+
+	gpio-export {
+		compatible = "gpio-export";
+
+		/* Quectel EG95 reset: pulse high, the vendor firmware for 1 s. */
+		modem-reset {
+			gpio-export,name = "modem-reset";
+			gpio-export,output = <0>;
+			gpios = <&gpio 2 GPIO_ACTIVE_HIGH>;
+		};
+
+		/*
+		 * The LoRa card in the first mPCIe slot. gpio-export,output is
+		 * the raw level, so <1> releases this and the GNSS reset.
+		 */
+		lora-reset {
+			gpio-export,name = "lora-reset";
+			gpio-export,output = <1>;
+			gpios = <&gpio 17 GPIO_ACTIVE_LOW>;
+		};
+
+		/* The u-blox GNSS receiver on UART1. */
+		gnss-reset {
+			gpio-export,name = "gnss-reset";
+			gpio-export,output = <1>;
+			gpios = <&gpio 16 GPIO_ACTIVE_LOW>;
+		};
+	};
+};
+
+&keys {
+	/*
+	 * Asserted when input power drops. BTN_7, as the vendor firmware has
+	 * it: KEY_POWER would run /etc/rc.button/power, and a brownout would
+	 * then power the gateway off for good.
+	 */
+	key-dying-gasp {
+		label = "dying-gasp";
+		gpios = <&gpio 18 GPIO_ACTIVE_LOW>;
+		linux,code = <BTN_7>;
+	};
+};
+
+/* GPIO 18, the dying gasp input, is PWM0 unless set to GPIO here. */
+&state_default {
+	pwm0 {
+		groups = "pwm0";
+		function = "gpio";
+	};
+};
+
+/* GNSS receiver, NMEA at 9600 baud. */
+&uart1 {
+	status = "okay";
+};
