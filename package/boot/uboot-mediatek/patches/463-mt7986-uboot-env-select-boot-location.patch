@@ -1,0 +1,22 @@
+--- a/board/mediatek/mt7986/mt7986_rfb.c
++++ b/board/mediatek/mt7986/mt7986_rfb.c
+@@ -97,7 +97,18 @@ int ft_system_setup(void *blob, struct b
+ 	const char *media;
+ 	u32 media_handle;
+ 
+-	switch ((readl(0x1001f6f0) & 0x300) >> 8) {
++	const char *boot_media_env;
++	int boot_media_type;
++    boot_media_env = env_get("boot_media");
++    if (boot_media_env) {
++        boot_media_type = simple_strtol(boot_media_env, NULL, 10);
++		printf("boot_media set from uboot. %d\n", boot_media_type);
++    } else {
++        // Fall back to hardware detection if env variable not set
++        boot_media_type = (readl(0x1001f6f0) & 0x300) >> 8;
++    }
++
++	switch (boot_media_type) {
+ 	case MT7986_BOOT_NOR:
+ 		media = "rootdisk-nor";
+ 		break
