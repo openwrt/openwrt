@@ -326,15 +326,7 @@
 	};
 };
 
-&q6v5_wcss {
-	firmware-name = "ath11k/IPQ5018/hw1.0/q6_fw.mdt",
-			"ath11k/IPQ5018/hw1.0/m3_fw.mdt";
-};
-
 &wifi {
 	status = "okay";
-
-	qcom,rproc = <&q6v5_wcss>;
 	qcom,calibration-variant = "TP-Link-EAP650-Outdoor-v1";
-	qcom,ath11k-fw-memory-mode = <1>;
 };

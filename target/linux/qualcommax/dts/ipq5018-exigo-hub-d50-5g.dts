@@ -440,17 +440,9 @@
 	wake-gpios = <&tlmm 19 GPIO_ACTIVE_HIGH>;
 };
 
-&q6v5_wcss {
-	firmware-name = "ath11k/IPQ5018/hw1.0/q6_fw.mdt",
-			"ath11k/IPQ5018/hw1.0/m3_fw.mdt";
-};
-
 &wifi {
 	status = "okay";
-
-	qcom,rproc = <&q6v5_wcss>;
 	qcom,calibration-variant = "Xunison-Exigo-Hub-D50-5G";
-	qcom,ath11k-fw-memory-mode = <1>;
 
 	nvmem-cells = <&caldata_ipq5018>, <&macaddr_gmac1 2>;
 	nvmem-cell-names = "calibration", "mac-address";

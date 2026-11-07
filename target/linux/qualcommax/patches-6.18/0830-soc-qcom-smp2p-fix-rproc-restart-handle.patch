@@ -1,0 +1,35 @@
+From cd08686dc07353a55b61692e8ed9e1356f470f69 Mon Sep 17 00:00:00 2001
+From: Ziyang Huang <hzyitc@outlook.com>
+Date: Sun, 1 Nov 2026 18:28:02 +0800
+Subject: [PATCH 1/1] soc: qcom: smp2p: fix remoteproc restart issue
+
+A kick is required to start the SMP2P communicating process in Q6.
+
+For the first boot, qcom_smp2p_probe() will do this.
+
+But in the remain restart sequence, the driver is waiting the interruption
+from the slave-kernel channel while the Q6 is waiting the kick to set the
+smem-state. So the restart proccess always timeouts.
+
+Here we check the slave-kernel value. The default 0 value mean Q6 has
+restarted and is waiting for the kick. After kick sent, Q6 will set the
+ready bit, so the value becomes non-zero.
+
+Signed-off-by: Ziyang Huang <hzyitc@outlook.com>
+---
+ drivers/soc/qcom/smp2p.c | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+--- a/drivers/soc/qcom/smp2p.c
++++ b/drivers/soc/qcom/smp2p.c
+@@ -273,6 +273,10 @@ static void qcom_smp2p_notify_in(struct
+ 				handle_nested_irq(irq_pin);
+ 			}
+ 		}
++
++		if (val == 0)
++			/* Q6 has restarted, kick as required. */
++			qcom_smp2p_kick(smp2p);
+ 	}
+ }
+ 

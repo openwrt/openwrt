@@ -5,8 +5,31 @@
  * Copyright (c) 2023-2025 The Linux Foundation. All rights reserved.
  */
 
+#define PD1_DDR_ADDR(addr)	((addr)-0x100000)
+#define PD23_DDR_ADDR(addr)	((addr)-0x40000)
+
 &q6_region {
-	reg = <0x0 0x4b000000 0x0 0x3000000>;
+	/*
+	 * Address	Size		Region
+	 * 0x4b000000	0x01300000	Q6
+	 * 0x4c300000	0x00100000	Heap
+	 * 0x4c400000	0x00040000	PD1 BDF
+	 * 0x4c440000	0x00041000	PD1 M3 Firmware
+	 * 0x4c4a0000	0x00041000	PD2/3 M3 Firmware
+	 * 0x4c500000	0x00c00000	PD1 DDR
+	 * 0x4d100000	0x00040000	PD2 BDF
+	 * 0x4d140000	0x00cc0000	PD2 DDR
+	 * None		0x00100000	PD1 M3 Dump
+	 * 0x4de00000	0x00200000	PD1 CalDB
+	 * 0x4e000000	0x00500000	PD2 CalDB
+	 * 0x4e500000	0x00100000	PD2 M3 Dump
+	 * 0x4e600000	0x00040000	PD3 BDF
+	 * 0x4e640000	0x00cc0000	PD3 DDR
+	 * 0x4f300000	0x00500000	PD3 CalDB
+	 * 0x4f800000	0x00500000	PD3 M3 Dump
+	 */
+	// reg = <0x0 0x4b000000 0x0 0x3600000>; /* for 1*QCN6122 instance */
+	reg = <0x0 0x4b000000 0x0 0x4900000>; /* for 2*QCN6122 instance */
 };
 
 &q6v5_wcss {
@@ -92,6 +115,17 @@
 	};
 };
 
+&wifi {
+	qcom,rproc = <&q6_wcss_pd1>;
+	qcom,userpd-subsys-name = "q6v5_wcss_userpd1";
+
+	qcom,ath11k-fw-memory-mode = <1>;
+	qcom,bdf-addr = <0x4c400000>; /* size=0x40000 */
+	// qcom,ddr-addr = <PD1_DDR_ADDR(0x4c500000)>; /* default_value=PD1_DDR_ADDR(bdf_addr+0x100000) size=0xc00000 */
+	qcom,caldb-addr = <0x4de00000>; /* size=0x200000 */
+	// qcom,m3-dump-addr = <0x4d400000>; /* size=0x100000 */
+};
+
 &soc {
 	//QCN6122: 1st instance
 	wifi1: wifi@b00a040 {
@@ -110,6 +144,16 @@
 			     <GIC_SPI 426 IRQ_TYPE_EDGE_RISING>,
 			     <GIC_SPI 427 IRQ_TYPE_EDGE_RISING>,
 			     <GIC_SPI 428 IRQ_TYPE_EDGE_RISING>;
+
+		qcom,rproc = <&q6_wcss_pd2>;
+		qcom,userpd-subsys-name = "q6v5_wcss_userpd2";
+
+		qcom,ath11k-fw-memory-mode = <1>;
+		qcom,bdf-addr = <0x4d100000>; /* size=0x40000 */
+		// qcom,ddr-addr = <PD23_DDR_ADDR(0x4d140000)>; /* default_value=PD23_DDR_ADDR(bdf_addr+0x40000) size=0xcc0000 */
+		qcom,caldb-addr = <0x4e000000>; /* size=0x500000 */
+		qcom,m3-dump-addr = <0x4e500000>; /* size=0x100000 */
+
 		status = "disabled";
 	};
 
@@ -130,6 +174,16 @@
 			     <GIC_SPI 458 IRQ_TYPE_EDGE_RISING>,
 			     <GIC_SPI 459 IRQ_TYPE_EDGE_RISING>,
 			     <GIC_SPI 460 IRQ_TYPE_EDGE_RISING>;
+
+		qcom,rproc = <&q6_wcss_pd3>;
+		qcom,userpd-subsys-name = "q6v5_wcss_userpd3";
+
+		qcom,ath11k-fw-memory-mode = <1>;
+		qcom,bdf-addr = <0x4e600000>; /* size=0x40000 */
+		// qcom,ddr-addr = <PD23_DDR_ADDR(0x4e640000)>; /* default_value=PD23_DDR_ADDR(bdf_addr+0x40000) size=0xcc0000 */
+		qcom,caldb-addr = <0x4f300000>; /* size=0x500000 */
+		qcom,m3-dump-addr = <0x4f800000>; /* size=0x100000 */
+
 		status = "disabled";
 	};
 };

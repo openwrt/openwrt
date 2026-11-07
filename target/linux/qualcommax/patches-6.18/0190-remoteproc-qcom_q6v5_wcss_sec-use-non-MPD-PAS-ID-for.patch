@@ -1,0 +1,29 @@
+From 4c40255cad87cb58e1e9e37fb4e076263119fc93 Mon Sep 17 00:00:00 2001
+From: Ziyang Huang <hzyitc@outlook.com>
+Date: Sun, 1 Nov 2026 18:58:52 +0800
+Subject: [PATCH 1/1] remoteproc: qcom_q6v5_wcss_sec: use non-MPD PAS ID for
+ IPQ5018
+
+WCSS_PAS_ID will bring up both Q6 and WCSS subsystem.
+
+In MultiPD arch, MPD_WCSS_PAS_ID only bring up Q6 subsystem  whlile the
+WCSS subsystem belongs to UserPD1, becuase it only control the internal
+2.4G WiFi. The driver will bring up it through a TZ call durning UserPD1
+start sequence.
+
+Signed-off-by: Ziyang Huang <hzyitc@outlook.com>
+---
+ drivers/remoteproc/qcom_q6v5_wcss_sec.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/remoteproc/qcom_q6v5_wcss_sec.c
++++ b/drivers/remoteproc/qcom_q6v5_wcss_sec.c
+@@ -414,7 +414,7 @@ static const struct wcss_data wcss_sec_i
+ };
+ 
+ static const struct of_device_id wcss_sec_of_match[] = {
+-	{ .compatible = "qcom,ipq5018-wcss-sec-pil", .data = &wcss_sec_ipq5332_res_init },
++	{ .compatible = "qcom,ipq5018-wcss-sec-pil", .data = &wcss_sec_ipq9574_res_init },
+ 	{ .compatible = "qcom,ipq5332-wcss-sec-pil", .data = &wcss_sec_ipq5332_res_init },
+ 	{ .compatible = "qcom,ipq5424-wcss-sec-pil", .data = &wcss_sec_ipq5424_res_init },
+ 	{ .compatible = "qcom,ipq9574-wcss-sec-pil", .data = &wcss_sec_ipq9574_res_init },
