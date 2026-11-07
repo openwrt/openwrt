@@ -24,7 +24,8 @@ platform_check_image() {
 	jiorouter,ax6000-jidu6111|\
 	jiorouter,ax6000-jidu6411|\
 	jiorouter,ax6000-jidu6611|\
-	jiorouter,ax6000-jidu6711)
+	jiorouter,ax6000-jidu6711|\
+	jiorouter,ax6000-jidu6811)
 		nand_do_platform_check "$(board_name)" "$1"
 		return $?
 		;;
@@ -57,7 +58,8 @@ platform_do_upgrade() {
 	jiorouter,ax6000-jidu6111|\
 	jiorouter,ax6000-jidu6411|\
 	jiorouter,ax6000-jidu6611|\
-	jiorouter,ax6000-jidu6711)
+	jiorouter,ax6000-jidu6711|\
+	jiorouter,ax6000-jidu6811)
 		jiorouter_initial_setup || return 1
 		CI_UBIPART="ubi"
 		nand_do_upgrade "$1"

@@ -77,6 +77,14 @@ define Device/jiorouter_ax6000-jidu6711
 endef
 TARGET_DEVICES += jiorouter_ax6000-jidu6711
 
+define Device/jiorouter_ax6000-jidu6811
+	$(call Device/jiorouter_ax6000-common)
+	DEVICE_VARIANT := JIDU6811
+	DEVICE_DTS_CONFIG := config@jidu6811
+	DEVICE_DTS := ipq9554-jiorouter-ax6000-jidu6811
+endef
+TARGET_DEVICES += jiorouter_ax6000-jidu6811
+
 define Device/linksys_ln6001
 	$(call Device/FitImage)
 	DEVICE_VENDOR := Linksys
