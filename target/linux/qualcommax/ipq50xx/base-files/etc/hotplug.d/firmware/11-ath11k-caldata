@@ -43,6 +43,14 @@ case "$FIRMWARE" in
 		ath11k_patch_mac $(macaddr_add $(mtd_get_mac_binary "0:art" 0x6) 2) 0
 		ath11k_set_macflag
 		;;
+	h3c,magic-nx30|\
+	h3c,magic-rc3000-v1|\
+	h3c,magic-rc3000-v2|\
+	h3c,magic-rc3000-v3)
+		caldata_extract "0:art" 0x1000 0x20000
+		ath11k_patch_mac $(macaddr_add $(mtd_get_mac_ascii 0:appsblenv ethaddr) 2) 0
+		ath11k_set_macflag
+		;;
 	linksys,mr2000|\
 	linksys,mr5500|\
 	linksys,mx2000|\
@@ -133,6 +141,14 @@ case "$FIRMWARE" in
 	glinet,gl-b3000)
 		caldata_extract "0:art" 0x26800 0x20000
 		ath11k_patch_mac $(macaddr_add $(get_mac_label_dt) 4) 0
+		ath11k_set_macflag
+		;;
+	h3c,magic-nx30|\
+	h3c,magic-rc3000-v1|\
+	h3c,magic-rc3000-v2|\
+	h3c,magic-rc3000-v3)
+		caldata_extract "0:art" 0x26800 0x20000
+		ath11k_patch_mac $(macaddr_add $(mtd_get_mac_ascii 0:appsblenv ethaddr) 3) 0
 		ath11k_set_macflag
 		;;
 	linksys,mr2000|\
