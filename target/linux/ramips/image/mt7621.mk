@@ -3945,6 +3945,20 @@ define Device/zio_freezio
 endef
 TARGET_DEVICES += zio_freezio
 
+define Device/zte_mf258
+  $(Device/nand)
+  $(Device/uimage-lzma-loader)
+  IMAGE_SIZE := 112640k
+  KERNEL_SIZE := 8192k
+  DEVICE_VENDOR := ZTE
+  DEVICE_MODEL := MF258
+  DEVICE_ALT0_VENDOR := ZTE
+  DEVICE_ALT0_MODEL := MK258
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615e kmod-mt7663-firmware-ap \
+	kmod-8021q
+endef
+TARGET_DEVICES += zte_mf258
+
 define Device/zyxel_lte3301-plus
   $(Device/nand)
   DEVICE_VENDOR := Zyxel
