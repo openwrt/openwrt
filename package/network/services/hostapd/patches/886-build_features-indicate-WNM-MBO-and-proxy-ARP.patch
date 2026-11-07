@@ -1,0 +1,42 @@
+From 8cd4c225a008e6aa67806bd032d071ba4c3e4910 Mon Sep 17 00:00:00 2001
+From: Christopher Griffin <christophergriffin05@gmail.com>
+Date: Tue, 3 Nov 2026 23:40:00 -0600
+Subject: [PATCH] build_features: indicate WNM, MBO and proxy ARP
+
+A program that configures hostapd cannot tell whether the build parses
+bss_transition, wnm_sleep_mode and wnm_sleep_mode_no_keys (CONFIG_WNM_AP),
+mbo (CONFIG_MBO) or proxy_arp (CONFIG_PROXYARP); a build without one
+refuses the whole configuration at such a line, as an unknown item.
+Answer "wnm-ap", "mbo" and "proxyarp" in has_feature(), so that
+`hostapd -vwnm-ap` and the others tell it.
+
+CONFIG_WNM alone does not tell it: wpa_supplicant's Makefile sets
+CONFIG_WNM for CONFIG_MBO, so a multicall wpad-basic defines CONFIG_WNM
+but not CONFIG_WNM_AP, and refuses bss_transition.
+
+Signed-off-by: Christopher Griffin <christophergriffin05@gmail.com>
+---
+ src/utils/build_features.h | 12 ++++++++++++
+ 1 file changed, 12 insertions(+)
+
+--- a/src/utils/build_features.h
++++ b/src/utils/build_features.h
+@@ -79,6 +79,18 @@ static inline int has_feature(const char
+ 	if (!strcmp(feat, "robust-av-scs"))
+ 		return 1;
+ #endif
++#ifdef CONFIG_WNM_AP
++	if (!strcmp(feat, "wnm-ap"))
++		return 1;
++#endif
++#ifdef CONFIG_MBO
++	if (!strcmp(feat, "mbo"))
++		return 1;
++#endif
++#ifdef CONFIG_PROXYARP
++	if (!strcmp(feat, "proxyarp"))
++		return 1;
++#endif
+ 	return 0;
+ }
+ 
