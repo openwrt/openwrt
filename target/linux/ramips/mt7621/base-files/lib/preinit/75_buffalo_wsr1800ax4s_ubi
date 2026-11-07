@@ -1,0 +1,52 @@
+# SPDX-License-Identifier: GPL-2.0-only
+#
+# The stock firmware of the Buffalo WSR-1800AX4S does not use UBI and
+# its web UI updater writes only the kernel and rootfs partitions, so
+# after a factory install the "ubi" partition still holds stock data
+# and mount_root finds no rootfs_data volume to use as the overlay.
+# Prepare the partition here, before mount_root runs, with the same
+# steps wsr1800ax4s_ensure_ubi() in platform.sh performs on the first
+# sysupgrade (modelled on bcm4908's rootfs_prepare). A partition that
+# already carries a usable UBI is left completely untouched.
+
+buffalo_wsr1800ax4s_ubi_prepare() {
+	local mtdnum dev vdir
+
+	[ "$(board_name)" = "buffalo,wsr-1800ax4s" ] || return
+
+	# A usable rootfs_data volume means there is nothing to do.
+	ubinfo /dev/ubi0 -N rootfs_data > /dev/null 2>&1 && return
+
+	if [ ! -e /dev/ubi0 ]; then
+		mtdnum="$(find_mtd_index ubi)"
+		[ -n "$mtdnum" ] || return
+
+		# Attach fails on the stock leftover content: format the
+		# partition, like the first sysupgrade does.
+		if ! ubiattach -m "$mtdnum" 2> /dev/null; then
+			ubiformat "/dev/mtd$mtdnum" -y || return
+			ubiattach -m "$mtdnum" || return
+		fi
+	fi
+
+	# /dev is populated before preinit hooks run and gains no nodes
+	# for devices created here, so the mtd-utils cannot open the
+	# UBI device and mount_root cannot open the volume device.
+	# Create both nodes from sysfs, like bcm4908's rootfs_prepare
+	# does for its volume device.
+	dev="$(cat /sys/class/ubi/ubi0/dev 2> /dev/null)"
+	[ -n "$dev" ] && [ ! -e /dev/ubi0 ] && \
+		mknod -m 0600 /dev/ubi0 c "${dev%:*}" "${dev#*:}"
+
+	ubimkvol /dev/ubi0 -N rootfs_data -m > /dev/null 2>&1
+
+	for vdir in /sys/class/ubi/ubi0_*; do
+		[ -f "$vdir/name" ] || continue
+		[ "$(cat "$vdir/name")" = "rootfs_data" ] || continue
+		dev="$(cat "$vdir/dev" 2> /dev/null)"
+		[ -n "$dev" ] && [ ! -e "/dev/${vdir##*/}" ] && \
+			mknod -m 0600 "/dev/${vdir##*/}" c "${dev%:*}" "${dev#*:}"
+	done
+}
+
+[ "$INITRAMFS" = "1" ] || boot_hook_add preinit_main buffalo_wsr1800ax4s_ubi_prepare
