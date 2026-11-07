@@ -10,6 +10,22 @@
 
 #include "uencrypt.h"
 
+unsigned char *uencrypt_hexstr2buf(const char *str, long *len)
+{
+    unsigned char *buf;
+    long inlen = strlen(str);
+
+    *len = 0;
+    if (inlen % 2)
+        return NULL;
+
+    *len = inlen >> 1;
+    buf = malloc(*len);
+    for  (long x = 0; x < *len; x++)
+        sscanf(str + x * 2, "%2hhx", buf + x);
+    return buf;
+}
+
 static void check_enc_dec(const int enc)
 {
     if (enc == -1)
