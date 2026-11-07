@@ -1,0 +1,51 @@
+From: Michael Lotz <mmlr@mlotz.ch>
+Subject: nvmem: fix cell write clobber of outside bits
+
+When a nvmem cell does not end on a byte boundary, the missing bits are
+filled by reading the pre-existing value. They are then masked and or-ed
+with the value in the buffer to be written, which gets its value from
+the input buffer. However, when the input buffer has bits set outside
+the width of the cell, those were never cleared. That allowed a nvmem
+cell write to clobber the remaining upper bits. Fix this by first
+clearing the bits of the buffer that are outside of the cell and only
+then or-ing the pre-existing value.
+
+Cell declaration:
+
+    status@0 {
+        reg = <0x0 0x1>;
+        bits = <2 2>;
+    };
+
+Existing value:  0x10
+Write value:     0xff
+Expected result: 0x1c
+Actual result:   0xfc
+
+So contrary to expectation the upper bits of the write buffer were
+written instead of being masked off.
+
+Signed-off-by: Michael Lotz <mmlr@mlotz.ch>
+--- a/drivers/nvmem/core.c
++++ b/drivers/nvmem/core.c
+@@ -1776,7 +1776,7 @@ static void *nvmem_cell_prepare_write_bu
+ {
+ 	struct nvmem_device *nvmem = cell->nvmem;
+ 	int i, rc, nbits, bit_offset = cell->bit_offset;
+-	u8 v, *p, *buf, *b, pbyte, pbits;
++	u8 v, *p, *buf, *b, pbyte, pbits, mask;
+ 
+ 	nbits = cell->nbits;
+ 	buf = kzalloc(cell->bytes, GFP_KERNEL);
+@@ -1814,8 +1814,10 @@ static void *nvmem_cell_prepare_write_bu
+ 				    cell->offset + cell->bytes - 1, &v, 1);
+ 		if (rc)
+ 			goto err;
+-		*p |= GENMASK(7, (nbits + bit_offset) % BITS_PER_BYTE) & v;
+ 
++		mask = GENMASK(7, (nbits + bit_offset) % BITS_PER_BYTE);
++		*p &= ~mask;
++		*p |= v & mask;
+ 	}
+ 
+ 	return buf;
