@@ -28,6 +28,43 @@ export function wiphy_band(info, band) {
 	return info.wiphy_bands[band_idx];
 };
 
+function freq_in_range(freq_ranges, freq) {
+	if (!freq_ranges)
+		return true;
+
+	freq *= 1000;
+	for (let range in freq_ranges)
+		if (freq >= range.start && freq <= range.end)
+			return true;
+}
+
+function radio_supports_band(radio, band) {
+	if (!radio.freq_ranges || !band?.freqs)
+		return false;
+
+	for (let freq in band.freqs)
+		if (!freq.disabled && freq_in_range(radio.freq_ranges, freq.freq))
+			return true;
+
+	return false;
+}
+
+export function wiphy_radio(info, band, current) {
+	let band_info = wiphy_band(info, band);
+	if (!info?.radios || !band_info)
+		return current;
+
+	for (let radio in info.radios)
+		if (radio.index == current && radio_supports_band(radio, band_info))
+			return current;
+
+	for (let radio in info.radios)
+		if (radio_supports_band(radio, band_info))
+			return radio.index;
+
+	return current;
+};
+
 export function log(msg) {
 	printf(`wifi-scripts: ${msg}\n`);
 };
