@@ -653,9 +653,9 @@ function iface_key_caching(config) {
 	if (config.wpa < 2)
 		return;
 
-	if (config.network_bridge && config.rsn_preauth) {
+	if (config.network_ifname && config.rsn_preauth) {
 		set_default(config, 'okc', true);
-		config.rsn_preauth_interfaces = config.network_bridge;
+		config.rsn_preauth_interfaces = config.network_ifname;
 
 		append_vars(config, [
 			'rsn_preauth', 'rsn_preauth_interfaces'
