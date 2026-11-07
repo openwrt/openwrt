@@ -1,0 +1,49 @@
+From 23e1aa4dd47413fdba234c5a203f24ce226813c6 Mon Sep 17 00:00:00 2001
+From: Henry Essinghigh <henry@essinghigh.dev>
+Date: Fri, 30 Oct 2026 00:38:47 +0000
+Subject: [PATCH] MIPS: Octeon: ignore bootloader mem= when the image cmdline
+ replaces it
+
+The PA-220 U-Boot autoboot passes PanOS arguments including
+"mem=4096", which prom_init() would parse as a 4096-byte limit. When
+the image carries a replacing command line ("-..."), skip the
+bootloader's mem= as well.
+
+Signed-off-by: Henry Essinghigh <henry@essinghigh.dev>
+---
+ arch/mips/cavium-octeon/setup.c | 17 +++++++++++++++++
+ 1 file changed, 17 insertions(+)
+
+--- a/arch/mips/cavium-octeon/setup.c
++++ b/arch/mips/cavium-octeon/setup.c
+@@ -683,6 +683,21 @@ static int __init octeon_use_image_cmdli
+ static inline int octeon_use_image_cmdline(void) { return 0; }
+ #endif
+ 
++/*
++ * When the image carries a replacing command line ("-..."), the
++ * bootloader's arguments are discarded; that must include its mem= limit
++ * (e.g. the PA-220 U-Boot passes PanOS's "mem=4096", which this code
++ * would read as 4096 bytes).
++ */
++static bool octeon_image_cmdline_replaces(void)
++{
++#ifdef CONFIG_IMAGE_CMDLINE_HACK
++	return __image_cmdline[0] == '-';
++#else
++	return false;
++#endif
++}
++
+ /**
+  * prom_init - Early entry point for arch setup
+  */
+@@ -922,6 +937,8 @@ void __init prom_init(void)
+ 			cvmx_phys_to_ptr(octeon_boot_desc_ptr->argv[i]);
+ 		if ((strncmp(arg, "MEM=", 4) == 0) ||
+ 		    (strncmp(arg, "mem=", 4) == 0)) {
++			if (octeon_image_cmdline_replaces())
++				continue;
+ 			max_memory = memparse(arg + 4, &p);
+ 			if (max_memory == 0)
+ 				max_memory = 32ull << 30;
