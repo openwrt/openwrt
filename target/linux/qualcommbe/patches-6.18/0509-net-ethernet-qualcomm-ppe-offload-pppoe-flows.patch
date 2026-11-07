@@ -1,0 +1,950 @@
+From: Kenneth Kasilag <kenneth@kasilag.me>
+Date: Sun, 05 Jul 2026 00:00:00 +0000
+Subject: [PATCH] net: ethernet: qualcomm: ppe: offload PPPoE flows
+
+Offload flows of a PPPoE WAN. Consume the channel lifecycle events added by
+patch 0420 and recover the PPPoE/physical hierarchy through the existing
+forward-path API. A successful connect creates a persistent session slot
+of (session ID, peer MAC). It owns an L3 interface past the per-port ones
+and a PPPoE session table entry; disconnect invalidates it. Individual
+PPPOE_PUSH flow rules only look up and reference the published session.
+
+The L3 interface carries the source MAC rewrite of the rule together
+with the session ID and the PPPoE flag, so the hardware encapsulates
+on egress; the session table entry assigns PPPoE ingress of the
+session on any physical port to the same interface, which terminates
+it. The reverse direction of the connection arrives as a plain rule
+of the inner tuple. Netfilter emits no decap key or action, and installs
+an ordinary flow entry, which the terminated packets then hit. The
+session table write bounds its index against the per-SoC table depth
+carried by the variant.
+
+Match the complete vendor session key: enable both unicast and
+multicast resolution, validate the peer/server source MAC, and use the
+all-physical-port bitmap. The port L3 interface binding is left
+untouched by PPPoE flows: session traffic resolves its interface
+through the session table, and non-PPPoE ingress on a PPPoE WAN port keeps
+taking the software path. A separate lifecycle reference prevents
+directional flow expiry from removing a live session.
+
+Program the session dependencies before publishing its valid bits and
+invalidate those bits before teardown. Preserve the tunnel-owned EXT2
+fields when updating the ordinary L3 mapping. If publication rollback or
+disconnect invalidation fails, retain the session key and its dependencies
+in a poisoned slot so unknown hardware state cannot be reused.
+
+Also reject rules with match keys outside the supported set instead
+of skipping the unknown keys. Tunnel routes, for example, arrive with
+ENC_* keys, and offloading them as plain routed flows would have
+transmitted the packets unencapsulated. The TCP flags key remains a
+deliberate exception: the hardware forwards FIN/RST packets instead
+of punting them, which only delays the flow teardown until the flow
+idles out.
+
+Signed-off-by: Kenneth Kasilag <kenneth@kasilag.me>
+---
+--- a/drivers/net/ethernet/qualcomm/ppe/edma_port.c
++++ b/drivers/net/ethernet/qualcomm/ppe/edma_port.c
+@@ -179,14 +179,14 @@ static int edma_port_change_mtu(struct n
+ 	port = port_priv->ppe_port;
+ 	old_mtu = netdev->mtu;
+ 	ret = ppe_l3_if_set(port->ppe_dev, port->port_id, netdev->dev_addr,
+-			    mtu);
++			    mtu, -1);
+ 	if (ret)
+ 		return ret;
+ 
+ 	ret = ppe_port_set_maxframe(port, mtu);
+ 	if (ret) {
+ 		ppe_l3_if_set(port->ppe_dev, port->port_id,
+-			      netdev->dev_addr, old_mtu);
++			      netdev->dev_addr, old_mtu, -1);
+ 		return ret;
+ 	}
+ 
+@@ -318,7 +318,7 @@ static int edma_port_set_mac_address(str
+ 
+ 	ret = ppe_l3_if_set(port_priv->ppe_port->ppe_dev,
+ 			    port_priv->ppe_port->port_id,
+-			    addr->sa_data, netdev->mtu);
++			    addr->sa_data, netdev->mtu, -1);
+ 	if (ret) {
+ 		netdev_err(netdev, "set L3 interface MAC failed: %d\n", ret);
+ 		return ret;
+@@ -488,7 +488,7 @@ int edma_port_setup(struct ppe_port *por
+ 	}
+ 
+ 	ret = ppe_l3_if_set(ppe_dev, port_id, netdev->dev_addr,
+-			    netdev->mtu);
++			    netdev->mtu, -1);
+ 	if (ret)
+ 		goto l3_setup_fail;
+ 
+--- a/drivers/net/ethernet/qualcomm/ppe/ppe_flow.c
++++ b/drivers/net/ethernet/qualcomm/ppe/ppe_flow.c
+@@ -333,14 +333,19 @@ int ppe_my_mac_set(struct ppe_device *pp
+  * @addr: MAC address of the interface, the source MAC of routed packets
+  * leaving through it
+  * @mtu: MTU of the interface
++ * @pppoe_sid: PPPoE session ID of the interface, negative when it is
++ * not a PPPoE interface
+  *
+  * Configure the ingress side (routing enable, MTU) and the egress side
+- * (source MAC rewrite) of an L3 interface.
++ * (source MAC rewrite) of an L3 interface. On a PPPoE interface the
++ * ingress side terminates the session of the packets which the PPPoE
++ * session table assigned to the interface, and the egress side
++ * encapsulates the packets it transmits with the session ID.
+  *
+  * Return: 0 on success, negative error code on failure.
+  */
+ int ppe_l3_if_set(struct ppe_device *ppe_dev, int index, const u8 *addr,
+-		  int mtu)
++		  int mtu, int pppoe_sid)
+ {
+ 	u32 in[3] = {}, eg[3] = {};
+ 	u32 reg;
+@@ -363,6 +368,7 @@ int ppe_l3_if_set(struct ppe_device *ppe
+ 	in[1] &= ~(PPE_IN_L3_IF_W1_TTL_EXCEED_CMD |
+ 		   PPE_IN_L3_IF_W1_TTL_EXCEED_DEACCEL |
+ 		   PPE_IN_L3_IF_W1_DMAC_CHECK_DIS |
++		   PPE_IN_L3_IF_W1_PPPOE_EN |
+ 		   PPE_IN_L3_IF_W1_MRU_IPV6);
+ 	in[1] |= FIELD_PREP(PPE_IN_L3_IF_W1_TTL_EXCEED_CMD,
+ 			    PPE_ACTION_REDIRECT_TO_CPU);
+@@ -374,6 +380,9 @@ int ppe_l3_if_set(struct ppe_device *ppe
+ 	in[2] |= FIELD_PREP(PPE_IN_L3_IF_W2_UDP_CSM0_CMD,
+ 			    PPE_IN_L3_IF_UDP_CSM0_MAPT_RECALCULATE);
+ 
++	if (pppoe_sid >= 0)
++		in[1] |= PPE_IN_L3_IF_W1_PPPOE_EN;
++
+ 	ret = regmap_bulk_write(ppe_dev->regmap, reg, in, ARRAY_SIZE(in));
+ 	if (ret)
+ 		return ret;
+@@ -382,6 +391,11 @@ int ppe_l3_if_set(struct ppe_device *ppe
+ 	eg[1] = FIELD_PREP(PPE_EG_L3_IF_W1_MAC_ADDR_HI,
+ 			   addr[0] << 8 | addr[1]);
+ 
++	if (pppoe_sid >= 0) {
++		eg[1] |= FIELD_PREP(PPE_EG_L3_IF_W1_SESSION_ID, pppoe_sid);
++		eg[2] = PPE_EG_L3_IF_W2_PPPOE_EN;
++	}
++
+ 	reg = PPE_EG_L3_IF_TBL_ADDR + PPE_EG_L3_IF_TBL_INC * index;
+ 
+ 	return regmap_bulk_write(ppe_dev->regmap, reg, eg, ARRAY_SIZE(eg));
+@@ -418,6 +432,91 @@ int ppe_l3_if_clear(struct ppe_device *p
+ }
+ 
+ /**
++ * ppe_pppoe_session_set - Program a PPPoE session table entry
++ * @ppe_dev: PPE device
++ * @index: PPPoE session table index
++ * @enable: Whether to install or clear the entry
++ * @sid: PPPoE session ID
++ * @peer: PPPoE peer/server MAC address
++ * @l3_if: L3 interface assigned to the terminated packets
++ *
++ * Match the session on every PPE ingress port by SID and peer MAC, as
++ * the vendor interface-lifecycle transaction does. Both unicast and
++ * multicast session traffic resolves to the PPPoE L3 interface.
++ *
++ * Return: 0 on success, negative error code on failure.
++ */
++int ppe_pppoe_session_set(struct ppe_device *ppe_dev, int index,
++			  bool enable, u16 sid, const u8 *peer, int l3_if)
++{
++	u32 ext2_mask = PPE_PPPOE_SESSION_EXT2_L3_IF_VALID |
++			PPE_PPPOE_SESSION_EXT2_L3_IF;
++	u32 base_reg, ext_reg, ext1_reg, ext2_reg;
++	u32 val, ext, ext1, ext2;
++	int ret = 0, err;
++
++	if (index >= ppe_dev->variant->num_pppoe_sessions)
++		return -EINVAL;
++
++	base_reg = PPE_PPPOE_SESSION_ADDR + PPE_PPPOE_SESSION_INC * index;
++	ext_reg = PPE_PPPOE_SESSION_EXT_ADDR +
++		  PPE_PPPOE_SESSION_EXT_INC * index;
++	ext1_reg = PPE_PPPOE_SESSION_EXT1_ADDR +
++		   PPE_PPPOE_SESSION_EXT1_INC * index;
++	ext2_reg = PPE_PPPOE_SESSION_EXT2_ADDR +
++		   PPE_PPPOE_SESSION_EXT2_INC * index;
++
++	if (!enable) {
++		/* Invalidate first; attempt every clear and return the first error. */
++		ret = regmap_write(ppe_dev->regmap, ext_reg, 0);
++		err = regmap_update_bits(ppe_dev->regmap, ext2_reg,
++					 ext2_mask, 0);
++		if (!ret)
++			ret = err;
++		err = regmap_write(ppe_dev->regmap, ext1_reg, 0);
++		if (!ret)
++			ret = err;
++		err = regmap_write(ppe_dev->regmap, base_reg, 0);
++		if (!ret)
++			ret = err;
++		return ret;
++	}
++
++	val = FIELD_PREP(PPE_PPPOE_SESSION_SESSION_ID, sid) |
++	      FIELD_PREP(PPE_PPPOE_SESSION_PORT_BITMAP,
++			 FIELD_MAX(PPE_PPPOE_SESSION_PORT_BITMAP));
++	ext = PPE_PPPOE_SESSION_EXT_MC_VALID |
++	      PPE_PPPOE_SESSION_EXT_UC_VALID |
++	      PPE_PPPOE_SESSION_EXT_SMAC_VALID |
++	      FIELD_PREP(PPE_PPPOE_SESSION_EXT_SMAC_HI,
++			 peer[4] << 8 | peer[5]);
++	ext1 = peer[0] << 24 | peer[1] << 16 | peer[2] << 8 | peer[3];
++	ext2 = PPE_PPPOE_SESSION_EXT2_L3_IF_VALID |
++	       FIELD_PREP(PPE_PPPOE_SESSION_EXT2_L3_IF, l3_if);
++
++	ret = regmap_write(ppe_dev->regmap, base_reg, val);
++	if (ret)
++		goto rollback;
++	ret = regmap_write(ppe_dev->regmap, ext1_reg, ext1);
++	if (ret)
++		goto rollback;
++	ret = regmap_update_bits(ppe_dev->regmap, ext2_reg, ext2_mask, ext2);
++	if (ret)
++		goto rollback;
++	ret = regmap_write(ppe_dev->regmap, ext_reg, ext);
++	if (!ret)
++		return 0;
++
++rollback:
++	/* Best effort: leave the row invalid and preserve tunnel EXT2 fields. */
++	regmap_write(ppe_dev->regmap, ext_reg, 0);
++	regmap_update_bits(ppe_dev->regmap, ext2_reg, ext2_mask, 0);
++	regmap_write(ppe_dev->regmap, ext1_reg, 0);
++	regmap_write(ppe_dev->regmap, base_reg, 0);
++	return ret;
++}
++
++/**
+  * ppe_port_l3_if_set - Bind a PPE port to an L3 interface
+  * @ppe_dev: PPE device
+  * @port: PPE port to configure
+--- a/drivers/net/ethernet/qualcomm/ppe/ppe_flow.h
++++ b/drivers/net/ethernet/qualcomm/ppe/ppe_flow.h
+@@ -70,11 +70,13 @@ int ppe_flow_hw_init(struct ppe_device *
+ int ppe_my_mac_set(struct ppe_device *ppe_dev, int index, const u8 *addr,
+ 		   bool valid);
+ int ppe_l3_if_set(struct ppe_device *ppe_dev, int index, const u8 *addr,
+-		  int mtu);
++		  int mtu, int pppoe_sid);
+ int ppe_l3_if_my_mac_set(struct ppe_device *ppe_dev, int index,
+ 			 int my_mac, bool enable);
+ int ppe_l3_if_clear(struct ppe_device *ppe_dev, int index);
+ int ppe_port_l3_if_set(struct ppe_device *ppe_dev, int port, int l3_if);
++int ppe_pppoe_session_set(struct ppe_device *ppe_dev, int index,
++			  bool enable, u16 sid, const u8 *peer, int l3_if);
+ int ppe_pub_ip_set(struct ppe_device *ppe_dev, int index, __be32 addr);
+ int ppe_nexthop_set(struct ppe_device *ppe_dev, int index,
+ 		    const struct ppe_flow_nexthop *nh);
+--- a/drivers/net/ethernet/qualcomm/ppe/ppe_flowtable.c
++++ b/drivers/net/ethernet/qualcomm/ppe/ppe_flowtable.c
+@@ -6,7 +6,8 @@
+  * The PPE port net devices accept flow block bindings through
+  * ndo_setup_tc(TC_SETUP_FT). Offloaded rules translate to a next hop
+  * entry (egress port, MAC rewrites, VLAN, NAT addresses) and a flow
+- * entry (the 5-tuple and the translated L4 port). The router MAC
++ * entry (the 5-tuple and the translated L4 port), plus a PPPoE
++ * session for flows leaving through a PPPoE WAN. The router MAC
+  * table is maintained from the source MAC rewrite of the rules: the
+  * egress source MAC of one direction is the MAC the reverse direction
+  * ingresses on. Flows the hardware cannot express fall back to the
+@@ -17,12 +18,15 @@
+ #include <linux/debugfs.h>
+ #include <linux/etherdevice.h>
+ #include <linux/hashtable.h>
++#include <linux/if_arp.h>
+ #include <linux/if_vlan.h>
+ #include <linux/ip.h>
+ #include <linux/netdevice.h>
++#include <linux/ppp_channel.h>
+ #include <linux/rcupdate.h>
+ #include <linux/regmap.h>
+ #include <linux/rhashtable.h>
++#include <linux/rtnetlink.h>
+ #include <linux/seq_file.h>
+ #include <net/flow_offload.h>
+ #include <net/ipv6.h>
+@@ -78,6 +82,38 @@ struct ppe_ft_pub_ip {
+ static_assert(offsetof(struct ppe_ft_pub_ip, ref) == 0);
+ 
+ /**
++ * struct ppe_ft_pppoe - A refcounted PPPoE session.
++ * @ref: Reference count of the session.
++ * @sid: PPPoE session ID.
++ * @peer: PPPoE peer/server MAC address.
++ * @local: Local/router MAC owned by the session L3 interface.
++ * @mtu: MTU of the PPP netdevice.
++ * @port: Physical PPE port below the session.
++ * @ppp_dev: Connected PPP netdevice, NULL after disconnect.
++ * @connected: The PPP lifecycle reference and hardware row are active.
++ * @poisoned: Hardware cleanup failed and the slot must not be reused.
++ *
++ * A session owns the PPPoE session table entry and the L3 interface
++ * of its slot index (past the per-port L3 interfaces). The lifecycle
++ * notifier publishes it before flows and retains it until disconnect.
++ */
++struct ppe_ft_pppoe {
++	struct ppe_ft_ref ref;
++	u16 sid;
++	u8 peer[ETH_ALEN];
++	u8 local[ETH_ALEN];
++	u16 mtu;
++	u8 port;
++	struct net_device *ppp_dev;
++	bool connected;
++	bool poisoned;
++};
++
++static_assert(offsetof(struct ppe_ft_pppoe, ref) == 0);
++
++#define PPE_FT_PPPOE_SESSIONS	8
++
++/**
+  * struct ppe_ft_flow - An offloaded flow.
+  * @node: Hash table node, keyed by the flow cookie.
+  * @cookie: Flow cookie of the rule.
+@@ -86,6 +122,7 @@ static_assert(offsetof(struct ppe_ft_pub
+  * @nexthop: Next hop index of the flow.
+  * @my_mac: Router MAC slot held by the flow, negative when none.
+  * @pub_ip: Public IP slot held by the flow, negative when none.
++ * @pppoe: PPPoE session slot held by the flow, negative when none.
+  * @eport: Egress PPE port of the flow.
+  * @packets: Hit packet count at the last stats read.
+  * @bytes: Hit byte count at the last stats read.
+@@ -100,6 +137,7 @@ struct ppe_ft_flow {
+ 	u16 nexthop;
+ 	int my_mac;
+ 	int pub_ip;
++	int pppoe;
+ 	u8 eport;
+ 	u32 packets;
+ 	u64 bytes;
+@@ -129,6 +167,8 @@ struct ppe_ft_host {
+  * @nexthop_used: Allocation bitmap of the next hop entries.
+  * @my_macs: Refcounted router MAC slots.
+  * @pub_ips: Refcounted public IP slots.
++ * @pppoe: Refcounted PPPoE session slots.
++ * @ppp_nb: PPP channel lifecycle notifier.
+  * @block_cb_list: Flow block callbacks bound to the PPE ports.
+  * @hosts: Refcount of the flows sharing a source host entry.
+  */
+@@ -150,6 +190,8 @@ struct ppe_flowtable {
+ 	DECLARE_BITMAP(nexthop_used, PPE_NEXTHOP_TBL_ENTRIES);
+ 	struct ppe_ft_my_mac my_macs[PPE_MY_MAC_TBL_ENTRIES];
+ 	struct ppe_ft_pub_ip pub_ips[PPE_PUB_IP_TBL_ENTRIES];
++	struct ppe_ft_pppoe pppoe[PPE_FT_PPPOE_SESSIONS];
++	struct notifier_block ppp_nb;
+ 	struct list_head block_cb_list;
+ };
+ 
+@@ -173,6 +215,7 @@ struct ppe_ft_data {
+ 	__be32 dip;
+ 	__be16 sport;
+ 	__be16 dport;
++	int pppoe_sid;
+ };
+ 
+ static int ppe_ft_mangle_eth(const struct flow_action_entry *act, void *eth)
+@@ -404,6 +447,282 @@ static void ppe_ft_pub_ip_put(struct ppe
+ 	ppe_ft_ref_put(ft->pub_ips, sizeof(*ft->pub_ips), index);
+ }
+ 
++/* The reserved L3 interfaces are allocated in regions past the
++ * per-port ones, each region based at the end of the one before it;
++ * ppe_flowtable_setup() checks the layout fits the interface tables.
++ * A PPPoE session slot owns one interface of the first region.
++ */
++static int ppe_ft_pppoe_l3_if(struct ppe_flowtable *ft, int index)
++{
++	return ft->ppe_dev->num_ports + index;
++}
++
++/* Get a refcounted PPPoE session slot of (session ID, peer MAC),
++ * programming its session table entry on first use. Must be called
++ * with the flowtable lock held.
++ */
++struct ppe_ft_pppoe_path {
++	u16 sid;
++	u8 peer[ETH_ALEN];
++	u8 local[ETH_ALEN];
++	int mtu;
++	int port;
++};
++
++static int ppe_ft_pppoe_path(struct net_device *ppp_dev,
++			     struct ppe_ft_pppoe_path *topo)
++{
++	struct net_device_path_stack stack = {};
++	u8 daddr[ETH_ALEN] = {};
++	bool have_pppoe = false;
++	int i, ret;
++
++	topo->port = -1;
++	topo->mtu = ppp_dev->mtu;
++	rcu_read_lock();
++	ret = dev_fill_forward_path(ppp_dev, daddr, &stack);
++	if (ret)
++		goto out_unlock;
++
++	for (i = 0; i < stack.num_paths; i++) {
++		const struct net_device_path *path = &stack.path[i];
++
++		switch (path->type) {
++		case DEV_PATH_PPPOE:
++			if (have_pppoe || path->encap.proto != htons(ETH_P_PPP_SES)) {
++				ret = -EOPNOTSUPP;
++				goto out_unlock;
++			}
++			have_pppoe = true;
++			topo->sid = path->encap.id;
++			ether_addr_copy(topo->peer, path->encap.h_dest);
++			break;
++		case DEV_PATH_ETHERNET: {
++			struct edma_port_priv *port_priv;
++
++			if (topo->port >= 0 || !edma_port_dev_check(path->dev)) {
++				ret = -EOPNOTSUPP;
++				goto out_unlock;
++			}
++			port_priv = netdev_priv(path->dev);
++			topo->port = port_priv->ppe_port->port_id;
++			ether_addr_copy(topo->local, path->dev->dev_addr);
++			break;
++		}
++		default:
++			ret = -EOPNOTSUPP;
++			goto out_unlock;
++		}
++	}
++
++	if (!have_pppoe || topo->port < 0 ||
++	    !is_valid_ether_addr(topo->peer) ||
++	    !is_valid_ether_addr(topo->local))
++		ret = -EINVAL;
++
++out_unlock:
++	rcu_read_unlock();
++	return ret;
++}
++
++static bool ppe_ft_pppoe_match(const void *entry, const void *key)
++{
++	const struct ppe_ft_pppoe *session = entry, *want = key;
++
++	return session->sid == want->sid &&
++	       ether_addr_equal(session->peer, want->peer);
++}
++
++static int ppe_ft_pppoe_get(struct ppe_flowtable *ft, u16 sid,
++			    const u8 *peer, const u8 *local, int port)
++{
++	int i;
++
++	for (i = 0; i < PPE_FT_PPPOE_SESSIONS; i++) {
++		struct ppe_ft_pppoe *session = &ft->pppoe[i];
++
++		if (!session->ref.refcnt || session->sid != sid ||
++		    !ether_addr_equal(session->peer, peer))
++			continue;
++		if (session->poisoned)
++			return -EIO;
++		if (!session->connected)
++			return -ENOTCONN;
++		if (session->port != port ||
++		    !ether_addr_equal(session->local, local))
++			return -EEXIST;
++
++		session->ref.refcnt++;
++		return i;
++	}
++
++	return -ENOENT;
++}
++
++static void ppe_ft_pppoe_put(struct ppe_flowtable *ft, int index)
++{
++	if (!ppe_ft_ref_put(ft->pppoe, sizeof(*ft->pppoe), index))
++		return;
++
++	if (WARN_ON_ONCE(ft->pppoe[index].connected))
++		ppe_pppoe_session_set(ft->ppe_dev, index, false, 0, NULL, 0);
++	memset(&ft->pppoe[index], 0, sizeof(ft->pppoe[index]));
++}
++
++static int ppe_ft_pppoe_connect(struct ppe_flowtable *ft,
++				struct net_device *ppp_dev)
++{
++	struct ppe_ft_pppoe_path topo = {};
++	struct ppe_ft_pppoe want = {};
++	struct ppe_ft_pppoe *session;
++	bool is_new;
++	int i, ret, cleanup_ret;
++
++	ret = ppe_ft_pppoe_path(ppp_dev, &topo);
++	if (ret)
++		return ret;
++
++	want.sid = topo.sid;
++	want.mtu = topo.mtu;
++	want.port = topo.port;
++	want.ppp_dev = ppp_dev;
++	want.connected = true;
++	ether_addr_copy(want.peer, topo.peer);
++	ether_addr_copy(want.local, topo.local);
++
++	mutex_lock(&ft->lock);
++	i = ppe_ft_ref_get(ft->pppoe, sizeof(*ft->pppoe),
++			   PPE_FT_PPPOE_SESSIONS, ppe_ft_pppoe_match,
++			   &want, &is_new);
++	if (i < 0) {
++		ret = i;
++		goto out_unlock;
++	}
++
++	if (!is_new) {
++		session = &ft->pppoe[i];
++		if (session->poisoned) {
++			ret = -EIO;
++			goto out_ref;
++		}
++		if (session->port != topo.port || session->mtu != topo.mtu ||
++		    !ether_addr_equal(session->local, topo.local)) {
++			ret = -EEXIST;
++			goto out_ref;
++		}
++		if (session->connected) {
++			ret = session->ppp_dev == ppp_dev ? 0 : -EEXIST;
++			goto out_ref;
++		}
++	} else {
++		session = &ft->pppoe[i];
++	}
++
++	ret = ppe_l3_if_set(ft->ppe_dev, ppe_ft_pppoe_l3_if(ft, i),
++			    topo.local, topo.mtu, topo.sid);
++	if (ret)
++		goto out_ref;
++
++	ret = ppe_pppoe_session_set(ft->ppe_dev, i, true, topo.sid,
++				    topo.peer, ppe_ft_pppoe_l3_if(ft, i));
++	if (ret) {
++		cleanup_ret = ppe_pppoe_session_set(ft->ppe_dev, i, false,
++						    0, NULL, 0);
++		if (cleanup_ret) {
++			if (is_new) {
++				want.ref.refcnt = 1;
++				want.ppp_dev = NULL;
++				want.connected = false;
++				want.poisoned = true;
++				*session = want;
++			} else {
++				session->ppp_dev = NULL;
++				session->connected = false;
++				session->poisoned = true;
++			}
++			dev_err(ft->ppe_dev->dev,
++				"quarantining partial PPPoE session %d: %d\n",
++				i, cleanup_ret);
++			goto out_unlock;
++		}
++		goto out_ref;
++	}
++
++	if (is_new) {
++		want.ref.refcnt = 1;
++		*session = want;
++	} else {
++		session->ppp_dev = ppp_dev;
++		session->connected = true;
++	}
++	mutex_unlock(&ft->lock);
++	return 0;
++
++out_ref:
++	if (!is_new)
++		ppe_ft_ref_put(ft->pppoe, sizeof(*ft->pppoe), i);
++out_unlock:
++	mutex_unlock(&ft->lock);
++	return ret;
++}
++
++static int ppe_ft_pppoe_disconnect(struct ppe_flowtable *ft,
++				   struct net_device *ppp_dev)
++{
++	int i, ret = -ENOENT;
++
++	mutex_lock(&ft->lock);
++	for (i = 0; i < PPE_FT_PPPOE_SESSIONS; i++) {
++		struct ppe_ft_pppoe *session = &ft->pppoe[i];
++
++		if (!session->connected || session->ppp_dev != ppp_dev)
++			continue;
++		ret = ppe_pppoe_session_set(ft->ppe_dev, i, false, 0, NULL, 0);
++		session->connected = false;
++		session->ppp_dev = NULL;
++		if (ret) {
++			session->poisoned = true;
++			dev_err(ft->ppe_dev->dev,
++				"quarantining PPPoE session %d: %d\n", i, ret);
++		} else {
++			ppe_ft_pppoe_put(ft, i);
++		}
++		break;
++	}
++	mutex_unlock(&ft->lock);
++
++	return ret;
++}
++
++static int ppe_ft_ppp_event(struct notifier_block *nb,
++			    unsigned long event, void *ptr)
++{
++	struct ppe_flowtable *ft = container_of(nb, struct ppe_flowtable,
++						 ppp_nb);
++	struct net_device *ppp_dev = ptr;
++	int ret;
++
++	switch (event) {
++	case PPP_CHANNEL_CONNECT:
++		ret = ppe_ft_pppoe_connect(ft, ppp_dev);
++		break;
++	case PPP_CHANNEL_DISCONNECT:
++		ret = ppe_ft_pppoe_disconnect(ft, ppp_dev);
++		if (ret == -ENOENT)
++			return NOTIFY_DONE;
++		break;
++	default:
++		return NOTIFY_DONE;
++	}
++
++	if (ret)
++		netdev_warn(ppp_dev,
++			    "PPE PPPoE lifecycle event %lu failed: %d\n",
++			    event, ret);
++
++	return NOTIFY_DONE;
++}
++
+ /* Hash key of a flow's source IP for the host refcount table. */
+ static u32 ppe_ft_host_key(const struct ppe_flow_entry *flow)
+ {
+@@ -567,7 +886,9 @@ static int ppe_ft_flow_replace(struct pp
+ 	flow->cookie = f->cookie;
+ 	flow->my_mac = -1;
+ 	flow->pub_ip = -1;
++	flow->pppoe = -1;
+ 	nh.vid = -1;
++	data.pppoe_sid = -1;
+ 
+ 	{
+ 		struct flow_match_basic match;
+@@ -738,6 +1059,9 @@ static int ppe_ft_flow_replace(struct pp
+ 			}
+ 			nh.vid = act->vlan.vid;
+ 			break;
++		case FLOW_ACTION_PPPOE_PUSH:
++			data.pppoe_sid = act->pppoe.sid;
++			break;
+ 		case FLOW_ACTION_CSUM:
+ 			break;
+ 		default:
+@@ -752,6 +1076,14 @@ static int ppe_ft_flow_replace(struct pp
+ 		goto err_free;
+ 	}
+ 
++	/* The PPPoE L3 interface carries the session ID, so it needs
++	 * the source MAC rewrite of the rule to be complete.
++	 */
++	if (data.pppoe_sid >= 0 && is_zero_ether_addr(data.eth.src)) {
++		ret = -EOPNOTSUPP;
++		goto err_free;
++	}
++
+ 	port_priv = netdev_priv(odev);
+ 	nh.port = port_priv->ppe_port->port_id;
+ 	nh.l3_if = nh.port;
+@@ -803,25 +1135,50 @@ static int ppe_ft_flow_replace(struct pp
+ 		flow->entry.fwd_type = PPE_FLOW_FWD_TYPE_ROUTE;
+ 	}
+ 
++	/* A PPPoE push routes the flow through the L3 interface of its
++	 * session, which encapsulates on egress; the session table
++	 * entry of the slot terminates the reverse direction, whose
++	 * rule arrives as a plain flow of the inner tuple.
++	 */
++	if (data.pppoe_sid >= 0) {
++		flow->pppoe = ppe_ft_pppoe_get(ft, data.pppoe_sid,
++					       data.eth.dst, data.eth.src,
++					       nh.port);
++		if (flow->pppoe < 0) {
++			ret = flow->pppoe;
++			goto err_pub_ip;
++		}
++		nh.l3_if = ppe_ft_pppoe_l3_if(ft, flow->pppoe);
++	}
++
+ 	/* The source MAC of this direction is the router MAC the
+-	 * reverse direction ingresses on; the egress L3 interface of
+-	 * the port provides the rewrite.
++	 * reverse direction ingresses on; the egress L3 interface
++	 * provides the rewrite.
+ 	 */
+ 	if (!is_zero_ether_addr(data.eth.src)) {
+ 		flow->my_mac = ppe_ft_my_mac_get(ft, data.eth.src);
+ 		if (flow->my_mac < 0) {
+ 			ret = flow->my_mac;
+-			goto err_pub_ip;
++			goto err_pppoe;
+ 		}
+ 
+-		ret = ppe_l3_if_set(ft->ppe_dev, nh.l3_if, data.eth.src,
+-				    odev->mtu);
+-		if (ret)
+-			goto err_my_mac;
++		if (data.pppoe_sid < 0) {
++			ret = ppe_l3_if_set(ft->ppe_dev, nh.l3_if,
++					    data.eth.src, odev->mtu, -1);
++			if (ret)
++				goto err_my_mac;
++		}
+ 
+-		ret = ppe_port_l3_if_set(ft->ppe_dev, nh.port, nh.l3_if);
+-		if (ret)
+-			goto err_my_mac;
++		/* The port binding classifies plain ingress on the
++		 * port; PPPoE ingress resolves its L3 interface
++		 * through the session table instead.
++		 */
++		if (data.pppoe_sid < 0) {
++			ret = ppe_port_l3_if_set(ft->ppe_dev, nh.port,
++						 nh.l3_if);
++			if (ret)
++				goto err_my_mac;
++		}
+ 
+ 		ret = ppe_l3_if_my_mac_set(ft->ppe_dev, nh.l3_if,
+ 					   flow->my_mac, true);
+@@ -883,6 +1240,8 @@ err_host:
+ 	ppe_ft_host_put(ft, &flow->entry);
+ err_my_mac:
+ 	ppe_ft_my_mac_put(ft, flow->my_mac);
++err_pppoe:
++	ppe_ft_pppoe_put(ft, flow->pppoe);
+ err_pub_ip:
+ 	ppe_ft_pub_ip_put(ft, flow->pub_ip);
+ err_unlock:
+@@ -912,6 +1271,7 @@ static int ppe_ft_flow_destroy(struct pp
+ 		ppe_ft_host_put(ft, &flow->entry);
+ 		clear_bit(flow->nexthop, ft->nexthop_used);
+ 		ppe_ft_my_mac_put(ft, flow->my_mac);
++		ppe_ft_pppoe_put(ft, flow->pppoe);
+ 		ppe_ft_pub_ip_put(ft, flow->pub_ip);
+ 	} else {
+ 		ppe_ft_flow_quarantine(ft, flow);
+@@ -1276,6 +1636,73 @@ static int ppe_ft_flow_rows_show(struct
+ 	 * between reads. This expensive view is separate from flows.
+ 	 */
+ 	mutex_lock(&ft->lock);
++	{
++		int i;
++
++		for (i = 0; i < PPE_FT_PPPOE_SESSIONS; i++) {
++			struct ppe_ft_pppoe *session = &ft->pppoe[i];
++			u32 base[2] = {}, ext = 0, ext1 = 0, ext2 = 0;
++			u32 in_l3[3] = {}, eg_l3[3] = {};
++			u32 reg;
++			int l3_if, base_err, ext_err, ext1_err, ext2_err;
++			int in_err, eg_err;
++
++			if (!session->ref.refcnt)
++				continue;
++			l3_if = ppe_ft_pppoe_l3_if(ft, i);
++			reg = PPE_PPPOE_SESSION_ADDR + PPE_PPPOE_SESSION_INC * i;
++			base_err = regmap_bulk_read(ft->ppe_dev->regmap, reg, base,
++						    ARRAY_SIZE(base));
++			reg = PPE_PPPOE_SESSION_EXT_ADDR +
++				PPE_PPPOE_SESSION_EXT_INC * i;
++			ext_err = regmap_read(ft->ppe_dev->regmap, reg, &ext);
++			reg = PPE_PPPOE_SESSION_EXT1_ADDR +
++				PPE_PPPOE_SESSION_EXT1_INC * i;
++			ext1_err = regmap_read(ft->ppe_dev->regmap, reg, &ext1);
++			reg = PPE_PPPOE_SESSION_EXT2_ADDR +
++				PPE_PPPOE_SESSION_EXT2_INC * i;
++			ext2_err = regmap_read(ft->ppe_dev->regmap, reg, &ext2);
++			reg = PPE_IN_L3_IF_TBL_ADDR + PPE_IN_L3_IF_TBL_INC * l3_if;
++			in_err = regmap_bulk_read(ft->ppe_dev->regmap, reg, in_l3,
++						  ARRAY_SIZE(in_l3));
++			reg = PPE_EG_L3_IF_TBL_ADDR + PPE_EG_L3_IF_TBL_INC * l3_if;
++			eg_err = regmap_bulk_read(ft->ppe_dev->regmap, reg, eg_l3,
++						  ARRAY_SIZE(eg_l3));
++			seq_printf(seq,
++				   "pppoe index:%d sid:%u port:%u connected:%u poisoned:%u ref:%u peer:%pM local:%pM l3_if:%d\n",
++				   i, session->sid, session->port,
++				   session->connected, session->poisoned,
++				   session->ref.refcnt, session->peer,
++				   session->local, l3_if);
++			ppe_ft_debug_words(seq, "pppoe_base_raw", base,
++					   ARRAY_SIZE(base));
++			seq_printf(seq,
++				   "  pppoe_ext_raw:%08x %08x %08x read:%d/%d/%d/%d sid:%lu port_bitmap:%02lx uc:%u smac:%u l3_valid:%u l3:%lu\n",
++				   ext, ext1, ext2, base_err, ext_err,
++				   ext1_err, ext2_err,
++				   FIELD_GET(PPE_PPPOE_SESSION_SESSION_ID,
++					     base[0]),
++				   FIELD_GET(PPE_PPPOE_SESSION_PORT_BITMAP,
++					     base[0]),
++				   !!(ext & PPE_PPPOE_SESSION_EXT_UC_VALID),
++				   !!(ext & PPE_PPPOE_SESSION_EXT_SMAC_VALID),
++				   !!(ext2 & PPE_PPPOE_SESSION_EXT2_L3_IF_VALID),
++				   FIELD_GET(PPE_PPPOE_SESSION_EXT2_L3_IF,
++					     ext2));
++			ppe_ft_debug_words(seq, "pppoe_in_l3_raw", in_l3,
++					   ARRAY_SIZE(in_l3));
++			ppe_ft_debug_words(seq, "pppoe_eg_l3_raw", eg_l3,
++					   ARRAY_SIZE(eg_l3));
++			seq_printf(seq,
++				   "  pppoe_l3 read:%d/%d in_en:%u out_en:%u out_sid:%lu\n",
++				   in_err, eg_err,
++				   !!(in_l3[1] & PPE_IN_L3_IF_W1_PPPOE_EN),
++				   !!(eg_l3[2] & PPE_EG_L3_IF_W2_PPPOE_EN),
++				   FIELD_GET(PPE_EG_L3_IF_W1_SESSION_ID,
++					     eg_l3[1]));
++		}
++	}
++
+ 	rhashtable_walk_enter(&ft->flows, &iter);
+ 	rhashtable_walk_start(&iter);
+ 	while ((flow = rhashtable_walk_next(&iter))) {
+@@ -1677,6 +2104,7 @@ int ppe_flowtable_setup_tc(struct net_de
+  */
+ int ppe_flowtable_setup(struct ppe_device *ppe_dev)
+ {
++	struct net_device *ppp_dev;
+ 	struct ppe_flowtable *ft;
+ 	int ret;
+ 
+@@ -1685,6 +2113,11 @@ int ppe_flowtable_setup(struct ppe_devic
+ 		return -ENOMEM;
+ 
+ 	ft->ppe_dev = ppe_dev;
++	if (WARN_ON(ppe_ft_pppoe_l3_if(ft, PPE_FT_PPPOE_SESSIONS) >
++		    PPE_IN_L3_IF_TBL_ENTRIES)) {
++		kfree(ft);
++		return -ERANGE;
++	}
+ 	mutex_init(&ft->lock);
+ 	INIT_LIST_HEAD(&ft->block_cb_list);
+ 	INIT_LIST_HEAD(&ft->zombies);
+@@ -1696,8 +2129,30 @@ int ppe_flowtable_setup(struct ppe_devic
+ 	}
+ 
+ 	hash_init(ft->hosts);
++	ft->ppp_nb.notifier_call = ppe_ft_ppp_event;
+ 	ppe_dev->flowtable = ft;
+ 
++	ret = ppp_register_channel_notifier(&ft->ppp_nb);
++	if (ret) {
++		ppe_dev->flowtable = NULL;
++		rhashtable_destroy(&ft->flows);
++		kfree(ft);
++		return ret;
++	}
++
++	/* The notifier reports only future channel transitions; adopt the
++	 * PPP devices that connected before it was registered (probe
++	 * deferral, driver load after the WAN came up). A session the
++	 * racing notifier already published is recognized as connected
++	 * and skipped.
++	 */
++	rtnl_lock();
++	for_each_netdev(&init_net, ppp_dev) {
++		if (ppp_dev->type == ARPHRD_PPP)
++			ppe_ft_pppoe_connect(ft, ppp_dev);
++	}
++	rtnl_unlock();
++
+ 	return 0;
+ }
+ 
+@@ -1725,7 +2180,17 @@ void ppe_flowtable_destroy(struct ppe_de
+ 		return;
+ 
+ 	WARN_ON(!list_empty(&ft->block_cb_list));
++	ppp_unregister_channel_notifier(&ft->ppp_nb);
+ 	ppe_ft_flow_drain(ft);
++	mutex_lock(&ft->lock);
++	for (i = 0; i < PPE_FT_PPPOE_SESSIONS; i++) {
++		if (!ft->pppoe[i].ref.refcnt)
++			continue;
++		if (ft->pppoe[i].connected)
++			ppe_pppoe_session_set(ft->ppe_dev, i, false, 0, NULL, 0);
++		memset(&ft->pppoe[i], 0, sizeof(ft->pppoe[i]));
++	}
++	mutex_unlock(&ft->lock);
+ 
+ 	debugfs_remove(ft->debugfs_reasons);
+ 	debugfs_remove(ft->debugfs_pipeline);
+--- a/drivers/net/ethernet/qualcomm/ppe/ppe_regs.h
++++ b/drivers/net/ethernet/qualcomm/ppe/ppe_regs.h
+@@ -215,6 +215,8 @@
+ #define PPE_EG_L3_IF_TBL_INC			0x10
+ #define PPE_EG_L3_IF_W0_MAC_ADDR_LO		GENMASK(31, 0)
+ #define PPE_EG_L3_IF_W1_MAC_ADDR_HI		GENMASK(15, 0)
++#define PPE_EG_L3_IF_W1_SESSION_ID		GENMASK(31, 16)
++#define PPE_EG_L3_IF_W2_PPPOE_EN		BIT(0)
+ 
+ /* PPE service code configuration on the egress direction. */
+ #define PPE_EG_SERVICE_TBL_ADDR			0x43000
+@@ -625,6 +627,7 @@
+ #define PPE_IN_L3_IF_W1_TTL_EXCEED_DEACCEL	BIT(2)
+ #define PPE_IN_L3_IF_W1_MAC_BITMAP		GENMASK(10, 3)
+ #define PPE_IN_L3_IF_W1_DMAC_CHECK_DIS		BIT(12)
++#define PPE_IN_L3_IF_W1_PPPOE_EN		BIT(11)
+ #define PPE_IN_L3_IF_W1_MRU_IPV6		GENMASK(31, 18)
+ #define PPE_IN_L3_IF_W2_MTU_IPV6		GENMASK(13, 0)
+ #define PPE_IN_L3_IF_W2_UDP_CSM0_CMD		GENMASK(15, 14)
+@@ -723,6 +726,37 @@
+ #define PPE_NEXTHOP_W2_MAC_ADDR_HI		GENMASK(31, 0)
+ #define PPE_NEXTHOP_W3_IP_ADDR_DNAT		GENMASK(31, 0)
+ 
++/* PPPoE session table of the tunnel lookup block. An entry matches
++ * PPPoE-encapsulated unicast or multicast ingress on the ports of its
++ * bitmap by session ID, optionally also by the source (server) MAC,
++ * and assigns the ingress L3 interface, which terminates the session
++ * when its PPPoE flag is set. The four register arrays of an entry
++ * share the index.
++ */
++#define PPE_PPPOE_SESSION_ADDR			0x306800
++#define PPE_PPPOE_SESSION_ENTRIES		64
++#define PPE_PPPOE_SESSION_INC			8
++#define PPE_PPPOE_SESSION_SESSION_ID		GENMASK(15, 0)
++#define PPE_PPPOE_SESSION_PORT_BITMAP		GENMASK(23, 16)
++#define PPE_PPPOE_SESSION_PORT_TYPE		GENMASK(25, 24)
++
++#define PPE_PPPOE_SESSION_EXT_ADDR		0x306a00
++#define PPE_PPPOE_SESSION_EXT_INC		4
++#define PPE_PPPOE_SESSION_EXT_MC_VALID		BIT(0)
++#define PPE_PPPOE_SESSION_EXT_UC_VALID		BIT(1)
++#define PPE_PPPOE_SESSION_EXT_SMAC_VALID	BIT(2)
++#define PPE_PPPOE_SESSION_EXT_SMAC_HI		GENMASK(31, 16)
++
++#define PPE_PPPOE_SESSION_EXT1_ADDR		0x306c00
++#define PPE_PPPOE_SESSION_EXT1_INC		4
++
++#define PPE_PPPOE_SESSION_EXT2_ADDR		0x306e00
++#define PPE_PPPOE_SESSION_EXT2_INC		4
++#define PPE_PPPOE_SESSION_EXT2_TL_L3_IF		GENMASK(6, 0)
++#define PPE_PPPOE_SESSION_EXT2_TL_L3_IF_VALID	BIT(7)
++#define PPE_PPPOE_SESSION_EXT2_L3_IF		GENMASK(15, 8)
++#define PPE_PPPOE_SESSION_EXT2_L3_IF_VALID	BIT(16)
++
+ /* Per-flow hit counters, indexed like the flow table. */
+ #define PPE_FLOW_CNT_TBL_ADDR			0x120000
+ #define PPE_FLOW_CNT_TBL_ENTRIES		4096

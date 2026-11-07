@@ -1,0 +1,499 @@
+From: Kenneth Kasilag <kenneth@kasilag.me>
+Date: Sat, 04 Jul 2026 00:00:00 +0000
+Subject: [PATCH] net: ethernet: qualcomm: ppe: offload multicast groups
+
+Offload the multicast database of snooping bridges to the hardware
+FDB, which forwards multicast MAC addresses to a port bitmap. Without
+group entries the hardware floods multicast to the members with
+BR_MCAST_FLOOD set, matching how the software bridge treats groups
+outside its MDB; for the groups a snooping bridge restricts, that
+flooding over-delivers.
+
+A group entry carries its member ports, the multicast router ports of
+the bridge, and always the CPU port: membership reports to the group
+keep reaching the snooping bridge that way, software ports of the
+bridge receive the group through it, and host joins are covered
+without further work, so no separate IGMP trap rule is needed. IGMP
+queries are link-local multicast, which never has a group entry and
+floods.
+
+Group entries exist only while snooping is enabled: without snooping
+the bridge floods all multicast, ignoring its MDB, and a restrictive
+hardware entry would under-deliver. Disabling snooping drops the
+entries of the bridge. Groups whose members are all software ports
+(such as wireless interfaces) stay on the flood path, which
+over-delivers but loses nothing.
+
+Signed-off-by: Kenneth Kasilag <kenneth@kasilag.me>
+---
+--- a/drivers/net/ethernet/qualcomm/ppe/ppe_bridge.c
++++ b/drivers/net/ethernet/qualcomm/ppe/ppe_bridge.c
+@@ -75,6 +75,8 @@ struct ppe_bridge_vsi {
+  * bound to a VSI, the ingress translation rules assign one per VLAN.
+  * @pvid: PVID of the port on a VLAN-aware bridge, 0 when none.
+  * @flags: Offloaded bridge port flags of the port.
++ * @mrouter: Port leads to a multicast router and is included in the
++ * bitmap of every offloaded multicast group of its bridge.
+  */
+ struct ppe_bridge_port {
+ 	struct net_device *bridge;
+@@ -82,6 +84,7 @@ struct ppe_bridge_port {
+ 	int vsi;
+ 	u16 pvid;
+ 	unsigned long flags;
++	bool mrouter;
+ };
+ 
+ /* The bridge port flags the offload supports, matching the defaults of
+@@ -103,6 +106,7 @@ struct ppe_bridge_port {
+  * @fdb_ht: Shadow of the dynamic hardware FDB entries reported to the
+  * bridge, to tell new and aged-out entries apart while walking the
+  * hardware table.
++ * @mdb_ht: Offloaded multicast groups, hashed like @fdb_ht.
+  * @xlt_used: Allocation bitmap of the ingress VLAN translation rules.
+  * @shutdown: Tear-down in progress, stops the FDB synchronization from
+  * rescheduling itself.
+@@ -122,6 +126,7 @@ struct ppe_bridge {
+ 	struct workqueue_struct *fdb_wq;
+ 	struct delayed_work fdb_sync;
+ 	DECLARE_HASHTABLE(fdb_ht, 8);
++	DECLARE_HASHTABLE(mdb_ht, 6);
+ 	DECLARE_BITMAP(xlt_used, PPE_XLT_RULE_TBL_ENTRIES);
+ 	bool shutdown;
+ 	struct ppe_bridge_vsi vsis[PPE_VSI_TBL_ENTRIES];
+@@ -255,6 +260,12 @@ static int ppe_bridge_vsi_hw_update(stru
+ 
+ 		if (pb->ports[i].flags & BR_FLOOD)
+ 			uuc |= BIT(i);
++		/* Multicast without an offloaded group entry floods to
++		 * the members, which is what the software bridge does
++		 * with groups outside its MDB, with or without
++		 * snooping. Snooped groups forward along their own FDB
++		 * entries instead.
++		 */
+ 		if (pb->ports[i].flags & BR_MCAST_FLOOD)
+ 			umc |= BIT(i);
+ 		if (pb->ports[i].flags & BR_BCAST_FLOOD)
+@@ -441,6 +452,107 @@ static void ppe_bridge_fdb_shadow_purge(
+ 	}
+ }
+ 
++/**
++ * struct ppe_bridge_mdb - An offloaded multicast group.
++ * @node: Hash table node, hashed by MAC address and VSI.
++ * @addr: Multicast MAC address of the group.
++ * @vsi: VSI of the group.
++ * @ports: Bitmap of the PPE ports which are members of the group.
++ */
++struct ppe_bridge_mdb {
++	struct hlist_node node;
++	unsigned char addr[ETH_ALEN];
++	u8 vsi;
++	unsigned int ports;
++};
++
++static struct ppe_bridge_mdb *ppe_bridge_mdb_find(struct ppe_bridge *pb,
++						  const unsigned char *addr,
++						  u8 vsi)
++{
++	struct ppe_bridge_mdb *mdb;
++
++	hash_for_each_possible(pb->mdb_ht, mdb, node,
++			       ppe_bridge_fdb_key(addr, vsi))
++		if (mdb->vsi == vsi && ether_addr_equal(mdb->addr, addr))
++			return mdb;
++
++	return NULL;
++}
++
++/* Program the hardware FDB entry of a multicast group: its member
++ * ports, the multicast router ports of the bridge, and always the CPU
++ * port, so that membership reports to the group keep reaching the
++ * snooping bridge and the software ports of the bridge receive the
++ * group through it.
++ */
++static int ppe_bridge_mdb_hw_update(struct ppe_bridge *pb,
++				    struct ppe_bridge_mdb *mdb)
++{
++	struct ppe_bridge_vsi *v = &pb->vsis[mdb->vsi];
++	struct ppe_fdb_entry entry = {};
++	unsigned int ports = mdb->ports;
++	int i;
++
++	for (i = 1; i < pb->ppe_dev->num_ports; i++)
++		if (pb->ports[i].mrouter && pb->ports[i].bridge == v->br)
++			ports |= BIT(i);
++
++	ether_addr_copy(entry.addr, mdb->addr);
++	entry.vsi = mdb->vsi;
++	entry.is_static = true;
++	entry.port_bitmap = BIT(0) | (ports & v->members);
++
++	return ppe_fdb_entry_add(pb->ppe_dev, &entry);
++}
++
++static int ppe_bridge_mdb_hw_remove(struct ppe_bridge *pb,
++				    struct ppe_bridge_mdb *mdb)
++{
++	struct ppe_fdb_entry entry = {};
++
++	ether_addr_copy(entry.addr, mdb->addr);
++	entry.vsi = mdb->vsi;
++	entry.is_static = true;
++	entry.port_bitmap = BIT(0);
++
++	return ppe_fdb_entry_del(pb->ppe_dev, &entry);
++}
++
++/* Drop the offloaded groups of a released VSI, whose hardware entries
++ * the FDB flush of the release removes, or of a whole bridge, removing
++ * the hardware entries here. A NULL bridge with a negative VSI matches
++ * everything.
++ */
++static int ppe_bridge_mdb_purge(struct ppe_bridge *pb,
++				const struct net_device *br, int vsi)
++{
++	struct ppe_bridge_mdb *mdb;
++	struct hlist_node *tmp;
++	int bkt, err = 0, ret;
++
++	hash_for_each_safe(pb->mdb_ht, bkt, tmp, mdb, node) {
++		if (vsi >= 0 && mdb->vsi != vsi)
++			continue;
++		if (br) {
++			if (pb->vsis[mdb->vsi].br != br)
++				continue;
++
++			ret = ppe_bridge_mdb_hw_remove(pb, mdb);
++			if (ret) {
++				if (!err)
++					err = ret;
++				continue;
++			}
++		}
++
++		hash_del(&mdb->node);
++		kfree(mdb);
++	}
++
++	return err;
++}
++
+ /* Release a VSI which lost its last member port: drop its translation
+  * rules, park it back to the CPU-only state the PPE core initialized,
+  * and flush its FDB entries, including the CPU-directed entries which
+@@ -471,7 +583,10 @@ static int ppe_bridge_vsi_release(struct
+ 	ret = ppe_fdb_vsi_flush(pb->ppe_dev, vsi);
+ 	if (ret && !err)
+ 		err = ret;
+-	ppe_bridge_fdb_shadow_purge(pb, -1, vsi);
++	if (!ret) {
++		ppe_bridge_fdb_shadow_purge(pb, -1, vsi);
++		ppe_bridge_mdb_purge(pb, NULL, vsi);
++	}
+ 
+ 	if (err) {
+ 		v->poisoned = true;
+@@ -667,6 +782,7 @@ static int ppe_bridge_port_join(struct p
+ 	pb->ports[port].vsi = vsi;
+ 	pb->ports[port].pvid = 0;
+ 	pb->ports[port].flags = PPE_BRIDGE_SUPPORTED_FLAGS;
++	pb->ports[port].mrouter = false;
+ 
+ 	if (!vlan_aware) {
+ 		pb->vsis[vsi].members |= BIT(port);
+@@ -727,6 +843,7 @@ err_state:
+ 	pb->ports[port].dev = NULL;
+ 	pb->ports[port].vsi = -1;
+ 	pb->ports[port].flags = 0;
++	pb->ports[port].mrouter = false;
+ 
+ 	return ret;
+ }
+@@ -771,6 +888,7 @@ static void ppe_bridge_port_leave(struct
+ 	pb->ports[port].dev = NULL;
+ 	pb->ports[port].vsi = -1;
+ 	pb->ports[port].flags = 0;
++	pb->ports[port].mrouter = false;
+ 
+ 	/* The bridge leaves the port in the disabled spanning tree
+ 	 * state, restore the forwarding of the now standalone port.
+@@ -955,6 +1073,96 @@ static int ppe_bridge_port_vlan_del(stru
+ 	return err;
+ }
+ 
++/* Resolve the VSI a multicast group of a port maps to, negative when
++ * the group has no offloaded VSI and thus no hardware traffic to direct.
++ */
++static int ppe_bridge_mdb_vsi(struct ppe_bridge *pb, int port, u16 vid)
++{
++	if (vid)
++		return ppe_bridge_vsi_find(pb, pb->ports[port].bridge, vid);
++
++	return pb->ports[port].vsi;
++}
++
++static int ppe_bridge_port_mdb_add(struct ppe_bridge *pb,
++				   struct net_device *dev,
++				   const struct switchdev_obj_port_mdb *obj)
++{
++	int port = ppe_bridge_port_id(dev);
++	struct net_device *br = pb->ports[port].bridge;
++	struct ppe_bridge_mdb *mdb;
++	int vsi, ret;
++
++	if (!br)
++		return -EOPNOTSUPP;
++	if (!br_multicast_enabled(br))
++		return 0;
++
++	vsi = ppe_bridge_mdb_vsi(pb, port, obj->vid);
++	if (vsi < 0)
++		return 0;
++
++	mdb = ppe_bridge_mdb_find(pb, obj->addr, vsi);
++	if (!mdb) {
++		mdb = kzalloc(sizeof(*mdb), GFP_KERNEL);
++		if (!mdb)
++			return -ENOMEM;
++		ether_addr_copy(mdb->addr, obj->addr);
++		mdb->vsi = vsi;
++		hash_add(pb->mdb_ht, &mdb->node,
++			 ppe_bridge_fdb_key(mdb->addr, mdb->vsi));
++	}
++
++	mdb->ports |= BIT(port);
++	ret = ppe_bridge_mdb_hw_update(pb, mdb);
++	if (ret) {
++		mdb->ports &= ~BIT(port);
++		if (!mdb->ports) {
++			hash_del(&mdb->node);
++			kfree(mdb);
++		}
++	}
++
++	return ret;
++}
++
++static int ppe_bridge_port_mdb_del(struct ppe_bridge *pb,
++				   struct net_device *dev,
++				   const struct switchdev_obj_port_mdb *obj)
++{
++	int port = ppe_bridge_port_id(dev);
++	struct ppe_bridge_mdb *mdb;
++	int vsi, ret;
++
++	if (!pb->ports[port].bridge)
++		return -EOPNOTSUPP;
++
++	vsi = ppe_bridge_mdb_vsi(pb, port, obj->vid);
++	if (vsi < 0)
++		return 0;
++	mdb = ppe_bridge_mdb_find(pb, obj->addr, vsi);
++	if (!mdb || !(mdb->ports & BIT(port)))
++		return 0;
++
++	mdb->ports &= ~BIT(port);
++	if (mdb->ports) {
++		ret = ppe_bridge_mdb_hw_update(pb, mdb);
++		if (ret)
++			mdb->ports |= BIT(port);
++		return ret;
++	}
++
++	ret = ppe_bridge_mdb_hw_remove(pb, mdb);
++	if (ret) {
++		mdb->ports |= BIT(port);
++		return ret;
++	}
++
++	hash_del(&mdb->node);
++	kfree(mdb);
++	return 0;
++}
++
+ static int ppe_bridge_stp_state_set(struct ppe_bridge *pb,
+ 				    struct net_device *dev, u8 state)
+ {
+@@ -1059,6 +1267,59 @@ static int ppe_bridge_ageing_time_set(st
+ 	return 0;
+ }
+ 
++/* A port towards a multicast router must receive every group, fold it
++ * into the group entries of its bridge.
++ */
++static int ppe_bridge_mrouter_set(struct ppe_bridge *pb,
++				  struct net_device *dev, bool mrouter)
++{
++	int port = ppe_bridge_port_id(dev);
++	struct net_device *br = pb->ports[port].bridge;
++	struct ppe_bridge_mdb *mdb;
++	int bkt, ret;
++
++	if (pb->ports[port].mrouter == mrouter)
++		return 0;
++
++	pb->ports[port].mrouter = mrouter;
++
++	hash_for_each(pb->mdb_ht, bkt, mdb, node) {
++		if (pb->vsis[mdb->vsi].br != br)
++			continue;
++
++		ret = ppe_bridge_mdb_hw_update(pb, mdb);
++		if (ret)
++			goto rollback;
++	}
++
++	return 0;
++
++rollback:
++	pb->ports[port].mrouter = !mrouter;
++	hash_for_each(pb->mdb_ht, bkt, mdb, node) {
++		if (pb->vsis[mdb->vsi].br == br)
++			ppe_bridge_mdb_hw_update(pb, mdb);
++	}
++	return ret;
++}
++
++/* Multicast snooping was toggled. On disable the bridge floods all
++ * multicast, ignoring its MDB: drop the group entries of the bridge, so
++ * the hardware floods along the VSI bitmaps as well. The groups are
++ * reported again as membership builds back up after re-enabling.
++ */
++static int ppe_bridge_mc_disabled_set(struct ppe_bridge *pb,
++				      struct net_device *dev, bool disabled)
++{
++	int port = ppe_bridge_port_id(dev);
++	struct net_device *br = pb->ports[port].bridge;
++
++	if (disabled)
++		return ppe_bridge_mdb_purge(pb, br, -1);
++
++	return 0;
++}
++
+ static int ppe_bridge_attr_set(struct net_device *dev, const void *ctx,
+ 			       const struct switchdev_attr *attr,
+ 			       struct netlink_ext_ack *extack)
+@@ -1079,6 +1340,11 @@ static int ppe_bridge_attr_set(struct ne
+ 		return 0;
+ 	case SWITCHDEV_ATTR_ID_PORT_BRIDGE_FLAGS:
+ 		return ppe_bridge_flags_set(pb, dev, attr->u.brport_flags);
++	case SWITCHDEV_ATTR_ID_PORT_MROUTER:
++		return ppe_bridge_mrouter_set(pb, dev, attr->u.mrouter);
++	case SWITCHDEV_ATTR_ID_BRIDGE_MC_DISABLED:
++		return ppe_bridge_mc_disabled_set(pb, dev,
++						  attr->u.mc_disabled);
+ 	case SWITCHDEV_ATTR_ID_BRIDGE_AGEING_TIME:
+ 		return ppe_bridge_ageing_time_set(pb, dev,
+ 						  attr->u.ageing_time);
+@@ -1270,7 +1536,9 @@ static int ppe_bridge_obj_add(struct net
+ 	struct ppe_bridge *pb = port_priv->ppe_port->ppe_dev->bridge;
+ 
+ 	/* VLANs of the bridge device itself terminate at the CPU port,
+-	 * which is a member of every VSI already.
++	 * which is a member of every VSI already. Host multicast joins
++	 * are covered the same way, the CPU port is in the bitmap of
++	 * every offloaded group.
+ 	 */
+ 	if (netif_is_bridge_master(obj->orig_dev))
+ 		return 0;
+@@ -1280,6 +1548,9 @@ static int ppe_bridge_obj_add(struct net
+ 		return ppe_bridge_port_vlan_add(pb, dev,
+ 						SWITCHDEV_OBJ_PORT_VLAN(obj),
+ 						extack);
++	case SWITCHDEV_OBJ_ID_PORT_MDB:
++		return ppe_bridge_port_mdb_add(pb, dev,
++					       SWITCHDEV_OBJ_PORT_MDB(obj));
+ 	default:
+ 		return -EOPNOTSUPP;
+ 	}
+@@ -1298,6 +1569,9 @@ static int ppe_bridge_obj_del(struct net
+ 	case SWITCHDEV_OBJ_ID_PORT_VLAN:
+ 		return ppe_bridge_port_vlan_del(pb, dev,
+ 						SWITCHDEV_OBJ_PORT_VLAN(obj));
++	case SWITCHDEV_OBJ_ID_PORT_MDB:
++		return ppe_bridge_port_mdb_del(pb, dev,
++					       SWITCHDEV_OBJ_PORT_MDB(obj));
+ 	default:
+ 		return -EOPNOTSUPP;
+ 	}
+@@ -1366,6 +1640,7 @@ int ppe_bridge_setup(struct ppe_device *
+ 		pb->ports[i].vsi = -1;
+ 
+ 	hash_init(pb->fdb_ht);
++	hash_init(pb->mdb_ht);
+ 	INIT_DELAYED_WORK(&pb->fdb_sync, ppe_bridge_fdb_sync_work);
+ 
+ 	pb->fdb_wq = alloc_ordered_workqueue("ppe_bridge_fdb", 0);
+@@ -1444,6 +1719,8 @@ void ppe_bridge_destroy(struct ppe_devic
+ 		kfree(fdb);
+ 	}
+ 
++	ppe_bridge_mdb_purge(pb, NULL, -1);
++
+ 	if (ppe_mac_trap_clear(ppe_dev, 0))
+ 		dev_err(ppe_dev->dev, "failed to clear BPDU trap\n");
+ 	ppe_dev->bridge = NULL;
+--- a/drivers/net/ethernet/qualcomm/ppe/ppe_config.c
++++ b/drivers/net/ethernet/qualcomm/ppe/ppe_config.c
+@@ -1855,9 +1855,16 @@ static void ppe_fdb_entry_pack(const str
+ {
+ 	u32 dst_info;
+ 
+-	dst_info = FIELD_PREP(PPE_FDB_DST_INFO_TYPE,
+-			      PPE_FDB_DST_INFO_TYPE_PORT_ID);
+-	dst_info |= FIELD_PREP(PPE_FDB_DST_INFO_VALUE, entry->port);
++	if (entry->port_bitmap) {
++		dst_info = FIELD_PREP(PPE_FDB_DST_INFO_TYPE,
++				      PPE_FDB_DST_INFO_TYPE_PORT_BITMAP);
++		dst_info |= FIELD_PREP(PPE_FDB_DST_INFO_VALUE,
++				       entry->port_bitmap);
++	} else {
++		dst_info = FIELD_PREP(PPE_FDB_DST_INFO_TYPE,
++				      PPE_FDB_DST_INFO_TYPE_PORT_ID);
++		dst_info |= FIELD_PREP(PPE_FDB_DST_INFO_VALUE, entry->port);
++	}
+ 
+ 	val[0] = (u32)entry->addr[2] << 24 | entry->addr[3] << 16 |
+ 		 entry->addr[4] << 8 | entry->addr[5];
+@@ -1904,10 +1911,14 @@ static void ppe_fdb_entry_unpack(const u
+ 	dst_info |= FIELD_PREP(PPE_FDB_DST_INFO_HI,
+ 			       FIELD_GET(PPE_FDB_W2_DST_INFO_HI, val[2]));
+ 	if (FIELD_GET(PPE_FDB_DST_INFO_TYPE, dst_info) ==
+-	    PPE_FDB_DST_INFO_TYPE_PORT_ID)
++	    PPE_FDB_DST_INFO_TYPE_PORT_ID) {
+ 		entry->port = FIELD_GET(PPE_FDB_DST_INFO_VALUE, dst_info);
+-	else
++		entry->port_bitmap = 0;
++	} else {
+ 		entry->port = PPE_FDB_PORT_NONE;
++		entry->port_bitmap = FIELD_GET(PPE_FDB_DST_INFO_VALUE,
++					       dst_info);
++	}
+ 
+ 	entry->age = FIELD_GET(PPE_FDB_W2_HIT_AGE, val[2]);
+ 	entry->is_static = entry->age == PPE_FDB_HIT_AGE_STATIC;
+--- a/drivers/net/ethernet/qualcomm/ppe/ppe_config.h
++++ b/drivers/net/ethernet/qualcomm/ppe/ppe_config.h
+@@ -311,7 +311,11 @@ enum ppe_stp_state {
+  * struct ppe_fdb_entry - PPE hardware FDB entry.
+  * @addr: MAC address.
+  * @vsi: VSI (bridge domain) the MAC address belongs to.
+- * @port: Destination PPE port of the MAC address.
++ * @port: Destination PPE port of the MAC address, PPE_FDB_PORT_NONE
++ * when the destination is a port bitmap.
++ * @port_bitmap: Destination PPE port bitmap of the MAC address, used
++ * instead of @port when non-zero. Multicast addresses forward to all
++ * ports of their bitmap.
+  * @is_static: Entry is excluded from hardware aging.
+  * @age: Age value of a dynamic entry (PPE_FDB_HIT_AGE_*).
+  */
+@@ -319,6 +323,7 @@ struct ppe_fdb_entry {
+ 	u8 addr[ETH_ALEN];
+ 	u8 vsi;
+ 	u8 port;
++	unsigned int port_bitmap;
+ 	bool is_static;
+ 	u8 age;
+ };
