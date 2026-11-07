@@ -1,0 +1,112 @@
+From d6e7ea829e6204f8d2a8175b17e2f94be3613e9d Mon Sep 17 00:00:00 2001
+From: Mieczyslaw Nalewaj <namiltd@yahoo.com>
+Date: Sat, 10 Oct 2026 16:50:17 +0200
+Subject: [PATCH net-next v7 10/10] net: dsa: realtek: rtl8365mb: add support
+ for RTL8367S-VB
+
+Add the RTL8367S-VB (chip ID 0x6642, version 0x0010) to the chip table.
+It is the first chip of family D, whose handling was added in the
+preceding patches, so this is the patch that makes it reachable.
+
+The SGMII/HSGMII SerDes of this chip sits on port 6 and the
+MII/TMII/RMII/RGMII interface on port 7, as on family C, but the external
+interface indices are one lower (EXT0 and EXT1 instead of EXT1 and EXT2).
+The chip reuses the existing initialization jam table.
+
+The chip has 8 ports, not 11. Cap priv->num_ports at
+RTL8365MB_D_MAX_NUM_PORTS for family D. This is a functional change: it
+sets ds->num_ports, the IRQ domain size and the bound of every loop over
+priv->num_ports.
+
+The L2 learning limit is the same as on family C (2112 entries), as
+given by the Realtek rtl8367 common API (rtl8367_common V1.4.2), so
+RTL8365MB_LEARN_LIMIT_MAX needs no per-family handling; only its
+comment is updated.
+
+Tested on a TP-Link Archer AX55 v1 (RTL8367S-VB, CPU port over HSGMII
+to an IPQ5018) with bridge VLAN filtering and per-port PVIDs. SGMII has
+also been seen working, but I no longer have the exact link partner and
+speed it was tested with, so treat it as lightly tested. RGMII mode has
+not yet been tested.
+
+Signed-off-by: Mieczyslaw Nalewaj <namiltd@yahoo.com>
+Reviewed-by: Linus Walleij <linusw@kernel.org>
+---
+ drivers/net/dsa/realtek/Kconfig          |  3 ++-
+ drivers/net/dsa/realtek/rtl8365mb_main.c | 32 +++++++++++++++++++++---
+ 2 files changed, 30 insertions(+), 5 deletions(-)
+
+--- a/drivers/net/dsa/realtek/Kconfig
++++ b/drivers/net/dsa/realtek/Kconfig
+@@ -34,7 +34,8 @@ config NET_DSA_REALTEK_RTL8365MB
+ 	depends on NET_DSA_REALTEK_SMI || NET_DSA_REALTEK_MDIO
+ 	select NET_DSA_TAG_RTL8_4
+ 	help
+-	  Select to enable support for Realtek RTL8365MB-VC and RTL8367S.
++	  Select to enable support for Realtek RTL8365MB-VC, RTL8367S and
++	  RTL8367S-VB.
+ 
+ config NET_DSA_REALTEK_RTL8366RB
+ 	tristate "Realtek RTL8366RB switch driver"
+--- a/drivers/net/dsa/realtek/rtl8365mb_main.c
++++ b/drivers/net/dsa/realtek/rtl8365mb_main.c
+@@ -89,6 +89,12 @@
+  * things will work out-of-the-box for other chips, and a careful review of the
+  * vendor driver may be needed to expand support. The RTL8365MB-VC seems to be
+  * one of the simpler chips.
++ *
++ * The RTL8367S-VB (chip ID 0x6642) is not part of the family listed above. It
++ * belongs to a newer generation, which this driver calls family D. Its
++ * registers differ in the VLAN table, the external interface speed and RGMII
++ * configuration and the SerDes, so the code paths specific to it are selected
++ * with rtl8365mb_get_family().
+  */
+ 
+ #include <linux/bitfield.h>
+@@ -119,9 +125,10 @@
+ #define RTL8365MB_NUM_PHYREGS		32
+ #define RTL8365MB_PHYREGMAX		(RTL8365MB_NUM_PHYREGS - 1)
+ #define RTL8365MB_MAX_NUM_PORTS		11
+-/* Valid for the whole family except RTL8370B, which has 4160 entries.
+- * RTL8370B is mentioned in vendor code but it might not even belong
+- * to the same RTL8367C family.
++#define RTL8365MB_D_MAX_NUM_PORTS	8
++/* Valid for the whole RTL8367C family (and for family D, RTL8367S-VB)
++ * except RTL8370B, which has 4160 entries. RTL8370B is mentioned in
++ * vendor code but it might not even belong to the same RTL8367C family.
+  */
+ #define RTL8365MB_LEARN_LIMIT_MAX	2112
+ #define RTL8365MB_MAX_NUM_EXTINTS	3
+@@ -882,6 +889,19 @@ static const struct rtl8365mb_chip_info
+ 		.jam_table = rtl8365mb_init_jam_8365mb_vc,
+ 		.jam_size = ARRAY_SIZE(rtl8365mb_init_jam_8365mb_vc),
+ 	},
++	{
++		.name = "RTL8367S-VB",
++		.chip_id = 0x6642,
++		.chip_ver = 0x0010,
++		.family = RTL8365MB_FAMILY_D,
++		.extints = {
++			{ 6, 0, PHY_INTF(SGMII) | PHY_INTF(HSGMII) },
++			{ 7, 1, PHY_INTF(MII) | PHY_INTF(TMII) |
++				PHY_INTF(RMII) | PHY_INTF(RGMII) },
++		},
++		.jam_table = rtl8365mb_init_jam_8365mb_vc,
++		.jam_size = ARRAY_SIZE(rtl8365mb_init_jam_8365mb_vc),
++	},
+ };
+ 
+ enum rtl8365mb_stp_state {
+@@ -3913,7 +3933,11 @@ static int rtl8365mb_detect(struct realt
+ 
+ 	dev_info(priv->dev, "found an %s switch\n", mb->chip_info->name);
+ 
+-	priv->num_ports = RTL8365MB_MAX_NUM_PORTS;
++	if (rtl8365mb_get_family(priv) == RTL8365MB_FAMILY_D)
++		priv->num_ports = RTL8365MB_D_MAX_NUM_PORTS;
++	else
++		priv->num_ports = RTL8365MB_MAX_NUM_PORTS;
++
+ 	mb->priv = priv;
+ 
+ 	ret = devm_mutex_init(priv->dev, &mb->sds_lock);
