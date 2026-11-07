@@ -64,16 +64,18 @@ setup_interface () {
 		proto_add_ipv6_prefix "$prefix"
 	done
 
-	# Merge addresses
-	for entry in $RA_ADDRESSES; do
-		local duplicate=0
-		local addr="${entry%%/*}"
-		for dentry in $ADDRESSES; do
-			local daddr="${dentry%%/*}"
-			[ "$addr" = "$daddr" ] && duplicate=1
+	# Merge addresses unless RA-derived addresses are disabled
+	if [ "$NORAADDR" != "1" ]; then
+		for entry in $RA_ADDRESSES; do
+			local duplicate=0
+			local addr="${entry%%/*}"
+			for dentry in $ADDRESSES; do
+				local daddr="${dentry%%/*}"
+				[ "$addr" = "$daddr" ] && duplicate=1
+			done
+			[ "$duplicate" = "0" ] && ADDRESSES="$ADDRESSES $entry"
 		done
-		[ "$duplicate" = "0" ] && ADDRESSES="$ADDRESSES $entry"
-	done
+	fi
 
 	for entry in $ADDRESSES; do
 		local addr="${entry%%/*}"
