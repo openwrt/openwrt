@@ -76,8 +76,9 @@ ifeq ($(CONFIG_IB_STANDALONE),)
 		-name 'kernel$(PACKAGE_VERSION_SEPARATOR)*.$(PACKAGE_SUFFIX)' \) \
 	  -exec $(CP) -t $(PKG_BUILD_DIR)/packages {} +
 else
-	$(FIND) $(wildcard $(PACKAGE_SUBDIRS)) -type f -name '*.$(PACKAGE_SUFFIX)' \
-		-exec $(CP) -t $(PKG_BUILD_DIR)/packages/ {} +
+	rsync -a --include='*.$(PACKAGE_SUFFIX)' --exclude='*' \
+	$(foreach dir,$(wildcard $(PACKAGE_SUBDIRS)),$(dir)/) \
+	$(PKG_BUILD_DIR)/packages/
 endif
 
 ifneq ($(CONFIG_SIGNATURE_CHECK),)
