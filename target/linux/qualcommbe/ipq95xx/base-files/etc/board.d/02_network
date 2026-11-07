@@ -17,7 +17,8 @@ ipq95xx_setup_interfaces()
 	askey,sbe1v1k)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" "wan"
 		;;
-	jiorouter,ax6000-jidu6111)
+	jiorouter,ax6000-jidu6111|\
+	jiorouter,ax6000-jidu6411)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "wan"
 		;;
 	linksys,ln6001)
