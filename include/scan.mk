@@ -119,4 +119,7 @@ $(TMP_DIR)/.$(SCAN_TARGET): $(TARGET_STAMP)
 
 FORCE:
 .PHONY: FORCE
-.NOTPARALLEL:
+
+# No .NOTPARALLEL: each PackageDir rule writes only its own $(TMP_DIR)/info
+# file, and the merge step runs after all of them finish. The caller picks
+# the job count, so -j1 gives the serial scan.
