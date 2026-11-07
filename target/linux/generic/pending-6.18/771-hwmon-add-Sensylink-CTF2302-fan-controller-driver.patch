@@ -1,0 +1,304 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Alex Rau <alex@retroduction.org>
+Subject: [PATCH] hwmon: add Sensylink CTF2302 fan controller driver
+
+Minimal driver for the Sensylink CTF2302 fan controller found in the
+Ubiquiti UniFi Cloud Gateway Fiber. It sets the chip up like the stock
+firmware does and exposes three temperatures, two fan speeds and the fan
+duty cycle (pwm1).
+
+Assisted-by: Claude:claude-sonnet-5-5
+Signed-off-by: Alex Rau <alex@retroduction.org>
+
+--- /dev/null
++++ b/drivers/hwmon/ctf2302.c
+@@ -0,0 +1,259 @@
++// SPDX-License-Identifier: GPL-2.0-only
++/*
++ * Sensylink CTF2302 fan controller, as used on the Ubiquiti UniFi Cloud
++ * Gateway Fiber.
++ *
++ * All registers are big endian 16 bit words. The probe writes the same
++ * six registers as the stock firmware, in its order and with its values
++ * (each can be overridden from the device tree with the stock property
++ * names).
++ *
++ * Register 0x40 holds the fan duty cycle in its high byte (0..255) and a
++ * control field in its low byte. The stock driver keeps the control field
++ * at the low byte of its probe value (0x6e) and only changes the duty;
++ * with the control field at 0 the chip ignores the duty and runs the fan
++ * at full speed.
++ *
++ * Temperature and tachometer registers hold a 12 bit value in their upper
++ * bits: temperature = value / 16 - 64 degC, fan = 983040 / value RPM.
++ */
++
++#include <linux/delay.h>
++#include <linux/err.h>
++#include <linux/hwmon.h>
++#include <linux/i2c.h>
++#include <linux/module.h>
++#include <linux/mutex.h>
++#include <linux/of.h>
++
++#define CTF2302_REG_TEMP(ch)		(0x00 + (ch))
++#define CTF2302_REG_TACH(ch)		(0x05 + (ch))
++#define CTF2302_REG_CONV_RATE		0x0d
++#define CTF2302_REG_CH_DIS		0x0e
++#define CTF2302_REG_CONFIG1		0x10
++#define CTF2302_REG_CONFIG2		0x11
++#define CTF2302_REG_FAN_SPIN_TIME	0x17
++#define CTF2302_REG_FAN_DCY_CTRL	0x40
++
++struct ctf2302_data {
++	struct i2c_client *client;
++	struct mutex lock;
++	u8 dcy_ctrl;	/* control field in the low byte of 0x40 */
++};
++
++struct ctf2302_init_reg {
++	u8 reg;
++	const char *prop;
++	u16 def;
++};
++
++/*
++ * Order, values and device tree property names as the stock firmware uses
++ * them; each value can be overridden from the device tree.
++ */
++static const struct ctf2302_init_reg ctf2302_init[] = {
++	{ CTF2302_REG_CH_DIS,		"ch-dis",		0x2000 },
++	{ CTF2302_REG_CONV_RATE,	"conv-rate",		0x5000 },
++	{ CTF2302_REG_CONFIG2,		"config2",		0x5511 },
++	{ CTF2302_REG_FAN_DCY_CTRL,	"fan-dcy-ctrl",		0x006e },
++	{ CTF2302_REG_FAN_SPIN_TIME,	"fan-spin-time",	0x4488 },
++	{ CTF2302_REG_CONFIG1,		"config1",		0x0404 },
++};
++
++static const char * const ctf2302_temp_label[] = { "Local", "CPU", "PMIC" };
++
++/* 12 bit value from the upper bits of a big endian register */
++static int ctf2302_read_12bit(struct i2c_client *client, u8 reg)
++{
++	int ret = i2c_smbus_read_word_swapped(client, reg);
++
++	if (ret < 0)
++		return ret;
++
++	return (ret >> 4) & 0xfff;
++}
++
++static umode_t ctf2302_is_visible(const void *data,
++				  enum hwmon_sensor_types type,
++				  u32 attr, int channel)
++{
++	switch (type) {
++	case hwmon_temp:
++		if (attr == hwmon_temp_input || attr == hwmon_temp_label)
++			return 0444;
++		break;
++	case hwmon_fan:
++		if (attr == hwmon_fan_input)
++			return 0444;
++		break;
++	case hwmon_pwm:
++		if (attr == hwmon_pwm_input)
++			return 0644;
++		break;
++	default:
++		break;
++	}
++
++	return 0;
++}
++
++static int ctf2302_read(struct device *dev, enum hwmon_sensor_types type,
++			u32 attr, int channel, long *val)
++{
++	struct ctf2302_data *data = dev_get_drvdata(dev);
++	int ret;
++
++	switch (type) {
++	case hwmon_temp:
++		if (attr != hwmon_temp_input)
++			return -EOPNOTSUPP;
++		ret = ctf2302_read_12bit(data->client, CTF2302_REG_TEMP(channel));
++		if (ret < 0)
++			return ret;
++		*val = ret * 1000L / 16 - 64000;
++		return 0;
++	case hwmon_fan:
++		if (attr != hwmon_fan_input)
++			return -EOPNOTSUPP;
++		ret = ctf2302_read_12bit(data->client, CTF2302_REG_TACH(channel));
++		if (ret < 0)
++			return ret;
++		*val = (ret == 0 || ret == 0xfff) ? 0 : 983040L / ret;
++		return 0;
++	case hwmon_pwm:
++		if (attr != hwmon_pwm_input)
++			return -EOPNOTSUPP;
++		ret = i2c_smbus_read_word_swapped(data->client,
++						  CTF2302_REG_FAN_DCY_CTRL);
++		if (ret < 0)
++			return ret;
++		*val = (ret >> 8) & 0xff;
++		return 0;
++	default:
++		return -EOPNOTSUPP;
++	}
++}
++
++static int ctf2302_read_string(struct device *dev,
++			       enum hwmon_sensor_types type, u32 attr,
++			       int channel, const char **str)
++{
++	if (type != hwmon_temp || attr != hwmon_temp_label)
++		return -EOPNOTSUPP;
++
++	*str = ctf2302_temp_label[channel];
++	return 0;
++}
++
++static int ctf2302_write(struct device *dev, enum hwmon_sensor_types type,
++			 u32 attr, int channel, long val)
++{
++	struct ctf2302_data *data = dev_get_drvdata(dev);
++	int ret;
++
++	if (type != hwmon_pwm || attr != hwmon_pwm_input)
++		return -EOPNOTSUPP;
++
++	val = clamp_val(val, 0, 255);
++
++	mutex_lock(&data->lock);
++	ret = i2c_smbus_write_word_swapped(data->client,
++					   CTF2302_REG_FAN_DCY_CTRL,
++					   (val << 8) | data->dcy_ctrl);
++	mutex_unlock(&data->lock);
++
++	return ret;
++}
++
++static const struct hwmon_ops ctf2302_hwmon_ops = {
++	.is_visible = ctf2302_is_visible,
++	.read = ctf2302_read,
++	.read_string = ctf2302_read_string,
++	.write = ctf2302_write,
++};
++
++static const struct hwmon_channel_info * const ctf2302_info[] = {
++	HWMON_CHANNEL_INFO(temp,
++			   HWMON_T_INPUT | HWMON_T_LABEL,
++			   HWMON_T_INPUT | HWMON_T_LABEL,
++			   HWMON_T_INPUT | HWMON_T_LABEL),
++	HWMON_CHANNEL_INFO(fan, HWMON_F_INPUT, HWMON_F_INPUT),
++	HWMON_CHANNEL_INFO(pwm, HWMON_PWM_INPUT),
++	NULL
++};
++
++static const struct hwmon_chip_info ctf2302_chip_info = {
++	.ops = &ctf2302_hwmon_ops,
++	.info = ctf2302_info,
++};
++
++static int ctf2302_probe(struct i2c_client *client)
++{
++	struct device *dev = &client->dev;
++	struct ctf2302_data *data;
++	struct device *hwmon_dev;
++	unsigned int i;
++	u32 val;
++	int ret;
++
++	if (!i2c_check_functionality(client->adapter,
++				     I2C_FUNC_SMBUS_WORD_DATA))
++		return -ENODEV;
++
++	data = devm_kzalloc(dev, sizeof(*data), GFP_KERNEL);
++	if (!data)
++		return -ENOMEM;
++
++	data->client = client;
++	mutex_init(&data->lock);
++
++	/* The stock firmware waits 50 ms before the first access. */
++	msleep(50);
++
++	for (i = 0; i < ARRAY_SIZE(ctf2302_init); i++) {
++		const struct ctf2302_init_reg *r = &ctf2302_init[i];
++
++		val = r->def;
++		of_property_read_u32(dev->of_node, r->prop, &val);
++
++		ret = i2c_smbus_write_word_swapped(client, r->reg, val);
++		if (ret < 0)
++			return dev_err_probe(dev, ret,
++					     "write 0x%04x to reg 0x%02x failed\n",
++					     val, r->reg);
++
++		if (r->reg == CTF2302_REG_FAN_DCY_CTRL)
++			data->dcy_ctrl = val & 0xff;
++	}
++
++	hwmon_dev = devm_hwmon_device_register_with_info(dev, client->name,
++							 data,
++							 &ctf2302_chip_info,
++							 NULL);
++	return PTR_ERR_OR_ZERO(hwmon_dev);
++}
++
++static const struct i2c_device_id ctf2302_id[] = {
++	{ "ctf2302" },
++	{ }
++};
++MODULE_DEVICE_TABLE(i2c, ctf2302_id);
++
++static const struct of_device_id ctf2302_of_match[] = {
++	{ .compatible = "sensylink,ctf2302" },
++	{ }
++};
++MODULE_DEVICE_TABLE(of, ctf2302_of_match);
++
++static struct i2c_driver ctf2302_driver = {
++	.driver = {
++		.name = "ctf2302",
++		.of_match_table = ctf2302_of_match,
++	},
++	.probe = ctf2302_probe,
++	.id_table = ctf2302_id,
++};
++module_i2c_driver(ctf2302_driver);
++
++MODULE_DESCRIPTION("Sensylink CTF2302 fan controller driver");
++MODULE_LICENSE("GPL");
+--- a/drivers/hwmon/Kconfig
++++ b/drivers/hwmon/Kconfig
+@@ -67,6 +67,17 @@ config SENSORS_ABITUGURU3
+ 	  This driver can also be built as a module. If so, the module
+ 	  will be called abituguru3.
+ 
++config SENSORS_CTF2302
++	tristate "Sensylink CTF2302 fan controller"
++	depends on I2C
++	help
++	  If you say yes here you get support for the Sensylink CTF2302
++	  fan controller with three temperature inputs and two tachometer
++	  inputs, as found in the Ubiquiti UniFi Cloud Gateway Fiber.
++
++	  This driver can also be built as a module. If so, the module
++	  will be called ctf2302.
++
+ config SENSORS_SMPRO
+ 	tristate "Ampere's Altra SMpro hardware monitoring driver"
+ 	depends on MFD_SMPRO
+--- a/drivers/hwmon/Makefile
++++ b/drivers/hwmon/Makefile
+@@ -11,6 +11,7 @@ obj-$(CONFIG_SENSORS_ACPI_POWER) += acpi
+ obj-$(CONFIG_SENSORS_ATK0110)	+= asus_atk0110.o
+ obj-$(CONFIG_SENSORS_ASUS_EC)	+= asus-ec-sensors.o
+ obj-$(CONFIG_SENSORS_ASUS_WMI)	+= asus_wmi_sensors.o
++obj-$(CONFIG_SENSORS_CTF2302)	+= ctf2302.o
+ obj-$(CONFIG_SENSORS_HP_WMI)	+= hp-wmi-sensors.o
+ 
+ # Native drivers
