@@ -94,7 +94,7 @@
  
     IFXOS_RETURN_IF_POINTER_NULL(pSocAddr, IFX_ERROR);
  
-+#if LINUX_VERSION_CODE < KERNEL_VERSION(6,18,57)
++#if LINUX_VERSION_CODE < KERNEL_VERSION(6,19,0)
     ret = (socFd->ops->bind(socFd, (struct sockaddr*) pSocAddr, sizeof(IFXOS_sockAddr_t)));
 +#else
 +   ret = (socFd->ops->bind(socFd, (struct sockaddr_unsized*) pSocAddr, sizeof(IFXOS_sockAddr_t)));
