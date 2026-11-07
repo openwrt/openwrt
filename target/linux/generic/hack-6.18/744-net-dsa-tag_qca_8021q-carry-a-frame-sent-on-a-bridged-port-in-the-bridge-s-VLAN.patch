@@ -1,0 +1,72 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Stanislaw Pal <kuncy7@gmail.com>
+Date: Tue, 27 Oct 2026 16:00:00 +0100
+Subject: [PATCH] net: dsa: tag_qca_8021q: carry a frame sent on a bridged port
+ in the bridge's VLAN
+
+Under qca-8021q a port that joins a bridge swaps its own tag_8021q VLAN
+for the bridge's, and the bridge sends through it with offload_fwd_mark,
+in that VLAN, with the switch forwarding by its own FDB. A frame sent
+on the port netdev itself still got the port's own VLAN, of which the
+port is no longer a member, and the switch dropped it.
+
+The software flowtable sends exactly such frames: once a flow is in it,
+FLOW_OFFLOAD_XMIT_DIRECT hands the packets to the bridge port the FDB
+names, bypassing the bridge. On an ASUS RT-AX89X with the QCA8337 under
+qca-8021q, a client on lan7 could ping and resolve names, but every TCP
+connection froze after the handshake and a few replies, while the same
+flows worked with flow_offloading off, and from the ports of the SoC's
+own switch.
+
+Carry such a frame in the bridge's VLAN: the tag_8021q bridge VID for a
+VLAN-unaware bridge, the port's PVID for a VLAN-aware one, or the VLAN
+tag it already wears. The switch then delivers it by its FDB, which also
+puts it on the right port when the bridge learnt the station on another
+one (imprecise RX).
+
+Only unicast moves: the flowtable sends nothing else this way, and a
+broadcast or multicast frame sent on the port itself (arping -I lan7, a
+packet socket bound to the port) would otherwise be flooded to every
+port of the bridge. Those keep the port's VLAN, as before.
+
+Link: https://github.com/openwrt/openwrt/pull/26141#issuecomment-6444417923
+Signed-off-by: Stanislaw Pal <kuncy7@gmail.com>
+---
+--- a/net/dsa/tag_qca_8021q.c
++++ b/net/dsa/tag_qca_8021q.c
+@@ -8,6 +8,8 @@
+  * plain 802.1Q, which any MAC - and any hardware in front of it - parses.
+  */
+ #include <linux/dsa/8021q.h>
++#include <linux/etherdevice.h>
++#include <linux/if_bridge.h>
+ #include <linux/if_vlan.h>
+ #include <net/dsa.h>
+ 
+@@ -76,6 +78,26 @@ static struct sk_buff *qca_8021q_xmit(st
+ 			return skb;
+ 
+ 		tx_vid = dsa_tag_8021q_bridge_vid(bridge_num);
++	} else if (dp->bridge && dp->bridge->tx_fwd_offload &&
++		   is_unicast_ether_addr(eth_hdr(skb)->h_dest)) {
++		struct net_device *br = dsa_port_bridge_dev_get(dp);
++		u16 pvid;
++
++		/* A unicast frame sent on a bridged port itself, not by the
++		 * bridge: the flowtable transmits its flows this way
++		 * (FLOW_OFFLOAD_XMIT_DIRECT). The port's own VLAN went with
++		 * bridging, so carry the frame in the bridge's VLAN instead,
++		 * where the switch delivers it by its own FDB - to the right
++		 * port even when the bridge learnt the station on another one
++		 * (imprecise RX). Broadcast and multicast keep the port's VLAN.
++		 */
++		if (!br_vlan_enabled(br))
++			tx_vid = dsa_tag_8021q_bridge_vid(dsa_port_bridge_num_get(dp));
++		else if (skb_vlan_tag_present(skb) ||
++			 skb->protocol == htons(ETH_P_8021Q))
++			return skb;
++		else if (!br_vlan_get_pvid_rcu(netdev, &pvid) && pvid)
++			tx_vid = pvid;
+ 	}
+ 
+ 	/* An 802.1Q upper of the port (wan.35 for a PPPoE ISP, wan.99 next
