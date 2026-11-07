@@ -41,8 +41,9 @@
 #define DLT_IEEE802_11_RADIO		127
 #define LEN_IEEE802_11_HDR			32
 
-#define FRAMETYPE_MASK				0xFC
+#define FRAMETYPE_BEACON_MASK			0xFC
 #define FRAMETYPE_BEACON			0x80
+#define FRAMETYPE_DATA_MASK			0x0C
 #define FRAMETYPE_DATA				0x08
 
 #if __BYTE_ORDER == __BIG_ENDIAN
@@ -550,8 +551,8 @@ int main(int argc, char **argv)
 
 		frametype = *(uint8_t *)(pktbuf + le16(rhdr->it_len));
 
-		if ((filter_data   && (frametype & FRAMETYPE_MASK) == FRAMETYPE_DATA) ||
-		    (filter_beacon && (frametype & FRAMETYPE_MASK) == FRAMETYPE_BEACON))
+		if ((filter_data   && (frametype & FRAMETYPE_DATA_MASK) == FRAMETYPE_DATA) ||
+		    (filter_beacon && (frametype & FRAMETYPE_BEACON_MASK) == FRAMETYPE_BEACON))
 		{
 			frames_filtered++;
 			continue;
