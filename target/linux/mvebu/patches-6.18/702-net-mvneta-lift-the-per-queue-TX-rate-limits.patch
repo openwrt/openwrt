@@ -1,0 +1,48 @@
+From 5c5817631d9fc5bce0cc4f200a2da608dc6ad734 Mon Sep 17 00:00:00 2001
+From: Josef Schlehofer <pepe.schlehofer@gmail.com>
+Date: Sun, 1 Nov 2026 21:14:00 +0100
+Subject: [PATCH net v3 1/5] net: mvneta: lift the per-queue TX rate limits
+
+The per-queue rate limits set by mqprio stay in effect after the
+shaper is turned off.
+
+mvneta_disable_per_queue_rate_limit() only changes the mode bits in
+MVNETA_TXQ_CMD1_REG. The token buckets keep limiting the TX queues
+with that mode as well, and their refill rate still holds the old
+limit.
+
+Refill the token buckets of all TX queues at full rate when the rate
+limit is disabled. Deleting the qdisc reaches this code only with the
+next patch.
+
+Tested on a Turris Omnia (Armada 385) with 10 Mbit/s limits on a
+100 Mbit/s link. When mqprio was set up again without a shaper, each
+TX queue stayed at 10 Mbit/s. With this patch the link reaches
+94 Mbit/s.
+
+Fixes: 2551dc9e398c ("net: mvneta: Add TC traffic shaping offload")
+Signed-off-by: Josef Schlehofer <pepe.schlehofer@gmail.com>
+Reviewed-by: Maxime Chevallier <maxime.chevallier@bootlin.com>
+---
+ drivers/net/ethernet/marvell/mvneta.c | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+--- a/drivers/net/ethernet/marvell/mvneta.c
++++ b/drivers/net/ethernet/marvell/mvneta.c
+@@ -5212,9 +5212,16 @@ static int mvneta_enable_per_queue_rate_
+ static void mvneta_disable_per_queue_rate_limit(struct mvneta_port *pp)
+ {
+ 	u32 val = mvreg_read(pp, MVNETA_TXQ_CMD1_REG);
++	int queue;
+ 
+ 	val |= (MVNETA_TXQ_CMD1_BW_LIM_SEL_V1 | MVNETA_TXQ_CMD1_BW_LIM_EN);
+ 	mvreg_write(pp, MVNETA_TXQ_CMD1_REG, val);
++
++	/* The token buckets still limit the queues, refill them at full rate */
++	val = (1 << MVNETA_TXQ_BUCKET_REFILL_PERIOD_SHIFT) |
++	      MVNETA_TXQ_BUCKET_REFILL_VALUE_MAX;
++	for (queue = 0; queue < txq_number; queue++)
++		mvreg_write(pp, MVNETA_TXQ_BUCKET_REFILL_REG(queue), val);
+ }
+ 
+ static int mvneta_setup_queue_rates(struct mvneta_port *pp, int queue,
