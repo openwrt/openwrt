@@ -120,7 +120,6 @@ const struct rtldsa_config rtldsa_838x_cfg = {
 	.mask_port_reg_be = rtl838x_mask_port_reg,
 	.set_port_reg_be = rtl838x_set_port_reg,
 	.get_port_reg_be = rtl838x_get_port_reg,
-	.mask_port_reg_le = rtl838x_mask_port_reg,
 	.set_port_reg_le = rtl838x_set_port_reg,
 	.get_port_reg_le = rtl838x_get_port_reg,
 	.stat_port_rst = RTL838X_STAT_PORT_RST,
