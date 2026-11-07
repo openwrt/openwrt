@@ -20,6 +20,8 @@ sleep 1
 
 v "Rebooting system..."
 umount -a
+# upgraded (PID 1) stops feeding the watchdog: a stalled reboot is reset
+kill -HUP 1 2>/dev/null
 reboot -f
 sleep 5
 echo b 2>/dev/null >/proc/sysrq-trigger
