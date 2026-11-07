@@ -1,0 +1,43 @@
+// SPDX-License-Identifier: (GPL-2.0 OR MIT)
+
+/dts-v1/;
+#include "mt7981b-cudy-p2.dtsi"
+
+/ {
+	model = "Cudy P2 v2";
+	compatible = "cudy,p2-v2", "mediatek,mt7981";
+};
+
+&xhci {
+	phy-names = "usb2-0";
+	mediatek,u3p-dis-msk = <1>;
+};
+
+&u3port0 {
+	status = "okay";
+};
+
+&pio {
+	modem_power_hog {
+		gpio-hog;
+		gpios = <6 1>;
+		output-high;
+		line-name = "5gpwr-hog";
+	};
+
+	modem_mux_hog {
+		gpio-hog;
+		gpios = <8 0>;
+		output-low;
+		line-name = "usb5g-hog";
+	};
+};
+
+&voip_volte {
+	gpio-export,output = <0>;
+};
+
+&gpio5gpwr {
+	gpio-export,output = <1>;
+};
+
