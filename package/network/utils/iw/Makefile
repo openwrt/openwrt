@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=iw
 PKG_VERSION:=6.17
-PKG_RELEASE:=1
+PKG_RELEASE:=2
  
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
 PKG_SOURCE_URL:=@KERNEL/software/network/iw
@@ -35,6 +35,7 @@ define Package/iw
 $(call Package/iw/Default)
   VARIANT:=tiny
   DEFAULT_VARIANT:=1
+  CONFLICTS:=iw-full
 endef
 
 define Package/iw-full

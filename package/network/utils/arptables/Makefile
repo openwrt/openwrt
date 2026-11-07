@@ -7,7 +7,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=arptables
 PKG_VERSION:=0.0.5
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=https://ftp.netfilter.org/pub/arptables
@@ -25,7 +25,7 @@ define Package/arptables-legacy
   TITLE:=ARP firewalling software
   DEPENDS:=+kmod-arptables
   URL:=https://git.netfilter.org/arptables/
-  PROVIDES:=arptables
+  PROVIDES:=@arptables
   ALTERNATIVES:=\
     200:/usr/sbin/arptables:/usr/sbin/arptables-legacy
 endef
