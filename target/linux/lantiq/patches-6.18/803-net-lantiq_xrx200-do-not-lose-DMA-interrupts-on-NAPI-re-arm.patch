@@ -1,0 +1,66 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Gregory Dymarek <gregd72002@gmail.com>
+Date: Sun, 25 Oct 2026 00:00:00 +0000
+Subject: [PATCH] net: lantiq_xrx200: do not lose DMA interrupts on NAPI re-arm
+
+The DMA interrupt handler acks the channel status and disables the channel
+interrupt, and NAPI enables it again when it is done. A descriptor that
+completes between the last descriptor check in NAPI and the re-enable sets
+the channel status again. On the xRX330 (DMA rev 8) enabling the interrupt
+with that status already set raises no interrupt, so the descriptor is
+never handled: once the TX ring fills up, transmission stops for good.
+
+Clear the channel status before enabling the interrupt, then check the
+next descriptor once more and reschedule NAPI if it has completed.
+
+Seen on a DrayTek Vigor 2862 (xRX330): iperf3 stalled after about one
+second; the TX channel showed a pending descriptor-complete status with
+no interrupt, and forcing the interrupt from the ICU resumed traffic.
+
+Signed-off-by: Gregory Dymarek <gregd72002@gmail.com>
+---
+--- a/drivers/net/ethernet/lantiq_xrx200.c
++++ b/drivers/net/ethernet/lantiq_xrx200.c
+@@ -280,6 +280,24 @@
+ 	return ret;
+ }
+ 
++/*
++ * Re-arm the channel interrupt when NAPI is done. On the xRX330 a descriptor
++ * that completes while the interrupt is disabled leaves the channel status
++ * set, and no interrupt is raised once it is enabled again. Clear the status
++ * before enabling the interrupt and check the next descriptor once more.
++ */
++static void xrx200_dma_rearm(struct xrx200_chan *ch, struct ltq_dma_desc *desc)
++{
++	ltq_dma_ack_irq(&ch->dma);
++	ltq_dma_enable_irq(&ch->dma);
++
++	if ((READ_ONCE(desc->ctl) & (LTQ_DMA_OWN | LTQ_DMA_C)) == LTQ_DMA_C &&
++	    napi_schedule_prep(&ch->napi)) {
++		ltq_dma_disable_irq(&ch->dma);
++		__napi_schedule(&ch->napi);
++	}
++}
++
+ static int xrx200_poll_rx(struct napi_struct *napi, int budget)
+ {
+ 	struct xrx200_chan *ch = container_of(napi,
+@@ -304,7 +322,7 @@
+ 
+ 	if (rx < budget) {
+ 		if (napi_complete_done(&ch->napi, rx))
+-			ltq_dma_enable_irq(&ch->dma);
++			xrx200_dma_rearm(ch, &ch->dma.desc_base[ch->dma.desc]);
+ 	}
+ 
+ 	return rx;
+@@ -348,7 +366,7 @@
+ 
+ 	if (pkts < budget) {
+ 		if (napi_complete_done(&ch->napi, pkts))
+-			ltq_dma_enable_irq(&ch->dma);
++			xrx200_dma_rearm(ch, &ch->dma.desc_base[ch->tx_free]);
+ 	}
+ 
+ 	return pkts;

@@ -1,0 +1,182 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Gregory Dymarek <gregd72002@gmail.com>
+Date: Sun, 25 Oct 2026 00:00:00 +0000
+Subject: [PATCH] serial: lantiq: support the xRX330 interrupt bit layout
+
+The ASC on the xRX330 (GRX390 family) has an extra TX buffer interrupt
+at bit 1 of IRNREN/IRNCR, which moves RX to bit 2 and the error
+interrupt to bit 3. The driver hard-codes the VR9 layout (TX bit 0,
+RX bit 1, error bit 2), so on xRX330 it enables the TX buffer interrupt
+in place of RX and RX in place of the error interrupt, and never
+enables the error interrupt. Received characters then raise the error
+line, whose handler does not read the FIFO, and input is only picked
+up in 16-byte bursts with overruns.
+
+Move the interrupt bits into the per-SoC data and add an
+"lantiq,xrx330-asc" compatible with the xRX330 layout. Each bit drives
+its own ICU line, so the device tree lists the TX, RX and error lines
+in that order as before.
+
+The TX buffer interrupt stays disabled, as the TX buffer bit of the
+other SoCs already is: it fires along with TX activity, and the driver
+refills the TX FIFO from the TX interrupt alone, so it would only add
+interrupts. Its ICU line is not part of the binding.
+
+Also declare the early console for the new compatible. It only polls
+the FIFO level, so it does not depend on the interrupt layout.
+
+Tested on a DrayTek Vigor 2862 (xRX330 rev 1.1): each source enabled on
+its own raises a separate ICU line (bit 0 TX, bit 1 TX buffer, bit 2 RX,
+bit 3 RX overrun with ASCCON.ROEN set).
+
+Signed-off-by: Gregory Dymarek <gregd72002@gmail.com>
+---
+--- a/Documentation/devicetree/bindings/serial/lantiq,asc.yaml
++++ b/Documentation/devicetree/bindings/serial/lantiq,asc.yaml
+@@ -15,7 +15,9 @@
+ 
+ properties:
+   compatible:
+-    const: lantiq,asc
++    enum:
++      - lantiq,asc
++      - lantiq,xrx330-asc
+ 
+   reg:
+     maxItems: 1
+--- a/drivers/tty/serial/lantiq.c
++++ b/drivers/tty/serial/lantiq.c
+@@ -54,10 +54,17 @@
+ #define ASC_IRNREN_RX		0x2
+ #define ASC_IRNREN_ERR		0x4
+ #define ASC_IRNREN_TX_BUF	0x8
+-#define ASC_IRNCR_TIR		0x1
+-#define ASC_IRNCR_RIR		0x2
+-#define ASC_IRNCR_EIR		0x4
+-#define ASC_IRNCR_MASK		GENMASK(2, 0)
++/*
++ * xRX330: an extra TX buffer bit at bit 1 moves RX and error up by one.
++ * The TX buffer interrupt is left disabled, like ASC_IRNREN_TX_BUF on the
++ * other SoCs: it fires along with TX activity, while the driver refills the
++ * FIFO from the TX interrupt alone, so enabling it would only add interrupts.
++ * Its ICU line is not listed in the device tree.
++ */
++#define ASC_IRNREN_XRX330_TX		0x1
++#define ASC_IRNREN_XRX330_TX_BUF	0x2
++#define ASC_IRNREN_XRX330_RX		0x4
++#define ASC_IRNREN_XRX330_ERR		0x8
+ 
+ #define ASCOPT_CSIZE		0x3
+ #define TXFIFO_FL		1
+@@ -103,6 +110,10 @@
+ 	int	(*fetch_irq)(struct device *dev, struct ltq_uart_port *ltq_port);
+ 	int	(*request_irq)(struct uart_port *port);
+ 	void	(*free_irq)(struct uart_port *port);
++	/* interrupt bits, same layout in IRNREN and IRNCR */
++	u32	irq_tx;
++	u32	irq_rx;
++	u32	irq_err;
+ };
+ 
+ struct ltq_uart_port {
+@@ -237,7 +248,7 @@
+ 	struct ltq_uart_port *ltq_port = to_ltq_uart_port(port);
+ 
+ 	spin_lock_irqsave(&ltq_port->lock, flags);
+-	__raw_writel(ASC_IRNCR_TIR, port->membase + LTQ_ASC_IRNCR);
++	__raw_writel(ltq_port->soc->irq_tx, port->membase + LTQ_ASC_IRNCR);
+ 	spin_unlock_irqrestore(&ltq_port->lock, flags);
+ 	lqasc_start_tx(port);
+ 	return IRQ_HANDLED;
+@@ -251,7 +262,7 @@
+ 	struct ltq_uart_port *ltq_port = to_ltq_uart_port(port);
+ 
+ 	spin_lock_irqsave(&ltq_port->lock, flags);
+-	__raw_writel(ASC_IRNCR_EIR, port->membase + LTQ_ASC_IRNCR);
++	__raw_writel(ltq_port->soc->irq_err, port->membase + LTQ_ASC_IRNCR);
+ 	/* clear any pending interrupts */
+ 	asc_update_bits(0, ASCWHBSTATE_CLRPE | ASCWHBSTATE_CLRFE |
+ 		ASCWHBSTATE_CLRROE, port->membase + LTQ_ASC_WHBSTATE);
+@@ -267,7 +278,7 @@
+ 	struct ltq_uart_port *ltq_port = to_ltq_uart_port(port);
+ 
+ 	spin_lock_irqsave(&ltq_port->lock, flags);
+-	__raw_writel(ASC_IRNCR_RIR, port->membase + LTQ_ASC_IRNCR);
++	__raw_writel(ltq_port->soc->irq_rx, port->membase + LTQ_ASC_IRNCR);
+ 	lqasc_rx_chars(port);
+ 	spin_unlock_irqrestore(&ltq_port->lock, flags);
+ 	return IRQ_HANDLED;
+@@ -283,16 +294,17 @@
+ 	spin_lock_irqsave(&ltq_port->lock, flags);
+ 	stat = readl(port->membase + LTQ_ASC_IRNCR);
+ 	spin_unlock_irqrestore(&ltq_port->lock, flags);
+-	if (!(stat & ASC_IRNCR_MASK))
++	if (!(stat & (ltq_port->soc->irq_tx | ltq_port->soc->irq_rx |
++		      ltq_port->soc->irq_err)))
+ 		return IRQ_NONE;
+ 
+-	if (stat & ASC_IRNCR_TIR)
++	if (stat & ltq_port->soc->irq_tx)
+ 		lqasc_tx_int(irq, p);
+ 
+-	if (stat & ASC_IRNCR_RIR)
++	if (stat & ltq_port->soc->irq_rx)
+ 		lqasc_rx_int(irq, p);
+ 
+-	if (stat & ASC_IRNCR_EIR)
++	if (stat & ltq_port->soc->irq_err)
+ 		lqasc_err_int(irq, p);
+ 
+ 	return IRQ_HANDLED;
+@@ -360,8 +372,8 @@
+ 	if (retval)
+ 		return retval;
+ 
+-	__raw_writel(ASC_IRNREN_RX | ASC_IRNREN_ERR | ASC_IRNREN_TX,
+-		port->membase + LTQ_ASC_IRNREN);
++	__raw_writel(ltq_port->soc->irq_rx | ltq_port->soc->irq_err |
++		ltq_port->soc->irq_tx, port->membase + LTQ_ASC_IRNREN);
+ 	return retval;
+ }
+ 
+@@ -680,6 +692,8 @@
+ 	return 0;
+ }
+ OF_EARLYCON_DECLARE(lantiq, "lantiq,asc", lqasc_serial_early_console_setup);
++OF_EARLYCON_DECLARE(lantiq, "lantiq,xrx330-asc",
++		    lqasc_serial_early_console_setup);
+ OF_EARLYCON_DECLARE(lantiq, "intel,lgm-asc", lqasc_serial_early_console_setup);
+ 
+ #define LANTIQ_SERIAL_CONSOLE	(&lqasc_console)
+@@ -896,15 +910,31 @@
+ 	.fetch_irq = fetch_irq_lantiq,
+ 	.request_irq = request_irq_lantiq,
+ 	.free_irq = free_irq_lantiq,
++	.irq_tx = ASC_IRNREN_TX,
++	.irq_rx = ASC_IRNREN_RX,
++	.irq_err = ASC_IRNREN_ERR,
++};
++
++static const struct ltq_soc_data soc_data_xrx330 = {
++	.fetch_irq = fetch_irq_lantiq,
++	.request_irq = request_irq_lantiq,
++	.free_irq = free_irq_lantiq,
++	.irq_tx = ASC_IRNREN_XRX330_TX,
++	.irq_rx = ASC_IRNREN_XRX330_RX,
++	.irq_err = ASC_IRNREN_XRX330_ERR,
+ };
+ 
+ static const struct ltq_soc_data soc_data_intel = {
+ 	.fetch_irq = fetch_irq_intel,
+ 	.request_irq = request_irq_intel,
+ 	.free_irq = free_irq_intel,
++	.irq_tx = ASC_IRNREN_TX,
++	.irq_rx = ASC_IRNREN_RX,
++	.irq_err = ASC_IRNREN_ERR,
+ };
+ 
+ static const struct of_device_id ltq_asc_match[] = {
++	{ .compatible = "lantiq,xrx330-asc", .data = &soc_data_xrx330 },
+ 	{ .compatible = "lantiq,asc", .data = &soc_data_lantiq },
+ 	{ .compatible = "intel,lgm-asc", .data = &soc_data_intel },
+ 	{},
