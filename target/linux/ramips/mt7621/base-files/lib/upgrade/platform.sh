@@ -95,6 +95,7 @@ platform_do_upgrade() {
 	dlink,dir-3040-a1|\
 	dlink,dir-3060-a1|\
 	dlink,dir-853-a3|\
+	dlink,dir-853-r3|\
 	dlink,dir-x1860-b1|\
 	edup,ep-rt2960s|\
 	edup,ep-rt2983|\
