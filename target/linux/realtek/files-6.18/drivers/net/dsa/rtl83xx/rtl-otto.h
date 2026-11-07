@@ -338,7 +338,6 @@ struct rtldsa_config {
 	void (*mask_port_reg_be)(u64 clear, u64 set, int reg);
 	void (*set_port_reg_be)(u64 set, int reg);
 	u64 (*get_port_reg_be)(int reg);
-	void (*mask_port_reg_le)(u64 clear, u64 set, int reg);
 	void (*set_port_reg_le)(u64 set, int reg);
 	u64 (*get_port_reg_le)(int reg);
 	int stat_port_rst;
@@ -608,7 +607,6 @@ int rtl83xx_port_is_under(const struct net_device *dev, struct otto_dsa_priv *pr
 void rtl839x_mask_port_reg_be(u64 clear, u64 set, int reg);
 u64 rtl839x_get_port_reg_be(int reg);
 void rtl839x_set_port_reg_be(u64 set, int reg);
-void rtl839x_mask_port_reg_le(u64 clear, u64 set, int reg);
 void rtl839x_set_port_reg_le(u64 set, int reg);
 u64 rtl839x_get_port_reg_le(int reg);
 
