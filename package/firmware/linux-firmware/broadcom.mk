@@ -185,16 +185,6 @@ define Package/brcmfmac-firmware-usb/install
 endef
 $(eval $(call BuildPackage,brcmfmac-firmware-usb))
 
-Package/brcmsmac-firmware = $(call Package/firmware-default,Broadcom BCM43xx softmac PCIe firmware,,LICENCE.broadcom_bcm43xx)
-define Package/brcmsmac-firmware/install
-	$(INSTALL_DIR) $(1)/lib/firmware/brcm
-	$(INSTALL_DATA) \
-		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/brcm/bcm43xx-0.fw \
-		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/brcm/bcm43xx_hdr-0.fw \
-		$(1)/lib/firmware/brcm/
-endef
-$(eval $(call BuildPackage,brcmsmac-firmware))
-
 Package/bnx2-firmware = $(call Package/firmware-default,Broadcom BCM5706/5708/5709/5716 firmware)
 define Package/bnx2-firmware/install
 	$(INSTALL_DIR) $(1)/lib/firmware/bnx2
