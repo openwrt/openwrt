@@ -122,6 +122,20 @@ define Device/cmcc_rax3000q
 endef
 TARGET_DEVICES += cmcc_rax3000q
 
+define Device/davolink_dvw-632x
+	$(call Device/FitImage)
+	$(call Device/UbiFit)
+	DEVICE_VENDOR := Davolink
+	DEVICE_MODEL := DVW-632X
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	SOC := ipq5018
+	DEVICE_DTS_CONFIG := config@mp03.5-c1
+	DEVICE_PACKAGES := ath11k-firmware-ipq5018-qcn6122 \
+		ipq-wifi-davolink_dvw-632x
+endef
+TARGET_DEVICES += davolink_dvw-632x
+
 define Device/elecom_wrc-x3000gs2
 	$(call Device/FitImageLzma)
 	DEVICE_VENDOR := ELECOM
