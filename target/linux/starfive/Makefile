@@ -7,7 +7,7 @@ include $(TOPDIR)/rules.mk
 ARCH:=riscv64
 BOARD:=starfive
 BOARDNAME:=StarFive JH71x0 (7100/7110)
-FEATURES:=ext4
+FEATURES:=ext4 ramdisk rootfs-part squashfs
 KERNELNAME:=Image dtbs
 
 KERNEL_PATCHVER:=6.18
