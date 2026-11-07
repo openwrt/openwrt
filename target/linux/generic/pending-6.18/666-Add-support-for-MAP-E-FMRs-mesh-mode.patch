@@ -7,10 +7,7 @@ border relay. This is similar to how 6rd works but for IPv4 over IPv6.
 
 Signed-off-by: Steven Barth <cyrus@openwrt.org>
 ---
- include/net/ip6_tunnel.h       |  13 ++
- include/uapi/linux/if_tunnel.h |  13 ++
- net/ipv6/ip6_tunnel.c          | 276 +++++++++++++++++++++++++++++++++++++++--
- 3 files changed, 291 insertions(+), 11 deletions(-)
+ 3 files changed, 375 insertions(+), 8 deletions(-)
 
 --- a/include/net/ip6_tunnel.h
 +++ b/include/net/ip6_tunnel.h
@@ -79,7 +76,15 @@ Signed-off-by: Steven Barth <cyrus@openwrt.org>
   */
  
  #define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
-@@ -69,9 +72,9 @@ static bool log_ecn_error = true;
+@@ -23,6 +26,7 @@
+ #include <linux/icmp.h>
+ #include <linux/if.h>
+ #include <linux/in.h>
++#include <linux/inetdevice.h>
+ #include <linux/ip.h>
+ #include <linux/net.h>
+ #include <linux/in6.h>
+@@ -69,9 +73,9 @@ static bool log_ecn_error = true;
  module_param(log_ecn_error, bool, 0644);
  MODULE_PARM_DESC(log_ecn_error, "Log packets received with corrupted ECN");
  
@@ -91,7 +96,7 @@ Signed-off-by: Steven Barth <cyrus@openwrt.org>
  
  	return hash_32(hash, IP6_TUNNEL_HASH_SIZE_SHIFT);
  }
-@@ -116,17 +119,33 @@ static struct ip6_tnl *
+@@ -116,17 +120,33 @@ static struct ip6_tnl *
  ip6_tnl_lookup(struct net *net, int link,
  	       const struct in6_addr *remote, const struct in6_addr *local)
  {
@@ -127,7 +132,7 @@ Signed-off-by: Steven Barth <cyrus@openwrt.org>
  		if (link == t->parms.link)
  			return t;
  		else
-@@ -134,7 +153,7 @@ ip6_tnl_lookup(struct net *net, int link
+@@ -134,7 +154,7 @@ ip6_tnl_lookup(struct net *net, int link
  	}
  
  	memset(&any, 0, sizeof(any));
@@ -136,7 +141,7 @@ Signed-off-by: Steven Barth <cyrus@openwrt.org>
  	for_each_ip6_tunnel_rcu(ip6n->tnls_r_l[hash]) {
  		if (!ipv6_addr_equal(local, &t->parms.laddr) ||
  		    !ipv6_addr_any(&t->parms.raddr) ||
-@@ -147,7 +166,7 @@ ip6_tnl_lookup(struct net *net, int link
+@@ -147,7 +167,7 @@ ip6_tnl_lookup(struct net *net, int link
  			cand = t;
  	}
  
@@ -145,7 +150,7 @@ Signed-off-by: Steven Barth <cyrus@openwrt.org>
  	for_each_ip6_tunnel_rcu(ip6n->tnls_r_l[hash]) {
  		if (!ipv6_addr_equal(remote, &t->parms.raddr) ||
  		    !ipv6_addr_any(&t->parms.laddr) ||
-@@ -196,7 +215,7 @@ ip6_tnl_bucket(struct ip6_tnl_net *ip6n,
+@@ -196,7 +216,7 @@ ip6_tnl_bucket(struct ip6_tnl_net *ip6n,
  
  	if (!ipv6_addr_any(remote) || !ipv6_addr_any(local)) {
  		prio = 1;
@@ -154,7 +159,7 @@ Signed-off-by: Steven Barth <cyrus@openwrt.org>
  	}
  	return &ip6n->tnls[prio][h];
  }
-@@ -376,6 +395,12 @@ ip6_tnl_dev_uninit(struct net_device *de
+@@ -376,6 +396,12 @@ ip6_tnl_dev_uninit(struct net_device *de
  	struct net *net = t->net;
  	struct ip6_tnl_net *ip6n = net_generic(net, ip6_tnl_net_id);
  
@@ -167,115 +172,149 @@ Signed-off-by: Steven Barth <cyrus@openwrt.org>
  	if (dev == ip6n->fb_tnl_dev)
  		RCU_INIT_POINTER(ip6n->tnls_wc[0], NULL);
  	else
-@@ -798,6 +823,107 @@ int ip6_tnl_rcv_ctl(struct ip6_tnl *t,
+@@ -798,6 +824,141 @@ int ip6_tnl_rcv_ctl(struct ip6_tnl *t,
  }
  EXPORT_SYMBOL_GPL(ip6_tnl_rcv_ctl);
  
 +/**
 + * ip4ip6_fmr_calc - calculate target / source IPv6-address based on FMR
 + *   @dest: destination IPv6 address buffer
-+ *   @skb: received socket buffer
++ *   @skb: socket buffer
 + *   @fmr: MAP FMR
 + *   @xmit: Calculate for xmit or rcv
 + **/
 +static void ip4ip6_fmr_calc(struct in6_addr *dest,
-+		const struct iphdr *iph, const uint8_t *end,
++		const struct sk_buff *skb,
 +		const struct __ip6_tnl_fmr *fmr, bool xmit)
 +{
-+	int psidlen = fmr->ea_len - (32 - fmr->ip4_prefix_len);
-+	u8 *portp = NULL;
-+	bool use_dest_addr;
-+	const struct iphdr *dsth = iph;
++	unsigned int frombyte = fmr->ip6_prefix_len / 8;
++	int fromrem = fmr->ip6_prefix_len % 8;
++	unsigned int bytes = min_t(unsigned int, sizeof(u64),
++				   sizeof(struct in6_addr) - frombyte);
++	const u32 *addr;
++	u64 eabits = 0, mask;
++	u64 t = 0;
++	u16 psidbits = 0;
++	int psidlen = max_t(int, 0, fmr->ea_len - (32 - fmr->ip4_prefix_len));
++	struct iphdr iph_buf, dsth_buf;
++	const struct iphdr *iph, *dsth;
++	struct icmphdr ih_buf;
++	const struct icmphdr *ih;
++	__be16 ports_buf[2];
++	const __be16 *ports;
++	__be16 port = 0;
++	bool use_dest_addr = xmit;
++	int offset = skb_network_offset(skb);
 +
-+	if ((u8*)dsth >= end)
++	iph = skb_header_pointer(skb, offset, sizeof(iph_buf), &iph_buf);
++	if (!iph || iph->version != 4 || iph->ihl < 5)
 +		return;
 +
-+	/* find significant IP header */
-+	if (iph->protocol == IPPROTO_ICMP) {
-+		struct icmphdr *ih = (struct icmphdr*)(((u8*)dsth) + dsth->ihl * 4);
-+		if (ih && ((u8*)&ih[1]) <= end && (
-+			ih->type == ICMP_DEST_UNREACH ||
-+			ih->type == ICMP_SOURCE_QUENCH ||
-+			ih->type == ICMP_TIME_EXCEEDED ||
-+			ih->type == ICMP_PARAMETERPROB ||
-+			ih->type == ICMP_REDIRECT))
-+				dsth = (const struct iphdr*)&ih[1];
-+	}
++	dsth = iph;
++	offset += iph->ihl * 4;
++	if (offset > skb->len)
++		return;
 +
-+	/* in xmit-path use dest port by default and source port only if
-+		this is an ICMP reply to something else; vice versa in rcv-path */
-+	use_dest_addr = (xmit && dsth == iph) || (!xmit && dsth != iph);
++	/* Find the quoted IP header in ICMP errors. */
++	if (iph->protocol == IPPROTO_ICMP &&
++	    !(iph->frag_off & htons(IP_OFFSET))) {
++		ih = skb_header_pointer(skb, offset, sizeof(ih_buf), &ih_buf);
++		if (!ih)
++			return;
 +
-+	/* get dst port */
-+	if (((u8*)&dsth[1]) <= end && (
-+		dsth->protocol == IPPROTO_UDP ||
-+		dsth->protocol == IPPROTO_TCP ||
-+		dsth->protocol == IPPROTO_SCTP ||
-+		dsth->protocol == IPPROTO_DCCP)) {
-+			/* for UDP, TCP, SCTP and DCCP source and dest port
-+			follow IPv4 header directly */
-+			portp = ((u8*)dsth) + dsth->ihl * 4;
-+
-+			if (use_dest_addr)
-+				portp += sizeof(u16);
-+	} else if (iph->protocol == IPPROTO_ICMP) {
-+		struct icmphdr *ih = (struct icmphdr*)(((u8*)dsth) + dsth->ihl * 4);
-+
-+		/* use icmp identifier as port */
-+		if (((u8*)&ih) <= end && (
-+		    (use_dest_addr && (
-+		    ih->type == ICMP_ECHOREPLY ||
-+			ih->type == ICMP_TIMESTAMPREPLY ||
-+			ih->type == ICMP_INFO_REPLY ||
-+			ih->type == ICMP_ADDRESSREPLY)) ||
-+			(!use_dest_addr && (
-+			ih->type == ICMP_ECHO ||
-+			ih->type == ICMP_TIMESTAMP ||
-+			ih->type == ICMP_INFO_REQUEST ||
-+			ih->type == ICMP_ADDRESS)
-+			)))
-+				portp = (u8*)&ih->un.echo.id;
-+	}
-+
-+	if ((portp && &portp[2] <= end) || psidlen == 0) {
-+		int frombyte = fmr->ip6_prefix_len / 8;
-+		int fromrem = fmr->ip6_prefix_len % 8;
-+		int bytes = sizeof(struct in6_addr) - frombyte;
-+		const u32 *addr = (use_dest_addr) ? &iph->daddr : &iph->saddr;
-+		u64 eabits = ((u64)ntohl(*addr)) << (32 + fmr->ip4_prefix_len);
-+		u64 t = 0;
-+
-+		/* extract PSID from port and add it to eabits */
-+		u16 psidbits = 0;
-+		if (psidlen > 0) {
-+			psidbits = ((u16)portp[0]) << 8 | ((u16)portp[1]);
-+			psidbits >>= 16 - psidlen - fmr->offset;
-+			psidbits = (u16)(psidbits << (16 - psidlen));
-+			eabits |= ((u64)psidbits) << (48 - (fmr->ea_len - psidlen));
++		switch (ih->type) {
++		case ICMP_DEST_UNREACH:
++		case ICMP_SOURCE_QUENCH:
++		case ICMP_TIME_EXCEEDED:
++		case ICMP_PARAMETERPROB:
++		case ICMP_REDIRECT:
++			offset += sizeof(ih_buf);
++			dsth = skb_header_pointer(skb, offset, sizeof(dsth_buf),
++						  &dsth_buf);
++			if (!dsth || dsth->version != 4 || dsth->ihl < 5)
++				return;
++			offset += dsth->ihl * 4;
++			if (offset > skb->len)
++				return;
++			use_dest_addr = !xmit;
++			break;
 +		}
-+
-+		/* rewrite destination address */
-+		*dest = fmr->ip6_prefix;
-+		memcpy(&dest->s6_addr[10], addr, sizeof(*addr));
-+		dest->s6_addr16[7] = htons(psidbits >> (16 - psidlen));
-+
-+		if (bytes > sizeof(u64))
-+			bytes = sizeof(u64);
-+
-+		/* insert eabits */
-+		memcpy(&t, &dest->s6_addr[frombyte], bytes);
-+		t = be64_to_cpu(t) & ~(((((u64)1) << fmr->ea_len) - 1)
-+			<< (64 - fmr->ea_len - fromrem));
-+		t = cpu_to_be64(t | (eabits >> fromrem));
-+		memcpy(&dest->s6_addr[frombyte], &t, bytes);
 +	}
++
++	if (psidlen > 0) {
++		/* Non-initial fragments do not contain transport headers. */
++		if (dsth->frag_off & htons(IP_OFFSET))
++			return;
++
++		switch (dsth->protocol) {
++		case IPPROTO_UDP:
++		case IPPROTO_TCP:
++		case IPPROTO_SCTP:
++		case IPPROTO_DCCP:
++			ports = skb_header_pointer(skb, offset, sizeof(ports_buf),
++						   ports_buf);
++			if (!ports)
++				return;
++			port = ports[use_dest_addr];
++			break;
++		case IPPROTO_ICMP:
++			ih = skb_header_pointer(skb, offset, sizeof(ih_buf), &ih_buf);
++			if (!ih)
++				return;
++
++			/* Use the ICMP identifier as the port. */
++			if ((use_dest_addr &&
++			     (ih->type == ICMP_ECHOREPLY ||
++			      ih->type == ICMP_TIMESTAMPREPLY ||
++			      ih->type == ICMP_INFO_REPLY ||
++			      ih->type == ICMP_ADDRESSREPLY)) ||
++			    (!use_dest_addr &&
++			     (ih->type == ICMP_ECHO ||
++			      ih->type == ICMP_TIMESTAMP ||
++			      ih->type == ICMP_INFO_REQUEST ||
++			      ih->type == ICMP_ADDRESS)))
++				port = ih->un.echo.id;
++			else
++				return;
++			break;
++		default:
++			return;
++		}
++	}
++
++	addr = use_dest_addr ? &iph->daddr : &iph->saddr;
++	if (fmr->ip4_prefix_len < 32)
++		eabits = ((u64)ntohl(*addr)) << (32 + fmr->ip4_prefix_len);
++
++	/* extract PSID from port and add it to eabits */
++	if (psidlen > 0) {
++		psidbits = ntohs(port);
++		psidbits >>= 16 - psidlen - fmr->offset;
++		psidbits = (u16)(psidbits << (16 - psidlen));
++		eabits |= ((u64)psidbits) << (48 - (fmr->ea_len - psidlen));
++	}
++
++	/* rewrite destination address */
++	*dest = fmr->ip6_prefix;
++	memcpy(&dest->s6_addr[10], addr, sizeof(*addr));
++	dest->s6_addr16[7] = htons(psidbits >> (16 - psidlen));
++
++	if (!fmr->ea_len)
++		return;
++
++	/* insert eabits */
++	memcpy(&t, &dest->s6_addr[frombyte], bytes);
++	mask = ((1ULL << fmr->ea_len) - 1) << (64 - fmr->ea_len - fromrem);
++	t = be64_to_cpu(t) & ~mask;
++	t = cpu_to_be64(t | ((eabits >> fromrem) & mask));
++	memcpy(&dest->s6_addr[frombyte], &t, bytes);
 +}
 +
 +
  static int __ip6_tnl_rcv(struct ip6_tnl *tunnel, struct sk_buff *skb,
  			 const struct tnl_ptk_info *tpi,
  			 struct metadata_dst *tun_dst,
-@@ -863,6 +989,27 @@ static int __ip6_tnl_rcv(struct ip6_tnl
+@@ -863,6 +1024,24 @@ static int __ip6_tnl_rcv(struct ip6_tnl
  
  	memset(skb->cb, 0, sizeof(struct inet6_skb_parm));
  
@@ -291,19 +330,16 @@ Signed-off-by: Steven Barth <cyrus@openwrt.org>
 +
 +			/* Check that IPv6 matches IPv4 source to prevent spoofing */
 +			if (fmr)
-+				ip4ip6_fmr_calc(&expected, ip_hdr(skb),
-+						skb_tail_pointer(skb), fmr, false);
++				ip4ip6_fmr_calc(&expected, skb, fmr, false);
 +
-+			if (!ipv6_addr_equal(&ipv6h->saddr, &expected)) {
-+				rcu_read_unlock();
++			if (!ipv6_addr_equal(&ipv6h->saddr, &expected))
 +				goto drop;
-+			}
 +	}
 +
  	__skb_tunnel_rx(skb, tunnel->dev, tunnel->net);
  
  	err = dscp_ecn_decapsulate(tunnel, ipv6h, skb);
-@@ -1012,6 +1159,7 @@ static void init_tel_txopt(struct ipv6_t
+@@ -1012,6 +1191,7 @@ static void init_tel_txopt(struct ipv6_t
  	opt->ops.opt_nflen = 8;
  }
  
@@ -311,7 +347,7 @@ Signed-off-by: Steven Barth <cyrus@openwrt.org>
  /**
   * ip6_tnl_addr_conflict - compare packet addresses to tunnel's own
   *   @t: the outgoing tunnel device
-@@ -1290,6 +1438,7 @@ ipxip6_tnl_xmit(struct sk_buff *skb, str
+@@ -1290,6 +1470,7 @@ ipxip6_tnl_xmit(struct sk_buff *skb, str
  		u8 protocol)
  {
  	struct ip6_tnl *t = netdev_priv(dev);
@@ -319,26 +355,27 @@ Signed-off-by: Steven Barth <cyrus@openwrt.org>
  	struct ipv6hdr *ipv6h;
  	const struct iphdr  *iph;
  	int encap_limit = -1;
-@@ -1389,6 +1538,18 @@ ipxip6_tnl_xmit(struct sk_buff *skb, str
+@@ -1389,6 +1570,19 @@ ipxip6_tnl_xmit(struct sk_buff *skb, str
  	fl6.flowi6_uid = sock_net_uid(dev_net(dev), NULL);
  	dsfield = INET_ECN_encapsulate(dsfield, orig_dsfield);
  
-+	/* try to find matching FMR */
-+	for (fmr = t->parms.fmrs; fmr; fmr = fmr->next) {
-+		unsigned mshift = 32 - fmr->ip4_prefix_len;
-+		if (ntohl(fmr->ip4_prefix.s_addr) >> mshift ==
-+				ntohl(ip_hdr(skb)->daddr) >> mshift)
-+			break;
-+	}
++	if (protocol == IPPROTO_IPIP) {
++		/* Try to find a matching FMR. */
++		for (fmr = t->parms.fmrs; fmr; fmr = fmr->next) {
++			__be32 mask = inet_make_mask(fmr->ip4_prefix_len);
 +
-+	/* change dstaddr according to FMR */
-+	if (fmr)
-+		ip4ip6_fmr_calc(&fl6.daddr, ip_hdr(skb), skb_tail_pointer(skb), fmr, true);
++			if (!((fmr->ip4_prefix.s_addr ^ ip_hdr(skb)->daddr) & mask))
++				break;
++		}
++
++		if (fmr)
++			ip4ip6_fmr_calc(&fl6.daddr, skb, fmr, true);
++	}
 +
  	if (iptunnel_handle_offloads(skb, SKB_GSO_IPXIP6))
  		return -1;
  
-@@ -1545,6 +1706,14 @@ ip6_tnl_change(struct ip6_tnl *t, const
+@@ -1545,6 +1739,14 @@ ip6_tnl_change(struct ip6_tnl *t, const
  	t->parms.link = p->link;
  	t->parms.proto = p->proto;
  	t->parms.fwmark = p->fwmark;
@@ -353,7 +390,7 @@ Signed-off-by: Steven Barth <cyrus@openwrt.org>
  	dst_cache_reset(&t->dst_cache);
  	ip6_tnl_link_config(t);
  }
-@@ -1590,6 +1759,7 @@ ip6_tnl_parm_from_user(struct __ip6_tnl_
+@@ -1590,6 +1792,7 @@ ip6_tnl_parm_from_user(struct __ip6_tnl_
  	p->flowinfo = u->flowinfo;
  	p->link = u->link;
  	p->proto = u->proto;
@@ -361,23 +398,69 @@ Signed-off-by: Steven Barth <cyrus@openwrt.org>
  	memcpy(p->name, u->name, sizeof(u->name));
  }
  
-@@ -1973,6 +2143,15 @@ static int ip6_tnl_validate(struct nlatt
+@@ -1956,10 +2159,61 @@ static int __net_init ip6_fb_tnl_dev_ini
  	return 0;
  }
  
 +static const struct nla_policy ip6_tnl_fmr_policy[IFLA_IPTUN_FMR_MAX + 1] = {
 +	[IFLA_IPTUN_FMR_IP6_PREFIX] = { .len = sizeof(struct in6_addr) },
 +	[IFLA_IPTUN_FMR_IP4_PREFIX] = { .len = sizeof(struct in_addr) },
-+	[IFLA_IPTUN_FMR_IP6_PREFIX_LEN] = { .type = NLA_U8 },
-+	[IFLA_IPTUN_FMR_IP4_PREFIX_LEN] = { .type = NLA_U8 },
-+	[IFLA_IPTUN_FMR_EA_LEN] = { .type = NLA_U8 },
-+	[IFLA_IPTUN_FMR_OFFSET] = { .type = NLA_U8 }
++	[IFLA_IPTUN_FMR_IP6_PREFIX_LEN] = NLA_POLICY_MAX(NLA_U8, 128),
++	[IFLA_IPTUN_FMR_IP4_PREFIX_LEN] = NLA_POLICY_MAX(NLA_U8, 32),
++	[IFLA_IPTUN_FMR_EA_LEN] = NLA_POLICY_MAX(NLA_U8, 48),
++	[IFLA_IPTUN_FMR_OFFSET] = NLA_POLICY_MAX(NLA_U8, 16)
 +};
 +
- static void ip6_tnl_netlink_parms(struct nlattr *data[],
- 				  struct __ip6_tnl_parm *parms)
++static int ip6_tnl_fmr_validate(struct nlattr *fmrs,
++				struct netlink_ext_ack *extack)
++{
++	struct nlattr *fmr;
++	int rem;
++
++	nla_for_each_nested(fmr, fmrs, rem) {
++		struct nlattr *tb[IFLA_IPTUN_FMR_MAX + 1];
++		u8 ip6_prefix_len = 0, ip4_prefix_len = 0, ea_len = 0, offset = 6;
++		int psidlen, err;
++
++		err = nla_parse_nested(tb, IFLA_IPTUN_FMR_MAX, fmr,
++				       ip6_tnl_fmr_policy, extack);
++		if (err)
++			return err;
++
++		if (tb[IFLA_IPTUN_FMR_IP6_PREFIX_LEN])
++			ip6_prefix_len = nla_get_u8(tb[IFLA_IPTUN_FMR_IP6_PREFIX_LEN]);
++		if (tb[IFLA_IPTUN_FMR_IP4_PREFIX_LEN])
++			ip4_prefix_len = nla_get_u8(tb[IFLA_IPTUN_FMR_IP4_PREFIX_LEN]);
++		if (tb[IFLA_IPTUN_FMR_EA_LEN])
++			ea_len = nla_get_u8(tb[IFLA_IPTUN_FMR_EA_LEN]);
++		if (tb[IFLA_IPTUN_FMR_OFFSET])
++			offset = nla_get_u8(tb[IFLA_IPTUN_FMR_OFFSET]);
++
++		psidlen = max_t(int, 0, ea_len - (32 - ip4_prefix_len));
++		if (ip6_prefix_len + ea_len > 128 || psidlen + offset > 16) {
++			NL_SET_ERR_MSG(extack, "Invalid MAP-E FMR bit lengths");
++			return -EINVAL;
++		}
++	}
++
++	return rem ? -EINVAL : 0;
++}
++
+ static int ip6_tnl_validate(struct nlattr *tb[], struct nlattr *data[],
+ 			    struct netlink_ext_ack *extack)
  {
-@@ -2010,6 +2189,46 @@ static void ip6_tnl_netlink_parms(struct
+ 	u8 proto;
++	int err;
++
++	if (data && data[IFLA_IPTUN_FMRS]) {
++		err = ip6_tnl_fmr_validate(data[IFLA_IPTUN_FMRS], extack);
++		if (err)
++			return err;
++	}
+ 
+ 	if (!data || !data[IFLA_IPTUN_PROTO])
+ 		return 0;
+@@ -2010,6 +2264,47 @@ static void ip6_tnl_netlink_parms(struct
  
  	if (data[IFLA_IPTUN_FWMARK])
  		parms->fwmark = nla_get_u32(data[IFLA_IPTUN_FWMARK]);
@@ -389,8 +472,9 @@ Signed-off-by: Steven Barth <cyrus@openwrt.org>
 +			struct nlattr *fmrd[IFLA_IPTUN_FMR_MAX + 1], *c;
 +			struct __ip6_tnl_fmr *nfmr;
 +
-+			nla_parse_nested(fmrd, IFLA_IPTUN_FMR_MAX,
-+				fmr, ip6_tnl_fmr_policy, NULL);
++			if (nla_parse_nested(fmrd, IFLA_IPTUN_FMR_MAX, fmr,
++					     ip6_tnl_fmr_policy, NULL))
++				continue;
 +
 +			if (!(nfmr = kzalloc(sizeof(*nfmr), GFP_KERNEL)))
 +				continue;
@@ -424,7 +508,7 @@ Signed-off-by: Steven Barth <cyrus@openwrt.org>
  }
  
  static int ip6_tnl_newlink(struct net_device *dev,
-@@ -2121,6 +2340,12 @@ static void ip6_tnl_dellink(struct net_d
+@@ -2121,6 +2416,12 @@ static void ip6_tnl_dellink(struct net_d
  
  static size_t ip6_tnl_get_size(const struct net_device *dev)
  {
@@ -437,7 +521,7 @@ Signed-off-by: Steven Barth <cyrus@openwrt.org>
  	return
  		/* IFLA_IPTUN_LINK */
  		nla_total_size(4) +
-@@ -2150,6 +2375,24 @@ static size_t ip6_tnl_get_size(const str
+@@ -2150,6 +2451,24 @@ static size_t ip6_tnl_get_size(const str
  		nla_total_size(0) +
  		/* IFLA_IPTUN_FWMARK */
  		nla_total_size(4) +
@@ -462,7 +546,7 @@ Signed-off-by: Steven Barth <cyrus@openwrt.org>
  		0;
  }
  
-@@ -2157,6 +2400,9 @@ static int ip6_tnl_fill_info(struct sk_b
+@@ -2157,6 +2476,9 @@ static int ip6_tnl_fill_info(struct sk_b
  {
  	struct ip6_tnl *tunnel = netdev_priv(dev);
  	struct __ip6_tnl_parm *parm = &tunnel->parms;
@@ -472,7 +556,7 @@ Signed-off-by: Steven Barth <cyrus@openwrt.org>
  
  	if (nla_put_u32(skb, IFLA_IPTUN_LINK, parm->link) ||
  	    nla_put_in6_addr(skb, IFLA_IPTUN_LOCAL, &parm->laddr) ||
-@@ -2166,9 +2412,27 @@ static int ip6_tnl_fill_info(struct sk_b
+@@ -2166,9 +2488,27 @@ static int ip6_tnl_fill_info(struct sk_b
  	    nla_put_be32(skb, IFLA_IPTUN_FLOWINFO, parm->flowinfo) ||
  	    nla_put_u32(skb, IFLA_IPTUN_FLAGS, parm->flags) ||
  	    nla_put_u8(skb, IFLA_IPTUN_PROTO, parm->proto) ||
@@ -501,7 +585,7 @@ Signed-off-by: Steven Barth <cyrus@openwrt.org>
  	if (nla_put_u16(skb, IFLA_IPTUN_ENCAP_TYPE, tunnel->encap.type) ||
  	    nla_put_be16(skb, IFLA_IPTUN_ENCAP_SPORT, tunnel->encap.sport) ||
  	    nla_put_be16(skb, IFLA_IPTUN_ENCAP_DPORT, tunnel->encap.dport) ||
-@@ -2208,6 +2472,7 @@ static const struct nla_policy ip6_tnl_p
+@@ -2208,6 +2548,7 @@ static const struct nla_policy ip6_tnl_p
  	[IFLA_IPTUN_ENCAP_DPORT]	= { .type = NLA_U16 },
  	[IFLA_IPTUN_COLLECT_METADATA]	= { .type = NLA_FLAG },
  	[IFLA_IPTUN_FWMARK]		= { .type = NLA_U32 },
