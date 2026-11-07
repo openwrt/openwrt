@@ -1,0 +1,154 @@
+From 92acd0f6c91ecad25fcad0abce092ce287c3c647 Mon Sep 17 00:00:00 2001
+From: Til Kaiser <mail@tk154.de>
+Date: Wed, 30 Sep 2026 21:39:53 +0200
+Subject: [PATCH] net: ethernet: qualcomm: ppe: Add platform support for
+ IPQ5332
+
+IPQ5332 shares the IPQ9574 PPE architecture, but has only two Ethernet
+ports plus the EDMA FIFO. Its PPE clock runs at 200 MHz, and it needs
+four interconnect paths and the GCC sleep clock.
+
+Add IPQ5332 platform data and a PPE type using the hooks introduced for
+IPQ5424. Exclude the unavailable GMAC/XGMAC 2-5 register ranges.
+
+Clarify that the common parent and rate apply to the NSSCC PPE clocks;
+the GCC sleep clock has a separate parent.
+
+Signed-off-by: Til Kaiser <mail@tk154.de>
+
+--- a/drivers/net/ethernet/qualcomm/ppe/ppe.c
++++ b/drivers/net/ethernet/qualcomm/ppe/ppe.c
+@@ -22,11 +22,14 @@
+ 
+ #define IPQ9574_PPE_CLK_RATE	353000000
+ #define IPQ5424_PPE_CLK_RATE	375000000
++#define IPQ5332_PPE_CLK_RATE	200000000
+ 
+ /* 6 physical ports, 1 EDMA FIFO and 1 EIP FIFO. */
+ #define IPQ9574_PPE_PORT_MAX		8
+ /* 3 physical ports and 1 EDMA FIFO. */
+ #define IPQ5424_PPE_PORT_MAX		4
++/* 2 physical ports and 1 EDMA FIFO. */
++#define IPQ5332_PPE_PORT_MAX		3
+ 
+ /**
+  * struct ppe_of_data - PPE private data of IPQ SoC
+@@ -115,6 +118,29 @@ static const struct icc_bulk_data ipq542
+ 	},
+ };
+ 
++static const struct icc_bulk_data ipq5332_ppe_icc_data[] = {
++	{
++		.name = "ppe",
++		.avg_bw = 0,
++		.peak_bw = 0,
++	},
++	{
++		.name = "ppe_cfg",
++		.avg_bw = 0,
++		.peak_bw = 0,
++	},
++	{
++		.name = "qos_gen",
++		.avg_bw = 6000,
++		.peak_bw = 6000,
++	},
++	{
++		.name = "timeout_ref",
++		.avg_bw = 6000,
++		.peak_bw = 6000,
++	},
++};
++
+ static const struct regmap_range ppe_readable_ranges[] = {
+ 	regmap_reg_range(0x0, 0x1ff),		/* Global */
+ 	regmap_reg_range(0x400, 0x5ff),		/* LPI CSR */
+@@ -191,6 +217,37 @@ static const struct regmap_config regmap
+ 	.fast_io = true,
+ };
+ 
++/* For IPQ5332, there are only two Ethernet ports, the register space of
++ * GMAC/XGMAC 2-5 is unavailable.
++ */
++static const struct regmap_range ppe_reserved_ranges_ipq5332[] = {
++	regmap_reg_range(0x1400, 0x15ff),	/* GMAC2 */
++	regmap_reg_range(0x1600, 0x17ff),	/* GMAC3 */
++	regmap_reg_range(0x1800, 0x19ff),	/* GMAC4 */
++	regmap_reg_range(0x1a00, 0x1bff),	/* GMAC5 */
++	regmap_reg_range(0x508000, 0x50bfff),	/* XGMAC2 */
++	regmap_reg_range(0x50c000, 0x50ffff),	/* XGMAC3 */
++	regmap_reg_range(0x510000, 0x513fff),	/* XGMAC4 */
++	regmap_reg_range(0x514000, 0x517fff),	/* XGMAC5 */
++};
++
++static const struct regmap_access_table ppe_reg_table_ipq5332 = {
++	.yes_ranges = ppe_readable_ranges,
++	.n_yes_ranges = ARRAY_SIZE(ppe_readable_ranges),
++	.no_ranges = ppe_reserved_ranges_ipq5332,
++	.n_no_ranges = ARRAY_SIZE(ppe_reserved_ranges_ipq5332),
++};
++
++static const struct regmap_config regmap_config_ipq5332 = {
++	.reg_bits = 32,
++	.reg_stride = 4,
++	.val_bits = 32,
++	.rd_table = &ppe_reg_table_ipq5332,
++	.wr_table = &ppe_reg_table_ipq5332,
++	.max_register = 0xbef800,
++	.fast_io = true,
++};
++
+ static int ppe_clock_init_and_reset(struct ppe_device *ppe_dev,
+ 				    const struct ppe_of_data *data)
+ {
+@@ -223,9 +280,9 @@ static int ppe_clock_init_and_reset(stru
+ 	if (ret)
+ 		return ret;
+ 
+-	/* The PPE clocks have a common parent clock. Setting the clock
+-	 * rate of "ppe" ensures the clock rate of all PPE clocks is
+-	 * configured to the same rate.
++	/* The NSSCC PPE clocks (ppe, apb, ipe and btq) share a parent.
++	 * Setting the "ppe" rate also sets the rate of the other NSSCC
++	 * PPE clocks. The optional GCC sleep clock has a separate parent.
+ 	 */
+ 	clk = devm_clk_get(dev, "ppe");
+ 	if (IS_ERR(clk))
+@@ -339,9 +396,19 @@ static const struct ppe_of_data ipq5424_
+ 	.num_icc_paths = ARRAY_SIZE(ipq5424_ppe_icc_data),
+ };
+ 
++static const struct ppe_of_data ipq5332_data = {
++	.type = IPQ5332_PPE,
++	.ppe_rate = IPQ5332_PPE_CLK_RATE,
++	.num_ports = IPQ5332_PPE_PORT_MAX,
++	.regmap_config = &regmap_config_ipq5332,
++	.icc_paths = ipq5332_ppe_icc_data,
++	.num_icc_paths = ARRAY_SIZE(ipq5332_ppe_icc_data),
++};
++
+ static const struct of_device_id qcom_ppe_of_match[] = {
+ 	{ .compatible = "qcom,ipq9574-ppe", .data = &ipq9574_data },
+ 	{ .compatible = "qcom,ipq5424-ppe", .data = &ipq5424_data },
++	{ .compatible = "qcom,ipq5332-ppe", .data = &ipq5332_data },
+ 	{}
+ };
+ MODULE_DEVICE_TABLE(of, qcom_ppe_of_match);
+--- a/drivers/net/ethernet/qualcomm/ppe/ppe.h
++++ b/drivers/net/ethernet/qualcomm/ppe/ppe.h
+@@ -19,6 +19,7 @@ struct ppe_ports;
+  * enum ppe_type - PPE device type.
+  * @IPQ9574_PPE: PPE device of IPQ9574.
+  * @IPQ5424_PPE: PPE device of IPQ5424.
++ * @IPQ5332_PPE: PPE device of IPQ5332.
+  *
+  * PPE type is used to identify the PPE device of the different
+  * IPQ platform.
+@@ -26,6 +27,7 @@ struct ppe_ports;
+ enum ppe_type {
+ 	IPQ9574_PPE,
+ 	IPQ5424_PPE,
++	IPQ5332_PPE,
+ };
+ 
+ /**

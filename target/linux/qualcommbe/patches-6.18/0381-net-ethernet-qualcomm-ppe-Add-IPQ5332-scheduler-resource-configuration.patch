@@ -1,0 +1,84 @@
+From abccbb4b6a172a0e21730498223497e7a1852adf Mon Sep 17 00:00:00 2001
+From: Til Kaiser <mail@tk154.de>
+Date: Wed, 30 Sep 2026 21:39:53 +0200
+Subject: [PATCH] net: ethernet: qualcomm: ppe: Add IPQ5332 scheduler resource
+ configuration
+
+The PPE scheduler resources are assigned per port, with the reserved
+pool stored at the end of the table. IPQ5332 needs entries for the CPU
+port and two Ethernet ports, followed by the reserved pool at index 3.
+
+Add an IPQ5332 resource table and select it through the PPE type dispatch.
+Retain the driver's CPU and reserved queue partition: CPU unicast queues
+0-63 and multicast queues 256-271. The queue, flow and DRR ranges for
+ports 1 and 2 match the QSDK IPQ5332 definitions.
+
+Signed-off-by: Til Kaiser <mail@tk154.de>
+
+--- a/drivers/net/ethernet/qualcomm/ppe/ppe_config.c
++++ b/drivers/net/ethernet/qualcomm/ppe/ppe_config.c
+@@ -1231,6 +1231,53 @@ static const struct ppe_port_schedule_re
+ 	},
+ };
+ 
++static const struct ppe_port_schedule_resource ipq5332_ppe_scheduler_res[] = {
++	{	.ucastq_start	= 0,
++		.ucastq_end	= 63,
++		.mcastq_start	= 256,
++		.mcastq_end	= 271,
++		.flow_id_start	= 0,
++		.flow_id_end	= 0,
++		.l0node_start	= 0,
++		.l0node_end	= 7,
++		.l1node_start	= 0,
++		.l1node_end	= 0,
++	},
++	{	.ucastq_start	= 144,
++		.ucastq_end	= 159,
++		.mcastq_start	= 272,
++		.mcastq_end	= 275,
++		.flow_id_start	= 36,
++		.flow_id_end	= 39,
++		.l0node_start	= 48,
++		.l0node_end	= 63,
++		.l1node_start	= 8,
++		.l1node_end	= 11,
++	},
++	{	.ucastq_start	= 160,
++		.ucastq_end	= 175,
++		.mcastq_start	= 276,
++		.mcastq_end	= 279,
++		.flow_id_start	= 40,
++		.flow_id_end	= 43,
++		.l0node_start	= 64,
++		.l0node_end	= 79,
++		.l1node_start	= 12,
++		.l1node_end	= 15,
++	},
++	{	.ucastq_start	= 64,
++		.ucastq_end	= 143,
++		.mcastq_start	= 0,
++		.mcastq_end	= 0,
++		.flow_id_start	= 1,
++		.flow_id_end	= 35,
++		.l0node_start	= 8,
++		.l0node_end	= 47,
++		.l1node_start	= 1,
++		.l1node_end	= 7,
++	},
++};
++
+ /* Set the PPE queue level scheduler configuration. */
+ static int ppe_scheduler_l0_queue_map_set(struct ppe_device *ppe_dev,
+ 					  int node_id, int port,
+@@ -1570,6 +1617,10 @@ int ppe_port_resource_get(struct ppe_dev
+ 		scheduler_res = ipq5424_ppe_scheduler_res;
+ 		scheduler_res_len = ARRAY_SIZE(ipq5424_ppe_scheduler_res);
+ 		break;
++	case IPQ5332_PPE:
++		scheduler_res = ipq5332_ppe_scheduler_res;
++		scheduler_res_len = ARRAY_SIZE(ipq5332_ppe_scheduler_res);
++		break;
+ 	default:
+ 		dev_err(ppe_dev->dev, "Invalid PPE type %d\n", ppe_dev->type);
+ 		return -EINVAL;

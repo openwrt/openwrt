@@ -112,6 +112,7 @@ ALLWIFIBOARDS:= \
 	tplink_eap660hd-v1 \
 	tplink_re700x \
 	tplink_tl-wa1201-v2 \
+	ubnt_u7-pro-xgs \
 	ubnt_utr \
 	wallys_dr40x9 \
 	wallys_dr5018s \
@@ -327,6 +328,7 @@ $(eval $(call generate-ipq-wifi-package,tplink_eap650-outdoor-v1,TP-Link EAP650-
 $(eval $(call generate-ipq-wifi-package,tplink_eap660hd-v1,TP-Link EAP660 HD v1))
 $(eval $(call generate-ipq-wifi-package,tplink_re700x,TP-Link RE700X))
 $(eval $(call generate-ipq-wifi-package,tplink_tl-wa1201-v2,TP-Link TL-WA1201 V2))
+$(eval $(call generate-ipq-wifi-package,ubnt_u7-pro-xgs,Ubiquiti UniFi U7 Pro XGS))
 $(eval $(call generate-ipq-wifi-package,ubnt_utr,Ubiquiti UniFi Travel Router))
 $(eval $(call generate-ipq-wifi-package,wallys_dr40x9,Wallys DR40X9))
 $(eval $(call generate-ipq-wifi-package,wallys_dr5018s,Wallys DR5018S))
