@@ -1,0 +1,137 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jose Ignacio Tornos Martinez <jtornosm@redhat.com>
+Date: Thu, 17 Sep 2026 08:48:23 +0200
+Subject: [PATCH v7 2/4] wifi: ath11k/ath12k: remove skb parameter from get_ring_selector
+
+Change the get_ring_selector hw_ops callback signature from
+get_ring_selector(struct sk_buff *skb) to get_ring_selector(u8 ac),
+removing the dependency on the skb.
+
+After the previous patch switched WCN6750 from skb_get_hash() to
+skb_get_queue_mapping(), all get_ring_selector implementations fall
+into two categories:
+ - smp_processor_id(): ignores the skb entirely
+ - skb_get_queue_mapping(): only reads the AC value from the skb
+
+Since the AC is the only information extracted from the skb, pass it
+directly as a u8 parameter instead. Callers in the dp_tx path now
+pass skb_get_queue_mapping(skb), which preserves the exact same
+behavior.
+
+This change enables a subsequent patch to call get_ring_selector()
+from wake_tx_queue using txq->ac, without needing access to the skb.
+mac80211 guarantees that skb_get_queue_mapping(skb) == txq->ac
+for any skb dequeued from a given txq, since both values are
+derived from the same skb->priority through the same AC mapping.
+
+No functional change.
+
+Link: https://lore.kernel.org/all/20260917064825.12747-1-jtornosm@redhat.com/
+Signed-off-by: Jose Ignacio Tornos Martinez <jtornosm@redhat.com>
+---
+v7: no modification
+v6: https://lore.kernel.org/all/20260811172435.616200-3-jtornosm@redhat.com/
+
+ drivers/net/wireless/ath/ath11k/dp_tx.c       |  2 +-
+ drivers/net/wireless/ath/ath11k/hw.c          | 16 ++++------------
+ drivers/net/wireless/ath/ath11k/hw.h          |  2 +-
+ drivers/net/wireless/ath/ath12k/hw.h          |  2 +-
+ drivers/net/wireless/ath/ath12k/wifi7/dp_tx.c |  2 +-
+ drivers/net/wireless/ath/ath12k/wifi7/hw.c    |  6 +++---
+ 6 files changed, 11 insertions(+), 19 deletions(-)
+
+--- a/drivers/net/wireless/ath/ath11k/dp_tx.c
++++ b/drivers/net/wireless/ath/ath11k/dp_tx.c
+@@ -108,7 +108,7 @@ int ath11k_dp_tx(struct ath11k *ar, stru
+ 
+ 	pool_id = skb_get_queue_mapping(skb) & (ATH11K_HW_MAX_QUEUES - 1);
+ 
+-	ring_selector = ab->hw_params.hw_ops->get_ring_selector(skb);
++	ring_selector = ab->hw_params.hw_ops->get_ring_selector(skb_get_queue_mapping(skb));
+ 
+ tcl_ring_sel:
+ 	tcl_ring_retry = false;
+--- a/drivers/net/wireless/ath/ath11k/hw.c
++++ b/drivers/net/wireless/ath/ath11k/hw.c
+@@ -887,22 +887,14 @@ static bool ath11k_hw_wcn6855_rx_desc_ge
+ 			 __le32_to_cpu(desc->u.wcn6855.msdu_start.info2));
+ }
+ 
+-static u32 ath11k_hw_ipq8074_get_tcl_ring_selector(struct sk_buff *skb)
++static u32 ath11k_hw_ipq8074_get_tcl_ring_selector(u8 ac)
+ {
+-	/* Let the default ring selection be based on current processor
+-	 * number, where one of the 3 tcl rings are selected based on
+-	 * the smp_processor_id(). In case that ring
+-	 * is full/busy, we resort to other available rings.
+-	 * If all rings are full, we drop the packet.
+-	 *
+-	 * TODO: Add throttling logic when all rings are full
+-	 */
+ 	return smp_processor_id();
+ }
+ 
+-static u32 ath11k_hw_wcn6750_get_tcl_ring_selector(struct sk_buff *skb)
++static u32 ath11k_hw_wcn6750_get_tcl_ring_selector(u8 ac)
+ {
+-	return skb_get_queue_mapping(skb);
++	return ac;
+ }
+ 
+ const struct ath11k_hw_ops ipq9574_ops = {
+--- a/drivers/net/wireless/ath/ath11k/hw.h
++++ b/drivers/net/wireless/ath/ath11k/hw.h
+@@ -278,7 +278,7 @@ struct ath11k_hw_ops {
+ 	u16 (*mpdu_info_get_peerid)(struct hal_rx_mpdu_info *mpdu_info);
+ 	bool (*rx_desc_mac_addr2_valid)(struct hal_rx_desc *desc);
+ 	u8* (*rx_desc_mpdu_start_addr2)(struct hal_rx_desc *desc);
+-	u32 (*get_ring_selector)(struct sk_buff *skb);
++	u32 (*get_ring_selector)(u8 ac);
+ };
+ 
+ extern const struct ath11k_hw_ops ipq9574_ops;
+--- a/drivers/net/wireless/ath/ath12k/hw.h
++++ b/drivers/net/wireless/ath/ath12k/hw.h
+@@ -245,7 +245,7 @@ struct ath12k_hw_ops {
+ 	int (*mac_id_to_pdev_id)(const struct ath12k_hw_params *hw, int mac_id);
+ 	int (*mac_id_to_srng_id)(const struct ath12k_hw_params *hw, int mac_id);
+ 	int (*rxdma_ring_sel_config)(struct ath12k_base *ab);
+-	u8 (*get_ring_selector)(struct sk_buff *skb);
++	u8 (*get_ring_selector)(u8 ac);
+ 	bool (*dp_srng_is_tx_comp_ring)(int ring_num);
+ 	bool (*is_frame_link_agnostic)(struct ath12k_link_vif *arvif,
+ 				       struct ieee80211_mgmt *mgmt);
+--- a/drivers/net/wireless/ath/ath12k/wifi7/dp_tx.c
++++ b/drivers/net/wireless/ath/ath12k/wifi7/dp_tx.c
+@@ -111,7 +111,7 @@ int ath12k_wifi7_dp_tx(struct ath12k_pde
+ 	 * If all rings are full, we drop the packet.
+ 	 * TODO: Add throttling logic when all rings are full
+ 	 */
+-	ring_selector = dp->hw_params->hw_ops->get_ring_selector(skb);
++	ring_selector = dp->hw_params->hw_ops->get_ring_selector(skb_get_queue_mapping(skb));
+ 
+ tcl_ring_sel:
+ 	tcl_ring_retry = false;
+--- a/drivers/net/wireless/ath/ath12k/wifi7/hw.c
++++ b/drivers/net/wireless/ath/ath12k/wifi7/hw.c
+@@ -49,7 +49,7 @@ ath12k_wifi7_hw_mac_id_to_srng_id_qcn927
+ 	return 0;
+ }
+ 
+-static u8 ath12k_wifi7_hw_get_ring_selector_qcn9274(struct sk_buff *skb)
++static u8 ath12k_wifi7_hw_get_ring_selector_qcn9274(u8 ac)
+ {
+ 	return smp_processor_id();
+ }
+@@ -83,9 +83,9 @@ ath12k_wifi7_hw_mac_id_to_srng_id_wcn785
+ 	return mac_id;
+ }
+ 
+-static u8 ath12k_wifi7_hw_get_ring_selector_wcn7850(struct sk_buff *skb)
++static u8 ath12k_wifi7_hw_get_ring_selector_wcn7850(u8 ac)
+ {
+-	return skb_get_queue_mapping(skb);
++	return ac;
+ }
+ 
+ static bool ath12k_wifi7_dp_srng_is_comp_ring_wcn7850(int ring_num)

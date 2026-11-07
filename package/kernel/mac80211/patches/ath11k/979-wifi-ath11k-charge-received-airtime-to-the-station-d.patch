@@ -1,0 +1,59 @@
+From c6c5077a26c893f08467d73810acd50d45a4e787 Mon Sep 17 00:00:00 2001
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Date: Mon, 24 Aug 2026 15:38:05 +0200
+Subject: [PATCH ath-next v6 7/9] wifi: ath11k: charge received airtime to the
+ station deficit
+
+mac80211 charges received airtime to the same deficit, as AIRTIME_USE_RX
+is set by default, but ath11k reports none. Register each received
+PPDU's duration, which ath11k already adds to rx_duration, once against
+the PPDU's first TID, or BE when it names none. The TID comes from the
+PPDU end user stats TLV, which is added to the default monitor status
+filter. The call runs under ab->base_lock, as on the transmit side:
+ath11k_mac_op_sta_state() drops the station from its peer under that
+lock, and mac80211 frees it after that without an RCU grace period.
+
+A station uploading with DSCP CS5 moved its VI deficit in 3 of 3 runs;
+uploads marked BE left it unchanged in 3 of 3.
+
+Tested-on: IPQ8074 hw2.0 AHB WLAN.HK.2.9.0.1-02146-QCAHKSWPL_SILICONZ-1
+
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+
+--- a/drivers/net/wireless/ath/ath11k/dp_rx.c
++++ b/drivers/net/wireless/ath/ath11k/dp_rx.c
+@@ -5294,6 +5294,7 @@ int ath11k_dp_rx_process_mon_status(stru
+ 	struct ath11k_peer *peer;
+ 	struct ath11k_sta *arsta;
+ 	int num_buffs_reaped = 0;
++	u8 tid;
+ 	u32 rx_buf_sz;
+ 	u16 log_type;
+ 	struct ath11k_mon_data *pmon = (struct ath11k_mon_data *)&ar->dp.mon_data;
+@@ -5361,6 +5362,16 @@ int ath11k_dp_rx_process_mon_status(stru
+ 		arsta = ath11k_sta_to_arsta(peer->sta);
+ 		ath11k_dp_rx_update_peer_stats(arsta, ppdu_info);
+ 
++		/* Charged once per PPDU with the measured duration, as on
++		 * the transmit side, to the first TID of the PPDU; BE when
++		 * it names none. mac80211 frees the station without a grace
++		 * period after the peer drops it under base_lock.
++		 */
++		tid = ppdu_info->tid < IEEE80211_NUM_TIDS ? ppdu_info->tid : 0;
++		if (ppdu_info->rx_duration)
++			ieee80211_sta_register_airtime(peer->sta, tid, 0,
++						       ppdu_info->rx_duration);
++
+ 		if (ath11k_debugfs_is_pktlog_peer_valid(ar, peer->addr))
+ 			trace_ath11k_htt_rxdesc(ar, skb->data, log_type, rx_buf_sz);
+ 
+--- a/drivers/net/wireless/ath/ath11k/mac.c
++++ b/drivers/net/wireless/ath/ath11k/mac.c
+@@ -229,6 +229,7 @@ ath11k_phymodes[NUM_NL80211_BANDS][ATH11
+ const struct htt_rx_ring_tlv_filter ath11k_mac_mon_status_filter_default = {
+ 	.rx_filter = HTT_RX_FILTER_TLV_FLAGS_MPDU_START |
+ 		     HTT_RX_FILTER_TLV_FLAGS_PPDU_END |
++		     HTT_RX_FILTER_TLV_FLAGS_PPDU_END_USER_STATS |
+ 		     HTT_RX_FILTER_TLV_FLAGS_PPDU_END_STATUS_DONE,
+ 	.pkt_filter_flags0 = HTT_RX_FP_MGMT_FILTER_FLAGS0,
+ 	.pkt_filter_flags1 = HTT_RX_FP_MGMT_FILTER_FLAGS1,

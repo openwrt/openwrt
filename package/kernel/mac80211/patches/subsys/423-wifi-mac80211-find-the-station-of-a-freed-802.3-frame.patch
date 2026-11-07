@@ -1,0 +1,53 @@
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Date: Sat, 24 Oct 2026 12:35:18 +0200
+Subject: [PATCH wireless-next] wifi: mac80211: find the station of a freed
+ 802.3 frame for AQL
+
+ieee80211_report_used_skb() returns a frame's pending airtime to the
+station found from the 802.11 header. An encap offloaded frame starts
+with its 802.3 header instead, so the lookup finds no station, the
+station keeps the charge, and once its leaked airtime exceeds its limit
+ieee80211_txq_airtime_check() stops scheduling it until it reassociates.
+Drivers with AQL and encap offload reach this through
+ieee80211_free_txskb() wherever they drop a frame without knowing its
+station, for example when firmware recovery returns the frames it held.
+
+Look up an encap offloaded frame's station with
+ieee80211_lookup_ra_sta(), as ieee80211_subif_start_xmit_8023() did on
+transmit.
+
+Fixes: 50ff477a8639 ("mac80211: add 802.11 encapsulation offloading support")
+[adapted to backports 7.2: ieee80211_lookup_ra_sta() is already
+ exported there and has no bss argument; it finds the station with
+ sta_info_get_bss(), which gives the same station for a unicast frame]
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+---
+--- a/net/mac80211/status.c
++++ b/net/mac80211/status.c
+@@ -783,11 +783,24 @@ static void ieee80211_report_used_skb(st
+ 		acked = false;
+ 
+ 	if (tx_time_est) {
+-		struct sta_info *sta;
++		struct ieee80211_sub_if_data *sdata;
++		struct sta_info *sta = NULL;
+ 
+ 		rcu_read_lock();
+ 
+-		sta = sta_info_get_by_addrs(local, hdr->addr1, hdr->addr2);
++		/* An encap offloaded frame still starts with its 802.3
++		 * header; find its station as the transmit path did.
++		 */
++		if (!(info->flags & IEEE80211_TX_CTL_HW_80211_ENCAP)) {
++			sta = sta_info_get_by_addrs(local, hdr->addr1,
++						    hdr->addr2);
++		} else {
++			sdata = ieee80211_sdata_from_skb(local, skb);
++			if (!sdata ||
++			    ieee80211_lookup_ra_sta(sdata, skb, &sta) ||
++			    IS_ERR(sta))
++				sta = NULL;
++		}
+ 		ieee80211_sta_update_pending_airtime(local, sta,
+ 						     skb_get_queue_mapping(skb),
+ 						     tx_time_est,
