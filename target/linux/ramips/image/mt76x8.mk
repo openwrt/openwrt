@@ -1222,6 +1222,19 @@ define Device/tplink_tl-wr842n-v5
 endef
 TARGET_DEVICES += tplink_tl-wr842n-v5
 
+define Device/tplink_tl-wr845n-v3
+  $(Device/tplink-v2-okli)
+  IMAGE_SIZE := 7616k
+  DEVICE_MODEL := TL-WR845N
+  DEVICE_VARIANT := v3
+  TPLINK_FLASHLAYOUT := 8Mmtk
+  TPLINK_HWID := 0x08450003
+  TPLINK_HWREVADD := 0x3
+  LOADER_FLASH_OFFS := 0x50000
+  IMAGES := factory.bin sysupgrade.bin
+endef
+TARGET_DEVICES += tplink_tl-wr845n-v3
+
 define Device/tplink_tl-wr850n-v2
   $(Device/tplink-v2)
   IMAGE_SIZE := 7808k
