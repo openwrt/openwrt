@@ -1,0 +1,24 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Ville Takio <ville+git@takio.fi>
+Date: Wed, 4 Nov 2026 19:30:00 +0200
+Subject: [PATCH] b43: add B43_DFS to the local symbols
+
+816-02 adds the B43_DFS option of the AC-PHY radar detection to b43's
+Kconfig. Backports only passes on the symbols listed in local-symbols,
+so list it next to B43_PHY_AC.
+
+Signed-off-by: Ville Takio <ville+git@takio.fi>
+---
+ local-symbols | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/local-symbols
++++ b/local-symbols
+@@ -194,6 +194,7 @@ B43_PHY_LP=
+ B43_PHY_HT=
+ B43_PHY_LCN=
+ B43_PHY_AC=
++B43_DFS=
+ B43_LEDS=
+ B43_HWRNG=
+ B43_DEBUG=
