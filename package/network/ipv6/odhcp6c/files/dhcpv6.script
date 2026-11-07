@@ -127,6 +127,12 @@ setup_interface () {
 		entry="${entry#*,}"
 		local metric="${entry%%,*}"
 
+		# A metric set on the interface applies to its routes, as it does
+		# on IPv4. The values from the RA keep only their order on top of
+		# it.
+		[ -n "$METRIC" ] && [ "$metric" -ge 256 ] 2>/dev/null &&
+			metric=$((METRIC + (metric - 256) / 128))
+
 		for xentry in $RA_ROUTES; do
 			local xprefix="${xentry%%,*}"
 			xentry="${xentry#*,}"
