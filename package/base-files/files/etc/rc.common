@@ -153,9 +153,19 @@ extra_command "enabled" "Check if service is started on boot"
 		_procd_ubus_call list
 	}
 
+	# procd kills what is left in an instance's cgroup when the instance
+	# exits: leave the service's cgroup before stopping it, so that a
+	# restart run from inside the service lives on to start it again
+	_procd_leave_cgroup() {
+		grep -qs "^0::/services/$1/" /proc/$$/cgroup &&
+			echo $$ > /sys/fs/cgroup/cgroup.procs 2>/dev/null
+		return 0
+	}
+
 	stop() {
 		procd_lock
 		stop_service "$@"
+		_procd_leave_cgroup "$(basename ${basescript:-$initscript})"
 		procd_kill "$(basename ${basescript:-$initscript})" "$1"
 		if eval "type service_stopped" 2>/dev/null >/dev/null; then
 			service_stopped
