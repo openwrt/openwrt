@@ -1,0 +1,60 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Nicolai Buchwitz <nb@tipi-net.de>
+Date: Fri, 12 Jun 2026 20:59:15 +0000
+Subject: [PATCH] net: bcmgenet: collapse TX priority queues to a single queue
+
+The strict-priority TX queues can starve under multi-queue load and
+trip NETDEV WATCHDOG. The multi-queue design was originally used for
+STB use cases that are no longer needed (confirmed by Justin Chen at
+Broadcom). GENET v1 already exercises a single-queue path. Point v2-v4
+at the same configuration: ring 0 takes the full BD pool.
+
+GENET v5 shares the v4 table, so Raspberry Pi 4 / CM4 (BCM2711) is
+covered.
+
+Posted to net-next (reviewed by Justin Chen and Florian Fainelli):
+https://lore.kernel.org/netdev/20260612205915.3156127-2-nb@tipi-net.de/
+
+Fixes: https://github.com/openwrt/openwrt/issues/20570
+
+Signed-off-by: Nicolai Buchwitz <nb@tipi-net.de>
+Signed-off-by: Stuart Johnson <stuart@stu.org.uk>
+---
+ drivers/net/ethernet/broadcom/genet/bcmgenet.c | 12 ++++++------
+ 1 file changed, 6 insertions(+), 6 deletions(-)
+
+--- a/drivers/net/ethernet/broadcom/genet/bcmgenet.c
++++ b/drivers/net/ethernet/broadcom/genet/bcmgenet.c
+@@ -3703,8 +3703,8 @@
+ };
+ 
+ static const struct bcmgenet_hw_params bcmgenet_hw_params_v2 = {
+-	.tx_queues = 4,
+-	.tx_bds_per_q = 32,
++	.tx_queues = 0,
++	.tx_bds_per_q = 0,
+ 	.rx_queues = 0,
+ 	.rx_bds_per_q = 0,
+ 	.bp_in_en_shift = 16,
+@@ -3721,8 +3721,8 @@
+ };
+ 
+ static const struct bcmgenet_hw_params bcmgenet_hw_params_v3 = {
+-	.tx_queues = 4,
+-	.tx_bds_per_q = 32,
++	.tx_queues = 0,
++	.tx_bds_per_q = 0,
+ 	.rx_queues = 0,
+ 	.rx_bds_per_q = 0,
+ 	.bp_in_en_shift = 17,
+@@ -3739,8 +3739,8 @@
+ };
+ 
+ static const struct bcmgenet_hw_params bcmgenet_hw_params_v4 = {
+-	.tx_queues = 4,
+-	.tx_bds_per_q = 32,
++	.tx_queues = 0,
++	.tx_bds_per_q = 0,
+ 	.rx_queues = 0,
+ 	.rx_bds_per_q = 0,
+ 	.bp_in_en_shift = 17,
