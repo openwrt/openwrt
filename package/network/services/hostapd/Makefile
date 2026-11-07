@@ -33,8 +33,6 @@ PKG_CONFIG_DEPENDS:= \
 
 PKG_BUILD_FLAGS:=gc-sections lto
 
-EAPOL_TEST_PROVIDERS:=eapol-test eapol-test-openssl eapol-test-wolfssl
-
 SUPPLICANT_PROVIDERS:=
 HOSTAPD_PROVIDERS:=
 
@@ -171,7 +169,6 @@ define Package/hostapd/Default
   EXTRA_DEPENDS:=hostapd-common (=$(PKG_VERSION)-r$(PKG_RELEASE))
   USERID:=network=101:network=101
   PROVIDES:=hostapd
-  CONFLICTS:=$(HOSTAPD_PROVIDERS)
   HOSTAPD_PROVIDERS+=$(1)
 endef
 
@@ -278,7 +275,6 @@ define Package/wpad/Default
   USERID:=network=101:network=101
   URL:=https://w1.fi/
   PROVIDES:=hostapd wpa-supplicant
-  CONFLICTS:=$(HOSTAPD_PROVIDERS) $(SUPPLICANT_PROVIDERS)
   HOSTAPD_PROVIDERS+=$(1)
   SUPPLICANT_PROVIDERS+=$(1)
 endef
@@ -422,7 +418,6 @@ define Package/wpa-supplicant/Default
   EXTRA_DEPENDS:=hostapd-common (=$(PKG_VERSION)-r$(PKG_RELEASE))
   USERID:=network=101:network=101
   PROVIDES:=wpa-supplicant
-  CONFLICTS:=$(SUPPLICANT_PROVIDERS)
   SUPPLICANT_PROVIDERS+=$(1)
 endef
 
@@ -553,7 +548,6 @@ define Package/eapol-test-openssl
   $(call Package/eapol-test/Default,$(1))
   TITLE+= (OpenSSL full)
   VARIANT:=supplicant-full-openssl
-  CONFLICTS:=$(filter-out eapol-test-openssl ,$(EAPOL_TEST_PROVIDERS))
   DEPENDS+=$(OPENSSL_DEPENDS)
   PROVIDES:=eapol-test
 endef
@@ -562,7 +556,6 @@ define Package/eapol-test-wolfssl
   $(call Package/eapol-test/Default,$(1))
   TITLE+= (wolfSSL full)
   VARIANT:=supplicant-full-wolfssl
-  CONFLICTS:=$(filter-out eapol-test-openssl ,$(filter-out eapol-test-wolfssl ,$(EAPOL_TEST_PROVIDERS)))
   DEPENDS+=+PACKAGE_eapol-test-wolfssl:libwolfssl
   PROVIDES:=eapol-test
 endef
@@ -571,7 +564,6 @@ define Package/eapol-test-mbedtls
   $(call Package/eapol-test/Default,$(1))
   TITLE+= (mbedTLS full)
   VARIANT:=supplicant-full-mbedtls
-  CONFLICTS:=$(filter-out eapol-test-openssl ,$(filter-out eapol-test-mbedtls ,$(EAPOL_TEST_PROVIDERS)))
   DEPENDS+=+PACKAGE_eapol-test-mbedtls:libmbedtls
   PROVIDES:=eapol-test
 endef
