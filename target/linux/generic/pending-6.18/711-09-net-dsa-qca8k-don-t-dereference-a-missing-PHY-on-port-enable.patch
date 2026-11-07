@@ -1,0 +1,32 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Santiago Hormazabal <santiagohssl@gmail.com>
+Date: Tue, 20 Oct 2026 00:00:00 +0000
+Subject: [PATCH] net: dsa: qca8k: don't dereference a missing PHY on port
+ enable
+
+User ports without a PHY, such as port 6 wired to an SFP cage through the
+switch SerDes, get a NULL phy in .port_enable. Calling
+phy_support_asym_pause() on it oopses as soon as the port is brought up:
+
+  Unable to handle kernel paging request at virtual address 0000021c
+  epc   : phy_copy_pause_bits+0x0/0x48
+  ra    : qca8k_port_enable+0xf4/0x11c [qca8k]
+
+Only advertise asymmetric pause when there is a PHY to configure.
+
+Signed-off-by: Santiago Hormazabal <santiagohssl@gmail.com>
+---
+ drivers/net/dsa/qca/qca8k-common.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/net/dsa/qca/qca8k-common.c
++++ b/drivers/net/dsa/qca/qca8k-common.c
+@@ -784,7 +784,7 @@ int qca8k_port_enable(struct dsa_switch
+ 	qca8k_port_set_status(priv, port, 1);
+ 	priv->port_enabled_map |= BIT(port);
+ 
+-	if (dsa_is_user_port(ds, port))
++	if (dsa_is_user_port(ds, port) && phy)
+ 		phy_support_asym_pause(phy);
+ 
+ 	return 0;

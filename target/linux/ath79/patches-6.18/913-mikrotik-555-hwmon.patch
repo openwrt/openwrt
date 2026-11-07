@@ -1,0 +1,40 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Santiago Hormazabal <santiagohssl@gmail.com>
+Date: Tue, 20 Oct 2026 00:00:00 +0000
+Subject: [PATCH] ath79: add MikroTik 555 timer health monitor
+
+Some RouterBOARDs, such as the RB953GS, measure their input voltage and
+PCB temperature with a 555 timer whose output is sampled on a GPIO.
+
+Signed-off-by: Santiago Hormazabal <santiagohssl@gmail.com>
+---
+--- a/drivers/hwmon/Kconfig
++++ b/drivers/hwmon/Kconfig
+@@ -1424,6 +1424,17 @@ config SENSORS_MENF21BMC_HWMON
+ 	  This driver can also be built as a module. If so the module
+ 	  will be called menf21bmc_hwmon.
+ 
++config SENSORS_MIKROTIK_555
++	tristate "MikroTik RouterBOARD 555 timer health monitor"
++	depends on GPIOLIB && OF
++	help
++	  If you say yes here you get support for the input voltage and PCB
++	  temperature monitor of some MikroTik RouterBOARDs, such as the
++	  RB953GS, which is a 555 timer sampled on a GPIO.
++
++	  This driver can also be built as a module. If so, the module
++	  will be called mikrotik-555-hwmon.
++
+ config SENSORS_MR75203
+ 	tristate "Moortec Semiconductor MR75203 PVT Controller"
+ 	select REGMAP_MMIO
+--- a/drivers/hwmon/Makefile
++++ b/drivers/hwmon/Makefile
+@@ -173,6 +173,7 @@ obj-$(CONFIG_SENSORS_TC654)	+= tc654.o
+ obj-$(CONFIG_SENSORS_TPS23861)	+= tps23861.o
+ obj-$(CONFIG_SENSORS_MLXREG_FAN) += mlxreg-fan.o
+ obj-$(CONFIG_SENSORS_MENF21BMC_HWMON) += menf21bmc_hwmon.o
++obj-$(CONFIG_SENSORS_MIKROTIK_555) += mikrotik-555-hwmon.o
+ obj-$(CONFIG_SENSORS_MR75203)	+= mr75203.o
+ obj-$(CONFIG_SENSORS_NCT6683)	+= nct6683.o
+ obj-$(CONFIG_SENSORS_NCT6694)	+= nct6694-hwmon.o
