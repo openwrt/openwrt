@@ -22,7 +22,8 @@ jiorouter_initial_setup() {
 platform_check_image() {
 	case "$(board_name)" in
 	jiorouter,ax6000-jidu6111|\
-	jiorouter,ax6000-jidu6411)
+	jiorouter,ax6000-jidu6411|\
+	jiorouter,ax6000-jidu6611)
 		nand_do_platform_check "$(board_name)" "$1"
 		return $?
 		;;
@@ -53,7 +54,8 @@ platform_do_upgrade() {
 		emmc_do_upgrade "$1"
 		;;
 	jiorouter,ax6000-jidu6111|\
-	jiorouter,ax6000-jidu6411)
+	jiorouter,ax6000-jidu6411|\
+	jiorouter,ax6000-jidu6611)
 		jiorouter_initial_setup || return 1
 		CI_UBIPART="ubi"
 		nand_do_upgrade "$1"
