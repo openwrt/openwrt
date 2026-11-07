@@ -39,6 +39,25 @@ config GCC_DEFAULT_SSP
 	help
 	    Use gcc configure option --enable-default-ssp to turn on -fstack-protector-strong by default.
 
+config GCC_BUILD_SANITIZERS
+	bool
+	prompt "Build the GCC sanitizer runtime libraries (ASan/HWASan/UBSan/...)" if TOOLCHAINOPTS
+	help
+	    Build GCC's libsanitizer runtimes (libasan, libhwasan, libubsan, ...).
+	    These are not built for non-glibc C libraries by default; enable this
+	    to build them anyway, e.g. to use HWAddressSanitizer on a musl target.
+	    The individual runtime libraries then become selectable under Libraries.
+
+config GCC_SANITIZER_DEFAULT_OPTIONS
+	string
+	prompt "Default HWASan runtime options" if TOOLCHAINOPTS && GCC_BUILD_SANITIZERS
+	depends on GCC_BUILD_SANITIZERS
+	default "halt_on_error=0:log_path=/tmp/hwasan"
+	help
+	    Baked into libhwasan as the default option string (same colon-separated
+	    syntax as the HWASAN_OPTIONS env var, which still overrides at runtime).
+	    Must contain no spaces. Empty = upstream defaults.
+
 config SJLJ_EXCEPTIONS
 	bool
 	prompt "Use setjump()/longjump() exceptions" if TOOLCHAINOPTS
