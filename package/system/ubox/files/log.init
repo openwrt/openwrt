@@ -64,6 +64,8 @@ start_service_file()
 	procd_open_instance logfile
 	procd_set_param command "$PROG" -f -F "$log_file" -p "$pid_file"
 	[ -n "${log_size}" ] && procd_append_param command -S "$log_size"
+	# at boot, also write what was logged before the file could be opened
+	[ "$_BOOT" = "1" ] && procd_append_param command -l 100000
 	procd_close_instance
 }
 
