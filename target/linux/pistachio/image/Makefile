@@ -11,7 +11,7 @@ define Device/Default
   PROFILES := Default
   FILESYSTEMS := squashfs
   KERNEL_DEPENDS = $$(wildcard $$(DTS_DIR)/$$(DEVICE_DTS).dts)
-  KERNEL = kernel-bin | gzip | fit gzip $$(DTS_DIR)/$$(DEVICE_DTS).dtb
+  KERNEL = kernel-bin | libdeflate-gzip | fit gzip $$(DTS_DIR)/$$(DEVICE_DTS).dtb
   KERNEL_SUFFIX := -kernel.itb
   KERNEL_INSTALL := 1
   KERNEL_IN_UBI := 1

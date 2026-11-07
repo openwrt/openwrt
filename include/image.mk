@@ -326,7 +326,9 @@ endef
 define Image/mkfs/targz
 	$(TAR) -cp --numeric-owner --owner=0 --group=0 --mode=a-s --sort=name \
 		$(if $(SOURCE_DATE_EPOCH),--mtime="@$(SOURCE_DATE_EPOCH)") \
-		-C $(call mkfs_target_dir,$(1)) . | gzip -9n > $@
+		-C $(call mkfs_target_dir,$(1)) -f $@.tar .
+	$(STAGING_DIR_HOST)/bin/libdeflate-gzip -12 -n -c $@.tar > $@
+	rm -f $@.tar
 endef
 
 define Image/Manifest
@@ -350,7 +352,8 @@ ifdef CONFIG_TARGET_ROOTFS_TARGZ
   define Image/Build/targz
 	$(TAR) -cp --numeric-owner --owner=0 --group=0 --mode=a-s --sort=name \
 		$(if $(SOURCE_DATE_EPOCH),--mtime="@$(SOURCE_DATE_EPOCH)") \
-		-C $(TARGET_DIR)/ . | gzip -9n > $(BIN_DIR)/$(IMG_PREFIX)$(if $(PROFILE_SANITIZED),-$(PROFILE_SANITIZED))-rootfs.tar.gz
+		-C $(TARGET_DIR)/ -f $(BIN_DIR)/$(IMG_PREFIX)$(if $(PROFILE_SANITIZED),-$(PROFILE_SANITIZED))-rootfs.tar .
+	$(STAGING_DIR_HOST)/bin/libdeflate-gzip -f -12 -n $(BIN_DIR)/$(IMG_PREFIX)$(if $(PROFILE_SANITIZED),-$(PROFILE_SANITIZED))-rootfs.tar
   endef
 endif
 endif
@@ -358,7 +361,8 @@ endif
 ifeq ($(filter-out cpiogz,$(ROOTFS_FILESYSTEM)),)
 ifdef CONFIG_TARGET_ROOTFS_CPIOGZ
   define Image/Build/cpiogz
-	( cd $(TARGET_DIR); find . | $(STAGING_DIR_HOST)/bin/cpio -o -H newc -R 0:0 | gzip -9n >$(BIN_DIR)/$(IMG_ROOTFS).cpio.gz )
+	( cd $(TARGET_DIR); find . | $(STAGING_DIR_HOST)/bin/cpio -o -H newc -R 0:0 >$(BIN_DIR)/$(IMG_ROOTFS).cpio )
+	$(STAGING_DIR_HOST)/bin/libdeflate-gzip -f -12 -n $(BIN_DIR)/$(IMG_ROOTFS).cpio
   endef
 endif
 endif
