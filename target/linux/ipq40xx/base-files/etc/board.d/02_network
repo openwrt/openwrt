@@ -31,6 +31,9 @@ ipq40xx_setup_interfaces()
 	zyxel,nbg6617)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "wan"
 		;;
+	zyxel,wsq50)
+		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" "wan"
+		;;
 	8dev,jalapeno|\
 	alfa-network,ap120c-ac|\
 	asus,map-ac1300|\
