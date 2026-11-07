@@ -17,7 +17,7 @@ Signed-off-by: John Crispin <john@phrozen.org>
 +++ b/tools/mtk_image.c
 @@ -706,7 +706,7 @@ static void mtk_image_set_mt7621_header(
  	shdr->stage_size = cpu_to_be32(datasize);
-
+ 
  	image_set_magic(hdr, IH_MAGIC);
 -	image_set_time(hdr, time(NULL));
 +	image_set_time(hdr, imagetool_get_source_date("mtk_image", time(NULL)));

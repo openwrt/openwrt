@@ -1,0 +1,131 @@
+From 3ffad26f17cbe32df9b37f407b8984adecd97c0c Mon Sep 17 00:00:00 2001
+From: David Lechner <dlechner@baylibre.com>
+Date: Thu, 13 Aug 2026 09:40:16 -0500
+Subject: [PATCH] clk: mediatek: fix using clocks before relocation
+
+Remove the static mtk_clk_providers array. Static variables cannot be
+used before relocation in U-Boot, so it broke systems that used clocks
+before relocation, e.g. for UART early console.
+
+The mtk_clk_providers array was likely premature optimization anyway
+since it only saves a few cycles of searching a small number of clock
+devices on each parent lookup.
+
+Reported-by: Sam Shih <Sam.Shih@mediatek.com>
+Tested-by: Sam Shih <Sam.Shih@mediatek.com>
+Fixes: 8ef0ad4c7a6d ("clk: mediatek: use registered provider for parent lookup")
+Link: https://patch.msgid.link/20260813-mtk-clk-fix-reprobe-regression-v2-1-c7d1076a7ada@baylibre.com
+Signed-off-by: David Lechner <dlechner@baylibre.com>
+---
+ drivers/clk/mediatek/clk-mtk.c | 70 ++++++++++++----------------------
+ 1 file changed, 25 insertions(+), 45 deletions(-)
+
+--- a/drivers/clk/mediatek/clk-mtk.c
++++ b/drivers/clk/mediatek/clk-mtk.c
+@@ -35,8 +35,6 @@
+ #define SCP_AXICK_DCM_DIS_EN		BIT(0)
+ #define SCP_AXICK_26M_SEL_EN		BIT(4)
+ 
+-static struct udevice *mtk_clk_providers[MTK_CLK_TREE_NUM_TYPES];
+-
+ static bool mtk_clk_tree_type_is_provider(enum mtk_clk_tree_type type)
+ {
+ 	return type != MTK_CLK_TREE_NONE && type < MTK_CLK_TREE_NUM_TYPES;
+@@ -58,44 +56,40 @@ static enum mtk_clk_tree_type mtk_clk_tr
+ 
+ static struct udevice *mtk_clk_tree_get_provider(enum mtk_clk_tree_type type)
+ {
++	struct udevice *dev;
++	struct uclass *uc;
++	int ret;
++
+ 	if (!mtk_clk_tree_type_is_provider(type))
+ 		return NULL;
+ 
+-	if (!mtk_clk_providers[type]) {
+-		struct udevice *dev;
+-		struct uclass *uc;
+-		int ret;
++	ret = uclass_get(UCLASS_CLK, &uc);
++	if (ret)
++		return ERR_PTR(ret);
++
++	uclass_foreach_dev(dev, uc) {
++		const struct mtk_clk_tree *tree;
++		const void *ops;
++
++		ops = dev_get_driver_ops(dev);
++		if (ops != &mtk_clk_apmixedsys_ops &&
++		    ops != &mtk_clk_fixed_pll_ops &&
++		    ops != &mtk_clk_topckgen_ops &&
++		    ops != &mtk_clk_infrasys_ops)
++			continue;
++
++		tree = (const void *)dev_get_driver_data(dev);
++		if (tree->type != type)
++			continue;
+ 
+-		/* Lazily probe and register the requested provider. */
+-		ret = uclass_get(UCLASS_CLK, &uc);
++		ret = device_probe(dev);
+ 		if (ret)
+ 			return ERR_PTR(ret);
+ 
+-		uclass_foreach_dev(dev, uc) {
+-			const struct mtk_clk_tree *tree;
+-			const void *ops;
+-
+-			ops = dev_get_driver_ops(dev);
+-			if (ops != &mtk_clk_apmixedsys_ops &&
+-			    ops != &mtk_clk_fixed_pll_ops &&
+-			    ops != &mtk_clk_topckgen_ops &&
+-			    ops != &mtk_clk_infrasys_ops)
+-				continue;
+-
+-			tree = (const void *)dev_get_driver_data(dev);
+-			if (tree->type != type)
+-				continue;
+-
+-			/* Probe will add it to mtk_clk_providers[type]. */
+-			ret = device_probe(dev);
+-			if (ret)
+-				return ERR_PTR(ret);
+-
+-			break;
+-		}
++		return dev;
+ 	}
+ 
+-	return mtk_clk_providers[type] ?: ERR_PTR(-ENOENT);
++	return ERR_PTR(-ENOENT);
+ }
+ 
+ static struct udevice *mtk_clk_parent_get_provider(u16 flags)
+@@ -103,20 +97,6 @@ static struct udevice *mtk_clk_parent_ge
+ 	return mtk_clk_tree_get_provider(mtk_clk_tree_type_from_parent_flags(flags));
+ }
+ 
+-static int mtk_clk_tree_register_provider(struct udevice *dev,
+-					  const struct mtk_clk_tree *tree)
+-{
+-	if (!mtk_clk_tree_type_is_provider(tree->type))
+-		return 0;
+-
+-	if (mtk_clk_providers[tree->type])
+-		return -EEXIST;
+-
+-	mtk_clk_providers[tree->type] = dev;
+-
+-	return 0;
+-}
+-
+ /* shared functions */
+ 
+ static const int mtk_common_clk_of_xlate(struct clk *clk,
+@@ -1128,5 +1108,5 @@ int mtk_clk_probe(struct udevice *dev)
+ 
+ 	priv->tree = tree;
+ 
+-	return mtk_clk_tree_register_provider(dev, tree);
++	return 0;
+ }
