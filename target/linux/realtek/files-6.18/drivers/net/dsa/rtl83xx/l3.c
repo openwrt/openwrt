@@ -447,6 +447,26 @@ static u32 otto_l3_930x_hash4(u32 ip, int algorithm)
 	return hash;
 }
 
+/* The SDK folds the upper 96 address bits into nine-bit XOR chunks.
+ * The low 32 bits use the IPv4 hash, including its end-around-carry variant.
+ */
+static u32 otto_l3_930x_hash6(const struct in6_addr *ip, int algorithm)
+{
+	const u8 *bytes = ip->s6_addr;
+	u32 hash = bytes[0] >> 6;
+	unsigned int bit, byte;
+	u32 word;
+
+	for (bit = 2; bit < 96; bit += 9) {
+		byte = bit / 8;
+		word = bytes[byte] << 8;
+		if (byte + 1 < 12)
+			word |= bytes[byte + 1];
+		hash ^= (word >> (7 - bit % 8)) & 0x1ff;
+	}
+	return hash ^ otto_l3_930x_hash4(be32_to_cpu(ip->s6_addr32[3]), algorithm);
+}
+
 /*
  * Get the Destination-MAC of an L3 egress interface or the Source MAC for routed packets
  * from the SoC's L3_EGR_INTF_MAC table. Indexes 0-2047 are DMACs, 2048+ are SMACs
@@ -633,7 +653,9 @@ static int otto_l3_930x_find_slot(struct otto_l3_ctrl *ctrl, struct otto_l3_rout
 		if (err)
 			return err;
 		algorithm = (v >> (2 + t)) & 0x1;
-		hash = otto_l3_930x_hash4(rt->dst_ip, algorithm);
+		hash = rt->attr.type == ROUTE_TYPE_IP6UC ?
+			otto_l3_930x_hash6(&rt->dst_ip6, algorithm) :
+			otto_l3_930x_hash4(rt->dst_ip, algorithm);
 
 		dev_dbg(ctrl->dev, "table %d, algorithm %d, hash %04x\n", t, algorithm, hash);
 
