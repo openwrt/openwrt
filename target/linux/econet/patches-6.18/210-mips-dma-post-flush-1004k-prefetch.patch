@@ -1,0 +1,65 @@
+From e48b4e0fc2ad72e3108c45786be9fa6ce1ae1c38 Mon Sep 17 00:00:00 2001
+From: Emre Yavuzalp <emreyavuzalp2@gmail.com>
+Date: Sun, 27 Sep 2026 12:44:27 +0300
+Subject: [PATCH] mips: fix post-DMA cache flush on 1004K/34K without IOCU
+
+EcoNet EN7528 (dual-core 1004Kc, 4 VPEs) and EN751221 (34Kc, up to 2
+VPEs) have CONFIG_CPU_HAS_PREFETCH but no IOCU, so device DMA does not
+snoop the L1/L2 caches. Linux only performs arch_sync_dma_for_cpu()
+when cpu_needs_post_dma_flush() is true; 1004K/34K are not in that
+list and do not implement MAAR, so dma_sync_single_for_cpu() is a
+no-op.
+
+On SMP a foreign core can speculatively fill a DMA buffer (page_pool
+recycle, skb head, etc.) while the engine is still writing. The stale
+line later writebacks over a kmem_cache object -- seen as:
+
+  CPU n Unable to handle kernel paging request
+  kmem_cache_alloc_noprof / inet_twsk_alloc
+  Kernel panic - not syncing: Fatal exception in interrupt
+
+after a Wi-Fi client joins and generates TCP TIME_WAIT churn. maxcpus=1
+hides it by removing the other L1; it is not a driver regression.
+
+Treat 1004K and 34K like BMIPS5000 for this check: neither has MAAR,
+and once cpu_needs_post_dma_flush() is true the existing non-inclusive
+r4k_dma_cache_inv() path already invalidates via bc_inv() (mips_sc_inv:
+Hit_Writeback_Inv_SD on both edge lines plus a full range blast), so no
+change is needed there.
+
+Verified on hardware: TP-Link EX20v (EN7528, 4 VPEs online, no
+maxcpus=1 workaround needed). Reproduced reliably with a 10-thread TCP
+hammer against the router (586 concurrent TIME_WAIT sockets) both on
+current HEAD and on an older known-good commit, ruling out a driver
+regression; zero oops across repeated runs after this fix. EN751221
+boards (e.g. TP-Link Archer C5v) ship single-threaded by default and
+are unaffected until a second VPE is brought up, at which point the
+same race applies; the CPU_34K arm covers that case.
+
+Signed-off-by: Emre Yavuzalp <emreyavuzalp2@gmail.com>
+---
+ arch/mips/mm/dma-noncoherent.c | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/arch/mips/mm/dma-noncoherent.c b/arch/mips/mm/dma-noncoherent.c
+index ab4f2a7..8c24174 100644
+--- a/arch/mips/mm/dma-noncoherent.c
++++ b/arch/mips/mm/dma-noncoherent.c
+@@ -33,6 +33,14 @@ static inline bool cpu_needs_post_dma_flush(void)
+ 	case CPU_BMIPS5000:
+ 	case CPU_LOONGSON2EF:
+ 	case CPU_XBURST:
++	/*
++	 * 1004Kc (EN7528) and 34Kc (EN751221) implement prefetch but
++	 * EcoNet parts have no IOCU, so DMA is not hardware-coherent.
++	 * Post-DMA invalidate is required on SMP or recycled buffers
++	 * write back into the slab allocator.
++	 */
++	case CPU_1004K:
++	case CPU_34K:
+ 		return true;
+ 	default:
+ 		/*
+-- 
+2.47.3
+
