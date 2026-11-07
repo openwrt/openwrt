@@ -7,9 +7,13 @@
  */
 
 #include <linux/bitfield.h>
+#include <linux/interrupt.h>
+#include <linux/irqdomain.h>
 #include <linux/if_bridge.h>
+#include <linux/if_vlan.h>
 #include <linux/mfd/syscon.h>
 #include <linux/module.h>
+#include <linux/of_irq.h>
 #include <linux/of.h>
 #include <linux/phy.h>
 #include <linux/phylink.h>
@@ -38,12 +42,13 @@
  */
 #define RTL960X_DEFAULT_CPU_PORT		9
 
+#define RTL960X_PORT_MASK	GENMASK(10, 0)
 /*
  * Port isolation registers - one egress portmask per port. Bits 28:11 are
  * the extension ports of MAC7/9/10, which the driver leaves clear.
  */
 #define RTL960X_PORT_ISOLATION_REG(_port)	(0x27000 + (_port) * 4)
-#define   RTL960X_PORT_ISOLATION_MASK		GENMASK(10, 0)
+#define   RTL960X_PORT_ISOLATION_MASK		RTL960X_PORT_MASK
 
 /* MSTP port state registers - one per port, a 2-bit state per MSTI */
 #define RTL960X_MSTI_CTRL_REG(_port)		(0x1704c + (_port) * 4)
@@ -63,6 +68,18 @@
 #define RTL960X_LUT_LEARN_OVER_CTRL_REG		0x1c010
 #define   RTL960X_LUT_LEARN_OVER_ACT_MASK(_port)	(0x3 << ((_port) * 2))
 #define   RTL960X_LUT_LEARN_OVER_ACT_FORWARD	0	/* forward, do not learn */
+
+/* Broadcast flooding port mask */
+#define RTL960X_UNKNOWN_BROADCAST_FLOOD	  0x1c028
+
+/* Unknown multicast DA flooding port mask */
+#define RTL960X_UNKNOWN_MULTICAST_FLOOD	  0x1c02c
+
+/* Unknown unicast DA flooding port mask */
+#define RTL960X_UNKNOWN_UNICAST_FLOOD	0x1c030
+
+#define RTL960X_SUPPORTED_BRIDGE_FLAGS \
+		(BR_LEARNING | BR_FLOOD | BR_MCAST_FLOOD | BR_BCAST_FLOOD)
 
 /* Per port MIB statistics */
 #define RTL960X_STAT_PORT_MIB_BASE		(0x32000)
@@ -125,7 +142,54 @@
 #define RTL960X_STAT_RESET_CONFIG	0x3401c
 #define   STAT_RESET_CMD		BIT(5)
 
+#define RTL960X_ACCEPT_MAX_LEN(x)		(0x11028 + (x) * 4)
+#define   RTL960X_ACCEPT_MAX_LEN_MASK	GENMASK(13, 0)
 #define RTL960X_MAX_PACKET_LENGTH	0x3fff
+/* Ethernet header, two stacked VLAN tags (802.1ad QinQ) and FCS */
+#define RTL960X_FRAME_OVERHEAD		(ETH_HLEN + 2 * VLAN_HLEN + ETH_FCS_LEN)
+#define RTL8_4_TAG_OVERHEAD		8
+
+/* Interrupt polarity register */
+#define RTL960X_INTR_POLARITY_REG	0x1d000
+#define   RTL960X_INTR_POLARITY_MASK	BIT(0)
+#define   RTL960X_INTR_POLARITY_HIGH	0
+#define   RTL960X_INTR_POLARITY_LOW	1
+
+/* Interrupt mask/status register - enable/check specific interrupt types */
+#define RTL960X_INTR_IMR_REG			0x1d00c
+#define RTL960X_INTR_IMS_REG			0x1d010
+#define   RTL960X_INTR_TOD_UPDATE_MASK		BIT(20)
+#define   RTL960X_INTR_SFP_MASK			BIT(19)
+#define   RTL960X_INTR_TOD_MASK			BIT(18)
+#define   RTL960X_INTR_FB_EVENT_MASK		BIT(17)
+#define   RTL960X_INTR_SWITCH_CRASH_MASK	BIT(16)
+#define   RTL960X_INTR_SMARTCARD_MASK		BIT(15)
+#define   RTL960X_INTR_THERMAL_ALARM_MASK	BIT(14)
+#define   RTL960X_INTR_DYING_GASP_MASK		BIT(13)
+#define   RTL960X_INTR_PTP_1_SEC_MASK		BIT(12)
+#define   RTL960X_INTR_EPON_MASK		BIT(11)
+#define   RTL960X_INTR_GPON_MASK		BIT(10)
+#define   RTL960X_INTR_SERDES_MASK		BIT(9)
+#define   RTL960X_INTR_GPHY_MASK		BIT(8)
+#define   RTL960X_INTR_ACL_ACTION_MASK		BIT(7)
+#define   RTL960X_INTR_DBGO_MASK		BIT(6)
+#define   RTL960X_INTR_LOOP_DETECTION_MASK	BIT(5)
+#define   RTL960X_INTR_SPECIAL_CONGEST_MASK	BIT(4)
+#define   RTL960X_INTR_SPEED_CHANGE_MASK	BIT(3)
+#define   RTL960X_INTR_LEARN_OVER_MASK		BIT(2)
+#define   RTL960X_INTR_METER_EXCEEDED_MASK	BIT(1)
+#define   RTL960X_INTR_LINK_CHANGE_MASK		BIT(0)
+/* The define would be too big listing everything above so genmask it is */
+#define   RTL960X_INTR_ALL_MASK			GENMASK(20, 0)
+
+/* Per-port interrupt type status registers */
+#define RTL960X_INTR_STATUS_REG			0x1d014
+#define   RTL960X_INTR_STAT_THERMAL_MASK	GENMASK(31, 28)
+#define   RTL960X_INTR_STAT_GPHY_MASK		GENMASK(20, 16)
+#define   RTL960X_INTR_STAT_PORT_LINKDOWN_MASK		RTL960X_PORT_MASK
+#define RTL960X_INTR_STATUS1_REG		0x1d018
+#define   RTL960X_INTR_STAT_PORT_LINKUP_MASK		(RTL960X_PORT_MASK << 16)
+#define   RTL960X_INTR_STAT_PORT_SPEED_CHANGE_MASK	RTL960X_PORT_MASK
 
 struct rtl960x_mib_counter {
 	u32 offset;
@@ -516,6 +580,56 @@ static int rtl960x_port_set_learning(struct rtl960x_dsa *priv, int port,
 				  RTL960X_LUT_LRN_LIMITNO_MASK(port), enable);
 }
 
+static int rtl960x_port_set_ucast_flood(struct rtl960x_dsa *priv, int port,
+					bool enable)
+{
+	/* Frames with unknown unicast DA will be flooded to a programmable
+	 * port mask that by default includes all ports. Add or remove
+	 * the specified port from this port mask accordingly.
+	 */
+	return regmap_assign_bits(priv->map, RTL960X_UNKNOWN_UNICAST_FLOOD,
+				  BIT(port), enable);
+}
+
+static int rtl960x_port_set_mcast_flood(struct rtl960x_dsa *priv, int port,
+					bool enable)
+{
+	return regmap_assign_bits(priv->map, RTL960X_UNKNOWN_MULTICAST_FLOOD,
+				  BIT(port), enable);
+}
+
+static int rtl960x_port_set_bcast_flood(struct rtl960x_dsa *priv, int port,
+					bool enable)
+{
+	return regmap_assign_bits(priv->map, RTL960X_UNKNOWN_BROADCAST_FLOOD,
+				  BIT(port), enable);
+}
+
+/**
+ * rtl960x_setup_port_flood_control() - setup default flood control for a port
+ * @priv: rtl960x_dsa pointer
+ * @port: port index
+ *
+ * This function enables flooding for a given port.
+ *
+ * Context: Can sleep.
+ * Return: 0 on success, negative value for failure.
+ */
+static int rtl960x_setup_port_flood_control(struct rtl960x_dsa *priv, int port)
+{
+	int ret;
+
+	ret = rtl960x_port_set_ucast_flood(priv, port, true);
+	if (ret)
+		return ret;
+
+	ret = rtl960x_port_set_mcast_flood(priv, port, true);
+	if (ret)
+		return ret;
+
+	return rtl960x_port_set_bcast_flood(priv, port, true);
+}
+
 static void rtl960x_port_fast_age(struct dsa_switch *ds, int port)
 {
 	struct rtl960x_dsa *priv = ds->priv;
@@ -565,6 +679,288 @@ static void rtl960x_port_stp_state_set(struct dsa_switch *ds, int port,
 					      val));
 }
 
+static int rtl960x_get_and_clear_status_reg(struct rtl960x_dsa *priv, u32 reg,
+					    u32 *val)
+{
+	int ret;
+
+	ret = regmap_read(priv->map, reg, val);
+	if (ret)
+		return ret;
+
+	return regmap_write(priv->map, reg, *val);
+}
+
+static irqreturn_t rtl960x_irq(int irq, void *data)
+{
+	struct rtl960x_dsa *priv = data;
+	unsigned long line_changes = 0;
+	u32 stat;
+	int line;
+	int ret;
+
+	ret = rtl960x_get_and_clear_status_reg(priv, RTL960X_INTR_IMS_REG,
+					       &stat);
+	if (ret)
+		goto out_error;
+
+	if (stat & (RTL960X_INTR_LINK_CHANGE_MASK | RTL960X_INTR_SPEED_CHANGE_MASK)) {
+		u32 linkdown_ind, linkup_ind, speed_ind, val;
+
+		ret = rtl960x_get_and_clear_status_reg(
+			priv, RTL960X_INTR_STATUS_REG, &val);
+		if (ret)
+			goto out_error;
+
+		linkdown_ind = FIELD_GET(RTL960X_INTR_STAT_PORT_LINKDOWN_MASK, val);
+
+		ret = rtl960x_get_and_clear_status_reg(
+			priv, RTL960X_INTR_STATUS1_REG, &val);
+		if (ret)
+			goto out_error;
+
+		linkup_ind = FIELD_GET(RTL960X_INTR_STAT_PORT_LINKUP_MASK, val);
+
+		speed_ind = FIELD_GET(RTL960X_INTR_STAT_PORT_SPEED_CHANGE_MASK, val);
+
+		line_changes = linkdown_ind | linkup_ind | speed_ind;
+	}
+
+	if (!line_changes)
+		goto out_none;
+
+	for_each_set_bit(line, &line_changes, RTL960X_NUM_PORTS) {
+		int child_irq = irq_find_mapping(priv->irqdomain, line);
+
+		if (!child_irq)
+			continue;
+
+		handle_nested_irq(child_irq);
+	}
+
+	return IRQ_HANDLED;
+
+out_error:
+	dev_err(priv->dev, "failed to read interrupt status: %pe\n",
+		ERR_PTR(ret));
+
+out_none:
+	return IRQ_NONE;
+}
+
+static struct irq_chip rtl960x_irq_chip = {
+	.name = "rtl960x-switch",
+	/* The hardware doesn't support masking IRQs on a per-port basis */
+};
+
+static int rtl960x_irq_map(struct irq_domain *domain, unsigned int irq,
+			     irq_hw_number_t hwirq)
+{
+	struct rtl960x_dsa *priv = domain->host_data;
+
+	irq_set_chip_data(irq, priv);
+	irq_set_chip_and_handler(irq, &rtl960x_irq_chip, handle_simple_irq);
+	irq_set_nested_thread(irq, 1);
+	irq_set_noprobe(irq);
+	irq_set_parent(irq, priv->irq);
+
+	return 0;
+}
+
+static void rtl960x_irq_unmap(struct irq_domain *d, unsigned int irq)
+{
+	irq_set_nested_thread(irq, 0);
+	irq_set_chip_and_handler(irq, NULL, NULL);
+	irq_set_chip_data(irq, NULL);
+}
+
+static const struct irq_domain_ops rtl960x_irqdomain_ops = {
+	.map = rtl960x_irq_map,
+	.unmap = rtl960x_irq_unmap,
+	.xlate = irq_domain_xlate_onecell,
+};
+
+static int rtl960x_set_irq_enable(struct rtl960x_dsa *priv, bool enable)
+{
+	return regmap_assign_bits(priv->map, RTL960X_INTR_IMR_REG,
+				  RTL960X_INTR_LINK_CHANGE_MASK |
+				  RTL960X_INTR_SPEED_CHANGE_MASK, enable);
+}
+
+static int rtl960x_irq_enable(struct rtl960x_dsa *priv)
+{
+	return rtl960x_set_irq_enable(priv, true);
+}
+
+static int rtl960x_irq_disable(struct rtl960x_dsa *priv)
+{
+	return rtl960x_set_irq_enable(priv, false);
+}
+
+static int rtl960x_irq_setup(struct rtl960x_dsa *priv)
+{
+	struct dsa_switch *ds = priv->ds;
+	struct device_node *intc;
+	struct dsa_port *dp;
+	u32 irq_trig;
+	int virq;
+	int irq;
+	u32 val;
+	int ret;
+
+	intc = of_get_child_by_name(priv->dev->of_node, "interrupt-controller");
+	if (!intc) {
+		dev_err(priv->dev, "missing child interrupt-controller node\n");
+		return -EINVAL;
+	}
+
+	/* RTL960X IRQs cascade off this one */
+	irq = of_irq_get(intc, 0);
+	if (irq <= 0) {
+		if (!irq) {
+			dev_err(priv->dev, "failed to map IRQ\n");
+			ret = -EINVAL;
+		} else {
+			ret = dev_err_probe(priv->dev, irq,
+					    "failed to get parent irq\n");
+		}
+		goto out_put_node;
+	}
+
+	/* Store the irq so that we know to map and free it during teardown */
+	priv->irq = irq;
+
+	priv->irqdomain = irq_domain_create_linear(of_fwnode_handle(intc), RTL960X_NUM_PORTS,
+						   &rtl960x_irqdomain_ops, priv);
+	if (!priv->irqdomain) {
+		dev_err(priv->dev, "failed to add irq domain\n");
+		ret = -ENOMEM;
+		goto out_put_node;
+	}
+
+	dsa_switch_for_each_available_port(dp, ds) {
+		virq = irq_create_mapping(priv->irqdomain, dp->index);
+		if (!virq) {
+			dev_err(priv->dev,
+				"failed to create irq domain mapping\n");
+			ret = -EINVAL;
+			goto out_remove_irqdomain;
+		}
+
+		irq_set_parent(virq, irq);
+	}
+
+	/* Configure chip interrupt signal polarity */
+	irq_trig = irq_get_trigger_type(irq);
+	switch (irq_trig) {
+	case IRQF_TRIGGER_RISING:
+	case IRQF_TRIGGER_HIGH:
+		val = RTL960X_INTR_POLARITY_HIGH;
+		break;
+	case IRQF_TRIGGER_FALLING:
+	case IRQF_TRIGGER_LOW:
+		val = RTL960X_INTR_POLARITY_LOW;
+		break;
+	default:
+		dev_err(priv->dev, "unsupported irq trigger type %u\n",
+			irq_trig);
+		ret = -EINVAL;
+		goto out_remove_irqdomain;
+	}
+
+	ret = regmap_update_bits(priv->map, RTL960X_INTR_POLARITY_REG,
+				 RTL960X_INTR_POLARITY_MASK, val);
+	if (ret)
+		goto out_remove_irqdomain;
+
+	/* Disable the interrupt in case the chip has it enabled on reset */
+	ret = rtl960x_irq_disable(priv);
+	if (ret)
+		goto out_remove_irqdomain;
+
+	/* Clear the interrupt status register */
+	ret = regmap_write(priv->map, RTL960X_INTR_IMS_REG,
+			   RTL960X_INTR_ALL_MASK);
+	if (ret)
+		goto out_remove_irqdomain;
+
+	ret = regmap_write(priv->map, RTL960X_INTR_STATUS_REG,
+			   RTL960X_INTR_STAT_PORT_LINKDOWN_MASK |
+			   RTL960X_INTR_STAT_GPHY_MASK);
+	if (ret)
+		goto out_remove_irqdomain;
+
+	ret = regmap_write(priv->map, RTL960X_INTR_STATUS1_REG,
+			   RTL960X_INTR_STAT_PORT_LINKUP_MASK |
+			   RTL960X_INTR_STAT_PORT_SPEED_CHANGE_MASK);
+	if (ret)
+		goto out_remove_irqdomain;
+
+	ret = request_threaded_irq(irq, NULL, rtl960x_irq, IRQF_ONESHOT,
+				   "rtl960x-switch", priv);
+	if (ret) {
+		dev_err(priv->dev, "failed to request irq: %pe\n",
+			ERR_PTR(ret));
+		goto out_remove_irqdomain;
+	}
+
+	ret = rtl960x_irq_enable(priv);
+	if (ret)
+		goto out_free_irq;
+
+	of_node_put(intc);
+
+	return 0;
+
+out_free_irq:
+	free_irq(priv->irq, priv);
+
+out_remove_irqdomain:
+	dsa_switch_for_each_port(dp, ds) {
+		virq = irq_find_mapping(priv->irqdomain, dp->index);
+
+		if (virq)
+			irq_dispose_mapping(virq);
+	}
+
+	irq_domain_remove(priv->irqdomain);
+	priv->irqdomain = NULL;
+
+out_put_node:
+	priv->irq = 0;
+	of_node_put(intc);
+
+	return ret;
+}
+
+static void rtl960x_irq_teardown(struct rtl960x_dsa *priv)
+{
+	struct dsa_switch *ds = priv->ds;
+	struct dsa_port *dp;
+	int virq;
+
+	if (priv->irq) {
+		free_irq(priv->irq, priv);
+		priv->irq = 0;
+	}
+
+	if (priv->irqdomain) {
+		/* Unused ports with a linked PHY still have an active IRQ
+		 * mapping that must be disposed of during teardown. Loop
+		 * through all ports.
+		 */
+		dsa_switch_for_each_port(dp, ds) {
+			virq = irq_find_mapping(priv->irqdomain, dp->index);
+
+			if (virq)
+				irq_dispose_mapping(virq);
+		}
+
+		irq_domain_remove(priv->irqdomain);
+		priv->irqdomain = NULL;
+	}
+}
+
 static enum dsa_tag_protocol rtl960x_dsa_get_tag_protocol(struct dsa_switch *ds,
 							  int port,
 							  enum dsa_tag_protocol mp)
@@ -579,6 +975,13 @@ static int rtl960x_dsa_setup(struct dsa_switch *ds)
 	struct dsa_port *dp;
 	int ret;
 
+	/* Set up cascading IRQs */
+	ret = rtl960x_irq_setup(priv);
+	if (ret == -EPROBE_DEFER)
+		return ret;
+	else if (ret)
+		dev_info(priv->dev, "no interrupt support\n");
+
 	/*
 	 * Start with all ports completely isolated and not learning, the CPU
 	 * and unused ports included, as rtl8365mb does. Learning is enabled
@@ -591,11 +994,16 @@ static int rtl960x_dsa_setup(struct dsa_switch *ds)
 	dsa_switch_for_each_port(dp, ds) {
 		ret = rtl960x_port_set_isolation(priv, dp->index, 0);
 		if (ret)
-			return ret;
+			goto out_teardown_irq;
 
 		ret = rtl960x_port_set_learning(priv, dp->index, false);
 		if (ret)
-			return ret;
+			goto out_teardown_irq;
+
+		/* Enable all types of flooding */
+		ret = rtl960x_setup_port_flood_control(priv, dp->index);
+		if (ret)
+			goto out_teardown_irq;
 
 		if (dsa_port_is_cpu(dp))
 			cpu_ports |= BIT(dp->index);
@@ -605,7 +1013,7 @@ static int rtl960x_dsa_setup(struct dsa_switch *ds)
 	dsa_switch_for_each_user_port(dp, ds) {
 		ret = rtl960x_port_set_isolation(priv, dp->index, cpu_ports);
 		if (ret)
-			return ret;
+			goto out_teardown_irq;
 
 		user_ports |= BIT(dp->index);
 	}
@@ -614,11 +1022,11 @@ static int rtl960x_dsa_setup(struct dsa_switch *ds)
 	dsa_switch_for_each_cpu_port(dp, ds) {
 		ret = rtl960x_cpu_port_setup(priv, dp->index);
 		if (ret)
-			return ret;
+			goto out_teardown_irq;
 
 		ret = rtl960x_port_set_isolation(priv, dp->index, user_ports);
 		if (ret)
-			return ret;
+			goto out_teardown_irq;
 	}
 
 	/* One reserved VID per offloaded bridge; DSA numbers them for us. */
@@ -628,10 +1036,26 @@ static int rtl960x_dsa_setup(struct dsa_switch *ds)
 
 	ret = rtl960x_port_mib_reset(priv, user_ports | cpu_ports);
 	if (ret)
-		return ret;
+		goto out_teardown_irq;
 
 	/* Every user port starts standalone (see rtl960x_vlan_setup). */
-	return rtl960x_vlan_setup(ds);
+	ret = rtl960x_vlan_setup(ds);
+	if (ret)
+		goto out_teardown_irq;
+
+	return 0;
+
+out_teardown_irq:
+	rtl960x_irq_teardown(priv);
+
+	return ret;
+}
+
+static void rtl960x_teardown(struct dsa_switch *ds)
+{
+	struct rtl960x_dsa *priv = ds->priv;
+
+	rtl960x_irq_teardown(priv);
 }
 
 static int rtl960x_port_bridge_join(struct dsa_switch *ds, int port,
@@ -752,8 +1176,12 @@ static int rtl960x_port_pre_bridge_flags(struct dsa_switch *ds, int port,
 					 struct switchdev_brport_flags flags,
 					 struct netlink_ext_ack *extack)
 {
-	/* Flooding follows the hardware defaults (everything is flooded). */
-	if (flags.mask & ~BR_LEARNING)
+	struct rtl960x_dsa *priv = ds->priv;
+
+	dev_dbg(priv->dev, "pre_bridge_flags port:%d flags:%lx supported:%lx\n",
+		port, flags.mask, RTL960X_SUPPORTED_BRIDGE_FLAGS);
+
+	if (flags.mask & ~RTL960X_SUPPORTED_BRIDGE_FLAGS)
 		return -EINVAL;
 
 	return 0;
@@ -764,10 +1192,36 @@ static int rtl960x_port_bridge_flags(struct dsa_switch *ds, int port,
 				     struct netlink_ext_ack *extack)
 {
 	struct rtl960x_dsa *priv = ds->priv;
+	bool enable;
+	int ret;
 
-	if (flags.mask & BR_LEARNING)
-		return rtl960x_port_set_learning(priv, port,
-						 !!(flags.val & BR_LEARNING));
+	if (flags.mask & BR_LEARNING) {
+		enable = !!(flags.val & BR_LEARNING);
+		ret = rtl960x_port_set_learning(priv, port, enable);
+		if (ret)
+			return ret;
+	}
+
+	if (flags.mask & BR_FLOOD) {
+		enable = !!(flags.val & BR_FLOOD);
+		ret = rtl960x_port_set_ucast_flood(priv, port, enable);
+		if (ret)
+			return ret;
+	}
+
+	if (flags.mask & BR_MCAST_FLOOD) {
+		enable = !!(flags.val & BR_MCAST_FLOOD);
+		ret = rtl960x_port_set_mcast_flood(priv, port, enable);
+		if (ret)
+			return ret;
+	}
+
+	if (flags.mask & BR_BCAST_FLOOD) {
+		enable = !!(flags.val & BR_BCAST_FLOOD);
+		ret = rtl960x_port_set_bcast_flood(priv, port, enable);
+		if (ret)
+			return ret;
+	}
 
 	return 0;
 }
@@ -826,6 +1280,32 @@ rtl960x_dsa_preferred_default_local_cpu_port(struct dsa_switch *ds)
 	return NULL;
 }
 
+static int rtl960x_port_change_mtu(struct dsa_switch *ds, int port,
+				   int new_mtu)
+{
+	struct rtl960x_dsa *priv = ds->priv;
+	struct dsa_port *dp = dsa_to_port(ds, port);
+	int frame_size;
+
+	frame_size = new_mtu + RTL960X_FRAME_OVERHEAD;
+
+	if (dsa_port_is_cpu(dp))
+		frame_size += RTL8_4_TAG_OVERHEAD;
+
+	dev_dbg(priv->dev, "port %d changing mtu to %d (frame size: %d)\n",
+		port, new_mtu, frame_size);
+
+	return regmap_update_bits(priv->map, RTL960X_ACCEPT_MAX_LEN(port),
+				  RTL960X_ACCEPT_MAX_LEN_MASK,
+				  FIELD_PREP(RTL960X_ACCEPT_MAX_LEN_MASK,
+					     frame_size));
+}
+
+static int rtl960x_port_max_mtu(struct dsa_switch *ds, int port)
+{
+	return RTL960X_MAX_PACKET_LENGTH - RTL960X_FRAME_OVERHEAD - RTL8_4_TAG_OVERHEAD;
+}
+
 static void rtl960x_dsa_mac_config(struct phylink_config *config,
 				   unsigned int mode,
 				   const struct phylink_link_state *state)
@@ -861,6 +1341,7 @@ static const struct phylink_mac_ops rtl960x_dsa_phylink_mac_ops = {
 static const struct dsa_switch_ops rtl960x_dsa_ops = {
 	.get_tag_protocol	= rtl960x_dsa_get_tag_protocol,
 	.setup			= rtl960x_dsa_setup,
+	.teardown		= rtl960x_teardown,
 	.preferred_default_local_cpu_port = rtl960x_dsa_preferred_default_local_cpu_port,
 	.phylink_get_caps	= rtl960x_dsa_phylink_get_caps,
 	.port_bridge_join	= rtl960x_port_bridge_join,
@@ -875,6 +1356,8 @@ static const struct dsa_switch_ops rtl960x_dsa_ops = {
 	.port_fdb_add		= rtl960x_port_fdb_add,
 	.port_fdb_del		= rtl960x_port_fdb_del,
 	.port_fdb_dump		= rtl960x_port_fdb_dump,
+	.port_mdb_add		= rtl960x_port_mdb_add,
+	.port_mdb_del		= rtl960x_port_mdb_del,
 	.get_strings		= rtl960x_get_strings,
 	.get_ethtool_stats	= rtl960x_get_ethtool_stats,
 	.get_sset_count		= rtl960x_get_sset_count,
@@ -884,6 +1367,8 @@ static const struct dsa_switch_ops rtl960x_dsa_ops = {
 	.get_rmon_stats		= rtl960x_get_rmon_stats,
 	.get_stats64		= rtl960x_get_stats64,
 	.get_pause_stats	= rtl960x_get_pause_stats,
+	.port_change_mtu	= rtl960x_port_change_mtu,
+	.port_max_mtu		= rtl960x_port_max_mtu,
 };
 
 static int rtl960x_dsa_probe(struct platform_device *pdev)
