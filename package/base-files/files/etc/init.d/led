@@ -103,6 +103,14 @@ load_led() {
 		}
 		printf "\n" >> /var/run/led.state
 
+		# Setting the trigger may alter brightness, so do this first
+		echo $trigger > /sys/class/leds/${sysfs}/trigger 2> /dev/null
+		ret="$?"
+		[ $ret = 0 ] || {
+			echo >&2 "Skipping trigger '$trigger' for led '$name' due to missing kernel module"
+			return 1
+		}
+
 		[ "$default" = 0 ] &&
 			echo 0 >/sys/class/leds/${sysfs}/brightness
 
@@ -113,12 +121,6 @@ load_led() {
 
 		led_color_set "$1" "$sysfs"
 
-		echo $trigger > /sys/class/leds/${sysfs}/trigger 2> /dev/null
-		ret="$?"
-		[ $ret = 0 ] || {
-			echo >&2 "Skipping trigger '$trigger' for led '$name' due to missing kernel module"
-			return 1
-		}
 		case "$trigger" in
 		"heartbeat")
 			echo "${inverted}" > "/sys/class/leds/${sysfs}/invert"
