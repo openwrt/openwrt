@@ -3,8 +3,9 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=lantiq-gphy-firmware
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 PKG_FLAGS:=nonshared
+PKG_LICENSE:=LicenseRef-MaxLinear-Software-License-Agreement
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -18,7 +19,8 @@ endef
 
 define Package/lantiq-gphy-firmware/install
 	$(INSTALL_DIR) $(1)/lib/firmware/lantiq
-	$(INSTALL_DATA) files/$(2) $(1)/lib/firmware/lantiq/$(3)
+	$(INSTALL_DATA) files/LICENSE $(1)/lib/firmware/lantiq/$(2).LICENSE
+	$(INSTALL_DATA) files/$(2) $(1)/lib/firmware/lantiq/$(2)
 endef
 
 define Package/xrx200-rev1.1-phy11g-firmware
@@ -30,7 +32,7 @@ define Package/xrx200-rev1.1-phy11g-firmware/description
 endef
 
 define Package/xrx200-rev1.1-phy11g-firmware/install
-	$(call Package/lantiq-gphy-firmware/install,$(1),xrx200_phy11g_a14.bin,xrx200_phy11g_a14.bin)
+	$(call Package/lantiq-gphy-firmware/install,$(1),xrx200_phy11g_a14.bin)
 endef
 
 define Package/xrx200-rev1.2-phy11g-firmware
@@ -42,7 +44,7 @@ define Package/xrx200-rev1.2-phy11g-firmware/description
 endef
 
 define Package/xrx200-rev1.2-phy11g-firmware/install
-	$(call Package/lantiq-gphy-firmware/install,$(1),xrx200_phy11g_a22.bin,xrx200_phy11g_a22.bin)
+	$(call Package/lantiq-gphy-firmware/install,$(1),xrx200_phy11g_a22.bin)
 endef
 
 define Package/xrx200-rev1.1-phy22f-firmware
@@ -54,7 +56,7 @@ define Package/xrx200-rev1.1-phy22f-firmware/description
 endef
 
 define Package/xrx200-rev1.1-phy22f-firmware/install
-	$(call Package/lantiq-gphy-firmware/install,$(1),xrx200_phy22f_a14.bin,xrx200_phy22f_a14.bin)
+	$(call Package/lantiq-gphy-firmware/install,$(1),xrx200_phy22f_a14.bin)
 endef
 
 define Package/xrx200-rev1.2-phy22f-firmware
@@ -66,7 +68,31 @@ define Package/xrx200-rev1.2-phy22f-firmware/description
 endef
 
 define Package/xrx200-rev1.2-phy22f-firmware/install
-	$(call Package/lantiq-gphy-firmware/install,$(1),xrx200_phy22f_a22.bin,xrx200_phy22f_a22.bin)
+	$(call Package/lantiq-gphy-firmware/install,$(1),xrx200_phy22f_a22.bin)
+endef
+
+define Package/xrx300-phy11g-firmware
+  $(call Package/lantiq-gphy-firmware-defaults, xRx300 Gigabit Ethernet PHY Firmware)
+endef
+
+define Package/xrx300-phy11g-firmware/description
+  This package contains firmware for Gigabit Ethernet PHY integrated in xRx300 SoC.
+endef
+
+define Package/xrx300-phy11g-firmware/install
+	$(call Package/lantiq-gphy-firmware/install,$(1),xrx300_phy11g_a21.bin)
+endef
+
+define Package/xrx300-phy22f-firmware
+  $(call Package/lantiq-gphy-firmware-defaults, xRx300 Fast Ethernet PHY Firmware)
+endef
+
+define Package/xrx300-phy22f-firmware/description
+  This package contains firmware for Fast Ethernet PHY integrated in xRx300 SoC.
+endef
+
+define Package/xrx300-phy22f-firmware/install
+	$(call Package/lantiq-gphy-firmware/install,$(1),xrx300_phy22f_a21.bin)
 endef
 
 define Build/Compile
@@ -76,3 +102,5 @@ $(eval $(call BuildPackage,xrx200-rev1.1-phy11g-firmware))
 $(eval $(call BuildPackage,xrx200-rev1.2-phy11g-firmware))
 $(eval $(call BuildPackage,xrx200-rev1.1-phy22f-firmware))
 $(eval $(call BuildPackage,xrx200-rev1.2-phy22f-firmware))
+$(eval $(call BuildPackage,xrx300-phy11g-firmware))
+$(eval $(call BuildPackage,xrx300-phy22f-firmware))
