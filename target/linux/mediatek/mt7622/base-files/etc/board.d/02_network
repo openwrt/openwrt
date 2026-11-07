@@ -8,7 +8,8 @@ mediatek_setup_interfaces()
 	local board="$1"
 
 	case $board in
-	dlink,eagle-pro-ai-m32-a1)
+	dlink,eagle-pro-ai-m32-a1|\
+	dlink,eagle-pro-ai-m32-a1-ubi)
 		ucidef_set_interfaces_lan_wan "lan1 lan2" wan
 		;;
 	smartrg,sdg-841-t6)
