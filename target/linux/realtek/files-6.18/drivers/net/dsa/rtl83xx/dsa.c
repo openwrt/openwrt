@@ -9,6 +9,7 @@
 
 #include "fdb.h"
 #include "lag.h"
+#include "flow.h"
 #include "mirror.h"
 #include "mac.h"
 #include "l2.h"
