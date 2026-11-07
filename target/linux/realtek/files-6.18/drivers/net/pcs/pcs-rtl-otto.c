@@ -583,6 +583,8 @@ struct rtpcs_serdes {
 	struct delayed_work cali_work;
 	enum rtpcs_rx_phase rx_phase;
 	u8 rxcal_tries;
+	/* Odd while an RX calibration attempt runs. */
+	u32 rxcal_seq;
 	struct delayed_work linkmon_work;
 	u8 rxmon_down;
 	u64 rxmon_recovery_after;
@@ -2099,7 +2101,12 @@ static void rtpcs_93xx_rx_cali_work_handler(struct work_struct *work)
 	}
 
 	sds->rxcal_tries++;
+	WRITE_ONCE(sds->rxcal_seq, sds->rxcal_seq + 1);
 	ret = sds->ops->rx_calibrate(sds);
+	WRITE_ONCE(sds->rxcal_seq, sds->rxcal_seq + 1);
+	for (int i = 0; i < RTPCS_MAX_LINKS_PER_SDS; i++)
+		if (sds->link[i])
+			phylink_pcs_change(&sds->link[i]->pcs, true);
 	dev_dbg(sds->ctrl->dev, "SerDes %u: RX calibration attempt %u/%u returned %d\n",
 		sds->id, sds->rxcal_tries, RTPCS_RXCAL_MAX_TRIES, ret);
 	if (ret < 0) {
@@ -4710,6 +4717,7 @@ static void rtpcs_pcs_get_state(struct phylink_pcs *pcs, unsigned int neg_mode,
 	struct rtpcs_link *link = rtpcs_phylink_pcs_to_link(pcs);
 	struct rtpcs_ctrl *ctrl = link->ctrl;
 	struct rtpcs_serdes *sds = link->sds;
+	u32 rxcal_seq;
 
 	state->link = 0;
 	/* Forced SGMII parameters are supplied by phylink out of band. */
@@ -4720,8 +4728,12 @@ static void rtpcs_pcs_get_state(struct phylink_pcs *pcs, unsigned int neg_mode,
 		state->pause &= ~(MLO_PAUSE_RX | MLO_PAUSE_TX);
 	}
 
+	rxcal_seq = READ_ONCE(sds->rxcal_seq);
+	if (rxcal_seq & 1)
+		return;
+
 	mutex_lock(&ctrl->lock);
-	if (sds->rx_phase == RTPCS_RX_PHASE_CALIBRATION)
+	if (sds->rx_phase == RTPCS_RX_PHASE_CALIBRATION || sds->rxcal_seq != rxcal_seq)
 		goto unlock;
 
 	switch (sds->hw_mode) {
