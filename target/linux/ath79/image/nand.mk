@@ -4,7 +4,7 @@ define Build/dongwon-header
 	tail -c +9 $@ >> $@.tmp
 	( \
 		header_crc="$$(head -c 68 $@.tmp | gzip -c | \
-			tail -c 8 | od -An -N4 -tx4 --endian little | tr -d ' \n')"; \
+			tail -c 8 | od -An -tx4 --endian little | tr -d ' \n' | cut -c1-8)"; \
 		head -c 4 $@.tmp; \
 		printf "$$(echo $$header_crc | sed 's/../\\x&/g')"; \
 		tail -c +9 $@.tmp; \
