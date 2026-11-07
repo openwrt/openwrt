@@ -170,6 +170,16 @@ define Build/umedia-header
 	fix-u-media-header -T 0x46 -B $(1) -i $@ -o $@.new && mv $@.new $@
 endef
 
+define Build/wsr-gtkc-rootfs
+	python3 $(TOPDIR)/scripts/gtkc-trailer.py $(IMAGE_ROOTFS) $(KDIR)/root.gtkc
+endef
+
+define Build/wsr-factory
+	python3 $(TOPDIR)/scripts/buffalo-wsr-factory.py $@ $(KDIR)/root.gtkc \
+		'$(SUPPORTED_DEVICES)' '$(VERSION_DIST)' '$(VERSION_NUMBER)' \
+		'$(REVISION)' '$(BOARD)/$(SUBTARGET)' '$(DEVICE_NAME)'
+endef
+
 define Build/wrg-header
 	-[ -f "$@" ] && \
 	mkwrgimg -i $@ -d "/dev/mtdblock/2" -s $(1) -o $@.new && \

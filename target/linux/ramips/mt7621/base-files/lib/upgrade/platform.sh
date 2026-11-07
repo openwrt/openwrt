@@ -8,6 +8,76 @@ REQUIRE_IMAGE_METADATA=1
 RAMFS_COPY_BIN='fw_printenv fw_setenv'
 RAMFS_COPY_DATA='/etc/fw_env.config /var/lock/fw_printenv.lock'
 
+# Buffalo WSR-1800AX4S: the stock bootcode mirrors bank1 over bank0
+# at power-on unless both banks hold identical images, parses only
+# legacy ("@") FIT node names, and CRC-checks each rootfs against a
+# "gtkc:" trailer at offset 0x99adc6 of the partition. The overlay
+# is a UBIFS volume named "rootfs_data" on the separate "ubi" MTD
+# partition. nand_do_upgrade cannot be used here: it would write
+# the rootfs into a UBI volume on "ubi" and the kernel to bank0
+# only, so the bootcode would roll the device back.
+wsr1800ax4s_ensure_ubi() {
+	local ubidev mtdnum
+
+	ubidev="$(nand_find_ubi ubi)"
+	if [ -z "$ubidev" ]; then
+		mtdnum="$(find_mtd_index ubi)"
+		[ -n "$mtdnum" ] || return 1
+		if ! ubiattach -m "$mtdnum"; then
+			ubiformat "/dev/mtd$mtdnum" -y || return 1
+			ubiattach -m "$mtdnum" || return 1
+		fi
+		ubidev="$(nand_find_ubi ubi)"
+		[ -n "$ubidev" ] || return 1
+	fi
+	if [ -z "$(nand_find_volume "$ubidev" rootfs_data)" ]; then
+		ubimkvol "/dev/$ubidev" -N rootfs_data -m || return 1
+	fi
+	return 0
+}
+
+wsr1800ax4s_check_image() {
+	local file="$1"
+	local board_dir root_len
+
+	board_dir="$(tar tf "$file" | grep -m 1 '^sysupgrade-.*/$')"
+	board_dir="${board_dir%/}"
+	[ -n "$board_dir" ] || return 1
+	root_len=$(tar xOf "$file" "$board_dir/root" | wc -c)
+	# The build-generated root image is the 0x99adc6 bootcode span
+	# plus the 14-byte gtkc trailer; the tar member is in addition
+	# padded to a 1024-byte boundary by sysupgrade-tar.sh.
+	[ "$root_len" -ge 10071508 ] && [ "$root_len" -le 10092544 ] || return 1
+	tar xOf "$file" "$board_dir/root" | dd bs=2 skip=5035747 count=7 2>/dev/null | grep -q '^gtkc:' || return 1
+	return 0
+}
+
+wsr1800ax4s_do_upgrade() {
+	local file="$1"
+	local board_dir kernel_len root_len
+	local kfile=/tmp/wsr-kernel.bin rfile=/tmp/wsr-root.bin
+
+	board_dir="$(tar tf "$file" | grep -m 1 '^sysupgrade-.*/$')"
+	board_dir="${board_dir%/}"
+	[ -n "$board_dir" ] || return 1
+	tar xOf "$file" "$board_dir/kernel" > "$kfile" || return 1
+	tar xOf "$file" "$board_dir/root" > "$rfile" || return 1
+	kernel_len=$(wc -c < "$kfile")
+	root_len=$(wc -c < "$rfile")
+	[ "$kernel_len" -gt 0 ] && [ "$kernel_len" -le 4194304 ] || return 1
+	[ "$root_len" -ge 10071508 ] && [ "$root_len" -le 10092544 ] || return 1
+	dd if="$rfile" bs=2 skip=5035747 count=7 2>/dev/null | grep -q '^gtkc:' || return 1
+
+	wsr1800ax4s_ensure_ubi || return 1
+
+	mtd write "$rfile" rootfs || return 1
+	mtd write "$kfile" kernel || return 1
+	mtd write "$rfile" rootfs1 || return 1
+	mtd write "$kfile" kernel1 || return 1
+	rm -f "$kfile" "$rfile"
+	return 0
+}
+
 platform_check_image() {
 	local board=$(board_name)
 	local magic="$(get_magic_long "$1")"
@@ -18,6 +88,9 @@ platform_check_image() {
 	buffalo,wsr-2533dhpl2|\
 	buffalo,wsr-2533dhpls)
 		buffalo_check_image "$board" "$magic" "$1" || return 1
+		;;
+	buffalo,wsr-1800ax4s)
+		wsr1800ax4s_check_image "$1" || return 1
 		;;
 	esac
 
@@ -167,6 +240,10 @@ platform_do_upgrade() {
 	buffalo,wsr-2533dhpl2|\
 	buffalo,wsr-2533dhpls)
 		buffalo_do_upgrade "$1"
+		;;
+	buffalo,wsr-1800ax4s)
+		wsr1800ax4s_do_upgrade "$1" && nand_do_upgrade_success
+		nand_do_upgrade_failed
 		;;
 	dna,valokuitu-plus-ex400|\
 	genexis,pulse-ex400)
