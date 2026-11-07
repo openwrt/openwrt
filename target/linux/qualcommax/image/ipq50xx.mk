@@ -260,7 +260,9 @@ define Device/linksys_mr5500
 		kmod-ath11k-pci \
 		ath11k-firmware-qcn9074 \
 		ipq-wifi-linksys_mr5500 \
-		kmod-usb-ledtrig-usbport
+		kmod-usb-ledtrig-usbport \
+		kmod-btqcomipc \
+		qca-bt-firmware-ipq5018
 endef
 TARGET_DEVICES += linksys_mr5500
 
@@ -269,7 +271,9 @@ define Device/linksys_mx2000
 	DEVICE_MODEL := MX2000
 	DEVICE_DTS_CONFIG := config@mp03.5-c1
 	DEVICE_PACKAGES := ath11k-firmware-ipq5018-qcn6122 \
-		ipq-wifi-linksys_mx2000
+		ipq-wifi-linksys_mx2000 \
+		kmod-btqcomipc \
+		qca-bt-firmware-ipq5018
 endef
 TARGET_DEVICES += linksys_mx2000
 
@@ -280,7 +284,9 @@ define Device/linksys_mx5500
 	DEVICE_PACKAGES := ath11k-firmware-ipq5018 \
 		kmod-ath11k-pci \
 		ath11k-firmware-qcn9074 \
-		ipq-wifi-linksys_mx5500
+		ipq-wifi-linksys_mx5500 \
+		kmod-btqcomipc \
+		qca-bt-firmware-ipq5018
 endef
 TARGET_DEVICES += linksys_mx5500
 
@@ -298,7 +304,9 @@ define Device/linksys_mx6200
 	SOC := ipq5018
 	IMAGE/factory.ubi := append-ubi | linksys-image type=$$$$(DEVICE_MODEL)
 	DEVICE_PACKAGES := ath11k-firmware-ipq5018-qcn6122 \
-		ipq-wifi-linksys_mx6200
+		ipq-wifi-linksys_mx6200 \
+		kmod-btqcomipc \
+		qca-bt-firmware-ipq5018
 endef
 TARGET_DEVICES += linksys_mx6200
 
@@ -309,7 +317,9 @@ define Device/linksys_spnmx56
 	DEVICE_PACKAGES := ath11k-firmware-ipq5018 \
 		kmod-ath11k-pci \
 		ath11k-firmware-qcn9074 \
-		ipq-wifi-linksys_spnmx56
+		ipq-wifi-linksys_spnmx56 \
+		kmod-btqcomipc \
+		qca-bt-firmware-ipq5018
 endef
 TARGET_DEVICES += linksys_spnmx56
 
