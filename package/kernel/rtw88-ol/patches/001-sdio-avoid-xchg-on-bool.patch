@@ -1,0 +1,22 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Ivan Belokobylskiy <belokobylskij@gmail.com>
+Subject: [PATCH] wifi: rtw88: sdio: use u32 for waiting_for_irq
+
+xchg() on a 1-byte type is lowered to __xchg_small() on 32-bit MIPS,
+which is not exported to modules and breaks the build with
+"__xchg_small [rtw_sdio.ko] undefined!". Use u32 for the flag.
+
+Signed-off-by: Ivan Belokobylskiy <belokobylskij@gmail.com>
+---
+--- a/sdio.h
++++ b/sdio.h
+@@ -175,7 +175,8 @@ struct rtw_sdio_tx_data {
+ struct rtw_sdio_work_data {
+ 	struct delayed_work work;
+ 	struct rtw_dev *rtwdev;
+-	bool waiting_for_irq;
++	/* xchg() on 1-byte types needs __xchg_small, not exported on MIPS */
++	u32 waiting_for_irq;
+ };
+ 
+ struct rtw_sdio {

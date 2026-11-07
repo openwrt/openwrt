@@ -1,0 +1,49 @@
+# OpenWrt-specific Kbuild for the rtw88 fork: SDIO chips only
+# (RTL8189ES and RTL8723BS), no PCI/USB, no debug/LED support.
+
+ccflags-y += -O2 -std=gnu11 -Wno-declaration-after-statement
+ccflags-y += -D__CHECK_ENDIAN__
+# KERNEL_VERSION(6, 18, 0): API level of the mac80211 backports
+ccflags-y += -DRTW_KERNEL_VERSION_CODE=397824
+
+obj-m		+= rtw_core.o
+rtw_core-objs	:= main.o \
+		   mac80211.o \
+		   util.o \
+		   debug.o \
+		   tx.o \
+		   rx.o \
+		   mac.o \
+		   phy.o \
+		   coex.o \
+		   efuse.o \
+		   fw.o \
+		   ps.o \
+		   sec.o \
+		   bf.o \
+		   regd.o \
+		   sar.o
+
+ifeq ($(CONFIG_PM),y)
+rtw_core-objs	+= wow.o
+endif
+
+obj-m		+= rtw_sdio.o
+rtw_sdio-objs	:= sdio.o
+
+# RTL8189ES
+obj-m		+= rtw_8188e.o
+rtw_8188e-objs	:= rtw8188e.o rtw8188e_table.o
+
+obj-m		+= rtw_8189es.o
+rtw_8189es-objs	:= rtw8189es.o
+
+# RTL8723BS
+obj-m		+= rtw_8723x.o
+rtw_8723x-objs	:= rtw8723x.o
+
+obj-m		+= rtw_8723b.o
+rtw_8723b-objs	:= rtw8723b.o rtw8723b_table.o
+
+obj-m		+= rtw_8723bs.o
+rtw_8723bs-objs	:= rtw8723bs.o
