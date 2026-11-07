@@ -1,0 +1,60 @@
+// SPDX-License-Identifier: (GPL-2.0 OR MIT)
+
+#include "mt7986b-mercusys-mr90x-v1-common.dtsi"
+
+/ {
+	compatible = "mercusys,h90x-v1", "mediatek,mt7986b";
+	model = "MERCUSYS Halo H90X v1";
+};
+
+&partitions {
+	partition@0 {
+		label = "boot";
+		reg = <0x0 0x200000>;
+		read-only;
+	};
+
+	partition@200000 {
+		label = "u-boot-env";
+		reg = <0x200000 0x100000>;
+	};
+
+	partition@300000 {
+		label = "ubi0";
+		reg = <0x300000 0x2a00000>;
+	};
+
+	partition@2d00000 {
+		label = "ubi1";
+		reg = <0x2d00000 0x2a00000>;
+		read-only;
+	};
+
+	partition@5700000 {
+		label = "radio";
+		reg = <0x5700000 0x100000>;
+		read-only;
+	};
+
+	partition@5800000 {
+		label = "factory_data";
+		reg = <0x5800000 0x900000>;
+		read-only;
+	};
+
+	partition@6100000 {
+		label = "runtime_data";
+		reg = <0x6100000 0x1100000>;
+		read-only;
+	};
+};
+
+&switch {
+	ports {
+		/delete-node/ port@0;
+	};
+};
+
+&{/leds} {
+	/delete-node/ led-2;
+};
