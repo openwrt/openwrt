@@ -1,0 +1,166 @@
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Date: Wed, 28 Oct 2026 08:41:26 +0100
+Subject: [PATCH] wifi: ath10k: spread the PCI copy engine interrupts over the
+ CPUs
+
+The PCI ath10k devices are capable of multiple MSI. The QCA9889 of a
+Xiaomi AX3600 advertises 8 vectors in its MSI capability (Multiple
+Message Capable 3) and, when granted all of them, raises the firmware
+interrupt and each copy engine on its own vector, the layout ath10k
+used until commit cfe9011a05a8 ("ath10k: remove MSI range support").
+Since then ath10k asks for one vector, so all its copy engine
+interrupts and the NAPI they schedule run on one CPU.
+
+Ask for as many MSI vectors as the device offers and spread them over
+the CPUs, starting each further device on the next CPU. Every vector
+keeps the shared handler, which schedules the NAPI that services all
+copy engines, so the copy engine to vector mapping does not matter for
+correctness. With one vector nothing changes.
+
+On the AX3600, with a station uploading 87-88 Mbit/s over the QCA9889,
+the HTT copy engine raised 36891-37590 interrupts in 14 s on vector 6
+and the WMI and HTC ones 165-313 each on vectors 2-4. The receive
+softirq moved from CPU0 (21-25%) to CPU2 (21-35%), with CPU0 at 1-3%.
+Measured with idle-priority spinners, the CPU time of the whole system
+stayed within the run-to-run spread: 25-42% of four CPUs against 22-34%
+uploading, 14-35% against 10-37% downloading (3 runs each). A firmware
+crash forced through debugfs recovered as without the change.
+
+Tested-on: QCA9887 hw1.0 PCI 10.2.4-1.0-00047
+
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+---
+--- a/ath10k-7.2/pci.c
++++ b/ath10k-7.2/pci.c
+@@ -38,6 +38,9 @@ MODULE_PARM_DESC(irq_mode, "0: auto, 1:
+ module_param_named(reset_mode, ath10k_pci_reset_mode, uint, 0644);
+ MODULE_PARM_DESC(reset_mode, "0: auto, 1: warm only (default: 0)");
+ 
++/* Spreads the interrupts of each further device from the next CPU on */
++static atomic_t ath10k_pci_num_devs = ATOMIC_INIT(0);
++
+ /* how long wait to wait for target to initialise, in ms */
+ #define ATH10K_PCI_TARGET_WAIT 3000
+ #define ATH10K_PCI_NUM_WARM_RESET_ATTEMPTS 3
+@@ -2269,8 +2272,10 @@ static void ath10k_pci_irq_disable(struc
+ static void ath10k_pci_irq_sync(struct ath10k *ar)
+ {
+ 	struct ath10k_pci *ar_pci = ath10k_pci_priv(ar);
++	int i;
+ 
+-	synchronize_irq(ar_pci->pdev->irq);
++	for (i = 0; i < ar_pci->num_irqs; i++)
++		synchronize_irq(pci_irq_vector(ar_pci->pdev, i));
+ }
+ 
+ static void ath10k_pci_irq_enable(struct ath10k *ar)
+@@ -3512,18 +3517,42 @@ out:
+ static int ath10k_pci_request_irq_msi(struct ath10k *ar)
+ {
+ 	struct ath10k_pci *ar_pci = ath10k_pci_priv(ar);
+-	int ret;
++	int cpu_offset, cpu, irq, ret, i;
+ 
+-	ret = request_irq(ar_pci->pdev->irq,
+-			  ath10k_pci_interrupt_handler,
+-			  IRQF_SHARED, "ath10k_pci", ar);
+-	if (ret) {
+-		ath10k_warn(ar, "failed to request MSI irq %d: %d\n",
+-			    ar_pci->pdev->irq, ret);
+-		return ret;
++	/* With several vectors the device raises the firmware interrupt and
++	 * each copy engine on its own one. Each vector schedules the same
++	 * NAPI, so they only differ in where it runs: spread them over the
++	 * CPUs, from a different CPU for each device.
++	 */
++	cpu_offset = atomic_fetch_inc(&ath10k_pci_num_devs);
++
++	for (i = 0; i < ar_pci->num_irqs; i++) {
++		irq = pci_irq_vector(ar_pci->pdev, i);
++		ret = request_irq(irq, ath10k_pci_interrupt_handler,
++				  IRQF_SHARED, "ath10k_pci", ar);
++		if (ret) {
++			ath10k_warn(ar, "failed to request MSI irq %d: %d\n",
++				    irq, ret);
++			goto err_free;
++		}
++
++		if (ar_pci->num_irqs > 1) {
++			cpu = cpumask_local_spread(i + cpu_offset,
++						   dev_to_node(ar_pci->dev));
++			irq_set_affinity_and_hint(irq, cpumask_of(cpu));
++		}
+ 	}
+ 
+ 	return 0;
++
++err_free:
++	while (--i >= 0) {
++		irq = pci_irq_vector(ar_pci->pdev, i);
++		irq_update_affinity_hint(irq, NULL);
++		free_irq(irq, ar);
++	}
++
++	return ret;
+ }
+ 
+ static int ath10k_pci_request_irq_intx(struct ath10k *ar)
+@@ -3560,8 +3589,13 @@ static int ath10k_pci_request_irq(struct
+ static void ath10k_pci_free_irq(struct ath10k *ar)
+ {
+ 	struct ath10k_pci *ar_pci = ath10k_pci_priv(ar);
++	int irq, i;
+ 
+-	free_irq(ar_pci->pdev->irq, ar);
++	for (i = 0; i < ar_pci->num_irqs; i++) {
++		irq = pci_irq_vector(ar_pci->pdev, i);
++		irq_update_affinity_hint(irq, NULL);
++		free_irq(irq, ar);
++	}
+ }
+ 
+ void ath10k_pci_init_napi(struct ath10k *ar)
+@@ -3583,9 +3617,12 @@ static int ath10k_pci_init_irq(struct at
+ 	/* Try MSI */
+ 	if (ath10k_pci_irq_mode != ATH10K_PCI_IRQ_INTX) {
+ 		ar_pci->oper_irq_mode = ATH10K_PCI_IRQ_MSI;
+-		ret = pci_enable_msi(ar_pci->pdev);
+-		if (ret == 0)
++		ret = pci_alloc_irq_vectors(ar_pci->pdev, 1, CE_COUNT_MAX + 1,
++					    PCI_IRQ_MSI);
++		if (ret > 0) {
++			ar_pci->num_irqs = ret;
+ 			return 0;
++		}
+ 
+ 		/* MHI failed, try legacy irq next */
+ 	}
+@@ -3600,6 +3637,7 @@ static int ath10k_pci_init_irq(struct at
+ 	 * synchronization checking.
+ 	 */
+ 	ar_pci->oper_irq_mode = ATH10K_PCI_IRQ_INTX;
++	ar_pci->num_irqs = 1;
+ 
+ 	ath10k_pci_write32(ar, SOC_CORE_BASE_ADDRESS + PCIE_INTR_ENABLE_ADDRESS,
+ 			   PCIE_INTR_FIRMWARE_MASK | PCIE_INTR_CE_MASK_ALL);
+@@ -3622,7 +3660,7 @@ static int ath10k_pci_deinit_irq(struct
+ 		ath10k_pci_deinit_irq_intx(ar);
+ 		break;
+ 	default:
+-		pci_disable_msi(ar_pci->pdev);
++		pci_free_irq_vectors(ar_pci->pdev);
+ 		break;
+ 	}
+ 
+--- a/ath10k-7.2/pci.h
++++ b/ath10k-7.2/pci.h
+@@ -115,6 +115,9 @@ struct ath10k_pci {
+ 	/* Operating interrupt mode */
+ 	enum ath10k_pci_irq_mode oper_irq_mode;
+ 
++	/* Number of MSI vectors, or 1 for INTx */
++	int num_irqs;
++
+ 	struct ath10k_pci_pipe pipe_info[CE_COUNT_MAX];
+ 
+ 	/* Copy Engine used for Diagnostic Accesses */
