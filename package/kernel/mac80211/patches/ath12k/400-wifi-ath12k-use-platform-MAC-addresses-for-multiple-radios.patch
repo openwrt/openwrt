@@ -1,0 +1,175 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Satoshi Ikeuchi <satosan.ikm@gmail.com>
+Date: Sun, 1 Nov 2026 22:45:00 +0900
+Subject: [PATCH] wifi: ath12k: use platform MAC addresses for multiple radios
+
+Read the optional platform MAC address during probe, before asynchronous
+firmware startup, so an unavailable NVMEM provider can defer probing.
+Keep it separate from the address supplied by the firmware.
+
+Use a valid platform address as the chip's base, retaining the existing
+pdev-index derivation for its radios. If any chip in a wiphy supplies a
+platform address, publish the final per-radio addresses and use the first
+one as perm_addr. This covers both single-chip multi-radio devices and
+multi-device groups. Devices without a valid platform address retain the
+existing firmware address selection and userspace allocation behavior.
+
+Adapt Kenneth Kasilag's per-radio address publication from OpenWrt
+PR #23786 for backports 7.2. Extend the lookup to multi-radio chips,
+move it into the probe path, and free the published array on normal
+cleanup as well as setup failure. No board-specific identification
+is needed.
+
+Link: https://github.com/openwrt/openwrt/pull/23786
+Signed-off-by: Satoshi Ikeuchi <satosan.ikm@gmail.com>
+---
+ drivers/net/wireless/ath/ath12k/core.c |  7 +++++++
+ drivers/net/wireless/ath/ath12k/core.h |  1 +
+ drivers/net/wireless/ath/ath12k/mac.c  | 40 ++++++++++++++++++++++++++++++++++++----
+ 3 files changed, 44 insertions(+), 4 deletions(-)
+
+--- a/drivers/net/wireless/ath/ath12k/core.c
++++ b/drivers/net/wireless/ath/ath12k/core.c
+@@ -11,6 +11,7 @@
+ #include <linux/firmware.h>
+ #include <linux/of.h>
+ #include <linux/of_graph.h>
++#include <linux/etherdevice.h>
+ #include "ahb.h"
+ #include "core.h"
+ #include "dp_tx.h"
+@@ -1809,6 +1810,12 @@
+ int ath12k_core_pre_init(struct ath12k_base *ab)
+ {
+ 	const struct ath12k_mem_profile_based_param *param;
++	int ret;
++
++	/* Read the optional platform address while probe can still defer. */
++	ret = device_get_mac_address(ab->dev, ab->platform_mac_addr);
++	if (ret == -EPROBE_DEFER)
++		return ret;
+ 
+ 	param = &ath12k_mem_profile_based_param[ab->target_mem_mode];
+ 	ab->profile_param = param;
+--- a/drivers/net/wireless/ath/ath12k/core.h
++++ b/drivers/net/wireless/ath/ath12k/core.h
+@@ -1026,6 +1026,7 @@
+ 	unsigned long long free_vdev_stats_id_map;
+ 	wait_queue_head_t peer_mapping_wq;
+ 	u8 mac_addr[ETH_ALEN];
++	u8 platform_mac_addr[ETH_ALEN];
+ 	bool wmi_ready;
+ 	u32 wlan_init_status;
+ 	int irq_num[ATH12K_IRQ_NUM_MAX];
+--- a/drivers/net/wireless/ath/ath12k/mac.c
++++ b/drivers/net/wireless/ath/ath12k/mac.c
+@@ -14553,15 +14553,20 @@
+ 			ath12k_mac_cleanup_iface_comb(radio[i].iface_combinations);
+ 
+ 		kfree(wiphy->radio);
++		kfree(wiphy->addresses);
++		wiphy->addresses = NULL;
++		wiphy->n_addresses = 0;
+ 	}
+ 
+ 	ath12k_mac_cleanup_iface_comb(wiphy->iface_combinations);
+ }
+ 
+-static int ath12k_mac_setup_iface_combinations(struct ath12k_hw *ah)
++static int ath12k_mac_setup_iface_combinations(struct ath12k_hw *ah,
++					       bool use_platform_mac)
+ {
+ 	struct ieee80211_iface_combination *combinations, *comb;
+ 	struct wiphy *wiphy = ah->hw->wiphy;
++	struct mac_address *addresses = NULL;
+ 	struct wiphy_radio *radio;
+ 	int n_combinations = 1;
+ 	struct ath12k *ar;
+@@ -14600,10 +14605,18 @@
+ 
+ 	/* there are multiple radios */
+ 
++	if (use_platform_mac) {
++		addresses = kzalloc_objs(*addresses, ah->num_radio);
++		if (!addresses) {
++			ret = -ENOMEM;
++			goto err_free_combinations;
++		}
++	}
++
+ 	radio = kzalloc_objs(*radio, ah->num_radio);
+ 	if (!radio) {
+ 		ret = -ENOMEM;
+-		goto err_free_combinations;
++		goto err_free_addresses;
+ 	}
+ 
+ 	for_each_ar(ah, ar, i) {
+@@ -14626,6 +14639,8 @@
+ 
+ 		radio[i].iface_combinations = comb;
+ 		radio[i].n_iface_combinations = 1;
++		if (addresses)
++			ether_addr_copy(addresses[i].addr, ar->mac_addr);
+ 	}
+ 
+ 	ret = ath12k_mac_setup_global_iface_comb(ah, radio, ah->num_radio, combinations);
+@@ -14637,6 +14652,8 @@
+ 
+ 	wiphy->radio = radio;
+ 	wiphy->n_radio = ah->num_radio;
++	wiphy->addresses = addresses;
++	wiphy->n_addresses = addresses ? ah->num_radio : 0;
+ 
+ out:
+ 	wiphy->iface_combinations = combinations;
+@@ -14653,6 +14670,9 @@
+ 
+ 	kfree(radio);
+ 
++err_free_addresses:
++	kfree(addresses);
++
+ err_free_combinations:
+ 	kfree(combinations);
+ 
+@@ -14791,6 +14811,7 @@
+ 	int ret, i, j;
+ 	u32 ht_cap = U32_MAX, antennas_rx = 0, antennas_tx = 0;
+ 	bool is_6ghz = false, is_raw_mode = false, is_monitor_disable = false;
++	bool use_platform_mac = false;
+ 	u8 *mac_addr = NULL;
+ 	u8 mbssid_max_interfaces = 0;
+ 
+@@ -14800,7 +14821,15 @@
+ 		u32 ht_cap_info = 0;
+ 
+ 		pdev = ar->pdev;
+-		if (ar->ab->pdevs_macaddr_valid) {
++		if (is_valid_ether_addr(ar->ab->platform_mac_addr)) {
++			ether_addr_copy(ar->mac_addr, ar->ab->platform_mac_addr);
++			ar->mac_addr[4] += ar->pdev_idx;
++			if (!is_valid_ether_addr(ar->mac_addr)) {
++				ret = -EINVAL;
++				goto err_cleanup_unregister;
++			}
++			use_platform_mac = true;
++		} else if (ar->ab->pdevs_macaddr_valid) {
+ 			ether_addr_copy(ar->mac_addr, pdev->mac_addr);
+ 		} else {
+ 			ether_addr_copy(ar->mac_addr, ar->ab->mac_addr);
+@@ -14846,10 +14875,13 @@
+ 	wiphy->available_antennas_rx = antennas_rx;
+ 	wiphy->available_antennas_tx = antennas_tx;
+ 
++	if (use_platform_mac)
++		mac_addr = ath12k_ah_to_ar(ah, 0)->mac_addr;
++
+ 	SET_IEEE80211_PERM_ADDR(hw, mac_addr);
+ 	SET_IEEE80211_DEV(hw, ab->dev);
+ 
+-	ret = ath12k_mac_setup_iface_combinations(ah);
++	ret = ath12k_mac_setup_iface_combinations(ah, use_platform_mac);
+ 	if (ret) {
+ 		ath12k_err(ab, "failed to setup interface combinations: %d\n", ret);
+ 		goto err_complete_cleanup_unregister;
