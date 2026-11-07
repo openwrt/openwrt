@@ -1,0 +1,97 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
+/include/ "ubnt_e100.dts"
+
+/ {
+	compatible = "ubnt,edgerouter-poe", "cavium,cn5020";
+	model = "Ubiquiti EdgeRouter PoE";
+
+	soc@0 {
+		pip@11800a0000000 {
+			interface@0 {
+				ethernet@0 {
+					label = "lan0";
+					phy-mode = "rgmii-rxid";
+				};
+				ethernet@1 {
+					label = "lan1";
+					phy-mode = "rgmii-rxid";
+				};
+				switchcpu: ethernet@2 {
+					/delete-property/ phy-handle;
+					label = "switchcpu";
+					phy-mode = "rgmii";
+					rx-delay = <0x10>;
+					fixed-link {
+						speed = <1000>;
+						full-duplex;
+					};
+				};
+			};
+		};
+	};
+};
+
+&smi0 {
+	/delete-node/ ethernet-phy@5;
+
+	/* All five PHYs share the Octeon's external MDIO bus. */
+	switchphy0: ethernet-phy@0 {
+		reg = <0>;
+	};
+	switchphy1: ethernet-phy@1 {
+		reg = <1>;
+	};
+	switchphy2: ethernet-phy@2 {
+		reg = <2>;
+	};
+
+	switch@10 {
+		compatible = "qca,qca8327";
+		reg = <0x10>;
+
+		ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			port@0 {
+				reg = <0>;
+				ethernet = <&switchcpu>;
+				phy-mode = "rgmii-rxid";
+				rx-internal-delay-ps = <1000>;
+				fixed-link {
+					speed = <1000>;
+					full-duplex;
+				};
+			};
+			port@1 {
+				reg = <1>;
+				label = "lan2";
+				phy-mode = "internal";
+				phy-handle = <&switchphy0>;
+			};
+			port@2 {
+				reg = <2>;
+				label = "lan3";
+				phy-mode = "internal";
+				phy-handle = <&switchphy1>;
+			};
+			port@3 {
+				reg = <3>;
+				label = "lan4";
+				phy-mode = "internal";
+				phy-handle = <&switchphy2>;
+			};
+		};
+	};
+};
+
+&gpio {
+	poe-power-disable {
+		gpio-hog;
+		gpios = <2 0>, <3 0>, <4 0>, <5 0>, <13 0>,
+			<14 0>, <15 0>, <16 0>, <17 0>, <18 0>;
+		output-low;
+		line-name = "poe-off";
+	};
+};

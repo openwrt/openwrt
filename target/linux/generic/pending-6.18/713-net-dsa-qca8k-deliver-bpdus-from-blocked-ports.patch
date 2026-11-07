@@ -1,0 +1,128 @@
+From 9135ba6b27ae7210742bf1c88c450653eb830afa Mon Sep 17 00:00:00 2001
+From: Henry Essinghigh <henry@essinghigh.dev>
+Date: Sat, 24 Oct 2026 18:26:28 +0100
+Subject: [PATCH] net: dsa: qca8k: deliver BPDUs from blocked ports
+
+Unknown-multicast forwarding does not deliver BPDUs to the CPU when an
+AR8327 ingress port is blocked. RSTP then ages out received information
+and repeatedly reopens a physical loop. Reserve an address-table entry
+for 01:80:c2:00:00:00, forwarding it only to CPU port 0 while bypassing
+port-state and VLAN restrictions on switches with only CPU port 0.
+Use native MDIO helpers outside the
+16-bit regmap space and verify the values before enabling the ports.
+
+Signed-off-by: Henry Essinghigh <henry@essinghigh.dev>
+---
+--- a/drivers/net/dsa/qca/qca8k.h
++++ b/drivers/net/dsa/qca/qca8k.h
+@@ -37,6 +37,16 @@
+ #define QCA8K_NUM_FDB_RECORDS				2048
+ 
+ #define QCA8K_PORT_VID_DEF				1
++
++/* First reserved-address entry: trap 802.1D BPDUs independently of STP state. */
++#define QCA8K_REG_RMA_CTRL0			0x3c000
++#define QCA8K_REG_RMA_CTRL1			0x3c004
++#define   QCA8K_RMA_REDIRECT_TO_CPU		BIT(30)
++#define   QCA8K_RMA_VLAN_LEAKY			BIT(29)
++#define   QCA8K_RMA_CROSS_PORT_STATE		BIT(23)
++#define   QCA8K_RMA_PORT_MASK			GENMASK(22, 16)
++#define QCA8K_REG_RMA_CTRL2			0x3c008
++#define   QCA8K_RMA_VALID			BIT(0)
+ 
+ /* Global control registers */
+ #define QCA8K_REG_MASK_CTRL				0x000
+@@ -244,6 +254,7 @@
+ #define   QCA8K_ATU_AGE_TIME(x)				FIELD_PREP(QCA8K_ATU_AGE_TIME_MASK, (x))
+ #define QCA8K_REG_GLOBAL_FW_CTRL0			0x620
+ #define   QCA8K_GLOBAL_FW_CTRL0_CPU_PORT_EN		BIT(10)
++#define   QCA8K_GLOBAL_FW_CTRL0_ARL_MULTI_LEAKY_EN	BIT(12)
+ #define   QCA8K_GLOBAL_FW_CTRL0_MIRROR_PORT_NUM		GENMASK(7, 4)
+ #define QCA8K_REG_GLOBAL_FW_CTRL1			0x624
+ #define   QCA8K_GLOBAL_FW_CTRL1_IGMP_DP_MASK		GENMASK(30, 24)
+--- a/drivers/net/dsa/qca/qca8k-8xxx.c
++++ b/drivers/net/dsa/qca/qca8k-8xxx.c
+@@ -1946,6 +1946,70 @@
+ 			   mask);
+ }
+ 
++static int qca8k_write_bpdu_ctrl(struct qca8k_priv *priv, u32 reg, u32 val)
++{
++	u32 check;
++	int ret;
++
++	ret = qca8k_write_mii(priv, reg, val);
++	if (ret)
++		return ret;
++
++	/* The legacy MDIO writer does not propagate data-word write errors. */
++	ret = qca8k_read_mii(priv, reg, &check);
++	if (ret)
++		return ret;
++
++	return check == val ? 0 : -EIO;
++}
++
++static int qca8k_setup_bpdu_trap(struct qca8k_priv *priv)
++{
++	u32 val;
++	int ret;
++
++	/* Reserved-address CPU redirection supports a single CPU at port 0. */
++	if (priv->switch_id != QCA8K_ID_QCA8327 ||
++	    dsa_cpu_ports(priv->ds) != BIT(0))
++		return 0;
++
++	/* The per-entry leaky flag needs its multicast ARL gate enabled. */
++	ret = regmap_set_bits(priv->regmap, QCA8K_REG_GLOBAL_FW_CTRL0,
++			      QCA8K_GLOBAL_FW_CTRL0_ARL_MULTI_LEAKY_EN);
++	if (ret)
++		return ret;
++
++	ret = qca8k_read(priv, QCA8K_REG_GLOBAL_FW_CTRL0, &val);
++	if (ret)
++		return ret;
++	if (!(val & QCA8K_GLOBAL_FW_CTRL0_ARL_MULTI_LEAKY_EN))
++		return -EIO;
++
++	/* BPDUs must reach the CPU even when the ingress port is blocking.
++	 * A normal unknown-multicast flood is subject to the port state and
++	 * lets received spanning-tree information expire on blocked ports.
++	 * The reserved table is beyond the 16-bit regmap address space, so
++	 * use the serialized MDIO helpers without changing the regmap format.
++	 */
++	ret = qca8k_write_bpdu_ctrl(priv, QCA8K_REG_RMA_CTRL2, 0);
++	if (ret)
++		return ret;
++
++	/* Match 01:80:c2:00:00:00. The low four MAC octets are in CTRL0. */
++	ret = qca8k_write_bpdu_ctrl(priv, QCA8K_REG_RMA_CTRL0, 0xc2000000);
++	if (ret)
++		return ret;
++
++	val = QCA8K_RMA_REDIRECT_TO_CPU | QCA8K_RMA_VLAN_LEAKY |
++	      QCA8K_RMA_CROSS_PORT_STATE |
++	      FIELD_PREP(QCA8K_RMA_PORT_MASK, BIT(0)) | 0x0180;
++	ret = qca8k_write_bpdu_ctrl(priv, QCA8K_REG_RMA_CTRL1, val);
++	if (ret)
++		return ret;
++
++	return qca8k_write_bpdu_ctrl(priv, QCA8K_REG_RMA_CTRL2, QCA8K_RMA_VALID);
++}
++
+ static int
+ qca8k_setup(struct dsa_switch *ds)
+ {
+@@ -1991,6 +2055,12 @@
+ 			      QCA8K_GLOBAL_FW_CTRL0_CPU_PORT_EN);
+ 	if (ret) {
+ 		dev_err(priv->dev, "failed enabling CPU port");
++		return ret;
++	}
++
++	ret = qca8k_setup_bpdu_trap(priv);
++	if (ret) {
++		dev_err(priv->dev, "failed configuring BPDU trap\n");
+ 		return ret;
+ 	}
+ 

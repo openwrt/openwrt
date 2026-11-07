@@ -1,0 +1,29 @@
+From bc3f77e2d5175c2552a3dda19d04d31edf637ed0 Mon Sep 17 00:00:00 2001
+From: Henry Essinghigh <henry@essinghigh.dev>
+Date: Sat, 24 Oct 2026 18:26:33 +0100
+Subject: [PATCH] staging: octeon: publish per-port firmware nodes
+
+DSA resolves its conduit using the ethernet phandle. Associate each
+Octeon netdev with its port node so that of_find_net_device_by_node()
+can locate it instead of seeing only the shared PIP parent device.
+
+Signed-off-by: Henry Essinghigh <henry@essinghigh.dev>
+---
+--- a/drivers/staging/octeon/ethernet.c
++++ b/drivers/staging/octeon/ethernet.c
+@@ -17,6 +17,7 @@
+ #include <linux/of_net.h>
+ #include <linux/if_ether.h>
+ #include <linux/if_vlan.h>
++#include <linux/property.h>
+ 
+ #include <net/dst.h>
+ 
+@@ -869,6 +870,7 @@
+ 			priv->netdev = dev;
+ 			priv->of_node = cvm_oct_node_for_port(pip, interface,
+ 							      port_index);
++			device_set_node(&dev->dev, of_fwnode_handle(priv->of_node));
+ 
+ 			INIT_DELAYED_WORK(&priv->port_periodic_work,
+ 					  cvm_oct_periodic_worker);
