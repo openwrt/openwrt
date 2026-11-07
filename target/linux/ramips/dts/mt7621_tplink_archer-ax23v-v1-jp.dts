@@ -1,0 +1,41 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "mt7621_tplink_archer-ax23.dtsi"
+
+/ {
+	compatible = "tplink,archer-ax23v-v1-jp", "mediatek,mt7621-soc";
+	model = "TP-Link Archer AX23V v1 (JP)";
+};
+
+&gmac1 {
+	phy-handle = <&ethphy0>;
+};
+
+&ethphy0 {
+	/delete-property/ interrupts;
+};
+
+&switch0 {
+	ports {
+		port@1 {
+			status = "okay";
+			label = "lan1";
+		};
+
+		port@2 {
+			status = "okay";
+			label = "lan2";
+		};
+
+		port@3 {
+			status = "okay";
+			label = "lan3";
+		};
+
+		port@4 {
+			status = "okay";
+			label = "lan4";
+		};
+	};
+};
+
