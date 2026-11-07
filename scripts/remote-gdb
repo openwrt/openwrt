@@ -53,6 +53,24 @@ if( opendir SD, "$Bin/../staging_dir" )
 
 	# Find gdb
 	my ($gdb) = glob("$Bin/../staging_dir/toolchain-${arch}_*_${libc}*/bin/*-gdb");
+	if( !defined($gdb) )
+	{
+		my $config_file = "$Bin/../.config";
+
+		open my $fh, '<', $config_file
+			or die "No '.config' file found: $!";
+		while (my $line = <$fh>)
+		{
+			# Match line with 'CONFIG_TOOLCHAIN_PREFIX'
+			if ($line =~ /^CONFIG_TOOLCHAIN_PREFIX=(.*)$/)
+			{
+				my $value = $1;
+				$value =~ s/^"(.*)"$/$1/;
+				$gdb = "${value}gdb";
+				print "Using toolchain: $gdb \n";
+			}
+		}
+	}
 	if( defined($gdb) && -x $gdb )
 	{
 		my ( $fh, $fp ) = tempfile();
