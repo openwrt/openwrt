@@ -1,0 +1,76 @@
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Subject: [PATCH] net/sched: sch_cake: give the shaper timer slack
+
+When the shaper holds the next packet back, CAKE arms its watchdog for
+the exact time that packet may leave. At a few hundred Mbit/s that is a
+timer interrupt, a softirq and a qdisc run for nearly every packet: on a
+4x Cortex-A53 router shaping 310 Mbit/s of download, the queue stopped
+on the shaper 1.29 times per packet sent.
+
+Let the timer fire up to four packet times late, capped at 100 us, as
+sch_fq does with its timer_slack. The shaper keeps its rate, since it
+sends what it owes once the timer runs. On the same router the shaper
+stops fell to 0.48 per packet and the CPU time per GB forwarded from
+14369 to 10481 ms (100 us slack, 8 flows, 4 runs each), at the same
+throughput. Four packet times are 156 us at 310 Mbit/s, where the cap
+applies, 48 us at 1 Gbit/s and 5 us at 10 Gbit/s.
+
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+---
+--- a/net/sched/sch_cake.c
++++ b/net/sched/sch_cake.c
+@@ -232,6 +232,7 @@ struct cake_sched_data {
+ 	/* time_next = time_this + ((len * rate_ns) >> rate_shft) */
+ 	ktime_t		time_next_packet;
+ 	ktime_t		failsafe_next_packet;
++	u64		timer_slack;
+ 	u64		rate_ns;
+ 	u16		rate_shft;
+ 	u16		overflow_timeout;
+@@ -1795,7 +1796,8 @@ static s32 cake_enqueue(struct sk_buff *
+ 					    ktime_to_ns(
+ 						   q->failsafe_next_packet));
+ 				sch->qstats.overlimits++;
+-				qdisc_watchdog_schedule_ns(&q->watchdog, next);
++				qdisc_watchdog_schedule_range_ns(&q->watchdog, next,
++								 q->timer_slack);
+ 			}
+ 		}
+ 	}
+@@ -2062,7 +2064,8 @@ begin:
+ 			       ktime_to_ns(q->failsafe_next_packet));
+ 
+ 		sch->qstats.overlimits++;
+-		qdisc_watchdog_schedule_ns(&q->watchdog, next);
++		qdisc_watchdog_schedule_range_ns(&q->watchdog, next,
++						 q->timer_slack);
+ 		return NULL;
+ 	}
+ 
+@@ -2302,7 +2305,8 @@ retry:
+ 		u64 next = min(ktime_to_ns(q->time_next_packet),
+ 			       ktime_to_ns(q->failsafe_next_packet));
+ 
+-		qdisc_watchdog_schedule_ns(&q->watchdog, next);
++		qdisc_watchdog_schedule_range_ns(&q->watchdog, next,
++						 q->timer_slack);
+ 	} else if (!sch->q.qlen) {
+ 		int i;
+ 
+@@ -2651,6 +2655,16 @@ static void cake_configure_rates(struct
+ 
+ 	qd->rate_ns   = qd->tins[ft].tin_rate_ns;
+ 	qd->rate_shft = qd->tins[ft].tin_rate_shft;
++
++	/* Waking the shaper for every packet costs a timer interrupt and a
++	 * softirq each. Letting the timer fire up to four packet times late
++	 * lets it send a few at once, as sch_fq's timer_slack does; the shaper
++	 * still meets its rate, since it catches up on what it owes. Capped so
++	 * that a slow link waits no longer than a fast one would.
++	 */
++	qd->timer_slack = min_t(u64, 100 * NSEC_PER_USEC,
++				(4ULL * psched_mtu(qdisc_dev(sch)) * qd->rate_ns) >>
++				qd->rate_shft);
+ }
+ 
+ static void cake_reconfigure(struct Qdisc *sch)
