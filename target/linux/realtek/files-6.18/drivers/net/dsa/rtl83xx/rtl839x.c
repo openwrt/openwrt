@@ -131,7 +131,6 @@ const struct rtldsa_config rtldsa_839x_cfg = {
 	.mask_port_reg_be = rtl839x_mask_port_reg_be,
 	.set_port_reg_be = rtl839x_set_port_reg_be,
 	.get_port_reg_be = rtl839x_get_port_reg_be,
-	.mask_port_reg_le = rtl839x_mask_port_reg_le,
 	.set_port_reg_le = rtl839x_set_port_reg_le,
 	.get_port_reg_le = rtl839x_get_port_reg_le,
 	.stat_port_rst = RTL839X_STAT_PORT_RST,
