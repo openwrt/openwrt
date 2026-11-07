@@ -1,0 +1,41 @@
+From b6674f5447ba008872d8f3f97c9ac2d45ad61c83 Mon Sep 17 00:00:00 2001
+From: Hleb Shauchenka <me@marleb.org>
+Date: Sat, 7 Nov 2026 17:39:52 +0100
+Subject: [PATCH net-next v2 3/3] net: phy: realtek: register hwmon thermal
+ zones
+
+The Realtek PHY hwmon device exposes the PHY temperature, but its
+channel info lacks HWMON_C_REGISTER_TZ, so the hwmon core does not
+register the sensor with the thermal framework and device-tree
+thermal zones that reference the PHY cannot bind.
+
+Set the flag, as the Aquantia PHY driver does. In mainline this
+affects the PHYs whose hwmon device rtl822x_probe() registers, the
+RTL8221B-VB-CG, RTL8221B-VM-CG and RTL8251B, when the device tree
+describes them. The internal NBASE-T PHYs normally have no device
+tree node, so the hwmon core registers no thermal zone for them.
+
+I tested this on a Zyxel XGS1250-12 B1 with OpenWrt's Linux 6.18.55,
+where OpenWrt's out-of-tree RTL8261N support calls
+rtl822x_hwmon_init(): the three PHY thermal zones register, and an
+emulated 85 C reading on one of them (CONFIG_THERMAL_EMULATION)
+switches the fan on through an 80 C trip and off again once cleared.
+
+This patch was prepared with AI assistance (Claude Opus 5.5 and Sol
+6.1), which also helped investigate the problem and run the tests on
+my switch.
+
+Link: https://lore.kernel.org/netdev/20261107-realtek-hwmon-tz-v2-3-6b9a69d44470@marleb.org/
+Reviewed-by: Andrew Lunn <andrew@lunn.ch>
+Signed-off-by: Hleb Shauchenka <me@marleb.org>
+---
+--- a/drivers/net/phy/realtek/realtek_hwmon.c
++++ b/drivers/net/phy/realtek/realtek_hwmon.c
+@@ -55,6 +55,7 @@ static const struct hwmon_ops rtl822x_hw
+ };
+ 
+ static const struct hwmon_channel_info * const rtl822x_hwmon_info[] = {
++	HWMON_CHANNEL_INFO(chip, HWMON_C_REGISTER_TZ),
+ 	HWMON_CHANNEL_INFO(temp, HWMON_T_INPUT | HWMON_T_MAX),
+ 	NULL
+ };
