@@ -1,0 +1,37 @@
+From 3a9c76c711bdfd2d0cb8aa6cbb2b51489833a02f Mon Sep 17 00:00:00 2001
+From: Mikhail Zhilkin <csharper2005@gmail.com>
+Date: Sat, 7 Nov 2026 12:10:18 +0100
+Subject: [PATCH v1 1/3] net: mtk_eth: an8855: fix bitwise collision in
+ RX_CTRL_8 register
+
+In an8855_port_sgmii_init(), the bitwise operations for
+the AN8855_RX_CTRL_8 register contain a shifting error. The code
+attempts to set a value at shift 16 (0x200 << 16), but subsequently
+applies a mask and value shifted by 14 (0xfff << 14). This creates a
+bitwise collision where the second operation overlaps and overwrites the
+bits configured by the first operation, resulting in unintended register
+values.
+
+Fix the shift offset for the lower bits from 14 to 0 to prevent
+overlap and correctly apply the exact values used in the upstream
+Linux driver.
+
+Signed-off-by: Mikhail Zhilkin <csharper2005@gmail.com>
+Link: https://patchwork.ozlabs.org/project/uboot/patch/20261107142441.2104669-2-csharper2005@gmail.com/
+---
+ drivers/net/mtk_eth/an8855.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/drivers/net/mtk_eth/an8855.c
++++ b/drivers/net/mtk_eth/an8855.c
+@@ -627,8 +627,8 @@ static int an8855_port_sgmii_init(struct
+ 	an8855_reg_read(priv, AN8855_RX_CTRL_8, &val);
+ 	val &= ~(0xfff << 16);
+ 	val |= (0x200 << 16);
+-	val &= ~(0x7fff << 14);
+-	val |= (0xfff << 14);
++	val &= ~(0x7fff << 0);
++	val |= (0xfff << 0);
+ 	an8855_reg_write(priv, AN8855_RX_CTRL_8, val);
+ 
+ 	/* Frequency memter */
