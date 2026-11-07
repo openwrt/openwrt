@@ -1,0 +1,101 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Dmitry Sinyavin <sinyavin@gmail.com>
+Date: Fri, 14 Aug 2026 20:00:00 +0200
+Subject: [PATCH] usb: chipidea: qcom: handle MDM9607 manual pull-up
+
+The selected MF283V factory DTB sets qcom,dp-manual-pullup.  Hardware
+testing with a forced peripheral session showed that this is not
+optional: the PHY and controller bind, the UDC and ACM function register,
+but the host sees no attach and the UDC receives no USB reset.
+
+Match the downstream connect/disconnect sequence for this MDM9607-only
+mode.  On gadget pull-up, select and assert the external VBUS-valid input
+through ULPI MISC_A, then assert the existing GENCONFIG2 and USBCMD
+session-valid overrides.  Reverse the ULPI and USBCMD operations on
+disconnect.  Report ULPI transaction failures and abort the corresponding
+session-valid update.
+
+Signed-off-by: Dmitry Sinyavin <sinyavin@gmail.com>
+---
+ drivers/usb/chipidea/ci_hdrc_msm.c | 49 ++++++++++++++++++++++++++++++++++++--
+ 1 file changed, 47 insertions(+), 2 deletions(-)
+
+--- a/drivers/usb/chipidea/ci_hdrc_msm.c
++++ b/drivers/usb/chipidea/ci_hdrc_msm.c
+@@ -13,6 +13,8 @@
+ #include <linux/reset-controller.h>
+ #include <linux/extcon.h>
+ #include <linux/of.h>
++#include <linux/ulpi/driver.h>
++#include <linux/ulpi/regs.h>
+ 
+ #include "ci.h"
+ 
+@@ -27,6 +29,10 @@
+ 
+ #define HSPHY_SESS_VLD_CTRL		BIT(25)
+ 
++#define MDM9607_ULPI_MISC_A		0x96
++#define MDM9607_VBUSVLDEXT		BIT(0)
++#define MDM9607_VBUSVLDEXTSEL		BIT(1)
++
+ /* Vendor base starts at 0x200 beyond CI base */
+ #define HS_PHY_CTRL			0x0040
+ #define HS_PHY_SEC_CTRL			0x0078
+@@ -115,8 +121,7 @@ static int ci_hdrc_msm_notify_event(stru
+ 			hw_write_id_reg(ci, HS_PHY_GENCONFIG_2,
+ 					HS_PHY_ULPI_TX_PKT_EN_CLR_FIX, 0);
+ 
+-		if (!IS_ERR(ci->platdata->vbus_extcon.edev) || ci->role_switch ||
+-		    msm_ci->force_peripheral_session) {
++		if (!IS_ERR(ci->platdata->vbus_extcon.edev) || ci->role_switch) {
+ 			hw_write_id_reg(ci, HS_PHY_GENCONFIG_2,
+ 					HS_PHY_SESS_VLD_CTRL_EN,
+ 					HS_PHY_SESS_VLD_CTRL_EN);
+@@ -125,6 +130,46 @@ static int ci_hdrc_msm_notify_event(stru
+ 
+ 		}
+ 		break;
++	case CI_HDRC_CONTROLLER_PULLUP_EVENT:
++		if (msm_ci->force_peripheral_session) {
++			u8 mask = MDM9607_VBUSVLDEXT |
++				  MDM9607_VBUSVLDEXTSEL;
++			if (!ci->ulpi)
++				return -ENODEV;
++
++			if (ci->gadget.connected) {
++				ret = ulpi_write(ci->ulpi,
++						 ULPI_SET(MDM9607_ULPI_MISC_A),
++						 mask);
++				if (ret) {
++					dev_err(dev,
++						"MDM9607 ULPI MISC_A set failed: %d\n",
++						ret);
++					return ret;
++				}
++
++				hw_write_id_reg(ci, HS_PHY_GENCONFIG_2,
++						HS_PHY_SESS_VLD_CTRL_EN,
++						HS_PHY_SESS_VLD_CTRL_EN);
++				hw_write(ci, OP_USBCMD, HSPHY_SESS_VLD_CTRL,
++					 HSPHY_SESS_VLD_CTRL);
++			} else {
++				ret = ulpi_write(ci->ulpi,
++						 ULPI_CLR(MDM9607_ULPI_MISC_A),
++						 mask);
++				if (ret) {
++					dev_err(dev,
++						"MDM9607 ULPI MISC_A clear failed: %d\n",
++						ret);
++					return ret;
++				}
++
++				hw_write(ci, OP_USBCMD, HSPHY_SESS_VLD_CTRL, 0);
++			}
++			/* Complete the session-valid update before returning. */
++			mb();
++		}
++		break;
+ 	case CI_HDRC_CONTROLLER_STOPPED_EVENT:
+ 		dev_dbg(dev, "CI_HDRC_CONTROLLER_STOPPED_EVENT received\n");
+ 		phy_power_off(ci->phy);

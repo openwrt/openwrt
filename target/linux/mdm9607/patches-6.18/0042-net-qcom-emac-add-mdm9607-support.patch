@@ -1,0 +1,591 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Dmitry Sinyavin <sinyavin@gmail.com>
+Date: Mon, 27 Jul 2026 12:40:35 +0200
+Subject: [PATCH] net: qcom: emac: add MDM9607 support
+
+The MDM9607 Ethernet controller uses the Qualcomm EMAC block with a
+platform-specific SGMII initialization sequence and clock topology.
+
+Add the MDM9607 SGMII operations and wire the required clocks, resets,
+regulators and PHY setup into the existing Qualcomm EMAC driver.
+
+Signed-off-by: Dmitry Sinyavin <sinyavin@gmail.com>
+---
+ drivers/net/ethernet/qualcomm/emac/Makefile   |   2 +-
+ .../qualcomm/emac/emac-sgmii-mdm9607.c        | 149 ++++++++++++++++++
+ .../net/ethernet/qualcomm/emac/emac-sgmii.c   |  73 ++++++---
+ .../net/ethernet/qualcomm/emac/emac-sgmii.h   |   2 +
+ drivers/net/ethernet/qualcomm/emac/emac.c     | 105 +++++++++++--
+ drivers/net/ethernet/qualcomm/emac/emac.h     |   5 +
+ 6 files changed, 303 insertions(+), 33 deletions(-)
+ create mode 100644 drivers/net/ethernet/qualcomm/emac/emac-sgmii-mdm9607.c
+
+--- a/drivers/net/ethernet/qualcomm/emac/Makefile
++++ b/drivers/net/ethernet/qualcomm/emac/Makefile
+@@ -6,5 +6,5 @@
+ obj-$(CONFIG_QCOM_EMAC) += qcom-emac.o
+ 
+ qcom-emac-objs := emac.o emac-mac.o emac-phy.o emac-sgmii.o emac-ethtool.o \
+-		  emac-sgmii-fsm9900.o emac-sgmii-qdf2432.o \
++		  emac-sgmii-fsm9900.o emac-sgmii-mdm9607.o emac-sgmii-qdf2432.o \
+ 		  emac-sgmii-qdf2400.o
+--- /dev/null
++++ b/drivers/net/ethernet/qualcomm/emac/emac-sgmii-mdm9607.c
+@@ -0,0 +1,153 @@
++// SPDX-License-Identifier: GPL-2.0-only
++/* Qualcomm MDM9607 EMAC SGMII controller.
++ *
++ * The register values and the +0x300 PCS placement match the MDM9607
++ * downstream driver.  The sequence was also verified independently on a
++ * ZTE MF283V before the networking driver was enabled.
++ */
++
++#include <linux/iopoll.h>
++
++#include "emac.h"
++
++#define QSERDES_COM_SYS_CLK_CTRL		0x000
++#define QSERDES_COM_PLL_VCOTAIL_EN	0x004
++#define QSERDES_COM_PLL_CNTRL		0x014
++#define QSERDES_COM_PLL_IP_SETI		0x018
++#define QSERDES_COM_PLL_CP_SETI		0x024
++#define QSERDES_COM_PLL_IP_SETP		0x028
++#define QSERDES_COM_PLL_CP_SETP		0x02c
++#define QSERDES_COM_SYSCLK_EN_SEL	0x038
++#define QSERDES_COM_RESETSM_CNTRL	0x040
++#define QSERDES_COM_PLLLOCK_CMP1	0x044
++#define QSERDES_COM_PLLLOCK_CMP2	0x048
++#define QSERDES_COM_PLLLOCK_CMP3	0x04c
++#define QSERDES_COM_PLLLOCK_CMP_EN	0x050
++#define QSERDES_COM_BGTC		0x058
++#define QSERDES_COM_DEC_START1		0x064
++#define QSERDES_COM_RES_TRIM_SEARCH	0x088
++#define QSERDES_COM_DIV_FRAC_START1	0x098
++#define QSERDES_COM_DIV_FRAC_START2	0x09c
++#define QSERDES_COM_DIV_FRAC_START3	0x0a0
++#define QSERDES_COM_DEC_START2		0x0a4
++#define QSERDES_COM_PLL_CRCTRL		0x0ac
++#define QSERDES_COM_RESET_SM		0x0bc
++#define QSERDES_TX_BIST_MODE_LANENO	0x100
++#define QSERDES_TX_TX_EMP_POST1_LVL	0x108
++#define QSERDES_TX_TX_DRV_LVL		0x10c
++#define QSERDES_TX_LANE_MODE		0x150
++#define QSERDES_TX_TRAN_DRVR_EMP_EN	0x170
++#define QSERDES_RX_CDR_CONTROL		0x200
++#define QSERDES_RX_CDR_CONTROL2		0x210
++#define QSERDES_RX_RX_EQ_GAIN12		0x230
++
++#define SGMII_PHY_SERDES_START		0x300
++#define SGMII_PHY_CMN_PWR_CTRL		0x304
++#define SGMII_PHY_RX_PWR_CTRL		0x308
++#define SGMII_PHY_TX_PWR_CTRL		0x30c
++#define SGMII_PHY_LANE_CTRL1		0x318
++#define SGMII_PHY_CDR_CTRL0		0x358
++#define SGMII_PHY_POW_DWN_CTRL0		0x380
++#define SGMII_PHY_IRQ_CMD		0x3ac
++#define SGMII_PHY_INTERRUPT_CLEAR	0x3b0
++#define SGMII_PHY_INTERRUPT_MASK	0x3b4
++#define SGMII_PHY_INTERRUPT_STATUS	0x3b8
++
++#define QSERDES_READY			BIT(5)
++#define SGMII_PHY_INTERRUPT_ERR		(BIT(7) | BIT(6))
++
++struct mdm9607_reg_write {
++	u16 offset;
++	u8 value;
++};
++
++static const struct mdm9607_reg_write mdm9607_sgmii_settings[] = {
++	{ SGMII_PHY_CDR_CTRL0,		0x0f },
++	{ SGMII_PHY_POW_DWN_CTRL0,	0x01 },
++	{ SGMII_PHY_CMN_PWR_CTRL,	0x5b },
++	{ SGMII_PHY_TX_PWR_CTRL,	0x32 },
++	{ SGMII_PHY_RX_PWR_CTRL,	0x92 },
++	{ SGMII_PHY_CMN_PWR_CTRL,	0x7b },
++	{ QSERDES_COM_PLL_VCOTAIL_EN,	0xfd },
++	{ QSERDES_COM_PLL_CNTRL,	0x26 },
++	{ SGMII_PHY_LANE_CTRL1,		0x5f },
++	{ QSERDES_COM_SYSCLK_EN_SEL,	0x08 },
++	{ QSERDES_COM_SYS_CLK_CTRL,	0x18 },
++	{ QSERDES_COM_PLL_IP_SETI,	0x03 },
++	{ QSERDES_COM_PLL_CP_SETI,	0x3b },
++	{ QSERDES_COM_PLL_IP_SETP,	0x0a },
++	{ QSERDES_COM_PLL_CP_SETP,	0x09 },
++	{ QSERDES_COM_PLL_CRCTRL,	0xfb },
++	{ QSERDES_COM_DEC_START1,	0x82 },
++	{ QSERDES_COM_DEC_START2,	0x03 },
++	{ QSERDES_COM_DIV_FRAC_START1,	0xd5 },
++	{ QSERDES_COM_DIV_FRAC_START2,	0xaa },
++	{ QSERDES_COM_DIV_FRAC_START3,	0x13 },
++	{ QSERDES_COM_PLLLOCK_CMP1,	0x2b },
++	{ QSERDES_COM_PLLLOCK_CMP2,	0x68 },
++	{ QSERDES_COM_PLLLOCK_CMP3,	0x00 },
++	{ QSERDES_COM_PLLLOCK_CMP_EN,	0x01 },
++	{ QSERDES_COM_RESETSM_CNTRL,	0x10 },
++	{ QSERDES_COM_RES_TRIM_SEARCH,	0x00 },
++	{ QSERDES_COM_BGTC,		0x07 },
++	{ QSERDES_RX_CDR_CONTROL,	0x5a },
++	{ QSERDES_RX_CDR_CONTROL2,	0x5c },
++	{ QSERDES_TX_BIST_MODE_LANENO,	0x00 },
++	{ QSERDES_TX_TX_DRV_LVL,	0x1f },
++	{ QSERDES_TX_TRAN_DRVR_EMP_EN,	0x03 },
++	{ QSERDES_TX_TX_EMP_POST1_LVL,	0x21 },
++	{ QSERDES_RX_RX_EQ_GAIN12,	0xff },
++	{ QSERDES_TX_LANE_MODE,		0x08 },
++};
++
++int emac_sgmii_init_mdm9607(struct emac_adapter *adpt)
++{
++	struct emac_sgmii *phy = &adpt->phy;
++	u32 irq_status;
++	u32 reset_sm;
++	unsigned int i;
++	int ret;
++
++	for (i = 0; i < ARRAY_SIZE(mdm9607_sgmii_settings); i++)
++		writel_relaxed(mdm9607_sgmii_settings[i].value,
++			       phy->base + mdm9607_sgmii_settings[i].offset);
++	/* Make the settings table visible before starting SerDes. */
++	wmb();
++
++	writel_relaxed(BIT(0), phy->base + SGMII_PHY_SERDES_START);
++	/* Ensure the start request reaches hardware before polling status. */
++	wmb();
++
++	ret = readl_poll_timeout(phy->base + QSERDES_COM_RESET_SM, reset_sm,
++				 reset_sm & QSERDES_READY, 100, 20000);
++	if (ret) {
++		netdev_err(adpt->netdev,
++			   "MDM9607 SGMII failed to reach READY: reset_sm=%#x irq_status=%#x\n",
++			   reset_sm,
++			   readl_relaxed(phy->base +
++					 SGMII_PHY_INTERRUPT_STATUS));
++		return ret;
++	}
++
++	writel_relaxed(0, phy->base + SGMII_PHY_INTERRUPT_MASK);
++	/* Mask interrupts before inspecting and clearing latched errors. */
++	wmb();
++
++	irq_status = readl_relaxed(phy->base + SGMII_PHY_INTERRUPT_STATUS);
++	if (irq_status & SGMII_PHY_INTERRUPT_ERR) {
++		writel_relaxed(SGMII_PHY_INTERRUPT_ERR,
++			       phy->base + SGMII_PHY_INTERRUPT_CLEAR);
++		writel_relaxed(BIT(0), phy->base + SGMII_PHY_IRQ_CMD);
++		/* Submit the clear command before waiting for status. */
++		wmb();
++		readl_poll_timeout_atomic(
++			phy->base + SGMII_PHY_INTERRUPT_STATUS, irq_status,
++			!(irq_status & SGMII_PHY_INTERRUPT_ERR), 1, 10);
++		writel_relaxed(0, phy->base + SGMII_PHY_IRQ_CMD);
++		writel_relaxed(0, phy->base + SGMII_PHY_INTERRUPT_CLEAR);
++		/* Complete the clear sequence before returning. */
++		wmb();
++	}
++
++	return 0;
++}
+--- a/drivers/net/ethernet/qualcomm/emac/emac-sgmii.c
++++ b/drivers/net/ethernet/qualcomm/emac/emac-sgmii.c
+@@ -47,6 +47,12 @@
+ 
+ #define SERDES_START_WAIT_TIMES			100
+ 
++static void __iomem *emac_sgmii_reg(struct emac_sgmii *phy,
++				    unsigned int offset)
++{
++	return phy->base + phy->phy_offset + offset;
++}
++
+ int emac_sgmii_init(struct emac_adapter *adpt)
+ {
+ 	if (!(adpt->phy.sgmii_ops && adpt->phy.sgmii_ops->init))
+@@ -96,10 +102,10 @@ static void emac_sgmii_link_init(struct
+ 	/* Always use autonegotiation. It works no matter how the external
+ 	 * PHY is configured.
+ 	 */
+-	val = readl(phy->base + EMAC_SGMII_PHY_AUTONEG_CFG2);
++	val = readl(emac_sgmii_reg(phy, EMAC_SGMII_PHY_AUTONEG_CFG2));
+ 	val &= ~(FORCE_AN_RX_CFG | FORCE_AN_TX_CFG);
+ 	val |= AN_ENABLE;
+-	writel(val, phy->base + EMAC_SGMII_PHY_AUTONEG_CFG2);
++	writel(val, emac_sgmii_reg(phy, EMAC_SGMII_PHY_AUTONEG_CFG2));
+ }
+ 
+ static int emac_sgmii_irq_clear(struct emac_adapter *adpt, u8 irq_bits)
+@@ -107,8 +113,10 @@ static int emac_sgmii_irq_clear(struct e
+ 	struct emac_sgmii *phy = &adpt->phy;
+ 	u8 status;
+ 
+-	writel_relaxed(irq_bits, phy->base + EMAC_SGMII_PHY_INTERRUPT_CLEAR);
+-	writel_relaxed(IRQ_GLOBAL_CLEAR, phy->base + EMAC_SGMII_PHY_IRQ_CMD);
++	writel_relaxed(irq_bits,
++		       emac_sgmii_reg(phy, EMAC_SGMII_PHY_INTERRUPT_CLEAR));
++	writel_relaxed(IRQ_GLOBAL_CLEAR,
++		       emac_sgmii_reg(phy, EMAC_SGMII_PHY_IRQ_CMD));
+ 	/* Ensure interrupt clear command is written to HW */
+ 	wmb();
+ 
+@@ -116,8 +124,9 @@ static int emac_sgmii_irq_clear(struct e
+ 	 * be confirmed before clearing the bits in other registers.
+ 	 * It takes a few cycles for hw to clear the interrupt status.
+ 	 */
+-	if (readl_poll_timeout_atomic(phy->base +
+-				      EMAC_SGMII_PHY_INTERRUPT_STATUS,
++	if (readl_poll_timeout_atomic(
++				      emac_sgmii_reg(phy,
++						    EMAC_SGMII_PHY_INTERRUPT_STATUS),
+ 				      status, !(status & irq_bits), 1,
+ 				      SGMII_PHY_IRQ_CLR_WAIT_TIME)) {
+ 		net_err_ratelimited("%s: failed to clear SGMII irq: status:0x%x bits:0x%x\n",
+@@ -126,8 +135,9 @@ static int emac_sgmii_irq_clear(struct e
+ 	}
+ 
+ 	/* Finalize clearing procedure */
+-	writel_relaxed(0, phy->base + EMAC_SGMII_PHY_IRQ_CMD);
+-	writel_relaxed(0, phy->base + EMAC_SGMII_PHY_INTERRUPT_CLEAR);
++	writel_relaxed(0, emac_sgmii_reg(phy, EMAC_SGMII_PHY_IRQ_CMD));
++	writel_relaxed(0,
++		       emac_sgmii_reg(phy, EMAC_SGMII_PHY_INTERRUPT_CLEAR));
+ 
+ 	/* Ensure that clearing procedure finalization is written to HW */
+ 	wmb();
+@@ -144,7 +154,8 @@ static irqreturn_t emac_sgmii_interrupt(
+ 	struct emac_sgmii *phy = &adpt->phy;
+ 	u8 status;
+ 
+-	status = readl(phy->base + EMAC_SGMII_PHY_INTERRUPT_STATUS);
++	status = readl(emac_sgmii_reg(phy,
++				     EMAC_SGMII_PHY_INTERRUPT_STATUS));
+ 	status &= SGMII_ISR_MASK;
+ 	if (!status)
+ 		return IRQ_HANDLED;
+@@ -181,16 +192,19 @@ static irqreturn_t emac_sgmii_interrupt(
+ static void emac_sgmii_reset_prepare(struct emac_adapter *adpt)
+ {
+ 	struct emac_sgmii *phy = &adpt->phy;
++	void __iomem *csr2;
+ 	u32 val;
+ 
++	csr2 = adpt->is_mdm9607 ? adpt->csr + EMAC_EMAC_WRAPPER_CSR2 :
++				 phy->base + EMAC_EMAC_WRAPPER_CSR2;
++
+ 	/* Reset PHY */
+-	val = readl(phy->base + EMAC_EMAC_WRAPPER_CSR2);
+-	writel(((val & ~PHY_RESET) | PHY_RESET), phy->base +
+-	       EMAC_EMAC_WRAPPER_CSR2);
++	val = readl(csr2);
++	writel((val & ~PHY_RESET) | PHY_RESET, csr2);
+ 	/* Ensure phy-reset command is written to HW before the release cmd */
+ 	msleep(50);
+-	val = readl(phy->base + EMAC_EMAC_WRAPPER_CSR2);
+-	writel((val & ~PHY_RESET), phy->base + EMAC_EMAC_WRAPPER_CSR2);
++	val = readl(csr2);
++	writel(val & ~PHY_RESET, csr2);
+ 	/* Ensure phy-reset release command is written to HW before initializing
+ 	 * SGMII
+ 	 */
+@@ -221,7 +235,8 @@ static int emac_sgmii_common_open(struct
+ 		ret = emac_sgmii_irq_clear(adpt, 0xff);
+ 		if (ret)
+ 			return ret;
+-		writel(0, sgmii->base + EMAC_SGMII_PHY_INTERRUPT_MASK);
++		writel(0, emac_sgmii_reg(sgmii,
++					 EMAC_SGMII_PHY_INTERRUPT_MASK));
+ 
+ 		ret = request_irq(sgmii->irq, emac_sgmii_interrupt, 0,
+ 				  "emac-sgmii", adpt);
+@@ -240,8 +255,9 @@ static void emac_sgmii_common_close(stru
+ 	struct emac_sgmii *sgmii = &adpt->phy;
+ 
+ 	/* Make sure interrupts are disabled */
+-	writel(0, sgmii->base + EMAC_SGMII_PHY_INTERRUPT_MASK);
+-	free_irq(sgmii->irq, adpt);
++	writel(0, emac_sgmii_reg(sgmii, EMAC_SGMII_PHY_INTERRUPT_MASK));
++	if (sgmii->irq)
++		free_irq(sgmii->irq, adpt);
+ }
+ 
+ /* The error interrupts are only valid after the link is up */
+@@ -257,11 +273,14 @@ static int emac_sgmii_common_link_change
+ 			return ret;
+ 
+ 		writel(SGMII_ISR_MASK,
+-		       sgmii->base + EMAC_SGMII_PHY_INTERRUPT_MASK);
++		       emac_sgmii_reg(sgmii,
++				      EMAC_SGMII_PHY_INTERRUPT_MASK));
+ 	} else {
+ 		/* Disable interrupts */
+-		writel(0, sgmii->base + EMAC_SGMII_PHY_INTERRUPT_MASK);
+-		synchronize_irq(sgmii->irq);
++		writel(0, emac_sgmii_reg(sgmii,
++					 EMAC_SGMII_PHY_INTERRUPT_MASK));
++		if (sgmii->irq)
++			synchronize_irq(sgmii->irq);
+ 	}
+ 
+ 	return 0;
+@@ -275,6 +294,14 @@ static struct sgmii_ops fsm9900_ops = {
+ 	.reset = emac_sgmii_common_reset,
+ };
+ 
++static struct sgmii_ops mdm9607_ops = {
++	.init = emac_sgmii_init_mdm9607,
++	.open = emac_sgmii_common_open,
++	.close = emac_sgmii_common_close,
++	.link_change = emac_sgmii_common_link_change,
++	.reset = emac_sgmii_common_reset,
++};
++
+ static struct sgmii_ops qdf2432_ops = {
+ 	.init = emac_sgmii_init_qdf2432,
+ 	.open = emac_sgmii_common_open,
+@@ -349,6 +376,10 @@ static const struct of_device_id emac_sg
+ 		.data = &fsm9900_ops,
+ 	},
+ 	{
++		.compatible = "qcom,mdm9607-emac-sgmii",
++		.data = &mdm9607_ops,
++	},
++	{
+ 		.compatible = "qcom,qdf2432-emac-sgmii",
+ 		.data = &qdf2432_ops,
+ 	},
+@@ -404,6 +435,8 @@ int emac_sgmii_config(struct platform_de
+ 		}
+ 
+ 		phy->sgmii_ops = (struct sgmii_ops *)match->data;
++		if (match->data == &mdm9607_ops)
++			phy->phy_offset = 0x300;
+ 	}
+ 
+ 	/* Base address is the first address */
+--- a/drivers/net/ethernet/qualcomm/emac/emac-sgmii.h
++++ b/drivers/net/ethernet/qualcomm/emac/emac-sgmii.h
+@@ -32,6 +32,7 @@ struct sgmii_ops {
+ struct emac_sgmii {
+ 	void __iomem		*base;
+ 	void __iomem		*digital;
++	unsigned int		phy_offset;
+ 	unsigned int		irq;
+ 	atomic_t		decode_error_count;
+ 	struct	sgmii_ops	*sgmii_ops;
+@@ -40,6 +41,7 @@ struct emac_sgmii {
+ int emac_sgmii_config(struct platform_device *pdev, struct emac_adapter *adpt);
+ 
+ int emac_sgmii_init_fsm9900(struct emac_adapter *adpt);
++int emac_sgmii_init_mdm9607(struct emac_adapter *adpt);
+ int emac_sgmii_init_qdf2432(struct emac_adapter *adpt);
+ int emac_sgmii_init_qdf2400(struct emac_adapter *adpt);
+ 
+--- a/drivers/net/ethernet/qualcomm/emac/emac.c
++++ b/drivers/net/ethernet/qualcomm/emac/emac.c
+@@ -8,6 +8,7 @@
+ #include <linux/if_vlan.h>
+ #include <linux/interrupt.h>
+ #include <linux/io.h>
++#include <linux/delay.h>
+ #include <linux/module.h>
+ #include <linux/of.h>
+ #include <linux/of_net.h>
+@@ -571,10 +572,70 @@ static int emac_probe_resources(struct p
+ 	return 0;
+ }
+ 
++static int emac_mdm9607_power_on(struct platform_device *pdev,
++				 struct emac_adapter *adpt)
++{
++	static const char * const supply_names[] = {
++		"emac_vreg1", "emac_vreg2", "emac_vreg3", "emac_vreg4",
++		"emac_vreg5",
++	};
++	unsigned int i;
++	int ret;
++
++	if (!adpt->is_mdm9607)
++		return 0;
++
++	for (i = 0; i < ARRAY_SIZE(adpt->supplies); i++)
++		adpt->supplies[i].supply = supply_names[i];
++
++	adpt->phy_reset = devm_gpiod_get(&pdev->dev, "phy-reset",
++					 GPIOD_OUT_HIGH);
++	if (IS_ERR(adpt->phy_reset))
++		return dev_err_probe(&pdev->dev, PTR_ERR(adpt->phy_reset),
++				     "could not assert external PHY reset\n");
++
++	ret = devm_regulator_bulk_get(&pdev->dev, ARRAY_SIZE(adpt->supplies),
++				       adpt->supplies);
++	if (ret)
++		return dev_err_probe(&pdev->dev, ret,
++				     "could not acquire EMAC supplies\n");
++
++	ret = regulator_bulk_enable(ARRAY_SIZE(adpt->supplies),
++				    adpt->supplies);
++	if (ret)
++		return dev_err_probe(&pdev->dev, ret,
++				     "could not enable EMAC supplies\n");
++
++	usleep_range(10000, 20000);
++	return 0;
++}
++
++static void emac_mdm9607_phy_reset_release(struct platform_device *pdev,
++					    struct emac_adapter *adpt)
++{
++	if (!adpt->is_mdm9607)
++		return;
++
++	gpiod_set_value_cansleep(adpt->phy_reset, 0);
++	usleep_range(10000, 20000);
++}
++
++static void emac_mdm9607_power_off(struct emac_adapter *adpt)
++{
++	if (!adpt->is_mdm9607)
++		return;
++
++	gpiod_set_value_cansleep(adpt->phy_reset, 1);
++	regulator_bulk_disable(ARRAY_SIZE(adpt->supplies), adpt->supplies);
++}
++
+ static const struct of_device_id emac_dt_match[] = {
+ 	{
+ 		.compatible = "qcom,fsm9900-emac",
+ 	},
++	{
++		.compatible = "qcom,mdm9607-emac",
++	},
+ 	{}
+ };
+ MODULE_DEVICE_TABLE(of, emac_dt_match);
+@@ -602,7 +663,11 @@ static int emac_probe(struct platform_de
+ 	 * 1. PTP:	45bits. (Driver doesn't support yet.)
+ 	 * 2. NON-PTP:	46bits.
+ 	 */
+-	ret = dma_set_mask_and_coherent(&pdev->dev, DMA_BIT_MASK(46));
++	ret = dma_set_mask_and_coherent(
++		&pdev->dev,
++		DMA_BIT_MASK(of_device_is_compatible(pdev->dev.of_node,
++						     "qcom,mdm9607-emac") ?
++			     32 : 46));
+ 	if (ret) {
+ 		dev_err(&pdev->dev, "could not set DMA mask\n");
+ 		return ret;
+@@ -619,6 +684,9 @@ static int emac_probe(struct platform_de
+ 	adpt = netdev_priv(netdev);
+ 	adpt->netdev = netdev;
+ 	adpt->msg_enable = EMAC_MSG_DEFAULT;
++	adpt->is_mdm9607 =
++		of_device_is_compatible(pdev->dev.of_node,
++					"qcom,mdm9607-emac");
+ 
+ 	phy = &adpt->phy;
+ 	atomic_set(&phy->decode_error_count, 0);
+@@ -632,11 +700,15 @@ static int emac_probe(struct platform_de
+ 	if (ret)
+ 		goto err_undo_netdev;
+ 
++	ret = emac_mdm9607_power_on(pdev, adpt);
++	if (ret)
++		goto err_undo_netdev;
++
+ 	/* initialize clocks */
+ 	ret = emac_clks_phase1_init(pdev, adpt);
+ 	if (ret) {
+ 		dev_err(&pdev->dev, "could not initialize clocks\n");
+-		goto err_undo_netdev;
++		goto err_undo_power;
+ 	}
+ 
+ 	netdev->watchdog_timeo = EMAC_WATCHDOG_TIME;
+@@ -646,23 +718,25 @@ static int emac_probe(struct platform_de
+ 
+ 	emac_init_adapter(adpt);
+ 
+-	/* init external phy */
+-	ret = emac_phy_config(pdev, adpt);
+-	if (ret)
+-		goto err_undo_clocks;
+-
+-	/* init internal sgmii phy */
++	/* Initialize the internal SGMII while its reference is 19.2 MHz. */
+ 	ret = emac_sgmii_config(pdev, adpt);
+ 	if (ret)
+-		goto err_undo_mdiobus;
++		goto err_undo_clocks;
+ 
+-	/* enable clocks */
++	/* Enable the data-path and MDIO clocks only after SGMII is ready. */
+ 	ret = emac_clks_phase2_init(pdev, adpt);
+ 	if (ret) {
+ 		dev_err(&pdev->dev, "could not initialize clocks\n");
+-		goto err_undo_mdiobus;
++		goto err_undo_sgmii;
+ 	}
+ 
++	emac_mdm9607_phy_reset_release(pdev, adpt);
++
++	/* Register the factory-described external PHY after MDIO is clocked. */
++	ret = emac_phy_config(pdev, adpt);
++	if (ret)
++		goto err_undo_sgmii;
++
+ 	/* set hw features */
+ 	netdev->features = NETIF_F_SG | NETIF_F_HW_CSUM | NETIF_F_RXCSUM |
+ 			NETIF_F_TSO | NETIF_F_TSO6 | NETIF_F_HW_VLAN_CTAG_RX |
+@@ -690,6 +764,7 @@ static int emac_probe(struct platform_de
+ 		dev_err(&pdev->dev, "could not register net device\n");
+ 		goto err_undo_napi;
+ 	}
++	netif_carrier_off(netdev);
+ 
+ 	reg =  readl_relaxed(adpt->base + EMAC_DMA_MAS_CTRL);
+ 	devid = (reg & DEV_ID_NUM_BMSK)  >> DEV_ID_NUM_SHFT;
+@@ -707,11 +782,16 @@ static int emac_probe(struct platform_de
+ 
+ err_undo_napi:
+ 	netif_napi_del(&adpt->rx_q.napi);
+-err_undo_mdiobus:
+ 	put_device(&adpt->phydev->mdio.dev);
+ 	mdiobus_unregister(adpt->mii_bus);
++err_undo_sgmii:
++	if (adpt->phy.digital)
++		iounmap(adpt->phy.digital);
++	iounmap(adpt->phy.base);
+ err_undo_clocks:
+ 	emac_clks_teardown(adpt);
++err_undo_power:
++	emac_mdm9607_power_off(adpt);
+ err_undo_netdev:
+ 	free_netdev(netdev);
+ 
+@@ -733,6 +813,7 @@ static void emac_remove(struct platform_
+ 	cancel_work_sync(&adpt->work_thread);
+ 
+ 	emac_clks_teardown(adpt);
++	emac_mdm9607_power_off(adpt);
+ 
+ 	put_device(&adpt->phydev->mdio.dev);
+ 	mdiobus_unregister(adpt->mii_bus);
+--- a/drivers/net/ethernet/qualcomm/emac/emac.h
++++ b/drivers/net/ethernet/qualcomm/emac/emac.h
+@@ -8,6 +8,8 @@
+ #include <linux/irqreturn.h>
+ #include <linux/netdevice.h>
+ #include <linux/clk.h>
++#include <linux/gpio/consumer.h>
++#include <linux/regulator/consumer.h>
+ #include <linux/platform_device.h>
+ #include "emac-mac.h"
+ #include "emac-phy.h"
+@@ -335,6 +337,9 @@ struct emac_adapter {
+ 
+ 	struct emac_irq			irq;
+ 	struct clk			*clk[EMAC_CLK_CNT];
++	struct regulator_bulk_data	supplies[5];
++	struct gpio_desc		*phy_reset;
++	bool				is_mdm9607;
+ 
+ 	/* All Descriptor memory */
+ 	struct emac_ring_header		ring_header;

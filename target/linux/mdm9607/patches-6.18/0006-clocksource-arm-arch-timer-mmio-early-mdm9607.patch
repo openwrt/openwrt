@@ -1,0 +1,160 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Dmitry Sinyavin <sinyavin@gmail.com>
+Date: Fri, 14 Aug 2026 20:00:00 +0200
+Subject: [PATCH] clocksource: arm_arch_timer: initialize MDM9607 MMIO timer early
+
+MDM9607 firmware describes only an ARM memory-mapped architected timer.
+The old Qualcomm 3.18 kernel initialized arm,armv7-timer-mem from the
+early OF timer table, but current kernels only bind it as a platform
+driver.  A platform driver is too late to provide the first clockevent,
+so ARM time_init() returns without a usable timer.
+
+Add a deliberately MDM9607-scoped early bridge which uses the existing
+MMIO timer operations.  Keep the normal platform-driver path for every
+other machine and suppress its duplicate probe after successful early
+initialization.
+
+Signed-off-by: Dmitry Sinyavin <sinyavin@gmail.com>
+---
+ drivers/clocksource/arm_arch_timer_mmio.c | 112 +++++++++++++++++++++++
+ 1 file changed, 112 insertions(+)
+
+--- a/drivers/clocksource/arm_arch_timer_mmio.c
++++ b/drivers/clocksource/arm_arch_timer_mmio.c
+@@ -10,10 +10,12 @@
+ 
+ #define pr_fmt(fmt) 	"arch_timer_mmio: " fmt
+ 
++#include <linux/clocksource.h>
+ #include <linux/clockchips.h>
+ #include <linux/interrupt.h>
+ #include <linux/io-64-nonatomic-lo-hi.h>
+ #include <linux/of_irq.h>
++#include <linux/of.h>
+ #include <linux/of_address.h>
+ #include <linux/platform_device.h>
+ 
+@@ -277,6 +279,112 @@ static void arch_timer_mmio_setup(struct
+ 	clocksource_register_hz(&at->cs, at->rate);
+ }
+ 
++/*
++ * MDM9607 has no CPU-register architected timer in its firmware DT.  Its
++ * memory-mapped timer therefore has to become available during time_init(),
++ * before platform devices exist.  Keep this workaround machine-specific.
++ */
++static struct arch_timer mdm9607_early_timer;
++static bool mdm9607_early_timer_done;
++
++static int __init
++arch_timer_mmio_mdm9607_early_init(struct device_node *np)
++{
++	struct arch_timer *at = &mdm9607_early_timer;
++	struct device_node *frame;
++	void __iomem *cntctlbase;
++	u32 cntacr, cnttidr, frame_number, rate;
++	int phys_irq, virt_irq, irq, ret;
++
++	if (!of_machine_is_compatible("qcom,mdm9607"))
++		return -ENODEV;
++
++	frame = of_get_next_available_child(np, NULL);
++	if (!frame) {
++		pr_err("MDM9607 early timer has no available frame\n");
++		return -ENODEV;
++	}
++
++	ret = of_property_read_u32(frame, "frame-number", &frame_number);
++	if (ret || frame_number >= ARCH_TIMER_MEM_MAX_FRAMES) {
++		pr_err("MDM9607 early timer has an invalid frame-number\n");
++		ret = -EINVAL;
++		goto out_put_frame;
++	}
++
++	cntctlbase = of_iomap(np, 0);
++	if (!cntctlbase) {
++		pr_err("cannot map MDM9607 CNTCTLBase\n");
++		ret = -ENXIO;
++		goto out_put_frame;
++	}
++
++	cnttidr = readl_relaxed(cntctlbase + CNTTIDR);
++	cntacr = CNTACR_RFRQ | CNTACR_RWPT | CNTACR_RPCT |
++		 CNTACR_RWVT | CNTACR_RVOFF | CNTACR_RVCT;
++	writel_relaxed(cntacr, cntctlbase + CNTACR(frame_number));
++	cntacr = readl_relaxed(cntctlbase + CNTACR(frame_number));
++	iounmap(cntctlbase);
++
++	phys_irq = irq_of_parse_and_map(frame, 0);
++	virt_irq = irq_of_parse_and_map(frame, 1);
++	if ((cnttidr & CNTTIDR_VIRT(frame_number)) &&
++	    !(~cntacr & (CNTACR_RWVT | CNTACR_RVCT)) && virt_irq) {
++		at->access = VIRT_ACCESS;
++		irq = virt_irq;
++	} else if (!(~cntacr & (CNTACR_RWPT | CNTACR_RPCT)) && phys_irq) {
++		at->access = PHYS_ACCESS;
++		irq = phys_irq;
++	} else {
++		pr_err("MDM9607 timer frame %u is not accessible\n",
++		       frame_number);
++		ret = -ENXIO;
++		goto out_put_frame;
++	}
++
++	at->base = of_iomap(frame, 0);
++	if (!at->base) {
++		pr_err("cannot map MDM9607 timer frame %u\n", frame_number);
++		ret = -ENXIO;
++		goto out_put_frame;
++	}
++
++	rate = readl_relaxed(at->base + CNTFRQ);
++	if (of_property_read_u32(np, "clock-frequency", &at->rate))
++		at->rate = rate;
++	if (!at->rate)
++		at->rate = arch_timer_get_rate();
++	if (!at->rate) {
++		pr_err("MDM9607 early timer has no usable frequency\n");
++		ret = -EINVAL;
++		goto out_unmap_frame;
++	}
++
++	ret = request_irq(irq, arch_timer_mmio_handler,
++			  IRQF_TIMER | IRQF_NO_AUTOEN,
++			  "arch_mem_timer", &at->evt);
++	if (ret) {
++		pr_err("failed to request MDM9607 timer IRQ %d: %d\n",
++		       irq, ret);
++		goto out_unmap_frame;
++	}
++
++	arch_timer_mmio_setup(at, irq);
++	mdm9607_early_timer_done = true;
++	of_node_put(frame);
++	return 0;
++
++out_unmap_frame:
++	iounmap(at->base);
++	at->base = NULL;
++out_put_frame:
++	of_node_put(frame);
++	return ret;
++}
++TIMER_OF_DECLARE(armv7_arch_timer_mmio_mdm9607,
++		 "arm,armv7-timer-mem",
++		 arch_timer_mmio_mdm9607_early_init);
++
+ static int arch_timer_mmio_frame_register(struct platform_device *pdev,
+ 					  struct arch_timer_mem_frame *frame)
+ {
+@@ -380,6 +488,10 @@ static int arch_timer_mmio_probe(struct
+ 
+ 	np = pdev->dev.of_node;
+ 
++	if (mdm9607_early_timer_done &&
++	    of_machine_is_compatible("qcom,mdm9607"))
++		return 0;
++
+ 	at = devm_kmalloc(&pdev->dev, sizeof(*at), GFP_KERNEL | __GFP_ZERO);
+ 	if (!at)
+ 		return -ENOMEM;
