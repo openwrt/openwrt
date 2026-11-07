@@ -1,0 +1,22 @@
+[ "$ACTION" = "add" ] || exit 0
+
+. /lib/functions.sh
+. /lib/functions/system.sh
+
+board=$(board_name)
+
+case "$board" in
+tplink,archer-be550-v1)
+	# The QCN6274 (5 and 6 GHz on one phy) reports a placeholder MAC.
+	# 5 GHz uses base + 3; wifi-scripts give the second radio of the
+	# phy (6 GHz) that address + 16, i.e. base + 19 (stock: base + 4).
+	# The 2.4 GHz radio gets its MAC via caldata instead.
+	case "$(readlink -f /sys${DEVPATH}/device)" in
+	*/0002:01:00.0)
+		label_mac=$(get_mac_binary "/tmp/tp_data/default-mac" 0)
+		[ -n "$label_mac" ] && \
+			macaddr_add "$label_mac" 3 > /sys${DEVPATH}/macaddress
+		;;
+	esac
+	;;
+esac
