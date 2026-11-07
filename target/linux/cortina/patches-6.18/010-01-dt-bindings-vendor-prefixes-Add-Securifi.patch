@@ -1,0 +1,27 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Fil Dunsky <filipp.dunsky@gmail.com>
+Date: Tue, 6 Oct 2026 21:17:39 +0300
+Subject: [PATCH] dt-bindings: vendor-prefixes: Add Securifi
+
+Securifi Ltd. makes the Almond series of touchscreen Wi-Fi routers.
+Add a vendor prefix for it.
+
+Reviewed-by: Linus Walleij <linusw@kernel.org>
+Acked-by: Conor Dooley <conor.dooley@microchip.com>
+Signed-off-by: Fil Dunsky <filipp.dunsky@gmail.com>
+Link: https://lore.kernel.org/r/20261013-b4-cs75xx-v6-1-37e8f3969b7c@gmail.com
+---
+ Documentation/devicetree/bindings/vendor-prefixes.yaml | 2 ++
+ 1 file changed, 2 insertions(+)
+
+--- a/Documentation/devicetree/bindings/vendor-prefixes.yaml
++++ b/Documentation/devicetree/bindings/vendor-prefixes.yaml
+@@ -1397,6 +1397,8 @@ patternProperties:
+     description: SDMC Technology Co., Ltd
+   "^seagate,.*":
+     description: Seagate Technology PLC
++  "^securifi,.*":
++    description: Securifi Ltd.
+   "^seeed,.*":
+     description: Seeed Technology Co., Ltd
+   "^seirobotics,.*":

@@ -1,0 +1,20 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Fil Dunsky <filipp.dunsky@gmail.com>
+Date: Tue, 13 Oct 2026 07:10:00 +0300
+Subject: [PATCH] watchdog: arm_twd_wdt: include mod_devicetable.h on 6.18
+
+The upstream driver gets struct of_device_id through other headers in
+linux-next; on 6.18 it has to be included explicitly.
+
+Signed-off-by: Fil Dunsky <filipp.dunsky@gmail.com>
+---
+--- a/drivers/watchdog/arm_twd_wdt.c
++++ b/drivers/watchdog/arm_twd_wdt.c
+@@ -22,6 +22,7 @@
+ #include <linux/math64.h>
+ #include <linux/minmax.h>
+ #include <linux/module.h>
++#include <linux/mod_devicetable.h>
+ #include <linux/platform_device.h>
+ #include <linux/pm.h>
+ #include <linux/smp.h>
