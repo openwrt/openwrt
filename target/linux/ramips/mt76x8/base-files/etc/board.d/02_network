@@ -69,6 +69,10 @@ ramips_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"1:lan" "2:lan" "3:lan" "4:lan" "0:wan" "6@eth0"
 		;;
+	freefa,ac1200m-u10)
+	        ucidef_add_switch "switch0" \
+	                "1:lan" "4:wan" "6@eth0"
+	        ;;
 	asus,rt-n10p-v3|\
 	asus,rt-n11p-b1|\
 	asus,rt-n12-vp-b1|\
