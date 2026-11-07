@@ -1,0 +1,29 @@
+From 55775f54fd801c8ad2a609189304024951fd7ae1 Mon Sep 17 00:00:00 2001
+From: George Sapkin <george@sapk.in>
+Date: Sun, 29 Mar 2026 11:15:53 +0300
+Subject: [PATCH] hardcode uclient-fetch instead of wget
+
+Both wget-ssl and wget-nossl provide @wget-any that apk depends on and
+both are valid choices for users to install. However, wget-nossl lacks
+TLS support which makes installing and updating packages impossible.
+Making wget-nossl have lower alternative priority than uclient-fetch
+defeats the purpose of installing it, since uclient-fetch will be the
+default alternative for wget.
+
+Instead, hardcode uclient-fetch to be always used instead of wget, so
+users can install whichever wget variant they prefer.
+---
+ src/io_url_wget.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/src/io_url_wget.c
++++ b/src/io_url_wget.c
+@@ -19,7 +19,7 @@ struct apk_istream *apk_io_url_istream(c
+ 	char *argv[16];
+ 	int i = 0;
+
+-	argv[i++] = "wget";
++	argv[i++] = "uclient-fetch";
+ 	argv[i++] = "-q";
+ 	argv[i++] = "-T";
+ 	argv[i++] = wget_timeout;
