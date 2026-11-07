@@ -1,0 +1,40 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: PTPT52.AI <ptpt52@gmail.com>
+Date: Sat, 26 Sep 2026 01:05:00 +0800
+Subject: [PATCH] clk: airoha: fix reset register updates
+
+Build the reset value from a known state instead of ORing bits into an
+uninitialized stack variable.  Preserve the inverted PCIC polarity and
+return regmap failures to reset consumers.
+
+Signed-off-by: PTPT52.AI <ptpt52@gmail.com>
+---
+ drivers/clk/clk-en7523.c | 12 +++++-------
+ 1 file changed, 5 insertions(+), 7 deletions(-)
+
+--- a/drivers/clk/clk-en7523.c
++++ b/drivers/clk/clk-en7523.c
+@@ -1043,18 +1043,16 @@ static int en7523_reset_update(struct re
+ {
+ 	struct en_rst_data *rst_data = container_of(rcdev, struct en_rst_data, rcdev);
+ 	u32 addr = rst_data->bank_ofs[id / RST_NR_PER_BANK];
++	u32 mask = BIT(id % RST_NR_PER_BANK);
+ 	u32 val;
+ 
+-	/* For PCIC reset logic is inverted, 0:assert 1:deassert*/
++	/* For PCIC reset logic is inverted, 0:assert 1:deassert. */
+ 	if (addr == REG_NP_SCU_PCIC)
+-		val |= assert ? 0 : BIT(id % RST_NR_PER_BANK);
++		val = assert ? 0 : mask;
+ 	else
+-		val |= assert ? BIT(id % RST_NR_PER_BANK) : 0;
++		val = assert ? mask : 0;
+ 
+-	regmap_update_bits(rst_data->map, addr, BIT(id % RST_NR_PER_BANK),
+-			   val);
+-
+-	return 0;
++	return regmap_update_bits(rst_data->map, addr, mask, val);
+ }
+ 
+ static int en7523_reset_assert(struct reset_controller_dev *rcdev,
