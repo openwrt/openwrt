@@ -61,7 +61,7 @@ static void otto_fdb_uc_put(struct otto_dsa_priv *priv, int idx)
  */
 static void otto_fdb_uc_release_row(struct otto_dsa_priv *priv,
 				    struct otto_l3_nexthop *nh,
-				    struct rtl838x_l2_entry *e)
+				    struct otto_l2_entry *e)
 {
 	struct rtldsa_l2_uc *m = otto_fdb_uc_lookup(priv, nh->l2_id);
 
@@ -95,7 +95,7 @@ static void otto_fdb_uc_release_row(struct otto_dsa_priv *priv,
 static void otto_fdb_uc_put_row(struct otto_dsa_priv *priv,
 				struct otto_l3_nexthop *nh)
 {
-	struct rtl838x_l2_entry e = {};
+	struct otto_l2_entry e = {};
 
 	if (otto_l2_find_hash_entry(priv, nh->l2_seed, true, &e) != nh->l2_id)
 		return;
@@ -108,14 +108,14 @@ static void otto_fdb_uc_put_row(struct otto_dsa_priv *priv,
 }
 
 /* Add an L2 nexthop entry for the L3 routing system / PIE forwarding in the SoC
- * Use VID and MAC in rtl838x_l2_entry to find the entry the switch holds for the
+ * Use VID and MAC in otto_l2_entry to find the entry the switch holds for the
  * gateway and mark it as a nexthop by setting its nexthop bit
  * Called from the L3 layer
  * The index in the L2 hash table is filled into nh->l2_id;
  */
 int otto_fdb_nexthop_add(struct otto_dsa_priv *priv, struct otto_l3_nexthop *nh)
 {
-	struct rtl838x_l2_entry e = {};
+	struct otto_l2_entry e = {};
 	u64 seed = priv->r->l2_hash_seed(nh->mac, nh->rvid);
 	int idx;
 
@@ -183,7 +183,7 @@ int otto_fdb_nexthop_add(struct otto_dsa_priv *priv, struct otto_l3_nexthop *nh)
 
 bool otto_fdb_nexthop_current(struct otto_dsa_priv *priv, struct otto_l3_nexthop *nh)
 {
-	struct rtl838x_l2_entry e = {};
+	struct otto_l2_entry e = {};
 
 	if (!nh->l2_installed)
 		return false;
@@ -200,7 +200,7 @@ bool otto_fdb_nexthop_current(struct otto_dsa_priv *priv, struct otto_l3_nexthop
  */
 int otto_fdb_nexthop_del(struct otto_dsa_priv *priv, struct otto_l3_nexthop *nh)
 {
-	struct rtl838x_l2_entry e = {};
+	struct otto_l2_entry e = {};
 	u32 key = nh->l2_id >> 2;
 	int i = nh->l2_id & 0x3;
 	int idx;
@@ -234,7 +234,7 @@ int otto_fdb_nexthop_del(struct otto_dsa_priv *priv, struct otto_l3_nexthop *nh)
 	return 0;
 }
 
-static void otto_fdb_uc_entry_setup(struct rtl838x_l2_entry *e, int port,
+static void otto_fdb_uc_entry_setup(struct otto_l2_entry *e, int port,
 				    int vid, u64 mac)
 {
 	bool next_hop = e->valid && e->next_hop;
@@ -267,7 +267,7 @@ int otto_fdb_port_add(struct dsa_switch *ds, int port,
 {
 	struct otto_dsa_priv *priv = ds->priv;
 	u64 mac = ether_addr_to_u64(addr);
-	struct rtl838x_l2_entry e;
+	struct otto_l2_entry e;
 	int err = 0, idx;
 	u64 seed = priv->r->l2_hash_seed(mac, vid);
 	int lag_group = otto_lag_find_group_from_port(priv, port);
@@ -327,7 +327,7 @@ int otto_fdb_port_del(struct dsa_switch *ds, int port,
 {
 	struct otto_dsa_priv *priv = ds->priv;
 	u64 mac = ether_addr_to_u64(addr);
-	struct rtl838x_l2_entry e;
+	struct otto_l2_entry e;
 	int err = 0, idx;
 	u64 seed = priv->r->l2_hash_seed(mac, vid);
 	int lag_group = otto_lag_find_group_from_port(priv, port);
@@ -397,7 +397,7 @@ int otto_fdb_port_dump(struct dsa_switch *ds, int port,
 	mutex_lock(&priv->reg_mutex);
 
 	for (int i = 0; i < uc_rows; i++) {
-		struct rtl838x_l2_entry e = {};
+		struct otto_l2_entry e = {};
 
 		if (!((i + 1) % 64))
 			cond_resched();
@@ -412,7 +412,7 @@ int otto_fdb_port_dump(struct dsa_switch *ds, int port,
 	}
 
 	for (int i = 0; i < cam_rows; i++) {
-		struct rtl838x_l2_entry e = {};
+		struct otto_l2_entry e = {};
 
 		priv->r->read_cam(i, &e);
 
@@ -429,7 +429,7 @@ int otto_fdb_port_dump(struct dsa_switch *ds, int port,
 }
 
 static void otto_fdb_dump_entry(struct seq_file *m, struct otto_dsa_priv *priv,
-				struct rtl838x_l2_entry *e)
+				struct otto_l2_entry *e)
 {
 	u64 portmask;
 
@@ -512,7 +512,7 @@ static int otto_fdb_show(struct seq_file *m, void *v)
 	 * once, the second hash block of RTL930x/RTL931x included.
 	 */
 	for (int i = 0; i < uc_rows; i++) {
-		struct rtl838x_l2_entry e = {};
+		struct otto_l2_entry e = {};
 
 		priv->r->read_l2_entry_using_hash(i >> 2, i & 0x3, &e);
 
@@ -526,7 +526,7 @@ static int otto_fdb_show(struct seq_file *m, void *v)
 	}
 
 	for (int i = 0; i < cam_rows; i++) {
-		struct rtl838x_l2_entry e = {};
+		struct otto_l2_entry e = {};
 
 		priv->r->read_cam(i, &e);
 

@@ -428,7 +428,7 @@ void rtldsa_port_fast_age(struct dsa_switch *ds, int port)
 	mutex_unlock(&priv->reg_mutex);
 }
 
-static void rtldsa_setup_l2_mc_entry(struct rtl838x_l2_entry *e, int vid, u64 mac, int mc_group)
+static void rtldsa_setup_l2_mc_entry(struct otto_l2_entry *e, int vid, u64 mac, int mc_group)
 {
 	memset(e, 0, sizeof(*e));
 
@@ -466,7 +466,7 @@ static int rtldsa_83xx_port_mdb_add(struct dsa_switch *ds, int port,
 {
 	struct otto_dsa_priv *priv = ds->priv;
 	u64 mac = ether_addr_to_u64(mdb->addr);
-	struct rtl838x_l2_entry e;
+	struct otto_l2_entry e;
 	int err = 0, idx;
 	int vid = mdb->vid;
 	u64 seed = priv->r->l2_hash_seed(mac, vid);
@@ -552,7 +552,7 @@ static int rtldsa_port_mdb_del(struct dsa_switch *ds, int port,
 {
 	struct otto_dsa_priv *priv = ds->priv;
 	u64 mac = ether_addr_to_u64(mdb->addr);
-	struct rtl838x_l2_entry e;
+	struct otto_l2_entry e;
 	int err = 0, idx;
 	int vid = mdb->vid;
 	u64 seed = priv->r->l2_hash_seed(mac, vid);

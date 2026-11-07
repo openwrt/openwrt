@@ -8,14 +8,14 @@ struct dsa_lag;
 struct dsa_switch;
 struct netdev_lag_upper_info;
 struct netlink_ext_ack;
-struct rtl838x_l2_entry;
+struct otto_l2_entry;
 struct otto_dsa_priv;
 struct rtldsa_93xx_lag_entry;
 
 #define MAX_LAGS 16
 
 int otto_lag_find_group_from_port(struct otto_dsa_priv *priv, int port);
-void otto_lag_93xx_prepare_fdb(struct rtl838x_l2_entry *e, int lag_group);
+void otto_lag_93xx_prepare_fdb(struct otto_l2_entry *e, int lag_group);
 int otto_lag_port_change(struct dsa_switch *ds, int port);
 int otto_lag_port_join(struct dsa_switch *ds, int port, struct dsa_lag lag,
 		       struct netdev_lag_upper_info *info,

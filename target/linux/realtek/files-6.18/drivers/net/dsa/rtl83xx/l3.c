@@ -2521,7 +2521,7 @@ int otto_l3_flow_nexthop_get(struct otto_dsa_priv *priv, struct otto_l3_nexthop 
 {
 	struct otto_l3_dmac key = { .mac = dmac };
 	struct otto_l3_ctrl *ctrl = priv->l3_ctrl;
-	struct rtl838x_l2_entry e = {};
+	struct otto_l2_entry e = {};
 	u8 mac[ETH_ALEN];
 	int idx, err;
 
@@ -4595,7 +4595,7 @@ static int otto_l3_930x_nexthop_show(struct seq_file *m, void *v)
 		return rows < 0 ? rows : l2_rows;
 
 	for (int idx = 0; idx < rows; idx++) {
-		struct rtl838x_l2_entry e = {};
+		struct otto_l2_entry e = {};
 		struct otto_l3_intf egr = {};
 		u16 dmac_idx, intf;
 		u8 smac[ETH_ALEN];
@@ -4799,7 +4799,7 @@ static int otto_l3_839x_route_show(struct seq_file *m, void *v)
 
 	for (int idx = 0; idx < rows; idx++) {
 		char dst[INET6_ADDRSTRLEN + sizeof("/128")];
-		struct rtl838x_l2_entry e = {};
+		struct otto_l2_entry e = {};
 		struct otto_l3_dmac dmac;
 		struct pie_rule pr;
 		u8 gw[ETH_ALEN];
