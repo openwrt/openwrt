@@ -1,0 +1,220 @@
+#!/bin/sh
+#
+# Copyright (C) 2021 TDT AG <development@tdt.de>
+#
+# This is free software, licensed under the GNU General Public License v2.
+# See https://www.gnu.org/licenses/gpl-2.0.txt for more information.
+#
+
+. /usr/share/libubox/jshn.sh
+
+MESSAGE_DIR="/tmp/notification/messages.d"
+MESSAGE_MAX=20
+
+get_uuid() {
+	local file="$1"
+	local uuid
+
+	uuid="${file##*/}"
+
+	echo "${uuid%*.json}"
+}
+
+gen_uuid() {
+	cat /proc/sys/kernel/random/uuid
+}
+
+list() {
+	json_init
+
+	json_add_object "add"
+	json_add_string "title"
+	json_add_string "description"
+	json_add_string "url"
+	json_add_string "package"
+	json_close_object
+
+	json_add_object "remove"
+	json_add_string "uuid"
+	json_close_object
+
+	json_add_object "list"
+	json_close_object
+
+	json_add_object "flush"
+	json_close_object
+
+	json_dump
+}
+
+notification_add() {
+	local title="$1"
+	local description="$2"
+	local url="$3"
+	local package="$4"
+
+	local timestamp uuid
+
+	local code=-1
+	local msg="Unable to add notification"
+
+	timestamp="$(date +%s)"
+
+	uuid="$(gen_uuid)"
+	if [ -z "$uuid" ]; then
+		json_init
+		json_add_int "code" "-2"
+		json_add_string "message" "Unable to get uuid"
+		json_dump
+		return
+	fi
+
+	json_init
+	json_add_string title "$title"
+	json_add_string description "$description"
+	json_add_int timestamp "$timestamp"
+	[ -z "$url" ] || json_add_string "url" "$url"
+	[ -z "$package" ] || json_add_string "package" "$package"
+	json_dump > "${MESSAGE_DIR}/${uuid}.json"
+
+	if [ -f "${MESSAGE_DIR}/${uuid}.json" ]; then
+		code=0
+		msg="Notification added"
+	fi
+
+	local count=0
+	for file in "${MESSAGE_DIR}"/*.json; do
+		count=$((count + 1))
+		if [ "$count" -gt "$MESSAGE_MAX" ]; then
+			rm "${MESSAGE_DIR}/${file}"
+		fi
+	done
+
+	json_init
+	json_add_int "code" "$code"
+	json_add_string "message" "$msg"
+	json_dump
+}
+
+notification_remove() {
+	local uuid="$1"
+
+	local code=-1
+	local msg="Notification not found"
+
+
+	if [ -f "${MESSAGE_DIR}/${uuid}.json" ]; then
+		rm "${MESSAGE_DIR}/${uuid}.json"
+		code=0
+		msg="Notication removed"
+	fi
+
+	json_init
+	json_add_int "code" "$code"
+	json_add_string "message" "$msg"
+	json_dump
+}
+
+notification_list() {
+	local uuid title description timestamp url package
+
+	json_init
+	if [ -n "$(ls -A "$MESSAGE_DIR")" ]; then
+		json_add_array "messages"
+		for entry in "${MESSAGE_DIR}"/*.json; do
+			uuid="$(get_uuid "$entry")"
+
+			json_set_namespace dump old_cb
+			json_load_file "$entry"
+			json_get_vars title description timestamp url package
+			json_cleanup
+			json_set_namespace "$old_cb"
+
+			json_add_object ""
+			json_add_string uuid "$uuid"
+			json_add_string title "$title"
+			json_add_string description "$description"
+			json_add_int timestamp "$timestamp"
+			json_add_array actions
+			json_add_object
+			json_add_string action dismiss
+			json_close_object
+			[ -z "$url" ] || {
+				json_add_object
+				json_add_string action link
+				json_add_string url "$url"
+				json_close_object
+			}
+			[ -z "$package" ] || {
+				json_add_object
+				json_add_string action opkg
+				json_add_string package "$package"
+				json_close_object
+			}
+			json_close_array
+			json_close_object
+		done
+		json_close_array
+	fi
+	json_dump
+}
+
+notification_flush() {
+	local code=0
+	local msg="All notifications flushed"
+
+	rm "$MESSAGE_DIR"/*.json
+
+	json_init
+	json_add_int "code" "$code"
+	json_add_string "message" "$msg"
+	json_dump
+}
+
+call() {
+	local method="$1"
+
+	local title description url package uuid
+
+	case "$method" in
+		add)
+			read -r input;
+			json_load "${input}"
+			json_get_var title title
+			json_get_var description description
+			json_get_var url url
+			json_get_var package package
+			notification_add "$title" "$description" "$url" "$package"
+		;;
+		remove)
+			read -r input;
+			json_load "${input}"
+			json_get_var uuid uuid
+			notification_remove "$uuid"
+		;;
+		list)
+			notification_list
+		;;
+		flush)
+			notification_flush
+		;;
+	esac
+}
+
+main() {
+	local path="$1"
+	local method="$2"
+
+	mkdir -p "${MESSAGE_DIR}"
+
+	case "$path" in
+		list)
+			list
+		;;
+		call)
+			call "$method"
+		;;
+	esac
+}
+
+main "$@"
