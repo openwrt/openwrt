@@ -1,3 +1,4 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Pietro Ameruoso <p.ameruoso@live.it>
 Date: Wed, 26 Aug 2026 00:00:00 +0200
 Subject: [PATCH] arm64: dts: mediatek: mt7988a-bpi-r4-pro: add external PHYs
@@ -8,18 +9,32 @@ and describe their LEDs using the common PHY LED binding with distinct
 LAN and WAN functions. Keep the LAN6 and WAN interface names in the base
 device tree so they are independent of the selected PHY or SFP overlay.
 
+The PHY lanes use USXGMII instead of the fixed-rate 10GBASE-R of the
+vendor device tree: the AS21xxx PHY rate-adapts its host SerDes to the
+speed negotiated on the copper side and the MediaTek PCS only follows
+that when USXGMII in-band negotiation is enabled. With 10GBASE-R the PCS
+stays at 10G with AN disabled, so a link partner below 10G shows a PHY
+link that carries no traffic. This matches the upstream wan-phy/lan-phy
+overlays and the MediaTek mt7988 reference board, which attach the same
+PHY family (AN8831X) to gmac1 with phy-mode = "usxgmii".
+
 Signed-off-by: Pietro Ameruoso <p.ameruoso@live.it>
 Signed-off-by: Frank Wunderlich <frank-w@public-files.de>
 ---
 --- a/arch/arm64/boot/dts/mediatek/mt7988a-bananapi-bpi-r4-pro-8x.dts
 +++ b/arch/arm64/boot/dts/mediatek/mt7988a-bananapi-bpi-r4-pro-8x.dts
-@@ -14,3 +14,82 @@
+@@ -14,3 +14,87 @@
  		     "bananapi,bpi-r4-pro",
  		     "mediatek,mt7988a";
  };
 +
 +&gmac1 {
 +	openwrt,netdev-name = "wan";
++	phy-handle = <&phy28>;
++	phy-mode = "usxgmii";
++	phy-connection-type = "usxgmii";
++	managed = "in-band-status";
++	status = "okay";
 +};
 +
 +&switch16 {

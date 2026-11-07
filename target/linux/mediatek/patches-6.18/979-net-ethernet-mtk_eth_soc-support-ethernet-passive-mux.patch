@@ -1,0 +1,495 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Bo-Cun Chen <bc-bocun.chen@mediatek.com>
+Date: Thu, 28 Nov 2024 13:29:36 +0800
+Subject: [PATCH] net: ethernet: mtk_eth_soc: support ethernet passive mux
+
+In order to support SFP/PHY dynamic switching, we add a passive mux to
+the SerDes path that connects with the SFP cage and PHY. We then use
+the GPIO to control this mux, which will switch to the SFP framework
+when the SFP module is inserted and will switch to the PHY framework
+when the SFP module is removed.
+
+Ported to kernel 6.18 for the Bananapi BPi-R4 Pro 8X: the mux channels
+are child nodes of a "mux-bus" container below the ethernet node, the
+channel is selected following the SFP module detect line and the MAC is
+moved to it by swapping its of_node and phylink pair while the interface
+is out of service. phylinks are created on demand because a phylink owns
+the pcs-handle references of the MAC, so only the selected channel may
+hold one.
+
+The module detect line stays a single consumer of the sfp driver: the
+mux resolves the cage referenced by its SFP channel with
+sfp_bus_find_fwnode() and asks that cage for the module presence through
+sfp_bus_module_present() while holding the rtnl lock.
+
+The swap runs in three steps: take the interface out of service and
+disconnect its phy under the rtnl lock, destroy the phylink of the
+previous channel and create the one of the new channel without that lock
+- registering and unregistering the sfp bus of a phylink takes it - and
+finally select the channel and reopen the interface under the rtnl lock
+again. Both mux channels reference the same pcs of the MAC and a phylink
+links the pcs it holds into a single linked list, so the phylink of the
+previous channel has to be gone before the new one takes them over,
+otherwise both instances share one list entry and destroying the old one
+walks over an already deleted pcs. The interface stays detached over the
+whole swap so that no other path can open it while it has no phylink,
+and is attached again before it is reopened.
+
+The channel select line is driven with the channel the driver starts on,
+so the hardware and the driver agree before the first poll. A poll that
+finds the cage of the SFP channel not bound yet leaves the lane alone
+and only reschedules the work, instead of recording a channel it never
+selected.
+
+GPIOs and mux memory are devm-managed, both channels are validated at
+probe and a failed mux setup aborts the MAC probe instead of being
+silently ignored.
+
+Signed-off-by: Bo-Cun Chen <bc-bocun.chen@mediatek.com>
+---
+ drivers/net/ethernet/mediatek/mtk_eth_soc.c | 341 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ drivers/net/ethernet/mediatek/mtk_eth_soc.h | 41 +++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 382 insertions(+)
+
+--- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
++++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
+@@ -26,6 +26,8 @@
+ #include <linux/pcs/pcs-mtk-lynxi.h>
+ #include <linux/pcs/pcs.h>
+ #include <linux/phy/phy.h>
++#include <linux/sfp.h>
++#include <linux/gpio/consumer.h>
+ #include <linux/jhash.h>
+ #include <linux/bitfield.h>
+ #include <net/dsa.h>
+@@ -5265,6 +5267,336 @@ static int mtk_fill_available_pcs(struct
+ 	return 0;
+ }
+ 
++static struct phylink *mtk_mux_create_channel(struct mtk_mux *mux,
++					      unsigned int channel)
++{
++	struct mtk_mac *mac = mux->mac;
++	struct mtk_eth *eth = mac->hw;
++	struct phylink *phylink;
++
++	/*
++	 * A phylink owns the pcs of the MAC and links them into a single
++	 * linked list, so no other phylink of this MAC may be alive - both
++	 * instances would otherwise reference the same pcs list entry.
++	 *
++	 * Must be called without the rtnl lock held: registering the sfp
++	 * bus of a channel phylink takes that lock.
++	 */
++	mac->of_node = mux->data[channel]->of_node;
++	phylink = phylink_create(&mac->phylink_config,
++				 of_fwnode_handle(mac->of_node),
++				 mux->data[channel]->phy_mode,
++				 &mtk_phylink_ops);
++	if (IS_ERR(phylink)) {
++		dev_err_ratelimited(eth->dev,
++				    "ethernet mux: failed to create phylink for channel %u: %pe\n",
++				    channel, phylink);
++
++		/* roll back to the previous channel to keep the MAC usable */
++		mac->of_node = mux->data[mux->channel]->of_node;
++	}
++
++	return phylink;
++}
++
++static void mtk_mux_poll(struct work_struct *work)
++{
++	struct mtk_mux *mux = container_of(work, struct mtk_mux, poll.work);
++	struct mtk_mac *mac = mux->mac;
++	struct mtk_eth *eth = mac->hw;
++	struct net_device *dev = eth->netdev[mac->id];
++	struct phylink *phylink;
++	unsigned int new_channel;
++	bool detached = false, stopped = false, switched = false;
++	int sfp_present;
++
++	/*
++	 * The phylink is swapped without the rtnl lock held because the sfp
++	 * bus of a channel phylink is registered and unregistered under that
++	 * lock. Take the interface out of service first so that no other path
++	 * can use the phylink over the swap; a detached interface also makes
++	 * a concurrent dev_open() fail instead of opening a MAC that has no
++	 * phylink.
++	 *
++	 * The module presence is read under that lock: sfp_unregister_socket()
++	 * clears the socket bound to the cage while holding it.
++	 */
++	rtnl_lock();
++
++	sfp_present = sfp_bus_module_present(mux->sfp_bus);
++	if (sfp_present < 0) {
++		/* the cage of the sfp channel has not bound yet */
++		rtnl_unlock();
++		goto reschedule;
++	}
++
++	new_channel = sfp_present ? mux->sfp_present_channel :
++				   !mux->sfp_present_channel;
++
++	/* retry as long as the MAC has no phylink, a previous switch failed */
++	if (mux->channel == new_channel && mac->phylink) {
++		rtnl_unlock();
++		goto reschedule;
++	}
++
++	if (mux->channel != new_channel || !mac->phylink) {
++		netif_device_detach(dev);
++		detached = true;
++
++		if (netif_running(dev)) {
++			dev_close(dev);
++			stopped = true;
++		}
++
++		/* phylink_destroy() expects the attached phy to be gone */
++		if (mac->phylink)
++			phylink_disconnect_phy(mac->phylink);
++	}
++
++	rtnl_unlock();
++
++	if (detached) {
++		/*
++		 * Destroy the phylink of the previous channel before creating
++		 * the one of the new channel - both channels reference the
++		 * same pcs of the MAC, and those outlive a phylink because
++		 * they belong to their provider drivers.
++		 */
++		if (mac->phylink) {
++			phylink_destroy(mac->phylink);
++			mac->phylink = NULL;
++		}
++
++		phylink = mtk_mux_create_channel(mux, new_channel);
++		if (IS_ERR(phylink)) {
++			dev_err_ratelimited(eth->dev,
++					    "ethernet mux: mac%u: failed to switch to channel %u: %pe\n",
++					    mac->id, new_channel, phylink);
++
++			/* keep the MAC usable on the channel it is on now */
++			phylink = mtk_mux_create_channel(mux, mux->channel);
++			if (IS_ERR(phylink))
++				phylink = NULL;
++		} else {
++			switched = true;
++		}
++
++		mac->phylink = phylink;
++	}
++
++	rtnl_lock();
++
++	if (switched) {
++		mux->channel = new_channel;
++
++		gpiod_set_value_cansleep(mux->chan_sel_gpio, new_channel);
++
++		dev_info(eth->dev,
++			 "ethernet mux: mac%u switched to channel %u\n",
++			 mac->id, new_channel);
++	}
++
++	if (detached) {
++		/* the interface has to be present again before opening it */
++		netif_device_attach(dev);
++
++		if (stopped && mac->phylink && dev_open(dev, NULL))
++			netdev_err(dev,
++				   "ethernet mux: failed to reopen interface\n");
++	}
++
++	rtnl_unlock();
++
++reschedule:
++	mod_delayed_work(system_wq, &mux->poll, msecs_to_jiffies(100));
++}
++
++static int mtk_add_mux_channel(struct mtk_mux *mux, struct device_node *np)
++{
++	const __be32 *_id = of_get_property(np, "reg", NULL);
++	struct mtk_mac *mac = mux->mac;
++	struct mtk_eth *eth = mac->hw;
++	phy_interface_t phy_mode;
++	struct mtk_mux_data *data;
++	int err, id;
++
++	if (!_id) {
++		dev_err(eth->dev, "missing mux channel id\n");
++		return -EINVAL;
++	}
++
++	id = be32_to_cpup(_id);
++	if (id >= MTK_MUX_CHANNELS) {
++		dev_err(eth->dev, "%d is not a valid mux channel id\n", id);
++		return -EINVAL;
++	}
++
++	if (mux->data[id]) {
++		dev_err(eth->dev, "duplicate mux channel id found: %d\n", id);
++		return -EINVAL;
++	}
++
++	err = of_get_phy_mode(np, &phy_mode);
++	if (err) {
++		dev_err(eth->dev, "incorrect phy-mode for mux channel %d\n", id);
++		return err;
++	}
++
++	data = devm_kzalloc(eth->dev, sizeof(*data), GFP_KERNEL);
++	if (!data)
++		return -ENOMEM;
++
++	data->of_node = np;
++	data->phy_mode = phy_mode;
++	mux->data[id] = data;
++
++	return 0;
++}
++
++static void mtk_release_mux(struct mtk_eth *eth, int id)
++{
++	struct mtk_mux *mux = eth->mux[id];
++
++	if (!mux)
++		return;
++
++	cancel_delayed_work_sync(&mux->poll);
++	sfp_bus_put(mux->sfp_bus);
++	eth->mux[id] = NULL;
++}
++
++static void mtk_release_all_muxes(struct mtk_eth *eth)
++{
++	int i;
++
++	for (i = 0; i < MTK_MAX_DEVS; i++)
++		mtk_release_mux(eth, i);
++}
++
++static int mtk_add_mux(struct mtk_eth *eth, struct device_node *np)
++{
++	const __be32 *_id = of_get_property(np, "reg", NULL);
++	struct device_node *child;
++	struct mtk_mux *mux;
++	struct sfp_bus *bus;
++	unsigned int id;
++	int err, i;
++
++	if (!_id) {
++		dev_err(eth->dev, "missing attach mac id\n");
++		return -EINVAL;
++	}
++
++	id = be32_to_cpup(_id);
++	if (id >= MTK_MAX_DEVS) {
++		dev_err(eth->dev, "%d is not a valid attach mac id\n", id);
++		return -EINVAL;
++	}
++
++	if (!eth->mac[id]) {
++		dev_err(eth->dev, "no mac found for mux attach id %d\n", id);
++		return -ENODEV;
++	}
++
++	if (eth->mux[id]) {
++		dev_err(eth->dev, "duplicate mux for mac id %d\n", id);
++		return -EINVAL;
++	}
++
++	mux = devm_kzalloc(eth->dev, sizeof(*mux), GFP_KERNEL);
++	if (!mux)
++		return -ENOMEM;
++
++	mux->mac = eth->mac[id];
++
++	err = of_property_read_u32(np, "sfp-present-channel",
++				   &mux->sfp_present_channel);
++	if (err) {
++		dev_err(eth->dev, "missing sfp-present-channel property\n");
++		return err;
++	}
++
++	if (mux->sfp_present_channel >= MTK_MUX_CHANNELS) {
++		dev_err(eth->dev, "%d is not a valid sfp-present-channel\n",
++			mux->sfp_present_channel);
++		return -EINVAL;
++	}
++
++	/* the MAC node itself describes the PHY channel, start on it */
++	mux->channel = !mux->sfp_present_channel;
++	eth->mux[id] = mux;
++
++	/* start the hardware on the channel the driver believes in */
++	mux->chan_sel_gpio = devm_fwnode_gpiod_get_index(eth->dev,
++		of_fwnode_handle(np), "chan-sel", 0,
++		mux->channel ? GPIOD_OUT_HIGH : GPIOD_OUT_LOW, "chan-sel");
++	if (IS_ERR(mux->chan_sel_gpio)) {
++		dev_err(eth->dev, "failed to request gpio for chan-sel\n");
++		return PTR_ERR(mux->chan_sel_gpio);
++	}
++
++	for_each_child_of_node(np, child) {
++		err = mtk_add_mux_channel(mux, child);
++		if (err) {
++			of_node_put(child);
++			return err;
++		}
++	}
++
++	for (i = 0; i < MTK_MUX_CHANNELS; i++) {
++		if (!mux->data[i]) {
++			dev_err(eth->dev, "ethernet mux is missing channel %d\n",
++				i);
++			return -EINVAL;
++		}
++	}
++
++	/* the module detect line belongs to the cage of the sfp channel */
++	bus = sfp_bus_find_fwnode(of_fwnode_handle(
++		mux->data[mux->sfp_present_channel]->of_node));
++	if (IS_ERR(bus)) {
++		dev_err(eth->dev, "failed to find the sfp bus of the mux\n");
++		return PTR_ERR(bus);
++	}
++	if (!bus) {
++		dev_err(eth->dev, "sfp-present channel %u has no sfp bus\n",
++			mux->sfp_present_channel);
++		return -EINVAL;
++	}
++	mux->sfp_bus = bus;
++
++	INIT_DELAYED_WORK(&mux->poll, mtk_mux_poll);
++	mod_delayed_work(system_wq, &mux->poll, msecs_to_jiffies(3000));
++
++	return 0;
++}
++
++static int mtk_add_muxes(struct mtk_eth *eth)
++{
++	struct device_node *mux_np, *child;
++	int err = 0;
++
++	mux_np = of_get_child_by_name(eth->dev->of_node, "mux-bus");
++	if (!mux_np)
++		return 0;
++
++	for_each_available_child_of_node(mux_np, child) {
++		if (!of_device_is_compatible(child, "mediatek,eth-mux"))
++			continue;
++
++		err = mtk_add_mux(eth, child);
++		if (err) {
++			dev_err(eth->dev, "failed to add ethernet mux\n");
++			of_node_put(child);
++			break;
++		}
++	}
++
++	of_node_put(mux_np);
++
++	return err;
++}
++
+ static int mtk_add_mac(struct mtk_eth *eth, struct device_node *np)
+ {
+ 	const struct phylink_mac_ops *mac_ops = &mtk_phylink_ops;
+@@ -5847,6 +6179,10 @@ static int mtk_probe(struct platform_dev
+ 			goto err_free_dev;
+ 	}
+ 
++	err = mtk_add_muxes(eth);
++	if (err)
++		goto err_release_mux;
++
+ 	if (eth->soc->offload_version) {
+ 		u8 ppe_num = eth->soc->ppe_num;
+ 
+@@ -5906,6 +6242,8 @@ err_unreg_netdev:
+ 	mtk_unreg_dev(eth);
+ err_deinit_ppe:
+ 	mtk_ppe_deinit(eth);
++err_release_mux:
++	mtk_release_all_muxes(eth);
+ 	mtk_mdio_cleanup(eth);
+ err_free_dev:
+ 	mtk_free_dev(eth);
+@@ -5925,6 +6263,9 @@ static void mtk_remove(struct platform_d
+ 	struct mtk_mac *mac;
+ 	int i;
+ 
++	/* stop the mux polling before the MACs below are torn down */
++	mtk_release_all_muxes(eth);
++
+ 	/* stop all devices to make sure that dma is properly shut down */
+ 	for (i = 0; i < MTK_MAX_DEVS; i++) {
+ 		if (!eth->netdev[i])
+--- a/drivers/net/ethernet/mediatek/mtk_eth_soc.h
++++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.h
+@@ -728,6 +728,9 @@ struct mtk_tx_dma_v2 {
+ 
+ struct mtk_eth;
+ struct mtk_mac;
++struct mtk_mux;
++struct gpio_desc;
++struct sfp_bus;
+ 
+ struct mtk_xdp_stats {
+ 	u64 rx_xdp_redirect;
+@@ -1387,6 +1390,7 @@ struct mtk_eth {
+ 	struct net_device		*dummy_dev;
+ 	struct net_device		*netdev[MTK_MAX_DEVS];
+ 	struct mtk_mac			*mac[MTK_MAX_DEVS];
++	struct mtk_mux			*mux[MTK_MAX_DEVS];
+ 	int				irq[MTK_FE_IRQ_NUM];
+ 	u32				msg_enable;
+ 	unsigned long			sysclk;
+@@ -1472,6 +1476,43 @@ struct mtk_mac {
+ 	u8				dsa_port_rank[MTK_DSA_USER_PORT_MAX];
+ };
+ 
++#define MTK_MUX_CHANNELS			2
++
++/* struct mtk_mux_data -	data of one channel of a passive mux
++ * @of_node:		firmware node describing the channel (phy-handle,
++ *			sfp, managed and phy-mode of that channel)
++ * @phy_mode:		serdes interface mode of the channel
++ */
++struct mtk_mux_data {
++	struct device_node		*of_node;
++	phy_interface_t			phy_mode;
++};
++
++/* struct mtk_mux -	struct describing a passive mux attached to a MAC.
++ *			The mux selects between two serdes lanes - typically
++ *			an external PHY and an SFP cage - and is switched at
++ *			runtime following the SFP module detect line. Only the
++ *			selected channel owns the MAC phylink (and therefore
++ *			the pcs-handle of the MAC), so a channel phylink is
++ *			created on demand and destroyed when leaving it.
++ * @poll:		delayed work polling the module detect line
++ * @sfp_bus:		SFP cage whose module detect line selects the channel
++ * @chan_sel_gpio:	channel select output, logical value is the channel id
++ * @data:		channels described in the device tree
++ * @mac:		MAC this mux is attached to
++ * @channel:		channel currently selected
++ * @sfp_present_channel: channel to select while an SFP module is present
++ */
++struct mtk_mux {
++	struct delayed_work		poll;
++	struct sfp_bus			*sfp_bus;
++	struct gpio_desc		*chan_sel_gpio;
++	struct mtk_mux_data		*data[MTK_MUX_CHANNELS];
++	struct mtk_mac			*mac;
++	unsigned int			channel;
++	unsigned int			sfp_present_channel;
++};
++
+ /* the struct describing the SoC. these are declared in the soc_xyz.c files */
+ extern const struct of_device_id of_mtk_match[];
+ 
