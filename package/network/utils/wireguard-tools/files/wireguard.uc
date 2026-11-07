@@ -68,10 +68,13 @@ function load_peers(cursor, iface) {
 		let peer_p_ka = peer_section.persistent_keepalive;
 		let peer_psk = peer_section.preshared_key;
 
-		if (!peer_key)
+		if (!peer_key) {
+			warn('wireguard: ', iface, ', peer section ', peer_section['.name'], ': no public_key, skipping the peer\n');
 			return;
+		}
 
 		let peer_data = {
+			section: peer_section['.name'],
 			public_key: peer_key,
 			preshared_key: peer_psk,
 			endpoint_host: peer_eph,
@@ -85,6 +88,68 @@ function load_peers(cursor, iface) {
 	});
 
 	return peers;
+}
+
+const WG_KEY_RE = /^[A-Za-z0-9+/]{43}=$/;
+
+// wg's config parser refuses the whole configuration for one bad value, so a
+// peer section that uci holds broken takes the interface down with it. Each
+// value is checked against wg's own grammar here, and a refused one costs its
+// line instead of the tunnel. Every refusal is logged with the interface and
+// the peer's uci section, so the operator can find the offending section.
+function warn_peer(iface, peer, what) {
+	warn('wireguard: ', iface, ', peer ', peer.section, ' (', peer.public_key, '): omitting ', what, '\n');
+}
+
+function valid_wg_key(v) {
+	return type(v) == 'string' && match(v, WG_KEY_RE);
+}
+
+function valid_keepalive(v) {
+	if (type(v) != 'string' || v == '')
+		return false;
+	if (lc(v) == 'off')
+		return true;
+	return match(v, /^[0-9]{1,5}$/) && int(v) <= 65535;
+}
+
+// wg resolves a port name through /etc/services; the digits go to the config
+// as they are, because wg takes them either way and the config grammar wants a
+// number. Returns null for a port that wg would refuse.
+function port_number(v) {
+	if (type(v) != 'string' || v == '')
+		return null;
+	if (match(v, /^[0-9]+$/))
+		return (int(v) >= 1 && int(v) <= 65535) ? v : null;
+
+	let services = fs.readfile('/etc/services');
+	if (!services)
+		return null;
+
+	for (let line in split(services, '\n')) {
+		let fields = split(trim(line), /\s+/);
+		if (length(fields) >= 2 && fields[0] == v && match(fields[1], /\/udp$/))
+			return substr(fields[1], 0, index(fields[1], '/'));
+	}
+
+	return null;
+}
+
+// An address literal goes to wg as it is. A name resolves through nslookup,
+// the resolver busybox ships: ucode has no getaddrinfo, and the exit code
+// alone is not reliable across busybox versions, so the answer decides.
+function resolves(host) {
+	if (match(host, /^[0-9.]+$/) || index(host, ':') >= 0)
+		return true;
+
+	let proc = fs.popen(sprintf("nslookup '%s' 2>/dev/null", replace(host, "'", "'\\''")), 'r');
+	if (!proc)
+		return false;
+
+	let out = proc.read('all');
+	proc.close();
+
+	return index(out, 'Name:') >= 0;
 }
 
 function proto_setup(proto) {
@@ -117,17 +182,33 @@ function proto_setup(proto) {
 	let ipv6_routes = [];
 
 	for (let peer in config.peers) {
+		if (!valid_wg_key(peer.public_key)) {
+			warn_peer(iface, peer, 'the peer: the public key is not a WireGuard key');
+			continue;
+		}
+
 		wg_config += '\n[Peer]\n';
 		wg_config += sprintf('PublicKey=%s\n', peer.public_key);
 
-		if (peer.preshared_key)
-			wg_config += sprintf('PresharedKey=%s\n', peer.preshared_key);
+		if (peer.preshared_key) {
+			if (valid_wg_key(peer.preshared_key))
+				wg_config += sprintf('PresharedKey=%s\n', peer.preshared_key);
+			else
+				warn_peer(iface, peer, 'PresharedKey: the value is not a WireGuard key');
+		}
 
 		if (peer.endpoint_host) {
-			let eph = peer.endpoint_host;
-			if (index(eph, ':') >= 0 && substr(eph, 0, 1) != '[')
-				eph = sprintf('[%s]', eph);
-			wg_config += sprintf('Endpoint=%s:%s\n', eph, peer.endpoint_port);
+			let port = port_number(peer.endpoint_port);
+			if (port == null)
+				warn_peer(iface, peer, sprintf('Endpoint: the port %s of host %s is neither a number nor a service name', peer.endpoint_port, peer.endpoint_host));
+			else if (!resolves(peer.endpoint_host))
+				warn_peer(iface, peer, sprintf('Endpoint: the host %s (port %s) does not resolve', peer.endpoint_host, port));
+			else {
+				let eph = peer.endpoint_host;
+				if (index(eph, ':') >= 0 && substr(eph, 0, 1) != '[')
+					eph = sprintf('[%s]', eph);
+				wg_config += sprintf('Endpoint=%s:%s\n', eph, port);
+			}
 		}
 
 		if (peer.allowed_ips) {
@@ -148,8 +229,12 @@ function proto_setup(proto) {
 			}
 		}
 
-		if (peer.persistent_keepalive)
-			wg_config += sprintf('PersistentKeepalive=%s\n', peer.persistent_keepalive);
+		if (peer.persistent_keepalive) {
+			if (valid_keepalive(peer.persistent_keepalive))
+				wg_config += sprintf('PersistentKeepalive=%s\n', peer.persistent_keepalive);
+			else
+				warn_peer(iface, peer, sprintf('PersistentKeepalive: the value %s is neither 0-65535 nor off', peer.persistent_keepalive));
+		}
 	}
 
 	let wg_proc = fs.popen(sprintf('%s syncconf %s /dev/stdin', WG, iface), 'w');
