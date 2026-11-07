@@ -764,11 +764,19 @@ uc_hostapd_iface_start(uc_vm_t *vm, size_t nargs)
 	if (!iface)
 		return NULL;
 
+	if (info && ucv_type(info) != UC_OBJECT)
+		return NULL;
+
+	conf = iface->conf;
+	for (i = 0; i < iface->num_bss; i++)
+		iface->bss[i]->conf->start_disabled = 0;
+
+	/* The end of the CAC sets up the BSSes */
+	if (!info && iface->state == HAPD_IFACE_DFS)
+		return ucv_boolean_new(true);
+
 	if (!info)
 		goto out;
-
-	if (ucv_type(info) != UC_OBJECT)
-		return NULL;
 
 #define UPDATE_VAL(field, name)							\
 	do {									\
@@ -779,7 +787,6 @@ uc_hostapd_iface_start(uc_vm_t *vm, size_t nargs)
 		}								\
 	} while(0)
 
-	conf = iface->conf;
 	UPDATE_VAL(op_class, "op_class");
 	UPDATE_VAL(hw_mode, "hw_mode");
 	UPDATE_VAL(channel, "channel");
@@ -823,9 +830,6 @@ out:
 
 	if (conf->channel && !iface->freq)
 		iface->freq = hostapd_hw_get_freq(iface->bss[0], conf->channel);
-
-	for (i = 0; i < iface->num_bss; i++)
-		iface->bss[i]->conf->start_disabled = 0;
 
 	if (iface->state != HAPD_IFACE_ENABLED) {
 		hostapd_enable_iface(iface);
