@@ -26,11 +26,10 @@ uci_load() {
 
 	_C=0
 	if [ -z "$CONFIG_APPEND" ]; then
-		for VAR in $CONFIG_LIST_STATE; do
-			export ${NO_EXPORT:+-n} CONFIG_${VAR}=
-			export ${NO_EXPORT:+-n} CONFIG_${VAR}_LENGTH=
+		for VAR in $CONFIG_OPTION_STATE; do
+			unset "CONFIG_$VAR"
 		done
-		export ${NO_EXPORT:+-n} CONFIG_LIST_STATE=
+		export ${NO_EXPORT:+-n} CONFIG_OPTION_STATE=
 		export ${NO_EXPORT:+-n} CONFIG_SECTIONS=
 		export ${NO_EXPORT:+-n} CONFIG_NUM_SECTIONS=0
 		export ${NO_EXPORT:+-n} CONFIG_SECTION=
