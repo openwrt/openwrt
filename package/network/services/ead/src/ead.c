@@ -85,7 +85,7 @@ static u16_t nid = 0xffff; /* node id */
 static char username[32] = "";
 static int state = EAD_TYPE_SET_USERNAME;
 static const char *passwd_file = PASSWD_FILE;
-static const char password[MAXPARAMLEN];
+static char password[MAXPARAMLEN];
 static bool child_pending = false;
 
 static unsigned char abuf[MAXPARAMLEN + 1];
@@ -226,11 +226,6 @@ prepare_password(void)
 
 hash_password:
 	tce = gettcid(tpe.index);
-	do {
-		t_random(tpe.password.data, SALTLEN);
-	} while (memcmp(saltbuf, (char *)dig, sizeof(saltbuf)) == 0);
-	if (saltbuf[0] == 0)
-		saltbuf[0] = 0xff;
 
 	n = BigIntegerFromBytes(tce->modulus.data, tce->modulus.len);
 	g = BigIntegerFromBytes(tce->generator.data, tce->generator.len);
@@ -552,9 +547,9 @@ handle_send_cmd(struct ead_packet *pkt, int len, int *nstate)
 		/* send keepalive packets every 200 ms so that the client doesn't timeout */
 		gettimeofday(&to, NULL);
 		memcpy(&tn, &to, sizeof(tn));
-		tv.tv_usec = PCAP_TIMEOUT * 1000;
-		tv.tv_sec = 0;
 		do {
+			tv.tv_usec = PCAP_TIMEOUT * 1000;
+			tv.tv_sec = 0;
 			cmddata->done = 0;
 			FD_SET(pfd[0], &fds);
 			nfds = select(pfd[0] + 1, &fds, NULL, NULL, &tv);

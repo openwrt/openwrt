@@ -96,12 +96,18 @@ ead_get_tx_iv(void)
 }
 
 static void
-ead_hash_message(struct ead_msg_encrypted *enc, uint32_t *hash, int len)
+ead_hash_message(struct ead_msg *msg, uint32_t *hash, int len)
 {
+	struct ead_msg_encrypted *enc = EAD_DATA(msg, enc);
 	unsigned char *data = (unsigned char *) enc;
+	unsigned char hdr[64] = { 0 };
 
-	/* hash the packet with the stored hash part initialized to zero */
+	/* hash the packet with the stored hash part initialized to zero,
+	 * prefixed with the message type so that a frame cannot be
+	 * replayed as a different type (e.g. RESULT_CMD as SEND_CMD) */
 	sha_init(hash);
+	memcpy(hdr, &msg->type, sizeof(msg->type));
+	sha_transform(hash, hdr, W);
 	memset(enc->hash, 0, sizeof(enc->hash));
 	while (len > 0) {
 		sha_transform(hash, data, W);
@@ -124,7 +130,7 @@ ead_encrypt_message(struct ead_msg *msg, unsigned int len)
 	msg->len = htonl(enclen);
 	enc->iv = htonl(ead_get_tx_iv());
 
-	ead_hash_message(enc, hash, enclen);
+	ead_hash_message(msg, hash, enclen);
 	for (i = 0; i < 5; i++)
 		enc->hash[i] = htonl(hash[i]);
 	DEBUG(2, "SHA1 generate (0x%08x), len=%d\n", enc->hash[0], enclen);
@@ -168,7 +174,7 @@ ead_decrypt_message(struct ead_msg *msg)
 
 	for (i = 0; i < 5; i++)
 		hash_old[i] = ntohl(enc->hash[i]);
-	ead_hash_message(enc, hash_new, enclen);
+	ead_hash_message(msg, hash_new, enclen);
 	if (memcmp(hash_old, hash_new, sizeof(hash_old)) != 0) {
 		DEBUG(2, "SHA1 mismatch (0x%08x != 0x%08x), len=%d\n", hash_old[0], hash_new[0], enclen);
 		return 0;
