@@ -1,0 +1,92 @@
+#!/bin/sh
+
+is_wd_cloud_ex2_ultra() {
+	[ -r /proc/device-tree/compatible ] &&
+	tr '\0' '\n' < /proc/device-tree/compatible |
+		grep -qx 'wd,cloud-ex2-ultra'
+}
+
+is_wd_cloud_ex2_ultra || exit 0
+
+SYS_LOW=45000
+SYS_HIGH=50000
+DISK_LOW=38000
+DISK_HIGH=45000
+MIN_PWM=80
+MAX_PWM=255
+HYSTERESIS=2000
+POLL_INTERVAL=60
+
+find_hwmon_by_name() {
+	for hwmon in /sys/class/hwmon/hwmon*; do
+		[ -r "$hwmon/name" ] || continue
+		[ "$(cat "$hwmon/name" 2>/dev/null)" = "$1" ] && {
+			echo "$hwmon"
+			return
+		}
+	done
+}
+
+read_source_temp() {
+	hwmon=$1
+	hottest=
+	for input in "$hwmon"/temp*_input; do
+		[ -r "$input" ] || continue
+		temp=$(cat "$input" 2>/dev/null)
+		case "$temp" in
+			''|*[!0-9-]*) continue ;;
+		esac
+		[ "$temp" -lt 0 ] && continue
+		[ -z "$hottest" ] || [ "$temp" -le "$hottest" ] || hottest=$temp
+		[ -n "$hottest" ] || hottest=$temp
+	done
+	echo "$hottest"
+}
+
+fan_for_temp() {
+	temp=$1
+	low=$2
+	high=$3
+
+	[ "$temp" -gt 0 ] || return
+	if [ "$temp" -gt "$low" ]; then
+		step=$((temp - low))
+		range=$((high - low))
+		[ "$step" -gt "$range" ] && step=$range
+		echo $((MIN_PWM + step * (MAX_PWM - MIN_PWM) / range))
+	elif [ "$temp" -ge $((low - HYSTERESIS)) ] && [ "$last_pwm" -gt 0 ]; then
+		echo "$MIN_PWM"
+	fi
+}
+
+fan_hwmon=$(find_hwmon_by_name wt6703f)
+[ -n "$fan_hwmon" ] || exit 1
+[ -w "$fan_hwmon/pwm1" ] || exit 1
+
+last_pwm=$MIN_PWM
+echo "$last_pwm" > "$fan_hwmon/pwm1" || exit 1
+while :; do
+	pwm=0
+	for hwmon in /sys/class/hwmon/hwmon*; do
+		[ -r "$hwmon/name" ] || continue
+		name=$(cat "$hwmon/name" 2>/dev/null)
+		temp=$(read_source_temp "$hwmon")
+		[ -n "$temp" ] || continue
+
+		case "$name" in
+			wt6703f|f10e4078.thermal|f1072004*)
+				candidate=$(fan_for_temp "$temp" "$SYS_LOW" "$SYS_HIGH")
+				;;
+			*)
+				candidate=$(fan_for_temp "$temp" "$DISK_LOW" "$DISK_HIGH")
+				;;
+		esac
+		[ -n "$candidate" ] && [ "$candidate" -gt "$pwm" ] && pwm=$candidate
+	done
+
+	if [ "$pwm" != "$last_pwm" ]; then
+		echo "$pwm" > "$fan_hwmon/pwm1" 2>/dev/null || exit 1
+		last_pwm=$pwm
+	fi
+	sleep "$POLL_INTERVAL"
+done
