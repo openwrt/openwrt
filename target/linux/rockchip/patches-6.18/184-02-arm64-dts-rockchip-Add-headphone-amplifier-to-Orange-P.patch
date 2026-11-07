@@ -1,0 +1,69 @@
+From a1aa2c47c6f14ade7dc07b3e8b4a3e758cf2a9c3 Mon Sep 17 00:00:00 2001
+From: Kel Modderman <kelvmod@gmail.com>
+Date: Sat, 26 Sep 2026 15:12:56 +1000
+Subject: [PATCH] arm64: dts: rockchip: Add headphone amplifier to
+ Orange Pi 5 Pro
+
+The Orange Pi 5 Pro routes the ES8388 LOUT1/ROUT1 to the headphone jack
+through an amplifier enabled by GPIO4_B5. Without it the jack is silent
+apart from faint leakage on signal peaks.
+
+Describe the amplifier as a simple-audio-amplifier aux device and route
+the headphone path through it.
+
+Fixes: f47af8ebbe53 ("arm64: dts: rockchip: Add Orange Pi 5 Pro board support")
+Signed-off-by: Kel Modderman <kelvmod@gmail.com>
+Link: https://lore.kernel.org/all/20261018-opi5pro-amp-v1-2-05c84e91bf6d@gmail.com/
+---
+ .../dts/rockchip/rk3588s-orangepi-5-pro.dts   | 21 +++++++++++++++++--
+ 1 file changed, 19 insertions(+), 2 deletions(-)
+
+--- a/arch/arm64/boot/dts/rockchip/rk3588s-orangepi-5-pro.dts
++++ b/arch/arm64/boot/dts/rockchip/rk3588s-orangepi-5-pro.dts
+@@ -22,13 +22,16 @@
+ 		compatible = "simple-audio-card";
+ 		pinctrl-names = "default";
+ 		pinctrl-0 = <&hp_detect>;
++		simple-audio-card,aux-devs = <&headphone_amp>;
+ 		simple-audio-card,format = "i2s";
+ 		simple-audio-card,hp-det-gpios = <&gpio1 RK_PD5 GPIO_ACTIVE_HIGH>;
+ 		simple-audio-card,mclk-fs = <256>;
+ 		simple-audio-card,name = "rockchip,es8388";
+ 		simple-audio-card,routing =
+-			"Headphones", "LOUT1",
+-			"Headphones", "ROUT1",
++			"Headphones", "Headphones Amp OUTL",
++			"Headphones", "Headphones Amp OUTR",
++			"Headphones Amp INL", "LOUT1",
++			"Headphones Amp INR", "ROUT1",
+ 			"LINPUT1", "Microphone Jack",
+ 			"RINPUT1", "Microphone Jack",
+ 			"LINPUT2", "Onboard Microphone",
+@@ -48,6 +51,14 @@
+ 		};
+ 	};
+ 
++	headphone_amp: headphone-amp {
++		compatible = "simple-audio-amplifier";
++		enable-gpios = <&gpio4 RK_PB5 GPIO_ACTIVE_HIGH>;
++		pinctrl-names = "default";
++		pinctrl-0 = <&headphone_amp_en>;
++		sound-name-prefix = "Headphones Amp";
++	};
++
+ 	pwm-leds {
+ 		compatible = "pwm-leds";
+ 
+@@ -236,6 +247,12 @@
+ 		};
+ 	};
+ 
++	sound {
++		headphone_amp_en: headphone-amp-en {
++			rockchip,pins = <4 RK_PB5 RK_FUNC_GPIO &pcfg_pull_none>;
++		};
++	};
++
+ 	usb {
+ 		vcc5v0_otg_en: vcc5v0-otg-en {
+ 			rockchip,pins = <0 RK_PC4 RK_FUNC_GPIO &pcfg_pull_down>;

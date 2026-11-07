@@ -6,7 +6,7 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_VERSION:=2026.10
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 PKG_HASH:=3f856da3cbbc93af51ff95fde18588a348b4a26723b01d9841e999d988481015
 
 PKG_MAINTAINER:=Sarah Maedel <openwrt@tbspace.de>
@@ -424,6 +424,13 @@ define U-Boot/nanopi-r6s-rk3588s
     friendlyarm_nanopi-r6s
 endef
 
+define U-Boot/orangepi-5-pro-rk3588s
+  $(U-Boot/rk358x/Default)
+  NAME:=Orange Pi 5 Pro
+  BUILD_DEVICES:= \
+    xunlong_orangepi-5-pro
+endef
+
 define U-Boot/rock5a-rk3588s
   $(U-Boot/rk358x/Default)
   NAME:=ROCK 5A
@@ -483,6 +490,7 @@ UBOOT_TARGETS := \
   sige7-rk3588 \
   nanopi-r6c-rk3588s \
   nanopi-r6s-rk3588s \
+  orangepi-5-pro-rk3588s \
   rock5a-rk3588s \
   rock-5c-rk3588s
 

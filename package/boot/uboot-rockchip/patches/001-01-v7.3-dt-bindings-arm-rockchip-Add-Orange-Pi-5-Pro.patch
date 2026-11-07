@@ -1,0 +1,26 @@
+From 03b1c32f54bae3a4e73f82e1ccb322cfead24a2c Mon Sep 17 00:00:00 2001
+From: Dennis Gilmore <dennis@ausil.us>
+Date: Sun, 10 May 2026 21:53:47 -0500
+Subject: [PATCH] dt-bindings: arm: rockchip: Add Orange Pi
+ 5 Pro
+
+Add compatible string for the Orange Pi 5 Pro.
+
+Acked-by: Krzysztof Kozlowski <krzysztof.kozlowski@oss.qualcomm.com>
+Signed-off-by: Dennis Gilmore <dennis@ausil.us>
+Link: https://patch.msgid.link/20260511025352.106126-2-dennis@ausil.us
+Signed-off-by: Heiko Stuebner <heiko@sntech.de>
+---
+ dts/upstream/Bindings/arm/rockchip.yaml | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/dts/upstream/Bindings/arm/rockchip.yaml
++++ b/dts/upstream/Bindings/arm/rockchip.yaml
+@@ -1338,6 +1338,7 @@ properties:
+         items:
+           - enum:
+               - xunlong,orangepi-5
++              - xunlong,orangepi-5-pro
+               - xunlong,orangepi-5b
+           - const: rockchip,rk3588s
+ 
