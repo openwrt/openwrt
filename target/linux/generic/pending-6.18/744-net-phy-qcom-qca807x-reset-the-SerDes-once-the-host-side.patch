@@ -1,0 +1,140 @@
+From b41f234c6cecac21e959b9598084a07567e0efa3 Mon Sep 17 00:00:00 2001
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Date: Sat, 31 Oct 2026 21:00:00 +0100
+Subject: [PATCH] net: phy: qcom: qca807x: reset the SerDes once the host side
+ is configured
+
+The QCA807x driver resets the PSGMII/QSGMII SerDes of the package in
+.config_init, when the first PHY of the package is attached. phylink
+configures the PCS later, from phylink_start(), so a host that
+calibrates its SerDes in .pcs_config does so after the PHY SerDes was
+reset. On an IPQ6018 with a QCA8075 in QSGMII mode (Linksys MR7500), a
+port whose copper link comes up after that calibration then passes no
+frames until the next reboot. qca-ssdk resets the PHY SerDes right after
+it calibrates the host UNIPHY.
+
+Keep the mode setup in .config_init and move the reset to the first
+.config_aneg of the package. phylib runs it from the state machine once
+phy_start() has been called, and phylink_start() calls phy_start() after
+the PCS is configured.
+
+Link: https://github.com/openwrt/openwrt/issues/25746
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+---
+ drivers/net/phy/qcom/qca807x.c | 68 +++++++++++++++++++++++++---------
+ 1 file changed, 50 insertions(+), 18 deletions(-)
+
+diff --git a/drivers/net/phy/qcom/qca807x.c b/drivers/net/phy/qcom/qca807x.c
+index 511cde345e089..d27654535d8f7 100644
+--- a/drivers/net/phy/qcom/qca807x.c
++++ b/drivers/net/phy/qcom/qca807x.c
+@@ -114,6 +114,7 @@ enum qca807x_global_phy {
+ struct qca807x_shared_priv {
+ 	unsigned int package_mode;
+ 	u32 tx_drive_strength;
++	bool serdes_reset_pending;
+ };
+ 
+ struct qca807x_gpio_priv {
+@@ -559,6 +560,27 @@ static int qca807x_phy_package_probe_once(struct phy_device *phydev)
+ 	return 0;
+ }
+ 
++static int qca807x_phy_package_serdes_reset(struct phy_device *phydev)
++{
++	int val, ret;
++
++	val = __phy_package_read(phydev, QCA807X_PQSGMII_ADDR,
++				 PQSGMII_CTRL_REG);
++	val &= ~PQSGMII_ANALOG_SW_RESET;
++	ret = __phy_package_write(phydev, QCA807X_PQSGMII_ADDR,
++				  PQSGMII_CTRL_REG, val);
++	if (ret)
++		return ret;
++
++	msleep(SERDES_RESET_SLEEP);
++
++	val = __phy_package_read(phydev, QCA807X_PQSGMII_ADDR,
++				 PQSGMII_CTRL_REG);
++	val |= PQSGMII_ANALOG_SW_RESET;
++	return __phy_package_write(phydev, QCA807X_PQSGMII_ADDR,
++				   PQSGMII_CTRL_REG, val);
++}
++
+ static int qca807x_phy_package_config_init_once(struct phy_device *phydev)
+ {
+ 	struct qca807x_shared_priv *priv = phy_package_get_priv(phydev);
+@@ -592,24 +614,11 @@ static int qca807x_phy_package_config_init_once(struct phy_device *phydev)
+ 	if (ret)
+ 		goto exit;
+ 
+-	/* After mode change Serdes reset is required */
+-	val = __phy_package_read(phydev, QCA807X_PQSGMII_ADDR,
+-				 PQSGMII_CTRL_REG);
+-	val &= ~PQSGMII_ANALOG_SW_RESET;
+-	ret = __phy_package_write(phydev, QCA807X_PQSGMII_ADDR,
+-				  PQSGMII_CTRL_REG, val);
+-	if (ret)
+-		goto exit;
+-
+-	msleep(SERDES_RESET_SLEEP);
+-
+-	val = __phy_package_read(phydev, QCA807X_PQSGMII_ADDR,
+-				 PQSGMII_CTRL_REG);
+-	val |= PQSGMII_ANALOG_SW_RESET;
+-	ret = __phy_package_write(phydev, QCA807X_PQSGMII_ADDR,
+-				  PQSGMII_CTRL_REG, val);
+-	if (ret)
+-		goto exit;
++	/* After mode change Serdes reset is required. The host configures
++	 * its end of the link only when the interface is brought up, after
++	 * the PHY has been attached, so defer the reset until then.
++	 */
++	priv->serdes_reset_pending = true;
+ 
+ 	/* Workaround to enable AZ transmitting ability */
+ 	val = __phy_package_read_mmd(phydev, QCA807X_PQSGMII_ADDR,
+@@ -786,6 +795,27 @@ static int qca807x_config_init(struct phy_device *phydev)
+ 			     control_dac);
+ }
+ 
++static int qca807x_config_aneg(struct phy_device *phydev)
++{
++	struct qca807x_shared_priv *priv = phy_package_get_priv(phydev);
++	int ret = 0;
++
++	/* The first autonegotiation of the package starts once the host
++	 * has configured its end of the link, so reset the SerDes here.
++	 */
++	phy_lock_mdio_bus(phydev);
++	if (priv->serdes_reset_pending) {
++		ret = qca807x_phy_package_serdes_reset(phydev);
++		if (!ret)
++			priv->serdes_reset_pending = false;
++	}
++	phy_unlock_mdio_bus(phydev);
++	if (ret)
++		return ret;
++
++	return genphy_config_aneg(phydev);
++}
++
+ static int qca807x_update_stats(struct phy_device *phydev)
+ {
+ 	struct qca807x_priv *priv = phydev->priv;
+@@ -810,6 +840,7 @@ static struct phy_driver qca807x_drivers[] = {
+ 		/* PHY_GBIT_FEATURES */
+ 		.probe		= qca807x_probe,
+ 		.config_init	= qca807x_config_init,
++		.config_aneg	= qca807x_config_aneg,
+ 		.read_status	= qca807x_read_status,
+ 		.config_intr	= at803x_config_intr,
+ 		.handle_interrupt = at803x_handle_interrupt,
+@@ -832,6 +863,7 @@ static struct phy_driver qca807x_drivers[] = {
+ 		/* PHY_GBIT_FEATURES */
+ 		.probe		= qca807x_probe,
+ 		.config_init	= qca807x_config_init,
++		.config_aneg	= qca807x_config_aneg,
+ 		.read_status	= qca807x_read_status,
+ 		.config_intr	= at803x_config_intr,
+ 		.handle_interrupt = at803x_handle_interrupt,
