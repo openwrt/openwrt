@@ -165,8 +165,12 @@ else
   tools-$(if $(CONFIG_BUILD_ALL_HOST_TOOLS)$(CONFIG_DWARVES),y) += dwarves
 endif
 
+# Tools that are built only because an enabled tool depends on them (e.g.
+# liblzo for lzop with CONFIG_SDK) end up in tools- instead of tools-y, so the
+# per-tool dependencies below have to cover tools- as well.  Otherwise such a
+# tool can start before ccache is installed and fail on the missing launcher.
 ifneq ($(CONFIG_CCACHE)$(CONFIG_SDK),)
-$(foreach tool, $(filter-out zstd zlib xz pkgconf patch ninja meson libressl expat cmake,$(tools-y)), $(eval $(curdir)/$(tool)/compile += $(curdir)/ccache/compile))
+$(foreach tool, $(filter-out zstd zlib xz pkgconf patch ninja meson libressl expat cmake,$(tools-y) $(tools-)), $(eval $(curdir)/$(tool)/compile += $(curdir)/ccache/compile))
 tools-y += ccache xxhash
 $(curdir)/xxhash/compile := $(curdir)/cmake/compile
 $(curdir)/ccache/compile := $(curdir)/xxhash/compile
@@ -174,9 +178,9 @@ endif
 
 # in case there is no patch tool on the host we need to make patch tool a
 # dependency for tools which have patches directory
-$(foreach tool, $(tools-y), $(if $(wildcard $(curdir)/$(tool)/patches),$(eval $(curdir)/$(tool)/compile += $(curdir)/patch/compile)))
+$(foreach tool, $(tools-y) $(tools-), $(if $(wildcard $(curdir)/$(tool)/patches),$(eval $(curdir)/$(tool)/compile += $(curdir)/patch/compile)))
 
-$(foreach tool, $(filter-out zstd,$(tools-y)), $(eval $(curdir)/$(tool)/compile += $(curdir)/zstd/compile))
+$(foreach tool, $(filter-out zstd,$(tools-y) $(tools-)), $(eval $(curdir)/$(tool)/compile += $(curdir)/zstd/compile))
 
 # make any tool depend on the following to ensure that archives can be unpacked and patched properly
 tools-core += libdeflate
@@ -184,7 +188,7 @@ tools-core += patch
 tools-core += tar
 tools-core += zstd
 
-$(foreach tool, $(tools-y), $(eval $(curdir)/$(tool)/compile += $(patsubst %,$(curdir)/%/compile,$(tools-core))))
+$(foreach tool, $(tools-y) $(tools-), $(eval $(curdir)/$(tool)/compile += $(patsubst %,$(curdir)/%/compile,$(tools-core))))
 tools-y += $(tools-core)
 
 # make some core tools depend on sed and flock
