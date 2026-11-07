@@ -276,10 +276,8 @@ void otto_vlan_838x_set_untagged(u32 vlan, u64 portmask)
  */
 void otto_vlan_838x_port_forward_on_inner(struct otto_dsa_priv *priv, int port, bool is_set)
 {
-	if (is_set)
-		regmap_write_bits(priv->map, RTL838X_VLAN_PORT_FWD, BIT(port), 0);
-	else
-		regmap_write_bits(priv->map, RTL838X_VLAN_PORT_FWD, BIT(port), BIT(port));
+	regmap_assign_bits(priv->map, RTL838X_VLAN_PORT_FWD,
+			   BIT(port), !is_set);
 }
 
 int
@@ -459,10 +457,8 @@ void otto_vlan_839x_set_untagged(u32 vlan, u64 portmask)
 /* Sets the L2 forwarding to be based on either the inner VLAN tag or the outer */
 void otto_vlan_839x_port_forward_on_inner(struct otto_dsa_priv *priv, int port, bool is_set)
 {
-	if (is_set)
-		rtl839x_mask_port_reg_le(BIT_ULL(port), 0ULL, RTL839X_VLAN_PORT_FWD);
-	else
-		rtl839x_mask_port_reg_le(0ULL, BIT_ULL(port), RTL839X_VLAN_PORT_FWD);
+	regmap_assign_bits(priv->map, RTL839X_VLAN_PORT_FWD + (port / 32) * 4,
+			   BIT(port % 32), !is_set);
 }
 
 int
@@ -698,10 +694,8 @@ void otto_vlan_930x_set_untagged(u32 vlan, u64 portmask)
 void otto_vlan_930x_port_forward_on_inner(struct otto_dsa_priv *priv, int port, bool is_set)
 {
 	/* Always set all tag modes to fwd based on either inner or outer tag */
-	if (is_set)
-		regmap_write_bits(priv->map, RTL930X_VLAN_PORT_FWD + (port << 2), 0xf, 0);
-	else
-		regmap_write_bits(priv->map, RTL930X_VLAN_PORT_FWD + (port << 2), 0xf, 0xf);
+	regmap_assign_bits(priv->map, RTL930X_VLAN_PORT_FWD + (port << 2),
+			   0xf, !is_set);
 }
 
 void otto_vlan_930x_profile_setup(struct otto_dsa_priv *priv, int profile)
@@ -926,10 +920,8 @@ void otto_vlan_931x_set_untagged(u32 vlan, u64 portmask)
 void otto_vlan_931x_port_forward_on_inner(struct otto_dsa_priv *priv, int port, bool is_set)
 {
 	/* Always set all tag modes to fwd based on either inner or outer tag */
-	if (is_set)
-		regmap_write_bits(priv->map, RTL931X_VLAN_PORT_FWD + (port << 2), 0xf, 0);
-	else
-		regmap_write_bits(priv->map, RTL931X_VLAN_PORT_FWD + (port << 2), 0xf, 0xf);
+	regmap_assign_bits(priv->map, RTL931X_VLAN_PORT_FWD + (port << 2),
+			   0xf, !is_set);
 }
 
 void otto_vlan_931x_profile_setup(struct otto_dsa_priv *priv, int profile)
