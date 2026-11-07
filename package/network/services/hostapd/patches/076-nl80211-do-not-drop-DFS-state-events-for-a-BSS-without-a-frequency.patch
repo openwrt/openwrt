@@ -1,0 +1,68 @@
+From bf9a51e7ed30b37f7fbcdaf7a4e623e62d0dc6f5 Mon Sep 17 00:00:00 2001
+From: Christopher Griffin <christophergriffin05@gmail.com>
+Date: Fri, 30 Oct 2026 21:51:52 -0500
+Subject: [PATCH] nl80211: Do not drop DFS state events for a BSS without a
+ frequency
+
+NL80211_RADAR_NOP_FINISHED and NL80211_RADAR_PRE_CAC_EXPIRED come
+without an interface, and nl80211_radar_event() hands them to the BSS
+whose link frequency matches the event, or failing that, any BSS on a
+5 GHz frequency. A BSS that is not beaconing has no frequency: the
+removal of its beacon clears it. So an event that arrives while the
+interface restarts and runs ACS reaches no BSS and is dropped with only
+a debug message.
+
+That loses a pre-CAC expiry in a common case. An AP on a DFS channel
+whose interface is reconfigured stops beaconing, reads the channel list
+while the channel is still available, and runs ACS. About two seconds
+after the channel stops being used, cfg80211 expires its CAC (outside
+ETSI) and sends PRE_CAC_EXPIRED, which is dropped. If ACS then picks the
+same channel, hostapd skips CAC on a channel it still has as available,
+the kernel refuses it ("Could not set channel for kernel driver"), and
+the interface ends up disabled.
+
+Seen on IPQ8074 (ath11k) APs in the US, 5 GHz HE40 with ACS: a
+reconfigure on channel 108 re-picked 108 twelve seconds later and
+failed, while the kernel already listed 108 and 112 as usable; one on
+140 failed the same way. From a non-DFS channel, or from a cold start,
+the same change ran CAC and came up.
+
+Pass these two events to the first BSS when no BSS matched. Both
+handlers already ignore a frequency outside the interface's own
+hardware, and wpa_supplicant handles NOP_FINISHED only for an AP or
+mesh interface.
+
+Tested on an IPQ8074 AP on channel 60 HE40, with the channel list
+limited to the channel in use and a reload: without this change ACS
+re-picked 60 and the interface failed as above; with it hostapd logged
+DFS-PRE-CAC-EXPIRED for 5300 and 5320 MHz during ACS, ran CAC and came
+up.
+
+Assisted-by: Claude:claude-opus-5-5
+Signed-off-by: Christopher Griffin <christophergriffin05@gmail.com>
+---
+
+--- a/src/drivers/driver_nl80211_event.c
++++ b/src/drivers/driver_nl80211_event.c
+@@ -2853,6 +2853,21 @@ static void nl80211_radar_event(struct i802_bss *bss, struct nlattr **tb)
+ 	if (hit)
+ 		return;
+ 
++	/* NOP_FINISHED and PRE_CAC_EXPIRED change the DFS state of a channel
++	 * of the wiphy and come without an interface. A BSS that is not
++	 * beaconing, e.g., while it restarts and runs ACS, has no frequency to
++	 * match, but its interface still keeps the state of that channel.
++	 * Losing the event leaves the channel available there after the
++	 * kernel expired its CAC, so a later start on it skips CAC and the
++	 * kernel refuses the channel. The handlers ignore a frequency outside
++	 * the interface's own range. */
++	if (event_type == NL80211_RADAR_NOP_FINISHED ||
++	    event_type == NL80211_RADAR_PRE_CAC_EXPIRED) {
++		data.dfs_event.link_id = NL80211_DRV_LINK_ID_NA;
++		nl80211_process_radar_event(drv->first_bss, &data, event_type);
++		return;
++	}
++
+ 	wpa_printf(MSG_DEBUG, "nl80211: DFS event on unknown freq on %s",
+ 		   bss->ifname);
+ }
