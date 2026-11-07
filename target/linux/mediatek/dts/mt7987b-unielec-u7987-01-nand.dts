@@ -1,0 +1,98 @@
+// SPDX-License-Identifier: (GPL-2.0 OR MIT)
+
+/*
+ * Copyright (C) 2026 Ivan Huang <ivanhuang@unielecinc.com>
+ */
+
+/dts-v1/;
+#include "mt7987b-unielec-u7987-01.dtsi"
+
+/ {
+	model = "Unielec U7987-01 (NAND)";
+	compatible = "unielec,u7987-01-nand",
+		     "mediatek,mt7987b", "mediatek,mt7987";
+};
+
+&gmac0 {
+	nvmem-cell-names = "mac-address";
+	nvmem-cells = <&macaddr_factory_4 (-2)>;
+};
+
+&gmac1 {
+	nvmem-cell-names = "mac-address";
+	nvmem-cells = <&macaddr_factory_4 (-1)>;
+};
+
+&spi0 {
+	pinctrl-0 = <&spi0_flash_pins>;
+	pinctrl-names = "default";
+
+	status = "okay";
+
+	flash@0 {
+		compatible = "spi-nand";
+		reg = <0>;
+		spi-max-frequency = <52000000>;
+		spi-rx-bus-width = <4>;
+		spi-tx-bus-width = <4>;
+		mediatek,bmt-max-ratio = <1>;
+		mediatek,bmt-max-reserved-blocks = <64>;
+		mediatek,nmbm;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				reg = <0x0 0x100000>;
+				label = "BL2";
+				read-only;
+			};
+
+			partition@100000 {
+				reg = <0x100000 0x80000>;
+				label = "u-boot-env";
+			};
+
+			partition@180000 {
+				reg = <0x180000 0x400000>;
+				label = "Factory";
+				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					eeprom_factory_0: eeprom@0 {
+						reg = <0x0 0x1e00>;
+					};
+
+					macaddr_factory_4: macaddr@4 {
+						compatible = "mac-base";
+						reg = <0x4 0x6>;
+						#nvmem-cell-cells = <1>;
+					};
+				};
+			};
+
+			partition@580000 {
+				reg = <0x580000 0x200000>;
+				label = "FIP";
+				read-only;
+			};
+
+			partition@780000 {
+				compatible = "linux,ubi";
+				reg = <0x780000 0x7080000>;
+				label = "ubi";
+			};
+		};
+	};
+};
+
+&wifi {
+	nvmem-cell-names = "eeprom";
+	nvmem-cells = <&eeprom_factory_0>;
+};
