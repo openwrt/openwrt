@@ -1,0 +1,503 @@
+From e019f64d91ff7c2dfbbfe7f76a14f240761b9edc Mon Sep 17 00:00:00 2001
+From: Jernej Skrabec <jernej.skrabec@gmail.com>
+Date: Sun, 12 Jan 2025 21:48:24 +0100
+Subject: [PATCH 8/8] feat(allwinner): add A523 support
+
+The Allwinner A523 features two clusters with four Cortex-A55 cores
+each, also use an Arm GIC-600 for the interrupt controller. The memory
+map changes a bit, but most of the peripherals are compatible as far as
+TF-A is concerned.
+An exception are the CPU ops, which turn the power of cores on or off,
+they use a separate implementation, dictated by the DSU interconnect.
+
+Add a new build platform, enabling the Cortex-A55 cores, and provide an
+A55 specific Makefile snippet. Describe the new memory map, and add the
+new CPU ops implementation.
+
+Change-Id: I10d5bd1224e21593ab96ec62b986e01b141bf8d8
+Signed-off-by: Jernej Skrabec <jernej.skrabec@gmail.com>
+Signed-off-by: Andre Przywara <andre.przywara@arm.com>
+---
+ docs/plat/allwinner.rst                       |   2 +
+ plat/allwinner/common/allwinner-common-a55.mk |  25 ++++
+ plat/allwinner/common/include/plat_macros.S   |   4 +
+ plat/allwinner/common/include/sunxi_def.h     |   1 +
+ plat/allwinner/common/sunxi_bl31_setup.c      |  15 +++
+ plat/allwinner/common/sunxi_native_pm_a55.c   | 118 ++++++++++++++++++
+ plat/allwinner/common/sunxi_security.c        |  17 +++
+ .../allwinner/sun55i_a523/include/sunxi_ccu.h |  14 +++
+ .../sun55i_a523/include/sunxi_cpucfg.h        |   7 ++
+ .../sun55i_a523/include/sunxi_mmap.h          |  50 ++++++++
+ .../allwinner/sun55i_a523/include/sunxi_spc.h |  17 +++
+ plat/allwinner/sun55i_a523/platform.mk        |  25 ++++
+ .../allwinner/sun55i_a523/sunxi_idle_states.c |  11 ++
+ plat/allwinner/sun55i_a523/sunxi_power.c      |  20 +++
+ 14 files changed, 326 insertions(+)
+ create mode 100644 plat/allwinner/common/allwinner-common-a55.mk
+ create mode 100644 plat/allwinner/common/sunxi_native_pm_a55.c
+ create mode 100644 plat/allwinner/sun55i_a523/include/sunxi_ccu.h
+ create mode 100644 plat/allwinner/sun55i_a523/include/sunxi_cpucfg.h
+ create mode 100644 plat/allwinner/sun55i_a523/include/sunxi_mmap.h
+ create mode 100644 plat/allwinner/sun55i_a523/include/sunxi_spc.h
+ create mode 100644 plat/allwinner/sun55i_a523/platform.mk
+ create mode 100644 plat/allwinner/sun55i_a523/sunxi_idle_states.c
+ create mode 100644 plat/allwinner/sun55i_a523/sunxi_power.c
+
+diff --git a/docs/plat/allwinner.rst b/docs/plat/allwinner.rst
+index 8e967dcde..3d56a8009 100644
+--- a/docs/plat/allwinner.rst
++++ b/docs/plat/allwinner.rst
+@@ -27,6 +27,8 @@ There is one build target per supported SoC:
+ +------+-------------------+
+ | R329 | sun50i_r329       |
+ +------+-------------------+
++| A523 | sun55i_a523       |
+++------+-------------------+
+ 
+ To build with the default settings for a particular SoC:
+ 
+diff --git a/plat/allwinner/common/allwinner-common-a55.mk b/plat/allwinner/common/allwinner-common-a55.mk
+new file mode 100644
+index 000000000..0b36e2403
+--- /dev/null
++++ b/plat/allwinner/common/allwinner-common-a55.mk
+@@ -0,0 +1,25 @@
++#
++# Copyright (c) 2025, ARM Limited and Contributors. All rights reserved.
++#
++# SPDX-License-Identifier: BSD-3-Clause
++#
++
++BL31_SOURCES		+=	lib/cpus/${ARCH}/cortex_a55.S
++
++ifeq (${SUNXI_PSCI_USE_NATIVE},1)
++BL31_SOURCES		+=	${AW_PLAT}/common/sunxi_native_pm_a55.c
++endif
++
++# A55 cores use GIC-600
++USE_GIC_DRIVER			:=	3
++GICV3_SUPPORT_GIC600		:=	1
++
++# ARISC SCP not yet supported
++SUNXI_PSCI_USE_SCPI		:=	0
++
++# Enable workarounds for Cortex-A55 errata. Allwinner uses at least r2p0.
++ERRATA_A55_1530923		:=	1
++
++USE_COHERENT_MEM		:=	0
++WARMBOOT_ENABLE_DCACHE_EARLY	:=	1
++HW_ASSISTED_COHERENCY		:=	1
+diff --git a/plat/allwinner/common/include/plat_macros.S b/plat/allwinner/common/include/plat_macros.S
+index 77f183dd2..522eb54cc 100644
+--- a/plat/allwinner/common/include/plat_macros.S
++++ b/plat/allwinner/common/include/plat_macros.S
+@@ -19,7 +19,11 @@
+ 	 * ---------------------------------------------
+ 	 */
+ 	.macro plat_crash_print_regs
++#if USE_GIC_DRIVER == 3
++	mov_imm	x17, SUNXI_GICR_BASE
++#else
+ 	mov_imm	x17, SUNXI_GICC_BASE
++#endif
+ 	mov_imm	x16, SUNXI_GICD_BASE
+ 	arm_print_gic_regs
+ 	.endm
+diff --git a/plat/allwinner/common/include/sunxi_def.h b/plat/allwinner/common/include/sunxi_def.h
+index 20f6c4986..5d925e4cc 100644
+--- a/plat/allwinner/common/include/sunxi_def.h
++++ b/plat/allwinner/common/include/sunxi_def.h
+@@ -19,6 +19,7 @@
+ #define SUNXI_SOC_H6			0x1728
+ #define SUNXI_SOC_H616			0x1823
+ #define SUNXI_SOC_R329			0x1851
++#define SUNXI_SOC_A523			0x1890
+ 
+ #define SUNXI_VER_BITS_MASK		0xffU
+ #define JEDEC_ALLWINNER_BKID		9U
+diff --git a/plat/allwinner/common/sunxi_bl31_setup.c b/plat/allwinner/common/sunxi_bl31_setup.c
+index 93a22f64b..c1e5355b6 100644
+--- a/plat/allwinner/common/sunxi_bl31_setup.c
++++ b/plat/allwinner/common/sunxi_bl31_setup.c
+@@ -18,6 +18,7 @@
+ #include <drivers/generic_delay_timer.h>
+ #include <drivers/ti/uart/uart_16550.h>
+ #include <lib/mmio.h>
++#include <plat/arm/common/plat_arm.h>
+ #include <plat/common/platform.h>
+ 
+ #include <sunxi_def.h>
+@@ -32,6 +33,13 @@ static console_t console;
+ 
+ static void *fdt;
+ 
++#if USE_GIC_DRIVER == 3
++static const uintptr_t sunxi_gicr_base_addrs[2] = {
++	SUNXI_GICR_BASE,
++	0U
++};
++#endif
++
+ /*
+  * Try to find a DTB loaded in memory by previous stages.
+  *
+@@ -123,6 +131,9 @@ void bl31_platform_setup(void)
+ 	case SUNXI_SOC_R329:
+ 		soc_name = "R329";
+ 		break;
++	case SUNXI_SOC_A523:
++		soc_name = "A523";
++		break;
+ 	default:
+ 		soc_name = "unknown";
+ 		break;
+@@ -166,6 +177,10 @@ void bl31_platform_setup(void)
+ 
+ 	sunxi_pmic_setup(soc_id, fdt);
+ 
++#if USE_GIC_DRIVER == 3
++	gic_set_gicr_frames(sunxi_gicr_base_addrs);
++#endif
++
+ 	INFO("BL31: Platform setup done\n");
+ }
+ 
+diff --git a/plat/allwinner/common/sunxi_native_pm_a55.c b/plat/allwinner/common/sunxi_native_pm_a55.c
+new file mode 100644
+index 000000000..d67f211f1
+--- /dev/null
++++ b/plat/allwinner/common/sunxi_native_pm_a55.c
+@@ -0,0 +1,118 @@
++/*
++ * Copyright (c) 2025, ARM Limited and Contributors. All rights reserved.
++ *
++ * SPDX-License-Identifier: BSD-3-Clause
++ */
++
++#include <arch_helpers.h>
++#include <common/debug.h>
++#include <lib/mmio.h>
++#include <lib/psci/psci.h>
++#include <lib/utils_def.h>
++#include <plat/common/platform.h>
++
++#include <platform_def.h>
++#include <sunxi_cpucfg.h>
++#include <sunxi_mmap.h>
++#include <sunxi_private.h>
++
++#define SUNXI_WDOG0_SRST_REG		(SUNXI_R_WDOG_BASE + 0x0008)
++
++#define SUNXI_INITARCH_REG(n)		(SUNXI_CPUCFG_BASE + 0x0020 + (n) * 4)
++#define HOTPLUG_CONTROL_REG(n)		(SUNXI_R_CPUCFG_BASE + 0x200 + (n) * 4)
++#define HOTPLUG_POWERMODE_REG(n)	(SUNXI_R_CPUCFG_BASE + 0x220 + (n) * 4)
++#define PPU_PWSR(n)			(SUNXI_R_CPUCFG_BASE + (n) * 0x1000 + 0x1008)
++
++#define STATE_ON			8
++#define STATE_OFF			0
++
++#define GIC_WAKEUP_DISABLE		BIT(1)
++#define POWER_ON			BIT(0)
++
++#define HOTPLUG_EN			BIT(0)
++
++#define AARCH64				BIT(0)
++
++static void sunxi_cpu_off(u_register_t mpidr)
++{
++	unsigned int core = MPIDR_AFFLVL1_VAL(mpidr);
++
++	mmio_clrbits_32(HOTPLUG_POWERMODE_REG(core), POWER_ON);
++
++	mmio_setbits_32(HOTPLUG_CONTROL_REG(core), GIC_WAKEUP_DISABLE);
++}
++
++static int sunxi_pwr_domain_on(u_register_t mpidr)
++{
++	unsigned int core = MPIDR_AFFLVL1_VAL(mpidr);
++
++	mmio_setbits_32(SUNXI_INITARCH_REG(core), AARCH64);
++
++	while ((mmio_read_32(PPU_PWSR(core + 1)) & 0xf) != STATE_OFF)
++		;
++
++	mmio_setbits_32(HOTPLUG_POWERMODE_REG(core), POWER_ON);
++	mmio_setbits_32(HOTPLUG_CONTROL_REG(core), HOTPLUG_EN);
++
++	while ((mmio_read_32(PPU_PWSR(core + 1)) & 0xf) != STATE_ON)
++		;
++
++	mmio_clrbits_32(HOTPLUG_CONTROL_REG(core), HOTPLUG_EN);
++	mmio_clrbits_32(HOTPLUG_POWERMODE_REG(core), POWER_ON);
++
++	return PSCI_E_SUCCESS;
++}
++
++static void sunxi_pwr_domain_off(const psci_power_state_t *target_state)
++{
++	sunxi_cpu_off(read_mpidr());
++}
++
++static void sunxi_pwr_domain_on_finish(const psci_power_state_t *target_state)
++{
++	unsigned int core = plat_my_core_pos();
++
++	mmio_clrbits_32(HOTPLUG_CONTROL_REG(core), GIC_WAKEUP_DISABLE);
++}
++
++static void sunxi_system_off(void)
++{
++	unsigned int cluster;
++	unsigned int core;
++
++	/* Attempt to power down the board (may not return) */
++	sunxi_power_down();
++
++	/* Turn off all CPUs */
++	for (cluster = 0; cluster < PLATFORM_CLUSTER_COUNT; ++cluster) {
++		for (core = 0; core < PLATFORM_MAX_CPUS_PER_CLUSTER; ++core) {
++			u_register_t mpidr = (cluster << MPIDR_AFF2_SHIFT) |
++					     (core    << MPIDR_AFF1_SHIFT) |
++					     BIT(24) | BIT(31);
++			sunxi_cpu_off(mpidr);
++		}
++	}
++}
++
++static void __dead2 sunxi_system_reset(void)
++{
++	/* Reset the whole system when using watchdog reset */
++	mmio_write_32(SUNXI_WDOG0_SRST_REG, 0x16aa0001);
++
++	ERROR("PSCI: System reset failed\n");
++	panic();
++}
++
++static const plat_psci_ops_t sunxi_native_psci_ops = {
++	.pwr_domain_on			= sunxi_pwr_domain_on,
++	.pwr_domain_off			= sunxi_pwr_domain_off,
++	.pwr_domain_on_finish		= sunxi_pwr_domain_on_finish,
++	.system_off			= sunxi_system_off,
++	.system_reset			= sunxi_system_reset,
++	.validate_ns_entrypoint		= sunxi_validate_ns_entrypoint,
++};
++
++void sunxi_set_native_psci_ops(const plat_psci_ops_t **psci_ops)
++{
++	*psci_ops = &sunxi_native_psci_ops;
++}
+diff --git a/plat/allwinner/common/sunxi_security.c b/plat/allwinner/common/sunxi_security.c
+index 98b91c39f..a614d9d9b 100644
+--- a/plat/allwinner/common/sunxi_security.c
++++ b/plat/allwinner/common/sunxi_security.c
+@@ -37,4 +37,21 @@ void sunxi_security_setup(void)
+ 
+ 	/* Set all DMA channels (16 max.) to non-secure */
+ 	mmio_write_32(SUNXI_DMA_BASE + DMA_SEC_REG, 0xffff);
++
++	/* Some SoCs feature more protection bits in the PRCM block */
++#ifdef SUNXI_R_TZMA_BASE
++	mmio_write_32(SUNXI_R_TZMA_BASE + 0, 0);
++	mmio_write_32(SUNXI_R_TZMA_BASE + 4, 0);
++	mmio_write_32(SUNXI_R_TZMA_BASE + 8, 0);
++#endif
++
++#ifdef SUNXI_R_SPC_BASE
++	mmio_write_32(SUNXI_R_SPC_BASE + 0x04, 0xffffffff);
++	mmio_write_32(SUNXI_R_SPC_BASE + 0x14, 0xffffffff);
++	mmio_write_32(SUNXI_R_SPC_BASE + 0x24, 0xffffffff);
++#endif
++
++#ifdef SUNXI_DSP_PRCM_BASE
++	mmio_write_32(SUNXI_DSP_PRCM_BASE + 8, 7);
++#endif
+ }
+diff --git a/plat/allwinner/sun55i_a523/include/sunxi_ccu.h b/plat/allwinner/sun55i_a523/include/sunxi_ccu.h
+new file mode 100644
+index 000000000..91f07ade6
+--- /dev/null
++++ b/plat/allwinner/sun55i_a523/include/sunxi_ccu.h
+@@ -0,0 +1,14 @@
++/*
++ * Copyright (c) 2025, ARM Limited and Contributors. All rights reserved.
++ *
++ * SPDX-License-Identifier: BSD-3-Clause
++ */
++
++#ifndef SUNXI_CCU_H
++#define SUNXI_CCU_H
++
++#define SUNXI_CCU_SEC_SWITCH_REG	(SUNXI_CCU_BASE + 0x0f00)
++
++#define SUNXI_R_PRCM_SEC_SWITCH_REG	(SUNXI_R_PRCM_BASE + 0x0290)
++
++#endif /* SUNXI_CCU_H */
+diff --git a/plat/allwinner/sun55i_a523/include/sunxi_cpucfg.h b/plat/allwinner/sun55i_a523/include/sunxi_cpucfg.h
+new file mode 100644
+index 000000000..58edd05f1
+--- /dev/null
++++ b/plat/allwinner/sun55i_a523/include/sunxi_cpucfg.h
+@@ -0,0 +1,7 @@
++/*
++ * Copyright (c) 2025, ARM Limited and Contributors. All rights reserved.
++ *
++ * SPDX-License-Identifier: BSD-3-Clause
++ */
++
++#include <sunxi_cpucfg_ncat2.h>
+diff --git a/plat/allwinner/sun55i_a523/include/sunxi_mmap.h b/plat/allwinner/sun55i_a523/include/sunxi_mmap.h
+new file mode 100644
+index 000000000..914b55aef
+--- /dev/null
++++ b/plat/allwinner/sun55i_a523/include/sunxi_mmap.h
+@@ -0,0 +1,50 @@
++/*
++ * Copyright (c) 2025, ARM Limited and Contributors. All rights reserved.
++ *
++ * SPDX-License-Identifier: BSD-3-Clause
++ */
++
++#ifndef SUNXI_MMAP_H
++#define SUNXI_MMAP_H
++
++/* Memory regions */
++#define SUNXI_ROM_BASE			0x00000000
++#define SUNXI_ROM_SIZE			0x00010000
++#define SUNXI_SRAM_BASE			0x00020000
++#define SUNXI_SRAM_SIZE			0x00044000
++#define SUNXI_SRAM_A1_BASE		0x00020000
++#define SUNXI_SRAM_A1_SIZE		0x00020000
++#define SUNXI_SRAM_A2_BASE		0x00040000
++#define SUNXI_SRAM_A2_BL31_OFFSET	0x00014000
++#define SUNXI_SRAM_A2_SIZE		0x00024000
++#define SUNXI_DEV_BASE			0x01000000
++#define SUNXI_DEV_SIZE			0x09000000
++#define SUNXI_DRAM_BASE			0x40000000
++#define SUNXI_DRAM_VIRT_BASE		0x0a000000
++
++/* Memory-mapped devices */
++#define SUNXI_PIO_BASE			0x02000000
++#define SUNXI_SPC_BASE			0x02000800
++#define SUNXI_CCU_BASE			0x02001000
++#define SUNXI_WDOG_BASE			0x02050000
++#define SUNXI_UART0_BASE		0x02500000
++#define SUNXI_SYSCON_BASE		0x03000000
++#define SUNXI_DMA_BASE			0x03002000
++#define SUNXI_SID_BASE			0x03006000
++#define SUNXI_GICD_BASE			0x03400000
++#define SUNXI_GICR_BASE			0x03460000
++#define SUNXI_SPI0_BASE			0x04025000
++#define SUNXI_R_SPC_BASE		0x07002000
++#define SUNXI_R_TZMA_BASE		0x07002400
++#define SUNXI_R_PRCM_BASE		0x07010000
++#define SUNXI_R_WDOG_BASE		0x07020400
++#define SUNXI_R_PIO_BASE		0x07022000
++#define SUNXI_R_CPUCFG_BASE		0x07050000
++#define SUNXI_R_UART_BASE		0x07080000
++#define SUNXI_R_I2C_BASE		0x07081400
++#define SUNXI_MSGBOX_BASE		0x07094000
++#define SUNXI_DSP_PRCM_BASE		0x07102000
++#define SUNXI_CPUCFG_BASE		0x08000000
++#define SUNXI_C0_CPUXCFG_BASE		0x09010000
++
++#endif /* SUNXI_MMAP_H */
+diff --git a/plat/allwinner/sun55i_a523/include/sunxi_spc.h b/plat/allwinner/sun55i_a523/include/sunxi_spc.h
+new file mode 100644
+index 000000000..9862ce2a8
+--- /dev/null
++++ b/plat/allwinner/sun55i_a523/include/sunxi_spc.h
+@@ -0,0 +1,17 @@
++/*
++ * Copyright (c) 2025 ARM Limited and Contributors. All rights reserved.
++ *
++ * SPDX-License-Identifier: BSD-3-Clause
++ */
++
++#ifndef SUNXI_SPC_H
++#define SUNXI_SPC_H
++
++/* Get by REing stock ATF and checking initialization loop boundary */
++#define SUNXI_SPC_NUM_PORTS		14
++
++#define SUNXI_SPC_DECPORT_STA_REG(p)	(SUNXI_SPC_BASE + 0x0000 + 0x10 * (p))
++#define SUNXI_SPC_DECPORT_SET_REG(p)	(SUNXI_SPC_BASE + 0x0004 + 0x10 * (p))
++#define SUNXI_SPC_DECPORT_CLR_REG(p)	(SUNXI_SPC_BASE + 0x0008 + 0x10 * (p))
++
++#endif /* SUNXI_SPC_H */
+diff --git a/plat/allwinner/sun55i_a523/platform.mk b/plat/allwinner/sun55i_a523/platform.mk
+new file mode 100644
+index 000000000..de8cdebcb
+--- /dev/null
++++ b/plat/allwinner/sun55i_a523/platform.mk
+@@ -0,0 +1,25 @@
++#
++# Copyright (c) 2025, ARM Limited and Contributors. All rights reserved.
++#
++# SPDX-License-Identifier: BSD-3-Clause
++#
++
++# Allwinner A523 supports Armv8.2 extensions
++ARM_ARCH_MAJOR := 8
++ARM_ARCH_MINOR := 2
++
++# There are 8 cores in 1 cluster
++PLATFORM_MAX_CPUS_PER_CLUSTER := 8
++
++SUNXI_SETUP_REGULATORS := 0
++
++# No ARISC SCP support at the moment
++SUNXI_PSCI_USE_SCPI     :=      0
++SUNXI_PSCI_USE_NATIVE   :=      1
++
++# The differences between the platforms are covered by the include files.
++include plat/allwinner/common/allwinner-common.mk
++include plat/allwinner/common/allwinner-common-a55.mk
++
++# Put NOBITS memory in the first 64K of SRAM A2, overwriting U-Boot's SPL.
++SEPARATE_NOBITS_REGION	:=	1
+diff --git a/plat/allwinner/sun55i_a523/sunxi_idle_states.c b/plat/allwinner/sun55i_a523/sunxi_idle_states.c
+new file mode 100644
+index 000000000..b461b1bde
+--- /dev/null
++++ b/plat/allwinner/sun55i_a523/sunxi_idle_states.c
+@@ -0,0 +1,11 @@
++/*
++ * Copyright (c) 2025, ARM Limited and Contributors. All rights reserved.
++ *
++ * SPDX-License-Identifier: BSD-3-Clause
++ */
++
++#include <sunxi_private.h>
++
++const struct psci_cpu_idle_state sunxi_idle_states[] = {
++	{}
++};
+diff --git a/plat/allwinner/sun55i_a523/sunxi_power.c b/plat/allwinner/sun55i_a523/sunxi_power.c
+new file mode 100644
+index 000000000..34e4df822
+--- /dev/null
++++ b/plat/allwinner/sun55i_a523/sunxi_power.c
+@@ -0,0 +1,20 @@
++/*
++ * Copyright (c) 2025, ARM Limited and Contributors. All rights reserved.
++ *
++ * SPDX-License-Identifier: BSD-3-Clause
++ */
++
++#include <platform_def.h>
++#include <sunxi_mmap.h>
++#include <sunxi_cpucfg.h>
++#include <sunxi_private.h>
++
++int sunxi_pmic_setup(uint16_t socid, const void *fdt)
++{
++	/* PMIC not yet supported */
++	return 0;
++}
++
++void sunxi_power_down(void)
++{
++}
+-- 
+2.39.5
+
