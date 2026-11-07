@@ -45,6 +45,7 @@ opkg = \
 
 apk = \
   IPKG_INSTROOT=$(1) \
+  FAKEROOTDONTTRYCHOWN=1 \
   $(FAKEROOT) $(STAGING_DIR_HOST)/bin/apk \
 	--root $(1) \
 	--keys-dir $(if $(APK_KEYS),$(APK_KEYS),$(TOPDIR)) \
