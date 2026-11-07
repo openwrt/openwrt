@@ -425,20 +425,16 @@ static int otto_l3_839x_setup(struct otto_l3_ctrl *ctrl)
 	return regmap_write_bits(priv->map, RTL839X_ROUTING_EXCPT_CTRL, 0x3 << 14, 2 << 14);
 }
 
-static u32 otto_l3_930x_hash4(u32 ip, int algorithm, bool move_dip)
+static u32 otto_l3_930x_hash4(u32 ip, int algorithm)
 {
 	u32 s0, s1, pH;
 	u32 rows[4];
 	u32 hash;
 
-	memset(rows, 0, sizeof(rows));
-
 	rows[0] = HASH_PICK(ip, 27, 5);
 	rows[1] = HASH_PICK(ip, 18, 9);
 	rows[2] = HASH_PICK(ip, 9, 9);
-
-	if (!move_dip)
-		rows[3] = HASH_PICK(ip, 0, 9);
+	rows[3] = HASH_PICK(ip, 0, 9);
 
 	if (!algorithm) {
 		hash = rows[0] ^ rows[1] ^ rows[2] ^ rows[3];
@@ -449,6 +445,26 @@ static u32 otto_l3_930x_hash4(u32 ip, int algorithm, bool move_dip)
 		hash = pH ^ rows[3];
 	}
 	return hash;
+}
+
+/* The SDK folds the upper 96 address bits into nine-bit XOR chunks.
+ * The low 32 bits use the IPv4 hash, including its end-around-carry variant.
+ */
+static u32 otto_l3_930x_hash6(const struct in6_addr *ip, int algorithm)
+{
+	const u8 *bytes = ip->s6_addr;
+	u32 hash = bytes[0] >> 6;
+	unsigned int bit, byte;
+	u32 word;
+
+	for (bit = 2; bit < 96; bit += 9) {
+		byte = bit / 8;
+		word = bytes[byte] << 8;
+		if (byte + 1 < 12)
+			word |= bytes[byte + 1];
+		hash ^= (word >> (7 - bit % 8)) & 0x1ff;
+	}
+	return hash ^ otto_l3_930x_hash4(be32_to_cpu(ip->s6_addr32[3]), algorithm);
 }
 
 /*
@@ -626,9 +642,9 @@ static const u8 otto_l3_930x_slot_widths[] = { 1, 2, 3, 6 };
 static int otto_l3_930x_find_slot(struct otto_l3_ctrl *ctrl, struct otto_l3_route *rt, bool must_exist)
 {
 	struct otto_dsa_priv *priv = ctrl->priv;
-	int slot_width, algorithm, addr, idx, err;
+	int slot_width, algorithm, addr, idx, err, width;
 	struct otto_l3_route route_entry;
-	u32 hash, v;
+	u32 hash, occupied, mask, v;
 
 	slot_width = otto_l3_930x_slot_widths[rt->attr.type & 0x3];
 
@@ -637,37 +653,42 @@ static int otto_l3_930x_find_slot(struct otto_l3_ctrl *ctrl, struct otto_l3_rout
 		if (err)
 			return err;
 		algorithm = (v >> (2 + t)) & 0x1;
-		hash = otto_l3_930x_hash4(rt->dst_ip, algorithm, false);
+		hash = rt->attr.type == ROUTE_TYPE_IP6UC ?
+			otto_l3_930x_hash6(&rt->dst_ip6, algorithm) :
+			otto_l3_930x_hash4(rt->dst_ip, algorithm);
+		occupied = 0;
 
-		dev_dbg(ctrl->dev, "table %d, algorithm %d, hash %04x\n", t, algorithm, hash);
-
-		for (int s = 0; s < 6; s += slot_width) {
-			addr = (t << 12) | ((hash & 0x1ff) << 3) | s;
-			dev_dbg(ctrl->dev, "physical address %d\n", addr);
-			idx = ((addr / 8) * 6) + (addr % 8);
-			dev_dbg(ctrl->dev, "logical address %d\n", idx);
-
+		/* Walk entry boundaries, not continuation slots: IPv6 unicast
+		 * occupies slots 0..2 or 3..5, and multicast can also span slots.
+		 * A free starting slot alone does not make the whole group free.
+		 */
+		for (int slot = 0; slot < 6; slot += width) {
+			addr = (t << 12) | ((hash & 0x1ff) << 3) | slot;
+			idx = (addr / 8) * 6 + addr % 8;
 			err = otto_l3_930x_host_route_read(ctrl, idx, &route_entry);
 			if (err)
 				return err;
-			dev_dbg(ctrl->dev, "route valid %d, route dest: %pI4, hit %d\n",
-				rt->attr.valid, &rt->dst_ip, rt->attr.hit);
-			if (!must_exist && !route_entry.attr.valid)
+			width = route_entry.attr.valid ?
+				otto_l3_930x_slot_widths[route_entry.attr.type] : 1;
+			if (!route_entry.attr.valid)
+				continue;
+			occupied |= ((1U << width) - 1) << slot;
+			if (!must_exist || route_entry.attr.type != rt->attr.type)
+				continue;
+			if (rt->attr.type == ROUTE_TYPE_IP4UC && route_entry.dst_ip == rt->dst_ip)
 				return idx;
-			if (must_exist &&
-			    route_entry.attr.valid &&
-			    route_entry.attr.type == rt->attr.type) {
-				switch (rt->attr.type) {
-				case ROUTE_TYPE_IP4UC:
-					if (route_entry.dst_ip == rt->dst_ip)
-						return idx;
-					break;
-				case ROUTE_TYPE_IP6UC:
-					if (ipv6_addr_equal(&route_entry.dst_ip6, &rt->dst_ip6))
-						return idx;
-					break;
-				}
-			}
+			if (rt->attr.type == ROUTE_TYPE_IP6UC &&
+			    ipv6_addr_equal(&route_entry.dst_ip6, &rt->dst_ip6))
+				return idx;
+		}
+		if (must_exist)
+			continue;
+		for (int slot = 0; slot + slot_width <= 6; slot += slot_width) {
+			mask = ((1U << slot_width) - 1) << slot;
+			if (occupied & mask)
+				continue;
+			addr = (t << 12) | ((hash & 0x1ff) << 3) | slot;
+			return (addr / 8) * 6 + addr % 8;
 		}
 	}
 
