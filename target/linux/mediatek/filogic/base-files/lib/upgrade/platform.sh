@@ -190,6 +190,9 @@ platform_do_upgrade() {
 	glinet,gl-be10000-ubootmod|\
 	globitel,bt-r320|\
 	h3c,magic-nx30-pro|\
+	haolian,hl3020p|\
+	haolian,hl3020p-rgb|\
+	haolian,hl3020p-leds|\
 	imou,hx21|\
 	jcg,q30-pro|\
 	jdcloud,re-cp-03|\
