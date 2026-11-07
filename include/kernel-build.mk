@@ -20,8 +20,13 @@ define Kernel/Prepare
 	$(call Kernel/Prepare/Default)
 endef
 
+# Kernel/Configure/Default ends by deriving user_headers and .vermagic.
+# A Post hook that changes the effective kernel configuration is
+# responsible for regenerating any such derived artifact itself.
 define Kernel/Configure
+	$(foreach hook,$(Hooks/KernelConfigure/Pre),$(call $(hook))$(sep))
 	$(call Kernel/Configure/Default)
+	$(foreach hook,$(Hooks/KernelConfigure/Post),$(call $(hook))$(sep))
 endef
 
 define Kernel/CompileModules
