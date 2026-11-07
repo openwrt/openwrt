@@ -29,6 +29,9 @@ preinit_mount_cfg_part() {
 	tplink,fr365-v1)
 		mount_ubi_part "wlan" "ubi_wlan_factory_data"
 		;;
+	tplink,vx830v)
+		mount_ubi_part "misc_ro" "misc_ro"
+		;;
 	*)
 		;;
 	esac
