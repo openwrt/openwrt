@@ -2416,6 +2416,30 @@ ar8xxx_start(struct ar8xxx_priv *priv)
 	return 0;
 }
 
+/*
+ * Some boards wire the switch's port 4 to the CPU MAC and need the AR8316
+ * RGMII workaround applied for it.  The driver normally learns this from
+ * the addr != 0 probe of that PHY, but the switch PHY ID (0x004dd041) is
+ * also claimed by at803x, so that path may never run.  Let the board say
+ * so in the device tree instead.
+ */
+static bool
+ar8xxx_port4_is_phy(struct ar8xxx_priv *priv)
+{
+	struct device_node *np = priv->pdev ? priv->pdev->of_node : NULL;
+
+	if (np && of_property_read_bool(np, "qca,phy4-mii-enable"))
+		return true;
+
+	if (np && np->parent &&
+	    of_property_read_bool(np->parent, "qca,phy4-mii-enable"))
+		return true;
+
+	return priv->mii_bus->dev.of_node &&
+	       of_property_read_bool(priv->mii_bus->dev.of_node,
+				     "qca,phy4-mii-enable");
+}
+
 static int
 ar8xxx_phy_config_init(struct phy_device *phydev)
 {
@@ -2490,6 +2514,18 @@ ar8xxx_check_link_states(struct ar8xxx_priv *priv)
 	mutex_unlock(&priv->reg_mutex);
 
 	return changed;
+}
+
+/*
+ * Boards whose MACs are not phylib clients (fixed link) still need the
+ * switch programmed.  Initialise it as soon as the switch PHY is probed.
+ */
+static bool
+ar8xxx_init_at_probe(struct ar8xxx_priv *priv)
+{
+	struct device_node *np = priv->mii_bus->dev.of_node;
+
+	return np && of_property_read_bool(np, "qca,init-at-probe");
 }
 
 static int
@@ -2649,6 +2685,20 @@ ar8xxx_phy_probe(struct phy_device *phydev)
 
 found:
 	priv->use_count++;
+
+	if (phydev->mdio.addr == 0 && ar8xxx_init_at_probe(priv)) {
+		if (ar8xxx_port4_is_phy(priv)) {
+			priv->dev.ports = (AR8216_NUM_PORTS - 1);
+			priv->port4_phy = true;
+		}
+
+		priv->phy = phydev;
+		phydev->interface = PHY_INTERFACE_MODE_RGMII;
+
+		ret = ar8xxx_start(priv);
+		if (ret)
+			goto err_unregister_switch;
+	}
 
 	if (phydev->mdio.addr == 0 && priv->chip->config_at_probe) {
 		priv->phy = phydev;
