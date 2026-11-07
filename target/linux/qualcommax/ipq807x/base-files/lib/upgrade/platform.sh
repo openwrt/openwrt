@@ -189,6 +189,7 @@ platform_do_upgrade() {
 	netgear,wax218|\
 	netgear,wax620|\
 	netgear,wax630|\
+	tplink,tl-er2260t|\
 	zyxel,nwa110ax|\
 	zyxel,nwa210ax)
 		nand_do_upgrade "$1"
