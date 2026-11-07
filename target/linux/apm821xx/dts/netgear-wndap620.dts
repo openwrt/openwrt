@@ -24,6 +24,14 @@
 	};
 };
 
+&rtl_ports {
+	ethernet-port@2 {
+		reg = <2>;
+		label = "lan";
+		phy-handle = <&phy2>;
+	};
+};
+
 &PCIE0 {
 	/*
 	 * relevant lspci topology:
