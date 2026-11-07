@@ -329,7 +329,6 @@ define Device/dlink_dwr-921-c3
   DEVICE_MODEL := DWR-921
   DEVICE_VARIANT := C3
   DLINK_ROM_ID := DLK6E2414009
-  SUPPORTED_DEVICES := dlink,dwr-921-c1
 endef
 TARGET_DEVICES += dlink_dwr-921-c3
 
