@@ -80,8 +80,10 @@ sub parse_package_metadata_usergroup($$$$$) {
 			makefile => $makefile,
 		};
 	} elsif ($names->{$name}{id} != $id) {
-		warn "$makefile: id of $typename $name collides with that defined defined in $names->{$name}{makefile}\n";
-		return 0;
+		warn "$makefile: id ($id) of $typename $name collides with that defined in $names->{$name}{makefile} ($names->{$name}{id})\n";
+		if ($names->{$name}{id} == -1 && $id < 65536) {
+			$names->{$name}{id} = $id;
+		}
 	}
 	return 1;
 }
