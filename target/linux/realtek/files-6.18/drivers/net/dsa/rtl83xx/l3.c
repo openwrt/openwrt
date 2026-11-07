@@ -425,20 +425,16 @@ static int otto_l3_839x_setup(struct otto_l3_ctrl *ctrl)
 	return regmap_write_bits(priv->map, RTL839X_ROUTING_EXCPT_CTRL, 0x3 << 14, 2 << 14);
 }
 
-static u32 otto_l3_930x_hash4(u32 ip, int algorithm, bool move_dip)
+static u32 otto_l3_930x_hash4(u32 ip, int algorithm)
 {
 	u32 s0, s1, pH;
 	u32 rows[4];
 	u32 hash;
 
-	memset(rows, 0, sizeof(rows));
-
 	rows[0] = HASH_PICK(ip, 27, 5);
 	rows[1] = HASH_PICK(ip, 18, 9);
 	rows[2] = HASH_PICK(ip, 9, 9);
-
-	if (!move_dip)
-		rows[3] = HASH_PICK(ip, 0, 9);
+	rows[3] = HASH_PICK(ip, 0, 9);
 
 	if (!algorithm) {
 		hash = rows[0] ^ rows[1] ^ rows[2] ^ rows[3];
@@ -637,7 +633,7 @@ static int otto_l3_930x_find_slot(struct otto_l3_ctrl *ctrl, struct otto_l3_rout
 		if (err)
 			return err;
 		algorithm = (v >> (2 + t)) & 0x1;
-		hash = otto_l3_930x_hash4(rt->dst_ip, algorithm, false);
+		hash = otto_l3_930x_hash4(rt->dst_ip, algorithm);
 
 		dev_dbg(ctrl->dev, "table %d, algorithm %d, hash %04x\n", t, algorithm, hash);
 
