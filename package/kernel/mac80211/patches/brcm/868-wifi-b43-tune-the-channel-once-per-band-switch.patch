@@ -1,0 +1,111 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Rosen Penev <rosenp@gmail.com>
+Date: Mon, 2 Nov 2026 00:32:07 -0800
+Subject: [PATCH] wifi: b43: tune the channel once per band switch
+
+A band switch tunes the new channel three times. b43_phy_init() turns
+the radio on before ops->init(), and the HT-PHY radio unblock tunes the
+channel on a PHY that isn't set up yet. b43_phy_init() then tunes it
+again after ops->init(), and b43_op_config() a third time after
+b43_switch_band() returns. On HT-PHY every tune also runs the TX I/Q and
+LO calibration, so a band switch on a BCM4331 took about 92 ms, which a
+scan pays twice for every 2.4 GHz channel it visits from a 5 GHz BSS.
+
+Let b43_switch_band() report that it switched the band, so that
+b43_op_config() leaves the channel to b43_phy_init(), and skip the
+channel switch in the HT-PHY radio unblock while b43_phy_init() is
+running. A band switch now takes about 40 ms.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01S2DU22Uxo4LiJPr66K7TVt
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+---
+ drivers/net/wireless/broadcom/b43/main.c       | 17 +++++++++++------
+ drivers/net/wireless/broadcom/b43/phy_common.c |  2 ++
+ drivers/net/wireless/broadcom/b43/phy_common.h |  3 +++
+ drivers/net/wireless/broadcom/b43/phy_ht.c     |  7 ++++++-
+ 4 files changed, 22 insertions(+), 7 deletions(-)
+
+--- a/drivers/net/wireless/broadcom/b43/main.c
++++ b/drivers/net/wireless/broadcom/b43/main.c
+@@ -4717,7 +4717,10 @@ static const char *band_to_string(enum n
+ 	return "";
+ }
+ 
+-/* Expects wl->mutex locked */
++/*
++ * Expects wl->mutex locked. Returns 1 if it switched the band, which also
++ * tunes the channel (b43_phy_init()), 0 if the band was right already.
++ */
+ static int b43_switch_band(struct b43_wldev *dev,
+ 			   struct ieee80211_channel *chan)
+ {
+@@ -4786,7 +4789,7 @@ static int b43_switch_band(struct b43_wl
+ 
+ 	b43_phy_init(dev);
+ 
+-	return 0;
++	return 1;
+ }
+ 
+ static void b43_set_beacon_listen_interval(struct b43_wldev *dev, u16 interval)
+@@ -4866,13 +4869,15 @@ static int b43_op_config(struct ieee8021
+ 
+ 		/* Switch the band (if necessary). */
+ 		err = b43_switch_band(dev, conf->chandef.chan);
+-		if (err)
++		if (err < 0)
+ 			goto out_mac_enable;
+ 
+-		/* Switch to the requested channel.
+-		 * The firmware takes care of races with the TX handler.
++		/* Switch to the requested channel, unless the band switch
++		 * did. The firmware takes care of races with the TX handler.
+ 		 */
+-		b43_switch_channel(dev, phy->channel);
++		if (!err)
++			b43_switch_channel(dev, phy->channel);
++		err = 0;
+ 	}
+ 
+ 	if (changed & IEEE80211_CONF_CHANGE_RETRY_LIMITS)
+--- a/drivers/net/wireless/broadcom/b43/phy_common.c
++++ b/drivers/net/wireless/broadcom/b43/phy_common.c
+@@ -95,7 +95,9 @@ int b43_phy_init(struct b43_wldev *dev)
+ 	}
+ 
+ 	phy->ops->switch_analog(dev, true);
++	phy->in_init = true;
+ 	b43_software_rfkill(dev, false);
++	phy->in_init = false;
+ 
+ 	err = ops->init(dev);
+ 	if (err) {
+--- a/drivers/net/wireless/broadcom/b43/phy_common.h
++++ b/drivers/net/wireless/broadcom/b43/phy_common.h
+@@ -227,6 +227,9 @@ struct b43_phy {
+ 	/* After power reset full init has to be performed */
+ 	bool do_full_init;
+ 
++	/* b43_phy_init() is turning the radio on ahead of ops->init() */
++	bool in_init;
++
+ 	/* Analog Type */
+ 	u8 analog;
+ 	/* B43_PHYTYPE_ */
+--- a/drivers/net/wireless/broadcom/b43/phy_ht.c
++++ b/drivers/net/wireless/broadcom/b43/phy_ht.c
+@@ -1549,7 +1549,12 @@ static void b43_phy_ht_op_software_rfkil
+ 		else
+ 			B43_WARN_ON(1);
+ 
+-		b43_switch_channel(dev, dev->phy.channel);
++		/*
++		 * b43_phy_init() tunes the channel once the PHY is set up;
++		 * tuning (and calibrating) before that is wasted.
++		 */
++		if (!dev->phy.in_init)
++			b43_switch_channel(dev, dev->phy.channel);
+ 	}
+ }
+ 

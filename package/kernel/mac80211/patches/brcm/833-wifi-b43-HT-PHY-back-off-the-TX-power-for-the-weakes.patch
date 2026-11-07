@@ -1,0 +1,133 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Rosen Penev <rosenp@gmail.com>
+Date: Sat, 24 Oct 2026 16:47:14 -0700
+Subject: [PATCH] wifi: b43: HT-PHY: back off the TX power for the weakest rate
+
+On BCM4331 boards without an external PA flag, the HT-PHY TX power
+control loop holds every core at the SPROM maximum power, 19 dBm at
+2.4 GHz on an Apple AirPort Extreme card. The SPROM asks for 1.5 dB
+less at MCS 5-7 and 1 dB less at 48 and 54 Mbit/s, but the loop has a
+single target, and b43 doesn't know how HT-PHY sends a single rate
+below it: unlike N-PHY, writing offsets to entries 64-147 of table 0x1a
+changes nothing. So 64-QAM goes out at the power meant for CCK and is
+too distorted to decode: a sniffer and the AP saw 94-100% of the MCS 6
+and MCS 7 frames with a bad FCS at -21 dBm.
+
+Lower the loop target by the largest per-rate backoff the SPROM asks
+for in the band. The other rates lose the same power, a fraction of a
+dB to 2.5 dB depending on the band.
+
+At 2.4 GHz that only takes the AirPort card from 19 to 17.5 dBm per
+core, still too close to where its PA saturates for 64-QAM. Measured
+with a fixed TX gain index per core (power control loop off), the
+estimated output rises by about 0.5 dB per index step and flattens at
+20.75 dBm on all three cores from index 12 down. A sniffer counting
+frames with a bad FCS saw MCS 6 and MCS 7 come out clean only between
+indices 28 and 24, about 13 to 15 dBm per core, and 58% of the MCS 7
+frames corrupted at about 17 dBm and 97% of the MCS 6 frames at about
+19 dBm. The power control loop itself holds its target within about
+1.5 dB on every core, so the target is the problem, not the TSSI
+estimate. So also cap the 2.4 GHz target at 15.5 dBm per core, about
+5 dB below the PA saturation. Boards with a static TX gain (external
+FEM or high-gain PA) don't use the target and are not affected.
+
+On the AirPort card at 2.4 GHz, channel 6, the frames with a bad FCS go
+from 100% to 6-8% at MCS 6 and from 94-98% to 14-17% at MCS 7. At 5 GHz,
+channel 36 (2.5 dB backoff), TCP upload goes from 31-35 to 40-43 Mbit/s
+and download stays at 35-45 Mbit/s; WPA2, SAE and GCMP-256 connections
+still pass.
+
+Fixes: 5949e0406041 ("b43: HT-PHY: setup TX power control")
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+---
+ drivers/net/wireless/broadcom/b43/phy_ht.c | 59 +++++++++++++++++++++-
+ 1 file changed, 58 insertions(+), 1 deletion(-)
+
+--- a/drivers/net/wireless/broadcom/b43/phy_ht.c
++++ b/drivers/net/wireless/broadcom/b43/phy_ht.c
+@@ -16,6 +16,10 @@
+ #include "tables_phy_ht.h"
+ #include "radio_2059.h"
+ #include "main.h"
++#include "ppr.h"
++
++/* Highest TX power control target per core at 2.4 GHz, 15.5 dBm in Q5.2 */
++#define B43_PHY_HT_2G_MAX_TARGET	62
+ 
+ /*
+  * A front end module like the R6400's. BFL_EXTLNA and extpagain don't tell
+@@ -661,13 +665,44 @@ static void b43_phy_ht_tssi_setup(struct
+ 	}
+ }
+ 
++/* The largest per-rate TX power backoff the SPROM asks for at @freq (Q5.2) */
++static u8 b43_phy_ht_rate_backoff(struct b43_wldev *dev, u16 freq)
++{
++	struct b43_ppr ppr;
++	enum b43_band band;
++	u8 max, min = U8_MAX;
++	int i;
++
++	if (b43_current_band(dev->wl) == NL80211_BAND_2GHZ)
++		band = B43_BAND_2G;
++	else if (freq < 5100)
++		band = B43_BAND_5G_LO;
++	else if (freq < 5500)
++		band = B43_BAND_5G_MI;
++	else
++		band = B43_BAND_5G_HI;
++
++	b43_ppr_clear(dev, &ppr);
++	if (!b43_ppr_load_max_from_sprom(dev, &ppr, band))
++		return 0;
++
++	max = b43_ppr_get_max(dev, &ppr);
++	for (i = 0; i < B43_PPR_RATES_NUM; i++) {
++		/* Rates the band doesn't have, CCK at 5 GHz, stay 0 */
++		if (ppr.__all_rates[i])
++			min = min(min, ppr.__all_rates[i]);
++	}
++
++	return min < max ? max - min : 0;
++}
++
+ static void b43_phy_ht_tx_power_ctl_setup(struct b43_wldev *dev)
+ {
+ 	struct b43_phy_ht *phy_ht = dev->phy.ht;
+ 	struct ssb_sprom *sprom = dev->dev->bus_sprom;
+ 
+ 	u8 *idle = phy_ht->idle_tssi;
+-	u8 target[3];
++	u8 target[3], backoff;
+ 	s16 a1[3], b0[3], b1[3];
+ 
+ 	u16 freq = dev->phy.chandef->chan->center_freq;
+@@ -709,6 +744,28 @@ static void b43_phy_ht_tx_power_ctl_setu
+ 		b1[0] = b1[1] = b1[2] = -1393;
+ 	}
+ 
++	/*
++	 * The power control loop holds one target for all rates, and how
++	 * HT-PHY sends a single rate below it is not known. Lower the target
++	 * by the largest per-rate backoff the SPROM asks for, which keeps
++	 * 64-QAM inside what the PA handles, at the cost of the same backoff
++	 * for the other rates.
++	 */
++	backoff = b43_phy_ht_rate_backoff(dev, freq);
++	for (c = 0; c < 3; c++)
++		target[c] -= min(target[c], backoff);
++
++	/*
++	 * That is not enough at 2.4 GHz: there the PA saturates at about
++	 * 20.75 dBm per core, and 64-QAM only stays decodable at least 5 dB
++	 * below that. With a static TX gain the target is not used.
++	 */
++	if (b43_current_band(dev->wl) == NL80211_BAND_2GHZ) {
++		for (c = 0; c < 3; c++)
++			target[c] = min_t(u8, target[c],
++					  B43_PHY_HT_2G_MAX_TARGET);
++	}
++
+ 	/* Regulatory and user limits, but no lower than 8 dBm */
+ 	limit = INT_TO_Q52(dev->phy.chandef->chan->max_power);
+ 	if (dev->phy.desired_txpower)
