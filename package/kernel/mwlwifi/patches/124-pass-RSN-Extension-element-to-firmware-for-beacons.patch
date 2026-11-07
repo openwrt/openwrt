@@ -1,0 +1,74 @@
+From da8a83c9e3a1b2ea7d34cc8c847fa06cb5a670cc Mon Sep 17 00:00:00 2001
+From: Anders Kaseorg <andersk@mit.edu>
+Date: Sat, 10 Oct 2026 01:24:12 +0000
+Subject: pass RSN Extension element to firmware for beacons
+
+The firmware builds beacons from the elements that
+mwl_fwcmd_parse_beacon() picks out of the beacon template, and the RSN
+Extension element (RSNXE) is not among them. hostapd includes an RSNXE
+when SAE hash-to-element is enabled (OpenWrt's default for WPA3), and
+also includes it in message 3 of the 4-way handshake. Stations that
+saw the beacon without it therefore found a mismatch and disconnected
+with reason 17 (IE in 4-Way Handshake differs) right after SAE
+authentication and association, before the handshake completed.
+
+Pass the RSNXE to the firmware in the proprietary element list, as is
+already done for the Mobility Domain element.
+
+This affects all chips, but has been tested on the 88W8964 only. The
+proprietary element list already carries the Mobility Domain element on
+all chips, and the change only has an effect when hostapd puts an RSNXE
+in the beacon.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Signed-off-by: Anders Kaseorg <andersk@mit.edu>
+---
+ core.h      |  2 ++
+ hif/fwcmd.c | 11 +++++++++++
+ 2 files changed, 13 insertions(+)
+
+--- a/core.h
++++ b/core.h
+@@ -375,6 +375,7 @@ struct beacon_info {
+ 	u8 *ie_rsn_ptr;
+ 	u8 *ie_rsn48_ptr;
+ 	u8 *ie_mde_ptr;
++	u8 *ie_rsnx_ptr;
+ 	u8 *ie_ht_ptr;
+ 	u8 *ie_vht_ptr;
+ 	u8 *ie_country_ptr;
+@@ -386,6 +387,7 @@ struct beacon_info {
+ 	u8 ie_rsn_len;
+ 	u8 ie_rsn48_len;
+ 	u8 ie_mde_len;
++	u8 ie_rsnx_len;
+ 	u8 ie_ht_len;
+ 	u8 ie_vht_len;
+ 	u8 ie_country_len;
+--- a/hif/fwcmd.c
++++ b/hif/fwcmd.c
+@@ -488,6 +488,10 @@ static void mwl_fwcmd_parse_beacon(struc
+ 			beacon_info->ie_mde_len = (elen + 2);
+ 			beacon_info->ie_mde_ptr = (pos - 2);
+ 			break;
++		case WLAN_EID_RSNX:
++			beacon_info->ie_rsnx_len = (elen + 2);
++			beacon_info->ie_rsnx_ptr = (pos - 2);
++			break;
+ 		case WLAN_EID_HT_CAPABILITY:
+ 		case WLAN_EID_HT_OPERATION:
+ 		case WLAN_EID_OVERLAP_BSS_SCAN_PARAM:
+@@ -614,6 +618,13 @@ static int mwl_fwcmd_set_ies(struct mwl_
+ 	       beacon->ie_mde_ptr, beacon->ie_mde_len);
+ 	ie_list_len_proprietary += mwl_vif->beacon_info.ie_mde_len;
+ 
++	if (ie_list_len_proprietary + beacon->ie_rsnx_len <=
++	    sizeof(pcmd->ie_list_proprietary)) {
++		memcpy(pcmd->ie_list_proprietary + ie_list_len_proprietary,
++		       beacon->ie_rsnx_ptr, beacon->ie_rsnx_len);
++		ie_list_len_proprietary += beacon->ie_rsnx_len;
++	}
++
+ 	pcmd->ie_list_len_proprietary = cpu_to_le16(ie_list_len_proprietary);
+ 
+ 	if (mwl_hif_exec_cmd(priv->hw, HOSTCMD_CMD_SET_IES)) {

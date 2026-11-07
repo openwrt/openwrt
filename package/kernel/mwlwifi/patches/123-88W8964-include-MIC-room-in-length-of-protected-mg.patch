@@ -1,0 +1,94 @@
+From 0f33a69cb902b968f11ebe9be1ed795d6006f911 Mon Sep 17 00:00:00 2001
+From: Anders Kaseorg <andersk@mit.edu>
+Date: Sat, 10 Oct 2026 01:23:53 +0000
+Subject: 88W8964: include MIC room in length of protected mgmt frames
+
+For management frames, the 88W8964 TX descriptor carries the length of
+the frame after the DMA header. For a protected management frame, the
+firmware encrypts the frame and appends the 8-byte CCMP MIC, but the
+driver passes a length (and DMA mapping) that excludes the MIC.
+
+The vendor driver for this chip includes room for the MIC both in the
+descriptor length and in the DMA mapping. Without it, stations never
+answered our protected action frames: our ADDBA requests timed out, and
+stations kept tearing down and re-requesting their own block ack
+sessions, as if our ADDBA responses never arrived. Under load the
+firmware also stopped delivering received frames within a minute or so.
+
+Append zeroed room for the MIC to protected management frames before
+handing them to the firmware, and trim it again on TX completion before
+reporting the status to mac80211. If the room cannot be allocated, drop
+the frame rather than send it without the room.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Signed-off-by: Anders Kaseorg <andersk@mit.edu>
+---
+ hif/pcie/8964/tx_ndp.c | 23 +++++++++++++++++++++++
+ 1 file changed, 23 insertions(+)
+
+--- a/hif/pcie/8964/tx_ndp.c
++++ b/hif/pcie/8964/tx_ndp.c
+@@ -41,6 +41,7 @@
+ #define TX_CTRL_TYPE_DATA       BIT(0)
+ #define TX_CTRL_EAPOL           BIT(1)
+ #define TX_CTRL_TCP_ACK         BIT(2)
++#define TX_CTRL_MIC_ROOM        BIT(3)
+ 
+ /* Transmission information to transmit a socket buffer.
+  */
+@@ -461,6 +462,10 @@ void pcie_tx_done_ndp(struct ieee80211_h
+ 			dev_kfree_skb_any(skb);
+ 			goto bypass_ack;
+ 		} else {
++			if (tx_ctrl->flags & TX_CTRL_MIC_ROOM)
++				skb_trim(skb,
++					 skb->len - IEEE80211_CCMP_MIC_LEN);
++
+ 			/* Remove H/W dma header */
+ 			dma_data = (struct pcie_dma_data *)skb->data;
+ 
+@@ -521,6 +526,7 @@ void pcie_tx_xmit_ndp(struct ieee80211_h
+ 	bool eapol_frame = false;
+ 	bool start_ba_session = false;
+ 	struct pcie_tx_ctrl_ndp *tx_ctrl;
++	int mic_room = 0;
+ 
+ 	tx_info = IEEE80211_SKB_CB(skb);
+ 	k_conf = tx_info->control.hw_key;
+@@ -603,6 +609,8 @@ void pcie_tx_xmit_ndp(struct ieee80211_h
+ 		}
+ 
+ 		pcie_tx_encapsulate_frame(priv, skb, k_conf);
++		if (k_conf && k_conf->cipher == WLAN_CIPHER_SUITE_CCMP)
++			mic_room = IEEE80211_CCMP_MIC_LEN;
+ 	} else {
+ 		tid = qos & 0x7;
+ 		if (sta && sta->deflink.ht_cap.ht_supported && !eapol_frame &&
+@@ -660,12 +668,27 @@ void pcie_tx_xmit_ndp(struct ieee80211_h
+ 		}
+ 	}
+ 
++	if (mic_room) {
++		/* The firmware expects the length of a protected
++		 * management frame to include room for the MIC.
++		 */
++		if (skb_tailroom(skb) < mic_room &&
++		    pskb_expand_head(skb, 0, mic_room, GFP_ATOMIC)) {
++			ieee80211_free_txskb(hw, skb);
++			return;
++		}
++		skb_put_zero(skb, mic_room);
++		wh = &((struct pcie_dma_data *)skb->data)->wh;
++	}
++
+ 	index = SYSADPT_TX_WMM_QUEUES - index - 1;
+ 
+ 	tx_ctrl = (struct pcie_tx_ctrl_ndp *)tx_info->driver_data;
+ 	tx_ctrl->tx_que_priority = tx_que_priority;
+ 	tx_ctrl->hdrlen = ieee80211_hdrlen(wh->frame_control);
+ 	tx_ctrl->flags = 0;
++	if (mic_room)
++		tx_ctrl->flags |= TX_CTRL_MIC_ROOM;
+ 	tx_ctrl->qos = qos;
+ 	if (!mgmtframe)
+ 		tx_ctrl->flags |= TX_CTRL_TYPE_DATA;
