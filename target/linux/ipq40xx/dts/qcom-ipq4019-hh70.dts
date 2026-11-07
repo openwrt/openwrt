@@ -1,0 +1,331 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "qcom-ipq4019.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/soc/qcom,tcsr.h>
+
+/ {
+	model = "Alcatel HH70";
+	compatible = "alcatel,hh70", "qcom,ipq4019";
+
+	memory {
+		device_type = "memory";
+		reg = <0x80000000 0x10000000>;
+	};
+
+	aliases {
+		serial0 = &blsp1_uart1;
+		ethernet0 = &gmac;
+		label-mac-device = &gmac;
+		led-boot = &led_wifi;
+		led-failsafe = &led_wifi;
+		led-running = &led_wifi;
+	};
+
+	chosen {
+		stdout-path = "serial0:115200n8";
+	};
+
+	soc {
+		tcsr@1949000 {
+			compatible = "qcom,tcsr";
+			reg = <0x1949000 0x100>;
+			qcom,wifi_glb_cfg = <TCSR_WIFI_GLB_CFG>;
+		};
+
+		tcsr@194b000 {
+			compatible = "qcom,tcsr";
+			reg = <0x194b000 0x100>;
+			qcom,usb-hsphy-mode-select = <TCSR_USB_HSPHY_HOST_MODE>;
+			status = "okay";
+		};
+
+		ess_tcsr@1953000 {
+			compatible = "qcom,tcsr";
+			reg = <0x1953000 0x1000>;
+			qcom,ess-interface-select = <TCSR_ESS_PSGMII>;
+		};
+
+		tcsr@1957000 {
+			compatible = "qcom,tcsr";
+			reg = <0x1957000 0x100>;
+			qcom,wifi_noc_memtype_m0_m2 = <TCSR_WIFI_NOC_MEMTYPE_M0_M2>;
+		};
+	};
+
+	keys {
+		compatible = "gpio-keys";
+		pinctrl-0 = <&key_pins>;
+		pinctrl-names = "default";
+
+		reset {
+			label = "reset";
+			gpios = <&tlmm 5 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+			debounce-interval = <60>;
+		};
+
+		wps {
+			label = "wps";
+			gpios = <&tlmm 2 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_WPS_BUTTON>;
+			debounce-interval = <15>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		pinctrl-0 = <&led_pins>;
+		pinctrl-names = "default";
+
+		led_wifi: led-wifi {
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_WLAN;
+			gpios = <&tlmm 4 GPIO_ACTIVE_HIGH>;
+		};
+	};
+};
+
+&prng {
+	status = "okay";
+};
+
+&blsp_dma {
+	status = "okay";
+};
+
+&tlmm {
+	/*
+	 * GPIO63 enables the internal MSM9640 modem/USB path.
+	 * Stock firmware drives this line high. Hardware testing confirms that
+	 * asserting it makes the modem enumerate on USB 3.0 and creates usb0
+	 * through rndis_host.
+	 */
+	modem-enable-hog {
+		gpio-hog;
+		gpios = <63 GPIO_ACTIVE_HIGH>;
+		output-high;
+		line-name = "modem-enable";
+	};
+
+	/* Stock HH70 console: BLSP UART0 on GPIO60/GPIO61. */
+	serial_pins: serial-pinmux {
+		mux {
+			pins = "gpio60", "gpio61";
+			function = "blsp_uart0";
+			bias-disable;
+		};
+	};
+
+	/* Stock HH70 SPI NOR uses the alternate GPIO54-GPIO57 SPI0 group. */
+	spi_0_pins: spi-0-pinmux {
+		mux {
+			function = "blsp_spi0";
+			pins = "gpio55", "gpio56", "gpio57";
+			drive-strength = <12>;
+			bias-disable;
+		};
+
+		mux-cs {
+			function = "gpio";
+			pins = "gpio54";
+			drive-strength = <2>;
+			bias-disable;
+			output-high;
+		};
+	};
+
+	key_pins: key-pinmux {
+		mux {
+			pins = "gpio2", "gpio5";
+			function = "gpio";
+			bias-disable;
+		};
+	};
+
+	led_pins: led-pinmux {
+		mux {
+			pins = "gpio0", "gpio4";
+			function = "gpio";
+			bias-disable;
+		};
+	};
+};
+
+&blsp1_uart1 {
+	pinctrl-0 = <&serial_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&blsp1_spi1 {
+	pinctrl-0 = <&spi_0_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+	cs-gpios = <&tlmm 54 GPIO_ACTIVE_LOW>;
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <24000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "0:SBL1";
+				reg = <0x000000 0x040000>;
+				read-only;
+			};
+
+			partition@40000 {
+				label = "0:MIBIB";
+				reg = <0x040000 0x020000>;
+				read-only;
+			};
+
+			partition@60000 {
+				label = "0:QSEE";
+				reg = <0x060000 0x060000>;
+				read-only;
+			};
+
+			partition@c0000 {
+				label = "0:CDT";
+				reg = <0x0c0000 0x010000>;
+				read-only;
+			};
+
+			partition@d0000 {
+				label = "0:DDRPARAMS";
+				reg = <0x0d0000 0x010000>;
+				read-only;
+			};
+
+			partition@e0000 {
+				label = "0:APPSBLENV";
+				reg = <0x0e0000 0x010000>;
+				read-only;
+			};
+
+			partition@f0000 {
+				label = "0:APPSBL";
+				reg = <0x0f0000 0x080000>;
+				read-only;
+			};
+
+			art: partition@170000 {
+				label = "0:ART";
+				reg = <0x170000 0x010000>;
+				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_art_0: macaddr@0 {
+						reg = <0x0000 0x6>;
+					};
+
+					macaddr_art_6: macaddr@6 {
+						reg = <0x0006 0x6>;
+					};
+
+					precal_art_1000: pre-calibration@1000 {
+						reg = <0x1000 0x2f20>;
+					};
+
+					precal_art_5000: pre-calibration@5000 {
+						reg = <0x5000 0x2f20>;
+					};
+				};
+			};
+
+			partition@180000 {
+				label = "0:HLOS";
+				reg = <0x180000 0x3e0000>;
+			};
+
+			partition@560000 {
+				label = "rootfs";
+				reg = <0x560000 0x980000>;
+			};
+
+			partition@ee0000 {
+				label = "0:OEM";
+				reg = <0xee0000 0x020000>;
+				read-only;
+			};
+
+			partition@f00000 {
+				label = "0:JRDRESOUCE";
+				reg = <0xf00000 0x100000>;
+				read-only;
+			};
+		};
+	};
+};
+
+&mdio {
+	status = "okay";
+};
+
+&gmac {
+	status = "okay";
+	nvmem-cells = <&macaddr_art_0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&switch {
+	status = "okay";
+};
+
+&swport1 {
+	status = "okay";
+	label = "wan";
+
+	nvmem-cells = <&macaddr_art_6>;
+	nvmem-cell-names = "mac-address";
+};
+
+&swport2 {
+	status = "okay";
+	label = "lan";
+};
+
+&usb2_hs_phy {
+	status = "okay";
+};
+
+&usb2 {
+	status = "okay";
+};
+
+&usb3_ss_phy {
+	status = "okay";
+};
+
+&usb3_hs_phy {
+	status = "okay";
+};
+
+&usb3 {
+	status = "okay";
+};
+
+&wifi0 {
+	status = "okay";
+	nvmem-cells = <&precal_art_1000>;
+	nvmem-cell-names = "pre-calibration";
+};
+
+&wifi1 {
+	status = "okay";
+	nvmem-cells = <&precal_art_5000>;
+	nvmem-cell-names = "pre-calibration";
+};
