@@ -1,0 +1,470 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
+/*
+ * MokerLink POE-10G07110GSM
+ * 7x 10GBASE-T (PoE++) + 1x 10G SFP+, Realtek RTL9303
+ *
+ * Hardware:
+ *   - SoC RTL9303, 128 MiB RAM, 16 MiB Winbond W25Q128 SPI NOR
+ *   - one RTL8264B quad PHY plus three RTL8261BE PHYs (vendor hardware
+ *     profile RTL9303_8264B_3X8261BE_XGE_POE), with the bus/address map
+ *     and lane polarity the vendor U-Boot programs
+ *   - two RTL8239-VB PSE chips, driven directly over I2C (no PSE
+ *     microcontroller)
+ *   - three I2C buses bit-banged on SoC GPIOs with one SCL line (GPIO 8):
+ *     an ADT7476 fan controller at 0x2e on SDA GPIO 9, the RTL8239s on
+ *     SDA GPIO 10 (0x20/0x21 and 0x22/0x23, broadcast 0x60), the SFP+
+ *     EEPROM on SDA GPIO 11
+ *   - console on header J4 at 115200 8N1
+ *   - stock firmware: a uImage with magic 0x83800000, booted by "boota"
+ *
+ * The GPIOs and I2C devices are those of the stock firmware's board table
+ * for this switch ("9303M7XC1XF" in board_conf.ko).
+ *
+ * Deliberately left out:
+ *   - GPIO LEDs: the system LED already works as the boot loader leaves
+ *     it, and driving the wrong GPIO as an output can hold a PHY or the
+ *     PoE controller in reset
+ *   - the RTL8231 expander: the stock firmware registers none of its pins
+ *     on this board
+ */
+
+/dts-v1/;
+
+#include "rtl930x.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/phy/phy.h>
+
+/ {
+	compatible = "mokerlink,poe-10g07110gsm", "realtek,rtl9303-soc";
+	model = "MokerLink POE-10G07110GSM";
+
+	/*
+	 * Fixed I2C bus numbers, so that the PSE LED trigger names
+	 * ("pse-<bus>-<address>:port<n>:delivering") do not change.
+	 */
+	aliases {
+		i2c0 = &i2c_fan;
+		i2c1 = &i2c_poe;
+		i2c2 = &i2c_sfp;
+	};
+
+	/*
+	 * Port LEDs as the vendor SDK programs them from the hardware profile
+	 * (rtl9300_led_config): bi-colour scan mode, three LEDs per port.
+	 * LED 0 is the orange half of the link LED (100M-5G), LED 1 the green
+	 * half (10G), LED 2 the green PoE LED, which has no hardware function
+	 * and needs software control. The cells list LED 2 first. Set 1 is
+	 * the SFP+ port's.
+	 */
+	led_set {
+		compatible = "realtek,rtl9300-leds";
+		realtek,led-mode = <RTL93XX_LED_MODE_BI_COLOR_SCAN>;
+
+		led_set0 = <RTL93XX_LED_SET_NONE
+			    (RTL93XX_LED_SET_10G | RTL93XX_LED_SET_LINK | RTL93XX_LED_SET_ACT)
+			    (RTL93XX_LED_SET_5G | RTL93XX_LED_SET_2P5G | RTL93XX_LED_SET_1G |
+			     RTL93XX_LED_SET_100M | RTL93XX_LED_SET_LINK | RTL93XX_LED_SET_ACT)>;
+		led_set1 = <RTL93XX_LED_SET_NONE
+			    (RTL93XX_LED_SET_10G | RTL93XX_LED_SET_LINK | RTL93XX_LED_SET_ACT)
+			    (RTL93XX_LED_SET_2P5G | RTL93XX_LED_SET_1G | RTL93XX_LED_SET_100M |
+			     RTL93XX_LED_SET_LINK | RTL93XX_LED_SET_ACT)>;
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		/*
+		 * The stock firmware's reset button: this board's entry in
+		 * board_conf.ko uses the button table buttonConfSys_9303M5XC2XF,
+		 * with resetGpio5. Pressed reads 0.
+		 */
+		button-reset {
+			label = "reset";
+			gpios = <&gpio0 5 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+	};
+
+	/*
+	 * The SFP+ cage of lan8. Its signals are SoC GPIOs, as the stock
+	 * firmware registers them for this board (board_gpio_init in
+	 * board_conf.ko): module present (MDO_FX_0) on GPIO 13, loss of
+	 * signal (LOS_FX_0) on GPIO 12, transmitter disable (TX_DIS_FX_0) on
+	 * GPIO 14, and no transmitter fault line. The module EEPROM is on the
+	 * bit-banged bus with SDA GPIO 11.
+	 */
+	sfp0: sfp-p8 {
+		compatible = "sff,sfp";
+		i2c-bus = <&i2c_sfp>;
+		mod-def0-gpios = <&gpio0 13 GPIO_ACTIVE_LOW>;
+		los-gpios = <&gpio0 12 GPIO_ACTIVE_HIGH>;
+		tx-disable-gpios = <&gpio0 14 GPIO_ACTIVE_HIGH>;
+		maximum-power-milliwatt = <2000>;
+	};
+
+	/*
+	 * The supply of the PoE ports, 260 W in total by the datasheet. The
+	 * PSE core keeps this budget across both RTL8239s: a port gets power
+	 * only while the power its PD's class asks for still fits.
+	 */
+	poe_supply: regulator-poe {
+		compatible = "regulator-fixed";
+		regulator-name = "poe";
+		regulator-min-microvolt = <54000000>;
+		regulator-max-microvolt = <54000000>;
+		regulator-always-on;
+		regulator-power-budget-milliwatt = <260000>;
+	};
+
+	/*
+	 * 128 MiB RAM ("DRAM: 128 MB") and the 115200 baud console of the
+	 * vendor U-Boot are both the rtl930x.dtsi defaults.
+	 */
+
+	/*
+	 * Three I2C buses that the stock firmware bit-bangs on SoC GPIOs, with
+	 * one common SCL line (SDK interface 2, "software I2C"): the fan
+	 * controller (SDA GPIO 9), the two RTL8239 PoE controllers (SDA GPIO
+	 * 10) and the SFP+ cage (SDA GPIO 11). i2c-gpio requests the shared SCL
+	 * once and serializes the transfers of the three buses. The pins are
+	 * those of the RTL9303 I2C master 1, but the RTL8239s take their
+	 * 25460-byte firmware only as one write, far beyond the 16 bytes per
+	 * transfer of the master: sent in 16-byte writes, they NAK the second
+	 * one.
+	 */
+	i2c_fan: i2c-fan {
+		compatible = "i2c-gpio";
+		sda-gpios = <&gpio0 9 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
+		scl-gpios = <&gpio0 8 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
+		i2c-gpio,delay-us = <5>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		/*
+		 * Runs the fans at full speed from power-on until
+		 * userspace programs it; the stock firmware sets 50 %.
+		 * Its three temperature sensors are what the stock
+		 * firmware follows. Pin 14 as GPIO, as the stock
+		 * firmware sets it (register 0x7d = 0x03), so it acts
+		 * neither as TACH4 nor as a THERM input.
+		 */
+		fan-controller@2e {
+			compatible = "adi,adt7476";
+			reg = <0x2e>;
+			adi,pin14-function = "gpio";
+		};
+	};
+
+	i2c_poe: i2c-poe {
+		compatible = "i2c-gpio";
+		sda-gpios = <&gpio0 10 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
+		scl-gpios = <&gpio0 8 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
+		i2c-gpio,delay-us = <5>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		/*
+		 * Two RTL8239-VB, each answering on two addresses
+		 * (channels 0-3 and 4-7). Port to channel mapping from
+		 * the stock firmware (poePortConf_9303M7XC1XF_BT): every
+		 * port is 4-pair on two consecutive channels; channels
+		 * 6 and 7 of the second chip are not wired.
+		 */
+		pse_a: ethernet-pse@20 {
+			compatible = "realtek,rtl8239";
+			reg = <0x20>;
+
+			channels {
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				pse_a_ch0: channel@0 { reg = <0>; };
+				pse_a_ch1: channel@1 { reg = <1>; };
+				pse_a_ch2: channel@2 { reg = <2>; };
+				pse_a_ch3: channel@3 { reg = <3>; };
+				pse_a_ch4: channel@4 { reg = <4>; };
+				pse_a_ch5: channel@5 { reg = <5>; };
+				pse_a_ch6: channel@6 { reg = <6>; };
+				pse_a_ch7: channel@7 { reg = <7>; };
+			};
+
+			pse-pis {
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				/* front port 4 */
+				pse_port4: pse-pi@0 {
+					reg = <0>;
+					#pse-cells = <0>;
+					pairset-names = "alternative-a", "alternative-b";
+					pairsets = <&pse_a_ch0>, <&pse_a_ch1>;
+					vpwr-supply = <&poe_supply>;
+				};
+
+				/* front port 5 */
+				pse_port5: pse-pi@1 {
+					reg = <1>;
+					#pse-cells = <0>;
+					pairset-names = "alternative-a", "alternative-b";
+					pairsets = <&pse_a_ch2>, <&pse_a_ch3>;
+					vpwr-supply = <&poe_supply>;
+				};
+
+				/* front port 6 */
+				pse_port6: pse-pi@2 {
+					reg = <2>;
+					#pse-cells = <0>;
+					pairset-names = "alternative-a", "alternative-b";
+					pairsets = <&pse_a_ch4>, <&pse_a_ch5>;
+					vpwr-supply = <&poe_supply>;
+				};
+
+				/* front port 7 */
+				pse_port7: pse-pi@3 {
+					reg = <3>;
+					#pse-cells = <0>;
+					pairset-names = "alternative-a", "alternative-b";
+					pairsets = <&pse_a_ch6>, <&pse_a_ch7>;
+					vpwr-supply = <&poe_supply>;
+				};
+			};
+		};
+
+		pse_b: ethernet-pse@22 {
+			compatible = "realtek,rtl8239";
+			reg = <0x22>;
+
+			channels {
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				pse_b_ch0: channel@0 { reg = <0>; };
+				pse_b_ch1: channel@1 { reg = <1>; };
+				pse_b_ch2: channel@2 { reg = <2>; };
+				pse_b_ch3: channel@3 { reg = <3>; };
+				pse_b_ch4: channel@4 { reg = <4>; };
+				pse_b_ch5: channel@5 { reg = <5>; };
+			};
+
+			pse-pis {
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				/* front port 1 */
+				pse_port1: pse-pi@0 {
+					reg = <0>;
+					#pse-cells = <0>;
+					pairset-names = "alternative-a", "alternative-b";
+					pairsets = <&pse_b_ch0>, <&pse_b_ch1>;
+					vpwr-supply = <&poe_supply>;
+				};
+
+				/* front port 2 */
+				pse_port2: pse-pi@1 {
+					reg = <1>;
+					#pse-cells = <0>;
+					pairset-names = "alternative-a", "alternative-b";
+					pairsets = <&pse_b_ch2>, <&pse_b_ch3>;
+					vpwr-supply = <&poe_supply>;
+				};
+
+				/* front port 3 */
+				pse_port3: pse-pi@2 {
+					reg = <2>;
+					#pse-cells = <0>;
+					pairset-names = "alternative-a", "alternative-b";
+					pairsets = <&pse_b_ch4>, <&pse_b_ch5>;
+					vpwr-supply = <&poe_supply>;
+				};
+			};
+		};
+	};
+
+	/* SFP+ module EEPROM and diagnostics (0x50, 0x51), for sfp0 */
+	i2c_sfp: i2c-sfp {
+		compatible = "i2c-gpio";
+		sda-gpios = <&gpio0 11 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
+		scl-gpios = <&gpio0 8 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
+		i2c-gpio,delay-us = <5>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+	};
+};
+
+&spi0 {
+	status = "okay";
+
+	flash@0 {
+		/* Winbond W25Q128 (JEDEC ID EF4018) */
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <10000000>;
+
+		/*
+		 * Same layout as the stock firmware's partition table. Everything
+		 * except "firmware" is read-only so that OpenWrt never touches the
+		 * boot loader, its environment, the board info or the stock
+		 * configuration. That keeps a return to stock possible.
+		 */
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			/* stock: LOADER */
+			partition@0 {
+				label = "u-boot";
+				reg = <0x0000000 0x00e0000>;
+				read-only;
+			};
+
+			/* stock: BDINFO */
+			partition@e0000 {
+				label = "u-boot-env";
+				reg = <0x00e0000 0x0010000>;
+				read-only;
+			};
+
+			/* stock: SYSINFO */
+			partition@f0000 {
+				label = "u-boot-env2";
+				reg = <0x00f0000 0x0010000>;
+				read-only;
+			};
+
+			/* stock: JFFS2 CFG */
+			partition@100000 {
+				label = "jffs";
+				reg = <0x0100000 0x0100000>;
+				read-only;
+			};
+
+			/* stock: JFFS2 LOG */
+			partition@200000 {
+				label = "jffs2";
+				reg = <0x0200000 0x0100000>;
+				read-only;
+			};
+
+			/* stock: RUNTIME */
+			partition@300000 {
+				compatible = "openwrt,uimage", "denx,uimage";
+				/*
+				 * The stock RUNTIME image is a uImage with this magic.
+				 * Must match UIMAGE_MAGIC in image/rtl930x.mk.
+				 */
+				openwrt,ih-magic = <0x83800000>;
+				label = "firmware";
+				reg = <0x0300000 0x0c00000>;
+			};
+
+			/* stock: OEMINFO */
+			partition@f00000 {
+				label = "oeminfo";
+				reg = <0x0f00000 0x0100000>;
+				read-only;
+			};
+		};
+	};
+};
+
+/*
+ * PHYs, as the vendor U-Boot maps them (SMI_PORT_POLLING_SEL and
+ * SMI_PORT*_ADDR_CTRL read after `rtk network on`):
+ *   MAC  0: RTL8261BE, SMI bus 1, address 0 (PHY ID read back: 001c:caf3)
+ *   MAC  8: single PHY, SMI bus 2, address 0
+ *   MAC 16: single PHY, SMI bus 3, address 0
+ *   MAC 20, 24, 25, 26: RTL8264B quad, SMI bus 0, addresses 0-3
+ * The three single PHYs are the RTL8261BEs of the vendor hardware profile.
+ */
+&mdio_bus0 {
+	ethernet-phy-package@0 {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <0>;
+
+		PHY_C45_PSE(20, 0, pse_port4)
+		PHY_C45_PSE(24, 1, pse_port5)
+		PHY_C45_PSE(25, 2, pse_port6)
+		PHY_C45_PSE(26, 3, pse_port7)
+	};
+};
+
+&mdio_bus1 {
+	PHY_C45_PSE(0, 0, pse_port1)
+};
+
+&mdio_bus2 {
+	PHY_C45_PSE(8, 0, pse_port2)
+};
+
+&mdio_bus3 {
+	PHY_C45_PSE(16, 0, pse_port3)
+};
+
+/*
+ * Lane polarity on both ends of every PHY link, exactly as the vendor U-Boot
+ * programs it after `rtk network on` (read back from the RTL8264B VEND1
+ * register 0xc1 and the SerDes polarity registers). The RTL8261BE links
+ * (MAC 0/8/16, SerDes 2-4) and the SFP+ lane (SerDes 9) are normal on both
+ * ends. The RTL826x PHY driver (&phyN) and the SerDes driver (&serdesN) both
+ * default to "normal" and reprogram polarity on every init, so these lines
+ * are required: without them the RTL8264B ports link up but pass no frames.
+ */
+&phy20 { tx-polarity = <PHY_POL_INVERT>; };
+&phy24 { rx-polarity = <PHY_POL_INVERT>; };
+&phy25 { tx-polarity = <PHY_POL_INVERT>; };
+&phy26 { rx-polarity = <PHY_POL_INVERT>; };
+
+&serdes5 { rx-polarity = <PHY_POL_INVERT>; };
+&serdes6 { tx-polarity = <PHY_POL_INVERT>; };
+&serdes7 { rx-polarity = <PHY_POL_INVERT>; };
+&serdes8 { tx-polarity = <PHY_POL_INVERT>; };
+
+&switch0 {
+	ethernet-ports {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		/*
+		 * RJ45 10GBASE-T ports: front ports 1-7 are MAC ports 0, 8, 16,
+		 * 20, 24, 25, 26, so front ports 1-3 are the RTL8261BEs and 4-7
+		 * the RTL8264B.
+		 */
+		SWITCH_PORT_SDS(0, 1, 2, 0, usxgmii)
+		SWITCH_PORT_SDS(8, 2, 3, 0, usxgmii)
+		SWITCH_PORT_SDS(16, 3, 4, 0, usxgmii)
+		SWITCH_PORT_SDS(20, 4, 5, 0, usxgmii)
+		SWITCH_PORT_SDS(24, 5, 6, 0, usxgmii)
+		SWITCH_PORT_SDS(25, 6, 7, 0, usxgmii)
+		SWITCH_PORT_SDS(26, 7, 8, 0, usxgmii)
+
+		/*
+		 * SFP+ cage, lan8: MAC port 27 on SerDes 9. phylink picks the
+		 * interface the module needs.
+		 */
+		port27: port@27 {
+			reg = <27>;
+			label = "lan8";
+			led-set = <1>;
+			pcs-handle = <&serdes9 0>;
+			phy-mode = "10gbase-r";
+			sfp = <&sfp0>;
+			managed = "in-band-status";
+		};
+
+		/* CPU port */
+		port@28 {
+			ethernet = <&ethernet0>;
+			reg = <28>;
+			phy-mode = "internal";
+
+			fixed-link {
+				speed = <1000>;
+				full-duplex;
+			};
+		};
+	};
+};

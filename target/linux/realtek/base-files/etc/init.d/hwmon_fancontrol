@@ -175,5 +175,14 @@ boot() {
 	linksys,lgs328mpc-v2)
 		linksys_lgs328mpc_v2
 		;;
+	mokerlink,poe-10g07110gsm)
+		# As the stock firmware runs the fans: duty 128 (50 %), also below
+		# 64 C, full speed at 66 C (the chip's smallest range), on all three
+		# outputs; critical at 100 C, the chip's default, which the stock
+		# firmware keeps.
+		adt747x_fancontrol 1 128 64000 66000 100000 96000 1
+		adt747x_fancontrol 2 128 64000 66000 100000 96000 1
+		adt747x_fancontrol 3 128 64000 66000 100000 96000 1
+		;;
 	esac
 }
