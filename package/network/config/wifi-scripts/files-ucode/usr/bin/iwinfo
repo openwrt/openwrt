@@ -139,6 +139,7 @@ if (ARGV[0] == '-j') {
 }
 
 if (!length(ARGV)) {
+	iwinfo.update();
 	let info = iwinfo.info();
 	if (pretty)
 		print_info(info);
@@ -174,6 +175,9 @@ if (ARGV[0] == 'nl80211' && ARGV[1] == 'phyname') {
 	print(name + '\n');
 	return 0;
 }
+
+// A "<device> <command>" query doesn't need to scan all interfaces
+iwinfo.update(length(ARGV) == 2 ? ARGV[0] : null);
 
 if (length(ARGV) == 2 && iwinfo.ifaces[ARGV[0]])
 	for (let cmd, cb in commands)
