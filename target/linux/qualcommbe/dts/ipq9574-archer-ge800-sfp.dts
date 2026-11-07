@@ -1,0 +1,31 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+/dts-v1/;
+
+#include "ipq9574-archer-ge800-common.dtsi"
+
+/ {
+	model = "TP-Link Archer GE800 SFP";
+	compatible = "tplink,archer-ge800-sfp", "qcom,ipq9574";
+};
+
+/*
+ * The SFP+ cage and the 10 Gbps RJ45 "Internet" port are a combo on PPE
+ * port 6. Like the BE800, the medium is a build-time choice: this variant
+ * routes port 6 to the cage and leaves the AQR113C WAN PHY unused.
+ */
+&xgmac6 {
+	phy-mode = "10gbase-r";
+	managed = "in-band-status";
+	sfp = <&sfp0>;
+};
+
+&sfp_medium {
+	default-state = "on";
+};
+
+&sfp0 {
+	status = "okay";
+	/* GPON/XGS-PON ONU sticks draw more than the 1 W SFP default. */
+	maximum-power-milliwatt = <3000>;
+};
