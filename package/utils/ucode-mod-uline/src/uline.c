@@ -242,7 +242,7 @@ linebuf_delete(struct linebuf *line, size_t len)
 	if (len > max_len)
 		len = max_len;
 
-	memmove(dest, dest + len, tail + 1);
+	memmove(dest, dest + len, tail - len + 1);
 	line->len -= len;
 }
 
@@ -289,6 +289,7 @@ static void
 __pos_add_string(struct uline_state *s, struct pos *pos, const char *str, size_t len)
 {
 	const char *next;
+	const char *end = str + len;
 
 	while ((next = memchr(str, KEY_ESC, len)) != NULL) {
 		size_t cur_len = next - str;
@@ -296,13 +297,14 @@ __pos_add_string(struct uline_state *s, struct pos *pos, const char *str, size_t
 		pos_add_ofs(s, pos, nsyms(s, str, cur_len));
 		next++;
 
-		if (*next == '[' || *next == 'O') {
+		if (next < end && (*next == '[' || *next == 'O')) {
 			next++;
-			while (*next <= 63)
+			while (next < end && *next <= 63)
 				next++;
 		}
-		next++;
-		len -= next - str;
+		if (next < end)
+			next++;
+		len = end - next;
 		str = next;
 	}
 
@@ -604,7 +606,8 @@ linebuf_reset(struct linebuf *line)
 {
 	line->pos = 0;
 	line->len = 0;
-	line->buf[0] = 0;
+	if (line->buf)
+		line->buf[0] = 0;
 	line->update_pos = 0;
 }
 
@@ -832,7 +835,7 @@ __uline_set_line(struct uline_state *s, struct linebuf *line, const char *str, s
 	size_t i, prev_len = line->len;
 
 	line->len = 0;
-		linebuf_extend(line, len);
+	linebuf_extend(line, len + 1);
 	for (i = 0; i < prev_len && i < len; i++) {
 		if (line->buf[i] != str[i])
 			break;
@@ -847,6 +850,7 @@ __uline_set_line(struct uline_state *s, struct linebuf *line, const char *str, s
 	line->update_pos = i;
 
 	memcpy(line->buf, str, len);
+	line->buf[len] = 0;
 	line->len = len;
 	if (line->pos > line->len)
 		line->pos = line->len;
