@@ -30,14 +30,33 @@ endef
 #
 # You can tell it by looking at the bootloader version string
 # " at %s version %s free bootbase".
+#
+# The stub is a single MIPS "j 0x80020000" instruction (word 0x08008000) that
+# trampolines from the low decompress address to the real kernel entry. Its
+# BYTE order must match the target's endianness. Keyed off TRX_MODEL's own
+# TRX_ENDIAN rather than CONFIG_BIG_ENDIAN: TRX_ENDIAN is the variable this
+# same file already uses for the image's actual endianness (see
+# Build/tclinux-trx above), and on a TP-Link EX20v (TRX_ENDIAN=le) build the
+# previous CONFIG_BIG_ENDIAN-keyed version produced the wrong byte order,
+# which decodes to a different instruction and jumps to a garbage address
+# (observed as CP0_EPC=0 Undefined Exception on the EX20v's serial console).
 define Build/tclinux-free-bootbase-jump
 	@[ "$(KERNEL_LOADADDR)" = 0x80020000 ] || { \
 		$(call ERROR_MESSAGE,WARNING: KERNEL_LOADADDR changed); \
 		rm -f $@; \
 	}
-	printf '$(if $(CONFIG_BIG_ENDIAN),\010\000\200\000,\000\200\000\010)' > $@.new
+	printf '$(if $(filter le,$(TRX_ENDIAN)),\000\200\000\010,\010\000\200\000)' > $@.new
 	dd if=/dev/zero bs=122876 count=1 >> $@.new
 	cat $@ >> $@.new
+	mv $@.new $@
+endef
+
+# EX20v's free bootbase does NOT read the zytrx "HDR2" format that
+# tclinux-trx.sh emits; it reads a proprietary 256-byte tag recovered from
+# the stock tclinux.bin. See ex20v-tctag.py for the tag layout and which
+# fields differ per image.
+define Build/ex20v-tctag
+  ./ex20v-tctag.py $@ $@.new
 	mv $@.new $@
 endef
 
