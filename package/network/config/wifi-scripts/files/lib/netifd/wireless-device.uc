@@ -71,7 +71,7 @@ function handle_link(dev, data, up)
 	if (ap && config.multicast_to_unicast != null)
 		dev_data.multicast_to_unicast = config.multicast_to_unicast ? 1 : 0;
 
-	if (data.type == "vif" && config.mode == "ap") {
+	if (data.type == "vif" && ap) {
 		dev_data.wireless_proxyarp = !!config.proxy_arp;
 		dev_data.wireless_isolate = !!config.isolate;
 	}
