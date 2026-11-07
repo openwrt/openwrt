@@ -145,6 +145,7 @@ define Device/FitImage
 endef
 
 define Device/Default
+  FS_OPTIONS/ext4 :=
   PROFILES := Default
   DEVICE_DTS = $$(SOC)-$(lastword $(subst _, ,$(1)))
   DEVICE_DTS_DIR := $(DTS_DIR)

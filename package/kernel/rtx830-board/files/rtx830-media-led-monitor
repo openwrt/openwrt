@@ -1,0 +1,58 @@
+#!/bin/sh
+# SPDX-License-Identifier: GPL-2.0-only
+# Verified front-panel bits only; detection never mounts or writes media.
+SYSFS=${RTX830_MEDIA_SYSFS:-/sys}
+
+media_state() {
+ USB_PRESENT=0
+ SD_PRESENT=0
+ for dev in "$SYSFS"/bus/usb/devices/*; do
+  case "${dev##*/}" in 1-1.1|1-1.1.*) ;; *) continue ;; esac
+  [ -r "$dev/bDeviceClass" ] || continue
+  cls=$(cat "$dev/bDeviceClass" 2>/dev/null) || continue
+  case "$cls" in 09) continue ;; esac
+  USB_PRESENT=1
+  break
+ done
+ reader="$SYSFS/bus/usb/devices/1-1.2"
+ [ "$(cat "$reader/idVendor" 2>/dev/null)" = 05e3 ] || return 0
+ [ "$(cat "$reader/idProduct" 2>/dev/null)" = 0745 ] || return 0
+ for block in "$SYSFS"/block/*; do
+  [ -r "$block/size" ] && [ ! -e "$block/partition" ] || continue
+  path=$(readlink -f "$block/device" 2>/dev/null) || continue
+  case "$path" in */1-1.2/*) ;; *) continue ;; esac
+  sectors=$(cat "$block/size" 2>/dev/null) || continue
+  case "$sectors" in ''|*[!0-9]*) continue ;; esac
+  [ "$sectors" -gt 0 ] || continue
+  SD_PRESENT=1
+  break
+ done
+}
+
+set_led() {
+ led="$SYSFS/class/leds/rtx830:$1"
+ [ -w "$led/brightness" ] && [ -w "$led/trigger" ] || return 0
+ # Leave configured triggers (for example timer/netdev) under user control.
+ grep -q '\[none\]' "$led/trigger" || return 0
+ # Re-check actual brightness so a driver reload converges.
+ [ "$(cat "$led/brightness" 2>/dev/null)" = "$2" ] && return 0
+ printf '%s\n' "$2" > "$led/brightness"
+}
+
+update_leds() {
+ media_state
+ set_led usb "$USB_PRESENT"
+ set_led microsd "$SD_PRESENT"
+}
+
+case "${1:-}" in
+ --once) update_leds; exit $? ;;
+ '') ;;
+ *) exit 2 ;;
+esac
+trap 'exit 0' TERM INT
+while :; do
+ update_leds
+ sleep 1 &
+ wait "$!"
+done
