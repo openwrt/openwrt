@@ -1,0 +1,100 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "mt7621_cudy_wr1300.dtsi"
+
+/ {
+	compatible = "cudy,wr1300-v4", "mediatek,mt7621-soc";
+	model = "Cudy WR1300 v4";
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_sys: sys {
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio 18 GPIO_ACTIVE_HIGH>;
+		};
+
+		internet {
+			function = LED_FUNCTION_WAN_ONLINE;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio 9 GPIO_ACTIVE_HIGH>;
+		};
+
+		wan {
+			function = LED_FUNCTION_WAN;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio 8 GPIO_ACTIVE_LOW>;
+		};
+
+		lan1 {
+			function = "lan1";
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio 15 GPIO_ACTIVE_LOW>;
+		};
+
+		lan2 {
+			function = "lan2";
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
+		};
+
+		lan3 {
+			function = "lan3";
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio 7 GPIO_ACTIVE_LOW>;
+		};
+
+		lan4 {
+			function = "lan4";
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio 11 GPIO_ACTIVE_HIGH>;
+		};
+
+		wlan2g {
+			function = LED_FUNCTION_WLAN_2GHZ;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio 6 GPIO_ACTIVE_LOW>;
+		};
+
+		wlan5g {
+			function = LED_FUNCTION_WLAN_5GHZ;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio 5 GPIO_ACTIVE_HIGH>;
+		};
+	};
+};
+
+&key_reset {
+	gpios = <&gpio 10 GPIO_ACTIVE_LOW>;
+};
+
+&key_wps {
+	gpios = <&gpio 12 GPIO_ACTIVE_LOW>;
+};
+
+&pcie0 {
+	wifi@0,0 {
+		compatible = "mediatek,mt76";
+		reg = <0x0000 0 0 0 0>;
+		nvmem-cells = <&eeprom_factory_0>, <&macaddr_bdinfo_de00 0>;
+		nvmem-cell-names = "eeprom", "mac-address";
+		ieee80211-freq-limit = <2400000 2500000>;
+	};
+};
+
+&pcie1 {
+	wifi@0,0 {
+		compatible = "mediatek,mt76";
+		reg = <0x0000 0 0 0 0>;
+		nvmem-cells = <&eeprom_factory_8000>, <&macaddr_bdinfo_de00 2>;
+		nvmem-cell-names = "eeprom", "mac-address";
+		ieee80211-freq-limit = <5000000 6000000>;
+	};
+};
+
+&state_default {
+	gpio {
+		groups = "wdt", "i2c", "jtag", "uart2", "uart3";
+	};
+};

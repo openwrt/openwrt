@@ -22,31 +22,16 @@
 	keys {
 		compatible = "gpio-keys";
 
-		reset {
+		key_reset: reset {
 			label = "reset";
 			gpios = <&gpio 18 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RESTART>;
 		};
 
-		wps {
+		key_wps: wps {
 			label = "wps";
 			gpios = <&gpio 7 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_WPS_BUTTON>;
-		};
-	};
-
-	leds {
-		compatible = "gpio-leds";
-
-		led_sys: sys {
-			label = "green:sys";
-			gpios = <&gpio 15 GPIO_ACTIVE_LOW>;
-		};
-
-		wps {
-			function = LED_FUNCTION_WPS;
-			color = <LED_COLOR_ID_GREEN>;
-			gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
 		};
 	};
 };
