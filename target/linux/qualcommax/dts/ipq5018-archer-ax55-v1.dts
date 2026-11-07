@@ -150,7 +150,7 @@
 		reg = <0>;
 
 		nand-ecc-engine = <&qpic_nand>;
-		nand-ecc-strength = <4>;
+		nand-ecc-strength = <4>; /* Vendor use ECC4 on both ESMT (64B OOB) and GigaDevice (128B OOB) flash */
 		nand-ecc-step-size = <512>;
 		nand-bus-width = <8>;
 
