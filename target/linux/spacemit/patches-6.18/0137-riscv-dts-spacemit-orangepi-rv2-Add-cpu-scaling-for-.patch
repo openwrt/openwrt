@@ -1,0 +1,74 @@
+From d5b903ae49426a275bbdc7fa425a88eedf4ddd3b Mon Sep 17 00:00:00 2001
+From: Vincent Legoll <vincent.legoll@gmail.com>
+Date: Tue, 4 Aug 2026 15:32:33 +0200
+Subject: [PATCH] riscv: dts: spacemit: orangepi-rv2: Add cpu scaling for K1
+ SoC
+
+Enable CPU DVFS on OrangePi RV2
+
+Signed-off-by: Vincent Legoll <vincent.legoll@gmail.com>
+Link: https://patch.msgid.link/20260804133236.205668-3-a.heider@gmail.com
+Signed-off-by: Yixun Lan <dlan@kernel.org>
+(cherry picked from commit e56e2800e994d251486a3988209e07a711eb95b7)
+---
+ .../boot/dts/spacemit/k1-orangepi-rv2.dts     | 35 ++++++++++++++++++-
+ 1 file changed, 34 insertions(+), 1 deletion(-)
+
+--- a/arch/riscv/boot/dts/spacemit/k1-orangepi-rv2.dts
++++ b/arch/riscv/boot/dts/spacemit/k1-orangepi-rv2.dts
+@@ -7,6 +7,7 @@
+ /dts-v1/;
+ 
+ #include "k1.dtsi"
++#include "k1-opp.dtsi"
+ #include "k1-pinctrl.dtsi"
+ 
+ / {
+@@ -82,6 +83,38 @@
+ 	status = "okay";
+ };
+ 
++&cpu_0 {
++	cpu-supply = <&buck1_0v9>;
++};
++
++&cpu_1 {
++	cpu-supply = <&buck1_0v9>;
++};
++
++&cpu_2 {
++	cpu-supply = <&buck1_0v9>;
++};
++
++&cpu_3 {
++	cpu-supply = <&buck1_0v9>;
++};
++
++&cpu_4 {
++	cpu-supply = <&buck1_0v9>;
++};
++
++&cpu_5 {
++	cpu-supply = <&buck1_0v9>;
++};
++
++&cpu_6 {
++	cpu-supply = <&buck1_0v9>;
++};
++
++&cpu_7 {
++	cpu-supply = <&buck1_0v9>;
++};
++
+ &emmc {
+ 	bus-width = <8>;
+ 	mmc-hs400-1_8v;
+@@ -189,7 +222,7 @@
+ 		dldoin2-supply = <&buck5>;
+ 
+ 		regulators {
+-			buck1 {
++			buck1_0v9: buck1 {
+ 				regulator-min-microvolt = <500000>;
+ 				regulator-max-microvolt = <1050000>;
+ 				regulator-ramp-delay = <5000>;
