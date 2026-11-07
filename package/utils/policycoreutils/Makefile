@@ -6,12 +6,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=policycoreutils
-PKG_VERSION:=3.10
+PKG_VERSION:=3.11
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=https://github.com/SELinuxProject/selinux/releases/download/$(PKG_VERSION)
-PKG_HASH:=8dbd50d868acbfae9d1a972f6bbb2587f06c9ec73308d11af6acb3a401de9832
+PKG_HASH:=054e41ec039731a5ee6b797a8e0b8d6e346ee1d0a9bac2f252db48c23f9a8b1b
 PKG_INSTALL:=1
 HOST_BUILD_DEPENDS:=libsemanage/host gettext-full/host
 PKG_BUILD_DEPENDS:=BUSYBOX_CONFIG_PAM:libpam gettext-full/host
@@ -19,7 +19,7 @@ PKG_BUILD_DEPENDS:=BUSYBOX_CONFIG_PAM:libpam gettext-full/host
 PKG_MAINTAINER:=Thomas Petazzoni <thomas.petazzoni@bootlin.com>
 PKG_CPE_ID:=cpe:/a:selinuxproject:policycoreutils
 PKG_LICENSE:=GPL-2.0-or-later
-PKG_LICENSE_FILES:=COPYING
+PKG_LICENSE_FILES:=LICENSE
 
 include $(INCLUDE_DIR)/package.mk
 include $(INCLUDE_DIR)/nls.mk
@@ -91,7 +91,7 @@ define Package/policycoreutils/Default
   SECTION:=utils
   CATEGORY:=Utilities
   TITLE:=SELinux policy utility
-  URL:=https://github.com/selinuxproject
+  URL:=https://selinuxproject.github.io/
 endef
 
 define Package/policycoreutils
