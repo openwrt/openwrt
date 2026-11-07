@@ -46,8 +46,20 @@ struct bcma_fbs {
 	struct device *dev;
 	struct list_head list;
 	struct ssb_sprom sprom;
+
+	/* Match by PCI topology (host_pci buses, e.g. an external
+	 * BCM4352 behind pcie-bcm6328) — set when DT provides the
+	 * legacy "pci-bus"/"pci-dev" pair. */
 	u32 pci_bus;
 	u32 pci_dev;
+	bool match_pci;
+
+	/* Match by DT phandle (host_soc buses, e.g. the integrated
+	 * BCM6362 WLAN). Set when DT provides "bcma-bus = <&phandle>".
+	 * The phandle target is the bcma bus node itself; the SoC
+	 * match path compares it directly against bus->dev->of_node. */
+	struct device_node *bcma_bus_np;
+
 	bool devid_override;
 };
 
@@ -57,18 +69,47 @@ static struct list_head bcma_fbs_list = LIST_HEAD_INIT(bcma_fbs_list);
 int bcma_get_fallback_sprom(struct bcma_bus *bus, struct ssb_sprom *out)
 {
 	struct bcma_fbs *pos;
-	u32 pci_bus, pci_dev;
+	struct device_node *np = NULL;
+	u32 pci_bus = 0, pci_dev = 0;
+	bool soc;
 
-	if (bus->hosttype != BCMA_HOSTTYPE_PCI)
+	switch (bus->hosttype) {
+	case BCMA_HOSTTYPE_PCI:
+		if (!bus->host_pci || !bus->host_pci->bus)
+			return -ENOENT;
+		pci_bus = bus->host_pci->bus->number;
+		pci_dev = PCI_SLOT(bus->host_pci->devfn);
+		soc = false;
+		break;
+	case BCMA_HOSTTYPE_SOC:
+		/* The host driver probes directly on the bcma DT
+		 * node, so bus->dev->of_node IS the node the
+		 * brcm,bcma-sprom phandle is meant to point at.
+		 * Compare directly, no DT navigation needed.
+		 */
+		if (!bus->dev || !bus->dev->of_node)
+			return -ENOENT;
+		np = bus->dev->of_node;
+		soc = true;
+		break;
+	default:
 		return -ENOENT;
-
-	pci_bus = bus->host_pci->bus->number;
-	pci_dev = PCI_SLOT(bus->host_pci->devfn);
+	}
 
 	list_for_each_entry(pos, &bcma_fbs_list, list) {
-		if (pos->pci_bus != pci_bus ||
+		if (soc) {
+			if (!pos->bcma_bus_np || pos->bcma_bus_np != np)
+				continue;
+			memcpy(out, &pos->sprom, sizeof(struct ssb_sprom));
+			dev_info(pos->dev, "requested by SoC bcma [%pOFn]\n",
+				 np);
+			return 0;
+		}
+
+		if (!pos->match_pci ||
+		    pos->pci_bus != pci_bus ||
 		    pos->pci_dev != pci_dev)
-		    	continue;
+			continue;
 
 		if (pos->devid_override)
 			bus->host_pci->device = pos->sprom.dev_id;
@@ -80,7 +121,11 @@ int bcma_get_fallback_sprom(struct bcma_bus *bus, struct ssb_sprom *out)
 		return 0;
 	}
 
-	pr_err("unable to fill SPROM for [%x:%x]\n", pci_bus, pci_dev);
+	if (soc)
+		pr_err("unable to fill SPROM for SoC bcma [%pOFn]\n",
+		       np);
+	else
+		pr_err("unable to fill SPROM for [%x:%x]\n", pci_bus, pci_dev);
 
 	return -EINVAL;
 }
@@ -489,8 +534,23 @@ static int bcma_fbs_probe(struct platform_device *pdev)
 
 	bcma_fbs_set(priv, node);
 
-	of_property_read_u32(node, "pci-bus", &priv->pci_bus);
-	of_property_read_u32(node, "pci-dev", &priv->pci_dev);
+	/* Source 1 (legacy): off-chip PCIe radios (e.g. the BCM4352 on
+	 * the DSL-3580L). DT supplies pci-bus + pci-dev. */
+	if (!of_property_read_u32(node, "pci-bus", &priv->pci_bus)) {
+		of_property_read_u32(node, "pci-dev", &priv->pci_dev);
+		priv->match_pci = true;
+	}
+
+	/* Source 2 (new): on-chip radios on a bcma SoC backplane (e.g.
+	 * the BCM6362 integrated 2.4 GHz). DT supplies a phandle to the
+	 * shim/bcma-bus node — match happens in bcma_get_fallback_sprom
+	 * by comparing of_node pointers, not by bus number. */
+	priv->bcma_bus_np = of_parse_phandle(node, "bcma-bus", 0);
+
+	if (!priv->match_pci && !priv->bcma_bus_np) {
+		dev_err(dev, "neither pci-bus nor bcma-bus specified\n");
+		return -EINVAL;
+	}
 
 	ret = of_get_mac_address(node, mac);
 	if (ret == -EPROBE_DEFER)
@@ -512,8 +572,12 @@ static int bcma_fbs_probe(struct platform_device *pdev)
 	list_add(&priv->list, &bcma_fbs_list);
 	spin_unlock_irqrestore(&bcma_fbs_lock, flags);
 
-	dev_info(dev, "registered SPROM for [%x:%x]\n",
-		 priv->pci_bus, priv->pci_dev);
+	if (priv->match_pci)
+		dev_info(dev, "registered SPROM for [%x:%x]\n",
+			 priv->pci_bus, priv->pci_dev);
+	else
+		dev_info(dev, "registered SPROM for SoC bcma [%pOFn]\n",
+			 priv->bcma_bus_np);
 
 	return 0;
 }
