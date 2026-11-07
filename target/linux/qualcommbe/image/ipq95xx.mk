@@ -31,6 +31,28 @@ define Device/askey_sbe1v1k
 endef
 TARGET_DEVICES += askey_sbe1v1k
 
+define Device/jiorouter_ax6000-common
+	$(call Device/FitImage)
+	$(call Device/UbiFit)
+	DEVICE_VENDOR := JioRouter
+	DEVICE_MODEL := AX6000
+	SOC := ipq9554
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	NAND_SIZE := 256m
+	DEVICE_PACKAGES := ath11k-firmware-qcn9074 ath11k-firmware-ipq9574 \
+		kmod-ath11k-pci kmod-ath11k-ahb \
+		ipq-wifi-jiorouter_ax6000-jidu6j11
+endef
+
+define Device/jiorouter_ax6000-jidu6111
+	$(call Device/jiorouter_ax6000-common)
+	DEVICE_VARIANT := JIDU6111
+	DEVICE_DTS_CONFIG := config@jidu6111
+	DEVICE_DTS := ipq9554-jiorouter-ax6000-jidu6111
+endef
+TARGET_DEVICES += jiorouter_ax6000-jidu6111
+
 define Device/linksys_ln6001
 	$(call Device/FitImage)
 	DEVICE_VENDOR := Linksys
