@@ -1,0 +1,72 @@
+From b97e9edc587aab548cae725df3b483ced3bb0aa1 Mon Sep 17 00:00:00 2001
+From: Mikhail Zhilkin <csharper2005@gmail.com>
+Date: Sat, 7 Nov 2026 12:32:05 +0100
+Subject: [PATCH v1 3/3] net: mtk_eth: an8855: sync SerDes analog tuning with
+ Linux driver
+
+Port the TX FIR (TX Eye) and RX CDR (RX Jitter Tolerance) analog
+tuning parameters from the upstream Linux Airoha AN8855 DSA driver
+(drivers/net/dsa/airoha/an8855.c).
+
+The default U-Boot configuration omits these register writes, leaving
+the SerDes with inferior default drive characteristics. On hardware
+iterations with minor silicon or trace variances, this marginal signal
+integrity leads to severe packet loss (50-60%) during TFTP recovery
+over the 2500Base-X link. Explicitly configuring AN8855_INTF_CTRL_10,
+AN8855_INTF_CTRL_11, and AN8855_RG_QP_CDR_LPF_BOT_LIM ensures a
+stable physical link across boards.
+
+Signed-off-by: Mikhail Zhilkin <csharper2005@gmail.com>
+Link: https://patchwork.ozlabs.org/project/uboot/patch/20261107142441.2104669-4-csharper2005@gmail.com/
+---
+ drivers/net/mtk_eth/an8855.c | 25 +++++++++++++++++++++++++
+ 1 file changed, 25 insertions(+)
+
+--- a/drivers/net/mtk_eth/an8855.c
++++ b/drivers/net/mtk_eth/an8855.c
+@@ -96,6 +96,8 @@
+ #define AN8855_SS_LCPLL_TDC_PCW_1		(AN8855_QP_PMA_TOP_BASE + 0x248)
+ #define AN8855_INTF_CTRL_8			(AN8855_QP_PMA_TOP_BASE + 0x320)
+ #define AN8855_INTF_CTRL_9			(AN8855_QP_PMA_TOP_BASE + 0x324)
++#define AN8855_INTF_CTRL_10			(AN8855_QP_PMA_TOP_BASE + 0x328)
++#define AN8855_INTF_CTRL_11			(AN8855_QP_PMA_TOP_BASE + 0x32c)
+ #define AN8855_PLL_CTRL_0			(AN8855_QP_PMA_TOP_BASE + 0x400)
+ #define AN8855_PLL_CTRL_2			(AN8855_QP_PMA_TOP_BASE + 0x408)
+ #define AN8855_PLL_CTRL_3			(AN8855_QP_PMA_TOP_BASE + 0x40c)
+@@ -113,6 +115,7 @@
+ #define AN8855_QP_ANA_CSR_BASE			0x1022f000
+ #define AN8855_RG_QP_RX_DAC_EN			(AN8855_QP_ANA_CSR_BASE + 0x00)
+ #define AN8855_RG_QP_RXAFE_RESERVE		(AN8855_QP_ANA_CSR_BASE + 0x04)
++#define AN8855_RG_QP_CDR_LPF_BOT_LIM		(AN8855_QP_ANA_CSR_BASE + 0x08)
+ #define AN8855_RG_QP_CDR_LPF_MJV_LIM		(AN8855_QP_ANA_CSR_BASE + 0x0c)
+ #define AN8855_RG_QP_CDR_LPF_SETVALUE		(AN8855_QP_ANA_CSR_BASE + 0x14)
+ #define AN8855_RG_QP_CDR_PR_CKREF_DIV1		(AN8855_QP_ANA_CSR_BASE + 0x18)
+@@ -678,6 +681,28 @@ static int an8855_port_sgmii_init(struct
+ 	an8855_reg_write(priv, AN8855_MSG_RX_LIK_STS_0, 0x01010107);
+ 	an8855_reg_write(priv, AN8855_MSG_RX_LIK_STS_2, 0x00000EEF);
+ 
++	/* TX FIR - improve TX EYE */
++	an8855_reg_read(priv, AN8855_INTF_CTRL_10, &val);
++	val &= ~(0x1f << 24);
++	val |= (0x04 << 24);
++	val &= ~(0x1f << 16);
++	val |= (0x00 << 16);
++	val |= BIT(29) | BIT(21);
++	an8855_reg_write(priv, AN8855_INTF_CTRL_10, val);
++
++	an8855_reg_read(priv, AN8855_INTF_CTRL_11, &val);
++	val &= ~(0x3f << 0);
++	val |= BIT(6);
++	an8855_reg_write(priv, AN8855_INTF_CTRL_11, val);
++
++	/* RX CDR - improve RX Jitter Tolerance */
++	an8855_reg_read(priv, AN8855_RG_QP_CDR_LPF_BOT_LIM, &val);
++	val &= ~(0x7 << 24);
++	val |= (0x5 << 24);
++	val &= ~(0x7 << 20);
++	val |= (0x5 << 20);
++	an8855_reg_write(priv, AN8855_RG_QP_CDR_LPF_BOT_LIM, val);
++
+ 	return 0;
+ }
+ 
