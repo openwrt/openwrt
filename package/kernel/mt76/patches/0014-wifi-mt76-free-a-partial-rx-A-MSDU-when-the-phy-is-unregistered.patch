@@ -1,0 +1,71 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Eason Lai <eason.lai@mediatek.com>
+Date: Wed, 28 Oct 2026 10:10:53 +0800
+Subject: [PATCH 2/2] wifi: mt76: free a partial rx A-MSDU when the phy is
+ unregistered
+
+mt76_rx_release_burst() keeps the first subframes of an A-MSDU in
+phy->rx_amsdu[q] until the last subframe arrives. If the phy or device
+is unregistered in the meantime, nothing frees this skb and it leaks.
+
+Free any parked A-MSDU after ieee80211_unregister_hw(), once rx has
+stopped.
+
+Fixes: cc4b3c139ad3 ("mt76: mt7915: enable hw rx-amsdu de-aggregation")
+Signed-off-by: Eason Lai <eason.lai@mediatek.com>
+---
+ mac80211.c | 22 ++++++++++++++++++++++
+ 1 file changed, 22 insertions(+)
+
+--- a/mac80211.c
++++ b/mac80211.c
+@@ -603,6 +603,19 @@ int mt76_register_phy(struct mt76_phy *p
+ }
+ EXPORT_SYMBOL_GPL(mt76_register_phy);
+ 
++static void mt76_rx_amsdu_purge(struct mt76_phy *phy)
++{
++	int q;
++
++	for (q = 0; q < ARRAY_SIZE(phy->rx_amsdu); q++) {
++		spin_lock_bh(&phy->rx_amsdu[q].lock);
++		dev_kfree_skb(phy->rx_amsdu[q].head);
++		phy->rx_amsdu[q].head = NULL;
++		phy->rx_amsdu[q].tail = NULL;
++		spin_unlock_bh(&phy->rx_amsdu[q].lock);
++	}
++}
++
+ void mt76_unregister_phy(struct mt76_phy *phy)
+ {
+ 	struct mt76_dev *dev = phy->dev;
+@@ -614,6 +627,7 @@ void mt76_unregister_phy(struct mt76_phy
+ 		mt76_led_cleanup(phy);
+ 	mt76_tx_status_check(dev, true);
+ 	ieee80211_unregister_hw(phy->hw);
++	mt76_rx_amsdu_purge(phy);
+ 	dev->phys[phy->band_idx] = NULL;
+ }
+ EXPORT_SYMBOL_GPL(mt76_unregister_phy);
+@@ -811,6 +825,7 @@ EXPORT_SYMBOL_GPL(mt76_register_device);
+ void mt76_unregister_device(struct mt76_dev *dev)
+ {
+ 	struct ieee80211_hw *hw = dev->hw;
++	int i;
+ 
+ 	if (!test_bit(MT76_STATE_REGISTERED, &dev->phy.state))
+ 		return;
+@@ -820,6 +835,13 @@ void mt76_unregister_device(struct mt76_
+ 	mt76_tx_status_check(dev, true);
+ 	mt76_wcid_cleanup(dev, &dev->global_wcid);
+ 	ieee80211_unregister_hw(hw);
++
++	/* radio phys sharing dev->hw (e.g. mt7996) are not unregistered
++	 * separately
++	 */
++	for (i = 0; i < ARRAY_SIZE(dev->phys); i++)
++		if (dev->phys[i])
++			mt76_rx_amsdu_purge(dev->phys[i]);
+ }
+ EXPORT_SYMBOL_GPL(mt76_unregister_device);
+ 

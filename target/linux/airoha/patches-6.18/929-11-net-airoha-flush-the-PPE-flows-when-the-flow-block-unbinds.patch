@@ -1,0 +1,128 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Lukasz M <lukasz1992m+openwrt@gmail.com>
+Date: Wed, 4 Nov 2026 23:00:00 +0100
+Subject: [PATCH] net airoha flush the PPE flows when the flow block unbinds
+
+After a firewall reload (fw4 reload, a flowtable deleted or rebuilt with
+other flags or devices) the bound PPE entries of the old flowtable stayed
+in the FOE table and went on forwarding in hardware, with the NAT and the
+forward path of the old rules, and their airoha_flow_table_entry stayed
+allocated.
+
+nf_tables unregisters the flowtable hooks, and with them the block
+callbacks (FLOW_BLOCK_UNBIND), in the commit phase and frees the
+flowtable later (nf_tables_flowtable_destroy() -> nf_flow_table_free()).
+The FLOW_CLS_DESTROY of its flows then walks an empty callback list and
+never reaches the driver.
+
+When a net_device drops its last block callback, unbind and free every
+flow of the PPE, on the GDM net_devices and on the xPON client's
+net_device alike.  A flowtable that stays binds the flows that still have
+traffic again: a packet on its software path calls flow_offload_refresh()
+-> nf_flow_offload_add(), and the REPLACE finds no entry for the cookie.
+A late DESTROY or STATS for a flushed cookie gets -ENOENT, which the
+flowtable ignores.
+
+Signed-off-by: Lukasz M <lukasz1992m+openwrt@gmail.com>
+---
+--- a/drivers/net/ethernet/airoha/airoha_eth.c
++++ b/drivers/net/ethernet/airoha/airoha_eth.c
+@@ -3881,8 +3881,11 @@ static int airoha_dev_setup_tc_block(str
+ 			return -ENOENT;
+ 
+ 		if (!flow_block_cb_decref(block_cb)) {
++			struct airoha_gdm_dev *gdm = netdev_priv(dev);
++
+ 			flow_block_cb_remove(block_cb, f);
+ 			list_del(&block_cb->driver_list);
++			airoha_ppe_flow_flush(gdm->eth);
+ 		}
+ 		return 0;
+ 	default:
+@@ -4623,8 +4626,17 @@ static int airoha_xpon_setup_tc_block(st
+ 			return -ENOENT;
+ 
+ 		if (!flow_block_cb_decref(block_cb)) {
++			struct airoha_gdm_dev *gdm;
++			unsigned long flags;
++
+ 			flow_block_cb_remove(block_cb, f);
+ 			list_del(&block_cb->driver_list);
++
++			spin_lock_irqsave(&airoha_xpon_lock, flags);
++			gdm = airoha_xpon_client.gdm;
++			spin_unlock_irqrestore(&airoha_xpon_lock, flags);
++			if (gdm)
++				airoha_ppe_flow_flush(gdm->eth);
+ 		}
+ 		return 0;
+ 	default:
+--- a/drivers/net/ethernet/airoha/airoha_eth.h
++++ b/drivers/net/ethernet/airoha/airoha_eth.h
+@@ -912,6 +912,7 @@ struct airoha_gdm_dev *airoha_xpon_ppe_u
+ 						u32 skprio,
+ 						struct airoha_xpon_ppe_us *us);
+ void airoha_ppe_xpon_flush(struct airoha_eth *eth);
++void airoha_ppe_flow_flush(struct airoha_eth *eth);
+ void airoha_ppe_set_cpu_port(struct airoha_gdm_dev *dev, u8 ppe_id, u8 fport);
+ bool airoha_ppe_is_enabled(struct airoha_eth *eth, int index);
+ void airoha_ppe_check_skb(struct airoha_ppe_dev *dev, struct sk_buff *skb,
+--- a/drivers/net/ethernet/airoha/airoha_ppe.c
++++ b/drivers/net/ethernet/airoha/airoha_ppe.c
+@@ -160,6 +160,56 @@ static const struct rhashtable_params ai
+ 	.automatic_shrinking = true,
+ };
+ 
++/*
++ * A net_device drops its last flow block callback (FLOW_BLOCK_UNBIND: the
++ * flowtable is deleted, e.g. rebuilt by a firewall reload, or the device
++ * leaves it).  nf_tables unregisters the flowtable hooks, and with them the
++ * block callbacks, in the commit phase and frees the flowtable only later
++ * (nf_tables_flowtable_destroy() -> nf_flow_table_free()), so the
++ * FLOW_CLS_DESTROY of its flows finds an empty callback list and never
++ * gets here: the bound FOE entries would go on forwarding with the old NAT
++ * and their software entries would stay allocated.  Unbind and free every
++ * flow now.  A flowtable that stays sends the flows that still have
++ * traffic again (a packet on its software path calls flow_offload_refresh()
++ * -> nf_flow_offload_add(), and the REPLACE finds no entry for the cookie);
++ * a DESTROY or STATS for a flushed cookie gets -ENOENT, which the flowtable
++ * ignores.  Flower rules offloaded through another net_device's block are
++ * flushed as well and tc does not send them again.
++ */
++void airoha_ppe_flow_flush(struct airoha_eth *eth)
++{
++	struct airoha_flow_table_entry *e;
++	struct rhashtable_iter iter;
++	struct hlist_node *n;
++	HLIST_HEAD(flushed);
++
++	mutex_lock(&flow_offload_mutex);
++	rhashtable_walk_enter(&eth->flow_table, &iter);
++	rhashtable_walk_start(&iter);
++	while ((e = rhashtable_walk_next(&iter))) {
++		if (IS_ERR(e))
++			continue;
++
++		airoha_ppe_foe_flow_remove_entry(eth->ppe, e);
++		rhashtable_remove_fast(&eth->flow_table, &e->node,
++				       airoha_flow_table_params);
++		/*
++		 * The walk may still step through e; l2_subflow_node is only
++		 * used by subflows, which are not in the flow table.
++		 */
++		hlist_add_head(&e->l2_subflow_node, &flushed);
++	}
++	rhashtable_walk_stop(&iter);
++	rhashtable_walk_exit(&iter);
++
++	hlist_for_each_entry_safe(e, n, &flushed, l2_subflow_node) {
++		if (e->wed)
++			airoha_ppe_wed_flow_remove(e->wed_idx);
++		kfree(e);
++	}
++	mutex_unlock(&flow_offload_mutex);
++}
++
+ static int airoha_ppe_get_num_stats_entries(struct airoha_ppe *ppe)
+ {
+ 	if (!IS_ENABLED(CONFIG_NET_AIROHA_FLOW_STATS))

@@ -1,0 +1,18 @@
+# SPDX-License-Identifier: GPL-2.0
+config EN7571
+	tristate "Airoha EN7571 GPON Laser Transceiver"
+	depends on I2C && HWMON && OF && GPIOLIB && NVMEM
+	select REGULATOR
+	help
+	  Driver for the Airoha EN7571 GPON laser transceiver.
+	  This driver handles the SFF-8472 digital diagnostic monitoring
+	  interface (voltage, bias/modulation currents, optical power,
+	  temperatures) and laser control (TX enable/disable, APD, RSSI).
+	  The transmitter is driven through a GPIO pair and registered as
+	  the "en7571-laser" regulator; the xPON half switches it through
+	  that regulator.  Diagnostics are exposed through hwmon.
+	  It also works with the an7552-gpon driver, which calls the few
+	  remaining exported entry points (safe circuit reset, traffic
+	  status, the MAC burst interface hook).
+
+	  If unsure, say N.

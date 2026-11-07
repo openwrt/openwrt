@@ -1,0 +1,51 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Lukasz M <lukasz1992m+openwrt@gmail.com>
+Date: Sat, 31 Oct 2026 12:00:00 +0100
+Subject: [PATCH] net airoha strip the DSA tag after the TX ring check
+
+airoha_dev_xmit() moved the MTK DSA tag into the descriptor (memmove plus
+__skb_pull, or a rewrite of the TPID) before checking the TX ring for
+room.  When the ring was full it returned NETDEV_TX_BUSY with the skb
+already changed; the stack resends the same skb and the second pass took
+the real EtherType for a tag, cut four more bytes and put garbage into
+SP_TAG.  Several netdev queues share one hardware ring, so another queue
+can hit a full ring while its own txq is still running.
+
+Take the tag once the frame is sure to be queued, under q->lock.  Same
+issue fixed in the X-WRT airoha driver ("Check locked TX ring capacity
+before DSA conversion").
+
+Signed-off-by: Lukasz M <lukasz1992m+openwrt@gmail.com>
+---
+--- a/drivers/net/ethernet/airoha/airoha_eth.c
++++ b/drivers/net/ethernet/airoha/airoha_eth.c
+@@ -2992,13 +2992,11 @@ static netdev_tx_t airoha_dev_xmit(struc
+ 	 */
+ 	txq_idx = skb_get_queue_mapping(skb) % AIROHA_NUM_TX_RING;
+ 	qid = airoha_qdma_get_txq(qdma, txq_idx);
+-	tag = airoha_get_dsa_tag(skb, netdev);
+ 
+ 	msg0 = FIELD_PREP(QDMA_ETH_TXMSG_CHAN_MASK,
+ 			  txq_idx / AIROHA_NUM_QOS_QUEUES) |
+ 	       FIELD_PREP(QDMA_ETH_TXMSG_QUEUE_MASK,
+-			  txq_idx % AIROHA_NUM_QOS_QUEUES) |
+-	       FIELD_PREP(QDMA_ETH_TXMSG_SP_TAG_MASK, tag);
++			  txq_idx % AIROHA_NUM_QOS_QUEUES);
+ 	if (skb->ip_summed == CHECKSUM_PARTIAL)
+ 		msg0 |= FIELD_PREP(QDMA_ETH_TXMSG_TCO_MASK, 1) |
+ 			FIELD_PREP(QDMA_ETH_TXMSG_UCO_MASK, 1) |
+@@ -3045,6 +3043,14 @@ static netdev_tx_t airoha_dev_xmit(struc
+ 		return NETDEV_TX_BUSY;
+ 	}
+ 
++	/*
++	 * Move the DSA tag into the descriptor only once the frame will be
++	 * queued: the stack resends a NETDEV_TX_BUSY skb and a second pass
++	 * would strip it again.
++	 */
++	tag = airoha_get_dsa_tag(skb, netdev);
++	msg0 |= FIELD_PREP(QDMA_ETH_TXMSG_SP_TAG_MASK, tag);
++
+ 	e = list_first_entry(&q->tx_list, struct airoha_queue_entry,
+ 			     list);
+ 	len = skb_headlen(skb);

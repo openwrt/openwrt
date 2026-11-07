@@ -1,0 +1,61 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Airoha Team <airoha@airoha.com>
+Date: Sat, 31 Oct 2026 12:00:00 +0100
+Subject: [PATCH] net: airoha: refcounted start/stop of a shared QDMA engine
+
+The xPON client rides on the WAN QDMA engine: it registers the QDMA it
+wants to use and starts it when it comes up, stops it when it goes
+away, while the GDM devices of the same engine may still be running.
+Add the refcounted airoha_qdma_start()/airoha_qdma_stop() pair the
+xPON client API calls and take the driver reference at probe time, so
+the engine is disabled only when its last user is gone.
+
+Signed-off-by: Lukasz M <lukasz1992m+openwrt@gmail.com>
+---
+--- a/drivers/net/ethernet/airoha/airoha_eth.c
++++ b/drivers/net/ethernet/airoha/airoha_eth.c
+@@ -2178,6 +2178,33 @@ static void airoha_dev_set_xmit_frame_si
+ 					 VLAN_ETH_HLEN + netdev->mtu));
+ }
+ 
++static void airoha_qdma_start(struct airoha_qdma *qdma)
++{
++	airoha_qdma_set(qdma, REG_QDMA_GLOBAL_CFG,
++			GLOBAL_CFG_TX_DMA_EN_MASK |
++			GLOBAL_CFG_RX_DMA_EN_MASK);
++	qdma->users++;
++}
++
++static void airoha_qdma_stop(struct airoha_qdma *qdma)
++{
++	u32 status;
++
++	if (!qdma->users || --qdma->users)
++		return;
++
++	airoha_qdma_clear(qdma, REG_QDMA_GLOBAL_CFG,
++			  GLOBAL_CFG_TX_DMA_EN_MASK |
++			  GLOBAL_CFG_RX_DMA_EN_MASK);
++
++	if (read_poll_timeout(airoha_qdma_rr, status,
++			      !(status & (GLOBAL_CFG_TX_DMA_BUSY_MASK |
++					  GLOBAL_CFG_RX_DMA_BUSY_MASK)),
++			      USEC_PER_MSEC, 50 * USEC_PER_MSEC, true,
++			      qdma, REG_QDMA_GLOBAL_CFG))
++		dev_warn(qdma->eth->dev, "QDMA DMA engine busy timeout\n");
++}
++
+ static int airoha_dev_open(struct net_device *netdev)
+ {
+ 	struct airoha_gdm_dev *dev = netdev_priv(netdev);
+@@ -4178,9 +4205,7 @@ static int airoha_probe(struct platform_
+ 
+ 	for (i = 0; i < ARRAY_SIZE(eth->qdma); i++) {
+ 		airoha_qdma_start_napi(&eth->qdma[i]);
+-		airoha_qdma_set(&eth->qdma[i], REG_QDMA_GLOBAL_CFG,
+-				GLOBAL_CFG_TX_DMA_EN_MASK |
+-				GLOBAL_CFG_RX_DMA_EN_MASK);
++		airoha_qdma_start(&eth->qdma[i]);
+ 	}
+ 
+ 	for_each_child_of_node(pdev->dev.of_node, np) {

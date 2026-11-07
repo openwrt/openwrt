@@ -1,0 +1,759 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Lukasz M <lukasz1992m+openwrt@gmail.com>
+Date: Sat, 31 Oct 2026 12:00:00 +0100
+Subject: [PATCH] net airoha Add xPON QDMA client API and BQL
+
+The xPON MAC (an7552-gpon) registers as a client of the WAN QDMA and the
+WAN GDM: it sends GEM frames with airoha_xpon_tx() (GEM port, T-CONT
+channel, queue and OMCI flag in the TX message), gets its RX through a
+callback, and charges its data frames to its own netdev TX queues (BQL).
+
+On AN7563 the T-CONT channels share the eight TX rings by queue, so a
+full ring is hit by frames of several netdev TX queues of the client.
+On a full ring all TX queues of the client are stopped and the ring is
+marked; the completion wakes them all through airoha_xpon_wake_txqs().
+Stopping only the frame's own queue left the others sending into the
+full ring and losing frames, so HTB and fq_codel on pon0 had no
+backpressure and one T-CONT could starve the rest.  The frame that
+found the ring full is dropped.  The ring is picked with
+airoha_qdma_get_txq() like the GDM TX path, so a SoC with fewer TX rings
+only has to change that helper.
+
+Downstream data frames went through PPE1 (GDM2 forwarding): when the
+client asks for it (airoha_xpon_ops.ppe_downstream), airoha_xpon_deliver()
+binds a pending flow the same way the GDM path of airoha_qdma_rx_process()
+does - FOE hash from RX message word 1, airoha_ppe_check_skb() on
+PPE_CPU_REASON_HIT_UNBIND_RATE_REACHED.  OMCI frames are never bound.
+
+Signed-off-by: Lukasz M <lukasz1992m+openwrt@gmail.com>
+---
+--- a/drivers/net/ethernet/airoha/airoha_eth.c
++++ b/drivers/net/ethernet/airoha/airoha_eth.c
+@@ -7,9 +7,12 @@
+ #include <linux/of_net.h>
+ #include <linux/of_reserved_mem.h>
+ #include <linux/platform_device.h>
++#include <linux/soc/airoha/airoha_xpon.h>
+ #include <linux/tcp.h>
+ #include <linux/pcs/pcs.h>
+ #include <linux/u64_stats_sync.h>
++#include <linux/rtnetlink.h>
++#include <linux/wait.h>
+ #include <net/dst_metadata.h>
+ #include <net/ip6_checksum.h>
+ #include <net/page_pool/helpers.h>
+@@ -20,6 +23,10 @@
+ #include "airoha_regs.h"
+ #include "airoha_eth.h"
+ 
++static struct airoha_gdm_dev *airoha_xpon_gdm_dev(struct airoha_qdma *qdma);
++static bool airoha_xpon_owns_netdev(struct net_device *netdev);
++static bool airoha_xpon_deliver(struct sk_buff *skb, u32 msg0, u32 msg1);
++
+ u32 airoha_rr(void __iomem *base, u32 offset)
+ {
+ 	return readl(base + offset);
+@@ -914,8 +921,16 @@ static int airoha_qdma_rx_process(struct
+ 			goto free_frag;
+ 
+ 		dev = airoha_qdma_get_gdm_dev(eth, desc);
+-		if (IS_ERR(dev))
+-			goto free_frag;
++		if (IS_ERR(dev)) {
++			/* Downstream xPON frames carry a GEM source port
++			 * rather than a GDM one, so the lookup above cannot
++			 * attribute them to a netdev.  Hand them to the xPON
++			 * client registered on this QDMA.
++			 */
++			dev = airoha_xpon_gdm_dev(q->qdma);
++			if (!dev)
++				goto free_frag;
++		}
+ 
+ 		msg1 = le32_to_cpu(READ_ONCE(desc->msg1));
+ 		netdev = netdev_from_priv(dev);
+@@ -940,7 +955,16 @@ static int airoha_qdma_rx_process(struct
+ 				continue;
+ 			}
+ 
+-			q->skb->protocol = eth_type_trans(q->skb, netdev);
++			if (airoha_xpon_owns_netdev(netdev)) {
++				/* The xPON client classifies the frame from
++				 * the QDMA message (GEM port, OMCI) before it
++				 * parses the payload.
++				 */
++				q->skb->protocol = 0;
++				q->skb->ip_summed = CHECKSUM_NONE;
++			} else {
++				q->skb->protocol = eth_type_trans(q->skb, netdev);
++			}
+ 		} else { /* scattered frame */
+ 			struct skb_shared_info *shinfo = skb_shinfo(q->skb);
+ 			int nr_frags = shinfo->nr_frags;
+@@ -956,6 +980,14 @@ static int airoha_qdma_rx_process(struct
+ 		if (FIELD_GET(QDMA_DESC_MORE_MASK, desc_ctrl))
+ 			continue;
+ 
++		if (airoha_xpon_deliver(q->skb,
++					le32_to_cpu(READ_ONCE(desc->msg0)),
++					le32_to_cpu(READ_ONCE(desc->msg1)))) {
++			done++;
++			q->skb = NULL;
++			continue;
++		}
++
+ 		if (netdev_uses_dsa(netdev)) {
+ 			struct airoha_gdm_port *port = dev->port;
+ 
+@@ -1152,12 +1184,19 @@ static int airoha_qdma_init_rx(struct ai
+ 	return 0;
+ }
+ 
++static void airoha_xpon_wake_txqs(struct airoha_qdma *qdma);
++static bool airoha_xpon_is_tx_dev(const struct net_device *dev);
++static void airoha_xpon_tx_completed(struct sk_buff *skb);
++static const struct net_device_ops airoha_netdev_ops;
++
+ static void airoha_qdma_wake_netdev_txqs(struct airoha_queue *q)
+ {
+ 	struct airoha_qdma *qdma = q->qdma;
+ 	struct airoha_eth *eth = qdma->eth;
+ 	int i, qid = q - &qdma->q_tx[0];
+ 
++	airoha_xpon_wake_txqs(qdma);
++
+ 	for (i = 0; i < ARRAY_SIZE(eth->ports); i++) {
+ 		struct airoha_gdm_port *port = eth->ports[i];
+ 		int d;
+@@ -1277,15 +1316,27 @@ static int airoha_qdma_tx_napi_poll(stru
+ 		q->queued--;
+ 
+ 		if (skb) {
+-			struct airoha_gdm_dev *dev = netdev_priv(skb->dev);
+-			u16 qidx = skb_get_queue_mapping(skb);
+-			struct netdev_queue *txq;
+-
+-			txq = skb_get_tx_queue(skb->dev, skb);
+-
+-			spin_lock_bh(&dev->txq_lock[qidx]);
+-			netdev_tx_completed_queue(txq, 1, skb->len);
+-			spin_unlock_bh(&dev->txq_lock[qidx]);
++			/*
++			 * xPON data frames are charged to the client's
++			 * tx_dev, which is not one of ours: its private data
++			 * is not a struct airoha_gdm_dev.  OMCI/OAM frames and
++			 * frames of a departed client have no skb->dev.
++			 */
++			if (skb->dev &&
++			    skb->dev->netdev_ops != &airoha_netdev_ops) {
++				airoha_xpon_tx_completed(skb);
++			} else if (skb->dev) {
++				struct airoha_gdm_dev *dev =
++					netdev_priv(skb->dev);
++				u16 qidx = skb_get_queue_mapping(skb);
++				struct netdev_queue *txq;
++
++				txq = skb_get_tx_queue(skb->dev, skb);
++
++				spin_lock_bh(&dev->txq_lock[qidx]);
++				netdev_tx_completed_queue(txq, 1, skb->len);
++				spin_unlock_bh(&dev->txq_lock[qidx]);
++			}
+ 
+ 			dev_kfree_skb_any(skb);
+ 		}
+@@ -1458,10 +1509,13 @@ static void airoha_qdma_tx_cleanup(struc
+ 			WRITE_ONCE(desc->msg2, 0);
+ 
+ 			if (skb) {
+-				struct netdev_queue *txq;
+-
+-				txq = skb_get_tx_queue(skb->dev, skb);
+-				netdev_tx_completed_queue(txq, 1, skb->len);
++				/* keep the BQL of an xPON client balanced */
++				if (skb->dev &&
++				    airoha_xpon_is_tx_dev(skb->dev))
++					netdev_tx_completed_queue(
++						skb_get_tx_queue(skb->dev,
++								 skb),
++						1, skb->len);
+ 				dev_kfree_skb_any(skb);
+ 				e->skb = NULL;
+ 			}
+@@ -3757,6 +3811,480 @@ static const struct ethtool_ops airoha_e
+ 	.get_link		= ethtool_op_get_link,
+ };
+ 
++/* ---- xPON (GPON) client riding on the WAN QDMA ----
++ *
++ * The xPON MAC does not own a QDMA engine: it registers the WAN GDM device
++ * it wants to use, hands upstream frames over through airoha_xpon_tx() and
++ * receives downstream frames from this driver's NAPI context.
++ */
++static DEFINE_SPINLOCK(airoha_xpon_lock);
++static DECLARE_WAIT_QUEUE_HEAD(airoha_xpon_wq);
++static unsigned int airoha_xpon_inflight;
++
++static struct {
++	struct net_device *dev;
++	struct airoha_gdm_dev *gdm;
++	struct airoha_qdma *qdma;
++	void (*rx)(void *priv, struct sk_buff *skb,
++		   const struct airoha_xpon_rx_info *info);
++	void *rx_priv;
++	struct net_device *tx_dev;
++	bool ppe_downstream;
++} airoha_xpon_client;
++
++static struct airoha_gdm_dev *airoha_xpon_gdm_dev(struct airoha_qdma *qdma)
++{
++	struct airoha_gdm_dev *gdm = NULL;
++	unsigned long flags;
++
++	spin_lock_irqsave(&airoha_xpon_lock, flags);
++	if (airoha_xpon_client.qdma == qdma)
++		gdm = airoha_xpon_client.gdm;
++	spin_unlock_irqrestore(&airoha_xpon_lock, flags);
++
++	return gdm;
++}
++
++static bool airoha_xpon_owns_netdev(struct net_device *netdev)
++{
++	unsigned long flags;
++	bool owns = false;
++
++	if (!netdev)
++		return false;
++
++	spin_lock_irqsave(&airoha_xpon_lock, flags);
++	owns = airoha_xpon_client.dev == netdev;
++	spin_unlock_irqrestore(&airoha_xpon_lock, flags);
++
++	return owns;
++}
++
++/*
++ * Data frames went through PPE1 (GDM2 forwarding): bind a pending flow the
++ * same way the GDM path of airoha_qdma_rx_process() does.  The frame still
++ * starts with its Ethernet header here.
++ */
++static void airoha_xpon_rx_ppe(struct airoha_eth *eth, struct sk_buff *skb,
++			       u32 msg1)
++{
++	u32 hash = FIELD_GET(AIROHA_RXD4_FOE_ENTRY, msg1);
++	u32 reason = FIELD_GET(AIROHA_RXD4_PPE_CPU_REASON, msg1);
++
++	if (hash == AIROHA_RXD4_FOE_ENTRY)
++		return;
++
++	skb_set_hash(skb, jhash_1word(hash, 0), PKT_HASH_TYPE_L4);
++	if (reason == PPE_CPU_REASON_HIT_UNBIND_RATE_REACHED) {
++		skb_reset_mac_header(skb);
++		airoha_ppe_check_skb(&eth->ppe->dev, skb, hash, false);
++	}
++}
++
++static bool airoha_xpon_deliver(struct sk_buff *skb, u32 msg0, u32 msg1)
++{
++	void (*rx)(void *priv, struct sk_buff *skb,
++		   const struct airoha_xpon_rx_info *info);
++	struct airoha_xpon_rx_info info;
++	struct airoha_eth *eth = NULL;
++	void *priv = NULL;
++	unsigned long flags;
++
++	if (!skb || !skb->dev)
++		return false;
++
++	spin_lock_irqsave(&airoha_xpon_lock, flags);
++	rx = airoha_xpon_client.dev == skb->dev ? airoha_xpon_client.rx : NULL;
++	if (rx) {
++		priv = airoha_xpon_client.rx_priv;
++		if (airoha_xpon_client.ppe_downstream)
++			eth = airoha_xpon_client.gdm->eth;
++		airoha_xpon_inflight++;
++	}
++	spin_unlock_irqrestore(&airoha_xpon_lock, flags);
++
++	if (!rx)
++		return false;
++
++	info.gem_port = FIELD_GET(QDMA_ETH_RXMSG_SP_TAG_MASK, msg0);
++	info.channel = FIELD_GET(QDMA_ETH_RXMSG_CHAN_MASK, msg0);
++	info.oam = !!(msg0 & QDMA_ETH_RXMSG_OAM_MASK);
++	info.crc_err = !!(msg0 & QDMA_ETH_RXMSG_CRCER_MASK);
++	if (eth && !info.oam)
++		airoha_xpon_rx_ppe(eth, skb, msg1);
++	rx(priv, skb, &info);
++
++	spin_lock_irqsave(&airoha_xpon_lock, flags);
++	airoha_xpon_inflight--;
++	if (!airoha_xpon_inflight)
++		wake_up_all(&airoha_xpon_wq);
++	spin_unlock_irqrestore(&airoha_xpon_lock, flags);
++
++	return true;
++}
++
++int airoha_xpon_register(struct net_device *netdev,
++			  const struct airoha_xpon_ops *ops)
++{
++	struct airoha_gdm_dev *gdm;
++	struct airoha_qdma *qdma;
++	unsigned long flags;
++	unsigned int i;
++	int ret = 0;
++
++	if (!netdev || !ops || !ops->rx)
++		return -EINVAL;
++
++	if (netdev->netdev_ops != &airoha_netdev_ops)
++		return -EINVAL;
++
++	rtnl_lock();
++	gdm = netdev_priv(netdev);
++	qdma = rtnl_dereference(gdm->qdma);
++	if (!qdma) {
++		ret = -ENODEV;
++		goto unlock;
++	}
++
++	spin_lock_irqsave(&airoha_xpon_lock, flags);
++	if (airoha_xpon_client.dev) {
++		ret = -EBUSY;
++	} else {
++		/*
++		 * Frames of an earlier registration were detached
++		 * (airoha_xpon_detach_tx()) and never completed: BQL of the
++		 * tx_dev starts from zero again, not from their bytes.
++		 */
++		for (i = 0; ops->tx_dev && i < ops->tx_dev->num_tx_queues; i++)
++			netdev_tx_reset_subqueue(ops->tx_dev, i);
++		airoha_xpon_client.dev = netdev;
++		airoha_xpon_client.gdm = gdm;
++		airoha_xpon_client.qdma = qdma;
++		airoha_xpon_client.rx = ops->rx;
++		airoha_xpon_client.rx_priv = ops->priv;
++		airoha_xpon_client.tx_dev = ops->tx_dev;
++		airoha_xpon_client.ppe_downstream = ops->ppe_downstream;
++	}
++	spin_unlock_irqrestore(&airoha_xpon_lock, flags);
++
++	if (!ret)
++		airoha_qdma_start(qdma);
++unlock:
++	rtnl_unlock();
++
++	return ret;
++}
++EXPORT_SYMBOL_GPL(airoha_xpon_register);
++
++/*
++ * BQL completion of a client data frame.  One TX queue of the client feeds
++ * several QDMA rings, and their completions arrive from more than one TX
++ * IRQ queue, so dql_completed() needs a lock; the GDM devices keep theirs
++ * (txq_lock) in their private data, the client's net_device has none.
++ */
++static DEFINE_SPINLOCK(airoha_xpon_bql_lock);
++
++static void airoha_xpon_tx_completed(struct sk_buff *skb)
++{
++	struct netdev_queue *txq = skb_get_tx_queue(skb->dev, skb);
++
++	spin_lock_bh(&airoha_xpon_bql_lock);
++	netdev_tx_completed_queue(txq, 1, skb->len);
++	spin_unlock_bh(&airoha_xpon_bql_lock);
++}
++
++/* end of an airoha_xpon_tx() counted in airoha_xpon_inflight */
++static void airoha_xpon_put(void)
++{
++	unsigned long flags;
++
++	spin_lock_irqsave(&airoha_xpon_lock, flags);
++	if (!--airoha_xpon_inflight)
++		wake_up_all(&airoha_xpon_wq);
++	spin_unlock_irqrestore(&airoha_xpon_lock, flags);
++}
++
++/*
++ * Frames still in the rings stop referring to the client's net_device, so
++ * a late TX completion does not touch it once the client is gone.
++ */
++static void airoha_xpon_detach_tx(struct airoha_qdma *qdma,
++				  struct net_device *tx_dev)
++{
++	int i, j;
++
++	for (i = 0; i < ARRAY_SIZE(qdma->q_tx); i++) {
++		struct airoha_queue *q = &qdma->q_tx[i];
++
++		if (!q->ndesc)
++			continue;
++
++		spin_lock_bh(&q->lock);
++		for (j = 0; j < q->ndesc; j++) {
++			struct sk_buff *skb = q->entry[j].skb;
++
++			if (skb && skb->dev == tx_dev)
++				skb->dev = NULL;
++		}
++		spin_unlock_bh(&q->lock);
++	}
++}
++
++static bool airoha_xpon_is_tx_dev(const struct net_device *dev)
++{
++	return dev == READ_ONCE(airoha_xpon_client.tx_dev);
++}
++
++static void airoha_xpon_wake_txqs(struct airoha_qdma *qdma)
++{
++	struct net_device *tx_dev = NULL;
++	unsigned long flags;
++
++	spin_lock_irqsave(&airoha_xpon_lock, flags);
++	if (airoha_xpon_client.qdma == qdma)
++		tx_dev = airoha_xpon_client.tx_dev;
++	spin_unlock_irqrestore(&airoha_xpon_lock, flags);
++
++	if (tx_dev)
++		netif_tx_wake_all_queues(tx_dev);
++}
++
++void airoha_xpon_unregister(struct net_device *netdev)
++{
++	struct net_device *tx_dev = NULL;
++	struct airoha_qdma *qdma = NULL;
++	unsigned long flags;
++
++	rtnl_lock();
++	spin_lock_irqsave(&airoha_xpon_lock, flags);
++	if (airoha_xpon_client.dev == netdev) {
++		qdma = airoha_xpon_client.qdma;
++		tx_dev = airoha_xpon_client.tx_dev;
++		airoha_xpon_client.tx_dev = NULL;
++		airoha_xpon_client.rx = NULL;
++		airoha_xpon_client.rx_priv = NULL;
++		airoha_xpon_client.qdma = NULL;
++		airoha_xpon_client.gdm = NULL;
++		airoha_xpon_client.dev = NULL;
++	}
++	spin_unlock_irqrestore(&airoha_xpon_lock, flags);
++
++	if (qdma) {
++		wait_event(airoha_xpon_wq, !READ_ONCE(airoha_xpon_inflight));
++		if (tx_dev)
++			airoha_xpon_detach_tx(qdma, tx_dev);
++		airoha_qdma_stop(qdma);
++	}
++	rtnl_unlock();
++}
++EXPORT_SYMBOL_GPL(airoha_xpon_unregister);
++
++int airoha_xpon_tx(struct sk_buff *skb,
++		   const struct airoha_xpon_tx_info *info)
++{
++	struct net_device *tx_dev;
++	struct airoha_gdm_dev *gdm;
++	struct airoha_eth *eth;
++	struct airoha_qdma *qdma;
++	struct net_device *netdev;
++	struct airoha_queue_entry *e;
++	struct airoha_queue *q;
++	unsigned long flags;
++	unsigned int i, data_idx, qid;
++	u32 nr_frags, msg0, msg1, msg2, len;
++	int ret = -ENODEV;
++	bool counted = false;
++	void *data;
++	LIST_HEAD(tx_list);
++
++	if (!skb)
++		return -EINVAL;
++
++	ret = -EINVAL;
++	if (!info || info->channel > AIROHA_XPON_MAX_CHANNEL ||
++	    info->queue > AIROHA_XPON_MAX_QUEUE)
++		goto drop;
++
++	ret = -ENODEV;
++	spin_lock_irqsave(&airoha_xpon_lock, flags);
++	netdev = airoha_xpon_client.dev;
++	gdm = airoha_xpon_client.gdm;
++	qdma = airoha_xpon_client.qdma;
++	tx_dev = airoha_xpon_client.tx_dev;
++	/*
++	 * Counted like airoha_xpon_deliver(): airoha_xpon_unregister()
++	 * waits for it before it detaches tx_dev from the rings and stops
++	 * the QDMA, so no frame of the client is queued after that.
++	 */
++	counted = netdev && gdm && qdma;
++	if (counted)
++		airoha_xpon_inflight++;
++	spin_unlock_irqrestore(&airoha_xpon_lock, flags);
++
++	if (!counted)
++		goto drop;
++
++	qid = airoha_qdma_get_txq(qdma, info->channel * AIROHA_NUM_QOS_QUEUES +
++				  info->queue);
++	q = &qdma->q_tx[qid];
++	if (!q->ndesc)
++		goto drop;
++
++	eth = gdm->eth;
++	/* The xPON MAC takes the GEM port, the T-CONT channel and
++	 * the OMCI flag from message word 0.
++	 */
++	msg0 = FIELD_PREP(QDMA_ETH_TXMSG_SP_TAG_MASK, info->gem_port) |
++	       FIELD_PREP(QDMA_ETH_TXMSG_CHAN_MASK, info->channel) |
++	       FIELD_PREP(QDMA_ETH_TXMSG_QUEUE_MASK, info->queue);
++	if (info->oam)
++		msg0 |= QDMA_ETH_TXMSG_OAM_MASK;
++	/*
++	 * Checksum and TSO as on the GDM path (airoha_dev_xmit()): the
++	 * bits sit below the GPON fields of message word 0.  TSO takes the
++	 * MSS from the TCP checksum field; on -EBUSY the skb comes back
++	 * and is written again on the retry, with the same value.
++	 */
++	if (skb->ip_summed == CHECKSUM_PARTIAL)
++		msg0 |= QDMA_ETH_TXMSG_TCO_MASK | QDMA_ETH_TXMSG_UCO_MASK |
++			QDMA_ETH_TXMSG_ICO_MASK;
++	if (skb_is_gso(skb) &&
++	    (skb_shinfo(skb)->gso_type & (SKB_GSO_TCPV4 | SKB_GSO_TCPV6))) {
++		ret = -ENOMEM;
++		if (skb_cow_head(skb, 0))
++			goto drop;
++		tcp_hdr(skb)->check =
++			(__force __sum16)cpu_to_be16(skb_shinfo(skb)->gso_size);
++		msg0 |= QDMA_ETH_TXMSG_TSO_MASK;
++	}
++	/* vendor gwan_config_tx_msg()/ewan_config_tx_msg(): NBOQ follows
++	 * the channel, OMCI/OAM frames are marked no-drop and no frame is
++	 * charged to an accounting group.
++	 */
++	msg1 = FIELD_PREP(QDMA_ETH_TXMSG_NBOQ_MASK, info->channel) |
++	       FIELD_PREP(QDMA_ETH_TXMSG_FPORT_MASK, airoha_get_fe_port(gdm)) |
++	       FIELD_PREP(QDMA_ETH_TXMSG_METER_MASK, 0x7f) |
++	       FIELD_PREP(QDMA_ETH_TXMSG_ACNT_G1_MASK, 0x1f) |
++	       FIELD_PREP(QDMA_ETH_TXMSG_ACNT_G0_MASK, 0x3f);
++	if (info->oam)
++		msg1 |= QDMA_ETH_TXMSG_NO_DROP_MASK;
++	msg2 = 0xffff;
++
++	/*
++	 * Data frames are charged to the client's TX queue (BQL); OMCI/OAM
++	 * frames are not charged to any netdev TX queue.
++	 */
++	skb->dev = info->oam ? NULL : tx_dev;
++
++	spin_lock_bh(&q->lock);
++
++	nr_frags = 1 + skb_shinfo(skb)->nr_frags;
++	if (q->queued + nr_frags >= q->ndesc) {
++		/*
++		 * The T-CONTs share the rings by queue: stop every TX queue
++		 * of the client, not only this frame's, so its qdisc holds
++		 * the frames until the completion wakes them all
++		 * (airoha_xpon_wake_txqs()).
++		 */
++		if (tx_dev) {
++			netif_tx_stop_all_queues(tx_dev);
++			q->txq_stopped = true;
++		}
++		ret = -EBUSY;
++		/*
++		 * The skb has not been consumed and still belongs to the
++		 * caller: hand it back (NETDEV_TX_BUSY) instead of freeing it
++		 * here.  The stopped queues are woken on completion
++		 * (airoha_xpon_wake_txqs()).
++		 */
++		spin_unlock_bh(&q->lock);
++		airoha_xpon_put();
++		return ret;
++	}
++
++	i = 0;
++	len = skb_headlen(skb);
++	data = skb->data;
++	e = list_first_entry(&q->tx_list, struct airoha_queue_entry, list);
++
++	while (true) {
++		struct airoha_qdma_desc *desc = &q->desc[e - q->entry];
++		skb_frag_t *frag = &skb_shinfo(skb)->frags[i];
++		dma_addr_t addr;
++		u32 val;
++
++		addr = dma_map_single(eth->dev, data, len, DMA_TO_DEVICE);
++		if (unlikely(dma_mapping_error(eth->dev, addr))) {
++			ret = -EIO;
++			goto error_unmap;
++		}
++
++		list_move_tail(&e->list, &tx_list);
++		e->skb = i == nr_frags - 1 ? skb : NULL;
++		e->dma_addr = addr;
++		e->dma_type = AIROHA_DMA_MAP_SINGLE;
++		e->dma_len = len;
++
++		e = list_first_entry(&q->tx_list, struct airoha_queue_entry,
++				     list);
++		data_idx = e - q->entry;
++
++		val = FIELD_PREP(QDMA_DESC_LEN_MASK, len);
++		if (i < nr_frags - 1)
++			val |= FIELD_PREP(QDMA_DESC_MORE_MASK, 1);
++		WRITE_ONCE(desc->ctrl, cpu_to_le32(val));
++		WRITE_ONCE(desc->addr, cpu_to_le32(addr));
++		WRITE_ONCE(desc->data,
++			   cpu_to_le32(FIELD_PREP(QDMA_DESC_NEXT_ID_MASK,
++						  data_idx)));
++		WRITE_ONCE(desc->msg0, cpu_to_le32(msg0));
++		WRITE_ONCE(desc->msg1, cpu_to_le32(msg1));
++		WRITE_ONCE(desc->msg2, cpu_to_le32(msg2));
++
++		if (++i == nr_frags)
++			break;
++
++		data = skb_frag_address(frag);
++		len = skb_frag_size(frag);
++	}
++	q->queued += i;
++
++	skb_tx_timestamp(skb);
++	if (skb->dev) {
++		struct netdev_queue *txq = skb_get_tx_queue(skb->dev, skb);
++
++		netdev_tx_sent_queue(txq, skb->len);
++		if (q->ndesc - q->queued < q->free_thr) {
++			netif_tx_stop_queue(txq);
++			q->txq_stopped = true;
++		}
++	}
++	airoha_qdma_rmw(qdma, REG_TX_CPU_IDX(qid), TX_RING_CPU_IDX_MASK,
++			FIELD_PREP(TX_RING_CPU_IDX_MASK, data_idx));
++
++	spin_unlock_bh(&q->lock);
++	airoha_xpon_put();
++
++	return 0;
++
++error_unmap:
++	list_for_each_entry(e, &tx_list, list) {
++		dma_unmap_single(eth->dev, e->dma_addr, e->dma_len,
++				 DMA_TO_DEVICE);
++		e->dma_addr = 0;
++		e->dma_type = AIROHA_DMA_UNMAPPED;
++	}
++	list_splice(&tx_list, &q->tx_list);
++	spin_unlock_bh(&q->lock);
++drop:
++	dev_kfree_skb_any(skb);
++	if (counted)
++		airoha_xpon_put();
++
++	return ret;
++}
++EXPORT_SYMBOL_GPL(airoha_xpon_tx);
++
+ static int airoha_metadata_dst_alloc(struct airoha_gdm_port *port)
+ {
+ 	int i;
+--- a/drivers/net/ethernet/airoha/airoha_regs.h
++++ b/drivers/net/ethernet/airoha/airoha_regs.h
+@@ -897,6 +897,7 @@
+ #define QDMA_ETH_TXMSG_QUEUE_MASK	GENMASK(2, 0)
+ /* TX MSG1 */
+ #define QDMA_ETH_TXMSG_NO_DROP		BIT(31)
++#define QDMA_ETH_TXMSG_NO_DROP_MASK	BIT(31)
+ #define QDMA_ETH_TXMSG_METER_MASK	GENMASK(30, 24)	/* 0x7f no meters */
+ #define QDMA_ETH_TXMSG_FPORT_MASK	GENMASK(23, 20)
+ #define QDMA_ETH_TXMSG_NBOQ_MASK	GENMASK(19, 15)
+@@ -908,6 +909,10 @@
+ 
+ /* RX MSG0 */
+ #define QDMA_ETH_RXMSG_SPTAG		GENMASK(21, 14)
++#define QDMA_ETH_RXMSG_SP_TAG_MASK	GENMASK(29, 14)
++#define QDMA_ETH_RXMSG_CRCER_MASK	BIT(11)
++#define QDMA_ETH_RXMSG_OAM_MASK		BIT(8)
++#define QDMA_ETH_RXMSG_CHAN_MASK	GENMASK(7, 3)
+ /* RX MSG1 */
+ #define QDMA_ETH_RXMSG_DEI_MASK		BIT(31)
+ #define QDMA_ETH_RXMSG_IP6_MASK		BIT(30)
+--- /dev/null
++++ b/include/linux/soc/airoha/airoha_xpon.h
+@@ -0,0 +1,72 @@
++/* SPDX-License-Identifier: GPL-2.0-only */
++/*
++ * xPON (GPON) client interface of the Airoha ethernet driver.
++ *
++ * The xPON MAC has no DMA engine of its own: upstream frames are queued on
++ * the WAN QDMA and downstream frames arrive on the WAN QDMA RX rings.  The
++ * GEM port travels in the QDMA message word 0.
++ */
++#ifndef __LINUX_SOC_AIROHA_XPON_H
++#define __LINUX_SOC_AIROHA_XPON_H
++
++#include <linux/types.h>
++
++struct net_device;
++struct sk_buff;
++
++/**
++ * struct airoha_xpon_tx_info - QDMA TX message word 0 for an xPON frame
++ * @gem_port: GEM port id (GPON) carried in msg0[29:14]
++ * @channel: QDMA channel, i.e. the T-CONT, msg0[7:3]
++ * @queue: QDMA queue inside @channel, msg0[2:0]
++ * @oam: frame belongs to the OMCI/OAM channel, msg0[8]
++ */
++struct airoha_xpon_tx_info {
++	u16 gem_port;
++	u8 channel;
++	u8 queue;
++	bool oam;
++};
++
++/**
++ * struct airoha_xpon_rx_info - QDMA RX message word 0 of an xPON frame
++ * @gem_port: source GEM port id (GPON) from msg0[29:14]
++ * @channel: QDMA channel, msg0[7:3]
++ * @oam: frame was received on the OMCI/OAM channel, msg0[8]
++ * @crc_err: the MAC flagged a CRC error, msg0[11]
++ */
++struct airoha_xpon_rx_info {
++	u16 gem_port;
++	u8 channel;
++	bool oam;
++	bool crc_err;
++};
++
++/**
++ * struct airoha_xpon_ops - xPON client callbacks
++ * @rx: called from the airoha-eth NAPI context for every downstream frame,
++ *	must not sleep; the callback owns @skb
++ * @priv: opaque pointer handed back to @rx
++ * @tx_dev: net_device the client's data frames are sent from; when set,
++ *	frames without @oam are charged to its TX queue (BQL) and the queue
++ *	is stopped/woken with the QDMA ring
++ * @ppe_downstream: bind downstream flows (entering on @tx_dev) in the PPE
++ */
++struct airoha_xpon_ops {
++	void (*rx)(void *priv, struct sk_buff *skb,
++		   const struct airoha_xpon_rx_info *info);
++	void *priv;
++	struct net_device *tx_dev;
++	bool ppe_downstream;
++};
++
++#define AIROHA_XPON_MAX_CHANNEL		31
++#define AIROHA_XPON_MAX_QUEUE		7
++
++int airoha_xpon_register(struct net_device *netdev,
++			 const struct airoha_xpon_ops *ops);
++void airoha_xpon_unregister(struct net_device *netdev);
++int airoha_xpon_tx(struct sk_buff *skb,
++		   const struct airoha_xpon_tx_info *info);
++
++#endif /* __LINUX_SOC_AIROHA_XPON_H */

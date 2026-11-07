@@ -1,0 +1,18 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Lukasz M <lukasz1992m+openwrt@gmail.com>
+Date: Sat, 31 Oct 2026 12:00:00 +0100
+Subject: [PATCH] fw4: resolve lower devices for implicit VLANs
+
+Signed-off-by: Lukasz M <lukasz1992m+openwrt@gmail.com>
+---
+--- a/root/usr/share/ucode/fw4.uc
++++ b/root/usr/share/ucode/fw4.uc
+@@ -428,7 +428,7 @@ function resolve_lower_devices(devstatus, devname) {
+ 	let devs = [];
+ 
+ 	if (dir) {
+-		switch (devstatus[devname]?.devtype) {
++		switch (lc(devstatus[devname]?.devtype ?? devstatus[devname]?.type)) {
+ 		case 'vlan':
+ 		case 'bridge':
+ 			let e;

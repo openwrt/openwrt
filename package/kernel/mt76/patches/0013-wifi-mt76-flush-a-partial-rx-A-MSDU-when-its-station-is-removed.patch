@@ -1,0 +1,110 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Eason Lai <eason.lai@mediatek.com>
+Date: Wed, 28 Oct 2026 10:10:52 +0800
+Subject: [PATCH 1/2] wifi: mt76: flush a partial rx A-MSDU when its station is
+ removed
+
+mt76_rx_release_burst() keeps the first subframe of an A-MSDU in
+phy->rx_amsdu[q] until the last subframe arrives, which can take several
+polls. mt76_rx_status.wcid in that skb is only valid inside the RCU
+section it was filled in.
+
+If the station is removed meanwhile, the wcid is freed together with the
+sta, and mt76_rx_convert() and mt76_check_ccmp_pn() use a dangling
+pointer once the A-MSDU is released. Neither mt76_rx_aggr_stop() nor
+__mt76_sta_remove() looks at rx_amsdu.
+
+Drop a parked A-MSDU that references the wcid in mt76_wcid_cleanup(),
+which every driver calls on station removal, and protect rx_amsdu with a
+new per-queue lock.
+
+Fixes: cc4b3c139ad3 ("mt76: mt7915: enable hw rx-amsdu de-aggregation")
+Signed-off-by: Eason Lai <eason.lai@mediatek.com>
+---
+ mac80211.c | 43 +++++++++++++++++++++++++++++++++++++++++++
+ mt76.h     |  1 +
+ 2 files changed, 44 insertions(+)
+
+--- a/mac80211.c
++++ b/mac80211.c
+@@ -428,9 +428,12 @@ mt76_phy_init(struct mt76_phy *phy, stru
+ {
+ 	struct mt76_dev *dev = phy->dev;
+ 	struct wiphy *wiphy = hw->wiphy;
++	int i;
+ 
+ 	INIT_LIST_HEAD(&phy->tx_list);
+ 	spin_lock_init(&phy->tx_lock);
++	for (i = 0; i < ARRAY_SIZE(phy->rx_amsdu); i++)
++		spin_lock_init(&phy->rx_amsdu[i].lock);
+ 	INIT_DELAYED_WORK(&phy->roc_work, mt76_roc_complete_work);
+ 	INIT_DELAYED_WORK(&phy->scan_work, mt76_scan_work);
+ 
+@@ -969,10 +972,48 @@ void mt76_rx(struct mt76_dev *dev, enum
+ 	}
+ #endif
+ 
++	spin_lock(&phy->rx_amsdu[q].lock);
+ 	mt76_rx_release_burst(phy, q, skb);
++	spin_unlock(&phy->rx_amsdu[q].lock);
+ }
+ EXPORT_SYMBOL_GPL(mt76_rx);
+ 
++/* Drop a partially received A-MSDU that still references the wcid of a
++ * station which is being removed.
++ */
++static void mt76_rx_amsdu_flush_wcid(struct mt76_dev *dev,
++				     struct mt76_wcid *wcid)
++{
++	int i, q;
++
++	for (i = 0; i < ARRAY_SIZE(dev->phys); i++) {
++		struct mt76_phy *phy = dev->phys[i];
++
++		if (!phy)
++			continue;
++
++		for (q = 0; q < ARRAY_SIZE(phy->rx_amsdu); q++) {
++			struct sk_buff *skb;
++			struct mt76_rx_status *status;
++
++			spin_lock_bh(&phy->rx_amsdu[q].lock);
++			skb = phy->rx_amsdu[q].head;
++			if (skb) {
++				status = (struct mt76_rx_status *)skb->cb;
++				if (status->wcid == wcid) {
++					phy->rx_amsdu[q].head = NULL;
++					phy->rx_amsdu[q].tail = NULL;
++				} else {
++					skb = NULL;
++				}
++			}
++			spin_unlock_bh(&phy->rx_amsdu[q].lock);
++
++			dev_kfree_skb(skb);
++		}
++	}
++}
++
+ bool mt76_has_tx_pending(struct mt76_phy *phy)
+ {
+ 	struct mt76_queue *q;
+@@ -1764,6 +1805,8 @@ void mt76_wcid_cleanup(struct mt76_dev *
+ 	struct sk_buff_head list;
+ 	struct sk_buff *skb;
+ 
++	mt76_rx_amsdu_flush_wcid(dev, wcid);
++
+ 	mt76_tx_status_lock(dev, &list);
+ 	mt76_tx_status_skb_get(dev, wcid, -1, &list);
+ 	idr_destroy(&wcid->pktid);
+--- a/mt76.h
++++ b/mt76.h
+@@ -921,6 +921,7 @@ struct mt76_phy {
+ 	u8 mac_work_count;
+ 
+ 	struct {
++		spinlock_t lock;
+ 		struct sk_buff *head;
+ 		struct sk_buff **tail;
+ 		u16 seqno;

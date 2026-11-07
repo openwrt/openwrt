@@ -1,0 +1,49 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Lukasz M <lukasz1992m+openwrt@gmail.com>
+Date: Mon, 2 Nov 2026 16:00:00 +0100
+Subject: [PATCH] net: airoha: wed: do not start the WDMA without its rx rings
+
+airoha_wed_start() ignores the return value of wed_wdma_rx_ring_setup()
+and goes on to wed_hw_init() and wed_dma_enable(), which sets
+WDMA_GLO_CFG_RX_DMA_EN.  A ring whose allocation failed has no
+descriptor and its BASE/COUNT registers were not written by that call:
+they keep their reset value on the first start, or the address of the
+ring freed by an earlier detach on a restart.  The WDMA then reads
+descriptors from PA 0 or from memory that is no longer a ring and writes
+its completion state there.
+
+The mainline mtk_wed_start() stops at this point and leaves the engines
+off.  Do the same: the reset path already expects airoha_wed_start() to
+leave everything off when it cannot restore the rings, so the Wi-Fi
+driver keeps running with the offload disabled instead of handing the
+WDMA an unfinished ring.
+
+On the XX530v V2 both WDMA RX rings are set up by the TX ring setup of
+the two bands before the start, so this is the single-band or
+failed-allocation path rather than the one this board takes today.
+
+Signed-off-by: Lukasz M <lukasz1992m+openwrt@gmail.com>
+---
+--- a/drivers/net/ethernet/airoha/airoha_wed.c
++++ b/drivers/net/ethernet/airoha/airoha_wed.c
+@@ -881,9 +881,17 @@ static void airoha_wed_start(struct mtk_
+ 	if (dev->hw->reset_failed)
+ 		return;
+ 
+-	for (i = 0; i < ARRAY_SIZE(dev->rx_wdma); i++)
+-		if (!dev->rx_wdma[i].desc)
+-			wed_wdma_rx_ring_setup(dev, i, 16, false);
++	for (i = 0; i < ARRAY_SIZE(dev->rx_wdma); i++) {
++		if (dev->rx_wdma[i].desc)
++			continue;
++
++		if (wed_wdma_rx_ring_setup(dev, i, 16, false)) {
++			dev_err(dev->hw->dev,
++				"wdma rx ring %d setup failed, offload stays off\n",
++				i);
++			return;
++		}
++	}
+ 
+ 	wed_hw_init(dev);
+ 	wed_configure_irq(dev, irq_mask);

@@ -1,0 +1,219 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Lukasz M <lukasz1992m+openwrt@gmail.com>
+Date: Sat, 31 Oct 2026 12:00:00 +0100
+Subject: [PATCH] mt76 npu reset the mt7916 npu when the driver lets go
+
+There is no stop/pause command for AN7563 NPU firmware to stop the cores.
+Moreover it is impossible to change memory location of buffers that NPU uses.
+Those are set once during firmware initialization and stay until poweroff.
+
+On warm reboot, NPU firmware persists and changes into a bomb: random writes to
+host memory - as buffer location is lost. Ovserved pattern is a memory corruption,
+causing random hangs and panics.
+
+The only way to prevent corruption is to force hard reset of NPU during mt76
+unload. It is possible as WiFi RX is the only use case for NPU in AN7563 with
+MT7916. We can use this fact to implement a workaround.
+
+OS reboot will not unload kernel modules, but the pci shutdown can be used instead.
+
+Signed-off-by: Lukasz M <lukasz1992m+openwrt@gmail.com>
+---
+--- a/mt76.h
++++ b/mt76.h
+@@ -1702,6 +1702,7 @@ void mt76_npu_queue_cleanup(struct mt76_
+ void mt76_npu_disable_irqs(struct mt76_dev *dev);
+ int mt76_npu_init(struct mt76_dev *dev, phys_addr_t phy_addr, int type);
+ void mt76_npu_deinit(struct mt76_dev *dev);
++int mt76_npu_reset(struct mt76_dev *dev);
+ void mt76_npu_queue_setup(struct mt76_dev *dev, struct mt76_queue *q);
+ void mt76_npu_txdesc_cleanup(struct mt76_queue *q, int index);
+ int mt76_npu_net_setup_tc(struct ieee80211_hw *hw, struct ieee80211_vif *vif,
+@@ -1749,6 +1750,10 @@ static inline int mt76_npu_init(struct m
+ static inline void mt76_npu_deinit(struct mt76_dev *dev)
+ {
+ }
++static inline int mt76_npu_reset(struct mt76_dev *dev)
++{
++	return 0;
++}
+ 
+ static inline void mt76_npu_queue_setup(struct mt76_dev *dev,
+ 					struct mt76_queue *q)
+--- a/mt7915/init.c
++++ b/mt7915/init.c
+@@ -1391,6 +1391,7 @@ void mt7915_unregister_device(struct mt7
+ 	mt7915_coredump_unregister(dev);
+ 	mt7915_unregister_thermal(&dev->phy);
+ 	mt76_unregister_device(&dev->mt76);
++	mt7915_npu_stop(dev);
+ 	mt7915_stop_hardware(dev);
+ 
+ 	mt76_free_device(&dev->mt76);
+--- a/mt7915/mt7915.h
++++ b/mt7915/mt7915.h
+@@ -680,6 +680,7 @@ int mt7915_mmio_wed_init(struct mt7915_d
+ int __mt7915_npu_hw_init(struct mt7915_dev *dev);
+ int mt7915_npu_hw_init(struct mt7915_dev *dev);
+ bool mt7915_npu_rx_setup(struct mt7915_dev *dev);
++void mt7915_npu_stop(struct mt7915_dev *dev);
+ #else
+ static inline int __mt7915_npu_hw_init(struct mt7915_dev *dev)
+ {
+@@ -693,6 +694,9 @@ static inline bool mt7915_npu_rx_setup(s
+ {
+ 	return false;
+ }
++static inline void mt7915_npu_stop(struct mt7915_dev *dev)
++{
++}
+ #endif
+ 
+ #endif
+--- a/mt7915/npu.c
++++ b/mt7915/npu.c
+@@ -237,3 +237,16 @@ int mt7915_npu_hw_init(struct mt7915_dev
+ 
+ 	return 0;
+ }
++
++/*
++ * Before the rx queues are freed: the MT7916 NPU firmware has no stop
++ * command and would keep writing to the rings of this driver, so reset it.
++ * The cores stay off until mt76_npu_init() starts them again.
++ */
++void mt7915_npu_stop(struct mt7915_dev *dev)
++{
++	int err = mt76_npu_reset(&dev->mt76);
++
++	if (err)
++		dev_warn(dev->mt76.dev, "NPU reset failed: %d\n", err);
++}
+--- a/npu.c
++++ b/npu.c
+@@ -3,7 +3,10 @@
+  * Copyright (c) 2025 AIROHA Inc
+  * Author: Lorenzo Bianconi <lorenzo@kernel.org>
+  */
++#include <linux/delay.h>
+ #include <linux/kernel.h>
++#include <linux/mfd/syscon.h>
++#include <linux/regmap.h>
+ #include <net/flow_offload.h>
+ #include <net/pkt_cls.h>
+ 
+@@ -556,6 +559,59 @@ unlock:
+ }
+ EXPORT_SYMBOL_GPL(mt76_npu_disable_irqs);
+ 
++static bool mt76_npu_host_rings_set(struct airoha_npu *npu)
++{
++	u32 val = 0;
++
++	regmap_read(npu->regmap, airoha_npu_wlan_get_queue_addr(npu, 0, false),
++		    &val);
++
++	return !!val;
++}
++
++/* NP SCU RST_CTRL2, the NPU reset line: clk-en7523 EN7581_NPU_RST */
++#define MT76_NPU_SCU_RST_CTRL2		0x830
++#define MT76_NPU_SCU_NPU_RST		BIT(9)
++
++/*
++ * The MT7916 NPU firmware has no stop command and keeps the host rings it
++ * was given: reset the NPU.  The reset clears the registers of the cores,
++ * the mailbox and the host adaptor and leaves the cores off.
++ */
++static int mt76_npu_reset_npu(struct airoha_npu *npu)
++{
++	struct regmap *scu;
++	int err;
++
++	scu = syscon_regmap_lookup_by_phandle(npu->dev->of_node, "airoha,scu");
++	if (IS_ERR(scu))
++		return PTR_ERR(scu);
++
++	err = regmap_set_bits(scu, MT76_NPU_SCU_RST_CTRL2, MT76_NPU_SCU_NPU_RST);
++	if (err)
++		return err;
++
++	usleep_range(20000, 30000);
++
++	return regmap_clear_bits(scu, MT76_NPU_SCU_RST_CTRL2,
++				 MT76_NPU_SCU_NPU_RST);
++}
++
++int mt76_npu_reset(struct mt76_dev *dev)
++{
++	struct airoha_npu *npu;
++	int err = 0;
++
++	mutex_lock(&dev->mutex);
++	npu = rcu_dereference_protected(dev->mmio.npu, &dev->mutex);
++	if (npu)
++		err = mt76_npu_reset_npu(npu);
++	mutex_unlock(&dev->mutex);
++
++	return err;
++}
++EXPORT_SYMBOL_GPL(mt76_npu_reset);
++
+ int mt76_npu_init(struct mt76_dev *dev, phys_addr_t phy_addr, int type)
+ {
+ 	struct airoha_ppe_dev *ppe_dev;
+@@ -586,6 +642,27 @@ int mt76_npu_init(struct mt76_dev *dev,
+ 		goto error_npu_put;
+ 	}
+ 
++	/*
++	 * The MT7916 NPU is started by the first driver that wants it
++	 * (airoha_npu_start(): nothing to do while it runs) and reset when
++	 * that driver lets go (mt7915_npu_stop()), as its firmware takes
++	 * the host rings once.  One that still holds rings - a warm reboot
++	 * left it running - is reset first.
++	 */
++	if (is_mt7916(dev)) {
++		err = 0;
++		if (mt76_npu_host_rings_set(npu))
++			err = mt76_npu_reset_npu(npu);
++		if (!err)
++			err = airoha_npu_start(npu);
++		if (!err && mt76_npu_host_rings_set(npu))
++			err = -EBUSY;
++		if (err) {
++			dev_warn(dev->dev, "NPU not usable: %d\n", err);
++			goto error_ppe_put;
++		}
++	}
++
+ 	err = airoha_npu_wlan_init_reserved_memory(npu);
+ 	if (err)
+ 		goto error_ppe_put;
+--- a/mt7915/pci.c
++++ b/mt7915/pci.c
+@@ -238,6 +238,16 @@ static void mt7915_pci_remove(struct pci
+ 	mt7915_unregister_device(dev);
+ }
+ 
++/*
++ * A reboot does not unload the module and does not reset the card: the
++ * kernel only clears its bus mastering, but the WED and the NPU would keep the
++ * rings of this stack.  Let all of it go as the module removal does.
++ */
++static void mt7915_pci_shutdown(struct pci_dev *pdev)
++{
++	mt7915_pci_remove(pdev);
++}
++
+ struct pci_driver mt7915_hif_driver = {
+ 	.name		= KBUILD_MODNAME "_hif",
+ 	.id_table	= mt7915_hif_device_table,
+@@ -250,6 +260,7 @@ struct pci_driver mt7915_pci_driver = {
+ 	.id_table	= mt7915_pci_device_table,
+ 	.probe		= mt7915_pci_probe,
+ 	.remove		= mt7915_pci_remove,
++	.shutdown	= mt7915_pci_shutdown,
+ };
+ 
+ MODULE_DEVICE_TABLE(pci, mt7915_pci_device_table);
