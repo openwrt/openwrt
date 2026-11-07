@@ -1,0 +1,412 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+/dts-v1/;
+
+#include "ipq6018.dtsi"
+#include "ipq6018-cp-cpu.dtsi"
+#include "ipq6018-ess.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+
+/ {
+	model = "Arista AP-C200";
+	compatible = "arista,ap-c200", "qcom,ipq6018";
+
+	aliases {
+		serial0 = &blsp1_uart3;
+		ethernet0 = &swport1;
+		label-mac-device = &swport1;
+
+		led-boot = &led_power_green;
+		led-failsafe = &led_power_red;
+		led-running = &led_power_green;
+		led-upgrade = &led_power_red;
+	};
+
+	chosen {
+		stdout-path = "serial0:115200n8";
+		bootargs-append = " root=/dev/ubiblock0_1";
+	};
+
+	keys {
+		compatible = "gpio-keys";
+		pinctrl-0 = <&button_pins>;
+		pinctrl-names = "default";
+
+		reset {
+			label = "reset";
+			gpios = <&tlmm 19 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+			debounce-interval = <60>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		pinctrl-0 = <&led_pins>;
+		pinctrl-names = "default";
+
+		led_lan_red: led-lan-red {
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_LAN;
+			gpios = <&tlmm 24 GPIO_ACTIVE_HIGH>;
+		};
+
+		led_lan_green: led-lan-green {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_LAN;
+			gpios = <&tlmm 25 GPIO_ACTIVE_HIGH>;
+		};
+
+		led_wlan2g_red: led-wlan2g-red {
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_WLAN;
+			function-enumerator = <0>;
+			gpios = <&tlmm 29 GPIO_ACTIVE_HIGH>;
+		};
+
+		led_power_red: led-power-red {
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_POWER;
+			gpios = <&tlmm 31 GPIO_ACTIVE_HIGH>;
+		};
+
+		led_power_green: led-power-green {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_POWER;
+			gpios = <&tlmm 32 GPIO_ACTIVE_HIGH>;
+			default-state = "on";
+		};
+
+		led_wlan2g_green: led-wlan2g-green {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WLAN;
+			function-enumerator = <0>;
+			gpios = <&tlmm 33 GPIO_ACTIVE_HIGH>;
+		};
+
+		led_wlan5g_red: led-wlan5g-red {
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_WLAN;
+			function-enumerator = <1>;
+			gpios = <&tlmm 35 GPIO_ACTIVE_HIGH>;
+		};
+
+		led_wlan5g_green: led-wlan5g-green {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WLAN;
+			function-enumerator = <1>;
+			gpios = <&tlmm 36 GPIO_ACTIVE_HIGH>;
+		};
+	};
+};
+
+&tlmm {
+	mdio_pins: mdio-pins {
+		mdc {
+			pins = "gpio64";
+			function = "mdc";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+
+		mdio {
+			pins = "gpio65";
+			function = "mdio";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+	};
+
+	led_pins: led-pins {
+		pins = "gpio24", "gpio25", "gpio29", "gpio31",
+		       "gpio32", "gpio33", "gpio35", "gpio36";
+		function = "gpio";
+		drive-strength = <8>;
+		bias-pull-down;
+	};
+
+	button_pins: button-pins {
+		pins = "gpio19";
+		function = "gpio";
+		drive-strength = <8>;
+		bias-pull-up;
+	};
+
+	spi_nor_pins: spi-nor-pins {
+		pins = "gpio38", "gpio39", "gpio40", "gpio41";
+		function = "blsp0_spi";
+		drive-strength = <8>;
+		bias-pull-down;
+	};
+};
+
+&blsp1_uart3 {
+	pinctrl-0 = <&serial_3_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&mdio {
+	status = "okay";
+	pinctrl-0 = <&mdio_pins>;
+	pinctrl-names = "default";
+
+	phy6: ethernet-phy@6 {
+		reg = <6>;
+		/*
+		 * GPIO 75 is not the PHY reset on this board. Requesting
+		 * it drops the link. A BMCR soft reset also leaves the
+		 * reset bit set, so phy_init_hw() never finishes.
+		 */
+		qca,keep-pll-enabled;
+		qca,disable-hibernation-mode;
+		qca,skip-soft-reset;
+	};
+};
+
+&edma {
+	status = "okay";
+};
+
+&uniphy0 {
+	status = "okay";
+};
+
+&switch {
+	status = "okay";
+
+	ports {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		port@0 {
+			reg = <0>;
+			ethernet = <&edma>;
+			phy-mode = "internal";
+
+			fixed-link {
+				speed = <1000>;
+				full-duplex;
+			};
+		};
+
+		swport1: port@1 {
+			reg = <1>;
+			label = "lan";
+			phy-handle = <&phy6>;
+			phy-mode = "sgmii";
+			pcs-handle = <&uniphy0 0>;
+			nvmem-cells = <&macaddr_art_18>;
+			nvmem-cell-names = "mac-address";
+		};
+	};
+};
+
+&blsp1_spi1 {
+	pinctrl-0 = <&spi_nor_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <50000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "0:SBL1";
+				reg = <0x000000 0x0c0000>;
+				read-only;
+			};
+
+			partition@c0000 {
+				label = "0:MIBIB";
+				reg = <0x0c0000 0x010000>;
+				read-only;
+			};
+
+			partition@d0000 {
+				label = "0:BOOTCONFIG";
+				reg = <0x0d0000 0x020000>;
+				read-only;
+			};
+
+			partition@f0000 {
+				label = "0:BOOTCONFIG1";
+				reg = <0x0f0000 0x020000>;
+				read-only;
+			};
+
+			partition@110000 {
+				label = "0:QSEE";
+				reg = <0x110000 0x1a0000>;
+				read-only;
+			};
+
+			partition@2b0000 {
+				label = "0:QSEE_1";
+				reg = <0x2b0000 0x1a0000>;
+				read-only;
+			};
+
+			partition@450000 {
+				label = "0:DEVCFG";
+				reg = <0x450000 0x010000>;
+				read-only;
+			};
+
+			partition@460000 {
+				label = "0:DEVCFG_1";
+				reg = <0x460000 0x010000>;
+				read-only;
+			};
+
+			partition@470000 {
+				label = "0:RPM";
+				reg = <0x470000 0x040000>;
+				read-only;
+			};
+
+			partition@4b0000 {
+				label = "0:RPM_1";
+				reg = <0x4b0000 0x040000>;
+				read-only;
+			};
+
+			partition@4f0000 {
+				label = "0:CDT";
+				reg = <0x4f0000 0x010000>;
+				read-only;
+			};
+
+			partition@500000 {
+				label = "0:CDT_1";
+				reg = <0x500000 0x010000>;
+				read-only;
+			};
+
+			partition@510000 {
+				label = "0:APPSBLENV";
+				reg = <0x510000 0x010000>;
+				read-only;
+			};
+
+			partition@520000 {
+				label = "0:APPSBL";
+				reg = <0x520000 0x100000>;
+				read-only;
+			};
+
+			partition@620000 {
+				label = "0:APPSBL_1";
+				reg = <0x620000 0x100000>;
+				read-only;
+			};
+
+			partition@720000 {
+				label = "0:ART";
+				reg = <0x720000 0x040000>;
+				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_art_18: macaddr@18 {
+						reg = <0x18 0x6>;
+					};
+				};
+			};
+
+			partition@760000 {
+				label = "HL_backup0";
+				reg = <0x760000 0x800000>;
+				read-only;
+			};
+
+			partition@f60000 {
+				label = "HL_backup1";
+				reg = <0xf60000 0x800000>;
+				read-only;
+			};
+
+			partition@1760000 {
+				label = "CONFIG";
+				reg = <0x1760000 0x400000>;
+				read-only;
+			};
+
+			partition@1b60000 {
+				label = "LOGGING";
+				reg = <0x1b60000 0x100000>;
+				read-only;
+			};
+
+			partition@1c60000 {
+				label = "DEVCERT";
+				reg = <0x1c60000 0x020000>;
+				read-only;
+			};
+
+			partition@1c80000 {
+				label = "RESERVED";
+				reg = <0x1c80000 0x380000>;
+				read-only;
+			};
+		};
+	};
+};
+
+&qpic_bam {
+	status = "okay";
+};
+
+&qpic_nand {
+	status = "okay";
+
+	nand@0 {
+		reg = <0>;
+		nand-ecc-strength = <4>;
+		nand-ecc-step-size = <512>;
+		nand-bus-width = <8>;
+
+		/*
+		 * The SMEM parser multiplies its block counts by the
+		 * NAND erase size and doubles these ranges. Use the
+		 * stock byte addresses instead.
+		 */
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "rootfs";
+				reg = <0x0 0x10000000>;
+			};
+
+			partition@10000000 {
+				label = "rootfs_1";
+				reg = <0x10000000 0x10000000>;
+				read-only;
+			};
+		};
+	};
+};
+
+&wifi {
+	status = "okay";
+	qcom,ath11k-calibration-variant = "Arista-AP-C200";
+};
+
+&prng {
+	status = "okay";
+};

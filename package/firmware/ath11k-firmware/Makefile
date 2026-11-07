@@ -11,7 +11,7 @@ PKG_NAME:=ath11k-firmware
 PKG_SOURCE_DATE:=2024-10-14
 PKG_SOURCE_VERSION:=15f050122da5ef5bef2cc8c7c19dfb7f98060a49
 PKG_MIRROR_HASH:=e7a89d1570f32552ade539376181494724b5eafb31d00451ff2dcf5a2922a0cb
-PKG_RELEASE:=2
+PKG_RELEASE:=3
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=https://git.codelinaro.org/clo/ath-firmware/ath11k-firmware.git
@@ -100,6 +100,13 @@ define Package/ath11k-firmware-ipq6018/install
 	$(INSTALL_DATA) \
 		$(PKG_BUILD_DIR)/IPQ6018/hw1.0/2.5.0.1/WLAN.HK.2.5.0.1-03982-QCAHKSWPL_SILICONZ-3/* \
 		$(1)/lib/firmware/IPQ6018/
+	# Generic board data for devices with no ipq-wifi package. ipq-wifi
+	# installs later and overwrites this path. ath11k requests board.bin
+	# when nothing in this file matches.
+	$(INSTALL_DIR) $(1)/lib/firmware/ath11k/IPQ6018/hw1.0
+	$(INSTALL_DATA) \
+		$(PKG_BUILD_DIR)/IPQ6018/hw1.0/board-2.bin \
+		$(1)/lib/firmware/ath11k/IPQ6018/hw1.0/
 endef
 
 define Package/ath11k-firmware-ipq9574/install
