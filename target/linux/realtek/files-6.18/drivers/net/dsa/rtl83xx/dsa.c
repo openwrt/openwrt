@@ -5,6 +5,7 @@
 #include <linux/etherdevice.h>
 #include <linux/if_bridge.h>
 #include <linux/if_vlan.h>
+#include <linux/regmap.h>
 #include <asm/mach-rtl-otto/mach-rtl-otto.h>
 
 #include "fdb.h"
@@ -81,8 +82,8 @@ static void rtldsa_port_set_salrn(struct otto_dsa_priv *priv,
 	int shift = SALRN_PORT_SHIFT(port);
 	int val = enable ? SALRN_MODE_HARDWARE : SALRN_MODE_DISABLED;
 
-	sw_w32_mask(SALRN_MODE_MASK << shift, val << shift,
-		    priv->r->l2_port_new_salrn(port));
+	regmap_write_bits(priv->map, priv->r->l2_port_new_salrn(port),
+			  SALRN_MODE_MASK << shift, val << shift);
 }
 
 static int rtldsa_83xx_setup(struct dsa_switch *ds)
@@ -135,7 +136,7 @@ static int rtldsa_83xx_setup(struct dsa_switch *ds)
 	/* Make sure all frames sent to the switch's MAC are trapped to the CPU-port
 	 *  0: FWD, 1: DROP, 2: TRAP2CPU
 	 */
-	sw_w32(0x2, priv->r->self_mac_trap_ctrl);
+	regmap_write(priv->map, priv->r->self_mac_trap_ctrl, 0x2);
 
 	priv->r->pie_init(priv);
 
