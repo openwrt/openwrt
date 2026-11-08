@@ -5162,6 +5162,15 @@ put_switch:
 	return ret;
 }
 
+static void rtpcs_free_links(void *data)
+{
+	struct rtpcs_ctrl *ctrl = data;
+
+	for (int i = 0; i < ctrl->cfg->serdes_count; i++)
+		for (int j = 0; j < RTPCS_MAX_LINKS_PER_SDS; j++)
+			kfree(ctrl->serdes[i].link[j]);
+}
+
 static struct phylink_pcs *rtpcs_pcs_get(struct fwnode_reference_args *pcsspec, void *data)
 {
 	struct rtpcs_serdes *sds = data;
@@ -5185,21 +5194,23 @@ static struct phylink_pcs *rtpcs_pcs_get(struct fwnode_reference_args *pcsspec, 
 		return ERR_PTR(-ENODEV);
 	}
 
-	if (!sds->link[link_idx]) {
-		link = devm_kzalloc(dev, sizeof(*link), GFP_KERNEL);
-		if (!link)
-			return ERR_PTR(-ENOMEM);
+	scoped_guard(mutex, &sds->ctrl->lock) {
+		if (!sds->link[link_idx]) {
+			link = kzalloc(sizeof(*link), GFP_KERNEL);
+			if (!link)
+				return ERR_PTR(-ENOMEM);
 
-		link->ctrl = sds->ctrl;
-		link->port = sds->link_port[link_idx];
-		link->sds = sds;
-		link->pcs.ops = sds->ctrl->cfg->pcs_ops;
-		link->pcs.media_teardown = true;
+			link->ctrl = sds->ctrl;
+			link->port = sds->link_port[link_idx];
+			link->sds = sds;
+			link->pcs.ops = sds->ctrl->cfg->pcs_ops;
+			link->pcs.media_teardown = true;
 
-		sds->link[link_idx] = link;
+			sds->link[link_idx] = link;
+		}
+
+		return &sds->link[link_idx]->pcs;
 	}
-
-	return &sds->link[link_idx]->pcs;
 }
 
 static int rtpcs_probe(struct platform_device *pdev)
@@ -5228,6 +5239,11 @@ static int rtpcs_probe(struct platform_device *pdev)
 	ctrl->bus = rtpcs_find_mdio_bus(ctrl);
 	if (IS_ERR(ctrl->bus))
 		return PTR_ERR(ctrl->bus);
+
+	/* Registered before RX cleanup so lazy link objects outlive RX work. */
+	ret = devm_add_action_or_reset(dev, rtpcs_free_links, ctrl);
+	if (ret)
+		return ret;
 
 	for (i = 0; i < ctrl->cfg->serdes_count; i++) {
 		sds = &ctrl->serdes[i];
