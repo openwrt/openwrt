@@ -64,7 +64,7 @@ define KernelPackage/rp1-hevc-dec
     CONFIG_VIDEO_RPI_HEVC_DEC
   FILES:=$(LINUX_DIR)/drivers/media/platform/raspberrypi/hevc_dec/rpi-hevc-dec.ko
   AUTOLOAD:=$(call AutoLoad,67,rpi-hevc-dec)
-  DEPENDS:=@TARGET_bcm27xx_bcm2712 +kmod-video-core +kmod-video-dma-contig +kmod-video-videobuf2 +kmod-video-mem2mem
+  DEPENDS:=@TARGET_bcm27xx_bcm2711||TARGET_bcm27xx_bcm2712 +kmod-video-core +kmod-video-dma-contig +kmod-video-videobuf2 +kmod-video-mem2mem
 endef
 
 define KernelPackage/rp1-hevc-dec/description
