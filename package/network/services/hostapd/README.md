@@ -66,7 +66,7 @@ Kick a client off the network.
 | addr | string | yes | client MAC address |
 | reason | int32 | no | 802.11 reason code |
 | deauth | bool | no | deauthenticates client instead of disassociating |
-| ban_time | int32 | no | ban client for N milliseconds |
+| ban_time | int32 | no | ban client for N milliseconds; a ban of the MLD address of a client MLD refuses it on each link, and a ban of a link address refuses that link address |
 | ban_status | int32 | no | Status Code the ban answers the client's authentication and association with, 1 to 65535 (default 17) |
 
 ### example
@@ -248,7 +248,7 @@ List banned clients.
 
 
 ## notify_response
-When enabled, hostapd will send a ubus notification and wait for a response before responding to various requests. This is used by e.g. usteer to make it possible to ignore probe requests.
+When enabled, hostapd will send a ubus notification and wait for a response before responding to various requests. This is used by e.g. usteer to make it possible to ignore probe requests. The `address` of an `auth` or `assoc` notification is the MLD address of a client MLD.
 
 :warning: enabling this will cause hostapd to stop responding to probe requests unless a ubus subscriber responds to the ubus notifications.
 

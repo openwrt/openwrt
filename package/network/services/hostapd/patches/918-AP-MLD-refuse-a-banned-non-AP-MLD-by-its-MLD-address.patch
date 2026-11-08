@@ -1,0 +1,36 @@
+From: Felix Fietkau <nbd@nbd.name>
+Subject: [PATCH] AP MLD: refuse a banned non-AP MLD by its MLD address
+
+The ubus ban check in hostapd_ubus_handle_event() compares the source
+address of the frame. A non-AP MLD sends its Authentication frames from
+a link address, and its Basic Multi-Link element names its MLD address.
+A ban of the MLD address thus misses the Authentication frame. It also
+misses a (Re)Association Request that hostapd matches to the station by
+the MLD address of the Multi-Link element (handle_mlo_translate()),
+where the driver did not translate the addresses.
+
+Give the request the MLD address of a non-AP MLD. handle_auth() takes it
+from the Multi-Link element, as its ACL check does; handle_assoc() takes
+it from the station entry. The ban check tests the MLD address first and
+the link address after it, so a ban of a link address still refuses it.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/src/ap/ieee802_11.c
++++ b/src/ap/ieee802_11.c
+@@ -4395,6 +4395,7 @@ static void handle_auth(struct hostapd_d
+ 		.type = HOSTAPD_UBUS_AUTH_REQ,
+ 		.mgmt_frame = mgmt,
+ 		.ssi_signal = rssi,
++		.mld_addr = mld_sta ? sa : NULL,
+ 	};
+ 
+ 	auth_alg = le_to_host16(mgmt->u.auth.auth_alg);
+@@ -7877,6 +7878,7 @@ static void handle_assoc(struct hostapd_
+ 		.type = HOSTAPD_UBUS_ASSOC_REQ,
+ 		.mgmt_frame = mgmt,
+ 		.ssi_signal = rssi,
++		.mld_addr = ap_sta_is_mld(hapd, sta) ? sta->addr : NULL,
+ 	};
+ 
+ 	/* followed by SSID and Supported rates; and HT capabilities if 802.11n

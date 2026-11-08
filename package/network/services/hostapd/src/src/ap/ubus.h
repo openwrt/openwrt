@@ -40,6 +40,7 @@ struct hostapd_ubus_request {
 	const struct ieee802_11_elems *elems;
 	int ssi_signal; /* dBm */
 	const u8 *addr;
+	const u8 *mld_addr;
 };
 
 struct hostapd_iface;

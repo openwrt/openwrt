@@ -3192,9 +3192,19 @@ ubus_event_cb(struct ubus_notify_request *req, int idx, int ret)
 	ureq->resp = ret;
 }
 
-int hostapd_ubus_handle_event(struct hostapd_data *hapd, struct hostapd_ubus_request *req)
+static u16 hostapd_ubus_ban_status(struct hostapd_data *hapd, const u8 *addr)
 {
 	struct ubus_banned_client *ban;
+
+	if (!addr)
+		return 0;
+
+	ban = avl_find_element(&hostapd_ubus_state(hapd)->banned, addr, ban, avl);
+	return ban ? ban->status : 0;
+}
+
+int hostapd_ubus_handle_event(struct hostapd_data *hapd, struct hostapd_ubus_request *req)
+{
 	const u8 bcast[ETH_ALEN] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
 	const char *types[HOSTAPD_UBUS_TYPE_MAX] = {
 		[HOSTAPD_UBUS_PROBE_REQ] = "probe",
@@ -3204,20 +3214,22 @@ int hostapd_ubus_handle_event(struct hostapd_data *hapd, struct hostapd_ubus_req
 	const char *type = "mgmt";
 	struct ubus_event_req ureq = {};
 	struct ubus_object *obj = hostapd_ubus_notify_obj(hapd);
-	const u8 *addr;
+	const u8 *link_addr, *addr;
+	u16 ban_status;
 
 	if (req->mgmt_frame)
-		addr = req->mgmt_frame->sa;
+		link_addr = req->mgmt_frame->sa;
 	else
-		addr = req->addr;
+		link_addr = req->addr;
+	addr = req->mld_addr ? req->mld_addr : link_addr;
 
-	ban = avl_find_element(&hostapd_ubus_state(hapd)->banned, addr, ban, avl);
-	if (ban)
-		return ban->status;
-
-	ban = avl_find_element(&hostapd_ubus_state(hapd)->banned, bcast, ban, avl);
-	if (ban)
-		return ban->status;
+	ban_status = hostapd_ubus_ban_status(hapd, req->mld_addr);
+	if (!ban_status)
+		ban_status = hostapd_ubus_ban_status(hapd, link_addr);
+	if (!ban_status)
+		ban_status = hostapd_ubus_ban_status(hapd, bcast);
+	if (ban_status)
+		return ban_status;
 
 	if (!obj->has_subscribers)
 		return WLAN_STATUS_SUCCESS;
