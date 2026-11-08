@@ -326,11 +326,11 @@ static int rtldsa_ethernet_loaded(struct platform_device *pdev)
 
 static int rtl83xx_sw_probe(struct platform_device *pdev)
 {
-	struct otto_dsa_priv *priv;
 	struct device *dev = &pdev->dev;
 	const struct rtldsa_config *r;
+	struct otto_dsa_priv *priv;
+	int bpdu_reg, err = 0;
 	u64 bpdu_mask;
-	int err = 0;
 
 	pr_debug("Probing RTL838X switch device\n");
 	if (!pdev->dev.of_node) {
@@ -455,21 +455,22 @@ static int rtl83xx_sw_probe(struct platform_device *pdev)
 		goto err_register_l3;
 
 	/* TODO: put this into l2_setup() */
-	switch (soc_info.family) {
-	default:
+	if (priv->r->spcl_trap_eapol_ctrl) {
 		/* Flood BPDUs to all ports including cpu-port */
-		bpdu_mask = soc_info.family == RTL8380_FAMILY_ID ? 0x1FFFFFFF : 0x1FFFFFFFFFFFFF;
-		priv->r->set_port_reg_be(bpdu_mask, priv->r->rma_bpdu_fld_pmask);
+		bpdu_mask = GENMASK_ULL(priv->r->cpu_port, 0);
+		bpdu_reg = priv->r->rma_bpdu_fld_pmask;
+		if (priv->r->cpu_port >= 32) {
+			regmap_write(priv->map, bpdu_reg, upper_32_bits(bpdu_mask));
+			bpdu_reg += 4;
+		}
+		regmap_write(priv->map, bpdu_reg, lower_32_bits(bpdu_mask));
 
 		/* TRAP 802.1X frames (EAPOL) to the CPU-Port, bypass STP and VLANs */
-		sw_w32(7, priv->r->spcl_trap_eapol_ctrl);
+		regmap_write(priv->map, priv->r->spcl_trap_eapol_ctrl, 7);
 
 		rtl838x_dbgfs_init(priv);
-		break;
-	case RTL9300_FAMILY_ID:
-	case RTL9310_FAMILY_ID:
+	} else {
 		rtl930x_dbgfs_init(priv);
-		break;
 	}
 
 	otto_fdb_dbgfs_init(priv);
