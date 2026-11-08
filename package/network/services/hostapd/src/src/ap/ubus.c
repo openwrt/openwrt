@@ -215,7 +215,7 @@ hostapd_bss_del_ban(void *eloop_data, void *user_ctx)
 	struct hostapd_ubus_bss *ubus = user_ctx;
 
 	avl_delete(&ubus->banned, &ban->avl);
-	free(ban);
+	os_free(ban);
 }
 
 static void
