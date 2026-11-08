@@ -1,0 +1,150 @@
+From: Rosen Penev <rosenp@gmail.com>
+Date: Sat, 7 Nov 2026 17:01:31 -0800
+Subject: [PATCH] wifi: ath9k: ahb: take the reference clock rate from the
+ clock framework
+
+The wireless MAC of the Atheros and QCA MIPS SoCs runs from the board's
+25 or 40 MHz crystal, and ath9k programs its PLL and other timings for
+the one it is told. The platform data used to set is_clk_25mhz from the
+SoC's bootstrap pins. Since that went away, ath9k assumes 40 MHz on every
+AHB device, which is wrong for the many 25 MHz boards.
+
+Take the rate of the reference clock from the device tree. Without the
+clock, keep the 40 MHz default. The QCA953x only supports 25 MHz, and
+some boards set the bootstrap pin for 40 MHz anyway, so always use
+25 MHz there, as the platform code did.
+
+The AHB code needs per device state for this and for what follows, so
+embed the ath_softc in a struct ath_ahb and add a hook that runs before
+the hardware is set up.
+
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+Assisted-by: LLM
+---
+--- a/drivers/net/wireless/ath/ath9k/ahb.c
++++ b/drivers/net/wireless/ath/ath9k/ahb.c
+@@ -16,6 +16,7 @@
+  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+  */
+ 
++#include <linux/clk.h>
+ #include <linux/module.h>
+ #include <linux/nl80211.h>
+ #include <linux/of.h>
+@@ -23,6 +24,11 @@
+ 
+ #include "ath9k.h"
+ 
++struct ath_ahb {
++	struct ath_softc sc;	/* must be first, it is hw->priv */
++	struct clk *ref_clk;
++};
++
+ static const struct of_device_id ath9k_of_match_table[] = {
+ 	{ .compatible = "qca,ar9130-wifi", .data = (void *)AR5416_AR9100_DEVID },
+ 	{ .compatible = "qca,ar9330-wifi", .data = (void *)AR9300_DEVID_AR9330 },
+@@ -52,10 +58,52 @@ static const struct ath_bus_ops ath_ahb_
+ 	.eeprom_read = ath_ahb_eeprom_read,
+ };
+ 
++static struct ath_ahb *ath_ahb_from_ah(struct ath_hw *ah)
++{
++	struct ath_softc *sc = ah->hw->priv;
++
++	return container_of(sc, struct ath_ahb, sc);
++}
++
++int ath_ahb_init_hw(struct ath_hw *ah)
++{
++	struct ath_ahb *ahb = ath_ahb_from_ah(ah);
++
++	if (ahb->ref_clk)
++		ah->is_clk_25mhz = clk_get_rate(ahb->ref_clk) == 25000000;
++
++	switch (ah->hw_version.devid) {
++	case AR9300_DEVID_AR953X:
++		/*
++		 * The QCA953x only supports a 25 MHz reference clock. Some
++		 * vendors set the bootstrap pin for 40 MHz anyway, which
++		 * would break the MAC.
++		 */
++		ah->is_clk_25mhz = true;
++		break;
++	}
++
++	return 0;
++}
++
++static int ath_ahb_get_resources(struct platform_device *pdev,
++				 struct ath_ahb *ahb)
++{
++	struct device *dev = &pdev->dev;
++
++	ahb->ref_clk = devm_clk_get_optional_enabled(dev, NULL);
++	if (IS_ERR(ahb->ref_clk))
++		return dev_err_probe(dev, PTR_ERR(ahb->ref_clk),
++				     "failed to get the reference clock\n");
++
++	return 0;
++}
++
+ static int ath_ahb_probe(struct platform_device *pdev)
+ {
+ 	struct ieee80211_hw *hw;
+ 	struct ath_softc *sc;
++	struct ath_ahb *ahb;
+ 	struct ath_hw *ah;
+ 	void __iomem *mem;
+ 	char hw_name[64];
+@@ -74,7 +122,7 @@ static int ath_ahb_probe(struct platform
+ 		return irq;
+ 
+ 	ath9k_fill_chanctx_ops();
+-	hw = ieee80211_alloc_hw(sizeof(struct ath_softc), &ath9k_ops);
++	hw = ieee80211_alloc_hw(sizeof(struct ath_ahb), &ath9k_ops);
+ 	if (hw == NULL) {
+ 		dev_err(&pdev->dev, "no memory for ieee80211_hw\n");
+ 		return -ENOMEM;
+@@ -83,7 +131,12 @@ static int ath_ahb_probe(struct platform
+ 	SET_IEEE80211_DEV(hw, &pdev->dev);
+ 	platform_set_drvdata(pdev, hw);
+ 
+-	sc = hw->priv;
++	ahb = hw->priv;
++	ret = ath_ahb_get_resources(pdev, ahb);
++	if (ret)
++		goto err_free_hw;
++
++	sc = &ahb->sc;
+ 	sc->hw = hw;
+ 	sc->dev = &pdev->dev;
+ 	sc->mem = mem;
+--- a/drivers/net/wireless/ath/ath9k/ath9k.h
++++ b/drivers/net/wireless/ath/ath9k/ath9k.h
+@@ -1152,9 +1152,11 @@ static inline void ath_pci_exit(void) {}
+ #ifdef CPTCFG_ATH9K_AHB
+ int ath_ahb_init(void);
+ void ath_ahb_exit(void);
++int ath_ahb_init_hw(struct ath_hw *ah);
+ #else
+ static inline int ath_ahb_init(void) { return 0; };
+ static inline void ath_ahb_exit(void) {};
++static inline int ath_ahb_init_hw(struct ath_hw *ah) { return 0; };
+ #endif
+ 
+ #endif /* ATH9K_H */
+--- a/drivers/net/wireless/ath/ath9k/init.c
++++ b/drivers/net/wireless/ath/ath9k/init.c
+@@ -724,6 +724,12 @@ static int ath9k_init_softc(u16 devid, s
+ 	 */
+ 	ath9k_init_pcoem_platform(sc);
+ 
++	if (bus_ops->ath_bus_type == ATH_AHB) {
++		ret = ath_ahb_init_hw(ah);
++		if (ret)
++			return ret;
++	}
++
+ 	ret = ath9k_of_init(sc);
+ 	if (ret)
+ 		return ret;
