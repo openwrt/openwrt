@@ -126,37 +126,32 @@ int otto_mirror_port_add(struct dsa_switch *ds, int port,
 	/* We support 4 mirror groups, one destination port per group */
 	struct otto_dsa_priv *priv = ds->priv;
 	struct otto_mirror_config config;
-	int pm_reg;
-	int group;
-	int r;
+	u32 pm_bit = BIT(port % 32), val;
+	int pm_offset, pm_reg, group, r;
 
 	if (!priv->r->get_mirror_config)
 		return -EOPNOTSUPP;
 
-	pr_debug("In %s\n", __func__);
-
+	pm_offset = (priv->r->cpu_port >= 32 && port < 32) ? 4 : 0;
 	scoped_guard(mutex, &priv->reg_mutex) {
 		group = otto_mirror_group_find(priv, mirror->to_local_port);
 		if (group < 0)
 			return group;
 
-		pr_debug("Using group %d\n", group);
-
 		r = priv->r->get_mirror_config(&config, group, mirror->to_local_port);
 		if (r < 0)
 			return r;
 
-		if (ingress)
-			pm_reg = config.spm;
-		else
-			pm_reg = config.dpm;
-
 		regmap_write(priv->map, config.ctrl, config.val);
 
-		if (priv->r->get_port_reg_be(pm_reg) & (1ULL << port))
+		pm_reg = ingress ? config.spm : config.dpm;
+		r = regmap_read(priv->map, pm_reg + pm_offset, &val);
+		if (r)
+			return r;
+		if (val & pm_bit)
 			return -EEXIST;
 
-		priv->r->mask_port_reg_be(0, 1ULL << port, pm_reg);
+		regmap_set_bits(priv->map, pm_reg + pm_offset, pm_bit);
 		priv->mirror_group_ports[group] = mirror->to_local_port;
 	}
 
@@ -168,14 +163,13 @@ void otto_mirror_port_del(struct dsa_switch *ds, int port,
 {
 	struct otto_dsa_priv *priv = ds->priv;
 	struct otto_mirror_config config;
-	int group = 0;
-	int r;
+	int pm_offset, pm_reg, group, r;
+	u32 pm_bit = BIT(port % 32);
 
 	if (!priv->r->get_mirror_config)
 		return;
 
-	pr_debug("In %s\n", __func__);
-
+	pm_offset = (priv->r->cpu_port >= 32 && port < 32) ? 4 : 0;
 	scoped_guard(mutex, &priv->reg_mutex) {
 		for (group = 0; group < 4; group++) {
 			if (priv->mirror_group_ports[group] == mirror->to_local_port)
@@ -188,13 +182,8 @@ void otto_mirror_port_del(struct dsa_switch *ds, int port,
 		if (r < 0)
 			return;
 
-		if (mirror->ingress) {
-			/* Ingress, clear source port matrix */
-			priv->r->mask_port_reg_be(1ULL << port, 0, config.spm);
-		} else {
-			/* Egress, clear destination port matrix */
-			priv->r->mask_port_reg_be(1ULL << port, 0, config.dpm);
-		}
+		pm_reg = mirror->ingress ? config.spm : config.dpm;
+		regmap_clear_bits(priv->map, pm_reg + pm_offset, pm_bit);
 
 		otto_mirror_group_release(priv, group, &config);
 	}
