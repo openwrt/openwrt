@@ -608,6 +608,7 @@ struct rtpcs_link {
 	struct rtpcs_serdes *sds;
 	u64 media_generation;
 	int port;
+	bool enabled;
 };
 
 struct rtpcs_config {
@@ -2056,18 +2057,27 @@ static void rtpcs_93xx_sds_arm_rxcal(struct rtpcs_serdes *sds, unsigned int dela
 	lockdep_assert_held(&sds->ctrl->lock);
 
 	sds->rxcal_tries = 0;
-	sds->rx_phase = RTPCS_RX_PHASE_CALIBRATION;
+	WRITE_ONCE(sds->rx_phase, RTPCS_RX_PHASE_CALIBRATION);
 	mod_delayed_work(system_wq, &sds->cali_work, msecs_to_jiffies(delay_ms));
 }
 
 static void rtpcs_93xx_sds_arm_linkmon(struct rtpcs_serdes *sds)
 {
+	struct rtpcs_link *link;
+
 	lockdep_assert_held(&sds->ctrl->lock);
 
 	sds->rxmon_down = 0;
-	sds->rx_phase = RTPCS_RX_PHASE_MONITORING;
+	WRITE_ONCE(sds->rx_phase, RTPCS_RX_PHASE_MONITORING);
 	dev_dbg(sds->ctrl->dev, "SerDes %u: RX link monitor armed\n", sds->id);
 	mod_delayed_work(system_wq, &sds->linkmon_work, msecs_to_jiffies(RTPCS_RXMON_POLL_MS));
+
+	/* Request a fresh link-state read after the batch, whether it passed or not. */
+	for (int i = 0; i < RTPCS_MAX_LINKS_PER_SDS; i++) {
+		link = sds->link[i];
+		if (link && link->enabled)
+			phylink_pcs_change(&link->pcs, true);
+	}
 }
 
 static void rtpcs_93xx_rx_cali_work_handler(struct work_struct *work)
@@ -3300,7 +3310,7 @@ static void rtpcs_sds_cancel_rx_work(void *data)
 	struct rtpcs_serdes *sds = data;
 
 	scoped_guard(mutex, &sds->ctrl->lock) {
-		sds->rx_phase = RTPCS_RX_PHASE_IDLE;
+		WRITE_ONCE(sds->rx_phase, RTPCS_RX_PHASE_IDLE);
 		sds->rxmon_recovery_after = 0;
 	}
 
@@ -3579,6 +3589,7 @@ static int rtpcs_930x_sds_post_config(struct rtpcs_serdes *sds, enum rtpcs_sds_m
 	    hw_mode != RTPCS_SDS_MODE_USXGMII)
 		return 0;
 
+	WRITE_ONCE(sds->rx_phase, RTPCS_RX_PHASE_CALIBRATION);
 	rtpcs_930x_sds_rxcal_init(sds, hw_mode);
 
 	dev_dbg(sds->ctrl->dev, "SerDes %u: arming RX calibration for mode %u\n",
@@ -4580,6 +4591,8 @@ static int rtpcs_931x_sds_rx_calibrate(struct rtpcs_serdes *sds)
 /* Apply acquisition defaults and defer calibration until RX is ready. */
 static int rtpcs_931x_sds_post_config(struct rtpcs_serdes *sds, enum rtpcs_sds_mode hw_mode)
 {
+	bool needs_rxcal;
+
 	if (sds->type != RTPCS_SDS_TYPE_10G || sds->attachment == RTPCS_SDS_ATTACH_NONE)
 		return 0;
 	if (hw_mode != RTPCS_SDS_MODE_10GBASER &&
@@ -4587,10 +4600,15 @@ static int rtpcs_931x_sds_post_config(struct rtpcs_serdes *sds, enum rtpcs_sds_m
 	    hw_mode != RTPCS_SDS_MODE_USXGMII)
 		return 0;
 
+	needs_rxcal = sds->attachment == RTPCS_SDS_ATTACH_PHY ||
+		      hw_mode == RTPCS_SDS_MODE_10GBASER;
+	if (needs_rxcal)
+		WRITE_ONCE(sds->rx_phase, RTPCS_RX_PHASE_CALIBRATION);
+
 	if (hw_mode != RTPCS_SDS_MODE_XSGMII)
 		rtpcs_931x_sds_reset_leq_dfe(sds);
 
-	if (sds->attachment != RTPCS_SDS_ATTACH_PHY && hw_mode != RTPCS_SDS_MODE_10GBASER)
+	if (!needs_rxcal)
 		return 0;
 
 	rtpcs_93xx_sds_arm_rxcal(sds, RTPCS_931X_RXCAL_START_MS);
@@ -4865,6 +4883,9 @@ static void rtpcs_pcs_get_state(struct phylink_pcs *pcs, unsigned int neg_mode,
 		state->pause &= ~(MLO_PAUSE_RX | MLO_PAUSE_TX);
 	}
 
+	if (READ_ONCE(sds->rx_phase) == RTPCS_RX_PHASE_CALIBRATION)
+		return;
+
 	mutex_lock(&ctrl->lock);
 	if (sds->rx_phase == RTPCS_RX_PHASE_CALIBRATION)
 		goto unlock;
@@ -4881,6 +4902,24 @@ static void rtpcs_pcs_get_state(struct phylink_pcs *pcs, unsigned int neg_mode,
 	}
 unlock:
 	mutex_unlock(&ctrl->lock);
+}
+
+static int rtpcs_pcs_enable(struct phylink_pcs *pcs)
+{
+	struct rtpcs_link *link = rtpcs_phylink_pcs_to_link(pcs);
+
+	scoped_guard(mutex, &link->ctrl->lock)
+		link->enabled = true;
+
+	return 0;
+}
+
+static void rtpcs_pcs_disable(struct phylink_pcs *pcs)
+{
+	struct rtpcs_link *link = rtpcs_phylink_pcs_to_link(pcs);
+
+	scoped_guard(mutex, &link->ctrl->lock)
+		link->enabled = false;
 }
 
 static void rtpcs_pcs_an_restart(struct phylink_pcs *pcs)
@@ -4963,7 +5002,7 @@ static int rtpcs_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
 			if (sds->rx_phase == RTPCS_RX_PHASE_CALIBRATION)
 				dev_dbg(ctrl->dev, "SerDes %u: invalidating pending RX calibration for configuration change\n",
 					sds->id);
-			sds->rx_phase = RTPCS_RX_PHASE_IDLE;
+			WRITE_ONCE(sds->rx_phase, RTPCS_RX_PHASE_IDLE);
 			sds->rxmon_down = 0;
 		}
 
@@ -5306,6 +5345,8 @@ static int rtpcs_probe(struct platform_device *pdev)
 }
 
 static const struct phylink_pcs_ops rtpcs_pcs_ops = {
+	.pcs_enable		= rtpcs_pcs_enable,
+	.pcs_disable		= rtpcs_pcs_disable,
 	.pcs_an_restart		= rtpcs_pcs_an_restart,
 	.pcs_config		= rtpcs_pcs_config,
 	.pcs_get_state		= rtpcs_pcs_get_state,
