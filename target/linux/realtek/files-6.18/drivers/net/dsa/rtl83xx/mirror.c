@@ -110,10 +110,17 @@ static int otto_mirror_group_find(struct otto_dsa_priv *priv, int port)
 static void otto_mirror_group_release(struct otto_dsa_priv *priv, int group,
 				      struct otto_mirror_config *config)
 {
-	if (priv->mirror_group_flower[group] ||
-	    priv->r->get_port_reg_be(config->spm) ||
-	    priv->r->get_port_reg_be(config->dpm))
+	u32 val;
+
+	if (priv->mirror_group_flower[group])
 		return;
+
+	for (int i = 0; i < DIV_ROUND_UP(priv->r->cpu_port + 1, 32); i++) {
+		if (regmap_read(priv->map, config->spm + i * 4, &val) || val)
+			return;
+		if (regmap_read(priv->map, config->dpm + i * 4, &val) || val)
+			return;
+	}
 
 	priv->mirror_group_ports[group] = -1;
 	regmap_write(priv->map, config->ctrl, 0);
