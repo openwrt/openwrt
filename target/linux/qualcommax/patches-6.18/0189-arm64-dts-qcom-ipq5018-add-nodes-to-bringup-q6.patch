@@ -16,26 +16,37 @@ Signed-off-by: George Moussalem <george.moussalem@outlook.com>
 
 --- a/arch/arm64/boot/dts/qcom/ipq5018.dtsi
 +++ b/arch/arm64/boot/dts/qcom/ipq5018.dtsi
-@@ -158,6 +158,11 @@
+@@ -158,6 +158,21 @@
  			reg = <0x0 0x4ac00000 0x0 0x200000>;
  			no-map;
  		};
 +
 +		q6_region: wcss@4b000000 {
-+			reg = <0x0 0x4b000000 0x0 0x1b00000>;
++			/*
++			 * Address	Size		Region
++			 * 0x4b000000	0x00900000	Q6
++			 * 0x4b900000	0x00100000	Heap
++			 * 0x4ba00000	0x00040000	PD1 BDF
++			 * 0x4ba40000	0x00041000	M3 Firmware
++			 * 0x4baa0000	0x01660000	DDR
++			 * 0x4d100000	0x00200000	CalDB
++			 * None		0x00100000	M3 Dump
++			 */
++			reg = <0x0 0x4b000000 0x0 0x2300000>;
 +			no-map;
 +		};
  	};
  
  	soc: soc@0 {
-@@ -748,6 +753,41 @@
+@@ -748,6 +763,42 @@
  			};
  		};
  
 +		q6v5_wcss: remoteproc@cd00000 {
 +			compatible = "qcom,ipq5018-wcss-sec-pil";
 +			reg = <0x0cd00000 0x10000>;
-+			firmware-name = "ath11k/IPQ5018/hw1.0/q6_fw.mbn";
++			firmware-name = "ath11k/IPQ5018/hw1.0/q6_fw.mdt",
++					"ath11k/IPQ5018/hw1.0/m3_fw.mdt";
 +			interrupts-extended = <&intc GIC_SPI 291 IRQ_TYPE_EDGE_RISING>,
 +					      <&wcss_smp2p_in 0 IRQ_TYPE_NONE>,
 +					      <&wcss_smp2p_in 1 IRQ_TYPE_NONE>,
@@ -70,7 +81,7 @@ Signed-off-by: George Moussalem <george.moussalem@outlook.com>
  		pcie1: pcie@80000000 {
  			compatible = "qcom,pcie-ipq5018";
  			reg = <0x80000000 0xf1d>,
-@@ -1022,4 +1062,28 @@
+@@ -1022,4 +1073,28 @@
  			     <GIC_PPI 4 (GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_LOW)>,
  			     <GIC_PPI 1 (GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_LOW)>;
  	};

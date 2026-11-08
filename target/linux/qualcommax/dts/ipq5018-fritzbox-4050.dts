@@ -383,6 +383,10 @@
 	status = "okay";
 };
 
+&q6_region {
+	reg = <0x0 0x4b000000 0x0 0x3600000>; /* for 1*QCN6122 instance */
+};
+
 &q6v5_wcss {
 	/* The QCN6102 radio should map to UPD ID 2. Without       */
 	/* bootargs, the firmware will expect it to be on UPD ID 3 */
@@ -398,22 +402,12 @@
 
 &wifi {
 	// IPQ5018
-	qcom,rproc = <&q6_wcss_pd1>;
 	qcom,calibration-variant = "AVM-FritzBox4050";
-	qcom,ath11k-fw-memory-mode = <1>;
-	qcom,bdf-addr = <0x4c400000>;
-
 	status = "okay";
 };
 
 &wifi1 {
 	// QCN6102 5G
-	qcom,rproc = <&q6_wcss_pd2>;
-	qcom,userpd-subsys-name = "q6v5_wcss_userpd2";
 	qcom,calibration-variant = "AVM-FritzBox4050";
-	qcom,ath11k-fw-memory-mode = <1>;
-	qcom,bdf-addr = <0x4d100000>;
-	qcom,m3-dump-addr = <0x4df00000>;
-
 	status = "okay";
 };
