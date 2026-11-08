@@ -426,10 +426,14 @@ static int rtl83xx_sw_probe(struct platform_device *pdev)
 		priv->ports[i].dp = dsa_to_port(priv->ds, i);
 
 	/* Enable link and media change interrupts. Are the SERDES masks needed? */
-	sw_w32_mask(0, 3, priv->r->isr_glb_src);
+	regmap_write_bits(priv->map, priv->r->isr_glb_src, 3, 3);
 
-	priv->r->set_port_reg_le(priv->irq_mask, priv->r->isr_port_link_sts_chg);
-	priv->r->set_port_reg_le(priv->irq_mask, priv->r->imr_port_link_sts_chg);
+	for (int i = 0; i < DIV_ROUND_UP(priv->r->cpu_port + 1, 32); i++) {
+		u32 mask = priv->irq_mask >> (i * 32);
+
+		regmap_write(priv->map, priv->r->isr_port_link_sts_chg + i * 4, mask);
+		regmap_write(priv->map, priv->r->imr_port_link_sts_chg + i * 4, mask);
+	}
 
 	priv->link_state_irq = platform_get_irq(pdev, 0);
 	pr_info("LINK state irq: %d\n", priv->link_state_irq);
