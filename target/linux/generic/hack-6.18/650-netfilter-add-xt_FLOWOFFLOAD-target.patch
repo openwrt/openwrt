@@ -17,7 +17,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/include/net/netfilter/nf_flow_table.h
 +++ b/include/net/netfilter/nf_flow_table.h
-@@ -309,6 +309,11 @@ void nf_flow_table_free(struct nf_flowta
+@@ -312,6 +312,11 @@ void nf_flow_table_free(struct nf_flowta
  
  void flow_offload_teardown(struct flow_offload *flow);
  
@@ -95,7 +95,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  #include <net/netfilter/nf_flow_table.h>
  #include <net/netfilter/nf_conntrack.h>
  #include <net/netfilter/nf_conntrack_core.h>
-@@ -426,8 +425,7 @@ flow_offload_lookup(struct nf_flowtable
+@@ -425,8 +424,7 @@ flow_offload_lookup(struct nf_flowtable
  }
  EXPORT_SYMBOL_GPL(flow_offload_lookup);
  
@@ -105,7 +105,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		      void (*iter)(struct nf_flowtable *flowtable,
  				   struct flow_offload *flow, void *data),
  		      void *data)
-@@ -641,6 +639,7 @@ static void nf_flow_offload_gc_step(stru
+@@ -643,6 +641,7 @@ static void nf_flow_offload_gc_step(stru
  		nf_flow_offload_stats(flow_table, flow);
  	}
  }
@@ -115,7 +115,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  {
 --- /dev/null
 +++ b/net/netfilter/xt_FLOWOFFLOAD.c
-@@ -0,0 +1,734 @@
+@@ -0,0 +1,757 @@
 +/*
 + * Copyright (C) 2018-2021 Felix Fietkau <nbd@nbd.name>
 + *
@@ -133,6 +133,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +#include <net/netfilter/nf_conntrack_extend.h>
 +#include <net/netfilter/nf_conntrack_helper.h>
 +#include <net/netfilter/nf_flow_table.h>
++#include <net/sch_generic.h>
 +
 +struct xt_flowoffload_hook {
 +	struct hlist_node list;
@@ -399,6 +400,21 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +	return true;
 +}
 +
++/* A device with a qdisc someone configured or a tc hook must see the flow: the
++ * path ends there, as in nft_dev_path_info().
++ */
++static bool nf_dev_has_tc(const struct net_device *dev)
++{
++	const struct Qdisc *q = rcu_dereference(dev->qdisc);
++
++#ifdef CONFIG_NET_XGRESS
++	if (rcu_access_pointer(dev->tcx_ingress) ||
++	    rcu_access_pointer(dev->tcx_egress))
++		return true;
++#endif
++	return q && q->handle && q->enqueue && !(q->flags & TCQ_F_BUILTIN);
++}
++
 +static int nf_dev_path_info(const struct net_device_path_stack *stack,
 +			    struct nf_forward_info *info,
 +			    unsigned char *ha)
@@ -410,6 +426,13 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +
 +	for (i = 0; i < stack->num_paths; i++) {
 +		path = &stack->path[i];
++		if (i < stack->num_paths - 1 && nf_dev_has_tc(path->dev)) {
++			info->indev = path->dev;
++			if (is_zero_ether_addr(info->h_source))
++				memcpy(info->h_source, path->dev->dev_addr, ETH_ALEN);
++			break;
++		}
++
 +		switch (path->type) {
 +		case DEV_PATH_ETHERNET:
 +		case DEV_PATH_IEEE80211:

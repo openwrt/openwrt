@@ -1,0 +1,231 @@
+From 2a63444188c34857f91a6b7a41b5ec2b21fe4ba4 Mon Sep 17 00:00:00 2001
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Date: Sun, 8 Nov 2026 12:00:00 +0100
+Subject: [PATCH] netfilter: flowtable: end the forward path at a device with tc
+
+A shaper on a VLAN, PPPoE or bridge device stops shaping as soon as the
+flowtable offloads a flow through that device. The forward path
+discovery walks from the route's device down to the real device and
+offloads the flow there: the flowtable takes the packets at the real
+device's ingress hook and transmits them on the real device, so the
+qdisc and the tc hooks of a device in between never see them.
+
+End the path at the first device, walking down from the route's device,
+that has a root qdisc someone configured, or a tcx/clsact hook, and
+offload the flow at that device. The flowtable then takes the packets
+after that device's tc ingress, and transmits them through its qdisc. A
+flow whose path is transmitted directly cannot end at a device that is
+not an Ethernet device, so such a flow stays on the classic path.
+
+The root qdisc the kernel attaches by default has no handle: qdisc_create()
+allocates one for every qdisc tc adds, qdisc_create_dflt() none. A
+default qdisc is stepped over as before, so a device that got one by the
+order it came up in does not end the path: pppd in demand mode brings
+the ppp device up before the PPPoE channel that makes it IFF_NO_QUEUE is
+connected, and dev_activate() gives it the default qdisc then.
+
+A qdisc or a tc hook added after the flow was offloaded moves that
+device. No netdevice event reports it: qdisc_graft() only notifies
+rtnetlink listeners, and attaching a tcx program notifies no one. So
+nf_flow_dst_valid() walks the path of the flow again in the gc and
+tears the flow down when tc now ends it at another device; the next
+packet offloads it there. A path that no longer reaches the device the
+flow ends at, such as a bridge port the host left, is left to the fdb
+check. For that walk a direct xmit tuple keeps the dst of its route, as
+one with a tunnel already does. That dst belongs to the device the
+route points at, the bridge or the VLAN device above the port, and is
+not used to transmit; the gc and the packet path now check it as they
+check the dst of a neighbour xmit tuple.
+
+The walk raises the gc cost per flow from 0.86 to 3.01 us (median of
+5274 and 12044 nf_flow_offload_gc_step() calls, 64 TCP flows through a
+VLAN device in a KVM guest, one run each). A flow whose path does not
+change is not torn down: over 82 to 188 gc passes the forward chain saw
+198 or 199 packets of the 64 flows, with and without tc on the VLAN
+device. struct flow_offload stays at 296 bytes.
+
+[ adapted to 6.18: dst_cache and dst_cookie move out of the union with the
+  direct xmit fields, as fa7395c02d95 ("netfilter: flowtable: support IPIP
+  tunnel with direct xmit") does upstream, so that a direct xmit tuple keeps
+  its route dst; struct flow_offload grows from 224 to 256 bytes (pahole,
+  x86-64), the kmalloc-256 object kzalloc() already gave it; the natural end
+  of the path is the first DSA port, where nft_dev_path_info() stops on 6.18;
+  708's nf_flow_dst_valid() has no dst check on 6.18, so there only the
+  packet path checks that dst; hack 650's xt_FLOWOFFLOAD ends its path at
+  a device with tc too, so that the gc does not tear its flows down ]
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+---
+--- a/include/net/netfilter/nf_flow_table.h
++++ b/include/net/netfilter/nf_flow_table.h
+@@ -141,11 +141,12 @@ struct flow_offload_tuple {
+ 					port_vlans:2,
+ 					in_vlan_ingress:2;
+ 	u16				mtu;
++	u32				dst_cookie;
++	struct dst_entry		*dst_cache;
++
+ 	union {
+ 		struct {
+-			struct dst_entry *dst_cache;
+ 			u32		ifidx;
+-			u32		dst_cookie;
+ 		};
+ 		struct {
+ 			u32		ifidx;
+@@ -300,6 +301,8 @@ void flow_offload_refresh(struct nf_flow
+ struct flow_offload_tuple_rhash *flow_offload_lookup(struct nf_flowtable *flow_table,
+ 						     struct flow_offload_tuple *tuple);
+ void nf_flow_table_gc_run(struct nf_flowtable *flow_table);
++bool nf_flow_tc_moved(const struct flow_offload *flow,
++		      enum flow_offload_tuple_dir dir);
+ void nf_flow_table_gc_cleanup(struct nf_flowtable *flowtable,
+ 			      struct net_device *dev);
+ void nf_flow_table_cleanup(struct net_device *dev);
+--- a/net/netfilter/nf_flow_table_core.c
++++ b/net/netfilter/nf_flow_table_core.c
+@@ -132,7 +132,8 @@ static int flow_offload_fill_route(struc
+ 		flow_tuple->bridge_vlan = route->tuple[dir].out.bridge_vlan;
+ 		flow_tuple->port_vlans = route->tuple[dir].out.port_vlans;
+ 		flow_tuple->out.hw_ifidx = route->tuple[dir].out.hw_ifindex;
+-		dst_release(dst);
++		flow_tuple->dst_cache = dst;
++		flow_tuple->dst_cookie = flow_offload_dst_cookie(flow_tuple);
+ 		break;
+ 	case FLOW_OFFLOAD_XMIT_XFRM:
+ 	case FLOW_OFFLOAD_XMIT_NEIGH:
+@@ -152,9 +153,7 @@ static int flow_offload_fill_route(struc
+ static void nft_flow_dst_release(struct flow_offload *flow,
+ 				 enum flow_offload_tuple_dir dir)
+ {
+-	if (flow->tuplehash[dir].tuple.xmit_type == FLOW_OFFLOAD_XMIT_NEIGH ||
+-	    flow->tuplehash[dir].tuple.xmit_type == FLOW_OFFLOAD_XMIT_XFRM)
+-		dst_release(flow->tuplehash[dir].tuple.dst_cache);
++	dst_release(flow->tuplehash[dir].tuple.dst_cache);
+ }
+ 
+ void flow_offload_route_init(struct flow_offload *flow,
+@@ -581,6 +580,9 @@ static bool nf_flow_dst_valid(struct nf_
+ 	u16 vid = 0;
+ 	int i;
+ 
++	if (nf_flow_tc_moved(flow, dir))
++		return false;
++
+ 	if (!tuple->bridge_path)
+ 		return true;
+ 
+--- a/net/netfilter/nf_flow_table_ip.c
++++ b/net/netfilter/nf_flow_table_ip.c
+@@ -260,8 +260,7 @@ static bool nf_flow_exceeds_mtu(const st
+ 
+ static inline bool nf_flow_dst_check(struct flow_offload_tuple *tuple)
+ {
+-	if (tuple->xmit_type != FLOW_OFFLOAD_XMIT_NEIGH &&
+-	    tuple->xmit_type != FLOW_OFFLOAD_XMIT_XFRM)
++	if (!tuple->dst_cache)
+ 		return true;
+ 
+ 	return dst_check(tuple->dst_cache, tuple->dst_cookie);
+--- a/net/netfilter/nf_flow_table_path.c
++++ b/net/netfilter/nf_flow_table_path.c
+@@ -14,6 +14,7 @@
+ #include <net/netfilter/nf_conntrack_core.h>
+ #include <net/netfilter/nf_conntrack_extend.h>
+ #include <net/netfilter/nf_flow_table.h>
++#include <net/sch_generic.h>
+ 
+ static enum flow_offload_xmit_type nft_xmit_type(struct dst_entry *dst)
+ {
+@@ -98,6 +99,74 @@ struct nft_forward_info {
+ 	enum flow_offload_xmit_type xmit_type;
+ };
+ 
++/* A device with a qdisc someone configured or a tc hook must see the flow: the
++ * path ends there. The root qdisc the kernel attaches by default has no handle.
++ */
++static bool nft_dev_has_tc(const struct net_device *dev)
++{
++	const struct Qdisc *q = rcu_dereference(dev->qdisc);
++
++#ifdef CONFIG_NET_XGRESS
++	if (rcu_access_pointer(dev->tcx_ingress) ||
++	    rcu_access_pointer(dev->tcx_egress))
++		return true;
++#endif
++	return q && q->handle && q->enqueue && !(q->flags & TCQ_F_BUILTIN);
++}
++
++/**
++ * nf_flow_tc_moved() - check that tc still lets the flow end where it does
++ * @flow: offloaded flow
++ * @dir: direction whose path is walked again
++ *
++ * A qdisc or a tc hook added to or removed from a device on the path after
++ * the flow was offloaded moves the device the path has to end at.
++ *
++ * Return: true if the flow now has to end at another device of its path.
++ */
++bool nf_flow_tc_moved(const struct flow_offload *flow,
++		      enum flow_offload_tuple_dir dir)
++{
++	const struct flow_offload_tuple *tuple = &flow->tuplehash[dir].tuple;
++	const struct flow_offload_tuple *other = &flow->tuplehash[!dir].tuple;
++	struct net_device_path_stack stack;
++	int i, end = -1, tc = -1, last;
++	unsigned char ha[ETH_ALEN];
++
++	if (!tuple->dst_cache || tuple->xmit_type == FLOW_OFFLOAD_XMIT_XFRM)
++		return false;
++
++	rcu_read_lock();
++	if (nft_dev_fill_forward_path(NULL, tuple->dst_cache, flow->ct,
++				      (enum ip_conntrack_dir)dir, ha,
++				      &stack) < 0) {
++		rcu_read_unlock();
++		return false;
++	}
++
++	last = stack.num_paths - 1;
++	for (i = 0; i < stack.num_paths; i++) {
++		if (stack.path[i].dev->ifindex == other->iifidx)
++			end = i;
++		if (tc < 0 && i < stack.num_paths - 1 &&
++		    nft_dev_has_tc(stack.path[i].dev))
++			tc = i;
++		if (stack.path[i].type == DEV_PATH_DSA) {
++			last = i;
++			break;
++		}
++	}
++	rcu_read_unlock();
++
++	/* A path that no longer reaches the device, such as a bridge port
++	 * the host left, is not a tc change.
++	 */
++	if (end < 0)
++		return false;
++
++	return end != (tc < 0 ? last : tc);
++}
++
+ static int nft_dev_path_info(const struct net_device_path_stack *stack,
+ 			     struct nft_forward_info *info,
+ 			     unsigned char *ha, struct nf_flowtable *flowtable)
+@@ -109,6 +178,17 @@ static int nft_dev_path_info(const struc
+ 
+ 	for (i = 0; i < stack->num_paths; i++) {
+ 		path = &stack->path[i];
++		if (i < stack->num_paths - 1 && nft_dev_has_tc(path->dev)) {
++			if (info->xmit_type == FLOW_OFFLOAD_XMIT_DIRECT &&
++			    !nft_is_valid_ether_device(path->dev))
++				return -1;
++
++			info->indev = path->dev;
++			if (is_zero_ether_addr(info->h_source))
++				memcpy(info->h_source, path->dev->dev_addr, ETH_ALEN);
++			break;
++		}
++
+ 		switch (path->type) {
+ 		case DEV_PATH_ETHERNET:
+ 		case DEV_PATH_IEEE80211:
