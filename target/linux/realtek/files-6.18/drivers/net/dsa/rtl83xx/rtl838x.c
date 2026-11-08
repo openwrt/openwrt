@@ -117,7 +117,6 @@ const struct rtldsa_config rtldsa_838x_cfg = {
 	.fib_entries = 8192,
 	.l2_uc_tbl = RTL8380_TBL_L2_UC,
 	.l2_cam_tbl = RTL8380_TBL_L2_CAM_UC,
-	.set_port_reg_be = rtl838x_set_port_reg,
 	.get_port_reg_be = rtl838x_get_port_reg,
 	.set_port_reg_le = rtl838x_set_port_reg,
 	.get_port_reg_le = rtl838x_get_port_reg,
