@@ -2723,9 +2723,12 @@ return {
 			delete hostapd.data.dpp_hooks[name];
 		bss_event("remove", name);
 	},
+	// The AP MLD keeps its name on its other links, so the event names the
+	// radio of the link that stopped.
 	bss_link_removed: function(phy, name, obj) {
 		if (!iface_link_reload_expired(phy, name))
 			mld_link_bss_remove(phy, name, obj);
+		bss_event("link_removed", name, { phy });
 	},
 	cac_start: function(phy, cac) {
 		hostapd.data.obj?.notify("cac_start",
