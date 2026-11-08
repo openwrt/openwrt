@@ -536,7 +536,13 @@ static int otto_lag_93xx_set_group2ports(struct otto_dsa_priv *priv, int group,
 static inline void otto_lag_93xx_set_local_group2ports(struct otto_dsa_priv *priv, int group,
 						       u64 ports)
 {
-	priv->r->set_port_reg_be(ports, priv->r->trk_mbr_ctr(group));
+	int reg = priv->r->trk_mbr_ctr(group);
+
+	if (priv->r->cpu_port >= 32) {
+		regmap_write(priv->map, reg, upper_32_bits(ports));
+		reg += 4;
+	}
+	regmap_write(priv->map, reg, lower_32_bits(ports));
 }
 
 int otto_lag_93xx_set_port_members(struct otto_dsa_priv *priv, int group,
