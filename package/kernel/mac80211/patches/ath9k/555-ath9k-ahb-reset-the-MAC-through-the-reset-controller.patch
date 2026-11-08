@@ -1,0 +1,177 @@
+From: Rosen Penev <rosenp@gmail.com>
+Date: Sat, 7 Nov 2026 17:01:31 -0800
+Subject: [PATCH] wifi: ath9k: ahb: reset the MAC through the reset controller
+
+Some of the SoC MACs need a reset from the SoC's reset controller along
+with their own: the AHB interface of the AR913x, the MAC of the AR933x
+after a cold reset or with frames pending, and the RTC interface of the
+QCA955x on every reset. ath9k_hw calls external_reset() for these, which
+the platform code used to set and nothing sets anymore.
+
+Take the reset from the device tree and implement external_reset() with
+it, also once before the hardware is set up, as the platform code did.
+After the reset, the AR933x MAC reloads its EEPROM, so wait for the
+EEPBUSY bit in RST_BOOTSTRAP to clear. The register is the second reg
+entry of the device, and the AR933x goes without the external reset when
+it is not there.
+
+The platform code of the QCA955x also polled the WMAC bit of the DDR
+controller's client activity for up to 100 us before the reset. ath9k_hw
+already waits for the MAC's DMA to halt before it, so leave that out.
+
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+Assisted-by: LLM
+---
+--- a/drivers/net/wireless/ath/ath9k/ahb.c
++++ b/drivers/net/wireless/ath/ath9k/ahb.c
+@@ -17,17 +17,24 @@
+  */
+ 
+ #include <linux/clk.h>
++#include <linux/delay.h>
++#include <linux/iopoll.h>
+ #include <linux/module.h>
+ #include <linux/nl80211.h>
+ #include <linux/of.h>
+ #include <linux/platform_device.h>
++#include <linux/reset.h>
+ #include <linux/sys_soc.h>
+ 
+ #include "ath9k.h"
+ 
++#define AR933X_BOOTSTRAP_EEPBUSY	BIT(4)
++
+ struct ath_ahb {
+ 	struct ath_softc sc;	/* must be first, it is hw->priv */
+ 	struct clk *ref_clk;
++	struct reset_control *reset;
++	void __iomem *bootstrap;
+ 	const struct soc_device_attribute *soc;
+ };
+ 
+@@ -85,6 +92,60 @@ static int ath_ahb_soc_rev(struct ath_hw
+ 	return (uintptr_t)ath_ahb_from_ah(ah)->soc->data;
+ }
+ 
++/* reset the AHB-WMAC interface */
++static int ar913x_wmac_reset(struct ath_hw *ah)
++{
++	struct ath_ahb *ahb = ath_ahb_from_ah(ah);
++	int ret;
++
++	ret = reset_control_assert(ahb->reset);
++	if (ret)
++		return ret;
++	mdelay(10);
++
++	ret = reset_control_deassert(ahb->reset);
++	mdelay(10);
++
++	return ret;
++}
++
++static int ar933x_wmac_reset(struct ath_hw *ah)
++{
++	struct ath_ahb *ahb = ath_ahb_from_ah(ah);
++	u32 val;
++	int ret;
++
++	ret = reset_control_assert(ahb->reset);
++	if (ret)
++		return ret;
++
++	ret = reset_control_deassert(ahb->reset);
++	if (ret)
++		return ret;
++
++	/* the MAC reloads its EEPROM after the reset */
++	return readl_poll_timeout_atomic(ahb->bootstrap, val,
++					 !(val & AR933X_BOOTSTRAP_EEPBUSY),
++					 10000, 200000);
++}
++
++/* the RTC interface is reset along with the MAC, see ath9k_hw_set_reset() */
++static int qca955x_wmac_reset(struct ath_hw *ah)
++{
++	struct ath_ahb *ahb = ath_ahb_from_ah(ah);
++	int ret;
++
++	ret = reset_control_assert(ahb->reset);
++	if (ret)
++		return ret;
++	udelay(10);
++
++	ret = reset_control_deassert(ahb->reset);
++	udelay(10);
++
++	return ret;
++}
++
+ int ath_ahb_init_hw(struct ath_hw *ah)
+ {
+ 	struct ath_ahb *ahb = ath_ahb_from_ah(ah);
+@@ -94,6 +155,10 @@ int ath_ahb_init_hw(struct ath_hw *ah)
+ 		ah->is_clk_25mhz = clk_get_rate(ahb->ref_clk) == 25000000;
+ 
+ 	switch (ah->hw_version.devid) {
++	case AR5416_AR9100_DEVID:
++		if (ahb->reset)
++			ah->external_reset = ar913x_wmac_reset;
++		break;
+ 	case AR9300_DEVID_AR9330:
+ 		/*
+ 		 * The MACs of the AR933x v1.0 and v1.1 report the same
+@@ -101,6 +166,8 @@ int ath_ahb_init_hw(struct ath_hw *ah)
+ 		 */
+ 		if (ahb->soc && ath_ahb_soc_rev(ah) == 1)
+ 			ah->get_mac_revision = ath_ahb_soc_rev;
++		if (ahb->reset && ahb->bootstrap)
++			ah->external_reset = ar933x_wmac_reset;
+ 		break;
+ 	case AR9300_DEVID_AR953X:
+ 		/*
+@@ -116,11 +183,18 @@ int ath_ahb_init_hw(struct ath_hw *ah)
+ 		if (ahb->soc)
+ 			ah->get_mac_revision = ath_ahb_soc_rev;
+ 		break;
++	case AR9300_DEVID_QCA955X:
++		if (ahb->reset)
++			ah->external_reset = qca955x_wmac_reset;
++		break;
+ 	}
+ 
+ 	if (has_soc_rev && !ahb->soc)
+ 		dev_warn(ah->dev, "unknown SoC revision\n");
+ 
++	if (ah->external_reset)
++		return ah->external_reset(ah);
++
+ 	return 0;
+ }
+ 
+@@ -128,12 +202,25 @@ static int ath_ahb_get_resources(struct
+ 				 struct ath_ahb *ahb)
+ {
+ 	struct device *dev = &pdev->dev;
++	struct resource *res;
+ 
+ 	ahb->ref_clk = devm_clk_get_optional_enabled(dev, NULL);
+ 	if (IS_ERR(ahb->ref_clk))
+ 		return dev_err_probe(dev, PTR_ERR(ahb->ref_clk),
+ 				     "failed to get the reference clock\n");
+ 
++	ahb->reset = devm_reset_control_get_optional_exclusive(dev, NULL);
++	if (IS_ERR(ahb->reset))
++		return dev_err_probe(dev, PTR_ERR(ahb->reset),
++				     "failed to get the reset\n");
++
++	res = platform_get_resource(pdev, IORESOURCE_MEM, 1);
++	if (res) {
++		ahb->bootstrap = devm_ioremap_resource(dev, res);
++		if (IS_ERR(ahb->bootstrap))
++			return PTR_ERR(ahb->bootstrap);
++	}
++
+ 	ahb->soc = soc_device_match(ath_ahb_soc_revs);
+ 
+ 	return 0;

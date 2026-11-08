@@ -1,0 +1,111 @@
+From: Rosen Penev <rosenp@gmail.com>
+Date: Sat, 7 Nov 2026 17:01:31 -0800
+Subject: [PATCH] wifi: ath9k: ahb: take the MAC revision from the SoC revision
+
+The AR934x, QCA953x and QCA956x MACs do not report their revision, and
+the MACs of the AR933x v1.0 and v1.1 report the same one. ath9k_hw takes
+it from get_mac_revision() then, which the platform code used to set.
+Without it, the QCA953x v1.1 and v2.0 run with the initvals of v1.0, and
+the AR934x v1.3 and later get the workarounds of the older revisions.
+
+Match the revision of the SoC device that the arch code registers and
+return it from get_mac_revision(). Only do so for the AR933x v1.1, as
+the platform code did.
+
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+Assisted-by: LLM
+---
+--- a/drivers/net/wireless/ath/ath9k/ahb.c
++++ b/drivers/net/wireless/ath/ath9k/ahb.c
+@@ -21,12 +21,14 @@
+ #include <linux/nl80211.h>
+ #include <linux/of.h>
+ #include <linux/platform_device.h>
++#include <linux/sys_soc.h>
+ 
+ #include "ath9k.h"
+ 
+ struct ath_ahb {
+ 	struct ath_softc sc;	/* must be first, it is hw->priv */
+ 	struct clk *ref_clk;
++	const struct soc_device_attribute *soc;
+ };
+ 
+ static const struct of_device_id ath9k_of_match_table[] = {
+@@ -58,6 +60,19 @@ static const struct ath_bus_ops ath_ahb_
+ 	.eeprom_read = ath_ahb_eeprom_read,
+ };
+ 
++#define ATH_AHB_SOC_REV(_rev) \
++	{ .family = "Atheros", .revision = #_rev, .data = (void *)_rev }
++
++static const struct soc_device_attribute ath_ahb_soc_revs[] = {
++	ATH_AHB_SOC_REV(0), ATH_AHB_SOC_REV(1), ATH_AHB_SOC_REV(2),
++	ATH_AHB_SOC_REV(3), ATH_AHB_SOC_REV(4), ATH_AHB_SOC_REV(5),
++	ATH_AHB_SOC_REV(6), ATH_AHB_SOC_REV(7), ATH_AHB_SOC_REV(8),
++	ATH_AHB_SOC_REV(9), ATH_AHB_SOC_REV(10), ATH_AHB_SOC_REV(11),
++	ATH_AHB_SOC_REV(12), ATH_AHB_SOC_REV(13), ATH_AHB_SOC_REV(14),
++	ATH_AHB_SOC_REV(15),
++	{ /* sentinel */ }
++};
++
+ static struct ath_ahb *ath_ahb_from_ah(struct ath_hw *ah)
+ {
+ 	struct ath_softc *sc = ah->hw->priv;
+@@ -65,14 +80,28 @@ static struct ath_ahb *ath_ahb_from_ah(s
+ 	return container_of(sc, struct ath_ahb, sc);
+ }
+ 
++static int ath_ahb_soc_rev(struct ath_hw *ah)
++{
++	return (uintptr_t)ath_ahb_from_ah(ah)->soc->data;
++}
++
+ int ath_ahb_init_hw(struct ath_hw *ah)
+ {
+ 	struct ath_ahb *ahb = ath_ahb_from_ah(ah);
++	bool has_soc_rev = false;
+ 
+ 	if (ahb->ref_clk)
+ 		ah->is_clk_25mhz = clk_get_rate(ahb->ref_clk) == 25000000;
+ 
+ 	switch (ah->hw_version.devid) {
++	case AR9300_DEVID_AR9330:
++		/*
++		 * The MACs of the AR933x v1.0 and v1.1 report the same
++		 * revision, only the SoC revision tells them apart.
++		 */
++		if (ahb->soc && ath_ahb_soc_rev(ah) == 1)
++			ah->get_mac_revision = ath_ahb_soc_rev;
++		break;
+ 	case AR9300_DEVID_AR953X:
+ 		/*
+ 		 * The QCA953x only supports a 25 MHz reference clock. Some
+@@ -80,9 +109,18 @@ int ath_ahb_init_hw(struct ath_hw *ah)
+ 		 * would break the MAC.
+ 		 */
+ 		ah->is_clk_25mhz = true;
++		fallthrough;
++	case AR9300_DEVID_AR9340:
++	case AR9300_DEVID_QCA956X:
++		has_soc_rev = true;
++		if (ahb->soc)
++			ah->get_mac_revision = ath_ahb_soc_rev;
+ 		break;
+ 	}
+ 
++	if (has_soc_rev && !ahb->soc)
++		dev_warn(ah->dev, "unknown SoC revision\n");
++
+ 	return 0;
+ }
+ 
+@@ -96,6 +134,8 @@ static int ath_ahb_get_resources(struct
+ 		return dev_err_probe(dev, PTR_ERR(ahb->ref_clk),
+ 				     "failed to get the reference clock\n");
+ 
++	ahb->soc = soc_device_match(ath_ahb_soc_revs);
++
+ 	return 0;
+ }
+ 
