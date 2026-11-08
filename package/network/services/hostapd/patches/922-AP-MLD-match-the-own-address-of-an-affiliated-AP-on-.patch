@@ -1,0 +1,142 @@
+From: Felix Fietkau <nbd@nbd.name>
+Subject: [PATCH] AP MLD: match the own address of an affiliated AP on its link
+ only
+
+get_hapd_bssid() returns the BSS whose own address equals the BSSID
+before it looks at the link of the frame. The own address of an
+affiliated AP can be the AP MLD address. When the link of the event has
+no BSS any more, switch_link_hapd() keeps the BSS of the interface,
+and the lookup returns it for any frame that names the AP MLD address.
+After a link removal, a Data frame of a STA of the removed link thus
+gets a Deauthentication frame from a partner link, on the channel of
+that link, where the STA does not hear it.
+
+Match the own address of an affiliated AP only on its own link, as the
+AP MLD address already is.
+
+mac80211 gives a frame of an unknown sender the link whose channel the
+frame came on, so on an AP MLD such a frame comes without a link ID only
+where no link is on that channel. Examples are a frame that the driver
+handles after the STOP_AP of its link, and a frame on the channel of a
+removed link while the radio stays there for another interface.
+hostapd_rx_from_unknown_sta() and hostapd_mgmt_rx() then match the BSS
+by its own address without a link, and the affiliated AP whose own
+address is the AP MLD address answers in the same way.
+
+A driver can also report the frames of a known station without a link:
+mt7996 sets no link for a non-MLO station on an AP MLD. Its unexpected
+4-address frame enables 4-address WDS mode, and its frames before the
+association get reason 7 from ieee802_11_rx_from_unknown(): a
+Disassociation frame if the STA is authenticated, a Deauthentication
+frame if hostapd holds no entry for the STA.
+
+On an AP MLD, a received frame without a link names no affiliated AP
+where no affiliated AP of the AP MLD holds a station entry for the
+sender. A frame from a known sender keeps the match. Broadcast frames,
+a non-MLD BSS and the Beacon frame fallback are unchanged. The TX status
+path keeps the match without a link, since hostapd gets the TX status
+of some frames without a link ID.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/src/ap/drv_callbacks.c
++++ b/src/ap/drv_callbacks.c
+@@ -1924,6 +1924,21 @@ switch_link_scan(struct hostapd_data *ha
+ 
+ #define HAPD_BROADCAST ((struct hostapd_data *) -1)
+ 
++/* The own address of an affiliated AP can be the AP MLD address, so it names
++ * the BSS only on the link of that BSS */
++static bool hapd_own_addr_on_link(struct hostapd_data *hapd, const u8 *bssid,
++				  int link_id)
++{
++	if (!ether_addr_equal(bssid, hapd->own_addr))
++		return false;
++#ifdef CONFIG_IEEE80211BE
++	if (hapd->conf->mld_ap && link_id >= 0)
++		return link_id == hapd->mld_link_id;
++#endif /* CONFIG_IEEE80211BE */
++	return true;
++}
++
++
+ static struct hostapd_data * get_hapd_bssid(struct hostapd_iface *iface,
+ 					    const u8 *bssid, int link_id)
+ {
+@@ -1947,14 +1962,13 @@ static struct hostapd_data * get_hapd_bs
+ #endif /* CONFIG_IEEE80211BE */
+ 
+ 		hapd = iface->bss[i];
+-		if (ether_addr_equal(bssid, hapd->own_addr))
++		if (hapd_own_addr_on_link(hapd, bssid, link_id))
+ 			return hapd;
+ 
+ #ifdef CONFIG_IEEE80211BE
+-		if (ether_addr_equal(bssid, hapd->own_addr) ||
+-		    (hapd->conf->mld_ap &&
+-		     ether_addr_equal(bssid, hapd->mld->mld_addr) &&
+-		     link_id == hapd->mld_link_id))
++		if (hapd->conf->mld_ap &&
++		    ether_addr_equal(bssid, hapd->mld->mld_addr) &&
++		    link_id == hapd->mld_link_id)
+ 			return hapd;
+ 
+ 		if (!hapd->conf->mld_ap)
+@@ -1964,7 +1978,7 @@ static struct hostapd_data * get_hapd_bs
+ 			if (p_hapd == hapd)
+ 				continue;
+ 
+-			if (ether_addr_equal(bssid, p_hapd->own_addr) ||
++			if (hapd_own_addr_on_link(p_hapd, bssid, link_id) ||
+ 			    (ether_addr_equal(bssid, p_hapd->mld->mld_addr) &&
+ 			     link_id == p_hapd->mld_link_id))
+ 				return p_hapd;
+@@ -1976,11 +1990,38 @@ static struct hostapd_data * get_hapd_bs
+ }
+ 
+ 
++/* mac80211 gives a frame of an unknown sender the link of its channel, so on
++ * an AP MLD a frame without a link from a sender that no affiliated AP knows
++ * came on a channel that no affiliated AP holds. The driver can report the
++ * frames of a known non-MLO station without a link. */
++static struct hostapd_data * get_hapd_bssid_rx(struct hostapd_iface *iface,
++					       const u8 *bssid, const u8 *sa,
++					       int link_id)
++{
++	struct hostapd_data *hapd;
++#ifdef CONFIG_IEEE80211BE
++	struct hostapd_data *sta_hapd;
++#endif /* CONFIG_IEEE80211BE */
++
++	hapd = get_hapd_bssid(iface, bssid, link_id);
++#ifdef CONFIG_IEEE80211BE
++	if (link_id >= 0 || !hapd || hapd == HAPD_BROADCAST ||
++	    !hapd->conf->mld_ap)
++		return hapd;
++
++	sta_hapd = hapd;
++	if (!ap_get_sta_mld_links(&sta_hapd, sa, NULL))
++		return NULL;
++#endif /* CONFIG_IEEE80211BE */
++	return hapd;
++}
++
++
+ static void hostapd_rx_from_unknown_sta(struct hostapd_data *hapd,
+ 					const u8 *bssid, const u8 *addr,
+ 					int wds, int link_id)
+ {
+-	hapd = get_hapd_bssid(hapd->iface, bssid, link_id);
++	hapd = get_hapd_bssid_rx(hapd->iface, bssid, addr, link_id);
+ 	if (hapd == NULL || hapd == HAPD_BROADCAST)
+ 		return;
+ 
+@@ -2021,7 +2062,7 @@ static int hostapd_mgmt_rx(struct hostap
+ 	if (bssid == NULL)
+ 		return 0;
+ 
+-	hapd = get_hapd_bssid(iface, bssid, rx_mgmt->link_id);
++	hapd = get_hapd_bssid_rx(iface, bssid, hdr->addr2, rx_mgmt->link_id);
+ 
+ 	if (!hapd) {
+ 		u16 fc = le_to_host16(hdr->frame_control);
