@@ -1,0 +1,46 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Ville Takio <ville+git@takio.fi>
+Date: Sun, 8 Nov 2026 15:20:00 +0200
+Subject: [PATCH] wifi: b43: N-PHY: enable the BCM43217 external PAs
+
+On the BCM43217 the external PAs of the two cores are enabled in PMU chip
+control register 1: bit 13 for core 0 and bit 8 for core 1, as Broadcom's
+CCTRL43217_EXTPA_C0/C1. b43 and bcma never set them. After a power-on
+they are clear, the PAs stay off and TX power control cannot reach its
+target: on an ASUS RT-AC56U (BCM43217, extpagain2g 3) the power index
+ends at 0x30 against 0x50, the estimate at 0x030 against 0x350, a phone
+sees the AP 17 dB weaker and TCP download is 3 Mbit/s.
+
+The vendor driver sets both bits, read back after it ran, and they stay
+set over a warm reboot, which hid this whenever b43 was loaded after it.
+With them cleared by hand b43 runs as after a power-on; set, it runs as
+after the vendor driver.
+
+Set them at N-PHY init on a BCM43217 whose 2.4 GHz PA is external.
+
+Signed-off-by: Ville Takio <ville+git@takio.fi>
+---
+ drivers/net/wireless/broadcom/b43/phy_n.c | 12 ++++++++++++
+ 1 file changed, 12 insertions(+)
+
+--- a/drivers/net/wireless/broadcom/b43/phy_n.c
++++ b/drivers/net/wireless/broadcom/b43/phy_n.c
+@@ -7103,6 +7103,18 @@ static int b43_phy_initn(struct b43_wlde
+ #endif
+ 		}
+ 	}
++#ifdef CPTCFG_B43_BCMA
++	/*
++	 * The BCM43217 enables the external PAs of its two cores in PMU chip
++	 * control register 1, bit 13 for core 0 and bit 8 for core 1. Nothing
++	 * else sets them: after a power-on they are clear, the PAs stay off
++	 * and TX power control runs open, at a fraction of the power.
++	 */
++	if (dev->dev->bus_type == B43_BUS_BCMA &&
++	    dev->dev->chip_id == BCMA_CHIP_ID_BCM43217 && !b43_nphy_ipa(dev))
++		bcma_chipco_chipctl_maskset(&dev->dev->bdev->bus->drv_cc, 1,
++					    ~0, BIT(13) | BIT(8));
++#endif
+ 	nphy->use_int_tx_iq_lo_cal = b43_nphy_ipa(dev) ||
+ 		phy->rev >= 7 ||
+ 		(phy->rev >= 5 &&

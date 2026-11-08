@@ -1,0 +1,53 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Ville Takio <ville+git@takio.fi>
+Date: Sun, 8 Nov 2026 16:00:00 +0200
+Subject: [PATCH] wifi: b43: N-PHY: route the TSSI on rev 7 and later
+
+When the RSSI select picks the TSSI, b43_nphy_rev3_rssi_select() sets the
+radio's TX SSI mux only on rev 3-6 (radio 2056). On rev 7 and later
+(radio 2057) the mux stays as the radio came up, the TSSI does not reach
+the AFE, and TX power control works on a wrong power estimate.
+
+Do what brcmsmac's brcms_phy_wr_tx_mux() does on rev 7 and later: write
+the mux of the core, 0x11 with an external PA (0xe/0xc at 2.4/5 GHz with
+an internal one, as on 2056), and power up IQTEST_SEL_PU with an external
+PA.
+
+On an ASUS RT-AC56U (BCM43217, N-PHY rev 17, radio 2057 rev 14, external
+PA) after a power-on, with its PAs enabled: TX power control index 0x30
+and power estimate 0x030 without this, 0x50 and 0x150 with it, as after
+the vendor driver ran.
+
+Signed-off-by: Ville Takio <ville+git@takio.fi>
+---
+ drivers/net/wireless/broadcom/b43/phy_n.c | 19 ++++++++++++++-----
+ 1 file changed, 14 insertions(+), 5 deletions(-)
+
+--- a/drivers/net/wireless/broadcom/b43/phy_n.c
++++ b/drivers/net/wireless/broadcom/b43/phy_n.c
+@@ -1811,11 +1811,20 @@ static void b43_nphy_rev3_rssi_select(st
+ 					enum nl80211_band band =
+ 						b43_current_band(dev->wl);
+ 
+-					if (dev->phy.rev < 7) {
+-						if (b43_nphy_ipa(dev))
+-							val = (band == NL80211_BAND_5GHZ) ? 0xC : 0xE;
+-						else
+-							val = 0x11;
++					if (b43_nphy_ipa(dev))
++						val = (band == NL80211_BAND_5GHZ) ? 0xC : 0xE;
++					else
++						val = 0x11;
++					if (dev->phy.rev >= 7) {
++						b43_radio_write(dev, i == 0 ?
++								R2057_TX0_TX_SSI_MUX :
++								R2057_TX1_TX_SSI_MUX,
++								val);
++						if (!b43_nphy_ipa(dev))
++							b43_radio_write(dev,
++									R2057_IQTEST_SEL_PU,
++									0x1);
++					} else {
+ 						reg = (i == 0) ? B2056_TX0 : B2056_TX1;
+ 						reg |= B2056_TX_TX_SSI_MUX;
+ 						b43_radio_write(dev, reg, val);
