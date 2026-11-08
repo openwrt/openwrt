@@ -253,22 +253,33 @@ static void rtldsa_port_link_change(struct dsa_switch *ds, int port,
 
 static irqreturn_t rtldsa_switch_irq(int irq, void *dev_id)
 {
-	struct otto_dsa_priv *priv;
 	struct dsa_switch *ds = dev_id;
-	u64 link, ports;
+	struct otto_dsa_priv *priv;
+	u32 link, ports;
 
 	priv = ds->priv;
-	ports = priv->r->get_port_reg_le(priv->r->isr_port_link_sts_chg);
-	priv->r->set_port_reg_le(ports, priv->r->isr_port_link_sts_chg);
 
-	/* read latched */
-	link = priv->r->get_port_reg_le(priv->r->mac_link_sts);
-	link = priv->r->get_port_reg_le(priv->r->mac_link_sts);
+	for (int i = 0; i < DIV_ROUND_UP(priv->r->cpu_port + 1, 32); i++) {
+		if (regmap_read(priv->map, priv->r->isr_port_link_sts_chg + i * 4,
+				&ports))
+			break;
 
-	for (int port = 0; port < priv->r->cpu_port; port++)
-		if (ports & BIT_ULL(port))
-			rtldsa_port_link_change(ds, port, &priv->ports[port],
-						link & BIT_ULL(port));
+		/* Acknowledge only the status bits read above. */
+		if (regmap_write(priv->map, priv->r->isr_port_link_sts_chg + i * 4,
+				 ports))
+			break;
+
+		/* read latched */
+		if (regmap_read(priv->map, priv->r->mac_link_sts + i * 4, &link))
+			break;
+		if (regmap_read(priv->map, priv->r->mac_link_sts + i * 4, &link))
+			break;
+
+		for (int port = i * 32; port < (i + 1) * 32 && port < priv->r->cpu_port; port++)
+			if (ports & BIT(port % 32))
+				rtldsa_port_link_change(ds, port, &priv->ports[port],
+							link & BIT(port % 32));
+	}
 
 	return IRQ_HANDLED;
 }
