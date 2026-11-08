@@ -1,0 +1,55 @@
+From ea603c277d55489b955457cca5e27a2b2e33ea84 Mon Sep 17 00:00:00 2001
+From: David Woodhouse <dwmw@amazon.co.uk>
+Date: Fri, 30 Oct 2026 16:21:16 +0000
+Subject: [PATCH] wireguard: socket: fix sticky source address on p2p
+ interfaces
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+WireGuard attempts to reply from the address to which the original
+packet was sent, caching it in endpoint->src4 and validating it before
+each use with inet_confirm_addr(..., RT_SCOPE_HOST).
+
+For Legacy IP that validation always fails for an address on a
+point-to-point interface, because confirm_addr_indev() insists on
+inet_ifa_match(), which compares against ifa_address — the *peer*
+address on a p2p link — under a /32 mask. The local address is never
+within that "subnet", so a perfectly valid source address is discarded
+and send4() falls back to kernel source address selection.
+
+For peers on the far side of the p2p link, the fallback happens to
+select the same address and nobody notices. But when a peer on a local
+LAN sends to the p2p address (e.g. my OpenWrt box listening on its
+external PPPoE address), the reply is sent from the LAN interface's
+own address instead. A stateful firewall on the peer then drops the
+reply as unrelated to the flow it originated, and the handshake never
+completes.
+
+inet_confirm_addr() is an ARP helper answering "do I have an address on
+the same subnet as this"; what send4() wants to ask is only "is this
+still a local address". Use __ip_dev_find() for that, matching what
+send6() already does with ipv6_chk_addr(). IPv6 does not have this
+problem.
+
+Fixes: e7096c131e51 ("net: WireGuard secure network tunnel")
+Cc: stable@vger.kernel.org
+Signed-off-by: David Woodhouse <dwmw@amazon.co.uk>
+Signed-off-by: Jason A. Donenfeld <Jason@zx2c4.com>
+---
+ drivers/net/wireguard/socket.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/drivers/net/wireguard/socket.c
++++ b/drivers/net/wireguard/socket.c
+@@ -50,8 +50,8 @@ static int send4(struct wg_device *wg, s
+ 
+ 	if (!rt) {
+ 		security_sk_classify_flow(sock, flowi4_to_flowi_common(&fl));
+-		if (unlikely(!inet_confirm_addr(sock_net(sock), NULL, 0,
+-						fl.saddr, RT_SCOPE_HOST))) {
++		if (unlikely(fl.saddr &&
++			     !__ip_dev_find(sock_net(sock), fl.saddr, false))) {
+ 			endpoint->src4.s_addr = 0;
+ 			endpoint->src_if4 = 0;
+ 			fl.saddr = 0;
