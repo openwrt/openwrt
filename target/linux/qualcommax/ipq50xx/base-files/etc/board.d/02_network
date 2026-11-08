@@ -50,7 +50,8 @@ ipq50xx_setup_interfaces()
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" "wan"
 		;;
 	tplink,eap650-outdoor-v1|\
-	tplink,re700x)
+	tplink,re700x|\
+	ubnt,unifi-6-pro)
 		ucidef_set_interface_lan "lan" "dhcp"
 		;;
 	zte,t5400)
