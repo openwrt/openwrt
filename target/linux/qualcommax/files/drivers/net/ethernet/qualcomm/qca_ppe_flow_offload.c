@@ -379,6 +379,25 @@ static int ppe_flow_port_by_ifindex(struct qca_ppe_priv *priv, int ifindex)
 	return -EOPNOTSUPP;
 }
 
+/* A flowtable flow ends at the first device of its path with a qdisc or a tc
+ * hook, which on a shaped uplink is the WAN's L3 device: the shaper's
+ * redirect sits there, in a clsact that ends both directions of the flow.
+ * The PPE shapes that uplink's flows itself, through the shaper devices, so
+ * such a flow is still built whole in hardware, from the port, VLAN, session
+ * and addresses the driver keeps for the uplink; a direction without a
+ * shaper is forwarded at line rate (ppe_flow_shape()). Without a shaper of
+ * this driver the qdisc on that device is someone else's, and the flow stays
+ * in software to pass it. The device is the one ppe_flow_shaper_path()
+ * resolves the uplink from.
+ */
+static bool ppe_flow_uplink_dev(struct qca_ppe_priv *priv, int ifindex)
+{
+	lockdep_assert_held(&priv->flow_lock);
+
+	return ifindex && ifindex == (priv->uplink_dev ?: priv->ul_shaper) &&
+	       priv->ul_port >= 0 && (priv->ul_shaper || priv->dl_shaper);
+}
+
 static int ppe_uplink_find(struct qca_ppe_priv *priv, int port, u16 vid)
 {
 	int i;
@@ -2345,7 +2364,7 @@ static int ppe_flow_offload_replace(struct ppe_flow_block *fb,
 	struct ppe_flow_entry *entry;
 	struct ppe_flow_data data = {};
 	struct flow_action_entry *act;
-	bool snat, dnat, v6;
+	bool snat, dnat, v6, uplink_in = false;
 	int i, ret, nfw, nhw, iport;
 
 	guard(mutex)(&priv->flow_lock);
@@ -2367,6 +2386,12 @@ static int ppe_flow_offload_replace(struct ppe_flow_block *fb,
 		 */
 		iport = ppe_flow_port_by_ifindex(priv,
 						 match.key->ingress_ifindex);
+		if (iport < 0 &&
+		    ppe_flow_uplink_dev(priv, match.key->ingress_ifindex)) {
+			iport = priv->ul_port;
+			data.ivid = priv->ul_vid;
+			uplink_in = true;
+		}
 		if (iport < 0)
 			return ppe_flow_reject(priv, PPE_REJECT_INGRESS_PORT);
 	}
@@ -2379,7 +2404,7 @@ static int ppe_flow_offload_replace(struct ppe_flow_block *fb,
 	 */
 	if (flow_rule_match_key(rule, FLOW_DISSECTOR_KEY_CVLAN))
 		return ppe_flow_reject(priv, PPE_REJECT_INGRESS_VLAN);
-	if (flow_rule_match_key(rule, FLOW_DISSECTOR_KEY_VLAN)) {
+	if (!uplink_in && flow_rule_match_key(rule, FLOW_DISSECTOR_KEY_VLAN)) {
 		struct flow_match_vlan match;
 
 		flow_rule_match_vlan(rule, &match);
@@ -2484,6 +2509,31 @@ static int ppe_flow_offload_replace(struct ppe_flow_block *fb,
 			break;
 		default:
 			return ppe_flow_reject(priv, PPE_REJECT_ACTION);
+		}
+	}
+
+	/* Only a device that is not a switch port: a plain port uplink keeps
+	 * its VLAN devices, such as IPTV's, on the port's own path.
+	 */
+	if (data.odev && net_eq(dev_net(data.odev), &init_net) &&
+	    ppe_flow_port_by_ifindex(priv, data.odev->ifindex) < 0 &&
+	    ppe_flow_uplink_dev(priv, data.odev->ifindex)) {
+		struct dsa_port *dp = dsa_to_port(&priv->ds, priv->ul_port);
+
+		if (data.vlan_valid || data.pppoe_valid || !dp->user)
+			return ppe_flow_reject(priv, PPE_REJECT_ACTION);
+
+		data.odev = dp->user;
+		data.vlan_id = priv->ul_vid;
+		data.vlan_valid = !!priv->ul_vid;
+		data.pppoe_sid = priv->ul_sid;
+		data.pppoe_valid = !!priv->ul_sid;
+		/* The L3 device of a PPPoE uplink has no link addresses: the
+		 * frame goes to the session's peer from the port's own.
+		 */
+		if (data.pppoe_valid) {
+			u64_to_ether_addr(priv->ul_h_dest, data.eth.h_dest);
+			u64_to_ether_addr(priv->ul_h_source, data.eth.h_source);
 		}
 	}
 
