@@ -25,11 +25,6 @@
 #include "stp.h"
 
 /* Port register accessor functions for the RTL838x and RTL930X SoCs */
-void rtl838x_mask_port_reg(u64 clear, u64 set, int reg)
-{
-	sw_w32_mask((u32)clear, (u32)set, reg);
-}
-
 void rtl838x_set_port_reg(u64 set, int reg)
 {
 	sw_w32((u32)set, reg);
@@ -41,12 +36,6 @@ u64 rtl838x_get_port_reg(int reg)
 }
 
 /* Port register accessor functions for the RTL839x and RTL931X SoCs */
-void rtl839x_mask_port_reg_be(u64 clear, u64 set, int reg)
-{
-	sw_w32_mask((u32)(clear >> 32), (u32)(set >> 32), reg);
-	sw_w32_mask((u32)(clear & 0xffffffff), (u32)(set & 0xffffffff), reg + 4);
-}
-
 u64 rtl839x_get_port_reg_be(int reg)
 {
 	u64 v = sw_r32(reg);

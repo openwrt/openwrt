@@ -335,7 +335,6 @@ struct otto_dsa_priv;
 struct rtldsa_config {
 	const struct dsa_switch_ops *switch_ops;
 	const struct phylink_mac_ops *phylink_mac_ops;
-	void (*mask_port_reg_be)(u64 clear, u64 set, int reg);
 	void (*set_port_reg_be)(u64 set, int reg);
 	u64 (*get_port_reg_be)(int reg);
 	void (*set_port_reg_le)(u64 set, int reg);
@@ -604,14 +603,12 @@ struct fdb_update_work {
 void rtldsa_port_fast_age(struct dsa_switch *ds, int port);
 int rtl83xx_port_is_under(const struct net_device *dev, struct otto_dsa_priv *priv);
 /* Port register accessor functions for the RTL839x and RTL931X SoCs */
-void rtl839x_mask_port_reg_be(u64 clear, u64 set, int reg);
 u64 rtl839x_get_port_reg_be(int reg);
 void rtl839x_set_port_reg_be(u64 set, int reg);
 void rtl839x_set_port_reg_le(u64 set, int reg);
 u64 rtl839x_get_port_reg_le(int reg);
 
 /* Port register accessor functions for the RTL838x and RTL930X SoCs */
-void rtl838x_mask_port_reg(u64 clear, u64 set, int reg);
 void rtl838x_set_port_reg(u64 set, int reg);
 u64 rtl838x_get_port_reg(int reg);
 
