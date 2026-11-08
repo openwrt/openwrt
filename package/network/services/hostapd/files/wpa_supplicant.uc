@@ -1333,7 +1333,8 @@ function iface_ubus_add(ifname)
 				if (!iface)
 					return libubus.STATUS_NOT_FOUND;
 
-				iface.ctrl("RECONFIGURE");
+				if (iface.ctrl("RECONFIGURE") != "OK")
+					return libubus.STATUS_UNKNOWN_ERROR;
 
 				// the file of a station MLD holds the frequencies of one radio only
 				let mld = wpas.data.mld[ifname];
