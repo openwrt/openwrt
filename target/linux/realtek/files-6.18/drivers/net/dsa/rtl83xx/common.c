@@ -24,44 +24,6 @@
 #include "tc.h"
 #include "stp.h"
 
-/* Port register accessor functions for the RTL838x and RTL930X SoCs */
-void rtl838x_set_port_reg(u64 set, int reg)
-{
-	sw_w32((u32)set, reg);
-}
-
-u64 rtl838x_get_port_reg(int reg)
-{
-	return ((u64)sw_r32(reg));
-}
-
-/* Port register accessor functions for the RTL839x and RTL931X SoCs */
-u64 rtl839x_get_port_reg_be(int reg)
-{
-	u64 v = sw_r32(reg);
-
-	v <<= 32;
-	v |= sw_r32(reg + 4);
-
-	return v;
-}
-
-void rtl839x_set_port_reg_le(u64 set, int reg)
-{
-	sw_w32(set, reg);
-	sw_w32(set >> 32, reg + 4);
-}
-
-u64 rtl839x_get_port_reg_le(int reg)
-{
-	u64 v = sw_r32(reg + 4);
-
-	v <<= 32;
-	v |= sw_r32(reg);
-
-	return v;
-}
-
 static bool rtldsa_phy_load_deferred(struct phy_device *phydev)
 {
 	struct device *d = &phydev->mdio.dev;
