@@ -1,23 +1,54 @@
 From: Felix Fietkau <nbd@nbd.name>
-Date: Thu, 3 Jul 2025 11:22:26 +0200
-Subject: [PATCH] hostapd: add support for specifying the link id in the config
+Date: Tue, 20 Oct 2026 14:43:02 +0200
+Subject: [PATCH] AP MLD: Allow the link ID of an affiliated AP to be configured
 
-Makes it easier to dynamically manage links for a MLD at run time.
+The link ID of an affiliated AP depends on the order in which the links
+join the AP MLD. This makes it hard to manage the links of an AP MLD at
+run time.
+
+Add the mld_link_id option for the link ID of the AP. Reject a value
+outside 0..14 when the configuration is read, and a link ID that
+another affiliated AP of the AP MLD uses when the AP joins the AP MLD.
+An AP without mld_link_id gets a free link ID as before, so it does not
+take the configured link ID of another affiliated AP.
 
 Signed-off-by: Felix Fietkau <nbd@nbd.name>
 ---
 
 --- a/hostapd/config_file.c
 +++ b/hostapd/config_file.c
-@@ -5209,6 +5209,8 @@ static int hostapd_config_fill(struct ho
+@@ -5209,6 +5209,16 @@ static int hostapd_config_fill(struct ho
  		conf->punct_acs_threshold = val;
  	} else if (os_strcmp(buf, "mld_ap") == 0) {
  		bss->mld_ap = !!atoi(pos);
 +	} else if (os_strcmp(buf, "mld_link_id") == 0) {
-+		bss->mld_link_id = atoi(pos);
++		int val = atoi(pos);
++
++		if (val < 0 || val >= MAX_NUM_MLD_LINKS) {
++			wpa_printf(MSG_ERROR,
++				   "Line %d: mld_link_id must be between 0 and %d",
++				   line, MAX_NUM_MLD_LINKS - 1);
++			return 1;
++		}
++		bss->mld_link_id = val;
  	} else if (os_strcmp(buf, "mld_addr") == 0) {
  		if (hwaddr_aton(pos, bss->mld_addr)) {
  			wpa_printf(MSG_ERROR, "Line %d: Invalid mld_addr",
+--- a/hostapd/hostapd.conf
++++ b/hostapd/hostapd.conf
+@@ -1168,6 +1168,12 @@ wmm_ac_vo_acm=0
+ # 1 = yes (MLO)
+ #mld_ap=0
+ 
++# AP MLD link ID
++# The link ID (0..14) of this AP within the AP MLD. The link ID of each
++# affiliated AP of an AP MLD must be different. If not set, the AP gets the
++# next link ID that no other affiliated AP of the AP MLD uses.
++#mld_link_id=0
++
+ # AP MLD MAC address
+ # The configured address will be set as the interface hardware address and used
+ # as the AP MLD MAC address. If not set, the current interface hardware address
 --- a/src/ap/ap_config.c
 +++ b/src/ap/ap_config.c
 @@ -180,6 +180,9 @@ void hostapd_config_defaults_bss(struct
@@ -26,32 +57,49 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	bss->urnm_mfpr = -1;
 +#ifdef CONFIG_IEEE80211BE
 +	bss->mld_link_id = -1;
-+#endif
++#endif /* CONFIG_IEEE80211BE */
  #ifdef CONFIG_ENC_ASSOC
  	bss->assoc_frame_encryption = 0;
  	bss->pmksa_caching_privacy = 0;
 --- a/src/ap/ap_config.h
 +++ b/src/ap/ap_config.h
-@@ -1002,6 +1002,8 @@ struct hostapd_bss_config {
+@@ -1002,6 +1002,9 @@ struct hostapd_bss_config {
  	/* The AP's MLD MAC address within the AP MLD */
  	u8 mld_addr[ETH_ALEN];
  
-+	s8 mld_link_id;
++	/* The link ID of the AP within the AP MLD, -1 to assign one */
++	int mld_link_id;
 +
  #ifdef CONFIG_TESTING_OPTIONS
  	/*
  	 * If set indicate the AP as disabled in the RNR element included in the
 --- a/src/ap/hostapd.c
 +++ b/src/ap/hostapd.c
-@@ -3233,7 +3233,10 @@ struct hostapd_iface * hostapd_alloc_ifa
- #ifdef CONFIG_IEEE80211BE
- static void hostapd_bss_alloc_link_id(struct hostapd_data *hapd)
+@@ -3266,13 +3266,23 @@ static int hostapd_mld_unused_link_id(st
+ static int hostapd_bss_alloc_link_id(struct hostapd_data *hapd,
+ 				     struct hostapd_mld *mld)
  {
--	hapd->mld_link_id = hapd->mld->next_link_id++;
-+	if (hapd->conf->mld_link_id >= 0)
-+		hapd->mld_link_id = hapd->conf->mld_link_id;
-+	else
-+		hapd->mld_link_id = hapd->mld->next_link_id++;
- 	wpa_printf(MSG_DEBUG, "AP MLD: %s: Link ID %d assigned.",
- 		   hapd->mld->name, hapd->mld_link_id);
- }
+-	int link_id = hostapd_mld_unused_link_id(mld);
++	int link_id = hapd->conf->mld_link_id;
+ 
+-	if (link_id < 0) {
+-		wpa_printf(MSG_ERROR, "AP MLD %s: No free link ID", mld->name);
++	if (link_id >= 0 && (mld->used_link_ids & BIT(link_id))) {
++		wpa_printf(MSG_ERROR, "AP MLD %s: Link ID %d already in use",
++			   mld->name, link_id);
+ 		return -1;
+ 	}
+-	mld->next_link_id = (link_id + 1) % MAX_NUM_MLD_LINKS;
++
++	if (link_id < 0) {
++		link_id = hostapd_mld_unused_link_id(mld);
++		if (link_id < 0) {
++			wpa_printf(MSG_ERROR, "AP MLD %s: No free link ID",
++				   mld->name);
++			return -1;
++		}
++		mld->next_link_id = (link_id + 1) % MAX_NUM_MLD_LINKS;
++	}
+ 
+ 	mld->used_link_ids |= BIT(link_id);
+ 	hapd->mld_link_id = link_id;

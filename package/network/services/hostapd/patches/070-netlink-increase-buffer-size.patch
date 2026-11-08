@@ -1,10 +1,16 @@
 From: Felix Fietkau <nbd@nbd.name>
-Date: Sat, 18 Oct 2025 21:55:44 +0200
-Subject: [PATCH] netlink: increase buffer size
+Date: Tue, 20 Oct 2026 14:20:36 +0200
+Subject: [PATCH] netlink: Increase the receive buffer size
 
-When lots of events are waiting to be received, the default buffer size
-is not enough, and hostapd can run into "No buffer space available" on
-recvmsg. This will cause the netdev state tracking to go out of sync.
+The RTMGRP_LINK socket of netlink_init() uses the default receive
+buffer. If many link events wait to be received, the kernel drops the
+events that do not fit, and recvfrom() fails with "No buffer space
+available". The interface state that the driver wrappers track from
+these events then goes out of sync with the kernel.
+
+Request a receive buffer of 256 KiB. The kernel limits the value to
+net.core.rmem_max. Keep the default send buffer, since the requests on
+this socket are small.
 
 Signed-off-by: Felix Fietkau <nbd@nbd.name>
 ---
@@ -15,16 +21,19 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  {
  	struct netlink_data *netlink;
  	struct sockaddr_nl local;
-+	int size = 262144;
++	int rcvbuf = 262144;
  
  	netlink = os_zalloc(sizeof(*netlink));
  	if (netlink == NULL)
-@@ -105,6 +106,9 @@ struct netlink_data * netlink_init(struc
+@@ -105,6 +106,12 @@ struct netlink_data * netlink_init(struc
  		return NULL;
  	}
  
-+	setsockopt(netlink->sock, SOL_SOCKET, SO_RCVBUF, &size, sizeof(size));
-+	setsockopt(netlink->sock, SOL_SOCKET, SO_SNDBUF, &size, sizeof(size));
++	if (setsockopt(netlink->sock, SOL_SOCKET, SO_RCVBUF, &rcvbuf,
++		       sizeof(rcvbuf)) < 0)
++		wpa_printf(MSG_DEBUG,
++			   "netlink: Failed to set the receive buffer size: %s",
++			   strerror(errno));
 +
  	os_memset(&local, 0, sizeof(local));
  	local.nl_family = AF_NETLINK;

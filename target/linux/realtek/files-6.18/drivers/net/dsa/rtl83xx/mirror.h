@@ -15,13 +15,14 @@
 #define RTL839X_MIR_SPM_CTRL			(0x2510)
 
 struct dsa_switch;
+struct otto_dsa_priv;
 struct dsa_mall_mirror_tc_entry;
 struct netlink_ext_ack;
 
 /**
- * struct rtldsa_mirror_config - Mirror configuration for specific group and port
+ * struct otto_mirror_config - Mirror configuration for specific group and port
  */
-struct rtldsa_mirror_config {
+struct otto_mirror_config {
 	/** @ctrl: control register for mirroring group */
 	int ctrl;
 
@@ -35,14 +36,16 @@ struct rtldsa_mirror_config {
 	u32 val;
 };
 
-int rtldsa_838x_get_mirror_config(struct rtldsa_mirror_config *config, int group, int port);
-int rtldsa_839x_get_mirror_config(struct rtldsa_mirror_config *config, int group, int port);
-int rtldsa_930x_get_mirror_config(struct rtldsa_mirror_config *config, int group, int port);
-int rtldsa_931x_get_mirror_config(struct rtldsa_mirror_config *config, int group, int port);
-int rtldsa_port_mirror_add(struct dsa_switch *ds, int port,
-			   struct dsa_mall_mirror_tc_entry *mirror,
-			   bool ingress, struct netlink_ext_ack *extack);
-void rtldsa_port_mirror_del(struct dsa_switch *ds, int port,
-			    struct dsa_mall_mirror_tc_entry *mirror);
+int otto_mirror_838x_get_config(struct otto_mirror_config *config, int group, int port);
+int otto_mirror_839x_get_config(struct otto_mirror_config *config, int group, int port);
+int otto_mirror_930x_get_config(struct otto_mirror_config *config, int group, int port);
+int otto_mirror_931x_get_config(struct otto_mirror_config *config, int group, int port);
+int otto_mirror_port_add(struct dsa_switch *ds, int port,
+			 struct dsa_mall_mirror_tc_entry *mirror,
+			 bool ingress, struct netlink_ext_ack *extack);
+void otto_mirror_port_del(struct dsa_switch *ds, int port,
+			  struct dsa_mall_mirror_tc_entry *mirror);
+int otto_mirror_group_get(struct otto_dsa_priv *priv, int port);
+void otto_mirror_group_put(struct otto_dsa_priv *priv, int group);
 
 #endif /* _OTTO_MIRROR_H */

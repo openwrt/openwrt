@@ -1,0 +1,170 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Tue, 27 Oct 2026 13:38:05 +0000
+Subject: [PATCH] wifi: mac80211: pass the TID-to-link mapping of a station to
+ the driver
+
+The device of an AP MLD picks the link of each frame to an associated
+non-AP MLD, so only the driver can apply a mapping that the AP MLD
+negotiated with that station.
+
+Add a driver op that sets the mapping of a station, and implement the
+cfg80211 op of an AP MLD with it. A mapping that names a link that the
+station did not set up is rejected. The default mapping reaches the
+driver as a mapping of every TID to all links of the station.
+
+Co-developed-by: Michael-CY Lee <michael-cy.lee@mediatek.com>
+Signed-off-by: Michael-CY Lee <michael-cy.lee@mediatek.com>
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/include/net/mac80211.h
++++ b/include/net/mac80211.h
+@@ -4736,6 +4736,12 @@ struct ieee80211_prep_tx_info {
+  *	ieee80211_adv_ttlm_duration_set(). The driver passes @params->cookie
+  *	back with each step. cfg80211 calls this only while no mapping is
+  *	requested or established. This callback can sleep.
++ * @set_sta_ttlm: for an AP MLD, apply the TID-to-link mapping negotiated with
++ *	the given non-AP MLD: send the frames of each TID only on the links
++ *	@ttlm gives for it. Without @ttlm->valid, the default mapping applies
++ *	again, and @ttlm maps every TID to all links of the station. A driver
++ *	that implements this sets %NL80211_EXT_FEATURE_AP_NEG_TTLM. This
++ *	callback can sleep.
+  * @adv_ttlm_cancel: cancel the advertised TID-to-link mapping of the given
+  *	cookie, when a link of the AP MLD stops before its end. The driver
+  *	stops the mapping in the device and reports no further step of it;
+@@ -5220,6 +5226,9 @@ struct ieee80211_ops {
+ 				struct cfg80211_adv_ttlm_params *params);
+ 	void (*adv_ttlm_cancel)(struct ieee80211_hw *hw,
+ 				struct ieee80211_vif *vif, u64 cookie);
++	int (*set_sta_ttlm)(struct ieee80211_hw *hw, struct ieee80211_vif *vif,
++			    struct ieee80211_sta *sta,
++			    const struct ieee80211_neg_ttlm *ttlm);
+ 	void (*prep_add_interface)(struct ieee80211_hw *hw,
+ 				   enum nl80211_iftype type);
+ 	int (*set_eml_op_mode)(struct ieee80211_hw *hw,
+--- a/net/mac80211/cfg.c
++++ b/net/mac80211/cfg.c
+@@ -6095,6 +6095,43 @@ ieee80211_adv_ttlm_request(struct wiphy
+ 	return drv_adv_ttlm_request(sdata->local, sdata, params);
+ }
+ 
++static int
++ieee80211_set_sta_ttlm(struct wiphy *wiphy, struct net_device *dev,
++		       const u8 *mac, struct cfg80211_ttlm_params *params)
++{
++	struct ieee80211_sub_if_data *sdata = IEEE80211_DEV_TO_SUB_IF(dev);
++	struct ieee80211_neg_ttlm ttlm = {};
++	struct sta_info *sta;
++	u16 links;
++	int tid;
++
++	lockdep_assert_wiphy(sdata->local->hw.wiphy);
++
++	if (sdata->vif.type != NL80211_IFTYPE_AP ||
++	    !ieee80211_vif_is_mld(&sdata->vif))
++		return -EOPNOTSUPP;
++
++	sta = sta_info_get_bss(sdata, mac);
++	if (!sta)
++		return -ENOENT;
++
++	if (!sta->sta.mlo)
++		return -EINVAL;
++
++	links = sta->sta.valid_links;
++	for (tid = 0; tid < IEEE80211_TTLM_NUM_TIDS; tid++) {
++		if (params &&
++		    ((params->dlink[tid] | params->ulink[tid]) & ~links))
++			return -EINVAL;
++
++		ttlm.downlink[tid] = params ? params->dlink[tid] : links;
++		ttlm.uplink[tid] = params ? params->ulink[tid] : links;
++	}
++	ttlm.valid = !!params;
++
++	return drv_set_sta_ttlm(sdata->local, sdata, sta, &ttlm);
++}
++
+ static void
+ ieee80211_adv_ttlm_cancel(struct wiphy *wiphy, struct net_device *dev,
+ 			  u64 cookie)
+@@ -6264,6 +6301,7 @@ const struct cfg80211_ops mac80211_confi
+ 	.set_ttlm = ieee80211_set_ttlm,
+ 	.adv_ttlm_request = ieee80211_adv_ttlm_request,
+ 	.adv_ttlm_cancel = ieee80211_adv_ttlm_cancel,
++	.set_sta_ttlm = ieee80211_set_sta_ttlm,
+ 	.get_radio_mask = ieee80211_get_radio_mask,
+ 	.assoc_ml_reconf = ieee80211_assoc_ml_reconf,
+ 	.set_epcs = ieee80211_set_epcs,
+--- a/net/mac80211/driver-ops.h
++++ b/net/mac80211/driver-ops.h
+@@ -1875,6 +1875,31 @@ drv_adv_ttlm_request(struct ieee80211_lo
+ 	return ret;
+ }
+ 
++static inline int
++drv_set_sta_ttlm(struct ieee80211_local *local,
++		 struct ieee80211_sub_if_data *sdata,
++		 struct sta_info *sta,
++		 const struct ieee80211_neg_ttlm *ttlm)
++{
++	int ret = -EOPNOTSUPP;
++
++	might_sleep();
++	lockdep_assert_wiphy(local->hw.wiphy);
++	if (!check_sdata_in_driver(sdata))
++		return -EIO;
++
++	if (!sta->uploaded)
++		return -EIO;
++
++	trace_drv_set_sta_ttlm(local, sdata, &sta->sta, ttlm);
++	if (local->ops->set_sta_ttlm)
++		ret = local->ops->set_sta_ttlm(&local->hw, &sdata->vif,
++					       &sta->sta, ttlm);
++	trace_drv_return_int(local, ret);
++
++	return ret;
++}
++
+ static inline void
+ drv_adv_ttlm_cancel(struct ieee80211_local *local,
+ 		    struct ieee80211_sub_if_data *sdata, u64 cookie)
+--- a/net/mac80211/trace.h
++++ b/net/mac80211/trace.h
+@@ -3424,6 +3424,36 @@ TRACE_EVENT(drv_can_neg_ttlm,
+ 	TP_printk(LOCAL_PR_FMT ", " VIF_PR_FMT, LOCAL_PR_ARG, VIF_PR_ARG)
+ );
+ 
++TRACE_EVENT(drv_set_sta_ttlm,
++	    TP_PROTO(struct ieee80211_local *local,
++		     struct ieee80211_sub_if_data *sdata,
++		     struct ieee80211_sta *sta,
++		     const struct ieee80211_neg_ttlm *ttlm),
++
++	TP_ARGS(local, sdata, sta, ttlm),
++
++	TP_STRUCT__entry(LOCAL_ENTRY
++			 VIF_ENTRY
++			 STA_ENTRY
++			 __field(bool, valid)
++			 __array(u16, downlink, sizeof(u16) * 8)
++			 __array(u16, uplink, sizeof(u16) * 8)
++	),
++
++	TP_fast_assign(LOCAL_ASSIGN;
++		       VIF_ASSIGN;
++		       STA_ASSIGN;
++		       __entry->valid = ttlm->valid;
++		       memcpy(__entry->downlink, ttlm->downlink,
++			      sizeof(ttlm->downlink));
++		       memcpy(__entry->uplink, ttlm->uplink,
++			      sizeof(ttlm->uplink));
++	),
++
++	TP_printk(LOCAL_PR_FMT ", " VIF_PR_FMT ", " STA_PR_FMT " valid:%d",
++		  LOCAL_PR_ARG, VIF_PR_ARG, STA_PR_ARG, __entry->valid)
++);
++
+ TRACE_EVENT(drv_neg_ttlm_res,
+ 	    TP_PROTO(struct ieee80211_local *local,
+ 		     struct ieee80211_sub_if_data *sdata,

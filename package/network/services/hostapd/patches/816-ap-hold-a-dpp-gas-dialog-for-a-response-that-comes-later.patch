@@ -1,0 +1,115 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Sat, 17 Oct 2026 17:00:00 +0200
+Subject: [PATCH] AP: hold a DPP GAS dialog for a response that comes later
+
+An EasyMesh Proxy Agent relays the DPP Configuration Request to the
+Multi-AP Controller over 1905 and gets the response back the same way.
+gas_serv sent the GAS Initial Response only once that response was
+there. The Enrollee stays on the channel for a short time after its
+request, and where the round trip took longer it heard no response.
+
+DPP 3.0 has a Configurator that needs more than 100 ms set the GAS
+Comeback Delay and answer later Comeback Requests with a delay until
+the response is ready. gas_serv_req_dpp_processing() now takes an empty
+response as one that comes later. It creates the dialog, answers with
+a comeback delay of 100 TU and no response, and answers each Comeback
+Request to that dialog with a delay of 500 TU until
+gas_serv_dpp_resp_fill() hands the response over. The comeback
+exchange then sends it in fragments as before. The dialog lives as
+long as its station entry: 5 s after the last Comeback Request.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/src/ap/gas_serv.c
++++ b/src/ap/gas_serv.c
+@@ -1663,16 +1663,32 @@ done:
+ 
+ 
+ #ifdef CONFIG_DPP
++/*
++ * An empty response is one that a Configurator elsewhere still has to give,
++ * as through an EasyMesh Proxy Agent: the Enrollee comes back after these
++ * delays (in TUs), and gas_serv_dpp_resp_fill() hands the response over. DPP
++ * 3.0 has a Configurator that needs more than 100 ms set the GAS Comeback
++ * Delay, and answer later Comeback Requests with a delay until it is ready.
++ */
++#define GAS_DPP_PENDING_DELAY 100
++#define GAS_DPP_PENDING_REPEAT_DELAY 500
++
+ void gas_serv_req_dpp_processing(struct hostapd_data *hapd,
+ 				 const u8 *sa, u8 dialog_token,
+ 				 int prot, struct wpabuf *buf, int freq)
+ {
+ 	struct wpabuf *tx_buf;
++	int pending = !wpabuf_len(buf);
+ 
+-	if (wpabuf_len(buf) > hapd->conf->gas_frag_limit ||
++	if (pending || wpabuf_len(buf) > hapd->conf->gas_frag_limit ||
+ 	    hapd->conf->gas_comeback_delay) {
+ 		struct gas_dialog_info *di;
+-		u16 comeback_delay = 1;
++		u16 comeback_delay = pending ? GAS_DPP_PENDING_DELAY : 1;
++
++		if (pending) {
++			wpabuf_free(buf);
++			buf = NULL;
++		}
+ 
+ 		if (hapd->conf->gas_comeback_delay) {
+ 			/* Testing - allow overriding of the delay value */
+@@ -1728,6 +1744,22 @@ void gas_serv_req_dpp_processing(struct
+ 				wpabuf_len(tx_buf));
+ 	wpabuf_free(tx_buf);
+ }
++
++
++/* Takes `buf` and answers 0 where a dialog waits for it, else -1. */
++int gas_serv_dpp_resp_fill(struct hostapd_data *hapd, const u8 *sa,
++			   u8 dialog_token, struct wpabuf *buf)
++{
++	struct gas_dialog_info *dialog;
++
++	dialog = gas_serv_dialog_find(hapd, sa, dialog_token);
++	if (!dialog || !dialog->dpp || dialog->sd_resp)
++		return -1;
++
++	dialog->sd_resp = buf;
++	dialog->sd_resp_pos = 0;
++	return 0;
++}
+ #endif /* CONFIG_DPP */
+ 
+ 
+@@ -1912,6 +1944,22 @@ static void gas_serv_rx_gas_comeback_req
+ 		goto send_resp;
+ 	}
+ 
++#ifdef CONFIG_DPP
++	if (dialog->dpp && !dialog->sd_resp) {
++		wpa_msg(hapd->msg_ctx, MSG_DEBUG,
++			"DPP: Configuration response not yet received - ask for another comeback");
++		tx_buf = gas_build_comeback_resp(dialog_token,
++						 WLAN_STATUS_SUCCESS, 0, 0,
++						 GAS_DPP_PENDING_REPEAT_DELAY,
++						 10 + 2);
++		if (!tx_buf)
++			return;
++		gas_serv_write_dpp_adv_proto(tx_buf);
++		wpabuf_put_le16(tx_buf, 0);
++		goto send_resp;
++	}
++#endif /* CONFIG_DPP */
++
+ 	frag_len = wpabuf_len(dialog->sd_resp) - dialog->sd_resp_pos;
+ 	if (frag_len > hapd->conf->gas_frag_limit) {
+ 		frag_len = hapd->conf->gas_frag_limit;
+--- a/src/ap/gas_serv.h
++++ b/src/ap/gas_serv.h
+@@ -94,5 +94,7 @@ void gas_serv_deinit(struct hostapd_data
+ void gas_serv_req_dpp_processing(struct hostapd_data *hapd,
+ 				 const u8 *sa, u8 dialog_token,
+ 				 int prot, struct wpabuf *buf, int freq);
++int gas_serv_dpp_resp_fill(struct hostapd_data *hapd, const u8 *sa,
++			   u8 dialog_token, struct wpabuf *buf);
+ 
+ #endif /* GAS_SERV_H */

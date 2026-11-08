@@ -1,0 +1,115 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Thu, 22 Oct 2026 20:00:00 +0200
+Subject: [PATCH] wifi: nl80211: report the expiry of an offloaded AP Removal
+ Timer
+
+An AP MLD announces the removal of an affiliated AP in the Beacon frames
+of all its links with a Reconfiguration Multi-Link element, whose AP
+Removal Timer counts the TBTTs to the removal (IEEE 802.11be-2024
+35.3.6.3). User space sees no TBTT, so it updates the beacons of every
+link at each beacon interval to count the timer. A device that takes
+each new template as a new critical update then keeps the Critical
+Update flag set for the whole countdown, past the DTIM Beacon frame that
+ends it (35.3.10).
+
+Add an extended feature with which the driver declares that it counts
+the timer in the Beacon frames itself, and let it report the expiry with
+NL80211_CMD_LINKS_REMOVED on the AP interface. The links stay valid,
+because user space removes them after the frames that the removal needs.
+The driver can keep later beacon updates from the device until the
+expiry, since a device can take the timer of each new template as its
+new start.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/include/net/cfg80211.h
++++ b/include/net/cfg80211.h
+@@ -11074,6 +11074,10 @@ cfg80211_6ghz_power_type(u8 control, u32
+  * AP MLD removing the corresponding affiliated APs with Multi-Link
+  * reconfiguration. Note that it's not valid to remove all links, in this
+  * case disconnect instead.
++ * On an AP interface, a driver with
++ * %NL80211_EXT_FEATURE_AP_REMOVAL_TIMER_OFFLOAD calls it when the AP Removal
++ * Timer of the affiliated APs of @link_mask expired. The links stay valid
++ * until user space removes them.
+  * Also note that the wdev mutex must be held.
+  */
+ void cfg80211_links_removed(struct net_device *dev, u16 link_mask);
+--- a/net/wireless/nl80211.c
++++ b/net/wireless/nl80211.c
+@@ -21969,23 +21969,32 @@ void cfg80211_links_removed(struct net_d
+ 	struct wiphy *wiphy = wdev->wiphy;
+ 	struct cfg80211_registered_device *rdev = wiphy_to_rdev(wiphy);
+ 	struct sk_buff *msg;
++	bool ap = wdev->iftype == NL80211_IFTYPE_AP;
+ 	struct nlattr *links;
+ 	void *hdr;
+ 
+ 	lockdep_assert_wiphy(wdev->wiphy);
+ 	trace_cfg80211_links_removed(dev, link_mask);
+ 
+-	if (WARN_ON(wdev->iftype != NL80211_IFTYPE_STATION &&
+-		    wdev->iftype != NL80211_IFTYPE_P2P_CLIENT))
++	if (ap) {
++		if (WARN_ON(!wiphy_ext_feature_isset(wiphy,
++				NL80211_EXT_FEATURE_AP_REMOVAL_TIMER_OFFLOAD)))
++			return;
++	} else if (WARN_ON(wdev->iftype != NL80211_IFTYPE_STATION &&
++			   wdev->iftype != NL80211_IFTYPE_P2P_CLIENT)) {
+ 		return;
++	}
+ 
+ 	if (WARN_ON(!wdev->valid_links || !link_mask ||
+ 		    (wdev->valid_links & link_mask) != link_mask ||
+ 		    wdev->valid_links == link_mask))
+ 		return;
+ 
+-	cfg80211_wdev_release_link_bsses(wdev, link_mask);
+-	wdev->valid_links &= ~link_mask;
++	/* user space removes the links of an AP */
++	if (!ap) {
++		cfg80211_wdev_release_link_bsses(wdev, link_mask);
++		wdev->valid_links &= ~link_mask;
++	}
+ 
+ 	msg = nlmsg_new(NLMSG_DEFAULT_SIZE, GFP_KERNEL);
+ 	if (!msg)
+--- a/include/uapi/linux/nl80211.h
++++ b/include/uapi/linux/nl80211.h
+@@ -1333,6 +1333,10 @@
+  *	setup links due to AP MLD removing the corresponding affiliated APs with
+  *	Multi-Link reconfiguration. %NL80211_ATTR_MLO_LINKS is used to provide
+  *	information about the removed STA MLD setup links.
++ *	On an AP interface, with %NL80211_EXT_FEATURE_AP_REMOVAL_TIMER_OFFLOAD,
++ *	it reports that the AP Removal Timer of the affiliated APs of the links
++ *	in %NL80211_ATTR_MLO_LINKS expired; the links stay until user space
++ *	removes them.
+  *
+  * @NL80211_CMD_SET_TID_TO_LINK_MAPPING: Set the TID to Link Mapping for a
+  *      non-AP MLD station. The %NL80211_ATTR_MLO_TTLM_DLINK and
+@@ -7383,6 +7387,17 @@ enum nl80211_feature_flags {
+  *	service, configured with %NL80211_CMD_SET_SCS.
+  * @NL80211_EXT_FEATURE_MSCS: Driver supports the mirrored stream
+  *	classification service, configured with %NL80211_CMD_SET_MSCS.
++ * @NL80211_EXT_FEATURE_AP_REMOVAL_TIMER_OFFLOAD: The driver counts the AP
++ *	Removal Timer of an affiliated AP that a Reconfiguration Multi-Link
++ *	element in the beacon of an AP MLD link announces (IEEE 802.11be-2024,
++ *	35.3.6.3), in the Beacon frames of every link that carries the element,
++ *	and reports its expiry with %NL80211_CMD_LINKS_REMOVED on the AP
++ *	interface. User space sets the beacons with the element once. Until
++ *	the expiry, the driver can keep later beacon updates of the links of
++ *	the AP MLD from the device, so user space sets the beacons of the links
++ *	that stay again after the event. The expiry comes before the TBTT at
++ *	which the timer reaches 0, and the removed links keep running until
++ *	user space stops them.
+  *
+  * @NUM_NL80211_EXT_FEATURES: number of extended features.
+  * @MAX_NL80211_EXT_FEATURES: highest extended feature index.
+@@ -7472,6 +7487,7 @@ enum nl80211_ext_feature_index {
+ 	NL80211_EXT_FEATURE_AP_ADV_TTLM,
+ 	NL80211_EXT_FEATURE_SCS,
+ 	NL80211_EXT_FEATURE_MSCS,
++	NL80211_EXT_FEATURE_AP_REMOVAL_TIMER_OFFLOAD,
+ 
+ 	/* add new features before the definition below */
+ 	NUM_NL80211_EXT_FEATURES,

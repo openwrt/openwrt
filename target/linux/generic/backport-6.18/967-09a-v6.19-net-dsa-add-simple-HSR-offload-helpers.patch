@@ -1,0 +1,160 @@
+From 0e75bfe340bf05d1586eaf02942438573bda69e3 Mon Sep 17 00:00:00 2001
+From: Vladimir Oltean <vladimir.oltean@nxp.com>
+Date: Sun, 30 Nov 2025 15:16:47 +0200
+Subject: [PATCH] net: dsa: add simple HSR offload helpers
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+It turns out that HSR offloads are so fine-grained that many DSA
+switches can do a small part even though they weren't specifically
+designed for the protocols supported by that driver (HSR and PRP).
+
+Specifically NETIF_F_HW_HSR_DUP - it is simple packet duplication on
+transmit, towards all (aka 2) ports members of the HSR device.
+
+For many DSA switches, we know how to duplicate a packet, even though we
+never typically use that feature. The transmit port mask from the
+tagging protocol can have multiple bits set, and the switch should send
+the packet once to every port with a bit set from that mask.
+
+Nonetheless, not all tagging protocols are like this, and sometimes the
+port is a single numeric value rather than a bit mask. For that reason,
+and also because switches can sometimes change tagging protocols for
+different ones, we need to make HSR offload helpers opt-in.
+
+For devices that can do nothing else HSR-specific, we introduce
+dsa_port_simple_hsr_join() and dsa_port_simple_hsr_leave(). These
+functions monitor when two user ports of the same switch are part of the
+same HSR device, and when that condition is true, they toggle the
+NETIF_F_HW_HSR_DUP feature flag of both net devices.
+
+Normally only dsa_port_simple_hsr_join() and dsa_port_simple_hsr_leave()
+are needed. The dsa_port_simple_hsr_validate() helper is just to see
+what kind of configuration could be offloadable using the generic
+helpers. This is used by switch drivers which are not currently using
+the right tagging protocol to offload this HSR ring, but could in
+principle offload it after changing the tagger.
+
+Suggested-by: David Yang <mmyangfl@gmail.com>
+Cc: "Alvin Šipraga" <alsi@bang-olufsen.dk>
+Cc: Chester A. Unal" <chester.a.unal@arinc9.com>
+Cc: "Clément Léger" <clement.leger@bootlin.com>
+Cc: Daniel Golle <daniel@makrotopia.org>
+Cc: DENG Qingfang <dqfext@gmail.com>
+Cc: Florian Fainelli <florian.fainelli@broadcom.com>
+Cc: George McCollister <george.mccollister@gmail.com>
+Cc: Hauke Mehrtens <hauke@hauke-m.de>
+Cc: Jonas Gorski <jonas.gorski@gmail.com>
+Cc: Kurt Kanzenbach <kurt@linutronix.de>
+Cc: Linus Walleij <linus.walleij@linaro.org>
+Cc: Sean Wang <sean.wang@mediatek.com>
+Cc: UNGLinuxDriver@microchip.com
+Cc: Woojung Huh <woojung.huh@microchip.com>
+Signed-off-by: Vladimir Oltean <vladimir.oltean@nxp.com>
+Link: https://patch.msgid.link/20251130131657.65080-6-vladimir.oltean@nxp.com
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ include/net/dsa.h |  9 +++++++
+ net/dsa/dsa.c     | 65 +++++++++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 74 insertions(+)
+
+--- a/include/net/dsa.h
++++ b/include/net/dsa.h
+@@ -1338,6 +1338,15 @@ bool dsa_mdb_present_in_other_db(struct
+ 				 const struct switchdev_obj_port_mdb *mdb,
+ 				 struct dsa_db db);
+ 
++int dsa_port_simple_hsr_validate(struct dsa_switch *ds, int port,
++				 struct net_device *hsr,
++				 struct netlink_ext_ack *extack);
++int dsa_port_simple_hsr_join(struct dsa_switch *ds, int port,
++			     struct net_device *hsr,
++			     struct netlink_ext_ack *extack);
++int dsa_port_simple_hsr_leave(struct dsa_switch *ds, int port,
++			      struct net_device *hsr);
++
+ /* Keep inline for faster access in hot path */
+ static inline bool netdev_uses_dsa(const struct net_device *dev)
+ {
+--- a/net/dsa/dsa.c
++++ b/net/dsa/dsa.c
+@@ -9,6 +9,7 @@
+ 
+ #include <linux/device.h>
+ #include <linux/err.h>
++#include <linux/if_hsr.h>
+ #include <linux/list.h>
+ #include <linux/module.h>
+ #include <linux/netdevice.h>
+@@ -1769,6 +1770,70 @@ bool dsa_mdb_present_in_other_db(struct
+ }
+ EXPORT_SYMBOL_GPL(dsa_mdb_present_in_other_db);
+ 
++/* Helpers for switches without specific HSR offloads, but which can implement
++ * NETIF_F_HW_HSR_DUP because their tagger uses dsa_xmit_port_mask()
++ */
++int dsa_port_simple_hsr_validate(struct dsa_switch *ds, int port,
++				 struct net_device *hsr,
++				 struct netlink_ext_ack *extack)
++{
++	enum hsr_port_type type;
++	int err;
++
++	err = hsr_get_port_type(hsr, dsa_to_port(ds, port)->user, &type);
++	if (err)
++		return err;
++
++	if (type != HSR_PT_SLAVE_A && type != HSR_PT_SLAVE_B) {
++		NL_SET_ERR_MSG_MOD(extack,
++				   "Only HSR slave ports can be offloaded");
++		return -EOPNOTSUPP;
++	}
++
++	return 0;
++}
++EXPORT_SYMBOL_GPL(dsa_port_simple_hsr_validate);
++
++int dsa_port_simple_hsr_join(struct dsa_switch *ds, int port,
++			     struct net_device *hsr,
++			     struct netlink_ext_ack *extack)
++{
++	struct dsa_port *dp = dsa_to_port(ds, port), *other_dp;
++	int err;
++
++	err = dsa_port_simple_hsr_validate(ds, port, hsr, extack);
++	if (err)
++		return err;
++
++	dsa_hsr_foreach_port(other_dp, ds, hsr) {
++		if (other_dp != dp) {
++			dp->user->features |= NETIF_F_HW_HSR_DUP;
++			other_dp->user->features |= NETIF_F_HW_HSR_DUP;
++			break;
++		}
++	}
++
++	return 0;
++}
++EXPORT_SYMBOL_GPL(dsa_port_simple_hsr_join);
++
++int dsa_port_simple_hsr_leave(struct dsa_switch *ds, int port,
++			      struct net_device *hsr)
++{
++	struct dsa_port *dp = dsa_to_port(ds, port), *other_dp;
++
++	dsa_hsr_foreach_port(other_dp, ds, hsr) {
++		if (other_dp != dp) {
++			dp->user->features &= ~NETIF_F_HW_HSR_DUP;
++			other_dp->user->features &= ~NETIF_F_HW_HSR_DUP;
++			break;
++		}
++	}
++
++	return 0;
++}
++EXPORT_SYMBOL_GPL(dsa_port_simple_hsr_leave);
++
+ static const struct dsa_stubs __dsa_stubs = {
+ 	.conduit_hwtstamp_validate = __dsa_conduit_hwtstamp_validate,
+ };

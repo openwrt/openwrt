@@ -1,0 +1,113 @@
+From 4686b25129cb5ee205b28329daa5d4a34ecbb8b1 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Wed, 21 Oct 2026 01:24:14 +0000
+Subject: [PATCH] mips: fix N32/N64 soft-float returns of floating-point
+ structs
+
+With soft float, GCC returns a struct of one or two float or double
+fields with the first field in v0 and the second in a0, each like a
+scalar of its type, i.e. a float in the low 32 bits.  libffi got this
+partly wrong:
+
+  - ffi_call_N32 took the second field of a struct of two floats or of
+    a double and a float from v1; 2e825e219fa0 ("MIPS: fix some N32
+    test failure (#701)") had changed the other two cases to a0.
+  - ffi_closure_N32 had no soft-float struct cases at all and returned
+    these structs like any small struct, as the first 16 bytes of the
+    return value in v0 and v1.  That puts the second field in the wrong
+    register, and on big-endian a single float in the upper half of v0.
+
+Store the second field from a0 in ffi_call_N32, and return soft-float
+structs of one or two floating-point fields from the closure in v0 and
+a0.  Like the soft-float cases in ffi_call_N32, the new closure cases
+are outside the hard-float #ifdef, so a library built for hard float
+also handles cifs for the soft-float ABIs.
+
+This fixes cls_struct_fp_return on malta (mips64r2, both endians) and
+octeon (octeon+), n64 soft-float, under qemu-user, and the remaining
+failure of libffi.bhaible/test-callback on big-endian, a closure
+returning struct { float x; }.  This code predates the git history.
+Assisted-by: LLM
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ src/mips/n32.S | 45 +++++++++++++++++++++++++++++++++++++++++----
+ 1 file changed, 41 insertions(+), 4 deletions(-)
+
+--- a/src/mips/n32.S
++++ b/src/mips/n32.S
+@@ -396,7 +396,7 @@ retstruct_f_f_soft:
+ 	jal	t9
+ 	REG_L	t4, 4*FFI_SIZEOF_ARG($fp)
+ 	sw	v0, 0(t4)
+-	sw	v1, 4(t4)
++	sw	a0, 4(t4)
+ 	b	epilogue
+ 	
+ retstruct_d_f_soft:	
+@@ -404,7 +404,7 @@ retstruct_d_f_soft:
+ 	jal	t9
+ 	REG_L	t4, 4*FFI_SIZEOF_ARG($fp)
+ 	sd	v0, 0(t4)
+-	sw	v1, 8(t4)
++	sw	a0, 8(t4)
+ 	b	epilogue
+ 	
+ retstruct_f_d_soft:	
+@@ -711,18 +711,55 @@ cls_retstruct_d_f:
+ 	b	cls_epilogue
+ 	
+ cls_retstruct_f_d:	
+-	bne	v0, FFI_TYPE_STRUCT_FD, cls_retcomplex_ld_ld
++	bne	v0, FFI_TYPE_STRUCT_FD, cls_retstruct_f_soft
+ 	l.s	$f0, V0_OFF2($sp)
+ 	l.d	$f2, V1_OFF2($sp)
+ 	b	cls_epilogue
+ #else
+ cls_longdouble_soft:
+-	bne	v0, FFI_TYPE_LONGDOUBLE, cls_retcomplex_ld_ld
++	bne	v0, FFI_TYPE_LONGDOUBLE, cls_retstruct_f_soft
+ 	REG_L	v0, V0_OFF2($sp)
+ 	REG_L	a0, V1_OFF2($sp) # not typo, it is a0, I have no idea, gcc does do it
+ 	b	cls_epilogue
+ #endif
+ 
++	# With soft float, a struct of one or two floating-point fields is
++	# returned with the first field in v0 and the second in a0, each
++	# like a scalar of its type.
++cls_retstruct_f_soft:
++	bne	v0, FFI_TYPE_STRUCT_F_SOFT, cls_retstruct_d_soft
++	lw	v0, V0_OFF2($sp)
++	b	cls_epilogue
++
++cls_retstruct_d_soft:
++	bne	v0, FFI_TYPE_STRUCT_D_SOFT, cls_retstruct_f_f_soft
++	ld	v0, V0_OFF2($sp)
++	b	cls_epilogue
++
++cls_retstruct_f_f_soft:
++	bne	v0, FFI_TYPE_STRUCT_FF_SOFT, cls_retstruct_d_d_soft
++	lw	v0, V0_OFF2($sp)
++	lw	a0, (V0_OFF2+4)($sp)
++	b	cls_epilogue
++
++cls_retstruct_d_d_soft:
++	bne	v0, FFI_TYPE_STRUCT_DD_SOFT, cls_retstruct_f_d_soft
++	ld	v0, V0_OFF2($sp)
++	ld	a0, (V0_OFF2+8)($sp)
++	b	cls_epilogue
++
++cls_retstruct_f_d_soft:
++	bne	v0, FFI_TYPE_STRUCT_FD_SOFT, cls_retstruct_d_f_soft
++	lw	v0, V0_OFF2($sp)
++	ld	a0, (V0_OFF2+8)($sp)
++	b	cls_epilogue
++
++cls_retstruct_d_f_soft:
++	bne	v0, FFI_TYPE_STRUCT_DF_SOFT, cls_retcomplex_ld_ld
++	ld	v0, V0_OFF2($sp)
++	lw	a0, (V0_OFF2+8)($sp)
++	b	cls_epilogue
++
+ cls_retcomplex_ld_ld:
+ 	bne	v0, FFI_TYPE_COMPLEX_LDLD, cls_retstruct_small2
+ 	REG_L	t8, A0_OFF2($sp)

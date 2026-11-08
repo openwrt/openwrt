@@ -1,0 +1,1205 @@
+From 9d541a2ba4ef9db06fba6f76a701084600a60d17 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Wed, 28 Oct 2026 09:56:39 +0000
+Subject: [PATCH] media: rockchip: rkisp2: Add the ISPP pipe mode
+
+The RV1126 ISPP consumes the ISP output through a pool of buffers that
+the ISPP owns: the mainpath DMA writes every frame, as a semi-planar
+YUV422 picture plus a gain map, into the pool and the ISPP reads it from
+there. The pool bases are physical addresses, the same scheme as the raw
+readback, so they are mapped onto themselves in the ISP IOMMU domain for
+the lifetime of the VICAP feed.
+
+Add the output pad the ISPP links to, which carries the whole frame as
+YUYV8_2X8, its width rounded down to a multiple of 16 pixels: the ISP
+2.0 mainpath writes contiguous lines of the picture width and the ISPP
+reads the pool with a 16 byte aligned stride, so the dual crop cuts
+the width to what both agree on and the mainpath resizer is bypassed.
+The params crop block leaves the mainpath crop and resizer alone while
+the pipe is armed or running, as it would otherwise program them for
+the idle mainpath capture node and its format. The pad is full range
+and takes the range through the CSC flag of the format like the
+mainpath pad; the colour space matrix of the ISP follows the pad that
+feeds the pool. The ISP publishes a private subdev at its own device
+node when its output port is connected; the ISPP matches it through an
+async notifier, passes the pool with the subdev core ioctl operation
+before the stream starts and gets the input format and the stream
+control through it.
+
+The ISP rotates the pool buffers: the base of the next buffer is written
+at the frame start and latched by the auto update at the mainpath frame
+end, which hands the completed buffer to the ISPP through a callback of
+the pipe configuration, together with the ISP frame sequence so that
+the ISPP output and the ISP statistics of one exposure share a number;
+the ISPP returns the buffer with RKISP2_ISPP_CMD_PUT. A frame is dropped
+when no buffer is free. The quick mode, in which the hardware alternates
+two pool buffers and pipes the output line by line, only tracks the
+frame buffer compression mode of the mainpath and is left selectable
+for it.
+
+The pipe stop runs after the readback drain and before the ISP stop:
+it waits for the mainpath frame end of the last frame the ISP started,
+disables the mainpath and the gain map writer and latches that state
+with the memory interface soft update, as the ISP stop masks the
+interrupts and resets the engines and the ISPP frees the pool right
+after. The mainpath frame end is not fed to the capture handler while
+the pipe runs, as that would re-target the write base to a capture
+buffer. The pipe and the mainpath capture are exclusive. The stream on
+takes a runtime PM reference so the pipe keeps the ISP powered without
+a capture device, and the ISP 2.0 clock control ungates the memory
+interface write engines the mainpath needs.
+
+Assisted-by: LLM
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ MAINTAINERS                                   |   1 +
+ .../platform/rockchip/rkisp2/rkisp2-capture.c |  16 +-
+ .../platform/rockchip/rkisp2/rkisp2-common.h  |  46 ++
+ .../platform/rockchip/rkisp2/rkisp2-isp.c     | 641 +++++++++++++++++-
+ .../platform/rockchip/rkisp2/rkisp2-params.c  |   6 +
+ .../platform/rockchip/rkisp2/rkisp2-resizer.c |  29 +
+ .../platform/rockchip/rkisp2/rkisp2-vicap.c   |   3 +
+ .../linux/platform_data/media/rkisp2-toispp.h |  71 ++
+ 8 files changed, 783 insertions(+), 30 deletions(-)
+ create mode 100644 include/linux/platform_data/media/rkisp2-toispp.h
+
+--- a/MAINTAINERS
++++ b/MAINTAINERS
+@@ -22317,6 +22317,7 @@ L:	linux-media@vger.kernel.org
+ L:	linux-rockchip@lists.infradead.org
+ S:	Maintained
+ F:	Documentation/devicetree/bindings/media/rockchip-ispp.yaml
++F:	include/linux/platform_data/media/rkisp2-toispp.h
+ 
+ ROCKCHIP RK3568 RANDOM NUMBER GENERATOR SUPPORT
+ M:	Daniel Golle <daniel@makrotopia.org>
+--- a/drivers/media/platform/rockchip/rkisp2/rkisp2-capture.c
++++ b/drivers/media/platform/rockchip/rkisp2/rkisp2-capture.c
+@@ -736,6 +736,12 @@ irqreturn_t rkisp2_capture_isr(int irq,
+ 
+ 		if (!(status & RKISP2_CIF_MI_FRAME(cap)))
+ 			continue;
++		if (cap->id == RKISP2_MAINPATH && rkisp2->isp.ispp.active) {
++			rkisp2->isp.ispp.mi_frames++;
++			wake_up(&rkisp2->isp.ispp.done);
++			rkisp2_ispp_pipe_frame_end(&rkisp2->isp);
++			continue;
++		}
+ 		if (!cap->is_stopping) {
+ 			rkisp2_handle_buffer(cap);
+ 			continue;
+@@ -1047,6 +1053,14 @@ rkisp2_vb2_start_streaming(struct vb2_qu
+ 
+ 	mutex_lock(&cap->rkisp2->stream_lock);
+ 
++	/* the mainpath feed of the ISPP pipe and its capture are exclusive */
++	if (cap->id == RKISP2_MAINPATH && cap->rkisp2->isp.ispp.active) {
++		dev_err(cap->rkisp2->dev,
++			"mainpath capture rejected: the ISPP pipe is running\n");
++		ret = -EBUSY;
++		goto err_ret_buffers;
++	}
++
+ 	ret = video_device_pipeline_start(&cap->vnode.vdev, &cap->rkisp2->pipe);
+ 	if (ret) {
+ 		dev_err(cap->rkisp2->dev, "start pipeline failed %d\n", ret);
+@@ -1113,6 +1127,7 @@ rkisp2_fill_pixfmt(const struct rkisp2_c
+ 	unsigned int i;
+ 	u32 stride;
+ 
++	memset(pixm->plane_fmt, 0, sizeof(pixm->plane_fmt));
+ 	info = v4l2_format_info(pixm->pixelformat);
+ 	pixm->num_planes = info->mem_planes;
+ 
+@@ -1123,7 +1138,6 @@ rkisp2_fill_pixfmt(const struct rkisp2_c
+ 	stride = clamp(DIV_ROUND_UP(plane_y->bytesperline, info->bpp[0]),
+ 		       pixm->width, 65536U);
+ 
+-	memset(pixm->plane_fmt, 0, sizeof(pixm->plane_fmt));
+ 	plane_y->bytesperline = stride * info->bpp[0];
+ 	plane_y->sizeimage = plane_y->bytesperline * pixm->height;
+ 
+--- a/drivers/media/platform/rockchip/rkisp2/rkisp2-common.h
++++ b/drivers/media/platform/rockchip/rkisp2/rkisp2-common.h
+@@ -16,6 +16,7 @@
+ #include <linux/interrupt.h>
+ #include <linux/list.h>
+ #include <linux/mutex.h>
++#include <linux/platform_data/media/rkisp2-toispp.h>
+ #include <linux/spinlock.h>
+ #include <linux/wait.h>
+ #include <linux/media/rockchip/rkisp2-config.h>
+@@ -29,6 +30,7 @@
+ #include "rkisp2-regs.h"
+ 
+ struct dentry;
++struct iommu_domain;
+ struct reset_control;
+ struct regmap;
+ 
+@@ -103,6 +105,9 @@ enum rkisp2_rawrd_id {
+ 	RKISP2_RAWRD_MAX,
+ };
+ 
++/* the ISPP port of the ISP device node */
++#define RKISP2_ISP_DT_PORT_ISPP		1
++
+ /* enum for the isp pads */
+ enum rkisp2_isp_pad {
+ 	RKISP2_ISP_PAD_SINK_VIDEO_DMA_BASE,
+@@ -115,6 +120,7 @@ enum rkisp2_isp_pad {
+ 	RKISP2_ISP_PAD_SOURCE_VIDEO_MAIN,
+ 	RKISP2_ISP_PAD_SOURCE_VIDEO_SELF,
+ 	RKISP2_ISP_PAD_SOURCE_STATS,
++	RKISP2_ISP_PAD_SOURCE_ISPP,
+ 	RKISP2_ISP_PAD_MAX
+ };
+ 
+@@ -185,6 +191,15 @@ struct rkisp2_info {
+  * @sink_fmt:			input format
+  * @frame_sequence:		used to synchronize frame_id between video devices.
+  * @dphy_errctrl_disabled:	flag to re-enable DPHY errctrl interrupt after error
++ * @streaming:			the ISP is streaming, a runtime PM reference is held
++ * @ispp.active:		the ISPP pipe is running
++ * @ispp.start:			the ISPP asked for the pipe on the next stream on
++ * @ispp.cfg:			the ISPP input pool passed by the ISPP
++ * @ispp.iommu:			the iommu domain the input pool was mapped into
++ * @ispp.pic_size:		size of one pool picture buffer
++ * @ispp.gain_size:		size of one pool gain buffer
++ * @ispp.mi_frames:		mainpath frame ends since the pipe started
++ * @ispp.done:			woken at every mainpath frame end
+  */
+ struct rkisp2_isp {
+ 	struct v4l2_subdev sd;
+@@ -193,6 +208,31 @@ struct rkisp2_isp {
+ 	const struct rkisp2_mbus_info *sink_fmt;
+ 	__u32 frame_sequence;
+ 	bool dphy_errctrl_disabled;
++	bool streaming;
++	struct {
++		bool active;
++		bool start;
++		struct rkisp2_ispp_cfg cfg;
++		struct iommu_domain *iommu;
++		size_t pic_size;
++		size_t gain_size;
++		u32 mi_frames;
++		wait_queue_head_t done;
++		/* protects cur, nxt and free */
++		spinlock_t lock;
++		int cur;
++		int nxt;
++		unsigned long free;
++	} ispp;
++	/*
++	 * Pipe API for the ISPP consumer: a private subdev published
++	 * through the async mechanism, owned by the ISPP v4l2 device
++	 * while the two are bound.
++	 */
++	struct {
++		struct v4l2_subdev sd;
++		struct media_pad pad;
++	} toispp;
+ };
+ 
+ /*
+@@ -657,6 +697,9 @@ int rkisp2_vicap_register(struct rkisp2_
+ void rkisp2_vicap_unregister(struct rkisp2_device *rkisp2);
+ bool rkisp2_vicap_available(struct rkisp2_device *rkisp2);
+ bool rkisp2_isp_dma_linked(struct rkisp2_isp *isp);
++void rkisp2_ispp_pipe_iommu_map(struct rkisp2_isp *isp);
++void rkisp2_ispp_pipe_vstart(struct rkisp2_isp *isp);
++void rkisp2_ispp_pipe_frame_end(struct rkisp2_isp *isp);
+ int rkisp2_vicap_start(struct rkisp2_device *rkisp2,
+ 		       const struct v4l2_mbus_framefmt *fmt);
+ void rkisp2_vicap_drain(struct rkisp2_device *rkisp2);
+@@ -680,6 +723,9 @@ void rkisp2_resizer_pre_configure(struct
+ 				  const struct v4l2_mbus_framefmt *mp_src_frm,
+ 				  const struct v4l2_mbus_framefmt *sp_src_frm);
+ void rkisp2_resizer_devs_init(struct rkisp2_device *rkisp2);
++void rkisp2_resizer_pipe_configure(struct rkisp2_device *rkisp2, u32 width,
++				   u32 height);
++void rkisp2_resizer_pipe_disable(struct rkisp2_device *rkisp2);
+ 
+ int rkisp2_stats_register(struct rkisp2_device *rkisp2);
+ void rkisp2_stats_unregister(struct rkisp2_device *rkisp2);
+--- a/drivers/media/platform/rockchip/rkisp2/rkisp2-isp.c
++++ b/drivers/media/platform/rockchip/rkisp2/rkisp2-isp.c
+@@ -10,13 +10,16 @@
+  */
+ 
+ #include <linux/delay.h>
++#include <linux/iommu.h>
+ #include <linux/iopoll.h>
+ #include <linux/pm_runtime.h>
++#include <linux/property.h>
+ #include <linux/regmap.h>
+ #include <linux/reset.h>
+ #include <linux/videodev2.h>
+ #include <linux/vmalloc.h>
+ 
++#include <media/v4l2-async.h>
+ #include <media/v4l2-event.h>
+ 
+ #include "rkisp2-common.h"
+@@ -118,6 +121,7 @@ static int rkisp2_config_isp(struct rkis
+ 	const struct v4l2_mbus_framefmt *mp_src_frm;
+ 	const struct v4l2_mbus_framefmt *sp_src_frm;
+ 	const struct v4l2_mbus_framefmt *sink_frm;
++	unsigned int mp_src_pad;
+ 
+ 	/* All the video sink formats and crops are kept equal */
+ 	sink_frm = v4l2_subdev_state_get_format(sd_state,
+@@ -127,8 +131,10 @@ static int rkisp2_config_isp(struct rkis
+ 	 * or yuv -> yuv so we only need to check the main path source pad
+ 	 * format
+ 	 */
+-	mp_src_frm = v4l2_subdev_state_get_format(sd_state,
+-					       RKISP2_ISP_PAD_SOURCE_VIDEO_MAIN);
++	mp_src_pad = RKISP2_ISP_PAD_SOURCE_VIDEO_MAIN;
++	if (isp->ispp.start || isp->ispp.active)
++		mp_src_pad = RKISP2_ISP_PAD_SOURCE_ISPP;
++	mp_src_frm = v4l2_subdev_state_get_format(sd_state, mp_src_pad);
+ 
+ 	sink_fmt = rkisp2_mbus_info_get_by_code(sink_frm->code);
+ 	mp_src_fmt = rkisp2_mbus_info_get_by_code(mp_src_frm->code);
+@@ -313,7 +319,10 @@ static void rkisp2_config_clk(struct rki
+ 
+ 	val = RKISP2_CIF_CLK_CTRL_ISP_3A | RKISP2_CIF_CLK_CTRL_ISP_RAW;
+ 	if (rkisp2_has_feature(rkisp2, RAWRD_CLK))
+-		val |= CLK_CTRL_MI_READ | CLK_CTRL_MI_RAWRD;
++		val |= CLK_CTRL_MI_LDC | CLK_CTRL_MI_MP | CLK_CTRL_MI_JPEG |
++		       CLK_CTRL_MI_DP | CLK_CTRL_MI_Y12 | CLK_CTRL_MI_SP |
++		       CLK_CTRL_MI_RAW0 | CLK_CTRL_MI_RAW1 |
++		       CLK_CTRL_MI_READ | CLK_CTRL_MI_RAWRD;
+ 	rkisp2_write(rkisp2, RKISP2_CIF_VI_ISP_CLK_CTRL_V12, val);
+ 
+ 	rkisp2_sws_config(rkisp2);
+@@ -359,6 +368,13 @@ static int rkisp2_isp_enum_mbus_code(str
+ 	unsigned int i, dir;
+ 	int pos = 0;
+ 
++	if (code->pad == RKISP2_ISP_PAD_SOURCE_ISPP) {
++		if (code->index > 0)
++			return -EINVAL;
++		code->code = MEDIA_BUS_FMT_YUYV8_2X8;
++		return 0;
++	}
++
+ 	if (code->pad == RKISP2_ISP_PAD_SINK_VIDEO_DMA_0 ||
+ 	    code->pad == RKISP2_ISP_PAD_SINK_VIDEO_DMA_1 ||
+ 	    code->pad == RKISP2_ISP_PAD_SINK_VIDEO_DMA_2) {
+@@ -418,7 +434,8 @@ static int rkisp2_isp_enum_frame_size(st
+ 
+ 	if (!(mbus_info->direction & RKISP2_ISP_SD_SRC) &&
+ 	    (fse->pad == RKISP2_ISP_PAD_SOURCE_VIDEO_MAIN ||
+-	     fse->pad == RKISP2_ISP_PAD_SOURCE_VIDEO_SELF))
++	     fse->pad == RKISP2_ISP_PAD_SOURCE_VIDEO_SELF ||
++	     fse->pad == RKISP2_ISP_PAD_SOURCE_ISPP))
+ 		return -EINVAL;
+ 
+ 	fse->min_width = RKISP2_ISP_MIN_WIDTH;
+@@ -459,6 +476,17 @@ static int rkisp2_isp_init_state(struct
+ 		src_fmt->quantization = V4L2_QUANTIZATION_LIM_RANGE;
+ 	}
+ 
++	/* The ISPP pad carries the frame as YUV422, 16 px wide multiples */
++	src_fmt = v4l2_subdev_state_get_format(sd_state,
++					       RKISP2_ISP_PAD_SOURCE_ISPP);
++	*src_fmt = *sink_fmt;
++	src_fmt->width = ALIGN_DOWN(sink_fmt->width, 16);
++	src_fmt->code = MEDIA_BUS_FMT_YUYV8_2X8;
++	src_fmt->colorspace = V4L2_COLORSPACE_SRGB;
++	src_fmt->xfer_func = V4L2_XFER_FUNC_SRGB;
++	src_fmt->ycbcr_enc = V4L2_YCBCR_ENC_601;
++	src_fmt->quantization = V4L2_QUANTIZATION_FULL_RANGE;
++
+ 	return 0;
+ }
+ 
+@@ -586,6 +614,7 @@ static void rkisp2_isp_set_sink_fmt(stru
+ {
+ 	const struct rkisp2_mbus_info *mbus_info;
+ 	struct v4l2_mbus_framefmt *sink_fmt;
++	struct v4l2_mbus_framefmt *ispp_fmt;
+ 	bool is_yuv;
+ 	enum rkisp2_isp_pad pad;
+ 
+@@ -642,6 +671,31 @@ static void rkisp2_isp_set_sink_fmt(stru
+ 		sink_fmt = v4l2_subdev_state_get_format(sd_state, pad);
+ 		*sink_fmt = *format;
+ 	}
++
++	/*
++	 * The ISPP pad follows the sensor frame; the main path writes
++	 * contiguous lines and the ISPP reads 16 byte aligned strides,
++	 * so the dual crop cuts the width down to a multiple of 16.
++	 */
++	ispp_fmt = v4l2_subdev_state_get_format(sd_state,
++						RKISP2_ISP_PAD_SOURCE_ISPP);
++	ispp_fmt->width = ALIGN_DOWN(format->width, 16);
++	ispp_fmt->height = format->height;
++}
++
++/* the ISPP pad follows the sensor frame; only the YUV range is selectable */
++static void rkisp2_isp_set_ispp_fmt(struct rkisp2_isp *isp,
++				    struct v4l2_subdev_state *sd_state,
++				    struct v4l2_mbus_framefmt *format)
++{
++	struct v4l2_mbus_framefmt *ispp_fmt;
++
++	ispp_fmt = v4l2_subdev_state_get_format(sd_state,
++						RKISP2_ISP_PAD_SOURCE_ISPP);
++	if (format->flags & V4L2_MBUS_FRAMEFMT_SET_CSC &&
++	    format->quantization != V4L2_QUANTIZATION_DEFAULT)
++		ispp_fmt->quantization = format->quantization;
++	*format = *ispp_fmt;
+ }
+ 
+ static int rkisp2_isp_set_fmt(struct v4l2_subdev *sd,
+@@ -657,6 +711,8 @@ static int rkisp2_isp_set_fmt(struct v4l
+ 	else if (fmt->pad == RKISP2_ISP_PAD_SOURCE_VIDEO_MAIN ||
+ 		 fmt->pad == RKISP2_ISP_PAD_SOURCE_VIDEO_SELF)
+ 		rkisp2_isp_set_src_fmt(isp, sd_state, &fmt->format, fmt->pad);
++	else if (fmt->pad == RKISP2_ISP_PAD_SOURCE_ISPP)
++		rkisp2_isp_set_ispp_fmt(isp, sd_state, &fmt->format);
+ 	else
+ 		fmt->format = *v4l2_subdev_state_get_format(sd_state,
+ 							    fmt->pad);
+@@ -710,6 +766,431 @@ static int rkisp2_isp_source_find(struct
+ 	return 0;
+ }
+ 
++/*
++ * The ISPP pipe mode: the ISP output is piped straight into the ISPP and
++ * the mainpath DMA writes every frame, as a semi-planar YUV422 picture
++ * plus a gain map, into a ping-pong pool of buffers owned by the ISPP.
++ * In the quick mode the hardware alternates the two pool buffers at each
++ * frame end.  Otherwise the driver rotates them: the base of the next
++ * frame is written at the frame start and latched by the auto update at
++ * the frame end, the completed buffer is handed to the ISPP from the
++ * mainpath frame end and comes back through RKISP2_ISPP_CMD_PUT.
++ */
++
++static bool rkisp2_ispp_pipe_quick(struct rkisp2_isp *isp)
++{
++	return isp->ispp.cfg.work_mode & RKISP2_ISPP_WORK_QUICK;
++}
++
++static void rkisp2_ispp_pipe_base_set(struct rkisp2_isp *isp, unsigned int idx)
++{
++	struct rkisp2_device *rkisp2 = isp->rkisp2;
++	const struct rkisp2_ispp_cfg *cfg = &isp->ispp.cfg;
++	u32 plane = cfg->width * cfg->height;
++
++	rkisp2_write(rkisp2, RKISP2_CIF_MI_MP_Y_BASE_AD_INIT,
++		     cfg->buf[idx].pic_phys);
++	rkisp2_write(rkisp2, RKISP2_CIF_MI_MP_CB_BASE_AD_INIT,
++		     cfg->buf[idx].pic_phys + plane);
++	rkisp2_write(rkisp2, MI_GAIN_WR_BASE, cfg->buf[idx].gain_phys);
++}
++
++void rkisp2_ispp_pipe_vstart(struct rkisp2_isp *isp)
++{
++	unsigned long flags;
++	int idx;
++
++	if (!isp->ispp.active || rkisp2_ispp_pipe_quick(isp))
++		return;
++
++	spin_lock_irqsave(&isp->ispp.lock, flags);
++	if (isp->ispp.nxt < 0) {
++		idx = find_first_bit(&isp->ispp.free, isp->ispp.cfg.buf_num);
++		if (idx < isp->ispp.cfg.buf_num) {
++			clear_bit(idx, &isp->ispp.free);
++			isp->ispp.nxt = idx;
++		}
++	}
++	if (isp->ispp.nxt >= 0)
++		rkisp2_ispp_pipe_base_set(isp, isp->ispp.nxt);
++	spin_unlock_irqrestore(&isp->ispp.lock, flags);
++}
++
++void rkisp2_ispp_pipe_frame_end(struct rkisp2_isp *isp)
++{
++	const struct rkisp2_ispp_cfg *cfg = &isp->ispp.cfg;
++	unsigned long flags;
++	int done = -1;
++
++	if (!isp->ispp.active || rkisp2_ispp_pipe_quick(isp))
++		return;
++
++	spin_lock_irqsave(&isp->ispp.lock, flags);
++	if (isp->ispp.cur >= 0 && isp->ispp.nxt >= 0) {
++		done = isp->ispp.cur;
++		isp->ispp.cur = isp->ispp.nxt;
++		isp->ispp.nxt = -1;
++	}
++	spin_unlock_irqrestore(&isp->ispp.lock, flags);
++
++	if (done >= 0)
++		cfg->ops->frame(cfg->priv, done, isp->frame_sequence,
++				ktime_get_ns());
++}
++
++static void rkisp2_ispp_pipe_put(struct rkisp2_isp *isp, unsigned int idx)
++{
++	unsigned long flags;
++
++	spin_lock_irqsave(&isp->ispp.lock, flags);
++	if (idx < isp->ispp.cfg.buf_num)
++		set_bit(idx, &isp->ispp.free);
++	spin_unlock_irqrestore(&isp->ispp.lock, flags);
++}
++
++static void rkisp2_ispp_pipe_mi_reload(struct rkisp2_isp *isp)
++{
++	struct rkisp2_device *rkisp2 = isp->rkisp2;
++	const struct rkisp2_ispp_cfg *cfg = &isp->ispp.cfg;
++	u32 plane, mi_ctrl, val;
++
++	/* semi-planar 4:2:2 into the pool, contiguous lines of a 16 px multiple */
++	plane = cfg->width * cfg->height;
++	rkisp2_write(rkisp2, RKISP2_CIF_MI_MP_Y_SIZE_INIT, plane);
++	rkisp2_write(rkisp2, RKISP2_CIF_MI_MP_CB_SIZE_INIT, plane);
++	rkisp2_write(rkisp2, RKISP2_CIF_MI_MP_CR_SIZE_INIT, 0);
++	rkisp2_write(rkisp2, RKISP2_CIF_MI_MP_Y_OFFS_CNT_INIT, 0);
++	rkisp2_write(rkisp2, RKISP2_CIF_MI_MP_CB_OFFS_CNT_INIT, 0);
++	rkisp2_write(rkisp2, RKISP2_CIF_MI_MP_CR_OFFS_CNT_INIT, 0);
++
++	rkisp2_ispp_pipe_base_set(isp, 0);
++
++	mi_ctrl = rkisp2_read(rkisp2, RKISP2_CIF_MI_CTRL);
++	mi_ctrl &= ~RKISP2_MI_CTRL_MP_FMT_MASK;
++	mi_ctrl &= ~GENMASK(17, 16);
++	mi_ctrl |= RKISP2_CIF_MI_CTRL_BURST_LEN_LUM_64;
++	mi_ctrl &= ~GENMASK(19, 18);
++	mi_ctrl |= RKISP2_CIF_MI_CTRL_BURST_LEN_CHROM_64;
++	mi_ctrl |= RKISP2_MI_CTRL_MP_WRITE_YUV_SPLA |
++		   RKISP2_CIF_MI_CTRL_MP_ENABLE |
++		   RKISP2_CIF_MI_MP_AUTOUPDATE_ENABLE;
++	if (cfg->buf_num > 1 && rkisp2_ispp_pipe_quick(isp)) {
++		rkisp2_write(rkisp2, RKISP2_CIF_MI_MP_Y_BASE_AD_INIT2,
++			     cfg->buf[1].pic_phys);
++		rkisp2_write(rkisp2, RKISP2_CIF_MI_MP_CB_BASE_AD_INIT2,
++			     cfg->buf[1].pic_phys + plane);
++		rkisp2_write(rkisp2, MI_GAIN_WR_BASE2, cfg->buf[1].gain_phys);
++		mi_ctrl |= RKISP2_CIF_MI_MP_PINGPONG_ENABLE;
++	}
++	rkisp2_write(rkisp2, RKISP2_CIF_MI_CTRL, mi_ctrl);
++
++	/* gain map write path */
++	rkisp2_write(rkisp2, MI_GAIN_WR_SIZE,
++		     ALIGN(cfg->width, 64) * ALIGN(cfg->height, 128) >> 4);
++	rkisp2_write(rkisp2, MI_GAIN_WR_LENGTH,
++		     ALIGN((cfg->width + 3) >> 2, 16));
++	val = rkisp2_read(rkisp2, MI_WR_CTRL2) | SW_GAIN_WR_AUTOUPD;
++	if (cfg->buf_num > 1 && rkisp2_ispp_pipe_quick(isp))
++		val |= SW_GAIN_WR_PINGPONG;
++	rkisp2_write(rkisp2, MI_WR_CTRL2, val);
++
++	/* route the mainpath to the MI write engine */
++	rkisp2_write(rkisp2, RKISP2_CIF_VI_DPCL,
++		     rkisp2_read(rkisp2, RKISP2_CIF_VI_DPCL) |
++		     RKISP2_CIF_VI_DPCL_CHAN_MODE_MP |
++		     RKISP2_CIF_VI_DPCL_MP_MUX_MRSZ_MI);
++	rkisp2_write(rkisp2, RKISP2_CIF_MI_CTRL,
++		     rkisp2_read(rkisp2, RKISP2_CIF_MI_CTRL) |
++		     RKISP2_CIF_MI_CTRL_INIT_BASE_EN |
++		     RKISP2_CIF_MI_CTRL_INIT_OFFSET_EN);
++
++	/* latched by the soft update the VICAP start does afterwards */
++	rkisp2_write(rkisp2, RKISP2_CIF_MI_INIT,
++		     RKISP2_CIF_MI_INIT_MP_OUTPUT_YUV422);
++	rkisp2_write(rkisp2, ISP_MPFBC_CTRL, SW_MPFBC_YUV_MODE(1));
++	rkisp2_write(rkisp2, RKISP2_CIF_MI_IMSC,
++		     rkisp2_read(rkisp2, RKISP2_CIF_MI_IMSC) |
++		     RKISP2_CIF_MI_MP_FE);
++}
++
++static int rkisp2_ispp_pipe_start(struct rkisp2_isp *isp)
++{
++	struct rkisp2_device *rkisp2 = isp->rkisp2;
++	const struct rkisp2_ispp_cfg *cfg = &isp->ispp.cfg;
++	u32 val;
++
++	if (!(cfg->work_mode & RKISP2_ISPP_WORK_422))
++		return -EOPNOTSUPP;
++	if (!cfg->buf_num || cfg->buf_num > RKISP2_ISPP_BUF_MAX)
++		return -EINVAL;
++
++	isp->ispp.cur = 0;
++	isp->ispp.nxt = -1;
++	isp->ispp.free = GENMASK(cfg->buf_num - 1, 0) & ~BIT(0);
++	isp->ispp.mi_frames = 0;
++
++	rkisp2_resizer_pipe_configure(rkisp2, cfg->width, cfg->height);
++	rkisp2_ispp_pipe_mi_reload(isp);
++
++	/* pipe the ISP output straight into the ISPP */
++	if (rkisp2_ispp_pipe_quick(isp)) {
++		val = rkisp2_read(rkisp2, ISP3X_SWS_CFG) | SW_ISP2PP_PIPE_EN;
++		rkisp2_write(rkisp2, ISP3X_SWS_CFG, val);
++	}
++
++	dev_dbg(rkisp2->dev, "ISPP pipe started: %ux%u\n", cfg->width,
++		cfg->height);
++
++	return 0;
++}
++
++static void rkisp2_ispp_pipe_iommu_unmap(struct rkisp2_isp *isp)
++{
++	const struct rkisp2_ispp_cfg *cfg = &isp->ispp.cfg;
++	int i;
++
++	/* a domain switched since the map took the mapping with it */
++	if (!isp->ispp.iommu ||
++	    isp->ispp.iommu != iommu_get_domain_for_dev(isp->rkisp2->dev))
++		return;
++
++	for (i = 0; i < cfg->buf_num; i++) {
++		iommu_unmap(isp->ispp.iommu, cfg->buf[i].pic_phys,
++			    isp->ispp.pic_size);
++		iommu_unmap(isp->ispp.iommu, cfg->buf[i].gain_phys,
++			    isp->ispp.gain_size);
++	}
++	isp->ispp.iommu = NULL;
++}
++
++static void rkisp2_ispp_pipe_stop(struct rkisp2_isp *isp)
++{
++	struct rkisp2_device *rkisp2 = isp->rkisp2;
++	u32 mi_ctrl, val;
++
++	/* the write engine finishes its frame after the ISP core has */
++	if (!wait_event_timeout(isp->ispp.done,
++				isp->ispp.mi_frames == isp->frame_sequence + 1,
++				msecs_to_jiffies(1000)))
++		dev_warn(rkisp2->dev,
++			 "ISPP pipe: mainpath write did not stop\n");
++
++	rkisp2_resizer_pipe_disable(rkisp2);
++
++	mi_ctrl = rkisp2_read(rkisp2, RKISP2_CIF_MI_CTRL);
++	mi_ctrl &= ~(RKISP2_CIF_MI_CTRL_MP_ENABLE |
++		     RKISP2_CIF_MI_MP_PINGPONG_ENABLE);
++	rkisp2_write(rkisp2, RKISP2_CIF_MI_CTRL, mi_ctrl);
++
++	rkisp2_write(rkisp2, RKISP2_CIF_MI_IMSC,
++		     rkisp2_read(rkisp2, RKISP2_CIF_MI_IMSC) &
++		     ~RKISP2_CIF_MI_MP_FE);
++
++	rkisp2_write(rkisp2, MI_WR_CTRL2,
++		     rkisp2_read(rkisp2, MI_WR_CTRL2) &
++		     ~(SW_GAIN_WR_AUTOUPD | SW_GAIN_WR_PINGPONG));
++	/* a non-zero size keeps the gain writer armed for the next mainpath run */
++	rkisp2_write(rkisp2, MI_GAIN_WR_SIZE, 0);
++	rkisp2_write(rkisp2, MI_GAIN_WR_LENGTH, 0);
++	rkisp2_write(rkisp2, ISP_MPFBC_CTRL, 0);
++	rkisp2_write(rkisp2, ISP3X_SWS_CFG,
++		     rkisp2_read(rkisp2, ISP3X_SWS_CFG) &
++		     ~SW_ISP2PP_PIPE_EN);
++
++	/* latch the disarmed write engines now, no frame end follows */
++	val = rkisp2_read(rkisp2, RKISP2_CIF_MI_INIT) &
++	      RKISP2_CIF_MI_INIT_MP_OUTPUT_MASK;
++	rkisp2_write(rkisp2, RKISP2_CIF_MI_INIT,
++		     val | RKISP2_CIF_MI_INIT_SOFT_UPD);
++}
++
++/*
++ * The mainpath writes the physical pool bases: map each onto itself so
++ * a translated domain resolves them like the identity domain does.
++ */
++void rkisp2_ispp_pipe_iommu_map(struct rkisp2_isp *isp)
++{
++	struct rkisp2_device *rkisp2 = isp->rkisp2;
++	const struct rkisp2_ispp_cfg *cfg = &isp->ispp.cfg;
++	struct iommu_domain *dom;
++	size_t wh, pic_size, gain_size;
++	int i, ret;
++
++	if (!isp->ispp.active || isp->ispp.iommu)
++		return;
++
++	dom = iommu_get_domain_for_dev(rkisp2->dev);
++	if (!dom || !(dom->type & __IOMMU_DOMAIN_PAGING) ||
++	    !dom->ops || !dom->ops->map_pages)
++		return;
++
++	wh = ALIGN(cfg->width, 16) * cfg->height;
++	pic_size = PAGE_ALIGN(2 * wh);
++	gain_size = PAGE_ALIGN(ALIGN(cfg->width, 64) *
++			       ALIGN(cfg->height, 128) >> 4);
++
++	for (i = 0; i < cfg->buf_num; i++) {
++		ret = iommu_map(dom, cfg->buf[i].pic_phys,
++				cfg->buf[i].pic_phys,
++				pic_size, IOMMU_READ | IOMMU_WRITE,
++				GFP_KERNEL);
++		if (ret)
++			goto err;
++		ret = iommu_map(dom, cfg->buf[i].gain_phys,
++				cfg->buf[i].gain_phys,
++				gain_size, IOMMU_READ | IOMMU_WRITE,
++				GFP_KERNEL);
++		if (ret)
++			goto err;
++	}
++
++	isp->ispp.iommu = dom;
++	isp->ispp.pic_size = pic_size;
++	isp->ispp.gain_size = gain_size;
++	return;
++
++err:
++	for (; i >= 0; i--) {
++		iommu_unmap(dom, cfg->buf[i].pic_phys, pic_size);
++		iommu_unmap(dom, cfg->buf[i].gain_phys, gain_size);
++	}
++	dev_warn(rkisp2->dev,
++		 "ISPP pipe: could not map the input pool (err %d)\n",
++		 ret);
++}
++
++static int rkisp2_ispp_set(struct rkisp2_isp *isp,
++			   const struct rkisp2_ispp_cfg *cfg)
++{
++	struct device *dev = isp->rkisp2->dev;
++	int i;
++
++	if (isp->ispp.active || isp->ispp.start) {
++		dev_err(dev, "ISPP pipe already running or pending\n");
++		return -EBUSY;
++	}
++
++	if (!(cfg->work_mode & RKISP2_ISPP_WORK_422) ||
++	    (!(cfg->work_mode & RKISP2_ISPP_WORK_QUICK) &&
++	     (!cfg->ops || !cfg->ops->frame)) ||
++	    !cfg->buf_num || cfg->buf_num > RKISP2_ISPP_BUF_MAX ||
++	    !cfg->width || !cfg->height)
++		return -EINVAL;
++	for (i = 0; i < cfg->buf_num; i++)
++		if (!cfg->buf[i].pic || !cfg->buf[i].gain)
++			return -EINVAL;
++
++	isp->ispp.cfg = *cfg;
++	isp->ispp.start = true;
++	dev_dbg(dev, "ISPP pipe armed: mode 0x%x bufs %d %ux%u\n",
++		cfg->work_mode, cfg->buf_num, cfg->width, cfg->height);
++
++	return 0;
++}
++
++static long rkisp2_toispp_ioctl(struct v4l2_subdev *sd, unsigned int cmd,
++				void *arg)
++{
++	struct rkisp2_isp *isp = container_of(sd, struct rkisp2_isp, toispp.sd);
++
++	if (!arg)
++		return -ENOTTY;
++
++	switch (cmd) {
++	case RKISP2_ISPP_CMD_SET:
++		return rkisp2_ispp_set(isp, arg);
++	case RKISP2_ISPP_CMD_PUT:
++		rkisp2_ispp_pipe_put(isp, *(const unsigned int *)arg);
++		return 0;
++	default:
++		return -ENOTTY;
++	}
++}
++
++static int rkisp2_toispp_get_fmt(struct v4l2_subdev *sd,
++				 struct v4l2_subdev_state *state,
++				 struct v4l2_subdev_format *fmt)
++{
++	struct rkisp2_isp *isp = container_of(sd, struct rkisp2_isp, toispp.sd);
++	struct v4l2_subdev_format ispp_fmt = {
++		.pad = RKISP2_ISP_PAD_SOURCE_ISPP,
++	};
++	int ret;
++
++	if (fmt->pad)
++		return -EINVAL;
++
++	ret = v4l2_subdev_call_state_active(&isp->sd, pad, get_fmt, &ispp_fmt);
++	if (ret)
++		return ret;
++
++	fmt->format = ispp_fmt.format;
++	fmt->which = state ? V4L2_SUBDEV_FORMAT_ACTIVE
++			   : V4L2_SUBDEV_FORMAT_TRY;
++
++	return 0;
++}
++
++static int rkisp2_toispp_s_stream(struct v4l2_subdev *sd, int on)
++{
++	struct rkisp2_isp *isp = container_of(sd, struct rkisp2_isp, toispp.sd);
++
++	return v4l2_subdev_call(&isp->sd, video, s_stream, on);
++}
++
++static const struct v4l2_subdev_core_ops rkisp2_toispp_core_ops = {
++	.ioctl = rkisp2_toispp_ioctl,
++};
++
++static const struct v4l2_subdev_video_ops rkisp2_toispp_video_ops = {
++	.s_stream = rkisp2_toispp_s_stream,
++};
++
++static const struct v4l2_subdev_pad_ops rkisp2_toispp_pad_ops = {
++	.get_fmt = rkisp2_toispp_get_fmt,
++};
++
++static const struct v4l2_subdev_ops rkisp2_toispp_ops = {
++	.core = &rkisp2_toispp_core_ops,
++	.video = &rkisp2_toispp_video_ops,
++	.pad = &rkisp2_toispp_pad_ops,
++};
++
++static int rkisp2_toispp_register(struct rkisp2_device *rkisp2)
++{
++	struct rkisp2_isp *isp = &rkisp2->isp;
++	struct v4l2_subdev *sd = &isp->toispp.sd;
++	int ret;
++
++	v4l2_subdev_init(sd, &rkisp2_toispp_ops);
++	sd->dev = rkisp2->dev;
++	sd->owner = THIS_MODULE;
++	strscpy(sd->name, "rkisp2-toispp", sizeof(sd->name));
++	sd->entity.function = MEDIA_ENT_F_VID_IF_BRIDGE;
++
++	isp->toispp.pad.flags = MEDIA_PAD_FL_SOURCE;
++	ret = media_entity_pads_init(&sd->entity, 1, &isp->toispp.pad);
++	if (ret)
++		return ret;
++
++	ret = v4l2_async_register_subdev(sd);
++	if (ret)
++		media_entity_cleanup(&sd->entity);
++
++	return ret;
++}
++
++static void rkisp2_toispp_unregister(struct rkisp2_device *rkisp2)
++{
++	struct rkisp2_isp *isp = &rkisp2->isp;
++
++	if (!isp->toispp.sd.entity.pads)
++		return;
++
++	v4l2_async_unregister_subdev(&isp->toispp.sd);
++	media_entity_cleanup(&isp->toispp.sd.entity);
++}
++
+ /* the second frame failure is a per-attempt coin flip */
+ #define RKISP2_RAWRD_PREFLIGHT_ATTEMPTS	4
+ 
+@@ -721,8 +1202,12 @@ static int rkisp2_pipeline_restart(struc
+ 	struct v4l2_subdev_state *sd_state;
+ 	int ret;
+ 
++	if (isp->ispp.active)
++		rkisp2_ispp_pipe_stop(isp);
+ 	rkisp2_isp_stop(isp);
+ 	rkisp2_vicap_stop(rkisp2);
++	/* the write engine is down: unmap before the feed restarts */
++	rkisp2_ispp_pipe_iommu_unmap(isp);
+ 
+ 	isp->frame_sequence = -1;
+ 
+@@ -730,13 +1215,21 @@ static int rkisp2_pipeline_restart(struc
+ 	ret = rkisp2_config_cif(isp, sd_state);
+ 	if (!ret)
+ 		ret = rkisp2_isp_start(isp, sd_state, NULL);
++	if (!ret && isp->ispp.active)
++		ret = rkisp2_ispp_pipe_start(isp);
+ 	if (!ret)
+ 		ret = rkisp2_vicap_start(rkisp2, sink_fmt);
+ 	v4l2_subdev_unlock_state(sd_state);
+ 
+ 	if (ret) {
++		/* leave the pipeline fully stopped */
+ 		rkisp2_isp_stop(isp);
++		if (isp->ispp.active) {
++			rkisp2_ispp_pipe_stop(isp);
++			isp->ispp.active = false;
++		}
+ 		rkisp2_vicap_stop(rkisp2);
++		rkisp2_ispp_pipe_iommu_unmap(isp);
+ 	}
+ 
+ 	return ret;
+@@ -754,22 +1247,42 @@ static int rkisp2_isp_s_stream(struct v4
+ 	int ret;
+ 
+ 	if (!enable) {
++		if (!isp->streaming)
++			return 0;
++		isp->streaming = false;
+ 		if (rkisp2->source)
+ 			v4l2_subdev_call(rkisp2->source, video, s_stream,
+ 					 false);
+ 		rkisp2_vicap_drain(rkisp2);
++		if (isp->ispp.active) {
++			rkisp2_ispp_pipe_stop(isp);
++			isp->ispp.active = false;
++		}
+ 		rkisp2_isp_stop(isp);
+ 		rkisp2_vicap_stop(rkisp2);
++		rkisp2_ispp_pipe_iommu_unmap(isp);
++		pm_runtime_put_sync(rkisp2->dev);
+ 		return 0;
+ 	}
+ 
++	if (isp->streaming)
++		return 0;
++
+ 	vicap = rkisp2_vicap_available(rkisp2);
+ 	if (vicap) {
+ 		rkisp2->source = NULL;
+ 	} else {
+ 		ret = rkisp2_isp_source_find(isp, &source_pad);
+-		if (ret)
++		if (ret) {
++			isp->ispp.start = false;
+ 			return ret;
++		}
++	}
++
++	ret = pm_runtime_resume_and_get(rkisp2->dev);
++	if (ret) {
++		isp->ispp.start = false;
++		return ret;
+ 	}
+ 
+ 	isp->frame_sequence = -1;
+@@ -778,11 +1291,25 @@ static int rkisp2_isp_s_stream(struct v4
+ 
+ 	ret = rkisp2_config_cif(isp, sd_state);
+ 	if (ret)
+-		goto out_unlock;
++		goto err_unlock;
+ 
+ 	ret = rkisp2_isp_start(isp, sd_state, source_pad);
+ 	if (ret)
+-		goto out_unlock;
++		goto err_isp_stop;
++
++	if (isp->ispp.start) {
++		isp->ispp.start = false;
++		if (rkisp2->capture_devs[RKISP2_MAINPATH].is_streaming) {
++			dev_err(rkisp2->dev,
++				"ISPP pipe rejected: mainpath capture is streaming\n");
++			ret = -EBUSY;
++		} else {
++			ret = rkisp2_ispp_pipe_start(isp);
++		}
++		if (ret)
++			goto err_isp_stop;
++		isp->ispp.active = true;
++	}
+ 
+ 	sink_fmt = *v4l2_subdev_state_get_format(sd_state,
+ 						 RKISP2_ISP_PAD_SINK_VIDEO_DMA_0);
+@@ -790,41 +1317,77 @@ static int rkisp2_isp_s_stream(struct v4
+ 	if (rkisp2->source) {
+ 		ret = v4l2_subdev_call(rkisp2->source, video, s_stream, true);
+ 		if (ret)
+-			rkisp2_isp_stop(isp);
++			goto err_isp_stop;
+ 	}
+ 
+-out_unlock:
+ 	v4l2_subdev_unlock_state(sd_state);
+ 
+-	if (ret || !vicap)
+-		return ret;
++	if (vicap) {
++		/*
++		 * The readback node is not in use: take the raw frames
++		 * from the VICAP driver. With the readback link enabled,
++		 * user space supplies them through the readback node
++		 * instead and the VICAP input must stay off.
++		 */
++		ret = rkisp2_vicap_start(rkisp2, &sink_fmt);
++		if (ret) {
++			dev_err(rkisp2->dev, "VICAP start failed %d\n", ret);
++			goto err_source_stop;
++		}
+ 
+-	ret = rkisp2_vicap_start(rkisp2, &sink_fmt);
+-	if (ret) {
+-		rkisp2_isp_stop(isp);
+-		return ret;
+-	}
++		for (attempt = 0; attempt < RKISP2_RAWRD_PREFLIGHT_ATTEMPTS;
++		     attempt++) {
++			if (rkisp2_rawrd_preflight_ok(rkisp2))
++				break;
++
++			dev_warn(rkisp2->dev,
++				 "readback preflight: frame 2 not complete, restarting (%u)\n",
++				 attempt + 1);
++
++			ret = rkisp2_pipeline_restart(rkisp2, sd, isp,
++						      &sink_fmt);
++			if (ret)
++				goto err_source_stop;
++		}
+ 
+-	for (attempt = 0; attempt < RKISP2_RAWRD_PREFLIGHT_ATTEMPTS;
+-	     attempt++) {
+-		if (rkisp2_rawrd_preflight_ok(rkisp2))
+-			return 0;
++		if (attempt == RKISP2_RAWRD_PREFLIGHT_ATTEMPTS) {
++			dev_err(rkisp2->dev,
++				"readback preflight: giving up after %d attempts\n",
++				RKISP2_RAWRD_PREFLIGHT_ATTEMPTS);
++			ret = -ETIMEDOUT;
++			goto err_source_stop;
++		}
++	}
+ 
+-		dev_warn(rkisp2->dev,
+-			 "readback preflight: frame 2 not complete, restarting (%u)\n",
+-			 attempt + 1);
++	isp->streaming = true;
+ 
+-		ret = rkisp2_pipeline_restart(rkisp2, sd, isp, &sink_fmt);
+-		if (ret)
+-			return ret;
+-	}
++	return 0;
+ 
+-	dev_err(rkisp2->dev, "readback preflight: giving up after %d attempts\n",
+-		RKISP2_RAWRD_PREFLIGHT_ATTEMPTS);
++err_source_stop:
++	if (rkisp2->source)
++		v4l2_subdev_call(rkisp2->source, video, s_stream, false);
+ 	rkisp2_isp_stop(isp);
++	if (isp->ispp.active) {
++		rkisp2_ispp_pipe_stop(isp);
++		isp->ispp.active = false;
++	}
+ 	rkisp2_vicap_stop(rkisp2);
++	rkisp2_ispp_pipe_iommu_unmap(isp);
++	pm_runtime_put_sync(rkisp2->dev);
++	return ret;
+ 
+-	return -ETIMEDOUT;
++err_isp_stop:
++	rkisp2_isp_stop(isp);
++	if (isp->ispp.active) {
++		rkisp2_ispp_pipe_stop(isp);
++		isp->ispp.active = false;
++	}
++	rkisp2_ispp_pipe_iommu_unmap(isp);
++	v4l2_subdev_unlock_state(sd_state);
++err_unlock:
++	isp->ispp.start = false;
++	pm_runtime_put_sync(rkisp2->dev);
++	return ret;
+ }
+ 
+ static int rkisp2_isp_subs_evt(struct v4l2_subdev *sd, struct v4l2_fh *fh,
+@@ -869,9 +1432,12 @@ int rkisp2_isp_register(struct rkisp2_de
+ 	struct rkisp2_isp *isp = &rkisp2->isp;
+ 	struct media_pad *pads = isp->pads;
+ 	struct v4l2_subdev *sd = &isp->sd;
++	struct fwnode_handle *ep;
+ 	int ret;
+ 
+ 	isp->rkisp2 = rkisp2;
++	spin_lock_init(&isp->ispp.lock);
++	init_waitqueue_head(&isp->ispp.done);
+ 
+ 	v4l2_subdev_init(sd, &rkisp2_isp_ops);
+ 	sd->internal_ops = &rkisp2_isp_internal_ops;
+@@ -889,6 +1455,7 @@ int rkisp2_isp_register(struct rkisp2_de
+ 	pads[RKISP2_ISP_PAD_SOURCE_VIDEO_MAIN].flags = MEDIA_PAD_FL_SOURCE;
+ 	pads[RKISP2_ISP_PAD_SOURCE_VIDEO_SELF].flags = MEDIA_PAD_FL_SOURCE;
+ 	pads[RKISP2_ISP_PAD_SOURCE_STATS].flags = MEDIA_PAD_FL_SOURCE;
++	pads[RKISP2_ISP_PAD_SOURCE_ISPP].flags = MEDIA_PAD_FL_SOURCE;
+ 
+ 	ret = media_entity_pads_init(&sd->entity, RKISP2_ISP_PAD_MAX, pads);
+ 	if (ret)
+@@ -904,6 +1471,16 @@ int rkisp2_isp_register(struct rkisp2_de
+ 		goto err_subdev_cleanup;
+ 	}
+ 
++	/* the ISPP behind the output port takes the pipe subdev over */
++	ep = fwnode_graph_get_endpoint_by_id(dev_fwnode(rkisp2->dev),
++					     RKISP2_ISP_DT_PORT_ISPP, 0, 0);
++	if (ep) {
++		fwnode_handle_put(ep);
++		ret = rkisp2_toispp_register(rkisp2);
++		if (ret)
++			goto err_subdev_cleanup;
++	}
++
+ 	return 0;
+ 
+ err_subdev_cleanup:
+@@ -921,6 +1498,11 @@ void rkisp2_isp_unregister(struct rkisp2
+ 	if (!isp->sd.v4l2_dev)
+ 		return;
+ 
++	/*
++	 * Drop the ISPP binding first: the unbind callback may stop the
++	 * pipe through the isp while the isp subdev is still registered.
++	 */
++	rkisp2_toispp_unregister(rkisp2);
+ 	v4l2_device_unregister_subdev(&isp->sd);
+ 	v4l2_subdev_cleanup(&isp->sd);
+ 	media_entity_cleanup(&isp->sd.entity);
+@@ -957,6 +1539,7 @@ irqreturn_t rkisp2_isp_isr(int irq, void
+ 	if (status & RKISP2_CIF_ISP_V_START) {
+ 		rkisp2->isp.frame_sequence++;
+ 		rkisp2_isp_queue_event_sof(&rkisp2->isp);
++		rkisp2_ispp_pipe_vstart(&rkisp2->isp);
+ 		if (status & RKISP2_CIF_ISP_FRAME) {
+ 			WARN_ONCE(1, "irq delay is too long, buffers might not be in sync\n");
+ 			rkisp2->debug.irq_delay++;
+--- a/drivers/media/platform/rockchip/rkisp2/rkisp2-params.c
++++ b/drivers/media/platform/rockchip/rkisp2/rkisp2-params.c
+@@ -496,6 +496,12 @@ static void __rkisp2_params_crop(struct
+ 			.width = window->h_size,
+ 			.height = window->v_size
+ 		};
++		struct rkisp2_isp *isp = &params->rkisp2->isp;
++
++		/* the ISPP pipe owns the mainpath crop and resizer */
++		if (i == RKISP2_MAINPATH &&
++		    (isp->ispp.start || isp->ispp.active))
++			continue;
+ 
+ 		/*
+ 		 * Resizer (and dual crop if applicable) always needs to be
+--- a/drivers/media/platform/rockchip/rkisp2/rkisp2-resizer.c
++++ b/drivers/media/platform/rockchip/rkisp2/rkisp2-resizer.c
+@@ -382,6 +382,35 @@ void rkisp2_resizer_configure(struct rki
+ 					  &rsz->source_format);
+ }
+ 
++/*
++ * The ISPP pipe takes the mainpath output at the ISP size: only the
++ * extra readback lines are cut off by the dual crop, the resizer is
++ * bypassed.
++ */
++void rkisp2_resizer_pipe_configure(struct rkisp2_device *rkisp2, u32 width,
++				   u32 height)
++{
++	struct rkisp2_resizer *rsz = &rkisp2->resizer_devs[RKISP2_MAINPATH];
++	struct v4l2_rect crop = {
++		.left = 0,
++		.top = 0,
++		.width = width,
++		.height = height,
++	};
++
++	if (rkisp2_has_feature(rkisp2, DUAL_CROP))
++		rkisp2_resizer_config_dcrop(rsz, false, &crop);
++	rkisp2_resizer_disable_rsz(rsz);
++}
++
++void rkisp2_resizer_pipe_disable(struct rkisp2_device *rkisp2)
++{
++	struct rkisp2_resizer *rsz = &rkisp2->resizer_devs[RKISP2_MAINPATH];
++
++	if (rkisp2_has_feature(rkisp2, DUAL_CROP))
++		rkisp2_resizer_disable_dcrop(rsz);
++}
++
+ void rkisp2_resizer_pre_configure(struct rkisp2_device *rkisp2,
+ 				  const struct v4l2_mbus_framefmt *sink_frm,
+ 				  const struct v4l2_mbus_framefmt *mp_src_frm,
+--- a/drivers/media/platform/rockchip/rkisp2/rkisp2-vicap.c
++++ b/drivers/media/platform/rockchip/rkisp2/rkisp2-vicap.c
+@@ -196,6 +196,9 @@ int rkisp2_vicap_start(struct rkisp2_dev
+ 	if (ret)
+ 		return ret;
+ 
++	/* the pool is written by the mainpath from the first frame on */
++	rkisp2_ispp_pipe_iommu_map(&rkisp2->isp);
++
+ 	/*
+ 	 * The feed can run without a capture output, which is where the
+ 	 * readback input is normally selected; the soft update latches
+--- /dev/null
++++ b/include/linux/platform_data/media/rkisp2-toispp.h
+@@ -0,0 +1,71 @@
++/* SPDX-License-Identifier: GPL-2.0 */
++/*
++ * Rockchip ISP2: ISPP input pool interface.
++ *
++ * In the quick input mode the ISP output is piped straight into the ISPP.
++ * The mainpath DMA of the ISP keeps running and writes every frame, as a
++ * semi-planar YUV422 picture plus a gain map, into a ping-pong pool of
++ * buffers that the ISPP owns.
++ *
++ * The ISPP binds the ISP subdevice through a V4L2 async notifier and
++ * passes the pool with the subdevice core ioctl operation below before it
++ * starts the stream. The ISP stops writing the pool once the stream is
++ * stopped, so the ISPP may free the buffers after that.
++ */
++
++#ifndef _RKISP2_TOISPP_H
++#define _RKISP2_TOISPP_H
++
++#include <linux/types.h>
++
++#define RKISP2_ISPP_BUF_MAX 3
++
++/* struct rkisp2_ispp_cfg::work_mode */
++#define RKISP2_ISPP_WORK_422		BIT(1)
++#define RKISP2_ISPP_WORK_QUICK		BIT(2)
++
++struct rkisp2_ispp_pool_buf {
++	/* semi-planar YUV422 picture: the Y plane, then the UV plane */
++	dma_addr_t pic;
++	dma_addr_t gain;
++	/*
++	 * The real physical addresses of the pool buffers.  The ISP
++	 * mainpath is programmed with physical bases (the physical-base
++	 * scheme): while the ISP's IOMMU is in the identity domain the
++	 * bases pass through 1:1, and for a translated domain the
++	 * driver maps each base onto itself so it is valid in both
++	 * cases.
++	 */
++	phys_addr_t pic_phys;
++	phys_addr_t gain_phys;
++};
++
++/*
++ * Without the quick mode the ISP hands every completed pool buffer to
++ * the ISPP from its mainpath frame end interrupt, and the ISPP gives it
++ * back with RKISP2_ISPP_CMD_PUT once it has consumed it.
++ */
++struct rkisp2_ispp_ops {
++	/* a completed pool buffer, with the ISP frame sequence it holds */
++	void (*frame)(void *priv, unsigned int idx, u32 sequence,
++		      u64 timestamp);
++};
++
++struct rkisp2_ispp_cfg {
++	u8 work_mode;
++	u8 buf_num;
++	u32 width;
++	u32 height;
++	struct rkisp2_ispp_pool_buf buf[RKISP2_ISPP_BUF_MAX];
++	const struct rkisp2_ispp_ops *ops;
++	void *priv;
++};
++
++enum rkisp2_ispp_cmd {
++	/* arg: const struct rkisp2_ispp_cfg */
++	RKISP2_ISPP_CMD_SET = 1,
++	/* arg: const unsigned int *, the pool buffer index */
++	RKISP2_ISPP_CMD_PUT = 2,
++};
++
++#endif

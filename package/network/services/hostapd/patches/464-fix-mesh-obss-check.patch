@@ -1,18 +1,60 @@
 From: Felix Fietkau <nbd@nbd.name>
-Date: Tue, 14 Nov 2017 12:38:08 +0100
-Subject: [PATCH] Fix issues with disabling obss scan when using fixed_freq on
- mesh
+Date: Tue, 20 Oct 2026 14:38:32 +0200
+Subject: [PATCH] wpa_supplicant: Skip the OBSS check of an IBSS or mesh with fixed_freq
 
+On 5 GHz and 6 GHz, ibss_mesh_select_40mhz() checks the scan results
+for other BSSs on the primary and secondary channels of a 40 MHz
+channel. check_40mhz_5g() can then swap the primary and secondary
+channels, and a failure to get the scan results falls back to 20 MHz.
+This also happens with fixed_freq=1, so an IBSS or mesh with a fixed
+frequency can start on another primary channel. Mesh STAs with
+different scan results can then select different primary channels.
+
+Skip the check with fixed_freq=1, for IBSS and mesh. Document
+fixed_freq in wpa_supplicant.conf, which did not describe it.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+
+--- a/wpa_supplicant/config_ssid.h
++++ b/wpa_supplicant/config_ssid.h
+@@ -565,7 +565,7 @@ struct wpa_ssid {
+ 	u8 edmg_channel;
+ 
+ 	/**
+-	 * fixed_freq - Use fixed frequency for IBSS
++	 * fixed_freq - Use fixed frequency for IBSS or mesh
+ 	 */
+ 	int fixed_freq;
+ 
 --- a/wpa_supplicant/wpa_supplicant.c
 +++ b/wpa_supplicant/wpa_supplicant.c
-@@ -3592,6 +3592,10 @@ void ibss_mesh_setup_freq(struct wpa_sup
+@@ -3592,6 +3592,9 @@ void ibss_mesh_setup_freq(struct wpa_sup
  
  	freq->freq = ssid->frequency;
  
-+	if (ssid->fixed_freq) {
++	if (ssid->fixed_freq)
 +		obss_scan = 0;
-+	}
 +
  	if (ssid->mode == WPAS_MODE_IBSS && !ssid->fixed_freq) {
  		struct wpa_bss *bss = ibss_find_existing_bss(wpa_s, ssid);
  
+--- a/wpa_supplicant/wpa_supplicant.conf
++++ b/wpa_supplicant/wpa_supplicant.conf
+@@ -1021,6 +1021,16 @@ fast_reauth=1
+ # an IBSS network with the configured SSID is already present, the frequency of
+ # the network will be used instead of this configured value.
+ #
++# fixed_freq: Whether to use the configured frequency as is (IBSS and mesh)
++# 0 = adapt the channel to the other networks found in the scan results
++#     (default)
++# 1 = use the configured frequency as the primary channel
++# With fixed_freq=1, an IBSS does not move to the frequency of an IBSS with the
++# same SSID, and the driver is asked to keep the frequency. On 5 GHz and 6 GHz,
++# an IBSS or mesh also does not check the other BSSs on the channels of a
++# 40 MHz channel. That check can move the primary channel to the secondary
++# channel or fall back to 20 MHz.
++#
+ # pbss: Whether to use PBSS. Relevant to IEEE 802.11ad networks only.
+ # 0 = do not use PBSS
+ # 1 = use PBSS

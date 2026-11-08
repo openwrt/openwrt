@@ -62,7 +62,7 @@ Signed-off-by: George Moussalem <george.moussalem@outlook.com>
  		goto err_put_psy;
 --- a/drivers/usb/dwc3/core.h
 +++ b/drivers/usb/dwc3/core.h
-@@ -1033,6 +1033,7 @@ struct dwc3_glue_ops {
+@@ -1042,6 +1042,7 @@ struct dwc3_glue_ops {
   * @regs_size: address space size
   * @fladj: frame length adjustment
   * @ref_clk_per: reference clock period configuration
@@ -70,7 +70,7 @@ Signed-off-by: George Moussalem <george.moussalem@outlook.com>
   * @irq_gadget: peripheral controller's IRQ number
   * @otg_irq: IRQ number for OTG IRQs
   * @current_otg_role: current role of operation while using the OTG block
-@@ -1254,6 +1255,7 @@ struct dwc3 {
+@@ -1270,6 +1271,7 @@ struct dwc3 {
  
  	u32			fladj;
  	u32			ref_clk_per;

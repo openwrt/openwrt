@@ -1,0 +1,34 @@
+From: Zhi-Jun You <hujy652@gmail.com>
+Date: Mon, 26 Oct 2026 17:57:28 +0800
+Subject: [PATCH] net: ethernet: mtk_wed: skip ring reset in wdma_tx_ring_setup for WED v3
+
+Currently WED v3 tx wdma ring, ring reset happens in a separate code
+block unconditionally.
+
+Moreover, v3 has double the size of wdma_desc and has different init
+values. mtk_wed_ring_reset doens't deal with that and would corrupt the
+wdma_desc.
+
+Fix this by skipping mtk_wed_ring_reset in mtk_wdma_tx_ring_setup for
+WED v3.
+
+Fixes: e2f64db13aa1 ("net: ethernet: mtk_wed: introduce WED support for MT7988")
+Reported-by: Sashiko <sashiko-bot@kernel.org>
+Link: https://sashiko.dev/#/patchset/20260711112128.971-1-hujy652@gmail.com?part=1
+Signed-off-by: Zhi-Jun You <hujy652@gmail.com>
+---
+---
+ drivers/net/ethernet/mediatek/mtk_wed.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/net/ethernet/mediatek/mtk_wed.c
++++ b/drivers/net/ethernet/mediatek/mtk_wed.c
+@@ -1938,7 +1938,7 @@ mtk_wed_wdma_tx_ring_setup(struct mtk_we
+ 	wdma_w32(dev, MTK_WDMA_RING_TX(idx) + MTK_WED_RING_OFS_CPU_IDX, 0);
+ 	wdma_w32(dev, MTK_WDMA_RING_TX(idx) + MTK_WED_RING_OFS_DMA_IDX, 0);
+ 
+-	if (reset)
++	if (!mtk_wed_is_v3_or_greater(dev->hw) && reset)
+ 		mtk_wed_ring_reset(wdma, MTK_WED_WDMA_RING_SIZE, true);
+ 
+ 	if (!idx)  {

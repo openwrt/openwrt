@@ -1,0 +1,86 @@
+FROM: Andrew LaMarche <andrewjlamarche@gmail.com>
+Date: Sat, 25 Oct 2026 00:00:00 -0400
+Subject: [PATCH] octeon: Fix PEM BAR register map on CN70XX
+
+On CN70XX, the PEM register map differs from the other Octoen III models.
+PEM_BAR_CTL is at block offset 0xa0 and the BAR1 index table at 0x100, while
+the in-tree code uses the CN68XX offsets (BAR_CTL at 0x128, BAR1 index at 0xa8)
+for all Octeon III parts. The Cavium OCTEON-SDK cvmx-permx-defs.h special cases
+CN70XX for both registers.
+
+With the generic offsets, __cvmx_pcie_rc_initialize_gen2() programs the wrong
+registers on CN70XX. The intended BAR_CTL value lands on a BAR1 index entry,
+and the BAR1 index writes land on the real BAR_CTL (0xa8) and BAR2_MASK (0xb0).
+BAR2_MASK is ANDed with inbound (device DMA) addresses, so a bogus value there
+silently corrups all PCIe DMA to host memory. Observed on a CN7030 board while
+debugging a failing b43 firmware intialization followed by DMA errors.
+
+Add model awareness helpers and use them for the three affected addresses.
+
+Signed-off-by: Andrew LaMarche <andrewjlamarche@gmail.com>
+
+--- a/arch/mips/pci/pcie-octeon.c
++++ b/arch/mips/pci/pcie-octeon.c
+@@ -1141,6 +1141,38 @@ static int __cvmx_pcie_rc_initialize_lin
+ 	return 0;
+ }
+ 
++/*
++ * On CN70XX, the PEM register map differs from the other Octeon III models.
++ * PEM_BAR_CTL is at block offset 0xa8 (not 0x128) and the BAR1 index table
++ * is at 0x100 (not 0xa8). See the family checks in the Cavium OCTEON-SDK
++ * cvmx-pemx-defs.h. With the generic offsets, the BAR1 index writes below
++ * would land on the real BAR_CTL (0xa8) and BAR2_MASK (0xb0); BAR2_MASK is
++ * ANDed with inbound (device DMA) addresses, so corrupting it breaks PCIe
++ * DMA to host memory.
++ */
++
++static bool octeon_pem_new_bar_map(void)
++{
++	return OCTEON_IS_MODEL(OCTEON_CN70XX);
++}
++
++static u64 octeon_pemx_bar_ctl_addr(int pcie_port)
++{
++	if (octeon_pem_new_bar_map())
++		return CVMX_ADD_IO_SEG(0x00011800C00000A8ull) +
++			(pcie_port & 1) * 0x1000000ull;
++
++	return CVMX_PEMX_BAR_CTL(pcie_port);
++}
++
++static u64 octeon_pemx_bar1_index_addr(int index, int pcie_port)
++{
++	if (octeon_pem_new_bar_map())
++		return CVMX_ADD_IO_SEG(0x00011800C0000100ull) +
++			((index & 15) + (pcie_port & 1) * 0x200000ull) * 8;
++
++	return CVMX_PEMX_BAR1_INDEXX(index, pcie_port);
++}
+ 
+ /**
+  * Initialize a PCIe gen 2 port for use in host(RC) mode. It doesn't enumerate
+@@ -1395,12 +1427,12 @@ static int __cvmx_pcie_rc_initialize_gen
+ 	 * - WAIT_COM=0 will likely work for all applications.
+ 	 * Load completion relaxed ordering (NPEI_CTL_PORTn[WAITL_COM])
+ 	 */
+-	pemx_bar_ctl.u64 = cvmx_read_csr(CVMX_PEMX_BAR_CTL(pcie_port));
++	pemx_bar_ctl.u64 = cvmx_read_csr(octeon_pemx_bar_ctl_addr(pcie_port));
+ 	pemx_bar_ctl.s.bar1_siz = 3;  /* 256MB BAR1*/
+ 	pemx_bar_ctl.s.bar2_enb = 1;
+ 	pemx_bar_ctl.s.bar2_esx = 1;
+ 	pemx_bar_ctl.s.bar2_cax = 0;
+-	cvmx_write_csr(CVMX_PEMX_BAR_CTL(pcie_port), pemx_bar_ctl.u64);
++	cvmx_write_csr(octeon_pemx_bar_ctl_addr(pcie_port), pemx_bar_ctl.u64);
+ 	sli_ctl_portx.u64 = cvmx_read_csr(CVMX_PEXP_SLI_CTL_PORTX(pcie_port));
+ 	sli_ctl_portx.s.ptlp_ro = 1;
+ 	sli_ctl_portx.s.ctlp_ro = 1;
+@@ -1418,7 +1450,7 @@ static int __cvmx_pcie_rc_initialize_gen
+ 	bar1_index.s.addr_v = 1;   /* Valid entry */
+ 
+ 	for (i = 0; i < 16; i++) {
+-		cvmx_write_csr(CVMX_PEMX_BAR1_INDEXX(i, pcie_port), bar1_index.u64);
++		cvmx_write_csr(octeon_pemx_bar1_index_addr(i, pcie_port), bar1_index.u64);
+ 		/* 256MB / 16 >> 22 == 4 */
+ 		bar1_index.s.addr_idx += (((1ull << 28) / 16ull) >> 22);
+ 	}

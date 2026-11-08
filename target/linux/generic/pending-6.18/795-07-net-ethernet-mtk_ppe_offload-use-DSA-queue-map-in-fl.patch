@@ -29,7 +29,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 
 --- a/drivers/net/ethernet/mediatek/mtk_ppe_offload.c
 +++ b/drivers/net/ethernet/mediatek/mtk_ppe_offload.c
-@@ -193,6 +193,7 @@ mtk_flow_set_output_device(struct mtk_et
+@@ -198,6 +198,7 @@ mtk_flow_set_output_device(struct mtk_et
  			   int *wed_index)
  {
  	struct mtk_wdma_info info = {};
@@ -37,7 +37,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	int pse_port, dsa_port, queue;
  
  	if (mtk_flow_get_wdma_info(dev, dest_mac, &info) == 0) {
-@@ -230,9 +231,12 @@ mtk_flow_set_output_device(struct mtk_et
+@@ -235,9 +236,12 @@ mtk_flow_set_output_device(struct mtk_et
  	else
  		return -EOPNOTSUPP;
  

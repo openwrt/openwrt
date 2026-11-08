@@ -1,0 +1,59 @@
+From 9ab0b3ce8c764087e9b3c1c19290b24be333abfa Mon Sep 17 00:00:00 2001
+From: Josef Schlehofer <pepe.schlehofer@gmail.com>
+Date: Sun, 11 Oct 2026 18:13:14 +0200
+Subject: [PATCH] wifi: rtw88: 8822b: Relax ETSI EDCCA threshold on 2.4 GHz
+
+The RTL8822B has no firmware-managed adaptivity, so rtw88 sets
+the EDCCA thresholds in the driver. Under ETSI, the current rule
+uses L2H = min(IGI, 36), at most about -74 dBm.
+
+On a TP-Link Archer T4U v3 (RTL8812BU) operating as a 2.4 GHz AP,
+in-band energy, mostly from the adapter's own USB 3 link, kept IGI
+at 0x2a and L2H at 36. The AP was not seen in any of 5 scans, and
+the driver reported "failed to get tx report from firmware".
+
+With min(max(IGI + 8, 48), 50), the AP was seen in 4/5 scans on the
+same port and boot (16/19 across repeated runs), with no TX report
+failures and no change in the false alarm rate.
+
+EN 300 328 V2.2.2 tests detection at -70 dBm/MHz for a 20 dBm EIRP
+transmitter, about -57 dBm over 20 MHz.
+
+Use the normal threshold, max(IGI + 8, 48), on 2.4 GHz under ETSI,
+capped at 50 (nominally -60 dBm). Keep the existing rule on 5 GHz
+and in JP.
+
+Signed-off-by: Josef Schlehofer <pepe.schlehofer@gmail.com>
+Acked-by: Ping-Ke Shih <pkshih@realtek.com>
+Link: https://lore.kernel.org/linux-wireless/20261011204509.46062-1-pepe.schlehofer@gmail.com/
+---
+ drivers/net/wireless/realtek/rtw88/rtw8822b.c | 6 ++++++
+ drivers/net/wireless/realtek/rtw88/rtw8822b.h | 2 ++
+ 2 files changed, 8 insertions(+)
+
+--- a/drivers/net/wireless/realtek/rtw88/rtw8822b.c
++++ b/drivers/net/wireless/realtek/rtw88/rtw8822b.c
+@@ -1562,6 +1562,12 @@ static void rtw8822b_adaptivity(struct r
+ 	if (dm_info->edcca_mode == RTW_EDCCA_NORMAL) {
+ 		l2h = max_t(s8, igi + EDCCA_IGI_L2H_DIFF, EDCCA_TH_L2H_LB);
+ 		h2l = l2h - EDCCA_L2H_H2L_DIFF_NORMAL;
++	} else if (rtwdev->regd.dfs_region == NL80211_DFS_ETSI &&
++		   rtwdev->hal.current_band_type == RTW_BAND_2G) {
++		/* follow the normal threshold, capped for EN 300 328 */
++		l2h = max_t(s8, igi + EDCCA_IGI_L2H_DIFF, EDCCA_TH_L2H_LB);
++		l2h = min_t(s8, l2h, RTW8822B_EDCCA_ETSI_2G);
++		h2l = l2h - EDCCA_L2H_H2L_DIFF;
+ 	} else {
+ 		l2h = min_t(s8, igi, dm_info->l2h_th_ini);
+ 		h2l = l2h - EDCCA_L2H_H2L_DIFF;
+--- a/drivers/net/wireless/realtek/rtw88/rtw8822b.h
++++ b/drivers/net/wireless/realtek/rtw88/rtw8822b.h
+@@ -151,6 +151,8 @@ _rtw_write32s_mask(struct rtw_dev *rtwde
+ 
+ #define RTW8822B_EDCCA_MAX	0x7f
+ #define RTW8822B_EDCCA_SRC_DEF	1
++/* nominally -60 dBm: 3 dB below the EN 300 328 level at 20 dBm e.i.r.p. */
++#define RTW8822B_EDCCA_ETSI_2G	50
+ #define REG_HTSTFWT	0x800
+ #define REG_RXCCAMSK	0x814
+ #define REG_L1WT	0x83c

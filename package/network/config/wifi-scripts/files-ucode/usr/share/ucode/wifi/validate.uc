@@ -51,9 +51,9 @@ function validate_value(schema, key, value) {
 	switch(schema.type) {
 	case 'number':
 		value = +value;
-		if (schema.minimum && value < schema.minimum)
+		if (schema.minimum != null && value < schema.minimum)
 			abort(`${key}: ${value} is lower than the minimum value`);
-		if (schema.maximum && value > schema.maximum)
+		if (schema.maximum != null && value > schema.maximum)
 			abort(`${key}: ${value} is larger than the maximum value`);
 		if (schema.enum && !(value in schema.enum))
 			abort(`${key}: ${value} has to be one of ${schema.enum}`);

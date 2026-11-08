@@ -127,6 +127,8 @@
 
 	i2c@4 {
 		reg = <4>;
+		#address-cells = <1>;
+		#size-cells = <0>;
 
 		adt7476@2e {
 			compatible = "adi,adt7476";

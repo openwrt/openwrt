@@ -1,50 +1,35 @@
 From: John Crispin <john@phrozen.org>
-Date: Mon, 5 Oct 2026 16:30:00 +0200
-Subject: [PATCH] ACS: scan for all links of an AP MLD with one request
+Date: Tue, 6 Oct 2026 07:59:32 +0200
+Subject: [PATCH] ACS: Scan for all links of an AP MLD with one request
 
 The links of an AP MLD share one wiphy, and the kernel runs one scan per
-wiphy at a time. If several links use ACS, each link scans for itself,
-and every link after the first one gets -EBUSY and retries every
-ACS_SCAN_RETRY_INTERVAL seconds. The ACS of three links then takes
-three full scans and the retry delays, and every retry logs two lines
-at info level.
+wiphy at a time. If several links use ACS, each link scans for itself.
+Every link after the first one gets -EBUSY and retries after
+ACS_SCAN_RETRY_INTERVAL seconds, so ACS takes one full scan per link
+plus the retry delays.
 
-Scan for all links of the AP MLD that are in ACS with one request:
+Scan the channels of all links of the AP MLD that are in ACS with one
+request, and give the survey to each link of the scan, on whichever link
+the driver reports it. Each link gets its own copy of the survey
+entries, since links on the same band share channels. Continue each
+link from the event loop, since EVENT_SCAN_RESULTS can go on to call the
+scan callback of the partner links, and a scan started from the
+callback would complete at once. A partner link waits at most
+ACS_SCAN_WAIT_TIMEOUT seconds for the results and then scans for
+itself, since the results can be lost if the requesting link is torn
+down. acs_cleanup() drops the scan callback of ACS, so that a link
+disabled during its scan does not block the scans of its partner links.
 
-- acs_request_scan() adds the channels of every partner link that is in
-  ACS and waits for a scan, and gives those links the scan callback.
-- acs_scan_complete() fetches the survey once. Every link of the scan
-  keeps its scan callback until then, and the survey event hands the
-  survey to each of them, whichever link the driver reports it on.
-  Each link keeps the channels of its own band.
-- Each link then counts the scan, and continues from the event loop:
-  the links that need more scans with the next request, the others
-  with the channel study. EVENT_SCAN_RESULTS may still go on to call
-  the scan callback of the partners when the results reached a link
-  that did not scan, so a request started from the callback would be
-  taken as completed at once.
-- A link that the scan of a partner link includes waits at most
-  ACS_SCAN_WAIT_TIMEOUT seconds for its results, and then scans for
-  itself. The results can be lost when the partner link is torn down.
-- acs_cleanup() drops the scan callback of ACS, so that a link that is
-  disabled during its scan does not block the scans of its partner
-  links.
-
-A driver that scans its radios in parallel can then serve all links
-with one scan.
-
-The partner scan check of hostapd_driver_scan() moves into
-hostapd_mld_partner_scanning(). A scan that has to wait for a partner
-link is expected, so log it at debug level.
+A scan refused for a partner link that scans is expected, so log it at
+debug level.
 
 Signed-off-by: John Crispin <john@phrozen.org>
-[nbd: continue the requesting link from the event loop as well, keep
- its scan callback until the survey is fetched, add the wait timeout of
- a partner link and the scan callback reset in acs_cleanup()]
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
 ---
+
 --- a/src/ap/acs.c
 +++ b/src/ap/acs.c
-@@ -310,6 +310,13 @@ static const struct bw_item *bw_desc[] =
+@@ -310,6 +310,14 @@ static const struct bw_item *bw_desc[] =
  static int acs_request_scan(struct hostapd_iface *iface);
  static int acs_survey_is_sufficient(struct freq_survey *survey);
  static void acs_scan_retry(void *eloop_data, void *user_data);
@@ -53,12 +38,13 @@ Signed-off-by: John Crispin <john@phrozen.org>
 +static void acs_study_timeout(void *eloop_data, void *user_data);
 +static void acs_scan_wait_timeout(void *eloop_data, void *user_data);
 +
-+/* seconds a link waits for the scan of a partner link */
++/* How long a link waits for the results of a partner link's scan that
++ * includes its channels */
 +#define ACS_SCAN_WAIT_TIMEOUT 30
  
  
  static void acs_clean_chan_surveys(struct hostapd_channel_data *chan)
-@@ -357,6 +364,12 @@ void acs_cleanup(struct hostapd_iface *i
+@@ -357,6 +365,14 @@ void acs_cleanup(struct hostapd_iface *i
  	iface->acs_num_completed_scans = 0;
  	iface->acs_num_retries = 0;
  	eloop_cancel_timeout(acs_scan_retry, iface, NULL);
@@ -66,16 +52,21 @@ Signed-off-by: John Crispin <john@phrozen.org>
 +	eloop_cancel_timeout(acs_study_timeout, iface, NULL);
 +	eloop_cancel_timeout(acs_scan_wait_timeout, iface, NULL);
 +
++	/* A partner link would otherwise wait for this link's scan, see
++	 * hostapd_mld_partner_scanning() */
 +	if (iface->scan_cb == acs_scan_complete)
 +		iface->scan_cb = NULL;
  }
  
  
-@@ -1357,37 +1370,118 @@ fail:
+@@ -1357,37 +1373,124 @@ fail:
  }
  
  
-+/* The links of an AP MLD share one wiphy, which runs one scan at a time */
++/*
++ * The links of an AP MLD share one wiphy, which runs one scan at a time. ACS
++ * therefore scans for all links of the MLD that are in ACS with one request.
++ */
 +static size_t acs_mld_partners(struct hostapd_iface *iface,
 +			       struct hostapd_iface **partners, bool scanning)
 +{
@@ -160,8 +151,9 @@ Signed-off-by: John Crispin <john@phrozen.org>
  	wpa_printf(MSG_DEBUG, "ACS: Using survey based algorithm (acs_num_scans=%d)",
  		   iface->conf->acs_num_scans);
  
-+	/* Each link keeps its scan_cb until the survey event, which goes to the
-+	 * link that requested the scan. */
++	/* The survey event goes to the link that requested the scan, which
++	 * need not be this one. Every link of the scan keeps its scan_cb until
++	 * then, so that the event hands the survey to each of them. */
  	err = hostapd_drv_get_survey(iface->bss[0], 0);
 +
 +	for (i = 0; i < n; i++) {
@@ -183,7 +175,9 @@ Signed-off-by: John Crispin <john@phrozen.org>
 -		if (err && err != -EBUSY) {
 -			wpa_printf(MSG_ERROR, "ACS: Failed to request scan");
 -			goto fail;
-+	/* EVENT_SCAN_RESULTS may still call the scan_cb of the partners */
++	/* EVENT_SCAN_RESULTS may still go on to call the scan_cb of the
++	 * partners, so a scan started from here would be taken as completed
++	 * at once. Continue every link from the event loop instead. */
 +	for (i = 0; i < n; i++) {
 +		struct hostapd_iface *h = ifaces[i];
 +
@@ -206,7 +200,7 @@ Signed-off-by: John Crispin <john@phrozen.org>
  }
  
  
-@@ -1425,34 +1519,71 @@ static int * acs_request_scan_add_freqs(
+@@ -1425,34 +1528,71 @@ static int * acs_request_scan_add_freqs(
  }
  
  
@@ -290,7 +284,7 @@ Signed-off-by: John Crispin <john@phrozen.org>
  	*freq = 0;
  
  	if (params.freqs == freq) {
-@@ -1484,7 +1615,8 @@ static int acs_request_scan(struct hosta
+@@ -1484,7 +1624,8 @@ static int acs_request_scan(struct hosta
  			return -1;
  		}
  
@@ -300,7 +294,7 @@ Signed-off-by: John Crispin <john@phrozen.org>
  			   "Failed to request acs scan ret=%d (%s) - try to scan after %d seconds",
  			   ret, strerror(-ret), ACS_SCAN_RETRY_INTERVAL);
  		eloop_cancel_timeout(acs_scan_retry, iface, NULL);
-@@ -1501,6 +1633,17 @@ static int acs_request_scan(struct hosta
+@@ -1501,6 +1642,17 @@ static int acs_request_scan(struct hosta
  
  	iface->scan_cb = acs_scan_complete;
  
@@ -353,13 +347,15 @@ Signed-off-by: John Crispin <john@phrozen.org>
  int hostapd_driver_scan(struct hostapd_data *hapd,
  			struct wpa_driver_scan_params *params)
  {
-@@ -782,29 +808,11 @@ int hostapd_driver_scan(struct hostapd_d
+@@ -782,31 +808,12 @@ int hostapd_driver_scan(struct hostapd_d
  	if (hapd->conf->mld_ap)
  		params->link_id = hapd->mld_link_id;
  
 -	if (!hapd->iface->scan_cb && hapd->conf->mld_ap &&
 -	    hapd->iface->interfaces) {
--		/* Other links may be waiting for scan results */
+-		/* A scan event without a matching cookie goes to the partner
+-		 * link that waits for scan results, so only one link at a time
+-		 * can wait. */
 -		unsigned int i;
 -
 -		for (i = 0; i < hapd->iface->interfaces->count; i++) {
@@ -380,7 +376,8 @@ Signed-off-by: John Crispin <john@phrozen.org>
 -				return -EBUSY;
 -			}
 -		}
-+	/* Other links may be waiting for scan results */
++	/* A scan event without a matching cookie goes to the partner link that
++	 * waits for scan results, so only one link at a time can wait. */
 +	if (!hapd->iface->scan_cb && hostapd_mld_partner_scanning(hapd)) {
 +		wpa_printf(MSG_DEBUG,
 +			   "Scan in progress in a partner link - try to scan later");
@@ -400,11 +397,79 @@ Signed-off-by: John Crispin <john@phrozen.org>
  struct wpa_scan_results * hostapd_driver_get_scan_results(
 --- a/src/ap/drv_callbacks.c
 +++ b/src/ap/drv_callbacks.c
-@@ -2272,6 +2272,30 @@ void hostapd_event_get_survey(struct hos
+@@ -2235,22 +2235,13 @@ static void hostapd_single_channel_get_s
+ }
  
  
+-void hostapd_event_get_survey(struct hostapd_iface *iface,
+-			      struct survey_results *survey_results)
++static void hostapd_survey_list_add(struct hostapd_iface *iface,
++				    struct survey_results *survey_results,
++				    bool copy)
+ {
+-	struct freq_survey *survey, *tmp;
++	struct freq_survey *survey, *tmp, *entry;
+ 	struct hostapd_channel_data *chan;
+ 
+-	if (dl_list_empty(&survey_results->survey_list)) {
+-		wpa_printf(MSG_DEBUG, "No survey data received");
+-		return;
+-	}
+-
+-	if (survey_results->freq_filter) {
+-		hostapd_single_channel_get_survey(iface, survey_results);
+-		return;
+-	}
+-
+ 	dl_list_for_each_safe(survey, tmp, &survey_results->survey_list,
+ 			      struct freq_survey, list) {
+ 		chan = hostapd_get_mode_channel(iface, survey->freq);
+@@ -2261,17 +2252,68 @@ void hostapd_event_get_survey(struct hos
+ 		if (!(chan->flag & HOSTAPD_CHAN_SURVEY_LIST_INITIALIZED))
+ 			continue;
+ 
+-		dl_list_del(&survey->list);
+-		dl_list_add_tail(&chan->survey_list, &survey->list);
++		if (copy) {
++			entry = os_memdup(survey, sizeof(*survey));
++			if (!entry)
++				return;
++		} else {
++			entry = survey;
++			dl_list_del(&entry->list);
++		}
++		dl_list_add_tail(&chan->survey_list, &entry->list);
+ 
+-		hostapd_update_nf(iface, chan, survey);
++		hostapd_update_nf(iface, chan, entry);
+ 
+ 		iface->chans_surveyed++;
+ 	}
+ }
+ 
+ 
++void hostapd_event_get_survey(struct hostapd_iface *iface,
++			      struct survey_results *survey_results)
++{
++	if (dl_list_empty(&survey_results->survey_list)) {
++		wpa_printf(MSG_DEBUG, "No survey data received");
++		return;
++	}
++
++	if (survey_results->freq_filter) {
++		hostapd_single_channel_get_survey(iface, survey_results);
++		return;
++	}
++
++	hostapd_survey_list_add(iface, survey_results, false);
++}
++
++
  #ifdef HOSTAPD
 +
++/* ACS scans for all links of an AP MLD in one request, see
++ * acs_scan_complete(), so the links that take part need the survey too.
++ * Links can share channels, so each of them gets its own copy. */
 +static void hostapd_event_get_survey_mld(struct hostapd_data *hapd,
 +					 struct survey_results *survey_results)
 +{
@@ -423,7 +488,7 @@ Signed-off-by: John Crispin <john@phrozen.org>
 +		    !hostapd_is_ml_partner(hapd, h->bss[0]))
 +			continue;
 +
-+		hostapd_event_get_survey(h, survey_results);
++		hostapd_survey_list_add(h, survey_results, true);
 +	}
 +#endif /* CONFIG_IEEE80211BE */
 +}
@@ -431,11 +496,12 @@ Signed-off-by: John Crispin <john@phrozen.org>
  #ifdef NEED_AP_MLME
  
  static void hostapd_event_iface_unavailable(struct hostapd_data *hapd)
-@@ -2838,6 +2862,7 @@ void wpa_supplicant_event(void *ctx, enu
+@@ -2836,6 +2878,8 @@ void wpa_supplicant_event(void *ctx, enu
+ 			data->connect_failed_reason.code);
  		break;
  	case EVENT_SURVEY:
- 		hostapd_event_get_survey(hapd->iface, &data->survey_results);
++		/* The link of the event takes the entries off the list */
 +		hostapd_event_get_survey_mld(hapd, &data->survey_results);
+ 		hostapd_event_get_survey(hapd->iface, &data->survey_results);
  		break;
  #ifdef NEED_AP_MLME
- 	case EVENT_INTERFACE_UNAVAILABLE:

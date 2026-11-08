@@ -1,0 +1,150 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Tue, 27 Oct 2026 13:02:23 +0000
+Subject: [PATCH] wifi: add the nl80211 and hwsim UAPI numbers of wireless-next
+
+Add the nl80211 commands, attributes and extended features, and the
+hwsim attribute HWSIM_ATTR_NO_MONITOR, that wireless-next commit
+2c50cd5d10e8 ("wifi: cfg80211/mac80211: apply HE OBSS PD settings on
+beacon update") holds after 7.2. The commands, attributes and features
+that later patches add then take the numbers after the upstream ones,
+so user space that follows upstream keeps its numbering.
+
+Only the enum entries and their kernel-doc are added. The kernel does
+not implement the new upstream commands and attributes. Other header
+changes of wireless-next, such as new station flags, are left out, as
+the 7.2 code depends on their old values.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/include/uapi/linux/nl80211.h
++++ b/include/uapi/linux/nl80211.h
+@@ -1425,6 +1425,38 @@
+  * @NL80211_CMD_STOP_PD: Stop the PD operation, identified by
+  *	its %NL80211_ATTR_WDEV interface.
+  *
++ * @NL80211_CMD_NAN_SET_NON_EVAC_CHANNELS: Set the list of NAN local schedule
++ *	channels that must not be evacuated. NAN must be operational
++ *	(%NL80211_CMD_START_NAN was executed) and a local schedule must have
++ *	been set (%NL80211_CMD_NAN_SET_LOCAL_SCHED). The command carries zero
++ *	or more nested %NL80211_ATTR_NAN_CHANNEL attributes, each identifying a
++ *	channel (by its channel definition) of the current local schedule that
++ *	must not be evacuated for concurrent operations. The provided list
++ *	replaces the previous set of non-evacuable channels; channels of the
++ *	current schedule that are not included become evacuable again. All
++ *	provided channels must exist in the current local schedule, otherwise
++ *	the command fails. This is used to protect channels carrying NDC or
++ *	immutable schedules, whose evacuation would break existing NDP
++ *	connections.
++ *	The non-evacuable marking is a per-channel property of the current
++ *	local schedule and only affects evacuation for concurrent operations;
++ *	it does not prevent the schedule itself from being changed. Removing a
++ *	channel from the schedule with %NL80211_CMD_NAN_SET_LOCAL_SCHED is a
++ *	user-initiated change, not an evacuation, and is allowed even for a
++ *	non-evacuable channel. Across a schedule update, channels that remain
++ *	keep their non-evacuable marking, removed channels lose it, and newly
++ *	added channels are evacuable by default; issue this command again to
++ *	change the non-evacuable set.
++ * @NL80211_CMD_UPDATE_BEACON: Update the beacon and other templates of an AP
++ *	interface, but only that. Same attributes as %NL80211_CMD_SET_BEACON,
++ *	%NL80211_ATTR_BEACON_HEAD and %NL80211_ATTR_BEACON_TAIL are required,
++ *	configuration changes such as %NL80211_ATTR_FTM_RESPONDER rejected.
++ *	This doesn't acquire the wiphy mutex internally, so it's faster, but
++ *	cannot update any other configuration.
++ *	For MLO a single link is set with %NL80211_ATTR_MLO_LINK_ID as usual
++ *	and multiple can be nested in %NL80211_ATTR_MLO_LINKS but then the
++ *	update isn't atomic if any failures happen.
++ *	Only supported with %NL80211_EXT_FEATURE_UPDATE_BEACON.
+  * @NL80211_CMD_MAX: highest used command number
+  * @__NL80211_CMD_AFTER_LAST: internal use
+  */
+@@ -1703,6 +1735,10 @@ enum nl80211_commands {
+ 	NL80211_CMD_START_PD,
+ 	NL80211_CMD_STOP_PD,
+ 
++	NL80211_CMD_NAN_SET_NON_EVAC_CHANNELS,
++
++	NL80211_CMD_UPDATE_BEACON,
++
+ 	/* add new commands above here */
+ 
+ 	/* used to define NL80211_CMD_MAX below */
+@@ -3182,6 +3218,19 @@ enum nl80211_commands {
+  *	The aggregated message always precedes the per-link messages for the
+  *	same station within a dump sequence.
+  *
++ * @NL80211_ATTR_FRAME_NO_STA: Valid for @NL80211_CMD_FRAME to denote that
++ *	the kernel had no station for a received frame or should not use a
++ *	known station to transmit a frame. This is relevant to know whether
++ *	MLD address translation happened or to disable it when sending a frame.
++ *
++ * @NL80211_ATTR_ASSOC_CIP: Enable Control Integrity Protocol for the
++ *	association
++ * @NL80211_ATTR_CIP_CAPABILITIES: The Control Integrity Protocol for the
++ *	station.
++ *
++ * @NL80211_ATTR_ASSOC_PROTECTED_TWT: Enable protected TWT for the association,
++ *	requires protected TWT support (flag attribute)
++ *
+  * @NUM_NL80211_ATTR: total number of nl80211_attrs available
+  * @NL80211_ATTR_MAX: highest attribute number currently defined
+  * @__NL80211_ATTR_AFTER_LAST: internal use
+@@ -3782,6 +3831,13 @@ enum nl80211_attrs {
+ 
+ 	NL80211_ATTR_STA_DUMP_LINK_STATS,
+ 
++	NL80211_ATTR_FRAME_NO_STA,
++
++	NL80211_ATTR_ASSOC_CIP,
++	NL80211_ATTR_CIP_CAPABILITIES,
++
++	NL80211_ATTR_ASSOC_PROTECTED_TWT,
++
+ 	/* add attributes here, update the policy in nl80211.c */
+ 
+ 	__NL80211_ATTR_AFTER_LAST,
+@@ -7104,6 +7160,16 @@ enum nl80211_feature_flags {
+  *	LTF key seed via %NL80211_KEY_LTF_SEED. The seed is used to generate
+  *	secure LTF keys for secure LTF measurement sessions.
+  *
++ * @NL80211_EXT_FEATURE_PROBE_AP: Driver supports probing the associated AP
++ *	in STA mode using @NL80211_CMD_PROBE_PEER.
++ *
++ * @NL80211_EXT_FEATURE_FAST_ROAM_OFFLOAD: Driver supports fast roaming
++ *	offload in station mode, including Fast Transition or Opportunistic
++ *	Key Caching.
++ *
++ * @NL80211_EXT_FEATURE_UPDATE_BEACON: Driver supports
++ *	%NL80211_CMD_UPDATE_BEACON.
++ *
+  * @NUM_NL80211_EXT_FEATURES: number of extended features.
+  * @MAX_NL80211_EXT_FEATURES: highest extended feature index.
+  */
+@@ -7185,6 +7251,9 @@ enum nl80211_ext_feature_index {
+ 	NL80211_EXT_FEATURE_IEEE8021X_AUTH,
+ 	NL80211_EXT_FEATURE_ROC_ADDR_FILTER,
+ 	NL80211_EXT_FEATURE_SET_KEY_LTF_SEED,
++	NL80211_EXT_FEATURE_PROBE_AP,
++	NL80211_EXT_FEATURE_FAST_ROAM_OFFLOAD,
++	NL80211_EXT_FEATURE_UPDATE_BEACON,
+ 
+ 	/* add new features before the definition below */
+ 	NUM_NL80211_EXT_FEATURES,
+--- a/drivers/net/wireless/virtual/mac80211_hwsim.h
++++ b/drivers/net/wireless/virtual/mac80211_hwsim.h
+@@ -162,6 +162,8 @@ enum hwsim_commands {
+  *	each radio instead of for the wiphy.
+  * @HWSIM_ATTR_SUPPORT_NAN_DEVICE: support NAN Device virtual interface (flag)
+  * @HWSIM_ATTR_SUPPORT_BACKGROUND_RADAR: background radar/CAC support (flag)
++ * @HWSIM_ATTR_NO_MONITOR: skip monitor report for this TX status, e.g. in case
++ *	the frame was never reported to any receiver (flag)
+  * @__HWSIM_ATTR_MAX: enum limit
+  */
+ enum hwsim_attrs {
+@@ -197,6 +199,7 @@ enum hwsim_attrs {
+ 	HWSIM_ATTR_MULTI_RADIO,
+ 	HWSIM_ATTR_SUPPORT_NAN_DEVICE,
+ 	HWSIM_ATTR_SUPPORT_BACKGROUND_RADAR,
++	HWSIM_ATTR_NO_MONITOR,
+ 	__HWSIM_ATTR_MAX,
+ };
+ #define HWSIM_ATTR_MAX (__HWSIM_ATTR_MAX - 1)

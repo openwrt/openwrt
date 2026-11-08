@@ -1,0 +1,261 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Sat, 10 Oct 2026 08:00:00 +0200
+Subject: [PATCH] wifi: nl80211: report the end of a critical update on an AP
+ link
+
+IEEE 802.11be-2024 35.3.10 has an AP affiliated with an AP MLD set the
+Critical Update flag in its Beacon and Probe Response frames until and
+including the next DTIM Beacon frame on its link, and clear it
+otherwise. User space builds the beacon, but the DTIM Count of each
+Beacon frame comes from the stack below it. User space can only count
+Beacon frames, which keeps the flag in up to DTIM period - 1 Beacon
+frames after the DTIM Beacon frame.
+
+Add an extended feature with which the driver declares that it clears
+the flag after the next DTIM Beacon frame of the link, and an event that
+reports the clear per link. User space stays in control: it sets the
+flag in the beacon head of each link that the critical update affects
+and keeps it there until the event. The flag has a fixed offset in the
+beacon head, so no offset attribute is needed.
+
+User space can start a new critical update on a link before it reads
+the event of the previous one. Let user space pass an ID with the
+beacon to tell the two apart: a new ID starts a critical update, the
+same ID continues it, and the event carries the ID of the update that
+ended.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/include/net/cfg80211.h
++++ b/include/net/cfg80211.h
+@@ -1463,6 +1463,9 @@ struct cfg80211_rnr_elems {
+  * @he_oper: HE operation IE (or %NULL if HE isn't enabled)
+  * @eht_oper: EHT operation IE (or %NULL if EHT isn't enabled)
+  * @uhr_oper: UHR operation (or %NULL if UHR isn't enabled)
++ * @crit_update_id: ID of the critical update to which the Critical Update
++ *	flag in @head belongs, 0 if none is given, see
++ *	%NL80211_ATTR_CRIT_UPDATE_ID
+  */
+ struct cfg80211_beacon_data {
+ 	unsigned int link_id;
+@@ -1494,6 +1497,8 @@ struct cfg80211_beacon_data {
+ 	const struct ieee80211_he_operation *he_oper;
+ 	const struct ieee80211_eht_operation *eht_oper;
+ 	const struct ieee80211_uhr_operation *uhr_oper;
++
++	u32 crit_update_id;
+ };
+ 
+ struct mac_address {
+@@ -10746,6 +10751,20 @@ cfg80211_6ghz_power_type(u8 control, u32
+ void cfg80211_links_removed(struct net_device *dev, u16 link_mask);
+ 
+ /**
++ * cfg80211_crit_update_done - notify that the Critical Update flag is clear
++ * @dev: network device of the AP
++ * @link_id: link ID of the AP link, 0 for an AP that is not an AP MLD
++ * @crit_update_id: ID of the critical update, 0 if it has none, see
++ *	%NL80211_ATTR_CRIT_UPDATE_ID
++ *
++ * A driver with %NL80211_EXT_FEATURE_BEACON_CRIT_UPDATE calls this after the
++ * DTIM Beacon frame that ends the Critical Update flag of the link, see
++ * %NL80211_CMD_CRIT_UPDATE_DONE. The wiphy mutex must be held.
++ */
++void cfg80211_crit_update_done(struct net_device *dev, unsigned int link_id,
++			       u32 crit_update_id);
++
++/**
+  * struct cfg80211_mlo_reconf_done_data - MLO reconfiguration data
+  * @buf: MLO Reconfiguration Response frame (header + body)
+  * @len: length of the frame data
+--- a/net/wireless/nl80211.c
++++ b/net/wireless/nl80211.c
+@@ -1096,6 +1096,7 @@ static const struct nla_policy nl80211_p
+ 	[NL80211_ATTR_NPCA_PUNCT_BITMAP] =
+ 		NLA_POLICY_FULL_RANGE(NLA_U32, &nl80211_punct_bitmap_range),
+ 	[NL80211_ATTR_STA_DUMP_LINK_STATS] = { .type = NLA_FLAG },
++	[NL80211_ATTR_CRIT_UPDATE_ID] = NLA_POLICY_MIN(NLA_U32, 1),
+ };
+ 
+ /* policy for the key attributes */
+@@ -6794,6 +6795,15 @@ static int nl80211_parse_beacon(struct c
+ 		bcn->he_bss_color_valid = true;
+ 	}
+ 
++	if (attrs[NL80211_ATTR_CRIT_UPDATE_ID]) {
++		if (!wiphy_ext_feature_isset(&rdev->wiphy,
++					     NL80211_EXT_FEATURE_BEACON_CRIT_UPDATE))
++			return -EOPNOTSUPP;
++
++		bcn->crit_update_id =
++			nla_get_u32(attrs[NL80211_ATTR_CRIT_UPDATE_ID]);
++	}
++
+ 	if (attrs[NL80211_ATTR_MBSSID_ELEMS]) {
+ 		struct cfg80211_mbssid_elems *mbssid =
+ 			nl80211_parse_mbssid_elems(&rdev->wiphy,
+@@ -21496,6 +21506,61 @@ void cfg80211_links_removed(struct net_d
+ }
+ EXPORT_SYMBOL(cfg80211_links_removed);
+ 
++void cfg80211_crit_update_done(struct net_device *dev, unsigned int link_id,
++			       u32 crit_update_id)
++{
++	struct wireless_dev *wdev = dev->ieee80211_ptr;
++	struct wiphy *wiphy = wdev->wiphy;
++	struct cfg80211_registered_device *rdev = wiphy_to_rdev(wiphy);
++	struct sk_buff *msg;
++	void *hdr;
++
++	lockdep_assert_wiphy(wdev->wiphy);
++	trace_cfg80211_crit_update_done(dev, link_id, crit_update_id);
++
++	if (WARN_ON(wdev->iftype != NL80211_IFTYPE_AP &&
++		    wdev->iftype != NL80211_IFTYPE_P2P_GO))
++		return;
++
++	if (WARN_ON(wdev->valid_links ? !(wdev->valid_links & BIT(link_id)) :
++				       link_id))
++		return;
++
++	msg = nlmsg_new(NLMSG_DEFAULT_SIZE, GFP_KERNEL);
++	if (!msg)
++		return;
++
++	hdr = nl80211hdr_put(msg, 0, 0, 0, NL80211_CMD_CRIT_UPDATE_DONE);
++	if (!hdr) {
++		nlmsg_free(msg);
++		return;
++	}
++
++	if (nla_put_u32(msg, NL80211_ATTR_WIPHY, rdev->wiphy_idx) ||
++	    nla_put_u32(msg, NL80211_ATTR_IFINDEX, dev->ifindex) ||
++	    nla_put_u64_64bit(msg, NL80211_ATTR_WDEV, wdev_id(wdev),
++			      NL80211_ATTR_PAD))
++		goto nla_put_failure;
++
++	if (wdev->valid_links &&
++	    nla_put_u8(msg, NL80211_ATTR_MLO_LINK_ID, link_id))
++		goto nla_put_failure;
++
++	if (crit_update_id &&
++	    nla_put_u32(msg, NL80211_ATTR_CRIT_UPDATE_ID, crit_update_id))
++		goto nla_put_failure;
++
++	genlmsg_end(msg, hdr);
++
++	genlmsg_multicast_netns(&nl80211_fam, wiphy_net(&rdev->wiphy), msg, 0,
++				NL80211_MCGRP_MLME, GFP_KERNEL);
++	return;
++
++ nla_put_failure:
++	nlmsg_free(msg);
++}
++EXPORT_SYMBOL(cfg80211_crit_update_done);
++
+ void nl80211_mlo_reconf_add_done(struct net_device *dev,
+ 				 struct cfg80211_mlo_reconf_done_data *data)
+ {
+--- a/net/wireless/trace.h
++++ b/net/wireless/trace.h
+@@ -4236,6 +4236,24 @@ TRACE_EVENT(cfg80211_links_removed,
+ 		  __entry->link_mask)
+ );
+ 
++TRACE_EVENT(cfg80211_crit_update_done,
++	TP_PROTO(struct net_device *netdev, unsigned int link_id,
++		 u32 crit_update_id),
++	TP_ARGS(netdev, link_id, crit_update_id),
++	TP_STRUCT__entry(
++		NETDEV_ENTRY
++		__field(unsigned int, link_id)
++		__field(u32, crit_update_id)
++	),
++	TP_fast_assign(
++		NETDEV_ASSIGN;
++		__entry->link_id = link_id;
++		__entry->crit_update_id = crit_update_id;
++	),
++	TP_printk(NETDEV_PR_FMT ", link_id:%u, crit_update_id:%u",
++		  NETDEV_PR_ARG, __entry->link_id, __entry->crit_update_id)
++);
++
+ TRACE_EVENT(cfg80211_mlo_reconf_add_done,
+ 	TP_PROTO(struct net_device *netdev, u16 link_mask,
+ 		 const u8 *buf, size_t len, bool driver_initiated),
+--- a/include/uapi/linux/nl80211.h
++++ b/include/uapi/linux/nl80211.h
+@@ -1457,6 +1457,14 @@
+  *	and multiple can be nested in %NL80211_ATTR_MLO_LINKS but then the
+  *	update isn't atomic if any failures happen.
+  *	Only supported with %NL80211_EXT_FEATURE_UPDATE_BEACON.
++ * @NL80211_CMD_CRIT_UPDATE_DONE: Notify user space that the Critical Update
++ *	flag is clear in the Beacon frames of an AP link, after the DTIM Beacon
++ *	frame that followed the start of the critical update. The event carries
++ *	%NL80211_ATTR_WIPHY, %NL80211_ATTR_IFINDEX, %NL80211_ATTR_WDEV, for an
++ *	AP MLD %NL80211_ATTR_MLO_LINK_ID, and %NL80211_ATTR_CRIT_UPDATE_ID if
++ *	the critical update has an ID. See
++ *	%NL80211_EXT_FEATURE_BEACON_CRIT_UPDATE.
++ *
+  * @NL80211_CMD_MAX: highest used command number
+  * @__NL80211_CMD_AFTER_LAST: internal use
+  */
+@@ -1738,6 +1746,7 @@ enum nl80211_commands {
+ 	NL80211_CMD_NAN_SET_NON_EVAC_CHANNELS,
+ 
+ 	NL80211_CMD_UPDATE_BEACON,
++	NL80211_CMD_CRIT_UPDATE_DONE,
+ 
+ 	/* add new commands above here */
+ 
+@@ -3230,6 +3239,12 @@ enum nl80211_commands {
+  *
+  * @NL80211_ATTR_ASSOC_PROTECTED_TWT: Enable protected TWT for the association,
+  *	requires protected TWT support (flag attribute)
++ * @NL80211_ATTR_CRIT_UPDATE_ID: u32 ID, not 0, of the critical update to
++ *	which the Critical Update flag in the beacon head belongs. Used with
++ *	the beacon of %NL80211_CMD_START_AP, %NL80211_CMD_SET_BEACON and the
++ *	other commands that carry a beacon, and in
++ *	%NL80211_CMD_CRIT_UPDATE_DONE. See
++ *	%NL80211_EXT_FEATURE_BEACON_CRIT_UPDATE.
+  *
+  * @NUM_NL80211_ATTR: total number of nl80211_attrs available
+  * @NL80211_ATTR_MAX: highest attribute number currently defined
+@@ -3837,6 +3852,7 @@ enum nl80211_attrs {
+ 	NL80211_ATTR_CIP_CAPABILITIES,
+ 
+ 	NL80211_ATTR_ASSOC_PROTECTED_TWT,
++	NL80211_ATTR_CRIT_UPDATE_ID,
+ 
+ 	/* add attributes here, update the policy in nl80211.c */
+ 
+@@ -7169,6 +7185,21 @@ enum nl80211_feature_flags {
+  *
+  * @NL80211_EXT_FEATURE_UPDATE_BEACON: Driver supports
+  *	%NL80211_CMD_UPDATE_BEACON.
++ * @NL80211_EXT_FEATURE_BEACON_CRIT_UPDATE: The driver clears the Critical
++ *	Update flag (IEEE 802.11be-2024, 9.4.1.4) in the Beacon frames of an
++ *	AP link after the next DTIM Beacon frame (35.3.10), and reports it with
++ *	%NL80211_CMD_CRIT_UPDATE_DONE. User space sets the flag in the beacon
++ *	head of each link that a critical update affects, with an
++ *	%NL80211_ATTR_CRIT_UPDATE_ID other than that of the previous critical
++ *	update of the link. A beacon update with a new ID starts a critical
++ *	update, also when the previous one is done, and the next DTIM Beacon
++ *	frame after it ends it. A beacon update with the flag and the same ID,
++ *	or without an ID, continues the current critical update, or starts one
++ *	if there is none. After the DTIM Beacon frame, the driver keeps the
++ *	flag out of the Beacon frames until a beacon update without the flag
++ *	or with a new ID. User space keeps the flag until the event with the
++ *	ID of the current critical update. The driver does not track the flag
++ *	of a nontransmitted BSSID and reports no event for it.
+  *
+  * @NUM_NL80211_EXT_FEATURES: number of extended features.
+  * @MAX_NL80211_EXT_FEATURES: highest extended feature index.
+@@ -7254,6 +7285,7 @@ enum nl80211_ext_feature_index {
+ 	NL80211_EXT_FEATURE_PROBE_AP,
+ 	NL80211_EXT_FEATURE_FAST_ROAM_OFFLOAD,
+ 	NL80211_EXT_FEATURE_UPDATE_BEACON,
++	NL80211_EXT_FEATURE_BEACON_CRIT_UPDATE,
+ 
+ 	/* add new features before the definition below */
+ 	NUM_NL80211_EXT_FEATURES,

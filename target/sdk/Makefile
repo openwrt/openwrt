@@ -36,7 +36,8 @@ EXCLUDE_DIRS:= \
 
 SDK_DIRS = \
 		$(STAGING_SUBDIR_HOST) \
-		$(STAGING_SUBDIR_TOOLCHAIN)
+		$(STAGING_SUBDIR_TOOLCHAIN) \
+		$(patsubst $(TOPDIR)/%,%,$(wildcard $(STAGING_DIR)/usr/lib/rust))
 
 GIT_URL:=$(shell git config --get remote.origin.url 2>/dev/null)
 GIT_URL:=$(if $(CONFIG_BUILDBOT),$(filter git://% http://% https://%,$(GIT_URL)),$(GIT_URL))

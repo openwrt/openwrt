@@ -690,6 +690,7 @@ define Device/Build/dtb
 	$(call Image/BuildDTB,$(strip $(2))/$(strip $(3)).dts,$$@)
 
   compile-dtb: $(KDIR)/image-$(1).dtb
+  DTBS_TO_CHECK += $(KDIR)/image-$(1).dtb
   endif
 
 endef
@@ -963,11 +964,12 @@ define BuildImage
   prepare:
   compile:
   compile-dtb:
+  check-dtb:
   clean:
   image_prepare:
 
   ifeq ($(IB),)
-    .PHONY: download prepare compile compile-dtb clean image_prepare kernel_prepare install install-images
+    .PHONY: download prepare compile compile-dtb check-dtb clean image_prepare kernel_prepare install install-images
     compile:
 		$(call Build/Compile)
 
@@ -975,6 +977,11 @@ define BuildImage
 		$(call Build/Clean)
 
     compile-dtb:
+    check-dtb: compile-dtb
+	@for dtb in $$(sort $$(DTBS_TO_CHECK)); do \
+		dt-validate -s $(LINUX_DIR)/Documentation/devicetree/bindings/processed-schema.json \
+			$(if $(DT_SCHEMA_FILES),-l "$(DT_SCHEMA_FILES)",-m) "$$$$dtb" || exit 1; \
+	done
     image_prepare: compile compile-dtb
 		mkdir -p $(BIN_DIR) $(KDIR)/tmp
 		rm -rf $(BUILD_DIR)/json_info_files

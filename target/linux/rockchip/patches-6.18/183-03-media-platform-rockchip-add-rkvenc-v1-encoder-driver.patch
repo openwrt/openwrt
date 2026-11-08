@@ -1,4 +1,4 @@
-From 4478c9d81c72508da867630331ae5d6e7fa31b9f Mon Sep 17 00:00:00 2001
+From cc48f7cd0faa378a48af7fabd6ad7207c64b0cc5 Mon Sep 17 00:00:00 2001
 From: Daniel Golle <daniel@makrotopia.org>
 Date: Fri, 16 Oct 2026 23:57:02 +0100
 Subject: [PATCH] media: platform: rockchip: Add RKVENC v1 encoder driver
@@ -27,7 +27,9 @@ a V4L2 front end:
     keyframe), buffer queueing, the device_run to hardware job mapping
     and the hard-IRQ/threaded-IRQ completion model with claim-under-lock
     job ownership and a watchdog. A failed job is cleared with a force
-    clear and resets the block only when that does not stop it.
+    clear and resets the block only when that does not stop it. A
+    bitstream overflow is a rate-control event: the controller restarts
+    that frame type from its control QP and the frame is run once more.
 
 Both V4L2_MPEG_VIDEO_HEADER_MODE_SEPARATE and JOINED_WITH_1ST_FRAME
 (with PREPEND_SPSPPS_TO_IDR) are supported. Hardware row-level rate
@@ -51,18 +53,18 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  .../platform/rockchip/rkvenc/rkvenc-hevc.c    |   63 +
  .../platform/rockchip/rkvenc/rkvenc-nal.c     |  353 +++++
  .../platform/rockchip/rkvenc/rkvenc-nal.h     |   12 +
- .../platform/rockchip/rkvenc/rkvenc-rc.c      |  180 +++
+ .../platform/rockchip/rkvenc/rkvenc-rc.c      |  195 +++
  .../platform/rockchip/rkvenc/rkvenc-ref.c     |  127 ++
- .../platform/rockchip/rkvenc/rkvenc-v4l2.c    | 1149 +++++++++++++++++
+ .../platform/rockchip/rkvenc/rkvenc-v4l2.c    | 1150 +++++++++++++++++
  .../rockchip/rkvenc/rkvenc-vepu541-h264.c     |  207 +++
- .../rockchip/rkvenc/rkvenc-vepu541-hevc.c     |  211 +++
- .../rockchip/rkvenc/rkvenc-vepu541-regs.h     |  283 ++++
- .../rockchip/rkvenc/rkvenc-vepu541-tables.c   |   97 ++
+ .../rockchip/rkvenc/rkvenc-vepu541-hevc.c     |  183 +++
+ .../rockchip/rkvenc/rkvenc-vepu541-regs.h     |  284 ++++
+ .../rockchip/rkvenc/rkvenc-vepu541-tables.c   |  278 ++++
  .../platform/rockchip/rkvenc/rkvenc-vepu541.c |  218 ++++
- .../platform/rockchip/rkvenc/rkvenc-vepu541.h |  198 +++
- .../media/platform/rockchip/rkvenc/rkvenc.c   |  520 ++++++++
- .../media/platform/rockchip/rkvenc/rkvenc.h   |  249 ++++
- 20 files changed, 4073 insertions(+)
+ .../platform/rockchip/rkvenc/rkvenc-vepu541.h |  201 +++
+ .../media/platform/rockchip/rkvenc/rkvenc.c   |  552 ++++++++
+ .../media/platform/rockchip/rkvenc/rkvenc.h   |  251 ++++
+ 20 files changed, 4280 insertions(+)
  create mode 100644 drivers/media/platform/rockchip/rkvenc/Kconfig
  create mode 100644 drivers/media/platform/rockchip/rkvenc/Makefile
  create mode 100644 drivers/media/platform/rockchip/rkvenc/rkvenc-gop.c
@@ -751,7 +753,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +#endif
 --- /dev/null
 +++ b/drivers/media/platform/rockchip/rkvenc/rkvenc-rc.c
-@@ -0,0 +1,180 @@
+@@ -0,0 +1,195 @@
 +// SPDX-License-Identifier: GPL-2.0-only
 +/*
 + * Frame-level integer rate controller for the RKVENC v1 encoder
@@ -780,7 +782,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +
 +/* Derived safe policy values (design/04 "needs approval" boxes). */
 +#define RKVENC_RC_W_CLAMP	4096u	/* C12: I/P complexity ratio cap */
-+#define RKVENC_RC_QP_STEP	4u	/* C13: max QP change per frame/type */
++#define RKVENC_RC_QP_STEP	4	/* C13: max QP change per frame/type */
 +#define RKVENC_RC_DEFAULT_FPS	30u	/* C6: default frame rate (S_PARM) */
 +
 +static u32 rkvenc_qs[RKVENC_QP_MAX + 1];
@@ -840,7 +842,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	u8 hi = ctx->c.max_qp;
 +	s32 prev = ctx->rc_qp[t];
 +	u32 target;
-+	unsigned int q;
++	int q;
 +
 +	if (!ctx->rc_active) {
 +		*qp = frame_type ? ctx->c.p_frame_qp : ctx->c.i_frame_qp;
@@ -931,6 +933,21 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	ctx->rc_buf = clamp_t(s64, ctx->rc_buf, -cap, cap);
 +
 +	ctx->rc_first[t] = false;
++}
++
++/*
++ * A frame of type t overflowed its capture buffer of bytes at the picked
++ * QP. The retry restarts from the control QP; the step limit alone would
++ * need frames that the overflow keeps dropping.
++ */
++void rkvenc_rc_overflow(struct rkvenc_ctx *ctx, u32 bytes, u8 frame_type)
++{
++	s8 start = frame_type ? ctx->c.p_frame_qp : ctx->c.i_frame_qp;
++	unsigned int t = frame_type ? 1 : 0;
++
++	rkvenc_rc_update(ctx, bytes, ctx->cur_qp, frame_type);
++	if (ctx->rc_qp[t] < start)
++		ctx->rc_qp[t] = start;
 +}
 --- /dev/null
 +++ b/drivers/media/platform/rockchip/rkvenc/rkvenc-ref.c
@@ -1064,7 +1081,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +}
 --- /dev/null
 +++ b/drivers/media/platform/rockchip/rkvenc/rkvenc-v4l2.c
-@@ -0,0 +1,1149 @@
+@@ -0,0 +1,1150 @@
 +// SPDX-License-Identifier: GPL-2.0-only
 +/*
 + * V4L2 stateful mem-to-mem front end for the Rockchip RKVENC v1 encoder.
@@ -1560,7 +1577,8 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +		f.src.plane[1] = f.src.plane[0] + ctx->bytesperline * ctx->height;
 +	else
 +		f.src.plane[1] = lower_32_bits(
-+			vb2_dma_contig_plane_dma_addr(&src->vb2_buf, 1));
++			vb2_dma_contig_plane_dma_addr(&src->vb2_buf, 1) +
++			src->vb2_buf.planes[1].data_offset);
 +
 +	f.bs.base = lower_32_bits(
 +		vb2_dma_contig_plane_dma_addr(&dst->vb2_buf, 0));
@@ -3606,7 +3624,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +#endif
 --- /dev/null
 +++ b/drivers/media/platform/rockchip/rkvenc/rkvenc.c
-@@ -0,0 +1,533 @@
+@@ -0,0 +1,552 @@
 +// SPDX-License-Identifier: GPL-2.0-only
 +/*
 + * Rockchip RKVENC v1 platform driver: probe/remove, clocks, resets, power
@@ -3702,6 +3720,8 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +		if (rkvenc_vepu541_l1_written(a))
 +			writel(img->l1[a / 4], regs + a);
 +
++	/* A timed out job must not be judged by the previous status. */
++	dev->irq_sta = 0;
 +	/* Order every relaxed write before the start (spec/01 5.4). */
 +	writel(img->enc_strt, regs + RKVENC_ENC_STRT);
 +
@@ -3824,14 +3844,31 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +		rkvenc_rc_update(ctx, payload, qp_avg, frame_type);
 +		rkvenc_gop_commit(ctx);
 +		ctx->consecutive_errors = 0;
++		ctx->overflow_retried = false;
 +
 +		avg_qp = v4l2_ctrl_find(&ctx->ctrl_hdl,
 +					V4L2_CID_MPEG_VIDEO_AVERAGE_QP);
 +		if (avg_qp)
 +			v4l2_ctrl_s_ctrl(avg_qp, qp_avg);
++	} else if (ctx->rc_active && !ctx->overflow_retried &&
++		   (int_sta & RKVENC_INT_ERRORS) == RKVENC_INT_OFLW) {
++		/* The job stays running for the framework: the frame is retried */
++		dst = v4l2_m2m_next_dst_buf(ctx->m2m_ctx);
++		rkvenc_hw_recover(dev);
++		rkvenc_rc_overflow(ctx,
++				   dst ? vb2_plane_size(&dst->vb2_buf, 0) : 0,
++				   ctx->cur_intra ? 0 : 1);
++		ctx->overflow_retried = true;
++		if (ctx->cur_prepend)
++			ctx->joined_header_done = false;
++		dev->job_ctx = NULL;
++		pm_runtime_put(dev->dev);
++		rkvenc_m2m_ops.device_run(ctx);
++		return;
 +	} else {
 +		rkvenc_hw_recover(dev);
 +		rkvenc_gop_rollback(ctx);
++		ctx->overflow_retried = false;
 +		ctx->consecutive_errors++;
 +		if (ctx->consecutive_errors >= RKVENC_MAX_CONSEC_ERRORS) {
 +			vb2_queue_error(&ctx->m2m_ctx->out_q_ctx.q);
@@ -4142,7 +4179,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +MODULE_LICENSE("GPL");
 --- /dev/null
 +++ b/drivers/media/platform/rockchip/rkvenc/rkvenc.h
-@@ -0,0 +1,249 @@
+@@ -0,0 +1,251 @@
 +/* SPDX-License-Identifier: GPL-2.0-only */
 +/*
 + * Rockchip RKVENC v1 H.264 / HEVC encoder driver.
@@ -4312,6 +4349,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	bool last_good_valid;
 +	int last_good;
 +	u32 consecutive_errors;
++	bool overflow_retried;
 +
 +	/* OUTPUT (raw) format details. */
 +	u32 src_num_planes;
@@ -4379,6 +4417,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +void rkvenc_rc_pick(struct rkvenc_ctx *ctx, u8 *qp, u8 frame_type);
 +void rkvenc_rc_update(struct rkvenc_ctx *ctx, u32 bytes, u32 qp_avg,
 +		      u8 frame_type);
++void rkvenc_rc_overflow(struct rkvenc_ctx *ctx, u32 bytes, u8 frame_type);
 +
 +/* rkvenc-h264.c / rkvenc-hevc.c */
 +int rkvenc_h264_setup(struct rkvenc_ctx *ctx);

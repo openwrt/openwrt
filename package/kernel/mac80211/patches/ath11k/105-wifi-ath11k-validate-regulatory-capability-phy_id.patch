@@ -1,0 +1,38 @@
+From f8729a40ebcc94d164be8f154483a21669f3ab52 Mon Sep 17 00:00:00 2001
+From: Pengpeng Hou <pengpeng@iscas.ac.cn>
+Date: Sat, 4 Jul 2026 09:10:40 +0800
+Subject: [PATCH] wifi: ath11k: validate regulatory capability phy_id
+
+ath11k_wmi_tlv_ext_hal_reg_caps() copies firmware regulatory
+capability records into soc->hal_reg_cap[] using reg_cap.phy_id as
+the destination index.  The loop count is bounded by num_phy, but the
+phy_id embedded in each record is not checked against the fixed
+MAX_RADIOS-sized destination array.
+
+Reject firmware records whose phy_id does not fit soc->hal_reg_cap[]
+before copying the parsed capability.
+
+Signed-off-by: Pengpeng Hou <pengpeng@iscas.ac.cn>
+Reviewed-by: Rameshkumar Sundaram <rameshkumar.sundaram@oss.qualcomm.com>
+Reviewed-by: Baochen Qiang <baochen.qiang@oss.qualcomm.com>
+Link: https://patch.msgid.link/20260704011040.26233-1-pengpeng@iscas.ac.cn
+Signed-off-by: Jeff Johnson <jeff.johnson@oss.qualcomm.com>
+---
+ drivers/net/wireless/ath/ath11k/wmi.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+--- a/drivers/net/wireless/ath/ath11k/wmi.c
++++ b/drivers/net/wireless/ath/ath11k/wmi.c
+@@ -4860,6 +4860,12 @@ static int ath11k_wmi_tlv_ext_hal_reg_ca
+ 			return ret;
+ 		}
+ 
++		if (reg_cap.phy_id >= ARRAY_SIZE(soc->hal_reg_cap)) {
++			ath11k_warn(soc, "invalid reg cap phy_id %u\n",
++				    reg_cap.phy_id);
++			return -EINVAL;
++		}
++
+ 		memcpy(&soc->hal_reg_cap[reg_cap.phy_id],
+ 		       &reg_cap, sizeof(reg_cap));
+ 	}

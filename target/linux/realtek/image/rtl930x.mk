@@ -60,16 +60,7 @@ define Device/sirivision_sr-st3808f
 endef
 TARGET_DEVICES += sirivision_sr-st3808f
 
-define Device/hasivo_f1100w-4sx-4xgt-common
-  SOC := rtl9303
-  DEVICE_VENDOR := Hasivo
-  DEVICE_MODEL := F1100W-4SX-4XGT
-  DEVICE_ALT0_VENDOR := Hasivo
-  DEVICE_ALT0_MODEL := F1100W-4SX-4XGT-SE
-  DEVICE_PACKAGES := \
-    kmod-phy-realtek rtl826x-firmware uboot-envtools
-  IMAGE_SIZE := 29696k
-  $(Device/kernel-lzma)
+define Device/hasivo-stock-patch-installer
   # Stock download patch requires a filename starting with patch, ending in .tar.gz, and no longer than 64 bytes.
   DEVICE_IMG_NAME = $$(if $$(filter factory.patch.tar.gz,$$(2)),patch-openwrt-$$(DEVICE_NAME).tar.gz,$$(DEVICE_IMG_PREFIX)-$$(1)-$$(2))
   # ImageBuilder and AUTOREMOVE lack prepared BusyBox sources and U-Boot objects.
@@ -81,6 +72,19 @@ define Device/hasivo_f1100w-4sx-4xgt-common
 	pad-rootfs | \
 	check-size | \
 	hasivo-stock-patch
+endef
+
+define Device/hasivo_f1100w-4sx-4xgt-common
+  SOC := rtl9303
+  DEVICE_VENDOR := Hasivo
+  DEVICE_MODEL := F1100W-4SX-4XGT
+  DEVICE_ALT0_VENDOR := Hasivo
+  DEVICE_ALT0_MODEL := F1100W-4SX-4XGT-SE
+  DEVICE_PACKAGES := \
+    kmod-phy-realtek rtl826x-firmware uboot-envtools
+  IMAGE_SIZE := 29696k
+  $(Device/kernel-lzma)
+  $(Device/hasivo-stock-patch-installer)
 endef
 
 define Device/hasivo_f1100w-4sx-4xgt
@@ -130,6 +134,18 @@ define Device/hasivo_s1100w-8xgt-se
 endef
 TARGET_DEVICES += hasivo_s1100w-8xgt-se
 
+define Device/hasivo_s1100wp-8gt-2s-plus
+  SOC := rtl9302
+  DEVICE_VENDOR := Hasivo
+  DEVICE_MODEL := S1100WP-8GT-2S+
+  DEVICE_PACKAGES := kmod-pse-hasivo-hs104 kmod-mfd-hasivo-stc8 \
+    kmod-hasivo-mcu-wdt kmod-rtc-pcf8563 uboot-envtools
+  IMAGE_SIZE := 29696k
+  $(Device/kernel-lzma)
+  $(Device/hasivo-stock-patch-installer)
+endef
+TARGET_DEVICES += hasivo_s1100wp-8gt-2s-plus
+
 define Device/hasivo_s1100wp-8gt-se
   SOC := rtl9303
   DEVICE_VENDOR := Hasivo
@@ -169,6 +185,29 @@ define Device/hasivo_s600wp-5gt-2sx-se
   $(Device/kernel-lzma)
 endef
 TARGET_DEVICES += hasivo_s600wp-5gt-2sx-se
+
+define Device/horaco_zx-sw82ts-l2p
+  SOC := rtl9302
+  UIMAGE_MAGIC := 0x93000000
+  HASIVO_MODEL := 9312
+  DEVICE_VENDOR := Horaco
+  DEVICE_MODEL := ZX-SW82TS-L2P
+  DEVICE_ALT0_VENDOR := Hasivo
+  DEVICE_ALT0_MODEL := S1300WP-8GT-2S+
+  DEVICE_PACKAGES := kmod-block2mtd kmod-hasivo-mcu-sensor kmod-hasivo-mcu-wdt \
+	kmod-loop kmod-mfd-hasivo-stc8 kmod-pse-hasivo-hs104 kmod-rtc-pcf8563 losetup
+  IMAGE_SIZE := 29696k
+  $(Device/kernel-lzma)
+  IMAGES += factory.tar.gz
+  IMAGE/factory.tar.gz := \
+	append-kernel | \
+	pad-to 64k | \
+	append-rootfs | \
+	pad-rootfs | \
+	check-size 7168k | \
+	hasivo-web-factory
+endef
+TARGET_DEVICES += horaco_zx-sw82ts-l2p
 
 define Device/horaco_zx-swtgw2c8f
   SOC := rtl9303
@@ -214,6 +253,34 @@ define Device/lianguo_lg-swtgw3c8f
 	check-size
 endef
 TARGET_DEVICES += lianguo_lg-swtgw3c8f
+
+define Device/lianguo_lg510s-4t2xs
+  SOC := rtl9303
+  UIMAGE_MAGIC := 0x83800000
+  DEVICE_VENDOR := Lianguo
+  DEVICE_MODEL := LG510S-4T2XS
+  DEVICE_ALT0_VENDOR := GoodTop
+  DEVICE_ALT0_MODEL := LG510S-4T2XS
+  DEVICE_ALT1_VENDOR := Horaco
+  DEVICE_ALT1_MODEL := ZX510S-4T2XS
+  DEVICE_ALT2_VENDOR := HRUI
+  DEVICE_ALT2_MODEL := HR510S-4T2XS
+  DEVICE_ALT3_VENDOR := MokerLink
+  DEVICE_ALT3_MODEL := 10G04210GSM
+  DEVICE_ALT4_VENDOR := Sodola
+  DEVICE_ALT4_MODEL := SL510S-4T2XS
+  DEVICE_PACKAGES := rtl826x-firmware
+  IMAGE_SIZE := 12288k
+  $(Device/kernel-lzma)
+  IMAGES += factory.bix
+  IMAGE/factory.bix := \
+	append-kernel | \
+	pad-to 64k | \
+	append-rootfs | \
+	pad-rootfs | \
+	check-size
+endef
+TARGET_DEVICES += lianguo_lg510s-4t2xs
 
 define Device/mokerlink_2g080gm
   SOC := rtl9303

@@ -47,6 +47,13 @@ function sae_password_option(config) {
 	return false;
 }
 
+/* SAE needs a passphrase or sae_password entries: a 64 hex digit key is a
+ * raw PSK */
+function sae_password_available(config) {
+	return !!config.ppsk || key_kind(config.key) == 'passphrase' || !!config.sae_station_passwords ||
+		sae_password_option(config);
+}
+
 function bss_refusal(config, band) {
 	const personal = config.auth_type in [ 'psk', 'psk2', 'sae', 'psk-sae', 'psk-sae-compat' ];
 	const kind = key_kind(config.key);
@@ -54,14 +61,12 @@ function bss_refusal(config, band) {
 	if (personal && !config.ppsk && kind == 'invalid')
 		return 'INVALID_WPA_PSK';
 
-	/* SAE needs a passphrase or sae_password entries: a 64 hex digit key is
-	 * a raw PSK */
-	const sae_only = config.auth_type == 'sae' || (config.auth_type == 'psk-sae-compat' && band == '6g');
+	/* outside 6 GHz, psk-sae-compat offers SAE in the RSNE Override element */
+	const sae_needed = config.auth_type in [ 'sae', 'psk-sae', 'psk-sae-compat' ];
 	const mld_sae = config.auth_type == 'psk' && config.rsno2_sae;
-	const sae_password = config.ppsk || kind == 'passphrase' || config.sae_station_passwords ||
-		sae_password_option(config);
+	const sae_password = sae_password_available(config);
 
-	if (personal && sae_only && !sae_password)
+	if (personal && sae_needed && !sae_password)
 		return 'SAE_NO_PASSWORD';
 	if (personal && mld_sae && !sae_password)
 		return 'MLD_SAE_NO_PASSWORD';
@@ -103,8 +108,13 @@ function mld_links(link_config, dev_config, phy_features, rsno2) {
 }
 
 /* WPA3 Specification v3.5 14.2: an AP MLD includes an identical RSNE
- * Override 2 element on all links, so a link that needs it adds it to all */
+ * Override 2 element on all links, so a link that needs it adds it to all.
+ * With sae_ext_key 0 and no SAE password, the AP MLD sends none, so that a
+ * raw PSK keeps working. */
 function mld_rsno2(link_config, dev_config, phy_features) {
+	if (link_config.sae_ext_key === false && !sae_password_available(link_config))
+		return false;
+
 	for (let link in mld_links(link_config, dev_config, phy_features))
 		if (link.config.rsno2_sae)
 			return true;
@@ -254,12 +264,15 @@ function iface_auth_type(config, band, eht) {
 	if (config.auth_type in [ 'sae', 'psk-sae', 'psk-sae-compat' ] || config.rsno2_sae) {
 		config.sae_require_mfp = 1;
 		set_default(config, 'sae_groups', '19 20 21');
-		if (!config.ppsk) {
-			if (band == '6g')
-				set_default(config, 'sae_pwe', 1);
-			else
-				set_default(config, 'sae_pwe', 2);
-		}
+		/* IEEE 802.11be-2024 12.6.2: same RSNXE on all links, and hostapd
+		 * enables H2E for sae_pwe 0 on 6 GHz only */
+		if (config.sae_pwe === 0 && config.mlo && index(config.mlo_bands ?? [], '6g') >= 0 &&
+		    config.auth_type in [ 'sae', 'psk-sae' ])
+			delete config.sae_pwe;
+		if (band == '6g')
+			set_default(config, 'sae_pwe', 1);
+		else
+			set_default(config, 'sae_pwe', 2);
 	}
 
 	if (config.own_ip_addr)
@@ -401,7 +414,7 @@ function iface_rrm(config) {
 	set_default(config, 'rrm_beacon_report', config.ieee80211k);
 
 	append_vars(config, [
-		'rrm_neighbor_report', 'rrm_beacon_report', 'rnr', 'ftm_responder',
+		'rrm_neighbor_report', 'rrm_beacon_report', 'rnr',
 	]);
 }
 

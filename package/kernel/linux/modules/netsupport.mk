@@ -46,9 +46,7 @@ define KernelPackage/appletalk
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=Appletalk protocol support
   KCONFIG:= \
-        CONFIG_ATALK \
-        CONFIG_DEV_APPLETALK \
-        CONFIG_IPDDP=n
+        CONFIG_ATALK
   FILES:=$(LINUX_DIR)/net/appletalk/appletalk.ko
   AUTOLOAD:=$(call AutoLoad,40,appletalk)
 endef
@@ -912,7 +910,7 @@ $(eval $(call KernelPackage,sched-drr))
 define KernelPackage/sched-dualpi2
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=Dual Queue PI Square scheduler (DUALPI2)
-  DEPENDS:=+kmod-sched-core @!LINUX_6_12
+  DEPENDS:=+kmod-sched-core
   KCONFIG:=CONFIG_NET_SCH_DUALPI2
   FILES:=$(LINUX_DIR)/net/sched/sch_dualpi2.ko
   AUTOLOAD:=$(call AutoProbe,sch_dualpi2)
@@ -1144,7 +1142,7 @@ define KernelPackage/sched
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=Extra traffic schedulers
   DEPENDS:=+kmod-sched-core +kmod-sched-ets +kmod-sched-act-pedit +kmod-sched-gred \
-	+LINUX_6_12:kmod-lib-crc32c +kmod-lib-textsearch
+	+kmod-lib-textsearch
   KCONFIG:= \
 	CONFIG_NET_SCH_CODEL \
 	CONFIG_NET_SCH_MULTIQ \
@@ -1328,21 +1326,12 @@ define KernelPackage/sctp
   TITLE:=SCTP protocol kernel support
   KCONFIG:=\
      CONFIG_IP_SCTP \
-     CONFIG_SCTP_DBG_MSG=n \
      CONFIG_SCTP_DBG_OBJCNT=n \
-     CONFIG_SCTP_HMAC_NONE=n \
-     CONFIG_SCTP_HMAC_SHA1=n \
-     CONFIG_SCTP_HMAC_MD5=y \
-     CONFIG_SCTP_COOKIE_HMAC_SHA1=n \
-     CONFIG_SCTP_COOKIE_HMAC_MD5=y \
-     CONFIG_SCTP_DEFAULT_COOKIE_HMAC_NONE=n \
-     CONFIG_SCTP_DEFAULT_COOKIE_HMAC_SHA1=n \
-     CONFIG_SCTP_DEFAULT_COOKIE_HMAC_SHA256=n@ge6.18 \
-     CONFIG_SCTP_DEFAULT_COOKIE_HMAC_MD5=y
+     CONFIG_SCTP_DEFAULT_COOKIE_HMAC_SHA256=y \
+     CONFIG_SCTP_DEFAULT_COOKIE_HMAC_NONE=n
   FILES:= $(LINUX_DIR)/net/sctp/sctp.ko
   AUTOLOAD:= $(call AutoLoad,32,sctp)
-  DEPENDS:=+LINUX_6_12:kmod-lib-crc32c +kmod-crypto-md5 +kmod-crypto-hmac \
-    +kmod-udptunnel4 +kmod-udptunnel6
+  DEPENDS:=+kmod-udptunnel4 +kmod-udptunnel6
 endef
 
 define KernelPackage/sctp/description
@@ -1370,7 +1359,7 @@ define KernelPackage/netem
   DEPENDS:=+kmod-sched
   KCONFIG:=CONFIG_NET_SCH_NETEM
   FILES:=$(LINUX_DIR)/net/sched/sch_netem.ko
-  AUTOLOAD:=$(call AutoLoad,99,netem)
+  AUTOLOAD:=$(call AutoLoad,99,sch_netem)
 endef
 
 define KernelPackage/netem/description

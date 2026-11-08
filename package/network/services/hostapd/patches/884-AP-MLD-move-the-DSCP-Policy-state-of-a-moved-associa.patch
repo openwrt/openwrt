@@ -1,0 +1,42 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Tue, 27 Oct 2026 13:28:52 +0000
+Subject: [PATCH] AP MLD: move the DSCP Policy state of a moved association
+
+hostapd_ml_move_assoc_sta() gives the association of a non-AP MLD to
+another link STA, and the caller then frees the old association STA.
+ap_free_sta() frees its DSCP policies, so the non-AP MLD loses the
+policies that the AP configured, and the dialog token and the state of
+the DSCP Policy exchange start again.
+
+Move the policies, the DSCP Policy state and the dialog token to the
+new association STA.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/src/ap/ieee802_11_eht.c
++++ b/src/ap/ieee802_11_eht.c
+@@ -20,6 +20,7 @@
+ #include "scs.h"
+ #include "accounting.h"
+ #include "ieee802_1x.h"
++#include "robust_av.h"
+ 
+ 
+ static u16 ieee80211_eht_ppet_size(u16 ppe_thres_hdr, const u8 *phy_cap_info)
+@@ -1681,6 +1682,16 @@ struct sta_info * hostapd_ml_move_assoc_
+ 	accounting_sta_move(hapd, sta, *assoc_hapd, assoc_sta);
+ 	ieee802_1x_move_station(*assoc_hapd, sta, assoc_sta);
+ #ifdef CONFIG_ROBUST_AV
++	free_dscp_policies(assoc_sta);
++	assoc_sta->policies = sta->policies;
++	assoc_sta->num_dscp_policies = sta->num_dscp_policies;
++	sta->policies = NULL;
++	sta->num_dscp_policies = 0;
++	assoc_sta->dscp_reset = sta->dscp_reset;
++	assoc_sta->unsolicited_dialog_token = sta->unsolicited_dialog_token;
++	assoc_sta->dscp_state = sta->dscp_state;
++#endif /* CONFIG_ROBUST_AV */
++#ifdef CONFIG_ROBUST_AV
+ 	os_memcpy(assoc_sta->scs_active, sta->scs_active,
+ 		  sizeof(sta->scs_active));
+ 	os_memset(sta->scs_active, 0, sizeof(sta->scs_active));

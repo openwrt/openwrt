@@ -1,0 +1,216 @@
+From: Aishwarya R <aishwarya.r@oss.qualcomm.com>
+Date: Tue, 12 May 2026 10:54:49 +0530
+Subject: [PATCH] DSCP: Check STA capability for DSCP policy
+
+Add robust_av.c with a helper to update STA DSCP Policy capability based
+on the Wi-Fi Alliance Capabilities element. The
+hostapd_update_dscp_policy_capability() helper clears the stored
+capability first, requires MFP to be enabled for the STA, and sets
+WLAN_STA_DSCP_POLICY when the DSCP Policy capability bit is present in
+the received WFA capabilities data.
+
+Also add CONFIG_ROBUST_AV build integration.
+
+Backport of hostap commit 220bb242f6d4. OpenWrt context: sta_info.h:
+WLAN_STA_DSCP_POLICY as BIT(28), the 2.12 flag form (main uses BIT_ULL);
+defconfig: entry after CONFIG_AFC.
+
+Signed-off-by: Aishwarya R <aishwarya.r@oss.qualcomm.com>
+---
+--- a/hostapd/Android.mk
++++ b/hostapd/Android.mk
+@@ -1161,6 +1161,11 @@ L_CFLAGS += -DCONFIG_PROCESS_COORDINATIO
+ OBJS += src/common/proc_coord.c
+ endif
+ 
++ifdef CONFIG_ROBUST_AV
++L_CFLAGS += -DCONFIG_ROBUST_AV
++OBJS += src/ap/robust_av.c
++endif
++
+ OBJS_c = hostapd_cli.c
+ OBJS_c += src/common/wpa_ctrl.c
+ OBJS_c += src/utils/os_$(CONFIG_OS).c
+--- a/hostapd/Makefile
++++ b/hostapd/Makefile
+@@ -1398,6 +1398,11 @@ OBJS += ../src/ap/ndisc_snoop.o
+ endif
+ endif
+ 
++ifdef CONFIG_ROBUST_AV
++CFLAGS += -DCONFIG_ROBUST_AV
++OBJS += ../src/ap/robust_av.o
++endif
++
+ OBJS += ../src/drivers/driver_common.o
+ 
+ ifdef CONFIG_WPA_CLI_EDIT
+--- a/hostapd/defconfig
++++ b/hostapd/defconfig
+@@ -442,3 +442,9 @@ CONFIG_DPP2=y
+ 
+ # Automated Frequency Coordination for 6 GHz outdoor
+ #CONFIG_AFC=y
++
++# Robust AV Streaming Support
++# This controls inclusion of QoS Management / DSCP Policy support that is
++# used as part of Robust AV Streaming. At present, this enables DSCP Policy
++# capability handling in hostapd.
++#CONFIG_ROBUST_AV=y
+--- a/src/ap/Makefile
++++ b/src/ap/Makefile
+@@ -12,6 +12,7 @@ CFLAGS += -DCONFIG_WPS
+ CFLAGS += -DCONFIG_PROXYARP
+ CFLAGS += -DCONFIG_IPV6
+ CFLAGS += -DCONFIG_AIRTIME_POLICY
++CFLAGS += -DCONFIG_ROBUST_AV
+ 
+ LIB_OBJS= \
+ 	accounting.o \
+@@ -47,6 +48,7 @@ LIB_OBJS= \
+ 	p2p_hostapd.o \
+ 	pmksa_cache_auth.o \
+ 	preauth_auth.o \
++	robust_av.o \
+ 	rrm.o \
+ 	sta_info.o \
+ 	tkip_countermeasures.o \
+--- a/src/ap/ieee802_11_shared.c
++++ b/src/ap/ieee802_11_shared.c
+@@ -18,6 +18,7 @@
+ #include "ap_drv_ops.h"
+ #include "wpa_auth.h"
+ #include "dpp_hostapd.h"
++#include "robust_av.h"
+ #include "ieee802_11.h"
+ 
+ 
+@@ -1330,6 +1331,9 @@ void hostapd_wfa_capab(struct hostapd_da
+ 	capab_len = *pos++;
+ 	if (capab_len > end - pos)
+ 		return;
++
++	hostapd_update_dscp_policy_capability(hapd, sta, pos, capab_len);
++
+ 	pos += capab_len; /* skip the Capabilities field */
+ 
+ 	/* Wi-Fi Alliance Capabilities attributes use a header that is similar
+--- /dev/null
++++ b/src/ap/robust_av.c
+@@ -0,0 +1,44 @@
++/*
++ * hostapd / DSCP Policy
++ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
++ *
++ * This software may be distributed under the terms of the BSD license.
++ * See README for more details.
++ */
++
++#include "utils/includes.h"
++
++#include "utils/common.h"
++#include "common/ieee802_11_defs.h"
++#include "common/ieee802_11_common.h"
++#include "hostapd.h"
++#include "ieee802_11.h"
++#include "sta_info.h"
++#include "ap_config.h"
++#include "ap_drv_ops.h"
++#include "robust_av.h"
++
++
++/*
++ * Update DSCP policy capabilities for a STA based on the received Capabilities
++ * field of a WFA Capabilities element.
++ */
++void hostapd_update_dscp_policy_capability(struct hostapd_data *hapd,
++					   struct sta_info *sta,
++					   const u8 *pos, size_t len)
++{
++
++	sta->flags &= ~WLAN_STA_DSCP_POLICY;
++
++	if (!(sta->flags & WLAN_STA_MFP))
++		return;
++
++	if (!pos || len < 1)
++		return;
++
++	if (pos[0] & WFA_CAPA_QM_DSCP_POLICY) {
++		sta->flags |= WLAN_STA_DSCP_POLICY;
++		wpa_printf(MSG_DEBUG, "DSCP: STA " MACSTR
++			   " supports DSCP Policy", MAC2STR(sta->addr));
++	}
++}
+--- /dev/null
++++ b/src/ap/robust_av.h
+@@ -0,0 +1,32 @@
++/*
++ * hostapd / DSCP Policy
++ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
++ *
++ * This software may be distributed under the terms of the BSD license.
++ * See README for more details.
++ */
++
++#ifndef ROBUST_AV_H
++#define ROBUST_AV_H
++
++struct hostapd_data;
++struct sta_info;
++
++#ifdef CONFIG_ROBUST_AV
++
++void hostapd_update_dscp_policy_capability(struct hostapd_data *hapd,
++					   struct sta_info *sta,
++					   const u8 *pos, size_t len);
++
++#else /* CONFIG_ROBUST_AV */
++
++static inline void
++hostapd_update_dscp_policy_capability(struct hostapd_data *hapd,
++				      struct sta_info *sta,
++				      const u8 *pos, size_t len)
++{
++}
++
++#endif /* CONFIG_ROBUST_AV */
++
++#endif /* ROBUST_AV_H */
+--- a/src/ap/sta_info.h
++++ b/src/ap/sta_info.h
+@@ -46,6 +46,7 @@
+ #define WLAN_STA_6GHZ BIT(25)
+ #define WLAN_STA_PENDING_PASN_FILS_ERP BIT(26)
+ #define WLAN_STA_EHT BIT(27)
++#define WLAN_STA_DSCP_POLICY BIT(28)
+ #define WLAN_STA_PENDING_DISASSOC_CB BIT(29)
+ #define WLAN_STA_PENDING_DEAUTH_CB BIT(30)
+ #define WLAN_STA_NONERP BIT(31)
+--- a/wpa_supplicant/Android.mk
++++ b/wpa_supplicant/Android.mk
+@@ -1078,6 +1078,11 @@ OBJS += src/ap/acs.c
+ LIBS += -lm
+ endif
+ 
++ifdef CONFIG_ROBUST_AV
++L_CFLAGS += -DCONFIG_ROBUST_AV
++OBJS += src/ap/robust_av.c
++endif
++
+ ifdef CONFIG_PCSC
+ # PC/SC interface for smartcards (USIM, GSM SIM)
+ L_CFLAGS += -DPCSC_FUNCS -I/usr/include/PCSC
+--- a/wpa_supplicant/Makefile
++++ b/wpa_supplicant/Makefile
+@@ -1099,6 +1099,10 @@ ifdef CONFIG_UCODE
+ OBJS += ../src/ap/ucode.o
+ endif
+ endif
++ifdef CONFIG_ROBUST_AV
++CFLAGS += -DCONFIG_ROBUST_AV
++OBJS += ../src/ap/robust_av.o
++endif
+ 
+ CFLAGS += -DEAP_SERVER -DEAP_SERVER_IDENTITY
+ OBJS += ../src/eap_server/eap_server.o

@@ -112,17 +112,23 @@ export function parse_encryption(config, dev_config, phy_features, rsno2) {
 	 * WPA3 Specification v3.5 2.5 requires SAE-EXT-KEY and GCMP-256 with
 	 * EHT or MLO. Some clients fail when these are offered in the RSNE, so on
 	 * EHT they go into the RSNE Override 2 element. Explicit sae_ext_key and
-	 * gcmp256 options apply to the RSNE; 0 also keeps them out of RSNO2. An
-	 * RSNE that already offers the AKM and the pairwise cipher of the RSNO2E
-	 * makes the RSNO2E a duplicate, so the BSS sends none. An AP MLD sends
-	 * none only where that holds on every link (ap.uc mld_rsno2()).
+	 * gcmp256 options apply to the RSNE; 0 also keeps them out of RSNO2,
+	 * except on an AP MLD with an SAE password. An RSNE that already offers
+	 * the AKM and the pairwise cipher of the RSNO2E makes the RSNO2E a
+	 * duplicate, so the BSS sends none. An AP MLD sends none only where that
+	 * holds on every link (ap.uc mld_rsno2()).
 	 */
 	let eht = wildcard(dev_config?.htmode ?? '', 'EHT*');
 	let compat = (config.auth_type == 'sae-compat');
 	let rsno2_mode = config.auth_type in [ 'sae', 'psk3', 'sae-mixed', 'psk3-mixed' ] ||
 		(!!config.mlo && config.auth_type == 'psk2');
-	/* all links of an AP MLD must reach the same decision */
-	let rsno2_sae = (eht || !!config.mlo) && rsno2_mode && config.sae_ext_key !== false;
+	/* All links of an AP MLD must reach the same decision. Its RSNO2E holds
+	 * the AKM that all links share (IEEE 802.11be-2024 12.6.2, WPA3
+	 * Specification v3.5 2.5 item 4), also with sae_ext_key 0 where an SAE
+	 * password exists (ap.uc mld_rsno2()). sae-compat adds SAE-EXT-KEY to the
+	 * RSNO2E itself unless sae_ext_key is 0. */
+	let rsno2_sae = config.mlo ? (rsno2_mode || (compat && config.sae_ext_key === false)) :
+		(eht && rsno2_mode && config.sae_ext_key !== false);
 	let rsno2_pairwise = (config.gcmp256 !== false && phy_features?.cipher_gcmp256) ? 'GCMP-256' : 'CCMP';
 	config.gcmp256 ??= compat && eht;
 	config.sae_ext_key ??= compat && eht;

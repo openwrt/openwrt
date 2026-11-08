@@ -1,0 +1,41 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: John Crispin <john@phrozen.org>
+Subject: [PATCH] pinctrl: mt7988: add the pwm3_0 group
+
+PWM channel 3 reaches two pins on this SoC, GPIO81 in function 2 and
+GPIO59 in function 5. Only the first one is here. The kernel driver
+carries both, as "pwm3" and "pwm3_0".
+
+Boards that route the second one have no way to ask for it, and GPIO81
+is not always free: on the GL.iNet BE14000 it is the SFP loss of signal
+input, and the backlight sits on GPIO59.
+
+--- a/drivers/pinctrl/mediatek/pinctrl-mt7988.c
++++ b/drivers/pinctrl/mediatek/pinctrl-mt7988.c
+@@ -744,6 +744,9 @@ static const int mt7988_pwm2_funcs[] = {
+ static const int mt7988_pwm3_pins[] = { 81 };
+ static const int mt7988_pwm3_funcs[] = { 2 };
+ 
++static const int mt7988_pwm3_0_pins[] = { 59 };
++static const int mt7988_pwm3_0_funcs[] = { 5 };
++
+ static const int mt7988_pwm4_pins[] = { 82 };
+ static const int mt7988_pwm4_funcs[] = { 2 };
+ 
+@@ -1138,6 +1141,7 @@ static const struct mtk_group_desc mt798
+ 	PINCTRL_PIN_GROUP("uart1_2", mt7988_uart1_2),
+ 	PINCTRL_PIN_GROUP("pwm2", mt7988_pwm2),
+ 	PINCTRL_PIN_GROUP("pwm3", mt7988_pwm3),
++	PINCTRL_PIN_GROUP("pwm3_0", mt7988_pwm3_0),
+ 	PINCTRL_PIN_GROUP("pwm4", mt7988_pwm4),
+ 	PINCTRL_PIN_GROUP("pwm5", mt7988_pwm5),
+ 	PINCTRL_PIN_GROUP("net_wo0_uart_txd_0", mt7988_net_wo0_uart_txd_0),
+@@ -1175,7 +1179,7 @@ static const char *const mt7988_jtag_gro
+ 	"wo1_jtag", "wo2_jtag", "jtag", "tops_jtag0_1", };
+ static const char *const mt7988_int_usxgmii_groups[] = { "int_usxgmii", };
+ static const char *const mt7988_pwm_groups[] = { "pwm0", "pwm1", "pwm2", "pwm3",
+-	"pwm4", "pwm5", "pwm6", "pwm7" };
++	"pwm3_0", "pwm4", "pwm5", "pwm6", "pwm7" };
+ static const char *const mt7988_dfd_groups[] = { "dfd", };
+ static const char *const mt7988_i2c_groups[] = { "xfi_phy0_i2c0",
+ 	"xfi_phy1_i2c0", "xfi_phy_pll_i2c0", "xfi_phy_pll_i2c1", "i2c0_0",

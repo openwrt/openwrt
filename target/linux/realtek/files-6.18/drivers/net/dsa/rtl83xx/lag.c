@@ -160,7 +160,7 @@ int otto_lag_find_group_from_port(struct otto_dsa_priv *priv, int port)
  * @e: L2 entry data
  * @lag_group: lag id of the trunk group
  */
-void otto_lag_93xx_prepare_fdb(struct rtl838x_l2_entry *e, int lag_group)
+void otto_lag_93xx_prepare_fdb(struct otto_l2_entry *e, int lag_group)
 {
 	if (e && lag_group >= 0) {
 		e->is_trunk = true;

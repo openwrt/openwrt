@@ -134,13 +134,12 @@ struct qca_uniphy_match_data {
 	bool ref_clk_enable;
 };
 
-#define to_qca_uniphy_pcs(n) container_of(pcs, struct qca_uniphy_pcs, pcs);
+#define to_qca_uniphy_pcs(n) container_of(n, struct qca_uniphy_pcs, pcs)
 
 struct qca_uniphy {
 	struct device *dev;
 	void __iomem *base;
 	struct regmap *regmap;
-	struct reset_control *rst_ahb;
 	struct reset_control *rst_soft;
 	struct reset_control *rst_xpcs;
 	struct clk_bulk_data *clks;
@@ -157,8 +156,8 @@ struct qca_uniphy {
 	phy_interface_t interface;
 };
 
-#define port_rx_clk_idx(upcs)	((upcs)->channel * 2) + 2
-#define port_tx_clk_idx(upcs)	(((upcs)->channel * 2) + 1) + 2
+#define port_rx_clk_idx(upcs)	((upcs)->channel * 2 + 2)
+#define port_tx_clk_idx(upcs)	((upcs)->channel * 2 + 3)
 /* The pair is adjacent, so the bulk ops can take it from the rx index */
 #define QCA_UNIPHY_PORT_CLKS	2
 

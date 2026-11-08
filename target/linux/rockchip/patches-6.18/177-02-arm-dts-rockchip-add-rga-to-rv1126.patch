@@ -1,19 +1,20 @@
-From 6c1de0a70a10904ac2f2daf5947d00e80476bf14 Mon Sep 17 00:00:00 2001
+From dcf68c56ac95225a64669c4339adee9454044ec7 Mon Sep 17 00:00:00 2001
 From: Daniel Golle <daniel@makrotopia.org>
 Date: Fri, 9 Oct 2026 14:33:15 +0100
 Subject: [PATCH] ARM: dts: rockchip: add rga to rv1126
 
 Add the RGA 2D graphics accelerator of the video output power domain.
-The node is disabled and left for boards to enable.
+Like the RGA nodes of the other Rockchip SoCs it needs nothing from a
+board, so it is enabled in the SoC dtsi.
 
 Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 ---
- arch/arm/boot/dts/rockchip/rv1126.dtsi | 13 +++++++++++++
- 1 file changed, 13 insertions(+)
+ arch/arm/boot/dts/rockchip/rv1126.dtsi | 12 ++++++++++++
+ 1 file changed, 12 insertions(+)
 
 --- a/arch/arm/boot/dts/rockchip/rv1126.dtsi
 +++ b/arch/arm/boot/dts/rockchip/rv1126.dtsi
-@@ -1086,6 +1086,19 @@
+@@ -1086,6 +1086,18 @@
  		status = "disabled";
  	};
  
@@ -27,7 +28,6 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +		resets = <&cru SRST_RGA_CORE>, <&cru SRST_RGA_A>,
 +			 <&cru SRST_RGA_H>;
 +		reset-names = "core", "axi", "ahb";
-+		status = "disabled";
 +	};
 +
  	vop: vop@ffb00000 {

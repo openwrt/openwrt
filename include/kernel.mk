@@ -134,6 +134,16 @@ ifeq ($(call qstrip,$(CONFIG_EXTERNAL_KERNEL_TREE))$(call qstrip,$(CONFIG_KERNEL
 	KERNELRELEASE=$(LINUX_VERSION)
 endif
 
+ifdef CONFIG_KERNEL_RUST
+  include $(INCLUDE_DIR)/rust-values.mk
+
+  KERNEL_MAKE_FLAGS += \
+	RUSTC="$(RUSTC)" \
+	BINDGEN="$(STAGING_DIR_HOST)/bin/bindgen" \
+	RUST_LIB_SRC="$(STAGING_DIR_HOST)/lib/rustlib/src/rust/library" \
+	LIBCLANG_PATH="$(RUST_LIBCLANG_PATH)"
+endif
+
 KERNEL_MAKEOPTS = -C $(LINUX_DIR) $(KERNEL_MAKE_FLAGS)
 
 ifdef CONFIG_USE_SPARSE
@@ -150,8 +160,7 @@ define collect_module_symvers
 		grep -F $(PKG_BUILD_DIR) $(PKG_BUILD_DIR)/$$$$subdir/Module.symvers >> $(PKG_BUILD_DIR)/Module.symvers.tmp; \
 		[ "$(PKG_BUILD_DIR)" = "$$$$realdir" ] || \
 			grep -F $$$$realdir $(PKG_BUILD_DIR)/$$$$subdir/Module.symvers >> $(PKG_BUILD_DIR)/Module.symvers.tmp; \
-		[ -s "$(PKG_BUILD_DIR)/Module.symvers.tmp" ] || [ "$(KERNEL_PATCHVER)" = "6.18" ] && \
-			sed 's/\.o$$$$//' $(PKG_BUILD_DIR)/$$$$subdir/modules.order | \
+		sed 's/\.o$$$$//' $(PKG_BUILD_DIR)/$$$$subdir/modules.order | \
 			grep -Ff - $(PKG_BUILD_DIR)/$$$$subdir/Module.symvers >> $(PKG_BUILD_DIR)/Module.symvers.tmp; \
 	done; \
 	sort -u $(PKG_BUILD_DIR)/Module.symvers.tmp > $(PKG_BUILD_DIR)/Module.symvers; \

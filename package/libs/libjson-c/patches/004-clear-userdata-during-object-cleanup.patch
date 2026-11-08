@@ -1,0 +1,48 @@
+From 0c3a5a1994ed6b5957d2e878fc1298ce9aa09b3f Mon Sep 17 00:00:00 2001
+From: Eric Hawicz <erh+git@nimenees.com>
+Date: Sat, 4 Jul 2026 11:38:15 -0400
+Origin: https://github.com/json-c/json-c/commit/0c3a5a1994ed6b5957d2e878fc1298ce9aa09b3f
+Subject: [PATCH] Issue #934: Also set _userdata=NULL in
+ _json_object_maybe_free() so json_object_put doesn't try to use it as a
+ _delete_parent value. Update the test_deep_nesting test output.
+
+---
+ json_object.c                    | 7 +++++--
+ tests/test_deep_nesting.expected | 1 +
+ 2 files changed, 6 insertions(+), 2 deletions(-)
+
+diff --git a/json_object.c b/json_object.c
+index 71cd25b2a6..095b84e2b4 100644
+--- a/json_object.c
++++ b/json_object.c
+@@ -304,6 +304,8 @@ static inline int _json_object_put_maybe_free(struct json_object *jso, int free_
+ 	if (jso->_user_delete)
+ 		jso->_user_delete(jso, jso->_userdata);
+ 	jso->_user_delete = NULL;
++	jso->_userdata = NULL; // aka _delete_parent, but json_object_put() will
++	                       // have already grabbed it if it needs it.
+ 
+ 	switch (jso->o_type)
+ 	{
+@@ -435,10 +437,11 @@ int json_object_put(struct json_object *jso)
+ 
+ 		// All slots are cleared, now pop back up to the parent
+ 		{
+-			json_object *parent = jso->_delete_parent;
+-			int rc;
+ 			// jso is a child that's already been detached from its parent
+ 			// so we need to actually free it now
++			// Be sure to grab _delete_parent *before* freeing jso.
++			json_object *parent = jso->_delete_parent;
++			int rc;
+ 			assert(jso->_ref_count == 0);
+ 			jso->_ref_count++;   // We're the exclusive owner of jso, non-atomic add is ok.
+ 			// Note: the call must not be inside assert(), or it gets
+diff --git a/tests/test_deep_nesting.expected b/tests/test_deep_nesting.expected
+index b869cfaabe..b9c1ab9848 100644
+--- a/tests/test_deep_nesting.expected
++++ b/tests/test_deep_nesting.expected
+@@ -1,2 +1,3 @@
+ Parsed depth 100000 string to json_object: yes
+ Freed json_object
++in user_delete, userdata_val=1

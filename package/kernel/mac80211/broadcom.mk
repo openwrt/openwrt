@@ -106,7 +106,7 @@ define KernelPackage/b43/config
 config PACKAGE_B43_USE_SSB
 	select PACKAGE_kmod-ssb
 	tristate
-	depends on !TARGET_bcm47xx && !TARGET_bcm63xx
+	depends on !TARGET_bcm47xx
 	default PACKAGE_kmod-b43 if PACKAGE_B43_BUSES_BCMA_AND_SSB
 	default PACKAGE_kmod-b43 if PACKAGE_B43_BUSES_SSB
 

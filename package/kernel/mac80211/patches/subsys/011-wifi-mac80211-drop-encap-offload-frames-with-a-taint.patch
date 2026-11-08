@@ -1,0 +1,33 @@
+From c8ddbe1e8c43f6d008591c50f8be8de39cdce267 Mon Sep 17 00:00:00 2001
+From: Johannes Berg <johannes.berg@intel.com>
+Date: Sun, 2 Aug 2026 10:57:21 +0200
+Subject: [PATCH] wifi: mac80211: drop encap offload frames with a tainted key
+
+When a key is tainted, which happens in some WoWLAN and extended
+key ID scenarios, frames that would use it should be dropped.
+Fix that for encapsulation offload frames.
+
+Fixes: 50ff477a8639 ("mac80211: add 802.11 encapsulation offloading support")
+Link: https://patch.msgid.link/20260802105818.870b6ef31374.Ib87175b55b9fd94c16ba6d9cd816b7a09248df87@changeid
+Signed-off-by: Johannes Berg <johannes.berg@intel.com>
+---
+ net/mac80211/tx.c | 8 +++++++-
+ 1 file changed, 7 insertions(+), 1 deletion(-)
+
+--- a/net/mac80211/tx.c
++++ b/net/mac80211/tx.c
+@@ -614,7 +614,13 @@ ieee80211_select_key_8023(struct ieee802
+ 		tx->key = rcu_dereference(tx->sdata->deflink.default_multicast_key);
+ 	}
+ 
+-	if (tx->key && tx->key->flags & KEY_FLAG_UPLOADED_TO_HARDWARE)
++	if (!tx->key)
++		return TX_CONTINUE;
++
++	if (unlikely(tx->key->flags & KEY_FLAG_TAINTED))
++		return TX_DROP;
++
++	if (tx->key->flags & KEY_FLAG_UPLOADED_TO_HARDWARE)
+ 		info->control.hw_key = &tx->key->conf;
+ 
+ 	return TX_CONTINUE;

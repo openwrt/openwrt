@@ -139,17 +139,6 @@ config KERNEL_UBSAN
 	  via boot parameter ubsan_handle
 	  (see: Documentation/dev-tools/ubsan.rst).
 
-config KERNEL_UBSAN_SANITIZE_ALL
-	bool "Enable instrumentation for the entire kernel"
-	depends on KERNEL_UBSAN
-	default y
-	help
-	  This option activates instrumentation for the entire kernel.
-	  If you don't enable this option, you have to explicitly specify
-	  UBSAN_SANITIZE := y for the files/directories you want to check for UB.
-	  Enabling this option will get kernel image size increased
-	  significantly.
-
 config KERNEL_UBSAN_ALIGNMENT
 	bool "Enable checking of pointers alignment"
 	depends on KERNEL_UBSAN
@@ -562,6 +551,11 @@ config KERNEL_DEBUG_INFO
 	select KERNEL_DEBUG_KERNEL
 	help
 	  This will compile your kernel and modules with debug information.
+
+# DEBUG_INFO has no prompt in the kernel, it is set by the "Debug information"
+# choice. Select DEBUG_INFO_NONE to actually disable debug information.
+config KERNEL_DEBUG_INFO_NONE
+	def_bool !KERNEL_DEBUG_INFO
 
 config KERNEL_DEBUG_INFO_BTF
 	bool "Enable additional BTF type information"
@@ -1061,18 +1055,6 @@ if KERNEL_CGROUPS
 		  This config option also selects MM_OWNER config option, which
 		  could in turn add some fork/exit overhead.
 
-	config KERNEL_MEMCG_KMEM
-		bool "Memory Resource Controller Kernel Memory accounting (EXPERIMENTAL)"
-		default y
-		depends on KERNEL_MEMCG
-		help
-		  The Kernel Memory extension for Memory Resource Controller can limit
-		  the amount of memory used by kernel objects in the system. Those are
-		  fundamentally different from the entities handled by the standard
-		  Memory Controller, which are page-based, and can be swapped. Users of
-		  the kmem extension can use it to guarantee that no group of processes
-		  will ever exhaust kernel resources alone.
-	
 	config KERNEL_MEMCG_V1
 		bool "Legacy cgroup v1 memory controller"
 		default n
@@ -1148,29 +1130,15 @@ if KERNEL_CGROUPS
 		  This option only enables generic Block IO controller infrastructure.
 		  One needs to also enable actual IO controlling logic/policy. For
 		  enabling proportional weight division of disk bandwidth in CFQ, set
-		  CONFIG_CFQ_GROUP_IOSCHED=y; for enabling throttling policy, set
+		  CONFIG_BFQ_GROUP_IOSCHED=y; for enabling throttling policy, set
 		  CONFIG_BLK_DEV_THROTTLING=y.
 
 	if KERNEL_BLK_CGROUP
 
-		config KERNEL_CFQ_GROUP_IOSCHED
-			bool "Proportional weight of disk bandwidth in CFQ"
-
 		config KERNEL_BLK_DEV_THROTTLING
 			bool "Enable throttling policy"
 			default y
-
-		config KERNEL_BLK_DEV_THROTTLING_LOW
-			bool "Block throttling .low limit interface support (EXPERIMENTAL)"
-			depends on KERNEL_BLK_DEV_THROTTLING
 	endif
-
-	config KERNEL_DEBUG_BLK_CGROUP
-		bool "Enable Block IO controller debugging"
-		depends on KERNEL_BLK_CGROUP
-		help
-		  Enable some debugging help. Currently it exports additional stat
-		  files in a cgroup which can be useful for debugging.
 
 	config KERNEL_NET_CLS_CGROUP
 		bool "legacy Control Group Classifier"
@@ -1500,39 +1468,6 @@ menu "Filesystem ACL and attr support options"
 
 	config KERNEL_TMPFS_POSIX_ACL
 		bool "Enable POSIX ACL for TMPFS Filesystems"
-		select KERNEL_FS_POSIX_ACL
-		default y if USE_FS_ACL_ATTR
-
-	config KERNEL_CIFS_ACL
-		bool "Enable CIFS ACLs"
-		select KERNEL_FS_POSIX_ACL
-		default y if USE_FS_ACL_ATTR
-
-	config KERNEL_HFS_FS_POSIX_ACL
-		bool "Enable POSIX ACL for HFS Filesystems"
-		select KERNEL_FS_POSIX_ACL
-		default y if USE_FS_ACL_ATTR
-
-	config KERNEL_HFSPLUS_FS_POSIX_ACL
-		bool "Enable POSIX ACL for HFS+ Filesystems"
-		select KERNEL_FS_POSIX_ACL
-		default y if USE_FS_ACL_ATTR
-
-	config KERNEL_NFS_ACL_SUPPORT
-		bool "Enable ACLs for NFS"
-		default y if USE_FS_ACL_ATTR
-
-	config KERNEL_NFS_V3_ACL_SUPPORT
-		bool "Enable ACLs for NFSv3"
-
-	config KERNEL_NFSD_V2_ACL_SUPPORT
-		bool "Enable ACLs for NFSDv2"
-
-	config KERNEL_NFSD_V3_ACL_SUPPORT
-		bool "Enable ACLs for NFSDv3"
-
-	config KERNEL_REISER_FS_POSIX_ACL
-		bool "Enable POSIX ACLs for ReiserFS"
 		select KERNEL_FS_POSIX_ACL
 		default y if USE_FS_ACL_ATTR
 

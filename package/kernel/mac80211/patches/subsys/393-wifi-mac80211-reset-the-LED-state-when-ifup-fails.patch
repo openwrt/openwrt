@@ -29,7 +29,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
 
 --- a/net/mac80211/iface.c
 +++ b/net/mac80211/iface.c
-@@ -1603,8 +1603,12 @@ int ieee80211_do_open(struct wireless_de
+@@ -1610,8 +1610,12 @@ int ieee80211_do_open(struct wireless_de
   err_del_interface:
  	drv_remove_interface(local, sdata);
   err_stop:

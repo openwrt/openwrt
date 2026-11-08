@@ -1,0 +1,39 @@
+From d8223a782bf183b3141a60799601cdcc306d745d Mon Sep 17 00:00:00 2001
+From: Michele Salerno <mikysal78@gmail.com>
+Date: Fri, 23 Oct 2026 20:08:20 +0200
+Subject: [PATCH] pci: mvebu: wait for the link to go down while in reset
+
+With 801-pci-mvebu-time-out-reset-on-link-up.patch the reset wait ends as
+soon as the link reads up. When the bootloader already trained the link,
+it still reads up right after PERST# is asserted, so the wait ends at once
+("reset completed in 0us") and the card is enumerated while it is still
+coming out of reset: on the WRT3200ACM, with reset-gpios on both ports,
+the 5GHz card (pcie@1,0) was missing after boot and only appeared after a
+manual rescan.
+
+Keep PERST# asserted until the link is down (at most 100ms) before
+releasing it.
+
+Signed-off-by: Michele Salerno <mikysal78@gmail.com>
+---
+ drivers/pci/controller/pci-mvebu.c | 9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+--- a/drivers/pci/controller/pci-mvebu.c
++++ b/drivers/pci/controller/pci-mvebu.c
+@@ -1379,6 +1379,15 @@ static int mvebu_pcie_powerup(struct mve
+ 		of_property_read_u32(port->dn, "reset-delay-us",
+ 				     &reset_udelay);
+ 
++		/*
++		 * The link-up check below is only meaningful once the link has
++		 * gone down: with a link trained by the bootloader it still
++		 * reads up right after PERST# is asserted, and the card would
++		 * be enumerated while it is still coming out of reset.
++		 */
++		for (i = 0; i < 100 && mvebu_pcie_link_up(port); i++)
++			msleep(1);
++
+ 		udelay(100);
+ 
+ 		gpiod_set_value_cansleep(port->reset_gpio, 0);

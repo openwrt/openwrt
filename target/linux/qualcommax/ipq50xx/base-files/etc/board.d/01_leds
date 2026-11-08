@@ -65,6 +65,9 @@ xunison,exigo-hub-d50-5g)
 	ucidef_set_led_netdev "wan" "WAN" "green:wan" "wan" "link tx rx"
 	ucidef_set_led_netdev "internet" "Internet" "green:wan-online" "wwan0" "link"
 	;;
+zte,t5400)
+	ucidef_set_led_netdev "wan" "WAN" "white:status" "eth0" "link"
+	;;
 esac
 
 board_config_flush

@@ -88,7 +88,7 @@ define KernelPackage/industrialio-buffer-cb
   TITLE:=Provides callback buffer used for push in-kernel interfaces
   KCONFIG:=CONFIG_IIO_BUFFER_CB
   FILES:=$(LINUX_DIR)/drivers/iio/buffer/industrialio-buffer-cb.ko
-  AUTOLOAD:=$(call AutoLoad,55,industrialio-triggered-buffer-cb)
+  AUTOLOAD:=$(call AutoLoad,55,industrialio-buffer-cb)
   $(call AddDepends/iio)
 endef
 
@@ -135,7 +135,6 @@ define KernelPackage/iio-ad799x
   DEPENDS:=+kmod-i2c-core +kmod-industrialio-triggered-buffer
   TITLE:=Analog Devices AD799x ADC driver
   KCONFIG:= \
-	CONFIG_AD799X_RING_BUFFER=y \
 	CONFIG_AD799X
   FILES:=$(LINUX_DIR)/drivers/iio/adc/ad799x.ko
   AUTOLOAD:=$(call AutoLoad,56,ad799x)
@@ -186,7 +185,7 @@ define KernelPackage/iio-hmc5843
   FILES:= \
       $(LINUX_DIR)/drivers/iio/magnetometer/hmc5843_i2c.ko \
       $(LINUX_DIR)/drivers/iio/magnetometer/hmc5843_core.ko
-  AUTOLOAD:=$(call AutoLoad,56,hmc5843)
+  AUTOLOAD:=$(call AutoLoad,56,hmc5843_i2c)
   $(call AddDepends/iio)
 endef
 
@@ -259,7 +258,7 @@ $(eval $(call KernelPackage,iio-dht11))
 
 define KernelPackage/iio-bme680
   TITLE:=BME680 gas/humidity/pressure/temperature sensor
-  DEPENDS:=+kmod-regmap-core +!LINUX_6_12:kmod-industrialio-triggered-buffer
+  DEPENDS:=+kmod-regmap-core +kmod-industrialio-triggered-buffer
   KCONFIG:=CONFIG_BME680
   FILES:=$(LINUX_DIR)/drivers/iio/chemical/bme680_core.ko
   $(call AddDepends/iio)
@@ -594,7 +593,7 @@ define KernelPackage/iio-fxas21002c
   DEPENDS:=+kmod-regmap-core +kmod-industrialio-triggered-buffer
   KCONFIG:= CONFIG_FXAS21002C
   FILES:=$(LINUX_DIR)/drivers/iio/gyro/fxas21002c_core.ko
-  AUTOLOAD:=$(call AutoLoad,56,fxas21002c)
+  AUTOLOAD:=$(call AutoLoad,56,fxas21002c_core)
   $(call AddDepends/iio)
 endef
 
@@ -644,7 +643,7 @@ define KernelPackage/iio-fxos8700
   DEPENDS:=+kmod-regmap-core
   KCONFIG:= CONFIG_FXOS8700
   FILES:=$(LINUX_DIR)/drivers/iio/imu/fxos8700_core.ko
-  AUTOLOAD:=$(call AutoLoad,56,fxos8700)
+  AUTOLOAD:=$(call AutoLoad,56,fxos8700_core)
   $(call AddDepends/iio)
 endef
 

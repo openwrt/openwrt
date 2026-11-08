@@ -4,6 +4,7 @@
  * Copyright (c) 2023-2024, Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
+#include <linux/bitfield.h>
 #include <linux/clk.h>
 #include <linux/ethtool.h>
 #include <linux/hash.h>
@@ -19,7 +20,10 @@
 #include <linux/of_platform.h>
 #include <linux/property.h>
 #include <linux/regmap.h>
+#include <linux/unaligned.h>
 #include <linux/reset.h>
+#include <net/dsa.h>
+#include <net/dst_metadata.h>
 #include <net/netdev_queues.h>
 
 #include "qca_edma.h"
@@ -243,6 +247,27 @@ static void edma_tx_ring_free(struct edma_queue *q, struct edma_ring *ring,
 	edma_ring_free(priv, ring, desc_size);
 }
 
+/* The ring index registers are accessed per frame and per poll, which the
+ * register map's checks would cost more than the access itself.
+ */
+/* The rings are uncached, so both words of a descriptor, the address and the
+ * status, are read in one access.
+ */
+static u64 edma_desc_read(const void *desc)
+{
+	return le64_to_cpu(READ_ONCE(*(const __le64 *)desc));
+}
+
+static u32 edma_idx_read(struct edma_priv *priv, u32 reg)
+{
+	return readl(priv->base + reg);
+}
+
+static void edma_idx_write(struct edma_priv *priv, u32 reg, u32 val)
+{
+	writel(val, priv->base + reg);
+}
+
 static int edma_rx_fill(struct edma_queue *q)
 {
 	struct edma_ring *rxfill_ring = &q->rxfill_ring;
@@ -253,15 +278,10 @@ static int edma_rx_fill(struct edma_queue *q)
 	struct page *page;
 	u16 filled = 0;
 	dma_addr_t dma;
-	u32 val;
 
-	regmap_read(priv->regmap, EDMA_REG_RXFILL_PROD_IDX(q->rxfill),
-		    &val);
-	prod = val & EDMA_RXFILL_PROD_IDX_MASK & (rxfill_ring->count - 1);
-
-	regmap_read(priv->regmap, EDMA_REG_RXFILL_CONS_IDX(q->rxfill),
-		    &val);
-	cons = val & EDMA_RXFILL_CONS_IDX_MASK & (rxfill_ring->count - 1);
+	prod = q->rxfill_prod;
+	cons = edma_idx_read(priv, EDMA_REG_RXFILL_CONS_IDX(q->rxfill)) &
+	       EDMA_RXFILL_CONS_IDX_MASK & (rxfill_ring->count - 1);
 
 	while (1) {
 		next = prod + 1;
@@ -295,10 +315,9 @@ static int edma_rx_fill(struct edma_queue *q)
 	}
 
 	if (filled) {
-		wmb();
-		regmap_write(priv->regmap,
-			     EDMA_REG_RXFILL_PROD_IDX(q->rxfill),
-			     prod & EDMA_RXFILL_PROD_IDX_MASK);
+		q->rxfill_prod = prod;
+		edma_idx_write(priv, EDMA_REG_RXFILL_PROD_IDX(q->rxfill),
+			       prod & EDMA_RXFILL_PROD_IDX_MASK);
 	}
 
 	return filled;
@@ -341,17 +360,21 @@ static bool edma_rx_page_take(struct edma_queue *q, struct page *page,
  */
 static u16 edma_txdesc_free(struct edma_queue *q)
 {
-	struct edma_priv *priv = q->priv;
-	u32 prod, cons;
+	u16 prod = READ_ONCE(q->tx_prod);
+	u32 cons;
 
-	regmap_read(priv->regmap, EDMA_REG_TXDESC_PROD_IDX(q->txdesc),
-		    &prod);
-	regmap_read(priv->regmap, EDMA_REG_TXDESC_CONS_IDX(q->txdesc),
-		    &cons);
+	cons = edma_idx_read(q->priv, EDMA_REG_TXDESC_CONS_IDX(q->txdesc));
 
-	return ((cons & EDMA_TXDESC_CONS_IDX_MASK) -
-		(prod & EDMA_TXDESC_PROD_IDX_MASK) - 1) &
+	return ((cons & EDMA_TXDESC_CONS_IDX_MASK) - prod - 1) &
 	       (q->txdesc_ring.count - 1);
+}
+
+/* Hands the engine every descriptor placed since the last kick. */
+static void edma_tx_kick(struct edma_queue *q)
+{
+	edma_idx_write(q->priv, EDMA_REG_TXDESC_PROD_IDX(q->txdesc),
+		       q->tx_prod & EDMA_TXDESC_PROD_IDX_MASK);
+	q->tx_kick = false;
 }
 
 /* Unmaps every descriptor the frame was written from and releases the slots
@@ -404,52 +427,41 @@ static u32 edma_clean_tx(struct edma_queue *q, int budget, int napi_budget)
 	const struct edma_soc_data *soc = priv->soc;
 	struct platform_device *pdev = priv->pdev;
 	u32 cleaned = 0, pkts = 0, bytes = 0;
-	struct edma_txcmpl *txcmpl;
 	struct sk_buff *skb;
 	u16 prod, cons;
-	u32 val;
 
-	regmap_read(priv->regmap,
-		    EDMA_REG_TXCMPL_PROD_IDX(soc->txcmpl_base,
-					     q->txcmpl),
-		    &val);
-	prod = val & EDMA_TXCMPL_PROD_IDX_MASK;
-
-	regmap_read(priv->regmap,
-		    EDMA_REG_TXCMPL_CONS_IDX(soc->txcmpl_base,
-					     q->txcmpl),
-		    &val);
-	cons = val & EDMA_TXCMPL_CONS_IDX_MASK;
+	prod = edma_idx_read(priv, EDMA_REG_TXCMPL_PROD_IDX(soc->txcmpl_base,
+							    q->txcmpl)) &
+	       EDMA_TXCMPL_PROD_IDX_MASK;
+	cons = q->txcmpl_cons;
 
 	while (cons != prod && cleaned < budget) {
-		txcmpl = EDMA_TXCMPL_DESC(txcmpl_ring, cons);
+		u64 desc = edma_desc_read(EDMA_TXCMPL_DESC(txcmpl_ring, cons));
+		u32 status = upper_32_bits(desc);
 
-		if (unlikely(txcmpl->status & EDMA_TXCMPL_ERROR)) {
+		if (unlikely(status & EDMA_TXCMPL_ERROR)) {
 			dev_warn_ratelimited(&pdev->dev, "tx error %#x\n",
-					     txcmpl->status);
+					     status);
 			q->stats.tx_desc_error++;
 			DEV_STATS_INC(priv->netdev, tx_errors);
 		}
 
-		/* A frame is named by the first completion of its run and
-		 * released on the one that clears the more bit; the opaque of
-		 * the completions in between is not written.
-		 */
-		/* The opaque is only written for the descriptor that carried
-		 * the preheader, so it is read once per run and not again if
-		 * the run turns out to name no frame: a later completion of
-		 * the same run would otherwise hand back whatever its field
-		 * held and name a frame the engine still owns.
+		/* The engine writes the opaque only into the completion of
+		 * the descriptor that carried the preheader, so a run is named
+		 * once, by its first completion, and released on the one that
+		 * clears the more bit. A later completion of the run would hand
+		 * back whatever its field held and name a frame the engine
+		 * still owns.
 		 */
 		if (!q->txcmpl_run) {
 			q->txcmpl_run = true;
-			q->txcmpl_idx = txcmpl->buffer_addr;
+			q->txcmpl_idx = lower_32_bits(desc);
 			if (q->txcmpl_idx < q->txdesc_ring.count)
 				q->txcmpl_skb =
 					q->txdesc_ring.skb_store[q->txcmpl_idx];
 		}
 
-		if (!(txcmpl->status & EDMA_TXCMPL_MORE)) {
+		if (!(status & EDMA_TXCMPL_MORE)) {
 			skb = q->txcmpl_skb;
 			q->txcmpl_skb = NULL;
 			q->txcmpl_run = false;
@@ -457,7 +469,7 @@ static u32 edma_clean_tx(struct edma_queue *q, int budget, int napi_budget)
 			if (unlikely(!skb)) {
 				dev_warn(&pdev->dev,
 					 "invalid skb: cons:%u prod:%u status %x\n",
-					 cons, prod, txcmpl->status);
+					 cons, prod, status);
 				q->stats.tx_unnamed_frame++;
 			} else {
 				bytes += edma_tx_release(q, q->txcmpl_idx, skb,
@@ -482,12 +494,9 @@ static u32 edma_clean_tx(struct edma_queue *q, int budget, int napi_budget)
 				   pkts, bytes, edma_txdesc_free(q),
 				   EDMA_TX_RING_THRESH, !napi_budget);
 
-	/* Ensure all TX completions are processed before updating cons idx */
-	wmb();
-	regmap_write(priv->regmap,
-		     EDMA_REG_TXCMPL_CONS_IDX(soc->txcmpl_base,
-					      q->txcmpl),
-		     cons);
+	q->txcmpl_cons = cons;
+	edma_idx_write(priv, EDMA_REG_TXCMPL_CONS_IDX(soc->txcmpl_base,
+						      q->txcmpl), cons);
 
 	return cleaned;
 }
@@ -542,8 +551,9 @@ static void edma_rx_csum(struct net_device *netdev, struct sk_buff *skb,
 	    l4_off > skb_headlen(skb) + l2_len)
 		return;
 
-	/* The sum ends with the IP packet, and the stack subtracts the padding
-	 * it trims behind it.
+	/* The engine's sum stops at the end of the IP packet, while the stack
+	 * subtracts any padding it trims from skb->csum, so a padded frame is
+	 * left to software.
 	 */
 	l3 = skb->data + l3_off - l2_len;
 	if (pid & EDMA_RXDESC_PID_IPV6)
@@ -603,39 +613,119 @@ static void edma_rx_vlan(struct net_device *netdev, struct sk_buff *skb,
 		__vlan_hwaccel_put_tag(skb, htons(ETH_P_8021Q), tci);
 }
 
+/* The switch routed the frame to the CPU port on a flow it holds, with no
+ * exception: its driver may own the egress and send it on unchanged.
+ */
+static bool edma_rx_flow(struct net_device *netdev, struct sk_buff *skb,
+			 const struct edma_rx_preheader *rxph)
+{
+	u32 pre2 = le32_to_cpu(rxph->rx_pre2);
+	struct edma_priv *priv = netdev_priv(netdev);
+	const struct qca_edma_switch_ops *ops;
+
+	if (((pre2 >> EDMA_RXPH_HASH_FLAG_SHIFT) & EDMA_RXPH_HASH_FLAG_MASK) !=
+	    EDMA_RXPH_HASH_FLOW ||
+	    le16_to_cpu(rxph->dst_info) != EDMA_PREHDR_DSTINFO_PORTID_IND << 8 ||
+	    FIELD_GET(EDMA_RXPH_CPU_CODE, le32_to_cpu(rxph->rx_pre4)))
+		return false;
+
+	ops = READ_ONCE(priv->sw_ops);
+	if (!ops || !ops->flow_xmit)
+		return false;
+
+	skb->dev = netdev;
+	return ops->flow_xmit(READ_ONCE(priv->sw_ds), skb,
+			      pre2 & EDMA_RXPH_HASH_MASK);
+}
+
+/* A frame the switch trapped to the CPU is the bridge's to forward, so it
+ * goes through the tagger, which leaves it unmarked: it gets the header the
+ * QCA tagger reads its source port from, right behind the addresses, and
+ * skb->data where the tagger expects it, past that header. The tagger pulls
+ * the two bytes there out of a complete checksum, which covered none of
+ * them, so a frame with one is left to software.
+ */
+static bool edma_rx_tag(struct sk_buff *skb, u32 src_port)
+{
+	__be16 *hdr;
+
+	if (unlikely(skb_headroom(skb) < ETH_HLEN + QCA_HDR_LEN))
+		return false;
+
+	if (skb->ip_summed == CHECKSUM_COMPLETE)
+		skb->ip_summed = CHECKSUM_NONE;
+
+	__skb_push(skb, ETH_HLEN + QCA_HDR_LEN);
+	memmove(skb->data, skb->data + QCA_HDR_LEN, 2 * ETH_ALEN);
+	hdr = (__be16 *)(skb->data + 2 * ETH_ALEN);
+	*hdr = htons(FIELD_PREP(QCA_HDR_RECV_VERSION, QCA_HDR_VERSION) |
+		     FIELD_PREP(QCA_HDR_RECV_TYPE, QCA_HDR_RECV_TYPE_NORMAL) |
+		     FIELD_PREP(QCA_HDR_RECV_SOURCE_PORT, src_port));
+	skb_reset_mac_header(skb);
+	__skb_pull(skb, ETH_HLEN);
+
+	return true;
+}
+
+/* Reads a descriptor and hands its frame's lines to the CPU. The preheader
+ * and the headers behind it are prefetched, which the caller does one frame
+ * ahead so that they arrive while the frame before is processed.
+ */
+static void edma_rx_peek(struct edma_queue *q, u16 idx, u32 *addr, u32 *status)
+{
+	u64 desc = edma_desc_read(EDMA_RXDESC_DESC(&q->rxdesc_ring, idx));
+	void *rxph;
+
+	*addr = lower_32_bits(desc);
+	*status = upper_32_bits(desc);
+	rxph = phys_to_virt(*addr);
+	page_pool_dma_sync_for_cpu(q->page_pool, virt_to_head_page(rxph), 0,
+				   min_t(u32, EDMA_RX_PREHDR_SIZE +
+					 (*status & EDMA_RXDESC_PACKET_LEN_MASK),
+					 q->priv->rx_frame_len));
+	prefetch(rxph);
+	prefetch(rxph + L1_CACHE_BYTES);
+}
+
 static u32 edma_clean_rx(struct edma_queue *q, int budget)
 {
 	struct edma_ring *rxdesc_ring = &q->rxdesc_ring;
 	struct edma_priv *priv = q->priv;
 	struct net_device *netdev = priv->netdev;
 	struct platform_device *pdev = priv->pdev;
-	struct dsa_oob_tag_info *tag_info;
 	struct edma_rx_preheader *rxph;
-	struct edma_rxdesc *rxdesc;
+	u32 next_addr, next_status;
 	unsigned char *frame;
+	bool ahead = false;
 	struct sk_buff *skb;
 	u16 prod, cons;
 	struct page *page;
 	u32 done = 0;
 	u32 src_port;
 	int pkt_len;
-	u32 val;
 
-	regmap_read(priv->regmap, EDMA_REG_RXDESC_PROD_IDX(q->rxdesc),
-		    &val);
-	prod = val & EDMA_RXDESC_PROD_IDX_MASK;
-
-	regmap_read(priv->regmap, EDMA_REG_RXDESC_CONS_IDX(q->rxdesc),
-		    &val);
-	cons = val & EDMA_RXDESC_CONS_IDX_MASK;
+	prod = edma_idx_read(priv, EDMA_REG_RXDESC_PROD_IDX(q->rxdesc)) &
+	       EDMA_RXDESC_PROD_IDX_MASK;
+	cons = q->rxdesc_cons;
 
 	while (cons != prod && done < budget) {
 		u32 desc_addr, desc_status;
+		u16 next = cons + 1;
 		u32 store_idx;
 
-		rxdesc = EDMA_RXDESC_DESC(rxdesc_ring, cons);
-		desc_addr = le32_to_cpu(rxdesc->buffer_addr);
-		desc_status = le32_to_cpu(rxdesc->status);
+		if (ahead) {
+			desc_addr = next_addr;
+			desc_status = next_status;
+		} else {
+			edma_rx_peek(q, cons, &desc_addr, &desc_status);
+		}
+
+		if (next == rxdesc_ring->count)
+			next = 0;
+		ahead = next != prod && done + 1 < budget;
+		if (ahead)
+			edma_rx_peek(q, next, &next_addr, &next_status);
+
 		rxph = phys_to_virt(desc_addr);
 		page = virt_to_head_page(rxph);
 
@@ -644,12 +734,16 @@ static u32 edma_clean_rx(struct edma_queue *q, int budget)
 		if (unlikely(desc_status & EDMA_RXDESC_MORE))
 			q->stats.rx_split_frame++;
 
-		page_pool_dma_sync_for_cpu(q->page_pool, page, 0,
-					   EDMA_RX_PREHDR_SIZE + pkt_len);
 		store_idx = le32_to_cpu(rxph->opaque);
 		if (unlikely(!edma_rx_page_take(q, page, store_idx))) {
 			q->stats.rx_untracked_page++;
 			DEV_STATS_INC(netdev, rx_errors);
+			goto next;
+		}
+
+		if (unlikely(EDMA_RX_PREHDR_SIZE + pkt_len > priv->rx_frame_len)) {
+			page_pool_put_full_page(q->page_pool, page, true);
+			DEV_STATS_INC(netdev, rx_length_errors);
 			goto next;
 		}
 
@@ -680,22 +774,37 @@ static u32 edma_clean_rx(struct edma_queue *q, int budget)
 		skb_reserve(skb, NET_SKB_PAD + EDMA_RX_PREHDR_SIZE);
 		skb_put(skb, pkt_len);
 
+		/* A frame handed to a multiqueue shaper picks its queue by
+		 * the ring, so each ring's CPU feeds a queue of its own.
+		 */
+		skb_record_rx_queue(skb, q->idx);
+		if (edma_rx_flow(netdev, skb, rxph)) {
+			dev_sw_netstats_rx_add(netdev, pkt_len);
+			goto next;
+		}
+
 		edma_rx_vlan(netdev, skb, rxph);
 		frame = skb->data;
-		skb_record_rx_queue(skb, q->idx);
 		skb->protocol = eth_type_trans(skb, priv->netdev);
 		edma_rx_csum(netdev, skb, rxph, desc_status,
 			     skb->data - frame);
 		edma_rx_hash(netdev, skb, rxph);
 
-		tag_info = skb_ext_add(skb, SKB_EXT_DSA_OOB);
-		if (unlikely(!tag_info)) {
-			dev_kfree_skb_any(skb);
-			q->stats.rx_no_tag++;
-			DEV_STATS_INC(netdev, rx_dropped);
-			goto next;
+		/* A forwarded frame names its port in a metadata dst, which
+		 * DSA reads without a tagger; a trapped one carries a tag.
+		 */
+		if (src_port < EDMA_PORTS && netdev_uses_dsa(netdev)) {
+			if (!FIELD_GET(EDMA_RXPH_CPU_CODE,
+				       le32_to_cpu(rxph->rx_pre4))) {
+				skb_dst_set_noref(skb,
+						  &priv->port_md[src_port]->dst);
+			} else if (unlikely(!edma_rx_tag(skb, src_port))) {
+				dev_kfree_skb_any(skb);
+				q->stats.rx_no_tag++;
+				DEV_STATS_INC(netdev, rx_dropped);
+				goto next;
+			}
 		}
-		tag_info->port = src_port;
 
 		dev_sw_netstats_rx_add(priv->netdev, pkt_len);
 		napi_gro_receive(&q->napi, skb);
@@ -709,10 +818,10 @@ next:
 
 	edma_rx_fill(q);
 
-	wmb();
-	regmap_write(priv->regmap,
-		     EDMA_REG_RXDESC_CONS_IDX(q->rxdesc),
-		     cons);
+	if (done) {
+		q->rxdesc_cons = cons;
+		edma_idx_write(priv, EDMA_REG_RXDESC_CONS_IDX(q->rxdesc), cons);
+	}
 	return done;
 }
 
@@ -726,7 +835,6 @@ static int edma_napi(struct napi_struct *napi, int budget)
 	const struct edma_soc_data *soc = priv->soc;
 	u32 tx, rx, fill;
 	u16 prod, cons;
-	u32 val;
 	int done;
 
 	edma_clean_tx(q, budget, budget);
@@ -734,17 +842,16 @@ static int edma_napi(struct napi_struct *napi, int budget)
 	if (done >= budget)
 		return budget;
 
-	regmap_read(priv->regmap,
-		    EDMA_REG_TX_INT_STAT(soc->tx_int_base, q->txcmpl), &tx);
-	regmap_read(priv->regmap, EDMA_REG_RXDESC_INT_STAT(q->rxdesc), &rx);
-	regmap_read(priv->regmap, EDMA_REG_RXFILL_INT_STAT(q->rxfill), &fill);
+	tx = edma_idx_read(priv, EDMA_REG_TX_INT_STAT(soc->tx_int_base,
+						      q->txcmpl));
+	rx = edma_idx_read(priv, EDMA_REG_RXDESC_INT_STAT(q->rxdesc));
+	fill = edma_idx_read(priv, EDMA_REG_RXFILL_INT_STAT(q->rxfill));
 	if (tx || rx || fill)
 		return budget;
 
-	regmap_read(priv->regmap, EDMA_REG_RXFILL_PROD_IDX(q->rxfill), &val);
-	prod = val & (q->rxfill_ring.count - 1);
-	regmap_read(priv->regmap, EDMA_REG_RXFILL_CONS_IDX(q->rxfill), &val);
-	cons = val & (q->rxfill_ring.count - 1);
+	prod = q->rxfill_prod;
+	cons = edma_idx_read(priv, EDMA_REG_RXFILL_CONS_IDX(q->rxfill)) &
+	       (q->rxfill_ring.count - 1);
 	if (prod == cons) {
 		dev_warn_ratelimited(&priv->pdev->dev, "RXFILL ring starved\n");
 		q->stats.rx_fill_starved++;
@@ -821,8 +928,13 @@ static u16 edma_tx_ndesc(const struct sk_buff *skb)
 	const struct sk_buff *seg;
 	u16 n = skb_shinfo(skb)->nr_frags + 1;
 
-	skb_walk_frags(skb, seg)
+	/* Each segment misses twice, on the skb and on its shared info, so
+	 * the next one is fetched meanwhile.
+	 */
+	skb_walk_frags(skb, seg) {
+		prefetch(seg->next);
 		n += !!skb_headlen(seg) + skb_shinfo(seg)->nr_frags;
+	}
 
 	return n;
 }
@@ -848,8 +960,12 @@ static bool edma_tx_map(struct device *dev, struct edma_ring *ring,
 	return true;
 }
 
+/* @dst_info names the switch port the frame leaves by, zero for the switch
+ * to forward it; @tagged says the frame carries the QCA tag that named it,
+ * which comes off once the frame is sure to be taken.
+ */
 static netdev_tx_t edma_ring_xmit(struct edma_queue *q, struct net_device *netdev,
-				  struct sk_buff *skb)
+				  struct sk_buff *skb, u16 dst_info, bool tagged)
 {
 	struct netdev_queue *txq = netdev_get_tx_queue(netdev, q->idx);
 	const struct skb_shared_info *shinfo = skb_shinfo(skb);
@@ -858,27 +974,28 @@ static netdev_tx_t edma_ring_xmit(struct edma_queue *q, struct net_device *netde
 	struct device *dev = &priv->pdev->dev;
 	u16 mask = txdesc_ring->count - 1;
 	struct edma_tx_preheader *txph;
-	struct dsa_oob_tag_info *tag_info;
 	u16 ndesc = edma_tx_ndesc(skb);
 	struct edma_txdesc *txdesc;
-	u16 prod, cons, dst_info, n;
-	u32 val, idx, i, len, bytes, tso;
+	u16 prod, cons, n;
+	u32 idx, i, len, bytes, tso;
 	struct sk_buff *seg;
 	dma_addr_t head_dma;
 	bool taken = false;
+	bool stop;
 	__be16 proto;
 
 	spin_lock_bh(&q->tx_lock);
 
-	regmap_read(priv->regmap,
-		    EDMA_REG_TXDESC_PROD_IDX(q->txdesc),
-		    &val);
-	prod = val & EDMA_TXDESC_PROD_IDX_MASK;
-
-	regmap_read(priv->regmap,
-		    EDMA_REG_TXDESC_CONS_IDX(q->txdesc),
-		    &val);
-	cons = val & EDMA_TXDESC_CONS_IDX_MASK;
+	/* The stop below is decided on the cached index too, so it is read
+	 * again before it could stop the queue on room the engine has freed.
+	 */
+	prod = q->tx_prod;
+	cons = q->tx_cons;
+	if (((cons - prod - 1) & mask) < EDMA_TX_RING_THRESH + ndesc) {
+		cons = edma_idx_read(priv, EDMA_REG_TXDESC_CONS_IDX(q->txdesc)) &
+		       EDMA_TXDESC_CONS_IDX_MASK;
+		q->tx_cons = cons;
+	}
 
 	idx = prod & mask;
 
@@ -896,6 +1013,12 @@ static netdev_tx_t edma_ring_xmit(struct edma_queue *q, struct net_device *netde
 	if (taken || ((cons - prod - 1) & mask) < ndesc)
 		goto busy;
 
+	if (tagged) {
+		memmove(skb->data + QCA_HDR_LEN, skb->data, 2 * ETH_ALEN);
+		__skb_pull(skb, QCA_HDR_LEN);
+		skb_reset_mac_header(skb);
+	}
+
 	len = skb_headlen(skb);
 	bytes = skb->len;
 
@@ -903,13 +1026,6 @@ static netdev_tx_t edma_ring_xmit(struct edma_queue *q, struct net_device *netde
 	 * taken while that still points at the MAC header.
 	 */
 	proto = vlan_get_protocol(skb);
-
-	tag_info = skb_ext_find(skb, SKB_EXT_DSA_OOB);
-	if (tag_info)
-		dst_info = (EDMA_DST_PORT_TYPE << 8) |
-			   (tag_info->port & EDMA_DST_PORT_ID_MASK);
-	else
-		dst_info = 0;
 
 	txph = (struct edma_tx_preheader *)skb_push(skb, EDMA_TX_PREHDR_SIZE);
 	memset((void *)txph, 0, EDMA_TX_PREHDR_SIZE);
@@ -962,15 +1078,18 @@ static netdev_tx_t edma_ring_xmit(struct edma_queue *q, struct net_device *netde
 	} while (seg);
 
 	prod = (prod + ndesc) & mask;
+	WRITE_ONCE(q->tx_prod, prod);
+	stop = ((cons - prod - 1) & mask) < EDMA_TX_RING_THRESH;
 
 	dev_sw_netstats_tx_add(netdev, 1, bytes);
-	netdev_tx_sent_queue(txq, bytes);
 
-	/* Ensure descriptor writes are visible before updating prod idx */
-	wmb();
-	regmap_write(priv->regmap,
-		     EDMA_REG_TXDESC_PROD_IDX(q->txdesc),
-		     prod & EDMA_TXDESC_PROD_IDX_MASK);
+	/* A queue about to stop gets its frames now: nothing after the stop
+	 * would hand them over.
+	 */
+	if (__netdev_tx_sent_queue(txq, bytes, netdev_xmit_more() && !stop))
+		edma_tx_kick(q);
+	else
+		q->tx_kick = true;
 
 	/* The queue is rechecked against the hardware once it is stopped: a
 	 * completion that drains the ring between the descriptor going out and
@@ -979,7 +1098,7 @@ static netdev_tx_t edma_ring_xmit(struct edma_queue *q, struct net_device *netde
 	 * placed from decide whether to stop at all, since a consumer index
 	 * only ages into reporting less room than the ring has.
 	 */
-	if (((cons - prod - 1) & mask) < EDMA_TX_RING_THRESH)
+	if (stop)
 		netif_txq_try_stop(txq, edma_txdesc_free(q),
 				   EDMA_TX_RING_THRESH);
 
@@ -1001,10 +1120,15 @@ unmap:
 	txdesc_ring->skb_store[idx] = NULL;
 drop:
 	dev_kfree_skb_any(skb);
+	if (q->tx_kick)
+		edma_tx_kick(q);
 	spin_unlock_bh(&q->tx_lock);
 	return NETDEV_TX_OK;
 
 busy:
+	if (q->tx_kick)
+		edma_tx_kick(q);
+
 	/* A refusal stops the queue here rather than in the caller, so that the
 	 * recheck happens against the state this refusal was decided on: a
 	 * completion that drains the ring once the lock is dropped would
@@ -1085,22 +1209,27 @@ static void edma_queue_rings_drain(struct edma_queue *q)
 {
 	struct edma_priv *priv = q->priv;
 
-	edma_clean_tx(q, INT_MAX, 0);
-	q->txcmpl_skb = NULL;
-	q->txcmpl_run = false;
-
 	edma_tx_ring_free(q, &q->txdesc_ring, sizeof(struct edma_txdesc));
 	edma_ring_free(priv, &q->txcmpl_ring, sizeof(struct edma_txcmpl));
 	edma_rx_ring_free(q, &q->rxfill_ring, sizeof(struct edma_rxfill_desc));
 	edma_ring_free(priv, &q->rxdesc_ring, sizeof(struct edma_rxdesc));
 }
 
+/* Completions are only walked on rings the engine ran: a set that fails to
+ * come up behind a reset has indices from the configuration before it.
+ */
 static void edma_rings_drain(struct edma_priv *priv)
 {
 	unsigned int i;
 
-	for (i = 0; i < priv->num_queues; i++)
-		edma_queue_rings_drain(&priv->q[i]);
+	for (i = 0; i < priv->num_queues; i++) {
+		struct edma_queue *q = &priv->q[i];
+
+		edma_clean_tx(q, INT_MAX, 0);
+		q->txcmpl_skb = NULL;
+		q->txcmpl_run = false;
+		edma_queue_rings_drain(q);
+	}
 }
 
 static int edma_rings_alloc(struct edma_priv *priv)
@@ -1140,6 +1269,12 @@ static void edma_configure_txdesc_ring(struct edma_queue *q)
 	regmap_update_bits(priv->regmap,
 			   EDMA_REG_TXDESC_PROD_IDX(q->txdesc),
 			   EDMA_TXDESC_PROD_IDX_MASK, val);
+
+	q->tx_prod = edma_idx_read(priv, EDMA_REG_TXDESC_PROD_IDX(q->txdesc)) &
+		     EDMA_TXDESC_PROD_IDX_MASK;
+	q->tx_cons = edma_idx_read(priv, EDMA_REG_TXDESC_CONS_IDX(q->txdesc)) &
+		     EDMA_TXDESC_CONS_IDX_MASK;
+	q->tx_kick = false;
 }
 
 static void edma_configure_txcmpl_ring(struct edma_queue *q)
@@ -1175,6 +1310,11 @@ static void edma_configure_txcmpl_ring(struct edma_queue *q)
 		     EDMA_REG_TX_INT_CTRL(soc->tx_int_base,
 					  q->txcmpl),
 		     0x2);
+
+	q->txcmpl_cons = edma_idx_read(priv,
+				       EDMA_REG_TXCMPL_CONS_IDX(soc->txcmpl_base,
+								q->txcmpl)) &
+			 EDMA_TXCMPL_CONS_IDX_MASK;
 }
 
 static void edma_configure_rxdesc_ring(struct edma_queue *q)
@@ -1205,6 +1345,9 @@ static void edma_configure_rxdesc_ring(struct edma_queue *q)
 	regmap_write(priv->regmap,
 		     EDMA_REG_RX_INT_CTRL(q->rxdesc),
 		     0x2);
+
+	q->rxdesc_cons = edma_idx_read(priv, EDMA_REG_RXDESC_CONS_IDX(q->rxdesc)) &
+			 EDMA_RXDESC_CONS_IDX_MASK;
 }
 
 static void edma_configure_rxfill_ring(struct edma_queue *q)
@@ -1220,6 +1363,8 @@ static void edma_configure_rxfill_ring(struct edma_queue *q)
 		     EDMA_REG_RXFILL_RING_SIZE(q->rxfill),
 		     rxfill_ring->count & EDMA_RXFILL_RING_SIZE_MASK);
 
+	q->rxfill_prod = edma_idx_read(priv, EDMA_REG_RXFILL_PROD_IDX(q->rxfill)) &
+			 EDMA_RXFILL_PROD_IDX_MASK & (rxfill_ring->count - 1);
 	edma_rx_fill(q);
 }
 
@@ -1387,7 +1532,7 @@ static void edma_get_ringparam(struct net_device *netdev,
 	ring->rx_pending = priv->rx_ring_size;
 }
 
-static int edma_reconfigure(struct edma_priv *priv, u8 order, unsigned int nq,
+static int edma_reconfigure(struct edma_priv *priv, int mtu, unsigned int nq,
 			    u16 tx_size, u16 rx_size);
 
 /* The core has already held the request to what get_ringparam calls the
@@ -1418,7 +1563,7 @@ static int edma_set_ringparam(struct net_device *netdev,
 	    ring->rx_pending == priv->rx_ring_size)
 		return 0;
 
-	return edma_reconfigure(priv, priv->rx_page_order, priv->num_queues,
+	return edma_reconfigure(priv, netdev->mtu, priv->num_queues,
 				ring->tx_pending, ring->rx_pending);
 }
 
@@ -1431,7 +1576,7 @@ static int edma_reset(struct net_device *netdev, u32 *flags)
 	if (!(*flags & ETH_RESET_DMA))
 		return -EINVAL;
 
-	ret = edma_reconfigure(priv, priv->rx_page_order, priv->num_queues,
+	ret = edma_reconfigure(priv, netdev->mtu, priv->num_queues,
 			       priv->tx_ring_size, priv->rx_ring_size);
 	if (!ret)
 		*flags &= ~ETH_RESET_DMA;
@@ -1674,7 +1819,7 @@ static int edma_set_channels(struct net_device *netdev,
 	if (ch->combined_count == priv->num_queues)
 		return 0;
 
-	return edma_reconfigure(priv, priv->rx_page_order, ch->combined_count,
+	return edma_reconfigure(priv, netdev->mtu, ch->combined_count,
 				priv->tx_ring_size, priv->rx_ring_size);
 }
 
@@ -1778,15 +1923,6 @@ static int edma_ndo_open(struct net_device *netdev)
 		netdev_tx_reset_queue(netdev_get_tx_queue(netdev, i));
 		napi_enable(&q->napi);
 	}
-	/* A NAPI thread is named after its NAPI ID, which a NAPI only gets once
-	 * it is enabled, and the name is what packet steering pairs a thread
-	 * with its queue by. So threading starts at the first open.
-	 */
-	if (!priv->threaded_set) {
-		priv->threaded_set = true;
-		if (dev_set_threaded(netdev, NETDEV_NAPI_THREADED_ENABLED))
-			netdev_warn(netdev, "failed to enable threaded NAPI\n");
-	}
 
 	netif_tx_start_all_queues(netdev);
 	for (i = 0; i < priv->num_queues; i++) {
@@ -1872,13 +2008,49 @@ static netdev_features_t edma_ndo_features_check(struct sk_buff *skb,
 	return vlan_features_check(skb, features);
 }
 
-static netdev_tx_t edma_ndo_xmit(struct sk_buff *skb, struct net_device *netdev)
+/* A frame refused before it reaches the ring may have been the last of a
+ * batch whose earlier frames wait for their kick.
+ */
+static void edma_tx_flush(struct edma_queue *q)
+{
+	spin_lock_bh(&q->tx_lock);
+	if (q->tx_kick)
+		edma_tx_kick(q);
+	spin_unlock_bh(&q->tx_lock);
+}
+
+/* The switch port a frame from DSA leaves by, out of the QCA tag the tagger
+ * put behind its addresses: one port, the lowest named. Zero for a frame
+ * not sent through the switch's ports, which the switch forwards itself.
+ */
+static u16 edma_tx_port(struct sk_buff *skb, struct net_device *netdev,
+			bool *tagged)
+{
+	u16 hdr, ports;
+
+	*tagged = false;
+	if (!netdev_uses_dsa(netdev) || skb_headlen(skb) < ETH_HLEN + QCA_HDR_LEN)
+		return 0;
+
+	hdr = get_unaligned_be16(skb->data + 2 * ETH_ALEN);
+	ports = FIELD_GET(QCA_HDR_XMIT_DP_BIT, hdr);
+	if (FIELD_GET(QCA_HDR_XMIT_VERSION, hdr) != QCA_HDR_VERSION ||
+	    !(hdr & QCA_HDR_XMIT_FROM_CPU) || !ports)
+		return 0;
+
+	*tagged = true;
+	return (EDMA_DST_PORT_TYPE << 8) |
+	       ((ffs(ports) - 1) & EDMA_DST_PORT_ID_MASK);
+}
+
+static netdev_tx_t edma_xmit(struct sk_buff *skb, struct net_device *netdev,
+			     u16 dst_info, bool tagged)
 {
 	struct edma_priv *priv = netdev_priv(netdev);
+	struct edma_queue *q = &priv->q[skb_get_queue_mapping(skb)];
 	const struct edma_soc_data *soc = priv->soc;
-	u32 nhead;
 
-	if (skb->len < ETH_HLEN)
+	if (skb->len < ETH_HLEN + (tagged ? QCA_HDR_LEN : 0))
 		goto drop;
 
 	if (edma_tx_needs_linearize(skb) && skb_linearize(skb))
@@ -1887,26 +2059,115 @@ static netdev_tx_t edma_ndo_xmit(struct sk_buff *skb, struct net_device *netdev)
 	/* skb_padto() zero-fills the tailroom but leaves the tail where it
 	 * was, so advancing the length by hand puts skb->len past the data a
 	 * later head reallocation copies: the pad would be reallocated
-	 * uninitialised and transmitted.
+	 * uninitialised and transmitted. The tag comes off later, so it does
+	 * not count towards the size.
 	 */
-	if (skb_put_padto(skb, soc->tx_min_size)) {
+	if (skb_put_padto(skb, soc->tx_min_size + (tagged ? QCA_HDR_LEN : 0))) {
 		DEV_STATS_INC(netdev, tx_dropped);
+		edma_tx_flush(q);
 		return NETDEV_TX_OK;
 	}
 
-	nhead = netdev->needed_headroom;
-
-	if ((skb_cloned(skb) || skb_headroom(skb) < nhead) &&
-	    pskb_expand_head(skb, nhead, 0, GFP_ATOMIC))
+	/* Only the preheader is written in front of the frame, and the tag's
+	 * bytes in it, so a clone whose header is released keeps its head.
+	 */
+	if (skb_cow_head(skb, netdev->needed_headroom))
 		goto drop;
 
-	return edma_ring_xmit(&priv->q[skb_get_queue_mapping(skb)], netdev, skb);
+	return edma_ring_xmit(q, netdev, skb, dst_info, tagged);
 
 drop:
 	dev_kfree_skb_any(skb);
 	DEV_STATS_INC(netdev, tx_dropped);
+	edma_tx_flush(q);
 
 	return NETDEV_TX_OK;
+}
+
+static netdev_tx_t edma_ndo_xmit(struct sk_buff *skb, struct net_device *netdev)
+{
+	bool tagged;
+	u16 dst_info = edma_tx_port(skb, netdev, &tagged);
+
+	return edma_xmit(skb, netdev, dst_info, tagged);
+}
+
+/**
+ * qca_edma_port_xmit - send a finished frame out of a switch port
+ * @skb: the frame, untagged, on its transmit queue's mapping
+ * @conduit: the EDMA conduit
+ * @port: the switch port
+ *
+ * For the switch's driver, which knows the port without a tagger. Called
+ * with the conduit's transmit queue locked, as its ndo_start_xmit is.
+ *
+ * Return: as ndo_start_xmit; NETDEV_TX_BUSY leaves @skb untouched.
+ */
+netdev_tx_t qca_edma_port_xmit(struct sk_buff *skb, struct net_device *conduit,
+			       unsigned int port)
+{
+	return edma_xmit(skb, conduit, (EDMA_DST_PORT_TYPE << 8) |
+			 (port & EDMA_DST_PORT_ID_MASK), false);
+}
+EXPORT_SYMBOL_GPL(qca_edma_port_xmit);
+
+static const struct net_device_ops edma_netdev_ops;
+
+/**
+ * qca_edma_switch_register - bind the switch behind an EDMA conduit
+ * @conduit: the conduit
+ * @ds: the switch
+ * @ops: what it provides
+ *
+ * Return: 0, or -ENODEV when @conduit is not an EDMA netdev.
+ */
+int qca_edma_switch_register(struct net_device *conduit, struct dsa_switch *ds,
+			     const struct qca_edma_switch_ops *ops)
+{
+	struct edma_priv *priv;
+
+	if (conduit->netdev_ops != &edma_netdev_ops)
+		return -ENODEV;
+	priv = netdev_priv(conduit);
+	WRITE_ONCE(priv->sw_ds, ds);
+	WRITE_ONCE(priv->sw_ops, ops);
+
+	return 0;
+}
+EXPORT_SYMBOL_GPL(qca_edma_switch_register);
+
+/**
+ * qca_edma_switch_unregister - unbind the switch behind an EDMA conduit
+ * @conduit: the conduit
+ *
+ * Waits until no receive path still calls into the switch.
+ */
+void qca_edma_switch_unregister(struct net_device *conduit)
+{
+	struct edma_priv *priv;
+
+	if (conduit->netdev_ops != &edma_netdev_ops)
+		return;
+	priv = netdev_priv(conduit);
+	WRITE_ONCE(priv->sw_ops, NULL);
+	synchronize_net();
+	WRITE_ONCE(priv->sw_ds, NULL);
+}
+EXPORT_SYMBOL_GPL(qca_edma_switch_unregister);
+
+/* The flow engine is the switch's, so a flowtable bound to one of its user
+ * ports, which DSA hands to the conduit, goes on to the switch.
+ */
+static int edma_ndo_setup_tc(struct net_device *netdev,
+			     enum tc_setup_type type, void *type_data)
+{
+	struct dsa_port *cpu_dp = netdev->dsa_ptr;
+
+	if (type != TC_SETUP_FT || !cpu_dp || !cpu_dp->ds->ops->port_setup_tc)
+		return -EOPNOTSUPP;
+
+	return cpu_dp->ds->ops->port_setup_tc(cpu_dp->ds, cpu_dp->index, type,
+					      type_data);
 }
 
 static const struct net_device_ops edma_netdev_ops = {
@@ -1919,6 +2180,7 @@ static const struct net_device_ops edma_netdev_ops = {
 	.ndo_set_mac_address = eth_mac_addr,
 	.ndo_validate_addr = eth_validate_addr,
 	.ndo_get_stats64 = dev_get_tstats64,
+	.ndo_setup_tc = edma_ndo_setup_tc,
 };
 
 /* The first ring set's three interrupts come before the misc one, and every
@@ -1992,13 +2254,19 @@ static int edma_irq_init(struct edma_priv *priv)
 	return 0;
 }
 
+/* The longest frame the ports admit, preheader included. The page pool only
+ * syncs this much for the device, so a longer frame the PPE still redirects to
+ * the CPU may land on stale lines past it and is dropped.
+ */
+static u32 edma_rx_frame_len(int mtu)
+{
+	return EDMA_RX_PREHDR_SIZE + mtu + ETH_HLEN + 2 * VLAN_HLEN;
+}
+
 static u8 edma_rx_page_order(int mtu)
 {
-	size_t size = NET_SKB_PAD + EDMA_RX_PREHDR_SIZE + mtu + ETH_HLEN +
-		      2 * VLAN_HLEN +
-		      SKB_DATA_ALIGN(sizeof(struct skb_shared_info));
-
-	return get_order(size);
+	return get_order(NET_SKB_PAD + edma_rx_frame_len(mtu) +
+			 SKB_DATA_ALIGN(sizeof(struct skb_shared_info)));
 }
 
 static u32 edma_rx_buffer_size(u8 order)
@@ -2008,7 +2276,7 @@ static u32 edma_rx_buffer_size(u8 order)
 }
 
 static struct page_pool *edma_page_pool_create(struct edma_priv *priv,
-					       u8 order, u16 size,
+					       u8 order, u32 len, u16 size,
 					       struct napi_struct *napi)
 {
 	struct page_pool_params pp = {
@@ -2018,7 +2286,7 @@ static struct page_pool *edma_page_pool_create(struct edma_priv *priv,
 		.dev       = &priv->pdev->dev,
 		.dma_dir   = DMA_FROM_DEVICE,
 		.offset    = NET_SKB_PAD,
-		.max_len   = edma_rx_buffer_size(order),
+		.max_len   = len,
 		.flags     = PP_FLAG_DMA_MAP | PP_FLAG_DMA_SYNC_DEV,
 		.napi      = napi,
 	};
@@ -2034,14 +2302,15 @@ static void edma_page_pools_destroy(struct page_pool **pools, unsigned int n)
 		page_pool_destroy(pools[i]);
 }
 
-static int edma_page_pools_create(struct edma_priv *priv, u8 order, u16 size,
+static int edma_page_pools_create(struct edma_priv *priv, int mtu, u16 size,
 				  struct page_pool **pools, unsigned int n)
 {
 	unsigned int i;
 
 	memset(pools, 0, EDMA_MAX_QUEUES * sizeof(*pools));
 	for (i = 0; i < n; i++) {
-		pools[i] = edma_page_pool_create(priv, order, size,
+		pools[i] = edma_page_pool_create(priv, edma_rx_page_order(mtu),
+						 edma_rx_frame_len(mtu), size,
 						 &priv->q[i].napi);
 		if (IS_ERR(pools[i])) {
 			int ret = PTR_ERR(pools[i]);
@@ -2078,20 +2347,21 @@ static void edma_set_xps(struct edma_priv *priv)
  * taking them down and bringing them back - and putting the old ones back if
  * that fails, rather than leaving the conduit without a datapath.
  */
-static int edma_reconfigure(struct edma_priv *priv, u8 order, unsigned int nq,
+static int edma_reconfigure(struct edma_priv *priv, int mtu, unsigned int nq,
 			    u16 tx_size, u16 rx_size)
 {
 	struct page_pool *pools[EDMA_MAX_QUEUES];
 	struct net_device *netdev = priv->netdev;
 	unsigned int old_nq = priv->num_queues;
 	u8 old_order = priv->rx_page_order;
+	u32 old_len = priv->rx_frame_len;
 	u16 old_tx = priv->tx_ring_size;
 	u16 old_rx = priv->rx_ring_size;
 	unsigned int i;
 	bool running;
 	int ret;
 
-	ret = edma_page_pools_create(priv, order, rx_size, pools, nq);
+	ret = edma_page_pools_create(priv, mtu, rx_size, pools, nq);
 	if (ret)
 		return ret;
 
@@ -2111,8 +2381,9 @@ static int edma_reconfigure(struct edma_priv *priv, u8 order, unsigned int nq,
 
 	edma_page_pools_swap(priv, pools);
 	priv->num_queues = nq;
-	priv->rx_page_order = order;
-	priv->rx_buffer_size = edma_rx_buffer_size(order);
+	priv->rx_page_order = edma_rx_page_order(mtu);
+	priv->rx_buffer_size = edma_rx_buffer_size(priv->rx_page_order);
+	priv->rx_frame_len = edma_rx_frame_len(mtu);
 	priv->tx_ring_size = tx_size;
 	priv->rx_ring_size = rx_size;
 
@@ -2124,6 +2395,7 @@ static int edma_reconfigure(struct edma_priv *priv, u8 order, unsigned int nq,
 		priv->num_queues = old_nq;
 		priv->rx_page_order = old_order;
 		priv->rx_buffer_size = edma_rx_buffer_size(old_order);
+		priv->rx_frame_len = old_len;
 		priv->tx_ring_size = old_tx;
 		priv->rx_ring_size = old_rx;
 		edma_page_pools_destroy(pools, nq);
@@ -2155,11 +2427,10 @@ static int edma_reconfigure(struct edma_priv *priv, u8 order, unsigned int nq,
 static int edma_ndo_change_mtu(struct net_device *netdev, int new_mtu)
 {
 	struct edma_priv *priv = netdev_priv(netdev);
-	u8 order = edma_rx_page_order(new_mtu);
 	int ret = 0;
 
-	if (order != priv->rx_page_order)
-		ret = edma_reconfigure(priv, order, priv->num_queues,
+	if (edma_rx_frame_len(new_mtu) != priv->rx_frame_len)
+		ret = edma_reconfigure(priv, new_mtu, priv->num_queues,
 				       priv->tx_ring_size, priv->rx_ring_size);
 	if (!ret)
 		WRITE_ONCE(netdev->mtu, new_mtu);
@@ -2214,6 +2485,37 @@ static int edma_get_mac_address(struct net_device *netdev,
 	return -ENODEV;
 }
 
+static void edma_port_md_free(struct edma_priv *priv)
+{
+	unsigned int i;
+
+	for (i = 0; i < EDMA_PORTS; i++) {
+		if (priv->port_md[i])
+			metadata_dst_free(priv->port_md[i]);
+		priv->port_md[i] = NULL;
+	}
+}
+
+static int edma_port_md_alloc(struct edma_priv *priv)
+{
+	unsigned int i;
+
+	for (i = 0; i < EDMA_PORTS; i++) {
+		struct metadata_dst *md;
+
+		md = metadata_dst_alloc(0, METADATA_HW_PORT_MUX, GFP_KERNEL);
+		if (!md) {
+			edma_port_md_free(priv);
+			return -ENOMEM;
+		}
+
+		md->u.port_info.port_id = i;
+		priv->port_md[i] = md;
+	}
+
+	return 0;
+}
+
 static int edma_probe(struct platform_device *pdev)
 {
 	struct page_pool *pools[EDMA_MAX_QUEUES];
@@ -2264,6 +2566,7 @@ static int edma_probe(struct platform_device *pdev)
 
 	priv = netdev_priv(netdev);
 	priv->regmap = regmap;
+	priv->base = base;
 	priv->rst = rst;
 	priv->pdev = pdev;
 	priv->soc = device_get_match_data(dev);
@@ -2304,8 +2607,9 @@ static int edma_probe(struct platform_device *pdev)
 	priv->tx_ugt_thre = EDMA_COAL_FRAMES - 1;
 	priv->rx_page_order = edma_rx_page_order(netdev->mtu);
 	priv->rx_buffer_size = edma_rx_buffer_size(priv->rx_page_order);
-	ret = edma_page_pools_create(priv, priv->rx_page_order,
-				     priv->rx_ring_size, pools, nq);
+	priv->rx_frame_len = edma_rx_frame_len(netdev->mtu);
+	ret = edma_page_pools_create(priv, netdev->mtu, priv->rx_ring_size,
+				     pools, nq);
 	if (ret)
 		return ret;
 	edma_page_pools_swap(priv, pools);
@@ -2334,6 +2638,10 @@ static int edma_probe(struct platform_device *pdev)
 	for (i = 0; i < nq; i++)
 		netif_napi_add(netdev, &priv->q[i].napi, edma_napi);
 
+	ret = edma_port_md_alloc(priv);
+	if (ret)
+		goto err_md;
+
 	ret = edma_irq_init(priv);
 	if (ret)
 		goto err_irq;
@@ -2352,6 +2660,8 @@ static int edma_probe(struct platform_device *pdev)
 	return 0;
 
 err_irq:
+	edma_port_md_free(priv);
+err_md:
 	for (i = 0; i < nq; i++)
 		netif_napi_del(&priv->q[i].napi);
 	edma_hw_stop(priv);
@@ -2377,6 +2687,7 @@ static void edma_remove(struct platform_device *pdev)
 	edma_hw_stop(priv);
 	edma_rings_drain(priv);
 	edma_page_pools_destroy(pools, priv->num_queues);
+	edma_port_md_free(priv);
 }
 
 static const struct edma_soc_data ipq60xx_data = {

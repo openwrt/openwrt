@@ -1,0 +1,66 @@
+From 4389a25ec075b45de6a2e15135c7908ce9693c4e Mon Sep 17 00:00:00 2001
+From: Rosen Penev <rosenp@gmail.com>
+Date: Thu, 22 Oct 2026 14:29:41 -0700
+Subject: [PATCH] wifi: mt76: mt76x02: restart mac_work after a channel
+ change
+
+Since the channel change code moved to the core, mt76_set_channel()
+cancels phy->mac_work before calling the driver's set_channel op. The
+mt7603, mt7615 and mt7915 set_channel ops queue mac_work again, but the
+mt76x0 and mt76x2 ones do not, and they only queue it in their start
+op. After the first channel change, which happens on every interface
+up, association and scan, mt76x02_mac_work never runs again.
+
+mt76x02_mac_work calls mt76_tx_status_check() to time out frames that
+wait for a TX status report. Without it, frames whose report is lost
+stay in the wcid pktid idr until another report happens to sweep them.
+On an MT7612U station sending 25 Mbit/s of UDP, 48 such frames piled
+up within seconds. They kept their AQL airtime and their socket memory,
+and the sender blocked on a full socket send buffer for up to 30 s
+until a connection monitor probe swept them. The work also collects the
+survey, A-MPDU and EDCCA statistics and checks for MAC errors.
+
+Queue mac_work again at the end of the set_channel ops.
+
+Fixes: f4fdd7716290 ("wifi: mt76: partially move channel change code to core")
+Assisted-by: LLM
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+---
+ mt76x0/main.c     | 2 ++
+ mt76x2/pci_main.c | 2 ++
+ mt76x2/usb_main.c | 2 ++
+ 3 files changed, 6 insertions(+)
+
+--- a/mt76x0/main.c
++++ b/mt76x0/main.c
+@@ -26,6 +26,8 @@ int mt76x0_set_channel(struct mt76_phy *
+ 		tasklet_enable(&dev->dfs_pd.dfs_tasklet);
+ 	}
+ 	mt76x02_pre_tbtt_enable(dev, true);
++	ieee80211_queue_delayed_work(mt76_hw(dev), &dev->mphy.mac_work,
++				     MT_MAC_WORK_INTERVAL);
+ 
+ 	return 0;
+ }
+--- a/mt76x2/pci_main.c
++++ b/mt76x2/pci_main.c
+@@ -49,6 +49,8 @@ int mt76x2e_set_channel(struct mt76_phy
+ 
+ 	tasklet_enable(&dev->dfs_pd.dfs_tasklet);
+ 	tasklet_enable(&dev->mt76.pre_tbtt_tasklet);
++	ieee80211_queue_delayed_work(mt76_hw(dev), &dev->mphy.mac_work,
++				     MT_MAC_WORK_INTERVAL);
+ 
+ 	return 0;
+ }
+--- a/mt76x2/usb_main.c
++++ b/mt76x2/usb_main.c
+@@ -45,6 +45,8 @@ int mt76x2u_set_channel(struct mt76_phy
+ 	mt76x2_mac_resume(dev);
+ 
+ 	mt76x02_pre_tbtt_enable(dev, true);
++	ieee80211_queue_delayed_work(mt76_hw(dev), &dev->mphy.mac_work,
++				     MT_MAC_WORK_INTERVAL);
+ 
+ 	return err;
+ }

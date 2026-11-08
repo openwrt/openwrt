@@ -26,7 +26,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 
 --- a/drivers/net/phy/aquantia/aquantia_main.c
 +++ b/drivers/net/phy/aquantia/aquantia_main.c
-@@ -1001,6 +1001,95 @@ static int aqr_gen2_read_global_syscfg(s
+@@ -1004,6 +1004,95 @@ static int aqr_gen2_read_global_syscfg(s
  	return 0;
  }
  
@@ -122,7 +122,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  static int aqr_gen2_fill_interface_modes(struct phy_device *phydev)
  {
  	unsigned long *possible = phydev->possible_interfaces;
-@@ -1022,6 +1111,10 @@ static int aqr_gen2_fill_interface_modes
+@@ -1025,6 +1114,10 @@ static int aqr_gen2_fill_interface_modes
  			return ret;
  	}
  
@@ -133,7 +133,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	ret = aqr_gen2_read_global_syscfg(phydev);
  	if (ret)
  		return ret;
-@@ -1106,30 +1199,6 @@ static void aqr107_link_change_notify(st
+@@ -1109,30 +1202,6 @@ static void aqr107_link_change_notify(st
  		phydev_info(phydev, "Aquantia 1000Base-T2 mode active\n");
  }
  

@@ -1,0 +1,166 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Sat, 24 Oct 2026 02:00:00 +0200
+Subject: [PATCH] AP MLD: free the data of a removed affiliated AP at the
+ expiry
+
+Depends on 603-ap-mld-remove-an-affiliated-ap-at-the-expiry.patch.
+
+At the expiry, hostapd_link_remove_finish() took the BSS out of the AP
+MLD and left its station entries and its BSS data to the ucode
+bss_link_removed hook, which deletes the BSS. Every other path that
+takes a BSS out of the AP MLD frees its data right after
+hostapd_bss_link_deinit(), and upstream frees the whole interface at
+the expiry. Where the BSS outlives the hook (no ucode hook, or a hook
+that keeps it), it holds references to the objects that the links of
+the AP MLD share: the IEEE 802.1X authenticator, the auth_serv objects
+and the RADIUS client of the first BSS. Whether a BSS frees or only
+drops these depends on hostapd_mld_is_first_bss(), which returns true
+for every BSS once no link is left. When the other links leave first,
+the removed BSS frees them a second time:
+
+  FREE[...]: invalid magic in os_free() <- eapol_auth_deinit()
+  <- ieee802_1x_deinit() <- hostapd_deinit_wpa()
+  <- hostapd_free_hapd_data()
+
+The station entry of a non-AP MLD whose association link was removed
+also stayed, with a pointer to the wpa_sm that the partner link STAs
+share. clear_wpa_sm_for_all_sta() walks only the links of the AP MLD,
+so a new association of the station on another link left a stale
+pointer, and hostapd crashed in wpa_auth_sta_set_vlan().
+
+Free the stations while the BSS is still a link of the AP MLD, take it
+out, and then free its data, so that it releases the shared objects as
+a non-first BSS and wpa_deinit() gives the primary authenticator role
+to a remaining link. The hostapd_data stays allocated and stopped for
+the hook or a later removal. No driver flush: the link STOP_AP already
+removed the stations of the link.
+
+Remove the link from the driver at the expiry as well.
+hostapd_free_hapd_data() does that only for a BSS that is not bss[0] of
+its interface; for bss[0], use link_remove_keep_bss(), as the ucode BSS
+stop does. Then clear drv_priv. Before, the removal of the link waited
+for a deletion of the BSS. A deletion of a stopped bss[0] (the hook,
+where the radio has another BSS) no longer reached the driver: the
+kernel kept the link, and the nl80211 BSS kept the freed BSS as its
+context. The link removal moves that context to a remaining link. With
+drv_priv cleared, the flush of a later deletion does not reach the
+netdev: nl80211 sends a flush for a link that is gone without the link
+ID, which removes the stations of every link.
+
+hostapd_set_freq() and hostapd_start_dfs_cac() did not test drv_priv,
+unlike the driver wrappers around them. The ucode start of an enabled
+interface calls hostapd_set_freq() for each BSS, and the interference
+handler and the background radar CAC use bss[0], which can be the
+removed BSS: the driver then took a NULL context. Both now return as
+the other wrappers do.
+
+The ucode object of the BSS is freed with its data, before the hook,
+and hostapd.uc takes the BSS from the hook's argument. The hook makes a
+new object for the stopped BSS; where the hook removes the whole
+interface, hostapd_interface_free() now drops the registry entry of
+each BSS without an event, as hostapd_ucode_free_iface() does for the
+interface.
+
+The stopped BSS must not stay bss[0] of its interface: bss[0] holds the
+driver handle and the enabled state of the interface. With drv_priv
+cleared there, a BSS added to the interface took no driver handle and
+crashed in wpa_driver_nl80211_if_add(), and DISABLE answered "already
+disabled" while another BSS of the interface ran. Where the interface
+has another BSS, move the stopped BSS behind the others and make the
+next BSS the first, as the ucode BSS deletion does. Where it was the
+only BSS, set the interface state to DISABLED, as upstream does at the
+expiry (hostapd_disable_iface()).
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/src/ap/hostapd.c
++++ b/src/ap/hostapd.c
+@@ -752,6 +752,39 @@ void hostapd_mld_beacons_update(struct h
+ }
+ 
+ 
++/* bss[0] holds the driver handle of the interface and its enabled state. */
++static void hostapd_link_remove_first_bss(struct hostapd_data *hapd)
++{
++	struct hostapd_iface *iface = hapd->iface;
++	struct hostapd_config *iconf = iface->conf;
++	size_t i;
++
++	if (hapd != iface->bss[0])
++		return;
++
++	/* As upstream, which disables the interface of a removed link */
++	if (iface->num_bss == 1) {
++		hostapd_set_state(iface, HAPD_IFACE_DISABLED);
++		return;
++	}
++
++	for (i = 1; i < iface->num_bss; i++)
++		iface->bss[i - 1] = iface->bss[i];
++	iface->bss[iface->num_bss - 1] = hapd;
++
++	for (i = 0; i < iconf->num_bss && iconf->bss[i] != hapd->conf; i++)
++		;
++	for (i++; i < iconf->num_bss; i++) {
++		iconf->bss[i - 1] = iconf->bss[i];
++		iconf->bss[i] = hapd->conf;
++	}
++
++	iface->bss[0]->interface_added = 0;
++	hapd->interface_added = 1;
++	hostapd_drv_set_first_bss(iface->bss[0]);
++}
++
++
+ static void hostapd_link_remove_finish(void *eloop_data, void *user_ctx)
+ {
+ 	struct hostapd_data *hapd = eloop_data;
+@@ -767,7 +800,18 @@ static void hostapd_link_remove_finish(v
+ 	wpa_printf(MSG_DEBUG, "MLD: Removal timer expired, link_id=%u stopped",
+ 		   hapd->mld_link_id);
+ 
++	/* Free the BSS data after it left the AP MLD, so that it releases the
++	 * objects that the links share as a non-first BSS */
++	hostapd_free_stas(hapd);
+ 	hostapd_bss_link_deinit(hapd);
++	/* hostapd_free_hapd_data() removes the driver link of a later BSS only */
++	if (hapd == hapd->iface->bss[0])
++		hostapd_drv_link_remove_keep_bss(hapd);
++	hostapd_free_hapd_data(hapd);
++	/* The netdev stays with the other links: a later flush without the
++	 * link would remove their stations */
++	hapd->drv_priv = NULL;
++	hostapd_link_remove_first_bss(hapd);
+ 	hostapd_mld_beacons_update(hapd);
+ 
+ 	hostapd_ucode_bss_cb(hapd, "bss_link_removed");
+@@ -4272,6 +4316,8 @@ void hostapd_interface_free(struct hosta
+ 		if (iface->bss[j])
+ 			hostapd_mld_ref_dec(iface->bss[j]);
+ #endif /* CONFIG_IEEE80211BE */
++		if (iface->bss[j])
++			hostapd_ucode_forget_bss(iface->bss[j]);
+ 		wpa_printf(MSG_DEBUG, "%s: free hapd %p",
+ 			   __func__, iface->bss[j]);
+ 		os_free(iface->bss[j]);
+--- a/src/ap/ap_drv_ops.c
++++ b/src/ap/ap_drv_ops.c
+@@ -703,7 +703,7 @@ int hostapd_set_freq(struct hostapd_data
+ 				    NULL, hostapd_get_punct_bitmap(hapd)))
+ 		return -1;
+ 
+-	if (hapd->driver == NULL)
++	if (hapd->driver == NULL || hapd->drv_priv == NULL)
+ 		return 0;
+ 	if (hapd->driver->set_freq == NULL)
+ 		return 0;
+@@ -1129,7 +1129,8 @@ int hostapd_start_dfs_cac(struct hostapd
+ 	int res;
+ 	struct hostapd_hw_modes *cmode = iface->current_mode;
+ 
+-	if (!hapd->driver || !hapd->driver->start_dfs_cac || !cmode)
++	if (!hapd->driver || !hapd->driver->start_dfs_cac || !hapd->drv_priv ||
++	    !cmode)
+ 		return 0;
+ 
+ 	if (!iface->conf->ieee80211h) {

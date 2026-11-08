@@ -65,7 +65,7 @@ $(eval $(call KernelPackage,fs-autofs4))
 define KernelPackage/fs-btrfs
   SUBMENU:=$(FS_MENU)
   TITLE:=BTRFS filesystem support
-  DEPENDS:=+LINUX_6_12:kmod-lib-crc32c +kmod-lib-lzo +kmod-lib-zlib-inflate +kmod-lib-zlib-deflate +kmod-lib-raid6 +kmod-lib-xor +kmod-lib-zstd +kmod-crypto-blake2b +kmod-crypto-xxhash
+  DEPENDS:=+kmod-lib-lzo +kmod-lib-zlib-inflate +kmod-lib-zlib-deflate +kmod-lib-raid6 +kmod-lib-xor +kmod-lib-zstd +kmod-crypto-blake2b +kmod-crypto-xxhash
   KCONFIG:=CONFIG_BTRFS_FS
   FILES:=\
 	$(LINUX_DIR)/fs/btrfs/btrfs.ko
@@ -103,7 +103,6 @@ define KernelPackage/fs-smbfs-common
   KCONFIG:=\
 	CONFIG_SMBFS
   FILES:= \
-	$(LINUX_DIR)/fs/smb/common/cifs_arc4.ko@lt6.18 \
 	$(LINUX_DIR)/fs/smb/common/cifs_md4.ko
 endef
 
@@ -468,7 +467,7 @@ define KernelPackage/fs-nfs-common
 	CONFIG_NFS_V4_1_IMPLEMENTATION_ID_DOMAIN="kernel.org" \
 	CONFIG_NFS_V4_1_MIGRATION=n \
 	CONFIG_NFS_V4_2=y \
-	CONFIG_NFSD_V4_DELEG_TIMESTAMPS=n@ge6.18 \
+	CONFIG_NFSD_V4_DELEG_TIMESTAMPS=n \
 	CONFIG_NFS_V4_2_READ_PLUS=n
   FILES:= \
 	$(LINUX_DIR)/fs/lockd/lockd.ko \
@@ -485,15 +484,7 @@ define KernelPackage/fs-nfs-common-rpcsec
   TITLE:=NFS Secure RPC
   DEPENDS:= \
 	+kmod-fs-nfs-common \
-	+kmod-crypto-manager \
-	+kmod-crypto-authenc \
-	+kmod-crypto-hmac \
-	+kmod-crypto-cmac \
-	+kmod-crypto-sha1 \
-	+kmod-crypto-sha256 \
-	+kmod-crypto-sha512 \
-	+kmod-crypto-cbc \
-	+kmod-crypto-cts
+	+kmod-crypto-krb5
   KCONFIG:= \
 	CONFIG_SUNRPC_GSS \
 	CONFIG_RPCSEC_GSS_KRB5
@@ -588,21 +579,6 @@ endef
 $(eval $(call KernelPackage,fs-ntfs3))
 
 
-define KernelPackage/fs-reiserfs
-  SUBMENU:=$(FS_MENU)
-  TITLE:=ReiserFS filesystem support
-  KCONFIG:=CONFIG_REISERFS_FS
-  FILES:=$(LINUX_DIR)/fs/reiserfs/reiserfs.ko
-  AUTOLOAD:=$(call AutoLoad,30,reiserfs,1)
-endef
-
-define KernelPackage/fs-reiserfs/description
- Kernel module for ReiserFS support
-endef
-
-$(eval $(call KernelPackage,fs-reiserfs))
-
-
 define KernelPackage/fs-squashfs
   SUBMENU:=$(FS_MENU)
   TITLE:=SquashFS 4.0 filesystem support
@@ -660,7 +636,7 @@ define KernelPackage/fs-xfs
   SUBMENU:=$(FS_MENU)
   TITLE:=XFS filesystem support
   KCONFIG:=CONFIG_XFS_FS
-  DEPENDS:= +kmod-fs-exportfs +LINUX_6_12:kmod-lib-crc32c
+  DEPENDS:= +kmod-fs-exportfs
   FILES:=$(LINUX_DIR)/fs/xfs/xfs.ko
   AUTOLOAD:=$(call AutoLoad,30,xfs,1)
 endef

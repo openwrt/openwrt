@@ -22,7 +22,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/net/wireless/nl80211.c
 +++ b/net/wireless/nl80211.c
-@@ -8234,6 +8234,22 @@ nla_put_failure:
+@@ -8241,6 +8241,22 @@ nla_put_failure:
  	return -EMSGSIZE;
  }
  
@@ -45,7 +45,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  static int nl80211_send_station(struct sk_buff *msg, u32 cmd, u32 portid,
  				u32 seq, int flags,
  				struct cfg80211_registered_device *rdev,
-@@ -8269,16 +8285,8 @@ static int nl80211_send_station(struct s
+@@ -8276,16 +8292,8 @@ static int nl80211_send_station(struct s
  		    sinfo->assoc_resp_ies))
  		goto nla_put_failure;
  
@@ -64,7 +64,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	cfg80211_sinfo_release_content(sinfo);
  	genlmsg_end(msg, hdr);
-@@ -8673,6 +8681,8 @@ static int nl80211_dump_station(struct s
+@@ -8680,6 +8688,8 @@ static int nl80211_dump_station(struct s
  		switch (ctx->phase) {
  		case NL80211_DUMP_STA_PHASE_AGGREGATED:
  			ret = nl80211_put_sta_info_common(skb, rdev, &ctx->sinfo);

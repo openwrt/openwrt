@@ -1,0 +1,86 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Sat, 24 Oct 2026 18:00:00 +0200
+Subject: [PATCH] AP MLD: move the VLAN list also when one link remains
+
+Upstream fix: hostap main 741d70dd8e32 has the same code, from
+aa7a038e088f ("AP MLD: Move VLAN list when the first link (BSS) is
+removed"); to be reported upstream.
+
+An AP MLD keeps its VLAN list on the first BSS, and every VLAN user
+takes it from hostapd_mld_get_first_bss(). hostapd_mld_remove_link()
+moved the list to the new first BSS only where that BSS is not the last
+link. When the first of two links is removed, the remaining link became
+the first BSS with its own list, which holds only the wildcard entry:
+
+- a GTK rekey of a VLAN group fails in hostapd_wpa_auth_set_key(), as
+  the list has no interface for the VLAN ID, and the group state
+  machine ends in FATAL_FAILURE;
+- vlan_remove_dynamic() finds no entry, so the AP_VLAN netdev stays
+  after its last station, and the next station of that VLAN fails in
+  vlan_add_dynamic() because the netdev exists.
+
+Move the list for every new first BSS, and free the new first BSS's own
+list, which the AP MLD no longer reads. This also stops the leak of that
+list on the path with more links.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/src/ap/ap_config.c
++++ b/src/ap/ap_config.c
+@@ -25,7 +25,7 @@
+ #include "ap_config.h"
+ 
+ 
+-static void hostapd_config_free_vlan(struct hostapd_bss_config *bss)
++void hostapd_config_free_vlan(struct hostapd_bss_config *bss)
+ {
+ 	struct hostapd_vlan *vlan, *prev;
+ 
+--- a/src/ap/ap_config.h
++++ b/src/ap/ap_config.h
+@@ -1498,6 +1498,7 @@ void hostapd_config_free_eap_user(struct
+ void hostapd_config_free_eap_users(struct hostapd_eap_user *user);
+ void hostapd_config_clear_wpa_psk(struct hostapd_wpa_psk **p);
+ void hostapd_config_clear_rxkhs(struct hostapd_bss_config *conf);
++void hostapd_config_free_vlan(struct hostapd_bss_config *bss);
+ void hostapd_config_free_bss(struct hostapd_bss_config *conf);
+ void hostapd_config_free(struct hostapd_config *conf);
+ int hostapd_maclist_found(struct mac_acl_entry *list, int num_entries,
+--- a/src/ap/hostapd.c
++++ b/src/ap/hostapd.c
+@@ -1718,14 +1718,15 @@ void hostapd_free_hapd_data(struct hosta
+ /* hostapd_mld_move_vlan_list - Move the VLAN list to the new first bss
+  *
+  * This function is used to copy the reference to the VLAN list from the old
+- * first BSS to the new first BSS when the first BSS is removed.
++ * first BSS to the new first BSS when the first BSS is removed. The AP MLD
++ * uses only the list of its first BSS, so the new first BSS's own list goes.
+  */
+ static void hostapd_mld_move_vlan_list(struct hostapd_data *old_fbss,
+ 				       struct hostapd_data *new_fbss)
+ {
++	hostapd_config_free_vlan(new_fbss->conf);
+ 	new_fbss->conf->vlan = old_fbss->conf->vlan;
+ 	old_fbss->conf->vlan = NULL;
+-
+ }
+ #endif /* CONFIG_IEEE80211BE */
+ 
+@@ -6814,16 +6815,9 @@ int hostapd_mld_remove_link(struct hosta
+ 	if (dl_list_empty(&mld->links)) {
+ 		mld->fbss = NULL;
+ 	} else {
+-		struct hostapd_data *last_link_bss;
+-
+ 		next_fbss = dl_list_entry(mld->links.next, struct hostapd_data,
+ 					  link);
+-		last_link_bss = dl_list_last(&mld->links, struct hostapd_data,
+-					     link);
+-
+-		if (next_fbss != last_link_bss)
+-			hostapd_mld_move_vlan_list(hapd, next_fbss);
+-
++		hostapd_mld_move_vlan_list(hapd, next_fbss);
+ 		mld->fbss = next_fbss;
+ 		hostapd_mld_move_radius(hapd, next_fbss);
+ 		accounting_mld_first_bss_moved(hapd, next_fbss);

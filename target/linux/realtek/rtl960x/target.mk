@@ -4,6 +4,7 @@ SUBTARGET:=rtl960x
 CPU_TYPE:=24kc
 BOARD:=realtek
 BOARDNAME:=Realtek MIPS RTL960X / RTL8198D
+DEVICE_TYPE:=router
 FEATURES+=nand source-only
 
 define Target/Description

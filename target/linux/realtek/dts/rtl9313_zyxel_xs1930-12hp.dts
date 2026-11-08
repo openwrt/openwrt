@@ -20,6 +20,15 @@
 			gpios = <&gpio0 3 GPIO_ACTIVE_LOW>;
 		};
 	};
+
+	poe_supply: supply-poe {
+		compatible = "regulator-fixed";
+		regulator-name = "poe-supply";
+		regulator-always-on;
+		regulator-boot-on;
+
+		regulator-power-budget-milliwatt = <375000>;
+	};
 };
 
 &led_set {
@@ -54,6 +63,7 @@
 
 			disable-ports-gpios = <&gpio0 30 GPIO_ACTIVE_LOW>;
 			reset-gpios = <&gpio0 10 GPIO_ACTIVE_LOW>;
+			vmain-supply = <&poe_supply>;
 
 			pse-pis {
 				#address-cells = <1>;

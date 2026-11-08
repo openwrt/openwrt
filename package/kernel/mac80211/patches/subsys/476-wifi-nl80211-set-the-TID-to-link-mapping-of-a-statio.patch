@@ -1,0 +1,197 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Tue, 27 Oct 2026 13:38:05 +0000
+Subject: [PATCH] wifi: nl80211: set the TID-to-link mapping of a station of an
+ AP MLD
+
+An AP MLD that supports TID-to-link mapping negotiation (IEEE
+802.11be-2024, 35.3.7.2.3) agrees on a mapping with an associated
+non-AP MLD and then sends the frames of each TID only on the links that
+the mapping gives for it. User space negotiates the mapping, but
+NL80211_CMD_SET_TID_TO_LINK_MAPPING sets a mapping only on a non-AP MLD
+interface, so the driver of an AP MLD never learns it.
+
+Accept the command on an AP interface as well, with the MLD address of
+the station in NL80211_ATTR_MAC. Without the two mapping attributes the
+default mapping applies again, which is the result of a teardown. Add
+an extended feature with which the driver declares that it applies
+such a mapping. The TID-To-Link Mapping Negotiation Support subfield in
+the MLD capabilities of the AP interface type does not tell it:
+mac80211_hwsim sets that subfield without applying any mapping.
+
+Co-developed-by: Michael-CY Lee <michael-cy.lee@mediatek.com>
+Signed-off-by: Michael-CY Lee <michael-cy.lee@mediatek.com>
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/include/net/cfg80211.h
++++ b/include/net/cfg80211.h
+@@ -5561,6 +5561,10 @@ struct mgmt_frame_regs {
+  *
+  * @set_hw_timestamp: Enable/disable HW timestamping of TM/FTM frames.
+  * @set_ttlm: set the TID to link mapping.
++ * @set_sta_ttlm: for an AP MLD, set the negotiated TID-to-link mapping of the
++ *	associated non-AP MLD with the given MLD address; %NULL @params sets
++ *	the default mapping. See %NL80211_CMD_SET_TID_TO_LINK_MAPPING.
++ *	(invoked with the wiphy mutex held)
+  * @adv_ttlm_request: advertise a TID-to-link mapping of an AP MLD, see
+  *	%NL80211_CMD_ADV_TTLM_REQUEST. cfg80211 calls it only while no mapping
+  *	is requested or established. (invoked with the wiphy mutex held)
+@@ -5964,6 +5968,9 @@ struct cfg80211_ops {
+ 				    struct cfg80211_set_hw_timestamp *hwts);
+ 	int	(*set_ttlm)(struct wiphy *wiphy, struct net_device *dev,
+ 			    struct cfg80211_ttlm_params *params);
++	int	(*set_sta_ttlm)(struct wiphy *wiphy, struct net_device *dev,
++				const u8 *mac,
++				struct cfg80211_ttlm_params *params);
+ 	int	(*adv_ttlm_request)(struct wiphy *wiphy, struct net_device *dev,
+ 				    struct cfg80211_adv_ttlm_params *params);
+ 	void	(*adv_ttlm_cancel)(struct wiphy *wiphy, struct net_device *dev,
+--- a/net/wireless/nl80211.c
++++ b/net/wireless/nl80211.c
+@@ -19715,6 +19715,38 @@ static int nl80211_set_hw_timestamp(stru
+ }
+ 
+ static int
++nl80211_set_sta_ttlm(struct cfg80211_registered_device *rdev,
++		     struct net_device *dev, struct genl_info *info)
++{
++	struct nlattr *dlink = info->attrs[NL80211_ATTR_MLO_TTLM_DLINK];
++	struct nlattr *ulink = info->attrs[NL80211_ATTR_MLO_TTLM_ULINK];
++	struct wireless_dev *wdev = dev->ieee80211_ptr;
++	struct cfg80211_ttlm_params params = {};
++
++	if (!wiphy_ext_feature_isset(&rdev->wiphy,
++				     NL80211_EXT_FEATURE_AP_NEG_TTLM))
++		return -EOPNOTSUPP;
++
++	if (!wdev->valid_links)
++		return -EINVAL;
++
++	if (!info->attrs[NL80211_ATTR_MAC] || !dlink != !ulink)
++		return -EINVAL;
++
++	if (!dlink)
++		return rdev_set_sta_ttlm(rdev, dev,
++					 nla_data(info->attrs[NL80211_ATTR_MAC]),
++					 NULL);
++
++	nla_memcpy(params.dlink, dlink, sizeof(params.dlink));
++	nla_memcpy(params.ulink, ulink, sizeof(params.ulink));
++
++	return rdev_set_sta_ttlm(rdev, dev,
++				 nla_data(info->attrs[NL80211_ATTR_MAC]),
++				 &params);
++}
++
++static int
+ nl80211_set_ttlm(struct sk_buff *skb, struct genl_info *info)
+ {
+ 	struct cfg80211_ttlm_params params = {};
+@@ -19722,6 +19754,9 @@ nl80211_set_ttlm(struct sk_buff *skb, st
+ 	struct net_device *dev = info->user_ptr[1];
+ 	struct wireless_dev *wdev = dev->ieee80211_ptr;
+ 
++	if (wdev->iftype == NL80211_IFTYPE_AP)
++		return nl80211_set_sta_ttlm(rdev, dev, info);
++
+ 	if (wdev->iftype != NL80211_IFTYPE_STATION &&
+ 	    wdev->iftype != NL80211_IFTYPE_P2P_CLIENT)
+ 		return -EOPNOTSUPP;
+--- a/net/wireless/rdev-ops.h
++++ b/net/wireless/rdev-ops.h
+@@ -1610,6 +1610,22 @@ rdev_set_hw_timestamp(struct cfg80211_re
+ }
+ 
+ static inline int
++rdev_set_sta_ttlm(struct cfg80211_registered_device *rdev,
++		  struct net_device *dev, const u8 *mac,
++		  struct cfg80211_ttlm_params *params)
++{
++	struct wiphy *wiphy = &rdev->wiphy;
++	int ret = -EOPNOTSUPP;
++
++	trace_rdev_set_sta_ttlm(wiphy, dev, mac, params);
++	if (rdev->ops->set_sta_ttlm)
++		ret = rdev->ops->set_sta_ttlm(wiphy, dev, mac, params);
++	trace_rdev_return_int(wiphy, ret);
++
++	return ret;
++}
++
++static inline int
+ rdev_set_ttlm(struct cfg80211_registered_device *rdev,
+ 	      struct net_device *dev,
+ 	      struct cfg80211_ttlm_params *params)
+--- a/net/wireless/trace.h
++++ b/net/wireless/trace.h
+@@ -3247,6 +3247,37 @@ TRACE_EVENT(rdev_set_ttlm,
+ 		  WIPHY_PR_ARG, NETDEV_PR_ARG)
+ );
+ 
++TRACE_EVENT(rdev_set_sta_ttlm,
++	TP_PROTO(struct wiphy *wiphy, struct net_device *netdev, const u8 *mac,
++		 struct cfg80211_ttlm_params *params),
++	TP_ARGS(wiphy, netdev, mac, params),
++	TP_STRUCT__entry(
++		WIPHY_ENTRY
++		NETDEV_ENTRY
++		MAC_ENTRY(mac)
++		__field(bool, dflt)
++		__array(u8, dlink, sizeof(u16) * 8)
++		__array(u8, ulink, sizeof(u16) * 8)
++	),
++	TP_fast_assign(
++		WIPHY_ASSIGN;
++		NETDEV_ASSIGN;
++		MAC_ASSIGN(mac, mac);
++		__entry->dflt = !params;
++		if (params) {
++			memcpy(__entry->dlink, params->dlink,
++			       sizeof(params->dlink));
++			memcpy(__entry->ulink, params->ulink,
++			       sizeof(params->ulink));
++		} else {
++			memset(__entry->dlink, 0, sizeof(__entry->dlink));
++			memset(__entry->ulink, 0, sizeof(__entry->ulink));
++		}
++	),
++	TP_printk(WIPHY_PR_FMT ", " NETDEV_PR_FMT ", sta: %pM, default: %d",
++		  WIPHY_PR_ARG, NETDEV_PR_ARG, __entry->mac, __entry->dflt)
++);
++
+ TRACE_EVENT(rdev_adv_ttlm_request,
+ 	TP_PROTO(struct wiphy *wiphy, struct net_device *netdev,
+ 		 struct cfg80211_adv_ttlm_params *params),
+--- a/include/uapi/linux/nl80211.h
++++ b/include/uapi/linux/nl80211.h
+@@ -1342,6 +1342,11 @@
+  *      non-AP MLD station. The %NL80211_ATTR_MLO_TTLM_DLINK and
+  *      %NL80211_ATTR_MLO_TTLM_ULINK attributes are used to specify the
+  *      TID to Link mapping for downlink/uplink traffic.
++ *	On an AP MLD interface, set the mapping that the AP MLD negotiated
++ *	with the associated non-AP MLD whose MLD address %NL80211_ATTR_MAC
++ *	holds. Without %NL80211_ATTR_MLO_TTLM_DLINK and
++ *	%NL80211_ATTR_MLO_TTLM_ULINK, the default mapping applies again. See
++ *	%NL80211_EXT_FEATURE_AP_NEG_TTLM.
+  *
+  * @NL80211_CMD_ASSOC_MLO_RECONF: For a non-AP MLD station, request to
+  *      add/remove links to/from the association. To indicate link
+@@ -7416,6 +7421,11 @@ enum nl80211_feature_flags {
+  *	that stay again after the event. The expiry comes before the TBTT at
+  *	which the timer reaches 0, and the removed links keep running until
+  *	user space stops them.
++ * @NL80211_EXT_FEATURE_AP_NEG_TTLM: The driver applies the TID-to-link
++ *	mapping that an AP MLD negotiated with an associated non-AP MLD
++ *	(IEEE 802.11be-2024, 35.3.7.2.3), set with
++ *	%NL80211_CMD_SET_TID_TO_LINK_MAPPING on the AP interface: it sends the
++ *	frames of each TID only on the links the mapping gives for it.
+  *
+  * @NUM_NL80211_EXT_FEATURES: number of extended features.
+  * @MAX_NL80211_EXT_FEATURES: highest extended feature index.
+@@ -7506,6 +7516,7 @@ enum nl80211_ext_feature_index {
+ 	NL80211_EXT_FEATURE_SCS,
+ 	NL80211_EXT_FEATURE_MSCS,
+ 	NL80211_EXT_FEATURE_AP_REMOVAL_TIMER_OFFLOAD,
++	NL80211_EXT_FEATURE_AP_NEG_TTLM,
+ 
+ 	/* add new features before the definition below */
+ 	NUM_NL80211_EXT_FEATURES,

@@ -1,0 +1,182 @@
+From 09ac78477ab9f05fd6a740454bc8190f729938b5 Mon Sep 17 00:00:00 2001
+From: David Yang <mmyangfl@gmail.com>
+Date: Thu, 21 May 2026 09:03:07 +0800
+Subject: [PATCH] net: dsa: yt921x: Add port TBF support
+
+React to TC_SETUP_QDISC_TBF and configure the egress shaper as
+appropriate with the maximum rate and burst size requested by the user.
+Per queue shaper is possible, though not touched in this commit.
+
+Signed-off-by: David Yang <mmyangfl@gmail.com>
+Link: https://patch.msgid.link/20260521010320.208138-4-mmyangfl@gmail.com
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ drivers/net/dsa/yt921x.c | 87 ++++++++++++++++++++++++++++++++++++++++
+ drivers/net/dsa/yt921x.h | 18 +++++++++
+ 2 files changed, 105 insertions(+)
+
+--- a/drivers/net/dsa/yt921x.c
++++ b/drivers/net/dsa/yt921x.c
+@@ -24,6 +24,7 @@
+ #include <net/dsa.h>
+ #include <net/dscp.h>
+ #include <net/ieee8021q.h>
++#include <net/pkt_cls.h>
+ 
+ #include "yt921x.h"
+ 
+@@ -1273,6 +1274,17 @@ yt921x_marker_tfm_police(struct yt921x_m
+ }
+ 
+ static int
++yt921x_marker_tfm_shape(struct yt921x_marker *marker, u64 rate, u64 burst,
++			unsigned int flags, struct yt921x_priv *priv, int port,
++			struct netlink_ext_ack *extack)
++{
++	return yt921x_marker_tfm(marker, rate, burst, flags,
++				 priv->port_shape_slot_ns, YT921X_SHAPE_CIR_MAX,
++				 YT921X_SHAPE_CBS_MAX, YT921X_SHAPE_UNIT_MAX,
++				 priv, port, extack);
++}
++
++static int
+ yt921x_police_validate(const struct flow_action_police *police,
+ 		       const struct flow_action *action,
+ 		       const struct flow_action_entry *act,
+@@ -1379,6 +1391,73 @@ end:
+ }
+ 
+ static int
++yt921x_dsa_port_setup_tc_tbf_port(struct dsa_switch *ds, int port,
++				  const struct tc_tbf_qopt_offload *qopt)
++{
++	struct yt921x_priv *priv = to_yt921x_priv(ds);
++	struct netlink_ext_ack *extack = qopt->extack;
++	u32 ctrls[2];
++	int res;
++
++	if (qopt->parent != TC_H_ROOT)
++		return -EOPNOTSUPP;
++
++	switch (qopt->command) {
++	case TC_TBF_STATS:
++		/* Unfortunately the convention for TC_*_STATS is a mess,
++		 * neither 0 nor -EOPNOTSUPP is perfect here.
++		 */
++		return -EOPNOTSUPP;
++	case TC_TBF_DESTROY:
++		ctrls[0] = 0;
++		ctrls[1] = 0;
++		break;
++	case TC_TBF_REPLACE: {
++		const struct tc_tbf_qopt_offload_replace_params *p;
++		struct yt921x_marker marker;
++
++		p = &qopt->replace_params;
++
++		res = yt921x_marker_tfm_shape(&marker, p->rate.rate_bytes_ps,
++					      p->max_size,
++					      YT921X_MARKER_SINGLE_BUCKET,
++					      priv, port, extack);
++		if (res)
++			return res;
++
++		ctrls[0] = YT921X_PORT_SHAPE_CTRLa_CIR(marker.cir) |
++			   YT921X_PORT_SHAPE_CTRLa_CBS(marker.cbs);
++		ctrls[1] = YT921X_PORT_SHAPE_CTRLb_UNIT(marker.unit) |
++			   YT921X_PORT_SHAPE_CTRLb_EN;
++		break;
++	}
++	default:
++		return -EOPNOTSUPP;
++	}
++
++	mutex_lock(&priv->reg_lock);
++	res = yt921x_reg64_write(priv, YT921X_PORTn_SHAPE_CTRL(port), ctrls);
++	mutex_unlock(&priv->reg_lock);
++
++	return res;
++}
++
++static int
++yt921x_dsa_port_setup_tc(struct dsa_switch *ds, int port,
++			 enum tc_setup_type type, void *type_data)
++{
++	switch (type) {
++	case TC_SETUP_QDISC_TBF: {
++		const struct tc_tbf_qopt_offload *qopt = type_data;
++
++		return yt921x_dsa_port_setup_tc_tbf_port(ds, port, qopt);
++	}
++	default:
++		return -EOPNOTSUPP;
++	}
++}
++
++static int
+ yt921x_mirror_del(struct yt921x_priv *priv, int port, bool ingress)
+ {
+ 	u32 mask;
+@@ -3523,6 +3602,13 @@ static int yt921x_chip_setup_tc(struct y
+ 		return res;
+ 	priv->meter_slot_ns = ctrl * op_ns;
+ 
++	ctrl = max(priv->port_shape_slot_ns / op_ns,
++		   YT921X_PORT_SHAPE_SLOT_MIN);
++	res = yt921x_reg_write(priv, YT921X_PORT_SHAPE_SLOT, ctrl);
++	if (res)
++		return res;
++	priv->port_shape_slot_ns = ctrl * op_ns;
++
+ 	return 0;
+ }
+ 
+@@ -3679,6 +3765,7 @@ static const struct dsa_switch_ops yt921
+ 	/* rate */
+ 	.port_policer_del	= yt921x_dsa_port_policer_del,
+ 	.port_policer_add	= yt921x_dsa_port_policer_add,
++	.port_setup_tc		= yt921x_dsa_port_setup_tc,
+ 	/* hsr */
+ 	.port_hsr_leave		= dsa_port_simple_hsr_leave,
+ 	.port_hsr_join		= dsa_port_simple_hsr_join,
+--- a/drivers/net/dsa/yt921x.h
++++ b/drivers/net/dsa/yt921x.h
+@@ -531,6 +531,19 @@ enum yt921x_app_selector {
+ #define  YT921X_MIRROR_PORT_M			GENMASK(3, 0)
+ #define   YT921X_MIRROR_PORT(x)				FIELD_PREP(YT921X_MIRROR_PORT_M, (x))
+ 
++#define YT921X_PORT_SHAPE_SLOT		0x34000c
++#define  YT921X_PORT_SHAPE_SLOT_SLOT_M		GENMASK(11, 0)
++#define YT921X_PORTn_SHAPE_CTRL(port)	(0x354000 + 8 * (port))
++#define  YT921X_PORT_SHAPE_CTRLb_EN		BIT(4)
++#define  YT921X_PORT_SHAPE_CTRLb_PKT_MODE	BIT(3)	/* 0: byte rate mode */
++#define  YT921X_PORT_SHAPE_CTRLb_UNIT_M		GENMASK(2, 0)
++#define   YT921X_PORT_SHAPE_CTRLb_UNIT(x)		FIELD_PREP(YT921X_PORT_SHAPE_CTRLb_UNIT_M, (x))
++#define  YT921X_PORT_SHAPE_CTRLa_CBS_M		GENMASK(31, 18)
++#define   YT921X_PORT_SHAPE_CTRLa_CBS(x)		FIELD_PREP(YT921X_PORT_SHAPE_CTRLa_CBS_M, (x))
++#define  YT921X_PORT_SHAPE_CTRLa_CIR_M		GENMASK(17, 0)
++#define   YT921X_PORT_SHAPE_CTRLa_CIR(x)		FIELD_PREP(YT921X_PORT_SHAPE_CTRLa_CIR_M, (x))
++#define YT921X_PORTn_SHAPE_STAT(port)	(0x356000 + 4 * (port))
++
+ #define YT921X_EDATA_EXTMODE	0xfb
+ #define YT921X_EDATA_LEN	0x100
+ 
+@@ -556,6 +569,10 @@ enum yt921x_fdb_entry_status {
+ #define YT921X_METER_UNIT_MAX	((1 << 3) - 1)
+ #define YT921X_METER_CIR_MAX	((1 << 18) - 1)
+ #define YT921X_METER_CBS_MAX	((1 << 16) - 1)
++#define YT921X_PORT_SHAPE_SLOT_MIN	80
++#define YT921X_SHAPE_UNIT_MAX	((1 << 3) - 1)
++#define YT921X_SHAPE_CIR_MAX	((1 << 18) - 1)
++#define YT921X_SHAPE_CBS_MAX	((1 << 14) - 1)
+ 
+ #define YT921X_LAG_NUM		2
+ #define YT921X_LAG_PORT_NUM	4
+@@ -652,6 +669,7 @@ struct yt921x_priv {
+ 
+ 	const struct yt921x_info *info;
+ 	unsigned int meter_slot_ns;
++	unsigned int port_shape_slot_ns;
+ 	/* cache of dsa_cpu_ports(ds) */
+ 	u16 cpu_ports_mask;
+ 	unsigned char cycle_ns;

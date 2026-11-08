@@ -2,6 +2,7 @@
 
 /dts-v1/;
 
+#include "ipq8074.dtsi"
 #include "ipq8074-512m.dtsi"
 #include "ipq8074-ac-cpu.dtsi"
 #include "ipq8074-ess.dtsi"
@@ -451,6 +452,6 @@
 &wifi {
 	status = "okay";
 
-	qcom,ath11k-calibration-variant = "ZTE-MF269";
+	qcom,calibration-variant = "ZTE-MF269";
 	qcom,ath11k-fw-memory-mode = <1>;
 };

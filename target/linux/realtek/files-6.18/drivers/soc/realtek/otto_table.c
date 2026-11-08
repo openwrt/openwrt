@@ -149,6 +149,9 @@ static const struct otto_table_map otto_table_maps[OTTO_TBL_COUNT] = {
 	TBL_MAP(RTL8380_TBL_IACL, OTTO_REG_8380_0, 1, 18, 1536, 0),
 	TBL_MAP(RTL8380_TBL_MSTI, OTTO_REG_8380_0, 2, 2, 64, 0),
 	TBL_MAP(RTL8380_TBL_LOG, OTTO_REG_8380_0, 3, 2, 128, 0),
+	/* A LOG write clears a counter: ADDR[8:0] = {CLRH, CLRL, index[6:0]} */
+	TBL_MAP(RTL8380_TBL_LOG_CLRL, OTTO_REG_8380_0, 3, 2, 128, 128),
+	TBL_MAP(RTL8380_TBL_LOG_CLRH, OTTO_REG_8380_0, 3, 2, 128, 256),
 
 	TBL_MAP(RTL8380_TBL_UNTAG, OTTO_REG_8380_1, 0, 1, 4096, 0),
 	TBL_MAP(RTL8380_TBL_ROUTING, OTTO_REG_8380_1, 2, 2, 512, 0),
@@ -176,6 +179,10 @@ static const struct otto_table_map otto_table_maps[OTTO_TBL_COUNT] = {
 
 	TBL_MAP(RTL8390_TBL_UNTAG, OTTO_REG_8390_1, 0, 2, 4096, 0),
 	TBL_MAP(RTL8390_TBL_ROUTING, OTTO_REG_8390_1, 2, 2, 2048, 0),
+
+	TBL_MAP(RTL8390_TBL_SCHED, OTTO_REG_8390_2, 0, 9, 53, 0),
+	TBL_MAP(RTL8390_TBL_SPG_PORT, OTTO_REG_8390_2, 1, 7, 52, 0),
+	TBL_MAP(RTL8390_TBL_OUT_Q, OTTO_REG_8390_2, 2, 8, 53, 0),
 
 	TBL_MAP(RTL9300_TBL_L2_UC, OTTO_REG_9300_L2, 0, 3, 16384, 0),
 	TBL_MAP(RTL9300_TBL_L2_MC, OTTO_REG_9300_L2, 0, 3, 16384, 0),
@@ -253,6 +260,24 @@ static const struct otto_table_map otto_table_maps[OTTO_TBL_COUNT] = {
 
 	TBL_MAP(RTL9310_TBL_LAG, OTTO_REG_9310_2, 0, 3, 128, 0),
 	TBL_MAP(RTL9310_TBL_PORT_ISO_CTRL, OTTO_REG_9310_2, 1, 2, 1024, 0),
+
+	/* The L3 tables share this access register with the two above. Their
+	 * row counts are address spaces, not entry counts: the host and prefix
+	 * route tables overlay the flow table (Realtek GPL SDK,
+	 * rtk_mango_table_list).
+	 *
+	 * Both route tables implement six of every eight addresses, so the
+	 * SDK's 12288 entries span 12288 / 6 * 8 = 16384 addresses, which is
+	 * also the whole of the access register's 14 bit address field. The
+	 * RTL9300 host route table above is the same conversion: 6144 entries
+	 * in the SDK's array against the 8192 recorded here.
+	 */
+	TBL_MAP(RTL9310_TBL_L3_ROUTER_MAC, OTTO_REG_9310_2, 2, 5, 1024, 0),
+	TBL_MAP(RTL9310_TBL_L3_HOST_ROUTE_IPUC, OTTO_REG_9310_2, 3, 4, 16384, 0),
+	TBL_MAP(RTL9310_TBL_L3_PREFIX_ROUTE_IPUC, OTTO_REG_9310_2, 4, 6, 16384, 0),
+	TBL_MAP(RTL9310_TBL_L3_NEXTHOP, OTTO_REG_9310_2, 6, 1, 8192, 0),
+	TBL_MAP(RTL9310_TBL_L3_IGR_INTF, OTTO_REG_9310_2, 7, 2, 1024, 0),
+	TBL_MAP(RTL9310_TBL_L3_EGR_INTF, OTTO_REG_9310_2, 8, 4, 1024, 0),
 
 	TBL_MAP(RTL9310_TBL_VLAN_UNTAG, OTTO_REG_9310_3, 0, 2, 4096, 0),
 
@@ -379,7 +404,7 @@ static struct otto_table *otto_table_reg(int handle)
 }
 
 /* The command register masks the index to the width of its index field, which
- * cannot express the bound: it is wider than the table on 97 of the tables,
+ * cannot express the bound: it is wider than the table on 99 of the tables,
  * exactly as wide on the other 41, and 11 tables do not have a power-of-two
  * row count at all.
  */

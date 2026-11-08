@@ -383,7 +383,7 @@ const struct otto_stats_mib_desc otto_stats_931x_mib_desc = {
 void otto_stats_838x_init(struct otto_dsa_priv *priv)
 {
 	/* Enable statistics module: all counters plus debug */
-	sw_w32_mask(0, 3, RTL838X_STAT_CTRL);
+	regmap_write_bits(priv->map, RTL838X_STAT_CTRL, 3, 3);
 }
 
 u64 otto_stats_931x_port_table_read(int port, unsigned int mib_size,
@@ -424,7 +424,7 @@ void otto_stats_init(struct otto_dsa_priv *priv)
 		priv->r->stat_init(priv);
 
 	/* Reset statistics counters */
-	sw_w32_mask(0, 1, priv->r->stat_rst);
+	regmap_write_bits(priv->map, priv->r->stat_rst, 1, 1);
 
 	mutex_unlock(&priv->reg_mutex);
 }
@@ -433,7 +433,7 @@ static bool otto_stats_read_mib_item(struct otto_dsa_priv *priv, int port,
 				     const struct otto_stats_mib_item *mib_item,
 				     u64 *data)
 {
-	u32 high1, high2;
+	u32 low, high1, high2;
 	int reg, reg_offset, addr_low;
 
 	switch (mib_item->reg) {
@@ -461,16 +461,22 @@ static bool otto_stats_read_mib_item(struct otto_dsa_priv *priv, int port,
 	addr_low = reg + (port + 1) * reg_offset - 4 - mib_item->offset;
 
 	if (mib_item->size == 2) {
-		high1 = sw_r32(addr_low - 4);
-		*data = sw_r32(addr_low);
-		high2 = sw_r32(addr_low - 4);
+		if (regmap_read(priv->map, addr_low - 4, &high1))
+			return false;
+		if (regmap_read(priv->map, addr_low, &low))
+			return false;
+		if (regmap_read(priv->map, addr_low - 4, &high2))
+			return false;
 		if (high1 != high2) {
 			/* Low must have wrapped and overflowed into high, read again */
-			*data = sw_r32(addr_low);
+			if (regmap_read(priv->map, addr_low, &low))
+				return false;
 		}
-		*data |= (u64)high2 << 32;
+		*data = (u64)high2 << 32 | low;
 	} else {
-		*data = sw_r32(addr_low);
+		if (regmap_read(priv->map, addr_low, &low))
+			return false;
+		*data = low;
 	}
 
 	return true;
@@ -1027,25 +1033,15 @@ u32 otto_stats_838x_packet_cntr_read(struct otto_dsa_priv *priv, int counter)
 
 void otto_stats_838x_packet_cntr_clear(struct otto_dsa_priv *priv, int counter)
 {
-	int tbl = otto_table_acquire(RTL8380_TBL_LOG);
-	u32 buf[2];
+	u32 buf[2] = {};
 
 	dev_dbg(priv->dev, "clearing LOG packet counter %d\n", counter);
 
-	/*
-	 * Two counters share one LOG table entry. Read the current entry
-	 * first so clearing one half preserves the adjacent counter.
+	/* A LOG entry holds two counters and takes no data: a write to the
+	 * clear address of one half zeroes that half and leaves the other.
 	 */
-	__otto_table_read(tbl, counter / 2, &buf);
-
-	if (counter % 2)
-		buf[0] = 0;
-	else
-		buf[1] = 0;
-
-	__otto_table_write(tbl, counter / 2, &buf);
-
-	otto_table_release(tbl);
+	otto_table_write(counter % 2 ? RTL8380_TBL_LOG_CLRH : RTL8380_TBL_LOG_CLRL,
+			 counter / 2, &buf);
 }
 
 u32 otto_stats_839x_packet_cntr_read(struct otto_dsa_priv *priv, int counter)

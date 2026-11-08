@@ -192,6 +192,8 @@
 
 	i2c0: i2c@0 {
 		reg = <0>;
+		#address-cells = <1>;
+		#size-cells = <0>;
 
 		pse: ethernet-pse@20 {
 			compatible = "zyxel,xgs1930-28hp-pse", "realtek,pse-mcu-gen2-smbus";

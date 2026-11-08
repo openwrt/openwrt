@@ -11,14 +11,14 @@ PKG_NAME:=ucode
 PKG_RELEASE:=1
 
 PKG_SOURCE_PROTO:=git
-PKG_SOURCE_URL=https://github.com/jow-/ucode.git
-PKG_SOURCE_DATE:=2026-07-09
-PKG_SOURCE_VERSION:=b885dd0fe1e974551fb1233ca5f3aa74d80b74d9
-PKG_MIRROR_HASH:=654ba9dc8714aa8caf75ef422962fb465c2b21c8fbe4518a47f9de391cce6e71
+PKG_SOURCE_URL=https://github.com/ucode-lang/ucode.git
+PKG_SOURCE_DATE:=2026-10-28
+PKG_SOURCE_VERSION:=dfc64d41fd720163ac21d9feb9cb224d1a80fd75
+PKG_MIRROR_HASH:=149deff35eca0d0aad2ff308023355def8453e71338cba3033483a13de63733f
 PKG_MAINTAINER:=Jo-Philipp Wich <jo@mein.io>
 PKG_LICENSE:=ISC
 
-PKG_ABI_VERSION:=20230711
+PKG_ABI_VERSION:=20261009
 PKG_BUILD_DEPENDS:=libmd
 HOST_BUILD_DEPENDS:=libjson-c/host
 
@@ -54,7 +54,10 @@ CMAKE_HOST_OPTIONS += \
 	-DDEBUG_SUPPORT=ON \
 	-DLOG_SUPPORT=OFF \
 	-DZLIB_SUPPORT=ON \
-	-DDIGEST_SUPPORT=OFF
+	-DDIGEST_SUPPORT=OFF \
+	-DFFI_SUPPORT=OFF \
+	-DNETADDR_SUPPORT=OFF \
+	-DSERIAL_SUPPORT=OFF
 
 
 define Package/ucode/default
@@ -138,6 +141,10 @@ $(eval $(call UcodeModule, \
 	The debug plugin module provides runtime debugging and introspection facilities.))
 
 $(eval $(call UcodeModule, \
+	ffi, FFI_SUPPORT, +libffi, \
+	The ffi plugin module allows ucode scripts to call C functions in shared libraries through libffi.))
+
+$(eval $(call UcodeModule, \
 	fs, FS_SUPPORT, , \
 	The filesystem plugin module allows interaction with the local file system.))
 
@@ -150,6 +157,10 @@ $(eval $(call UcodeModule, \
 	The math plugin provides access to various <math.h> procedures.))
 
 $(eval $(call UcodeModule, \
+	netaddr, NETADDR_SUPPORT, , \
+	The netaddr plugin provides IPv4, IPv6 and MAC address parsing and calculation.))
+
+$(eval $(call UcodeModule, \
 	nl80211, NL80211_SUPPORT, +libnl-tiny +libubox, \
 	The nl80211 plugin provides access to the Linux wireless 802.11 netlink API.))
 
@@ -160,6 +171,10 @@ $(eval $(call UcodeModule, \
 $(eval $(call UcodeModule, \
 	rtnl, RTNL_SUPPORT, +libnl-tiny +libubox, \
 	The rtnl plugin provides access to the Linux routing netlink API.))
+
+$(eval $(call UcodeModule, \
+	serial, SERIAL_SUPPORT, , \
+	The serial plugin provides termios, modem control line and serial port configuration access.))
 
 $(eval $(call UcodeModule, \
 	socket, SOCKET_SUPPORT, , \

@@ -1,29 +1,29 @@
 From: Felix Fietkau <nbd@nbd.name>
-Date: Sun, 27 Sep 2026 20:12:59 +0200
-Subject: [PATCH] hostapd: keep the first link when a later AP MLD link fails
+Date: Tue, 6 Oct 2026 07:43:15 +0200
+Subject: [PATCH] AP MLD: Keep the first link when a later link fails
 
-A later link of an AP MLD takes the driver instance of the first link
-(hapd->drv_priv = h_hapd->drv_priv) in hostapd_driver_init() and joins
-the MLD only after hostapd_drv_link_add() succeeds. When that call, or
-the check for driver MLO support, fails, the link returns -1 with the
-borrowed pointer still set.
+A later link of an AP MLD takes the driver instance of the first link in
+hostapd_driver_init() and joins the AP MLD only after
+hostapd_drv_link_add() succeeds. When that call or the check for driver
+MLO support fails, the function returns -1 with the borrowed pointer
+still set. The cleanup of the caller then passes it to
+hostapd_cleanup_driver() as an instance of its own.
 
-The caller's cleanup, hostapd_deinit_driver(), then treats the instance
-as its own: hostapd_cleanup_driver() removes the link with this BSS's
-link ID from the shared instance, which is the link of another BSS when
-the link IDs collide, or deinits the instance when it looks unshared.
-The first link keeps a pointer to a torn down or freed instance, and the
-next link that is set up calls get_capa() on it and crashes hostapd.
+At startup, main() frees the interfaces in order. The cleanup of the
+links before the failed one deinitialises the instance, and the cleanup
+of the failed link then uses the freed pointer.
 
-Seen with an AP MLD whose links span two wiphys: the link on the second
-wiphy was assigned link ID 0, hostapd_drv_link_add() refused it, and the
-cleanup removed link 0 of the first wiphy.
+Through hostapd_add_iface(), if the failed link has the link ID of the
+first link, the cleanup removes that link from the shared instance, or
+deinitialises the instance when it has no other link. In the second
+case the first link loses its driver instance, and hostapd crashes in
+get_capa() when it sets up the next link.
 
-A link that never joined the MLD now drops the borrowed instance before
-it returns, so the cleanup leaves the first link alone.
+Drop the borrowed instance when the link did not join the AP MLD.
 
 Signed-off-by: Felix Fietkau <nbd@nbd.name>
 ---
+
 --- a/hostapd/main.c
 +++ b/hostapd/main.c
 @@ -371,7 +371,7 @@ setup_mld:
@@ -50,7 +50,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +
 +#ifdef CONFIG_IEEE80211BE
 +fail_mld:
-+	/* A later link only borrowed the driver instance of the first link */
++	/* A later link only borrowed the driver instance of the first link. */
 +	if (h_hapd) {
 +		hapd->drv_priv = NULL;
 +		hapd->interface_added = 0;

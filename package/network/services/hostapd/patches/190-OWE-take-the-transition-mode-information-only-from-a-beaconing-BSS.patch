@@ -1,0 +1,133 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Tue, 20 Oct 2026 15:20:31 +0200
+Subject: [PATCH] OWE: Take the transition mode information only from a beaconing BSS
+
+hostapd_owe_iface_iter() accepts any started BSS as the source of the
+OWE transition mode information. An open BSS thus advertises a
+start_disabled OWE BSS whose Beacon frames are held, and an OWE BSS
+keeps advertising its open BSS while the driver has the interface of
+that BSS down.
+
+Skip a source BSS whose Beacon frames are held or whose interface the
+driver disabled. Look the information up again when a held BSS is
+started explicitly and when the driver disables or enables an
+interface, so that the elements follow these changes. Defer the update
+of a BSS whose own interface the driver disabled to its interface
+enable.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+
+--- a/src/ap/beacon.c
++++ b/src/ap/beacon.c
+@@ -2738,9 +2738,15 @@ void ieee802_11_free_ap_params(struct wp
+ 
+ 
+ /* A start_disabled BSS beacons only after ieee802_11_start_beacon() */
++bool ieee802_11_beacon_held(struct hostapd_data *hapd)
++{
++	return hapd->conf->start_disabled && !hapd->beacon_started;
++}
++
++
+ static bool hostapd_beacon_held(struct hostapd_data *hapd)
+ {
+-	if (!hapd->conf->start_disabled || hapd->beacon_started)
++	if (!ieee802_11_beacon_held(hapd))
+ 		return false;
+ 
+ 	wpa_printf(MSG_DEBUG, "%s: Beacon frames held for start_disabled BSS",
+@@ -3391,8 +3397,14 @@ int ieee802_11_set_beacon(struct hostapd
+ 
+ int ieee802_11_start_beacon(struct hostapd_data *hapd)
+ {
++	bool held = ieee802_11_beacon_held(hapd);
++	int ret;
++
+ 	hapd->beacon_started = 1;
+-	return ieee802_11_set_beacon(hapd);
++	ret = ieee802_11_set_beacon(hapd);
++	if (held)
++		hostapd_owe_update_trans(hapd->iface);
++	return ret;
+ }
+ 
+ 
+--- a/src/ap/beacon.h
++++ b/src/ap/beacon.h
+@@ -18,6 +18,7 @@ void handle_probe_req(struct hostapd_dat
+ void ieee802_11_set_beacon_per_bss_only(struct hostapd_data *hapd);
+ int ieee802_11_set_beacon(struct hostapd_data *hapd);
+ int ieee802_11_start_beacon(struct hostapd_data *hapd);
++bool ieee802_11_beacon_held(struct hostapd_data *hapd);
+ int ieee802_11_set_beacons(struct hostapd_iface *iface);
+ int ieee802_11_update_beacons(struct hostapd_iface *iface);
+ int ieee802_11_build_ap_params(struct hostapd_data *hapd,
+--- a/src/ap/drv_callbacks.c
++++ b/src/ap/drv_callbacks.c
+@@ -2585,6 +2585,7 @@ static void hostapd_iface_enable(struct
+ 			hostapd_reconfig_encryption(hapd);
+ 		hapd->reenable_beacon = 1;
+ 		ieee802_11_set_beacon(hapd);
++		hostapd_owe_update_trans(hapd->iface);
+ #ifdef NEED_AP_MLME
+ 	} else if (hapd->disabled && hapd->iface->cac_started) {
+ 		wpa_printf(MSG_DEBUG, "DFS: restarting pending CAC");
+@@ -2599,6 +2600,7 @@ static void hostapd_iface_disable(struct
+ 	hostapd_free_stas(hapd);
+ 	wpa_msg(hapd->msg_ctx, MSG_INFO, INTERFACE_DISABLED);
+ 	hapd->disabled = 1;
++	hostapd_owe_update_trans(hapd->iface);
+ }
+ 
+ 
+--- a/src/ap/hostapd.c
++++ b/src/ap/hostapd.c
+@@ -125,9 +125,6 @@ void hostapd_reconfig_encryption(struct
+ }
+ 
+ 
+-static void hostapd_owe_update_trans(struct hostapd_iface *iface);
+-
+-
+ static void hostapd_reload_bss(struct hostapd_data *hapd)
+ {
+ 	struct hostapd_ssid *ssid;
+@@ -2547,7 +2544,8 @@ static int hostapd_owe_iface_iter(struct
+ 			   MAC2STR(bss->own_addr),
+ 			   wpa_ssid_txt(bss->conf->ssid.ssid,
+ 					bss->conf->ssid.ssid_len));
+-		if (!bss->started || !bss->conf->ssid.ssid_set ||
++		if (!bss->started || bss->disabled ||
++		    ieee802_11_beacon_held(bss) || !bss->conf->ssid.ssid_set ||
+ 		    !bss->conf->ssid.ssid_len ||
+ 		    is_zero_ether_addr(bss->own_addr))
+ 			continue;
+@@ -2620,7 +2618,7 @@ static int hostapd_owe_iface_iter2(struc
+ 		struct hostapd_data *bss = iface->bss[i];
+ 		int res;
+ 
+-		if (!bss->conf->owe_transition_ifname[0])
++		if (!bss->conf->owe_transition_ifname[0] || bss->disabled)
+ 			continue;
+ 		if (bss->iface->state != HAPD_IFACE_ENABLED) {
+ 			wpa_printf(MSG_DEBUG,
+@@ -2662,7 +2660,7 @@ static void hostapd_owe_update_trans_ifa
+ }
+ 
+ 
+-static void hostapd_owe_update_trans(struct hostapd_iface *iface)
++void hostapd_owe_update_trans(struct hostapd_iface *iface)
+ {
+ 	hostapd_owe_update_trans_ifaces(iface->interfaces, iface);
+ }
+--- a/src/ap/hostapd.h
++++ b/src/ap/hostapd.h
+@@ -860,6 +860,7 @@ void hostapd_cleanup_cs_params(struct ho
+ void hostapd_periodic_iface(struct hostapd_iface *iface);
+ int hostapd_owe_trans_get_info(struct hostapd_data *hapd);
+ bool hostapd_owe_trans_static(struct hostapd_bss_config *conf);
++void hostapd_owe_update_trans(struct hostapd_iface *iface);
+ void hostapd_ocv_check_csa_sa_query(void *eloop_ctx, void *timeout_ctx);
+ 
+ void hostapd_switch_color(struct hostapd_data *hapd, u64 bitmap);

@@ -5,11 +5,14 @@
 #include <linux/etherdevice.h>
 #include <linux/math64.h>
 #include <linux/netdevice.h>
+#include <linux/regmap.h>
 #include <net/flow_offload.h>
 #include <linux/rhashtable.h>
 #include <asm/mach-rtl-otto/mach-rtl-otto.h>
 
+#include "mirror.h"
 #include "pie.h"
+#include "qos.h"
 #include "rtl-otto.h"
 #include "stats.h"
 #include "tc.h"
@@ -25,6 +28,12 @@ struct rtl83xx_flow {
 
 #define RTL930X_BANDWIDTH_CTRL_EGRESS(port)	(0x7660 + (port * 16))
 #define RTL930X_BANDWIDTH_CTRL_INGRESS(port)	(0x8068 + (port * 4))
+#define RTL930X_BANDWIDTH_CTRL_QUEUE_SET0(port, queue) \
+						(0x3C60 + ((port) * 384) + ((queue) * 8))
+#define RTL930X_BANDWIDTH_CTRL_QUEUE_SET1(port, queue) \
+						(0xE300 + (((port) - 24) * 96) + ((queue) * 8))
+#define RTL930X_EGBW_LB_CTRL			0x78EC
+#define RTL930X_EGBW_LB_CTRL_TOKEN		GENMASK(31, 16)
 #define RTL930X_BANDWIDTH_CTRL_INGRESS_BURST_HIGH_ON(port) \
 						(0x80DC + (port * 8))
 #define RTL930X_BANDWIDTH_CTRL_INGRESS_BURST_HIGH_OFF(port) \
@@ -260,7 +269,7 @@ static int otto_tc_add_flow(struct otto_dsa_priv *priv, struct flow_cls_offload 
 {
 	struct flow_rule *rule = flow_cls_offload_flow_rule(f);
 	const struct flow_action_entry *act;
-	int i, err;
+	int i, err, port;
 
 	dev_dbg(priv->dev, "adding flower rule\n");
 
@@ -340,10 +349,30 @@ static int otto_tc_add_flow(struct otto_dsa_priv *priv, struct flow_cls_offload 
 
 		case FLOW_ACTION_MIRRED:
 			dev_dbg(priv->dev, "action MIRRED\n");
-			err = otto_tc_parse_fwd(priv, act, flow);
-			if (err)
+			if (!priv->r->pie_mirror_group) {
+				err = otto_tc_parse_fwd(priv, act, flow);
+				if (err)
+					return err;
+				flow->rule.fwd_act = PIE_ACT_COPY_TO_PORT;
+				break;
+			}
+			port = rtl83xx_port_is_under(act->dev, priv);
+			if (port < 0) {
+				netdev_info(act->dev, "not a DSA port on this switch\n");
+				return -EINVAL;
+			}
+			/* A copy through the forwarding action would take over the
+			 * forwarding decision of the L3 rules in later blocks.
+			 */
+			err = otto_mirror_group_get(priv, port);
+			if (err < 0) {
+				if (err == -ENOSPC)
+					NL_SET_ERR_MSG_MOD(f->common.extack,
+							   "all four mirror groups are in use");
 				return err;
-			flow->rule.fwd_act = PIE_ACT_COPY_TO_PORT;
+			}
+			flow->rule.mir_sel = true;
+			flow->rule.mir_data = err;
 			break;
 
 		default:
@@ -408,6 +437,8 @@ static void otto_tc_flow_free(void *ptr, void *arg)
 
 	priv->r->pie_rule_rm(priv, &flow->rule);
 	otto_tc_packet_cntr_put(priv, flow->rule.packet_cntr);
+	if (flow->rule.mir_sel)
+		otto_mirror_group_put(priv, flow->rule.mir_data);
 
 	/* Readers may still hold an RCU-protected reference after the
 	 * object has been removed from the hash table.
@@ -521,6 +552,8 @@ static int otto_tc_configure_flower(struct otto_dsa_priv *priv,
 out_remove:
 	rhashtable_remove_fast(&priv->tc_ht, &flow->node, tc_ht_params);
 	otto_tc_packet_cntr_put(priv, flow->rule.packet_cntr);
+	if (flow->rule.mir_sel)
+		otto_mirror_group_put(priv, flow->rule.mir_data);
 	/* published in tc_ht above; a concurrent reader may still hold a ref */
 	kfree_rcu(flow, rcu_head);
 	goto out_err;
@@ -562,6 +595,8 @@ static int otto_tc_delete_flower(struct otto_dsa_priv *priv,
 
 	priv->r->pie_rule_rm(priv, &flow->rule);
 	otto_tc_packet_cntr_put(priv, flow->rule.packet_cntr);
+	if (flow->rule.mir_sel)
+		otto_mirror_group_put(priv, flow->rule.mir_data);
 
 	kfree_rcu(flow, rcu_head);
 
@@ -732,6 +767,7 @@ int otto_tc_930x_port_rate_police_add(struct dsa_switch *ds, int port,
 	u32 burst;
 	u64 rate;
 	u32 addr;
+	int err;
 
 	/* rate has unit 16000 bit */
 	rate = div_u64(act->police.rate_bytes_ps, 2000);
@@ -751,43 +787,89 @@ int otto_tc_930x_port_rate_police_add(struct dsa_switch *ds, int port,
 		 * working, the realtek default ratio of 1:2 seems to work
 		 * reasonable well
 		 */
-		sw_w32(burst, RTL930X_BANDWIDTH_CTRL_INGRESS_BURST_HIGH_ON(port));
-		sw_w32(burst / 2, RTL930X_BANDWIDTH_CTRL_INGRESS_BURST_HIGH_OFF(port));
+		err = regmap_write(priv->map, RTL930X_BANDWIDTH_CTRL_INGRESS_BURST_HIGH_ON(port),
+				   burst);
+		if (err)
+			return err;
+		err = regmap_write(priv->map, RTL930X_BANDWIDTH_CTRL_INGRESS_BURST_HIGH_OFF(port),
+				   burst / 2);
+		if (err)
+			return err;
 
 		/* Enable ingress bandwidth flow control to improve TCP throughput and avoid
 		 * the drops behavior of the RTL930x ingress rate limiter which seem to not
 		 * play well with any congestion control algorithm
 		 */
-		sw_w32_mask(0, RTL930X_INGRESS_FC_CTRL_EN(port),
-			    RTL930X_INGRESS_FC_CTRL(port));
+		err = regmap_write_bits(priv->map, RTL930X_INGRESS_FC_CTRL(port),
+					RTL930X_INGRESS_FC_CTRL_EN(port),
+					RTL930X_INGRESS_FC_CTRL_EN(port));
+		if (err)
+			return err;
 	} else {
 		/* the bucket is 16 bit wide and has to hold the burst and one frame */
 		burst = min_t(u32, act->police.burst, U16_MAX - priv->r->max_frame);
 
-		sw_w32(burst, addr + 4);
+		err = regmap_write(priv->map, addr + 4, burst);
+		if (err)
+			return err;
 	}
 
-	sw_w32(rate, addr);
-
-	return 0;
+	return regmap_write(priv->map, addr, rate);
 }
 
 int otto_tc_930x_port_rate_police_del(struct dsa_switch *ds, int port,
 				      struct flow_cls_offload *cls,
 				      bool ingress)
 {
+	struct otto_dsa_priv *priv = ds->priv;
 	u32 addr;
+	int err;
 
 	if (ingress)
 		addr = RTL930X_BANDWIDTH_CTRL_INGRESS(port);
 	else
 		addr = RTL930X_BANDWIDTH_CTRL_EGRESS(port);
 
-	sw_w32_mask(RTL93XX_BANDWIDTH_CTRL_ENABLE, 0, addr);
+	err = regmap_write_bits(priv->map, addr, RTL93XX_BANDWIDTH_CTRL_ENABLE, 0);
+	if (err)
+		return err;
 
 	if (ingress)
-		sw_w32_mask(RTL930X_INGRESS_FC_CTRL_EN(port), 0,
-			    RTL930X_INGRESS_FC_CTRL(port));
+		return regmap_write_bits(priv->map, RTL930X_INGRESS_FC_CTRL(port),
+					 RTL930X_INGRESS_FC_CTRL_EN(port), 0);
+
+	return 0;
+}
+
+/* A queue below 0 is the shaper of the whole port and a rate of 0 switches the shaper off */
+int otto_tc_930x_egress_shaper_set(struct otto_dsa_priv *priv, int port, int queue,
+				   u64 rate_bytes_ps, u32 burst)
+{
+	u64 rate = div_u64(rate_bytes_ps, 2000);
+	u32 addr, lb_ctrl;
+
+	if (queue < 0)
+		addr = RTL930X_BANDWIDTH_CTRL_EGRESS(port);
+	else if (port < 24)
+		addr = RTL930X_BANDWIDTH_CTRL_QUEUE_SET0(port, queue);
+	else
+		addr = RTL930X_BANDWIDTH_CTRL_QUEUE_SET1(port, queue);
+
+	if (!rate_bytes_ps)
+		return regmap_clear_bits(priv->map, addr, RTL93XX_BANDWIDTH_CTRL_ENABLE);
+
+	/* the bucket is 16 bit wide and has to hold the burst and one frame, and the burst
+	 * at least three of the tokens the bucket is refilled with
+	 */
+	regmap_read(priv->map, RTL930X_EGBW_LB_CTRL, &lb_ctrl);
+	burst = min_t(u32, burst, U16_MAX - priv->r->max_frame);
+	if (!rate || burst < 3 * FIELD_GET(RTL930X_EGBW_LB_CTRL_TOKEN, lb_ctrl))
+		return -EINVAL;
+
+	rate = min_t(u64, rate, RTL93XX_BANDWIDTH_CTRL_RATE_MAX);
+
+	regmap_write(priv->map, addr + 4, burst);
+	regmap_write(priv->map, addr, rate | RTL93XX_BANDWIDTH_CTRL_ENABLE);
 
 	return 0;
 }
@@ -796,9 +878,11 @@ int otto_tc_931x_port_rate_police_add(struct dsa_switch *ds, int port,
 				      const struct flow_action_entry *act,
 				      bool ingress)
 {
+	struct otto_dsa_priv *priv = ds->priv;
 	u32 burst;
 	u64 rate;
 	u32 addr;
+	int err;
 
 	/* rate has unit 16000 bit */
 	rate = div_u64(act->police.rate_bytes_ps, 2000);
@@ -812,16 +896,18 @@ int otto_tc_931x_port_rate_police_add(struct dsa_switch *ds, int port,
 	else
 		addr = RTL931X_BANDWIDTH_CTRL_EGRESS(port);
 
-	sw_w32(burst, addr + 4);
-	sw_w32(rate, addr);
+	err = regmap_write(priv->map, addr + 4, burst);
+	if (err)
+		return err;
 
-	return 0;
+	return regmap_write(priv->map, addr, rate);
 }
 
 int otto_tc_931x_port_rate_police_del(struct dsa_switch *ds, int port,
 				      struct flow_cls_offload *cls,
 				      bool ingress)
 {
+	struct otto_dsa_priv *priv = ds->priv;
 	u32 addr;
 
 	if (ingress)
@@ -829,9 +915,22 @@ int otto_tc_931x_port_rate_police_del(struct dsa_switch *ds, int port,
 	else
 		addr = RTL931X_BANDWIDTH_CTRL_EGRESS(port);
 
-	sw_w32_mask(RTL93XX_BANDWIDTH_CTRL_ENABLE, 0, addr);
+	return regmap_write_bits(priv->map, addr, RTL93XX_BANDWIDTH_CTRL_ENABLE, 0);
+}
 
-	return 0;
+static void otto_tc_tbf_apply(struct otto_dsa_priv *priv, int port, int queue, bool allowed)
+{
+	struct rtldsa_port *pp = &priv->ports[port];
+	struct rtldsa_tbf *tbf = queue < 0 ? &pp->tbf : &pp->queue_tbf[queue];
+	bool offload = allowed && tbf->handle && tbf->rate_bytes_ps && !tbf->child;
+
+	if (offload)
+		offload = !priv->r->egress_shaper_set(priv, port, queue, tbf->rate_bytes_ps,
+						      tbf->burst);
+	if (!offload && tbf->offloaded)
+		priv->r->egress_shaper_set(priv, port, queue, 0, 0);
+
+	tbf->offloaded = offload;
 }
 
 int otto_tc_cls_flower_add(struct dsa_switch *ds, int port,
@@ -860,7 +959,7 @@ int otto_tc_cls_flower_add(struct dsa_switch *ds, int port,
 		goto unlock;
 	}
 
-	if (!ingress && p->rate_police_egress) {
+	if (!ingress && (p->rate_police_egress || p->tbf.handle)) {
 		ret = -EOPNOTSUPP;
 		goto unlock;
 	}
@@ -910,10 +1009,12 @@ int otto_tc_cls_flower_del(struct dsa_switch *ds, int port,
 	if (ret < 0)
 		goto unlock;
 
-	if (ingress)
+	if (ingress) {
 		p->rate_police_ingress = 0;
-	else
+	} else {
 		p->rate_police_egress = 0;
+		otto_tc_tbf_apply(priv, port, -1, true);
+	}
 
 unlock:
 	mutex_unlock(&priv->reg_mutex);
@@ -936,4 +1037,189 @@ int otto_tc_cls_flower_stats(struct dsa_switch *ds, int port,
 		return 0;
 
 	return ret;
+}
+
+static bool otto_tc_ets_offloaded(struct rtldsa_port *pp)
+{
+	if (!pp->ets_offloadable || pp->ets_children)
+		return false;
+
+	for (int queue = 0; queue < MAX_PRIOS; queue++)
+		if (pp->queue_tbf[queue].handle && !pp->queue_tbf[queue].offloaded)
+			return false;
+
+	return true;
+}
+
+static void otto_tc_ets_apply(struct otto_dsa_priv *priv, int port)
+{
+	struct rtldsa_port *pp = &priv->ports[port];
+	bool offload = pp->ets_offloadable && !pp->ets_children;
+
+	for (int queue = 0; queue < MAX_PRIOS; queue++)
+		otto_tc_tbf_apply(priv, port, queue, offload);
+
+	offload = otto_tc_ets_offloaded(pp);
+
+	for (int queue = 0; queue < MAX_PRIOS; queue++) {
+		if (!offload)
+			otto_tc_tbf_apply(priv, port, queue, false);
+		else if (pp->ets_weights[queue])
+			priv->r->queue_sched_set(priv, port, queue, pp->ets_weights[queue], false);
+		else
+			priv->r->queue_sched_set(priv, port, queue, 1, true);
+	}
+
+	if (!offload)
+		otto_qos_queue_sched_reset(priv, port);
+}
+
+/* Band 0 is the band ETS serves first and queue 7 the queue the hardware serves first.
+ * The hardware maps priority n to queue n for the whole switch, so only the priomap
+ * that says the same can be offloaded.
+ */
+static int otto_tc_setup_qdisc_ets(struct otto_dsa_priv *priv, int port,
+				   struct tc_ets_qopt_offload *qopt)
+{
+	struct tc_ets_qopt_offload_replace_params *p = &qopt->replace_params;
+	struct rtldsa_port *pp = &priv->ports[port];
+	u32 old_handle = pp->ets_handle, child;
+	unsigned int band;
+
+	if (!priv->r->queue_sched_set || qopt->parent != TC_H_ROOT)
+		return -EOPNOTSUPP;
+
+	switch (qopt->command) {
+	case TC_ETS_REPLACE:
+		if (pp->ets_handle != qopt->handle)
+			pp->ets_children = 0;
+		pp->ets_children &= GENMASK(p->bands - 1, 0);
+		pp->ets_handle = qopt->handle;
+		pp->ets_offloadable = p->bands == MAX_PRIOS;
+		for (int band = 0; pp->ets_offloadable && band < MAX_PRIOS; band++) {
+			int queue = MAX_PRIOS - 1 - band;
+
+			pp->ets_offloadable = p->priomap[queue] == band &&
+					      (!p->quanta[band] || p->weights[band]);
+			pp->ets_weights[queue] = p->quanta[band] ? p->weights[band] : 0;
+		}
+		break;
+	case TC_ETS_DESTROY:
+		if (pp->ets_handle != qopt->handle)
+			return 0;
+		pp->ets_handle = 0;
+		pp->ets_offloadable = false;
+		break;
+	case TC_ETS_STATS:
+		if (pp->ets_handle != qopt->handle)
+			return -EOPNOTSUPP;
+		return otto_tc_ets_offloaded(pp) ? 0 : -EOPNOTSUPP;
+	case TC_ETS_GRAFT:
+		if (pp->ets_handle != qopt->handle)
+			return -EOPNOTSUPP;
+		/* the kernel keeps a refused child, so the qdisc stays out of the hardware
+		 * while any band has one, other than a TBF on the queue of the band
+		 */
+		band = qopt->graft_params.band;
+		child = qopt->graft_params.child_handle;
+		if (child && (band >= MAX_PRIOS ||
+			      child != pp->queue_tbf[MAX_PRIOS - 1 - band].handle))
+			pp->ets_children |= BIT(band);
+		else
+			pp->ets_children &= ~BIT(band);
+		break;
+	default:
+		return -EOPNOTSUPP;
+	}
+
+	/* the TBFs on the bands of another ETS cannot be matched to a queue */
+	for (int queue = 0; pp->ets_handle != old_handle && queue < MAX_PRIOS; queue++)
+		pp->queue_tbf[queue].handle = 0;
+
+	scoped_guard(mutex, &priv->reg_mutex)
+		otto_tc_ets_apply(priv, port);
+
+	return (otto_tc_ets_offloaded(pp) || qopt->command == TC_ETS_DESTROY) ? 0 : -EOPNOTSUPP;
+}
+
+static int otto_tc_setup_qdisc_tbf(struct otto_dsa_priv *priv, int port,
+				   struct tc_tbf_qopt_offload *qopt)
+{
+	const struct psched_ratecfg *rate = &qopt->replace_params.rate;
+	unsigned int band = TC_H_MIN(qopt->parent);
+	struct rtldsa_port *pp = &priv->ports[port];
+	struct rtldsa_tbf *tbf;
+	int queue = -1;
+
+	if (!priv->r->egress_shaper_set)
+		return -EOPNOTSUPP;
+
+	if (qopt->parent == TC_H_ROOT) {
+		tbf = &pp->tbf;
+	} else if (pp->ets_handle && TC_H_MAJ(qopt->parent) == pp->ets_handle &&
+		   band && band <= MAX_PRIOS) {
+		queue = MAX_PRIOS - band;
+		tbf = &pp->queue_tbf[queue];
+	} else {
+		return -EOPNOTSUPP;
+	}
+
+	switch (qopt->command) {
+	case TC_TBF_REPLACE:
+		if (tbf->handle != qopt->handle)
+			tbf->child = false;
+		tbf->handle = qopt->handle;
+		/* the limiters know no overhead, minimum size or ATM cells, so a TBF that
+		 * uses them gets no rate and stays in software
+		 */
+		if (rate->overhead || rate->mpu || rate->linklayer == TC_LINKLAYER_ATM)
+			tbf->rate_bytes_ps = 0;
+		else
+			tbf->rate_bytes_ps = rate->rate_bytes_ps;
+		tbf->burst = qopt->replace_params.max_size;
+		break;
+	case TC_TBF_DESTROY:
+		if (tbf->handle != qopt->handle)
+			return 0;
+		tbf->handle = 0;
+		break;
+	case TC_TBF_STATS:
+		return tbf->handle == qopt->handle && tbf->offloaded ? 0 : -EOPNOTSUPP;
+	case TC_TBF_GRAFT:
+		if (tbf->handle != qopt->handle)
+			return -EOPNOTSUPP;
+		/* the kernel keeps a refused child and puts the noop qdisc, which drops
+		 * everything, in place of a deleted one, so the qdisc stays out of the
+		 * hardware from its first graft on
+		 */
+		tbf->child = true;
+		break;
+	default:
+		return -EOPNOTSUPP;
+	}
+
+	scoped_guard(mutex, &priv->reg_mutex) {
+		/* the egress police uses the shaper of the port */
+		if (queue < 0)
+			otto_tc_tbf_apply(priv, port, queue, !pp->rate_police_egress);
+		else
+			otto_tc_ets_apply(priv, port);
+	}
+
+	return (tbf->offloaded || qopt->command == TC_TBF_DESTROY) ? 0 : -EOPNOTSUPP;
+}
+
+int otto_tc_port_setup_tc(struct dsa_switch *ds, int port, enum tc_setup_type type,
+			  void *type_data)
+{
+	struct otto_dsa_priv *priv = ds->priv;
+
+	switch (type) {
+	case TC_SETUP_QDISC_TBF:
+		return otto_tc_setup_qdisc_tbf(priv, port, type_data);
+	case TC_SETUP_QDISC_ETS:
+		return otto_tc_setup_qdisc_ets(priv, port, type_data);
+	default:
+		return -EOPNOTSUPP;
+	}
 }

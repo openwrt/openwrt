@@ -411,6 +411,28 @@ _procd_add_action_mount_trigger() {
 	_procd_close_trigger
 }
 
+# uvol registers its volumes with blockd, at /tmp/run/uvol/<name>
+_procd_get_uvol_mountpoint() {
+	local path="${1%%/}/"
+
+	case "$path" in
+	/tmp/run/uvol/?*/*)
+		path="${path#/tmp/run/uvol/}"
+		echo "/tmp/run/uvol/${path%%/*}"
+		;;
+	esac
+}
+
+_procd_get_link_target() {
+	local link="$(readlink "$1")"
+
+	case "$link" in
+	"") ;;
+	/*) path_normalize "$link" ;;
+	*) path_normalize "$(cd "${1%/*}/" && pwd -P)/$link" ;;
+	esac
+}
+
 procd_get_mountpoints() {
 	(
 		__procd_check_mount() {
@@ -421,12 +443,36 @@ procd_get_mountpoints() {
 			target="${target%%/}/"
 			[ "$path" != "${path##$target}" ] && echo "${target%%/}"
 		}
-		local mpath
+		local mpath link path
 		config_load fstab
 		for mpath in "$@"; do
-			config_foreach __procd_check_mount mount "$mpath"
+			link="$(_procd_get_link_target "$mpath")"
+			for path in "$mpath" ${link:+"$link"}; do
+				config_foreach __procd_check_mount mount "$path"
+				_procd_get_uvol_mountpoint "$path"
+			done
 		done
 	) | sort -u
+}
+
+procd_mountpoints_ready() {
+	local mountpoint ready
+
+	for mountpoint in $(procd_get_mountpoints "$@"); do
+		case "$mountpoint" in
+		/tmp/run/uvol/*)
+			[ -L "$mountpoint" ] || return 1
+			[ -n "$ready" ] ||
+				ready="$(ubus call block status 2>/dev/null | jsonfilter -e '@.ready')"
+			[ "$ready" = "true" ] || return 1
+			;;
+		*)
+			awk -v target="$mountpoint" '$2 == target { found = 1 } END { exit !found }' \
+				/proc/mounts || return 1
+			;;
+		esac
+	done
+	return 0
 }
 
 _procd_add_restart_mount_trigger() {

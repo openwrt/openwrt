@@ -26,7 +26,6 @@ define KernelPackage/sound-soc-bcm2835-i2s
   TITLE:=SoC Audio support for the Broadcom 2835 I2S module
   KCONFIG:= \
     CONFIG_SND_BCM2835_SOC_I2S \
-    CONFIG_SND_SOC_DMAENGINE_PCM=y \
     CONFIG_SND_SOC_GENERIC_DMAENGINE_PCM=y
   FILES:= \
     $(LINUX_DIR)/sound/soc/bcm/snd-soc-bcm2835-i2s.ko
@@ -163,8 +162,7 @@ define KernelPackage/sound-soc-allo-digione
   FILES:= \
     $(LINUX_DIR)/sound/soc/codecs/snd-soc-wm8804.ko \
     $(LINUX_DIR)/sound/soc/codecs/snd-soc-wm8804-i2c.ko
-  AUTOLOAD:=$(call AutoLoad,68,snd-soc-wm8804-i2c snd-soc-wm8804 \
-    snd-soc-allo-digione)
+  AUTOLOAD:=$(call AutoLoad,68,snd-soc-wm8804-i2c snd-soc-wm8804)
   DEPENDS:= \
     kmod-sound-soc-bcm2835-i2s \
     +kmod-sound-soc-rpi-wm8804-soundcard \
@@ -294,8 +292,9 @@ define KernelPackage/sound-soc-audioinjector-isolated-soundcard
     CONFIG_SND_SOC_CS4271_I2C
   FILES:= \
     $(LINUX_DIR)/sound/soc/bcm/snd-soc-audioinjector-isolated-soundcard.ko \
-    $(LINUX_DIR)/sound/soc/codecs/snd-soc-wm8731.ko
-  AUTOLOAD:=$(call AutoLoad,68,snd-soc-cs4271.o \
+    $(LINUX_DIR)/sound/soc/codecs/snd-soc-cs4271.ko \
+    $(LINUX_DIR)/sound/soc/codecs/snd-soc-cs4271-i2c.ko
+  AUTOLOAD:=$(call AutoLoad,68,snd-soc-cs4271 \
     snd-soc-cs4271-i2c \
     snd-soc-audioinjector-isolated-soundcard)
   DEPENDS:= \
@@ -323,7 +322,7 @@ define KernelPackage/sound-soc-audioinjector-octo-soundcard
     $(LINUX_DIR)/sound/soc/bcm/snd-soc-audioinjector-octo-soundcard.ko \
     $(LINUX_DIR)/sound/soc/codecs/snd-soc-cs42xx8.ko \
     $(LINUX_DIR)/sound/soc/codecs/snd-soc-cs42xx8-i2c.ko
-  AUTOLOAD:=$(call AutoLoad,68,snd-soc- \
+  AUTOLOAD:=$(call AutoLoad,68,snd-soc-cs42xx8 snd-soc-cs42xx8-i2c \
     snd-soc-audioinjector-octo-soundcard)
   DEPENDS:= \
     kmod-sound-soc-bcm2835-i2s \
@@ -390,7 +389,8 @@ define KernelPackage/sound-soc-dacberry-soundcard
     CONFIG_SND_SOC_TLV320AIC3X_I2C
   FILES:= \
     $(LINUX_DIR)/sound/soc/bcm/snd-soc-dacberry400.ko \
-    $(LINUX_DIR)/sound/soc/codecs/snd-soc-tlv320aic3x.ko
+    $(LINUX_DIR)/sound/soc/codecs/snd-soc-tlv320aic3x.ko \
+    $(LINUX_DIR)/sound/soc/codecs/snd-soc-tlv320aic3x-i2c.ko
   AUTOLOAD:=$(call AutoLoad,68,snd-soc-tlv320aic3x-i2c snd-soc-dacberry400)
   DEPENDS:= \
     kmod-sound-soc-bcm2835-i2s \
@@ -509,8 +509,7 @@ $(eval $(call KernelPackage,sound-soc-fe-pi))
 define KernelPackage/sound-soc-googlevoicehat
   TITLE:=Support for Google VoiceHAT Sound Card
   KCONFIG:= \
-    CONFIG_SND_BCM2708_SOC_GOOGLEVOICEHAT_SOUNDCARD \
-    CONFIG_SND_SOC_VOICEHAT
+    CONFIG_SND_BCM2708_SOC_GOOGLEVOICEHAT_SOUNDCARD
   FILES:= \
     $(LINUX_DIR)/sound/soc/bcm/snd-soc-googlevoicehat-codec.ko
   AUTOLOAD:=$(call AutoLoad,68,snd-soc-googlevoicehat-codec)
@@ -531,7 +530,6 @@ define KernelPackage/sound-soc-hifiberry-adc
   TITLE:=Support for HifiBerry ADC
   KCONFIG:= \
     CONFIG_SND_BCM2708_SOC_HIFIBERRY_ADC \
-    CONFIG_SND_RPI_HIFIBERRY_ADC \
     CONFIG_SND_SOC_PCM186X_I2C
   FILES:= \
     $(LINUX_DIR)/sound/soc/bcm/snd-soc-hifiberry-adc.ko \
@@ -937,7 +935,6 @@ define KernelPackage/sound-soc-pifi-40-amp
   TITLE:=Support for PiFi-40 amp
   KCONFIG:= \
     CONFIG_SND_BCM2708_SOC_PIFI_40 \
-    CONFIG_SND_PIFI_40 \
     CONFIG_SND_SOC_TAS571X
   FILES:= \
     $(LINUX_DIR)/sound/soc/bcm/snd-soc-pifi-40.ko \
@@ -988,7 +985,6 @@ define KernelPackage/sound-soc-rpi-cirrus
     CONFIG_MFD_WM5110=n \
     CONFIG_MFD_WM8997=n \
     CONFIG_MFD_WM8998=n \
-    CONFIG_REGULATOR_ARIZONA \
     CONFIG_REGULATOR_ARIZONA_LDO1 \
     CONFIG_REGULATOR_ARIZONA_MICSUPP \
     CONFIG_SND_BCM2708_SOC_RPI_CIRRUS \

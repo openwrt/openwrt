@@ -1,0 +1,77 @@
+From 2c50cd5d10e8723797f28c7978f1f61688e0c0d2 Mon Sep 17 00:00:00 2001
+From: John Macias <dencity7@gmail.com>
+Date: Sun, 25 Oct 2026 20:58:03 -0700
+Subject: [PATCH] wifi: cfg80211/mac80211: apply HE OBSS PD settings on beacon
+ update
+
+hostapd puts NL80211_ATTR_HE_OBSS_PD into NL80211_CMD_SET_BEACON as well
+as NL80211_CMD_START_AP, but cfg80211 parses it only when the AP starts.
+A change of the spatial reuse parameters therefore reaches the beacon
+but not the driver, and the only way to apply it is to restart the AP,
+which disconnects all stations.
+
+Parse the attribute in the AP update path and apply it in
+ieee80211_change_beacon() when it differs from the current settings.
+
+Assisted-by: LLM
+Signed-off-by: John Macias <dencity7@gmail.com>
+Link: https://patch.msgid.link/20261026035803.2630025-1-dencity7@gmail.com
+Signed-off-by: Johannes Berg <johannes.berg@intel.com>
+[nbd: in 7.2 the AP update attributes are parsed in nl80211_set_beacon(),
+ which has no nl80211_parse_ap_update() yet]
+---
+ include/net/cfg80211.h | 3 +++
+ net/mac80211/cfg.c     | 7 +++++++
+ net/wireless/nl80211.c | 7 +++++++
+ 3 files changed, 17 insertions(+)
+
+--- a/include/net/cfg80211.h
++++ b/include/net/cfg80211.h
+@@ -1647,12 +1647,15 @@ struct cfg80211_ap_settings {
+  * @fils_discovery: FILS discovery transmission parameters
+  * @unsol_bcast_probe_resp: Unsolicited broadcast probe response parameters
+  * @s1g_short_beacon: S1G short beacon data
++ * @he_obss_pd: OBSS Packet Detection settings, applied if @he_obss_pd.enable
++ *	is set
+  */
+ struct cfg80211_ap_update {
+ 	struct cfg80211_beacon_data beacon;
+ 	struct cfg80211_fils_discovery fils_discovery;
+ 	struct cfg80211_unsol_bcast_probe_resp unsol_bcast_probe_resp;
+ 	struct cfg80211_s1g_short_beacon s1g_short_beacon;
++	struct ieee80211_he_obss_pd he_obss_pd;
+ };
+ 
+ /**
+--- a/net/mac80211/cfg.c
++++ b/net/mac80211/cfg.c
+@@ -1993,6 +1993,13 @@ static int ieee80211_change_beacon(struc
+ 		changed |= BSS_CHANGED_HE_BSS_COLOR;
+ 	}
+ 
++	if (params->he_obss_pd.enable && link_conf->he_support &&
++	    memcmp(&params->he_obss_pd, &link_conf->he_obss_pd,
++		   sizeof(params->he_obss_pd))) {
++		link_conf->he_obss_pd = params->he_obss_pd;
++		changed |= BSS_CHANGED_HE_OBSS_PD;
++	}
++
+ 	ieee80211_link_info_change_notify(sdata, link, changed);
+ 	return 0;
+ }
+--- a/net/wireless/nl80211.c
++++ b/net/wireless/nl80211.c
+@@ -7568,6 +7568,13 @@ static int nl80211_set_beacon(struct sk_
+ 			goto out;
+ 	}
+ 
++	attr = info->attrs[NL80211_ATTR_HE_OBSS_PD];
++	if (attr) {
++		err = nl80211_parse_he_obss_pd(attr, &params->he_obss_pd);
++		if (err)
++			goto out;
++	}
++
+ 	err = rdev_change_beacon(rdev, dev, params);
+ 
+ out:

@@ -1,0 +1,167 @@
+From 880976cc55c363fdd2ec37bf29d4f487381d94ed Mon Sep 17 00:00:00 2001
+From: Karsten Sperling <ksperling@apple.com>
+Date: Fri, 26 Jun 2026 23:14:41 +1200
+Subject: [PATCH] mbedtls: implement TLS 1.3 key export and application data
+
+Use mbedtls_ssl_export_keying_material() instead of
+mbedtls_ssl_tls_prf() in tls_connection_export_key() when
+MBEDTLS_SSL_KEYING_MATERIAL_EXPORT is enabled (available from Mbed TLS
+3.6.4), and disable TLS 1.3 otherwise. Without this API, hostapd has no
+way to derive the MSK after a successful EAP TLS 1.3 handshake and
+disassociates the station.
+
+mbedtls_ssl_export_keying_material() implements both the TLS <=1.2
+(PRF-based) and TLS 1.3 export. Using it for all TLS versions when
+available mirrors the OpenSSL backend's use of
+SSL_export_keying_material().
+
+The mbedtls_ssl_export_keys_cb() code paths are kept as they are still
+used by tls_connection_get_random() and the EAP-FAST (TLS 1.2 only) key
+derivation.
+
+Also decrypt and pass through post-handshake application data. This is
+necessary so the "protected success indication" can be processed on the
+supplicant side, allowing the EAP-TLS 1.3 handshake to complete
+successfully.
+
+With these changes, most EAP-TLS 1.3 hwsim tests pass on mbedtls.
+
+Signed-off-by: Karsten Sperling <ksperling@apple.com>
+
+--- a/src/crypto/tls_mbedtls.c
++++ b/src/crypto/tls_mbedtls.c
+@@ -11,7 +11,6 @@
+  * reference: src/crypto/tls_*.c
+  *
+  * Known Limitations:
+- * - no TLSv1.3 (not available in mbedtls 2.x; experimental in mbedtls 3.x)
+  * - no OCSP (not yet available in mbedtls)
+  * - mbedtls does not support all certificate encodings used by hwsim tests
+  *   PCKS#5 v1.5
+@@ -31,6 +30,7 @@
+  * - code written to be compatible with mbedtls 2.x and mbedtls 3.x
+  *   (currently requires mbedtls >= 2.27.0 for mbedtls_mpi_random())
+  *   (currently requires mbedtls >= 2.18.0 for mbedtls_ssl_tls_prf())
++ *   (TLS 1.3 requires mbedtls >= 3.6.4 for mbedtls_ssl_export_keying_material())
+  * - builds with tests/build/build-wpa_supplicant-mbedtls.config
+  * - passes all tests/ crypto module tests (incomplete coverage)
+  *   ($ cd tests; make clean; make -j 4 run-tests CONFIG_TLS=mbedtls)
+@@ -123,6 +123,15 @@ typedef mbedtls_tls_prf_types int;
+ #endif
+ #endif
+ 
++/* MBEDTLS_SSL_PROTO_TLS1_3 by itself is insufficient for working TLS 1.3 support,
++ * because keying material from a TLSv1.3 session can only be exported via the
++ * mbedtls_ssl_export_keying_material() API that requires Mbed TLS 3.6.4 or newer
++ * and is guarded by MBEDTLS_SSL_KEYING_MATERIAL_EXPORT.
++ * See tls_connection_export_key(). */
++#if defined(MBEDTLS_SSL_PROTO_TLS1_3) && defined(MBEDTLS_SSL_KEYING_MATERIAL_EXPORT)
++#define TLS_MBEDTLS_TLS13
++#endif
++
+ 
+ struct tls_conf {
+ 	mbedtls_ssl_config conf;
+@@ -644,7 +653,7 @@ static int tls_mbedtls_data_is_pem(const
+ static void tls_mbedtls_set_allowed_tls_vers(struct tls_conf *tls_conf,
+                                              mbedtls_ssl_config *conf)
+ {
+-  #if !defined(MBEDTLS_SSL_PROTO_TLS1_3)
++  #if !defined(TLS_MBEDTLS_TLS13)
+ 	tls_conf->flags |= TLS_CONN_DISABLE_TLSv1_3;
+   #endif
+ 
+@@ -2057,7 +2066,16 @@ int tls_connection_export_key(void *tls_
+ 			      size_t context_len, u8 *out, size_t out_len)
+ {
+ 	/* (EAP-PEAP EAP-TLS EAP-TTLS) */
+-  #if MBEDTLS_VERSION_NUMBER >= 0x02120000 /* mbedtls 2.18.0 */
++  #if defined(MBEDTLS_SSL_KEYING_MATERIAL_EXPORT) /* mbedtls 3.6.4 */
++	/* Implements both TLS <= 1.2 and TLS 1.3 keying material export */
++	return (conn && conn->established)
++	  ? mbedtls_ssl_export_keying_material(&conn->ssl, out, out_len,
++	                                       label, os_strlen(label),
++	                                       context, context_len,
++	                                       context != NULL)
++	  : -1;
++  #elif MBEDTLS_VERSION_NUMBER >= 0x02120000 /* mbedtls 2.18.0 */
++	/* TLS <= 1.2 only, tls_prf_type will be 0 when TLS 1.3 is used. */
+ 	return (conn && conn->established && conn->tls_prf_type)
+ 	  ? mbedtls_ssl_tls_prf(conn->tls_prf_type,
+ 				conn->expkey_secret, conn->expkey_secret_len, label,
+@@ -2283,8 +2301,32 @@ struct wpabuf * tls_connection_handshake
+ 			/* Need to return something to get final TLS ACK. */
+ 			conn->push_buf = wpabuf_alloc(0);
+ 
+-		if (appl_data /*&& conn->pull_buf && wpabuf_len(conn->pull_buf)*/)
+-			*appl_data = NULL; /* RFE: check for application data */
++		/* Decrypt any application data the peer sent after the
++		 * handshake completed. In particular, the EAP-TLS 1.3 Protected
++		 * Success Indication (a single 0x00 byte) is sent in this way,
++		 * and the EAP-TLS peer relies on this being returned to observe
++		 * completion. Note that there is no read loop here: A single
++		 * reassembled EAP message has been fed into the TLS layer, and
++		 * the read returns the first application data record from that
++		 * message (if any). This matches the logic in the other
++		 * backends (e.g. OpenSSL, wolfSSL) and is sufficient for
++		 * EAP since it sends at most 1 byte of post-handshake data. */
++		if (appl_data && conn->pull_buf &&
++		    wpabuf_len(conn->pull_buf) > conn->pull_buf_offset) {
++			struct wpabuf *ad = wpabuf_alloc(
++			    wpabuf_len(conn->pull_buf) - conn->pull_buf_offset);
++			if (ad) {
++				int res = mbedtls_ssl_read(&conn->ssl,
++				                           wpabuf_mhead(ad),
++				                           wpabuf_size(ad));
++				if (res > 0) {
++					wpabuf_put(ad, res);
++					*appl_data = ad;
++				} else {
++					wpabuf_free(ad);
++				}
++			}
++		}
+ 		break;
+ 	case MBEDTLS_ERR_SSL_WANT_WRITE:
+ 	case MBEDTLS_ERR_SSL_WANT_READ:
+--- a/tests/hwsim/test_ap_eap.py
++++ b/tests/hwsim/test_ap_eap.py
+@@ -134,10 +134,19 @@ def check_pkcs5_v15_support(dev):
+     if "BoringSSL" in tls or "GnuTLS" in tls or "mbed TLS" in tls:
+         raise HwsimSkip("PKCS#5 v1.5 not supported with this TLS library: " + tls)
+ 
++def mbedtls_supports_tls13(tls):
++    # TLS 1.3 keying material export requires 3.6.4 or newer
++    try:
++        run = next((tok[4:] for tok in tls.split() if tok.startswith("run=")))
++        return [int(x) for x in run.split(".")] >= [3, 6, 4]
++    except ValueError: # e.g. "run=n/a" without MBEDTLS_VERSION_C
++        return False
++
+ def check_tls13_support(dev):
+     tls = dev.request("GET tls_library")
+     if tls.startswith("mbed TLS"):
+-        raise HwsimSkip("TLS v1.3 not supported")
++        if mbedtls_supports_tls13(tls):
++            return
+     ok = ['run=OpenSSL', 'wolfSSL']
+     for s in ok:
+         if s in tls:
+@@ -6268,15 +6277,13 @@ def test_ap_wpa2_eap_tls_versions(dev, a
+     elif tls.startswith("internal") or tls.startswith("mbed TLS"):
+         check_tls_ver(dev[0], hapd,
+                       "tls_disable_tlsv1_0=1 tls_disable_tlsv1_1=1", "TLSv1.2")
+-    if tls.startswith("mbed TLS"):
+-        check_tls_ver(dev[2], hapd,
+-                      "tls_disable_tlsv1_0=0 tls_disable_tlsv1_1=1 tls_disable_tlsv1_2=1", "TLSv1.0")
+-    else:
++    if not tls.startswith("mbed TLS"): # MbedTLS 3.x removed support for TLS 1.0 and 1.1
+         check_tls_ver(dev[1], hapd,
+                       "tls_disable_tlsv1_0=1 tls_disable_tlsv1_1=0 tls_disable_tlsv1_2=1", "TLSv1.1")
+         check_tls_ver(dev[2], hapd,
+                       "tls_disable_tlsv1_0=0 tls_disable_tlsv1_1=1 tls_disable_tlsv1_2=1", "TLSv1")
+     if "run=OpenSSL 1.1.1" in tls or "run=OpenSSL 3." in tls or \
++       tls.startswith("mbed TLS") and mbedtls_supports_tls13(tls) or \
+        tls.startswith("wolfSSL"):
+         check_tls_ver(dev[0], hapd,
+                       "tls_disable_tlsv1_0=1 tls_disable_tlsv1_1=1 tls_disable_tlsv1_2=1 tls_disable_tlsv1_3=0", "TLSv1.3")

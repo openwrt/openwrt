@@ -161,14 +161,10 @@ qca_uniphy_refclk_recalc_rate(struct clk_hw *hw, unsigned long parent_rate)
 		regmap_read(uniphy->regmap, IPQ5018_UNIPHY_REFCLK, &val);
 		if (val & IPQ5018_UNIPHY_REFCLK_DIV)
 			return UNIPHY_REFCLK_25MHZ;
-		else
-			return UNIPHY_REFCLK_50MHZ;
-		break;
+		return UNIPHY_REFCLK_50MHZ;
 	default:
-		return -EINVAL;
+		return 0;
 	}
-
-	return 0;
 }
 
 static int
@@ -212,12 +208,12 @@ static int qca_uniphy_refclk_register(struct qca_uniphy *uniphy,
 	struct clk_parent_data pdata = { .fw_name = "ref" };
 	struct clk_init_data init = {};
 
-	init.name = name,
+	init.name = name;
 	init.parent_data = &pdata;
 	init.num_parents = 1;
-	init.ops = &qca_uniphy_refclk_ops,
+	init.ops = &qca_uniphy_refclk_ops;
 	/* always derive rate from the UNIPHY register */
-	init.flags = CLK_GET_RATE_NOCACHE,
+	init.flags = CLK_GET_RATE_NOCACHE;
 
 	uniphy->ref_clk.hw.init = &init;
 	uniphy->ref_clk.uniphy = uniphy;

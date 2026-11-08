@@ -420,7 +420,7 @@
 			compatible = "pci17cb,1104";
 			reg = <0x00010000 0 0 0 0>;
 
-			qcom,ath11k-calibration-variant = "Xunison-Exigo-Hub-D50-5G";
+			qcom,calibration-variant = "Xunison-Exigo-Hub-D50-5G";
 
 			nvmem-cells = <&caldata_qcn9074>, <&macaddr_gmac1 3>;
 			nvmem-cell-names = "calibration", "mac-address";
@@ -449,7 +449,7 @@
 	status = "okay";
 
 	qcom,rproc = <&q6v5_wcss>;
-	qcom,ath11k-calibration-variant = "Xunison-Exigo-Hub-D50-5G";
+	qcom,calibration-variant = "Xunison-Exigo-Hub-D50-5G";
 	qcom,ath11k-fw-memory-mode = <1>;
 
 	nvmem-cells = <&caldata_ipq5018>, <&macaddr_gmac1 2>;

@@ -1,53 +1,53 @@
-From 3948dff95675d76ada056c9249b1d0707ebbdcce Mon Sep 17 00:00:00 2001
 From: Felix Fietkau <nbd@nbd.name>
-Date: Thu, 1 Oct 2026 09:18:41 +0200
-Subject: [PATCH] AP MLD: drop a link that goes from the station's links
+Date: Tue, 6 Oct 2026 07:56:27 +0200
+Subject: [PATCH] AP MLD: Remove a link that is not set up from the links of the station
 
-hostapd_ml_process_reconf_link() sets up an added link while it handles
-the Link Reconfiguration Request: it adds the link station and marks the
-link valid, with status success, on every station of the non-AP MLD.
-Five paths undo the addition afterwards:
-
+hostapd_ml_process_reconf_link() sets up each added link while it
+handles the Link Reconfiguration Request: it adds the link station and
+marks the link as valid on every station of the non-AP MLD. Five paths
+undo an addition afterwards:
 - the Group KDE limit in hostapd_validate_link_reconf_req();
-- a request hostapd_validate_link_reconf_req() refuses after the
-  addition (the valid-links, add-and-delete and total-links checks);
+- a later refusal of the request in hostapd_validate_link_reconf_req();
 - the reject-all path of hostapd_send_link_reconf_resp();
-- a response that could not be sent, in
-  hostapd_handle_link_reconf_req();
-- a response the station did not acknowledge, in
-  hostapd_link_reconf_resp_tx_status().
+- a response that hostapd_handle_link_reconf_req() could not send;
+- a response that the station did not acknowledge.
 
-The first, third and fifth freed the link station alone; the second and
-fourth freed nothing. In every case the other stations kept the link as
-valid, and the authenticator kept it in its links for the group keys
-(wpa_auth_set_ml_info() ran with the link in process_reconf_link()). The
-station's ubus get_clients, sta-authorized and sta-links-changed then
-named a link that is not set up.
+The first, third and fifth paths freed only the link station. The other
+stations kept the link as valid, and STA output on the control
+interface showed a link that is not set up. The second and fourth paths
+freed nothing, so the link station and the link in the authenticator
+stayed as well. hostapd_validate_link_reconf_req() also reported
+CTRL-EVENT-LINK-STA-ADDED before the checks that lead to a revert, and
+no revert path reported the removal.
 
-ap_free_link_sta() frees the station of one link and clears the link on
-the other stations and in the authenticator, as the removal of a link in
-hostapd_link_reconf_resp_tx_status() did inline; that removal now uses
-it too. hostapd_ml_reconf_adds_revert() undoes the added links on all
-five paths. Each added link holds a station this request created:
+On all five paths, free the link station and clear the link on the
+other stations and in the authenticator, as the link removal in
+hostapd_link_reconf_resp_tx_status() already did. Each added link holds
+a station that this request created, because
 ieee80211_ml_process_link() refuses an addition where the link already
 has a station.
 
-604 depends on this patch and 605 builds on it; the three land together.
+Report CTRL-EVENT-LINK-STA-ADDED only once the station acknowledges the
+response, so that a reverted addition is not reported. Free a link
+station without AP-STA-DISCONNECTED, like the link removal of
+LINK_REMOVE, since the non-AP MLD stays associated. The link station
+carries the authorized flag that ieee80211_ml_process_link() copies from
+the station on the association link, so ap_free_sta() would report
+AP-STA-DISCONNECTED with the MLD address. This applies to the link
+deletion of Link Reconfiguration as well.
 
 Signed-off-by: Felix Fietkau <nbd@nbd.name>
 ---
- src/ap/ieee802_11_eht.c | 93 +++++++++++++++++++----------------------
- src/ap/sta_info.c       | 35 ++++++++++++++++
- src/ap/sta_info.h       |  1 +
- 3 files changed, 78 insertions(+), 51 deletions(-)
 
 --- a/src/ap/ieee802_11_eht.c
 +++ b/src/ap/ieee802_11_eht.c
-@@ -1586,6 +1586,28 @@ void ml_deinit_link_reconf_req(struct li
+@@ -1607,6 +1607,30 @@ void ml_deinit_link_reconf_req(struct li
  }
  
  
-+/* links: the added links whose setup is reverted */
++/* hostapd_ml_process_reconf_link() sets up each link it accepts while the
++ * request is handled, before the response goes out. `links` names the added
++ * links that are not set up after all. */
 +static void hostapd_ml_reconf_adds_revert(struct hostapd_data *hapd,
 +					  struct link_reconf_req_list *req_list,
 +					  u16 links)
@@ -72,7 +72,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  void hostapd_link_reconf_resp_tx_status(struct hostapd_data *hapd,
  					struct sta_info *sta,
  					const struct ieee80211_mgmt *mgmt,
-@@ -1636,21 +1658,8 @@ void hostapd_link_reconf_resp_tx_status(
+@@ -1657,24 +1681,19 @@ void hostapd_link_reconf_resp_tx_status(
  			   "; revert link additions",
  			   MAC2STR(mgmt->da));
  
@@ -96,10 +96,24 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		goto exit;
  	}
  
-@@ -1739,24 +1748,7 @@ void hostapd_link_reconf_resp_tx_status(
- 		wpa_msg(hapd->msg_ctx, MSG_INFO,
- 			WPA_EVENT_LINK_STA_REMOVED "sta=" MACSTR " link_id=%u",
- 			MAC2STR(lsta->addr), link_id);
++	dl_list_for_each(info, &req_list->add_req, struct link_reconf_req_info,
++			 list) {
++		if (req_list->links_add_ok & BIT(info->link_id))
++			ap_sta_link_event(hapd, WPA_EVENT_LINK_STA_ADDED,
++					  req_list->sta_mld_addr,
++					  info->link_id);
++	}
++
+ 	if (dl_list_empty(&req_list->del_req))
+ 		goto exit;
+ 
+@@ -1757,27 +1776,9 @@ void hostapd_link_reconf_resp_tx_status(
+ 		}
+ 
+ 		/* Free as a link STA */
+-		wpa_msg(hapd->msg_ctx, MSG_INFO,
+-			WPA_EVENT_LINK_STA_REMOVED "sta=" MACSTR " link_id=%u",
+-			MAC2STR(lsta->addr), link_id);
 -		ap_free_sta(lhapd, lsta);
 -
 -		for_each_mld_link(other_hapd, lhapd) {
@@ -118,11 +132,13 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 -		wpa_auth_set_ml_info(assoc_sta->wpa_sm,
 -				     assoc_sta->mld_assoc_link_id,
 -				     &assoc_sta->mld_info);
++		ap_sta_link_event(hapd, WPA_EVENT_LINK_STA_REMOVED, lsta->addr,
++				  link_id);
 +		ap_free_link_sta(lhapd, lsta);
  	}
  
  exit:
-@@ -1850,31 +1842,20 @@ hostapd_reject_all_reconf_req(struct hos
+@@ -1871,31 +1872,20 @@ hostapd_reject_all_reconf_req(struct hos
  			      struct link_reconf_req_list *req_list)
  {
  	struct link_reconf_req_info *info;
@@ -157,7 +173,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		wpa_printf(MSG_DEBUG, "MLD: Reject add-link=%u with status=%u",
  			   info->link_id, status);
  		pos += 2;
-@@ -2593,7 +2574,7 @@ hostapd_validate_link_reconf_req(struct
+@@ -2615,14 +2605,10 @@ hostapd_validate_link_reconf_req(struct
  						  req_list->sta_mld_addr);
  
  			if (lsta)
@@ -166,7 +182,14 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		} else {
  			total_kde_len += link_kde_len;
  			links_add_ok |= BIT(info->link_id);
-@@ -2622,14 +2603,14 @@ hostapd_validate_link_reconf_req(struct
+-			wpa_msg(hapd->msg_ctx, MSG_INFO,
+-				WPA_EVENT_LINK_STA_ADDED "sta=" MACSTR
+-				" link_id=%u", MAC2STR(req_list->sta_mld_addr),
+-				info->link_id);
+ 		}
+ 
+ 		info->status = status;
+@@ -2644,14 +2630,14 @@ hostapd_validate_link_reconf_req(struct
  	    (links_del_ok && !(valid_links & links_del_ok))) {
  		wpa_printf(MSG_INFO,
  			   "MLD: Links requested failed to satisfy valid links");
@@ -183,7 +206,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	}
  
  	valid_links |= links_add_ok;
-@@ -2638,7 +2619,7 @@ hostapd_validate_link_reconf_req(struct
+@@ -2660,7 +2646,7 @@ hostapd_validate_link_reconf_req(struct
  		if (!recover_from_zero_links(&links_del_ok, &recovery_link)) {
  			wpa_printf(MSG_INFO,
  				   "MLD: Total-links validation failed");
@@ -192,7 +215,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		}
  		/* Add the recovery link back to valid_links */
  		valid_links |= BIT(recovery_link);
-@@ -2652,6 +2633,10 @@ hostapd_validate_link_reconf_req(struct
+@@ -2674,6 +2660,10 @@ hostapd_validate_link_reconf_req(struct
  	assoc_sta->reconf_req = req_list;
  
  	return true;
@@ -203,10 +226,11 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  }
  
  
-@@ -2786,6 +2771,9 @@ skip_oci_validation:
+@@ -2808,6 +2798,10 @@ skip_oci_validation:
  
  out:
  	if (ret) {
++		/* A response that did not go out accepted nothing. */
 +		if (req_list)
 +			hostapd_ml_reconf_adds_revert(hapd, req_list,
 +						      req_list->links_add_ok);
@@ -215,10 +239,13 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  			assoc_sta->reconf_req = NULL;
 --- a/src/ap/sta_info.c
 +++ b/src/ap/sta_info.c
-@@ -592,6 +592,38 @@ void hostapd_free_stas(struct hostapd_da
+@@ -639,6 +639,44 @@ void hostapd_free_stas(struct hostapd_da
  
  
  #ifdef CONFIG_IEEE80211BE
++/* The other stations of the non-AP MLD keep a list of its links, and the
++ * authenticator keeps a copy of it for the group keys. Neither may name a
++ * link once its station is gone. */
 +void ap_free_link_sta(struct hostapd_data *lhapd, struct sta_info *lsta)
 +{
 +	struct hostapd_data *assoc_hapd, *other_hapd;
@@ -228,6 +255,9 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +
 +	os_memcpy(addr, lsta->addr, ETH_ALEN);
 +	assoc_sta = hostapd_ml_get_assoc_sta(lhapd, lsta, &assoc_hapd);
++	/* The non-AP MLD stays associated over its other links, so no
++	 * disconnection is reported for it. */
++	ap_sta_set_authorized_flag(lhapd, lsta, 0);
 +	ap_free_sta(lhapd, lsta);
 +
 +	for_each_mld_link(other_hapd, lhapd) {
@@ -256,7 +286,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	struct sta_info *sta, *prev;
 --- a/src/ap/sta_info.h
 +++ b/src/ap/sta_info.h
-@@ -481,6 +481,7 @@ static inline void ap_sta_set_mld(struct
+@@ -478,6 +478,7 @@ static inline void ap_sta_set_mld(struct
  
  void ap_sta_free_sta_profile(struct mld_info *info);
  

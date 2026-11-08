@@ -1,0 +1,211 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Tue, 13 Oct 2026 12:00:15 +0200
+Subject: [PATCH] wifi: mac80211: keep learned MSCS entries of offloaded flows
+
+A learned entry expires when no uplink frame of the flow reached
+mac80211 for the stream timeout. Once the uplink is offloaded, its
+frames no longer reach the CPU, so an active flow looks idle and its
+entry is dropped, while the hardware keeps forwarding the downlink
+with the learned priority. 11.25.3 of IEEE 802.11-2024 allows an AP to
+keep a variable past the stream timeout.
+
+Add a driver op that reports how long ago the hardware last forwarded
+a flow. Before an entry expires, ask the driver and refresh the entry
+from the answer, so that it lives as long as the hardware forwards the
+flow.
+
+An MSCS mirrors the user priority that the station uses, and the
+station can change it for a flow at any time. While the uplink stays
+offloaded, mac80211 does not see the change, and the downlink keeps the
+old priority. When the hardware keeps an entry alive, also drop the
+flow from the hardware, so that its next uplink frames reach mac80211.
+A changed priority is thus learned within one stream timeout.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+
+--- a/include/net/mac80211.h
++++ b/include/net/mac80211.h
+@@ -5140,6 +5140,23 @@ struct ieee80211_ops {
+ 				   struct ieee80211_sta *sta,
+ 				   const struct cfg80211_flow_key *key,
+ 				   u32 fields);
++	/**
++	 * @flow_offload_idle:
++	 * Called before a learned MSCS entry of a station expires. Return
++	 * the time in seconds since the hardware last forwarded a frame of
++	 * the flow whose tuple, masked to @fields, equals @key, or a
++	 * negative error when no offloaded entry matches. The learned entry
++	 * then survives as long as the hardware forwards the flow, and
++	 * @flow_offload_flush is called for the flow, so that its next
++	 * frames from the station reach mac80211. Optional.
++	 *
++	 * Called with the wiphy mutex held. This callback may sleep.
++	 */
++	int (*flow_offload_idle)(struct ieee80211_hw *hw,
++				 struct ieee80211_vif *vif,
++				 struct ieee80211_sta *sta,
++				 const struct cfg80211_flow_key *key,
++				 u32 fields);
+ 	int (*set_tid_config)(struct ieee80211_hw *hw,
+ 			      struct ieee80211_vif *vif,
+ 			      struct ieee80211_sta *sta,
+--- a/net/mac80211/driver-ops.h
++++ b/net/mac80211/driver-ops.h
+@@ -1600,6 +1600,32 @@ static inline void drv_flow_offload_flus
+ 	trace_drv_return_void(local);
+ }
+ 
++static inline int drv_flow_offload_idle(struct ieee80211_local *local,
++					struct ieee80211_sub_if_data *sdata,
++					struct sta_info *sta,
++					const struct cfg80211_flow_key *key,
++					u32 fields)
++{
++	int ret;
++
++	might_sleep();
++	lockdep_assert_wiphy(local->hw.wiphy);
++
++	if (!local->ops->flow_offload_idle || !sta->uploaded)
++		return -ENOENT;
++
++	sdata = get_bss_sdata(sdata);
++	if (!check_sdata_in_driver(sdata))
++		return -EIO;
++
++	trace_drv_flow_offload_idle(local, sdata, &sta->sta);
++	ret = local->ops->flow_offload_idle(&local->hw, &sdata->vif, &sta->sta,
++					    key, fields);
++	trace_drv_return_int(local, ret);
++
++	return ret;
++}
++
+ static inline int drv_set_tid_config(struct ieee80211_local *local,
+ 				     struct ieee80211_sub_if_data *sdata,
+ 				     struct ieee80211_sta *sta,
+--- a/net/mac80211/scs.c
++++ b/net/mac80211/scs.c
+@@ -237,11 +237,50 @@ static void ieee80211_flow_purge(struct
+ 	mscs->n_entries = 0;
+ }
+ 
++static struct ieee80211_flow_entry *
++ieee80211_flow_expired_find(struct ieee80211_mscs_sta *mscs)
++{
++	struct ieee80211_flow_entry *entry;
++
++	lockdep_assert_held(&mscs->lock);
++
++	list_for_each_entry(entry, &mscs->entries, list)
++		if (time_after_eq(jiffies, READ_ONCE(entry->last_update) +
++					   mscs->timeout))
++			return entry;
++
++	return NULL;
++}
++
++/*
++ * An expired entry survives while the hardware still forwards its flow. The
++ * offloaded uplink frames do not reach the learn path, so the flow is dropped
++ * from the hardware, and a changed priority is learned from its next frames.
++ */
++static bool ieee80211_flow_entry_refresh(struct ieee80211_sub_if_data *sdata,
++					 struct sta_info *sta,
++					 struct ieee80211_mscs_sta *mscs,
++					 struct ieee80211_flow_entry *entry)
++{
++	int idle;
++
++	idle = drv_flow_offload_idle(sdata->local, sta->sdata, sta,
++				     &entry->hkey.key, mscs->layout);
++	if (idle < 0 || idle * HZ >= mscs->timeout)
++		return false;
++
++	WRITE_ONCE(entry->last_update, jiffies - idle * HZ);
++	drv_flow_offload_flush(sdata->local, sta->sdata, sta, &entry->hkey.key,
++			       mscs->layout);
++
++	return true;
++}
++
+ /* Return the time until the next entry expires, zero when none is left */
+-static unsigned long ieee80211_flow_gc_sta(struct ieee80211_if_ap *ap,
++static unsigned long ieee80211_flow_gc_sta(struct ieee80211_sub_if_data *sdata,
+ 					   struct sta_info *sta)
+ {
+-	struct ieee80211_flow_entry *entry, *tmp;
++	struct ieee80211_flow_entry *entry;
+ 	struct ieee80211_mscs_sta *mscs;
+ 	unsigned long delay = 0;
+ 
+@@ -249,20 +288,35 @@ static unsigned long ieee80211_flow_gc_s
+ 	if (!mscs)
+ 		return 0;
+ 
++	/* Only this work and a new MSCS free entries, both under the wiphy
++	 * lock, so an entry stays valid while the driver is asked about it.
++	 */
++	while (true) {
++		spin_lock_bh(&mscs->lock);
++		entry = ieee80211_flow_expired_find(mscs);
++		spin_unlock_bh(&mscs->lock);
++		if (!entry)
++			break;
++
++		if (ieee80211_flow_entry_refresh(sdata, sta, mscs, entry))
++			continue;
++
++		spin_lock_bh(&mscs->lock);
++		ieee80211_flow_entry_free(&sdata->u.ap, entry);
++		mscs->n_entries--;
++		spin_unlock_bh(&mscs->lock);
++	}
++
+ 	spin_lock_bh(&mscs->lock);
+ 
+-	list_for_each_entry_safe(entry, tmp, &mscs->entries, list) {
++	list_for_each_entry(entry, &mscs->entries, list) {
+ 		unsigned long dead = READ_ONCE(entry->last_update) +
+ 				     mscs->timeout;
++		unsigned long left = time_after(dead, jiffies) ? dead - jiffies
++							       : 1;
+ 
+-		if (time_after_eq(jiffies, dead)) {
+-			ieee80211_flow_entry_free(ap, entry);
+-			mscs->n_entries--;
+-			continue;
+-		}
+-
+-		if (!delay || time_before(dead, jiffies + delay))
+-			delay = dead - jiffies;
++		if (!delay || left < delay)
++			delay = left;
+ 	}
+ 
+ 	spin_unlock_bh(&mscs->lock);
+@@ -286,7 +340,7 @@ static void ieee80211_flow_gc_work(struc
+ 		if (sta->sdata->bss != ap)
+ 			continue;
+ 
+-		sta_delay = ieee80211_flow_gc_sta(ap, sta);
++		sta_delay = ieee80211_flow_gc_sta(sdata, sta);
+ 		if (sta_delay && (!delay || sta_delay < delay))
+ 			delay = sta_delay;
+ 	}
+--- a/net/mac80211/trace.h
++++ b/net/mac80211/trace.h
+@@ -1063,6 +1063,13 @@ DEFINE_EVENT(sta_event, drv_flow_offload
+ 	TP_ARGS(local, sdata, sta)
+ );
+ 
++DEFINE_EVENT(sta_event, drv_flow_offload_idle,
++	TP_PROTO(struct ieee80211_local *local,
++		 struct ieee80211_sub_if_data *sdata,
++		 struct ieee80211_sta *sta),
++	TP_ARGS(local, sdata, sta)
++);
++
+ DEFINE_EVENT(sta_event, drv_sta_statistics,
+ 	TP_PROTO(struct ieee80211_local *local,
+ 		 struct ieee80211_sub_if_data *sdata,

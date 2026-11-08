@@ -15,13 +15,10 @@ define KernelPackage/can
 	CONFIG_CAN_DEV \
 	CONFIG_CAN_NETLINK=y \
 	CONFIG_CAN_CALC_BITTIMING=y \
-	CONFIG_CAN_LEDS=y \
 	CONFIG_CAN_AT91=n \
 	CONFIG_CAN_TI_HECC=n \
 	CONFIG_CAN_MCP251X=n \
-	CONFIG_CAN_BFIN=n \
 	CONFIG_CAN_JANZ_ICAN3=n \
-	CONFIG_PCH_CAN=n \
 	CONFIG_CAN_GRCAN=n \
 	CONFIG_CAN_CC770=n \
 	CONFIG_CAN_MSCAN=n \
@@ -164,6 +161,25 @@ endef
 $(eval $(call KernelPackage,can-mcp251x))
 
 
+define KernelPackage/can-mcp251xfd
+  TITLE:=MCP251xFD SPI CAN FD controller
+  KCONFIG:=\
+	CONFIG_SPI=y \
+	CONFIG_CAN_MCP251XFD \
+	CONFIG_CAN_MCP251XFD_SANITY=n
+  FILES:=$(LINUX_DIR)/drivers/net/can/spi/mcp251xfd/mcp251xfd.ko
+  AUTOLOAD:=$(call AutoProbe,mcp251xfd)
+  DEPENDS:=+kmod-regmap-core
+  $(call AddDepends/can)
+endef
+
+define KernelPackage/can-mcp251xfd/description
+ Microchip MCP2517FD, MCP2518FD and MCP251863 SPI CAN FD controllers
+endef
+
+$(eval $(call KernelPackage,can-mcp251xfd))
+
+
 define KernelPackage/can-raw
   TITLE:=Raw CAN Protcol
   KCONFIG:=CONFIG_CAN_RAW
@@ -233,7 +249,7 @@ define KernelPackage/can-usb-esd
   TITLE:=ESD USB/2 CAN/USB interface
   KCONFIG:=CONFIG_CAN_ESD_USB
   FILES:=$(LINUX_DIR)/drivers/net/can/usb/esd_usb.ko
-  AUTOLOAD:=$(call AutoProbe,esd_usb2 esd_usb)
+  AUTOLOAD:=$(call AutoProbe,esd_usb)
   $(call AddDepends/can,+kmod-usb-core)
 endef
 
@@ -311,6 +327,22 @@ define KernelPackage/can-vcan/description
 endef
 
 $(eval $(call KernelPackage,can-vcan))
+
+
+define KernelPackage/can-vxcan
+  TITLE:=Virtual CAN Tunnel (vxcan)
+  KCONFIG:=CONFIG_CAN_VXCAN
+  FILES:=$(LINUX_DIR)/drivers/net/can/vxcan.ko
+  AUTOLOAD:=$(call AutoProbe,vxcan)
+  $(call AddDepends/can)
+endef
+
+define KernelPackage/can-vxcan/description
+ Similar to the virtual ethernet driver veth, vxcan implements a
+ local CAN traffic tunnel between two virtual CAN network devices.
+endef
+
+$(eval $(call KernelPackage,can-vxcan))
 
 define KernelPackage/can-xilinx-can
   TITLE:=Xilinx CAN IP

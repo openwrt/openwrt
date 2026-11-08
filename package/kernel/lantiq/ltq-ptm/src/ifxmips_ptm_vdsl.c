@@ -983,8 +983,6 @@ static int ptm_showtime_exit(void)
 static const struct of_device_id ltq_ptm_match[] = {
 #ifdef CONFIG_DANUBE
 	{ .compatible = "lantiq,ppe-danube", .data = NULL },
-#elif defined CONFIG_AMAZON_SE
-	{ .compatible = "lantiq,ppe-ase", .data = NULL },
 #elif defined CONFIG_AR9
 	{ .compatible = "lantiq,ppe-arx100", .data = NULL },
 #elif defined CONFIG_VR9

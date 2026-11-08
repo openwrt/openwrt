@@ -30,8 +30,6 @@
 
 #if defined(CONFIG_DANUBE)
   #error Danube is not VDSL PTM mode!
-#elif defined(CONFIG_AMAZON_SE)
-  #error Amazon-SE is not VDSL PTM mode!
 #elif defined(CONFIG_AR9)
   #error AR9 is not VDSL PTM mode!
 #elif defined(CONFIG_VR9)

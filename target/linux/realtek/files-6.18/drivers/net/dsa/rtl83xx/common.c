@@ -11,10 +11,12 @@
 #include <linux/inetdevice.h>
 #include <linux/mfd/syscon.h>
 #include <linux/platform_device.h>
+#include <linux/regmap.h>
 #include <linux/rhashtable.h>
 #include <linux/of_net.h>
 #include <asm/mach-rtl-otto/mach-rtl-otto.h>
 
+#include "fdb.h"
 #include "l2.h"
 #include "l3.h"
 #include "pie.h"
@@ -59,12 +61,6 @@ void rtl839x_set_port_reg_be(u64 set, int reg)
 {
 	sw_w32(set >> 32, reg);
 	sw_w32(set & 0xffffffff, reg + 4);
-}
-
-void rtl839x_mask_port_reg_le(u64 clear, u64 set, int reg)
-{
-	sw_w32_mask((u32)clear, (u32)set, reg);
-	sw_w32_mask((u32)(clear >> 32), (u32)(set >> 32), reg + 4);
 }
 
 void rtl839x_set_port_reg_le(u64 set, int reg)
@@ -164,6 +160,7 @@ static int rtldsa_ports_probe(struct otto_dsa_priv *priv)
 	led_node = of_find_compatible_node(NULL, NULL, "realtek,rtl9300-leds");
 
 	for_each_node_by_name(dn, "port") {
+		const char *managed;
 		u32 led_set;
 		char led_set_str[16] = {0};
 
@@ -196,6 +193,10 @@ static int rtldsa_ports_probe(struct otto_dsa_priv *priv)
 		}
 
 		priv->ports[pn].phy = !!phy_node;
+		/* In-band status as phylink reads it */
+		if (!of_property_read_string(dn, "managed", &managed) &&
+		    !strcmp(managed, "in-band-status"))
+			priv->ports[pn].inband = true;
 	}
 
 	return 0;
@@ -243,6 +244,30 @@ int rtl83xx_port_is_under(const struct net_device *dev, struct otto_dsa_priv *pr
 	return -EINVAL;
 }
 
+/*
+ * A port with a PHY and without in-band status takes its link state from
+ * phylib, which polls the PHY once a second. Reporting a MAC link loss to
+ * phylink would make it take the link down and then straight back up from the
+ * PHY state of the last poll, until the next poll reads the link as down. Let
+ * phylib read the PHY now instead, which also reports a new link without
+ * waiting for the poll.
+ *
+ * With in-band status, phylink takes the link state also from the PCS, and
+ * needs the MAC link change to resolve the link again when the PCS comes up
+ * after the PHY. The SFP ports have no PHY in the device tree, so the PHY of
+ * an SFP module, which goes away with the module, is not used here.
+ */
+static void rtldsa_port_link_change(struct dsa_switch *ds, int port,
+				    const struct rtldsa_port *p, bool up)
+{
+	struct dsa_port *dp = dsa_to_port(ds, port);
+
+	if (p->phy && !p->inband && dp->user && dp->user->phydev)
+		phy_mac_interrupt(dp->user->phydev);
+	else
+		dsa_port_phylink_mac_change(ds, port, up);
+}
+
 static irqreturn_t rtldsa_switch_irq(int irq, void *dev_id)
 {
 	struct otto_dsa_priv *priv;
@@ -259,9 +284,22 @@ static irqreturn_t rtldsa_switch_irq(int irq, void *dev_id)
 
 	for (int port = 0; port < priv->r->cpu_port; port++)
 		if (ports & BIT_ULL(port))
-			dsa_port_phylink_mac_change(ds, port, link & BIT_ULL(port));
+			rtldsa_port_link_change(ds, port, &priv->ports[port],
+						link & BIT_ULL(port));
 
 	return IRQ_HANDLED;
+}
+
+static void rtldsa_switch_irq_disable(struct otto_dsa_priv *priv)
+{
+	const u32 masks[2] = { 0 };
+
+	/* Stop the device from asserting the shared IRQ before releasing it. */
+	regmap_bulk_write(priv->map, priv->r->imr_port_link_sts_chg, masks,
+			  DIV_ROUND_UP(priv->r->cpu_port + 1, 32));
+
+	if (priv->r->imr_glb)
+		regmap_write(priv->map, priv->r->imr_glb, 0);
 }
 
 /*
@@ -363,7 +401,7 @@ static int rtl83xx_sw_probe(struct platform_device *pdev)
 		return err;
 
 	priv->family_id = soc_info.family;
-	priv->r->stp_init();
+	priv->r->stp_init(priv);
 	priv->irq_mask = GENMASK_ULL(priv->r->cpu_port - 1, 0);
 
 	err = rtldsa_mdio_loaded();
@@ -406,11 +444,13 @@ static int rtl83xx_sw_probe(struct platform_device *pdev)
 	if (err) {
 		dev_err(dev, "Error setting up switch interrupt.\n");
 		/* Need to free allocated switch here */
+	} else {
+		priv->link_state_irq_requested = true;
 	}
 
-	/* Enable interrupts for switch, on RTL931x, the IRQ is always on globally */
-	if (soc_info.family != RTL9310_FAMILY_ID)
-		sw_w32(0x1, priv->r->imr_glb);
+	/* Enable the global interrupt mask where one exists. */
+	if (priv->r->imr_glb)
+		regmap_write(priv->map, priv->r->imr_glb, 1);
 
 	otto_l2_get_ageing_time(priv);
 
@@ -443,7 +483,7 @@ static int rtl83xx_sw_probe(struct platform_device *pdev)
 		break;
 	}
 
-	otto_l2_dbgfs_init(priv);
+	otto_fdb_dbgfs_init(priv);
 
 	if (priv->r->lag_switch_init)
 		priv->r->lag_switch_init(priv);
@@ -453,7 +493,11 @@ static int rtl83xx_sw_probe(struct platform_device *pdev)
 	return 0;
 
 err_register_l3:
-	dsa_switch_shutdown(priv->ds);
+	rtldsa_switch_irq_disable(priv);
+	if (priv->link_state_irq_requested)
+		free_irq(priv->link_state_irq, priv->ds);
+	cancel_delayed_work_sync(&priv->counters_work);
+	dsa_unregister_switch(priv->ds);
 err_register_switch:
 	otto_tc_cleanup(priv);
 	destroy_workqueue(priv->wq);
@@ -468,7 +512,6 @@ static void rtl83xx_sw_remove(struct platform_device *pdev)
 	if (!priv)
 		return;
 
-	/* TODO: */
 	pr_debug("Removing platform driver for rtl83xx-sw\n");
 
 	/* Stop debugfs readers before tearing down the switch. */
@@ -482,7 +525,10 @@ static void rtl83xx_sw_remove(struct platform_device *pdev)
 	otto_l3_remove(priv);
 	cancel_delayed_work_sync(&priv->counters_work);
 
-	dsa_switch_shutdown(priv->ds);
+	rtldsa_switch_irq_disable(priv);
+	if (priv->link_state_irq_requested)
+		free_irq(priv->link_state_irq, priv->ds);
+	dsa_unregister_switch(priv->ds);
 
 	otto_tc_cleanup(priv);
 

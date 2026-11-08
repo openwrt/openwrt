@@ -1,35 +1,38 @@
 From: Felix Fietkau <nbd@nbd.name>
-Date: Fri, 4 Sep 2026 18:10:00 +0200
-Subject: [PATCH] VLAN: increase netlink buffer size
+Date: Tue, 20 Oct 2026 14:26:26 +0200
+Subject: [PATCH] VLAN: Set up a dynamic VLAN interface without its RTM_NEWLINK event
 
-The dynamic VLAN code opens its own RTMGRP_LINK socket and takes the
-default buffer, where netlink_init() sets one. A reconfiguration that
-creates and destroys several interfaces bursts more link events than the
-default holds, and hostapd answers "VLAN: vlan_event_receive: recvfrom
-failed: No buffer space available" and loses the events it needed.
+With CONFIG_FULL_DYNAMIC_VLAN, vlan_add_dynamic() creates the interface
+of a dynamic VLAN. Only the RTM_NEWLINK event of that interface, through
+vlan_event_receive(), then creates the bridge and the tagged interfaces
+of the VLAN and adds the interface to the bridge. If the receive queue
+of the VLAN netlink socket is full, the kernel drops the event, and
+hostapd logs "VLAN: vlan_event_receive: recvfrom failed: No buffer
+space available". The stations of the VLAN then have no path to the
+bridge.
 
-Use the same size as netlink_init().
+Call vlan_newlink() when the interface is created, as vlan_dynamic_add()
+does for a static VLAN. The interface exists at that point, since
+vlan_if_add() already sets it up. vlan_newlink() ignores the later
+event for a VLAN that it configured.
 
 Signed-off-by: Felix Fietkau <nbd@nbd.name>
 ---
 
---- a/src/ap/vlan_full.c
-+++ b/src/ap/vlan_full.c
-@@ -767,6 +767,7 @@ struct full_dynamic_vlan *
- full_dynamic_vlan_init(struct hostapd_data *hapd)
- {
- 	struct sockaddr_nl local;
-+	int size = 262144;
- 	struct full_dynamic_vlan *priv;
- 
- 	priv = os_zalloc(sizeof(*priv));
-@@ -787,6 +788,9 @@ full_dynamic_vlan_init(struct hostapd_da
- 		return NULL;
+--- a/src/ap/vlan_init.c
++++ b/src/ap/vlan_init.c
+@@ -227,9 +227,13 @@ struct hostapd_vlan * vlan_add_dynamic(s
+ 	if (vlan_if_add(hapd, n, 0)) {
+ 		hapd->conf->vlan = n->next;
+ 		os_free(n);
+-		n = NULL;
++		return NULL;
  	}
  
-+	setsockopt(priv->s, SOL_SOCKET, SO_RCVBUF, &size, sizeof(size));
-+	setsockopt(priv->s, SOL_SOCKET, SO_SNDBUF, &size, sizeof(size));
++#ifdef CONFIG_FULL_DYNAMIC_VLAN
++	vlan_newlink(n->ifname, hapd);
++#endif /* CONFIG_FULL_DYNAMIC_VLAN */
 +
- 	os_memset(&local, 0, sizeof(local));
- 	local.nl_family = AF_NETLINK;
- 	local.nl_groups = RTMGRP_LINK;
+ 	return n;
+ }
+ 

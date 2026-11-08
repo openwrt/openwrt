@@ -1,0 +1,66 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Fri, 28 Aug 2026 10:04:34 +0200
+Subject: [PATCH] wifi: mac80211: apply MSCS on transmit
+
+Look up the learned priority of an MSDU that no SCS descriptor matched,
+and cap it with the User Priority Limit of the request. SCS runs first,
+so an MSDU of an SCS stream keeps the priority of that stream.
+
+With this the AP mirrors the uplink priority of a learned flow onto
+its downlink.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+
+--- a/net/mac80211/scs.c
++++ b/net/mac80211/scs.c
+@@ -109,22 +109,46 @@ ieee80211_scs_sta_build(struct cfg80211_
+  */
+ bool ieee80211_flow_classify(struct sta_info *sta, struct sk_buff *skb)
+ {
++	struct ieee80211_flow_entry *entry;
+ 	struct cfg80211_scs_verdict verdict;
++	struct ieee80211_mscs_sta *mscs;
++	struct ieee80211_flow_hkey hkey;
+ 	struct cfg80211_flow_info info;
+ 	struct ieee80211_scs_sta *scs;
+ 
+ 	scs = rcu_dereference(sta->scs);
+-	if (!scs)
++	mscs = rcu_dereference(sta->mscs);
++	if (!scs && !mscs)
+ 		return false;
+ 
+ 	if (!cfg80211_flow_parse(skb, &info))
+ 		return false;
+ 
+-	cfg80211_scs_evaluate(scs->rule, scs->n_rules, &info, &verdict);
+-	if (!verdict.match)
++	if (scs) {
++		cfg80211_scs_evaluate(scs->rule, scs->n_rules, &info,
++				      &verdict);
++		if (verdict.match) {
++			skb->priority = verdict.up;
++
++			return true;
++		}
++	}
++
++	/* An SCS match takes precedence over the MSCS */
++	if (!mscs)
++		return false;
++
++	hkey.sta = sta;
++	if (!cfg80211_flow_key_build(&info, mscs->layout, CFG80211_FLOW_AS_IS,
++				     &hkey.key))
++		return false;
++
++	entry = rhashtable_lookup(&sta->sdata->bss->flow_tbl, &hkey,
++				  flow_rht_params);
++	if (!entry)
+ 		return false;
+ 
+-	skb->priority = verdict.up;
++	skb->priority = min_t(u8, READ_ONCE(entry->up), mscs->up_limit);
+ 
+ 	return true;
+ }

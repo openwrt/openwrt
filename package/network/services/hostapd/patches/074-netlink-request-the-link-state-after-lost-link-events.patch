@@ -1,0 +1,173 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Tue, 20 Oct 2026 14:25:11 +0200
+Subject: [PATCH] netlink: Request the link state after lost link events
+
+If the receive queue of the RTMGRP_LINK socket of netlink_init() is
+full, the kernel drops the link events that do not fit, and the next
+recvfrom() fails with ENOBUFS. netlink_receive() only logs the error.
+A lost interface down event leaves if_disabled clear in the nl80211
+driver wrapper, so hostapd never sees EVENT_INTERFACE_DISABLED, and the
+following interface up event does not restart the AP.
+
+Request a dump of all links on ENOBUFS. The replies arrive as
+RTM_NEWLINK messages on the same socket and pass through the newlink
+callbacks, which compare the reported state with the tracked one. If
+events are lost again while a dump runs, request another dump when it
+ends. The dump does not recover a lost RTM_DELLINK event or a lost
+AF_BRIDGE port event, since it reports neither removed interfaces nor
+bridge ports.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+
+--- a/src/drivers/netlink.c
++++ b/src/drivers/netlink.c
+@@ -17,9 +17,74 @@
+ struct netlink_data {
+ 	struct netlink_config *cfg;
+ 	int sock;
++	u32 seq;
++	u32 dump_seq;
++	bool dump_again;
+ };
+ 
+ 
++static u32 netlink_seq_next(struct netlink_data *netlink)
++{
++	if (++netlink->seq == 0)
++		netlink->seq++;
++	return netlink->seq;
++}
++
++
++/* The RTM_NEWLINK replies of the dump pass through the event callbacks and
++ * bring the tracked state up to date after the kernel dropped events. */
++static void netlink_links_request(struct netlink_data *netlink)
++{
++	struct {
++		struct nlmsghdr hdr;
++		struct ifinfomsg ifinfo;
++	} req;
++
++	if (netlink->dump_seq) {
++		netlink->dump_again = true;
++		return;
++	}
++
++	os_memset(&req, 0, sizeof(req));
++	req.hdr.nlmsg_len = NLMSG_LENGTH(sizeof(struct ifinfomsg));
++	req.hdr.nlmsg_type = RTM_GETLINK;
++	req.hdr.nlmsg_flags = NLM_F_REQUEST | NLM_F_DUMP;
++	req.hdr.nlmsg_seq = netlink_seq_next(netlink);
++	req.ifinfo.ifi_family = AF_UNSPEC;
++
++	if (send(netlink->sock, &req, req.hdr.nlmsg_len, 0) < 0) {
++		wpa_printf(MSG_INFO,
++			   "netlink: Failed to request the link state: %s",
++			   strerror(errno));
++		return;
++	}
++
++	netlink->dump_seq = req.hdr.nlmsg_seq;
++	netlink->dump_again = false;
++}
++
++
++static void netlink_links_done(struct netlink_data *netlink,
++			       struct nlmsghdr *h)
++{
++	struct nlmsgerr *err = NLMSG_DATA(h);
++
++	if (!netlink->dump_seq || h->nlmsg_seq != netlink->dump_seq)
++		return;
++
++	/* The kernel keeps a dump that it could not start for a full receive
++	 * queue and continues it once the queue drains. */
++	if (h->nlmsg_type == NLMSG_ERROR &&
++	    h->nlmsg_len >= NLMSG_LENGTH(sizeof(*err)) &&
++	    err->error == -ENOBUFS)
++		return;
++
++	netlink->dump_seq = 0;
++	if (netlink->dump_again)
++		netlink_links_request(netlink);
++}
++
++
+ static void netlink_receive_link(struct netlink_data *netlink,
+ 				 void (*cb)(void *ctx, struct ifinfomsg *ifi,
+ 					    u8 *buf, size_t len),
+@@ -47,6 +112,12 @@ try_again:
+ 	fromlen = sizeof(from);
+ 	left = recvfrom(sock, buf, sizeof(buf), MSG_DONTWAIT,
+ 			(struct sockaddr *) &from, &fromlen);
++	if (left < 0 && errno == ENOBUFS) {
++		wpa_printf(MSG_INFO,
++			   "netlink: Link events lost, request the link state");
++		netlink_links_request(netlink);
++		return;
++	}
+ 	if (left < 0) {
+ 		if (errno != EINTR && errno != EAGAIN)
+ 			wpa_printf(MSG_INFO, "netlink: recvfrom failed: %s",
+@@ -65,6 +136,10 @@ try_again:
+ 			netlink_receive_link(netlink, netlink->cfg->dellink_cb,
+ 					     h);
+ 			break;
++		case NLMSG_DONE:
++		case NLMSG_ERROR:
++			netlink_links_done(netlink, h);
++			break;
+ 		}
+ 
+ 		h = NLMSG_NEXT(h, left);
+@@ -184,7 +259,6 @@ int netlink_send_oper_ifla(struct netlin
+ 		char opts[16];
+ 	} req;
+ 	struct rtattr *rta;
+-	static int nl_seq;
+ 	ssize_t ret;
+ 
+ 	os_memset(&req, 0, sizeof(req));
+@@ -192,7 +266,7 @@ int netlink_send_oper_ifla(struct netlin
+ 	req.hdr.nlmsg_len = NLMSG_LENGTH(sizeof(struct ifinfomsg));
+ 	req.hdr.nlmsg_type = RTM_SETLINK;
+ 	req.hdr.nlmsg_flags = NLM_F_REQUEST;
+-	req.hdr.nlmsg_seq = ++nl_seq;
++	req.hdr.nlmsg_seq = netlink_seq_next(netlink);
+ 	req.hdr.nlmsg_pid = 0;
+ 
+ 	req.ifinfo.ifi_family = AF_UNSPEC;
+--- a/src/drivers/priv_netlink.h
++++ b/src/drivers/priv_netlink.h
+@@ -37,12 +37,17 @@
+ #endif
+ 
+ #define NLM_F_REQUEST 1
++#define NLM_F_DUMP 0x300
++
++#define NLMSG_ERROR 0x2
++#define NLMSG_DONE 0x3
+ 
+ #define NETLINK_ROUTE 0
+ #define RTMGRP_LINK 1
+ #define RTM_BASE 0x10
+ #define RTM_NEWLINK (RTM_BASE + 0)
+ #define RTM_DELLINK (RTM_BASE + 1)
++#define RTM_GETLINK (RTM_BASE + 2)
+ #define RTM_SETLINK (RTM_BASE + 3)
+ 
+ #define NLMSG_ALIGNTO 4
+@@ -90,6 +95,12 @@ struct nlmsghdr
+ 	u32 nlmsg_pid;
+ };
+ 
++struct nlmsgerr
++{
++	int error;
++	struct nlmsghdr msg;
++};
++
+ struct ifinfomsg
+ {
+ 	unsigned char ifi_family;

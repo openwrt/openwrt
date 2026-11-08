@@ -16,7 +16,8 @@ ipq60xx_setup_interfaces()
 	link,nn6000-v1)
 		ucidef_set_interfaces_lan_wan "lan1 lan2" "wan"
 		;;
-	alfa-network,ap120c-ax)
+	alfa-network,ap120c-ax|\
+	wallys,dr6018s)
 		ucidef_set_interfaces_lan_wan "lan" "wan"
 		;;
 	mikrotik,chateau-5g-r17-ax)

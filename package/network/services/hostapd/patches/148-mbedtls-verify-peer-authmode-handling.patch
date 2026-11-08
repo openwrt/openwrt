@@ -1,0 +1,170 @@
+From 763d8473f277591801c63de2abe48403eb1e7957 Mon Sep 17 00:00:00 2001
+From: Karsten Sperling <ksperling@apple.com>
+Date: Mon, 3 Aug 2026 16:47:22 +1200
+Subject: [PATCH] mbedtls: make verify_peer / authmode handling more consistent
+
+tls_conf->verify_peer and tls_connection->verify_peer were both
+booleans, with different meanings: on the config it selected between
+VERIFY_REQUIRED and VERIFY_OPTIONAL and was only assigned when a CA
+certificate was configured, leaving the third case (no CA, VERIFY_NONE)
+implicit in the branch that applied it; on the connection it recorded
+merely whether the verify callback had been installed, discarding the
+0/1/2 that tls_connection_set_verify() was given.
+
+Store the tls.h 0/1/2 verify_peer on both, derive the config default
+once in tls_mbedtls_set_certs(), and map it to an authmode
+(MBEDTLS_SSL_VERIFY_*) in a single place, tls_mbedtls_authmode(). Mbed
+TLS keeps the authmode on the mbedtls_ssl_config, which is shared
+between connections, so the config value is only the default for
+connections that never call tls_connection_set_verify(); a connection's
+own mode is applied per handshake by tls_connection_apply_authmode() via
+mbedtls_ssl_set_hs_authmode().
+
+Because mbedtls_ssl_session_reset() re-initializes ssl->handshake it
+discards that override, so tls_connection_shutdown() now re-applies it.
+(No behavior change in practice, since connections are only re-used by
+the EAP peer code which does not call tls_connection_set_verify().)
+
+The verify callback needs no equivalent handling, since it is stored on
+the mbedtls_ssl_context, which mbedtls_ssl_session_reset() leaves alone;
+remove the redundant re-installation in tls_connection_handshake().
+
+A verify_peer outside 0-2 is now treated as 1 rather than falling
+through to VERIFY_NONE, matching the OpenSSL backend, and
+tls_connection_shutdown() returns -1 on failure rather than an Mbed TLS
+error code.
+
+Signed-off-by: Karsten Sperling <ksperling@apple.com>
+
+--- a/src/crypto/tls_mbedtls.c
++++ b/src/crypto/tls_mbedtls.c
+@@ -138,7 +138,7 @@ struct tls_conf {
+ 	mbedtls_ssl_config conf;
+ 	struct tls_global *global;
+ 
+-	unsigned int verify_peer:1;
++	unsigned int verify_peer:2;         /* 0/1/2 per tls_connection_set_verify() */
+ 	unsigned int verify_depth0_only:1;
+ 	unsigned int check_crl:2;           /*(needs :2 bits for 0, 1, 2)*/
+ 	unsigned int check_crl_strict:1;    /*(needs :1 bit  for 0, 1)*/
+@@ -202,7 +202,7 @@ struct tls_connection {
+ 
+ 	unsigned int established:1;
+ 	unsigned int resumed:1;
+-	unsigned int verify_peer:1;
++	unsigned int verify_peer:2; /* 0/1/2 per tls_connection_set_verify() */
+ 	unsigned int is_server:1;
+ 
+ 	mbedtls_ssl_context ssl;
+@@ -514,6 +514,37 @@ char * tls_connection_peer_serial_num(vo
+ 
+ static void tls_pull_buf_reset(struct tls_connection *conn);
+ 
++
++/* Map the 0/1/2 verify_peer of the tls.h API to an MbedTLS authmode. */
++static int tls_mbedtls_authmode(unsigned int verify_peer)
++{
++	switch (verify_peer) {
++	case 2:  return MBEDTLS_SSL_VERIFY_OPTIONAL;/*(eap_teap_init())*/
++	case 1:  return MBEDTLS_SSL_VERIFY_REQUIRED;
++	default: return MBEDTLS_SSL_VERIFY_NONE;
++	}
++}
++
++
++/* MbedTLS keeps the authmode on the mbedtls_ssl_config, which is shared between
++ * connections, but tls.h treats peer verification as a per-connection property.
++ * tls_conf->verify_peer is therefore only the default for connections that never
++ * call tls_connection_set_verify(), and the effective mode is applied per
++ * handshake with mbedtls_ssl_set_hs_authmode(). */
++static void tls_connection_apply_authmode(struct tls_connection *conn)
++{
++	int authmode = tls_mbedtls_authmode(conn->verify_peer);
++
++	/* The mbedtls_ssl_set_hs_authmode API itself is guarded only by
++	 * MBEDTLS_SSL_SERVER_NAME_INDICATION, but application of the value in
++	 * the handshake logic is additionally gated by MBEDTLS_SSL_SRV_C */
++  #if defined(MBEDTLS_SSL_SERVER_NAME_INDICATION) && !defined(MBEDTLS_SSL_SRV_C)
++  #error mbedtls_ssl_set_hs_authmode() is a no-op without MBEDTLS_SSL_SRV_C
++  #endif
++	mbedtls_ssl_set_hs_authmode(&conn->ssl, authmode);
++}
++
++
+ int tls_connection_shutdown(void *tls_ctx, struct tls_connection *conn)
+ {
+ 	/* Note: this function called from eap_peer_tls_reauth_init()
+@@ -532,7 +563,13 @@ int tls_connection_shutdown(void *tls_ct
+ 
+ 	/* RFE: prepare for session resumption? (see doc in crypto/tls.h) */
+ 
+-	return mbedtls_ssl_session_reset(&conn->ssl);
++	if (mbedtls_ssl_session_reset(&conn->ssl) != 0)
++		return -1;
++
++	/* mbedtls_ssl_session_reset() re-inits ssl->handshake, which
++	 * discards mbedtls_ssl_set_hs_*() overrides; re-apply them. */
++	tls_connection_apply_authmode(conn);
++	return 0;
+ }
+ 
+ 
+@@ -1621,16 +1658,18 @@ static int tls_mbedtls_set_certs(struct
+ 		return -1;
+ 	}
+ 
+-	if (!tls_conf->has_ca_cert)
+-		mbedtls_ssl_conf_authmode(&tls_conf->conf, MBEDTLS_SSL_VERIFY_NONE);
+-	else {
+-		/* Initial setting: REQUIRED for client, OPTIONAL for server
+-		 *   (see also tls_connection_set_verify()) */
+-		tls_conf->verify_peer = (tls_conf->global->tls_conf == NULL);
+-		int authmode = tls_conf->verify_peer
+-		  ? MBEDTLS_SSL_VERIFY_REQUIRED
+-		  : MBEDTLS_SSL_VERIFY_OPTIONAL;
+-		mbedtls_ssl_conf_authmode(&tls_conf->conf, authmode);
++	/* Default authmode for connections that do not call
++	 * tls_connection_set_verify(): verify the peer if a CA is configured,
++	 * requiring a certificate from a server we connect to, but tolerating a
++	 * client that presents none. Whether this is a client or a server config
++	 * is inferred from whether tls_global_set_params() has been called on the
++	 * context. (see also tls_connection_apply_authmode()) */
++	tls_conf->verify_peer = !tls_conf->has_ca_cert ? 0
++	                      : tls_conf->global->tls_conf == NULL ? 1 : 2;
++	mbedtls_ssl_conf_authmode(&tls_conf->conf,
++	                          tls_mbedtls_authmode(tls_conf->verify_peer));
++
++	if (tls_conf->has_ca_cert) {
+ 		mbedtls_ssl_conf_ca_chain(&tls_conf->conf,
+ 		                          &tls_conf->ca_cert,
+ 		                          tls_conf->crl);
+@@ -2106,15 +2145,11 @@ int tls_connection_set_verify(void *tls_
+ 		return -1;
+ 	}
+ 
+-	int authmode;
+-	switch (verify_peer) {
+-	case 2:  authmode = MBEDTLS_SSL_VERIFY_OPTIONAL; break;/*(eap_teap_init())*/
+-	case 1:  authmode = MBEDTLS_SSL_VERIFY_REQUIRED; break;
+-	default: authmode = MBEDTLS_SSL_VERIFY_NONE;     break;
+-	}
+-	mbedtls_ssl_set_hs_authmode(&conn->ssl, authmode);
++	/* Treat unknown verify_peer as REQUIRED, matching OpenSSL. */
++	conn->verify_peer = (0 <= verify_peer && verify_peer <= 2) ? verify_peer : 1;
+ 
+-	if ((conn->verify_peer = (authmode != MBEDTLS_SSL_VERIFY_NONE)))
++	tls_connection_apply_authmode(conn);
++	if (conn->verify_peer)
+ 		mbedtls_ssl_set_verify(&conn->ssl, tls_mbedtls_verify_cb, conn);
+ 	else
+ 		mbedtls_ssl_set_verify(&conn->ssl, NULL, NULL);
+@@ -2379,9 +2414,6 @@ struct wpabuf * tls_connection_handshake
+ 			return NULL;
+ 	}
+ 
+-	if (conn->verify_peer) /*(call here might be redundant; nbd)*/
+-		mbedtls_ssl_set_verify(&conn->ssl, tls_mbedtls_verify_cb, conn);
+-
+   #ifdef TLS_MBEDTLS_SESSION_TICKETS
+ 	if (conn->clienthello_session_ticket)
+ 		/*(starting handshake for EAP-FAST and EAP-TEAP)*/

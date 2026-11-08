@@ -66,6 +66,8 @@ static inline int has_feature(const char *feat)
 #ifdef CONFIG_DPP
 	if (!strcmp(feat, "dpp"))
 		return 1;
+	if (!strcmp(feat, "dpp-map"))
+		return 1;
 #endif
 	return 0;
 }

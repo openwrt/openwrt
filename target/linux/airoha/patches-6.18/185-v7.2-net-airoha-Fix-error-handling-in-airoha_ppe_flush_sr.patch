@@ -23,7 +23,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
 
 --- a/drivers/net/ethernet/airoha/airoha_ppe.c
 +++ b/drivers/net/ethernet/airoha/airoha_ppe.c
-@@ -1354,7 +1354,7 @@ static int airoha_ppe_flush_sram_entries
+@@ -1360,7 +1360,7 @@ static int airoha_ppe_flush_sram_entries
  {
  	u32 sram_num_entries = airoha_ppe_get_total_sram_num_entries(ppe);
  	struct airoha_foe_entry *hwe = ppe->foe;
@@ -32,7 +32,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  
  	for (i = 0; i < sram_num_entries; i++) {
  		int err;
-@@ -1362,10 +1362,10 @@ static int airoha_ppe_flush_sram_entries
+@@ -1368,10 +1368,10 @@ static int airoha_ppe_flush_sram_entries
  		memset(&hwe[i], 0, sizeof(*hwe));
  		err = airoha_ppe_foe_commit_sram_entry(ppe, i);
  		if (err)

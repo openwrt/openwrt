@@ -1,0 +1,128 @@
+From 2e15289e345bca8b15c114daa1be427ef413f626 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Mon, 19 Oct 2026 20:50:23 +0100
+Subject: [PATCH 2/3] nvmem: rockchip-otp: Add RV1126 read support
+
+RV1126 uses a byte-addressed OTP controller with internal chip-enable
+and reset sequencing. Add its 512-byte read interface and two-clock
+configuration, retaining the provider's read-only access policy.
+
+Initialise the controller with its clocks enabled before each read.
+Use the vendor driver's 1 us polling interval and the existing 10 ms
+OTP timeout for the controller's status handshakes.
+
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ drivers/nvmem/rockchip-otp.c | 73 +++++++++++++++++++++++++++++++++++-
+ 1 file changed, 72 insertions(+), 1 deletion(-)
+
+--- a/drivers/nvmem/rockchip-otp.c
++++ b/drivers/nvmem/rockchip-otp.c
+@@ -66,6 +66,18 @@
+ #define RK3588_AUTO_EN			BIT(0)
+ #define RK3588_RD_DONE			BIT(1)
+ 
++#define RV1126_OTP_NVM_CEB		0x00
++#define RV1126_OTP_NVM_RSTB		0x04
++#define RV1126_OTP_NVM_ST		0x18
++#define RV1126_OTP_NVM_RADDR		0x1c
++#define RV1126_OTP_NVM_RSTART		0x20
++#define RV1126_OTP_NVM_RDATA		0x24
++#define RV1126_OTP_READ_ST		0x30
++#define RV1126_OTP_CEB_READY		BIT(0)
++#define RV1126_OTP_RSTB_READY		BIT(2)
++#define RV1126_OTP_RSTB_DEASSERT		BIT(0)
++#define RV1126_OTP_READ_START		BIT(0)
++
+ struct rockchip_data {
+ 	int size;
+ 	int read_offset;
+@@ -263,6 +275,50 @@ static int rk3588_otp_read(void *context
+ 	return ret;
+ }
+ 
++static int rv1126_otp_init(struct rockchip_otp *otp)
++{
++	u32 status;
++	int ret;
++
++	writel(0, otp->base + RV1126_OTP_NVM_CEB);
++	ret = readl_poll_timeout_atomic(otp->base + RV1126_OTP_NVM_ST,
++					status, status & RV1126_OTP_CEB_READY,
++					1, OTPC_TIMEOUT);
++	if (ret)
++		return ret;
++
++	writel(RV1126_OTP_RSTB_DEASSERT, otp->base + RV1126_OTP_NVM_RSTB);
++	return readl_poll_timeout_atomic(otp->base + RV1126_OTP_NVM_ST,
++					status, status & RV1126_OTP_RSTB_READY,
++					1, OTPC_TIMEOUT);
++}
++
++static int rv1126_otp_read(void *context, unsigned int offset, void *val,
++			   size_t bytes)
++{
++	struct rockchip_otp *otp = context;
++	u8 *buf = val;
++	u32 status;
++	int ret;
++
++	ret = rv1126_otp_init(otp);
++	if (ret)
++		return ret;
++
++	while (bytes--) {
++		writel(offset++, otp->base + RV1126_OTP_NVM_RADDR);
++		writel(RV1126_OTP_READ_START, otp->base + RV1126_OTP_NVM_RSTART);
++		ret = readl_poll_timeout_atomic(otp->base + RV1126_OTP_READ_ST,
++						status, !status, 1, OTPC_TIMEOUT);
++		if (ret)
++			return ret;
++
++		*buf++ = readb(otp->base + RV1126_OTP_NVM_RDATA);
++	}
++
++	return 0;
++}
++
+ static int rockchip_otp_read(void *context, unsigned int offset,
+ 			     void *val, size_t bytes)
+ {
+@@ -379,6 +435,17 @@ static const struct rockchip_data rk3588
+ 	.reg_read = rk3588_otp_read,
+ };
+ 
++static const char * const rv1126_otp_clocks[] = {
++	"otp", "apb_pclk",
++};
++
++static const struct rockchip_data rv1126_data = {
++	.size = 0x200,
++	.clks = rv1126_otp_clocks,
++	.num_clks = ARRAY_SIZE(rv1126_otp_clocks),
++	.reg_read = rv1126_otp_read,
++};
++
+ static const struct of_device_id rockchip_otp_match[] = {
+ 	{
+ 		.compatible = "rockchip,px30-otp",
+@@ -408,6 +475,10 @@ static const struct of_device_id rockchi
+ 		.compatible = "rockchip,rk3588-otp",
+ 		.data = &rk3588_data,
+ 	},
++	{
++		.compatible = "rockchip,rv1126-otp",
++		.data = &rv1126_data,
++	},
+ 	{ /* sentinel */ },
+ };
+ MODULE_DEVICE_TABLE(of, rockchip_otp_match);
+@@ -448,7 +519,7 @@ static int rockchip_otp_probe(struct pla
+ 	if (ret)
+ 		return dev_err_probe(dev, ret, "failed to get clocks\n");
+ 
+-	otp->rst = devm_reset_control_array_get_exclusive(dev);
++	otp->rst = devm_reset_control_array_get_optional_exclusive(dev);
+ 	if (IS_ERR(otp->rst))
+ 		return dev_err_probe(dev, PTR_ERR(otp->rst),
+ 				     "failed to get resets\n");

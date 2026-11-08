@@ -1,0 +1,43 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Tue, 20 Oct 2026 14:13:52 +0200
+Subject: [PATCH] AP MLD: Accept EAPOL from an associated station without wpa_sm
+
+For an AP MLD, hostapd_event_eapol_rx() accepts only a station entry
+with a wpa_sm when it looks up the BSS of the sender with
+hostapd_find_by_sta(). A station that associated without RSN, such as
+a WPS Enrollee, has none. The frame then goes to the BSS of the driver
+event, which can be another link than that of the station. A non-MLO
+station has no entry on the other links, and ieee802_1x_receive() drops
+each EAP-Response.
+
+Search again for any associated station entry when no entry with a
+wpa_sm matches, as the handler did before commit a5188103220d ("AP MLD:
+Handle link_id in EAPOL RX handler"). An entry with a wpa_sm keeps
+priority.
+
+Fixes: a5188103220d ("AP MLD: Handle link_id in EAPOL RX handler")
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+
+--- a/src/ap/drv_callbacks.c
++++ b/src/ap/drv_callbacks.c
+@@ -2132,10 +2132,18 @@ static void hostapd_event_eapol_rx(struc
+ 				   int link_id)
+ {
+ 	struct hostapd_data *orig_hapd = hapd;
++#ifdef CONFIG_IEEE80211BE
++	struct hostapd_data *sta_hapd;
++#endif /* CONFIG_IEEE80211BE */
+ 
+ #ifdef CONFIG_IEEE80211BE
+ 	hapd = switch_link_hapd(hapd, link_id);
+-	hapd = hostapd_find_by_sta(hapd->iface, src, true, NULL);
++	sta_hapd = hostapd_find_by_sta(hapd->iface, src, true, NULL);
++	/* A station that associated without RSN, as a WPS Enrollee does, has
++	 * no wpa_sm. */
++	if (!sta_hapd)
++		sta_hapd = hostapd_find_by_sta(hapd->iface, src, false, NULL);
++	hapd = sta_hapd;
+ #else /* CONFIG_IEEE80211BE */
+ 	hapd = hostapd_find_by_sta(hapd->iface, src, false, NULL);
+ #endif /* CONFIG_IEEE80211BE */

@@ -1,0 +1,199 @@
+From: Rosen Penev <rosenp@gmail.com>
+Date: Sat, 10 Oct 2026 14:27:28 -0700
+Subject: [PATCH] MIPS: lib: use maddu and prefetch in csum_partial()
+
+csum_partial() reads every byte of the buffer once and keeps the carry
+with three instructions per word: ADDC expands to addu, sltu and a
+second addu. On a BCM4716 (74Kc at 480 MHz, no L2, ~80 cycles per DRAM
+miss) validating the checksum of forwarded TCP with GRO made it the top
+entry in the profile, 13-16% of all cycles.
+
+maddu accumulates a 32-bit word into the 64-bit HI:LO pair in a single
+instruction, so the carry only has to be folded once, after the loop.
+One 32-byte loop replaces the 128/64/32-byte cascade, 18 instructions
+per 32 bytes instead of 33, with one load placed between two
+accumulates so that cores whose multiplier stalls back-to-back
+accumulates can overlap the two streams. HI:LO is seeded through
+multu sum,1 rather than mtlo: writing HI or LO while a multiply result
+has not been read leaves the other one UNPREDICTABLE. HI:LO is saved
+and restored by the exception paths, so an interrupt inside the loop
+does not disturb the accumulator. The prologue stages that aligned src
+to 8, 16 and 32 bytes are skipped, the loop only needs word alignment.
+
+maddu was added in MIPS32 and removed again in MIPS32r6, and it only
+accumulates 32-bit words, so the 64-bit path and everything before
+MIPS32 keep the existing loops.
+
+Cores like the 74K have no hardware prefetcher, so every line is a
+demand miss, and after a non-coherent DMA the received data is never in
+the cache. With the faster loop the load latency is nearly all that is
+left, so fetch the line 256 bytes ahead. Unlike memcpy(), which
+disables prefetching on DMA_NONCOHERENT entirely, only prefetch
+addresses the loop itself loads later in the same call, so the prefetch
+never brings in a line the loop would not fetch anyway: the 74K does not
+need a post-DMA invalidate, so a line fetched past that could belong to
+a buffer the device is still writing, and the CPU would later read the
+stale copy. The loop runs with the prefetch until 256 bytes before the
+end and finishes without it, so there is no bounds check per iteration.
+
+Asus RT-N16 (BCM4716, bgmac), iperf3 single stream unless noted,
+median of 3 in Mbit/s, mean of two rounds, in one boot with the variants
+selected at runtime:
+
+                     stock      maddu      prefetch   both
+  local rx / tx      218 / 191  224 / 191  246 / 211  253 / 216
+  routed up / down   166 / 135  168 / 139  191 / 151  195 / 154
+  routed, 4 streams  64 / 77    65 / 79    68 / 83    69 / 84
+
+maddu alone does little on the 74K, which waits on the misses, and the
+two together are 2-3% above the prefetch alone with one stream. A
+prefetch distance of 192 bytes performed the same, 128 bytes was about
+1% lower.
+
+TP-Link Archer C7 v2 (QCA9558, 74Kc, ag71xx without checksum offload),
+same method, stock and both, in separate boots:
+
+                     stock      both
+  local rx / tx      384 / 339  419 / 369
+  routed up / down   396 / 600  389 / 619
+  routed, 4 streams  388 / 545  378 / 553
+
+On an RTL9303 (34Kc) maddu alone raised iperf3 transmit from 185.8 to
+210.2 Mbit/s and lowered the CPU time at a fixed 70 Mbit/s by 11%; on
+RTL931x (interAptiv) single stream transmit went from 178 to 200 Mbit/s.
+
+Every length from 0 to 1024 at every source alignment 0 to 31, plus
+larger sizes up to 32 KiB, with six data patterns and seven starting
+sums, gives the same result as the generic C checksum under
+qemu-mipsel.
+
+Co-developed-by: Gennaro Cimmino <gcimmino@rayonra.net>
+Signed-off-by: Gennaro Cimmino <gcimmino@rayonra.net>
+Suggested-by: Markus Stockhausen <markus.stockhausen@gmx.de>
+Assisted-by: LLM
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+---
+--- a/arch/mips/lib/csum_partial.S
++++ b/arch/mips/lib/csum_partial.S
+@@ -14,6 +14,7 @@
+ #include <linux/export.h>
+ #include <asm/asm.h>
+ #include <asm/asm-offsets.h>
++#include <asm/isa-rev.h>
+ #include <asm/regdef.h>
+ 
+ #ifdef CONFIG_64BIT
+@@ -54,8 +55,44 @@
+ 
+ #endif /* USE_DOUBLE */
+ 
++/*
++ * maddu accumulates a 32-bit word into HI:LO in a single instruction and was
++ * added in MIPS32; MIPS32r6 removed it again.
++ */
++#if !defined(USE_DOUBLE) && MIPS_ISA_REV >= 1 && MIPS_ISA_REV < 6
++#define USE_MADDU
++#define BLOCK_SHIFT	0x5
++#else
++#define BLOCK_SHIFT	0x7
++#endif
++
+ #define UNIT(unit)  ((unit)*NBYTES)
+ 
++/*
++ * Accumulate 32 bytes into HI:LO, branching back to loop until src reaches
++ * end. One load sits between two accumulates, so that cores whose multiplier
++ * stalls back-to-back accumulates can overlap the two streams.
++ */
++#define CSUM_MADDU_BLOCK(src, end, loop)				\
++	lw	t0, 0x00(src);					\
++	lw	t1, 0x04(src);					\
++	lw	t3, 0x08(src);					\
++	maddu	t0, t6;						\
++	lw	t4, 0x0c(src);					\
++	maddu	t1, t6;						\
++	lw	t0, 0x10(src);					\
++	maddu	t3, t6;						\
++	lw	t1, 0x14(src);					\
++	maddu	t4, t6;						\
++	lw	t3, 0x18(src);					\
++	maddu	t0, t6;						\
++	lw	t4, 0x1c(src);					\
++	PTR_ADDU	src, src, 0x20;				\
++	maddu	t1, t6;						\
++	maddu	t3, t6;						\
++	bne	src, end, loop;					\
++	 maddu	t4, t6
++
+ #define ADDC(sum,reg)						\
+ 	.set	push;						\
+ 	.set	noat;						\
+@@ -141,6 +178,9 @@ EXPORT_SYMBOL(csum_partial)
+ 	bnez	t8, .Ldo_end_words
+ 	 move	t8, a1
+ 
++#ifdef USE_MADDU
++	LONG_SRL	t8, a1, BLOCK_SHIFT
++#else
+ 	andi	t8, src, 0x4
+ 	beqz	t8, .Lqword_align
+ 	 andi	t8, src, 0x8
+@@ -171,7 +211,7 @@ EXPORT_SYMBOL(csum_partial)
+ 
+ .Loword_align:
+ 	beqz	t8, .Lbegin_movement
+-	 LONG_SRL	t8, a1, 0x7
++	 LONG_SRL	t8, a1, BLOCK_SHIFT
+ 
+ #ifdef USE_DOUBLE
+ 	ld	t0, 0x00(src)
+@@ -183,9 +223,40 @@ EXPORT_SYMBOL(csum_partial)
+ #endif
+ 	LONG_SUBU	a1, a1, 0x10
+ 	PTR_ADDU	src, src, 0x10
+-	LONG_SRL	t8, a1, 0x7
++	LONG_SRL	t8, a1, BLOCK_SHIFT
++#endif /* USE_MADDU */
+ 
+ .Lbegin_movement:
++#ifdef USE_MADDU
++	li	t6, 1
++	LONG_SLL	t8, t8, BLOCK_SHIFT
++	PTR_ADDU	t8, src, t8
++	multu	sum, t6			/* mtlo would be restricted here */
++
++#ifdef CONFIG_CPU_HAS_PREFETCH
++	/*
++	 * Fetch 256 bytes ahead, but only addresses the loop loads itself
++	 * later: on non-coherent systems any other line could belong to a
++	 * buffer the device still owns.
++	 */
++	PTR_SUBU	t5, t8, 0x100
++	sltu	t2, src, t5
++	beqz	t2, .Lmove_maddu
++	 nop
++
++.Lmove_maddu_pref:
++	pref	0, 0x100(src)
++	CSUM_MADDU_BLOCK(src, t5, .Lmove_maddu_pref)
++#endif
++
++.Lmove_maddu:
++	CSUM_MADDU_BLOCK(src, t8, .Lmove_maddu)
++
++	mflo	sum
++	mfhi	t1
++	ADDC(sum, t1)
++	andi	t8, a1, 0x1c
++#else
+ 	beqz	t8, 1f
+ 	 andi	t2, a1, 0x40
+ 
+@@ -217,6 +288,7 @@ EXPORT_SYMBOL(csum_partial)
+ 	CSUM_BIGCHUNK(src, 0x00, sum, t0, t1, t3, t4)
+ 	andi	t8, a1, 0x1c
+ 	PTR_ADDU	src, src, 0x20
++#endif /* USE_MADDU */
+ 
+ .Ldo_end_words:
+ 	beqz	t8, .Lsmall_csumcpy
