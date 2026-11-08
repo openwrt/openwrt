@@ -121,6 +121,17 @@
 		nand {
 			compatible = "mikrotik,rb4xx-nand";
 
+			/*
+			 * The controller has no ECC engine of its own, so ask for
+			 * software Hamming, which is what the ar71xx driver used.
+			 * The algorithm has to come from the device tree as well:
+			 * nand_scan_tail() overwrites chip->ecc.algo from the user
+			 * configuration, and without it the probe fails with
+			 * "Unsupported ECC algorithm!" and no partition is
+			 * registered.
+			 */
+			nand-ecc-mode = "soft";
+
 			gpios = <&cpld_gpio 5 GPIO_ACTIVE_HIGH>, // ALE
 				<&cpld_gpio 6 GPIO_ACTIVE_HIGH>, // CLE
 				<&cpld_gpio 7 GPIO_ACTIVE_HIGH>, // nCE
