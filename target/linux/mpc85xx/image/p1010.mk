@@ -32,7 +32,6 @@ define Build/ix2106-factory
 		--rootfs $(IMAGE_ROOTFS) --output $@
 endef
 
-
 define Device/aerohive_br200-wp
   DEVICE_VENDOR := Aerohive
   DEVICE_MODEL := BR200-WP
@@ -53,7 +52,6 @@ define Device/aerohive_br200-wp
   IMAGE_SIZE = 63m
 endef
 TARGET_DEVICES += aerohive_br200-wp
-
 
 define Device/enterasys_ws-ap3715i
   DEVICE_VENDOR := Enterasys
