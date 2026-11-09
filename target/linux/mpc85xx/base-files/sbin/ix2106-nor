@@ -155,16 +155,17 @@ validate_backup() {
 	tar -xOf "$archive" manifest.sha256 > "$tmp/manifest.sha256" || die "cannot read archive manifest"
 	tar -xOf "$archive" factory.bin > "$tmp/factory.bin" || die "cannot read factory archive member"
 	check_factory "$tmp/factory.bin"
-	for member in factory.bin factory-data.bin firmware.bin boot-reserved.bin; do
+	hash=$(sha256sum "$tmp/factory.bin" | awk '{print $1}') || die "cannot hash factory archive member"
+	printf '%s  factory.bin\n' "$hash" > "$tmp/expected.sha256"
+	for member in factory-data.bin firmware.bin boot-reserved.bin; do
 		size=$(tar -xOf "$archive" "$member" | wc -c | tr -d '[:space:]')
 		case "$member" in
-			factory.bin) expected_size=$((IX2106_FACTORY_SIZE)) ;;
 			factory-data.bin) expected_size=$((IX2106_FACTORY_DATA_SIZE)) ;;
 			firmware.bin) expected_size=$((IX2106_FW_SIZE)) ;;
 			boot-reserved.bin) expected_size=$((IX2106_BOOT_RESERVED_SIZE)) ;;
 		esac
 		[ "$size" = "$expected_size" ] || die "$member backup size mismatch"
-		hash=$(tar -xOf "$archive" "$member" | sha256sum | awk '{print $1}')
+		hash=$(tar -xOf "$archive" "$member" | sha256sum | awk '{print $1}') || die "cannot hash $member archive member"
 		printf '%s  %s\n' "$hash" "$member" >> "$tmp/expected.sha256"
 	done
 	cmp -s "$tmp/expected.sha256" "$tmp/manifest.sha256" || die "backup member checksum or manifest name mismatch"
