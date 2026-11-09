@@ -1,0 +1,46 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Mon, 9 Nov 2026 05:00:00 +0100
+Subject: [PATCH] wifi: mac80211: do not resolve an MLD station by its MLD address in RX
+
+ieee80211_rx_for_interface() looks up the sender of a frame that no link
+station matches with sta_info_get_bss(), which on an MLD interface finds
+an MLO station by its MLD address. The frame then takes the link that
+the driver reports or, without one, the link of the receive frequency.
+If the station does not hold that link, ieee80211_rx_data_set_link()
+fails and the frame is dropped. A non-AP MLD that scans the channel of
+another link of its AP MLD sends its Probe Requests from its MLD
+address, so the AP MLD does not answer them.
+
+On an MLD interface, resolve the station only by a link address, and
+handle a frame from any other address like one from an unknown sender.
+On its links a non-AP MLD transmits from its link addresses, and a
+non-MLO station of an MLD interface has a link station as well. This is
+the rule for such frames of commit 6d531b9af16e ("wifi: mac80211:
+rework RX packet handling"), without the rest of that rework.
+
+Fixes: ea9d807b5642 ("wifi: mac80211: add link information in ieee80211_rx_status")
+Fixes: 4970e393eb5d ("wifi: mac80211: determine missing link_id in ieee80211_rx_for_interface() based on frequency")
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/net/mac80211/rx.c
++++ b/net/mac80211/rx.c
+@@ -5357,7 +5357,7 @@ static bool ieee80211_rx_for_interface(s
+ {
+ 	struct link_sta_info *link_sta;
+ 	struct ieee80211_hdr *hdr = (void *)skb->data;
+-	struct sta_info *sta;
++	struct sta_info *sta = NULL;
+ 	int link_id = -1;
+ 
+ 	if (ieee80211_is_s1g_beacon(hdr->frame_control)) {
+@@ -5380,7 +5380,9 @@ static bool ieee80211_rx_for_interface(s
+ 	} else {
+ 		struct ieee80211_rx_status *status = IEEE80211_SKB_RXCB(skb);
+ 
+-		sta = sta_info_get_bss(rx->sdata, hdr->addr2);
++		/* On an MLD interface, only a link address resolves a station */
++		if (!ieee80211_vif_is_mld(&rx->sdata->vif))
++			sta = sta_info_get_bss(rx->sdata, hdr->addr2);
+ 		if (status->link_valid) {
+ 			link_id = status->link_id;
+ 		} else if (ieee80211_vif_is_mld(&rx->sdata->vif) &&
