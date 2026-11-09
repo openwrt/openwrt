@@ -1,0 +1,68 @@
+From: Davíð Steinn Geirsson <david@dsg.is>
+Date: Thu, 12 Nov 2026 00:07:49 +0000
+Subject: [PATCH] clk: qcom: gcc-ipq5018: fix swapped MDIO clocks and resets
+
+The GCC has a block reset (BCR) and an AHB clock branch for each of the
+two MDIO controllers. The pair at 0x58000/0x58004 belongs to the
+controller at 0x90000 (mdio1 in ipq5018.dtsi) and the pair at
+0x58010/0x58014 belongs to the controller at 0x88000 (mdio0). The driver
+maps the GCC_MDIO0_* IDs to the first pair and the GCC_MDIO1_* IDs to
+the second, so each MDIO node gets the clock and reset of the other
+controller.
+
+ipq5018.dtsi enables mdio0 and leaves mdio1 disabled. On a board that
+does not enable mdio1, clk_disable_unused() gates 0x58014 and the
+controller at 0x88000 stops responding. Its registers then read back a
+stale bus value, so MDIO reads return garbage instead of failing.
+
+Observed on a Ubiquiti UniFi 6 Pro, which has the internal GE PHY on
+mdio0 and nothing on mdio1:
+- Gating 0x58004 leaves the 0x88000 controller working and every
+  0x90000 register reads 0xffff. Gating 0x58014 does the reverse.
+- Asserting the BCR at 0x58000 resets the 0x90000 controller and halts
+  the 0x58004 branch. The BCR at 0x58010 resets the 0x88000 controller
+  and halts the 0x58014 branch.
+
+Swap the clock and reset offsets so that each ID controls the
+controller it is named after. No in-tree DT uses the MDIO resets.
+
+Fixes: e3fdbef1bab8 ("clk: qcom: Add Global Clock controller (GCC) driver for IPQ5018")
+Link: https://lore.kernel.org/r/20261112155801.610730-1-david@dsg.is
+Signed-off-by: Davíð Steinn Geirsson <david@dsg.is>
+--- a/drivers/clk/qcom/gcc-ipq5018.c
++++ b/drivers/clk/qcom/gcc-ipq5018.c
+@@ -1970,9 +1970,9 @@ static struct clk_branch gcc_lpass_sway_
+ };
+ 
+ static struct clk_branch gcc_mdio0_ahb_clk = {
+-	.halt_reg = 0x58004,
++	.halt_reg = 0x58014,
+ 	.clkr = {
+-		.enable_reg = 0x58004,
++		.enable_reg = 0x58014,
+ 		.enable_mask = BIT(0),
+ 		.hw.init = &(struct clk_init_data) {
+ 			.name = "gcc_mdioi0_ahb_clk",
+@@ -1987,9 +1987,9 @@ static struct clk_branch gcc_mdio0_ahb_c
+ };
+ 
+ static struct clk_branch gcc_mdio1_ahb_clk = {
+-	.halt_reg = 0x58014,
++	.halt_reg = 0x58004,
+ 	.clkr = {
+-		.enable_reg = 0x58014,
++		.enable_reg = 0x58004,
+ 		.enable_mask = BIT(0),
+ 		.hw.init = &(struct clk_init_data) {
+ 			.name = "gcc_mdio1_ahb_clk",
+@@ -3589,8 +3589,8 @@ static const struct qcom_reset_map gcc_i
+ 	[GCC_GMAC1_SYS_ARES] = { 0x68438, 1 },
+ 	[GCC_IMEM_BCR] = { 0x0e000, 0 },
+ 	[GCC_LPASS_BCR] = { 0x2e000, 0 },
+-	[GCC_MDIO0_BCR] = { 0x58000, 0 },
+-	[GCC_MDIO1_BCR] = { 0x58010, 0 },
++	[GCC_MDIO0_BCR] = { 0x58010, 0 },
++	[GCC_MDIO1_BCR] = { 0x58000, 0 },
+ 	[GCC_MPM_BCR] = { 0x2c000, 0 },
+ 	[GCC_PCIE0_BCR] = { 0x75004, 0 },
+ 	[GCC_PCIE0_LINK_DOWN_BCR] = { 0x750a8, 0 },
