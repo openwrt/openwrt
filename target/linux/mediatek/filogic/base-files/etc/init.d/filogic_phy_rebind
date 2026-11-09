@@ -1,0 +1,13 @@
+#!/bin/sh /etc/rc.common
+# SPDX-License-Identifier: GPL-2.0-only
+
+START=11
+
+boot() {
+	case $(board_name) in
+	zyxel,usg-lite-60ax)
+		echo "mdio-bus:1f" > /sys/bus/mdio_bus/drivers/mt7530-mdio/unbind
+		echo "mdio-bus:1f" > /sys/bus/mdio_bus/drivers/mt7530-mdio/bind
+		;;
+	esac
+}

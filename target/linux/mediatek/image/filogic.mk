@@ -124,6 +124,13 @@ define Build/zyxel-nwa-fit-filogic
 	@mv $@.new $@
 endef
 
+define Build/zyxel-usg-lite-fit-filogic
+	$(TOPDIR)/scripts/mkits-zyxel-fit-filogic.sh \
+		$@.its $@ "88 e1 ff ff ff ff ff ff ff ff"
+	PATH=$(LINUX_DIR)/scripts/dtc:$(PATH) mkimage -f $@.its $@.new
+	@mv $@.new $@
+endef
+
 define Build/cetron-header
 	$(eval magic=$(word 1,$(1)))
 	$(eval model=$(word 2,$(1)))
@@ -4546,6 +4553,24 @@ define Device/zyxel_nwa50ax-pro
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
 endef
 TARGET_DEVICES += zyxel_nwa50ax-pro
+
+define Device/zyxel_usg-lite-60ax
+  DEVICE_VENDOR := Zyxel
+  DEVICE_MODEL := USG LITE 60AX
+  DEVICE_DTS := mt7986a-zyxel-usg-lite-60ax
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_PACKAGES := kmod-mt7915e kmod-mt7986-firmware mt7986-wo-firmware kmod-phy-airoha-en8811h zyxel-bootconfig
+  DEVICE_DTS_LOADADDR := 0x44000000
+  UBINIZE_OPTS := -E 5
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  IMAGE_SIZE := 81920k
+  KERNEL_IN_UBI := 1
+  IMAGES += factory.bin
+  IMAGE/factory.bin := append-ubi | check-size $$$$(IMAGE_SIZE) | zyxel-usg-lite-fit-filogic
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+endef
+TARGET_DEVICES += zyxel_usg-lite-60ax
 
 define Device/zyxel_wx5600-t0-ubootmod
   DEVICE_VENDOR := Zyxel

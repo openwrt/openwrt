@@ -1,0 +1,62 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Ted Chang <ted.cschang@gmail.com>
+Date: Wed, 11 Nov 2026 00:00:00 +0000
+Subject: [PATCH] net: phy: airoha: add LED polarity configuration for EN8811H
+
+Add LED polarity configuration for Airoha EN8811H PHY driver.
+
+Signed-off-by: Ted Chang <ted.cschang@gmail.com>
+---
+--- a/drivers/net/phy/air_en8811h.c
++++ b/drivers/net/phy/air_en8811h.c
+@@ -148,6 +148,7 @@
+ struct led {
+ 	unsigned long rules;
+ 	unsigned long state;
++	u8 pol;
+ };
+ 
+ #define clk_hw_to_en8811h_priv(_hw)			\
+@@ -758,6 +759,25 @@ static int air_led_init(struct phy_devic
+ 	return 0;
+ }
+ 
++static int air_led_polarity_set(struct phy_device *phydev, int index,
++				unsigned long modes)
++{
++	struct en8811h_priv *priv = phydev->priv;
++	u8 pol;
++
++	if (index >= EN8811H_LED_COUNT)
++		return -EINVAL;
++
++	if (test_bit(PHY_LED_ACTIVE_LOW, &modes))
++		pol = AIR_ACTIVE_LOW;
++	else
++		pol = AIR_ACTIVE_HIGH;
++
++	priv->led[index].pol = pol;
++
++	return air_led_init(phydev, index, AIR_LED_ENABLE, pol);
++}
++
+ static int air_leds_init(struct phy_device *phydev, int num, int dur, int mode)
+ {
+ 	struct en8811h_priv *priv = phydev->priv;
+@@ -796,7 +816,7 @@ static int air_leds_init(struct phy_devi
+ 	}
+ 
+ 	for (i = 0; i < num; ++i) {
+-		ret = air_led_init(phydev, i, AIR_LED_ENABLE, AIR_ACTIVE_HIGH);
++		ret = air_led_init(phydev, i, AIR_LED_ENABLE, priv->led[i].pol);
+ 		if (ret < 0) {
+ 			phydev_err(phydev, "LED%d init failed: %d\n", i, ret);
+ 			return ret;
+@@ -1231,6 +1251,7 @@ static struct phy_driver en8811h_driver[
+ 	.led_brightness_set	= air_led_brightness_set,
+ 	.led_hw_control_set	= air_led_hw_control_set,
+ 	.led_hw_control_get	= air_led_hw_control_get,
++	.led_polarity_set	= air_led_polarity_set,
+ } };
+ 
+ module_phy_driver(en8811h_driver);
