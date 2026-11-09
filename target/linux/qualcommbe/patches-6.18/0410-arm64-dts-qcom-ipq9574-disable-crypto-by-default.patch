@@ -1,0 +1,40 @@
+From 78a653f35b29c2443a1951081d1a07a315fbe7b3 Mon Sep 17 00:00:00 2001
+From: Jackie Han <jackie.han@gmail.com>
+Date: Fri, 6 Nov 2026 19:07:25 +0800
+Subject: [PATCH] arm64: dts: qcom: ipq9574: disable the crypto engine by
+ default
+
+OpenWrt does not build a driver for the Qualcomm Crypto Engine
+(CONFIG_CRYPTO_DEV_QCE is not set), so nothing binds the crypto and
+cryptobam nodes. While they are enabled the GCC clock controller keeps
+waiting for them and logs, on every boot:
+
+  qcom,gcc-ipq9574 1800000.clock-controller: sync_state() pending
+  due to 73a000.crypto
+
+Disable both nodes in the SoC dtsi instead of in each board. A board
+that wants to use the engine can enable them again.
+
+Signed-off-by: Jackie Han <jackie.han@gmail.com>
+---
+ arch/arm64/boot/dts/qcom/ipq9574.dtsi | 2 ++
+ 1 file changed, 2 insertions(+)
+
+--- a/arch/arm64/boot/dts/qcom/ipq9574.dtsi
++++ b/arch/arm64/boot/dts/qcom/ipq9574.dtsi
+@@ -414,6 +414,7 @@
+ 			qcom,num-ees = <4>;
+ 			num-channels = <16>;
+ 			qcom,controlled-remotely;
++			status = "disabled";
+ 		};
+ 
+ 		crypto: crypto@73a000 {
+@@ -425,6 +426,7 @@
+ 			clock-names = "iface", "bus", "core";
+ 			dmas = <&cryptobam 2>, <&cryptobam 3>;
+ 			dma-names = "rx", "tx";
++			status = "disabled";
+ 		};
+ 
+ 		tsens: thermal-sensor@4a9000 {

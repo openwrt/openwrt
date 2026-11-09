@@ -1,0 +1,494 @@
+From 1239e8883f8e2f83f62041c4021d53654649ada4 Mon Sep 17 00:00:00 2001
+From: Mark Adler <git@madler.net>
+Date: Fri, 3 Apr 2026 19:34:30 -0700
+Subject: [PATCH] Add compressBound_z, deflateBound_z, xompress_z and uncompress_z functions for large values.
+
+* These take and return size_t integers, instead of unsigned longs,
+  for those platforms with 32-bit longs. Overflow is clamped to the
+  maximum value for the type.
+* Provide size_t arguments for Windows, on which a long is 32 bits.
+* Check for invalid NULL pointer inputs to zlib operations.
+
+Upstream: https://github.com/madler/zlib/commit/916dc1ac
+Upstream: https://github.com/madler/zlib/commit/4edb00de
+Upstream: https://github.com/madler/zlib/commit/5c477553
+
+[backported to 2.3.3: deflateBound() keeps the 2.3.3 fallback wrapper
+ length of 6 bytes]
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+---
+ compress.c                 | 60 +++++++++++++++++++++++++++++++-------
+ deflate.c                  | 26 ++++++++++++-----
+ gzlib.c                    |  2 +-
+ uncompr.c                  | 32 ++++++++++++++++++--
+ win32/zlib-ng.def.in       |  1 +
+ win32/zlib.def.in          |  5 ++++
+ win32/zlibcompat.def.in    |  6 ++++
+ zlib-ng.h.in               |  5 ++++
+ zlib-ng.map.in             |  5 ++++
+ zlib.h.in                  | 21 +++++++++++--
+ zlib.map.in                |  7 ++++-
+ zlib_name_mangling-ng.h.in |  1 +
+ zlib_name_mangling.h.in    |  6 ++++
+ 13 files changed, 152 insertions(+), 25 deletions(-)
+
+--- a/compress.c
++++ b/compress.c
+@@ -6,6 +6,8 @@
+ #include "zbuild.h"
+ #include "zutil.h"
+ 
++#include <limits.h>
++
+ /* ===========================================================================
+  *  Architecture-specific hooks.
+  */
+@@ -28,13 +30,20 @@
+    memory, Z_BUF_ERROR if there was not enough room in the output buffer,
+    Z_STREAM_ERROR if the level parameter is invalid.
+ */
+-z_int32_t Z_EXPORT PREFIX(compress2)(unsigned char *dest, z_uintmax_t *destLen, const unsigned char *source,
+-                        z_uintmax_t sourceLen, z_int32_t level) {
++#ifdef ZLIB_COMPAT
++int Z_EXPORT PREFIX(compress2_z)(unsigned char *dest, z_size_t *destLen, const unsigned char *source, z_size_t sourceLen,
++                        int level) {
++#else
++int32_t Z_EXPORT PREFIX(compress2)(uint8_t *dest, size_t *destLen, const uint8_t *source, size_t sourceLen, int32_t level) {
++#endif
+     PREFIX3(stream) stream;
+     int err;
+-    const unsigned int max = (unsigned int)-1;
+     z_size_t left;
+ 
++    if ((sourceLen > 0 && source == NULL) ||
++        destLen == NULL || (*destLen > 0 && dest == NULL))
++        return Z_STREAM_ERROR;
++
+     left = *destLen;
+     *destLen = 0;
+ 
+@@ -53,11 +62,11 @@ z_int32_t Z_EXPORT PREFIX(compress2)(uns
+ 
+     do {
+         if (stream.avail_out == 0) {
+-            stream.avail_out = left > (unsigned long)max ? max : (unsigned int)left;
++            stream.avail_out = (unsigned int)MIN(UINT_MAX, left);
+             left -= stream.avail_out;
+         }
+         if (stream.avail_in == 0) {
+-            stream.avail_in = sourceLen > (unsigned long)max ? max : (unsigned int)sourceLen;
++            stream.avail_in = (unsigned int)MIN(UINT_MAX, sourceLen);
+             sourceLen -= stream.avail_in;
+         }
+         err = PREFIX(deflate)(&stream, sourceLen ? Z_NO_FLUSH : Z_FINISH);
+@@ -78,21 +87,50 @@ z_int32_t Z_EXPORT PREFIX(compress)(unsi
+    If the default memLevel or windowBits for deflateInit() is changed, then
+    this function needs to be updated.
+  */
+-z_uintmax_t Z_EXPORT PREFIX(compressBound)(z_uintmax_t sourceLen) {
+-    z_uintmax_t complen = DEFLATE_BOUND_COMPLEN(sourceLen);
++#ifdef ZLIB_COMPAT
++z_size_t Z_EXPORT PREFIX(compressBound_z)(z_size_t sourceLen) {
++#else
++size_t Z_EXPORT PREFIX(compressBound)(size_t sourceLen) {
++#endif
++    z_size_t complen = DEFLATE_BOUND_COMPLEN(sourceLen);
++    z_size_t bound;
+ 
+-    if (complen > 0)
++    if (complen > 0) {
+         /* Architecture-specific code provided an upper bound. */
+-        return complen + ZLIB_WRAPLEN;
++        bound = complen + ZLIB_WRAPLEN;
++        return bound < sourceLen ? (z_size_t)-1 : bound;
++    }
+ 
+ #ifndef NO_QUICK_STRATEGY
+-    return sourceLen                       /* The source size itself */
++    bound = sourceLen                      /* The source size itself */
+       + (sourceLen == 0 ? 1 : 0)           /* Always at least one byte for any input */
+       + (sourceLen < 9 ? 1 : 0)            /* One extra byte for lengths less than 9 */
+       + DEFLATE_QUICK_OVERHEAD(sourceLen)  /* Source encoding overhead, padded to next full byte */
+       + DEFLATE_BLOCK_OVERHEAD             /* Deflate block overhead bytes */
+       + ZLIB_WRAPLEN;                      /* zlib wrapper */
+ #else
+-    return sourceLen + (sourceLen >> 4) + 7 + ZLIB_WRAPLEN;
++    bound = sourceLen + (sourceLen >> 4) + 7 + ZLIB_WRAPLEN;
+ #endif
++    return bound < sourceLen ? (z_size_t)-1 : bound;
+ }
++
++#ifdef ZLIB_COMPAT
++unsigned long Z_EXPORT PREFIX(compressBound)(unsigned long sourceLen) {
++    z_size_t bound = PREFIX(compressBound_z)(sourceLen);
++    return (unsigned long)MIN(ULONG_MAX, bound);
++}
++
++int Z_EXPORT PREFIX(compress2)(unsigned char *dest, unsigned long *destLen, const unsigned char *source,
++                              unsigned long sourceLen, int level) {
++    z_size_t got = destLen ? *destLen : 0;
++    int ret = PREFIX(compress2_z)(dest, &got, source, sourceLen, level);
++    if (destLen)
++        *destLen = (unsigned long)got;
++    return ret;
++}
++
++z_int32_t Z_EXPORT PREFIX(compress_z)(unsigned char *dest, z_size_t *destLen, const unsigned char *source,
++                                      z_size_t sourceLen) {
++    return PREFIX(compress2_z)(dest, destLen, source, sourceLen, Z_DEFAULT_COMPRESSION);
++}
++#endif
+--- a/deflate.c
++++ b/deflate.c
+@@ -52,6 +52,8 @@
+ #include "deflate.h"
+ #include "deflate_p.h"
+ 
++#include <limits.h>
++
+ /* Avoid conflicts with zlib.h macros */
+ #ifdef ZLIB_COMPAT
+ # undef deflateInit
+@@ -668,17 +670,20 @@ int32_t Z_EXPORT PREFIX(deflateTune)(PRE
+  * upper bound of about 14% expansion does not seem onerous for output buffer
+  * allocation.
+  */
+-unsigned long Z_EXPORT PREFIX(deflateBound)(PREFIX3(stream) *strm, unsigned long sourceLen) {
++z_size_t Z_EXPORT PREFIX(deflateBound_z)(PREFIX3(stream) *strm, z_size_t sourceLen) {
+     deflate_state *s;
+-    unsigned long complen, wraplen;
++    z_size_t complen, wraplen;
++    z_size_t bound;
+ 
+     /* conservative upper bound for compressed data */
+     complen = sourceLen + ((sourceLen + 7) >> 3) + ((sourceLen + 63) >> 6) + 5;
+     DEFLATE_BOUND_ADJUST_COMPLEN(strm, complen, sourceLen);  /* hook for IBM Z DFLTCC */
+ 
+     /* if can't get parameters, return conservative bound plus zlib wrapper */
+-    if (deflateStateCheck(strm))
+-        return complen + 6;
++    if (deflateStateCheck(strm)) {
++        bound = complen + 6;
++        return bound < sourceLen ? (z_size_t)-1 : bound;
++    }
+ 
+     /* compute wrapper length */
+     s = strm->state;
+@@ -727,19 +732,26 @@ unsigned long Z_EXPORT PREFIX(deflateBou
+             complen = sourceLen + (sourceLen >> 5) + (sourceLen >> 7) + (sourceLen >> 11) + 7;
+         }
+ 
+-        return complen + wraplen;
++        bound = complen + wraplen;
++        return bound < sourceLen ? (z_size_t)-1 : bound;
+     }
+ 
+ #ifndef NO_QUICK_STRATEGY
+-    return sourceLen                       /* The source size itself */
++    bound = sourceLen                      /* The source size itself */
+       + (sourceLen == 0 ? 1 : 0)           /* Always at least one byte for any input */
+       + (sourceLen < 9 ? 1 : 0)            /* One extra byte for lengths less than 9 */
+       + DEFLATE_QUICK_OVERHEAD(sourceLen)  /* Source encoding overhead, padded to next full byte */
+       + DEFLATE_BLOCK_OVERHEAD             /* Deflate block overhead bytes */
+       + wraplen;                           /* none, zlib or gzip wrapper */
+ #else
+-    return sourceLen + (sourceLen >> 4) + 7 + wraplen;
++    bound = sourceLen + (sourceLen >> 4) + 7 + wraplen;
+ #endif
++    return bound < sourceLen ? (z_size_t)-1 : bound;
++}
++
++unsigned long Z_EXPORT PREFIX(deflateBound)(PREFIX3(stream) *strm, unsigned long sourceLen) {
++    size_t bound = PREFIX(deflateBound_z)(strm, sourceLen);
++    return (unsigned long)MIN(ULONG_MAX, bound);
+ }
+ 
+ /* =========================================================================
+--- a/gzlib.c
++++ b/gzlib.c
+@@ -118,7 +118,7 @@ static gzFile gz_open(const void *path,
+ #endif
+ 
+     /* check input */
+-    if (path == NULL)
++    if (path == NULL || mode == NULL)
+         return NULL;
+ 
+     /* Initialize gzFile state */
+--- a/uncompr.c
++++ b/uncompr.c
+@@ -22,13 +22,23 @@
+    Z_DATA_ERROR if the input data was corrupted, including if the input data is
+    an incomplete zlib stream.
+ */
+-z_int32_t Z_EXPORT PREFIX(uncompress2)(unsigned char *dest, z_uintmax_t *destLen, const unsigned char *source, z_uintmax_t *sourceLen) {
++#ifdef ZLIB_COMPAT
++int Z_EXPORT PREFIX(uncompress2_z)(unsigned char *dest, z_size_t *destLen, const unsigned char *source,
++                                   z_size_t *sourceLen) {
++#else
++z_int32_t Z_EXPORT PREFIX(uncompress2)(unsigned char *dest, z_uintmax_t *destLen, const unsigned char *source,
++                                       z_uintmax_t *sourceLen) {
++#endif
+     PREFIX3(stream) stream;
+     int err;
+     const unsigned int max = (unsigned int)-1;
+-    z_uintmax_t len, left;
++    z_size_t len, left;
+     unsigned char buf[1];    /* for detection of incomplete stream when *destLen == 0 */
+ 
++    if (sourceLen == NULL || (*sourceLen > 0 && source == NULL) ||
++        destLen == NULL || (*destLen > 0 && dest == NULL))
++        return Z_STREAM_ERROR;
++
+     len = *sourceLen;
+     if (*destLen) {
+         left = *destLen;
+@@ -78,3 +88,21 @@ z_int32_t Z_EXPORT PREFIX(uncompress2)(u
+ z_int32_t Z_EXPORT PREFIX(uncompress)(unsigned char *dest, z_uintmax_t *destLen, const unsigned char *source, z_uintmax_t sourceLen) {
+     return PREFIX(uncompress2)(dest, destLen, source, &sourceLen);
+ }
++
++#ifdef ZLIB_COMPAT
++int Z_EXPORT PREFIX(uncompress2)(unsigned char *dest, unsigned long *destLen, const unsigned char *source,
++                                 unsigned long *sourceLen) {
++    z_size_t got = destLen ? *destLen : 0, used = sourceLen ? *sourceLen : 0;
++    int ret = PREFIX(uncompress2_z)(dest, &got, source, &used);
++    if (sourceLen)
++        *sourceLen = (unsigned long)used;
++    if (destLen)
++        *destLen = (unsigned long)got;
++    return ret;
++}
++
++z_int32_t Z_EXPORT PREFIX(uncompress_z)(unsigned char *dest, z_size_t *destLen, const unsigned char *source,
++                                        z_size_t sourceLen) {
++    return PREFIX(uncompress2_z)(dest, destLen, source, &sourceLen);
++}
++#endif
+--- a/win32/zlib-ng.def.in
++++ b/win32/zlib-ng.def.in
+@@ -19,6 +19,7 @@ EXPORTS
+     @ZLIB_SYMBOL_PREFIX@zng_deflateParams
+     @ZLIB_SYMBOL_PREFIX@zng_deflateTune
+     @ZLIB_SYMBOL_PREFIX@zng_deflateBound
++    @ZLIB_SYMBOL_PREFIX@zng_deflateBound_z
+     @ZLIB_SYMBOL_PREFIX@zng_deflatePending
+     @ZLIB_SYMBOL_PREFIX@zng_deflatePrime
+     @ZLIB_SYMBOL_PREFIX@zng_deflateUsed
+--- a/win32/zlib.def.in
++++ b/win32/zlib.def.in
+@@ -14,6 +14,7 @@ EXPORTS
+     @ZLIB_SYMBOL_PREFIX@deflateParams
+     @ZLIB_SYMBOL_PREFIX@deflateTune
+     @ZLIB_SYMBOL_PREFIX@deflateBound
++    @ZLIB_SYMBOL_PREFIX@deflateBound_z
+     @ZLIB_SYMBOL_PREFIX@deflatePending
+     @ZLIB_SYMBOL_PREFIX@deflatePrime
+     @ZLIB_SYMBOL_PREFIX@deflateUsed
+@@ -32,10 +33,14 @@ EXPORTS
+     @ZLIB_SYMBOL_PREFIX@zlibCompileFlags
+ ; utility functions
+     @ZLIB_SYMBOL_PREFIX@compress
++    @ZLIB_SYMBOL_PREFIX@compress_z
+     @ZLIB_SYMBOL_PREFIX@compress2
++    @ZLIB_SYMBOL_PREFIX@compress2_z
+     @ZLIB_SYMBOL_PREFIX@compressBound
+     @ZLIB_SYMBOL_PREFIX@uncompress
++    @ZLIB_SYMBOL_PREFIX@uncompress_z
+     @ZLIB_SYMBOL_PREFIX@uncompress2
++    @ZLIB_SYMBOL_PREFIX@uncompress2_z
+ ; large file functions
+     @ZLIB_SYMBOL_PREFIX@adler32_combine64
+     @ZLIB_SYMBOL_PREFIX@crc32_combine64
+--- a/win32/zlibcompat.def.in
++++ b/win32/zlibcompat.def.in
+@@ -14,6 +14,7 @@ EXPORTS
+     @ZLIB_SYMBOL_PREFIX@deflateParams
+     @ZLIB_SYMBOL_PREFIX@deflateTune
+     @ZLIB_SYMBOL_PREFIX@deflateBound
++    @ZLIB_SYMBOL_PREFIX@deflateBound_z
+     @ZLIB_SYMBOL_PREFIX@deflatePending
+     @ZLIB_SYMBOL_PREFIX@deflatePrime
+     @ZLIB_SYMBOL_PREFIX@deflateUsed
+@@ -32,10 +33,15 @@ EXPORTS
+     @ZLIB_SYMBOL_PREFIX@zlibCompileFlags
+ ; utility functions
+     @ZLIB_SYMBOL_PREFIX@compress
++    @ZLIB_SYMBOL_PREFIX@compress_z
+     @ZLIB_SYMBOL_PREFIX@compress2
++    @ZLIB_SYMBOL_PREFIX@compress2_z
+     @ZLIB_SYMBOL_PREFIX@compressBound
++    @ZLIB_SYMBOL_PREFIX@compressBound_z
+     @ZLIB_SYMBOL_PREFIX@uncompress
++    @ZLIB_SYMBOL_PREFIX@uncompress_z
+     @ZLIB_SYMBOL_PREFIX@uncompress2
++    @ZLIB_SYMBOL_PREFIX@uncompress2_z
+     @ZLIB_SYMBOL_PREFIX@gzopen
+     @ZLIB_SYMBOL_PREFIX@gzdopen
+     @ZLIB_SYMBOL_PREFIX@gzbuffer
+--- a/zlib-ng.h.in
++++ b/zlib-ng.h.in
+@@ -749,6 +749,8 @@ int32_t zng_deflateTune(zng_stream *strm
+ 
+ Z_EXTERN Z_EXPORT
+ unsigned long zng_deflateBound(zng_stream *strm, unsigned long sourceLen);
++Z_EXTERN Z_EXPORT
++size_t zng_deflateBound_z(zng_stream *strm, size_t sourceLen);
+ /*
+      deflateBound() returns an upper bound on the compressed size after
+    deflation of sourceLen bytes.  It must be called after deflateInit() or
+@@ -760,6 +762,9 @@ unsigned long zng_deflateBound(zng_strea
+    to return Z_STREAM_END.  Note that it is possible for the compressed size to
+    be larger than the value returned by deflateBound() if flush options other
+    than Z_FINISH or Z_NO_FLUSH are used.
++
++     deflateBound_z() is the same, but takes and returns a size_t length.  Note
++   that a long is 32 bits on Windows.
+ */
+ 
+ Z_EXTERN Z_EXPORT
+--- a/zlib-ng.map.in
++++ b/zlib-ng.map.in
+@@ -3,6 +3,11 @@ ZLIB_NG_2.4.0 {
+     @ZLIB_SYMBOL_PREFIX@zng_deflateUsed;
+ };
+ 
++ZLIB_NG_2.3.4 {
++  global:
++    @ZLIB_SYMBOL_PREFIX@zng_deflateBound_z;
++};
++
+ ZLIB_NG_2.1.0 {
+   global:
+     @ZLIB_SYMBOL_PREFIX@zng_deflateInit;
+--- a/zlib.h.in
++++ b/zlib.h.in
+@@ -761,6 +761,7 @@ Z_EXTERN int Z_EXPORT deflateTune(z_stre
+  */
+ 
+ Z_EXTERN unsigned long Z_EXPORT deflateBound(z_stream *strm, unsigned long sourceLen);
++Z_EXTERN z_size_t Z_EXPORT deflateBound_z(z_stream *strm, z_size_t sourceLen);
+ /*
+      deflateBound() returns an upper bound on the compressed size after
+    deflation of sourceLen bytes.  It must be called after deflateInit() or
+@@ -772,6 +773,9 @@ Z_EXTERN unsigned long Z_EXPORT deflateB
+    to return Z_STREAM_END.  Note that it is possible for the compressed size to
+    be larger than the value returned by deflateBound() if flush options other
+    than Z_FINISH or Z_NO_FLUSH are used.
++
++     deflateBound_z() is the same, but takes and returns a size_t length.  Note
++   that a long is 32 bits on Windows.
+ */
+ 
+ Z_EXTERN int Z_EXPORT deflatePending(z_stream *strm, uint32_t *pending, int *bits);
+@@ -1220,10 +1224,12 @@ Z_EXTERN unsigned long Z_EXPORT zlibComp
+    stream-oriented functions.  To simplify the interface, some default options
+    are assumed (compression level and memory usage, standard memory allocation
+    functions).  The source code of these utility functions can be modified if
+-   you need special options.
++   you need special options.  The _z versions of the functions use the size_t
++   type for lengths.  Note that a long is 32 bits on Windows.
+ */
+ 
+ Z_EXTERN int Z_EXPORT compress(unsigned char *dest, unsigned long *destLen, const unsigned char *source, unsigned long sourceLen);
++Z_EXTERN int Z_EXPORT compress_z(unsigned char *dest, z_size_t *destLen, const unsigned char *source, z_size_t sourceLen);
+ /*
+      Compresses the source buffer into the destination buffer.  sourceLen is
+    the byte length of the source buffer.  Upon entry, destLen is the total size
+@@ -1239,6 +1245,8 @@ Z_EXTERN int Z_EXPORT compress(unsigned
+ 
+ Z_EXTERN int Z_EXPORT compress2(unsigned char *dest, unsigned long *destLen, const unsigned char *source,
+                               unsigned long sourceLen, int level);
++Z_EXTERN int Z_EXPORT compress2_z(unsigned char *dest, z_size_t *destLen, const unsigned char *source,
++                                  z_size_t sourceLen, int level);
+ /*
+      Compresses the source buffer into the destination buffer.  The level
+    parameter has the same meaning as in deflateInit.  sourceLen is the byte
+@@ -1253,13 +1261,18 @@ Z_EXTERN int Z_EXPORT compress2(unsigned
+ */
+ 
+ Z_EXTERN unsigned long Z_EXPORT compressBound(unsigned long sourceLen);
++Z_EXTERN z_size_t Z_EXPORT compressBound_z(z_size_t sourceLen);
+ /*
+      compressBound() returns an upper bound on the compressed size after
+    compress() or compress2() on sourceLen bytes.  It would be used before a
+    compress() or compress2() call to allocate the destination buffer.
++
++     compressBound_z() is the same, but takes and returns a size_t length.
++   Note that a long is 32 bits on Windows.
+ */
+ 
+ Z_EXTERN int Z_EXPORT uncompress(unsigned char *dest, unsigned long *destLen, const unsigned char *source, unsigned long sourceLen);
++Z_EXTERN int Z_EXPORT uncompress_z(unsigned char *dest, z_size_t *destLen, const unsigned char *source, z_size_t sourceLen);
+ /*
+      Decompresses the source buffer into the destination buffer.  sourceLen is
+    the byte length of the source buffer.  Upon entry, destLen is the total size
+@@ -1277,8 +1290,10 @@ Z_EXTERN int Z_EXPORT uncompress(unsigne
+ */
+ 
+ 
+-Z_EXTERN int Z_EXPORT uncompress2 (unsigned char *dest,         unsigned long *destLen,
+-                                 const unsigned char *source, unsigned long *sourceLen);
++Z_EXTERN int Z_EXPORT uncompress2(unsigned char *dest, unsigned long *destLen,
++                                  const unsigned char *source, unsigned long *sourceLen);
++Z_EXTERN int Z_EXPORT uncompress2_z(unsigned char *dest, z_size_t *destLen,
++                                    const unsigned char *source, z_size_t *sourceLen);
+ /*
+      Same as uncompress, except that sourceLen is a pointer, where the
+    length of the source is *sourceLen.  On return, *sourceLen is the number of
+--- a/zlib.map.in
++++ b/zlib.map.in
+@@ -98,5 +98,10 @@ ZLIB_1.2.12 {
+ } ZLIB_1.2.9;
+ 
+ ZLIB_1.3.2 {
+-    @ZLIB_SYMBOL_PREFIX@deflateUsed;
++    @ZLIB_SYMBOL_PREFIX@compress_z;
++    @ZLIB_SYMBOL_PREFIX@compress2_z;
++    @ZLIB_SYMBOL_PREFIX@compressBound_z;
++    @ZLIB_SYMBOL_PREFIX@deflateBound_z;
++    @ZLIB_SYMBOL_PREFIX@uncompress_z;
++    @ZLIB_SYMBOL_PREFIX@uncompress2_z;
+ } ZLIB_1.2.12;
+--- a/zlib_name_mangling-ng.h.in
++++ b/zlib_name_mangling-ng.h.in
+@@ -30,6 +30,7 @@
+ #define zng_crc32_z               @ZLIB_SYMBOL_PREFIX@zng_crc32_z
+ #define zng_deflate               @ZLIB_SYMBOL_PREFIX@zng_deflate
+ #define zng_deflateBound          @ZLIB_SYMBOL_PREFIX@zng_deflateBound
++#define zng_deflateBound_z        @ZLIB_SYMBOL_PREFIX@zng_deflateBound_z
+ #define zng_deflateCopy           @ZLIB_SYMBOL_PREFIX@zng_deflateCopy
+ #define zng_deflateEnd            @ZLIB_SYMBOL_PREFIX@zng_deflateEnd
+ #define zng_deflateGetDictionary  @ZLIB_SYMBOL_PREFIX@zng_deflateGetDictionary
+--- a/zlib_name_mangling.h.in
++++ b/zlib_name_mangling.h.in
+@@ -20,8 +20,11 @@
+ #define adler32_z             @ZLIB_SYMBOL_PREFIX@adler32_z
+ #ifndef Z_SOLO
+ #  define compress              @ZLIB_SYMBOL_PREFIX@compress
++#  define compress_z            @ZLIB_SYMBOL_PREFIX@compress_z
+ #  define compress2             @ZLIB_SYMBOL_PREFIX@compress2
++#  define compress2_z           @ZLIB_SYMBOL_PREFIX@compress2_z
+ #  define compressBound         @ZLIB_SYMBOL_PREFIX@compressBound
++#  define compressBound_z       @ZLIB_SYMBOL_PREFIX@compressBound_z
+ #endif
+ #define crc32                 @ZLIB_SYMBOL_PREFIX@crc32
+ #define crc32_combine         @ZLIB_SYMBOL_PREFIX@crc32_combine
+@@ -32,6 +35,7 @@
+ #define crc32_z               @ZLIB_SYMBOL_PREFIX@crc32_z
+ #define deflate               @ZLIB_SYMBOL_PREFIX@deflate
+ #define deflateBound          @ZLIB_SYMBOL_PREFIX@deflateBound
++#define deflateBound_z        @ZLIB_SYMBOL_PREFIX@deflateBound_z
+ #define deflateCopy           @ZLIB_SYMBOL_PREFIX@deflateCopy
+ #define deflateEnd            @ZLIB_SYMBOL_PREFIX@deflateEnd
+ #define deflateGetDictionary  @ZLIB_SYMBOL_PREFIX@deflateGetDictionary
+@@ -123,7 +127,9 @@
+ #define read_buf              @ZLIB_SYMBOL_PREFIX@read_buf
+ #ifndef Z_SOLO
+ #  define uncompress            @ZLIB_SYMBOL_PREFIX@uncompress
++#  define uncompress_z          @ZLIB_SYMBOL_PREFIX@uncompress_z
+ #  define uncompress2           @ZLIB_SYMBOL_PREFIX@uncompress2
++#  define uncompress2_z         @ZLIB_SYMBOL_PREFIX@uncompress2_z
+ #endif
+ #define zError                @ZLIB_SYMBOL_PREFIX@zError
+ #ifndef Z_SOLO

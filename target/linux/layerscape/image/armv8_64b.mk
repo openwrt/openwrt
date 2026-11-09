@@ -1,0 +1,512 @@
+# SPDX-License-Identifier: GPL-2.0-only
+#
+# Copyright 2018-2020 NXP
+
+define Device/Default
+  PROFILES := Default
+  IMAGES := firmware.bin sysupgrade.bin
+  DEVICE_DTS_DIR := $(DTS_DIR)/freescale
+  DEVICE_DTS = $(subst _,-,$(1))
+  FILESYSTEMS := squashfs
+  KERNEL := kernel-bin | gzip | uImage gzip
+  KERNEL_INITRAMFS = kernel-bin | gzip | fit gzip $$(DEVICE_DTS_DIR)/$$(DEVICE_DTS).dtb
+  KERNEL_LOADADDR := 0x80000000
+  IMAGE_SIZE := 64m
+  IMAGE/sysupgrade.bin = \
+    ls-append-dtb $$(DEVICE_DTS) | pad-to 1M | \
+    append-kernel | pad-to 17M | \
+    append-rootfs | pad-rootfs | \
+    check-size $(LS_SYSUPGRADE_IMAGE_SIZE) | append-metadata
+endef
+
+define Device/fsl-sdboot
+  KERNEL = kernel-bin | gzip | fit gzip $$(DEVICE_DTS_DIR)/$$(DEVICE_DTS).dtb
+  IMAGES := sdcard.img.gz sysupgrade.bin
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+endef
+
+DEVICE_VARS += T40_ROOTFS_PARTSIZE T40_BOOTFS_PARTSIZE
+
+# The T40 vendor boot path is fixed to a FIT at /kernel_T20_T40_prod.itb on sda3.
+# Keep the disk layout explicit here because the generic sdcard helpers assume a
+# simpler kernel/rootfs scheme that does not match the vendor boot flow.
+#
+# Partition layout for the generated first-install image:
+#   p1    2 MiB  placeholder / vendor gap
+#   p2    2 MiB  placeholder
+#   p3  128 MiB  ext2 SYSA bootfs with /kernel_T20_T40_prod.itb
+#   p4 1024 MiB  squashfs rootfs with the standard loop-backed rootfs_data tail
+#
+# Keeping the OpenWrt squashfs rootfs on the last partition lets us stay on the
+# normal rootdisk overlay path while still leaving room to grow p4 later.
+T40_P1_OFFSET_MB := 1
+T40_P1_SIZE_MB := 2
+T40_P2_SIZE_MB := 2
+
+# p1 exists only to preserve the vendor-style partition map; zero-filled content
+# is sufficient because neither U-Boot nor OpenWrt reads a filesystem there.
+define T40/mk-placeholder-image
+	set -e; \
+	rm -f "$(1)"; \
+	dd if=/dev/zero of="$(1)" bs=1M count="$(2)" >/dev/null 2>&1
+endef
+
+# The vendor bootloader only cares that partition 3 is ext2 and exposes the FIT
+# as /kernel_T20_T40_prod.itb at the filesystem root.
+#
+# mkfs.ext2 picks a random UUID and directory hash seed by default (the seed
+# also decides the readdir order); pin both for reproducible images.
+T40_BOOTFS_UUID = $(patsubst %00,%03,$(IMG_PART_DISKGUID))
+
+define T40/mk-bootfs-ext2
+	set -e; \
+	mkdir -p "$(KDIR_TMP)"; \
+	rm -f "$(1)"; \
+	tmpdir="$$(mktemp -d "$(KDIR_TMP)/t40-bootfs.XXXXXX")"; \
+	cmdfile="$$(mktemp "$(KDIR_TMP)/t40-bootfs-owner.XXXXXX")"; \
+	trap 'rm -rf "$$tmpdir"; rm -f "$$cmdfile"' EXIT HUP INT TERM; \
+	cp "$(2)" "$$tmpdir/kernel_T20_T40_prod.itb"; \
+	dd if=/dev/zero of="$(1)" bs=1M count="$(T40_BOOTFS_PARTSIZE)" >/dev/null 2>&1; \
+	$(STAGING_DIR_HOST)/bin/mkfs.ext2 -q -F -L SYSA \
+		-U $(T40_BOOTFS_UUID) -E hash_seed=$(T40_BOOTFS_UUID) \
+		-d "$$tmpdir" "$(1)" >/dev/null 2>&1; \
+	( cd "$$tmpdir" && \
+		find . -mindepth 1 -printf 'set_inode_field /%P uid 0\nset_inode_field /%P gid 0\n' \
+			> "$$cmdfile" ); \
+	$(STAGING_DIR_HOST)/bin/debugfs -w -f "$$cmdfile" "$(1)" >/dev/null 2>&1
+endef
+
+define Build/t40-bootfs-image
+	set -e; \
+	$(call T40/mk-bootfs-ext2,$@,$(IMAGE_KERNEL))
+endef
+
+define Build/t40-sdcard
+	set -e; \
+	trap 'rm -f "$@.p1" "$@.p2" "$@.p3"' EXIT HUP INT TERM; \
+	rm -f "$@" "$@.p1" "$@.p2" "$@.p3"; \
+	set -- $$(ptgen -o "$@" -h 4 -s 63 -l 1024 -S 0x$(IMG_PART_SIGNATURE) \
+		-t 83 -p $(T40_P1_SIZE_MB)M@$(T40_P1_OFFSET_MB)M \
+		-t 83 -p $(T40_P2_SIZE_MB)M \
+		-t 83 -p $(T40_BOOTFS_PARTSIZE)M \
+		-t 83 -p $(T40_ROOTFS_PARTSIZE)M); \
+	p1_offset="$$(($$1 / 512))"; p1_size="$$(($$2 / 512))"; \
+	p2_offset="$$(($$3 / 512))"; p2_size="$$(($$4 / 512))"; \
+	p3_offset="$$(($$5 / 512))"; p3_size="$$(($$6 / 512))"; \
+	p4_offset="$$(($$7 / 512))"; p4_size="$$(($$8 / 512))"; \
+	$(call T40/mk-placeholder-image,$@.p1,$(T40_P1_SIZE_MB)); \
+	$(call T40/mk-placeholder-image,$@.p2,$(T40_P2_SIZE_MB)); \
+	$(call T40/mk-bootfs-ext2,$@.p3,$(IMAGE_KERNEL)); \
+	dd if="$@.p1" of="$@" bs=512 seek="$$p1_offset" count="$$p1_size" conv=notrunc >/dev/null 2>&1; \
+	dd if="$@.p2" of="$@" bs=512 seek="$$p2_offset" count="$$p2_size" conv=notrunc >/dev/null 2>&1; \
+	dd if="$@.p3" of="$@" bs=512 seek="$$p3_offset" count="$$p3_size" conv=notrunc >/dev/null 2>&1; \
+	dd if=/dev/zero of="$@" bs=512 seek="$$(($$p4_offset + $$p4_size - 1))" count=1 conv=notrunc >/dev/null 2>&1; \
+	dd if="$(IMAGE_ROOTFS)" of="$@" bs=512 seek="$$p4_offset" conv=notrunc >/dev/null 2>&1
+endef
+
+define Device/fsl_ls1012a-frdm
+  DEVICE_VENDOR := NXP
+  DEVICE_MODEL := FRDM-LS1012A
+  DEVICE_PACKAGES += \
+    layerscape-ppfe \
+    kmod-ppfe
+  BLOCKSIZE := 256KiB
+  IMAGE/firmware.bin := \
+    ls-clean | \
+    ls-append $(1)-bl2.pbl | pad-to 1M | \
+    ls-append $(1)-fip.bin | pad-to 5M | \
+    ls-append $(1)-uboot-env.bin | pad-to 10M | \
+    ls-append pfe.itb | pad-to 15M | \
+    ls-append-dtb $$(DEVICE_DTS) | pad-to 16M | \
+    append-kernel | pad-to $$(BLOCKSIZE) | \
+    append-rootfs | pad-rootfs | check-size
+  IMAGE/sysupgrade.bin := \
+    append-kernel | pad-to $$(BLOCKSIZE) | \
+    append-rootfs | pad-rootfs | \
+    check-size $(LS_SYSUPGRADE_IMAGE_SIZE) | append-metadata
+  KERNEL := kernel-bin | gzip | fit gzip $$(DEVICE_DTS_DIR)/$$(DEVICE_DTS).dtb
+endef
+TARGET_DEVICES += fsl_ls1012a-frdm
+
+define Device/fsl_ls1012a-rdb
+  $(Device/fix-sysupgrade)
+  DEVICE_VENDOR := NXP
+  DEVICE_MODEL := LS1012A-RDB
+  DEVICE_PACKAGES += \
+    layerscape-ppfe \
+    kmod-hwmon-ina2xx \
+    kmod-iio-fxas21002c-i2c \
+    kmod-iio-fxos8700-i2c \
+    kmod-ppfe
+  IMAGE/firmware.bin := \
+    ls-clean | \
+    ls-append $(1)-bl2.pbl | pad-to 1M | \
+    ls-append $(1)-fip.bin | pad-to 5M | \
+    ls-append $(1)-uboot-env.bin | pad-to 10M | \
+    ls-append pfe.itb | pad-to 15M | \
+    ls-append-dtb $$(DEVICE_DTS) | pad-to 16M | \
+    append-kernel | pad-to 32M | \
+    append-rootfs | pad-rootfs | check-size
+endef
+TARGET_DEVICES += fsl_ls1012a-rdb
+
+define Device/fsl_ls1012a-frwy-sdboot
+  $(Device/rework-sdcard-images)
+  $(Device/fsl-sdboot)
+  DEVICE_VENDOR := NXP
+  DEVICE_MODEL := FRWY-LS1012A
+  DEVICE_PACKAGES += \
+    layerscape-ppfe \
+    kmod-ppfe
+  DEVICE_DTS := fsl-ls1012a-frwy
+  IMAGES += firmware.bin
+  IMAGE/firmware.bin := \
+    ls-clean | \
+    ls-append $(1)-bl2.pbl | pad-to 128K | \
+    ls-append pfe.itb | pad-to 384K | \
+    ls-append $(1)-fip.bin | pad-to 1856K | \
+    ls-append $(1)-uboot-env.bin | pad-to 2048K | \
+    check-size 2097153
+  IMAGE/sdcard.img.gz := \
+    ls-clean | \
+    ls-append-sdhead $(1) | pad-to 16M | \
+    ls-append-kernel | pad-to $(LS_SD_ROOTFSPART_OFFSET)M | \
+    append-rootfs | pad-to $(LS_SD_IMAGE_SIZE)M | gzip
+endef
+TARGET_DEVICES += fsl_ls1012a-frwy-sdboot
+
+define Device/fsl_ls1028a-rdb
+  DEVICE_VENDOR := NXP
+  DEVICE_MODEL := LS1028A-RDB
+  DEVICE_VARIANT := Default
+  KERNEL = kernel-bin | gzip | fit gzip $$(DEVICE_DTS_DIR)/$$(DEVICE_DTS).dtb
+  DEVICE_PACKAGES += \
+    kmod-hwmon-ina2xx \
+    kmod-hwmon-lm90 \
+    kmod-rtc-pcf2127
+  IMAGE/firmware.bin := \
+    ls-clean | \
+    ls-append $(1)-bl2.pbl | pad-to 1M | \
+    ls-append $(1)-fip.bin | pad-to 5M | \
+    ls-append $(1)-uboot-env.bin | pad-to 16M | \
+    append-kernel | \
+    append-rootfs | pad-rootfs | check-size
+  IMAGE/sysupgrade.bin := \
+    append-kernel | \
+    append-rootfs | pad-rootfs | \
+    check-size $(LS_SYSUPGRADE_IMAGE_SIZE) | append-metadata
+endef
+TARGET_DEVICES += fsl_ls1028a-rdb
+
+define Device/fsl_ls1028a-rdb-sdboot
+  $(Device/fsl-sdboot)
+  DEVICE_VENDOR := NXP
+  DEVICE_MODEL := LS1028A-RDB
+  DEVICE_VARIANT := SD Card Boot
+  DEVICE_DTS := fsl-ls1028a-rdb
+  DEVICE_PACKAGES += \
+    kmod-hwmon-ina2xx \
+    kmod-hwmon-lm90 \
+    kmod-rtc-pcf2127
+  IMAGE/sdcard.img.gz := \
+    ls-clean | \
+    ls-append-sdhead $(1) | pad-to 4K | \
+    ls-append $(1)-bl2.pbl | pad-to 1M | \
+    ls-append $(1)-fip.bin | pad-to 5M | \
+    ls-append $(1)-uboot-env.bin | pad-to 16M | \
+    ls-append-kernel | pad-to $(LS_SD_ROOTFSPART_OFFSET)M | \
+    append-rootfs | pad-to $(LS_SD_IMAGE_SIZE)M | gzip
+endef
+TARGET_DEVICES += fsl_ls1028a-rdb-sdboot
+
+define Device/fsl_ls1043a-rdb
+  $(Device/fix-sysupgrade)
+  DEVICE_VENDOR := NXP
+  DEVICE_MODEL := LS1043A-RDB
+  DEVICE_VARIANT := Default
+  DEVICE_PACKAGES += \
+    kmod-ahci-qoriq \
+    kmod-hwmon-ina2xx \
+    kmod-hwmon-lm90
+  IMAGE/firmware.bin := \
+    ls-clean | \
+    ls-append $(1)-bl2.pbl | pad-to 1M | \
+    ls-append $(1)-fip.bin | pad-to 5M | \
+    ls-append $(1)-uboot-env.bin | pad-to 9M | \
+    ls-append $(1)-fman.bin | pad-to 15M | \
+    ls-append-dtb $$(DEVICE_DTS) | pad-to 16M | \
+    append-kernel | pad-to 32M | \
+    append-rootfs | pad-rootfs | check-size
+endef
+TARGET_DEVICES += fsl_ls1043a-rdb
+
+define Device/fsl_ls1043a-rdb-sdboot
+  $(Device/rework-sdcard-images)
+  $(Device/fsl-sdboot)
+  DEVICE_VENDOR := NXP
+  DEVICE_MODEL := LS1043A-RDB
+  DEVICE_VARIANT := SD Card Boot
+  DEVICE_PACKAGES += \
+    kmod-ahci-qoriq \
+    kmod-hwmon-ina2xx \
+    kmod-hwmon-lm90
+  DEVICE_DTS := fsl-ls1043a-rdb
+  IMAGE/sdcard.img.gz := \
+    ls-clean | \
+    ls-append-sdhead $(1) | pad-to 4K | \
+    ls-append $(1)-bl2.pbl | pad-to 1M | \
+    ls-append $(1)-fip.bin | pad-to 5M | \
+    ls-append $(1)-uboot-env.bin | pad-to 9M | \
+    ls-append fsl_ls1043a-rdb-fman.bin | pad-to 16M | \
+    ls-append-kernel | pad-to $(LS_SD_ROOTFSPART_OFFSET)M | \
+    append-rootfs | pad-to $(LS_SD_IMAGE_SIZE)M | gzip
+endef
+TARGET_DEVICES += fsl_ls1043a-rdb-sdboot
+
+define Device/watchguard_firebox-t40
+  DEVICE_VENDOR := WatchGuard
+  DEVICE_MODEL := Firebox T40
+  SUPPORTED_DEVICES := watchguard,firebox-t40
+  DEVICE_DTS := fsl-ls1043a-watchguard-firebox-t40
+  # WatchGuard U-Boot may otherwise pass the DTB to Linux at an unusable in-place address.
+  DEVICE_DTS_LOADADDR := 0x90000000
+  FILESYSTEMS := squashfs
+  T40_ROOTFS_PARTSIZE := 1024
+  T40_BOOTFS_PARTSIZE := 128
+  KERNEL := kernel-bin | gzip | fit gzip $$(DEVICE_DTS_DIR)/$$(DEVICE_DTS).dtb
+  # USB recovery on the T40 needs a real FIT with a separate initrd payload.
+  KERNEL_INITRAMFS := kernel-bin | gzip | fit gzip $$(DEVICE_DTS_DIR)/$$(DEVICE_DTS).dtb with-initrd
+  IMAGES := sysupgrade.bin sdcard.img.gz
+  # Sysupgrade only needs the FIT payload; the on-device updater copies it into
+  # the existing ext2 SYSA boot partition instead of shipping a full 128 MiB image.
+  IMAGE/sysupgrade.bin := sysupgrade-tar kernel=$$(IMAGE_KERNEL) | append-metadata
+  IMAGE/sdcard.img.gz := t40-sdcard | gzip
+  DEVICE_PACKAGES += \
+    kmod-gpio-button-hotplug \
+    kmod-gpio-nxp-74hc164 \
+    kmod-leds-gpio \
+    kmod-spi-gpio
+endef
+TARGET_DEVICES += watchguard_firebox-t40
+
+define Device/fsl_ls1046a-frwy
+  DEVICE_VENDOR := NXP
+  DEVICE_MODEL := FRWY-LS1046A
+  DEVICE_VARIANT := Default
+  IMAGE/firmware.bin := \
+    ls-clean | \
+    ls-append $(1)-bl2.pbl | pad-to 1M | \
+    ls-append $(1)-fip.bin | pad-to 5M | \
+    ls-append $(1)-uboot-env.bin | pad-to 9M | \
+    ls-append fsl_ls1046a-rdb-fman.bin | pad-to 15M | \
+    ls-append-dtb $$(DEVICE_DTS) | pad-to 16M | \
+    append-kernel | pad-to 32M | \
+    append-rootfs | pad-rootfs | check-size
+endef
+TARGET_DEVICES += fsl_ls1046a-frwy
+
+define Device/fsl_ls1046a-frwy-sdboot
+  $(Device/fsl-sdboot)
+  DEVICE_VENDOR := NXP
+  DEVICE_MODEL := FRWY-LS1046A
+  DEVICE_VARIANT := SD Card Boot
+  DEVICE_DTS := fsl-ls1046a-frwy
+  IMAGE/sdcard.img.gz := \
+    ls-clean | \
+    ls-append-sdhead $(1) | pad-to 4K | \
+    ls-append $(1)-bl2.pbl | pad-to 1M | \
+    ls-append $(1)-fip.bin | pad-to 5M | \
+    ls-append $(1)-uboot-env.bin | pad-to 9M | \
+    ls-append fsl_ls1046a-rdb-fman.bin | pad-to 16M | \
+    ls-append-kernel | pad-to $(LS_SD_ROOTFSPART_OFFSET)M | \
+    append-rootfs | pad-to $(LS_SD_IMAGE_SIZE)M | gzip
+endef
+TARGET_DEVICES += fsl_ls1046a-frwy-sdboot
+
+define Device/fsl_ls1046a-rdb
+  $(Device/fix-sysupgrade)
+  DEVICE_VENDOR := NXP
+  DEVICE_MODEL := LS1046A-RDB
+  DEVICE_VARIANT := Default
+  DEVICE_PACKAGES += \
+    kmod-ahci-qoriq \
+    kmod-hwmon-ina2xx \
+    kmod-hwmon-lm90
+  IMAGE/firmware.bin := \
+    ls-clean | \
+    ls-append $(1)-bl2.pbl | pad-to 1M | \
+    ls-append $(1)-fip.bin | pad-to 5M | \
+    ls-append $(1)-uboot-env.bin | pad-to 9M | \
+    ls-append $(1)-fman.bin | pad-to 15M | \
+    ls-append-dtb $$(DEVICE_DTS) | pad-to 16M | \
+    append-kernel | pad-to 32M | \
+    append-rootfs | pad-rootfs | check-size
+endef
+TARGET_DEVICES += fsl_ls1046a-rdb
+
+define Device/fsl_ls1046a-rdb-sdboot
+  $(Device/rework-sdcard-images)
+  $(Device/fsl-sdboot)
+  DEVICE_VENDOR := NXP
+  DEVICE_MODEL := LS1046A-RDB
+  DEVICE_VARIANT := SD Card Boot
+  DEVICE_PACKAGES += \
+    kmod-ahci-qoriq \
+    kmod-hwmon-ina2xx \
+    kmod-hwmon-lm90
+  DEVICE_DTS := fsl-ls1046a-rdb
+  IMAGE/sdcard.img.gz := \
+    ls-clean | \
+    ls-append-sdhead $(1) | pad-to 4K | \
+    ls-append $(1)-bl2.pbl | pad-to 1M | \
+    ls-append $(1)-fip.bin | pad-to 5M | \
+    ls-append $(1)-uboot-env.bin | pad-to 9M | \
+    ls-append fsl_ls1046a-rdb-fman.bin | pad-to 16M | \
+    ls-append-kernel | pad-to $(LS_SD_ROOTFSPART_OFFSET)M | \
+    append-rootfs | pad-to $(LS_SD_IMAGE_SIZE)M | gzip
+endef
+TARGET_DEVICES += fsl_ls1046a-rdb-sdboot
+
+define Device/fsl_ls1088a-rdb
+  $(Device/fix-sysupgrade)
+  DEVICE_VENDOR := NXP
+  DEVICE_MODEL := LS1088A-RDB
+  DEVICE_VARIANT := Default
+  DEVICE_PACKAGES += \
+    restool \
+    kmod-ahci-qoriq \
+    kmod-hwmon-ina2xx \
+    kmod-hwmon-lm90
+  IMAGE/firmware.bin := \
+    ls-clean | \
+    ls-append $(1)-bl2.pbl | pad-to 1M | \
+    ls-append $(1)-fip.bin | pad-to 5M | \
+    ls-append $(1)-uboot-env.bin | pad-to 10M | \
+    ls-append $(1)-mc.itb | pad-to 13M | \
+    ls-append $(1)-dpl.dtb | pad-to 14M | \
+    ls-append $(1)-dpc.dtb | pad-to 15M | \
+    ls-append-dtb $$(DEVICE_DTS) | pad-to 16M | \
+    append-kernel | pad-to 32M | \
+    append-rootfs | pad-rootfs | check-size
+endef
+TARGET_DEVICES += fsl_ls1088a-rdb
+
+define Device/fsl_ls1088a-rdb-sdboot
+  $(Device/rework-sdcard-images)
+  $(Device/fsl-sdboot)
+  DEVICE_VENDOR := NXP
+  DEVICE_MODEL := LS1088A-RDB
+  DEVICE_VARIANT := SD Card Boot
+  DEVICE_PACKAGES += \
+    restool \
+    kmod-ahci-qoriq \
+    kmod-hwmon-ina2xx \
+    kmod-hwmon-lm90
+  DEVICE_DTS := fsl-ls1088a-rdb
+  IMAGE/sdcard.img.gz := \
+    ls-clean | \
+    ls-append-sdhead $(1) | pad-to 4K | \
+    ls-append $(1)-bl2.pbl | pad-to 1M | \
+    ls-append $(1)-fip.bin | pad-to 5M | \
+    ls-append $(1)-uboot-env.bin | pad-to 10M | \
+    ls-append fsl_ls1088a-rdb-mc.itb | pad-to 13M | \
+    ls-append fsl_ls1088a-rdb-dpl.dtb | pad-to 14M | \
+    ls-append fsl_ls1088a-rdb-dpc.dtb | pad-to 16M | \
+    ls-append-kernel | pad-to $(LS_SD_ROOTFSPART_OFFSET)M | \
+    append-rootfs | pad-to $(LS_SD_IMAGE_SIZE)M | gzip
+endef
+TARGET_DEVICES += fsl_ls1088a-rdb-sdboot
+
+define Device/fsl_ls2088a-rdb
+  $(Device/fix-sysupgrade)
+  DEVICE_VENDOR := NXP
+  DEVICE_MODEL := LS2088ARDB
+  DEVICE_PACKAGES += \
+    restool \
+    kmod-ahci-qoriq
+  IMAGE/firmware.bin := \
+    ls-clean | \
+    ls-append $(1)-bl2.pbl | pad-to 1M | \
+    ls-append $(1)-fip.bin | pad-to 5M | \
+    ls-append $(1)-uboot-env.bin | pad-to 10M | \
+    ls-append $(1)-mc.itb | pad-to 13M | \
+    ls-append $(1)-dpl.dtb | pad-to 14M | \
+    ls-append $(1)-dpc.dtb | pad-to 15M | \
+    ls-append-dtb $$(DEVICE_DTS) | pad-to 16M | \
+    append-kernel | pad-to 32M | \
+    append-rootfs | pad-rootfs | check-size
+endef
+TARGET_DEVICES += fsl_ls2088a-rdb
+
+define Device/fsl_lx2160a-rdb
+  DEVICE_VENDOR := NXP
+  DEVICE_MODEL := LX2160A-RDB
+  DEVICE_VARIANT := Rev2.0 silicon
+  DEVICE_PACKAGES += restool
+  IMAGE/firmware.bin := \
+    ls-clean | \
+    ls-append $(1)-bl2.pbl | pad-to 1M | \
+    ls-append $(1)-fip.bin | pad-to 5M | \
+    ls-append $(1)-uboot-env.bin | pad-to 8M | \
+    ls-append $(1)-fip_ddr_all.bin | pad-to 10M | \
+    ls-append $(1)-mc.itb | pad-to 13M | \
+    ls-append $(1)-dpl.dtb | pad-to 14M | \
+    ls-append $(1)-dpc.dtb | pad-to 15M | \
+    ls-append-dtb $$(DEVICE_DTS) | pad-to 16M | \
+    append-kernel | pad-to 32M | \
+    append-rootfs | pad-rootfs | check-size
+endef
+TARGET_DEVICES += fsl_lx2160a-rdb
+
+define Device/fsl_lx2160a-rdb-sdboot
+  $(Device/fsl-sdboot)
+  DEVICE_VENDOR := NXP
+  DEVICE_MODEL := LX2160A-RDB
+  DEVICE_VARIANT := Rev2.0 silicon SD Card Boot
+  DEVICE_PACKAGES += restool
+  DEVICE_DTS := fsl-lx2160a-rdb
+  IMAGE/sdcard.img.gz := \
+    ls-clean | \
+    ls-append-sdhead $(1) | pad-to 4K | \
+    ls-append $(1)-bl2.pbl | pad-to 1M | \
+    ls-append $(1)-fip.bin | pad-to 5M | \
+    ls-append $(1)-uboot-env.bin | pad-to 8M | \
+    ls-append fsl_lx2160a-rdb-fip_ddr_all.bin | pad-to 10M | \
+    ls-append fsl_lx2160a-rdb-mc.itb | pad-to 13M | \
+    ls-append fsl_lx2160a-rdb-dpl.dtb | pad-to 14M | \
+    ls-append fsl_lx2160a-rdb-dpc.dtb | pad-to 16M | \
+    ls-append-kernel | pad-to $(LS_SD_ROOTFSPART_OFFSET)M | \
+    append-rootfs | pad-to $(LS_SD_IMAGE_SIZE)M | gzip
+endef
+TARGET_DEVICES += fsl_lx2160a-rdb-sdboot
+
+define Device/traverse_ten64-mtd
+  DEVICE_VENDOR := Traverse
+  DEVICE_MODEL := Ten64 (NAND boot)
+  BOARD_NAME := ten64-mtd
+  DEVICE_PACKAGES += \
+    uboot-envtools \
+    kmod-rtc-rx8025 \
+    kmod-sfp \
+    kmod-i2c-mux-pca954x \
+    restool
+  DEVICE_DESCRIPTION = \
+    Generate images for booting from NAND/ubifs on Traverse Ten64 (LS1088A) \
+    family boards. For disk (NVMe/USB/SD) boot, use the armvirt target instead.
+  FILESYSTEMS := squashfs
+  KERNEL_LOADADDR := 0x80000000
+  KERNEL_ENTRY_POINT := 0x80000000
+  FDT_LOADADDR := 0x90000000
+  KERNEL_SUFFIX := -kernel.itb
+  DEVICE_DTS := fsl-ls1088a-ten64
+  IMAGES := nand.ubi sysupgrade.bin
+  KERNEL := kernel-bin | gzip | traverse-fit-ls1088 gzip $$(DTS_DIR)/$$(DEVICE_DTS).dtb $$(FDT_LOADADDR)
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  IMAGE/nand.ubi := append-ubi
+  KERNEL_IN_UBI := 1
+  BLOCKSIZE := 128KiB
+  PAGESIZE := 2048
+  MKUBIFS_OPTS := -m $$(PAGESIZE) -e 124KiB -c 600
+  SUPPORTED_DEVICES = traverse,ten64
+endef
+TARGET_DEVICES += traverse_ten64-mtd

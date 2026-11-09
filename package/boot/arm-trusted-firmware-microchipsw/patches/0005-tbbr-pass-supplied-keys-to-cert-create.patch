@@ -1,0 +1,65 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Robert Marko <robert.marko@sartura.hr>
+Date: Mon, 12 Oct 2026 19:04:12 +0200
+Subject: [PATCH] tbbr: pass all supplied keys to cert_create
+
+cert_create loads all TBBR keys even if a key is not used by the requested
+certificate. Forward each supplied key unconditionally to both the normal
+and FWU invocations, so CREATE_KEYS=0 works with a complete key set.
+
+Signed-off-by: Robert Marko <robert.marko@sartura.hr>
+---
+ make_helpers/tbbr/tbbr_tools.mk | 14 ++++++++++----
+ 1 file changed, 10 insertions(+), 4 deletions(-)
+
+--- a/make_helpers/tbbr/tbbr_tools.mk
++++ b/make_helpers/tbbr/tbbr_tools.mk
+@@ -78,7 +78,17 @@ $(if ${PLAT_KEY},$(eval $(call CERT_ADD_
+ $(if ${SWD_ROT_KEY},$(eval $(call CERT_ADD_CMD_OPT,${SWD_ROT_KEY},--swd-rot-key)))
+ $(if ${CORE_SWD_KEY},$(eval $(call CERT_ADD_CMD_OPT,${CORE_SWD_KEY},--core-swd-key)))
+ $(if ${TRUSTED_WORLD_KEY},$(eval $(call CERT_ADD_CMD_OPT,${TRUSTED_WORLD_KEY},--trusted-world-key)))
++$(if ${TRUSTED_WORLD_KEY},$(eval $(call CERT_ADD_CMD_OPT,${TRUSTED_WORLD_KEY},--trusted-world-key,FWU_)))
+ $(if ${NON_TRUSTED_WORLD_KEY},$(eval $(call CERT_ADD_CMD_OPT,${NON_TRUSTED_WORLD_KEY},--non-trusted-world-key)))
++$(if ${NON_TRUSTED_WORLD_KEY},$(eval $(call CERT_ADD_CMD_OPT,${NON_TRUSTED_WORLD_KEY},--non-trusted-world-key,FWU_)))
++$(if ${SCP_BL2_KEY},$(eval $(call CERT_ADD_CMD_OPT,${SCP_BL2_KEY},--scp-fw-key)))
++$(if ${SCP_BL2_KEY},$(eval $(call CERT_ADD_CMD_OPT,${SCP_BL2_KEY},--scp-fw-key,FWU_)))
++$(if ${BL31_KEY},$(eval $(call CERT_ADD_CMD_OPT,${BL31_KEY},--soc-fw-key)))
++$(if ${BL31_KEY},$(eval $(call CERT_ADD_CMD_OPT,${BL31_KEY},--soc-fw-key,FWU_)))
++$(if ${BL32_KEY},$(eval $(call CERT_ADD_CMD_OPT,${BL32_KEY},--tos-fw-key)))
++$(if ${BL32_KEY},$(eval $(call CERT_ADD_CMD_OPT,${BL32_KEY},--tos-fw-key,FWU_)))
++$(if ${BL33_KEY},$(eval $(call CERT_ADD_CMD_OPT,${BL33_KEY},--nt-fw-key)))
++$(if ${BL33_KEY},$(eval $(call CERT_ADD_CMD_OPT,${BL33_KEY},--nt-fw-key,FWU_)))
+ 
+ 
+ # Add the BL2 CoT (image cert)
+@@ -93,7 +103,6 @@ endif
+ # Add the SCP_BL2 CoT (key cert + img cert)
+ ifneq (${SCP_BL2},)
+ ifneq (${COT},cca)
+-    $(if ${SCP_BL2_KEY},$(eval $(call CERT_ADD_CMD_OPT,${SCP_BL2_KEY},--scp-fw-key)))
+     $(eval $(call TOOL_ADD_PAYLOAD,${BUILD_PLAT}/scp_fw_content.crt,--scp-fw-cert))
+     $(eval $(call TOOL_ADD_PAYLOAD,${BUILD_PLAT}/scp_fw_key.crt,--scp-fw-key-cert))
+ endif
+@@ -102,7 +111,6 @@ endif
+ ifeq (${ARCH},aarch64)
+ ifeq (${NEED_BL31},yes)
+ # Add the BL31 CoT (key cert + img cert)
+-$(if ${BL31_KEY},$(eval $(call CERT_ADD_CMD_OPT,${BL31_KEY},--soc-fw-key)))
+ ifneq (${COT},cca)
+ $(eval $(call TOOL_ADD_PAYLOAD,${BUILD_PLAT}/soc_fw_content.crt,--soc-fw-cert))
+ $(eval $(call TOOL_ADD_PAYLOAD,${BUILD_PLAT}/soc_fw_key.crt,--soc-fw-key-cert))
+@@ -112,14 +120,12 @@ endif
+ 
+ # Add the BL32 CoT (key cert + img cert)
+ ifeq (${NEED_BL32},yes)
+-    $(if ${BL32_KEY},$(eval $(call CERT_ADD_CMD_OPT,${BL32_KEY},--tos-fw-key)))
+     $(eval $(call TOOL_ADD_PAYLOAD,${BUILD_PLAT}/tos_fw_content.crt,--tos-fw-cert))
+     $(eval $(call TOOL_ADD_PAYLOAD,${BUILD_PLAT}/tos_fw_key.crt,--tos-fw-key-cert))
+ endif
+ 
+ # Add the BL33 CoT (key cert + img cert)
+ ifneq (${BL33},)
+-    $(if ${BL33_KEY},$(eval $(call CERT_ADD_CMD_OPT,${BL33_KEY},--nt-fw-key)))
+     $(eval $(call TOOL_ADD_PAYLOAD,${BUILD_PLAT}/nt_fw_content.crt,--nt-fw-cert))
+ ifneq (${COT},dualroot)
+     ifneq (${COT},cca)

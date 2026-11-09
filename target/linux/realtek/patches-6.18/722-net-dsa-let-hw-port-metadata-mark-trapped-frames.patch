@@ -1,0 +1,48 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Paul Tobias <openwrt-commits@tobias.pt>
+Date: Wed, 30 Sep 2026 09:00:00 +0700
+Subject: net: dsa: let hardware port metadata mark trapped frames
+
+The DSA core marks every frame it receives through METADATA_HW_PORT_MUX
+as forwarded in hardware, so the bridge never forwards a frame the
+switch only trapped to the CPU. Add a trapped flag to the metadata for
+the driver to say so.
+
+Signed-off-by: Paul Tobias <openwrt-commits@tobias.pt>
+
+--- a/include/net/dst_metadata.h
++++ b/include/net/dst_metadata.h
+@@ -18,6 +18,11 @@ enum metadata_type {
+ struct hw_port_info {
+ 	struct net_device *lower_dev;
+ 	u32 port_id;
++	/* RX: trapped to the CPU without hardware forwarding. Leave false
++	 * for the default DSA forwarding mark. Do not modify while this
++	 * metadata destination is referenced by packets.
++	 */
++	bool trapped;
+ };
+ 
+ struct macsec_info {
+--- a/net/dsa/tag.c
++++ b/net/dsa/tag.c
+@@ -70,6 +70,7 @@ static int dsa_switch_rcv(struct sk_buff
+ 
+ 	if (md_dst && md_dst->type == METADATA_HW_PORT_MUX) {
+ 		unsigned int port = md_dst->u.port_info.port_id;
++		bool trapped = md_dst->u.port_info.trapped;
+ 
+ 		skb_dst_drop(skb);
+ 		if (!skb_has_extensions(skb))
+@@ -77,7 +78,10 @@ static int dsa_switch_rcv(struct sk_buff
+ 
+ 		skb->dev = dsa_conduit_find_user(dev, 0, port);
+ 		if (likely(skb->dev)) {
+-			dsa_default_offload_fwd_mark(skb);
++			if (trapped)
++				skb->offload_fwd_mark = 0;
++			else
++				dsa_default_offload_fwd_mark(skb);
+ 			nskb = skb;
+ 		}
+ 	} else {

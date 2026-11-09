@@ -1,0 +1,150 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Tue, 4 Aug 2026 19:07:45 +0200
+Subject: [PATCH] AP MLD: Do not address Authentication replies to the MLD MAC address
+
+For a non-AP MLD, handle_auth() addresses its reply to the MLD MAC
+address, and the driver must translate it to the link address of the
+peer. The driver has that link address from the last time the station
+was added to it. A non-AP MLD can change its affiliated STA addresses
+when it (re)associates to the AP MLD it is associated with (IEEE Std
+802.11be-2024, 12.2.11). If hostapd keeps the driver entry for the new
+attempt, the reply goes to the old link address and is never
+acknowledged. hostapd keeps the entry for an association with
+management frame protection, and for the entry that an earlier
+authentication added without an association (sta->added_unassoc). In
+the second case, handle_auth() also keeps mld_info.links[].peer_addr,
+and add_associated_sta() programs the old link address again.
+
+Per 11.3.4.3, the reply goes to the affiliated STA that sent the frame
+with authentication transaction sequence number 1. An Authentication
+frame carries no Link Info (35.3.5.4), so use the source address of the
+received frame, like handle_assoc() does for the (Re)Association
+Response frame. The TX status of the reply then carries the link
+address, so handle_auth_cb() also looks up the station by it.
+
+If transaction 1 comes from a new link address while
+sta->added_unassoc is set, start over: record the new address in
+peer_addr and add the station to the driver again, as for a station
+without a driver entry. The (Re)Association Request frame carries the
+address of the last successful authentication (35.3.5.1), so the
+association continues with the address the driver now has. If the
+driver translated the source address to the MLD MAC address, keep the
+recorded link address, since the frame does not show it. An
+association with management frame protection keeps its driver entry
+until the SA Query procedure ends.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+
+--- a/src/ap/ieee802_11.c
++++ b/src/ap/ieee802_11.c
+@@ -4215,6 +4215,21 @@ static void handle_auth_pasn(struct host
+ #endif /* CONFIG_PASN */
+ 
+ 
++#ifdef CONFIG_IEEE80211BE
++static const u8 * auth_peer_link_addr(struct hostapd_data *hapd,
++				      struct sta_info *sta, const u8 *sa)
++{
++	const u8 *peer_addr = sta->mld_info.links[hapd->mld_link_id].peer_addr;
++
++	if (ether_addr_equal(sa, sta->addr) && !is_zero_ether_addr(peer_addr) &&
++	    (sta->added_unassoc || (sta->flags & WLAN_STA_ASSOC)))
++		return peer_addr;
++
++	return sa;
++}
++#endif /* CONFIG_IEEE80211BE */
++
++
+ static void handle_auth(struct hostapd_data *hapd,
+ 			const struct ieee80211_mgmt *mgmt, size_t len,
+ 			int rssi, int from_queue)
+@@ -4230,7 +4245,10 @@ static void handle_auth(struct hostapd_d
+ 	u16 seq_ctrl;
+ 	struct radius_sta rad_info;
+ 	const u8 *dst, *sa;
+-	bool mld_sta = false;
++	bool mld_sta = false, link_addr_changed = false;
++#ifdef CONFIG_IEEE80211BE
++	u8 link_addr[ETH_ALEN];
++#endif /* CONFIG_IEEE80211BE */
+ 
+ 	if (len < IEEE80211_HDRLEN + sizeof(mgmt->u.auth)) {
+ 		wpa_printf(MSG_INFO, "handle_auth - too short payload (len=%lu)",
+@@ -4552,9 +4570,20 @@ static void handle_auth(struct hostapd_d
+ 	/* Set the non-AP MLD information based on the initial Authentication
+ 	 * frame. Once the STA entry has been added to the driver, the driver
+ 	 * will translate addresses in the frame and we need to avoid overriding
+-	 * peer_addr based on mgmt->sa which would have been translated to the
+-	 * MLD MAC address. */
+-	if (!sta->added_unassoc && auth_transaction == 1) {
++	 * peer_addr with the MLD MAC address. A new link address starts over,
++	 * since the STA entry in the driver does not know it. */
++	if (mld_sta && auth_transaction == 1) {
++		const u8 *peer_addr =
++			sta->mld_info.links[hapd->mld_link_id].peer_addr;
++
++		os_memcpy(link_addr, auth_peer_link_addr(hapd, sta, mgmt->sa),
++			  ETH_ALEN);
++		link_addr_changed = sta->added_unassoc &&
++			!ether_addr_equal(link_addr, peer_addr);
++	}
++
++	if ((!sta->added_unassoc || link_addr_changed) &&
++	    auth_transaction == 1) {
+ 		ap_sta_free_sta_profile(&sta->mld_info);
+ 		os_memset(&sta->mld_info, 0, sizeof(sta->mld_info));
+ 
+@@ -4571,7 +4600,7 @@ static void handle_auth(struct hostapd_d
+ 			os_memcpy(sta->mld_info.common_info.mld_addr, sa,
+ 				  ETH_ALEN);
+ 			os_memcpy(sta->mld_info.links[link_id].peer_addr,
+-				  mgmt->sa, ETH_ALEN);
++				  link_addr, ETH_ALEN);
+ 			os_memcpy(sta->mld_info.links[link_id].local_addr,
+ 				  hapd->own_addr, ETH_ALEN);
+ 		}
+@@ -4605,7 +4634,8 @@ static void handle_auth(struct hostapd_d
+ 	 *
+ 	 * If this is not the first transaction, in a multi-step authentication
+ 	 * algorithm, the station already exists in the driver
+-	 * (sta->added_unassoc = 1) so skip it.
++	 * (sta->added_unassoc = 1) so skip it, unless a non-AP MLD starts over
++	 * from a new link address.
+ 	 *
+ 	 * In mesh mode, the station was already added to the driver when the
+ 	 * NEW_PEER_CANDIDATE event is received.
+@@ -4622,7 +4652,8 @@ static void handle_auth(struct hostapd_d
+ 	if (FULL_AP_CLIENT_STATE_SUPP(hapd->iface->drv_flags) &&
+ 	    (!(sta->flags & WLAN_STA_MFP) || !ap_sta_is_authorized(sta)) &&
+ 	    !(hapd->conf->mesh & MESH_ENABLED) &&
+-	    !(sta->added_unassoc) && auth_alg != WLAN_AUTH_PASN) {
++	    (!sta->added_unassoc || link_addr_changed) &&
++	    auth_alg != WLAN_AUTH_PASN) {
+ 		if (ap_sta_re_add(hapd, sta) < 0) {
+ 			resp = WLAN_STATUS_AP_UNABLE_TO_HANDLE_NEW_STA;
+ 			goto fail;
+@@ -4731,11 +4762,6 @@ static void handle_auth(struct hostapd_d
+  fail:
+ 	dst = mgmt->sa;
+ 
+-#ifdef CONFIG_IEEE80211BE
+-	if (ap_sta_is_mld(hapd, sta))
+-		dst = sta->addr;
+-#endif /* CONFIG_IEEE80211BE */
+-
+ 	reply_res = send_auth_reply(hapd, sta, dst, auth_alg,
+ 				    auth_alg == WLAN_AUTH_SAE ?
+ 				    auth_transaction : auth_transaction + 1,
+@@ -8500,6 +8526,10 @@ static void handle_auth_cb(struct hostap
+ 	bool success_status;
+ 
+ 	sta = ap_get_sta(hapd, mgmt->da);
++#ifdef CONFIG_IEEE80211BE
++	if (!sta)
++		sta = ap_get_link_sta(hapd, mgmt->da);
++#endif /* CONFIG_IEEE80211BE */
+ 	if (!sta) {
+ 		wpa_printf(MSG_DEBUG, "handle_auth_cb: STA " MACSTR
+ 			   " not found",

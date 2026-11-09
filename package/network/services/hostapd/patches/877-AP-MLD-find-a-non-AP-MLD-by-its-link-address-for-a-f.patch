@@ -1,0 +1,36 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Sun, 25 Oct 2026 17:00:00 +0100
+Subject: [PATCH] AP MLD: find a non-AP MLD by its link address for a frame
+ from an unknown STA
+
+mac80211 translates the addresses of a frame of a non-AP MLD to the
+MLD addresses only where it finds the station. Without a driver
+station, for example in the short time while hostapd removes and adds
+the station again for a new association, it reports a Data frame with
+the link address of the non-AP MLD. ieee802_11_rx_from_unknown() looks
+that address up with ap_get_sta(), which knows the non-AP MLD only by
+its MLD address, and sends a Disassociation or Deauthentication with
+reason 7 to a station that is associated.
+
+Where ap_get_sta() finds no station on a link of an AP MLD, look the
+station up by its link address. The rules for the station found stay
+as they are, and a sender that hostapd does not hold still gets the
+frame.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/src/ap/ieee802_11.c
++++ b/src/ap/ieee802_11.c
+@@ -9621,6 +9621,12 @@ void ieee802_11_rx_from_unknown(struct h
+ 	struct sta_info *sta;
+ 
+ 	sta = ap_get_sta(hapd, src);
++#ifdef CONFIG_IEEE80211BE
++	/* Without a driver station, the frame of a non-AP MLD keeps the
++	 * address of its link */
++	if (!sta && hapd->conf->mld_ap)
++		sta = ap_get_link_sta(hapd, src);
++#endif /* CONFIG_IEEE80211BE */
+ 	if (sta &&
+ 	    ((sta->flags & WLAN_STA_ASSOC) ||
+ 	     ((sta->flags & WLAN_STA_ASSOC_REQ_OK) && wds))) {

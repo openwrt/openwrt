@@ -1,0 +1,91 @@
+From 95d9c0c7f20ab1b49ac88773a6138b16d2b8f061 Mon Sep 17 00:00:00 2001
+From: zjzhao <zjzhao@edatec.cn>
+Date: Thu, 27 Aug 2026 10:56:51 +0800
+Subject: [PATCH] overlays: wm8960-soundcard: Add media parameter
+
+Add optional media board support to the wm8960-soundcard overlay:
+- mclk: Overrides the MCLK clock frequency (default 12.288 MHz)
+- media: Switches to the media board configuration: 24 MHz MCLK,
+  enables headphone jack detection (wlf,hp-cfg) and an on-board
+  microphone / dual speaker sound card.
+
+The parameters are implemented as dormant fragments and have no
+effect unless explicitly activated, preserving full backward
+compatibility with existing configurations.
+
+Tested on Raspberry Pi 5 (EDATEC media board) with:
+  dtoverlay=wm8960-soundcard,media=on
+
+Signed-off-by: zjzhao <zjzhao@edatec.cn>
+---
+ arch/arm/boot/dts/overlays/README             |  7 ++++
+ .../dts/overlays/wm8960-soundcard-overlay.dts | 40 +++++++++++++++++++
+ 2 files changed, 47 insertions(+)
+
+--- a/arch/arm/boot/dts/overlays/README
++++ b/arch/arm/boot/dts/overlays/README
+@@ -6387,6 +6387,13 @@ Info:   Overlay for the Waveshare wm8960
+ Load:   dtoverlay=wm8960-soundcard,<param>=<val>
+ Params: alsaname                Changes the card name in ALSA
+         compatible              Changes the codec compatibility
++        mclk                    Sets the MCLK clock frequency in Hz (default
++                                12.288 MHz for the standard Waveshare HAT,
++                                24 MHz when the media parameter is used)
++        media                   Uses the media board configuration: 24 MHz
++                                MCLK, enables headphone jack detection
++                                (wlf,hp-cfg) and an on-board microphone /
++                                dual speaker sound card
+ 
+ 
+ Name:   ws2812-pio
+--- a/arch/arm/boot/dts/overlays/wm8960-soundcard-overlay.dts
++++ b/arch/arm/boot/dts/overlays/wm8960-soundcard-overlay.dts
+@@ -75,8 +75,48 @@
+ 		};
+ 	};
+ 
++	/* EDATEC media board: 24MHz MCLK oscillator */
++	fragment@4 {
++		target = <&wm8960_mclk>;
++		__dormant__ {
++			clock-frequency = <24000000>;
++		};
++	};
++
++	/* EDATEC media board: enable headphone jack detection */
++	fragment@5 {
++		target = <&wm8960>;
++		__dormant__ {
++			wlf,hp-cfg = <2 2 3>;
++		};
++	};
++
++	/* EDATEC media board: on-board mic + dual speakers sound card */
++	fragment@6 {
++		target = <&sound>;
++		__dormant__ {
++			simple-audio-card,widgets =
++				"Microphone", "On Board Mic",
++				"Line", "Line In",
++				"Line", "Line Out",
++				"Speaker", "Speaker",
++				"Headphone", "Headphone Jack";
++
++			simple-audio-card,routing =
++				"Headphone Jack", "HP_L",
++				"Headphone Jack", "HP_R",
++				"Speaker", "SPK_LP",
++				"Speaker", "SPK_LN",
++				"Speaker", "SPK_RP",
++				"Speaker", "SPK_RN",
++				"LINPUT2", "Headphone Jack";
++		};
++	};
++
+ 	__overrides__ {
+ 		alsaname = <&slave_overlay>,"simple-audio-card,name";
+ 		compatible = <&wm8960>,"compatible";
++		mclk = <&wm8960_mclk>,"clock-frequency:0";
++		media = <0>, "=4=5=6";
+ 	};
+ };

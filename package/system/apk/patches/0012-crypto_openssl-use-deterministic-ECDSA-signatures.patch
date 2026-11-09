@@ -1,0 +1,293 @@
+From: John Crispin <john@phrozen.org>
+Subject: [PATCH] crypto_openssl: use deterministic ECDSA signatures
+
+ECDSA signatures use a random nonce, so signing the same data twice
+gives different bytes, and often a different signature length. Signed
+packages are thus not reproducible, and neither are images that record
+the package size in the installed database.
+
+Derive the nonce from the private key and the digest as specified in
+RFC 6979. With OpenSSL 3.2 or later, request this with the "nonce-type"
+parameter. LibreSSL has no such option, so install an EC_KEY_METHOD
+that computes the RFC 6979 nonce and passes it to the default sign
+function. The signatures are standard ECDSA signatures and verify as
+before.
+
+Tested against the P-256 test vectors in RFC 6979 appendix A.2.5
+(SHA-1, SHA-256 and SHA-512) with LibreSSL 4.2.1 and OpenSSL 3.5.7.
+
+Signed-off-by: John Crispin <john@phrozen.org>
+---
+ src/crypto_openssl.c | 232 ++++++++++++++++++++++++++++++++++++++++++++++++++-
+ 1 file changed, 231 insertions(+), 1 deletion(-)
+
+diff --git a/src/crypto_openssl.c b/src/crypto_openssl.c
+index 14fe5d6..6f63b63 100644
+--- a/src/crypto_openssl.c
++++ b/src/crypto_openssl.c
+@@ -11,6 +11,16 @@
+ #include <openssl/engine.h>
+ #endif
+ 
++#if defined(LIBRESSL_VERSION_NUMBER)
++#define APK_ECDSA_RFC6979_METHOD
++#include <sys/uio.h>
++#include <openssl/ec.h>
++#include <openssl/hmac.h>
++#elif OPENSSL_VERSION_NUMBER >= 0x30200000L
++#define APK_ECDSA_RFC6979_PARAM
++#include <openssl/core_names.h>
++#endif
++
+ #include "apk_crypto.h"
+ 
+ // Copmatibility with older openssl
+@@ -164,6 +174,221 @@ int apk_digest_ctx_final(struct apk_digest_ctx *dctx, struct apk_digest *d)
+ 	return 0;
+ }
+ 
++#if defined(APK_ECDSA_RFC6979_METHOD)
++/*
++ * LibreSSL has no deterministic ECDSA, so signing the same data twice gives
++ * different signatures. Derive the nonce from the private key and the digest
++ * as specified in RFC 6979, which makes signed packages reproducible. The
++ * result is a standard ECDSA signature.
++ */
++#define RFC6979_MAX_RLEN	66
++
++struct apk_rfc6979_input {
++	const EVP_MD *md;
++	const unsigned char *digest;
++	int digest_len;
++	int used;
++};
++
++static int apk_rfc6979_ex_index = -1;
++static EC_KEY_METHOD *apk_rfc6979_method;
++static int (*apk_ecdsa_sign_default)(int type, const unsigned char *digest, int digest_len,
++	unsigned char *sig, unsigned int *sig_len, const BIGNUM *kinv, const BIGNUM *r, EC_KEY *eckey);
++static int (*apk_ecdsa_sign_setup_default)(EC_KEY *eckey, BN_CTX *ctx, BIGNUM **kinvp, BIGNUM **rp);
++
++static int apk_rfc6979_hmac(const EVP_MD *md, const unsigned char *key, int hlen,
++			    const struct iovec *iov, int iovcnt, unsigned char *out)
++{
++	HMAC_CTX *ctx = HMAC_CTX_new();
++	int i, ok = 0;
++
++	if (!ctx) return 0;
++	if (HMAC_Init_ex(ctx, key, hlen, md, NULL) != 1) goto err;
++	for (i = 0; i < iovcnt; i++)
++		if (HMAC_Update(ctx, iov[i].iov_base, iov[i].iov_len) != 1) goto err;
++	ok = HMAC_Final(ctx, out, NULL) == 1;
++err:
++	HMAC_CTX_free(ctx);
++	return ok;
++}
++
++static int apk_rfc6979_bits2int(BIGNUM *z, const unsigned char *bits, int len, int qlen)
++{
++	if (!BN_bin2bn(bits, len, z)) return 0;
++	if (len * 8 > qlen) return BN_rshift(z, z, len * 8 - qlen);
++	return 1;
++}
++
++static int apk_rfc6979_sign_setup(EC_KEY *eckey, BN_CTX *ctx_in, BIGNUM **kinvp, BIGNUM **rp)
++{
++	struct apk_rfc6979_input *in = EC_KEY_get_ex_data(eckey, apk_rfc6979_ex_index);
++	const EC_GROUP *group = EC_KEY_get0_group(eckey);
++	const BIGNUM *priv = EC_KEY_get0_private_key(eckey);
++	unsigned char V[EVP_MAX_MD_SIZE], K[EVP_MAX_MD_SIZE], sep;
++	unsigned char x[RFC6979_MAX_RLEN], h[RFC6979_MAX_RLEN];
++	unsigned char T[RFC6979_MAX_RLEN + EVP_MAX_MD_SIZE];
++	struct iovec iov_v[] = { { V, 0 } };
++	struct iovec iov_vs[] = { { V, 0 }, { &sep, 1 } };
++	struct iovec iov_seed[] = { { V, 0 }, { &sep, 1 }, { x, 0 }, { h, 0 } };
++	BN_CTX *ctx = NULL;
++	BIGNUM *q, *z, *k = NULL, *kinv = NULL, *r = NULL;
++	EC_POINT *R = NULL;
++	int qlen, rlen, hlen, tlen, ret = 0;
++
++	if (!in) return apk_ecdsa_sign_setup_default(eckey, ctx_in, kinvp, rp);
++
++	/*
++	 * A second nonce is only requested if s turns out to be 0. RFC 6979
++	 * continues its generator in that case, but the probability is
++	 * negligible, so fail instead.
++	 */
++	if (in->used++) return 0;
++
++	BN_free(*kinvp);
++	*kinvp = NULL;
++	BN_free(*rp);
++	*rp = NULL;
++
++	if (!group || !priv || !in->md) return 0;
++	if (!(ctx = BN_CTX_new())) return 0;
++	BN_CTX_start(ctx);
++	q = BN_CTX_get(ctx);
++	z = BN_CTX_get(ctx);
++	if (!z || !(k = BN_new()) || !(kinv = BN_new()) || !(r = BN_new()) ||
++	    !(R = EC_POINT_new(group)) || !EC_GROUP_get_order(group, q, ctx))
++		goto err;
++
++	qlen = BN_num_bits(q);
++	rlen = (qlen + 7) / 8;
++	hlen = EVP_MD_size(in->md);
++	if (rlen > RFC6979_MAX_RLEN || hlen <= 0 || hlen > EVP_MAX_MD_SIZE) goto err;
++	iov_v[0].iov_len = iov_vs[0].iov_len = iov_seed[0].iov_len = hlen;
++	iov_seed[2].iov_len = iov_seed[3].iov_len = rlen;
++
++	/* x = int2octets(priv), h = bits2octets(digest) */
++	if (BN_bn2binpad(priv, x, rlen) != rlen) goto err;
++	if (!apk_rfc6979_bits2int(z, in->digest, in->digest_len, qlen)) goto err;
++	if (BN_cmp(z, q) >= 0 && !BN_sub(z, z, q)) goto err;
++	if (BN_bn2binpad(z, h, rlen) != rlen) goto err;
++
++	/* RFC 6979 section 3.2, steps b to g */
++	memset(V, 0x01, hlen);
++	memset(K, 0x00, hlen);
++	sep = 0x00;
++	if (!apk_rfc6979_hmac(in->md, K, hlen, iov_seed, 4, K) ||
++	    !apk_rfc6979_hmac(in->md, K, hlen, iov_v, 1, V))
++		goto err;
++	sep = 0x01;
++	if (!apk_rfc6979_hmac(in->md, K, hlen, iov_seed, 4, K) ||
++	    !apk_rfc6979_hmac(in->md, K, hlen, iov_v, 1, V))
++		goto err;
++
++	/* step h: repeat until 1 <= k < q and r != 0 */
++	BN_set_flags(k, BN_FLG_CONSTTIME);
++	for (;;) {
++		for (tlen = 0; tlen * 8 < qlen; tlen += hlen) {
++			if (!apk_rfc6979_hmac(in->md, K, hlen, iov_v, 1, V)) goto err;
++			memcpy(T + tlen, V, hlen);
++		}
++		if (!apk_rfc6979_bits2int(k, T, tlen, qlen)) goto err;
++		if (!BN_is_zero(k) && BN_cmp(k, q) < 0) {
++			if (!EC_POINT_mul(group, R, k, NULL, NULL, ctx) ||
++			    !EC_POINT_get_affine_coordinates(group, R, z, NULL, ctx) ||
++			    !BN_nnmod(r, z, q, ctx))
++				goto err;
++			if (!BN_is_zero(r)) break;
++		}
++		sep = 0x00;
++		if (!apk_rfc6979_hmac(in->md, K, hlen, iov_vs, 2, K) ||
++		    !apk_rfc6979_hmac(in->md, K, hlen, iov_v, 1, V))
++			goto err;
++	}
++	if (!BN_mod_inverse(kinv, k, q, ctx)) goto err;
++
++	*kinvp = kinv;
++	*rp = r;
++	kinv = r = NULL;
++	ret = 1;
++err:
++	OPENSSL_cleanse(V, sizeof V);
++	OPENSSL_cleanse(K, sizeof K);
++	OPENSSL_cleanse(x, sizeof x);
++	OPENSSL_cleanse(T, sizeof T);
++	EC_POINT_free(R);
++	BN_clear_free(k);
++	BN_clear_free(kinv);
++	BN_free(r);
++	BN_CTX_end(ctx);
++	BN_CTX_free(ctx);
++	return ret;
++}
++
++static int apk_rfc6979_sign(int type, const unsigned char *digest, int digest_len,
++	unsigned char *sig, unsigned int *sig_len, const BIGNUM *kinv, const BIGNUM *r, EC_KEY *eckey)
++{
++	struct apk_rfc6979_input in = {
++		.md = EVP_get_digestbynid(type),
++		.digest = digest,
++		.digest_len = digest_len,
++	};
++	int ret;
++
++	if (!EC_KEY_set_ex_data(eckey, apk_rfc6979_ex_index, &in)) return 0;
++	ret = apk_ecdsa_sign_default(type, digest, digest_len, sig, sig_len, kinv, r, eckey);
++	EC_KEY_set_ex_data(eckey, apk_rfc6979_ex_index, NULL);
++	return ret;
++}
++
++static void apk_rfc6979_init(void)
++{
++	const EC_KEY_METHOD *def = EC_KEY_OpenSSL();
++	ECDSA_SIG *(*sign_sig)(const unsigned char *digest, int digest_len,
++		const BIGNUM *kinv, const BIGNUM *r, EC_KEY *eckey);
++
++	apk_rfc6979_ex_index = EC_KEY_get_ex_new_index(0, NULL, NULL, NULL, NULL);
++	if (apk_rfc6979_ex_index < 0) return;
++	apk_rfc6979_method = EC_KEY_METHOD_new(def);
++	if (!apk_rfc6979_method) return;
++	EC_KEY_METHOD_get_sign(def, &apk_ecdsa_sign_default, &apk_ecdsa_sign_setup_default, &sign_sig);
++	EC_KEY_METHOD_set_sign(apk_rfc6979_method, apk_rfc6979_sign, apk_rfc6979_sign_setup, sign_sig);
++}
++
++static void apk_rfc6979_free(void)
++{
++	EC_KEY_METHOD_free(apk_rfc6979_method);
++	apk_rfc6979_method = NULL;
++}
++
++static int apk_sign_deterministic(EVP_PKEY_CTX *pctx, EVP_PKEY *pkey)
++{
++	if (EVP_PKEY_base_id(pkey) != EVP_PKEY_EC) return 0;
++	if (!apk_rfc6979_method) return -APKE_CRYPTO_ERROR;
++	if (EC_KEY_set_method(EVP_PKEY_get0_EC_KEY(pkey), apk_rfc6979_method) != 1)
++		return -APKE_CRYPTO_ERROR;
++	return 0;
++}
++#elif defined(APK_ECDSA_RFC6979_PARAM)
++static void apk_rfc6979_init(void) {}
++static void apk_rfc6979_free(void) {}
++
++static int apk_sign_deterministic(EVP_PKEY_CTX *pctx, EVP_PKEY *pkey)
++{
++	unsigned int nonce_type = 1;
++	OSSL_PARAM params[] = {
++		OSSL_PARAM_construct_uint(OSSL_SIGNATURE_PARAM_NONCE_TYPE, &nonce_type),
++		OSSL_PARAM_construct_end(),
++	};
++
++	if (!EVP_PKEY_is_a(pkey, "EC")) return 0;
++	if (EVP_PKEY_CTX_set_params(pctx, params) != 1) return -APKE_CRYPTO_ERROR;
++	return 0;
++}
++#else
++static void apk_rfc6979_init(void) {}
++static void apk_rfc6979_free(void) {}
++static int apk_sign_deterministic(EVP_PKEY_CTX *pctx, EVP_PKEY *pkey) { return 0; }
++#endif
++
+ static int apk_pkey_init(struct apk_pkey *pkey, EVP_PKEY *key)
+ {
+ 	unsigned char dig[EVP_MAX_MD_SIZE], *pub = NULL;
+@@ -210,8 +435,11 @@ int apk_pkey_load(struct apk_pkey *pkey, int dirfd, const char *fn, int priv)
+ 
+ int apk_sign_start(struct apk_digest_ctx *dctx, uint8_t alg, struct apk_pkey *pkey)
+ {
++	EVP_PKEY_CTX *pctx;
++
+ 	if (EVP_MD_CTX_reset(ossl_mdctx(dctx)) != 1 ||
+-	    EVP_DigestSignInit(ossl_mdctx(dctx), NULL, apk_digest_alg_to_evp(alg), NULL, ossl_pkey(pkey)) != 1)
++	    EVP_DigestSignInit(ossl_mdctx(dctx), &pctx, apk_digest_alg_to_evp(alg), NULL, ossl_pkey(pkey)) != 1 ||
++	    apk_sign_deterministic(pctx, ossl_pkey(pkey)) != 0)
+ 		return -APKE_CRYPTO_ERROR;
+ 	dctx->alg = alg;
+ 	return 0;
+@@ -243,6 +471,7 @@ int apk_verify(struct apk_digest_ctx *dctx, void *sig, size_t len)
+ static void apk_crypto_cleanup(void)
+ {
+ 	free_algorithms();
++	apk_rfc6979_free();
+ 
+ #if OPENSSL_VERSION_NUMBER < 0x1010000fL || (defined(LIBRESSL_VERSION_NUMBER) && LIBRESSL_VERSION_NUMBER < 0x2070000fL)
+ 	EVP_cleanup();
+@@ -266,4 +495,5 @@ void apk_crypto_init(void)
+ #endif
+ 
+ 	lookup_algorithms();
++	apk_rfc6979_init();
+ }

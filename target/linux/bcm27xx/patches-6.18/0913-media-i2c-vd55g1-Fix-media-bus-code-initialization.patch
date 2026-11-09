@@ -1,0 +1,76 @@
+From 2d943bf78c689c8681d065df6a233c3dfdcec36d Mon Sep 17 00:00:00 2001
+From: Benjamin Mugnier <benjamin.mugnier@foss.st.com>
+Date: Mon, 29 Jun 2026 12:51:46 +0200
+Subject: [PATCH] media: i2c: vd55g1: Fix media bus code initialization
+
+Commit e4a4f2e3b9bc65e0b82ae8c3a2945955870df36f upstream.
+
+In the driver initialization, the index of the default media bus code
+from the supported media bus code array is passed directly to the
+vd55g1_get_fmt_code() function instead of the proper media bus code.
+
+This works correctly as a proper media bus code is set after
+initialization but could not have been the case. This also resulted in
+mutliple "Unsupported mbus format" error messages.
+
+Retrieve the media bus code from the media bus code array, and pass this
+media bus code to vd55g1_get_fmt_code() instead of the code index.
+
+Rename VD55G1_MBUS_CODE_DEF to VD55G1_MBUS_CODE_IDX_DEF and
+VD55G1_MODE_DEF to VD55G1_MODE_IDX_DEF while at it to avoid future
+confusions. Display the guilty error code in warning message.
+
+Cc: stable@vger.kernel.org
+Fixes: e138e7f00042 ("media: i2c: vd55g1: Add support for vd65g4 RGB variant")
+Signed-off-by: Benjamin Mugnier <benjamin.mugnier@foss.st.com>
+---
+ drivers/media/i2c/vd55g1.c | 16 ++++++++++------
+ 1 file changed, 10 insertions(+), 6 deletions(-)
+
+--- a/drivers/media/i2c/vd55g1.c
++++ b/drivers/media/i2c/vd55g1.c
+@@ -114,9 +114,8 @@
+ 
+ #define VD55G1_WIDTH					804
+ #define VD55G1_HEIGHT					704
+-#define VD55G1_MODE_DEF					0
++#define VD55G1_MODE_IDX_DEF				0
+ #define VD55G1_NB_GPIOS					4
+-#define VD55G1_MBUS_CODE_DEF				0
+ #define VD55G1_DGAIN_DEF				256
+ #define VD55G1_AGAIN_DEF				19
+ #define VD55G1_EXPO_MAX_TERM				64
+@@ -634,7 +633,7 @@ static u32 vd55g1_get_fmt_code(struct vd
+ 				goto adapt_bayer_pattern;
+ 		}
+ 	}
+-	dev_warn(sensor->dev, "Unsupported mbus format\n");
++	dev_warn(sensor->dev, "Unsupported mbus format: 0x%x\n", code);
+ 
+ 	return code;
+ 
+@@ -1347,6 +1346,7 @@ static int vd55g1_init_state(struct v4l2
+ {
+ 	struct vd55g1 *sensor = to_vd55g1(sd);
+ 	struct v4l2_subdev_format fmt = { 0 };
++	int code;
+ 	struct v4l2_subdev_route routes[] = {
+ 		{ .flags = V4L2_SUBDEV_ROUTE_FL_ACTIVE }
+ 	};
+@@ -1361,9 +1361,13 @@ static int vd55g1_init_state(struct v4l2
+ 	if (ret)
+ 		return ret;
+ 
+-	vd55g1_update_pad_fmt(sensor, &vd55g1_supported_modes[VD55G1_MODE_DEF],
+-			      vd55g1_get_fmt_code(sensor, VD55G1_MBUS_CODE_DEF),
+-			      &fmt.format);
++	if (sensor->id == VD55G1_MODEL_ID_VD55G1)
++		code = vd55g1_mbus_formats_mono[0];
++	else
++		code = vd55g1_mbus_formats_bayer[0][0];
++	vd55g1_update_pad_fmt(sensor,
++			      &vd55g1_supported_modes[VD55G1_MODE_IDX_DEF],
++			      vd55g1_get_fmt_code(sensor, code), &fmt.format);
+ 
+ 	return vd55g1_set_pad_fmt(sd, sd_state, &fmt);
+ }

@@ -1,0 +1,66 @@
+From 835f385dbf3a47727181e73063a433e5c7113eca Mon Sep 17 00:00:00 2001
+From: Stefan Kalscheuer <stefan@stklcode.de>
+Date: Fri, 3 Apr 2026 16:52:44 +0200
+Subject: [PATCH] replace init_dummy_netdev() with alloc_netdev_dummy() for
+ kernel 6.14+
+
+init_dummy_netdev() was removed in kernel 6.14. Un-embed the net_device
+from the private struct by converting it into a pointer and use
+alloc_netdev_dummy() for initialization of the dummy device.
+
+Signed-off-by: Stefan Kalscheuer <stefan@stklcode.de>
+---
+ hif/pcie/dev.h  |  4 ++++
+ hif/pcie/pcie.c | 17 +++++++++++++++--
+ 2 files changed, 19 insertions(+), 2 deletions(-)
+
+--- a/hif/pcie/dev.h
++++ b/hif/pcie/dev.h
+@@ -583,7 +583,11 @@ struct pcie_priv {
+ 	struct tasklet_struct tx_task;
+ 	struct tasklet_struct tx_done_task;
+ 	/* NAPI */
++#if LINUX_VERSION_CODE < KERNEL_VERSION(6,14,0)
+ 	struct net_device napi_dev;
++#else
++	struct net_device *napi_dev;
++#endif
+ 	struct napi_struct napi;
+ 	struct tasklet_struct rx_task;
+ 	unsigned int tx_head_room;
+--- a/hif/pcie/pcie.c
++++ b/hif/pcie/pcie.c
+@@ -215,9 +215,15 @@ static int pcie_init_8997(struct ieee802
+ 		     (void *)pcie_8997_tx_done_task, (unsigned long)hw);
+ 	tasklet_disable(&pcie_priv->tx_done_task);
+ 	spin_lock_init(&pcie_priv->tx_desc_lock);
++#if LINUX_VERSION_CODE < KERNEL_VERSION(6,15,0)
+ 	init_dummy_netdev(&pcie_priv->napi_dev);
+-	netif_napi_add(&pcie_priv->napi_dev, &pcie_priv->napi,
+-		       pcie_8997_poll_napi);
++	netif_napi_add(&pcie_priv->napi_dev, &pcie_priv->napi, pcie_8997_poll_napi);
++#else
++	pcie_priv->napi_dev = alloc_netdev_dummy(0);
++	if (!pcie_priv->napi_dev)
++		return -ENOMEM;
++	netif_napi_add(pcie_priv->napi_dev, &pcie_priv->napi, pcie_8997_poll_napi);
++#endif
+ 	pcie_priv->txq_limit = PCIE_TX_QUEUE_LIMIT;
+ 	pcie_priv->txq_wake_threshold = PCIE_TX_WAKE_Q_THRESHOLD;
+ 	pcie_priv->recv_limit = PCIE_RECEIVE_LIMIT;
+@@ -310,8 +316,15 @@ static int pcie_init_8864(struct ieee802
+ 	tasklet_init(&pcie_priv->tx_done_task, (void *)pcie_8864_tx_done_task, (unsigned long)hw);
+ 	tasklet_disable(&pcie_priv->tx_done_task);
+ 	spin_lock_init(&pcie_priv->tx_desc_lock);
++#if LINUX_VERSION_CODE < KERNEL_VERSION(6,14,0)
+ 	init_dummy_netdev(&pcie_priv->napi_dev);
+ 	netif_napi_add(&pcie_priv->napi_dev, &pcie_priv->napi, pcie_8864_poll_napi);
++#else
++	pcie_priv->napi_dev = alloc_netdev_dummy(0);
++	if (!pcie_priv->napi_dev)
++		return -ENOMEM;
++	netif_napi_add(pcie_priv->napi_dev, &pcie_priv->napi, pcie_8864_poll_napi);
++#endif
+ 	pcie_priv->txq_limit = PCIE_TX_QUEUE_LIMIT;
+ 	pcie_priv->txq_wake_threshold = PCIE_TX_WAKE_Q_THRESHOLD;
+ 	pcie_priv->recv_limit = PCIE_RECEIVE_LIMIT;

@@ -1,0 +1,38 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Shi Jiayang <shi05275@163.com>
+Subject: [PATCH] net: dsa: yt922x: accept auxiliary VID 0 FDB notifications
+
+A filtered bridge replays VLAN-unaware local FDB notifications as well as
+its per-VLAN entries. VID 0 cannot be a data lookup key on filtered ports.
+Accept these auxiliary adds and deletes without programming hardware, so
+DSA can balance its CPU address cache without spurious -95/-2 errors.
+
+Signed-off-by: Shi Jiayang <shi05275@163.com>
+
+---
+--- a/drivers/net/dsa/yt921x.c
++++ b/drivers/net/dsa/yt921x.c
+@@ -6540,6 +6540,14 @@ yt922x_dsa_port_fdb_add(struct dsa_switc
+ 
+ 	if (!is_valid_ether_addr(addr) || db.type != DSA_DB_BRIDGE)
+ 		return -EOPNOTSUPP;
++	/* The bridge also replays its VLAN-unaware local FDB entries while
++	 * filtering is enabled. No data frame can use hardware VID 0: access
++	 * traffic uses its PVID, and tagged traffic uses its customer VID.
++	 * Accept the auxiliary notification so DSA can balance its CPU cache,
++	 * but only program the subsequent per-VLAN entries into hardware.
++	 */
++	if (!vid && br_vlan_enabled(db.bridge.dev))
++		return 0;
+ 	hwvid = br_vlan_enabled(db.bridge.dev) ? vid : YT922X_BRIDGE_VID;
+ 	alias = br_vlan_enabled(db.bridge.dev) ? 0 : vid;
+ 	yt922x_fdb_key(addr, hwvid, entry);
+@@ -6604,6 +6612,8 @@ yt922x_dsa_port_fdb_del(struct dsa_switc
+ 	if (vid >= VLAN_VID_MASK || db.type != DSA_DB_BRIDGE ||
+ 	    !is_valid_ether_addr(addr))
+ 		return -EOPNOTSUPP;
++	if (!vid && br_vlan_enabled(db.bridge.dev))
++		return 0;
+ 	if (!br_vlan_enabled(db.bridge.dev) && vid > YT922X_BRIDGE_VID)
+ 		return -EOPNOTSUPP;
+ 	hwvid = br_vlan_enabled(db.bridge.dev) ? vid : YT922X_BRIDGE_VID;

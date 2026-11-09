@@ -1,0 +1,51 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Sat, 24 Oct 2026 13:34:30 +0200
+Subject: [PATCH] hostapd: advertise SCS and MSCS where the driver installs them
+
+Set the SCS bit (54) of the Extended Capabilities element where the
+driver declares WPA_DRIVER_FLAGS2_SCS, and the Mirrored SCS bit (85)
+where it declares WPA_DRIVER_FLAGS2_MSCS, so that a station sends its
+requests (IEEE Std 802.11-2024, 11.25.2 and 11.25.3). Clear the SCS
+Traffic Description Support bit of the EHT MAC Capabilities Information
+field, which hostapd copies from the driver, where the driver cannot
+install an SCS descriptor. robust_av_scs_disabled still clears all
+three.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/src/ap/ieee802_11_eht.c
++++ b/src/ap/ieee802_11_eht.c
+@@ -141,7 +141,8 @@ u8 * hostapd_eid_eht_capab(struct hostap
+ 	os_memset(cap, 0, sizeof(*cap));
+ 	cap->mac_cap = host_to_le16(eht_cap->mac_cap);
+ #ifdef CONFIG_ROBUST_AV
+-	if (hostapd_is_robust_av_scs_disabled(hapd))
++	if (hostapd_is_robust_av_scs_disabled(hapd) ||
++	    !(hapd->iface->drv_flags2 & WPA_DRIVER_FLAGS2_SCS))
+ 		cap->mac_cap &= ~host_to_le16(EHT_MACCAP_SCS_TRAFFIC_DESC);
+ #endif /* CONFIG_ROBUST_AV */
+ 	os_memcpy(cap->phy_cap, eht_cap->phy_cap, EHT_PHY_CAPAB_LEN);
+--- a/src/ap/ieee802_11_shared.c
++++ b/src/ap/ieee802_11_shared.c
+@@ -435,6 +435,10 @@ static void hostapd_ext_capab_byte(struc
+ 	case 6: /* Bits 48-55 */
+ 		if (hapd->conf->ssid.utf8_ssid)
+ 			*pos |= 0x01; /* Bit 48 - UTF-8 SSID */
++#ifdef CONFIG_ROBUST_AV
++		if (hapd->iface->drv_flags2 & WPA_DRIVER_FLAGS2_SCS)
++			*pos |= 0x40; /* Bit 54 - SCS */
++#endif /* CONFIG_ROBUST_AV */
+ 		break;
+ 	case 7: /* Bits 56-63 */
+ 		break;
+@@ -480,6 +484,10 @@ static void hostapd_ext_capab_byte(struc
+ 		if (mbssid_complete)
+ 			*pos |= 0x01; /* Bit 80 - Complete List of NonTxBSSID
+ 				       * Profiles */
++#ifdef CONFIG_ROBUST_AV
++		if (hapd->iface->drv_flags2 & WPA_DRIVER_FLAGS2_MSCS)
++			*pos |= 0x20; /* Bit 85 - Mirrored SCS */
++#endif /* CONFIG_ROBUST_AV */
+ 		break;
+ 	case 11: /* Bits 88-95 */
+ #ifdef CONFIG_SAE_PK

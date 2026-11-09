@@ -1,0 +1,275 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Shi Jiayang <shi05275@163.com>
+Subject: [PATCH] net: dsa: yt922x: add selectable four-byte port tagging
+
+Add a distinct yt922x_4b protocol selected through the standard
+CPU-port dsa-tag-protocol property. Retain the original eight-byte
+yt922x protocol, including its default selection and checksum workaround.
+
+The four-byte port control word uses a TX destination bitmap at bits
+13:5 and an RX source port at bits 7:4. These fields differ from the
+eight-byte format. Two-ended YT9224 tests verified physical ports 6/7,
+IPv4/IPv6 traffic, and preservation of customer VLAN tags and PCP.
+Leave the undocumented TX priority override bits clear.
+
+Use TPID 0x8100 so the conduit parser can recognize the inner headers.
+Switch the TPID and both tag modes together, restoring their old values
+on a programming error. Register both taggers so the DSA core can select
+the protocol at setup or switch it through its normal interface.
+
+Signed-off-by: Shi Jiayang <shi05275@163.com>
+---
+--- a/Documentation/devicetree/bindings/net/dsa/dsa-port.yaml
++++ b/Documentation/devicetree/bindings/net/dsa/dsa-port.yaml
+@@ -58,6 +58,8 @@ properties:
+       - rtl8_4
+       - rtl8_4t
+       - seville
++      - yt922x
++      - yt922x_4b
+ 
+ # CPU and DSA ports must have phylink-compatible link descriptions
+ if:
+--- a/drivers/net/dsa/yt921x.c
++++ b/drivers/net/dsa/yt921x.c
+@@ -6142,30 +6142,66 @@ static int yt922x_chip_setup(struct yt92
+ 	return 0;
+ }
+ 
+-static int yt922x_cpu_tag_mode_set_8b(struct yt921x_priv *priv)
++static int yt922x_cpu_tag_mode_set(struct yt921x_priv *priv,
++				   enum dsa_tag_protocol proto)
+ {
+-	u32 val;
+-	u32 val1;
+-	int res;
++	static const u32 regs[] = {
++		YT921X_CPU_TAG_TPID,
++		YT922X_CPU_TAG_RX_CTRL,
++		YT922X_CPU_TAG_TX_CTRL,
++	};
++	u32 saved[ARRAY_SIZE(regs)], next[ARRAY_SIZE(regs)];
++	bool four_byte = proto == DSA_TAG_PROTO_YT922X_4B;
++	int i, res, err;
+ 
+-	/* cpu tag mode set to 8b*/
+-	res = yt921x_reg_read(priv, YT922X_CPU_TAG_RX_CTRL, &val);
+-	if (res)
+-		return res;
+-	res = yt921x_reg_read(priv, YT922X_CPU_TAG_TX_CTRL, &val1);
+-	if (res)
+-		return res;
+-	val &= ~YT922X_CPU_TAG_RX_MODE;
+-	val1 &= ~YT922X_CPU_TAG_TX_MODE;
+-	val1 &= ~YT922X_CPU_TAG_TX_TYPE;
+-	res = yt921x_reg_write(priv, YT922X_CPU_TAG_RX_CTRL, val);
+-	if (res)
+-		return res;
+-	res = yt921x_reg_write(priv, YT922X_CPU_TAG_TX_CTRL, val1);
+-	if (res)
+-		return res;
++	if (proto != DSA_TAG_PROTO_YT922X && !four_byte)
++		return -EOPNOTSUPP;
++
++	for (i = 0; i < ARRAY_SIZE(regs); i++) {
++		res = yt921x_reg_read(priv, regs[i], &saved[i]);
++		if (res)
++			return res;
++		next[i] = saved[i];
++	}
++	next[0] &= ~YT921X_CPU_TAG_TPID_TPID_M;
++	next[0] |= FIELD_PREP(YT921X_CPU_TAG_TPID_TPID_M,
++			      four_byte ? ETH_P_8021Q : ETH_P_YT921X);
++	next[1] &= ~YT922X_CPU_TAG_RX_MODE;
++	next[2] &= ~(YT922X_CPU_TAG_TX_MODE | YT922X_CPU_TAG_TX_TYPE);
++	if (four_byte) {
++		next[1] |= YT922X_CPU_TAG_RX_MODE;
++		next[2] |= YT922X_CPU_TAG_TX_MODE;
++	}
++
++	for (i = 0; i < ARRAY_SIZE(regs); i++) {
++		res = yt921x_reg_write(priv, regs[i], next[i]);
++		if (res)
++			goto restore;
++	}
+ 
+ 	return 0;
++
++restore:
++	for (i = ARRAY_SIZE(regs) - 1; i >= 0; i--) {
++		err = yt921x_reg_write(priv, regs[i], saved[i]);
++		if (err)
++			dev_err(to_device(priv), "Failed to restore tag register %#x: %d\n",
++				regs[i], err);
++	}
++	return res;
++}
++
++static int yt922x_dsa_change_tag_protocol(struct dsa_switch *ds,
++					  enum dsa_tag_protocol proto)
++{
++	struct yt921x_priv *priv = to_yt921x_priv(ds);
++	int res;
++
++	mutex_lock(&priv->reg_lock);
++	res = yt922x_cpu_tag_mode_set(priv, proto);
++	mutex_unlock(&priv->reg_lock);
++
++	return res;
+ }
+ 
+ static int yt922x_cpu_port_set(struct yt921x_priv *priv)
+@@ -6175,7 +6211,7 @@ static int yt922x_cpu_port_set(struct yt
+ 	int res;
+ 
+ 	/* cpu tag mode */
+-	res = yt922x_cpu_tag_mode_set_8b(priv);
++	res = yt922x_cpu_tag_mode_set(priv, DSA_TAG_PROTO_YT922X);
+ 	if (res)
+ 		return res;
+ 
+@@ -6255,6 +6291,7 @@ static void yt922x_dsa_teardown(struct d
+ static const struct dsa_switch_ops yt922x_dsa_switch_ops = {
+ 	/* port */
+ 	.get_tag_protocol	= yt922x_dsa_get_tag_protocol,
++	.change_tag_protocol	= yt922x_dsa_change_tag_protocol,
+ 	.phylink_get_caps	= yt922x_dsa_phylink_get_caps,
+ 	.port_setup		= yt922x_dsa_port_setup,
+ 	/* chip */
+--- /dev/null
++++ b/include/linux/dsa/yt922x.h
+@@ -0,0 +1,25 @@
++/* SPDX-License-Identifier: GPL-2.0-or-later */
++#ifndef _LINUX_DSA_YT922X_H
++#define _LINUX_DSA_YT922X_H
++
++#include <linux/bitfield.h>
++#include <linux/bits.h>
++#include <linux/types.h>
++
++/* YT9224 four-byte port tag, following the configurable two-byte TPID.
++ * TX: one destination bit per physical port, starting at bit 5.
++ * RX: source physical port in bits 7:4. Customer VLAN tags follow this tag.
++ * Do not reuse the eight-byte format's force-destination or priority bits.
++ */
++#define YT922X_4B_TX_PORT_M	GENMASK(13, 5)
++#define YT922X_4B_RX_PORT_M	GENMASK(7, 4)
++
++static inline u16 yt922x_4b_port_tag(unsigned int port)
++{
++	if (port > 8)
++		return 0;
++
++	return FIELD_PREP(YT922X_4B_TX_PORT_M, BIT(port));
++}
++
++#endif
+--- a/include/net/dsa.h
++++ b/include/net/dsa.h
+@@ -59,6 +59,7 @@ struct tc_action;
+ #define DSA_TAG_PROTO_MXL862_8021Q_VALUE	31
+ #define DSA_TAG_PROTO_YT921X_VALUE		32
+ #define DSA_TAG_PROTO_YT922X_VALUE		33
++#define DSA_TAG_PROTO_YT922X_4B_VALUE		34
+ 
+ enum dsa_tag_protocol {
+ 	DSA_TAG_PROTO_NONE		= DSA_TAG_PROTO_NONE_VALUE,
+@@ -95,6 +96,7 @@ enum dsa_tag_protocol {
+ 	DSA_TAG_PROTO_MXL862_8021Q	= DSA_TAG_PROTO_MXL862_8021Q_VALUE,
+ 	DSA_TAG_PROTO_YT921X		= DSA_TAG_PROTO_YT921X_VALUE,
+ 	DSA_TAG_PROTO_YT922X		= DSA_TAG_PROTO_YT922X_VALUE,
++	DSA_TAG_PROTO_YT922X_4B		= DSA_TAG_PROTO_YT922X_4B_VALUE,
+ };
+ 
+ struct dsa_switch;
+--- a/net/dsa/tag_yt922x.c
++++ b/net/dsa/tag_yt922x.c
+@@ -7,6 +7,7 @@
+  */
+ 
+ #include <linux/etherdevice.h>
++#include <linux/dsa/yt922x.h>
+ 
+ #include "tag.h"
+ 
+@@ -101,8 +102,77 @@ static const struct dsa_device_ops yt922
+ 	.needed_headroom = YT922X_TAG_LEN,
+ };
+ 
+-MODULE_DESCRIPTION("DSA tag driver for Motorcomm YT922x switches");
+-MODULE_LICENSE("GPL");
++static struct sk_buff *
++yt922x_4b_tag_xmit(struct sk_buff *skb, struct net_device *netdev)
++{
++	struct dsa_port *dp = dsa_user_to_port(netdev);
++	u16 ctrl = yt922x_4b_port_tag(dp->index);
++	__be16 *tag;
++
++	if (unlikely(!ctrl))
++		return NULL;
++
++	skb_push(skb, VLAN_HLEN);
++	dsa_alloc_etype_header(skb, VLAN_HLEN);
++	tag = dsa_etype_header_pos_tx(skb);
++	tag[0] = htons(ETH_P_8021Q);
++	tag[1] = htons(ctrl);
++
++	return skb;
++}
++
++static struct sk_buff *
++yt922x_4b_tag_rcv(struct sk_buff *skb, struct net_device *netdev)
++{
++	struct net_device *user;
++	unsigned int port;
++	u16 ctrl;
++
++	if (skb_vlan_tag_present(skb)) {
++		if (unlikely(skb->vlan_proto != htons(ETH_P_8021Q)))
++			return NULL;
++		ctrl = skb_vlan_tag_get(skb);
++		__vlan_hwaccel_clear_tag(skb);
++	} else {
++		__be16 *tag;
++
++		if (unlikely(!pskb_may_pull(skb, VLAN_HLEN)))
++			return NULL;
++		tag = dsa_etype_header_pos_rx(skb);
++		if (unlikely(tag[0] != htons(ETH_P_8021Q)))
++			return NULL;
++		ctrl = ntohs(tag[1]);
++		skb_pull_rcsum(skb, VLAN_HLEN);
++		dsa_strip_etype_header(skb, VLAN_HLEN);
++	}
++
++	port = FIELD_GET(YT922X_4B_RX_PORT_M, ctrl);
++	user = dsa_conduit_find_user(netdev, 0, port);
++	if (unlikely(!user))
++		return NULL;
++	skb->dev = user;
++
++	return skb;
++}
++
++static const struct dsa_device_ops yt922x_4b_netdev_ops = {
++	.name = "yt922x_4b",
++	.proto = DSA_TAG_PROTO_YT922X_4B,
++	.xmit = yt922x_4b_tag_xmit,
++	.rcv = yt922x_4b_tag_rcv,
++	.needed_headroom = VLAN_HLEN,
++};
++
++DSA_TAG_DRIVER(yt922x_netdev_ops);
++DSA_TAG_DRIVER(yt922x_4b_netdev_ops);
+ MODULE_ALIAS_DSA_TAG_DRIVER(DSA_TAG_PROTO_YT922X, YT922X_TAG_NAME);
++MODULE_ALIAS_DSA_TAG_DRIVER(DSA_TAG_PROTO_YT922X_4B, "yt922x_4b");
+ 
+-module_dsa_tag_driver(yt922x_netdev_ops);
++static struct dsa_tag_driver *yt922x_tag_drivers[] = {
++	&DSA_TAG_DRIVER_NAME(yt922x_netdev_ops),
++	&DSA_TAG_DRIVER_NAME(yt922x_4b_netdev_ops),
++};
++module_dsa_tag_drivers(yt922x_tag_drivers);
++
++MODULE_DESCRIPTION("DSA tag driver for Motorcomm YT922x switches");
++MODULE_LICENSE("GPL");

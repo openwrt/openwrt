@@ -1,0 +1,193 @@
+From: Pietro Ameruoso <p.ameruoso@live.it>
+Date: Mon, 17 Aug 2026 09:00:00 +0000
+Subject: [PATCH] net: phy: as21xxx: fix AS2101x runtime behavior
+
+Move DPC rate-adaptation setup from probe to the PHY config_init callback,
+while preserving the existing behavior of enabling it for every supported
+variant.
+
+Standard Clause 45 link status does not reflect the firmware link state
+reliably. Use the vendor AN arbitration state and report link complete
+when it reaches LINK_GOOD.
+
+Finally, expose the full-duplex BASE-T modes supported by the AS21010 and
+AS21011 variants. The generic feature discovery does not provide these
+capabilities before the firmware-backed PHY is fully operational.
+
+Signed-off-by: Pietro Ameruoso <p.ameruoso@live.it>
+---
+ drivers/net/phy/as21xxx.c | 70 ++++++++++++++++++++++++++++++++----------------
+ 1 file changed, 48 insertions(+), 22 deletions(-)
+
+--- a/drivers/net/phy/as21xxx.c
++++ b/drivers/net/phy/as21xxx.c
+@@ -116,6 +116,9 @@
+ #define IPC_CMD_TEMP_MON_GET		0x4
+ 
+ #define AS21XXX_MDIO_AN_C22		0xffe0
++#define AS21XXX_AN_STATES1		0x8005
++#define   AS21XXX_AN_STATES1_ARB_MASK	GENMASK(15, 12)
++#define   AS21XXX_AN_STATE_LINK_GOOD	9
+ 
+ #define PHY_ID_AS21XXX			0x75009410
+ /* AS21xxx ID Legend
+@@ -662,11 +665,12 @@ static int as21xxx_probe(struct phy_devi
+ 		return ret;
+ 
+ 	/* Enable PTP clk if not already Enabled */
+-	ret = phy_set_bits_mmd(phydev, MDIO_MMD_VEND1, VEND1_PTP_CLK,
+-			       VEND1_PTP_CLK_EN);
+-	if (ret)
+-		return ret;
++	return phy_set_bits_mmd(phydev, MDIO_MMD_VEND1, VEND1_PTP_CLK,
++				VEND1_PTP_CLK_EN);
++}
+ 
++static int as21xxx_config_init(struct phy_device *phydev)
++{
+ 	return aeon_dpc_ra_enable(phydev);
+ }
+ 
+@@ -682,26 +686,13 @@ static int as21xxx_read_link(struct phy_
+ 	if (*bmcr < 0)
+ 		return *bmcr;
+ 
+-	/* Autoneg is being started, therefore disregard current
+-	 * link status and report link as down.
+-	 */
+-	if (*bmcr & BMCR_ANRESTART) {
+-		phydev->link = 0;
+-		return 0;
+-	}
+-
+-	status = phy_read_mmd(phydev, MDIO_MMD_AN, MDIO_STAT1);
++	status = phy_read_mmd(phydev, MDIO_MMD_AN, AS21XXX_AN_STATES1);
+ 	if (status < 0)
+ 		return status;
+ 
+-	phydev->link = !!(status & MDIO_STAT1_LSTATUS);
+-	phydev->autoneg_complete = !!(status & MDIO_AN_STAT1_COMPLETE);
+-
+-	/* Consider the case that autoneg was started and "aneg complete"
+-	 * bit has been reset, but "link up" bit not yet.
+-	 */
+-	if (phydev->autoneg == AUTONEG_ENABLE && !phydev->autoneg_complete)
+-		phydev->link = 0;
++	phydev->link = FIELD_GET(AS21XXX_AN_STATES1_ARB_MASK, status) ==
++			 AS21XXX_AN_STATE_LINK_GOOD;
++	phydev->autoneg_complete = phydev->link;
+ 
+ 	return 0;
+ }
+@@ -961,6 +952,27 @@ out_unlock:
+ 	return ret;
+ }
+ 
++static int as21xxx_get_features(struct phy_device *phydev)
++{
++	linkmode_zero(phydev->supported);
++	linkmode_set_bit(ETHTOOL_LINK_MODE_Autoneg_BIT,
++			   phydev->supported);
++	linkmode_set_bit(ETHTOOL_LINK_MODE_TP_BIT,
++			   phydev->supported);
++	linkmode_set_bit(ETHTOOL_LINK_MODE_100baseT_Full_BIT,
++			   phydev->supported);
++	linkmode_set_bit(ETHTOOL_LINK_MODE_1000baseT_Full_BIT,
++			   phydev->supported);
++	linkmode_set_bit(ETHTOOL_LINK_MODE_2500baseT_Full_BIT,
++			 phydev->supported);
++	linkmode_set_bit(ETHTOOL_LINK_MODE_5000baseT_Full_BIT,
++			 phydev->supported);
++	linkmode_set_bit(ETHTOOL_LINK_MODE_10000baseT_Full_BIT,
++			 phydev->supported);
++
++	return 0;
++}
++
+ static int as21xxx_match_phy_device(struct phy_device *phydev,
+ 				    const struct phy_driver *phydrv)
+ {
+@@ -1112,6 +1124,8 @@ static struct phy_driver as21xxx_drivers
+ 		PHY_ID_MATCH_EXACT(PHY_ID_AS21011JB1),
+ 		.name		= "Aeonsemi AS21011JB1",
+ 		.probe		= as21xxx_probe,
++		.get_features	= as21xxx_get_features,
++		.config_init	= as21xxx_config_init,
+ 		.match_phy_device = as21xxx_match_phy_device,
+ 		.read_status	= as21xxx_read_status,
+ 		.read_mmd	= as21xxx_read_mmd,
+@@ -1126,6 +1140,8 @@ static struct phy_driver as21xxx_drivers
+ 		PHY_ID_MATCH_EXACT(PHY_ID_AS21011PB1),
+ 		.name		= "Aeonsemi AS21011PB1",
+ 		.probe		= as21xxx_probe,
++		.get_features	= as21xxx_get_features,
++		.config_init	= as21xxx_config_init,
+ 		.match_phy_device = as21xxx_match_phy_device,
+ 		.read_status	= as21xxx_read_status,
+ 		.read_mmd	= as21xxx_read_mmd,
+@@ -1140,6 +1156,8 @@ static struct phy_driver as21xxx_drivers
+ 		PHY_ID_MATCH_EXACT(PHY_ID_AS21010PB1),
+ 		.name		= "Aeonsemi AS21010PB1",
+ 		.probe		= as21xxx_probe,
++		.get_features	= as21xxx_get_features,
++		.config_init	= as21xxx_config_init,
+ 		.match_phy_device = as21xxx_match_phy_device,
+ 		.read_status	= as21xxx_read_status,
+ 		.read_mmd	= as21xxx_read_mmd,
+@@ -1154,6 +1172,8 @@ static struct phy_driver as21xxx_drivers
+ 		PHY_ID_MATCH_EXACT(PHY_ID_AS21010JB1),
+ 		.name		= "Aeonsemi AS21010JB1",
+ 		.probe		= as21xxx_probe,
++		.get_features	= as21xxx_get_features,
++		.config_init	= as21xxx_config_init,
+ 		.match_phy_device = as21xxx_match_phy_device,
+ 		.read_status	= as21xxx_read_status,
+ 		.read_mmd	= as21xxx_read_mmd,
+@@ -1168,6 +1188,7 @@ static struct phy_driver as21xxx_drivers
+ 		PHY_ID_MATCH_EXACT(PHY_ID_AS21210PB1),
+ 		.name		= "Aeonsemi AS21210PB1",
+ 		.probe		= as21xxx_probe,
++		.config_init	= as21xxx_config_init,
+ 		.match_phy_device = as21xxx_match_phy_device,
+ 		.read_status	= as21xxx_read_status,
+ 		.read_mmd	= as21xxx_read_mmd,
+@@ -1182,6 +1203,7 @@ static struct phy_driver as21xxx_drivers
+ 		PHY_ID_MATCH_EXACT(PHY_ID_AS21510JB1),
+ 		.name		= "Aeonsemi AS21510JB1",
+ 		.probe		= as21xxx_probe,
++		.config_init	= as21xxx_config_init,
+ 		.match_phy_device = as21xxx_match_phy_device,
+ 		.read_status	= as21xxx_read_status,
+ 		.read_mmd	= as21xxx_read_mmd,
+@@ -1196,6 +1218,7 @@ static struct phy_driver as21xxx_drivers
+ 		PHY_ID_MATCH_EXACT(PHY_ID_AS21510PB1),
+ 		.name		= "Aeonsemi AS21510PB1",
+ 		.probe		= as21xxx_probe,
++		.config_init	= as21xxx_config_init,
+ 		.match_phy_device = as21xxx_match_phy_device,
+ 		.read_status	= as21xxx_read_status,
+ 		.read_mmd	= as21xxx_read_mmd,
+@@ -1210,6 +1233,7 @@ static struct phy_driver as21xxx_drivers
+ 		PHY_ID_MATCH_EXACT(PHY_ID_AS21511JB1),
+ 		.name		= "Aeonsemi AS21511JB1",
+ 		.probe		= as21xxx_probe,
++		.config_init	= as21xxx_config_init,
+ 		.match_phy_device = as21xxx_match_phy_device,
+ 		.read_status	= as21xxx_read_status,
+ 		.read_mmd	= as21xxx_read_mmd,
+@@ -1224,6 +1248,7 @@ static struct phy_driver as21xxx_drivers
+ 		PHY_ID_MATCH_EXACT(PHY_ID_AS21210JB1),
+ 		.name		= "Aeonsemi AS21210JB1",
+ 		.probe		= as21xxx_probe,
++		.config_init	= as21xxx_config_init,
+ 		.match_phy_device = as21xxx_match_phy_device,
+ 		.read_status	= as21xxx_read_status,
+ 		.read_mmd	= as21xxx_read_mmd,
+@@ -1238,6 +1263,7 @@ static struct phy_driver as21xxx_drivers
+ 		PHY_ID_MATCH_EXACT(PHY_ID_AS21511PB1),
+ 		.name		= "Aeonsemi AS21511PB1",
+ 		.probe		= as21xxx_probe,
++		.config_init	= as21xxx_config_init,
+ 		.match_phy_device = as21xxx_match_phy_device,
+ 		.read_status	= as21xxx_read_status,
+ 		.read_mmd	= as21xxx_read_mmd,

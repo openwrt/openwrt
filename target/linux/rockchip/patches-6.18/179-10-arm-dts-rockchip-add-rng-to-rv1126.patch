@@ -1,0 +1,32 @@
+From 0a2e3697a54fc73e37ce0a58086964c9c9687c0e Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Sat, 10 Oct 2026 12:00:09 +0100
+Subject: [PATCH] ARM: dts: rockchip: add rng to rv1126
+
+Describe the TRNG in the crypto block. Its register window starts at
+the TRNG control register, behind the registers of the crypto engine, and
+the node names the AHB clock and the power domain of the block that
+the TRNG needs.
+
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ arch/arm/boot/dts/rockchip/rv1126.dtsi | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+--- a/arch/arm/boot/dts/rockchip/rv1126.dtsi
++++ b/arch/arm/boot/dts/rockchip/rv1126.dtsi
+@@ -706,6 +706,14 @@
+ 		power-domains = <&power RV1126_PD_CRYPTO>;
+ 	};
+ 
++	rng: rng@ff500400 {
++		compatible = "rockchip,rv1126-rng";
++		reg = <0xff500400 0x80>;
++		clocks = <&cru HCLK_CRYPTO>;
++		clock-names = "ahb";
++		power-domains = <&power RV1126_PD_CRYPTO>;
++	};
++
+ 	i2c3: i2c@ff520000 {
+ 		compatible = "rockchip,rv1126-i2c", "rockchip,rk3399-i2c";
+ 		reg = <0xff520000 0x1000>;

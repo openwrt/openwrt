@@ -1,0 +1,42 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Sat, 24 Oct 2026 11:30:00 +0200
+Subject: [PATCH] nl80211: keep the netdev of a BSS that becomes the first BSS
+
+Depends on 601-ucode_support.patch.
+
+The ucode BSS deletion and set_bss_order make another BSS the first BSS
+of an interface with set_first_bss(). The netdev of that BSS can be one
+that hostapd created (added_if). Where the driver is shared with another
+interface, a DISABLE of the interface then removed that netdev
+(hostapd_cleanup_driver() -> hostapd_if_remove()), and the next ENABLE
+failed: hostapd_driver_init() finds the shared driver through the
+netdev of the first BSS, so the driver init ended with "Could not read
+interface ... flags: No such device".
+
+Clear added_if of the new first BSS, so that its netdev stays at a
+deinit, as the netdev of a first BSS that hostapd did not create does.
+The old first BSS keeps its flag: hostapd still removes only the netdevs
+it created for a BSS that is not first, and an MLD netdev of another
+owner stays. Also move drv->ifindex to the new first BSS, as the
+removal of a first BSS does.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/src/drivers/driver_nl80211.c
++++ b/src/drivers/driver_nl80211.c
+@@ -12098,10 +12098,15 @@ static int driver_nl80211_set_first_bss(
+ 		if (tbss->next != bss)
+ 			continue;
+ 
++		/* The netdev of the first BSS stays at a deinit, and the next
++		 * driver init finds the driver through it */
++		bss->added_if = 0;
++
+ 		tbss->next = bss->next;
+ 		bss->next = drv->first_bss;
+ 		drv->first_bss = bss;
+ 		drv->ctx = bss->ctx;
++		drv->ifindex = bss->ifindex;
+ 		return 0;
+ 	}
+ 

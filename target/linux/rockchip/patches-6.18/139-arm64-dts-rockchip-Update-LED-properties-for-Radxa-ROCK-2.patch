@@ -1,0 +1,58 @@
+--- a/arch/arm64/boot/dts/rockchip/rk3528-rock-2.dtsi
++++ b/arch/arm64/boot/dts/rockchip/rk3528-rock-2.dtsi
+@@ -38,7 +38,7 @@
+ 		pinctrl-names = "default";
+ 		pinctrl-0 = <&state_led_b>;
+ 
+-		led-0 {
++		state_led: led-0 {
+ 			color = <LED_COLOR_ID_BLUE>;
+ 			default-state = "on";
+ 			function = LED_FUNCTION_HEARTBEAT;
+--- a/arch/arm64/boot/dts/rockchip/rk3528-rock-2a.dts
++++ b/arch/arm64/boot/dts/rockchip/rk3528-rock-2a.dts
+@@ -10,6 +10,11 @@
+ 
+ 	aliases {
+ 		ethernet0 = &gmac1;
++
++		led-boot = &sys_led;
++		led-failsafe = &sys_led;
++		led-running = &sys_led;
++		led-upgrade = &sys_led;
+ 	};
+ 
+ 	vcc5v0_usb30_otg: regulator-5v0-vcc-usb30-otg {
+@@ -40,12 +45,10 @@
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&state_led_b>, <&sys_led_g>;
+ 
+-	led-1 {
++	sys_led: led-1 {
+ 		color = <LED_COLOR_ID_GREEN>;
+-		default-state = "on";
+ 		function = LED_FUNCTION_STATUS;
+ 		gpios = <&gpio3 RK_PC1 GPIO_ACTIVE_LOW>;
+-		linux,default-trigger = "default-on";
+ 	};
+ };
+ 
+--- a/arch/arm64/boot/dts/rockchip/rk3528-rock-2f.dts
++++ b/arch/arm64/boot/dts/rockchip/rk3528-rock-2f.dts
+@@ -7,4 +7,16 @@
+ / {
+ 	model = "Radxa ROCK 2F";
+ 	compatible = "radxa,rock-2f", "rockchip,rk3528";
++
++	aliases {
++		led-boot = &state_led;
++		led-failsafe = &state_led;
++		led-running = &state_led;
++		led-upgrade = &state_led;
++	};
++};
++
++&state_led {
++	/delete-property/ default-state;
++	/delete-property/ linux,default-trigger;
+ };

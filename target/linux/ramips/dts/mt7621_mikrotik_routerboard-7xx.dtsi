@@ -1,0 +1,87 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "mt7621_mikrotik.dtsi"
+
+/ {
+	gpio_export {
+		compatible = "gpio-export";
+
+		buzzer {
+			/* Beeper requires PWM for frequency selection */
+			gpio-export,name = "buzzer";
+			gpio-export,output = <0>;
+			gpios = <&gpio 15 GPIO_ACTIVE_HIGH>;
+		};
+	};
+};
+
+&keys {
+	mode {
+		label = "mode";
+		gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
+		linux,code = <BTN_0>;
+	};
+};
+
+&partitions {
+	partition@40000 {
+		compatible = "mikrotik,minor";
+		label = "firmware";
+		reg = <0x040000 0xfc0000>;
+	};
+};
+
+&reg_vbus {
+	/delete-property/ regulator-always-on;
+	gpios = <&gpio 12 GPIO_ACTIVE_HIGH>;
+	enable-active-high;
+	regulator-boot-on;
+};
+
+&switch0 {
+	ports {
+		port0: port@0 {
+			status = "okay";
+			label = "wan";
+
+			nvmem-cells = <&macaddr_hard 0>;
+			nvmem-cell-names = "mac-address";
+		};
+
+		port@1 {
+			status = "okay";
+			label = "lan2";
+
+			nvmem-cells = <&macaddr_hard 1>;
+			nvmem-cell-names = "mac-address";
+		};
+
+		port@2 {
+			status = "okay";
+			label = "lan3";
+
+			nvmem-cells = <&macaddr_hard 2>;
+			nvmem-cell-names = "mac-address";
+		};
+
+		port@3 {
+			status = "okay";
+			label = "lan4";
+
+			nvmem-cells = <&macaddr_hard 3>;
+			nvmem-cell-names = "mac-address";
+		};
+
+		port@4 {
+			status = "okay";
+			label = "lan5";
+
+			nvmem-cells = <&macaddr_hard 4>;
+			nvmem-cell-names = "mac-address";
+		};
+	};
+};
+
+&sdhci {
+	status = "okay";
+};

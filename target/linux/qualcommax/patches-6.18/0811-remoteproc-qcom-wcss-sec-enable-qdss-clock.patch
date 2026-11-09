@@ -1,0 +1,35 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Robert Marko <robimarko@gmail.com>
+Date: Wed, 16 Sep 2026 18:15:00 +0200
+Subject: [PATCH] remoteproc: qcom: wcss-sec: enable optional QDSS clock
+
+Enable the optional QDSS clock while the secure WCSS remote processor is
+running. Some platforms require this clock for WCSS firmware loading.
+
+Signed-off-by: Robert Marko <robimarko@gmail.com>
+---
+ drivers/remoteproc/qcom_q6v5_wcss_sec.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+--- a/drivers/remoteproc/qcom_q6v5_wcss_sec.c
++++ b/drivers/remoteproc/qcom_q6v5_wcss_sec.c
+@@ -316,6 +316,7 @@ static int wcss_sec_probe(struct platfor
+ 	struct rproc *rproc;
+ 	struct wcss_sec *wcss;
+ 	struct clk *sleep_clk;
++	struct clk *qdss_clk;
+ 	struct clk *prng_clk;
+ 	struct clk *int_clk;
+ 	const char **firmware = NULL;
+@@ -361,6 +362,11 @@ static int wcss_sec_probe(struct platfor
+ 		return dev_err_probe(&pdev->dev, PTR_ERR(prng_clk),
+ 				     "Failed to get prng clock\n");
+ 
++	qdss_clk = devm_clk_get_optional_enabled(&pdev->dev, "qdss");
++	if (IS_ERR(qdss_clk))
++		return dev_err_probe(&pdev->dev, PTR_ERR(qdss_clk),
++				     "Failed to get QDSS clock\n");
++
+ 	ret = qcom_q6v5_init(&wcss->q6, pdev, rproc,
+ 			     WCSS_CRASH_REASON, NULL, NULL);
+ 	if (ret)

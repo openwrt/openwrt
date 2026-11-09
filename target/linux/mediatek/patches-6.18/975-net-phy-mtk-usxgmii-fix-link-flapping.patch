@@ -1,0 +1,31 @@
+From: Pietro Ameruoso <p.ameruoso@live.it>
+Date: Mon, 17 Aug 2026 08:00:00 +0000
+Subject: [PATCH] net: pcs: mtk-usxgmii: avoid link-up reset in USXGMII mode
+
+The PCS link-up callback resets and reconfigures the USXGMII PCS and XFI
+PHY immediately after phylink observes a successful in-band link. With
+an Aeonsemi AS21010 PHY, the line-side autonegotiation remains complete
+while the MediaTek PCS carrier repeatedly drops after this reset.
+
+USXGMII already negotiates and reports its link state in-band, and the
+PCS has been configured before link-up. Do not tear down that established
+link from the link-up callback. Keep the existing reset sequence for the
+fixed-rate 5GBASE-R and 10GBASE-R modes.
+
+Signed-off-by: Pietro Ameruoso <p.ameruoso@live.it>
+---
+ drivers/net/pcs/pcs-mtk-usxgmii.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+--- a/drivers/net/pcs/pcs-mtk-usxgmii.c
++++ b/drivers/net/pcs/pcs-mtk-usxgmii.c
+@@ -360,6 +360,9 @@ static void mtk_usxgmii_pcs_link_up(stru
+ {
+ 	struct mtk_usxgmii_pcs *mpcs = pcs_to_mtk_usxgmii_pcs(pcs);
+ 
++	if (interface == PHY_INTERFACE_MODE_USXGMII)
++		return;
++
+ 	/* Reconfiguring USXGMII to ensure the quality of the RX signal
+ 	 * after the line side link up.
+ 	 */

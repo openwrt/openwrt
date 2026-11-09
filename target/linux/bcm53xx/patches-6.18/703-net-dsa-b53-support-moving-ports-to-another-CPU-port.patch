@@ -1,0 +1,109 @@
+From: Rosen Penev <rosenp@gmail.com>
+Date: Wed, 14 Oct 2026 18:00:00 -0700
+Subject: [PATCH] net: dsa: b53: support moving ports to another CPU port
+
+Every frame a router forwards crosses its CPU port twice, so with a
+single 1 Gbit/s CPU port the forwarded traffic in both directions adds
+up to at most 1 Gbit/s. BCM58xx connects its ports 5, 7 and 8 to
+separate AMACs, and a board can describe more than one of them.
+
+Implement port_change_conduit so that user ports can be moved to
+another CPU port, and keep port 8 as the default one on BCM58xx with
+preferred_default_local_cpu_port, so that describing another port
+changes nothing until a port is moved. With several CPU ports, limit
+the port based VLAN of a user port to its own CPU port: flooded frames
+would otherwise reach the host through both. DSA migrates the host
+addresses, which steer unicast traffic, on its own. Frames trapped to
+the management port still arrive on port 8, which DSA accepts for any
+user port.
+
+Report brcm-prepend for every CPU port of BCM58xx; the tagger uses the
+regular tag on ports other than 8.
+
+Cisco Meraki MX65, wan1 on port 7 and LAN on port 8, each AMAC
+interrupt on its own CPU, TCP forwarded in both directions at once:
+
+                 port 8 only   split
+  total (Mbit/s)     917        1552
+
+Assisted-by: Claude:claude-opus-5-5
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+---
+--- a/drivers/net/dsa/b53/b53_common.c
++++ b/drivers/net/dsa/b53/b53_common.c
+@@ -569,11 +569,52 @@ void b53_imp_vlan_setup(struct dsa_switc
+ 	b53_for_each_port(dev, i) {
+ 		b53_read16(dev, B53_PVLAN_PAGE, B53_PVLAN_PORT_MASK(i), &pvlan);
+ 		pvlan |= BIT(cpu_port);
++		/* With several CPU ports, flood a user port's traffic only
++		 * to its own one, or the host would receive it twice
++		 */
++		if (hweight32(dsa_cpu_ports(ds)) > 1 && dsa_is_user_port(ds, i)) {
++			pvlan &= ~dsa_cpu_ports(ds);
++			pvlan |= BIT(dsa_to_port(ds, i)->cpu_dp->index);
++		}
+ 		b53_write16(dev, B53_PVLAN_PAGE, B53_PVLAN_PORT_MASK(i), pvlan);
+ 	}
+ }
+ EXPORT_SYMBOL(b53_imp_vlan_setup);
+ 
++static int b53_port_change_conduit(struct dsa_switch *ds, int port,
++				   struct net_device *conduit,
++				   struct netlink_ext_ack *extack)
++{
++	struct b53_device *dev = ds->priv;
++	u16 pvlan;
++
++	if (netif_is_lag_master(conduit)) {
++		NL_SET_ERR_MSG_MOD(extack, "LAG conduits are not supported");
++		return -EOPNOTSUPP;
++	}
++
++	b53_read16(dev, B53_PVLAN_PAGE, B53_PVLAN_PORT_MASK(port), &pvlan);
++	pvlan &= ~dsa_cpu_ports(ds);
++	pvlan |= BIT(conduit->dsa_ptr->index);
++	b53_write16(dev, B53_PVLAN_PAGE, B53_PVLAN_PORT_MASK(port), pvlan);
++
++	return 0;
++}
++
++/* Keep port 8 as the default CPU port of BCM58xx when another one is
++ * described: ports can move to it with port_change_conduit
++ */
++static struct dsa_port *b53_preferred_default_local_cpu_port(struct dsa_switch *ds)
++{
++	struct b53_device *dev = ds->priv;
++
++	if (dev->chip_id == BCM58XX_DEVICE_ID &&
++	    dsa_is_cpu_port(ds, B53_CPU_PORT))
++		return dsa_to_port(ds, B53_CPU_PORT);
++
++	return NULL;
++}
++
+ static void b53_port_set_ucast_flood(struct b53_device *dev, int port,
+ 				     bool unicast)
+ {
+@@ -2512,9 +2553,11 @@ enum dsa_tag_protocol b53_get_tag_protoc
+ 	}
+ 
+ 	/* Broadcom BCM58xx chips have a flow accelerator on Port 8
+-	 * which requires us to use the prepended Broadcom tag type
++	 * which requires us to use the prepended Broadcom tag type. A
++	 * switch tree has a single tagging protocol, so report it for any
++	 * CPU port: the tagger uses the regular tag on the other ones.
+ 	 */
+-	if (dev->chip_id == BCM58XX_DEVICE_ID && port == B53_CPU_PORT) {
++	if (dev->chip_id == BCM58XX_DEVICE_ID) {
+ 		dev->tag_protocol = DSA_TAG_PROTO_BRCM_PREPEND;
+ 		goto out;
+ 	}
+@@ -2691,6 +2734,8 @@ static const struct phylink_mac_ops b53_
+ 
+ static const struct dsa_switch_ops b53_switch_ops = {
+ 	.get_tag_protocol	= b53_get_tag_protocol,
++	.preferred_default_local_cpu_port = b53_preferred_default_local_cpu_port,
++	.port_change_conduit	= b53_port_change_conduit,
+ 	.setup			= b53_setup,
+ 	.teardown		= b53_teardown,
+ 	.get_strings		= b53_get_strings,

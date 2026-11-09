@@ -1,0 +1,43 @@
+From d4ce2cef189ef4c267d5bcec922f5d390a85bc22 Mon Sep 17 00:00:00 2001
+From: Markus Stockhausen <markus.stockhausen@gmx.de>
+Date: Mon, 31 Aug 2026 16:34:39 +0200
+Subject: net: mdio: realtek-rtl9300: reword Kconfig and module description
+
+The Realtek MDIO driver has been enhanced to support multiple
+devices from the RTL83xx/RTL93xx series. Reword Kconfig and
+module description accordingly.
+
+Signed-off-by: Markus Stockhausen <markus.stockhausen@gmx.de>
+Reviewed-by: Andrew Lunn <andrew@lunn.ch>
+Link: https://patch.msgid.link/20260831143439.2404484-14-markus.stockhausen@gmx.de
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ drivers/net/mdio/Kconfig                | 4 ++--
+ drivers/net/mdio/mdio-realtek-rtl9300.c | 2 +-
+ 2 files changed, 3 insertions(+), 3 deletions(-)
+
+--- a/drivers/net/mdio/Kconfig
++++ b/drivers/net/mdio/Kconfig
+@@ -164,11 +164,11 @@ config MDIO_IPQ8064
+ 	  interface units of the IPQ8064 SoC
+ 
+ config MDIO_REALTEK_RTL9300
+-	tristate "Realtek RTL9300 MDIO interface support"
++	tristate "Realtek RTL83xx/RTL93xx MDIO interface support"
+ 	depends on MACH_REALTEK_RTL || COMPILE_TEST
+ 	help
+ 	  This driver supports the MDIO interface found in the Realtek
+-	  RTL9300 family of Ethernet switches with integrated SoC.
++	  RTL83xx/RTL93xx family of Ethernet switches with integrated SoC.
+ 
+ config MDIO_REGMAP
+ 	tristate
+--- a/drivers/net/mdio/mdio-realtek-rtl9300.c
++++ b/drivers/net/mdio/mdio-realtek-rtl9300.c
+@@ -1151,5 +1151,5 @@ static struct platform_driver otto_emdio
+ 
+ module_platform_driver(otto_emdio_driver);
+ 
+-MODULE_DESCRIPTION("RTL9300 MDIO driver");
++MODULE_DESCRIPTION("RTL83xx/RTL93xx MDIO driver");
+ MODULE_LICENSE("GPL");

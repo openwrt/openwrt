@@ -1,0 +1,48 @@
+// SPDX-License-Identifier: GPL-2.0
+
+#include "mt7981b-mercusys-mr85x-common.dtsi"
+
+/ {
+	model = "MERCUSYS MR85X";
+	compatible = "mercusys,mr85x", "mediatek,mt7981";
+};
+
+&partitions {
+	partition@0 {
+		label = "boot";
+		reg = <0x0 0x200000>;
+		read-only;
+	};
+
+	partition@200000 {
+		label = "u-boot-env";
+		reg = <0x200000 0x100000>;
+	};
+
+	partition@300000 {
+		label = "ubi0";
+		reg = <0x300000 0x3200000>;
+	};
+
+	partition@3500000 {
+		label = "ubi1";
+		reg = <0x3500000 0x3200000>;
+		read-only;
+	};
+
+	partition@6700000 {
+		label = "userconfig";
+		reg = <0x6700000 0x800000>;
+		read-only;
+	};
+
+	partition@6f00000 {
+		label = "tp_data";
+		reg = <0x6f00000 0x800000>;
+		read-only;
+	};
+};
+
+&wifi {
+	status = "okay";
+};

@@ -1,0 +1,23 @@
+#
+# Copyright (C) 2016 LEDE
+#
+
+[ -f /etc/config/ubootenv ] && exit 0
+
+touch /etc/config/ubootenv
+
+. /lib/uboot-envtools.sh
+. /lib/functions.sh
+
+board=$(board_name)
+
+case "$board" in
+	traverse,ten64)
+		ubootenv_add_uci_config "/dev/mtd3" "0x0000" "0x80000" "0x80000"
+	;;
+esac
+
+config_load ubootenv
+config_foreach ubootenv_add_app_config ubootenv
+
+exit 0

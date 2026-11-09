@@ -1,0 +1,66 @@
+From 73022f605c447f31610b94ed4a983d2b4bf2c721 Mon Sep 17 00:00:00 2001
+From: Rosen Penev <rosenp@gmail.com>
+Date: Wed, 7 Oct 2026 20:51:22 -0700
+Subject: [PATCH] net: ibm: emac: size RX buffers for the MTU
+
+Any MTU above ETH_DATA_LEN selects the largest MAL buffer size of 4080
+bytes. A DSA conduit always runs with a slightly larger MTU for the
+switch tag (1502 for qca8k), so every received frame then uses an 8K
+slab object and a 4K cache invalidate even though it is at most 1520
+bytes long. Size the buffers for the MTU instead, capped at the MAL
+maximum as before. Larger jumbo frames still span several descriptors.
+
+emac_change_mtu() only resized the ring, which is also where the jumbo
+mode and the APM821xx maximum jumbo size are programmed, when the RX skb
+size changed. 1500 and 1502 now share a skb size, so also resize the
+ring whenever the old or new MTU is a jumbo one. Otherwise jumbo mode
+stays off and 1502 byte frames are dropped when the MTU is raised while
+the interface is up.
+
+Routing a single TCP stream through the qca8k switch of a Meraki MX60
+(APM82181, iperf3 median of 3, A/B in the same boot):
+
+          LAN->WAN   WAN->LAN  (Mbit/s)
+  before  538        476
+  after   564        498
+
+Assisted-by: LLM
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+Reviewed-by: Daniel Machon <daniel.machon@microchip.com>
+Link: https://patch.msgid.link/20261008035122.3182851-1-rosenp@gmail.com
+Signed-off-by: Paolo Abeni <pabeni@redhat.com>
+---
+ drivers/net/ethernet/ibm/emac/core.c | 7 +++++--
+ drivers/net/ethernet/ibm/emac/core.h | 5 +----
+ 2 files changed, 6 insertions(+), 6 deletions(-)
+
+--- a/drivers/net/ethernet/ibm/emac/core.c
++++ b/drivers/net/ethernet/ibm/emac/core.c
+@@ -1114,8 +1114,11 @@ static int emac_change_mtu(struct net_de
+ 	DBG(dev, "change_mtu(%d)" NL, new_mtu);
+ 
+ 	if (netif_running(ndev)) {
+-		/* Check if we really need to reinitialize RX ring */
+-		if (emac_rx_skb_size(ndev->mtu) != emac_rx_skb_size(new_mtu))
++		/* Check if we really need to reinitialize RX ring. The
++		 * jumbo frame settings are only updated by a resize.
++		 */
++		if (emac_rx_skb_size(ndev->mtu) != emac_rx_skb_size(new_mtu) ||
++		    ndev->mtu > ETH_DATA_LEN || new_mtu > ETH_DATA_LEN)
+ 			ret = emac_resize_rx_ring(dev, new_mtu);
+ 	}
+ 
+--- a/drivers/net/ethernet/ibm/emac/core.h
++++ b/drivers/net/ethernet/ibm/emac/core.h
+@@ -56,10 +56,7 @@
+ /* RX BD size for the given MTU */
+ static inline int emac_rx_size(int mtu)
+ {
+-	if (mtu > ETH_DATA_LEN)
+-		return MAL_MAX_RX_SIZE;
+-	else
+-		return mal_rx_size(ETH_DATA_LEN + EMAC_MTU_OVERHEAD);
++	return mal_rx_size(max(mtu, ETH_DATA_LEN) + EMAC_MTU_OVERHEAD);
+ }
+ 
+ /* Size of RX skb for the given MTU */

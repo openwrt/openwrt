@@ -1,0 +1,83 @@
+From 28ceb7eb73c90ef6f59c24a7fcc4fe8e42183b2c Mon Sep 17 00:00:00 2001
+From: Hiroki Nakajima <3na7nanana@gmail.com>
+Date: Sun, 12 Jul 2026 16:26:52 +0900
+Subject: [PATCH] media: rkvdec: use DIV_ROUND_UP() for CTB counts
+
+Use DIV_ROUND_UP() when computing HEVC coding tree block counts
+instead of open-coding the same rounding expression. This keeps the
+rounding intent explicit without changing behavior.
+
+Found using a Coccinelle rule generated from the DIV_ROUND_UP() macro
+definition.
+
+Signed-off-by: Hiroki Nakajima <3na7nanana@gmail.com>
+Signed-off-by: Nicolas Dufresne <nicolas.dufresne@collabora.com>
+Signed-off-by: Hans Verkuil <hverkuil+cisco@kernel.org>
+---
+ drivers/media/platform/rockchip/rkvdec/rkvdec-hevc.c      | 4 ++--
+ .../media/platform/rockchip/rkvdec/rkvdec-vdpu381-hevc.c  | 8 ++++----
+ .../media/platform/rockchip/rkvdec/rkvdec-vdpu383-hevc.c  | 8 ++++----
+ 3 files changed, 10 insertions(+), 10 deletions(-)
+
+--- a/drivers/media/platform/rockchip/rkvdec/rkvdec-hevc.c
++++ b/drivers/media/platform/rockchip/rkvdec/rkvdec-hevc.c
+@@ -258,9 +258,9 @@ static void assemble_hw_pps(struct rkvde
+ 		for (i = 0; i <= pps->num_tile_rows_minus1; i++)
+ 			WRITE_PPS(pps->row_height_minus1[i], ROW_HEIGHT(i));
+ 	} else {
+-		WRITE_PPS(((sps->pic_width_in_luma_samples + ctb_size_y - 1) / ctb_size_y) - 1,
++		WRITE_PPS(DIV_ROUND_UP(sps->pic_width_in_luma_samples, ctb_size_y) - 1,
+ 			  COLUMN_WIDTH(0));
+-		WRITE_PPS(((sps->pic_height_in_luma_samples + ctb_size_y - 1) / ctb_size_y) - 1,
++		WRITE_PPS(DIV_ROUND_UP(sps->pic_height_in_luma_samples, ctb_size_y) - 1,
+ 			  ROW_HEIGHT(0));
+ 	}
+ 
+--- a/drivers/media/platform/rockchip/rkvdec/rkvdec-vdpu381-hevc.c
++++ b/drivers/media/platform/rockchip/rkvdec/rkvdec-vdpu381-hevc.c
+@@ -261,8 +261,8 @@ static void assemble_hw_pps(struct rkvde
+ 	memset(row_height, 0, sizeof(row_height));
+ 
+ 	max_cu_width = 1 << (sps->log2_diff_max_min_luma_coding_block_size + log2_min_cb_size);
+-	pic_in_cts_width = (width + max_cu_width - 1) / max_cu_width;
+-	pic_in_cts_height = (height + max_cu_width - 1) / max_cu_width;
++	pic_in_cts_width = DIV_ROUND_UP(width, max_cu_width);
++	pic_in_cts_height = DIV_ROUND_UP(height, max_cu_width);
+ 
+ 	if (pps->flags & V4L2_HEVC_PPS_FLAG_TILES_ENABLED) {
+ 		if (pps->flags & V4L2_HEVC_PPS_FLAG_UNIFORM_SPACING) {
+@@ -275,8 +275,8 @@ static void assemble_hw_pps(struct rkvde
+ 						  column_width, row_height);
+ 		}
+ 	} else {
+-		column_width[0] = (width + max_cu_width - 1) / max_cu_width;
+-		row_height[0] = (height + max_cu_width - 1) / max_cu_width;
++		column_width[0] = DIV_ROUND_UP(width, max_cu_width);
++		row_height[0] = DIV_ROUND_UP(height, max_cu_width);
+ 	}
+ 
+ 	for (i = 0; i < 20; i++) {
+--- a/drivers/media/platform/rockchip/rkvdec/rkvdec-vdpu383-hevc.c
++++ b/drivers/media/platform/rockchip/rkvdec/rkvdec-vdpu383-hevc.c
+@@ -287,8 +287,8 @@ static void assemble_hw_pps(struct rkvde
+ 	memset(row_height, 0, sizeof(row_height));
+ 
+ 	max_cu_width = 1 << (sps->log2_diff_max_min_luma_coding_block_size + log2_min_cb_size);
+-	pic_in_cts_width = (width + max_cu_width - 1) / max_cu_width;
+-	pic_in_cts_height = (height + max_cu_width - 1) / max_cu_width;
++	pic_in_cts_width = DIV_ROUND_UP(width, max_cu_width);
++	pic_in_cts_height = DIV_ROUND_UP(height, max_cu_width);
+ 
+ 	if (tiles_enabled) {
+ 		if (pps->flags & V4L2_HEVC_PPS_FLAG_UNIFORM_SPACING) {
+@@ -301,8 +301,8 @@ static void assemble_hw_pps(struct rkvde
+ 						  column_width, row_height);
+ 		}
+ 	} else {
+-		column_width[0] = (width + max_cu_width - 1) / max_cu_width;
+-		row_height[0] = (height + max_cu_width - 1) / max_cu_width;
++		column_width[0] = DIV_ROUND_UP(width, max_cu_width);
++		row_height[0] = DIV_ROUND_UP(height, max_cu_width);
+ 	}
+ 
+ 	for (i = 0; i < 20; i++)

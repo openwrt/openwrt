@@ -1,0 +1,294 @@
+From d70731ff95d2ac70024bba28e10756fe76d1a6d1 Mon Sep 17 00:00:00 2001
+From: Jonas Jelonek <jonas@jonasjelonek.de>
+Date: Tue, 6 Oct 2026 23:27:16 +0000
+Subject: [PATCH] net: pse-pd: realtek-pse-mcu: configure global power budget
+
+Use the optional VMAIN regulator power budget to configure the MCU's
+aggregate PoE power limit during probe. Quantize the available budget to
+the protocol's 100 mW units and reserve exactly that amount through the
+regulator core.
+
+Read the current budget and budget index before updating the MCU so probe
+failures can restore the previous firmware configuration. Always release
+the regulator reservation during cleanup, even when the MCU cannot be
+reached to restore its state after a probe failure.
+
+On normal driver removal, leave the programmed MCU budget in place so
+ongoing power delivery can continue. The regulator reservation is released,
+but reducing the MCU budget to zero would interrupt power delivery.
+
+Boards without vmain-supply retain their existing firmware-managed
+budget.
+
+Signed-off-by: Jonas Jelonek <jonas@jonasjelonek.de>
+
+--- a/drivers/net/pse-pd/realtek-pse-mcu-core.c
++++ b/drivers/net/pse-pd/realtek-pse-mcu-core.c
+@@ -34,10 +34,12 @@
+ #include <linux/delay.h>
+ #include <linux/gpio/consumer.h>
+ #include <linux/jiffies.h>
++#include <linux/math.h>
+ #include <linux/minmax.h>
+ #include <linux/module.h>
+ #include <linux/property.h>
+ #include <linux/pse-pd/pse.h>
++#include <linux/regulator/consumer.h>
+ #include <linux/unaligned.h>
+ 
+ #include "realtek-pse-mcu.h"
+@@ -62,6 +64,8 @@
+ #define RTPSE_MCU_MAX_PORTS			48
+ #define RTPSE_MCU_PORT_MAX_PRIORITY		3
+ 
++#define RTPSE_MCU_GLOBAL_BUDGET_LSB_MW		100
++
+ /* Bounded resends when the MCU replies NOT_READY (busy). */
+ #define RTPSE_MCU_NOT_READY_RETRIES		3
+ 
+@@ -76,6 +80,8 @@ enum rtpse_mcu_cmd {
+ 	RTPSE_MCU_CMD_GET_SYSTEM_INFO,
+ 	RTPSE_MCU_CMD_GET_EXT_CONFIG,
+ 	RTPSE_MCU_CMD_SET_POWER_MANAGEMENT_MODE,
++	RTPSE_MCU_CMD_GET_POWER_STATUS,
++	RTPSE_MCU_CMD_SET_GLOBAL_BUDGET,
+ 
+ 	RTPSE_MCU_CMD_PORT_ENABLE,
+ 	RTPSE_MCU_CMD_PORT_SET_POWER_LIMIT_TYPE,
+@@ -393,6 +399,118 @@ static int rtpse_mcu_set_power_managemen
+ 	return (resp.payload[0] == 0x0) ? 0 : -EIO;
+ }
+ 
++static int rtpse_mcu_get_global_budget(struct rtpse_mcu_ctrl *pse, u8 *budget_idx,
++				       u16 *budget_raw)
++{
++	struct rtpse_mcu_msg req, resp;
++	const struct rtpse_mcu_opcode *opc;
++	int ret;
++
++	opc = &pse->dialect->opcode[RTPSE_MCU_CMD_GET_POWER_STATUS];
++	if (!opc->valid)
++		return -EOPNOTSUPP;
++
++	rtpse_mcu_msg_init(&req, opc->op);
++	ret = rtpse_mcu_do_xfer(pse, &req, &resp);
++	if (ret)
++		return ret;
++
++	if (resp.payload[4] > 0x7)
++		return -ERANGE;
++
++	*budget_idx = resp.payload[4];
++	*budget_raw = get_unaligned_be16(&resp.payload[2]);
++	return 0;
++}
++
++static int rtpse_mcu_set_global_budget(struct rtpse_mcu_ctrl *pse, u8 budget_idx,
++				       u16 budget_raw)
++{
++	const struct rtpse_mcu_opcode *opc;
++	struct rtpse_mcu_msg req, resp;
++	int ret;
++
++	opc = &pse->dialect->opcode[RTPSE_MCU_CMD_SET_GLOBAL_BUDGET];
++	if (!opc->valid)
++		return -EOPNOTSUPP;
++
++	rtpse_mcu_msg_init(&req, opc->op);
++	req.payload[0] = budget_idx;
++	put_unaligned_be16(budget_raw, &req.payload[1]);
++	put_unaligned_be16(0, &req.payload[3]);
++
++	ret = rtpse_mcu_do_xfer(pse, &req, &resp);
++	if (ret)
++		return ret;
++	if (resp.payload[0] != budget_idx || resp.payload[1] != 0)
++		return -EIO;
++
++	return 0;
++}
++
++static void rtpse_mcu_restore_global_budget(struct rtpse_mcu_ctrl *pse,
++					    u8 budget_idx, u16 budget_raw)
++{
++	int ret;
++
++	ret = rtpse_mcu_set_global_budget(pse, budget_idx, budget_raw);
++	if (ret)
++		dev_warn(pse->dev, "failed to restore global power budget: %d\n", ret);
++}
++
++static void rtpse_mcu_free_global_budget(void *data)
++{
++	struct rtpse_mcu_ctrl *pse = data;
++
++	regulator_free_power_budget(pse->vmain, pse->requested_budget_mW);
++}
++
++static int rtpse_mcu_apply_global_budget(struct rtpse_mcu_ctrl *pse,
++					 struct regulator *vmain,
++					 u8 *budget_idx,
++					 u16 *old_budget_raw)
++{
++	int budget, ret;
++	u16 budget_raw;
++
++	budget = regulator_get_unclaimed_power_budget(vmain);
++	if (budget == INT_MAX)
++		return -ENODATA;
++	if (budget > U16_MAX * RTPSE_MCU_GLOBAL_BUDGET_LSB_MW)
++		return -ERANGE;
++
++	budget = rounddown(budget, RTPSE_MCU_GLOBAL_BUDGET_LSB_MW);
++	budget_raw = budget / RTPSE_MCU_GLOBAL_BUDGET_LSB_MW;
++
++	ret = regulator_request_power_budget(vmain, budget);
++	if (ret)
++		return ret;
++
++	ret = rtpse_mcu_get_global_budget(pse, budget_idx, old_budget_raw);
++	if (ret)
++		goto err_free_budget;
++
++	pse->vmain = vmain;
++	pse->requested_budget_mW = budget;
++
++	ret = rtpse_mcu_set_global_budget(pse, *budget_idx, budget_raw);
++	if (ret)
++		goto err_restore_budget;
++
++	ret = devm_add_action(pse->dev, rtpse_mcu_free_global_budget, pse);
++	if (ret)
++		goto err_restore_budget;
++
++	return 0;
++
++err_restore_budget:
++	rtpse_mcu_restore_global_budget(pse, *budget_idx, *old_budget_raw);
++
++err_free_budget:
++	regulator_free_power_budget(vmain, budget);
++	return ret;
++}
++
+ /* Port operations */
+ 
+ static int rtpse_mcu_port_get_status(struct rtpse_mcu_ctrl *pse, unsigned int port,
+@@ -813,6 +931,9 @@ int rtpse_mcu_register(struct rtpse_mcu_
+ 	const struct rtpse_mcu_match_data *match;
+ 	struct rtpse_mcu_info info;
+ 	struct gpio_desc *gpiod;
++	struct regulator *vmain;
++	u16 old_budget_raw;
++	u8 budget_idx;
+ 	int ret;
+ 
+ 	BUILD_BUG_ON(sizeof(struct rtpse_mcu_msg) != RTPSE_MCU_MSG_SIZE);
+@@ -837,6 +958,13 @@ int rtpse_mcu_register(struct rtpse_mcu_
+ 		return dev_err_probe(pse->dev, -EINVAL,
+ 				     "dialect for chip is incomplete\n");
+ 
++	vmain = devm_regulator_get_optional(pse->dev, "vmain");
++	if (PTR_ERR(vmain) == -ENODEV)
++		vmain = NULL;
++	else if (IS_ERR(vmain))
++		return dev_err_probe(pse->dev, PTR_ERR(vmain),
++				     "failed to get vmain supply\n");
++
+ 	/*
+ 	 * Release the MCU from reset before the first transaction; the
+ 	 * boot-retry loop in discover() waits for it to answer.
+@@ -866,19 +994,32 @@ int rtpse_mcu_register(struct rtpse_mcu_
+ 	if (ret)
+ 		dev_warn_probe(pse->dev, ret, "failed to set power management mode\n");
+ 
++	if (vmain) {
++		ret = rtpse_mcu_apply_global_budget(pse, vmain,
++						    &budget_idx,
++						    &old_budget_raw);
++		if (ret == -ENODATA)
++			vmain = NULL;
++		else if (ret)
++			return dev_err_probe(pse->dev, ret,
++					     "failed to apply global power budget\n");
++	}
++
+ 	if (!info.system_enable) {
+ 		ret = rtpse_mcu_set_global_state(pse, true);
+ 		/* Dialects without a global-state concept (e.g. Gen1) return
+ 		 * -EOPNOTSUPP; treat that as "no separate enable required".
+ 		 */
+-		if (ret && ret != -EOPNOTSUPP)
+-			return dev_err_probe(pse->dev, ret,
+-					     "failed to enable PSE system\n");
++		if (ret && ret != -EOPNOTSUPP) {
++			ret = dev_err_probe(pse->dev, ret,
++					    "failed to enable PSE system\n");
++			goto err_restore_budget;
++		}
+ 		if (!ret) {
+ 			ret = devm_add_action_or_reset(pse->dev,
+ 						       rtpse_mcu_global_disable, pse);
+ 			if (ret)
+-				return ret;
++				goto err_restore_budget;
+ 		}
+ 	}
+ 
+@@ -899,7 +1040,18 @@ int rtpse_mcu_register(struct rtpse_mcu_
+ 	pse->pcdev.pis_prio_max = RTPSE_MCU_PORT_MAX_PRIORITY;
+ 	pse->pcdev.supp_budget_eval_strategies = PSE_BUDGET_EVAL_STRAT_DYNAMIC;
+ 
+-	return devm_pse_controller_register(pse->dev, &pse->pcdev);
++	ret = devm_pse_controller_register(pse->dev, &pse->pcdev);
++	if (ret)
++		goto err_restore_budget;
++
++	return 0;
++
++err_restore_budget:
++	if (vmain)
++		rtpse_mcu_restore_global_budget(pse, budget_idx,
++						old_budget_raw);
++
++	return ret;
+ }
+ EXPORT_SYMBOL_GPL(rtpse_mcu_register);
+ 
+@@ -974,6 +1126,8 @@ static const struct rtpse_mcu_dialect rt
+ 		[RTPSE_MCU_CMD_GET_SYSTEM_INFO]		= RTPSE_MCU_OP(0x40),
+ 		[RTPSE_MCU_CMD_GET_EXT_CONFIG]		= RTPSE_MCU_OP(0x4a),
+ 		[RTPSE_MCU_CMD_SET_POWER_MANAGEMENT_MODE] = RTPSE_MCU_OP(0x10),
++		[RTPSE_MCU_CMD_GET_POWER_STATUS]	= RTPSE_MCU_OP(0x41),
++		[RTPSE_MCU_CMD_SET_GLOBAL_BUDGET]	= RTPSE_MCU_OP(0x04),
+ 
+ 		[RTPSE_MCU_CMD_PORT_ENABLE]		= RTPSE_MCU_OP(0x01),
+ 		[RTPSE_MCU_CMD_PORT_SET_POWER_LIMIT_TYPE] = RTPSE_MCU_OP(0x12),
+@@ -995,6 +1149,8 @@ static const struct rtpse_mcu_dialect rt
+ 		[RTPSE_MCU_CMD_GET_SYSTEM_INFO]		= RTPSE_MCU_OP(0x20),
+ 		[RTPSE_MCU_CMD_GET_EXT_CONFIG]		= RTPSE_MCU_OP(0x2b),
+ 		[RTPSE_MCU_CMD_SET_POWER_MANAGEMENT_MODE] = RTPSE_MCU_OP(0x17),
++		[RTPSE_MCU_CMD_GET_POWER_STATUS]	= RTPSE_MCU_OP(0x23),
++		[RTPSE_MCU_CMD_SET_GLOBAL_BUDGET]	= RTPSE_MCU_OP(0x18),
+ 
+ 		[RTPSE_MCU_CMD_PORT_ENABLE]		= RTPSE_MCU_OP(0x00),
+ 		[RTPSE_MCU_CMD_PORT_SET_POWER_LIMIT_TYPE] = RTPSE_MCU_OP(0x15),
+--- a/drivers/net/pse-pd/realtek-pse-mcu.h
++++ b/drivers/net/pse-pd/realtek-pse-mcu.h
+@@ -62,6 +62,7 @@ static inline bool rtpse_mcu_resp_is_fin
+ struct rtpse_mcu_dialect;
+ struct rtpse_mcu_chip_info;
+ struct rtpse_mcu_ctrl;
++struct regulator;
+ 
+ /* Per-compatible match data (the of_match .data). */
+ struct rtpse_mcu_match_data {
+@@ -82,6 +83,8 @@ struct rtpse_mcu_ctrl {
+ 	const struct rtpse_mcu_dialect *dialect;
+ 	const struct rtpse_mcu_chip_info *chip;
+ 	const struct rtpse_mcu_transport_ops *transport;
++	struct regulator *vmain;
++	unsigned int requested_budget_mW;
+ 	u8 seq;			/* rolling request seq_num, echoed by the MCU */
+ };
+ 

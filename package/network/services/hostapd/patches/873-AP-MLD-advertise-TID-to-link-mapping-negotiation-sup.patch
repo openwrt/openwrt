@@ -1,0 +1,27 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Sun, 25 Oct 2026 07:30:00 +0200
+Subject: [PATCH] AP MLD: advertise TID-to-link mapping negotiation support
+
+hostapd_eid_eht_basic_ml_common() clears the TID-To-Link Mapping
+Negotiation Support subfield of the MLD capabilities that the driver
+gives, since the AP MLD did not answer a negotiation.
+
+Advertise the value of the driver where the driver applies a negotiated
+mapping (NL80211_EXT_FEATURE_AP_NEG_TTLM). A driver can set the
+subfield for its AP interface type without that support, and the value
+2 is reserved, so both still give 0.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+
+--- a/src/ap/ieee802_11_eht.c
++++ b/src/ap/ieee802_11_eht.c
+@@ -523,8 +523,8 @@ u8 * hostapd_eid_eht_basic_ml_common(str
+ 	mld_cap &= ~EHT_ML_MLD_CAPA_MAX_NUM_SIM_LINKS_MASK;
+ 	mld_cap |= active_links & EHT_ML_MLD_CAPA_MAX_NUM_SIM_LINKS_MASK;
+ 
+-	/* TODO: Advertise T2LM based on driver support as well */
+ 	mld_cap &= ~EHT_ML_MLD_CAPA_TID_TO_LINK_MAP_NEG_SUPP_MSK;
++	mld_cap |= hostapd_mld_neg_ttlm_capa(hapd);
+ 
+ 	mld_cap |= EHT_ML_MLD_CAPA_LINK_RECONF_OP_SUPPORT;
+ 

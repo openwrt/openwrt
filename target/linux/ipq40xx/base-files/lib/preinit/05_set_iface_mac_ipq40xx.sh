@@ -1,0 +1,28 @@
+. /lib/functions.sh
+
+preinit_set_mac_address() {
+	case $(board_name) in
+	engenius,eap2200)
+		base_mac=$(cat /sys/class/net/eth0/address)
+		ip link set dev eth1 address $(macaddr_add "$base_mac" 1)
+		;;
+	teltonika,rutx50)
+		# Vendor Bootloader removes nvmem-cells from partition,
+		# so this needs to be done here.
+		base_mac="$(mtd_get_mac_binary 0:CONFIG 0x0)"
+		ip link set dev eth0 address "$base_mac"
+		ip link set dev lan1 address "$base_mac"
+		ip link set dev lan2 address "$base_mac"
+		ip link set dev lan3 address "$base_mac"
+		ip link set dev lan4 address "$base_mac"
+		ip link set dev wan address "$(macaddr_add "$base_mac" 1)"
+		;;
+	zyxel,nbg6617)
+		base_mac=$(cat /sys/class/net/eth0/address)
+		ip link set dev eth0 address $(macaddr_add "$base_mac" 2)
+		ip link set dev eth1 address $(macaddr_add "$base_mac" 3)
+		;;
+	esac
+}
+
+boot_hook_add preinit_main preinit_set_mac_address

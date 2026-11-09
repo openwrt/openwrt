@@ -1,0 +1,38 @@
+#
+# Copyright © 2017 OpenWrt.org
+#
+
+. /lib/functions/uci-defaults.sh
+
+board_config_update
+
+case "$(board_name)" in
+cisco-mx100-hw)
+	ucidef_set_led_usbport "usb" "USB" "mx100:green:usb" "1-1-port2"
+	ucidef_set_led_default "diag" "DIAG" "mx100:green:tricolor" "1"
+	;;
+pc-engines-apu1|pc-engines-apu2|pc-engines-apu3|pc-engines-apu4|pc-engines-apu5|pc-engines-apu6)
+	ucidef_set_led_netdev "wan" "WAN" "apu:green:3" "eth0"
+	ucidef_set_led_netdev "lan" "LAN" "apu:green:2" "br-lan"
+	ucidef_set_led_default "diag" "DIAG" "apu:green:1" "1"
+	;;
+sophos-sg-105wr1|sophos-sg-125wr1|sophos-sg-135wr1|sophos-xg-105wr1|sophos-xg-125wr1|sophos-xg-135wr1)
+	ucidef_set_led_netdev "wlan" "WiFi" "ath9k-phy0" "phy0tpt"
+	;;
+sophos-sg-105wr2|sophos-sg-125wr2|sophos-sg-135wr2|sophos-xg-105wr2|sophos-xg-125wr2|sophos-xg-135wr2|\
+sophos-sg-105wr3|sophos-sg-125wr3|sophos-sg-135wr3|sophos-xg-105wr3|sophos-xg-125wr3|sophos-xg-135wr3)
+	ucidef_set_led_netdev "wlan" "WiFi" "ath10k-phy0" "phy0tpt"
+	;;
+traverse-technologies-geos)
+	ucidef_set_led_netdev "lan" "LAN" "geos:1" "br-lan" "tx rx"
+	ucidef_set_led_netdev "wlan" "WiFi" "geos:2" "phy0tpt"
+	ucidef_set_led_default "diag" "DIAG" "geos:3" "1"
+	;;
+silicom-80500-0214-*)
+        ucidef_set_led_netdev "wan" "WAN" "multicolor:fp_center" "wan0"
+        ucidef_set_led_netdev "lan" "LAN" "multicolor:fp_right" "br-lan"
+        ;;
+esac
+board_config_flush
+
+exit 0

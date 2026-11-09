@@ -1,0 +1,43 @@
+# Configuration for OpenWrt Issue Labeller
+# Automates issue form validation and labelling via openwrt-bot webhook.
+
+_trigger_label: "to-triage"
+_invalid_label: "invalid"
+_remove_labels: ["to-triage"]
+_invalid_comment: "Invalid {field} reported. `{value}`"
+
+# Tag release branch (e.g. release/23.05 or release/24.10).
+# The list items are alternatives: concrete releases (24.10.7, 25.12.0-rc2)
+# must have a matching Git tag, while stable-branch snapshots (24.10-SNAPSHOT)
+# are format-validated only — OpenWrt does not tag snapshot builds.
+"release/{major}.{minor}":
+  - field: "release"
+    format: '^\d+\.\d+\.\d+(-rc\d+)*$'
+    exists: "tag:v{value}"
+  - field: "release"
+    format: '^\d+\.\d+-SNAPSHOT$'
+
+# Tag development snapshot release
+"SNAPSHOT":
+  - field: "release"
+    format: '^SNAPSHOT$'
+
+# Tag target (e.g. target/x86, target/ath79, target/ramips)
+"target/{segment0}":
+  - field: "target"
+    format: '^[a-zA-Z0-9]+/[a-zA-Z0-9]+$'
+    exists: "path:target/linux/{segment0}/{segment1}"
+
+# Tag image source
+"Official Image":
+  - field: "image_kind"
+    contains: "official"
+
+"Self Built Image":
+  - field: "image_kind"
+    contains: "self"
+
+# Tag supported device
+"Supported Device":
+  - field: "device"
+    not_empty: true

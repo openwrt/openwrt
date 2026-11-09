@@ -1,0 +1,33 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Tue, 6 Oct 2026 07:52:10 +0200
+Subject: [PATCH] AP MLD: Send a Disassociation frame on the link of its BSS
+
+hostapd_drv_sta_disassoc() passes a link ID only for a non-AP MLD. For
+any other station of an AP MLD, i802_sta_disassoc() sends the frame with
+link ID -1, so nl80211 uses the frequency of the first link of the
+interface, while the SA and the BSSID are the link address of the BSS.
+If that BSS is not the first link, ieee80211_mgmt_tx() in mac80211 finds
+the frame off the channel of its link and refuses it with -EBUSY. The
+station does not get the Disassociation frame.
+
+Pass the link ID of the BSS for every station of an AP MLD, as
+hostapd_drv_sta_deauth() does.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+
+--- a/src/ap/ap_drv_ops.c
++++ b/src/ap/ap_drv_ops.c
+@@ -931,10 +931,9 @@ int hostapd_drv_sta_disassoc(struct host
+ 	if (hapd->conf->mld_ap) {
+ 		struct sta_info *sta = ap_get_sta(hapd, addr);
+ 
+-		if (ap_sta_is_mld(hapd, sta)) {
++		link_id = hapd->mld_link_id;
++		if (ap_sta_is_mld(hapd, sta))
+ 			own_addr = hapd->mld->mld_addr;
+-			link_id = hapd->mld_link_id;
+-		}
+ 	}
+ #endif /* CONFIG_IEEE80211BE */
+ 

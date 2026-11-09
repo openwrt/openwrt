@@ -1,0 +1,31 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include <dt-bindings/leds/common.h>
+
+#include "ar9344_mikrotik_routerboard.dtsi"
+#include "ar9344_mikrotik_routerboard-16m-nor.dtsi"
+
+/ {
+	compatible = "mikrotik,routerboard-lhg-5nd", "qca,ar9344";
+	model = "MikroTik RouterBOARD LHG 5nD";
+};
+
+&leds {
+	power {
+		function = LED_FUNCTION_POWER;
+		color = <LED_COLOR_ID_BLUE>;
+		gpios = <&gpio 11 GPIO_ACTIVE_HIGH>;
+		default-state = "on";
+	};
+
+	led_user: user {
+		label = "white:user";
+		gpios = <&gpio 20 GPIO_ACTIVE_LOW>;
+	};
+
+	lan {
+		function = LED_FUNCTION_LAN;
+		color = <LED_COLOR_ID_GREEN>;
+		gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
+	};
+};

@@ -1,0 +1,42 @@
+. /lib/functions.sh
+
+do_sysinfo_ath79_fixup() {
+	local model=""
+
+	case $(board_name) in
+	netgear,ex7300)
+		local part=$(find_mtd_part caldata)
+		local board_hw_id=$(dd if=$part bs=1 skip=67 count=10 2>/dev/null)
+		case "$board_hw_id" in
+		5508013406)
+			model="Netgear EX6400"
+			;;
+		5508013271)
+			model="Netgear EX7300"
+			;;
+		esac
+		;;
+	netgear,ex7300-v2)
+		local part=$(find_mtd_part artmtd)
+		local antenna_cfg=$(dd if=$part bs=1 skip=59 count=7 2>/dev/null)
+		local board_hw_id=$(dd if=$part bs=1 skip=67 count=6 2>/dev/null)
+		case "$antenna_cfg" in
+		3X3+3X3)
+			model="Netgear EX6250"
+			;;
+		3X3+4X4)
+			# EX6400 v2, EX6410, EX6420
+			model="Netgear ${board_hw_id:-EX6400 v2}"
+			;;
+		4X4+4X4)
+			# EX7300 v2, EX7320
+			model="Netgear ${board_hw_id:-EX7300 v2}"
+			;;
+		esac
+		;;
+	esac
+
+	[ -n "$model" ] && echo "$model" > /tmp/sysinfo/model
+}
+
+boot_hook_add preinit_main do_sysinfo_ath79_fixup

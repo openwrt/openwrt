@@ -1,0 +1,52 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include <dt-bindings/leds/common.h>
+
+#include "qca953x_dlink_dap-2xxx.dtsi"
+
+/ {
+	compatible = "dlink,dap-3320-a1", "qca,qca9533";
+	model = "D-Link DAP-3320 A1";
+
+	aliases {
+		led-boot = &led_power_green;
+		led-failsafe = &led_power_green;
+		led-running = &led_power_green;
+		led-upgrade = &led_power_green;
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "reset";
+			linux,code = <KEY_RESTART>;
+			gpios = <&gpio 12 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_power_green: power_green {
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio 11 GPIO_ACTIVE_LOW>;
+			default-state = "on";
+		};
+	};
+};
+
+&partitions {
+	partition@70000 {
+		label = "firmware";
+		reg = <0x70000 0xef0000>;
+		compatible = "wrg";
+	};
+
+	partition@f60000 {
+		label = "dlink";
+		reg = <0xf60000 0x90000>;
+		read-only;
+	};
+};

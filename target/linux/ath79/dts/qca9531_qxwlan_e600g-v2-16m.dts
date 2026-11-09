@@ -1,0 +1,37 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include <dt-bindings/leds/common.h>
+
+#include "qca9531_qxwlan_e600g.dtsi"
+
+/ {
+	model = "Qxwlan E600G v2 16M";
+	compatible = "qxwlan,e600g-v2-16m", "qca,qca9531";
+};
+
+&partitions {
+	partition@70000 {
+		compatible = "denx,uimage";
+		label = "firmware";
+		reg = <0x070000 0xf90000>;
+	};
+};
+
+&wmac {
+	led {
+		led-sources = <4>;
+		led-active-low;
+	};
+};
+
+&pcie0 {
+	/delete-node/ wifi@0,0;
+};
+
+&usb_phy {
+	status = "okay";
+};
+
+&usb0 {
+	status = "okay";
+};

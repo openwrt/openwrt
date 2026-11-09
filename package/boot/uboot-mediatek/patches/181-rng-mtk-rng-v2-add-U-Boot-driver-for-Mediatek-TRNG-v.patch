@@ -1,0 +1,122 @@
+From b56ce9aeb9679e0343de539c58ed4cdfe1c83a47 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Tue, 3 Mar 2026 17:18:51 +0000
+Subject: [PATCH] rng: mtk-rng-v2: add U-Boot driver for Mediatek TRNG via SMC
+
+On newer Mediatek SoCs (MT7981, MT7987, MT7988) the RNG hardware is
+only accessible from secure world. On MT7986 it depends on the TF-A
+release used whether direct access to the HWRNG via MMIO is possible,
+or (on newer firmware) random bytes can only be acquired using SMC.
+
+This driver obtains random data through a vendor-defined Secure
+Monitor Call to ARM Trusted Firmware.
+
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ drivers/rng/Kconfig      |  9 ++++++
+ drivers/rng/Makefile     |  1 +
+ drivers/rng/mtk-rng-v2.c | 70 ++++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 80 insertions(+)
+ create mode 100644 drivers/rng/mtk-rng-v2.c
+
+--- a/drivers/rng/Kconfig
++++ b/drivers/rng/Kconfig
+@@ -45,6 +45,15 @@ config RNG_MTK
+ 	  Enable support for the hardware random number generator
+ 	  on Mediatek SoCs (e.g. MT7623, MT7986).
+ 
++config RNG_MTK_V2
++	bool "Mediatek Random Number Generator support (v2/SMC)"
++	depends on DM_RNG && ARCH_MEDIATEK && ARM_SMCCC
++	help
++	  Enable support for the hardware random number generator
++	  on newer Mediatek SoCs (e.g. MT7981, MT7987, MT7988) where
++	  the RNG is only accessible via Secure Monitor Calls to
++	  ARM Trusted Firmware.
++
+ config RNG_NPCM
+ 	bool "Nuvoton NPCM SoCs Random Number Generator support"
+ 	depends on DM_RNG && !LIB_RAND
+--- a/drivers/rng/Makefile
++++ b/drivers/rng/Makefile
+@@ -8,6 +8,7 @@ obj-$(CONFIG_RNG_MESON) += meson-rng.o
+ obj-$(CONFIG_RNG_SANDBOX) += sandbox_rng.o
+ obj-$(CONFIG_RNG_MSM) += msm_rng.o
+ obj-$(CONFIG_RNG_MTK) += mtk-rng.o
++obj-$(CONFIG_RNG_MTK_V2) += mtk-rng-v2.o
+ obj-$(CONFIG_RNG_NPCM) += npcm_rng.o
+ obj-$(CONFIG_RNG_OPTEE) += optee_rng.o
+ obj-$(CONFIG_RNG_STM32) += stm32_rng.o
+--- /dev/null
++++ b/drivers/rng/mtk-rng-v2.c
+@@ -0,0 +1,70 @@
++// SPDX-License-Identifier: GPL-2.0-or-later
++/*
++ * Driver for Mediatek Hardware Random Number Generator (v2/SMC)
++ *
++ * Copyright (C) 2023 Daniel Golle <daniel@makrotopia.org>
++ *
++ * On newer Mediatek SoCs the RNG hardware is only accessible from
++ * secure world.  Random numbers are obtained via a vendor-defined
++ * Secure Monitor Call handled by ARM Trusted Firmware-A.
++ *
++ * Converted from Linux to U-Boot driver model.
++ */
++
++#include <dm.h>
++#include <rng.h>
++#include <linux/arm-smccc.h>
++
++/* MediaTek SIP SMC function ID for RNG — use SMC64 on AArch64, SMC32 on AArch32 */
++#ifdef CONFIG_ARM64
++#define MTK_SIP_SMC_CONVENTION	ARM_SMCCC_SMC_64
++#else
++#define MTK_SIP_SMC_CONVENTION	ARM_SMCCC_SMC_32
++#endif
++
++#define MTK_SIP_TRNG_GET_RND	ARM_SMCCC_CALL_VAL(ARM_SMCCC_FAST_CALL, \
++						   MTK_SIP_SMC_CONVENTION, \
++						   ARM_SMCCC_OWNER_SIP, 0x550)
++
++static int mtk_rng_v2_read(struct udevice *dev, void *data, size_t len)
++{
++	struct arm_smccc_res res;
++	char *buf = data;
++
++	while (len) {
++		arm_smccc_smc(MTK_SIP_TRNG_GET_RND, 0, 0, 0, 0, 0, 0, 0,
++			      &res);
++		if (res.a0)
++			return -EIO;
++
++		if (len >= sizeof(u32)) {
++			*(u32 *)buf = res.a1;
++			buf += sizeof(u32);
++			len -= sizeof(u32);
++		} else {
++			memcpy(buf, &res.a1, len);
++			len = 0;
++		}
++	}
++
++	return 0;
++}
++
++static const struct dm_rng_ops mtk_rng_v2_ops = {
++	.read = mtk_rng_v2_read,
++};
++
++static const struct udevice_id mtk_rng_v2_match[] = {
++	{ .compatible = "mediatek,mt7981-rng" },
++	{ .compatible = "mediatek,mt7986-rng" },
++	{ .compatible = "mediatek,mt7987-rng" },
++	{ .compatible = "mediatek,mt7988-rng" },
++	{},
++};
++
++U_BOOT_DRIVER(mtk_rng_v2) = {
++	.name = "mtk-rng-v2",
++	.id = UCLASS_RNG,
++	.of_match = mtk_rng_v2_match,
++	.ops = &mtk_rng_v2_ops,
++};

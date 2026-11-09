@@ -1,0 +1,55 @@
+From 99e204d255c9b47a188dd79762b9406d9c5fed9b Mon Sep 17 00:00:00 2001
+Message-ID: <99e204d255c9b47a188dd79762b9406d9c5fed9b.1779348625.git.lorenzo@kernel.org>
+In-Reply-To: <e15783f7c987e199ecf80b3d858ed5a86d33c508.1779348625.git.lorenzo@kernel.org>
+References: <e15783f7c987e199ecf80b3d858ed5a86d33c508.1779348625.git.lorenzo@kernel.org>
+From: Lorenzo Bianconi <lorenzo@kernel.org>
+Date: Wed, 20 May 2026 17:16:39 +0200
+Subject: [PATCH 13/13] net: airoha: Rework MTU configuration
+
+Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
+---
+ drivers/net/ethernet/airoha/airoha_eth.c  | 85 +++++++++++------------
+ drivers/net/ethernet/airoha/airoha_eth.h  |  1 +
+ drivers/net/ethernet/airoha/airoha_ppe.c  |  8 +--
+ drivers/net/ethernet/airoha/airoha_regs.h |  9 ++-
+ 4 files changed, 49 insertions(+), 54 deletions(-)
+
+--- a/drivers/net/ethernet/airoha/airoha_eth.c
++++ b/drivers/net/ethernet/airoha/airoha_eth.c
+@@ -3560,9 +3560,9 @@ static void airoha_disable_qos_for_gdm34
+ 
+ 	clear_bit(AIROHA_DEV_F_WAN, &dev->flags);
+ 	airoha_dev_set_qdma(dev);
++	airoha_dev_set_xmit_frame_size(netdev);
+ 
+ 	airoha_set_macaddr(dev, netdev->dev_addr);
+-	airoha_ppe_set_xmit_frame_size(dev);
+ 
+ 	if (netif_running(netdev))
+ 		airoha_set_gdm_port_fwd_cfg(dev->eth,
+--- a/drivers/net/ethernet/airoha/airoha_ppe.c
++++ b/drivers/net/ethernet/airoha/airoha_ppe.c
+@@ -105,16 +105,23 @@ void airoha_ppe_set_xmit_frame_size(stru
+ {
+ 	struct airoha_gdm_port *port = dev->port;
+ 	struct airoha_eth *eth = dev->eth;
++	struct airoha_qdma *qdma;
+ 	int i, ppe_id, index;
+ 	u32 len = 0;
+ 
++	qdma = airoha_qdma_deref(dev);
+ 	for (i = 0; i < ARRAY_SIZE(port->devs); i++) {
+ 		struct airoha_gdm_dev *d = port->devs[i];
+ 		struct net_device *netdev;
++		struct airoha_qdma *q;
+ 
+ 		if (!d)
+ 			continue;
+ 
++		q = airoha_qdma_deref(d);
++		if (q != qdma)
++			continue;
++
+ 		netdev = netdev_from_priv(d);
+ 		if (netif_running(netdev))
+ 			len = max_t(u32, len, netdev->mtu);

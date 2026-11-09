@@ -1,0 +1,28 @@
+From 14002a49c22f205dbb52fcc9b867c499ea64c161 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Wed, 7 Oct 2026 12:28:14 +0100
+Subject: [PATCH] rust: opp: accept the old OPP in the config_clks callback
+
+The generic OpenWrt patch "OPP: Provide old opp to config_clks on
+_set_opp" adds the old OPP to config_clks_t. The Rust trampoline for
+the callback still uses the previous signature, so rust/kernel.o fails
+to build with CONFIG_RUST and CONFIG_PM_OPP enabled.
+
+Accept the extra argument and ignore it, which keeps the Rust ConfigOps
+interface unchanged.
+
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ rust/kernel/opp.rs | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/rust/kernel/opp.rs
++++ b/rust/kernel/opp.rs
+@@ -511,6 +511,7 @@ impl<T: ConfigOps + Default> Config<T> {
+     extern "C" fn config_clks(
+         dev: *mut bindings::device,
+         opp_table: *mut bindings::opp_table,
++        _old_opp: *mut bindings::dev_pm_opp,
+         opp: *mut bindings::dev_pm_opp,
+         _data: *mut c_void,
+         scaling_down: bool,

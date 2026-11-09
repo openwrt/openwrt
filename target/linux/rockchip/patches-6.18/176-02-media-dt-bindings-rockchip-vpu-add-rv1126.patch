@@ -1,0 +1,27 @@
+From a86d903f6a9137b287c0f80c34d5a1ef5f1e063d Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Fri, 9 Oct 2026 14:30:29 +0100
+Subject: [PATCH] media: dt-bindings: rockchip-vpu: add rv1126
+
+The RV1126 has the same VPU2 encoder and decoder pair as the RK3399,
+with the encoder at the start of the register window and the decoder
+0x400 further on. Use the RK3399 compatible string as fallback.
+
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ Documentation/devicetree/bindings/media/rockchip-vpu.yaml | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+--- a/Documentation/devicetree/bindings/media/rockchip-vpu.yaml
++++ b/Documentation/devicetree/bindings/media/rockchip-vpu.yaml
+@@ -30,7 +30,9 @@ properties:
+               - rockchip,rk3188-vpu
+           - const: rockchip,rk3066-vpu
+       - items:
+-          - const: rockchip,rk3228-vpu
++          - enum:
++              - rockchip,rk3228-vpu
++              - rockchip,rv1126-vpu
+           - const: rockchip,rk3399-vpu
+       - items:
+           - const: rockchip,rk3588-vpu121

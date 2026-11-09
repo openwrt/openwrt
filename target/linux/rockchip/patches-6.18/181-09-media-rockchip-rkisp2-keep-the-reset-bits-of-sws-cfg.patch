@@ -1,0 +1,93 @@
+From 78e925eb05db5e23ac72274abcef3d34a06d01f7 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Fri, 16 Oct 2026 01:12:01 +0100
+Subject: [PATCH] media: rockchip: rkisp2: Keep the reset bits of SWS_CFG
+
+SWS_CFG holds the enables for the DDR reads of the TMO, WDR and DHAZ
+blocks, which are set at reset. The driver replaced the whole register
+with its own two bits.
+
+Set the frame drop disable bit on top of the current value, and the
+frame process acknowledge disable bit only for the ISP versions that
+define it.
+
+Assisted-by: LLM
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ .../platform/rockchip/rkisp2/rkisp2-common.h    | 17 +++++++++++++++++
+ .../media/platform/rockchip/rkisp2/rkisp2-dev.c |  4 ++--
+ .../media/platform/rockchip/rkisp2/rkisp2-isp.c |  3 +--
+ 3 files changed, 20 insertions(+), 4 deletions(-)
+
+--- a/drivers/media/platform/rockchip/rkisp2/rkisp2-common.h
++++ b/drivers/media/platform/rockchip/rkisp2/rkisp2-common.h
+@@ -113,6 +113,7 @@ enum rkisp2_isp_pad {
+  * enum rkisp2_feature - ISP features
+  *
+  * @RKISP2_FEATURE_DUAL_CROP: The ISP has the dual crop block at the resizer input
++ * @RKISP2_FEATURE_ACK_FRM_PRO: SWS_CFG has the frame process acknowledge disable bit
+  *
+  * The ISP features are stored in a bitmask in &rkisp2_info.features and allow
+  * the driver to implement support for features present in some ISP versions
+@@ -120,6 +121,7 @@ enum rkisp2_isp_pad {
+  */
+ enum rkisp2_feature {
+ 	RKISP2_FEATURE_DUAL_CROP = BIT(0),
++	RKISP2_FEATURE_ACK_FRM_PRO = BIT(1),
+ };
+ 
+ #define rkisp2_has_feature(rkisp2, feature) \
+@@ -526,6 +528,21 @@ static inline u32 rkisp2_read(struct rki
+ }
+ 
+ /*
++ * Only the bits that are defined for the ISP version are set: the other bits
++ * of SWS_CFG enable DDR reads of some blocks and are set at reset.
++ */
++static inline void rkisp2_sws_config(struct rkisp2_device *rkisp2)
++{
++	u32 val = rkisp2_read(rkisp2, ISP3X_SWS_CFG) |
++		  RKISP2_CIF_SWS_MIPI_DROP_FRM_DIS;
++
++	if (rkisp2_has_feature(rkisp2, ACK_FRM_PRO))
++		val |= RKISP2_CIF_SWS_ACK_FRM_PRO_DIS;
++
++	rkisp2_write(rkisp2, ISP3X_SWS_CFG, val);
++}
++
++/*
+  * rkisp2_cap_enum_mbus_codes - A helper function that return the i'th supported mbus code
+  *				of the capture entity. This is used to enumerate the supported
+  *				mbus codes on the source pad of the resizer.
+--- a/drivers/media/platform/rockchip/rkisp2/rkisp2-dev.c
++++ b/drivers/media/platform/rockchip/rkisp2/rkisp2-dev.c
+@@ -78,7 +78,7 @@ static int __maybe_unused rkisp2_runtime
+ 	/* Make sure the IRQ handler will see the above */
+ 	mb();
+ 
+-	rkisp2_write(rkisp2, ISP3X_SWS_CFG, RKISP2_CIF_SWS_MIPI_DROP_FRM_DIS);
++	rkisp2_sws_config(rkisp2);
+ 
+ 	return 0;
+ }
+@@ -210,7 +210,7 @@ static const struct rkisp2_info rk3588_i
+ 	.isrs = rk3588_isp_isrs,
+ 	.isr_size = ARRAY_SIZE(rk3588_isp_isrs),
+ 	.isp_ver = RKISP3_V0,
+-	.features = RKISP2_FEATURE_DUAL_CROP,
++	.features = RKISP2_FEATURE_DUAL_CROP | RKISP2_FEATURE_ACK_FRM_PRO,
+ 	.max_width = 4672,
+ 	.max_height = 3504,
+ };
+--- a/drivers/media/platform/rockchip/rkisp2/rkisp2-isp.c
++++ b/drivers/media/platform/rockchip/rkisp2/rkisp2-isp.c
+@@ -264,8 +264,7 @@ static void rkisp2_config_clk(struct rki
+ 	val = RKISP2_CIF_CLK_CTRL_ISP_3A | RKISP2_CIF_CLK_CTRL_ISP_RAW;
+ 	rkisp2_write(rkisp2, RKISP2_CIF_VI_ISP_CLK_CTRL_V12, val);
+ 
+-	val = RKISP2_CIF_SWS_MIPI_DROP_FRM_DIS	| RKISP2_CIF_SWS_ACK_FRM_PRO_DIS;
+-	rkisp2_write(rkisp2, ISP3X_SWS_CFG, val);
++	rkisp2_sws_config(rkisp2);
+ }
+ 
+ static int rkisp2_isp_start(struct rkisp2_isp *isp,

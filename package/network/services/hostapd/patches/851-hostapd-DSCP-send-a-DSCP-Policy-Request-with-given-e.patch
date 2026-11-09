@@ -1,0 +1,88 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Sat, 24 Oct 2026 11:21:42 +0200
+Subject: [PATCH] hostapd: DSCP: send a DSCP Policy Request with given elements
+
+EasyMesh 6.1 section 20.2.4 has a Multi-AP Agent forward the QoS
+Management element of a QoS Management Descriptor TLV to the station by
+the unsolicited DSCP Policy Request procedure, and keep no DSCP Policy
+state (20.2.1). The DSCP_POLICY command rebuilds an element from its own
+text form, which does not give the octets the Controller sent.
+
+Add hostapd_send_dscp_policy_request_raw(), which sends one unsolicited
+DSCP Policy Request with the station's next Dialog Token and the given
+QoS Management elements unchanged, and stores no policy.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/src/ap/robust_av.c
++++ b/src/ap/robust_av.c
+@@ -673,6 +673,57 @@ static bool is_valid_qm_elem(const u8 *i
+ }
+ 
+ 
++/*
++ * Send an unsolicited DSCP Policy Request that carries the QoS Management
++ * elements as given, for a caller that keeps the policies itself. Returns the
++ * Dialog Token, -EOPNOTSUPP where the BSS or the station has no DSCP Policy
++ * capability, -EINVAL where the elements are not whole QoS Management
++ * elements or do not fit in one frame, and -EIO where the send fails.
++ */
++int hostapd_send_dscp_policy_request_raw(struct hostapd_data *hapd,
++					 struct sta_info *sta, bool reset,
++					 const u8 *elems, size_t elems_len)
++{
++	const struct element *elem;
++	struct wpabuf *frame;
++	u8 dialog_token;
++	int ret;
++
++	if (!hapd->conf->enable_dscp_policy_capa ||
++	    !(sta->flags & WLAN_STA_DSCP_POLICY))
++		return -EOPNOTSUPP;
++
++	for_each_element(elem, elems, elems_len) {
++		if (!is_valid_qm_elem((const u8 *) elem, 2 + elem->datalen))
++			return -EINVAL;
++	}
++	if (!for_each_element_completed(elem, elems, elems_len))
++		return -EINVAL;
++
++	dialog_token = get_next_unsolicited_dialog_token(sta);
++	frame = new_dscp_policy_req_frame(hapd, sta, dialog_token, reset, 0);
++	if (!frame)
++		return -ENOMEM;
++
++	if (wpabuf_tailroom(frame) < elems_len) {
++		wpabuf_free(frame);
++		return -EINVAL;
++	}
++	wpabuf_put_data(frame, elems, elems_len);
++
++	ret = hostapd_drv_send_action(hapd, hapd->iface->freq, 0, sta->addr,
++				      wpabuf_head(frame), wpabuf_len(frame));
++	wpabuf_free(frame);
++	if (ret) {
++		wpa_printf(MSG_DEBUG, "DSCP: Failed to send policy request to "
++			   MACSTR, MAC2STR(sta->addr));
++		return -EIO;
++	}
++
++	return dialog_token;
++}
++
++
+ static int set_frame_classifier_type4_ipv4(struct hostapd_dscp_policy *policy)
+ {
+ 	u8 classifier_mask;
+--- a/src/ap/robust_av.h
++++ b/src/ap/robust_av.h
+@@ -143,6 +143,9 @@ int hostapd_send_unsolicited_dscp_policy
+ 						 u8 reset,
+ 						 const int *policy_ids,
+ 						 unsigned int num_policies);
++int hostapd_send_dscp_policy_request_raw(struct hostapd_data *hapd,
++					 struct sta_info *sta, bool reset,
++					 const u8 *elems, size_t elems_len);
+ int hostapd_handle_dscp_policy_query(struct hostapd_data *hapd,
+ 				     struct sta_info *sta,
+ 				     const u8 *data, size_t len);

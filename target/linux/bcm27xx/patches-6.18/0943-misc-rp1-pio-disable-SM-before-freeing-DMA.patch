@@ -1,0 +1,55 @@
+From 1347b00c6b6bc4b375e1ff4e77ac1bdd8f174650 Mon Sep 17 00:00:00 2001
+From: Hans Verkuil <hverkuil@kernel.org>
+Date: Thu, 3 Sep 2026 08:37:17 +0200
+Subject: [PATCH] misc: rp1-pio: disable SM before freeing DMA
+
+If the DMA is freed first, and the SMs are disabled afterwards, then the
+next time you use the DMA the first 4-8 words are corrupt (old data).
+
+Disable the SMs first, then free the DMA. With this change there is no
+longer old data seen in the next run.
+
+Signed-off-by: Hans Verkuil <hverkuil@kernel.org>
+---
+ drivers/misc/rp1-pio.c | 23 +++++++++++------------
+ 1 file changed, 11 insertions(+), 12 deletions(-)
+
+--- a/drivers/misc/rp1-pio.c
++++ b/drivers/misc/rp1-pio.c
+@@ -1537,6 +1537,17 @@ void rp1_pio_close(struct rp1_pio_client
+ 	}
+ 	spin_unlock(&pio->lock);
+ 
++	if (client->claimed_sms) {
++		struct rp1_pio_sm_set_enabled_args se_args = {
++			.mask = client->claimed_sms, .enable = 0
++		};
++		struct rp1_pio_sm_claim_args uc_args = {
++			.mask = client->claimed_sms
++		};
++		rp1_pio_sm_set_enabled(client, &se_args);
++		rp1_pio_sm_unclaim(client, &uc_args);
++	}
++
+ 	claimed = client->claimed_dmas;
+ 
+ 	for (i = 0; claimed; i++) {
+@@ -1554,18 +1565,6 @@ void rp1_pio_close(struct rp1_pio_client
+ 	pio->claimed_dmas &= ~client->claimed_dmas;
+ 	spin_unlock(&pio->lock);
+ 
+-	if (client->claimed_sms) {
+-		struct rp1_pio_sm_set_enabled_args se_args = {
+-			.mask = client->claimed_sms, .enable = 0
+-		};
+-		struct rp1_pio_sm_claim_args uc_args = {
+-			.mask = client->claimed_sms
+-		};
+-
+-		rp1_pio_sm_set_enabled(client, &se_args);
+-		rp1_pio_sm_unclaim(client, &uc_args);
+-	}
+-
+ 	if (client->claimed_instrs)
+ 		rp1_pio_remove_instrs(pio, client->claimed_instrs);
+ 

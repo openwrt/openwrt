@@ -1,0 +1,278 @@
+From f6a526ae9a9d9fac9eed019c4fb0a2a78a2f24d0 Mon Sep 17 00:00:00 2001
+From: Jacopo Mondi <jacopo.mondi@ideasonboard.com>
+Date: Tue, 1 Jul 2025 18:57:17 +0200
+Subject: [PATCH 853/858] media: v4l2-core: Introduce v4l2-isp.c
+
+Add to the V4L2 framework helper functions to support drivers when
+validating a buffer of V4L2 ISP parameters.
+
+Driver shall use v4l2_isp_params_validate_buffer_size() to verify the
+size correctness of the data received from userspace, and after having
+copied the data to a kernel-only memory location, complete the
+validation by calling v4l2_isp_params_validate_buffer().
+
+Reviewed-by: Daniel Scally <dan.scally@ideasonboard.com>
+Reviewed-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Reviewed-by: Michael Riesch <michael.riesch@collabora.com>
+Acked-by: Sakari Ailus <sakari.ailus@linux.intel.com>
+Tested-by: Lad Prabhakar <prabhakar.mahadev-lad.rj@bp.renesas.com>
+Signed-off-by: Jacopo Mondi <jacopo.mondi@ideasonboard.com>
+Signed-off-by: Hans Verkuil <hverkuil+cisco@kernel.org>
+---
+ drivers/media/v4l2-core/Kconfig    |   4 +
+ drivers/media/v4l2-core/Makefile   |   1 +
+ drivers/media/v4l2-core/v4l2-isp.c | 132 +++++++++++++++++++++++++++++
+ include/media/v4l2-isp.h           |  91 ++++++++++++++++++++
+ 4 files changed, 228 insertions(+)
+ create mode 100644 drivers/media/v4l2-core/v4l2-isp.c
+ create mode 100644 include/media/v4l2-isp.h
+
+--- a/drivers/media/v4l2-core/Kconfig
++++ b/drivers/media/v4l2-core/Kconfig
+@@ -82,3 +82,7 @@ config V4L2_CCI_I2C
+ 	depends on I2C
+ 	select REGMAP_I2C
+ 	select V4L2_CCI
++
++config V4L2_ISP
++	tristate
++	depends on VIDEOBUF2_CORE
+--- a/drivers/media/v4l2-core/Makefile
++++ b/drivers/media/v4l2-core/Makefile
+@@ -29,6 +29,7 @@ obj-$(CONFIG_V4L2_CCI) += v4l2-cci.o
+ obj-$(CONFIG_V4L2_FLASH_LED_CLASS) += v4l2-flash-led-class.o
+ obj-$(CONFIG_V4L2_FWNODE) += v4l2-fwnode.o
+ obj-$(CONFIG_V4L2_H264) += v4l2-h264.o
++obj-$(CONFIG_V4L2_ISP) += v4l2-isp.o
+ obj-$(CONFIG_V4L2_JPEG_HELPER) += v4l2-jpeg.o
+ obj-$(CONFIG_V4L2_MEM2MEM_DEV) += v4l2-mem2mem.o
+ obj-$(CONFIG_V4L2_VP9) += v4l2-vp9.o
+--- /dev/null
++++ b/drivers/media/v4l2-core/v4l2-isp.c
+@@ -0,0 +1,132 @@
++// SPDX-License-Identifier: GPL-2.0-or-later
++/*
++ * Video4Linux2 generic ISP parameters and statistics support
++ *
++ * Copyright (C) 2025 Ideas On Board Oy
++ * Author: Jacopo Mondi <jacopo.mondi@ideasonboard.com>
++ */
++
++#include <media/v4l2-isp.h>
++
++#include <linux/bitops.h>
++#include <linux/device.h>
++
++#include <media/videobuf2-core.h>
++
++int v4l2_isp_params_validate_buffer_size(struct device *dev,
++					 struct vb2_buffer *vb,
++					 size_t max_size)
++{
++	size_t header_size = offsetof(struct v4l2_isp_params_buffer, data);
++	size_t payload_size = vb2_get_plane_payload(vb, 0);
++
++	/* Payload size can't be greater than the destination buffer size */
++	if (payload_size > max_size) {
++		dev_dbg(dev, "Payload size is too large: %zu\n", payload_size);
++		return -EINVAL;
++	}
++
++	/* Payload size can't be smaller than the header size */
++	if (payload_size < header_size) {
++		dev_dbg(dev, "Payload size is too small: %zu\n", payload_size);
++		return -EINVAL;
++	}
++
++	return 0;
++}
++EXPORT_SYMBOL_GPL(v4l2_isp_params_validate_buffer_size);
++
++int v4l2_isp_params_validate_buffer(struct device *dev, struct vb2_buffer *vb,
++				    const struct v4l2_isp_params_buffer *buffer,
++				    const struct v4l2_isp_params_block_info *info,
++				    size_t num_blocks)
++{
++	size_t header_size = offsetof(struct v4l2_isp_params_buffer, data);
++	size_t payload_size = vb2_get_plane_payload(vb, 0);
++	size_t block_offset = 0;
++	size_t buffer_size;
++
++	/*
++	 * Currently only the first version of the V4L2 ISP parameters format is
++	 * supported. We accept both V0 and V1 to support existing drivers
++	 * compatible with V4L2 ISP that use either 0 or 1 as their "first
++	 * version" identifiers.
++	 */
++	if (buffer->version != V4L2_ISP_PARAMS_VERSION_V0 &&
++	    buffer->version != V4L2_ISP_PARAMS_VERSION_V1) {
++		dev_dbg(dev,
++			"Unsupported V4L2 ISP parameters format version: %u\n",
++			buffer->version);
++		return -EINVAL;
++	}
++
++	/* Validate the size reported in the header */
++	buffer_size = header_size + buffer->data_size;
++	if (buffer_size != payload_size) {
++		dev_dbg(dev, "Data size %zu and payload size %zu are different\n",
++			buffer_size, payload_size);
++		return -EINVAL;
++	}
++
++	/* Walk the list of ISP configuration blocks and validate them. */
++	buffer_size = buffer->data_size;
++	while (buffer_size >= sizeof(struct v4l2_isp_params_block_header)) {
++		const struct v4l2_isp_params_block_info *block_info;
++		const struct v4l2_isp_params_block_header *block;
++
++		block = (const struct v4l2_isp_params_block_header *)
++			(buffer->data + block_offset);
++
++		if (block->type >= num_blocks) {
++			dev_dbg(dev,
++				"Invalid block type %u at offset %zu\n",
++				block->type, block_offset);
++			return -EINVAL;
++		}
++
++		if (block->size > buffer_size) {
++			dev_dbg(dev, "Premature end of parameters data\n");
++			return -EINVAL;
++		}
++
++		/* It's invalid to specify both ENABLE and DISABLE. */
++		if ((block->flags & (V4L2_ISP_PARAMS_FL_BLOCK_ENABLE |
++				     V4L2_ISP_PARAMS_FL_BLOCK_DISABLE)) ==
++		     (V4L2_ISP_PARAMS_FL_BLOCK_ENABLE |
++		     V4L2_ISP_PARAMS_FL_BLOCK_DISABLE)) {
++			dev_dbg(dev, "Invalid block flags %x at offset %zu\n",
++				block->flags, block_offset);
++			return -EINVAL;
++		}
++
++		/*
++		 * Match the block reported size against the info provided
++		 * one, but allow the block to only contain the header in
++		 * case it is going to be disabled.
++		 */
++		block_info = &info[block->type];
++		if (block->size != block_info->size &&
++		    (!(block->flags & V4L2_ISP_PARAMS_FL_BLOCK_DISABLE) ||
++		    block->size != sizeof(*block))) {
++			dev_dbg(dev,
++				"Invalid block size %u (expected %zu) at offset %zu\n",
++				block->size, block_info->size, block_offset);
++			return -EINVAL;
++		}
++
++		block_offset += block->size;
++		buffer_size -= block->size;
++	}
++
++	if (buffer_size) {
++		dev_dbg(dev, "Unexpected data after the parameters buffer end\n");
++		return -EINVAL;
++	}
++
++	return 0;
++}
++EXPORT_SYMBOL_GPL(v4l2_isp_params_validate_buffer);
++
++MODULE_LICENSE("GPL");
++MODULE_AUTHOR("Jacopo Mondi <jacopo.mondi@ideasonboard.com");
++MODULE_DESCRIPTION("V4L2 generic ISP parameters and statistics helpers");
+--- /dev/null
++++ b/include/media/v4l2-isp.h
+@@ -0,0 +1,91 @@
++/* SPDX-License-Identifier: GPL-2.0-or-later */
++/*
++ * Video4Linux2 generic ISP parameters and statistics support
++ *
++ * Copyright (C) 2025 Ideas On Board Oy
++ * Author: Jacopo Mondi <jacopo.mondi@ideasonboard.com>
++ */
++
++#ifndef _V4L2_ISP_H_
++#define _V4L2_ISP_H_
++
++#include <linux/media/v4l2-isp.h>
++
++struct device;
++struct vb2_buffer;
++
++/**
++ * v4l2_isp_params_buffer_size - Calculate size of v4l2_isp_params_buffer
++ * @max_params_size: The total size of the ISP configuration blocks
++ *
++ * Users of the v4l2 extensible parameters will have differing sized data arrays
++ * depending on their specific parameter buffers. Drivers and userspace will
++ * need to be able to calculate the appropriate size of the struct to
++ * accommodate all ISP configuration blocks provided by the platform.
++ * This macro provides a convenient tool for the calculation.
++ */
++#define v4l2_isp_params_buffer_size(max_params_size) \
++	(offsetof(struct v4l2_isp_params_buffer, data) + (max_params_size))
++
++/**
++ * v4l2_isp_params_validate_buffer_size - Validate a V4L2 ISP buffer sizes
++ * @dev: the driver's device pointer
++ * @vb: the videobuf2 buffer
++ * @max_size: the maximum allowed buffer size
++ *
++ * This function performs validation of the size of a V4L2 ISP parameters buffer
++ * before the driver can access the actual data buffer content.
++ *
++ * After the sizes validation, drivers should copy the buffer content to a
++ * kernel-only memory area to prevent userspace from modifying it,
++ * before completing validation using v4l2_isp_params_validate_buffer().
++ *
++ * The @vb buffer as received from the vb2 .buf_prepare() operation is checked
++ * against @max_size and it's validated to be large enough to accommodate at
++ * least one ISP configuration block.
++ */
++int v4l2_isp_params_validate_buffer_size(struct device *dev,
++					 struct vb2_buffer *vb,
++					 size_t max_size);
++
++/**
++ * struct v4l2_isp_params_block_info - V4L2 ISP per-block info
++ * @size: the block expected size
++ *
++ * The v4l2_isp_params_block_info collects information of the ISP configuration
++ * blocks for validation purposes. It currently only contains the expected
++ * block size.
++ *
++ * Drivers shall prepare a list of block info, indexed by block type, one for
++ * each supported ISP block and correctly populate them with the expected block
++ * size.
++ */
++struct v4l2_isp_params_block_info {
++	size_t size;
++};
++
++/**
++ * v4l2_isp_params_validate_buffer - Validate a V4L2 ISP parameters buffer
++ * @dev: the driver's device pointer
++ * @vb: the videobuf2 buffer
++ * @buffer: the V4L2 ISP parameters buffer
++ * @info: the list of per-block validation info
++ * @num_blocks: the number of blocks
++ *
++ * This function completes the validation of a V4L2 ISP parameters buffer,
++ * verifying each configuration block correctness before the driver can use
++ * them to program the hardware.
++ *
++ * Drivers should use this function after having validated the correctness of
++ * the vb2 buffer sizes by using the v4l2_isp_params_validate_buffer_size()
++ * helper first. Once the buffer size has been validated, drivers should
++ * perform a copy of the user provided buffer into a kernel-only memory buffer
++ * to prevent userspace from modifying its content after it has been submitted
++ * to the driver, and then call this function to complete validation.
++ */
++int v4l2_isp_params_validate_buffer(struct device *dev, struct vb2_buffer *vb,
++				    const struct v4l2_isp_params_buffer *buffer,
++				    const struct v4l2_isp_params_block_info *info,
++				    size_t num_blocks);
++
++#endif /* _V4L2_ISP_H_ */

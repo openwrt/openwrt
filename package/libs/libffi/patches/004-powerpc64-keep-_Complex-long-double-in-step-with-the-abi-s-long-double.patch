@@ -1,0 +1,147 @@
+From 5cad43c09f09c24fe94b41298afb3b20495d4576 Mon Sep 17 00:00:00 2001
+From: Anthony Green <green@moxielogic.com>
+Date: Wed, 16 Sep 2026 06:15:21 -0400
+Subject: [PATCH] powerpc64: keep _Complex long double in step with the abi's
+ long double
+
+ffi_prep_types_linux64() rewrites ffi_type_longdouble to 8 or 16 bytes
+according to the FFI_LINUX_LONG_DOUBLE_128 bit of the abi it is handed.  That
+hook, and the fact that ffi_type_longdouble is one of only two non-const
+ffi_type objects on this target, exist so that a single libffi can describe
+calls into libraries built with either long double width.
+
+ffi_type_complex_longdouble is the other non-const one, for the same reason,
+but was never updated: its size and alignment stayed frozen at whatever
+sizeof(_Complex long double) was when libffi itself was compiled.  A caller
+asking for the other width therefore got a type that disagreed with its own
+element -- an element of 8 bytes inside an aggregate still claiming 32 -- which
+matters twice over:
+
+  - ffi_call_int() completes a floating-point small-struct return with
+    memcpy (rvalue, smst_buffer, cif->rtype->size), so the return value is
+    copied at the build-time size.  On a 128-bit build handed the 64-bit abi
+    that writes 32 bytes into a 16-byte value; the other way around it
+    truncates the imaginary half.
+
+  - initialize_aggregate() sizes and aligns struct members from ->size and
+    ->alignment, so any struct containing a _Complex long double comes out the
+    build-time size and ffi_get_struct_offsets() reports wrong offsets.
+
+Derive both fields from ffi_type_longdouble, which the same function has just
+set.  No test reached this because the testsuite only ever passes
+FFI_DEFAULT_ABI, where the frozen size happens to be correct, so add one that
+checks the types agree at each width the hook distinguishes and that a struct
+built from the complex type matches.  Verified on ppc64le under emulation: the
+new test aborts against a library without this change and passes with it, on
+both a 128-bit and a -mlong-double-64 build, and it is unsupported off
+powerpc64.
+
+Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>
+---
+ src/powerpc/ffi_linux64.c                     | 11 +++
+ testsuite/Makefile.am                         |  1 +
+ .../libffi.complex/complex_longdouble_abi.c   | 68 +++++++++++++++++++
+ 3 files changed, 80 insertions(+)
+ create mode 100644 testsuite/libffi.complex/complex_longdouble_abi.c
+
+--- a/src/powerpc/ffi_linux64.c
++++ b/src/powerpc/ffi_linux64.c
+@@ -61,6 +61,17 @@ ffi_prep_types_linux64 (ffi_abi abi)
+       ffi_type_longdouble.size = 16;
+       ffi_type_longdouble.alignment = 16;
+     }
++#ifdef FFI_TARGET_HAS_COMPLEX_TYPE
++  /* _Complex long double is two halves of whatever long double just became.
++     Its size comes from sizeof(_Complex long double) at build time, which is
++     only right for the ABI libffi itself was built for, so keep it in step.
++     Leaving it behind makes the type disagree with its own element: a caller
++     that asks for the other long double width would get a return value copied
++     at cif->rtype->size (wrong by 16 bytes either way) and structs containing
++     the type laid out to the build-time size.  */
++  ffi_type_complex_longdouble.size = 2 * ffi_type_longdouble.size;
++  ffi_type_complex_longdouble.alignment = ffi_type_longdouble.alignment;
++#endif
+ }
+ #endif
+ 
+--- a/testsuite/Makefile.am
++++ b/testsuite/Makefile.am
+@@ -84,6 +84,7 @@ EXTRA_DIST = config/default.exp emscript
+ 	libffi.complex/complex.exp libffi.complex/complex.inc libffi.complex/complex_defs_double.inc \
+ 	libffi.complex/complex_defs_float.inc libffi.complex/complex_defs_longdouble.inc libffi.complex/complex_double.c \
+ 	libffi.complex/complex_float.c libffi.complex/complex_i128.c libffi.complex/complex_int.c libffi.complex/complex_longdouble.c \
++	libffi.complex/complex_longdouble_abi.c \
+ 	libffi.complex/ffitest.h libffi.complex/many_complex.inc libffi.complex/many_complex_double.c \
+ 	libffi.complex/many_complex_float.c libffi.complex/many_complex_longdouble.c libffi.complex/return_complex.inc \
+ 	libffi.complex/return_complex1.inc libffi.complex/return_complex1_double.c libffi.complex/return_complex1_float.c \
+--- /dev/null
++++ b/testsuite/libffi.complex/complex_longdouble_abi.c
+@@ -0,0 +1,68 @@
++/* Area:	ffi_prep_types
++   Purpose:	Check that _Complex long double follows the abi's long double width.
++   Limitations:	powerpc64 only -- the one target where long double has more
++		than one width at run time.
++   PR:		none.
++   Originator:	Anthony Green 20260916	 */
++
++/* { dg-do run { target powerpc64*-*-linux-gnu* } } */
++
++#include "ffitest.h"
++
++/* ffi_prep_cif() and ffi_get_struct_offsets() resize ffi_type_longdouble to
++   match the FFI_LINUX_LONG_DOUBLE_128 bit of the abi they are handed, so that
++   one libffi can describe calls into libraries built with either width.  That
++   is also why these two types, alone among the ffi_type objects, are not
++   const.  ffi_type_complex_longdouble has to keep up: two halves of whatever
++   long double currently is.  */
++
++static void
++check_width (ffi_abi abi, size_t ld_size, unsigned short ld_align)
++{
++  ffi_cif cif;
++  ffi_type *args[1];
++  ffi_type *elements[2];
++  ffi_type s;
++  size_t offsets[1];
++
++  args[0] = &ffi_type_complex_longdouble;
++  CHECK (ffi_prep_cif (&cif, abi, 1, &ffi_type_complex_longdouble, args)
++	 == FFI_OK);
++
++  CHECK (ffi_type_longdouble.size == ld_size);
++  CHECK (ffi_type_longdouble.alignment == ld_align);
++
++  CHECK (ffi_type_complex_longdouble.size == 2 * ld_size);
++  CHECK (ffi_type_complex_longdouble.alignment == ld_align);
++  CHECK (ffi_type_complex_longdouble.elements[0]->size == ld_size);
++
++  /* A struct built out of that type has to come out the same size, which is
++     what ffi_get_struct_offsets() and every struct-passing path rely on.  */
++  elements[0] = &ffi_type_complex_longdouble;
++  elements[1] = NULL;
++  s.size = 0;
++  s.alignment = 0;
++  s.type = FFI_TYPE_STRUCT;
++  s.elements = elements;
++  CHECK (ffi_get_struct_offsets (abi, &s, offsets) == FFI_OK);
++  CHECK (s.size == 2 * ld_size);
++  CHECK (offsets[0] == 0);
++}
++
++int
++main (void)
++{
++  size_t native = (FFI_DEFAULT_ABI & FFI_LINUX_LONG_DOUBLE_128) ? 16 : 8;
++
++  /* A 64-bit long double, as musl selects on ppc64le.  */
++  check_width ((ffi_abi) FFI_LINUX, 8, 8);
++  /* A 128-bit long double, either IBM-128 or IEEE-128.  */
++  check_width ((ffi_abi) (FFI_LINUX | FFI_LINUX_LONG_DOUBLE_128), 16, 16);
++  /* Leave the globals as this build's default abi found them.  */
++  check_width (FFI_DEFAULT_ABI, native, (unsigned short) native);
++
++  printf ("success\n");
++  exit (0);
++}
++
++/* { dg-output "success" } */

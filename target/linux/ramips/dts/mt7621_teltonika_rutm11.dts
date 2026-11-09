@@ -1,0 +1,247 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "mt7621_teltonika_rutm-common.dtsi"
+
+/ {
+	compatible = "teltonika,rutm11", "mediatek,mt7621-soc";
+	model = "Teltonika RUTM11";
+
+	gpio_spi {
+		compatible = "spi-gpio";
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		sck-gpios = <&gpio 9 GPIO_ACTIVE_HIGH>;
+		mosi-gpios = <&gpio 5 GPIO_ACTIVE_HIGH>;
+		cs-gpios = <&gpio 11 GPIO_ACTIVE_HIGH>;
+		num-chipselects = <1>;
+
+		gpio_hc595: gpio_hc595@0 {
+			compatible = "fairchild,74hc595";
+			reg = <0>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			registers-number = <2>;
+			spi-max-frequency = <10000000>;
+			enable-gpios = <&gpio 15 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	gpio-export {
+		compatible = "gpio-export";
+
+		gpio_modem_reset {
+			gpio-export,name = "modem_reset";
+			gpio-export,output = <0>;
+			gpios = <&gpio 14 GPIO_ACTIVE_HIGH>;
+		};
+
+		gpio_modem_power {
+			gpio-export,name = "modem_power";
+			gpio-export,output = <0>;
+			gpios = <&gpio 16 GPIO_ACTIVE_HIGH>;
+		};
+
+		gpio_sim_select {
+			gpio-export,name = "sim_select";
+			gpio-export,output = <0>;
+			gpios = <&gpio 18 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	leds {
+		wan_sim1 {
+			function = "wan-sim1";
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio 41 GPIO_ACTIVE_HIGH>;
+		};
+
+		wan_sim2 {
+			function = "wan-sim2";
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio 43 GPIO_ACTIVE_HIGH>;
+		};
+
+		wan_eth {
+			function = "wan-eth";
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio 45 GPIO_ACTIVE_HIGH>;
+		};
+
+		wan_wifi {
+			function = "wan-wifi";
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio 42 GPIO_ACTIVE_HIGH>;
+		};
+
+		wifi_2g {
+			function = LED_FUNCTION_WLAN_2GHZ;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio 6 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "phy0tpt";
+		};
+
+		wifi_5g {
+			function = LED_FUNCTION_WLAN_5GHZ;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio 7 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "phy1tpt";
+		};
+
+		2G {
+			function = "2G";
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio_hc595 8 GPIO_ACTIVE_HIGH>;
+		};
+
+		3G {
+			function = "3G";
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio_hc595 9 GPIO_ACTIVE_HIGH>;
+		};
+
+		4G {
+			function = "4G";
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio_hc595 10 GPIO_ACTIVE_HIGH>;
+		};
+
+		rssi1 {
+			function = "rssi-1";
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio_hc595 11 GPIO_ACTIVE_HIGH>;
+		};
+
+		rssi2 {
+			function = "rssi-2";
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio_hc595 12 GPIO_ACTIVE_HIGH>;
+		};
+
+		rssi3 {
+			function = "rssi-3";
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio_hc595 13 GPIO_ACTIVE_HIGH>;
+		};
+
+		rssi4 {
+			function = "rssi-4";
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio_hc595 14 GPIO_ACTIVE_HIGH>;
+		};
+
+		rssi5 {
+			function = "rssi-5";
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio_hc595 15 GPIO_ACTIVE_HIGH>;
+		};
+
+		lan1-g {
+			function = LED_FUNCTION_LAN;
+			color = <LED_COLOR_ID_GREEN>;
+			function-enumerator = <1>;
+			gpios = <&gpio_hc595 0 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "mt7530-0:00:1Gbps";
+		};
+
+		lan1-y {
+			function = LED_FUNCTION_LAN;
+			color = <LED_COLOR_ID_AMBER>;
+			function-enumerator = <1>;
+			gpios = <&gpio_hc595 4 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "mt7530-0:00:100Mbps";
+		};
+
+		lan2-g {
+			function = LED_FUNCTION_LAN;
+			color = <LED_COLOR_ID_GREEN>;
+			function-enumerator = <2>;
+			gpios = <&gpio_hc595 1 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "mt7530-0:01:1Gbps";
+		};
+
+		lan2-y {
+			function = LED_FUNCTION_LAN;
+			color = <LED_COLOR_ID_AMBER>;
+			function-enumerator = <2>;
+			gpios = <&gpio_hc595 5 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "mt7530-0:01:100Mbps";
+		};
+
+		lan3-g {
+			function = LED_FUNCTION_LAN;
+			color = <LED_COLOR_ID_GREEN>;
+			function-enumerator = <3>;
+			gpios = <&gpio_hc595 2 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "mt7530-0:02:1Gbps";
+		};
+
+		lan3-y {
+			function = LED_FUNCTION_LAN;
+			color = <LED_COLOR_ID_AMBER>;
+			function-enumerator = <3>;
+			gpios = <&gpio_hc595 6 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "mt7530-0:02:100Mbps";
+		};
+
+		wan-g {
+			function = LED_FUNCTION_WAN;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio_hc595 3 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "mt7530-0:04:1Gbps";
+		};
+
+		wan-y {
+			function = LED_FUNCTION_WAN;
+			color = <LED_COLOR_ID_AMBER>;
+			gpios = <&gpio_hc595 7 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "mt7530-0:04:100Mbps";
+		};
+	};
+};
+
+&switch0 {
+	ports {
+		port@0 {
+			status = "okay";
+			label = "lan1";
+		};
+
+		port@1 {
+			status = "okay";
+			label = "lan2";
+		};
+
+		port@2 {
+			status = "okay";
+			label = "lan3";
+		};
+	};
+};
+
+&pcie {
+	status = "okay";
+};
+
+&pcie0 {
+	wifi@0,0 {
+		compatible = "mediatek,mt76";
+		reg = <0x0000 0 0 0 0>;
+		nvmem-cells = <&eeprom_factory_0>;
+		nvmem-cell-names = "eeprom";
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		band@0 {
+			reg = <0>;
+			nvmem-cells = <&macaddr_config_0 2>;
+			nvmem-cell-names = "mac-address";
+		};
+
+		band@1 {
+			reg = <1>;
+			nvmem-cells = <&macaddr_config_0 3>;
+			nvmem-cell-names = "mac-address";
+		};
+	};
+};

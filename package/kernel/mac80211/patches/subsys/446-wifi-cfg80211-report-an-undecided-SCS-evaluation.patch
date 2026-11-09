@@ -1,0 +1,114 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Tue, 22 Sep 2026 10:42:48 +0200
+Subject: [PATCH] wifi: cfg80211: report an undecided SCS evaluation
+
+A caller that evaluates a flow instead of a frame, such as a driver
+that offloads flows to hardware, has no frame for a filter classifier
+and may lack parameters that a classifier selects. A descriptor that
+did not match for that reason could still match a frame of the flow,
+so the caller must not derive a per flow rule from the verdict.
+
+Add an undecided flag to the verdict. It is set when a descriptor that
+did not match selects a parameter that the flow does not carry, and
+matched on nothing else. The transmit path ignores it, since a frame
+without the parameter cannot match.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+
+--- a/include/net/cfg80211.h
++++ b/include/net/cfg80211.h
+@@ -4331,11 +4331,15 @@ struct cfg80211_mscs_desc {
+  * struct cfg80211_scs_verdict - result of an SCS evaluation
+  *
+  * @match: an SCS descriptor matched the MSDU
++ * @undecided: a descriptor that did not match selects a parameter that the
++ *	MSDU lacks. A caller that evaluates a flow instead of a frame must
++ *	not derive a flow rule from this verdict.
+  * @scsid: identifier of the matching descriptor
+  * @up: user priority to assign
+  */
+ struct cfg80211_scs_verdict {
+ 	bool match;
++	bool undecided;
+ 	u8 scsid;
+ 	u8 up;
+ };
+--- a/net/wireless/scs.c
++++ b/net/wireless/scs.c
+@@ -756,14 +756,18 @@ static bool tclas_filter_offset(const st
+ }
+ 
+ static bool tclas_filter_match(const struct cfg80211_tclas *t,
+-			       const struct cfg80211_flow_info *info)
++			       const struct cfg80211_flow_info *info,
++			       bool *undecided)
+ {
+ 	const struct cfg80211_tclas_filter *f = &t->filter;
+ 	u8 buf[CFG80211_TCLAS_FILTER_LEN], *p;
+ 	unsigned int i, off;
+ 
+-	if (!info->skb)
++	if (!info->skb) {
++		*undecided = true;
++
+ 		return false;
++	}
+ 
+ 	if (!tclas_filter_offset(info, f, &off))
+ 		return false;
+@@ -780,16 +784,19 @@ static bool tclas_filter_match(const str
+ }
+ 
+ static bool tclas_match(const struct cfg80211_tclas *t,
+-			const struct cfg80211_flow_info *info)
++			const struct cfg80211_flow_info *info, bool *undecided)
+ {
+ 	struct cfg80211_flow_key key;
+ 
+ 	if (t->type == CFG80211_TCLAS_FILTER)
+-		return tclas_filter_match(t, info);
++		return tclas_filter_match(t, info, undecided);
+ 
+ 	if (!cfg80211_flow_key_build(info, t->fields, CFG80211_FLOW_AS_IS,
+-				     &key))
++				     &key)) {
++		*undecided = true;
++
+ 		return false;
++	}
+ 
+ 	return !memcmp(&key, &t->key, sizeof(key));
+ }
+@@ -807,13 +814,14 @@ static u16 tclas_param_count(const struc
+ }
+ 
+ static bool scs_desc_match(const struct cfg80211_scs_desc *desc,
+-			   const struct cfg80211_flow_info *info)
++			   const struct cfg80211_flow_info *info,
++			   bool *undecided)
+ {
+ 	unsigned int i;
+ 	bool any = false;
+ 
+ 	for (i = 0; i < desc->n_tclas; i++) {
+-		if (tclas_match(&desc->tclas[i], info)) {
++		if (tclas_match(&desc->tclas[i], info, undecided)) {
+ 			any = true;
+ 			continue;
+ 		}
+@@ -866,10 +874,14 @@ void cfg80211_scs_evaluate(struct cfg802
+ 	memset(verdict, 0, sizeof(*verdict));
+ 
+ 	for (i = 0; i < n_desc; i++) {
++		bool undecided = false;
+ 		u16 count;
+ 
+-		if (!scs_desc_match(desc[i], info))
++		if (!scs_desc_match(desc[i], info, &undecided)) {
++			/* A missing parameter only matters without a match */
++			verdict->undecided |= undecided;
+ 			continue;
++		}
+ 
+ 		count = scs_desc_param_count(desc[i]);
+ 		if (count <= best)

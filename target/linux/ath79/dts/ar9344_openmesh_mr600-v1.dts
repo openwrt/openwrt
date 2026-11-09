@@ -1,0 +1,48 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include <dt-bindings/leds/common.h>
+
+#include "ar9344_openmesh_mr600.dtsi"
+
+/ {
+	compatible = "openmesh,mr600-v1", "qca,ar9344";
+	model = "OpenMesh MR600 v1";
+
+	aliases {
+		led-boot = &led_power_orange;
+		led-failsafe = &led_power_orange;
+		led-running = &led_power_orange;
+		led-upgrade = &led_power_orange;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		wps_blue {
+			function = LED_FUNCTION_WPS;
+			color = <LED_COLOR_ID_BLUE>;
+			gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
+		};
+
+		led_power_orange: power_orange {
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_ORANGE>;
+			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
+			default-state = "on";
+		};
+	};
+};
+
+&wmac {
+	led {
+		led-sources = <12>;
+		led-active-low;
+	};
+};
+
+&ath9k {
+	led {
+		led-sources = <0>;
+		led-active-low;
+	};
+};

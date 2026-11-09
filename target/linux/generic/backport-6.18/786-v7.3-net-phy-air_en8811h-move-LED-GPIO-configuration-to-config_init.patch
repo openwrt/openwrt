@@ -1,0 +1,61 @@
+From 03b4702fc5e311cbac9ba8654021a88f0dac914c Mon Sep 17 00:00:00 2001
+From: Vitaliy Sochnev <sochnev.v.74@gmail.com>
+Date: Sun, 23 Aug 2026 14:06:36 +0100
+Subject: net: phy: air_en8811h: move LED GPIO configuration to config_init
+
+The LED GPIO pins (GPIO3/4/5, mapped to LED2/LED1/LED0) are only ever
+configured as outputs once, in .probe(). But .config_init() restarts
+the MD32 MCU via en8811h_restart_mcu() on every call after the first
+(priv->mcu_needs_restart), and that restart resets buckpbus-mapped MCU
+state, including EN8811H_GPIO_OUTPUT. As a result the LED GPIOs fall
+back to inputs after the first event that re-triggers .config_init()
+(link renegotiation, ifdown/ifup, resume), and the PHY's LEDs stop
+reflecting link/activity state even though they worked right after
+probe.
+
+Move the GPIO-as-output configuration from .probe() to the end of
+.config_init(), so it is reapplied every time the MCU may have been
+restarted.
+
+Fixes: 71e79430117d ("net: phy: air_en8811h: Add the Airoha EN8811H PHY driver")
+Suggested-by: Mikhail Zhilkin <csharper2005@gmail.com>
+Signed-off-by: Vitaliy Sochnev <sochnev.v.74@gmail.com>
+Link: https://patch.msgid.link/20260823130638.1166453-2-sochnev.v.74@gmail.com
+Signed-off-by: Paolo Abeni <pabeni@redhat.com>
+---
+ drivers/net/phy/air_en8811h.c | 17 ++++++++++-------
+ 1 file changed, 10 insertions(+), 7 deletions(-)
+
+--- a/drivers/net/phy/air_en8811h.c
++++ b/drivers/net/phy/air_en8811h.c
+@@ -957,13 +957,6 @@ static int en8811h_probe(struct phy_devi
+ 	if (ret)
+ 		return ret;
+ 
+-	/* Configure led gpio pins as output */
+-	ret = air_buckpbus_reg_modify(phydev, EN8811H_GPIO_OUTPUT,
+-				      EN8811H_GPIO_OUTPUT_345,
+-				      EN8811H_GPIO_OUTPUT_345);
+-	if (ret < 0)
+-		return ret;
+-
+ 	return 0;
+ }
+ 
+@@ -1049,6 +1042,16 @@ static int en8811h_config_init(struct ph
+ 		return ret;
+ 	}
+ 
++	/* Configure led gpio pins as output. en8811h_restart_mcu() above
++	 * resets buckpbus-mapped MCU state including this register, so it
++	 * must be reapplied on every .config_init() call.
++	 */
++	ret = air_buckpbus_reg_modify(phydev, EN8811H_GPIO_OUTPUT,
++				      EN8811H_GPIO_OUTPUT_345,
++				      EN8811H_GPIO_OUTPUT_345);
++	if (ret < 0)
++		return ret;
++
+ 	return 0;
+ }
+ 

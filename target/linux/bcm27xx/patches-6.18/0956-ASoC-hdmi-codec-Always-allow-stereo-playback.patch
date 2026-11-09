@@ -1,0 +1,49 @@
+From 57b3507b2098383cabbe3df6f0af2aed6b80eaaf Mon Sep 17 00:00:00 2001
+From: Dom Cobley <popcornmix@gmail.com>
+Date: Fri, 4 Sep 2026 11:48:05 +0100
+Subject: [PATCH] ASoC: hdmi-codec: Always allow stereo playback
+
+hdmi_codec_get_ch_alloc_table_idx() searches for a CEA channel allocation
+whose speaker mask is a subset of the one advertised in the sink's ELD.
+Every allocation in the table contains the front pair, and the only escape
+hatch requires the ELD speaker allocation byte to be entirely zero (the
+unplugged case), so a sink that advertises speakers without setting bit 0
+(FL/FR) matches nothing and the function returns -EINVAL.
+
+A Philips 77OLED809 does exactly that. Its Speaker Allocation Data Block
+is 0x7e, declaring LFE1, FC, BL/BR, BC, FLc/FRc and RLC/RRC but no front
+pair. CTA-861 defines bit 0 as FL/FR and attaches no further requirement
+to it, so edid-decode -c passes this EDID, but with the bit clear there
+is no allocation left to select. The set's only LPCM format is 2 channel,
+so every playback attempt fails:
+
+  hdmi-audio-codec hdmi-audio-codec.1.auto: Not able to map channels to speakers (-22)
+  hdmi-audio-codec hdmi-audio-codec.1.auto: ASoC: error at snd_soc_pcm_dai_prepare on i2s-hifi: -22
+
+This repeats for as long as userspace retries the open, and leaves no
+usable HDMI audio output.
+
+CA 0x00 describes plain stereo and is valid whatever the sink advertises,
+so return it for two channels or fewer without consulting the ELD.
+Compressed formats are unaffected, as they do not reach this function.
+
+See: https://github.com/raspberrypi/linux/issues/7603
+
+Signed-off-by: Dom Cobley <popcornmix@gmail.com>
+---
+ sound/soc/codecs/hdmi-codec.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+--- a/sound/soc/codecs/hdmi-codec.c
++++ b/sound/soc/codecs/hdmi-codec.c
+@@ -362,6 +362,10 @@ static int hdmi_codec_get_ch_alloc_table
+ 	unsigned long spk_mask;
+ 	const struct hdmi_codec_cea_spk_alloc *cap = hdmi_codec_channel_alloc;
+ 
++	/* Index 0 is CA 0x00, which is valid for any sink */
++	if (channels <= 2)
++		return 0;
++
+ 	spk_alloc = drm_eld_get_spk_alloc(hcp->eld);
+ 	spk_mask = hdmi_codec_spk_mask_from_alloc(spk_alloc);
+ 

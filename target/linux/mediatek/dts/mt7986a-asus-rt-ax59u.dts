@@ -1,0 +1,91 @@
+// SPDX-License-Identifier: (GPL-2.0 OR MIT)
+
+#include "mt7986a-asus-rt-ax59u-common.dtsi"
+
+/ {
+	model = "ASUS RT-AX59U";
+	compatible = "asus,rt-ax59u", "mediatek,mt7986a";
+
+	chosen {
+		bootargs-override = "";
+	};
+};
+
+&gmac0 {
+	nvmem-cells = <&macaddr_factory_4>;
+	nvmem-cell-names = "mac-address";
+};
+
+&spi_nand {
+	compatible = "u-boot-dont-touch-spi-nand";
+	reg = <0>;
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	/*
+	 * ASUS bootloader tries to replace the partitions defined in
+	 * Device Tree and by that also deletes all additional properties
+	 * needed for UBI and NVMEM-on-UBI.
+	 * Prevent this from happening by tricking the loader to delete and
+	 * replace a bait node instead (works with older bootloaders).
+	 */
+	partitions: dummy {
+		compatible = "u-boot-dummy-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		partition@0 {
+			reg = <0x0 0x0>;
+			label = "remove_me";
+		};
+	};
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		partition@0 {
+			reg = <0x0 0x400000>;
+			label = "u-boot";
+			read-only;
+		};
+
+		partition@400000 {
+			compatible = "linux,ubi";
+			reg = <0x400000 0x7c00000>;
+			label = "UBI_DEV";
+
+			volumes {
+				ubi_factory: ubi-volume-factory {
+					volname = "Factory";
+				};
+			};
+		};
+	};
+};
+
+&ubi_factory {
+	nvmem-layout {
+		compatible = "fixed-layout";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		eeprom_factory_0: eeprom@0 {
+			reg = <0x0 0x1000>;
+		};
+
+		macaddr_factory_4: macaddr@4 {
+			reg = <0x4 0x6>;
+		};
+
+		precal_factory_1010: precal@1010 {
+			reg = <0x1010 0x62810>;
+		};
+	};
+};
+
+&wifi {
+	nvmem-cells = <&eeprom_factory_0>, <&precal_factory_1010>;
+	nvmem-cell-names = "eeprom", "precal";
+};

@@ -1,0 +1,159 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Felix Fietkau <nbd@nbd.name>
+Date: Sat, 24 Oct 2026 06:01:37 +0200
+Subject: [PATCH] ubus: keep reconnecting after a ubusd restart
+
+On a lost connection, ubus_disconnect_cb() tries ubus_reconnect()
+once. ubusd is usually still down at that point, and the callback then
+frees the context with ubus_destroy(). main() keeps its own copy of
+the context pointer and the first socket fd: the loop polls the closed
+fd, which returns POLLNVAL at once, so odhcp6c spins at full CPU
+without ever connecting again, and at exit ubus_destroy() frees the
+context a second time:
+
+  ERROR: AddressSanitizer: attempting double-free
+    #1 ubus_destroy src/ubus.c
+    #2 main src/odhcp6c.c
+
+Keep the context on a failed reconnect and try again from the main
+loop once per second, with poll() woken in time for the next try.
+Poll the socket of the current connection, since a reconnect opens a
+new one. Log the failure once per loss.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+ src/odhcp6c.c | 11 ++++++++++-
+ src/ubus.c    | 55 +++++++++++++++++++++++++++++++++++++++++++++++----
+ src/ubus.h    |  3 +++
+ 3 files changed, 64 insertions(+), 5 deletions(-)
+
+--- a/src/odhcp6c.c
++++ b/src/odhcp6c.c
+@@ -841,7 +841,14 @@ int main(_o_unused int argc, char* const
+ 		if (signal_usr2 || signal_term)
+ 			dhcpv6_set_state(DHCPV6_EXIT);
+ 
+-		poll_res = poll(fds, nfds, dhcpv6_get_state_timeout());
++		int timeout = dhcpv6_get_state_timeout();
++
++#ifdef WITH_UBUS
++		fds[UBUS_FD_INDEX].fd = ubus_get_fd();
++		timeout = ubus_get_timeout(timeout);
++#endif /* WITH_UBUS */
++
++		poll_res = poll(fds, nfds, timeout);
+ 		dhcpv6_reset_state_timeout();
+ 		if (poll_res == -1 && (errno == EINTR || errno == EAGAIN)) {
+ 			continue;
+@@ -853,6 +860,8 @@ int main(_o_unused int argc, char* const
+ #ifdef WITH_UBUS
+ 		if (fds[1].revents & POLLIN)
+ 			ubus_handle_event(ubus);
++
++		ubus_check_reconnect();
+ #endif /* WITH_UBUS */
+ 	}
+ 
+--- a/src/ubus.c
++++ b/src/ubus.c
+@@ -70,6 +70,8 @@
+ #include "odhcp6c.h"
+ #include "ubus.h"
+ 
++#define UBUS_RECONNECT_INTERVAL 1000
++
+ #define CHECK(stmt) \
+ 	do { \
+ 		int ret = (stmt); \
+@@ -127,6 +129,8 @@ enum {
+ struct ubus_context *ubus = NULL;
+ static struct blob_buf b;
+ static char ubus_name[24];
++static uint64_t ubus_reconnect_time;
++static bool ubus_reconnect_failed;
+ 
+ static int ubus_handle_get_state(struct ubus_context *ctx, struct ubus_object *obj,
+ 		struct ubus_request_data *req, const char *method, struct blob_attr *msg);
+@@ -188,15 +192,58 @@ static struct ubus_object odhcp6c_object
+ 	.n_methods = ARRAY_SIZE(odhcp6c_object_methods),
+ };
+ 
+-static void ubus_disconnect_cb(struct ubus_context *ubus)
++static void ubus_reconnect_try(struct ubus_context *ubus)
+ {
+ 	int ret;
+ 
++	ubus_reconnect_time = odhcp6c_get_milli_time();
++
+ 	ret = ubus_reconnect(ubus, NULL);
+ 	if (ret) {
+-		error("Cannot reconnect to ubus: %s", ubus_strerror(ret));
+-		ubus_destroy(ubus);
++		if (!ubus_reconnect_failed)
++			error("Cannot reconnect to ubus: %s", ubus_strerror(ret));
++		ubus_reconnect_failed = true;
++		return;
+ 	}
++
++	if (ubus_reconnect_failed)
++		notice("Reconnected to ubus");
++	ubus_reconnect_failed = false;
++}
++
++static int ubus_reconnect_wait(void)
++{
++	uint64_t elapsed = odhcp6c_get_milli_time() - ubus_reconnect_time;
++
++	if (elapsed >= UBUS_RECONNECT_INTERVAL)
++		return 0;
++
++	return UBUS_RECONNECT_INTERVAL - elapsed;
++}
++
++int ubus_get_fd(void)
++{
++	return ubus ? ubus->sock.fd : -1;
++}
++
++int ubus_get_timeout(int timeout)
++{
++	int wait;
++
++	if (!ubus || ubus->sock.fd >= 0)
++		return timeout;
++
++	wait = ubus_reconnect_wait();
++
++	return timeout < wait ? timeout : wait;
++}
++
++void ubus_check_reconnect(void)
++{
++	if (!ubus || ubus->sock.fd >= 0 || ubus_reconnect_wait())
++		return;
++
++	ubus_reconnect_try(ubus);
+ }
+ 
+ char *ubus_init(const char* interface)
+@@ -215,7 +262,7 @@ char *ubus_init(const char* interface)
+ 		return (char *)ubus_strerror(ret);
+ 	}
+ 
+-	ubus->connection_lost = ubus_disconnect_cb;
++	ubus->connection_lost = ubus_reconnect_try;
+ 	return NULL;
+ }
+ 
+--- a/src/ubus.h
++++ b/src/ubus.h
+@@ -68,6 +68,9 @@
+ 
+ char *ubus_init(const char* interface);
+ struct ubus_context *ubus_get_ctx(void);
++int ubus_get_fd(void);
++int ubus_get_timeout(int timeout);
++void ubus_check_reconnect(void);
+ void ubus_destroy(struct ubus_context *ubus);
+ int ubus_dhcp_event(const char *status);
+ 

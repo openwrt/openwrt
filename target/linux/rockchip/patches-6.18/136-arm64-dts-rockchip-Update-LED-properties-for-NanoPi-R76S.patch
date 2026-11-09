@@ -1,0 +1,27 @@
+--- a/arch/arm64/boot/dts/rockchip/rk3576-nanopi-r76s.dts
++++ b/arch/arm64/boot/dts/rockchip/rk3576-nanopi-r76s.dts
+@@ -23,6 +23,11 @@
+ 		mmc0 = &sdhci;
+ 		mmc1 = &sdmmc;
+ 		mmc2 = &sdio;
++
++		led-boot = &power_led;
++		led-failsafe = &power_led;
++		led-running = &power_led;
++		led-upgrade = &power_led;
+ 	};
+ 
+ 	chosen {
+@@ -54,11 +59,10 @@
+ 			gpios = <&gpio2 RK_PB0 GPIO_ACTIVE_HIGH>;
+ 		};
+ 
+-		led-1 {
++		power_led: led-1 {
+ 			color = <LED_COLOR_ID_RED>;
+ 			function = LED_FUNCTION_POWER;
+ 			gpios = <&gpio2 RK_PB3 GPIO_ACTIVE_HIGH>;
+-			linux,default-trigger = "heartbeat";
+ 		};
+ 
+ 		led-2 {

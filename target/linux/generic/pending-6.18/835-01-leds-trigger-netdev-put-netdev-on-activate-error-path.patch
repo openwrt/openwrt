@@ -1,0 +1,37 @@
+From: "A. Sverdlin" <alexander.sverdlin@siemens.com>
+Date: Tue, 27 Oct 2026 12:33:41 +0100
+Subject: [PATCH] leds: trigger: netdev: Put netdev on activate error path
+
+When hw control is active, set_device_name() takes a reference on the
+netdev via dev_get_by_name(). The register_netdevice_notifier() failure
+path frees trigger_data without dropping it, leaking the netdev.
+
+Cc: stable@vger.kernel.org
+Closes: https://lore.kernel.org/all/20260914140045.B8F4C1F000FF@smtp.kernel.org/
+Fixes: 0316cc5629d1 ("leds: trigger: netdev: init mode if hw control already active")
+Signed-off-by: Alexander Sverdlin <alexander.sverdlin@siemens.com>
+Link: https://lore.kernel.org/linux-leds/20261027113349.383147-2-alexander.sverdlin@siemens.com/
+---
+Changelog:
+v5:
+- removed unset_device_name()
+v3:
+- introduced unset_device_name() as a counterpart of set_device_name()
+
+ drivers/leds/trigger/ledtrig-netdev.c | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+--- a/drivers/leds/trigger/ledtrig-netdev.c
++++ b/drivers/leds/trigger/ledtrig-netdev.c
+@@ -730,8 +730,10 @@ static int netdev_trig_activate(struct l
+ 	led_set_trigger_data(led_cdev, trigger_data);
+ 
+ 	rc = register_netdevice_notifier(&trigger_data->notifier);
+-	if (rc)
++	if (rc) {
++		dev_put(trigger_data->net_dev);
+ 		kfree(trigger_data);
++	}
+ 
+ 	return rc;
+ }

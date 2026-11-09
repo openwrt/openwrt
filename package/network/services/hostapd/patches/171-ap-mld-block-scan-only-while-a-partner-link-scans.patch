@@ -1,0 +1,48 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Tue, 6 Oct 2026 07:42:46 +0200
+Subject: [PATCH] AP MLD: Block a scan only while a partner link scans
+
+hostapd_driver_scan() refuses a scan with -EBUSY while a partner link of
+the same AP MLD is in HAPD_IFACE_ACS, and a link stays in that state
+while it waits to retry a refused scan. If a second link starts ACS
+while the first one scans, its scan is refused. With acs_num_scans above
+1, the next scan of the first link is then refused as well. From then on
+each link finds the other in HAPD_IFACE_ACS on every retry, and both
+fail after ACS_SCAN_RETRY_MAX_COUNT attempts.
+
+The check exists because scan results without a matching scan cookie go
+to the link that received the event, or to the partner links with a
+scan callback. That requires at most one partner link with a scan in
+progress, not at most one partner link in ACS. Test for the scan
+callback instead of the interface state. The HT 20/40 MHz coexistence
+scan sets the scan callback as well, so it stays covered.
+
+Fixes: 76f8cfd6a206 ("AP MLD: Fix ACS and HT scan related issues")
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+
+--- a/src/ap/ap_drv_ops.c
++++ b/src/ap/ap_drv_ops.c
+@@ -784,7 +784,9 @@ int hostapd_driver_scan(struct hostapd_d
+ 
+ 	if (!hapd->iface->scan_cb && hapd->conf->mld_ap &&
+ 	    hapd->iface->interfaces) {
+-		/* Other links may be waiting for scan results */
++		/* A scan event without a matching cookie goes to the partner
++		 * link that waits for scan results, so only one link at a time
++		 * can wait. */
+ 		unsigned int i;
+ 
+ 		for (i = 0; i < hapd->iface->interfaces->count; i++) {
+@@ -799,9 +801,9 @@ int hostapd_driver_scan(struct hostapd_d
+ 			h_hapd = h_iface->bss[0];
+ 
+ 			if (hostapd_is_ml_partner(hapd, h_hapd) &&
+-			    h_hapd->iface->state == HAPD_IFACE_ACS) {
++			    h_iface->scan_cb) {
+ 				wpa_printf(MSG_INFO,
+-					   "ACS in progress in a partner link - try to scan later");
++					   "Scan in progress in a partner link - try to scan later");
+ 				return -EBUSY;
+ 			}
+ 		}

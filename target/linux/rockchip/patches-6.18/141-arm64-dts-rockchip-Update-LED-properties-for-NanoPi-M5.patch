@@ -1,0 +1,55 @@
+From: Ryan Leung <untilscour@protonmail.com>
+Date: Fri, 17 Apr 2026 13:37:40 +1000
+Subject: [PATCH] arm64: dts: rockchip: Update LED properties for NanoPi M5
+
+Reassign `led_sys` from `HEARTBEAT` to `POWER` and `led1` from LAN to WAN
+to match the OpenWrt boot/network indicator convention; drop the temporary
+label strings now that color/function provide the sysfs name;
+and add led-{boot,failsafe,running,upgrade} aliases pointing at led_sys.
+
+Signed-off-by: Ryan Leung <untilscour@protonmail.com>
+
+--- a/arch/arm64/boot/dts/rockchip/rk3576-nanopi-m5.dts
++++ b/arch/arm64/boot/dts/rockchip/rk3576-nanopi-m5.dts
+@@ -23,6 +23,11 @@
+ 		ethernet0 = &gmac0;
+ 		ethernet1 = &gmac1;
+ 		mmc0 = &sdmmc;
++
++		led-boot = &led_sys;
++		led-failsafe = &led_sys;
++		led-running = &led_sys;
++		led-upgrade = &led_sys;
+ 	};
+ 
+ 	chosen {
+@@ -88,19 +93,16 @@
+ 
+ 		led_sys: led-0 {
+ 			color = <LED_COLOR_ID_RED>;
+-			function = LED_FUNCTION_HEARTBEAT;
++			function = LED_FUNCTION_POWER;
+ 			gpios = <&gpio2 RK_PB3 GPIO_ACTIVE_HIGH>;
+-			label = "sys";
+-			linux,default-trigger = "heartbeat";
+ 			pinctrl-names = "default";
+ 			pinctrl-0 = <&led_sys_h>;
+ 		};
+ 
+ 		led1: led-1 {
+ 			color = <LED_COLOR_ID_GREEN>;
+-			function = LED_FUNCTION_LAN;
++			function = LED_FUNCTION_WAN;
+ 			gpios = <&gpio4 RK_PC5 GPIO_ACTIVE_HIGH>;
+-			label = "led1";
+ 			linux,default-trigger = "netdev";
+ 			pinctrl-names = "default";
+ 			pinctrl-0 = <&led1_h>;
+@@ -110,7 +112,6 @@
+ 			color = <LED_COLOR_ID_GREEN>;
+ 			function = LED_FUNCTION_LAN;
+ 			gpios = <&gpio2 RK_PB0 GPIO_ACTIVE_HIGH>;
+-			label = "led2";
+ 			linux,default-trigger = "netdev";
+ 			pinctrl-names = "default";
+ 			pinctrl-0 = <&led2_h>;

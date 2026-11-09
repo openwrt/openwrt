@@ -1,0 +1,10 @@
+#include "rt5350_7links_px-4885.dtsi"
+
+/ {
+	compatible = "7links,px-4885-8m", "7links,px-4885", "ralink,rt5350-soc";
+	model = "7Links PX-4885 (8M)";
+};
+
+&firmware {
+	reg = <0x50000 0x7b0000>;
+};

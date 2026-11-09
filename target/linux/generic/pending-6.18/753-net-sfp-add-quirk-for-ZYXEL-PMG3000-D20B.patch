@@ -1,0 +1,43 @@
+From 79e5c67e6740b1652cdaf81820738fe6c3ba333b Mon Sep 17 00:00:00 2001
+From: Martin Ostertag <Martin.Ostertag@gmx.de>
+Date: Sun, 25 Oct 2026 19:35:06 +0100
+Subject: [PATCH] net: phy: sfp: add quirk for ZYXEL PMG3000-D20B
+
+Add a dedicated quirk for the ZYXEL PMG3000-D20B module.
+
+The module reports LOS and TX fault in a way that prevents normal
+initialization, and it also needs the bad GPON startup delay in order
+to come up reliably.
+
+Use the existing GPON-specific fixups to ignore LOS, ignore TX fault,
+and apply T_START_UP_BAD_GPON.
+
+Signed-off-by: Martin Ostertag <Martin.Ostertag@gmx.de>
+Tested-by: Martin Ostertag <Martin.Ostertag@gmx.de>
+---
+ drivers/net/phy/sfp.c | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+--- a/drivers/net/phy/sfp.c
++++ b/drivers/net/phy/sfp.c
+@@ -426,6 +426,12 @@ static void sfp_fixup_nokia(struct sfp *
+ 	sfp_fixup_ignore_los(sfp);
+ }
+ 
++static void sfp_fixup_zyxel(struct sfp *sfp)
++{
++	sfp_fixup_ignore_tx_fault_and_los(sfp);
++	sfp->module_t_wait = T_START_UP_BAD_GPON;
++}
++
+ // For 10GBASE-T short-reach modules
+ static void sfp_fixup_10gbaset_30m(struct sfp *sfp)
+ {
+@@ -663,6 +669,7 @@ static const struct sfp_quirk sfp_quirks
+ 
+ 	SFP_QUIRK_S("ZOERAX", "SFP-2.5G-T", sfp_quirk_oem_2_5g),
+ 	SFP_QUIRK_S("TP-LINK", "TL-SM410U", sfp_quirk_oem_2_5g),
++	SFP_QUIRK("ZYXEL", "PMG3000-D20B", sfp_quirk_disable_autoneg, sfp_fixup_zyxel),
+ };
+ 
+ static size_t sfp_strlen(const char *str, size_t maxlen)

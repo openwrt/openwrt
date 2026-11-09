@@ -1,0 +1,46 @@
+From 2811b2fe69bab6e9ab7e405dd7d83fd1360bc604 Mon Sep 17 00:00:00 2001
+From: Robert Marko <robert.marko@sartura.hr>
+Date: Fri, 5 Dec 2025 11:45:42 +0100
+Subject: [PATCH 05/17] mmc: atmel-sdhci: set GCK rate based on compatible
+
+In order to add support for LAN969x we need to set the GCK rate based on
+compatible instead of defaulting to 240000000 Hz as LAN969x uses only
+100000000 Hz.
+
+Signed-off-by: Robert Marko <robert.marko@sartura.hr>
+---
+ drivers/mmc/atmel_sdhci.c | 9 +++++----
+ 1 file changed, 5 insertions(+), 4 deletions(-)
+
+--- a/drivers/mmc/atmel_sdhci.c
++++ b/drivers/mmc/atmel_sdhci.c
+@@ -96,6 +96,7 @@ static int atmel_sdhci_probe(struct udev
+ 	struct mmc_uclass_priv *upriv = dev_get_uclass_priv(dev);
+ 	struct atmel_sdhci_plat *plat = dev_get_plat(dev);
+ 	struct sdhci_host *host = dev_get_priv(dev);
++	u32 gck_rate = dev_get_driver_data(dev);
+ 	u32 max_clk;
+ 	struct clk clk;
+ 	int ret;
+@@ -119,7 +120,7 @@ static int atmel_sdhci_probe(struct udev
+ 	if (ret)
+ 		return ret;
+ 
+-	clk_set_rate(&clk, ATMEL_SDHC_GCK_RATE);
++	clk_set_rate(&clk, gck_rate);
+ 
+ 	max_clk = clk_get_rate(&clk);
+ 	if (!max_clk)
+@@ -163,9 +164,9 @@ static int atmel_sdhci_bind(struct udevi
+ }
+ 
+ static const struct udevice_id atmel_sdhci_ids[] = {
+-	{ .compatible = "atmel,sama5d2-sdhci" },
+-	{ .compatible = "microchip,sam9x60-sdhci" },
+-	{ .compatible = "microchip,sama7g5-sdhci" },
++	{ .compatible = "atmel,sama5d2-sdhci", .data = ATMEL_SDHC_GCK_RATE },
++	{ .compatible = "microchip,sam9x60-sdhci", .data = ATMEL_SDHC_GCK_RATE },
++	{ .compatible = "microchip,sama7g5-sdhci", .data = ATMEL_SDHC_GCK_RATE },
+ 	{ }
+ };
+ 

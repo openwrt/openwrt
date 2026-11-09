@@ -1,0 +1,35 @@
+From 25f3f2ff88ae604a3b473b501fc55d58fcb0f5eb Mon Sep 17 00:00:00 2001
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Date: Fri, 4 Sep 2026 11:06:26 +0200
+Subject: [PATCH] wifi: mac80211: fix swapped fq_overlimit/fq_overmemory in aqm
+ debugfs
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+The two scnprintf arguments for fq_overlimit and fq_overmemory are in the
+wrong order, which results in the aqm debugfs file showing the overmemory
+count under the fq_overlimit label and vice versa.
+
+Fixes: 2a4e675d887b ("mac80211: Export fq memory limit information in debugfs")
+Reviewed-by: Toke Høiland-Jørgensen <toke@toke.dk>
+Assisted-by: Claude:claude-opus-5
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+Link: https://patch.msgid.link/20260904090626.92727-1-julius@bairaktaris.de
+Signed-off-by: Johannes Berg <johannes.berg@intel.com>
+---
+ net/mac80211/debugfs.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/net/mac80211/debugfs.c
++++ b/net/mac80211/debugfs.c
+@@ -97,8 +97,8 @@ static ssize_t aqm_read(struct file *fil
+ 			"RW fq_quantum %u\n",
+ 			fq->flows_cnt,
+ 			fq->backlog,
+-			fq->overmemory,
+ 			fq->overlimit,
++			fq->overmemory,
+ 			fq->collisions,
+ 			fq->memory_usage,
+ 			fq->memory_limit,

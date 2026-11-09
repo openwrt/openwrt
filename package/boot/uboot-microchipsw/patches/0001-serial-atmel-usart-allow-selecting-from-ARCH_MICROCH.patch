@@ -1,0 +1,25 @@
+From 12f9c378b05393ffe0e61b92ceaf7eb0da9f2d12 Mon Sep 17 00:00:00 2001
+From: Robert Marko <robert.marko@sartura.hr>
+Date: Thu, 4 Dec 2025 14:52:17 +0100
+Subject: [PATCH 01/17] serial: atmel-usart: allow selecting from
+ ARCH_MICROCHIPSW
+
+USART driver is reused by a lot of Microchip platforms, in this case we
+need it for LAN969x so allow selecting it when ARCH_MICROCHIPSW is used.
+
+Signed-off-by: Robert Marko <robert.marko@sartura.hr>
+---
+ drivers/serial/Kconfig | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/serial/Kconfig
++++ b/drivers/serial/Kconfig
+@@ -681,7 +681,7 @@ config ARM_DCC
+ 
+ config ATMEL_USART
+ 	bool "Atmel USART support"
+-	depends on ARCH_AT91
++	depends on ARCH_AT91 || ARCH_MICROCHIPSW
+ 	help
+ 	  Select this to enable USART support for Atmel SoCs. It can be
+ 	  configured in the device tree, and input clock frequency can

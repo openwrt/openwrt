@@ -1,0 +1,44 @@
+From e2e43103c00b5f7ccedbdbdece0f622cb420b4a5 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Fri, 3 Oct 2025 12:53:10 +0100
+Subject: [PATCH] mt7987: make SPI controller configurable
+
+Allow selecting the SPI controller used for SPIM-NAND or SPI-NOR boot
+devices (either SPI0 or SPI2).
+
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ plat/mediatek/apsoc_common/Config.in        |  1 +
+ plat/mediatek/mt7987/Config.in              | 29 +++++++++++++++++++++
+ plat/mediatek/mt7987/bl2/bl2.mk             | 12 +++++++++
+ plat/mediatek/mt7987/bl2/bl2_dev_spi_nand.c | 10 ++++++-
+ plat/mediatek/mt7987/platform.mk            |  4 +--
+ 5 files changed, 53 insertions(+), 3 deletions(-)
+ create mode 100644 plat/mediatek/mt7987/Config.in
+
+--- a/plat/mediatek/mt7987/bl2/bl2.mk
++++ b/plat/mediatek/mt7987/bl2/bl2.mk
+@@ -91,7 +91,11 @@ endif # END OF BOOT_DEVICE = ram
+ ifeq ($(BOOT_DEVICE),nor)
+ $(eval $(call BL2_BOOT_NOR))
+ BL2_SOURCES		+=	$(MTK_PLAT_SOC)/bl2/bl2_dev_spi_nor.c
++ifeq ($(SPIM_NAND_PREFER_SPI2),1)
+ DTS_NAME		:=	mt7987-spi2
++else
++DTS_NAME		:=	mt7987-spi0
++endif
+ endif # END OF BOOTDEVICE = nor
+ 
+ ifeq ($(BOOT_DEVICE),emmc)
+@@ -118,7 +122,11 @@ ifeq ($(SPIM_NAND_NO_RETRY),1)
+ BL2_CPPFLAGS		+=	-DSPIM_NAND_NO_RETRY
+ endif # END OF SPIM_NAND_NO_RETRY
+ NAND_TYPE		?=	spim:2k+64
++ifeq ($(SPIM_NAND_PREFER_SPI2),1)
++DTS_NAME		:=	mt7987-spi2
++else
+ DTS_NAME		:=	mt7987-spi0
++endif
+ $(eval $(call BL2_BOOT_NAND_TYPE_CHECK,$(NAND_TYPE),spim:2k+64 spim:2k+128 spim:4k+256))
+ endif # END OF BOOTDEVICE = spim-nand
+ 

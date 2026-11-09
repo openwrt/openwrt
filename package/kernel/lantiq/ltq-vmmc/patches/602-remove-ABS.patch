@@ -1,0 +1,20 @@
+--- a/src/drv_vmmc_api.h
++++ b/src/drv_vmmc_api.h
+@@ -149,17 +149,6 @@ DECLARE_TRACE_GROUP(VMMC);
+       return code;                                                         \
+    }while(0)
+ 
+-/*******************************************************************************
+-Description:
+-   always returns the absolute value of argument given
+-Arguments:
+-   x  - argument
+-Return:
+-   absolute value of x
+-*******************************************************************************/
+-/* define ABS */
+-#define ABS(x) (((x) < 0) ? -(x) : (x))
+-
+ /* regular format macros */
+ /*******************************************************************************
+ Description:

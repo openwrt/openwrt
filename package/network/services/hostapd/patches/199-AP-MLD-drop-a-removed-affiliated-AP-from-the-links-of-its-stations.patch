@@ -1,0 +1,44 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Tue, 6 Oct 2026 07:56:46 +0200
+Subject: [PATCH] AP MLD: Drop a removed affiliated AP from the links of its stations
+
+When an affiliated AP leaves the AP MLD through LINK_REMOVE,
+hostapd_free_link_stas() frees the link stations of the non-AP MLDs
+that stay associated over their other links. The stations on those
+other links kept the removed link as valid, so STA output on the
+control interface still listed it. hostapd_free_stas() of a BSS that is
+not the association link of a non-AP MLD freed its link station with
+ap_free_sta() and left the same stale link, for example on
+DEAUTHENTICATE ff:ff:ff:ff:ff:ff on that BSS or on DISABLE of it.
+
+Free each link station with ap_free_link_sta(), which also clears the
+link on the other stations and frees the link station without
+AP-STA-DISCONNECTED. Free the link stations of a BSS in
+hostapd_free_stas() the same way, reported with
+CTRL-EVENT-LINK-STA-REMOVED.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+
+--- a/src/ap/sta_info.c
++++ b/src/ap/sta_info.c
+@@ -620,6 +620,7 @@ void hostapd_free_stas(struct hostapd_da
+ 
+ #ifdef CONFIG_IEEE80211BE
+ 	hostapd_free_mld_partner_stas(hapd);
++	hostapd_free_link_stas(hapd);
+ #endif /* CONFIG_IEEE80211BE */
+ 
+ 	sta = hapd->sta_list;
+@@ -693,10 +694,7 @@ void hostapd_free_link_stas(struct hosta
+ 			   MAC2STR(prev->addr));
+ 		ap_sta_link_event(hapd, WPA_EVENT_LINK_STA_REMOVED, prev->addr,
+ 				  hapd->mld_link_id);
+-		/* The non-AP MLD stays associated over its other links, so no
+-		 * disconnection is reported for it. */
+-		ap_sta_set_authorized_flag(hapd, prev, 0);
+-		ap_free_sta(hapd, prev);
++		ap_free_link_sta(hapd, prev);
+ 	}
+ }
+ #endif /* CONFIG_IEEE80211BE */

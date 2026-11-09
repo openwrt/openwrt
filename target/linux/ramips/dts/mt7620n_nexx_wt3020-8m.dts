@@ -1,0 +1,18 @@
+#include "mt7620n_nexx_wt3020.dtsi"
+
+/ {
+	compatible = "nexx,wt3020-8m", "nexx,wt3020", "ralink,mt7620n-soc";
+	model = "Nexx WT3020 (8M)";
+};
+
+&firmware {
+	reg = <0x50000 0x7b0000>;
+};
+
+&ehci {
+	status = "okay";
+};
+
+&ohci {
+	status = "okay";
+};

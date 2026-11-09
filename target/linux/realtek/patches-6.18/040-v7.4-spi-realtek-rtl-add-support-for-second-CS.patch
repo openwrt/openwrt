@@ -1,0 +1,99 @@
+From 1f82e6956faacc6e0c1b402838ba188e19af5a3c Mon Sep 17 00:00:00 2001
+From: Jonas Jelonek <jonas@jonasjelonek.de>
+Date: Mon, 21 Sep 2026 21:31:45 +0000
+Subject: [PATCH] spi: realtek-rtl: add support for second CS
+
+The initial driver assumed that the controller's second chip select was
+vestigial because none of the devices examined at the time used it. This
+does not hold for all hardware: there are devices with a peripheral
+connected to CS1. Since the controller only advertises one chip select
+and keeps CS1 permanently deasserted, those peripherals cannot be used.
+
+Advertise both native chip selects and select the appropriate CSBx bit in
+->set_cs(). Build the initial SFCSR control value from zero. The
+datasheet specifies CHIP_SEL for MMIO mode only, so keep it clear for
+this PIO driver and set only the two active-low CSB bits to leave both
+lines deasserted.
+
+Rename the callback argument from "active" to "level" while touching this
+code. ->set_cs() receives the physical line level, not a logical assertion
+state: after applying SPI_CS_HIGH, the core passes false to drive the line
+low and true to drive it high. The CSBx bits directly encode that level,
+and the native outputs are active-low, so clear the selected bit for a
+low/asserted line and set it for a high/deasserted line.
+
+Signed-off-by: Jonas Jelonek <jonas@jonasjelonek.de>
+Link: https://patch.msgid.link/20260921213145.671282-1-jonas@jonasjelonek.de
+Signed-off-by: Mark Brown <broonie@kernel.org>
+
+--- a/drivers/spi/spi-realtek-rtl.c
++++ b/drivers/spi/spi-realtek-rtl.c
+@@ -19,7 +19,6 @@ struct rtspi {
+ #define RTL_SPI_SFCSR_CSB0		BIT(31)
+ #define RTL_SPI_SFCSR_CSB1		BIT(30)
+ #define RTL_SPI_SFCSR_RDY		BIT(27)
+-#define RTL_SPI_SFCSR_CS		BIT(24)
+ #define RTL_SPI_SFCSR_LEN_MASK		~(0x03 << 28)
+ #define RTL_SPI_SFCSR_LEN1		(0x00 << 28)
+ #define RTL_SPI_SFCSR_LEN4		(0x03 << 28)
+@@ -30,17 +29,31 @@ struct rtspi {
+ #define REG(x)		(rtspi->base + x)
+ 
+ 
+-static void rt_set_cs(struct spi_device *spi, bool active)
++static void rt_set_cs(struct spi_device *spi, bool level)
+ {
+ 	struct rtspi *rtspi = spi_controller_get_devdata(spi->controller);
+-	u32 value;
++	unsigned int cs = spi_get_chipselect(spi, 0);
++	u32 cs_mask, value;
++
++	switch (cs) {
++	case 0:
++		cs_mask = RTL_SPI_SFCSR_CSB0;
++		break;
++	case 1:
++		cs_mask = RTL_SPI_SFCSR_CSB1;
++		break;
++	default:
++		return;
++	}
+ 
+-	/* CS0 bit is active low */
+ 	value = __raw_readl(REG(RTL_SPI_SFCSR));
+-	if (active)
+-		value |= RTL_SPI_SFCSR_CSB0;
++
++	/* CSBx is active low */
++	if (level)
++		value |= cs_mask;
+ 	else
+-		value &= ~RTL_SPI_SFCSR_CSB0;
++		value &= ~cs_mask;
++
+ 	__raw_writel(value, REG(RTL_SPI_SFCSR));
+ }
+ 
+@@ -139,11 +152,9 @@ static void init_hw(struct rtspi *rtspi)
+ 	value |= RTL_SPI_SFCR_RBO | RTL_SPI_SFCR_WBO;
+ 	__raw_writel(value, REG(RTL_SPI_SFCR));
+ 
+-	value = __raw_readl(REG(RTL_SPI_SFCSR));
+-	/* Permanently disable CS1, since it's never used */
+-	value |= RTL_SPI_SFCSR_CSB1;
+-	/* Select CS0 for use */
+-	value &= RTL_SPI_SFCSR_CS;
++	/* CHIP_SEL is only used in MMIO mode; CSB0/CSB1 are active low. */
++	value = 0;
++	value |= RTL_SPI_SFCSR_CSB0 | RTL_SPI_SFCSR_CSB1;
+ 	__raw_writel(value, REG(RTL_SPI_SFCSR));
+ }
+ 
+@@ -173,6 +184,7 @@ static int realtek_rtl_spi_probe(struct
+ 	ctrl->flags = SPI_CONTROLLER_HALF_DUPLEX;
+ 	ctrl->set_cs = rt_set_cs;
+ 	ctrl->transfer_one = transfer_one;
++	ctrl->num_chipselect = 2;
+ 
+ 	err = devm_spi_register_controller(&pdev->dev, ctrl);
+ 	if (err) {

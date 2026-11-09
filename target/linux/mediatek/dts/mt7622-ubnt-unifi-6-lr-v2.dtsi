@@ -1,0 +1,73 @@
+#include "mt7622-ubnt-unifi-6-lr.dtsi"
+
+/ {
+	aliases {
+		led-boot = &led_white;
+		led-failsafe = &led_white;
+		led-running = &led_blue;
+		led-upgrade = &led_blue;
+	};
+
+	gpio-leds {
+		compatible = "gpio-leds";
+
+		led_white: dome_white {
+			label = "white:dome";
+			gpios = <&pio 0x43 GPIO_ACTIVE_LOW>;
+		};
+
+		led_blue: dome_blue {
+			label = "blue:dome";
+			gpios = <&pio 0x44 GPIO_ACTIVE_HIGH>;
+		};
+	};
+};
+
+&eth {
+	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&eth_pins>;
+
+	gmac0: mac@0 {
+		compatible = "mediatek,eth-mac";
+		reg = <0>;
+
+		phy-mode = "2500base-x";
+		phy-handle = <&phy0>;
+		phy-connection-type = "2500base-x";
+	};
+
+	mdio: mdio-bus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		phy0: ethernet-phy@8 {
+			compatible = "ethernet-phy-ieee802.3-c45";
+			reg = <0x8>;
+		};
+	};
+};
+
+&gmac0 {
+	nvmem-cells = <&macaddr_eeprom_0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&slot0 {
+	wmac1: wifi@0,0 {
+		compatible = "mediatek,mt76";
+		reg = <0x0 0 0 0 0>;
+	};
+};
+
+&wmac {
+	nvmem-cells = <&eeprom_factory_0>, <&macaddr_eeprom_0>;
+	nvmem-cell-names = "eeprom", "mac-address";
+	status = "okay";
+};
+
+&wmac1 {
+	nvmem-cells = <&eeprom_factory_20000>, <&macaddr_eeprom_6>;
+	nvmem-cell-names = "eeprom", "mac-address";
+	ieee80211-freq-limit = <5000000 6000000>;
+};

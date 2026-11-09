@@ -1,0 +1,38 @@
+From: Zhi-Jun You <hujy652@gmail.com>
+Date: Mon, 26 Oct 2026 17:57:30 +0800
+Subject: [PATCH] net: ethernet: mtk_wed: free up rings during detach
+
+During __mtk_wed_detach, rx_ring and tx_wdma aren't freed up.
+
+Fix this by add them to mtk_wed_free_rx_rings.
+
+This patch is pulled from mtk-openwrt-feeds to address Sashiko's review
+and edit to rely on ring->desc instead of an extra flag.
+
+Link: https://github.com/mediatek/mtk-openwrt-feeds/blob/main/25.12/files/target/linux/mediatek/patches-6.12/999-wed-04-Fix-reinsert-wifi-module-cause-memory-leak-issue.patch
+Fixes: 4c5de09eb0d0 ("net: ethernet: mtk_wed: add configure wed wo support")
+Reported-by: Sashiko <sashiko-bot@kernel.org>
+Link: https://sashiko.dev/#/message/179000700034.2160803.10594281691384015089%40kernel.org
+Signed-off-by: Zhi-Jun You <hujy652@gmail.com>
+---
+---
+ drivers/net/ethernet/mediatek/mtk_wed.c | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+--- a/drivers/net/ethernet/mediatek/mtk_wed.c
++++ b/drivers/net/ethernet/mediatek/mtk_wed.c
+@@ -949,6 +949,14 @@ mtk_wed_free_ring(struct mtk_wed_device
+ static void
+ mtk_wed_free_rx_rings(struct mtk_wed_device *dev)
+ {
++	int i;
++
++	for (i = 0; i < ARRAY_SIZE(dev->rx_ring); i++)
++		mtk_wed_free_ring(dev, &dev->rx_ring[i]);
++
++	for (i = 0; i < ARRAY_SIZE(dev->tx_wdma); i++)
++		mtk_wed_free_ring(dev, &dev->tx_wdma[i]);
++
+ 	mtk_wed_free_rx_buffer(dev);
+ 	mtk_wed_free_ring(dev, &dev->rro.ring);
+ }

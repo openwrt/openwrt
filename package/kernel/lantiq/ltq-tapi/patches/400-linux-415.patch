@@ -1,0 +1,36 @@
+--- a/src/drv_tapi_linux.c
++++ b/src/drv_tapi_linux.c
+@@ -107,7 +107,7 @@ struct _TAPI_FD_PRIV_DATA
+ /* ============================= */
+ /* Local Functions               */
+ /* ============================= */
+-static IFX_void_t TAPI_timer_call_back (IFX_ulong_t arg);
++static IFX_void_t TAPI_timer_call_back (struct timer_list *t);
+ #if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,20))
+ static IFX_void_t TAPI_tqueue (IFX_void_t *pWork);
+ #else /* for Kernel newer or equal 2.6.20 */
+@@ -3354,11 +3354,7 @@ Timer_ID TAPI_Create_Timer(TIMER_ENTRY p
+    pTimerData->nArgument = nArgument;
+    pTimerData->bStopped = IFX_FALSE;
+ 
+-   init_timer(&(pTimerData->Timer_List));
+-
+-   /* set timer call back function */
+-   pTimerData->Timer_List.function = TAPI_timer_call_back;
+-   pTimerData->Timer_List.data = (IFX_ulong_t) pTimerData;
++   timer_setup(&(pTimerData->Timer_List), TAPI_timer_call_back, 0);
+ 
+    /* Initialize Timer Task */
+ #ifdef LINUX_2_6
+@@ -3499,9 +3495,9 @@ static IFX_void_t TAPI_tqueue (struct wo
+ 
+    \param  arg          Pointer to corresponding timer ID.
+ */
+-static IFX_void_t TAPI_timer_call_back (IFX_ulong_t arg)
++static IFX_void_t TAPI_timer_call_back (struct timer_list *t)
+ {
+-   Timer_ID Timer = (Timer_ID) arg;
++   Timer_ID Timer = from_timer(Timer, t, Timer_List);
+    /* do the operation in process context,
+       not in interrupt context */
+ #ifdef LINUX_2_6

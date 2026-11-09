@@ -1,0 +1,586 @@
+// SPDX-License-Identifier: (GPL-2.0 OR MIT)
+
+/dts-v1/;
+#include "mt7988a.dtsi"
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/leds/common.h>
+#include <dt-bindings/pinctrl/mt65xx.h>
+#include <dt-bindings/regulator/richtek,rt5190a-regulator.h>
+
+/ {
+	compatible = "ltc,vl7m19k", "mediatek,mt7988a";
+	model = "LTC Velo7 Max";
+
+	aliases {
+		serial0 = &serial0;
+		label-mac-device = &gmac0;
+		led-boot = &led_status_green;
+		led-failsafe = &led_status_red;
+		led-running = &led_status_green;
+		led-upgrade = &led_status_blue;
+	};
+
+	chosen {
+		stdout-path = "serial0:115200n8";
+		bootargs = "console=ttyS0,115200n1 earlycon=uart8250,mmio32,0x11000000 pci=pcie_bus_perf";
+	};
+
+	gpio-leds {
+		compatible = "gpio-leds";
+
+		led-power {
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_POWER;
+			gpios = <&pio 81 GPIO_ACTIVE_HIGH>;
+		};
+
+		led_status_green: led-status-green {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_STATUS;
+			gpios = <&pio 68 GPIO_ACTIVE_HIGH>;
+		};
+
+		led_status_blue: led-status-blue {
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_STATUS;
+			gpios = <&pio 75 GPIO_ACTIVE_HIGH>;
+		};
+
+		led_status_red: led-status-red {
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_STATUS;
+			gpios = <&pio 76 GPIO_ACTIVE_HIGH>;
+		};
+
+		led-wlan-2g {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WLAN_2GHZ;
+			gpios = <&pio 79 GPIO_ACTIVE_HIGH>;
+		};
+
+		led-wlan-5g {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WLAN_5GHZ;
+			gpios = <&pio 63 GPIO_ACTIVE_HIGH>;
+		};
+
+		led-wlan-6g {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WLAN_6GHZ;
+			gpios = <&pio 62 GPIO_ACTIVE_HIGH>;
+		};
+
+		led-tel1-green {
+			color = <LED_COLOR_ID_GREEN>;
+			function = "tel";
+			function-enumerator = <1>;
+			gpios = <&pio 0 GPIO_ACTIVE_HIGH>;
+		};
+
+		led-tel1-red {
+			color = <LED_COLOR_ID_RED>;
+			function = "tel";
+			function-enumerator = <1>;
+			gpios = <&pio 2 GPIO_ACTIVE_HIGH>;
+		};
+
+		led-tel2-green {
+			color = <LED_COLOR_ID_GREEN>;
+			function = "tel";
+			function-enumerator = <2>;
+			gpios = <&pio 1 GPIO_ACTIVE_HIGH>;
+		};
+
+		led-tel2-red {
+			color = <LED_COLOR_ID_RED>;
+			function = "tel";
+			function-enumerator = <2>;
+			gpios = <&pio 3 GPIO_ACTIVE_HIGH>;
+		};
+
+		led-wps {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WPS;
+			gpios = <&pio 21 GPIO_ACTIVE_HIGH>;
+			default-state = "on";
+		};
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		button-reset {
+			label = "reset";
+			linux,code = <KEY_RESTART>;
+			gpios = <&pio 13 GPIO_ACTIVE_LOW>;
+		};
+
+		button-wps {
+			label = "wps";
+			linux,code = <KEY_WPS_BUTTON>;
+			gpios = <&pio 14 GPIO_ACTIVE_LOW>;
+		};
+
+		button-reboot {
+			label = "reboot";
+			linux,code = <KEY_POWER2>;
+			gpios = <&pio 8 GPIO_ACTIVE_LOW>;
+		};
+	};
+};
+
+&i2c0 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&i2c0_pins>;
+	status = "okay";
+
+	rt5190a_64: rt5190a@64 {
+		compatible = "richtek,rt5190a";
+		reg = <0x64>;
+		vin2-supply = <&rt5190_buck1>;
+		vin3-supply = <&rt5190_buck1>;
+		vin4-supply = <&rt5190_buck1>;
+
+		regulators {
+			rt5190_buck1: buck1 {
+				regulator-name = "rt5190a-buck1";
+				regulator-min-microvolt = <5090000>;
+				regulator-max-microvolt = <5090000>;
+				regulator-allowed-modes =
+				<RT5190A_OPMODE_AUTO RT5190A_OPMODE_FPWM>;
+				regulator-boot-on;
+				regulator-always-on;
+			};
+
+			buck2 {
+				regulator-name = "vcore";
+				regulator-min-microvolt = <600000>;
+				regulator-max-microvolt = <1400000>;
+				regulator-boot-on;
+				regulator-always-on;
+			};
+
+			rt5190_buck3: buck3 {
+				regulator-name = "vproc";
+				regulator-min-microvolt = <600000>;
+				regulator-max-microvolt = <1400000>;
+				regulator-boot-on;
+			};
+
+			buck4 {
+				regulator-name = "rt5190a-buck4";
+				regulator-min-microvolt = <850000>;
+				regulator-max-microvolt = <850000>;
+				regulator-allowed-modes =
+				<RT5190A_OPMODE_AUTO RT5190A_OPMODE_FPWM>;
+				regulator-boot-on;
+				regulator-always-on;
+			};
+
+			ldo {
+				regulator-name = "rt5190a-ldo";
+				regulator-min-microvolt = <1200000>;
+				regulator-max-microvolt = <1200000>;
+				regulator-boot-on;
+				regulator-always-on;
+			};
+		};
+	};
+};
+
+&cpu0 {
+	proc-supply = <&rt5190_buck3>;
+};
+
+&cpu1 {
+	proc-supply = <&rt5190_buck3>;
+};
+
+&cpu2 {
+	proc-supply = <&rt5190_buck3>;
+};
+
+&cpu3 {
+	proc-supply = <&rt5190_buck3>;
+};
+
+&cci {
+	proc-supply = <&rt5190_buck3>;
+};
+
+&spi0 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&spi0_flash_pins>;
+	status = "okay";
+
+	spi_nand@0 {
+		compatible = "spi-nand";
+		reg = <0>;
+		spi-max-frequency = <52000000>;
+		spi-rx-bus-width = <4>;
+		spi-tx-bus-width = <4>;
+		mediatek,nmbm;
+		mediatek,bmt-max-ratio = <1>;
+		mediatek,bmt-max-reserved-blocks = <256>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "BL2";
+				reg = <0x0 0x100000>;
+				read-only;
+			};
+
+			partition@100000 {
+				label = "u-boot-env";
+				reg = <0x100000 0x80000>;
+			};
+
+			partition@180000 {
+				label = "Factory";
+				reg = <0x180000 0x400000>;
+				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					eeprom_factory_0: eeprom@0 {
+						reg = <0x0 0x1e00>;
+					};
+
+					macaddr_factory_4: macaddr@4 {
+						compatible = "mac-base";
+						reg = <0x4 0x6>;
+						#nvmem-cell-cells = <1>;
+					};
+				};
+			};
+
+			partition@580000 {
+				label = "FIP";
+				reg = <0x580000 0x200000>;
+			};
+
+			partition@780000 {
+				label = "ubi";
+				reg = <0x780000 0xc080000>;
+				compatible = "linux,ubi";
+			};
+
+			partition@c800000 {
+				label = "config";
+				reg = <0xc800000 0xa00000>;
+				compatible = "linux,ubi";
+			};
+
+			partition@d200000 {
+				label = "config_bak";
+				reg = <0xd200000 0xa00000>;
+				compatible = "linux,ubi";
+			};
+
+			partition@dc00000 {
+				label = "data";
+				reg = <0xdc00000 0x1400000>;
+				compatible = "linux,ubi";
+			};
+		};
+	};
+};
+
+&pio {
+	pcie0_pins: pcie0-pins {
+		mux {
+			function = "pcie";
+			groups = "pcie_2l_0_pereset";
+		};
+	};
+
+	pcie1_pins: pcie1-pins {
+		mux {
+			function = "pcie";
+			groups = "pcie_2l_1_pereset";
+		};
+	};
+
+	mdio0_pins: mdio0-pins {
+		mux {
+			function = "eth";
+			groups = "mdc_mdio0";
+		};
+
+		conf {
+			groups = "mdc_mdio0";
+			drive-strength = <MTK_DRIVE_8mA>;
+		};
+	};
+
+	i2c0_pins: i2c0-g0-pins {
+		mux {
+			function = "i2c";
+			groups = "i2c0_1";
+		};
+	};
+
+	spi0_flash_pins: spi0-flash-pins {
+		mux {
+			function = "spi";
+			groups = "spi0", "spi0_wp_hold";
+		};
+	};
+
+	gbe0_led0_pins: gbe0-led0-pins {
+		mux {
+			function = "led";
+			groups = "gbe0_led0";
+		};
+	};
+
+	gbe0_led1_pins: gbe0-led1-pins {
+		mux {
+			function = "led";
+			groups = "gbe0_led1";
+		};
+	};
+
+	gbe1_led0_pins: gbe1-led0-pins {
+		mux {
+			function = "led";
+			groups = "gbe1_led0";
+		};
+	};
+
+	gbe1_led1_pins: gbe1-led1-pins {
+		mux {
+			function = "led";
+			groups = "gbe1_led1";
+		};
+	};
+
+	gbe2_led0_pins: gbe2-led0-pins {
+		mux {
+			function = "led";
+			groups = "gbe2_led0";
+		};
+	};
+
+	gbe2_led1_pins: gbe2-led1-pins {
+		mux {
+			function = "led";
+			groups = "gbe2_led1";
+		};
+	};
+
+	gbe3_led0_pins: gbe3-led0-pins {
+		mux {
+			function = "led";
+			groups = "gbe3_led0";
+		};
+	};
+
+	gbe3_led1_pins: gbe3-led1-pins {
+		mux {
+			function = "led";
+			groups = "gbe3_led1";
+		};
+	};
+};
+
+&eth {
+	pinctrl-names = "default";
+	pinctrl-0 = <&mdio0_pins>;
+	status = "okay";
+};
+
+&serial0 {
+	status = "okay";
+};
+
+&watchdog {
+	status = "okay";
+};
+
+&ssusb0 {
+	status = "okay";
+};
+
+&ssusb1 {
+	status = "okay";
+};
+
+&tphy {
+	status = "okay";
+};
+
+&xsphy {
+	status = "okay";
+};
+
+&mdio_bus {
+	phy6: ethernet-phy@6 {
+		reg = <6>;
+		reset-gpios = <&pio 77 GPIO_ACTIVE_LOW>;
+		reset-assert-us = <100000>;
+		reset-deassert-us = <221000>;
+		compatible = "ethernet-phy-ieee802.3-c45";
+	};
+
+	phy7: ethernet-phy@7 {
+		reg = <7>;
+		reset-gpios = <&pio 10 GPIO_ACTIVE_LOW>;
+		reset-assert-us = <100000>;
+		reset-deassert-us = <221000>;
+		compatible = "ethernet-phy-ieee802.3-c45";
+	};
+};
+
+&int_2p5g_phy {
+	status = "disabled";
+};
+
+&gmac0 {
+	nvmem-cells = <&macaddr_factory_4 (-2)>;
+	nvmem-cell-names = "mac-address";
+	status = "okay";
+};
+
+&gmac1 {
+	phy-mode = "usxgmii";
+	phy-connection-type = "usxgmii";
+	managed = "in-band-status";
+	phy = <&phy6>;
+	nvmem-cells = <&macaddr_factory_4 (-2)>;
+	nvmem-cell-names = "mac-address";
+	status = "okay";
+};
+
+&gmac2 {
+	phy-mode = "usxgmii";
+	phy-connection-type = "usxgmii";
+	managed = "in-band-status";
+	phy = <&phy7>;
+	nvmem-cells = <&macaddr_factory_4 (-1)>;
+	nvmem-cell-names = "mac-address";
+	status = "okay";
+};
+
+&switch {
+	status = "okay";
+};
+
+&gsw_port0 {
+	label = "lan0";
+};
+
+&gsw_phy0 {
+	pinctrl-names = "gbe-led";
+	pinctrl-0 = <&gbe0_led0_pins>, <&gbe0_led1_pins>;
+};
+
+&gsw_phy0_led0 {
+	status = "okay";
+	function = LED_FUNCTION_LAN;
+	color = <LED_COLOR_ID_GREEN>;
+};
+
+&gsw_phy0_led1 {
+	status = "okay";
+	function = LED_FUNCTION_LAN;
+	color = <LED_COLOR_ID_ORANGE>;
+};
+
+&gsw_port1 {
+	label = "lan1";
+};
+
+&gsw_phy1 {
+	pinctrl-names = "gbe-led";
+	pinctrl-0 = <&gbe1_led0_pins>, <&gbe1_led1_pins>;
+};
+
+&gsw_phy1_led0 {
+	status = "okay";
+	function = LED_FUNCTION_LAN;
+	color = <LED_COLOR_ID_GREEN>;
+};
+
+&gsw_phy1_led1 {
+	status = "okay";
+	function = LED_FUNCTION_LAN;
+	color = <LED_COLOR_ID_ORANGE>;
+};
+
+&gsw_port2 {
+	label = "lan2";
+};
+
+&gsw_phy2 {
+	pinctrl-names = "gbe-led";
+	pinctrl-0 = <&gbe2_led0_pins>, <&gbe2_led1_pins>;
+};
+
+&gsw_phy2_led0 {
+	status = "okay";
+	function = LED_FUNCTION_LAN;
+	color = <LED_COLOR_ID_GREEN>;
+};
+
+&gsw_phy2_led1 {
+	status = "okay";
+	function = LED_FUNCTION_LAN;
+	color = <LED_COLOR_ID_ORANGE>;
+};
+
+&gsw_port3 {
+	label = "lan3";
+};
+
+&gsw_phy3 {
+	pinctrl-names = "gbe-led";
+	pinctrl-0 = <&gbe3_led0_pins>, <&gbe3_led1_pins>;
+};
+
+&gsw_phy3_led0 {
+	status = "okay";
+	function = LED_FUNCTION_LAN;
+	color = <LED_COLOR_ID_GREEN>;
+};
+
+&gsw_phy3_led1 {
+	status = "okay";
+	function = LED_FUNCTION_LAN;
+	color = <LED_COLOR_ID_ORANGE>;
+};
+
+&pcie0 {
+	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&pcie0_pins>;
+	wifi-reset-gpios = <&pio 7 GPIO_ACTIVE_LOW>;
+	wifi-reset-msleep = <100>;
+
+	pcie@0,0 {
+		reg = <0x0000 0 0 0 0>;
+		#address-cells = <3>;
+		#size-cells = <2>;
+
+		wifi@0,0 {
+			compatible = "mediatek,mt76";
+			reg = <0x0000 0 0 0 0>;
+			nvmem-cells = <&eeprom_factory_0>;
+			nvmem-cell-names = "eeprom";
+		};
+	};
+};
+
+&pcie1 {
+	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&pcie1_pins>;
+};

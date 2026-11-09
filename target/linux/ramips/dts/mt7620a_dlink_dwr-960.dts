@@ -1,0 +1,35 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "mt7620a_dlink_dwr-96x.dtsi"
+
+/ {
+	compatible = "dlink,dwr-960", "ralink,mt7620a-soc";
+	model = "D-Link DWR-960";
+};
+
+&ethernet {
+	pinctrl-names = "default";
+	pinctrl-0 = <&rgmii2_pins &mdio_pins>;
+
+	mediatek,portmap = "wllll";
+
+	port@5 {
+		status = "okay";
+		phy-mode = "rgmii-txid";
+		phy-handle = <&phy7>;
+	};
+
+	mdio-bus {
+		status = "okay";
+
+		phy7: ethernet-phy@7 {
+			reg = <7>;
+			phy-mode = "rgmii-id";
+		};
+	};
+};
+
+&wifi {
+	nvmem-cells = <&eeprom_config_e08e>, <&macaddr_config_e50e 2>;
+	nvmem-cell-names = "eeprom", "mac-address";
+};

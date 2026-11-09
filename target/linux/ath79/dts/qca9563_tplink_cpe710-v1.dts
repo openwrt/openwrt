@@ -1,0 +1,20 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "qca9563_tplink_cpe710.dtsi"
+
+/ {
+	model = "TP-Link CPE710 v1";
+	compatible = "tplink,cpe710-v1", "qca,qca9563";
+};
+
+&mdio0 {
+	phy4: ethernet-phy@4 {
+		reg = <4>;
+		reset-gpios = <&gpio 11 GPIO_ACTIVE_LOW>;
+	};
+};
+
+&eth0 {
+	phy-handle = <&phy4>;
+	phy-mode = "sgmii";
+};

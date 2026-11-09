@@ -1,0 +1,660 @@
+From 65d2dbd28ee8224c0ad9bf5f0a755963efd7b4cb Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Wed, 28 Oct 2026 09:56:08 +0000
+Subject: [PATCH] media: rockchip: rkisp2: Add the ISPP uapi blocks
+
+The Rockchip ISPP (image post-processing) unit of the RV1126 uses the
+same V4L2 ISP extensible block format as the ISP2, with the ISPP blocks
+added to the Rockchip uapi header.
+
+Add the ISPP params blocks, one per module (TNR, NR, SHP, FEC, ORB),
+laid out with natural alignment and explicit padding, and the ISPP
+stats blocks (ORB feature points and the FEC motion mesh). The blocks
+are carried in the standard v4l2_isp_buffer envelope of
+V4L2_META_FMT_RKISP2_PARAMS and V4L2_META_FMT_RKISP2_STATS, so no new
+meta format is needed.
+
+The stand-alone FEC mem2mem node takes its requests through a private
+ioctl, so add the rkispp_fec_in_out request structure with it.
+
+Assisted-by: LLM
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ .../uapi/linux/media/rockchip/rkisp2-config.h | 615 +++++++++++++++++-
+ 1 file changed, 614 insertions(+), 1 deletion(-)
+
+--- a/include/uapi/linux/media/rockchip/rkisp2-config.h
++++ b/include/uapi/linux/media/rockchip/rkisp2-config.h
+@@ -1,6 +1,6 @@
+ /* SPDX-License-Identifier: ((GPL-2.0-or-later WITH Linux-syscall-note) OR MIT) */
+ /*
+- * Rockchip ISP2 userspace API
++ * Rockchip ISP2 family (ISP2 and ISPP) userspace API
+  * Copyright (C) 2017 Rockchip Electronics Co., Ltd.
+  * Copyright (C) 2026 Ideas on Board Oy.
+  */
+@@ -12,6 +12,7 @@
+ #include <linux/build_bug.h>
+ #endif /* __KERNEL__ */
+ #include <linux/types.h>
++#include <linux/videodev2.h>
+ 
+ #include <linux/media/v4l2-isp.h>
+ 
+@@ -672,4 +673,616 @@ struct rkisp2_params_awb_meas {
+ 	sizeof(struct rkisp2_params_hist_big) * 3		+\
+ 	sizeof(struct rkisp2_params_awb_meas))
+ 
++/*---------- ISPP (image post-processing) ------------*/
++
++/*
++ * The Rockchip ISPP (image post-processing) blocks follow the same
++ * extensible block conventions as the RkISP2 blocks above: every block
++ * embeds a struct v4l2_isp_block_header as its first member, uses natural
++ * alignment with explicit padding, and is identified by one of the block
++ * type enums below.
++ *
++ * The params blocks carry the per-module 3A tuning parameters which are
++ * programmed directly into the ISPP module register banks; the individual
++ * gain filter, scale, weight and kernel tables are 3A tuning values whose
++ * exact fixed-point semantics are per the Rockchip ISPP hardware user
++ * manual. A module is configured only when its block is present in the
++ * params buffer with the V4L2_ISP_PARAMS_FL_BLOCK_ENABLE flag set, and a
++ * block with the V4L2_ISP_PARAMS_FL_BLOCK_DISABLE flag disables the module.
++ */
++
++#define RKISPP_ORB_BRIEF_NUM			15
++#define RKISPP_ORB_DATA_NUM			10000
++
++/*
++ * Maximum number of FEC mesh points the driver accepts per frame. This
++ * covers the densest mesh grid (16 pixel vertex spacing) at the maximum
++ * supported input resolution and matches the 131072 point mesh buffers of
++ * the ISPP FEC engine.
++ */
++#define RKISPP_FEC_MESH_POINTS_MAX		131072
++
++/* ISPP TNR curve and table sizes */
++#define RKISPP_TNR_SIGMA_CURVE_SIZE		17
++#define RKISPP_TNR_LUMA_CURVE_SIZE		6
++#define RKISPP_TNR_GFCOEF6_SIZE		6
++#define RKISPP_TNR_GFCOEF3_SIZE		3
++#define RKISPP_TNR_SCALE_YG_SIZE		4
++#define RKISPP_TNR_SCALE_YL_SIZE		3
++#define RKISPP_TNR_SCALE_CG_SIZE		3
++#define RKISPP_TNR_SCALE_Y2CG_SIZE		3
++#define RKISPP_TNR_SCALE_CL_SIZE		2
++#define RKISPP_TNR_SCALE_Y2CL_SIZE		3
++#define RKISPP_TNR_WEIGHT_Y_SIZE		3
++
++/* ISPP NR table sizes */
++#define RKISPP_NR_UVNR_UVGAIN_SIZE		2
++#define RKISPP_NR_UVNR_T1FLT_WTQ_SIZE		8
++#define RKISPP_NR_UVNR_T2GEN_WTQ_SIZE		4
++#define RKISPP_NR_UVNR_T2FLT_WT_SIZE		3
++#define RKISPP_NR_YNR_SGM_DX_SIZE		16
++#define RKISPP_NR_YNR_SGM_Y_SIZE		17
++#define RKISPP_NR_YNR_HWEIT_D_SIZE		20
++#define RKISPP_NR_YNR_HGRAD_Y_SIZE		24
++#define RKISPP_NR_YNR_HSTV_Y_SIZE		17
++#define RKISPP_NR_YNR_CI_SIZE			4
++#define RKISPP_NR_YNR_LGAIN_MIN_SIZE		4
++#define RKISPP_NR_YNR_LWEIT_FLT_SIZE		4
++#define RKISPP_NR_YNR_HGAIN_SGM_SIZE		4
++#define RKISPP_NR_YNR_HWEIT_SIZE		4
++#define RKISPP_NR_YNR_LWEIT_CMP_SIZE		2
++#define RKISPP_NR_YNR_ST_SCALE_SIZE		3
++
++/* ISPP SHP kernel and table sizes */
++#define RKISPP_SHP_PBF_KERNEL_SIZE		3
++#define RKISPP_SHP_MRF_KERNEL_SIZE		6
++#define RKISPP_SHP_MBF_KERNEL_SIZE		12
++#define RKISPP_SHP_HRF_KERNEL_SIZE		6
++#define RKISPP_SHP_HBF_KERNEL_SIZE		3
++#define RKISPP_SHP_EDGE_COEF_SIZE		3
++#define RKISPP_SHP_EDGE_SMOTH_SIZE		3
++#define RKISPP_SHP_EDGE_GAUS_SIZE		6
++#define RKISPP_SHP_DOG_KERNEL_SIZE		6
++#define RKISPP_SHP_LUM_POINT_SIZE		6
++#define RKISPP_SHP_SIGMA_SIZE			8
++#define RKISPP_SHP_LUM_CLP_SIZE			8
++#define RKISPP_SHP_LUM_MIN_SIZE			8
++#define RKISPP_SHP_EDGE_LUM_THED_SIZE		8
++#define RKISPP_SHP_CLAMP_SIZE			8
++#define RKISPP_SHP_DETAIL_ALPHA_SIZE		8
++
++/**
++ * enum rkispp_params_block_type - Rockchip ISPP extensible params block types
++ *
++ * @RKISPP_PARAMS_BLOCK_TNR: Temporal noise reduction
++ * @RKISPP_PARAMS_BLOCK_NR: Noise reduction (luma and chroma)
++ * @RKISPP_PARAMS_BLOCK_SHP: Sharpening
++ * @RKISPP_PARAMS_BLOCK_FEC: FEC frame estimation (motion mesh)
++ * @RKISPP_PARAMS_BLOCK_ORB: ORB feature detection
++ */
++enum rkispp_params_block_type {
++	RKISPP_PARAMS_BLOCK_TNR,
++	RKISPP_PARAMS_BLOCK_NR,
++	RKISPP_PARAMS_BLOCK_SHP,
++	RKISPP_PARAMS_BLOCK_FEC,
++	RKISPP_PARAMS_BLOCK_ORB,
++};
++
++/**
++ * enum rkispp_stats_block_type - Rockchip ISPP extensible stats block types
++ *
++ * @RKISPP_STATS_BLOCK_ORB: ORB feature points measured in the frame
++ * @RKISPP_STATS_BLOCK_FEC_MESH: FEC mesh measured in the frame
++ */
++enum rkispp_stats_block_type {
++	RKISPP_STATS_BLOCK_ORB,
++	RKISPP_STATS_BLOCK_FEC_MESH,
++};
++
++/**
++ * enum rkispp_tnr_mode - ISPP TNR temporal averaging mode
++ *
++ * @RKISPP_TNR_MODE_2_TO_1: Average the two most recent frames
++ * @RKISPP_TNR_MODE_3_TO_1: Average the three most recent frames
++ */
++enum rkispp_tnr_mode {
++	RKISPP_TNR_MODE_2_TO_1 = 2,
++	RKISPP_TNR_MODE_3_TO_1 = 3,
++};
++
++/**
++ * struct rkispp_params_tnr - Rockchip ISPP params TNR config
++ *
++ * Rockchip ISPP parameters temporal noise reduction configuration block.
++ * Identified by :c:type:`RKISPP_PARAMS_BLOCK_TNR`.
++ *
++ * @header: The ISPP parameters block header
++ * @mode: Temporal averaging mode, from enum rkispp_tnr_mode; when 0 the
++ *		driver uses its default (2:1)
++ * @opty_en: Optimal Y processing enable
++ * @optc_en: Optimal C processing enable
++ * @gain_en: Exposure gain compensation enable
++ * @pk0_y: Y peak value 0
++ * @pk1_y: Y peak value 1
++ * @pk0_c: C peak value 0
++ * @pk1_c: C peak value 1
++ * @glb_gain_cur_sqrt: Square root of the current global exposure gain
++ * @sigma_x: Sigma curve, x values (first 16 of the 17 curve points, 8 bits)
++ * @gfcoef_y0: Gain filter coefficient table y0 (6 entries, 8 bits)
++ * @gfcoef_y1: Gain filter coefficient table y1 (3 entries, 8 bits)
++ * @gfcoef_y2: Gain filter coefficient table y2 (3 entries, 8 bits)
++ * @gfcoef_y3: Gain filter coefficient table y3 (3 entries, 8 bits)
++ * @gfcoef_yg0: Gain filter coefficient table yg0 (6 entries, 8 bits)
++ * @gfcoef_yg1: Gain filter coefficient table yg1 (3 entries, 8 bits)
++ * @gfcoef_yg2: Gain filter coefficient table yg2 (3 entries, 8 bits)
++ * @gfcoef_yg3: Gain filter coefficient table yg3 (3 entries, 8 bits)
++ * @gfcoef_yl0: Gain filter coefficient table yl0 (6 entries, 8 bits)
++ * @gfcoef_yl1: Gain filter coefficient table yl1 (3 entries, 8 bits)
++ * @gfcoef_yl2: Gain filter coefficient table yl2 (3 entries, 8 bits)
++ * @gfcoef_cg0: Gain filter coefficient table cg0 (6 entries, 8 bits)
++ * @gfcoef_cg1: Gain filter coefficient table cg1 (3 entries, 8 bits)
++ * @gfcoef_cg2: Gain filter coefficient table cg2 (3 entries, 8 bits)
++ * @gfcoef_cl0: Gain filter coefficient table cl0 (6 entries, 8 bits)
++ * @gfcoef_cl1: Gain filter coefficient table cl1 (3 entries, 8 bits)
++ * @weight_y: Y weights (3 entries, 8 bits)
++ * @reserved: padding
++ * @glb_gain_cur: Current global exposure gain (16 bits)
++ * @glb_gain_nxt: Next global exposure gain (16 bits)
++ * @glb_gain_cur_div: Current global exposure gain divider (16 bits)
++ * @txt_th1_y: Y texture threshold 1 (16 bits)
++ * @txt_th0_c: C texture threshold 0 (16 bits)
++ * @txt_th1_c: C texture threshold 1 (16 bits)
++ * @txt_thy_dlt: Y texture threshold delta (16 bits)
++ * @txt_thc_dlt: C texture threshold delta (16 bits)
++ * @txt_th0_y: Y texture threshold 0 (16 bits)
++ * @sigma_y: Sigma curve, y values (17 entries, 16 bits)
++ * @luma_curve: Luma curve (6 entries, 16 bits)
++ * @scale_yg: Scale factors, yg (4 entries, 16 bits)
++ * @scale_yl: Scale factors, yl (3 entries, 16 bits)
++ * @scale_cg: Scale factors, cg (3 entries, 16 bits)
++ * @scale_y2cg: Scale factors, y to cg (3 entries, 16 bits)
++ * @scale_cl: Scale factors, cl (2 entries, 16 bits)
++ * @scale_y2cl: Scale factors, y to cl (3 entries, 16 bits)
++ */
++struct rkispp_params_tnr {
++	struct v4l2_isp_block_header header;
++	__u8 mode;
++	__u8 opty_en;
++	__u8 optc_en;
++	__u8 gain_en;
++	__u8 pk0_y;
++	__u8 pk1_y;
++	__u8 pk0_c;
++	__u8 pk1_c;
++	__u8 glb_gain_cur_sqrt;
++	__u8 sigma_x[RKISPP_TNR_SIGMA_CURVE_SIZE - 1];
++	__u8 gfcoef_y0[RKISPP_TNR_GFCOEF6_SIZE];
++	__u8 gfcoef_y1[RKISPP_TNR_GFCOEF3_SIZE];
++	__u8 gfcoef_y2[RKISPP_TNR_GFCOEF3_SIZE];
++	__u8 gfcoef_y3[RKISPP_TNR_GFCOEF3_SIZE];
++	__u8 gfcoef_yg0[RKISPP_TNR_GFCOEF6_SIZE];
++	__u8 gfcoef_yg1[RKISPP_TNR_GFCOEF3_SIZE];
++	__u8 gfcoef_yg2[RKISPP_TNR_GFCOEF3_SIZE];
++	__u8 gfcoef_yg3[RKISPP_TNR_GFCOEF3_SIZE];
++	__u8 gfcoef_yl0[RKISPP_TNR_GFCOEF6_SIZE];
++	__u8 gfcoef_yl1[RKISPP_TNR_GFCOEF3_SIZE];
++	__u8 gfcoef_yl2[RKISPP_TNR_GFCOEF3_SIZE];
++	__u8 gfcoef_cg0[RKISPP_TNR_GFCOEF6_SIZE];
++	__u8 gfcoef_cg1[RKISPP_TNR_GFCOEF3_SIZE];
++	__u8 gfcoef_cg2[RKISPP_TNR_GFCOEF3_SIZE];
++	__u8 gfcoef_cl0[RKISPP_TNR_GFCOEF6_SIZE];
++	__u8 gfcoef_cl1[RKISPP_TNR_GFCOEF3_SIZE];
++	__u8 weight_y[RKISPP_TNR_WEIGHT_Y_SIZE];
++	__u8 reserved[3];
++	__u16 glb_gain_cur;
++	__u16 glb_gain_nxt;
++	__u16 glb_gain_cur_div;
++	__u16 txt_th1_y;
++	__u16 txt_th0_c;
++	__u16 txt_th1_c;
++	__u16 txt_thy_dlt;
++	__u16 txt_thc_dlt;
++	__u16 txt_th0_y;
++	__u16 sigma_y[RKISPP_TNR_SIGMA_CURVE_SIZE];
++	__u16 luma_curve[RKISPP_TNR_LUMA_CURVE_SIZE];
++	__u16 scale_yg[RKISPP_TNR_SCALE_YG_SIZE];
++	__u16 scale_yl[RKISPP_TNR_SCALE_YL_SIZE];
++	__u16 scale_cg[RKISPP_TNR_SCALE_CG_SIZE];
++	__u16 scale_y2cg[RKISPP_TNR_SCALE_Y2CG_SIZE];
++	__u16 scale_cl[RKISPP_TNR_SCALE_CL_SIZE];
++	__u16 scale_y2cl[RKISPP_TNR_SCALE_Y2CL_SIZE];
++} __attribute__((aligned(8)));
++
++/**
++ * struct rkispp_params_nr - Rockchip ISPP params NR config
++ *
++ * Rockchip ISPP parameters noise reduction configuration block.
++ * Identified by :c:type:`RKISPP_PARAMS_BLOCK_NR`.
++ *
++ * The UV NR (uvnr_*) fields configure the chroma noise reduction, the Y NR
++ * (ynr_*) fields configure the luma noise reduction. The "low" (l*) and
++ * "high" (h*) tables address the two luma level ranges of the Y NR.
++ *
++ * @header: The ISPP parameters block header
++ * @uvnr_step1_en: UV NR step 1 enable
++ * @uvnr_step2_en: UV NR step 2 enable
++ * @nr_gain_en: Noise reduction 3A gain enable
++ * @uvnr_sd32_self_en: UV NR self-adaptive 32-step mode enable
++ * @uvnr_nobig_en: UV NR on non-big (sub-sampled) frames enable
++ * @uvnr_big_en: UV NR on big (full resolution) frames enable
++ * @uvnr_gain_1sigma: UV NR gain, 1 sigma (8 bits)
++ * @uvnr_gain_offset: UV NR gain offset (8 bits)
++ * @uvnr_gain_t2gen: UV NR gain, T2 generation (8 bits)
++ * @uvnr_gain_iso: UV NR gain ISO correction (8 bits)
++ * @uvnr_t1gen_m3alpha: UV NR T1 generation alpha (8 bits)
++ * @uvnr_t1flt_mode: UV NR T1 filter mode (8 bits)
++ * @uvnr_t1flt_wtp: UV NR T1 filter weight point (8 bits)
++ * @uvnr_t2gen_m3alpha: UV NR T2 generation alpha (8 bits)
++ * @uvnr_t2gen_wtp: UV NR T2 generation weight point (8 bits)
++ * @uvnr_gain_uvgain: UV NR gain table (2 entries, 8 bits)
++ * @uvnr_t1flt_wtq: UV NR T1 filter weight table (8 entries, 8 bits)
++ * @uvnr_t2gen_wtq: UV NR T2 generation weight table (4 entries, 8 bits)
++ * @uvnr_t2flt_wtp: UV NR T2 filter weight point (8 bits)
++ * @uvnr_t2flt_wt: UV NR T2 filter weight table (3 entries, 8 bits)
++ * @ynr_sgm_dx: Y NR sigma grid, x values (16 entries, 8 bits)
++ * @ynr_lci: Y NR CI table, low range (4 entries, 8 bits)
++ * @ynr_lgain_min: Y NR low gain minimum table (4 entries, 8 bits)
++ * @ynr_lgain_max: Y NR low gain maximum (8 bits)
++ * @ynr_lmerge_bound: Y NR low range merge bound (8 bits)
++ * @ynr_lmerge_ratio: Y NR low range merge ratio (8 bits)
++ * @ynr_lweit_flt: Y NR low weight filter table (4 entries, 8 bits)
++ * @ynr_hlci: Y NR CI table, high luminance (4 entries, 8 bits)
++ * @ynr_lhci: Y NR CI table, low luminance (4 entries, 8 bits)
++ * @ynr_hhci: Y NR CI table, high contrast (4 entries, 8 bits)
++ * @ynr_hgain_sgm: Y NR high gain sigma table (4 entries, 8 bits)
++ * @ynr_hweit_d: Y NR high weight detail table (20 entries, 8 bits)
++ * @ynr_hgrad_y: Y NR high gradient Y table (24 entries, 8 bits)
++ * @ynr_hmax_adjust: Y NR high range max adjustment (8 bits)
++ * @ynr_hstrength: Y NR high range strength (8 bits)
++ * @ynr_lweit_cmp: Y NR low weight compare table (2 entries, 8 bits)
++ * @ynr_lmaxgain_lv4: Y NR low max gain level 4 (8 bits)
++ * @reserved: padding
++ * @uvnr_t1flt_msigma: UV NR T1 filter sigma (16 bits)
++ * @uvnr_t2gen_msigma: UV NR T2 generation sigma (16 bits)
++ * @uvnr_t2flt_msigma: UV NR T2 filter sigma (16 bits)
++ * @ynr_lsgm_y: Y NR low sigma grid, y values (17 entries, 16 bits)
++ * @ynr_hsgm_y: Y NR high sigma grid, y values (17 entries, 16 bits)
++ * @ynr_hweit: Y NR high weight table (4 entries, 16 bits)
++ * @ynr_hstv_y: Y NR high stability Y table (17 entries, 16 bits)
++ * @ynr_st_scale: Y NR stability scale (3 entries, 16 bits)
++ * @reserved1: padding
++ */
++struct rkispp_params_nr {
++	struct v4l2_isp_block_header header;
++	__u8 uvnr_step1_en;
++	__u8 uvnr_step2_en;
++	__u8 nr_gain_en;
++	__u8 uvnr_sd32_self_en;
++	__u8 uvnr_nobig_en;
++	__u8 uvnr_big_en;
++	__u8 uvnr_gain_1sigma;
++	__u8 uvnr_gain_offset;
++	__u8 uvnr_gain_t2gen;
++	__u8 uvnr_gain_iso;
++	__u8 uvnr_t1gen_m3alpha;
++	__u8 uvnr_t1flt_mode;
++	__u8 uvnr_t1flt_wtp;
++	__u8 uvnr_t2gen_m3alpha;
++	__u8 uvnr_t2gen_wtp;
++	__u8 uvnr_gain_uvgain[RKISPP_NR_UVNR_UVGAIN_SIZE];
++	__u8 uvnr_t1flt_wtq[RKISPP_NR_UVNR_T1FLT_WTQ_SIZE];
++	__u8 uvnr_t2gen_wtq[RKISPP_NR_UVNR_T2GEN_WTQ_SIZE];
++	__u8 uvnr_t2flt_wtp;
++	__u8 uvnr_t2flt_wt[RKISPP_NR_UVNR_T2FLT_WT_SIZE];
++	__u8 ynr_sgm_dx[RKISPP_NR_YNR_SGM_DX_SIZE];
++	__u8 ynr_lci[RKISPP_NR_YNR_CI_SIZE];
++	__u8 ynr_lgain_min[RKISPP_NR_YNR_LGAIN_MIN_SIZE];
++	__u8 ynr_lgain_max;
++	__u8 ynr_lmerge_bound;
++	__u8 ynr_lmerge_ratio;
++	__u8 ynr_lweit_flt[RKISPP_NR_YNR_LWEIT_FLT_SIZE];
++	__u8 ynr_hlci[RKISPP_NR_YNR_CI_SIZE];
++	__u8 ynr_lhci[RKISPP_NR_YNR_CI_SIZE];
++	__u8 ynr_hhci[RKISPP_NR_YNR_CI_SIZE];
++	__u8 ynr_hgain_sgm[RKISPP_NR_YNR_HGAIN_SGM_SIZE];
++	__u8 ynr_hweit_d[RKISPP_NR_YNR_HWEIT_D_SIZE];
++	__u8 ynr_hgrad_y[RKISPP_NR_YNR_HGRAD_Y_SIZE];
++	__u8 ynr_hmax_adjust;
++	__u8 ynr_hstrength;
++	__u8 ynr_lweit_cmp[RKISPP_NR_YNR_LWEIT_CMP_SIZE];
++	__u8 ynr_lmaxgain_lv4;
++	__u8 reserved[1];
++	__u16 uvnr_t1flt_msigma;
++	__u16 uvnr_t2gen_msigma;
++	__u16 uvnr_t2flt_msigma;
++	__u16 ynr_lsgm_y[RKISPP_NR_YNR_SGM_Y_SIZE];
++	__u16 ynr_hsgm_y[RKISPP_NR_YNR_SGM_Y_SIZE];
++	__u16 ynr_hweit[RKISPP_NR_YNR_HWEIT_SIZE];
++	__u16 ynr_hstv_y[RKISPP_NR_YNR_HSTV_Y_SIZE];
++	__u16 ynr_st_scale[RKISPP_NR_YNR_ST_SCALE_SIZE];
++	__u16 reserved1[2];
++} __attribute__((aligned(8)));
++
++/**
++ * struct rkispp_params_shp - Rockchip ISPP params SHP config
++ *
++ * Rockchip ISPP parameters sharpening configuration block.
++ * Identified by :c:type:`RKISPP_PARAMS_BLOCK_SHP`.
++ *
++ * The filter stages are the pre-basic filter (pbf), the medium resolution
++ * filter (mrf/mbf) and the high resolution filter (hrf/hbf).
++ *
++ * @header: The ISPP parameters block header
++ * @rotation: Output rotation in quarter turns (0 to 3)
++ * @scl_down_v: Internal scaler downscale factor, vertical (8 bits)
++ * @scl_down_h: Internal scaler downscale factor, horizontal (8 bits)
++ * @tile_ycnt: Tile count, vertical (8 bits)
++ * @tile_xcnt: Tile count, horizontal (8 bits)
++ * @alpha_adp_en: Adaptive alpha enable
++ * @yin_flt_en: Input Y filter enable
++ * @edge_avg_en: Edge averaging enable
++ * @ehf_th: Edge high frequency threshold (8 bits)
++ * @pbf_ratio: Pre-basic filter ratio (8 bits)
++ * @edge_thed: Edge threshold (8 bits)
++ * @dir_min: Minimum edge direction (8 bits)
++ * @pbf_shf_bits: Pre-basic filter shift bits (8 bits)
++ * @mbf_shf_bits: Medium filter shift bits (8 bits)
++ * @hbf_shf_bits: High filter shift bits (8 bits)
++ * @m_ratio: Medium resolution ratio (8 bits)
++ * @h_ratio: High resolution ratio (8 bits)
++ * @pbf_k: Pre-basic filter kernel (3 taps, 8 bits)
++ * @mrf_k: Medium resolution forward filter kernel (6 taps, 8 bits)
++ * @mbf_k: Medium basic filter kernel (12 taps, 8 bits)
++ * @hrf_k: High resolution forward filter kernel (6 taps, 8 bits)
++ * @hbf_k: High basic filter kernel (3 taps, 8 bits)
++ * @eg_coef: Edge gain coefficients (3 entries, 8 bits signed)
++ * @eg_smoth: Edge smoothing table (3 entries, 8 bits)
++ * @eg_gaus: Edge gaussian table (6 entries, 8 bits)
++ * @dog_k: Difference of gaussians kernel (6 taps, 8 bits signed)
++ * @lum_point: Luminance curve points (6 entries, 8 bits)
++ * @pbf_sigma: Pre-basic filter sigma curve (8 entries, 8 bits)
++ * @lum_clp_m: Medium luminance clamp table (8 entries, 8 bits)
++ * @lum_min_m: Medium minimum luminance table (8 entries, 8 bits signed)
++ * @mbf_sigma: Medium filter sigma curve (8 entries, 8 bits)
++ * @lum_clp_h: High luminance clamp table (8 entries, 8 bits)
++ * @hbf_sigma: High filter sigma curve (8 entries, 8 bits)
++ * @edge_lum_thed: Edge luminance threshold table (8 entries, 8 bits)
++ * @clamp_pos: Positive clamp curve (8 entries, 8 bits)
++ * @clamp_neg: Negative clamp curve (8 entries, 8 bits)
++ * @detail_alpha: Detail alpha curve (8 entries, 8 bits)
++ * @reserved: padding
++ * @hbf_ratio: High filter ratio (16 bits)
++ * @smoth_th4: Smoothing threshold 4 (16 bits)
++ * @l_alpha: Low alpha (16 bits)
++ * @g_alpha: Global alpha (16 bits)
++ * @rfl_ratio: Low resolution ratio (16 bits)
++ * @rfh_ratio: High resolution ratio (16 bits)
++ * @reserved1: padding
++ */
++struct rkispp_params_shp {
++	struct v4l2_isp_block_header header;
++	__u8 rotation;
++	__u8 scl_down_v;
++	__u8 scl_down_h;
++	__u8 tile_ycnt;
++	__u8 tile_xcnt;
++	__u8 alpha_adp_en;
++	__u8 yin_flt_en;
++	__u8 edge_avg_en;
++	__u8 ehf_th;
++	__u8 pbf_ratio;
++	__u8 edge_thed;
++	__u8 dir_min;
++	__u8 pbf_shf_bits;
++	__u8 mbf_shf_bits;
++	__u8 hbf_shf_bits;
++	__u8 m_ratio;
++	__u8 h_ratio;
++	__u8 pbf_k[RKISPP_SHP_PBF_KERNEL_SIZE];
++	__u8 mrf_k[RKISPP_SHP_MRF_KERNEL_SIZE];
++	__u8 mbf_k[RKISPP_SHP_MBF_KERNEL_SIZE];
++	__u8 hrf_k[RKISPP_SHP_HRF_KERNEL_SIZE];
++	__u8 hbf_k[RKISPP_SHP_HBF_KERNEL_SIZE];
++	__s8 eg_coef[RKISPP_SHP_EDGE_COEF_SIZE];
++	__u8 eg_smoth[RKISPP_SHP_EDGE_SMOTH_SIZE];
++	__u8 eg_gaus[RKISPP_SHP_EDGE_GAUS_SIZE];
++	__s8 dog_k[RKISPP_SHP_DOG_KERNEL_SIZE];
++	__u8 lum_point[RKISPP_SHP_LUM_POINT_SIZE];
++	__u8 pbf_sigma[RKISPP_SHP_SIGMA_SIZE];
++	__u8 lum_clp_m[RKISPP_SHP_LUM_CLP_SIZE];
++	__s8 lum_min_m[RKISPP_SHP_LUM_MIN_SIZE];
++	__u8 mbf_sigma[RKISPP_SHP_SIGMA_SIZE];
++	__u8 lum_clp_h[RKISPP_SHP_LUM_CLP_SIZE];
++	__u8 hbf_sigma[RKISPP_SHP_SIGMA_SIZE];
++	__u8 edge_lum_thed[RKISPP_SHP_EDGE_LUM_THED_SIZE];
++	__u8 clamp_pos[RKISPP_SHP_CLAMP_SIZE];
++	__u8 clamp_neg[RKISPP_SHP_CLAMP_SIZE];
++	__u8 detail_alpha[RKISPP_SHP_DETAIL_ALPHA_SIZE];
++	__u8 reserved[1];
++	__u16 hbf_ratio;
++	__u16 smoth_th4;
++	__u16 l_alpha;
++	__u16 g_alpha;
++	__u16 rfl_ratio;
++	__u16 rfh_ratio;
++	__u16 reserved1[2];
++} __attribute__((aligned(8)));
++
++/**
++ * struct rkispp_params_fec - Rockchip ISPP params FEC config
++ *
++ * Rockchip ISPP parameters FEC (frame estimation) motion mesh configuration
++ * block. Identified by :c:type:`RKISPP_PARAMS_BLOCK_FEC`.
++ *
++ * The FEC engine measures a mesh of motion vectors between consecutive
++ * frames across the pipeline; the mesh of the measured frame is reported
++ * in the RKISPP_STATS_BLOCK_FEC_MESH stats block.
++ *
++ * @header: The ISPP parameters block header
++ * @mesh_density: 0 for the dense mesh grid (16 pixel vertex spacing,
++ *		 inputs up to 1920 pixels wide), 1 for the coarse mesh grid
++ *		 (32 pixel vertex spacing, wider inputs)
++ * @crop_en: Enable the measurement crop window below
++ * @reserved: padding
++ * @crop_width: Measurement crop window width in pixels (16 bits)
++ * @crop_height: Measurement crop window height in pixels (16 bits)
++ * @mesh_size: Number of mesh points to measure for this frame, must not
++ *		exceed the grid size of the input geometry
++ * @reserved1: padding
++ */
++struct rkispp_params_fec {
++	struct v4l2_isp_block_header header;
++	__u8 mesh_density;
++	__u8 crop_en;
++	__u8 reserved[2];
++	__u16 crop_width;
++	__u16 crop_height;
++	__u32 mesh_size;
++	__u8 reserved1[4];
++} __attribute__((aligned(8)));
++
++/**
++ * struct rkispp_params_orb - Rockchip ISPP params ORB config
++ *
++ * Rockchip ISPP parameters ORB feature detection configuration block.
++ * Identified by :c:type:`RKISPP_PARAMS_BLOCK_ORB`.
++ *
++ * The ORB engine detects ORB feature points in the pipeline input; the
++ * features of the measured frame are reported in the
++ * RKISPP_STATS_BLOCK_ORB stats block.
++ *
++ * @header: The ISPP parameters block header
++ * @limit_value: Feature limit value (8 bits)
++ * @reserved: padding
++ * @max_feature: Maximum number of features to report (21 bits)
++ */
++struct rkispp_params_orb {
++	struct v4l2_isp_block_header header;
++	__u8 limit_value;
++	__u8 reserved[3];
++	__u32 max_feature;
++} __attribute__((aligned(8)));
++
++#define RKISPP_PARAMS_MAX_SIZE				\
++	(sizeof(struct rkispp_params_tnr)			+\
++	sizeof(struct rkispp_params_nr)			+\
++	sizeof(struct rkispp_params_shp)			+\
++	sizeof(struct rkispp_params_fec)			+\
++	sizeof(struct rkispp_params_orb))
++
++/**
++ * struct rkispp_stats_orb_point - ORB feature point
++ *
++ * @x: Point x coordinate in the input frame (13 bits)
++ * @y: Point y coordinate in the input frame (13 bits)
++ * @brief: Binary feature descriptor (15 bytes)
++ * @reserved: padding
++ */
++struct rkispp_stats_orb_point {
++	__u16 x;
++	__u16 y;
++	__u8 brief[RKISPP_ORB_BRIEF_NUM];
++	__u8 reserved[7];
++} __attribute__((aligned(8)));
++
++/**
++ * struct rkispp_stats_orb - Rockchip ISPP ORB stats
++ *
++ * Rockchip ISPP statistics ORB feature points block.
++ * Identified by :c:type:`RKISPP_STATS_BLOCK_ORB`.
++ *
++ * The frame the measurements belong to is given by the buffer sequence
++ * of the stats buffer carrying this block.
++ *
++ * @header: The ISPP stats block header
++ * @total_num: Number of valid points in the @points array
++ * @reserved: padding
++ * @points: ORB feature points, only the first @total_num entries are valid
++ */
++struct rkispp_stats_orb {
++	struct v4l2_isp_block_header header;
++	__u32 total_num;
++	__u32 reserved;
++	struct rkispp_stats_orb_point points[RKISPP_ORB_DATA_NUM];
++} __attribute__((aligned(8)));
++
++/**
++ * struct rkispp_stats_fec_mesh - Rockchip ISPP FEC mesh stats
++ *
++ * Rockchip ISPP statistics FEC mesh block.
++ * Identified by :c:type:`RKISPP_STATS_BLOCK_FEC_MESH`.
++ *
++ * The frame the mesh belongs to is given by the buffer sequence of the
++ * stats buffer carrying this block.
++ *
++ * @header: The ISPP stats block header
++ * @mesh_width: Mesh grid width in vertices of this frame
++ * @mesh_height: Mesh grid height in vertices of this frame
++ * @points: Number of valid mesh points
++ * @xint: Mesh point x coordinates, integer part in pixels (16 bits)
++ * @xfra: Mesh point x coordinates, fractional part (8 bits)
++ * @yint: Mesh point y coordinates, integer part in pixels (16 bits)
++ * @yfra: Mesh point y coordinates, fractional part (8 bits)
++ *
++ * The arrays hold one entry per mesh point, only the first @points
++ * entries are valid.
++ */
++struct rkispp_stats_fec_mesh {
++	struct v4l2_isp_block_header header;
++	__u16 mesh_width;
++	__u16 mesh_height;
++	__u32 points;
++	__u16 xint[RKISPP_FEC_MESH_POINTS_MAX];
++	__u8 xfra[RKISPP_FEC_MESH_POINTS_MAX];
++	__u16 yint[RKISPP_FEC_MESH_POINTS_MAX];
++	__u8 yfra[RKISPP_FEC_MESH_POINTS_MAX];
++} __attribute__((aligned(8)));
++
++#define RKISPP_STATS_MAX_SIZE				\
++	(sizeof(struct rkispp_stats_orb)			+\
++	sizeof(struct rkispp_stats_fec_mesh))
++
++/*
++ * Rockchip ISPP stand-alone FEC (frame estimation) mem2mem node.
++ */
++
++/**
++ * struct rkispp_fec_in_out - Rockchip ISPP FEC m2m request
++ *
++ * One request measures the motion mesh between two consecutive frames
++ * held in the in picture and reports the result in the out picture and
++ * the four mesh arrays.
++ *
++ * @width: Picture width in pixels
++ * @height: Picture height in pixels
++ * @in_fourcc: In picture format, from the V4L2_PIX_FMT_* values
++ * @out_fourcc: Out picture format, from the V4L2_PIX_FMT_* values
++ * @in_pic_fd: dma-buf fd of the in picture (luma plane first,
++ *		chroma plane right after the full luma plane)
++ * @out_pic_fd: dma-buf fd of the out picture (same layout)
++ * @mesh_xint_fd: dma-buf fd of the mesh x integer array (2 bytes per
++ *		mesh point, at least cal_fec_mesh() * 2 bytes)
++ * @mesh_xfra_fd: dma-buf fd of the mesh x fraction array (1 byte per
++ *		mesh point)
++ * @mesh_yint_fd: dma-buf fd of the mesh y integer array (2 bytes per
++ *		mesh point, at least cal_fec_mesh() * 2 bytes)
++ * @mesh_yfra_fd: dma-buf fd of the mesh y fraction array (1 byte per
++ *		mesh point)
++ */
++struct rkispp_fec_in_out {
++	__u32 width;
++	__u32 height;
++	__u32 in_fourcc;
++	__u32 out_fourcc;
++	__s32 in_pic_fd;
++	__s32 out_pic_fd;
++	__s32 mesh_xint_fd;
++	__s32 mesh_xfra_fd;
++	__s32 mesh_yint_fd;
++	__s32 mesh_yfra_fd;
++};
++
++#define RKISPP_CMD_FEC_IN_OUT \
++	_IOW('V', BASE_VIDIOC_PRIVATE + 10, struct rkispp_fec_in_out)
++
+ #endif /* _UAPI_RKISP2_CONFIG_H */

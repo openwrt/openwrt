@@ -1,0 +1,43 @@
+From af548d46835ca1303ddcd4fd0e9334e226a2f254 Mon Sep 17 00:00:00 2001
+From: Edoardo Pinci <epinci@outlook.com>
+Date: Sun, 27 Sep 2026 15:51:27 +0200
+Subject: [PATCH] ath79: always register ath9k GPIO descriptors
+
+OpenWrt builds ath9k as part of the separate mac80211 package, so
+CONFIG_ATH9K_AHB is not enabled in the kernel configuration. The ath79
+GPIO driver is built into the kernel and cannot see the package's Kconfig
+selection.
+
+Always register the ath9k GPIO descriptor lookup table. It is required by
+the out-of-tree ath9k module and is harmless when that module is not
+loaded.
+
+Signed-off-by: Edoardo Pinci <epinci@outlook.com>
+---
+ drivers/gpio/gpio-ath79.c | 8 --------
+ 1 file changed, 8 deletions(-)
+
+--- a/drivers/gpio/gpio-ath79.c
++++ b/drivers/gpio/gpio-ath79.c
+@@ -215,7 +215,6 @@ static const struct of_device_id ath79_g
+ };
+ MODULE_DEVICE_TABLE(of, ath79_gpio_of_match);
+ 
+-#if IS_ENABLED(CONFIG_ATH9K_AHB)
+ /*
+  * This registers all of the ath79k GPIOs as descriptors to be picked
+  * directly from the ATH79K wifi driver if the two are jitted together
+@@ -257,13 +256,6 @@ static int ath79_gpio_register_wifi_desc
+ 
+ 	return 0;
+ }
+-#else
+-static int ath79_gpio_register_wifi_descriptors(struct device *dev,
+-						const char *label)
+-{
+-	return 0;
+-}
+-#endif
+ 
+ static int ath79_gpio_probe(struct platform_device *pdev)
+ {

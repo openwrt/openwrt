@@ -1,0 +1,32 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Wed, 5 Aug 2026 19:13:43 +0200
+Subject: [PATCH] AP MLD: Find the station by link address in the association TX status
+
+A non-AP MLD station is stored under its MLD MAC address. If the driver
+did not translate the source address of the (Re)Association Request
+frame to the MLD MAC address, handle_assoc() addresses the response to
+the link address, and the TX status carries that address too.
+handle_assoc_cb() then does not find the station, the association is
+never completed, and the peer waits for an EAPOL-Key frame that is never
+sent.
+
+Also look up the station by its link address, as handle_auth_cb() does.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+
+--- a/src/ap/ieee802_11.c
++++ b/src/ap/ieee802_11.c
+@@ -8710,6 +8710,12 @@ static void handle_assoc_cb(struct hosta
+ 	int new_assoc = 1;
+ 
+ 	sta = ap_get_sta(hapd, mgmt->da);
++#ifdef CONFIG_IEEE80211BE
++	/* A non-AP MLD is registered under its MLD MAC address, while the
++	 * response was addressed to the link address it associated from. */
++	if (!sta)
++		sta = ap_get_link_sta(hapd, mgmt->da);
++#endif /* CONFIG_IEEE80211BE */
+ 	if (!sta) {
+ 		wpa_printf(MSG_INFO, "handle_assoc_cb: STA " MACSTR " not found",
+ 			   MAC2STR(mgmt->da));

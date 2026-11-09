@@ -1,0 +1,743 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Thu, 22 Oct 2026 20:00:00 +0200
+Subject: [PATCH] AP MLD: let the driver count the AP Removal Timer
+
+Depends on 602-ap-mld-announce-the-removal-of-an-affiliated-ap.patch,
+603-ap-mld-remove-an-affiliated-ap-at-the-expiry.patch, 608 and 609,
+and on the mac80211 patches that add
+NL80211_EXT_FEATURE_AP_REMOVAL_TIMER_OFFLOAD.
+
+Patch 602 counts the AP Removal Timer on the host: at each beacon
+interval it sets the beacons of every link of the AP MLD with the next
+count. On mt7996 each new template with the Critical Update flag starts
+the critical update in the firmware again, so the flag stays set for the
+whole countdown, past the DTIM Beacon that ends it (IEEE 802.11be-2024
+35.3.10).
+
+Where the driver declares NL80211_EXT_FEATURE_AP_REMOVAL_TIMER_OFFLOAD,
+set the beacons once at the start of the removal and let the driver
+count the timer. Until the expiry, no beacon of the AP MLD is set, as
+the driver counts from the beacons it took at the start, like the
+MediaTek SDK does. The host timer sets no beacon, and keeps the count of
+the Probe Response frames and the times of the ucode link_remove method
+current.
+
+NL80211_CMD_LINKS_REMOVED on the AP interface reports the expiry, which
+the driver sends after the Beacon frame with the count 1 and before the
+removal TBTT, once it stopped the TX of the link. That event ends the
+removal. At the event the other links drop the Reconfiguration
+element, so that no frame at or after the removal TBTT carries it.
+The stations get their frames and the link stops after the removal TBTT
+(IEEE 802.11be-2024 35.3.6.3). hostapd sees no TBTT, but the first
+Beacon frame with the element goes out less than one beacon interval
+after the update of the removed link returns, so the removal TBTT comes
+before count + 1 intervals after that return, and the stations get
+their frames then. The times of the ucode link_remove method include
+that interval.
+
+The host count starts at the return of that update and stays at 1 until
+the event, so the Probe Response frames carry the element until the
+expiry, with a count never above that of the Beacon frames. If the event
+is missing count + 2 beacon intervals after the return, hostapd logs it
+and ends the removal as at the event, so that the beacons of the other
+links are not held for ever. If the driver takes no beacon of the
+removed link at the start, it does not count the timer, so the removal
+fails and the beacons are set again without the element.
+
+The driver times the expiry in whole seconds and counts one removal of
+an AP MLD at a time. With the feature, a removal whose count of beacon
+intervals is not a whole number of seconds is refused, and so is a
+removal while another link of the AP MLD is being removed. Without the
+feature, the count of 602 stays.
+
+By IEEE 802.11be-2024 35.3.6.3, a non-AP MLD whose only setup link is
+the removed one counts itself disassociated at the removal TBTT. At the
+expiry event, which comes before that TBTT, clear the authorized flag
+of each such station in hostapd and in the driver, so that mac80211
+drops new data for it before the TBTT. The Deauthentication after the
+TBTT of 603 stays. Without the offload, 603 clears the flag at the host
+expiry, which also comes before that TBTT.
+
+Add NL80211_EXT_FEATURE_SCS and NL80211_EXT_FEATURE_MSCS to
+nl80211_copy.h as well, so that the feature numbers match the kernel
+headers of the mac80211 patches.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/src/ap/beacon.c
++++ b/src/ap/beacon.c
+@@ -2808,6 +2808,9 @@ static int __ieee802_11_set_beacon(struc
+ 			   hapd->mld_link_id);
+ 		return 0;
+ 	}
++
++	if (hostapd_link_remove_beacon_held(hapd))
++		return 0;
+ #endif /* CONFIG_IEEE80211BE */
+ 
+ 	if (hapd->csa_in_progress) {
+@@ -2917,6 +2920,11 @@ static int __ieee802_11_set_beacon(struc
+ 		wpa_printf(MSG_ERROR, "Failed to set beacon parameters");
+ 	else
+ 		ret = 0;
++
++#ifdef CONFIG_IEEE80211BE
++	if (!res)
++		hostapd_link_remove_beacon_set(hapd);
++#endif /* CONFIG_IEEE80211BE */
+ fail:
+ 	ieee802_11_free_ap_params(&params);
+ 	return ret;
+--- a/src/ap/drv_callbacks.c
++++ b/src/ap/drv_callbacks.c
+@@ -3050,6 +3050,10 @@ void hostapd_wpa_event(void *ctx, enum w
+ 	case EVENT_ADV_TTLM:
+ 		hostapd_adv_ttlm_event(hapd, &data->adv_ttlm);
+ 		break;
++	case EVENT_AP_REMOVAL_TIMER_EXPIRED:
++		hostapd_link_remove_expired(
++			hapd, data->ap_removal_timer_expired.links);
++		break;
+ #endif /* CONFIG_IEEE80211BE */
+ 	default:
+ 		wpa_printf(MSG_DEBUG, "Unknown event %d", event);
+--- a/src/ap/hostapd.c
++++ b/src/ap/hostapd.c
+@@ -477,6 +477,7 @@ static int hostapd_broadcast_wep_set(str
+ 
+ static void hostapd_link_remove_timeout_handler(void *eloop_data,
+ 						void *user_ctx);
++static void hostapd_link_remove_offload_expire(struct hostapd_data *hapd);
+ 
+ 
+ /* A nontransmitted BSSID sends no Beacon frames of its own, so the driver does
+@@ -542,6 +543,47 @@ static unsigned int hostapd_link_remove_
+ }
+ 
+ 
++static u64 hostapd_link_remove_until_us(struct os_reltime *t)
++{
++	struct os_reltime now, left;
++
++	os_get_reltime(&now);
++	if (!os_reltime_before(&now, t))
++		return 0;
++
++	os_reltime_sub(t, &now, &left);
++	return (u64) left.sec * 1000000 + left.usec;
++}
++
++
++static void hostapd_link_remove_return_after(struct hostapd_data *hapd,
++					     unsigned int beacons,
++					     struct os_reltime *t)
++{
++	u64 us = (u64) beacons * TU_TO_USEC(hapd->iconf->beacon_int);
++
++	*t = hapd->eht_mld_link_removal_return;
++	t->sec += us / 1000000;
++	t->usec += us % 1000000;
++	t->sec += t->usec / 1000000;
++	t->usec %= 1000000;
++}
++
++
++/* The first Beacon frame with the element goes out less than one beacon
++ * interval after the update returns, so the removal TBTT comes before
++ * start + 1 intervals after that return */
++static u64 hostapd_link_remove_tbtt_after_us(struct hostapd_data *hapd)
++{
++	struct os_reltime t;
++
++	hostapd_link_remove_return_after(hapd,
++					 hapd->eht_mld_link_removal_start + 1,
++					 &t);
++	return hostapd_link_remove_until_us(&t);
++}
++
++
+ static u64 hostapd_link_remove_expiry_us(struct hostapd_data *hapd)
+ {
+ 	struct os_reltime now, left;
+@@ -575,21 +617,98 @@ u64 hostapd_link_remove_expiry_ms(struct
+  * caller commits no earlier than the link stops. */
+ u64 hostapd_link_remove_ms(struct hostapd_data *hapd)
+ {
++	u64 us;
++
+ 	if (!hapd->eht_mld_link_removal_count)
+ 		return 0;
+ 
+-	return (hostapd_link_remove_expiry_us(hapd) +
+-		hostapd_link_remove_tx_wait_us(hapd) + 999) / 1000;
++	if (hapd->eht_mld_link_removal_offload)
++		us = hostapd_link_remove_tbtt_after_us(hapd);
++	else
++		us = hostapd_link_remove_expiry_us(hapd);
++
++	return (us + hostapd_link_remove_tx_wait_us(hapd) + 999) / 1000;
+ }
+ 
+ 
+ static bool hostapd_link_remove_pending(struct hostapd_data *hapd)
+ {
+ 	return hapd->eht_mld_link_removal_count ||
++		hapd->eht_mld_link_removal_offload ||
+ 		hapd->eht_mld_link_removal_expired;
+ }
+ 
+ 
++static bool hostapd_link_remove_offload(struct hostapd_data *hapd)
++{
++	return !!(hapd->iface->drv_flags2 &
++		  WPA_DRIVER_FLAGS2_AP_REMOVAL_TIMER_OFFLOAD);
++}
++
++
++/* The driver counts the AP Removal Timer from the Beacon frames it took at the
++ * start, so no link of the AP MLD gets another one until the expiry. */
++bool hostapd_link_remove_beacon_held(struct hostapd_data *hapd)
++{
++	struct hostapd_data *link_bss;
++
++	if (!hapd->conf->mld_ap || !hapd->mld)
++		return false;
++
++	for_each_mld_link(link_bss, hapd) {
++		if (!link_bss->eht_mld_link_removal_offload)
++			continue;
++
++		wpa_printf(MSG_DEBUG,
++			   "MLD: No Beacon update for link_id=%u while the driver counts the removal of link_id=%u",
++			   hapd->mld_link_id, link_bss->mld_link_id);
++		return true;
++	}
++
++	return false;
++}
++
++
++static void hostapd_link_remove_offload_missing(void *eloop_data,
++						void *user_ctx)
++{
++	struct hostapd_data *hapd = eloop_data;
++
++	wpa_printf(MSG_WARNING,
++		   "MLD: The driver reported no expiry of the AP Removal Timer of link_id=%u, expire it",
++		   hapd->mld_link_id);
++	hostapd_link_remove_offload_expire(hapd);
++}
++
++
++/* The driver times the expiry in whole seconds, and counts one removal of an
++ * AP MLD at a time */
++static bool hostapd_link_remove_offload_check(struct hostapd_data *hapd,
++					      u32 count)
++{
++	struct hostapd_data *link_bss;
++
++	if ((hapd->iconf->beacon_int * count) % 1000) {
++		wpa_printf(MSG_INFO,
++			   "MLD: Do not remove link_id=%u in %u beacons, the driver needs a whole number of seconds",
++			   hapd->mld_link_id, count);
++		return false;
++	}
++
++	for_each_mld_link(link_bss, hapd) {
++		if (link_bss == hapd || !hostapd_link_remove_pending(link_bss))
++			continue;
++
++		wpa_printf(MSG_INFO,
++			   "MLD: Do not remove link_id=%u while link_id=%u is being removed",
++			   hapd->mld_link_id, link_bss->mld_link_id);
++		return false;
++	}
++
++	return true;
++}
++
++
+ static struct hostapd_data *
+ hostapd_link_remove_partner(struct hostapd_data *hapd, struct sta_info *sta)
+ {
+@@ -741,21 +860,28 @@ static void hostapd_link_remove_notify_s
+ }
+ 
+ 
+-static void hostapd_link_remove_expire(struct hostapd_data *hapd)
++/* The other links drop the element */
++static bool hostapd_link_remove_expire_beacons(struct hostapd_data *hapd)
+ {
+-	unsigned int wait_us;
+-
+ 	if (!hostapd_link_remove_partner(hapd, NULL)) {
+ 		wpa_printf(MSG_INFO,
+ 			   "MLD: Keep link_id=%u, no other link beacons",
+ 			   hapd->mld_link_id);
+ 		ieee802_11_set_beacon(hapd);
+-		return;
++		return false;
+ 	}
+ 
+ 	hapd->eht_mld_link_removal_expired = true;
+ 	hapd->beacon_set_done = 0;
+ 	hostapd_mld_beacons_update(hapd);
++	return true;
++}
++
++
++static void hostapd_link_remove_expire_stas(struct hostapd_data *hapd)
++{
++	unsigned int wait_us;
++
+ 	hostapd_free_link_stas(hapd);
+ 	hostapd_link_remove_notify_stas(hapd);
+ 
+@@ -773,6 +899,88 @@ static void hostapd_link_remove_expire(s
+ }
+ 
+ 
++static void hostapd_link_remove_expire(struct hostapd_data *hapd)
++{
++	if (hostapd_link_remove_expire_beacons(hapd))
++		hostapd_link_remove_expire_stas(hapd);
++}
++
++
++static void hostapd_link_remove_offload_tbtt(void *eloop_data, void *user_ctx)
++{
++	struct hostapd_data *hapd = eloop_data;
++
++	wpa_printf(MSG_DEBUG, "MLD: Removal TBTT of link_id=%u passed",
++		   hapd->mld_link_id);
++	hostapd_link_remove_expire_stas(hapd);
++}
++
++
++static bool hostapd_link_remove_sta_single_link(struct hostapd_data *hapd,
++						struct sta_info *sta)
++{
++	struct mld_link_info *link;
++	unsigned int i;
++
++	for (i = 0; i < MAX_NUM_MLD_LINKS; i++) {
++		link = &sta->mld_info.links[i];
++		if (i != hapd->mld_link_id && link->valid &&
++		    link->status == WLAN_STATUS_SUCCESS)
++			return false;
++	}
++
++	return sta->mld_info.links[hapd->mld_link_id].valid;
++}
++
++
++/* A non-AP MLD whose only setup link is the removed one counts itself
++ * disassociated at the removal TBTT (IEEE Std 802.11be-2024, 35.3.6.3) */
++static void
++hostapd_link_remove_unauth_single_link_stas(struct hostapd_data *hapd)
++{
++	struct sta_info *sta;
++
++	for (sta = hapd->sta_list; sta; sta = sta->next) {
++		if (!(sta->flags & WLAN_STA_ASSOC) || !ap_sta_is_mld(hapd, sta) ||
++		    !hostapd_link_remove_sta_single_link(hapd, sta))
++			continue;
++
++		wpa_printf(MSG_DEBUG,
++			   "MLD: " MACSTR " loses its only link_id=%u at the removal TBTT",
++			   MAC2STR(sta->addr), hapd->mld_link_id);
++		ap_sta_set_authorized(hapd, sta, 0);
++		hostapd_set_sta_flags(hapd, sta);
++	}
++}
++
++
++/* The expiry comes before the removal TBTT, after the driver stopped the TX of
++ * the link. The other links drop the element before that TBTT, and the
++ * stations get their frames and the link stops after it (IEEE Std
++ * 802.11be-2024, 35.3.6.3). */
++static void hostapd_link_remove_offload_expire(struct hostapd_data *hapd)
++{
++	u64 us;
++
++	eloop_cancel_timeout(hostapd_link_remove_timeout_handler, hapd, NULL);
++	eloop_cancel_timeout(hostapd_link_remove_offload_missing, hapd, NULL);
++	us = hostapd_link_remove_tbtt_after_us(hapd);
++	hapd->eht_mld_link_removal_offload = false;
++	hapd->eht_mld_link_removal_count = 0;
++
++	if (!hostapd_link_remove_expire_beacons(hapd))
++		return;
++
++	hostapd_link_remove_unauth_single_link_stas(hapd);
++
++	wpa_printf(MSG_DEBUG,
++		   "MLD: link_id=%u stops after the removal TBTT, in %llu us",
++		   hapd->mld_link_id, (unsigned long long) us);
++	eloop_register_timeout(us / 1000000, us % 1000000,
++			       hostapd_link_remove_offload_tbtt, hapd, NULL);
++}
++
++
+ /* hostapd sees no TBTT: the countdown runs from the return of the first
+  * Beacon update and expires before the TBTT that the count names. */
+ static void hostapd_link_remove_timeout_handler(void *eloop_data,
+@@ -780,7 +988,9 @@ static void hostapd_link_remove_timeout_
+ {
+ 	struct hostapd_data *hapd = (struct hostapd_data *) eloop_data;
+ 
+-	if (hapd->eht_mld_link_removal_count == 0)
++	if (hapd->eht_mld_link_removal_count == 0 ||
++	    (hapd->eht_mld_link_removal_offload &&
++	     hapd->eht_mld_link_removal_count == 1))
+ 		return;
+ 	hapd->eht_mld_link_removal_count--;
+ 
+@@ -788,6 +998,14 @@ static void hostapd_link_remove_timeout_
+ 		   hapd->mld_link_id,
+ 		   hapd->eht_mld_link_removal_count);
+ 
++	/* The count of the Probe Response frames follows the Beacon frames
++	 * and stays at 1 until the expiry */
++	if (hapd->eht_mld_link_removal_offload) {
++		if (hapd->eht_mld_link_removal_count > 1)
++			hostapd_link_remove_timeout_register(hapd);
++		return;
++	}
++
+ 	if (!hapd->eht_mld_link_removal_count) {
+ 		hostapd_link_remove_expire(hapd);
+ 		return;
+@@ -850,6 +1068,10 @@ int hostapd_link_remove(struct hostapd_d
+ 		return -1;
+ 	}
+ 
++	if (hostapd_link_remove_offload(hapd) &&
++	    !hostapd_link_remove_offload_check(hapd, count))
++		return -1;
++
+ 	wpa_printf(MSG_DEBUG,
+ 		   "MLD: Remove link_id=%u in %u beacons",
+ 		   hapd->mld_link_id, count);
+@@ -861,13 +1083,87 @@ int hostapd_link_remove(struct hostapd_d
+ 		hapd->eht_mld_bss_param_change = 0;
+ 
+ 	hostapd_mld_crit_update_start(hapd);
++	hapd->eht_mld_link_removal_start_pending =
++		hostapd_link_remove_offload(hapd);
+ 	ieee802_11_set_beacon(hapd);
+-	os_get_reltime(&hapd->eht_mld_link_removal_due);
++	/* without the template, the driver does not count the timer */
++	if (hapd->eht_mld_link_removal_start_pending) {
++		wpa_printf(MSG_INFO,
++			   "MLD: The driver took no Beacon frame with the removal of link_id=%u",
++			   hapd->mld_link_id);
++		hapd->eht_mld_link_removal_start_pending = false;
++		hapd->eht_mld_link_removal_start = 0;
++		hapd->eht_mld_link_removal_count = 0;
++		hostapd_mld_crit_update_start(hapd);
++		ieee802_11_set_beacon(hapd);
++		return -1;
++	}
++	hapd->eht_mld_link_removal_offload = hostapd_link_remove_offload(hapd);
++	if (!hapd->eht_mld_link_removal_offload)
++		os_get_reltime(&hapd->eht_mld_link_removal_due);
++	hapd->eht_mld_link_removal_return = hapd->eht_mld_link_removal_due;
+ 	hostapd_link_remove_timeout_register(hapd);
++
++	if (hapd->eht_mld_link_removal_offload) {
++		struct os_reltime t;
++		u64 us;
++
++		hostapd_link_remove_return_after(hapd, count + 2, &t);
++		us = hostapd_link_remove_until_us(&t);
++		eloop_register_timeout(us / 1000000, us % 1000000,
++				       hostapd_link_remove_offload_missing,
++				       hapd, NULL);
++	}
+ 	return 0;
+ }
+ 
+ 
++/* The driver counts from the first TBTT after it took the template of the
++ * removed link, and the Probe Response frames must not count ahead of the
++ * Beacon frames, so the host count starts when that update returns */
++void hostapd_link_remove_beacon_set(struct hostapd_data *hapd)
++{
++	if (!hapd->eht_mld_link_removal_start_pending)
++		return;
++
++	os_get_reltime(&hapd->eht_mld_link_removal_due);
++	hapd->eht_mld_link_removal_start_pending = false;
++}
++
++
++/* One removal runs at a time on an AP MLD, see
++ * hostapd_link_remove_offload_check(). The expiry can free the BSS of the
++ * link and end the AP MLD of hapd. */
++void hostapd_link_remove_expired(struct hostapd_data *hapd, u16 links)
++{
++	struct hostapd_data *link_bss, *removed = NULL;
++
++	if (!hapd->conf->mld_ap || !hapd->mld)
++		return;
++
++	for_each_mld_link(link_bss, hapd) {
++		if ((links & BIT(link_bss->mld_link_id)) &&
++		    link_bss->eht_mld_link_removal_offload) {
++			removed = link_bss;
++			break;
++		}
++	}
++
++	if (!removed) {
++		wpa_printf(MSG_DEBUG,
++			   "MLD: No removal of links 0x%x runs, ignore their expiry",
++			   links);
++		return;
++	}
++
++	wpa_printf(MSG_DEBUG,
++		   "MLD: The driver reported the expiry of the AP Removal Timer of link_id=%u, %u beacons left",
++		   removed->mld_link_id, removed->eht_mld_link_removal_count);
++
++	hostapd_link_remove_offload_expire(removed);
++}
++
++
+ /* Unlike switch_link_hapd(), a link that hostapd no longer has is not
+  * replaced by the first link */
+ void hostapd_crit_update_done(struct hostapd_data *hapd, int link_id, u32 id)
+@@ -1133,7 +1429,11 @@ void hostapd_free_hapd_data(struct hosta
+ #ifdef CONFIG_IEEE80211BE
+ 	eloop_cancel_timeout(hostapd_link_remove_timeout_handler, hapd, NULL);
+ 	eloop_cancel_timeout(hostapd_link_remove_finish, hapd, NULL);
++	eloop_cancel_timeout(hostapd_link_remove_offload_missing, hapd, NULL);
++	eloop_cancel_timeout(hostapd_link_remove_offload_tbtt, hapd, NULL);
+ 	hapd->eht_mld_link_removal_count = 0;
++	hapd->eht_mld_link_removal_offload = false;
++	hapd->eht_mld_link_removal_start_pending = false;
+ 	hapd->eht_mld_link_removal_expired = false;
+ 	hapd->eht_mld_link_removal_tx = 0;
+ 	hapd->eht_mld_crit_update = false;
+--- a/src/ap/hostapd.h
++++ b/src/ap/hostapd.h
+@@ -555,6 +555,13 @@ struct hostapd_data {
+ 	struct os_reltime eht_mld_link_removal_due;
+ 	bool eht_mld_link_removal_expired;
+ 	unsigned int eht_mld_link_removal_tx;
++	/* The driver counts the AP Removal Timer until
++	 * EVENT_AP_REMOVAL_TIMER_EXPIRED */
++	bool eht_mld_link_removal_offload;
++	/* The host count starts when this link's next update returns */
++	bool eht_mld_link_removal_start_pending;
++	/* The return of the update that started the driver's count */
++	struct os_reltime eht_mld_link_removal_return;
+ 	/* Critical Update flag set until EVENT_CRIT_UPDATE_DONE */
+ 	bool eht_mld_crit_update;
+ 	u32 eht_mld_crit_update_id;
+@@ -1033,6 +1040,9 @@ u64 hostapd_link_remove_expiry_ms(struct
+ u64 hostapd_link_remove_ms(struct hostapd_data *hapd);
+ void hostapd_mld_beacons_update(struct hostapd_data *hapd);
+ void hostapd_link_remove_tx_status(struct hostapd_data *hapd, const u8 *addr);
++void hostapd_link_remove_expired(struct hostapd_data *hapd, u16 links);
++bool hostapd_link_remove_beacon_held(struct hostapd_data *hapd);
++void hostapd_link_remove_beacon_set(struct hostapd_data *hapd);
+ bool hostapd_is_ml_partner(struct hostapd_data *hapd1,
+ 			   struct hostapd_data *hapd2);
+ u8 hostapd_get_mld_id(struct hostapd_data *hapd);
+--- a/src/drivers/driver.h
++++ b/src/drivers/driver.h
+@@ -2593,6 +2593,10 @@ struct wpa_driver_capa {
+ /** Driver advertises a TID-to-link mapping of an AP MLD and reports its steps
+  * with EVENT_ADV_TTLM */
+ #define WPA_DRIVER_FLAGS2_AP_ADV_TTLM		0x0000008000000000ULL
++/** Driver counts the AP Removal Timer of a Reconfiguration Multi-Link element
++ * in the Beacon frames and reports its expiry with
++ * EVENT_AP_REMOVAL_TIMER_EXPIRED */
++#define WPA_DRIVER_FLAGS2_AP_REMOVAL_TIMER_OFFLOAD	0x0000010000000000ULL
+ 	u64 flags2;
+ 
+ #define FULL_AP_CLIENT_STATE_SUPP(drv_flags) \
+@@ -6751,6 +6755,14 @@ enum wpa_event_type {
+ 	 * Described in wpa_event_data.adv_ttlm.
+ 	 */
+ 	EVENT_ADV_TTLM,
++
++	/**
++	 * EVENT_AP_REMOVAL_TIMER_EXPIRED - The AP Removal Timer of affiliated
++	 * APs of an AP MLD expired
++	 *
++	 * Described in wpa_event_data.ap_removal_timer_expired.
++	 */
++	EVENT_AP_REMOVAL_TIMER_EXPIRED,
+ };
+ 
+ 
+@@ -7757,6 +7769,15 @@ union wpa_event_data {
+ 	} adv_ttlm;
+ 
+ 	/**
++	 * struct ap_removal_timer_expired - Data for
++	 *	EVENT_AP_REMOVAL_TIMER_EXPIRED
++	 * @links: Bitmap of the link IDs of the affiliated APs
++	 */
++	struct ap_removal_timer_expired {
++		u16 links;
++	} ap_removal_timer_expired;
++
++	/**
+ 	 * struct pasn_auth - Data for EVENT_PASN_AUTH
+ 	 */
+ 	struct pasn_auth pasn_auth;
+--- a/src/drivers/driver_common.c
++++ b/src/drivers/driver_common.c
+@@ -112,6 +112,7 @@ const char * event_to_string(enum wpa_ev
+ 	E2S(PEER_MEASUREMENT_COMPLETE);
+ 	E2S(CRIT_UPDATE_DONE);
+ 	E2S(ADV_TTLM);
++	E2S(AP_REMOVAL_TIMER_EXPIRED);
+ 	}
+ 
+ 	return "UNKNOWN";
+--- a/src/drivers/driver_nl80211_capa.c
++++ b/src/drivers/driver_nl80211_capa.c
+@@ -613,6 +613,9 @@ static void wiphy_info_ext_feature_flags
+ 			      NL80211_EXT_FEATURE_AP_ADV_TTLM))
+ 		capa->flags2 |= WPA_DRIVER_FLAGS2_AP_ADV_TTLM;
+ 	if (ext_feature_isset(ext_features, len,
++			      NL80211_EXT_FEATURE_AP_REMOVAL_TIMER_OFFLOAD))
++		capa->flags2 |= WPA_DRIVER_FLAGS2_AP_REMOVAL_TIMER_OFFLOAD;
++	if (ext_feature_isset(ext_features, len,
+ 			      NL80211_EXT_FEATURE_SCHED_SCAN_RELATIVE_RSSI))
+ 		capa->flags |= WPA_DRIVER_FLAGS_SCHED_SCAN_RELATIVE_RSSI;
+ 	if (ext_feature_isset(ext_features, len,
+--- a/src/drivers/driver_nl80211_event.c
++++ b/src/drivers/driver_nl80211_event.c
+@@ -942,15 +942,12 @@ out:
+ #endif /* CONFIG_DRIVER_NL80211_QCA */
+ 
+ 
+-static void mlme_event_link_removal(struct wpa_driver_nl80211_data *drv,
+-				    struct nlattr *mlo_links)
++static u16 nl80211_mlo_links_get(struct nlattr *mlo_links)
+ {
+ 	struct nlattr *link;
+-	u16 removed_links = 0;
+-	int rem_links, i;
++	u16 links = 0;
++	int rem_links;
+ 
+-	if (!mlo_links)
+-		return;
+ 	nla_for_each_nested(link, mlo_links, rem_links) {
+ 		struct nlattr *tb[NL80211_ATTR_MAX + 1];
+ 		int link_id;
+@@ -965,9 +962,23 @@ static void mlme_event_link_removal(stru
+ 		if (link_id >= MAX_NUM_MLD_LINKS)
+ 			continue;
+ 
+-		removed_links |= BIT(link_id);
++		links |= BIT(link_id);
+ 	}
+ 
++	return links;
++}
++
++
++static void mlme_event_link_removal(struct wpa_driver_nl80211_data *drv,
++				    struct nlattr *mlo_links)
++{
++	u16 removed_links;
++	int i;
++
++	if (!mlo_links)
++		return;
++	removed_links = nl80211_mlo_links_get(mlo_links);
++
+ 	drv->sta_mlo_info.valid_links &= ~removed_links;
+ 	drv->sta_mlo_info.req_links &= ~removed_links;
+ 
+@@ -983,6 +994,24 @@ static void mlme_event_link_removal(stru
+ }
+ 
+ 
++static void nl80211_ap_removal_timer_expired(struct i802_bss *bss,
++					     struct nlattr *mlo_links)
++{
++	union wpa_event_data data;
++
++	if (!mlo_links)
++		return;
++
++	os_memset(&data, 0, sizeof(data));
++	data.ap_removal_timer_expired.links = nl80211_mlo_links_get(mlo_links);
++
++	wpa_printf(MSG_DEBUG, "nl80211: AP Removal Timer expired - links 0x%x",
++		   data.ap_removal_timer_expired.links);
++
++	wpa_supplicant_event(bss->ctx, EVENT_AP_REMOVAL_TIMER_EXPIRED, &data);
++}
++
++
+ static void mlme_event_connect(struct wpa_driver_nl80211_data *drv,
+ 			       enum nl80211_commands cmd, bool qca_roam_auth,
+ 			       struct nlattr *status,
+@@ -5199,7 +5228,11 @@ static void do_process_drv_event(struct
+ 		break;
+ #endif /* CONFIG_IEEE80211AX */
+ 	case NL80211_CMD_LINKS_REMOVED:
+-		mlme_event_link_removal(drv, tb[NL80211_ATTR_MLO_LINKS]);
++		if (is_ap_interface(drv->nlmode))
++			nl80211_ap_removal_timer_expired(
++				bss, tb[NL80211_ATTR_MLO_LINKS]);
++		else
++			mlme_event_link_removal(drv, tb[NL80211_ATTR_MLO_LINKS]);
+ 		break;
+ 	case NL80211_CMD_CRIT_UPDATE_DONE:
+ 		nl80211_crit_update_done_event(bss, tb);
+--- a/src/drivers/nl80211_copy.h
++++ b/src/drivers/nl80211_copy.h
+@@ -1333,6 +1333,10 @@
+  *	setup links due to AP MLD removing the corresponding affiliated APs with
+  *	Multi-Link reconfiguration. %NL80211_ATTR_MLO_LINKS is used to provide
+  *	information about the removed STA MLD setup links.
++ *	On an AP interface, with %NL80211_EXT_FEATURE_AP_REMOVAL_TIMER_OFFLOAD,
++ *	it reports that the AP Removal Timer of the affiliated APs of the links
++ *	in %NL80211_ATTR_MLO_LINKS expired; the links stay until user space
++ *	removes them.
+  *
+  * @NL80211_CMD_SET_TID_TO_LINK_MAPPING: Set the TID to Link Mapping for a
+  *      non-AP MLD station. The %NL80211_ATTR_MLO_TTLM_DLINK and
+@@ -7274,6 +7278,21 @@ enum nl80211_feature_flags {
+  *	%NL80211_CMD_ADV_TTLM_ENDED. A link that the mapping disables or
+  *	enables is a critical update (35.3.10), so the request also needs
+  *	%NL80211_EXT_FEATURE_BEACON_CRIT_UPDATE.
++ * @NL80211_EXT_FEATURE_SCS: Driver supports the stream classification
++ *	service, configured with %NL80211_CMD_SET_SCS.
++ * @NL80211_EXT_FEATURE_MSCS: Driver supports the mirrored stream
++ *	classification service, configured with %NL80211_CMD_SET_MSCS.
++ * @NL80211_EXT_FEATURE_AP_REMOVAL_TIMER_OFFLOAD: The driver counts the AP
++ *	Removal Timer of an affiliated AP that a Reconfiguration Multi-Link
++ *	element in the beacon of an AP MLD link announces (IEEE 802.11be-2024,
++ *	35.3.6.3), in the Beacon frames of every link that carries the element,
++ *	and reports its expiry with %NL80211_CMD_LINKS_REMOVED on the AP
++ *	interface. User space sets the beacons with the element once. Until
++ *	the expiry, the driver can keep later beacon updates of the links of
++ *	the AP MLD from the device, so user space sets the beacons of the links
++ *	that stay again after the event. The expiry comes before the TBTT at
++ *	which the timer reaches 0, and the removed links keep running until
++ *	user space stops them.
+  *
+  * @NUM_NL80211_EXT_FEATURES: number of extended features.
+  * @MAX_NL80211_EXT_FEATURES: highest extended feature index.
+@@ -7361,6 +7380,9 @@ enum nl80211_ext_feature_index {
+ 	NL80211_EXT_FEATURE_UPDATE_BEACON,
+ 	NL80211_EXT_FEATURE_BEACON_CRIT_UPDATE,
+ 	NL80211_EXT_FEATURE_AP_ADV_TTLM,
++	NL80211_EXT_FEATURE_SCS,
++	NL80211_EXT_FEATURE_MSCS,
++	NL80211_EXT_FEATURE_AP_REMOVAL_TIMER_OFFLOAD,
+ 
+ 	/* add new features before the definition below */
+ 	NUM_NL80211_EXT_FEATURES,

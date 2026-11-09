@@ -1,0 +1,30 @@
+// SPDX-License-Identifier: (GPL-2.0 OR MIT)
+
+/dts-v1/;
+/plugin/;
+
+/ {
+	fragment@0 {
+		target = <&gmac1>;
+		__overlay__ {
+			phy-mode = "internal";
+			phy-handle = <&phy15>;
+			status = "okay";
+		};
+	};
+
+	fragment@1 {
+		target-path = "/soc_netsys/ethernet@15100000/mdio-bus";
+		__overlay__ {
+			/* built-in 2.5G Ethernet PHY */
+			phy15: phy@15 {
+				pinctrl-names = "i2p5gbe-led";
+				pinctrl-0 = <&i2p5gbe_led0_pins>;
+				compatible = "ethernet-phy-ieee802.3-c45";
+				reg = <15>;
+				phy-mode = "internal";
+			};
+		};
+	};
+};
+

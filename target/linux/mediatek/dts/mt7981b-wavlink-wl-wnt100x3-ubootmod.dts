@@ -1,0 +1,77 @@
+// SPDX-License-Identifier: GPL-2.0-only OR MIT
+
+/dts-v1/;
+
+#include "mt7981b-wavlink-wl-wnt100x3.dtsi"
+
+/ {
+	model = "WAVLINK WL-WNT100X3 (OpenWrt U-Boot layout)";
+	compatible = "wavlink,wl-wnt100x3-ubootmod", "mediatek,mt7981b";
+};
+
+&chosen {
+	bootargs = "root=/dev/fit0 rootwait";
+	rootdisk = <&ubi_rootdisk>;
+};
+
+&spi_nand {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		partition@0 {
+			label = "bl2";
+			reg = <0x0 0x100000>;
+			read-only;
+		};
+
+		partition@100000 {
+			label = "u-boot-env";
+			reg = <0x100000 0x80000>;
+			read-only;
+		};
+
+		partition@180000 {
+			label = "factory";
+			reg = <0x180000 0x200000>;
+			read-only;
+
+			nvmem-layout {
+				compatible = "fixed-layout";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				eeprom_factory: eeprom@0 {
+					reg = <0x0 0x1000>;
+				};
+
+				macaddr_lan: macaddr@3fff4 {
+					reg = <0x3fff4 0x06>;
+				};
+
+				macaddr_wan: macaddr@3fffa {
+					reg = <0x3fffa 0x06>;
+				};
+			};
+		};
+
+		partition@380000 {
+			label = "fip";
+			reg = <0x380000 0x200000>;
+			read-only;
+		};
+
+		partition@580000 {
+			label = "ubi";
+			reg = <0x580000 0x7a80000>;
+			compatible = "linux,ubi";
+
+			volumes {
+				ubi_rootdisk: ubi-volume-fit {
+					volname = "fit";
+				};
+			};
+		};
+	};
+};

@@ -1,0 +1,71 @@
+From 8c5626b0bc2859ac301ac985d1fbc36e660f7a21 Mon Sep 17 00:00:00 2001
+From: Dom Cobley <popcornmix@gmail.com>
+Date: Wed, 26 Aug 2026 11:10:36 +0100
+Subject: [PATCH] drm/vc4: hdmi: Don't write past the end of a packet RAM slot
+
+Each packet RAM slot is VC4_HDMI_PACKET_STRIDE (36) bytes: nine 32-bit
+words holding a 3-byte packet header followed by four 7-byte subpackets.
+The even words carry three bytes and the odd words four, so a slot can
+only ever hold 31 bytes of infoframe.
+
+vc4_hdmi_write_infoframe() instead loops over the infoframe seven bytes
+at a time and emits two words per iteration, consuming ceil(len / 7) * 8
+bytes of RAM. For any infoframe longer than 28 bytes that is more than
+the slot holds, and the trailing write lands on the first word of the
+next slot. The subsequent loop that clears the remainder of the slot is
+skipped as well, since packet_reg has already passed packet_reg_next.
+
+Today the only infoframe large enough to trigger this is the 30-byte
+Dynamic Range and Mastering infoframe, which occupies slot 7 and spills
+into slot 8, so nothing observable happens. A full-length (31-byte)
+vendor infoframe would occupy slot 1 and zero the header word of slot 2,
+corrupting the AVI infoframe written just before it.
+
+Stop the loop once the slot is full, and reject infoframes that cannot
+fit rather than silently truncating them. The limit matches the largest
+infoframe hdmi_infoframe_pack() can produce,
+HDMI_INFOFRAME_HEADER_SIZE + HDMI_MAX_INFOFRAME_SIZE, so no valid caller
+is affected.
+
+Signed-off-by: Dom Cobley <popcornmix@gmail.com>
+---
+ drivers/gpu/drm/vc4/vc4_hdmi.c      | 5 ++++-
+ drivers/gpu/drm/vc4/vc4_hdmi_regs.h | 6 ++++++
+ 2 files changed, 10 insertions(+), 1 deletion(-)
+
+--- a/drivers/gpu/drm/vc4/vc4_hdmi.c
++++ b/drivers/gpu/drm/vc4/vc4_hdmi.c
+@@ -654,7 +654,7 @@ static int vc4_hdmi_write_infoframe(stru
+ 	if (!drm_dev_enter(drm, &idx))
+ 		return 0;
+ 
+-	if (len > sizeof(buffer)) {
++	if (len > VC4_HDMI_PACKET_SIZE) {
+ 		ret = -ENOMEM;
+ 		goto out;
+ 	}
+@@ -680,6 +680,9 @@ static int vc4_hdmi_write_infoframe(stru
+ 		       base + packet_reg);
+ 		packet_reg += 4;
+ 
++		if (packet_reg >= packet_reg_next)
++			break;
++
+ 		writel(buffer[i + 3] << 0 |
+ 		       buffer[i + 4] << 8 |
+ 		       buffer[i + 5] << 16 |
+--- a/drivers/gpu/drm/vc4/vc4_hdmi_regs.h
++++ b/drivers/gpu/drm/vc4/vc4_hdmi_regs.h
+@@ -7,6 +7,12 @@
+ 
+ #define VC4_HDMI_PACKET_STRIDE			0x24
+ 
++/*
++ * A packet RAM slot is 9 words, holding a 3-byte packet header followed by
++ * four 7-byte subpackets, so only 31 of its 36 bytes are addressable.
++ */
++#define VC4_HDMI_PACKET_SIZE			31
++
+ enum vc4_hdmi_regs {
+ 	VC4_INVALID = 0,
+ 	VC4_HDMI,

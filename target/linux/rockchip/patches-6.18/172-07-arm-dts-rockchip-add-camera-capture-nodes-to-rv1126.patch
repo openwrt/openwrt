@@ -1,0 +1,214 @@
+From f1e4354b6594a488b2697f7b73e66ad759559430 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Fri, 9 Oct 2026 14:22:22 +0100
+Subject: [PATCH] ARM: dts: rockchip: add camera capture nodes to rv1126
+
+Add the two CSI D-PHYs, the MIPI CSI-2 receiver, the VICAP and the
+VICAP Lite with their IOMMUs, and the video input power domain with
+its QoS registers. The VICAP does not use its IOMMU and takes
+physically contiguous buffers, whereas the VICAP Lite is attached to
+its IOMMU. All nodes are disabled and the media graph links are left to
+the board.
+
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ arch/arm/boot/dts/rockchip/rv1126.dtsi | 160 +++++++++++++++++++++++++
+ 1 file changed, 160 insertions(+)
+
+--- a/arch/arm/boot/dts/rockchip/rv1126.dtsi
++++ b/arch/arm/boot/dts/rockchip/rv1126.dtsi
+@@ -170,6 +170,21 @@
+ 		reg = <0xfe810080 0x20>;
+ 	};
+ 
++	qos_isp: qos@fe890000 {
++		compatible = "rockchip,rv1126-qos", "syscon";
++		reg = <0xfe890000 0x20>;
++	};
++
++	qos_cif_lite: qos@fe890080 {
++		compatible = "rockchip,rv1126-qos", "syscon";
++		reg = <0xfe890080 0x20>;
++	};
++
++	qos_cif: qos@fe890100 {
++		compatible = "rockchip,rv1126-qos", "syscon";
++		reg = <0xfe890100 0x20>;
++	};
++
+ 	qos_emmc: qos@fe860000 {
+ 		compatible = "rockchip,rv1126-qos", "syscon";
+ 		reg = <0xfe860000 0x20>;
+@@ -268,6 +283,26 @@
+ 				#power-domain-cells = <0>;
+ 			};
+ 
++			power-domain@RV1126_PD_VI {
++				reg = <RV1126_PD_VI>;
++				clocks = <&cru ACLK_ISP>,
++					 <&cru HCLK_ISP>,
++					 <&cru CLK_ISP>,
++					 <&cru ACLK_CIF>,
++					 <&cru HCLK_CIF>,
++					 <&cru DCLK_CIF>,
++					 <&cru CLK_CIF_OUT>,
++					 <&cru CLK_MIPICSI_OUT>,
++					 <&cru PCLK_CSIHOST>,
++					 <&cru ACLK_CIFLITE>,
++					 <&cru HCLK_CIFLITE>,
++					 <&cru DCLK_CIFLITE>;
++				pm_qos = <&qos_isp>,
++					 <&qos_cif_lite>,
++					 <&qos_cif>;
++				#power-domain-cells = <0>;
++			};
++
+ 			power-domain@RV1126_PD_VO {
+ 				reg = <RV1126_PD_VO>;
+ 				clocks = <&cru ACLK_RGA>,
+@@ -439,6 +474,26 @@
+ 		#reset-cells = <1>;
+ 	};
+ 
++	csi_dphy0: phy@ff4b0000 {
++		compatible = "rockchip,rv1126-csi-dphy";
++		reg = <0xff4b0000 0x8000>;
++		clocks = <&cru PCLK_CSIPHY0>;
++		clock-names = "pclk";
++		#phy-cells = <0>;
++		rockchip,grf = <&grf>;
++		status = "disabled";
++	};
++
++	csi_dphy1: phy@ff4b8000 {
++		compatible = "rockchip,rv1126-csi-dphy";
++		reg = <0xff4b8000 0x8000>;
++		clocks = <&cru PCLK_CSIPHY1>;
++		clock-names = "pclk";
++		#phy-cells = <0>;
++		rockchip,grf = <&grf>;
++		status = "disabled";
++	};
++
+ 	u2phy0: usb2-phy@ff4c0000 {
+ 		compatible = "rockchip,rv1126-usb2phy";
+ 		reg = <0xff4c0000 0x8000>;
+@@ -726,6 +781,84 @@
+ 		status = "disabled";
+ 	};
+ 
++	vicap: video-capture@ffae0000 {
++		compatible = "rockchip,rv1126-vicap";
++		reg = <0xffae0000 0x200>;
++		interrupts = <GIC_SPI 58 IRQ_TYPE_LEVEL_HIGH>;
++		assigned-clocks = <&cru DCLK_CIF>;
++		assigned-clock-rates = <300000000>;
++		clocks = <&cru ACLK_CIF>, <&cru HCLK_CIF>, <&cru DCLK_CIF>;
++		clock-names = "aclk", "hclk", "dclk";
++		power-domains = <&power RV1126_PD_VI>;
++		resets = <&cru SRST_CIF_A>, <&cru SRST_CIF_H>,
++			 <&cru SRST_CIF_D>, <&cru SRST_CIF_P>,
++			 <&cru SRST_CIF_I>, <&cru SRST_CIF_RX_P>;
++		reset-names = "arst", "hrst", "drst", "prst", "irst", "rxprst";
++		rockchip,grf = <&grf>;
++		status = "disabled";
++
++		ports {
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			vicap_dvp: port@0 {
++				reg = <0>;
++			};
++
++			vicap_mipi: port@1 {
++				reg = <1>;
++			};
++		};
++	};
++
++	vicap_mmu: iommu@ffae0800 {
++		compatible = "rockchip,iommu";
++		reg = <0xffae0800 0x100>;
++		interrupts = <GIC_SPI 58 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&cru ACLK_CIF>, <&cru HCLK_CIF>;
++		clock-names = "aclk", "iface";
++		#iommu-cells = <0>;
++		power-domains = <&power RV1126_PD_VI>;
++		status = "disabled";
++	};
++
++	vicap_lite: video-capture@ffae8000 {
++		compatible = "rockchip,rv1126-vicap-lite";
++		reg = <0xffae8000 0x200>;
++		interrupts = <GIC_SPI 53 IRQ_TYPE_LEVEL_HIGH>;
++		assigned-clocks = <&cru DCLK_CIFLITE>;
++		assigned-clock-rates = <300000000>;
++		clocks = <&cru ACLK_CIFLITE>, <&cru HCLK_CIFLITE>,
++			 <&cru DCLK_CIFLITE>;
++		clock-names = "aclk", "hclk", "dclk";
++		iommus = <&vicap_lite_mmu>;
++		power-domains = <&power RV1126_PD_VI>;
++		resets = <&cru SRST_CIFLITE_A>, <&cru SRST_CIFLITE_H>,
++			 <&cru SRST_CIFLITE_D>, <&cru SRST_CIFLITE_RX_P>;
++		reset-names = "arst", "hrst", "drst", "rxprst";
++		status = "disabled";
++
++		ports {
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			vicap_lite_mipi: port@1 {
++				reg = <1>;
++			};
++		};
++	};
++
++	vicap_lite_mmu: iommu@ffae8800 {
++		compatible = "rockchip,iommu";
++		reg = <0xffae8800 0x100>;
++		interrupts = <GIC_SPI 53 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&cru ACLK_CIFLITE>, <&cru HCLK_CIFLITE>;
++		clock-names = "aclk", "iface";
++		#iommu-cells = <0>;
++		power-domains = <&power RV1126_PD_VI>;
++		status = "disabled";
++	};
++
+ 	vop: vop@ffb00000 {
+ 		compatible = "rockchip,rv1126-vop";
+ 		reg = <0xffb00000 0x200>, <0xffb00a00 0x400>;
+@@ -763,6 +896,33 @@
+ 		status = "disabled";
+ 	};
+ 
++	csi2: csi@ffb10000 {
++		compatible = "rockchip,rv1126-mipi-csi2",
++			     "rockchip,rk3568-mipi-csi2";
++		reg = <0xffb10000 0x10000>;
++		interrupts = <GIC_SPI 56 IRQ_TYPE_LEVEL_HIGH>,
++			     <GIC_SPI 57 IRQ_TYPE_LEVEL_HIGH>;
++		interrupt-names = "err1", "err2";
++		clocks = <&cru PCLK_CSIHOST>;
++		phys = <&csi_dphy0>;
++		power-domains = <&power RV1126_PD_VI>;
++		resets = <&cru SRST_CSIHOST_P>;
++		status = "disabled";
++
++		ports {
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			csi2_in: port@0 {
++				reg = <0>;
++			};
++
++			csi2_out: port@1 {
++				reg = <1>;
++			};
++		};
++	};
++
+ 	gmac: ethernet@ffc40000 {
+ 		compatible = "rockchip,rv1126-gmac", "snps,dwmac-4.20a";
+ 		reg = <0xffc40000 0x4000>;

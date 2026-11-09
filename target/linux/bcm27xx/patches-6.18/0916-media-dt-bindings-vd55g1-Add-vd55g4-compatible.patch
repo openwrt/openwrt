@@ -1,0 +1,29 @@
+From d0397a30156982bb032a7f962d33086e7b3c7002 Mon Sep 17 00:00:00 2001
+From: Benjamin Mugnier <benjamin.mugnier@foss.st.com>
+Date: Mon, 29 Jun 2026 12:51:49 +0200
+Subject: [PATCH] media: dt-bindings: vd55g1: Add vd55g4 compatible
+
+Commit eaa329aff7bb272f7ba6881de14eb3a4c6626ed5 upstream
+
+Define it as a new monochrome variant of vd65g4.
+
+Acked-by: Krzysztof Kozlowski <krzysztof.kozlowski@oss.qualcomm.com>
+Signed-off-by: Benjamin Mugnier <benjamin.mugnier@foss.st.com>
+---
+ Documentation/devicetree/bindings/media/i2c/st,vd55g1.yaml | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+--- a/Documentation/devicetree/bindings/media/i2c/st,vd55g1.yaml
++++ b/Documentation/devicetree/bindings/media/i2c/st,vd55g1.yaml
+@@ -27,9 +27,10 @@ properties:
+   compatible:
+     enum:
+       - st,vd55g1
++      - st,vd55g4
+       - st,vd65g4
+     description:
+-      VD55G1 is the monochrome variant, while VD65G4 is the color one.
++      VD55G1 and VD55G4 are monochrome variants, while VD65G4 is a color one.
+ 
+   reg:
+     maxItems: 1

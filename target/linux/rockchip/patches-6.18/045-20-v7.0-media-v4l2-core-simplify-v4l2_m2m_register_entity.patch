@@ -1,0 +1,41 @@
+From 42bf68dfef7e737933674bd56e1159950247b094 Mon Sep 17 00:00:00 2001
+From: Dmitry Antipov <dmantipov@yandex.ru>
+Date: Sat, 1 Nov 2025 12:08:00 +0300
+Subject: [PATCH] media: v4l2-core: simplify v4l2_m2m_register_entity()
+
+Avoid 'strlen()'/'kmalloc()'/'snprintf()' sequence by using
+the convenient 'kasprintf()' in 'v4l2_m2m_register_entity()'.
+
+Signed-off-by: Dmitry Antipov <dmantipov@yandex.ru>
+Signed-off-by: Hans Verkuil <hverkuil+cisco@kernel.org>
+---
+ drivers/media/v4l2-core/v4l2-mem2mem.c | 10 +++-------
+ 1 file changed, 3 insertions(+), 7 deletions(-)
+
+--- a/drivers/media/v4l2-core/v4l2-mem2mem.c
++++ b/drivers/media/v4l2-core/v4l2-mem2mem.c
+@@ -1037,8 +1037,6 @@ static int v4l2_m2m_register_entity(stru
+ {
+ 	struct media_entity *entity;
+ 	struct media_pad *pads;
+-	char *name;
+-	unsigned int len;
+ 	int num_pads;
+ 	int ret;
+ 
+@@ -1071,12 +1069,10 @@ static int v4l2_m2m_register_entity(stru
+ 		entity->info.dev.major = VIDEO_MAJOR;
+ 		entity->info.dev.minor = vdev->minor;
+ 	}
+-	len = strlen(vdev->name) + 2 + strlen(m2m_entity_name[type]);
+-	name = kmalloc(len, GFP_KERNEL);
+-	if (!name)
++	entity->name = kasprintf(GFP_KERNEL, "%s-%s", vdev->name,
++				 m2m_entity_name[type]);
++	if (!entity->name)
+ 		return -ENOMEM;
+-	snprintf(name, len, "%s-%s", vdev->name, m2m_entity_name[type]);
+-	entity->name = name;
+ 	entity->function = function;
+ 
+ 	ret = media_entity_pads_init(entity, num_pads, pads);

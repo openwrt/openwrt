@@ -1,0 +1,22 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
+
+#include "rtl9303_horaco_zx-swtgw2c8f.dtsi"
+
+/*
+ * The GT-SWTXG8FM appears to be a rebrand of the Horaco ZX-SWTGW2C8F
+ * with minor LED configuration differences.
+ */
+
+/ {
+	compatible = "goodtop,gt-swtxg8fm", "realtek,rtl9303-soc";
+	model = "GoodTop GT-SWTXG8FM";
+};
+
+&led_set {
+	clock-frequency = <2500000>;
+};
+
+&leds {
+	pinctrl-0 = <&pinmux_disable_sys_led>,
+		    <&pinmux_enable_led_sync>;
+};

@@ -1,0 +1,364 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Sun, 11 Oct 2026 20:00:00 +0200
+Subject: [PATCH] wifi: mac80211: pass the advertised TID-to-link mapping to
+ the driver
+
+Pass a request for an advertised TID-to-link mapping of an AP MLD to the
+driver, and let the driver report each step to user space with
+ieee80211_adv_ttlm_notify(). The driver times the mapping and disables
+the links outside it, and cfg80211 tracks whether a mapping is active,
+so mac80211 keeps no state of its own.
+
+Add a driver operation that cancels the mapping when cfg80211 ends it
+at the stop of a link. Each step carries the cookie of the request, and
+the steps that name a TBTT carry its CLOCK_BOOTTIME. A driver whose
+device cannot stop a mapping rejects a new request until the device
+ended it, so that the steps of the device always belong to the mapping
+of the cookie that the driver reports.
+
+Add ieee80211_adv_ttlm_duration_set(), with which a driver that gets its
+Beacon frames from mac80211 sets the Expected Duration field of the
+advertised mapping. mac80211 writes the field before it protects the
+Beacon frame, so the MIC stays valid.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/include/net/mac80211.h
++++ b/include/net/mac80211.h
+@@ -4719,6 +4719,21 @@ struct ieee80211_prep_tx_info {
+  *	if the requested TID-To-Link mapping can be accepted or not.
+  *	If it's not accepted the driver may suggest a preferred mapping and
+  *	modify @ttlm parameter with the suggested TID-to-Link mapping.
++ * @adv_ttlm_request: for an AP MLD, advertise a TID-to-link mapping, see
++ *	%NL80211_CMD_ADV_TTLM_REQUEST. The driver reports each step with
++ *	ieee80211_adv_ttlm_notify(). Once the mapping is established, the
++ *	driver finds the TID-To-Link Mapping element without the Mapping
++ *	Switch Time field in the beacon template and counts its Expected
++ *	Duration field down, or it sets the field with
++ *	ieee80211_adv_ttlm_duration_set(). The driver passes @params->cookie
++ *	back with each step. cfg80211 calls this only while no mapping is
++ *	requested or established. This callback can sleep.
++ * @adv_ttlm_cancel: cancel the advertised TID-to-link mapping of the given
++ *	cookie, when a link of the AP MLD stops before its end. The driver
++ *	stops the mapping in the device and reports no further step of it;
++ *	cfg80211 reports the end to user space. A driver whose device cannot
++ *	stop a mapping returns -EBUSY to a new @adv_ttlm_request until the
++ *	device ended the mapping. This callback can sleep.
+  * @prep_add_interface: prepare for interface addition. This can be used by
+  *      drivers to prepare for the addition of a new interface, e.g., allocate
+  *      the needed resources etc. This callback doesn't guarantee that an
+@@ -5126,6 +5141,11 @@ struct ieee80211_ops {
+ 	enum ieee80211_neg_ttlm_res
+ 	(*can_neg_ttlm)(struct ieee80211_hw *hw, struct ieee80211_vif *vif,
+ 			struct ieee80211_neg_ttlm *ttlm);
++	int (*adv_ttlm_request)(struct ieee80211_hw *hw,
++				struct ieee80211_vif *vif,
++				struct cfg80211_adv_ttlm_params *params);
++	void (*adv_ttlm_cancel)(struct ieee80211_hw *hw,
++				struct ieee80211_vif *vif, u64 cookie);
+ 	void (*prep_add_interface)(struct ieee80211_hw *hw,
+ 				   enum nl80211_iftype type);
+ 	int (*set_eml_op_mode)(struct ieee80211_hw *hw,
+@@ -5972,6 +5992,41 @@ bool ieee80211_beacon_cntdwn_is_complete
+ void ieee80211_color_change_finish(struct ieee80211_vif *vif, u8 link_id);
+ 
+ /**
++ * ieee80211_adv_ttlm_notify - report a step of an advertised TID-to-link mapping
++ * @vif: &struct ieee80211_vif pointer from the add_interface callback.
++ * @event: the step, with the cookie of the request and, for
++ *	%NL80211_CMD_ADV_TTLM_STARTED and %NL80211_CMD_ADV_TTLM_ESTABLISHED,
++ *	the CLOCK_BOOTTIME of the TBTT if the driver knows it
++ * @gfp: allocation flags
++ *
++ * A driver that handles @adv_ttlm_request calls this when it scheduled the
++ * mapping (once for each link), when the mapping is established and when it
++ * ended. cfg80211 drops a notification whose cookie is not that of the
++ * mapping that is requested or established, for example after
++ * @adv_ttlm_cancel.
++ */
++void ieee80211_adv_ttlm_notify(struct ieee80211_vif *vif,
++			       const struct cfg80211_adv_ttlm_event *event,
++			       gfp_t gfp);
++
++/**
++ * ieee80211_adv_ttlm_duration_set - set the Expected Duration of the
++ *	advertised TID-to-link mapping in the Beacon frames of an AP link
++ * @vif: &struct ieee80211_vif pointer from the add_interface callback.
++ * @link_id: valid link_id during MLO or 0 for non-MLO
++ * @duration: the Expected Duration in TUs, or a negative value to keep the
++ *	field that user space set
++ *
++ * From the next Beacon frame that mac80211 builds for the link, mac80211
++ * writes @duration into the Expected Duration field of each TID-To-Link
++ * Mapping element without the Mapping Switch Time field. mac80211 writes it
++ * before it protects the Beacon frame, so a driver that gets its Beacon
++ * frames from mac80211 uses this instead of a change to the frame.
++ */
++void ieee80211_adv_ttlm_duration_set(struct ieee80211_vif *vif,
++				     unsigned int link_id, s32 duration);
++
++/**
+  * ieee80211_crit_update_done - notify mac80211 that the Critical Update flag
+  *	of an AP link is clear
+  * @vif: &struct ieee80211_vif pointer from the add_interface callback.
+--- a/net/mac80211/cfg.c
++++ b/net/mac80211/cfg.c
+@@ -5753,6 +5753,36 @@ void ieee80211_color_change_finish(struc
+ }
+ EXPORT_SYMBOL_GPL(ieee80211_color_change_finish);
+ 
++void ieee80211_adv_ttlm_notify(struct ieee80211_vif *vif,
++			       const struct cfg80211_adv_ttlm_event *event,
++			       gfp_t gfp)
++{
++	struct ieee80211_sub_if_data *sdata = vif_to_sdata(vif);
++
++	cfg80211_adv_ttlm_notify(sdata->dev, event, gfp);
++}
++EXPORT_SYMBOL_GPL(ieee80211_adv_ttlm_notify);
++
++void ieee80211_adv_ttlm_duration_set(struct ieee80211_vif *vif,
++				     unsigned int link_id, s32 duration)
++{
++	struct ieee80211_sub_if_data *sdata = vif_to_sdata(vif);
++	struct ieee80211_link_data *link;
++
++	if (WARN_ON(vif->type != NL80211_IFTYPE_AP ||
++		    link_id >= IEEE80211_MLD_MAX_NUM_LINKS))
++		return;
++
++	rcu_read_lock();
++	link = rcu_dereference(sdata->link[link_id]);
++	if (link)
++		WRITE_ONCE(link->u.ap.adv_ttlm_duration,
++			   duration < 0 ? 0 :
++			   IEEE80211_ADV_TTLM_DURATION_SET | duration);
++	rcu_read_unlock();
++}
++EXPORT_SYMBOL_GPL(ieee80211_adv_ttlm_duration_set);
++
+ void ieee80211_crit_update_done_work(struct wiphy *wiphy,
+ 				     struct wiphy_work *work)
+ {
+@@ -6071,6 +6101,28 @@ ieee80211_set_ttlm(struct wiphy *wiphy,
+ }
+ 
+ static int
++ieee80211_adv_ttlm_request(struct wiphy *wiphy, struct net_device *dev,
++			   struct cfg80211_adv_ttlm_params *params)
++{
++	struct ieee80211_sub_if_data *sdata = IEEE80211_DEV_TO_SUB_IF(dev);
++
++	if (sdata->vif.type != NL80211_IFTYPE_AP ||
++	    !ieee80211_vif_is_mld(&sdata->vif))
++		return -EOPNOTSUPP;
++
++	return drv_adv_ttlm_request(sdata->local, sdata, params);
++}
++
++static void
++ieee80211_adv_ttlm_cancel(struct wiphy *wiphy, struct net_device *dev,
++			  u64 cookie)
++{
++	struct ieee80211_sub_if_data *sdata = IEEE80211_DEV_TO_SUB_IF(dev);
++
++	drv_adv_ttlm_cancel(sdata->local, sdata, cookie);
++}
++
++static int
+ ieee80211_assoc_ml_reconf(struct wiphy *wiphy, struct net_device *dev,
+ 			  struct cfg80211_ml_reconf_req *req)
+ {
+@@ -6226,6 +6278,8 @@ const struct cfg80211_ops mac80211_confi
+ 	.del_link_station = ieee80211_del_link_station,
+ 	.set_hw_timestamp = ieee80211_set_hw_timestamp,
+ 	.set_ttlm = ieee80211_set_ttlm,
++	.adv_ttlm_request = ieee80211_adv_ttlm_request,
++	.adv_ttlm_cancel = ieee80211_adv_ttlm_cancel,
+ 	.get_radio_mask = ieee80211_get_radio_mask,
+ 	.assoc_ml_reconf = ieee80211_assoc_ml_reconf,
+ 	.set_epcs = ieee80211_set_epcs,
+--- a/net/mac80211/driver-ops.h
++++ b/net/mac80211/driver-ops.h
+@@ -1780,6 +1780,42 @@ drv_can_neg_ttlm(struct ieee80211_local
+ 	return res;
+ }
+ 
++static inline int
++drv_adv_ttlm_request(struct ieee80211_local *local,
++		     struct ieee80211_sub_if_data *sdata,
++		     struct cfg80211_adv_ttlm_params *params)
++{
++	int ret = -EOPNOTSUPP;
++
++	might_sleep();
++	lockdep_assert_wiphy(local->hw.wiphy);
++	if (!check_sdata_in_driver(sdata))
++		return -EIO;
++
++	trace_drv_adv_ttlm_request(local, sdata, params);
++	if (local->ops->adv_ttlm_request)
++		ret = local->ops->adv_ttlm_request(&local->hw, &sdata->vif,
++						   params);
++	trace_drv_return_int(local, ret);
++
++	return ret;
++}
++
++static inline void
++drv_adv_ttlm_cancel(struct ieee80211_local *local,
++		    struct ieee80211_sub_if_data *sdata, u64 cookie)
++{
++	might_sleep();
++	lockdep_assert_wiphy(local->hw.wiphy);
++	if (!check_sdata_in_driver(sdata))
++		return;
++
++	trace_drv_adv_ttlm_cancel(local, sdata, cookie);
++	if (local->ops->adv_ttlm_cancel)
++		local->ops->adv_ttlm_cancel(&local->hw, &sdata->vif, cookie);
++	trace_drv_return_void(local);
++}
++
+ static inline void
+ drv_prep_add_interface(struct ieee80211_local *local,
+ 		       enum nl80211_iftype type)
+--- a/net/mac80211/trace.h
++++ b/net/mac80211/trace.h
+@@ -3302,6 +3302,63 @@ TRACE_EVENT(stop_queue,
+ 	)
+ );
+ 
++TRACE_EVENT(drv_adv_ttlm_request,
++	TP_PROTO(struct ieee80211_local *local,
++		 struct ieee80211_sub_if_data *sdata,
++		 struct cfg80211_adv_ttlm_params *params),
++
++	TP_ARGS(local, sdata, params),
++
++	TP_STRUCT__entry(
++		LOCAL_ENTRY
++		VIF_ENTRY
++		__field(u16, links)
++		__field(u32, switch_time)
++		__field(u32, duration)
++		__field(u64, cookie)
++	),
++
++	TP_fast_assign(
++		LOCAL_ASSIGN;
++		VIF_ASSIGN;
++		__entry->links = params->links;
++		__entry->switch_time = params->switch_time;
++		__entry->duration = params->duration;
++		__entry->cookie = params->cookie;
++	),
++
++	TP_printk(
++		LOCAL_PR_FMT VIF_PR_FMT
++		" links:0x%x switch_time:%u duration:%u cookie:%llu",
++		LOCAL_PR_ARG, VIF_PR_ARG, __entry->links,
++		__entry->switch_time, __entry->duration, __entry->cookie
++	)
++);
++
++TRACE_EVENT(drv_adv_ttlm_cancel,
++	TP_PROTO(struct ieee80211_local *local,
++		 struct ieee80211_sub_if_data *sdata, u64 cookie),
++
++	TP_ARGS(local, sdata, cookie),
++
++	TP_STRUCT__entry(
++		LOCAL_ENTRY
++		VIF_ENTRY
++		__field(u64, cookie)
++	),
++
++	TP_fast_assign(
++		LOCAL_ASSIGN;
++		VIF_ASSIGN;
++		__entry->cookie = cookie;
++	),
++
++	TP_printk(
++		LOCAL_PR_FMT VIF_PR_FMT " cookie:%llu",
++		LOCAL_PR_ARG, VIF_PR_ARG, __entry->cookie
++	)
++);
++
+ TRACE_EVENT(drv_can_neg_ttlm,
+ 	    TP_PROTO(struct ieee80211_local *local,
+ 		     struct ieee80211_sub_if_data *sdata,
+--- a/net/mac80211/ieee80211_i.h
++++ b/net/mac80211/ieee80211_i.h
+@@ -1121,6 +1121,8 @@ static inline u32 ieee80211_crit_update_
+ 	return (u64)val >> 32;
+ }
+ 
++#define IEEE80211_ADV_TTLM_DURATION_SET	BIT(31)
++
+ struct ieee80211_link_data_ap {
+ 	struct beacon_data __rcu *beacon;
+ 	struct probe_resp __rcu *probe_resp;
+@@ -1135,6 +1137,9 @@ struct ieee80211_link_data_ap {
+ 
+ 	/* IEEE80211_CRIT_UPDATE() */
+ 	atomic64_t crit_update;
++
++	/* IEEE80211_ADV_TTLM_DURATION_SET | duration, or 0 */
++	u32 adv_ttlm_duration;
+ };
+ 
+ struct ieee80211_link_data {
+--- a/net/mac80211/tx.c
++++ b/net/mac80211/tx.c
+@@ -5708,6 +5708,40 @@ static void ieee80211_beacon_crit_update
+ 	}
+ }
+ 
++static void ieee80211_beacon_adv_ttlm(struct ieee80211_link_data *link,
++				      struct sk_buff *skb)
++{
++	size_t hdr_len = offsetof(struct ieee80211_mgmt, u.beacon.variable);
++	u32 duration = READ_ONCE(link->u.ap.adv_ttlm_duration);
++	struct ieee80211_mgmt *mgmt = (void *)skb->data;
++	const struct element *elem;
++
++	if (!(duration & IEEE80211_ADV_TTLM_DURATION_SET))
++		return;
++
++	for_each_element_extid(elem, WLAN_EID_EXT_TID_TO_LINK_MAPPING,
++			       mgmt->u.beacon.variable, skb->len - hdr_len) {
++		u8 *pos = (u8 *)elem->data + 2;
++		u8 control;
++
++		if (elem->datalen < 2)
++			continue;
++
++		control = elem->data[1];
++		if ((control & IEEE80211_TTLM_CONTROL_SWITCH_TIME_PRESENT) ||
++		    !(control & IEEE80211_TTLM_CONTROL_EXPECTED_DUR_PRESENT))
++			continue;
++
++		if (!(control & IEEE80211_TTLM_CONTROL_DEF_LINK_MAP))
++			pos++;
++
++		if (pos + 3 > elem->data + elem->datalen)
++			continue;
++
++		put_unaligned_le24(duration, pos);
++	}
++}
++
+ static struct sk_buff *
+ __ieee80211_beacon_get_ap(struct ieee80211_hw *hw,
+ 			  struct ieee80211_vif *vif,
+@@ -5769,6 +5803,8 @@ __ieee80211_beacon_get_ap(struct ieee802
+ 	if (beacon->tail)
+ 		skb_put_data(skb, beacon->tail, beacon->tail_len);
+ 
++	ieee80211_beacon_adv_ttlm(link, skb);
++
+ 	if (ieee80211_beacon_protect(skb, local, sdata, link) < 0) {
+ 		dev_kfree_skb(skb);
+ 		return NULL;

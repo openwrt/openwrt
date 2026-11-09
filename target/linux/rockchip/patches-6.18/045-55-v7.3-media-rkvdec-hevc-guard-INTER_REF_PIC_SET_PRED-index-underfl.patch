@@ -1,0 +1,42 @@
+From 052c5ed5a1d96a6b24fd50ccda16fc6841ee7ca3 Mon Sep 17 00:00:00 2001
+From: Michael Bommarito <michael.bommarito@gmail.com>
+Date: Wed, 27 May 2026 15:47:37 -0400
+Subject: [PATCH] media: rkvdec: hevc: guard INTER_REF_PIC_SET_PRED index
+ underflow
+
+st_ref_pic_set_prediction() computes the reference RPS index as
+st_rps_idx - (delta_idx_minus1 + 1) per HEVC spec equation 7-59.
+Both operands are u8, so when delta_idx_minus1 + 1 exceeds the
+current index the subtraction wraps and the subsequent array access
+at calculated_rps_st_sets[ref_rps_idx] reads far out of bounds.
+
+A userspace V4L2 client that can open the RKVDEC m2m decoder can
+submit an EXT_SPS_ST_RPS control with INTER_REF_PIC_SET_PRED set
+and delta_idx_minus1 crafted to trigger the underflow.
+
+Reject the entry early when the reference index would underflow.
+
+Fixes: c9a59dc2acc7 ("media: rkvdec: Add HEVC support for the VDPU381 variant")
+Cc: stable@vger.kernel.org
+Suggested-by: Detlev Casanova <detlev.casanova@collabora.com>
+Assisted-by: Claude:claude-opus-4-7
+Signed-off-by: Michael Bommarito <michael.bommarito@gmail.com>
+Reviewed-by: Nicolas Dufresne <nicolas.dufresne@collabora.com>
+Signed-off-by: Nicolas Dufresne <nicolas.dufresne@collabora.com>
+Signed-off-by: Hans Verkuil <hverkuil+cisco@kernel.org>
+---
+ drivers/media/platform/rockchip/rkvdec/rkvdec-hevc-common.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+--- a/drivers/media/platform/rockchip/rkvdec/rkvdec-hevc-common.c
++++ b/drivers/media/platform/rockchip/rkvdec/rkvdec-hevc-common.c
+@@ -209,6 +209,9 @@ static void st_ref_pic_set_prediction(st
+ 	int i, j;
+ 	int dPoc;
+ 
++	if ((unsigned int)rps_data->delta_idx_minus1 + 1 > idx)
++		return;
++
+ 	ref_rps_idx = st_rps_idx - (rps_data->delta_idx_minus1 + 1); /* 7-59 */
+ 	delta_rps = (1 - 2 * rps_data->delta_rps_sign) *
+ 		   (rps_data->abs_delta_rps_minus1 + 1); /* 7-60 */

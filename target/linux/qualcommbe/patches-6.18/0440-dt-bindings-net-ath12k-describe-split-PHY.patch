@@ -1,0 +1,62 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Satoshi Ikeuchi <satosan.ikm@gmail.com>
+Date: Tue, 29 Sep 2026 00:00:00 +0000
+Subject: [RFC PATCH] dt-bindings: net: wireless: ath12k: describe split-PHY
+ configuration
+
+QCN9274 supports single-PHY and split-PHY configurations. Some fixed
+split-PHY designs do not identify that configuration through the OTP
+board identifier.
+
+Describe the fixed configuration with an optional qcom,split-phy flag
+on the radio node. Use the existing QCN9274 binding, whose WSI ports
+are optional, without changing WCN7850 requirements or WSI connections.
+
+This is a proposed binding for review.
+
+Signed-off-by: Satoshi Ikeuchi <satosan.ikm@gmail.com>
+---
+ .../bindings/net/wireless/qcom,ath12k-wsi.yaml | 28 +++++++++++++++++++++
+ 1 file changed, 28 insertions(+)
+
+--- a/Documentation/devicetree/bindings/net/wireless/qcom,ath12k-wsi.yaml
++++ b/Documentation/devicetree/bindings/net/wireless/qcom,ath12k-wsi.yaml
+@@ -52,6 +52,14 @@ properties:
+   reg:
+     maxItems: 1
+ 
++  qcom,split-phy:
++    type: boolean
++    description:
++      The device has a fixed split-PHY configuration with two independent
++      PHYs. This property describes the radio topology on designs where
++      the device's OTP board identifier does not identify that configuration.
++      Only applicable to QCN9274 hw2.0.
++
+   qcom,calibration-variant:
+     $ref: /schemas/types.yaml#/definitions/string
+     description:
+@@ -201,3 +209,23 @@ examples:
+             };
+         };
+     };
++  - |
++    pcie {
++        #address-cells = <3>;
++        #size-cells = <2>;
++
++        pcie@0 {
++            device_type = "pci";
++            reg = <0x0 0x0 0x0 0x0 0x0>;
++            #address-cells = <3>;
++            #size-cells = <2>;
++            ranges;
++
++            wifi@0 {
++                compatible = "pci17cb,1109";
++                reg = <0x0 0x0 0x0 0x0 0x0>;
++
++                qcom,split-phy;
++            };
++        };
++    };

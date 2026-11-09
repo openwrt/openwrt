@@ -1,0 +1,52 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Sat, 24 Oct 2026 11:21:08 +0200
+Subject: [PATCH] hostapd: report DSCP Policy Query and Response frames on ubus
+
+EasyMesh 6.1 section 20.2.4 has a Multi-AP Agent tunnel the body of each
+DSCP Policy Query and DSCP Policy Response frame it receives to its
+Controller. Report both as the action-frame notification, types
+dscp-query and dscp-response, with the body from the Category octet, as
+the BTM Query and the WNM Notification Request are reported.
+
+The report comes before hostapd's own handling and does not depend on
+the DSCP Policy capability of the station: the agent tunnels every such
+frame of a BSS that advertises the capability. Unprotected frames stay
+dropped.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/src/ap/ieee802_11.c
++++ b/src/ap/ieee802_11.c
+@@ -8352,7 +8352,7 @@ static void handle_beacon(struct hostapd
+ 
+ #ifdef CONFIG_ROBUST_AV
+ static void hostapd_dscp_action(struct hostapd_data *hapd, struct sta_info *sta,
+-				const u8 *pos, const u8 *end)
++				const u8 *body, const u8 *pos, const u8 *end)
+ {
+ 	u8 subtype;
+ 
+@@ -8367,9 +8367,13 @@ static void hostapd_dscp_action(struct h
+ 	subtype = *pos++;
+ 	switch (subtype) {
+ 	case QM_DSCP_POLICY_QUERY:
++		hostapd_ubus_notify_action_frame(hapd, "dscp-query", sta->addr,
++						 body, end - body);
+ 		hostapd_handle_dscp_policy_query(hapd, sta, pos, end - pos);
+ 		break;
+ 	case QM_DSCP_POLICY_RESP:
++		hostapd_ubus_notify_action_frame(hapd, "dscp-response",
++						 sta->addr, body, end - body);
+ 		hostapd_handle_dscp_policy_response(hapd, sta, pos, end - pos);
+ 		break;
+ 	default:
+@@ -8409,7 +8413,8 @@ static int hostapd_action_vs(struct host
+ 				   "DSCP: Ignoring unprotected frame");
+ 			return -1;
+ 		}
+-		hostapd_dscp_action(hapd, sta, pos, end);
++		hostapd_dscp_action(hapd, sta, (const u8 *) &mgmt->u.action,
++				    pos, end);
+ 		return 0;
+ #endif /* CONFIG_ROBUST_AV */
+ 	default:

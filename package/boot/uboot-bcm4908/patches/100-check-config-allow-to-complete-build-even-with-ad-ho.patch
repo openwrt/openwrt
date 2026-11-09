@@ -1,0 +1,40 @@
+From: Masahiro Yamada <yamada.masahiro@socionext.com>
+Date: Mon, 26 Sep 2016 13:05:02 +0900
+Subject: [PATCH] check-config: allow to complete build even with ad-hoc CONFIG
+ options
+
+Currently, the check-config.sh terminates the build when unknown
+ad-hoc options are detected.  I think it is too much because we may
+want to patch config headers locally in a build/deployment project.
+
+So, let's relax check-config.sh to just warn even if it detects
+options that are not in the whitelist.  Instead, this check can be
+done at the end of build, along with other checks.  It will catch
+more attention.
+
+Even with this change, the Buildman tool catches new warnings,
+so Tom can give NACK to new ad-hoc options.
+
+Signed-off-by: Masahiro Yamada <yamada.masahiro@socionext.com>
+---
+ scripts/check-config.sh | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+--- a/scripts/check-config.sh
++++ b/scripts/check-config.sh
+@@ -50,14 +50,13 @@ cat `find ${srctree} -name "Kconfig*"` |
+ 	|sort |uniq > ${ok}
+ comm -23 ${suspects} ${ok} >${new_adhoc}
+ if [ -s ${new_adhoc} ]; then
+-	echo >&2 "Error: You must add new CONFIG options using Kconfig"
++	echo >&2 "Warning: You must add new CONFIG options using Kconfig"
+ 	echo >&2 "The following new ad-hoc CONFIG options were detected:"
+ 	cat >&2 ${new_adhoc}
+ 	echo >&2
+ 	echo >&2 "Please add these via Kconfig instead. Find a suitable Kconfig"
+ 	echo >&2 "file and add a 'config' or 'menuconfig' option."
+ 	# Don't delete the temporary files in case they are useful
+-	exit 1
+ else
+ 	rm ${suspects} ${ok} ${new_adhoc}
+ fi

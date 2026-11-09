@@ -1,0 +1,38 @@
+// SPDX-License-Identifier: (GPL-2.0 OR MIT)
+/*
+ * eMMC factory partition layout common to every SmartRG SKU with an
+ * mt799x PCIe radio (MT7987 and MT7988 hosts): the radio eeprom cell
+ * and the mfginfo MAC provider. Include after the dtsi defining
+ * &emmc_block. MT7981/MT7986 SKUs use the built-in wifi layout
+ * (0x1000 eeprom) and do not fit here.
+ */
+
+&emmc_block {
+	partitions {
+		block-partition-factory {
+			partname = "factory";
+
+			factory_layout: nvmem-layout {
+				compatible = "fixed-layout";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				eeprom_factory_0: eeprom@0 {
+					reg = <0x0 0x1e00>;
+				};
+			};
+		};
+
+		block-partition-mfginfo {
+			partname = "mfginfo";
+
+			nvmem-layout {
+				compatible = "adtran,mfginfo";
+
+				macaddr: mfg-mac {
+					#nvmem-cell-cells = <1>;
+				};
+			};
+		};
+	};
+};

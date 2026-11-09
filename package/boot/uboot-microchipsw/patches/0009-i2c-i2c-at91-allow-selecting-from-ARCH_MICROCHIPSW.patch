@@ -1,0 +1,25 @@
+From a6a3c5438ae73a14fda838763f4ace4b2b6b9f20 Mon Sep 17 00:00:00 2001
+From: Robert Marko <robert.marko@sartura.hr>
+Date: Mon, 19 Jan 2026 13:30:27 +0100
+Subject: [PATCH 09/17] i2c: i2c-at91: allow selecting from ARCH_MICROCHIPSW
+
+AT91 I2C driver is reused by a lot of Microchip platforms, in this case we
+need it for LAN969x so allow selecting it when ARCH_MICROCHIPSW is used.
+
+Signed-off-by: Robert Marko <robert.marko@sartura.hr>
+---
+ drivers/i2c/Kconfig | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+--- a/drivers/i2c/Kconfig
++++ b/drivers/i2c/Kconfig
+@@ -163,7 +163,8 @@ config SYS_I2C_ADI
+ 
+ config SYS_I2C_AT91
+ 	bool "Atmel I2C driver"
+-	depends on DM_I2C && ARCH_AT91
++	depends on DM_I2C
++	depends on ARCH_AT91 || ARCH_MICROCHIPSW
+ 	help
+ 	  Add support for the Atmel I2C driver. A serious problem is that there
+ 	  is no documented way to issue repeated START conditions for more than

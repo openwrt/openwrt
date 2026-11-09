@@ -1,0 +1,17 @@
+--- a/programs/CMakeLists.txt
++++ b/programs/CMakeLists.txt
+@@ -3,14 +3,10 @@ add_custom_target(${programs_target})
+ 
+ add_subdirectory(aes)
+ add_subdirectory(cipher)
+-if (NOT WIN32)
+-    add_subdirectory(fuzz)
+-endif()
+ add_subdirectory(hash)
+ add_subdirectory(pkey)
+ add_subdirectory(psa)
+ add_subdirectory(random)
+ add_subdirectory(ssl)
+-add_subdirectory(test)
+ add_subdirectory(util)
+ add_subdirectory(x509)

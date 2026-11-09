@@ -1,0 +1,39 @@
+From 1d8e73163ef933624341075f576e2f36ef9133f7 Mon Sep 17 00:00:00 2001
+From: Miaoqing Pan <miaoqing.pan@oss.qualcomm.com>
+Date: Thu, 6 Aug 2026 18:13:31 +0800
+Subject: [PATCH] wifi: ath11k: unregister PM notifier on QMI init failure path
+
+ath11k_core_init() registers a PM notifier before the QMI server
+becomes available. If the QMI server never arrives, the device remove()
+path can take the early-exit path introduced for QMI initialization
+failures, skipping ath11k_core_deinit().
+
+As a result, the PM notifier remains registered after the ath11k base
+object has been freed. A subsequent suspend or resume event may invoke
+the stale notifier and trigger a use-after-free.
+
+Fix this by explicitly unregistering the PM notifier in the QMI failure
+cleanup path before releasing ath11k resources.
+
+Tested-on: WCN6750 hw1.0 AHB WLAN.MSL.2.0.c2-00204-QCAMSLSWPLZ-1
+
+Fixes: 32d93b51bc7e ("wifi: ath11k: choose default PM policy for hibernation")
+Signed-off-by: Miaoqing Pan <miaoqing.pan@oss.qualcomm.com>
+Reviewed-by: Baochen Qiang <baochen.qiang@oss.qualcomm.com>
+Reviewed-by: Rameshkumar Sundaram <rameshkumar.sundaram@oss.qualcomm.com>
+Link: https://patch.msgid.link/20260806101331.484063-4-miaoqing.pan@oss.qualcomm.com
+Signed-off-by: Jeff Johnson <jeff.johnson@oss.qualcomm.com>
+---
+ drivers/net/wireless/ath/ath11k/ahb.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/drivers/net/wireless/ath/ath11k/ahb.c
++++ b/drivers/net/wireless/ath/ath11k/ahb.c
+@@ -1271,6 +1271,7 @@ static void ath11k_ahb_remove(struct pla
+ 		ath11k_ahb_power_down(ab, false);
+ 		ath11k_debugfs_soc_destroy(ab);
+ 		ath11k_qmi_deinit_service(ab);
++		ath11k_core_pm_notifier_unregister(ab);
+ 		goto qmi_fail;
+ 	}
+ 

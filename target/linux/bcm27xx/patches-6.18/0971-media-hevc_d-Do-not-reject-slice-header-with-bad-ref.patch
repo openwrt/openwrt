@@ -1,0 +1,181 @@
+From 4bb240615790ea5bd939484f4595b6952ac94ef4 Mon Sep 17 00:00:00 2001
+From: John Cox <jc@kynesim.co.uk>
+Date: Fri, 11 Sep 2026 14:51:26 +0100
+Subject: [PATCH] media/hevc_d: Do not reject slice header with bad ref_idx
+ entries
+
+The previous patch to hevc_d checked that the entries in ref_idx
+were legal and rejected the slice header if not. Unfortunately
+gstreamer marks missing frames in this manner and expects decode
+to continue. Stop rejecting the header and produce a sanitized
+copy of ref_idx_lX that we use for the decode.
+
+Signed-off-by: John Cox <jc@kynesim.co.uk>
+---
+ .../raspberrypi/hevc_dec/hevc_d_h265.c        | 83 +++++++++++++------
+ 1 file changed, 56 insertions(+), 27 deletions(-)
+
+--- a/drivers/media/platform/raspberrypi/hevc_dec/hevc_d_h265.c
++++ b/drivers/media/platform/raspberrypi/hevc_dec/hevc_d_h265.c
+@@ -259,6 +259,10 @@ struct hevc_d_dec_state {
+ 	unsigned int start_ctb_y;
+ 	unsigned int prev_ctb_x;        /* CTB X,Y of start_ts - 1 */
+ 	unsigned int prev_ctb_y;
++
++	/* Sanitized copies of the slice header arrays */
++	u8 ref_idx_l0[NUM_REF_IDX_ACTIVE_MAX];
++	u8 ref_idx_l1[NUM_REF_IDX_ACTIVE_MAX];
+ };
+ 
+ /* Phase 1 command and bit FIFOs */
+@@ -695,7 +699,7 @@ static void program_slicecmds(struct hev
+  * get NoBackwardPredictionFlag.
+  */
+ static int has_backward(const struct v4l2_hevc_dpb_entry *const dpb,
+-			const __u8 *const idx, const unsigned int n,
++			const u8 *const idx, const unsigned int n,
+ 			const s32 cur_poc)
+ {
+ 	unsigned int i;
+@@ -764,9 +768,9 @@ static void pre_slice_decode(struct hevc
+ 	if (sh->slice_type == HEVC_SLICE_P || sh->slice_type == HEVC_SLICE_B) {
+ 		/* Flag to say all reference pictures are from the past */
+ 		const int no_backward_pred_flag =
+-			has_backward(dec->dpb, sh->ref_idx_l0, s->nb_refs[L0],
++			has_backward(dec->dpb, s->ref_idx_l0, s->nb_refs[L0],
+ 				     sh->slice_pic_order_cnt) &&
+-			has_backward(dec->dpb, sh->ref_idx_l1, s->nb_refs[L1],
++			has_backward(dec->dpb, s->ref_idx_l1, s->nb_refs[L1],
+ 				     sh->slice_pic_order_cnt);
+ 		cmd_slice |= no_backward_pred_flag << 10;
+ 		msg_slice(de, cmd_slice);
+@@ -774,11 +778,11 @@ static void pre_slice_decode(struct hevc
+ 		if (s->slice_temporal_mvp)
+ 			de->dpbno_col = collocated_from_l0_flag ?
+ 				(sh->collocated_ref_idx < s->nb_refs[L0] ?
+-				 sh->ref_idx_l0[sh->collocated_ref_idx] :
+-				 sh->ref_idx_l0[0]) :
++				 s->ref_idx_l0[sh->collocated_ref_idx] :
++				 s->ref_idx_l0[0]) :
+ 				(sh->collocated_ref_idx < s->nb_refs[L1] ?
+-				 sh->ref_idx_l1[sh->collocated_ref_idx] :
+-				 sh->ref_idx_l1[0]);
++				 s->ref_idx_l1[sh->collocated_ref_idx] :
++				 s->ref_idx_l1[0]);
+ 
+ 		/* Write reference picture descriptions */
+ 		weighted_pred_flag =
+@@ -787,7 +791,7 @@ static void pre_slice_decode(struct hevc
+ 				!!(s->pps.flags & V4L2_HEVC_PPS_FLAG_WEIGHTED_BIPRED);
+ 
+ 		for (idx = 0; idx < s->nb_refs[L0]; ++idx) {
+-			unsigned int dpb_no = sh->ref_idx_l0[idx];
++			unsigned int dpb_no = s->ref_idx_l0[idx];
+ 
+ 			msg_slice(de,
+ 				  dpb_no |
+@@ -808,7 +812,7 @@ static void pre_slice_decode(struct hevc
+ 		}
+ 
+ 		for (idx = 0; idx < s->nb_refs[L1]; ++idx) {
+-			unsigned int dpb_no = sh->ref_idx_l1[idx];
++			unsigned int dpb_no = s->ref_idx_l1[idx];
+ 
+ 			msg_slice(de,
+ 				  dpb_no |
+@@ -1516,6 +1520,37 @@ static u32 mk_config2(const struct hevc_
+ 	return c;
+ }
+ 
++static inline bool idx_valid(unsigned int idx)
++{
++	return idx < V4L2_HEVC_DPB_ENTRIES_NUM_MAX;
++}
++
++/*
++ * Create a ref_idx array that only contains valid values.
++ * Fill bad values with the last seen good value.
++ * If nothing good then fill with zeros
++ */
++static void sanitize_ref_idx(u8 *dst, const __u8 *src, const unsigned int n)
++{
++	unsigned int i;
++	u8 v = 0;
++
++	/* Find the first good value or leave v = 0 if none */
++	for (i = 0; i < n; ++i) {
++		if (idx_valid(src[i])) {
++			v = src[i];
++			break;
++		}
++	}
++
++	/* Now fill bad with last seen good */
++	for (i = 0; i < n; ++i) {
++		if (idx_valid(src[i]))
++			v = src[i];
++		dst[i] = v;
++	}
++}
++
+ static inline bool is_ref_unit_type(const unsigned int nal_unit_type)
+ {
+ 	/* From Table 7-1
+@@ -1776,10 +1811,18 @@ static int hevc_d_h265_setup(struct hevc
+ 					0 :
+ 					sh->num_ref_idx_l1_active_minus1 + 1;
+ 
++		/*
++		 * Fix up idx arrays - some userspace code such as gstreamer
++		 * adds deliberately bad values to indicate missing frames and
++		 * expects decode to succeed - deal with that
++		 */
++		sanitize_ref_idx(s->ref_idx_l0, sh->ref_idx_l0, s->nb_refs[0]);
++		sanitize_ref_idx(s->ref_idx_l1, sh->ref_idx_l1, s->nb_refs[1]);
++
+ 		for (j = 0; j != s->nb_refs[0]; ++j)
+-			s->idx_inuse |= 1 << sh->ref_idx_l0[j];
++			s->idx_inuse |= 1 << s->ref_idx_l0[j];
+ 		for (j = 0; j != s->nb_refs[1]; ++j)
+-			s->idx_inuse |= 1 << sh->ref_idx_l1[j];
++			s->idx_inuse |= 1 << s->ref_idx_l1[j];
+ 
+ 		if (s->sps.flags & V4L2_HEVC_SPS_FLAG_SCALING_LIST_ENABLED)
+ 			populate_scaling_factors(run, de, s);
+@@ -2476,20 +2519,6 @@ const struct v4l2_ctrl_ops hevc_d_hevc_p
+ 	.try_ctrl = try_ctrl_pps,
+ };
+ 
+-/* Check the DPB indices that decode will use are all in range */
+-static bool ref_idx_valid(const __u8 *const ref_idx, const unsigned int n_minus_1)
+-{
+-	unsigned int i;
+-
+-	if (n_minus_1 > NUM_REF_IDX_ACTIVE_MAX - 1)
+-		return false;
+-	for (i = 0; i <= n_minus_1; ++i)
+-		if (ref_idx[i] >= V4L2_HEVC_DPB_ENTRIES_NUM_MAX)
+-			return false;
+-
+-	return true;
+-}
+-
+ static int try_ctrl_slice_params(struct v4l2_ctrl *ctrl)
+ {
+ 	struct hevc_d_ctx *const ctx = ctrl->priv;
+@@ -2518,13 +2547,13 @@ static int try_ctrl_slice_params(struct
+ 		}
+ 
+ 		if (sh->slice_type != HEVC_SLICE_I) {
+-			if (!ref_idx_valid(sh->ref_idx_l0, sh->num_ref_idx_l0_active_minus1))
++			if (sh->num_ref_idx_l0_active_minus1 > NUM_REF_IDX_ACTIVE_MAX - 1)
+ 				return -EINVAL;
+ 			if (sh->five_minus_max_num_merge_cand > 4)
+ 				return -EINVAL;
+ 		}
+ 		if (sh->slice_type == HEVC_SLICE_B) {
+-			if (!ref_idx_valid(sh->ref_idx_l1, sh->num_ref_idx_l1_active_minus1))
++			if (sh->num_ref_idx_l1_active_minus1 > NUM_REF_IDX_ACTIVE_MAX - 1)
+ 				return -EINVAL;
+ 		}
+ 	}

@@ -1,0 +1,20 @@
+#
+# Copyright (C) 2025 OpenWrt.org
+#
+
+. /lib/functions/uci-defaults.sh
+
+board_config_update
+
+board=$(board_name)
+
+case "$board" in
+mikrotik,routerboard-2011uias-2hnd)
+	ucidef_add_gpio_switch "usb_power_n" "USB host power" "532" "0"
+	ucidef_add_gpio_switch "poe_port10_out_power" "PoE outuput on port 10" "514" "1"
+	;;
+esac
+
+board_config_flush
+
+exit 0

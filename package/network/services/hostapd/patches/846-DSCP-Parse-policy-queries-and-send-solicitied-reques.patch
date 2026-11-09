@@ -1,0 +1,867 @@
+From: Aishwarya R <aishwarya.r@oss.qualcomm.com>
+Date: Tue, 12 May 2026 10:54:54 +0530
+Subject: [PATCH] DSCP: Parse policy queries and send solicitied request
+
+Parse QoS Management elements to extract and validate query
+attributes(TCLAS Type 4, domain name, port range). Build internal query
+structures and normalize Type 4 classifier parameters for IPv4/IPv6.
+
+Implement query parsing for one or more QoS Management elements,
+including wildcard query detection. Add policy-match logic to compare
+parsed queries against per-STA DSCP policies.
+
+Construct and transmit DSCP Policy Request frames in response to valid
+STA-initiated DSCP policy queries per Wi-Fi Alliance QoS Management
+spec. Support fragmentation and the More bit, and honor the DSCP reset
+flag.
+
+Backport of hostap commit 35245b849a7f.
+
+Signed-off-by: Aishwarya R <aishwarya.r@oss.qualcomm.com>
+---
+--- a/src/ap/ieee802_11.c
++++ b/src/ap/ieee802_11.c
+@@ -8350,6 +8350,33 @@ static void handle_beacon(struct hostapd
+ }
+ 
+ 
++#ifdef CONFIG_ROBUST_AV
++static void hostapd_dscp_action(struct hostapd_data *hapd, struct sta_info *sta,
++				const u8 *pos, const u8 *end)
++{
++	u8 subtype;
++
++	if (!hapd->conf->enable_dscp_policy_capa)
++		return;
++
++	if (end - pos < 1) {
++		wpa_printf(MSG_DEBUG, "DSCP Action: Frame too short");
++		return;
++	}
++
++	subtype = *pos++;
++	switch (subtype) {
++	case QM_DSCP_POLICY_QUERY:
++		hostapd_handle_dscp_policy_query(hapd, sta, pos, end - pos);
++		break;
++	default:
++		wpa_printf(MSG_DEBUG, "QM Action: Unknown subtype %u", subtype);
++		break;
++	}
++}
++#endif /* CONFIG_ROBUST_AV */
++
++
+ static int hostapd_action_vs(struct hostapd_data *hapd,
+ 			     struct sta_info *sta,
+ 			     const struct ieee80211_mgmt *mgmt, size_t len,
+@@ -8372,6 +8399,16 @@ static int hostapd_action_vs(struct host
+ 	case WFA_CAPAB_VENDOR_TYPE:
+ 		hostapd_wfa_capab(hapd, sta, pos, end);
+ 		return 0;
++#ifdef CONFIG_ROBUST_AV
++	case QM_ACTION_VENDOR_TYPE:
++		if (!protected) {
++			wpa_printf(MSG_DEBUG,
++				   "DSCP: Ignoring unprotected frame");
++			return -1;
++		}
++		hostapd_dscp_action(hapd, sta, pos, end);
++		return 0;
++#endif /* CONFIG_ROBUST_AV */
+ 	default:
+ 		wpa_printf(MSG_DEBUG,
+ 			   "Ignore unknown Vendor Specific Action frame OUI/type %08x%s",
+--- a/src/ap/robust_av.c
++++ b/src/ap/robust_av.c
+@@ -663,3 +663,753 @@ int hostapd_send_unsolicited_dscp_policy
+ 	sta->dscp_state.pending_more = more;
+ 	return 0;
+ }
++
++
++static bool is_valid_qm_elem(const u8 *ie, size_t rem_len)
++{
++	return ie && rem_len >= 6 &&
++		ie[0] == WLAN_EID_VENDOR_SPECIFIC && ie[1] >= 4 &&
++		WPA_GET_BE32(&ie[2]) == QM_IE_VENDOR_TYPE;
++}
++
++
++static int set_frame_classifier_type4_ipv4(struct hostapd_dscp_policy *policy)
++{
++	u8 classifier_mask;
++	const u8 *frame_classifier = policy->frame_classifier;
++	struct type4_params *type4_param = &policy->type4_param;
++
++	if (policy->frame_classifier_len < IPV4_CLASSIFIER_LEN) {
++		wpa_printf(MSG_INFO,
++			   "QM: Received IPv4 frame classifier with insufficient length %d",
++			   policy->frame_classifier_len);
++		return -1;
++	}
++
++	classifier_mask = frame_classifier[1];
++
++	/* Classifier Mask - bit 1 = Source IP Address */
++	if (classifier_mask & TCLAS_MASK_SRC_IP) {
++		type4_param->classifier_mask |= TCLAS_MASK_SRC_IP;
++		os_memcpy(&type4_param->ip_params.v4.src_ip,
++			  &frame_classifier[3], IPV4_ADDR_LEN);
++	}
++
++	/* Classifier Mask - bit 2 = Destination IP Address */
++	if (classifier_mask & TCLAS_MASK_DST_IP) {
++		if (policy->domain_name) {
++			wpa_printf(MSG_INFO,
++				   "QM: IPv4: Both domain name and destination IP address not expected");
++			return -1;
++		}
++
++		type4_param->classifier_mask |= TCLAS_MASK_DST_IP;
++		os_memcpy(&type4_param->ip_params.v4.dst_ip,
++			  &frame_classifier[7], IPV4_ADDR_LEN);
++	}
++
++	/* Classifier Mask - bit 3 = Source Port */
++	if (classifier_mask & TCLAS_MASK_SRC_PORT) {
++		type4_param->classifier_mask |= TCLAS_MASK_SRC_PORT;
++		type4_param->ip_params.v4.src_port =
++			WPA_GET_BE16(&frame_classifier[11]);
++	}
++
++	/* Classifier Mask - bit 4 = Destination Port */
++	if (classifier_mask & TCLAS_MASK_DST_PORT) {
++		if (policy->port_range_info) {
++			wpa_printf(MSG_INFO,
++				   "QM: IPv4: Both port range and destination port not expected");
++			return -1;
++		}
++
++		type4_param->classifier_mask |= TCLAS_MASK_DST_PORT;
++		type4_param->ip_params.v4.dst_port =
++			WPA_GET_BE16(&frame_classifier[13]);
++	}
++
++	/* Classifier Mask - bit 5 = DSCP (ignored) */
++
++	/* Classifier Mask - bit 6 = Protocol */
++	if (classifier_mask & TCLAS_MASK_PROTOCOL) {
++		type4_param->classifier_mask |= TCLAS_MASK_PROTOCOL;
++		type4_param->ip_params.v4.protocol = frame_classifier[16];
++	}
++
++	return 0;
++}
++
++
++static int set_frame_classifier_type4_ipv6(struct hostapd_dscp_policy *policy)
++{
++	u8 classifier_mask;
++	const u8 *frame_classifier = policy->frame_classifier;
++	struct type4_params *type4_param = &policy->type4_param;
++
++	if (policy->frame_classifier_len < IPV6_CLASSIFIER_LEN) {
++		wpa_printf(MSG_INFO,
++			   "QM: Received IPv6 frame classifier with insufficient length %d",
++			   policy->frame_classifier_len);
++		return -1;
++	}
++
++	classifier_mask = frame_classifier[1];
++
++	/* Classifier Mask - bit 1 = Source IP Address */
++	if (classifier_mask & TCLAS_MASK_SRC_IP) {
++		type4_param->classifier_mask |= TCLAS_MASK_SRC_IP;
++		os_memcpy(&type4_param->ip_params.v6.src_ip,
++			  &frame_classifier[3], IPV6_ADDR_LEN);
++	}
++
++	/* Classifier Mask - bit 2 = Destination IP Address */
++	if (classifier_mask & TCLAS_MASK_DST_IP) {
++		if (policy->domain_name) {
++			wpa_printf(MSG_INFO,
++				   "QM: IPv6: Both domain name and destination IP address not expected");
++			return -1;
++		}
++		type4_param->classifier_mask |= TCLAS_MASK_DST_IP;
++		os_memcpy(&type4_param->ip_params.v6.dst_ip,
++			  &frame_classifier[19], IPV6_ADDR_LEN);
++	}
++
++	/* Classifier Mask - bit 3 = Source Port */
++	if (classifier_mask & TCLAS_MASK_SRC_PORT) {
++		type4_param->classifier_mask |= TCLAS_MASK_SRC_PORT;
++		type4_param->ip_params.v6.src_port =
++			WPA_GET_BE16(&frame_classifier[35]);
++	}
++
++	/* Classifier Mask - bit 4 = Destination Port */
++	if (classifier_mask & TCLAS_MASK_DST_PORT) {
++		if (policy->port_range_info) {
++			wpa_printf(MSG_INFO,
++				   "IPv6: Both port range and destination port not expected");
++			return -1;
++		}
++
++		type4_param->classifier_mask |= TCLAS_MASK_DST_PORT;
++		type4_param->ip_params.v6.dst_port =
++			WPA_GET_BE16(&frame_classifier[37]);
++	}
++
++	/* Classifier Mask - bit 5 = DSCP (ignored) */
++
++	/* Classifier Mask - bit 6 = Next Header */
++	if (classifier_mask & BIT(6)) {
++		type4_param->classifier_mask |= BIT(6);
++		type4_param->ip_params.v6.next_header = frame_classifier[40];
++	}
++
++	return 0;
++}
++
++
++static int ap_set_frame_classifier_params(struct hostapd_dscp_policy *policy)
++{
++	const u8 *frame_classifier = policy->frame_classifier;
++	u8 frame_classifier_len = policy->frame_classifier_len;
++
++	if (frame_classifier_len < 3) {
++		wpa_printf(MSG_INFO,
++			   "QM: Received frame classifier with insufficient length %d",
++			   frame_classifier_len);
++		return -1;
++	}
++
++	/* Only allowed Classifier Type: IP and higher layer parameters (4) */
++	if (frame_classifier[0] != CLASSIFIER_TYPE_4) {
++		wpa_printf(MSG_INFO,
++			   "QM: Received frame classifier with invalid classifier type %d",
++			   frame_classifier[0]);
++		return -1;
++	}
++
++	/* Classifier Mask - bit 0 = Version */
++	if (!(frame_classifier[1] & TCLAS_MASK_VERSION)) {
++		wpa_printf(MSG_INFO,
++			   "QM: Received frame classifier without IP version");
++		return -1;
++	}
++
++	/* Version (4 or 6) */
++	if (frame_classifier[2] == IPV4) {
++		if (set_frame_classifier_type4_ipv4(policy)) {
++			wpa_printf(MSG_INFO,
++				   "QM: Failed to set IPv4 parameters");
++			return -1;
++		}
++
++		policy->type4_param.ip_version = IPV4;
++	} else if (frame_classifier[2] == IPV6) {
++		if (set_frame_classifier_type4_ipv6(policy)) {
++			wpa_printf(MSG_INFO,
++				   "QM: Failed to set IPv6 parameters");
++			return -1;
++		}
++
++		policy->type4_param.ip_version = IPV6;
++	} else {
++		wpa_printf(MSG_INFO, "QM: Received unknown IP version %d",
++			   frame_classifier[2]);
++		return -1;
++	}
++
++	return 0;
++}
++
++
++static int hostapd_parse_query_elements(struct hostapd_dscp_policy *query,
++					u8 attr_id, u8 attr_len,
++					const u8 *attr_data)
++{
++	switch (attr_id) {
++	case QM_ATTR_PORT_RANGE:
++		if (attr_len < 4) {
++			wpa_printf(MSG_INFO,
++				   "DSCP: Received Port Range attribute with insufficient length %d",
++				   attr_len);
++			return -EINVAL;
++		}
++		if (query->port_range_info) {
++			wpa_printf(MSG_INFO,
++				   "DSCP Policy: Duplicate Port Range");
++			return -EINVAL;
++		}
++		query->start_port = WPA_GET_BE16(attr_data);
++		query->end_port = WPA_GET_BE16(attr_data + 2);
++		query->port_range_info = true;
++		break;
++	case QM_ATTR_TCLAS:
++		if (attr_len < 1) {
++			wpa_printf(MSG_INFO,
++				   "DSCP: Received TCLAS attribute with insufficient length %d",
++				   attr_len);
++			return -EINVAL;
++		}
++		if (query->frame_classifier) {
++			wpa_printf(MSG_DEBUG, "DSCP Policy: Duplicate TCLAS");
++			return -EINVAL;
++		}
++		query->frame_classifier = (u8 *) attr_data;
++		query->frame_classifier_len = attr_len;
++
++		if (ap_set_frame_classifier_params(query)) {
++			wpa_printf(MSG_INFO,
++				   "DSCP: Failed to set frame classifier parameters");
++			return -EINVAL;
++		}
++		break;
++	case QM_ATTR_DOMAIN_NAME:
++		if (attr_len < 1) {
++			wpa_printf(MSG_INFO,
++				   "DSCP: Received domain name attribute with insufficient length %d",
++				   attr_len);
++			return -EINVAL;
++		}
++		if (query->domain_name) {
++			wpa_printf(MSG_DEBUG,
++				   "DSCP Policy: Duplicate Domain Name");
++			return -EINVAL;
++		}
++		query->domain_name = (char *) attr_data;
++		query->domain_name_len = attr_len;
++		break;
++	default:
++		break;
++	}
++	return 0;
++}
++
++
++static int parse_single_policy(const u8 *ie, size_t ie_len,
++			       struct hostapd_dscp_policy **el_out,
++			       unsigned int index)
++{
++	const u8 *attr;
++	int rem_attrs;
++	struct hostapd_dscp_policy *el;
++
++	if (!ie || ie_len < 6 || ie[1] < 4)
++		return -EINVAL;
++
++	el = os_zalloc(sizeof(*el));
++	if (!el)
++		return -ENOMEM;
++
++	attr = ie + 6;
++	rem_attrs = ie[1] - 4;
++
++	while (rem_attrs >= 2 && rem_attrs >= 2 + attr[1]) {
++		u8 id = attr[0];
++
++		if (id == QM_ATTR_DSCP_POLICY) {
++			wpa_printf(MSG_INFO,
++				   "DSCP Query: DSCP Policy attribute not allowed");
++			os_free(el);
++			return -EINVAL;
++		}
++
++		if (hostapd_parse_query_elements(el, attr[0], attr[1],
++						 &attr[2])) {
++			os_free(el);
++			return -EINVAL;
++		}
++
++		rem_attrs -= 2 + attr[1];
++		attr += 2 + attr[1];
++	}
++
++	*el_out = el;
++	return 0;
++}
++
++
++static int parse_dscp_query(const u8 *data, size_t len,
++			    struct dscp_context *ctx)
++{
++	const u8 *pos, *end;
++	struct hostapd_dscp_policy **parsed;
++	unsigned int count = 0, i = 0, j;
++	int ie_len;
++
++	if (!data || len < 1 || !ctx)
++		return -EINVAL;
++
++	pos = data + 1;
++	end = data + len;
++
++	ctx->dialog_token = data[0];
++
++	if (ctx->dialog_token == 0) {
++		wpa_printf(MSG_INFO, "DSCP: Invalid dialog_token in query");
++		return -EINVAL;
++	}
++
++	/* First pass: count valid elements */
++	while (end - pos >= 2) {
++		ie_len = 2 + pos[1];
++		if (end - pos < ie_len)
++			break;
++
++		if (is_valid_qm_elem(pos, ie_len))
++			count++;
++
++		pos += ie_len;
++	}
++
++	if (count == 0) {
++		ctx->is_wildcard = true;
++		return 0;
++	}
++
++	parsed = os_calloc(count, sizeof(*parsed));
++	if (!parsed)
++		return -ENOMEM;
++
++	/* Second pass: parse and populate */
++	pos = data + 1;
++	while (end - pos >= 2 && i < count) {
++		ie_len = 2 + pos[1];
++		if (end - pos < ie_len)
++			break;
++
++		if (!is_valid_qm_elem(pos, ie_len)) {
++			pos += ie_len;
++			continue;
++		}
++
++		if (parse_single_policy(pos, ie_len, &parsed[i], i) != 0)
++			goto error;
++		i++;
++
++		pos += ie_len;
++	}
++
++	ctx->query_policy = parsed;
++	ctx->num_query_policies = i;
++	return 0;
++
++error:
++	for (j = 0; j < i; j++)
++		os_free(parsed[j]);
++	os_free(parsed);
++	return -1;
++}
++
++
++static bool match_ipv4_classifier(const struct type4_params *query,
++				  const struct type4_params *policy)
++{
++	if ((query->classifier_mask & TCLAS_MASK_SRC_IP) &&
++	    os_memcmp(&query->ip_params.v4.src_ip,
++		      &policy->ip_params.v4.src_ip, 4) != 0)
++		return false;
++
++	if ((query->classifier_mask & TCLAS_MASK_DST_IP) &&
++	    os_memcmp(&query->ip_params.v4.dst_ip,
++		      &policy->ip_params.v4.dst_ip, 4) != 0)
++		return false;
++
++	if ((query->classifier_mask & TCLAS_MASK_SRC_PORT) &&
++	    query->ip_params.v4.src_port != policy->ip_params.v4.src_port)
++		return false;
++
++	if ((query->classifier_mask & TCLAS_MASK_DST_PORT) &&
++	    query->ip_params.v4.dst_port != policy->ip_params.v4.dst_port)
++		return false;
++
++	if ((query->classifier_mask & TCLAS_MASK_PROTOCOL) &&
++	    query->ip_params.v4.protocol != policy->ip_params.v4.protocol)
++		return false;
++
++	return true;
++}
++
++
++static bool match_ipv6_classifier(const struct type4_params *query,
++				  const struct type4_params *policy)
++{
++	if ((query->classifier_mask & TCLAS_MASK_SRC_IP) &&
++	    os_memcmp(&query->ip_params.v6.src_ip,
++		      &policy->ip_params.v6.src_ip, 16) != 0)
++		return false;
++
++	if ((query->classifier_mask & TCLAS_MASK_DST_IP) &&
++	    os_memcmp(&query->ip_params.v6.dst_ip,
++		      &policy->ip_params.v6.dst_ip, 16) != 0)
++		return false;
++
++	if ((query->classifier_mask & TCLAS_MASK_SRC_PORT) &&
++	    query->ip_params.v6.src_port != policy->ip_params.v6.src_port)
++		return false;
++
++	if ((query->classifier_mask & TCLAS_MASK_DST_PORT) &&
++	    query->ip_params.v6.dst_port != policy->ip_params.v6.dst_port)
++		return false;
++
++	if ((query->classifier_mask & BIT(6)) &&
++	    query->ip_params.v6.next_header != policy->ip_params.v6.next_header)
++		return false;
++
++	return true;
++}
++
++
++static bool match_type4_classifier(const struct type4_params *query,
++				   const struct type4_params *policy,
++				   u8 ip_version)
++{
++	if (query->classifier_mask != policy->classifier_mask)
++		return false;
++
++	switch (ip_version) {
++	case IPV4:
++		if (!match_ipv4_classifier(query, policy))
++			return false;
++		break;
++	case IPV6:
++		if (!match_ipv6_classifier(query, policy))
++			return false;
++		break;
++	default:
++		return false;
++	}
++
++	return true;
++}
++
++
++static int policy_matches_query(struct dscp_context *ctx)
++{
++	struct hostapd_dscp_policy *policy, *query;
++	struct hostapd_dscp_policy **tmp;
++	unsigned int max_policies = 0, i, j;
++
++	ctx->num_req_policies = 0;
++	ctx->req_policy = NULL;
++
++	/* Wildcard query: match all policies for the STA */
++	if (ctx->is_wildcard) {
++		max_policies = ctx->sta->num_dscp_policies;
++		ctx->req_policy = os_calloc(max_policies,
++					    sizeof(*ctx->req_policy));
++		if (!ctx->req_policy)
++			return 0;
++
++		for (j = 0; j < max_policies; j++) {
++			policy = ctx->sta->policies[j];
++			ctx->req_policy[ctx->num_req_policies++] = policy;
++		}
++		return ctx->num_req_policies;
++	}
++
++	for (i = 0; i < ctx->num_query_policies; i++) {
++		query = ctx->query_policy[i];
++
++		for (j = 0; j < ctx->sta->num_dscp_policies; j++) {
++			bool match = false;
++
++			policy = ctx->sta->policies[j];
++
++			/* Match port range */
++			if (query->port_range_info && policy->port_range_info) {
++				if (policy->start_port <= query->end_port &&
++				    policy->end_port >= query->start_port)
++					match = true;
++			}
++
++
++			if (!match && query->domain_name &&
++			    policy->domain_name &&
++			    query->domain_name_len == policy->domain_name_len &&
++			    os_memcmp(query->domain_name, policy->domain_name,
++				      query->domain_name_len) == 0)
++				match = true;
++
++			if (!match && query->frame_classifier &&
++			    policy->frame_classifier) {
++				u8 ip_version = query->type4_param.ip_version;
++				u8 classifier_mask =
++					query->type4_param.classifier_mask;
++
++				if (ip_version ==
++				    policy->type4_param.ip_version &&
++				    classifier_mask ==
++				    policy->type4_param.classifier_mask &&
++				    match_type4_classifier(&query->type4_param,
++							   &policy->type4_param,
++							   ip_version))
++					match = true;
++			}
++
++			if (!match)
++				continue;
++
++			tmp = os_realloc_array(ctx->req_policy,
++					       ctx->num_req_policies + 1,
++					       sizeof(*ctx->req_policy));
++			if (!tmp)
++				continue;
++
++			ctx->req_policy = tmp;
++			ctx->req_policy[ctx->num_req_policies++] = policy;
++		}
++	}
++
++	return ctx->num_req_policies;
++}
++
++
++static size_t policy_element_len(const struct hostapd_dscp_policy *policy)
++{
++	size_t len = 0;
++
++	/* QoS Management element header: Element ID (1), Length (1), OUI (3),
++	 * OUI Type (1) */
++	len += 6;
++
++	/* DSCP Policy attribute:Attr ID(1) + Len(1) + Policy ID(1) +
++	 * Req Type(1) + DSCP (1) */
++	len += 5;
++
++	/* Classifier attributes */
++	if (policy->frame_classifier_len)
++		len += 2 + policy->frame_classifier_len;
++
++	/* Port Range attribute: Attribute ID (1) + Length (1) +
++	 * Start Port (2) + End Port (2) */
++	if (policy->port_range_info)
++		len += 6;
++
++	/* Domain Name attribute: Attribute ID (1) + Length (1) +
++	 * domain_name_len */
++	if (policy->domain_name_len)
++		len += 2 + policy->domain_name_len;
++
++	return len;
++}
++
++
++static void add_policy_element(struct wpabuf *buf,
++			       const struct hostapd_dscp_policy *policy)
++{
++	struct wpabuf *elem;
++
++	elem = wpabuf_alloc(policy_element_len(policy));
++	if (!elem)
++		return;
++
++	wpabuf_put_be32(elem, QM_IE_VENDOR_TYPE);
++
++	/* DSCP Policy attribute */
++	wpabuf_put_u8(elem, QM_ATTR_DSCP_POLICY);
++	wpabuf_put_u8(elem, 3);
++	wpabuf_put_u8(elem, policy->policy_id);
++	wpabuf_put_u8(elem, policy->req_type);
++
++	if (policy->req_type == DSCP_POLICY_REQ_REMOVE)
++		wpabuf_put_u8(elem, 255); /* DSCP = 255 for REMOVE */
++	else
++		wpabuf_put_u8(elem, policy->dscp);
++
++	if (policy->frame_classifier && policy->frame_classifier_len) {
++		wpabuf_put_u8(elem, QM_ATTR_TCLAS);
++		wpabuf_put_u8(elem, policy->frame_classifier_len);
++		wpabuf_put_data(elem, policy->frame_classifier,
++				policy->frame_classifier_len);
++	}
++
++	/* Classifier: Domain Name */
++	if (policy->domain_name && policy->domain_name_len > 0) {
++		wpabuf_put_u8(elem, QM_ATTR_DOMAIN_NAME);
++		wpabuf_put_u8(elem, policy->domain_name_len);
++		wpabuf_put_data(elem, policy->domain_name,
++				policy->domain_name_len);
++	}
++
++	if (policy->port_range_info) {
++		wpabuf_put_u8(elem, QM_ATTR_PORT_RANGE);
++		wpabuf_put_u8(elem, 4);
++		wpabuf_put_be16(elem, policy->start_port);
++		wpabuf_put_be16(elem, policy->end_port);
++	}
++
++	wpabuf_put_u8(buf, WLAN_EID_VENDOR_SPECIFIC);
++	wpabuf_put_u8(buf, wpabuf_len(elem));
++	wpabuf_put_buf(buf, elem);
++
++	wpabuf_free(elem);
++}
++
++
++/* Build DSCP Policy Request frame */
++static struct wpabuf * build_dscp_policy_request(struct hostapd_data *hapd,
++						 struct sta_info *sta,
++						 const struct dscp_context *ctx,
++						 size_t offset,
++						 size_t *policies_used,
++						 u8 dialog_token,
++						 bool *more)
++{
++	struct wpabuf *buf;
++	u8 *rc_field;
++	size_t i;
++
++	buf = wpabuf_alloc(MAX_DSCP_REQ_SIZE);
++	if (!buf)
++		return NULL;
++
++	/* Action frame header */
++	wpabuf_put_u8(buf, WLAN_ACTION_VENDOR_SPECIFIC_PROTECTED);
++	wpabuf_put_be32(buf, QM_ACTION_VENDOR_TYPE);
++	wpabuf_put_u8(buf, QM_DSCP_POLICY_REQ);
++
++	/* Dialog Token */
++	wpabuf_put_u8(buf, dialog_token);
++
++	/* Request Control */
++	rc_field = wpabuf_put(buf, 1);
++	*rc_field = sta->dscp_reset ? DSCP_POLICY_CTRL_RESET : 0x00;
++	*more = false;
++
++	for (i = offset; i < ctx->num_req_policies; i++) {
++		const struct hostapd_dscp_policy *policy = ctx->req_policy[i];
++
++		if (sta->dscp_reset &&
++		    policy->req_type == DSCP_POLICY_REQ_REMOVE)
++			continue;
++
++		if (wpabuf_len(buf) + policy_element_len(policy) >
++		    MAX_DSCP_REQ_SIZE) {
++			*rc_field |= DSCP_POLICY_CTRL_MORE;
++			*more = true;
++			break;
++		}
++
++		add_policy_element(buf, policy);
++	}
++
++	if (policies_used)
++		*policies_used = i - offset;
++
++	/* If no matching policies, leave QoS Management element list empty */
++	if (ctx->num_req_policies == 0 && sta->dscp_reset == 0)
++		wpa_printf(MSG_DEBUG,
++			   "QM: No matching policies - sending empty response");
++
++	return buf;
++}
++
++
++int hostapd_handle_dscp_policy_query(struct hostapd_data *hapd,
++				     struct sta_info *sta,
++				     const u8 *data, size_t len)
++{
++	struct wpabuf *resp;
++	struct dscp_context ctx;
++	size_t offset = 0, used;
++	u8 dialog_token;
++	bool more = false;
++	unsigned int i;
++
++	if (!sta || !(sta->flags & WLAN_STA_AUTHORIZED)) {
++		wpa_printf(MSG_DEBUG, "DSCP Policy: STA not authorized");
++		return -1;
++	}
++
++	if (!(sta->flags & WLAN_STA_DSCP_POLICY)) {
++		wpa_printf(MSG_DEBUG, "DSCP: STA " MACSTR " not capable",
++			   MAC2STR(sta->addr));
++		return -1;
++	}
++
++	if (len == 0)
++		return -1;
++
++	os_memset(&ctx, 0, sizeof(ctx));
++	ctx.hapd = hapd;
++	ctx.sta = sta;
++
++	if (parse_dscp_query(data, len, &ctx) < 0) {
++		wpa_printf(MSG_DEBUG, "DSCP: Failed to parse query from "
++			   MACSTR,
++			   MAC2STR(sta->addr));
++		return -1;
++	}
++
++	if (policy_matches_query(&ctx) <= 0)
++		wpa_printf(MSG_DEBUG, "QM: No matching DSCP policies found");
++
++	dialog_token = ctx.dialog_token;
++
++	resp = build_dscp_policy_request(hapd, sta, &ctx, offset, &used,
++					 dialog_token, &more);
++	if (!resp)
++		goto cleanup;
++
++	if (hostapd_drv_send_action(hapd, hapd->iface->freq, 0, sta->addr,
++				    wpabuf_head(resp), wpabuf_len(resp))) {
++
++		wpa_printf(MSG_DEBUG, "DSCP: Failed to send policy request to "
++			   MACSTR, MAC2STR(sta->addr));
++		wpabuf_free(resp);
++		goto cleanup;
++	}
++
++	wpabuf_free(resp);
++
++	if (used && more) {
++		sta->dscp_state.offset = offset + used;
++		sta->dscp_state.last_dialog_token = dialog_token;
++		sta->dscp_state.pending_more = true;
++	}
++
++cleanup:
++	for (i = 0; i < ctx.num_query_policies; i++)
++		os_free(ctx.query_policy[i]);
++	os_free(ctx.query_policy);
++	os_free(ctx.req_policy);
++	return 0;
++}
+--- a/src/ap/robust_av.h
++++ b/src/ap/robust_av.h
+@@ -15,6 +15,7 @@ struct sta_info;
+ #define CLASSIFIER_TYPE_4	4
+ 
+ /* Bit positions for classifier mask */
++#define TCLAS_MASK_VERSION	BIT(0)
+ #define TCLAS_MASK_SRC_IP	BIT(1)
+ #define TCLAS_MASK_DST_IP	BIT(2)
+ #define TCLAS_MASK_SRC_PORT	BIT(3)
+@@ -86,6 +87,17 @@ struct hostapd_dscp_policy {
+ 	bool port_range_info;
+ };
+ 
++struct dscp_context {
++	struct hostapd_data *hapd;
++	struct sta_info *sta;
++	u8 dialog_token;
++	struct hostapd_dscp_policy **query_policy;
++	unsigned int num_query_policies;
++	struct hostapd_dscp_policy **req_policy;
++	unsigned int num_req_policies;
++	bool is_wildcard;
++};
++
+ 
+ #ifdef CONFIG_ROBUST_AV
+ 
+@@ -122,5 +134,8 @@ int hostapd_send_unsolicited_dscp_policy
+ 						 u8 reset,
+ 						 const int *policy_ids,
+ 						 unsigned int num_policies);
++int hostapd_handle_dscp_policy_query(struct hostapd_data *hapd,
++				     struct sta_info *sta,
++				     const u8 *data, size_t len);
+ 
+ #endif /* ROBUST_AV_H */

@@ -1,0 +1,84 @@
+From 11a14e4c3e1a4a57ddbf4f2da7c4406c52210f36 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Wed, 28 Oct 2026 20:00:03 +0000
+Subject: [PATCH] media: rockchip: rkisp2: Stop readback-fed capture directly
+
+The capture stop applies the memory interface disable at the next
+frame end and waits up to a second for it. With a raw readback as the
+ISP input there is no next frame once the last queued raw buffer has
+been consumed: a user that stops the capture node before the readback
+node, which libcamera does so that the ISP ends at a frame boundary,
+ran into the timeout at every stop, which forced the disable and added
+a second to the stop latency.
+
+Check whether the readback channels are idle, no frame in flight and
+nothing queued, and apply the disable directly in that case; the ISP
+is at a frame boundary then by definition. A readback frame in flight
+still completes the stop at its frame end, and a sensor-fed ISP keeps
+the frame end wait.
+
+Assisted-by: LLM
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ .../platform/rockchip/rkisp2/rkisp2-capture.c |  7 ++++++
+ .../platform/rockchip/rkisp2/rkisp2-common.h  |  1 +
+ .../platform/rockchip/rkisp2/rkisp2-dmarx.c   | 22 +++++++++++++++++++
+ 3 files changed, 30 insertions(+)
+
+--- a/drivers/media/platform/rockchip/rkisp2/rkisp2-capture.c
++++ b/drivers/media/platform/rockchip/rkisp2/rkisp2-capture.c
+@@ -932,6 +932,13 @@ static void rkisp2_cap_stream_disable(st
+ {
+ 	int ret;
+ 
++	/* a readback input with no frame in flight ends no more frames */
++	if (rkisp2_dmarx_input_idle(cap->rkisp2)) {
++		cap->ops->stop(cap);
++		cap->is_streaming = false;
++		return;
++	}
++
+ 	/* Stream should stop in interrupt. If it doesn't, stop it by force. */
+ 	cap->is_stopping = true;
+ 	ret = wait_event_timeout(cap->done,
+--- a/drivers/media/platform/rockchip/rkisp2/rkisp2-common.h
++++ b/drivers/media/platform/rockchip/rkisp2/rkisp2-common.h
+@@ -590,6 +590,7 @@ irqreturn_t rkisp2_isp_isr(int irq, void
+ irqreturn_t rkisp2_capture_isr(int irq, void *ctx);
+ irqreturn_t rkisp2_mipi_isr(int irq, void *ctx);
+ void rkisp2_dmarx_isr(struct rkisp2_device *rkisp2, u32 status);
++bool rkisp2_dmarx_input_idle(struct rkisp2_device *rkisp2);
+ void rkisp2_params_isr(struct rkisp2_params *params);
+ irqreturn_t rkisp2_stats_isr_eof(struct rkisp2_stats *stats);
+ 
+--- a/drivers/media/platform/rockchip/rkisp2/rkisp2-dmarx.c
++++ b/drivers/media/platform/rockchip/rkisp2/rkisp2-dmarx.c
+@@ -296,6 +296,28 @@ static void rkisp2_rawrd_return_all_buff
+ 	spin_unlock_irq(&chan->buf_lock);
+ }
+ 
++bool rkisp2_dmarx_input_idle(struct rkisp2_device *rkisp2)
++{
++	struct rkisp2_dmarx *dmarx = &rkisp2->dmarx;
++	bool streaming = false;
++	bool idle = true;
++	unsigned int i;
++
++	for (i = 0; i < dmarx->num_chans; i++) {
++		struct rkisp2_dmarx_chan *chan = &dmarx->chan[i];
++
++		if (!chan->streaming)
++			continue;
++		streaming = true;
++		spin_lock_irq(&chan->buf_lock);
++		if (chan->curr_buf || !list_empty(&chan->buf_queue))
++			idle = false;
++		spin_unlock_irq(&chan->buf_lock);
++	}
++
++	return streaming && idle;
++}
++
+ void rkisp2_dmarx_isr(struct rkisp2_device *rkisp2, u32 status)
+ {
+ 	struct rkisp2_dmarx *dmarx = &rkisp2->dmarx;

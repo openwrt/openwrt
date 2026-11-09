@@ -1,0 +1,21 @@
+. /lib/functions.sh
+
+case "$(board_name)" in
+	elecom,wrc-2533gent|\
+	totolink,a8000ru)
+	uci set system.@system[0].compat_version="1.1"
+	uci commit system
+	;;
+	bananapi,bpi-r64|\
+	buffalo,wsr-2533dhp2)
+	uci set system.@system[0].compat_version="1.2"
+	uci commit system
+	;;
+	linksys,e8450-ubi|\
+	xiaomi,redmi-router-ax6s)
+	uci set system.@system[0].compat_version="2.0"
+	uci commit system
+	;;
+esac
+
+exit 0

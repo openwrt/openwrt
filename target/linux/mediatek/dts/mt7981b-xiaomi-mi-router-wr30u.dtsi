@@ -1,0 +1,23 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+/dts-v1/;
+#include "mt7981b-xiaomi-mi-router-common.dtsi"
+
+&gmac0 {
+	nvmem-cell-names = "mac-address";
+	nvmem-cells = <&macaddr_factory_4 (-1)>;
+};
+
+&leds {
+	led-wan-blue {
+		color = <LED_COLOR_ID_BLUE>;
+		function = LED_FUNCTION_WAN;
+		gpios = <&pio 11 GPIO_ACTIVE_LOW>;
+	};
+
+	led-wan-yellow {
+		color = <LED_COLOR_ID_YELLOW>;
+		function = LED_FUNCTION_WAN;
+		gpios = <&pio 12 GPIO_ACTIVE_LOW>;
+	};
+};

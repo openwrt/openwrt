@@ -1,0 +1,52 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: John Crispin <john@phrozen.org>
+Subject: [PATCH] net: dsa: yt922x: apply the board MDI swap
+
+The ports of a YT8824 quad PHY on a YT9224 get no link on the GL.iNet
+GL-BE14000 until common extended register 0xa000 holds the board value.
+The vendor U-Boot writes this value. Another bootloader does not.
+
+Read the value from the "motorcomm,mdi-swap" property and write it after
+the chip reset, so that these ports work with any bootloader. The value
+depends on the board, so a board without the property gets no write.
+
+Signed-off-by: John Crispin <john@phrozen.org>
+---
+--- a/drivers/net/dsa/yt921x.c
++++ b/drivers/net/dsa/yt921x.c
+@@ -168,6 +168,7 @@ static const struct yt921x_info yt921x_i
+ #define YT921X_POLL_TIMEOUT_US	100000
+ 
+ #define YT922X_COMMON_EXT_PHYADDR 9
++#define YT922X_COMMON_EXT_MDI_SWAP 0xa000
+ /* The interval should be small enough to avoid overflow of 32bit MIBs.
+  *
+  * Until we can read MIBs from stats64 call directly (i.e. sleep
+@@ -6331,6 +6332,18 @@ static int yt922x_cpu_port_set(struct yt
+ 	return res;
+ }
+ 
++static int yt922x_mdi_swap_apply(struct yt921x_priv *priv)
++{
++	struct device *dev = to_device(priv);
++	u32 val;
++
++	if (of_property_read_u32(dev->of_node, "motorcomm,mdi-swap", &val))
++		return 0;
++
++	return yt921x_intif_ext_write(priv, YT922X_COMMON_EXT_PHYADDR,
++				      YT922X_COMMON_EXT_MDI_SWAP, val);
++}
++
+ static int yt922x_dsa_setup(struct dsa_switch *ds)
+ {
+ 	struct yt921x_priv *priv = to_yt921x_priv(ds);
+@@ -6359,6 +6372,8 @@ static int yt922x_dsa_setup(struct dsa_s
+ 	priv->cpu_mac_stopping = false;
+ 	priv->yt922x_bridge_broken = false;
+ 	res = yt922x_chip_reset(priv);
++	if (!res)
++		res = yt922x_mdi_swap_apply(priv);
+ 	mutex_unlock(&priv->reg_lock);
+ 	if (res)
+ 		return res;

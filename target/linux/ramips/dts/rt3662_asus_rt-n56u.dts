@@ -1,0 +1,171 @@
+#include "rt3883.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+
+/ {
+	compatible = "asus,rt-n56u", "ralink,rt3662-soc", "ralink,rt3883-soc";
+	model = "Asus RT-N56U";
+
+	aliases {
+		led-boot = &led_power;
+		led-failsafe = &led_power;
+		led-running = &led_power;
+		led-upgrade = &led_power;
+	};
+
+	flash@1c000000 {
+		compatible = "cfi-flash";
+		reg = <0x1c000000 0x800000>;
+		bank-width = <2>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				reg = <0x0 0x0030000>;
+				label = "u-boot";
+				read-only;
+			};
+
+			partition@30000 {
+				reg = <0x00030000 0x00010000>;
+				label = "u-boot-env";
+				read-only;
+			};
+
+			partition@40000 {
+				reg = <0x00040000 0x00010000>;
+				label = "factory";
+				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					eeprom_factory_0: eeprom@0 {
+						reg = <0x0 0x200>;
+					};
+
+					eeprom_factory_8000: eeprom@8000 {
+						reg = <0x8000 0x200>;
+					};
+
+					macaddr_factory_4: macaddr@4 {
+						reg = <0x4 0x6>;
+					};
+				};
+			};
+
+			partition@50000 {
+				compatible = "denx,uimage";
+				reg = <0x00050000 0x007b0000>;
+				label = "firmware";
+			};
+		};
+	};
+
+	rtl8367 {
+		compatible = "realtek,rtl8367";
+		sda-gpios = <&gpio0 1 GPIO_ACTIVE_HIGH>;
+		sck-gpios = <&gpio0 2 GPIO_ACTIVE_HIGH>;
+		realtek,extif = <8 1 0 1 1 1 1 1 1 2>;
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "reset";
+			gpios = <&gpio0 13 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+
+		wps {
+			label = "wps";
+			gpios = <&gpio1 2 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_WPS_BUTTON>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_power: power {
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_BLUE>;
+			gpios = <&gpio0 0 GPIO_ACTIVE_LOW>;
+		};
+
+		lan {
+			function = LED_FUNCTION_LAN;
+			color = <LED_COLOR_ID_BLUE>;
+			gpios = <&gpio0 19 GPIO_ACTIVE_LOW>;
+		};
+
+		wan {
+			function = LED_FUNCTION_WAN;
+			color = <LED_COLOR_ID_BLUE>;
+			gpios = <&gpio1 3 GPIO_ACTIVE_LOW>;
+		};
+
+		usb {
+			function = LED_FUNCTION_USB;
+			color = <LED_COLOR_ID_BLUE>;
+			gpios = <&gpio1 0 GPIO_ACTIVE_LOW>;
+		};
+	};
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&state_default {
+	gpio {
+		groups = "spi", "i2c", "jtag", "uartf";
+		function = "gpio";
+	};
+};
+
+&ethernet {
+	nvmem-cells = <&macaddr_factory_4>;
+	nvmem-cell-names = "mac-address";
+
+	port@0 {
+		mediatek,fixed-link = <1000 1 1 1>;
+	};
+};
+
+&pci {
+	status = "okay";
+};
+
+&pci1 {
+	status = "okay";
+
+	wifi@1,0 {
+		compatible = "pci1814,3091";
+		reg = <0x10000 0 0 0 0>;
+		nvmem-cells = <&eeprom_factory_8000>;
+		nvmem-cell-names = "eeprom";
+	};
+};
+
+&wmac {
+	ralink,2ghz = <0>;
+	nvmem-cells = <&eeprom_factory_0>;
+	nvmem-cell-names = "eeprom";
+};
+
+&ehci {
+	status = "okay";
+};
+
+&ohci {
+	status = "okay";
+};

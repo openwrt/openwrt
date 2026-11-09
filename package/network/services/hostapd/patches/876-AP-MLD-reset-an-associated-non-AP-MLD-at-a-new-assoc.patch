@@ -1,0 +1,74 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Sun, 25 Oct 2026 17:00:00 +0100
+Subject: [PATCH] AP MLD: reset an associated non-AP MLD at a new association
+
+A non-AP MLD that is associated can send a new (Re)Association Request
+without a new Authentication, for example a changed request during the
+4-way handshake, or a reassociation to the same AP MLD. handle_assoc()
+keeps its station entries, so ieee80211_ml_process_link() refuses each
+partner link with "MLD: link: Station already exists", and
+add_associated_sta() then removes the station from the driver with all
+its links. The response refuses the partner links, while hostapd keeps
+their entries without a driver station.
+
+IEEE Std 802.11be-2024, 11.3.5.3 l) deletes the states of the earlier
+association for a successful association. Reset such a non-AP MLD as
+after a timed out SA Query: check the request with a new WPA state
+machine, and once hostapd_get_aid() succeeds, free the earlier one and
+re-add the station, which removes the entries of the other links. A
+non-AP MLD with PMF that is authorized reaches this point only after
+its SA Query timed out, because check_sa_query() refuses it before.
+
+The request can come on another link than the association link. Make
+the link of the request the association link of the reset, so that the
+new state machine takes that link, the re-add replaces the station in
+the driver instead of adding a link to the station that it removes, and
+the TX status of the response is handled. A refused request restores
+the earlier association link.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/src/ap/ieee802_11.c
++++ b/src/ap/ieee802_11.c
+@@ -7582,6 +7582,7 @@ static void handle_assoc(struct hostapd_
+ 	bool reset_prev_assoc = false;
+ 	struct wpa_state_machine *prev_wpa_sm = NULL;
+ 	struct mld_info prev_mld_info;
++	u8 prev_assoc_link_id = 0;
+ #endif /* CONFIG_IEEE80211BE */
+ 
+ 	if (len < IEEE80211_HDRLEN + (reassoc ? sizeof(mgmt->u.reassoc_req) :
+@@ -7823,8 +7824,9 @@ static void handle_assoc(struct hostapd_
+ 	 * and FILS keep keys of the authentication in the state machine, so
+ 	 * only Open System and SAE authentication are covered.
+ 	 */
+-	if (hapd->conf->wpa && (sta->flags & WLAN_STA_MFP) &&
+-	    sta->sa_query_timed_out && ap_sta_is_mld(hapd, sta) &&
++	if (hapd->conf->wpa && ap_sta_is_mld(hapd, sta) &&
++	    ((sta->flags & WLAN_STA_ASSOC) ||
++	     ((sta->flags & WLAN_STA_MFP) && sta->sa_query_timed_out)) &&
+ 	    FULL_AP_CLIENT_STATE_SUPP(hapd->iface->drv_flags) &&
+ 	    (sta->auth_alg == WLAN_AUTH_OPEN ||
+ 	     sta->auth_alg == WLAN_AUTH_SAE)) {
+@@ -7832,6 +7834,9 @@ static void handle_assoc(struct hostapd_
+ 		prev_wpa_sm = sta->wpa_sm;
+ 		sta->wpa_sm = NULL;
+ 		ap_sta_mld_info_copy(&prev_mld_info, &sta->mld_info);
++		/* the link of the request becomes the association link */
++		prev_assoc_link_id = sta->mld_assoc_link_id;
++		sta->mld_assoc_link_id = hapd->mld_link_id;
+ 	}
+ #endif /* CONFIG_IEEE80211BE */
+ 
+@@ -7996,8 +8001,10 @@ static void handle_assoc(struct hostapd_
+ 	}
+  fail:
+ #ifdef CONFIG_IEEE80211BE
+-	if (reset_prev_assoc)
++	if (reset_prev_assoc) {
+ 		ap_sta_restore_wpa_sm(hapd, sta, prev_wpa_sm);
++		sta->mld_assoc_link_id = prev_assoc_link_id;
++	}
+ #endif /* CONFIG_IEEE80211BE */
+ 
+ 	/*

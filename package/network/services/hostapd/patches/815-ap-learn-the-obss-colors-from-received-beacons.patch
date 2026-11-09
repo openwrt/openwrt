@@ -1,0 +1,120 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Tue, 20 Oct 2026 14:23:56 +0200
+Subject: [PATCH] AP: Learn the OBSS colours from received Beacon frames
+
+hostapd adds an OBSS colour to the set of the radio only from the
+collision events of the kernel and from the BSS Color Collision reports
+of stations. mac80211 sends the event only for an OBSS with the colour
+of the BSS (ieee80211_rx_check_bss_color_collision()), so the colour of
+a neighbour with another colour does not enter the set while the
+neighbour beacons on the channel. A colour change can then select the
+colour of that neighbour.
+
+Read the BSS Color of the HE Operation element of each OBSS Beacon
+frame. If BSS Color Disabled is 0, the colour enters the set for the
+time of a collision event. An OBSS sends about ten Beacon frames a
+second, so its colour is renewed once a second at most. A radio without
+HE uses no colour and ignores the element.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+
+--- a/src/ap/hostapd.c
++++ b/src/ap/hostapd.c
+@@ -6018,9 +6018,10 @@ void hostapd_switch_color_timeout_handle
+ 
+ 
+ /* The colours of the OBSSs around the radio, which the kernel's BSS colour
+- * collision events and the BSS Color Collision reports of stations name. A
+- * colour stays BSS_COLOR_EVENT_AGE seconds after an event names it, and
+- * BSS_COLOR_REPORT_AGE seconds after a report does:
++ * collision events, the Beacon frames of the OBSSs and the BSS Color Collision
++ * reports of stations name. A colour stays BSS_COLOR_EVENT_AGE seconds after
++ * an event or a Beacon frame names it, and BSS_COLOR_REPORT_AGE seconds after
++ * a report does:
+  * - the kernel repeats an event every 500 ms while it hears the colliding
+  *   OBSS, and hostapd judges a collision persistent within
+  *   DOT11BSS_COLOR_COLLISION_AP_PERIOD + 10 s;
+@@ -6117,6 +6118,30 @@ void hostapd_bss_colors_collision_event(
+ 				      BSS_COLOR_EVENT_AGE);
+ }
+ 
++
++/* An OBSS sends about ten Beacon frames a second, so its colour is renewed
++ * once a second at most. */
++void hostapd_bss_colors_beacon(struct hostapd_iface *iface, u8 color)
++{
++	struct os_reltime now;
++	os_time_t clock;
++
++	if (!color || color >= HE_OPERATION_BSS_COLOR_MAX)
++		return;
++
++	if ((iface->bss_colors_in_use & BIT_ULL(color)) &&
++	    !os_get_reltime(&now)) {
++		clock = iface->bss_color_aging_paused ?
++			iface->bss_color_paused_at.sec : now.sec;
++		if (iface->bss_color_expiry[color].sec >=
++		    clock + BSS_COLOR_EVENT_AGE - 1)
++			return;
++	}
++
++	hostapd_bss_colors_in_use_age(iface, BIT_ULL(color),
++				      BSS_COLOR_EVENT_AGE);
++}
++
+ 
+ /* The colours of a BSS Color Collision report of a station. */
+ void hostapd_bss_colors_collision_report(struct hostapd_iface *iface,
+--- a/src/ap/hostapd.h
++++ b/src/ap/hostapd.h
+@@ -925,6 +925,7 @@ void hostapd_bss_colors_collision_event(
+ 					u64 bitmap);
+ void hostapd_bss_colors_collision_report(struct hostapd_iface *iface,
+ 					 u64 bitmap);
++void hostapd_bss_colors_beacon(struct hostapd_iface *iface, u8 color);
+ void hostapd_bss_color_disabled_set(struct hostapd_iface *iface, u8 disabled);
+ u64 hostapd_bss_colors_avoided(struct hostapd_iface *iface);
+ void hostapd_cleanup_cca_params(struct hostapd_data *hapd);
+--- a/src/ap/ieee802_11.c
++++ b/src/ap/ieee802_11.c
+@@ -8140,6 +8140,28 @@ static void handle_deauth(struct hostapd
+ }
+ 
+ 
++#ifdef CONFIG_IEEE80211AX
++static void handle_beacon_bss_color(struct hostapd_iface *iface,
++				    const struct ieee802_11_elems *elems)
++{
++	const struct ieee80211_he_operation *oper;
++	u32 params;
++
++	if (!iface->conf->ieee80211ax || !elems->he_operation)
++		return;
++
++	oper = (const struct ieee80211_he_operation *) elems->he_operation;
++	params = le_to_host32(oper->he_oper_params);
++	if (params & HE_OPERATION_BSS_COLOR_DISABLED)
++		return;
++
++	hostapd_bss_colors_beacon(iface,
++				  (params & HE_OPERATION_BSS_COLOR_MASK) >>
++				  HE_OPERATION_BSS_COLOR_OFFSET);
++}
++#endif /* CONFIG_IEEE80211AX */
++
++
+ static void handle_beacon(struct hostapd_data *hapd,
+ 			  const struct ieee80211_mgmt *mgmt, size_t len,
+ 			  struct hostapd_frame_info *fi)
+@@ -8161,6 +8183,10 @@ static void handle_beacon(struct hostapd
+ 					     sizeof(mgmt->u.beacon)), &elems,
+ 				      0);
+ 
++#ifdef CONFIG_IEEE80211AX
++	handle_beacon_bss_color(hapd->iface, &elems);
++#endif /* CONFIG_IEEE80211AX */
++
+ 	ap_list_process_beacon(hapd->iface, mgmt, &elems, fi);
+ 
+ #ifdef CONFIG_APUP

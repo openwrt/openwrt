@@ -1,0 +1,21 @@
+From 198b8ef4c94942166ba747b45ec66619c79e828a Mon Sep 17 00:00:00 2001
+From: Anthony Green <green@moxielogic.com>
+Date: Tue, 27 Oct 2026 07:45:22 -0400
+Subject: [PATCH] x86: leave complex arguments out of native raw calls
+
+---
+ src/x86/ffi.c | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+--- a/src/x86/ffi.c
++++ b/src/x86/ffi.c
+@@ -804,8 +804,7 @@ ffi_raw_call(ffi_cif *cif, void (*fn)(vo
+       size_t z = ty->size;
+       int t = ty->type;
+ 
+-      if (z <= FFI_SIZEOF_ARG && t != FFI_TYPE_STRUCT && t != FFI_TYPE_COMPLEX
+-	  && t != FFI_TYPE_FLOAT)
++      if (z <= FFI_SIZEOF_ARG && t != FFI_TYPE_STRUCT && t != FFI_TYPE_FLOAT)
+ 	{
+ 	  ffi_arg val = extend_basic_type (avalue, t);
+ 	  frame->regs[pabi->regs[narg_reg++]] = val;

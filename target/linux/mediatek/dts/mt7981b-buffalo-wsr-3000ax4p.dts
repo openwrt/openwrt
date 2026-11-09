@@ -1,0 +1,335 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+/dts-v1/;
+
+#include "mt7981b.dtsi"
+
+/ {
+	model = "BUFFALO WSR-3000AX4P";
+	compatible = "buffalo,wsr-3000ax4p", "mediatek,mt7981b";
+
+	aliases {
+		label-mac-device = &gmac0;
+		led-boot = &led_power_green;
+		led-failsafe = &led_power_orange;
+		led-running = &led_power_green;
+		led-upgrade = &led_power_green;
+		serial0 = &uart0;
+	};
+
+	chosen {
+		bootargs-override = "earlycon";
+		stdout-path = "serial0:115200n8";
+	};
+
+	memory@40000000 {
+		device_type = "memory";
+		reg = <0x0 0x40000000 0x0 0x20000000>;
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		button-wps {
+			label = "wps";
+			gpios = <&pio 0 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_WPS_BUTTON>;
+		};
+
+		button-reset {
+			label = "reset";
+			gpios = <&pio 1 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+
+		switch-wireless-bridge {
+			label = "wb";
+			gpios = <&pio 23 GPIO_ACTIVE_LOW>;
+			linux,code = <BTN_0>;
+			linux,input_type = <EV_SW>;
+		};
+
+		switch-router {
+			label = "router";
+			gpios = <&pio 24 GPIO_ACTIVE_LOW>;
+			linux,code = <BTN_1>;
+			linux,input_type = <EV_SW>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_power_orange: led-1 {
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_ORANGE>;
+			gpios = <&pio 9 GPIO_ACTIVE_HIGH>;
+		};
+
+		led_power_green: led-2 {
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&pio 10 GPIO_ACTIVE_HIGH>;
+		};
+
+		led-3 {
+			function = LED_FUNCTION_WLAN;
+			color = <LED_COLOR_ID_ORANGE>;
+			gpios = <&pio 11 GPIO_ACTIVE_HIGH>;
+		};
+
+		led-4 {
+			function = LED_FUNCTION_WLAN;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&pio 12 GPIO_ACTIVE_HIGH>;
+		};
+
+		led-5 {
+			function = LED_FUNCTION_WAN_ONLINE;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&pio 13 GPIO_ACTIVE_HIGH>;
+		};
+
+		led-6 {
+			function = "router";
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&pio 22 GPIO_ACTIVE_HIGH>;
+		};
+	};
+};
+
+&eth {
+	pinctrl-0 = <&mdio_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	gmac0: mac@0 {
+		compatible = "mediatek,eth-mac";
+		reg = <0>;
+		phy-connection-type = "2500base-x";
+
+		nvmem-cells = <&macaddr_bdata_mac 0>;
+		nvmem-cell-names = "mac-address";
+
+		fixed-link {
+			speed = <2500>;
+			full-duplex;
+			pause;
+		};
+	};
+};
+
+&mdio_bus {
+	switch@1f {
+		compatible = "mediatek,mt7531";
+		reg = <31>;
+		reset-gpios = <&pio 39 GPIO_ACTIVE_HIGH>;
+
+		ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			port@0 {
+				reg = <0>;
+				label = "wan";
+			};
+
+			port@1 {
+				reg = <1>;
+				label = "lan1";
+			};
+
+			port@2 {
+				reg = <2>;
+				label = "lan2";
+			};
+
+			port@4 {
+				reg = <4>;
+				label = "lan3";
+			};
+
+			port@6 {
+				reg = <6>;
+				ethernet = <&gmac0>;
+				phy-connection-type = "2500base-x";
+
+				fixed-link {
+					speed = <2500>;
+					full-duplex;
+					pause;
+				};
+			};
+		};
+	};
+};
+
+&pio {
+	spi0_flash_pins: spi0-pins {
+		mux {
+			function = "spi";
+			groups = "spi0", "spi0_wp_hold";
+		};
+
+		conf-pu {
+			pins = "SPI0_CS", "SPI0_HOLD", "SPI0_WP";
+			drive-strength = <MTK_DRIVE_8mA>;
+			bias-pull-up = <MTK_PUPD_SET_R1R0_11>;
+		};
+
+		conf-pd {
+			pins = "SPI0_CLK", "SPI0_MOSI", "SPI0_MISO";
+			drive-strength = <MTK_DRIVE_8mA>;
+			bias-pull-down = <MTK_PUPD_SET_R1R0_11>;
+		};
+	};
+};
+
+&spi0 {
+	pinctrl-0 = <&spi0_flash_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	flash@0 {
+		compatible = "spi-nand";
+		reg = <0>;
+
+		spi-max-frequency = <52000000>;
+		spi-tx-bus-width = <4>;
+		spi-rx-bus-width = <4>;
+
+		mediatek,nmbm;
+		mediatek,bmt-max-ratio = <1>;
+		mediatek,bmt-max-reserved-blocks = <64>;
+		mediatek,bmt-remap-range =
+			<0x0000000 0x580000>,  /*     BL2 - FIP */
+			<0x3980000 0x4880000>; /*  glbcfg - debug_log */
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "BL2";
+				reg = <0x0 0x100000>;
+				read-only;
+			};
+
+			partition@100000 {
+				label = "u-boot-env";
+				reg = <0x100000 0x80000>;
+			};
+
+			partition@180000 {
+				label = "Factory";
+				reg = <0x180000 0x200000>;
+				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					eeprom_factory_0: eeprom@0 {
+						reg = <0x0 0x1000>;
+					};
+				};
+			};
+
+			partition@380000 {
+				label = "FIP";
+				reg = <0x380000 0x200000>;
+				read-only;
+			};
+
+			/* stock: "ubi" */
+			partition@580000 {
+				label = "ubi_kernel";
+				reg = <0x580000 0x1a00000>;
+			};
+
+			partition@1f80000 {
+				label = "Kernel2";
+				reg = <0x1f80000 0x1a00000>;
+			};
+
+			partition@3980000 {
+				label = "glbcfg";
+				reg = <0x3980000 0x200000>;
+				read-only;
+			};
+
+			partition@3b80000 {
+				label = "seccfg";
+				reg = <0x3b80000 0x200000>;
+				read-only;
+			};
+
+			partition@3d80000 {
+				label = "board_data";
+				reg = <0x3d80000 0x200000>;
+				read-only;
+
+				nvmem-layout {
+					compatible = "ascii-eq-delim-env";
+
+					macaddr_bdata_mac: mac {
+						compatible = "mac-base";
+						#nvmem-cell-cells = <1>;
+					};
+				};
+			};
+
+			partition@3f80000 {
+				label = "debug_log";
+				reg = <0x3f80000 0x900000>;
+				read-only;
+			};
+
+			/*
+			 * stock: "WTB"
+			 *
+			 * The "WTB" partition is for "ネット脅威ブロッカー"
+			 * (en: Web Threat Blocker, DiXiM Security).
+			 * By default, a UBI with "dpi" volume exists. This UBI will
+			 * be rebuilt automatically if no "dpi" volume exists while
+			 * booting with stock firmware.
+			 */
+			partition@4880000 {
+				label = "ubi";
+				reg = <0x4880000 0x2c00000>;
+			};
+		};
+	};
+};
+
+&uart0 {
+	status = "okay";
+};
+
+&watchdog {
+	status = "okay";
+};
+
+&wifi {
+	nvmem-cells = <&eeprom_factory_0>;
+	nvmem-cell-names = "eeprom";
+	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	band@0 {
+		reg = <0>;
+		nvmem-cells = <&macaddr_bdata_mac 2>;
+		nvmem-cell-names = "mac-address";
+	};
+
+	band@1 {
+		reg = <1>;
+		nvmem-cells = <&macaddr_bdata_mac 9>;
+		nvmem-cell-names = "mac-address";
+	};
+};

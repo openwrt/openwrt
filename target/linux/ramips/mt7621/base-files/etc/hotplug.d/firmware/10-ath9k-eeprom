@@ -1,0 +1,20 @@
+#!/bin/sh
+
+[ -e /lib/firmware/$FIRMWARE ] && exit 0
+
+. /lib/functions/caldata.sh
+
+board=$(board_name)
+
+case "$FIRMWARE" in
+"ath9k-eeprom-pci-0000:01:00.0.bin")
+	case $board in
+	mikrotik,ltap-2hnd)
+		caldata_sysfsload_from_file "/sys/firmware/mikrotik/hard_config/wlan_data" 0x5000 0x440
+		;;
+	*)
+		caldata_die "board $board is not supported yet"
+		;;
+	esac
+	;;
+esac

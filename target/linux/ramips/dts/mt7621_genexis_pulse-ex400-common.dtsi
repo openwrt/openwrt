@@ -1,0 +1,131 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "mt7621.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+
+/ {
+	aliases {
+		ethernet0 = &gmac0;
+		label-mac-device = &gmac0;
+	};
+
+	chosen {
+		bootargs-override = "console=ttyS0,115200 rootfstype=squashfs,jffs2";
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "reset";
+			gpios = <&gpio 18 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+	};
+
+	leds: leds {
+		compatible = "gpio-leds";
+
+		led_status_green: led-0 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_STATUS;
+			gpios = <&gpio 8 GPIO_ACTIVE_LOW>;
+		};
+
+		led_status_red: led-1 {
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_STATUS;
+			gpios = <&gpio 11 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	i2c_gpio: i2c-gpio {
+		compatible = "i2c-gpio";
+
+		sda-gpios = <&gpio 3 GPIO_ACTIVE_HIGH>;
+		scl-gpios = <&gpio 4 GPIO_ACTIVE_HIGH>;
+
+		i2c-gpio,delay-us = <50>;
+		i2c-gpio,timeout-ms = <100>;
+
+		/* Semtech SX9512 */
+	};
+};
+
+&pcie {
+	status = "okay";
+};
+
+&nand {
+	status = "okay";
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		partition@0 {
+			reg = <0x00 0x100000>;
+			label = "uboot";
+			read-only;
+		};
+
+		partition@100000 {
+			reg = <0x100000 0xff00000>;
+			label = "ubi";
+			compatible = "linux,ubi";
+
+			volumes {
+				ubi-volume-env1 {
+					volname = "env1";
+
+					nvmem-layout {
+						compatible = "u-boot,env-redundant-count";
+
+						ethaddr: ethaddr {
+							#nvmem-cell-cells = <1>;
+						};
+					};
+				};
+			};
+		};
+	};
+};
+
+&gmac1 {
+	label = "wan";
+	phy-handle = <&ethphy0>;
+	nvmem-cells = <&ethaddr 1>;
+	nvmem-cell-names = "mac-address";
+	status = "okay";
+};
+
+&i2c {
+	/* Uses i2c-gpio */
+	status = "disabled";
+};
+
+&ethphy0 {
+	/delete-property/ interrupts;
+};
+
+&state_default {
+	gpio {
+		groups = "i2c", "uart2", "uart3";
+		function = "gpio";
+	};
+};
+
+&switch0 {
+	ports {
+		port@1 {
+			label = "lan";
+			nvmem-cells = <&ethaddr 0>;
+			nvmem-cell-names = "mac-address";
+			status = "okay";
+		};
+	};
+};

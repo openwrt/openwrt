@@ -1,0 +1,39 @@
+From 57fa905742491ee367818f49f7e73248719d4bb1 Mon Sep 17 00:00:00 2001
+From: Rosen Penev <rosenp@gmail.com>
+Date: Sat, 26 Sep 2026 14:16:26 -0700
+Subject: [PATCH] USB: bcma: defer probe until USB3 is ready
+
+Northstar SuperSpeed data goes to xHCI while D+/D- go to EHCI. If EHCI
+probes first with VBUS already on, a SuperSpeed device falls back to
+high-speed and stays there.
+
+Defer the NS USB2 core until the USB3 core has probed, and enable VBUS
+only after that host init (of_platform_populate binds xHCI when
+xhci-plat is already registered). USB2-only chips have no NS USB3 core
+and are unchanged.
+
+Remove the TODO since checks are being added.
+
+Assisted-by: LLM
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+---
+ drivers/usb/host/bcma-hcd.c | 7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
+
+--- a/drivers/usb/host/bcma-hcd.c
++++ b/drivers/usb/host/bcma-hcd.c
+@@ -396,8 +396,13 @@ static int bcma_hcd_probe(struct bcma_de
+ {
+ 	int err;
+ 	struct bcma_hcd_device *usb_dev;
++	struct bcma_device *usb3;
+ 
+-	/* TODO: Probably need checks here; is the core connected? */
++	if (core->id.id == BCMA_CORE_NS_USB20) {
++		usb3 = bcma_find_core(core->bus, BCMA_CORE_NS_USB30);
++		if (usb3 && !bcma_get_drvdata(usb3))
++			return -EPROBE_DEFER;
++	}
+ 
+ 	usb_dev = devm_kzalloc(&core->dev, sizeof(struct bcma_hcd_device),
+ 			       GFP_KERNEL);

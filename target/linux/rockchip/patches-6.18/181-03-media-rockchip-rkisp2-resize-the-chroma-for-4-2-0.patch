@@ -1,0 +1,56 @@
+From 453cbfa9fa4846b03d1f9c891635684bc7949b38 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Fri, 16 Oct 2026 12:00:41 +0100
+Subject: [PATCH] media: rockchip: rkisp2: Resize the chroma for 4:2:0 output
+
+rkisp2_resizer_configure() bypasses the resizer whenever the crop
+matches the output size, comparing the luma size alone. The ISP
+delivers 4:2:2 and a 4:2:0 output needs the chroma halved vertically,
+which is the resizer's job, so an unscaled NV12 stream hands the MI one
+chroma row per luma row. The MI offset counter wraps halfway through
+the plane and the chroma of the lower half of the frame lands on the
+upper half: on the RV1126 main path dark objects get a neutral halo
+and bright ones a displaced colour ghost.
+
+Compare the chroma subsampling as well before bypassing the resizer,
+as rkisp1_rsz_config() does.
+
+Assisted-by: LLM
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ .../platform/rockchip/rkisp2/rkisp2-resizer.c   | 17 ++++++++++++++++-
+ 1 file changed, 16 insertions(+), 1 deletion(-)
+
+--- a/drivers/media/platform/rockchip/rkisp2/rkisp2-resizer.c
++++ b/drivers/media/platform/rockchip/rkisp2/rkisp2-resizer.c
+@@ -334,6 +334,21 @@ static void rkisp2_resizer_config_rsz(st
+ 		rsz_ctrl | RKISP2_CIF_RSZ_CTRL_CFG_UPD);
+ }
+ 
++static bool rkisp2_resizer_bypass(const struct rkisp2_resizer *rsz,
++				  const struct v4l2_rect *crop)
++{
++	u32 in_xsubs, in_ysubs, out_xsubs, out_ysubs;
++
++	if (crop->width != rsz->source_size.width ||
++	    crop->height != rsz->source_size.height)
++		return false;
++
++	rkisp2_mbus_code_xysubs(rsz->source_format.code, &in_xsubs, &in_ysubs);
++	rkisp2_format_xysubs(rsz->source_fmt_info, &out_xsubs, &out_ysubs);
++
++	return in_xsubs == out_xsubs && in_ysubs == out_ysubs;
++}
++
+ void rkisp2_resizer_configure(struct rkisp2_resizer *rsz,
+ 			      struct v4l2_rect *crop)
+ {
+@@ -356,7 +371,7 @@ void rkisp2_resizer_configure(struct rki
+ 			rkisp2_resizer_config_dcrop(rsz, is_raw, crop);
+ 	}
+ 
+-	if (crop->width == rsz->source_size.width && crop->height == rsz->source_size.height)
++	if (rkisp2_resizer_bypass(rsz, crop))
+ 		rkisp2_resizer_disable_rsz(rsz);
+ 	else
+ 		rkisp2_resizer_config_rsz(rsz, crop,

@@ -1,0 +1,12 @@
+name: Build PR Profile
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize]
+
+permissions:
+  pull-requests: write
+
+jobs:
+  build-pr-profile:
+    uses: openwrt/actions-shared-workflows/.github/workflows/build-pr-profile.yml@main

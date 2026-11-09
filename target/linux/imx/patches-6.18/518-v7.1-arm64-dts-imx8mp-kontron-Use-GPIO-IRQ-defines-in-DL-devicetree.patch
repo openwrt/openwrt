@@ -1,0 +1,41 @@
+From 93190b6eab824454223e355477d7ef621d1d8dae Mon Sep 17 00:00:00 2001
+From: Frieder Schrempf <frieder.schrempf@kontron.de>
+Date: Fri, 20 Feb 2026 11:36:19 +0100
+Subject: arm64: dts: imx8mp-kontron: Use GPIO/IRQ defines in DL devicetree
+
+To make the code more readable, use the macros for the GPIO and IRQ
+settings.
+
+Signed-off-by: Frieder Schrempf <frieder.schrempf@kontron.de>
+Reviewed-by: Frank Li <Frank.Li@nxp.com>
+Reviewed-by: Daniel Baluta <daniel.baluta@nxp.com>
+Signed-off-by: Frank Li <Frank.Li@nxp.com>
+---
+ arch/arm64/boot/dts/freescale/imx8mp-kontron-dl.dtso | 7 ++++---
+ 1 file changed, 4 insertions(+), 3 deletions(-)
+
+--- a/arch/arm64/boot/dts/freescale/imx8mp-kontron-dl.dtso
++++ b/arch/arm64/boot/dts/freescale/imx8mp-kontron-dl.dtso
+@@ -7,6 +7,7 @@
+ /plugin/;
+ 
+ #include <dt-bindings/gpio/gpio.h>
++#include <dt-bindings/interrupt-controller/irq.h>
+ #include "imx8mp-pinfunc.h"
+ 
+ &{/} {
+@@ -80,11 +81,11 @@
+ 		pinctrl-names = "default";
+ 		pinctrl-0 = <&pinctrl_touch>;
+ 		interrupt-parent = <&gpio1>;
+-		interrupts = <6 8>;
+-		irq-gpios = <&gpio1 6 0>;
++		interrupts = <6 IRQ_TYPE_LEVEL_LOW>;
++		irq-gpios = <&gpio1 6 GPIO_ACTIVE_HIGH>;
+ 		AVDD28-supply = <&reg_vcc_panel>;
+ 		VDDIO-supply = <&reg_vcc_panel>;
+-		reset-gpios = <&gpio1 7 0>;
++		reset-gpios = <&gpio1 7 GPIO_ACTIVE_HIGH>;
+ 	};
+ };
+ 

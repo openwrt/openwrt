@@ -1,0 +1,33 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Tue, 6 Oct 2026 07:42:25 +0200
+Subject: [PATCH] AP MLD: Remove a link only when it is on the list
+
+hostapd_bss_link_deinit() takes hapd->started to mean that the BSS is
+linked to its AP MLD, but hostapd_setup_bss() sets hapd->started before
+the link joins the AP MLD. A setup that fails in between, for example in
+hostapd_drv_link_add(), reaches hostapd_mld_remove_link() with a list
+node that was never added, and dl_list_del() dereferences NULL. The
+failure paths of hostapd_add_iface() and
+hostapd_setup_interface_complete_sync() take this path.
+
+dl_list_del() clears the node and a BSS is allocated zeroed, so
+hapd->link.next is NULL exactly when the node is on no list. Skip the
+removal in that case.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+
+--- a/src/ap/hostapd.c
++++ b/src/ap/hostapd.c
+@@ -5572,6 +5572,11 @@ int hostapd_mld_remove_link(struct hosta
+ 	if (!mld)
+ 		return -1;
+ 
++	/* hostapd_setup_bss() sets hapd->started before the link joins the
++	 * MLD, so a setup that failed in between reaches here unlinked. */
++	if (!hapd->link.next)
++		return 0;
++
+ 	dl_list_del(&hapd->link);
+ 	mld->num_links--;
+ 

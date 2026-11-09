@@ -1,0 +1,67 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: John Crispin <john@phrozen.org>
+Subject: [PATCH] mediatek: spi: set the IPM duplex mode for raw transfers
+
+mtk_spi_hw_init() zeroes SPI_CFG3_IPM_REG, with a note that only spi-mem
+uses the register, and the spi-mem path does set it per operation. The
+raw mtk_spi_fifo_transfer() and mtk_spi_dma_transfer() paths therefore
+run every transfer in full duplex, and a one-way transfer has nothing
+draining the other side.
+
+On MT7988 SPI1 that stalls the engine once the 32 byte FIFO is full: the
+BE14000 panel's init commands, which fit the FIFO, go through, and the
+first 5120 byte pixel burst times out in mtk_spi_wait_for_transfer_done().
+The same code works on MT7987, so the stall is a property of this IP.
+
+The kernel driver selects the duplex mode before every transfer on IPM
+hardware, half duplex with the direction of the one buffer present, or
+full duplex when both are. Do the same in the two raw paths.
+
+--- a/plat/mediatek/apsoc_common/drivers/spi/mtk_spi.c
++++ b/plat/mediatek/apsoc_common/drivers/spi/mtk_spi.c
+@@ -487,6 +487,29 @@ static void mtk_spi_setup_dma_addr(struc
+ 		       mdata->base + SPI_RX_DST_REG);
+ }
+
++/*
++ * spi-mem sets CFG3 per operation, and mtk_spi_hw_init() zeroes it for the raw
++ * transfers below, which is full duplex. A one-way transfer then has nothing
++ * draining the other side, and on MT7988 SPI1 it never completes once the
++ * 32 byte FIFO fills. Pick the duplex mode per transfer, as the kernel does.
++ */
++static void mtk_spi_ipm_set_duplex(struct mtk_spi *mdata,
++				   const struct spi_transfer *xfer)
++{
++	uint32_t reg_val = 0;
++
++	if (!mdata->dev_comp->ipm_design)
++		return;
++
++	if (!xfer->tx_buf || !xfer->rx_buf) {
++		reg_val |= SPI_CFG3_IPM_HALF_DUPLEX_EN;
++		if (xfer->rx_buf)
++			reg_val |= SPI_CFG3_IPM_HALF_DUPLEX_DIR;
++	}
++
++	writel(reg_val, mdata->base + SPI_CFG3_IPM_REG);
++}
++
+ int mtk_spi_fifo_transfer(struct spi_device *spi,
+ 				 struct spi_transfer *xfer)
+ {
+@@ -507,6 +530,7 @@ int mtk_spi_fifo_transfer(struct spi_dev
+
+ 	mtk_spi_reset(mdata);
+ 	mtk_spi_hw_init(mdata, spi);
++	mtk_spi_ipm_set_duplex(mdata, xfer);
+ 	if (xfer->speed_hz > spi->max_speed_hz)
+ 		xfer->speed_hz = spi->max_speed_hz;
+ 	if (xfer->speed_hz == 0)
+@@ -581,6 +605,7 @@ int mtk_spi_dma_transfer(struct spi_devi
+
+ 	mtk_spi_reset(mdata);
+ 	mtk_spi_hw_init(mdata, spi);
++	mtk_spi_ipm_set_duplex(mdata, xfer);
+
+ 	if (xfer->speed_hz > spi->max_speed_hz)
+ 		xfer->speed_hz = spi->max_speed_hz;

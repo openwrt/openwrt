@@ -1,0 +1,134 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Tue, 6 Oct 2026 07:51:35 +0200
+Subject: [PATCH] AP MLD: Build the Reconfiguration ML element from the AP MLD links
+
+hostapd_eid_eht_reconf_ml() looks for links with a pending removal among
+the first BSS of every interface, not among the links of the AP MLD.
+It misses a link that is not the first BSS of its interface, and it adds
+the links of another AP MLD to the element.
+
+The buffer length of the Probe Response and of the (Re)Association
+Response also does not count the element, so neither frame has space
+reserved for it during a link removal.
+
+Take the links from the AP MLD, and count the element in the buffer
+length of both frames.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+
+--- a/src/ap/ieee802_11.c
++++ b/src/ap/ieee802_11.c
+@@ -6799,8 +6799,10 @@ static u16 send_assoc_resp(struct hostap
+ 		buflen += 3 + sizeof(struct ieee80211_eht_operation);
+ 		if (hapd->iconf->punct_bitmap)
+ 			buflen += EHT_OPER_DISABLED_SUBCHAN_BITMAP_SIZE;
+-		if (ap_sta_is_mld(hapd, sta))
++		if (ap_sta_is_mld(hapd, sta)) {
+ 			buflen += hostapd_eid_eht_ml_tid_to_link_map_len(hapd);
++			buflen += hostapd_eid_eht_ml_assoc_len(hapd, sta);
++		}
+ 	}
+ #endif /* CONFIG_IEEE80211BE */
+ 
+--- a/src/ap/ieee802_11.h
++++ b/src/ap/ieee802_11.h
+@@ -126,6 +126,8 @@ u8 * hostapd_eid_eht_ml_beacon(struct ho
+ 			       u8 *eid, bool include_mld_id);
+ u8 * hostapd_eid_eht_ml_assoc(struct hostapd_data *hapd, struct sta_info *info,
+ 			      u8 *eid);
++size_t hostapd_eid_eht_ml_assoc_len(struct hostapd_data *hapd,
++				    struct sta_info *info);
+ u8 * hostapd_eid_eht_basic_ml_common(struct hostapd_data *hapd,
+ 				     u8 *eid, struct mld_info *mld_info,
+ 				     bool include_mld_id, bool include_bpcc);
+--- a/src/ap/ieee802_11_eht.c
++++ b/src/ap/ieee802_11_eht.c
+@@ -745,29 +745,36 @@ out:
+ }
+ 
+ 
+-static u8 * hostapd_eid_eht_reconf_ml(struct hostapd_data *hapd, u8 *eid)
++static size_t hostapd_eid_eht_reconf_ml_len(struct hostapd_data *hapd)
+ {
++	size_t len = 0;
+ #ifdef CONFIG_TESTING_OPTIONS
+-	struct hostapd_data *other_hapd;
+-	u16 control;
+-	u8 *pos = eid;
+-	unsigned int i;
++	struct hostapd_data *link_bss;
+ 
+-	wpa_printf(MSG_DEBUG, "MLD: Reconfiguration ML");
++	if (!hapd->conf->mld_ap || !hapd->mld)
++		return 0;
+ 
+-	/* First check if the element needs to be added */
+-	for (i = 0; i < hapd->iface->interfaces->count; i++) {
+-		other_hapd = hapd->iface->interfaces->iface[i]->bss[0];
++	for_each_mld_link(link_bss, hapd)
++		if (link_bss->eht_mld_link_removal_count)
++			len += 2 + 5;
++
++	/* Element header (3), Multi-Link Control (2), Common Info (1) */
++	if (len)
++		len += 3 + 2 + 1;
++#endif /* CONFIG_TESTING_OPTIONS */
+ 
+-		wpa_printf(MSG_DEBUG, "MLD: Reconfiguration ML: %u",
+-			   other_hapd->eht_mld_link_removal_count);
++	return len;
++}
+ 
+-		if (other_hapd->eht_mld_link_removal_count)
+-			break;
+-	}
+ 
+-	/* No link is going to be removed */
+-	if (i == hapd->iface->interfaces->count)
++static u8 * hostapd_eid_eht_reconf_ml(struct hostapd_data *hapd, u8 *eid)
++{
++#ifdef CONFIG_TESTING_OPTIONS
++	struct hostapd_data *other_hapd;
++	u16 control;
++	u8 *pos = eid;
++
++	if (!hostapd_eid_eht_reconf_ml_len(hapd))
+ 		return eid;
+ 
+ 	wpa_printf(MSG_DEBUG, "MLD: Reconfiguration ML: Adding element");
+@@ -786,8 +793,7 @@ static u8 * hostapd_eid_eht_reconf_ml(st
+ 	*pos++ = 1;
+ 
+ 	/* Add the per station profiles */
+-	for (i = 0; i < hapd->iface->interfaces->count; i++) {
+-		other_hapd = hapd->iface->interfaces->iface[i]->bss[0];
++	for_each_mld_link(other_hapd, hapd) {
+ 		if (!other_hapd->eht_mld_link_removal_count)
+ 			continue;
+ 
+@@ -888,11 +894,23 @@ u8 * hostapd_eid_eht_ml_assoc(struct hos
+ }
+ 
+ 
++size_t hostapd_eid_eht_ml_assoc_len(struct hostapd_data *hapd,
++				    struct sta_info *info)
++{
++	if (!ap_sta_is_mld(hapd, info))
++		return 0;
++
++	return hostapd_eid_eht_basic_ml_len(hapd, info, false, true) +
++		hostapd_eid_eht_reconf_ml_len(hapd);
++}
++
++
+ size_t hostapd_eid_eht_ml_beacon_len(struct hostapd_data *hapd,
+ 				     struct mld_info *info,
+ 				     bool include_mld_id)
+ {
+-	return hostapd_eid_eht_ml_len(info, include_mld_id, false);
++	return hostapd_eid_eht_ml_len(info, include_mld_id, false) +
++		hostapd_eid_eht_reconf_ml_len(hapd);
+ }
+ 
+ 

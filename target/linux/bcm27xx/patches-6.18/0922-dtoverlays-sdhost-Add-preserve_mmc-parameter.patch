@@ -1,0 +1,38 @@
+From 0147d3f3f2a9cb7fcba1706cf7a23bf4633b76b9 Mon Sep 17 00:00:00 2001
+From: zjzhao <zjzhao@edatec.cn>
+Date: Fri, 7 Aug 2026 16:49:56 +0800
+Subject: [PATCH] dtoverlays: sdhost: Add preserve_mmc parameter
+
+Add a preserve_mmc parameter to the sdhost overlay that allows
+removing fragment@1 and fragment@2 (which disable mmc and mmcnr).
+This is needed on Compute Module when using gpios_22_27 mode,
+since disabling the other MMC interfaces would break WiFi on CM.
+
+Signed-off-by: zjzhao <zjzhao@edatec.cn>
+---
+ arch/arm/boot/dts/overlays/README             | 4 ++++
+ arch/arm/boot/dts/overlays/sdhost-overlay.dts | 1 +
+ 2 files changed, 5 insertions(+)
+
+--- a/arch/arm/boot/dts/overlays/README
++++ b/arch/arm/boot/dts/overlays/README
+@@ -4830,6 +4830,10 @@ Params: overclock_50            Clock (i
+                                 custom carrier boards (e.g. CM4 baseboard).
+                                 Applies ALT0 function and appropriate pulls.
+ 
++        preserve_mmc            Don't disable the other MMC interfaces
++                                (mmc/mmcnr). Useful on Compute Module
++                                when using gpios_22_27 with WiFi.
++
+ 
+ Name:   sdio
+ Info:   Selects the bcm2835-sdhost SD/MMC driver, optionally with overclock,
+--- a/arch/arm/boot/dts/overlays/sdhost-overlay.dts
++++ b/arch/arm/boot/dts/overlays/sdhost-overlay.dts
+@@ -54,5 +54,6 @@
+ 		pio_limit        = <&frag0>,"brcm,pio-limit:0";
+ 		debug            = <&frag0>,"brcm,debug?";
+ 		gpios_22_27      = <0>,"+3+4";
++		preserve_mmc     = <0>,"-1-2";
+ 	};
+ };

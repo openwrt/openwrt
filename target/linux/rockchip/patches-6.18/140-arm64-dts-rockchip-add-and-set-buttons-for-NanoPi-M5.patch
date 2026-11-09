@@ -1,0 +1,56 @@
+From: Ryan Leung <untilscour@protonmail.com>
+Date: Fri, 17 Apr 2026 13:37:40 +1000
+Subject: [PATCH] arm64: dts: rockchip: add and set buttons for NanoPi M5
+
+Set user button to reset button (`KEY_RESTART`) with
+maskrom and recovery buttons as generic `BTN_2` and `BTN_3` respectively.
+
+Signed-off-by: Ryan Leung <untilscour@protonmail.com>
+
+--- a/arch/arm64/boot/dts/rockchip/rk3576-nanopi-m5.dts
++++ b/arch/arm64/boot/dts/rockchip/rk3576-nanopi-m5.dts
+@@ -41,14 +41,42 @@
+ 		};
+ 	};
+ 
++	key-adc-mask {
++		compatible = "adc-keys";
++		io-channels = <&saradc 0>;
++		io-channel-names = "buttons";
++		keyup-threshold-microvolt = <1800000>;
++		poll-interval = <100>;
++
++		button-mask {
++			label = "maskrom";
++			linux,code = <BTN_2>;
++			press-threshold-microvolt = <0>;
++		};
++	};
++
++	key-adc-rcry {
++		compatible = "adc-keys";
++		io-channels = <&saradc 1>;
++		io-channel-names = "buttons";
++		keyup-threshold-microvolt = <1800000>;
++		poll-interval = <100>;
++
++		button-rcry {
++			label = "recovery";
++			linux,code = <BTN_3>;
++			press-threshold-microvolt = <0>;
++		};
++	};
++
+ 	keys {
+ 		compatible = "gpio-keys";
+ 
+ 		usr_button: key-1 {
+ 			debounce-interval = <50>;
+ 			gpios = <&gpio1 RK_PA0 GPIO_ACTIVE_LOW>;
+-			label = "user";
+-			linux,code = <BTN_1>;
++			label = "reset";
++			linux,code = <KEY_RESTART>;
+ 			pinctrl-names = "default";
+ 			pinctrl-0 = <&usr_button_l>;
+ 			wakeup-source;

@@ -1,0 +1,155 @@
+From 43d37a87d72237f7bc9fc06204b37f060d747a1d Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Wed, 28 Oct 2026 09:56:08 +0000
+Subject: [PATCH] dt-bindings: media: rockchip-ispp: Add the RV1126 ISPP
+
+The RV1126 ISPP (image post-processing) unit follows the ISP2 in the
+camera pipeline and takes its fixed YUV422 input from the ISP2 output
+port through its port endpoint. The unit needs its two interrupts (ISPP
+and FEC), its three clocks and its power domain, and takes its buffers
+from the optional reserved memory region.
+
+Assisted-by: LLM
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ .../bindings/media/rockchip-ispp.yaml         | 117 ++++++++++++++++++
+ MAINTAINERS                                   |   7 ++
+ 2 files changed, 124 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/media/rockchip-ispp.yaml
+
+--- /dev/null
++++ b/Documentation/devicetree/bindings/media/rockchip-ispp.yaml
+@@ -0,0 +1,117 @@
++# SPDX-License-Identifier: (GPL-2.0 OR BSD-2-Clause)
++%YAML 1.2
++---
++$id: http://devicetree.org/schemas/media/rockchip-ispp.yaml#
++$schema: http://devicetree.org/meta-schemas/core.yaml#
++
++title: Rockchip SoC image post-processing unit
++
++maintainers:
++  - Daniel Golle <daniel@makrotopia.org>
++
++description: |
++  Rockchip ISPP is the image post-processing unit that follows the ISP2 in
++  the camera pipeline. It applies temporal noise reduction (TNR), noise
++  reduction (NR), sharpening (SHP) and scaling to the ISP2 output, and
++  measures a FEC motion mesh and ORB feature points for every frame.
++
++properties:
++  compatible:
++    enum:
++      - rockchip,rv1126-ispp
++
++  reg:
++    maxItems: 1
++
++  interrupts:
++    minItems: 2
++    maxItems: 2
++
++  interrupt-names:
++    items:
++      - const: ispp_irq
++      - const: fec_irq
++
++  clocks:
++    items:
++      - description: ISPP AXI clock (aclk)
++      - description: ISPP AHB clock (hclk)
++      - description: ISPP core clock
++
++  clock-names:
++    items:
++      - const: aclk_ispp
++      - const: hclk_ispp
++      - const: clk_ispp
++
++  assigned-clocks: true
++
++  assigned-clock-rates: true
++
++  iommus:
++    maxItems: 1
++
++  memory-region:
++    maxItems: 1
++    description: reserved memory region for the ISPP buffers
++
++  power-domains:
++    items:
++      - description: ISPP power domain
++
++  port:
++    $ref: /schemas/graph.yaml#/properties/port
++    description: |
++      Input endpoint, connected to the ISP2 source pad. The format is
++      fixed to YUYV 8-bit 4:2:2.
++
++required:
++  - compatible
++  - reg
++  - interrupts
++  - clock-names
++  - power-domains
++
++additionalProperties: false
++
++examples:
++  - |
++
++    #include <dt-bindings/clock/rockchip,rv1126-cru.h>
++    #include <dt-bindings/interrupt-controller/arm-gic.h>
++    #include <dt-bindings/power/rockchip,rv1126-power.h>
++
++    reserved-memory {
++        #address-cells = <1>;
++        #size-cells = <1>;
++        ranges;
++
++        isp_reserved: isp {
++            compatible = "shared-dma-pool";
++            reusable;
++            size = <0x10000000>;
++        };
++    };
++
++    parent0: parent {
++        #address-cells = <1>;
++        #size-cells = <1>;
++
++        ispp: ispp@ffb60000 {
++            compatible = "rockchip,rv1126-ispp";
++            reg = <0xffb60000 0x20000>;
++            interrupts = <GIC_SPI 63 IRQ_TYPE_LEVEL_HIGH>,
++                         <GIC_SPI 64 IRQ_TYPE_LEVEL_HIGH>;
++            interrupt-names = "ispp_irq", "fec_irq";
++            clocks = <&cru ACLK_ISPP>, <&cru HCLK_ISPP>, <&cru CLK_ISPP>;
++            clock-names = "aclk_ispp", "hclk_ispp", "clk_ispp";
++            power-domains = <&power RV1126_PD_ISPP>;
++            memory-region = <&isp_reserved>;
++
++            port {
++                ispp_in: endpoint {
++                    remote-endpoint = <&isp_ispp_out>;
++                };
++            };
++        };
++    };
+--- a/MAINTAINERS
++++ b/MAINTAINERS
+@@ -22311,6 +22311,13 @@ F:	Documentation/userspace-api/media/v4l
+ F:	drivers/media/platform/rockchip/rkisp2
+ F:	include/uapi/linux/media/rockchip/rkisp2-config.h
+ 
++ROCKCHIP ISPP DRIVER
++M:	Daniel Golle <daniel@makrotopia.org>
++L:	linux-media@vger.kernel.org
++L:	linux-rockchip@lists.infradead.org
++S:	Maintained
++F:	Documentation/devicetree/bindings/media/rockchip-ispp.yaml
++
+ ROCKCHIP RK3568 RANDOM NUMBER GENERATOR SUPPORT
+ M:	Daniel Golle <daniel@makrotopia.org>
+ M:	Aurelien Jarno <aurelien@aurel32.net>

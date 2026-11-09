@@ -1,0 +1,17 @@
+. /lib/imx.sh
+. /lib/functions.sh
+. /lib/upgrade/common.sh
+
+move_config() {
+	local board=$(board_name)
+
+	case "$board" in
+	toradex,apalis_imx6q-eval|\
+	toradex,apalis_imx6q-ixora|\
+	toradex,apalis_imx6q-ixora-v1.1)
+		imx_sdcard_move_config
+		;;
+	esac
+}
+
+boot_hook_add preinit_mount_root move_config

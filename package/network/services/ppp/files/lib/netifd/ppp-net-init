@@ -1,0 +1,7 @@
+#!/bin/sh
+# pppd net-init script. It runs once the ppp unit is known, which is after
+# pppd has parsed its options, so the credentials file written by ppp.sh is
+# no longer needed.
+# $1 ifname  $2 tty  $3 speed  $4 ipparam (the netifd interface name)
+[ -n "$4" ] && rm -f "/var/run/pppd/$4.opts"
+exit 0

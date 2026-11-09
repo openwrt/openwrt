@@ -1,0 +1,42 @@
+From 1a3e37de23fd12f452c6939d37d0dd62a77a4bf0 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Fri, 16 Oct 2026 17:39:42 +0100
+Subject: [PATCH] clk: rockchip: rv1126: Add PD_VEPU clock tree
+
+The video encoder power domain of the RV1126 contains the RKVENC
+encoder. Add its AXI and AHB bus clocks, the AXI and AHB clocks of the
+encoder and the encoder core clock, together with the two interconnect
+gates that stay enabled.
+
+Assisted-by: LLM
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+
+--- a/drivers/clk/rockchip/clk-rv1126.c
++++ b/drivers/clk/rockchip/clk-rv1126.c
+@@ -756,6 +756,25 @@ static struct rockchip_clk_branch rv1126
+ 			RV1126_CLKSEL_CON(72), 8, 1, MFLAGS, 0, 7, DFLAGS,
+ 			RV1126_CLKGATE_CON(11), 1, GFLAGS),
+ 
++	/* PD_VEPU */
++	COMPOSITE(ACLK_PDVEPU, "aclk_pdvepu", mux_cpll_hpll_gpll_p, 0,
++		  RV1126_CLKSEL_CON(40), 6, 2, MFLAGS, 0, 5, DFLAGS,
++		  RV1126_CLKGATE_CON(12), 0, GFLAGS),
++	COMPOSITE_NOMUX(HCLK_PDVEPU, "hclk_pdvepu", "aclk_pdvepu", 0,
++			RV1126_CLKSEL_CON(41), 0, 5, DFLAGS,
++			RV1126_CLKGATE_CON(12), 2, GFLAGS),
++	GATE(ACLK_VENC, "aclk_venc", "aclk_pdvepu", 0,
++	     RV1126_CLKGATE_CON(12), 5, GFLAGS),
++	GATE(HCLK_VENC, "hclk_venc", "hclk_pdvepu", 0,
++	     RV1126_CLKGATE_CON(12), 6, GFLAGS),
++	COMPOSITE(CLK_VENC_CORE, "clk_venc_core", mux_cpll_gpll_hpll_p, 0,
++		  RV1126_CLKSEL_CON(40), 14, 2, MFLAGS, 8, 5, DFLAGS,
++		  RV1126_CLKGATE_CON(12), 1, GFLAGS),
++	GATE(0, "aclk_pdvepu_niu", "aclk_pdvepu", CLK_IGNORE_UNUSED,
++	     RV1126_CLKGATE_CON(12), 3, GFLAGS),
++	GATE(0, "hclk_pdvepu_niu", "hclk_pdvepu", CLK_IGNORE_UNUSED,
++	     RV1126_CLKGATE_CON(12), 4, GFLAGS),
++
+ 	/*
+ 	 * Clock-Architecture Diagram 8
+ 	 */

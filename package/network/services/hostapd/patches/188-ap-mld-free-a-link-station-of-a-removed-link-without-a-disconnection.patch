@@ -1,0 +1,62 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Tue, 6 Oct 2026 07:52:37 +0200
+Subject: [PATCH] AP MLD: Free a link station of a removed link without a disconnection
+
+When LINK_REMOVE takes a link out of the AP MLD,
+hostapd_free_link_stas() frees the link stations of the non-AP MLDs that
+are associated over another link. ap_free_sta() then reports
+AP-STA-DISCONNECTED with the MLD address, although the non-AP MLD stays
+associated over its other links.
+
+Clear the authorized flag of such a link station without the event
+before hostapd frees it, and report CTRL-EVENT-LINK-STA-REMOVED on the
+removed link instead. AP-STA-DISCONNECTED stays the event for a
+departure of the station. The addition and the deletion of a single
+link are reported with CTRL-EVENT-LINK-STA-ADDED and
+CTRL-EVENT-LINK-STA-REMOVED, as Link Reconfiguration already does. A
+Link Reconfiguration addition also sets the authorized flag of the new
+link station without AP-STA-CONNECTED.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+
+--- a/src/ap/sta_info.c
++++ b/src/ap/sta_info.c
+@@ -634,6 +634,11 @@ void hostapd_free_link_stas(struct hosta
+ 
+ 		wpa_printf(MSG_DEBUG, "Removing link station from MLD " MACSTR,
+ 			   MAC2STR(prev->addr));
++		ap_sta_link_event(hapd, WPA_EVENT_LINK_STA_REMOVED, prev->addr,
++				  hapd->mld_link_id);
++		/* The non-AP MLD stays associated over its other links, so no
++		 * disconnection is reported for it. */
++		ap_sta_set_authorized_flag(hapd, prev, 0);
+ 		ap_free_sta(hapd, prev);
+ 	}
+ }
+@@ -2093,6 +2098,14 @@ int ap_sta_pending_delayed_1x_auth_fail_
+ 
+ 
+ #ifdef CONFIG_IEEE80211BE
++void ap_sta_link_event(struct hostapd_data *hapd, const char *event,
++		       const u8 *addr, u8 link_id)
++{
++	wpa_msg(hapd->msg_ctx, MSG_INFO, "%ssta=" MACSTR " link_id=%u",
++		event, MAC2STR(addr), link_id);
++}
++
++
+ static void ap_sta_remove_link_sta(struct hostapd_data *hapd,
+ 				   struct sta_info *sta)
+ {
+--- a/src/ap/sta_info.h
++++ b/src/ap/sta_info.h
+@@ -489,6 +489,8 @@ void ap_sta_restore_wpa_sm(struct hostap
+ 			   struct wpa_state_machine *prev_sm);
+ int ap_sta_reset_prev_assoc(struct hostapd_data *hapd, struct sta_info *sta,
+ 			    struct wpa_state_machine *prev_sm);
++void ap_sta_link_event(struct hostapd_data *hapd, const char *event,
++		       const u8 *addr, u8 link_id);
+ 
+ static inline bool ap_sta_is_epp(const struct sta_info *sta)
+ {

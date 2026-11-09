@@ -1,0 +1,10 @@
+#include "rt3050_allnet_all0256n.dtsi"
+
+/ {
+	compatible = "allnet,all0256n-4m", "allnet,all0256n", "ralink,rt3050-soc";
+	model = "Allnet ALL0256N (4M)";
+};
+
+&firmware {
+	reg = <0x50000 0x3b0000>;
+};

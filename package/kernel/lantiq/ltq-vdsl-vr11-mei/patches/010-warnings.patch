@@ -1,0 +1,20 @@
+--- a/src/drv_mei_cpe_dbg_driver.c
++++ b/src/drv_mei_cpe_dbg_driver.c
+@@ -309,7 +309,7 @@ MEI_STATIC IFX_void_t MEI_DbgMsgDumpLogW
+    IFX_int32_t i;
+    unsigned short paylSize;
+    union {IFX_uint8_t  d8[2]; IFX_uint16_t d16;} temp16;
+-   union {IFX_uint8_t  d8[4]; IFX_uint16_t d32;} temp32;
++   union {IFX_uint8_t  d8[4]; IFX_uint32_t d32;} temp32;
+ 
+    MEI_DbgMsgDumpLogLabel(pCmvMsg, fctOpCode);
+ 
+@@ -368,7 +368,7 @@ MEI_STATIC IFX_void_t MEI_DbgMsgDumpTrcW
+    IFX_int32_t i;
+    unsigned short paylSize;
+    union {IFX_uint8_t  d8[2]; IFX_uint16_t d16;} temp16;
+-   union {IFX_uint8_t  d8[4]; IFX_uint16_t d32;} temp32;
++   union {IFX_uint8_t  d8[4]; IFX_uint32_t d32;} temp32;
+ 
+    MEI_DbgMsgDumpTraceLabel(pCmvMsg, fctOpCode);
+ 

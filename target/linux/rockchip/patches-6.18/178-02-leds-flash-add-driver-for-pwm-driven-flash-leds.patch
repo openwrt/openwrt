@@ -1,0 +1,348 @@
+From fbea741a4b56f132e0b72974f18cc62541cde74a Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Sat, 10 Oct 2026 10:57:43 +0100
+Subject: [PATCH] leds: flash: add driver for PWM driven flash LEDs
+
+The flash class drivers in the tree control the LED through enable
+GPIOs or a dedicated current regulator, so a camera whose illumination
+hangs directly on a PWM output has no way to appear as a V4L2 flash
+subdevice. Add a driver that maps the torch and flash intensities
+linearly onto the duty cycle of one PWM channel.
+
+Torch brightness and flash intensity both use the 8 bit LED class
+range, with the step derived from the current limits in the device
+tree. A strobe raises the duty cycle to the flash intensity and a
+delayed work returns it to the torch level when the flash timeout
+expires. The PWM can sleep, which is why the end of the strobe cannot
+use a timer callback.
+
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ drivers/leds/flash/Kconfig          |  13 ++
+ drivers/leds/flash/Makefile         |   1 +
+ drivers/leds/flash/leds-pwm-flash.c | 287 ++++++++++++++++++++++++++++
+ 3 files changed, 301 insertions(+)
+ create mode 100644 drivers/leds/flash/leds-pwm-flash.c
+
+--- a/drivers/leds/flash/Kconfig
++++ b/drivers/leds/flash/Kconfig
+@@ -75,6 +75,19 @@ config LEDS_MT6370_FLASH
+ 	  This driver can also be built as a module. If so, the module
+ 	  will be called "leds-mt6370-flash".
+ 
++config LEDS_PWM_FLASH
++	tristate "LED support for flash LEDs driven by a PWM channel"
++	depends on OF && PWM
++	depends on V4L2_FLASH_LED_CLASS || !V4L2_FLASH_LED_CLASS
++	help
++	  This option enables support for a flash LED whose brightness is
++	  set by the duty cycle of a single PWM channel. The LED provides
++	  torch and strobe modes, and a V4L2 flash subdevice if
++	  V4L2_FLASH_LED_CLASS is enabled.
++
++	  This driver can be built as a module, it will be called
++	  "leds-pwm-flash".
++
+ config LEDS_QCOM_FLASH
+ 	tristate "LED support for flash module inside Qualcomm Technologies, Inc. PMIC"
+ 	depends on MFD_SPMI_PMIC || COMPILE_TEST
+--- a/drivers/leds/flash/Makefile
++++ b/drivers/leds/flash/Makefile
+@@ -7,6 +7,7 @@ obj-$(CONFIG_LEDS_AS3645A)	+= leds-as364
+ obj-$(CONFIG_LEDS_KTD2692)	+= leds-ktd2692.o
+ obj-$(CONFIG_LEDS_LM3601X)	+= leds-lm3601x.o
+ obj-$(CONFIG_LEDS_MAX77693)	+= leds-max77693.o
++obj-$(CONFIG_LEDS_PWM_FLASH)	+= leds-pwm-flash.o
+ obj-$(CONFIG_LEDS_QCOM_FLASH)	+= leds-qcom-flash.o
+ obj-$(CONFIG_LEDS_RT4505)	+= leds-rt4505.o
+ obj-$(CONFIG_LEDS_RT8515)	+= leds-rt8515.o
+--- /dev/null
++++ b/drivers/leds/flash/leds-pwm-flash.c
+@@ -0,0 +1,287 @@
++// SPDX-License-Identifier: GPL-2.0
++/*
++ * Flash LED driven by a single PWM channel
++ */
++
++#include <linux/cleanup.h>
++#include <linux/led-class-flash.h>
++#include <linux/math64.h>
++#include <linux/module.h>
++#include <linux/mutex.h>
++#include <linux/platform_device.h>
++#include <linux/property.h>
++#include <linux/pwm.h>
++#include <linux/workqueue.h>
++
++#include <media/v4l2-flash-led-class.h>
++
++#define PWM_FLASH_LEVELS	LED_FULL
++
++struct pwm_flash {
++	struct led_classdev_flash fled_cdev;
++	struct v4l2_flash *v4l2_flash;
++	struct delayed_work strobe_work;
++	struct pwm_device *pwm;
++	struct mutex lock;
++	unsigned int torch_level;
++	unsigned int flash_level;
++	u32 torch_step;
++	u32 flash_step;
++	bool strobing;
++};
++
++static struct pwm_flash *fled_to_pwm_flash(struct led_classdev_flash *fled_cdev)
++{
++	return container_of(fled_cdev, struct pwm_flash, fled_cdev);
++}
++
++static int pwm_flash_apply(struct pwm_flash *priv)
++{
++	unsigned int level = priv->strobing ? priv->flash_level :
++					      priv->torch_level;
++	struct pwm_state state;
++
++	pwm_init_state(priv->pwm, &state);
++	state.duty_cycle = div_u64((u64)state.period * level, PWM_FLASH_LEVELS);
++	state.enabled = level;
++
++	return pwm_apply_might_sleep(priv->pwm, &state);
++}
++
++static int pwm_flash_brightness_set(struct led_classdev *led_cdev,
++				    enum led_brightness brightness)
++{
++	struct pwm_flash *priv = fled_to_pwm_flash(lcdev_to_flcdev(led_cdev));
++
++	guard(mutex)(&priv->lock);
++
++	priv->torch_level = brightness;
++
++	return pwm_flash_apply(priv);
++}
++
++static int pwm_flash_flash_brightness_set(struct led_classdev_flash *fled_cdev,
++					  u32 brightness)
++{
++	struct pwm_flash *priv = fled_to_pwm_flash(fled_cdev);
++
++	guard(mutex)(&priv->lock);
++
++	priv->flash_level = brightness / priv->flash_step;
++
++	return priv->strobing ? pwm_flash_apply(priv) : 0;
++}
++
++static int pwm_flash_timeout_set(struct led_classdev_flash *fled_cdev,
++				 u32 timeout)
++{
++	return 0;
++}
++
++static int pwm_flash_strobe_set(struct led_classdev_flash *fled_cdev,
++				bool state)
++{
++	struct pwm_flash *priv = fled_to_pwm_flash(fled_cdev);
++	int ret;
++
++	scoped_guard(mutex, &priv->lock) {
++		priv->strobing = state;
++		ret = pwm_flash_apply(priv);
++		if (ret)
++			priv->strobing = false;
++	}
++
++	if (state && !ret)
++		mod_delayed_work(system_wq, &priv->strobe_work,
++				 usecs_to_jiffies(fled_cdev->timeout.val));
++	else
++		cancel_delayed_work_sync(&priv->strobe_work);
++
++	return ret;
++}
++
++static int pwm_flash_strobe_get(struct led_classdev_flash *fled_cdev,
++				bool *state)
++{
++	struct pwm_flash *priv = fled_to_pwm_flash(fled_cdev);
++
++	guard(mutex)(&priv->lock);
++
++	*state = priv->strobing;
++
++	return 0;
++}
++
++static const struct led_flash_ops pwm_flash_ops = {
++	.flash_brightness_set = pwm_flash_flash_brightness_set,
++	.strobe_set = pwm_flash_strobe_set,
++	.strobe_get = pwm_flash_strobe_get,
++	.timeout_set = pwm_flash_timeout_set,
++};
++
++static void pwm_flash_strobe_end(struct work_struct *work)
++{
++	struct pwm_flash *priv = container_of(to_delayed_work(work),
++					      struct pwm_flash, strobe_work);
++
++	guard(mutex)(&priv->lock);
++
++	priv->strobing = false;
++	pwm_flash_apply(priv);
++}
++
++#if IS_ENABLED(CONFIG_V4L2_FLASH_LED_CLASS)
++static void pwm_flash_v4l2_config_init(struct pwm_flash *priv,
++				       struct v4l2_flash_config *config)
++{
++	struct led_classdev *led_cdev = &priv->fled_cdev.led_cdev;
++	struct led_flash_setting *s = &config->intensity;
++
++	strscpy(config->dev_name, led_cdev->dev->kobj.name,
++		sizeof(config->dev_name));
++
++	s->min = priv->torch_step;
++	s->max = PWM_FLASH_LEVELS * priv->torch_step;
++	s->step = priv->torch_step;
++	s->val = s->max;
++}
++#else
++static void pwm_flash_v4l2_config_init(struct pwm_flash *priv,
++				       struct v4l2_flash_config *config)
++{
++}
++#endif
++
++static int pwm_flash_settings_init(struct pwm_flash *priv,
++				   struct fwnode_handle *child)
++{
++	struct led_classdev_flash *fled_cdev = &priv->fled_cdev;
++	struct led_classdev *led_cdev = &fled_cdev->led_cdev;
++	u32 torch_max, flash_max, timeout_max;
++	int ret;
++
++	ret = fwnode_property_read_u32(child, "led-max-microamp", &torch_max);
++	if (ret)
++		return ret;
++
++	ret = fwnode_property_read_u32(child, "flash-max-microamp", &flash_max);
++	if (ret)
++		return ret;
++
++	ret = fwnode_property_read_u32(child, "flash-max-timeout-us",
++				       &timeout_max);
++	if (ret)
++		return ret;
++
++	priv->torch_step = torch_max / PWM_FLASH_LEVELS;
++	priv->flash_step = flash_max / PWM_FLASH_LEVELS;
++	if (!priv->torch_step || !priv->flash_step || !timeout_max)
++		return -EINVAL;
++
++	led_cdev->max_brightness = PWM_FLASH_LEVELS;
++	led_cdev->flags |= LED_DEV_CAP_FLASH;
++
++	fled_cdev->brightness.min = priv->flash_step;
++	fled_cdev->brightness.max = PWM_FLASH_LEVELS * priv->flash_step;
++	fled_cdev->brightness.step = priv->flash_step;
++	fled_cdev->brightness.val = fled_cdev->brightness.max;
++	priv->flash_level = PWM_FLASH_LEVELS;
++
++	fled_cdev->timeout.min = 1;
++	fled_cdev->timeout.max = timeout_max;
++	fled_cdev->timeout.step = 1;
++	fled_cdev->timeout.val = timeout_max;
++
++	return 0;
++}
++
++static int pwm_flash_probe(struct platform_device *pdev)
++{
++	struct fwnode_handle *child __free(fwnode_handle) = NULL;
++	struct v4l2_flash_config v4l2_sd_cfg = {};
++	struct led_init_data init_data = {};
++	struct led_classdev_flash *fled_cdev;
++	struct led_classdev *led_cdev;
++	struct device *dev = &pdev->dev;
++	struct pwm_flash *priv;
++	int ret;
++
++	priv = devm_kzalloc(dev, sizeof(*priv), GFP_KERNEL);
++	if (!priv)
++		return -ENOMEM;
++
++	priv->pwm = devm_pwm_get(dev, NULL);
++	if (IS_ERR(priv->pwm))
++		return dev_err_probe(dev, PTR_ERR(priv->pwm),
++				     "failed to get PWM\n");
++
++	child = device_get_next_child_node(dev, NULL);
++	if (!child)
++		return dev_err_probe(dev, -EINVAL, "no LED child node\n");
++
++	ret = devm_mutex_init(dev, &priv->lock);
++	if (ret)
++		return ret;
++
++	fled_cdev = &priv->fled_cdev;
++	led_cdev = &fled_cdev->led_cdev;
++	fled_cdev->ops = &pwm_flash_ops;
++	led_cdev->brightness_set_blocking = pwm_flash_brightness_set;
++
++	ret = pwm_flash_settings_init(priv, child);
++	if (ret)
++		return dev_err_probe(dev, ret, "invalid LED properties\n");
++
++	INIT_DELAYED_WORK(&priv->strobe_work, pwm_flash_strobe_end);
++	platform_set_drvdata(pdev, priv);
++
++	ret = pwm_flash_apply(priv);
++	if (ret)
++		return dev_err_probe(dev, ret, "failed to switch the LED off\n");
++
++	init_data.fwnode = child;
++	ret = devm_led_classdev_flash_register_ext(dev, fled_cdev, &init_data);
++	if (ret)
++		return dev_err_probe(dev, ret, "failed to register LED\n");
++
++	pwm_flash_v4l2_config_init(priv, &v4l2_sd_cfg);
++
++	priv->v4l2_flash = v4l2_flash_init(dev, child, fled_cdev, NULL,
++					   &v4l2_sd_cfg);
++	if (IS_ERR(priv->v4l2_flash))
++		return dev_err_probe(dev, PTR_ERR(priv->v4l2_flash),
++				     "failed to create V4L2 flash subdevice\n");
++
++	return 0;
++}
++
++static void pwm_flash_remove(struct platform_device *pdev)
++{
++	struct pwm_flash *priv = platform_get_drvdata(pdev);
++
++	v4l2_flash_release(priv->v4l2_flash);
++	cancel_delayed_work_sync(&priv->strobe_work);
++	priv->strobing = false;
++	priv->torch_level = 0;
++	pwm_flash_apply(priv);
++}
++
++static const struct of_device_id pwm_flash_of_match[] = {
++	{ .compatible = "pwm-flash-led" },
++	{ /* sentinel */ }
++};
++MODULE_DEVICE_TABLE(of, pwm_flash_of_match);
++
++static struct platform_driver pwm_flash_driver = {
++	.probe	= pwm_flash_probe,
++	.remove	= pwm_flash_remove,
++	.driver	= {
++		.name = "leds-pwm-flash",
++		.of_match_table = pwm_flash_of_match,
++	},
++};
++module_platform_driver(pwm_flash_driver);
++
++MODULE_AUTHOR("Daniel Golle <daniel@makrotopia.org>");
++MODULE_DESCRIPTION("Flash LED driven by a PWM channel");
++MODULE_LICENSE("GPL");

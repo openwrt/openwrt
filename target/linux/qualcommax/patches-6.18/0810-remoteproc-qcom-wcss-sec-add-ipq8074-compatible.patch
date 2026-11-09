@@ -1,0 +1,23 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Robert Marko <robimarko@gmail.com>
+Date: Wed, 16 Sep 2026 14:30:17 +0200
+Subject: [PATCH] remoteproc: qcom: wcss-sec: add IPQ8074 compatible
+
+Match the IPQ8074 WCSS secure PIL node and use the same PAS ID and
+subsystem name as IPQ9574.
+
+Signed-off-by: Robert Marko <robimarko@gmail.com>
+---
+ drivers/remoteproc/qcom_q6v5_wcss_sec.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/drivers/remoteproc/qcom_q6v5_wcss_sec.c
++++ b/drivers/remoteproc/qcom_q6v5_wcss_sec.c
+@@ -423,6 +423,7 @@ static const struct of_device_id wcss_se
+ 	{ .compatible = "qcom,ipq5018-wcss-sec-pil", .data = &wcss_sec_ipq5332_res_init },
+ 	{ .compatible = "qcom,ipq5332-wcss-sec-pil", .data = &wcss_sec_ipq5332_res_init },
+ 	{ .compatible = "qcom,ipq5424-wcss-sec-pil", .data = &wcss_sec_ipq5424_res_init },
++	{ .compatible = "qcom,ipq8074-wcss-sec-pil", .data = &wcss_sec_ipq9574_res_init },
+ 	{ .compatible = "qcom,ipq9574-wcss-sec-pil", .data = &wcss_sec_ipq9574_res_init },
+ 	{ },
+ };

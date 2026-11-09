@@ -1,0 +1,52 @@
+--- a/src/drv_mei_cpe_linux.c
++++ b/src/drv_mei_cpe_linux.c
+@@ -1267,7 +1267,9 @@ static long MEI_Ioctl( struct file *filp
+ MEI_IOCTL_RETURN:
+ 
+    local_args.drv_ioctl.retCode = ret;
+-   copy_to_user( ((IOCTL_MEI_arg_t *)nArgument), &local_args, retSize);
++   if (copy_to_user( ((IOCTL_MEI_arg_t *)nArgument), &local_args, retSize))
++      PRN_ERR_USR_NL( MEI_DRV, MEI_DRV_PRN_LEVEL_ERR,
++             ("MEI_DRV[??] Error ioctl - copy_to_user failed!" MEI_DRV_CRLF));
+ 
+    return (ret < 0) ? -1 : 0;
+ }
+@@ -3571,9 +3573,11 @@ static int MEI_IoctlMeiDbgAccessWr_Wrap(
+    ret =  MEI_IoctlMeiDbgAccessWr( pMeiDynCntrl, pLocalArgument);
+ 
+    /* return arguments - count */
+-   copy_to_user( (void *)&pUserArgument->count,
++   if (copy_to_user( (void *)&pUserArgument->count,
+                  (void *)&pLocalArgument->count,
+-                 sizeof(pUserArgument->count) ) ;
++                 sizeof(pUserArgument->count) ))
++      PRN_ERR_USR_NL( MEI_DRV, MEI_DRV_PRN_LEVEL_ERR,
++             ("MEI_DRV[??] Error ioctl - copy_to_user failed!" MEI_DRV_CRLF));
+ 
+    return ret;
+ }
+@@ -3600,16 +3604,20 @@ static int MEI_IoctlMeiDbgAccessRd_Wrap(
+    if ( pLocalArgument->count )
+    {
+       /* return the buffer */
+-      copy_to_user( pUserBuf,
++      if (copy_to_user( pUserBuf,
+                     pLocalArgument->pData_32,
+-                    pLocalArgument->count * sizeof(IFX_uint32_t) ) ;
++                    pLocalArgument->count * sizeof(IFX_uint32_t) ))
++         PRN_ERR_USR_NL( MEI_DRV, MEI_DRV_PRN_LEVEL_ERR,
++             ("MEI_DRV[??] Error ioctl - copy_to_user failed!" MEI_DRV_CRLF));
+ 
+    }
+ 
+    /* return count argument */
+-   copy_to_user( (void *)&pUserArgument->count,
++   if (copy_to_user( (void *)&pUserArgument->count,
+                  (void *)&pLocalArgument->count,
+-                 sizeof(pUserArgument->count) ) ;
++                 sizeof(pUserArgument->count) ))
++      PRN_ERR_USR_NL( MEI_DRV, MEI_DRV_PRN_LEVEL_ERR,
++             ("MEI_DRV[??] Error ioctl - copy_to_user failed!" MEI_DRV_CRLF));
+ 
+    return ret;
+ }

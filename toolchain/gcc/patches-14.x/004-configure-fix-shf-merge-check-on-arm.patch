@@ -1,0 +1,96 @@
+From: Thiago Jung Bauermann <thiago.bauermann@linaro.org>
+Date: Fri, 27 Dec 2024 21:47:56 +0000
+Subject: [PATCH] gcc/configure: Fix check for assembler section merging support on Arm
+
+In 32-bit Arm assembly, the @ character is the start of a comment so
+the section type needs to use the % character instead.
+
+configure.ac attempts to account for this difference by doing a second
+try when checking the assembler for section merging support.
+Unfortunately there is a bug: because the gcc_GAS_CHECK_FEATURE macro
+has a call to AC_CACHE_CHECK, it will actually skip the second try
+because the gcc_cv_as_shf_merge variable has already been set:
+
+  checking assembler for section merging support... no
+  checking assembler for section merging support... (cached) no
+
+Fix by using a separate variable for the second try, as is done in the
+check for COMDAT group support.
+
+With binutils 2.46 the first try fails, so HAVE_GAS_SHF_MERGE ends up 0
+and string literals lose their per-function mergeable sections. Dead
+strings then survive --gc-sections, which overflows size constrained
+images such as the am335x SPL.
+
+Upstream commit 36eee5a74eb6d4c48a3a22cd71b3944bac499d0a, present in
+GCC 15 and later.
+
+gcc/ChangeLog:
+	* configure.ac: Fix check for HAVE_GAS_SHF_MERGE on Arm targets.
+	* configure: Regenerate.
+--- a/gcc/configure
++++ b/gcc/configure
+@@ -27107,12 +27107,12 @@ $as_echo "$gcc_cv_as_shf_merge" >&6; }
+ 
+ 
+ if test $gcc_cv_as_shf_merge = no; then
+-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking assembler for section merging support" >&5
+-$as_echo_n "checking assembler for section merging support... " >&6; }
+-if ${gcc_cv_as_shf_merge+:} false; then :
++  { $as_echo "$as_me:${as_lineno-$LINENO}: checking assembler for section merging support (%progbits)" >&5
++$as_echo_n "checking assembler for section merging support (%progbits)... " >&6; }
++if ${gcc_cv_as_shf_merge_percent+:} false; then :
+   $as_echo_n "(cached) " >&6
+ else
+-  gcc_cv_as_shf_merge=no
++  gcc_cv_as_shf_merge_percent=no
+   if test x$gcc_cv_as != x; then
+     $as_echo '.section .rodata.str, "aMS", %progbits, 1' > conftest.s
+     if { ac_try='$gcc_cv_as $gcc_cv_as_flags --fatal-warnings -o conftest.o conftest.s >&5'
+@@ -27122,7 +27122,7 @@ else
+   $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+   test $ac_status = 0; }; }
+     then
+-	gcc_cv_as_shf_merge=yes
++	gcc_cv_as_shf_merge_percent=yes
+     else
+       echo "configure: failed program was" >&5
+       cat conftest.s >&5
+@@ -27130,14 +27130,15 @@ else
+     rm -f conftest.o conftest.s
+   fi
+ fi
+-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $gcc_cv_as_shf_merge" >&5
+-$as_echo "$gcc_cv_as_shf_merge" >&6; }
++{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $gcc_cv_as_shf_merge_percent" >&5
++$as_echo "$gcc_cv_as_shf_merge_percent" >&6; }
+ 
+ 
+ fi
+ 
+ cat >>confdefs.h <<_ACEOF
+-#define HAVE_GAS_SHF_MERGE `if test $gcc_cv_as_shf_merge = yes; then echo 1; else echo 0; fi`
++#define HAVE_GAS_SHF_MERGE `if test $gcc_cv_as_shf_merge = yes \
++    || test $gcc_cv_as_shf_merge_percent = yes; then echo 1; else echo 0; fi`
+ _ACEOF
+ 
+ 
+--- a/gcc/configure.ac
++++ b/gcc/configure.ac
+@@ -3606,12 +3606,14 @@ gcc_GAS_CHECK_FEATURE(section merging su
+  [--fatal-warnings],
+  [.section .rodata.str, "aMS", @progbits, 1])
+ if test $gcc_cv_as_shf_merge = no; then
+-  gcc_GAS_CHECK_FEATURE(section merging support, gcc_cv_as_shf_merge,
++  gcc_GAS_CHECK_FEATURE(section merging support (%progbits),
++    gcc_cv_as_shf_merge_percent,
+     [--fatal-warnings],
+     [.section .rodata.str, "aMS", %progbits, 1])
+ fi
+ AC_DEFINE_UNQUOTED(HAVE_GAS_SHF_MERGE,
+-  [`if test $gcc_cv_as_shf_merge = yes; then echo 1; else echo 0; fi`],
++  [`if test $gcc_cv_as_shf_merge = yes \
++    || test $gcc_cv_as_shf_merge_percent = yes; then echo 1; else echo 0; fi`],
+ [Define 0/1 if your assembler supports marking sections with SHF_MERGE flag.])
+ 
+ gcc_cv_ld_aligned_shf_merge=yes

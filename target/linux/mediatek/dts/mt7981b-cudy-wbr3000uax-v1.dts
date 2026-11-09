@@ -1,0 +1,15 @@
+// SPDX-License-Identifier: (GPL-2.0 OR MIT)
+
+/dts-v1/;
+#include "mt7981b-cudy-wbr3000uax-v1.dtsi"
+
+/ {
+	model = "Cudy WBR3000UAX v1";
+	compatible = "cudy,wbr3000uax-v1", "mediatek,mt7981";
+};
+
+&spi_nand {
+	mediatek,nmbm;
+	mediatek,bmt-max-ratio = <1>;
+	mediatek,bmt-max-reserved-blocks = <64>;
+};

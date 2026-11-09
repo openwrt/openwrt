@@ -1,0 +1,98 @@
+From f6f302cc76ff416a2b6f87cfea0a3511d34d8367 Mon Sep 17 00:00:00 2001
+From: Karsten Sperling <ksperling@apple.com>
+Date: Fri, 16 Oct 2026 15:42:35 +1300
+Subject: [PATCH] mbedtls: implement pbkdf2_sha256() and pbkdf2_sha384()
+
+These are needed by NAN, including NAN USD only builds (via
+nan_crypto.c). Share a single implementation with pbkdf2_sha1(), which
+also fixes pbkdf2_sha1() ignoring buflen and always deriving 32 bytes.
+
+Signed-off-by: Karsten Sperling <ksperling@apple.com>
+
+--- a/src/crypto/crypto_mbedtls.c
++++ b/src/crypto/crypto_mbedtls.c
+@@ -151,6 +151,11 @@
+ #define CRYPTO_MBEDTLS_PBKDF2_SHA1
+ #endif /* pbkdf2_sha1() */
+ 
++#if defined(CONFIG_NAN) || defined(CONFIG_NAN_USD)
++#define CRYPTO_MBEDTLS_PBKDF2_SHA256
++#define CRYPTO_MBEDTLS_PBKDF2_SHA384
++#endif /* pbkdf2_sha256() pbkdf2_sha384() */
++
+ #if defined(EAP_IKEV2) \
+  || defined(EAP_IKEV2_DYNAMIC) \
+  || defined(EAP_SERVER_IKEV2) /* CONFIG_EAP_IKEV2=y */
+@@ -933,19 +938,22 @@ int des_encrypt(const u8 *clear, const u
+ #endif
+ 
+ 
+-#ifdef CRYPTO_MBEDTLS_PBKDF2_SHA1
+-/* sha1-pbkdf2.c */
++#if defined(CRYPTO_MBEDTLS_PBKDF2_SHA1) \
++ || defined(CRYPTO_MBEDTLS_PBKDF2_SHA256) \
++ || defined(CRYPTO_MBEDTLS_PBKDF2_SHA384)
+ #include <mbedtls/pkcs5.h>
+-int pbkdf2_sha1(const char *passphrase, const u8 *ssid, size_t ssid_len,
+-                int iterations, u8 *buf, size_t buflen)
++static int crypto_mbedtls_pbkdf2(mbedtls_md_type_t md_type,
++                                 const char *passphrase,
++                                 const u8 *salt, size_t salt_len,
++                                 int iterations, u8 *buf, size_t buflen)
+ {
+   #if MBEDTLS_VERSION_NUMBER >= 0x03020200 /* mbedtls 3.2.2 */
+-	return mbedtls_pkcs5_pbkdf2_hmac_ext(MBEDTLS_MD_SHA1,
++	return mbedtls_pkcs5_pbkdf2_hmac_ext(md_type,
+ 			(const u8 *)passphrase, os_strlen(passphrase),
+-			ssid, ssid_len, iterations, 32, buf) ? -1 : 0;
++			salt, salt_len, iterations, buflen, buf) ? -1 : 0;
+   #else
+ 	const mbedtls_md_info_t *md_info;
+-	md_info = mbedtls_md_info_from_type(MBEDTLS_MD_SHA1);
++	md_info = mbedtls_md_info_from_type(md_type);
+ 	if (md_info == NULL)
+ 		return -1;
+ 	mbedtls_md_context_t ctx;
+@@ -953,13 +961,41 @@ int pbkdf2_sha1(const char *passphrase,
+ 	int ret = mbedtls_md_setup(&ctx, md_info, 1)
+ 	       || mbedtls_pkcs5_pbkdf2_hmac(&ctx,
+ 			(const u8 *)passphrase, os_strlen(passphrase),
+-			ssid, ssid_len, iterations, 32, buf) ? -1 : 0;
++			salt, salt_len, iterations, buflen, buf) ? -1 : 0;
+ 	mbedtls_md_free(&ctx);
+ 	return ret;
+   #endif
+ }
+ #endif
+ 
++#ifdef CRYPTO_MBEDTLS_PBKDF2_SHA1
++/* sha1-pbkdf2.c */
++int pbkdf2_sha1(const char *passphrase, const u8 *ssid, size_t ssid_len,
++                int iterations, u8 *buf, size_t buflen)
++{
++	return crypto_mbedtls_pbkdf2(MBEDTLS_MD_SHA1, passphrase,
++	                             ssid, ssid_len, iterations, buf, buflen);
++}
++#endif
++
++#ifdef CRYPTO_MBEDTLS_PBKDF2_SHA256
++int pbkdf2_sha256(const char *passphrase, const u8 *salt, size_t salt_len,
++		  int iterations, u8 *buf, size_t buflen)
++{
++	return crypto_mbedtls_pbkdf2(MBEDTLS_MD_SHA256, passphrase,
++	                             salt, salt_len, iterations, buf, buflen);
++}
++#endif
++
++#ifdef CRYPTO_MBEDTLS_PBKDF2_SHA384
++int pbkdf2_sha384(const char *passphrase, const u8 *salt, size_t salt_len,
++		  int iterations, u8 *buf, size_t buflen)
++{
++	return crypto_mbedtls_pbkdf2(MBEDTLS_MD_SHA384, passphrase,
++	                             salt, salt_len, iterations, buf, buflen);
++}
++#endif
++
+ 
+ /*#include "aes.h"*/ /* prototypes also included in "crypto.h" */
+ 

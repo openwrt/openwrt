@@ -1,0 +1,83 @@
+From 02143b62ebaac824fb5613aa21c797fabc449625 Mon Sep 17 00:00:00 2001
+From: Corentin Labbe <clabbe@baylibre.com>
+Date: Tue, 7 Nov 2023 15:55:27 +0000
+Subject: [PATCH] dt-bindings: crypto: add support for rockchip,crypto-rk3588
+
+Add device tree binding documentation for the Rockchip cryptographic
+offloader V2.
+
+Signed-off-by: Corentin Labbe <clabbe@baylibre.com>
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ .../crypto/rockchip,rk3588-crypto.yaml        | 65 +++++++++++++++++++
+ 1 file changed, 65 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/crypto/rockchip,rk3588-crypto.yaml
+
+--- /dev/null
++++ b/Documentation/devicetree/bindings/crypto/rockchip,rk3588-crypto.yaml
+@@ -0,0 +1,65 @@
++# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
++%YAML 1.2
++---
++$id: http://devicetree.org/schemas/crypto/rockchip,rk3588-crypto.yaml#
++$schema: http://devicetree.org/meta-schemas/core.yaml#
++
++title: Rockchip cryptographic offloader V2
++
++maintainers:
++  - Corentin Labbe <clabbe@baylibre.com>
++
++properties:
++  compatible:
++    enum:
++      - rockchip,rk3568-crypto
++      - rockchip,rk3588-crypto
++
++  reg:
++    maxItems: 1
++
++  interrupts:
++    maxItems: 1
++
++  clocks:
++    minItems: 3
++
++  clock-names:
++    items:
++      - const: core
++      - const: a
++      - const: h
++
++  resets:
++    minItems: 1
++
++  reset-names:
++    items:
++      - const: core
++
++required:
++  - compatible
++  - reg
++  - interrupts
++  - clocks
++  - clock-names
++  - resets
++  - reset-names
++
++additionalProperties: false
++
++examples:
++  - |
++    #include <dt-bindings/interrupt-controller/arm-gic.h>
++    #include <dt-bindings/clock/rockchip,rk3588-cru.h>
++    #include <dt-bindings/reset/rockchip,rk3588-cru.h>
++    crypto@fe370000 {
++      compatible = "rockchip,rk3588-crypto";
++      reg = <0xfe370000 0x4000>;
++      interrupts = <GIC_SPI 209 IRQ_TYPE_LEVEL_HIGH 0>;
++      clocks = <&scmi_clk SCMI_CRYPTO_CORE>, <&scmi_clk SCMI_ACLK_SECURE_NS>,
++               <&scmi_clk SCMI_HCLK_SECURE_NS>;
++      clock-names = "core", "a", "h";
++      resets = <&scmi_reset SRST_CRYPTO_CORE>;
++      reset-names = "core";
++    };

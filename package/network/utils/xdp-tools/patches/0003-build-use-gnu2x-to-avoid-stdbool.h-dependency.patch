@@ -1,0 +1,339 @@
+From bdb036b8015f5f55092cda9b140d79673007f4ca Mon Sep 17 00:00:00 2001
+From: Nick Hainke <vincent@systemli.org>
+Date: Sat, 18 Apr 2026 18:44:34 +0200
+Subject: [PATCH 3/3] build: use gnu2x to avoid stdbool.h dependency
+
+Bump the C standard from gnu11 to gnu2x for both CFLAGS and BPF_CFLAGS.
+In C23 (gnu2x), bool is a native keyword, so stdbool.h is no longer needed.
+This fixes "stdbool.h: No such file or directory" errors when building
+BPF programs with a clang that lacks its resource directory (e.g.
+OpenWrt's llvm-bpf built with LLVM_INSTALL_TOOLCHAIN_ONLY=ON on musl
+targets), affecting xdpdump_bpf.c, xdpdump_xdp.c and
+xdp_sample_common.bpf.h.
+
+Signed-off-by: Nick Hainke <vincent@systemli.org>
+---
+ headers/linux/err.h                         | 1 -
+ headers/linux/hashtable.h                   | 1 -
+ headers/linux/netfilter.h                   | 1 -
+ headers/xdp/xdp_sample_common.bpf.h         | 1 -
+ lib/defines.mk                              | 4 ++--
+ lib/libxdp/tests/test_dispatcher_versions.c | 1 -
+ lib/libxdp/tests/test_link_detach.c         | 1 -
+ lib/libxdp/tests/test_xdp_devbound.c        | 1 -
+ lib/libxdp/tests/test_xdp_frags.c           | 1 -
+ lib/libxdp/tests/test_xsk_refcnt.c          | 1 -
+ lib/testing/test-tool.c                     | 1 -
+ lib/util/params.c                           | 1 -
+ lib/util/params.h                           | 1 -
+ lib/util/xdp_sample.c                       | 1 -
+ lib/util/xdpsock.c                          | 1 -
+ lib/util/xdpsock.h                          | 1 -
+ lib/util/xpcapng.c                          | 1 -
+ xdp-bench/xdp_basic.c                       | 1 -
+ xdp-bench/xdp_redirect_basic.c              | 1 -
+ xdp-bench/xdp_redirect_cpumap.c             | 1 -
+ xdp-bench/xdp_redirect_devmap.c             | 1 -
+ xdp-bench/xdp_socket.c                      | 1 -
+ xdp-dump/xdpdump.c                          | 1 -
+ xdp-dump/xdpdump_bpf.c                      | 1 -
+ xdp-dump/xdpdump_xdp.c                      | 1 -
+ xdp-filter/xdp-filter.c                     | 1 -
+ xdp-loader/xdp-loader.c                     | 1 -
+ xdp-monitor/xdp-monitor.c                   | 1 -
+ xdp-trafficgen/xdp-trafficgen.c             | 1 -
+ 29 files changed, 2 insertions(+), 30 deletions(-)
+
+--- a/headers/linux/err.h
++++ b/headers/linux/err.h
+@@ -3,7 +3,6 @@
+ #ifndef __LINUX_ERR_H
+ #define __LINUX_ERR_H
+ 
+-#include <stdbool.h>
+ #include <linux/types.h>
+ #include <asm/errno.h>
+ 
+--- a/headers/linux/hashtable.h
++++ b/headers/linux/hashtable.h
+@@ -9,7 +9,6 @@
+ 
+ #include <math.h>
+ #include <stdint.h>
+-#include <stdbool.h>
+ #include <linux/hlist.h>
+ #include <linux/types.h>
+ #include <linux/kernel.h>
+--- a/headers/linux/netfilter.h
++++ b/headers/linux/netfilter.h
+@@ -1,7 +1,6 @@
+ #ifndef _LINUX_NETFILTER_H
+ #define _LINUX_NETFILTER_H
+ 
+-#include <stdbool.h>
+ #include <linux/types.h>
+ #include <bpf/bpf_helpers.h>
+ #include <xdp/parsing_helpers.h>
+--- a/headers/xdp/xdp_sample_common.bpf.h
++++ b/headers/xdp/xdp_sample_common.bpf.h
+@@ -6,7 +6,6 @@
+ #include "xdp_sample.bpf.h"
+ 
+ #include <bpf/vmlinux.h>
+-#include <stdbool.h>
+ #include <bpf/bpf_tracing.h>
+ #include <bpf/bpf_core_read.h>
+ #include <bpf/bpf_helpers.h>
+--- a/lib/defines.mk
++++ b/lib/defines.mk
+@@ -42,8 +42,8 @@ endif
+ 
+ DEFINES += -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64
+ 
+-CFLAGS += -std=gnu11 -Wextra -Werror $(DEFINES) $(ARCH_INCLUDES)
+-BPF_CFLAGS += $(DEFINES) $(filter -ffile-prefix-map=%,$(CFLAGS)) $(filter -I%,$(CFLAGS)) $(ARCH_INCLUDES)
++CFLAGS += -std=gnu2x -Wextra -Werror $(DEFINES) $(ARCH_INCLUDES)
++BPF_CFLAGS += -std=gnu2x $(DEFINES) $(filter -ffile-prefix-map=%,$(CFLAGS)) $(filter -I%,$(CFLAGS)) $(ARCH_INCLUDES)
+ 
+ CONFIGMK := $(LIB_DIR)/../config.mk
+ LIBMK := Makefile $(CONFIGMK) $(LIB_DIR)/defines.mk $(LIB_DIR)/common.mk $(LIB_DIR)/../version.mk
+--- a/lib/libxdp/tests/test_dispatcher_versions.c
++++ b/lib/libxdp/tests/test_dispatcher_versions.c
+@@ -6,7 +6,6 @@
+ #include <linux/err.h>
+ #include <net/if.h>
+ #include <pthread.h>
+-#include <stdbool.h>
+ #include <stdlib.h>
+ #include <string.h>
+ #include <sys/resource.h>
+--- a/lib/libxdp/tests/test_link_detach.c
++++ b/lib/libxdp/tests/test_link_detach.c
+@@ -6,7 +6,6 @@
+ #include <linux/err.h>
+ #include <net/if.h>
+ #include <pthread.h>
+-#include <stdbool.h>
+ #include <stdlib.h>
+ #include <string.h>
+ #include <sys/resource.h>
+--- a/lib/libxdp/tests/test_xdp_devbound.c
++++ b/lib/libxdp/tests/test_xdp_devbound.c
+@@ -6,7 +6,6 @@
+ #include <linux/err.h>
+ #include <net/if.h>
+ #include <pthread.h>
+-#include <stdbool.h>
+ #include <stdlib.h>
+ #include <string.h>
+ #include <sys/resource.h>
+--- a/lib/libxdp/tests/test_xdp_frags.c
++++ b/lib/libxdp/tests/test_xdp_frags.c
+@@ -6,7 +6,6 @@
+ #include <linux/err.h>
+ #include <net/if.h>
+ #include <pthread.h>
+-#include <stdbool.h>
+ #include <stdlib.h>
+ #include <string.h>
+ #include <sys/resource.h>
+--- a/lib/libxdp/tests/test_xsk_refcnt.c
++++ b/lib/libxdp/tests/test_xsk_refcnt.c
+@@ -4,7 +4,6 @@
+ #include <linux/err.h>
+ #include <net/if.h>
+ #include <pthread.h>
+-#include <stdbool.h>
+ #include <stdlib.h>
+ #include <string.h>
+ #include <sys/resource.h>
+--- a/lib/testing/test-tool.c
++++ b/lib/testing/test-tool.c
+@@ -2,7 +2,6 @@
+ #include <stdlib.h>
+ #include <string.h>
+ #include <errno.h>
+-#include <stdbool.h>
+ #include <unistd.h>
+ #include <fcntl.h>
+ 
+--- a/lib/util/params.c
++++ b/lib/util/params.c
+@@ -5,7 +5,6 @@
+ #include <stdlib.h>
+ #include <stdio.h>
+ #include <string.h>
+-#include <stdbool.h>
+ #include <getopt.h>
+ #include <errno.h>
+ 
+--- a/lib/util/params.h
++++ b/lib/util/params.h
+@@ -4,7 +4,6 @@
+ #define __PARAMS_H
+ 
+ #include <getopt.h>
+-#include <stdbool.h>
+ #include <stdlib.h>
+ #include <linux/in.h>
+ #include <linux/in6.h>
+--- a/lib/util/xdp_sample.c
++++ b/lib/util/xdp_sample.c
+@@ -15,7 +15,6 @@
+ #include <string.h>
+ #include <unistd.h>
+ #include <bpf/bpf.h>
+-#include <stdbool.h>
+ #include <inttypes.h>
+ #include <sys/mman.h>
+ #include <arpa/inet.h>
+--- a/lib/util/xdpsock.c
++++ b/lib/util/xdpsock.c
+@@ -19,7 +19,6 @@
+ #include <poll.h>
+ #include <pthread.h>
+ #include <signal.h>
+-#include <stdbool.h>
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <string.h>
+--- a/lib/util/xdpsock.h
++++ b/lib/util/xdpsock.h
+@@ -7,7 +7,6 @@
+ #define XDPSOCK_H_
+ 
+ #include <linux/if_xdp.h>
+-#include <stdbool.h>
+ #include <linux/if_ether.h>
+ #include <time.h>
+ #include <sched.h>
+--- a/lib/util/xpcapng.c
++++ b/lib/util/xpcapng.c
+@@ -13,7 +13,6 @@
+ #include <errno.h>
+ #include <fcntl.h>
+ #include <inttypes.h>
+-#include <stdbool.h>
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <string.h>
+--- a/xdp-bench/xdp_basic.c
++++ b/xdp-bench/xdp_basic.c
+@@ -12,7 +12,6 @@
+ #include <string.h>
+ #include <unistd.h>
+ #include <bpf/bpf.h>
+-#include <stdbool.h>
+ #include <linux/bpf.h>
+ #include <bpf/libbpf.h>
+ #include <sys/resource.h>
+--- a/xdp-bench/xdp_redirect_basic.c
++++ b/xdp-bench/xdp_redirect_basic.c
+@@ -12,7 +12,6 @@
+ #include <string.h>
+ #include <unistd.h>
+ #include <bpf/bpf.h>
+-#include <stdbool.h>
+ #include <linux/bpf.h>
+ #include <bpf/libbpf.h>
+ #include <sys/resource.h>
+--- a/xdp-bench/xdp_redirect_cpumap.c
++++ b/xdp-bench/xdp_redirect_cpumap.c
+@@ -13,7 +13,6 @@
+ #include <string.h>
+ #include <unistd.h>
+ #include <bpf/bpf.h>
+-#include <stdbool.h>
+ #include <arpa/inet.h>
+ #include <bpf/libbpf.h>
+ #include <sys/sysinfo.h>
+--- a/xdp-bench/xdp_redirect_devmap.c
++++ b/xdp-bench/xdp_redirect_devmap.c
+@@ -12,7 +12,6 @@
+ #include <string.h>
+ #include <unistd.h>
+ #include <bpf/bpf.h>
+-#include <stdbool.h>
+ #include <linux/bpf.h>
+ #include <bpf/libbpf.h>
+ #include <xdp/libxdp.h>
+--- a/xdp-bench/xdp_socket.c
++++ b/xdp-bench/xdp_socket.c
+@@ -2,7 +2,6 @@
+ #include <string.h>
+ #include <unistd.h>
+ #include <bpf/bpf.h>
+-#include <stdbool.h>
+ #include <linux/bpf.h>
+ #include <pthread.h>
+ #include <bpf/libbpf.h>
+--- a/xdp-dump/xdpdump.c
++++ b/xdp-dump/xdpdump.c
+@@ -9,7 +9,6 @@
+ #include <inttypes.h>
+ #include <limits.h>
+ #include <signal.h>
+-#include <stdbool.h>
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <string.h>
+--- a/xdp-dump/xdpdump_bpf.c
++++ b/xdp-dump/xdpdump_bpf.c
+@@ -3,7 +3,6 @@
+ /*****************************************************************************
+  * Include files
+  *****************************************************************************/
+-#include <stdbool.h>
+ #include <linux/bpf.h>
+ #include <bpf/bpf_helpers.h>
+ #include <bpf/bpf_trace_helpers.h>
+--- a/xdp-dump/xdpdump_xdp.c
++++ b/xdp-dump/xdpdump_xdp.c
+@@ -3,7 +3,6 @@
+ /*****************************************************************************
+  * Include files
+  *****************************************************************************/
+-#include <stdbool.h>
+ #include <linux/bpf.h>
+ #include <bpf/bpf_helpers.h>
+ #include <bpf/bpf_trace_helpers.h>
+--- a/xdp-filter/xdp-filter.c
++++ b/xdp-filter/xdp-filter.c
+@@ -4,7 +4,6 @@
+ #include <stdlib.h>
+ #include <string.h>
+ #include <errno.h>
+-#include <stdbool.h>
+ #include <unistd.h>
+ #include <fcntl.h>
+ #include <inttypes.h>
+--- a/xdp-loader/xdp-loader.c
++++ b/xdp-loader/xdp-loader.c
+@@ -4,7 +4,6 @@
+ #include <stdlib.h>
+ #include <string.h>
+ #include <errno.h>
+-#include <stdbool.h>
+ #include <unistd.h>
+ #include <fcntl.h>
+ 
+--- a/xdp-monitor/xdp-monitor.c
++++ b/xdp-monitor/xdp-monitor.c
+@@ -23,7 +23,6 @@ static const char *__doc_err_only__=
+ #include <string.h>
+ #include <unistd.h>
+ #include <bpf/bpf.h>
+-#include <stdbool.h>
+ #include <bpf/libbpf.h>
+ #include <sys/resource.h>
+ 
+--- a/xdp-trafficgen/xdp-trafficgen.c
++++ b/xdp-trafficgen/xdp-trafficgen.c
+@@ -6,7 +6,6 @@
+ #include <string.h>
+ #include <signal.h>
+ #include <errno.h>
+-#include <stdbool.h>
+ #include <unistd.h>
+ #include <fcntl.h>
+ #include <pthread.h>

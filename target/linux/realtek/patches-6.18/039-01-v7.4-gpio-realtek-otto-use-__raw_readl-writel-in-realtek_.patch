@@ -1,0 +1,37 @@
+From 61ef599b782e776437886f2be0623b3c9055e5d3 Mon Sep 17 00:00:00 2001
+From: Rustam Adilov <adilov@disroot.org>
+Date: Sat, 15 Aug 2026 14:44:50 +0500
+Subject: gpio: realtek-otto: use __raw_readl/writel in
+ realtek_gpio_update_line_imr()
+
+In preparation for upcoming changes to how bank reads and writes
+are defined in this driver, change the ioread32 and iowrite32 to
+their __raw variants. The realtek_gpio_update_line_imr() function
+is used by all devices regardless of GPIO_PORTS_REVERSED flag and
+thus this is the only place where there shouldn't be any byte
+swapping whether SWAP_IO_SPACE config is enabled or not and that
+is only possible with __raw_readl and __raw_writel.
+
+Reviewed-by: Linus Walleij <linusw@kernel.org>
+Signed-off-by: Rustam Adilov <adilov@disroot.org>
+Link: https://patch.msgid.link/20260815094451.31792-2-adilov@disroot.org
+Signed-off-by: Bartosz Golaszewski <bartosz.golaszewski@oss.qualcomm.com>
+---
+ drivers/gpio/gpio-realtek-otto.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/drivers/gpio/gpio-realtek-otto.c
++++ b/drivers/gpio/gpio-realtek-otto.c
+@@ -175,10 +175,10 @@ static void realtek_gpio_update_line_imr
+ 	u32 reg_val;
+ 
+ 	reg += 4 * (line_shift / 32);
+-	reg_val = ioread32(reg);
++	reg_val = __raw_readl(reg);
+ 	reg_val &= ~(REALTEK_GPIO_IMR_LINE_MASK << shift);
+ 	reg_val |= (irq_type & irq_mask & REALTEK_GPIO_IMR_LINE_MASK) << shift;
+-	iowrite32(reg_val, reg);
++	__raw_writel(reg_val, reg);
+ }
+ 
+ static void realtek_gpio_irq_ack(struct irq_data *data)

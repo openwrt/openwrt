@@ -1,0 +1,64 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Tue, 27 Oct 2026 20:00:00 +0100
+Subject: [PATCH] wifi: cfg80211: check the layout of the flow types
+
+The kernel patch 797-00 adds its own copy of the flow types for
+mtk_eth_soc, which fills a struct cfg80211_flow_info that mt76 and
+mac80211 read with this copy. The two copies are separate definitions,
+so a change to one of them still builds and then corrupts the data on
+the other side.
+
+Assert the offset of each field, the size of each structure and the
+value of each flow field, with the same values as 797-00.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+
+--- a/include/net/cfg80211.h
++++ b/include/net/cfg80211.h
+@@ -4258,6 +4258,46 @@ struct cfg80211_flow_info {
+ 	u16 l3_off;
+ };
+ 
++/*
++ * The kernel and the backports tree each define these types, and a structure
++ * crosses from one build to the other, so both keep this layout.
++ */
++static_assert(CFG80211_FLOW_F_ETH_SA == 0);
++static_assert(CFG80211_FLOW_F_ETH_DA == 1);
++static_assert(CFG80211_FLOW_F_ETH_TYPE == 2);
++static_assert(CFG80211_FLOW_F_VLAN_PCP == 3);
++static_assert(CFG80211_FLOW_F_VLAN_DEI == 4);
++static_assert(CFG80211_FLOW_F_VLAN_VID == 5);
++static_assert(CFG80211_FLOW_F_IP_VERSION == 6);
++static_assert(CFG80211_FLOW_F_IP_SRC == 7);
++static_assert(CFG80211_FLOW_F_IP_DST == 8);
++static_assert(CFG80211_FLOW_F_SRC_PORT == 9);
++static_assert(CFG80211_FLOW_F_DST_PORT == 10);
++static_assert(CFG80211_FLOW_F_DSCP == 11);
++static_assert(CFG80211_FLOW_F_PROTO == 12);
++static_assert(CFG80211_FLOW_F_FLOW_LABEL == 13);
++static_assert(NUM_CFG80211_FLOW_FIELDS == 14);
++static_assert(offsetof(struct cfg80211_flow_key, src) == 0);
++static_assert(offsetof(struct cfg80211_flow_key, dst) == 16);
++static_assert(offsetof(struct cfg80211_flow_key, flow_label) == 32);
++static_assert(offsetof(struct cfg80211_flow_key, sa) == 36);
++static_assert(offsetof(struct cfg80211_flow_key, da) == 42);
++static_assert(offsetof(struct cfg80211_flow_key, eth_type) == 48);
++static_assert(offsetof(struct cfg80211_flow_key, vlan_tci) == 50);
++static_assert(offsetof(struct cfg80211_flow_key, src_port) == 52);
++static_assert(offsetof(struct cfg80211_flow_key, dst_port) == 54);
++static_assert(offsetof(struct cfg80211_flow_key, ip_version) == 56);
++static_assert(offsetof(struct cfg80211_flow_key, dscp) == 57);
++static_assert(offsetof(struct cfg80211_flow_key, proto) == 58);
++static_assert(offsetof(struct cfg80211_flow_key, pad) == 59);
++static_assert(sizeof(struct cfg80211_flow_key) == 60);
++static_assert(offsetof(struct cfg80211_flow_info, key) == 0);
++static_assert(offsetof(struct cfg80211_flow_info, present) == 60);
++static_assert(offsetof(struct cfg80211_flow_info, skb) == 64);
++static_assert(offsetof(struct cfg80211_flow_info, l3_off) ==
++	      64 + sizeof(void *));
++static_assert(sizeof(struct cfg80211_flow_info) == 64 + 2 * sizeof(void *));
++
+ bool cfg80211_flow_parse(struct sk_buff *skb, struct cfg80211_flow_info *info);
+ 
+ /**

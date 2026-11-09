@@ -1,0 +1,37 @@
+#!/bin/sh /etc/rc.common
+# SPDX-License-Identifier: GPL-2.0-only
+
+START=99
+
+ln6001_reset_bootcount() {
+	local device="$1" record count checksum
+
+	record="$(hexdump -v -n 12 -e '12/1 "%02x"' "$device")" || return 1
+	[ "${#record}" -eq 24 ] || return 1
+	case "$record" in
+		*[!0-9a-f]*) return 1 ;;
+	esac
+	case "$record" in
+		110811200000000011081120) return 0 ;;
+		11081120*) ;;
+		*) return 1 ;;
+	esac
+	count="$(hexdump -v -s 4 -n 4 -e '1/4 "%u"' "$device")" || return 1
+	checksum="$(hexdump -v -s 8 -n 4 -e '1/4 "%u"' "$device")" || return 1
+	# Also repair a zero count left with a stale checksum.
+	[ "$count" -eq 0 ] ||
+		[ "$checksum" -eq $(((0x20110811 + count) & 0xffffffff)) ] || return 1
+
+	printf '\000\000\000\000\021\010\021\040' |
+		dd of="$device" bs=1 seek=4 count=8 \
+		conv=notrunc 2>/dev/null || return 1
+	sync
+	[ "$(hexdump -v -n 12 -e '12/1 "%02x"' "$device")" = 110811200000000011081120 ]
+}
+
+boot() {
+	[ "$(board_name)" = 'linksys,ln6001' ] || return 0
+	. /lib/upgrade/ln6001.sh
+	ln6001_active_slot >/dev/null || return 1
+	ln6001_reset_bootcount /dev/mmcblk0p22
+}

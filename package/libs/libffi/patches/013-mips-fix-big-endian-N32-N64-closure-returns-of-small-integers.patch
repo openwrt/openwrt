@@ -1,0 +1,106 @@
+From 0074d8a10c332b61d5d88c3b2bd840490be1ffb9 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Wed, 21 Oct 2026 01:24:10 +0000
+Subject: [PATCH] mips: fix big-endian N32/N64 closure returns of small
+ integers
+
+Closures store an integer return value narrower than ffi_arg widened to
+an ffi_arg, as the documentation requires and the testsuite does.  When
+the return value handling moved to returning the exact type, the jump
+table in ffi_closure_N32 started to load these values with lw, lh, lhu,
+lb or lbu from the start of the ffi_arg, which on big-endian holds the
+upper bits.  Every closure returning a char, short or int there now
+returned 0 or garbage.
+
+Load them from the end of the ffi_arg on big-endian.  Two values share
+the 32-bit integer path without being widened by the closure: a float
+with soft float, and a pointer on N32.  Widen those in
+ffi_closure_mips_inner_N32() first, as ffi_call() already reads a
+soft-float float return value from the end of the doubleword.
+
+This fixes cls_uchar, cls_sshort, cls_uint, cls_multi_*, closure_fn*,
+closure_simple, the *_va closure tests and most of
+libffi.bhaible/test-callback on malta (mips64r2) and octeon (octeon+),
+both big-endian n64 soft-float, under qemu-user.  N32 is compile-tested
+only.
+
+Fixes: 04f6fa310dde ("mips: Fix N32 ABI return value handling (#813)")
+Assisted-by: LLM
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ src/mips/ffi.c | 13 +++++++++++++
+ src/mips/n32.S | 18 +++++++++++++-----
+ 2 files changed, 26 insertions(+), 5 deletions(-)
+
+--- a/src/mips/ffi.c
++++ b/src/mips/ffi.c
+@@ -1271,6 +1271,19 @@ ffi_closure_mips_inner_N32 (ffi_cif *cif
+   /* Invoke the closure. */
+   fun (cif, rvalue, avaluep, user_data);
+ 
++#if defined(__MIPSEB__) || defined(_MIPSEB)
++  /* ffi_closure_N32 loads a 32-bit integer return value from the end of
++     an ffi_arg on big-endian.  A float with soft float and a pointer on
++     N32 are returned the same way, but the closure stores them at the
++     start, so widen them.  */
++  if ((cif->rtype->type == FFI_TYPE_FLOAT && soft_float)
++#if _MIPS_SIM == _ABIN32
++      || cif->rtype->type == FFI_TYPE_POINTER
++#endif
++      )
++    *(ffi_arg *) rvalue = (SINT32) *(UINT32 *) rvalue;
++#endif
++
+   return cif->flags >> (FFI_FLAG_BITS * 8);
+ }
+ 
+--- a/src/mips/n32.S
++++ b/src/mips/n32.S
+@@ -521,6 +521,14 @@ epilogue:
+ #define V1_OFF2		(3  * FFI_SIZEOF_ARG)
+ #define V0_OFF2		(2  * FFI_SIZEOF_ARG)
+ 
++/* Integer return values narrower than ffi_arg are stored widened to an
++   ffi_arg, so on big-endian their bytes are at its end.  */
++#if defined(__MIPSEB__) || defined(_MIPSEB)
++#define V0_OFF2_N(n)	(V0_OFF2 + FFI_SIZEOF_ARG - (n))
++#else
++#define V0_OFF2_N(n)	V0_OFF2
++#endif
++
+ #define RA_OFF2		(1  * FFI_SIZEOF_ARG)
+ #define GP_OFF2		(0  * FFI_SIZEOF_ARG)
+ 
+@@ -628,27 +636,27 @@ cls_retuint64:
+ 
+ cls_retsint32:
+ 	bne     v0, FFI_TYPE_SINT32, cls_retsint16
+-	lw	v0, V0_OFF2($sp)
++	lw	v0, V0_OFF2_N(4)($sp)
+ 	b	cls_epilogue
+ 
+ cls_retsint16:
+ 	bne     v0, FFI_TYPE_SINT16, cls_retuint16
+-	lh	v0, V0_OFF2($sp)
++	lh	v0, V0_OFF2_N(2)($sp)
+ 	b	cls_epilogue
+ 
+ cls_retuint16:
+ 	bne     v0, FFI_TYPE_UINT16, cls_retsint8
+-	lhu	v0, V0_OFF2($sp)
++	lhu	v0, V0_OFF2_N(2)($sp)
+ 	b	cls_epilogue
+ 
+ cls_retsint8:
+ 	bne     v0, FFI_TYPE_SINT8, cls_retuint8
+-	lb	v0, V0_OFF2($sp)
++	lb	v0, V0_OFF2_N(1)($sp)
+ 	b	cls_epilogue
+ 
+ cls_retuint8:
+ 	bne     v0, FFI_TYPE_UINT8, cls_retfloat
+-	lbu	v0, V0_OFF2($sp)
++	lbu	v0, V0_OFF2_N(1)($sp)
+ 	b	cls_epilogue
+ 
+ cls_retfloat:

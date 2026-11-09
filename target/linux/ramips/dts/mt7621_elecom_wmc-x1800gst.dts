@@ -1,0 +1,69 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "mt7621_elecom_wxc-x1800gsx.dtsi"
+
+/ {
+	compatible = "elecom,wmc-x1800gst", "mediatek,mt7621-soc";
+	model = "ELECOM WMC-X1800GST";
+
+	aliases {
+		label-mac-device = &gmac1;
+	};
+};
+
+&keys {
+	switch-ap {
+		label = "ap";
+		gpios = <&gpio 3 GPIO_ACTIVE_LOW>;
+		linux,code = <BTN_0>;
+		linux,input-type = <EV_SW>;
+	};
+
+	switch-router {
+		label = "router";
+		gpios = <&gpio 4 GPIO_ACTIVE_LOW>;
+		linux,code = <BTN_1>;
+		linux,input-type = <EV_SW>;
+	};
+
+	switch-extender {
+		label = "extender";
+		gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
+		linux,code = <BTN_2>;
+		linux,input-type = <EV_SW>;
+	};
+};
+
+&gmac1 {
+	status = "okay";
+	label = "wan";
+	phy-handle = <&ethphy0>;
+
+	nvmem-cells = <&macaddr_factory_3fffa>;
+	nvmem-cell-names = "mac-address";
+};
+
+&ethphy0 {
+	/delete-property/ interrupts;
+};
+
+&state_default {
+	gpio {
+		groups = "i2c", "uart3", "uart2", "jtag", "wdt";
+		function = "gpio";
+	};
+};
+
+&wifi {
+	band@0 {
+		reg = <0>;
+		nvmem-cells = <&macaddr_factory_4 0>;
+		nvmem-cell-names = "mac-address";
+	};
+
+	band@1 {
+		reg = <1>;
+		nvmem-cells = <&macaddr_factory_4 1>;
+		nvmem-cell-names = "mac-address";
+	};
+};

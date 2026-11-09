@@ -1,0 +1,58 @@
+From e04c3fff5b17e00504f2ea69acd7d829f058ddc4 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Tue, 3 Nov 2026 20:38:29 +0000
+Subject: [PATCH] Quieten the PID file chown failure when it is harmless
+
+Without CAP_CHOWN, dnsmasq logs that the chown of the PID file failed
+on every start. The file then stays owned by root, which only matters
+if the unprivileged daemon can no longer remove it on exit, and that
+depends on the directory. OpenWrt runs dnsmasq in a jail without
+CAP_CHOWN and a root:dnsmasq 0775 directory for the PID file.
+
+Report the failure only when, after dropping root, dnsmasq cannot
+write to the directory, or the directory is sticky and not its own.
+
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ src/dnsmasq.c | 23 ++++++++++++++++++++++-
+ 1 file changed, 22 insertions(+), 1 deletion(-)
+
+--- a/src/dnsmasq.c
++++ b/src/dnsmasq.c
+@@ -41,6 +41,27 @@ static void fatal_event(struct event_des
+ static int read_event(int fd, struct event_desc *evp, char **msg);
+ static void poll_resolv(int force, int do_reload, time_t now);
+ 
++static int runfile_removable(void)
++{
++  char *dir, *slash;
++  struct stat st;
++  int ret;
++
++  dir = safe_malloc(strlen(daemon->runfile) + 2);
++  strcpy(dir, daemon->runfile);
++
++  if ((slash = strrchr(dir, '/')))
++    slash[slash == dir] = 0;
++  else
++    strcpy(dir, ".");
++
++  ret = access(dir, W_OK | X_OK) == 0 && stat(dir, &st) == 0 &&
++    (!(st.st_mode & S_ISVTX) || st.st_uid == getuid());
++
++  free(dir);
++  return ret;
++}
++
+ int main (int argc, char **argv)
+ {
+   time_t now;
+@@ -883,7 +904,7 @@ int main (int argc, char **argv)
+   
+   my_syslog(LOG_INFO, _("compile time options: %s"), compile_opts);
+ 
+-  if (chown_warn != 0)
++  if (chown_warn != 0 && !runfile_removable())
+     {
+ #if defined(HAVE_LINUX_NETWORK)
+       if (chown_warn == EPERM && !have_cap_chown)
