@@ -1,0 +1,59 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Ziteng Xiao <xiaox@gaymail.cn>
+Date: Mon, 9 Nov 2026 21:05:00 +0800
+Subject: [PATCH] cfg80211: allow off-channel scan while beaconing on DFS
+ channel
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+nl80211_trigger_scan() validates every requested scan channel: if
+cfg80211_off_channel_oper_allowed() returns false, the channel must be
+within the interface's operating bandwidth, otherwise the whole scan
+request is rejected with -EBUSY.
+
+cfg80211_off_channel_oper_allowed() implements the policy "we cannot
+leave radar channels": when the operating channel itself is a radar
+channel (DFS primary), every scan channel outside the operating
+bandwidth is rejected.
+
+On hardware which software-scans (e.g. MT7986A with the integrated
+DBDC Wi-Fi 6 driven by mt7915e, which does not register .hw_scan), an
+AP on a DFS primary channel (e.g. ch64 with HE160) can therefore never
+scan channels outside its own 160 MHz block: "iw scan" fails with
+-EBUSY, even with the mac80211 ieee80211_can_leave_ch() relaxation
+already applied.
+
+Relax the radar-link check the same way mac80211 was relaxed: beacons
+pause during the off-channel window and radar detection resumes once
+back on the operating channel.
+
+Tested on Netcore N60 Pro (MT7986A): full-band scanning on ch64+HE160
+previously failed with -EBUSY and now succeeds.
+
+Fixes: https://github.com/openwrt/openwrt/issues/26572
+Signed-off-by: Ziteng Xiao <xiaox@gaymail.cn>
+(cherry picked from commit a89e61a704a6d8082fea409f37806666cbe26802)
+---
+ net/wireless/nl80211.c | 10 ++++++++--
+ 1 file changed, 8 insertions(+), 2 deletions(-)
+
+--- a/net/wireless/nl80211.c
++++ b/net/wireless/nl80211.c
+@@ -10414,8 +10414,14 @@
+ 		link_radio_idx = cfg80211_get_radio_idx_by_chan(wdev->wiphy,
+ 								chandef->chan);
+ 		if (link_radio_idx == radio_idx) {
+-			all_ok = false;
+-			break;
++			/*
++			 * Relax: allow off-channel scan while beaconing on a DFS
++			 * channel. Beacons pause during the off-channel window and
++			 * radar detection resumes once back on the operating
++			 * channel, same rationale as the mac80211
++			 * ieee80211_can_leave_ch() relaxation.
++			 */
++			continue;
+ 		}
+ 	}
+
