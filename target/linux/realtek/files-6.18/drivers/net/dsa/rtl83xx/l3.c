@@ -4682,6 +4682,55 @@ static const struct file_operations otto_l3_930x_nexthop_fops = {
 	.release = single_release,
 };
 
+/* The L3 termination endpoints: only a frame whose destination MAC matches a
+ * valid entry here reaches the route tables, and the action of that entry
+ * decides what becomes of it. Print every valid entry decoded and raw.
+ */
+static int otto_l3_930x_router_mac_dump(struct otto_l3_ctrl *ctrl, struct seq_file *s)
+{
+	u32 data[7];
+	u8 mac[ETH_ALEN], mask[ETH_ALEN];
+	int err = 0;
+
+	for (int row = 0; row < MAX_ROUTER_MACS; row++) {
+		err = otto_table_read(RTL9300_TBL_L3_ROUTER_MAC, row, &data);
+		if (err) {
+			seq_printf(s, "router_mac %d read_error %d\n", row, err);
+			break;
+		}
+		if (!(data[0] & BIT(20)))
+			continue;
+		u64_to_ether_addr(((u64)(data[1] & 0xffff) << 32) | data[2], mac);
+		u64_to_ether_addr(((u64)(data[4] & 0xffff) << 32) | data[5], mask);
+		seq_printf(s, "router_mac %d mac %pM mask %pM action %u port_type %u ",
+			   row, mac, mask, data[6] & 7, !!(data[0] & BIT(19)));
+		seq_printf(s, "port %u port_type_mask %u port_mask %02x vid %u vid_mask %03x raw",
+			   (data[0] >> 13) & 0x3f, !!(data[3] & BIT(19)),
+			   (data[3] >> 13) & 0x3f, data[0] & 0xfff, data[3] & 0xfff);
+		for (unsigned int i = 0; i < ARRAY_SIZE(data); i++)
+			seq_printf(s, " %08x", data[i]);
+		seq_putc(s, '\n');
+	}
+	return err;
+}
+
+/* Every router MAC update holds the register lock */
+static int otto_l3_router_mac_dump(struct otto_l3_ctrl *ctrl, struct seq_file *s)
+{
+	int err;
+
+	mutex_lock(ctrl->lock);
+	err = ctrl->cfg->router_mac_dump(ctrl, s);
+	mutex_unlock(ctrl->lock);
+	return err;
+}
+
+static int otto_l3_router_mac_show(struct seq_file *m, void *v)
+{
+	return otto_l3_router_mac_dump(m->private, m);
+}
+DEFINE_SHOW_ATTRIBUTE(otto_l3_router_mac);
+
 /* Clear the HIT bit of every valid unicast entry in the host route table by
  * read-modify-write. Read through the unicast view so the write covers the
  * entry and nothing else, the way the vendor SDK rewrites it through its own
@@ -4942,6 +4991,7 @@ static void otto_l3_930x_dbgfs_init(struct otto_l3_ctrl *ctrl)
 
 	debugfs_create_file("routes", 0400, root, ctrl, &otto_l3_930x_route_fops);
 	debugfs_create_file("nexthops", 0400, root, ctrl, &otto_l3_930x_nexthop_fops);
+	debugfs_create_file("router_macs", 0400, root, ctrl, &otto_l3_router_mac_fops);
 	debugfs_create_file("clear_route_hits", 0200, root, ctrl, &otto_l3_930x_clear_hit_fops);
 }
 
@@ -4986,6 +5036,7 @@ const struct otto_l3_config otto_l3_930x_cfg = {
 	.route_write = otto_l3_930x_route_write,
 	.setup = otto_l3_930x_setup,
 	.dbgfs_init = otto_l3_930x_dbgfs_init,
+	.router_mac_dump = otto_l3_930x_router_mac_dump,
 };
 
 const struct otto_l3_config otto_l3_931x_cfg = {

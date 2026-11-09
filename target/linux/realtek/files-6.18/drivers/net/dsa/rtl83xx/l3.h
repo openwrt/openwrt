@@ -13,6 +13,7 @@
 #include "rtl-otto.h"
 
 struct fib6_info;
+struct seq_file;
 
 #define MAX_SMACS 64
 #define MAX_DMACS 2048
@@ -168,6 +169,8 @@ struct otto_l3_config {
 	int (*route_write)(struct otto_l3_ctrl *ctrl, int idx, struct otto_l3_route *rt);
 	int (*setup)(struct otto_l3_ctrl *ctrl);
 	void (*dbgfs_init)(struct otto_l3_ctrl *ctrl);
+	/* Print the router MAC table as the hardware holds it */
+	int (*router_mac_dump)(struct otto_l3_ctrl *ctrl, struct seq_file *s);
 };
 
 struct otto_l3_ctrl {
