@@ -1,17 +1,18 @@
 #!/bin/sh
 # SPDX-License-Identifier: GPL-2.0-only
 
+IX2106_FACTORY_SIZE=0x00020000
+IX2106_FACTORY_DATA_SIZE=0x003e0000
 IX2106_FW_SIZE=0x019c0000
-IX2106_MAX_IMAGE_SIZE=0x019d0000
-IX2106_ROOTFS_OFFSET=0x00820000
-IX2106_ROOTFS_SIZE=0x011a0000
+IX2106_SYSUPGRADE_METADATA_MAX=0x00010000
+IX2106_SYSUPGRADE_MAX_SIZE=$((IX2106_FW_SIZE + IX2106_SYSUPGRADE_METADATA_MAX))
+IX2106_BOOT_RESERVED_SIZE=0x00240000
 IX2106_ERASE_SIZE=0x00020000
-IX2106_IMAGE=/tmp/ix2106-sysupgrade.raw
-IX2106_STATE=/tmp/ix2106-sysupgrade.state
-IX2106_READY=/tmp/ix2106-sysupgrade.ready
-IX2106_IMAGE_BASE=$IX2106_IMAGE
-IX2106_STATE_BASE=$IX2106_STATE
-IX2106_READY_BASE=$IX2106_READY
+IX2106_FW_OFFSET=0x00400000
+IX2106_FW_END=$((IX2106_FW_OFFSET + IX2106_FW_SIZE))
+IX2106_ROOTFS_OFFSET=0x00820000
+IX2106_ROOTFS_SIZE=$((IX2106_FW_SIZE - IX2106_ROOTFS_OFFSET))
+IX2106_STATE_BASE=${IX2106_STATE_BASE:-/tmp/ix2106-sysupgrade.state}
 
 ix2106_hash_file() {
 	local result
@@ -20,41 +21,46 @@ ix2106_hash_file() {
 	printf '%s\n' "${result%% *}"
 }
 
-ix2106_set_paths() {
-	IX2106_IMAGE="$IX2106_IMAGE_BASE.$1"
-	IX2106_STATE="$IX2106_STATE_BASE.$1"
-	IX2106_READY="$IX2106_READY_BASE.$1"
+ix2106_state_path() {
+	printf '%s.%s\n' "$IX2106_STATE_BASE" "$1"
 }
 
-ix2106_write_state() {
-	local source_hash="$1" raw_hash
-	[ -n "$source_hash" ] || return 1
-	raw_hash=$(ix2106_hash_file "$2") || return 1
-	printf '%s\n%s\n' "$source_hash" "$raw_hash"
+ix2106_snapshot_image() {
+	local image="$1" workdir="$2" image_size snapshot_size
+	local snapshot="$workdir/input"
+
+	[ -f "$image" ] || return 1
+	image_size=$(wc -c < "$image") || return 1
+	[ "$((image_size))" -gt 0 ] &&
+		[ "$((image_size))" -le "$((IX2106_SYSUPGRADE_MAX_SIZE))" ] || return 1
+	head -c "$((IX2106_SYSUPGRADE_MAX_SIZE + 1))" "$image" > "$snapshot" || return 1
+	snapshot_size=$(wc -c < "$snapshot") || return 1
+	[ "$((snapshot_size))" -gt 0 ] &&
+		[ "$((snapshot_size))" -le "$((IX2106_SYSUPGRADE_MAX_SIZE))" ] || return 1
+	ix2106_hash_file "$snapshot"
 }
 
-ix2106_verify_state() {
-	local source="$1"
-	local state="$2"
-	local source_hash raw_hash expected_source expected_raw
+ix2106_read_le32() {
+	local file="$1" offset="$2" bytes b1 b2 b3 b4
+	bytes=$(hexdump -v -e '4/1 "%u "' -s "$offset" -n 4 "$file") || return 1
+	set -- $bytes
+	[ "$#" -eq 4 ] || return 1
+	b1=$1 b2=$2 b3=$3 b4=$4
+	printf '%s\n' "$((b1 + (b2 << 8) + (b3 << 16) + (b4 << 24)))"
+}
 
-	[ -s "$state" ] || return 1
-	{
-		read -r expected_source
-		read -r expected_raw
-	} < "$state"
-	[ -n "$expected_source" ] && [ -n "$expected_raw" ] || return 1
-
-	source_hash=$(ix2106_hash_file "$source") || return 1
-	raw_hash=$(ix2106_hash_file "$IX2106_IMAGE") || return 1
-	[ "$source_hash" = "$expected_source" ] && [ "$raw_hash" = "$expected_raw" ] || return 1
-	ix2106_validate_raw_image "$IX2106_IMAGE"
+ix2106_read_be32() {
+	local file="$1" offset="$2" bytes b1 b2 b3 b4
+	bytes=$(hexdump -v -e '4/1 "%u "' -s "$offset" -n 4 "$file") || return 1
+	set -- $bytes
+	[ "$#" -eq 4 ] || return 1
+	b1=$1 b2=$2 b3=$3 b4=$4
+	printf '%s\n' "$(((b1 << 24) + (b2 << 16) + (b3 << 8) + b4))"
 }
 
 ix2106_validate_raw_image() {
 	local image="$1"
-	local size magic bytes used mark_offset marker
-	local b1 b2 b3 b4 b5 b6 b7 b8
+	local size magic used high mark_offset marker
 
 	[ -f "$image" ] || return 1
 	size=$(wc -c < "$image") || return 1
@@ -71,17 +77,12 @@ ix2106_validate_raw_image() {
 	}
 
 	# SquashFS bytes_used is a little-endian u64 at superblock offset 40.
-	bytes=$(hexdump -v -e '8/1 "%u "' \
-		-s "$((IX2106_ROOTFS_OFFSET + 40))" -n 8 "$image") || return 1
-	set -- $bytes
-	[ "$#" -eq 8 ] || return 1
-	b1=$1; b2=$2; b3=$3; b4=$4
-	b5=$5; b6=$6; b7=$7; b8=$8
-	[ "$b5$b6$b7$b8" = "0000" ] || {
+	used=$(ix2106_read_le32 "$image" "$((IX2106_ROOTFS_OFFSET + 40))") || return 1
+	high=$(ix2106_read_le32 "$image" "$((IX2106_ROOTFS_OFFSET + 44))") || return 1
+	[ "$high" -eq 0 ] || {
 		echo "IX2106: SquashFS length exceeds the supported range" >&2
 		return 1
 	}
-	used=$((b1 + (b2 << 8) + (b3 << 16) + (b4 << 24)))
 	[ "$used" -gt 0 ] && [ "$used" -le "$((IX2106_ROOTFS_SIZE))" ] || {
 		echo "IX2106: invalid SquashFS length" >&2
 		return 1
@@ -101,105 +102,65 @@ ix2106_validate_raw_image() {
 }
 
 ix2106_check_image() {
-	local image="$1"
-	local image_size source_hash snapshot snapshot_hash raw_tmp state_tmp workdir
+	local image="$1" snapshot_hash image_hash state_tmp workdir raw_tmp
 
-	[ -f "$image" ] || return 74
-	image_size=$(wc -c < "$image") || return 74
-	[ "$((image_size))" -gt 0 ] && [ "$((image_size))" -le "$((IX2106_MAX_IMAGE_SIZE))" ] || {
-		echo "IX2106: sysupgrade image exceeds the supported firmware and metadata size" >&2
-		return 74
-	}
-	# Use a per-source namespace so parallel checks cannot mix payloads/state.
-	# Extract from a private snapshot and make sure it matches the caller's file.
-	source_hash=$(ix2106_hash_file "$image") || return 74
-	ix2106_set_paths "$source_hash"
 	workdir=$(umask 077; mktemp -d /tmp/ix2106.XXXXXX) || return 74
-	snapshot="$workdir/input"
+	snapshot_hash=$(ix2106_snapshot_image "$image" "$workdir") || {
+		rm -rf "$workdir"
+		return 74
+	}
 	raw_tmp="$workdir/raw"
-	state_tmp="$workdir/state"
-	if ! cp "$image" "$snapshot"; then
+	if ! (umask 077; fwtool -q -T -i /dev/null "$workdir/input" > "$raw_tmp") ||
+	   ! ix2106_validate_raw_image "$raw_tmp"; then
 		rm -rf "$workdir"
 		return 74
 	fi
-	snapshot_hash=$(ix2106_hash_file "$snapshot") || {
+	image_hash=$(ix2106_hash_file "$image") || {
 		rm -rf "$workdir"
 		return 74
 	}
-	[ "$snapshot_hash" = "$source_hash" ] || {
-		rm -rf "$workdir"
-		echo "IX2106: image changed while creating validation snapshot" >&2
-		return 74
-	}
-	# fwtool skips signature trailers when no signature output is requested.
-	if ! (umask 077; fwtool -q -T -i /dev/null "$snapshot" > "$raw_tmp"); then
-		rm -rf "$workdir"
-		echo "IX2106: cannot strip required fwtool metadata" >&2
-		return 74
-	fi
-
-	if ! ix2106_validate_raw_image "$raw_tmp"; then
-		rm -rf "$workdir"
-		return 74
-	fi
-	if [ "$(ix2106_hash_file "$image")" != "$source_hash" ] ||
-	   [ "$(ix2106_hash_file "$snapshot")" != "$source_hash" ]; then
+	if [ "$image_hash" != "$snapshot_hash" ]; then
 		rm -rf "$workdir"
 		echo "IX2106: image changed during validation" >&2
 		return 74
 	fi
-	if ! (umask 077; ix2106_write_state "$source_hash" "$raw_tmp" > "$state_tmp"); then
+	state_tmp="$workdir/state"
+	if ! (umask 077; printf '%s\n' "$snapshot_hash" > "$state_tmp") ||
+	   ! mv -fT "$state_tmp" "$(ix2106_state_path "$snapshot_hash")"; then
 		rm -rf "$workdir"
-		echo "IX2106: cannot bind the checked image to its raw payload" >&2
+		echo "IX2106: cannot record the checked input" >&2
 		return 74
 	fi
-	mv -fT "$state_tmp" "$IX2106_STATE" || {
-		rm -rf "$workdir"
-		return 74
-	}
 	rm -rf "$workdir"
-
 	return 0
 }
 
 ix2106_prepare_upgrade() {
-	local source_hash expected_source expected_raw raw_tmp state_tmp workdir
-	unset IX2106_READY_HASH
-	source_hash=$(ix2106_hash_file "$1") || return 1
-	ix2106_set_paths "$source_hash"
-	[ -s "$IX2106_STATE" ] || {
-		echo "IX2106: checked image changed before upgrade" >&2
-		return 1
-	}
-	{
-		read -r expected_source
-		read -r expected_raw
-	} < "$IX2106_STATE"
-	[ "$source_hash" = "$expected_source" ] && [ -n "$expected_raw" ] || {
-		echo "IX2106: checked image changed before upgrade" >&2
-		return 1
-	}
+	local image="$1" source_hash checked_hash workdir receipt prepared_hash
+	unset IX2106_PREPARED_IMAGE IX2106_PREPARED_IMAGE_HASH
 	workdir=$(umask 077; mktemp -d /tmp/ix2106.XXXXXX) || return 1
-	raw_tmp="$workdir/raw"
-	state_tmp="$workdir/ready"
-	# Re-extract only for an actual upgrade, not for check-only runs.
-	if ! (umask 077; fwtool -q -T -i /dev/null "$1" > "$raw_tmp") ||
-	   ! ix2106_validate_raw_image "$raw_tmp" ||
-	   [ "$(ix2106_hash_file "$1")" != "$source_hash" ] ||
-	   [ "$(ix2106_hash_file "$raw_tmp")" != "$expected_raw" ]; then
+	source_hash=$(ix2106_snapshot_image "$image" "$workdir") || {
 		rm -rf "$workdir"
 		echo "IX2106: checked image changed before upgrade" >&2
 		return 1
-	fi
-	if ! (umask 077; cp "$IX2106_STATE" "$state_tmp") ||
-	   ! mv -fT "$raw_tmp" "$IX2106_IMAGE" ||
-	   ! mv -fT "$state_tmp" "$IX2106_READY"; then
+	}
+	receipt=$(ix2106_state_path "$source_hash")
+	if ! IFS= read -r checked_hash < "$receipt" ||
+	   [ "$source_hash" != "$checked_hash" ] ||
+	   ! (umask 077; fwtool -q -T -i /dev/null "$workdir/input" > "$workdir/raw") ||
+	   ! ix2106_validate_raw_image "$workdir/raw"; then
 		rm -rf "$workdir"
+		echo "IX2106: checked image receipt or firmware payload is invalid" >&2
 		return 1
 	fi
-	rm -rf "$workdir"
-	IX2106_READY_HASH=$source_hash
-	export IX2106_READY_HASH
+	prepared_hash=$(ix2106_hash_file "$workdir/raw") || {
+		rm -rf "$workdir"
+		return 1
+	}
+	rm -f "$workdir/input"
+	IX2106_PREPARED_IMAGE="$workdir/raw"
+	IX2106_PREPARED_IMAGE_HASH=$prepared_hash
+	export IX2106_PREPARED_IMAGE IX2106_PREPARED_IMAGE_HASH
 	return 0
 }
 
@@ -209,8 +170,7 @@ ix2106_mtd_partition_check() {
 	local expected_size="$3"
 	local expected_writeable="$4"
 	local line device index proc_size proc_erase sys_size sys_erase
-	local flags type reg_bytes reg_offset reg_size
-	local b1 b2 b3 b4 b5 b6 b7 b8
+	local flags type reg_offset reg_size sys_offset
 
 	line=$(grep "\"$name\"" /proc/mtd) || return 1
 	set -- $line
@@ -224,11 +184,16 @@ ix2106_mtd_partition_check() {
 	line="/sys/class/mtd/mtd$index"
 	sys_size=$(cat "$line/size") || return 1
 	sys_erase=$(cat "$line/erasesize") || return 1
+	sys_offset=$(cat "$line/offset") || return 1
 	flags=$(cat "$line/flags") || return 1
 	type=$(cat "$line/type") || return 1
 	if [ -n "$expected_size" ]; then
 		[ "$((sys_size))" -eq "$((expected_size))" ] || return 1
 		[ "$proc_size" -eq "$((expected_size))" ] || return 1
+	fi
+	if [ -n "$expected_offset" ]; then
+		# MTD part offsets and DT reg values are relative to the same parent.
+		[ "$((sys_offset))" -eq "$((expected_offset))" ] || return 1
 	fi
 	[ "$((sys_erase))" -eq "$((IX2106_ERASE_SIZE))" ] || return 1
 	[ "$proc_erase" -eq "$((IX2106_ERASE_SIZE))" ] || return 1
@@ -236,13 +201,8 @@ ix2106_mtd_partition_check() {
 	[ "$((flags & 0x400))" -eq "$expected_writeable" ] || return 1
 
 	if [ -n "$expected_offset" ]; then
-		reg_bytes=$(hexdump -v -e '8/1 "%u "' -n 8 "$line/of_node/reg") || return 1
-		set -- $reg_bytes
-		[ "$#" -eq 8 ] || return 1
-		b1=$1; b2=$2; b3=$3; b4=$4
-		b5=$5; b6=$6; b7=$7; b8=$8
-		reg_offset=$(((b1 << 24) + (b2 << 16) + (b3 << 8) + b4))
-		reg_size=$(((b5 << 24) + (b6 << 16) + (b7 << 8) + b8))
+		reg_offset=$(ix2106_read_be32 "$line/of_node/reg" 0) || return 1
+		reg_size=$(ix2106_read_be32 "$line/of_node/reg" 4) || return 1
 		[ "$reg_offset" -eq "$((expected_offset))" ] || return 1
 		[ "$reg_size" -eq "$((expected_size))" ] || return 1
 	fi
@@ -251,25 +211,21 @@ ix2106_mtd_partition_check() {
 }
 
 ix2106_check_mtd_layout() {
-	local proc_mtd="${1:-/proc/mtd}"
-	local proc_mounts="${2:-/proc/mounts}"
-
-	# firmware parent is the only writable updater target. Validate physical
-	# offsets, sizes, NOR type and erase size against the active OF partitions.
-	ix2106_mtd_partition_check firmware 0x00400000 0x019c0000 1024 || return 1
-	ix2106_mtd_partition_check factory 0x00000000 0x00020000 0 || return 1
-	ix2106_mtd_partition_check factory-data 0x00020000 0x003e0000 0 || return 1
-	ix2106_mtd_partition_check boot-reserved 0x01dc0000 0x00240000 0 || return 1
+	# Validate the fixed NOR layout against the active MTD and OF partitions.
+	ix2106_mtd_partition_check firmware "$IX2106_FW_OFFSET" "$IX2106_FW_SIZE" 1024 || return 1
+	ix2106_mtd_partition_check factory 0 "$IX2106_FACTORY_SIZE" 0 || return 1
+	ix2106_mtd_partition_check factory-data "$IX2106_FACTORY_SIZE" "$IX2106_FACTORY_DATA_SIZE" 0 || return 1
+	ix2106_mtd_partition_check boot-reserved "$IX2106_FW_END" "$IX2106_BOOT_RESERVED_SIZE" 0 || return 1
 	ix2106_mtd_partition_check kernel 0x00000000 0x00800000 0 || return 1
 	ix2106_mtd_partition_check rootfs-header 0x00800000 0x00020000 0 || return 1
-	ix2106_mtd_partition_check rootfs 0x00820000 0x011a0000 1024 || return 1
-	ix2106_check_rootfs_data "$proc_mtd" "$proc_mounts" || return 1
+	ix2106_mtd_partition_check rootfs "$IX2106_ROOTFS_OFFSET" "$IX2106_ROOTFS_SIZE" 1024 || return 1
+	ix2106_check_rootfs_data || return 1
 	return 0
 }
 
 ix2106_check_rootfs_data() {
-	local proc_mtd="$1"
-	local proc_mounts="$2"
+	local proc_mtd="${1:-/proc/mtd}"
+	local proc_mounts="${2:-/proc/mounts}"
 
 	if grep -q '"rootfs_data"' "$proc_mtd"; then
 		ix2106_mtd_partition_check rootfs_data "" "" 1024 || return 1
@@ -287,24 +243,29 @@ ix2106_check_rootfs_data() {
 }
 
 ix2106_do_upgrade() {
-	local source_hash
-	[ -n "${IX2106_READY_HASH:-}" ] || {
+	local actual_hash
+	[ -n "${IX2106_PREPARED_IMAGE:-}" ] &&
+		[ -n "${IX2106_PREPARED_IMAGE_HASH:-}" ] || {
 		echo "IX2106: checked image identity is missing in stage2" >&2
 		exit 1
 	}
-	source_hash=$(ix2106_hash_file "$1") || {
-		echo "IX2106: cannot identify upgrade image" >&2
+	case "$IX2106_PREPARED_IMAGE" in
+		/tmp/ix2106.*/raw) ;;
+		*)
+			echo "IX2106: prepared firmware path is invalid" >&2
+			exit 1
+			;;
+	esac
+	[ -f "$IX2106_PREPARED_IMAGE" ] && [ ! -L "$IX2106_PREPARED_IMAGE" ] || {
+		echo "IX2106: prepared firmware payload is unavailable" >&2
 		exit 1
 	}
-	[ "$source_hash" = "$IX2106_READY_HASH" ] || {
-		echo "IX2106: upgrade image changed after preparation" >&2
+	actual_hash=$(ix2106_hash_file "$IX2106_PREPARED_IMAGE") || {
+		echo "IX2106: cannot verify prepared firmware payload" >&2
 		exit 1
 	}
-	ix2106_set_paths "$source_hash"
-	# sysupgrade stage2 has pivoted to RAMFS; verify the original/raw image
-	# hashes again before touching flash.
-	ix2106_verify_state "$1" "$IX2106_READY" || {
-		echo "IX2106: upgrade image binding is missing or changed" >&2
+	[ "$actual_hash" = "$IX2106_PREPARED_IMAGE_HASH" ] || {
+		echo "IX2106: prepared firmware payload changed" >&2
 		exit 1
 	}
 	ix2106_check_mtd_layout || {
@@ -324,8 +285,10 @@ ix2106_do_upgrade() {
 	# number of input bytes, so the remainder of the fixed-size image is written.
 	if [ -n "$UPGRADE_BACKUP" ]; then
 		mtd -s "$IX2106_ROOTFS_OFFSET" -j "$UPGRADE_BACKUP" \
-			write "$IX2106_IMAGE" firmware || exit 1
+			write "$IX2106_PREPARED_IMAGE" firmware || exit 1
 	else
-		mtd -s "$IX2106_ROOTFS_OFFSET" write "$IX2106_IMAGE" firmware || exit 1
+		mtd -s "$IX2106_ROOTFS_OFFSET" write "$IX2106_PREPARED_IMAGE" firmware || exit 1
 	fi
+	rm -f "$IX2106_PREPARED_IMAGE"
+	rmdir "${IX2106_PREPARED_IMAGE%/*}" 2>/dev/null || true
 }

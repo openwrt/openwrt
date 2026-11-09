@@ -23,9 +23,9 @@ platform_check_image() {
 platform_pre_upgrade() {
 	case "$(board_name)" in
 	nec,ix2106)
-		# Bind the input and stripped image checked by platform_check_image.
+		# Keep policy validation in the sysupgrade/procd validation path.
 		# Do not remove the caller's file: -T and user-supplied /tmp paths use it.
-		ix2106_prepare_upgrade "$1" || return 1
+		ix2106_prepare_upgrade "$1" || exit 1
 		;;
 	esac
 }
