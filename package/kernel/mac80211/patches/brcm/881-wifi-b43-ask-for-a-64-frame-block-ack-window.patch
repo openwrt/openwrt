@@ -1,0 +1,61 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Ville Takio <ville+git@takio.fi>
+Date: Mon, 9 Nov 2026 05:30:00 +0200
+Subject: [PATCH] wifi: b43: ask for a 64 frame block ack window
+
+b43 asks for a block ack window of B43_AMPDU_MAX_FRAMES, the 32 MPDUs
+it puts in one A-MPDU. While one A-MPDU waits for its block ack, the
+next may only use what is left of those 32, so A-MPDUs to a busy
+station averaged 17-19 MPDUs. brcmsmac keeps 32 MPDUs per A-MPDU but
+a window of up to 64 (AMPDU_TX_BA_MAX_WSIZE).
+
+Ask for 64. The window still follows what the receiver answers, and
+the block ack bitmap from the TX status already has 64 bits.
+
+BCM43217 (RT-AC56U), OnePlus Nord 2 (2x2), TCP download on channel 6,
+alternating modules: 90.9 Mbit/s mean over 8 runs against 84.4 (wl
+7.14 on the same router: 92-95). Bytes per RTS (one per A-MPDU) from
+25.5-26.5 kB to 27.7-32.3 kB; no block ack or TX status errors.
+
+Signed-off-by: Ville Takio <ville+git@takio.fi>
+---
+--- a/drivers/net/wireless/broadcom/b43/b43.h
++++ b/drivers/net/wireless/broadcom/b43/b43.h
+@@ -835,6 +835,8 @@ enum {
+ 
+ /* Maximum number of MPDUs b43 puts in one A-MPDU */
+ #define B43_AMPDU_MAX_FRAMES	32
++/* Block ack window asked for: room for the next A-MPDU while one awaits its BA */
++#define B43_AMPDU_BA_WINDOW	IEEE80211_MAX_AMPDU_BUF_HT
+ /* Times an MPDU missing from a block ack is sent again */
+ #define B43_AMPDU_RETRY_LIMIT	5
+ 
+--- a/drivers/net/wireless/broadcom/b43/main.c
++++ b/drivers/net/wireless/broadcom/b43/main.c
+@@ -6318,7 +6318,7 @@ static int b43_op_ampdu_action(struct ie
+ 			ieee80211_sn_sub(params->ssn, 1);
+ 		bsta->baw_start[params->tid] = params->ssn;
+ 		bsta->baw_pending[params->tid] = 0;
+-		bsta->ampdu_buf[params->tid] = B43_AMPDU_MAX_FRAMES;
++		bsta->ampdu_buf[params->tid] = B43_AMPDU_BA_WINDOW;
+ 		return IEEE80211_AMPDU_TX_START_IMMEDIATE;
+ 	}
+ 	case IEEE80211_AMPDU_TX_OPERATIONAL: {
+@@ -6326,7 +6326,7 @@ static int b43_op_ampdu_action(struct ie
+ 
+ 		/*
+ 		 * The window is the reorder buffer the receiver answered
+-		 * with, which may be smaller than the B43_AMPDU_MAX_FRAMES
++		 * with, which may be smaller than the B43_AMPDU_BA_WINDOW
+ 		 * b43 asked for. Frames are aggregated as they are queued.
+ 		 */
+ 		bsta->ampdu_buf[params->tid] =
+@@ -6883,7 +6883,7 @@ static struct b43_wl *b43_wireless_init(
+ 	ieee80211_hw_set(hw, SUPPORT_FAST_XMIT);
+ 	/* Room for the TX header in front of the frame (one DMA descriptor) */
+ 	hw->extra_tx_headroom = sizeof(struct b43_txhdr);
+-	hw->max_tx_aggregation_subframes = B43_AMPDU_MAX_FRAMES;
++	hw->max_tx_aggregation_subframes = B43_AMPDU_BA_WINDOW;
+ 	hw->sta_data_size = sizeof(struct b43_sta);
+ 	hw->wiphy->interface_modes =
+ 		BIT(NL80211_IFTYPE_AP) |
