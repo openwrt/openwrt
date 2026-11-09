@@ -15,6 +15,7 @@ mvebu_setup_interfaces()
 	ctera,c200-v2|\
 	synology,ds213j|\
 	wd,cloud-ex2-ultra|\
+	wd,cloud-mirror|\
 	wd,cloud-mirror-gen2|\
 	zyxel,nas326)
 		ucidef_set_interface_lan "eth0" "dhcp"
@@ -97,6 +98,12 @@ mvebu_setup_macs()
 		label_mac=$(mtd_get_mac_ascii devinfo hw_mac_addr)
 		lan_mac=$label_mac
 		wan_mac=$label_mac
+		;;
+	wd,cloud-mirror)
+		# mac address is on ubi "rescue firmware" or ubi "config".
+
+		label_mac=$(macaddr_canonicalize $(strings /dev/mtd4|grep -E '([0-9A-F]{2}[:][0-9A-F]{2}[:][0-9A-F]{2}[:][0-9A-F])'))
+		lan_mac=$label_mac
 		;;
 	wd,cloud-ex2-ultra|\
 	wd,cloud-mirror-gen2)
