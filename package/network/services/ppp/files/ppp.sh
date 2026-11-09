@@ -65,6 +65,10 @@ ppp_exitcode_tostring()
 	esac
 }
 
+ppp_opt_quote() {
+	printf '%s' "$1" | sed 's/\\/\\\\/g; s/"/\\"/g'
+}
+
 ppp_install_file() {
 	local file="$1" owner="$2" tmp
 
@@ -77,10 +81,12 @@ ppp_install_file() {
 	}
 }
 
-ppp_write_ua_file() {
+ppp_write_auth_file() {
 	local file="$1" user="$2" pass="$3" owner="$4"
 
-	printf '%s\n%s\n' "$user" "$pass" | ppp_install_file "$file" "$owner"
+	printf 'user "%s"\npassword "%s"\n' \
+		"$(ppp_opt_quote "$user")" "$(ppp_opt_quote "$pass")" |
+		ppp_install_file "$file" "$owner"
 }
 
 ppp_generic_init_config() {
@@ -190,11 +196,11 @@ ppp_generic_setup() {
 		done
 	}
 
-	local uafile
+	local optfile
 	[ -n "$username" ] && {
-		uafile="/var/run/pppd/$config.creds"
+		optfile="/var/run/pppd/$config.opts"
 		mkdir -p /var/run/pppd
-		ppp_write_ua_file "$uafile" "$username" "$password" ${jail:+ppp}
+		ppp_write_auth_file "$optfile" "$username" "$password" ${jail:+ppp}
 	}
 
 	proto_run_command "$config" $jail /usr/sbin/pppd \
@@ -214,7 +220,7 @@ ppp_generic_setup() {
 		usepeerdns \
 		$demand $persist maxfail $maxfail \
 		${holdoff:+holdoff "$holdoff"} \
-		${uafile:++ua "$uafile" net-init-script /lib/netifd/ppp-net-init} \
+		${optfile:+file "$optfile" net-init-script /lib/netifd/ppp-net-init} \
 		$secrets \
 		${connect:+connect "$connect"} \
 		${disconnect:+disconnect "$disconnect"} \
@@ -230,7 +236,7 @@ ppp_generic_teardown() {
 	local interface="$1"
 	local errorstring=$(ppp_exitcode_tostring $ERROR)
 
-	rm -f "/var/run/pppd/$interface.creds" \
+	rm -f "/var/run/pppd/$interface.opts" \
 		"/var/run/pppd/$interface.chap-secrets" \
 		"/var/run/pppd/$interface.pap-secrets"
 
