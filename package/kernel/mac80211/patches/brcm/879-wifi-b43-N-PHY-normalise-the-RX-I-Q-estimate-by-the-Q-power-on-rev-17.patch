@@ -1,0 +1,49 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Ville Takio <ville+git@takio.fi>
+Date: Mon, 9 Nov 2026 02:30:00 +0200
+Subject: [PATCH] wifi: b43: N-PHY: normalise the RX I/Q estimate by the Q
+ power on rev 17
+
+b43_nphy_calc_rx_iq_comp() follows brcmsmac's
+wlc_phy_calc_rx_iq_comp_nphy(): a = -iq / ii and
+b = sqrt(qq / ii - a^2) - 1, scaled by 2^10. On the BCM43217 (N-PHY
+rev 17, radio 2057 rev 14) this leaves the RX I/Q compensation off:
+B came out at -12 to -14 on core 0 on every channel, where wl has
+-2 to +9.
+
+wl 7.14.164 (DD-WRT r66477, RT-AC56U) was traced through its RX I/Q
+calibration at channels 1 and 6. It takes one 0x4000-sample estimate
+per core, as b43 does, and the coefficients it writes to 0x9a-0x9d
+are the same arithmetic with ii and qq swapped, i.e. normalised by
+the Q power:
+
+  ch  core  iq        ii        qq        wl      brcmsmac  swapped
+  6   0     -4641116  47500652  46225012  103, 9  100, -19  103, 9
+  6   1     -3835190  63410572  62674819   63, 4   62,  -8   63, 4
+  1   0     -4240587  41440372  41144329  106,-2  105,  -9  106,-2
+  1   1     -3137415  55333261  55173457   58, 0   58,  -3   58, 0
+
+Swap ii and qq on rev 17. Other revisions keep the brcmsmac form;
+only rev 17 has been traced.
+
+Signed-off-by: Ville Takio <ville+git@takio.fi>
+---
+--- a/drivers/net/wireless/broadcom/b43/phy_n.c
++++ b/drivers/net/wireless/broadcom/b43/phy_n.c
+@@ -4554,6 +4554,16 @@ again:
+ 			break;
+ 		}
+ 
++		/*
++		 * On rev 17 the coefficients are normalised by the Q power,
++		 * not the I power: for every estimate in traces of wl 7.14 on
++		 * a BCM43217, the arithmetic below with ii and qq swapped
++		 * gives the a and b wl writes, and the brcmsmac form does
++		 * not (b off by 3 to 28, a by 0 to 3).
++		 */
++		if (dev->phy.rev == 17)
++			swap(ii, qq);
++
+ 		iq_nbits = b43_nphy_nbits(iq);
+ 		qq_nbits = b43_nphy_nbits(qq);
+ 
