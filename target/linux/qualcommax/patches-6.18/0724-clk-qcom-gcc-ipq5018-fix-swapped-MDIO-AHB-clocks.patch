@@ -1,0 +1,52 @@
+From 788a6c4fc0157798dbb4495091ae4b8384d7baee Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Dav=C3=AD=C3=B0=20Steinn=20Geirsson?= <david@dsg.is>
+Date: Mon, 9 Nov 2026 21:50:00 +0000
+Subject: [PATCH] clk: qcom: gcc-ipq5018: fix swapped MDIO AHB clocks
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+The branch at 0x58014 clocks MDIO0 (0x88000) and the branch at 0x58004
+clocks MDIO1 (0x90000). The driver has them the other way round, so each
+MDIO bus enables the other bus's clock.
+
+Found on a UniFi 6 Pro, which enables only mdio0: clk_disable_unused
+gates 0x58014 and MDIO0 stops responding. With 0x58004 gated and 0x58014
+running, MDIO0 works and every MDIO1 register reads 0xffff; with 0x58004
+running as well, MDIO1 works again.
+
+No affected boards were found: IPQ5018 boards enable either both MDIO
+buses, which keeps both clocks running with or without this change, or
+neither.
+
+Signed-off-by: Davíð Steinn Geirsson <david@dsg.is>
+---
+ drivers/clk/qcom/gcc-ipq5018.c | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+--- a/drivers/clk/qcom/gcc-ipq5018.c
++++ b/drivers/clk/qcom/gcc-ipq5018.c
+@@ -1970,9 +1970,9 @@ static struct clk_branch gcc_lpass_sway_
+ };
+ 
+ static struct clk_branch gcc_mdio0_ahb_clk = {
+-	.halt_reg = 0x58004,
++	.halt_reg = 0x58014,
+ 	.clkr = {
+-		.enable_reg = 0x58004,
++		.enable_reg = 0x58014,
+ 		.enable_mask = BIT(0),
+ 		.hw.init = &(struct clk_init_data) {
+ 			.name = "gcc_mdioi0_ahb_clk",
+@@ -1987,9 +1987,9 @@ static struct clk_branch gcc_mdio0_ahb_c
+ };
+ 
+ static struct clk_branch gcc_mdio1_ahb_clk = {
+-	.halt_reg = 0x58014,
++	.halt_reg = 0x58004,
+ 	.clkr = {
+-		.enable_reg = 0x58014,
++		.enable_reg = 0x58004,
+ 		.enable_mask = BIT(0),
+ 		.hw.init = &(struct clk_init_data) {
+ 			.name = "gcc_mdio1_ahb_clk",
