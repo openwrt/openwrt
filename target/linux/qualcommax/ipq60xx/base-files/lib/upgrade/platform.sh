@@ -307,3 +307,15 @@ platform_do_upgrade() {
 		;;
 	esac
 }
+
+platform_copy_config() {
+	case "$(board_name)" in
+	jdcloud,re-cs-02|\
+	jdcloud,re-cs-07|\
+	jdcloud,re-ss-01|\
+	link,nn6000-v1|\
+	link,nn6000-v2)
+		emmc_copy_config
+		;;
+	esac
+}
