@@ -4567,6 +4567,16 @@ define Device/zyxel_nwa50ax-pro
 endef
 TARGET_DEVICES += zyxel_nwa50ax-pro
 
+define Device/zyxel_usg-lite-60ax
+  $(call Device/zyxel_filogic_common)
+  DEVICE_MODEL := USG LITE 60AX
+  DEVICE_DTS := mt7986a-zyxel-usg-lite-60ax
+  DEVICE_PACKAGES := kmod-mt7915e kmod-mt7986-firmware mt7986-wo-firmware kmod-phy-airoha-en8811h zyxel-bootconfig
+  IMAGE_SIZE := 81920k
+  ZYXEL_MODEL_IDS := 88e1
+endef
+TARGET_DEVICES += zyxel_usg-lite-60ax
+
 define Device/zyxel_wax300h
   $(call Device/zyxel_filogic_common)
   DEVICE_MODEL := WAX300H

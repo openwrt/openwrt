@@ -5,7 +5,8 @@ apply_bootconfig() {
 	zyxel,nwa50ax|\
 	zyxel,nwa50ax-pro|\
 	zyxel,nwa55axe|\
-	zyxel,wax300h)
+	zyxel,wax300h|\
+	zyxel,usg-lite-60ax)
 		mtd_idx=$(find_mtd_index "bootconfig")
 		zyxel-bootconfig "/dev/mtd$mtd_idx" set-image-status 0 valid
 		zyxel-bootconfig "/dev/mtd$mtd_idx" set-active-image 0
