@@ -1,0 +1,47 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Petr Wozniak <petr.wozniak@gmail.com>
+Date: Tue, 14 Jul 2026 12:26:14 +0200
+Subject: [PATCH] wifi: mt76: share the throughput LED trigger across bands
+
+ieee80211_create_tpt_led_trigger() creates one trigger per ieee80211_hw
+and returns NULL with a WARN_ON() if called again for the same hw.
+
+Under the single-wiphy MLO model each band registers its own LED classdev
+for the same hw, and the bands can be initialised in any order. Create the
+trigger on the first mt76_led_init() call, stash it on the primary phy's
+classdev and let the other bands reuse it. This avoids the WARN_ON() splat
+and gives every band the same throughput trigger regardless of init order.
+
+Link: https://lore.kernel.org/linux-wireless/20260714102615.2943-2-petr.wozniak@gmail.com/
+Signed-off-by: Petr Wozniak <petr.wozniak@gmail.com>
+---
+ mac80211.c | 18 +++++++++++++-----
+ 1 file changed, 13 insertions(+), 5 deletions(-)
+
+--- a/mac80211.c
++++ b/mac80211.c
+@@ -228,11 +228,19 @@ static int mt76_led_init(struct mt76_phy
+ 		 wiphy_name(hw->wiphy));
+ 
+ 	phy->leds.cdev.name = phy->leds.name;
+-	phy->leds.cdev.default_trigger =
+-		ieee80211_create_tpt_led_trigger(hw,
+-					IEEE80211_TPT_LEDTRIG_FL_RADIO,
+-					mt76_tpt_blink,
+-					ARRAY_SIZE(mt76_tpt_blink));
++	/* The throughput trigger is created once per ieee80211_hw. Under
++	 * single-wiphy MLO every band registers its own LED classdev for the
++	 * same hw and the bands can come up in any order, so create the trigger
++	 * on the first call, stash it on the primary phy and let other bands
++	 * reuse it; calling it again would trip a WARN_ON().
++	 */
++	if (!dev->phy.leds.cdev.default_trigger)
++		dev->phy.leds.cdev.default_trigger =
++			ieee80211_create_tpt_led_trigger(hw,
++				IEEE80211_TPT_LEDTRIG_FL_RADIO,
++				mt76_tpt_blink,
++				ARRAY_SIZE(mt76_tpt_blink));
++	phy->leds.cdev.default_trigger = dev->phy.leds.cdev.default_trigger;
+ 
+ 	dev_info(dev->dev,
+ 		"registering led '%s'\n", phy->leds.name);

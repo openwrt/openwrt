@@ -1,0 +1,52 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Christoph Krapp <achterin@gmail.com>
+Date: Tue, 10 Nov 2026 09:25:26 +0100
+Subject: [PATCH] wifi: mt76: mt7996: turn off the LED of a stopped band
+
+All bands of a mt7996 device share a single ieee80211_hw, so there is
+only one mac80211 throughput LED trigger for all per-band LED classdevs.
+The trigger's IEEE80211_TPT_LEDTRIG_FL_RADIO state is tracked per hw:
+it is set when the first interface is opened and only cleared once the
+whole hw is stopped. While any band is up, the trigger timer calls
+led_trigger_blink() on every attached LED once per second, which switches
+the hardware TX-blink mode back on for all bands.
+
+As a result, disabling one radio leaves its LED lit as long as another
+band is still running.
+
+Keep the LED of a band that is not running off in the blink_set callback.
+The trigger timer re-applies the blink settings every second, so the LED
+of a stopped band goes dark on the next tick and stays off, without any
+LED handling in the band start/stop paths.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Signed-off-by: Christoph Krapp <achterin@gmail.com>
+---
+ mt7996/init.c | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
+
+--- a/mt7996/init.c
++++ b/mt7996/init.c
+@@ -331,11 +331,22 @@ static int mt7996_led_set_blink(struct l
+ 				unsigned long *delay_on,
+ 				unsigned long *delay_off)
+ {
++	struct mt76_phy *mphy = container_of(led_cdev, struct mt76_phy,
++					     leds.cdev);
+ 	u16 delta_on = 0, delta_off = 0;
+ 
+ #define HW_TICK		10
+ #define TO_HW_TICK(_t)	(((_t) > HW_TICK) ? ((_t) / HW_TICK) : HW_TICK)
+ 
++	/* The mac80211 throughput trigger is shared by all bands of the hw
++	 * and keeps blinking as long as any band is up. Keep the LED of a
++	 * band that is not running off instead of following the trigger.
++	 */
++	if (!test_bit(MT76_STATE_RUNNING, &mphy->state)) {
++		mt7996_led_set_config(led_cdev, 0, 0xff);
++		return 0;
++	}
++
+ 	if (*delay_on)
+ 		delta_on = TO_HW_TICK(*delay_on);
+ 	if (*delay_off)
