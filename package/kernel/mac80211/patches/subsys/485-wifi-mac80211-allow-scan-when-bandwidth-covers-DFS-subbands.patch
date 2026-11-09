@@ -1,0 +1,61 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Ziteng Xiao <xiaox@gaymail.cn>
+Date: Mon, 9 Nov 2026 13:20:00 +0800
+Subject: [PATCH] mac80211: allow scan when AP bandwidth covers DFS subbands
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+ieee80211_can_leave_ch() rejects every scan request when radar is
+required but the driver does not implement pre-CAC. mt76 (MT7981/7986/
+7988 platforms) has no pre-CAC support, so with the 5 GHz AP on a
+channel whose bandwidth covers DFS subbands (e.g. HE160 @ ch36,
+5170-5330 MHz covering the 5250-5350 MHz DFS range), "iw scan" fails
+permanently with -EBUSY before the driver is ever called.
+
+Additionally, hostapd fails to clear the per-link cac_started flag
+after CAC completes on mt76 ("Can't set DFS state for freq ..."
+warnings), leaving a stale flag that also blocks scanning forever,
+even across reboots.
+
+Relax ieee80211_can_leave_ch(): drop the regulatory_pre_cac_allowed()
+early-return and treat a stale cac_started flag as non-blocking (log
+only). CAC itself is unaffected and still runs at AP start.
+
+Reproduced on the official 25.12.6 binary (Netcore N60 Pro, MT7986A).
+
+Fixes: https://github.com/openwrt/openwrt/issues/26572
+Signed-off-by: Ziteng Xiao <xiaox@gaymail.cn>
+---
+ net/mac80211/scan.c |   17 +++++++++++++----
+ 1 file changed, 13 insertions(+), 4 deletions(-)
+
+--- a/net/mac80211/scan.c
++++ b/net/mac80211/scan.c
+@@ -607,13 +607,22 @@
+ 	if (!ieee80211_is_radar_required(local, req))
+ 		return true;
+ 
+-	if (!regulatory_pre_cac_allowed(local->hw.wiphy))
+-		return false;
+-
++	/*
++	 * Relax (part 1): allow offchannel scan when the current channel
++	 * width covers DFS subbands. Beacons pause during the offchannel
++	 * scan and radar detection resumes once back on the operating
++	 * channel.
++	 *
++	 * Relax (part 2): a stale cac_started flag (hostapd fails to clear
++	 * it for frequencies inside the 160MHz band) must not block scans
++	 * forever. Log it and allow the scan.
++	 */
+ 	list_for_each_entry(sdata_iter, &local->interfaces, list) {
+ 		for_each_valid_link(&sdata_iter->wdev, link_id)
+ 			if (sdata_iter->wdev.links[link_id].cac_started)
+-				return false;
++				wiphy_info(local->hw.wiphy,
++					   "scan-dbg: residual cac_started on link %u, allowing scan\n",
++					   link_id);
+ 	}
+ 
+ 	return true;
