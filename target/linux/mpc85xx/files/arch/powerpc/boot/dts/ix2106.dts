@@ -447,6 +447,7 @@
 					fixed-link {
 						speed = <1000>;
 						full-duplex;
+						pause;
 					};
 				};
 			};
@@ -482,6 +483,9 @@
 };
 
 &enet0 {
+	bd-stash;
+	rx-stash-len = <512>;
+	rx-stash-idx = <0>;
 	reg = <0xb0000 0x1000>;
 	phy-mode = "rgmii-id";
 	nvmem-cells = <&mac_ge1>;
@@ -490,6 +494,7 @@
 	fixed-link {
 		speed = <1000>;
 		full-duplex;
+		pause;
 	};
 };
 
