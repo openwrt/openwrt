@@ -1,0 +1,33 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Kosuke Shibuya <kakiringopcneko@gmail.com>
+Date: Mon, 9 Nov 2026 17:00:00 +0900
+Subject: [PATCH] net: gianfar: honor fixed-link pause settings
+
+Initialize gianfar pause state from the registered fixed PHY so the MAC
+configuration follows the fixed-link pause property before the interface
+is brought up.
+
+Signed-off-by: Kosuke Shibuya <kakiringopcneko@gmail.com>
+---
+--- a/drivers/net/ethernet/freescale/gianfar.c
++++ b/drivers/net/ethernet/freescale/gianfar.c
+@@ -798,11 +798,19 @@ static int gfar_of_init(struct platform_
+ 	 * to the PHY is the Ethernet MAC DT node.
+ 	 */
+ 	if (!priv->phy_node && of_phy_is_fixed_link(np)) {
++		struct phy_device *fixed_phy;
++
+ 		err = of_phy_register_fixed_link(np);
+ 		if (err)
+ 			goto err_grp_init;
+ 
+ 		priv->phy_node = of_node_get(np);
++		fixed_phy = of_phy_find_device(np);
++		if (fixed_phy) {
++			priv->rx_pause_en = fixed_phy->pause;
++			priv->tx_pause_en = fixed_phy->pause;
++			put_device(&fixed_phy->mdio.dev);
++		}
+ 	}
+ 
+ 	/* Find the TBI PHY.  If it's not there, we don't support SGMII */
