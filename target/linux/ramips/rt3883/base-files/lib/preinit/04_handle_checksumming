@@ -1,7 +1,12 @@
-# Netgear WNCE2001 has does a checksum check on boot and goes into recovery
-# tftp mode when the check fails.  Initializing the JFFS2 partition triggers
-# this, so we make sure to zero checksum and size to be checksummed before
-# that happens, so this needs to run very early during boot.
+# The ASUS RT-N56U bootloader verifies the uImage header checksum on boot.
+# In factory images created by "mkrtn56uimg -f", this checksum covers the
+# whole image including the rootfs, which no longer matches once the JFFS2
+# partition is initialized. Those images therefore carry a second header
+# with a kernel-only checksum right in front of rootfs_data, which is
+# copied over the first header here very early during boot.
+# Factory images are no longer built since commit 1b5ae141629d ("ramips:
+# drop rt-n56u factory image"), sysupgrade images ("mkrtn56uimg -s") only
+# have a kernel-only header, so nothing is done for them.
 
 do_checksumming_disable() {
 	. /lib/functions.sh
