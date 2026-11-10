@@ -5,6 +5,15 @@ STOP=10
 
 boot() {
 	case $(board_name) in
+		meraki,z3c)
+			echo "0" > /sys/class/gpio/lte_estop/value
+			sleep 1
+			echo "1" > /sys/class/gpio/lte_en/value
+			sleep 1
+			echo "1" > /sys/class/gpio/lte_rst/value
+			sleep 1
+			echo "0" > /sys/class/gpio/lte_rst/value
+		;;
 		netgear,lbr20)
 			echo "0" > /sys/class/gpio/lte_rst/value
 			echo "0" > /sys/class/gpio/lte_pwrkey/value
@@ -19,29 +28,20 @@ boot() {
 			sleep 1
 			echo "1" > /sys/class/gpio/lte_pwrkey/value
 		;;
-		meraki,z3c)
-			echo "0" > /sys/class/gpio/lte_estop/value
-			sleep 1
-			echo "1" > /sys/class/gpio/lte_en/value
-			sleep 1
-			echo "1" > /sys/class/gpio/lte_rst/value
-			sleep 1
-			echo "0" > /sys/class/gpio/lte_rst/value
-		;;
 	esac
 }
 
 shutdown() {
 	case $(board_name) in
+		meraki,z3c)
+			echo "1" > /sys/class/gpio/lte_estop/value
+			echo "0" > /sys/class/gpio/lte_en/value
+		;;
 		netgear,lbr20)
 			echo "0" > /sys/class/gpio/lte_pwrkey/value
 			sleep 1
 			echo "1" > /sys/class/gpio/lte_pwrkey/value
 			sleep 10
-		;;
-		meraki,z3c)
-			echo "1" > /sys/class/gpio/lte_estop/value
-			echo "0" > /sys/class/gpio/lte_en/value
 		;;
 	esac
 }
