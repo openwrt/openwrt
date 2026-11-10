@@ -88,7 +88,7 @@
 			"type": "string"
 		},
 		"cell_density": {
-			"description": "Configures data rates based on the coverage cell density. Normal configures basic rates to 6, 12, 24 Mbps if legacy_rates is 0, else to 5.5, 11 Mbps. High configures basic rates to 12, 24 Mbps if legacy_rates is 0, else to the 11 Mbps rate. Very High configures 24 Mbps as the basic rate. Supported rates lower than the minimum basic rate are not offered. The basic_rate and supported_rates options overrides this option. 0 = Disabled, 1 = Normal, 2 = High, 3 = Very High",
+			"description": "Configures data rates based on the coverage cell density. Normal configures basic rates to 6, 12, 24 Mbps if legacy_rates is 0, else to 5.5, 11 Mbps. High configures basic rates to 12, 24 Mbps if legacy_rates is 0, else to the 11 Mbps rate. Very High configures 24 Mbps as the basic rate if legacy_rates is 0, else the 11 Mbps rate. Supported rates lower than the minimum basic rate are not offered. The basic_rate and supported_rates options overrides this option. 0 = Disabled, 1 = Normal, 2 = High, 3 = Very High",
 			"type": "number",
 			"default": 0,
 			"minimum": 0,

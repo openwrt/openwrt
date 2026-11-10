@@ -106,7 +106,7 @@ function device_cell_density_append(config) {
 				config.supported_rates ??= [ 5500, 6000, 9000, 11000, 12000, 18000, 24000, 36000, 48000, 54000 ];
 				config.basic_rates ??= [ 5500, 11000 ];
 			}
-		} else if (config.cell_density == 2 || (config.cell_density > 3 && config.legacy_rates)) {
+		} else if (config.cell_density == 2 || (config.cell_density > 2 && config.legacy_rates)) {
 			if (!config.legacy_rates) {
 				config.supported_rates ??= [ 12000, 18000, 24000, 36000, 48000, 54000 ];
 				config.basic_rates ??= [ 12000, 24000 ];
