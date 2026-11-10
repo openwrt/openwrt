@@ -9,26 +9,26 @@ YES=
 
 board=$(board_name)
 case $board in
-	mqmaker,witi)
-		partname=factory
-		offset=$((0xe000))
+mqmaker,witi)
+	partname=factory
+	offset=$((0xe000))
 	;;
-	*)
-		echo "Unsupported board"
-		exit 1
+*)
+	echo "Unsupported board"
+	exit 1
 	;;
 esac
 
 while [ -n "$1" ]; do
 	case "$1" in
-		??:??:??:??:??:??) NEW_MAC="$1";;
-		-y) YES=1;;
-		*)
-			cat <<EOF
+	??:??:??:??:??:??) NEW_MAC="$1";;
+	-y) YES=1;;
+	*)
+		cat <<EOF
 Unknown option/argument '$1'
 Usage: $0 [-y] [<macaddr>]
 EOF
-			exit 1
+		exit 1
 		;;
 	esac
 	shift
@@ -57,11 +57,11 @@ gen_mac() {
 
 mac="$(mtd_get_mac_binary $partname $offset)"
 case "$mac" in
-	00:00:00:00:00:00);;
-	ff:ff:ff:ff:ff:ff);;
-	*)
-		echo "Current MAC address: $mac"
-		ask_bool "Overwrite (y/N)?" 0 || exit
+00:00:00:00:00:00);;
+ff:ff:ff:ff:ff:ff);;
+*)
+	echo "Current MAC address: $mac"
+	ask_bool "Overwrite (y/N)?" 0 || exit
 	;;
 esac
 
