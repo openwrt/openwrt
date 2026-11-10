@@ -17,7 +17,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
 
 --- a/kernel/cgroup/cgroup.c
 +++ b/kernel/cgroup/cgroup.c
-@@ -6083,6 +6083,9 @@ int __init cgroup_init_early(void)
+@@ -6091,6 +6091,9 @@ int __init cgroup_init_early(void)
  	return 0;
  }
  
@@ -27,7 +27,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
  /**
   * cgroup_init - cgroup initialization
   *
-@@ -6116,6 +6119,12 @@ int __init cgroup_init(void)
+@@ -6124,6 +6127,12 @@ int __init cgroup_init(void)
  
  	cgroup_unlock();
  
@@ -40,7 +40,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
  	for_each_subsys(ss, ssid) {
  		if (ss->early_init) {
  			struct cgroup_subsys_state *css =
-@@ -6786,6 +6795,10 @@ static int __init cgroup_disable(char *s
+@@ -6792,6 +6801,10 @@ static int __init cgroup_disable(char *s
  			    strcmp(token, ss->legacy_name))
  				continue;
  
@@ -51,7 +51,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
  			static_branch_disable(cgroup_subsys_enabled_key[i]);
  			pr_info("Disabling %s control group subsystem\n",
  				ss->name);
-@@ -6804,6 +6817,31 @@ static int __init cgroup_disable(char *s
+@@ -6810,6 +6823,31 @@ static int __init cgroup_disable(char *s
  }
  __setup("cgroup_disable=", cgroup_disable);
  
