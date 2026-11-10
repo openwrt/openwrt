@@ -18,7 +18,7 @@ Signed-off-by: Herbert Xu <herbert@gondor.apana.org.au>
 
 --- a/crypto/testmgr.c
 +++ b/crypto/testmgr.c
-@@ -4177,6 +4177,13 @@ static const struct alg_test_desc alg_te
+@@ -4178,6 +4178,13 @@ static const struct alg_test_desc alg_te
  			.cprng = __VECS(ansi_cprng_aes_tv_template)
  		}
  	}, {
@@ -34,7 +34,7 @@ Signed-off-by: Herbert Xu <herbert@gondor.apana.org.au>
  		.test = alg_test_aead,
 --- a/crypto/testmgr.h
 +++ b/crypto/testmgr.h
-@@ -17834,6 +17834,65 @@ static const struct aead_testvec hmac_sh
+@@ -18159,6 +18159,65 @@ static const struct aead_testvec hmac_sh
  	},
  };
  

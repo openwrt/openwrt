@@ -10,7 +10,7 @@ Signed-off-by: Antoine Tenart <antoine.tenart@bootlin.com>
 
 --- a/drivers/net/phy/sfp.c
 +++ b/drivers/net/phy/sfp.c
-@@ -1031,6 +1031,29 @@ static int sfp_i2c_mdiobus_create(struct
+@@ -1028,6 +1028,29 @@ static int sfp_i2c_mdiobus_create(struct
  	return 0;
  }
  
@@ -40,7 +40,7 @@ Signed-off-by: Antoine Tenart <antoine.tenart@bootlin.com>
  static void sfp_i2c_mdiobus_destroy(struct sfp *sfp)
  {
  	mdiobus_unregister(sfp->i2c_mii);
-@@ -2250,9 +2273,15 @@ static void sfp_sm_fault(struct sfp *sfp
+@@ -2247,9 +2270,15 @@ static void sfp_sm_fault(struct sfp *sfp
  
  static int sfp_sm_add_mdio_bus(struct sfp *sfp)
  {
