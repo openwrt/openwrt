@@ -33,7 +33,8 @@ case "$board" in
 		[ "$PHYNBR" = "0" ] && macaddr_add $hw_mac_addr 2 > /sys${DEVPATH}/macaddress
 		[ "$PHYNBR" = "1" ] && macaddr_add $hw_mac_addr 3 > /sys${DEVPATH}/macaddress
 		;;
-	airpi,ap3000m)
+	airpi,ap3000m|\
+	hiveton,h5000m)
 		base_mac=$(macaddr_generate_from_mmc_cid mmcblk0)
 		[ "$PHYNBR" = "0" ] && macaddr_add $base_mac 2 > /sys${DEVPATH}/macaddress
 		[ "$PHYNBR" = "1" ] && macaddr_add $base_mac 3 > /sys${DEVPATH}/macaddress
@@ -142,11 +143,6 @@ case "$board" in
 		addr=$(mtd_get_mac_ascii pdt_data_1 ethaddr)
 		[ "$PHYNBR" = "0" ] && macaddr_add $addr 2 > /sys${DEVPATH}/macaddress
 		[ "$PHYNBR" = "1" ] && macaddr_add $addr 3 > /sys${DEVPATH}/macaddress
-		;;
-	hiveton,h5000m)
-		base_mac=$(macaddr_generate_from_mmc_cid mmcblk0)
-		[ "$PHYNBR" = "0" ] && macaddr_add $base_mac 2 > /sys${DEVPATH}/macaddress
-		[ "$PHYNBR" = "1" ] && macaddr_add $base_mac 3 > /sys${DEVPATH}/macaddress
 		;;
 	iptime,ax3000q)
 		addr=$(mtd_get_mac_binary "Factory" 0x4)
