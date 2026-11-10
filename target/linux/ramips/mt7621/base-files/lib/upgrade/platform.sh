@@ -45,6 +45,13 @@ platform_do_upgrade() {
 			fw_setenv --lock / bootImage 0 || exit 1
 		fi
 		;;
+	asus,rt-ac65p|\
+	asus,rt-ac85p)
+		echo "Backing up firmware"
+		dd if=/dev/mtd4 bs=1024 count=4096  > /tmp/backup_firmware.bin
+		dd if=/dev/mtd5 bs=1024 count=52224 >> /tmp/backup_firmware.bin
+		mtd -e firmware2 write /tmp/backup_firmware.bin firmware2
+		;;
 	iptime,ax2002m|\
 	iptime,ax2004m)
 		if [ "$(fw_printenv -n boot_from 2>/dev/null)" != "firmware1" ]; then
@@ -58,25 +65,18 @@ platform_do_upgrade() {
 	mikrotik,routerboard-m33g)
 		[ "$(rootfs_type)" = "tmpfs" ] && mtd erase firmware
 		;;
-	asus,rt-ac65p|\
-	asus,rt-ac85p)
-		echo "Backing up firmware"
-		dd if=/dev/mtd4 bs=1024 count=4096  > /tmp/backup_firmware.bin
-		dd if=/dev/mtd5 bs=1024 count=52224 >> /tmp/backup_firmware.bin
-		mtd -e firmware2 write /tmp/backup_firmware.bin firmware2
-		;;
 	esac
 
 	case "$board" in
 	ampedwireless,ally-00x19k|\
 	ampedwireless,ally-r1900k|\
 	arcadyan,we420223-99|\
+	asus,4g-ax56|\
 	asus,rt-ac65p|\
 	asus,rt-ac85p|\
 	asus,rt-ac85u|\
 	asus,rt-ax53u|\
 	asus,rt-ax54|\
-	asus,4g-ax56|\
 	beeline,smartbox-flash|\
 	beeline,smartbox-giga|\
 	beeline,smartbox-pro|\
@@ -101,13 +101,13 @@ platform_do_upgrade() {
 	elecom,wmc-x1800gst|\
 	elecom,wsc-x1800gs|\
 	etisalat,s3|\
+	gemtek,wvrtm-127acn|\
+	gemtek,wvrtm-130acn|\
 	h3c,tx1800-plus|\
 	h3c,tx1801-plus|\
 	h3c,tx1806|\
 	haier,har-20s2u1|\
 	hiwifi,hc5962|\
-	gemtek,wvrtm-127acn|\
-	gemtek,wvrtm-130acn|\
 	iptime,a3004t|\
 	iptime,ax2002m|\
 	iptime,ax2004m|\
@@ -150,8 +150,8 @@ platform_do_upgrade() {
 	tplink,ec330-g5u-v1|\
 	tplink,ex220-v1-nand|\
 	wifire,s1500-nbn|\
-	xiaomi,mi-router-3g|\
 	xiaomi,mi-router-3-pro|\
+	xiaomi,mi-router-3g|\
 	xiaomi,mi-router-4|\
 	xiaomi,mi-router-ac2100|\
 	xiaomi,mi-router-cr6606|\
@@ -199,6 +199,12 @@ platform_do_upgrade() {
 	plasmacloud,pax1800-lite)
 		platform_do_upgrade_dualboot_datachk "$1"
 		;;
+	teltonika,rutm11|\
+	teltonika,rutm30|\
+	teltonika,rutm50)
+		CI_UBIPART="$(cmdline_get_var ubi.mtd)"
+		nand_do_upgrade "$1"
+		;;
 	tplink,er605-v2)
 		echo "Upgrading tplink,er605-v2"
 		CI_UBIPART="firmware"
@@ -230,12 +236,6 @@ platform_do_upgrade() {
 		;;
 	zyxel,wsm20)
 		zyxel_mstc_upgrade_prepare
-		nand_do_upgrade "$1"
-		;;
-	teltonika,rutm11|\
-	teltonika,rutm30|\
-	teltonika,rutm50)
-		CI_UBIPART="$(cmdline_get_var ubi.mtd)"
 		nand_do_upgrade "$1"
 		;;
 	*)
