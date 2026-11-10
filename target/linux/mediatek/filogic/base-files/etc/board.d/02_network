@@ -19,8 +19,9 @@ mediatek_setup_interfaces()
 	mercusys,mr80x-v3|\
 	routerich,ax3000-v1|\
 	zbtlink,zbt-z8103ax|\
-	zbtlink,zbt-z8103ax-c)
-		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" eth1
+	zbtlink,zbt-z8103ax-c|\
+	zbtlink,zbt-z8105ax-c)
+		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" "eth1"
 		;;
 	zbtlink,zbt-z8803be)
 		ucidef_set_interfaces_lan_wan "lan0 lan1 lan2" eth1
@@ -35,15 +36,32 @@ mediatek_setup_interfaces()
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 game" eth1
 		;;
 	acer,predator-w6x-stock|\
-	acer,predator-w6x-ubootmod)
-		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" eth1
+	acer,predator-w6x-ubootmod|\
+	asus,tuf-ax4200|\
+	iptime,ax3000sm|\
+	iptime,ax7800m-6e|\
+	jdcloud,re-cp-03|\
+	mediatek,mt7981-rfb|\
+	netcore,n60|\
+	netcore,n60-pro|\
+	nradio,c8-668gl|\
+	ruijie,rg-x60-pro|\
+	tplink,tl-7dr7230*|\
+	unielec,u7981-01*|\
+	wavlink,wl-wn536ax6-a|\
+	zbtlink,zbt-z8102ax|\
+	zbtlink,zbt-z8102ax-v2|\
+	zbtlink,zbt-z8106ax-s)
+		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "eth1"
 		;;
 	acer,vero-w6m)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" internet
 		;;
 	airtel,aap4221zy|\
 	comfast,cf-wa933|\
-	comfast,cf-wa933-ubi)
+	comfast,cf-wa933-ubi|\
+	smartrg,sdg-8712|\
+	smartrg,sdg-8732)
 		ucidef_set_interfaces_lan_wan "lan1 lan2" wan
 		;;
 	arcadyan,mozart)
@@ -82,26 +100,6 @@ mediatek_setup_interfaces()
 	tenbay,wr3000k|\
 	teralink,tl3020-256mb)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" wan
-		;;
-	asus,tuf-ax4200|\
-	iptime,ax3000sm|\
-	iptime,ax7800m-6e|\
-	jdcloud,re-cp-03|\
-	mediatek,mt7981-rfb|\
-	netcore,n60|\
-	netcore,n60-pro|\
-	nradio,c8-668gl|\
-	ruijie,rg-x60-pro|\
-	tplink,tl-7dr7230*|\
-	unielec,u7981-01*|\
-	wavlink,wl-wn536ax6-a|\
-	zbtlink,zbt-z8102ax|\
-	zbtlink,zbt-z8102ax-v2|\
-	zbtlink,zbt-z8106ax-s)
-		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "eth1"
-		;;
-	zbtlink,zbt-z8105ax-c)
-		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" "eth1"
 		;;
 	zbtlink,zbt-z8106ax-t)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "eth1 wwan"
@@ -233,10 +231,6 @@ mediatek_setup_interfaces()
 	mercusys,mr90x-v1|\
 	mercusys,mr90x-v1-ubi)
 		ucidef_set_interfaces_lan_wan "lan0 lan1 lan2" eth1
-		;;
-	smartrg,sdg-8712|\
-	smartrg,sdg-8732)
-		ucidef_set_interfaces_lan_wan "lan1 lan2" wan
 		;;
 	smartrg,sdg-9000)
 		ucidef_set_interfaces_lan_wan "aux lan1 lan2 lan3 lan4 lan5 lan6 lan7 lan8 lan9" wan
