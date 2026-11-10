@@ -55,7 +55,7 @@ case "$(board_name)" in
 *)
 	migrate_radio 'platform/18000000.wifi' 'platform/soc/18000000.wifi'
 	migrate_radio 'platform/18000000.wifi+1' 'platform/soc/18000000.wifi+1'
-    ;;
+	;;
 esac
 
 $WIRELESS_CHANGED && uci commit wireless
