@@ -1,0 +1,37 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Naresh Solanki <naresh.solanki.2011@gmail.com>
+Date: Tue, 10 Nov 2026 21:59:32 +0530
+Subject: [PATCH] mtd: spi-nor: spansion: add SPI_NOR_HAS_LOCK for s25fl064k
+ (W25Q64)
+
+The Winbond W25Q64 (JEDEC 0xef 0x40 0x17) on the Tenda AC10 V5 matches
+the spansion s25fl064k entry in the spi-nor ID table. These chips ship
+with BP=7 (whole-chip protected) and SRWD=1 set in the status register.
+
+spi_nor_try_unlock_all() (swp.c) only clears the block protect bits for
+flashes with SPI_NOR_HAS_LOCK. The s25fl064k entry has no .flags, so BP
+stays 7 and every erase and program operation silently does nothing
+while reads keep working: sysupgrade and any other mtd write appear to
+succeed, but the flash contents are unchanged.
+
+Add SPI_NOR_HAS_LOCK | SPI_NOR_HAS_TB to the s25fl064k entry. The W25Q64
+protection bits are non-volatile, so the unlock also needs
+CONFIG_MTD_SPI_NOR_SWP_DISABLE; the default
+CONFIG_MTD_SPI_NOR_SWP_DISABLE_ON_VOLATILE only unlocks flashes with
+volatile protection bits.
+
+Signed-off-by: Naresh Solanki <naresh.solanki.2011@gmail.com>
+---
+ drivers/mtd/spi-nor/spansion.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/drivers/mtd/spi-nor/spansion.c
++++ b/drivers/mtd/spi-nor/spansion.c
+@@ -1048,6 +1048,7 @@ static const struct flash_info spansion_
+ 		.id = SNOR_ID(0xef, 0x40, 0x17),
+ 		.name = "s25fl064k",
+ 		.size = SZ_8M,
++		.flags = SPI_NOR_HAS_LOCK | SPI_NOR_HAS_TB,
+ 		.no_sfdp_flags = SECT_4K | SPI_NOR_DUAL_READ | SPI_NOR_QUAD_READ,
+ 	}
+ };
