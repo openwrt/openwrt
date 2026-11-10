@@ -27,6 +27,7 @@ platform_check_image() {
 		;;
 	*)
 		return 0
+		;;
 	esac
 }
 
