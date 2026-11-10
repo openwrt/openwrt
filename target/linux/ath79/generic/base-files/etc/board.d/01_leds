@@ -6,6 +6,10 @@ board_config_update
 board=$(board_name)
 
 case "$board" in
+tplink,archer-c58hp-v1)
+	ucidef_set_led_switch "lan" "LAN" "white:lan" "switch0" "0x1e"
+	ucidef_set_led_netdev "wan" "WAN" "white:wan" "eth1"
+	;;
 8dev,carambola2)
 	ucidef_set_led_netdev "lan" "LAN" "orange:eth0" "eth0"
 	ucidef_set_led_switch "wan" "WAN" "orange:eth1" "switch0" "0x04"

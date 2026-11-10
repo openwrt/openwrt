@@ -12,6 +12,24 @@ platform_check_image() {
 	local board=$(board_name)
 
 	case "$board" in
+	tplink,archer-c58hp-v1)
+		local loader_mtd=$(find_mtd_index "loader")
+		local firmware_mtd=$(find_mtd_index "firmware")
+
+		[ -n "$loader_mtd" ] && [ -n "$firmware_mtd" ] || {
+			v "C58HP stage2 loader and firmware layout are required"
+			return 1
+		}
+		[ "$(cat /sys/class/mtd/mtd${loader_mtd}/offset)" -eq $((0x6d0000)) ] &&
+		[ "$(cat /sys/class/mtd/mtd${loader_mtd}/size)" -eq $((0x10000)) ] &&
+		[ "$(cat /sys/class/mtd/mtd${firmware_mtd}/size)" -eq $((0x7c0000)) ] &&
+		[ $(($(cat /sys/class/mtd/mtd${loader_mtd}/flags) & 0x400)) -eq 0 ] &&
+		[ $(($(cat /sys/class/mtd/mtd${firmware_mtd}/flags) & 0x400)) -ne 0 ] || return 1
+		[ "$(get_magic_long /dev/mtd${loader_mtd}ro)" = "27051956" ] || return 1
+		[ "$(dd if=/dev/mtd${loader_mtd}ro bs=1 skip=32 count=15 2>/dev/null)" = \
+			"C58HP stage2 v1" ] || return 1
+		[ "$(get_magic_long "$1")" = "4f4b4c49" ] || return 1
+		;;
 	jjplus,ja76pf2|\
 	ubnt,routerstation|\
 	ubnt,routerstation-pro)

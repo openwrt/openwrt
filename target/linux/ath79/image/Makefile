@@ -49,6 +49,24 @@ define Build/append-loader-okli-uimage
 	cat "$(KDIR)/loader-$(word 1,$(1)).uImage" >> "$@"
 endef
 
+define Build/c58hp-append-ram-dtb
+	cat $(KDIR)/image-qca9561_tplink_archer-c58hp-v1-ram.dtb >> $@
+endef
+
+define Build/c58hp-initial
+	rm -rf "$@.loader-build"
+	$(MAKE) -C lzma-loader \
+		PKG_BUILD_DIR="$@.loader-build" \
+		TARGET_DIR="$(dir $@)" LOADER_NAME="$(notdir $@).loader" \
+		LZMA_TEXT_START=0x81800000 LOADADDR=0x80060000 \
+		BOARD=ARCHER_C58HP_V1 compile loader.bin
+	$(TARGET_CROSS)nm -n "$@.loader-build/loader" > "$@.loader-symbols"
+	$(STAGING_DIR_HOST)/bin/python3 $(TOPDIR)/scripts/c58hp-image.py \
+		--firmware "$@" --loader "$@.loader.bin" \
+		--symbols "$@.loader-symbols" --output "$@"
+	rm -rf "$@.loader-build" "$@.loader.bin" "$@.loader-symbols"
+endef
+
 define Build/relocate-kernel
 	rm -rf $@.relocate
 	$(CP) ../../generic/image/relocate $@.relocate
