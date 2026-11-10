@@ -106,6 +106,9 @@ mediatek_setup_interfaces()
 	zbtlink,zbt-z8106ax-t)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "eth1 wwan"
 		;;
+	zbtlink,zbt-z8114ax-ds)
+		ucidef_set_interfaces_lan_wan "lan1" "eth1 wwan"
+		;;
 	asiarf,ap7986-003|\
 	asus,tuf-ax4200q|\
 	asus,tuf-ax6000|\
