@@ -83,7 +83,7 @@ linksys_bootconfig_set_primaryboot() {
 		echo "failed to toggle primaryboot on 0:HLOS part"
 		return 1
 	}
-	
+
 	set_bootconfig_primaryboot "$tempfile" "rootfs" $2
 	[ $? -ne 0 ] && {
 		echo "failed to toggle primaryboot for rootfs part"
