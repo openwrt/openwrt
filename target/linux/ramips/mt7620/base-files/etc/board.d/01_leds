@@ -146,7 +146,8 @@ hnet,c108)
 	ucidef_set_led_netdev "lan" "lan" "green:lan" "eth0"
 	ucidef_set_led_netdev "modem" "modem" "green:modem" "wwan0"
 	;;
-humax,e2)
+humax,e2|\
+tplink,re200-v1)
 	ucidef_set_led_netdev "lan" "lan" "green:lan" "eth0"
 	;;
 iodata,wn-ac1167gr|\
@@ -245,9 +246,6 @@ tplink,archer-mr200)
 tplink,ec220-g5-v2)
 	ucidef_set_led_switch "lan" "lan" "green:lan" "switch1" "0x17"
 	ucidef_set_led_switch "wan" "wan" "orange:wan" "switch1" "0x08"
-	;;
-tplink,re200-v1)
-	ucidef_set_led_netdev "lan" "lan" "green:lan" "eth0"
 	;;
 trendnet,tha103ac)
 	ucidef_set_rssimon "wlan0" "200000" "1"
