@@ -8,10 +8,10 @@ START=11
 # This is useful for userspace LED drivers, LEDs that rely on i2c, etc.
 
 boot() {
-    case $(board_name) in
-    netgear,pgzng1)
-        . /etc/diag.sh
-        set_led_state preinit_regular
-        ;;
-    esac
+	case $(board_name) in
+	netgear,pgzng1)
+		. /etc/diag.sh
+		set_led_state preinit_regular
+		;;
+	esac
 }
