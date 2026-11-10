@@ -1,0 +1,19 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "qca9561_tplink_archer-c58hp-v1.dtsi"
+
+/* Initial installation and stock restoration only. No automatic writes. */
+&spi {
+	flash@0 {
+		partitions {
+			/delete-node/ partition@10000;
+			/delete-node/ partition@6d0000;
+
+			partition@10000 {
+				/* Includes the future loader block, excludes all factory data. */
+				label = "install";
+				reg = <0x010000 0x7d0000>;
+			};
+		};
+	};
+};

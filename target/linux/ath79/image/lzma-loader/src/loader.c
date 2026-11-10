@@ -27,6 +27,13 @@
 #include "printf.h"
 #include "LzmaDecode.h"
 
+#ifdef CONFIG_BOARD_ARCHER_C58HP_V1
+#include "c58hp_validate.h"
+#ifndef CONFIG_KERNEL_CMDLINE
+#define CONFIG_KERNEL_CMDLINE "console=ttyS0,115200n8 rootfstype=squashfs,jffs2"
+#endif
+#endif
+
 #define AR71XX_FLASH_START	0x1f000000
 #define AR71XX_FLASH_END	0x1fe00000
 
@@ -143,6 +150,11 @@ static int lzma_decompress(unsigned char *outStream)
 	ret = LzmaDecode(&lzma_state, lzma_data, lzma_datasize, &ip, outStream,
 			 lzma_outsize, &op);
 
+#ifdef CONFIG_BOARD_ARCHER_C58HP_V1
+	if (ret == LZMA_RESULT_OK && op != lzma_outsize)
+		ret = LZMA_RESULT_DATA_ERROR;
+#endif
+
 	if (ret != LZMA_RESULT_OK) {
 		int i;
 
@@ -158,7 +170,39 @@ static int lzma_decompress(unsigned char *outStream)
 	return ret;
 }
 
+#if defined(CONFIG_BOARD_ARCHER_C58HP_V1)
+static void lzma_init_data(void)
+{
+	const unsigned char *image;
+	const char *error;
+	size_t available;
+
 #if (LZMA_WRAPPER)
+	extern unsigned char _lzma_data_start[];
+	extern unsigned char _lzma_data_end[];
+
+	image = _lzma_data_start;
+	available = _lzma_data_end - _lzma_data_start;
+#else
+	/* The kernel must be wholly below the reserved loader erase block. */
+	image = (const unsigned char *) KSEG1ADDR(AR71XX_FLASH_START + 0x10000);
+	available = C58HP_IMAGE_CAPACITY;
+#endif
+	error = c58hp_validate(image, available);
+	if (error) {
+		printf("C58HP image rejected: %s\n", error);
+		halt();
+	}
+	if ((unsigned long) workspace > 0x82000000U - C58HP_WORKSPACE_SIZE) {
+		printf("C58HP loader workspace outside reserved RAM\n");
+		halt();
+	}
+	printf("C58HP kernel header, CRCs and bounds verified\n");
+	kernel_la = C58HP_KERNEL_LOAD;
+	lzma_data = (unsigned char *) image + sizeof(struct image_header);
+	lzma_datasize = c58hp_be32(image + 12);
+}
+#elif (LZMA_WRAPPER)
 static void lzma_init_data(void)
 {
 	extern unsigned char _lzma_data_start[];

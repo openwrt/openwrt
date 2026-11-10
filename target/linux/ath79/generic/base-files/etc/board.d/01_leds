@@ -431,6 +431,10 @@ tplink,tl-wr842n-v3)
 	ucidef_set_led_switch "lan3" "LAN3" "green:lan3" "switch0" "0x04"
 	ucidef_set_led_switch "lan4" "LAN4" "green:lan4" "switch0" "0x02"
 	;;
+tplink,archer-c58hp-v1)
+	ucidef_set_led_switch "lan" "LAN" "white:lan" "switch0" "0x1e"
+	ucidef_set_led_netdev "wan" "WAN" "white:wan" "eth1"
+	;;
 tplink,archer-d50-v1)
 	ucidef_set_led_switch "lan" "LAN" "white:lan" "switch0" "0x1c"
 	ucidef_set_led_switch "wan_data" "WAN Data" "white:internet" "switch0" "0x02" "" "tx rx"
