@@ -54,6 +54,18 @@
 			function = LED_FUNCTION_STATUS;
 			gpios = <&gpio 4 GPIO_ACTIVE_LOW>;
 		};
+
+		led-lan {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_LAN;
+			gpios = <&gpio 15 GPIO_ACTIVE_LOW>;
+		};
+
+		led-wan {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WAN;
+			gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
+		};
 	};
 };
 
