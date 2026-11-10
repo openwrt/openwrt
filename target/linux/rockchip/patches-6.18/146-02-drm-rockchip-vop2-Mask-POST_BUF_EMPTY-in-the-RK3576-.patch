@@ -1,0 +1,28 @@
+From e299d67ae84d6634e4725888408adbf26a5051f3 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Tue, 10 Nov 2026 15:51:31 +0000
+Subject: [PATCH] drm/rockchip: vop2: Mask POST_BUF_EMPTY in the RK3576 handler
+
+rk3576_vp_isr() clears POST_BUF_EMPTY and leaves it enabled, so on
+RK3576 a persistent underflow raises the interrupt again as soon as it
+is cleared and turns into an interrupt storm.
+
+Disable the interrupt when it fires. vop2_crtc_atomic_flush() enables
+it again with the next committed configuration.
+
+Fixes: 944757a4cba6 ("drm/rockchip: vop2: Add support for rk3576")
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ drivers/gpu/drm/rockchip/rockchip_drm_vop2.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/drivers/gpu/drm/rockchip/rockchip_drm_vop2.c
++++ b/drivers/gpu/drm/rockchip/rockchip_drm_vop2.c
+@@ -2195,6 +2195,7 @@ static irqreturn_t rk3576_vp_isr(int irq
+ 	}
+ 
+ 	if (irqs & VP_INT_POST_BUF_EMPTY) {
++		vop2_crtc_disable_irq(vp, VP_INT_POST_BUF_EMPTY);
+ 		drm_err_ratelimited(vop2->drm, "POST_BUF_EMPTY irq err at vp%d\n", vp->id);
+ 		ret = IRQ_HANDLED;
+ 	}
