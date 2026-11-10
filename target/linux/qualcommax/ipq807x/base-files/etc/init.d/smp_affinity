@@ -10,11 +10,11 @@ PROG=smp_affinity
 
 log_msg() {
 
-  local irq_name="$1" affinity="$2" irq="$3"
+	local irq_name="$1" affinity="$2" irq="$3"
 
-  msg="$(printf "Pinning IRQ($irq) %-24s to CPU ${affinity}\n" "$irq_name")"
+	msg="$(printf "Pinning IRQ($irq) %-24s to CPU ${affinity}\n" "$irq_name")"
 
-  logger -t "$PROG" "$msg"
+	logger -t "$PROG" "$msg"
 }
 
 ######################################################################
@@ -28,18 +28,18 @@ log_msg() {
 
 cpus_to_bitmask() {
 
-  local bitmask=0
-  # shellcheck disable=2048
-  for range in ${*//,/ }; do
-    start="${range%-*}"
-    end="${range#*-}"
-    if [ -z "$end" ]; then
-      bitmask="$((bitmask | 1 << start))"
-    else
-      bitmask="$((bitmask | (2 ** (end - start + 1) - 1) << start))"
-    fi
-  done
-  printf '%x' $bitmask
+	local bitmask=0
+	# shellcheck disable=2048
+	for range in ${*//,/ }; do
+		start="${range%-*}"
+		end="${range#*-}"
+		if [ -z "$end" ]; then
+			bitmask="$((bitmask | 1 << start))"
+		else
+			bitmask="$((bitmask | (2 ** (end - start + 1) - 1) << start))"
+		fi
+	done
+	printf '%x' $bitmask
 }
 
 ######################################################################
@@ -50,17 +50,17 @@ cpus_to_bitmask() {
 
 bitmask_to_cpus() {
 
-  [ "${1:0:2}" != "0x" ] && set -- "0x$1"
-  local bitmask="$(printf '%d' "$1")"
+	[ "${1:0:2}" != "0x" ] && set -- "0x$1"
+	local bitmask="$(printf '%d' "$1")"
 
-  local cpus=""
-  for i in $(seq 0 63); do
-    if [ $((bitmask & 1)) -ne 0 ]; then
-      cpus="$cpus $i"
-    fi
-    bitmask=$((bitmask >> 1))
-  done
-  echo "${cpus# }"
+	local cpus=""
+	for i in $(seq 0 63); do
+		if [ $((bitmask & 1)) -ne 0 ]; then
+			cpus="$cpus $i"
+		fi
+		bitmask=$((bitmask >> 1))
+	done
+	echo "${cpus# }"
 }
 
 ######################################################################
@@ -71,52 +71,52 @@ bitmask_to_cpus() {
 
 set_affinity() {
 
-  local irq_name="$1" affinity="$2" bitmask irq
-  awk -v irq_name="$1" '$0 ~ irq_name { print substr($1, 1, length($1)-1); exit }' /proc/interrupts \
-    | while read -r irq; do
-      $enable_log && {
-        log_msg "$irq_name" "$affinity" "$irq"
-      }
-      bitmask=$(cpus_to_bitmask "$affinity") && echo "$bitmask" > "/proc/irq/$irq/smp_affinity"
-    done
+	local irq_name="$1" affinity="$2" bitmask irq
+	awk -v irq_name="$1" '$0 ~ irq_name { print substr($1, 1, length($1)-1); exit }' /proc/interrupts \
+		| while read -r irq; do
+			$enable_log && {
+				log_msg "$irq_name" "$affinity" "$irq"
+			}
+			bitmask=$(cpus_to_bitmask "$affinity") && echo "$bitmask" > "/proc/irq/$irq/smp_affinity"
+		done
 }
 
 enable_affinity_ipq807x() {
 
-  # assign 4 rx interrupts to each core
-  set_affinity 'reo2host-destination-ring1'    0
-  set_affinity 'reo2host-destination-ring2'    1
-  set_affinity 'reo2host-destination-ring3'    2
-  set_affinity 'reo2host-destination-ring4'    3
+	# assign 4 rx interrupts to each core
+	set_affinity 'reo2host-destination-ring1'    0
+	set_affinity 'reo2host-destination-ring2'    1
+	set_affinity 'reo2host-destination-ring3'    2
+	set_affinity 'reo2host-destination-ring4'    3
 
-  # assign 3 tcl completions to last 3 CPUs
-  set_affinity 'wbm2host-tx-completions-ring1' 1
-  set_affinity 'wbm2host-tx-completions-ring2' 2
-  set_affinity 'wbm2host-tx-completions-ring3' 3
+	# assign 3 tcl completions to last 3 CPUs
+	set_affinity 'wbm2host-tx-completions-ring1' 1
+	set_affinity 'wbm2host-tx-completions-ring2' 2
+	set_affinity 'wbm2host-tx-completions-ring3' 3
 
-  # assign 3 ppdu mac interrupts to last 3 cores
-  set_affinity 'ppdu-end-interrupts-mac1'      1
-  set_affinity 'ppdu-end-interrupts-mac2'      2
-  set_affinity 'ppdu-end-interrupts-mac3'      3
+	# assign 3 ppdu mac interrupts to last 3 cores
+	set_affinity 'ppdu-end-interrupts-mac1'      1
+	set_affinity 'ppdu-end-interrupts-mac2'      2
+	set_affinity 'ppdu-end-interrupts-mac3'      3
 
 }
 
 boot() {
 
-  local enable
+	local enable
 
-  config_load     smp_affinity
+	config_load     smp_affinity
 
-  config_get_bool enable     "general" enable     1
-  config_get_bool enable_log "general" enable_log 1
+	config_get_bool enable     "general" enable     1
+	config_get_bool enable_log "general" enable_log 1
 
-  [ "$enable"     -eq 1 ] && enable=true     || enable=false
-  [ "$enable_log" -eq 1 ] && enable_log=true || enable_log=false
+	[ "$enable"     -eq 1 ] && enable=true     || enable=false
+	[ "$enable_log" -eq 1 ] && enable_log=true || enable_log=false
 
-  $enable && {
-    enable_affinity_ipq807x
+	$enable && {
+		enable_affinity_ipq807x
 
-    # receive steering depends on where the ring interrupts are
-    [ -x /etc/init.d/packet_steering ] && /etc/init.d/packet_steering reload
-  }
+		# receive steering depends on where the ring interrupts are
+		[ -x /etc/init.d/packet_steering ] && /etc/init.d/packet_steering reload
+	}
 }
