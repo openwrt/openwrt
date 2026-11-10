@@ -519,8 +519,6 @@ function generate(config) {
 
 	device_country_code(config);
 
-	device_cell_density_append(config);
-
 	/* beacon */
 	append_vars(config, [ 'beacon_int', 'beacon_rate', 'rnr_beacon' ]);
 
@@ -553,6 +551,7 @@ function generate(config) {
 		config.legacy_rates = false;
 		append(require_mode[config.require_mode], 1);
 	}
+	device_cell_density_append(config);
 	device_htmode_append(config);
 
 	if (config.ieee80211ax || config.ieee80211be)
