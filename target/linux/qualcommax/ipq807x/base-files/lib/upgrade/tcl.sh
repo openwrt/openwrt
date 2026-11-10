@@ -56,7 +56,7 @@ bootconfig_rw_index() {
 			return 1
 		}
 	fi
-	
+
 	rm "$tempfile"
 }
 
