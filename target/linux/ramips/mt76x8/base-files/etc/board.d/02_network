@@ -288,7 +288,8 @@ ramips_setup_macs()
 	local label_mac=""
 
 	case $board in
-	asus,rt-ac1200)
+	asus,rt-ac1200|\
+	linksys,e5400)
 		wan_mac=$(mtd_get_mac_binary factory 0x22)
 		;;
 	elecom,wrc-1167fs)
@@ -349,9 +350,6 @@ ramips_setup_macs()
 	keenetic,kn-3211|\
 	zyxel,keenetic-extra-ii)
 		wan_mac=$(mtd_get_mac_binary rf-eeprom 0x28)
-		;;
-	linksys,e5400)
-		wan_mac=$(mtd_get_mac_binary factory 0x22)
 		;;
 	mercury,mac1200r-v2)
 		wan_mac=$(macaddr_add "$(mtd_get_mac_binary factory_info 0xd)" 1)

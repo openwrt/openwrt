@@ -59,7 +59,14 @@ wifire,s1500-nbn)
 	ucidef_set_led_netdev "lan4" "lan4" "green:lan-4" "lan4" "link tx rx"
 	ucidef_set_led_netdev "wan"  "wan"  "green:wan"  "wan"  "link tx rx"
 	;;
-belkin,rt1800)
+belkin,rt1800|\
+dlink,dir-1960-a1|\
+dlink,dir-2055-a1|\
+dlink,dir-2150-a1|\
+dlink,dir-2150-r1|\
+dlink,dir-2640-a1|\
+dlink,dir-2660-a1|\
+xiaomi,redmi-router-ac2100)
 	ucidef_set_led_netdev "wan" "wan" "white:wan" "wan"
 	;;
 cudy,ap1300-outdoor-v1)
@@ -111,14 +118,6 @@ dlink,dap-x1860-a1)
 dlink,dir-1360-a1)
 	ucidef_set_led_default "power" "Power" "white:power" "1"
 	ucidef_set_led_netdev "internet" "Internet" "white:wan" "wan"
-	;;
-dlink,dir-1960-a1|\
-dlink,dir-2055-a1|\
-dlink,dir-2150-a1|\
-dlink,dir-2150-r1|\
-dlink,dir-2640-a1|\
-dlink,dir-2660-a1)
-	ucidef_set_led_netdev "wan" "wan" "white:wan" "wan"
 	;;
 dlink,dir-3040-a1|\
 dlink,dir-3060-a1)
@@ -230,7 +229,8 @@ tplink,ex220-v1-nand)
 	ucidef_set_led_netdev "lan" "LAN" "green:lan" "br-lan"
 	ucidef_set_led_netdev "wan" "WAN" "green:wan" "wan"
 	;;
-tplink,deco-m4r-v4)
+tplink,deco-m4r-v4|\
+tplink,tl-wpa8631p-v3)
 	ucidef_set_led_netdev "lan" "LAN" "green:lan" "br-lan"
 	;;
 tplink,ec330-g5u-v1)
@@ -255,9 +255,6 @@ tplink,re650-v2)
 	ucidef_set_led_netdev "eth_act" "LAN act" "green:eth_act" "lan" "tx rx"
 	ucidef_set_led_netdev "eth_link" "LAN link" "green:eth_link" "lan" "link"
 	;;
-tplink,tl-wpa8631p-v3)
-	ucidef_set_led_netdev "lan" "LAN" "green:lan" "br-lan"
-	;;
 xiaomi,mi-router-4a-gigabit-v2)
 	ucidef_set_led_netdev "wan" "wan" "blue:wan" "wan" "link"
 	;;
@@ -268,9 +265,6 @@ xiaomi,mi-router-cr6606|\
 xiaomi,mi-router-cr6608|\
 xiaomi,mi-router-cr6609)
 	ucidef_set_led_netdev "internet" "Internet" "blue:net" "wan"
-	;;
-xiaomi,redmi-router-ac2100)
-	ucidef_set_led_netdev "wan" "wan" "white:wan" "wan"
 	;;
 youhua,wr1200js)
 	ucidef_set_led_netdev "internet" "INTERNET" "green:wan" "wan"
