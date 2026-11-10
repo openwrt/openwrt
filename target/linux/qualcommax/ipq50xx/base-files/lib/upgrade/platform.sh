@@ -242,7 +242,11 @@ platform_do_upgrade() {
 		remove_oem_ubi_volume ubi_rootfs
 		nand_do_upgrade "$1"
 		;;
-	liteon,wpx8324)
+	liteon,wpx8324|\
+	xunison,exigo-hub-d50-5g|\
+	yuncore,ax830|\
+	yuncore,ax850|\
+	zyxel,scr50axe)
 		CI_UBIPART="rootfs"
 		remove_oem_ubi_volume ubi_rootfs
 		remove_oem_ubi_volume bt_fw
@@ -350,16 +354,6 @@ platform_do_upgrade() {
 		CI_KERN_UBIPART="ubi_kernel"
 		CI_ROOT_UBIPART="rootfs"
 		CI_DATA_UBIPART="rootfs"
-		nand_do_upgrade "$1"
-		;;
-	xunison,exigo-hub-d50-5g|\
-	yuncore,ax830|\
-	yuncore,ax850|\
-	zyxel,scr50axe)
-		CI_UBIPART="rootfs"
-		remove_oem_ubi_volume ubi_rootfs
-		remove_oem_ubi_volume bt_fw
-		remove_oem_ubi_volume wifi_fw
 		nand_do_upgrade "$1"
 		;;
 	zte,t5400)
