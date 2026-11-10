@@ -12,9 +12,9 @@ ipq40xx_setup_interfaces()
 
 	case "$board" in
 	8dev,habanero-dvk|\
-	avm,fritzbox-4040|\
 	asus,rt-ac42u|\
 	asus,rt-ac58u|\
+	avm,fritzbox-4040|\
 	linksys,ea6350v3|\
 	linksys,ea8300|\
 	linksys,mr6350|\
@@ -101,14 +101,14 @@ ipq40xx_setup_interfaces()
 	extreme-networks,ws-ap391x)
 		ucidef_set_interfaces_lan_wan "sw-eth1 sw-eth2 sw-eth3 sw-eth5" "sw-eth4"
 		;;
-	linksys,whw01)
-		ucidef_set_interface_lan "eth1 eth2"
-		;;
 	glinet,gl-a1300|\
 	glinet,gl-b1300|\
 	glinet,gl-s1300|\
 	mobipromo,cm520-79f)
 		ucidef_set_interfaces_lan_wan "lan1 lan2" "wan"
+		;;
+	linksys,whw01)
+		ucidef_set_interface_lan "eth1 eth2"
 		;;
 	meraki,gx20|\
 	meraki,z3|\
