@@ -8,6 +8,7 @@
 #include <linux/clk.h>
 #include <linux/of_mdio.h>
 #include <linux/pcs/pcs.h>
+#include <linux/pcs/pcs-qca-uniphy.h>
 #include <linux/phy/phy.h>
 #include <linux/platform_device.h>
 #include <linux/reset.h>
@@ -85,6 +86,11 @@ static int ipq5018_gmac_pcs_init(struct stmmac_priv *priv)
 	}
 
 	priv->hw->phylink_pcs = pcs;
+
+	/* Not fatal: phylink runs the sequence again when the netdev is opened */
+	ret = qca_uniphy_pcs_preconfig(pcs, priv->plat->phy_interface);
+	if (ret)
+		dev_warn(priv->device, "failed to preconfigure PCS: %d\n", ret);
 
 	return 0;
 }
