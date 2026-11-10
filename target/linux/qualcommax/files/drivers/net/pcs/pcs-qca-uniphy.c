@@ -476,19 +476,16 @@ static u32 uniphy_sgmii_mode(struct qca_uniphy *uniphy)
 	return UNIPHY_SGMII_MODE;
 }
 
-static int qca_uniphy_pcs_config_mode(struct phylink_pcs *pcs,
-				      unsigned int neg_mode,
-				      phy_interface_t interface,
-				      const unsigned long *advertising,
-				      bool permit_pause_to_mac)
+/* force < 0 leaves the channel force bit alone */
+static int __qca_uniphy_config_mode(struct qca_uniphy_pcs *upcs,
+				    phy_interface_t interface, int force)
 {
-	struct qca_uniphy_pcs *upcs = to_qca_uniphy_pcs(pcs);
 	struct qca_uniphy *uniphy = upcs->uniphy;
 	u32 misc2_phy_mode, mode_ctrl, val;
 	int ret;
 
-	dev_dbg(uniphy->dev, "Configuring PCS: chan=%d, interface=%s, neg_mode=0x%x\n",
-		upcs->channel, phy_modes(interface), neg_mode);
+	dev_dbg(uniphy->dev, "Configuring PCS: chan=%d, interface=%s, force=%d\n",
+		upcs->channel, phy_modes(interface), force);
 
 	/* Every channel of the instance calls this with its own phylink state
 	 * mutex, so nothing else keeps two of them out of the sequence below.
@@ -547,12 +544,11 @@ static int qca_uniphy_pcs_config_mode(struct phylink_pcs *pcs,
 	/* The XPCS modes drive the channel from the XPCS and never read the
 	 * force bit.
 	 */
-	if (mode_ctrl != UNIPHY_XPCS_MODE) {
+	if (mode_ctrl != UNIPHY_XPCS_MODE && force >= 0) {
 		ret = regmap_update_bits(uniphy->regmap,
 					 UNIPHY_CH_CTRL(upcs->channel),
 					 UNIPHY_CH_FORCE_MODE,
-					 uniphy_ch_forced(pcs, neg_mode) ?
-					 UNIPHY_CH_FORCE_MODE : 0);
+					 force ? UNIPHY_CH_FORCE_MODE : 0);
 		if (ret)
 			return ret;
 	}
@@ -678,6 +674,18 @@ err_clks:
 		upcs->clks_enabled = true;
 
 	return ret;
+}
+
+static int qca_uniphy_pcs_config_mode(struct phylink_pcs *pcs,
+				      unsigned int neg_mode,
+				      phy_interface_t interface,
+				      const unsigned long *advertising,
+				      bool permit_pause_to_mac)
+{
+	struct qca_uniphy_pcs *upcs = to_qca_uniphy_pcs(pcs);
+
+	return __qca_uniphy_config_mode(upcs, interface,
+					uniphy_ch_forced(pcs, neg_mode));
 }
 
 static int qca_uniphy_pcs_config_usxgmii(struct phylink_pcs *pcs,
@@ -974,6 +982,29 @@ static const struct phylink_pcs_ops qca_uniphy_pcs_ops = {
 	.pcs_enable = qca_uniphy_pcs_enable,
 	.pcs_an_restart = qca_uniphy_pcs_an_restart,
 };
+
+/* Run the instance mode sequence ahead of phylink. phylink only configures the
+ * PCS when the netdev is opened, and until then the instance holds whatever
+ * the bootloader left behind. A link partner that is brought up earlier, such
+ * as a DSA switch on a fixed link, would train its receiver against that.
+ */
+int qca_uniphy_pcs_preconfig(struct phylink_pcs *pcs, phy_interface_t interface)
+{
+	struct qca_uniphy_pcs *upcs = to_qca_uniphy_pcs(pcs);
+
+	if (pcs->ops != &qca_uniphy_pcs_ops)
+		return -EINVAL;
+
+	switch (interface) {
+	case PHY_INTERFACE_MODE_SGMII:
+	case PHY_INTERFACE_MODE_1000BASEX:
+	case PHY_INTERFACE_MODE_2500BASEX:
+		return __qca_uniphy_config_mode(upcs, interface, -1);
+	default:
+		return 0;
+	}
+}
+EXPORT_SYMBOL_GPL(qca_uniphy_pcs_preconfig);
 
 static const struct of_device_id qca_uniphy_of_match[] = {
 	{ .compatible = "qualcomm,ipq5018-uniphy", .data = &ipq5018_data },
