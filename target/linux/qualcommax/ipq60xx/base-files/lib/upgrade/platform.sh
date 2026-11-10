@@ -78,7 +78,7 @@ tplink_get_boot_part() {
 		rootfs|rootfs_1)
 			echo "$ubi_mtd_arg"
 			return
-		;;
+			;;
 		esac
 	done
 
@@ -101,11 +101,11 @@ tplink_do_upgrade() {
 	rootfs)
 		CI_UBIPART="rootfs_1"
 		new_boot_part=1
-	;;
+		;;
 	rootfs_1)
 		CI_UBIPART="rootfs"
 		new_boot_part=0
-	;;
+		;;
 	esac
 
 	fw_setenv -s - <<-EOF
