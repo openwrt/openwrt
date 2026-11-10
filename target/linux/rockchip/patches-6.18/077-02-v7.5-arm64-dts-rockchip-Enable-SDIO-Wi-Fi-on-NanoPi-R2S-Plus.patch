@@ -1,0 +1,103 @@
+From bcb95c3641b06f20e0c2ed4c849139ad72084d29 Mon Sep 17 00:00:00 2001
+From: Deomid rojer Ryabkov <rojer@rojer.me>
+Date: Sat, 31 Oct 2026 13:47:14 +0300
+Subject: arm64: dts: rockchip: Enable SDIO Wi-Fi on NanoPi R2S Plus
+
+The NanoPi R2S Plus has an M.2 E-key slot wired to the sdmmc_ext
+controller in 4-bit SDIO mode, where FriendlyElec fit an optional
+Fn-Link 6222B-SRC (Realtek RTL8822CS) module:
+
+  - SDIO signalling at a fixed 1.8V (VCC_18)
+  - WIFI_REG_ON on GPIO3_B0, 32kHz sleep clock from the RK805 CLKOUT2
+
+Enable the controller and add the power sequence. The SDIO pins need
+8mA drive strength for SDR104 tuning to succeed, as in the vendor
+device tree [1]; with the SoC default of 4mA no sample phase works.
+
+On boards without the module the controller gives up after about 0.2s
+("mmc2: Failed to initialize a non-removable card"); nothing else is
+affected.
+
+With the mmc core change for the module's CMD11 handling at a fixed
+1.8V [2], the module is tuned to SDR104 at 150 MHz and works with the
+rtw88_8822cs driver; without it, it runs in high-speed mode at 50 MHz.
+
+[1] https://github.com/friendlyarm/kernel-rockchip/blob/9238df9d21e835bba35c8ba5248784387936cb2e/arch/arm64/boot/dts/rockchip/rk3328-nanopi-r2-rev24.dts#L144-L172
+[2] https://lore.kernel.org/linux-mmc/20261030142224.3183407-1-rojer@rojer.me/
+
+Reviewed-by: Shawn Lin <shawn.lin@rock-chips.com>
+Signed-off-by: Deomid rojer Ryabkov <rojer@rojer.me>
+Link: https://patch.msgid.link/20261031104714.3271017-3-rojer@rojer.me
+Signed-off-by: Heiko Stuebner <heiko@sntech.de>
+---
+ .../boot/dts/rockchip/rk3328-nanopi-r2s-plus.dts   | 55 ++++++++++++++++++++++
+ 1 file changed, 55 insertions(+)
+
+--- a/arch/arm64/boot/dts/rockchip/rk3328-nanopi-r2s-plus.dts
++++ b/arch/arm64/boot/dts/rockchip/rk3328-nanopi-r2s-plus.dts
+@@ -17,6 +17,15 @@
+ 	aliases {
+ 		mmc1 = &emmc;
+ 	};
++
++	sdio_pwrseq: sdio-pwrseq {
++		compatible = "mmc-pwrseq-simple";
++		clocks = <&rk805 1>;
++		clock-names = "ext_clock";
++		pinctrl-names = "default";
++		pinctrl-0 = <&wifi_reg_on_h>;
++		reset-gpios = <&gpio3 RK_PB0 GPIO_ACTIVE_LOW>;
++	};
+ };
+ 
+ &emmc {
+@@ -51,3 +60,49 @@
+ 	vccio4-supply = <&vcc_io_33>;
+ 	vccio6-supply = <&vcc_18>;
+ };
++
++&pinctrl {
++	wifi {
++		wifi_reg_on_h: wifi-reg-on-h {
++			rockchip,pins = <3 RK_PB0 RK_FUNC_GPIO &pcfg_pull_none>;
++		};
++	};
++};
++
++/*
++ * SDR104 tuning fails with the default 4mA drive strength, use 8mA like the
++ * vendor device tree.
++ */
++&sdmmc0ext_bus4 {
++	rockchip,pins =
++		<3 RK_PA4 3 &pcfg_pull_up_8ma>,
++		<3 RK_PA5 3 &pcfg_pull_up_8ma>,
++		<3 RK_PA6 3 &pcfg_pull_up_8ma>,
++		<3 RK_PA7 3 &pcfg_pull_up_8ma>;
++};
++
++&sdmmc0ext_clk {
++	rockchip,pins = <3 RK_PA2 3 &pcfg_pull_none_8ma>;
++};
++
++&sdmmc0ext_cmd {
++	rockchip,pins = <3 RK_PA0 3 &pcfg_pull_up_8ma>;
++};
++
++/* Optional M.2 E-key SDIO Wi-Fi module (Fn-Link 6222B-SRC, RTL8822CS) */
++&sdmmc_ext {
++	bus-width = <4>;
++	cap-sd-highspeed;
++	cap-sdio-irq;
++	keep-power-in-suspend;
++	mmc-pwrseq = <&sdio_pwrseq>;
++	no-mmc;
++	no-sd;
++	non-removable;
++	pinctrl-names = "default";
++	pinctrl-0 = <&sdmmc0ext_clk &sdmmc0ext_cmd &sdmmc0ext_bus4>;
++	sd-uhs-sdr104;
++	vmmc-supply = <&vcc_io_33>;
++	vqmmc-supply = <&vcc_18>;
++	status = "okay";
++};

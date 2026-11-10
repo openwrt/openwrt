@@ -124,7 +124,7 @@ define Device/friendlyarm_nanopi-r2s-plus
   $(Device/rk3328)
   DEVICE_VENDOR := FriendlyARM
   DEVICE_MODEL := NanoPi R2S Plus
-  DEVICE_PACKAGES := kmod-usb-net-rtl8152
+  DEVICE_PACKAGES := kmod-rtw88-8822cs kmod-usb-net-rtl8152 wpad-basic-mbedtls
 endef
 TARGET_DEVICES += friendlyarm_nanopi-r2s-plus
 
