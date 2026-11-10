@@ -7,13 +7,13 @@ boot() {
 	linksys,mr7350|\
 	linksys,mr7500)
 		mtd resetbc s_env || true
-	;;
+		;;
 	netgear,wax610|\
 	netgear,wax610y)
 		fw_setenv boot_count 0
-	;;
+		;;
 	yuncore,fap650)
 		fw_setenv owrt_bootcount 0
-	;;
+		;;
 	esac
 }
