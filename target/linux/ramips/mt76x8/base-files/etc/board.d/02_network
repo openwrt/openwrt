@@ -303,7 +303,7 @@ ramips_setup_macs()
 	comfast,cf-wr617ac)
 		lan_mac=$(mtd_get_mac_binary factory 0xe000)
 		wan_mac=$(macaddr_add "$lan_mac" 1)
-                ;;
+		;;
 	cudy,lt300-v3|\
 	hiwifi,hc5611|\
 	hiwifi,hc5661a|\
