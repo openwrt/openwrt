@@ -8,19 +8,19 @@
 board_config_update
 
 case "$(board_name)" in
-	iptime,ax2002m|\
-	iptime,ax2004m|\
-	ubnt,edgerouter-x|\
-	ubnt,edgerouter-x-sfp|\
-	ubnt,unifi-6-lite)
-		ucidef_set_compat_version "2.0"
-		;;
-	tplink,er605-v2)
-		ucidef_set_compat_version "1.2"
-		;;
-	*)
-		ucidef_set_compat_version "1.1"
-		;;
+iptime,ax2002m|\
+iptime,ax2004m|\
+ubnt,edgerouter-x|\
+ubnt,edgerouter-x-sfp|\
+ubnt,unifi-6-lite)
+	ucidef_set_compat_version "2.0"
+	;;
+tplink,er605-v2)
+	ucidef_set_compat_version "1.2"
+	;;
+*)
+	ucidef_set_compat_version "1.1"
+	;;
 esac
 
 board_config_flush

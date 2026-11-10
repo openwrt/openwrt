@@ -8,9 +8,7 @@ case "$(board_name)" in
 tplink,ec330-g5u-v1)
 	led_light="/sys/class/gpio/led-light/value"
 	echo "$((!$(cat $led_light)))" > "$led_light"
-;;
-	*)
-;;
+	;;
 esac
 
 return 0
