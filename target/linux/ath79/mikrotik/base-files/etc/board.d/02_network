@@ -37,6 +37,10 @@ ath79_setup_interfaces()
 	mikrotik,routerboard-wapr-2nd)
 		ucidef_set_interface_lan "eth0"
 		;;
+	mikrotik,routerboard-951g-2hnd|\
+	mikrotik,routerboard-962uigs-5hact2hnt)
+		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "wan"
+		;;
 	mikrotik,routerboard-951ui-2hnd|\
 	mikrotik,routerboard-951ui-2nd|\
 	mikrotik,routerboard-952ui-5ac2nd)
@@ -44,15 +48,11 @@ ath79_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0@eth0" "1:lan:4" "2:lan:3" "3:lan:2" "4:lan:1"
 		;;
-	mikrotik,routerboard-map-2nd)
-		ucidef_set_interface_lan "eth0 eth1"
-		;;
 	mikrotik,routerboard-960pgs)
 		ucidef_set_interfaces_lan_wan "lan2 lan3 lan4 lan5" "eth1 lan1"
 		;;
-	mikrotik,routerboard-951g-2hnd|\
-	mikrotik,routerboard-962uigs-5hact2hnt)
-		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "wan"
+	mikrotik,routerboard-map-2nd)
+		ucidef_set_interface_lan "eth0 eth1"
 		;;
 	*)
 		ucidef_set_interfaces_lan_wan "eth0" "eth1"
