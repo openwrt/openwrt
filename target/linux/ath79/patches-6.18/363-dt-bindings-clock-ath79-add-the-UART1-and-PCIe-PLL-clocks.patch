@@ -1,0 +1,54 @@
+From: Rosen Penev <rosenp@gmail.com>
+Subject: [PATCH] dt-bindings: clock: ath79: add the UART1 and PCIe PLL clocks
+
+Add IDs for two more clocks:
+
+The second, high speed UART of AR934x, which is compatible with the
+qca,ar9330-uart one, can run from a 100 MHz clock instead of the
+reference clock.
+
+AR724x, AR934x, QCA953x, QCA955x and QCA956x have a PCIe PLL, which the
+PCIe host controller nodes need to reference.
+
+Drop ATH79_CLK_END instead of growing it. The number of clocks is not
+part of the ABI, so it doesn't belong in the binding header, and the old
+clock code now sizes its table from the IDs it uses.
+
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+---
+ arch/mips/ath79/clock.c               | 6 ++++--
+ include/dt-bindings/clock/ath79-clk.h | 4 ++--
+ 2 files changed, 6 insertions(+), 4 deletions(-)
+
+--- a/arch/mips/ath79/clock.c
++++ b/arch/mips/ath79/clock.c
+@@ -25,13 +25,15 @@
+ #include <asm/mach-ath79/ar71xx_regs.h>
+ #include "common.h"
+ 
+-static struct clk *clks[ATH79_CLK_END];
++#define ATH79_CLK_NUM	(ATH79_CLK_MDIO + 1)
++
++static struct clk *clks[ATH79_CLK_NUM];
+ static struct clk_onecell_data clk_data = {
+ 	.clks = clks,
+ 	.clk_num = ARRAY_SIZE(clks),
+ };
+ 
+-static const char * const clk_names[ATH79_CLK_END] = {
++static const char * const clk_names[ATH79_CLK_NUM] = {
+ 	[ATH79_CLK_CPU] = "cpu",
+ 	[ATH79_CLK_DDR] = "ddr",
+ 	[ATH79_CLK_AHB] = "ahb",
+--- a/include/dt-bindings/clock/ath79-clk.h
++++ b/include/dt-bindings/clock/ath79-clk.h
+@@ -11,7 +11,7 @@
+ #define ATH79_CLK_AHB		2
+ #define ATH79_CLK_REF		3
+ #define ATH79_CLK_MDIO		4
+-
+-#define ATH79_CLK_END		5
++#define ATH79_CLK_UART1		5
++#define ATH79_CLK_PCIE		6
+ 
+ #endif /* __DT_BINDINGS_ATH79_CLK_H */
