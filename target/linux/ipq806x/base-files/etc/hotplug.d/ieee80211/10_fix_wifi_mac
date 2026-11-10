@@ -12,11 +12,11 @@ PHYNBR=${DEVPATH##*/phy}
 board=$(board_name)
 
 case "$board" in
-	extreme,ap3935)
-		echo "##### PHYNBR=$PHYNBR DEVPATH=$DEVPATH"
-		[ "$PHYNBR" = "0" ] && echo $(mtd_get_mac_ascii CFG1 RADIOADDR0) > /sys${DEVPATH}/macaddress
-		[ "$PHYNBR" = "1" ] && echo $(mtd_get_mac_ascii CFG1 RADIOADDR1) > /sys${DEVPATH}/macaddress
-		;;
+extreme,ap3935)
+	echo "##### PHYNBR=$PHYNBR DEVPATH=$DEVPATH"
+	[ "$PHYNBR" = "0" ] && echo $(mtd_get_mac_ascii CFG1 RADIOADDR0) > /sys${DEVPATH}/macaddress
+	[ "$PHYNBR" = "1" ] && echo $(mtd_get_mac_ascii CFG1 RADIOADDR1) > /sys${DEVPATH}/macaddress
+	;;
 esac
 
 OPATH=${DEVPATH##/devices/platform/}
