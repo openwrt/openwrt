@@ -13,18 +13,14 @@ mediatek_setup_interfaces()
 	h3c,magic-nx30-pro|\
 	imou,hx21|\
 	konka,komi-a31|\
+	mercusys,mr80x-v3|\
 	netis,nx30v2|\
 	netis,nx31|\
 	nokia,ea0326gmp|\
-	mercusys,mr80x-v3|\
 	routerich,ax3000-v1|\
 	zbtlink,zbt-z8103ax|\
 	zbtlink,zbt-z8103ax-c)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" eth1
-		;;
-	zbtlink,zbt-z8803be)
-		ucidef_set_interfaces_lan_wan "lan0 lan1 lan2" eth1
-		ucidef_set_interface "wan_sfp" device "eth2" protocol "none"
 		;;
 	acelink,ew-7886cax|\
 	tplink,eap683-lr)
@@ -41,6 +37,17 @@ mediatek_setup_interfaces()
 	acer,vero-w6m)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" internet
 		;;
+	airpi,ap3000m|\
+	bananapi,bpi-r3-mini|\
+	edgecore,eap111|\
+	hiveton,h5000m|\
+	huasifei,wh3000|\
+	huasifei,wh3000-pro-emmc|\
+	huasifei,wh3000-pro-nand|\
+	wavlink,wl-wnt100x3|\
+	wavlink,wl-wnt100x3-ubootmod)
+		ucidef_set_interfaces_lan_wan eth0 eth1
+		;;
 	airtel,aap4221zy|\
 	comfast,cf-wa933|\
 	comfast,cf-wa933-ubi|\
@@ -50,6 +57,15 @@ mediatek_setup_interfaces()
 		;;
 	arcadyan,mozart)
 		ucidef_set_interfaces_lan_wan "lan0 eth1" eth2
+		;;
+	asiarf,ap7986-003|\
+	asus,tuf-ax4200q|\
+	asus,tuf-ax6000|\
+	glinet,gl-mt6000|\
+	tplink,tl-xdr4288|\
+	tplink,tl-xdr6088|\
+	tplink,tl-xtr8488)
+		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4 lan5" eth1
 		;;
 	asus,rt-ax52|\
 	asus,rt-ax59u|\
@@ -102,80 +118,24 @@ mediatek_setup_interfaces()
 	zbtlink,zbt-z8106ax-s)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "eth1"
 		;;
-	zbtlink,zbt-z8105ax-c)
-		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" "eth1"
-		;;
-	zbtlink,zbt-z8106ax-t)
-		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "eth1 wwan"
-		;;
-	asiarf,ap7986-003|\
-	asus,tuf-ax4200q|\
-	asus,tuf-ax6000|\
-	glinet,gl-mt6000|\
-	tplink,tl-xdr4288|\
-	tplink,tl-xdr6088|\
-	tplink,tl-xtr8488)
-		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4 lan5" eth1
-		;;
 	bananapi,bpi-r3)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4 sfp2" "sfp1 wan"
 		;;
 	bananapi,bpi-r4)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 sfp-lan" "wan sfp-wan"
 		;;
-	bananapi,bpi-r4-lite)
-		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4 sfp-lan" wan
-		;;
 	bananapi,bpi-r4-2g5|\
 	bananapi,bpi-r4-poe)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "wan sfp-wan"
+		;;
+	bananapi,bpi-r4-lite)
+		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4 sfp-lan" wan
 		;;
 	bananapi,bpi-r4-pro-4e)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4 lan5 lan6 sfp-lan" "wan"
 		;;
 	bananapi,bpi-r4-pro-8x)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4 lan5 lan6" "wan"
-		;;
-	comfast,cf-e393ax)
-		ucidef_set_interfaces_lan_wan "lan1" eth1
-		;;
-	cudy,ap3000wall-v1)
-		ucidef_set_interface_lan "lan1 lan2 lan3 lan4 lan5"
-		;;
-	glinet,gl-be14000)
-		ucidef_set_interfaces_lan_wan "lan2 lan3 lan4 lan5 lan6 lan7 lan8 lan9 sfp" wan
-		;;
-	comfast,cf-xr186|\
-	cudy,ap3000outdoor-v1|\
-	cudy,ap3000-v1|\
-	cudy,re3000-v1|\
-	kebidumei,ax3000-u22|\
-	keenetic,kap-630|\
-	keenetic,kn-3411|\
-	keenetic,kn-4410|\
-	netcraze,nap-630|\
-	netcraze,nc-3411|\
-	netcraze,nc-4410|\
-	netgear,eax17|\
-	netgear,wax220|\
-	openfi,6c|\
-	tplink,f65-v1|\
-	ubnt,unifi-6-plus|\
-	wavlink,wl-wn573hx3|\
-	widelantech,wap430x|\
-	zyxel,nwa50ax-pro)
-		ucidef_set_interface_lan "eth0"
-		;;
-	airpi,ap3000m|\
-	bananapi,bpi-r3-mini|\
-	edgecore,eap111|\
-	hiveton,h5000m|\
-	huasifei,wh3000|\
-	huasifei,wh3000-pro-emmc|\
-	huasifei,wh3000-pro-nand|\
-	wavlink,wl-wnt100x3|\
-	wavlink,wl-wnt100x3-ubootmod)
-		ucidef_set_interfaces_lan_wan eth0 eth1
 		;;
 	bazis,ax3000wm|\
 	cudy,m3000-v1|\
@@ -197,6 +157,44 @@ mediatek_setup_interfaces()
 	openwrt,one)
 		ucidef_set_interfaces_lan_wan eth1 eth0
 		;;
+	comfast,cf-e393ax)
+		ucidef_set_interfaces_lan_wan "lan1" eth1
+		;;
+	comfast,cf-wr632ax|\
+	comfast,cf-wr632ax-ubi|\
+	comfast,cf-wr632ax-ubootmod|\
+	cudy,p2-v1|\
+	keenetic,kn-3911|\
+	smartrg,sdg-8622|\
+	smartrg,sdg-8632|\
+	smartrg,sdg-8733a|\
+	yuncore,ax835)
+		ucidef_set_interfaces_lan_wan lan wan
+		;;
+	comfast,cf-xr186|\
+	cudy,ap3000-v1|\
+	cudy,ap3000outdoor-v1|\
+	cudy,re3000-v1|\
+	kebidumei,ax3000-u22|\
+	keenetic,kap-630|\
+	keenetic,kn-3411|\
+	keenetic,kn-4410|\
+	netcraze,nap-630|\
+	netcraze,nc-3411|\
+	netcraze,nc-4410|\
+	netgear,eax17|\
+	netgear,wax220|\
+	openfi,6c|\
+	tplink,f65-v1|\
+	ubnt,unifi-6-plus|\
+	wavlink,wl-wn573hx3|\
+	widelantech,wap430x|\
+	zyxel,nwa50ax-pro)
+		ucidef_set_interface_lan "eth0"
+		;;
+	cudy,ap3000wall-v1)
+		ucidef_set_interface_lan "lan1 lan2 lan3 lan4 lan5"
+		;;
 	dlink,aquila-pro-ai-e30-a1|\
 	netis,eap930-v1)
 		ucidef_set_interface_lan "lan"
@@ -205,16 +203,8 @@ mediatek_setup_interfaces()
 	dlink,aquila-pro-ai-m60-a1)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" internet
 		;;
-	cudy,p2-v1|\
-	comfast,cf-wr632ax|\
-	comfast,cf-wr632ax-ubi|\
-	comfast,cf-wr632ax-ubootmod|\
-	keenetic,kn-3911|\
-	smartrg,sdg-8622|\
-	smartrg,sdg-8632|\
-	smartrg,sdg-8733a|\
-	yuncore,ax835)
-		ucidef_set_interfaces_lan_wan lan wan
+	glinet,gl-be14000)
+		ucidef_set_interfaces_lan_wan "lan2 lan3 lan4 lan5 lan6 lan7 lan8 lan9 sfp" wan
 		;;
 	keenetic,kn-1812|\
 	netcraze,nc-1812)
@@ -242,8 +232,19 @@ mediatek_setup_interfaces()
 	tenda,be12-pro)
 		ucidef_set_interfaces_lan_wan "lan3 lan4 lan5 eth1" eth2
 		;;
+	tplink,archer-ax80-v1|\
+	tplink,archer-ax80-v1-eu)
+		ucidef_set_interfaces_lan_wan "lan0 lan1 lan2 lan3" eth1
+		;;
+	tplink,be450|\
+	tplink,be450-ubi)
+		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 eth2" eth1
+		;;
 	tplink,fr365-v1)
 		ucidef_set_interfaces_lan_wan "port1 port3 port4 port5 port6" "port2"
+		;;
+	tplink,re6000xd)
+		ucidef_set_interface_lan "lan1 lan2 eth1"
 		;;
 	tplink,tl-7dr7250*)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 eth1" eth2
@@ -254,17 +255,6 @@ mediatek_setup_interfaces()
 	wavlink,wl-wn586x3b)
 		ucidef_set_interfaces_lan_wan "lan1 lan2" eth1
 		;;
-	tplink,archer-ax80-v1|\
-	tplink,archer-ax80-v1-eu)
-		ucidef_set_interfaces_lan_wan "lan0 lan1 lan2 lan3" eth1
-		;;
-	tplink,be450|\
-	tplink,be450-ubi)
-		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 eth2" eth1
-		;;
-	tplink,re6000xd)
-		ucidef_set_interface_lan "lan1 lan2 eth1"
-		;;
 	xiaomi,mi-router-ax3000t|\
 	xiaomi,mi-router-ax3000t-ubootmod|\
 	xiaomi,mi-router-wr30u-stock|\
@@ -272,6 +262,16 @@ mediatek_setup_interfaces()
 	xiaomi,redmi-router-ax6000-stock|\
 	xiaomi,redmi-router-ax6000-ubootmod)
 		ucidef_set_interfaces_lan_wan "lan2 lan3 lan4" wan
+		;;
+	zbtlink,zbt-z8105ax-c)
+		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" "eth1"
+		;;
+	zbtlink,zbt-z8106ax-t)
+		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "eth1 wwan"
+		;;
+	zbtlink,zbt-z8803be)
+		ucidef_set_interfaces_lan_wan "lan0 lan1 lan2" eth1
+		ucidef_set_interface "wan_sfp" device "eth2" protocol "none"
 		;;
 	zyxel,wx5600-t0-ubootmod)
 		ucidef_set_interface_lan "lan1 lan2"
@@ -290,11 +290,6 @@ mediatek_setup_macs()
 	local label_mac=""
 
 	case $board in
-	airpi,ap3000m)
-		base_mac=$(macaddr_generate_from_mmc_cid mmcblk0)
-		lan_mac="$base_mac"
-		wan_mac="$(macaddr_add "$base_mac" 1)"
-		;;
 	acer,predator-w6|\
 	acer,predator-w6d|\
 	acer,vero-w6m)
@@ -306,6 +301,11 @@ mediatek_setup_macs()
 		wan_mac=$(mtd_get_mac_ascii u-boot-env ethaddr)
 		lan_mac=$(macaddr_add "$wan_mac" 1)
 		label_mac=$wan_mac
+		;;
+	airpi,ap3000m)
+		base_mac=$(macaddr_generate_from_mmc_cid mmcblk0)
+		lan_mac="$base_mac"
+		wan_mac="$(macaddr_add "$base_mac" 1)"
 		;;
 	bananapi,bpi-r3|\
 	bananapi,bpi-r3-mini|\
