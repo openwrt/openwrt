@@ -61,7 +61,9 @@ ipq807x_setup_interfaces()
 		ucidef_set_interfaces_lan_wan "lan2 lan3 lan4 lan5" "wan"
 		;;
 	netgear,wax218|\
-	netgear,wax620)
+	netgear,wax620|\
+	tplink,eap620hd-v1|\
+	tplink,eap660hd-v1)
 		ucidef_set_interface_lan "lan" "dhcp"
 		;;
 	netgear,rbs750|\
@@ -70,10 +72,6 @@ ipq807x_setup_interfaces()
 		;;
 	qnap,301w)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4 10g-2" "10g-1"
-		;;
-	tplink,eap620hd-v1|\
-	tplink,eap660hd-v1)
-		ucidef_set_interface_lan "lan" "dhcp"
 		;;
 	zyxel,nbg7815)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4 10g" "wan"

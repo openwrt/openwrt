@@ -19,7 +19,11 @@ ipq50xx_setup_interfaces()
 	glinet,gl-b3000)
 		ucidef_set_interfaces_lan_wan "lan1 lan2" "wan"
 		;;
-	glinet,gl-x2000)
+	glinet,gl-x2000|\
+	linksys,mx6200|\
+	wallys,dr5018s|\
+	yuncore,ax830|\
+	yuncore,ax850)
 		ucidef_set_interfaces_lan_wan "lan" "wan"
 		;;
 	avm,fritzbox-4050|\
@@ -29,14 +33,9 @@ ipq50xx_setup_interfaces()
 	linksys,mx5500|\
 	linksys,spnmx56|\
 	mercusys,mr80x-v2|\
-	xiaomi,ax6000)
+	xiaomi,ax6000|\
+	xunison,exigo-hub-d50-5g)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" "wan"
-		;;
-	linksys,mx6200|\
-	wallys,dr5018s|\
-	yuncore,ax830|\
-	yuncore,ax850)
-		ucidef_set_interfaces_lan_wan "lan" "wan"
 		;;
 	cmcc,pz-l8|\
 	xiaomi,redmi-ax5400)
@@ -45,9 +44,6 @@ ipq50xx_setup_interfaces()
 		ucidef_set_network_device_conduit "lan2" "eth1"
 		ucidef_set_network_device_conduit "lan3" "eth1"
 		ucidef_set_network_device_conduit "wan" "eth0"
-		;;
-	xunison,exigo-hub-d50-5g)
-		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" "wan"
 		;;
 	tplink,eap650-outdoor-v1|\
 	tplink,re700x)
