@@ -37,6 +37,17 @@ case "$board" in
 		[ "$PHYNBR" -eq 1 ] && \
 			mtd_get_mac_ascii bdcfg "wlanmac" > /sys${DEVPATH}/macaddress
 		;;
+	dlink,dir-842-c1|\
+	dlink,dir-842-c2|\
+	dlink,dir-842-c3|\
+	nec,wf1200cr|\
+	nec,wg1200cr|\
+	qihoo,c301)
+		[ "$PHYNBR" -eq 0 ] && \
+			mtd_get_mac_ascii devdata wlan5mac > /sys${DEVPATH}/macaddress
+		[ "$PHYNBR" -eq 1 ] && \
+			mtd_get_mac_ascii devdata wlan24mac > /sys${DEVPATH}/macaddress
+		;;
 	elecom,wab-i1750-ps|\
 	elecom,wab-s1167-ps|\
 	elecom,wab-s600-ps)
@@ -82,17 +93,6 @@ case "$board" in
 		[ "$PHYNBR" -eq 0 ] && \
 			mtd_get_mac_ascii u-boot-env mac_addr > /sys${DEVPATH}/macaddress
 		;;
-	dlink,dir-842-c1|\
-	dlink,dir-842-c2|\
-	dlink,dir-842-c3|\
-	nec,wf1200cr|\
-	nec,wg1200cr|\
-	qihoo,c301)
-		[ "$PHYNBR" -eq 0 ] && \
-			mtd_get_mac_ascii devdata wlan5mac > /sys${DEVPATH}/macaddress
-		[ "$PHYNBR" -eq 1 ] && \
-			mtd_get_mac_ascii devdata wlan24mac > /sys${DEVPATH}/macaddress
-		;;
 	phicomm,k2t)
 		[ "$PHYNBR" -eq 0 ] && \
 			k2t_get_mac "5g_mac" > /sys${DEVPATH}/macaddress
@@ -110,14 +110,14 @@ case "$board" in
 		[ "$PHYNBR" -eq 1 ] && \
 			macaddr_add $base_mac 1 > /sys${DEVPATH}/macaddress
 		;;
-	wd,mynet-wifi-rangeextender)
-		echo $(nvram get wl0_hwaddr) > /sys${DEVPATH}/macaddress
-		;;
 	wd,mynet-n600|\
 	wd,mynet-n750)
 		[ "$PHYNBR" -eq 0 ] && \
 			mtd_get_mac_ascii devdata wlan24mac > /sys${DEVPATH}/macaddress
 		[ "$PHYNBR" -eq 1 ] && \
 			mtd_get_mac_ascii devdata wlan5mac > /sys${DEVPATH}/macaddress
+		;;
+	wd,mynet-wifi-rangeextender)
+		echo $(nvram get wl0_hwaddr) > /sys${DEVPATH}/macaddress
 		;;
 esac

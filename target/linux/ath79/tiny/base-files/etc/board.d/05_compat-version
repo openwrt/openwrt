@@ -8,15 +8,15 @@
 board_config_update
 
 case "$(board_name)" in
-	tplink,tl-wpa8630p-v2-int|\
-	tplink,tl-wpa8630p-v2.0-eu|\
-	tplink,tl-wpa8630p-v2.1-eu)
-		ucidef_set_compat_version "2.0"
-		;;
 	tplink,re355-v1|\
 	tplink,re450-v1|\
 	tplink,re450-v2)
 		ucidef_set_compat_version "3.0"
+		;;
+	tplink,tl-wpa8630p-v2-int|\
+	tplink,tl-wpa8630p-v2.0-eu|\
+	tplink,tl-wpa8630p-v2.1-eu)
+		ucidef_set_compat_version "2.0"
 		;;
 esac
 
