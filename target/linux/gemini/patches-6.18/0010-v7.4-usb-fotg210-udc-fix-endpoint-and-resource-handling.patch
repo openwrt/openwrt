@@ -101,7 +101,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  		fotg210_done(ep, req, -ECONNRESET);
  	spin_unlock_irqrestore(&ep->fotg210->lock, flags);
  
-@@ -886,6 +891,8 @@ static irqreturn_t fotg210_irq(int irq,
+@@ -891,6 +896,8 @@ static irqreturn_t fotg210_irq(int irq,
  	u32 int_msk = ioread32(fotg210->reg + FOTG210_DMIGR);
  
  	int_grp &= ~int_msk;
@@ -110,7 +110,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  
  	spin_lock(&fotg210->lock);
  
-@@ -1002,6 +1009,14 @@ static void fotg210_disable_unplug(struc
+@@ -1007,6 +1014,14 @@ static void fotg210_disable_unplug(struc
  	iowrite32(reg, fotg210->reg + FOTG210_PHYTMSR);
  }
  
@@ -125,7 +125,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  static int fotg210_udc_start(struct usb_gadget *g,
  		struct usb_gadget_driver *driver)
  {
-@@ -1009,20 +1024,23 @@ static int fotg210_udc_start(struct usb_
+@@ -1014,20 +1029,23 @@ static int fotg210_udc_start(struct usb_
  	u32 value;
  	int ret;
  
@@ -154,7 +154,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  	/* chip enable */
  	value = ioread32(fotg210->reg + FOTG210_DMCR);
  	value |= DMCR_CHIP_EN;
-@@ -1076,20 +1094,23 @@ static void fotg210_init(struct fotg210_
+@@ -1081,20 +1099,23 @@ static void fotg210_init(struct fotg210_
  static int fotg210_udc_stop(struct usb_gadget *g)
  {
  	struct fotg210_udc *fotg210 = gadget_to_fotg210(g);
@@ -182,7 +182,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  }
  
  /**
-@@ -1103,8 +1124,12 @@ static int fotg210_vbus_session(struct u
+@@ -1108,8 +1129,12 @@ static int fotg210_vbus_session(struct u
  {
  	struct fotg210_udc *fotg210 = gadget_to_fotg210(g);
  
@@ -197,7 +197,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  	return 0;
  }
  
-@@ -1144,28 +1169,24 @@ static int fotg210_phy_event(struct noti
+@@ -1149,28 +1174,24 @@ static int fotg210_phy_event(struct noti
  	}
  }
  
@@ -231,7 +231,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  
  	return 0;
  }
-@@ -1188,7 +1209,6 @@ int fotg210_udc_probe(struct platform_de
+@@ -1193,7 +1214,6 @@ int fotg210_udc_probe(struct platform_de
  		return -ENOMEM;
  
  	fotg210->dev = dev;
@@ -239,7 +239,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  
  	fotg210->phy = devm_usb_get_phy_by_phandle(dev, "usb-phy", 0);
  	if (IS_ERR(fotg210->phy)) {
-@@ -1216,8 +1236,6 @@ int fotg210_udc_probe(struct platform_de
+@@ -1221,8 +1241,6 @@ int fotg210_udc_probe(struct platform_de
  
  	spin_lock_init(&fotg210->lock);
  
@@ -248,7 +248,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  	fotg210->gadget.ops = &fotg210_gadget_ops;
  
  	fotg210->gadget.max_speed = USB_SPEED_HIGH;
-@@ -1267,38 +1285,45 @@ int fotg210_udc_probe(struct platform_de
+@@ -1272,38 +1290,45 @@ int fotg210_udc_probe(struct platform_de
  
  	fotg210_disable_unplug(fotg210);
  

@@ -33,7 +33,7 @@ Signed-off-by: Jonas Jelonek <jonas@jonasjelonek.de>
  	u8 lane = pcs_to_b53_pcs(pcs)->lane;
 --- a/drivers/net/dsa/mt7530.c
 +++ b/drivers/net/dsa/mt7530.c
-@@ -3187,7 +3187,7 @@ static void mt7530_pcs_get_state(struct
+@@ -3209,7 +3209,7 @@ static void mt7530_pcs_get_state(struct
  static int mt753x_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
  			     phy_interface_t interface,
  			     const unsigned long *advertising,
@@ -266,7 +266,7 @@ Signed-off-by: Jonas Jelonek <jonas@jonasjelonek.de>
  {
  	struct mtk_pcs_lynxi *mpcs = pcs_to_mtk_pcs_lynxi(pcs);
  	bool mode_changed = false, changed;
-@@ -323,7 +323,7 @@ static void mtk_pcs_lynxi_get_state(stru
+@@ -326,7 +326,7 @@ static void mtk_pcs_lynxi_get_state(stru
  	if (!state->link && mpcs->xfi_tphy) {
  		mpcs->interface = PHY_INTERFACE_MODE_NA;
  		mtk_pcs_lynxi_config(pcs, mpcs->neg_mode,
@@ -275,7 +275,7 @@ Signed-off-by: Jonas Jelonek <jonas@jonasjelonek.de>
  	}
  }
  
-@@ -349,7 +349,7 @@ static void mtk_pcs_lynxi_link_up(struct
+@@ -352,7 +352,7 @@ static void mtk_pcs_lynxi_link_up(struct
  	 */
  	if (mpcs->xfi_tphy && neg_mode != PHYLINK_PCS_NEG_INBAND_ENABLED) {
  		mpcs->interface = PHY_INTERFACE_MODE_NA;
@@ -284,7 +284,7 @@ Signed-off-by: Jonas Jelonek <jonas@jonasjelonek.de>
  	}
  
  	if (neg_mode != PHYLINK_PCS_NEG_INBAND_ENABLED) {
-@@ -396,7 +396,7 @@ static void mtk_pcs_lynxi_link_poll(stru
+@@ -399,7 +399,7 @@ static void mtk_pcs_lynxi_link_poll(stru
  
  	mpcs->interface = PHY_INTERFACE_MODE_NA;
  	mtk_pcs_lynxi_config(&mpcs->pcs, mpcs->neg_mode,

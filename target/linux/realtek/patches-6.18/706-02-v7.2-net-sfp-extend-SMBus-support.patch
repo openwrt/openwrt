@@ -75,7 +75,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  #include <linux/workqueue.h>
  
  #include "sfp.h"
-@@ -847,50 +848,113 @@ static int sfp_i2c_write(struct sfp *sfp
+@@ -844,50 +845,113 @@ static int sfp_i2c_write(struct sfp *sfp
  	return ret == ARRAY_SIZE(msgs) ? len : 0;
  }
  
@@ -213,7 +213,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	}
  
  	return data - (u8 *)buf;
-@@ -906,10 +970,29 @@ static int sfp_i2c_configure(struct sfp
+@@ -903,10 +967,29 @@ static int sfp_i2c_configure(struct sfp
  		sfp->read = sfp_i2c_read;
  		sfp->write = sfp_i2c_write;
  		max_block_size = SFP_EEPROM_BLOCK_SIZE;
