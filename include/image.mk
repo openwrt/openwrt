@@ -13,6 +13,9 @@ ifndef IB
   ifdef CONFIG_TARGET_PER_DEVICE_ROOTFS
     TARGET_PER_DEVICE_ROOTFS := 1
   endif
+else
+  $(foreach var,$(filter CONFIG_PACKAGE_%,$(.VARIABLES)),$(eval $(var):=))
+  $(foreach pkg,$(IB_PACKAGES),$(eval CONFIG_PACKAGE_$(pkg):=y))
 endif
 
 include $(INCLUDE_DIR)/feeds.mk
