@@ -154,14 +154,8 @@ linksys_lgs328mpc_v2() {
 
 boot() {
 	case $(board_name) in
-	plasmacloud,esx28|\
-	plasmacloud,psx28)
-		# Lowest speed at 50 C, full speed at 70 C; critical at 80 C, as
-		# per the datasheet.
-		adt747x_fancontrol 2 1 50000 70000 80000 75000 0 22500
-		;;
-	d-link,dgs-1210-28p-f|\
-	d-link,dgs-1210-28mp-f)
+	d-link,dgs-1210-28mp-f|\
+	d-link,dgs-1210-28p-f)
 		dlink_dgs_1210
 		;;
 	d-link,dgs-1250-28x)
@@ -174,6 +168,12 @@ boot() {
 		;;
 	linksys,lgs328mpc-v2)
 		linksys_lgs328mpc_v2
+		;;
+	plasmacloud,esx28|\
+	plasmacloud,psx28)
+		# Lowest speed at 50 C, full speed at 70 C; critical at 80 C, as
+		# per the datasheet.
+		adt747x_fancontrol 2 1 50000 70000 80000 75000 0 22500
 		;;
 	esac
 }
