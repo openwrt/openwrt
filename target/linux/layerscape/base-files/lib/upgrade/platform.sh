@@ -144,14 +144,6 @@ platform_copy_config() {
 	local board=$(board_name)
 
 	case "$board" in
-	watchguard,firebox-t40)
-		echo "Saving config backup..."
-		[ "$T40_ROOT_DEV" -a "$T40_ROOTFS_BLOCKS" ] || {
-			echo "Unable to determine T40 config destination"
-			return 1
-		}
-		dd if="$UPGRADE_BACKUP" of="$T40_ROOT_DEV" bs=512 seek=$T40_ROOTFS_BLOCKS || return 1
-		;;
 	fsl,ls1012a-frwy-sdboot|\
 	fsl,ls1021a-iot-sdboot|\
 	fsl,ls1021a-twr-sdboot|\
@@ -163,16 +155,20 @@ platform_copy_config() {
 	fsl,lx2160a-rdb-sdboot)
 		platform_copy_config_sdboot
 		;;
+	watchguard,firebox-t40)
+		echo "Saving config backup..."
+		[ "$T40_ROOT_DEV" -a "$T40_ROOTFS_BLOCKS" ] || {
+			echo "Unable to determine T40 config destination"
+			return 1
+		}
+		dd if="$UPGRADE_BACKUP" of="$T40_ROOT_DEV" bs=512 seek=$T40_ROOTFS_BLOCKS || return 1
+		;;
 	esac
 }
 platform_check_image() {
 	local board=$(board_name)
 
 	case "$board" in
-	traverse,ten64)
-		nand_do_platform_check "ten64-mtd" $1
-		return $?
-		;;
 	fsl,ls1012a-frdm|\
 	fsl,ls1012a-frwy-sdboot|\
 	fsl,ls1012a-rdb|\
@@ -181,7 +177,6 @@ platform_check_image() {
 	fsl,ls1021a-twr-sdboot|\
 	fsl,ls1028a-rdb|\
 	fsl,ls1028a-rdb-sdboot|\
-	watchguard,firebox-t40|\
 	fsl,ls1043a-rdb|\
 	fsl,ls1043a-rdb-sdboot|\
 	fsl,ls1046a-frwy|\
@@ -192,8 +187,13 @@ platform_check_image() {
 	fsl,ls1088a-rdb-sdboot|\
 	fsl,ls2088a-rdb|\
 	fsl,lx2160a-rdb|\
-	fsl,lx2160a-rdb-sdboot)
+	fsl,lx2160a-rdb-sdboot|\
+	watchguard,firebox-t40)
 		return 0
+		;;
+	traverse,ten64)
+		nand_do_platform_check "ten64-mtd" $1
+		return $?
 		;;
 	*)
 		echo "Sysupgrade is not currently supported on $board"
@@ -210,12 +210,6 @@ platform_do_upgrade() {
 	touch /var/lock/fw_printenv.lock
 
 	case "$board" in
-	traverse,ten64)
-		platform_do_upgrade_traverse_slotubi "${1}"
-		;;
-	watchguard,firebox-t40)
-		platform_do_upgrade_t40 "${1}"
-		;;
 	fsl,ls1012a-frdm|\
 	fsl,ls1012a-rdb|\
 	fsl,ls1021a-twr|\
@@ -240,6 +234,12 @@ platform_do_upgrade() {
 	fsl,lx2160a-rdb-sdboot)
 		platform_do_upgrade_sdboot "$1"
 		return 0
+		;;
+	traverse,ten64)
+		platform_do_upgrade_traverse_slotubi "${1}"
+		;;
+	watchguard,firebox-t40)
+		platform_do_upgrade_t40 "${1}"
 		;;
 	*)
 		echo "Sysupgrade is not currently supported on $board"
