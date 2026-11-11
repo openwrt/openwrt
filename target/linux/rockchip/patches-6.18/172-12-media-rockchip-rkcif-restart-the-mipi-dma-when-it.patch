@@ -1,0 +1,283 @@
+From 5ada3f92485f2ed78857918d1f106907b0f2ea44 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Tue, 3 Nov 2026 09:49:03 +0000
+Subject: [PATCH] media: rockchip: rkcif: restart the MIPI DMA when it slips
+
+The MIPI DMA ends a frame after the configured number of lines and the
+sensor frame start does not reset that count. A line dropped on the
+CSI-2 link, which the receiver reports as a frame boundary or sequence
+error, therefore leaves every later buffer composed of the tail of one
+frame and the head of the next, with the Bayer phase flipped when the
+offset is odd. Observed on an RV1126 with an IMX415 after a night of
+streaming, reproducible on demand by shortening the D-PHY settle time.
+
+Enable the frame start interrupts and read the line counter there: it
+is zero in the vertical blanking while the DMA is in step and holds the
+offset otherwise. Disabling and re-enabling the capture only pauses the
+counter, so once a second frame confirms the offset the stream is
+restarted through the existing stop and start paths, and the runtime
+suspend in between resets the block. With other streams keeping the
+block powered the restart is skipped and a warning given once; the
+restarts are counted in debugfs next to the error counters.
+
+Fixes: 1f2353f5a1af ("media: rockchip: rkcif: add support for rk3568 vicap mipi capture")
+Assisted-by: LLM
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ .../rockchip/rkcif/rkcif-capture-mipi.c       | 53 +++++++++++++++
+ .../platform/rockchip/rkcif/rkcif-common.h    |  8 +++
+ .../platform/rockchip/rkcif/rkcif-stream.c    | 64 +++++++++++++++++++
+ .../platform/rockchip/rkcif/rkcif-stream.h    |  2 +
+ 4 files changed, 127 insertions(+)
+
+--- a/drivers/media/platform/rockchip/rkcif/rkcif-capture-mipi.c
++++ b/drivers/media/platform/rockchip/rkcif/rkcif-capture-mipi.c
+@@ -43,10 +43,17 @@
+ #define RKCIF_MIPI_CTRL0_VC_ID(id)    ((id) << 8)
+ #define RKCIF_MIPI_CTRL0_CAP_EN	      BIT(0)
+ 
++#define RKCIF_MIPI_INT_FRAME0_START(id) BIT((id) * 2 + 0)
++#define RKCIF_MIPI_INT_FRAME1_START(id) BIT((id) * 2 + 1)
+ #define RKCIF_MIPI_INT_FRAME0_END(id) BIT(8 + (id) * 2 + 0)
+ #define RKCIF_MIPI_INT_FRAME1_END(id) BIT(8 + (id) * 2 + 1)
+ #define RKCIF_MIPI_INT_ALL_END GENMASK(15, 8)
+ 
++#define RKCIF_MIPI_LINE_CNT_MASK GENMASK(13, 0)
++
++/* a slipped frame boundary persists, so a second frame confirms it */
++#define RKCIF_MIPI_MISALIGNED_FRAMES 2
++
+ #define RK3568_MIPI_INT_DMA_Y_FIFO_OVERFLOW BIT(16)
+ #define RK3568_MIPI_INT_DMA_UV_FIFO_OVERFLOW BIT(17)
+ #define RK3568_MIPI_INT_CONFIG_FIFO_OVERFLOW BIT(18)
+@@ -871,6 +878,41 @@ static void rkcif_mipi_debugfs_init(stru
+ 		debugfs_create_ulong(match_data->errors[i].name, 0444,
+ 				     interface->debugfs_dir,
+ 				     &interface->error_count[i]);
++	debugfs_create_ulong("restarts", 0444, interface->debugfs_dir,
++			     &interface->restarts);
++}
++
++static u32 rkcif_mipi_line_cnt(struct rkcif_stream *stream)
++{
++	unsigned int index = RKCIF_MIPI_LINE_CNT_ID0_1 + stream->id / 2;
++	u32 val = rkcif_mipi_read(stream->interface, index);
++
++	return (val >> (stream->id % 2 * 16)) & RKCIF_MIPI_LINE_CNT_MASK;
++}
++
++/* the DMA frame boundary is a line count that only a block reset resyncs */
++static void rkcif_mipi_check_alignment(struct rkcif_stream *stream)
++{
++	u32 line;
++
++	if (!stream->streaming || stream->stopping || stream->restart_pending ||
++	    stream->realign_disabled)
++		return;
++
++	line = rkcif_mipi_line_cnt(stream);
++	if (!line) {
++		stream->misaligned_frames = 0;
++		return;
++	}
++
++	if (++stream->misaligned_frames < RKCIF_MIPI_MISALIGNED_FRAMES)
++		return;
++
++	stream->misaligned_frames = 0;
++	dev_warn(stream->rkcif->dev,
++		 "%s: frame starts at line %u, restarting the capture\n",
++		 stream->vdev.name, line);
++	rkcif_stream_restart(stream);
+ }
+ 
+ static void rkcif_mipi_queue_buffer(struct rkcif_stream *stream,
+@@ -942,6 +984,8 @@ static int rkcif_mipi_start_streaming(st
+ 
+ 	ctrl1 = RKCIF_XY_COORD(width, height);
+ 
++	int_mask |= RKCIF_MIPI_INT_FRAME0_START(stream->id);
++	int_mask |= RKCIF_MIPI_INT_FRAME1_START(stream->id);
+ 	int_mask |= RKCIF_MIPI_INT_FRAME0_END(stream->id);
+ 	int_mask |= RKCIF_MIPI_INT_FRAME1_END(stream->id);
+ 	int_mask |= rkcif_mipi_error_mask(interface);
+@@ -986,6 +1030,8 @@ static void rkcif_mipi_stop_streaming(st
+ 
+ 	rkcif_mipi_stream_write(stream, RKCIF_MIPI_CTRL0, 0);
+ 
++	int_mask |= RKCIF_MIPI_INT_FRAME0_START(stream->id);
++	int_mask |= RKCIF_MIPI_INT_FRAME1_START(stream->id);
+ 	int_mask |= RKCIF_MIPI_INT_FRAME0_END(stream->id);
+ 	int_mask |= RKCIF_MIPI_INT_FRAME1_END(stream->id);
+ 
+@@ -1050,6 +1096,10 @@ irqreturn_t rkcif_mipi_isr(int irq, void
+ 		for (unsigned int j = 0; j < interface->streams_num; j++) {
+ 			struct rkcif_stream *stream = &interface->streams[j];
+ 
++			if (intstat & RKCIF_MIPI_INT_FRAME0_START(stream->id) ||
++			    intstat & RKCIF_MIPI_INT_FRAME1_START(stream->id))
++				rkcif_mipi_check_alignment(stream);
++
+ 			if (intstat & RKCIF_MIPI_INT_FRAME0_END(stream->id) ||
+ 			    intstat & RKCIF_MIPI_INT_FRAME1_END(stream->id)) {
+ 				ret = IRQ_HANDLED;
+@@ -1060,6 +1110,9 @@ irqreturn_t rkcif_mipi_isr(int irq, void
+ 					continue;
+ 				}
+ 
++				if (stream->restart_pending)
++					continue;
++
+ 				rkcif_stream_pingpong(stream);
+ 			}
+ 		}
+--- a/drivers/media/platform/rockchip/rkcif/rkcif-common.h
++++ b/drivers/media/platform/rockchip/rkcif/rkcif-common.h
+@@ -15,6 +15,7 @@
+ #include <linux/clk.h>
+ #include <linux/mutex.h>
+ #include <linux/regmap.h>
++#include <linux/workqueue.h>
+ 
+ #include <media/media-device.h>
+ #include <media/media-entity.h>
+@@ -160,6 +161,12 @@ struct rkcif_stream {
+ 	bool stopping;
+ 	wait_queue_head_t wq_stopped;
+ 
++	bool streaming;
++	bool restart_pending;
++	bool realign_disabled;
++	unsigned int misaligned_frames;
++	struct work_struct restart_work;
++
+ 	/* frames go to an in-kernel consumer instead of the vb2 queue */
+ 	struct {
+ 		struct v4l2_subdev sd;
+@@ -215,6 +222,7 @@ struct rkcif_interface {
+ 
+ 	struct dentry *debugfs_dir;
+ 	unsigned long error_count[RKCIF_MIPI_ERRORS_MAX];
++	unsigned long restarts;
+ 
+ 	void (*set_crop)(struct rkcif_stream *stream, u16 left, u16 top);
+ };
+--- a/drivers/media/platform/rockchip/rkcif/rkcif-stream.c
++++ b/drivers/media/platform/rockchip/rkcif/rkcif-stream.c
+@@ -270,6 +270,60 @@ static void rkcif_stream_queue_buffer(st
+ 	rkcif_stream_push_buffer(stream, buffer);
+ }
+ 
++static void rkcif_stream_restart_work(struct work_struct *work)
++{
++	struct rkcif_stream *stream =
++		container_of(work, struct rkcif_stream, restart_work);
++	struct rkcif_device *rkcif = stream->rkcif;
++	u64 mask = BIT_ULL(stream->id);
++	int ret;
++
++	mutex_lock(&stream->vlock);
++	if (!stream->streaming || !stream->restart_pending)
++		goto out;
++
++	v4l2_subdev_disable_streams(&stream->interface->sd, RKCIF_IF_PAD_SRC,
++				    mask);
++	stream->stop_streaming(stream);
++
++	/* the runtime suspend resets the block and with it the line counter */
++	pm_runtime_put_sync(rkcif->dev);
++	if (!pm_runtime_suspended(rkcif->dev)) {
++		stream->realign_disabled = true;
++		dev_warn(rkcif->dev,
++			 "%s: cannot reset the block while other streams run\n",
++			 stream->vdev.name);
++	}
++	ret = pm_runtime_resume_and_get(rkcif->dev);
++	if (ret < 0) {
++		pm_runtime_get_noresume(rkcif->dev);
++		dev_err(rkcif->dev, "failed to resume for the restart: %d\n",
++			ret);
++		goto out;
++	}
++
++	stream->frame_phase = 0;
++	stream->queue_buffer(stream, 0);
++	stream->queue_buffer(stream, 1);
++	ret = stream->start_streaming(stream);
++	if (!ret)
++		ret = v4l2_subdev_enable_streams(&stream->interface->sd,
++						 RKCIF_IF_PAD_SRC, mask);
++	if (ret)
++		dev_err(rkcif->dev, "failed to restart the capture: %d\n", ret);
++	stream->interface->restarts++;
++
++out:
++	stream->restart_pending = false;
++	mutex_unlock(&stream->vlock);
++}
++
++void rkcif_stream_restart(struct rkcif_stream *stream)
++{
++	stream->restart_pending = true;
++	schedule_work(&stream->restart_work);
++}
++
+ static int rkcif_stream_hw_start(struct rkcif_stream *stream)
+ {
+ 	struct rkcif_device *rkcif = stream->rkcif;
+@@ -278,6 +332,9 @@ static int rkcif_stream_hw_start(struct
+ 
+ 	stream->frame_idx = 0;
+ 	stream->frame_phase = 0;
++	stream->misaligned_frames = 0;
++	stream->realign_disabled = false;
++	stream->restart_pending = false;
+ 
+ 	ret = video_device_pipeline_start(&stream->vdev, &stream->pipeline);
+ 	if (ret) {
+@@ -307,6 +364,8 @@ static int rkcif_stream_hw_start(struct
+ 	if (ret < 0)
+ 		goto err_stop_stream;
+ 
++	stream->streaming = true;
++
+ 	return 0;
+ 
+ err_stop_stream:
+@@ -333,6 +392,9 @@ static void rkcif_stream_hw_stop(struct
+ 	u64 mask;
+ 	int ret;
+ 
++	stream->streaming = false;
++	stream->restart_pending = false;
++
+ 	mask = BIT_ULL(stream->id);
+ 	v4l2_subdev_disable_streams(&stream->interface->sd, RKCIF_IF_PAD_SRC,
+ 				    mask);
+@@ -809,6 +871,7 @@ int rkcif_stream_register(struct rkcif_d
+ 	spin_lock_init(&stream->driver_queue_lock);
+ 
+ 	init_waitqueue_head(&stream->wq_stopped);
++	INIT_WORK(&stream->restart_work, rkcif_stream_restart_work);
+ 
+ 	mutex_init(&stream->vlock);
+ 
+@@ -888,6 +951,7 @@ void rkcif_stream_unregister(struct rkci
+ {
+ 	if (rkcif_stream_is_toisp(stream))
+ 		rkcif_toisp_unregister(stream);
++	cancel_work_sync(&stream->restart_work);
+ 	video_unregister_device(&stream->vdev);
+ 	media_entity_cleanup(&stream->vdev.entity);
+ }
+--- a/drivers/media/platform/rockchip/rkcif/rkcif-stream.h
++++ b/drivers/media/platform/rockchip/rkcif/rkcif-stream.h
+@@ -20,6 +20,8 @@
+ 
+ void rkcif_stream_pingpong(struct rkcif_stream *stream);
+ 
++void rkcif_stream_restart(struct rkcif_stream *stream);
++
+ int rkcif_stream_register(struct rkcif_device *rkcif,
+ 			  struct rkcif_stream *stream);
+ 

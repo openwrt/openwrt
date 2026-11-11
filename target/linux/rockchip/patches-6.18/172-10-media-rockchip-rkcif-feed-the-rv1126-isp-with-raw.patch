@@ -1,44 +1,188 @@
-From 8ce11defc9f218ded2296ab7c26245ff4e6fa4cd Mon Sep 17 00:00:00 2001
+From 7b33905397ece095c0844313c90a8716d66bf1f2 Mon Sep 17 00:00:00 2001
 From: Daniel Golle <daniel@makrotopia.org>
 Date: Fri, 16 Oct 2026 23:54:16 +0100
 Subject: [PATCH] media: rockchip: rkcif: Feed the RV1126 ISP with raw frames
 
 The VICAP of the RV1126 has no IOMMU, so the raw frames it shares with
 the ISP are allocated by its video node, and the ISP readback takes
-MSB-justified 16-bit words with more lines than the frame has.
+MSB-justified 16-bit words.
 
-Set the high alignment bit for the unpacked RAW10 and RAW12 formats so
-that a sample lands in bits 15:6 of its word. Keep a larger sizeimage
-that an application sets on the video node. Offer the MIPI stream to a
-consumer through a V4L2 subdevice described by rkcif-toisp.h, so that
-the ISP driver can take every completed frame.
+Offer unpacked RAW10 and RAW12 samples written MSB-justified, with the
+high alignment bit, as the 16-bit Bayer formats. One 16-bit format
+serves two bus codes, so the capture picks the format by the bus code
+as well, and the enumeration lists each format once unless it is asked
+for one bus code. Offer the MIPI stream to a consumer through a V4L2
+subdevice described by rkcif-toisp.h, so that the ISP driver can take
+every completed frame.
 
 Assisted-by: LLM
 Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 ---
- .../rockchip/rkcif/rkcif-capture-mipi.c       |   4 +
- .../platform/rockchip/rkcif/rkcif-common.h    |  13 +
- .../platform/rockchip/rkcif/rkcif-stream.c    | 289 +++++++++++++++++-
- .../linux/platform_data/media/rkcif-toisp.h   |  69 +++++
- 4 files changed, 369 insertions(+), 6 deletions(-)
+ .../rockchip/rkcif/rkcif-capture-mipi.c       | 121 ++++++-
+ .../platform/rockchip/rkcif/rkcif-common.h    |  14 +
+ .../platform/rockchip/rkcif/rkcif-stream.c    | 296 +++++++++++++++++-
+ .../linux/platform_data/media/rkcif-toisp.h   |  68 ++++
+ 4 files changed, 487 insertions(+), 12 deletions(-)
  create mode 100644 include/linux/platform_data/media/rkcif-toisp.h
 
 --- a/drivers/media/platform/rockchip/rkcif/rkcif-capture-mipi.c
 +++ b/drivers/media/platform/rockchip/rkcif/rkcif-capture-mipi.c
-@@ -394,9 +394,13 @@ rkcif_rk3568_mipi_ctrl0(struct rkcif_str
- 		break;
- 	case RKCIF_MIPI_TYPE_RAW10:
- 		ctrl0 |= RK3568_MIPI_CTRL0_WRDDR(0x1);
-+		if (!active_out_fmt->mipi.compact)
-+			ctrl0 |= RK3568_MIPI_CTRL0_HIGH_ALIGN;
- 		break;
- 	case RKCIF_MIPI_TYPE_RAW12:
- 		ctrl0 |= RK3568_MIPI_CTRL0_WRDDR(0x2);
-+		if (!active_out_fmt->mipi.compact)
-+			ctrl0 |= RK3568_MIPI_CTRL0_HIGH_ALIGN;
- 		break;
- 	case RKCIF_MIPI_TYPE_RGB888:
- 		ctrl0 |= RK3568_MIPI_CTRL0_WRDDR(0x3);
+@@ -317,6 +317,94 @@ static const struct rkcif_output_fmt mip
+ 			.type = RKCIF_MIPI_TYPE_RAW12,
+ 		},
+ 	},
++	{
++		.fourcc = V4L2_PIX_FMT_SBGGR16,
++		.mbus_code = MEDIA_BUS_FMT_SBGGR10_1X10,
++		.depth = 16,
++		.cplanes = 1,
++		.mipi = {
++			.dt = MIPI_CSI2_DT_RAW10,
++			.high_align = true,
++			.type = RKCIF_MIPI_TYPE_RAW10,
++		},
++	},
++	{
++		.fourcc = V4L2_PIX_FMT_SGBRG16,
++		.mbus_code = MEDIA_BUS_FMT_SGBRG10_1X10,
++		.depth = 16,
++		.cplanes = 1,
++		.mipi = {
++			.dt = MIPI_CSI2_DT_RAW10,
++			.high_align = true,
++			.type = RKCIF_MIPI_TYPE_RAW10,
++		},
++	},
++	{
++		.fourcc = V4L2_PIX_FMT_SGRBG16,
++		.mbus_code = MEDIA_BUS_FMT_SGRBG10_1X10,
++		.depth = 16,
++		.cplanes = 1,
++		.mipi = {
++			.dt = MIPI_CSI2_DT_RAW10,
++			.high_align = true,
++			.type = RKCIF_MIPI_TYPE_RAW10,
++		},
++	},
++	{
++		.fourcc = V4L2_PIX_FMT_SRGGB16,
++		.mbus_code = MEDIA_BUS_FMT_SRGGB10_1X10,
++		.depth = 16,
++		.cplanes = 1,
++		.mipi = {
++			.dt = MIPI_CSI2_DT_RAW10,
++			.high_align = true,
++			.type = RKCIF_MIPI_TYPE_RAW10,
++		},
++	},
++	{
++		.fourcc = V4L2_PIX_FMT_SBGGR16,
++		.mbus_code = MEDIA_BUS_FMT_SBGGR12_1X12,
++		.depth = 16,
++		.cplanes = 1,
++		.mipi = {
++			.dt = MIPI_CSI2_DT_RAW12,
++			.high_align = true,
++			.type = RKCIF_MIPI_TYPE_RAW12,
++		},
++	},
++	{
++		.fourcc = V4L2_PIX_FMT_SGBRG16,
++		.mbus_code = MEDIA_BUS_FMT_SGBRG12_1X12,
++		.depth = 16,
++		.cplanes = 1,
++		.mipi = {
++			.dt = MIPI_CSI2_DT_RAW12,
++			.high_align = true,
++			.type = RKCIF_MIPI_TYPE_RAW12,
++		},
++	},
++	{
++		.fourcc = V4L2_PIX_FMT_SGRBG16,
++		.mbus_code = MEDIA_BUS_FMT_SGRBG12_1X12,
++		.depth = 16,
++		.cplanes = 1,
++		.mipi = {
++			.dt = MIPI_CSI2_DT_RAW12,
++			.high_align = true,
++			.type = RKCIF_MIPI_TYPE_RAW12,
++		},
++	},
++	{
++		.fourcc = V4L2_PIX_FMT_SRGGB16,
++		.mbus_code = MEDIA_BUS_FMT_SRGGB12_1X12,
++		.depth = 16,
++		.cplanes = 1,
++		.mipi = {
++			.dt = MIPI_CSI2_DT_RAW12,
++			.high_align = true,
++			.type = RKCIF_MIPI_TYPE_RAW12,
++		},
++	},
+ };
+ 
+ static const struct rkcif_input_fmt mipi_in_fmts[] = {
+@@ -388,6 +476,8 @@ rkcif_rk3568_mipi_ctrl0(struct rkcif_str
+ 
+ 	if (active_out_fmt->mipi.compact)
+ 		ctrl0 |= RK3568_MIPI_CTRL0_COMPACT_EN;
++	if (active_out_fmt->mipi.high_align)
++		ctrl0 |= RK3568_MIPI_CTRL0_HIGH_ALIGN;
+ 
+ 	switch (active_out_fmt->mipi.type) {
+ 	case RKCIF_MIPI_TYPE_RAW8:
+@@ -496,6 +586,8 @@ rkcif_rk3588_mipi_ctrl0(struct rkcif_str
+ 	ctrl0 |= RKCIF_MIPI_CTRL0_DT_ID(active_out_fmt->mipi.dt);
+ 	ctrl0 |= RK3588_MIPI_CTRL0_CROP_EN;
+ 	ctrl0 |= RKCIF_MIPI_CTRL0_CAP_EN;
++	if (active_out_fmt->mipi.high_align)
++		ctrl0 |= RK3588_MIPI_CTRL0_HIGH_ALIGN;
+ 
+ 	switch (active_out_fmt->mipi.type) {
+ 	case RKCIF_MIPI_TYPE_RAW8:
+@@ -716,6 +808,32 @@ static void rkcif_mipi_queue_buffer(stru
+ 				buffer->buff_addr[RKCIF_PLANE_UV]);
+ }
+ 
++/* one 16-bit format serves both sample depths, so the bus code picks */
++static const struct rkcif_output_fmt *
++rkcif_mipi_find_output_fmt(struct rkcif_stream *stream)
++{
++	const struct rkcif_output_fmt *fmt;
++	struct v4l2_subdev_state *state;
++	struct v4l2_mbus_framefmt *mf;
++	unsigned int i;
++	u32 code = 0;
++
++	state = v4l2_subdev_lock_and_get_active_state(&stream->interface->sd);
++	mf = v4l2_subdev_state_get_format(state, RKCIF_IF_PAD_SRC, stream->id);
++	if (mf)
++		code = mf->code;
++	v4l2_subdev_unlock_state(state);
++
++	for (i = 0; i < stream->out_fmts_num; i++) {
++		fmt = &stream->out_fmts[i];
++		if (fmt->fourcc == stream->pix.pixelformat &&
++		    fmt->mbus_code == code)
++			return fmt;
++	}
++
++	return NULL;
++}
++
+ static int rkcif_mipi_start_streaming(struct rkcif_stream *stream)
+ {
+ 	struct rkcif_interface *interface = stream->interface;
+@@ -728,8 +846,7 @@ static int rkcif_mipi_start_streaming(st
+ 
+ 	state = v4l2_subdev_lock_and_get_active_state(&interface->sd);
+ 
+-	active_out_fmt = rkcif_stream_find_output_fmt(stream, false,
+-						      stream->pix.pixelformat);
++	active_out_fmt = rkcif_mipi_find_output_fmt(stream);
+ 	if (!active_out_fmt)
+ 		goto out;
+ 
 --- a/drivers/media/platform/rockchip/rkcif/rkcif-common.h
 +++ b/drivers/media/platform/rockchip/rkcif/rkcif-common.h
 @@ -11,6 +11,7 @@
@@ -49,7 +193,15 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  #include <linux/clk.h>
  #include <linux/mutex.h>
  #include <linux/regmap.h>
-@@ -157,6 +158,18 @@ struct rkcif_stream {
+@@ -125,6 +126,7 @@ struct rkcif_output_fmt {
+ 		struct {
+ 			u8 dt;
+ 			bool compact;
++			bool high_align;
+ 			enum rkcif_mipi_format_type type;
+ 		} mipi;
+ 	};
+@@ -157,6 +159,18 @@ struct rkcif_stream {
  	bool stopping;
  	wait_queue_head_t wq_stopped;
  
@@ -154,32 +306,37 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  static const struct vb2_ops rkcif_stream_vb2_ops = {
  	.queue_setup = rkcif_stream_setup_queue,
  	.buf_prepare = rkcif_stream_prepare_buffer,
-@@ -358,8 +388,23 @@ static int rkcif_stream_try_format(struc
+@@ -395,13 +425,25 @@ static int rkcif_stream_enum_formats(str
+ 				     struct v4l2_fmtdesc *f)
  {
  	struct rkcif_stream *stream = video_drvdata(file);
- 	struct v4l2_pix_format_mplane *pix = &f->fmt.pix_mp;
-+	u32 sizeimage[VIDEO_MAX_PLANES];
-+	unsigned int i;
-+	int ret;
-+
-+	for (i = 0; i < VIDEO_MAX_PLANES; i++)
-+		sizeimage[i] = pix->plane_fmt[i].sizeimage;
-+
-+	ret = rkcif_stream_fill_format(stream, pix);
-+	if (ret)
-+		return ret;
-+
-+	/* A consumer of the frames may need buffers larger than the frame. */
-+	for (i = 0; i < pix->num_planes; i++)
-+		if (sizeimage[i] > pix->plane_fmt[i].sizeimage)
-+			pix->plane_fmt[i].sizeimage = sizeimage[i];
++	const struct rkcif_output_fmt *fmt, *first;
++	unsigned int i, index = 0;
  
--	return rkcif_stream_fill_format(stream, pix);
-+	return 0;
+-	if (f->index >= stream->out_fmts_num)
+-		return -EINVAL;
++	for (i = 0; i < stream->out_fmts_num; i++) {
++		fmt = &stream->out_fmts[i];
++		first = rkcif_stream_find_output_fmt(stream, false,
++						     fmt->fourcc);
++		if (f->mbus_code && fmt->mbus_code != f->mbus_code)
++			continue;
++		if (!f->mbus_code && fmt != first)
++			continue;
++		if (index++ != f->index)
++			continue;
+ 
+-	f->pixelformat = stream->out_fmts[f->index].fourcc;
++		f->pixelformat = fmt->fourcc;
++		return 0;
++	}
+ 
+-	return 0;
++	return -EINVAL;
  }
  
- static int rkcif_stream_set_format(struct file *file, void *priv,
-@@ -526,6 +571,233 @@ static int rkcif_stream_init_vb2_queue(s
+ static int rkcif_stream_enum_framesizes(struct file *file, void *fh,
+@@ -526,6 +568,232 @@ static int rkcif_stream_init_vb2_queue(s
  	return vb2_queue_init(q);
  }
  
@@ -299,8 +456,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +
 +	cfg->bytesperline = stream->pix.plane_fmt[0].bytesperline;
 +	ret = rkcif_toisp_buffers_alloc(
-+		stream, PAGE_ALIGN(cfg->bytesperline *
-+				   (cfg->height + cfg->extra_lines)));
++		stream, PAGE_ALIGN(cfg->bytesperline * cfg->height));
 +	if (ret)
 +		goto unlock;
 +
@@ -413,7 +569,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  int rkcif_stream_register(struct rkcif_device *rkcif,
  			  struct rkcif_stream *stream)
  {
-@@ -598,6 +870,12 @@ int rkcif_stream_register(struct rkcif_d
+@@ -598,6 +866,12 @@ int rkcif_stream_register(struct rkcif_d
  		goto err_video_unregister;
  	}
  
@@ -426,7 +582,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	v4l2_info(v4l2_dev, "registered %s as /dev/video%d\n", vdev->name,
  		  vdev->num);
  
-@@ -612,6 +890,8 @@ err_media_entity_cleanup:
+@@ -612,6 +886,8 @@ err_media_entity_cleanup:
  
  void rkcif_stream_unregister(struct rkcif_stream *stream)
  {
@@ -437,7 +593,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  }
 --- /dev/null
 +++ b/include/linux/platform_data/media/rkcif-toisp.h
-@@ -0,0 +1,69 @@
+@@ -0,0 +1,68 @@
 +/* SPDX-License-Identifier: GPL-2.0 */
 +/*
 + * Rockchip Camera Interface (CIF): in-kernel frame consumer interface.
@@ -469,7 +625,6 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	u32 pixelformat;
 +	u32 width;
 +	u32 height;
-+	u32 extra_lines;
 +	u32 bytesperline;
 +};
 +
