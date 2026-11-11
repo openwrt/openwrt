@@ -12,14 +12,14 @@ platform_get_rootfs() {
 
 	if read cmdline < /proc/cmdline; then
 		case "$cmdline" in
-			*root=PARTUUID=*)
-				rootpartuuid="${cmdline##*root=PARTUUID=}"
-				rootpartuuid="${rootpartuuid%% *}"
-				rootfsdev="$(blkid -o device -t PARTUUID="${rootpartuuid}")"
+		*root=PARTUUID=*)
+			rootpartuuid="${cmdline##*root=PARTUUID=}"
+			rootpartuuid="${rootpartuuid%% *}"
+			rootfsdev="$(blkid -o device -t PARTUUID="${rootpartuuid}")"
 			;;
-			*root=*)
-				rootfsdev="${cmdline##*root=}"
-				rootfsdev="${rootfsdev%% *}"
+		*root=*)
+			rootfsdev="${cmdline##*root=}"
+			rootfsdev="${rootfsdev%% *}"
 			;;
 		esac
 
@@ -127,8 +127,8 @@ platform_do_upgrade() {
 	fi
 	[ -b "${rootfs}" ] || return 1
 	case "$board" in
-	er | \
-	ubnt,edgerouter-4 | \
+	er|\
+	ubnt,edgerouter-4|\
 	ubnt,edgerouter-6p)
 		kernel=/dev/mmcblk0p1
 		;;
@@ -144,6 +144,7 @@ platform_do_upgrade() {
 		;;
 	*)
 		return 1
+		;;
 	esac
 
 	platform_do_flash $tar_file $board $kernel $rootfs
@@ -160,12 +161,12 @@ platform_check_image() {
 	[ -n "$board_dir" ] || return 1
 
 	case "$board" in
-	er | \
-	itus,shield-router | \
-	ubnt,edgerouter-4 | \
-	ubnt,edgerouter-6p | \
-	ubnt,erlite | \
-	ubnt,usg | \
+	er|\
+	itus,shield-router|\
+	ubnt,edgerouter-4|\
+	ubnt,edgerouter-6p|\
+	ubnt,erlite|\
+	ubnt,usg|\
 	cisco,vedge1000)
 		local kernel_length=$(tar xf $tar_file $board_dir/kernel -O | wc -c 2> /dev/null)
 		local rootfs_length=$(tar xf $tar_file $board_dir/root -O | wc -c 2> /dev/null)

@@ -25,25 +25,24 @@ octeon_move_config() {
 	. /lib/functions.sh
 
 	case "$(board_name)" in
-		ubnt,erlite|\
-		ubnt,usg)
-			move_config "/dev/sda1" "vfat"
-			;;
-		itus,shield-router)
-			move_config "/dev/mmcblk1p1" "vfat"
-			;;
-		er|\
-		ubnt,edgerouter-4|\
-		ubnt,edgerouter-6p)
-			move_config "/dev/mmcblk0p1" "vfat"
-			;;
-		cisco,vedge1000)
-			# Copy from the internal USB disk's first partition.
-			# It is resolved from the device path to not be dependent on which
-			# /dev/sd? path it is at, nor which UUID it happens to have.
-			move_config "$(octeon_get_n821_disk 1)" "ext2"
-			;;
-
+	ubnt,erlite|\
+	ubnt,usg)
+		move_config "/dev/sda1" "vfat"
+		;;
+	itus,shield-router)
+		move_config "/dev/mmcblk1p1" "vfat"
+		;;
+	er|\
+	ubnt,edgerouter-4|\
+	ubnt,edgerouter-6p)
+		move_config "/dev/mmcblk0p1" "vfat"
+		;;
+	cisco,vedge1000)
+		# Copy from the internal USB disk's first partition.
+		# It is resolved from the device path to not be dependent on which
+		# /dev/sd? path it is at, nor which UUID it happens to have.
+		move_config "$(octeon_get_n821_disk 1)" "ext2"
+		;;
 	esac
 }
 
