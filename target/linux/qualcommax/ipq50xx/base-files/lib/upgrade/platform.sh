@@ -36,6 +36,24 @@ xiaomi_initramfs_prepare() {
 	ubiformat /dev/mtd$kern_mtdnum -y
 }
 
+# tplink_set_boot_idx <slot>: point TP-Link's U-Boot at a rootfs slot.
+# Some units ship with a U-Boot environment whose CRC is bad (seen on an
+# Archer AX55 v4); their U-Boot then runs its built-in defaults. fw_setenv
+# replaces such an environment with the uboot-envtools defaults, whose
+# bootcmd ("run distro_bootcmd") this U-Boot does not have, and the board
+# stops at the U-Boot prompt after the upgrade. Store the stock boot
+# command together with the slot in that case.
+tplink_set_boot_idx() {
+	local script=/tmp/tp_boot_idx.fwenv
+
+	echo "tp_boot_idx $1" > "$script"
+	if fw_printenv 2>&1 >/dev/null | grep -q 'Bad CRC'; then
+		echo "U-Boot environment has a bad CRC, writing bootcmd bootipq as well"
+		echo "bootcmd bootipq" >> "$script"
+	fi
+	fw_setenv -s "$script"
+}
+
 remove_oem_ubi_volume() {
 	local oem_volume_name="$1"
 	local oem_ubivol
@@ -279,7 +297,7 @@ platform_do_upgrade() {
 		sync
 		nand_do_flash_file "$1" || nand_do_upgrade_failed
 		if [ -z "$UPGRADE_OPT_USE_CURR_PART" ]; then
-			fw_setenv tp_boot_idx "$newtp" || {
+			tplink_set_boot_idx "$newtp" || {
 				echo "failed to set tp_boot_idx"
 				nand_do_upgrade_failed
 			}
@@ -301,7 +319,7 @@ platform_do_upgrade() {
 			idx=0
 			CI_UBIPART="rootfs"
 		fi
-		fw_setenv tp_boot_idx $idx || {
+		tplink_set_boot_idx $idx || {
 			echo "failed to set tp_boot_idx $idx"
 			return 1
 		}
