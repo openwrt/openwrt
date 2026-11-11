@@ -622,7 +622,7 @@ uc_hostapd_iface_set_bss_order(uc_vm_t *vm, size_t nargs)
 		struct hostapd_data *bss;
 
 		bss = ucv_resource_data(ucv_array_get(bss_list, i), "hostapd.bss");
-		if (bss->iface != iface)
+		if (!bss || bss->iface != iface)
 			goto free;
 
 		for (size_t k = 0; k < i; k++)
