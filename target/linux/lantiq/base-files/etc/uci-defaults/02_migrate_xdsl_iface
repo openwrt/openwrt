@@ -11,15 +11,15 @@ rename_xdsl_ifname()
 
 	config_get name ${section} $option
 	case $name in
-		nas0*)
-			name=${name/nas0/dsl0}
-			;;
-		ptm0*)
-			name=${name/ptm0/dsl0}
-			;;
-		*)
-			return
-			;;
+	nas0*)
+		name=${name/nas0/dsl0}
+		;;
+	ptm0*)
+		name=${name/ptm0/dsl0}
+		;;
+	*)
+		return
+		;;
 	esac
 
 	uci set ${cfg}.${section}.$option=$name
