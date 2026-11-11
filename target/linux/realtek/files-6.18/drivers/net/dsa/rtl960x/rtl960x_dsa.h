@@ -18,45 +18,33 @@
  */
 
 #define RTL960X_NUM_PORTS	11
-#define RTL960X_NUM_VLANS	4096
 #define RTL960X_NUM_MSTI	4
-
-/*
- * Driver-internal VIDs. VID 0 is the standalone VLAN shared by every user
- * port outside a bridge and the CPU port (the special VLAN 0 of the rtl83xx
- * and rtl8365mb drivers, ocelot's OCELOT_STANDALONE_PVID). One VID per
- * offloaded bridge is reserved at the top of the table, indexed by DSA's
- * 1-based bridge number, for the VLAN-unaware PVID (ocelot's per-bridge
- * unaware PVID). VID 4095 stays unused as 802.1Q reserves it.
- */
-#define RTL960X_STANDALONE_VID	0
-#define RTL960X_NUM_BRIDGE_VIDS	RTL960X_NUM_PORTS
-#define RTL960X_BRIDGE_VID(num)	(RTL960X_NUM_VLANS - 1 - (num))
-#define RTL960X_BRIDGE_VID_MIN	RTL960X_BRIDGE_VID(RTL960X_NUM_BRIDGE_VIDS)
+/* RTL960X supports 4k vlans (vid<=4095) */
+#define RTL960X_MAX_4K_VID			0x0fff /* 4095 */
 
 struct rtl960x_dsa {
 	struct dsa_switch *ds;
 	struct device *dev;
 	struct regmap *map;
+	/* vlan_lock protects against concurrent Read-Modify-Write operations
+	 * on the global VLAN 4K tables, such as when adding or deleting port
+	 * PVID configurations.
+	 */
+	struct mutex		vlan_lock;
 	/*
 	 * l2_lock keeps a whole FDB dump walk atomic against the FDB add/del
 	 * work items, which run from DSA's deferred workqueue, and serialises
 	 * the L2 flush engine.
 	 */
 	struct mutex l2_lock;
-	u16 pvid[RTL960X_NUM_PORTS];	/* shadow of each port's PVID */
-	u16 bridge_pvid[RTL960X_NUM_PORTS]; /* PVID set by the bridge, 0 if none */
-	u8 vlan_owner[RTL960X_BRIDGE_VID_MIN]; /* bridge.num using the VID */
-	/*
-	 * Membership and untagged egress DSA configured per VID. The table
-	 * entry also carries the transparent ports: user ports that are not
-	 * VLAN-filtering, which are members of every VID and keep the ingress
-	 * tag format on egress. A transparent bridge port is also a member of
-	 * its bridge's reserved VID and uses it as PVID.
+	/* PVID requested by the bridge, 0 if none. Only programmed
+     * while the port filters VLANs. Protected by vlan_lock.
 	 */
-	u16 vlan_member[RTL960X_BRIDGE_VID_MIN];
-	u16 vlan_untag[RTL960X_BRIDGE_VID_MIN];
-	u16 transparent;
+	u16 bridge_pvid[RTL960X_NUM_PORTS];
+	u16 mbr_mask[RTL960X_MAX_4K_VID];
+	u16 untag_mask[RTL960X_MAX_4K_VID];
+	/* User ports that do not filter VLANs. Protected by vlan_lock. */
+	u16 transparent_mask;
 };
 
 #endif /* __RTL960X_DSA_H */
