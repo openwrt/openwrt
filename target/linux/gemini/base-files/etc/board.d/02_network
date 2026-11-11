@@ -19,18 +19,15 @@ wiliboard,wbd222)
 	# NAS machines with a single ethernet port
 	ucidef_set_interface_lan "eth0" "dhcp"
 	;;
-itian,sq201)
-	# These are all connected to eth1 thru VSC7395
+itian,sq201|\
+storlink,gemini324)
+	# These are all connected to eth1 thru VSC7395 (SQ201) or
+	# VSC7385 (Gemini324)
 	ucidef_set_interface "eth" device "eth1" protocol "none"
 	ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "eth0"
 	;;
 ssi,1328)
 	ucidef_set_interfaces_lan_wan "eth0" "eth1"
-	;;
-storlink,gemini324)
-	# These are all connected to eth1 thru VSC7385
-	ucidef_set_interface "eth" device "eth1" protocol "none"
-	ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "eth0"
 	;;
 teltonika,rut1xx)
 	# One ethernet LAN which is offering DHCP
