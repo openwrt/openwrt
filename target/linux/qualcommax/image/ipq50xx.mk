@@ -334,6 +334,24 @@ define Device/mercusys_mr80x-v2
 endef
 TARGET_DEVICES += mercusys_mr80x-v2
 
+define Device/netgear_wax630e
+	$(call Device/FitImage)
+	$(call Device/UbiFit)
+	DEVICE_VENDOR := Netgear
+	DEVICE_MODEL := WAX630E
+	DEVICE_DTS_CONFIG := config@mp03.3
+	SOC := ipq5018
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	NAND_SIZE := 256m
+	IMAGE_SIZE := 59392k
+	DEVICE_PACKAGES := ath11k-firmware-ipq5018-qcn6122 \
+		kmod-ath11k-pci ath11k-firmware-qcn9074 \
+		kmod-spi-gpio kmod-gpio-nxp-74hc164 \
+		ipq-wifi-netgear_wax630e
+endef
+TARGET_DEVICES += netgear_wax630e
+
 define Device/tplink_archer-ax55-v1
 	$(call Device/FitImageLzma)
 	$(call Device/UbiFit)

@@ -1,0 +1,432 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+/dts-v1/;
+
+#include "ipq5018.dtsi"
+#include "ipq5018-ess.dtsi"
+#include "ipq5018-qcn6122.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+
+/ {
+	model = "Netgear WAX630E";
+	compatible = "netgear,wax630e", "qcom,ipq5018";
+
+	aliases {
+		serial0 = &blsp1_uart1;
+		label-mac-device = &gmac1;
+
+		led-boot = &led_power_blue;
+		led-failsafe = &led_power_red;
+		led-running = &led_power_green;
+		led-upgrade = &led_power_blue;
+	};
+
+	chosen {
+		/*
+		 * U-Boot (bootipq) appends
+		 * "ubi.mtd=rootfs root=mtd:ubi_rootfs rootfstype=squashfs",
+		 * "rootfs" being the active slot.
+		 */
+		bootargs-append = " root=/dev/ubiblock0_1 swiotlb=1 coherent_pool=2M";
+		stdout-path = "serial0:115200n8";
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		pinctrl-0 = <&button_pins>;
+		pinctrl-names = "default";
+
+		reset-button {
+			label = "reset";
+			gpios = <&tlmm 33 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+	};
+
+	/*
+	 * 74HC164 shift register for the LAN1 and radio LEDs.
+	 * Stock firmware: data GPIO 27, clock GPIO 28, master reset GPIO 14.
+	 */
+	led-spi {
+		compatible = "spi-gpio";
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		pinctrl-0 = <&led_spi_pins>;
+		pinctrl-names = "default";
+
+		sck-gpios = <&tlmm 28 GPIO_ACTIVE_HIGH>;
+		mosi-gpios = <&tlmm 27 GPIO_ACTIVE_HIGH>;
+
+		led_gpio: led-gpio@0 {
+			compatible = "fairchild,74hc595";
+			reg = <0>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			registers-number = <1>;
+			spi-max-frequency = <1000000>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		pinctrl-0 = <&leds_pins>;
+		pinctrl-names = "default";
+
+		led_power_red: led-power-red {
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_POWER;
+			gpios = <&tlmm 35 GPIO_ACTIVE_HIGH>;
+		};
+
+		led_power_green: led-power-green {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_POWER;
+			gpios = <&tlmm 46 GPIO_ACTIVE_HIGH>;
+		};
+
+		led_power_blue: led-power-blue {
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_POWER;
+			gpios = <&tlmm 32 GPIO_ACTIVE_HIGH>;
+		};
+
+		led-lan1-green {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <1>;
+			gpios = <&led_gpio 0 GPIO_ACTIVE_LOW>;
+		};
+
+		led-lan1-orange {
+			color = <LED_COLOR_ID_ORANGE>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <1>;
+			gpios = <&led_gpio 1 GPIO_ACTIVE_LOW>;
+		};
+
+		led-lan2-green {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <2>;
+			gpios = <&tlmm 31 GPIO_ACTIVE_HIGH>;
+		};
+
+		led-lan2-orange {
+			color = <LED_COLOR_ID_ORANGE>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <2>;
+			gpios = <&tlmm 30 GPIO_ACTIVE_HIGH>;
+		};
+
+		led-wlan2g-blue {
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_WLAN_2GHZ;
+			gpios = <&led_gpio 2 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy0radio";
+		};
+
+		led-wlan2g-green {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WLAN_2GHZ;
+			gpios = <&led_gpio 3 GPIO_ACTIVE_LOW>;
+		};
+
+		led-wlan5g-blue {
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_WLAN_5GHZ;
+			gpios = <&led_gpio 4 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy2radio";
+		};
+
+		led-wlan5g-green {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WLAN_5GHZ;
+			gpios = <&led_gpio 5 GPIO_ACTIVE_LOW>;
+		};
+
+		led-wlan6g-blue {
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_WLAN_6GHZ;
+			gpios = <&led_gpio 6 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy1radio";
+		};
+
+		led-wlan6g-green {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WLAN_6GHZ;
+			gpios = <&led_gpio 7 GPIO_ACTIVE_LOW>;
+		};
+	};
+};
+
+&sleep_clk {
+	clock-frequency = <32000>;
+};
+
+&xo_board_clk {
+	clock-div = <4>;
+	clock-mult = <1>;
+};
+
+&blsp1_uart1 {
+	status = "okay";
+
+	pinctrl-0 = <&serial_0_pins>;
+	pinctrl-names = "default";
+};
+
+&prng {
+	status = "okay";
+};
+
+&qfprom {
+	status = "okay";
+};
+
+&qpic_bam {
+	status = "okay";
+};
+
+&qpic_nand {
+	pinctrl-0 = <&qpic_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	/* Macronix MX35UF2GE4AD, 256 MiB */
+	nand@0 {
+		compatible = "spi-nand";
+		reg = <0>;
+		nand-ecc-engine = <&qpic_nand>;
+		nand-bus-width = <8>;
+		/* as written by the stock bootloader, 8-bit ECC fails to read */
+		nand-ecc-strength = <4>;
+		nand-ecc-step-size = <512>;
+
+		partitions {
+			compatible = "qcom,smem-part";
+
+			partition-0-art {
+				label = "0:art";
+				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_lan1: macaddr@0 {
+						reg = <0x0 0x6>;
+					};
+
+					macaddr_lan2: macaddr@6 {
+						reg = <0x6 0x6>;
+					};
+				};
+			};
+		};
+	};
+};
+
+/*
+ * =================================================================
+ *     _______________________             ____________
+ *    |        IPQ5018        |           |            |
+ *    | +------+   +--------+ |           | +--------+ |
+ *    | | MAC0 |---| GE Phy |-+--- MDI ---+ | LAN2   | |  1G
+ *    | +------+   +--------+ |           | +--------+ |
+ *    |                       |           |____________|
+ *    |                       |            _______________________
+ *    |                       |           |        QCA8081        |
+ *    | +------+   +--------+ |           | +--------+   +------+ |
+ *    | | MAC1 |---| Uniphy |-+-- SGMII+--+ | Phy    |---| LAN1 | |  2.5G, PoE
+ *    | +------+   +--------+ |           | +--------+   +------+ |
+ *    |_______________________|           |_______________________|
+ *
+ * =================================================================
+ */
+
+&uniphy0 {
+	status = "okay";
+
+	assigned-clocks = <&uniphy0 UNIPHY_CLK_REF>;
+	assigned-clock-rates = <UNIPHY_REFCLK_50MHZ>;
+};
+
+// MAC0 ---MDI---> IPQ5018 GE PHY
+&gmac0 {
+	status = "okay";
+
+	label = "lan2";
+
+	nvmem-cells = <&macaddr_lan2>;
+	nvmem-cell-names = "mac-address";
+};
+
+// MAC1 ---SGMII+---> QCA8081
+&gmac1 {
+	status = "okay";
+
+	phy-handle = <&qca8081>;
+	phy-mode = "2500base-x";
+
+	label = "lan1";
+
+	nvmem-cells = <&macaddr_lan1>;
+	nvmem-cell-names = "mac-address";
+};
+
+&mdio0 {
+	status = "okay";
+};
+
+&mdio1 {
+	status = "okay";
+
+	pinctrl-0 = <&mdio1_pins>;
+	pinctrl-names = "default";
+
+	qca8081: ethernet-phy@28 {
+		compatible = "ethernet-phy-id004d.d101";
+		reg = <28>;
+		reset-deassert-us = <10000>;
+		reset-gpios = <&tlmm 39 GPIO_ACTIVE_LOW>;
+	};
+};
+
+&tlmm {
+	button_pins: button-state {
+		pins = "gpio33";
+		function = "gpio";
+		drive-strength = <8>;
+		bias-pull-up;
+	};
+
+	led_spi_pins: led-spi-state {
+		pins = "gpio27", "gpio28";
+		function = "gpio";
+		drive-strength = <8>;
+		bias-disable;
+	};
+
+	leds_pins: leds-state {
+		pins = "gpio30", "gpio31", "gpio32", "gpio35", "gpio46";
+		function = "gpio";
+		drive-strength = <8>;
+		bias-disable;
+	};
+
+	mdio1_pins: mdio-state {
+		mdc-pins {
+			pins = "gpio36";
+			function = "mdc";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+
+		mdio-pins {
+			pins = "gpio37";
+			function = "mdio";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+	};
+
+	qpic_pins: qpic-state {
+		clock-pins {
+			pins = "gpio9";
+			function = "qspi_clk";
+			drive-strength = <8>;
+			bias-disable;
+		};
+
+		cs-pins {
+			pins = "gpio8";
+			function = "qspi_cs";
+			drive-strength = <8>;
+			bias-disable;
+		};
+
+		data-pins {
+			pins = "gpio4", "gpio5", "gpio6", "gpio7";
+			function = "qspi_data";
+			drive-strength = <8>;
+			bias-disable;
+		};
+	};
+
+	serial_0_pins: uart0-state {
+		pins = "gpio20", "gpio21";
+		function = "blsp0_uart0";
+		bias-disable;
+	};
+
+	/*
+	 * Nothing consumes these, drive them as the stock firmware does:
+	 * 74HC164 master reset released, LED supply switched on.
+	 */
+	led-mr-hog {
+		gpio-hog;
+		gpios = <14 GPIO_ACTIVE_HIGH>;
+		output-high;
+		line-name = "led-mr";
+	};
+
+	led-power-hog {
+		gpio-hog;
+		gpios = <16 GPIO_ACTIVE_HIGH>;
+		output-low;
+		line-name = "led-power";
+	};
+};
+
+/* QCN9024, 5 GHz 4x4 */
+&pcie0_phy {
+	status = "okay";
+};
+
+&pcie0 {
+	status = "okay";
+
+	perst-gpios = <&tlmm 15 GPIO_ACTIVE_LOW>;
+
+	pcie@0 {
+		wifi@0,0 {
+			status = "okay";
+
+			/* QCN9074: ath11k lacks DT compatible for PCI cards */
+			compatible = "pci17cb,1104";
+			reg = <0x00010000 0 0 0 0>;
+
+			qcom,ath11k-calibration-variant = "Netgear-WAX630E";
+		};
+	};
+};
+
+/* IPQ5018, 2.4 GHz */
+&wifi {
+	status = "okay";
+
+	qcom,rproc = <&q6_wcss_pd1>;
+	qcom,userpd-subsys-name = "q6v5_wcss_userpd1";
+	qcom,ath11k-calibration-variant = "Netgear-WAX630E";
+	qcom,ath11k-fw-memory-mode = <1>;
+	qcom,bdf-addr = <0x4c400000>;
+};
+
+/* QCN6122, 6 GHz */
+&wifi1 {
+	status = "okay";
+
+	qcom,rproc = <&q6_wcss_pd2>;
+	qcom,userpd-subsys-name = "q6v5_wcss_userpd2";
+	qcom,ath11k-calibration-variant = "Netgear-WAX630E";
+	qcom,ath11k-fw-memory-mode = <1>;
+	qcom,bdf-addr = <0x4d100000>;
+	qcom,m3-dump-addr = <0x4df00000>;
+};
