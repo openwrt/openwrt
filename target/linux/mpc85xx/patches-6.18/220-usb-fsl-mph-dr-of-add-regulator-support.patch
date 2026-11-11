@@ -39,7 +39,7 @@ Signed-off-by: Rosen Penev <rosenp@gmail.com>
  		}
  	}
  
-+	err = devm_regulator_get_enable_optional(&ofdev->dev, "vbus");
++	err = devm_regulator_get_enable(&ofdev->dev, "vbus");
 +	if (err)
 +		return dev_err_probe(&ofdev->dev, err, "failed to get vbus regulator\n");
 +
