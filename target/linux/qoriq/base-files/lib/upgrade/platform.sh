@@ -4,22 +4,22 @@ PART_NAME=firmware
 REQUIRE_IMAGE_METADATA=1
 
 platform_get_rootfs_device() {
-    local majmin sys path
+	local majmin sys path
 
-    majmin="$(awk '$5=="/rom"{print $3; exit}' /proc/self/mountinfo 2>/dev/null)"
-    [ -n "$majmin" ] || {
+	majmin="$(awk '$5=="/rom"{print $3; exit}' /proc/self/mountinfo 2>/dev/null)"
+	[ -n "$majmin" ] || {
 		echo "Unable to determine upgrade device"
 		return 1
 	}
 
-    sys="/sys/dev/block/$majmin"
-    [ -e "$sys" ] || {
+	sys="/sys/dev/block/$majmin"
+	[ -e "$sys" ] || {
 		echo "Unable to determine upgrade device"
 		return 1
 	}
 
-    path="$(readlink -f "$sys" 2>/dev/null)" || return 1
-    basename "$path"
+	path="$(readlink -f "$sys" 2>/dev/null)" || return 1
+	basename "$path"
 }
 
 platform_copy_config_sdboot() {
