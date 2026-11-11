@@ -33,14 +33,14 @@ platform_do_upgrade() {
 	local board=$(board_name)
 
 	case "$board" in
-		gemtek,w1700k-ubi|\
-		nokia,xg-040g-md-ubi|\
-		quantum,q1000k-ubi)
-			fit_do_upgrade "$1"
-			;;
-		*)
-			nand_do_upgrade "$1"
-			;;
+	gemtek,w1700k-ubi|\
+	nokia,xg-040g-md-ubi|\
+	quantum,q1000k-ubi)
+		fit_do_upgrade "$1"
+		;;
+	*)
+		nand_do_upgrade "$1"
+		;;
 	esac
 }
 
@@ -50,8 +50,6 @@ platform_pre_upgrade() {
 	case "$board" in
 	nokia,xg-040g-md)
 		nokia_initial_setup
-		;;
-	*)
 		;;
 	esac
 }
