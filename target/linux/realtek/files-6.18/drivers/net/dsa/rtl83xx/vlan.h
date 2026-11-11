@@ -89,6 +89,8 @@ struct otto_vlan_profile {
 	   routing_ipmc:1, routing_ip6mc:1, bridge_ipmc:1, bridge_ip6mc:1;
 };
 
+void otto_vlan_838x_set_igr_filter(struct otto_dsa_priv *priv, int port, enum igr_filter state);
+void otto_vlan_838x_set_egr_filter(struct otto_dsa_priv *priv, int port, enum egr_filter state);
 void otto_vlan_838x_tables_read(u32 vlan, struct otto_vlan_info *info);
 void otto_vlan_838x_set_tagged(u32 vlan, struct otto_vlan_info *info);
 void otto_vlan_838x_set_untagged(u32 vlan, u64 portmask);
@@ -105,6 +107,8 @@ void otto_vlan_838x_port_pvid_set(struct otto_dsa_priv *priv, int port, enum pbv
 void otto_vlan_838x_port_qinq_set(struct otto_dsa_priv *priv, int port, bool enable);
 void otto_vlan_838x_profile_dump(struct otto_dsa_priv *priv, int idx);
 
+void otto_vlan_839x_set_igr_filter(struct otto_dsa_priv *priv, int port, enum igr_filter state);
+void otto_vlan_839x_set_egr_filter(struct otto_dsa_priv *priv, int port, enum egr_filter state);
 void otto_vlan_839x_tables_read(u32 vlan, struct otto_vlan_info *info);
 void otto_vlan_839x_set_tagged(u32 vlan, struct otto_vlan_info *info);
 void otto_vlan_839x_set_untagged(u32 vlan, u64 portmask);
@@ -121,6 +125,8 @@ void otto_vlan_839x_port_pvid_set(struct otto_dsa_priv *priv, int port, enum pbv
 				  int pvid);
 void otto_vlan_839x_port_qinq_set(struct otto_dsa_priv *priv, int port, bool enable);
 
+void otto_vlan_930x_set_igr_filter(struct otto_dsa_priv *priv, int port, enum igr_filter state);
+void otto_vlan_930x_set_egr_filter(struct otto_dsa_priv *priv, int port, enum egr_filter state);
 void otto_vlan_930x_tables_read(u32 vlan, struct otto_vlan_info *info);
 void otto_vlan_930x_set_tagged(u32 vlan, struct otto_vlan_info *info);
 int otto_vlan_930x_profile_get(struct otto_dsa_priv *priv, int idx,
@@ -138,6 +144,8 @@ void otto_vlan_930x_port_pvid_mode_set(struct otto_dsa_priv *priv, int port, enu
 void otto_vlan_930x_port_pvid_set(struct otto_dsa_priv *priv, int port, enum pbvlan_type type,
 				  int pvid);
 
+void otto_vlan_931x_set_igr_filter(struct otto_dsa_priv *priv, int port, enum igr_filter state);
+void otto_vlan_931x_set_egr_filter(struct otto_dsa_priv *priv, int port, enum egr_filter state);
 int otto_vlan_931x_profile_get(struct otto_dsa_priv *priv, int idx,
 			       struct otto_vlan_profile *profile);
 void otto_vlan_931x_profile_dump(struct otto_dsa_priv *priv, int idx);

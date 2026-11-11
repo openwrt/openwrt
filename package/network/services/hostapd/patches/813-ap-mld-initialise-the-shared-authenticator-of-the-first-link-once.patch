@@ -61,7 +61,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  #ifdef EAP_TLS_FUNCS
  	if (hapd->conf->eap_server &&
  	    (hapd->conf->ca_cert || hapd->conf->server_cert ||
-@@ -521,8 +529,10 @@ int authsrv_init(struct hostapd_data *ha
+@@ -522,8 +530,10 @@ int authsrv_init(struct hostapd_data *ha
  
  #ifdef RADIUS_SERVER
  	if (hapd->conf->radius_server_clients &&

@@ -1,0 +1,26 @@
+From 22795871edea35dfaf63011782ea77a3f440a655 Mon Sep 17 00:00:00 2001
+From: Colin Ian King <colin.i.king@gmail.com>
+Date: Sat, 1 Nov 2025 18:34:46 +0000
+Subject: [PATCH] net: dsa: yt921x: Fix spelling mistake "stucked" -> "stuck"
+
+There is a spelling mistake in a dev_err message. Fix it.
+
+Signed-off-by: Colin Ian King <colin.i.king@gmail.com>
+Reviewed-by: Andrew Lunn <andrew@lunn.ch>
+Link: https://patch.msgid.link/20251101183446.32134-1-colin.i.king@gmail.com
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ drivers/net/dsa/yt921x.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/net/dsa/yt921x.c
++++ b/drivers/net/dsa/yt921x.c
+@@ -1131,7 +1131,7 @@ static int yt921x_fdb_wait(struct yt921x
+ 	res = yt921x_reg_wait(priv, YT921X_FDB_RESULT, YT921X_FDB_RESULT_DONE,
+ 			      &val);
+ 	if (res) {
+-		dev_err(dev, "FDB probably stucked\n");
++		dev_err(dev, "FDB probably stuck\n");
+ 		return res;
+ 	}
+ 

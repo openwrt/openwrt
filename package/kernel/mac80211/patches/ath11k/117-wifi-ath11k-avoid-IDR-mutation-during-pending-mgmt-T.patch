@@ -1,0 +1,79 @@
+From 3e7f5d362b2b3a21b3adb4b860aad14b69a896ad Mon Sep 17 00:00:00 2001
+From: Jiale Yao <yaojiale02@163.com>
+Date: Sat, 3 Oct 2026 17:20:59 +0800
+Subject: [PATCH] wifi: ath11k: avoid IDR mutation during pending mgmt TX
+ cleanup
+
+The pending management TX cleanup walks txmgmt_idr with idr_for_each(),
+and its callback removes the current entry. This can invalidate the
+radix-tree iterator retained by idr_for_each().
+
+Use idr_for_each_entry() so every iteration starts with a fresh lookup.
+Continue to remove each entry under txmgmt_idr_lock before freeing its skb,
+preventing concurrent TX completion from finding a stale skb pointer.
+
+Fixes: d5c65159f289 ("ath11k: driver for Qualcomm IEEE 802.11ax devices")
+Signed-off-by: Jiale Yao <yaojiale02@163.com>
+Reviewed-by: Baochen Qiang <baochen.qiang@oss.qualcomm.com>
+Reviewed-by: Rameshkumar Sundaram <rameshkumar.sundaram@oss.qualcomm.com>
+Link: https://patch.msgid.link/20261003092104.520135-3-yaojiale02@163.com
+Signed-off-by: Jeff Johnson <jeff.johnson@oss.qualcomm.com>
+---
+ drivers/net/wireless/ath/ath11k/core.c |  3 +--
+ drivers/net/wireless/ath/ath11k/mac.c  | 12 ++++++------
+ drivers/net/wireless/ath/ath11k/mac.h  |  2 +-
+ 3 files changed, 8 insertions(+), 9 deletions(-)
+
+--- a/drivers/net/wireless/ath/ath11k/core.c
++++ b/drivers/net/wireless/ath/ath11k/core.c
+@@ -2447,8 +2447,7 @@ void ath11k_core_pre_reconfigure_recover
+ 		complete(&ar->thermal.wmi_sync);
+ 
+ 		wake_up(&ar->dp.tx_empty_waitq);
+-		idr_for_each(&ar->txmgmt_idr,
+-			     ath11k_mac_tx_mgmt_pending_free, ar);
++		ath11k_mac_tx_mgmt_pending_free(ar);
+ 		idr_destroy(&ar->txmgmt_idr);
+ 		wake_up(&ar->txmgmt_empty_waitq);
+ 
+--- a/drivers/net/wireless/ath/ath11k/mac.c
++++ b/drivers/net/wireless/ath/ath11k/mac.c
+@@ -6167,13 +6167,13 @@ static void ath11k_mac_tx_mgmt_free(stru
+ 	ath11k_mgmt_over_wmi_tx_drop(ar, msdu);
+ }
+ 
+-int ath11k_mac_tx_mgmt_pending_free(int buf_id, void *skb, void *ctx)
++void ath11k_mac_tx_mgmt_pending_free(struct ath11k *ar)
+ {
+-	struct ath11k *ar = ctx;
+-
+-	ath11k_mac_tx_mgmt_free(ar, buf_id);
++	struct sk_buff *msdu;
++	int buf_id;
+ 
+-	return 0;
++	idr_for_each_entry(&ar->txmgmt_idr, msdu, buf_id)
++		ath11k_mac_tx_mgmt_free(ar, buf_id);
+ }
+ 
+ static int ath11k_mac_vif_txmgmt_idr_remove(int buf_id, void *skb, void *ctx)
+@@ -10418,7 +10418,7 @@ static void __ath11k_mac_unregister(stru
+ 
+ 	ieee80211_unregister_hw(ar->hw);
+ 
+-	idr_for_each(&ar->txmgmt_idr, ath11k_mac_tx_mgmt_pending_free, ar);
++	ath11k_mac_tx_mgmt_pending_free(ar);
+ 	idr_destroy(&ar->txmgmt_idr);
+ 
+ 	kfree(ar->mac.sbands[NL80211_BAND_2GHZ].channels);
+--- a/drivers/net/wireless/ath/ath11k/mac.h
++++ b/drivers/net/wireless/ath/ath11k/mac.h
+@@ -162,7 +162,7 @@ struct ath11k *ath11k_mac_get_ar_by_pdev
+ 
+ void ath11k_mac_drain_tx(struct ath11k *ar);
+ void ath11k_mac_peer_cleanup_all(struct ath11k *ar);
+-int ath11k_mac_tx_mgmt_pending_free(int buf_id, void *skb, void *ctx);
++void ath11k_mac_tx_mgmt_pending_free(struct ath11k *ar);
+ u8 ath11k_mac_bw_to_mac80211_bw(u8 bw);
+ enum nl80211_he_gi ath11k_mac_he_gi_to_nl80211_he_gi(u8 sgi);
+ enum nl80211_he_ru_alloc ath11k_mac_phy_he_ru_to_nl80211_he_ru_alloc(u16 ru_phy);

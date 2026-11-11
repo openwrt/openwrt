@@ -1359,7 +1359,7 @@ define KernelPackage/netem
   DEPENDS:=+kmod-sched
   KCONFIG:=CONFIG_NET_SCH_NETEM
   FILES:=$(LINUX_DIR)/net/sched/sch_netem.ko
-  AUTOLOAD:=$(call AutoLoad,99,netem)
+  AUTOLOAD:=$(call AutoLoad,99,sch_netem)
 endef
 
 define KernelPackage/netem/description

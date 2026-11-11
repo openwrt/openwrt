@@ -124,7 +124,7 @@ get_config_restart_hash() {
 }
 
 resolve_bridge_member_ports() {
-	local _lower _bridge _port _ports=""
+	local _lower _bridge _port _name _ports=""
 
 	_lower=$(ls "/sys/class/net/$1/" 2>/dev/null | grep "^lower_" | head -1)
 	[ -n "$_lower" ] || return 1
@@ -133,7 +133,11 @@ resolve_bridge_member_ports() {
 	[ -d "/sys/class/net/$_bridge/bridge" ] || return 1
 
 	for _port in $(ls "/sys/class/net/$_bridge/" 2>/dev/null | grep "^lower_"); do
-		append _ports "${_port#lower_}" ","
+		_name="${_port#lower_}"
+		# LLDP only runs on ethernet; skip wireless bridge members
+		[ -e "/sys/class/net/$_name/phy80211" ] && continue
+		[ -d "/sys/class/net/$_name/wireless" ] && continue
+		append _ports "$_name" ","
 	done
 
 	[ -n "$_ports" ] || return 1

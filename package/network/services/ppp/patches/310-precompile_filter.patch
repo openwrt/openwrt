@@ -13,7 +13,7 @@ Signed-off-by: Jo-Philipp Wich <jo@mein.io>
 
 --- a/configure.ac
 +++ b/configure.ac
-@@ -304,6 +304,13 @@ AM_CONDITIONAL(PPP_WITH_PAM, test "x${wi
+@@ -300,6 +300,13 @@ AM_CONDITIONAL(PPP_WITH_PAM, test "x${wi
  # With libpcap support, activate pppd on network activity
  AX_CHECK_PCAP
  
@@ -27,8 +27,8 @@ Signed-off-by: Jo-Philipp Wich <jo@mein.io>
  #
  # SunOS provides a version of libpcap that would work, but SunOS has no support for activity filter
  AM_CONDITIONAL([PPP_WITH_FILTER], [ test "x${with_pcap}" = "xyes" && test "x${build_sunos}" != "xyes" ])
-@@ -347,6 +354,7 @@ $PACKAGE_NAME version $PACKAGE_VERSION
-     With libatm..........: ${with_atm:-no}
+@@ -342,6 +349,7 @@ $PACKAGE_NAME version $PACKAGE_VERSION
+     With OpenSSL.........: ${with_openssl:-yes}
      With libpam..........: ${with_pam:-no}
      With libpcap.........: ${with_pcap:-no}
 +    With static libpcap..: ${with_static_pcap:-no}
@@ -174,10 +174,10 @@ Signed-off-by: Jo-Philipp Wich <jo@mein.io>
 +               goto err;
 +           }
 +           p->bf_len = size;
-+           p->bf_insns = (struct bpf_insn *) 
++           p->bf_insns = (struct bpf_insn *)
 +               malloc (size * sizeof (struct bpf_insn));
 +       }
-+    } 
++    }
 +    if (size != index)
 +    {
 +       ppp_option_error("error in precompiled active-filter,"

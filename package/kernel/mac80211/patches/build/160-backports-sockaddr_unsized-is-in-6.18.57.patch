@@ -12,7 +12,7 @@ so only define it for older kernels.
  /**
   * struct sockaddr_unsized - Unspecified size sockaddr for callbacks
   * @sa_family: Address family (AF_UNIX, AF_INET, AF_INET6, etc.)
-@@ -28,7 +28,7 @@
+@@ -28,7 +28,7 @@ struct sockaddr_unsized {
  	__kernel_sa_family_t	sa_family;	/* address family, AF_xxx */
  	char			sa_data[];	/* flexible address data */
  };

@@ -1,0 +1,174 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: John Crispin <john@phrozen.org>
+Subject: [PATCH] mt7988: show the OpenWrt logo on the GL.iNet BE14000
+
+BL2 draws the logo and leaves the panel running. Redraw it here, with the
+U-Boot version under it, and with the FIT description at preboot_os, so
+the screen tracks the boot instead of holding one picture until Linux.
+
+The board carries the same ST7789P3 the BE10000 does, and everything but
+the pins is already shared: the driver, the picture and the code that
+draws it. The panel is mounted 180 degrees against the BE10000 one, which
+the rotation property carries.
+
+The SPI1 node takes the dummy 208 MHz clock mt7988.dtsi hands every SPI
+master on this SoC, so the mux and the gates stay as BL2 left them, and
+it names the IPM capabilities that mt7988.dtsi leaves out.
+
+--- /dev/null
++++ b/arch/arm/dts/mt7988a-glinet-gl-be14000-u-boot.dtsi
+@@ -0,0 +1,79 @@
++// SPDX-License-Identifier: GPL-2.0
++/*
++ * Copyright (c) 2026 GL.iNet
++ */
++
++/* bootph-all throughout: the framebuffer is reserved before relocation */
++&pio {
++	bootph-all;
++
++	spi1_pins: spi1-pins {
++		mux {
++			function = "spi";
++			groups = "spi1";
++		};
++	};
++
++	pwm3_pins: pwm3-pins {
++		mux {
++			function = "pwm";
++			groups = "pwm3_0";
++		};
++	};
++};
++
++/*
++ * The clocks are the dummy fixed 208 MHz mt7988.dtsi hands every SPI master,
++ * so the mux and the gates stay as BL2 left them. BL2 drives this bus itself
++ * to draw the splash, so it sets both.
++ */
++&spi1 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&spi1_pins>;
++	#address-cells = <1>;
++	#size-cells = <0>;
++	status = "okay";
++	bootph-all;
++	clocks = <&spi_clk>, <&spi_clk>;
++	clock-names = "sel-clk", "spi-clk";
++	enhance_timing;
++	dma_ext;
++	ipm_design;
++	tick_dly = <2>;
++	sample_sel = <0>;
++
++	display@0 {
++		compatible = "sitronix,st7789p3";
++		reg = <0>;
++		spi-max-frequency = <52000000>;
++		spi-cpol;
++		spi-cpha;
++		bootph-all;
++
++		/* BL2 drew the splash and left the controller running */
++		skip-init;
++
++		rotation = <90>;
++
++		dc-gpios = <&pio 62 GPIO_ACTIVE_HIGH>;
++		reset-gpios = <&pio 68 GPIO_ACTIVE_HIGH>;
++		backlight = <&backlight>;
++	};
++};
++
++&pwm {
++	pinctrl-names = "default";
++	pinctrl-0 = <&pwm3_pins>;
++	status = "okay";
++	bootph-all;
++};
++
++/ {
++	backlight: backlight {
++		compatible = "pwm-backlight";
++		pwms = <&pwm 3 50000>;
++		brightness-levels = <0 16 32 48 64 80 96 112 128 144 160 176 192 208 224 255>;
++		default-brightness-level = <12>;
++		bootph-all;
++	};
++};
+--- a/board/mediatek/mt7988/Makefile
++++ b/board/mediatek/mt7988/Makefile
+@@ -1,3 +1,5 @@
+ # SPDX-License-Identifier:	GPL-2.0
+ 
+ obj-y	+= mt7988_rfb.o
++obj-$(CONFIG_VIDEO_ST7789P3)		+= ../common/panel_logo.o		\
++					   ../common/openwrt_logo.bmp.o
+--- a/board/mediatek/mt7988/mt7988_rfb.c
++++ b/board/mediatek/mt7988/mt7988_rfb.c
+@@ -14,6 +14,8 @@
+ #include <linux/delay.h>
+ #include <linux/libfdt.h>
+ 
++#include "../common/panel_logo.h"
++
+ #ifndef CONFIG_RESET_BUTTON_LABEL
+ #define CONFIG_RESET_BUTTON_LABEL "reset"
+ #endif
+@@ -38,6 +40,9 @@ int board_late_init(void)
+ 		}
+ 	}
+ 	env_relocate();
++
++	board_show_logo();
++
+ 	return 0;
+ }
+ 
+@@ -72,6 +77,8 @@ int ft_system_setup(void *blob, struct b
+ 		;;
+ 	}
+ 
++	fdt_mark_panel_initialised(blob);
++
+ 	chosen = fdt_path_offset(blob, "/chosen");
+ 	if (chosen <= 0)
+ 		return 0;
+--- a/configs/mt7988a_glinet_gl-be14000_defconfig
++++ b/configs/mt7988a_glinet_gl-be14000_defconfig
+@@ -43,6 +43,7 @@ CONFIG_CMD_RNG=y
+ CONFIG_CMD_STRINGS=y
+ CONFIG_CMD_DM=y
+ CONFIG_CMD_GPIO=y
++CONFIG_CMD_BMP=y
+ CONFIG_CMD_GPT=y
+ CONFIG_CMD_MMC=y
+ CONFIG_CMD_PART=y
+@@ -96,6 +97,16 @@ CONFIG_PINCONF=y
+ CONFIG_PINCTRL_MT7988=y
+ CONFIG_POWER_DOMAIN=y
+ CONFIG_MTK_POWER_DOMAIN=y
++CONFIG_DM_PWM=y
++CONFIG_PWM_MTK=y
++CONFIG_VIDEO=y
++CONFIG_VIDEO_ST7789P3=y
++CONFIG_NO_FB_CLEAR=y
++CONFIG_BACKLIGHT=y
++CONFIG_BACKLIGHT_PWM=y
++# CONFIG_VIDEO_LOGO is not set
++# CONFIG_CYCLIC is not set
++# CONFIG_SYS_WHITE_ON_BLACK is not set
+ CONFIG_DM_REGULATOR=y
+ CONFIG_DM_REGULATOR_FIXED=y
+ CONFIG_DM_REGULATOR_GPIO=y
+@@ -105,6 +116,9 @@ CONFIG_RNG_MTK_V2=y
+ CONFIG_DM_SERIAL=y
+ CONFIG_SERIAL_RX_BUFFER=y
+ CONFIG_MTK_SERIAL=y
++CONFIG_SPI=y
++CONFIG_DM_SPI=y
++CONFIG_MTK_SPIM=y
+ CONFIG_USB=y
+ CONFIG_USB_XHCI_HCD=y
+ CONFIG_USB_XHCI_MTK=y

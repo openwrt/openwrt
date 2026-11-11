@@ -545,4 +545,29 @@ cmdline_get_var() {
 	done
 }
 
+# lexically, without looking at the file system or following links
+path_normalize() {
+	local IFS=/
+	local part out= root= noglob=
+
+	case "$1" in /*) root=/ ;; esac
+	case "$-" in *f*) noglob=1 ;; esac
+	set -f
+	for part in $1; do
+		case "$part" in
+		""|.) ;;
+		..)
+			case "$out" in
+			""|..|*/..) [ -n "$root" ] || out="${out:+$out/}.." ;;
+			*/*) out="${out%/*}" ;;
+			*) out= ;;
+			esac
+			;;
+		*) out="${out:+$out/}$part" ;;
+		esac
+	done
+	[ -n "$noglob" ] || set +f
+	[ -n "$out" ] && echo "$root$out" || echo "${root:-.}"
+}
+
 [ -z "$IPKG_INSTROOT" ] && [ -f /lib/config/uci.sh ] && . /lib/config/uci.sh || true

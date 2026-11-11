@@ -52,7 +52,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  #endif /* CONFIG_ROBUST_AV */
  
  
-@@ -4863,6 +4876,9 @@ static int hostapd_ctrl_iface_receive_pr
+@@ -4865,6 +4878,9 @@ static int hostapd_ctrl_iface_receive_pr
  	} else if (os_strncmp(buf, "SEND_UNSOLICITED_DSCP_REQ ", 26) == 0) {
  		if (hostapd_ctrl_send_unsolicited_dscp_req(hapd, buf + 26))
  			reply_len = -1;

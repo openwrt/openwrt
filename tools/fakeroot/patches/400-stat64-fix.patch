@@ -1,0 +1,87 @@
+From bd2d1896e83c8d325fcea8eba566672698e27b43 Mon Sep 17 00:00:00 2001
+From: Drew DeVault <drew@ddevault.org>
+Date: Mon, 28 Sep 2026 11:58:23 +0000
+Subject: [PATCH] NetBSD fixes
+
+---
+ configure.ac               | 5 +++--
+ libfakeroot_time64_entry.c | 8 ++++----
+ meson.build                | 1 +
+ 3 files changed, 8 insertions(+), 6 deletions(-)
+
+--- a/configure.ac
++++ b/configure.ac
+@@ -378,7 +378,7 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+   ],[ AC_MSG_RESULT([no])
+   ])
+ 
+-AC_CHECK_FUNCS(fchmodat fchownat fstatat mkdirat mknodat openat renameat renameat2 unlinkat lchmod fgetattrlist)
++AC_CHECK_FUNCS(fchmodat fchownat fstatat fstatat64 stat64 lstat64 mkdirat mknodat openat renameat renameat2 unlinkat lchmod fgetattrlist)
+ 
+ save_LIBS="$LIBS"
+ # Linux
+@@ -442,7 +442,7 @@ for SEARCH in %stat f%stat l%stat f%stat
+   FUNC=`echo $SEARCH|sed -e 's/.*%//'`
+   PRE=`echo $SEARCH|sed -e 's/%.*//'`
+   FOUND=
+-  for WRAPPED in __${PRE}x${FUNC} _${PRE}x${FUNC} __${PRE}${FUNC}13 ${PRE}${FUNC} __${PRE}${FUNC}; do
++  for WRAPPED in __${PRE}x${FUNC} _${PRE}x${FUNC} __${PRE}${FUNC}50 __${PRE}${FUNC}13 ${PRE}${FUNC} __${PRE}${FUNC}; do
+     AC_CHECK_FUNCS($WRAPPED,FOUND=$WRAPPED)
+ dnl
+ dnl to unconditionally define only the _* functions, comment out the 2 lines above,
+@@ -579,6 +579,7 @@ case $target_cpu:$target_os in
+ 		;;
+ 	(*:netbsd*)
+ 		libcpath="/usr/lib/libc.so.12"
++		LDPRELOADABS=1
+ 		;;
+ 	(*:openbsd*|*:mirbsd*)
+ 		libcpath=$(/bin/ls -1 /usr/lib/libc.so.* | \
+--- a/libfakeroot_time64_entry.c
++++ b/libfakeroot_time64_entry.c
+@@ -64,7 +64,7 @@
+     }
+   #endif
+ 
+-    #ifndef NO_WRAP_LSTAT64_SYMBOL
++    #if defined(HAVE_LSTAT64) && !defined(NO_WRAP_LSTAT64_SYMBOL)
+     extern int WRAP_LSTAT64 LSTAT64_ARG (int ver, const char *file_name, void *st);
+ 
+     /* glibc exports both lstat64 and __xstat64 */
+@@ -72,7 +72,7 @@
+        return WRAP_LSTAT64 LSTAT64_ARG(_STAT_VER, file_name, st);
+     }
+     #endif
+-    #ifndef NO_WRAP_STAT64_SYMBOL
++    #if defined(HAVE_STAT64) && !defined(NO_WRAP_STAT64_SYMBOL)
+     extern int WRAP_STAT64 STAT64_ARG(int ver, const char *file_name, void *st);
+ 
+     /* glibc exports both stat64 and __xstat64 */
+@@ -80,7 +80,7 @@
+        return WRAP_STAT64 STAT64_ARG(_STAT_VER, file_name, st);
+     }
+     #endif
+-    #ifndef NO_WRAP_FSTAT64_SYMBOL
++    #if defined(HAVE_FSTAT64) && !defined(NO_WRAP_FSTAT64_SYMBOL)
+     extern int WRAP_FSTAT64 FSTAT64_ARG(int ver, int fd, void *st);
+ 
+     /* glibc exports both fstat64 and __fxstat64 */
+@@ -89,7 +89,7 @@
+     }
+     #endif
+ 
+-    #if defined(HAVE_FSTATAT) && !defined(NO_WRAP_FSTATAT64_SYMBOL)
++    #if defined(HAVE_FSTATAT) && defined(HAVE_FSTATAT64) && !defined(NO_WRAP_FSTATAT64_SYMBOL)
+     extern int WRAP_FSTATAT64 FSTATAT64_ARG(int ver, int dir_fd, const char *path, void *st, int flags);
+ 
+     /* glibc exports both fstatat64 and __fxstatat64 */
+--- a/meson.build
++++ b/meson.build
+@@ -458,6 +458,7 @@ foreach search : stat_searches
+   _candidates = [
+     _xcand1,
+     _xcand2,
++    '__' + _pre + _func + '50',            # e.g. __stat50
+     '__' + _pre + _func + '13',            # e.g. __stat13
+     _pre + _func,                          # e.g.  stat
+     '__' + _pre + _func,                   # e.g. __stat

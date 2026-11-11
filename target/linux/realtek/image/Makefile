@@ -15,6 +15,17 @@ define Build/hasivo-stock-patch
 	mv $@.new $@
 endef
 
+define Build/hasivo-web-factory
+	[ ! -f "$@" ] || { \
+		python3 $(TOPDIR)/target/linux/realtek/image/hasivo-web-factory.py \
+			--model $(HASIVO_MODEL) \
+			--uimage-magic $(UIMAGE_MAGIC) \
+			--image $@ \
+			--output $@.new && \
+		mv $@.new $@; \
+	}
+endef
+
 DEVICE_VARS += \
 	BELKIN_HEADER \
 	BELKIN_MODEL \
@@ -28,6 +39,7 @@ DEVICE_VARS += \
         FLASH_ADDR \
         H3C_DEVICE_ID \
         H3C_PRODUCT_ID \
+	HASIVO_MODEL \
 	LINKSYS_HEADER \
 	ZYNFW_BOARD \
 	ZYNFW_ALIGN \

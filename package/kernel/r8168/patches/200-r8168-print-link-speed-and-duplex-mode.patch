@@ -18,7 +18,7 @@ Signed-off-by: Chukun Pan <amadeus@jmu.edu.cn>
 
 --- a/src/r8168.h
 +++ b/src/r8168.h
-@@ -1480,6 +1480,8 @@ enum RTL8168_register_content {
+@@ -1484,6 +1484,8 @@ enum RTL8168_register_content {
          LinkStatus = 0x02,
          FullDup = 0x01,
  
@@ -37,7 +37,7 @@ Signed-off-by: Chukun Pan <amadeus@jmu.edu.cn>
  #include <linux/netdevice.h>
  #include <linux/etherdevice.h>
  #include <linux/delay.h>
-@@ -5527,6 +5528,38 @@ rtl8168_link_down_patch(struct net_devic
+@@ -5547,6 +5548,38 @@ rtl8168_link_down_patch(struct net_devic
  #endif
  }
  
@@ -55,7 +55,7 @@ Signed-off-by: Chukun Pan <amadeus@jmu.edu.cn>
 +        return duplex;
 +}
 +
-+static int rtl8168_phy_speed(u8 status)
++static int rtl8168_phy_speed(struct rtl8168_private *tp, u8 status)
 +{
 +        int speed = SPEED_UNKNOWN;
 +
@@ -66,7 +66,7 @@ Signed-off-by: Chukun Pan <amadeus@jmu.edu.cn>
 +                        speed = SPEED_100;
 +                else if (status & _10bps)
 +                        speed = SPEED_10;
-+                else if (eee_giga_lite)
++                else if (tp->enable_giga_lite)
 +                        speed = SPEED_1000;
 +        }
 +
@@ -76,7 +76,7 @@ Signed-off-by: Chukun Pan <amadeus@jmu.edu.cn>
  static void
  rtl8168_check_link_status(struct net_device *dev)
  {
-@@ -5546,11 +5579,18 @@ rtl8168_check_link_status(struct net_dev
+@@ -5566,11 +5599,18 @@ rtl8168_check_link_status(struct net_dev
                  if (link_status_on) {
                          rtl8168_link_on_patch(dev);
  
@@ -85,7 +85,7 @@ Signed-off-by: Chukun Pan <amadeus@jmu.edu.cn>
 +                        if (netif_msg_ifup(tp)) {
 +                                const u8 phy_status = RTL_R8(tp, PHYstatus);
 +                                const unsigned int phy_duplex = rtl8168_phy_duplex(phy_status);
-+                                const int phy_speed = rtl8168_phy_speed(phy_status);
++                                const int phy_speed = rtl8168_phy_speed(tp, phy_status);
 +                                printk(KERN_INFO PFX "%s: Link is Up - %s/%s\n",
 +                                       dev->name,
 +                                       phy_speed_to_str(phy_speed),

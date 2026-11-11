@@ -1,49 +1,23 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
 #include <net/dsa.h>
-#include <linux/bitfield.h>
+#include <linux/bitops.h>
 #include <linux/etherdevice.h>
 #include <linux/if_bridge.h>
 #include <linux/if_vlan.h>
-#include <linux/pcs/pcs.h>
-#include <linux/regmap.h>
 #include <asm/mach-rtl-otto/mach-rtl-otto.h>
 
+#include "fdb.h"
 #include "lag.h"
 #include "mirror.h"
 #include "mac.h"
 #include "l2.h"
+#include "qos.h"
 #include "rtl-otto.h"
 #include "stats.h"
 #include "tc.h"
 #include "vlan.h"
 #include "stp.h"
-
-/* Both length fields are 14 bits wide (hardware maximum 16383 bytes). */
-#define RTLDSA_MAC_MAX_LEN_FIELD		GENMASK(13, 0)
-/* Mask of both length fields, leaving the tag-inclusion bit (28) untouched. */
-#define RTLDSA_MAC_MAX_LEN_MASK \
-	(RTLDSA_MAC_MAX_LEN_FIELD | (RTLDSA_MAC_MAX_LEN_FIELD << 14))
-/* Encode @len into both the high-speed and the 10/100M length field. */
-#define RTLDSA_MAC_MAX_LEN_VAL(len) \
-	(((len) & RTLDSA_MAC_MAX_LEN_FIELD) | (((len) & RTLDSA_MAC_MAX_LEN_FIELD) << 14))
-
-/* MAC link state bits */
-#define RTL_SPEED_10				0
-#define RTL_SPEED_100				1
-#define RTL_SPEED_1000				2
-#define RTL_SPEED_2500				5
-#define RTL_SPEED_5000				6
-#define RTL_SPEED_10000				4
-
-#define RTL838X_NWAY_EN				BIT(2)
-
-#define RTL930X_PORT_IGNORE 0x3f
-
-/* Ethernet header, two stacked VLAN tags (802.1ad QinQ) and FCS */
-#define RTLDSA_FRAME_OVERHEAD		(ETH_HLEN + 2 * VLAN_HLEN + ETH_FCS_LEN)
-/* Tail tag the DSA core adds to a frame on its way to the conduit */
-#define RTLDSA_TAG_OVERHEAD		4
 
 static const u8 ipv4_ll_mcast_addr_base[ETH_ALEN] = {
 	0x01, 0x00, 0x5e, 0x00, 0x00, 0x00
@@ -224,354 +198,9 @@ static int rtldsa_93xx_setup(struct dsa_switch *ds)
 
 	priv->r->led_init(priv);
 
+	otto_qos_setup(ds);
+
 	return 0;
-}
-
-static int rtldsa_phylink_fill_available_pcs(struct phylink_config *config,
-					     struct phylink_pcs **available_pcs,
-					     unsigned int num_possible_pcs)
-{
-	struct dsa_port *dp = dsa_phylink_to_port(config);
-
-	return fwnode_phylink_pcs_parse(of_fwnode_handle(dp->dn),
-					available_pcs, num_possible_pcs);
-}
-
-static void rtldsa_phylink_get_caps(struct dsa_switch *ds, int port,
-				    struct phylink_config *config)
-{
-	struct dsa_port *dp = dsa_to_port(ds, port);
-	struct otto_dsa_priv *priv = ds->priv;
-	unsigned long caps = priv->r->mac_capabilities;
-
-	/* TODO: This needs to take into account the MAC to SERDES mapping */
-	config->mac_capabilities = caps;
-	if (caps & MAC_100)
-		__set_bit(PHY_INTERFACE_MODE_100BASEX, config->supported_interfaces);
-	if (caps & MAC_1000FD) {
-		__set_bit(PHY_INTERFACE_MODE_1000BASEX, config->supported_interfaces);
-		__set_bit(PHY_INTERFACE_MODE_SGMII, config->supported_interfaces);
-		__set_bit(PHY_INTERFACE_MODE_QSGMII, config->supported_interfaces);
-	}
-	if (caps & MAC_2500FD)
-		__set_bit(PHY_INTERFACE_MODE_2500BASEX, config->supported_interfaces);
-	if (caps & MAC_10000FD) {
-		__set_bit(PHY_INTERFACE_MODE_10GBASER, config->supported_interfaces);
-		__set_bit(PHY_INTERFACE_MODE_USXGMII, config->supported_interfaces);
-		__set_bit(PHY_INTERFACE_MODE_10G_QXGMII, config->supported_interfaces);
-	}
-
-	config->num_possible_pcs = fwnode_phylink_pcs_count(of_fwnode_handle(dp->dn));
-	if (config->num_possible_pcs) {
-		config->fill_available_pcs = rtldsa_phylink_fill_available_pcs;
-		bitmap_copy(config->pcs_interfaces, config->supported_interfaces,
-			    PHY_INTERFACE_MODE_MAX);
-	}
-
-	__set_bit(PHY_INTERFACE_MODE_INTERNAL, config->supported_interfaces);
-}
-
-static void rtldsa_83xx_phylink_mac_config(struct phylink_config *config,
-					   unsigned int mode,
-					   const struct phylink_link_state *state)
-{
-	struct dsa_port *dp = dsa_phylink_to_port(config);
-	struct otto_dsa_priv *priv = dp->ds->priv;
-	int port = dp->index;
-	u32 mcr;
-
-	pr_debug("%s port %d, mode %x\n", __func__, port, mode);
-
-	/* currently only needed for RTL8380 */
-	if (priv->family_id != RTL8380_FAMILY_ID)
-		return;
-
-	if (dsa_port_is_cpu(dp)) {
-		/* allow CRC errors on CPU-port */
-		regmap_update_bits(priv->map, priv->r->mac_port_ctrl(port),
-				   0x8, 0x8);
-		return;
-	}
-
-	regmap_read(priv->map, priv->r->mac_force_mode_ctrl(port), &mcr);
-	if (mode == MLO_AN_PHY || phylink_autoneg_inband(mode)) {
-		pr_debug("port %d PHY autonegotiates\n", port);
-
-		mcr |= RTL838X_NWAY_EN;
-	} else {
-		mcr &= ~RTL838X_NWAY_EN;
-	}
-	regmap_write(priv->map, priv->r->mac_force_mode_ctrl(port), mcr);
-}
-
-static void
-rtldsa_mac_link_state_source_set(struct otto_dsa_priv *priv, int port,
-				 enum rtldsa_mac_link_state_source source,
-				 phy_interface_t interface)
-{
-	int err;
-
-	if (!priv->r->mac_link_state_source_set)
-		return;
-
-	err = priv->r->mac_link_state_source_set(priv, port, source, interface);
-	if (err)
-		dev_err(priv->dev,
-			"failed to set MAC link-state source for port %d: %d\n",
-			port, err);
-}
-
-static void rtldsa_93xx_phylink_mac_config(struct phylink_config *config,
-					   unsigned int mode,
-					   const struct phylink_link_state *state)
-{
-	struct dsa_port *dp = dsa_phylink_to_port(config);
-	struct otto_dsa_priv *priv = dp->ds->priv;
-	const struct rtldsa_mac_force_mode_cfg *cfg;
-	bool force_dynamic_phy;
-	int port = dp->index;
-
-	/* Nothing to be done for the CPU-port */
-	if (port == priv->r->cpu_port)
-		return;
-
-	cfg = &priv->r->mac_force_mode;
-	force_dynamic_phy = !priv->ports[port].phy &&
-		(mode == MLO_AN_PHY || state->interface == PHY_INTERFACE_MODE_SGMII);
-
-	/* Select PCS before dropping force mode to avoid a transient link down. */
-	if (!priv->ports[port].phy && phylink_autoneg_inband(mode) &&
-	    !force_dynamic_phy)
-		rtldsa_mac_link_state_source_set(priv, port,
-					 RTLDSA_MAC_LINK_STATE_SOURCE_PCS,
-					 state->interface);
-
-	if (mode == MLO_AN_FIXED || force_dynamic_phy) {
-		/* Keep links that require force mode forced down. */
-		regmap_write(priv->map, priv->r->mac_force_mode_ctrl(port),
-			     cfg->force_en_mask | cfg->fc_force_en_mask);
-		if (force_dynamic_phy)
-			rtldsa_mac_link_state_source_set(priv, port,
-						 RTLDSA_MAC_LINK_STATE_SOURCE_PHY,
-						 state->interface);
-	} else {
-		/* Disable MAC completely */
-		regmap_write(priv->map, priv->r->mac_force_mode_ctrl(port), 0);
-	}
-}
-
-static void rtldsa_83xx_phylink_mac_link_down(struct phylink_config *config,
-					      unsigned int mode,
-					      phy_interface_t interface)
-{
-	struct dsa_port *dp = dsa_phylink_to_port(config);
-	struct otto_dsa_priv *priv = dp->ds->priv;
-	const struct rtldsa_mac_force_mode_cfg *cfg;
-	int port = dp->index;
-
-	cfg = &priv->r->mac_force_mode;
-
-	/* Stop TX/RX to port */
-	regmap_update_bits(priv->map, priv->r->mac_port_ctrl(port), 0x3, 0);
-
-	/* No longer force link */
-	regmap_update_bits(priv->map, priv->r->mac_force_mode_ctrl(port),
-			   cfg->force_en_mask | cfg->link_up_mask, 0);
-}
-
-static void rtldsa_93xx_phylink_mac_link_down(struct phylink_config *config,
-					      unsigned int mode,
-					      phy_interface_t interface)
-{
-	struct dsa_port *dp = dsa_phylink_to_port(config);
-	struct otto_dsa_priv *priv = dp->ds->priv;
-	const struct rtldsa_mac_force_mode_cfg *cfg;
-	bool force_dynamic_phy;
-	int port = dp->index;
-
-	cfg = &priv->r->mac_force_mode;
-	force_dynamic_phy = !priv->ports[port].phy &&
-		(mode == MLO_AN_PHY || interface == PHY_INTERFACE_MODE_SGMII);
-
-	/* Stop TX/RX to port */
-	regmap_update_bits(priv->map, priv->r->mac_port_ctrl(port), 0x3, 0);
-
-	if (!priv->ports[port].phy && phylink_autoneg_inband(mode) &&
-	    !force_dynamic_phy)
-		rtldsa_mac_link_state_source_set(priv, port,
-					 RTLDSA_MAC_LINK_STATE_SOURCE_PCS,
-					 interface);
-
-	if (dsa_port_is_cpu(dp) || mode == MLO_AN_FIXED || force_dynamic_phy) {
-		/* Preserve force mode while forcing the link down. */
-		regmap_update_bits(priv->map, priv->r->mac_force_mode_ctrl(port),
-				   cfg->link_up_mask, 0);
-		if (force_dynamic_phy)
-			rtldsa_mac_link_state_source_set(priv, port,
-						 RTLDSA_MAC_LINK_STATE_SOURCE_PHY,
-						 interface);
-	} else {
-		/* No longer force link */
-		regmap_update_bits(priv->map, priv->r->mac_force_mode_ctrl(port),
-				   cfg->force_en_mask | cfg->fc_force_en_mask |
-				   cfg->link_up_mask, 0);
-	}
-}
-
-static void rtldsa_83xx_phylink_mac_link_up(struct phylink_config *config,
-					    struct phy_device *phydev,
-					    unsigned int mode,
-					    phy_interface_t interface,
-					    int speed, int duplex,
-					    bool tx_pause, bool rx_pause)
-{
-	struct dsa_port *dp = dsa_phylink_to_port(config);
-	struct otto_dsa_priv *priv = dp->ds->priv;
-	const struct rtldsa_mac_force_mode_cfg *cfg;
-	int port = dp->index;
-	u32 mcr, spdsel;
-
-	if (speed == SPEED_1000)
-		spdsel = RTL_SPEED_1000;
-	else if (speed == SPEED_100)
-		spdsel = RTL_SPEED_100;
-	else
-		spdsel = RTL_SPEED_10;
-
-	cfg = &priv->r->mac_force_mode;
-	regmap_read(priv->map, priv->r->mac_force_mode_ctrl(port), &mcr);
-	mcr &= ~(cfg->rx_pause_mask | cfg->tx_pause_mask |
-		 cfg->duplex_mask | cfg->speed_mask);
-	mcr |= cfg->link_up_mask;
-	mcr |= field_prep(cfg->speed_mask, spdsel);
-
-	if (tx_pause)
-		mcr |= cfg->tx_pause_mask;
-	if (rx_pause)
-		mcr |= cfg->rx_pause_mask;
-	if (duplex == DUPLEX_FULL || priv->lagmembers & BIT_ULL(port))
-		mcr |= cfg->duplex_mask;
-	if (dsa_port_is_cpu(dp))
-		mcr |= cfg->force_en_mask;
-
-	pr_debug("%s port %d, mode %x, speed %d, duplex %d, txpause %d, rxpause %d: set mcr=%08x\n",
-		 __func__, port, mode, speed, duplex, tx_pause, rx_pause, mcr);
-	regmap_write(priv->map, priv->r->mac_force_mode_ctrl(port), mcr);
-
-	/* Restart TX/RX to port */
-	regmap_update_bits(priv->map, priv->r->mac_port_ctrl(port), 0x3, 0x3);
-}
-
-static void rtldsa_93xx_phylink_mac_link_up(struct phylink_config *config,
-					    struct phy_device *phydev,
-					    unsigned int mode,
-					    phy_interface_t interface,
-					    int speed, int duplex,
-					    bool tx_pause, bool rx_pause)
-{
-	struct dsa_port *dp = dsa_phylink_to_port(config);
-	struct otto_dsa_priv *priv = dp->ds->priv;
-	const struct rtldsa_mac_force_mode_cfg *cfg;
-	int port = dp->index;
-	bool dynamic_phy, force_dynamic_phy, keep_forced;
-	u32 mcr, spdsel;
-
-	/*
-	 * The RTL93xx polling machinery does more than issue MDIO
-	 * transactions. It collects resolved link state and distributes it
-	 * internally to the MAC, so polling must remain enabled for
-	 * SerDes-backed SFP ports even when there is no PHY to poll over MDIO.
-	 *
-	 * The MDIO driver owns the polling setup. It enables polling for PHY
-	 * and SerDes ports and initializes MAC_TYPE/PHY_ABLTY from the static,
-	 * firmware-described topology. That topology cannot describe a PHY
-	 * which appears later in a hot-plugged SFP module. Only DSA learns
-	 * about such a PHY through phylink, so the source selector is
-	 * deliberately shared: MDIO initializes it, while DSA updates it as
-	 * the active SFP link-state source changes. DSA does not disable
-	 * polling here; it only selects whether the polling machinery supplies
-	 * the MAC with state from the PCS or from the dynamic PHY.
-	 *
-	 * Accordingly, direct links use PCS state, while statically described
-	 * PHYs retain the MDIO driver's hardware-polling selection. Dynamic
-	 * SGMII and out-of-band PHYs select PHY state and remain forced.
-	 * Dynamic USXGMII PHYs use PCS state after a force pulse refreshes the
-	 * MAC parameters; fixed links and CPU ports also remain forced.
-	 */
-	cfg = &priv->r->mac_force_mode;
-	dynamic_phy = !priv->ports[port].phy && phydev;
-	force_dynamic_phy = dynamic_phy &&
-		(!phylink_autoneg_inband(mode) ||
-		 interface == PHY_INTERFACE_MODE_SGMII);
-	keep_forced = dsa_port_is_cpu(dp) || mode == MLO_AN_FIXED ||
-		      force_dynamic_phy;
-	if (dynamic_phy &&
-	    (interface == PHY_INTERFACE_MODE_SGMII ||
-	     interface == PHY_INTERFACE_MODE_USXGMII)) {
-		if (phydev->speed != SPEED_UNKNOWN)
-			speed = phydev->speed;
-		if (phydev->duplex != DUPLEX_UNKNOWN)
-			duplex = phydev->duplex;
-	}
-
-	regmap_read(priv->map, priv->r->mac_force_mode_ctrl(port), &mcr);
-	mcr &= ~(cfg->rx_pause_mask | cfg->tx_pause_mask);
-	mcr |= cfg->fc_force_en_mask;
-	if (tx_pause)
-		mcr |= cfg->tx_pause_mask;
-	if (rx_pause)
-		mcr |= cfg->rx_pause_mask;
-
-	if (!keep_forced && !dynamic_phy) {
-		if (!priv->ports[port].phy)
-			rtldsa_mac_link_state_source_set(priv, port,
-							 RTLDSA_MAC_LINK_STATE_SOURCE_PCS,
-							 interface);
-		mcr &= ~cfg->force_en_mask;
-		regmap_write(priv->map, priv->r->mac_force_mode_ctrl(port), mcr);
-		goto restart;
-	}
-
-	if (speed == SPEED_10000)
-		spdsel = RTL_SPEED_10000;
-	else if (speed == SPEED_5000)
-		spdsel = RTL_SPEED_5000;
-	else if (speed == SPEED_2500)
-		spdsel = RTL_SPEED_2500;
-	else if (speed == SPEED_1000)
-		spdsel = RTL_SPEED_1000;
-	else if (speed == SPEED_100)
-		spdsel = RTL_SPEED_100;
-	else
-		spdsel = RTL_SPEED_10;
-
-	mcr &= ~(cfg->duplex_mask | cfg->speed_mask);
-	mcr |= cfg->force_en_mask | cfg->fc_force_en_mask | cfg->link_up_mask;
-	mcr |= field_prep(cfg->speed_mask, spdsel);
-	if (dynamic_phy)
-		mcr &= ~cfg->media_mask;
-
-	if (duplex == DUPLEX_FULL || priv->lagmembers & BIT_ULL(port))
-		mcr |= cfg->duplex_mask;
-
-	pr_debug("%s port %d, mode %x, speed %d, duplex %d, txpause %d, rxpause %d: set mcr=%08x\n",
-		 __func__, port, mode, speed, duplex, tx_pause, rx_pause, mcr);
-	regmap_write(priv->map, priv->r->mac_force_mode_ctrl(port), mcr);
-	/* Pulse state force enables so hardware latches the new parameters. */
-	regmap_write(priv->map, priv->r->mac_force_mode_ctrl(port),
-		     mcr & ~cfg->force_en_mask);
-	if (keep_forced)
-		regmap_write(priv->map, priv->r->mac_force_mode_ctrl(port), mcr);
-
-	/* Keep force mode active while switching hardware link sources. */
-	if (force_dynamic_phy)
-		rtldsa_mac_link_state_source_set(priv, port,
-					 RTLDSA_MAC_LINK_STATE_SOURCE_PHY,
-					 interface);
-
-restart:
-	/* Restart TX/RX to port */
-	regmap_update_bits(priv->map, priv->r->mac_port_ctrl(port), 0x3, 0x3);
 }
 
 static int rtldsa_mc_group_alloc(struct otto_dsa_priv *priv, int port)
@@ -636,12 +265,6 @@ static int rtldsa_port_enable(struct dsa_switch *ds, int port, struct phy_device
 	/* add all other ports in the same bridge to switch mask of port */
 	priv->r->traffic_set(priv, port, priv->ports[port].pm);
 
-	/* TODO: Figure out if this is necessary */
-	if (priv->family_id == RTL9300_FAMILY_ID) {
-		sw_w32_mask(0, BIT(port), RTL930X_L2_PORT_SABLK_CTRL);
-		sw_w32_mask(0, BIT(port), RTL930X_L2_PORT_DABLK_CTRL);
-	}
-
 	return 0;
 }
 
@@ -662,106 +285,6 @@ static void rtldsa_port_disable(struct dsa_switch *ds, int port)
 	priv->r->traffic_set(priv, port, 0);
 
 	priv->ports[port].enable = false;
-}
-
-static int rtldsa_port_max_mtu(struct dsa_switch *ds, int port)
-{
-	struct otto_dsa_priv *priv = ds->priv;
-
-	/* Families that cannot limit the frame length keep advertising the
-	 * ether_setup() default their ports always had.
-	 */
-	if (!priv->r->max_frame)
-		return ETH_DATA_LEN;
-
-	return priv->r->max_frame - RTLDSA_FRAME_OVERHEAD - RTLDSA_TAG_OVERHEAD;
-}
-
-static int rtldsa_largest_mtu(struct dsa_switch *ds, int port, int new_mtu)
-{
-	struct dsa_port *dp;
-	int mtu = new_mtu;
-
-	/* The MTU of the port being changed is written after this operation
-	 * runs, and not every user netdevice exists yet while probing.
-	 */
-	dsa_switch_for_each_user_port(dp, ds)
-		if (dp->index != port && dp->user)
-			mtu = max_t(int, mtu, dp->user->mtu);
-
-	return mtu;
-}
-
-static int rtldsa_port_change_mtu(struct dsa_switch *ds, int port, int new_mtu)
-{
-	struct otto_dsa_priv *priv = ds->priv;
-	int frame_size;
-
-	if (!priv->r->max_frame)
-		return -EOPNOTSUPP;
-
-	/* The ethernet driver owns the limits of the CPU port and programs them
-	 * from the conduit MTU, which carries the tagger overhead that the DSA
-	 * core leaves out of the value handed here.
-	 */
-	if (dsa_is_cpu_port(ds, port))
-		return 0;
-
-	/* new_mtu is the L2 payload size, but the MAC limit counts the whole
-	 * frame: the Ethernet header, up to two stacked VLAN tags (802.1ad
-	 * QinQ) and the FCS. The MAC TAG_INC bit is left as found, so VLAN tag
-	 * bytes are not counted twice. The tail tag towards the CPU port takes
-	 * the place of the FCS and needs no room of its own.
-	 */
-	if (priv->r->mac_max_len_reg) {
-		frame_size = new_mtu + RTLDSA_FRAME_OVERHEAD;
-
-		sw_w32_mask(RTLDSA_MAC_MAX_LEN_MASK,
-			    RTLDSA_MAC_MAX_LEN_VAL(frame_size),
-			    priv->r->mac_max_len_reg(port));
-
-		return 0;
-	}
-
-	/* One register for all ports, so it has to fit the largest of them */
-	frame_size = rtldsa_largest_mtu(ds, port, new_mtu) + RTLDSA_FRAME_OVERHEAD;
-
-	sw_w32_mask(RTLDSA_MAC_MAX_LEN_MASK, RTLDSA_MAC_MAX_LEN_VAL(frame_size),
-		    priv->r->mac_max_len_ctrl);
-
-	if (priv->r->mac_max_len_ctrl_dup)
-		sw_w32_mask(RTLDSA_MAC_MAX_LEN_MASK,
-			    RTLDSA_MAC_MAX_LEN_VAL(frame_size),
-			    priv->r->mac_max_len_ctrl_dup);
-
-	return 0;
-}
-
-static bool rtldsa_support_eee(struct dsa_switch *ds, int port)
-{
-	struct otto_dsa_priv *priv = ds->priv;
-
-	/* TODO: do this better */
-	return (priv->ports[port].phy != 0);
-}
-
-static int rtldsa_set_mac_eee(struct dsa_switch *ds, int port, struct ethtool_keee *e)
-{
-	struct otto_dsa_priv *priv = ds->priv;
-
-	if (e->eee_enabled && !priv->eee_enabled) {
-		pr_info("Globally enabling EEE\n");
-		priv->r->init_eee(priv, true);
-	}
-
-	priv->r->set_mac_eee(priv, port, e->eee_enabled);
-
-	if (e->eee_enabled)
-		pr_info("Enabled EEE for port %d\n", port);
-	else
-		pr_info("Disabled EEE for port %d\n", port);
-
-	return 0;
 }
 
 static int rtldsa_set_ageing_time(struct dsa_switch *ds, unsigned int msec)
@@ -905,34 +428,7 @@ void rtldsa_port_fast_age(struct dsa_switch *ds, int port)
 	mutex_unlock(&priv->reg_mutex);
 }
 
-static void rtldsa_setup_l2_uc_entry(struct rtl838x_l2_entry *e, int port,
-				     int vid, u64 mac)
-{
-	bool next_hop = e->valid && e->next_hop;
-	u16 nh_route_id = next_hop ? e->nh_route_id : 0;
-
-	memset(e, 0, sizeof(*e));
-
-	e->type = L2_UNICAST;
-	e->valid = true;
-
-	/* A route may be forwarding through this address already, and the id
-	 * it is known by lives nowhere else.
-	 */
-	e->next_hop = next_hop;
-	e->nh_route_id = nh_route_id;
-
-	e->age = 3;
-	e->is_static = true;
-
-	e->port = port;
-
-	e->rvid = e->vid = vid;
-	e->is_ip_mc = e->is_ipv6_mc = false;
-	u64_to_ether_addr(mac, e->mac);
-}
-
-static void rtldsa_setup_l2_mc_entry(struct rtl838x_l2_entry *e, int vid, u64 mac, int mc_group)
+static void rtldsa_setup_l2_mc_entry(struct otto_l2_entry *e, int vid, u64 mac, int mc_group)
 {
 	memset(e, 0, sizeof(*e));
 
@@ -944,173 +440,6 @@ static void rtldsa_setup_l2_mc_entry(struct rtl838x_l2_entry *e, int vid, u64 ma
 	e->rvid = e->vid = vid;
 	e->is_ip_mc = e->is_ipv6_mc = false;
 	u64_to_ether_addr(mac, e->mac);
-}
-
-static int rtldsa_port_fdb_add(struct dsa_switch *ds, int port,
-			       const unsigned char *addr, u16 vid,
-			       const struct dsa_db db)
-{
-	struct otto_dsa_priv *priv = ds->priv;
-	u64 mac = ether_addr_to_u64(addr);
-	struct rtl838x_l2_entry e;
-	int err = 0, idx;
-	u64 seed = priv->r->l2_hash_seed(mac, vid);
-	int lag_group = otto_lag_find_group_from_port(priv, port);
-
-	if (lag_group >= 0 && priv->r->prepare_lag_fdb) {
-		priv->r->prepare_lag_fdb(&e, lag_group);
-	} else {
-		if (priv->lag_non_primary & BIT_ULL(port)) {
-			pr_debug("%s: %d is lag slave but prepare_lag_fdb is not supported. ignore\n",
-				 __func__, port);
-			return 0;
-		}
-	}
-
-	mutex_lock(&priv->reg_mutex);
-
-	idx = otto_l2_find_hash_entry(priv, seed, false, &e);
-
-	/* Found an existing or empty entry */
-	if (idx >= 0) {
-		struct rtldsa_l2_uc *m = otto_l2_uc_lookup(priv, idx);
-
-		if (m) {
-			/* A slot nobody had claimed carries whatever its last
-			 * owner left behind.
-			 */
-			if (!e.valid)
-				*m = (struct rtldsa_l2_uc){};
-			m->fdb_ref = true;
-		}
-
-		rtldsa_setup_l2_uc_entry(&e, port, vid, mac);
-		priv->r->write_l2_entry_using_hash(priv, idx >> 2, idx & 0x3, &e);
-		goto out;
-	}
-
-	/* Hash buckets full, try CAM */
-	idx = otto_l2_find_cam_entry(priv, seed, false, &e);
-
-	if (idx >= 0) {
-		rtldsa_setup_l2_uc_entry(&e, port, vid, mac);
-		priv->r->write_cam(idx, &e);
-		goto out;
-	}
-
-	err = -ENOTSUPP;
-
-out:
-	mutex_unlock(&priv->reg_mutex);
-
-	return err;
-}
-
-static int rtldsa_port_fdb_del(struct dsa_switch *ds, int port,
-			       const unsigned char *addr, u16 vid,
-			       const struct dsa_db db)
-{
-	struct otto_dsa_priv *priv = ds->priv;
-	u64 mac = ether_addr_to_u64(addr);
-	struct rtl838x_l2_entry e;
-	int err = 0, idx;
-	u64 seed = priv->r->l2_hash_seed(mac, vid);
-	int lag_group = otto_lag_find_group_from_port(priv, port);
-
-	if (lag_group >= 0 && priv->r->prepare_lag_fdb)
-		priv->r->prepare_lag_fdb(&e, lag_group);
-
-	pr_debug("In %s, mac %llx, vid: %d\n", __func__, mac, vid);
-
-	mutex_lock(&priv->reg_mutex);
-
-	idx = otto_l2_find_hash_entry(priv, seed, true, &e);
-
-	if (idx >= 0) {
-		struct rtldsa_l2_uc *m = otto_l2_uc_lookup(priv, idx);
-
-		pr_debug("Found entry index %d, key %d and bucket %d\n", idx, idx >> 2, idx & 3);
-
-		if (m)
-			m->fdb_ref = false;
-
-		/* A route still forwarding through this address keeps it, as
-		 * the next hop it already is, reachable through no port of its
-		 * own.
-		 */
-		if (m && m->l3_refcount && e.next_hop) {
-			e.port = priv->r->port_ignore;
-			e.age = 0;
-		} else {
-			e.valid = false;
-		}
-
-		priv->r->write_l2_entry_using_hash(priv, idx >> 2, idx & 0x3, &e);
-		goto out;
-	}
-
-	/* Check CAM for spillover from hash buckets */
-	idx = otto_l2_find_cam_entry(priv, seed, true, &e);
-
-	if (idx >= 0) {
-		e.valid = false;
-		priv->r->write_cam(idx, &e);
-		goto out;
-	}
-	err = -ENOENT;
-
-out:
-	mutex_unlock(&priv->reg_mutex);
-
-	return err;
-}
-
-static int rtldsa_port_fdb_dump(struct dsa_switch *ds, int port,
-				dsa_fdb_dump_cb_t *cb, void *data)
-{
-	struct otto_dsa_priv *priv = ds->priv;
-	int uc_rows, cam_rows;
-
-	uc_rows = otto_table_rows(priv->r->l2_uc_tbl);
-	if (uc_rows < 0)
-		return uc_rows;
-
-	cam_rows = otto_table_rows(priv->r->l2_cam_tbl);
-	if (cam_rows < 0)
-		return cam_rows;
-
-	mutex_lock(&priv->reg_mutex);
-
-	for (int i = 0; i < uc_rows; i++) {
-		struct rtl838x_l2_entry e = {};
-
-		if (!((i + 1) % 64))
-			cond_resched();
-
-		priv->r->read_l2_entry_using_hash(i >> 2, i & 0x3, &e);
-
-		if (!e.valid || e.type != L2_UNICAST || e.is_trunk)
-			continue;
-
-		if (e.port == port || e.port == RTL930X_PORT_IGNORE)
-			cb(e.mac, e.rvid, e.is_static, data);
-	}
-
-	for (int i = 0; i < cam_rows; i++) {
-		struct rtl838x_l2_entry e = {};
-
-		priv->r->read_cam(i, &e);
-
-		if (!e.valid || e.type != L2_UNICAST || e.is_trunk)
-			continue;
-
-		if (e.port == port)
-			cb(e.mac, e.rvid, e.is_static, data);
-	}
-
-	mutex_unlock(&priv->reg_mutex);
-
-	return 0;
 }
 
 static bool rtldsa_mac_is_unsnoop(const unsigned char *addr)
@@ -1137,7 +466,7 @@ static int rtldsa_83xx_port_mdb_add(struct dsa_switch *ds, int port,
 {
 	struct otto_dsa_priv *priv = ds->priv;
 	u64 mac = ether_addr_to_u64(mdb->addr);
-	struct rtl838x_l2_entry e;
+	struct otto_l2_entry e;
 	int err = 0, idx;
 	int vid = mdb->vid;
 	u64 seed = priv->r->l2_hash_seed(mac, vid);
@@ -1223,7 +552,7 @@ static int rtldsa_port_mdb_del(struct dsa_switch *ds, int port,
 {
 	struct otto_dsa_priv *priv = ds->priv;
 	u64 mac = ether_addr_to_u64(mdb->addr);
-	struct rtl838x_l2_entry e;
+	struct otto_l2_entry e;
 	int err = 0, idx;
 	int vid = mdb->vid;
 	u64 seed = priv->r->l2_hash_seed(mac, vid);
@@ -1281,7 +610,7 @@ static int rtldsa_port_pre_bridge_flags(struct dsa_switch *ds, int port,
 					struct netlink_ext_ack *extack)
 {
 	struct otto_dsa_priv *priv = ds->priv;
-	unsigned long features = BR_ISOLATED;
+	unsigned long features = BR_ISOLATED | BR_PORT_LOCKED;
 
 	pr_debug("%s: %d %lX\n", __func__, port, flags.val);
 	if (priv->r->enable_learning)
@@ -1289,9 +618,6 @@ static int rtldsa_port_pre_bridge_flags(struct dsa_switch *ds, int port,
 
 	if (priv->r->enable_flood)
 		features |= BR_FLOOD;
-
-	if (priv->r->enable_l2_new_sa_fwd)
-		features |= BR_PORT_LOCKED;
 
 	if (priv->r->enable_mcast_flood)
 		features |= BR_MCAST_FLOOD;
@@ -1326,7 +652,6 @@ static int rtldsa_port_bridge_flags(struct dsa_switch *ds, int port,
 {
 	struct otto_dsa_priv *priv = ds->priv;
 	struct dsa_port *dp = dsa_to_port(ds, port);
-	enum rtldsa_flood_type new_sa_fwd;
 	unsigned long cached_flags;
 
 	pr_debug("%s: %d %lX\n", __func__, port, flags.val);
@@ -1348,21 +673,13 @@ static int rtldsa_port_bridge_flags(struct dsa_switch *ds, int port,
 		rtldsa_port_set_salrn(priv, port, !!(cached_flags & BR_LEARNING));
 	}
 
-	priv->ports[port].flood_type = (cached_flags & BR_FLOOD) ?
-				       RTLDSA_FLOOD_TYPE_FORWARD :
-				       RTLDSA_FLOOD_TYPE_DROP;
-
 	if (priv->r->enable_flood)
-		priv->r->enable_flood(priv, port, priv->ports[port].flood_type);
+		priv->r->enable_flood(priv, port, !!(cached_flags & BR_FLOOD));
 
 	/* Trap frames with an unknown source address on a locked port to the
 	 * CPU, so that an authenticator can inspect them and add an FDB entry.
 	 */
-	new_sa_fwd = (cached_flags & BR_PORT_LOCKED) ? RTLDSA_FLOOD_TYPE_TRAP2CPU :
-						       RTLDSA_FLOOD_TYPE_FORWARD;
-
-	if (priv->r->enable_l2_new_sa_fwd)
-		priv->r->enable_l2_new_sa_fwd(priv, port, new_sa_fwd);
+	priv->r->set_l2_new_sa_trap(priv, port, !!(cached_flags & BR_PORT_LOCKED));
 
 	if (priv->r->enable_learning)
 		priv->r->enable_learning(priv, port, !!(cached_flags & BR_LEARNING));
@@ -1386,17 +703,11 @@ static int rtldsa_port_bridge_flags(struct dsa_switch *ds, int port,
 	return 0;
 }
 
-const struct phylink_mac_ops rtldsa_83xx_phylink_mac_ops = {
-	.mac_config		= rtldsa_83xx_phylink_mac_config,
-	.mac_link_down		= rtldsa_83xx_phylink_mac_link_down,
-	.mac_link_up		= rtldsa_83xx_phylink_mac_link_up,
-};
-
 const struct dsa_switch_ops rtldsa_83xx_switch_ops = {
 	.get_tag_protocol	= rtldsa_get_tag_protocol,
 	.setup			= rtldsa_83xx_setup,
 
-	.phylink_get_caps	= rtldsa_phylink_get_caps,
+	.phylink_get_caps	= otto_mac_phylink_get_caps,
 
 	.get_strings		= otto_stats_get_strings,
 	.get_ethtool_stats	= otto_stats_get_ethtool,
@@ -1411,11 +722,11 @@ const struct dsa_switch_ops rtldsa_83xx_switch_ops = {
 	.port_enable		= rtldsa_port_enable,
 	.port_disable		= rtldsa_port_disable,
 
-	.port_change_mtu	= rtldsa_port_change_mtu,
-	.port_max_mtu		= rtldsa_port_max_mtu,
+	.port_change_mtu	= otto_mac_port_change_mtu,
+	.port_max_mtu		= otto_mac_port_max_mtu,
 
-	.support_eee		= rtldsa_support_eee,
-	.set_mac_eee		= rtldsa_set_mac_eee,
+	.support_eee		= otto_mac_support_eee,
+	.set_mac_eee		= otto_mac_set_eee,
 
 	.set_ageing_time	= rtldsa_set_ageing_time,
 	.port_bridge_join	= rtldsa_port_bridge_join,
@@ -1431,15 +742,15 @@ const struct dsa_switch_ops rtldsa_83xx_switch_ops = {
 	.port_vlan_fast_age	= otto_vlan_port_fast_age,
 	.vlan_msti_set		= otto_vlan_msti_set,
 
-	.port_fdb_add		= rtldsa_port_fdb_add,
-	.port_fdb_del		= rtldsa_port_fdb_del,
-	.port_fdb_dump		= rtldsa_port_fdb_dump,
+	.port_fdb_add		= otto_fdb_port_add,
+	.port_fdb_del		= otto_fdb_port_del,
+	.port_fdb_dump		= otto_fdb_port_dump,
 
 	.port_mdb_add		= rtldsa_83xx_port_mdb_add,
 	.port_mdb_del		= rtldsa_port_mdb_del,
 
-	.port_mirror_add	= rtldsa_port_mirror_add,
-	.port_mirror_del	= rtldsa_port_mirror_del,
+	.port_mirror_add	= otto_mirror_port_add,
+	.port_mirror_del	= otto_mirror_port_del,
 
 	.port_lag_change	= otto_lag_port_change,
 	.port_lag_join		= otto_lag_port_join,
@@ -1453,17 +764,11 @@ const struct dsa_switch_ops rtldsa_83xx_switch_ops = {
 	.cls_flower_stats	= otto_tc_cls_flower_stats,
 };
 
-const struct phylink_mac_ops rtldsa_93xx_phylink_mac_ops = {
-	.mac_config		= rtldsa_93xx_phylink_mac_config,
-	.mac_link_down		= rtldsa_93xx_phylink_mac_link_down,
-	.mac_link_up		= rtldsa_93xx_phylink_mac_link_up,
-};
-
 const struct dsa_switch_ops rtldsa_93xx_switch_ops = {
 	.get_tag_protocol	= rtldsa_get_tag_protocol,
 	.setup			= rtldsa_93xx_setup,
 
-	.phylink_get_caps	= rtldsa_phylink_get_caps,
+	.phylink_get_caps	= otto_mac_phylink_get_caps,
 
 	.get_strings		= otto_stats_get_strings,
 	.get_ethtool_stats	= otto_stats_get_ethtool,
@@ -1478,11 +783,11 @@ const struct dsa_switch_ops rtldsa_93xx_switch_ops = {
 	.port_enable		= rtldsa_port_enable,
 	.port_disable		= rtldsa_port_disable,
 
-	.port_change_mtu	= rtldsa_port_change_mtu,
-	.port_max_mtu		= rtldsa_port_max_mtu,
+	.port_change_mtu	= otto_mac_port_change_mtu,
+	.port_max_mtu		= otto_mac_port_max_mtu,
 
-	.support_eee		= rtldsa_support_eee,
-	.set_mac_eee		= rtldsa_set_mac_eee,
+	.support_eee		= otto_mac_support_eee,
+	.set_mac_eee		= otto_mac_set_eee,
 
 	.set_ageing_time	= rtldsa_set_ageing_time,
 	.port_bridge_join	= rtldsa_port_bridge_join,
@@ -1498,15 +803,15 @@ const struct dsa_switch_ops rtldsa_93xx_switch_ops = {
 	.port_vlan_fast_age	= otto_vlan_port_fast_age,
 	.vlan_msti_set		= otto_vlan_msti_set,
 
-	.port_fdb_add		= rtldsa_port_fdb_add,
-	.port_fdb_del		= rtldsa_port_fdb_del,
-	.port_fdb_dump		= rtldsa_port_fdb_dump,
+	.port_fdb_add		= otto_fdb_port_add,
+	.port_fdb_del		= otto_fdb_port_del,
+	.port_fdb_dump		= otto_fdb_port_dump,
 
 	.port_mdb_add		= rtldsa_93xx_port_mdb_add,
 	.port_mdb_del		= rtldsa_port_mdb_del,
 
-	.port_mirror_add	= rtldsa_port_mirror_add,
-	.port_mirror_del	= rtldsa_port_mirror_del,
+	.port_mirror_add	= otto_mirror_port_add,
+	.port_mirror_del	= otto_mirror_port_del,
 
 	.port_lag_change	= otto_lag_port_change,
 	.port_lag_join		= otto_lag_port_join,
@@ -1519,4 +824,12 @@ const struct dsa_switch_ops rtldsa_93xx_switch_ops = {
 	.cls_flower_add		= otto_tc_cls_flower_add,
 	.cls_flower_del		= otto_tc_cls_flower_del,
 	.cls_flower_stats	= otto_tc_cls_flower_stats,
+
+	.port_get_default_prio	= otto_qos_port_get_default_prio,
+	.port_set_default_prio	= otto_qos_port_set_default_prio,
+	.port_get_dscp_prio	= otto_qos_port_get_dscp_prio,
+	.port_add_dscp_prio	= otto_qos_port_add_dscp_prio,
+	.port_del_dscp_prio	= otto_qos_port_del_dscp_prio,
+	.port_get_apptrust	= otto_qos_port_get_apptrust,
+	.port_set_apptrust	= otto_qos_port_set_apptrust,
 };

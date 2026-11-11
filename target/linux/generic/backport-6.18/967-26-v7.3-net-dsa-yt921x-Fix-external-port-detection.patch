@@ -1,0 +1,33 @@
+From f2596ce59b151b4bac31f355ea82bed22b57d502 Mon Sep 17 00:00:00 2001
+From: Chukun Pan <amadeus@jmu.edu.cn>
+Date: Fri, 10 Jul 2026 18:00:00 +0800
+Subject: [PATCH] net: dsa: yt921x: Fix external port detection
+
+The YT921x switch has two MAC ports: 8 and 9. Currently, the driver
+only allows port 8 as an external port, while port 9 is not working:
+
+yt921x mdio-bus:1d: Wrong mode 23 on port 9
+yt921x mdio-bus:1d: Failed to config port 9: -22
+
+Update the external port detection logic to enable the external PHY
+connected to port 9.
+
+Cc: stable+noautosel@kernel.org # never worked
+Signed-off-by: Chukun Pan <amadeus@jmu.edu.cn>
+Link: https://patch.msgid.link/20260710100000.3018614-1-amadeus@jmu.edu.cn
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ drivers/net/dsa/yt921x.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/net/dsa/yt921x.h
++++ b/drivers/net/dsa/yt921x.h
+@@ -854,7 +854,7 @@ enum yt921x_fdb_entry_status {
+ #define YT921X_PORT_NUM			11
+ 
+ #define yt921x_port_is_internal(port) ((port) < 8)
+-#define yt921x_port_is_external(port) (8 <= (port) && (port) < 9)
++#define yt921x_port_is_external(port) ((port) == 8 || (port) == 9)
+ 
+ struct yt921x_mib {
+ 	u64 rx_broadcast;

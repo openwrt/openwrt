@@ -1,0 +1,178 @@
+From e5b36c01302fb6d98a84333a196f57dcc2e2a9fe Mon Sep 17 00:00:00 2001
+From: Karsten Sperling <ksperling@apple.com>
+Date: Fri, 7 Aug 2026 16:04:54 +1200
+Subject: [PATCH] mbedtls: improve Suite B / TLS_CONN_SUITEB handling
+
+Leave tls_conf->flags unmodified as the flags the caller asked for.
+Instead, record in tls_conf which of the two
+openssl_ciphers=SUITEB128/SUITEB192 profiles was selected. Note these
+can be used independently of the TLS_CONN_SUITEB* flags. The suiteb128
+and suiteb192 members already existed but were unused. Whether Suite B
+is in effect at all is now decided by tls_conf_suiteb(), covering both
+the flags and the two profiles.
+
+Treat TLS_CONN_SUITEB_NO_ECDH on its own as asking for Suite B, as the
+OpenSSL backend does. hostapd's tls_flags parser sets TLS_CONN_SUITEB
+alongside it for [SUITEB-NO-ECDH], but the supplicant's
+tls_suiteb_no_ecdh=1 sets only TLS_CONN_SUITEB_NO_ECDH. This caused it
+to bypass Suite B entirely (including the DHE-only cipher default) which
+is selected inside a branch that is only reachable when Suite B is in
+effect.
+
+Also allow RSA signatures in TLS_CONN_SUITEB and TLS_CONN_SUITEB_NO_ECDH
+modes. The backend already configured the RSA ciphersuites and a
+certificate profile that allows any public key algorithm for this case,
+but it left the signature algorithms from MBEDTLS_SSL_PRESET_SUITEB in
+place (restricting to ECC-only). An RSA certificate therefore had no
+usable signature algorithm and the handshake failed with
+MBEDTLS_ERR_SSL_HANDSHAKE_FAILURE.
+
+Lastly add the TLS 1.3 ciphersuite for the Suite B 192-bit level to the
+ciphersuite defaults, which otherwise only cover TLS <= 1.2 and leave
+nothing to offer when the version range is restricted to TLSv1.3.
+
+The suiteb hwsim tests now pass with the mbedtls backend.
+
+Signed-off-by: Karsten Sperling <ksperling@apple.com>
+
+--- a/src/crypto/tls_mbedtls.c
++++ b/src/crypto/tls_mbedtls.c
+@@ -663,6 +663,18 @@ static int tls_mbedtls_data_is_pem(const
+ }
+ 
+ 
++static int tls_conf_suiteb(const struct tls_conf *tls_conf)
++{
++	/* Suite B is in effect if asked for via flag TLS_CONN_SUITEB or
++	 * TLS_CONN_SUITEB_NO_ECDH, or via openssl_ciphers=SUITEB128/SUITEB192.
++	 * nb: the flags ask for the CNSA variant of Suite B 192-bit, which also
++	 * permits RSA / DH with >= 3072-bit keys, unlike the ECC-only RFC 6460
++	 * profiles that openssl_ciphers=SUITEB128/SUITEB192 select. */
++	return ((tls_conf->flags & (TLS_CONN_SUITEB | TLS_CONN_SUITEB_NO_ECDH))
++	    || tls_conf->suiteb128 || tls_conf->suiteb192);
++}
++
++
+ static int tls_mbedtls_set_allowed_tls_vers(const struct tls_conf *tls_conf,
+                                             mbedtls_ssl_config *conf)
+ {
+@@ -672,8 +684,8 @@ static int tls_mbedtls_set_allowed_tls_v
+ 	flags |= TLS_CONN_DISABLE_TLSv1_3;
+   #endif
+ 
+-	/* unconditionally require TLSv1.2+ for TLS_CONN_SUITEB */
+-	if (flags & TLS_CONN_SUITEB) {
++	/* unconditionally require TLSv1.2+ for Suite B */
++	if (tls_conf_suiteb(tls_conf)) {
+ 		flags |= TLS_CONN_DISABLE_TLSv1_0;
+ 		flags |= TLS_CONN_DISABLE_TLSv1_1;
+ 	}
+@@ -1789,45 +1801,56 @@ static int tls_mbedtls_set_params(struct
+ 	                            ? params->openssl_ciphers
+ 	                            : tls_conf->global->openssl_ciphers;
+ 
+-	int suiteb128 = 0;
+-	int suiteb192 = 0;
++	/* openssl_ciphers=SUITEB128/SUITEB192 select one of the ECC-only X.509
++	 * certificate profiles above, whereas the TLS_CONN_SUITEB* flags use the
++	 * profile that permits any public key algorithm */
++	tls_conf->suiteb128 = 0;
++	tls_conf->suiteb192 = 0;
+ 	if (openssl_ciphers) {
+-		if (os_strcmp(openssl_ciphers, "SUITEB192") == 0) {
+-			suiteb192 = 1;
+-			tls_conf->flags |= TLS_CONN_SUITEB;
+-		}
+-		if (os_strcmp(openssl_ciphers, "SUITEB128") == 0) {
+-			suiteb128 = 1;
+-			tls_conf->flags |= TLS_CONN_SUITEB;
+-		}
++		if (os_strcmp(openssl_ciphers, "SUITEB192") == 0)
++			tls_conf->suiteb192 = 1;
++		if (os_strcmp(openssl_ciphers, "SUITEB128") == 0)
++			tls_conf->suiteb128 = 1;
+ 	}
+ 
+ 	int ret = mbedtls_ssl_config_defaults(
+ 	    &tls_conf->conf, tls_conf->global->tls_conf ? MBEDTLS_SSL_IS_SERVER
+ 	                                                : MBEDTLS_SSL_IS_CLIENT,
+ 	    MBEDTLS_SSL_TRANSPORT_STREAM,
+-	    (tls_conf->flags & TLS_CONN_SUITEB) ? MBEDTLS_SSL_PRESET_SUITEB
+-	                                        : MBEDTLS_SSL_PRESET_DEFAULT);
++	    tls_conf_suiteb(tls_conf) ? MBEDTLS_SSL_PRESET_SUITEB
++	                              : MBEDTLS_SSL_PRESET_DEFAULT);
+ 	if (ret != 0) {
+ 		elog(ret, "mbedtls_ssl_config_defaults");
+ 		return -1;
+ 	}
+ 
+-	if (suiteb128) {
++	if (tls_conf->suiteb128) {
+ 		mbedtls_ssl_conf_cert_profile(&tls_conf->conf,
+ 		                              &tls_mbedtls_crt_profile_suiteb128);
+ 		mbedtls_ssl_conf_dhm_min_bitlen(&tls_conf->conf, 2048);
+ 	}
+-	else if (suiteb192) {
++	else if (tls_conf->suiteb192) {
+ 		mbedtls_ssl_conf_cert_profile(&tls_conf->conf,
+ 		                              &tls_mbedtls_crt_profile_suiteb192);
+ 		mbedtls_ssl_conf_dhm_min_bitlen(&tls_conf->conf, 3072);
+ 	}
+-	else if (tls_conf->flags & TLS_CONN_SUITEB) {
++	else if (tls_conf->flags & (TLS_CONN_SUITEB | TLS_CONN_SUITEB_NO_ECDH)) {
+ 		/* treat as suiteb192 while allowing any PK algorithm */
+ 		mbedtls_ssl_conf_cert_profile(&tls_conf->conf,
+ 		                              &tls_mbedtls_crt_profile_suiteb192_anypk);
+ 		mbedtls_ssl_conf_dhm_min_bitlen(&tls_conf->conf, 3072);
++	  #if MBEDTLS_VERSION_NUMBER >= 0x03020000 /* mbedtls 3.2.0 */
++		/* MBEDTLS_SSL_PRESET_SUITEB restricts to ECDSA, permit RSA as well.
++		 * The list is not copied and must stay valid for the lifetime of the
++		 * config. (Older versions restrict the signature hash instead.) */
++		static const uint16_t suiteb_sig_algs[] = {
++			MBEDTLS_TLS1_3_SIG_ECDSA_SECP384R1_SHA384,
++			MBEDTLS_TLS1_3_SIG_RSA_PSS_RSAE_SHA384,
++			MBEDTLS_TLS1_3_SIG_RSA_PKCS1_SHA384,
++			MBEDTLS_TLS1_3_SIG_NONE
++		};
++		mbedtls_ssl_conf_sig_algs(&tls_conf->conf, suiteb_sig_algs);
++	  #endif
+ 	}
+ 
+ 	if (tls_mbedtls_set_allowed_tls_vers(tls_conf, &tls_conf->conf) != 0)
+@@ -1850,12 +1873,16 @@ static int tls_mbedtls_set_params(struct
+ 		if (!tls_mbedtls_set_ciphers(tls_conf, openssl_ciphers))
+ 			return -1;
+ 	}
+-	else if (tls_conf->flags & TLS_CONN_SUITEB) {
++	else if (tls_conf_suiteb(tls_conf)) {
+ 		/* special-case a select set of ciphers for hwsim tests */
+ 		if (!tls_mbedtls_set_ciphers(tls_conf,
+ 		        (tls_conf->flags & TLS_CONN_SUITEB_NO_ECDH)
+ 		          ? "DHE-RSA-AES256-GCM-SHA384"
+-		          : "ECDHE-RSA-AES256-GCM-SHA384:DHE-RSA-AES256-GCM-SHA384"))
++		          : "ECDHE-RSA-AES256-GCM-SHA384:DHE-RSA-AES256-GCM-SHA384"
++		#ifdef TLS_MBEDTLS_TLS13
++		            ":TLS_AES_256_GCM_SHA384"
++		#endif
++		        ))
+ 			return -1;
+ 	}
+ 
+@@ -2262,7 +2289,7 @@ __attribute_cold__
+ static void tls_mbedtls_suiteb_handshake_alert (struct tls_connection *conn)
+ {
+ 	/* tests/hwsim/test_suite_b.py test_suite_b_192_rsa_insufficient_dh */
+-	if (!(conn->tls_conf->flags & TLS_CONN_SUITEB))
++	if (!tls_conf_suiteb(conn->tls_conf))
+ 		return;
+ 	if (conn->global->tls_conf) /*(is server; want issue event on client)*/
+ 		return;
+@@ -3312,7 +3339,7 @@ tls_mbedtls_verify_cb (void *arg, mbedtl
+ 			                              "Distinguished Name",
+ 			                              TLS_FAIL_DN_MISMATCH);
+ 		}
+-		if (tls_conf->flags & TLS_CONN_SUITEB) {
++		if (tls_conf_suiteb(tls_conf)) {
+ 			/* check RSA modulus size (public key bitlen) */
+ 			const mbedtls_pk_type_t pk_alg = mbedtls_pk_get_type(&crt->pk);
+ 			if ((pk_alg == MBEDTLS_PK_RSA || pk_alg == MBEDTLS_PK_RSASSA_PSS)

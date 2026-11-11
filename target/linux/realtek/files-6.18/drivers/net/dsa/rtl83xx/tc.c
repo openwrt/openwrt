@@ -10,6 +10,7 @@
 #include <linux/rhashtable.h>
 #include <asm/mach-rtl-otto/mach-rtl-otto.h>
 
+#include "mirror.h"
 #include "pie.h"
 #include "qos.h"
 #include "rtl-otto.h"
@@ -363,7 +364,7 @@ static int otto_tc_add_flow(struct otto_dsa_priv *priv, struct flow_cls_offload 
 			/* A copy through the forwarding action would take over the
 			 * forwarding decision of the L3 rules in later blocks.
 			 */
-			err = rtldsa_mirror_group_get(priv, port);
+			err = otto_mirror_group_get(priv, port);
 			if (err < 0) {
 				if (err == -ENOSPC)
 					NL_SET_ERR_MSG_MOD(f->common.extack,
@@ -437,7 +438,7 @@ static void otto_tc_flow_free(void *ptr, void *arg)
 	priv->r->pie_rule_rm(priv, &flow->rule);
 	otto_tc_packet_cntr_put(priv, flow->rule.packet_cntr);
 	if (flow->rule.mir_sel)
-		rtldsa_mirror_group_put(priv, flow->rule.mir_data);
+		otto_mirror_group_put(priv, flow->rule.mir_data);
 
 	/* Readers may still hold an RCU-protected reference after the
 	 * object has been removed from the hash table.
@@ -552,7 +553,7 @@ out_remove:
 	rhashtable_remove_fast(&priv->tc_ht, &flow->node, tc_ht_params);
 	otto_tc_packet_cntr_put(priv, flow->rule.packet_cntr);
 	if (flow->rule.mir_sel)
-		rtldsa_mirror_group_put(priv, flow->rule.mir_data);
+		otto_mirror_group_put(priv, flow->rule.mir_data);
 	/* published in tc_ht above; a concurrent reader may still hold a ref */
 	kfree_rcu(flow, rcu_head);
 	goto out_err;
@@ -595,7 +596,7 @@ static int otto_tc_delete_flower(struct otto_dsa_priv *priv,
 	priv->r->pie_rule_rm(priv, &flow->rule);
 	otto_tc_packet_cntr_put(priv, flow->rule.packet_cntr);
 	if (flow->rule.mir_sel)
-		rtldsa_mirror_group_put(priv, flow->rule.mir_data);
+		otto_mirror_group_put(priv, flow->rule.mir_data);
 
 	kfree_rcu(flow, rcu_head);
 
@@ -766,6 +767,7 @@ int otto_tc_930x_port_rate_police_add(struct dsa_switch *ds, int port,
 	u32 burst;
 	u64 rate;
 	u32 addr;
+	int err;
 
 	/* rate has unit 16000 bit */
 	rate = div_u64(act->police.rate_bytes_ps, 2000);
@@ -785,43 +787,56 @@ int otto_tc_930x_port_rate_police_add(struct dsa_switch *ds, int port,
 		 * working, the realtek default ratio of 1:2 seems to work
 		 * reasonable well
 		 */
-		sw_w32(burst, RTL930X_BANDWIDTH_CTRL_INGRESS_BURST_HIGH_ON(port));
-		sw_w32(burst / 2, RTL930X_BANDWIDTH_CTRL_INGRESS_BURST_HIGH_OFF(port));
+		err = regmap_write(priv->map, RTL930X_BANDWIDTH_CTRL_INGRESS_BURST_HIGH_ON(port),
+				   burst);
+		if (err)
+			return err;
+		err = regmap_write(priv->map, RTL930X_BANDWIDTH_CTRL_INGRESS_BURST_HIGH_OFF(port),
+				   burst / 2);
+		if (err)
+			return err;
 
 		/* Enable ingress bandwidth flow control to improve TCP throughput and avoid
 		 * the drops behavior of the RTL930x ingress rate limiter which seem to not
 		 * play well with any congestion control algorithm
 		 */
-		sw_w32_mask(0, RTL930X_INGRESS_FC_CTRL_EN(port),
-			    RTL930X_INGRESS_FC_CTRL(port));
+		err = regmap_write_bits(priv->map, RTL930X_INGRESS_FC_CTRL(port),
+					RTL930X_INGRESS_FC_CTRL_EN(port),
+					RTL930X_INGRESS_FC_CTRL_EN(port));
+		if (err)
+			return err;
 	} else {
 		/* the bucket is 16 bit wide and has to hold the burst and one frame */
 		burst = min_t(u32, act->police.burst, U16_MAX - priv->r->max_frame);
 
-		sw_w32(burst, addr + 4);
+		err = regmap_write(priv->map, addr + 4, burst);
+		if (err)
+			return err;
 	}
 
-	sw_w32(rate, addr);
-
-	return 0;
+	return regmap_write(priv->map, addr, rate);
 }
 
 int otto_tc_930x_port_rate_police_del(struct dsa_switch *ds, int port,
 				      struct flow_cls_offload *cls,
 				      bool ingress)
 {
+	struct otto_dsa_priv *priv = ds->priv;
 	u32 addr;
+	int err;
 
 	if (ingress)
 		addr = RTL930X_BANDWIDTH_CTRL_INGRESS(port);
 	else
 		addr = RTL930X_BANDWIDTH_CTRL_EGRESS(port);
 
-	sw_w32_mask(RTL93XX_BANDWIDTH_CTRL_ENABLE, 0, addr);
+	err = regmap_write_bits(priv->map, addr, RTL93XX_BANDWIDTH_CTRL_ENABLE, 0);
+	if (err)
+		return err;
 
 	if (ingress)
-		sw_w32_mask(RTL930X_INGRESS_FC_CTRL_EN(port), 0,
-			    RTL930X_INGRESS_FC_CTRL(port));
+		return regmap_write_bits(priv->map, RTL930X_INGRESS_FC_CTRL(port),
+					 RTL930X_INGRESS_FC_CTRL_EN(port), 0);
 
 	return 0;
 }
@@ -863,9 +878,11 @@ int otto_tc_931x_port_rate_police_add(struct dsa_switch *ds, int port,
 				      const struct flow_action_entry *act,
 				      bool ingress)
 {
+	struct otto_dsa_priv *priv = ds->priv;
 	u32 burst;
 	u64 rate;
 	u32 addr;
+	int err;
 
 	/* rate has unit 16000 bit */
 	rate = div_u64(act->police.rate_bytes_ps, 2000);
@@ -879,16 +896,18 @@ int otto_tc_931x_port_rate_police_add(struct dsa_switch *ds, int port,
 	else
 		addr = RTL931X_BANDWIDTH_CTRL_EGRESS(port);
 
-	sw_w32(burst, addr + 4);
-	sw_w32(rate, addr);
+	err = regmap_write(priv->map, addr + 4, burst);
+	if (err)
+		return err;
 
-	return 0;
+	return regmap_write(priv->map, addr, rate);
 }
 
 int otto_tc_931x_port_rate_police_del(struct dsa_switch *ds, int port,
 				      struct flow_cls_offload *cls,
 				      bool ingress)
 {
+	struct otto_dsa_priv *priv = ds->priv;
 	u32 addr;
 
 	if (ingress)
@@ -896,9 +915,7 @@ int otto_tc_931x_port_rate_police_del(struct dsa_switch *ds, int port,
 	else
 		addr = RTL931X_BANDWIDTH_CTRL_EGRESS(port);
 
-	sw_w32_mask(RTL93XX_BANDWIDTH_CTRL_ENABLE, 0, addr);
-
-	return 0;
+	return regmap_write_bits(priv->map, addr, RTL93XX_BANDWIDTH_CTRL_ENABLE, 0);
 }
 
 static void otto_tc_tbf_apply(struct otto_dsa_priv *priv, int port, int queue, bool allowed)

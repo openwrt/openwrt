@@ -16,35 +16,7 @@
 #include "vlan.h"
 #include "stp.h"
 
-#define RTL839X_MAC_PORT_CTRL(port)		(0x8004 + (((port) << 7)))
-
-/* MAC maximum packet length (jumbo frame) control.
- *
- * The switch MAC drops frames whose L2 length exceeds the configured maximum.
- * A family holds either one register per user port or a single one for the
- * whole switch. The length is a direct byte value held in two 14-bit fields
- * (high-speed links in [13:0], 10/100M links in [27:14]); bit 28 selects
- * whether VLAN tag bytes count towards the limit.
- */
-
-#define RTL839X_MAC_MAX_LEN_CTRL		(0x02b0)
-
-#define RTL839X_MAX_FRAME			12288
-
-#define RTL839X_MAC_FORCE_MODE_CTRL		(0x02bc)
-
 #define RTL839X_PORT_ISO_CTRL(port)		(0x1400 + ((port) << 3))
-
-#define RTL839X_MAC_LINK_STS			(0x0390)
-
-#define RTL839X_EEE_TX_TIMER_GELITE_CTRL	(0x042C)
-#define RTL839X_EEE_TX_TIMER_GIGA_CTRL		(0x0430)
-#define RTL839X_EEE_TX_TIMER_10G_CTRL		(0x0434)
-#define RTL839X_EEE_CTRL(p)			(0x8008 + ((p) << 7))
-
-#define RTL839X_L2_CTRL_0			(0x3800)
-
-#define RTL839X_L2_TBL_FLUSH_CTRL		(0x3ba0)
 
 #define RTL839X_RMA_BPDU_FLD_PMSK		(0x125C)
 
@@ -88,16 +60,6 @@ static inline int rtl839x_port_iso_ctrl(int p)
 	return RTL839X_PORT_ISO_CTRL(p);
 }
 
-static inline int rtl839x_mac_force_mode_ctrl(int p)
-{
-	return RTL839X_MAC_FORCE_MODE_CTRL + (p << 2);
-}
-
-static inline int rtl839x_mac_port_ctrl(int p)
-{
-	return RTL839X_MAC_PORT_CTRL(p);
-}
-
 static void rtl839x_traffic_set(struct otto_dsa_priv *priv, int source, u64 dest_matrix)
 {
 	u64 ports = dest_matrix | BIT_ULL(source);
@@ -130,62 +92,6 @@ static void rtl839x_traffic_disable(struct otto_dsa_priv *priv, int source, int 
 	regmap_write_bits(priv->map, reg + 4, lower_32_bits(mask), 0);
 }
 
-/* Enables or disables the EEE/EEEP capability of a port */
-static void rtldsa_839x_set_mac_eee(struct otto_dsa_priv *priv, int port, bool enable)
-{
-	u32 v;
-
-	/* This works only for Ethernet ports, and on the RTL839X, ports above 47 are SFP */
-	if (port >= 48)
-		return;
-
-	enable = true;
-	pr_debug("In %s: setting port %d to %d\n", __func__, port, enable);
-	v = enable ? 0xf : 0x0;
-
-	/* Set EEE for 100, 500, 1000MBit and 10GBit */
-	regmap_write_bits(priv->map, rtl839x_mac_force_mode_ctrl(port), GENMASK(11, 8), v << 8);
-
-	/* Set TX/RX EEE state */
-	v = enable ? 0x3 : 0x0;
-	regmap_write(priv->map, RTL839X_EEE_CTRL(port), v);
-
-	priv->ports[port].eee_enabled = enable;
-}
-
-static void rtl839x_init_eee(struct otto_dsa_priv *priv, bool enable)
-{
-	pr_debug("Setting up EEE, state: %d\n", enable);
-
-	/* Set wake timer for TX and pause timer both to 0x21 */
-	regmap_write_bits(priv->map, RTL839X_EEE_TX_TIMER_GELITE_CTRL,
-			  GENMASK(27, 20) | GENMASK(7, 0), 0x21 << 20 | 0x21);
-	/* Set pause wake timer for GIGA-EEE to 0x11 */
-	regmap_write_bits(priv->map, RTL839X_EEE_TX_TIMER_GIGA_CTRL, GENMASK(27, 20), 0x11 << 20);
-	/* Set pause wake timer for 10GBit ports to 0x11 */
-	regmap_write_bits(priv->map, RTL839X_EEE_TX_TIMER_10G_CTRL, GENMASK(27, 20), 0x11 << 20);
-
-	/* Setup EEE on all ports */
-	for (int i = 0; i < priv->r->cpu_port; i++) {
-		if (priv->ports[i].phy)
-			priv->r->set_mac_eee(priv, i, enable);
-	}
-	priv->eee_enabled = enable;
-}
-
-static void rtl839x_set_igr_filter(struct otto_dsa_priv *priv, int port, enum igr_filter state)
-{
-	regmap_write_bits(priv->map, RTL839X_VLAN_PORT_IGR_FLTR + (((port >> 4) << 2)),
-			  GENMASK(1, 0) << ((port & 0xf) << 1),
-			  (u32)(state & 0x3) << ((port & 0xf) << 1));
-}
-
-static void rtl839x_set_egr_filter(struct otto_dsa_priv *priv, int port, enum egr_filter state)
-{
-	regmap_write_bits(priv->map, RTL839X_VLAN_PORT_EGR_FLTR + (((port >> 5) << 2)),
-			  BIT(port % 0x20), (u32)(state & 0x1) << (port % 0x20));
-}
-
 static void rtl839x_set_receive_management_action(struct otto_dsa_priv *priv,
 						int port, rma_ctrl_t type,
 						action_type_t action)
@@ -213,7 +119,7 @@ static void rtl839x_set_receive_management_action(struct otto_dsa_priv *priv,
 
 const struct rtldsa_config rtldsa_839x_cfg = {
 	.switch_ops = &rtldsa_83xx_switch_ops,
-	.phylink_mac_ops = &rtldsa_83xx_phylink_mac_ops,
+	.phylink_mac_ops = &otto_mac_83xx_phylink_ops,
 	.stp_init = otto_stp_839x_init,
 	.l2_bucket_size = 4,
 	.n_mst = 256,
@@ -225,7 +131,6 @@ const struct rtldsa_config rtldsa_839x_cfg = {
 	.mask_port_reg_be = rtl839x_mask_port_reg_be,
 	.set_port_reg_be = rtl839x_set_port_reg_be,
 	.get_port_reg_be = rtl839x_get_port_reg_be,
-	.mask_port_reg_le = rtl839x_mask_port_reg_le,
 	.set_port_reg_le = rtl839x_set_port_reg_le,
 	.get_port_reg_le = rtl839x_get_port_reg_le,
 	.stat_port_rst = RTL839X_STAT_PORT_RST,
@@ -241,12 +146,10 @@ const struct rtldsa_config rtldsa_839x_cfg = {
 	.traffic_disable = rtl839x_traffic_disable,
 	.traffic_set = rtl839x_traffic_set,
 	.port_iso_ctrl = rtl839x_port_iso_ctrl,
-	.l2_ctrl_0 = RTL839X_L2_CTRL_0,
 	.l2_ctrl_1 = RTL839X_L2_CTRL_1,
 	.self_mac_trap_ctrl = RTL839X_SPCL_TRAP_SWITCH_MAC_CTRL,
 	.l2_port_aging_out = RTL839X_L2_PORT_AGING_OUT,
 	.set_ageing_time = otto_l2_839x_set_ageing_time,
-	.l2_tbl_flush_ctrl = RTL839X_L2_TBL_FLUSH_CTRL,
 	.isr_glb_src = RTL839X_ISR_GLB_SRC,
 	.isr_port_link_sts_chg = RTL839X_ISR_PORT_LINK_STS_CHG,
 	.imr_port_link_sts_chg = RTL839X_IMR_PORT_LINK_STS_CHG,
@@ -268,9 +171,10 @@ const struct rtldsa_config rtldsa_839x_cfg = {
 	.vlan_port_qinq_set = otto_vlan_839x_port_qinq_set,
 	.vlan_port_pvidmode_set = otto_vlan_839x_port_pvid_mode_set,
 	.vlan_port_pvid_set = otto_vlan_839x_port_pvid_set,
-	.set_vlan_igr_filter = rtl839x_set_igr_filter,
-	.set_vlan_egr_filter = rtl839x_set_egr_filter,
+	.vlan_set_igr_filter = otto_vlan_839x_set_igr_filter,
+	.vlan_set_egr_filter = otto_vlan_839x_set_egr_filter,
 	.enable_learning = otto_l2_839x_enable_learning,
+	.set_l2_new_sa_trap = otto_l2_839x_set_port_new_sa_trap,
 	.enable_flood = otto_l2_839x_enable_flood,
 	.enable_mcast_flood = otto_l2_839x_enable_mcast_flood,
 	.enable_bcast_flood = otto_l2_839x_enable_bcast_flood,
@@ -285,15 +189,14 @@ const struct rtldsa_config rtldsa_839x_cfg = {
 		.tx_pause_mask = RTL839X_TX_PAUSE_EN,
 		.rx_pause_mask = RTL839X_RX_PAUSE_EN,
 	},
-	.mac_force_mode_ctrl = rtl839x_mac_force_mode_ctrl,
+	.mac_force_mode_ctrl = otto_mac_839x_force_mode_ctrl,
 	.mac_link_sts = RTL839X_MAC_LINK_STS,
-	.mac_port_ctrl = rtl839x_mac_port_ctrl,
+	.mac_port_ctrl = otto_mac_839x_port_ctrl,
 	.mac_capabilities = MAC_ASYM_PAUSE | MAC_SYM_PAUSE | MAC_10 | MAC_100 | MAC_1000FD,
 	.mac_max_len_ctrl = RTL839X_MAC_MAX_LEN_CTRL,
 	.max_frame = RTL839X_MAX_FRAME,
 	.l2_port_new_salrn = otto_l2_839x_port_new_salrn,
-	.l2_port_new_sa_fwd = otto_l2_839x_port_new_sa_fwd,
-	.get_mirror_config = rtldsa_839x_get_mirror_config,
+	.get_mirror_config = otto_mirror_839x_get_config,
 	.print_matrix = rtldsa_839x_print_matrix,
 	.read_l2_entry_using_hash = otto_l2_839x_read_entry_using_hash,
 	.write_l2_entry_using_hash = otto_l2_839x_write_entry_using_hash,
@@ -303,8 +206,8 @@ const struct rtldsa_config rtldsa_839x_cfg = {
 	.trk_mbr_ctr = otto_lag_839x_trk_mbr_ctr,
 	.rma_bpdu_fld_pmask = RTL839X_RMA_BPDU_FLD_PMSK,
 	.spcl_trap_eapol_ctrl = RTL839X_SPCL_TRAP_EAPOL_CTRL,
-	.init_eee = rtl839x_init_eee,
-	.set_mac_eee = rtldsa_839x_set_mac_eee,
+	.init_eee = otto_mac_839x_init_eee,
+	.set_mac_eee = otto_mac_839x_set_eee,
 	.l2_hash_seed = otto_l2_839x_hash_seed,
 	.l2_hash_key = otto_l2_839x_hash_key,
 	.read_mcast_pmask = otto_l2_839x_read_mcast_pmask,

@@ -49,7 +49,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  obj-$(CONFIG_NVMEM_IMX_IIM)		+= nvmem-imx-iim.o
 --- /dev/null
 +++ b/drivers/nvmem/block.c
-@@ -0,0 +1,198 @@
+@@ -0,0 +1,200 @@
 +// SPDX-License-Identifier: GPL-2.0-or-later
 +/*
 + * block device NVMEM provider
@@ -123,6 +123,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	struct device_node *np = dev_of_node(dev);
 +	struct nvmem_config config = {};
 +	struct blk_nvmem *bnv;
++	int err;
 +
 +	/* skip devices which do not have a device tree node */
 +	if (!np)
@@ -174,8 +175,9 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +		dev_err_probe(&bdev->bd_device, PTR_ERR(bnv->nvmem),
 +			      "Failed to register NVMEM device\n");
 +
++		err = PTR_ERR(bnv->nvmem);
 +		kfree(bnv);
-+		return PTR_ERR(bnv->nvmem);
++		return err;
 +	}
 +
 +	mutex_lock(&devices_mutex);

@@ -27,7 +27,7 @@ Signed-off-by: Erik Conijn <egc112@msn.com>
  #include <linux/platform_data/b53.h>
  #include <linux/phy.h>
  #include <linux/phylink.h>
-@@ -1267,6 +1268,35 @@ out:
+@@ -1308,6 +1309,35 @@ out:
  }
  EXPORT_SYMBOL(b53_setup_devlink_resources);
  
@@ -63,7 +63,7 @@ Signed-off-by: Erik Conijn <egc112@msn.com>
  static int b53_setup(struct dsa_switch *ds)
  {
  	struct b53_device *dev = ds->priv;
-@@ -1318,6 +1348,8 @@ static int b53_setup(struct dsa_switch *
+@@ -1359,6 +1389,8 @@ static int b53_setup(struct dsa_switch *
  		return ret;
  	}
  

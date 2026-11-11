@@ -124,7 +124,7 @@ Signed-off-by: Aishwarya R <aishwarya.r@oss.qualcomm.com>
  #endif /* CONFIG_ROBUST_AV */
  
  
-@@ -4770,6 +4860,9 @@ static int hostapd_ctrl_iface_receive_pr
+@@ -4772,6 +4862,9 @@ static int hostapd_ctrl_iface_receive_pr
  	} else if (os_strncmp(buf, "DSCP_POLICY ", 12) == 0) {
  		if (hostapd_ctrl_iface_set_dscp_policy(hapd, buf + 12))
  			reply_len = -1;

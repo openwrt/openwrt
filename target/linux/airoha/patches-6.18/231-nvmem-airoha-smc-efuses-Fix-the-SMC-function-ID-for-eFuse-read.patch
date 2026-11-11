@@ -1,0 +1,41 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Zhengping Zhang <zhengping.zhang@airoha.com>
+Date: Fri, 30 Oct 2026 10:46:00 +0800
+Subject: [PATCH] nvmem: airoha-smc-efuses: Fix the SMC function ID for eFuse read
+
+The Airoha firmware uses SMC function ID 0x82000005 for the eFuse
+word-read service. The driver currently uses 0x82000001, which does
+not select this service and prevents eFuse read from working
+correctly.
+
+Use the correct function ID and rename the constant to
+AIROHA_SMC_EFUSE_READ_WORD_FID to make the selected operation explicit.
+
+Fixes: b7846af2e6ca ("nvmem: airoha: Add support for SMC eFUSE")
+
+Link: https://lore.kernel.org/all/20261030024601.678699-1-zhengping.zhang@airoha.com/
+Signed-off-by: Zhengping Zhang <zhengping.zhang@airoha.com>
+---
+ drivers/nvmem/airoha-smc-efuses.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/drivers/nvmem/airoha-smc-efuses.c
++++ b/drivers/nvmem/airoha-smc-efuses.c
+@@ -11,7 +11,7 @@
+ #include <linux/of.h>
+ #include <linux/regmap.h>
+ 
+-#define AIROHA_SMC_EFUSE_FID		0x82000001
++#define AIROHA_SMC_EFUSE_READ_WORD_FID	0x82000005
+ #define AIROHA_SMC_EFUSE_SUB_ID_READ	0x44414552
+ 
+ #define AIROHA_EFUSE_CELLS		64
+@@ -35,7 +35,7 @@ static int airoha_efuse_reg_read(void *c
+ 	struct airoha_efuse_bank_priv *priv = context;
+ 	struct arm_smccc_res res;
+ 
+-	arm_smccc_1_1_invoke(AIROHA_SMC_EFUSE_FID,
++	arm_smccc_1_1_invoke(AIROHA_SMC_EFUSE_READ_WORD_FID,
+ 			     AIROHA_SMC_EFUSE_SUB_ID_READ,
+ 			     priv->bank_index, offset, 0, 0, 0, 0, &res);
+ 

@@ -1,0 +1,449 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: John Crispin <john@phrozen.org>
+Subject: [PATCH] video: add a Sitronix ST7789P3 panel driver
+
+A UCLASS_VIDEO driver for the ST7789P3 attached over SPI in MIPI DBI
+type C mode, where a D/C GPIO selects command or parameter. Transfers
+use spi_mem_exec_op(), since the MediaTek SPI drivers implement only
+the spi-mem API.
+
+--- a/drivers/video/Kconfig
++++ b/drivers/video/Kconfig
+@@ -941,6 +941,23 @@ config VIDEO_SEPS525
+ 	  Enable support for the Syncoam PM-OLED display driver (RGB 160x128).
+ 	  Currently driver is supporting only SPI interface.
+ 
++config VIDEO_ST7789P3
++	bool "Enable video support for Sitronix ST7789P3"
++	depends on DM_GPIO && DM_SPI && BACKLIGHT
++	select SPI_MEM
++	help
++	  Enable support for the Sitronix ST7789P3 LCD controller (RGB565
++	  320x240) attached over SPI in MIPI DBI type C mode, using a D/C GPIO
++	  to distinguish commands from parameters.
++
++	  A skip-init property on the panel node says an earlier stage already
++	  brought the controller up. The driver then leaves out the reset and
++	  the init sequence and draws over what is on screen.
++
++	  A rotation property says how the panel is mounted, and picks MADCTL.
++	  Both 90 and 270 give 320x240 landscape, one turned 180 degrees
++	  against the other. The property is required.
++
+ source "drivers/video/zynqmp/Kconfig"
+ source "drivers/video/nexell/Kconfig"
+ 
+--- a/drivers/video/Makefile
++++ b/drivers/video/Makefile
+@@ -89,6 +89,7 @@ obj-$(CONFIG_VIDEO_SANDBOX_SDL) += sandb
+ obj-$(CONFIG_VIDEO_SIMPLE) += simplefb.o
+ obj-$(CONFIG_VIDEO_VESA) += vesa.o
+ obj-$(CONFIG_VIDEO_SEPS525) += seps525.o
++obj-$(CONFIG_VIDEO_ST7789P3) += st7789p3.o
+ obj-$(CONFIG_VIDEO_ZYNQMP_DPSUB) += zynqmp/
+ 
+ obj-y += bridge/
+--- /dev/null
++++ b/drivers/video/st7789p3.c
+@@ -0,0 +1,401 @@
++// SPDX-License-Identifier: GPL-2.0+
++/*
++ * Sitronix ST7789P3 over SPI in MIPI DBI type C mode.
++ *
++ * The MediaTek SPIM controller implements only the spi-mem API, so transfers go
++ * through spi_mem_exec_op() rather than dm_spi_xfer(). A spi_mem_op must carry
++ * exactly one opcode byte, so the first byte of every burst rides in that slot;
++ * on the wire it is indistinguishable from a raw transfer.
++ *
++ * A skip-init property says an earlier stage already brought the panel up and
++ * left a picture on it. The reset and the init sequence are then left out, and
++ * the first frame goes straight at a running controller. The panel is
++ * write-only, so the claim cannot be checked here.
++ */
++
++#include <backlight.h>
++#include <dm.h>
++#include <log.h>
++#include <malloc.h>
++#include <mipi_display.h>
++#include <spi.h>
++#include <spi-mem.h>
++#include <video.h>
++#include <asm/gpio.h>
++#include <dm/device_compat.h>
++#include <linux/delay.h>
++#include <linux/kernel.h>
++
++#define ST7789P3_WIDTH		320
++#define ST7789P3_HEIGHT		240
++#define ST7789P3_BYTES_PER_PX	2
++#define ST7789P3_LINE_BYTES	(ST7789P3_WIDTH * ST7789P3_BYTES_PER_PX)
++
++/* mtk_spim_supports_op() takes 1..65536 data bytes freely, then only exact
++ * multiples of 65536, so a 153600 byte frame has to be split.
++ */
++#define ST7789P3_CHUNK		65536
++#define ST7789P3_CHUNK_LINES	(ST7789P3_CHUNK / ST7789P3_LINE_BYTES)
++#define ST7789P3_BUF_BYTES	(ST7789P3_CHUNK_LINES * ST7789P3_LINE_BYTES)
++
++#define ST7789P3_DELAY		0x00
++
++/*
++ * The controller's command timing is far tighter than its pixel timing, so
++ * anything short goes out slowly and only bulk pixel data runs at full speed,
++ * as mipi_dbi_spi_cmd_max_speed() does in Linux.
++ */
++#define ST7789P3_SLOW_MAX_LEN	64
++#define ST7789P3_SLOW_HZ	10000000
++
++struct st7789p3_priv {
++	struct gpio_desc reset_gpio;
++	struct gpio_desc dc_gpio;
++	struct udevice *backlight;
++	struct spi_slave *slave;
++	uint max_hz;
++	u8 *buf;
++	u8 madctl;
++	bool skip_init;
++	bool inited;
++	bool lit;
++};
++
++/*
++ * Both values set MV, so both give 320x240 landscape. The panel that is mounted
++ * the other way up needs the other one, and the two Linux panel-mipi-dbi blobs
++ * differ in this byte alone.
++ */
++#define ST7789P3_MADCTL_90	0x60	/* MV|MX */
++#define ST7789P3_MADCTL_270	0xa0	/* MV|MY */
++
++/*
++ * Transcribed from glinet,gl-be10000-panel.txt in package/firmware/mipi-dbi,
++ * the init sequence of the panel-mipi-dbi blob Linux loads. Records are
++ * <cmd> <nparams> <params...>; ST7789P3_DELAY carries milliseconds instead.
++ * MADCTL is the one byte the board supplies, so the table leaves it at zero.
++ */
++static const u8 st7789p3_init_seq[] = {
++	MIPI_DCS_SOFT_RESET, 0,
++	ST7789P3_DELAY, 1, 5,
++	MIPI_DCS_EXIT_SLEEP_MODE, 0,
++	ST7789P3_DELAY, 1, 120,
++	MIPI_DCS_SET_ADDRESS_MODE, 1, 0x00,
++	MIPI_DCS_SET_PIXEL_FORMAT, 1, 0x05,
++	0xb2, 5, 0x05, 0x05, 0x00, 0x33, 0x33,		/* PORCTRL */
++	0xb7, 1, 0x35,					/* GCTRL */
++	0xbb, 1, 0x21,					/* VCOMS */
++	0xc0, 1, 0x2c,					/* LCMCTRL */
++	0xc2, 1, 0x01,					/* VDVVRHEN */
++	0xc3, 1, 0x0b,					/* VRHS */
++	0xc4, 1, 0x20,					/* VDVS */
++	0xc6, 1, 0x0a,					/* FRCTRL2 */
++	0xd0, 2, 0xa7, 0xa1,				/* PWCTRL1 */
++	0xd0, 2, 0xa4, 0xa1,				/* PWCTRL1 */
++	MIPI_DCS_SET_TEAR_ON, 1, 0x00,
++	0xd6, 1, 0xa1,					/* vendor */
++	0xe0, 14, 0xd0, 0x04, 0x08, 0x0a, 0x09, 0x05, 0x2d,
++		  0x43, 0x49, 0x09, 0x16, 0x15, 0x26, 0x2b,	/* PVGAMCTRL */
++	0xe1, 14, 0xd0, 0x03, 0x09, 0x0a, 0x0a, 0x06, 0x2e,
++		  0x44, 0x40, 0x3a, 0x15, 0x15, 0x26, 0x2a,	/* NVGAMCTRL */
++	MIPI_DCS_ENTER_INVERT_MODE, 0,
++	ST7789P3_DELAY, 1, 10,
++	MIPI_DCS_SET_DISPLAY_ON, 0,
++	ST7789P3_DELAY, 1, 120,
++};
++
++static int st7789p3_exec(struct st7789p3_priv *priv, struct spi_mem_op *op,
++			 size_t len)
++{
++	int ret;
++
++	priv->slave->max_hz = len > ST7789P3_SLOW_MAX_LEN ? priv->max_hz :
++			      min_t(uint, priv->max_hz, ST7789P3_SLOW_HZ);
++
++	ret = spi_mem_exec_op(priv->slave, op);
++	priv->slave->max_hz = priv->max_hz;
++
++	return ret;
++}
++
++static int st7789p3_write_cmd(struct udevice *dev, u8 cmd)
++{
++	struct st7789p3_priv *priv = dev_get_priv(dev);
++	struct spi_mem_op op = SPI_MEM_OP(SPI_MEM_OP_CMD(cmd, 1),
++					  SPI_MEM_OP_NO_ADDR,
++					  SPI_MEM_OP_NO_DUMMY,
++					  SPI_MEM_OP_NO_DATA);
++	int ret;
++
++	ret = dm_gpio_set_value(&priv->dc_gpio, 0);
++	if (ret)
++		return ret;
++
++	return st7789p3_exec(priv, &op, 1);
++}
++
++static int st7789p3_write_data(struct udevice *dev, const u8 *buf, size_t len)
++{
++	struct st7789p3_priv *priv = dev_get_priv(dev);
++	int ret;
++
++	if (!len)
++		return 0;
++
++	ret = dm_gpio_set_value(&priv->dc_gpio, 1);
++	if (ret)
++		return ret;
++
++	while (len) {
++		size_t n = min(len, (size_t)ST7789P3_CHUNK);
++		struct spi_mem_op op = SPI_MEM_OP(SPI_MEM_OP_CMD(buf[0], 1),
++						  SPI_MEM_OP_NO_ADDR,
++						  SPI_MEM_OP_NO_DUMMY,
++						  SPI_MEM_OP_NO_DATA);
++
++		/*
++		 * exec_op picks the no-data register flag off data.nbytes but
++		 * its completion wait off data.dir, so the two have to agree.
++		 */
++		if (n > 1) {
++			op.data.dir = SPI_MEM_DATA_OUT;
++			op.data.nbytes = n - 1;
++			op.data.buf.out = buf + 1;
++			op.data.buswidth = 1;
++		}
++
++		ret = st7789p3_exec(priv, &op, n);
++		if (ret)
++			return ret;
++
++		buf += n;
++		len -= n;
++	}
++
++	return 0;
++}
++
++static int st7789p3_init_display(struct udevice *dev)
++{
++	struct st7789p3_priv *priv = dev_get_priv(dev);
++	size_t i = 0;
++	int ret;
++
++	while (i < ARRAY_SIZE(st7789p3_init_seq)) {
++		u8 cmd = st7789p3_init_seq[i++];
++		u8 len = st7789p3_init_seq[i++];
++
++		if (cmd == ST7789P3_DELAY) {
++			mdelay(st7789p3_init_seq[i]);
++			i += len;
++			continue;
++		}
++
++		ret = st7789p3_write_cmd(dev, cmd);
++		if (ret)
++			return ret;
++
++		if (cmd == MIPI_DCS_SET_ADDRESS_MODE)
++			ret = st7789p3_write_data(dev, &priv->madctl, 1);
++		else
++			ret = st7789p3_write_data(dev, &st7789p3_init_seq[i],
++						  len);
++		if (ret)
++			return ret;
++
++		i += len;
++	}
++
++	return 0;
++}
++
++static int st7789p3_set_window(struct udevice *dev)
++{
++	u8 col[4] = { 0, 0, (ST7789P3_WIDTH - 1) >> 8,
++		      (ST7789P3_WIDTH - 1) & 0xff };
++	u8 row[4] = { 0, 0, (ST7789P3_HEIGHT - 1) >> 8,
++		      (ST7789P3_HEIGHT - 1) & 0xff };
++	int ret;
++
++	ret = st7789p3_write_cmd(dev, MIPI_DCS_SET_COLUMN_ADDRESS);
++	if (ret)
++		return ret;
++	ret = st7789p3_write_data(dev, col, sizeof(col));
++	if (ret)
++		return ret;
++
++	ret = st7789p3_write_cmd(dev, MIPI_DCS_SET_PAGE_ADDRESS);
++	if (ret)
++		return ret;
++
++	return st7789p3_write_data(dev, row, sizeof(row));
++}
++
++static int st7789p3_sync(struct udevice *vid)
++{
++	struct video_priv *uc_priv = dev_get_uclass_priv(vid);
++	struct st7789p3_priv *priv = dev_get_priv(vid);
++	const u8 *fb = uc_priv->fb;
++	size_t fill = 0;
++	int y, ret;
++
++	/* video_post_probe() clears the screen, so this runs before probe ends */
++	if (!priv->inited)
++		return 0;
++
++	ret = st7789p3_set_window(vid);
++	if (ret)
++		return ret;
++
++	ret = st7789p3_write_cmd(vid, MIPI_DCS_WRITE_MEMORY_START);
++	if (ret)
++		return ret;
++
++	for (y = 0; y < ST7789P3_HEIGHT; y++) {
++		const u8 *src = fb + y * uc_priv->line_length;
++		int x;
++
++		/* framebuffer RGB565 is little endian, the panel wants MSB first */
++		for (x = 0; x < ST7789P3_WIDTH; x++) {
++			priv->buf[fill++] = src[x * 2 + 1];
++			priv->buf[fill++] = src[x * 2];
++		}
++
++		if (fill + ST7789P3_LINE_BYTES > ST7789P3_BUF_BYTES ||
++		    y == ST7789P3_HEIGHT - 1) {
++			ret = st7789p3_write_data(vid, priv->buf, fill);
++			if (ret)
++				return ret;
++			fill = 0;
++		}
++	}
++
++	if (!priv->lit && priv->backlight) {
++		priv->lit = true;
++		backlight_enable(priv->backlight);
++	}
++
++	return 0;
++}
++
++static int st7789p3_probe(struct udevice *dev)
++{
++	struct video_priv *uc_priv = dev_get_uclass_priv(dev);
++	struct st7789p3_priv *priv = dev_get_priv(dev);
++	int ret;
++
++	priv->slave = dev_get_parent_priv(dev);
++	if (!priv->slave)
++		return -ENODEV;
++
++	priv->max_hz = priv->slave->max_hz;
++	priv->skip_init = dev_read_bool(dev, "skip-init");
++
++	switch (dev_read_u32_default(dev, "rotation", 0)) {
++	case 90:
++		priv->madctl = ST7789P3_MADCTL_90;
++		break;
++	case 270:
++		priv->madctl = ST7789P3_MADCTL_270;
++		break;
++	default:
++		dev_err(dev, "rotation has to be 90 or 270\n");
++		return -EINVAL;
++	}
++
++	/*
++	 * Requesting an output drives it, and logical 0 is RESX asserted, so an
++	 * adopted panel has to be asked for released or the request alone wipes
++	 * the picture.
++	 */
++	ret = gpio_request_by_name(dev, "reset-gpios", 0, &priv->reset_gpio,
++				   priv->skip_init ?
++				   GPIOD_IS_OUT | GPIOD_IS_OUT_ACTIVE :
++				   GPIOD_IS_OUT);
++	if (ret) {
++		dev_err(dev, "cannot get reset GPIO: %d\n", ret);
++		return ret;
++	}
++
++	ret = gpio_request_by_name(dev, "dc-gpios", 0, &priv->dc_gpio,
++				   GPIOD_IS_OUT);
++	if (ret) {
++		dev_err(dev, "cannot get dc GPIO: %d\n", ret);
++		goto free_reset;
++	}
++
++	ret = uclass_get_device_by_phandle(UCLASS_PANEL_BACKLIGHT, dev,
++					   "backlight", &priv->backlight);
++	if (ret && ret != -ENOENT)
++		dev_err(dev, "cannot get backlight: %d\n", ret);
++
++	priv->buf = malloc(ST7789P3_BUF_BYTES);
++	if (!priv->buf) {
++		ret = -ENOMEM;
++		goto free_dc;
++	}
++
++	uc_priv->bpix = VIDEO_BPP16;
++	uc_priv->xsize = ST7789P3_WIDTH;
++	uc_priv->ysize = ST7789P3_HEIGHT;
++	uc_priv->rot = 0;
++
++	/* an earlier stage already lit the backlight it left the picture under */
++	priv->lit = priv->skip_init;
++
++	if (!priv->skip_init) {
++		/* RESX is active low, so released is 1, as mipi_dbi_hw_reset() */
++		dm_gpio_set_value(&priv->reset_gpio, 0);
++		mdelay(1);
++		dm_gpio_set_value(&priv->reset_gpio, 1);
++		mdelay(120);
++
++		ret = st7789p3_init_display(dev);
++		if (ret) {
++			dev_err(dev, "init sequence failed: %d\n", ret);
++			goto free_buf;
++		}
++	}
++
++	priv->inited = true;
++
++	return 0;
++
++free_buf:
++	free(priv->buf);
++free_dc:
++	dm_gpio_free(dev, &priv->dc_gpio);
++free_reset:
++	/* DM frees priv on a failed probe, so release these or a retry sees -EBUSY */
++	dm_gpio_free(dev, &priv->reset_gpio);
++
++	return ret;
++}
++
++static int st7789p3_bind(struct udevice *dev)
++{
++	struct video_uc_plat *plat = dev_get_uclass_plat(dev);
++
++	plat->size = ST7789P3_WIDTH * ST7789P3_HEIGHT * ST7789P3_BYTES_PER_PX;
++
++	return 0;
++}
++
++static const struct video_ops st7789p3_ops = {
++	.video_sync = st7789p3_sync,
++};
++
++static const struct udevice_id st7789p3_ids[] = {
++	{ .compatible = "sitronix,st7789p3" },
++	{ }
++};
++
++U_BOOT_DRIVER(st7789p3_video) = {
++	.name = "st7789p3_video",
++	.id = UCLASS_VIDEO,
++	.of_match = st7789p3_ids,
++	.ops = &st7789p3_ops,
++	.bind = st7789p3_bind,
++	.probe = st7789p3_probe,
++	.priv_auto = sizeof(struct st7789p3_priv),
++};

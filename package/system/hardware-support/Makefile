@@ -5,7 +5,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=hardware-support
-PKG_RELEASE:=2
+PKG_RELEASE:=3
 
 PKG_LICENSE:=GPL-2.0-only
 PKG_MAINTAINER:=Daniel Golle <daniel@makrotopia.org>
@@ -56,7 +56,7 @@ endef
 define Package/video-support/description
  Feature gate for display and video devices. Allocates the video and
  video-capture groups and installs the hotplug rules which put the DRM
- character devices into video.
+ character devices and the DMA-BUF heaps into video.
 
  A uevent carries no device capabilities, so a V4L2 node is created
  without a group and handed to v4l-id, which asks the driver and moves

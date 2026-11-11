@@ -631,7 +631,7 @@ define KernelPackage/serial-8250-exar
   TITLE:=Exar 8250 UARTs
   KCONFIG:= CONFIG_SERIAL_8250_EXAR
   FILES:=$(LINUX_DIR)/drivers/tty/serial/8250/8250_exar.ko
-  AUTOLOAD:=$(call AutoProbe,8250 8250_base 8250_exar)
+  AUTOLOAD:=$(call AutoProbe,8250_exar)
   DEPENDS:=@PCI_SUPPORT +kmod-serial-8250 +kmod-eeprom-93cx6
 endef
 
@@ -640,6 +640,24 @@ define KernelPackage/serial-8250-exar/description
 endef
 
 $(eval $(call KernelPackage,serial-8250-exar))
+
+
+define KernelPackage/serial-sc16is7xx
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=NXP SC16IS7xx SPI UARTs
+  KCONFIG:=CONFIG_SERIAL_SC16IS7XX
+  FILES:= \
+	$(LINUX_DIR)/drivers/tty/serial/sc16is7xx.ko \
+	$(LINUX_DIR)/drivers/tty/serial/sc16is7xx_spi.ko
+  AUTOLOAD:=$(call AutoProbe,sc16is7xx sc16is7xx_spi)
+  DEPENDS:=+kmod-regmap-spi
+endef
+
+define KernelPackage/serial-sc16is7xx/description
+ Kernel module for the NXP SC16IS7xx single and dual UART bridges on SPI.
+endef
+
+$(eval $(call KernelPackage,serial-sc16is7xx))
 
 
 define KernelPackage/regmap-core
@@ -1063,7 +1081,7 @@ define KernelPackage/keys-trusted
   DEPENDS:=@KERNEL_KEYS +kmod-crypto-hash +kmod-crypto-hmac +kmod-crypto-sha1 +kmod-tpm
   KCONFIG:=CONFIG_TRUSTED_KEYS
   FILES:= $(LINUX_DIR)/security/keys/trusted-keys/trusted.ko
-  AUTOLOAD:=$(call AutoLoad,01,trusted-keys,1)
+  AUTOLOAD:=$(call AutoLoad,01,trusted,1)
 endef
 
 define KernelPackage/keys-trusted/description

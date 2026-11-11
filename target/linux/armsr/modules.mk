@@ -160,7 +160,7 @@ define KernelPackage/marvell-mdio
   DEPENDS:=@TARGET_armsr +kmod-libphy +kmod-of-mdio +kmod-acpi-mdio
   KCONFIG:=CONFIG_MVMDIO
   FILES=$(LINUX_DIR)/drivers/net/ethernet/marvell/mvmdio.ko
-  AUTOLOAD=$(call AutoLoad,30,marvell-mdio)
+  AUTOLOAD=$(call AutoLoad,30,mvmdio)
 endef
 
 $(eval $(call KernelPackage,marvell-mdio))

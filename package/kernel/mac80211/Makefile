@@ -12,7 +12,7 @@ PKG_NAME:=mac80211
 
 PKG_SOURCE_VERSION:=7.2
 PKG_VERSION:=$(subst -,_,$(PKG_SOURCE_VERSION))
-PKG_RELEASE:=11
+PKG_RELEASE:=13
 PKG_LICENSE:=GPL-2.0-only
 PKG_LICENSE_FILES:=COPYING
 
@@ -134,8 +134,6 @@ define KernelPackage/mac80211
   TITLE:=Linux 802.11 Wireless Networking Stack
   # +kmod-crypto-cmac is a runtime only dependency of net/mac80211/aes_cmac.c
   DEPENDS+= +kmod-cfg80211 +kmod-crypto-cmac +kmod-crypto-ccm +kmod-crypto-gcm +hostapd-common
-  KCONFIG:=\
-	CONFIG_AVERAGE=y
   FILES:= $(PKG_BUILD_DIR)/net/mac80211/mac80211.ko
   ABI_VERSION:=$(PKG_VERSION)-$(PKG_RELEASE)
   MENU:=1

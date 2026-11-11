@@ -1,0 +1,102 @@
+# Migrate the wifi device paths of old configurations. This runs before
+# the first 'wifi config', which would add a duplicate section for every
+# radio whose path no longer matches.
+
+wifi_migration_changed=0
+
+# Path of the PCI host bridge of an old pciDDDD:BB path, in the form
+# wifi-detect writes it. The host bridges are children of their platform
+# devices since the switch to the new PCI drivers.
+wifi_migration_pci_path() {
+	local dev="$1"
+	local bridge
+
+	bridge=$(readlink -f "/sys/class/pci_bus/${dev#pci}/device") || return 1
+	[ "${bridge##*/}" = "${dev}" ] || return 1
+
+	bridge="${bridge#/sys/devices/}"
+	case "${bridge}" in
+		platform/*)
+			bridge="${bridge#platform/}"
+		;;
+		*)
+			return 1
+		;;
+	esac
+
+	echo "${bridge}"
+}
+
+wifi_migration_check_path() {
+	local section="$1"
+	local new="$2"
+	local path
+
+	config_get path ${section} path
+	[ "${path}" = "${new}" ] && wifi_migration_exists=1
+}
+
+wifi_migration_section() {
+	local section="$1"
+	local path orig dev bridge
+
+	config_get path ${section} path
+	[ -n "${path}" ] || return 0
+	orig="${path}"
+
+	case ${path} in
+		"pci0000:01/0000:01:00.0")
+			case "$(board_name)" in
+				tplink,archer-c5-v1|\
+				tplink,archer-c7-v1|\
+				tplink,archer-c7-v2|\
+				zyxel,emg2926-q10a|\
+				zyxel,nbg6716)
+					path="pci0000:00/0000:00:00.0"
+				;;
+			esac
+		;;
+		"platform/ahb/ahb:apb/18100000.wmac"|\
+		"platform/ar933x_wmac"|\
+		"platform/ar934x_wmac"|\
+		"platform/qca953x_wmac"|\
+		"platform/qca955x_wmac"|\
+		"platform/qca956x_wmac")
+			path="platform/ahb/18100000.wmac"
+		;;
+		"platform/ath9k")
+			path="platform/ahb/180c0000.wmac"
+		;;
+	esac
+
+	case ${path} in
+		pci*)
+			dev="${path%%/*}"
+			bridge=$(wifi_migration_pci_path "${dev}") && \
+				path="${bridge}${path#"${dev}"}"
+		;;
+	esac
+
+	[ "${path}" = "${orig}" ] && return 0
+
+	# A section with the new path means the system already ran the new
+	# paths; do not create a duplicate.
+	wifi_migration_exists=0
+	config_foreach wifi_migration_check_path wifi-device "${path}"
+	[ "${wifi_migration_exists}" = "1" ] && return 0
+
+	uci set wireless.${section}.path="${path}"
+	wifi_migration_changed=1
+}
+
+do_wifi_migration() {
+	[ -s /etc/config/wireless ] || return 0
+	mkdir -p /tmp/.uci
+
+	config_load wireless
+	config_foreach wifi_migration_section wifi-device
+
+	[ "${wifi_migration_changed}" = "1" ] && uci commit wireless
+}
+
+boot_hook_add preinit_main do_wifi_migration

@@ -1,0 +1,212 @@
+From 6d7f159904acaab93240bcf8468d33b1813c6aef Mon Sep 17 00:00:00 2001
+From: Karsten Sperling <ksperling@apple.com>
+Date: Fri, 31 Jul 2026 11:35:32 +1200
+Subject: [PATCH] mbedtls: tidy up dead / broken TLS resumption code paths
+
+When Mbed TLS has session ticket support (MBEDTLS_SSL_SESSION_TICKETS &&
+MBEDTLS_SSL_TICKET_C, enabled in OpenWrt) but neither EAP-FAST nor
+EAP-TEAP support is compiled into hostapd, there were code paths that
+install the vanilla mbedtls ticket callbacks (mbedtls_ssl_ticket_write /
+_parse). There was also fallback logic in the custom callbacks
+delegating to those functions when no session_ticket_cb was installed by
+the EAP method.
+
+However, hostapd builds that support EAP at all ("full" variants) also
+enable EAP-FAST, so the #else branch is dead unless the config is
+manually edited.
+
+At runtime, eap_server_tls_common.c passes
+TLS_CONN_DISABLE_SESSION_TICKET to tls_connection_set_verify() for all
+EAP types other than EAP-FAST.
+
+EAP-FAST uses the TLS session ticket extension to carry a "PAC" from the
+peer to the server, and the EAP server intercepts this ticket via the
+session_ticket_cb. No actual TLS-level ticket issuance or resumption
+occurs. (EAP-TEAP also supports PAC-based resumption but hostapd does
+not implement this.) Because the callbacks need to be re-installed
+around each mbedtls_ssl_handshake() call anyway (to set p_ticket =
+conn), installing them in tls_global_set_params() is unnecessary.
+Removing the DISABLE_SESSION_TICKET check from
+tls_connection_set_session_ticket_cb() aligns with other backends; the
+flag is checked before callbacks are actually installed.
+
+For non-FAST EAP types (e.g. TLS, TTLS, PEAP), even if resumption wasn't
+disabled by eap_server_tls_common.c, vanilla mbedtls_ssl_ticket_* ticket
+handling is insufficient. In these EAP types, resumption isn't simply a
+transport-level optimization; the EAP state machine actually needs to
+know whether resumption happened or not (via tls_connection_resumed() /
+conn->resumed), and success data from the original session needs to be
+recovered from the session cache. A resumed connection without success
+data is rejected outright by all three methods ("No success data in
+resumed session"). Making this work correctly would require actually
+implementing a session cache (including respecting tls_session_lifetime,
+supporting session removal etc).
+
+Removing these unreachable and broken / incomplete code paths instead
+simplifies the backend and also allows mbedtls_ssl_ticket_context to be
+removed from the tls_ctx.
+
+Signed-off-by: Karsten Sperling <ksperling@apple.com>
+
+--- a/src/crypto/tls_mbedtls.c
++++ b/src/crypto/tls_mbedtls.c
+@@ -53,7 +53,6 @@
+ #include <mbedtls/platform.h> /* mbedtls_calloc() mbedtls_free() */
+ #include <mbedtls/platform_util.h> /* mbedtls_platform_zeroize() */
+ #include <mbedtls/ssl.h>
+-#include <mbedtls/ssl_ticket.h>
+ #include <mbedtls/x509.h>
+ #include <mbedtls/x509_crt.h>
+ 
+@@ -109,7 +108,7 @@ typedef mbedtls_tls_prf_types int;
+ #if defined(EAP_FAST) || defined(EAP_FAST_DYNAMIC) || defined(EAP_SERVER_FAST) \
+  || defined(EAP_TEAP) || defined(EAP_SERVER_TEAP)
+ #ifdef MBEDTLS_SSL_SESSION_TICKETS
+-#ifdef MBEDTLS_SSL_TICKET_C
++#ifdef MBEDTLS_SSL_SRV_C
+ #define TLS_MBEDTLS_SESSION_TICKETS
+ #if defined(EAP_TEAP) || defined(EAP_SERVER_TEAP)
+ #define TLS_MBEDTLS_EAP_TEAP
+@@ -174,9 +173,6 @@ struct tls_global {
+ 	struct tls_conf *tls_conf;
+ 	char *ocsp_stapling_response;
+ 	mbedtls_ctr_drbg_context *ctr_drbg; /*(see crypto_mbedtls.c)*/
+-  #ifdef MBEDTLS_SSL_SESSION_TICKETS
+-	mbedtls_ssl_ticket_context ticket_ctx;
+-  #endif
+ 	char *ca_cert_file;
+ 	struct os_reltime crl_reload_previous;
+ 	unsigned int crl_reload_interval;
+@@ -330,14 +326,6 @@ void * tls_init(const struct tls_config
+ 		return &tls_ctx_global;
+ 
+ 	tls_ctx_global.ctr_drbg = crypto_mbedtls_ctr_drbg();
+-  #ifdef MBEDTLS_SSL_SESSION_TICKETS
+-	mbedtls_ssl_ticket_init(&tls_ctx_global.ticket_ctx);
+-	mbedtls_ssl_ticket_setup(&tls_ctx_global.ticket_ctx,
+-	                         mbedtls_ctr_drbg_random,
+-	                         tls_ctx_global.ctr_drbg,
+-	                         MBEDTLS_CIPHER_AES_256_GCM,
+-	                         43200); /* ticket timeout: 12 hours */
+-  #endif
+ 	/* copy struct for future use */
+ 	tls_ctx_global.init_conf = *conf;
+ 	if (conf->openssl_ciphers)
+@@ -364,9 +352,6 @@ void tls_deinit(void *tls_ctx)
+ 	*(const char **)&openssl_ciphers =
+ 	  tls_ctx_global.init_conf.openssl_ciphers;
+ 	os_free(openssl_ciphers);
+-  #ifdef MBEDTLS_SSL_SESSION_TICKETS
+-	mbedtls_ssl_ticket_free(&tls_ctx_global.ticket_ctx);
+-  #endif
+ 	os_memset(&tls_ctx_global, 0, sizeof(tls_ctx_global));
+ }
+ 
+@@ -1917,13 +1902,14 @@ static int tls_mbedtls_ssl_ticket_write(
+ {
+ 	struct tls_connection *conn = p_ticket;
+ 	if (conn && conn->session_ticket_cb) {
++		/* EAP-FAST / EAP-TEAP only use the session ticket extension to carry
++		 * the PAC in the peer -> server direction, no TLS ticket is issued. */
+ 		/* see tls_mbedtls_clienthello_session_ticket_prep() */
+ 		/* see tls_mbedtls_clienthello_session_ticket_set() */
+ 		return 0;
+ 	}
+ 
+-	return mbedtls_ssl_ticket_write(&tls_ctx_global.ticket_ctx,
+-	                                session, start, end, tlen, lifetime);
++	return MBEDTLS_ERR_SSL_FEATURE_UNAVAILABLE;
+ }
+ 
+ 
+@@ -1961,12 +1947,7 @@ static int tls_mbedtls_ssl_ticket_parse(
+ 		/*(non-zero return used for mbedtls debug logging)*/
+ 	}
+ 
+-	/* XXX: TODO always use tls_mbedtls_ssl_ticket_parse() for callback? */
+-	int rc = mbedtls_ssl_ticket_parse(&tls_ctx_global.ticket_ctx,
+-	                                  session, buf, len);
+-	if (conn)
+-		conn->resumed = (rc == 0);
+-	return rc;
++	return MBEDTLS_ERR_SSL_FEATURE_UNAVAILABLE;
+ }
+ 
+ #endif /* TLS_MBEDTLS_SESSION_TICKETS */
+@@ -1983,23 +1964,6 @@ int tls_global_set_params(void *tls_ctx,
+ 	if (tls_ctx_global.tls_conf == NULL)
+ 		return -1;
+ 
+-  #ifdef MBEDTLS_SSL_SESSION_TICKETS
+-  #ifdef MBEDTLS_SSL_TICKET_C
+-	if (!(params->flags & TLS_CONN_DISABLE_SESSION_TICKET))
+-	  #ifdef TLS_MBEDTLS_SESSION_TICKETS
+-		mbedtls_ssl_conf_session_tickets_cb(&tls_ctx_global.tls_conf->conf,
+-		                                    tls_mbedtls_ssl_ticket_write,
+-		                                    tls_mbedtls_ssl_ticket_parse,
+-		                                    NULL);
+-	  #else
+-		mbedtls_ssl_conf_session_tickets_cb(&tls_ctx_global.tls_conf->conf,
+-		                                    mbedtls_ssl_ticket_write,
+-		                                    mbedtls_ssl_ticket_parse,
+-		                                    &tls_ctx_global.ticket_ctx);
+-	  #endif
+-  #endif
+-  #endif
+-
+ 	os_free(tls_ctx_global.ocsp_stapling_response);
+ 	tls_ctx_global.ocsp_stapling_response = NULL;
+ 	if (params->ocsp_stapling_response)
+@@ -2319,14 +2283,16 @@ struct wpabuf * tls_connection_handshake
+ 	/* (unable to use mbedtls_ssl_set_user_data_p() with mbedtls 3.2.0+
+ 	 *  since ticket write and parse callbacks take (mbedtls_ssl_session *)
+ 	 *  param instead of (mbedtls_ssl_context *) param) */
+-	if (conn->tls_conf->flags & TLS_CONN_DISABLE_SESSION_TICKET)
+-		mbedtls_ssl_conf_session_tickets_cb(&conn->tls_conf->conf,
+-		                                    NULL, NULL, NULL);
+-	else
++	int use_session_ticket_cb = (conn->session_ticket_cb != NULL)
++		&& !(conn->tls_conf->flags & TLS_CONN_DISABLE_SESSION_TICKET);
++	if (use_session_ticket_cb)
+ 		mbedtls_ssl_conf_session_tickets_cb(&conn->tls_conf->conf,
+ 		                                    tls_mbedtls_ssl_ticket_write,
+ 		                                    tls_mbedtls_ssl_ticket_parse,
+ 		                                    conn);
++	else
++		mbedtls_ssl_conf_session_tickets_cb(&conn->tls_conf->conf,
++		                                    NULL, NULL, NULL);
+   #endif
+ 
+   #if MBEDTLS_VERSION_NUMBER >= 0x03020000 /* mbedtls 3.2.0 */
+@@ -2341,10 +2307,9 @@ struct wpabuf * tls_connection_handshake
+   #endif
+ 
+   #ifdef TLS_MBEDTLS_SESSION_TICKETS
+-	mbedtls_ssl_conf_session_tickets_cb(&conn->tls_conf->conf,
+-	                                    tls_mbedtls_ssl_ticket_write,
+-	                                    tls_mbedtls_ssl_ticket_parse,
+-	                                    NULL);
++	if (use_session_ticket_cb)
++		mbedtls_ssl_conf_session_tickets_cb(&conn->tls_conf->conf,
++		                                    NULL, NULL, NULL);
+   #endif
+ 
+ 	switch (ret) {
+@@ -2629,13 +2594,10 @@ int tls_connection_set_session_ticket_cb
+ 	void *tls_ctx, struct tls_connection *conn,
+ 	tls_session_ticket_cb cb, void *ctx)
+ {
+-	if (!(conn->tls_conf->flags & TLS_CONN_DISABLE_SESSION_TICKET)) {
+-		/* (EAP-FAST and EAP-TEAP) */
+-		conn->session_ticket_cb = cb;
+-		conn->session_ticket_cb_ctx = ctx;
+-		return 0;
+-	}
+-	return -1;
++	/* (EAP-FAST and EAP-TEAP) */
++	conn->session_ticket_cb = cb;
++	conn->session_ticket_cb_ctx = ctx;
++	return 0;
+ }
+ #endif
+ 

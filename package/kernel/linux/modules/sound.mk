@@ -54,7 +54,6 @@ define KernelPackage/sound-core
 	CONFIG_SND_VIRMIDI \
 	CONFIG_SND_SEQ_DUMMY \
 	CONFIG_SND_SEQUENCER_OSS=y \
-	CONFIG_HOSTAUDIO \
 	CONFIG_SND_PCM_OSS \
 	CONFIG_SND_MIXER_OSS \
 	CONFIG_SOUND_OSS_CORE_PRECLAIM=y \
@@ -68,7 +67,7 @@ define KernelPackage/sound-core/uml
   FILES:= \
 	$(LINUX_DIR)/sound/soundcore.ko \
 	$(LINUX_DIR)/arch/um/drivers/hostaudio.ko
-  AUTOLOAD+=$(call AutoLoad,30,soundcore hostaudio)
+  AUTOLOAD:=$(call AutoLoad,30,soundcore hostaudio)
 endef
 
 define KernelPackage/sound-core/description
@@ -224,7 +223,7 @@ define KernelPackage/sound-soc-imx
 	$(LINUX_DIR)/sound/soc/fsl/snd-soc-imx-audmux.ko \
 	$(LINUX_DIR)/sound/soc/fsl/snd-soc-fsl-ssi.ko \
 	$(LINUX_DIR)/sound/soc/fsl/imx-pcm-dma.ko
-  AUTOLOAD:=$(call AutoLoad,56,snd-soc-imx-audmux snd-soc-fsl-ssi snd-soc-imx-pcm)
+  AUTOLOAD:=$(call AutoLoad,56,snd-soc-imx-audmux snd-soc-fsl-ssi imx-pcm-dma)
   DEPENDS:=@TARGET_imx +kmod-sound-soc-core
   $(call AddDepends/sound)
 endef

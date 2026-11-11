@@ -30,15 +30,15 @@ void otto_stp_port_non_cist_states_set(struct otto_dsa_priv *priv, int port, u8 
 
 int otto_stp_838x_get(struct otto_dsa_priv *priv, u16 msti, int port);
 void otto_stp_838x_set(struct otto_dsa_priv *priv, u16 msti, int port, int state);
-void otto_stp_838x_init(void);
+void otto_stp_838x_init(struct otto_dsa_priv *priv);
 int otto_stp_839x_get(struct otto_dsa_priv *priv, u16 msti, int port);
 void otto_stp_839x_set(struct otto_dsa_priv *priv, u16 msti, int port, int state);
-void otto_stp_839x_init(void);
+void otto_stp_839x_init(struct otto_dsa_priv *priv);
 int otto_stp_930x_get(struct otto_dsa_priv *priv, u16 msti, int port);
 void otto_stp_930x_set(struct otto_dsa_priv *priv, u16 msti, int port, int state);
-void otto_stp_930x_init(void);
+void otto_stp_930x_init(struct otto_dsa_priv *priv);
 int otto_stp_931x_get(struct otto_dsa_priv *priv, u16 msti, int port);
 void otto_stp_931x_set(struct otto_dsa_priv *priv, u16 msti, int port, int state);
-void otto_stp_931x_init(void);
+void otto_stp_931x_init(struct otto_dsa_priv *priv);
 
 #endif /* _OTTO_STP_H */

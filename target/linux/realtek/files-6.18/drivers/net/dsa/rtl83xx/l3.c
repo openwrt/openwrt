@@ -82,9 +82,9 @@
 #include <linux/if_vlan.h>
 #include <linux/inet.h>
 #include <linux/inetdevice.h>
-#include <linux/iopoll.h>
 #include <linux/notifier.h>
 #include <linux/of.h>
+#include <linux/regmap.h>
 #include <linux/seq_file.h>
 #include <net/arp.h>
 #include <net/fib_notifier.h>
@@ -94,6 +94,7 @@
 #include <net/nexthop.h>
 #include <uapi/linux/rtnetlink.h>
 
+#include "fdb.h"
 #include "l2.h"
 #include "l3.h"
 #include "pie.h"
@@ -111,6 +112,9 @@
 #define ROUTE_ACT_TRAP2CPU	1
 #define ROUTE_ACT_COPY2CPU	2
 #define ROUTE_ACT_DROP		3
+
+/* Next hop destination that traps to the CPU instead of naming an L2 entry */
+#define NEXTHOP_TRAP2CPU	0x7ffe
 
 /* Route kinds */
 #define ROUTE_PREFIX		0
@@ -133,6 +137,13 @@
 
 #define DEFAULT_MTU 1536
 #define L3_EGRESS_DMACS 2048
+#define ROUTE_MTU_ID 1
+#define FLOW_MTU_ID 2
+
+bool otto_l3_fasttrack(struct otto_dsa_priv *priv)
+{
+	return priv->l3_ctrl && READ_ONCE(priv->l3_ctrl->fasttrack);
+}
 
 struct otto_l3_net_event_work {
 	struct work_struct work;
@@ -201,18 +212,32 @@ static int otto_l3_839x_set_dmac(struct otto_l3_ctrl *ctrl, u32 idx,
  */
 static int otto_l3_839x_get_smac(struct otto_l3_ctrl *ctrl, u32 idx, u64 *mac)
 {
-	*mac = (u64)(sw_r32(RTL839X_ROUTING_SA_CTRL + idx * 8) & 0xffff) << 32 |
-	       sw_r32(RTL839X_ROUTING_SA_CTRL + idx * 8 + 4);
+	struct otto_dsa_priv *priv = ctrl->priv;
+	u32 hi = 0, lo = 0;
+	int err;
+
+	err = regmap_read(priv->map, RTL839X_ROUTING_SA_CTRL + idx * 8, &hi);
+	if (err)
+		return err;
+	err = regmap_read(priv->map, RTL839X_ROUTING_SA_CTRL + idx * 8 + 4, &lo);
+	if (err)
+		return err;
+
+	*mac = (u64)(hi & 0xffff) << 32 | lo;
 
 	return 0;
 }
 
 static int otto_l3_839x_set_smac(struct otto_l3_ctrl *ctrl, u32 idx, u64 mac)
 {
-	sw_w32(mac >> 32, RTL839X_ROUTING_SA_CTRL + idx * 8);
-	sw_w32(mac, RTL839X_ROUTING_SA_CTRL + idx * 8 + 4);
+	struct otto_dsa_priv *priv = ctrl->priv;
+	int err;
 
-	return 0;
+	err = regmap_write(priv->map, RTL839X_ROUTING_SA_CTRL + idx * 8, mac >> 32);
+	if (err)
+		return err;
+
+	return regmap_write(priv->map, RTL839X_ROUTING_SA_CTRL + idx * 8 + 4, mac);
 }
 
 /* The prefix rows of an RTL839x are the PIE rules L3 keeps for itself. A rule
@@ -344,10 +369,11 @@ static int otto_l3_839x_route_matches(struct otto_l3_ctrl *ctrl, int row,
 	       pr.dip_m == inet_make_mask(rt->prefix_len);
 }
 
-static void otto_l3_839x_setup_port_macs(struct otto_l3_ctrl *ctrl)
+static int otto_l3_839x_setup_port_macs(struct otto_l3_ctrl *ctrl)
 {
 	struct otto_dsa_priv *priv = ctrl->priv;
 	struct net_device *dev;
+	int err;
 	u64 mac;
 
 	/* Configure the switch's own MAC addresses used when routing packets */
@@ -359,51 +385,56 @@ static void otto_l3_839x_setup_port_macs(struct otto_l3_ctrl *ctrl)
 	 * MAC of its own (otto_l3_switch_mac_get())
 	 */
 	ctrl->switch_macs[0] = mac;
-	otto_l3_839x_set_smac(ctrl, 0, mac);
-	for (int i = 1; i < MAX_SWITCH_MACS; i++)
-		otto_l3_839x_set_smac(ctrl, i, SWITCH_MAC_FREE);
+	err = otto_l3_839x_set_smac(ctrl, 0, mac);
+	for (int i = 1; i < MAX_SWITCH_MACS && !err; i++)
+		err = otto_l3_839x_set_smac(ctrl, i, SWITCH_MAC_FREE);
+
+	return err;
 }
 
 static int otto_l3_839x_setup(struct otto_l3_ctrl *ctrl)
 {
-	otto_l3_839x_setup_port_macs(ctrl);
+	struct otto_dsa_priv *priv = ctrl->priv;
+	int err;
+
+	err = otto_l3_839x_setup_port_macs(ctrl);
+	if (err)
+		return err;
 
 	/* A routed packet whose TTL runs out goes to the CPU, which answers
 	 * it with Time Exceeded, instead of being dropped. IP4_TTL_EXECEED,
 	 * bits 3:2: 0 drop, 1 forward, 2 trap (Realtek GPL SDK,
 	 * dal_cypress_trap.c).
 	 */
-	sw_w32_mask(0x3 << 2, 2 << 2, RTL839X_ROUTING_EXCPT_CTRL);
+	err = regmap_write_bits(priv->map, RTL839X_ROUTING_EXCPT_CTRL, 0x3 << 2, 2 << 2);
+	if (err)
+		return err;
 
 	/* The same for an IPv6 packet whose hop limit runs out, answered with
 	 * Time Exceeded: IP6_HL_EXCEED, bits 9:8.
 	 */
-	sw_w32_mask(0x3 << 8, 2 << 8, RTL839X_ROUTING_EXCPT_CTRL);
+	err = regmap_write_bits(priv->map, RTL839X_ROUTING_EXCPT_CTRL, 0x3 << 8, 2 << 8);
+	if (err)
+		return err;
 
 	/* A packet routed through a gateway whose L2 entry has aged out goes
 	 * to the CPU alone. Forwarded, the default, it is routed and reaches
 	 * the CPU as well, which routes it a second time. ROUTING_AGE, bits
 	 * 15:14, same encoding.
 	 */
-	sw_w32_mask(0x3 << 14, 2 << 14, RTL839X_ROUTING_EXCPT_CTRL);
-
-	return 0;
+	return regmap_write_bits(priv->map, RTL839X_ROUTING_EXCPT_CTRL, 0x3 << 14, 2 << 14);
 }
 
-static u32 otto_l3_930x_hash4(u32 ip, int algorithm, bool move_dip)
+static u32 otto_l3_930x_hash4(u32 ip, int algorithm)
 {
 	u32 s0, s1, pH;
 	u32 rows[4];
 	u32 hash;
 
-	memset(rows, 0, sizeof(rows));
-
 	rows[0] = HASH_PICK(ip, 27, 5);
 	rows[1] = HASH_PICK(ip, 18, 9);
 	rows[2] = HASH_PICK(ip, 9, 9);
-
-	if (!move_dip)
-		rows[3] = HASH_PICK(ip, 0, 9);
+	rows[3] = HASH_PICK(ip, 0, 9);
 
 	if (!algorithm) {
 		hash = rows[0] ^ rows[1] ^ rows[2] ^ rows[3];
@@ -414,6 +445,26 @@ static u32 otto_l3_930x_hash4(u32 ip, int algorithm, bool move_dip)
 		hash = pH ^ rows[3];
 	}
 	return hash;
+}
+
+/* The SDK folds the upper 96 address bits into nine-bit XOR chunks.
+ * The low 32 bits use the IPv4 hash, including its end-around-carry variant.
+ */
+static u32 otto_l3_930x_hash6(const struct in6_addr *ip, int algorithm)
+{
+	const u8 *bytes = ip->s6_addr;
+	u32 hash = bytes[0] >> 6;
+	unsigned int bit, byte;
+	u32 word;
+
+	for (bit = 2; bit < 96; bit += 9) {
+		byte = bit / 8;
+		word = bytes[byte] << 8;
+		if (byte + 1 < 12)
+			word |= bytes[byte + 1];
+		hash ^= (word >> (7 - bit % 8)) & 0x1ff;
+	}
+	return hash ^ otto_l3_930x_hash4(be32_to_cpu(ip->s6_addr32[3]), algorithm);
 }
 
 /*
@@ -590,45 +641,60 @@ static const u8 otto_l3_930x_slot_widths[] = { 1, 2, 3, 6 };
 /* Return a logical slot, -ENOENT for a missing route, or -ENOSPC if full. */
 static int otto_l3_930x_find_slot(struct otto_l3_ctrl *ctrl, struct otto_l3_route *rt, bool must_exist)
 {
-	int slot_width, algorithm, addr, idx, err;
+	struct otto_dsa_priv *priv = ctrl->priv;
+	int slot_width, algorithm, addr, idx, err, width;
 	struct otto_l3_route route_entry;
-	u32 hash;
+	u32 hash, occupied, mask, v;
 
 	slot_width = otto_l3_930x_slot_widths[rt->attr.type & 0x3];
 
 	for (int t = 0; t < 2; t++) {
-		algorithm = (sw_r32(RTL930X_L3_HOST_TBL_CTRL) >> (2 + t)) & 0x1;
-		hash = otto_l3_930x_hash4(rt->dst_ip, algorithm, false);
+		err = regmap_read(priv->map, RTL930X_L3_HOST_TBL_CTRL, &v);
+		if (err)
+			return err;
+		algorithm = (v >> (2 + t)) & 0x1;
+		hash = rt->attr.type == ROUTE_TYPE_IP6UC ?
+			otto_l3_930x_hash6(&rt->dst_ip6, algorithm) :
+			otto_l3_930x_hash4(rt->dst_ip, algorithm);
+		occupied = 0;
 
-		dev_dbg(ctrl->dev, "table %d, algorithm %d, hash %04x\n", t, algorithm, hash);
-
-		for (int s = 0; s < 6; s += slot_width) {
-			addr = (t << 12) | ((hash & 0x1ff) << 3) | s;
-			dev_dbg(ctrl->dev, "physical address %d\n", addr);
-			idx = ((addr / 8) * 6) + (addr % 8);
-			dev_dbg(ctrl->dev, "logical address %d\n", idx);
-
+		/* Walk entry boundaries, not continuation slots: IPv6 unicast
+		 * occupies slots 0..2 or 3..5, and multicast can also span slots.
+		 * A free starting slot alone does not make the whole group free.
+		 */
+		for (int slot = 0; slot < 6; slot += width) {
+			addr = (t << 12) | ((hash & 0x1ff) << 3) | slot;
+			idx = (addr / 8) * 6 + addr % 8;
 			err = otto_l3_930x_host_route_read(ctrl, idx, &route_entry);
 			if (err)
 				return err;
-			dev_dbg(ctrl->dev, "route valid %d, route dest: %pI4, hit %d\n",
-				rt->attr.valid, &rt->dst_ip, rt->attr.hit);
-			if (!must_exist && !route_entry.attr.valid)
-				return idx;
-			if (must_exist &&
-			    route_entry.attr.valid &&
-			    route_entry.attr.type == rt->attr.type) {
-				switch (rt->attr.type) {
-				case ROUTE_TYPE_IP4UC:
-					if (route_entry.dst_ip == rt->dst_ip)
-						return idx;
-					break;
-				case ROUTE_TYPE_IP6UC:
-					if (ipv6_addr_equal(&route_entry.dst_ip6, &rt->dst_ip6))
-						return idx;
-					break;
-				}
+			width = route_entry.attr.valid ?
+				otto_l3_930x_slot_widths[route_entry.attr.type] : 1;
+			if (!route_entry.attr.valid) {
+				/* A single-slot entry fits in the first free slot,
+				 * so there is no need to read the rest of the bucket.
+				 */
+				if (!must_exist && slot_width == 1)
+					return (addr / 8) * 6 + addr % 8;
+				continue;
 			}
+			occupied |= ((1U << width) - 1) << slot;
+			if (!must_exist || route_entry.attr.type != rt->attr.type)
+				continue;
+			if (rt->attr.type == ROUTE_TYPE_IP4UC && route_entry.dst_ip == rt->dst_ip)
+				return idx;
+			if (rt->attr.type == ROUTE_TYPE_IP6UC &&
+			    ipv6_addr_equal(&route_entry.dst_ip6, &rt->dst_ip6))
+				return idx;
+		}
+		if (must_exist)
+			continue;
+		for (int slot = 0; slot + slot_width <= 6; slot += slot_width) {
+			mask = ((1U << slot_width) - 1) << slot;
+			if (occupied & mask)
+				continue;
+			addr = (t << 12) | ((hash & 0x1ff) << 3) | slot;
+			return (addr / 8) * 6 + addr % 8;
 		}
 	}
 
@@ -717,8 +783,8 @@ static void otto_l3_930x_get_nexthop(struct otto_l3_ctrl *ctrl,
  * 0x7ffd: TRAP2MASTERCPU
  * 0x7fff: DMAC_ID_DROP
  */
-static void otto_l3_930x_set_nexthop(struct otto_l3_ctrl *ctrl,
-				     int idx, u16 dmac_id, u16 interface)
+static int otto_l3_930x_set_nexthop(struct otto_l3_ctrl *ctrl,
+				    int idx, u16 dmac_id, u16 interface)
 {
 	u32 v = ((dmac_id & 0x7fff) << 7) | (interface & 0x7f);
 
@@ -726,7 +792,7 @@ static void otto_l3_930x_set_nexthop(struct otto_l3_ctrl *ctrl,
 		idx, dmac_id, interface);
 
 	dev_dbg(ctrl->dev, "value at index 0: %08x\n", v);
-	otto_table_write(RTL9300_TBL_L3_NEXTHOP, idx, &v);
+	return otto_table_write(RTL9300_TBL_L3_NEXTHOP, idx, &v);
 }
 
 /* Prefix length of an IPv6 mask, i.e. how many leading bits are set */
@@ -846,41 +912,61 @@ static void otto_l3_930x_net6_mask(int prefix_len, struct in6_addr *ip6_m)
 		ip6_m->s6_addr[o] = 0xff00 >> b;
 }
 
+/* Load the destination of a unicast route into the key of the hardware lookup */
+static int otto_l3_930x_lookup_key_write(struct otto_l3_ctrl *ctrl, struct otto_l3_route *rt)
+{
+	struct otto_dsa_priv *priv = ctrl->priv;
+	u32 key[4] = {};
+	int err;
+
+	err = regmap_write_bits(priv->map, RTL930X_L3_HW_LU_KEY_CTRL, 0x3 << 19,
+				rt->attr.type << 19);
+	if (err)
+		return err;
+
+	if (rt->attr.type) { /* IPv6 */
+		struct in6_addr ip6;
+
+		ipv6_addr_prefix(&ip6, &rt->dst_ip6, rt->prefix_len);
+		for (int i = 0; i < 4; i++)
+			key[i] = (__force u32)ip6.s6_addr32[i];
+	} else { /* IPv4 */
+		key[3] = rt->dst_ip & inet_make_mask(rt->prefix_len);
+		dev_dbg(ctrl->dev, "searching for %pI4\n", &key[3]);
+	}
+
+	for (int i = 0; i < 4; i++) {
+		err = regmap_write(priv->map, RTL930X_L3_HW_LU_KEY_IP_CTRL + (i << 2), key[i]);
+		if (err)
+			return err;
+	}
+
+	return 0;
+}
+
 /*
  * Look up the index of a prefix route in the routing table CAM for unicast IPv4/6 routes
- * using hardware offload.
+ * using hardware offload. A lookup whose registers cannot be accessed did not
+ * complete, and returns -ETIMEDOUT like one that times out.
  */
 static int otto_l3_930x_route_lookup_hw(struct otto_l3_ctrl *ctrl, struct otto_l3_route *rt)
 {
-	u32 ip4_m, v;
+	struct otto_dsa_priv *priv = ctrl->priv;
+	u32 v;
 
 	if (rt->attr.type == ROUTE_TYPE_IP4MC || rt->attr.type == ROUTE_TYPE_IP6MC)
 		return -1;
 
-	sw_w32_mask(0x3 << 19, rt->attr.type << 19, RTL930X_L3_HW_LU_KEY_CTRL);
-	if (rt->attr.type) { /* IPv6 */
-		struct in6_addr key;
-
-		ipv6_addr_prefix(&key, &rt->dst_ip6, rt->prefix_len);
-		for (int i = 0; i < 4; i++)
-			sw_w32(key.s6_addr32[i],
-			       RTL930X_L3_HW_LU_KEY_IP_CTRL + (i << 2));
-	} else { /* IPv4 */
-		ip4_m = inet_make_mask(rt->prefix_len);
-		sw_w32(0, RTL930X_L3_HW_LU_KEY_IP_CTRL);
-		sw_w32(0, RTL930X_L3_HW_LU_KEY_IP_CTRL + 4);
-		sw_w32(0, RTL930X_L3_HW_LU_KEY_IP_CTRL + 8);
-		v = rt->dst_ip & ip4_m;
-		dev_dbg(ctrl->dev, "searching for %pI4\n", &v);
-		sw_w32(v, RTL930X_L3_HW_LU_KEY_IP_CTRL + 12);
-	}
+	if (otto_l3_930x_lookup_key_write(ctrl, rt))
+		return -ETIMEDOUT;
 
 	/* Execute CAM lookup in SoC */
-	sw_w32(BIT(15), RTL930X_L3_HW_LU_CTRL);
+	if (regmap_write(priv->map, RTL930X_L3_HW_LU_CTRL, BIT(15)))
+		return -ETIMEDOUT;
 
 	/* Wait until execute bit clears and result is ready */
-	if (readx_poll_timeout(sw_r32, RTL930X_L3_HW_LU_CTRL, v, !(v & BIT(15)),
-			       20, 10000))
+	if (regmap_read_poll_timeout(priv->map, RTL930X_L3_HW_LU_CTRL, v, !(v & BIT(15)),
+				     20, 10000))
 		return -ETIMEDOUT;
 
 	dev_dbg(ctrl->dev, "found: %d, index: %d\n", !!(v & BIT(14)), v & 0x1ff);
@@ -1315,6 +1401,19 @@ static int otto_l3_930x_set_egress_intf(struct otto_l3_ctrl *ctrl, int idx,
 	return otto_table_write(RTL9300_TBL_L3_EGR_INTF, idx & 0x7f, &data);
 }
 
+static void otto_l3_930x_dump_route_ctrl(struct otto_dsa_priv *priv)
+{
+	u32 ipuc = 0, ipmc = 0, ip6uc = 0, ip6mc = 0;
+
+	regmap_read(priv->map, RTL930X_L3_IPUC_ROUTE_CTRL, &ipuc);
+	regmap_read(priv->map, RTL930X_L3_IPMC_ROUTE_CTRL, &ipmc);
+	regmap_read(priv->map, RTL930X_L3_IP6UC_ROUTE_CTRL, &ip6uc);
+	regmap_read(priv->map, RTL930X_L3_IP6MC_ROUTE_CTRL, &ip6mc);
+
+	pr_debug("L3_IPUC_ROUTE_CTRL %08x, IPMC_ROUTE %08x, IP6UC_ROUTE %08x, IP6MC_ROUTE %08x\n",
+		 ipuc, ipmc, ip6uc, ip6mc);
+}
+
 /* Configure L3 routing settings of the device:
  * - MTUs
  * - Egress interface
@@ -1325,6 +1424,8 @@ static int otto_l3_930x_setup(struct otto_l3_ctrl *ctrl)
 {
 	struct otto_dsa_priv *priv = ctrl->priv;
 	int uncleared = 0;
+	u32 v = 0;
+	int err;
 
 	/* Setup MTU with id 0 for default interface */
 	for (int i = 0; i < MAX_INTF_MTUS; i++)
@@ -1332,16 +1433,36 @@ static int otto_l3_930x_setup(struct otto_l3_ctrl *ctrl)
 
 	priv->intf_mtu_count[0] = 0; /* Needs to stay forever */
 	priv->intf_mtus[0] = DEFAULT_MTU;
-	sw_w32_mask(0xffff, DEFAULT_MTU, RTL930X_L3_IP_MTU_CTRL(0));
-	sw_w32_mask(0xffff, DEFAULT_MTU, RTL930X_L3_IP6_MTU_CTRL(0));
+	err = regmap_write_bits(priv->map, RTL930X_L3_IP_MTU_CTRL(0), 0xffff, DEFAULT_MTU);
+	if (err)
+		return err;
+	err = regmap_write_bits(priv->map, RTL930X_L3_IP6_MTU_CTRL(0), 0xffff, DEFAULT_MTU);
+	if (err)
+		return err;
 	priv->intf_mtus[1] = DEFAULT_MTU;
-	sw_w32_mask(0xffff0000, DEFAULT_MTU << 16, RTL930X_L3_IP_MTU_CTRL(0));
-	sw_w32_mask(0xffff0000, DEFAULT_MTU << 16, RTL930X_L3_IP6_MTU_CTRL(0));
+	err = regmap_write_bits(priv->map, RTL930X_L3_IP_MTU_CTRL(0), 0xffff0000,
+				DEFAULT_MTU << 16);
+	if (err)
+		return err;
+	err = regmap_write_bits(priv->map, RTL930X_L3_IP6_MTU_CTRL(0), 0xffff0000,
+				DEFAULT_MTU << 16);
+	if (err)
+		return err;
 
-	sw_w32_mask(0xffff, DEFAULT_MTU, RTL930X_L3_IP_MTU_CTRL(1));
-	sw_w32_mask(0xffff, DEFAULT_MTU, RTL930X_L3_IP6_MTU_CTRL(1));
-	sw_w32_mask(0xffff0000, DEFAULT_MTU << 16, RTL930X_L3_IP_MTU_CTRL(1));
-	sw_w32_mask(0xffff0000, DEFAULT_MTU << 16, RTL930X_L3_IP6_MTU_CTRL(1));
+	err = regmap_write_bits(priv->map, RTL930X_L3_IP_MTU_CTRL(1), 0xffff, DEFAULT_MTU);
+	if (err)
+		return err;
+	err = regmap_write_bits(priv->map, RTL930X_L3_IP6_MTU_CTRL(1), 0xffff, DEFAULT_MTU);
+	if (err)
+		return err;
+	err = regmap_write_bits(priv->map, RTL930X_L3_IP_MTU_CTRL(1), 0xffff0000,
+				DEFAULT_MTU << 16);
+	if (err)
+		return err;
+	err = regmap_write_bits(priv->map, RTL930X_L3_IP6_MTU_CTRL(1), 0xffff0000,
+				DEFAULT_MTU << 16);
+	if (err)
+		return err;
 
 	/* Clear all source port MACs. One that cannot be cleared is only
 	 * logged: a failed setup fails the switch probe.
@@ -1352,13 +1473,15 @@ static int otto_l3_930x_setup(struct otto_l3_ctrl *ctrl)
 	if (uncleared)
 		dev_err(ctrl->dev, "%d source MACs not cleared\n", uncleared);
 
-	/* Configure the default L3 hash algorithm */
-	sw_w32_mask(BIT(2), 0, RTL930X_L3_HOST_TBL_CTRL);  /* Algorithm selection 0 = 0 */
-	sw_w32_mask(0, BIT(3), RTL930X_L3_HOST_TBL_CTRL);  /* Algorithm selection 1 = 1 */
+	/* Configure the default L3 hash algorithm: selection 0 = 0, selection 1 = 1 */
+	err = regmap_write_bits(priv->map, RTL930X_L3_HOST_TBL_CTRL, BIT(2), 0);
+	if (err)
+		return err;
+	err = regmap_write_bits(priv->map, RTL930X_L3_HOST_TBL_CTRL, BIT(3), BIT(3));
+	if (err)
+		return err;
 
-	pr_debug("L3_IPUC_ROUTE_CTRL %08x, IPMC_ROUTE %08x, IP6UC_ROUTE %08x, IP6MC_ROUTE %08x\n",
-		 sw_r32(RTL930X_L3_IPUC_ROUTE_CTRL), sw_r32(RTL930X_L3_IPMC_ROUTE_CTRL),
-		 sw_r32(RTL930X_L3_IP6UC_ROUTE_CTRL), sw_r32(RTL930X_L3_IP6MC_ROUTE_CTRL));
+	otto_l3_930x_dump_route_ctrl(priv);
 	/* A packet whose hop count runs out is answered, not dropped: the
 	 * action for it is TTL_FAIL_ACT at bit 17 and HL_FAIL_ACT at bit
 	 * 21, two bits each, and the Realtek GPL SDK lists the values as
@@ -1366,18 +1489,27 @@ static int otto_l3_930x_setup(struct otto_l3_ctrl *ctrl)
 	 * (dal_longan_l3.c, _actIpucRouteCtrlTtlFail and
 	 * _actIp6ucRouteCtrlHlFail).
 	 */
-	sw_w32(0x00022001, RTL930X_L3_IPUC_ROUTE_CTRL);
-	sw_w32(0x00214581, RTL930X_L3_IP6UC_ROUTE_CTRL);
-	sw_w32(0x00000501, RTL930X_L3_IPMC_ROUTE_CTRL);
-	sw_w32(0x00012881, RTL930X_L3_IP6MC_ROUTE_CTRL);
+	err = regmap_write(priv->map, RTL930X_L3_IPUC_ROUTE_CTRL, 0x00022001);
+	if (err)
+		return err;
+	err = regmap_write(priv->map, RTL930X_L3_IP6UC_ROUTE_CTRL, 0x00214581);
+	if (err)
+		return err;
+	err = regmap_write(priv->map, RTL930X_L3_IPMC_ROUTE_CTRL, 0x00000501);
+	if (err)
+		return err;
+	err = regmap_write(priv->map, RTL930X_L3_IP6MC_ROUTE_CTRL, 0x00012881);
+	if (err)
+		return err;
 
-	pr_debug("L3_IPUC_ROUTE_CTRL %08x, IPMC_ROUTE %08x, IP6UC_ROUTE %08x, IP6MC_ROUTE %08x\n",
-		 sw_r32(RTL930X_L3_IPUC_ROUTE_CTRL), sw_r32(RTL930X_L3_IPMC_ROUTE_CTRL),
-		 sw_r32(RTL930X_L3_IP6UC_ROUTE_CTRL), sw_r32(RTL930X_L3_IP6MC_ROUTE_CTRL));
+	otto_l3_930x_dump_route_ctrl(priv);
 
 	/* Trap non-ip traffic to the CPU-port (e.g. ARP so we stay reachable) */
-	sw_w32_mask(0x3 << 8, 0x1 << 8, RTL930X_L3_IP_ROUTE_CTRL);
-	pr_debug("L3_IP_ROUTE_CTRL %08x\n", sw_r32(RTL930X_L3_IP_ROUTE_CTRL));
+	err = regmap_write_bits(priv->map, RTL930X_L3_IP_ROUTE_CTRL, 0x3 << 8, 0x1 << 8);
+	if (err)
+		return err;
+	regmap_read(priv->map, RTL930X_L3_IP_ROUTE_CTRL, &v);
+	pr_debug("L3_IP_ROUTE_CTRL %08x\n", v);
 
 	/* PORT_ISO_RESTRICT_ROUTE_CTRL? */
 
@@ -1387,7 +1519,8 @@ static int otto_l3_930x_setup(struct otto_l3_ctrl *ctrl)
 	return 0;
 }
 
-static int otto_l3_alloc_egress_intf(struct otto_l3_ctrl *ctrl, u64 mac, int vlan)
+static int otto_l3_alloc_egress_intf(struct otto_l3_ctrl *ctrl, u64 mac, int vlan,
+				    u8 mtu_id)
 {
 	struct otto_l3_intf intf = {};
 	int free_mac = -1, err;
@@ -1402,7 +1535,8 @@ static int otto_l3_alloc_egress_intf(struct otto_l3_ctrl *ctrl, u64 mac, int vla
 			free_mac = i;
 			continue;
 		}
-		if (m == mac && ctrl->interfaces[i].vid == vlan) {
+		if (m == mac && ctrl->interfaces[i].vid == vlan &&
+		    ctrl->interfaces[i].ip4_mtu_id == mtu_id) {
 			dev_dbg(ctrl->dev, "reusing egress interface %d for VLAN %d\n",
 				i, vlan);
 			ctrl->intf_refs[i]++;
@@ -1420,8 +1554,7 @@ static int otto_l3_alloc_egress_intf(struct otto_l3_ctrl *ctrl, u64 mac, int vla
 	/* Set up default egress interface 1 */
 	intf.vid = vlan;
 	intf.smac_idx = free_mac;
-	intf.ip4_mtu_id = 1;
-	intf.ip6_mtu_id = 1;
+	intf.ip4_mtu_id = intf.ip6_mtu_id = mtu_id;
 	intf.ttl_scope = 1; /* TTL */
 	intf.hl_scope = 1;  /* Hop Limit */
 	intf.ip4_icmp_redirect = intf.ip6_icmp_redirect = 2;  /* FORWARD */
@@ -2038,7 +2171,7 @@ static void otto_l3_route_update_hw(struct otto_l3_ctrl *ctrl, struct otto_l3_ro
 
 	/* A route that forwards and gets a new gateway MAC traps while its
 	 * next hop moves over, or it would forward through the L2 entry
-	 * otto_l2_nexthop_add() releases.
+	 * otto_fdb_nexthop_add() releases.
 	 */
 	if (!first && mac != r->nh.mac && r->attr.action == ROUTE_ACT_FORWARD) {
 		r->attr.action = ROUTE_ACT_TRAP2CPU;
@@ -2103,7 +2236,7 @@ static void otto_l3_route_update_hw(struct otto_l3_ctrl *ctrl, struct otto_l3_ro
 	r->nh.dmac_id = dmac;
 
 	/* Update ROUTING table: map gateway-mac and switch-mac id to route id */
-	no_l2 = otto_l2_nexthop_add(priv, &r->nh);
+	no_l2 = otto_fdb_nexthop_add(priv, &r->nh);
 	if (!no_l2)
 		r->nh.l2_installed = true;
 
@@ -2260,7 +2393,7 @@ static int otto_l3_nexthop_update(struct otto_l3_ctrl *ctrl, u8 type, int ifinde
 			continue;
 
 		if (valid && r->hw_forward && r->nh.mac == mac &&
-		    otto_l2_nexthop_current(ctrl->priv, &r->nh))
+		    otto_fdb_nexthop_current(ctrl->priv, &r->nh))
 			continue;
 
 		if (valid)
@@ -2376,6 +2509,127 @@ static void otto_l3_intf_put(struct otto_l3_ctrl *ctrl, int if_id)
 		dev_err(ctrl->dev, "egress interface %d not freed\n", if_id);
 
 	mutex_unlock(ctrl->lock);
+}
+
+/* The PIE rule has already been removed, so no packet can use this next hop.
+ * Reset its stale contents before returning the row and shared resources.
+ */
+static void otto_l3_flow_nexthop_release(struct otto_l3_ctrl *ctrl,
+					 struct otto_l3_nexthop *nh)
+{
+	int err;
+
+	if (nh->id < MAX_ROUTES || nh->id >= MAX_ROUTES + MAX_HOST_ROUTES)
+		return;
+
+	mutex_lock(ctrl->lock);
+	err = ctrl->cfg->set_nexthop(ctrl, nh->id, NEXTHOP_TRAP2CPU, 0);
+	mutex_unlock(ctrl->lock);
+	if (err)
+		dev_warn(ctrl->dev, "unused flow next hop %u not reset: %d\n", nh->id, err);
+
+	if (nh->l2_installed)
+		otto_fdb_nexthop_del(ctrl->priv, nh);
+	otto_l3_intf_put(ctrl, nh->if_id);
+	otto_l3_dmac_put(ctrl, nh->dmac_id);
+	clear_bit(nh->id - MAX_ROUTES, ctrl->host_route_use_bm);
+	memset(nh, 0, sizeof(*nh));
+	nh->if_id = -1;
+	nh->dmac_id = -1;
+}
+
+/* A flow owns a next-hop row without installing any destination route. This
+ * also handles on-link hosts and default routes, which the FIB offload traps.
+ * RTNL protects the output port topology; resource_lock serializes allocations
+ * against the FIB and neighbour workers and flow deletion, which needs no RTNL.
+ */
+int otto_l3_flow_nexthop_get(struct otto_dsa_priv *priv, struct otto_l3_nexthop *nh,
+			     u64 smac, u64 dmac, u16 vlan, int port)
+{
+	struct otto_l3_dmac key = { .mac = dmac };
+	struct otto_l3_ctrl *ctrl = priv->l3_ctrl;
+	struct otto_l2_entry e = {};
+	u8 mac[ETH_ALEN];
+	int idx, err;
+
+	ASSERT_RTNL();
+	if (!otto_l3_fasttrack(priv) || !ctrl->cfg->set_nexthop)
+		return -EOPNOTSUPP;
+	if (port < 0 || port >= priv->ds->num_ports || !dsa_is_user_port(priv->ds, port) ||
+	    (priv->lagmembers & BIT_ULL(port)) || vlan >= VLAN_VID_MASK ||
+	    smac >> 48 || dmac >> 48)
+		return -EOPNOTSUPP;
+	u64_to_ether_addr(smac, mac);
+	if (!is_valid_ether_addr(mac))
+		return -EINVAL;
+	u64_to_ether_addr(dmac, mac);
+	if (!is_valid_ether_addr(mac))
+		return -EINVAL;
+
+	mutex_lock(&ctrl->resource_lock);
+	memset(nh, 0, sizeof(*nh));
+	nh->if_id = -1;
+	nh->dmac_id = -1;
+	mutex_lock(ctrl->lock);
+	idx = find_first_zero_bit(ctrl->host_route_use_bm, MAX_HOST_ROUTES);
+	if (idx < MAX_HOST_ROUTES)
+		set_bit(idx, ctrl->host_route_use_bm);
+	mutex_unlock(ctrl->lock);
+	if (idx == MAX_HOST_ROUTES) {
+		err = -ENOSPC;
+		goto unlock;
+	}
+	nh->id = MAX_ROUTES + idx;
+	nh->mac = nh->gw = dmac;
+	nh->rvid = vlan;
+	nh->if_id = otto_l3_alloc_egress_intf(ctrl, smac, vlan, FLOW_MTU_ID);
+	if (nh->if_id < 0) {
+		err = nh->if_id;
+		goto release;
+	}
+	nh->dmac_id = otto_l3_dmac_get(ctrl, &key);
+	if (nh->dmac_id < 0) {
+		err = nh->dmac_id;
+		goto release;
+	}
+	err = otto_fdb_nexthop_add(priv, nh);
+	if (err)
+		goto release;
+	nh->l2_installed = true;
+
+	/* The hardware, rather than a CPU-port fallback, must have learnt the
+	 * neighbour on exactly the physical port selected by the flowtable.
+	 */
+	mutex_lock(ctrl->lock);
+	idx = otto_l2_find_hash_entry(priv, nh->l2_seed, true, &e);
+	if (idx != nh->l2_id || !e.next_hop || e.port != port || e.is_trunk ||
+	    e.stack_dev || e.block_da || e.suspended) {
+		err = -EAGAIN;
+	} else {
+		err = ctrl->cfg->set_nexthop(ctrl, nh->id, nh->l2_id, nh->if_id);
+	}
+	mutex_unlock(ctrl->lock);
+	if (err)
+		goto release;
+	mutex_unlock(&ctrl->resource_lock);
+	return 0;
+
+release:
+	otto_l3_flow_nexthop_release(ctrl, nh);
+unlock:
+	mutex_unlock(&ctrl->resource_lock);
+	return err;
+}
+
+void otto_l3_flow_nexthop_put(struct otto_dsa_priv *priv, struct otto_l3_nexthop *nh)
+{
+	struct otto_l3_ctrl *ctrl = priv->l3_ctrl;
+
+	if (!ctrl)
+		return;
+	mutex_lock(&ctrl->resource_lock);
+	otto_l3_flow_nexthop_release(ctrl, nh);
+	mutex_unlock(&ctrl->resource_lock);
 }
 
 static void otto_l3_route_put_intf(struct otto_l3_ctrl *ctrl, struct otto_l3_route *r)
@@ -2525,6 +2779,7 @@ static void otto_l3_egress_sync(struct work_struct *work)
 	u64 mac, m;
 
 	rtnl_lock();
+	mutex_lock(&ctrl->resource_lock);
 
 	/* A source MAC of zero is how a free interface is told apart */
 	dev = __dev_get_by_index(&init_net, ew->ifindex);
@@ -2557,7 +2812,8 @@ static void otto_l3_egress_sync(struct work_struct *work)
 			continue;
 		}
 
-		if_id = otto_l3_alloc_egress_intf(ctrl, mac, r->nh.rvid);
+		if_id = otto_l3_alloc_egress_intf(ctrl, mac, r->nh.rvid,
+					       ctrl->interfaces[old].ip4_mtu_id);
 		if (if_id < 0) {
 			kept = true;
 			continue;
@@ -2573,6 +2829,7 @@ static void otto_l3_egress_sync(struct work_struct *work)
 		dev_err(ctrl->dev, "routes out of %s keep their old source MAC\n", dev->name);
 
 out:
+	mutex_unlock(&ctrl->resource_lock);
 	rtnl_unlock();
 	kfree(ew);
 }
@@ -2773,7 +3030,7 @@ static void otto_l3_route_teardown(struct otto_l3_ctrl *ctrl, struct otto_l3_rou
 	 */
 	if (r->is_host_route || !ctrl->prefix_rows_stale) {
 		if (r->nh.l2_installed)
-			otto_l2_nexthop_del(priv, &r->nh);
+			otto_fdb_nexthop_del(priv, &r->nh);
 
 		dev_dbg(ctrl->dev, "releasing packet counter %d\n", r->pr.packet_cntr);
 		otto_stats_packet_cntr_free(priv, r->pr.packet_cntr);
@@ -3031,7 +3288,7 @@ static int otto_l3_fib_add_v4(struct otto_l3_ctrl *ctrl, struct fib_entry_notifi
 			goto out_free_rt;
 
 		/* vid = 0: Do not care about VID */
-		route->nh.if_id = otto_l3_alloc_egress_intf(ctrl, mac, vlan);
+		route->nh.if_id = otto_l3_alloc_egress_intf(ctrl, mac, vlan, ROUTE_MTU_ID);
 		if (route->nh.if_id < 0)
 			goto out_free_rmac;
 
@@ -3513,7 +3770,7 @@ static int otto_l3_fib_add_v6(struct otto_l3_ctrl *ctrl, struct fib6_entry_notif
 		if (otto_l3_router_mac_get(ctrl, ndev))
 			goto out_failed;
 
-		route->nh.if_id = otto_l3_alloc_egress_intf(ctrl, mac, vlan);
+		route->nh.if_id = otto_l3_alloc_egress_intf(ctrl, mac, vlan, ROUTE_MTU_ID);
 		if (route->nh.if_id < 0)
 			goto out_failed;
 	}
@@ -3821,6 +4078,7 @@ static void otto_l3_fib_event_work_do(struct work_struct *work)
 
 	/* Protect internal structures from changes */
 	rtnl_lock();
+	mutex_lock(&ctrl->resource_lock);
 	dev_dbg(ctrl->dev, "doing work, event %ld\n", fib_work->event);
 	switch (fib_work->event) {
 	case FIB_EVENT_ENTRY_ADD:
@@ -3855,6 +4113,7 @@ static void otto_l3_fib_event_work_do(struct work_struct *work)
 		fib_rule_put(rule);
 		break;
 	}
+	mutex_unlock(&ctrl->resource_lock);
 	rtnl_unlock();
 	kfree(fib_work);
 }
@@ -3868,6 +4127,7 @@ static void otto_l3_fib6_event_work_do(struct work_struct *work)
 
 	/* Protect internal structures from changes */
 	rtnl_lock();
+	mutex_lock(&ctrl->resource_lock);
 	switch (fib_work->event) {
 	case FIB_EVENT_ENTRY_REPLACE:
 	case FIB_EVENT_ENTRY_APPEND:
@@ -3881,6 +4141,7 @@ static void otto_l3_fib6_event_work_do(struct work_struct *work)
 	}
 	if (err)
 		dev_err(ctrl->dev, "FIB6 event %ld failed: %d\n", fib_work->event, err);
+	mutex_unlock(&ctrl->resource_lock);
 	rtnl_unlock();
 
 	fib6_info_release(fib_work->fen6_info.rt);
@@ -4013,8 +4274,10 @@ static void otto_l3_net_event_work_do(struct work_struct *work)
 	struct otto_l3_net_event_work *net_work =
 		container_of(work, struct otto_l3_net_event_work, work);
 
+	mutex_lock(&net_work->ctrl->resource_lock);
 	otto_l3_nexthop_update(net_work->ctrl, net_work->type, net_work->ifindex,
 			       &net_work->gw_addr, net_work->mac, net_work->valid);
+	mutex_unlock(&net_work->ctrl->resource_lock);
 
 	kfree(net_work);
 }
@@ -4359,7 +4622,7 @@ static int otto_l3_930x_nexthop_show(struct seq_file *m, void *v)
 		return rows < 0 ? rows : l2_rows;
 
 	for (int idx = 0; idx < rows; idx++) {
-		struct rtl838x_l2_entry e = {};
+		struct otto_l2_entry e = {};
 		struct otto_l3_intf egr = {};
 		u16 dmac_idx, intf;
 		u8 smac[ETH_ALEN];
@@ -4563,7 +4826,7 @@ static int otto_l3_839x_route_show(struct seq_file *m, void *v)
 
 	for (int idx = 0; idx < rows; idx++) {
 		char dst[INET6_ADDRSTRLEN + sizeof("/128")];
-		struct rtl838x_l2_entry e = {};
+		struct otto_l2_entry e = {};
 		struct otto_l3_dmac dmac;
 		struct pie_rule pr;
 		u8 gw[ETH_ALEN];
@@ -4769,12 +5032,14 @@ void otto_l3_remove(struct otto_dsa_priv *priv)
 	 * be kept alive by it.
 	 */
 	rtnl_lock();
+	mutex_lock(&ctrl->resource_lock);
 	list_for_each_entry_safe(r, tmp, &ctrl->routes_list, list)
 		otto_l3_route_free(ctrl, r);
 	list_for_each_entry_safe(d, dtmp, &ctrl->rmac_devs, list) {
 		list_del(&d->list);
 		kfree(d);
 	}
+	mutex_unlock(&ctrl->resource_lock);
 	rtnl_unlock();
 }
 
@@ -4786,12 +5051,15 @@ struct otto_l3_flush_work {
 static void otto_l3_fib_flush_work_do(struct work_struct *work)
 {
 	struct otto_l3_flush_work *fw = container_of(work, struct otto_l3_flush_work, work);
+	struct otto_l3_ctrl *ctrl = fw->ctrl;
 	struct otto_l3_route *r, *tmp;
 
 	rtnl_lock();
+	mutex_lock(&ctrl->resource_lock);
 	list_for_each_entry_safe(r, tmp, &fw->ctrl->routes_list, list)
 		if (r->tb_id)
 			otto_l3_route_teardown(fw->ctrl, r);
+	mutex_unlock(&ctrl->resource_lock);
 	rtnl_unlock();
 }
 
@@ -4864,6 +5132,7 @@ int otto_l3_probe(struct device *dev, struct otto_dsa_priv *priv)
 	ctrl->dev = priv->dev;
 	/* For now share the register access lock with the DSA driver */
 	ctrl->lock = &priv->reg_mutex;
+	mutex_init(&ctrl->resource_lock);
 	/* Until the FIB notifier is in place there is nothing to replay */
 	INIT_DELAYED_WORK(&ctrl->resync_work, otto_l3_resync_work_do);
 	disable_delayed_work(&ctrl->resync_work);

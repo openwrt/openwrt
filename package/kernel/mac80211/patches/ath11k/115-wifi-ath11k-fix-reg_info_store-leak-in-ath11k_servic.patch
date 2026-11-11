@@ -1,0 +1,48 @@
+From 64828f091c7de5c1324427b140fb545f93ef073f Mon Sep 17 00:00:00 2001
+From: Jeff Johnson <jeff.johnson@oss.qualcomm.com>
+Date: Mon, 17 Aug 2026 16:46:34 -0700
+Subject: [PATCH] wifi: ath11k: fix reg_info_store leak in
+ ath11k_service_ready_ext_event()
+
+Currently, while processing the WMI Service Ready Ext event, the iterator
+in ath11k_service_ready_ext_event() can dispatch the HAL Regulatory
+Capabilities handler ath11k_wmi_tlv_ext_soc_hal_reg_caps_parse() which can
+allocate ab->reg_info_store.
+
+If a subsequent failure occurs during iteration, the ab->reg_info_store
+allocation is leaked.
+
+Directly free and clear the pointer on the error path.
+
+Note that the normal cleanup function ath11k_reg_free() cannot be used
+since other regulatory-related fields are not yet populated at this point.
+
+Compile tested only.
+
+Fixes: 7004bdceef60 ("wifi: ath11k: store cur_regulatory_info for each radio")
+Assisted-by: Claude:claude-sonnet-4-6
+Reviewed-by: Baochen Qiang <baochen.qiang@oss.qualcomm.com>
+Link: https://patch.msgid.link/20260817-reg_info_store-leak-v1-1-77025a99b074@oss.qualcomm.com
+Signed-off-by: Jeff Johnson <jeff.johnson@oss.qualcomm.com>
+---
+ drivers/net/wireless/ath/ath11k/wmi.c | 9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+--- a/drivers/net/wireless/ath/ath11k/wmi.c
++++ b/drivers/net/wireless/ath/ath11k/wmi.c
+@@ -5136,6 +5136,15 @@ static int ath11k_service_ready_ext_even
+ 
+ err:
+ 	kfree(svc_rdy_ext.mac_phy_caps);
++
++	/*
++	 * During TLV iteration the WMI_TAG_SOC_HAL_REG_CAPABILITIES
++	 * handler may have allocated ab->reg_info_store, so free it
++	 * on error to avoid a memory leak
++	 */
++	kfree(ab->reg_info_store);
++	ab->reg_info_store = NULL;
++
+ 	ath11k_wmi_free_dbring_caps(ab);
+ 	return ret;
+ }

@@ -16,7 +16,7 @@
 #define RTL931X_MIR_DPM_CTRL			(0xAF30)
 #define RTL931X_MIR_SPM_CTRL			(0xAF10)
 
-int rtldsa_838x_get_mirror_config(struct rtldsa_mirror_config *config, int group, int port)
+int otto_mirror_838x_get_config(struct otto_mirror_config *config, int group, int port)
 {
 	config->ctrl = RTL838X_MIR_CTRL + group * 4;
 	config->spm = RTL838X_MIR_SPM_CTRL + group * 4;
@@ -32,7 +32,7 @@ int rtldsa_838x_get_mirror_config(struct rtldsa_mirror_config *config, int group
 	return 0;
 }
 
-int rtldsa_839x_get_mirror_config(struct rtldsa_mirror_config *config, int group, int port)
+int otto_mirror_839x_get_config(struct otto_mirror_config *config, int group, int port)
 {
 	config->ctrl = RTL839X_MIR_CTRL + group * 4;
 	config->spm = RTL839X_MIR_SPM_CTRL + group * 8;
@@ -45,7 +45,7 @@ int rtldsa_839x_get_mirror_config(struct rtldsa_mirror_config *config, int group
 	return 0;
 }
 
-int rtldsa_930x_get_mirror_config(struct rtldsa_mirror_config *config, int group, int port)
+int otto_mirror_930x_get_config(struct otto_mirror_config *config, int group, int port)
 {
 	config->ctrl = RTL930X_MIR_CTRL + group * 4;
 	config->spm = RTL930X_MIR_SPM_CTRL + group * 4;
@@ -68,7 +68,7 @@ int rtldsa_930x_get_mirror_config(struct rtldsa_mirror_config *config, int group
 	return 0;
 }
 
-int rtldsa_931x_get_mirror_config(struct rtldsa_mirror_config *config, int group, int port)
+int otto_mirror_931x_get_config(struct otto_mirror_config *config, int group, int port)
 {
 	config->ctrl = RTL931X_MIR_CTRL + group * 4;
 	config->spm = RTL931X_MIR_SPM_CTRL + group * 8;
@@ -92,7 +92,7 @@ int rtldsa_931x_get_mirror_config(struct rtldsa_mirror_config *config, int group
 }
 
 /* Caller must hold priv->reg_mutex */
-static int rtldsa_mirror_group_find(struct otto_dsa_priv *priv, int port)
+static int otto_mirror_group_find(struct otto_dsa_priv *priv, int port)
 {
 	int group;
 
@@ -107,8 +107,8 @@ static int rtldsa_mirror_group_find(struct otto_dsa_priv *priv, int port)
 }
 
 /* Caller must hold priv->reg_mutex */
-static void rtldsa_mirror_group_release(struct otto_dsa_priv *priv, int group,
-					struct rtldsa_mirror_config *config)
+static void otto_mirror_group_release(struct otto_dsa_priv *priv, int group,
+				      struct otto_mirror_config *config)
 {
 	if (priv->mirror_group_flower[group] ||
 	    priv->r->get_port_reg_be(config->spm) ||
@@ -119,13 +119,13 @@ static void rtldsa_mirror_group_release(struct otto_dsa_priv *priv, int group,
 	regmap_write(priv->map, config->ctrl, 0);
 }
 
-int rtldsa_port_mirror_add(struct dsa_switch *ds, int port,
-			   struct dsa_mall_mirror_tc_entry *mirror,
-			   bool ingress, struct netlink_ext_ack *extack)
+int otto_mirror_port_add(struct dsa_switch *ds, int port,
+			 struct dsa_mall_mirror_tc_entry *mirror,
+			 bool ingress, struct netlink_ext_ack *extack)
 {
 	/* We support 4 mirror groups, one destination port per group */
 	struct otto_dsa_priv *priv = ds->priv;
-	struct rtldsa_mirror_config config;
+	struct otto_mirror_config config;
 	int pm_reg;
 	int group;
 	int r;
@@ -136,7 +136,7 @@ int rtldsa_port_mirror_add(struct dsa_switch *ds, int port,
 	pr_debug("In %s\n", __func__);
 
 	scoped_guard(mutex, &priv->reg_mutex) {
-		group = rtldsa_mirror_group_find(priv, mirror->to_local_port);
+		group = otto_mirror_group_find(priv, mirror->to_local_port);
 		if (group < 0)
 			return group;
 
@@ -163,11 +163,11 @@ int rtldsa_port_mirror_add(struct dsa_switch *ds, int port,
 	return 0;
 }
 
-void rtldsa_port_mirror_del(struct dsa_switch *ds, int port,
-			    struct dsa_mall_mirror_tc_entry *mirror)
+void otto_mirror_port_del(struct dsa_switch *ds, int port,
+			  struct dsa_mall_mirror_tc_entry *mirror)
 {
 	struct otto_dsa_priv *priv = ds->priv;
-	struct rtldsa_mirror_config config;
+	struct otto_mirror_config config;
 	int group = 0;
 	int r;
 
@@ -196,23 +196,23 @@ void rtldsa_port_mirror_del(struct dsa_switch *ds, int port,
 			priv->r->mask_port_reg_be(1ULL << port, 0, config.dpm);
 		}
 
-		rtldsa_mirror_group_release(priv, group, &config);
+		otto_mirror_group_release(priv, group, &config);
 	}
 }
 
 /* A flower rule mirrors through the group of its mirror port: the ACL mirror
  * action picks the frames, the group's port masks stay as they are.
  */
-int rtldsa_mirror_group_get(struct otto_dsa_priv *priv, int port)
+int otto_mirror_group_get(struct otto_dsa_priv *priv, int port)
 {
-	struct rtldsa_mirror_config config;
+	struct otto_mirror_config config;
 	int group, r;
 
 	if (!priv->r->get_mirror_config)
 		return -EOPNOTSUPP;
 
 	scoped_guard(mutex, &priv->reg_mutex) {
-		group = rtldsa_mirror_group_find(priv, port);
+		group = otto_mirror_group_find(priv, port);
 		if (group < 0)
 			return group;
 
@@ -228,13 +228,13 @@ int rtldsa_mirror_group_get(struct otto_dsa_priv *priv, int port)
 	return group;
 }
 
-void rtldsa_mirror_group_put(struct otto_dsa_priv *priv, int group)
+void otto_mirror_group_put(struct otto_dsa_priv *priv, int group)
 {
-	struct rtldsa_mirror_config config;
+	struct otto_mirror_config config;
 
 	scoped_guard(mutex, &priv->reg_mutex) {
 		priv->mirror_group_flower[group]--;
 		if (!priv->r->get_mirror_config(&config, group, priv->mirror_group_ports[group]))
-			rtldsa_mirror_group_release(priv, group, &config);
+			otto_mirror_group_release(priv, group, &config);
 	}
 }

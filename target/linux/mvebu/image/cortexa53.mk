@@ -153,5 +153,8 @@ define Device/ripe_atlas-v5
   DEVICE_MODEL := Atlas v5
   SOC := armada-3720
   BOOT_SCRIPT := ripe-atlas
+  KERNEL_LOADADDR := 0x00800000
+  KERNEL_INITRAMFS := kernel-bin | libdeflate-gzip | \
+    fit gzip $$(KDIR)/image-$$(DEVICE_DTS).dtb
 endef
 TARGET_DEVICES += ripe_atlas-v5
