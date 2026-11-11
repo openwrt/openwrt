@@ -1,0 +1,35 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Erik Conijn <egc112@msn.com>
+Date: Fri, 23 Oct 2026 13:10:51 +0200
+Subject: [PATCH] wifi: b43: HT-PHY: do not upload table 9 on FEM and HGPA
+ boards
+
+On a Netgear R6400 v1 (BCM4331, BFL_HGPA) the table 9 upload costs about
+10 dB of TX power: a client close by receives the access point at -37 to
+-44 dBm instead of -28 to -33 dBm, and the download drops from 109-111 to
+68-70 Mbit/s. On an R6400 v2 (BFL_FEM) it makes no difference.
+
+Read back from the hardware while Broadcom's wl driver runs, the R6400 v1
+has table 9 at 0, 1, 2, 3, 0, 1, 2, 3, ..., which is what b43 has without
+the upload. Skip the upload on boards with an external front end
+(BFL_FEM or BFL_HGPA).
+
+Assisted-by: Claude:claude-opus-5-5
+Signed-off-by: Erik Conijn <egc112@msn.com>
+---
+ drivers/net/wireless/broadcom/b43/tables_phy_ht.c | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+--- a/drivers/net/wireless/broadcom/b43/tables_phy_ht.c
++++ b/drivers/net/wireless/broadcom/b43/tables_phy_ht.c
+@@ -843,7 +843,9 @@ void b43_phy_ht_tables_init(struct b43_w
+ 	BUILD_BUG_ON(ARRAY_SIZE(b43_httab_0x1a_0xc0_late_5g) !=
+ 			B43_HTTAB_1A_C0_LATE_SIZE);
+ 
+-	httab_upload(dev, B43_HTTAB16(0x09, 0), b43_httab_0x09);
++	/* wl leaves table 9 at 0, 1, 2, 3, ... on FEM/HGPA boards (R6400) */
++	if (!(dev->dev->bus_sprom->boardflags_lo & (B43_BFL_FEM | B43_BFL_HGPA)))
++		httab_upload(dev, B43_HTTAB16(0x09, 0), b43_httab_0x09);
+ 	httab_upload(dev, B43_HTTAB16(0x12, 0), b43_httab_0x12);
+ 	httab_upload(dev, B43_HTTAB16(0x27, 0), b43_httab_0x27);
+ 	httab_upload(dev, B43_HTTAB16(0x26, 0), b43_httab_0x26);
