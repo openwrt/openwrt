@@ -92,6 +92,7 @@ platform_do_upgrade() {
 		;;
 	esac
 }
+
 platform_copy_config() {
 	case "$(board_name)" in
 	checkpoint,v-80|\
