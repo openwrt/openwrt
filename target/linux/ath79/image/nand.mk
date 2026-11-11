@@ -463,6 +463,19 @@ define Device/netgear_wndr4500-v3
 endef
 TARGET_DEVICES += netgear_wndr4500-v3
 
+define Device/philips_bsb002
+  SOC := qca9531
+  DEVICE_VENDOR := Philips
+  DEVICE_MODEL := Hue Bridge v2 (BSB002)
+  KERNEL_SIZE := 4096k
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-acm kmod-i2c-gpio
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  IMAGES := sysupgrade.tar
+  IMAGE/sysupgrade.tar := sysupgrade-tar | append-metadata
+endef
+TARGET_DEVICES += philips_bsb002
+
 define Device/zte_mf28x_common
   SOC := qca9563
   DEVICE_VENDOR := ZTE

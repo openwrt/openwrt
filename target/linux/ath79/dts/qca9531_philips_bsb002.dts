@@ -1,0 +1,261 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "qca953x.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+
+/ {
+	compatible = "philips,bsb002", "qca,qca9531";
+	model = "Philips Hue Bridge v2 (BSB002)";
+
+	chosen {
+		/delete-property/ bootargs;
+	};
+
+	aliases {
+		led-boot = &led_portal;
+		led-failsafe = &led_portal;
+		led-running = &led_portal;
+		led-upgrade = &led_portal;
+
+		label-mac-device = &eth0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		pinctrl-names = "default";
+
+		pinctrl-0 = <&jtag_disable_pins &led_gpio_pins>;
+
+		led_portal: portal {
+			color = <LED_COLOR_ID_BLUE>;
+			function = "portal";
+			gpios = <&gpio 2 GPIO_ACTIVE_HIGH>;
+		};
+
+		network {
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_LAN;
+			gpios = <&gpio 3 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	keys {
+		compatible = "gpio-keys";
+		pinctrl-names = "default";
+		pinctrl-0 = <&button_gpio_pins>;
+
+		link {
+			label = "link";
+			linux,code = <BTN_0>;
+			gpios = <&gpio 1 GPIO_ACTIVE_HIGH>;
+			debounce-interval = <60>;
+		};
+
+		reset {
+			label = "reset";
+			linux,code = <KEY_RESTART>;
+			gpios = <&gpio 0 GPIO_ACTIVE_HIGH>;
+			debounce-interval = <60>;
+		};
+	};
+
+	gpio-export {
+		compatible = "gpio-export";
+		pinctrl-names = "default";
+		pinctrl-0 = <&zigbee_gpio_pins>;
+
+		samr21_boot {
+			gpio-export,name = "samr21_bootn";
+			gpio-export,output = <1>;
+			gpios = <&gpio 13 GPIO_ACTIVE_HIGH>;
+		};
+
+		samr21_reset {
+			gpio-export,name = "samr21_resetn";
+			gpio-export,output = <1>;
+			gpios = <&gpio 15 GPIO_ACTIVE_HIGH>;
+		};
+
+		tx_frame {
+			gpio-export,name = "tx_frame";
+			gpio-export,output = <0>;
+			gpios = <&gpio 4 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	i2c_mfi: i2c-mfi {
+		compatible = "i2c-gpio";
+		pinctrl-names = "default";
+		pinctrl-0 = <&mfi_i2c_pins>;
+		sda-gpios = <&gpio 12 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
+		scl-gpios = <&gpio 16 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
+		i2c-gpio,delay-us = <5>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+	};
+};
+
+&pinmux {
+	button_gpio_pins: button_gpio_pins {
+		pinctrl-single,bits = <0x0 0x00000000 0x0000ffff>;
+	};
+
+	zigbee_gpio_pins: zigbee_gpio_pins {
+		pinctrl-single,bits = <0x4 0x00000000 0x000000ff>,
+				     <0xc 0x00000000 0xff00ff00>;
+	};
+
+	mfi_i2c_pins: mfi_i2c_pins {
+		pinctrl-single,bits = <0xc 0x00000000 0x000000ff>,
+				     <0x10 0x00000000 0x000000ff>;
+	};
+
+	led_gpio_pins: led_gpio_pins {
+		pinctrl-single,bits = <0x0 0x00000000 0xffff0000>;
+	};
+};
+
+&spi {
+	status = "okay";
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <25000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "u-boot";
+				reg = <0x0 0x40000>;
+				read-only;
+			};
+
+			bsb002_env: partition@40000 {
+				label = "u-boot-env";
+				reg = <0x40000 0x20000>;
+			};
+
+			partition@60000 {
+				label = "reserved";
+				reg = <0x60000 0x10000>;
+				read-only;
+			};
+
+			partition@70000 {
+				label = "art";
+				reg = <0x70000 0x10000>;
+				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_art_6: macaddr@6 {
+						reg = <0x6 0x6>;
+					};
+
+					cal_art_1000: calibration@1000 {
+						reg = <0x1000 0x440>;
+					};
+				};
+			};
+		};
+	};
+
+	flash@1 {
+		compatible = "spi-nand";
+		reg = <1>;
+		spi-max-frequency = <26000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			bsb002_kernel_0: partition@0 {
+				label = "kernel-0";
+				reg = <0x0 0x400000>;
+			};
+
+			bsb002_root_0: partition@400000 {
+				label = "root-0";
+				reg = <0x400000 0x2800000>;
+			};
+
+			bsb002_kernel_1: partition@2c00000 {
+				label = "kernel-1";
+				reg = <0x2c00000 0x400000>;
+			};
+
+			bsb002_root_1: partition@3000000 {
+				label = "root-1";
+				reg = <0x3000000 0x2800000>;
+			};
+
+			partition@5800000 {
+				label = "overlay";
+				reg = <0x5800000 0x2800000>;
+				read-only;
+			};
+		};
+	};
+};
+
+&mdio0 {
+	status = "disabled";
+};
+
+&eth0 {
+	status = "okay";
+	phy-handle = <&swphy0>;
+
+	nvmem-cells = <&macaddr_art_6>;
+	nvmem-cell-names = "mac-address";
+
+	gmac-config {
+		device = <&gmac>;
+		switch-phy-swap = <1>;
+		switch-phy-addr-swap = <0>;
+	};
+};
+
+&eth1 {
+	compatible = "syscon", "simple-mfd";
+	/delete-property/ builtin-switch;
+	/delete-node/ fixed-link;
+};
+
+&swphy0 {
+	max-speed = <100>;
+};
+
+&wmac {
+	status = "okay";
+
+	nvmem-cells = <&cal_art_1000>;
+	nvmem-cell-names = "calibration";
+
+	gpio-controller;
+};
+
+&usb0 {
+	status = "okay";
+};
+
+&usb_phy {
+	status = "okay";
+};
+
+&gpio {
+	gpio-line-names = "reset", "link", "portal", "network", "tx-frame",
+			  "", "", "", "", "", "", "", "mfi-sda", "samr21-bootn",
+			  "mfi-reset", "samr21-resetn", "mfi-scl", "mfi-sda-input";
+};
