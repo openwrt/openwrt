@@ -1,17 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
-/*
- * Forwarding database interface for the RTL960x switch core.
- *
- * The L2 table is a hash table of 2048 entries plus a 64-entry CAM, keyed by
- * {MAC, CVID} for IVL entries and {MAC, FID} for SVL entries. The hardware
- * hashes the key itself, so adding and deleting an entry is a single
- * MAC-method write (a delete writes the same key back invalid), and a dump
- * walks a port's valid unicast entries with the ADDR_NEXT_UC_PORT method.
- *
- * Filtering databases follow the mv88e6xxx model: standalone ports learn in
- * FID 0, every VLAN-unaware bridge shares FID 1, and DSA FDB operations with
- * VID 0 map to SVL/FID 1 while non-zero VIDs map to IVL/CVID.
- */
+/* Forwarding database interface for the RTL960x switch core. */
 
 #include <linux/bitfield.h>
 #include <linux/etherdevice.h>
@@ -61,8 +49,11 @@
 #define   RTL960X_L2_FLUSH_CTRL_BUSY_MSK	BIT(0)
 #define   RTL960X_L2_FLUSH_CTRL_MODE_MSK	GENMASK(2, 1)
 #define   RTL960X_L2_FLUSH_CTRL_MODE_PORT	0
+#define   RTL960X_L2_FLUSH_CTRL_MODE_VID	1
+#define   RTL960X_L2_FLUSH_CTRL_MODE_FID	2
 #define   RTL960X_L2_FLUSH_CTRL_STATIC_MSK	BIT(3)
 #define   RTL960X_L2_FLUSH_CTRL_DYNAMIC_MSK	BIT(4)
+#define   RTL960X_L2_FLUSH_CTRL_VID_MSK		GENMASK(16, 5)
 #define RTL960X_L2_FLUSH_EN_REG			0x17048
 #define   RTL960X_L2_FLUSH_EN_PORT_MSK		GENMASK(10, 0)
 
@@ -149,17 +140,6 @@ static void rtl960x_l2_uc_to_data(const struct rtl960x_l2_uc *uc, u32 *data)
 	data[2] |= FIELD_PREP(RTL960X_L2_UC_D2_VALID_MSK, uc->valid);
 }
 
-/* DSA VID 0 is the VLAN-unaware database, shared by all bridges as FID 1. */
-static void rtl960x_l2_uc_key_set(struct rtl960x_l2_uc_key *key,
-				  const unsigned char mac_addr[static ETH_ALEN],
-				  u16 vid)
-{
-	ether_addr_copy(key->mac_addr, mac_addr);
-	key->ivl = !!vid;
-	key->vid = vid;
-	key->fid = vid ? 0 : 1;
-}
-
 /* An FDB entry as DSA sees it */
 struct rtl960x_fdb_entry {
 	u8 mac_addr[ETH_ALEN];
@@ -228,7 +208,10 @@ static int rtl960x_l2_add_uc(int port,
 	struct rtl960x_l2_uc uc = { 0 };
 	int ret;
 
-	rtl960x_l2_uc_key_set(&uc.key, mac_addr, vid);
+	memcpy(uc.key.mac_addr, mac_addr, ETH_ALEN);
+	uc.key.ivl = true;
+	uc.key.vid = vid;
+	uc.key.fid = 0;
 	uc.port = port;
 	/*
 	 * Entries programmed by DSA (including those learned by the software
@@ -258,21 +241,44 @@ static int rtl960x_l2_add_uc(int port,
  * Context: Can sleep.
  * Return: 0 on success, or a negative error code on failure.
  */
-static int rtl960x_l2_del_uc(struct rtl960x_dsa *priv,
+static int rtl960x_l2_del_uc(struct rtl960x_dsa *priv, int port,
 			     const unsigned char mac_addr[static ETH_ALEN],
 			     u16 vid)
 {
 	u32 data[RTL960X_L2_ENTRY_SIZE];
 	struct rtl960x_l2_uc uc = { 0 };
+	struct rtl960x_l2_uc found = { 0 };
 	int ret;
 
-	rtl960x_l2_uc_key_set(&uc.key, mac_addr, vid);
-	/*
-	 * Unlike rtl8365mb, where age 0 deletes the entry, this table has a
-	 * valid bit: writing the key back with it clear frees the slot.
-	 */
+	memcpy(uc.key.mac_addr, mac_addr, ETH_ALEN);
+	uc.key.ivl = true;
+	uc.key.vid = vid;
+	uc.key.fid = 0;
+	/* Unlike on rtl8365mb, valid bit deletes the entry */
 	uc.valid = false;
 	uc.age = 0;
+	rtl960x_l2_uc_to_data(&uc, data);
+
+	/* First look for an existing entry (to get existing port members) */
+	ret = otto_table_l2_read(RTL9607C_TBL_L2_UC, 0, &data, 0,
+				 OTTO_TABLE_L2_METHOD_MAC);
+	if (ret == -ENOENT) {
+		dev_dbg(priv->dev, "%s: %pM vid=%d missing\n",
+			__func__, mac_addr, vid);
+		/* Silently return success */
+		return 0;
+	}
+	if (ret < 0)
+		return ret;
+
+	rtl960x_l2_data_to_uc(data, &found);
+	/* The key has no EFID, so the entry found may belong
+	 * to another port or bridge: leave it alone.
+	 */
+	if (found.port != port)
+		return 0;
+
+	/* rebuild the write payload: the read overwrote data[] */
 	rtl960x_l2_uc_to_data(&uc, data);
 
 	ret = otto_table_l2_write(RTL9607C_TBL_L2_UC, 0, &data, 0,
@@ -291,20 +297,23 @@ static int rtl960x_l2_del_uc(struct rtl960x_dsa *priv,
  * rtl960x_l2_flush() - flush the dynamic entries of a port
  * @priv: driver context
  * @port: port whose learned entries are dropped
+ * @vid: vlan id
  *
  * Context: Can sleep. Takes and releases &priv->l2_lock.
  * Return: 0 on success, or a negative error code on failure.
  */
-int rtl960x_l2_flush(struct rtl960x_dsa *priv, int port)
+int rtl960x_l2_flush(struct rtl960x_dsa *priv, int port, u16 vid)
 {
+	int mode = vid ? RTL960X_L2_FLUSH_CTRL_MODE_VID :
+			 RTL960X_L2_FLUSH_CTRL_MODE_PORT;
 	u32 val;
 	int ret;
 
 	mutex_lock(&priv->l2_lock);
 
 	ret = regmap_write(priv->map, RTL960X_L2_FLUSH_CTRL_REG,
-			   FIELD_PREP(RTL960X_L2_FLUSH_CTRL_MODE_MSK,
-				      RTL960X_L2_FLUSH_CTRL_MODE_PORT) |
+			   FIELD_PREP(RTL960X_L2_FLUSH_CTRL_MODE_MSK, mode) |
+			   FIELD_PREP(RTL960X_L2_FLUSH_CTRL_VID_MSK, vid) |
 			   FIELD_PREP(RTL960X_L2_FLUSH_CTRL_DYNAMIC_MSK, 1));
 	if (ret)
 		goto out;
@@ -391,7 +400,7 @@ int rtl960x_port_fdb_del(struct dsa_switch *ds, int port,
 		__func__, port, addr, vid, db.type);
 
 	mutex_lock(&priv->l2_lock);
-	ret = rtl960x_l2_del_uc(priv, addr, vid);
+	ret = rtl960x_l2_del_uc(priv, port, addr, vid);
 	mutex_unlock(&priv->l2_lock);
 
 	if (ret)

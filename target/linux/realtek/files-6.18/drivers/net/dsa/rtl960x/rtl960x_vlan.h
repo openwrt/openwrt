@@ -9,20 +9,22 @@
 
 #include "rtl960x_dsa.h"
 
-int rtl960x_vlan_setup(struct dsa_switch *ds);
-int rtl960x_vlan_port_bridge_join(struct dsa_switch *ds, int port,
-				  struct dsa_bridge bridge,
-				  struct netlink_ext_ack *extack);
-void rtl960x_vlan_port_bridge_leave(struct dsa_switch *ds, int port,
-				    struct dsa_bridge bridge);
+enum rtl960x_frame_ingress {
+	RTL960X_FRAME_TYPE_ANY_FRAME = 0,
+	RTL960X_FRAME_TYPE_TAGGED_ONLY,
+	RTL960X_FRAME_TYPE_UNTAGGED_ONLY,
+};
 
-int rtl960x_port_vlan_filtering(struct dsa_switch *ds, int port,
-				bool vlan_filtering,
-				struct netlink_ext_ack *extack);
-int rtl960x_port_vlan_add(struct dsa_switch *ds, int port,
-			  const struct switchdev_obj_port_vlan *vlan,
-			  struct netlink_ext_ack *extack);
-int rtl960x_port_vlan_del(struct dsa_switch *ds, int port,
-			  const struct switchdev_obj_port_vlan *vlan);
+int rtl960x_vlan_port_get_pvid(struct rtl960x_dsa *priv, int port, u16 *pvid);
+int rtl960x_vlan_port_set_pvid(struct rtl960x_dsa *priv, int port, u16 pvid);
+int rtl960x_vlan_port_get_framefilter(struct rtl960x_dsa *priv, int port,
+				      enum rtl960x_frame_ingress *frame_type);
+int rtl960x_vlan_port_set_framefilter(struct rtl960x_dsa *priv, int port,
+				      enum rtl960x_frame_ingress frame_type);
+int rtl960x_vlan_4k_set(struct rtl960x_dsa *priv, u16 vid, u16 member,
+			u16 untag);
+int rtl960x_vlan_pvid_port_commit(struct dsa_switch *ds, int port, u16 vid,
+				  bool vlan_filtering,
+				  struct netlink_ext_ack *extack);
 
 #endif /* __RTL960X_VLAN_H */

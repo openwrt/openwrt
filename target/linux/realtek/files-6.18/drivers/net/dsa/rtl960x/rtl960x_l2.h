@@ -10,7 +10,7 @@
 
 #include "rtl960x_dsa.h"
 
-int rtl960x_l2_flush(struct rtl960x_dsa *priv, int port);
+int rtl960x_l2_flush(struct rtl960x_dsa *priv, int port, u16 vid);
 
 int rtl960x_port_fdb_add(struct dsa_switch *ds, int port,
 			 const unsigned char *addr, u16 vid,
