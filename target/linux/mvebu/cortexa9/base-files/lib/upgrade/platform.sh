@@ -50,16 +50,16 @@ platform_do_upgrade() {
 		nand_do_upgrade "$1"
 		;;
 	ctera,c200-v2)
-	part=$(find_mtd_part "active_bank")
+		part=$(find_mtd_part "active_bank")
 
-	if [ -n "$part" ]; then
-		CI_KERNPART="$(strings $part | grep bank)"
-		nand_do_upgrade "$1"
-	else
-		echo "active_bank partition missed!"
-		return 1
-	fi
-	;;
+		if [ -n "$part" ]; then
+			CI_KERNPART="$(strings $part | grep bank)"
+			nand_do_upgrade "$1"
+		else
+			echo "active_bank partition missed!"
+			return 1
+		fi
+		;;
 	cznic,turris-omnia|\
 	kobol,helios4|\
 	solidrun,clearfog-base-a1|\
