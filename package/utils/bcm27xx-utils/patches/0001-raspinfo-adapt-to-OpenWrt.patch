@@ -13,9 +13,9 @@ Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
 
 --- a/raspinfo/raspinfo
 +++ b/raspinfo/raspinfo
-@@ -8,173 +8,13 @@
- 
- alias filter="sed -e 's/\([0-9a-fA-F]\{1,4\}:\)\{7,7\}[0-9a-fA-F]\{1,4\}/y.y.y.y.y.y.y.y/g' | sed -e 's/[0-9a-fA-F]\{1,4\}:\(:[0-9a-fA-F]\{1,4\}\)\{1,4\}/y::y.y.y.y/g' | sed -e 's/\([0-9]\{1,3\}\.\)\{3,3\}[0-9]\{1,3\}/x.x.x.x/g' | sed -e 's/\([0-9a-fA-F]\{2,2\}\:\)\{5,5\}[0-9a-fA-F]\{2,2\}/m.m.m.m/g'"
+@@ -13,173 +13,13 @@ vcgencmd_has() {
+    vcgencmd commands | tr ',="' '   ' | grep -qw -- "$1"
+ }
  
 -display_info_drm() {
 -   # kmsprint is more useful, but not always installed
@@ -188,7 +188,7 @@ Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
     fi
     echo
  
-@@ -188,7 +28,7 @@ network_info() {
+@@ -193,7 +33,7 @@ network_info() {
              if [ -d "$iface/phy80211" ]; then
                 ethtool -i $iface_name
              else
@@ -197,7 +197,7 @@ Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
                 echo
                 ethtool --show-eee $iface_name
                 echo
-@@ -198,7 +38,7 @@ network_info() {
+@@ -203,7 +43,7 @@ network_info() {
           fi
        done
     else
@@ -206,7 +206,7 @@ Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
     fi
  }
  
-@@ -222,8 +62,6 @@ echo
+@@ -227,8 +67,6 @@ echo
  cat /etc/os-release | head -4
  echo
  
@@ -215,7 +215,7 @@ Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
  uname -a
  
  cat /proc/cpuinfo | tail -3
-@@ -260,18 +98,6 @@ echo
+@@ -284,18 +122,6 @@ echo
  cat /proc/swaps
  
  echo
@@ -234,7 +234,7 @@ Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
  echo "Networking Information"
  echo "----------------------"
  echo
-@@ -283,21 +109,11 @@ echo "USB Information"
+@@ -307,21 +133,11 @@ echo "USB Information"
  echo "---------------"
  echo
  
@@ -261,7 +261,7 @@ Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
  
  echo
  echo "Firmware Configuration"
-@@ -322,7 +138,7 @@ echo "-----------------"
+@@ -346,7 +162,7 @@ echo "-----------------"
  echo
  
  if command -v pinctrl > /dev/null; then
@@ -270,7 +270,7 @@ Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
  elif command -v raspi-gpio > /dev/null; then
     raspi-gpio get 2>&1
  else
-@@ -335,11 +151,11 @@ echo "------------------"
+@@ -359,11 +175,11 @@ echo "------------------"
  echo
  
  if command -v vcdbg > /dev/null; then
@@ -285,18 +285,16 @@ Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
  fi
  
  echo
-@@ -347,16 +163,16 @@ echo "dmesg log"
+@@ -371,7 +187,7 @@ echo "dmesg log"
  echo "---------"
  echo
  
 -sudo dmesg | filter
 +dmesg | filter
  
--if  grep -q "^Revision\s*:\s*[ 123][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F]1[13457][0-9a-fA-F]$" /proc/cpuinfo
-+if  grep -q "^Revision\s*:\s*[ 123][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F]1[0-9][0-9a-fA-F]$" /proc/cpuinfo
- then
-    echo
-    echo "EEPROM"
+ # Boards with a bootloader EEPROM: BCM2711 (Pi 4, Pi 400, CM4) and BCM2712 (Pi 5, Pi 500, CM5)
+ if grep -q -e bcm2711 -e bcm2712 /proc/device-tree/compatible 2>/dev/null
+@@ -381,7 +197,7 @@ then
     echo "------"
     echo
     if command -v rpi-eeprom-update > /dev/null; then
