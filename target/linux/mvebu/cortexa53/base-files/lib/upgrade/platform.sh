@@ -69,8 +69,8 @@ platform_do_upgrade() {
 	globalscale,espressobin-v7-emmc)
 		legacy_sdcard_do_upgrade "$1"
 		;;
-	methode,udpu|\
-	methode,edpu)
+	methode,edpu|\
+	methode,udpu)
 		local active_kernpart
 
 		[ "$(rootfs_type)" = "tmpfs" ] && {
@@ -128,8 +128,8 @@ platform_copy_config() {
 	globalscale,espressobin-v7-emmc)
 		legacy_sdcard_copy_config
 		;;
-	methode,udpu|\
-	methode,edpu)
+	methode,edpu|\
+	methode,udpu)
 		emmc_copy_config
 		;;
 	esac
