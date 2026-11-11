@@ -5,15 +5,15 @@
 board_config_update
 
 case "$(board_name)" in
-avnet,zynq-zed | \
-bitmain,antminer-s9 | \
-digilent,zynq-zybo | \
-digilent,zynq-zybo-z7 | \
+avnet,zynq-zed|\
+bitmain,antminer-s9|\
+digilent,zynq-zybo|\
+digilent,zynq-zybo-z7|\
 xlnx,zynq-zc702)
 	ucidef_set_interface_lan 'eth0'
 	;;
 *)
-	echo "Unsupported hardware. Network interfaces not intialized"
+	echo "Unsupported hardware. Network interfaces not initialized"
 	;;
 esac
 
