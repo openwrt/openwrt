@@ -33,8 +33,8 @@ lantiq_setup_interfaces()
 	avm,fritz3390|\
 	avm,fritz3490|\
 	avm,fritz3490-micron|\
-	avm,fritz7360sl|\
 	avm,fritz7360-v2|\
+	avm,fritz7360sl|\
 	avm,fritz7362sl|\
 	avm,fritz7430|\
 	avm,fritz7490|\
@@ -93,12 +93,6 @@ lantiq_setup_macs()
 	arcadyan,arv7519rw22)
 		wan_mac=$(macaddr_add "$(mtd_get_mac_binary boardconfig 0x16)" 1)
 		;;
-	lantiq,easy80920-nand|\
-	lantiq,easy80920-nor|\
-	zyxel,p-2812hnu-f1|\
-	zyxel,p-2812hnu-f3)
-		wan_mac=$(macaddr_add "$(mtd_get_mac_ascii u-boot-env ethaddr)" 1)
-		;;
 	arcadyan,vgv7519-brn|\
 	arcadyan,vgv7519-nor|\
 	arcadyan,vrv9510kwac23)
@@ -108,9 +102,6 @@ lantiq_setup_macs()
 	avm,fritz3370-rev2-micron)
 		lan_mac=$(fritz_tffs -n maca -i $(find_mtd_part "tffs (1)"))
 		wan_mac=$(macaddr_add "$lan_mac" 3)
-		;;
-	avm,fritz7360sl)
-		wan_mac=$(macaddr_add "$(mtd_get_mac_binary urlader 0xa91)" 1)
 		;;
 	avm,fritz3390|\
 	avm,fritz3490|\
@@ -122,6 +113,9 @@ lantiq_setup_macs()
 	avm,fritz7490-micron)
 		lan_mac=$(fritz_tffs -n maca -i $(find_mtd_part "tffs (1)"))
 		wan_mac=$(fritz_tffs -n macdsl -i $(find_mtd_part "tffs (1)"))
+		;;
+	avm,fritz7360sl)
+		wan_mac=$(macaddr_add "$(mtd_get_mac_binary urlader 0xa91)" 1)
 		;;
 	avm,fritz7412|\
 	avm,fritz7430)
@@ -135,6 +129,12 @@ lantiq_setup_macs()
 		;;
 	buffalo,wbmr-300hpd)
 		wan_mac="$(mtd_get_mac_ascii u-boot-env ethaddr)"
+		;;
+	lantiq,easy80920-nand|\
+	lantiq,easy80920-nor|\
+	zyxel,p-2812hnu-f1|\
+	zyxel,p-2812hnu-f3)
+		wan_mac=$(macaddr_add "$(mtd_get_mac_ascii u-boot-env ethaddr)" 1)
 		;;
 	tplink,vr200|\
 	tplink,vr200v)

@@ -15,12 +15,12 @@ lantiq_setup_interfaces()
 	arcadyan,vg3503j)
 		ucidef_set_interface_lan "lan1 lan2"
 		;;
+	netgear,dm200)
+		ucidef_set_interface_lan "lan"
+		;;
 	tplink,tdw8970|\
 	tplink,tdw8980)
 		ucidef_set_interface_lan "lan1 lan2 lan3 lan4"
-		;;
-	netgear,dm200)
-		ucidef_set_interface_lan "lan"
 		;;
 	*)
 		ucidef_set_interface_lan 'eth0'
