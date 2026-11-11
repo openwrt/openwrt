@@ -9,7 +9,7 @@ platform_check_image() {
 
 platform_do_upgrade() {
 	case "$(board_name)" in
-	huawei,hg253s-v2 |\
+	huawei,hg253s-v2|\
 	netgear,dgnd3700-v2)
 		CI_JFFS2_CLEAN_MARKERS=1
 		nand_do_upgrade "$1"
