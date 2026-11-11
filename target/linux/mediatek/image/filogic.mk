@@ -3692,6 +3692,32 @@ define Device/tenda_be12-pro
 endef
 TARGET_DEVICES += tenda_be12-pro
 
+define Device/tenda_be12-pro-ubootmod
+  $(call Device/tenda_be12-pro)
+  DEVICE_VARIANT := OpenWrt U-Boot layout
+  DEVICE_DTS := mt7987a-tenda-be12-pro-ubootmod
+  KERNEL_IN_UBI := 1
+  UBOOTENV_IN_UBI := 1
+  IMAGES := sysupgrade.itb
+  IMAGE_SIZE := 123392k
+  KERNEL_INITRAMFS_SUFFIX := -recovery.itb
+  KERNEL := kernel-bin | libdeflate-gzip
+  KERNEL_INITRAMFS := kernel-bin | lzma | \
+	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd | pad-to 64k
+  IMAGE/sysupgrade.itb := append-kernel | \
+	fit gzip $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb external-with-rootfs | \
+	pad-rootfs | append-metadata
+  ARTIFACTS := preloader.bin bl31-uboot.fip
+  ARTIFACT/preloader.bin := mt7987-bl2 spim-nand-tenda-be12-pro
+  ARTIFACT/bl31-uboot.fip := mt7987-bl31-uboot tenda_be12-pro
+  # The stock layout combines BL2 and FIP in one 3 MiB partition.
+  ARTIFACTS += bootloader.bin
+  ARTIFACT/bootloader.bin := mt7987-bl2 spim-nand-tenda-be12-pro | \
+	check-size 1024k | pad-to 1024k | \
+	mt7987-bl31-uboot tenda_be12-pro | check-size 3072k | pad-to 3072k
+endef
+TARGET_DEVICES += tenda_be12-pro-ubootmod
+
 define Device/teralink_tl3020-256mb
   DEVICE_VENDOR := Teralink
   DEVICE_MODEL := TL3020
