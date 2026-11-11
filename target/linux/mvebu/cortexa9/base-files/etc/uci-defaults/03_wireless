@@ -20,31 +20,31 @@ linksys,wrt32x)
 	WIFIMAC2G=$(macaddr_add $(mtd_get_mac_ascii devinfo hw_mac_addr) 1)
 	WIFIMAC5G=$(macaddr_add $WIFIMAC2G 1)
 	case "$SKU" in
-		AP)
-			REGD=CN
+	AP)
+		REGD=CN
 		;;
-		AU)
-			REGD=AU
+	AU)
+		REGD=AU
 		;;
-		CA)
-			REGD=CA
+	CA)
+		REGD=CA
 		;;
-		EU)
-			REGD=FR
+	EU)
+		REGD=FR
 		;;
-		US)
-			REGD=US
+	US)
+		REGD=US
 		;;
 	esac
 
 	case "$board" in
-		linksys,wrt1900ac-v1)
-			WIFIMAC0=$WIFIMAC2G
-			WIFIMAC1=$WIFIMAC5G
+	linksys,wrt1900ac-v1)
+		WIFIMAC0=$WIFIMAC2G
+		WIFIMAC1=$WIFIMAC5G
 		;;
-		*)
-			WIFIMAC0=$WIFIMAC5G
-			WIFIMAC1=$WIFIMAC2G
+	*)
+		WIFIMAC0=$WIFIMAC5G
+		WIFIMAC1=$WIFIMAC2G
 		;;
 	esac
 
