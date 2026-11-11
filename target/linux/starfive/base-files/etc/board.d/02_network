@@ -8,8 +8,8 @@
 board_config_update
 
 case "$(board_name)" in
-starfive,visionfive-2-v1.3b|\
-starfive,visionfive-2-v1.2a)
+starfive,visionfive-2-v1.2a|\
+starfive,visionfive-2-v1.3b)
 	ucidef_set_interfaces_lan_wan "eth0" "eth1"
 	;;
 *)
