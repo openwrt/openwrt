@@ -152,14 +152,14 @@ platform_copy_config() {
 		}
 		dd if="$UPGRADE_BACKUP" of="$T40_ROOT_DEV" bs=512 seek=$T40_ROOTFS_BLOCKS || return 1
 		;;
-	fsl,ls1012a-frwy-sdboot | \
-	fsl,ls1021a-iot-sdboot | \
-	fsl,ls1021a-twr-sdboot | \
-	fsl,ls1028a-rdb-sdboot | \
-	fsl,ls1043a-rdb-sdboot | \
-	fsl,ls1046a-frwy-sdboot | \
-	fsl,ls1046a-rdb-sdboot | \
-	fsl,ls1088a-rdb-sdboot | \
+	fsl,ls1012a-frwy-sdboot|\
+	fsl,ls1021a-iot-sdboot|\
+	fsl,ls1021a-twr-sdboot|\
+	fsl,ls1028a-rdb-sdboot|\
+	fsl,ls1043a-rdb-sdboot|\
+	fsl,ls1046a-frwy-sdboot|\
+	fsl,ls1046a-rdb-sdboot|\
+	fsl,ls1088a-rdb-sdboot|\
 	fsl,lx2160a-rdb-sdboot)
 		platform_copy_config_sdboot
 		;;
@@ -173,25 +173,25 @@ platform_check_image() {
 		nand_do_platform_check "ten64-mtd" $1
 		return $?
 		;;
-	fsl,ls1012a-frdm | \
-	fsl,ls1012a-frwy-sdboot | \
-	fsl,ls1012a-rdb | \
-	fsl,ls1021a-iot-sdboot | \
-	fsl,ls1021a-twr | \
-	fsl,ls1021a-twr-sdboot | \
-	fsl,ls1028a-rdb | \
-	fsl,ls1028a-rdb-sdboot | \
-	watchguard,firebox-t40 | \
-	fsl,ls1043a-rdb | \
-	fsl,ls1043a-rdb-sdboot | \
-	fsl,ls1046a-frwy | \
-	fsl,ls1046a-frwy-sdboot | \
-	fsl,ls1046a-rdb | \
-	fsl,ls1046a-rdb-sdboot | \
-	fsl,ls1088a-rdb | \
-	fsl,ls1088a-rdb-sdboot | \
-	fsl,ls2088a-rdb | \
-	fsl,lx2160a-rdb | \
+	fsl,ls1012a-frdm|\
+	fsl,ls1012a-frwy-sdboot|\
+	fsl,ls1012a-rdb|\
+	fsl,ls1021a-iot-sdboot|\
+	fsl,ls1021a-twr|\
+	fsl,ls1021a-twr-sdboot|\
+	fsl,ls1028a-rdb|\
+	fsl,ls1028a-rdb-sdboot|\
+	watchguard,firebox-t40|\
+	fsl,ls1043a-rdb|\
+	fsl,ls1043a-rdb-sdboot|\
+	fsl,ls1046a-frwy|\
+	fsl,ls1046a-frwy-sdboot|\
+	fsl,ls1046a-rdb|\
+	fsl,ls1046a-rdb-sdboot|\
+	fsl,ls1088a-rdb|\
+	fsl,ls1088a-rdb-sdboot|\
+	fsl,ls2088a-rdb|\
+	fsl,lx2160a-rdb|\
 	fsl,lx2160a-rdb-sdboot)
 		return 0
 		;;
@@ -216,27 +216,27 @@ platform_do_upgrade() {
 	watchguard,firebox-t40)
 		platform_do_upgrade_t40 "${1}"
 		;;
-	fsl,ls1012a-frdm | \
-	fsl,ls1012a-rdb | \
-	fsl,ls1021a-twr | \
-	fsl,ls1028a-rdb | \
-	fsl,ls1043a-rdb | \
-	fsl,ls1046a-frwy | \
-	fsl,ls1046a-rdb | \
-	fsl,ls1088a-rdb | \
-	fsl,ls2088a-rdb | \
+	fsl,ls1012a-frdm|\
+	fsl,ls1012a-rdb|\
+	fsl,ls1021a-twr|\
+	fsl,ls1028a-rdb|\
+	fsl,ls1043a-rdb|\
+	fsl,ls1046a-frwy|\
+	fsl,ls1046a-rdb|\
+	fsl,ls1088a-rdb|\
+	fsl,ls2088a-rdb|\
 	fsl,lx2160a-rdb)
 		PART_NAME=firmware
 		default_do_upgrade "$1"
 		;;
-	fsl,ls1012a-frwy-sdboot | \
-	fsl,ls1021a-iot-sdboot | \
-	fsl,ls1021a-twr-sdboot | \
-	fsl,ls1028a-rdb-sdboot | \
-	fsl,ls1043a-rdb-sdboot | \
-	fsl,ls1046a-frwy-sdboot | \
-	fsl,ls1046a-rdb-sdboot | \
-	fsl,ls1088a-rdb-sdboot | \
+	fsl,ls1012a-frwy-sdboot|\
+	fsl,ls1021a-iot-sdboot|\
+	fsl,ls1021a-twr-sdboot|\
+	fsl,ls1028a-rdb-sdboot|\
+	fsl,ls1043a-rdb-sdboot|\
+	fsl,ls1046a-frwy-sdboot|\
+	fsl,ls1046a-rdb-sdboot|\
+	fsl,ls1088a-rdb-sdboot|\
 	fsl,lx2160a-rdb-sdboot)
 		platform_do_upgrade_sdboot "$1"
 		return 0
