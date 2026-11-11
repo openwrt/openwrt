@@ -1208,6 +1208,17 @@ define U-Boot/mt7987_rfb-sd
   DEPENDS:=+trusted-firmware-a-mt7987-sdmmc-comb
 endef
 
+define U-Boot/mt7987_tenda_be12-pro
+  NAME:=Tenda BE12 Pro (raw NAND)
+  BUILD_SUBTARGET:=filogic
+  BUILD_DEVICES:=tenda_be12-pro-ubootmod
+  UBOOT_CONFIG:=mt7987a_tenda_be12-pro
+  UBOOT_IMAGE:=u-boot.fip
+  BL2_BOOTDEV:=spim-nand-tenda-be12-pro
+  BL2_SOC:=mt7987
+  DEPENDS:=+trusted-firmware-a-mt7987-spim-nand-tenda-be12-pro
+endef
+
 define U-Boot/mt7987_routerich_be7200
   NAME:=Routerich BE7200
   BUILD_SUBTARGET:=filogic
@@ -1611,6 +1622,7 @@ UBOOT_TARGETS := \
 	mt7987_rfb-sd \
 	mt7987_rfb-spim-nand \
 	mt7987_routerich_be7200 \
+	mt7987_tenda_be12-pro \
 	mt7988_arcadyan_mozart \
 	mt7988_asus_zenwifi-bt8 \
 	mt7988_bananapi_bpi-r4-emmc \

@@ -241,7 +241,8 @@ mediatek_setup_interfaces()
 	smartrg,sdg-9000)
 		ucidef_set_interfaces_lan_wan "aux lan1 lan2 lan3 lan4 lan5 lan6 lan7 lan8 lan9" wan
 		;;
-	tenda,be12-pro)
+	tenda,be12-pro|\
+	tenda,be12-pro-ubootmod)
 		ucidef_set_interfaces_lan_wan "lan3 lan4 lan5 eth1" eth2
 		;;
 	tplink,fr365-v1)
