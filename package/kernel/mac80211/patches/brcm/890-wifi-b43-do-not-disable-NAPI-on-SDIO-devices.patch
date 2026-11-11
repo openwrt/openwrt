@@ -1,0 +1,31 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Erik Conijn <egc112@msn.com>
+Date: Mon, 26 Oct 2026 08:29:02 +0100
+Subject: [PATCH] wifi: b43: do not disable NAPI on SDIO devices
+
+NAPI is only enabled on non-SDIO devices, but b43_wireless_core_stop()
+disables it unconditionally. On an SDIO device the instance was never
+enabled and napi_disable() waits forever for it to become idle, so
+stopping the device hangs. Disable it under the same condition as it is
+enabled.
+
+Pointed out by the openwrt-ai review of openwrt/openwrt#25922.
+
+Assisted-by: Claude:claude-opus-5-5
+Signed-off-by: Erik Conijn <egc112@msn.com>
+---
+ drivers/net/wireless/broadcom/b43/main.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+--- a/drivers/net/wireless/broadcom/b43/main.c
++++ b/drivers/net/wireless/broadcom/b43/main.c
+@@ -5317,7 +5317,8 @@ redo:
+ 		b43_sdio_free_irq(dev);
+ 	else
+ 		free_irq(dev->dev->irq, dev);
+-	napi_disable(&orig_dev->napi);
++	if (!b43_bus_host_is_sdio(orig_dev->dev))
++		napi_disable(&orig_dev->napi);
+ 	mutex_lock(&wl->mutex);
+ 	dev = wl->current_dev;
+ 	if (!dev)
