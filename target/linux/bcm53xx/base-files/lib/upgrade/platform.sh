@@ -74,41 +74,41 @@ platform_identify() {
 
 	magic=$(get_magic_long "$1")
 	case "$magic" in
-		"48445230")
-			BCM53XX_FW_FORMAT="trx"
-			return
-			;;
-		"2a23245e")
-			local header_len=$((0x$(get_magic_long_at "$1" 4)))
-			local board_id_len=$(($header_len - 40))
+	"48445230")
+		BCM53XX_FW_FORMAT="trx"
+		return
+		;;
+	"2a23245e")
+		local header_len=$((0x$(get_magic_long_at "$1" 4)))
+		local board_id_len=$(($header_len - 40))
 
-			BCM53XX_FW_FORMAT="chk"
-			BCM53XX_FW_BOARD_ID=$(dd if="$1" skip=40 bs=1 count=$board_id_len 2>/dev/null | hexdump -v -e '1/1 "%c"')
-			BCM53XX_FW_INT_IMG_FORMAT="trx"
-			BCM53XX_FW_INT_IMG_TRX_OFFSET="$header_len"
-			BCM53XX_FW_INT_IMG_EXTRACT_CMD="dd skip=$header_len iflag=skip_bytes"
-			return
-			;;
-		"4c584c23")
-			local hdr_len=$(get_le_long_at "$1" 8)
-			local flags=$(get_le_long_at "$1" 12)
+		BCM53XX_FW_FORMAT="chk"
+		BCM53XX_FW_BOARD_ID=$(dd if="$1" skip=40 bs=1 count=$board_id_len 2>/dev/null | hexdump -v -e '1/1 "%c"')
+		BCM53XX_FW_INT_IMG_FORMAT="trx"
+		BCM53XX_FW_INT_IMG_TRX_OFFSET="$header_len"
+		BCM53XX_FW_INT_IMG_EXTRACT_CMD="dd skip=$header_len iflag=skip_bytes"
+		return
+		;;
+	"4c584c23")
+		local hdr_len=$(get_le_long_at "$1" 8)
+		local flags=$(get_le_long_at "$1" 12)
 
-			[ $((flags & LXL_FLAGS_VENDOR_LUXUL)) -gt 0 ] && notify_firmware_no_backup
+		[ $((flags & LXL_FLAGS_VENDOR_LUXUL)) -gt 0 ] && notify_firmware_no_backup
 
-			BCM53XX_FW_FORMAT="lxl"
-			BCM53XX_FW_BOARD_ID=$(dd if="$1" skip=16 bs=1 count=16 2>/dev/null | hexdump -v -e '1/1 "%c"')
-			BCM53XX_FW_INT_IMG_FORMAT="trx"
-			BCM53XX_FW_INT_IMG_TRX_OFFSET="$hdr_len"
-			BCM53XX_FW_INT_IMG_EXTRACT_CMD="dd skip=$hdr_len iflag=skip_bytes"
+		BCM53XX_FW_FORMAT="lxl"
+		BCM53XX_FW_BOARD_ID=$(dd if="$1" skip=16 bs=1 count=16 2>/dev/null | hexdump -v -e '1/1 "%c"')
+		BCM53XX_FW_INT_IMG_FORMAT="trx"
+		BCM53XX_FW_INT_IMG_TRX_OFFSET="$hdr_len"
+		BCM53XX_FW_INT_IMG_EXTRACT_CMD="dd skip=$hdr_len iflag=skip_bytes"
 
-			return
-			;;
-		"5ea3a417")
-			BCM53XX_FW_FORMAT="seamaseal"
-			BCM53XX_FW_BOARD_ID=$(oseama info "$1" | grep "Meta entry:.*signature=" | sed "s/.*=//")
-			BCM53XX_FW_INT_IMG_EXTRACT_CMD="oseama extract - -e 0"
-			return
-			;;
+		return
+		;;
+	"5ea3a417")
+		BCM53XX_FW_FORMAT="seamaseal"
+		BCM53XX_FW_BOARD_ID=$(oseama info "$1" | grep "Meta entry:.*signature=" | sed "s/.*=//")
+		BCM53XX_FW_INT_IMG_EXTRACT_CMD="oseama extract - -e 0"
+		return
+		;;
 	esac
 
 	magic=$(get_magic_long_at "$1" 14)
@@ -161,42 +161,42 @@ platform_other_check_image() {
 	}
 
 	case "$BCM53XX_FW_FORMAT" in
-		"seamaseal")
-			$(oseama info "$1" -e 0 | grep -q "Meta entry:.*type=firmware") || {
-				echo "Seama seal doesn't contain firmware entity"
-				error=1
-			}
-			;;
+	"seamaseal")
+		$(oseama info "$1" -e 0 | grep -q "Meta entry:.*type=firmware") || {
+			echo "Seama seal doesn't contain firmware entity"
+			error=1
+		}
+		;;
+	"trx")
+		if ! otrx check "$1"; then
+			echo "Failed to find a valid TRX in firmware"
+			notify_firmware_test_result "trx_valid" 0
+			error=1
+		else
+			notify_firmware_test_result "trx_valid" 1
+		fi
+
+		[ "$expected_image" == "safeloader" ] && {
+			echo "This device expects SafeLoader format and may not work with TRX"
+			error=1
+		}
+		;;
+	*)
+		case "$BCM53XX_FW_INT_IMG_FORMAT" in
 		"trx")
-			if ! otrx check "$1"; then
-				echo "Failed to find a valid TRX in firmware"
+			# Make sure that both ways of extracting TRX work.
+			# platform_do_upgrade() may use any of them.
+			if ! otrx check "$1" -o "$BCM53XX_FW_INT_IMG_TRX_OFFSET" || \
+			   ! $BCM53XX_FW_INT_IMG_EXTRACT_CMD < $1 | otrx check -; then
+				echo "Invalid (corrupted?) TRX firmware"
 				notify_firmware_test_result "trx_valid" 0
 				error=1
 			else
 				notify_firmware_test_result "trx_valid" 1
 			fi
-
-			[ "$expected_image" == "safeloader" ] && {
-				echo "This device expects SafeLoader format and may not work with TRX"
-				error=1
-			}
 			;;
-		*)
-			case "$BCM53XX_FW_INT_IMG_FORMAT" in
-				"trx")
-					# Make sure that both ways of extracting TRX work.
-					# platform_do_upgrade() may use any of them.
-					if ! otrx check "$1" -o "$BCM53XX_FW_INT_IMG_TRX_OFFSET" || \
-					   ! $BCM53XX_FW_INT_IMG_EXTRACT_CMD < $1 | otrx check -; then
-						echo "Invalid (corrupted?) TRX firmware"
-						notify_firmware_test_result "trx_valid" 0
-						error=1
-					else
-						notify_firmware_test_result "trx_valid" 1
-					fi
-					;;
-			esac
-			;;
+		esac
+		;;
 	esac
 
 	return $error
@@ -207,10 +207,10 @@ platform_check_image() {
 
 	board="$(board_name)"
 	case "$board" in
-	meraki,mr26 | \
-	meraki,mr32 | \
-	meraki,mx64 | \
-	meraki,mx64-a0 | \
+	meraki,mr26|\
+	meraki,mr32|\
+	meraki,mx64|\
+	meraki,mx64-a0|\
 	meraki,mx65)
 		# NAND sysupgrade
 		return 0
@@ -361,22 +361,22 @@ platform_other_do_upgrade() {
 	[ "$(platform_flash_type)" == "nand" ] && {
 		# Try NAND-aware upgrade
 		case "$BCM53XX_FW_FORMAT" in
-			"seamaseal")
-				platform_do_upgrade_nand_seamaseal "$1"
-				;;
+		"seamaseal")
+			platform_do_upgrade_nand_seamaseal "$1"
+			;;
+		"trx")
+			platform_do_upgrade_nand_trx "$1"
+			;;
+		*)
+			case "$BCM53XX_FW_INT_IMG_FORMAT" in
 			"trx")
-				platform_do_upgrade_nand_trx "$1"
+				platform_do_upgrade_nand_trx "$1" "$BCM53XX_FW_INT_IMG_TRX_OFFSET"
 				;;
 			*)
-				case "$BCM53XX_FW_INT_IMG_FORMAT" in
-					"trx")
-						platform_do_upgrade_nand_trx "$1" "$BCM53XX_FW_INT_IMG_TRX_OFFSET"
-						;;
-					*)
-						echo "NAND aware sysupgrade is unsupported for $BCM53XX_FW_FORMAT format"
-						;;
-				esac
+				echo "NAND aware sysupgrade is unsupported for $BCM53XX_FW_FORMAT format"
 				;;
+			esac
+			;;
 		esac
 
 		# Above calls exit on success.
@@ -385,37 +385,37 @@ platform_other_do_upgrade() {
 	}
 
 	case "$BCM53XX_FW_FORMAT" in
-		"safeloader")
-			PART_NAME=os-image
-			img=$(platform_img_from_safeloader "$1")
-			default_do_upgrade "$img"
-			;;
-		"seamaseal")
+	"safeloader")
+		PART_NAME=os-image
+		img=$(platform_img_from_safeloader "$1")
+		default_do_upgrade "$img"
+		;;
+	"seamaseal")
+		default_do_upgrade "$1" "$BCM53XX_FW_INT_IMG_EXTRACT_CMD"
+		;;
+	"trx")
+		default_do_upgrade "$1"
+		;;
+	*)
+		case "$BCM53XX_FW_INT_IMG_FORMAT" in
+		"trx")
 			default_do_upgrade "$1" "$BCM53XX_FW_INT_IMG_EXTRACT_CMD"
 			;;
-		"trx")
-			default_do_upgrade "$1"
-			;;
-		*)
-			case "$BCM53XX_FW_INT_IMG_FORMAT" in
-				"trx")
-					default_do_upgrade "$1" "$BCM53XX_FW_INT_IMG_EXTRACT_CMD"
-					;;
-			esac
-			;;
+		esac
+		;;
 	esac
 }
 
 platform_do_upgrade() {
 	case "$(board_name)" in
-	meraki,mr26 | \
+	meraki,mr26|\
 	meraki,mr32)
 		REQUIRE_IMAGE_METADATA=1
 		CI_KERNPART="part.safe"
 		nand_do_upgrade "$1"
 		;;
-	meraki,mx64 | \
-	meraki,mx64-a0 | \
+	meraki,mx64|\
+	meraki,mx64-a0|\
 	meraki,mx65)
 		REQUIRE_IMAGE_METADATA=1
 		nand_do_upgrade "$1"
