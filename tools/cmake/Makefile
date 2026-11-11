@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 PKG_NAME:=cmake
 PKG_VERSION:=4.4.3
 PKG_VERSION_MAJOR:=$(word 1,$(subst ., ,$(PKG_VERSION))).$(word 2,$(subst ., ,$(PKG_VERSION)))
-PKG_RELEASE:=2
+PKG_RELEASE:=3
 PKG_CPE_ID:=cpe:/a:kitware:cmake
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
@@ -40,6 +40,10 @@ HOST_CONFIGURE_ARGS := \
 	--generator=Ninja
 
 CMAKE_HOST_OPTIONS = \
+	-DLIBLZMA_INCLUDE_DIR="$(STAGING_DIR_HOST)/include" \
+	-DLIBLZMA_LIBRARY="$(STAGING_DIR_HOST)/lib/liblzma.a" \
+	-DZLIB_INCLUDE_DIR="$(STAGING_DIR_HOST)/include" \
+	-DZLIB_LIBRARY="$(STAGING_DIR_HOST)/lib/libz.a" \
 	-DZSTD_INCLUDE_DIR="$(STAGING_DIR_HOST)/include" \
 	-DZSTD_LIBRARY="$(STAGING_DIR_HOST)/lib/libzstd.a" \
 	-DBUILD_TESTING=OFF
