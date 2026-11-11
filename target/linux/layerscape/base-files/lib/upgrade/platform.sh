@@ -26,8 +26,7 @@ platform_do_upgrade_sdboot() {
 	echo "Erasing rootfs..."
 	dd if=/dev/zero of=/dev/mmcblk0p2 bs=1M > /dev/null 2>&1
 	echo "Writing rootfs..."
-	tar xf $tar_file ${board_dir}/root -O  | dd of=/dev/mmcblk0p2 bs=512k > /dev/null 2>&1
-
+	tar xf $tar_file ${board_dir}/root -O | dd of=/dev/mmcblk0p2 bs=512k > /dev/null 2>&1
 }
 
 platform_do_upgrade_traverse_slotubi() {
@@ -140,6 +139,7 @@ platform_copy_config_sdboot() {
 		umount /mnt
 	fi
 }
+
 platform_copy_config() {
 	local board=$(board_name)
 
@@ -165,6 +165,7 @@ platform_copy_config() {
 		;;
 	esac
 }
+
 platform_check_image() {
 	local board=$(board_name)
 
@@ -202,6 +203,7 @@ platform_check_image() {
 
 	return 1
 }
+
 platform_do_upgrade() {
 	local board=$(board_name)
 
