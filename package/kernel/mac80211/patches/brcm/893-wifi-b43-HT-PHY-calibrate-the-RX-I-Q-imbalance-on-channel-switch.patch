@@ -1,0 +1,364 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Erik Conijn <egc112@msn.com>
+Date: Mon, 26 Oct 2026 07:25:29 +0100
+Subject: [PATCH] wifi: b43: HT-PHY: calibrate the RX I/Q imbalance on
+ channel switch
+
+b43 never sets the HT-PHY RX I/Q compensation, so it stays at zero and
+every receive chain keeps its full amplitude and phase imbalance. On a
+Netgear R6400 v1 (BCM4331) that costs MCS 15 frames: on channel 6 up to
+a third of the MPDUs sent at a fixed MCS 15 were not received.
+
+Estimate the imbalance of each of the three chains with the I/Q
+estimator that N-PHY uses, compute the coefficients as
+b43_nphy_calc_rx_iq_comp() does for rev 3 and later, and write them
+after every channel switch, as the imbalance differs per channel. Only
+the receiver is used. The estimates use what the receiver hears; frames
+on the channel bias an estimate while noise does not, so of 32 estimates
+only the 8 with the lowest power are averaged, per chain. On the R6400
+v1 that brings the residual image rejection to 45-57 dB on all chains,
+also when the calibration runs at interface start. If an estimate fails
+or gives an implausible result, the compensation stays at zero, as
+before.
+
+Only the operating channel is calibrated, once per PHY init; a later
+switch back to it writes the stored result again. While no interface is
+up, on the channels a scan visits, and on the default channel mac80211
+uses while an interface starts or stops (IEEE80211_CONF_OFFCHANNEL), the
+compensation stays at zero, as before: a scan only needs the low rates
+and is not slowed down. The calibration is also skipped while the PHY is
+not initialized yet: b43_phy_init() switches the channel once before the
+PHY init, when the estimator does not yet see the I/Q layout the
+initialized PHY uses. It runs on 2.4 GHz only, where it was measured,
+and takes about 25 ms. It runs after the TX I/Q and LO calibration, in
+the order of brcmsmac's wlc_phy_cal_perical_nphy_run() (TX, then RX).
+
+Netgear R6400 v1, channel 6, MPDU loss at a fixed MCS 15 from a client,
+alternated 20 s blocks: 32.8 % without, 2.1 % with the calibration;
+TCP from the client 79.5 -> 90.8 Mbit/s in an earlier run with the same
+compensation computed outside the driver. Channel 11: 0.8 % vs 0.4 %.
+An R6400 v2 needs it less (3.3 % vs 1.0 %); TCP is unchanged there.
+Under up to 90 Mbit/s of traffic from another station during the
+calibration, the residual image rejection stays at 44-76 dB.
+
+Assisted-by: Claude:claude-opus-5-5
+Signed-off-by: Erik Conijn <egc112@msn.com>
+---
+ drivers/net/wireless/broadcom/b43/phy_ht.c | 245 +++++++++++++++++++++
+ drivers/net/wireless/broadcom/b43/phy_ht.h |  16 ++
+ 2 files changed, 261 insertions(+)
+
+--- a/drivers/net/wireless/broadcom/b43/phy_ht.c
++++ b/drivers/net/wireless/broadcom/b43/phy_ht.c
+@@ -11,6 +11,7 @@
+ 
+ #include <linux/cordic.h>
+ #include <linux/slab.h>
++#include <linux/math64.h>
+ 
+ #include "b43.h"
+ #include "phy_ht.h"
+@@ -1269,6 +1270,245 @@ static void b43_phy_ht_channel_setup(str
+ 	b43_phy_write(dev, 0x017e, 0x3830);
+ }
+ 
++/**************************************************
++ * RX I/Q imbalance calibration.
++ **************************************************/
++
++struct b43_phy_ht_iq_est {
++	s32 iq_prod;
++	u32 i_pwr;
++	u32 q_pwr;
++};
++
++/*
++ * Estimates per calibration, 0x4000 samples each. Frames on the channel
++ * bias an estimate, noise does not, so only the quietest are used.
++ */
++#define B43_PHY_HT_RXIQ_EST_COUNT	32
++#define B43_PHY_HT_RXIQ_EST_KEEP	8
++
++/* As b43_nphy_rx_iq_est(), for the three cores */
++static int b43_phy_ht_rx_iq_est(struct b43_wldev *dev,
++				struct b43_phy_ht_iq_est *est,
++				u16 samps, u8 time)
++{
++	static const u16 acc[] = {
++		B43_PHY_HT_IQEST_ACC_C1,
++		B43_PHY_HT_IQEST_ACC_C2,
++		B43_PHY_HT_IQEST_ACC_C3,
++	};
++	int i, core;
++
++	b43_phy_write(dev, B43_PHY_HT_IQEST_SAMCNT, samps);
++	b43_phy_maskset(dev, B43_PHY_HT_IQEST_WT, ~B43_PHY_HT_IQEST_WT_VAL,
++			time);
++	b43_phy_mask(dev, B43_PHY_HT_IQEST_CMD, ~B43_PHY_HT_IQEST_CMD_MODE);
++	b43_phy_set(dev, B43_PHY_HT_IQEST_CMD, B43_PHY_HT_IQEST_CMD_START);
++
++	for (i = 1000; i; i--) {
++		if (!(b43_phy_read(dev, B43_PHY_HT_IQEST_CMD) &
++		      B43_PHY_HT_IQEST_CMD_START))
++			break;
++		udelay(10);
++	}
++	if (!i)
++		return -ETIMEDOUT;
++
++	for (core = 0; core < 3; core++) {
++		u16 r = acc[core];
++
++		est[core].iq_prod = (b43_phy_read(dev, r + 1) << 16) |
++				    b43_phy_read(dev, r);
++		est[core].i_pwr = (b43_phy_read(dev, r + 3) << 16) |
++				  b43_phy_read(dev, r + 2);
++		est[core].q_pwr = (b43_phy_read(dev, r + 5) << 16) |
++				  b43_phy_read(dev, r + 4);
++	}
++
++	return 0;
++}
++
++/*
++ * The coefficients of b43_nphy_calc_rx_iq_comp() for PHY rev >= 3 (a to
++ * COMPA, b to COMPB), in 64-bit arithmetic so that a small I/Q product
++ * cannot overflow the shifts.
++ */
++static int b43_phy_ht_calc_rx_iq_comp(s32 iq, u32 ii, u32 qq,
++				      u16 *comp_a, u16 *comp_b)
++{
++	int iq_nbits, qq_nbits, arsh, brsh;
++	s64 num, a, t;
++	u64 den;
++	int b;
++
++	if (ii + qq < 2)
++		return -EINVAL;
++
++	iq_nbits = fls(abs(iq));
++	qq_nbits = fls(qq);
++	if (iq_nbits > 30)
++		return -EINVAL;
++
++	arsh = iq_nbits - 20;
++	num = (s64)iq * (1LL << (30 - iq_nbits));
++	if (arsh >= 0) {
++		num = -(num + (ii >> (1 + arsh)));
++		den = ii >> arsh;
++	} else {
++		num = -(num + ((u64)ii << (-1 - arsh)));
++		den = (u64)ii << -arsh;
++	}
++	if (!den)
++		return -EINVAL;
++	a = div64_s64(num, den);
++
++	brsh = qq_nbits - 11;
++	den = brsh >= 0 ? ii >> brsh : (u64)ii << -brsh;
++	if (!den)
++		return -EINVAL;
++	t = div64_u64((u64)qq << (31 - qq_nbits), den) - a * a;
++	if (t < 0)
++		return -EINVAL;
++	b = int_sqrt(t) - (1 << 10);
++
++	/* More than ~14 degrees or ~25 % off: not a plausible estimate */
++	if (abs(a) > 256 || abs(b) > 256)
++		return -ERANGE;
++
++	*comp_a = a & 0x3ff;
++	*comp_b = b & 0x3ff;
++	return 0;
++}
++
++/* Write the stored RX I/Q compensation, or zero it */
++static void b43_phy_ht_rx_iq_comp_set(struct b43_wldev *dev, bool zero)
++{
++	struct b43_phy_ht *phy_ht = dev->phy.ht;
++	int core;
++
++	for (core = 0; core < 3; core++) {
++		b43_phy_write(dev, B43_PHY_HT_RXIQ_COMPA(core),
++			      zero ? 0 : phy_ht->rxiq_comp[core][0]);
++		b43_phy_write(dev, B43_PHY_HT_RXIQ_COMPB(core),
++			      zero ? 0 : phy_ht->rxiq_comp[core][1]);
++	}
++}
++
++/*
++ * Estimate the I/Q imbalance of each receive chain from the noise it hears
++ * and compensate it. b43 never did this on HT-PHY: the compensation stayed
++ * at zero, which costs MCS 15 frames on boards with a large imbalance (up
++ * to a third of them on a Netgear R6400 v1 on channel 6). Frames received
++ * during an estimate bias it, so per chain only the estimates with the
++ * lowest power are averaged. The imbalance differs per channel, so run it
++ * after every channel switch. Receive only: the callers of the channel
++ * switch suspend the MAC, so the device's own transmissions, which bias the
++ * estimates much more than other stations' frames, stay out. On an error
++ * the compensation stays at zero, as before.
++ *
++ * Only the operating channel is calibrated: while no interface is up, on a
++ * scan channel, and on the default channel used while no interface has a
++ * channel context (when an interface starts or stops, where mac80211 sets
++ * IEEE80211_CONF_OFFCHANNEL), the compensation stays at zero. Until the
++ * next PHY init, a switch back to the channel of the stored result writes
++ * it back instead of calibrating again. Only 2.4 GHz is calibrated, where
++ * it was measured.
++ */
++static void b43_phy_ht_rx_iq_cal(struct b43_wldev *dev,
++				 struct ieee80211_channel *channel)
++{
++	struct b43_phy_ht *phy_ht = dev->phy.ht;
++	struct b43_phy_ht_iq_est (*est)[3];
++	u16 freq = channel->center_freq;
++	u16 a[3], b[3];
++	int i, k, core, err;
++
++	/*
++	 * b43_phy_init() switches the radio on, and with it the channel,
++	 * before the PHY init; estimates taken then do not match the
++	 * initialized PHY. A channel switch after the init calibrates.
++	 */
++	if (dev->phy.do_full_init)
++		return;
++
++	if (freq == phy_ht->rxiq_comp_freq) {
++		b43_phy_ht_rx_iq_comp_set(dev, false);
++		return;
++	}
++
++	if (channel->band != NL80211_BAND_2GHZ || !dev->wl->operating ||
++	    (dev->wl->hw->conf.flags & IEEE80211_CONF_OFFCHANNEL)) {
++		b43_phy_ht_rx_iq_comp_set(dev, true);
++		return;
++	}
++
++	b43_phy_ht_rx_iq_comp_set(dev, true);
++
++	est = kcalloc(B43_PHY_HT_RXIQ_EST_COUNT, sizeof(*est), GFP_KERNEL);
++	if (!est) {
++		err = -ENOMEM;
++		goto fail;
++	}
++
++	/* Let the radio settle on the new channel */
++	usleep_range(10000, 12000);
++
++	for (i = 0; i < B43_PHY_HT_RXIQ_EST_COUNT; i++) {
++		err = b43_phy_ht_rx_iq_est(dev, est[i], 0x4000, 32);
++		if (err)
++			goto out;
++	}
++
++	for (core = 0; core < 3; core++) {
++		s64 iq = 0;
++		u64 ii = 0, qq = 0;
++		u32 used = 0;
++
++		for (k = 0; k < B43_PHY_HT_RXIQ_EST_KEEP; k++) {
++			u64 pwr, min = U64_MAX;
++			int best = 0;
++
++			for (i = 0; i < B43_PHY_HT_RXIQ_EST_COUNT; i++) {
++				if (used & BIT(i))
++					continue;
++				pwr = (u64)est[i][core].i_pwr +
++				      est[i][core].q_pwr;
++				if (pwr < min) {
++					min = pwr;
++					best = i;
++				}
++			}
++			used |= BIT(best);
++			iq += est[best][core].iq_prod;
++			ii += est[best][core].i_pwr;
++			qq += est[best][core].q_pwr;
++		}
++
++		iq = div_s64(iq, B43_PHY_HT_RXIQ_EST_KEEP);
++		ii = div_u64(ii, B43_PHY_HT_RXIQ_EST_KEEP);
++		qq = div_u64(qq, B43_PHY_HT_RXIQ_EST_KEEP);
++		err = b43_phy_ht_calc_rx_iq_comp(iq, ii, qq, &a[core],
++						 &b[core]);
++		if (err)
++			goto out;
++	}
++
++	for (core = 0; core < 3; core++) {
++		phy_ht->rxiq_comp[core][0] = a[core];
++		phy_ht->rxiq_comp[core][1] = b[core];
++	}
++	phy_ht->rxiq_comp_freq = freq;
++	b43_phy_ht_rx_iq_comp_set(dev, false);
++	b43dbg(dev->wl, "HT-PHY: RX I/Q comp %03x/%03x %03x/%03x %03x/%03x\n",
++	       a[0], b[0], a[1], b[1], a[2], b[2]);
++out:
++	kfree(est);
++	if (!err)
++		return;
++fail:
++	b43dbg(dev->wl, "HT-PHY: RX I/Q calibration failed (%d)\n", err);
++}
++
+ static int b43_phy_ht_set_channel(struct b43_wldev *dev,
+ 				  struct ieee80211_channel *channel,
+ 				  enum nl80211_channel_type channel_type)
+@@ -1309,6 +1549,8 @@ static int b43_phy_ht_set_channel(struct
+ 		phy_ht->txcal_freq = b43_phy_ht_cal_tx_iq_lo(dev) ?
+ 				     channel->center_freq : 0;
+ 
++	b43_phy_ht_rx_iq_cal(dev, channel);
++
+ 	return 0;
+ }
+ 
+@@ -1430,6 +1672,9 @@ static int b43_phy_ht_op_init(struct b43
+ 	b43_phy_ht_tables_init(dev);
+ 	phy_ht->txcal_freq = 0;
+ 
++	/* A new PHY init needs a new RX I/Q calibration */
++	phy_ht->rxiq_comp_freq = 0;
++
+ 	b43_phy_mask(dev, 0x0be, ~0x2);
+ 	b43_phy_set(dev, 0x23f, 0x7ff);
+ 	b43_phy_set(dev, 0x240, 0x7ff);
+--- a/drivers/net/wireless/broadcom/b43/phy_ht.h
++++ b/drivers/net/wireless/broadcom/b43/phy_ht.h
+@@ -13,6 +13,8 @@
+ #define B43_PHY_HT_TABLE_ADDR			0x072 /* Table address */
+ #define B43_PHY_HT_TABLE_DATALO			0x073 /* Table data low */
+ #define B43_PHY_HT_TABLE_DATAHI			0x074 /* Table data high */
++#define B43_PHY_HT_RXIQ_COMPA(core)		(0x09A + 2 * (core)) /* RX I/Q comp A */
++#define B43_PHY_HT_RXIQ_COMPB(core)		(0x09B + 2 * (core)) /* RX I/Q comp B */
+ #define B43_PHY_HT_CLASS_CTL			0x0B0 /* Classifier control */
+ #define  B43_PHY_HT_CLASS_CTL_CCK_EN		0x0001 /* CCK enable */
+ #define  B43_PHY_HT_CLASS_CTL_OFDM_EN		0x0002 /* OFDM enable */
+@@ -33,6 +35,16 @@
+ #define B43_PHY_HT_TSSIMODE			0x122	/* TSSI mode */
+ #define  B43_PHY_HT_TSSIMODE_EN			0x0001	/* TSSI enable */
+ #define  B43_PHY_HT_TSSIMODE_PDEN		0x0002	/* Power det enable */
++#define B43_PHY_HT_IQEST_CMD			0x129	/* I/Q estimate command */
++#define  B43_PHY_HT_IQEST_CMD_START		0x0001	/* Start */
++#define  B43_PHY_HT_IQEST_CMD_MODE		0x0002	/* Mode */
++#define B43_PHY_HT_IQEST_WT			0x12A	/* I/Q estimate wait time */
++#define  B43_PHY_HT_IQEST_WT_VAL		0x00FF	/* Wait time */
++#define B43_PHY_HT_IQEST_SAMCNT			0x12B	/* I/Q estimate sample count */
++/* Per core, six registers: I/Q product, I power, Q power, each lo then hi */
++#define B43_PHY_HT_IQEST_ACC_C1			0x12C
++#define B43_PHY_HT_IQEST_ACC_C2			0x134
++#define B43_PHY_HT_IQEST_ACC_C3			0x13A
+ #define B43_PHY_HT_BW1				0x1CE
+ #define B43_PHY_HT_BW2				0x1CF
+ #define B43_PHY_HT_BW3				0x1D0
+@@ -145,6 +157,10 @@ struct b43_phy_ht {
+ 
+ 	/* Channel the TX I/Q and LO coefficients in use were found on, or 0 */
+ 	u16 txcal_freq;
++
++	/* RX I/Q compensation (a, b per core) of the operating channel */
++	u16 rxiq_comp_freq;
++	u16 rxiq_comp[3][2];
+ };
+ 
+ 
