@@ -312,7 +312,8 @@ realtek_setup_poe()
 	local lan_list="$2"
 
 	case $board in
-	d-link,dgs-1210-10mp-f)
+	d-link,dgs-1210-10mp-f|\
+	edgecore,ecs4100-12ph)
 		ucidef_set_poe 130 "$(filter_port_list "$lan_list" "lan9 lan10")"
 		;;
 	d-link,dgs-1210-10p)
@@ -325,9 +326,6 @@ realtek_setup_poe()
 	d-link,dgs-1210-28p-f)
 		ucidef_set_poe 193 "lan8 lan7 lan6 lan5 lan4 lan3 lan2 lan1 lan16 lan15 lan14 lan13 lan12 lan11 lan10 lan9 lan24 lan23
 				lan22 lan21 lan20 lan19 lan18 lan17"
-		;;
-	edgecore,ecs4100-12ph)
-		ucidef_set_poe 130 "$(filter_port_list "$lan_list" "lan9 lan10")"
 		;;
 	datto,l8)
 		ucidef_set_poe 55 "lan5 lan6 lan7 lan8 lan4 lan3 lan2 lan1"
