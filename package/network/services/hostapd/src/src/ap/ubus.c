@@ -859,6 +859,156 @@ static struct hostapd_data *hostapd_ubus_sta_bss(struct hostapd_data *hapd,
 #endif /* CONFIG_IEEE80211BE */
 }
 
+/*
+ * A driver can hold a Disassociation for a station in power save until it
+ * wakes, but send a Deauthentication at once, which the station then misses.
+ */
+#define HOSTAPD_UBUS_DEAUTH_DELAY 2
+
+struct hostapd_ubus_deauth {
+	struct dl_list list;
+	struct hostapd_data *hapd;
+	u8 addr[ETH_ALEN];
+	u16 reason;
+};
+
+static DEFINE_DL_LIST(ubus_deauth_pending);
+
+static bool hostapd_ubus_same_bss(struct hostapd_data *hapd1,
+				  struct hostapd_data *hapd2)
+{
+#ifdef CONFIG_IEEE80211BE
+	if (hostapd_is_ml_partner(hapd1, hapd2))
+		return true;
+#endif /* CONFIG_IEEE80211BE */
+
+	return hapd1 == hapd2;
+}
+
+static struct hostapd_ubus_deauth *
+hostapd_ubus_deauth_get(struct hostapd_data *hapd, const u8 *addr)
+{
+	struct hostapd_ubus_deauth *pending;
+
+	if (!addr)
+		return NULL;
+
+	dl_list_for_each(pending, &ubus_deauth_pending,
+			 struct hostapd_ubus_deauth, list)
+		if (ether_addr_equal(pending->addr, addr) &&
+		    hostapd_ubus_same_bss(pending->hapd, hapd))
+			return pending;
+
+	return NULL;
+}
+
+static void hostapd_ubus_deauth_timeout(void *eloop_data, void *user_ctx);
+
+static void hostapd_ubus_deauth_free(struct hostapd_ubus_deauth *pending)
+{
+	eloop_cancel_timeout(hostapd_ubus_deauth_timeout, pending, NULL);
+	dl_list_del(&pending->list);
+	os_free(pending);
+}
+
+/*
+ * A station that does not acknowledge the Disassociation stays in the
+ * driver with its keys until the Deauthentication, so that frame goes
+ * protected: a station with MFP drops an unprotected one.
+ */
+static void hostapd_ubus_deauth_mark(struct hostapd_data *hapd,
+				     const u8 *addr, bool follows)
+{
+	struct sta_info *sta;
+
+#ifdef CONFIG_IEEE80211BE
+	if (hapd->conf->mld_ap && hapd->mld) {
+		struct hostapd_data *link_bss;
+
+		for_each_mld_link(link_bss, hapd) {
+			sta = ap_get_sta(link_bss, addr);
+			if (sta)
+				sta->deauth_follows_disassoc = follows;
+		}
+		return;
+	}
+#endif /* CONFIG_IEEE80211BE */
+
+	sta = ap_get_sta(hapd, addr);
+	if (sta)
+		sta->deauth_follows_disassoc = follows;
+}
+
+static void hostapd_ubus_deauth_cancel(struct hostapd_data *hapd,
+				       const u8 *addr)
+{
+	struct hostapd_ubus_deauth *pending;
+
+	pending = hostapd_ubus_deauth_get(hapd, addr);
+	if (!pending)
+		return;
+
+	hostapd_ubus_deauth_mark(pending->hapd, pending->addr, false);
+	hostapd_ubus_deauth_free(pending);
+}
+
+static void hostapd_ubus_deauth_flush(struct hostapd_data *hapd)
+{
+	struct hostapd_ubus_deauth *pending, *tmp;
+
+	dl_list_for_each_safe(pending, tmp, &ubus_deauth_pending,
+			      struct hostapd_ubus_deauth, list)
+		if (pending->hapd == hapd)
+			hostapd_ubus_deauth_free(pending);
+}
+
+static void hostapd_ubus_deauth_send(struct hostapd_data *hapd,
+				     const u8 *addr, u16 reason)
+{
+	struct sta_info *sta;
+
+	hapd = hostapd_ubus_sta_bss(hapd, addr, &sta);
+	if (!sta || (sta->flags & WLAN_STA_ASSOC))
+		return;
+
+	hostapd_drv_sta_deauth(hapd, addr, reason);
+	ap_sta_deauthenticate(hapd, sta, reason);
+}
+
+static void hostapd_ubus_deauth_timeout(void *eloop_data, void *user_ctx)
+{
+	struct hostapd_ubus_deauth *pending = eloop_data;
+
+	dl_list_del(&pending->list);
+	hostapd_ubus_deauth_send(pending->hapd, pending->addr, pending->reason);
+	os_free(pending);
+}
+
+static void hostapd_ubus_deauth_queue(struct hostapd_data *hapd,
+				      const u8 *addr, u16 reason)
+{
+	struct hostapd_ubus_deauth *pending;
+
+	hostapd_ubus_deauth_cancel(hapd, addr);
+
+	pending = os_zalloc(sizeof(*pending));
+	if (pending) {
+		pending->hapd = hapd;
+		os_memcpy(pending->addr, addr, ETH_ALEN);
+		pending->reason = reason;
+		if (!eloop_register_timeout(HOSTAPD_UBUS_DEAUTH_DELAY, 0,
+					    hostapd_ubus_deauth_timeout,
+					    pending, NULL)) {
+			dl_list_add_tail(&ubus_deauth_pending, &pending->list);
+			hostapd_ubus_deauth_mark(hapd, addr, true);
+			return;
+		}
+		os_free(pending);
+	}
+
+	hostapd_ubus_deauth_send(hapd, addr, reason);
+}
+
 static const struct blobmsg_policy del_policy[__DEL_CLIENT_MAX] = {
 	[DEL_CLIENT_ADDR] = { "addr", BLOBMSG_TYPE_STRING },
 	[DEL_CLIENT_REASON] = { "reason", BLOBMSG_TYPE_INT32 },
@@ -876,12 +1026,23 @@ hostapd_bss_client_disconnect(struct hostapd_data *hapd, const u8 *addr,
 	struct hostapd_data *sta_bss;
 	struct sta_info *sta;
 
-	if (deauth)
-		hostapd_drv_sta_deauth(hapd, addr, reason);
-	else
-		hostapd_drv_sta_disassoc(hapd, addr, reason);
-
 	sta_bss = hostapd_ubus_sta_bss(hapd, addr, &sta);
+	if (deauth && sta && (sta->flags & WLAN_STA_ASSOC)) {
+		hostapd_drv_sta_disassoc(sta_bss, addr, reason);
+		ap_sta_disassociate(sta_bss, sta, reason);
+		hostapd_ubus_deauth_queue(sta_bss, addr, reason);
+		return;
+	}
+
+	/* The pending Deauthentication keeps its time and reason */
+	if (deauth && hostapd_ubus_deauth_get(sta_bss, addr))
+		return;
+
+	if (deauth)
+		hostapd_drv_sta_deauth(sta_bss, addr, reason);
+	else
+		hostapd_drv_sta_disassoc(sta_bss, addr, reason);
+
 	if (sta) {
 		if (deauth)
 			ap_sta_deauthenticate(sta_bss, sta, reason);
@@ -3133,6 +3294,8 @@ void hostapd_ubus_free_bss(struct hostapd_data *hapd)
 {
 	int i;
 
+	hostapd_ubus_deauth_flush(hapd);
+
 	for (i = 0; i < __HOSTAPD_ROBUST_AV_MAX; i++) {
 		os_free(hapd->ubus.robust_av_disallow[i]);
 		hapd->ubus.robust_av_disallow[i] = NULL;
@@ -3214,7 +3377,9 @@ static u16 hostapd_ubus_ban_status(struct hostapd_data *hapd, const u8 *addr)
 	return ban ? ban->status : 0;
 }
 
-int hostapd_ubus_handle_event(struct hostapd_data *hapd, struct hostapd_ubus_request *req)
+static int hostapd_ubus_request_status(struct hostapd_data *hapd,
+				       struct hostapd_ubus_request *req,
+				       const u8 *link_addr)
 {
 	const u8 bcast[ETH_ALEN] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
 	const char *types[HOSTAPD_UBUS_TYPE_MAX] = {
@@ -3225,13 +3390,9 @@ int hostapd_ubus_handle_event(struct hostapd_data *hapd, struct hostapd_ubus_req
 	const char *type = "mgmt";
 	struct ubus_event_req ureq = {};
 	struct ubus_object *obj = hostapd_ubus_notify_obj(hapd);
-	const u8 *link_addr, *addr;
+	const u8 *addr;
 	u16 ban_status;
 
-	if (req->mgmt_frame)
-		link_addr = req->mgmt_frame->sa;
-	else
-		link_addr = req->addr;
 	addr = req->mld_addr ? req->mld_addr : link_addr;
 
 	ban_status = hostapd_ubus_ban_status(hapd, req->mld_addr);
@@ -3313,6 +3474,23 @@ int hostapd_ubus_handle_event(struct hostapd_data *hapd, struct hostapd_ubus_req
 		return ureq.resp;
 
 	return WLAN_STATUS_SUCCESS;
+}
+
+int hostapd_ubus_handle_event(struct hostapd_data *hapd, struct hostapd_ubus_request *req)
+{
+	const u8 *link_addr = req->mgmt_frame ? req->mgmt_frame->sa : req->addr;
+	int status;
+
+	status = hostapd_ubus_request_status(hapd, req, link_addr);
+
+	/* A pending Deauthentication would end the new association */
+	if (status == WLAN_STATUS_SUCCESS &&
+	    req->type != HOSTAPD_UBUS_PROBE_REQ) {
+		hostapd_ubus_deauth_cancel(hapd, req->mld_addr);
+		hostapd_ubus_deauth_cancel(hapd, link_addr);
+	}
+
+	return status;
 }
 
 void hostapd_ubus_notify(struct hostapd_data *hapd, const char *type, const u8 *addr)
