@@ -3,7 +3,7 @@
 #
 
 if [ -x /usr/sbin/blkid ]; then
-  RAMFS_COPY_BIN="/usr/sbin/blkid"
+	RAMFS_COPY_BIN="/usr/sbin/blkid"
 fi
 
 platform_get_rootfs() {
