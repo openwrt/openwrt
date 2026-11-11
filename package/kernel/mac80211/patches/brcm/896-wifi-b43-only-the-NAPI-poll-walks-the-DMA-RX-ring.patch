@@ -1,0 +1,125 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Erik Conijn <egc112@msn.com>
+Date: Mon, 9 Nov 2026 08:03:30 +0100
+Subject: [PATCH] wifi: b43: only the NAPI poll walks the DMA RX ring
+
+With NAPI, the hardirq handler schedules the poll when an interrupt only
+signals RX and TX status, and wakes the IRQ thread otherwise. The thread
+then also receives from the DMA RX ring when RX_DONE is among its reasons.
+Its mask write in the hardirq handler is posted, so the level interrupt can
+fire again while the thread runs; when that interrupt is a pure RX one, the
+poll is scheduled and walks the same ring as the thread. Both hand the same
+buffers to mac80211 and refill the slots, and one skb is freed twice.
+
+On an R6400 v2 (BCM4331) with two stations under load, that crashed the
+router twice, 22 and 23 minutes after the start: an Oops in __slab_free
+on an skb head, from b43_dma_rx() in the IRQ thread. A test counter for
+two walkers in the ring at once saw the overlap in 10 of 20 driver
+reload cycles.
+
+Let only the poll walk the DMA RX ring. When the thread finds RX_DONE or
+a descriptor underrun, it schedules the poll and returns with the device
+interrupts still masked; the poll enables them again when it is done, as
+it does for the interrupts the hardirq handler gives it. The underrun
+recovery moves into the poll, so it no longer races with it either. The
+thread decides with b43_tx_direct(), the same test the hardirq handler
+uses before it hands an interrupt to the poll, so both agree on which
+devices receive in the poll (flatstik's suggestion). PIO and SDIO keep
+receiving in the thread.
+
+This changes the NAPI receive path added earlier in this series.
+
+Tested on the R6400 v2: no overlap in 30 reload cycles with the counter;
+then 2 x 75 cycles (7 h 50 min) and 200 cycles (10.5 h) of load from two
+stations without a crash, stall or kernel message, at the same throughput.
+
+Assisted-by: Claude:claude-opus-5-5
+Signed-off-by: Erik Conijn <egc112@msn.com>
+---
+ drivers/net/wireless/broadcom/b43/b43.h  |  2 ++
+ drivers/net/wireless/broadcom/b43/main.c | 33 +++++++++++++++++++++---
+ 2 files changed, 32 insertions(+), 3 deletions(-)
+
+--- a/drivers/net/wireless/broadcom/b43/b43.h
++++ b/drivers/net/wireless/broadcom/b43/b43.h
+@@ -954,6 +954,8 @@ struct b43_wldev {
+ 	struct napi_struct napi;
+ 	/* The interrupt the NAPI poll handles signals TX status */
+ 	bool napi_tx_status;
++	/* RX descriptor underrun seen by the IRQ thread, for the NAPI poll */
++	bool napi_rx_overflow;
+ 
+ 	/* encryption/decryption */
+ 	u16 ktp;		/* Key table pointer */
+--- a/drivers/net/wireless/broadcom/b43/main.c
++++ b/drivers/net/wireless/broadcom/b43/main.c
+@@ -2105,6 +2105,7 @@ static void b43_do_interrupt_thread(stru
+ 	u32 reason;
+ 	u32 dma_reason[ARRAY_SIZE(dev->dma_reason)];
+ 	u32 merged_dma_reason = 0;
++	bool rx_napi;
+ 	int i;
+ 
+ 	if (unlikely(b43_status(dev) != B43_STAT_STARTED))
+@@ -2163,18 +2164,29 @@ static void b43_do_interrupt_thread(stru
+ 	if (reason & B43_IRQ_NOISESAMPLE_OK)
+ 		handle_irq_noise(dev);
+ 
+-	/* Check the DMA reason registers for received data. */
++	/*
++	 * Check the DMA reason registers for received data. With NAPI only
++	 * the poll walks the DMA RX ring: the hardirq handler can schedule
++	 * it while this thread runs, so receiving here too would hand the
++	 * same buffers to mac80211 twice.
++	 */
++	rx_napi = b43_tx_direct(dev);
+ 	if (dma_reason[0] & B43_DMAIRQ_RDESC_UFLOW) {
+ 		if (B43_DEBUG)
+ 			b43warn(dev->wl, "RX descriptor underrun\n");
+-		b43_dma_handle_rx_overflow(dev->dma.rx_ring);
++		if (rx_napi)
++			WRITE_ONCE(dev->napi_rx_overflow, true);
++		else
++			b43_dma_handle_rx_overflow(dev->dma.rx_ring);
+ 	}
+ 	if (dma_reason[0] & B43_DMAIRQ_RX_DONE) {
+ 		if (b43_using_pio_transfers(dev))
+ 			b43_pio_rx(dev->pio.rx_queue);
+-		else
++		else if (!rx_napi)
+ 			b43_dma_rx(dev->dma.rx_ring, INT_MAX, NULL);
+ 	}
++	rx_napi = rx_napi && (dma_reason[0] & (B43_DMAIRQ_RX_DONE |
++					       B43_DMAIRQ_RDESC_UFLOW));
+ 	B43_WARN_ON(dma_reason[1] & B43_DMAIRQ_RX_DONE);
+ 	B43_WARN_ON(dma_reason[2] & B43_DMAIRQ_RX_DONE);
+ 	B43_WARN_ON(dma_reason[3] & B43_DMAIRQ_RX_DONE);
+@@ -2184,6 +2196,17 @@ static void b43_do_interrupt_thread(stru
+ 	if (reason & B43_IRQ_TX_OK)
+ 		b43_tx_status_irq(dev);
+ 
++	if (rx_napi) {
++		/*
++		 * The poll receives the frames and enables the device
++		 * interrupts again when it is done.
++		 */
++		local_bh_disable();
++		napi_schedule(&dev->napi);
++		local_bh_enable();
++		return;
++	}
++
+ 	/* Re-enable interrupts on the device by restoring the current interrupt mask. */
+ 	b43_write32(dev, B43_MMIO_GEN_IRQ_MASK, dev->irq_mask);
+ 
+@@ -2212,6 +2235,10 @@ static int b43_napi_poll(struct napi_str
+ 	int done = 0;
+ 
+ 	if (likely(b43_status(dev) == B43_STAT_STARTED)) {
++		if (unlikely(READ_ONCE(dev->napi_rx_overflow))) {
++			WRITE_ONCE(dev->napi_rx_overflow, false);
++			b43_dma_handle_rx_overflow(dev->dma.rx_ring);
++		}
+ 		done = b43_dma_rx(dev->dma.rx_ring, budget, napi);
+ 		if (READ_ONCE(dev->napi_tx_status)) {
+ 			WRITE_ONCE(dev->napi_tx_status, false);
