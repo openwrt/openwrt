@@ -1,4 +1,4 @@
-From cc48f7cd0faa378a48af7fabd6ad7207c64b0cc5 Mon Sep 17 00:00:00 2001
+From 8f270f912d743d34cefbfa08770eda2fc91b4f94 Mon Sep 17 00:00:00 2001
 From: Daniel Golle <daniel@makrotopia.org>
 Date: Fri, 16 Oct 2026 23:57:02 +0100
 Subject: [PATCH] media: platform: rockchip: Add RKVENC v1 encoder driver
@@ -33,10 +33,19 @@ a V4L2 front end:
 
 Both V4L2_MPEG_VIDEO_HEADER_MODE_SEPARATE and JOINED_WITH_1ST_FRAME
 (with PREPEND_SPSPPS_TO_IDR) are supported. Hardware row-level rate
-control is left disabled; the driver varies the per-picture QP only.
-The raw frames are imported without a kernel mapping and a capture
-buffer holds half as many bytes as the picture has pixels, so that 4K
-streams fit the vmalloc area of 32-bit systems.
+control is left disabled; the driver varies the per-picture QP only. An
+I frame takes the mean QP of the P frames of the previous GOP lowered by
+Rockchip MPP's default qp_delta_ip (4 for HEVC, 2 for H.264, h265e_api.c
+and h264e_api_v2.c), so that it is not coarser than the pictures it
+replaces. The P frame QP moves by at most one per frame and follows a
+running average of the P frame complexity, as frames below the skip
+threshold otherwise flip it every frame. The bucket holds one GOP of
+bits and starts empty; since the plan budgets the I frame, its deviation
+is taken at each GOP boundary and spread over the next GOP, which keeps
+the P frame QP flat within a GOP. The measured constants are noted in
+rkvenc-rc.c. The raw frames are imported without a kernel mapping and a
+capture buffer holds half as many bytes as the picture has pixels, so
+that 4K streams fit the vmalloc area of 32-bit systems.
 
 The RK3568 HEVC tiles wider than 1920 pixels and the Q6 VEPU variant
 are out of scope.
@@ -53,8 +62,8 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  .../platform/rockchip/rkvenc/rkvenc-hevc.c    |   63 +
  .../platform/rockchip/rkvenc/rkvenc-nal.c     |  353 +++++
  .../platform/rockchip/rkvenc/rkvenc-nal.h     |   12 +
- .../platform/rockchip/rkvenc/rkvenc-rc.c      |  195 +++
- .../platform/rockchip/rkvenc/rkvenc-ref.c     |  127 ++
+ .../platform/rockchip/rkvenc/rkvenc-rc.c      |  256 ++++
+ .../platform/rockchip/rkvenc/rkvenc-ref.c     |  121 ++
  .../platform/rockchip/rkvenc/rkvenc-v4l2.c    | 1150 +++++++++++++++++
  .../rockchip/rkvenc/rkvenc-vepu541-h264.c     |  207 +++
  .../rockchip/rkvenc/rkvenc-vepu541-hevc.c     |  183 +++
@@ -63,8 +72,8 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  .../platform/rockchip/rkvenc/rkvenc-vepu541.c |  218 ++++
  .../platform/rockchip/rkvenc/rkvenc-vepu541.h |  201 +++
  .../media/platform/rockchip/rkvenc/rkvenc.c   |  552 ++++++++
- .../media/platform/rockchip/rkvenc/rkvenc.h   |  251 ++++
- 20 files changed, 4280 insertions(+)
+ .../media/platform/rockchip/rkvenc/rkvenc.h   |  254 ++++
+ 20 files changed, 4338 insertions(+)
  create mode 100644 drivers/media/platform/rockchip/rkvenc/Kconfig
  create mode 100644 drivers/media/platform/rockchip/rkvenc/Makefile
  create mode 100644 drivers/media/platform/rockchip/rkvenc/rkvenc-gop.c
@@ -753,7 +762,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +#endif
 --- /dev/null
 +++ b/drivers/media/platform/rockchip/rkvenc/rkvenc-rc.c
-@@ -0,0 +1,195 @@
+@@ -0,0 +1,256 @@
 +// SPDX-License-Identifier: GPL-2.0-only
 +/*
 + * Frame-level integer rate controller for the RKVENC v1 encoder
@@ -765,11 +774,10 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 + * scale qs[] is shared by H.264 and HEVC (quantiser step doubles every
 + * six QP) and is derived exactly from round(256 * 2^((q-4)/6)).
 + *
-+ * The policy constants the design marks "needs approval" (C11 VBV size,
-+ * C12 I/P ratio clamp, C13 QP step, D horizon, C6 default fps) are
-+ * replaced here by derived safe values, each flagged in a comment. They
-+ * are not hardware facts and can be tightened once measured on real
-+ * camera content.
++ * Of the policy constants the design marks "needs approval", the C11 VBV
++ * size and the D horizon are one GOP of bits, C6 is the usual 30 fps,
++ * and the C12 I/P ratio clamp, the C13 QP step and the P complexity
++ * weight are measured on RV1126 camera streams at 4K and 720p.
 + */
 +
 +#include <linux/math.h>
@@ -781,9 +789,18 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +#define RKVENC_QS_BASE	{ 256, 287, 323, 362, 406, 456 }
 +
 +/* Derived safe policy values (design/04 "needs approval" boxes). */
-+#define RKVENC_RC_W_CLAMP	4096u	/* C12: I/P complexity ratio cap */
-+#define RKVENC_RC_QP_STEP	4	/* C13: max QP change per frame/type */
 +#define RKVENC_RC_DEFAULT_FPS	30u	/* C6: default frame rate (S_PARM) */
++
++/* C12: I/P complexity ratio cap, Q8; static scenes measured up to 37 */
++#define RKVENC_RC_W_CLAMP (64u * 256)
++/* C13: max P QP change per frame; a larger step makes the P QP flip */
++#define RKVENC_RC_QP_STEP 1
++/* Weight of a new P frame in the P complexity, Q8; measured */
++#define RKVENC_RC_X_WEIGHT 32
++
++/* I-frame QP below the P-frame QP, Rockchip MPP's qp_delta_ip defaults */
++#define RKVENC_RC_QP_DELTA_IP_HEVC 4
++#define RKVENC_RC_QP_DELTA_IP_H264 2
 +
 +static u32 rkvenc_qs[RKVENC_QP_MAX + 1];
 +
@@ -807,23 +824,69 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	}
 +}
 +
++/* C11: the bucket holds Bs = T_avg * GOP length (one GOP of bits). */
++static u32 rkvenc_rc_capacity(struct rkvenc_ctx *ctx)
++{
++	if (ctx->c.vbv_size)
++		return ctx->c.vbv_size;
++	return ctx->rc_tavg * max_t(u32, ctx->c.gop_size, 1);
++}
++
++/*
++ * The plan budgets the I frame of a GOP, so the bucket is only on plan
++ * at a GOP boundary: its deviation there is spread over the next GOP.
++ */
++static u64 rkvenc_rc_correct(struct rkvenc_ctx *ctx, u64 t_t, u32 n)
++{
++	s64 c = div_s64(ctx->rc_buf_gop, n);
++
++	if (c < 0)
++		return t_t + (u64)-c;
++	if ((u64)c >= t_t)
++		return 1;
++	return t_t - (u64)c;
++}
++
++/* X_t = S * qs[q_avg] / 256. */
++static u32 rkvenc_rc_complexity(struct rkvenc_ctx *ctx, unsigned int t, u64 s,
++				u32 qp_avg)
++{
++	u32 x = (u32)div_u64(s * rkvenc_qs[min(qp_avg, RKVENC_QP_MAX)], 256);
++
++	/* a P frame below the skip threshold alone would swing the model */
++	if (!t || ctx->rc_first[1])
++		return x;
++	return (u32)div_u64((u64)ctx->rc_x[1] * (256 - RKVENC_RC_X_WEIGHT) +
++				    (u64)x * RKVENC_RC_X_WEIGHT,
++			    256);
++}
++
++/* Rounded mean QP of the P frames since the last I frame; resets it. */
++static int rkvenc_rc_p_qp_mean(struct rkvenc_ctx *ctx)
++{
++	int q = ctx->rc_qp[1];
++
++	if (ctx->rc_p_qp_cnt)
++		q = DIV_ROUND_CLOSEST(ctx->rc_p_qp_sum, ctx->rc_p_qp_cnt);
++	ctx->rc_p_qp_sum = 0;
++	ctx->rc_p_qp_cnt = 0;
++	return q;
++}
++
 +void rkvenc_rc_init(struct rkvenc_ctx *ctx)
 +{
 +	u32 bitrate = ctx->c.bitrate ?: 4000000;
 +	u32 fps = ctx->fps ?: RKVENC_RC_DEFAULT_FPS;
-+	u32 gop = ctx->c.gop_size;
 +
 +	rkvenc_qs_build();
 +
 +	ctx->rc_tavg = div_u64((u64)bitrate, fps);
 +	if (!ctx->rc_tavg)
 +		ctx->rc_tavg = 1;
-+	/* C11: Bs = T_avg * GOP length (one GOP of bits). */
-+	if (ctx->c.vbv_size)
-+		ctx->rc_buf = (s32)min_t(u64, (u64)ctx->c.vbv_size,
-+					 (u64)S32_MAX);
-+	else
-+		ctx->rc_buf = (s32)(ctx->rc_tavg * max_t(u32, gop, 1));
++	ctx->rc_buf = 0;
++	ctx->rc_buf_gop = 0;
++	ctx->rc_p_qp_sum = 0;
++	ctx->rc_p_qp_cnt = 0;
 +	ctx->rc_x[0] = ctx->rc_x[1] = 0;
 +	ctx->rc_qp[0] = ctx->c.i_frame_qp;
 +	ctx->rc_qp[1] = ctx->c.p_frame_qp;
@@ -855,9 +918,26 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +		return;
 +	}
 +
++	if (!t)
++		ctx->rc_buf_gop = ctx->rc_buf;
++
++	/* An I frame coarser than the P frames before it shows as a pulse. */
++	if (!t && !ctx->rc_first[1]) {
++		/* the GOP mean: the last P QP alone makes I sizes swing */
++		q = rkvenc_rc_p_qp_mean(ctx);
++		if (ctx->codec == RKVENC_CODEC_HEVC)
++			q -= RKVENC_RC_QP_DELTA_IP_HEVC;
++		else
++			q -= RKVENC_RC_QP_DELTA_IP_H264;
++		q = clamp_t(int, q, lo, hi);
++		ctx->rc_qp[0] = (s8)q;
++		*qp = q;
++		return;
++	}
++
 +	/*
 +	 * T_I/T_P keep the GOP average at T_avg; the buffer correction
-+	 * over D frames pulls the rate back toward target. qs_target is
++	 * over a GOP pulls the rate back toward target. qs_target is
 +	 * the quantiser step that, at the measured complexity, would
 +	 * have produced T bits; the smallest QP whose qs[] reaches it
 +	 * wins.
@@ -866,8 +946,6 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +		u64 w = div_u64((u64)ctx->rc_x[0] * 256,
 +				ctx->rc_x[1] ?: 1);
 +		u32 n = max_t(u32, ctx->c.gop_size, 1);
-+		u32 d = max_t(u32, (u32)(ctx->rc_buf < 0 ? -ctx->rc_buf :
-+					ctx->rc_buf) / ctx->rc_tavg, 1);
 +		u64 t_p, t_t;
 +
 +		w = min_t(u64, w, RKVENC_RC_W_CLAMP);
@@ -875,14 +953,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +				w + 256 * (n - 1));
 +		t_t = t ? t_p : t_p * w / 256;
 +		/* Buffer correction: spend down an excess, save a deficit. */
-+		if (ctx->rc_buf < 0)
-+			t_t += (u32)div_s64(div_s64((s64)-ctx->rc_buf, d),
-+					    ctx->blocks);
-+		else
-+			t_t -= (u32)div_s64(div_s64((s64)ctx->rc_buf, d),
-+					    ctx->blocks);
-+		if (t_t < 1)
-+			t_t = 1;
++		t_t = rkvenc_rc_correct(ctx, t_t, n);
 +
 +		target = (u32)div_u64((u64)ctx->rc_x[t] * 256, t_t);
 +
@@ -904,6 +975,10 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	q = clamp_t(int, q, lo, hi);
 +
 +	ctx->rc_qp[t] = (s8)q;
++	if (t) {
++		ctx->rc_p_qp_sum += q;
++		ctx->rc_p_qp_cnt++;
++	}
 +	*qp = q;
 +}
 +
@@ -916,17 +991,12 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +{
 +	unsigned int t = frame_type ? 1 : 0;
 +	u64 s = (u64)bytes * 8;		/* frame size in bits */
-+	u32 vbv = ctx->c.vbv_size ?: ctx->rc_tavg;
-+	s64 cap = max_t(u64, vbv, 1);
++	s64 cap = max_t(u64, rkvenc_rc_capacity(ctx), 1);
 +
 +	if (!ctx->rc_active)
 +		return;
 +
-+	/* X_t = S * qs[q_avg] / 256. */
-+	if (qp_avg <= RKVENC_QP_MAX)
-+		ctx->rc_x[t] = (u32)div_u64(s * rkvenc_qs[qp_avg], 256);
-+	else
-+		ctx->rc_x[t] = (u32)div_u64(s * rkvenc_qs[RKVENC_QP_MAX], 256);
++	ctx->rc_x[t] = rkvenc_rc_complexity(ctx, t, s, qp_avg);
 +
 +	/* Leaky bucket: f += S - T_avg, clamped to [-Bs, Bs]. */
 +	ctx->rc_buf += (s32)s - (s32)ctx->rc_tavg;
@@ -951,7 +1021,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +}
 --- /dev/null
 +++ b/drivers/media/platform/rockchip/rkvenc/rkvenc-ref.c
-@@ -0,0 +1,127 @@
+@@ -0,0 +1,121 @@
 +// SPDX-License-Identifier: GPL-2.0-only
 +/*
 + * Reconstruction / reference slot pool for the RKVENC v1 encoder.
@@ -1008,18 +1078,12 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	dma_addr_t dma;
 +	void *cpu;
 +	unsigned int i;
-+	size_t sizes[4];
 +	int ret = 0;
 +
 +	if (ctx->slots_alloc)
 +		return 0;
 +
 +	rkvenc_vepu541_slot_sizes(ctx->codec, ctx->width, ctx->height, sz);
-+
-+	sizes[RKVENC_BUF_HDR] = sz->rfp_hdr;
-+	sizes[RKVENC_BUF_BODY] = sz->rfp_body;
-+	sizes[RKVENC_BUF_DSP] = sz->dsp;
-+	sizes[RKVENC_BUF_CMV] = sz->cmv;
 +
 +	for (i = 0; i < RKVENC_SLOTS; i++) {
 +		/* Reconstruction header. Body follows it with a 4 KiB step. */
@@ -4179,7 +4243,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +MODULE_LICENSE("GPL");
 --- /dev/null
 +++ b/drivers/media/platform/rockchip/rkvenc/rkvenc.h
-@@ -0,0 +1,251 @@
+@@ -0,0 +1,254 @@
 +/* SPDX-License-Identifier: GPL-2.0-only */
 +/*
 + * Rockchip RKVENC v1 H.264 / HEVC encoder driver.
@@ -4367,7 +4431,10 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	s32 rc_buf;		/* virtual buffer fullness, in bits */
 +	u32 rc_tavg;		/* target bits per frame */
 +	s8 rc_qp[2];		/* last chosen QP per type: 0=I, 1=P */
-+	u32 rc_x[2];		/* last measured complexity per type */
++	u32 rc_x[2]; /* last measured complexity per type */
++	s32 rc_buf_gop; /* buffer fullness at the last GOP boundary */
++	u32 rc_p_qp_sum; /* P frame QPs since the last I frame */
++	u32 rc_p_qp_cnt;
 +	bool rc_active;
 +	bool rc_first[2];	/* first frame of each type seen */
 +
