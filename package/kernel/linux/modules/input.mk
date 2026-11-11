@@ -70,6 +70,22 @@ endef
 
 $(eval $(call KernelPackage,hid-alps))
 
+define KernelPackage/hid-multitouch
+  SUBMENU:=$(INPUT_MODULES_MENU)
+  TITLE:=HID multitouch panel support
+  DEPENDS:=+kmod-hid
+  KCONFIG:=CONFIG_HID_MULTITOUCH
+  FILES:=$(LINUX_DIR)/drivers/hid/hid-multitouch.ko
+  AUTOLOAD:=$(call AutoProbe,hid-multitouch)
+endef
+
+define KernelPackage/hid-multitouch/description
+ Support for HID multitouch touchscreens and touchpads that report
+ more than one contact, on USB, I2C or Bluetooth
+endef
+
+$(eval $(call KernelPackage,hid-multitouch))
+
 define KernelPackage/input-adc-keys
   SUBMENU:=$(INPUT_MODULES_MENU)
   TITLE:=ADC Ladder Buttons support
