@@ -1,0 +1,155 @@
+From b330260219cb73fc0c7922e5fc92acc77209a4f9 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Wed, 4 Nov 2026 12:21:28 +0000
+Subject: [PATCH] media: rockchip: rkisp2: Add the CPROC params block
+
+The colour processing block of the ISP adjusts brightness, contrast,
+saturation and hue of the YUV output. Add the parameters block for it,
+following the ISP1 layout with the three range flags, and program the
+block from it.
+
+Assisted-by: LLM
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ .../platform/rockchip/rkisp2/rkisp2-params.c  | 34 +++++++++++++++++
+ .../uapi/linux/media/rockchip/rkisp2-config.h | 37 ++++++++++++++++++-
+ 2 files changed, 70 insertions(+), 1 deletion(-)
+
+--- a/drivers/media/platform/rockchip/rkisp2/rkisp2-params.c
++++ b/drivers/media/platform/rockchip/rkisp2/rkisp2-params.c
+@@ -52,6 +52,7 @@ union rkisp2_params_block {
+ 	const struct rkisp2_params_hist_big *hist_big;
+ 	const struct rkisp2_params_awb_meas *awb_meas;
+ 	const struct rkisp2_params_dpcc *dpcc;
++	const struct rkisp2_params_cproc *cproc;
+ 	const __u8 *data;
+ };
+ 
+@@ -79,6 +80,8 @@ static void rkisp2_params_awb_meas(struc
+ 				   union rkisp2_params_block block);
+ static void rkisp2_params_dpcc(struct rkisp2_params *params,
+ 			       union rkisp2_params_block block);
++static void rkisp2_params_cproc(struct rkisp2_params *params,
++				union rkisp2_params_block block);
+ 
+ typedef void (*rkisp2_params_handler)(struct rkisp2_params *params,
+ 				      const union rkisp2_params_block block);
+@@ -110,6 +113,7 @@ rkisp2_params_handlers[] = {
+ 	RKISP2_PARAMS_BLOCK_HANDLER_INFO(HIST_BIG2, hist_big, PRE),
+ 	RKISP2_PARAMS_BLOCK_HANDLER_INFO(AWB_MEAS, awb_meas, PRE),
+ 	RKISP2_PARAMS_BLOCK_HANDLER_INFO(DPCC, dpcc, PRE),
++	RKISP2_PARAMS_BLOCK_HANDLER_INFO(CPROC, cproc, PRE),
+ };
+ 
+ static const struct v4l2_isp_params_block_type_info
+@@ -128,6 +132,7 @@ static const struct v4l2_isp_params_bloc
+ 		RKISP2_PARAMS_BLOCK_INFO(HIST_BIG2, hist_big),
+ 		RKISP2_PARAMS_BLOCK_INFO(AWB_MEAS, awb_meas),
+ 		RKISP2_PARAMS_BLOCK_INFO(DPCC, dpcc),
++		RKISP2_PARAMS_BLOCK_INFO(CPROC, cproc),
+ 	};
+ 
+ static_assert(ARRAY_SIZE(rkisp2_params_handlers) ==
+@@ -912,6 +917,35 @@ static void rkisp2_params_dpcc(struct rk
+ 	rkisp2_dpcc_write(params, ISP_DPCC0_MODE, mode | ISP_DPCC_EN);
+ }
+ 
++static void rkisp2_params_cproc(struct rkisp2_params *params,
++				union rkisp2_params_block block)
++{
++	const struct rkisp2_params_cproc *arg = block.cproc;
++	u32 control = RKISP2_CIF_C_PROC_CTR_ENABLE;
++
++	if (block.header->flags & V4L2_ISP_PARAMS_FL_BLOCK_DISABLE) {
++		rkisp2_param_clear_bits(params, CPROC_CTRL,
++					RKISP2_CIF_C_PROC_CTR_ENABLE);
++		return;
++	}
++
++	if (!(block.header->flags & V4L2_ISP_PARAMS_FL_BLOCK_ENABLE))
++		return;
++
++	rkisp2_write(params->rkisp2, CPROC_CONTRAST, arg->contrast);
++	rkisp2_write(params->rkisp2, CPROC_HUE, arg->hue);
++	rkisp2_write(params->rkisp2, CPROC_SATURATION, arg->sat);
++	rkisp2_write(params->rkisp2, CPROC_BRIGHTNESS, arg->brightness);
++
++	if (arg->c_out_range)
++		control |= RKISP2_CIF_C_PROC_COUT_FULL;
++	if (arg->y_in_range)
++		control |= RKISP2_CIF_C_PROC_YIN_FULL;
++	if (arg->y_out_range)
++		control |= RKISP2_CIF_C_PROC_YOUT_FULL;
++	rkisp2_write(params->rkisp2, CPROC_CTRL, control);
++}
++
+ static void rkisp2_params_configure(struct rkisp2_params *params,
+ 				    struct rkisp2_params_buffer *buf,
+ 				    enum rkisp2_params_configure_priority prio)
+--- a/include/uapi/linux/media/rockchip/rkisp2-config.h
++++ b/include/uapi/linux/media/rockchip/rkisp2-config.h
+@@ -229,6 +229,7 @@ struct rkisp2_stats_awb_mean {
+  * @RKISP2_PARAMS_BLOCK_HIST_BIG2: Histogram measurement config (second big block)
+  * @RKISP2_PARAMS_BLOCK_AWB_MEAS: AWB measurements config
+  * @RKISP2_PARAMS_BLOCK_DPCC: Defect pixel cluster correction config
++ * @RKISP2_PARAMS_BLOCK_CPROC: Color processing config
+  */
+ enum rkisp2_params_block_type {
+ 	RKISP2_PARAMS_BLOCK_BLS,
+@@ -245,6 +246,7 @@ enum rkisp2_params_block_type {
+ 	RKISP2_PARAMS_BLOCK_HIST_BIG2,
+ 	RKISP2_PARAMS_BLOCK_AWB_MEAS,
+ 	RKISP2_PARAMS_BLOCK_DPCC,
++	RKISP2_PARAMS_BLOCK_CPROC,
+ };
+ 
+ /* DPCC: three method sets, each with a green and a red/blue variant */
+@@ -777,6 +779,38 @@ struct rkisp2_params_dpcc {
+ 	__u32 reserved;
+ } __attribute__((aligned(8)));
+ 
++/**
++ * struct rkisp2_params_cproc - RkISP2 params color processing config
++ *
++ * RkISP2 parameters color processing configuration block, the brightness,
++ * contrast, saturation and hue adjustment of the YUV output.
++ * Identified by :c:type:`RKISP2_PARAMS_BLOCK_CPROC`.
++ *
++ * @header: The RkISP2 parameters block header
++ * @c_out_range: Chrominance pixel clipping range at output (0 for limited,
++ *		 1 for full)
++ * @y_in_range: Luminance pixel clipping range at input (0 for limited, 1 for
++ *		full)
++ * @y_out_range: Luminance pixel clipping range at output (0 for limited, 1
++ *		 for full)
++ * @contrast: 00~ff, 0.0~1.992
++ * @brightness: 80~7f, -128~+127
++ * @sat: saturation, 00~ff, 0.0~1.992
++ * @hue: 80~7f, -90~+87.188
++ * @reserved: padding
++ */
++struct rkisp2_params_cproc {
++	struct v4l2_isp_params_block_header header;
++	__u8 c_out_range;
++	__u8 y_in_range;
++	__u8 y_out_range;
++	__u8 contrast;
++	__u8 brightness;
++	__u8 sat;
++	__u8 hue;
++	__u8 reserved;
++} __attribute__((aligned(8)));
++
+ #define RKISP2_PARAMS_MAX_SIZE                                                 \
+ 	(sizeof(struct rkisp2_params_bls) +                                    \
+ 	 sizeof(struct rkisp2_params_awb_gains) +                              \
+@@ -787,7 +821,8 @@ struct rkisp2_params_dpcc {
+ 	 sizeof(struct rkisp2_params_hist_lite) +                              \
+ 	 sizeof(struct rkisp2_params_hist_big) * 3 +                           \
+ 	 sizeof(struct rkisp2_params_awb_meas) +                               \
+-	 sizeof(struct rkisp2_params_dpcc))
++	 sizeof(struct rkisp2_params_dpcc) +                                   \
++	 sizeof(struct rkisp2_params_cproc))
+ 
+ /*---------- ISPP (image post-processing) ------------*/
+ 

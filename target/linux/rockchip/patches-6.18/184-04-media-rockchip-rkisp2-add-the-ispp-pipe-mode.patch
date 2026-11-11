@@ -1,4 +1,4 @@
-From 9d541a2ba4ef9db06fba6f76a701084600a60d17 Mon Sep 17 00:00:00 2001
+From 3e9e2c4f9d77c0149172a626c4a21c0080d99783 Mon Sep 17 00:00:00 2001
 From: Daniel Golle <daniel@makrotopia.org>
 Date: Wed, 28 Oct 2026 09:56:39 +0000
 Subject: [PATCH] media: rockchip: rkisp2: Add the ISPP pipe mode
@@ -55,12 +55,12 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  MAINTAINERS                                   |   1 +
  .../platform/rockchip/rkisp2/rkisp2-capture.c |  16 +-
  .../platform/rockchip/rkisp2/rkisp2-common.h  |  46 ++
- .../platform/rockchip/rkisp2/rkisp2-isp.c     | 641 +++++++++++++++++-
+ .../platform/rockchip/rkisp2/rkisp2-isp.c     | 652 +++++++++++++++++-
  .../platform/rockchip/rkisp2/rkisp2-params.c  |   6 +
  .../platform/rockchip/rkisp2/rkisp2-resizer.c |  29 +
  .../platform/rockchip/rkisp2/rkisp2-vicap.c   |   3 +
  .../linux/platform_data/media/rkisp2-toispp.h |  71 ++
- 8 files changed, 783 insertions(+), 30 deletions(-)
+ 8 files changed, 794 insertions(+), 30 deletions(-)
  create mode 100644 include/linux/platform_data/media/rkisp2-toispp.h
 
 --- a/MAINTAINERS
@@ -137,7 +137,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  struct reset_control;
  struct regmap;
  
-@@ -103,6 +105,9 @@ enum rkisp2_rawrd_id {
+@@ -96,6 +98,9 @@ enum rkisp2_rawrd_id {
  	RKISP2_RAWRD_MAX,
  };
  
@@ -147,7 +147,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  /* enum for the isp pads */
  enum rkisp2_isp_pad {
  	RKISP2_ISP_PAD_SINK_VIDEO_DMA_BASE,
-@@ -115,6 +120,7 @@ enum rkisp2_isp_pad {
+@@ -108,6 +113,7 @@ enum rkisp2_isp_pad {
  	RKISP2_ISP_PAD_SOURCE_VIDEO_MAIN,
  	RKISP2_ISP_PAD_SOURCE_VIDEO_SELF,
  	RKISP2_ISP_PAD_SOURCE_STATS,
@@ -155,7 +155,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	RKISP2_ISP_PAD_MAX
  };
  
-@@ -185,6 +191,15 @@ struct rkisp2_info {
+@@ -176,6 +182,15 @@ struct rkisp2_info {
   * @sink_fmt:			input format
   * @frame_sequence:		used to synchronize frame_id between video devices.
   * @dphy_errctrl_disabled:	flag to re-enable DPHY errctrl interrupt after error
@@ -171,7 +171,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
   */
  struct rkisp2_isp {
  	struct v4l2_subdev sd;
-@@ -193,6 +208,31 @@ struct rkisp2_isp {
+@@ -184,6 +199,31 @@ struct rkisp2_isp {
  	const struct rkisp2_mbus_info *sink_fmt;
  	__u32 frame_sequence;
  	bool dphy_errctrl_disabled;
@@ -203,7 +203,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  };
  
  /*
-@@ -657,6 +697,9 @@ int rkisp2_vicap_register(struct rkisp2_
+@@ -648,6 +688,9 @@ int rkisp2_vicap_register(struct rkisp2_
  void rkisp2_vicap_unregister(struct rkisp2_device *rkisp2);
  bool rkisp2_vicap_available(struct rkisp2_device *rkisp2);
  bool rkisp2_isp_dma_linked(struct rkisp2_isp *isp);
@@ -213,7 +213,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  int rkisp2_vicap_start(struct rkisp2_device *rkisp2,
  		       const struct v4l2_mbus_framefmt *fmt);
  void rkisp2_vicap_drain(struct rkisp2_device *rkisp2);
-@@ -680,6 +723,9 @@ void rkisp2_resizer_pre_configure(struct
+@@ -671,6 +714,9 @@ void rkisp2_resizer_pre_configure(struct
  				  const struct v4l2_mbus_framefmt *mp_src_frm,
  				  const struct v4l2_mbus_framefmt *sp_src_frm);
  void rkisp2_resizer_devs_init(struct rkisp2_device *rkisp2);
@@ -242,7 +242,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  #include <media/v4l2-event.h>
  
  #include "rkisp2-common.h"
-@@ -118,6 +121,7 @@ static int rkisp2_config_isp(struct rkis
+@@ -117,6 +120,7 @@ static int rkisp2_config_isp(struct rkis
  	const struct v4l2_mbus_framefmt *mp_src_frm;
  	const struct v4l2_mbus_framefmt *sp_src_frm;
  	const struct v4l2_mbus_framefmt *sink_frm;
@@ -250,7 +250,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  
  	/* All the video sink formats and crops are kept equal */
  	sink_frm = v4l2_subdev_state_get_format(sd_state,
-@@ -127,8 +131,10 @@ static int rkisp2_config_isp(struct rkis
+@@ -126,8 +130,10 @@ static int rkisp2_config_isp(struct rkis
  	 * or yuv -> yuv so we only need to check the main path source pad
  	 * format
  	 */
@@ -263,7 +263,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  
  	sink_fmt = rkisp2_mbus_info_get_by_code(sink_frm->code);
  	mp_src_fmt = rkisp2_mbus_info_get_by_code(mp_src_frm->code);
-@@ -313,7 +319,10 @@ static void rkisp2_config_clk(struct rki
+@@ -309,7 +315,10 @@ static void rkisp2_config_clk(struct rki
  
  	val = RKISP2_CIF_CLK_CTRL_ISP_3A | RKISP2_CIF_CLK_CTRL_ISP_RAW;
  	if (rkisp2_has_feature(rkisp2, RAWRD_CLK))
@@ -275,7 +275,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	rkisp2_write(rkisp2, RKISP2_CIF_VI_ISP_CLK_CTRL_V12, val);
  
  	rkisp2_sws_config(rkisp2);
-@@ -359,6 +368,13 @@ static int rkisp2_isp_enum_mbus_code(str
+@@ -355,6 +364,13 @@ static int rkisp2_isp_enum_mbus_code(str
  	unsigned int i, dir;
  	int pos = 0;
  
@@ -289,7 +289,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	if (code->pad == RKISP2_ISP_PAD_SINK_VIDEO_DMA_0 ||
  	    code->pad == RKISP2_ISP_PAD_SINK_VIDEO_DMA_1 ||
  	    code->pad == RKISP2_ISP_PAD_SINK_VIDEO_DMA_2) {
-@@ -418,7 +434,8 @@ static int rkisp2_isp_enum_frame_size(st
+@@ -414,7 +430,8 @@ static int rkisp2_isp_enum_frame_size(st
  
  	if (!(mbus_info->direction & RKISP2_ISP_SD_SRC) &&
  	    (fse->pad == RKISP2_ISP_PAD_SOURCE_VIDEO_MAIN ||
@@ -299,7 +299,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  		return -EINVAL;
  
  	fse->min_width = RKISP2_ISP_MIN_WIDTH;
-@@ -459,6 +476,17 @@ static int rkisp2_isp_init_state(struct
+@@ -455,6 +472,17 @@ static int rkisp2_isp_init_state(struct
  		src_fmt->quantization = V4L2_QUANTIZATION_LIM_RANGE;
  	}
  
@@ -317,7 +317,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	return 0;
  }
  
-@@ -586,6 +614,7 @@ static void rkisp2_isp_set_sink_fmt(stru
+@@ -582,6 +610,7 @@ static void rkisp2_isp_set_sink_fmt(stru
  {
  	const struct rkisp2_mbus_info *mbus_info;
  	struct v4l2_mbus_framefmt *sink_fmt;
@@ -325,7 +325,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	bool is_yuv;
  	enum rkisp2_isp_pad pad;
  
-@@ -642,6 +671,31 @@ static void rkisp2_isp_set_sink_fmt(stru
+@@ -638,6 +667,42 @@ static void rkisp2_isp_set_sink_fmt(stru
  		sink_fmt = v4l2_subdev_state_get_format(sd_state, pad);
  		*sink_fmt = *format;
  	}
@@ -341,23 +341,34 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	ispp_fmt->height = format->height;
 +}
 +
-+/* the ISPP pad follows the sensor frame; only the YUV range is selectable */
++/* the ISPP pad follows the sensor frame; only the colour space is selectable */
 +static void rkisp2_isp_set_ispp_fmt(struct rkisp2_isp *isp,
 +				    struct v4l2_subdev_state *sd_state,
 +				    struct v4l2_mbus_framefmt *format)
 +{
 +	struct v4l2_mbus_framefmt *ispp_fmt;
++	bool set_csc;
 +
 +	ispp_fmt = v4l2_subdev_state_get_format(sd_state,
 +						RKISP2_ISP_PAD_SOURCE_ISPP);
-+	if (format->flags & V4L2_MBUS_FRAMEFMT_SET_CSC &&
-+	    format->quantization != V4L2_QUANTIZATION_DEFAULT)
-+		ispp_fmt->quantization = format->quantization;
++	set_csc = format->flags & V4L2_MBUS_FRAMEFMT_SET_CSC;
++	if (set_csc) {
++		if (format->colorspace != V4L2_COLORSPACE_DEFAULT)
++			rkisp2_isp_csc_defaults(ispp_fmt, format->colorspace);
++		if (format->xfer_func != V4L2_XFER_FUNC_DEFAULT)
++			ispp_fmt->xfer_func = format->xfer_func;
++		if (format->ycbcr_enc != V4L2_YCBCR_ENC_DEFAULT)
++			ispp_fmt->ycbcr_enc = format->ycbcr_enc;
++		if (format->quantization != V4L2_QUANTIZATION_DEFAULT)
++			ispp_fmt->quantization = format->quantization;
++	}
 +	*format = *ispp_fmt;
++	if (set_csc)
++		format->flags |= V4L2_MBUS_FRAMEFMT_SET_CSC;
  }
  
  static int rkisp2_isp_set_fmt(struct v4l2_subdev *sd,
-@@ -657,6 +711,8 @@ static int rkisp2_isp_set_fmt(struct v4l
+@@ -653,6 +718,8 @@ static int rkisp2_isp_set_fmt(struct v4l
  	else if (fmt->pad == RKISP2_ISP_PAD_SOURCE_VIDEO_MAIN ||
  		 fmt->pad == RKISP2_ISP_PAD_SOURCE_VIDEO_SELF)
  		rkisp2_isp_set_src_fmt(isp, sd_state, &fmt->format, fmt->pad);
@@ -366,7 +377,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	else
  		fmt->format = *v4l2_subdev_state_get_format(sd_state,
  							    fmt->pad);
-@@ -710,6 +766,431 @@ static int rkisp2_isp_source_find(struct
+@@ -706,6 +773,431 @@ static int rkisp2_isp_source_find(struct
  	return 0;
  }
  
@@ -798,7 +809,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  /* the second frame failure is a per-attempt coin flip */
  #define RKISP2_RAWRD_PREFLIGHT_ATTEMPTS	4
  
-@@ -721,8 +1202,12 @@ static int rkisp2_pipeline_restart(struc
+@@ -717,8 +1209,12 @@ static int rkisp2_pipeline_restart(struc
  	struct v4l2_subdev_state *sd_state;
  	int ret;
  
@@ -811,7 +822,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  
  	isp->frame_sequence = -1;
  
-@@ -730,13 +1215,21 @@ static int rkisp2_pipeline_restart(struc
+@@ -726,13 +1222,21 @@ static int rkisp2_pipeline_restart(struc
  	ret = rkisp2_config_cif(isp, sd_state);
  	if (!ret)
  		ret = rkisp2_isp_start(isp, sd_state, NULL);
@@ -833,7 +844,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	}
  
  	return ret;
-@@ -754,22 +1247,42 @@ static int rkisp2_isp_s_stream(struct v4
+@@ -750,22 +1254,42 @@ static int rkisp2_isp_s_stream(struct v4
  	int ret;
  
  	if (!enable) {
@@ -877,7 +888,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	}
  
  	isp->frame_sequence = -1;
-@@ -778,11 +1291,25 @@ static int rkisp2_isp_s_stream(struct v4
+@@ -774,11 +1298,25 @@ static int rkisp2_isp_s_stream(struct v4
  
  	ret = rkisp2_config_cif(isp, sd_state);
  	if (ret)
@@ -905,7 +916,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  
  	sink_fmt = *v4l2_subdev_state_get_format(sd_state,
  						 RKISP2_ISP_PAD_SINK_VIDEO_DMA_0);
-@@ -790,41 +1317,77 @@ static int rkisp2_isp_s_stream(struct v4
+@@ -786,41 +1324,77 @@ static int rkisp2_isp_s_stream(struct v4
  	if (rkisp2->source) {
  		ret = v4l2_subdev_call(rkisp2->source, video, s_stream, true);
  		if (ret)
@@ -1006,7 +1017,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  }
  
  static int rkisp2_isp_subs_evt(struct v4l2_subdev *sd, struct v4l2_fh *fh,
-@@ -869,9 +1432,12 @@ int rkisp2_isp_register(struct rkisp2_de
+@@ -865,9 +1439,12 @@ int rkisp2_isp_register(struct rkisp2_de
  	struct rkisp2_isp *isp = &rkisp2->isp;
  	struct media_pad *pads = isp->pads;
  	struct v4l2_subdev *sd = &isp->sd;
@@ -1019,7 +1030,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  
  	v4l2_subdev_init(sd, &rkisp2_isp_ops);
  	sd->internal_ops = &rkisp2_isp_internal_ops;
-@@ -889,6 +1455,7 @@ int rkisp2_isp_register(struct rkisp2_de
+@@ -885,6 +1462,7 @@ int rkisp2_isp_register(struct rkisp2_de
  	pads[RKISP2_ISP_PAD_SOURCE_VIDEO_MAIN].flags = MEDIA_PAD_FL_SOURCE;
  	pads[RKISP2_ISP_PAD_SOURCE_VIDEO_SELF].flags = MEDIA_PAD_FL_SOURCE;
  	pads[RKISP2_ISP_PAD_SOURCE_STATS].flags = MEDIA_PAD_FL_SOURCE;
@@ -1027,7 +1038,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  
  	ret = media_entity_pads_init(&sd->entity, RKISP2_ISP_PAD_MAX, pads);
  	if (ret)
-@@ -904,6 +1471,16 @@ int rkisp2_isp_register(struct rkisp2_de
+@@ -900,6 +1478,16 @@ int rkisp2_isp_register(struct rkisp2_de
  		goto err_subdev_cleanup;
  	}
  
@@ -1044,7 +1055,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	return 0;
  
  err_subdev_cleanup:
-@@ -921,6 +1498,11 @@ void rkisp2_isp_unregister(struct rkisp2
+@@ -917,6 +1505,11 @@ void rkisp2_isp_unregister(struct rkisp2
  	if (!isp->sd.v4l2_dev)
  		return;
  
@@ -1056,7 +1067,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	v4l2_device_unregister_subdev(&isp->sd);
  	v4l2_subdev_cleanup(&isp->sd);
  	media_entity_cleanup(&isp->sd.entity);
-@@ -957,6 +1539,7 @@ irqreturn_t rkisp2_isp_isr(int irq, void
+@@ -953,6 +1546,7 @@ irqreturn_t rkisp2_isp_isr(int irq, void
  	if (status & RKISP2_CIF_ISP_V_START) {
  		rkisp2->isp.frame_sequence++;
  		rkisp2_isp_queue_event_sof(&rkisp2->isp);
@@ -1081,7 +1092,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  		 * Resizer (and dual crop if applicable) always needs to be
 --- a/drivers/media/platform/rockchip/rkisp2/rkisp2-resizer.c
 +++ b/drivers/media/platform/rockchip/rkisp2/rkisp2-resizer.c
-@@ -382,6 +382,35 @@ void rkisp2_resizer_configure(struct rki
+@@ -379,6 +379,35 @@ void rkisp2_resizer_configure(struct rki
  					  &rsz->source_format);
  }
  
@@ -1119,7 +1130,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  				  const struct v4l2_mbus_framefmt *mp_src_frm,
 --- a/drivers/media/platform/rockchip/rkisp2/rkisp2-vicap.c
 +++ b/drivers/media/platform/rockchip/rkisp2/rkisp2-vicap.c
-@@ -196,6 +196,9 @@ int rkisp2_vicap_start(struct rkisp2_dev
+@@ -206,6 +206,9 @@ int rkisp2_vicap_start(struct rkisp2_dev
  	if (ret)
  		return ret;
  

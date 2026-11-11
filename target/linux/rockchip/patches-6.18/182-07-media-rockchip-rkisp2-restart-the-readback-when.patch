@@ -26,7 +26,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 
 --- a/drivers/media/platform/rockchip/rkisp2/rkisp2-common.h
 +++ b/drivers/media/platform/rockchip/rkisp2/rkisp2-common.h
-@@ -281,6 +281,7 @@ struct rkisp2_dmarx_chan {
+@@ -272,6 +272,7 @@ struct rkisp2_dmarx_chan {
  	spinlock_t buf_lock;
  	struct list_head buf_queue;
  	struct rkisp2_buffer *curr_buf;
@@ -34,7 +34,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	const struct rkisp2_dmarx_fmt *fmts;
  	unsigned int fmt_cnt;
  	const struct rkisp2_dmarx_fmt *fmt;
-@@ -292,6 +293,7 @@ struct rkisp2_dmarx_chan {
+@@ -283,6 +284,7 @@ struct rkisp2_dmarx_chan {
  	bool stopping;
  	bool busy;
  	wait_queue_head_t idle_wq;
@@ -42,7 +42,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  };
  
  struct rkisp2_dmarx {
-@@ -649,6 +651,7 @@ bool rkisp2_dmarx_ext_queue(struct rkisp
+@@ -640,6 +642,7 @@ bool rkisp2_dmarx_ext_queue(struct rkisp
  			    struct rkisp2_buffer *buf);
  void rkisp2_dmarx_ext_drain(struct rkisp2_device *rkisp2);
  void rkisp2_dmarx_ext_stop(struct rkisp2_device *rkisp2);
@@ -63,7 +63,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  #include <media/v4l2-fh.h>
  #include <media/v4l2-ioctl.h>
  #include <media/v4l2-mc.h>
-@@ -266,6 +268,9 @@ static void rkisp2_rawrd_program_buffer(
+@@ -263,6 +265,9 @@ static void rkisp2_rawrd_program_buffer(
  		     buf->buff_addr[0]);
  }
  
@@ -73,7 +73,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  static void rkisp2_rawrd_update_mi(struct rkisp2_dmarx_chan *chan,
  				   struct rkisp2_buffer *buf)
  {
-@@ -278,10 +283,33 @@ static void rkisp2_rawrd_update_mi(struc
+@@ -275,10 +280,33 @@ static void rkisp2_rawrd_update_mi(struc
  		     rkisp2_read(chan->rkisp2, RKISP2_CIF_MIPI_CTRL) |
  			     RKISP2_CIF_MIPI_CTRL_OUTPUT_ENA);
  
@@ -107,7 +107,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  static void rkisp2_rawrd_return_all_buffers(struct rkisp2_dmarx_chan *chan,
  					    enum vb2_buffer_state state)
  {
-@@ -344,6 +372,11 @@ void rkisp2_dmarx_isr(struct rkisp2_devi
+@@ -341,6 +369,11 @@ void rkisp2_dmarx_isr(struct rkisp2_devi
  			list_del(&chan->curr_buf->queue);
  		}
  		chan->busy = chan->curr_buf;
@@ -119,7 +119,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  		spin_unlock(&chan->buf_lock);
  
  		if (chan->curr_buf)
-@@ -539,6 +572,19 @@ err_unlock:
+@@ -536,6 +569,19 @@ err_unlock:
  	return ret;
  }
  
@@ -139,7 +139,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  int rkisp2_dmarx_ext_start(struct rkisp2_device *rkisp2, u32 fourcc,
  			   u32 width, u32 height)
  {
-@@ -563,6 +609,7 @@ int rkisp2_dmarx_ext_start(struct rkisp2
+@@ -560,6 +606,7 @@ int rkisp2_dmarx_ext_start(struct rkisp2
  	spin_lock_irq(&chan->buf_lock);
  	chan->ext = true;
  	chan->stopping = false;
@@ -147,7 +147,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	spin_unlock_irq(&chan->buf_lock);
  
  	rkisp2_rawrd_hw_start(chan);
-@@ -600,8 +647,10 @@ void rkisp2_dmarx_ext_stop(struct rkisp2
+@@ -597,8 +644,10 @@ void rkisp2_dmarx_ext_stop(struct rkisp2
  	chan->streaming = false;
  	chan->ext = false;
  	chan->stopping = false;
@@ -158,7 +158,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	rkisp2_rawrd_hw_stop(rkisp2);
  }
  
-@@ -806,6 +855,7 @@ int rkisp2_dmarx_register(struct rkisp2_
+@@ -803,6 +852,7 @@ int rkisp2_dmarx_register(struct rkisp2_
  		spin_lock_init(&chan->buf_lock);
  		init_waitqueue_head(&chan->idle_wq);
  		INIT_LIST_HEAD(&chan->buf_queue);
@@ -168,7 +168,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  		ret = rkisp2_rawrd_media_init(chan);
 --- a/drivers/media/platform/rockchip/rkisp2/rkisp2-isp.c
 +++ b/drivers/media/platform/rockchip/rkisp2/rkisp2-isp.c
-@@ -710,6 +710,38 @@ static int rkisp2_isp_source_find(struct
+@@ -706,6 +706,38 @@ static int rkisp2_isp_source_find(struct
  	return 0;
  }
  
@@ -207,7 +207,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  static int rkisp2_isp_s_stream(struct v4l2_subdev *sd, int enable)
  {
  	struct rkisp2_isp *isp = to_rkisp2_isp(sd);
-@@ -717,6 +749,7 @@ static int rkisp2_isp_s_stream(struct v4
+@@ -713,6 +745,7 @@ static int rkisp2_isp_s_stream(struct v4
  	struct v4l2_subdev_state *sd_state;
  	struct v4l2_mbus_framefmt sink_fmt;
  	struct media_pad *source_pad = NULL;
@@ -215,7 +215,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	bool vicap;
  	int ret;
  
-@@ -767,10 +800,31 @@ out_unlock:
+@@ -763,10 +796,31 @@ out_unlock:
  		return ret;
  
  	ret = rkisp2_vicap_start(rkisp2, &sink_fmt);

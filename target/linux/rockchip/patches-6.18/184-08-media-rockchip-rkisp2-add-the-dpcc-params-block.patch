@@ -1,0 +1,339 @@
+From 1f1321c8fdaa290d75335dd91b6a3292cbf85b85 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Wed, 4 Nov 2026 09:40:49 +0000
+Subject: [PATCH] media: rockchip: rkisp2: Add the DPCC params block
+
+The ISP 2.0 corrects defective pixels in its three DPCC instances, one
+per HDR frame path, with the method sets of the ISP1 DPCC extended by a
+Rockchip method that takes a minimum distance and a distance scale.
+Nothing programs them, so every hot pixel of the sensor reaches the
+output.
+
+Add the DPCC parameters block, following the ISP1 layout with the
+additional method bits and fields, and program the three instances
+alike from it, switching the correction on and off through the block
+flags.
+
+Assisted-by: LLM
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ .../platform/rockchip/rkisp2/rkisp2-params.c  | 101 +++++++++++--
+ .../rockchip/rkisp2/rkisp2-regs-v2x.h         |  11 ++
+ .../uapi/linux/media/rockchip/rkisp2-config.h | 136 ++++++++++++++++--
+ 3 files changed, 221 insertions(+), 27 deletions(-)
+
+--- a/drivers/media/platform/rockchip/rkisp2/rkisp2-params.c
++++ b/drivers/media/platform/rockchip/rkisp2/rkisp2-params.c
+@@ -51,6 +51,7 @@ union rkisp2_params_block {
+ 	const struct rkisp2_params_hist_lite *hist_lite;
+ 	const struct rkisp2_params_hist_big *hist_big;
+ 	const struct rkisp2_params_awb_meas *awb_meas;
++	const struct rkisp2_params_dpcc *dpcc;
+ 	const __u8 *data;
+ };
+ 
+@@ -76,6 +77,8 @@ static void rkisp2_params_hist_big(struc
+ 				   union rkisp2_params_block block);
+ static void rkisp2_params_awb_meas(struct rkisp2_params *params,
+ 				   union rkisp2_params_block block);
++static void rkisp2_params_dpcc(struct rkisp2_params *params,
++			       union rkisp2_params_block block);
+ 
+ typedef void (*rkisp2_params_handler)(struct rkisp2_params *params,
+ 				      const union rkisp2_params_block block);
+@@ -106,24 +109,26 @@ rkisp2_params_handlers[] = {
+ 	RKISP2_PARAMS_BLOCK_HANDLER_INFO(HIST_BIG1, hist_big, PRE),
+ 	RKISP2_PARAMS_BLOCK_HANDLER_INFO(HIST_BIG2, hist_big, PRE),
+ 	RKISP2_PARAMS_BLOCK_HANDLER_INFO(AWB_MEAS, awb_meas, PRE),
++	RKISP2_PARAMS_BLOCK_HANDLER_INFO(DPCC, dpcc, PRE),
+ };
+ 
+ static const struct v4l2_isp_params_block_type_info
+-rkisp2_params_block_types_info[] = {
+-	RKISP2_PARAMS_BLOCK_INFO(BLS, bls),
+-	RKISP2_PARAMS_BLOCK_INFO(AWB_GAINS, awb_gains),
+-	RKISP2_PARAMS_BLOCK_INFO(CSM, csm),
+-	RKISP2_PARAMS_BLOCK_INFO(CCM, ccm),
+-	RKISP2_PARAMS_BLOCK_INFO(GOC, goc),
+-	RKISP2_PARAMS_BLOCK_INFO(LSC, lsc),
+-	RKISP2_PARAMS_BLOCK_INFO(CROP, crop),
+-	RKISP2_PARAMS_BLOCK_INFO(AE_LITE, ae_lite),
+-	RKISP2_PARAMS_BLOCK_INFO(HIST_LITE, hist_lite),
+-	RKISP2_PARAMS_BLOCK_INFO(HIST_BIG0, hist_big),
+-	RKISP2_PARAMS_BLOCK_INFO(HIST_BIG1, hist_big),
+-	RKISP2_PARAMS_BLOCK_INFO(HIST_BIG2, hist_big),
+-	RKISP2_PARAMS_BLOCK_INFO(AWB_MEAS, awb_meas),
+-};
++	rkisp2_params_block_types_info[] = {
++		RKISP2_PARAMS_BLOCK_INFO(BLS, bls),
++		RKISP2_PARAMS_BLOCK_INFO(AWB_GAINS, awb_gains),
++		RKISP2_PARAMS_BLOCK_INFO(CSM, csm),
++		RKISP2_PARAMS_BLOCK_INFO(CCM, ccm),
++		RKISP2_PARAMS_BLOCK_INFO(GOC, goc),
++		RKISP2_PARAMS_BLOCK_INFO(LSC, lsc),
++		RKISP2_PARAMS_BLOCK_INFO(CROP, crop),
++		RKISP2_PARAMS_BLOCK_INFO(AE_LITE, ae_lite),
++		RKISP2_PARAMS_BLOCK_INFO(HIST_LITE, hist_lite),
++		RKISP2_PARAMS_BLOCK_INFO(HIST_BIG0, hist_big),
++		RKISP2_PARAMS_BLOCK_INFO(HIST_BIG1, hist_big),
++		RKISP2_PARAMS_BLOCK_INFO(HIST_BIG2, hist_big),
++		RKISP2_PARAMS_BLOCK_INFO(AWB_MEAS, awb_meas),
++		RKISP2_PARAMS_BLOCK_INFO(DPCC, dpcc),
++	};
+ 
+ static_assert(ARRAY_SIZE(rkisp2_params_handlers) ==
+ 	      ARRAY_SIZE(rkisp2_params_block_types_info));
+@@ -841,6 +846,72 @@ static void rkisp2_params_awb_meas(struc
+ 	rkisp2_write(params->rkisp2, ISP3X_RAWAWB_CTRL, control);
+ }
+ 
++/* the ISP 2.0 has one DPCC instance per HDR frame path */
++static const u32 rkisp2_dpcc_offsets[] = {
++	0,
++	ISP_DPCC1_BASE - ISP_DPCC0_BASE,
++	ISP_DPCC2_BASE - ISP_DPCC0_BASE,
++};
++
++static void rkisp2_dpcc_write(struct rkisp2_params *params, u32 reg, u32 val)
++{
++	unsigned int i;
++
++	for (i = 0; i < ARRAY_SIZE(rkisp2_dpcc_offsets); i++)
++		rkisp2_write(params->rkisp2, reg + rkisp2_dpcc_offsets[i], val);
++}
++
++static void rkisp2_params_dpcc(struct rkisp2_params *params,
++			       union rkisp2_params_block block)
++{
++	const struct rkisp2_isp_dpcc_methods_config *m;
++	const struct rkisp2_params_dpcc *arg = block.dpcc;
++	unsigned int i;
++	u32 mode;
++	u32 reg;
++
++	if (block.header->flags & V4L2_ISP_PARAMS_FL_BLOCK_DISABLE) {
++		mode = rkisp2_read(params->rkisp2, ISP_DPCC0_MODE);
++		rkisp2_dpcc_write(params, ISP_DPCC0_MODE, mode & ~ISP_DPCC_EN);
++		return;
++	}
++
++	if (!(block.header->flags & V4L2_ISP_PARAMS_FL_BLOCK_ENABLE))
++		return;
++
++	rkisp2_dpcc_write(params, ISP_DPCC0_OUTPUT_MODE,
++			  arg->output_mode & ISP_DPCC_OUTPUT_MODE_MASK);
++	rkisp2_dpcc_write(params, ISP_DPCC0_SET_USE,
++			  arg->set_use & ISP_DPCC_SET_USE_MASK);
++
++	for (i = 0; i < RKISP2_ISP_DPCC_METHODS_MAX; i++) {
++		m = &arg->methods[i];
++
++		reg = ISP_DPCC0_METHODS_SET_1 + i * sizeof(u32);
++		rkisp2_dpcc_write(params, reg,
++				  m->method & ISP_DPCC_METHODS_SET_MASK);
++
++		reg = ISP_DPCC0_LINE_THRESH_1 + i * ISP_DPCC_METHODS_SET_STRIDE;
++		rkisp2_dpcc_write(params, reg, m->line_thresh);
++		rkisp2_dpcc_write(params, reg + 0x4,
++				  m->line_mad_fac & ISP_DPCC_LINE_MAD_FAC_MASK);
++		rkisp2_dpcc_write(params, reg + 0x8,
++				  m->pg_fac & ISP_DPCC_PG_FAC_MASK);
++		rkisp2_dpcc_write(params, reg + 0xc,
++				  m->rnd_thresh & ISP_DPCC_RND_THRESH_MASK);
++		rkisp2_dpcc_write(params, reg + 0x10,
++				  m->rg_fac & ISP_DPCC_RG_FAC_MASK);
++	}
++
++	rkisp2_dpcc_write(params, ISP_DPCC0_RO_LIMITS,
++			  arg->ro_limits & ISP_DPCC_RO_LIMITS_MASK);
++	rkisp2_dpcc_write(params, ISP_DPCC0_RND_OFFS,
++			  arg->rnd_offs & ISP_DPCC_RND_OFFS_MASK);
++
++	mode = arg->mode & ISP_DPCC_MODE_MASK;
++	rkisp2_dpcc_write(params, ISP_DPCC0_MODE, mode | ISP_DPCC_EN);
++}
++
+ static void rkisp2_params_configure(struct rkisp2_params *params,
+ 				    struct rkisp2_params_buffer *buf,
+ 				    enum rkisp2_params_configure_priority prio)
+--- a/drivers/media/platform/rockchip/rkisp2/rkisp2-regs-v2x.h
++++ b/drivers/media/platform/rockchip/rkisp2/rkisp2-regs-v2x.h
+@@ -2509,6 +2509,17 @@
+ /* DPCC */
+ /* ISP_DPCC_CTRL */
+ #define ISP_DPCC_EN			BIT(0)
++#define ISP_DPCC_MODE_MASK GENMASK(2, 1)
++#define ISP_DPCC_OUTPUT_MODE_MASK GENMASK(6, 0)
++#define ISP_DPCC_SET_USE_MASK GENMASK(3, 0)
++#define ISP_DPCC_METHODS_SET_MASK 0x00003f3f
++#define ISP_DPCC_LINE_MAD_FAC_MASK 0xffff3f3f
++#define ISP_DPCC_PG_FAC_MASK 0x00003f3f
++#define ISP_DPCC_RND_THRESH_MASK 0x0000ffff
++#define ISP_DPCC_RG_FAC_MASK 0x00003f3f
++#define ISP_DPCC_RO_LIMITS_MASK GENMASK(11, 0)
++#define ISP_DPCC_RND_OFFS_MASK GENMASK(11, 0)
++#define ISP_DPCC_METHODS_SET_STRIDE 0x14
+ 
+ /* CCM */
+ /* ISP_CCM_CTRL */
+--- a/include/uapi/linux/media/rockchip/rkisp2-config.h
++++ b/include/uapi/linux/media/rockchip/rkisp2-config.h
+@@ -228,6 +228,7 @@ struct rkisp2_stats_awb_mean {
+  * @RKISP2_PARAMS_BLOCK_HIST_BIG1: Histogram measurement config (first big block)
+  * @RKISP2_PARAMS_BLOCK_HIST_BIG2: Histogram measurement config (second big block)
+  * @RKISP2_PARAMS_BLOCK_AWB_MEAS: AWB measurements config
++ * @RKISP2_PARAMS_BLOCK_DPCC: Defect pixel cluster correction config
+  */
+ enum rkisp2_params_block_type {
+ 	RKISP2_PARAMS_BLOCK_BLS,
+@@ -243,8 +244,59 @@ enum rkisp2_params_block_type {
+ 	RKISP2_PARAMS_BLOCK_HIST_BIG1,
+ 	RKISP2_PARAMS_BLOCK_HIST_BIG2,
+ 	RKISP2_PARAMS_BLOCK_AWB_MEAS,
++	RKISP2_PARAMS_BLOCK_DPCC,
+ };
+ 
++/* DPCC: three method sets, each with a green and a red/blue variant */
++#define RKISP2_ISP_DPCC_METHODS_MAX 3
++
++#define RKISP2_ISP_DPCC_MODE_GRAYSCALE_MODE (1U << 1)
++#define RKISP2_ISP_DPCC_MODE_STAGE1_ENABLE (1U << 2)
++
++#define RKISP2_ISP_DPCC_OUTPUT_MODE_STAGE1_INCL_G_CENTER (1U << 0)
++#define RKISP2_ISP_DPCC_OUTPUT_MODE_STAGE1_INCL_RB_CENTER (1U << 1)
++#define RKISP2_ISP_DPCC_OUTPUT_MODE_STAGE1_G_3X3 (1U << 2)
++#define RKISP2_ISP_DPCC_OUTPUT_MODE_STAGE1_RB_3X3 (1U << 3)
++#define RKISP2_ISP_DPCC_OUTPUT_MODE_DPCC_OUTPUT_SEL (1U << 4)
++#define RKISP2_ISP_DPCC_OUTPUT_MODE_RK_OUT_SEL(v) ((v) << 5)
++
++#define RKISP2_ISP_DPCC_SET_USE_STAGE1_USE_SET(n) (1U << (n))
++#define RKISP2_ISP_DPCC_SET_USE_STAGE1_USE_FIX_SET (1U << 3)
++
++#define RKISP2_ISP_DPCC_METHODS_SET_PG_GREEN_ENABLE (1U << 0)
++#define RKISP2_ISP_DPCC_METHODS_SET_LC_GREEN_ENABLE (1U << 1)
++#define RKISP2_ISP_DPCC_METHODS_SET_RO_GREEN_ENABLE (1U << 2)
++#define RKISP2_ISP_DPCC_METHODS_SET_RND_GREEN_ENABLE (1U << 3)
++#define RKISP2_ISP_DPCC_METHODS_SET_RG_GREEN_ENABLE (1U << 4)
++#define RKISP2_ISP_DPCC_METHODS_SET_RK_GREEN_ENABLE (1U << 5)
++#define RKISP2_ISP_DPCC_METHODS_SET_PG_RED_BLUE_ENABLE (1U << 8)
++#define RKISP2_ISP_DPCC_METHODS_SET_LC_RED_BLUE_ENABLE (1U << 9)
++#define RKISP2_ISP_DPCC_METHODS_SET_RO_RED_BLUE_ENABLE (1U << 10)
++#define RKISP2_ISP_DPCC_METHODS_SET_RND_RED_BLUE_ENABLE (1U << 11)
++#define RKISP2_ISP_DPCC_METHODS_SET_RG_RED_BLUE_ENABLE (1U << 12)
++#define RKISP2_ISP_DPCC_METHODS_SET_RK_RED_BLUE_ENABLE (1U << 13)
++
++#define RKISP2_ISP_DPCC_LINE_THRESH_G(v) ((v) << 0)
++#define RKISP2_ISP_DPCC_LINE_THRESH_RB(v) ((v) << 8)
++#define RKISP2_ISP_DPCC_LINE_THRESH_MINDIS_G(v) ((v) << 16)
++#define RKISP2_ISP_DPCC_LINE_THRESH_MINDIS_RB(v) ((v) << 24)
++#define RKISP2_ISP_DPCC_LINE_MAD_FAC_G(v) ((v) << 0)
++#define RKISP2_ISP_DPCC_LINE_MAD_FAC_RB(v) ((v) << 8)
++#define RKISP2_ISP_DPCC_LINE_MAD_FAC_DIS_SCALE_MAX(v) ((v) << 16)
++#define RKISP2_ISP_DPCC_LINE_MAD_FAC_DIS_SCALE_MIN(v) ((v) << 24)
++#define RKISP2_ISP_DPCC_PG_FAC_G(v) ((v) << 0)
++#define RKISP2_ISP_DPCC_PG_FAC_RB(v) ((v) << 8)
++#define RKISP2_ISP_DPCC_RND_THRESH_G(v) ((v) << 0)
++#define RKISP2_ISP_DPCC_RND_THRESH_RB(v) ((v) << 8)
++#define RKISP2_ISP_DPCC_RG_FAC_G(v) ((v) << 0)
++#define RKISP2_ISP_DPCC_RG_FAC_RB(v) ((v) << 8)
++
++#define RKISP2_ISP_DPCC_RO_LIMITS_n_G(n, v) ((v) << ((n) * 4))
++#define RKISP2_ISP_DPCC_RO_LIMITS_n_RB(n, v) ((v) << ((n) * 4 + 2))
++
++#define RKISP2_ISP_DPCC_RND_OFFS_n_G(n, v) ((v) << ((n) * 4))
++#define RKISP2_ISP_DPCC_RND_OFFS_n_RB(n, v) ((v) << ((n) * 4 + 2))
++
+ /**
+  * struct rkisp2_isp_window -  measurement window.
+  *
+@@ -662,18 +714,78 @@ struct rkisp2_params_awb_meas {
+ 	__u8 reserved[7];
+ } __attribute__((aligned(8)));
+ 
+-#define RKISP2_PARAMS_MAX_SIZE					\
+-	(sizeof(struct rkisp2_params_bls)			+\
+-	sizeof(struct rkisp2_params_awb_gains)			+\
+-	sizeof(struct rkisp2_params_csm)			+\
+-	sizeof(struct rkisp2_params_ccm)			+\
+-	sizeof(struct rkisp2_params_goc)			+\
+-	sizeof(struct rkisp2_params_lsc)			+\
+-	sizeof(struct rkisp2_params_crop)			+\
+-	sizeof(struct rkisp2_params_ae_lite)			+\
+-	sizeof(struct rkisp2_params_hist_lite)			+\
+-	sizeof(struct rkisp2_params_hist_big) * 3		+\
+-	sizeof(struct rkisp2_params_awb_meas))
++/**
++ * struct rkisp2_isp_dpcc_methods_config - DPCC methods set configuration
++ *
++ * This structure stores the configuration of one set of methods for the DPCC
++ * algorithm. Multiple methods can be selected in each set (independently for
++ * the Green and Red/Blue components) through the @method field, the result is
++ * the logical AND of all enabled methods. The remaining fields set thresholds
++ * and factors for each method.
++ *
++ * @method: Method enable bits (RKISP2_ISP_DPCC_METHODS_SET_*)
++ * @line_thresh: Line threshold (RKISP2_ISP_DPCC_LINE_THRESH_*), the upper
++ *		 half holds the minimum distance of the Rockchip method
++ * @line_mad_fac: Line Mean Absolute Difference factor
++ *		  (RKISP2_ISP_DPCC_LINE_MAD_FAC_*), the upper half holds the
++ *		  distance scale of the Rockchip method
++ * @pg_fac: Peak gradient factor (RKISP2_ISP_DPCC_PG_FAC_*)
++ * @rnd_thresh: Rank Neighbor Difference threshold (RKISP2_ISP_DPCC_RND_THRESH_*)
++ * @rg_fac: Rank gradient factor (RKISP2_ISP_DPCC_RG_FAC_*)
++ */
++struct rkisp2_isp_dpcc_methods_config {
++	__u32 method;
++	__u32 line_thresh;
++	__u32 line_mad_fac;
++	__u32 pg_fac;
++	__u32 rnd_thresh;
++	__u32 rg_fac;
++};
++
++/**
++ * struct rkisp2_params_dpcc - RkISP2 params DPCC config
++ *
++ * RkISP2 parameters Defect Pixel Cluster Correction configuration block.
++ * Identified by :c:type:`RKISP2_PARAMS_BLOCK_DPCC`.
++ *
++ * The ISP 2.0 carries three DPCC instances, one per HDR frame path, and the
++ * block configures all of them alike. The layout follows the ISP1 DPCC
++ * configuration, extended with the Rockchip method and its minimum distance
++ * and distance scale fields.
++ *
++ * @header: The RkISP2 parameters block header
++ * @mode: DPCC mode (RKISP2_ISP_DPCC_MODE_*)
++ * @output_mode: Interpolation output mode (RKISP2_ISP_DPCC_OUTPUT_MODE_*)
++ * @set_use: Methods sets selection (RKISP2_ISP_DPCC_SET_USE_*)
++ * @methods: Methods sets configuration
++ * @ro_limits: Rank order limits (RKISP2_ISP_DPCC_RO_LIMITS_*)
++ * @rnd_offs: Differential rank offsets for the rank neighbor difference
++ *	      (RKISP2_ISP_DPCC_RND_OFFS_*)
++ * @reserved: padding
++ */
++struct rkisp2_params_dpcc {
++	struct v4l2_isp_params_block_header header;
++	__u32 mode;
++	__u32 output_mode;
++	__u32 set_use;
++	struct rkisp2_isp_dpcc_methods_config
++		methods[RKISP2_ISP_DPCC_METHODS_MAX];
++	__u32 ro_limits;
++	__u32 rnd_offs;
++	__u32 reserved;
++} __attribute__((aligned(8)));
++
++#define RKISP2_PARAMS_MAX_SIZE                                                 \
++	(sizeof(struct rkisp2_params_bls) +                                    \
++	 sizeof(struct rkisp2_params_awb_gains) +                              \
++	 sizeof(struct rkisp2_params_csm) + sizeof(struct rkisp2_params_ccm) + \
++	 sizeof(struct rkisp2_params_goc) + sizeof(struct rkisp2_params_lsc) + \
++	 sizeof(struct rkisp2_params_crop) +                                   \
++	 sizeof(struct rkisp2_params_ae_lite) +                                \
++	 sizeof(struct rkisp2_params_hist_lite) +                              \
++	 sizeof(struct rkisp2_params_hist_big) * 3 +                           \
++	 sizeof(struct rkisp2_params_awb_meas) +                               \
++	 sizeof(struct rkisp2_params_dpcc))
+ 
+ /*---------- ISPP (image post-processing) ------------*/
+ 

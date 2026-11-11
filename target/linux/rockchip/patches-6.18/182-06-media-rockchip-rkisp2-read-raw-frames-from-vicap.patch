@@ -1,4 +1,4 @@
-From e26da203a4d12109118a18a4f49cb7eae790b49f Mon Sep 17 00:00:00 2001
+From 8f7a5b649f56e502c9901e79ee3bccb2891581c5 Mon Sep 17 00:00:00 2001
 From: Daniel Golle <daniel@makrotopia.org>
 Date: Fri, 16 Oct 2026 23:54:17 +0100
 Subject: [PATCH] media: rockchip: rkisp2: Read raw frames from VICAP on the
@@ -12,12 +12,14 @@ passed on without user space.
 Move the readback start and stop sequence and the buffer queueing into
 helpers, bind the VICAP subdevice with an async notifier and feed every
 completed frame to the first readback channel when the first capture
-stream starts. Let the link from the first readback node to the ISP
-decide who supplies the frames: the link is created disabled on SoCs
-with a VICAP frame source and takes the VICAP input as long as it stays
-disabled. Select the readback input before the first trigger, as the
-hardware drops the trigger of the write that changes the input mode in
-about 7 % of the stream starts.
+stream starts. The VICAP writes the frames in the 16-bit Bayer format
+of the sensor's order, the MSB-justified words the readback takes. Let
+the link from the first readback node to the ISP decide who supplies
+the frames: the link is created disabled on SoCs with a VICAP frame
+source and takes the VICAP input as long as it stays disabled. Select
+the readback input before the first trigger, as the hardware drops the
+trigger of the write that changes the input mode in about 7 % of the
+stream starts.
 
 The readback engine takes the physical address the VICAP DMA writes the
 frame to. While the ISP IOMMU is on the identity domain that base
@@ -43,8 +45,8 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  .../platform/rockchip/rkisp2/rkisp2-dev.c     |   9 +-
  .../platform/rockchip/rkisp2/rkisp2-dmarx.c   | 183 ++++++++--
  .../platform/rockchip/rkisp2/rkisp2-isp.c     |  91 +++--
- .../platform/rockchip/rkisp2/rkisp2-vicap.c   | 322 ++++++++++++++++++
- 8 files changed, 608 insertions(+), 63 deletions(-)
+ .../platform/rockchip/rkisp2/rkisp2-vicap.c   | 331 ++++++++++++++++++
+ 8 files changed, 617 insertions(+), 63 deletions(-)
  create mode 100644 drivers/media/platform/rockchip/rkisp2/rkisp2-vicap.c
 
 --- a/drivers/media/platform/rockchip/rkisp2/Makefile
@@ -89,23 +91,23 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  #include <linux/media/rockchip/rkisp2-config.h>
  #include <media/media-device.h>
  #include <media/media-entity.h>
-@@ -157,6 +158,7 @@ enum rkisp2_feature {
+@@ -149,6 +150,7 @@ enum rkisp2_feature {
+  * @features: bitmask of rkisp2_feature features implemented by the ISP
   * @max_width: maximum input frame width
   * @max_height: maximum input frame height
-  * @rdbk_extra_lines: lines added to the raw readback frame
 + * @vicap_compatible: compatible of the VICAP node that feeds the readback
   *
   * This structure contains information about the ISP specific to a particular
   * ISP model, version, or integration in a particular SoC.
-@@ -171,6 +173,7 @@ struct rkisp2_info {
+@@ -162,6 +164,7 @@ struct rkisp2_info {
+ 	unsigned int features;
  	unsigned int max_width;
  	unsigned int max_height;
- 	unsigned int rdbk_extra_lines;
 +	const char *vicap_compatible;
  };
  
  /*
-@@ -214,11 +217,13 @@ struct rkisp2_vdev_node {
+@@ -205,11 +208,13 @@ struct rkisp2_vdev_node {
   * @vb:		vb2 buffer
   * @queue:	entry of the buffer in the queue
   * @buff_addr:	dma addresses of each plane, used only by the capture devices: selfpath, mainpath
@@ -119,7 +121,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  };
  
  /*
-@@ -283,6 +288,10 @@ struct rkisp2_dmarx_chan {
+@@ -274,6 +279,10 @@ struct rkisp2_dmarx_chan {
  	const struct rkisp2_rawrd_cfg *cfg;
  	enum rkisp2_rawrd_id id;
  	bool streaming;
@@ -130,7 +132,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  };
  
  struct rkisp2_dmarx {
-@@ -290,6 +299,14 @@ struct rkisp2_dmarx {
+@@ -281,6 +290,14 @@ struct rkisp2_dmarx {
  	unsigned int num_chans;
  };
  
@@ -145,7 +147,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  /*
   * struct rkisp2_capture - ISP capture video device
   *
-@@ -479,6 +496,7 @@ struct rkisp2_debug {
+@@ -470,6 +487,7 @@ struct rkisp2_debug {
   * @resizer_devs:  resizer sub-devices
   * @capture_devs:  capture devices
   * @dmarx:	   ISP memory read device
@@ -153,7 +155,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
   * @params:	   ISP parameters metadata output device
   * @stats:	   ISP statistics metadata capture device
   * @pipe:	   media pipeline
-@@ -505,6 +523,7 @@ struct rkisp2_device {
+@@ -496,6 +514,7 @@ struct rkisp2_device {
  	struct rkisp2_resizer resizer_devs[2];
  	struct rkisp2_capture capture_devs[2];
  	struct rkisp2_dmarx dmarx;
@@ -161,7 +163,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	struct rkisp2_params params;
  	struct rkisp2_stats stats;
  	struct media_pipeline pipe;
-@@ -612,6 +631,7 @@ irqreturn_t rkisp2_capture_isr(int irq,
+@@ -603,6 +622,7 @@ irqreturn_t rkisp2_capture_isr(int irq,
  irqreturn_t rkisp2_mipi_isr(int irq, void *ctx);
  void rkisp2_dmarx_isr(struct rkisp2_device *rkisp2);
  bool rkisp2_dmarx_input_idle(struct rkisp2_device *rkisp2);
@@ -169,7 +171,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  void rkisp2_params_isr(struct rkisp2_params *params);
  irqreturn_t rkisp2_stats_isr_eof(struct rkisp2_stats *stats);
  
-@@ -623,6 +643,23 @@ int rkisp2_isp_register(struct rkisp2_de
+@@ -614,6 +634,23 @@ int rkisp2_isp_register(struct rkisp2_de
  void rkisp2_isp_unregister(struct rkisp2_device *rkisp2);
  int rkisp2_dmarx_register(struct rkisp2_device *rkisp2);
  void rkisp2_dmarx_unregister(struct rkisp2_device *rkisp2);
@@ -269,10 +271,10 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	ret = rkisp2_params_register(rkisp2);
  	if (ret)
  		goto error;
-@@ -228,6 +234,7 @@ static const struct rkisp2_info rv1126_i
+@@ -227,6 +233,7 @@ static const struct rkisp2_info rv1126_i
+ 		    RKISP2_FEATURE_RAWRD_CLK | RKISP2_FEATURE_RAWRD_RESET,
  	.max_width = 4416,
  	.max_height = 3312,
- 	.rdbk_extra_lines = RKISP2_ISP20_RDBK_EXTRA_LINES,
 +	.vicap_compatible = "rockchip,rv1126-vicap",
  };
  
@@ -289,7 +291,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  static const struct rkisp2_dmarx_fmt rkisp2_rawrd_formats[] = {
  	{
  		.fourcc = V4L2_PIX_FMT_SRGGB8,
-@@ -335,19 +338,25 @@ void rkisp2_dmarx_isr(struct rkisp2_devi
+@@ -332,19 +335,25 @@ void rkisp2_dmarx_isr(struct rkisp2_devi
  		spin_lock(&chan->buf_lock);
  		done = chan->curr_buf;
  		chan->curr_buf = NULL;
@@ -317,7 +319,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  		dev_dbg(rkisp2->dev, "%s: %s buffer %pad done\n",
  			__func__, chan->cfg->name, &done->buff_addr[0]);
  	}
-@@ -394,36 +403,53 @@ static int rkisp2_rawrd_buf_init(struct
+@@ -391,36 +400,53 @@ static int rkisp2_rawrd_buf_init(struct
  	return 0;
  }
  
@@ -384,7 +386,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	/*
  	 * TODO Use stream counter to stop/start all video nodes when all are
  	 * started / one is stopped
-@@ -431,6 +457,19 @@ static void rkisp2_rawrd_stop_streaming(
+@@ -428,6 +454,19 @@ static void rkisp2_rawrd_stop_streaming(
  	 * writing 0 is ok for now
  	 */
  	rkisp2_write(rkisp2, MI_RD_CTRL2, 0);
@@ -404,7 +406,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  
  	v4l2_pipeline_pm_put(entity);
  	pm_runtime_put(rkisp2->dev);
-@@ -438,18 +477,41 @@ static void rkisp2_rawrd_stop_streaming(
+@@ -435,18 +474,41 @@ static void rkisp2_rawrd_stop_streaming(
  	mutex_unlock(&rkisp2->stream_lock);
  }
  
@@ -448,7 +450,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	ret = video_device_pipeline_start(&chan->vnode.vdev, &rkisp2->pipe);
  	if (ret)
  		goto err_unlock;
-@@ -462,25 +524,7 @@ static int rkisp2_rawrd_start_streaming(
+@@ -459,25 +521,7 @@ static int rkisp2_rawrd_start_streaming(
  	if (ret)
  		goto err_pm_put;
  
@@ -475,7 +477,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  
  	mutex_unlock(&rkisp2->stream_lock);
  	return 0;
-@@ -495,6 +539,72 @@ err_unlock:
+@@ -492,6 +536,72 @@ err_unlock:
  	return ret;
  }
  
@@ -548,7 +550,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  static const struct vb2_ops rkisp2_rawrd_vb2_ops = {
  	.queue_setup = rkisp2_rawrd_queue_setup,
  	.buf_prepare = rkisp2_rawrd_buf_prepare,
-@@ -694,6 +804,7 @@ int rkisp2_dmarx_register(struct rkisp2_
+@@ -691,6 +801,7 @@ int rkisp2_dmarx_register(struct rkisp2_
  		chan->fmt_cnt = ARRAY_SIZE(rkisp2_rawrd_formats);
  		chan->id = i;
  		spin_lock_init(&chan->buf_lock);
@@ -592,7 +594,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  }
  
  /* ----------------------------------------------------------------------------
-@@ -666,41 +681,62 @@ static const struct v4l2_subdev_pad_ops
+@@ -662,41 +677,62 @@ static const struct v4l2_subdev_pad_ops
   * Stream operations
   */
  
@@ -673,7 +675,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	}
  
  	isp->frame_sequence = -1;
-@@ -715,16 +751,25 @@ static int rkisp2_isp_s_stream(struct v4
+@@ -711,16 +747,25 @@ static int rkisp2_isp_s_stream(struct v4
  	if (ret)
  		goto out_unlock;
  
@@ -704,7 +706,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  
 --- /dev/null
 +++ b/drivers/media/platform/rockchip/rkisp2/rkisp2-vicap.c
-@@ -0,0 +1,322 @@
+@@ -0,0 +1,331 @@
 +// SPDX-License-Identifier: (GPL-2.0-or-later OR MIT)
 +/*
 + * Rockchip ISP2 Driver - raw frames from the VICAP driver
@@ -727,22 +729,32 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	size_t iommu_size;
 +};
 +
-+static const struct {
++/* the readback takes unpacked samples MSB-justified in 16-bit words */
++static const struct rkisp2_vicap_fmt {
 +	u32 mbus_code;
 +	u32 fourcc;
++	u32 vicap_fourcc;
 +} rkisp2_vicap_fmts[] = {
-+	{ MEDIA_BUS_FMT_SRGGB8_1X8, V4L2_PIX_FMT_SRGGB8 },
-+	{ MEDIA_BUS_FMT_SBGGR8_1X8, V4L2_PIX_FMT_SBGGR8 },
-+	{ MEDIA_BUS_FMT_SGRBG8_1X8, V4L2_PIX_FMT_SGRBG8 },
-+	{ MEDIA_BUS_FMT_SGBRG8_1X8, V4L2_PIX_FMT_SGBRG8 },
-+	{ MEDIA_BUS_FMT_SRGGB10_1X10, V4L2_PIX_FMT_SRGGB10 },
-+	{ MEDIA_BUS_FMT_SBGGR10_1X10, V4L2_PIX_FMT_SBGGR10 },
-+	{ MEDIA_BUS_FMT_SGRBG10_1X10, V4L2_PIX_FMT_SGRBG10 },
-+	{ MEDIA_BUS_FMT_SGBRG10_1X10, V4L2_PIX_FMT_SGBRG10 },
-+	{ MEDIA_BUS_FMT_SRGGB12_1X12, V4L2_PIX_FMT_SRGGB12 },
-+	{ MEDIA_BUS_FMT_SBGGR12_1X12, V4L2_PIX_FMT_SBGGR12 },
-+	{ MEDIA_BUS_FMT_SGRBG12_1X12, V4L2_PIX_FMT_SGRBG12 },
-+	{ MEDIA_BUS_FMT_SGBRG12_1X12, V4L2_PIX_FMT_SGBRG12 },
++	{ MEDIA_BUS_FMT_SRGGB8_1X8, V4L2_PIX_FMT_SRGGB8, V4L2_PIX_FMT_SRGGB8 },
++	{ MEDIA_BUS_FMT_SBGGR8_1X8, V4L2_PIX_FMT_SBGGR8, V4L2_PIX_FMT_SBGGR8 },
++	{ MEDIA_BUS_FMT_SGRBG8_1X8, V4L2_PIX_FMT_SGRBG8, V4L2_PIX_FMT_SGRBG8 },
++	{ MEDIA_BUS_FMT_SGBRG8_1X8, V4L2_PIX_FMT_SGBRG8, V4L2_PIX_FMT_SGBRG8 },
++	{ MEDIA_BUS_FMT_SRGGB10_1X10, V4L2_PIX_FMT_SRGGB10,
++	  V4L2_PIX_FMT_SRGGB16 },
++	{ MEDIA_BUS_FMT_SBGGR10_1X10, V4L2_PIX_FMT_SBGGR10,
++	  V4L2_PIX_FMT_SBGGR16 },
++	{ MEDIA_BUS_FMT_SGRBG10_1X10, V4L2_PIX_FMT_SGRBG10,
++	  V4L2_PIX_FMT_SGRBG16 },
++	{ MEDIA_BUS_FMT_SGBRG10_1X10, V4L2_PIX_FMT_SGBRG10,
++	  V4L2_PIX_FMT_SGBRG16 },
++	{ MEDIA_BUS_FMT_SRGGB12_1X12, V4L2_PIX_FMT_SRGGB12,
++	  V4L2_PIX_FMT_SRGGB16 },
++	{ MEDIA_BUS_FMT_SBGGR12_1X12, V4L2_PIX_FMT_SBGGR12,
++	  V4L2_PIX_FMT_SBGGR16 },
++	{ MEDIA_BUS_FMT_SGRBG12_1X12, V4L2_PIX_FMT_SGRBG12,
++	  V4L2_PIX_FMT_SGRBG16 },
++	{ MEDIA_BUS_FMT_SGBRG12_1X12, V4L2_PIX_FMT_SGBRG12,
++	  V4L2_PIX_FMT_SGBRG16 },
 +};
 +
 +static int rkisp2_vicap_call(struct rkisp2_vicap *vicap, unsigned int cmd,
@@ -851,15 +863,15 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	.frame = rkisp2_vicap_frame,
 +};
 +
-+static u32 rkisp2_vicap_fourcc(u32 mbus_code)
++static const struct rkisp2_vicap_fmt *rkisp2_vicap_find_fmt(u32 mbus_code)
 +{
 +	unsigned int i;
 +
 +	for (i = 0; i < ARRAY_SIZE(rkisp2_vicap_fmts); i++)
 +		if (rkisp2_vicap_fmts[i].mbus_code == mbus_code)
-+			return rkisp2_vicap_fmts[i].fourcc;
++			return &rkisp2_vicap_fmts[i];
 +
-+	return 0;
++	return NULL;
 +}
 +
 +bool rkisp2_vicap_available(struct rkisp2_device *rkisp2)
@@ -879,8 +891,8 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +		.ops = &rkisp2_vicap_ops,
 +		.priv = vicap,
 +	};
++	const struct rkisp2_vicap_fmt *vfmt;
 +	struct rkcif_toisp_format format;
-+	u32 fourcc;
 +	u32 reg;
 +	int ret;
 +
@@ -888,8 +900,8 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	if (ret)
 +		return ret;
 +
-+	fourcc = rkisp2_vicap_fourcc(format.mbus_code);
-+	if (!fourcc || format.mbus_code != fmt->code ||
++	vfmt = rkisp2_vicap_find_fmt(format.mbus_code);
++	if (!vfmt || format.mbus_code != fmt->code ||
 +	    format.width != fmt->width || format.height != fmt->height) {
 +		dev_err(rkisp2->dev,
 +			"VICAP provides %ux%u code 0x%04x, ISP sink is %ux%u code 0x%04x\n",
@@ -898,7 +910,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +		return -EPIPE;
 +	}
 +
-+	ret = rkisp2_dmarx_ext_start(rkisp2, fourcc, format.width,
++	ret = rkisp2_dmarx_ext_start(rkisp2, vfmt->fourcc, format.width,
 +				     format.height);
 +	if (ret)
 +		return ret;
@@ -914,10 +926,9 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	reg |= RKISP2_CIF_MI_INIT_SOFT_UPD;
 +	rkisp2_write(rkisp2, RKISP2_CIF_MI_INIT, reg);
 +
-+	start.cfg.pixelformat = fourcc;
++	start.cfg.pixelformat = vfmt->vicap_fourcc;
 +	start.cfg.width = format.width;
 +	start.cfg.height = format.height;
-+	start.cfg.extra_lines = rkisp2->info->rdbk_extra_lines;
 +	ret = rkisp2_vicap_call(vicap, RKCIF_TOISP_CMD_START, &start);
 +	if (!ret && start.cfg.bytesperline != chan->pix.plane_fmt[0].bytesperline) {
 +		rkisp2_vicap_call(vicap, RKCIF_TOISP_CMD_STOP, NULL);

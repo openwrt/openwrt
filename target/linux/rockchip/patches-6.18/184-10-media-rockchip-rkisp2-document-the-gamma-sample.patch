@@ -1,0 +1,36 @@
+From 7c2bfc7b72a3bc97d79f7c7659211b4621ccf2d7 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Wed, 4 Nov 2026 11:58:44 +0000
+Subject: [PATCH] media: rockchip: rkisp2: Document the gamma sample positions
+
+The gamma out block takes each sample as the output at the end of its
+segment and the offset register as the output for a zero input, so a
+44-segment curve uses 44 samples and the entry after the last segment is
+not read. Say so in the block description, which read as if the samples
+were the knots of the curve including the origin.
+
+Assisted-by: LLM
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ include/uapi/linux/media/rockchip/rkisp2-config.h | 8 +++++---
+ 1 file changed, 5 insertions(+), 3 deletions(-)
+
+--- a/include/uapi/linux/media/rockchip/rkisp2-config.h
++++ b/include/uapi/linux/media/rockchip/rkisp2-config.h
+@@ -508,11 +508,13 @@ struct rkisp2_params_ccm {
+  * @header: The RkISP2 parameters block header
+  * @mode: goc mode (from enum rkisp2_isp_goc_mode)
+  * @segments: segments mode (from enum rkisp2_isp_goc_segments)
+- * @offset: offset value of the gamma out curve
+- * @gamma_y: gamma out curve y-axis for all color components
++ * @offset: gamma out curve output for a zero input
++ * @gamma_y: gamma out curve output at the end of each segment, for all color
++ *	     components
+  * @reserved: padding
+  *
+- * The number of entries of @gamma_y depends on the segments mode. The entries
++ * The number of entries of @gamma_y depends on the segments mode, 44 or 48;
++ * the hardware does not read the entry after the last segment. The entries
+  * are 12-bit unsigned.
+  */
+ struct rkisp2_params_goc {

@@ -1,0 +1,28 @@
+From 7dff4405154d7484c0ffab701e5cb88c56ae2561 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Fri, 6 Nov 2026 00:23:04 +0000
+Subject: [PATCH] media: rockchip: rkisp2: Document the CCM identity
+
+The RkISP2 colour correction adds the identity matrix to the programmed
+coefficients, so a diagonal register holds the coefficient minus one,
+as the Rockchip AIQ isp20 CCM configuration writes it. The uapi
+describes the coefficients as the plain matrix, and a user following it
+doubles the brightness of the picture. State the offset diagonal.
+
+Assisted-by: LLM
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ include/uapi/linux/media/rockchip/rkisp2-config.h | 2 ++
+ 1 file changed, 2 insertions(+)
+
+--- a/include/uapi/linux/media/rockchip/rkisp2-config.h
++++ b/include/uapi/linux/media/rockchip/rkisp2-config.h
+@@ -390,6 +390,8 @@ struct rkisp2_params_csm {
+  *		and 7 bit fractional part, ranging from -8 (0x400) to +7.992 (0x3FF). 0 is
+  *		represented by 0x000 and a coefficient value of 1 as 0x080. The
+  *		value is expanded 128 times (TODO figure out what this means).
++ *		The hardware adds the identity matrix, so the diagonal holds
++ *		the coefficient minus one.
+  * @offset: Red, Green, Blue offsets for the color correction matrix. 12-bits
+  *	    wide ranging from -4096 to 4095, but only for red; green and blue are 11-bit
+  *	    signed fixed-point like coeff, but are still 12-bits wide.
