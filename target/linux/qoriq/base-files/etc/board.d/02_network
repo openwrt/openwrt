@@ -26,7 +26,6 @@ watchguard,firebox-m300)
 		device="$(basename "$sweth")"
 		wg_set_opt_interface "$device" "${device#sweth}"
 	done
-
 	;;
 esac
 
