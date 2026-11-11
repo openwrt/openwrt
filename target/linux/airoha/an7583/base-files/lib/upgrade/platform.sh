@@ -46,7 +46,5 @@ platform_pre_upgrade() {
 	nokia,xg-040g-mf)
 		nokia_initial_setup
 		;;
-	*)
-		;;
 	esac
 }
