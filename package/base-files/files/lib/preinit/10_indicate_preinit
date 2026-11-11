@@ -92,7 +92,7 @@ preinit_config_port() {
 	ip link set "$original" name "$netdev"
 }
 
-preinit_config_board() {
+preinit_rename_netdevs() {
 	/bin/board_detect /tmp/board.json
 
 	[ -f "/tmp/board.json" ] || return
@@ -129,6 +129,17 @@ preinit_config_board() {
 			json_select ..
 		json_select ..
 	done
+}
+
+preinit_config_board() {
+	/bin/board_detect /tmp/board.json
+
+	[ -f "/tmp/board.json" ] || return
+
+	. /usr/share/libubox/jshn.sh
+
+	json_init
+	json_load "$(cat /tmp/board.json)"
 
 	json_select network
 		json_select "lan"
@@ -236,5 +247,6 @@ pi_indicate_preinit() {
 	set_state preinit
 }
 
+boot_hook_add preinit_main preinit_rename_netdevs
 boot_hook_add preinit_main preinit_ip
 boot_hook_add preinit_main pi_indicate_preinit
