@@ -1,0 +1,42 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Erik Conijn <egc112@msn.com>
+Date: Fri, 30 Oct 2026 08:55:41 +0100
+Subject: [PATCH] wifi: b43: drop the A-MSDU subframes the MAC splits off
+
+The MAC splits a received A-MSDU into its subframes, one RX buffer each,
+and flags them in the RX status with the A-MSDU bit. b43 passes them to
+mac80211 as complete frames. The first one carries the 802.11 header,
+followed by subframe data where mac80211 expects the QoS control and the
+CCMP header, so with hardware decryption mac80211 takes a random PN from
+it. That PN is stored for whatever TID the garbage names, and every later
+frame of that TID is dropped as a replay until the station rekeys: on an
+EA6900 (BCM4360) with an ath11k client, a 5 GHz upload stopped within
+minutes once the client started sending A-MSDUs.
+
+Drop the subframes, as brcmsmac does (brcms_c_recv(), RXS_AMSDU_MASK).
+
+Assisted-by: Claude:claude-opus-5-5
+Signed-off-by: Erik Conijn <egc112@msn.com>
+---
+ drivers/net/wireless/broadcom/b43/xmit.c | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
+
+--- a/drivers/net/wireless/broadcom/b43/xmit.c
++++ b/drivers/net/wireless/broadcom/b43/xmit.c
+@@ -1195,6 +1195,16 @@ void b43_rx(struct b43_wldev *dev, struc
+ 		 * the key in software. */
+ 		goto drop;
+ 	}
++	/*
++	 * The MAC splits a received A-MSDU into its subframes, one buffer
++	 * each, and flags them with the A-MSDU bit. None of them is a
++	 * complete MPDU: the first one carries the 802.11 header followed by
++	 * subframe data where the QoS control and the security header belong,
++	 * so mac80211 would read a random CCMP PN from it and take every later
++	 * frame of that TID for a replay. Drop them, as brcmsmac does.
++	 */
++	if (unlikely(macstat & B43_RX_MAC_AMSDU))
++		goto drop;
+ 
+ 	/* Skip PLCP and padding */
+ 	padding = (macstat & B43_RX_MAC_PADDING) ? 2 : 0;
