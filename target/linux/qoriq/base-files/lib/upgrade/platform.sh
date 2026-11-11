@@ -59,8 +59,7 @@ platform_do_upgrade_sdboot() {
 	echo "Erasing rootfs..."
 	dd if=/dev/zero of=/dev/mmcblk0p2 bs=1M > /dev/null 2>&1
 	echo "Writing rootfs..."
-	tar xf $tar_file ${board_dir}/root -O  | dd of=/dev/mmcblk0p2 bs=512k > /dev/null 2>&1
-
+	tar xf $tar_file ${board_dir}/root -O | dd of=/dev/mmcblk0p2 bs=512k > /dev/null 2>&1
 }
 
 platform_do_upgrade_nor() {
@@ -70,8 +69,8 @@ platform_do_upgrade_nor() {
 	board_dir=${board_dir%/}
 	local temp_sysupgrade="/tmp/sysupgrade.bin"
 
-	tar xf $tar_file ${board_dir}/kernel -O  > $temp_sysupgrade.tmp || return 1
-	tar xf $tar_file ${board_dir}/root -O >> $temp_sysupgrade.tmp  || return 1
+	tar xf $tar_file ${board_dir}/kernel -O > $temp_sysupgrade.tmp || return 1
+	tar xf $tar_file ${board_dir}/root -O >> $temp_sysupgrade.tmp || return 1
 	dd if=$temp_sysupgrade.tmp of=$temp_sysupgrade bs=128k conv=sync > /dev/null 2>&1 || return 1
 	printf '\xDE\xAD\xC0\xDE' | dd of=$temp_sysupgrade bs=128k oflag=append conv=notrunc,sync > /dev/null 2>&1 || return 1
 
