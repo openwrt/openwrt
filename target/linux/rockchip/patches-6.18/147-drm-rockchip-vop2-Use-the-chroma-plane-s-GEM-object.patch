@@ -1,0 +1,35 @@
+From 053e1b4f332d9907a6626820c4dd032053f61015 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Wed, 11 Nov 2026 00:23:38 +0000
+Subject: [PATCH] drm/rockchip: vop2: Use the chroma plane's GEM object
+
+vop2_plane_atomic_update() computes the UV start address of a
+multi-planar framebuffer from fb->obj[0]. rockchip_fb_create() sets up
+the framebuffer with drm_gem_fb_init_with_funcs(), which looks up one
+GEM object per plane from the ADDFB2 handles and checks each plane
+against its own object only, so a framebuffer with luma and chroma in
+two buffers is accepted. The window then fetches chroma from the luma
+buffer at the chroma plane's offset, or past the end of the luma buffer.
+
+Take the UV address from fb->obj[1] for formats with a second plane.
+The packed and AFBC YUV formats have a single plane and keep using
+fb->obj[0].
+
+Fixes: 604be85547ce ("drm/rockchip: Add VOP2 driver")
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ drivers/gpu/drm/rockchip/rockchip_drm_vop2.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+--- a/drivers/gpu/drm/rockchip/rockchip_drm_vop2.c
++++ b/drivers/gpu/drm/rockchip/rockchip_drm_vop2.c
+@@ -1203,7 +1203,8 @@ static void vop2_plane_atomic_update(str
+ 		if ((pstate->rotation & DRM_MODE_REFLECT_Y) && !afbc_en)
+ 			offset += fb->pitches[1] * ((pstate->src_h >> 16) - 2) / vsub;
+ 
+-		rk_obj = to_rockchip_obj(fb->obj[0]);
++		if (fb->format->num_planes > 1)
++			rk_obj = to_rockchip_obj(fb->obj[1]);
+ 		uv_mst = rk_obj->dma_addr + offset + fb->offsets[1];
+ 	}
+ 
