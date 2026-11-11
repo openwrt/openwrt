@@ -1,0 +1,165 @@
+From a559d1b2e928bc916b22fd3508a0db304fee1e43 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Thu, 5 Nov 2026 00:44:00 +0000
+Subject: [PATCH] media: rockchip: ispp: Take the ISP pool frames compressed
+
+Read the pool in the FBC format of the ISP: the TNR and NR read it with
+a zero stride, the payload behind the header in place of the chroma
+plane, and the NR with the 16-aligned frame height; the TNR writes its
+output in the same format, while the NR, FEC and outputs stay
+uncompressed. Make the compressed 4:2:0 pool the default, as in the
+vendor driver.
+
+With it a 4K frame takes 13 ms in the TNR and 11 ms in the NR, against
+70 ms and 20 ms with the uncompressed 4:2:2 pool.
+
+Assisted-by: LLM
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ drivers/media/platform/rockchip/ispp/dev.c    |  2 +-
+ drivers/media/platform/rockchip/ispp/stream.c | 66 +++++++++++++------
+ 2 files changed, 46 insertions(+), 22 deletions(-)
+
+--- a/drivers/media/platform/rockchip/ispp/dev.c
++++ b/drivers/media/platform/rockchip/ispp/dev.c
+@@ -29,7 +29,7 @@ bool rkispp_monitor;
+ module_param_named(monitor, rkispp_monitor, bool, 0644);
+ MODULE_PARM_DESC(monitor, "rkispp abnormal restart monitor");
+ 
+-static int rkisp_ispp_mode = ISP_ISPP_422;
++static int rkisp_ispp_mode = ISP_ISPP_FBC;
+ module_param_named(mode, rkisp_ispp_mode, int, 0644);
+ MODULE_PARM_DESC(mode, "isp->ispp mode: bit0 fbc, bit1 yuv422, bit2 quick");
+ 
+--- a/drivers/media/platform/rockchip/ispp/stream.c
++++ b/drivers/media/platform/rockchip/ispp/stream.c
+@@ -420,11 +420,19 @@ static void rkispp_frame_end(struct rkis
+ 	update_mi(stream);
+ }
+ 
++/*
++ * @fmt: the format of the module input and of the TNR output, FMT_FBC
++ *	 included; the NR writes it uncompressed
++ * @stride: the uncompressed line stride
++ * @rd_stride: the stride of a read of @fmt, 0 for a compressed frame
++ * @uv_offset: the chroma plane, or the FBC payload, behind the picture base
++ */
+ struct rkispp_geometry {
+ 	u32 width;
+ 	u32 height;
+ 	u32 fmt;
+ 	u32 stride;
++	u32 rd_stride;
+ 	u32 uv_offset;
+ };
+ 
+@@ -436,27 +444,44 @@ static void rkispp_geometry_get(struct r
+ 	if (dev->inp == INP_DDR)
+ 		g->fmt = vdev->stream[STREAM_II].out_cap_fmt.wr_fmt;
+ 	else
+-		g->fmt = dev->isp_mode & FMT_YUV422;
++		g->fmt = dev->isp_mode & (FMT_YUV422 | FMT_FBC);
+ 	g->width = dev->ispp_sdev.out_fmt.width;
+ 	g->height = dev->ispp_sdev.out_fmt.height;
+ 	g->stride = fmt_stride(g->fmt, g->width);
+-	g->uv_offset = ALIGN(g->width, 16) * g->height;
++	if (g->fmt & FMT_FBC) {
++		g->rd_stride = 0;
++		g->uv_offset = RKISP2_ISPP_FBC_HEAD_SIZE(g->width, g->height);
++	} else {
++		g->rd_stride = g->stride;
++		g->uv_offset = ALIGN(g->width, 16) * g->height;
++	}
++}
++
++/* a frame of the module input format, with the tail the TNR over-reads */
++static u32 rkispp_geometry_pic_size(const struct rkispp_geometry *g)
++{
++	u32 w = ALIGN(g->width, 16), h = g->height, size = 0;
++
++	if (g->fmt & FMT_FBC) {
++		h = ALIGN(h, 16);
++		size = g->uv_offset;
++	}
++	if (g->fmt & FMT_YUV422)
++		return size + w * h * 2 + g->width * 4;
++	return size + w * h * 3 / 2 + g->width * 2;
+ }
+ 
+ static int init_pool(struct rkispp_device *dev, u32 *w, u32 *h)
+ {
+ 	struct rkispp_stream_vdev *vdev = &dev->stream_vdev;
+-	u32 fmt, pic_size, gain_size;
++	struct rkispp_geometry g;
++	u32 pic_size, gain_size;
+ 	int i, ret;
+ 
+-	fmt = dev->isp_mode & FMT_YUV422;
+-	*w = dev->ispp_sdev.out_fmt.width;
+-	*h = dev->ispp_sdev.out_fmt.height;
+-	/* the isp mainpath writes the lines at the 16 byte aligned stride */
+-	pic_size = (fmt & FMT_YUV422) ? ALIGN(*w, 16) * *h * 2 :
+-					ALIGN(*w, 16) * *h * 3 / 2;
+-	/* the TNR fetch over-reads the frame tail; keep it inside the mapping */
+-	pic_size += (fmt & FMT_YUV422) ? *w * 4 : *w * 2;
++	rkispp_geometry_get(dev, &g);
++	*w = g.width;
++	*h = g.height;
++	pic_size = rkispp_geometry_pic_size(&g);
+ 	gain_size = PAGE_ALIGN(ALIGN(*w, 64) * ALIGN(*h, 128) >> 4);
+ 
+ 	for (i = 0; i < RKISPP_BUF_POOL_MAX; i++) {
+@@ -599,9 +624,9 @@ static void tnr_regs_config(struct rkisp
+ 			g.fmt << 4 | SW_TNR_1ST_FRM);
+ 
+ 	rkispp_set_bits(dev, RKISPP_TNR_CTRL, FMT_RD_MASK, g.fmt);
+-	rkispp_write(dev, RKISPP_TNR_CUR_VIR_STRIDE, g.stride >> 2);
+-	rkispp_write(dev, RKISPP_TNR_IIR_VIR_STRIDE, g.stride >> 2);
+-	rkispp_write(dev, RKISPP_TNR_NXT_VIR_STRIDE, g.stride >> 2);
++	rkispp_write(dev, RKISPP_TNR_CUR_VIR_STRIDE, g.rd_stride >> 2);
++	rkispp_write(dev, RKISPP_TNR_IIR_VIR_STRIDE, g.rd_stride >> 2);
++	rkispp_write(dev, RKISPP_TNR_NXT_VIR_STRIDE, g.rd_stride >> 2);
+ 	rkispp_set_bits(dev, RKISPP_TNR_CORE_CTRL, SW_TNR_MODE,
+ 			vdev->tnr.is_3to1 ? SW_TNR_MODE : 0);
+ 	rkispp_write(dev, RKISPP_TNR_GAIN_CUR_VIR_STRIDE, gain_stride);
+@@ -630,10 +655,7 @@ static int config_tnr(struct rkispp_devi
+ 		return 0;
+ 
+ 	rkispp_geometry_get(dev, &g);
+-	pic_size = (g.fmt & FMT_YUV422) ? g.width * g.height * 2 :
+-					  g.width * g.height * 3 / 2;
+-	/* the same tail room as the input pool */
+-	pic_size += (g.fmt & FMT_YUV422) ? g.width * 4 : g.width * 2;
++	pic_size = rkispp_geometry_pic_size(&g);
+ 	gain_size = ALIGN(g.width, 64) * ALIGN(g.height, 128) >> 4;
+ 
+ 	if (vdev->module_ens & (ISPP_MODULE_NR | ISPP_MODULE_SHP)) {
+@@ -777,7 +799,7 @@ static void nr_shp_regs_config(struct rk
+ 		rkispp_write(dev, RKISPP_SHARP_WR_UV_BASE, val + addr_offs);
+ 		rkispp_write(dev, RKISPP_SHARP_WR_VIR_STRIDE, g.stride >> 2);
+ 		rkispp_set_bits(dev, RKISPP_SHARP_CTRL, SW_SHP_WR_FORMAT_MASK,
+-				g.fmt);
++				g.fmt & ~FMT_FBC);
+ 
+ 		rkispp_write(dev, RKISPP_FEC_RD_Y_BASE, val);
+ 		rkispp_write(dev, RKISPP_FEC_RD_UV_BASE, val + addr_offs);
+@@ -797,7 +819,9 @@ static void nr_shp_regs_config(struct rk
+ 
+ 	rkispp_set_bits(dev, RKISPP_NR_CTRL, NR_NEW_ALGO, NR_NEW_ALGO);
+ 	rkispp_set_bits(dev, RKISPP_NR_CTRL, FMT_RD_MASK, g.fmt);
+-	rkispp_write(dev, RKISPP_NR_VIR_STRIDE, g.stride >> 2);
++	rkispp_write(dev, RKISPP_NR_VIR_STRIDE, g.rd_stride >> 2);
++	if (g.fmt & FMT_FBC)
++		rkispp_write(dev, RKISPP_FBC_VIR_HEIGHT, ALIGN(g.height, 16));
+ 	rkispp_write(dev, RKISPP_NR_VIR_STRIDE_GAIN, ALIGN(g.width, 64) >> 4);
+ 	rkispp_write(dev, RKISPP_CTRL_SIZE, g.height << 16 | g.width);
+ }
+@@ -880,7 +904,7 @@ static void fec_regs_config(struct rkisp
+ 		stream->config->reg.cur_uv_base = RKISPP_FEC_RD_UV_BASE;
+ 	}
+ 
+-	rkispp_set_bits(dev, RKISPP_FEC_CTRL, FMT_RD_MASK, g.fmt);
++	rkispp_set_bits(dev, RKISPP_FEC_CTRL, FMT_RD_MASK, g.fmt & ~FMT_FBC);
+ 	rkispp_write(dev, RKISPP_FEC_RD_VIR_STRIDE, g.stride >> 2);
+ 	rkispp_write(dev, RKISPP_FEC_PIC_SIZE, g.height << 16 | g.width);
+ 	rkispp_mesh_regs_config(dev);

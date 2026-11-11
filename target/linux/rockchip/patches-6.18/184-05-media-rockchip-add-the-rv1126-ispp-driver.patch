@@ -1,19 +1,20 @@
-From 68087d16822d862e6f32d0643150b697ba245ac7 Mon Sep 17 00:00:00 2001
+From b61b848b2167030e2ac32cac9b2ca9ce25528632 Mon Sep 17 00:00:00 2001
 From: Daniel Golle <daniel@makrotopia.org>
 Date: Wed, 28 Oct 2026 13:18:43 +0000
 Subject: [PATCH] media: rockchip: Add the RV1126 ISPP driver
 
 The RV1126 SoC pairs the ISP2 with an image post-processing unit
 (ISPP) that applies temporal noise reduction, noise reduction,
-sharpening and scaling to the YUV422 stream coming out of the ISP.
+sharpening, lens distortion correction and scaling to the YUV422
+stream coming out of the ISP.
 
 The driver matches the rockchip,rv1126-ispp device and registers the
-rkispp-subdev entity with input, output, params and stats pads, one
-video device per output stream (the module bypass and the three
+rkispp-subdev entity with input, output, params, mesh and stats pads,
+one video device per output stream (the module bypass and the three
 scalers), the II input stream, the params and stats devices carrying
-the v4l2_isp_buffer blocks, and a debugfs node. The module bypass
-output offers NV12 and NV12M, the scalers derive their chroma base from
-the luma base and stay single plane.
+the v4l2_isp_buffer blocks, the FEC mesh device and a debugfs node. The
+module bypass output offers NV12 and NV12M, the scalers derive their
+chroma base from the luma base and stay single plane.
 
 The pipeline input is the ISP output pool handed over through the ISP
 pipe subdev, or the II stream frames written back from DDR when the
@@ -26,6 +27,14 @@ interrupts are handled in a thread. The queued params blocks apply per
 module at the module frame ends, a restart re-applies the current
 state of the enabled modules, and a monitor work restarts the pipeline
 when a module stops completing frames.
+
+The FEC correction mesh comes in through the rkispp_fec_mesh metadata
+output device. A queued mesh is checked against the output format,
+copied into one of two engine banks and returned at once; the engine
+reads the new bank from the next frame on and the old bank is free
+once two FEC frames have ended. The FEC module stays out of the
+pipeline until a mesh has been loaded, so the engine never reads an
+empty bank.
 
 A scaler stopped while the pipeline keeps running finishes the frame
 it is writing: its disable takes effect at the frame boundary and its
@@ -40,28 +49,30 @@ cancels the works as well.
 Assisted-by: LLM
 Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 ---
- MAINTAINERS                                   |    1 +
+ MAINTAINERS                                   |    2 +
  drivers/media/platform/rockchip/Kconfig       |    1 +
  drivers/media/platform/rockchip/Makefile      |    1 +
  drivers/media/platform/rockchip/ispp/Kconfig  |   23 +
- drivers/media/platform/rockchip/ispp/Makefile |   13 +
+ drivers/media/platform/rockchip/ispp/Makefile |   14 +
  drivers/media/platform/rockchip/ispp/common.c |  108 +
  drivers/media/platform/rockchip/ispp/common.h |   95 +
  drivers/media/platform/rockchip/ispp/debug.c  |  146 +
- drivers/media/platform/rockchip/ispp/dev.c    |  402 +++
- drivers/media/platform/rockchip/ispp/dev.h    |   79 +
+ drivers/media/platform/rockchip/ispp/dev.c    |  416 +++
+ drivers/media/platform/rockchip/ispp/dev.h    |   81 +
  drivers/media/platform/rockchip/ispp/hw.c     |  239 ++
  drivers/media/platform/rockchip/ispp/hw.h     |   46 +
- drivers/media/platform/rockchip/ispp/ispp.c   |  463 +++
- drivers/media/platform/rockchip/ispp/ispp.h   |   54 +
- drivers/media/platform/rockchip/ispp/params.c | 1117 +++++++
+ drivers/media/platform/rockchip/ispp/ispp.c   |  464 +++
+ drivers/media/platform/rockchip/ispp/ispp.h   |   58 +
+ drivers/media/platform/rockchip/ispp/mesh.c   |  496 +++
+ drivers/media/platform/rockchip/ispp/mesh.h   |   43 +
+ drivers/media/platform/rockchip/ispp/params.c | 1106 +++++++
  drivers/media/platform/rockchip/ispp/params.h |   48 +
  drivers/media/platform/rockchip/ispp/regs.h   |  492 +++
- drivers/media/platform/rockchip/ispp/stats.c  |  504 +++
- drivers/media/platform/rockchip/ispp/stats.h  |   88 +
- drivers/media/platform/rockchip/ispp/stream.c | 2723 +++++++++++++++++
- drivers/media/platform/rockchip/ispp/stream.h |  238 ++
- 21 files changed, 6881 insertions(+)
+ drivers/media/platform/rockchip/ispp/stats.c  |  418 +++
+ drivers/media/platform/rockchip/ispp/stats.h  |   53 +
+ drivers/media/platform/rockchip/ispp/stream.c | 2736 +++++++++++++++++
+ drivers/media/platform/rockchip/ispp/stream.h |  241 ++
+ 23 files changed, 7327 insertions(+)
  create mode 100644 drivers/media/platform/rockchip/ispp/Kconfig
  create mode 100644 drivers/media/platform/rockchip/ispp/Makefile
  create mode 100644 drivers/media/platform/rockchip/ispp/common.c
@@ -73,6 +84,8 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  create mode 100644 drivers/media/platform/rockchip/ispp/hw.h
  create mode 100644 drivers/media/platform/rockchip/ispp/ispp.c
  create mode 100644 drivers/media/platform/rockchip/ispp/ispp.h
+ create mode 100644 drivers/media/platform/rockchip/ispp/mesh.c
+ create mode 100644 drivers/media/platform/rockchip/ispp/mesh.h
  create mode 100644 drivers/media/platform/rockchip/ispp/params.c
  create mode 100644 drivers/media/platform/rockchip/ispp/params.h
  create mode 100644 drivers/media/platform/rockchip/ispp/regs.h
@@ -83,10 +96,11 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 
 --- a/MAINTAINERS
 +++ b/MAINTAINERS
-@@ -22317,6 +22317,7 @@ L:	linux-media@vger.kernel.org
+@@ -22317,6 +22317,8 @@ L:	linux-media@vger.kernel.org
  L:	linux-rockchip@lists.infradead.org
  S:	Maintained
  F:	Documentation/devicetree/bindings/media/rockchip-ispp.yaml
++F:	Documentation/userspace-api/media/v4l/metafmt-rkispp-fec-mesh.rst
 +F:	drivers/media/platform/rockchip/ispp
  F:	include/linux/platform_data/media/rkisp2-toispp.h
  
@@ -130,20 +144,21 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	  Enable this to support the Image Post-Processing (ISPP) unit
 +	  present in the RV1126 SoC. The ISPP follows the ISP2 in the
 +	  camera pipeline and applies temporal noise reduction, noise
-+	  reduction, sharpening and scaling to its YUV422 input, while
-+	  measuring a FEC motion mesh and ORB feature points per frame.
++	  reduction, sharpening, lens distortion correction and scaling to
++	  its YUV422 input, while measuring ORB feature points per frame.
 +
 +	  To compile this driver as a module, choose M here: the module
 +	  will be called video-rkispp.
 --- /dev/null
 +++ b/drivers/media/platform/rockchip/ispp/Makefile
-@@ -0,0 +1,13 @@
+@@ -0,0 +1,14 @@
 +# SPDX-License-Identifier: GPL-2.0-only
 +
 +video-rkispp-y := common.o \
 +		  dev.o \
 +		  hw.o \
 +		  ispp.o \
++		  mesh.o \
 +		  params.o \
 +		  stats.o \
 +		  stream.o
@@ -511,7 +526,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +}
 --- /dev/null
 +++ b/drivers/media/platform/rockchip/ispp/dev.c
-@@ -0,0 +1,402 @@
+@@ -0,0 +1,416 @@
 +// SPDX-License-Identifier: GPL-2.0
 +/*
 + * Rockchip ISPP platform driver
@@ -684,6 +699,12 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	if (ret < 0)
 +		return ret;
 +
++	source = &ispp_dev->mesh_vdev.vnode.vdev.entity;
++	ret = media_create_pad_link(source, 0, sink, RKISPP_PAD_SINK_MESH,
++				    flags);
++	if (ret < 0)
++		return ret;
++
 +	flags = MEDIA_LNK_FL_ENABLED;
 +	source = &ispp_dev->ispp_sdev.sd.entity;
 +	sink = &ispp_dev->stats_vdev.vnode.vdev.entity;
@@ -724,12 +745,12 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +
 +	/* the modules parameter overrides the mask for non-standard pipelines */
 +	if (rkispp_modules)
-+		ispp_dev->stream_vdev.module_ens =
++		ispp_dev->stream_vdev.module_cfg =
 +			rkispp_modules &
 +			(ISPP_MODULE_TNR_3TO1 | ISPP_MODULE_NR |
 +			 ISPP_MODULE_SHP | ISPP_MODULE_FEC);
 +	else
-+		ispp_dev->stream_vdev.module_ens = ISPP_MODULE_NR |
++		ispp_dev->stream_vdev.module_cfg = ISPP_MODULE_NR |
 +						   ISPP_MODULE_SHP;
 +	return 0;
 +}
@@ -746,9 +767,13 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	if (ret < 0)
 +		goto err_unreg_stream_vdevs;
 +
-+	ret = rkispp_register_stats_vdev(ispp_dev);
++	ret = rkispp_register_mesh_vdev(ispp_dev);
 +	if (ret < 0)
 +		goto err_unreg_params_vdev;
++
++	ret = rkispp_register_stats_vdev(ispp_dev);
++	if (ret < 0)
++		goto err_unreg_mesh_vdev;
 +
 +	ret = rkispp_register_subdev(ispp_dev, &ispp_dev->v4l2_dev);
 +	if (ret < 0)
@@ -762,6 +787,8 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	rkispp_unregister_subdev(ispp_dev);
 +err_unreg_stats_vdev:
 +	rkispp_unregister_stats_vdev(ispp_dev);
++err_unreg_mesh_vdev:
++	rkispp_unregister_mesh_vdev(ispp_dev);
 +err_unreg_params_vdev:
 +	rkispp_unregister_params_vdev(ispp_dev);
 +err_unreg_stream_vdevs:
@@ -838,6 +865,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +err_unreg_platform_subdevs:
 +	rkispp_unregister_subdev(ispp_dev);
 +	rkispp_unregister_stats_vdev(ispp_dev);
++	rkispp_unregister_mesh_vdev(ispp_dev);
 +	rkispp_unregister_params_vdev(ispp_dev);
 +	rkispp_unregister_stream_vdevs(ispp_dev);
 +err_hw_exit:
@@ -857,6 +885,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	rkispp_debug_cleanup(ispp_dev);
 +	rkispp_unregister_subdev(ispp_dev);
 +	rkispp_unregister_stats_vdev(ispp_dev);
++	rkispp_unregister_mesh_vdev(ispp_dev);
 +	rkispp_unregister_params_vdev(ispp_dev);
 +	rkispp_unregister_stream_vdevs(ispp_dev);
 +	rkispp_hw_exit(ispp_dev);
@@ -916,7 +945,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +MODULE_IMPORT_NS("DMA_BUF");
 --- /dev/null
 +++ b/drivers/media/platform/rockchip/ispp/dev.h
-@@ -0,0 +1,79 @@
+@@ -0,0 +1,81 @@
 +/* SPDX-License-Identifier: GPL-2.0 */
 +/*
 + * Rockchip ISPP device
@@ -930,6 +959,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +#include <linux/workqueue.h>
 +
 +#include "ispp.h"
++#include "mesh.h"
 +#include "params.h"
 +#include "stream.h"
 +#include "stats.h"
@@ -964,6 +994,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	struct rkispp_subdev ispp_sdev;
 +	struct rkispp_stream_vdev stream_vdev;
 +	struct rkispp_params_vdev params_vdev;
++	struct rkispp_mesh_vdev mesh_vdev;
 +	struct rkispp_stats_vdev stats_vdev;
 +	struct v4l2_async_notifier nf;
 +	struct work_struct irq_work;
@@ -1289,7 +1320,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +#endif
 --- /dev/null
 +++ b/drivers/media/platform/rockchip/ispp/ispp.c
-@@ -0,0 +1,463 @@
+@@ -0,0 +1,464 @@
 +// SPDX-License-Identifier: GPL-2.0
 +/*
 + * Rockchip ISPP subdev
@@ -1712,6 +1743,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	ispp_sdev->pads[RKISPP_PAD_SINK].flags = MEDIA_PAD_FL_SINK |
 +						 MEDIA_PAD_FL_MUST_CONNECT;
 +	ispp_sdev->pads[RKISPP_PAD_SINK_PARAMS].flags = MEDIA_PAD_FL_SINK;
++	ispp_sdev->pads[RKISPP_PAD_SINK_MESH].flags = MEDIA_PAD_FL_SINK;
 +	ispp_sdev->pads[RKISPP_PAD_SOURCE].flags = MEDIA_PAD_FL_SOURCE;
 +	ispp_sdev->pads[RKISPP_PAD_SOURCE_STATS].flags = MEDIA_PAD_FL_SOURCE;
 +
@@ -1755,7 +1787,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +}
 --- /dev/null
 +++ b/drivers/media/platform/rockchip/ispp/ispp.h
-@@ -0,0 +1,54 @@
+@@ -0,0 +1,58 @@
 +/* SPDX-License-Identifier: GPL-2.0 */
 +/*
 + * Rockchip ISPP subdev
@@ -1771,10 +1803,14 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +enum rkispp_pad {
 +	RKISPP_PAD_SINK,
 +	RKISPP_PAD_SINK_PARAMS,
++	RKISPP_PAD_SINK_MESH,
 +	RKISPP_PAD_SOURCE,
 +	RKISPP_PAD_SOURCE_STATS,
 +	RKISPP_PAD_MAX
 +};
++
++/* the dense FEC mesh grid is limited to this picture width */
++#define RKISPP_FEC_DENSE_WIDTH_MAX 1920
 +
 +enum rkispp_state {
 +	ISPP_STOP = 0,
@@ -1811,8 +1847,553 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +
 +#endif
 --- /dev/null
++++ b/drivers/media/platform/rockchip/ispp/mesh.c
+@@ -0,0 +1,496 @@
++// SPDX-License-Identifier: GPL-2.0
++/*
++ * Rockchip ISPP FEC correction mesh
++ *
++ * Copyright (c) 2026 Daniel Golle <daniel@makrotopia.org>
++ */
++
++#include <linux/media/rockchip/rkisp2-config.h>
++#include <media/v4l2-ioctl.h>
++#include <media/videobuf2-vmalloc.h>
++
++#include "dev.h"
++#include "ispp.h"
++#include "regs.h"
++
++#define RKISPP_MESH_REQ_BUFS_MIN 1
++#define RKISPP_MESH_REQ_BUFS_MAX 4
++
++/*
++ * A switch programmed between two FEC kicks is latched by the second one
++ * at the latest, so the bank it left behind is read by at most two more
++ * frames.
++ */
++#define RKISPP_FEC_MESH_RETIRE_FRAMES 2
++
++/* bank layout: x fraction, y fraction, x integer, y integer */
++static u32 rkispp_mesh_xfra_oft(u32 points)
++{
++	return 0;
++}
++
++static u32 rkispp_mesh_yfra_oft(u32 points)
++{
++	return ALIGN(points, 16);
++}
++
++static u32 rkispp_mesh_xint_oft(u32 points)
++{
++	return 2 * ALIGN(points, 16);
++}
++
++static u32 rkispp_mesh_yint_oft(u32 points)
++{
++	return rkispp_mesh_xint_oft(points) + ALIGN(2 * points, 16);
++}
++
++static u32 rkispp_mesh_bank_size(u32 points)
++{
++	return rkispp_mesh_xint_oft(points) + 2 * ALIGN(2 * points, 16);
++}
++
++/* the densest grid any picture can have: dense up to the width limit */
++static u32 rkispp_mesh_points_max(void)
++{
++	u32 dense = cal_fec_mesh(RKISPP_FEC_DENSE_WIDTH_MAX, RKISPP_MAX_HEIGHT,
++				 RKISPP_FEC_MESH_DENSE);
++	u32 coarse = cal_fec_mesh(RKISPP_MAX_WIDTH, RKISPP_MAX_HEIGHT,
++				  RKISPP_FEC_MESH_COARSE);
++
++	return max(dense, coarse);
++}
++
++static u32 rkispp_mesh_buf_size(void)
++{
++	return ALIGN(sizeof(struct rkispp_fec_mesh), 16) +
++	       rkispp_mesh_bank_size(rkispp_mesh_points_max());
++}
++
++static bool rkispp_mesh_table_ok(u32 offset, u32 len, size_t size)
++{
++	if (offset % 16 || offset < sizeof(struct rkispp_fec_mesh))
++		return false;
++	return (u64)offset + len <= size;
++}
++
++static int rkispp_mesh_check(struct rkispp_device *dev,
++			     const struct rkispp_fec_mesh *mesh, size_t size)
++{
++	struct isppsd_fmt *fmt = &dev->ispp_sdev.out_fmt;
++	u32 n = mesh->mesh_size;
++
++	if (mesh->width != fmt->width || mesh->height != fmt->height)
++		return -EINVAL;
++	if (mesh->density > RKISPP_FEC_MESH_COARSE)
++		return -EINVAL;
++	if (mesh->width > RKISPP_FEC_DENSE_WIDTH_MAX &&
++	    mesh->density != RKISPP_FEC_MESH_COARSE)
++		return -EINVAL;
++	if (n != cal_fec_mesh(mesh->width, mesh->height, mesh->density))
++		return -EINVAL;
++	if (!rkispp_mesh_table_ok(mesh->xint_offset, 2 * n, size) ||
++	    !rkispp_mesh_table_ok(mesh->xfra_offset, n, size) ||
++	    !rkispp_mesh_table_ok(mesh->yint_offset, 2 * n, size) ||
++	    !rkispp_mesh_table_ok(mesh->yfra_offset, n, size))
++		return -EINVAL;
++	return 0;
++}
++
++static bool rkispp_mesh_running(struct rkispp_device *dev)
++{
++	return dev->ispp_sdev.state == ISPP_START &&
++	       dev->stream_vdev.module_ens & ISPP_MODULE_FEC;
++}
++
++static void rkispp_mesh_regs_write(struct rkispp_device *dev)
++{
++	struct rkispp_mesh_vdev *mesh_vdev = &dev->mesh_vdev;
++	struct rkispp_dummy_buffer *bank = &mesh_vdev->bank[mesh_vdev->cur];
++	u32 n = mesh_vdev->mesh_size;
++
++	rkispp_write(dev, RKISPP_FEC_MESH_XFRA_BASE,
++		     bank->dma_addr + rkispp_mesh_xfra_oft(n));
++	rkispp_write(dev, RKISPP_FEC_MESH_YFRA_BASE,
++		     bank->dma_addr + rkispp_mesh_yfra_oft(n));
++	rkispp_write(dev, RKISPP_FEC_MESH_XINT_BASE,
++		     bank->dma_addr + rkispp_mesh_xint_oft(n));
++	rkispp_write(dev, RKISPP_FEC_MESH_YINT_BASE,
++		     bank->dma_addr + rkispp_mesh_yint_oft(n));
++	rkispp_write(dev, RKISPP_FEC_MESH_SIZE, n);
++	rkispp_set_bits(dev, RKISPP_FEC_CORE_CTRL, SW_MESH_DENSITY,
++			mesh_vdev->density ? SW_MESH_DENSITY : 0);
++}
++
++static int rkispp_mesh_bank_prepare(struct rkispp_device *dev,
++				    struct rkispp_dummy_buffer *bank,
++				    u32 points)
++{
++	size_t size = PAGE_ALIGN(rkispp_mesh_bank_size(points));
++
++	if (bank->size >= size)
++		return 0;
++	rkispp_dummy_buffer_free(dev, bank);
++	return rkispp_dummy_buffer_alloc(dev, bank, size, 0);
++}
++
++static void rkispp_mesh_copy(struct rkispp_dummy_buffer *bank,
++			     const struct rkispp_fec_mesh *mesh)
++{
++	const u8 *src = (const u8 *)mesh;
++	u8 *dst = bank->vaddr;
++	u32 n = mesh->mesh_size;
++
++	memcpy(dst + rkispp_mesh_xfra_oft(n), src + mesh->xfra_offset, n);
++	memcpy(dst + rkispp_mesh_yfra_oft(n), src + mesh->yfra_offset, n);
++	memcpy(dst + rkispp_mesh_xint_oft(n), src + mesh->xint_offset, 2 * n);
++	memcpy(dst + rkispp_mesh_yint_oft(n), src + mesh->yint_offset, 2 * n);
++}
++
++/* copy the queued meshes into the free bank, one per retired switch */
++static void rkispp_mesh_load(struct rkispp_device *dev)
++{
++	struct rkispp_mesh_vdev *mesh_vdev = &dev->mesh_vdev;
++	const struct rkispp_fec_mesh *mesh;
++	struct rkispp_dummy_buffer *bank;
++	struct rkispp_buffer *buf;
++	unsigned long flags;
++	u32 next;
++	int ret;
++
++	mutex_lock(&mesh_vdev->bank_lock);
++	for (;;) {
++		spin_lock_irqsave(&mesh_vdev->lock, flags);
++		if (mesh_vdev->retire || list_empty(&mesh_vdev->queued)) {
++			spin_unlock_irqrestore(&mesh_vdev->lock, flags);
++			break;
++		}
++		buf = list_first_entry(&mesh_vdev->queued, struct rkispp_buffer,
++				       queue);
++		list_del(&buf->queue);
++		next = mesh_vdev->loaded ? mesh_vdev->cur ^ 1 : 0;
++		spin_unlock_irqrestore(&mesh_vdev->lock, flags);
++
++		mesh = buf->vaddr[0];
++		bank = &mesh_vdev->bank[next];
++		ret = rkispp_mesh_bank_prepare(dev, bank, mesh->mesh_size);
++		if (!ret)
++			rkispp_mesh_copy(bank, mesh);
++
++		spin_lock_irqsave(&mesh_vdev->lock, flags);
++		if (!ret) {
++			mesh_vdev->cur = next;
++			mesh_vdev->mesh_size = mesh->mesh_size;
++			mesh_vdev->density = mesh->density;
++			mesh_vdev->loaded = true;
++			if (rkispp_mesh_running(dev)) {
++				rkispp_mesh_regs_write(dev);
++				mesh_vdev->retire =
++					RKISPP_FEC_MESH_RETIRE_FRAMES;
++			}
++		}
++		spin_unlock_irqrestore(&mesh_vdev->lock, flags);
++
++		vb2_buffer_done(&buf->vb.vb2_buf,
++				ret ? VB2_BUF_STATE_ERROR : VB2_BUF_STATE_DONE);
++	}
++	mutex_unlock(&mesh_vdev->bank_lock);
++}
++
++bool rkispp_mesh_loaded(struct rkispp_device *dev)
++{
++	struct rkispp_mesh_vdev *mesh_vdev = &dev->mesh_vdev;
++	unsigned long flags;
++	bool loaded;
++
++	spin_lock_irqsave(&mesh_vdev->lock, flags);
++	loaded = mesh_vdev->loaded;
++	spin_unlock_irqrestore(&mesh_vdev->lock, flags);
++	return loaded;
++}
++
++void rkispp_mesh_regs_config(struct rkispp_device *dev)
++{
++	struct rkispp_mesh_vdev *mesh_vdev = &dev->mesh_vdev;
++	unsigned long flags;
++
++	spin_lock_irqsave(&mesh_vdev->lock, flags);
++	if (mesh_vdev->loaded)
++		rkispp_mesh_regs_write(dev);
++	spin_unlock_irqrestore(&mesh_vdev->lock, flags);
++}
++
++void rkispp_mesh_isr(struct rkispp_device *dev, u32 mis)
++{
++	struct rkispp_mesh_vdev *mesh_vdev = &dev->mesh_vdev;
++	unsigned long flags;
++	bool pending;
++
++	if (!(mis & FEC_INT))
++		return;
++
++	spin_lock_irqsave(&mesh_vdev->lock, flags);
++	if (mesh_vdev->retire)
++		mesh_vdev->retire--;
++	pending = !mesh_vdev->retire && !list_empty(&mesh_vdev->queued);
++	spin_unlock_irqrestore(&mesh_vdev->lock, flags);
++
++	if (pending)
++		rkispp_mesh_load(dev);
++}
++
++/* called with bank_lock held */
++static void rkispp_mesh_banks_free(struct rkispp_device *dev)
++{
++	struct rkispp_mesh_vdev *mesh_vdev = &dev->mesh_vdev;
++	unsigned long flags;
++	unsigned int i;
++
++	spin_lock_irqsave(&mesh_vdev->lock, flags);
++	mesh_vdev->loaded = false;
++	spin_unlock_irqrestore(&mesh_vdev->lock, flags);
++
++	for (i = 0; i < RKISPP_FEC_MESH_BANKS; i++)
++		rkispp_dummy_buffer_free(dev, &mesh_vdev->bank[i]);
++}
++
++/* the banks live while either the pipeline or the mesh queue runs */
++void rkispp_mesh_pipeline_stopped(struct rkispp_device *dev)
++{
++	struct rkispp_mesh_vdev *mesh_vdev = &dev->mesh_vdev;
++	unsigned long flags;
++	bool release;
++
++	mutex_lock(&mesh_vdev->bank_lock);
++	spin_lock_irqsave(&mesh_vdev->lock, flags);
++	mesh_vdev->retire = 0;
++	release = !mesh_vdev->streamon;
++	spin_unlock_irqrestore(&mesh_vdev->lock, flags);
++	if (release)
++		rkispp_mesh_banks_free(dev);
++	mutex_unlock(&mesh_vdev->bank_lock);
++
++	rkispp_mesh_load(dev);
++}
++
++static int rkispp_mesh_enum_fmt_meta_out(struct file *file, void *fh,
++					 struct v4l2_fmtdesc *f)
++{
++	if (f->index)
++		return -EINVAL;
++
++	if (f->mbus_code && f->mbus_code != MEDIA_BUS_FMT_METADATA_FIXED)
++		return -EINVAL;
++
++	f->pixelformat = V4L2_META_FMT_RKISPP_FEC_MESH;
++
++	return 0;
++}
++
++static int rkispp_mesh_g_fmt_meta_out(struct file *file, void *fh,
++				      struct v4l2_format *f)
++{
++	struct v4l2_meta_format *meta = &f->fmt.meta;
++
++	memset(meta, 0, sizeof(*meta));
++	meta->dataformat = V4L2_META_FMT_RKISPP_FEC_MESH;
++	meta->buffersize = rkispp_mesh_buf_size();
++
++	return 0;
++}
++
++static int rkispp_mesh_querycap(struct file *file, void *priv,
++				struct v4l2_capability *cap)
++{
++	struct video_device *vdev = video_devdata(file);
++
++	strscpy(cap->driver, DRIVER_NAME, sizeof(cap->driver));
++	strscpy(cap->card, vdev->name, sizeof(cap->card));
++	strscpy(cap->bus_info, "platform: " DRIVER_NAME, sizeof(cap->bus_info));
++
++	return 0;
++}
++
++static const struct v4l2_ioctl_ops rkispp_mesh_ioctl = {
++	.vidioc_reqbufs = vb2_ioctl_reqbufs,
++	.vidioc_querybuf = vb2_ioctl_querybuf,
++	.vidioc_create_bufs = vb2_ioctl_create_bufs,
++	.vidioc_qbuf = vb2_ioctl_qbuf,
++	.vidioc_dqbuf = vb2_ioctl_dqbuf,
++	.vidioc_prepare_buf = vb2_ioctl_prepare_buf,
++	.vidioc_expbuf = vb2_ioctl_expbuf,
++	.vidioc_streamon = vb2_ioctl_streamon,
++	.vidioc_streamoff = vb2_ioctl_streamoff,
++	.vidioc_enum_fmt_meta_out = rkispp_mesh_enum_fmt_meta_out,
++	.vidioc_g_fmt_meta_out = rkispp_mesh_g_fmt_meta_out,
++	.vidioc_s_fmt_meta_out = rkispp_mesh_g_fmt_meta_out,
++	.vidioc_try_fmt_meta_out = rkispp_mesh_g_fmt_meta_out,
++	.vidioc_querycap = rkispp_mesh_querycap,
++};
++
++static int rkispp_mesh_vb2_queue_setup(struct vb2_queue *vq,
++				       unsigned int *num_buffers,
++				       unsigned int *num_planes,
++				       unsigned int sizes[],
++				       struct device *alloc_devs[])
++{
++	*num_buffers = clamp_t(u32, *num_buffers, RKISPP_MESH_REQ_BUFS_MIN,
++			       RKISPP_MESH_REQ_BUFS_MAX);
++	*num_planes = 1;
++	sizes[0] = rkispp_mesh_buf_size();
++
++	return 0;
++}
++
++static int rkispp_mesh_vb2_buf_prepare(struct vb2_buffer *vb)
++{
++	struct rkispp_mesh_vdev *mesh_vdev = vb->vb2_queue->drv_priv;
++	struct vb2_v4l2_buffer *vbuf = to_vb2_v4l2_buffer(vb);
++	struct rkispp_buffer *buf = to_rkispp_buffer(vbuf);
++	size_t payload = vb2_get_plane_payload(vb, 0);
++
++	if (payload < sizeof(struct rkispp_fec_mesh))
++		return -EINVAL;
++
++	buf->vaddr[0] = vb2_plane_vaddr(vb, 0);
++	if (!buf->vaddr[0])
++		return -EINVAL;
++
++	return rkispp_mesh_check(mesh_vdev->dev, buf->vaddr[0], payload);
++}
++
++static void rkispp_mesh_vb2_buf_queue(struct vb2_buffer *vb)
++{
++	struct rkispp_mesh_vdev *mesh_vdev = vb->vb2_queue->drv_priv;
++	struct vb2_v4l2_buffer *vbuf = to_vb2_v4l2_buffer(vb);
++	struct rkispp_buffer *buf = to_rkispp_buffer(vbuf);
++	unsigned long flags;
++
++	spin_lock_irqsave(&mesh_vdev->lock, flags);
++	list_add_tail(&buf->queue, &mesh_vdev->queued);
++	spin_unlock_irqrestore(&mesh_vdev->lock, flags);
++
++	rkispp_mesh_load(mesh_vdev->dev);
++}
++
++static int rkispp_mesh_vb2_start_streaming(struct vb2_queue *vq,
++					   unsigned int count)
++{
++	struct rkispp_mesh_vdev *mesh_vdev = vq->drv_priv;
++	unsigned long flags;
++
++	spin_lock_irqsave(&mesh_vdev->lock, flags);
++	mesh_vdev->streamon = true;
++	spin_unlock_irqrestore(&mesh_vdev->lock, flags);
++
++	return 0;
++}
++
++static void rkispp_mesh_vb2_stop_streaming(struct vb2_queue *vq)
++{
++	struct rkispp_mesh_vdev *mesh_vdev = vq->drv_priv;
++	struct rkispp_device *dev = mesh_vdev->dev;
++	struct rkispp_buffer *buf;
++	unsigned long flags;
++	LIST_HEAD(tmp_list);
++
++	mutex_lock(&mesh_vdev->bank_lock);
++	spin_lock_irqsave(&mesh_vdev->lock, flags);
++	mesh_vdev->streamon = false;
++	list_splice_init(&mesh_vdev->queued, &tmp_list);
++	spin_unlock_irqrestore(&mesh_vdev->lock, flags);
++	if (dev->ispp_sdev.state == ISPP_STOP)
++		rkispp_mesh_banks_free(dev);
++	mutex_unlock(&mesh_vdev->bank_lock);
++
++	list_for_each_entry(buf, &tmp_list, queue)
++		vb2_buffer_done(&buf->vb.vb2_buf, VB2_BUF_STATE_ERROR);
++}
++
++static const struct vb2_ops rkispp_mesh_vb2_ops = {
++	.queue_setup = rkispp_mesh_vb2_queue_setup,
++	.buf_prepare = rkispp_mesh_vb2_buf_prepare,
++	.buf_queue = rkispp_mesh_vb2_buf_queue,
++	.start_streaming = rkispp_mesh_vb2_start_streaming,
++	.stop_streaming = rkispp_mesh_vb2_stop_streaming,
++};
++
++static const struct v4l2_file_operations rkispp_mesh_fops = {
++	.mmap = vb2_fop_mmap,
++	.unlocked_ioctl = video_ioctl2,
++	.poll = vb2_fop_poll,
++	.open = v4l2_fh_open,
++	.release = vb2_fop_release,
++};
++
++static int rkispp_mesh_init_vb2_queue(struct vb2_queue *q,
++				      struct rkispp_mesh_vdev *mesh_vdev)
++{
++	q->type = V4L2_BUF_TYPE_META_OUTPUT;
++	q->io_modes = VB2_MMAP | VB2_DMABUF;
++	q->drv_priv = mesh_vdev;
++	q->ops = &rkispp_mesh_vb2_ops;
++	q->mem_ops = &vb2_vmalloc_memops;
++	q->buf_struct_size = sizeof(struct rkispp_buffer);
++	q->timestamp_flags = V4L2_BUF_FLAG_TIMESTAMP_MONOTONIC;
++	q->lock = &mesh_vdev->dev->iqlock;
++	q->dev = mesh_vdev->dev->dev;
++
++	return vb2_queue_init(q);
++}
++
++int rkispp_register_mesh_vdev(struct rkispp_device *dev)
++{
++	struct rkispp_mesh_vdev *mesh_vdev = &dev->mesh_vdev;
++	struct rkispp_vdev_node *node = &mesh_vdev->vnode;
++	struct video_device *vdev = &node->vdev;
++	int ret;
++
++	mesh_vdev->dev = dev;
++	INIT_LIST_HEAD(&mesh_vdev->queued);
++	spin_lock_init(&mesh_vdev->lock);
++	mutex_init(&mesh_vdev->bank_lock);
++
++	strscpy(vdev->name, "rkispp_fec_mesh", sizeof(vdev->name));
++
++	video_set_drvdata(vdev, mesh_vdev);
++	vdev->ioctl_ops = &rkispp_mesh_ioctl;
++	vdev->fops = &rkispp_mesh_fops;
++	vdev->release = video_device_release_empty;
++	vdev->lock = &dev->iqlock;
++	vdev->v4l2_dev = &dev->v4l2_dev;
++	vdev->queue = &node->buf_queue;
++	vdev->device_caps = V4L2_CAP_STREAMING | V4L2_CAP_META_OUTPUT;
++	vdev->vfl_dir = VFL_DIR_TX;
++	ret = rkispp_mesh_init_vb2_queue(vdev->queue, mesh_vdev);
++	if (ret)
++		return ret;
++
++	node->pad.flags = MEDIA_PAD_FL_SOURCE;
++	ret = media_entity_pads_init(&vdev->entity, 1, &node->pad);
++	if (ret < 0) {
++		vb2_queue_release(vdev->queue);
++		return ret;
++	}
++	ret = video_register_device(vdev, VFL_TYPE_VIDEO, -1);
++	if (ret < 0) {
++		dev_err(dev->dev,
++			"could not register Video for Linux device\n");
++		media_entity_cleanup(&vdev->entity);
++		vb2_queue_release(vdev->queue);
++	}
++	return ret;
++}
++
++void rkispp_unregister_mesh_vdev(struct rkispp_device *dev)
++{
++	struct rkispp_mesh_vdev *mesh_vdev = &dev->mesh_vdev;
++	struct rkispp_vdev_node *node = &mesh_vdev->vnode;
++	struct video_device *vdev = &node->vdev;
++
++	video_unregister_device(vdev);
++	media_entity_cleanup(&vdev->entity);
++	vb2_queue_release(vdev->queue);
++	mutex_lock(&mesh_vdev->bank_lock);
++	rkispp_mesh_banks_free(dev);
++	mutex_unlock(&mesh_vdev->bank_lock);
++}
+--- /dev/null
++++ b/drivers/media/platform/rockchip/ispp/mesh.h
+@@ -0,0 +1,43 @@
++/* SPDX-License-Identifier: GPL-2.0 */
++/*
++ * Rockchip ISPP FEC correction mesh
++ *
++ * Copyright (c) 2026 Daniel Golle <daniel@makrotopia.org>
++ */
++
++#ifndef _RKISPP_MESH_H
++#define _RKISPP_MESH_H
++
++#include <linux/types.h>
++#include "common.h"
++
++/* engine copies of the mesh, ping-ponged so a switch never races a frame */
++#define RKISPP_FEC_MESH_BANKS 2
++
++struct rkispp_mesh_vdev {
++	struct rkispp_vdev_node vnode;
++	struct rkispp_device *dev;
++
++	/* protects queued, the bank state and streamon */
++	spinlock_t lock;
++	/* serialises the bank copies with their release */
++	struct mutex bank_lock;
++	struct list_head queued;
++	struct rkispp_dummy_buffer bank[RKISPP_FEC_MESH_BANKS];
++	u32 cur;
++	/* FEC frame ends until the bank left behind by a switch is free */
++	u32 retire;
++	u32 mesh_size;
++	u32 density;
++	bool loaded;
++	bool streamon;
++};
++
++bool rkispp_mesh_loaded(struct rkispp_device *dev);
++void rkispp_mesh_regs_config(struct rkispp_device *dev);
++void rkispp_mesh_isr(struct rkispp_device *dev, u32 mis);
++void rkispp_mesh_pipeline_stopped(struct rkispp_device *dev);
++int rkispp_register_mesh_vdev(struct rkispp_device *dev);
++void rkispp_unregister_mesh_vdev(struct rkispp_device *dev);
++
++#endif
+--- /dev/null
 +++ b/drivers/media/platform/rockchip/ispp/params.c
-@@ -0,0 +1,1117 @@
+@@ -0,0 +1,1106 @@
 +// SPDX-License-Identifier: GPL-2.0
 +/*
 + * Rockchip ISPP parameters
@@ -2396,27 +2977,9 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +{
 +	struct rkispp_params_vdev *params_vdev = &dev->params_vdev;
 +	const struct rkispp_params_fec *arg = block.fec;
-+	u32 width, height, mesh_size;
 +	u32 val;
 +
 +	memcpy(&params_vdev->cur_params.fec, arg, sizeof(*arg));
-+
-+	width = dev->ispp_sdev.out_fmt.width;
-+	height = dev->ispp_sdev.out_fmt.height;
-+	mesh_size = cal_fec_mesh(width, height, 0);
-+	if (arg->mesh_size > mesh_size) {
-+		v4l2_err(&dev->v4l2_dev,
-+			 "fec mesh size %u exceeds the max %u\n",
-+			 arg->mesh_size, mesh_size);
-+		return;
-+	}
-+
-+	/* the mesh buffers are the stats scratch banks, fixed per stream */
-+
-+	val = arg->mesh_density ? SW_MESH_DENSITY : 0;
-+	rkispp_set_bits(dev, RKISPP_FEC_CORE_CTRL, SW_MESH_DENSITY, val);
-+
-+	rkispp_write(dev, RKISPP_FEC_MESH_SIZE, arg->mesh_size);
 +
 +	val = (arg->crop_height & 0x1FFFF) << 14 |
 +	      (arg->crop_width & 0x1FFFF) << 1 | (arg->crop_en & 0x01);
@@ -2527,6 +3090,8 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +{
 +	if (type == RKISPP_PARAMS_BLOCK_TNR && dev->inp != INP_ISP)
 +		return false;
++	if (type == RKISPP_PARAMS_BLOCK_FEC && !rkispp_mesh_loaded(dev))
++		return false;
 +	return !(flags & V4L2_ISP_PARAMS_FL_BLOCK_DISABLE);
 +}
 +
@@ -2562,9 +3127,14 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	const struct rkispp_params_block_handler_info *info;
 +	struct v4l2_isp_params_buffer *cfg = buf->cfg;
 +	size_t block_offset = 0, max_offset = cfg->data_size;
++	u32 ens;
 +
-+	stream_vdev->module_ens =
-+		rkispp_params_buf_ens(dev, cfg, stream_vdev->module_ens);
++	stream_vdev->module_cfg =
++		rkispp_params_buf_ens(dev, cfg, stream_vdev->module_cfg);
++	/* the FEC path is wired at the start, the running mask keeps it */
++	ens = rkispp_modules_effective(dev) & ~ISPP_MODULE_FEC;
++	ens |= stream_vdev->module_ens & ISPP_MODULE_FEC;
++	stream_vdev->module_ens = ens;
 +
 +	while (max_offset && block_offset < max_offset) {
 +		union rkispp_params_block block;
@@ -2761,8 +3331,8 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	if (params_vdev->first_params) {
 +		params_vdev->first_params = false;
 +		/* the engine starts from this buffer: its blocks set the mask */
-+		vdev->module_ens = rkispp_params_buf_ens(dev, params_buf->cfg,
-+							 vdev->module_ens);
++		vdev->module_cfg = rkispp_params_buf_ens(dev, params_buf->cfg,
++							 vdev->module_cfg);
 +		wake_up(&dev->sync_onoff);
 +	}
 +	list_add_tail(&params_buf->queue, &params_vdev->params);
@@ -3478,10 +4048,10 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +#endif /* _RKISPP_REGS_H */
 --- /dev/null
 +++ b/drivers/media/platform/rockchip/ispp/stats.c
-@@ -0,0 +1,504 @@
+@@ -0,0 +1,418 @@
 +// SPDX-License-Identifier: GPL-2.0
 +/*
-+ * Rockchip ISPP statistics (ORB feature points, FEC mesh)
++ * Rockchip ISPP statistics (ORB feature points)
 + *
 + * Copyright (c) 2019 Fuzhou Rockchip Electronics Co., Ltd.
 + */
@@ -3509,7 +4079,6 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +
 +static const struct v4l2_isp_stats_block_type_info rkispp_stats_blocks_info[] = {
 +	RKISPP_STATS_BLOCK_INFO(ORB, orb),
-+	RKISPP_STATS_BLOCK_INFO(FEC_MESH, fec_mesh),
 +};
 +
 +static void *rkispp_stats_block(struct rkispp_device *dev,
@@ -3554,40 +4123,6 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	}
 +}
 +
-+static void rkispp_stats_fill_fec_mesh(struct rkispp_stats_vdev *stats_vdev,
-+				       struct v4l2_isp_buffer *stat_buf,
-+				       u32 frame)
-+{
-+	struct rkispp_device *dev = stats_vdev->dev;
-+	struct rkispp_subdev *sdev = &dev->ispp_sdev;
-+	struct rkispp_dummy_buffer *bank =
-+		&stats_vdev->mesh_buf[stats_vdev->mesh_buf_idx];
-+	struct rkispp_stats_fec_mesh *mesh;
-+	u32 w = sdev->out_fmt.width;
-+	bool density = w > 1920;
-+	u32 n = stats_vdev->mesh_size;
-+	u32 i;
-+
-+	mesh = rkispp_stats_block(dev, stat_buf, RKISPP_STATS_BLOCK_FEC_MESH);
-+	if (IS_ERR(mesh))
-+		return;
-+
-+	mesh->mesh_width = density ? w / 32 + 1 : w / 16 + 1;
-+	mesh->mesh_height = density ? 9 : 17;
-+	mesh->points = n;
-+
-+	for (i = 0; i < n; i++) {
-+		mesh->xfra[i] =
-+			((__u8 *)bank->vaddr)[rkispp_mesh_xfra_oft(n) + i];
-+		mesh->yfra[i] =
-+			((__u8 *)bank->vaddr)[rkispp_mesh_yfra_oft(n) + i];
-+		mesh->xint[i] =
-+			((__u16 *)bank->vaddr)[rkispp_mesh_xint_oft(n) / 2 + i];
-+		mesh->yint[i] =
-+			((__u16 *)bank->vaddr)[rkispp_mesh_yint_oft(n) / 2 + i];
-+	}
-+}
-+
 +/* runs after the pipeline interrupt has advanced the frame sequence */
 +static void rkispp_stats_frame_end(struct rkispp_device *dev)
 +{
@@ -3609,8 +4144,6 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +		v4l2_isp_stats_init_buffer(stat_buf, V4L2_ISP_VERSION_V1);
 +		if (dev->stream_vdev.module_ens & ISPP_MODULE_ORB)
 +			rkispp_stats_fill_orb(stats_vdev, stat_buf, frame);
-+		if (dev->stream_vdev.module_ens & ISPP_MODULE_FEC)
-+			rkispp_stats_fill_fec_mesh(stats_vdev, stat_buf, frame);
 +
 +		curr_buf->vb.sequence = frame;
 +		curr_buf->vb.vb2_buf.timestamp = ktime_get_ns();
@@ -3636,28 +4169,13 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	stats_vdev->orb_buf_idx ^= 1;
 +	rkispp_write(dev, RKISPP_ORB_WR_BASE,
 +		     stats_vdev->orb_buf[stats_vdev->orb_buf_idx].dma_addr);
-+	stats_vdev->mesh_buf_idx ^= 1;
-+	{
-+		struct rkispp_dummy_buffer *bank =
-+			&stats_vdev->mesh_buf[stats_vdev->mesh_buf_idx];
-+		u32 n = stats_vdev->mesh_size;
-+
-+		rkispp_write(dev, RKISPP_FEC_MESH_XFRA_BASE,
-+			     bank->dma_addr + rkispp_mesh_xfra_oft(n));
-+		rkispp_write(dev, RKISPP_FEC_MESH_YFRA_BASE,
-+			     bank->dma_addr + rkispp_mesh_yfra_oft(n));
-+		rkispp_write(dev, RKISPP_FEC_MESH_XINT_BASE,
-+			     bank->dma_addr + rkispp_mesh_xint_oft(n));
-+		rkispp_write(dev, RKISPP_FEC_MESH_YINT_BASE,
-+			     bank->dma_addr + rkispp_mesh_yint_oft(n));
-+	}
 +unlock:
 +	spin_unlock_irqrestore(&stats_vdev->irq_lock, flags);
 +}
 +
 +void rkispp_stats_isr(struct rkispp_device *dev, u32 mis)
 +{
-+	if (!(mis & (ORB_INT | FEC_INT)))
++	if (!(mis & ORB_INT))
 +		return;
 +
 +	rkispp_stats_frame_end(dev);
@@ -3666,55 +4184,23 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +int rkispp_stats_init_scratch(struct rkispp_device *dev)
 +{
 +	struct rkispp_stats_vdev *stats_vdev = &dev->stats_vdev;
-+	struct rkispp_subdev *sdev = &dev->ispp_sdev;
-+	u32 w = sdev->out_fmt.width;
-+	u32 h = sdev->out_fmt.height;
 +	struct rkispp_dummy_buffer *buf;
-+	size_t orb_size, mesh_size;
++	size_t orb_size;
 +	u32 i, ret;
 +
 +	if (stats_vdev->orb_buf[0].vaddr)
 +		return 0;
 +
-+	stats_vdev->mesh_size = cal_fec_mesh(w, h, w > 1920);
-+	if (stats_vdev->mesh_size > RKISPP_FEC_MESH_POINTS_MAX) {
-+		dev_err(dev->dev,
-+			"mesh size %u exceeds the stats buffer limit\n",
-+			stats_vdev->mesh_size);
-+		return -EINVAL;
-+	}
-+
 +	orb_size = RKISPP_ORB_DATA_NUM * sizeof(struct rkispp_orb_hw_point);
-+	mesh_size = PAGE_ALIGN(rkispp_mesh_bank_size(stats_vdev->mesh_size));
 +	for (i = 0; i < RKISPP_ORB_BUF_NUM; i++) {
 +		buf = &stats_vdev->orb_buf[i];
 +		ret = rkispp_dummy_buffer_alloc(dev, buf, orb_size, 0);
 +		if (ret)
 +			goto err;
 +	}
-+	for (i = 0; i < RKISPP_FEC_MESH_BUF_NUM; i++) {
-+		buf = &stats_vdev->mesh_buf[i];
-+		ret = rkispp_dummy_buffer_alloc(dev, buf, mesh_size, 0);
-+		if (ret)
-+			goto err;
-+	}
 +
 +	stats_vdev->orb_buf_idx = 0;
-+	stats_vdev->mesh_buf_idx = 0;
 +	rkispp_write(dev, RKISPP_ORB_WR_BASE, stats_vdev->orb_buf[0].dma_addr);
-+	{
-+		struct rkispp_dummy_buffer *bank = &stats_vdev->mesh_buf[0];
-+		u32 n = stats_vdev->mesh_size;
-+
-+		rkispp_write(dev, RKISPP_FEC_MESH_XFRA_BASE,
-+			     bank->dma_addr + rkispp_mesh_xfra_oft(n));
-+		rkispp_write(dev, RKISPP_FEC_MESH_YFRA_BASE,
-+			     bank->dma_addr + rkispp_mesh_yfra_oft(n));
-+		rkispp_write(dev, RKISPP_FEC_MESH_XINT_BASE,
-+			     bank->dma_addr + rkispp_mesh_xint_oft(n));
-+		rkispp_write(dev, RKISPP_FEC_MESH_YINT_BASE,
-+			     bank->dma_addr + rkispp_mesh_yint_oft(n));
-+	}
 +
 +	return 0;
 +err:
@@ -3729,8 +4215,6 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +
 +	for (i = 0; i < RKISPP_ORB_BUF_NUM; i++)
 +		rkispp_dummy_buffer_free(dev, &stats_vdev->orb_buf[i]);
-+	for (i = 0; i < RKISPP_FEC_MESH_BUF_NUM; i++)
-+		rkispp_dummy_buffer_free(dev, &stats_vdev->mesh_buf[i]);
 +}
 +
 +static int rkispp_stats_enum_fmt_meta_cap(struct file *file, void *priv,
@@ -3985,10 +4469,10 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +}
 --- /dev/null
 +++ b/drivers/media/platform/rockchip/ispp/stats.h
-@@ -0,0 +1,88 @@
+@@ -0,0 +1,53 @@
 +/* SPDX-License-Identifier: GPL-2.0 */
 +/*
-+ * Rockchip ISPP statistics (ORB feature points, FEC mesh)
++ * Rockchip ISPP statistics (ORB feature points)
 + *
 + * Copyright (c) 2019 Fuzhou Rockchip Electronics Co., Ltd.
 + */
@@ -4002,7 +4486,6 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +
 +/* number of HW scratch banks ping-ponged per measurement */
 +#define RKISPP_ORB_BUF_NUM 2
-+#define RKISPP_FEC_MESH_BUF_NUM 2
 +
 +/* ORB point as the core writes it, repacked before it is handed out */
 +struct rkispp_orb_hw_point {
@@ -4012,36 +4495,6 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	u32 dmy1 : 6;
 +	u8 dmy2[13];
 +} __packed;
-+
-+/*
-+ * Layout of one FEC mesh scratch bank, as written by the FEC core:
-+ * the fractional x/y arrays (1 byte per point) first, then the
-+ * integer x/y arrays (2 bytes per point).
-+ */
-+static inline u32 rkispp_mesh_xfra_oft(u32 points)
-+{
-+	return 0;
-+}
-+
-+static inline u32 rkispp_mesh_yfra_oft(u32 points)
-+{
-+	return ALIGN(points, 16);
-+}
-+
-+static inline u32 rkispp_mesh_xint_oft(u32 points)
-+{
-+	return 2 * ALIGN(points, 16);
-+}
-+
-+static inline u32 rkispp_mesh_yint_oft(u32 points)
-+{
-+	return rkispp_mesh_xint_oft(points) + ALIGN(2 * points, 16);
-+}
-+
-+static inline u32 rkispp_mesh_bank_size(u32 points)
-+{
-+	return rkispp_mesh_xint_oft(points) + 2 * ALIGN(2 * points, 16);
-+}
 +
 +struct rkispp_stats_vdev {
 +	struct rkispp_vdev_node vnode;
@@ -4057,10 +4510,6 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	/* HW scratch: the ORB core writes the frame points here */
 +	struct rkispp_dummy_buffer orb_buf[RKISPP_ORB_BUF_NUM];
 +	u32 orb_buf_idx;
-+	/* HW scratch: the FEC core writes the frame mesh here */
-+	struct rkispp_dummy_buffer mesh_buf[RKISPP_FEC_MESH_BUF_NUM];
-+	u32 mesh_buf_idx;
-+	u32 mesh_size;
 +	/* last frame whose measurement was delivered */
 +	u32 done_frame;
 +
@@ -4076,7 +4525,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +#endif
 --- /dev/null
 +++ b/drivers/media/platform/rockchip/ispp/stream.c
-@@ -0,0 +1,2723 @@
+@@ -0,0 +1,2736 @@
 +// SPDX-License-Identifier: GPL-2.0
 +/*
 + * Rockchip ISPP streams
@@ -4962,14 +5411,14 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	rkispp_set_bits(dev, RKISPP_FEC_CTRL, FMT_RD_MASK, g.fmt);
 +	rkispp_write(dev, RKISPP_FEC_RD_VIR_STRIDE, g.stride >> 2);
 +	rkispp_write(dev, RKISPP_FEC_PIC_SIZE, g.height << 16 | g.width);
++	rkispp_mesh_regs_config(dev);
 +	rkispp_set_bits(dev, RKISPP_CTRL_QUICK, 0, GLB_FEC2SCL_EN);
 +
-+	/* the soft reset gates the fec clock and disables its ddr write */
++	/* the soft reset gates the fec clock */
 +	gate = rkispp_read(dev, RKISPP_CTRL_CLKGATE);
 +	if (!(gate & GATE_DIS_FEC))
 +		rkispp_write(dev, RKISPP_CTRL_CLKGATE, gate | GATE_DIS_FEC);
 +	rkispp_set_bits(dev, RKISPP_FEC_CORE_CTRL, SW_FEC_EN, SW_FEC_EN);
-+	rkispp_clear_bits(dev, RKISPP_FEC_CORE_CTRL, SW_FEC2DDR_DIS);
 +}
 +
 +static int config_fec(struct rkispp_device *dev)
@@ -5145,8 +5594,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	struct rkispp_device *dev = stream->isppdev;
 +	u32 i;
 +
-+	/* the fec frame end belongs to the mem2mem node, never to mb */
-+	for (i = ISPP_MODULE_SHP; i > 0; i = i >> 1) {
++	for (i = ISPP_MODULE_FEC; i > 0; i = i >> 1) {
 +		if (dev->stream_vdev.module_ens & i)
 +			break;
 +	}
@@ -5237,8 +5685,8 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	u32 in_height = dev->ispp_sdev.out_fmt.height;
 +	u32 hy_fac = (stream->out_fmt.width - 1) * 8192 / (in_width - 1) + 1;
 +	u32 vy_fac = (stream->out_fmt.height - 1) * 8192 / (in_height - 1) + 1;
-+	/* only shp params set SW_SCL_FIRST_MODE, an empty stream never does */
-+	u32 val = SW_SCL_ENABLE | SW_SCL_FIRST_MODE;
++	bool fec = dev->stream_vdev.module_ens & ISPP_MODULE_FEC;
++	u32 val = SW_SCL_ENABLE;
 +	u32 mask = SW_SCL_WR_YUV_LIMIT | SW_SCL_WR_YUYV_YCSWAP |
 +		   SW_SCL_WR_YUYV_FORMAT | SW_SCL_WR_YUV_FORMAT |
 +		   SW_SCL_WR_UV_DIS | SW_SCL_BYPASS | SW_SCL_FIRST_MODE;
@@ -5252,10 +5700,12 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	       wr_limit(stream, SW_SCL_WR_YUV_LIMIT);
 +
 +	/* the scaler reads the fec output when the fec runs, else the shp's */
-+	if (dev->stream_vdev.module_ens & ISPP_MODULE_FEC)
++	if (fec) {
 +		rkispp_set_bits(dev, RKISPP_CTRL_QUICK, 0, GLB_FEC2SCL_EN);
-+	else
++	} else {
 +		rkispp_clear_bits(dev, RKISPP_CTRL_QUICK, GLB_FEC2SCL_EN);
++		val |= SW_SCL_FIRST_MODE;
++	}
 +	rkispp_set_bits(dev, stream->config->reg.ctrl, mask, val);
 +	stream->scl_bypass = !!(val & SW_SCL_BYPASS);
 +	stream->is_cfg = true;
@@ -5499,6 +5949,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +		fec_free_buf(dev);
 +		free_pool(dev);
 +		rkispp_stats_uninit_scratch(dev);
++		rkispp_mesh_pipeline_stopped(dev);
 +	}
 +}
 +
@@ -5761,6 +6212,20 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	return ret;
 +}
 +
++/* TNR reads the ISP input pool, NR feeds it, FEC needs a loaded mesh */
++u32 rkispp_modules_effective(struct rkispp_device *dev)
++{
++	u32 ens = dev->stream_vdev.module_cfg;
++
++	if (dev->inp == INP_ISP)
++		ens |= ISPP_MODULE_NR;
++	else
++		ens &= ~ISPP_MODULE_TNR_3TO1;
++	if (!rkispp_mesh_loaded(dev))
++		ens &= ~ISPP_MODULE_FEC;
++	return ens;
++}
++
 +static int rkispp_start_streaming(struct vb2_queue *queue, unsigned int count)
 +{
 +	struct rkispp_stream *stream = queue->drv_priv;
@@ -5803,8 +6268,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	if (ret < 0)
 +		goto free_dummy_buf;
 +
-+	if (dev->inp == INP_ISP)
-+		dev->stream_vdev.module_ens |= ISPP_MODULE_NR;
++	dev->stream_vdev.module_ens = rkispp_modules_effective(dev);
 +
 +	if (stream->ops && stream->ops->config) {
 +		ret = stream->ops->config(stream);
@@ -6621,16 +7085,13 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	     (is_fec_en && module == ISPP_MODULE_FEC))) {
 +		vdev->monitor.retry = 0;
 +
-+		/* with fec the frames run back to back: a reset would hit scl */
-+		if (!is_fec_en) {
-+			rkispp_soft_reset(&dev->hw_dev);
-+			rkispp_regs_restore(dev);
-+			rkispp_queue_dmabuf(dev, NULL);
-+			WRITE_ONCE(vdev->frame_resets, vdev->frame_resets + 1);
-+			for (i = STREAM_S0; i <= STREAM_S2; i++)
-+				if (vdev->stream[i].stopping)
-+					wake_up(&vdev->stream[i].done);
-+		}
++		rkispp_soft_reset(&dev->hw_dev);
++		rkispp_regs_restore(dev);
++		rkispp_queue_dmabuf(dev, NULL);
++		WRITE_ONCE(vdev->frame_resets, vdev->frame_resets + 1);
++		for (i = STREAM_S0; i <= STREAM_S2; i++)
++			if (vdev->stream[i].stopping)
++				wake_up(&vdev->stream[i].done);
 +	}
 +
 +	if (dev->ispp_sdev.state == ISPP_STOP && !dev->stream_vdev.is_idle)
@@ -6680,6 +7141,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +			rkispp_clear_bits(dev, RKISPP_TNR_CTRL, SW_TNR_1ST_FRM);
 +
 +	rkispp_stats_isr(dev, mis_val);
++	rkispp_mesh_isr(dev, mis_val);
 +
 +	for (i = 0; i <= STREAM_S2; i++) {
 +		stream = &vdev->stream[i];
@@ -6802,7 +7264,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +}
 --- /dev/null
 +++ b/drivers/media/platform/rockchip/ispp/stream.h
-@@ -0,0 +1,238 @@
+@@ -0,0 +1,241 @@
 +/* SPDX-License-Identifier: GPL-2.0 */
 +/*
 + * Rockchip ISPP streams
@@ -7030,10 +7492,13 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	unsigned int frame_resets;
 +	bool is_idle;
 +	atomic_t refcnt;
++	/* the modules asked for, and the ones the pipeline runs with */
++	u32 module_cfg;
 +	u32 module_ens;
 +	u32 irq_ends;
 +};
 +
++u32 rkispp_modules_effective(struct rkispp_device *dev);
 +void rkispp_module_work_event(struct rkispp_device *dev, void *buf_rd,
 +			      void *buf_wr, u32 module, bool is_isr);
 +void rkispp_isr(u32 mis_val, struct rkispp_device *dev);
