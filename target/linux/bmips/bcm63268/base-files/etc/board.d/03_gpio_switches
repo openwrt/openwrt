@@ -12,7 +12,7 @@ else
 fi
 
 case "$(board_name)" in
-sercomm,h500-s-lowi |\
+sercomm,h500-s-lowi|\
 sercomm,h500-s-vfes)
 	ucidef_add_gpio_switch "qtn_power" "Quantenna Module Power" "$(($GPIO_BASE + 20))" "1"
 	;;

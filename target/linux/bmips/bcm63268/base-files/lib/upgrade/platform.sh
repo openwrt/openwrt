@@ -9,15 +9,15 @@ platform_check_image() {
 
 platform_do_upgrade() {
 	case "$(board_name)" in
-	actiontec,t1200h |\
-	comtrend,vg-8050 |\
-	comtrend,vr-3032u |\
+	actiontec,t1200h|\
+	comtrend,vg-8050|\
+	comtrend,vr-3032u|\
 	sagem,fast-3864-op)
 		CI_JFFS2_CLEAN_MARKERS=1
 		nand_do_upgrade "$1"
 		;;
-	sercomm,h500-s-lowi |\
-	sercomm,h500-s-vfes |\
+	sercomm,h500-s-lowi|\
+	sercomm,h500-s-vfes|\
 	sercomm,shg2500)
 		nand_do_upgrade "$1"
 		;;
