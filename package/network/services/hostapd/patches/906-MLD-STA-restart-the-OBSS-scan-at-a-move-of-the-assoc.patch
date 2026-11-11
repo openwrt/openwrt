@@ -1,0 +1,56 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Wed, 11 Nov 2026 12:00:00 +0100
+Subject: [PATCH] MLD STA: restart the OBSS scan at a move of the association
+ link
+
+After a removal of the association link, the driver names another link
+as the association link, and wpas_link_reconfig() reads it into
+mlo_assoc_link_id. The OBSS scan keeps the setup that
+sme_sched_obss_scan() made for the BSS of the old association link. If
+the new association link is not on 2.4 GHz, the OBSS scan timer keeps
+running, and each OBSS scan result makes the station send a 20/40 BSS
+Coexistence frame to the AP of the new association link.
+
+wpas_link_reconfig() updates current_bss only where the BSSID from the
+driver changes. With the SME in wpa_supplicant, that BSSID is the AP MLD
+address, which stays the same at the move.
+
+Where the association link changes, take the BSS of the new association
+link as current_bss, signal the change of CurrentBSS and set up the OBSS
+scan again. sme_sched_obss_scan() stops the timer, ignores the result of
+a scan in progress, and starts the timer again only for a BSS on 2.4 GHz
+that supports HT40 and asks for OBSS scans. Without a BSS entry for the
+new association link, the OBSS scan stops. The OBSS scan runs while
+new_connection is 0: wpa_supplicant_set_state() starts it when it clears
+new_connection at WPA_COMPLETED, and stops it when it sets
+new_connection again.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/wpa_supplicant/events.c
++++ b/wpa_supplicant/events.c
+@@ -6773,6 +6773,7 @@ static void wpas_removed_links_forget(st
+ static void wpas_link_reconfig(struct wpa_supplicant *wpa_s)
+ {
+ 	u16 old_links = wpa_s->valid_links;
++	u8 old_assoc_link_id = wpa_s->mlo_assoc_link_id;
+ 	u8 bssid[ETH_ALEN];
+ 
+ 	if (wpa_drv_get_bssid(wpa_s, bssid) < 0) {
+@@ -6808,6 +6809,16 @@ static void wpas_link_reconfig(struct wp
+ 	    wpa_s->links[wpa_s->mlo_assoc_link_id].freq)
+ 		wpa_s->assoc_freq = wpa_s->links[wpa_s->mlo_assoc_link_id].freq;
+ 
++	if (wpa_s->mlo_assoc_link_id != old_assoc_link_id) {
++		struct wpa_bss *bss = wpa_supplicant_update_current_bss(
++			wpa_s, wpa_s->links[wpa_s->mlo_assoc_link_id].bssid);
++
++		if (bss)
++			wpas_notify_bssid_changed(wpa_s);
++		/* The OBSS scan runs while new_connection is 0 */
++		sme_sched_obss_scan(wpa_s, bss && !wpa_s->new_connection);
++	}
++
+ 	/* The BSS of a link the station deleted itself stays on air */
+ 	wpas_removed_links_forget(wpa_s, old_links & ~wpa_s->valid_links &
+ 				  ~wpa_s->requested_link_deletes);
