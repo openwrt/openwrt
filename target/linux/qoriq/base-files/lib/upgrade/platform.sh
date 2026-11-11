@@ -86,18 +86,19 @@ platform_check_image() {
 		echo "$T4240_ROOTFS" > /tmp/t4240_rootfs_device
 
 		case "$T4240_ROOTFS" in
-			mmcblk*)
-				export_bootdevice && export_partdevice diskdev 0 || {
-					echo "Unable to determine upgrade device"
-					return 1
-				}
-			;;
-			mtdblock*)
-				return 0
-			;;
-			*)
+		mmcblk*)
+			export_bootdevice && export_partdevice diskdev 0 || {
 				echo "Unable to determine upgrade device"
 				return 1
+			}
+			;;
+		mtdblock*)
+			return 0
+			;;
+		*)
+			echo "Unable to determine upgrade device"
+			return 1
+			;;
 		esac
 		;;
 	watchguard,firebox-m300)
@@ -115,11 +116,12 @@ platform_copy_config() {
 		T4240_ROOTFS="$(cat /tmp/t4240_rootfs_device 2>/dev/null)"
 
 		case "$T4240_ROOTFS" in
-			mmcblk*)
+		mmcblk*)
 			platform_copy_config_sdboot
 			;;
-			*)
+		*)
 			return 0
+			;;
 		esac
 		;;
 	watchguard,firebox-m300)
@@ -127,6 +129,7 @@ platform_copy_config() {
 		;;
 	*)
 		return 0
+		;;
 	esac
 }
 
@@ -136,15 +139,16 @@ platform_do_upgrade() {
 		T4240_ROOTFS="$(cat /tmp/t4240_rootfs_device 2>/dev/null)"
 
 		case "$T4240_ROOTFS" in
-			mmcblk*)
-				platform_do_upgrade_sdboot "$1"
+		mmcblk*)
+			platform_do_upgrade_sdboot "$1"
 			;;
-			mtdblock*)
-				platform_do_upgrade_nor "$1"
+		mtdblock*)
+			platform_do_upgrade_nor "$1"
 			;;
-			*)
-				echo "Unable to determine upgrade device"
-				return 1
+		*)
+			echo "Unable to determine upgrade device"
+			return 1
+			;;
 		esac
 		;;
 	watchguard,firebox-m300)
