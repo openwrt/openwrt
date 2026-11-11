@@ -1,0 +1,61 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Erik Conijn <egc112@msn.com>
+Date: Tue, 10 Nov 2026 20:52:52 -0800
+Subject: [PATCH] wifi: b43: HT-PHY: receive A-MPDUs of up to 64 KiB
+
+Advertise a maximum A-MPDU length of 64 KiB on HT-PHY too, and raise
+the ucode's limits for it as on N-PHY, as brcms_c_ampdu_shm_upd() does
+for that factor: the watchdog (M_WATCHDOG_8TU) to 10 and the longest
+PSDU (M_MIMO_MAXSYM) to 0xffff.
+
+Upload from an ath11k client, the two versions alternated run by run
+(30 s each): Netgear R6400 v2 (BCM4331) 92.2 and 88.8 Mbit/s with
+32 KiB, 107 and 105 Mbit/s with 64 KiB (+17 %); R6400 v1 91.4 and
+88.2 against 82.2 and 93.2 Mbit/s (no clear difference).
+
+Assisted-by: Claude:claude-opus-5-5
+Signed-off-by: Erik Conijn <egc112@msn.com>
+[rosenp: reuse the N-PHY defines and code instead of adding them again]
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+---
+ drivers/net/wireless/broadcom/b43/b43.h  | 2 +-
+ drivers/net/wireless/broadcom/b43/main.c | 9 +++++----
+ 2 files changed, 6 insertions(+), 5 deletions(-)
+
+--- a/drivers/net/wireless/broadcom/b43/b43.h
++++ b/drivers/net/wireless/broadcom/b43/b43.h
+@@ -332,7 +332,7 @@ enum {
+ #define  B43_SHM_SH_UCODESTAT_SUSP	3	/* suspended */
+ #define  B43_SHM_SH_UCODESTAT_SLEEP	4	/* asleep (PS) */
+ #define B43_SHM_SH_MAXBFRAMES		0x0080	/* Maximum number of frames in a burst */
+-#define B43_SHM_SH_MIMO_MAXSYM		0x00BA	/* Longest PSDU received, N-PHY (bytes) */
++#define B43_SHM_SH_MIMO_MAXSYM		0x00BA	/* Longest PSDU received, N/HT-PHY (bytes) */
+ #define B43_SHM_SH_WATCHDOG_8TU		0x003C	/* RX A-MPDU watchdog (8 TU); was DEFAULTIV */
+ #define B43_SHM_SH_SPUWKUP		0x0094	/* pre-wakeup for synth PU in us */
+ #define B43_SHM_SH_PRETBTT		0x0096	/* pre-TBTT in us */
+--- a/drivers/net/wireless/broadcom/b43/main.c
++++ b/drivers/net/wireless/broadcom/b43/main.c
+@@ -5863,10 +5863,11 @@ static int b43_wireless_core_init(struct
+ 	 * A timeout of zero is infinite. */
+ 	b43_shm_write16(dev, B43_SHM_SHARED, B43_SHM_SH_PRMAXTIME, 1);
+ 	/*
+-	 * Receive A-MPDUs of up to 64 KiB on N-PHY, as brcmsmac does for
+-	 * that factor: the longest PSDU to 64 KiB and its watchdog to 10.
++	 * Receive A-MPDUs of up to 64 KiB on N-PHY and HT-PHY, as brcmsmac
++	 * does for that factor: the longest PSDU to 64 KiB and its watchdog
++	 * to 10.
+ 	 */
+-	if (dev->phy.type == B43_PHYTYPE_N) {
++	if (dev->phy.type == B43_PHYTYPE_N || dev->phy.type == B43_PHYTYPE_HT) {
+ 		b43_shm_write16(dev, B43_SHM_SHARED, B43_SHM_SH_MIMO_MAXSYM,
+ 				0xFFFF);
+ 		b43_shm_write16(dev, B43_SHM_SHARED, B43_SHM_SH_WATCHDOG_8TU,
+@@ -6513,7 +6514,7 @@ static void b43_ht_cap_set_chains(struct
+ 	if (rx_ss >= 2)
+ 		ht_cap->mcs.rx_mask[1] = 0xff;
+ 	/* The firmware takes up to 64 KiB, see b43_wireless_core_init() */
+-	if (dev->phy.type == B43_PHYTYPE_N)
++	if (dev->phy.type == B43_PHYTYPE_N || dev->phy.type == B43_PHYTYPE_HT)
+ 		ht_cap->ampdu_factor = IEEE80211_HT_MAX_AMPDU_64K;
+ 	if (tx < 2)
+ 		ht_cap->cap &= ~IEEE80211_HT_CAP_TX_STBC;
