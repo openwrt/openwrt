@@ -1,0 +1,49 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Marco Martins <marcomartins86@gmail.com>
+Date: Mon, 9 Nov 2026 22:40:01 +0000
+Subject: [PATCH] wifi: b43: G-PHY: don't decode OFDM frames as HT
+
+b43_rx() reads both bits of B43_RX_PHYST0_FTYPE to tell 802.11n frames
+apart. A G-PHY sets bit 1 for its OFDM frames as well, so each OFDM
+frame was decoded as HT, with rate_idx 108 (0x6c, the first PLCP byte),
+and mac80211 dropped it with a warning:
+
+  Rate marked as an HT rate but passed status->rate_idx is not an MCS
+  index [0-76]: 108 (0x6c)
+
+On an ASUS WL-320gE (BCM5352, G-PHY rev 7, radio 2050 rev 2) as an AP,
+69% of pings were lost at idle and no TCP connection came up, with
+firmware 784.2 and 666.2 alike.
+
+Only N-PHY and HT-PHY tell 802.11n frames apart. On any other PHY, read
+the OFDM bit only, as before.
+
+Signed-off-by: Marco Martins <marcomartins86@gmail.com>
+---
+ drivers/net/wireless/broadcom/b43/xmit.c | 8 +++++++-
+ 1 file changed, 7 insertions(+), 1 deletion(-)
+
+--- a/drivers/net/wireless/broadcom/b43/xmit.c
++++ b/drivers/net/wireless/broadcom/b43/xmit.c
+@@ -1155,6 +1155,7 @@ void b43_rx(struct b43_wldev *dev, struc
+ 	const struct b43_rxhdr_fw4 *rxhdr = _rxhdr;
+ 	__le16 fctl;
+ 	u16 phystat0, phystat3;
++	u16 ftype;
+ 	u16 chanstat, mactime;
+ 	u32 macstat;
+ 	u16 chanid;
+@@ -1273,7 +1274,12 @@ void b43_rx(struct b43_wldev *dev, struc
+ 		}
+ 	}
+ 
+-	switch (phystat0 & B43_RX_PHYST0_FTYPE) {
++	ftype = phystat0 & B43_RX_PHYST0_FTYPE;
++	/* Only N-PHY and HT-PHY tell 802.11n frames apart; a G-PHY also sets
++	 * bit 1 for OFDM frames, which would then be decoded as HT */
++	if (dev->phy.type != B43_PHYTYPE_N && dev->phy.type != B43_PHYTYPE_HT)
++		ftype &= B43_RX_PHYST0_OFDM;
++	switch (ftype) {
+ 	case B43_RX_PHYST0_PRE_N:
+ 	case B43_RX_PHYST0_STD_N:
+ 		/*
