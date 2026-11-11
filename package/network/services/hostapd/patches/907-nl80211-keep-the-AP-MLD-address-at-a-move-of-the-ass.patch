@@ -1,0 +1,43 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Wed, 11 Nov 2026 14:00:00 +0100
+Subject: [PATCH] nl80211: keep the AP MLD address at a move of the association
+ link
+
+nl80211_mlo_assoc_link_move() replaces drv->bssid with the BSSID of the
+new association link where drv->bssid is the BSSID of the removed link.
+drv->bssid holds one of two addresses:
+- For a connection through the connect command, nl80211_parse_mlo_info()
+  sets it to the BSSID of the association link.
+- With the SME in wpa_supplicant, it is the source address of the
+  Association Response frame, which mac80211 translates to the AP MLD
+  address.
+The check tells the two apart only where the AP MLD address differs from
+every link BSSID.
+
+An AP MLD can use the BSSID of one of its links as its MLD address. If
+the AP MLD removes that link while it is the association link, drv->bssid
+takes the BSSID of another link, and wpas_link_reconfig() copies it into
+wpa_s->bssid. In a later scan result, cfg80211 marks the BSS of every
+link as associated. For the BSS of a link other than the new association
+link, nl80211_check_bss_status() finds that drv->bssid is neither its
+BSSID nor the AP MLD address, and deauthenticates.
+
+Replace drv->bssid only where the driver does the SME. With the SME in
+wpa_supplicant, drv->bssid stays the AP MLD address.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/src/drivers/driver_nl80211_event.c
++++ b/src/drivers/driver_nl80211_event.c
+@@ -377,8 +377,9 @@ static void nl80211_mlo_assoc_link_move(
+ 		wpa_printf(MSG_DEBUG,
+ 			   "nl80211: MLO: association link %u removed, use link %d",
+ 			   mlo->assoc_link_id, i);
+-		if (ether_addr_equal(drv->bssid,
+-				     mlo->links[mlo->assoc_link_id].bssid))
++		/* With the SME in wpa_supplicant, the BSSID is the AP MLD
++		 * address */
++		if (!(drv->capa.flags & WPA_DRIVER_FLAGS_SME))
+ 			os_memcpy(drv->bssid, mlo->links[i].bssid, ETH_ALEN);
+ 		mlo->assoc_link_id = i;
+ 		return;
