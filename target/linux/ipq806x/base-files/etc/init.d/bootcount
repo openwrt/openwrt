@@ -7,6 +7,7 @@ START=99
 boot() {
 	case $(board_name) in
 	aruba,ap-32x|\
+	aruba,ap-32x-256m|\
 	edgecore,ecw5410|\
 	ignitenet,ss-w2-ac2600)
 		fw_setenv bootcount 0
