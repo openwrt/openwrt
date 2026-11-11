@@ -3663,6 +3663,7 @@ define Device/tenbay_wr3000k
   DEVICE_VENDOR := Tenbay
   DEVICE_MODEL := WR3000K
   DEVICE_DTS := mt7981b-tenbay-wr3000k
+  IMAGE_METADATA := "tenbay_wr3000k_ubi1": 1
   DEVICE_DTS_DIR := ../dts
   DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware
   UBINIZE_OPTS := -E 5
