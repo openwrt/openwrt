@@ -7,7 +7,8 @@ LINE1="# dlink fan script runs every 5 minutes"
 LINE2="*/5 * * * * /sbin/fan_ctrl.sh"
 
 case "$(board_name)" in
-d-link,dgs-1210-28p-f|d-link,dgs-1210-28mp-f)
+d-link,dgs-1210-28p-f|\
+d-link,dgs-1210-28mp-f)
 	[ -f "$CRON_FILE" ] || exit 0
 
 	# Remove legacy user-space fan_ctrl script from crontab

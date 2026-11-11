@@ -33,6 +33,7 @@ realtek_setup_interfaces()
 	*)
 		ucidef_set_bridge_device switch
 		ucidef_set_interface_lan "$lan_list"
+		;;
 	esac
 }
 
