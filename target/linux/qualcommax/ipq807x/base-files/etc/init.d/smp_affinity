@@ -9,7 +9,6 @@ START=93
 PROG=smp_affinity
 
 log_msg() {
-
 	local irq_name="$1" affinity="$2" irq="$3"
 
 	msg="$(printf "Pinning IRQ($irq) %-24s to CPU ${affinity}\n" "$irq_name")"
@@ -27,7 +26,6 @@ log_msg() {
 #######################################################################
 
 cpus_to_bitmask() {
-
 	local bitmask=0
 	# shellcheck disable=2048
 	for range in ${*//,/ }; do
@@ -49,7 +47,6 @@ cpus_to_bitmask() {
 ######################################################################
 
 bitmask_to_cpus() {
-
 	[ "${1:0:2}" != "0x" ] && set -- "0x$1"
 	local bitmask="$(printf '%d' "$1")"
 
@@ -70,7 +67,6 @@ bitmask_to_cpus() {
 ######################################################################
 
 set_affinity() {
-
 	local irq_name="$1" affinity="$2" bitmask irq
 	awk -v irq_name="$1" '$0 ~ irq_name { print substr($1, 1, length($1)-1); exit }' /proc/interrupts \
 		| while read -r irq; do
@@ -82,7 +78,6 @@ set_affinity() {
 }
 
 enable_affinity_ipq807x() {
-
 	# assign 4 rx interrupts to each core
 	set_affinity 'reo2host-destination-ring1'    0
 	set_affinity 'reo2host-destination-ring2'    1
@@ -98,11 +93,9 @@ enable_affinity_ipq807x() {
 	set_affinity 'ppdu-end-interrupts-mac1'      1
 	set_affinity 'ppdu-end-interrupts-mac2'      2
 	set_affinity 'ppdu-end-interrupts-mac3'      3
-
 }
 
 boot() {
-
 	local enable
 
 	config_load     smp_affinity
