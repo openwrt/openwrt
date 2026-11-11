@@ -12,6 +12,10 @@ include $(INCLUDE_DIR)/image-commands.mk
 ifndef IB
   ifdef CONFIG_TARGET_PER_DEVICE_ROOTFS
     TARGET_PER_DEVICE_ROOTFS := 1
+    package_in_rootfs = $(if $(ROOTFS_MANIFEST),$(shell \
+	cut -d' ' -f1 $(ROOTFS_MANIFEST) | grep -qxF '$(1)' && echo y),$(2))
+    $(foreach var,$(filter CONFIG_PACKAGE_%,$(.VARIABLES)),$(if $(filter y m,$($(var))), \
+      $(eval $(var) = $$(call package_in_rootfs,$(var:CONFIG_PACKAGE_%=%),$($(var))))))
   endif
 else
   $(foreach var,$(filter CONFIG_PACKAGE_%,$(.VARIABLES)),$(eval $(var):=))
@@ -403,6 +407,7 @@ else
 	-$(CP) -T $(mkfs_cur_target_dir).opkg/ $(mkfs_cur_target_dir)/etc/opkg/
 	rm -rf $(mkfs_cur_target_dir).opkg $(mkfs_cur_target_dir).conf
 endif
+	$(call package_manifest,$(mkfs_cur_target_dir),1) > $(mkfs_cur_target_dir).manifest
 	$(call prepare_rootfs,$(mkfs_cur_target_dir),$(TOPDIR)/files)
 
 $(KDIR)/root.%: kernel_prepare
@@ -563,6 +568,11 @@ endef
 define Device/Export
   $(foreach var,$(DEVICE_VARS) $(DEFAULT_DEVICE_VARS),$(call Device/ExportVar,$(1),$(var)))
   $(1) : FILESYSTEM:=$(2)
+endef
+
+define Device/ExportManifest
+  $(if $(TARGET_PER_DEVICE_ROOTFS), \
+    $(1) : private ROOTFS_MANIFEST:=$(KDIR)/target-dir-$(ROOTFS_ID/$(2)).manifest)
 endef
 
 ifdef IB
@@ -745,6 +755,7 @@ define Device/Build/image
 	  $(BUILD_DIR)/json_info_files/$(call DEVICE_IMG_NAME,$(1),$(2)).json, \
 	  $(BIN_DIR)/$(call DEVICE_IMG_NAME,$(1),$(2)))
   $(eval $(call Device/Export,$(KDIR)/tmp/$(call DEVICE_IMG_NAME,$(1),$(2)),$(1)))
+  $(eval $(call Device/ExportManifest,$(KDIR)/tmp/$(call DEVICE_IMG_NAME,$(1),$(2)),$(3)))
   $(3)-images: $(BIN_DIR)/$(call DEVICE_IMG_NAME,$(1),$(2))
 
   ROOTFS/$(1)/$(3) := \
@@ -814,6 +825,7 @@ define Device/Build/artifact
 	  $(BUILD_DIR)/json_info_files/$(DEVICE_IMG_PREFIX)-$(1).json, \
 	  $(BIN_DIR)/$(DEVICE_IMG_PREFIX)-$(1))
   $(eval $(call Device/Export,$(KDIR)/tmp/$(DEVICE_IMG_PREFIX)-$(1)))
+  $(eval $(call Device/ExportManifest,$(KDIR)/tmp/$(DEVICE_IMG_PREFIX)-$(1),$(2)))
   $(KDIR)/tmp/$(DEVICE_IMG_PREFIX)-$(1): $$(KDIR_KERNEL_IMAGE) $(if $(CONFIG_TARGET_ROOTFS_INITRAMFS),$(if $(IB),,$(2)-initramfs-images)) $(2)-images
 	@rm -f $$@
 	$$(call concat_cmd,$(ARTIFACT/$(1)))
