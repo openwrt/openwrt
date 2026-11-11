@@ -9,7 +9,8 @@ board_config_update
 board=$(board_name)
 
 case "$board" in
-aerohive,br200-wp)
+aerohive,br200-wp|\
+tplink,tl-wdr4900-v1)
 	ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "wan"
 	;;
 aerohive,hiveap-330|\
@@ -19,20 +20,15 @@ enterasys,ws-ap3715i)
 cznic,turris1x)
 	ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4 lan5" "eth2"
 	;;
-enterasys,ws-ap3710i)
+enterasys,ws-ap3710i|\
+hpe,msm460)
 	ucidef_set_interface_lan "eth0"
 	;;
 fsl,P2020RDB)
 	ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "eth1"
 	;;
-hpe,msm460)
-	ucidef_set_interface_lan "eth0"
-	;;
 ocedo,panda)
 	ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4 lan5 lan6 lan7 lan8" "eth1"
-	;;
-tplink,tl-wdr4900-v1)
-	ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "wan"
 	;;
 watchguard,firebox-t10|\
 watchguard,firebox-t15)
