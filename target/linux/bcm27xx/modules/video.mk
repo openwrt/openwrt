@@ -170,6 +170,26 @@ define KernelPackage/drm-vc4/description
   used in BCM2835, BCM2836 and BCM2837 SoCs (e.g. Raspberry Pi).
 endef
 
+define Package/kmod-drm-vc4/postinst
+#!/bin/sh
+if [ -z "$${IPKG_INSTROOT}" ] && [ -f /boot/distroconfig.txt ] && \
+   ! grep -qsE '^dtoverlay=vc4-f?kms-v3d' /boot/config.txt /boot/distroconfig.txt; then
+	[ -z "$$(tail -c 1 /boot/distroconfig.txt)" ] || echo >> /boot/distroconfig.txt
+	printf '[all]\ndtoverlay=vc4-kms-v3d\n' >> /boot/distroconfig.txt
+	echo "kmod-drm-vc4: vc4-kms-v3d overlay added, reboot to apply"
+fi
+endef
+
+define Package/kmod-drm-vc4/prerm
+#!/bin/sh
+if [ -z "$${IPKG_INSTROOT}" ] && [ -f /boot/distroconfig.txt ] && \
+   grep -q '^dtoverlay=vc4-kms-v3d$$' /boot/distroconfig.txt; then
+	sed -i -e '/^\[all\]$$/{N;/\ndtoverlay=vc4-kms-v3d$$/d;P;D}' \
+		-e '/^dtoverlay=vc4-kms-v3d$$/d' /boot/distroconfig.txt
+	echo "kmod-drm-vc4: vc4-kms-v3d overlay removed, reboot to apply"
+fi
+endef
+
 $(eval $(call KernelPackage,drm-vc4))
 
 
