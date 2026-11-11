@@ -93,9 +93,9 @@ platform_check_image() {
 	case "$board" in
 	dlink,dir-685|\
 	itian,sq201|\
-	storlink,gemini324|\
 	raidsonic,ib-4210-b|\
 	raidsonic,ib-4220-b|\
+	storlink,gemini324|\
 	verbatim,s08v1901-d1)
 		return 0
 		;;
@@ -113,14 +113,14 @@ platform_do_upgrade() {
 		PART_NAME=firmware
 		default_do_upgrade "$1"
 		;;
+	itian,sq201)
+		gemini_do_combined_upgrade "$1" 16 48 48
+		;;
 	raidsonic,ib-4210-b|\
 	raidsonic,ib-4220-b|\
 	storlink,gemini324|\
 	verbatim,s08v1901-d1)
 		gemini_do_combined_upgrade "$1" 24 48 48
-		;;
-	itian,sq201)
-		gemini_do_combined_upgrade "$1" 16 48 48
 		;;
 	esac
 }
