@@ -1,0 +1,145 @@
+From 60ff5ca555854f23cbdbaf74db54f80f5b25f06d Mon Sep 17 00:00:00 2001
+From: Mieczyslaw Nalewaj <namiltd@yahoo.com>
+Date: Wed, 22 Jul 2026 22:47:26 +0200
+Subject: [PATCH net-next v10 06/12] net: dsa: realtek: rtl8365mb: refactor
+ VLAN 4k handling
+
+Move the family-specific VLAN 4k table accessors behind struct
+rtl8365mb_family_info, so that family D can provide its own versions
+without is_d() checks in the shared code. The existing code becomes the
+family C implementation and is otherwise unchanged: rename the
+functions to rtl8365mb_c_vlan_4k_read() and rtl8365mb_c_vlan_4k_write(),
+export them and call them through the family info.
+
+No functional change.
+
+Tested-by: Gustavo Foletto Mora <gusfmora@gmail.com>
+Tested-by: Stanislaw Pal <kuncy7@gmail.com>
+Signed-off-by: Mieczyslaw Nalewaj <namiltd@yahoo.com>
+---
+ drivers/net/dsa/realtek/rtl8365mb.h      |  5 +++++
+ drivers/net/dsa/realtek/rtl8365mb_main.c |  2 ++
+ drivers/net/dsa/realtek/rtl8365mb_vlan.c | 21 ++++++++++++---------
+ drivers/net/dsa/realtek/rtl8365mb_vlan.h |  7 +++++++
+ 4 files changed, 26 insertions(+), 9 deletions(-)
+
+--- a/drivers/net/dsa/realtek/rtl8365mb.h
++++ b/drivers/net/dsa/realtek/rtl8365mb.h
+@@ -10,6 +10,7 @@ enum rtl8365mb_family {
+ };
+ 
+ struct rtl8365mb_jam_tbl_entry;
++struct rtl8365mb_vlan4k;
+ 
+ struct rtl8365mb_family_info {
+ 	enum rtl8365mb_family family;
+@@ -19,6 +20,10 @@ struct rtl8365mb_family_info {
+ 	int (*ext_config_forcemode)(struct realtek_priv *priv, int port,
+ 				    bool link, int speed, int duplex,
+ 				    bool tx_pause, bool rx_pause);
++	int (*vlan_4k_read)(struct realtek_priv *priv, u16 vid,
++			    struct rtl8365mb_vlan4k *vlan4k);
++	int (*vlan_4k_write)(struct realtek_priv *priv,
++			     const struct rtl8365mb_vlan4k *vlan4k);
+ };
+ 
+ const struct rtl8365mb_family_info *
+--- a/drivers/net/dsa/realtek/rtl8365mb_main.c
++++ b/drivers/net/dsa/realtek/rtl8365mb_main.c
+@@ -744,6 +744,8 @@ static const struct rtl8365mb_family_inf
+ 	.jam_table = rtl8365mb_init_jam_8365mb_vc,
+ 	.jam_size = ARRAY_SIZE(rtl8365mb_init_jam_8365mb_vc),
+ 	.ext_config_forcemode = rtl8365mb_c_ext_config_forcemode,
++	.vlan_4k_read = rtl8365mb_c_vlan_4k_read,
++	.vlan_4k_write = rtl8365mb_c_vlan_4k_write,
+ };
+ 
+ /**
+--- a/drivers/net/dsa/realtek/rtl8365mb_vlan.c
++++ b/drivers/net/dsa/realtek/rtl8365mb_vlan.c
+@@ -48,12 +48,13 @@
+ 
+ #include "rtl8365mb_vlan.h"
+ #include "rtl8365mb_table.h"
++#include "rtl8365mb.h"
+ #include <linux/if_bridge.h>
+ #include <linux/lockdep.h>
+ #include <linux/regmap.h>
+ 
+ /* CVLAN (i.e. VLAN4k) table entry layout, u16[3] */
+-#define RTL8365MB_CVLAN_ENTRY_SIZE			3 /* 48-bits */
++#define RTL8365MB_C_CVLAN_ENTRY_SIZE			3 /* 48-bits */
+ #define RTL8365MB_CVLAN_ENTRY_D0_MBR_MASK		GENMASK(7, 0)
+ #define   RTL8365MB_CVLAN_MBR_LO_MASK			GENMASK(7, 0)
+ #define RTL8365MB_CVLAN_ENTRY_D0_UNTAG_MASK		GENMASK(15, 8)
+@@ -182,10 +183,10 @@ struct rtl8365mb_vlanmc {
+ 	u8 meteridx : 6;
+ };
+ 
+-static int rtl8365mb_vlan_4k_read(struct realtek_priv *priv, u16 vid,
+-				  struct rtl8365mb_vlan4k *vlan4k)
++int rtl8365mb_c_vlan_4k_read(struct realtek_priv *priv, u16 vid,
++			     struct rtl8365mb_vlan4k *vlan4k)
+ {
+-	u16 data[RTL8365MB_CVLAN_ENTRY_SIZE];
++	u16 data[RTL8365MB_C_CVLAN_ENTRY_SIZE];
+ 	int val;
+ 	int ret;
+ 
+@@ -230,10 +231,10 @@ static int rtl8365mb_vlan_4k_read(struct
+ 	return 0;
+ }
+ 
+-static int rtl8365mb_vlan_4k_write(struct realtek_priv *priv,
+-				   const struct rtl8365mb_vlan4k *vlan4k)
++int rtl8365mb_c_vlan_4k_write(struct realtek_priv *priv,
++			      const struct rtl8365mb_vlan4k *vlan4k)
+ {
+-	u16 data[RTL8365MB_CVLAN_ENTRY_SIZE] = { 0 };
++	u16 data[RTL8365MB_C_CVLAN_ENTRY_SIZE] = { 0 };
+ 	u16 vid;
+ 	int val;
+ 
+@@ -282,6 +283,7 @@ rtl8365mb_vlan_4k_port_set(struct dsa_sw
+ 			   struct netlink_ext_ack *extack,
+ 			   bool include)
+ {
++	const struct rtl8365mb_family_info *fi;
+ 	struct realtek_priv *priv = ds->priv;
+ 	struct rtl8365mb_vlan4k vlan4k = {0};
+ 	int ret;
+@@ -296,7 +298,8 @@ rtl8365mb_vlan_4k_port_set(struct dsa_sw
+ 		return -EINVAL;
+ 	}
+ 
+-	ret = rtl8365mb_vlan_4k_read(priv, vlan->vid, &vlan4k);
++	fi = rtl8365mb_get_family_info(priv);
++	ret = fi->vlan_4k_read(priv, vlan->vid, &vlan4k);
+ 	if (ret) {
+ 		dev_err(priv->dev, "Failed to read VLAN 4k table\n");
+ 		return ret;
+@@ -313,7 +316,7 @@ rtl8365mb_vlan_4k_port_set(struct dsa_sw
+ 		vlan4k.untag &= ~BIT(port);
+ 	vlan4k.ivl_en = true; /* always use Independent VLAN Learning */
+ 
+-	ret = rtl8365mb_vlan_4k_write(priv, &vlan4k);
++	ret = fi->vlan_4k_write(priv, &vlan4k);
+ 	if (ret) {
+ 		dev_err(priv->dev, "Failed to write VLAN 4k table\n");
+ 		return ret;
+--- a/drivers/net/dsa/realtek/rtl8365mb_vlan.h
++++ b/drivers/net/dsa/realtek/rtl8365mb_vlan.h
+@@ -18,6 +18,13 @@ enum rtl8365mb_frame_ingress {
+ 	RTL8365MB_FRAME_TYPE_UNTAGGED_ONLY,
+ };
+ 
++struct rtl8365mb_vlan4k;
++
++int rtl8365mb_c_vlan_4k_read(struct realtek_priv *priv, u16 vid,
++			     struct rtl8365mb_vlan4k *vlan4k);
++int rtl8365mb_c_vlan_4k_write(struct realtek_priv *priv,
++			      const struct rtl8365mb_vlan4k *vlan4k);
++
+ int rtl8365mb_vlan_port_get_pvid(struct realtek_priv *priv, int port,
+ 				 u16 *pvid);
+ int
