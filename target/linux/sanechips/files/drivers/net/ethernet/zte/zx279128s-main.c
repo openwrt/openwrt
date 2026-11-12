@@ -106,6 +106,67 @@ out:
 	return ret;
 }
 
+/*
+ * The BMU fills its on-chip cache from a free-index table as soon as it is
+ * enabled, and that first fill reads the 16-bit indices little-endian, while
+ * every refill after it reads them big-endian.  With an all big-endian table
+ * the first fill takes byte-swapped indices, skips those out of range and
+ * keeps the rest, which the table hands out again later: two owners for one
+ * buffer, and frames corrupted by the other owner.
+ *
+ * So the head of the table, which the first fill reads, is little-endian,
+ * and the rest is big-endian.  Once the first fill is done, the part of the
+ * head that it did not read is rewritten big-endian for the refills.
+ */
+#define ZX_BMU_FIRST_FILL_MAX	256
+
+static void zx_bmu_table_init(__be16 *tab, unsigned int entries)
+{
+	unsigned int i;
+
+	for (i = 0; i < entries; i++)
+		tab[i] = i < ZX_BMU_FIRST_FILL_MAX ?
+			 (__force __be16)cpu_to_le16(i) : cpu_to_be16(i);
+}
+
+static void zx_bmu_table_fixup_one(struct zx_eth_adapter *adapter, __be16 *tab,
+				   unsigned int entries, u32 ptr_reg)
+{
+	unsigned int i, done, prev, tries = 100;
+
+	/* Wait for the first fill to end: the read index stops moving */
+	done = readl(adapter->base + ptr_reg) & ZX_BMU_PTR_RD;
+	do {
+		prev = done;
+		fsleep(100);
+		done = readl(adapter->base + ptr_reg) & ZX_BMU_PTR_RD;
+	} while (done != prev && --tries);
+
+	/*
+	 * A BMU that the bootloader used and nothing reset since continues
+	 * from the bootloader's read index, so what it read here is unknown:
+	 * leave the whole table to the refills.
+	 */
+	if (!tries || done >= ZX_BMU_FIRST_FILL_MAX) {
+		dev_warn(adapter->dev,
+			 "BMU read %u free-buffer entries at enable, buffers may get two owners\n",
+			 done);
+		done = 0;
+	}
+
+	for (i = done; i < min(entries, ZX_BMU_FIRST_FILL_MAX); i++)
+		tab[i] = cpu_to_be16(i);
+}
+
+static void zx_bmu_table_fixup(struct zx_eth_adapter *adapter)
+{
+	zx_bmu_table_fixup_one(adapter, adapter->tab0, ZX_TAB0_ENTRIES,
+			       ZX_BMU_THRES1);
+	zx_bmu_table_fixup_one(adapter, adapter->tab1, ZX_TAB1_ENTRIES,
+			       ZX_BMU_THRES2);
+	dma_wmb();
+}
+
 /* ---- RX descriptor release ----------------------------------------- */
 
 /*
@@ -421,7 +482,6 @@ static int zx_hw_init(struct zx_eth_adapter *adapter)
 {
 	void __iomem *base = adapter->base;
 	static const int port_to_sw_idx[8] = { 0, 1, 2, 3, 4, -1, 5, 6 };
-	__be16 *tab;
 	u32 val;
 	int i, ret;
 
@@ -436,15 +496,9 @@ static int zx_hw_init(struct zx_eth_adapter *adapter)
 	writel(GENMASK(ZX_NUM_PORTS - 1, 0), base + ZX_GLB_PORT_CLK_EN);
 	zx_pp_init(adapter);
 
-	/* 2. Free-buffer index tables */
-	tab = adapter->tab0;
-	for (i = 0; i < ZX_TAB0_ENTRIES; i++)
-		tab[i] = cpu_to_be16(i);
-
-	tab = adapter->tab1;
-	for (i = 0; i < ZX_TAB1_ENTRIES; i++)
-		tab[i] = cpu_to_be16(i);
-
+	/* 2. Free-buffer index tables, see zx_bmu_table_init() */
+	zx_bmu_table_init(adapter->tab0, ZX_TAB0_ENTRIES);
+	zx_bmu_table_init(adapter->tab1, ZX_TAB1_ENTRIES);
 	dma_wmb();
 	ret = zx_tm_init(adapter);
 	if (ret)
@@ -489,6 +543,8 @@ static int zx_hw_init(struct zx_eth_adapter *adapter)
 	writel(0x2000000,  base + ZX_BMU_THRES2);
 	writel(0,          base + ZX_BMU_BUF_ALLOC);
 	writel(ZX_BMU_CTRL_EN, base + ZX_BMU_CTRL);
+
+	zx_bmu_table_fixup(adapter);
 
 	writel(17, base + 0x3a00e0);
 

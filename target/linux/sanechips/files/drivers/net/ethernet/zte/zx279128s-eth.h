@@ -128,6 +128,7 @@
 #define  ZX_BMU_FREE_SLOTS	GENMASK(8, 3)
 #define ZX_BMU_THRES1		(ZX_BMU_BASE + 0x48)
 #define ZX_BMU_THRES2		(ZX_BMU_BASE + 0x4c)
+#define  ZX_BMU_PTR_RD		GENMASK(15, 0)	/* table entries read */
 #define ZX_BMU_LIMIT1		(ZX_BMU_BASE + 0x58)
 #define ZX_BMU_LIMIT2		(ZX_BMU_BASE + 0x5c)
 
