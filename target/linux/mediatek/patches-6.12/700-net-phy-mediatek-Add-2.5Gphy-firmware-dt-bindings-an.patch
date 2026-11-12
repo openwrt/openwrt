@@ -40,7 +40,7 @@ Signed-off-by: Sky Huang <skylake.huang@mediatek.com>
 +  reg:
 +    items:
 +      - description: pmb firmware load address
-+      - description: firmware trigger register
++      - description: MCU CSR base address
 +
 +required:
 +  - compatible
@@ -53,7 +53,7 @@ Signed-off-by: Sky Huang <skylake.huang@mediatek.com>
 +    phyfw: phy-firmware@f000000 {
 +      compatible = "mediatek,2p5gphy-fw";
 +      reg = <0 0x0f100000 0 0x20000>,
-+            <0 0x0f0f0018 0 0x20>;
++            <0 0x0f0f0000 0 0x20>;
 +    };
 --- a/MAINTAINERS
 +++ b/MAINTAINERS
