@@ -117,9 +117,9 @@
 						reg = <0x0 0x400>;
 					};
 
-					eeprom_factory_8000: eeprom@8000 {
+					eeprom_factory_4000: eeprom@4000 {
 						/* MT7613 has unique eeprom size '0x4da8' */
-						reg = <0x8000 0x4da8>;
+						reg = <0x4000 0x4da8>;
 					};
 
 					macaddr_factory_4: macaddr@4 {
@@ -161,7 +161,7 @@
 	wifi@0,0 {
 		compatible = "mediatek,mt76";
 		reg = <0x0000 0 0 0 0>;
-		nvmem-cells = <&eeprom_factory_8000>, <&macaddr_factory_4004>;
+		nvmem-cells = <&eeprom_factory_4000>, <&macaddr_factory_4004>;
 		nvmem-cell-names = "eeprom", "mac-address";
 		ieee80211-freq-limit = <5000000 6000000>;
 	};
