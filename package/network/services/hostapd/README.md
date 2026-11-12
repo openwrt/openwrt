@@ -66,6 +66,7 @@ Kick a client off the network, or with `ban_only` change its ban alone.
 | addr | string | yes | client MAC address |
 | reason | int32 | no | 802.11 reason code |
 | deauth | bool | no | deauthenticates the client: a client that hostapd holds as associated gets a Disassociation with the reason at once and a Deauthentication with the same reason 2 s later; where the client does not acknowledge the Disassociation, hostapd keeps it in the driver until the Deauthentication, so that a client with MFP gets that frame protected; a call for an address whose Deauthentication an earlier call still holds back sends nothing, and that Deauthentication keeps its time and reason; any other address gets the Deauthentication at once |
+| deauth_now | bool | no | with deauth: the client gets the Deauthentication alone, at once, also where hostapd holds it as associated; a Deauthentication that an earlier call still holds back for the address is cancelled, and the new one carries the reason of this call |
 | ban_time | int32 | no | ban client for N milliseconds; a ban of the MLD address of a client MLD refuses it on each link, and a ban of a link address refuses that link address |
 | ban_status | int32 | no | Status Code the ban answers the client's authentication and association with, 1 to 65535 (default 17) |
 | ban_only | bool | no | sends no frame and leaves an associated client connected; only ban_time and ban_status apply, and a ban_time of 0 ends a ban |
