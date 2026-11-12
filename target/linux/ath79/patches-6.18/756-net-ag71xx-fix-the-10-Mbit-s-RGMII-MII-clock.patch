@@ -1,0 +1,34 @@
+From: Rosen Penev <rosenp@gmail.com>
+Date: Thu, 12 Nov 2026 16:21:34 -0800
+Subject: [PATCH] net: ag71xx: fix the 10 Mbit/s RGMII/MII clock
+
+The phase counters of ETH_XMII_CONTROL hold the number of CLK100 cycles
+in each half of the interface clock, minus one (QCA9558 datasheet,
+10.6.18, describes them as "CLK100/CLK125 + 1" cycles). At 100 Mbit/s,
+0x01 gives 2 cycles, 20 ns, and the 25 MHz clock. At 10 Mbit/s, the
+2.5 MHz clock needs 20 cycles, 0x13, but 0x16 gives 23 cycles and
+2.17 MHz.
+
+Use 0x13, which the OpenWrt device trees of the AeroHive HiveAP-121
+and Meraki MR18 and Z1 already set, as does the 8devices Rambutan for
+the same clock of its SGMII MAC.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+---
+ drivers/net/ethernet/atheros/ag71xx.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/drivers/net/ethernet/atheros/ag71xx.c
++++ b/drivers/net/ethernet/atheros/ag71xx.c
+@@ -1044,8 +1044,8 @@ static void ag71xx_xmii_set_speed(struct
+ 		       FIELD_PREP(ETH_XMII_PHASE0_CNT, 0x01);
+ 		break;
+ 	case SPEED_10:
+-		val |= FIELD_PREP(ETH_XMII_PHASE1_CNT, 0x16) |
+-		       FIELD_PREP(ETH_XMII_PHASE0_CNT, 0x16);
++		val |= FIELD_PREP(ETH_XMII_PHASE1_CNT, 0x13) |
++		       FIELD_PREP(ETH_XMII_PHASE0_CNT, 0x13);
+ 		break;
+ 	}
+ 
