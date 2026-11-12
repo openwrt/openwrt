@@ -482,5 +482,11 @@
 	nvmem-cells = <&precal_art_5000>;
 	nvmem-cell-names = "pre-calibration";
 	qcom,ath10k-calibration-variant = "Arista-W118";
+
+	/*
+	 * The W-118 is certified for U-NII-2C only up to 5700 MHz (channel
+	 * 140) and not for U-NII-4: leave out channel 144 and 169-177.
+	 */
+	ieee80211-freq-limit = <5170000 5710000>, <5735000 5835000>;
 	status = "okay";
 };
