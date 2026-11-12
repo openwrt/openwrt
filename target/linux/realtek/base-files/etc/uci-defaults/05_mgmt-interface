@@ -1,0 +1,43 @@
+#!/bin/sh
+#
+# Set up the dedicated management port as its own DHCP interface,
+# outside the switch bridge, and allow access to the device through it.
+# board.json cannot express this: with a bridge device set, every
+# interface becomes a VLAN of that bridge.
+
+. /lib/functions.sh
+
+mgmt_dev=
+
+case "$(board_name)" in
+tplink,tl-st5008f-v2)
+	mgmt_dev=eth1
+	;;
+esac
+
+[ -n "$mgmt_dev" ] || exit 0
+
+# Leave an existing setup alone (also on sysupgrade with kept settings)
+uci -q get network.mgmt >/dev/null && exit 0
+uci -q show network | grep -q "='$mgmt_dev'$" && exit 0
+
+uci -q batch <<EOF
+set network.mgmt=interface
+set network.mgmt.device='$mgmt_dev'
+set network.mgmt.proto='dhcp'
+commit network
+EOF
+
+zone=$(uci -q show firewall | \
+	sed -n "s/^firewall\.\(@zone\[[0-9]*\]\)\.name='lan'$/\1/p")
+if [ -n "$zone" ]; then
+	case " $(uci -q get firewall.$zone.network) " in
+	*" mgmt "*) ;;
+	*)
+		uci add_list firewall.$zone.network='mgmt'
+		uci commit firewall
+		;;
+	esac
+fi
+
+exit 0
