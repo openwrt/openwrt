@@ -1,0 +1,83 @@
+From f782a0b2793c56809abccc5835f96dc28a987fd6 Mon Sep 17 00:00:00 2001
+From: Christian Hewitt <christianshewitt@gmail.com>
+Date: Fri, 19 Dec 2025 12:18:55 +0000
+Subject: [PATCH] media: rkvdec: Add VP9 support for the VDPU346 variant
+
+Add VP9 support to VDPU346, supporting yuv420@L5.1, profile 0/2, and
+limited to 4K@60fps.
+
+Signed-off-by: Christian Hewitt <christianshewitt@gmail.com>
+---
+ .../media/platform/rockchip/rkvdec/rkvdec.c   | 54 +++++++++++++++++++
+ 1 file changed, 54 insertions(+)
+
+--- a/drivers/media/platform/rockchip/rkvdec/rkvdec.c
++++ b/drivers/media/platform/rockchip/rkvdec/rkvdec.c
+@@ -499,6 +499,45 @@ static const struct rkvdec_decoded_fmt_d
+ 	},
+ };
+ 
++static const struct rkvdec_ctrl_desc vdpu346_vp9_ctrl_descs[] = {
++	{
++		.cfg.id = V4L2_CID_STATELESS_VP9_FRAME,
++		.cfg.ops = &rkvdec_ctrl_ops,
++	},
++	{
++		.cfg.id = V4L2_CID_STATELESS_VP9_COMPRESSED_HDR,
++	},
++	{
++		.cfg.id = V4L2_CID_MPEG_VIDEO_VP9_PROFILE,
++		.cfg.min = V4L2_MPEG_VIDEO_VP9_PROFILE_0,
++		.cfg.max = V4L2_MPEG_VIDEO_VP9_PROFILE_2,
++		.cfg.def = V4L2_MPEG_VIDEO_VP9_PROFILE_0,
++		/* profiles 1/3 are 4:2:2/4:4:4 which VDPU346 cannot decode */
++		.cfg.menu_skip_mask = BIT(V4L2_MPEG_VIDEO_VP9_PROFILE_1),
++	},
++	{
++		.cfg.id = V4L2_CID_MPEG_VIDEO_VP9_LEVEL,
++		.cfg.min = V4L2_MPEG_VIDEO_VP9_LEVEL_1_0,
++		.cfg.max = V4L2_MPEG_VIDEO_VP9_LEVEL_5_1,
++	},
++};
++
++static const struct rkvdec_ctrls vdpu346_vp9_ctrls = {
++	.ctrls = vdpu346_vp9_ctrl_descs,
++	.num_ctrls = ARRAY_SIZE(vdpu346_vp9_ctrl_descs),
++};
++
++static const struct rkvdec_decoded_fmt_desc rkvdec_vdpu346_vp9_decoded_fmts[] = {
++	{
++		.fourcc = V4L2_PIX_FMT_NV12,
++		.image_fmt = RKVDEC_IMG_FMT_420_8BIT,
++	},
++	{
++		.fourcc = V4L2_PIX_FMT_NV15,
++		.image_fmt =  RKVDEC_IMG_FMT_420_10BIT,
++	},
++};
++
+ static const struct rkvdec_ctrl_desc vdpu381_vp9_ctrl_descs[] = {
+ 	{
+ 		.cfg.id = V4L2_CID_STATELESS_VP9_FRAME,
+@@ -638,6 +677,21 @@ static const struct rkvdec_coded_fmt_des
+ 		.decoded_fmts = rkvdec_h264_decoded_fmts,
+ 		.subsystem_flags = VB2_V4L2_FL_SUPPORTS_M2M_HOLD_CAPTURE_BUF,
+ 	},
++	{
++		.fourcc = V4L2_PIX_FMT_VP9_FRAME,
++		.frmsize = {
++			.min_width = 64,
++			.max_width = 4096,
++			.step_width = 64,
++			.min_height = 64,
++			.max_height = 2304,
++			.step_height = 64,
++		},
++		.ctrls = &vdpu346_vp9_ctrls,
++		.ops = &rkvdec_vdpu381_vp9_fmt_ops,
++		.num_decoded_fmts = ARRAY_SIZE(rkvdec_vdpu346_vp9_decoded_fmts),
++		.decoded_fmts = rkvdec_vdpu346_vp9_decoded_fmts,
++	},
+ };
+ 
+ static const struct rkvdec_coded_fmt_desc vdpu381_coded_fmts[] = {

@@ -1,0 +1,34 @@
+From 4afc3cabeeba369f423aff0c6820671521d1b9c7 Mon Sep 17 00:00:00 2001
+From: Christian Hewitt <christianshewitt@gmail.com>
+Date: Fri, 19 Sep 2025 14:28:48 +0000
+Subject: [PATCH] media: dt-bindings: rockchip: Add RK3568 Video Decoder
+ bindings
+
+The video decoder in RK356X (vdpu346) is described in the same way as
+the one in RK3588 (vdpu381). A new compatible is added as the decoder
+capabilities are a subset of the vdpu381 capabilities.
+
+Signed-off-by: Christian Hewitt <christianshewitt@gmail.com>
+Acked-by: Rob Herring (Arm) <robh@kernel.org>
+---
+ Documentation/devicetree/bindings/media/rockchip,vdec.yaml | 2 ++
+ 1 file changed, 2 insertions(+)
+
+--- a/Documentation/devicetree/bindings/media/rockchip,vdec.yaml
++++ b/Documentation/devicetree/bindings/media/rockchip,vdec.yaml
+@@ -18,6 +18,7 @@ properties:
+     oneOf:
+       - const: rockchip,rk3288-vdec
+       - const: rockchip,rk3399-vdec
++      - const: rockchip,rk3568-vdec
+       - const: rockchip,rk3576-vdec
+       - const: rockchip,rk3588-vdec
+       - items:
+@@ -111,6 +112,7 @@ allOf:
+         compatible:
+           contains:
+             enum:
++              - rockchip,rk3568-vdec
+               - rockchip,rk3576-vdec
+               - rockchip,rk3588-vdec
+     then:
