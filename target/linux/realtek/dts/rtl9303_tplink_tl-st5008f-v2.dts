@@ -114,6 +114,13 @@
 &gpio0 {
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinmux_disable_spi0>;
+
+	mgmt-phy-hog {
+		gpio-hog;
+		gpios = <22 GPIO_ACTIVE_HIGH>;
+		output-high;
+		line-name = "mgmt-phy-enable";
+	};
 };
 
 &i2c_mst1 {
@@ -242,4 +249,12 @@
 &ethernet0 {
 	nvmem-cells = <&macaddr_para>;
 	nvmem-cell-names = "mac-address";
+};
+
+&usb_ehci {
+	status = "okay";
+};
+
+&usb_phy {
+	status = "okay";
 };

@@ -360,6 +360,7 @@ define Device/tplink_tl-st5008f-v2
   DEVICE_VENDOR := TP-Link
   DEVICE_MODEL := TL-ST5008F
   DEVICE_VARIANT := v2.0
+  DEVICE_PACKAGES := kmod-phy-rtk-usb2 kmod-usb2 kmod-usb-net-rtl8152
   IMAGE_SIZE := 12032k
   $(Device/kernel-lzma)
 endef

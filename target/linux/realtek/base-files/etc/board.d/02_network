@@ -189,13 +189,16 @@ realtek_setup_macs()
 	sirivision,sr-st3408f|\
 	sirivision,sr-st3808f|\
 	sirivision,sr-st31212f|\
-	tplink,tl-st5008f-v2|\
 	ubnt,usw-pro-max-24-poe|\
 	ubnt,usw-pro-xg-10-poe|\
 	ubnt,usw-pro-xg-8-poe|\
 	zyxel,gs1920-24-v1|\
 	zyxel,gs1920-24hp-v2)
 		lan_mac="$(get_mac_label)"
+		;;
+	tplink,tl-st5008f-v2)
+		lan_mac="$(get_mac_label)"
+		ucidef_set_network_device_mac eth1 "$(macaddr_setbit_la "$lan_mac")"
 		;;
 	hasivo,f1100w-4sx-4xgt|\
 	hasivo,f1100w-4sx-4xgt-512mb|\
