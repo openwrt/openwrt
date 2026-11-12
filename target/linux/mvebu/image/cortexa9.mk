@@ -481,6 +481,23 @@ define Device/wd_cloud-ex2-ultra
 endef
 TARGET_DEVICES += wd_cloud-ex2-ultra
 
+define Device/wd_cloud-mirror-gen1
+  $(Device/NAND-128K)
+  DEVICE_VENDOR := Western Digital
+  DEVICE_MODEL := MyCloud Mirror
+  DEVICE_VARIANT := Gen 1
+  DEVICE_PACKAGES += uboot-envtools mkf2fs e2fsprogs \
+		     partx-utils kmod-hwmon-drivetemp kmod-hwmon-gpiofan \
+		     kmod-wt69p3 kmod-usb3 \
+		     -ppp -kmod-nft-offload \
+		     -dnsmasq -odhcpd-ipv6only
+  DEVICE_DTS := armada-370-wd_cloud-mirror-gen1
+  KERNEL_SIZE := 5120k
+  KERNEL := kernel-bin | append-dtb | uImage none
+  KERNEL_INITRAMFS := kernel-bin | append-dtb | uImage none
+endef
+TARGET_DEVICES += wd_cloud-mirror-gen1
+
 define Device/wd_cloud-mirror-gen2
   $(Device/NAND-128K)
   DEVICE_VENDOR := Western Digital
