@@ -1,0 +1,1458 @@
+From f576ce26eff590ba533b2756f665893ddae0d790 Mon Sep 17 00:00:00 2001
+From: Venkata Atchuta Bheemeswara Sarma Darbha <vdarbha0473@gmail.com>
+Date: Sun, 26 Jul 2026 15:25:36 -0500
+Subject: [PATCH] media: rkvdec: Add VP9 support for VDPU381 variant
+
+Add support for VP9 decoding on VDPU381 used with RK3588. VDPU381
+supports VP9 Profile 0 and Profile 2 up to 7680x4320@30fps.
+
+Co-developed-by: Igor Paunovic <royalnet026@gmail.com>
+Signed-off-by: Igor Paunovic <royalnet026@gmail.com>
+Co-developed-by: Francesco Saverio Pavone <pavone.lawyer@gmail.com>
+Signed-off-by: Francesco Saverio Pavone <pavone.lawyer@gmail.com>
+Signed-off-by: Venkata Atchuta Bheemeswara Sarma Darbha <vdarbha0473@gmail.com>
+---
+ .../media/platform/rockchip/rkvdec/Makefile   |    1 +
+ .../rockchip/rkvdec/rkvdec-vdpu381-regs.h     |  234 ++++
+ .../rockchip/rkvdec/rkvdec-vdpu381-vp9.c      | 1067 +++++++++++++++++
+ .../media/platform/rockchip/rkvdec/rkvdec.c   |   61 +
+ .../media/platform/rockchip/rkvdec/rkvdec.h   |    1 +
+ 5 files changed, 1364 insertions(+)
+ create mode 100644 drivers/media/platform/rockchip/rkvdec/rkvdec-vdpu381-vp9.c
+
+--- a/drivers/media/platform/rockchip/rkvdec/Makefile
++++ b/drivers/media/platform/rockchip/rkvdec/Makefile
+@@ -10,6 +10,7 @@ rockchip-vdec-y += \
+ 		   rkvdec-rcb.o \
+ 		   rkvdec-vdpu381-h264.o \
+ 		   rkvdec-vdpu381-hevc.o \
++		   rkvdec-vdpu381-vp9.o \
+ 		   rkvdec-vdpu383-h264.o \
+ 		   rkvdec-vdpu383-hevc.o \
+ 		   rkvdec-vp9-common.o \
+--- a/drivers/media/platform/rockchip/rkvdec/rkvdec-vdpu381-regs.h
++++ b/drivers/media/platform/rockchip/rkvdec/rkvdec-vdpu381-regs.h
+@@ -4,6 +4,8 @@
+  *
+  * Copyright (C) 2024 Collabora, Ltd.
+  *  Detlev Casanova <detlev.casanova@collabora.com>
++ *
++ * Copyright (C) 2025 Venkata Atchuta Bheemeswara Sarma Darbha <vdarbha0473@gmail.com>
+  */
+ 
+ #include <linux/types.h>
+@@ -382,6 +384,211 @@ struct rkvdec_vdpu381_regs_hevc_params {
+ 
+ } __packed;
+ 
++struct rkvdec_vdpu381_vp9_set {
++	u32 vp9_cprheader_offset : 16;
++	u32 reserved			 : 16;
++} __packed;
++
++/* base: OFFSET_CODEC_PARAMS_REGS */
++struct rkvdec_vdpu381_regs_vp9_params {
++	struct rkvdec_vdpu381_vp9_set reg064;
++
++	u32 cur_top_poc;
++	u32 reserved0;
++
++	struct rkvdec_vdpu381_vp9_segid_grp {
++		u32 vp9_segid_abs_delta		 : 1;
++		u32 vp9_segid_frame_qp_delta_en  : 1;
++		u32 vp9_segid_frame_qp_delta     : 9;
++		u32 vp9_segid_frame_loopfilter_value_en : 1;
++		u32 vp9_segid_frame_loopfilter_value : 7;
++		u32 vp9_segid_referinfo_en : 1;
++		u32 vp9_segid_referinfo : 2;
++		u32 vp9_segid_frame_skip_en : 1;
++		u32 reserved : 9;
++	} reg67_74[8];
++
++	struct rkvdec_vdpu381_vp9_info_lastframe {
++		u32 vp9_mode_deltas_lastframe : 14;
++		u32 reserved0 : 2;
++		u32 segmentation_enable_lstframe : 1;
++		u32 vp9_last_showframe : 1;
++		u32 vp9_last_intra_only : 1;
++		u32 vp9_last_widhheight_eqcur :1;
++		u32 vp9_color_sapce_lastkeyframe : 3;
++		u32 reserved1 : 9;
++	} reg75;
++
++	struct rkvdec_vdpu381_vp9_cprheader_config {
++		u32 vp9_tx_mode : 3;
++		u32 vp9_frame_reference_mode : 2;
++		u32 reserved : 27;
++	} reg76;
++
++	struct rkvdec_vdpu381_vp9_intercmd_num {
++		u32 vp9_intercmd_num : 24;
++		u32 reserved : 8;
++	} reg77;
++
++	u32 reg78_vp9_stream_size;
++
++	struct rkvdec_vdpu381_vp9_lastf_y_hor_virstride {
++		u32 vp9_lastfy_hor_virstride : 16;
++		u32 reserved : 16;
++	} reg79;
++
++	struct rkvdec_vdpu381_vp9_lastf_uv_hor_virstride {
++		u32 vp9_lastfuv_hor_virstride : 16;
++		u32 reserved : 16;
++	} reg80;
++
++	struct rkvdec_vdpu381_vp9_goldenf_y_hor_virstride {
++		u32 vp9_goldenfy_hor_virstride : 16;
++		u32 reserved : 16;
++	} reg81;
++
++	struct rkvdec_vdpu381_vp9_golden_uv_hot_virstride {
++		u32 vp9_goldenuv_hor_virstride : 16;
++		u32 reserved : 16;
++	} reg82;
++
++	struct rkvdec_vdpu381_vp9_altreff_y_hor_virstride {
++		u32 vp9_altreffy_hor_virstride :16;
++		u32 reserved : 16;
++	} reg83;
++
++	struct rkvdec_vdpu381_vp9_altreff_uv_hor_virstride {
++		u32 vp9_altreff_uv_hor_virstride : 16;
++		u32 reserved : 16;
++	} reg84;
++
++	struct rkvdec_vdpu381_vp9_lastf_y_virstride {
++		u32 vp9_lastfy_virstride : 28;
++		u32 reserved : 4;
++	} reg85;
++
++	struct rkvdec_vdpu381_vp9_golden_y_virstride {
++		u32 vp9_goldeny_virstride : 28;
++		u32 reserved : 4;
++	} reg86;
++
++	struct rkvdec_vdpu381_vp9_altref_y_virstride {
++		u32 vp9_altrefy_virstride : 28;
++		u32 reserved : 4;
++	} reg87;
++
++	struct rkvdec_vdpu381_vp9_lref_hor_scale {
++		u32 vp9_lref_hor_scale : 16;
++		u32 reserved : 16;
++	} reg88;
++
++	struct rkvdec_vdpu381_vp9_lref_ver_scale {
++		u32 vp9_lref_ver_scale : 16;
++		u32 reserved : 16;
++	} reg89;
++
++	struct rkvdec_vdpu381_vp9_gref_hor_scale {
++		u32 vp9_gref_hor_scale : 16;
++		u32 reserved : 16;
++	} reg90;
++
++	struct rkvdec_vdpu381_vp9_gref_ver_scale {
++		u32 vp9_gref_ver_scale :16;
++		u32 reserved : 16;
++	} reg91;
++
++	struct rkvdec_vdpu381_vp9_aref_hor_scale {
++		u32 vp9_aref_hor_scale : 16;
++		u32 reserved : 16;
++	} reg92;
++
++	struct rkvdec_vdpu381_vp9_aref_ver_scale {
++		u32 vp9_aref_ver_scale : 16;
++		u32 reserved : 16;
++	} reg93;
++
++	struct rkvdec_vdpu381_vp9_ref_deltas_lastframe {
++		u32 vp9_ref_deltas_lastframe : 28;
++		u32 reserved : 4;
++	} reg94;
++
++	u32 reg95_vp9_last_poc;
++
++	u32 reg96_vp9_golden_poc;
++
++	u32 reg97_vp9_altref_poc;
++
++	u32 reg98_vp9_col_ref_poc;
++
++	struct rkvdec_vdpu381_vp9_prob_ref_poc {
++		u32 vp9_prob_ref_poc : 16;
++		u32 reserved : 16;
++	} reg99;
++
++	struct rkvdec_vdpu381_vp9_segid_ref_poc {
++		u32 vp9_segid_ref_poc : 16;
++		u32 reserved : 16;
++	} reg100;
++
++	u32 reserved1[2];
++
++	struct rkvdec_vdpu381_vp9_prob_en {
++		u32 reserved : 20;
++		u32 vp9_prob_update_en : 1;
++		u32 vp9_refresh_en : 1;
++		u32 vp9_prob_save_en : 1;
++		u32 vp9_intra_only_flag : 1;
++		u32 vp9_txfmmode_rfsh_en : 1;
++		u32 vp9_ref_mode_rfsh_en : 1;
++		u32 vp9_single_ref_rfsh_en : 1;
++		u32 vp9_comp_ref_rfsh_en : 1;
++		u32 vp9_interp_filter_switch_en : 1;
++		u32 vp9_allow_high_precision_mv : 1;
++		u32 vp9_last_key_frame_flag : 1;
++		u32 vp9_inter_coef_rfsh_flag :1;
++	} reg103;
++
++	u32 reserved2;
++
++	struct rkvdec_vdpu381_vp9_cnt_upd_en_avs2_headlen {
++		u32 avs2_head_len : 4;
++		u32 vp9count_update_en : 1;
++		u32 reserved : 27;
++	} reg105;
++
++	struct rkvdec_vdpu381_vp9_frame_width_last {
++		u32 vp9_framewidth_last : 16;
++		u32 reserved : 16;
++	} reg106;
++
++	struct rkvdec_vdpu381_vp9_frame_height_last {
++		u32 vp9_frameheight_last: 16;
++		u32 reserved : 16;
++	} reg107;
++
++	struct rkvdec_vdpu381_vp9_frame_width_golden {
++		u32 vp9_framewidth_golden : 16;
++		u32 reserved : 16;
++	} reg108;
++
++	struct rkvdec_vdpu381_vp9_frame_height_golden {
++		u32 vp9_frameheight_golden : 16;
++		u32 reserved : 16;
++	} reg109;
++
++	struct rkvdec_vdpu381_vp9_frame_width_altref {
++		u32 vp9_framewidth_altref : 16;
++		u32 reserved : 16;
++	} reg110;
++
++	struct rkvdec_vdpu381_vp9_frame_height_altref {
++		u32 vp9_frameheight_altref : 16;
++		u32 reserved : 16;
++	} reg111;
++
++	u32 reserved3;
++} __packed;
++
+ /* base: OFFSET_CODEC_ADDR_REGS */
+ struct rkvdec_vdpu381_regs_h26x_addr {
+ 	u32 reserved_160;
+@@ -394,6 +601,26 @@ struct rkvdec_vdpu381_regs_h26x_addr {
+ 	u32 reg199_cabactbl_base;
+ } __packed;
+ 
++struct rkvdec_vdpu381_regs_vp9_addr {
++	u32 vp9_delta_prob_base;
++	u32 reserved0;
++	u32 vp9_last_prob_base;
++	u32 reserved1;
++	u32 vp9_referlast_base;
++	u32 vp9_refergolden_base;
++	u32 vp9_referalfter_base;
++	u32 vp9_count_base;
++	u32 vp9_segidlast_base;
++	u32 avp9_segidcur_base;
++	u32 vp9_refcolmv_base;
++	u32 vp9_intercmd_base;
++	u32 vp9_update_prob_wr_bas;
++	u32 reserved2[7];
++	u32 scanlist_addr;
++	u32 colmv_base[16];
++	u32 cabactbl_base;
++} __packed;
++
+ struct rkvdec_vdpu381_regs_h26x_highpoc {
+ 	struct {
+ 		u32 ref0_poc_highbit	: 4;
+@@ -427,4 +654,11 @@ struct rkvdec_vdpu381_regs_hevc {
+ 	struct rkvdec_vdpu381_regs_h26x_highpoc		hevc_highpoc;
+ } __packed;
+ 
++struct rkvdec_vdpu381_regs_vp9 {
++	struct rkvdec_vdpu381_regs_common			common;
++	struct rkvdec_vdpu381_regs_vp9_params		vp9_param;
++	struct rkvdec_vdpu381_regs_common_addr		common_addr;
++	struct rkvdec_vdpu381_regs_vp9_addr			vp9_addr;
++} __packed;
++
+ #endif /* __RKVDEC_REGS_H__ */
+--- /dev/null
++++ b/drivers/media/platform/rockchip/rkvdec/rkvdec-vdpu381-vp9.c
+@@ -0,0 +1,1067 @@
++// SPDX-License-Identifier: GPL-2.0
++/*
++ * Rockchip Video Decoder VP9 backend
++ *
++ * Copyright (C) 2025 Venkata Atchuta Bheemeswara Sarma Darbha <vdarbha0473@gmail.com>
++ *
++ * Copyright (C) 2019 Collabora, Ltd.
++ *	Boris Brezillon <boris.brezillon@collabora.com>
++ * Copyright (C) 2021 Collabora, Ltd.
++ *	Andrzej Pietrasiewicz <andrzej.p@collabora.com>
++ *
++ * Copyright (C) 2016 Rockchip Electronics Co., Ltd.
++ *	Alpha Lin <Alpha.Lin@rock-chips.com>
++ */
++
++/*
++ * For following the vp9 spec please start reading this driver
++ * code from rkvdec_vp9_run() followed by rkvdec_vp9_done().
++ */
++
++#include <linux/kernel.h>
++#include <linux/vmalloc.h>
++#include <media/v4l2-mem2mem.h>
++#include <media/v4l2-vp9.h>
++
++#include "rkvdec-rcb.h"
++#include "rkvdec.h"
++#include "rkvdec-vdpu381-regs.h"
++#include "rkvdec-vp9-common.h"
++
++#define RKVDEC_VP9_PROBE_SIZE      4864
++#define RKVDEC_VP9_COUNT_SIZE      13208
++/*
++ * VP9 segmap size: ceil(width/64) * ceil(height/64) * 256 / 4
++ * For 4K (3840x2160): 60 * 34 * 64 = 130,560 bytes
++ * For 8K (7680x4320): 120 * 68 * 64 = 522,240 bytes
++ * Use 8K-safe value to cover all supported resolutions.
++ */
++#define RKVDEC_VP9_MAX_SEGMAP_SIZE 524288
++
++/* Data structure describing auxiliary buffer format. */
++struct rkvdec_vp9_priv_tbl {
++	struct rkvdec_vp9_probs probs;
++	u8 segmap[2][RKVDEC_VP9_MAX_SEGMAP_SIZE];
++};
++
++struct rkvdec_vp9_refs_counts {
++	u32 eob[2];
++	u32 coeff[3];
++};
++
++struct rkvdec_vp9_inter_frame_symbol_counts {
++	u32 partition[16][4];
++	u32 skip[3][2];
++	u32 inter[4][2];
++	u32 tx32p[2][4];
++	u32 tx16p[2][4];
++	u32 tx8p[2][2];
++	u32 y_mode[4][10];
++	u32 uv_mode[10][10];
++	u32 comp[5][2];
++	u32 comp_ref[5][2];
++	u32 single_ref[5][2][2];
++	u32 mv_mode[7][4];
++	u32 filter[4][3];
++	u32 mv_joint[4];
++	u32 sign[2][2];
++	/* add 1 element for align */
++	u32 classes[2][11 + 1];
++	u32 class0[2][2];
++	u32 bits[2][10][2];
++	u32 class0_fp[2][2][4];
++	u32 fp[2][4];
++	u32 class0_hp[2][2];
++	u32 hp[2][2];
++	struct rkvdec_vp9_refs_counts ref_cnt[2][4][2][6][6];
++};
++
++struct rkvdec_vp9_intra_frame_symbol_counts {
++	u32 partition[4][4][4];
++	u32 skip[3][2];
++	u32 intra[4][2];
++	u32 tx32p[2][4];
++	u32 tx16p[2][4];
++	u32 tx8p[2][2];
++	struct rkvdec_vp9_refs_counts ref_cnt[2][4][2][6][6];
++};
++
++struct rkvdec_vp9_frame_info {
++	u32 valid : 1;
++	u32 segmapid : 1;
++	u32 frame_context_idx : 2;
++	u32 reference_mode : 2;
++	u32 tx_mode : 3;
++	u32 interpolation_filter : 3;
++	u32 flags;
++	u64 timestamp;
++	struct v4l2_vp9_segmentation seg;
++	struct v4l2_vp9_loop_filter lf;
++};
++
++struct rkvdec_vp9_ctx {
++	struct rkvdec_aux_buf priv_tbl;
++	struct rkvdec_aux_buf count_tbl;
++	struct v4l2_vp9_frame_symbol_counts inter_cnts;
++	struct v4l2_vp9_frame_symbol_counts intra_cnts;
++	struct v4l2_vp9_frame_context probability_tables;
++	struct v4l2_vp9_frame_context frame_context[4];
++	struct rkvdec_vp9_frame_info cur;
++	struct rkvdec_vp9_frame_info last;
++	struct rkvdec_vdpu381_regs_vp9 regs;
++};
++
++static void init_intra_only_probs(struct rkvdec_ctx *ctx,
++				  const struct rkvdec_vp9_run *run)
++{
++	struct rkvdec_vp9_ctx *vp9_ctx = ctx->priv;
++	struct rkvdec_vp9_priv_tbl *tbl = vp9_ctx->priv_tbl.cpu;
++	struct rkvdec_vp9_intra_only_frame_probs *rkprobs;
++	const struct v4l2_vp9_frame_context *probs;
++	unsigned int i, j, k;
++
++	rkprobs = &tbl->probs.intra_only;
++	probs = &vp9_ctx->probability_tables;
++
++	/*
++	 * intra only 149 x 128 bits ,aligned to 152 x 128 bits coeff related
++	 * prob 64 x 128 bits
++	 */
++	for (i = 0; i < ARRAY_SIZE(probs->coef); i++) {
++		for (j = 0; j < ARRAY_SIZE(probs->coef[0]); j++)
++			write_coeff_plane(probs->coef[i][j][0],
++					  rkprobs->coef_intra[i][j]);
++	}
++
++	/* intra mode prob  80 x 128 bits */
++	for (i = 0; i < ARRAY_SIZE(v4l2_vp9_kf_y_mode_prob); i++) {
++		unsigned int byte_count = 0;
++		int idx = 0;
++
++		/* vp9_kf_y_mode_prob */
++		for (j = 0; j < ARRAY_SIZE(v4l2_vp9_kf_y_mode_prob[0]); j++) {
++			for (k = 0; k < ARRAY_SIZE(v4l2_vp9_kf_y_mode_prob[0][0]);
++			     k++) {
++				u8 val = v4l2_vp9_kf_y_mode_prob[i][j][k];
++
++				rkprobs->intra_mode[i].y_mode[idx++] = val;
++				byte_count++;
++				if (byte_count == 27) {
++					byte_count = 0;
++					idx += 5;
++				}
++			}
++		}
++	}
++
++	for (i = 0; i < sizeof(v4l2_vp9_kf_uv_mode_prob); ++i) {
++		const u8 *ptr = (const u8 *)v4l2_vp9_kf_uv_mode_prob;
++
++		rkprobs->intra_mode[i / 23].uv_mode[i % 23] = ptr[i];
++	}
++}
++
++static void init_inter_probs(struct rkvdec_ctx *ctx,
++			     const struct rkvdec_vp9_run *run)
++{
++	struct rkvdec_vp9_ctx *vp9_ctx = ctx->priv;
++	struct rkvdec_vp9_priv_tbl *tbl = vp9_ctx->priv_tbl.cpu;
++	struct rkvdec_vp9_inter_frame_probs *rkprobs;
++	const struct v4l2_vp9_frame_context *probs;
++	unsigned int i, j, k;
++
++	rkprobs = &tbl->probs.inter;
++	probs = &vp9_ctx->probability_tables;
++
++	/*
++	 * inter probs
++	 * 151 x 128 bits, aligned to 152 x 128 bits
++	 * inter only
++	 * intra_y_mode & inter_block info 6 x 128 bits
++	 */
++
++	memcpy(rkprobs->y_mode, probs->y_mode, sizeof(rkprobs->y_mode));
++	memcpy(rkprobs->comp_mode, probs->comp_mode,
++	       sizeof(rkprobs->comp_mode));
++	memcpy(rkprobs->comp_ref, probs->comp_ref,
++	       sizeof(rkprobs->comp_ref));
++	memcpy(rkprobs->single_ref, probs->single_ref,
++	       sizeof(rkprobs->single_ref));
++	memcpy(rkprobs->inter_mode, probs->inter_mode,
++	       sizeof(rkprobs->inter_mode));
++	memcpy(rkprobs->interp_filter, probs->interp_filter,
++	       sizeof(rkprobs->interp_filter));
++
++	/* 128 x 128 bits coeff related */
++	for (i = 0; i < ARRAY_SIZE(probs->coef); i++) {
++		for (j = 0; j < ARRAY_SIZE(probs->coef[0]); j++) {
++			for (k = 0; k < ARRAY_SIZE(probs->coef[0][0]); k++)
++				write_coeff_plane(probs->coef[i][j][k],
++						  rkprobs->coef[k][i][j]);
++		}
++	}
++
++	/* intra uv mode 6 x 128 */
++	memcpy(rkprobs->uv_mode_0_2, &probs->uv_mode[0],
++	       sizeof(rkprobs->uv_mode_0_2));
++	memcpy(rkprobs->uv_mode_3_5, &probs->uv_mode[3],
++	       sizeof(rkprobs->uv_mode_3_5));
++	memcpy(rkprobs->uv_mode_6_8, &probs->uv_mode[6],
++	       sizeof(rkprobs->uv_mode_6_8));
++	memcpy(rkprobs->uv_mode_9, &probs->uv_mode[9],
++	       sizeof(rkprobs->uv_mode_9));
++
++	/* mv related 6 x 128 */
++	memcpy(rkprobs->mv.joint, probs->mv.joint,
++	       sizeof(rkprobs->mv.joint));
++	memcpy(rkprobs->mv.sign, probs->mv.sign,
++	       sizeof(rkprobs->mv.sign));
++	memcpy(rkprobs->mv.classes, probs->mv.classes,
++	       sizeof(rkprobs->mv.classes));
++	memcpy(rkprobs->mv.class0_bit, probs->mv.class0_bit,
++	       sizeof(rkprobs->mv.class0_bit));
++	memcpy(rkprobs->mv.bits, probs->mv.bits,
++	       sizeof(rkprobs->mv.bits));
++	memcpy(rkprobs->mv.class0_fr, probs->mv.class0_fr,
++	       sizeof(rkprobs->mv.class0_fr));
++	memcpy(rkprobs->mv.fr, probs->mv.fr,
++	       sizeof(rkprobs->mv.fr));
++	memcpy(rkprobs->mv.class0_hp, probs->mv.class0_hp,
++	       sizeof(rkprobs->mv.class0_hp));
++	memcpy(rkprobs->mv.hp, probs->mv.hp,
++	       sizeof(rkprobs->mv.hp));
++}
++
++static void init_probs(struct rkvdec_ctx *ctx,
++		       const struct rkvdec_vp9_run *run)
++{
++	const struct v4l2_ctrl_vp9_frame *dec_params;
++	struct rkvdec_vp9_ctx *vp9_ctx = ctx->priv;
++	struct rkvdec_vp9_priv_tbl *tbl = vp9_ctx->priv_tbl.cpu;
++	struct rkvdec_vp9_probs *rkprobs = &tbl->probs;
++	const struct v4l2_vp9_segmentation *seg;
++	const struct v4l2_vp9_frame_context *probs;
++	bool intra_only;
++
++	dec_params = run->decode_params;
++	probs = &vp9_ctx->probability_tables;
++	seg = &dec_params->seg;
++
++	memset(rkprobs, 0, sizeof(*rkprobs));
++
++	intra_only = !!(dec_params->flags &
++			(V4L2_VP9_FRAME_FLAG_KEY_FRAME |
++			 V4L2_VP9_FRAME_FLAG_INTRA_ONLY));
++
++	/* sb info  5 x 128 bit */
++	memcpy(rkprobs->partition,
++	       intra_only ? v4l2_vp9_kf_partition_probs : probs->partition,
++	       sizeof(rkprobs->partition));
++
++	memcpy(rkprobs->pred, seg->pred_probs, sizeof(rkprobs->pred));
++	memcpy(rkprobs->tree, seg->tree_probs, sizeof(rkprobs->tree));
++	memcpy(rkprobs->skip, probs->skip, sizeof(rkprobs->skip));
++	memcpy(rkprobs->tx32, probs->tx32, sizeof(rkprobs->tx32));
++	memcpy(rkprobs->tx16, probs->tx16, sizeof(rkprobs->tx16));
++	memcpy(rkprobs->tx8, probs->tx8, sizeof(rkprobs->tx8));
++	memcpy(rkprobs->is_inter, probs->is_inter, sizeof(rkprobs->is_inter));
++
++	if (intra_only)
++		init_intra_only_probs(ctx, run);
++	else
++		init_inter_probs(ctx, run);
++}
++
++static void config_ref_registers(struct rkvdec_ctx *ctx,
++				 const struct rkvdec_vp9_run *run,
++				 struct rkvdec_decoded_buffer *ref_buf,
++				 int i)
++{
++	unsigned int aligned_pitch, aligned_height, y_len;
++	struct rkvdec_vp9_ctx *vp9_ctx = ctx->priv;
++	struct rkvdec_vdpu381_regs_vp9 *regs = &vp9_ctx->regs;
++
++	aligned_height = round_up(ref_buf->vp9.height, 64);
++
++	switch (i) {
++	case 0:
++		regs->vp9_param.reg107.vp9_frameheight_last = ref_buf->vp9.height;
++		regs->vp9_param.reg106.vp9_framewidth_last = ref_buf->vp9.width;
++		break;
++	case 1:
++		regs->vp9_param.reg109.vp9_frameheight_golden = ref_buf->vp9.height;
++		regs->vp9_param.reg108.vp9_framewidth_golden = ref_buf->vp9.width;
++		break;
++	case 2:
++		regs->vp9_param.reg111.vp9_frameheight_altref = ref_buf->vp9.height;
++		regs->vp9_param.reg110.vp9_framewidth_altref = ref_buf->vp9.width;
++		break;
++	}
++
++	switch (i) {
++	case 0:
++		regs->vp9_addr.vp9_referlast_base =
++			vb2_dma_contig_plane_dma_addr(&ref_buf->base.vb.vb2_buf, 0);
++		break;
++	case 1:
++		regs->vp9_addr.vp9_refergolden_base =
++			vb2_dma_contig_plane_dma_addr(&ref_buf->base.vb.vb2_buf, 0);
++		break;
++	case 2:
++		regs->vp9_addr.vp9_referalfter_base =
++			vb2_dma_contig_plane_dma_addr(&ref_buf->base.vb.vb2_buf, 0);
++		break;
++	}
++
++	if (&ref_buf->base.vb == run->base.bufs.dst)
++		return;
++
++	/* Real buffer stride, not display-width-derived (see config_registers). */
++	aligned_pitch = ctx->decoded_fmt.fmt.pix_mp.plane_fmt[0].bytesperline;
++	y_len = aligned_height * aligned_pitch;
++
++	switch (i) {
++	case 0:
++		regs->vp9_param.reg79.vp9_lastfy_hor_virstride = aligned_pitch / 16;
++		regs->vp9_param.reg80.vp9_lastfuv_hor_virstride = aligned_pitch / 16;
++		regs->vp9_param.reg85.vp9_lastfy_virstride = y_len / 16;
++		break;
++	case 1:
++		regs->vp9_param.reg81.vp9_goldenfy_hor_virstride = aligned_pitch / 16;
++		regs->vp9_param.reg82.vp9_goldenuv_hor_virstride = aligned_pitch / 16;
++		regs->vp9_param.reg86.vp9_goldeny_virstride = y_len / 16;
++		break;
++	case 2:
++		regs->vp9_param.reg83.vp9_altreffy_hor_virstride = aligned_pitch / 16;
++		regs->vp9_param.reg84.vp9_altreff_uv_hor_virstride = aligned_pitch / 16;
++		regs->vp9_param.reg87.vp9_altrefy_virstride = y_len / 16;
++		break;
++	}
++}
++
++static void config_seg_registers(struct rkvdec_ctx *ctx, unsigned int segid)
++{
++	struct rkvdec_vp9_ctx *vp9_ctx = ctx->priv;
++	struct rkvdec_vdpu381_regs_vp9 *regs = &vp9_ctx->regs;
++	const struct v4l2_vp9_segmentation *seg;
++	s16 feature_val;
++	int feature_id;
++
++	seg = vp9_ctx->last.valid ? &vp9_ctx->last.seg : &vp9_ctx->cur.seg;
++	feature_id = V4L2_VP9_SEG_LVL_ALT_Q;
++	if (v4l2_vp9_seg_feat_enabled(seg->feature_enabled, feature_id, segid)) {
++		feature_val = seg->feature_data[segid][feature_id];
++		regs->vp9_param.reg67_74[segid].vp9_segid_frame_qp_delta_en = 1;
++		regs->vp9_param.reg67_74[segid].vp9_segid_frame_qp_delta = feature_val;
++	}
++
++	feature_id = V4L2_VP9_SEG_LVL_ALT_L;
++	if (v4l2_vp9_seg_feat_enabled(seg->feature_enabled, feature_id, segid)) {
++		feature_val = seg->feature_data[segid][feature_id];
++		regs->vp9_param.reg67_74[segid].vp9_segid_frame_loopfilter_value_en = 1;
++		regs->vp9_param.reg67_74[segid].vp9_segid_frame_loopfilter_value = feature_val;
++	}
++
++	feature_id = V4L2_VP9_SEG_LVL_REF_FRAME;
++	if (v4l2_vp9_seg_feat_enabled(seg->feature_enabled, feature_id, segid)) {
++		feature_val = seg->feature_data[segid][feature_id];
++		regs->vp9_param.reg67_74[segid].vp9_segid_referinfo_en = 1;
++		regs->vp9_param.reg67_74[segid].vp9_segid_referinfo = feature_val;
++	}
++
++	feature_id = V4L2_VP9_SEG_LVL_SKIP;
++	regs->vp9_param.reg67_74[segid].vp9_segid_frame_skip_en =
++		v4l2_vp9_seg_feat_enabled(seg->feature_enabled, feature_id, segid);
++
++	regs->vp9_param.reg67_74[segid].vp9_segid_abs_delta = !segid &&
++		(seg->flags & V4L2_VP9_SEGMENTATION_FLAG_ABS_OR_DELTA_UPDATE);
++}
++
++static void update_ctx_cur_info(struct rkvdec_vp9_ctx *vp9_ctx,
++				struct rkvdec_decoded_buffer *buf,
++				const struct v4l2_ctrl_vp9_frame *dec_params)
++{
++	vp9_ctx->cur.valid = true;
++	vp9_ctx->cur.reference_mode = dec_params->reference_mode;
++	vp9_ctx->cur.interpolation_filter = dec_params->interpolation_filter;
++	vp9_ctx->cur.flags = dec_params->flags;
++	vp9_ctx->cur.timestamp = buf->base.vb.vb2_buf.timestamp;
++	vp9_ctx->cur.seg = dec_params->seg;
++	vp9_ctx->cur.lf = dec_params->lf;
++}
++
++static void update_ctx_last_info(struct rkvdec_vp9_ctx *vp9_ctx)
++{
++	vp9_ctx->last = vp9_ctx->cur;
++}
++
++static void rkvdec_write_regs(struct rkvdec_ctx *ctx)
++{
++	struct rkvdec_dev *rkvdec = ctx->dev;
++	struct rkvdec_vp9_ctx *vp9_ctx = ctx->priv;
++
++	rkvdec_memcpy_toio(rkvdec->regs + OFFSET_COMMON_REGS,
++			   &vp9_ctx->regs.common,
++			   sizeof(vp9_ctx->regs.common));
++	rkvdec_memcpy_toio(rkvdec->regs + OFFSET_CODEC_PARAMS_REGS,
++			   &vp9_ctx->regs.vp9_param,
++			   sizeof(vp9_ctx->regs.vp9_param));
++	rkvdec_memcpy_toio(rkvdec->regs + OFFSET_COMMON_ADDR_REGS,
++			   &vp9_ctx->regs.common_addr,
++			   sizeof(vp9_ctx->regs.common_addr));
++	rkvdec_memcpy_toio(rkvdec->regs + OFFSET_CODEC_ADDR_REGS,
++			   &vp9_ctx->regs.vp9_addr,
++			   sizeof(vp9_ctx->regs.vp9_addr));
++}
++
++static dma_addr_t get_mv_base_addr(struct rkvdec_ctx *ctx, struct rkvdec_decoded_buffer *buf)
++{
++	unsigned int aligned_pitch, aligned_height, yuv_len;
++
++	aligned_height = round_up(buf->vp9.height, 64);
++
++	aligned_pitch = ctx->decoded_fmt.fmt.pix_mp.plane_fmt[0].bytesperline;
++	yuv_len = (aligned_height * aligned_pitch * 3) / 2;
++
++	return vb2_dma_contig_plane_dma_addr(&buf->base.vb.vb2_buf, 0) +
++	       yuv_len;
++}
++
++static void config_registers(struct rkvdec_ctx *ctx,
++			     const struct rkvdec_vp9_run *run)
++{
++	unsigned int y_len, aligned_height, aligned_pitch, stream_len;
++	const struct v4l2_ctrl_vp9_frame *dec_params;
++	struct rkvdec_decoded_buffer *ref_bufs[3];
++	struct rkvdec_decoded_buffer *dst, *last, *mv_ref;
++	struct rkvdec_vp9_ctx *vp9_ctx = ctx->priv;
++	struct rkvdec_vdpu381_regs_vp9 *regs = &vp9_ctx->regs;
++	const struct v4l2_vp9_segmentation *seg;
++	u32 pixels;
++
++	dma_addr_t rlc_addr, dst_addr;
++	bool intra_only;
++	unsigned int i;
++
++	dec_params = run->decode_params;
++	dst = vb2_to_rkvdec_decoded_buf(&run->base.bufs.dst->vb2_buf);
++	ref_bufs[0] = get_ref_buf_vp9(ctx, &dst->base.vb, dec_params->last_frame_ts);
++	ref_bufs[1] = get_ref_buf_vp9(ctx, &dst->base.vb, dec_params->golden_frame_ts);
++	ref_bufs[2] = get_ref_buf_vp9(ctx, &dst->base.vb, dec_params->alt_frame_ts);
++
++	if (vp9_ctx->last.valid)
++		last = get_ref_buf_vp9(ctx, &dst->base.vb, vp9_ctx->last.timestamp);
++	else
++		last = dst;
++
++	update_dec_buf_info(dst, dec_params);
++	update_ctx_cur_info(vp9_ctx, dst, dec_params);
++	seg = &dec_params->seg;
++
++	intra_only = !!(dec_params->flags &
++			(V4L2_VP9_FRAME_FLAG_KEY_FRAME |
++			 V4L2_VP9_FRAME_FLAG_INTRA_ONLY));
++
++	regs->common.reg009_dec_mode.dec_mode = VDPU381_MODE_VP9;
++
++	regs->vp9_param.reg103.vp9_intra_only_flag = intra_only;
++
++	/* Set config */
++	regs->common.reg011_important_en.buf_empty_en = 1;
++	regs->common.reg011_important_en.dec_clkgate_e = 1;
++	regs->common.reg011_important_en.dec_timeout_e = 1;
++
++	aligned_height = round_up(ctx->decoded_fmt.fmt.pix_mp.height, 64);
++
++	/* use capture buffer's bytesperline as hw stride, same as HEVC. */
++	aligned_pitch = ctx->decoded_fmt.fmt.pix_mp.plane_fmt[0].bytesperline;
++	y_len = aligned_height * aligned_pitch;
++
++	pixels = ctx->decoded_fmt.fmt.pix_mp.height * ctx->decoded_fmt.fmt.pix_mp.width;
++
++	regs->common.reg018_y_hor_stride.y_hor_virstride = aligned_pitch / 16;
++	regs->common.reg019_uv_hor_stride.uv_hor_virstride = aligned_pitch / 16;
++	regs->common.reg020_y_stride.y_virstride = y_len / 16;
++
++	stream_len = vb2_get_plane_payload(&run->base.bufs.src->vb2_buf, 0);
++
++	regs->common.reg016_stream_len = stream_len;
++
++	/* Activate block gating */
++	regs->common.reg026_block_gating_en.inter_auto_gating_e = 1;
++	regs->common.reg026_block_gating_en.filterd_auto_gating_e = 1;
++	regs->common.reg026_block_gating_en.strmd_auto_gating_e = 1;
++	regs->common.reg026_block_gating_en.mcp_auto_gating_e = 1;
++	regs->common.reg026_block_gating_en.busifd_auto_gating_e = 0;
++	regs->common.reg026_block_gating_en.dec_ctrl_auto_gating_e = 1;
++	regs->common.reg026_block_gating_en.intra_auto_gating_e = 1;
++	regs->common.reg026_block_gating_en.mc_auto_gating_e = 1;
++	regs->common.reg026_block_gating_en.transd_auto_gating_e = 1;
++	regs->common.reg026_block_gating_en.sram_auto_gating_e = 1;
++	regs->common.reg026_block_gating_en.cru_auto_gating_e = 1;
++	regs->common.reg026_block_gating_en.reg_cfg_gating_en = 1;
++
++	/* Set timeout threshold */
++	if (pixels < RKVDEC_1080P_PIXELS)
++		regs->common.reg032_timeout_threshold = RKVDEC_TIMEOUT_1080p;
++	else if (pixels < RKVDEC_4K_PIXELS)
++		regs->common.reg032_timeout_threshold = RKVDEC_TIMEOUT_4K;
++	else if (pixels < RKVDEC_8K_PIXELS)
++		regs->common.reg032_timeout_threshold = RKVDEC_TIMEOUT_8K;
++	else
++		regs->common.reg032_timeout_threshold = RKVDEC_TIMEOUT_MAX;
++
++	/*
++	 * Reset count buffer, because decoder only output intra related syntax
++	 * counts when decoding intra frame, but update entropy need to update
++	 * all the probabilities.
++	 */
++	if (intra_only)
++		memset(vp9_ctx->count_tbl.cpu, 0, vp9_ctx->count_tbl.size);
++
++	vp9_ctx->cur.segmapid = vp9_ctx->last.segmapid;
++	if (!intra_only &&
++	    !(dec_params->flags & V4L2_VP9_FRAME_FLAG_ERROR_RESILIENT) &&
++	    (!(seg->flags & V4L2_VP9_SEGMENTATION_FLAG_ENABLED) ||
++	     (seg->flags & V4L2_VP9_SEGMENTATION_FLAG_UPDATE_MAP)))
++		vp9_ctx->cur.segmapid++;
++
++	for (i = 0; i < ARRAY_SIZE(ref_bufs); i++)
++		config_ref_registers(ctx, run, ref_bufs[i], i);
++
++	for (i = 0; i < 8; i++)
++		config_seg_registers(ctx, i);
++
++	regs->vp9_param.reg76.vp9_tx_mode = vp9_ctx->cur.tx_mode;
++	regs->vp9_param.reg76.vp9_frame_reference_mode = dec_params->reference_mode;
++
++	if (!intra_only) {
++		const struct v4l2_vp9_loop_filter *lf;
++
++		if (vp9_ctx->last.valid)
++			lf = &vp9_ctx->last.lf;
++		else
++			lf = &vp9_ctx->cur.lf;
++
++		for (i = 0; i < ARRAY_SIZE(lf->ref_deltas); i++)
++			regs->vp9_param.reg94.vp9_ref_deltas_lastframe |=
++				(lf->ref_deltas[i] & 0x7f) << (7 * i);
++
++		for (i = 0; i < ARRAY_SIZE(lf->mode_deltas); i++)
++			regs->vp9_param.reg75.vp9_mode_deltas_lastframe |=
++				(lf->mode_deltas[i] & 0x7f) << (7 * i);
++	}
++
++	regs->vp9_param.reg75.segmentation_enable_lstframe =
++		vp9_ctx->last.valid && !intra_only &&
++		vp9_ctx->last.seg.flags & V4L2_VP9_SEGMENTATION_FLAG_ENABLED;
++
++	regs->vp9_param.reg75.vp9_last_showframe =
++		vp9_ctx->last.valid &&
++		vp9_ctx->last.flags & V4L2_VP9_FRAME_FLAG_SHOW_FRAME;
++
++	regs->vp9_param.reg75.vp9_last_intra_only =
++		vp9_ctx->last.valid &&
++		vp9_ctx->last.flags &
++		(V4L2_VP9_FRAME_FLAG_KEY_FRAME | V4L2_VP9_FRAME_FLAG_INTRA_ONLY);
++
++	regs->vp9_param.reg75.vp9_last_widhheight_eqcur =
++		vp9_ctx->last.valid &&
++		last->vp9.width == dst->vp9.width &&
++		last->vp9.height == dst->vp9.height;
++
++	regs->vp9_param.reg78_vp9_stream_size = stream_len;
++
++	for (i = 0; !intra_only && i < ARRAY_SIZE(ref_bufs); i++) {
++		unsigned int refw = ref_bufs[i]->vp9.width;
++		unsigned int refh = ref_bufs[i]->vp9.height;
++		u32 hscale, vscale;
++
++		hscale = (refw << 14) /	dst->vp9.width;
++		vscale = (refh << 14) / dst->vp9.height;
++
++		switch (i) {
++		case 0:
++			regs->vp9_param.reg88.vp9_lref_hor_scale = hscale;
++			regs->vp9_param.reg89.vp9_lref_ver_scale = vscale;
++			break;
++		case 1:
++			regs->vp9_param.reg90.vp9_gref_hor_scale = hscale;
++			regs->vp9_param.reg91.vp9_gref_ver_scale = vscale;
++			break;
++		case 2:
++			regs->vp9_param.reg92.vp9_aref_hor_scale = hscale;
++			regs->vp9_param.reg93.vp9_aref_ver_scale = vscale;
++			break;
++		}
++	}
++
++	/* Set rlc base address (input stream) */
++	rlc_addr = vb2_dma_contig_plane_dma_addr(&run->base.bufs.src->vb2_buf, 0);
++	regs->common_addr.rlc_base = rlc_addr;
++	regs->common_addr.rlcwrite_base = rlc_addr;
++
++	/* Set output base address */
++	dst_addr = vb2_dma_contig_plane_dma_addr(&dst->base.vb.vb2_buf, 0);
++	regs->common_addr.decout_base = dst_addr;
++	regs->common_addr.error_ref_base = dst_addr;
++
++	/* Set colmv address */
++	regs->common_addr.colmv_cur_base = dst_addr + ctx->colmv_offset;
++
++	/* Set RCB addresses */
++	for (i = 0; i < rkvdec_rcb_buf_count(ctx); i++)
++		regs->common_addr.rcb_base[i] = rkvdec_rcb_buf_dma_addr(ctx, i);
++
++	regs->vp9_addr.cabactbl_base = vp9_ctx->priv_tbl.dma +
++		offsetof(struct rkvdec_vp9_priv_tbl, probs);
++
++	regs->vp9_addr.vp9_count_base = vp9_ctx->count_tbl.dma;
++
++	regs->vp9_addr.vp9_segidlast_base = vp9_ctx->priv_tbl.dma +
++		offsetof(struct rkvdec_vp9_priv_tbl, segmap) +
++		(RKVDEC_VP9_MAX_SEGMAP_SIZE * (!vp9_ctx->cur.segmapid));
++
++	regs->vp9_addr.avp9_segidcur_base = vp9_ctx->priv_tbl.dma +
++		offsetof(struct rkvdec_vp9_priv_tbl, segmap) +
++		(RKVDEC_VP9_MAX_SEGMAP_SIZE * vp9_ctx->cur.segmapid);
++
++	if (!intra_only &&
++	    !(dec_params->flags & V4L2_VP9_FRAME_FLAG_ERROR_RESILIENT) &&
++	    vp9_ctx->last.valid)
++		mv_ref = last;
++	else
++		mv_ref = dst;
++
++	regs->vp9_addr.vp9_refcolmv_base = get_mv_base_addr(ctx, mv_ref);
++
++	rkvdec_write_regs(ctx);
++}
++
++static int validate_dec_params(struct rkvdec_ctx *ctx,
++			       const struct v4l2_ctrl_vp9_frame *dec_params)
++{
++	unsigned int aligned_width, aligned_height;
++
++	aligned_width = round_up(dec_params->frame_width_minus_1 + 1, 64);
++	aligned_height = round_up(dec_params->frame_height_minus_1 + 1, 64);
++
++	/*
++	 * Userspace should update the capture/decoded format when the
++	 * resolution changes.
++	 */
++	if (aligned_width != ctx->decoded_fmt.fmt.pix_mp.width ||
++	    aligned_height != ctx->decoded_fmt.fmt.pix_mp.height) {
++		dev_err(ctx->dev->dev,
++			"unexpected bitstream resolution %dx%d\n",
++			dec_params->frame_width_minus_1 + 1,
++			dec_params->frame_height_minus_1 + 1);
++		return -EINVAL;
++	}
++
++	return 0;
++}
++
++static int rkvdec_vp9_run_preamble(struct rkvdec_ctx *ctx,
++				   struct rkvdec_vp9_run *run)
++{
++	const struct v4l2_ctrl_vp9_frame *dec_params;
++	const struct v4l2_ctrl_vp9_compressed_hdr *prob_updates;
++	struct rkvdec_vp9_ctx *vp9_ctx = ctx->priv;
++	struct v4l2_ctrl *ctrl;
++	unsigned int fctx_idx;
++	int ret;
++
++	/* v4l2-specific stuff */
++	rkvdec_run_preamble(ctx, &run->base);
++
++	ctrl = v4l2_ctrl_find(&ctx->ctrl_hdl,
++			      V4L2_CID_STATELESS_VP9_FRAME);
++	if (WARN_ON(!ctrl))
++		return -EINVAL;
++	dec_params = ctrl->p_cur.p;
++
++	ret = validate_dec_params(ctx, dec_params);
++	if (ret)
++		return ret;
++
++	run->decode_params = dec_params;
++
++	ctrl = v4l2_ctrl_find(&ctx->ctrl_hdl, V4L2_CID_STATELESS_VP9_COMPRESSED_HDR);
++	if (WARN_ON(!ctrl))
++		return -EINVAL;
++	prob_updates = ctrl->p_cur.p;
++	vp9_ctx->cur.tx_mode = prob_updates->tx_mode;
++
++	/*
++	 * vp9 stuff
++	 *
++	 * by this point the userspace has done all parts of 6.2 uncompressed_header()
++	 * except this fragment:
++	 * if ( FrameIsIntra || error_resilient_mode ) {
++	 *	setup_past_independence ( )
++	 *	if ( frame_type == KEY_FRAME || error_resilient_mode == 1 ||
++	 *	     reset_frame_context == 3 ) {
++	 *		for ( i = 0; i < 4; i ++ ) {
++	 *			save_probs( i )
++	 *		}
++	 *	} else if ( reset_frame_context == 2 ) {
++	 *		save_probs( frame_context_idx )
++	 *	}
++	 *	frame_context_idx = 0
++	 * }
++	 */
++	fctx_idx = v4l2_vp9_reset_frame_ctx(dec_params, vp9_ctx->frame_context);
++	vp9_ctx->cur.frame_context_idx = fctx_idx;
++
++	/* 6.1 frame(sz): load_probs() and load_probs2() */
++	vp9_ctx->probability_tables = vp9_ctx->frame_context[fctx_idx];
++
++	/*
++	 * The userspace has also performed 6.3 compressed_header(), but handling the
++	 * probs in a special way. All probs which need updating, except MV-related,
++	 * have been read from the bitstream and translated through inv_map_table[],
++	 * but no 6.3.6 inv_recenter_nonneg(v, m) has been performed. The values passed
++	 * by userspace are either translated values (there are no 0 values in
++	 * inv_map_table[]), or zero to indicate no update. All MV-related probs which need
++	 * updating have been read from the bitstream and (mv_prob << 1) | 1 has been
++	 * performed. The values passed by userspace are either new values
++	 * to replace old ones (the above mentioned shift and bitwise or never result in
++	 * a zero) or zero to indicate no update.
++	 * fw_update_probs() performs actual probs updates or leaves probs as-is
++	 * for values for which a zero was passed from userspace.
++	 */
++	v4l2_vp9_fw_update_probs(&vp9_ctx->probability_tables, prob_updates, dec_params);
++
++	return 0;
++}
++
++static int rkvdec_vp9_run(struct rkvdec_ctx *ctx)
++{
++	struct rkvdec_dev *rkvdec = ctx->dev;
++	struct rkvdec_vp9_ctx *vp9_ctx = ctx->priv;
++	struct rkvdec_vp9_run run = { };
++	int ret;
++	u32 watchdog_time;
++
++	ret = rkvdec_vp9_run_preamble(ctx, &run);
++
++	if (ret) {
++		rkvdec_run_postamble(ctx, &run.base);
++
++		return ret;
++	}
++
++	/* Prepare probs. */
++	init_probs(ctx, &run);
++
++	/* Configure hardware registers. */
++	config_registers(ctx, &run);
++
++	rkvdec_run_postamble(ctx, &run.base);
++
++	u64 timeout_threshold = vp9_ctx->regs.common.reg032_timeout_threshold;
++	unsigned long axi_rate = clk_get_rate(rkvdec->axi_clk);
++
++	if (axi_rate)
++		watchdog_time = 2 * (1000 * timeout_threshold) / axi_rate;
++	else
++		watchdog_time = 2000;
++
++	schedule_delayed_work(&rkvdec->watchdog_work,
++			      msecs_to_jiffies(watchdog_time));
++
++	writel(VDPU381_DEC_E_BIT, rkvdec->regs + VDPU381_REG_DEC_E);
++
++	return 0;
++}
++
++#define copy_tx_and_skip(p1, p2)				\
++do {								\
++	memcpy((p1)->tx8, (p2)->tx8, sizeof((p1)->tx8));	\
++	memcpy((p1)->tx16, (p2)->tx16, sizeof((p1)->tx16));	\
++	memcpy((p1)->tx32, (p2)->tx32, sizeof((p1)->tx32));	\
++	memcpy((p1)->skip, (p2)->skip, sizeof((p1)->skip));	\
++} while (0)
++
++static void rkvdec_vp9_done(struct rkvdec_ctx *ctx,
++			    struct vb2_v4l2_buffer *src_buf,
++			    struct vb2_v4l2_buffer *dst_buf,
++			    enum vb2_buffer_state result)
++{
++	struct rkvdec_vp9_ctx *vp9_ctx = ctx->priv;
++	unsigned int fctx_idx;
++
++	/* v4l2-specific stuff */
++	if (result == VB2_BUF_STATE_ERROR)
++		goto out_update_last;
++
++	/*
++	 * vp9 stuff
++	 *
++	 * 6.1.2 refresh_probs()
++	 *
++	 * In the spec a complementary condition goes last in 6.1.2 refresh_probs(),
++	 * but it makes no sense to perform all the activities from the first "if"
++	 * there if we actually are not refreshing the frame context. On top of that,
++	 * because of 6.2 uncompressed_header() whenever error_resilient_mode == 1,
++	 * refresh_frame_context == 0. Consequently, if we don't jump to out_update_last
++	 * it means error_resilient_mode must be 0.
++	 */
++	if (!(vp9_ctx->cur.flags & V4L2_VP9_FRAME_FLAG_REFRESH_FRAME_CTX))
++		goto out_update_last;
++
++	fctx_idx = vp9_ctx->cur.frame_context_idx;
++
++	if (!(vp9_ctx->cur.flags & V4L2_VP9_FRAME_FLAG_PARALLEL_DEC_MODE)) {
++		/* error_resilient_mode == 0 && frame_parallel_decoding_mode == 0 */
++		struct v4l2_vp9_frame_context *probs = &vp9_ctx->probability_tables;
++		bool frame_is_intra = vp9_ctx->cur.flags &
++		    (V4L2_VP9_FRAME_FLAG_KEY_FRAME | V4L2_VP9_FRAME_FLAG_INTRA_ONLY);
++		struct tx_and_skip {
++			u8 tx8[2][1];
++			u8 tx16[2][2];
++			u8 tx32[2][3];
++			u8 skip[3];
++		} _tx_skip, *tx_skip = &_tx_skip;
++		struct v4l2_vp9_frame_symbol_counts *counts;
++
++		/* buffer the forward-updated TX and skip probs */
++		if (frame_is_intra)
++			copy_tx_and_skip(tx_skip, probs);
++
++		/* 6.1.2 refresh_probs(): load_probs() and load_probs2() */
++		*probs = vp9_ctx->frame_context[fctx_idx];
++
++		/* if FrameIsIntra then undo the effect of load_probs2() */
++		if (frame_is_intra)
++			copy_tx_and_skip(probs, tx_skip);
++
++		counts = frame_is_intra ? &vp9_ctx->intra_cnts : &vp9_ctx->inter_cnts;
++		v4l2_vp9_adapt_coef_probs(probs, counts,
++					  !vp9_ctx->last.valid ||
++					  vp9_ctx->last.flags & V4L2_VP9_FRAME_FLAG_KEY_FRAME,
++					  frame_is_intra);
++		if (!frame_is_intra) {
++			const struct rkvdec_vp9_inter_frame_symbol_counts *inter_cnts;
++			u32 classes[2][11];
++			int i;
++
++			inter_cnts = vp9_ctx->count_tbl.cpu;
++			for (i = 0; i < ARRAY_SIZE(classes); ++i)
++				memcpy(classes[i], inter_cnts->classes[i], sizeof(classes[0]));
++			counts->classes = &classes;
++
++			/* load_probs2() already done */
++			v4l2_vp9_adapt_noncoef_probs(&vp9_ctx->probability_tables, counts,
++						     vp9_ctx->cur.reference_mode,
++						     vp9_ctx->cur.interpolation_filter,
++						     vp9_ctx->cur.tx_mode, vp9_ctx->cur.flags);
++		}
++	}
++
++	/* 6.1.2 refresh_probs(): save_probs(fctx_idx) */
++	vp9_ctx->frame_context[fctx_idx] = vp9_ctx->probability_tables;
++
++out_update_last:
++	update_ctx_last_info(vp9_ctx);
++}
++
++static void rkvdec_init_v4l2_vp9_count_tbl(struct rkvdec_ctx *ctx)
++{
++	struct rkvdec_vp9_ctx *vp9_ctx = ctx->priv;
++	struct rkvdec_vp9_intra_frame_symbol_counts *intra_cnts = vp9_ctx->count_tbl.cpu;
++	struct rkvdec_vp9_inter_frame_symbol_counts *inter_cnts = vp9_ctx->count_tbl.cpu;
++	int i, j, k, l, m;
++
++	vp9_ctx->inter_cnts.partition = &inter_cnts->partition;
++	vp9_ctx->inter_cnts.skip = &inter_cnts->skip;
++	vp9_ctx->inter_cnts.intra_inter = &inter_cnts->inter;
++	vp9_ctx->inter_cnts.tx32p = &inter_cnts->tx32p;
++	vp9_ctx->inter_cnts.tx16p = &inter_cnts->tx16p;
++	vp9_ctx->inter_cnts.tx8p = &inter_cnts->tx8p;
++
++	vp9_ctx->intra_cnts.partition = (u32 (*)[16][4])(&intra_cnts->partition);
++	vp9_ctx->intra_cnts.skip = &intra_cnts->skip;
++	vp9_ctx->intra_cnts.intra_inter = &intra_cnts->intra;
++	vp9_ctx->intra_cnts.tx32p = &intra_cnts->tx32p;
++	vp9_ctx->intra_cnts.tx16p = &intra_cnts->tx16p;
++	vp9_ctx->intra_cnts.tx8p = &intra_cnts->tx8p;
++
++	vp9_ctx->inter_cnts.y_mode = &inter_cnts->y_mode;
++	vp9_ctx->inter_cnts.uv_mode = &inter_cnts->uv_mode;
++	vp9_ctx->inter_cnts.comp = &inter_cnts->comp;
++	vp9_ctx->inter_cnts.comp_ref = &inter_cnts->comp_ref;
++	vp9_ctx->inter_cnts.single_ref = &inter_cnts->single_ref;
++	vp9_ctx->inter_cnts.mv_mode = &inter_cnts->mv_mode;
++	vp9_ctx->inter_cnts.filter = &inter_cnts->filter;
++	vp9_ctx->inter_cnts.mv_joint = &inter_cnts->mv_joint;
++	vp9_ctx->inter_cnts.sign = &inter_cnts->sign;
++	/*
++	 * rk hardware actually uses "u32 classes[2][11 + 1];"
++	 * instead of "u32 classes[2][11];", so this must be explicitly
++	 * copied into vp9_ctx->classes when passing the data to the
++	 * vp9 library function
++	 */
++	vp9_ctx->inter_cnts.class0 = &inter_cnts->class0;
++	vp9_ctx->inter_cnts.bits = &inter_cnts->bits;
++	vp9_ctx->inter_cnts.class0_fp = &inter_cnts->class0_fp;
++	vp9_ctx->inter_cnts.fp = &inter_cnts->fp;
++	vp9_ctx->inter_cnts.class0_hp = &inter_cnts->class0_hp;
++	vp9_ctx->inter_cnts.hp = &inter_cnts->hp;
++
++#define INNERMOST_LOOP \
++	do {										\
++		for (m = 0; m < ARRAY_SIZE(vp9_ctx->inter_cnts.coeff[0][0][0][0]); ++m) {\
++			vp9_ctx->inter_cnts.coeff[i][j][k][l][m] =			\
++				&inter_cnts->ref_cnt[k][i][j][l][m].coeff;		\
++			vp9_ctx->inter_cnts.eob[i][j][k][l][m][0] =			\
++				&inter_cnts->ref_cnt[k][i][j][l][m].eob[0];		\
++			vp9_ctx->inter_cnts.eob[i][j][k][l][m][1] =			\
++				&inter_cnts->ref_cnt[k][i][j][l][m].eob[1];		\
++											\
++			vp9_ctx->intra_cnts.coeff[i][j][k][l][m] =			\
++				&intra_cnts->ref_cnt[k][i][j][l][m].coeff;		\
++			vp9_ctx->intra_cnts.eob[i][j][k][l][m][0] =			\
++				&intra_cnts->ref_cnt[k][i][j][l][m].eob[0];		\
++			vp9_ctx->intra_cnts.eob[i][j][k][l][m][1] =			\
++				&intra_cnts->ref_cnt[k][i][j][l][m].eob[1];		\
++		}									\
++	} while (0)
++
++	for (i = 0; i < ARRAY_SIZE(vp9_ctx->inter_cnts.coeff); ++i)
++		for (j = 0; j < ARRAY_SIZE(vp9_ctx->inter_cnts.coeff[0]); ++j)
++			for (k = 0; k < ARRAY_SIZE(vp9_ctx->inter_cnts.coeff[0][0]); ++k)
++				for (l = 0; l < ARRAY_SIZE(vp9_ctx->inter_cnts.coeff[0][0][0]); ++l)
++					INNERMOST_LOOP;
++#undef INNERMOST_LOOP
++}
++
++static int rkvdec_vp9_validate_frame(const struct v4l2_ctrl_vp9_frame *frame)
++{
++	if (frame->profile == 1 || frame->profile == 3)
++		return -EINVAL;
++
++	if (frame->bit_depth != 8 && frame->bit_depth != 10)
++		return -EINVAL;
++
++	return 0;
++}
++
++static int rkvdec_vp9_try_ctrl(struct rkvdec_ctx *ctx, struct v4l2_ctrl *ctrl)
++{
++	if (ctrl->id == V4L2_CID_STATELESS_VP9_FRAME)
++		return rkvdec_vp9_validate_frame(ctrl->p_new.p_vp9_frame);
++
++	return 0;
++}
++
++static int rkvdec_vp9_start(struct rkvdec_ctx *ctx)
++{
++	struct rkvdec_dev *rkvdec = ctx->dev;
++	struct rkvdec_vp9_priv_tbl *priv_tbl;
++	struct rkvdec_vp9_ctx *vp9_ctx;
++	unsigned char *count_tbl;
++	struct v4l2_ctrl *ctrl;
++	int ret;
++
++	/* frame header */
++	ctrl = v4l2_ctrl_find(&ctx->ctrl_hdl, V4L2_CID_STATELESS_VP9_FRAME);
++	if (!ctrl)
++		return -EINVAL;
++
++	ret = rkvdec_vp9_validate_frame(ctrl->p_new.p_vp9_frame);
++	if (ret)
++		return ret;
++
++	vp9_ctx = kzalloc_obj(*vp9_ctx);
++	if (!vp9_ctx)
++		return -ENOMEM;
++
++	ctx->priv = vp9_ctx;
++
++	BUILD_BUG_ON(sizeof(priv_tbl->probs) % 16); /* ensure probs size is 128-bit aligned */
++	priv_tbl = dma_alloc_coherent(rkvdec->dev, sizeof(*priv_tbl),
++				      &vp9_ctx->priv_tbl.dma, GFP_KERNEL);
++	if (!priv_tbl) {
++		ret = -ENOMEM;
++		goto err_free_ctx;
++	}
++
++	vp9_ctx->priv_tbl.size = sizeof(*priv_tbl);
++	vp9_ctx->priv_tbl.cpu = priv_tbl;
++
++	count_tbl = dma_alloc_coherent(rkvdec->dev, RKVDEC_VP9_COUNT_SIZE,
++				       &vp9_ctx->count_tbl.dma, GFP_KERNEL);
++	if (!count_tbl) {
++		ret = -ENOMEM;
++		goto err_free_priv_tbl;
++	}
++
++	vp9_ctx->count_tbl.size = RKVDEC_VP9_COUNT_SIZE;
++	vp9_ctx->count_tbl.cpu = count_tbl;
++	rkvdec_init_v4l2_vp9_count_tbl(ctx);
++
++	return 0;
++
++err_free_priv_tbl:
++	dma_free_coherent(rkvdec->dev, vp9_ctx->priv_tbl.size,
++			  vp9_ctx->priv_tbl.cpu, vp9_ctx->priv_tbl.dma);
++
++err_free_ctx:
++	kfree(vp9_ctx);
++	return ret;
++}
++
++static void rkvdec_vp9_stop(struct rkvdec_ctx *ctx)
++{
++	struct rkvdec_vp9_ctx *vp9_ctx = ctx->priv;
++	struct rkvdec_dev *rkvdec = ctx->dev;
++
++	dma_free_coherent(rkvdec->dev, vp9_ctx->count_tbl.size,
++			  vp9_ctx->count_tbl.cpu, vp9_ctx->count_tbl.dma);
++
++	dma_free_coherent(rkvdec->dev, vp9_ctx->priv_tbl.size,
++			  vp9_ctx->priv_tbl.cpu, vp9_ctx->priv_tbl.dma);
++
++	kfree(vp9_ctx);
++}
++
++static int rkvdec_vp9_adjust_fmt(struct rkvdec_ctx *ctx,
++				 struct v4l2_format *f)
++{
++	struct v4l2_pix_format_mplane *fmt = &f->fmt.pix_mp;
++
++	fmt->num_planes = 1;
++	if (!fmt->plane_fmt[0].sizeimage)
++		fmt->plane_fmt[0].sizeimage = fmt->width * fmt->height * 2;
++	return 0;
++}
++
++static enum rkvdec_image_fmt
++rkvdec_vp9_get_image_fmt(struct rkvdec_ctx *ctx, struct v4l2_ctrl *ctrl)
++{
++	const struct v4l2_ctrl_vp9_frame *frame = ctrl->p_new.p_vp9_frame;
++
++	if (ctrl->id != V4L2_CID_STATELESS_VP9_FRAME)
++		return RKVDEC_IMG_FMT_ANY;
++
++	switch (frame->bit_depth) {
++	case 8:
++		return RKVDEC_IMG_FMT_420_8BIT;
++	case 10:
++		return RKVDEC_IMG_FMT_420_10BIT;
++	default:
++		return RKVDEC_IMG_FMT_ANY;
++	}
++}
++
++const struct rkvdec_coded_fmt_ops rkvdec_vdpu381_vp9_fmt_ops = {
++	.adjust_fmt = rkvdec_vp9_adjust_fmt,
++	.start = rkvdec_vp9_start,
++	.stop = rkvdec_vp9_stop,
++	.run = rkvdec_vp9_run,
++	.done = rkvdec_vp9_done,
++	.try_ctrl = rkvdec_vp9_try_ctrl,
++	.get_image_fmt = rkvdec_vp9_get_image_fmt,
++};
+--- a/drivers/media/platform/rockchip/rkvdec/rkvdec.c
++++ b/drivers/media/platform/rockchip/rkvdec/rkvdec.c
+@@ -499,6 +499,45 @@ static const struct rkvdec_decoded_fmt_d
+ 	},
+ };
+ 
++static const struct rkvdec_ctrl_desc vdpu381_vp9_ctrl_descs[] = {
++	{
++		.cfg.id = V4L2_CID_STATELESS_VP9_FRAME,
++		.cfg.ops = &rkvdec_ctrl_ops,
++	},
++	{
++		.cfg.id = V4L2_CID_STATELESS_VP9_COMPRESSED_HDR,
++	},
++	{
++		.cfg.id = V4L2_CID_MPEG_VIDEO_VP9_PROFILE,
++		.cfg.min = V4L2_MPEG_VIDEO_VP9_PROFILE_0,
++		.cfg.max = V4L2_MPEG_VIDEO_VP9_PROFILE_2,
++		.cfg.def = V4L2_MPEG_VIDEO_VP9_PROFILE_0,
++		/* profiles 1/3 are 4:2:2/4:4:4 which VDPU381 cannot decode */
++		.cfg.menu_skip_mask = BIT(V4L2_MPEG_VIDEO_VP9_PROFILE_1),
++	},
++	{
++		.cfg.id = V4L2_CID_MPEG_VIDEO_VP9_LEVEL,
++		.cfg.min = V4L2_MPEG_VIDEO_VP9_LEVEL_1_0,
++		.cfg.max = V4L2_MPEG_VIDEO_VP9_LEVEL_6_1,
++	},
++};
++
++static const struct rkvdec_ctrls vdpu381_vp9_ctrls = {
++	.ctrls = vdpu381_vp9_ctrl_descs,
++	.num_ctrls = ARRAY_SIZE(vdpu381_vp9_ctrl_descs),
++};
++
++static const struct rkvdec_decoded_fmt_desc rkvdec_vdpu381_vp9_decoded_fmts[] = {
++	{
++		.fourcc = V4L2_PIX_FMT_NV12,
++		.image_fmt = RKVDEC_IMG_FMT_420_8BIT,
++	},
++	{
++		.fourcc = V4L2_PIX_FMT_NV15,
++		.image_fmt =  RKVDEC_IMG_FMT_420_10BIT,
++	},
++};
++
+ static const struct rkvdec_coded_fmt_desc rkvdec_coded_fmts[] = {
+ 	{
+ 		.fourcc = V4L2_PIX_FMT_HEVC_SLICE,
+@@ -634,6 +673,21 @@ static const struct rkvdec_coded_fmt_des
+ 		.decoded_fmts = rkvdec_h264_decoded_fmts,
+ 		.subsystem_flags = VB2_V4L2_FL_SUPPORTS_M2M_HOLD_CAPTURE_BUF,
+ 	},
++	{
++		.fourcc = V4L2_PIX_FMT_VP9_FRAME,
++		.frmsize = {
++			.min_width = 64,
++			.max_width = 65472,
++			.step_width = 64,
++			.min_height = 64,
++			.max_height = 65472,
++			.step_height = 64,
++		},
++		.ctrls = &vdpu381_vp9_ctrls,
++		.ops = &rkvdec_vdpu381_vp9_fmt_ops,
++		.num_decoded_fmts = ARRAY_SIZE(rkvdec_vdpu381_vp9_decoded_fmts),
++		.decoded_fmts = rkvdec_vdpu381_vp9_decoded_fmts,
++	}
+ };
+ 
+ static const struct rkvdec_coded_fmt_desc vdpu383_coded_fmts[] = {
+@@ -890,6 +944,13 @@ static int rkvdec_s_output_fmt(struct fi
+ 	 * Note that this will propagates any size changes to the decoded format.
+ 	 */
+ 	ctx->image_fmt = RKVDEC_IMG_FMT_ANY;
++
++	/* VP9 bit depth is per-frame, not up-front like HEVC's SPS;
++	 * default to 8-bit/NV12 until get_image_fmt() switches it.
++	 */
++	if (desc->fourcc == V4L2_PIX_FMT_VP9_FRAME)
++		ctx->image_fmt = RKVDEC_IMG_FMT_420_8BIT;
++
+ 	rkvdec_reset_decoded_fmt(ctx);
+ 
+ 	/* Propagate colorspace information to capture. */
+--- a/drivers/media/platform/rockchip/rkvdec/rkvdec.h
++++ b/drivers/media/platform/rockchip/rkvdec/rkvdec.h
+@@ -191,6 +191,7 @@ extern const struct rkvdec_coded_fmt_ops
+ /* VDPU381 ops */
+ extern const struct rkvdec_coded_fmt_ops rkvdec_vdpu381_h264_fmt_ops;
+ extern const struct rkvdec_coded_fmt_ops rkvdec_vdpu381_hevc_fmt_ops;
++extern const struct rkvdec_coded_fmt_ops rkvdec_vdpu381_vp9_fmt_ops;
+ 
+ /* VDPU383 ops */
+ extern const struct rkvdec_coded_fmt_ops rkvdec_vdpu383_h264_fmt_ops;

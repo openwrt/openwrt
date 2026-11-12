@@ -1,0 +1,344 @@
+From fdab1bff8239491bbf0a5f0a7e19dcf5cde99fdb Mon Sep 17 00:00:00 2001
+From: Venkata Atchuta Bheemeswara Sarma Darbha <vdarbha0473@gmail.com>
+Date: Sun, 26 Jul 2026 15:25:35 -0500
+Subject: [PATCH] media: rkvdec: Move vp9 functions to common file
+
+Refactor common VP9 functions in preparation for adding the VDPU381
+variant
+
+Signed-off-by: Venkata Atchuta Bheemeswara Sarma Darbha <vdarbha0473@gmail.com>
+---
+ .../media/platform/rockchip/rkvdec/Makefile   |   1 +
+ .../rockchip/rkvdec/rkvdec-vp9-common.c       |  65 ++++++++++
+ .../rockchip/rkvdec/rkvdec-vp9-common.h       |  92 ++++++++++++++
+ .../platform/rockchip/rkvdec/rkvdec-vp9.c     | 113 +-----------------
+ 4 files changed, 159 insertions(+), 112 deletions(-)
+ create mode 100644 drivers/media/platform/rockchip/rkvdec/rkvdec-vp9-common.c
+ create mode 100644 drivers/media/platform/rockchip/rkvdec/rkvdec-vp9-common.h
+
+--- a/drivers/media/platform/rockchip/rkvdec/Makefile
++++ b/drivers/media/platform/rockchip/rkvdec/Makefile
+@@ -12,4 +12,5 @@ rockchip-vdec-y += \
+ 		   rkvdec-vdpu381-hevc.o \
+ 		   rkvdec-vdpu383-h264.o \
+ 		   rkvdec-vdpu383-hevc.o \
++		   rkvdec-vp9-common.o \
+ 		   rkvdec-vp9.o
+--- /dev/null
++++ b/drivers/media/platform/rockchip/rkvdec/rkvdec-vp9-common.c
+@@ -0,0 +1,65 @@
++// SPDX-License-Identifier: GPL-2.0
++/*
++ * Rockchip video decoder VP9 common functions
++ *
++ * Copyright (C) 2019 Collabora, Ltd.
++ *	Boris Brezillon <boris.brezillon@collabora.com>
++ * Copyright (C) 2021 Collabora, Ltd.
++ *	Andrzej Pietrasiewicz <andrzej.p@collabora.com>
++ *
++ * Copyright (C) 2016 Rockchip Electronics Co., Ltd.
++ *	Alpha Lin <Alpha.Lin@rock-chips.com>
++ */
++#include <linux/v4l2-common.h>
++#include <media/v4l2-h264.h>
++#include <media/v4l2-mem2mem.h>
++
++#include "rkvdec.h"
++#include "rkvdec-vp9-common.h"
++
++void write_coeff_plane(const u8 coef[6][6][3], u8 *coeff_plane)
++{
++	unsigned int idx = 0, byte_count = 0;
++	int k, m, n;
++	u8 p;
++
++	for (k = 0; k < 6; k++) {
++		for (m = 0; m < 6; m++) {
++			for (n = 0; n < 3; n++) {
++				p = coef[k][m][n];
++				coeff_plane[idx++] = p;
++				byte_count++;
++				if (byte_count == 27) {
++					idx += 5;
++					byte_count = 0;
++				}
++			}
++		}
++	}
++}
++
++struct rkvdec_decoded_buffer *
++get_ref_buf_vp9(struct rkvdec_ctx *ctx, struct vb2_v4l2_buffer *dst, u64 timestamp)
++{
++	struct v4l2_m2m_ctx *m2m_ctx = ctx->fh.m2m_ctx;
++	struct vb2_queue *cap_q = &m2m_ctx->cap_q_ctx.q;
++	struct vb2_buffer *buf;
++
++	/*
++	 * If a ref is unused or invalid, address of current destination
++	 * buffer is returned.
++	 */
++	buf = vb2_find_buffer(cap_q, timestamp);
++	if (!buf)
++		buf = &dst->vb2_buf;
++
++	return vb2_to_rkvdec_decoded_buf(buf);
++}
++
++void update_dec_buf_info(struct rkvdec_decoded_buffer *buf,
++			 const struct v4l2_ctrl_vp9_frame *dec_params)
++{
++	buf->vp9.width = dec_params->frame_width_minus_1 + 1;
++	buf->vp9.height = dec_params->frame_height_minus_1 + 1;
++	buf->vp9.bit_depth = dec_params->bit_depth;
++}
+--- /dev/null
++++ b/drivers/media/platform/rockchip/rkvdec/rkvdec-vp9-common.h
+@@ -0,0 +1,92 @@
++/* SPDX-License-Identifier: GPL-2.0 */
++/*
++ * Rockchip video decoder VP9 common functions
++ *
++ * Copyright (C) 2019 Collabora, Ltd.
++ *	Boris Brezillon <boris.brezillon@collabora.com>
++ * Copyright (C) 2021 Collabora, Ltd.
++ *	Andrzej Pietrasiewicz <andrzej.p@collabora.com>
++ *
++ * Copyright (C) 2016 Rockchip Electronics Co., Ltd.
++ *	Alpha Lin <Alpha.Lin@rock-chips.com>
++ */
++
++#include <media/v4l2-h264.h>
++#include <media/v4l2-mem2mem.h>
++#include <media/v4l2-vp9.h>
++
++#include "rkvdec.h"
++
++struct rkvdec_vp9_run {
++	struct rkvdec_run base;
++	const struct v4l2_ctrl_vp9_frame *decode_params;
++};
++
++struct rkvdec_vp9_intra_mode_probs {
++	u8 y_mode[105];
++	u8 uv_mode[23];
++};
++
++struct rkvdec_vp9_intra_only_frame_probs {
++	u8 coef_intra[4][2][128];
++	struct rkvdec_vp9_intra_mode_probs intra_mode[10];
++};
++
++struct rkvdec_vp9_inter_frame_probs {
++	u8 y_mode[4][9];
++	u8 comp_mode[5];
++	u8 comp_ref[5];
++	u8 single_ref[5][2];
++	u8 inter_mode[7][3];
++	u8 interp_filter[4][2];
++	u8 padding0[11];
++	u8 coef[2][4][2][128];
++	u8 uv_mode_0_2[3][9];
++	u8 padding1[5];
++	u8 uv_mode_3_5[3][9];
++	u8 padding2[5];
++	u8 uv_mode_6_8[3][9];
++	u8 padding3[5];
++	u8 uv_mode_9[9];
++	u8 padding4[7];
++	u8 padding5[16];
++	struct {
++		u8 joint[3];
++		u8 sign[2];
++		u8 classes[2][10];
++		u8 class0_bit[2];
++		u8 bits[2][10];
++		u8 class0_fr[2][2][3];
++		u8 fr[2][3];
++		u8 class0_hp[2];
++		u8 hp[2];
++		u8 padding6[3];
++	} mv;
++};
++
++struct rkvdec_vp9_probs {
++	u8 partition[16][3];
++	u8 pred[3];
++	u8 tree[7];
++	u8 skip[3];
++	u8 tx32[2][3];
++	u8 tx16[2][2];
++	u8 tx8[2][1];
++	u8 is_inter[4];
++	/* 128 bit alignment */
++	u8 padding0[3];
++	union {
++		struct rkvdec_vp9_inter_frame_probs inter;
++		struct rkvdec_vp9_intra_only_frame_probs intra_only;
++	};
++	/* 128 bit alignment */
++	u8 padding1[8];
++};
++
++void write_coeff_plane(const u8 coef[6][6][3], u8 *coeff_plane);
++
++struct rkvdec_decoded_buffer *
++get_ref_buf_vp9(struct rkvdec_ctx *ctx, struct vb2_v4l2_buffer *dst, u64 timestamp);
++
++void update_dec_buf_info(struct rkvdec_decoded_buffer *buf,
++			 const struct v4l2_ctrl_vp9_frame *dec_params);
+--- a/drivers/media/platform/rockchip/rkvdec/rkvdec-vp9.c
++++ b/drivers/media/platform/rockchip/rkvdec/rkvdec-vp9.c
+@@ -23,71 +23,12 @@
+ 
+ #include "rkvdec.h"
+ #include "rkvdec-regs.h"
++#include "rkvdec-vp9-common.h"
+ 
+ #define RKVDEC_VP9_PROBE_SIZE		4864
+ #define RKVDEC_VP9_COUNT_SIZE		13232
+ #define RKVDEC_VP9_MAX_SEGMAP_SIZE	73728
+ 
+-struct rkvdec_vp9_intra_mode_probs {
+-	u8 y_mode[105];
+-	u8 uv_mode[23];
+-};
+-
+-struct rkvdec_vp9_intra_only_frame_probs {
+-	u8 coef_intra[4][2][128];
+-	struct rkvdec_vp9_intra_mode_probs intra_mode[10];
+-};
+-
+-struct rkvdec_vp9_inter_frame_probs {
+-	u8 y_mode[4][9];
+-	u8 comp_mode[5];
+-	u8 comp_ref[5];
+-	u8 single_ref[5][2];
+-	u8 inter_mode[7][3];
+-	u8 interp_filter[4][2];
+-	u8 padding0[11];
+-	u8 coef[2][4][2][128];
+-	u8 uv_mode_0_2[3][9];
+-	u8 padding1[5];
+-	u8 uv_mode_3_5[3][9];
+-	u8 padding2[5];
+-	u8 uv_mode_6_8[3][9];
+-	u8 padding3[5];
+-	u8 uv_mode_9[9];
+-	u8 padding4[7];
+-	u8 padding5[16];
+-	struct {
+-		u8 joint[3];
+-		u8 sign[2];
+-		u8 classes[2][10];
+-		u8 class0_bit[2];
+-		u8 bits[2][10];
+-		u8 class0_fr[2][2][3];
+-		u8 fr[2][3];
+-		u8 class0_hp[2];
+-		u8 hp[2];
+-	} mv;
+-};
+-
+-struct rkvdec_vp9_probs {
+-	u8 partition[16][3];
+-	u8 pred[3];
+-	u8 tree[7];
+-	u8 skip[3];
+-	u8 tx32[2][3];
+-	u8 tx16[2][2];
+-	u8 tx8[2][1];
+-	u8 is_inter[4];
+-	/* 128 bit alignment */
+-	u8 padding0[3];
+-	union {
+-		struct rkvdec_vp9_inter_frame_probs inter;
+-		struct rkvdec_vp9_intra_only_frame_probs intra_only;
+-	};
+-	/* 128 bit alignment */
+-	u8 padding1[11];
+-};
+-
+ /* Data structure describing auxiliary buffer format. */
+ struct rkvdec_vp9_priv_tbl {
+ 	struct rkvdec_vp9_probs probs;
+@@ -136,11 +77,6 @@ struct rkvdec_vp9_intra_frame_symbol_cou
+ 	struct rkvdec_vp9_refs_counts ref_cnt[2][4][2][6][6];
+ };
+ 
+-struct rkvdec_vp9_run {
+-	struct rkvdec_run base;
+-	const struct v4l2_ctrl_vp9_frame *decode_params;
+-};
+-
+ struct rkvdec_vp9_frame_info {
+ 	u32 valid : 1;
+ 	u32 segmapid : 1;
+@@ -166,27 +102,6 @@ struct rkvdec_vp9_ctx {
+ 	struct rkvdec_regs regs;
+ };
+ 
+-static void write_coeff_plane(const u8 coef[6][6][3], u8 *coeff_plane)
+-{
+-	unsigned int idx = 0, byte_count = 0;
+-	int k, m, n;
+-	u8 p;
+-
+-	for (k = 0; k < 6; k++) {
+-		for (m = 0; m < 6; m++) {
+-			for (n = 0; n < 3; n++) {
+-				p = coef[k][m][n];
+-				coeff_plane[idx++] = p;
+-				byte_count++;
+-				if (byte_count == 27) {
+-					idx += 5;
+-					byte_count = 0;
+-				}
+-			}
+-		}
+-	}
+-}
+-
+ static void init_intra_only_probs(struct rkvdec_ctx *ctx,
+ 				  const struct rkvdec_vp9_run *run)
+ {
+@@ -348,24 +263,6 @@ static void init_probs(struct rkvdec_ctx
+ 		init_inter_probs(ctx, run);
+ }
+ 
+-static struct rkvdec_decoded_buffer *
+-get_ref_buf_vp9(struct rkvdec_ctx *ctx, struct vb2_v4l2_buffer *dst, u64 timestamp)
+-{
+-	struct v4l2_m2m_ctx *m2m_ctx = ctx->fh.m2m_ctx;
+-	struct vb2_queue *cap_q = &m2m_ctx->cap_q_ctx.q;
+-	struct vb2_buffer *buf;
+-
+-	/*
+-	 * If a ref is unused or invalid, address of current destination
+-	 * buffer is returned.
+-	 */
+-	buf = vb2_find_buffer(cap_q, timestamp);
+-	if (!buf)
+-		buf = &dst->vb2_buf;
+-
+-	return vb2_to_rkvdec_decoded_buf(buf);
+-}
+-
+ static dma_addr_t get_mv_base_addr(struct rkvdec_decoded_buffer *buf)
+ {
+ 	unsigned int aligned_pitch, aligned_height, yuv_len;
+@@ -446,14 +343,6 @@ static void config_seg_registers(struct
+ 		(seg->flags & V4L2_VP9_SEGMENTATION_FLAG_ABS_OR_DELTA_UPDATE);
+ }
+ 
+-static void update_dec_buf_info(struct rkvdec_decoded_buffer *buf,
+-				const struct v4l2_ctrl_vp9_frame *dec_params)
+-{
+-	buf->vp9.width = dec_params->frame_width_minus_1 + 1;
+-	buf->vp9.height = dec_params->frame_height_minus_1 + 1;
+-	buf->vp9.bit_depth = dec_params->bit_depth;
+-}
+-
+ static void update_ctx_cur_info(struct rkvdec_vp9_ctx *vp9_ctx,
+ 				struct rkvdec_decoded_buffer *buf,
+ 				const struct v4l2_ctrl_vp9_frame *dec_params)

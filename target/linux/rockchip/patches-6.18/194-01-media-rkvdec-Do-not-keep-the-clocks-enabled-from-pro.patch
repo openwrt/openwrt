@@ -1,0 +1,45 @@
+From f0c22bb63bb4e9cb8592cc3bcfda95c25fce48a7 Mon Sep 17 00:00:00 2001
+From: Igor Velkov <iav@iav.lv>
+Date: Fri, 30 Oct 2026 18:02:04 +0000
+Subject: [PATCH] media: rkvdec: Do not keep the clocks enabled from probe
+
+Since commit 6a846f7d72c7 ("media: rkvdec: Enable all clocks without
+naming them") the clocks are fetched with devm_clk_bulk_get_all_enabled(),
+which keeps them enabled from probe until unbind. rkvdec_runtime_suspend()
+disables them on top of that, so their enable count never drops to zero
+and the clock gates stay open while the decoder is idle.
+
+On RK3399 this also breaks restore from hibernation when the boot kernel
+has not enabled these clocks, for example with rkvdec built as a module:
+the gates are closed when the restored kernel takes over, while it still
+counts the clocks as enabled. Powering on the vdu power domain then finds
+the count at 1 and leaves the gates closed, and the first QoS register
+write of the domain never returns.
+
+Get the clocks without enabling them and let runtime PM enable them while
+the decoder is in use, as before that commit. Without CONFIG_PM the
+runtime PM callbacks are not registered, so keep the clocks enabled from
+probe in that case, as etnaviv and v3d do.
+
+Fixes: 6a846f7d72c7 ("media: rkvdec: Enable all clocks without naming them")
+Cc: stable@vger.kernel.org # v7.0+
+Signed-off-by: Igor Velkov <iav@iav.lv>
+Link: https://lore.kernel.org/r/20261030-rkvdec-runtime-pm-clocks-v2-1-8ff510a231de@iav.lv
+---
+ drivers/media/platform/rockchip/rkvdec/rkvdec.c | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+--- a/drivers/media/platform/rockchip/rkvdec/rkvdec.c
++++ b/drivers/media/platform/rockchip/rkvdec/rkvdec.c
+@@ -2015,7 +2015,10 @@ static int rkvdec_probe(struct platform_
+ 	if (ret)
+ 		return ret;
+ 
+-	ret = devm_clk_bulk_get_all_enabled(&pdev->dev, &rkvdec->clocks);
++	if (IS_ENABLED(CONFIG_PM))
++		ret = devm_clk_bulk_get_all(&pdev->dev, &rkvdec->clocks);
++	else
++		ret = devm_clk_bulk_get_all_enabled(&pdev->dev, &rkvdec->clocks);
+ 	if (ret < 0)
+ 		return ret;
+ 

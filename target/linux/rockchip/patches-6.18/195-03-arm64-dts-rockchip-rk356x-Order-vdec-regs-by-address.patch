@@ -1,0 +1,36 @@
+From 9c33ba7de98675e9ef398f32333b452cdaa9aed2 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Thu, 12 Nov 2026 01:48:32 +0000
+Subject: [PATCH] arm64: dts: rockchip: rk356x: Order vdec regs by address
+
+The rockchip,vdec binding lists the register blocks as link, function,
+cache since commit 35c8178ed2bd ("media: dt-bindings: rockchip,vdec:
+Add alternative reg-names order for RK35{76,88}") and marks the
+function, link, cache order deprecated. The RK356x node uses the
+deprecated order, which also leaves its unit address 0xfdf80100 on the
+second reg entry.
+
+List the blocks as link, function, cache. The driver looks them up by
+name.
+
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ arch/arm64/boot/dts/rockchip/rk356x-base.dtsi | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+--- a/arch/arm64/boot/dts/rockchip/rk356x-base.dtsi
++++ b/arch/arm64/boot/dts/rockchip/rk356x-base.dtsi
+@@ -631,10 +631,10 @@
+ 
+ 	vdec: video-codec@fdf80100 {
+ 		compatible = "rockchip,rk3568-vdec";
+-		reg = <0x0 0xfdf80200 0x0 0x500>,
+-		      <0x0 0xfdf80100 0x0 0x100>,
++		reg = <0x0 0xfdf80100 0x0 0x100>,
++		      <0x0 0xfdf80200 0x0 0x500>,
+ 		      <0x0 0xfdf80700 0x0 0x100>;
+-		reg-names = "function", "link", "cache";
++		reg-names = "link", "function", "cache";
+ 		interrupts = <GIC_SPI 91 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&cru ACLK_RKVDEC>, <&cru HCLK_RKVDEC>,
+ 			 <&cru CLK_RKVDEC_CA>, <&cru CLK_RKVDEC_CORE>,

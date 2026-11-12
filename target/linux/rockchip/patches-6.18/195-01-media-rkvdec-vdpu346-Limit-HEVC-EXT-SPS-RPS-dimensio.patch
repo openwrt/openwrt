@@ -1,0 +1,37 @@
+From 78e8f21ec6fa8506ee2b7e70a29d523f76c56186 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Thu, 12 Nov 2026 01:45:39 +0000
+Subject: [PATCH] media: rkvdec: vdpu346: Limit HEVC EXT SPS RPS dimensions
+
+The VDPU346 control table registers the HEVC EXT_SPS_ST_RPS and
+EXT_SPS_LT_RPS controls with 65 elements each. struct rkvdec_rps holds
+64 short term sets and 32 long term references, the limits of ITU-T
+H.265 7.4.8 and 7.4.3.2.1, and the VDPU346 shares that table with the
+VDPU381.
+
+Register the controls with 64 and 32 elements, the dimensions the
+VDPU381 and VDPU383 use since commit f0b9d7e5be06 ("media: rkvdec:
+hevc: tighten EXT SPS RPS control dimensions").
+
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ drivers/media/platform/rockchip/rkvdec/rkvdec.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/drivers/media/platform/rockchip/rkvdec/rkvdec.c
++++ b/drivers/media/platform/rockchip/rkvdec/rkvdec.c
+@@ -278,12 +278,12 @@ static const struct rkvdec_ctrl_desc vdp
+ 	{
+ 		.cfg.id = V4L2_CID_STATELESS_HEVC_EXT_SPS_ST_RPS,
+ 		.cfg.ops = &rkvdec_ctrl_ops,
+-		.cfg.dims = { 65 },
++		.cfg.dims = { 64 },
+ 	},
+ 	{
+ 		.cfg.id = V4L2_CID_STATELESS_HEVC_EXT_SPS_LT_RPS,
+ 		.cfg.ops = &rkvdec_ctrl_ops,
+-		.cfg.dims = { 65 },
++		.cfg.dims = { 32 },
+ 	},
+ };
+ 
