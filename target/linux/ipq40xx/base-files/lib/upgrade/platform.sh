@@ -120,6 +120,7 @@ platform_do_upgrade() {
 	engenius,eap2200|\
 	glinet,gl-a1300|\
 	glinet,gl-ap1300|\
+	gryphon,guardian|\
 	luma,wrtq-329acn|\
 	mobipromo,cm520-79f|\
 	netgear,lbr20|\
