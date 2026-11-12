@@ -1,0 +1,70 @@
+From 900e975ca1b05f5e4fc6cc0558979a9ea6fcdba2 Mon Sep 17 00:00:00 2001
+From: Mieczyslaw Nalewaj <namiltd@yahoo.com>
+Date: Thu, 12 Nov 2026 16:12:32 +0000
+Subject: [PATCH] MIPS: ralink: free the padding in front of the kernel text
+
+The first 32 KiB of the kernel image are kept free of code because of
+the MIPS 24K EPC erratum, and the module allocator keeps module code
+out of them, so hand them back to the page allocator as ordinary data
+pages. The first page stays reserved, as the kernel reserves it on
+every CPU, which leaves 28 KiB. Nothing is freed if the exception
+vectors are in the padding.
+
+Signed-off-by: Mieczyslaw Nalewaj <namiltd@yahoo.com>
+[Marco: drop the second message, free_reserved_area() logs one; say
+ what keeps code out of the pages; keep the first page; move it from
+ mt7620.c to of.c, for every SoC with RALINK_PAD_FIRST_32K]
+Signed-off-by: Marco Martins <marcomartins86@gmail.com>
+---
+ arch/mips/ralink/of.c | 29 +++++++++++++++++++++++++++++
+ 1 file changed, 29 insertions(+)
+
+--- a/arch/mips/ralink/of.c
++++ b/arch/mips/ralink/of.c
+@@ -14,6 +14,7 @@
+ #include <linux/of_fdt.h>
+ #include <linux/kernel.h>
+ #include <linux/memblock.h>
++#include <linux/mm.h>
+ #include <linux/of.h>
+ #include <linux/of_address.h>
+ 
+@@ -21,6 +22,8 @@
+ #include <asm/bootinfo.h>
+ #include <asm/addrspace.h>
+ #include <asm/prom.h>
++#include <asm/sections.h>
++#include <asm/setup.h>
+ #include <asm/mach-ralink/ralink_regs.h>
+ 
+ #include "common.h"
+@@ -118,3 +121,29 @@ static int __init plat_of_setup(void)
+ }
+ 
+ arch_initcall(plat_of_setup);
++
++#ifdef CONFIG_RALINK_PAD_FIRST_32K
++/*
++ * head.S keeps the first 32 KiB of the image free of code (EPC erratum),
++ * and the module allocator keeps module code out of them, so return them
++ * to the page allocator. The first page stays reserved, as on every CPU.
++ */
++static int __init ralink_free_head_padding(void)
++{
++	unsigned long start = (unsigned long)_text + PAGE_SIZE;
++	unsigned long end = (unsigned long)_text + SZ_32K;
++
++	/* only if the kernel really starts at KSEG0 and code begins after the pad */
++	if ((unsigned long)_text != KSEG0 || (unsigned long)_stext < end)
++		return 0;
++
++	/* nor if the exception vectors are in it */
++	if (ebase >= (unsigned long)_text && ebase < end)
++		return 0;
++
++	free_reserved_area((void *)start, (void *)end, -1, "head padding");
++
++	return 0;
++}
++late_initcall(ralink_free_head_padding);
++#endif
