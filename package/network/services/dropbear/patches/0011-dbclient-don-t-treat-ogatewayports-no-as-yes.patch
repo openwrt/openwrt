@@ -1,0 +1,24 @@
+From 296481eb0ca7392e853906ad4629d71d99b2a515 Mon Sep 17 00:00:00 2001
+From: Matt Johnston <matt@ucc.asn.au>
+Date: Wed, 17 Jun 2026 21:34:58 +0800
+Subject: [PATCH 11/23] dbclient: don't treat -ogatewayports=no as yes
+
+Any -o gatewayports argument was treated as yes.
+
+Fixes: 3341b6767f62 ("cli-runopts.c: support more options")
+(cherry picked from commit 42731b31d5f7d9f26f6d25429c3ca286476acb17)
+---
+ src/cli-runopts.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/src/cli-runopts.c
++++ b/src/cli-runopts.c
+@@ -1007,7 +1007,7 @@ static void add_extendedopt(const char*
+ 
+ #if DROPBEAR_CLI_LOCALTCPFWD
+ 	if (match_extendedopt(&optstr, "GatewayPorts") == DROPBEAR_SUCCESS) {
+-		opts.listen_fwd_all = 1;
++		opts.listen_fwd_all = parse_flag_value(optstr);
+ 		return;
+ 	}
+ #endif

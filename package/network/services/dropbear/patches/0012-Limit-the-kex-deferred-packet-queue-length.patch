@@ -1,0 +1,96 @@
+From a6956ad87f5b79d8ab252774909ad1784dff9fc7 Mon Sep 17 00:00:00 2001
+From: Matt Johnston <matt@ucc.asn.au>
+Date: Fri, 3 Jul 2026 19:56:22 +0800
+Subject: [PATCH 12/23] Limit the kex deferred packet queue length
+
+During a key exchange, non-transport sent packets are enqueued since
+they are not allowed to be sent. The queue is theoretically unbounded,
+which could cause unbounded memory use.
+
+In normal operation not many packets would be expected from a peer
+before a reply KEXINIT, but a coincidental flood of channel open
+requests from a client at the same instant as a rekey begins could cause
+numerous replies. Perhaps that could happen with hectic SOCKS forwarding,
+so the limit is set to MAX_CHANNELS.
+Only reply packets would be enqueue, all of those are relatively small.
+
+The rekey KEX can't be directly triggered by a malicious peer, it has to
+wait for a rekey KEXINIT to be sent by Dropbear (client or server),
+after 1GB of data or 8 hours. It can only occur post-auth, none of the
+allowed pre-auth packets can trigger an enqueued reply.
+Memory is used by the session dropbear process, so the OOM killer would
+usually sort it out.
+
+(cherry picked from commit d35cf53782040ab11ea38369244cdbe92fc85b9a)
+[backport: adjusted context for 2025.89]
+---
+ src/common-session.c | 1 +
+ src/packet.c         | 8 ++++++++
+ src/session.h        | 1 +
+ src/sysoptions.h     | 4 ++++
+ 4 files changed, 14 insertions(+)
+
+--- a/src/common-session.c
++++ b/src/common-session.c
+@@ -117,6 +117,7 @@ void common_session_init(int sock_in, in
+ 	ses.lastpacket = 0;
+ 	ses.reply_queue_head = NULL;
+ 	ses.reply_queue_tail = NULL;
++	ses.reply_queue_len = 0;
+ 
+ 	/* set all the algos to none */
+ 	ses.keys = (struct key_context*)m_malloc(sizeof(struct key_context));
+--- a/src/packet.c
++++ b/src/packet.c
+@@ -477,6 +477,12 @@ static int packet_is_okay_kex(unsigned c
+ 
+ static void enqueue_reply_packet() {
+ 	struct packetlist * new_item = NULL;
++
++	if (ses.reply_queue_len > MAX_DEFER_REPLY_QUEUE) {
++		/* This limit should never be reached by a normal peer. */
++		dropbear_exit("Full reply queue");
++	}
++
+ 	new_item = m_malloc(sizeof(struct packetlist));
+ 	new_item->next = NULL;
+ 	
+@@ -490,6 +496,7 @@ static void enqueue_reply_packet() {
+ 		ses.reply_queue_head = new_item;
+ 	}
+ 	ses.reply_queue_tail = new_item;
++	ses.reply_queue_len++;
+ }
+ 
+ void maybe_flush_reply_queue() {
+@@ -512,6 +519,7 @@ void maybe_flush_reply_queue() {
+ 		encrypt_packet();
+ 	}
+ 	ses.reply_queue_head = ses.reply_queue_tail = NULL;
++	ses.reply_queue_len = 0;
+ }
+ 	
+ /* encrypt the writepayload, putting into writebuf, ready for write_packet()
+--- a/src/session.h
++++ b/src/session.h
+@@ -209,6 +209,7 @@ struct sshsession {
+ 	/* a list of queued replies that should be sent after a KEX has
+ 	   concluded (ie, while dataallowed was unset)*/
+ 	struct packetlist *reply_queue_head, *reply_queue_tail;
++	size_t reply_queue_len;
+ 
+ 	void(*remoteclosed)(void); /* A callback to handle closure of the
+ 									  remote connection */
+--- a/src/sysoptions.h
++++ b/src/sysoptions.h
+@@ -253,6 +253,10 @@
+ #define MAX_STRING_LEN (MAX(MAX_CMD_LEN, 2400)) /* Sun SSH needs 2400 for algos,
+                                                    MAX_CMD_LEN is usually longer */
+ 
++/* Count of packets ot enqueue deferring while a KEX is in progress.
++ * We wouldn't expect to be anywhere near one-per-channel in normal
++ * operation, but all replies are small so this is a reasonable upper bound */
++#define MAX_DEFER_REPLY_QUEUE MAX_CHANNELS
+ 
+ /* Key type sizes are ordered large to small, all are
+  determined empirically, and rounded up */
