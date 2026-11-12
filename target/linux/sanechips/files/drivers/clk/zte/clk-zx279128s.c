@@ -14,6 +14,7 @@
 #include <linux/bitfield.h>
 #include <linux/clk.h>
 #include <linux/clk-provider.h>
+#include <linux/delay.h>
 #include <linux/io.h>
 #include <linux/of.h>
 #include <linux/of_address.h>
@@ -48,6 +49,8 @@ static const struct zx_reset_line zx279128s_top_resets[] = {
 	[ZX279128S_RESET_USB_B10] = { 0x4c, 10 },
 	[ZX279128S_RESET_USB_B11] = { 0x4c, 11 },
 	[ZX279128S_RESET_USB_B14] = { 0x4c, 14 },
+	/* Ethernet traffic manager; also clears its queue usage */
+	[ZX279128S_RESET_TM]      = { 0x08, 3 },
 };
 
 static DEFINE_SPINLOCK(zx_top_lock);
@@ -115,7 +118,19 @@ static int zx_reset_status(struct reset_controller_dev *rcdev, unsigned long id)
 	return !(val & BIT(line->bit));
 }
 
+static int zx_reset_reset(struct reset_controller_dev *rcdev, unsigned long id)
+{
+	int ret;
+
+	ret = zx_reset_assert(rcdev, id);
+	if (ret)
+		return ret;
+	fsleep(1000);
+	return zx_reset_deassert(rcdev, id);
+}
+
 static const struct reset_control_ops zx_reset_ops = {
+	.reset = zx_reset_reset,
 	.assert = zx_reset_assert,
 	.deassert = zx_reset_deassert,
 	.status = zx_reset_status,

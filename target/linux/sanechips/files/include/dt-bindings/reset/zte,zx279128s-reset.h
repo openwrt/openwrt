@@ -14,7 +14,8 @@
 #define ZX279128S_RESET_USB_B10		1
 #define ZX279128S_RESET_USB_B11		2
 #define ZX279128S_RESET_USB_B14		3
-#define ZX279128S_RESET_COUNT		4
+#define ZX279128S_RESET_TM		4
+#define ZX279128S_RESET_COUNT		5
 
 /*
  * Top CRM 2 logical reset lines.

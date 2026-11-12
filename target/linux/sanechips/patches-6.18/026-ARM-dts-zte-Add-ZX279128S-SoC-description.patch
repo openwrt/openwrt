@@ -10,13 +10,13 @@ and DWC3 USB.
 
 Signed-off-by: Navid Ghahremani <ghahramani.navid@gmail.com>
 ---
- arch/arm/boot/dts/zte/zx279128s.dtsi | 422 +++++++++++++++++++++++++++
- 1 file changed, 422 insertions(+)
+ arch/arm/boot/dts/zte/zx279128s.dtsi | 423 +++++++++++++++++++++++++++
+ 1 file changed, 423 insertions(+)
  create mode 100644 arch/arm/boot/dts/zte/zx279128s.dtsi
 
 --- /dev/null
 +++ b/arch/arm/boot/dts/zte/zx279128s.dtsi
-@@ -0,0 +1,422 @@
+@@ -0,0 +1,423 @@
 +// SPDX-License-Identifier: GPL-2.0-only OR BSD-2-Clause
 +/*
 + * ZTE zx279128s SoC: dual Cortex-A9 with an L2C-310 cache controller, a
@@ -227,6 +227,7 @@ Signed-off-by: Navid Ghahremani <ghahramani.navid@gmail.com>
 +			compatible = "zte,zx279128s-gmac";
 +			reg = <0x92000000 0x400000>;
 +			interrupts = <GIC_SPI 36 IRQ_TYPE_LEVEL_HIGH>;
++			resets = <&topcrm ZX279128S_RESET_TM>;
 +			status = "disabled";
 +
 +			ethernet-ports {

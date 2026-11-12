@@ -33,6 +33,7 @@
 #include <linux/of_net.h>
 #include <linux/phy.h>
 #include <linux/platform_device.h>
+#include <linux/reset.h>
 #include <linux/rtnetlink.h>
 #include <linux/seq_file.h>
 
@@ -1212,6 +1213,7 @@ static int zx_eth_probe(struct platform_device *pdev)
 {
 	struct device *dev = &pdev->dev;
 	struct zx_eth_adapter *adapter;
+	struct reset_control *rst;
 	struct device_node *np;
 	u8 addrs[ZX_NUM_PORTS][ETH_ALEN];
 	unsigned long have_addr = 0;
@@ -1284,6 +1286,25 @@ static int zx_eth_probe(struct platform_device *pdev)
 	adapter->rx_ring_dma = adapter->buf_pool_dma + ZX_RX_OFFSET;
 	adapter->tx_ring = adapter->buffer_pool + ZX_TX_OFFSET;
 	adapter->tx_ring_dma = adapter->buf_pool_dma + ZX_TX_OFFSET;
+
+	/*
+	 * Queue usage survives the switch's own reset in zx_hw_reset().  When
+	 * U-Boot gave up a TFTP download and started again, the frames it had
+	 * queued meanwhile for the ports without a link stay counted, and their
+	 * downstream usage is above the queue manager's watermark: RED then
+	 * drops every frame the CPU sends, until the next power cycle.  The
+	 * traffic manager's reset clears the usage.
+	 */
+	rst = devm_reset_control_get_optional_exclusive(dev, NULL);
+	if (IS_ERR(rst)) {
+		ret = dev_err_probe(dev, PTR_ERR(rst), "no traffic manager reset\n");
+		goto err_dma;
+	}
+	ret = reset_control_reset(rst);
+	if (ret) {
+		dev_err(dev, "traffic manager reset failed: %d\n", ret);
+		goto err_dma;
+	}
 
 	ret = zx_hw_init(adapter);
 	if (ret)
