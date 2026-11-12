@@ -133,7 +133,7 @@ define Device/aruba_ap-32x
 	ARTIFACTS := apboot.mbn
 	ARTIFACT/apboot.mbn := append-uboot
 	DEVICE_PACKAGES := ath10k-firmware-qca99x0-ct kmod-i2c-gpio kmod-tpm-i2c-atmel \
-		apboot-aruba-ipq806x
+		apboot-aruba-ipq806x ipq-wifi-aruba_ap-325
 endef
 TARGET_DEVICES += aruba_ap-32x
 
