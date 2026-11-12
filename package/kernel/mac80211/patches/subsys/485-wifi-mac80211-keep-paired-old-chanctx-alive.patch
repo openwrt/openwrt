@@ -1,0 +1,96 @@
+From 3412e9a800786d1dec4a58367db1cba275e7ef11 Mon Sep 17 00:00:00 2001
+From: Zhiling Zou <zhilinz@nebusec.ai>
+Date: Mon, 3 Aug 2026 12:35:10 +0800
+Subject: [PATCH] wifi: mac80211: keep paired old chanctx alive
+
+An in-place replacement keeps reciprocal replace_ctx pointers between
+the old WILL_BE_REPLACED chanctx and the new REPLACES_OTHER chanctx.
+However, the early free paths only consider assigned and reserved link
+users when deciding whether to free the old chanctx.
+
+That lets the old chanctx be freed too early while the replacement
+partner still points back to it, either when the last assigned link is
+released or when that link successfully reassigns to another existing
+context. Later unreserve and switch-finalization paths can then follow a
+stale replace_ctx pointer.
+
+Keep a paired old chanctx alive until the replacement pair has been torn
+down. Apply the same check to both __ieee80211_link_release_channel()
+and ieee80211_link_use_reserved_reassign(). If the replacement is later
+abandoned, ieee80211_link_unreserve_chanctx() already tears down the
+pairing before freeing the old chanctx once no users remain.
+
+Fixes: 5bcae31d9cb1 ("mac80211: implement multi-vif in-place reservations")
+Cc: stable@vger.kernel.org
+Reported-by: Vega <vega@nebusec.ai>
+Signed-off-by: Zhiling Zou <zhilinz@nebusec.ai>
+Link: https://patch.msgid.link/b9b582b0db3814f641648b8886bb50f9d68f93ac.1785730815.git.zhilinz@nebusec.ai
+Signed-off-by: Johannes Berg <johannes.berg@intel.com>
+---
+ net/mac80211/chan.c | 20 ++++++++++++++++++--
+ 1 file changed, 18 insertions(+), 2 deletions(-)
+
+--- a/net/mac80211/chan.c
++++ b/net/mac80211/chan.c
+@@ -231,6 +231,13 @@ int ieee80211_chanctx_refcount(struct ie
+ 	return num;
+ }
+ 
++static bool
++ieee80211_chanctx_has_replace_partner(struct ieee80211_chanctx *ctx)
++{
++	return ctx->replace_state == IEEE80211_CHANCTX_WILL_BE_REPLACED &&
++	       ctx->replace_ctx;
++}
++
+ static int ieee80211_num_chanctx(struct ieee80211_local *local, int radio_idx)
+ {
+ 	struct ieee80211_chanctx *ctx;
+@@ -1403,6 +1410,7 @@ void ieee80211_link_unreserve_chanctx(st
+ {
+ 	struct ieee80211_sub_if_data *sdata = link->sdata;
+ 	struct ieee80211_chanctx *ctx = link->reserved_chanctx;
++	struct ieee80211_chanctx *old_ctx = NULL;
+ 
+ 	lockdep_assert_wiphy(sdata->local->hw.wiphy);
+ 
+@@ -1416,6 +1424,7 @@ void ieee80211_link_unreserve_chanctx(st
+ 			if (WARN_ON(!ctx->replace_ctx))
+ 				return;
+ 
++			old_ctx = ctx->replace_ctx;
+ 			WARN_ON(ctx->replace_ctx->replace_state !=
+ 			        IEEE80211_CHANCTX_WILL_BE_REPLACED);
+ 			WARN_ON(ctx->replace_ctx->replace_ctx != ctx);
+@@ -1426,6 +1435,11 @@ void ieee80211_link_unreserve_chanctx(st
+ 
+ 			list_del_rcu(&ctx->list);
+ 			kfree_rcu(ctx, rcu_head);
++
++			if (ieee80211_chanctx_refcount(sdata->local,
++						       old_ctx) == 0)
++				ieee80211_free_chanctx(sdata->local, old_ctx,
++						       false);
+ 		} else {
+ 			ieee80211_free_chanctx(sdata->local, ctx, false);
+ 		}
+@@ -1705,7 +1719,8 @@ ieee80211_link_use_reserved_reassign(str
+ 
+ 	ieee80211_check_fast_xmit_iface(sdata);
+ 
+-	if (ieee80211_chanctx_refcount(local, old_ctx) == 0)
++	if (ieee80211_chanctx_refcount(local, old_ctx) == 0 &&
++	    !ieee80211_chanctx_has_replace_partner(old_ctx))
+ 		ieee80211_free_chanctx(local, old_ctx, false);
+ 
+ 	ieee80211_recalc_chanctx_min_def(local, new_ctx);
+@@ -2174,7 +2189,8 @@ void __ieee80211_link_release_channel(st
+ 	}
+ 
+ 	ieee80211_assign_link_chanctx(link, NULL, false);
+-	if (ieee80211_chanctx_refcount(local, ctx) == 0)
++	if (ieee80211_chanctx_refcount(local, ctx) == 0 &&
++	    !ieee80211_chanctx_has_replace_partner(ctx))
+ 		ieee80211_free_chanctx(local, ctx, skip_idle_recalc);
+ 
+ 	link->radar_required = false;

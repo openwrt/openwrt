@@ -1,0 +1,38 @@
+From 9e15ccad0877c4a748bf2b817811a23f2d71bd92 Mon Sep 17 00:00:00 2001
+From: Jiale Yao <yaojiale02@163.com>
+Date: Sat, 26 Sep 2026 19:40:37 +0800
+Subject: [PATCH] wifi: ath11k: Reject short management RX frames
+
+ath11k_pull_mgmt_rx_params_tlv() verifies that the firmware-reported frame
+length fits in the WMI event, but does not ensure that it can hold an IEEE
+802.11 management header. It then sets skb->len to that reported length.
+
+ath11k_mgmt_rx_event() subsequently reads frame_control and other header
+fields without another length check. A firmware event with a short buf_len
+can therefore cause an out-of-bounds read.
+
+Reject frames shorter than a three-address IEEE 802.11 header before
+adjusting the skb to expose the frame.
+
+Fixes: d5c65159f289 ("ath11k: driver for Qualcomm IEEE 802.11ax devices")
+Signed-off-by: Jiale Yao <yaojiale02@163.com>
+Reviewed-by: Vasanthakumar Thiagarajan <vasanthakumar.thiagarajan@oss.qualcomm.com>
+Reviewed-by: Baochen Qiang <baochen.qiang@oss.qualcomm.com>
+Link: https://patch.msgid.link/20260926114037.3231795-1-yaojiale02@163.com
+Signed-off-by: Jeff Johnson <jeff.johnson@oss.qualcomm.com>
+---
+ drivers/net/wireless/ath/ath11k/wmi.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+--- a/drivers/net/wireless/ath/ath11k/wmi.c
++++ b/drivers/net/wireless/ath/ath11k/wmi.c
+@@ -6004,7 +6004,8 @@ static int ath11k_pull_mgmt_rx_params_tl
+ 	hdr->tsf_delta =  ev->tsf_delta;
+ 	memcpy(hdr->rssi_ctl, ev->rssi_ctl, sizeof(hdr->rssi_ctl));
+ 
+-	if (skb->len < (frame - skb->data) + hdr->buf_len) {
++	if (hdr->buf_len < sizeof(struct ieee80211_hdr_3addr) ||
++	    skb->len < (frame - skb->data) + hdr->buf_len) {
+ 		ath11k_warn(ab, "invalid length in mgmt rx hdr ev");
+ 		return -EPROTO;
+ 	}

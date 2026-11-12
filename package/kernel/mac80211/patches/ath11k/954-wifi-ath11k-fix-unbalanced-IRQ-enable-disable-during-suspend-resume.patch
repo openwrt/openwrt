@@ -1,0 +1,87 @@
+From e56c9d429ba004d5416b03091fd7656187cdcaf1 Mon Sep 17 00:00:00 2001
+From: Baochen Qiang <baochen.qiang@oss.qualcomm.com>
+Date: Mon, 28 Sep 2026 18:45:25 +0800
+Subject: [PATCH] wifi: ath11k: fix unbalanced IRQ enable/disable during
+ suspend/resume
+
+Commit f7a74e131d3f ("wifi: ath11k: disable interrupts during firmware
+crash recovery") added an unconditional ath11k_hif_irq_disable()/
+ath11k_hif_ce_irq_disable() pair inside
+ath11k_core_reconfigure_on_crash(), guarded by "if (!ab->is_reset)", to
+stop the DP NAPI from touching rings that have just been torn down. That
+fixes AHB device recovery, but breaks PCI device suspend/resume. During
+suspend, IRQs are disabled once in ath11k_core_suspend_late(). Then during
+resume, ath11k_core_reconfigure_on_crash() sees ab->is_reset clear and
+disables them a second time. Those IRQs are enabled only once during
+the following reinitialization, leaving the IRQ lines masked. As a result,
+HTC control responses never arrive, and resume fails:
+
+  failed to receive control response completion, polling..
+  failed to connect to HTT: -110
+  failed to reconfigure driver on crash recovery
+  failed to resume core: -110
+
+Fix this by disabling the IRQs unconditionally at the top of
+ath11k_core_reconfigure_on_crash(), and instead drop the disable
+calls from the two places that already disable IRQs before this
+function can run: ath11k_core_suspend_late() and ath11k_core_reset().
+This keeps a single disable per recovery/suspend cycle regardless of
+which path (recovery or suspend) triggers it, so the refcount on
+PCI parts stays balanced while AHB parts keep getting the disable
+that the original commit needed.
+
+Fixes: f7a74e131d3f ("wifi: ath11k: disable interrupts during firmware crash recovery")
+Reported-by: Marek Szyprowski <m.szyprowski@samsung.com>
+Closes: https://lore.kernel.org/linux-wireless/a068a857-a549-4cc2-ae0f-3ef119d3a859@samsung.com/
+Tested-by: Marek Szyprowski <m.szyprowski@samsung.com>
+Tested-by: Julius Bairaktaris <julius@bairaktaris.de>
+Signed-off-by: Baochen Qiang <baochen.qiang@oss.qualcomm.com>
+Reviewed-by: Rameshkumar Sundaram <rameshkumar.sundaram@oss.qualcomm.com>
+Link: https://patch.msgid.link/20260928-ath11k-unbalanced-irq-enable-disable-v1-1-75166f534763@oss.qualcomm.com
+Signed-off-by: Jeff Johnson <jeff.johnson@oss.qualcomm.com>
+---
+ drivers/net/wireless/ath/ath11k/core.c | 18 ++----------------
+ 1 file changed, 2 insertions(+), 16 deletions(-)
+
+--- a/drivers/net/wireless/ath/ath11k/core.c
++++ b/drivers/net/wireless/ath/ath11k/core.c
+@@ -1417,9 +1417,6 @@ int ath11k_core_suspend_late(struct ath1
+ 	if (ab->actual_pm_policy == ATH11K_PM_WOW)
+ 		return 0;
+ 
+-	ath11k_hif_irq_disable(ab);
+-	ath11k_hif_ce_irq_disable(ab);
+-
+ 	ath11k_hif_power_down(ab, true);
+ 
+ 	return 0;
+@@ -2475,17 +2472,9 @@ static int ath11k_core_reconfigure_on_cr
+ 	int ret;
+ 
+ 	mutex_lock(&ab->core_lock);
++	ath11k_hif_irq_disable(ab);
++	ath11k_hif_ce_irq_disable(ab);
+ 	ath11k_thermal_unregister(ab);
+-
+-	/*
+-	 * ath11k_core_reset() already disabled the interrupts on the reset
+-	 * path; only the firmware crash path reaches here with them live.
+-	 */
+-	if (!ab->is_reset) {
+-		ath11k_hif_irq_disable(ab);
+-		ath11k_hif_ce_irq_disable(ab);
+-	}
+-
+ 	ath11k_dp_pdev_free(ab);
+ 	ath11k_cfr_deinit(ab);
+ 	ath11k_spectral_deinit(ab);
+@@ -2746,9 +2735,6 @@ static void ath11k_core_reset(struct wor
+ 	time_left = wait_for_completion_timeout(&ab->recovery_start,
+ 						ATH11K_RECOVER_START_TIMEOUT_HZ);
+ 
+-	ath11k_hif_irq_disable(ab);
+-	ath11k_hif_ce_irq_disable(ab);
+-
+ 	ath11k_hif_power_down(ab, false);
+ 	ath11k_hif_power_up(ab);
+ 

@@ -1,0 +1,41 @@
+From e588e83e5c7a0f6d7a77dbbb58927c8c8cfd598e Mon Sep 17 00:00:00 2001
+From: Zhao Li <enderaoelyther@gmail.com>
+Date: Thu, 10 Sep 2026 14:54:02 +0800
+Subject: [PATCH] wifi: mac80211: shut down RX BA session timer on teardown
+
+Tearing down an RX BA session can leave the session timer queued on a
+freed tid_rx. Later timer-wheel processing and the timer callback itself
+then run against freed memory.
+
+An RX BAR handler can dereference tid_rx under RCU before teardown
+unpublishes it and stay in its read-side critical section while teardown
+deletes the session timer. The stale handler can then rearm the timer
+after timer_delete_sync() returns and before the RCU callback frees
+tid_rx.
+
+Use timer_shutdown_sync() so rearm attempts become ineffective once
+teardown starts. Keep reorder_timer unchanged: teardown marks the session
+removed under reorder_lock and its release path checks that state before
+rearming. session_timer has no equivalent guard because
+ieee80211_rx_h_ctrl() rearms it before taking reorder_lock.
+
+Fixes: a87f736d942c ("mac80211: use RCU for RX aggregation")
+Cc: stable@kernel.org # 5.15+
+Assisted-by: LLM sparse kasan
+Signed-off-by: Zhao Li <enderaoelyther@gmail.com>
+Signed-off-by: Johannes Berg <johannes.berg@intel.com>
+---
+ net/mac80211/agg-rx.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/net/mac80211/agg-rx.c
++++ b/net/mac80211/agg-rx.c
+@@ -102,7 +102,7 @@ void __ieee80211_stop_rx_ba_session(stru
+ 	if (!tid_rx)
+ 		return;
+ 
+-	timer_delete_sync(&tid_rx->session_timer);
++	timer_shutdown_sync(&tid_rx->session_timer);
+ 
+ 	/* make sure ieee80211_sta_reorder_release() doesn't re-arm the timer */
+ 	spin_lock_bh(&tid_rx->reorder_lock);

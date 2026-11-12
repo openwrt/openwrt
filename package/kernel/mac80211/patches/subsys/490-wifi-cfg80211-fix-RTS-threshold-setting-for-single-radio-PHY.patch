@@ -1,0 +1,40 @@
+From 9eda41e32263806a66835e275efdcc0c5f46bbc4 Mon Sep 17 00:00:00 2001
+From: Stanislaw Gruszka <stf_xl@wp.pl>
+Date: Sat, 19 Sep 2026 11:24:54 +0200
+Subject: [PATCH] wifi: cfg80211: fix RTS threshold setting for single-radio
+ PHY
+
+Due to an incorrect old_radio_rts_threshold check, we do not set
+rdev->wiphy.rts_threshold for a single-radio PHY, and the threshold
+value is not propagated to lower layers.
+
+Cc: stable@vger.kernel.org
+Fixes: 264637941cf4 ("wifi: cfg80211: Add Support to Set RTS Threshold for each Radio")
+Signed-off-by: Stanislaw Gruszka <stf_xl@wp.pl>
+Link: https://patch.msgid.link/20260919092454.50266-1-stf_xl@wp.pl
+Signed-off-by: Johannes Berg <johannes.berg@intel.com>
+---
+ net/wireless/nl80211.c | 11 ++++++-----
+ 1 file changed, 6 insertions(+), 5 deletions(-)
+
+--- a/net/wireless/nl80211.c
++++ b/net/wireless/nl80211.c
+@@ -4608,12 +4608,13 @@ static int nl80211_set_wiphy(struct sk_b
+ 			rdev->wiphy.retry_long = retry_long;
+ 		if (changed & WIPHY_PARAM_FRAG_THRESHOLD)
+ 			rdev->wiphy.frag_threshold = frag_threshold;
+-		if ((changed & WIPHY_PARAM_RTS_THRESHOLD) &&
+-		    old_radio_rts_threshold) {
++		if (changed & WIPHY_PARAM_RTS_THRESHOLD) {
+ 			rdev->wiphy.rts_threshold = rts_threshold;
+-			for (i = 0 ; i < rdev->wiphy.n_radio; i++)
+-				rdev->wiphy.radio_cfg[i].rts_threshold =
+-					rdev->wiphy.rts_threshold;
++			if (old_radio_rts_threshold) {
++				for (i = 0; i < rdev->wiphy.n_radio; i++)
++					rdev->wiphy.radio_cfg[i].rts_threshold =
++						rdev->wiphy.rts_threshold;
++			}
+ 		}
+ 		if (changed & WIPHY_PARAM_COVERAGE_CLASS)
+ 			rdev->wiphy.coverage_class = coverage_class;
