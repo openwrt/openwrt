@@ -357,6 +357,13 @@ function assign_dev_cpu(dev) {
 			cpu = -1;
 		else if (rps_cpus)
 			cpu = rps_cpus;
+		else if (hw_spread && dev.rss)
+			// A receive ring of a wireless device carries whole
+			// flows, and the driver, mac80211 and forwarding work of
+			// a flow all run on that ring's CPU. The device can also
+			// hash every flow of a station onto one ring. Let the
+			// stack half of the work go to any CPU.
+			cpu = -1;
 		else if (!hw_spread)
 			cpu = get_next_cpu(rx_weight, dev.napi_cpu);
 		for (let netdev in dev.netdev)
