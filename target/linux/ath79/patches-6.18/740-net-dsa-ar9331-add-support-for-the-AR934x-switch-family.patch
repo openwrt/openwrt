@@ -1,0 +1,346 @@
+From: Rosen Penev <rosenp@gmail.com>
+Subject: [PATCH] net: dsa: ar9331: add support for the AR934x switch family
+
+The AR934x, QCA953x and QCA956x SoCs contain a switch that is close to
+the one in the AR9331. It has the same five FE PHYs behind the same
+MDIO access scheme and most registers at the same addresses. The
+differences are:
+
+- the global interrupt status and mask are at 0x14 and 0x18
+- the 802.1Q mode and the port VLAN members are in Port-Based VLAN 2
+  (0x10c) instead of Port-Based VLAN (0x108)
+- MAC0 has to be connected to the GMII of the CPU MAC in Operational
+  Mode 0, and the CPU port has to be enabled in the CPU Port register
+- PHY4, which MAC5 shares with the second CPU MAC (GMAC0), has to be
+  handed to GMAC0 in Operational Mode 1 when port 5 is not used
+- the flood masks leave out port 0 after reset
+- the MIB counters do not count after reset, and auto-cast them to the
+  CPU port when a timer expires or a counter is half full
+- frames to and from the CPU carry the 2 byte header of the QCA8K
+  switches instead of the AR9331 header
+
+Normal frames use the same header bits as QCA8K: version 2 in bits 15:14,
+the from-CPU bit 7 and the port bitmap in bits 6:0 on transmit, the source
+port in bits 2:0 and a zero type on receive. So use the existing qca
+tagger. The MIB and register access frames use other type values, so keep
+the MIB auto-cast disabled; the driver polls the counters.
+
+Tested on a NiuBi NB-PR1 (QCA9531) with port 1 as user port.
+
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+Assisted-by: LLM
+---
+--- a/drivers/net/dsa/qca/Kconfig
++++ b/drivers/net/dsa/qca/Kconfig
+@@ -3,10 +3,11 @@ config NET_DSA_AR9331
+ 	tristate "Qualcomm Atheros AR9331 Ethernet switch support"
+ 	depends on NET_DSA
+ 	select NET_DSA_TAG_AR9331
++	select NET_DSA_TAG_QCA
+ 	select REGMAP
+ 	help
+-	  This enables support for the Qualcomm Atheros AR9331 built-in Ethernet
+-	  switch.
++	  This enables support for the Ethernet switches built into the
++	  Qualcomm Atheros AR9331, AR934x, QCA953x and QCA956x SoCs.
+ 
+ config NET_DSA_QCA8K
+ 	tristate "Qualcomm Atheros QCA8K Ethernet switch family support"
+--- a/drivers/net/dsa/qca/ar9331.c
++++ b/drivers/net/dsa/qca/ar9331.c
+@@ -37,10 +37,16 @@
+  *
+  * CFG_SW_PHY_SWAP and CFG_SW_PHY_ADDR_SWAP are part of SoC specific register
+  * set and not related to switch internal registers.
++ *
++ * The switches in the AR934x, QCA953x and QCA956x SoCs share the PHYs,
++ * the MDIO access scheme and most registers with the AR9331. They differ in
++ * the location of the interrupt and port VLAN registers, need the CPU port to
++ * be enabled explicitly and use the same 2 byte header as the QCA8K switches.
+  */
+ 
+ #include <linux/bitfield.h>
+ #include <linux/module.h>
++#include <linux/of.h>
+ #include <linux/of_irq.h>
+ #include <linux/of_mdio.h>
+ #include <linux/regmap.h>
+@@ -53,17 +59,38 @@
+ /* dummy reg to change page */
+ #define AR9331_SW_REG_PAGE			0x40000
+ 
++#define AR9344_SW_REG_OPER_MODE0		0x04
++#define AR9344_SW_OPER_MODE0_MAC_GMII_EN	BIT(6)
++
++#define AR9344_SW_REG_OPER_MODE1		0x08
++#define AR9344_SW_OPER_MODE1_PHY4_MII_EN	BIT(28)
++
++#define AR9344_SW_PHY4_PORT			5
++
+ /* Global Interrupt */
+ #define AR9331_SW_REG_GINT			0x10
+ #define AR9331_SW_REG_GINT_MASK			0x14
++#define AR9344_SW_REG_GINT			0x14
++#define AR9344_SW_REG_GINT_MASK			0x18
+ #define AR9331_SW_GINT_PHY_INT			BIT(2)
+ 
+ #define AR9331_SW_REG_FLOOD_MASK		0x2c
+ #define AR9331_SW_FLOOD_MASK_BROAD_TO_CPU	BIT(26)
++#define AR9344_SW_FLOOD_MASK_BROAD_DP_M		GENMASK(31, 25)
++#define AR9344_SW_FLOOD_MASK_MULTI_DP_M		GENMASK(22, 16)
++#define AR9344_SW_FLOOD_MASK_UNI_DP_M		GENMASK(6, 0)
+ 
+ #define AR9331_SW_REG_GLOBAL_CTRL		0x30
+ #define AR9331_SW_GLOBAL_CTRL_MFS_M		GENMASK(13, 0)
+ 
++#define AR9344_SW_REG_CPU_PORT			0x78
++#define AR9344_SW_CPU_PORT_EN			BIT(8)
++
++#define AR9344_SW_REG_MIB_FUNC			0x80
++#define AR9344_SW_MIB_FUNC_MIB_EN		BIT(30)
++#define AR9344_SW_MIB_FUNC_AT_HALF_EN		BIT(16)
++#define AR9344_SW_MIB_FUNC_TIMER_M		GENMASK(15, 0)
++
+ #define AR9331_SW_REG_MDIO_CTRL			0x98
+ #define AR9331_SW_MDIO_CTRL_BUSY		BIT(31)
+ #define AR9331_SW_MDIO_CTRL_MASTER_EN		BIT(30)
+@@ -118,6 +145,10 @@
+ #define AR9331_SW_8021Q_MODE_NONE			0
+ #define AR9331_SW_PORT_VLAN_PORT_VID_MEMBER		GENMASK(25, 16)
+ 
++/* AR934x: the 802.1Q mode and the port VLAN members are in Port-Based VLAN 2 */
++#define AR9344_SW_REG_PORT_VLAN2(_port)			(0x10c + (_port) * 0x100)
++#define AR9344_SW_PORT_VLAN2_PORT_VID_MEMBER		GENMASK(22, 16)
++
+ /* MIB registers */
+ #define AR9331_MIB_COUNTER(x)			(0x20000 + ((x) * 0x100))
+ 
+@@ -235,7 +266,19 @@ struct ar9331_sw_port {
+ 	struct spinlock stats_lock;
+ };
+ 
++struct ar9331_sw_priv;
++
++struct ar9331_sw_info {
++	enum dsa_tag_protocol tag_protocol;
++	unsigned int reg_gint;
++	unsigned int reg_gint_mask;
++	int (*setup_globals)(struct ar9331_sw_priv *priv);
++	int (*setup_port_vlan)(struct ar9331_sw_priv *priv, int port,
++			       u32 port_mask);
++};
++
+ struct ar9331_sw_priv {
++	const struct ar9331_sw_info *info;
+ 	struct device *dev;
+ 	struct dsa_switch ds;
+ 	struct dsa_switch_ops ops;
+@@ -389,11 +432,95 @@ static int ar9331_sw_mbus_init(struct ar
+ 	return 0;
+ }
+ 
++static int ar9331_sw_setup_port_vlan(struct ar9331_sw_priv *priv, int port,
++				     u32 port_mask)
++{
++	u32 val;
++
++	val = FIELD_PREP(AR9331_SW_PORT_VLAN_8021Q_MODE,
++			 AR9331_SW_8021Q_MODE_NONE) |
++		FIELD_PREP(AR9331_SW_PORT_VLAN_PORT_VID_MEMBER, port_mask);
++
++	return regmap_write(priv->regmap, AR9331_SW_REG_PORT_VLAN(port), val);
++}
++
++static int ar9344_sw_setup_port_vlan(struct ar9331_sw_priv *priv, int port,
++				     u32 port_mask)
++{
++	u32 val;
++
++	val = FIELD_PREP(AR9331_SW_PORT_VLAN_8021Q_MODE,
++			 AR9331_SW_8021Q_MODE_NONE) |
++		FIELD_PREP(AR9344_SW_PORT_VLAN2_PORT_VID_MEMBER, port_mask);
++
++	return regmap_write(priv->regmap, AR9344_SW_REG_PORT_VLAN2(port), val);
++}
++
++static int ar9331_sw_setup_globals(struct ar9331_sw_priv *priv)
++{
++	/* Do not drop broadcast frames */
++	return regmap_write_bits(priv->regmap, AR9331_SW_REG_FLOOD_MASK,
++				 AR9331_SW_FLOOD_MASK_BROAD_TO_CPU,
++				 AR9331_SW_FLOOD_MASK_BROAD_TO_CPU);
++}
++
++static int ar9344_sw_setup_globals(struct ar9331_sw_priv *priv)
++{
++	struct regmap *regmap = priv->regmap;
++	int ret;
++
++	/* Connect MAC0 to the GMII of the CPU MAC, it is disconnected after
++	 * reset.
++	 */
++	ret = regmap_write(regmap, AR9344_SW_REG_OPER_MODE0,
++			   AR9344_SW_OPER_MODE0_MAC_GMII_EN);
++	if (ret)
++		return ret;
++
++	/* PHY4 is shared by MAC5 and the second CPU MAC (GMAC0). Hand it to
++	 * GMAC0 through MII unless port 5 is used. The switch reset clears
++	 * this bit.
++	 */
++	if (dsa_is_unused_port(&priv->ds, AR9344_SW_PHY4_PORT)) {
++		ret = regmap_write(regmap, AR9344_SW_REG_OPER_MODE1,
++				   AR9344_SW_OPER_MODE1_PHY4_MII_EN);
++		if (ret)
++			return ret;
++	}
++
++	/* Without this bit, no CPU is connected to port 0 */
++	ret = regmap_set_bits(regmap, AR9344_SW_REG_CPU_PORT,
++			      AR9344_SW_CPU_PORT_EN);
++	if (ret)
++		return ret;
++
++	/* The flood masks leave out port 0 after reset. Flood broadcast and
++	 * unknown multicast and unicast frames to the CPU too, the port VLAN
++	 * members keep them away from the other ports.
++	 */
++	ret = regmap_set_bits(regmap, AR9331_SW_REG_FLOOD_MASK,
++			      FIELD_PREP(AR9344_SW_FLOOD_MASK_BROAD_DP_M, BIT(0)) |
++			      FIELD_PREP(AR9344_SW_FLOOD_MASK_MULTI_DP_M, BIT(0)) |
++			      FIELD_PREP(AR9344_SW_FLOOD_MASK_UNI_DP_M, BIT(0)));
++	if (ret)
++		return ret;
++
++	/* The MIB counters do not count after reset. Enable them, but do not
++	 * let the switch send them to the CPU port on its own: the stats are
++	 * polled, and the tagger does not handle MIB frames.
++	 */
++	return regmap_update_bits(regmap, AR9344_SW_REG_MIB_FUNC,
++				  AR9344_SW_MIB_FUNC_MIB_EN |
++				  AR9344_SW_MIB_FUNC_AT_HALF_EN |
++				  AR9344_SW_MIB_FUNC_TIMER_M,
++				  AR9344_SW_MIB_FUNC_MIB_EN);
++}
++
+ static int ar9331_sw_setup_port(struct dsa_switch *ds, int port)
+ {
+ 	struct ar9331_sw_priv *priv = ds->priv;
+ 	struct regmap *regmap = priv->regmap;
+-	u32 port_mask, port_ctrl, val;
++	u32 port_mask, port_ctrl;
+ 	int ret;
+ 
+ 	/* Generate default port settings */
+@@ -418,11 +545,7 @@ static int ar9331_sw_setup_port(struct d
+ 		port_mask = 0;
+ 	}
+ 
+-	val = FIELD_PREP(AR9331_SW_PORT_VLAN_8021Q_MODE,
+-			 AR9331_SW_8021Q_MODE_NONE) |
+-		FIELD_PREP(AR9331_SW_PORT_VLAN_PORT_VID_MEMBER, port_mask);
+-
+-	ret = regmap_write(regmap, AR9331_SW_REG_PORT_VLAN(port), val);
++	ret = priv->info->setup_port_vlan(priv, port, port_mask);
+ 	if (ret)
+ 		goto error;
+ 
+@@ -454,10 +577,7 @@ static int ar9331_sw_setup(struct dsa_sw
+ 	if (ret)
+ 		return ret;
+ 
+-	/* Do not drop broadcast frames */
+-	ret = regmap_write_bits(regmap, AR9331_SW_REG_FLOOD_MASK,
+-				AR9331_SW_FLOOD_MASK_BROAD_TO_CPU,
+-				AR9331_SW_FLOOD_MASK_BROAD_TO_CPU);
++	ret = priv->info->setup_globals(priv);
+ 	if (ret)
+ 		goto error;
+ 
+@@ -497,7 +617,9 @@ static enum dsa_tag_protocol ar9331_sw_g
+ 							int port,
+ 							enum dsa_tag_protocol m)
+ {
+-	return DSA_TAG_PROTO_AR9331;
++	struct ar9331_sw_priv *priv = ds->priv;
++
++	return priv->info->tag_protocol;
+ }
+ 
+ static void ar9331_sw_phylink_get_caps(struct dsa_switch *ds, int port,
+@@ -709,7 +831,7 @@ static irqreturn_t ar9331_sw_irq(int irq
+ 	u32 stat;
+ 	int ret;
+ 
+-	ret = regmap_read(regmap, AR9331_SW_REG_GINT, &stat);
++	ret = regmap_read(regmap, priv->info->reg_gint, &stat);
+ 	if (ret) {
+ 		dev_err(priv->dev, "can't read interrupt status\n");
+ 		return IRQ_NONE;
+@@ -725,7 +847,7 @@ static irqreturn_t ar9331_sw_irq(int irq
+ 		handle_nested_irq(child_irq);
+ 	}
+ 
+-	ret = regmap_write(regmap, AR9331_SW_REG_GINT, stat);
++	ret = regmap_write(regmap, priv->info->reg_gint, stat);
+ 	if (ret) {
+ 		dev_err(priv->dev, "can't write interrupt status\n");
+ 		return IRQ_NONE;
+@@ -761,7 +883,7 @@ static void ar9331_sw_irq_bus_sync_unloc
+ 	struct regmap *regmap = priv->regmap;
+ 	int ret;
+ 
+-	ret = regmap_update_bits(regmap, AR9331_SW_REG_GINT_MASK,
++	ret = regmap_update_bits(regmap, priv->info->reg_gint_mask,
+ 				 AR9331_SW_GINT_PHY_INT, priv->irq_mask);
+ 	if (ret)
+ 		dev_err(priv->dev, "failed to change IRQ mask\n");
+@@ -949,8 +1071,8 @@ static int ar9331_sw_bus_write(void *con
+ }
+ 
+ static const struct regmap_range ar9331_valid_regs[] = {
+-	regmap_reg_range(0x0, 0x0),
+-	regmap_reg_range(0x10, 0x14),
++	regmap_reg_range(0x0, 0x8),
++	regmap_reg_range(0x10, 0x18),
+ 	regmap_reg_range(0x20, 0x24),
+ 	regmap_reg_range(0x2c, 0x30),
+ 	regmap_reg_range(0x40, 0x44),
+@@ -1038,6 +1160,10 @@ static int ar9331_sw_probe(struct mdio_d
+ 	if (!priv)
+ 		return -ENOMEM;
+ 
++	priv->info = of_device_get_match_data(&mdiodev->dev);
++	if (!priv->info)
++		return -EINVAL;
++
+ 	priv->regmap = devm_regmap_init(&mdiodev->dev, &ar9331_sw_bus, priv,
+ 					&ar9331_mdio_regmap_config);
+ 	if (IS_ERR(priv->regmap)) {
+@@ -1120,8 +1246,25 @@ static void ar9331_sw_shutdown(struct md
+ 	dev_set_drvdata(&mdiodev->dev, NULL);
+ }
+ 
++static const struct ar9331_sw_info ar9331_sw_info = {
++	.tag_protocol = DSA_TAG_PROTO_AR9331,
++	.reg_gint = AR9331_SW_REG_GINT,
++	.reg_gint_mask = AR9331_SW_REG_GINT_MASK,
++	.setup_globals = ar9331_sw_setup_globals,
++	.setup_port_vlan = ar9331_sw_setup_port_vlan,
++};
++
++static const struct ar9331_sw_info ar9344_sw_info = {
++	.tag_protocol = DSA_TAG_PROTO_QCA,
++	.reg_gint = AR9344_SW_REG_GINT,
++	.reg_gint_mask = AR9344_SW_REG_GINT_MASK,
++	.setup_globals = ar9344_sw_setup_globals,
++	.setup_port_vlan = ar9344_sw_setup_port_vlan,
++};
++
+ static const struct of_device_id ar9331_sw_of_match[] = {
+-	{ .compatible = "qca,ar9331-switch" },
++	{ .compatible = "qca,ar9331-switch", .data = &ar9331_sw_info },
++	{ .compatible = "qca,ar9340-switch", .data = &ar9344_sw_info },
+ 	{ },
+ };
+ 
