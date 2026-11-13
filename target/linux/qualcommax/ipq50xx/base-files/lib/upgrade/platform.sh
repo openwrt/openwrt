@@ -202,10 +202,11 @@ platform_do_upgrade() {
 	cmcc,rax3000q|\
 	elecom,wrc-x3000gs2|\
 	elecom,wrc-x3000gst2|\
-	iodata,wn-dax3000gr)
+	iodata,wn-dax3000gr|\
+	iodata,wn-dax5400qr)
 		local delay
 
-		delay=$(fw_printenv bootdelay)
+		delay=$(fw_printenv -n bootdelay)
 		[ -z "$delay" ] || [ "$delay" -eq "0" ] && \
 			fw_setenv bootdelay 3
 
