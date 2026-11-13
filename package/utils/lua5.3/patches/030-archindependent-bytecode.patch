@@ -1,0 +1,166 @@
+--- a/src/ldump.c
++++ b/src/ldump.c
+@@ -7,6 +7,8 @@
+ #define ldump_c
+ #define LUA_CORE
+ 
++#include <endian.h>
++
+ #include "lprefix.h"
+ 
+ 
+@@ -74,7 +76,7 @@ static void DumpString (const TString *s
+   if (s == NULL)
+     DumpByte(0, D);
+   else {
+-    size_t size = tsslen(s) + 1;  /* include trailing '\0' */
++    unsigned int size = tsslen(s) + 1;  /* include trailing '\0' */
+     const char *str = getstr(s);
+     if (size < 0xFF)
+       DumpByte(cast_int(size), D);
+@@ -187,12 +189,15 @@ static void DumpHeader (DumpState *D) {
+   DumpByte(LUAC_FORMAT, D);
+   DumpLiteral(LUAC_DATA, D);
+   DumpByte(sizeof(int), D);
+-  DumpByte(sizeof(size_t), D);
++  DumpByte(sizeof(unsigned int), D);
+   DumpByte(sizeof(Instruction), D);
+   DumpByte(sizeof(lua_Integer), D);
+   DumpByte(sizeof(lua_Number), D);
+-  DumpInteger(LUAC_INT, D);
+-  DumpNumber(LUAC_NUM, D);
++#if __BYTE_ORDER == __LITTLE_ENDIAN
++  DumpByte(0, D);
++#else
++  DumpByte(1, D);
++#endif
+ }
+ 
+ 
+--- a/src/llimits.h
++++ b/src/llimits.h
+@@ -159,11 +159,7 @@ typedef LUAI_UACINT l_uacInt;
+ ** type for virtual-machine instructions;
+ ** must be an unsigned with (at least) 4 bytes (see details in lopcodes.h)
+ */
+-#if LUAI_BITSINT >= 32
+ typedef unsigned int Instruction;
+-#else
+-typedef unsigned long Instruction;
+-#endif
+ 
+ 
+ 
+--- a/src/lundump.c
++++ b/src/lundump.c
+@@ -7,6 +7,8 @@
+ #define lundump_c
+ #define LUA_CORE
+ 
++#include <endian.h>
++
+ #include "lprefix.h"
+ 
+ 
+@@ -33,6 +35,7 @@ typedef struct {
+   lua_State *L;
+   ZIO *Z;
+   const char *name;
++  int swap;
+ } LoadState;
+ 
+ 
+@@ -42,18 +45,57 @@ static l_noret error(LoadState *S, const
+ }
+ 
+ 
+-/*
+-** All high-level loads go through LoadVector; you can change it to
+-** adapt to the endianness of the input
+-*/
+-#define LoadVector(S,b,n)	LoadBlock(S,b,(n)*sizeof((b)[0]))
+-
+ static void LoadBlock (LoadState *S, void *b, size_t size) {
+   if (luaZ_read(S->Z, b, size) != 0)
+     error(S, "truncated");
+ }
+ 
+ 
++/*
++** All high-level loads go through LoadVector
++*/
++static void LoadVector(LoadState *S, void *b, size_t n)
++{
++  size_t size = sizeof((b)[0]);
++
++  LoadBlock(S, b, n * size);
++
++  if (S->swap) {
++      char* p=(char*) b;
++      char c;
++      switch (size) {
++      case 1:
++         break;
++      case 2:
++         while (n--) {
++            c=p[0]; p[0]=p[1]; p[1]=c;
++            p+=2;
++         }
++         break;
++      case 4:
++         while (n--) {
++            c=p[0]; p[0]=p[3]; p[3]=c;
++            c=p[1]; p[1]=p[2]; p[2]=c;
++            p+=4;
++         }
++         break;
++      case 8:
++         while (n--) {
++            c=p[0]; p[0]=p[7]; p[7]=c;
++            c=p[1]; p[1]=p[6]; p[6]=c;
++            c=p[2]; p[2]=p[5]; p[5]=c;
++            c=p[3]; p[3]=p[4]; p[4]=c;
++            p+=8;
++         }
++         break;
++      default:
++         error(S,"bad size");
++         break;
++      }
++   }
++}
++
++
+ #define LoadVar(S,x)		LoadVector(S,&x,1)
+ 
+ 
+@@ -86,7 +128,7 @@ static lua_Integer LoadInteger (LoadStat
+ 
+ 
+ static TString *LoadString (LoadState *S) {
+-  size_t size = LoadByte(S);
++  unsigned int size = LoadByte(S);
+   if (size == 0xFF)
+     LoadVar(S, size);
+   if (size == 0)
+@@ -241,14 +283,15 @@ static void checkHeader (LoadState *S) {
+     error(S, "format mismatch in");
+   checkliteral(S, LUAC_DATA, "corrupted");
+   checksize(S, int);
+-  checksize(S, size_t);
++  checksize(S, unsigned int);
+   checksize(S, Instruction);
+   checksize(S, lua_Integer);
+   checksize(S, lua_Number);
+-  if (LoadInteger(S) != LUAC_INT)
+-    error(S, "endianness mismatch in");
+-  if (LoadNumber(S) != LUAC_NUM)
+-    error(S, "float format mismatch in");
++  #if __BYTE_ORDER == __LITTLE_ENDIAN
++    S->swap = LoadByte(S) == 1;
++  #else
++    S->swap = LoadByte(S) == 0;
++  #endif
+ }
+ 
+ 
