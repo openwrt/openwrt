@@ -153,20 +153,16 @@
 				reg = <0x90000 0x10000>;
 			};
 			partition@a0000 {
-				label = "rootfs_data";
+				label = "jffs2-cfg";
 				reg = <0xa0000 0xd60000>;
 			};
 			partition@e00000 {
 				label = "jffs2-log";
 				reg = <0xe00000 0x200000>;
 			};
-			firmware_partition_1: partition@1000000 {
+			firmware_partition: partition@1000000 {
 				label = "firmware";
-				reg = <0x1000000 0x800000>;
-			};
-			firmware_partition_2: partition@1800000 {
-				label = "firmware2";
-				reg = <0x1800000 0x800000>;
+				reg = <0x1000000 0x1000000>;
 			};
 		};
 	};
