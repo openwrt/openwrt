@@ -1,0 +1,39 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Kosuke Shibuya <kakiringopcneko@gmail.com>
+Date: Wed, 4 Nov 2026 17:38:07 +0900
+Subject: [PATCH] gpio: mmio: support the NEC IX2106 CPLD
+
+Match the memory-mapped CPLD GPIO banks on the NEC IX2106 and allow
+reserved GPIO ranges in the binding.
+
+Signed-off-by: Kosuke Shibuya <kakiringopcneko@gmail.com>
+---
+--- a/drivers/gpio/gpio-mmio.c
++++ b/drivers/gpio/gpio-mmio.c
+@@ -734,6 +734,7 @@ static const struct of_device_id bgpio_o
+ 	{ .compatible = "brcm,bcm6345-gpio" },
+ 	{ .compatible = "wd,mbl-gpio" },
+ 	{ .compatible = "ni,169445-nand-gpio" },
++	{ .compatible = "nec,ix2106-cpld-gpio" },
+ 	{ .compatible = "intel,ixp4xx-expansion-bus-mmio-gpio" },
+ 	{ }
+ };
+--- a/Documentation/devicetree/bindings/gpio/gpio-mmio.yaml
++++ b/Documentation/devicetree/bindings/gpio/gpio-mmio.yaml
+@@ -23,6 +23,7 @@ properties:
+       - ni,169445-nand-gpio
+       - wd,mbl-gpio # Western Digital MyBook Live memory-mapped GPIO controller
+       - intel,ixp4xx-expansion-bus-mmio-gpio
++      - nec,ix2106-cpld-gpio
+ 
+   big-endian: true
+ 
+@@ -31,6 +32,8 @@ properties:
+ 
+   gpio-controller: true
+ 
++  gpio-reserved-ranges: true
++
+   little-endian: true
+ 
+   reg:

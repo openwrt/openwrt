@@ -11,9 +11,23 @@ platform_check_image() {
 		turris1x_check_image "$1"
 		return $?
 		;;
+	nec,ix2106)
+		ix2106_check_image "$1"
+		return $?
+		;;
 	esac
 
 	return 0
+}
+
+platform_pre_upgrade() {
+	case "$(board_name)" in
+	nec,ix2106)
+		# Keep policy validation in the sysupgrade/procd validation path.
+		# Do not remove the caller's file: -T and user-supplied /tmp paths use it.
+		ix2106_prepare_upgrade "$1" || exit 1
+		;;
+	esac
 }
 
 platform_do_upgrade() {
@@ -22,6 +36,9 @@ platform_do_upgrade() {
 	case "$board" in
 	cznic,turris1x)
 		turris1x_do_upgrade "$1"
+		;;
+	nec,ix2106)
+		ix2106_do_upgrade "$1"
 		;;
 	hpe,msm460|\
 	ocedo,panda|\
