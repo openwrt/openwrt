@@ -1,0 +1,42 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Rosen Penev <rosenp@gmail.com>
+Date: Wed, 4 Nov 2026 18:05:19 -0800
+Subject: [PATCH 714/715] net: ibm: emac: fix TX skb double free in
+ emac_full_tx_reset()
+
+emac_full_tx_reset() cleans the TX ring without the TX lock.
+emac_netif_stop() only keeps MAL NAPI from polling RX for this EMAC,
+mal_poll() still calls emac_poll_tx() for it. A descriptor cleaned by
+emac_clean_tx_ring() has MAL_TX_CTRL_READY clear and looks completed,
+so emac_poll_tx() can free the same skb a second time and both race on
+tx_cnt and ack_slot.
+
+On an APM82181, each MTU change to or from a jumbo MTU does a full TX
+reset. Toggling the MTU while forwarding traffic corrupted skbs within
+minutes (list_del corruption in GRO). With the ring cleaned under the
+TX lock it survived 10 minutes of the same test.
+
+Fixes: 1d3bb996481e ("Device tree aware EMAC driver")
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+---
+ drivers/net/ethernet/ibm/emac/core.c | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+--- a/drivers/net/ethernet/ibm/emac/core.c
++++ b/drivers/net/ethernet/ibm/emac/core.c
+@@ -746,8 +746,15 @@ static void emac_full_tx_reset(struct em
+ 
+ 	emac_tx_disable(dev);
+ 	mal_disable_tx_channel(dev->mal, dev->mal_tx_chan);
++
++	/* MAL NAPI runs emac_poll_tx() even while polling of this EMAC is
++	 * disabled. A cleaned descriptor reads as completed, so clean the
++	 * ring under the TX lock or emac_poll_tx() frees the skbs again.
++	 */
++	netif_tx_lock_bh(dev->ndev);
+ 	emac_clean_tx_ring(dev);
+ 	dev->tx_cnt = dev->tx_slot = dev->ack_slot = 0;
++	netif_tx_unlock_bh(dev->ndev);
+ 
+ 	emac_configure(dev);
+ 
