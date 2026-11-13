@@ -61,6 +61,10 @@ radxa,e52c)
 	ucidef_set_led_netdev "wan" "WAN" "green:wan" "wan"
 	ucidef_set_led_netdev "lan" "LAN" "green:lan" "lan"
 	;;
+widora,mangopi-m28k)
+	ucidef_set_led_netdev "lan" "LAN" "white:lan" "eth0"
+	ucidef_set_led_netdev "wan" "WAN" "white:wan" "eth1"
+	;;
 esac
 
 board_config_flush
