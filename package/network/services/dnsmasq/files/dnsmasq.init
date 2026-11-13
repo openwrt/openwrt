@@ -931,8 +931,9 @@ dnsmasq_start()
 	CONFIGFILE="${BASECONFIGFILE}.${cfg}"
 	CONFIGFILE_TMP="${CONFIGFILE}.$$"
 	HOSTFILE="${BASEHOSTFILE}.${cfg}"
-	HOSTFILE_TMP="${HOSTFILE}.$$"
 	HOSTFILE_DIR="$(dirname "$HOSTFILE")"
+	# a dotfile, which is ignored by the dnsmasq instances watching HOSTFILE_DIR
+	HOSTFILE_TMP="${HOSTFILE_DIR}/.$(basename "$HOSTFILE").$$"
 	BASEDHCPSTAMPFILE_CFG="${BASEDHCPSTAMPFILE}.${cfg}"
 
 	# before we can call xappend
@@ -1073,7 +1074,7 @@ dnsmasq_start()
 		xappend "--addn-hosts=$HOSTFILE"
 		append EXTRA_MOUNT "$HOSTFILE"
 	else
-		xappend "--addn-hosts=$HOSTFILE_DIR"
+		xappend "--hostsdir=$HOSTFILE_DIR"
 		append EXTRA_MOUNT "$HOSTFILE_DIR"
 	fi
 	config_list_foreach "$cfg" "addnhosts" append_addnhosts
