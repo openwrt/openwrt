@@ -1,0 +1,37 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+/*
+ * Copyright (c) 2026
+ * Author: Fil Dunsky <filipp.dunsky@gmail.com>
+ */
+
+#include "mt7621_securifi_almond.dtsi"
+
+/ {
+	compatible = "securifi,almond-3s", "mediatek,mt7621-soc";
+	model = "Securifi Almond 3S";
+
+	gpio-export {
+		compatible = "gpio-export";
+
+		modem-reset {
+			gpio-export,name = "modem_reset";
+			gpio-export,output = <1>;
+			gpios = <&gpio 33 GPIO_ACTIVE_LOW>;
+		};
+	};
+};
+
+&keys {
+	/* Battery-cover contact ("tamper"): a latch, not a momentary
+	 * button. EV_SW makes gpio-button-hotplug report the cover
+	 * position already at boot, so userspace can evaluate it from
+	 * any state (the stock firmware used it for a tamper alarm).
+	 */
+	tamper {
+		label = "tamper";
+		linux,code = <BTN_0>;
+		linux,input-type = <EV_SW>;
+		gpios = <&gpio 28 GPIO_ACTIVE_LOW>;
+		debounce-interval = <50>;
+	};
+};
