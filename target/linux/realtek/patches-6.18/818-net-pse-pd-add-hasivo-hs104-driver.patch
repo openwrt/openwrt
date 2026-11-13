@@ -85,11 +85,10 @@ Signed-off-by: Carlo Szelinsky <github@szelinsky.de>
 +    };
 --- a/drivers/net/pse-pd/Kconfig
 +++ b/drivers/net/pse-pd/Kconfig
-@@ -80,4 +80,12 @@ config PSE_TPS23881
- 
+@@ -81,6 +81,14 @@ config PSE_TPS23881
  	  To compile this driver as a module, choose M here: the
  	  module will be called tps23881.
-+
+ 
 +config PSE_HASIVO_HS104
 +	tristate "Hasivo HS104 PoE PSE Controller"
 +	depends on I2C
@@ -97,13 +96,16 @@ Signed-off-by: Carlo Szelinsky <github@szelinsky.de>
 +	  Support for the Hasivo HS104 PoE PSE Controller chip.
 +	  This driver allows control and monitoring of PoE ports via I2C.
 +
- endif
++
+ config PSE_MIKROTIK_POE
+ 	tristate "MikroTik RouterBOARD PoE PSE controller"
+ 	depends on SPI
 --- a/drivers/net/pse-pd/Makefile
 +++ b/drivers/net/pse-pd/Makefile
-@@ -10,3 +10,4 @@ obj-$(CONFIG_PSE_REGULATOR) += pse_regul
- obj-$(CONFIG_PSE_PD692X0) += pd692x0.o
+@@ -11,3 +11,4 @@ obj-$(CONFIG_PSE_PD692X0) += pd692x0.o
  obj-$(CONFIG_PSE_SI3474) += si3474.o
  obj-$(CONFIG_PSE_TPS23881) += tps23881.o
+ obj-$(CONFIG_PSE_MIKROTIK_POE) += mikrotik_poe.o
 +obj-$(CONFIG_PSE_HASIVO_HS104) += hasivo_hs104.o
 --- /dev/null
 +++ b/drivers/net/pse-pd/hasivo_hs104.c
