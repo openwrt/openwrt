@@ -1004,10 +1004,10 @@ hostapd_set_bss_options() {
 			fi
 		fi
 
-		if [ -n "$network_bridge" -a "$rsn_preauth" = 1 ]; then
+		if [ -n "$network_ifname" -a "$rsn_preauth" = 1 ]; then
 			set_default auth_cache 1
 			append bss_conf "rsn_preauth=1" "$N"
-			append bss_conf "rsn_preauth_interfaces=$network_bridge" "$N"
+			append bss_conf "rsn_preauth_interfaces=$network_ifname" "$N"
 		else
 			case "$auth_type" in
 			sae|psk-sae|owe)
