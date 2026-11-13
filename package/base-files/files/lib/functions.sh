@@ -545,6 +545,27 @@ cmdline_get_var() {
 	done
 }
 
+profile_d_retire() {
+	local file="/etc/profile.d/$1"
+	local hash sum
+
+	[ -f "$file" ] || return 0
+	shift
+
+	hash="$(sha256sum "$file")"
+	hash="${hash%% *}"
+
+	for sum in "$@"; do
+		[ -n "$sum" ] || continue
+		case "$hash" in
+		"$sum"*)
+			rm -f "$file"
+			return 0
+			;;
+		esac
+	done
+}
+
 profile_migrate() {
 	local new="$1"
 	local hash
