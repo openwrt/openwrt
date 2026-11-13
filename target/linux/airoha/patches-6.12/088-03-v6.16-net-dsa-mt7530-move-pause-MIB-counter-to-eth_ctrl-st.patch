@@ -36,7 +36,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  	MIB_DESC(2, 0xa8, "RxBytes"),
  	MIB_DESC(1, 0xb0, "RxCtrlDrop"),
  	MIB_DESC(1, 0xb4, "RxIngressDrop"),
-@@ -848,6 +846,18 @@ static void mt7530_get_rmon_stats(struct
+@@ -864,6 +862,18 @@ static void mt7530_get_rmon_stats(struct
  	*ranges = mt7530_rmon_ranges;
  }
  
@@ -55,7 +55,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  static int
  mt7530_set_ageing_time(struct dsa_switch *ds, unsigned int msecs)
  {
-@@ -3212,6 +3222,7 @@ const struct dsa_switch_ops mt7530_switc
+@@ -3234,6 +3244,7 @@ const struct dsa_switch_ops mt7530_switc
  	.get_ethtool_stats	= mt7530_get_ethtool_stats,
  	.get_sset_count		= mt7530_get_sset_count,
  	.get_rmon_stats		= mt7530_get_rmon_stats,

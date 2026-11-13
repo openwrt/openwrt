@@ -13,7 +13,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 
 --- a/drivers/net/pcs/pcs-mtk-lynxi.c
 +++ b/drivers/net/pcs/pcs-mtk-lynxi.c
-@@ -129,14 +129,23 @@ static void mtk_pcs_lynxi_get_state(stru
+@@ -129,7 +129,7 @@ static void mtk_pcs_lynxi_get_state(stru
  				    struct phylink_link_state *state)
  {
  	struct mtk_pcs_lynxi *mpcs = pcs_to_mtk_pcs_lynxi(pcs);
@@ -21,8 +21,13 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	unsigned int bm, bmsr, adv;
  
  	/* Read the BMSR and LPA */
- 	regmap_read(mpcs->regmap, SGMSYS_PCS_CONTROL_1, &bm);
--	regmap_read(mpcs->regmap, SGMSYS_PCS_ADVERTISE, &adv);
+ 	if (regmap_read(mpcs->regmap, SGMSYS_PCS_CONTROL_1, &bm) ||
+@@ -138,8 +138,18 @@ static void mtk_pcs_lynxi_get_state(stru
+ 		return;
+ 	}
+ 
+-	phylink_mii_c22_pcs_decode_state(state, FIELD_GET(SGMII_BMSR, bm),
+-					 FIELD_GET(SGMII_LPA, adv));
 +	bmsr = FIELD_GET(SGMII_BMSR, bm);
 +
 +	if (state->interface == PHY_INTERFACE_MODE_2500BASEX) {
@@ -33,15 +38,12 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +
 +		return;
 +	}
- 
--	phylink_mii_c22_pcs_decode_state(state, FIELD_GET(SGMII_BMSR, bm),
--					 FIELD_GET(SGMII_LPA, adv));
-+	regmap_read(mpcs->regmap, SGMSYS_PCS_ADVERTISE, &adv);
++
 +	phylink_mii_c22_pcs_decode_state(state, bmsr, FIELD_GET(SGMII_LPA, adv));
  }
  
  static void mtk_sgmii_reset(struct mtk_pcs_lynxi *mpcs)
-@@ -157,7 +166,7 @@ static int mtk_pcs_lynxi_config(struct p
+@@ -160,7 +170,7 @@ static int mtk_pcs_lynxi_config(struct p
  {
  	struct mtk_pcs_lynxi *mpcs = pcs_to_mtk_pcs_lynxi(pcs);
  	bool mode_changed = false, changed;
@@ -50,7 +52,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	int advertise, link_timer;
  
  	advertise = phylink_mii_c22_pcs_encode_advertisement(interface,
-@@ -180,9 +189,8 @@ static int mtk_pcs_lynxi_config(struct p
+@@ -183,9 +193,8 @@ static int mtk_pcs_lynxi_config(struct p
  	if (neg_mode == PHYLINK_PCS_NEG_INBAND_ENABLED) {
  		if (interface == PHY_INTERFACE_MODE_SGMII)
  			sgm_mode |= SGMII_SPEED_DUPLEX_AN;

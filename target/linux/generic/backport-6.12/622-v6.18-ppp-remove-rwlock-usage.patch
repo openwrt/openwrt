@@ -290,7 +290,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	}
  	return name;
  }
-@@ -3505,9 +3513,9 @@ ppp_connect_channel(struct channel *pch,
+@@ -3506,9 +3514,9 @@ ppp_connect_channel(struct channel *pch,
  	ppp = ppp_find_unit(pn, unit);
  	if (!ppp)
  		goto out;
@@ -302,7 +302,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	    rcu_dereference_protected(pch->bridge, lockdep_is_held(&pch->upl)))
  		goto outl;
  
-@@ -3532,13 +3540,13 @@ ppp_connect_channel(struct channel *pch,
+@@ -3533,13 +3541,13 @@ ppp_connect_channel(struct channel *pch,
  		ppp->dev->hard_header_len = hdrlen;
  	list_add_tail_rcu(&pch->clist, &ppp->channels);
  	++ppp->n_channels;
@@ -318,7 +318,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
   out:
  	mutex_unlock(&pn->all_ppp_mutex);
  	return ret;
-@@ -3553,10 +3561,9 @@ ppp_disconnect_channel(struct channel *p
+@@ -3554,10 +3562,9 @@ ppp_disconnect_channel(struct channel *p
  	struct ppp *ppp;
  	int err = -EINVAL;
  
