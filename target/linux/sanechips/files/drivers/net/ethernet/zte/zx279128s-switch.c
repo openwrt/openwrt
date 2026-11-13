@@ -8,6 +8,7 @@
 #include <linux/bitfield.h>
 #include <linux/etherdevice.h>
 #include <linux/if_bridge.h>
+#include <linux/if_vlan.h>
 #include <linux/io.h>
 #include <linux/iopoll.h>
 #include <linux/rtnetlink.h>
@@ -44,6 +45,33 @@ static int zx_sbrg_ind(struct zx_eth_adapter *adapter, u32 cmd)
 	writel(cmd, adapter->base + ZX_SBRG_IND_CMD);
 	return readl_poll_timeout_atomic(adapter->base + ZX_SBRG_IND_DONE, val,
 					 val & 1, 0, 1000);
+}
+
+/*
+ * With the IPv4 trap lifted (flow offload, hardware LAN switching), an IPv4
+ * frame the packet processor does not forward goes on to the bridge block.
+ * Its ingress check drops a VLAN tagged frame unless the VLAN table has the
+ * VID with the receiving port as a member, so tagged TCP and UDP to the
+ * router or across a VLAN trunk were lost.  Let every VID but 1 in from all
+ * switch ports.  Outside hardware LAN switching no port learns, so nothing
+ * is switched in hardware; hardware LAN switching only covers ports of a
+ * bridge that does not filter VLANs, which forwards tagged frames between
+ * them as well.  VID 1 is left to zx_sw_apply().
+ */
+void zx_sw_init_vlans(struct zx_eth_adapter *adapter)
+{
+	u32 entry = ZX_SBRG_VLAN_VALID;
+	int i, vid;
+
+	for (i = 0; i < ZX_NUM_PORTS; i++)
+		entry |= ZX_SBRG_VLAN_MEMBER(ZX_BRPORT(i));
+	for (vid = 2; vid < VLAN_N_VID - 1; vid++) {
+		if (zx_sbrg_ind(adapter, ZX_SBRG_MEM_VLAN << 22 | vid)) {
+			dev_warn(adapter->dev, "bridge VLAN table access timed out\n");
+			return;
+		}
+		writel(entry, adapter->base + ZX_SBRG_IND_DATA(0));
+	}
 }
 
 static void zx_sbrg_flush(struct zx_eth_adapter *adapter, u8 brports)

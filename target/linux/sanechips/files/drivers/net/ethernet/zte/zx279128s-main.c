@@ -495,6 +495,7 @@ static int zx_hw_init(struct zx_eth_adapter *adapter)
 	       base + ZX_GLB_CLK_CTRL);
 	writel(GENMASK(ZX_NUM_PORTS - 1, 0), base + ZX_GLB_PORT_CLK_EN);
 	zx_pp_init(adapter);
+	zx_sw_init_vlans(adapter);
 
 	/* 2. Free-buffer index tables, see zx_bmu_table_init() */
 	zx_bmu_table_init(adapter->tab0, ZX_TAB0_ENTRIES);

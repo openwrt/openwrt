@@ -162,6 +162,8 @@
 #define ZX_SBRG_MEM_VLAN	4		/* 1 word per VID */
 #define ZX_SBRG_VLAN_VALID	BIT(0)
 #define ZX_SBRG_VLAN_UNTAG(bp)	(1 << (2 * (bp) + 1))
+/* the other bit of the pair; either one lets bp's frames in */
+#define ZX_SBRG_VLAN_MEMBER(bp)	(1 << (2 * (bp) + 2))
 
 /* Packet processor tables, reached through an indirect access window:
  * command (index | table << 22 | read << 27), status bit 0 = idle, data.
@@ -379,6 +381,7 @@ int zx_eth_setup_tc(struct net_device *dev, enum tc_setup_type type,
 		    void *type_data);
 
 /* zx279128s-switch.c */
+void zx_sw_init_vlans(struct zx_eth_adapter *adapter);
 void zx_sw_init(struct zx_eth_adapter *adapter);
 void zx_sw_work(struct work_struct *work);
 void zx_sw_port_down(struct zx_eth_adapter *adapter, int port);
