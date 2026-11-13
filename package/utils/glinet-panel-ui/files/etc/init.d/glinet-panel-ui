@@ -1,0 +1,54 @@
+#!/bin/sh /etc/rc.common
+
+# The boot applet from /lib/preinit/01_glinet-panel-boot owns the panel until this runs.
+START=99
+USE_PROCD=1
+
+BOOT_PID=/var/run/glinet-panel-boot.pid
+
+touch_device() {
+	local event name
+
+	for event in /sys/class/input/event*; do
+		[ -e "$event/device/name" ] || continue
+
+		read -r name < "$event/device/name"
+
+		case "$name" in
+		*cst3*|*CST3*|*[Tt]ouch*)
+			echo "/dev/input/${event##*/}"
+			return
+			;;
+		esac
+	done
+}
+
+# Ask the applet for DRM master but leave it running. It keeps its framebuffer
+# on the plane, so the panel stays lit on its last frame until panel.uc commits
+# one of its own, which is also what stops the kernel disabling the pipe.
+boot_release() {
+	local pid
+
+	[ -f "$BOOT_PID" ] || return 0
+
+	read -r pid < "$BOOT_PID"
+
+	kill -USR1 "$pid" 2>/dev/null
+}
+
+start_service() {
+	local touch
+
+	touch="$(touch_device)"
+
+	boot_release
+
+	procd_open_instance
+	procd_set_param command /usr/bin/ucode /usr/share/ucode/glinet-panel-ui/panel.uc
+	# one call: env is a table, so a second call would replace the first
+	procd_set_param env GLINET_PANEL_BOOT_PID="$BOOT_PID" \
+		${touch:+PANEL_TOUCH_DEVICE="$touch"}
+	procd_set_param respawn
+	procd_set_param stderr 1
+	procd_close_instance
+}

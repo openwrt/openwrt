@@ -1,0 +1,47 @@
+#!/bin/sh
+
+GLINET_PANEL_BOOT_PID=/var/run/glinet-panel-boot.pid
+
+glinet_panel_boot_preinit() {
+	local conf="/etc/glinet-panel-ui/preinit.conf"
+	local module dev tries=0
+
+	[ -f "$conf" ] || return 0
+
+	. "$conf"
+
+	for module in $GLINET_PANEL_MODULES; do
+		modprobe "$module"
+	done
+
+	# a deferred probe can still be pending when modprobe returns
+	while [ ! -e /sys/class/drm/card0/dev ]; do
+		[ "$tries" -ge 3 ] && return 0
+		tries=$((tries + 1))
+		sleep 1
+	done
+
+	# /dev is a tmpfs and the preinit hotplug rules make no device nodes, so
+	# the node and its permissions are ours to create
+	[ -e /dev/dri/card0 ] || {
+		read -r dev < /sys/class/drm/card0/dev
+		mkdir -p /dev/dri
+		mknod /dev/dri/card0 c "${dev%%:*}" "${dev##*:}"
+		ACTION=add SUBSYSTEM=drm DEVNAME=dri/card0 /sbin/hotplug-call drm
+	}
+
+	# ucode has no getpid(), so the pid file is written from here
+	/usr/bin/ucode /usr/share/ucode/glinet-panel-ui/boot.uc &
+	echo $! > "$GLINET_PANEL_BOOT_PID"
+}
+
+glinet_panel_boot_failsafe() {
+	# failsafe never reaches rc.d, so nothing else would take the splash down
+	[ -f "$GLINET_PANEL_BOOT_PID" ] || return 0
+
+	kill "$(cat $GLINET_PANEL_BOOT_PID)" 2>/dev/null
+	rm -f "$GLINET_PANEL_BOOT_PID"
+}
+
+boot_hook_add preinit_essential glinet_panel_boot_preinit
+boot_hook_add failsafe glinet_panel_boot_failsafe

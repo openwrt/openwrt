@@ -1,0 +1,48 @@
+config panel
+	# minutes of no interaction before the panel goes idle, 1 to 30
+	option auto_lock '5'
+
+	# what to do when it does: on leaves the clock lit, blank turns the
+	# backlight off
+	option idle_mode 'on'
+
+	# six digits, asked for on the way out of idle. leave it out for no
+	# keypad. anything else is refused and logged
+	#option pin '123456'
+
+	# 10 to 100. the brightness page writes this back
+	option brightness '100'
+
+	# 1 to 8, the gradients in /usr/share/glinet-panel-ui/backgrounds. 0 or
+	# absent leaves the panel black
+	option background '7'
+
+	# where the panel is, in degrees. needs both, and without them the
+	# weather page is left out of the list below
+	#option latitude '0.0'
+	#option longitude '0.0'
+
+	# 0 to 100, how solid the card behind a list is. 100 is half solid, so
+	# the background always shows through a little. remove it for a solid
+	# card
+	option list_opacity '85'
+
+	# 1 the page follows the finger, 0 it changes in one step
+	option scroll '1'
+
+	# append the touch, fonts and colours test pages to the list below
+	option test_pages '0'
+
+	# the roots, in swipe order.
+	list pages 'traffic'
+	list pages 'weather'
+	list pages 'wifi'
+	list pages 'wifitoggles'
+	list pages 'radio'
+	list pages 'qrcodes'
+	list pages 'clients'
+	list pages 'interfaces'
+	list pages 'ports'
+	list pages 'system'
+	list pages 'brightness'
+	list pages 'reboot'
