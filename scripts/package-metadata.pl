@@ -257,61 +257,45 @@ sub mconf_depends {
 	return $res;
 }
 
-sub mconf_conflicts {
-	my $pkgname = shift;
-	my $depends = shift;
-	my $res = "";
-
-	foreach my $depend (@$depends) {
-		next unless $package{$depend};
-		$res .= "\t\tdepends on m || (PACKAGE_$depend != y)\n";
+sub normalize_conflicts {
+	my %conflicts;
+	my @names = sort {
+		($package{$b}{variant_default} || 0) <=> ($package{$a}{variant_default} || 0)
+			|| $a cmp $b
+	} keys %package;
+	my %rank = map { $names[$_] => $_ } 0 .. $#names;
+	foreach my $name (@names) {
+		foreach my $other (@{$package{$name}{conflicts} || []}) {
+			next if $name eq $other || !$package{$other};
+			next if $conflicts{$other}{$name};
+			$conflicts{$name}{$other} = 1;
+		}
 	}
-	return $res;
-}
-
-sub add_implicit_provides_conflicts {
+	foreach my $name (@names) {
+		foreach my $other (@{$package{$name}{inferred_conflicts} || []}) {
+			next if $name eq $other || !$package{$other};
+			next if $conflicts{$name}{$other} || $conflicts{$other}{$name};
+			my ($from, $to) = $rank{$name} < $rank{$other} ? ($name, $other) : ($other, $name);
+			$conflicts{$from}{$to} = 1;
+		}
+	}
 	foreach my $provide (keys %vpackage) {
-		next if $provide =~ /-any$/;
-
-		my $providers = $vpackage{$provide};
-		next unless $providers && @$providers > 1;
-
-		my $default_pkg;
-		my @non_defaults;
-
-		foreach my $pkg (@$providers) {
-			next if $pkg->{buildonly};
-			if ($pkg->{variant_default}) {
-				$default_pkg = $pkg;
-			} else {
-				push @non_defaults, $pkg;
-			}
+		my @providers = grep {
+			my $pkg = $_;
+			!$pkg->{buildonly} && ($pkg->{name} eq $provide ||
+				grep { $_ eq $provide } @{$pkg->{nonvirtual_provides} || []})
+		} @{$vpackage{$provide}};
+		my @defaults = grep { $_->{variant_default} } @providers;
+		next unless @defaults == 1;
+		my $default = $defaults[0];
+		foreach my $other (@providers) {
+			next if $default->{src}{makefile} eq $other->{src}{makefile};
+			next if $conflicts{$default->{name}}{$other->{name}} || $conflicts{$other->{name}}{$default->{name}};
+			$conflicts{$default->{name}}{$other->{name}} = 1;
 		}
-
-		next unless $default_pkg && @non_defaults;
-
-		my %existing_conflicts;
-		if ($default_pkg->{conflicts}) {
-			%existing_conflicts = map { $_ => 1 } @{$default_pkg->{conflicts}};
-		}
-
-		foreach my $non_default (@non_defaults) {
-			next if $existing_conflicts{$non_default->{name}};
-
-			my $already_conflicts = 0;
-			if ($non_default->{conflicts}) {
-				foreach my $c (@{$non_default->{conflicts}}) {
-					if ($c eq $default_pkg->{name}) {
-						$already_conflicts = 1;
-						last;
-					}
-				}
-			}
-			next if $already_conflicts;
-
-			$default_pkg->{conflicts} ||= [];
-			push @{$default_pkg->{conflicts}}, $non_default->{name};
-		}
+	}
+	foreach my $name (keys %package) {
+		$package{$name}{conflicts} = [sort keys %{$conflicts{$name} || {}}];
 	}
 }
 
@@ -384,7 +368,9 @@ sub print_package_config_category($) {
 			}
 			print mconf_depends($pkg->{name}, $pkg->{depends}, 0);
 			print mconf_depends($pkg->{name}, $pkg->{mdepends}, 0);
-			print mconf_conflicts($pkg->{name}, $pkg->{conflicts});
+			foreach my $conflict (@{$pkg->{conflicts}}) {
+				print "\t\tdepends on m || (PACKAGE_$conflict != y)\n";
+			}
 			print "\t\thelp\n";
 			print $pkg->{description};
 			print "\n";
@@ -410,7 +396,7 @@ sub print_package_overrides() {
 
 sub gen_package_config() {
 	parse_package_metadata($ARGV[0]) or exit 1;
-	add_implicit_provides_conflicts();
+	normalize_conflicts();
 	print "menuconfig IMAGEOPT\n\tbool \"Image configuration\"\n\tdefault n\n";
 	print "source \"package/*/image-config.in\"\n";
 	if (scalar glob "package/feeds/*/*/image-config.in") {

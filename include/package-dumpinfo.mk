@@ -15,7 +15,8 @@ $(if $(PKG_BUILD_DEPENDS),Build-Depends: $(PKG_BUILD_DEPENDS)
 endef
 
 define Dumpinfo/Package
-$(info $(SOURCE_INFO)Package: $(1)
+$(eval Package/$(1)/DEFAULT_VARIANT := $(DEFAULT_VARIANT))
+$(eval define Package/$(1)/dump
 $(if $(MENU),Menu: $(MENU)
 )$(if $(SUBMENU),Submenu: $(SUBMENU)
 )$(if $(SUBMENUDEP),Submenu-Depends: $(SUBMENUDEP)
@@ -23,12 +24,11 @@ $(if $(MENU),Menu: $(MENU)
 )$(if $(findstring $(PREREQ_CHECK),1),Prereq-Check: 1
 )Version: $(VERSION)
 Depends: $(call PKG_FIXUP_DEPENDS,$(1),$(DEPENDS))
-Conflicts: $(CONFLICTS)
 Menu-Depends: $(MDEPENDS)
 Provides: $(PROVIDES)
 $(if $(VARIANT),Build-Variant: $(VARIANT)
-$(if $(DEFAULT_VARIANT),Default-Variant: $(VARIANT)
-))Section: $(SECTION)
+)$(if $(DEFAULT_VARIANT),Default-Variant: $(VARIANT)
+)Section: $(SECTION)
 Category: $(CATEGORY)
 $(if $(filter nonshared,$(PKGFLAGS)),,Repository: $(if $(FEED),$(FEED),base)
 )Title: $(TITLE)
@@ -49,11 +49,27 @@ $(if $(KCONFIG),Kernel-Config: $(KCONFIG)
 $(if $(Package/$(1)/config),Config:
 $(Package/$(1)/config)
 @@
-))
-SOURCE_INFO :=
+)
+endef)
+endef
+
+define Dumpinfo/ValidateProviders
+$(foreach provide,$(sort $(foreach pkg,$(BUILD_PACKAGES),$(Package/$(pkg)/provides))), \
+  $(if $(word 2,$(PROVIDERS/$(provide))), \
+    $(if $(filter 1,$(words $(foreach pkg,$(PROVIDERS/$(provide)),$(if $(Package/$(pkg)/DEFAULT_VARIANT),$(pkg))))),, \
+      $(warning $(CURDIR): provide '$(provide)' needs exactly one DEFAULT_VARIANT (providers: $(PROVIDERS/$(provide)))))))
+endef
+
+define Dumpinfo/Print
+$(info Package: $(1)
+Conflicts: $(Package/$(1)/conflicts)
+Inferred-Conflicts: $(filter-out $(Package/$(1)/conflicts),$(call PackageConflicts,$(1)))
+$(value Package/$(1)/dump))
 endef
 
 dumpinfo: FORCE
+	$(if $(CHECK),,$(Dumpinfo/ValidateProviders))
 	$(if $(SOURCE_INFO),$(info $(SOURCE_INFO)))
+	$(if $(CHECK),,$(foreach pkg,$(BUILD_PACKAGES),$(call Dumpinfo/Print,$(pkg))))
 
 endif

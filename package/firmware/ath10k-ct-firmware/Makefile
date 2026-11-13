@@ -172,9 +172,7 @@ $(Package/ath10k-ct-firmware-default)
   PROVIDES:=\
     ath10k-firmware-qca988x \
     ath10k-firmware-qca988x-ct
-  CONFLICTS:=\
-    ath10k-firmware-qca988x \
-    ath10k-firmware-qca988x-ct
+  CONFLICTS:=ath10k-firmware-qca988x
   DEPENDS:=\
     +ath10k-board-qca988x \
     +!PACKAGE_kmod-ath10k-ct-smallbuffers:kmod-ath10k-ct
@@ -197,9 +195,7 @@ $(Package/ath10k-ct-firmware-default)
   PROVIDES:=\
     ath10k-firmware-qca9887 \
     ath10k-firmware-qca9887-ct
-  CONFLICTS:=\
-    ath10k-firmware-qca9887 \
-    ath10k-firmware-qca9887-ct
+  CONFLICTS:=ath10k-firmware-qca9887
   DEPENDS:=\
     +ath10k-board-qca9887 \
     +!PACKAGE_kmod-ath10k-ct-smallbuffers:kmod-ath10k-ct
@@ -222,10 +218,7 @@ $(Package/ath10k-ct-firmware-default)
   PROVIDES:=\
     ath10k-firmware-qca99x0 \
     ath10k-firmware-qca99x0-ct
-  CONFLICTS:=\
-    ath10k-firmware-qca99x0 \
-    ath10k-firmware-qca99x0-ct \
-    ath10k-firmware-qca99x0-ct-htt
+  CONFLICTS:=ath10k-firmware-qca99x0
   DEPENDS:=\
     +ath10k-board-qca99x0 \
     +!PACKAGE_kmod-ath10k-ct-smallbuffers:kmod-ath10k-ct
@@ -238,9 +231,7 @@ $(Package/ath10k-firmware-default)
   PROVIDES:=\
     ath10k-firmware-qca99x0 \
     ath10k-firmware-qca99x0-ct
-  CONFLICTS:=\
-    ath10k-firmware-qca99x0 \
-    ath10k-firmware-qca99x0-ct
+  CONFLICTS:=ath10k-firmware-qca99x0
   DEPENDS:=\
     +ath10k-board-qca99x0 \
     +!PACKAGE_kmod-ath10k-ct-smallbuffers:kmod-ath10k-ct
@@ -263,10 +254,7 @@ $(Package/ath10k-ct-firmware-default)
   PROVIDES:=\
     ath10k-firmware-qca9984 \
     ath10k-firmware-qca9984-ct
-  CONFLICTS:=\
-    ath10k-firmware-qca9984 \
-    ath10k-firmware-qca9984-ct \
-    ath10k-firmware-qca9984-ct-htt
+  CONFLICTS:=ath10k-firmware-qca9984
   DEPENDS:=\
     +ath10k-board-qca9984 \
     +!PACKAGE_kmod-ath10k-ct-smallbuffers:kmod-ath10k-ct
@@ -279,9 +267,7 @@ $(Package/ath10k-firmware-default)
   PROVIDES:=\
     ath10k-firmware-qca9984 \
     ath10k-firmware-qca9984-ct
-  CONFLICTS:=\
-    ath10k-firmware-qca9984 \
-    ath10k-firmware-qca9984-ct
+  CONFLICTS:=ath10k-firmware-qca9984
   DEPENDS:=\
     +ath10k-board-qca9984 \
     +!PACKAGE_kmod-ath10k-ct-smallbuffers:kmod-ath10k-ct
@@ -303,10 +289,7 @@ $(Package/ath10k-ct-firmware-default)
   PROVIDES:=\
     ath10k-firmware-qca4019 \
     ath10k-firmware-qca4019-ct
-  CONFLICTS:=\
-    ath10k-firmware-qca4019 \
-    ath10k-firmware-qca4019-ct \
-    ath10k-firmware-qca4019-ct-htt
+  CONFLICTS:=ath10k-firmware-qca4019
   DEPENDS:=\
     +!PACKAGE_kmod-ath10k-ct-smallbuffers:kmod-ath10k-ct
 endef
@@ -318,9 +301,7 @@ $(Package/ath10k-firmware-default)
   PROVIDES:=\
     ath10k-firmware-qca4019 \
     ath10k-firmware-qca4019-ct
-  CONFLICTS:=\
-    ath10k-firmware-qca4019 \
-    ath10k-firmware-qca4019-ct
+  CONFLICTS:=ath10k-firmware-qca4019
   DEPENDS:=\
     +!PACKAGE_kmod-ath10k-ct-smallbuffers:kmod-ath10k-ct
 endef
@@ -342,10 +323,7 @@ $(Package/ath10k-ct-firmware-default)
   PROVIDES:=\
     ath10k-firmware-qca9888 \
     ath10k-firmware-qca9888-ct
-  CONFLICTS:=\
-    ath10k-firmware-qca9888 \
-    ath10k-firmware-qca9888-ct \
-    ath10k-firmware-qca9888-ct-htt
+  CONFLICTS:=ath10k-firmware-qca9888
   DEPENDS:=\
     +ath10k-board-qca9888 \
     +!PACKAGE_kmod-ath10k-ct-smallbuffers:kmod-ath10k-ct
@@ -358,9 +336,7 @@ $(Package/ath10k-firmware-default)
   PROVIDES:=\
     ath10k-firmware-qca9888 \
     ath10k-firmware-qca9888-ct
-  CONFLICTS:=\
-    ath10k-firmware-qca9888 \
-    ath10k-firmware-qca9888-ct
+  CONFLICTS:=ath10k-firmware-qca9888
   DEPENDS:=\
     +ath10k-board-qca9888 \
     +!PACKAGE_kmod-ath10k-ct-smallbuffers:kmod-ath10k-ct

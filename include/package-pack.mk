@@ -300,7 +300,6 @@ _endef=endef
 
 ifeq ($(DUMP),)
   define BuildTarget/ipkg
-    ABIV_$(1):=$(call FormatABISuffix,$(1),$(ABI_VERSION))
     PDIR_$(1):=$(call FeedPackageDir,$(1))
 ifeq ($(CONFIG_USE_APK),)
     PACK_$(1):=$$(PDIR_$(1))/$(1)$$(ABIV_$(1))_$(VERSION)_$(PKGARCH).ipk
@@ -407,6 +406,8 @@ endif
 	$(call locked,$(CP) $(PKG_BUILD_DIR)/.pkgdir/$(1)/. $(STAGING_DIR_ROOT)/,root-copy)
 	touch $$@
 
+    Package/$(1)/CONFLICTS = $$(sort $(CONFLICTS) $$(foreach pkg,$$(filter-out $(CONFLICTS),$$(call PackageConflicts,$(1))),$$(pkg)$$(ABIV_$$(pkg))))
+
     Package/$(1)/DEPENDS := $$(foreach dep,$$(filter-out @%,$$(IDEPEND_$(1))),$$(dep)$$(call GetABISuffix,$$(dep)))
     ifneq ($$(EXTRA_DEPENDS),)
       ifeq ($(CONFIG_USE_APK),)
@@ -431,7 +432,7 @@ $(_define) Package/$(1)/CONTROL
 Package: $(1)$$(ABIV_$(1))
 Version: $(VERSION)
 $$(call addfield,Depends,$$(Package/$(1)/DEPENDS)
-)$$(call addfield,Conflicts,$$(call mergelist,$(CONFLICTS))
+)$$(call addfield,Conflicts,$$(call mergelist,$$(Package/$(1)/CONFLICTS))
 )$$(call addfield,Provides,$$(call mergelist,$$(Package/$(1)/PROVIDES))
 )$$(call addfield,Alternatives,$$(call mergelist,$(ALTERNATIVES))
 )$$(call addfield,Source,$(SOURCE)
@@ -621,7 +622,7 @@ else
 	  $$(if $$(Package/$(1)/PROVIDES),--info "provides:$$(Package/$(1)/PROVIDES)") \
 	  $$(if $$(Package/$(1)/PRIORITY),--info "provider-priority:$$(Package/$(1)/PRIORITY)") \
 	  $$(APK_SCRIPTS_$(1)) \
-	  --info "depends:$$(foreach depends,$$(subst $$(comma),$$(space),$$(subst $$(space),,$$(subst $$(paren_right),,$$(subst $$(paren_left),,$$(Package/$(1)/DEPENDS))))),$$(depends))" \
+	  --info "depends:$$(foreach depends,$$(subst $$(comma),$$(space),$$(subst $$(space),,$$(subst $$(paren_right),,$$(subst $$(paren_left),,$$(Package/$(1)/DEPENDS))))),$$(depends)) $$(addprefix !,$$(Package/$(1)/CONFLICTS))" \
 	  --files "$$(IDIR_$(1))" \
 	  $(if $(CONFIG_SIGN_EACH_PACKAGE),--sign $(BUILD_KEY_APK_SEC),) \
 	  --output "$$(PACK_$(1))"
