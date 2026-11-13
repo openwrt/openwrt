@@ -2,7 +2,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_VERSION:=2025.10
 PKG_HASH:=b4f032848e56cc8f213ad59f9132c084dbbb632bc29176d024e58220e0efdf4a
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 include $(INCLUDE_DIR)/u-boot.mk
 include $(INCLUDE_DIR)/package.mk
@@ -19,12 +19,17 @@ define U-Boot/dir-885l
   BUILD_DEVICES:=dlink_dir-885l
 endef
 
+define U-Boot/dir-868l-b1
+  NAME:=D-Link DIR-868L B1
+  BUILD_DEVICES:=dlink_dir-868l-b1
+endef
+
 define U-Boot/dir-890l
   NAME:=D-Link DIR-890L
   BUILD_DEVICES:=dlink_dir-890l
 endef
 
-UBOOT_TARGETS := dir-885l dir-890l
+UBOOT_TARGETS := dir-868l-b1 dir-885l dir-890l
 
 define Build/InstallDev
 	$(INSTALL_DIR) $(STAGING_DIR_IMAGE)
