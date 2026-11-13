@@ -1,0 +1,327 @@
+// SPDX-License-Identifier: (GPL-2.0 OR MIT)
+
+/*
+ * Copyright (C) 2026 Ivan Huang <ivanhuang@unielecinc.com>
+ */
+
+#include "mt7987b.dtsi"
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+
+/ {
+	/delete-node/ memory;
+
+	aliases {
+		label-mac-device = &gmac0;
+		serial0 = &uart0;
+	};
+
+	chosen {
+		stdout-path = "serial0:115200n8";
+	};
+
+	gpio-keys {
+		compatible = "gpio-keys";
+
+		button-reset {
+			debounce-interval = <10>;
+			gpios = <&pio 1 GPIO_ACTIVE_LOW>;
+			label = "reset";
+			linux,code = <KEY_RESTART>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led-0 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <1>;
+			gpios = <&pio 25 GPIO_ACTIVE_HIGH>;
+		};
+
+		led-1 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <2>;
+			gpios = <&pio 26 GPIO_ACTIVE_HIGH>;
+		};
+
+		led-2 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <3>;
+			gpios = <&pio 27 GPIO_ACTIVE_HIGH>;
+		};
+
+		led-3 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <4>;
+			gpios = <&pio 28 GPIO_ACTIVE_HIGH>;
+		};
+
+		led-4 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WLAN_2GHZ;
+			gpios = <&pio 29 GPIO_ACTIVE_HIGH>;
+		};
+
+		led-5 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WLAN_5GHZ;
+			gpios = <&pio 30 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	memory@40000000 {
+		device_type = "memory";
+		reg = <0 0x40000000 0 0x40000000>;
+	};
+};
+
+&eth {
+	status = "okay";
+};
+
+&gmac0 {
+	phy-mode = "2500base-x";
+
+	status = "okay";
+
+	fixed-link {
+		full-duplex;
+		pause;
+		speed = <2500>;
+	};
+};
+
+&gmac1 {
+	phy-handle = <&phy15>;
+	phy-mode = "internal";
+
+	status = "okay";
+};
+
+&mdio {
+	an8855: mfd@1 {
+		compatible = "airoha,an8855-mfd";
+		reg = <1>;
+	};
+
+	phy15: ethernet-phy@f {
+		compatible = "ethernet-phy-ieee802.3-c45";
+		reg = <15>;
+		pinctrl-0 = <&i2p5gbe_led0_pins>;
+		pinctrl-names = "i2p5gbe-led";
+	};
+};
+
+&an8855 {
+	efuse {
+		compatible = "airoha,an8855-efuse";
+		#nvmem-cell-cells = <0>;
+
+		nvmem-layout {
+			compatible = "fixed-layout";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			shift_sel_port0_tx_a: shift-sel-port0-tx-a@c {
+				reg = <0xc 0x4>;
+			};
+
+			shift_sel_port0_tx_b: shift-sel-port0-tx-b@10 {
+				reg = <0x10 0x4>;
+			};
+
+			shift_sel_port0_tx_c: shift-sel-port0-tx-c@14 {
+				reg = <0x14 0x4>;
+			};
+
+			shift_sel_port0_tx_d: shift-sel-port0-tx-d@18 {
+				reg = <0x18 0x4>;
+			};
+
+			shift_sel_port1_tx_a: shift-sel-port1-tx-a@1c {
+				reg = <0x1c 0x4>;
+			};
+
+			shift_sel_port1_tx_b: shift-sel-port1-tx-b@20 {
+				reg = <0x20 0x4>;
+			};
+
+			shift_sel_port1_tx_c: shift-sel-port1-tx-c@24 {
+				reg = <0x24 0x4>;
+			};
+
+			shift_sel_port1_tx_d: shift-sel-port1-tx-d@28 {
+				reg = <0x28 0x4>;
+			};
+
+			shift_sel_port2_tx_a: shift-sel-port2-tx-a@2c {
+				reg = <0x2c 0x4>;
+			};
+
+			shift_sel_port2_tx_b: shift-sel-port2-tx-b@30 {
+				reg = <0x30 0x4>;
+			};
+
+			shift_sel_port2_tx_c: shift-sel-port2-tx-c@34 {
+				reg = <0x34 0x4>;
+			};
+
+			shift_sel_port2_tx_d: shift-sel-port2-tx-d@38 {
+				reg = <0x38 0x4>;
+			};
+
+			shift_sel_port3_tx_a: shift-sel-port3-tx-a@4c {
+				reg = <0x4c 0x4>;
+			};
+
+			shift_sel_port3_tx_b: shift-sel-port3-tx-b@50 {
+				reg = <0x50 0x4>;
+			};
+
+			shift_sel_port3_tx_c: shift-sel-port3-tx-c@54 {
+				reg = <0x54 0x4>;
+			};
+
+			shift_sel_port3_tx_d: shift-sel-port3-tx-d@58 {
+				reg = <0x58 0x4>;
+			};
+		};
+	};
+
+	ethernet-switch {
+		compatible = "airoha,an8855-switch";
+		reset-gpios = <&pio 42 GPIO_ACTIVE_HIGH>;
+		airoha,ext-surge;
+
+		ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			port@0 {
+				reg = <0>;
+				label = "lan1";
+				phy-handle = <&internal_phy1>;
+				phy-mode = "internal";
+			};
+
+			port@1 {
+				reg = <1>;
+				label = "lan2";
+				phy-handle = <&internal_phy2>;
+				phy-mode = "internal";
+			};
+
+			port@2 {
+				reg = <2>;
+				label = "lan3";
+				phy-handle = <&internal_phy3>;
+				phy-mode = "internal";
+			};
+
+			port@3 {
+				reg = <3>;
+				label = "lan4";
+				phy-handle = <&internal_phy4>;
+				phy-mode = "internal";
+			};
+
+			port@5 {
+				reg = <5>;
+				ethernet = <&gmac0>;
+				phy-mode = "2500base-x";
+
+				fixed-link {
+					full-duplex;
+					pause;
+					speed = <2500>;
+				};
+			};
+		};
+	};
+
+	mdio {
+		compatible = "airoha,an8855-mdio";
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		internal_phy1: ethernet-phy@1 {
+			reg = <1>;
+
+			nvmem-cell-names = "tx_a", "tx_b", "tx_c", "tx_d";
+			nvmem-cells = <&shift_sel_port0_tx_a>,
+					<&shift_sel_port0_tx_b>,
+					<&shift_sel_port0_tx_c>,
+					<&shift_sel_port0_tx_d>;
+		};
+
+		internal_phy2: ethernet-phy@2 {
+			reg = <2>;
+
+			nvmem-cell-names = "tx_a", "tx_b", "tx_c", "tx_d";
+			nvmem-cells = <&shift_sel_port1_tx_a>,
+					<&shift_sel_port1_tx_b>,
+					<&shift_sel_port1_tx_c>,
+					<&shift_sel_port1_tx_d>;
+		};
+
+		internal_phy3: ethernet-phy@3 {
+			reg = <3>;
+
+			nvmem-cell-names = "tx_a", "tx_b", "tx_c", "tx_d";
+			nvmem-cells = <&shift_sel_port2_tx_a>,
+					<&shift_sel_port2_tx_b>,
+					<&shift_sel_port2_tx_c>,
+					<&shift_sel_port2_tx_d>;
+		};
+
+		internal_phy4: ethernet-phy@4 {
+			reg = <4>;
+
+			nvmem-cell-names = "tx_a", "tx_b", "tx_c", "tx_d";
+			nvmem-cells = <&shift_sel_port3_tx_a>,
+					<&shift_sel_port3_tx_b>,
+					<&shift_sel_port3_tx_c>,
+					<&shift_sel_port3_tx_d>;
+		};
+	};
+};
+
+&pcie0 {
+	pinctrl-0 = <&pcie0_pins>;
+	pinctrl-names = "default";
+
+	status = "okay";
+
+	pcie@0,0 {
+		reg = <0x0000 0 0 0 0>;
+		#address-cells = <3>;
+		#size-cells = <2>;
+
+		wifi: wifi@0,0 {
+			compatible = "mediatek,mt76";
+			reg = <0x0000 0 0 0 0>;
+		};
+	};
+};
+
+&ssusb {
+	status = "okay";
+};
+
+&tphyu3port0 {
+	status = "okay";
+};
+
+&uart0 {
+	pinctrl-0 = <&uart0_pins>;
+	pinctrl-names = "default";
+
+	status = "okay";
+};
