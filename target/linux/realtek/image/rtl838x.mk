@@ -380,7 +380,7 @@ define Device/tplink_sg2210p-v3
   DEVICE_VENDOR := TP-Link
   DEVICE_MODEL := SG2210P
   DEVICE_VARIANT := v3
-  DEVICE_PACKAGES := kmod-hwmon-tps23861
+  DEVICE_PACKAGES := kmod-hwmon-tps23861 kmod-pse-pd -ethtool ethtool-full
 endef
 TARGET_DEVICES += tplink_sg2210p-v3
 
