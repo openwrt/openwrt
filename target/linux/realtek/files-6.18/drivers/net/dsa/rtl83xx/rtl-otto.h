@@ -5,6 +5,7 @@
 
 #include <asm/mach-rtl-otto/mach-rtl-otto.h>
 #include <net/dsa.h>
+#include <net/pkt_cls.h>
 
 #include <linux/soc/realtek/otto_table.h>
 
@@ -89,6 +90,13 @@ struct rtldsa_tbf {
 	bool offloaded;
 };
 
+struct rtldsa_red {
+	u32 handle;
+	struct tc_red_qopt_offload_params params;
+	bool child;
+	bool offloaded;
+};
+
 struct rtldsa_port {
 	bool enable:1;
 	bool phy:1;
@@ -102,9 +110,11 @@ struct rtldsa_port {
 	u16 ets_children;
 	bool ets_offloadable;
 	u8 ets_weights[MAX_PRIOS];
-	u32 red_handle;
 	struct rtldsa_tbf tbf;
 	struct rtldsa_tbf queue_tbf[MAX_PRIOS];
+	struct rtldsa_red red;
+	struct rtldsa_red queue_red[MAX_PRIOS];
+	u32 red_cfg[MAX_PRIOS];
 	unsigned long cached_flags;
 	u64 pm;
 	u16 pvid;
@@ -332,7 +342,6 @@ struct pie_rule {
 };
 
 struct otto_dsa_priv;
-struct tc_red_qopt_offload_params;
 
 struct rtldsa_config {
 	const struct dsa_switch_ops *switch_ops;
@@ -499,9 +508,8 @@ struct rtldsa_config {
 	int (*set_egress_rate)(struct otto_dsa_priv *priv, int port, u32 rate);
 	void (*queue_sched_set)(struct otto_dsa_priv *priv, int port, int queue, u32 weight,
 				bool strict);
-	int (*red_enable)(struct otto_dsa_priv *priv, int port,
-			  const struct tc_red_qopt_offload_params *p);
-	void (*red_disable)(struct otto_dsa_priv *priv, int port);
+	int (*red_set)(struct otto_dsa_priv *priv, int port, int queue,
+		       const struct tc_red_qopt_offload_params *p);
 	int (*egress_shaper_set)(struct otto_dsa_priv *priv, int port, int queue,
 				 u64 rate_bytes_ps, u32 burst);
 	void (*qos_init)(struct otto_dsa_priv *priv);
@@ -569,8 +577,8 @@ struct otto_dsa_priv {
 	/** @red_ports: Port (bit) has RED offloaded */
 	u64 red_ports;
 
-	/** @red_cfg: RED thresholds and drop rate shared by all ports in @red_ports */
-	u32 red_cfg;
+	/** @red_cfg: RED setting of each queue, shared by all ports in @red_ports */
+	u32 red_cfg[MAX_PRIOS];
 	struct workqueue_struct *wq;
 	bool eee_enabled;
 	unsigned long mc_group_bm[MAX_MC_GROUPS >> 5];
