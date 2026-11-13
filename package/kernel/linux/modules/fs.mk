@@ -670,9 +670,10 @@ define KernelPackage/pstore
   KCONFIG:= \
 	CONFIG_PSTORE \
 	CONFIG_PSTORE_COMPRESS=y
-  FILES:= $(LINUX_DIR)/fs/pstore/pstore.ko
+  FILES:= $(LINUX_DIR)/fs/pstore/pstore.ko $(LINUX_DIR)/fs/pstore/ramoops.ko
   AUTOLOAD:=$(call AutoLoad,30,pstore,1)
-  DEPENDS:=+kmod-lib-zlib-deflate +kmod-lib-zlib-inflate
+  AUTOLOAD:=$(call AutoLoad,30,ramoops,1)
+  DEPENDS:=+kmod-lib-zlib-deflate +kmod-lib-zlib-inflate +kmod-reed-solomon
 endef
 
 define KernelPackage/pstore/description
