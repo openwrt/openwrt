@@ -19,6 +19,7 @@ subtarget-default = $(filter-out ., \
 
 define subtarget
   $(call warn_eval,$(1),t,T,$(1)/$(2): $($(1)/) $(foreach bd,$(call subtarget-default,$(1),$(2)),$(1)/$(bd)/$(2)))
+	-touch $($(1)/stamp-$(2))
 
 endef
 
