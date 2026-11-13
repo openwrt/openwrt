@@ -172,6 +172,12 @@ boot() {
 		# the fan is not stable at lower duty.
 		adt747x_fancontrol 1 40 45000 71670 85000 80000 1
 		;;
+	horaco,zx510s-7t1xs)
+		# Based on the stock profile (duty 26 cold, 128 above 30 C, full
+		# speed above 65 C): duty 26 below 40 C, then a linear ramp to full
+		# speed at 66.67 C for lower idle noise.
+		adt747x_fancontrol 1 26 40000 66670 85000 80000 1
+		;;
 	linksys,lgs328mpc-v2)
 		linksys_lgs328mpc_v2
 		;;
