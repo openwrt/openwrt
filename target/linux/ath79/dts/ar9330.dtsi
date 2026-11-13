@@ -154,9 +154,13 @@
 
 		wmac: wmac@18100000 {
 			compatible = "qca,ar9330-wifi";
-			reg = <0x18100000 0x20000>;
+			reg = <0x18100000 0x20000>,
+			      <0x180600ac 0x4>;
 
 			interrupts = <2>;
+
+			clocks = <&pll ATH79_CLK_REF>;
+			resets = <&rst 11>;
 
 			status = "disabled";
 		};
