@@ -15,7 +15,7 @@ Signed-off-by: Ziyang Huang <hzyitc@outlook.com>
 
 --- a/drivers/net/dsa/qca/qca8k-8xxx.c
 +++ b/drivers/net/dsa/qca/qca8k-8xxx.c
-@@ -1087,24 +1087,6 @@ qca8k_setup_mac_pwr_sel(struct qca8k_pri
+@@ -1099,24 +1099,6 @@ qca8k_setup_mac_pwr_sel(struct qca8k_pri
  	return ret;
  }
  
@@ -40,7 +40,7 @@ Signed-off-by: Ziyang Huang <hzyitc@outlook.com>
  static int
  qca8k_setup_of_pws_reg(struct qca8k_priv *priv)
  {
-@@ -1957,15 +1939,9 @@ qca8k_setup(struct dsa_switch *ds)
+@@ -1969,15 +1951,9 @@ qca8k_setup(struct dsa_switch *ds)
  {
  	struct qca8k_priv *priv = ds->priv;
  	struct dsa_port *dp;
@@ -57,7 +57,7 @@ Signed-off-by: Ziyang Huang <hzyitc@outlook.com>
  	/* Parse CPU port config to be later used in phy_link mac_config */
  	ret = qca8k_parse_port_config(priv);
  	if (ret)
-@@ -2044,17 +2020,12 @@ qca8k_setup(struct dsa_switch *ds)
+@@ -2056,17 +2032,12 @@ qca8k_setup(struct dsa_switch *ds)
  	if (ret)
  		return ret;
  
@@ -76,7 +76,7 @@ Signed-off-by: Ziyang Huang <hzyitc@outlook.com>
  
  		ret = qca8k_rmw(priv, QCA8K_PORT_LOOKUP_CTRL(port),
  				QCA8K_PORT_LOOKUP_MEMBER,
-@@ -2067,6 +2038,11 @@ qca8k_setup(struct dsa_switch *ds)
+@@ -2079,6 +2050,11 @@ qca8k_setup(struct dsa_switch *ds)
  		if (ret)
  			return ret;
  

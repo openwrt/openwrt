@@ -153,6 +153,11 @@
 			reg = <0x18070000 0x14>;
 		};
 
+		csum: checksum@18400000 {
+			compatible = "qca,ar9340-checksum";
+			reg = <0x18400000 0x58>;
+		};
+
 		wmac: wmac@18100000 {
 			compatible = "qca,ar9340-wifi";
 			reg = <0x18100000 0x20000>;
@@ -231,6 +236,8 @@
 &eth0 {
 	compatible = "qca,ar9340-eth", "syscon";
 
+	qca,checksum-engine = <&csum>;
+
 	pll-data = <0x16000000 0x00000101 0x00001616>;
 	pll-reg = <0x4 0x2c 17>;
 	pll-handle = <&pll>;
@@ -277,6 +284,8 @@
 
 &eth1 {
 	compatible = "qca,ar9340-eth", "syscon";
+
+	qca,checksum-engine = <&csum>;
 
 	resets = <&rst 13>;
 	reset-names = "mac";
