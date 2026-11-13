@@ -44,6 +44,8 @@ static const char *rb_tlv_cell_name(u16 tag)
 		return "wlan-data";
 	case RB_ID_BOARD_IDENTIFIER:
 		return "board-identifier";
+	case RB_ID_VOLTAGE_CALIBRATION:
+		return "voltage-calibration";
 	case RB_ID_PRODUCT_NAME:
 		return "product-name";
 	case RB_ID_DEFCONF:
