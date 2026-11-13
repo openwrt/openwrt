@@ -21,6 +21,7 @@
 #include <linux/byteorder/generic.h>
 #include <linux/mtd/mtd.h>
 #include <linux/mtd/partitions.h>
+#include <linux/unaligned.h>
 
 #include "mtdsplit.h"
 
@@ -397,6 +398,141 @@ static struct mtd_part_parser mtdsplit_bcm_wfi_split_parser = {
 	.type = MTD_PARSER_TYPE_FIRMWARE,
 };
 
+/*
+ * ZyXEL MSTC dual image (e.g. VMG8324-B10A): each slot starts with a 128 KiB
+ * block holding a Broadcom-style tag, followed by the JFFS2 with vmlinux.lz.
+ * The CFE boots the slot with the higher imageSequence and flashes new images
+ * into the other slot. Only the booted slot is split into firmware/kernel/ubi;
+ * the other slot is exposed as plain "img1"/"img2".
+ */
+#define MSTC_TAG_LEN		240
+#define MSTC_TAG_SIG_OFF	4
+#define MSTC_TAG_SIG		"MSTC_"
+#define MSTC_TAG_SIG_LEN	(sizeof(MSTC_TAG_SIG) - 1)
+#define MSTC_TAG_SEQ_OFF	138
+#define MSTC_TAG_SEQ_LEN	4
+#define MSTC_TAG_CRC_OFF	236
+
+static int mstc_tag_sequence(struct mtd_info *mtd, loff_t off, uint8_t *buf)
+{
+	char seq[MSTC_TAG_SEQ_LEN + 1];
+	size_t retlen;
+	u32 crc;
+	int val, rc;
+
+	rc = mtd_read(mtd, off, MSTC_TAG_LEN, &retlen, buf);
+	if (rc || retlen != MSTC_TAG_LEN)
+		return -EIO;
+
+	if (memcmp(&buf[MSTC_TAG_SIG_OFF], MSTC_TAG_SIG, MSTC_TAG_SIG_LEN))
+		return -ENOENT;
+
+	crc = crc32_le(0xffffffff, buf, MSTC_TAG_CRC_OFF);
+	if (crc != get_unaligned_be32(&buf[MSTC_TAG_CRC_OFF]))
+		return -EINVAL;
+
+	memcpy(seq, &buf[MSTC_TAG_SEQ_OFF], MSTC_TAG_SEQ_LEN);
+	seq[MSTC_TAG_SEQ_LEN] = '\0';
+	if (kstrtoint(strim(seq), 10, &val) || val < 0)
+		return -EINVAL;
+
+	return val;
+}
+
+static int mtdsplit_parse_mstc_wfi_split(struct mtd_info *master,
+					 const struct mtd_partition **pparts,
+					 struct mtd_part_parser_data *data)
+{
+	struct device_node *mtd_node = mtd_get_of_node(master);
+	struct mtd_partition *parts;
+	loff_t img_off[2], img_size[2];
+	int seq[2], active, ret;
+	u32 img1_size, img2_off;
+	uint8_t *buf;
+
+	if (!mtd_node ||
+	    of_property_read_u32(mtd_node, "zyxel,img2-offset", &img2_off) ||
+	    !img2_off || img2_off >= master->size)
+		return -EINVAL;
+
+	img_off[0] = 0;
+	img_off[1] = img2_off;
+	/* optional: slot 1 may end before img2 (reserved gap in between) */
+	if (of_property_read_u32(mtd_node, "zyxel,img1-size", &img1_size) ||
+	    !img1_size || img1_size > img2_off)
+		img1_size = img2_off;
+	img_size[0] = img1_size;
+	img_size[1] = master->size - img2_off;
+
+	buf = kzalloc(master->erasesize, GFP_KERNEL);
+	if (!buf)
+		return -ENOMEM;
+
+	seq[0] = mstc_tag_sequence(master, img_off[0], buf);
+	seq[1] = mstc_tag_sequence(master, img_off[1], buf);
+	pr_info("mstc-wfi: imageSequence img1=%d img2=%d\n", seq[0], seq[1]);
+
+	/* same rule as the CFE: higher sequence wins, img1 on a tie */
+	active = (seq[1] > seq[0]) ? 1 : 0;
+
+	ret = parse_bcm_wfi(master, pparts, buf, img_off[active],
+			    img_size[active], false);
+	if (ret <= 0 && seq[!active] >= 0) {
+		/* booted slot is not OpenWrt: try the other one */
+		active = !active;
+		ret = parse_bcm_wfi(master, pparts, buf, img_off[active],
+				    img_size[active], false);
+	}
+
+	kfree(buf);
+
+	if (ret > 0) {
+		parts = kcalloc(ret + 1, sizeof(*parts), GFP_KERNEL);
+		if (!parts) {
+			kfree(*pparts);
+			return -ENOMEM;
+		}
+
+		memcpy(parts, *pparts, ret * sizeof(*parts));
+		kfree(*pparts);
+
+		parts[ret].name = active ? PART_IMAGE_1 : PART_IMAGE_2;
+		parts[ret].offset = img_off[!active];
+		parts[ret].size = img_size[!active];
+		ret++;
+	} else {
+		parts = kcalloc(BCM_WFI_SPLIT_PARTS, sizeof(*parts), GFP_KERNEL);
+		if (!parts)
+			return -ENOMEM;
+
+		parts[0].name = PART_IMAGE_1;
+		parts[0].offset = img_off[0];
+		parts[0].size = img_size[0];
+
+		parts[1].name = PART_IMAGE_2;
+		parts[1].offset = img_off[1];
+		parts[1].size = img_size[1];
+		ret = BCM_WFI_SPLIT_PARTS;
+	}
+
+	*pparts = parts;
+
+	return ret;
+}
+
+static const struct of_device_id mtdsplit_mstc_wfi_split_of_match[] = {
+	{ .compatible = "zyxel,mstc-wfi-split" },
+	{ },
+};
+
+static struct mtd_part_parser mtdsplit_mstc_wfi_split_parser = {
+	.owner = THIS_MODULE,
+	.name = "mstc-wfi-split-fw",
+	.of_match_table = mtdsplit_mstc_wfi_split_of_match,
+	.parse_fn = mtdsplit_parse_mstc_wfi_split,
+	.type = MTD_PARSER_TYPE_FIRMWARE,
+};
+
 static int sercomm_bootflag_value(struct mtd_info *mtd, uint8_t *buf)
 {
 	size_t retlen;
@@ -534,6 +670,7 @@ static int __init mtdsplit_bcm_wfi_init(void)
 	register_mtd_parser(&mtdsplit_bcm_wfi_parser);
 	register_mtd_parser(&mtdsplit_bcm_wfi_split_parser);
 	register_mtd_parser(&mtdsplit_ser_wfi_parser);
+	register_mtd_parser(&mtdsplit_mstc_wfi_split_parser);
 
 	return 0;
 }
@@ -543,6 +680,7 @@ static void __exit mtdsplit_bcm_wfi_exit(void)
 	deregister_mtd_parser(&mtdsplit_bcm_wfi_parser);
 	deregister_mtd_parser(&mtdsplit_bcm_wfi_split_parser);
 	deregister_mtd_parser(&mtdsplit_ser_wfi_parser);
+	deregister_mtd_parser(&mtdsplit_mstc_wfi_split_parser);
 }
 
 module_init(mtdsplit_bcm_wfi_init);
