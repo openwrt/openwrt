@@ -120,6 +120,7 @@ platform_do_upgrade() {
 		PART_NAME="inactive"
 		platform_do_upgrade_dualboot_plasmacloud "$1"
 		;;
+	tplink,festa-fs308g-v1|\
 	tplink,sg2008p-v1|\
 	tplink,sg2008p-v3|\
 	tplink,sg2210p-v3)
