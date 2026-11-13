@@ -17,7 +17,7 @@ ifndef CONFIG_USE_GLIBC
 endif
 
 ifdef CONFIG_USE_MUSL
-  GCC_MAKE += gcc_cv_libc_provides_ssp=yes
+  GCC_CONFIGURE_VARS += gcc_cv_libc_provides_ssp=yes
 endif
 
 ifneq ($(CONFIG_SJLJ_EXCEPTIONS),)
@@ -39,6 +39,7 @@ define Host/Configure
 	$(CleanupToolchain)
 	mkdir -p $(GCC_BUILD_DIR)
 	(cd $(GCC_BUILD_DIR) && rm -f config.cache; \
+		$(if $(strip $(GCC_CONFIGURE_VARS)),export $(GCC_CONFIGURE_VARS);) \
 		$(GCC_CONFIGURE) \
 	);
 endef
@@ -53,7 +54,10 @@ endif
 
 define Host/Compile
 	$(FixGogccCrt)
-	+$(GCC_MAKE) $(HOST_JOBS) -C $(GCC_BUILD_DIR) all
+
+	$(GCC_MAKE) $(HOST_JOBS) -C $(GCC_BUILD_DIR) \
+		$(GCC_CONFIGURE_VARS) \
+		all
 endef
 
 define SetupExtraArch
@@ -71,7 +75,11 @@ endef
 
 define Host/Install
 	$(CleanupToolchain)
-	+$(GCC_MAKE) $(HOST_JOBS) -C $(GCC_BUILD_DIR) install
+
+	+$(GCC_MAKE) $(HOST_JOBS) -C $(GCC_BUILD_DIR) \
+		$(GCC_CONFIGURE_VARS) \
+		install
+
 	# Set up the symlinks to enable lying about target name.
 	set -e; \
 	(cd $(TOOLCHAIN_DIR); \
