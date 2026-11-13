@@ -1,0 +1,88 @@
+#include "mt7628an_tplink_8m.dtsi"
+
+/ {
+	compatible = "tplink,tl-wr841hp-v5", "mediatek,mt7628an-soc";
+	model = "TP-Link TL-WR841HP v5";
+
+	aliases {
+		led-boot = &led_power;
+		led-failsafe = &led_power;
+		led-running = &led_power;
+		led-upgrade = &led_power;
+	};
+
+	keys {
+		compatible = "gpio-keys";
+		
+		reset {
+			label = "reset";
+			gpios = <&gpio 37 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+
+		rfkill {
+			label = "rfkill";
+			gpios = <&gpio 5 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RFKILL>;
+		};
+		
+		wps {
+			label = "wps";
+			gpios = <&gpio 38 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_WPS_BUTTON>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		
+		led_power: power {
+			label = "green:power";
+			gpios = <&gpio 36 GPIO_ACTIVE_LOW>;
+		};
+
+		wps {
+			label = "green:wps";
+			gpios = <&gpio 40 GPIO_ACTIVE_LOW>;
+		};
+
+		lan {
+			label = "green:lan";
+			gpios = <&gpio 42 GPIO_ACTIVE_LOW>;
+		};
+		
+		wan_green {
+			label = "green:wan";
+			gpios = <&gpio 43 GPIO_ACTIVE_LOW>;
+		};
+
+		wan_orange {
+			label = "orange:wan";
+			gpios = <&gpio 11 GPIO_ACTIVE_LOW>;
+		};
+
+		wlan {
+			label = "green:wlan";
+			gpios = <&gpio 44 GPIO_ACTIVE_LOW>;
+		};
+	};
+};
+
+&ehci {
+	status = "disabled";
+};
+
+&ohci {
+	status = "disabled";
+};
+
+&state_default {
+	gpio {
+		groups = "gpio", "p0led_an", "p1led_an", "p2led_an", "p3led_an", "p4led_an", "perst", "refclk", "uart1", "wdt", "wled_an";
+		function = "gpio";
+	};
+};
+
+&esw {
+	mediatek,portmap = <0x3e>;
+};
