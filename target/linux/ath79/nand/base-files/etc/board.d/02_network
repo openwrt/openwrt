@@ -12,13 +12,24 @@ ath79_setup_interfaces()
 		ucidef_set_interface_lan "eth0"
 		;;
 	domywifi,dw33d)
-		ucidef_add_switch "switch0" \
-			"0u@eth0" "1:wan" "2:lan" "3:lan" "4:lan" "5:lan" "6u@eth1"
+		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "wan"
+		ucidef_set_network_device_conduit "wan" "eth0"
+		ucidef_set_network_device_conduit "lan1" "eth1"
+		ucidef_set_network_device_conduit "lan2" "eth1"
+		ucidef_set_network_device_conduit "lan3" "eth1"
+		ucidef_set_network_device_conduit "lan4" "eth1"
 		;;
+	dongwon,dw02-412h-128m|\
 	dongwon,dw02-412h-64m|\
-	dongwon,dw02-412h-128m)
-		ucidef_add_switch "switch0" \
-			"0@eth0" "2:lan:4" "3:lan:3" "4:lan:2" "5:lan:1" "1:wan"
+	glinet,gl-x1200-nor|\
+	glinet,gl-x1200-nor-nand|\
+	meraki,z1|\
+	netgear,wndr3700-v4|\
+	netgear,wndr4300|\
+	netgear,wndr4300-v2|\
+	netgear,wndr4300sw|\
+	netgear,wndr4500-v3)
+		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "wan"
 		;;
 	glinet,gl-ar300m-nand|\
 	glinet,gl-ar300m-nor|\
@@ -28,11 +39,9 @@ ath79_setup_interfaces()
 		;;
 	glinet,gl-ar750s-nor|\
 	glinet,gl-ar750s-nor-nand)
-		ucidef_add_switch "switch0" \
-			"0@eth0" "2:lan:2" "3:lan:1" "1:wan"
+		ucidef_set_interfaces_lan_wan "lan1 lan2" "wan"
 		;;
-	glinet,gl-e750|\
-	zte,mf282)
+	glinet,gl-e750)
 		ucidef_set_interface_lan "eth0"
 		ucidef_set_interface "wan" device "/dev/cdc-wdm0" protocol "qmi"
 		;;
@@ -41,18 +50,13 @@ ath79_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0@eth1" "4:lan"
 		;;
-	glinet,gl-x1200-nor|\
-	glinet,gl-x1200-nor-nand)
-		ucidef_add_switch "switch0" \
-			"0@eth0" "1:lan:4" "2:lan:3" "3:lan:2" "4:lan:1" "5:wan"
-		;;
 	linksys,ea4500-v3)
-		ucidef_add_switch "switch0" \
-			"6u@eth1" "1:lan" "2:lan" "3:lan" "4:lan" "5:wan" "0u@eth0"
-		;;
-	meraki,z1)
-		ucidef_add_switch "switch0" \
-			"0@eth0" "1:lan" "2:lan" "3:lan" "4:lan" "5:wan"
+		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "wan"
+		ucidef_set_network_device_conduit "lan1" "eth1"
+		ucidef_set_network_device_conduit "lan2" "eth1"
+		ucidef_set_network_device_conduit "lan3" "eth1"
+		ucidef_set_network_device_conduit "lan4" "eth1"
+		ucidef_set_network_device_conduit "wan" "eth0"
 		;;
 	netgear,pgzng1)
 		ucidef_set_interfaces_lan_wan "eth0" "eth1"
@@ -62,36 +66,28 @@ ath79_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0@eth1" "1:lan:4" "2:lan:1" "3:lan:2" "4:lan:3"
 		;;
-	netgear,wndr3700-v4|\
-	netgear,wndr4300|\
-	netgear,wndr4300sw|\
-	netgear,wndr4300-v2)
-		ucidef_add_switch "switch0" \
-			"0@eth0" "1:lan:4" "2:lan:3" "3:lan:2" "4:lan:1" "5:wan"
-		;;
-	netgear,wndr4500-v3)
-		ucidef_add_switch "switch0" \
-			"0@eth0" "1:lan" "2:lan" "3:lan" "4:lan" "5:wan"
-		;;
-	netgear,wndr4300tn)
-		ucidef_add_switch "switch0" \
-			"0@eth0" "1:lan:4" "2:lan:3" "3:lan:2" "4:lan:1"
-		;;
-	zte,mf281)
-		ucidef_add_switch "switch0" \
-			"0@eth0" "5:lan"
-		;;
+	netgear,wndr4300tn|\
 	zte,mf286|\
 	zte,mf286a|\
 	zte,mf286c|\
 	zte,mf286r)
-		ucidef_add_switch "switch0" \
-			"0@eth0" "1:lan:4" "2:lan:3" "3:lan:2" "5:lan:1"
+		ucidef_set_interface_lan "lan1 lan2 lan3 lan4"
+		;;
+	zte,mf281)
+		ucidef_set_interface_lan "lan"
+		;;
+	zte,mf282)
+		ucidef_set_interface_lan "lan1 lan2 lan3 lan4 lan5"
+		ucidef_set_interface "wan" device "/dev/cdc-wdm0" protocol "qmi"
 		;;
 	zyxel,emg2926-q10a|\
 	zyxel,nbg6716)
-		ucidef_add_switch "switch0" \
-			"0u@eth0" "1:lan" "2:lan" "3:lan" "4:lan" "5:wan" "6u@eth1"
+		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "wan"
+		ucidef_set_network_device_conduit "lan1" "eth0"
+		ucidef_set_network_device_conduit "lan2" "eth0"
+		ucidef_set_network_device_conduit "lan3" "eth0"
+		ucidef_set_network_device_conduit "lan4" "eth0"
+		ucidef_set_network_device_conduit "wan" "eth1"
 		;;
 	*)
 		ucidef_set_interfaces_lan_wan "eth0" "eth1"

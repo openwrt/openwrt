@@ -216,21 +216,88 @@
 	status = "okay";
 
 	ethernet-switch@10 {
-		compatible = "qca,ar8327";
+		compatible = "qca,qca8327";
+		#address-cells = <1>;
+		#size-cells = <0>;
 		reg = <0x10>;
-		qca,mib-poll-interval = <500>;
+		qca,ignore-power-on-sel;
+		qca,led-open-drain;
 
-		qca,ar8327-initvals = <
-			0x04 0x07600000
-			0x0c 0x01000000
-			0x10 0xc1000000
-			0x50 0xcc35cc35
-			0x54 0xcb37cb37
-			0x58 0x00000000
-			0x5c 0x00f3cf00
-			0x7c 0x0000007e
-			0x94 0x0000007e
-			>;
+		ethernet-ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			ethernet-port@0 {
+				reg = <0>;
+				ethernet = <&eth0>;
+				phy-mode = "rgmii-id";
+
+				fixed-link {
+					speed = <1000>;
+					full-duplex;
+				};
+			};
+
+			switch_port1: ethernet-port@1 {
+				reg = <1>;
+				label = "lan4";
+				phy-mode = "internal";
+				phy-handle = <&phy_port1>;
+			};
+
+			switch_port2: ethernet-port@2 {
+				reg = <2>;
+				label = "lan3";
+				phy-mode = "internal";
+				phy-handle = <&phy_port2>;
+			};
+
+			switch_port3: ethernet-port@3 {
+				reg = <3>;
+				label = "lan2";
+				phy-mode = "internal";
+				phy-handle = <&phy_port3>;
+			};
+
+			switch_port4: ethernet-port@4 {
+				reg = <4>;
+				label = "lan1";
+				phy-mode = "internal";
+				phy-handle = <&phy_port4>;
+			};
+
+			switch_port5: ethernet-port@5 {
+				reg = <5>;
+				label = "wan";
+				phy-mode = "internal";
+				phy-handle = <&phy_port5>;
+			};
+		};
+
+		mdio {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			phy_port1: ethernet-phy@0 {
+				reg = <0>;
+			};
+
+			phy_port2: ethernet-phy@1 {
+				reg = <1>;
+			};
+
+			phy_port3: ethernet-phy@2 {
+				reg = <2>;
+			};
+
+			phy_port4: ethernet-phy@3 {
+				reg = <3>;
+			};
+
+			phy_port5: ethernet-phy@4 {
+				reg = <4>;
+			};
+		};
 	};
 };
 
