@@ -1,0 +1,61 @@
+From 7d7ecb609616b716b1d22774b98be8c61f71b834 Mon Sep 17 00:00:00 2001
+From: Rosen Penev <rosenp@gmail.com>
+Date: Sun, 12 Jul 2026 12:50:36 -0700
+Subject: [PATCH] net: phy: qcom: qca807x: use IS_ENABLED() for GPIO support
+
+Replace the #ifdef CONFIG_GPIOLIB / #if IS_ENABLED(CONFIG_GPIOLIB)
+preprocessor guards around the GPIO controller code with a single
+runtime IS_ENABLED() check in qca807x_probe(). This follows the
+preferred kernel style of letting the compiler drop dead code rather
+than sprinkling #ifdef blocks through the C source.
+
+The gpiolib declarations (gpiochip_get_data, devm_gpiochip_add_data)
+are available unconditionally, so the code compiles either way. When
+CONFIG_GPIOLIB is disabled, the gpio-controller branch folds to false
+and the now-static qca807x_gpio() and its callbacks are dead-code
+eliminated, leaving no references to gpiolib symbols.
+
+Build-tested with CONFIG_QCA807X_PHY=m for both CONFIG_GPIOLIB=y and
+CONFIG_GPIOLIB=n; the =n object contains no undefined gpiolib
+references (the gpio helpers are eliminated).
+
+Assisted-by: opencode:hy3-free
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+---
+ drivers/net/phy/qcom/qca807x.c | 6 +-----
+ 1 file changed, 1 insertion(+), 5 deletions(-)
+
+--- a/drivers/net/phy/qcom/qca807x.c
++++ b/drivers/net/phy/qcom/qca807x.c
+@@ -360,7 +360,6 @@ static int qca807x_led_blink_set(struct
+ 	return qca808x_led_reg_blink_set(phydev, reg, delay_on, delay_off);
+ }
+ 
+-#ifdef CONFIG_GPIOLIB
+ static int qca807x_gpio_get_direction(struct gpio_chip *gc, unsigned int offset)
+ {
+ 	return GPIO_LINE_DIRECTION_OUT;
+@@ -431,7 +430,6 @@ static int qca807x_gpio(struct phy_devic
+ 
+ 	return devm_gpiochip_add_data(dev, gc, priv);
+ }
+-#endif
+ 
+ static int qca807x_read_fiber_status(struct phy_device *phydev)
+ {
+@@ -733,14 +731,12 @@ static int qca807x_probe(struct phy_devi
+ 	priv->dac_disable_bias_current_tweak = of_property_read_bool(node,
+ 								     "qcom,dac-disable-bias-current-tweak");
+ 
+-#if IS_ENABLED(CONFIG_GPIOLIB)
+ 	/* Do not register a GPIO controller unless flagged for it */
+-	if (of_property_read_bool(node, "gpio-controller")) {
++	if (IS_ENABLED(CONFIG_GPIOLIB) && of_property_read_bool(node, "gpio-controller")) {
+ 		ret = qca807x_gpio(phydev);
+ 		if (ret)
+ 			return ret;
+ 	}
+-#endif
+ 
+ 	/* Attach SFP bus on combo port*/
+ 	if (phy_read(phydev, QCA807X_CHIP_CONFIGURATION)) {
