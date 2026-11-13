@@ -197,12 +197,24 @@ sub mconf_depends {
 
 				$depend = shift @vdeps;
 
+				# Only bool consumers need the strict check: booleans cannot
+				# hold the module verdict (the resolver clamps m to y), so
+				# an m-only alternative would read as committed. Tristate
+				# consumers keep the visibility negation from before 1fd50531.
 				if (@vdeps > 1) {
 					$rank = join("&&", map { "PACKAGE_$_<PACKAGE_$pkgname" } @vdeps);
-					$negation = '!('.join("||", map { "PACKAGE_$_" } @vdeps).')';
+					if (!$package{$pkgname}->{tristate}) {
+						$negation = '(' . join("&&", map { "PACKAGE_$_ != y" } @vdeps) . ')';
+					} else {
+						$negation = '!(' . join("||", map { "PACKAGE_$_" } @vdeps) . ')';
+					}
 				} elsif (@vdeps > 0) {
 					$rank = "PACKAGE_${vdeps[0]}<PACKAGE_$pkgname";
-					$negation = '!PACKAGE_'.$vdeps[0];
+					if (!$package{$pkgname}->{tristate}) {
+						$negation = 'PACKAGE_' . $vdeps[0] . ' != y';
+					} else {
+						$negation = '!PACKAGE_' . $vdeps[0];
+					}
 				}
 			}
 
