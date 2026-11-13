@@ -1,0 +1,329 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+//
+// Buffalo WSR-1800AX4S (Gemtek WRTM-353AX)
+// SoC: MT7621AT, RAM 256MB, NAND 128MB (Winbond W29N01HV, nmbm),
+// WiFi: MT7915DAN + MT7975DN (PCIe, dual-band concurrent, single chip)
+//
+// Flash layout mirrors the stock nmbm partition table. The stock
+// bootcode (Buffalo Bootcode 1.04) requires both flash banks to
+// hold identical kernel/rootfs images, a FIT with legacy "@" node
+// names, and a "gtkc:" CRC trailer at offset 0x99adc6 of each
+// rootfs partition; see the partition comment below.
+
+#include "mt7621.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+
+/ {
+	compatible = "buffalo,wsr-1800ax4s", "mediatek,mt7621-soc";
+	model = "Buffalo WSR-1800AX4S";
+
+	aliases {
+		led-boot = &led_power_green;
+		led-failsafe = &led_power_red;
+		led-running = &led_power_green;
+		led-upgrade = &led_power_red;
+		label-mac-device = &ethernet;
+	};
+
+	chosen {
+		bootargs = "console=ttyS0,115200";
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		// All LEDs are active-low (stock DTB) and were lit one at a
+		// time on the live unit, 2026-11-04/05, colours confirmed
+		// by eye: POWER green/red, WIRELESS green/orange,
+		// INTERNET green, ROUTER green.
+
+		led_power_green: power_green {
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio 4 GPIO_ACTIVE_LOW>;
+			default-state = "on";
+		};
+
+		led_power_red: power_red {
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_RED>;
+			gpios = <&gpio 3 GPIO_ACTIVE_LOW>;
+		};
+
+		router_green {
+			function = "router";
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
+		};
+
+		wlan2g_green {
+			function = LED_FUNCTION_WLAN_2GHZ;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
+		};
+
+		wlan5g_orange {
+			function = LED_FUNCTION_WLAN_5GHZ;
+			color = <LED_COLOR_ID_AMBER>;
+			gpios = <&gpio 10 GPIO_ACTIVE_LOW>;
+		};
+
+		internet_green {
+			function = LED_FUNCTION_WAN;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio 15 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		// Front-top AOSS button, confirmed by fast GPIO polling
+		// (clean 1 -> 0 -> 1 press signature, exclusive responder).
+		wps {
+			label = "wps";
+			gpios = <&gpio 18 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_WPS_BUTTON>;
+		};
+
+		// AUTO/MANUAL slide switch, single pin, confirmed live:
+		// MANUAL position = 1, AUTO position = 0.
+		auto_manual {
+			label = "auto_manual";
+			gpios = <&gpio 7 GPIO_ACTIVE_HIGH>;
+			linux,code = <BTN_0>;
+			linux,input-type = <EV_SW>;
+		};
+
+		// Bottom RESET button, identified under the stock OS
+		// (2026-11-05): the stock firmware exports GPIO 6, 7, 8,
+		// 12, 16, 18 as sysfs inputs; fast sampling of those
+		// values during a short press showed GPIO 16 alone going
+		// hi -> lo. Active low.
+		reset {
+			label = "reset";
+			gpios = <&gpio 16 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+
+		// ROUTER/AP/WB slide switch, identified the same day:
+		// a two-pin code on GPIO 6 and GPIO 8. Physical levels:
+		//   ROUTER: 6=hi, 8=lo
+		//   AP:     6=lo, 8=hi
+		//   WB:     6=hi, 8=hi
+		// Modelled as two EV_SW inputs; userspace can decode the
+		// three positions from the pair. Each pin is "engaged"
+		// (reads lo) in exactly one end position.
+		mode_a {
+			label = "mode_a";
+			gpios = <&gpio 6 GPIO_ACTIVE_LOW>;
+			linux,code = <BTN_1>;
+			linux,input-type = <EV_SW>;
+		};
+
+		mode_b {
+			label = "mode_b";
+			gpios = <&gpio 8 GPIO_ACTIVE_LOW>;
+			linux,code = <BTN_2>;
+			linux,input-type = <EV_SW>;
+		};
+	};
+};
+
+&state_default {
+	gpio {
+		groups = "i2c", "uart3", "uart2";
+		function = "gpio";
+	};
+};
+
+&nand {
+	status = "okay";
+
+	// Stock firmware manages this NAND through nmbm; the stock
+	// kernel's MTD list is the nmbm logical view reproduced below.
+	// mediatek,bmt-remap-range is not needed: without it the MTD
+	// list matches the stock logical table and nmbm attaches its
+	// management area at block 960 (0x7800000), as on stock.
+	mediatek,nmbm;
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		partition@0 {
+			label = "Bootloader";
+			reg = <0x0 0x80000>;
+			read-only;
+		};
+
+		partition@80000 {
+			label = "Config";
+			reg = <0x80000 0x80000>;
+			read-only;
+		};
+
+		partition@100000 {
+			label = "Factory";
+			reg = <0x100000 0x80000>;
+			read-only;
+
+			nvmem-layout {
+				compatible = "fixed-layout";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				// MT7915 EEPROM + pre-calibration, same
+				// offsets as the donor board (calibration
+				// data verified present on this unit).
+				eeprom_factory_0: eeprom@0 {
+					reg = <0x0 0xe00>;
+				};
+
+				precal_factory_e10: precal@e10 {
+					reg = <0xe10 0x19c10>;
+				};
+
+				// Two binary MACs stored back to back:
+				// +0x4 = 90:96:f3:db:d3:31, +0xa = ...:38
+				macaddr_factory_4: macaddr@4 {
+					compatible = "mac-base";
+					reg = <0x4 0x6>;
+					#nvmem-cell-cells = <1>;
+				};
+
+				macaddr2_factory_a: macaddr2@a {
+					reg = <0xa 0x6>;
+				};
+			};
+		};
+
+		// Dual-bank layout. The bootcode reads kernel/rootfs from
+		// raw offsets inside each bank and CRC-checks only the
+		// squashfs span (its trailer sits at stock offset
+		// 0x99adc6 within rootfs), so the Linux-side map may cut
+		// each bank at the stock split point: rootfs ends at
+		// +0x9a0000 and the remaining space is a UBI partition
+		// holding the overlay (UBIFS volume "rootfs_data").
+		// JFFS2 on the raw tail proved unreliable on this NAND
+		// (intermittent EBADMSG during boot-time scans), hence UBI.
+		partition@180000 {
+			label = "kernel";
+			reg = <0x180000 0x400000>;
+		};
+
+		partition@580000 {
+			label = "rootfs";
+			reg = <0x580000 0x9a0000>;
+		};
+
+		partition@f20000 {
+			label = "ubi";
+			reg = <0xf20000 0x2360000>;
+		};
+
+		partition@3280000 {
+			label = "kernel1";
+			reg = <0x3280000 0x400000>;
+		};
+
+		partition@3680000 {
+			label = "rootfs1";
+			reg = <0x3680000 0x9a0000>;
+		};
+
+		partition@4020000 {
+			label = "rootfs_data1";
+			reg = <0x4020000 0x2760000>;
+		};
+
+		partition@6780000 {
+			label = "user_config";
+			reg = <0x6780000 0x100000>;
+			read-only;
+		};
+	};
+};
+
+&pcie {
+	status = "okay";
+};
+
+// MT7915 sits on PCIe port 1 (both radios in one chip), as on the
+// donor board; it came up with phy0/phy1 under the donor image.
+&pcie1 {
+	wifi@0,0 {
+		compatible = "mediatek,mt76";
+		reg = <0x0000 0 0 0 0>;
+		nvmem-cells = <&eeprom_factory_0>, <&precal_factory_e10>;
+		nvmem-cell-names = "eeprom", "precal";
+		mediatek,disable-radar-background;
+
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		band@0 {
+			reg = <0>;
+			nvmem-cells = <&macaddr_factory_4 0>;
+			nvmem-cell-names = "mac-address";
+		};
+
+		band@1 {
+			reg = <1>;
+			nvmem-cells = <&macaddr2_factory_a 0>;
+			nvmem-cell-names = "mac-address";
+		};
+	};
+};
+
+&gmac0 {
+	// Stock boot log: LAN MAC = 90:96:f3:db:d3:30, i.e. the
+	// stored +0x4 MAC minus one.
+	nvmem-cells = <&macaddr_factory_4 0xffffffff>;
+	nvmem-cell-names = "mac-address";
+};
+
+&gmac1 {
+	status = "okay";
+	label = "wan";
+	phy-handle = <&ethphy4>;
+	// The stored MAC itself (verified on the live unit:
+	// WAN = 90:96:f3:db:d3:31, the +0x4 factory MAC as-is).
+	nvmem-cells = <&macaddr_factory_4 0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&ethphy4 {
+	/delete-property/ interrupts;
+};
+
+&switch0 {
+	ports {
+		// Physical jack order is REVERSED vs. switch port
+		// numbers (cable-tested 2026-11-05): case LAN1 is
+		// port 3, LAN2 is port 2, LAN3 is port 1, LAN4 is port 0.
+		port@0 {
+			status = "okay";
+			label = "lan4";
+		};
+
+		port@1 {
+			status = "okay";
+			label = "lan3";
+		};
+
+		port@2 {
+			status = "okay";
+			label = "lan2";
+		};
+
+		port@3 {
+			status = "okay";
+			label = "lan1";
+		};
+	};
+};
