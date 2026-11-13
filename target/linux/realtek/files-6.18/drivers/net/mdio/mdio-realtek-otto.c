@@ -53,6 +53,7 @@
  * For now it should be sufficient.
  */
 
+#include <linux/bitmap.h>
 #include <linux/fwnode.h>
 #include <linux/fwnode_mdio.h>
 #include <linux/mfd/syscon.h>
@@ -757,12 +758,17 @@ static int rtmd_get_phy_info(struct rtmd_ctrl *ctrl, int pn, struct rtmd_phy_inf
 	return 0;
 }
 
-static struct fwnode_handle *rtmd_get_bus_node(struct fwnode_handle *phynode)
+static struct fwnode_handle *rtmd_get_bus_node(struct fwnode_handle *phynode, u32 *base_offset)
 {
 	struct fwnode_handle *parent = fwnode_get_parent(phynode);
+	u32 addr, base_addr;
 
+	*base_offset = 0;
 	if (parent && fwnode_name_eq(parent, "ethernet-phy-package")) {
 		struct fwnode_handle *grandparent = fwnode_get_parent(parent);
+		if (!fwnode_property_read_u32(parent, "reg", &base_addr) &&
+		    !fwnode_property_read_u32(phynode, "reg", &addr) && addr > base_addr)
+			*base_offset = addr - base_addr;
 		fwnode_handle_put(parent);
 		return grandparent;
 	}
@@ -987,9 +993,11 @@ static int rtmd_931x_setup_polling(struct rtmd_ctrl *ctrl)
 
 static int rtmd_map_ports(struct device *dev)
 {
+	DECLARE_BITMAP(base_ports, RTMD_MAX_PORTS) = {};
 	struct fwnode_handle *fw_dev = dev_fwnode(dev);
 	struct rtmd_ctrl *ctrl = dev_get_drvdata(dev);
 	int smi_bus, smi_addr, pn;
+	u32 base_offset;
 
 	struct fwnode_handle *fw_switch __free(fwnode_handle) = fwnode_get_parent(fw_dev);
 	if (!fw_switch)
@@ -1029,7 +1037,9 @@ static int rtmd_map_ports(struct device *dev)
 		if (smi_addr >= PHY_MAX_ADDR)
 			return dev_err_probe(dev, -EINVAL, "%pfwP illegal phy address\n", fw_phy);
 
-		struct fwnode_handle *fw_bus __free(fwnode_handle) = rtmd_get_bus_node(fw_phy);
+		struct fwnode_handle *fw_bus __free(fwnode_handle) =
+			rtmd_get_bus_node(fw_phy, &base_offset);
+
 		if (!fw_bus || fwnode_property_read_u32(fw_bus, "reg", &smi_bus))
 			return dev_err_probe(dev, -EINVAL, "%pfwP no bus number\n",
 					     fw_bus ?: fw_phy);
@@ -1043,7 +1053,16 @@ static int rtmd_map_ports(struct device *dev)
 		ctrl->port[pn].smi_bus = smi_bus;
 		ctrl->port[pn].smi_addr = smi_addr;
 		__set_bit(pn, ctrl->phy_ports);
+
+		if (base_offset) {
+			pn = pn - base_offset;
+			ctrl->port[pn].smi_bus = smi_bus;
+			ctrl->port[pn].smi_addr = smi_addr - base_offset;
+			__set_bit(pn, base_ports);
+		}
 	}
+
+	bitmap_or(ctrl->phy_ports, ctrl->phy_ports, base_ports, RTMD_MAX_PORTS);
 
 	return 0;
 }
