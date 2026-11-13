@@ -15,6 +15,84 @@
 
 &ethernet {
 	mediatek,portmap = "llllw";
+
+	mdio-bus {
+		status = "okay";
+
+		ephy0: ethernet-phy@0 {
+			reg = <0>;
+		};
+
+		ephy1: ethernet-phy@1 {
+			reg = <1>;
+		};
+
+		ephy2: ethernet-phy@2 {
+			reg = <2>;
+		};
+
+		ephy3: ethernet-phy@3 {
+			reg = <3>;
+		};
+
+		ephy4: ethernet-phy@4 {
+			reg = <4>;
+		};
+	};
+};
+
+&gsw {
+	ports {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		port@0 {
+			reg = <0>;
+			label = "lan4";
+			phy-handle = <&ephy0>;
+			phy-mode = "mii";
+		};
+
+		port@1 {
+			reg = <1>;
+			label = "lan3";
+			phy-handle = <&ephy1>;
+			phy-mode = "mii";
+		};
+
+		port@2 {
+			reg = <2>;
+			label = "lan2";
+			phy-handle = <&ephy2>;
+			phy-mode = "mii";
+		};
+
+		port@3 {
+			reg = <3>;
+			label = "lan1";
+			phy-handle = <&ephy3>;
+			phy-mode = "mii";
+		};
+
+		port@4 {
+			reg = <4>;
+			label = "wan";
+			phy-handle = <&ephy4>;
+			phy-mode = "mii";
+		};
+
+		port@6 {
+			reg = <6>;
+			ethernet = <&ethernet>;
+			phy-mode = "rgmii";
+
+			fixed-link {
+				speed = <1000>;
+				full-duplex;
+				pause;
+			};
+		};
+	};
 };
 
 &wmac {
