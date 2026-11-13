@@ -33,7 +33,7 @@ define Device/d-link_dgs-1210-10mp-f
   SOC := rtl8380
   DEVICE_MODEL := DGS-1210-10MP
   DEVICE_VARIANT := F
-  DEVICE_PACKAGES += realtek-poe
+  FEED_DEVICE_PACKAGES += realtek-poe
 endef
 TARGET_DEVICES += d-link_dgs-1210-10mp-f
 
@@ -41,7 +41,7 @@ define Device/d-link_dgs-1210-10p
   $(Device/d-link_dgs-1210)
   SOC := rtl8382
   DEVICE_MODEL := DGS-1210-10P
-  DEVICE_PACKAGES += realtek-poe
+  FEED_DEVICE_PACKAGES += realtek-poe
 endef
 TARGET_DEVICES += d-link_dgs-1210-10p
 
@@ -78,7 +78,8 @@ define Device/d-link_dgs-1210-28mp-f
   SOC := rtl8382
   DEVICE_MODEL := DGS-1210-28MP
   DEVICE_VARIANT := F
-  DEVICE_PACKAGES += realtek-poe kmod-hwmon-lm63
+  DEVICE_PACKAGES += kmod-hwmon-lm63
+  FEED_DEVICE_PACKAGES += realtek-poe
 endef
 TARGET_DEVICES += d-link_dgs-1210-28mp-f
 
@@ -87,7 +88,8 @@ define Device/d-link_dgs-1210-28p-f
   SOC := rtl8382
   DEVICE_MODEL := DGS-1210-28P
   DEVICE_VARIANT := F
-  DEVICE_PACKAGES += realtek-poe kmod-hwmon-lm63
+  DEVICE_PACKAGES += kmod-hwmon-lm63
+  FEED_DEVICE_PACKAGES += realtek-poe
 endef
 TARGET_DEVICES += d-link_dgs-1210-28p-f
 
@@ -98,7 +100,7 @@ define Device/datto_l8
   DEVICE_MODEL := L8
   DEVICE_ALT0_VENDOR := Open Mesh
   DEVICE_ALT0_MODEL := S8-L
-  DEVICE_PACKAGES += realtek-poe
+  FEED_DEVICE_PACKAGES += realtek-poe
   UIMAGE_MAGIC := 0x00703400
   IMAGE_SIZE := 13504k
 endef
@@ -137,7 +139,7 @@ define Device/hpe_1920-8g-poe-65w
   $(Device/hpe_1920)
   SOC := rtl8380
   DEVICE_MODEL := 1920-8G-PoE+ 65W (JG921A)
-  DEVICE_PACKAGES += realtek-poe
+  FEED_DEVICE_PACKAGES += realtek-poe
   H3C_DEVICE_ID := 0x00010024
 endef
 TARGET_DEVICES += hpe_1920-8g-poe-65w
@@ -147,7 +149,8 @@ define Device/hpe_1920-8g-poe-180w
   $(Device/hwmon-fan-migration)
   SOC := rtl8380
   DEVICE_MODEL := 1920-8G-PoE+ 180W (JG922A)
-  DEVICE_PACKAGES += realtek-poe kmod-hwmon-gpiofan
+  DEVICE_PACKAGES += kmod-hwmon-gpiofan
+  FEED_DEVICE_PACKAGES += realtek-poe
   H3C_DEVICE_ID := 0x00010025
   SUPPORTED_DEVICES += hpe,1920-8g-poe
 endef
@@ -174,7 +177,8 @@ define Device/hpe_1920-24g-poe-180w
   $(Device/hwmon-fan-migration)
   SOC := rtl8382
   DEVICE_MODEL := 1920-24G-PoE+ 180W (JG925A)
-  DEVICE_PACKAGES += realtek-poe kmod-hwmon-gpiofan
+  DEVICE_PACKAGES += kmod-hwmon-gpiofan
+  FEED_DEVICE_PACKAGES += realtek-poe
   H3C_DEVICE_ID := 0x00010028
 endef
 TARGET_DEVICES += hpe_1920-24g-poe-180w
@@ -184,7 +188,8 @@ define Device/hpe_1920-24g-poe-370w
   $(Device/hwmon-fan-migration)
   SOC := rtl8382
   DEVICE_MODEL := 1920-24G-PoE+ 370W (JG926A)
-  DEVICE_PACKAGES += realtek-poe kmod-hwmon-gpiofan
+  DEVICE_PACKAGES += kmod-hwmon-gpiofan
+  FEED_DEVICE_PACKAGES += realtek-poe
   H3C_DEVICE_ID := 0x00010029
 endef
 TARGET_DEVICES += hpe_1920-24g-poe-370w
@@ -284,7 +289,7 @@ define Device/netgear_gs110tup-v1
   $(Device/netgear_ngg)
   DEVICE_MODEL := GS110TUP
   DEVICE_VARIANT := v1
-  DEVICE_PACKAGES += realtek-poe
+  FEED_DEVICE_PACKAGES += realtek-poe
 endef
 TARGET_DEVICES += netgear_gs110tup-v1
 
@@ -369,7 +374,7 @@ define Device/tplink_sg2008p-v3
   DEVICE_VENDOR := TP-Link
   DEVICE_MODEL := SG2008P
   DEVICE_VARIANT := v3
-  DEVICE_PACKAGES := i2c-tools
+  FEED_DEVICE_PACKAGES := i2c-tools
 endef
 TARGET_DEVICES += tplink_sg2008p-v3
 
@@ -522,7 +527,7 @@ define Device/zyxel_gs1900-24ep-a1
   DEVICE_VARIANT := A1
   ZYXEL_VERS := ABTO
   SUPPORTED_DEVICES += zyxel,gs1900-24ep
-  DEVICE_PACKAGES += realtek-poe
+  FEED_DEVICE_PACKAGES += realtek-poe
 endef
 TARGET_DEVICES += zyxel_gs1900-24ep-a1
 
@@ -533,7 +538,7 @@ define Device/zyxel_gs1900-24hp-a1
   DEVICE_VARIANT := A1
   ZYXEL_VERS := AAHM
   SUPPORTED_DEVICES += zyxel,gs1900-24hp-v1
-  DEVICE_PACKAGES += realtek-poe
+  FEED_DEVICE_PACKAGES += realtek-poe
 endef
 TARGET_DEVICES += zyxel_gs1900-24hp-a1
 
@@ -544,6 +549,6 @@ define Device/zyxel_gs1900-24hp-b1
   DEVICE_VARIANT := B1
   ZYXEL_VERS := ABTP
   SUPPORTED_DEVICES += zyxel,gs1900-24hp-v2
-  DEVICE_PACKAGES += realtek-poe
+  FEED_DEVICE_PACKAGES += realtek-poe
 endef
 TARGET_DEVICES += zyxel_gs1900-24hp-b1
