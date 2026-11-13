@@ -1142,6 +1142,51 @@ static int otto_tc_setup_qdisc_ets(struct otto_dsa_priv *priv, int port,
 	return (otto_tc_ets_offloaded(pp) || qopt->command == TC_ETS_DESTROY) ? 0 : -EOPNOTSUPP;
 }
 
+static int otto_tc_setup_qdisc_red(struct otto_dsa_priv *priv, int port,
+				   struct tc_red_qopt_offload *qopt)
+{
+	struct rtldsa_port *p = &priv->ports[port];
+	int ret = 0;
+
+	if (!priv->r->red_enable || qopt->parent != TC_H_ROOT)
+		return -EOPNOTSUPP;
+
+	mutex_lock(&priv->reg_mutex);
+
+	switch (qopt->command) {
+	case TC_RED_REPLACE:
+		if (qopt->set.is_ecn)
+			ret = -EOPNOTSUPP;
+		else
+			ret = priv->r->red_enable(priv, port, &qopt->set);
+
+		if (ret)
+			priv->r->red_disable(priv, port);
+
+		p->red_handle = ret ? 0 : qopt->handle;
+		break;
+	case TC_RED_DESTROY:
+		if (p->red_handle != qopt->handle)
+			break;
+
+		priv->r->red_disable(priv, port);
+		p->red_handle = 0;
+		break;
+	case TC_RED_STATS:
+	case TC_RED_XSTATS:
+		if (!(priv->red_ports & BIT_ULL(port)) || p->red_handle != qopt->handle)
+			ret = -EOPNOTSUPP;
+		break;
+	default:
+		ret = -EOPNOTSUPP;
+		break;
+	}
+
+	mutex_unlock(&priv->reg_mutex);
+
+	return ret;
+}
+
 static int otto_tc_setup_qdisc_tbf(struct otto_dsa_priv *priv, int port,
 				   struct tc_tbf_qopt_offload *qopt)
 {
@@ -1215,6 +1260,8 @@ int otto_tc_port_setup_tc(struct dsa_switch *ds, int port, enum tc_setup_type ty
 	struct otto_dsa_priv *priv = ds->priv;
 
 	switch (type) {
+	case TC_SETUP_QDISC_RED:
+		return otto_tc_setup_qdisc_red(priv, port, type_data);
 	case TC_SETUP_QDISC_TBF:
 		return otto_tc_setup_qdisc_tbf(priv, port, type_data);
 	case TC_SETUP_QDISC_ETS:

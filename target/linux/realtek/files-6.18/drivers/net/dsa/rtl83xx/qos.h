@@ -7,6 +7,7 @@
 
 struct dsa_switch;
 struct otto_dsa_priv;
+struct tc_red_qopt_offload_params;
 
 #define RTL930X_PORT_TBL_IDX_CTRL(port)		(0x9B20 + (((port) / 16) * 4))
 #define RTL931X_PORT_TBL_IDX_CTRL(port)		(0x9064 + (((port) / 16) * 4))
@@ -33,6 +34,9 @@ void otto_qos_930x_init(struct otto_dsa_priv *priv);
 void otto_qos_931x_init(struct otto_dsa_priv *priv);
 void otto_qos_930x_queue_sched_set(struct otto_dsa_priv *priv, int port, int queue, u32 weight,
 				   bool strict);
+int otto_qos_930x_red_enable(struct otto_dsa_priv *priv, int port,
+			     const struct tc_red_qopt_offload_params *p);
+void otto_qos_930x_red_disable(struct otto_dsa_priv *priv, int port);
 void otto_qos_queue_sched_reset(struct otto_dsa_priv *priv, int port);
 
 void otto_qos_setup(struct dsa_switch *ds);

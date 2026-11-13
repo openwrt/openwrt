@@ -2,6 +2,7 @@
 
 #include <net/dcbnl.h>
 #include <net/dsa.h>
+#include <net/pkt_cls.h>
 #include <linux/delay.h>
 #include <linux/regmap.h>
 #include <linux/soc/realtek/otto_table.h>
@@ -71,6 +72,21 @@
 #define RTL930X_FC_GLB_FCOFF_LO_THR		(0xD88C)
 #define RTL930X_FC_GLB_THR_ON_MASK		GENMASK(27, 16)
 #define RTL930X_FC_GLB_THR_OFF_MASK		GENMASK(11, 0)
+#define RTL930X_FC_GLB_SYS_UTIL_THR		(0xD878)
+#define RTL930X_FC_GLB_SYS_UTIL_THR_MASK	GENMASK(11, 0)
+
+#define RTL930X_FC_PORT_EGR_DROP_CTRL(port)	(0xC380 + ((port) << 2))
+#define RTL930X_FC_PORT_EGR_DROP_REF_RXCNGST	BIT(1)
+#define RTL930X_SWRED_PORT_CTRL			(0x7A04)
+#define RTL930X_SWRED_QUEUE_DROP_CTRL(queue, dp) \
+						(0x7A08 + ((queue) * 12) + ((dp) << 2))
+#define RTL930X_SWRED_RATE_MASK			GENMASK(31, 24)
+#define RTL930X_SWRED_MAX_MASK			GENMASK(23, 12)
+#define RTL930X_SWRED_MIN_MASK			GENMASK(11, 0)
+#define RTL930X_SWRED_PAGE_SIZE			256
+#define RTL930X_SWRED_RATE_SCALE		1023
+#define RTL930X_SWRED_DROP_PRECEDENCES		3
+#define RTL930X_SWRED_QUEUES			12
 
 #define DSCP_MAP_MAX 64
 
@@ -563,6 +579,58 @@ static void otto_qos_930x_set_fc_thresholds(struct otto_dsa_priv *priv)
 	regmap_update_bits(priv->map, RTL930X_FC_GLB_LO_THR, mask, lo);
 	regmap_update_bits(priv->map, RTL930X_FC_GLB_FCOFF_HI_THR, mask, hi);
 	regmap_update_bits(priv->map, RTL930X_FC_GLB_FCOFF_LO_THR, mask, lo);
+
+	/* egress drop thresholds and RED only act once the buffer holds more pages than this */
+	regmap_update_bits(priv->map, RTL930X_FC_GLB_SYS_UTIL_THR,
+			   RTL930X_FC_GLB_SYS_UTIL_THR_MASK, 1);
+}
+
+int otto_qos_930x_red_enable(struct otto_dsa_priv *priv, int port,
+			     const struct tc_red_qopt_offload_params *p)
+{
+	u32 min = DIV_ROUND_UP(p->min, RTL930X_SWRED_PAGE_SIZE);
+	u32 max = p->max / RTL930X_SWRED_PAGE_SIZE;
+	u64 rate = ((u64)p->probability * RTL930X_SWRED_RATE_SCALE + U32_MAX) >> 32;
+	u32 cfg;
+
+	if (!min || min >= max || max > FIELD_MAX(RTL930X_SWRED_MAX_MASK) ||
+	    !rate || rate > FIELD_MAX(RTL930X_SWRED_RATE_MASK))
+		return -EINVAL;
+
+	cfg = FIELD_PREP(RTL930X_SWRED_RATE_MASK, rate) |
+	      FIELD_PREP(RTL930X_SWRED_MAX_MASK, max) |
+	      FIELD_PREP(RTL930X_SWRED_MIN_MASK, min);
+
+	if ((priv->red_ports & ~BIT_ULL(port)) && cfg != priv->red_cfg) {
+		dev_warn(priv->dev, "port %d: RED parameters differ from the ones in use\n", port);
+		return -EBUSY;
+	}
+
+	for (int queue = 0; queue < RTL930X_SWRED_QUEUES; queue++)
+		for (int dp = 0; dp < RTL930X_SWRED_DROP_PRECEDENCES; dp++)
+			regmap_write(priv->map, RTL930X_SWRED_QUEUE_DROP_CTRL(queue, dp), cfg);
+
+	/* RED only drops while the egress drop stage looks at the egress queue */
+	regmap_clear_bits(priv->map, RTL930X_FC_PORT_EGR_DROP_CTRL(port),
+			  RTL930X_FC_PORT_EGR_DROP_REF_RXCNGST);
+	regmap_set_bits(priv->map, RTL930X_SWRED_PORT_CTRL, BIT(port));
+
+	priv->red_cfg = cfg;
+	priv->red_ports |= BIT_ULL(port);
+
+	return 0;
+}
+
+void otto_qos_930x_red_disable(struct otto_dsa_priv *priv, int port)
+{
+	if (!(priv->red_ports & BIT_ULL(port)))
+		return;
+
+	regmap_clear_bits(priv->map, RTL930X_SWRED_PORT_CTRL, BIT(port));
+	regmap_set_bits(priv->map, RTL930X_FC_PORT_EGR_DROP_CTRL(port),
+			RTL930X_FC_PORT_EGR_DROP_REF_RXCNGST);
+
+	priv->red_ports &= ~BIT_ULL(port);
 }
 
 void otto_qos_930x_init(struct otto_dsa_priv *priv)
