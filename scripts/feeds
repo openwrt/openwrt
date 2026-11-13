@@ -726,10 +726,15 @@ sub install {
 	if($opts{a}) {
 		foreach my $f (@feeds) {
 			if (!defined($opts{p}) or $opts{p} eq $f->[1]) {
-				printf "Installing all packages from feed %s.\n", $f->[1];
+				printf "Installing all packages and targets from feed %s.\n", $f->[1];
 				get_feed($f->[1]);
 				foreach my $name (sort { lc($a) cmp lc($b) } keys %$feed_src) {
 					install_src($feed, $name, exists($opts{f})) == 0 or $ret = 1;
+					get_feed($f->[1]);
+				}
+				foreach my $name (sort { lc($a) cmp lc($b) } keys %$feed_target) {
+					next if $feed_target->{$name}{subtarget};
+					install_target($feed, $name, exists($opts{f})) == 0 or $ret = 1;
 					get_feed($f->[1]);
 				}
 			}
@@ -927,7 +932,7 @@ Commands:
 
 	install [options] <package>: Install a package
 	Options:
-	    -a :           Install all packages from all feeds or from the specified feed using the -p option.
+	    -a :           Install all packages and targets from all feeds or from the specified feed using the -p option.
 	    -p <feedname>: Prefer this feed when installing packages.
 	    -d <y|m|n>:    Set default for newly installed packages.
 	    -f :           Install will be forced even if the package exists in core OpenWrt (override)
