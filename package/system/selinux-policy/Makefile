@@ -14,7 +14,6 @@ PKG_SOURCE_VERSION:=v$(PKG_VERSION)
 PKG_BUILD_DEPENDS:=secilc/host policycoreutils/host
 
 PKG_MAINTAINER:=Dominick Grift <dominick.grift@defensec.nl>
-PKG_CPE_ID:=cpe:/a:defensec:selinux-policy
 PKG_LICENSE:=Unlicense
 PKG_LICENSE_FILES:=LICENSE
 
