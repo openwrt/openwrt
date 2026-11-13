@@ -112,8 +112,14 @@ static int jffs2_find_file(struct mtd_info *mtd, uint8_t *buf,
 				    OPENWRT_NAME_LEN)) {
 				valid = true;
 			} else if (!memcmp(node->name, name, name_len)) {
+				/*
+				 * Not an OpenWrt image (e.g. the stock firmware
+				 * in the other slot of a dual-image board):
+				 * -ENOENT lets the MTD core skip this partition
+				 * instead of deleting all partitions.
+				 */
 				if (!valid)
-					return -EINVAL;
+					return -ENOENT;
 
 				if (out_name)
 					*out_name = kstrndup(node->name,
