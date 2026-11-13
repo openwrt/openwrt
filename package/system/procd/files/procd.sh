@@ -12,6 +12,7 @@
 # procd_set_param(type, [value...])
 #   Available types:
 #     command: command line (array).
+#     workdir: working directory
 #     respawn info: array with 3 values $fail_threshold $restart_timeout $max_fail
 #     env: environment variable (passed to the process)
 #     data: arbitrary name/value pairs for detecting config changes (table)
@@ -265,7 +266,7 @@ _procd_set_param() {
 			json_add_int "$type" $(kill -l "$1")
 		;;
 		pidfile|user|group|seccomp|capabilities|facility|\
-		extroot|overlaydir|tmpoverlaysize|vrf)
+		extroot|overlaydir|tmpoverlaysize|vrf|workdir)
 			json_add_string "$type" "$1"
 		;;
 		stdout|stderr|no_new_privs)
