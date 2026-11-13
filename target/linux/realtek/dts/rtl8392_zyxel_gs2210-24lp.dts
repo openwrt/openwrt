@@ -1,0 +1,34 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
+
+#include "rtl839x_zyxel_gs1920-24hp-common.dtsi"
+#include "rtl8392_zyxel_gs1920-24-v1-common.dtsi"
+
+/ {
+	compatible = "zyxel,gs2210-24lp", "realtek,rtl8392-soc";
+	model = "Zyxel GS2210-24LP";
+
+	aliases {
+		label-mac-device = &ethernet0;
+	};
+
+	poe_supply: supply-poe {
+		compatible = "regulator-fixed";
+		regulator-name = "poe-supply";
+		regulator-always-on;
+		regulator-boot-on;
+
+		regulator-power-budget-milliwatt = <180000>;
+	};
+};
+
+&i2c4 {
+	adt7463: adt7463@2e {
+		compatible = "adi,adt7463";
+		reg = <0x2e>;
+	};
+};
+
+&pse {
+	compatible = "zyxel,gs2210-24lp-pse", "realtek,pse-mcu-gen1-smbus";
+	vmain-supply = <&poe_supply>;
+};
