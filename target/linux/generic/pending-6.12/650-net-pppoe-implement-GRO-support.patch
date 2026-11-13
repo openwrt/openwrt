@@ -213,7 +213,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	unregister_pernet_device(&pppoe_net_ops);
 --- a/net/ipv4/af_inet.c
 +++ b/net/ipv4/af_inet.c
-@@ -1546,6 +1546,7 @@ out:
+@@ -1549,6 +1549,7 @@ out:
  
  	return pp;
  }
@@ -221,7 +221,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  static struct sk_buff *ipip_gro_receive(struct list_head *head,
  					struct sk_buff *skb)
-@@ -1631,6 +1632,7 @@ int inet_gro_complete(struct sk_buff *sk
+@@ -1634,6 +1635,7 @@ int inet_gro_complete(struct sk_buff *sk
  out:
  	return err;
  }
@@ -231,7 +231,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  {
 --- a/net/ipv6/ip6_offload.c
 +++ b/net/ipv6/ip6_offload.c
-@@ -306,6 +306,7 @@ out:
+@@ -310,6 +310,7 @@ out:
  
  	return pp;
  }
@@ -239,7 +239,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  static struct sk_buff *sit_ip6ip6_gro_receive(struct list_head *head,
  					      struct sk_buff *skb)
-@@ -387,6 +388,7 @@ INDIRECT_CALLABLE_SCOPE int ipv6_gro_com
+@@ -391,6 +392,7 @@ INDIRECT_CALLABLE_SCOPE int ipv6_gro_com
  out:
  	return err;
  }

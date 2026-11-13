@@ -45,7 +45,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  	MIB_DESC(1, 0xb0, "RxCtrlDrop"),
  	MIB_DESC(1, 0xb4, "RxIngressDrop"),
  	MIB_DESC(1, 0xb8, "RxArlDrop"),
-@@ -792,6 +778,61 @@ mt7530_get_sset_count(struct dsa_switch
+@@ -808,6 +794,61 @@ mt7530_get_sset_count(struct dsa_switch
  	return ARRAY_SIZE(mt7530_mib);
  }
  
@@ -107,7 +107,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  static const struct ethtool_rmon_hist_range mt7530_rmon_ranges[] = {
  	{ 0, 64 },
  	{ 65, 127 },
-@@ -3221,6 +3262,7 @@ const struct dsa_switch_ops mt7530_switc
+@@ -3243,6 +3284,7 @@ const struct dsa_switch_ops mt7530_switc
  	.get_strings		= mt7530_get_strings,
  	.get_ethtool_stats	= mt7530_get_ethtool_stats,
  	.get_sset_count		= mt7530_get_sset_count,

@@ -30,7 +30,7 @@ Signed-off-by: João Mário Domingos <joao.mario@tecnico.ulisboa.pt>
 
 --- a/drivers/perf/riscv_pmu_sbi.c
 +++ b/drivers/perf/riscv_pmu_sbi.c
-@@ -1364,6 +1364,46 @@ static struct ctl_table sbi_pmu_sysctl_t
+@@ -1372,6 +1372,46 @@ static struct ctl_table sbi_pmu_sysctl_t
  	},
  };
  
@@ -77,17 +77,17 @@ Signed-off-by: João Mário Domingos <joao.mario@tecnico.ulisboa.pt>
  static int pmu_sbi_device_probe(struct platform_device *pdev)
  {
  	struct riscv_pmu *pmu = NULL;
-@@ -1413,6 +1453,13 @@ static int pmu_sbi_device_probe(struct p
+@@ -1423,6 +1463,13 @@ static int pmu_sbi_device_probe(struct p
  	pmu->event_unmapped = pmu_sbi_event_unmapped;
  	pmu->csr_index = pmu_sbi_csr_index;
  
 +	ret = sysfs_create_group(&pdev->dev.kobj, &pmu_sbi_group);
 +	if (ret) {
 +		dev_err(&pdev->dev, "sysfs creation failed\n");
-+		return ret;
++		goto out_destroy;
 +	}
 +	pdev->dev.groups = pmu_sbi_groups;
 +
  	ret = riscv_pm_pmu_register(pmu);
  	if (ret)
- 		goto out_unregister;
+ 		goto out_destroy;
