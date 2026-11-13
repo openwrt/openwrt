@@ -1,0 +1,75 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Tue, 21 Oct 2025 12:17:33 +0100
+Subject: [PATCH] net: dsa: lantiq_gswip: harmonize gswip_mii_mask_*()
+ parameters
+
+The 'clear' parameter of gswip_mii_mask_cfg() and gswip_mii_mask_pcdu()
+is inconsistent with the semantics of regmap_write_bits() which also
+applies the mask to the value to be written.
+Change the semantic mask/set of the functions gswip_mii_mask_cfg() and
+gswip_mii_mask_pcdu() to follow the regmap_write_bits() pattern.
+
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+Acked-by; Hauke Mehrtens <hauke@hauke-m.de>:
+Acked-by; Hauke Mehrtens <hauke@hauke-m.de>:
+Link: https://patch.msgid.link/218854236c97a152af071852bda83d02ff2dd918.1761045000.git.daniel@makrotopia.org
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ drivers/net/dsa/lantiq/lantiq_gswip.c | 17 +++++++----------
+ 1 file changed, 7 insertions(+), 10 deletions(-)
+
+--- a/drivers/net/dsa/lantiq/lantiq_gswip.c
++++ b/drivers/net/dsa/lantiq/lantiq_gswip.c
+@@ -120,7 +120,7 @@ static u32 gswip_switch_r_timeout(struct
+ 					!(val & cleared), 20, 50000);
+ }
+ 
+-static void gswip_mii_mask_cfg(struct gswip_priv *priv, u32 clear, u32 set,
++static void gswip_mii_mask_cfg(struct gswip_priv *priv, u32 mask, u32 set,
+ 			       int port)
+ {
+ 	int reg_port;
+@@ -131,11 +131,11 @@ static void gswip_mii_mask_cfg(struct gs
+ 
+ 	reg_port = port + priv->hw_info->mii_port_reg_offset;
+ 
+-	regmap_write_bits(priv->mii, GSWIP_MII_CFGp(reg_port), clear | set,
++	regmap_write_bits(priv->mii, GSWIP_MII_CFGp(reg_port), mask,
+ 			  set);
+ }
+ 
+-static void gswip_mii_mask_pcdu(struct gswip_priv *priv, u32 clear, u32 set,
++static void gswip_mii_mask_pcdu(struct gswip_priv *priv, u32 mask, u32 set,
+ 				int port)
+ {
+ 	int reg_port;
+@@ -148,16 +148,13 @@ static void gswip_mii_mask_pcdu(struct g
+ 
+ 	switch (reg_port) {
+ 	case 0:
+-		regmap_write_bits(priv->mii, GSWIP_MII_PCDU0, clear | set,
+-				  set);
++		regmap_write_bits(priv->mii, GSWIP_MII_PCDU0, mask, set);
+ 		break;
+ 	case 1:
+-		regmap_write_bits(priv->mii, GSWIP_MII_PCDU1, clear | set,
+-				  set);
++		regmap_write_bits(priv->mii, GSWIP_MII_PCDU1, mask, set);
+ 		break;
+ 	case 5:
+-		regmap_write_bits(priv->mii, GSWIP_MII_PCDU5, clear | set,
+-				  set);
++		regmap_write_bits(priv->mii, GSWIP_MII_PCDU5, mask, set);
+ 		break;
+ 	}
+ }
+@@ -1501,7 +1498,7 @@ static void gswip_phylink_mac_link_up(st
+ 		gswip_port_set_pause(priv, port, tx_pause, rx_pause);
+ 	}
+ 
+-	gswip_mii_mask_cfg(priv, 0, GSWIP_MII_CFG_EN, port);
++	gswip_mii_mask_cfg(priv, GSWIP_MII_CFG_EN, GSWIP_MII_CFG_EN, port);
+ }
+ 
+ static void gswip_get_strings(struct dsa_switch *ds, int port, u32 stringset,

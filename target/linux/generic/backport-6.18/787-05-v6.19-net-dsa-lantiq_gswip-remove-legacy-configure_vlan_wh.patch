@@ -1,0 +1,137 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Vladimir Oltean <vladimir.oltean@nxp.com>
+Date: Wed, 15 Oct 2025 23:32:50 +0100
+Subject: [PATCH] net: dsa: lantiq_gswip: remove legacy
+ configure_vlan_while_not_filtering option
+
+This driver doesn't support dynamic VLAN filtering changes, for simplicity.
+It expects that on a port, either gswip_vlan_add_unaware() or
+gswip_vlan_add_aware() is called, but not both.
+
+When !br_vlan_enabled(), the configure_vlan_while_not_filtering = false
+option is exactly what will prevent calls to gswip_port_vlan_add() from
+being issued by DSA.
+
+In fact, at the time these features were submitted:
+https://patchwork.ozlabs.org/project/netdev/patch/20190501204506.21579-3-hauke@hauke-m.de/
+"configure_vlan_while_not_filtering = false" did not even have a name,
+it was implicit behaviour. It only became legacy in commit 54a0ed0df496
+("net: dsa: provide an option for drivers to always receive bridge
+VLANs").
+
+Section "Bridge VLAN filtering" of Documentation/networking/switchdev.rst
+describes the exact set of rules. Notably, the PVID of the port must
+follow the VLAN awareness state of the bridge port. A VLAN-unaware
+bridge port should not respond to the addition of a bridge VLAN with the
+PVID flag. In fact, the pvid_change() test in
+tools/testing/selftests/net/forwarding/bridge_vlan_unaware.sh tests
+exactly this.
+
+The lantiq_gswip driver indeed does not respond to the addition of PVID
+VLANs while VLAN-unaware in the way described above, but only because of
+configure_vlan_while_not_filtering. Our purpose here is to get rid of
+configure_vlan_while_not_filtering, so we must add more complex logic
+which follows the VLAN awareness state and walks through the Active VLAN
+table entries, to find the index of the PVID register that should be
+committed to hardware on each port.
+
+As a side-effect of now having a proper implementation to assign the
+PVID all the "VLAN upper: ..." tests of the local_termination.sh self-
+tests which would previously all FAIL now all PASS (or XFAIL, but
+that's ok).
+
+Signed-off-by: Vladimir Oltean <vladimir.oltean@nxp.com>
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+Tested-by: Daniel Golle <daniel@makrotopia.org>
+Link: https://patch.msgid.link/47dab8a8b69ebb92624b9795b723114475d3fe4e.1760566491.git.daniel@makrotopia.org
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ drivers/net/dsa/lantiq/lantiq_gswip.c | 49 +++++++++++++++++++++++----
+ 1 file changed, 43 insertions(+), 6 deletions(-)
+
+--- a/drivers/net/dsa/lantiq/lantiq_gswip.c
++++ b/drivers/net/dsa/lantiq/lantiq_gswip.c
+@@ -547,6 +547,45 @@ static int gswip_pce_load_microcode(stru
+ 	return 0;
+ }
+ 
++static void gswip_port_commit_pvid(struct gswip_priv *priv, int port)
++{
++	struct dsa_port *dp = dsa_to_port(priv->ds, port);
++	struct net_device *br = dsa_port_bridge_dev_get(dp);
++	int idx;
++
++	if (!dsa_port_is_user(dp))
++		return;
++
++	if (br) {
++		u16 pvid = GSWIP_VLAN_UNAWARE_PVID;
++
++		if (br_vlan_enabled(br))
++			br_vlan_get_pvid(br, &pvid);
++
++		/* VLAN-aware bridge ports with no PVID will use Active VLAN
++		 * index 0. The expectation is that this drops all untagged and
++		 * VID-0 tagged ingress traffic.
++		 */
++		idx = 0;
++		for (int i = priv->hw_info->max_ports;
++		     i < ARRAY_SIZE(priv->vlans); i++) {
++			if (priv->vlans[i].bridge == br &&
++			    priv->vlans[i].vid == pvid) {
++				idx = i;
++				break;
++			}
++		}
++	} else {
++		/* The Active VLAN table index as configured by
++		 * gswip_add_single_port_br()
++		 */
++		idx = port + 1;
++	}
++
++	/* GSWIP 2.2 (GRX300) and later program here the VID directly. */
++	gswip_switch_w(priv, idx, GSWIP_PCE_DEFPVID(port));
++}
++
+ static int gswip_port_vlan_filtering(struct dsa_switch *ds, int port,
+ 				     bool vlan_filtering,
+ 				     struct netlink_ext_ack *extack)
+@@ -581,6 +620,8 @@ static int gswip_port_vlan_filtering(str
+ 				  GSWIP_PCE_PCTRL_0p(port));
+ 	}
+ 
++	gswip_port_commit_pvid(priv, port);
++
+ 	return 0;
+ }
+ 
+@@ -677,8 +718,6 @@ static int gswip_setup(struct dsa_switch
+ 
+ 	ds->mtu_enforcement_ingress = true;
+ 
+-	ds->configure_vlan_while_not_filtering = false;
+-
+ 	return 0;
+ }
+ 
+@@ -819,7 +858,7 @@ static int gswip_vlan_add(struct gswip_p
+ 		return err;
+ 	}
+ 
+-	gswip_switch_w(priv, vlan_aware ? idx : 0, GSWIP_PCE_DEFPVID(port));
++	gswip_port_commit_pvid(priv, port);
+ 
+ 	return 0;
+ }
+@@ -874,9 +913,7 @@ static int gswip_vlan_remove(struct gswi
+ 		}
+ 	}
+ 
+-	/* GSWIP 2.2 (GRX300) and later program here the VID directly. */
+-	if (pvid)
+-		gswip_switch_w(priv, 0, GSWIP_PCE_DEFPVID(port));
++	gswip_port_commit_pvid(priv, port);
+ 
+ 	return 0;
+ }

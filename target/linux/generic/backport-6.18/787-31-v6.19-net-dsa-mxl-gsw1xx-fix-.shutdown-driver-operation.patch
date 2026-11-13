@@ -1,0 +1,67 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Tue, 9 Dec 2025 01:29:05 +0000
+Subject: [PATCH] net: dsa: mxl-gsw1xx: fix .shutdown driver operation
+
+The .shutdown operation should call dsa_switch_shutdown() just like
+it is done also by the sibling lantiq_gswip driver. Not doing that
+results in shutdown or reboot hanging and waiting for the CPU port
+becoming free, which introduces a longer delay and a WARNING before
+shutdown or reboot in case the driver is built-into the kernel.
+Fix this by calling dsa_switch_shutdown() in the driver's shutdown
+operation, harmonizing it with what is done in the lantiq_gswip
+driver. As a side-effect this now allows to remove the previously
+exported gswip_disable_switch() function which no longer got any
+users.
+
+Fixes: 22335939ec907 ("net: dsa: add driver for MaxLinear GSW1xx switch family")
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+Link: https://patch.msgid.link/77ed91a5206e5dbf5d3e83d7e364ebfda90d31fd.1765241054.git.daniel@makrotopia.org
+Reviewed-by: Vladimir Oltean <olteanv@gmail.com>
+Signed-off-by: Paolo Abeni <pabeni@redhat.com>
+---
+ drivers/net/dsa/lantiq/lantiq_gswip.h        | 2 --
+ drivers/net/dsa/lantiq/lantiq_gswip_common.c | 6 ------
+ drivers/net/dsa/lantiq/mxl-gsw1xx.c          | 4 ++--
+ 3 files changed, 2 insertions(+), 10 deletions(-)
+
+--- a/drivers/net/dsa/lantiq/lantiq_gswip.h
++++ b/drivers/net/dsa/lantiq/lantiq_gswip.h
+@@ -294,8 +294,6 @@ struct gswip_priv {
+ 	u16 version;
+ };
+ 
+-void gswip_disable_switch(struct gswip_priv *priv);
+-
+ int gswip_probe_common(struct gswip_priv *priv, u32 version);
+ 
+ #endif /* __LANTIQ_GSWIP_H */
+--- a/drivers/net/dsa/lantiq/lantiq_gswip_common.c
++++ b/drivers/net/dsa/lantiq/lantiq_gswip_common.c
+@@ -1662,12 +1662,6 @@ static const struct dsa_switch_ops gswip
+ 	.support_eee		= gswip_support_eee,
+ };
+ 
+-void gswip_disable_switch(struct gswip_priv *priv)
+-{
+-	regmap_clear_bits(priv->mdio, GSWIP_MDIO_GLOB, GSWIP_MDIO_GLOB_ENABLE);
+-}
+-EXPORT_SYMBOL_GPL(gswip_disable_switch);
+-
+ static int gswip_validate_cpu_port(struct dsa_switch *ds)
+ {
+ 	struct gswip_priv *priv = ds->priv;
+--- a/drivers/net/dsa/lantiq/mxl-gsw1xx.c
++++ b/drivers/net/dsa/lantiq/mxl-gsw1xx.c
+@@ -662,9 +662,9 @@ static void gsw1xx_shutdown(struct mdio_
+ 	if (!priv)
+ 		return;
+ 
+-	dev_set_drvdata(&mdiodev->dev, NULL);
++	dsa_switch_shutdown(priv->ds);
+ 
+-	gswip_disable_switch(priv);
++	dev_set_drvdata(&mdiodev->dev, NULL);
+ }
+ 
+ static const struct gswip_hw_info gsw12x_data = {

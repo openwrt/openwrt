@@ -1,0 +1,185 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Tue, 21 Oct 2025 12:16:58 +0100
+Subject: [PATCH] net: dsa: lantiq_gswip: manually convert remaining uses
+ of read accessors
+
+Manually convert the remaining uses of the read accessor functions and
+remove them now that they are unused.
+
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+Acked-by; Hauke Mehrtens <hauke@hauke-m.de>:
+Acked-by; Hauke Mehrtens <hauke@hauke-m.de>:
+Link: https://patch.msgid.link/0e2a44b83131b40fc1ee558ed1f536c26e1232ba.1761045000.git.daniel@makrotopia.org
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ drivers/net/dsa/lantiq/lantiq_gswip.c | 78 +++++++++++++--------------
+ 1 file changed, 38 insertions(+), 40 deletions(-)
+
+--- a/drivers/net/dsa/lantiq/lantiq_gswip.c
++++ b/drivers/net/dsa/lantiq/lantiq_gswip.c
+@@ -111,15 +111,6 @@ static const struct gswip_rmon_cnt_desc
+ 	MIB_DESC(2, 0x0E, "TxGoodBytes"),
+ };
+ 
+-static u32 gswip_switch_r(struct gswip_priv *priv, u32 offset)
+-{
+-	u32 val;
+-
+-	regmap_read(priv->gswip, offset, &val);
+-
+-	return val;
+-}
+-
+ static void gswip_switch_mask(struct gswip_priv *priv, u32 clear, u32 set,
+ 			      u32 offset)
+ {
+@@ -135,15 +126,6 @@ static u32 gswip_switch_r_timeout(struct
+ 					!(val & cleared), 20, 50000);
+ }
+ 
+-static u32 gswip_mdio_r(struct gswip_priv *priv, u32 offset)
+-{
+-	u32 val;
+-
+-	regmap_read(priv->mdio, offset, &val);
+-
+-	return val;
+-}
+-
+ static void gswip_mdio_mask(struct gswip_priv *priv, u32 clear, u32 set,
+ 			    u32 offset)
+ {
+@@ -225,6 +207,7 @@ static int gswip_mdio_wr(struct mii_bus
+ static int gswip_mdio_rd(struct mii_bus *bus, int addr, int reg)
+ {
+ 	struct gswip_priv *priv = bus->priv;
++	u32 val;
+ 	int err;
+ 
+ 	err = gswip_mdio_poll(priv);
+@@ -244,7 +227,11 @@ static int gswip_mdio_rd(struct mii_bus
+ 		return err;
+ 	}
+ 
+-	return gswip_mdio_r(priv, GSWIP_MDIO_READ);
++	err = regmap_read(priv->mdio, GSWIP_MDIO_READ, &val);
++	if (err)
++		return err;
++
++	return val;
+ }
+ 
+ static int gswip_mdio(struct gswip_priv *priv)
+@@ -287,7 +274,8 @@ static int gswip_pce_table_entry_read(st
+ {
+ 	int i;
+ 	int err;
+-	u16 crtl;
++	u32 crtl;
++	u32 tmp;
+ 	u16 addr_mode = tbl->key_mode ? GSWIP_PCE_TBL_CTRL_OPMOD_KSRD :
+ 					GSWIP_PCE_TBL_CTRL_OPMOD_ADRD;
+ 
+@@ -295,10 +283,8 @@ static int gswip_pce_table_entry_read(st
+ 
+ 	err = gswip_switch_r_timeout(priv, GSWIP_PCE_TBL_CTRL,
+ 				     GSWIP_PCE_TBL_CTRL_BAS);
+-	if (err) {
+-		mutex_unlock(&priv->pce_table_lock);
+-		return err;
+-	}
++	if (err)
++		goto out_unlock;
+ 
+ 	regmap_write(priv->gswip, GSWIP_PCE_TBL_ADDR, tbl->index);
+ 	gswip_switch_mask(priv, GSWIP_PCE_TBL_CTRL_ADDR_MASK |
+@@ -308,28 +294,39 @@ static int gswip_pce_table_entry_read(st
+ 
+ 	err = gswip_switch_r_timeout(priv, GSWIP_PCE_TBL_CTRL,
+ 				     GSWIP_PCE_TBL_CTRL_BAS);
+-	if (err) {
+-		mutex_unlock(&priv->pce_table_lock);
+-		return err;
+-	}
+-
+-	for (i = 0; i < ARRAY_SIZE(tbl->key); i++)
+-		tbl->key[i] = gswip_switch_r(priv, GSWIP_PCE_TBL_KEY(i));
++	if (err)
++		goto out_unlock;
+ 
+-	for (i = 0; i < ARRAY_SIZE(tbl->val); i++)
+-		tbl->val[i] = gswip_switch_r(priv, GSWIP_PCE_TBL_VAL(i));
++	for (i = 0; i < ARRAY_SIZE(tbl->key); i++) {
++		err = regmap_read(priv->gswip, GSWIP_PCE_TBL_KEY(i), &tmp);
++		if (err)
++			goto out_unlock;
++		tbl->key[i] = tmp;
++	}
++	for (i = 0; i < ARRAY_SIZE(tbl->val); i++) {
++		err = regmap_read(priv->gswip, GSWIP_PCE_TBL_VAL(i), &tmp);
++		if (err)
++			goto out_unlock;
++		tbl->val[i] = tmp;
++	}
+ 
+-	tbl->mask = gswip_switch_r(priv, GSWIP_PCE_TBL_MASK);
++	err = regmap_read(priv->gswip, GSWIP_PCE_TBL_MASK, &tmp);
++	if (err)
++		goto out_unlock;
+ 
+-	crtl = gswip_switch_r(priv, GSWIP_PCE_TBL_CTRL);
++	tbl->mask = tmp;
++	err = regmap_read(priv->gswip, GSWIP_PCE_TBL_CTRL, &crtl);
++	if (err)
++		goto out_unlock;
+ 
+ 	tbl->type = !!(crtl & GSWIP_PCE_TBL_CTRL_TYPE);
+ 	tbl->valid = !!(crtl & GSWIP_PCE_TBL_CTRL_VLD);
+ 	tbl->gmap = (crtl & GSWIP_PCE_TBL_CTRL_GMAP_MASK) >> 7;
+ 
++out_unlock:
+ 	mutex_unlock(&priv->pce_table_lock);
+ 
+-	return 0;
++	return err;
+ }
+ 
+ static int gswip_pce_table_entry_write(struct gswip_priv *priv,
+@@ -337,7 +334,7 @@ static int gswip_pce_table_entry_write(s
+ {
+ 	int i;
+ 	int err;
+-	u16 crtl;
++	u32 crtl;
+ 	u16 addr_mode = tbl->key_mode ? GSWIP_PCE_TBL_CTRL_OPMOD_KSWR :
+ 					GSWIP_PCE_TBL_CTRL_OPMOD_ADWR;
+ 
+@@ -369,7 +366,7 @@ static int gswip_pce_table_entry_write(s
+ 
+ 	regmap_write(priv->gswip, GSWIP_PCE_TBL_MASK, tbl->mask);
+ 
+-	crtl = gswip_switch_r(priv, GSWIP_PCE_TBL_CTRL);
++	regmap_read(priv->gswip, GSWIP_PCE_TBL_CTRL, &crtl);
+ 	crtl &= ~(GSWIP_PCE_TBL_CTRL_TYPE | GSWIP_PCE_TBL_CTRL_VLD |
+ 		  GSWIP_PCE_TBL_CTRL_GMAP_MASK);
+ 	if (tbl->type)
+@@ -1525,7 +1522,7 @@ static void gswip_get_strings(struct dsa
+ static u32 gswip_bcm_ram_entry_read(struct gswip_priv *priv, u32 table,
+ 				    u32 index)
+ {
+-	u32 result;
++	u32 result, val;
+ 	int err;
+ 
+ 	regmap_write(priv->gswip, GSWIP_BM_RAM_ADDR, index);
+@@ -1543,7 +1540,8 @@ static u32 gswip_bcm_ram_entry_read(stru
+ 	}
+ 
+ 	regmap_read(priv->gswip, GSWIP_BM_RAM_VAL(0), &result);
+-	result |= gswip_switch_r(priv, GSWIP_BM_RAM_VAL(1)) << 16;
++	regmap_read(priv->gswip, GSWIP_BM_RAM_VAL(1), &val);
++	result |= val << 16;
+ 
+ 	return result;
+ }

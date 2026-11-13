@@ -1,0 +1,30 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Mon, 3 Nov 2025 12:19:47 +0000
+Subject: [PATCH] net: dsa: lantiq_gswip: add vendor property to setup
+ MII refclk output
+
+Read boolean Device Tree property "maxlinear,rmii-refclk-out" and switch
+the RMII reference clock to be a clock output rather than an input if it
+is set.
+
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+Reviewed-by: Alexander Sverdlin <alexander.sverdlin@siemens.com>
+Tested-by: Alexander Sverdlin <alexander.sverdlin@siemens.com>
+Link: https://patch.msgid.link/947d14970f74f760e4a60c777aabee64e7e4f356.1762170107.git.daniel@makrotopia.org
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ drivers/net/dsa/lantiq/lantiq_gswip_common.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+--- a/drivers/net/dsa/lantiq/lantiq_gswip_common.c
++++ b/drivers/net/dsa/lantiq/lantiq_gswip_common.c
+@@ -1402,6 +1402,8 @@ static void gswip_phylink_mac_config(str
+ 		break;
+ 	case PHY_INTERFACE_MODE_RMII:
+ 		miicfg |= GSWIP_MII_CFG_MODE_RMIIM;
++		if (of_property_read_bool(dp->dn, "maxlinear,rmii-refclk-out"))
++			miicfg |= GSWIP_MII_CFG_RMII_CLK;
+ 		break;
+ 	case PHY_INTERFACE_MODE_RGMII:
+ 	case PHY_INTERFACE_MODE_RGMII_ID:

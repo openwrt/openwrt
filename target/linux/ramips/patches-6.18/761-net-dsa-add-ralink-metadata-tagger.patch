@@ -28,16 +28,16 @@ Signed-off-by: Gleb Pesin <dormancygrace@gmail.com>
 
 --- a/include/net/dsa.h
 +++ b/include/net/dsa.h
-@@ -60,6 +60,7 @@ struct tc_action;
- #define DSA_TAG_PROTO_YT921X_VALUE		32
- #define DSA_TAG_PROTO_YT922X_VALUE		33
- #define DSA_TAG_PROTO_YT922X_4B_VALUE		34
-+#define DSA_TAG_PROTO_RALINK_VALUE		35
+@@ -61,6 +61,7 @@ struct tc_action;
+ #define DSA_TAG_PROTO_MXL862_8021Q_VALUE	33
+ #define DSA_TAG_PROTO_YT922X_VALUE		34
+ #define DSA_TAG_PROTO_YT922X_4B_VALUE		35
++#define DSA_TAG_PROTO_RALINK_VALUE		36
  
  enum dsa_tag_protocol {
  	DSA_TAG_PROTO_NONE		= DSA_TAG_PROTO_NONE_VALUE,
-@@ -97,6 +98,7 @@ enum dsa_tag_protocol {
- 	DSA_TAG_PROTO_YT921X		= DSA_TAG_PROTO_YT921X_VALUE,
+@@ -99,6 +100,7 @@ enum dsa_tag_protocol {
+ 	DSA_TAG_PROTO_MXL862_8021Q	= DSA_TAG_PROTO_MXL862_8021Q_VALUE,
  	DSA_TAG_PROTO_YT922X		= DSA_TAG_PROTO_YT922X_VALUE,
  	DSA_TAG_PROTO_YT922X_4B		= DSA_TAG_PROTO_YT922X_4B_VALUE,
 +	DSA_TAG_PROTO_RALINK		= DSA_TAG_PROTO_RALINK_VALUE,
@@ -46,7 +46,7 @@ Signed-off-by: Gleb Pesin <dormancygrace@gmail.com>
  struct dsa_switch;
 --- a/net/dsa/Kconfig
 +++ b/net/dsa/Kconfig
-@@ -151,6 +151,16 @@ config NET_DSA_TAG_QCA
+@@ -159,6 +159,16 @@ config NET_DSA_TAG_QCA
  	  Say Y or M if you want to enable support for tagging frames for
  	  the Qualcomm Atheros QCA8K switches.
  
@@ -65,7 +65,7 @@ Signed-off-by: Gleb Pesin <dormancygrace@gmail.com>
  	help
 --- a/net/dsa/Makefile
 +++ b/net/dsa/Makefile
-@@ -34,6 +34,7 @@ obj-$(CONFIG_NET_DSA_TAG_NONE) += tag_no
+@@ -35,6 +35,7 @@ obj-$(CONFIG_NET_DSA_TAG_NONE) += tag_no
  obj-$(CONFIG_NET_DSA_TAG_OCELOT) += tag_ocelot.o
  obj-$(CONFIG_NET_DSA_TAG_OCELOT_8021Q) += tag_ocelot_8021q.o
  obj-$(CONFIG_NET_DSA_TAG_QCA) += tag_qca.o
