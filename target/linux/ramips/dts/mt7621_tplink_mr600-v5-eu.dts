@@ -1,0 +1,280 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "mt7621.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+
+/ {
+	compatible = "tplink,mr600-v5-eu", "mediatek,mt7621-soc";
+	model = "TP-Link Archer MR600 v5 (EU)";
+
+	aliases {
+		label-mac-device = &gmac0;
+		led-boot = &led_power;
+		led-failsafe = &led_power;
+		led-running = &led_power;
+		led-upgrade = &led_power;
+	};
+
+	chosen {
+		bootargs-override = "console=ttyS0,115200";
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_power: led-0 {
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_WHITE>;
+			gpios = <&gpio 6 GPIO_ACTIVE_LOW>;
+		};
+
+		led-1 {
+			function = LED_FUNCTION_WAN;
+			color = <LED_COLOR_ID_WHITE>;
+			gpios = <&gpio 8 GPIO_ACTIVE_LOW>;
+		};
+
+		led-2 {
+			function = LED_FUNCTION_MOBILE;
+			color = <LED_COLOR_ID_WHITE>;
+			gpios = <&gpio 18 GPIO_ACTIVE_LOW>;
+		};
+
+		led-3 {
+			function = LED_FUNCTION_WLAN;
+			color = <LED_COLOR_ID_WHITE>;
+			gpios = <&gpio 16 GPIO_ACTIVE_LOW>;
+		};
+
+		led-4 {
+			function = LED_FUNCTION_LAN;
+			color = <LED_COLOR_ID_WHITE>;
+			gpios = <&gpio 15 GPIO_ACTIVE_LOW>;
+		};
+
+		led-5 {
+			function = "signal";
+			function-enumerator = <1>;
+			color = <LED_COLOR_ID_WHITE>;
+			gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
+		};
+
+		led-6 {
+			function = "signal";
+			function-enumerator = <2>;
+			color = <LED_COLOR_ID_WHITE>;
+			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
+		};
+
+		led-7 {
+			function = "signal";
+			function-enumerator = <3>;
+			color = <LED_COLOR_ID_WHITE>;
+			gpios = <&gpio 10 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		key-wlan {
+			label = "wlan";
+			gpios = <&gpio 3 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_WLAN>;
+		};
+
+		key-reset {
+			label = "reset";
+			gpios = <&gpio 4 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+	};
+};
+
+&gpio {
+	lte-power-hog {
+		gpio-hog;
+		gpios = <9 GPIO_ACTIVE_HIGH>;
+		output-high;
+		line-name = "lte-power";
+	};
+
+	lte-download-hog {
+		gpio-hog;
+		gpios = <5 GPIO_ACTIVE_HIGH>;
+		output-low;
+		line-name = "lte-download";
+	};
+};
+
+&nand {
+	status = "okay";
+
+	/*
+	 * The chip reports 128 bytes of OOB, but the stock U-Boot uses 64 bytes
+	 * (4-bit ECC), and it has to read the kernel written by OpenWrt.
+	 */
+	mediatek,oob-size = <64>;
+
+	/*
+	 * Stock TP-Link dual image layout. The stock U-Boot boots the JFFS2
+	 * file "linux*" from the slot selected by its boot flag ("bootidx"):
+	 * image0 = stock_kernel, image1 = kernel (OpenWrt).
+	 */
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		partition@0 {
+			label = "boot";
+			reg = <0x0 0x200000>;
+			read-only;
+		};
+
+		/* factory data; read-only makes UBI attach in read-only mode */
+		partition@200000 {
+			compatible = "linux,ubi";
+			label = "misc_ro";
+			reg = <0x200000 0x600000>;
+			read-only;
+
+			volumes {
+				ubi_misc_ro: ubi-volume-misc-ro {
+					volid = <0>;
+				};
+			};
+		};
+
+		partition@800000 {
+			label = "misc_rw";
+			reg = <0x800000 0x1200000>;
+			read-only;
+		};
+
+		partition@1a00000 {
+			label = "stock_kernel";
+			reg = <0x1a00000 0x800000>;
+			read-only;
+		};
+
+		partition@2200000 {
+			label = "stock_rootfs";
+			reg = <0x2200000 0x1000000>;
+			read-only;
+		};
+
+		partition@3200000 {
+			label = "kernel";
+			reg = <0x3200000 0x800000>;
+		};
+
+		partition@3a00000 {
+			label = "stock_rootfs2";
+			reg = <0x3a00000 0x1000000>;
+			read-only;
+		};
+
+		/* U-Boot's bootidx erases 0x4a00000-0x5000000 to store the flag */
+		partition@4a00000 {
+			label = "bflag";
+			reg = <0x4a00000 0x600000>;
+			read-only;
+		};
+
+		partition@5000000 {
+			label = "ubi";
+			reg = <0x5000000 0xaf00000>;
+		};
+
+		partition@ff00000 {
+			label = "bmt";
+			reg = <0xff00000 0x100000>;
+			read-only;
+		};
+	};
+};
+
+&pcie {
+	status = "okay";
+};
+
+/*
+ * The calibration data and the MAC address are files of the UBIFS in
+ * misc_ro, each stored in one uncompressed data node. The cells point at
+ * the node data. mt76 needs cells of its full EEPROM buffer size and does
+ * not use the bytes beyond the file sizes (512 and 1536 bytes).
+ */
+&ubi_misc_ro {
+	nvmem-layout {
+		compatible = "fixed-layout";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		eeprom_misc_ro_43d830: eeprom@43d830 {
+			reg = <0x43d830 0x400>;
+		};
+
+		eeprom_misc_ro_43e030: eeprom@43e030 {
+			reg = <0x43e030 0x4da8>;
+		};
+
+		macaddr_misc_ro_43f830: macaddr@43f830 {
+			compatible = "mac-base";
+			reg = <0x43f830 0x6>;
+			#nvmem-cell-cells = <1>;
+		};
+	};
+};
+
+&pcie0 {
+	wifi@0,0 {
+		compatible = "mediatek,mt76";
+		reg = <0x0000 0 0 0 0>;
+		ieee80211-freq-limit = <2400000 2500000>;
+		nvmem-cells = <&eeprom_misc_ro_43d830>, <&macaddr_misc_ro_43f830 0>;
+		nvmem-cell-names = "eeprom", "mac-address";
+	};
+};
+
+&pcie1 {
+	wifi@0,0 {
+		compatible = "mediatek,mt76";
+		reg = <0x0000 0 0 0 0>;
+		ieee80211-freq-limit = <5000000 6000000>;
+		nvmem-cells = <&eeprom_misc_ro_43e030>, <&macaddr_misc_ro_43f830 (-1)>;
+		nvmem-cell-names = "eeprom", "mac-address";
+	};
+};
+
+&gmac0 {
+	nvmem-cells = <&macaddr_misc_ro_43f830 0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&switch0 {
+	ports {
+		port@1 {
+			status = "okay";
+			label = "lan1";
+		};
+
+		port@2 {
+			status = "okay";
+			label = "lan2";
+		};
+
+		port@3 {
+			status = "okay";
+			label = "lan3";
+		};
+
+		port@4 {
+			status = "okay";
+			label = "wan";
+		};
+	};
+};
