@@ -2,6 +2,7 @@
 
 #include "ar9344.dtsi"
 #include "ar934x_ag71xx.dtsi"
+#include "ar934x_dsa.dtsi"
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
@@ -110,6 +111,27 @@
 
 	nvmem-cells = <&macaddr_caldata_0>;
 	nvmem-cell-names = "mac-address";
+};
+
+&switch_port1 {
+	status = "okay";
+	label = "lan4";
+	phy-handle = <&swphy4>;
+};
+
+&switch_port2 {
+	status = "okay";
+	label = "lan1";
+};
+
+&switch_port3 {
+	status = "okay";
+	label = "lan2";
+};
+
+&switch_port4 {
+	status = "okay";
+	label = "lan3";
 };
 
 &nand {

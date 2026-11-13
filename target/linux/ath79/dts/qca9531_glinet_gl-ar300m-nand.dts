@@ -2,6 +2,7 @@
 
 #include "qca9531_glinet_gl-ar300m.dtsi"
 #include "qca953x_ag71xx.dtsi"
+#include "qca953x_dsa.dtsi"
 
 / {
 	compatible = "glinet,gl-ar300m-nand", "qca,qca9531";
@@ -14,4 +15,24 @@
 
 &nand_ubi {
 	label = "ubi";
+};
+
+&switch_port1 {
+	status = "okay";
+	label = "lan1";
+};
+
+&switch_port2 {
+	status = "okay";
+	label = "lan2";
+};
+
+&switch_port3 {
+	status = "okay";
+	label = "lan3";
+};
+
+&switch_port4 {
+	status = "okay";
+	label = "lan4";
 };

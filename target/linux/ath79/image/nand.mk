@@ -169,6 +169,9 @@ define Device/glinet_gl-ar300m-nand
   IMAGE/factory.img := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
   SUPPORTED_DEVICES += glinet,gl-ar300m-nor
+  DEVICE_PACKAGES += kmod-dsa-ar9331
+  DEVICE_COMPAT_VERSION := 1.1
+  DEVICE_COMPAT_MESSAGE := Config cannot be migrated from swconfig to DSA
 endef
 TARGET_DEVICES += glinet_gl-ar300m-nand
 
@@ -176,6 +179,9 @@ define Device/glinet_gl-ar300m-nor
   $(Device/glinet_gl-ar300m-common-nand)
   DEVICE_VARIANT := NOR
   SUPPORTED_DEVICES += glinet,gl-ar300m-nand gl-ar300m
+  DEVICE_PACKAGES += kmod-dsa-ar9331
+  DEVICE_COMPAT_VERSION := 1.1
+  DEVICE_COMPAT_MESSAGE := Config cannot be migrated from swconfig to DSA
 endef
 TARGET_DEVICES += glinet_gl-ar300m-nor
 
@@ -225,6 +231,7 @@ define Device/glinet_gl-e750
   IMAGES += factory.img
   IMAGE/factory.img := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  DEVICE_PACKAGES += kmod-dsa-ar9331
 endef
 TARGET_DEVICES += glinet_gl-e750
 
@@ -240,6 +247,9 @@ define Device/glinet_gl-s200-nor
   $(Device/glinet_gl-s200-common)
   DEVICE_VARIANT := NOR
   IMAGE_SIZE := 16000k
+  DEVICE_PACKAGES += kmod-dsa-ar9331
+  DEVICE_COMPAT_VERSION := 1.1
+  DEVICE_COMPAT_MESSAGE := Config cannot be migrated from swconfig to DSA
 endef
 TARGET_DEVICES += glinet_gl-s200-nor
 
@@ -254,6 +264,9 @@ define Device/glinet_gl-s200-nor-nand
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
   IMAGE/factory.img := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi
   SUPPORTED_DEVICES += gl-s200 glinet,gl-s200
+  DEVICE_PACKAGES += kmod-dsa-ar9331
+  DEVICE_COMPAT_VERSION := 1.1
+  DEVICE_COMPAT_MESSAGE := Config cannot be migrated from swconfig to DSA
 endef
 TARGET_DEVICES += glinet_gl-s200-nor-nand
 
@@ -271,6 +284,9 @@ define Device/glinet_gl-xe300
   IMAGES += factory.img
   IMAGE/factory.img := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  DEVICE_PACKAGES += kmod-dsa-ar9331
+  DEVICE_COMPAT_VERSION := 1.1
+  DEVICE_COMPAT_MESSAGE := Config cannot be migrated from swconfig to DSA
 endef
 TARGET_DEVICES += glinet_gl-xe300
 
@@ -405,6 +421,9 @@ define Device/netgear_pgzng1
   PAGESIZE := 2048
   BLOCKSIZE := 128k
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  DEVICE_PACKAGES += kmod-dsa-ar9331
+  DEVICE_COMPAT_VERSION := 1.1
+  DEVICE_COMPAT_MESSAGE := Config cannot be migrated from swconfig to DSA
 endef
 TARGET_DEVICES += netgear_pgzng1
 
@@ -416,6 +435,9 @@ define Device/netgear_r6100
   NETGEAR_HW_ID := 29764434+0+128+128+2x2+2x2
   $(Device/netgear_ath79_nand)
   DEVICE_PACKAGES += kmod-ath10k-ct ath10k-firmware-qca988x-ct
+  DEVICE_PACKAGES += kmod-dsa-ar9331
+  DEVICE_COMPAT_VERSION := 1.1
+  DEVICE_COMPAT_MESSAGE := Config cannot be migrated from swconfig to DSA
 endef
 TARGET_DEVICES += netgear_r6100
 
