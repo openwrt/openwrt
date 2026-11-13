@@ -7,7 +7,7 @@ include $(TOPDIR)/rules.mk
 ARCH:=riscv64
 BOARD:=sifiveu
 BOARDNAME:=SiFive U-based RISC-V boards
-FEATURES:=ext4 legacy-sdcard
+FEATURES:=ext4 legacy-sdcard ramdisk rootfs-part squashfs
 KERNELNAME:=Image dtbs
 SUBTARGETS:=generic
 
