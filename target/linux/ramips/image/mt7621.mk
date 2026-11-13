@@ -3021,7 +3021,7 @@ define Device/tplink_archer-ax23-v1
   $(Device/tplink-safeloader)
   DEVICE_MODEL := Archer AX23
   DEVICE_VARIANT := v1
-  DEVICE_PACKAGES := kmod-mt7915-firmware -uboot-envtools
+  DEVICE_PACKAGES := kmod-mt7915-firmware kmod-ledtrig-network -uboot-envtools
   TPLINK_BOARD_ID := ARCHER-AX23-V1
   KERNEL := $(KERNEL_DTB) | uImage lzma
   IMAGE_SIZE := 15744k
@@ -3033,7 +3033,7 @@ define Device/tplink_archer-a6-v3
   $(Device/tplink-safeloader)
   DEVICE_MODEL := Archer A6
   DEVICE_VARIANT := V3
-  DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615e \
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615e kmod-ledtrig-network \
 	kmod-mt7663-firmware-ap -uboot-envtools
   TPLINK_BOARD_ID := ARCHER-A6-V3
   KERNEL := $(KERNEL_DTB) | uImage lzma
@@ -3047,7 +3047,7 @@ define Device/tplink_archer-c6-v3
   DEVICE_MODEL := Archer C6
   DEVICE_VARIANT := V3
   DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615e kmod-mt7663-firmware-ap \
-	-uboot-envtools
+	kmod-ledtrig-network -uboot-envtools
   TPLINK_BOARD_ID := ARCHER-C6-V3
   KERNEL := $(KERNEL_DTB) | uImage lzma
   IMAGE_SIZE := 15744k
