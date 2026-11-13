@@ -1,0 +1,104 @@
+From 4e57581a52d4d6d4a6512fea649f171fcc3d24eb Mon Sep 17 00:00:00 2001
+From: Josef Schlehofer <pepe.schlehofer@gmail.com>
+Date: Mon, 2 Nov 2026 11:33:18 +0100
+Subject: [PATCH net v3 4/5] net: mvneta: keep the TX rate limits across open
+ and MTU change
+
+After the interface is brought up again or its MTU is changed, every
+per-queue rate limit set by mqprio runs at 10.23 Mbit/s, whatever rate
+was configured. tc still shows the configured rates.
+
+mvneta_txq_hw_init() writes the token configuration of the legacy rate
+limiter for each TX queue. This also sets the refill value of the
+queue's token bucket to 1023, which is 10.23 Mbit/s at the refill
+period that mqprio uses.
+
+Remember the refill of each rate limited queue and program the rate
+limits again when the port is started. Resume also starts the port
+with mvneta_start_dev().
+
+Tested on a Turris Omnia (Armada 385) with 1 Mbit/s limits on a
+100 Mbit/s link. After the link was set down and up, or the MTU was
+changed, each busy TX queue carried about 10 Mbit/s. With this patch it
+stays at about 1 Mbit/s.
+
+Fixes: 2551dc9e398c ("net: mvneta: Add TC traffic shaping offload")
+Signed-off-by: Josef Schlehofer <pepe.schlehofer@gmail.com>
+---
+ drivers/net/ethernet/marvell/mvneta.c | 31 ++++++++++++++++++++++++++-
+ 1 file changed, 30 insertions(+), 1 deletion(-)
+
+--- a/drivers/net/ethernet/marvell/mvneta.c
++++ b/drivers/net/ethernet/marvell/mvneta.c
+@@ -683,6 +683,9 @@ struct mvneta_tx_queue {
+ 
+ 	u32 done_pkts_coal;
+ 
++	/* Bucket refill of the mqprio rate limit, 0 when not limited */
++	u32 bucket_refill;
++
+ 	/* Virtual address of the TX DMA descriptors array */
+ 	struct mvneta_tx_desc *descs;
+ 
+@@ -3752,6 +3755,8 @@ static int mvneta_config_interface(struc
+ 	return ret;
+ }
+ 
++static void mvneta_restore_per_queue_rate_limit(struct mvneta_port *pp);
++
+ static void mvneta_start_dev(struct mvneta_port *pp)
+ {
+ 	int cpu;
+@@ -3760,6 +3765,7 @@ static void mvneta_start_dev(struct mvne
+ 
+ 	mvneta_max_rx_size_set(pp, pp->pkt_size);
+ 	mvneta_txq_max_tx_size_set(pp, pp->pkt_size);
++	mvneta_restore_per_queue_rate_limit(pp);
+ 
+ 	/* start the Rx/Tx activity */
+ 	mvneta_port_enable(pp);
+@@ -5220,8 +5226,10 @@ static void mvneta_disable_per_queue_rat
+ 	/* The token buckets still limit the queues, refill them at full rate */
+ 	val = (1 << MVNETA_TXQ_BUCKET_REFILL_PERIOD_SHIFT) |
+ 	      MVNETA_TXQ_BUCKET_REFILL_VALUE_MAX;
+-	for (queue = 0; queue < txq_number; queue++)
++	for (queue = 0; queue < txq_number; queue++) {
++		pp->txqs[queue].bucket_refill = 0;
+ 		mvreg_write(pp, MVNETA_TXQ_BUCKET_REFILL_REG(queue), val);
++	}
+ }
+ 
+ static int mvneta_setup_queue_rates(struct mvneta_port *pp, int queue,
+@@ -5247,11 +5255,32 @@ static int mvneta_setup_queue_rates(stru
+ 	val |= (MVNETA_TXQ_BUCKET_REFILL_PERIOD <<
+ 		MVNETA_TXQ_BUCKET_REFILL_PERIOD_SHIFT);
+ 
++	pp->txqs[queue].bucket_refill = val;
+ 	mvreg_write(pp, MVNETA_TXQ_BUCKET_REFILL_REG(queue), val);
+ 
+ 	return 0;
+ }
+ 
++/* The TX queue setup overwrites the rate limits, program them again */
++static void mvneta_restore_per_queue_rate_limit(struct mvneta_port *pp)
++{
++	int queue;
++
++	for (queue = 0; queue < txq_number; queue++) {
++		if (pp->txqs[queue].bucket_refill)
++			break;
++	}
++
++	if (queue == txq_number || mvneta_enable_per_queue_rate_limit(pp))
++		return;
++
++	for (; queue < txq_number; queue++) {
++		if (pp->txqs[queue].bucket_refill)
++			mvreg_write(pp, MVNETA_TXQ_BUCKET_REFILL_REG(queue),
++				    pp->txqs[queue].bucket_refill);
++	}
++}
++
+ static int mvneta_setup_mqprio(struct net_device *dev,
+ 			       struct tc_mqprio_qopt_offload *mqprio)
+ {
