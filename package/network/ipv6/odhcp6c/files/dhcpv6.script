@@ -115,6 +115,8 @@ setup_interface () {
 		fi
 	done
 
+	config_load network
+
 	for entry in $RA_ROUTES; do
 		local duplicate=$NOSOURCEFILTER
 		local addr="${entry%%/*}"
@@ -125,7 +127,10 @@ setup_interface () {
 		entry="${entry#*,}"
 		local valid="${entry%%,*}"
 		entry="${entry#*,}"
-		local metric="${entry%%,*}"
+		local ra_metric="${entry%%,*}"
+
+		local metric
+		config_get metric "$INTERFACE" metric "$ra_metric"
 
 		for xentry in $RA_ROUTES; do
 			local xprefix="${xentry%%,*}"
