@@ -53,12 +53,13 @@
 
 #define TFFS_BLOCK_HEADER_MAGIC	0x41564d5f54464653ULL
 #define TFFS_VERSION		0x0003
+#define TFFS_TYPE_MTDNAND	0x0002
+#define TFFS_MAX_BAD_PAGES	0x0004
 #define TFFS_ENTRY_HEADER_SIZE	0x18
 #define TFFS_MAXIMUM_SEGMENT_SIZE	(0x800 - TFFS_ENTRY_HEADER_SIZE)
 
 #define TFFS_SECTOR_SIZE 0x0800
 #define TFFS_SECTOR_OOB_SIZE 0x0040
-#define TFFS_SECTORS_PER_PAGE 2
 
 #define TFFS_SEGMENT_CLEARED 0xffffffff
 
@@ -391,7 +392,7 @@ static int check_sector(off_t pos)
 	return 1;
 }
 
-static int check_block(off_t pos, uint32_t sector)
+static int check_block(off_t pos)
 {
 	if (!check_sector(pos)) {
 		return 0;
@@ -403,15 +404,15 @@ static int check_block(off_t pos, uint32_t sector)
 		fprintf(stderr, "Warning: block without magic header. Skipping block\n");
 		return 0;
 	}
-	if (read_uint32(readbuf, 0x0c) != TFFS_SECTORS_PER_PAGE) {
-		fprintf(stderr, "Warning: block with wrong number of sectors per page. Skipping block\n");
+	if (read_uint32(readbuf, 0x0c) != TFFS_TYPE_MTDNAND) {
+		fprintf(stderr, "Warning: block is not a nand block. Skipping block\n");
 		return 0;
 	}
 
-	uint32_t num_hdr_bad = read_uint32(readbuf, 0x0c);
-	for (uint32_t i = 0; i < num_hdr_bad; i++) {
-		uint32_t bad = sector + read_uint64(readbuf, 0x1c + sizeof(uint64_t)*i);
-		sector_mark_bad(bad);
+	uint32_t num_hdr_bad = read_uint32(readbuf, 0x1c);
+	if (num_hdr_bad > TFFS_MAX_BAD_PAGES) {
+		fprintf(stderr, "Warning: block header lists too many bad pages. Skipping block\n");
+		return 0;
 	}
 
 	return 1;
@@ -440,7 +441,7 @@ static int scan_mtd(void)
 	uint8_t block_ok = 0;
 	for (off_t pos = 0; pos < info.size; sector++, pos += TFFS_SECTOR_SIZE) {
 		if (pos % info.erasesize == 0) {
-			block_ok = check_block(pos, sector);
+			block_ok = check_block(pos);
 			/* first sector of the block contains metadata
 			   => handle it like a bad sector */
 			sector_mark_bad(sector);
