@@ -179,6 +179,15 @@ endif
 # directory are the same string, so the replacement keeps the root.
 IREMAP_TOOLCHAIN:=$(call iremap,$(BUILD_DIR_TOOLCHAIN),build_dir/$(notdir $(BUILD_DIR_TOOLCHAIN)))
 
+# Unquoted: 242-libsanitizer-add-a-built-in-HWASan-default-option-string.patch
+# stringifies the macro, so the value must have no spaces.
+ifdef CONFIG_GCC_BUILD_SANITIZERS
+  GCC_SANITIZER_OPTS:=$(call qstrip,$(CONFIG_GCC_SANITIZER_DEFAULT_OPTIONS))
+  ifneq ($(GCC_SANITIZER_OPTS),)
+    TARGET_CFLAGS+=-DHWASAN_DEFAULT_OPTIONS=$(GCC_SANITIZER_OPTS)
+  endif
+endif
+
 GCC_CONFIGURE+= \
 	CFLAGS="$(CFLAGS)" \
 	CXXFLAGS="$(CFLAGS)" \
