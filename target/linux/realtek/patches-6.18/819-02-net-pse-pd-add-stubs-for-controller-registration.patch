@@ -1,0 +1,46 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Roman Kuzmitskii <roman@damex.org>
+Subject: [PATCH] net: pse-pd: add stubs for controller registration API
+
+Drivers outside pse-pd can build without CONFIG_PSE_CONTROLLER.
+Stubs for controller registration and event helpers added.
+
+Signed-off-by: Roman Kuzmitskii <roman@damex.org>
+---
+--- a/include/linux/pse-pd/pse.h
++++ b/include/linux/pse-pd/pse.h
+@@ -440,6 +440,34 @@ static inline void pse_phy_lock_assert_h
+ 
+ #else
+ 
++static inline int pse_controller_register(struct pse_controller_dev *pcdev)
++{
++	return -EOPNOTSUPP;
++}
++
++static inline void pse_controller_unregister(struct pse_controller_dev *pcdev)
++{
++}
++
++struct device;
++static inline int devm_pse_controller_register(struct device *dev,
++					       struct pse_controller_dev *pcdev)
++{
++	return -EOPNOTSUPP;
++}
++
++static inline int devm_pse_irq_helper(struct pse_controller_dev *pcdev, int irq,
++				      int irq_flags, const struct pse_irq_desc *d)
++{
++	return -EOPNOTSUPP;
++}
++
++static inline int devm_pse_poll_helper(struct pse_controller_dev *pcdev,
++				       const struct pse_irq_desc *d)
++{
++	return -EOPNOTSUPP;
++}
++
+ static inline struct pse_control *of_pse_control_get(struct device_node *node,
+ 						     struct phy_device *phydev)
+ {

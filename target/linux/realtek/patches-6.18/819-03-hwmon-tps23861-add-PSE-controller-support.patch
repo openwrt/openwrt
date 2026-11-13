@@ -1,0 +1,382 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Roman Kuzmitskii <roman@damex.org>
+Subject: [PATCH] hwmon: tps23861: add PSE controller support
+
+PSE controller registered if node has pse-pis.
+Ports controlled by ethtool --set-pse.
+
+Only ports with pse-pi node switched to Auto.
+Disable: detection stops first, power cut only after power good.
+hwmon in*_enable hidden while PSE registered.
+Events polled.
+
+Signed-off-by: Roman Kuzmitskii <roman@damex.org>
+---
+--- a/drivers/hwmon/tps23861.c
++++ b/drivers/hwmon/tps23861.c
+@@ -15,7 +15,9 @@
+ #include <linux/i2c.h>
+ #include <linux/module.h>
+ #include <linux/of.h>
++#include <linux/pse-pd/pse.h>
+ #include <linux/regmap.h>
++#include <linux/units.h>
+ 
+ #define TEMPERATURE			0x2c
+ #define INPUT_VOLTAGE_LSB		0x2e
+@@ -85,6 +87,19 @@
+ #define PORT_DETECT_CAPACITANCE_INVALID_DELTA	11
+ #define PORT_DETECT_CAPACITANCE_OUT_OF_RANGE	12
+ #define POE_PLUS			0x40
++#define POWER_EVENT_CLEAR_ON_READ	0x03
++#define POWER_EVENT_PG_CHANGE(port)	BIT((port) + 4)
++#define FAULT_EVENT_CLEAR_ON_READ	0x07
++#define FAULT_EVENT_ICUT(port)		BIT(port)
++#define FAULT_EVENT_DISCONNECT(port)	BIT((port) + 4)
++#define START_ILIM_EVENT_CLEAR_ON_READ	0x09
++#define START_ILIM_EVENT_START(port)	BIT(port)
++#define START_ILIM_EVENT_ILIM(port)	BIT((port) + 4)
++#define SUPPLY_EVENT_CLEAR_ON_READ	0x0b
++#define SUPPLY_EVENT_TSD		BIT(7)
++#define POWER_STATUS			0x10
++#define POWER_STATUS_PE(port)		BIT(port)
++#define POWER_STATUS_PG(port)		BIT((port) + 4)
+ #define OPERATING_MODE			0x12
+ #define OPERATING_MODE_OFF		0
+ #define OPERATING_MODE_MANUAL		1
+@@ -94,9 +109,20 @@
+ #define OPERATING_MODE_PORT_2_MASK	GENMASK(3, 2)
+ #define OPERATING_MODE_PORT_3_MASK	GENMASK(5, 4)
+ #define OPERATING_MODE_PORT_4_MASK	GENMASK(7, 6)
++#define OPERATING_MODE_ALL_AUTO \
++	(FIELD_PREP(OPERATING_MODE_PORT_1_MASK, OPERATING_MODE_AUTO) | \
++	 FIELD_PREP(OPERATING_MODE_PORT_2_MASK, OPERATING_MODE_AUTO) | \
++	 FIELD_PREP(OPERATING_MODE_PORT_3_MASK, OPERATING_MODE_AUTO) | \
++	 FIELD_PREP(OPERATING_MODE_PORT_4_MASK, OPERATING_MODE_AUTO))
++#define DETECT_CLASS_ENABLE		0x14
++#define DETECT_ENABLE(port)		BIT(port)
++#define CLASS_ENABLE(port)		BIT((port) + 4)
+ 
+ #define DETECT_CLASS_RESTART		0x18
+ #define POWER_ENABLE			0x19
++#define DETECT_CLASS_ENABLE_DELAY_US	1200
++#define POWER_GOOD_POLL_US		1000
++#define START_TIME_MAX_US		140000
+ #define TPS23861_NUM_PORTS		4
+ 
+ #define TPS23861_GENERAL_MASK_1		0x17
+@@ -114,6 +140,7 @@ struct tps23861_data {
+ 	struct regmap *regmap;
+ 	u32 shunt_resistor;
+ 	struct i2c_client *client;
++	struct pse_controller_dev pcdev;
+ };
+ 
+ static const struct regmap_config tps23861_regmap_config = {
+@@ -188,13 +215,26 @@ static int tps23861_read_current(struct
+ 
+ static int tps23861_port_disable(struct tps23861_data *data, int channel)
+ {
+-	unsigned int regval = 0;
++	unsigned int status;
+ 	int err;
+ 
+-	regval |= BIT(channel + 4);
+-	err = regmap_write(data->regmap, POWER_ENABLE, regval);
++	fsleep(DETECT_CLASS_ENABLE_DELAY_US);
++	err = regmap_clear_bits(data->regmap, DETECT_CLASS_ENABLE,
++				DETECT_ENABLE(channel) | CLASS_ENABLE(channel));
++	if (err)
++		return err;
+ 
+-	return err;
++	err = regmap_read_poll_timeout(data->regmap, POWER_STATUS, status,
++				       !(status & POWER_STATUS_PE(channel)) ||
++				       (status & POWER_STATUS_PG(channel)),
++				       POWER_GOOD_POLL_US, START_TIME_MAX_US);
++	if (err)
++		return err;
++
++	if (!(status & POWER_STATUS_PE(channel)))
++		return 0;
++
++	return regmap_write(data->regmap, POWER_ENABLE, BIT(channel + 4));
+ }
+ 
+ static int tps23861_port_enable(struct tps23861_data *data, int channel)
+@@ -212,6 +252,8 @@ static int tps23861_port_enable(struct t
+ static umode_t tps23861_is_visible(const void *data, enum hwmon_sensor_types type,
+ 				   u32 attr, int channel)
+ {
++	const struct tps23861_data *priv = data;
++
+ 	switch (type) {
+ 	case hwmon_temp:
+ 		switch (attr) {
+@@ -227,6 +269,8 @@ static umode_t tps23861_is_visible(const
+ 		case hwmon_in_label:
+ 			return 0444;
+ 		case hwmon_in_enable:
++			if (priv->pcdev.ops)
++				return 0;
+ 			return 0200;
+ 		default:
+ 			return 0;
+@@ -502,12 +546,246 @@ static int tps23861_port_status_show(str
+ 
+ DEFINE_SHOW_ATTRIBUTE(tps23861_port_status);
+ 
++static struct tps23861_data *to_tps23861(struct pse_controller_dev *pcdev)
++{
++	return container_of(pcdev, struct tps23861_data, pcdev);
++}
++
++static int tps23861_pi_get_admin_state(struct pse_controller_dev *pcdev, int id,
++				       struct pse_admin_state *admin_state)
++{
++	struct tps23861_data *data = to_tps23861(pcdev);
++	unsigned int enable;
++	int err;
++
++	err = regmap_read(data->regmap, DETECT_CLASS_ENABLE, &enable);
++	if (err) {
++		admin_state->c33_admin_state = ETHTOOL_C33_PSE_ADMIN_STATE_UNKNOWN;
++		return err;
++	}
++
++	if (enable & DETECT_ENABLE(id))
++		admin_state->c33_admin_state = ETHTOOL_C33_PSE_ADMIN_STATE_ENABLED;
++	else
++		admin_state->c33_admin_state = ETHTOOL_C33_PSE_ADMIN_STATE_DISABLED;
++
++	return 0;
++}
++
++static int tps23861_pi_get_pw_status(struct pse_controller_dev *pcdev, int id,
++				     struct pse_pw_status *pw_status)
++{
++	struct tps23861_data *data = to_tps23861(pcdev);
++	unsigned int status, enable;
++	int err;
++
++	err = regmap_read(data->regmap, POWER_STATUS, &status);
++	if (err) {
++		pw_status->c33_pw_status = ETHTOOL_C33_PSE_PW_D_STATUS_UNKNOWN;
++		return err;
++	}
++
++	if (status & POWER_STATUS_PG(id)) {
++		pw_status->c33_pw_status = ETHTOOL_C33_PSE_PW_D_STATUS_DELIVERING;
++		return 0;
++	}
++
++	err = regmap_read(data->regmap, DETECT_CLASS_ENABLE, &enable);
++	if (err) {
++		pw_status->c33_pw_status = ETHTOOL_C33_PSE_PW_D_STATUS_UNKNOWN;
++		return err;
++	}
++
++	if (enable & DETECT_ENABLE(id))
++		pw_status->c33_pw_status = ETHTOOL_C33_PSE_PW_D_STATUS_SEARCHING;
++	else
++		pw_status->c33_pw_status = ETHTOOL_C33_PSE_PW_D_STATUS_DISABLED;
++
++	return 0;
++}
++
++static int tps23861_pi_get_pw_class(struct pse_controller_dev *pcdev, int id)
++{
++	struct tps23861_data *data = to_tps23861(pcdev);
++	unsigned int status;
++	int err;
++
++	err = regmap_read(data->regmap, PORT_1_STATUS + id, &status);
++	if (err)
++		return err;
++
++	switch (FIELD_GET(PORT_STATUS_CLASS_MASK, status)) {
++	case PORT_CLASS_1:
++		return 1;
++	case PORT_CLASS_2:
++		return 2;
++	case PORT_CLASS_3:
++		return 3;
++	case PORT_CLASS_4:
++		return 4;
++	default:
++		return 0;
++	}
++}
++
++static int tps23861_pi_get_actual_pw(struct pse_controller_dev *pcdev, int id)
++{
++	struct tps23861_data *data = to_tps23861(pcdev);
++	long voltage_mv, current_ma;
++	int err;
++
++	err = tps23861_read_voltage(data, id, &voltage_mv);
++	if (err)
++		return err;
++
++	err = tps23861_read_current(data, id, &current_ma);
++	if (err)
++		return err;
++
++	return voltage_mv * current_ma / MICROWATT_PER_MILLIWATT;
++}
++
++static int tps23861_pi_enable(struct pse_controller_dev *pcdev, int id)
++{
++	return tps23861_port_enable(to_tps23861(pcdev), id);
++}
++
++static int tps23861_pi_disable(struct pse_controller_dev *pcdev, int id)
++{
++	return tps23861_port_disable(to_tps23861(pcdev), id);
++}
++
++static int tps23861_pi_get_voltage(struct pse_controller_dev *pcdev, int id)
++{
++	struct tps23861_data *data = to_tps23861(pcdev);
++	long voltage_mv;
++	int err;
++
++	err = tps23861_read_voltage(data, id, &voltage_mv);
++	if (err)
++		return err;
++
++	return voltage_mv * (MICRO / MILLI);
++}
++
++static int tps23861_pse_map_event(int irq, struct pse_controller_dev *pcdev,
++				  unsigned long *notifs,
++				  unsigned long *notifs_mask)
++{
++	struct tps23861_data *data = to_tps23861(pcdev);
++	unsigned int power, fault, start_ilim, supply, status;
++	int err, port;
++
++	err = regmap_read(data->regmap, POWER_EVENT_CLEAR_ON_READ, &power);
++	if (err)
++		return err;
++
++	err = regmap_read(data->regmap, FAULT_EVENT_CLEAR_ON_READ, &fault);
++	if (err)
++		return err;
++
++	err = regmap_read(data->regmap, START_ILIM_EVENT_CLEAR_ON_READ,
++			  &start_ilim);
++	if (err)
++		return err;
++
++	err = regmap_read(data->regmap, SUPPLY_EVENT_CLEAR_ON_READ, &supply);
++	if (err)
++		return err;
++
++	err = regmap_read(data->regmap, POWER_STATUS, &status);
++	if (err)
++		return err;
++
++	for (port = 0; port < TPS23861_NUM_PORTS; port++) {
++		unsigned long events = 0;
++
++		if ((power & POWER_EVENT_PG_CHANGE(port)) &&
++		    (status & POWER_STATUS_PG(port)))
++			events |= ETHTOOL_C33_PSE_EVENT_DETECTION;
++		if (fault & FAULT_EVENT_DISCONNECT(port))
++			events |= ETHTOOL_C33_PSE_EVENT_DISCONNECTION;
++		if ((fault & FAULT_EVENT_ICUT(port)) ||
++		    (start_ilim & START_ILIM_EVENT_START(port)) ||
++		    (start_ilim & START_ILIM_EVENT_ILIM(port)))
++			events |= ETHTOOL_PSE_EVENT_OVER_CURRENT |
++				  ETHTOOL_C33_PSE_EVENT_DISCONNECTION;
++		if (supply & SUPPLY_EVENT_TSD)
++			events |= ETHTOOL_PSE_EVENT_OVER_TEMP;
++		if (!events)
++			continue;
++
++		__set_bit(port, notifs_mask);
++		notifs[port] = events;
++	}
++
++	return 0;
++}
++
++static int tps23861_setup_pi_matrix(struct pse_controller_dev *pcdev)
++{
++	struct tps23861_data *data = to_tps23861(pcdev);
++	unsigned int mask = 0;
++	int port;
++
++	for (port = 0; port < TPS23861_NUM_PORTS; port++) {
++		if (pcdev->pi[port].np)
++			mask |= OPERATING_MODE_PORT_1_MASK << (2 * port);
++	}
++
++	return regmap_update_bits(data->regmap, OPERATING_MODE, mask,
++				  OPERATING_MODE_ALL_AUTO & mask);
++}
++
++static const struct pse_controller_ops tps23861_pse_ops = {
++	.setup_pi_matrix = tps23861_setup_pi_matrix,
++	.pi_get_admin_state = tps23861_pi_get_admin_state,
++	.pi_get_pw_status = tps23861_pi_get_pw_status,
++	.pi_get_pw_class = tps23861_pi_get_pw_class,
++	.pi_get_actual_pw = tps23861_pi_get_actual_pw,
++	.pi_enable = tps23861_pi_enable,
++	.pi_disable = tps23861_pi_disable,
++	.pi_get_voltage = tps23861_pi_get_voltage,
++};
++
++static const struct pse_irq_desc tps23861_pse_poll_desc = {
++	.name = "tps23861-poll",
++	.map_event = tps23861_pse_map_event,
++};
++
++static int tps23861_pse_register(struct device *dev, struct tps23861_data *data)
++{
++	struct device_node *pis;
++	int err;
++
++	if (!IS_ENABLED(CONFIG_PSE_CONTROLLER))
++		return 0;
++
++	pis = of_get_child_by_name(dev->of_node, "pse-pis");
++	if (!pis)
++		return 0;
++	of_node_put(pis);
++
++	data->pcdev.ops = &tps23861_pse_ops;
++	data->pcdev.dev = dev;
++	data->pcdev.owner = THIS_MODULE;
++	data->pcdev.nr_lines = TPS23861_NUM_PORTS;
++	data->pcdev.types = ETHTOOL_PSE_C33;
++
++	err = devm_pse_poll_helper(&data->pcdev, &tps23861_pse_poll_desc);
++	if (err)
++		return err;
++
++	return devm_pse_controller_register(dev, &data->pcdev);
++}
++
+ static int tps23861_probe(struct i2c_client *client)
+ {
+ 	struct device *dev = &client->dev;
+ 	struct tps23861_data *data;
+ 	struct device *hwmon_dev;
+ 	u32 shunt_resistor;
++	int err;
+ 
+ 	data = devm_kzalloc(dev, sizeof(*data), GFP_KERNEL);
+ 	if (!data)
+@@ -536,6 +814,10 @@ static int tps23861_probe(struct i2c_cli
+ 				TPS23861_GENERAL_MASK_1,
+ 				TPS23861_CURRENT_SHUNT_MASK);
+ 
++	err = tps23861_pse_register(dev, data);
++	if (err)
++		return err;
++
+ 	hwmon_dev = devm_hwmon_device_register_with_info(dev, client->name,
+ 							 data, &tps23861_chip_info,
+ 							 NULL);
