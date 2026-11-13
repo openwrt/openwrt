@@ -313,6 +313,22 @@ define Device/linksys_spnmx56
 endef
 TARGET_DEVICES += linksys_spnmx56
 
+define Device/liteon_wpx8324
+	$(call Device/FitImage)
+	$(call Device/UbiFit)
+	DEVICE_VENDOR := Lite-On
+	DEVICE_MODEL := WPX8324
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	SOC := ipq5018
+	DEVICE_DTS_CONFIG := config@mp03.5-c1
+	DEVICE_PACKAGES := ath11k-firmware-ipq5018-qcn6122 \
+		ipq-wifi-liteon_wpx8324 \
+		kmod-usb-storage kmod-fs-vfat \
+		block-mount
+endef
+TARGET_DEVICES += liteon_wpx8324
+
 define Device/mercusys_mr80x-v2
 	$(call Device/FitImageLzma)
 	DEVICE_VENDOR := MERCUSYS
