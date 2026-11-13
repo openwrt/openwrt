@@ -161,3 +161,20 @@ define KernelPackage/pse-hasivo-hs104/description
 endef
 
 $(eval $(call KernelPackage,pse-hasivo-hs104))
+
+define KernelPackage/pse-icplus-ip804
+  SUBMENU:=$(PSE_MENU)
+  TITLE:=IC Plus IP804AR PSE controller support
+  KCONFIG:=CONFIG_PSE_ICPLUS_IP804
+  DEPENDS:=+kmod-i2c-core
+  FILES:=$(LINUX_DIR)/drivers/net/pse-pd/icplus_ip804.ko
+  AUTOLOAD:=$(call AutoProbe,icplus_ip804)
+  $(call AddDepends/pse-pd)
+endef
+
+define KernelPackage/pse-icplus-ip804/description
+ Kernel module for the IC Plus IP804AR 4-port IEEE 802.3af/at PoE PSE
+ controller, attached via I2C.
+endef
+
+$(eval $(call KernelPackage,pse-icplus-ip804))
