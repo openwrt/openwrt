@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later OR MIT
 
 #include "ar9344.dtsi"
+#include "ar934x_ag71xx.dtsi"
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
@@ -236,8 +237,9 @@
 &eth0 {
 	status = "okay";
 
-	/* default for ar934x, except for 1000M */
-	pll-data = <0x06000000 0x00000101 0x00001616>;
+	qca,gmac = <&gmac>;
+	qca,pll = <&pll>;
+	tx-internal-delay-ps = <800>;
 
 	nvmem-cells = <&macaddr_caldata_0>;
 	nvmem-cell-names = "mac-address";

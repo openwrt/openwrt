@@ -3,6 +3,7 @@
 #include <dt-bindings/leds/common.h>
 
 #include "qca955x_zyxel_nbg6x16.dtsi"
+#include "qca955x_ag71xx.dtsi"
 
 / {
 	compatible = "zyxel,nbg6716", "qca,qca9558";
@@ -198,4 +199,12 @@
 		led-sources = <19>;
 		led-active-low;
 	};
+};
+
+&eth0 {
+	qca,gmac = <&gmac>;
+	qca,pll = <&pll>;
+	rx-internal-delay-ps = <1800>;
+	tx-internal-delay-ps = <800>;
+	qca,tx-clk-invert;
 };

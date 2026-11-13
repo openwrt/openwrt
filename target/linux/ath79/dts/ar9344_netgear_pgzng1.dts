@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
 #include "ar9344.dtsi"
+#include "ar934x_ag71xx.dtsi"
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
@@ -177,8 +178,14 @@
 	};
 };
 
+/* The swap gives PHY0 to GMAC0 (LAN) and PHY4 to switch port 1 (WAN) */
 &eth0 {
 	status = "okay";
+
+	qca,gmac = <&gmac>;
+	qca,switch-phy-swap;
+
+	phy-mode = "internal";
 	phy-handle = <&swphy0>;
 
 	nvmem-cells = <&macaddr_caldata_6>;
@@ -187,17 +194,11 @@
 
 &eth1 {
 	status = "okay";
-	phy-handle = <&swphy4>;
 
 	nvmem-cells = <&macaddr_caldata_0>;
 	nvmem-cell-names = "mac-address";
-
-	gmac-config {
-		device = <&gmac>;
-		switch-phy-swap = <1>;
-		switch-only-mode = <1>;
-	};
 };
+
 
 &gpio {
 	gpio_ext_lna0 {
