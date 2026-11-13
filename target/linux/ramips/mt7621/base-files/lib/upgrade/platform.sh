@@ -114,6 +114,7 @@ platform_do_upgrade() {
 	iptime,t5004|\
 	jcg,q20|\
 	keenetic,kn-1910|\
+	keenetic,kn-1913|\
 	keenetic,kn-3510|\
 	linksys,e5600|\
 	linksys,e7350|\
