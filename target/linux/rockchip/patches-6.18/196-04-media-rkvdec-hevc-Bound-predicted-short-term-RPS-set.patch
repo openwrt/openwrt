@@ -1,0 +1,40 @@
+From 303f94e2dd498a482ab5c15584d225ea0d2f976e Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Fri, 13 Nov 2026 22:04:58 +0000
+Subject: [PATCH] media: rkvdec: hevc: bound predicted short-term RPS sets
+
+st_ref_pic_set_prediction() copies the use_delta_flag and
+used_by_curr_pic bits of entries 0 to num_delta_pocs of the reference
+set into two 16-entry stack arrays, and a predicted set can hold one
+entry more than its reference set. The control validation accepts 16
+entries in an explicit set, so the copy writes one byte past each stack
+array and the predicted set its 17th entry past its 16-entry arrays,
+and a chain of predicted sets writes further past the stack arrays and
+the calculated sets. ITU-T H.265 7.4.8 bounds a set by
+sps_max_dec_pic_buffering_minus1, at most 15 entries, and the hardware
+table holds 15 entries per set.
+
+A userspace V4L2 client that can open the RKVDEC m2m decoder can submit
+an EXT_SPS_ST_RPS control whose predicted sets overflow these arrays.
+
+Skip a predicted set whose reference set holds more than 15 entries,
+as is done for a reference index out of range.
+
+Fixes: c9a59dc2acc7 ("media: rkvdec: Add HEVC support for the VDPU381 variant")
+Cc: stable@vger.kernel.org
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ drivers/media/platform/rockchip/rkvdec/rkvdec-hevc-common.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+--- a/drivers/media/platform/rockchip/rkvdec/rkvdec-hevc-common.c
++++ b/drivers/media/platform/rockchip/rkvdec/rkvdec-hevc-common.c
+@@ -223,6 +223,8 @@ static void st_ref_pic_set_prediction(st
+ 		   (rps_data->abs_delta_rps_minus1 + 1); /* 7-60 */
+ 
+ 	ref_rps = &calculated_rps_st_sets[ref_rps_idx];
++	if (ref_rps->num_delta_pocs >= ARRAY_SIZE(use_delta_flag))
++		return;
+ 
+ 	for (j = 0; j <= ref_rps->num_delta_pocs; j++) {
+ 		used_by_curr_pic_flag[j] = !!(rps_data->used_by_curr_pic & (1 << j));
