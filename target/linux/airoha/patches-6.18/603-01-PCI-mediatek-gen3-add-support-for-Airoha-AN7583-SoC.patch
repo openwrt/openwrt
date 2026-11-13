@@ -1,0 +1,38 @@
+From 377d2a9ca28f18ca01e6b97834585bf383708a23 Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Thu, 24 Apr 2025 16:24:46 +0200
+Subject: [PATCH 1/2] PCI: mediatek-gen3: add support for Airoha AN7583 SoC
+
+Add support for Airoha AN7583 SoC that implement the same logic of
+Airoha EN7581 with the only difference that only 1 PCIe line is
+supported (for GEN3).
+
+A dedicated compatible is defined with the pdata struct with the 1 reset
+line.
+
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+---
+ drivers/pci/controller/pcie-mediatek-gen3.c | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
+
+--- a/drivers/pci/controller/pcie-mediatek-gen3.c
++++ b/drivers/pci/controller/pcie-mediatek-gen3.c
+@@ -1366,8 +1366,18 @@ static const struct mtk_gen3_pcie_pdata
+ 	.flags = SKIP_PCIE_RSTB,
+ };
+ 
++static const struct mtk_gen3_pcie_pdata mtk_pcie_soc_an7583 = {
++	.power_up = mtk_pcie_en7581_power_up,
++	.phy_resets = {
++		.id[0] = "phy-lane0",
++		.num_resets = 1,
++	},
++	.flags = SKIP_PCIE_RSTB,
++};
++
+ static const struct of_device_id mtk_pcie_of_match[] = {
+ 	{ .compatible = "airoha,en7581-pcie", .data = &mtk_pcie_soc_en7581 },
++	{ .compatible = "airoha,an7583-pcie-gen3", .data = &mtk_pcie_soc_an7583 },
+ 	{ .compatible = "mediatek,mt8192-pcie", .data = &mtk_pcie_soc_mt8192 },
+ 	{ .compatible = "mediatek,mt8196-pcie", .data = &mtk_pcie_soc_mt8196 },
+ 	{},

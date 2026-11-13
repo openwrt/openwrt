@@ -76,8 +76,8 @@ Reviewed-by: AngeloGioacchino Del Regno <angelogioacchino.delregno@collabora.com
  static const u16 en7581_rst_map[] = {
  	/* RST_CTRL2 */
  	[EN7581_XPON_PHY_RST]		= 0,
-@@ -564,6 +612,9 @@ static const u16 an7583_rst_map[] = {
- 	[AN7583_XPON_MAC_RST]		= RST_NR_PER_BANK + 31,
+@@ -568,6 +616,9 @@ static const u16 an7583_rst_map[] = {
+ 	[AN7583_PCIC_PERSTOUT1_RST]	= 2 * RST_NR_PER_BANK + 26,
  };
  
 +static int en7581_reset_register(struct device *dev, struct regmap *map,
@@ -86,7 +86,7 @@ Reviewed-by: AngeloGioacchino Del Regno <angelogioacchino.delregno@collabora.com
  static u32 en7523_get_base_rate(const struct en_clk_desc *desc, u32 val)
  {
  	if (!desc->base_bits)
-@@ -942,6 +993,7 @@ static int en7523_clk_hw_init(struct pla
+@@ -946,6 +997,7 @@ static int en7523_clk_hw_init(struct pla
  {
  	void __iomem *base, *np_base;
  	struct regmap *map, *clk_map;
@@ -94,7 +94,7 @@ Reviewed-by: AngeloGioacchino Del Regno <angelogioacchino.delregno@collabora.com
  
  	base = devm_platform_ioremap_resource(pdev, 0);
  	if (IS_ERR(base))
-@@ -961,7 +1013,13 @@ static int en7523_clk_hw_init(struct pla
+@@ -965,7 +1017,13 @@ static int en7523_clk_hw_init(struct pla
  	if (IS_ERR(clk_map))
  		return PTR_ERR(clk_map);
  
@@ -109,7 +109,7 @@ Reviewed-by: AngeloGioacchino Del Regno <angelogioacchino.delregno@collabora.com
  }
  
  static int en7523_reset_update(struct reset_controller_dev *rcdev,
-@@ -1016,7 +1074,8 @@ static const struct reset_control_ops en
+@@ -1020,7 +1078,8 @@ static const struct reset_control_ops en
  	.status = en7523_reset_status,
  };
  
@@ -119,7 +119,7 @@ Reviewed-by: AngeloGioacchino Del Regno <angelogioacchino.delregno@collabora.com
  {
  	struct en_rst_data *rst_data;
  
-@@ -1025,10 +1084,10 @@ static int en7581_reset_register(struct
+@@ -1029,10 +1088,10 @@ static int en7581_reset_register(struct
  		return -ENOMEM;
  
  	rst_data->bank_ofs = en7581_rst_ofs;
@@ -132,7 +132,7 @@ Reviewed-by: AngeloGioacchino Del Regno <angelogioacchino.delregno@collabora.com
  	rst_data->rcdev.of_xlate = en7523_reset_xlate;
  	rst_data->rcdev.ops = &en7581_reset_ops;
  	rst_data->rcdev.of_node = dev->of_node;
-@@ -1073,30 +1132,8 @@ static int en7581_clk_hw_init(struct pla
+@@ -1077,30 +1136,8 @@ static int en7581_clk_hw_init(struct pla
  	regmap_update_bits(clk_map, REG_NP_SCU_PCIC, REG_PCIE_CTRL,
  			   FIELD_PREP(REG_PCIE_CTRL, 3));
  
@@ -165,7 +165,7 @@ Reviewed-by: AngeloGioacchino Del Regno <angelogioacchino.delregno@collabora.com
  }
  
  static int an7583_clk_hw_init(struct platform_device *pdev,
-@@ -1129,7 +1166,8 @@ static int an7583_clk_hw_init(struct pla
+@@ -1133,7 +1170,8 @@ static int an7583_clk_hw_init(struct pla
  	regmap_update_bits(clk_map, REG_NP_SCU_PCIC, REG_PCIE_CTRL,
  			   FIELD_PREP(REG_PCIE_CTRL, 3));
  
