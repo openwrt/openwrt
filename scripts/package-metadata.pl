@@ -197,6 +197,7 @@ sub mconf_depends {
 
 				$depend = shift @vdeps;
 
+				@vdeps = grep { $_ ne $pkgname } @vdeps;
 				if (@vdeps > 1) {
 					$rank = join("&&", map { "PACKAGE_$_<PACKAGE_$pkgname" } @vdeps);
 					$negation = '!('.join("||", map { "PACKAGE_$_" } @vdeps).')';
