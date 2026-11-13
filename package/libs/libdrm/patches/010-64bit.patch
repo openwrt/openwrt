@@ -1,0 +1,12 @@
+--- a/include/drm/drm.h
++++ b/include/drm/drm.h
+@@ -37,6 +37,9 @@
+ 
+ #if   defined(__linux__)
+ 
++#ifndef __SANE_USERSPACE_TYPES__
++#define __SANE_USERSPACE_TYPES__	/* For PPC64, to get LL64 types */
++#endif
+ #include <linux/types.h>
+ #include <asm/ioctl.h>
+ typedef unsigned int drm_handle_t;
