@@ -38,7 +38,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  		if (!page)
  			return -ENOMEM;
  
-@@ -2438,6 +2438,10 @@ mtk_wed_attach(struct mtk_wed_device *de
+@@ -2443,6 +2443,10 @@ mtk_wed_attach(struct mtk_wed_device *de
  	dev->version = hw->version;
  	dev->hw->pcie_base = mtk_wed_get_pcie_base(dev);
  
