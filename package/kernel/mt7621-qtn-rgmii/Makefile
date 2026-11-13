@@ -20,7 +20,7 @@ define KernelPackage/mt7621-qtn-rgmii
   SECTION:=kernel
   SUBMENU:=Other modules
   TITLE:=Enable RGMII connected Quantenna module on MT7621
-  DEPENDS:=@TARGET_ramips_mt7621
+  DEPENDS:=@(TARGET_ramips_mt7621||TARGET_ramips_mt7621_small)
   HIDDEN:=1
   FILES:=$(PKG_BUILD_DIR)/mt7621-qtn-rgmii.ko
   AUTOLOAD:=$(call AutoLoad,30,mt7621-qtn-rgmii,1)
