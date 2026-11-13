@@ -134,7 +134,7 @@ define Build/cetron-header
 		printf "$(magic)" | dd bs=4 count=1 conv=sync iflag=fullblock 2>/dev/null; \
 		cat $@; \
 	) > $@.tmp
-	fw_crc=$$(gzip -c $@.tmp | tail -c 8 | od -An -N4 -tx4 --endian little | tr -d ' \n'); \
+	fw_crc=$$(gzip -c $@.tmp | tail -c 8 | od -An -tx4 --endian little | tr -d ' \n' | cut -c1-8); \
 	printf "$$(echo $$fw_crc | sed 's/../\\x&/g')" | cat - $@.tmp > $@
 	rm $@.tmp
 endef
