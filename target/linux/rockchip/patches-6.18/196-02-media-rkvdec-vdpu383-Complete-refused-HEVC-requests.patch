@@ -1,0 +1,34 @@
+From 44dff8ef55da3d03c513f216f487c4c05737ef48 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Fri, 13 Nov 2026 22:04:58 +0000
+Subject: [PATCH] media: rkvdec: vdpu383: complete refused HEVC requests
+
+rkvdec_hevc_run() returns -EINVAL when the RPS controls are missing,
+after rkvdec_hevc_run_preamble() applied the request's controls but
+without completing them. rkvdec_device_run() then returns the buffers
+with VB2_BUF_STATE_ERROR, which unbinds the source buffer from the
+request, while the request's control handler object stays incomplete.
+The request never reaches MEDIA_REQUEST_STATE_COMPLETE: poll() on its
+file descriptor never reports it, and MEDIA_REQUEST_IOC_REINIT fails
+with -EBUSY.
+
+Complete the request's controls before returning the error, as
+rkvdec_vp9_run() does.
+
+Fixes: e3b5b77e3689 ("media: rkvdec: Add HEVC support for the VDPU383 variant")
+Cc: stable@vger.kernel.org
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ drivers/media/platform/rockchip/rkvdec/rkvdec-vdpu383-hevc.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/drivers/media/platform/rockchip/rkvdec/rkvdec-vdpu383-hevc.c
++++ b/drivers/media/platform/rockchip/rkvdec/rkvdec-vdpu383-hevc.c
+@@ -553,6 +553,7 @@ static int rkvdec_hevc_run(struct rkvdec
+ 	if ((!ctx->has_sps_lt_rps && run.sps->num_long_term_ref_pics_sps) ||
+ 	    (!ctx->has_sps_st_rps && run.sps->num_short_term_ref_pic_sets)) {
+ 		dev_err_ratelimited(rkvdec->dev, "Long and short term RPS not set\n");
++		rkvdec_run_postamble(ctx, &run.base);
+ 		return -EINVAL;
+ 	}
+ 

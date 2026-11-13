@@ -1,0 +1,118 @@
+From c060e6a24db6124fb0a7dc54bbb5f6d8902f2cad Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Fri, 13 Nov 2026 22:04:58 +0000
+Subject: [PATCH] media: rkvdec: hevc: cache every short-term RPS set
+
+rkvdec_hevc_prepare_hw_st_rps() skips building the short-term RPS
+table when the first element of the EXT_SPS_ST_RPS control equals its
+cache, which holds a single element and starts zeroed. When the first
+element is all zero, e.g. for an empty first set, the table entries of
+the remaining sets are never built, and an SPS that differs from the
+previous one only after its first set, or only in
+num_short_term_ref_pic_sets, keeps the previous table. Inter pictures
+are then decoded with wrong references: JCT-VC DELTAQP_A_BRCM_4 decodes
+its intra pictures correctly and its inter pictures wrongly on an
+RK3568, whose VDPU346 uses the VDPU381 back end.
+
+Cache all sets the SPS uses together with their number, for both the
+VDPU381 and the VDPU383 back end. The SPS control validation bounds
+num_short_term_ref_pic_sets to 64, the size of the cache.
+
+Fixes: c9a59dc2acc7 ("media: rkvdec: Add HEVC support for the VDPU381 variant")
+Cc: stable@vger.kernel.org
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ .../platform/rockchip/rkvdec/rkvdec-hevc-common.c    | 12 ++++++++----
+ .../platform/rockchip/rkvdec/rkvdec-hevc-common.h    |  9 ++++++++-
+ .../platform/rockchip/rkvdec/rkvdec-vdpu381-hevc.c   |  2 +-
+ .../platform/rockchip/rkvdec/rkvdec-vdpu383-hevc.c   |  2 +-
+ 4 files changed, 18 insertions(+), 7 deletions(-)
+
+--- a/drivers/media/platform/rockchip/rkvdec/rkvdec-hevc-common.c
++++ b/drivers/media/platform/rockchip/rkvdec/rkvdec-hevc-common.c
+@@ -330,14 +330,17 @@ static void st_ref_pic_set_calculate(str
+ }
+ 
+ static void rkvdec_hevc_prepare_hw_st_rps(struct rkvdec_hevc_run *run, struct rkvdec_rps *rps,
+-					  struct v4l2_ctrl_hevc_ext_sps_st_rps *cache)
++					  struct rkvdec_hevc_st_rps_cache *cache)
+ {
++	u8 num_sets = run->sps->num_short_term_ref_pic_sets;
++	size_t size;
+ 	int idx;
+ 
+ 	if (!run->ext_sps_st_rps)
+ 		return;
+ 
+-	if (!memcmp(cache, run->ext_sps_st_rps, sizeof(struct v4l2_ctrl_hevc_ext_sps_st_rps)))
++	size = num_sets * sizeof(*cache->sets);
++	if (cache->num_sets == num_sets && !memcmp(cache->sets, run->ext_sps_st_rps, size))
+ 		return;
+ 
+ 	struct calculated_rps_st_set *calculated_rps_st_sets =
+@@ -357,11 +360,12 @@ static void rkvdec_hevc_prepare_hw_st_rp
+ 
+ 	kfree(calculated_rps_st_sets);
+ 
+-	memcpy(cache, run->ext_sps_st_rps, sizeof(struct v4l2_ctrl_hevc_ext_sps_st_rps));
++	memcpy(cache->sets, run->ext_sps_st_rps, size);
++	cache->num_sets = num_sets;
+ }
+ 
+ void rkvdec_hevc_assemble_hw_rps(struct rkvdec_hevc_run *run, struct rkvdec_rps *rps,
+-				 struct v4l2_ctrl_hevc_ext_sps_st_rps *st_cache)
++				 struct rkvdec_hevc_st_rps_cache *st_cache)
+ {
+ 	rkvdec_hevc_prepare_hw_st_rps(run, rps, st_cache);
+ 	rkvdec_hevc_assemble_hw_lt_rps(run, rps);
+--- a/drivers/media/platform/rockchip/rkvdec/rkvdec-hevc-common.h
++++ b/drivers/media/platform/rockchip/rkvdec/rkvdec-hevc-common.h
+@@ -35,10 +35,17 @@
+ 
+ #define RKVDEC_RPS_HEVC_SIZE		ALIGN(1032 + 64 * 384, 128)
+ 
++#define RKVDEC_HEVC_MAX_SHORT_TERM_REF_PIC_SETS	64
++
+ struct rkvdec_rps {
+ 	u32 info[RKVDEC_RPS_HEVC_SIZE / 8 / 4];
+ } __packed;
+ 
++struct rkvdec_hevc_st_rps_cache {
++	struct v4l2_ctrl_hevc_ext_sps_st_rps sets[RKVDEC_HEVC_MAX_SHORT_TERM_REF_PIC_SETS];
++	u8 num_sets;
++};
++
+ struct rkvdec_hevc_run {
+ 	struct rkvdec_run base;
+ 	const struct v4l2_ctrl_hevc_slice_params *slices_params;
+@@ -65,7 +72,7 @@ void compute_tiles_non_uniform(struct rk
+ 			       u16 width, u16 height, s32 pic_in_cts_width,
+ 			       s32 pic_in_cts_height, u16 *column_width, u16 *row_height);
+ void rkvdec_hevc_assemble_hw_rps(struct rkvdec_hevc_run *run, struct rkvdec_rps *rps,
+-				 struct v4l2_ctrl_hevc_ext_sps_st_rps *st_cache);
++				 struct rkvdec_hevc_st_rps_cache *st_cache);
+ void rkvdec_hevc_assemble_hw_scaling_list(struct rkvdec_ctx *ctx,
+ 					  struct rkvdec_hevc_run *run,
+ 					  struct scaling_factor *scaling_factor,
+--- a/drivers/media/platform/rockchip/rkvdec/rkvdec-vdpu381-hevc.c
++++ b/drivers/media/platform/rockchip/rkvdec/rkvdec-vdpu381-hevc.c
+@@ -117,7 +117,7 @@ struct rkvdec_hevc_priv_tbl {
+ struct rkvdec_hevc_ctx {
+ 	struct rkvdec_aux_buf			priv_tbl;
+ 	struct v4l2_ctrl_hevc_scaling_matrix	scaling_matrix_cache;
+-	struct v4l2_ctrl_hevc_ext_sps_st_rps	st_cache;
++	struct rkvdec_hevc_st_rps_cache		st_cache;
+ 	struct rkvdec_vdpu381_regs_hevc		regs;
+ };
+ 
+--- a/drivers/media/platform/rockchip/rkvdec/rkvdec-vdpu383-hevc.c
++++ b/drivers/media/platform/rockchip/rkvdec/rkvdec-vdpu383-hevc.c
+@@ -124,7 +124,7 @@ struct rkvdec_hevc_priv_tbl {
+ struct rkvdec_hevc_ctx {
+ 	struct rkvdec_aux_buf			priv_tbl;
+ 	struct v4l2_ctrl_hevc_scaling_matrix	scaling_matrix_cache;
+-	struct v4l2_ctrl_hevc_ext_sps_st_rps	st_cache;
++	struct rkvdec_hevc_st_rps_cache		st_cache;
+ 	struct vdpu383_regs_h26x		regs;
+ };
+ 
