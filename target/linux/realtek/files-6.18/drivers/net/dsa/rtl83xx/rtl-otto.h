@@ -5,6 +5,7 @@
 
 #include <asm/mach-rtl-otto/mach-rtl-otto.h>
 #include <net/dsa.h>
+#include <net/pkt_cls.h>
 
 #include <linux/soc/realtek/otto_table.h>
 
@@ -102,6 +103,10 @@ struct rtldsa_port {
 	u16 ets_children;
 	bool ets_offloadable;
 	u8 ets_weights[MAX_PRIOS];
+	u32 red_handle;
+	u32 red_prev_handle;
+	struct tc_red_qopt_offload_params red_params;
+	struct tc_red_qopt_offload_params red_prev;
 	struct rtldsa_tbf tbf;
 	struct rtldsa_tbf queue_tbf[MAX_PRIOS];
 	unsigned long cached_flags;
@@ -497,6 +502,9 @@ struct rtldsa_config {
 	int (*set_egress_rate)(struct otto_dsa_priv *priv, int port, u32 rate);
 	void (*queue_sched_set)(struct otto_dsa_priv *priv, int port, int queue, u32 weight,
 				bool strict);
+	int (*red_enable)(struct otto_dsa_priv *priv, int port,
+			  const struct tc_red_qopt_offload_params *p);
+	void (*red_disable)(struct otto_dsa_priv *priv, int port);
 	int (*egress_shaper_set)(struct otto_dsa_priv *priv, int port, int queue,
 				 u64 rate_bytes_ps, u32 burst);
 	void (*qos_init)(struct otto_dsa_priv *priv);
@@ -560,6 +568,12 @@ struct otto_dsa_priv {
 
 	/** @lagmembers: Port (bit) is part of any LAG */
 	u64 lagmembers;
+
+	/** @red_ports: Port (bit) has RED offloaded */
+	u64 red_ports;
+
+	/** @red_cfg: RED thresholds and drop rate shared by all ports in @red_ports */
+	u32 red_cfg;
 	struct workqueue_struct *wq;
 	bool eee_enabled;
 	unsigned long mc_group_bm[MAX_MC_GROUPS >> 5];
