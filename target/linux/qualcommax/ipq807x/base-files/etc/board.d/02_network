@@ -75,6 +75,9 @@ ipq807x_setup_interfaces()
 	tplink,eap660hd-v1)
 		ucidef_set_interface_lan "lan" "dhcp"
 		;;
+	tplink,tl-er2260t)
+		ucidef_set_interfaces_lan_wan "GE1 GE2 GE3 GE4 10GE1" "10GE2"
+		;;
 	zyxel,nbg7815)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4 10g" "wan"
 		;;
