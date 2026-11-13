@@ -1,0 +1,53 @@
+From d6b6e1466ab0edd4745077bb3f904e1ec3b79537 Mon Sep 17 00:00:00 2001
+From: John Crispin <john@phrozen.org>
+Date: Fri, 13 Nov 2026 09:58:28 +0100
+Subject: [PATCH] drm: expose the device fd
+
+A caller that hands DRM master to another process needs the open device
+fd. drmDropMaster() on it keeps the pipe lit, closing the device does not.
+
+Signed-off-by: John Crispin <john@phrozen.org>
+---
+ src/drivers/display/drm/lv_linux_drm.c | 7 +++++++
+ src/drivers/display/drm/lv_linux_drm.h | 7 +++++++
+ 2 files changed, 14 insertions(+)
+
+diff --git a/src/drivers/display/drm/lv_linux_drm.c b/src/drivers/display/drm/lv_linux_drm.c
+index 2bb6cb5..52bcbcf 100644
+--- a/src/drivers/display/drm/lv_linux_drm.c
++++ b/src/drivers/display/drm/lv_linux_drm.c
+@@ -252,6 +252,13 @@ void lv_linux_drm_set_file(lv_display_t * disp, const char * file, int64_t conne
+                 hor_res, ver_res, lv_display_get_dpi(disp));
+ }
+ 
++int lv_linux_drm_get_fd(lv_display_t * disp)
++{
++    drm_dev_t * drm_dev = lv_display_get_driver_data(disp);
++
++    return drm_dev ? drm_dev->fd : -1;
++}
++
+ /**********************
+  *   STATIC FUNCTIONS
+  **********************/
+diff --git a/src/drivers/display/drm/lv_linux_drm.h b/src/drivers/display/drm/lv_linux_drm.h
+index ee32466..77bf614 100644
+--- a/src/drivers/display/drm/lv_linux_drm.h
++++ b/src/drivers/display/drm/lv_linux_drm.h
+@@ -33,6 +33,13 @@ lv_display_t * lv_linux_drm_create(void);
+ 
+ void lv_linux_drm_set_file(lv_display_t * disp, const char * file, int64_t connector_id);
+ 
++/**
++ * Return the open DRM device file descriptor, or -1 if the display has none.
++ * Callers need it to hand DRM master to another process without disabling the
++ * pipe, which drmDropMaster() does and closing the device does not.
++ */
++int lv_linux_drm_get_fd(lv_display_t * disp);
++
+ /**********************
+  *      MACROS
+  **********************/
+-- 
+2.34.1
+
