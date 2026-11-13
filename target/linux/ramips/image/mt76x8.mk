@@ -518,6 +518,17 @@ define Device/keenetic_kn-1510
 endef
 TARGET_DEVICES += keenetic_kn-1510
 
+define Device/keenetic_kn-1610
+  IMAGE_SIZE := 15488k
+  DEVICE_VENDOR := Keenetic
+  DEVICE_MODEL := KN-1610
+  DEVICE_PACKAGES := kmod-mt76x2
+  IMAGES += factory.bin
+  IMAGE/factory.bin := $$(sysupgrade_bin) | pad-to $$$$(BLOCKSIZE) | \
+	check-size | zyimage -d 0x801610 -v "KN-1610"
+endef
+TARGET_DEVICES += keenetic_kn-1610
+
 define Device/keenetic_kn-1613
   IMAGE_SIZE := 15073280
   DEVICE_VENDOR := Keenetic
