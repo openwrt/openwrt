@@ -1,0 +1,155 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Sergey Lebedev <sergey@lebedev.mobi>
+Date: Sun, 12 Jul 2026 12:24:02 +0300
+Subject: [PATCH] mtd: nand: mtk: EN751221 -- use 32-bit register access
+ throughout the NFI/ECC banks
+
+The EN751221 NFI and ECC register banks only accept 32-bit (word)
+accesses; every sub-word writew()/readw()/writeb()/readb() the mainline
+driver uses is silently dropped or returns garbage. Two distinct
+symptoms come from the same cause:
+
+ - CON (writel) sticks but CNFG (writew) reads back 0, so CNFG_OP_CUST
+   never engages and READID returns no data ("data not ready").
+ - mtk_nfc_wait_ioready() polls NFI_PIO_DIRDY with an 8-bit read and
+   times out even when the data-ready bit is actually set (a 32-bit
+   dump of the same register shows PIO_DIRDY=1 while the 8-bit poll
+   fails).
+
+The vendor driver uses lw/sw (32-bit) for every NFI register and masks
+the low byte of the data port where it needs byte granularity. Route
+every NFI and ECC accessor helper through 32-bit ops instead.
+
+Signed-off-by: Sergey Lebedev <sergey@lebedev.mobi>
+---
+--- a/drivers/mtd/nand/raw/mtk_nand.c
++++ b/drivers/mtd/nand/raw/mtk_nand.c
+@@ -241,12 +241,13 @@ static inline void nfi_writel(struct mtk
+ 
+ static inline void nfi_writew(struct mtk_nfc *nfc, u16 val, u32 reg)
+ {
+-	writew(val, nfc->regs + reg);
++	/* EN751221 NFI bank is 32-bit-access-only; sub-word writes are dropped. */
++	writel(val, nfc->regs + reg);
+ }
+ 
+ static inline void nfi_writeb(struct mtk_nfc *nfc, u8 val, u32 reg)
+ {
+-	writeb(val, nfc->regs + reg);
++	writel(val, nfc->regs + reg);
+ }
+ 
+ static inline u32 nfi_readl(struct mtk_nfc *nfc, u32 reg)
+@@ -256,12 +257,12 @@ static inline u32 nfi_readl(struct mtk_n
+ 
+ static inline u16 nfi_readw(struct mtk_nfc *nfc, u32 reg)
+ {
+-	return readw_relaxed(nfc->regs + reg);
++	return readl_relaxed(nfc->regs + reg);
+ }
+ 
+ static inline u8 nfi_readb(struct mtk_nfc *nfc, u32 reg)
+ {
+-	return readb_relaxed(nfc->regs + reg);
++	return readl_relaxed(nfc->regs + reg);
+ }
+ 
+ static void mtk_nfc_hw_reset(struct mtk_nfc *nfc)
+@@ -401,9 +402,10 @@ static int mtk_nfc_hw_runtime_config(str
+ static inline void mtk_nfc_wait_ioready(struct mtk_nfc *nfc)
+ {
+ 	int rc;
+-	u8 val;
++	u32 val;
+ 
+-	rc = readb_poll_timeout_atomic(nfc->regs + NFI_PIO_DIRDY, val,
++	/* 32-bit access only on EN751221; readb() of PIO_DIRDY reads garbage. */
++	rc = readl_poll_timeout_atomic(nfc->regs + NFI_PIO_DIRDY, val,
+ 				       val & PIO_DI_RDY, 10, MTK_TIMEOUT);
+ 	if (rc < 0)
+ 		dev_err(nfc->dev, "data not ready\n");
+--- a/drivers/mtd/nand/ecc-mtk.c
++++ b/drivers/mtd/nand/ecc-mtk.c
+@@ -146,16 +146,16 @@ static irqreturn_t mtk_ecc_irq(int irq,
+ 	struct mtk_ecc *ecc = id;
+ 	u32 dec, enc;
+ 
+-	dec = readw(ecc->regs + ecc->caps->ecc_regs[ECC_DECIRQ_STA])
++	dec = readl(ecc->regs + ecc->caps->ecc_regs[ECC_DECIRQ_STA])
+ 		    & ECC_IRQ_EN;
+ 	if (dec) {
+-		dec = readw(ecc->regs + ecc->caps->ecc_regs[ECC_DECDONE]);
++		dec = readl(ecc->regs + ecc->caps->ecc_regs[ECC_DECDONE]);
+ 		if (dec & ecc->sectors) {
+ 			/*
+ 			 * Clear decode IRQ status once again to ensure that
+ 			 * there will be no extra IRQ.
+ 			 */
+-			readw(ecc->regs + ecc->caps->ecc_regs[ECC_DECIRQ_STA]);
++			readl(ecc->regs + ecc->caps->ecc_regs[ECC_DECIRQ_STA]);
+ 			ecc->sectors = 0;
+ 			complete(&ecc->done);
+ 		} else {
+@@ -258,7 +258,7 @@ EXPORT_SYMBOL(mtk_ecc_release);
+ static void mtk_ecc_hw_init(struct mtk_ecc *ecc)
+ {
+ 	mtk_ecc_wait_idle(ecc, ECC_ENCODE);
+-	writew(ECC_OP_DISABLE, ecc->regs + ECC_ENCCON);
++	writel(ECC_OP_DISABLE, ecc->regs + ECC_ENCCON);
+ 
+ 	mtk_ecc_wait_idle(ecc, ECC_DECODE);
+ 	writel(ECC_OP_DISABLE, ecc->regs + ECC_DECCON);
+@@ -338,14 +338,14 @@ int mtk_ecc_enable(struct mtk_ecc *ecc,
+ 		if (ecc->caps->pg_irq_sel && config->mode == ECC_NFI_MODE)
+ 			reg_val |= ECC_PG_IRQ_SEL;
+ 		if (op == ECC_ENCODE)
+-			writew(reg_val, ecc->regs +
++			writel(reg_val, ecc->regs +
+ 			       ecc->caps->ecc_regs[ECC_ENCIRQ_EN]);
+ 		else
+-			writew(reg_val, ecc->regs +
++			writel(reg_val, ecc->regs +
+ 			       ecc->caps->ecc_regs[ECC_DECIRQ_EN]);
+ 	}
+ 
+-	writew(ECC_OP_ENABLE, ecc->regs + ECC_CTL_REG(op));
++	writel(ECC_OP_ENABLE, ecc->regs + ECC_CTL_REG(op));
+ 
+ 	return 0;
+ }
+@@ -356,7 +356,7 @@ void mtk_ecc_disable(struct mtk_ecc *ecc
+ 	enum mtk_ecc_operation op = ECC_ENCODE;
+ 
+ 	/* find out the running operation */
+-	if (readw(ecc->regs + ECC_CTL_REG(op)) != ECC_OP_ENABLE)
++	if (readl(ecc->regs + ECC_CTL_REG(op)) != ECC_OP_ENABLE)
+ 		op = ECC_DECODE;
+ 
+ 	/* disable it */
+@@ -366,13 +366,13 @@ void mtk_ecc_disable(struct mtk_ecc *ecc
+ 		 * Clear decode IRQ status in case there is a timeout to wait
+ 		 * decode IRQ.
+ 		 */
+-		readw(ecc->regs + ecc->caps->ecc_regs[ECC_DECDONE]);
+-		writew(0, ecc->regs + ecc->caps->ecc_regs[ECC_DECIRQ_EN]);
++		readl(ecc->regs + ecc->caps->ecc_regs[ECC_DECDONE]);
++		writel(0, ecc->regs + ecc->caps->ecc_regs[ECC_DECIRQ_EN]);
+ 	} else {
+-		writew(0, ecc->regs + ecc->caps->ecc_regs[ECC_ENCIRQ_EN]);
++		writel(0, ecc->regs + ecc->caps->ecc_regs[ECC_ENCIRQ_EN]);
+ 	}
+ 
+-	writew(ECC_OP_DISABLE, ecc->regs + ECC_CTL_REG(op));
++	writel(ECC_OP_DISABLE, ecc->regs + ECC_CTL_REG(op));
+ 
+ 	mutex_unlock(&ecc->lock);
+ }
+@@ -400,7 +400,7 @@ int mtk_ecc_wait_done(struct mtk_ecc *ec
+ 		}
+ 
+ 		for (i = 0; i < 500000; i++) {
+-			val = readw(ecc->regs + done_reg);
++			val = readl(ecc->regs + done_reg);
+ 			if (val & mask) {
+ 				ecc->sectors = 0;
+ 				return 0;

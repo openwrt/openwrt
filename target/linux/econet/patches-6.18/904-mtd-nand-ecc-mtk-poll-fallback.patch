@@ -1,0 +1,90 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Sergey Lebedev <sergey@lebedev.mobi>
+Date: Sun, 12 Jul 2026 12:24:02 +0300
+Subject: [PATCH] mtd: nand: ecc-mtk: allow polling when no ECC interrupt is wired
+
+EcoNet EN751221 carries the MediaTek NFI ECC engine but does not route
+its interrupt to the CPU (the vendor driver polls the decode-done
+register). Make the ECC irq optional: if absent, poll ECC_DECDONE /
+ENCIRQ_STA in mtk_ecc_wait_done instead of waiting on a completion.
+
+Signed-off-by: Sergey Lebedev <sergey@lebedev.mobi>
+---
+--- a/drivers/mtd/nand/ecc-mtk.c
++++ b/drivers/mtd/nand/ecc-mtk.c
+@@ -64,6 +64,7 @@ struct mtk_ecc {
+ 	struct completion done;
+ 	struct mutex lock;
+ 	u32 sectors;
++	bool poll_mode;
+ 
+ 	u8 *eccdata;
+ };
+@@ -381,6 +382,36 @@ int mtk_ecc_wait_done(struct mtk_ecc *ec
+ {
+ 	int ret;
+ 
++	if (ecc->poll_mode) {
++		/*
++		 * Some SoCs (e.g. EcoNet EN751221) do not wire the ECC engine
++		 * interrupt to the CPU; the vendor driver polls instead. Poll
++		 * the decode-done / encode-status register here.
++		 */
++		u32 done_reg, mask, val;
++		int i;
++
++		if (op == ECC_ENCODE) {
++			done_reg = ecc->caps->ecc_regs[ECC_ENCIRQ_STA];
++			mask = ECC_IRQ_EN;
++		} else {
++			done_reg = ecc->caps->ecc_regs[ECC_DECDONE];
++			mask = ecc->sectors;
++		}
++
++		for (i = 0; i < 500000; i++) {
++			val = readw(ecc->regs + done_reg);
++			if (val & mask) {
++				ecc->sectors = 0;
++				return 0;
++			}
++			cpu_relax();
++		}
++		dev_err(ecc->dev, "%s poll timeout\n",
++			(op == ECC_ENCODE) ? "encoder" : "decoder");
++		return -ETIMEDOUT;
++	}
++
+ 	ret = wait_for_completion_timeout(&ecc->done, msecs_to_jiffies(500));
+ 	if (!ret) {
+ 		dev_err(ecc->dev, "%s timeout - interrupt did not arrive)\n",
+@@ -558,8 +589,8 @@ static int mtk_ecc_probe(struct platform
+ 		return PTR_ERR(ecc->clk);
+ 	}
+ 
+-	irq = platform_get_irq(pdev, 0);
+-	if (irq < 0)
++	irq = platform_get_irq_optional(pdev, 0);
++	if (irq == -EPROBE_DEFER)
+ 		return irq;
+ 
+ 	ret = dma_set_mask(dev, DMA_BIT_MASK(32));
+@@ -568,10 +599,15 @@ static int mtk_ecc_probe(struct platform
+ 		return ret;
+ 	}
+ 
+-	ret = devm_request_irq(dev, irq, mtk_ecc_irq, 0x0, "mtk-ecc", ecc);
+-	if (ret) {
+-		dev_err(dev, "failed to request irq\n");
+-		return -EINVAL;
++	if (irq > 0) {
++		ret = devm_request_irq(dev, irq, mtk_ecc_irq, 0x0, "mtk-ecc", ecc);
++		if (ret) {
++			dev_err(dev, "failed to request irq\n");
++			return -EINVAL;
++		}
++	} else {
++		ecc->poll_mode = true;
++		dev_info(dev, "no ecc irq; using polling mode\n");
+ 	}
+ 
+ 	ecc->dev = dev;

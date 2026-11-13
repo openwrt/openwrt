@@ -1,0 +1,65 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Sergey Lebedev <sergey@lebedev.mobi>
+Date: Thu, 13 Aug 2026 15:26:39 +0300
+Subject: [PATCH] mips: econet: disarm the bootloader's CP0 Compare before
+ VEIC dispatch
+
+econet does not use CP0 Count/Compare as a clockevent source -- the HPT
+peripheral driven from plat_time_init() is the real one -- so nothing in
+the platform ever services a Compare match. The bootloader does use
+Count/Compare for its own timing, and hands the kernel a Compare value that
+has already elapsed, so Cause.TI reads set from the first instant of boot.
+
+That is harmless under legacy IRQ dispatch, where the core's internal timer
+condition is routed nowhere. Once CONFIG_MIPS_MT_SMP makes cpu_has_veic true
+on this core, the CPU presents the same condition as a vectored interrupt as
+soon as interrupts are enabled, landing in the do_default_vi() slot
+trap_init() left behind -- only the econet INTC's own lines ever get real
+vectors installed. The result is a "Caught unexpected vectored interrupt"
+panic on the first local_irq_enable() of boot, reproducible on every boot of
+an EN751221 board.
+
+Disarm it in arch_init_irq(), before irqchip_init() can install any vector.
+Any write to Compare clears Cause.TI as an architectural side effect, and
+writing count - 1 puts the next match a full 32-bit wraparound away.
+
+The same class of bug affects secondary VPEs from vsmp_smp_finish(); that
+one is fixed separately in arch/mips/kernel/smp-mt.c.
+
+Signed-off-by: Sergey Lebedev <sergey@lebedev.mobi>
+---
+--- a/arch/mips/econet/init.c
++++ b/arch/mips/econet/init.c
+@@ -119,6 +119,32 @@ const char *get_system_type(void)
+ /* 4. Initialize the IRQ subsystem */
+ void __init arch_init_irq(void)
+ {
++	/*
++	 * Disarm any CP0 Count/Compare condition inherited from the
++	 * bootloader before the vector table can see it. econet does not use
++	 * CP0 Compare as a clockevent source -- the HPT peripheral driven by
++	 * plat_time_init() below is the real one -- so nothing here ever
++	 * services it, while the bootloader does use Count/Compare for its
++	 * own timing and hands the kernel a Compare value that has already
++	 * elapsed. Cause.TI therefore reads set from the first instant of
++	 * boot.
++	 *
++	 * That is harmless under legacy IRQ dispatch, where nothing routes
++	 * the core's internal timer condition anywhere. Once CONFIG_MIPS_MT_SMP
++	 * makes cpu_has_veic true on this core, though, the CPU presents the
++	 * condition as a vectored interrupt as soon as interrupts are enabled,
++	 * landing in the do_default_vi() slot trap_init() left behind -- only
++	 * the econet INTC's own lines ever get real vectors installed. The
++	 * result is a "Caught unexpected vectored interrupt" panic on the
++	 * first local_irq_enable() of boot, every time.
++	 *
++	 * Any write to Compare clears Cause.TI as an architectural side
++	 * effect; writing count - 1 puts the next match a full 32-bit
++	 * wraparound away.
++	 */
++	if (cpu_has_veic)
++		write_c0_compare(read_c0_count() - 1);
++
+ 	irqchip_init();
+ }
+ 
