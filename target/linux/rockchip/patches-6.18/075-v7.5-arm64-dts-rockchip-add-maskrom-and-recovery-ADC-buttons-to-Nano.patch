@@ -1,0 +1,57 @@
+From bc2e69f575631cb7b6528ad25990406a6339e8a9 Mon Sep 17 00:00:00 2001
+From: Ryan Leung <untilscour@protonmail.com>
+Date: Sun, 11 Oct 2026 06:27:42 +0000
+Subject: [PATCH] arm64: dts: rockchip: add maskrom and recovery ADC buttons to
+ NanoPi M5
+
+The FriendlyELEC Nanopi M5 has MASKROM and RECOVERY buttons connected
+via SARADC (sheets 6 and 19 of the schematic for both the LPDDR4X [1]
+and LPDDR5 [2] versions). Add the two buttons to the device tree.
+
+[1]: https://wiki.friendlyelec.com/wiki/images/1/10/NanoPi_M5_LP4X_2411_SCH.PDF
+[2]: https://wiki.friendlyelec.com/wiki/images/9/97/NanoPi_M5_LP5_2411_SCH.pdf
+
+Signed-off-by: Ryan Leung <untilscour@protonmail.com>
+Link: https://patch.msgid.link/20261011-nanopi-m5-adc-v1-1-822edeb1acf4@protonmail.com
+Signed-off-by: Heiko Stuebner <heiko@sntech.de>
+---
+ .../boot/dts/rockchip/rk3576-nanopi-m5.dts    | 28 +++++++++++++++++++
+ 1 file changed, 28 insertions(+)
+
+--- a/arch/arm64/boot/dts/rockchip/rk3576-nanopi-m5.dts
++++ b/arch/arm64/boot/dts/rockchip/rk3576-nanopi-m5.dts
+@@ -29,6 +29,34 @@
+ 		stdout-path = "serial0:1500000n8";
+ 	};
+ 
++	adc-keys-0 {
++		compatible = "adc-keys";
++		io-channels = <&saradc 0>;
++		io-channel-names = "buttons";
++		keyup-threshold-microvolt = <1800000>;
++		poll-interval = <100>;
++
++		button-maskrom {
++			label = "maskrom";
++			linux,code = <KEY_SETUP>;
++			press-threshold-microvolt = <0>;
++		};
++	};
++
++	adc-keys-1 {
++		compatible = "adc-keys";
++		io-channels = <&saradc 1>;
++		io-channel-names = "buttons";
++		keyup-threshold-microvolt = <1800000>;
++		poll-interval = <100>;
++
++		button-recovery {
++			label = "recovery";
++			linux,code = <KEY_VENDOR>;
++			press-threshold-microvolt = <0>;
++		};
++	};
++
+ 	hdmi-con {
+ 		compatible = "hdmi-connector";
+ 		hdmi-pwr-supply = <&vcc5v_hdmi_tx>;
