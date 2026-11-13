@@ -154,3 +154,26 @@ define Device/smartrg_sr505n
     kmod-leds-bcm6328
 endef
 TARGET_DEVICES += smartrg_sr505n
+
+define Device/zyxel_vmg8324-b10a
+  $(Device/bcm63xx-nand)
+  DEVICE_VENDOR := ZyXEL
+  DEVICE_MODEL := VMG8324-B10A
+  CHIP_ID := 63268
+  SOC := bcm63168
+  CFE_BOARD_ID := 963168VX
+  ZYXEL_MODEL_ID := 6006
+  # the CFE does not erase the rest of the slot: cover the blocks any stock
+  # image may have used (largest known vendor image: rootfsLen 0x1980000)
+  ZYXEL_PAD_TO := 0x1980000
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  SUBPAGESIZE := 512
+  VID_HDR_OFFSET := 2048
+  IMAGES := factory.bin sysupgrade.bin
+  IMAGE/factory.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | \
+    append-ubi | zyxel-mstc-tag
+  DEVICE_PACKAGES += $(USB2_PACKAGES) \
+    kmod-leds-bcm6328
+endef
+TARGET_DEVICES += zyxel_vmg8324-b10a
