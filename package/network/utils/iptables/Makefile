@@ -115,7 +115,8 @@ define Package/arptables-nft
 $(call Package/iptables/Default)
   DEPENDS:=+kmod-nft-arp +xtables-nft +kmod-arptables
   TITLE:=ARP firewall administration tool nft
-  PROVIDES:=arptables
+  PROVIDES:=@arptables
+  DEFAULT_VARIANT:=1
   ALTERNATIVES:=\
     300:/usr/sbin/arptables:xtables-nft-multi \
     300:/usr/sbin/arptables-restore:xtables-nft-multi \
@@ -129,7 +130,8 @@ define Package/ebtables-nft
 $(call Package/iptables/Default)
   DEPENDS:=+kmod-nft-bridge +xtables-nft +kmod-ebtables
   TITLE:=Bridge firewall administration tool nft
-  PROVIDES:=ebtables
+  PROVIDES:=@ebtables
+  DEFAULT_VARIANT:=1
   ALTERNATIVES:=\
     300:/usr/sbin/ebtables:xtables-nft-multi \
     300:/usr/sbin/ebtables-restore:xtables-nft-multi \
