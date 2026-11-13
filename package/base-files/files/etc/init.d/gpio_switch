@@ -52,6 +52,17 @@ load_gpio_switch()
 	fi
 }
 
+shutdown_gpio_switch()
+{
+	local value
+
+	config_get value "$1" shutdown_value
+	[ -n "$value" ] || return 0
+
+	config_set "$1" value "$value"
+	load_gpio_switch "$1"
+}
+
 service_triggers()
 {
 	procd_add_reload_trigger "system"
@@ -62,5 +73,18 @@ start_service()
 	[ -e /sys/class/gpio/ ] && {
 		config_load system
 		config_foreach load_gpio_switch gpio_switch
+	}
+}
+
+reload_service()
+{
+	start_service
+}
+
+stop_service()
+{
+	[ -e /sys/class/gpio/ ] && {
+		config_load system
+		config_foreach shutdown_gpio_switch gpio_switch
 	}
 }
