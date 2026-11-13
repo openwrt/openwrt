@@ -99,6 +99,17 @@ define Device/hasivo_f1100w-4sx-4xgt-512mb
 endef
 TARGET_DEVICES += hasivo_f1100w-4sx-4xgt-512mb
 
+# Stock bootloader loads the kernel from the beginning of the firmware region.
+define Device/hasivo_f1100w-6sx-2xgt
+  SOC := rtl9303
+  DEVICE_VENDOR := Hasivo
+  DEVICE_MODEL := F1100W-6SX-2XGT
+  DEVICE_PACKAGES := kmod-phy-realtek rtl826x-firmware
+  IMAGE_SIZE := 29696k
+  $(Device/kernel-lzma)
+endef
+TARGET_DEVICES += hasivo_f1100w-6sx-2xgt
+
 define Device/hasivo_f1100wp-4sx-4xgt-common
   SOC := rtl9303
   DEVICE_VENDOR := Hasivo
