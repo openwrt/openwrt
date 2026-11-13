@@ -18,6 +18,19 @@ my $mk=`command -v gmake 2>/dev/null`;	# select the right 'make' program
 chomp($mk);		# trim trailing newline
 $mk or $mk = "make";	# default to 'make'
 
+# As in toplevel.mk: unset gives the CPU count, an invalid value gives 1.
+my $scan_jobs = $ENV{SCAN_JOBS};
+unless (defined $scan_jobs) {
+	chomp($scan_jobs = `sysctl -n hw.ncpu 2>/dev/null || nproc`);
+}
+$scan_jobs =~ /^[1-9][0-9]*$/ or $scan_jobs = 1;
+
+# Feed indexes are independent, so several of them run at once. Split the job
+# budget between the feeds and the scan inside each feed, rather than give
+# every feed the full budget and oversubscribe the machine.
+my $feed_index_jobs = $scan_jobs >= 4 ? int($scan_jobs / 4) : 1;
+my $feed_scan_jobs = $scan_jobs >= 4 ? 4 : $scan_jobs;
+
 # check version of make
 my @mkver = split /\s+/, `$mk -v`, 4;
 my $valid_mk = 1;
@@ -133,8 +146,8 @@ sub update_index($)
 	$is_tty = defined $is_tty ? $is_tty : $ENV{MAKE_TERMOUT};
 	$is_tty = defined $is_tty ? $is_tty : 1;
 
-	system("$mk -s -f include/scan.mk IS_TTY=$is_tty SCAN_TARGET=\"packageinfo\" SCAN_DIR=\"feeds/$name\" SCAN_NAME=\"package\" SCAN_DEPTH=5 SCAN_EXTRA=\"\" TMP_DIR=\"$ENV{TOPDIR}/feeds/$name.tmp\"");
-	system("$mk -s -f include/scan.mk IS_TTY=$is_tty SCAN_TARGET=\"targetinfo\" SCAN_DIR=\"feeds/$name\" SCAN_NAME=\"target\" SCAN_DEPTH=5 SCAN_EXTRA=\"\" SCAN_MAKEOPTS=\"TARGET_BUILD=1\" TMP_DIR=\"$ENV{TOPDIR}/feeds/$name.tmp\"");
+	system("$mk -s -j$feed_scan_jobs -f include/scan.mk IS_TTY=$is_tty SCAN_TARGET=\"packageinfo\" SCAN_DIR=\"feeds/$name\" SCAN_NAME=\"package\" SCAN_DEPTH=5 SCAN_EXTRA=\"\" TMP_DIR=\"$ENV{TOPDIR}/feeds/$name.tmp\"");
+	system("$mk -s -j$feed_scan_jobs -f include/scan.mk IS_TTY=$is_tty SCAN_TARGET=\"targetinfo\" SCAN_DIR=\"feeds/$name\" SCAN_NAME=\"target\" SCAN_DEPTH=5 SCAN_EXTRA=\"\" SCAN_MAKEOPTS=\"TARGET_BUILD=1\" TMP_DIR=\"$ENV{TOPDIR}/feeds/$name.tmp\"");
 
 	system("ln -sf $name.tmp/.packageinfo ./feeds/$name.index");
 	system("ln -sf $name.tmp/.targetinfo ./feeds/$name.targetindex");
@@ -850,6 +863,18 @@ sub update_feed($$$$$$$)
 	return $rv;
 }
 
+sub index_reap($)
+{
+	my $index_pid = shift;
+	my $pid = wait();
+
+	return 1 if $pid < 0;
+	return 1 if $? == 0;
+
+	warn "Create index file './feeds/$index_pid->{$pid}.index' failed.\n";
+	return 0;
+}
+
 sub update {
 	my %opts;
 	my %argv_feeds;
@@ -884,12 +909,40 @@ sub update {
 		}
 		push @index_feeds, $name;
 	}
+	my $running = 0;
+	my %index_pid;
+	$| = 1;
+	# prepare-mk runs the host prerequisite checks once for the whole tree.
+	# Run it before the fork, so that the children do not run the checks at
+	# the same time on a fresh tree.
+	if ($feed_index_jobs > 1 and @index_feeds) {
+		system("$mk -s prepare-mk OPENWRT_BUILD= TMP_DIR=\"$ENV{TOPDIR}/feeds/$index_feeds[0].tmp\"");
+	}
 	foreach my $name (@index_feeds) {
 		warn "Create index file './feeds/$name.index' \n";
-		update_index($name) == 0 or do {
-			warn "failed.\n";
-			$failed=1;
-		};
+		if ($feed_index_jobs <= 1) {
+			update_index($name) == 0 or do {
+				warn "failed.\n";
+				$failed=1;
+			};
+			next;
+		}
+		while ($running >= $feed_index_jobs) {
+			index_reap(\%index_pid) or $failed=1;
+			$running--;
+		}
+		my $pid = fork();
+		defined $pid or die "Unable to fork for the index of feed $name";
+		if ($pid == 0) {
+			$ENV{SCAN_COOKIE} = $$;
+			exit(update_index($name) == 0 ? 0 : 1);
+		}
+		$index_pid{$pid} = $name;
+		$running++;
+	}
+	while ($running > 0) {
+		index_reap(\%index_pid) or $failed=1;
+		$running--;
 	}
 
 	return $failed;
