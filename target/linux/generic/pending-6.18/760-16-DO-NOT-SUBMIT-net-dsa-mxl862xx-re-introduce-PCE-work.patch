@@ -46,7 +46,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  #define MXL862XX_TFLOW_PCERULELOGICWRITE \
 --- a/drivers/net/dsa/mxl862xx/mxl862xx.c
 +++ b/drivers/net/dsa/mxl862xx/mxl862xx.c
-@@ -516,6 +516,44 @@ static int mxl862xx_setup_drop_meter(str
+@@ -518,6 +518,44 @@ static int mxl862xx_setup_drop_meter(str
  	return MXL862XX_API_WRITE(priv, MXL862XX_COMMON_REGISTERMOD, reg);
  }
  
@@ -91,7 +91,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  /* Per-CTP logical indices for protocol trap rules.
   *
   * The firmware pre-allocates a per-CTP PCE block for every port during
-@@ -529,16 +567,20 @@ static int mxl862xx_setup_drop_meter(str
+@@ -531,16 +569,20 @@ static int mxl862xx_setup_drop_meter(str
  #define MXL862XX_MLDV1_CTP_INDEX		3
  #define MXL862XX_MLDV2_CTP_INDEX		4
  
@@ -118,7 +118,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  }
  
  /**
-@@ -1252,9 +1294,11 @@ static int mxl862xx_setup(struct dsa_swi
+@@ -1267,9 +1309,11 @@ static int mxl862xx_setup(struct dsa_swi
  	if (ret)
  		return ret;
  

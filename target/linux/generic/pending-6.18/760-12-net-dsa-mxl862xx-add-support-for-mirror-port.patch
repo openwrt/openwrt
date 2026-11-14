@@ -50,7 +50,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  #define MXL862XX_TFLOW_PCERULEALLOC	(MXL862XX_TFLOW_MAGIC + 0x4)
 --- a/drivers/net/dsa/mxl862xx/mxl862xx.c
 +++ b/drivers/net/dsa/mxl862xx/mxl862xx.c
-@@ -1239,6 +1239,8 @@ static int mxl862xx_setup(struct dsa_swi
+@@ -1254,6 +1254,8 @@ static int mxl862xx_setup(struct dsa_swi
  				      (n_user_ports + n_cpu_ports);
  	}
  
@@ -59,7 +59,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	ret = mxl862xx_setup_drop_meter(ds);
  	if (ret)
  		return ret;
-@@ -2103,6 +2105,120 @@ static int mxl862xx_setup_cpu_bridge(str
+@@ -2133,6 +2135,120 @@ static int mxl862xx_setup_cpu_bridge(str
  	return mxl862xx_set_bridge_port(ds, port);
  }
  
@@ -180,7 +180,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  /**
   * mxl862xx_lag_master_port - Find the LAG master (lowest-numbered member)
   * @ds: DSA switch
-@@ -4282,6 +4398,8 @@ static const struct dsa_switch_ops mxl86
+@@ -4312,6 +4428,8 @@ static const struct dsa_switch_ops mxl86
  	.port_fdb_dump = mxl862xx_port_fdb_dump,
  	.port_mdb_add = mxl862xx_port_mdb_add,
  	.port_mdb_del = mxl862xx_port_mdb_del,
@@ -209,7 +209,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	struct dsa_lag *lag;
  	bool lag_tx_enabled;
  	u8 lag_hash_bits;
-@@ -391,6 +395,8 @@ struct mxl862xx_fw_version {
+@@ -407,6 +411,8 @@ struct mxl862xx_fw_version {
   * @trunk_hash:         current global hash field bitmask (6 bits,
   *                      MXL862XX_TRUNK_HASH_*); union of all active LAGs'
   *                      hash requirements
@@ -218,7 +218,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
   * @stats_work:         periodic work item that polls RMON hardware counters
   *                      and accumulates them into 64-bit per-port stats
   */
-@@ -422,6 +428,7 @@ struct mxl862xx_priv {
+@@ -440,6 +446,7 @@ struct mxl862xx_priv {
  	u16 cpu_trap_fid;
  	u16 lag_bridge_ports[MXL862XX_MAX_LAG_IDS + 1];
  	u8 trunk_hash;

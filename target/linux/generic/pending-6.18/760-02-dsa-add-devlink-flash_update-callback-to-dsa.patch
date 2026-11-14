@@ -1,23 +1,33 @@
-From 76491785e22884af9ee8ab5ea824ba8100a91fe1 Mon Sep 17 00:00:00 2001
+From 965904e9a6e3341994daff10d2433e4eadc07c79 Mon Sep 17 00:00:00 2001
 From: Daniel Golle <daniel@makrotopia.org>
-Date: Mon, 3 Aug 2026 04:51:51 +0100
-Subject: [PATCH net-next v10 1/5] net: dsa: add devlink flash_update callback
- to dsa_switch_ops
+Date: Fri, 14 Aug 2026 13:38:14 +0100
+Subject: [PATCH net-next v19] net: dsa: add devlink flash_update callback to
+ dsa_switch_ops
 
 Add a devlink_flash_update callback to dsa_switch_ops so that DSA
 drivers can support devlink dev flash without open-coding the devlink
 plumbing. Like the other trampolines in net/dsa/devlink.c, the op
-returns -EOPNOTSUPP when the driver does not implement the callback;
-the devlink core will then have fetched the firmware file from
-userspace before the request fails, which is acceptable for an
-operation as infrequent as a firmware update.
+returns -EOPNOTSUPP when the driver does not implement the callback.
+The devlink core takes a non-NULL ops->flash_update as the capability
+gate, so on a switch without the callback a flash request now fetches
+the firmware file, unless it names a component, which the core refuses
+after consulting the driver's info versions, or an overwrite mask,
+which it refuses outright: a missing file fails with the firmware
+loader's errno, -ENOENT, instead of -EOPNOTSUPP, and a file that is
+found reaches the trampoline inside a FLASH_UPDATE/FLASH_UPDATE_END
+notification pair. The ETHTOOL_FLASHDEV ioctl on a user port reaches
+the same trampoline through devlink's compat path, without extack.
+Both are acceptable for an operation as infrequent as a firmware
+update.
 
 The devlink core calls the op with the devlink instance lock held and
-without rtnl_lock, whereas DSA serialises its switch and port ops
-under rtnl_lock, so a driver has to serialise a flash against its own
-ops itself.
+without rtnl_lock. DSA calls its port ops from paths of its own, some
+without rtnl_lock either, and registers the devlink instance before
+the user ports exist, so a driver serialises a flash against its own
+ops and its own setup itself.
 
 Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+Reviewed-by: Andrew Lunn <andrew@lunn.ch>
 ---
  include/net/dsa.h |  3 +++
  net/dsa/devlink.c | 13 +++++++++++++
