@@ -1,0 +1,85 @@
+From 9d75ec1126feb21198f9cce305493af70161677a Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Fri, 13 Nov 2026 22:04:58 +0000
+Subject: [PATCH] media: rkvdec: hevc: bound the RPS reads by the control size
+
+The RPS helpers read num_short_term_ref_pic_sets elements of the
+EXT_SPS_ST_RPS control and num_long_term_ref_pics_sps elements of the
+EXT_SPS_LT_RPS control, however many elements userspace passed. Beyond
+the passed elements they read stale entries of the control's array,
+and past its allocation once the SPS counts more sets than the control
+has ever held, as the control framework sizes a dynamic array for the
+largest element count it has seen. The short-term sets read from there
+are unchecked, and a num_negative_pics or num_positive_pics above 16
+overflows the calculated sets, the stack arrays of
+st_ref_pic_set_prediction() and the hardware RPS table.
+
+A userspace V4L2 client that can open the RKVDEC m2m decoder can set an
+SPS whose counts exceed the number of elements it passed in these
+controls, so the reads run past the allocation.
+
+Use the controls only when they hold at least as many elements as the
+SPS counts, and treat them as not set otherwise in both back ends.
+
+Fixes: c9a59dc2acc7 ("media: rkvdec: Add HEVC support for the VDPU381 variant")
+Cc: stable@vger.kernel.org
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ .../platform/rockchip/rkvdec/rkvdec-hevc-common.c    | 12 ++++++------
+ .../platform/rockchip/rkvdec/rkvdec-vdpu381-hevc.c   |  4 ++--
+ .../platform/rockchip/rkvdec/rkvdec-vdpu383-hevc.c   |  4 ++--
+ 3 files changed, 10 insertions(+), 10 deletions(-)
+
+--- a/drivers/media/platform/rockchip/rkvdec/rkvdec-hevc-common.c
++++ b/drivers/media/platform/rockchip/rkvdec/rkvdec-hevc-common.c
+@@ -448,18 +448,18 @@ void rkvdec_hevc_run_preamble(struct rkv
+ 			      V4L2_CID_STATELESS_HEVC_SCALING_MATRIX);
+ 	run->scaling_matrix = ctrl ? ctrl->p_cur.p : NULL;
+ 
++	run->ext_sps_st_rps = NULL;
+ 	if (ctx->has_sps_st_rps) {
+ 		ctrl = v4l2_ctrl_find(&ctx->ctrl_hdl,
+ 				      V4L2_CID_STATELESS_HEVC_EXT_SPS_ST_RPS);
+-		run->ext_sps_st_rps = ctrl ? ctrl->p_cur.p : NULL;
+-	} else {
+-		run->ext_sps_st_rps = NULL;
++		if (ctrl && ctrl->elems >= run->sps->num_short_term_ref_pic_sets)
++			run->ext_sps_st_rps = ctrl->p_cur.p;
+ 	}
++	run->ext_sps_lt_rps = NULL;
+ 	if (ctx->has_sps_lt_rps) {
+ 		ctrl = v4l2_ctrl_find(&ctx->ctrl_hdl,
+ 				      V4L2_CID_STATELESS_HEVC_EXT_SPS_LT_RPS);
+-		run->ext_sps_lt_rps = ctrl ? ctrl->p_cur.p : NULL;
+-	} else {
+-		run->ext_sps_lt_rps = NULL;
++		if (ctrl && ctrl->elems >= run->sps->num_long_term_ref_pics_sps)
++			run->ext_sps_lt_rps = ctrl->p_cur.p;
+ 	}
+ }
+--- a/drivers/media/platform/rockchip/rkvdec/rkvdec-vdpu381-hevc.c
++++ b/drivers/media/platform/rockchip/rkvdec/rkvdec-vdpu381-hevc.c
+@@ -604,8 +604,8 @@ static int rkvdec_hevc_run(struct rkvdec
+ 	 * On vdpu381, not setting the long and short term ref sets will just output wrong frames.
+ 	 * Let's just warn about it and let the decoder run anyway.
+ 	 */
+-	if ((!ctx->has_sps_lt_rps && run.sps->num_long_term_ref_pics_sps) ||
+-	    (!ctx->has_sps_st_rps && run.sps->num_short_term_ref_pic_sets)) {
++	if ((!run.ext_sps_lt_rps && run.sps->num_long_term_ref_pics_sps) ||
++	    (!run.ext_sps_st_rps && run.sps->num_short_term_ref_pic_sets)) {
+ 		dev_warn_ratelimited(rkvdec->dev, "Long and short term RPS not set\n");
+ 	} else {
+ 		rkvdec_hevc_assemble_hw_rps(&run, &tbl->rps, &hevc_ctx->st_cache);
+--- a/drivers/media/platform/rockchip/rkvdec/rkvdec-vdpu383-hevc.c
++++ b/drivers/media/platform/rockchip/rkvdec/rkvdec-vdpu383-hevc.c
+@@ -550,8 +550,8 @@ static int rkvdec_hevc_run(struct rkvdec
+ 	 * To be on the safe side for this new v4l2 control, write an error in the log and mark
+ 	 * the buffer as failed by returning an error here.
+ 	 */
+-	if ((!ctx->has_sps_lt_rps && run.sps->num_long_term_ref_pics_sps) ||
+-	    (!ctx->has_sps_st_rps && run.sps->num_short_term_ref_pic_sets)) {
++	if ((!run.ext_sps_lt_rps && run.sps->num_long_term_ref_pics_sps) ||
++	    (!run.ext_sps_st_rps && run.sps->num_short_term_ref_pic_sets)) {
+ 		dev_err_ratelimited(rkvdec->dev, "Long and short term RPS not set\n");
+ 		rkvdec_run_postamble(ctx, &run.base);
+ 		return -EINVAL;

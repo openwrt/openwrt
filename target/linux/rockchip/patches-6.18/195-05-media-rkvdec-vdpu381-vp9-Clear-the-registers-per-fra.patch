@@ -1,0 +1,30 @@
+From 514da1a9607795003b3dee7277112df11b082bb0 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Thu, 12 Nov 2026 09:29:42 +0000
+Subject: [PATCH] media: rkvdec: vdpu381: vp9: Clear the registers per frame
+
+The VP9 register set lives in the context and config_registers() only
+sets the fields a frame needs. The segment feature enables, the
+reference scale factors and the reference strides keep the values of
+earlier frames, and the loop filter deltas of the last frame are ORed
+into what is already there.
+
+Clear the register set before it is filled, as the H.264 and HEVC
+backends do.
+
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ drivers/media/platform/rockchip/rkvdec/rkvdec-vdpu381-vp9.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+--- a/drivers/media/platform/rockchip/rkvdec/rkvdec-vdpu381-vp9.c
++++ b/drivers/media/platform/rockchip/rkvdec/rkvdec-vdpu381-vp9.c
+@@ -462,6 +462,8 @@ static void config_registers(struct rkvd
+ 			(V4L2_VP9_FRAME_FLAG_KEY_FRAME |
+ 			 V4L2_VP9_FRAME_FLAG_INTRA_ONLY));
+ 
++	memset(regs, 0, sizeof(*regs));
++
+ 	regs->common.reg009_dec_mode.dec_mode = VDPU381_MODE_VP9;
+ 
+ 	regs->vp9_param.reg103.vp9_intra_only_flag = intra_only;

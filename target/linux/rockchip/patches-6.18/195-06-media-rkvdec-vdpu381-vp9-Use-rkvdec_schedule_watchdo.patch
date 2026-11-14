@@ -1,0 +1,43 @@
+From f437fcd3437da402bc017b2e096ae7048183b5b5 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Thu, 12 Nov 2026 09:29:54 +0000
+Subject: [PATCH] media: rkvdec: vdpu381: vp9: Use rkvdec_schedule_watchdog()
+
+rkvdec_vp9_run() open codes the watchdog period with a 64-bit
+division, which fails to link on 32-bit ARM, and declares the operands
+after the first statement. rkvdec_schedule_watchdog() computes the
+same period with div_u64(); call it.
+
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ .../platform/rockchip/rkvdec/rkvdec-vdpu381-vp9.c    | 12 +-----------
+ 1 file changed, 1 insertion(+), 11 deletions(-)
+
+--- a/drivers/media/platform/rockchip/rkvdec/rkvdec-vdpu381-vp9.c
++++ b/drivers/media/platform/rockchip/rkvdec/rkvdec-vdpu381-vp9.c
+@@ -744,7 +744,6 @@ static int rkvdec_vp9_run(struct rkvdec_
+ 	struct rkvdec_vp9_ctx *vp9_ctx = ctx->priv;
+ 	struct rkvdec_vp9_run run = { };
+ 	int ret;
+-	u32 watchdog_time;
+ 
+ 	ret = rkvdec_vp9_run_preamble(ctx, &run);
+ 
+@@ -762,16 +761,7 @@ static int rkvdec_vp9_run(struct rkvdec_
+ 
+ 	rkvdec_run_postamble(ctx, &run.base);
+ 
+-	u64 timeout_threshold = vp9_ctx->regs.common.reg032_timeout_threshold;
+-	unsigned long axi_rate = clk_get_rate(rkvdec->axi_clk);
+-
+-	if (axi_rate)
+-		watchdog_time = 2 * (1000 * timeout_threshold) / axi_rate;
+-	else
+-		watchdog_time = 2000;
+-
+-	schedule_delayed_work(&rkvdec->watchdog_work,
+-			      msecs_to_jiffies(watchdog_time));
++	rkvdec_schedule_watchdog(rkvdec, vp9_ctx->regs.common.reg032_timeout_threshold);
+ 
+ 	writel(VDPU381_DEC_E_BIT, rkvdec->regs + VDPU381_REG_DEC_E);
+ 

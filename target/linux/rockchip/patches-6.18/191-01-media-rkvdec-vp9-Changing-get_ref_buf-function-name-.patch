@@ -1,0 +1,43 @@
+From 75bfc22c43a1b16114634bcfa4c8dbb6ffb2f3b5 Mon Sep 17 00:00:00 2001
+From: Venkata Atchuta Bheemeswara Sarma Darbha <vdarbha0473@gmail.com>
+Date: Sun, 26 Jul 2026 15:25:34 -0500
+Subject: [PATCH] media: rkvdec: vp9: Changing get_ref_buf function name to
+ get_ref_buf_vp9
+
+This change is in preparation for the upcoming commits and to denote
+that this function is not to be confused with the similar function
+found in rkvdec's hevc.
+
+Signed-off-by: Venkata Atchuta Bheemeswara Sarma Darbha <vdarbha0473@gmail.com>
+---
+ drivers/media/platform/rockchip/rkvdec/rkvdec-vp9.c | 10 +++++-----
+ 1 file changed, 5 insertions(+), 5 deletions(-)
+
+--- a/drivers/media/platform/rockchip/rkvdec/rkvdec-vp9.c
++++ b/drivers/media/platform/rockchip/rkvdec/rkvdec-vp9.c
+@@ -349,7 +349,7 @@ static void init_probs(struct rkvdec_ctx
+ }
+ 
+ static struct rkvdec_decoded_buffer *
+-get_ref_buf(struct rkvdec_ctx *ctx, struct vb2_v4l2_buffer *dst, u64 timestamp)
++get_ref_buf_vp9(struct rkvdec_ctx *ctx, struct vb2_v4l2_buffer *dst, u64 timestamp)
+ {
+ 	struct v4l2_m2m_ctx *m2m_ctx = ctx->fh.m2m_ctx;
+ 	struct vb2_queue *cap_q = &m2m_ctx->cap_q_ctx.q;
+@@ -489,12 +489,12 @@ static void config_registers(struct rkvd
+ 
+ 	dec_params = run->decode_params;
+ 	dst = vb2_to_rkvdec_decoded_buf(&run->base.bufs.dst->vb2_buf);
+-	ref_bufs[0] = get_ref_buf(ctx, &dst->base.vb, dec_params->last_frame_ts);
+-	ref_bufs[1] = get_ref_buf(ctx, &dst->base.vb, dec_params->golden_frame_ts);
+-	ref_bufs[2] = get_ref_buf(ctx, &dst->base.vb, dec_params->alt_frame_ts);
++	ref_bufs[0] = get_ref_buf_vp9(ctx, &dst->base.vb, dec_params->last_frame_ts);
++	ref_bufs[1] = get_ref_buf_vp9(ctx, &dst->base.vb, dec_params->golden_frame_ts);
++	ref_bufs[2] = get_ref_buf_vp9(ctx, &dst->base.vb, dec_params->alt_frame_ts);
+ 
+ 	if (vp9_ctx->last.valid)
+-		last = get_ref_buf(ctx, &dst->base.vb, vp9_ctx->last.timestamp);
++		last = get_ref_buf_vp9(ctx, &dst->base.vb, vp9_ctx->last.timestamp);
+ 	else
+ 		last = dst;
+ 

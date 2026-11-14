@@ -1,0 +1,120 @@
+From 32df1227d04288205cddf1ec7002d70f1720cfc7 Mon Sep 17 00:00:00 2001
+From: Alex Kazinsky <a.kazinsky@ideco.ru>
+Date: Mon, 26 Oct 2026 16:48:07 +0400
+Subject: [PATCH] media: rkvdec: Handle interrupts without a current context
+
+The watchdog can finish the current job before the threaded IRQ handler
+retrieves its context. In that case, v4l2_m2m_get_curr_priv() returns NULL,
+but the variant IRQ handlers unconditionally dereference ctx->dev.
+
+Pass the device pointer to the variant IRQ handlers independently of the
+context. Clear the interrupt status and, for VDPU383, disable interrupts
+before returning if no current context exists. This avoids dereferencing
+NULL while still acknowledging the interrupt.
+
+Found by Linux Verification Center (linuxtesting.org) with SVACE.
+
+Fixes: f9c7b7deeffd ("media: rkvdec: Support per-variant interrupt handler")
+Signed-off-by: Alex Kazinsky <a.kazinsky@ideco.ru>
+Link: https://lore.kernel.org/r/20261026124808.642373-1-a.kazinsky@ideco.ru
+---
+ .../media/platform/rockchip/rkvdec/rkvdec.c   | 23 +++++++++++++------
+ .../media/platform/rockchip/rkvdec/rkvdec.h   |  4 +++-
+ 2 files changed, 19 insertions(+), 8 deletions(-)
+
+--- a/drivers/media/platform/rockchip/rkvdec/rkvdec.c
++++ b/drivers/media/platform/rockchip/rkvdec/rkvdec.c
+@@ -1640,15 +1640,18 @@ static void rkvdec_iommu_restore(struct
+ 	}
+ }
+ 
+-static irqreturn_t rk3399_irq_handler(struct rkvdec_ctx *ctx)
++static irqreturn_t rk3399_irq_handler(struct rkvdec_dev *rkvdec,
++				      struct rkvdec_ctx *ctx)
+ {
+-	struct rkvdec_dev *rkvdec = ctx->dev;
+ 	enum vb2_buffer_state state;
+ 	u32 status;
+ 
+ 	status = readl(rkvdec->regs + RKVDEC_REG_INTERRUPT);
+ 	writel(0, rkvdec->regs + RKVDEC_REG_INTERRUPT);
+ 
++	if (!ctx)
++		return IRQ_HANDLED;
++
+ 	if (status & RKVDEC_RDY_STA) {
+ 		state = VB2_BUF_STATE_DONE;
+ 	} else {
+@@ -1663,9 +1666,9 @@ static irqreturn_t rk3399_irq_handler(st
+ 	return IRQ_HANDLED;
+ }
+ 
+-static irqreturn_t vdpu381_irq_handler(struct rkvdec_ctx *ctx)
++static irqreturn_t vdpu381_irq_handler(struct rkvdec_dev *rkvdec,
++				       struct rkvdec_ctx *ctx)
+ {
+-	struct rkvdec_dev *rkvdec = ctx->dev;
+ 	enum vb2_buffer_state state;
+ 	bool need_reset = 0;
+ 	u32 status;
+@@ -1673,6 +1676,9 @@ static irqreturn_t vdpu381_irq_handler(s
+ 	status = readl(rkvdec->regs + VDPU381_REG_STA_INT);
+ 	writel(0, rkvdec->regs + VDPU381_REG_STA_INT);
+ 
++	if (!ctx)
++		return IRQ_HANDLED;
++
+ 	if (status & VDPU381_STA_INT_DEC_RDY_STA) {
+ 		state = VB2_BUF_STATE_DONE;
+ 	} else {
+@@ -1692,9 +1698,9 @@ static irqreturn_t vdpu381_irq_handler(s
+ 	return IRQ_HANDLED;
+ }
+ 
+-static irqreturn_t vdpu383_irq_handler(struct rkvdec_ctx *ctx)
++static irqreturn_t vdpu383_irq_handler(struct rkvdec_dev *rkvdec,
++				       struct rkvdec_ctx *ctx)
+ {
+-	struct rkvdec_dev *rkvdec = ctx->dev;
+ 	enum vb2_buffer_state state;
+ 	bool need_reset = 0;
+ 	u32 status;
+@@ -1705,6 +1711,9 @@ static irqreturn_t vdpu383_irq_handler(s
+ 	writel(FIELD_PREP_WM16(VDPU383_INT_EN_IRQ | VDPU383_INT_EN_LINE_IRQ, 0),
+ 	       rkvdec->link + VDPU383_LINK_INT_EN);
+ 
++	if (!ctx)
++		return IRQ_HANDLED;
++
+ 	if (status & VDPU383_STA_INT_DEC_RDY_STA) {
+ 		state = VB2_BUF_STATE_DONE;
+ 	} else {
+@@ -1727,7 +1736,7 @@ static irqreturn_t rkvdec_irq_handler(in
+ 	struct rkvdec_ctx *ctx = v4l2_m2m_get_curr_priv(rkvdec->m2m_dev);
+ 	const struct rkvdec_variant *variant = rkvdec->variant;
+ 
+-	return variant->ops->irq_handler(ctx);
++	return variant->ops->irq_handler(rkvdec, ctx);
+ }
+ 
+ /*
+--- a/drivers/media/platform/rockchip/rkvdec/rkvdec.h
++++ b/drivers/media/platform/rockchip/rkvdec/rkvdec.h
+@@ -30,6 +30,7 @@
+ #define RKVDEC_8K_PIXELS		(7680 * 4320)
+ 
+ struct rkvdec_ctx;
++struct rkvdec_dev;
+ struct rkvdec_rcb_config;
+ 
+ struct rkvdec_ctrl_desc {
+@@ -72,7 +73,8 @@ vb2_to_rkvdec_decoded_buf(struct vb2_buf
+ }
+ 
+ struct rkvdec_variant_ops {
+-	irqreturn_t (*irq_handler)(struct rkvdec_ctx *ctx);
++	irqreturn_t (*irq_handler)(struct rkvdec_dev *rkvdec,
++				   struct rkvdec_ctx *ctx);
+ 	u32 (*colmv_size)(u16 width, u16 height);
+ 	void (*flatten_matrices)(u8 *output, const u8 *input, int matrices, int row_length);
+ };

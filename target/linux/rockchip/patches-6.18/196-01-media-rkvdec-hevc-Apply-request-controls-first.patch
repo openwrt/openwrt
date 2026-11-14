@@ -1,0 +1,46 @@
+From f60a2fe6ea602bb1eb91c19ba802fd6ddf1eef94 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Fri, 13 Nov 2026 22:04:58 +0000
+Subject: [PATCH] media: rkvdec: hevc: apply request controls first
+
+rkvdec_hevc_run_preamble() takes the control pointers and the slice
+count before rkvdec_run_preamble() applies the request. When a request
+carries more elements of a dynamic array control than the control has
+held so far, v4l2_ctrl_request_setup() reallocates the array and frees
+the old one, which leaves run->slices_params, run->ext_sps_st_rps or
+run->ext_sps_lt_rps pointing to freed memory, and run->num_slices holds
+the element count of the previous request. The EXT SPS RPS controls are
+also looked up depending on has_sps_st_rps and has_sps_lt_rps before
+the request's own controls could set them.
+
+A userspace V4L2 client that can open the RKVDEC m2m decoder can submit
+a request that grows one of these dynamic array controls and reach the
+freed array through the stale pointer.
+
+Apply the request first, as rkvdec_vp9_run_preamble() does.
+
+Fixes: 3595375c2301 ("media: rkvdec: Add HEVC backend")
+Cc: stable@vger.kernel.org
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ drivers/media/platform/rockchip/rkvdec/rkvdec-hevc-common.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/drivers/media/platform/rockchip/rkvdec/rkvdec-hevc-common.c
++++ b/drivers/media/platform/rockchip/rkvdec/rkvdec-hevc-common.c
+@@ -429,6 +429,8 @@ void rkvdec_hevc_run_preamble(struct rkv
+ {
+ 	struct v4l2_ctrl *ctrl;
+ 
++	rkvdec_run_preamble(ctx, &run->base);
++
+ 	ctrl = v4l2_ctrl_find(&ctx->ctrl_hdl,
+ 			      V4L2_CID_STATELESS_HEVC_DECODE_PARAMS);
+ 	run->decode_params = ctrl ? ctrl->p_cur.p : NULL;
+@@ -460,6 +462,4 @@ void rkvdec_hevc_run_preamble(struct rkv
+ 	} else {
+ 		run->ext_sps_lt_rps = NULL;
+ 	}
+-
+-	rkvdec_run_preamble(ctx, &run->base);
+ }
