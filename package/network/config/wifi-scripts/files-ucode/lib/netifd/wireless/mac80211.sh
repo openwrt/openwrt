@@ -64,13 +64,16 @@ function get_channel_frequency(band, channel) {
 	}
 }
 
-function setup_phy(phy, config, data) {
+function setup_phy(phy, config, data, in_use) {
 	if (config.channel == "auto")
 		config.channel = 0;
 	config.channel = +config.channel;
 	config.frequency = get_channel_frequency(config.band, config.channel);
 
-	if (config.country_code) {
+	/* the regulatory domain is the whole system's: a radio with no enabled
+	 * interface (a disabled radio, or a spare one still at the generated
+	 * '00') does not set it */
+	if (config.country_code && in_use) {
 		log(`Setting country code to ${config.country_code}`);
 		system(`iw reg set ${config.country_code}`);
 	}
@@ -205,7 +208,7 @@ function setup() {
 	delete config.hwmode;
 
 	validate('device', config);
-	setup_phy(data.phy, data.config, data.data);
+	setup_phy(data.phy, data.config, data.data, length(data.interfaces ?? {}) > 0);
 
 	let supplicant_mesh;
 	let has_ap = false;
