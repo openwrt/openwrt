@@ -1,0 +1,66 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Gleb Pesin <dormancygrace@gmail.com>
+Date: Wed, 29 Jul 2026 21:00:00 +0000
+Subject: [PATCH] mt7620: avoid direct jal in entropy bootstrap
+
+MT7620 can sporadically execute direct jal imm26 calls with an incorrect
+high address nibble. Linux 6.18 calls mix_pool_bytes() directly from the
+timer-based entropy bootstrap, and affected systems have been observed
+jumping from the intended 0x80... target to 0x70... instead.
+
+Use the same volatile function-pointer workaround as the existing MT7620
+random helpers so the compiler emits jalr at these call sites.
+
+Signed-off-by: Gleb Pesin <dormancygrace@gmail.com>
+---
+ drivers/char/random.c | 18 ++++++++++++++++++
+ 1 file changed, 18 insertions(+)
+
+--- a/drivers/char/random.c
++++ b/drivers/char/random.c
+@@ -1269,8 +1269,13 @@ static void __cold entropy_timer(struct
+ {
+ 	struct entropy_timer_state *state = container_of(timer, struct entropy_timer_state, timer);
+ 	unsigned long entropy = random_get_entropy();
+-
++#ifdef CONFIG_NET_RALINK_MT7620
++	typedef void (*mix_pool_t)(const void *in, size_t nbytes);
++	volatile mix_pool_t mix_pool_fn = mix_pool_bytes;
++	mix_pool_fn(&entropy, sizeof(entropy));
++#else
+ 	mix_pool_bytes(&entropy, sizeof(entropy));
++#endif
+ 	if (atomic_inc_return(&state->samples) % state->samples_per_bit == 0)
+ 		credit_init_bits(1);
+ }
+@@ -1288,6 +1293,10 @@ static void __cold try_to_generate_entro
+ 	unsigned long last = random_get_entropy();
+ 	cpumask_var_t timer_cpus;
+ 	int cpu = -1;
++#ifdef CONFIG_NET_RALINK_MT7620
++	typedef void (*mix_pool_t)(const void *in, size_t nbytes);
++	volatile mix_pool_t mix_pool_fn = mix_pool_bytes;
++#endif
+ 
+ 	for (i = 0; i < NUM_TRIAL_SAMPLES - 1; ++i) {
+ 		stack->entropy = random_get_entropy();
+@@ -1341,11 +1350,19 @@ static void __cold try_to_generate_entro
+ 
+ 			preempt_enable();
+ 		}
++#ifdef CONFIG_NET_RALINK_MT7620
++		mix_pool_fn(&stack->entropy, sizeof(stack->entropy));
++#else
+ 		mix_pool_bytes(&stack->entropy, sizeof(stack->entropy));
++#endif
+ 		schedule();
+ 		stack->entropy = random_get_entropy();
+ 	}
++#ifdef CONFIG_NET_RALINK_MT7620
++	mix_pool_fn(&stack->entropy, sizeof(stack->entropy));
++#else
+ 	mix_pool_bytes(&stack->entropy, sizeof(stack->entropy));
++#endif
+ 
+ 	free_cpumask_var(timer_cpus);
+ out:
