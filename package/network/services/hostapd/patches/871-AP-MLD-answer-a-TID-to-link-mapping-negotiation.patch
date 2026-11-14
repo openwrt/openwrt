@@ -41,7 +41,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/src/ap/hostapd.c
 +++ b/src/ap/hostapd.c
-@@ -1407,10 +1407,13 @@ int hostapd_adv_ttlm_request(struct host
+@@ -1406,10 +1406,13 @@ int hostapd_adv_ttlm_request(struct host
  
  	ret = hostapd_drv_adv_ttlm_request(hapd, links, switch_time, duration,
  					   &hapd->mld->adv_ttlm_cookie);

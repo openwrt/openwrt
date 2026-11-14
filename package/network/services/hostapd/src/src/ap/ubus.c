@@ -1407,7 +1407,7 @@ hostapd_switch_chan(struct ubus_context *ctx, struct ubus_object *obj,
 				NULL,
 				hostapd_get_punct_bitmap(hapd));
 
-	for (i = 0; i < hapd->iface->num_bss; i++) {
+	for (i = 0; i < hapd->iface->num_bss && !ret; i++) {
 		struct hostapd_data *bss = hapd->iface->bss[i];
 
 		if (hostapd_switch_channel(bss, &css) != 0)

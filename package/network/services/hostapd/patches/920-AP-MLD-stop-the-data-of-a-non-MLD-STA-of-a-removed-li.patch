@@ -27,7 +27,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 ---
 --- a/src/ap/hostapd.c
 +++ b/src/ap/hostapd.c
-@@ -955,8 +955,10 @@ static void hostapd_link_remove_notify_stas(struct hostapd_data *hapd)
+@@ -930,8 +930,10 @@ static void hostapd_link_remove_notify_stas(struct hostapd_data *hapd)
  
  		/* Stop new data before the frame ends State 3 or 4 (IEEE Std
  		 * 802.11-2024, 11.3.3) */
@@ -40,7 +40,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  		if (ap_sta_is_mld(hapd, sta)) {
  			tx_hapd = hostapd_link_remove_partner(hapd, sta);
-@@ -1054,19 +1056,25 @@ static bool hostapd_link_remove_sta_single_link(struct hostapd_data *hapd,
+@@ -1029,19 +1031,25 @@ static bool hostapd_link_remove_sta_single_link(struct hostapd_data *hapd,
  
  
  /* A non-AP MLD whose only setup link is the removed one counts itself
@@ -71,7 +71,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  			   MAC2STR(sta->addr), hapd->mld_link_id);
  		ap_sta_set_authorized(hapd, sta, 0);
  		hostapd_set_sta_flags(hapd, sta);
-@@ -1099,7 +1107,8 @@ static void hostapd_link_remove_start_held(struct hostapd_data *hapd)
+@@ -1107,7 +1115,8 @@ static void hostapd_link_remove_start_held(struct hostapd_data *hapd)
  /* The expiry comes before the removal TBTT, after the driver stopped the TX of
   * the link. The other links drop the element before that TBTT, and the
   * stations get their frames and the link stops after it (IEEE Std
@@ -81,7 +81,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  static void hostapd_link_remove_offload_expire(struct hostapd_data *hapd)
  {
  	u64 us;
-@@ -1107,20 +1116,21 @@ static void hostapd_link_remove_offload_expire(struct hostapd_data *hapd)
+@@ -1115,20 +1124,21 @@ static void hostapd_link_remove_offload_expire(struct hostapd_data *hapd)
  	eloop_cancel_timeout(hostapd_link_remove_timeout_handler, hapd, NULL);
  	eloop_cancel_timeout(hostapd_link_remove_offload_missing, hapd, NULL);
  	us = hostapd_link_remove_tbtt_after_us(hapd);
