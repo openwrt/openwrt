@@ -1980,6 +1980,11 @@ static void __ppe_port_queue_limit_set(struct qca_ppe_priv *priv, int port)
 		}
 	}
 
+	/* Twelve class depths at the ceiling are more than the queue manager
+	 * has buffers and more than a group's limit field holds.
+	 */
+	rate_bufs = min_t(u32, rate_bufs, priv->data->qm_total_buf);
+
 	if (sh->rate_bps && nport)
 		port_bufs = ppe_ac_bufs(priv, port, sh->rate_bps, sh->limit,
 					PPE_FLOW_SPREAD_QUEUES *
