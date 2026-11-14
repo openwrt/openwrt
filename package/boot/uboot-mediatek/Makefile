@@ -2,7 +2,7 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_VERSION:=2026.07
-PKG_RELEASE:=3
+PKG_RELEASE:=4
 PKG_HASH:=78e8bfc382fe388f9b55aa1daf8c563522a037779b5d4c349d1415e381f1243e
 PKG_BUILD_DEPENDS:=!(TARGET_ramips||TARGET_mediatek_mt7623):arm-trusted-firmware-tools/host
 PKG_PARALLEL_VARIANTS:=1
@@ -547,6 +547,18 @@ define U-Boot/mt7981_h3c_magic-nx30-pro
   BL2_SOC:=mt7981
   BL2_DDRTYPE:=ddr3
   DEPENDS:=+trusted-firmware-a-mt7981-spim-nand-ddr3
+endef
+
+define U-Boot/mt7981_huasifei_ws1610
+  NAME:=Huasifei WS1610
+  BUILD_SUBTARGET:=filogic
+  BUILD_DEVICES:=huasifei_ws1610
+  UBOOT_CONFIG:=mt7981_huasifei_ws1610
+  UBOOT_IMAGE:=u-boot.fip
+  BL2_BOOTDEV:=spim-nand-ubi
+  BL2_SOC:=mt7981
+  BL2_DDRTYPE:=ddr4
+  DEPENDS:=+trusted-firmware-a-mt7981-spim-nand-ubi-ddr4
 endef
 
 define U-Boot/mt7981_imou_hx21
@@ -1555,6 +1567,7 @@ UBOOT_TARGETS := \
 	mt7981_glinet_gl-xe3000 \
 	mt7981_globitel_bt-r320 \
 	mt7981_h3c_magic-nx30-pro \
+	mt7981_huasifei_ws1610 \
 	mt7981_imou_hx21 \
 	mt7981_jcg_q30-pro \
 	mt7981_keenetic_kn-1012 \
