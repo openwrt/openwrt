@@ -264,6 +264,12 @@ platform_do_upgrade() {
 	zyxel,nbg6617)
 		zyxel_do_upgrade "$1"
 		;;
+	zyxel,wsq50)
+		CI_KERNPART="0:HLOS"
+		CI_ROOTPART="rootfs"
+		CI_DATAPART="rootfs_data"
+		emmc_do_upgrade "$1"
+		;;
 	*)
 		default_do_upgrade "$1"
 		;;
@@ -274,7 +280,8 @@ platform_copy_config() {
 	case "$(board_name)" in
 	glinet,gl-b2200|\
 	google,wifi|\
-	linksys,whw03)
+	linksys,whw03|\
+	zyxel,wsq50)
 		emmc_copy_config
 		;;
 	esac
