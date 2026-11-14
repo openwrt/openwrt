@@ -1,0 +1,55 @@
+From 05aa635d263cff6cd0db31c266f5fa16a23f34ad Mon Sep 17 00:00:00 2001
+From: "Brendon C." <bren@bren.win>
+Date: Wed, 28 Oct 2026 22:00:00 -0500
+Subject: [PATCH] clk: mediatek: mt7981: swap MSDC and MSDC_HCK gate
+ parents
+
+The MT7981B datasheet specifies the storage interface as "eMMC v4.5 @52
+MHz 3.3V". MediaTek's SDK and U-Boot device trees give the MSDC
+controller CK_TOP_EMMC_208M as its "source" clock (max-frequency 52 MHz
+= 208/4) and CK_TOP_EMMC_400M as its "hclk", taken from topckgen
+directly, with the infracfg gate only as "source_cg". The mainline
+device tree takes both from the infracfg gates instead, and their
+parents are the other way round: CLK_INFRA_MSDC_CK from emmc_400m,
+CLK_INFRA_MSDC_HCK_CK from emmc_208m.
+
+mtk-sd derives its divider, the reported actual_clock and its data
+timeouts from the source rate, so with a device tree asking for 26 MHz
+it programs CKDIV=4 and believes the bus runs at 25 MHz while the real
+bus clock is 13 MHz, and every clock-derived timeout is sized for a bus
+twice as fast as the real one.
+
+On a GL.iNet GL-X3000 (Samsung 8GTF4R eMMC, 8-bit, 3.3 V, HS) this shows
+up as msdc_track_cmd_data write data errors (host->error=0x4) on
+roughly every 40 MB written, escalating under sustained multi-segment
+writes to exhausted retries, "I/O error, dev mmcblk0", lost page writes
+and a stopped f2fs overlay. Raw direct reads top out at 11 MB/s where
+the vendor kernel reaches 23 MB/s on the same card.
+
+Swap the two parents to match the vendor device trees. With the same
+device tree the bus then runs at a real 26 MHz, reads reach 23 MB/s,
+and four rounds of a 1.4 GB mixed direct/buffered write stress complete
+with zero retries and zero I/O errors, matching the vendor firmware.
+hclk's rate is only read for the CQE idle timer, which no MT7981 device
+tree enables.
+
+Fixes: 813c3b53b55b ("clk: mediatek: add MT7981 clock support")
+Suggested-by: Shiji Yang <yangshiji66@outlook.com>
+Signed-off-by: Brendon C. <bren@bren.win>
+---
+ drivers/clk/mediatek/clk-mt7981-infracfg.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/drivers/clk/mediatek/clk-mt7981-infracfg.c
++++ b/drivers/clk/mediatek/clk-mt7981-infracfg.c
+@@ -158,8 +158,8 @@ static const struct mtk_gate infra_clks[
+ 	GATE_INFRA1(CLK_INFRA_SPI1_HCK_CK, "infra_spi1_hck", "infra_66m_mck",
+ 		    14),
+ 	GATE_INFRA1(CLK_INFRA_FRTC_CK, "infra_frtc", "cb_rtc_32k", 15),
+-	GATE_INFRA1(CLK_INFRA_MSDC_CK, "infra_msdc", "emmc_400m", 16),
+-	GATE_INFRA1(CLK_INFRA_MSDC_HCK_CK, "infra_msdc_hck", "emmc_208m", 17),
++	GATE_INFRA1(CLK_INFRA_MSDC_CK, "infra_msdc", "emmc_208m", 16),
++	GATE_INFRA1(CLK_INFRA_MSDC_HCK_CK, "infra_msdc_hck", "emmc_400m", 17),
+ 	GATE_INFRA1(CLK_INFRA_MSDC_133M_CK, "infra_msdc_133m", "sysaxi", 18),
+ 	GATE_INFRA1(CLK_INFRA_MSDC_66M_CK, "infra_msdc_66m", "sysaxi", 19),
+ 	GATE_INFRA1(CLK_INFRA_ADC_26M_CK, "infra_adc_26m", "infra_adc_frc", 20),
