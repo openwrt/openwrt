@@ -1643,6 +1643,33 @@ function iface_config_remove(name, old_config)
 	return iface_remove(old_config);
 }
 
+// A wiphy that goes away, e.g. with its driver, takes its netdevs along, but
+// hostapd only disables a BSS whose netdev is gone. The interface, its BSSes
+// and their hostapd.<ifname> ubus objects stay until they are removed here.
+// The netdev names can belong to another phy by now, so leave netdevs alone.
+function iface_phy_gone(name)
+{
+	if (hostapd.interfaces[name] || hostapd.data.pending_config[name])
+		hostapd.printf(`Remove the interface of phy ${name}, which is gone`);
+
+	iface_config_remove(name, null);
+}
+
+// netifd can set a radio up again on the phy that replaced a gone one with no
+// teardown first (wifi reconf), and then sends no config_set for the old name.
+function iface_prune_gone(cur_name)
+{
+	for (let name in keys(hostapd.data.config)) {
+		let config = hostapd.data.config[name];
+		if (name == cur_name || !config?.phy ||
+		    access(`/sys/class/ieee80211/${config.phy}`))
+			continue;
+
+		delete hostapd.data.config[name];
+		iface_phy_gone(name);
+	}
+}
+
 // No fallback to a PHY restart, which would take the other BSSes down.
 // bss is the object of the hook: hostapd freed the BSS data before the hook,
 // and hostapd.bss still holds the object it released then.
@@ -1783,6 +1810,8 @@ function iface_set_config(name, config)
 	let phydev = phy_open(phy, config.radio_idx);
 	if (!phydev) {
 		hostapd.printf(`Failed to open phy ${phy}`);
+		delete hostapd.data.config[name];
+		iface_phy_gone(name);
 		return false;
 	}
 
@@ -2466,6 +2495,8 @@ let main_obj = {
 
 			if (!phy)
 				return libubus.STATUS_INVALID_ARGUMENT;
+
+			iface_prune_gone(name);
 
 			if (prev_file && !hostapd.data.config[name]) {
 				let config = iface_load_config(phy, radio, prev_file);
