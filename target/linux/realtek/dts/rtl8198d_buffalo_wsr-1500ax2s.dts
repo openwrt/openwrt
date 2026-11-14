@@ -24,8 +24,6 @@
 
 	keys {
 		compatible = "gpio-keys";
-		pinctrl-names = "default";
-		pinctrl-0 = <&pinmux_keys>;
 
 		key-reset {
 			label = "reset";
@@ -60,8 +58,6 @@
 
 	leds {
 		compatible = "gpio-leds";
-		pinctrl-names = "default";
-		pinctrl-0 = <&pinmux_leds>;
 
 		led_power: led-power {
 			color = <LED_COLOR_ID_GREEN>;
@@ -121,25 +117,6 @@
 			phy-mode = "internal";
 			phy-handle = <&phy3>;
 		};
-	};
-};
-
-&pinmux {
-	/*
-	 * GPIO function enable for the key and LED pins, as set by the
-	 * stock firmware. GPIO 5 (ROUTER position of the mode switch) is
-	 * unusable without this, the input keeps changing.
-	 */
-	pinmux_keys: keys {
-		/* bank 0: 0, 5, 28; bank 1: 2 */
-		pinctrl-single,bits = <0x0 0x10000021 0x10000021>,
-				      <0x4 0x4 0x4>;
-	};
-
-	pinmux_leds: leds {
-		/* bank 0: 8, 9, 12; bank 1: 1, 3, 6 */
-		pinctrl-single,bits = <0x0 0x1300 0x1300>,
-				      <0x4 0x4a 0x4a>;
 	};
 };
 
