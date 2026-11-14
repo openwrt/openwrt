@@ -2,6 +2,10 @@
 #
 # Copyright (C) 2006-2014 OpenWrt.org
 
+config KERNEL_XFRM_MIGRATE
+	bool "In-kernel XFRM migration support"
+	default y if !SMALL_FLASH
+
 config KERNEL_BUILD_USER
 	string "Custom Kernel Build User Name"
 	default "builder" if BUILDBOT
