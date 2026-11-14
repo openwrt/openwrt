@@ -1,0 +1,54 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Rosen Penev <rosenp@gmail.com>
+Date: Wed, 21 Oct 2026 19:15:14 -0700
+Subject: [PATCH] 88W8964: keep the TX done poll counter per device
+
+pcie_timer_routine_ndp() polls for TX completions every
+CHECK_TX_DONE_TIME, counted in a static variable. A board with two
+88W8964 radios, like the WRT3200ACM and WRT32X, shares that counter
+between both, so each radio was polled at irregular intervals. Keep
+the counter in struct pcie_priv.
+
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+[Robert Peerenboom: split out of neheb/mwlwifi (upstream branch) commit
+ 92b4dd1 ("88W8964: return all TX frames to mac80211 and fix TX path
+ bugs") and backported to db97edf2 on top of the OpenWrt patches]
+Signed-off-by: Robert Peerenboom <development@mindrush.de>
+---
+ hif/pcie/dev.h  | 1 +
+ hif/pcie/pcie.c | 6 +++---
+ 2 files changed, 4 insertions(+), 3 deletions(-)
+
+--- a/hif/pcie/dev.h
++++ b/hif/pcie/dev.h
+@@ -609,6 +609,7 @@ struct pcie_priv {
+ 	struct pcie_desc_data_ndp desc_data_ndp;
+ 	int tx_done_cnt;
+ 	bool data_tasks_killed;
++	int tx_done_timer_cnt;
+ 	struct ieee80211_sta *sta_link[SYSADPT_MAX_STA_SC4 + 1];
+ 	struct sk_buff_head rx_skb_trace;
+ 	struct ndp_rx_counter rx_cnts;
+--- a/hif/pcie/pcie.c
++++ b/hif/pcie/pcie.c
+@@ -1112,7 +1112,6 @@ static void pcie_timer_routine_ndp(struc
+ 	struct mwl_priv *priv = hw->priv;
+ 	struct pcie_priv *pcie_priv = priv->hif.priv;
+ 	int num = SYSADPT_TX_WMM_QUEUES;
+-	static int cnt;
+ 
+ 	if (!pcie_priv->is_tx_schedule) {
+ 		while (num--) {
+@@ -1124,9 +1123,10 @@ static void pcie_timer_routine_ndp(struc
+ 		}
+ 	}
+ 
+-	if ((++cnt * SYSADPT_TIMER_WAKEUP_TIME) >= CHECK_TX_DONE_TIME) {
++	if ((++pcie_priv->tx_done_timer_cnt * SYSADPT_TIMER_WAKEUP_TIME) >=
++	    CHECK_TX_DONE_TIME) {
+ 		pcie_tx_done_ndp(hw);
+-		cnt = 0;
++		pcie_priv->tx_done_timer_cnt = 0;
+ 	}
+ }
+ 

@@ -1,0 +1,37 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Rosen Penev <rosenp@gmail.com>
+Date: Wed, 21 Oct 2026 19:28:27 -0700
+Subject: [PATCH] 88W8864: record a TX skb in the ring only after it is
+ mapped
+
+pcie_tx_skb() stored the skb in the TX handle before mapping it. When
+the mapping failed, the skb was freed but the handle still pointed at
+it. Record the skb only once it is mapped.
+
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+[Robert Peerenboom: split out of neheb/mwlwifi (upstream branch) commit
+ dcb73e4dca ("88W8864/88W8997: fix RX refill, TX status and teardown
+ bugs") and backported to db97edf2 on top of the OpenWrt patches]
+Signed-off-by: Robert Peerenboom <development@mindrush.de>
+---
+ hif/pcie/8864/tx.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/hif/pcie/8864/tx.c
++++ b/hif/pcie/8864/tx.c
+@@ -266,7 +266,6 @@ static inline void pcie_tx_skb(struct mw
+ 	pcie_tx_add_dma_header(priv, tx_skb, 0, tailpad);
+ 
+ 	tx_hndl = pcie_priv->desc_data[desc_num].pnext_tx_hndl;
+-	tx_hndl->psk_buff = tx_skb;
+ 	tx_desc = tx_hndl->pdesc;
+ 	dma_data = (struct pcie_dma_data *)tx_skb->data;
+ 	wh = &dma_data->wh;
+@@ -293,6 +292,7 @@ static inline void pcie_tx_skb(struct mw
+ 		return;
+ 	}
+ 	tx_desc->pkt_ptr = cpu_to_le32(dma);
++	tx_hndl->psk_buff = tx_skb;
+ 	tx_desc->status = cpu_to_le32(EAGLE_TXD_STATUS_FW_OWNED);
+ 	/* make sure all the memory transactions done by cpu were completed */
+ 	wmb();	/*Data Memory Barrier*/

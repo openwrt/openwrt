@@ -1,0 +1,37 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Rosen Penev <rosenp@gmail.com>
+Date: Wed, 21 Oct 2026 19:28:27 -0700
+Subject: [PATCH] 88W8864: reset the firmware before freeing its rings
+
+pcie_deinit_8864() freed the RX and TX rings and only then reset the
+firmware, which could still DMA into the buffers. Reset it first.
+
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+[Robert Peerenboom: split out of neheb/mwlwifi (upstream branch) commit
+ dcb73e4dca ("88W8864/88W8997: fix RX refill, TX status and teardown
+ bugs") and backported to db97edf2 on top of the OpenWrt patches]
+Signed-off-by: Robert Peerenboom <development@mindrush.de>
+---
+ hif/pcie/pcie.c | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+--- a/hif/pcie/pcie.c
++++ b/hif/pcie/pcie.c
+@@ -422,6 +422,9 @@ static void pcie_deinit_8864(struct ieee
+ 	struct mwl_priv *priv = hw->priv;
+ 	struct pcie_priv *pcie_priv = priv->hif.priv;
+ 
++	/* Stop the firmware before freeing the buffers it may still use. */
++	pcie_reset(hw);
++
+ 	/* The tasklets are disabled while the radio is stopped, and
+ 	 * tasklet_kill() never returns for one that was scheduled in the
+ 	 * meantime. Let them run, as no-ops, so they can be killed.
+@@ -434,7 +437,6 @@ static void pcie_deinit_8864(struct ieee
+ 
+ 	pcie_8864_rx_deinit(hw);
+ 	pcie_8864_tx_deinit(hw);
+-	pcie_reset(hw);
+ }
+ 
+ static int pcie_get_info(struct ieee80211_hw *hw, char *buf, size_t size)

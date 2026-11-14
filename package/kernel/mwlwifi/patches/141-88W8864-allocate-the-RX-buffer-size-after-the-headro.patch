@@ -1,0 +1,47 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Rosen Penev <rosenp@gmail.com>
+Date: Wed, 21 Oct 2026 19:28:27 -0700
+Subject: [PATCH] 88W8864: allocate the RX buffer size after the
+ headroom
+
+RX buffers were allocated with rx_buf_size bytes, then reserved
+PCIE_MIN_BYTES_HEADROOM, and rx_buf_size bytes from skb->data were
+mapped and announced to the firmware. The mapping extended 64 bytes past
+the end of the buffer. Allocate room for rx_buf_size after the
+headroom.
+
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+[Robert Peerenboom: split out of neheb/mwlwifi (upstream branch) commit
+ dcb73e4dca ("88W8864/88W8997: fix RX refill, TX status and teardown
+ bugs") and backported to db97edf2 on top of the OpenWrt patches]
+Signed-off-by: Robert Peerenboom <development@mindrush.de>
+---
+ hif/pcie/8864/rx.c | 9 +++++++--
+ 1 file changed, 7 insertions(+), 2 deletions(-)
+
+--- a/hif/pcie/8864/rx.c
++++ b/hif/pcie/8864/rx.c
+@@ -88,8 +88,12 @@ static int pcie_rx_ring_init(struct mwl_
+ 		for (i = 0; i < PCIE_MAX_NUM_RX_DESC; i++) {
+ 			rx_hndl = &desc->rx_hndl[i];
+ 			rx_hndl->pdesc = &desc->prx_ring[i];
++			/* The firmware may fill all of rx_buf_size after
++			 * the headroom.
++			 */
+ 			rx_hndl->psk_buff =
+-				dev_alloc_skb(desc->rx_buf_size);
++				dev_alloc_skb(desc->rx_buf_size +
++					      PCIE_MIN_BYTES_HEADROOM);
+ 
+ 			if (!rx_hndl->psk_buff) {
+ 				wiphy_err(priv->hw->wiphy,
+@@ -321,7 +325,8 @@ static inline int pcie_rx_refill(struct
+ 
+ 	desc = &pcie_priv->desc_data[0];
+ 
+-	rx_hndl->psk_buff = dev_alloc_skb(desc->rx_buf_size);
++	rx_hndl->psk_buff = dev_alloc_skb(desc->rx_buf_size +
++					  PCIE_MIN_BYTES_HEADROOM);
+ 
+ 	if (!rx_hndl->psk_buff)
+ 		return -ENOMEM;

@@ -1,0 +1,241 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Rosen Penev <rosenp@gmail.com>
+Date: Wed, 21 Oct 2026 19:28:27 -0700
+Subject: [PATCH] 88W8864: refill the RX descriptor before handing a
+ frame up
+
+pcie_8864_poll_napi() passed each frame to mac80211 first and then
+called pcie_rx_refill(), whose result was ignored. When the allocation
+or the DMA mapping failed, the descriptor still pointed at the buffer
+just given to mac80211 and was handed back to the firmware anyway, so
+the firmware wrote into freed memory. A failed mapping also left a
+dangling psk_buff.
+
+Allocate and map the replacement buffer before handing a frame up. If
+that fails, drop the frame and give its own buffer back to the
+firmware. Hand the descriptor to the firmware only after a write
+barrier.
+
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+[Robert Peerenboom: split out of neheb/mwlwifi (upstream branch) commit
+ dcb73e4dca ("88W8864/88W8997: fix RX refill, TX status and teardown
+ bugs") and backported to db97edf2 on top of the OpenWrt patches]
+Signed-off-by: Robert Peerenboom <development@mindrush.de>
+---
+ hif/pcie/8864/rx.c | 134 +++++++++++++++++++++------------------------
+ 1 file changed, 63 insertions(+), 71 deletions(-)
+
+--- a/hif/pcie/8864/rx.c
++++ b/hif/pcie/8864/rx.c
+@@ -71,12 +71,52 @@ static int pcie_rx_ring_alloc(struct mwl
+ 	return 0;
+ }
+ 
++static struct sk_buff *pcie_rx_alloc_skb(struct mwl_priv *priv,
++					 dma_addr_t *dma)
++{
++	struct pcie_priv *pcie_priv = priv->hif.priv;
++	struct pcie_desc_data *desc = &pcie_priv->desc_data[0];
++	struct sk_buff *skb;
++
++	/* The firmware may fill all of rx_buf_size after the headroom. */
++	skb = dev_alloc_skb(desc->rx_buf_size + PCIE_MIN_BYTES_HEADROOM);
++	if (!skb)
++		return NULL;
++
++	skb_reserve(skb, PCIE_MIN_BYTES_HEADROOM);
++
++	*dma = dma_map_single(&(pcie_priv->pdev)->dev, skb->data,
++			      desc->rx_buf_size, DMA_FROM_DEVICE);
++	if (dma_mapping_error(&(pcie_priv->pdev)->dev, *dma)) {
++		dev_kfree_skb_any(skb);
++		wiphy_err(priv->hw->wiphy,
++			  "failed to map pci memory!\n");
++		return NULL;
++	}
++
++	return skb;
++}
++
++static void pcie_rx_set_buff(struct pcie_desc_data *desc,
++			     struct pcie_rx_hndl *rx_hndl,
++			     struct sk_buff *skb, dma_addr_t dma)
++{
++	rx_hndl->psk_buff = skb;
++	rx_hndl->pdesc->status = EAGLE_RXD_STATUS_OK;
++	rx_hndl->pdesc->qos_ctrl = 0x0000;
++	rx_hndl->pdesc->channel = 0x00;
++	rx_hndl->pdesc->rssi = 0x00;
++	rx_hndl->pdesc->pkt_len = cpu_to_le16(desc->rx_buf_size);
++	rx_hndl->pdesc->pphys_buff_data = cpu_to_le32(dma);
++}
++
+ static int pcie_rx_ring_init(struct mwl_priv *priv)
+ {
+ 	struct pcie_priv *pcie_priv = priv->hif.priv;
+ 	struct pcie_desc_data *desc;
+ 	int i;
+ 	struct pcie_rx_hndl *rx_hndl;
++	struct sk_buff *skb;
+ 	dma_addr_t dma;
+ 	u32 val;
+ 
+@@ -88,40 +128,18 @@ static int pcie_rx_ring_init(struct mwl_
+ 		for (i = 0; i < PCIE_MAX_NUM_RX_DESC; i++) {
+ 			rx_hndl = &desc->rx_hndl[i];
+ 			rx_hndl->pdesc = &desc->prx_ring[i];
+-			/* The firmware may fill all of rx_buf_size after
+-			 * the headroom.
+-			 */
+-			rx_hndl->psk_buff =
+-				dev_alloc_skb(desc->rx_buf_size +
+-					      PCIE_MIN_BYTES_HEADROOM);
+ 
+-			if (!rx_hndl->psk_buff) {
++			skb = pcie_rx_alloc_skb(priv, &dma);
++			if (!skb) {
+ 				wiphy_err(priv->hw->wiphy,
+ 					  "rxdesc %i: no skbuff available\n",
+ 					  i);
+ 				return -ENOMEM;
+ 			}
+ 
+-			skb_reserve(rx_hndl->psk_buff,
+-				    PCIE_MIN_BYTES_HEADROOM);
++			pcie_rx_set_buff(desc, rx_hndl, skb, dma);
+ 			desc->prx_ring[i].rx_control =
+ 				EAGLE_RXD_CTRL_DRIVER_OWN;
+-			desc->prx_ring[i].status = EAGLE_RXD_STATUS_OK;
+-			desc->prx_ring[i].qos_ctrl = 0x0000;
+-			desc->prx_ring[i].channel = 0x00;
+-			desc->prx_ring[i].rssi = 0x00;
+-			desc->prx_ring[i].pkt_len =
+-				cpu_to_le16(SYSADPT_MAX_AGGR_SIZE);
+-			dma = dma_map_single(&(pcie_priv->pdev)->dev,
+-					     rx_hndl->psk_buff->data,
+-					     desc->rx_buf_size,
+-					     DMA_FROM_DEVICE);
+-			if (dma_mapping_error(&(pcie_priv->pdev)->dev, dma)) {
+-				wiphy_err(priv->hw->wiphy,
+-					  "failed to map pci memory!\n");
+-				return -ENOMEM;
+-			}
+-			desc->prx_ring[i].pphys_buff_data = cpu_to_le32(dma);
+ 			val = (u32)desc->pphys_rx_ring +
+ 			      ((i + 1) * sizeof(struct pcie_rx_desc));
+ 			desc->prx_ring[i].pphys_next = cpu_to_le32(val);
+@@ -316,45 +334,6 @@ static inline int pcie_rx_process_amsdu(
+ 	return work_done;
+ }
+ 
+-static inline int pcie_rx_refill(struct mwl_priv *priv,
+-				 struct pcie_rx_hndl *rx_hndl)
+-{
+-	struct pcie_priv *pcie_priv = priv->hif.priv;
+-	struct pcie_desc_data *desc;
+-	dma_addr_t dma;
+-
+-	desc = &pcie_priv->desc_data[0];
+-
+-	rx_hndl->psk_buff = dev_alloc_skb(desc->rx_buf_size +
+-					  PCIE_MIN_BYTES_HEADROOM);
+-
+-	if (!rx_hndl->psk_buff)
+-		return -ENOMEM;
+-
+-	skb_reserve(rx_hndl->psk_buff, PCIE_MIN_BYTES_HEADROOM);
+-
+-	rx_hndl->pdesc->status = EAGLE_RXD_STATUS_OK;
+-	rx_hndl->pdesc->qos_ctrl = 0x0000;
+-	rx_hndl->pdesc->channel = 0x00;
+-	rx_hndl->pdesc->rssi = 0x00;
+-	rx_hndl->pdesc->pkt_len = cpu_to_le16(desc->rx_buf_size);
+-
+-	dma = dma_map_single(&(pcie_priv->pdev)->dev,
+-			     rx_hndl->psk_buff->data,
+-			     desc->rx_buf_size,
+-			     DMA_FROM_DEVICE);
+-	if (dma_mapping_error(&(pcie_priv->pdev)->dev, dma)) {
+-		dev_kfree_skb_any(rx_hndl->psk_buff);
+-		wiphy_err(priv->hw->wiphy,
+-			  "failed to map pci memory!\n");
+-		return -ENOMEM;
+-	}
+-
+-	rx_hndl->pdesc->pphys_buff_data = cpu_to_le32(dma);
+-
+-	return 0;
+-}
+-
+ int pcie_8864_rx_init(struct ieee80211_hw *hw)
+ {
+ 	struct mwl_priv *priv = hw->priv;
+@@ -394,7 +373,9 @@ int pcie_8864_poll_napi(struct napi_stru
+ 	struct pcie_rx_hndl *curr_hndl;
+ 	int work_done = 0;
+ 	struct sk_buff *prx_skb = NULL;
++	struct sk_buff *new_skb;
+ 	struct sk_buff *monitor_skb;
++	dma_addr_t dma;
+ 	int pkt_len;
+ 	struct ieee80211_rx_status *status;
+ 	struct ieee80211_hdr *wh;
+@@ -413,8 +394,17 @@ int pcie_8864_poll_napi(struct napi_stru
+ 	while ((curr_hndl->pdesc->rx_control == EAGLE_RXD_CTRL_DMA_OWN) &&
+ 	       (work_done < budget)) {
+ 		prx_skb = curr_hndl->psk_buff;
+-		if (unlikely(!prx_skb))
++
++		/* Replace the buffer before handing this one up. If there
++		 * is no replacement, drop the frame and reuse its buffer.
++		 */
++		new_skb = pcie_rx_alloc_skb(priv, &dma);
++		if (unlikely(!new_skb)) {
++			pcie_rx_set_buff(desc, curr_hndl, prx_skb,
++					 le32_to_cpu(curr_hndl->pdesc->pphys_buff_data));
+ 			goto out;
++		}
++
+ 		dma_unmap_single(&(pcie_priv->pdev)->dev,
+ 				 le32_to_cpu(curr_hndl->pdesc->pphys_buff_data),
+ 				 desc->rx_buf_size,
+@@ -423,13 +413,13 @@ int pcie_8864_poll_napi(struct napi_stru
+ 
+ 		if (unlikely(skb_tailroom(prx_skb) < pkt_len)) {
+ 			dev_kfree_skb_any(prx_skb);
+-			goto out;
++			goto refill;
+ 		}
+ 
+ 		if (unlikely(curr_hndl->pdesc->channel !=
+ 		    hw->conf.chandef.chan->hw_value)) {
+ 			dev_kfree_skb_any(prx_skb);
+-			goto out;
++			goto refill;
+ 		}
+ 
+ 		status = IEEE80211_SKB_RXCB(prx_skb);
+@@ -482,7 +472,7 @@ int pcie_8864_poll_napi(struct napi_stru
+ 
+ 			if ((*qc & IEEE80211_QOS_CTL_A_MSDU_PRESENT) && (ieee80211_has_a4(wh->frame_control))) {
+ 				work_done += pcie_rx_process_amsdu(priv, prx_skb, status);
+-				goto out;
++				goto refill;
+ 			}
+ 		}
+ 
+@@ -500,10 +490,12 @@ int pcie_8864_poll_napi(struct napi_stru
+ 		}
+ 
+ 		ieee80211_rx_napi(hw, NULL, prx_skb, &pcie_priv->napi);
++refill:
++		pcie_rx_set_buff(desc, curr_hndl, new_skb, dma);
+ out:
+-		pcie_rx_refill(priv, curr_hndl);
++		/* Hand the descriptor back to the firmware last. */
++		wmb();
+ 		curr_hndl->pdesc->rx_control = EAGLE_RXD_CTRL_DRIVER_OWN;
+-		curr_hndl->pdesc->qos_ctrl = 0;
+ 		curr_hndl = curr_hndl->pnext;
+ 		work_done++;
+ 	}

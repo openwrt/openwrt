@@ -1,0 +1,44 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Rosen Penev <rosenp@gmail.com>
+Date: Wed, 21 Oct 2026 19:28:27 -0700
+Subject: [PATCH] 88W8864: check the frame length before looking for
+ EAPOL
+
+The RX path compares the bytes after the LLC header of every QoS data
+frame with the EAPOL ethertype, without checking that the frame is long
+enough. Check the length first.
+
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+[Robert Peerenboom: split out of neheb/mwlwifi (upstream branch) commit
+ dcb73e4dca ("88W8864/88W8997: fix RX refill, TX status and teardown
+ bugs") and backported to db97edf2 on top of the OpenWrt patches]
+Signed-off-by: Robert Peerenboom <development@mindrush.de>
+---
+ hif/pcie/8864/rx.c | 8 +++++---
+ 1 file changed, 5 insertions(+), 3 deletions(-)
+
+--- a/hif/pcie/8864/rx.c
++++ b/hif/pcie/8864/rx.c
+@@ -370,6 +370,7 @@ int pcie_8864_poll_napi(struct napi_stru
+ 	struct sk_buff *monitor_skb;
+ 	dma_addr_t dma;
+ 	int pkt_len;
++	int hdrlen;
+ 	struct ieee80211_rx_status *status;
+ 	struct ieee80211_hdr *wh;
+ 	u8 *_data;
+@@ -457,10 +458,11 @@ int pcie_8864_poll_napi(struct napi_stru
+ 
+ 		if (ieee80211_is_data_qos(wh->frame_control)) {
+ 			qc = ieee80211_get_qos_ctl(wh);
+-			_data = prx_skb->data +
+-				ieee80211_hdrlen(wh->frame_control) + 6;
++			hdrlen = ieee80211_hdrlen(wh->frame_control);
++			_data = prx_skb->data + hdrlen + 6;
+ 
+-			if (!memcmp(_data, eapol, sizeof(eapol)))
++			if (prx_skb->len >= hdrlen + 6 + sizeof(eapol) &&
++			    !memcmp(_data, eapol, sizeof(eapol)))
+ 				*qc |= 7;
+ 
+ 			if ((*qc & IEEE80211_QOS_CTL_A_MSDU_PRESENT) && (ieee80211_has_a4(wh->frame_control))) {

@@ -1,0 +1,48 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Rosen Penev <rosenp@gmail.com>
+Date: Wed, 21 Oct 2026 19:15:14 -0700
+Subject: [PATCH] 88W8964: fix the TX ring setup and teardown checks
+
+pcie_tx_ring_init_ndp() only initialised the user field of the TX
+descriptors when the ring was not allocated, so it never did.
+pcie_tx_ring_free_ndp() cleared prx_ring_done instead of ptx_ring_done
+after freeing the TX done ring, and left pacnt_buf pointing at freed
+memory. Fix the check and clear the right pointers.
+
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+[Robert Peerenboom: split out of neheb/mwlwifi (upstream branch) commit
+ 92b4dd1 ("88W8964: return all TX frames to mac80211 and fix TX path
+ bugs") and backported to db97edf2 on top of the OpenWrt patches]
+Signed-off-by: Robert Peerenboom <development@mindrush.de>
+---
+ hif/pcie/8964/tx_ndp.c | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+--- a/hif/pcie/8964/tx_ndp.c
++++ b/hif/pcie/8964/tx_ndp.c
+@@ -110,7 +110,7 @@ static int pcie_tx_ring_init_ndp(struct
+ 	for (i = 0; i < PCIE_NUM_OF_DESC_DATA; i++)
+ 		skb_queue_head_init(&pcie_priv->txq[i]);
+ 
+-	if (!desc->ptx_ring) {
++	if (desc->ptx_ring) {
+ 		for (i = 0; i < MAX_NUM_TX_DESC; i++)
+ 			desc->ptx_ring[i].user = cpu_to_le32(i);
+ 		desc->tx_desc_busy_cnt = 0;
+@@ -166,7 +166,7 @@ static void pcie_tx_ring_free_ndp(struct
+ 				  MAX_NUM_TX_RING_DONE_BYTES,
+ 				  desc->ptx_ring_done,
+ 				  desc->pphys_tx_ring_done);
+-		desc->prx_ring_done = NULL;
++		desc->ptx_ring_done = NULL;
+ 	}
+ 
+ 	if (desc->pacnt_ring) {
+@@ -178,6 +178,7 @@ static void pcie_tx_ring_free_ndp(struct
+ 	}
+ 
+ 	kfree(desc->pacnt_buf);
++	desc->pacnt_buf = NULL;
+ }
+ 
+ static inline u32 pcie_tx_set_skb(struct mwl_priv *priv, struct sk_buff *skb,

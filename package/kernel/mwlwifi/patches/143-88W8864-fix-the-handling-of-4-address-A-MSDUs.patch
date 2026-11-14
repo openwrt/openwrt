@@ -1,0 +1,98 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Rosen Penev <rosenp@gmail.com>
+Date: Wed, 21 Oct 2026 19:28:27 -0700
+Subject: [PATCH] 88W8864: fix the handling of 4-address A-MSDUs
+
+pcie_rx_process_amsdu() splits a 4-address A-MSDU into its subframes.
+With rx_decrypt set, the original A-MSDU was only passed to monitor
+interfaces when it had been decrypted, and leaked otherwise. The
+function also returned an uninitialised work_done counter that the
+caller added to its NAPI budget accounting, and it read the length of a
+subframe without checking that the subframe header fits.
+
+Free the A-MSDU whenever it is not passed to a monitor interface, count
+it as one unit of NAPI work like any other frame, and check that a
+subframe header fits before reading its length.
+
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+[Robert Peerenboom: split out of neheb/mwlwifi (upstream branch) commit
+ dcb73e4dca ("88W8864/88W8997: fix RX refill, TX status and teardown
+ bugs"), which also supersedes 47c6401 ("fix uninitialised variables
+ found by clang") for this function, and backported to db97edf2 on top
+ of the OpenWrt patches]
+Signed-off-by: Robert Peerenboom <development@mindrush.de>
+---
+ hif/pcie/8864/rx.c | 31 ++++++++++++-------------------
+ 1 file changed, 12 insertions(+), 19 deletions(-)
+
+--- a/hif/pcie/8864/rx.c
++++ b/hif/pcie/8864/rx.c
+@@ -262,9 +262,9 @@ static inline void pcie_rx_status(struct
+ 	}
+ }
+ 
+-static inline int pcie_rx_process_amsdu(struct mwl_priv *priv,
+-					     struct sk_buff *skb,
+-					     struct ieee80211_rx_status *status)
++static inline void pcie_rx_process_amsdu(struct mwl_priv *priv,
++					      struct sk_buff *skb,
++					      struct ieee80211_rx_status *status)
+ {
+ 	struct ieee80211_hdr *wh;
+ 	u8 *qc;
+@@ -274,7 +274,6 @@ static inline int pcie_rx_process_amsdu(
+ 	u8 *data;
+ 	u16 frame_len;
+ 	struct sk_buff *newskb;
+-	int work_done;
+ 	struct pcie_priv *pcie_priv = priv->hif.priv;
+ 
+ 	wh = (struct ieee80211_hdr *)skb->data;
+@@ -290,7 +289,7 @@ static inline int pcie_rx_process_amsdu(
+ 	len = wh_len;
+ 	data = skb->data;
+ 
+-	while (len < skb->len) {
++	while (len + ETH_HLEN <= skb->len) {
+ 		frame_len = *(u8 *)(data + len + ETH_HLEN - 1) |
+ 			(*(u8 *)(data + len + ETH_HLEN - 2) << 8);
+ 
+@@ -316,22 +315,16 @@ static inline int pcie_rx_process_amsdu(
+ 			status->flag &= ~RX_FLAG_AMSDU_MORE;
+ 		memcpy(IEEE80211_SKB_RXCB(newskb), status, sizeof(*status));
+ 		ieee80211_rx_napi(priv->hw, NULL, newskb, &pcie_priv->napi);
+-		work_done++;
+ 	}
+ 
+-	if(priv->rx_decrypt) {
+-		if (status->flag & RX_FLAG_DECRYPTED) {
+-
+-			status->flag &= ~RX_FLAG_SKIP_MONITOR;
+-			status->flag |= RX_FLAG_ONLY_MONITOR;
+-			((struct ieee80211_hdr *)skb->data)->frame_control &= ~__cpu_to_le16(IEEE80211_FCTL_PROTECTED);
+-			ieee80211_rx_napi(priv->hw, NULL, skb, &pcie_priv->napi);
+-		}
+-	}
+-	else
++	if (priv->rx_decrypt && (status->flag & RX_FLAG_DECRYPTED)) {
++		status->flag &= ~RX_FLAG_SKIP_MONITOR;
++		status->flag |= RX_FLAG_ONLY_MONITOR;
++		((struct ieee80211_hdr *)skb->data)->frame_control &= ~__cpu_to_le16(IEEE80211_FCTL_PROTECTED);
++		ieee80211_rx_napi(priv->hw, NULL, skb, &pcie_priv->napi);
++	} else {
+ 		dev_kfree_skb_any(skb);
+-
+-	return work_done;
++	}
+ }
+ 
+ int pcie_8864_rx_init(struct ieee80211_hw *hw)
+@@ -471,7 +464,7 @@ int pcie_8864_poll_napi(struct napi_stru
+ 				*qc |= 7;
+ 
+ 			if ((*qc & IEEE80211_QOS_CTL_A_MSDU_PRESENT) && (ieee80211_has_a4(wh->frame_control))) {
+-				work_done += pcie_rx_process_amsdu(priv, prx_skb, status);
++				pcie_rx_process_amsdu(priv, prx_skb, status);
+ 				goto refill;
+ 			}
+ 		}

@@ -1,0 +1,36 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Rosen Penev <rosenp@gmail.com>
+Date: Wed, 21 Oct 2026 19:15:14 -0700
+Subject: [PATCH] 88W8964: check the skb_copy() of (re)association
+ responses
+
+pcie_tx_xmit_ndp() reports the status of (re)association responses
+from a copy, but used the copy without checking that skb_copy()
+succeeded. Skip the early report when the copy fails.
+
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+[Robert Peerenboom: split out of neheb/mwlwifi (upstream branch) commit
+ 92b4dd1 ("88W8964: return all TX frames to mac80211 and fix TX path
+ bugs") and backported to db97edf2 on top of the OpenWrt patches]
+Signed-off-by: Robert Peerenboom <development@mindrush.de>
+---
+ hif/pcie/8964/tx_ndp.c | 8 +++++---
+ 1 file changed, 5 insertions(+), 3 deletions(-)
+
+--- a/hif/pcie/8964/tx_ndp.c
++++ b/hif/pcie/8964/tx_ndp.c
+@@ -601,9 +601,11 @@ void pcie_tx_xmit_ndp(struct ieee80211_h
+ 			struct ieee80211_tx_info *ack_info;
+ 
+ 			ack_skb = skb_copy(skb, GFP_ATOMIC);
+-			ack_info = IEEE80211_SKB_CB(ack_skb);
+-			pcie_tx_prepare_info(priv, 0, ack_info);
+-			ieee80211_tx_status_skb(hw, ack_skb);
++			if (ack_skb) {
++				ack_info = IEEE80211_SKB_CB(ack_skb);
++				pcie_tx_prepare_info(priv, 0, ack_info);
++				ieee80211_tx_status_skb(hw, ack_skb);
++			}
+ 		}
+ 
+ 		pcie_tx_encapsulate_frame(priv, skb, k_conf);

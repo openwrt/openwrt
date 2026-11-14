@@ -1,0 +1,38 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Rosen Penev <rosenp@gmail.com>
+Date: Wed, 21 Oct 2026 19:15:14 -0700
+Subject: [PATCH] 88W8964: report the status of probe responses right
+ away
+
+The firmware reports no ACK status for management frames and can hold
+on to probe responses for minutes, so hostapd waited that long for the
+status of probe responses that request one. Report their status from a
+copy right away, like for (re)association responses.
+
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+[Robert Peerenboom: split out of neheb/mwlwifi (upstream branch) commit
+ 92b4dd1 ("88W8964: return all TX frames to mac80211 and fix TX path
+ bugs") and backported to db97edf2 on top of the OpenWrt patches]
+Signed-off-by: Robert Peerenboom <development@mindrush.de>
+---
+ hif/pcie/8964/tx_ndp.c | 8 +++++++-
+ 1 file changed, 7 insertions(+), 1 deletion(-)
+
+--- a/hif/pcie/8964/tx_ndp.c
++++ b/hif/pcie/8964/tx_ndp.c
+@@ -605,8 +605,14 @@ void pcie_tx_xmit_ndp(struct ieee80211_h
+ 			}
+ 		}
+ 
++		/* The firmware reports no ACK status, and can hold on to
++		 * probe responses for minutes, so report the status of a
++		 * copy right away.
++		 */
+ 		if (ieee80211_is_assoc_resp(wh->frame_control) ||
+-		    ieee80211_is_reassoc_resp(wh->frame_control)) {
++		    ieee80211_is_reassoc_resp(wh->frame_control) ||
++		    (ieee80211_is_probe_resp(wh->frame_control) &&
++		     (tx_info->flags & IEEE80211_TX_CTL_REQ_TX_STATUS))) {
+ 			struct sk_buff *ack_skb;
+ 			struct ieee80211_tx_info *ack_info;
+ 
