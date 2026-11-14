@@ -1500,6 +1500,8 @@ struct qca_ppe_priv {
 	 */
 	struct ppe_flow_entry __rcu **flow_slot;
 	atomic_t flow_xmit_drop;
+	/* frames whose index names a flow they are not of */
+	atomic_t flow_xmit_stale;
 	/* frames meant for the download shaper that found no device to pass */
 	atomic_t flow_shaper_miss;
 	/* The shaper devices this driver created for a direction, download
