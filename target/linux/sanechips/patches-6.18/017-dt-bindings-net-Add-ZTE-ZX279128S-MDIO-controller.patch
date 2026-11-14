@@ -1,0 +1,79 @@
+From 1bc0ceb20d5b736d92ec5c5faf421c662038ff56 Mon Sep 17 00:00:00 2001
+From: Navid Ghahremani <ghahramani.navid@gmail.com>
+Date: Mon, 12 Oct 2026 07:49:00 +0100
+Subject: [PATCH 14/24] dt-bindings: net: Add ZTE ZX279128S MDIO controller
+
+Describe the MDIO register block and its work/register clocks. External-
+PHY pin selections use pinctrl rather than direct syscon writes.
+
+Signed-off-by: Navid Ghahremani <ghahramani.navid@gmail.com>
+---
+
+--- /dev/null
++++ b/Documentation/devicetree/bindings/net/zte,zx279128s-mdio.yaml
+@@ -0,0 +1,65 @@
++# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
++%YAML 1.2
++---
++$id: http://devicetree.org/schemas/net/zte,zx279128s-mdio.yaml#
++$schema: http://devicetree.org/meta-schemas/core.yaml#
++
++title: ZTE zx279128s MDIO controller
++
++maintainers:
++  - Navid Ghahremani <ghahramani.navid@gmail.com>
++
++description:
++  The MDIO controller of the ZTE zx279128s reaches the PHYs of the integrated
++  switch and an optional external PHY. On boards with an external PHY, the
++  default pin state connects the interface to it.
++
++allOf:
++  - $ref: mdio.yaml#
++
++properties:
++  compatible:
++    const: zte,zx279128s-mdio
++
++  reg:
++    maxItems: 1
++
++  clocks:
++    items:
++      - description: work clock, the source of the management clock (MDC)
++      - description: register (APB) clock
++
++  clock-names:
++    items:
++      - const: wclk
++      - const: pclk
++
++required:
++  - compatible
++  - reg
++  - clocks
++  - clock-names
++
++unevaluatedProperties: false
++
++examples:
++  - |
++    #include <dt-bindings/clock/zte,zx279128s-crm.h>
++
++    mdio@9a101000 {
++        compatible = "zte,zx279128s-mdio";
++        reg = <0x9a101000 0x18>;
++        clocks = <&lsp1crpm ZX279128S_LSP1_MDIO_WCLK>,
++                 <&lsp1crpm ZX279128S_LSP1_MDIO_PCLK>;
++        clock-names = "wclk", "pclk";
++        #address-cells = <1>;
++        #size-cells = <0>;
++
++        ethernet-phy@8 {
++            reg = <8>;
++        };
++
++        ethernet-phy@a {
++            reg = <10>;
++        };
++    };
