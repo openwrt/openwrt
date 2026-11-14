@@ -1,0 +1,63 @@
+From 1400bc88073e86c4412d89f05fe7d0ca74db7612 Mon Sep 17 00:00:00 2001
+From: Marco Martins <marcomartins86@gmail.com>
+Date: Wed, 11 Nov 2026 21:40:00 +0000
+Subject: [PATCH] MIPS: ralink: mt7620: keep the kernel code out of the first
+ 32 KiB
+
+The 24KEc of the MT7620 (PRId 0x00019650) can save a wrong EPC for an
+interrupt taken at the first instruction of a J or JAL target: bits
+31:28 of the EPC then come from the address of the delay slot plus the
+sign-extended low 16 bits of the jump, as if it were a branch. This
+happens when bits 19 and 16 of the jump are set. Within a 256 MiB
+segment it gives a different result only for a jump in the first
+32 KiB, and then the return from the interrupt goes to the right
+offset in the segment below: 0x7... instead of 0x8..., and the kernel
+dies with "Unable to handle kernel paging request" in kernel mode.
+
+The kernel is linked at 0x80000000, so its first 32 KiB hold the early
+and the cold code (.text.unlikely), with calls that run often enough
+to hit this: try_to_generate_entropy() during boot, arch_align_stack()
+on exec.
+
+The 24Kc of an AR9132 does the same (seen from user space, which has
+the same problem in its own first 32 KiB of a segment), so this looks
+like an erratum of the 24K core; ath79 loads its kernel at 0x80060000
+and never runs code there.
+
+MediaTek's SDK kernels leave the same 32 KiB empty with
+". = . + 0x8000" at the start of .text in vmlinux.lds.S: for all SoCs
+in its 2.6.36 kernel, only for MT7620 and MT7628 in its 3.10 kernel.
+
+Raise the space before _stext from 0x400 to 0x8000 bytes on MT7620.
+This costs 31 KiB of RAM.
+
+Measured on a TL-WPA7510 v2 with a loop of JALs: about 20 such EPCs a
+second from 0x80003f90, none from 0x80008f90 and above, none with
+interrupts disabled, none with JALR to the same target. Before this,
+6 of 17 boots crashed; after it, none of 15 did.
+
+Signed-off-by: Marco Martins <marcomartins86@gmail.com>
+---
+ arch/mips/kernel/head.S | 9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+--- a/arch/mips/kernel/head.S
++++ b/arch/mips/kernel/head.S
+@@ -66,8 +66,17 @@
+ 	 * Reserved space for exception handlers.
+ 	 * Necessary for machines which link their kernels at KSEG0.
+ 	 */
++#ifdef CONFIG_SOC_MT7620
++	/*
++	 * The 24KEc of the MT7620 can save an EPC with wrong top four bits
++	 * for an interrupt at the target of a J or JAL in the first 32 KiB
++	 * of a 256 MiB segment, so keep the kernel code out of there.
++	 */
++	.fill	0x8000
++#else
+ 	.fill	0x400
+ #endif
++#endif
+ 
+ EXPORT(_stext)
+ 
