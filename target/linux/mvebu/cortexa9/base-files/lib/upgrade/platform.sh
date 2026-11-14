@@ -6,6 +6,11 @@
 RAMFS_COPY_BIN='fw_printenv fw_setenv seq strings'
 RAMFS_COPY_DATA='/etc/fw_env.config /var/lock/fw_printenv.lock'
 
+[ "$(board_name)" != "yamaha,rtx830" ] || {
+	RAMFS_COPY_BIN="seq strings sha256sum cmp uci mkfifo mktemp readlink /usr/bin/jshn /bin/true /sbin/poweroff"
+	RAMFS_COPY_DATA="/etc/config/system"
+}
+
 REQUIRE_IMAGE_METADATA=1
 
 nas326_initial_setup()
@@ -16,8 +21,17 @@ nas326_initial_setup()
 	ubirmvol /dev/ubi0 -N ubi_rootfs1
 }
 
+platform_pre_upgrade() {
+	[ "$(board_name)" != "yamaha,rtx830" ] || {
+		rtx830_upgrade_running_root && rtx830_defer_poweroff || exit 1
+	}
+}
+
 platform_check_image() {
 	case "$(board_name)" in
+	yamaha,rtx830)
+		rtx830_check_image "$1"
+		;;
 	cznic,turris-omnia|\
 	kobol,helios4|\
 	solidrun,clearfog-base-a1|\
@@ -32,6 +46,9 @@ platform_check_image() {
 
 platform_do_upgrade() {
 	case "$(board_name)" in
+	yamaha,rtx830)
+		rtx830_do_upgrade "$1"
+		;;
 	buffalo,ls220de)
 		# Kernel UBI volume name must be "boot"
 		CI_KERNPART=boot

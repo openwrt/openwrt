@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_VERSION:=2026.10
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_HASH:=3f856da3cbbc93af51ff95fde18588a348b4a26723b01d9841e999d988481015
 
@@ -82,6 +82,14 @@ define U-Boot/atlas
   UBOOT_CONFIG:=turris_mox
 endef
 
+define U-Boot/rtx830
+  NAME:=Yamaha RTX830
+  BUILD_DEVICES:=yamaha_rtx830
+  BUILD_SUBTARGET:=cortexa9
+  UBOOT_CONFIG:=rtx830_sdboot
+  UBOOT_IMAGE:=rtx830.bin
+endef
+
 UBOOT_TARGETS:= \
 	mox \
 	clearfog \
@@ -91,13 +99,33 @@ UBOOT_TARGETS:= \
 	atlas \
 	uDPU \
 	eDPU \
-	rb5009
+	rb5009 \
+	rtx830
+
+# This is a chainloaded image, not a Marvell BootROM KWB image.
+UBOOT_MAKE_FLAGS += $(if $(filter rtx830,$(BUILD_VARIANT)),u-boot.bin)
 
 UBOOT_CUSTOMIZE_CONFIG := \
 	--disable TOOLS_MKEFICAPSULE
 
 define Package/u-boot/install
 	$(if $(findstring cortexa53,$(BUILD_SUBTARGET)),,$(Package/u-boot/install/default))
+endef
+
+define Build/Compile
+	$(call Build/Compile/U-Boot)
+ifeq ($(BUILD_VARIANT),rtx830)
+	cd $(PKG_BUILD_DIR) && $(TARGET_CC) -c -x assembler-with-cpp \
+		-march=armv7-a -marm -o rtx830_canz_entry.o rtx830_canz_entry.S
+	cd $(PKG_BUILD_DIR) && $(TARGET_LD) -T rtx830_canz_entry.ld \
+		-o rtx830_canz_entry.elf rtx830_canz_entry.o
+	$(TARGET_CROSS)objcopy -O binary $(PKG_BUILD_DIR)/rtx830_canz_entry.elf \
+		$(PKG_BUILD_DIR)/rtx830_canz_entry.bin
+	rm -f $(PKG_BUILD_DIR)/rtx830.bin $(PKG_BUILD_DIR)/rtx830.bin.manifest.json
+	$(STAGING_DIR_HOST)/bin/python3 $(PKG_BUILD_DIR)/rtx830_pack_canz.py create \
+		--main $(PKG_BUILD_DIR)/rtx830_canz_entry.bin --output $(PKG_BUILD_DIR)/rtx830.bin
+	$(STAGING_DIR_HOST)/bin/python3 $(PKG_BUILD_DIR)/rtx830_pack_canz.py validate $(PKG_BUILD_DIR)/rtx830.bin
+endif
 endef
 
 define Build/InstallDev

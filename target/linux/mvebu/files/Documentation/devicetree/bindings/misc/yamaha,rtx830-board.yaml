@@ -1,0 +1,61 @@
+# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
+%YAML 1.2
+---
+$id: http://devicetree.org/schemas/misc/yamaha,rtx830-board.yaml#
+$schema: http://devicetree.org/meta-schemas/core.yaml#
+
+title: Yamaha RTX830 board controller
+
+maintainers:
+  - Kosuke Shibuya <kakiringopcneko@gmail.com>
+
+description: |
+  The SPI board controller manages storage power, front-panel indicators,
+  the buzzer, restart preparation and power-switch hold-up refresh.
+  It is not the SPI NOR controller and does not program the FPGA.
+
+allOf:
+  - $ref: /schemas/spi/spi-peripheral-props.yaml#
+
+properties:
+  compatible:
+    const: yamaha,rtx830-board
+  reg:
+    items:
+      - const: 2
+  spi-max-frequency:
+    maximum: 15625000
+  spi-cpol: true
+  spi-cpha: true
+  power-switch-gpios:
+    maxItems: 1
+    description: Active-high input indicating that the power switch is OFF.
+
+required:
+  - compatible
+  - reg
+  - spi-max-frequency
+  - spi-cpol
+  - spi-cpha
+  - power-switch-gpios
+
+unevaluatedProperties: false
+
+examples:
+  - |
+    #include <dt-bindings/gpio/gpio.h>
+
+    spi {
+        #address-cells = <1>;
+        #size-cells = <0>;
+
+        board@2 {
+            compatible = "yamaha,rtx830-board";
+            reg = <2>;
+            spi-max-frequency = <15625000>;
+            spi-cpol;
+            spi-cpha;
+            power-switch-gpios = <&gpio1 12 GPIO_ACTIVE_HIGH>;
+        };
+    };
+...

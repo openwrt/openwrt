@@ -1,0 +1,44 @@
+# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
+%YAML 1.2
+---
+$id: http://devicetree.org/schemas/power/reset/yamaha,rtx830-restart.yaml#
+$schema: http://devicetree.org/meta-schemas/core.yaml#
+
+title: Yamaha RTX830 private-watchdog restart controller
+
+maintainers:
+  - Kosuke Shibuya <kakiringopcneko@gmail.com>
+
+description: |
+  CPU0 private watchdog and the two system-controller registers used to
+  route its reset on the RTX830. The private timer is not included.
+
+properties:
+  compatible:
+    const: yamaha,rtx830-restart
+  reg:
+    items:
+      - description: CPU0 private watchdog
+      - description: Watchdog reset mask
+      - description: Reset routing register
+  reg-names:
+    items:
+      - const: private-watchdog
+      - const: reset-mask
+      - const: reset-route
+
+required:
+  - compatible
+  - reg
+  - reg-names
+
+additionalProperties: false
+
+examples:
+  - |
+    restart-controller@f100c620 {
+        compatible = "yamaha,rtx830-restart";
+        reg = <0xf100c620 0x20>, <0xf1018260 0x4>, <0xf1020704 0x4>;
+        reg-names = "private-watchdog", "reset-mask", "reset-route";
+    };
+...

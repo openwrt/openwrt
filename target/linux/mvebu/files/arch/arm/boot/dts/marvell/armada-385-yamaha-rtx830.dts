@@ -1,0 +1,244 @@
+// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
+/* Wiring and CPU1 BootROM aperture confirmed by the preceding Linux port.
+ * DDR, MPP routing and USB PHY are inherited from
+ * the Yamaha -> CANZ -> U-Boot handoff in this initial bring-up version.
+ */
+/dts-v1/;
+#include "armada-385.dtsi"
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+
+/ {
+	model = "Yamaha RTX830";
+	compatible = "yamaha,rtx830", "marvell,armada385", "marvell,armada380";
+
+	aliases {
+		rtc0 = &board_rtc;
+		label-mac-device = &eth1;
+	};
+
+	chosen {
+		stdout-path = "serial0:9600n8";
+	};
+
+	memory@0 {
+		device_type = "memory";
+		reg = <0 0x10000000>;
+	};
+
+	restart-controller@f100c620 {
+		compatible = "yamaha,rtx830-restart";
+		reg = <0xf100c620 0x20>, <0xf1018260 0x4>, <0xf1020704 0x4>;
+		reg-names = "private-watchdog", "reset-mask", "reset-route";
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+		button-download {
+			label = "download";
+			linux,code = <KEY_PROG1>;
+			gpios = <&gpio1 4 GPIO_ACTIVE_HIGH>;
+			debounce-interval = <150>;
+		};
+		button-usb {
+			label = "usb";
+			linux,code = <KEY_PROG2>;
+			gpios = <&gpio1 2 GPIO_ACTIVE_HIGH>;
+			debounce-interval = <150>;
+		};
+		button-microsd {
+			label = "microsd";
+			linux,code = <KEY_PROG3>;
+			gpios = <&gpio1 3 GPIO_ACTIVE_HIGH>;
+			debounce-interval = <150>;
+		};
+	};
+
+	cpus {
+		enable-method = "marvell,armada-380-smp";
+		cpu@0 {
+			status = "okay";
+		};
+		cpu@1 {
+			status = "okay";
+		};
+	};
+
+	soc {
+		/* CPU1 reset trampoline must still reach the internal BootROM. */
+		ranges = <MBUS_ID(0xf0, 0x01) 0 0xf1000000 0x100000
+			  MBUS_ID(0x01, 0x1d) 0 0xfff00000 0x100000
+			  /* CESA SRAM apertures, as on upstream Armada 385 boards. */
+			  MBUS_ID(0x09, 0x19) 0 0xf1100000 0x10000
+			  MBUS_ID(0x09, 0x15) 0 0xf1110000 0x10000>;
+		internal-regs {
+			/* Use the fixed 25 MHz timer for stable timekeeping. */
+			timer@c200 {
+				status = "disabled";
+			};
+		};
+	};
+};
+
+&uart0 {
+	status = "okay";
+};
+
+&i2c0 {
+	/* Keep the inherited board MPP routing. */
+	clock-frequency = <100000>;
+	status = "okay";
+	/* The factory EEPROM uses 8-bit word addresses (256 bytes). */
+	eeprom@52 {
+		compatible = "atmel,24c02";
+		reg = <0x52>;
+		read-only;
+
+		nvmem-layout {
+			compatible = "fixed-layout";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			macaddr_eeprom_3a: macaddr@3a {
+				reg = <0x3a 0x6>;
+			};
+
+			macaddr_eeprom_42: macaddr@42 {
+				reg = <0x42 0x6>;
+			};
+		};
+	};
+
+	board_rtc: rtc@32 {
+		compatible = "epson,rx8010";
+		reg = <0x32>;
+	};
+};
+
+&usb0 {
+	status = "okay";
+};
+
+&usb3_0 {
+	status = "disabled";
+};
+
+&usb3_1 {
+	status = "disabled";
+};
+
+&sdhci {
+	status = "disabled";
+};
+
+&rtc {
+	status = "disabled";
+}; /* The board clock is the external RX8010 on I2C0. */
+/* The standard Armada watchdog expires without resetting this board in
+ * measured tests. Keep it disabled; the board driver uses CPU0's private WD.
+ */
+&watchdog {
+	status = "disabled";
+};
+
+&eth0 {
+	status = "disabled";
+};
+
+&eth1 {
+	nvmem-cells = <&macaddr_eeprom_3a>;
+	nvmem-cell-names = "mac-address";
+	status = "okay";
+	phy-mode = "rgmii-id";
+	fixed-link {
+		speed = <1000>;
+		full-duplex;
+	};
+};
+
+&mdio {
+	status = "okay";
+	switch@10 {
+		compatible = "marvell,mv88e6085";
+		reg = <0x10>;
+		ethernet-ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			port@0 {
+				reg = <0>;
+				label = "wan";
+				nvmem-cells = <&macaddr_eeprom_42>;
+				nvmem-cell-names = "mac-address";
+			};
+			port@1 {
+				reg = <1>;
+				label = "lan4";
+			};
+			port@2 {
+				reg = <2>;
+				label = "lan3";
+			};
+			port@3 {
+				reg = <3>;
+				label = "lan2";
+			};
+			port@4 {
+				reg = <4>;
+				label = "lan1";
+			};
+			port@6 {
+				reg = <6>;
+				ethernet = <&eth1>;
+				phy-mode = "rgmii-id";
+				fixed-link {
+					speed = <1000>;
+					full-duplex;
+				};
+			};
+		};
+	};
+};
+
+&pinctrl {
+	rtx830_spi0_pins: rtx830-spi0-pins {
+		marvell,pins = "mpp22", "mpp23", "mpp24", "mpp26";
+		marvell,function = "spi0";
+	};
+};
+
+&spi0 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&rtx830_spi0_pins>;
+	status = "okay";
+	board@2 {
+		compatible = "yamaha,rtx830-board";
+		reg = <2>;
+		/* CFG 0x1818 inherited previously: mode 3, TCLK/16. */
+		spi-max-frequency = <15625000>;
+		spi-cpol;
+		spi-cpha;
+		power-switch-gpios = <&gpio1 12 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+/* SPI1/CS0 is the 32MiB NOR; SPI0/CS2 carries board controls. */
+&spi1 {
+	status = "okay";
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <5000000>;
+		spi-rx-bus-width = <1>;
+		spi-tx-bus-width = <1>;
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			partition@0 {
+				label = "rtx830-spi-readonly";
+				reg = <0 0x02000000>;
+				read-only;
+			};
+		};
+	};
+};
