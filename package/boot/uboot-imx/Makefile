@@ -8,7 +8,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_VERSION:=2026.04
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_HASH:=ac7c04b8b7004923b00a4e5d6699c5df4d21233bac9fda690d8cfbc209fff2fd
 
@@ -68,16 +68,23 @@ define U-Boot/wandboard
   BUILD_DEVICES:=wandboard_dual
 endef
 
+define U-Boot/xiaomi_dgnwg05lm
+  NAME:=Xiaomi Lumi gateway
+  BUILD_DEVICES:=aqara_zhwg11lm xiaomi_dgnwg05lm
+endef
+
 UBOOT_CUSTOMIZE_CONFIG := \
 	--disable TOOLS_MKEFICAPSULE
 
 UBOOT_TARGETS := \
 	apalis_imx6 \
+	aqara_zhwg11lm \
 	imx8mp_olimex_som_evb \
 	kontron-osm-s-mx8mp \
 	mx6cuboxi \
 	pico-pi-imx7d \
-	wandboard
+	wandboard \
+	xiaomi_dgnwg05lm
 
 ifneq ($(SUBTARGET),cortexa53)
 UBOOT_MAKE_FLAGS += u-boot.imx
