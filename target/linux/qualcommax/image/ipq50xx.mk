@@ -397,6 +397,23 @@ define Device/tplink_re700x
 endef
 TARGET_DEVICES += tplink_re700x
 
+define Device/ubnt_unifi-6-pro
+	$(call Device/FitImage)
+	$(call Device/EmmcImage)
+	DEVICE_VENDOR := Ubiquiti
+	DEVICE_MODEL := UniFi 6 Pro
+	DEVICE_ALT0_VENDOR := Ubiquiti
+	DEVICE_ALT0_MODEL := U6-Pro
+	SOC := ipq5018
+	DEVICE_DTS_CONFIG := config@a650
+	DEVICE_PACKAGES := ath11k-firmware-ipq5018 \
+		kmod-ath11k-pci \
+		ath11k-firmware-qcn9074 \
+		ipq-wifi-ubnt_unifi-6-pro \
+		kmod-fs-f2fs f2fs-tools
+endef
+TARGET_DEVICES += ubnt_unifi-6-pro
+
 define Device/wallys_dr5018s
 	$(call Device/FitImage)
 	$(call Device/UbiFit)
