@@ -1,4 +1,4 @@
-From 37e3010db4b84caa239d97cb0f334542e7a7a1bb Mon Sep 17 00:00:00 2001
+From d8575735a82d3c3a08120d60a2162fdf4a036eda Mon Sep 17 00:00:00 2001
 From: Daniel Golle <daniel@makrotopia.org>
 Date: Tue, 24 Mar 2026 18:51:13 +0000
 Subject: [PATCH 02/12] net: dsa: mxl862xx: trap link-local and multicast
@@ -55,9 +55,9 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 ---
  drivers/net/dsa/mxl862xx/mxl862xx-api.h | 709 ++++++++++++++++++++++++
  drivers/net/dsa/mxl862xx/mxl862xx-cmd.h |   6 +
- drivers/net/dsa/mxl862xx/mxl862xx.c     | 225 +++++++-
+ drivers/net/dsa/mxl862xx/mxl862xx.c     | 221 +++++++-
  drivers/net/dsa/mxl862xx/mxl862xx.h     |   8 +
- 4 files changed, 943 insertions(+), 5 deletions(-)
+ 4 files changed, 939 insertions(+), 5 deletions(-)
 
 --- a/drivers/net/dsa/mxl862xx/mxl862xx-api.h
 +++ b/drivers/net/dsa/mxl862xx/mxl862xx-api.h
@@ -809,7 +809,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  #include <linux/if_bridge.h>
  #include <linux/module.h>
  #include <linux/of_device.h>
-@@ -451,6 +452,173 @@ static int mxl862xx_setup_drop_meter(str
+@@ -453,6 +454,173 @@ static int mxl862xx_setup_drop_meter(str
  	return MXL862XX_API_WRITE(priv, MXL862XX_COMMON_REGISTERMOD, reg);
  }
  
@@ -983,7 +983,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  static int mxl862xx_set_bridge_port(struct dsa_switch *ds, int port)
  {
  	struct mxl862xx_bridge_port_config br_port_cfg = {};
-@@ -666,17 +834,23 @@ static int mxl862xx_allocate_bridge(stru
+@@ -668,17 +836,23 @@ static int mxl862xx_allocate_bridge(stru
  	return le16_to_cpu(br_alloc.bridge_id);
  }
  
@@ -1011,7 +1011,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	if (ret) {
  		dev_err(ds->dev, "failed to free fw bridge %u: %pe\n",
  			fw_id, ERR_PTR(ret));
-@@ -800,10 +974,42 @@ static int mxl862xx_setup(struct dsa_swi
+@@ -815,14 +989,42 @@ static int mxl862xx_setup(struct dsa_swi
  	if (ret)
  		return ret;
  
@@ -1039,23 +1039,23 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	if (ret)
 +		goto free_trap_fid;
 +
-+	ret = mxl862xx_setup_mdio(ds);
-+	if (ret)
+ 	ret = mxl862xx_setup_mdio(ds);
+ 	if (ret)
+-		return ret;
 +		goto free_trap_fid;
-+
+ 
  	schedule_delayed_work(&priv->stats_work,
  			      MXL862XX_STATS_POLL_INTERVAL);
  
--	return mxl862xx_setup_mdio(ds);
-+	return 0;
+ 	return 0;
 +
 +free_trap_fid:
 +	mxl862xx_free_fw_bridge(priv, priv->cpu_trap_fid);
 +	return ret;
  }
  
- static int mxl862xx_port_state(struct dsa_switch *ds, int port, bool enable)
-@@ -1515,6 +1721,15 @@ static int mxl862xx_port_setup(struct ds
+ static void mxl862xx_teardown(struct dsa_switch *ds)
+@@ -1542,6 +1744,15 @@ static int mxl862xx_port_setup(struct ds
  	if (ret)
  		return ret;
  
@@ -1073,9 +1073,9 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	if (ret)
 --- a/drivers/net/dsa/mxl862xx/mxl862xx.h
 +++ b/drivers/net/dsa/mxl862xx/mxl862xx.h
-@@ -343,6 +343,13 @@ struct mxl862xx_fw_version {
-  * @rescue_failed:      (rescue_mode) the self-heal gave up; the loader needs a
-  *                      power cycle and no flash can be accepted
+@@ -359,6 +359,13 @@ struct mxl862xx_fw_version {
+  *                      re-probe that could not be scheduled; the log names
+  *                      the cause, the devlink documentation the remedy
   * @rescue_heal_work:   background self-heal draining a wedged download to READY
 + * @cpu_trap_fid:       firmware bridge FID allocated for PCE-trapped frames;
 + *                      configured with uc/mc/bc flood all enabled so that
@@ -1087,7 +1087,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
   * @stats_work:         periodic work item that polls RMON hardware counters
   *                      and accumulates them into 64-bit per-port stats
   */
-@@ -369,6 +376,7 @@ struct mxl862xx_priv {
+@@ -387,6 +394,7 @@ struct mxl862xx_priv {
  	bool rescue_mode;
  	bool rescue_ready;
  	bool rescue_failed;

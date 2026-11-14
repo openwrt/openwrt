@@ -301,7 +301,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  #define MXL862XX_XPCS_PCS_GET_STATE	(MXL862XX_XPCS_MAGIC + 0x2)
 --- a/drivers/net/dsa/mxl862xx/mxl862xx-phylink.c
 +++ b/drivers/net/dsa/mxl862xx/mxl862xx-phylink.c
-@@ -66,6 +66,153 @@ static struct mxl862xx_pcs *pcs_to_mxl86
+@@ -71,6 +71,153 @@ static struct mxl862xx_pcs *pcs_to_mxl86
  	return container_of(pcs, struct mxl862xx_pcs, pcs);
  }
  
@@ -455,7 +455,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  static int mxl862xx_xpcs_if_mode(phy_interface_t interface)
  {
  	switch (interface) {
-@@ -380,7 +527,10 @@ void mxl862xx_setup_pcs(struct mxl862xx_
+@@ -385,7 +532,10 @@ void mxl862xx_setup_pcs(struct mxl862xx_
  	pcs->slot = MXL862XX_SERDES_SLOT(port);
  	pcs->interface = PHY_INTERFACE_MODE_NA;
  

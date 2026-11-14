@@ -1,103 +1,67 @@
-From 66aaa1b09b0f2e9e74a7274a878c6902e1aa2b9c Mon Sep 17 00:00:00 2001
+From beb8f60ed80bfacd375b4616474735cb23af8e5b Mon Sep 17 00:00:00 2001
 From: Daniel Golle <daniel@makrotopia.org>
-Date: Mon, 3 Aug 2026 04:52:03 +0100
-Subject: [PATCH net-next v10 3/5] net: dsa: mxl862xx: add devlink flash_update
- and info_get
+Date: Fri, 14 Aug 2026 13:40:29 +0100
+Subject: [PATCH net-next v19] net: dsa: mxl862xx: add devlink flash_update and
+ info_get
 
-Implement runtime firmware upgrade via "devlink dev flash" and version
-reporting via "devlink dev info":
+Implement "devlink dev flash" for firmware upgrade and "devlink dev
+info" for version reporting. info reports the chip part number and
+revision as the asic.id and asic.rev fixed versions, and the firmware
+version as both the running and the stored version, since the switch
+boots its firmware from its own flash; a zero part number or an all-zero
+version is omitted rather than published as a bogus match for userspace.
 
-  $ devlink dev info mdio_bus/mdio-bus:10
-  mdio_bus/mdio-bus:10:
-    driver mxl862xx
-    versions:
-        fixed:
-          asic.id 8628
-          asic.rev 0
-        running:
-          fw 1.0.70
-        stored:
-          fw 1.0.70
+flash validates the image and its payload CRCs, reboots the switch into
+its MCUboot loader with SYS_MISC_FW_UPDATE, transfers the image over the
+SB PDI clause-22 SMDIO protocol, and reboots into the new firmware once
+the loader has verified it. For the duration the driver closes and
+detaches the user ports so userspace cannot reopen them, closes the
+conduit, and blocks firmware API access under the MDIO bus lock so
+nothing reaches the bus after the switch has left for MCUboot. A blocked
+write reports success, so a bridge tearing its ports down over a flash
+does not see port_vlan_del() fail and leak its VLAN group. A transfer
+that fails leaves the switch in the loader; the next patch recovers it
+from there.
 
-The "asic.id" and "asic.rev" fixed versions carry the numeric chip part
-number and revision from the static CHIP ID registers (SYS_MISC_REG_RD),
-which userspace such as fwupd matches firmware against; they are omitted
-if the read fails or the part is unfused, so no bogus "0000" is
-published. The switch boots its firmware from its own flash, so "fw" is
-reported as both the running and the stored version; a flashless part
-would omit "stored", distinguishing the two without an API change.
-
-  $ devlink dev flash mdio_bus/mdio-bus:10 file mxl862xx-fw.bin
-
-The image, including both payload CRCs, is validated first, so a
-malformed file is rejected without disturbing the running switch. The
-driver then sends SYS_MISC_FW_UPDATE, which reboots the switch into its
-MCUboot bootloader, and transfers the signed image over the SB PDI
-protocol (clause-22 SMDIO), checking every write: a failed address write
-at the half-bank boundary would otherwise misplace half the payload
-unnoticed. A successful transfer reboots the switch into the new
-firmware. The loader verifies the image once the last slice has been
-programmed and publishes the verdict, so a rejected image is reported as
-such rather than as a transfer timeout. The whole cycle takes just under
-a minute.
-
-For its duration the driver closes all user and conduit interfaces and
-marks the user ports not-present with netif_device_detach() so userspace
-cannot reopen them; the conduit belongs to the MAC driver and is only
-closed. This also stops phylib polling the switch-internal PHYs,
-unreachable in MCUboot. The bridge's deferred STP DISABLED transitions
-are flushed under rtnl so they reach the firmware while it still runs;
-the stats poll and CRC error handler are stopped; and firmware API
-commands from other paths are blocked under the MDIO bus lock so none
-reaches the bus once the switch has rebooted. Progress is reported
-through devlink status notifications.
-
-The switch leaves MCUboot on its own by booting the new image, but the
-driver has no in-place path back, so it reinitialises with a full
-device_reprobe() scheduled regardless of the transfer outcome. During
-the teardown its API reads return -ENODEV and writes fake success, so it
-neither stalls on the absent firmware nor consumes buffers it never
-filled; port_mdb_del() takes that -ENODEV for a MAC table that is gone
-and reports success, since there is nothing left to delete. The reprobe
-holds module and device references taken before the switch was disturbed
-and runs from a work item, off the devlink caller's locking and signal
-context; it frees itself and drops both references when it finishes. A
-failed reprobe leaves the device unbound, exactly as a failed initial
-probe would, and a further flash is refused until it has run. An aborted
-transfer leaves the switch in MCUboot, where nothing here can reach it;
-the next patch adds the detection that makes such a switch flashable
-again.
-
-The reprobe cannot be cancelled from teardown: .shutdown() runs under
-device_lock(), which device_reprobe() takes as well, so a lock shared
-between the two would deadlock, and cancel_delayed_work_sync() would
-hang on the nested remove() the work triggers itself. The work checks
-instead whether the device is still bound, which both .shutdown() and
-the driver core signal by clearing drvdata, and skips the reprobe when
-it is not. device_lock() excludes .shutdown() while it looks, and the
-dsa_switch is kept out of devres so that a .shutdown() slipping into
-the remaining window cannot free it while the DSA tree still holds
-dsa_ports pointing at it.
-
-The closed user ports and conduit are not returned to their pre-flash
-administrative state across the reprobe; userspace brings them back up,
-and restoring it in-driver would need DSA-core support that does not
-yet exist.
+MCUboot offers no in-place path back, so the driver reinitialises with a
+deferred re-probe scheduled through device_schedule_reprobe() from the
+previous patch, which runs in the driver core off the devlink caller's
+locks and without pinning the driver module. ->shutdown() and
+.remove() take the devlink instance lock up front, since neither goes
+through devlink and dsa_unregister_switch() frees the user netdevs
+before devlink_unregister() would: this waits out a transfer in flight,
+for as long as the transfer's own timeouts allow, rather than cutting
+it in half, and refuses a flash that starts once teardown has begun. A
+flash is refused as well until the DSA tree has finished its setup,
+since devlink registers the switch before the core creates the user
+ports.
 
 Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 ---
+ drivers/net/dsa/mxl862xx/Kconfig         |   1 +
  drivers/net/dsa/mxl862xx/Makefile        |   2 +-
  drivers/net/dsa/mxl862xx/mxl862xx-api.h  |  10 +
  drivers/net/dsa/mxl862xx/mxl862xx-cmd.h  |   2 +
- drivers/net/dsa/mxl862xx/mxl862xx-fw.c   | 716 +++++++++++++++++++++++
- drivers/net/dsa/mxl862xx/mxl862xx-fw.h   |  17 +
- drivers/net/dsa/mxl862xx/mxl862xx-host.c |  11 +
- drivers/net/dsa/mxl862xx/mxl862xx.c      |  81 ++-
- drivers/net/dsa/mxl862xx/mxl862xx.h      |  14 +
- 8 files changed, 850 insertions(+), 3 deletions(-)
+ drivers/net/dsa/mxl862xx/mxl862xx-fw.c   | 711 +++++++++++++++++++++++
+ drivers/net/dsa/mxl862xx/mxl862xx-fw.h   |  18 +
+ drivers/net/dsa/mxl862xx/mxl862xx-host.c |  31 +
+ drivers/net/dsa/mxl862xx/mxl862xx-host.h |   1 +
+ drivers/net/dsa/mxl862xx/mxl862xx.c      |  83 ++-
+ drivers/net/dsa/mxl862xx/mxl862xx.h      |  33 +-
+ 10 files changed, 888 insertions(+), 4 deletions(-)
  create mode 100644 drivers/net/dsa/mxl862xx/mxl862xx-fw.c
  create mode 100644 drivers/net/dsa/mxl862xx/mxl862xx-fw.h
 
+--- a/drivers/net/dsa/mxl862xx/Kconfig
++++ b/drivers/net/dsa/mxl862xx/Kconfig
+@@ -3,6 +3,7 @@ config NET_DSA_MXL862
+ 	tristate "MaxLinear MxL862xx"
+ 	depends on NET_DSA
+ 	select CRC16
++	select CRC32
+ 	select NET_DSA_TAG_MXL_862XX
+ 	help
+ 	  This enables support for the MaxLinear MxL862xx switch family.
 --- a/drivers/net/dsa/mxl862xx/Makefile
 +++ b/drivers/net/dsa/mxl862xx/Makefile
 @@ -1,3 +1,3 @@
@@ -138,7 +102,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  #define MXL862XX_XPCS_PCS_GET_STATE	(MXL862XX_XPCS_MAGIC + 0x2)
 --- /dev/null
 +++ b/drivers/net/dsa/mxl862xx/mxl862xx-fw.c
-@@ -0,0 +1,716 @@
+@@ -0,0 +1,711 @@
 +// SPDX-License-Identifier: GPL-2.0-or-later
 +/*
 + * Firmware flash and devlink support for MaxLinear MxL862xx
@@ -212,17 +176,19 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 + *     - never send a slice/chunk count larger than what is outstanding;
 + *     - a STAT write is a command only once the loader has left the loop;
 + *     - the loader leaves the count in STAT while it programs the chunk, so
-+ *       a lingering count does not distinguish "busy" from "verdict".
++ *       a lingering count does not distinguish "busy" from "verdict";
++ *     - STAT is a 16-bit register, so a slice holds at most 65535 bytes,
++ *       which is what bounds MXL862XX_FW_BANK_SLICE.
 + */
 +
 +#include <linux/crc32.h>
 +#include <linux/delay.h>
 +#include <linux/device.h>
 +#include <linux/iopoll.h>
-+#include <linux/module.h>
 +#include <linux/netdevice.h>
 +#include <linux/overflow.h>
 +#include <linux/rtnetlink.h>
++#include <linux/sched.h>
 +#include <linux/workqueue.h>
 +#include <net/dsa.h>
 +#include <net/switchdev.h>
@@ -255,7 +221,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +/* Firmware transfer geometry */
 +#define MXL862XX_FW_HDR_SIZE		20
 +#define MXL862XX_FW_BANK_HALF		16384	/* words per half-bank */
-+#define MXL862XX_FW_BANK_SLICE		32760	/* words per full slice */
++#define MXL862XX_FW_BANK_SLICE		32760	/* words per full slice, 65520 B */
 +#define MXL862XX_FW_SB1_ADDR		0x7800	/* SB1 word address */
 +
 +/* Timeouts (generous upper bounds) */
@@ -263,6 +229,10 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +#define MXL862XX_FW_ACK_TIMEOUT_MS	5000
 +#define MXL862XX_FW_ERASE_TIMEOUT_MS	300000
 +#define MXL862XX_FW_WRITE_TIMEOUT_MS	60000
++/* Covers the loader's END wait, verification and the reset into READY */
++#define MXL862XX_SB_PDI_VERIFY_MS	15000
++
++/* Delays spent in full: the reboot into the new image, and the re-probe */
 +#define MXL862XX_FW_REBOOT_DELAY_MS	5000
 +#define MXL862XX_FW_REPROBE_DELAY_MS	500
 +
@@ -270,18 +240,17 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +{
 +	int ret;
 +
++	/* CTRL selects RST mode; ADDR and DATA are cleared to 0. */
 +	ret = mxl862xx_smdio_write(priv, MXL862XX_SB_PDI_CTRL,
 +				   MXL862XX_SB_PDI_CTRL_RST);
 +	if (ret < 0)
 +		return ret;
 +
-+	ret = mxl862xx_smdio_write(priv, MXL862XX_SB_PDI_ADDR,
-+				   MXL862XX_SB_PDI_CTRL_RST);
++	ret = mxl862xx_smdio_write(priv, MXL862XX_SB_PDI_ADDR, 0x0000);
 +	if (ret < 0)
 +		return ret;
 +
-+	return mxl862xx_smdio_write(priv, MXL862XX_SB_PDI_DATA,
-+				    MXL862XX_SB_PDI_CTRL_RST);
++	return mxl862xx_smdio_write(priv, MXL862XX_SB_PDI_DATA, 0x0000);
 +}
 +
 +static int mxl862xx_sb_pdi_poll_stat(struct mxl862xx_priv *priv, u16 expected,
@@ -334,7 +303,8 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +
 +	ret = read_poll_timeout(mxl862xx_smdio_read, val,
 +				val < 0 || (u16)val != (u16)data_written,
-+				10000, MXL862XX_FW_WRITE_TIMEOUT_MS * 1000,
++				10000, (MXL862XX_FW_WRITE_TIMEOUT_MS +
++					MXL862XX_SB_PDI_VERIFY_MS) * 1000,
 +				false, priv, MXL862XX_SB_PDI_STAT);
 +	if (val < 0)
 +		return val;
@@ -358,65 +328,6 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +				  u32 done, u32 total)
 +{
 +	devlink_flash_update_status_notify(dl, status, NULL, done, total);
-+}
-+
-+/* Post-flash reprobe. device_reprobe() detaches the driver -- running
-+ * remove(), which frees priv -- then re-probes, so this work touches only its
-+ * own device and module references and frees itself. A re-probe failure leaves
-+ * the device unbound, exactly as a failed initial probe would, so it is only
-+ * logged. Running from a workqueue keeps device_reprobe() out of the devlink
-+ * caller's locking and signal context.
-+ *
-+ * The work cannot be cancelled from teardown: .shutdown() runs under
-+ * device_lock(), which device_reprobe() takes as well, so a lock the two could
-+ * share would deadlock, and cancel_delayed_work_sync() would hang on the
-+ * nested remove() this work triggers itself. It therefore checks instead:
-+ * drvdata is cleared both by .shutdown() and by the driver core once a device
-+ * is unbound, so a NULL means there is nothing left to reprobe. device_lock()
-+ * excludes .shutdown() while the check runs, and mxl862xx_probe() keeps the
-+ * dsa_switch allocation out of devres so that losing the remaining race with
-+ * .shutdown() cannot free it while the DSA tree still points at it.
-+ */
-+struct mxl862xx_reprobe {
-+	struct delayed_work work;
-+	struct device *dev;
-+};
-+
-+static void mxl862xx_reprobe_work_fn(struct work_struct *work)
-+{
-+	struct mxl862xx_reprobe *rp =
-+		container_of(work, struct mxl862xx_reprobe, work.work);
-+	struct device *dev = rp->dev;
-+	bool bound;
-+
-+	device_lock(dev);
-+	bound = !!dev_get_drvdata(dev);
-+	device_unlock(dev);
-+
-+	if (!bound)
-+		dev_dbg(dev, "reprobe skipped, device is gone\n");
-+	else if (device_reprobe(dev))
-+		dev_err(dev, "reprobe failed; device left unbound\n");
-+
-+	put_device(dev);
-+	kfree(rp);
-+	module_put(THIS_MODULE);
-+}
-+
-+/* Allocate the reprobe up front, before the switch is disturbed, so an
-+ * allocation failure aborts cleanly. The caller holds a module and a device
-+ * reference; the work releases both once it runs. Returns NULL on -ENOMEM.
-+ */
-+static struct mxl862xx_reprobe *mxl862xx_reprobe_alloc(struct device *dev)
-+{
-+	struct mxl862xx_reprobe *rp;
-+
-+	rp = kzalloc_obj(*rp);
-+	if (!rp)
-+		return NULL;
-+	rp->dev = dev;
-+	INIT_DELAYED_WORK(&rp->work, mxl862xx_reprobe_work_fn);
-+	return rp;
 +}
 +
 +/* MCUboot firmware image header */
@@ -491,7 +402,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	u32 word_idx = 0, data_written = 0, idx = 0;
 +	unsigned long next_notify = jiffies - 1;
 +	u16 word, fdata;
-+	int ret, i;
++	int ret, val, i;
 +
 +	/* Step 1: reboot the firmware into MCUboot rescue mode */
 +	ret = mxl862xx_api_wrap(priv, SYS_MISC_FW_UPDATE, NULL, 0,
@@ -559,9 +470,18 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	if (ret < 0)
 +		goto write_err;
 +
-+	/* ACK is byte count + 1 */
-+	ret = mxl862xx_sb_pdi_poll_stat(priv, MXL862XX_FW_HDR_SIZE + 1,
-+					MXL862XX_FW_ACK_TIMEOUT_MS);
++	/* The ACK is the count + 1, replaced by 0 as soon as the erase is done,
++	 * so wait for the count to go: a short erase retires the ACK between
++	 * two polls.
++	 */
++	ret = read_poll_timeout(mxl862xx_smdio_read, val,
++				val < 0 || (u16)val != MXL862XX_FW_HDR_SIZE,
++				10000, MXL862XX_FW_ACK_TIMEOUT_MS * 1000, false,
++				priv, MXL862XX_SB_PDI_STAT);
++	if (val < 0)
++		ret = val;
++	if (!ret && (u16)val != MXL862XX_FW_HDR_SIZE + 1 && (u16)val != 0)
++		ret = -EPROTO;
 +	if (ret) {
 +		dev_err(&priv->mdiodev->dev,
 +			"flash: header ACK failed: %pe\n", ERR_PTR(ret));
@@ -573,7 +493,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +					MXL862XX_FW_ERASE_TIMEOUT_MS);
 +	if (ret) {
 +		dev_err(&priv->mdiodev->dev,
-+			"flash: erase timeout: %pe\n", ERR_PTR(ret));
++			"flash: erase failed: %pe\n", ERR_PTR(ret));
 +		goto no_end;
 +	}
 +
@@ -626,7 +546,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +			ret = mxl862xx_sb_pdi_flush_slice(priv, data_written);
 +			if (ret) {
 +				dev_err(&priv->mdiodev->dev,
-+					"flash: write timeout at %u/%u: %pe\n",
++					"flash: write failed at %u/%u: %pe\n",
 +					idx, payload_size, ERR_PTR(ret));
 +				goto no_end;
 +			}
@@ -646,8 +566,10 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	}
 +
 +	if (ret) {
-+		dev_err(&priv->mdiodev->dev,
-+			"flash: final slice failed: %pe\n", ERR_PTR(ret));
++		/* a rejected image (-EBADMSG) has been logged where it was seen */
++		if (ret != -EBADMSG)
++			dev_err(&priv->mdiodev->dev,
++				"flash: final slice failed: %pe\n", ERR_PTR(ret));
 +		goto no_end;
 +	}
 +
@@ -660,16 +582,21 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	 */
 +	ret = mxl862xx_smdio_write(priv, MXL862XX_SB_PDI_STAT,
 +				   MXL862XX_SB_PDI_END);
++	if (ret < 0)
++		dev_warn(&priv->mdiodev->dev,
++			 "flash: END signalling failed, waiting the loader out: %pe\n",
++			 ERR_PTR(ret));
++
 +	msleep(MXL862XX_FW_REBOOT_DELAY_MS);
-+	return ret;
++	return 0;
 +
 +write_err:
 +	dev_err(&priv->mdiodev->dev, "flash: SMDIO write failed: %pe\n",
 +		ERR_PTR(ret));
 +no_end:
-+	/* A failure leaves the loader mid transfer; do not signal END (a STAT
-+	 * write is a byte count then, and END would be misread as one, risking
-+	 * a receive-counter underflow). Return the error; the caller reprobes.
++	/* A failure may leave the loader mid transfer, where a STAT write is a
++	 * byte count and END would be misread as one, risking a receive-counter
++	 * underflow, so END is never signalled here. The caller reprobes.
 +	 */
 +	return ret;
 +}
@@ -682,10 +609,10 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	char buf[16];
 +	int ret;
 +
-+	/* A 0 part number means the CHIP ID read failed or the part is
-+	 * unfused; omit it rather than publish a bogus "0000" that fwupd
-+	 * would match firmware against -- it then falls back to the driver
-+	 * name.
++	/* A 0 part number means the CHIP ID read failed, the part is unfused
++	 * or a flash failed; omit it rather than publish a bogus "0000" that
++	 * fwupd would match firmware against, it then falls back to the
++	 * driver name.
 +	 */
 +	if (priv->asic_id) {
 +		snprintf(buf, sizeof(buf), "%04X", priv->asic_id);
@@ -729,23 +656,31 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +				  struct netlink_ext_ack *extack)
 +{
 +	struct mxl862xx_priv *priv = ds->priv;
-+	struct mxl862xx_reprobe *ko;
 +	struct dsa_port *dp;
 +	u32 payload_size;
-+	int ret, i;
++	int ret, err, i;
 +
-+	if (params->component) {
-+		NL_SET_ERR_MSG_MOD(extack, "component is not supported");
-+		return -EOPNOTSUPP;
++	/* devlink registers the switch before the DSA core creates its user
++	 * ports, which it publishes without rtnl held.
++	 */
++	if (!ds->dst->setup) {
++		NL_SET_ERR_MSG_MOD(extack, "switch tree is not set up");
++		return -EBUSY;
 +	}
 +
-+	/* A previous flash is still waiting for its reprobe: the firmware API
-+	 * is short-circuited, so the raw SB PDI writes below would run against
-+	 * a switch this driver no longer tracks.
++	/* Written under the instance lock this call is holding. */
++	if (priv->shutting_down) {
++		NL_SET_ERR_MSG_MOD(extack, "device is shutting down");
++		return -ENODEV;
++	}
++
++	/* A previous flash has short-circuited the firmware API until the
++	 * reprobe or a rebind, so the raw SB PDI writes below would run
++	 * against a switch this driver no longer tracks.
 +	 */
 +	if (priv->skip_teardown) {
 +		NL_SET_ERR_MSG_MOD(extack,
-+				   "device is reinitializing, retry later");
++				   "a previous flash left the driver awaiting reinitialisation");
 +		return -EBUSY;
 +	}
 +
@@ -753,25 +688,6 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	if (ret) {
 +		NL_SET_ERR_MSG_MOD(extack, "firmware image validation failed");
 +		return ret;
-+	}
-+
-+	/* The references the reprobe work needs to restore normal operation
-+	 * must be held before the switch is disturbed; the work itself is
-+	 * scheduled only once the flash is done (see below).
-+	 */
-+	if (!try_module_get(THIS_MODULE))
-+		return -ENODEV;
-+
-+	get_device(ds->dev);
-+
-+	/* Allocate the reprobe work before disturbing the switch, so an
-+	 * -ENOMEM here cannot strand it flashed but never reprobed.
-+	 */
-+	ko = mxl862xx_reprobe_alloc(ds->dev);
-+	if (!ko) {
-+		put_device(ds->dev);
-+		module_put(THIS_MODULE);
-+		return -ENOMEM;
 +	}
 +
 +	dev_info(ds->dev, "flash: running firmware %u.%u.%u\n",
@@ -800,26 +716,33 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	 */
 +	switchdev_deferred_process();
 +	rtnl_unlock();
++	/* The bridge's host address deletions run on the DSA workqueue. */
++	dsa_flush_workqueue();
 +
 +	mutex_lock_nested(&priv->mdiodev->bus->mdio_lock, MDIO_MUTEX_NESTED);
 +	priv->block_host = true;
 +	mutex_unlock(&priv->mdiodev->bus->mdio_lock);
 +
 +	set_bit(MXL862XX_FLAG_WORK_STOPPED, &priv->flags);
-+	cancel_delayed_work_sync(&priv->stats_work);
++	disable_delayed_work_sync(&priv->stats_work);
 +	cancel_work_sync(&priv->crc_err_work);
 +	for (i = 0; i < ds->num_ports; i++)
 +		cancel_work_sync(&priv->ports[i].host_flood_work);
 +
 +	ret = mxl862xx_flash_firmware(priv, params->fw, payload_size,
 +				      ds->devlink);
-+	if (ret)
-+		NL_SET_ERR_MSG_MOD(extack, "firmware transfer failed");
++	if (ret == -EBADMSG)
++		NL_SET_ERR_MSG_MOD(extack, "loader rejected the image");
++	else if (ret)
++		NL_SET_ERR_MSG_MOD(extack, "firmware update failed");
 +
 +	if (!ret) {
 +		mutex_lock_nested(&priv->mdiodev->bus->mdio_lock,
 +				  MDIO_MUTEX_NESTED);
-+		priv->block_host = false;
++		/* Keep block_host set so host writes stay blocked, but let the
++		 * readiness poll below read the freshly booted firmware.
++		 */
++		priv->flash_owner = current;
 +		mutex_unlock(&priv->mdiodev->bus->mdio_lock);
 +
 +		/* Refresh the cached versions so the flash update only
@@ -834,9 +757,9 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	}
 +
 +	if (ret) {
-+		/* The switch is in MCUboot with erased or partly written flash;
-+		 * drop the cached identity so devlink dev info stops reporting
-+		 * the pre-flash version until the reprobe re-reads the truth.
++		/* The loader may hold an erased or partly written image; drop
++		 * the cached identity so devlink dev info stops reporting the
++		 * pre-flash version until the reprobe re-reads the truth.
 +		 */
 +		memset(&priv->fw_version, 0, sizeof(priv->fw_version));
 +		priv->asic_id = 0;
@@ -844,20 +767,56 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	}
 +
 +	mutex_lock_nested(&priv->mdiodev->bus->mdio_lock, MDIO_MUTEX_NESTED);
++	priv->flash_owner = NULL;
++	priv->block_host = false;
 +	priv->skip_teardown = true;
 +	mutex_unlock(&priv->mdiodev->bus->mdio_lock);
 +
-+	/* Queue the reprobe last; the work was allocated up front and its
-+	 * module and device references are already held.
++	/* Reinitialise through a deferred re-probe: remove() runs with
++	 * skip_teardown set, then a fresh probe() starts against whatever
++	 * the switch now runs. The core drops the re-probe if the device is
++	 * unbound or deleted before it fires.
 +	 */
-+	queue_delayed_work(system_long_wq, &ko->work,
-+			   msecs_to_jiffies(MXL862XX_FW_REPROBE_DELAY_MS));
++	err = device_schedule_reprobe(ds->dev, MXL862XX_FW_REPROBE_DELAY_MS);
++	/* -EINVAL is a device being deleted, whose teardown takes over. */
++	if (err == -EINVAL)
++		err = 0;
++	if (err)
++		dev_err(ds->dev,
++			"flash: re-probe could not be scheduled (%pe); unbind and rebind to reinitialise\n",
++			ERR_PTR(err));
++	if (err && !ret)
++		NL_SET_ERR_MSG_MOD(extack,
++				   "new firmware is running, the driver needs rebinding");
 +
-+	return ret;
++	return ret ? ret : err;
++}
++
++/* The devlink core holds the instance lock across a flash, so taking it here
++ * waits for a transfer in flight instead of cutting the image in half, and
++ * bars one that has not started yet.
++ */
++void mxl862xx_flash_shutdown(struct dsa_switch *ds)
++{
++	struct mxl862xx_priv *priv = ds->priv;
++
++	if (!ds->devlink)
++		return;
++
++	/* A flash holds the instance lock for its whole run. Announce the
++	 * wait so the delay is not mistaken for a hang.
++	 */
++	if (!devl_trylock(ds->devlink)) {
++		dev_info(ds->dev,
++			 "firmware update in progress, waiting for it to finish\n");
++		devl_lock(ds->devlink);
++	}
++	priv->shutting_down = true;
++	devl_unlock(ds->devlink);
 +}
 --- /dev/null
 +++ b/drivers/net/dsa/mxl862xx/mxl862xx-fw.h
-@@ -0,0 +1,17 @@
+@@ -0,0 +1,18 @@
 +/* SPDX-License-Identifier: GPL-2.0-or-later */
 +
 +#ifndef __MXL862XX_FW_H
@@ -873,11 +832,16 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +int mxl862xx_devlink_flash_update(struct dsa_switch *ds,
 +				  struct devlink_flash_update_params *params,
 +				  struct netlink_ext_ack *extack);
++void mxl862xx_flash_shutdown(struct dsa_switch *ds);
 +
 +#endif /* __MXL862XX_FW_H */
 --- a/drivers/net/dsa/mxl862xx/mxl862xx-host.c
 +++ b/drivers/net/dsa/mxl862xx/mxl862xx-host.c
-@@ -15,6 +15,7 @@
+@@ -12,9 +12,11 @@
+ #include <linux/crc16.h>
+ #include <linux/iopoll.h>
+ #include <linux/limits.h>
++#include <linux/sched.h>
  #include <linux/unaligned.h>
  #include <net/dsa.h>
  #include "mxl862xx.h"
@@ -885,7 +849,25 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  #include "mxl862xx-host.h"
  
  #define CTRL_BUSY_MASK			BIT(15)
-@@ -340,6 +341,16 @@ int mxl862xx_api_wrap(struct mxl862xx_pr
+@@ -327,6 +329,17 @@ static int mxl862xx_send_cmd(struct mxl8
+ 	return ret;
+ }
+ 
++bool mxl862xx_api_gated(struct mxl862xx_priv *priv)
++{
++	bool gated;
++
++	mutex_lock_nested(&priv->mdiodev->bus->mdio_lock, MDIO_MUTEX_NESTED);
++	gated = priv->block_host || priv->skip_teardown;
++	mutex_unlock(&priv->mdiodev->bus->mdio_lock);
++
++	return gated;
++}
++
+ int mxl862xx_api_wrap(struct mxl862xx_priv *priv, u16 cmd, void *_data,
+ 		      u16 size, bool read, bool quiet)
+ {
+@@ -340,6 +353,24 @@ int mxl862xx_api_wrap(struct mxl862xx_pr
  
  	mutex_lock_nested(&priv->mdiodev->bus->mdio_lock, MDIO_MUTEX_NESTED);
  
@@ -894,14 +876,32 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +		goto out;
 +	}
 +
-+	if (priv->block_host && cmd != SYS_MISC_FW_UPDATE) {
-+		ret = -EBUSY;
++	/* During the post-flash readiness poll block_host stays set, but the
++	 * flash path's own firmware version reads must reach the new image;
++	 * host writes stay blocked so stale resource IDs cannot corrupt it.
++	 * A blocked write reports success: the reprobe discards the switch
++	 * configuration anyway, and a bridge tearing down over a flash must
++	 * not see port_vlan_del() fail, which leaks its VLAN group.
++	 */
++	if (priv->block_host && cmd != SYS_MISC_FW_UPDATE &&
++	    !(read && priv->flash_owner == current)) {
++		ret = read ? -EBUSY : 0;
 +		goto out;
 +	}
 +
  	max = (size + 1) / 2;
  
  	ret = mxl862xx_busy_wait(priv);
+--- a/drivers/net/dsa/mxl862xx/mxl862xx-host.h
++++ b/drivers/net/dsa/mxl862xx/mxl862xx-host.h
+@@ -7,6 +7,7 @@
+ 
+ void mxl862xx_host_init(struct mxl862xx_priv *priv);
+ void mxl862xx_host_shutdown(struct mxl862xx_priv *priv);
++bool mxl862xx_api_gated(struct mxl862xx_priv *priv);
+ int mxl862xx_api_wrap(struct mxl862xx_priv *priv, u16 cmd, void *data, u16 size,
+ 		      bool read, bool quiet);
+ 
 --- a/drivers/net/dsa/mxl862xx/mxl862xx.c
 +++ b/drivers/net/dsa/mxl862xx/mxl862xx.c
 @@ -21,6 +21,7 @@
@@ -926,20 +926,22 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  #define MXL862XX_TCM_INST_SEL		0xe00
  #define MXL862XX_TCM_CBS		0xe12
  #define MXL862XX_TCM_EBS		0xe13
-@@ -222,7 +230,46 @@ static int mxl862xx_phy_write_c45_mii_bu
+@@ -222,7 +230,48 @@ static int mxl862xx_phy_write_c45_mii_bu
  	return mxl862xx_phy_write_mmd(bus->priv, addr, devadd, regnum, val);
  }
  
 -static int mxl862xx_wait_ready(struct dsa_switch *ds)
-+/* Read the static chip part number and version from the CHIP ID
-+ * registers. Only possible with a running firmware, so the values are
-+ * cached at setup and left zero when the switch is in rescue mode.
++/* The CHIP ID registers are only readable through the firmware mailbox, so
++ * the values are cached here and stay zero while no firmware answers.
 + */
 +static int mxl862xx_read_chip_id(struct mxl862xx_priv *priv)
 +{
 +	struct mxl862xx_sys_reg_rw reg = {};
 +	u16 chipid_l, chipid_m;
 +	int ret;
++
++	priv->asic_id = 0;
++	priv->asic_rev = 0;
 +
 +	reg.addr = cpu_to_le32(MXL862XX_CHIPID_L);
 +	ret = MXL862XX_API_READ(priv, SYS_MISC_REG_RD, reg);
@@ -965,8 +967,8 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 + * @ds: DSA switch instance
 + *
 + * Poll the firmware until it reports its version and accepts
-+ * configuration commands, then cache the firmware version and chip ID.
-+ * Takes at least two seconds.
++ * configuration commands, then cache the firmware version, and the chip
++ * ID when it can be read. Takes at least two seconds.
 + *
 + * Return: 0 on success or a negative error code.
 + */
@@ -974,7 +976,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  {
  	struct mxl862xx_sys_fw_image_version ver = {};
  	unsigned long start = jiffies, timeout;
-@@ -272,6 +319,11 @@ static int mxl862xx_wait_ready(struct ds
+@@ -272,6 +321,11 @@ static int mxl862xx_wait_ready(struct ds
  		priv->fw_version.major = ver.iv_major;
  		priv->fw_version.minor = ver.iv_minor;
  		priv->fw_version.revision = le16_to_cpu(ver.iv_revision);
@@ -986,33 +988,45 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  		return 0;
  
  not_ready_yet:
-@@ -1590,6 +1642,12 @@ static int mxl862xx_port_mdb_del(struct
- 	ether_addr_copy(qparam.mac, mdb->addr);
+@@ -1565,6 +1619,12 @@ static int mxl862xx_port_mdb_add(struct
+ 	qparam.tci = cpu_to_le16(FIELD_PREP(MXL862XX_TCI_VLAN_ID, mdb->vid));
  
  	ret = MXL862XX_API_READ(priv, MXL862XX_MAC_TABLEENTRYQUERY, qparam);
-+	/* Post-flash teardown: the firmware and its MAC table are gone, so
-+	 * there is nothing left to delete. Outside it, -ENODEV is a bus error
-+	 * and must be reported.
++	/* A flash blocks the API (-EBUSY) and its teardown drops the MAC
++	 * table (-ENODEV); there is then nothing to program, and the reprobe
++	 * starts from a fresh configuration. See mxl862xx_port_mdb_del().
 +	 */
-+	if (ret == -ENODEV && priv->skip_teardown)
++	if ((ret == -EBUSY || ret == -ENODEV) && mxl862xx_api_gated(priv))
 +		return 0;
  	if (ret)
  		return ret;
  
-@@ -2037,6 +2095,12 @@ static void mxl862xx_stats_work_fn(struc
- 	struct dsa_switch *ds = priv->ds;
- 	struct dsa_port *dp;
+@@ -1602,6 +1662,12 @@ static int mxl862xx_port_mdb_del(struct
+ 	ether_addr_copy(qparam.mac, mdb->addr);
  
-+	/* A get_stats64() re-arm can race the flash teardown's WORK_STOPPED
-+	 * set and cancel; bail here so a stray poll never runs during a flash.
+ 	ret = MXL862XX_API_READ(priv, MXL862XX_MAC_TABLEENTRYQUERY, qparam);
++	/* A flash blocks the API (-EBUSY) and its teardown drops the MAC
++	 * table (-ENODEV); a delete then has nothing to do. Outside these,
++	 * both are bus errors and must be reported.
 +	 */
-+	if (test_bit(MXL862XX_FLAG_WORK_STOPPED, &priv->flags))
-+		return;
-+
- 	dsa_switch_for_each_available_port(dp, ds)
- 		mxl862xx_stats_poll(ds, dp->index);
++	if ((ret == -EBUSY || ret == -ENODEV) && mxl862xx_api_gated(priv))
++		return 0;
+ 	if (ret)
+ 		return ret;
  
-@@ -2108,6 +2172,8 @@ static const struct dsa_switch_ops mxl86
+@@ -1838,6 +1904,11 @@ static void mxl862xx_get_ethtool_stats(s
+ 	void *field;
+ 
+ 	ret = mxl862xx_read_rmon(ds, port, &cnt);
++	/* The flash gates refuse with these, and ethtool -S needs no privilege
++	 * to reach them, so they must not log.
++	 */
++	if ((ret == -EBUSY || ret == -ENODEV) && mxl862xx_api_gated(ds->priv))
++		return;
+ 	if (ret) {
+ 		dev_err(ds->dev, "failed to read RMON stats on port %d\n", port);
+ 		return;
+@@ -2119,6 +2190,8 @@ static const struct dsa_switch_ops mxl86
  	.get_pause_stats = mxl862xx_get_pause_stats,
  	.get_rmon_stats = mxl862xx_get_rmon_stats,
  	.get_stats64 = mxl862xx_get_stats64,
@@ -1021,46 +1035,44 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  };
  
  static int mxl862xx_probe(struct mdio_device *mdiodev)
-@@ -2123,7 +2189,13 @@ static int mxl862xx_probe(struct mdio_de
+@@ -2183,6 +2256,12 @@ static void mxl862xx_remove(struct mdio_
  
- 	priv->mdiodev = mdiodev;
+ 	priv = ds->priv;
  
--	ds = devm_kzalloc(dev, sizeof(*ds), GFP_KERNEL);
-+	/* Not devres managed: .shutdown() leaves the DSA tree holding
-+	 * dsa_ports whose dp->ds points here, and the flash reprobe can
-+	 * detach the driver afterwards, which would let devres free this
-+	 * while dsa_switch_find() still walks it. Freed in .remove() only,
-+	 * so a switch that was shut down keeps it until the power goes.
++	/* Wait out a flash in flight and bar a new one before the DSA core
++	 * frees the user netdevs; the devlink instance lock does not cover
++	 * that free, which dsa_unregister_switch() reaches first.
 +	 */
-+	ds = kzalloc_obj(*ds);
- 	if (!ds)
- 		return -ENOMEM;
- 
-@@ -2157,6 +2229,8 @@ static int mxl862xx_probe(struct mdio_de
- 		mxl862xx_host_shutdown(priv);
- 		for (i = 0; i < MXL862XX_MAX_PORTS; i++)
- 			cancel_work_sync(&priv->ports[i].host_flood_work);
-+		dev_set_drvdata(dev, NULL);
-+		kfree(ds);
- 	}
- 
- 	return err;
-@@ -2187,6 +2261,9 @@ static void mxl862xx_remove(struct mdio_
- 	 */
- 	for (i = 0; i < MXL862XX_MAX_PORTS; i++)
- 		cancel_work_sync(&priv->ports[i].host_flood_work);
++	mxl862xx_flash_shutdown(ds);
 +
-+	dev_set_drvdata(&mdiodev->dev, NULL);
-+	kfree(ds);
- }
+ 	set_bit(MXL862XX_FLAG_WORK_STOPPED, &priv->flags);
  
- static void mxl862xx_shutdown(struct mdio_device *mdiodev)
+ 	dsa_unregister_switch(ds);
+@@ -2209,6 +2288,8 @@ static void mxl862xx_shutdown(struct mdi
+ 
+ 	priv = ds->priv;
+ 
++	mxl862xx_flash_shutdown(ds);
++
+ 	dsa_switch_shutdown(ds);
+ 
+ 	set_bit(MXL862XX_FLAG_WORK_STOPPED, &priv->flags);
 --- a/drivers/net/dsa/mxl862xx/mxl862xx.h
 +++ b/drivers/net/dsa/mxl862xx/mxl862xx.h
-@@ -303,6 +303,10 @@ struct mxl862xx_fw_version {
+@@ -298,11 +298,18 @@ struct mxl862xx_fw_version {
+  *                      before CRC-triggered shutdown and cleared after;
+  *                      %MXL862XX_FLAG_WORK_STOPPED is set before cancelling
+  *                      stats_work to prevent rescheduling during teardown
++ *                      and a flash
+  * @drop_meter:         index of the single shared zero-rate firmware meter
+  *                      used to unconditionally drop traffic (used to block
   *                      flooding)
-  * @fw_version:         cached firmware version, populated at probe and
-  *                      compared with MXL862XX_FW_VER_MIN()
+- * @fw_version:         cached firmware version, populated at probe and
+- *                      compared with MXL862XX_FW_VER_MIN()
++ * @fw_version:         cached firmware version, compared with
++ *                      MXL862XX_FW_VER_MIN(); refreshed by
++ *                      mxl862xx_wait_ready() after a flash and cleared by
++ *                      a failed one until the reprobe
 + * @asic_id:            chip part number read from the CHIP ID registers,
 + *                      reported as the devlink "asic.id" fixed version
 + * @asic_rev:           chip version read from the CHIP ID registers,
@@ -1068,18 +1080,28 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
   * @serdes_ports:       SerDes interfaces incl. sub-interfaces in case of
   *                      10G_QXGMII or QSGMII
   * @serdes_refcount:    per-XPCS count of sub-ports enabled by phylink;
-@@ -319,6 +323,10 @@ struct mxl862xx_fw_version {
+@@ -319,6 +326,20 @@ struct mxl862xx_fw_version {
   * @evlan_ingress_size: per-port ingress Extended VLAN block size
   * @evlan_egress_size:  per-port egress Extended VLAN block size
   * @vf_block_size:      per-port VLAN Filter block size
-+ * @block_host:         reject firmware API commands (except FW_UPDATE)
-+ *                      during a firmware flash
-+ * @skip_teardown:      discard firmware API commands during the teardown
-+ *                      triggered by the post-flash reprobe
++ * @block_host:         during a firmware flash, a host firmware read fails
++ *                      with -EBUSY and a write reports success without
++ *                      touching the bus, so a teardown racing the flash
++ *                      does not fail; FW_UPDATE and the flash owner's own
++ *                      reads still reach the bus
++ * @flash_owner:        task running the post-flash readiness poll; only its
++ *                      own firmware reads pass block_host
++ * @skip_teardown:      from the end of a flash until the reprobe, or a rebind
++ *                      when the reprobe could not be scheduled, a host
++ *                      firmware read fails with -ENODEV and a write reports
++ *                      success without touching the bus
++ * @shutting_down:      set under the devlink instance lock once ->shutdown()
++ *                      or .remove() has begun, so no flash starts while the
++ *                      switch is going away
   * @stats_work:         periodic work item that polls RMON hardware counters
   *                      and accumulates them into 64-bit per-port stats
   */
-@@ -329,6 +337,8 @@ struct mxl862xx_priv {
+@@ -329,6 +350,8 @@ struct mxl862xx_priv {
  	unsigned long flags;
  	u16 drop_meter;
  	struct mxl862xx_fw_version fw_version;
@@ -1088,12 +1110,14 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	struct mxl862xx_pcs serdes_ports[8];
  	int serdes_refcount[2];
  	struct mutex serdes_lock;
-@@ -337,7 +347,11 @@ struct mxl862xx_priv {
+@@ -337,7 +360,13 @@ struct mxl862xx_priv {
  	u16 evlan_ingress_size;
  	u16 evlan_egress_size;
  	u16 vf_block_size;
++	struct task_struct *flash_owner;
 +	bool block_host;
 +	bool skip_teardown;
++	bool shutting_down;
  	struct delayed_work stats_work;
  };
  
