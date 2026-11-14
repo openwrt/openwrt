@@ -1,0 +1,32 @@
+From 77f954224d6224adf6a9f552978b99680e83681e Mon Sep 17 00:00:00 2001
+From: Mikhail Zhilkin <csharper2005@gmail.com>
+Date: Sat, 7 Nov 2026 12:15:27 +0100
+Subject: [PATCH v1 2/3] net: mtk_eth: an8855: enable link error recovery
+
+Sync the Link Error Recovery configuration with the upstream Linux
+driver.
+
+Currently, the U-Boot driver explicitly clears the
+AN8855_RG_LINK_ERRO_EN bit (bit 23) in the AN8855_RX_CTRL_26 register
+during SGMII initialization. Setting this bit instead of clearing it
+matches the Linux driver behavior, allowing the MAC/PCS to gracefully
+recover from momentary link errors on marginal hardware rather than
+dropping packets or the entire link.
+
+Signed-off-by: Mikhail Zhilkin <csharper2005@gmail.com>
+Link: https://patchwork.ozlabs.org/project/uboot/patch/20261107142441.2104669-3-csharper2005@gmail.com/
+---
+ drivers/net/mtk_eth/an8855.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/net/mtk_eth/an8855.c
++++ b/drivers/net/mtk_eth/an8855.c
+@@ -599,7 +599,7 @@ static int an8855_port_sgmii_init(struct
+ 	an8855_reg_write(priv, AN8855_PLL_CTRL_0, val);
+ 
+ 	an8855_reg_read(priv, AN8855_RX_CTRL_26, &val);
+-	val &= ~BIT(23);
++	val |= BIT(23);
+ 	val |= BIT(26);
+ 	an8855_reg_write(priv, AN8855_RX_CTRL_26, val);
+ 
