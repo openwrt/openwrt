@@ -8,19 +8,6 @@ set_ether_mac() {
 	local MAC2
 
 	case "$(board_name)" in
-	dlink,dns-313)
-		# The DNS-313 has a special field in its RedBoot
-		# binary that we need to check
-		part="$(find_mtd_part RedBoot)"
-		if [ -n "$part" ]; then
-			DEVID="$(dd if=$part bs=1 skip=119508 count=7 2>/dev/null)"
-			if [ "$DEVID" = "dns-313" ]; then
-				MAC1="$(mtd_get_mac_binary RedBoot 0x1d2f4)"
-				ip link set eth0 address "$MAC1" 2>/dev/null
-				return 0
-			fi
-		fi
-		;;
 	dlink,dir-685)
 		# The DIR-685 has a special field in its RedBoot
 		# binary that we need to check
@@ -32,6 +19,19 @@ set_ether_mac() {
 				MAC2=$(mtd_get_mac_binary RedBoot 0x17346)
 				ip link set eth0 address "$MAC1" 2>/dev/null
 				ip link set eth1 address "$MAC2" 2>/dev/null
+				return 0
+			fi
+		fi
+		;;
+	dlink,dns-313)
+		# The DNS-313 has a special field in its RedBoot
+		# binary that we need to check
+		part="$(find_mtd_part RedBoot)"
+		if [ -n "$part" ]; then
+			DEVID="$(dd if=$part bs=1 skip=119508 count=7 2>/dev/null)"
+			if [ "$DEVID" = "dns-313" ]; then
+				MAC1="$(mtd_get_mac_binary RedBoot 0x1d2f4)"
+				ip link set eth0 address "$MAC1" 2>/dev/null
 				return 0
 			fi
 		fi
