@@ -1,0 +1,45 @@
+From: Andrew Elsukov <morfak@gmail.com>
+Date: Thu, 8 Oct 2026 20:00:00 +0000
+Subject: [PATCH] clk: mediatek: mt7988-topckgen: PEXTP clocks are critical
+
+The PCIe PEXTP reference clock selectors pextp_p0_sel..pextp_p3_sel are
+left enabled by the bootloader, but no device tree node references them:
+the PCIe controllers only claim their infracfg clocks. clk_disable_unused()
+therefore gates them.
+
+The mtk-pcie-gen3 probe is deferred once and runs asynchronously from
+deferred_probe_initcall(), so on boards where other drivers take long to
+probe (e.g. BananaPi BPI-R4 Pro 8X with two AS21xxx PHYs) the PCIe link
+training overlaps with clk_disable_unused(). Gating the reference clock
+at that point makes random links fail with "PCIe link down" / -110.
+
+MediaTek's SDK marks these clocks critical, do the same.
+
+Signed-off-by: Andrew Elsukov <morfak@gmail.com>
+---
+--- a/drivers/clk/mediatek/clk-mt7988-topckgen.c
++++ b/drivers/clk/mediatek/clk-mt7988-topckgen.c
+@@ -225,15 +225,15 @@ static const struct mtk_mux top_muxes[]
+ 				   0x0d0, 0x0d4, 0x0d8, 0, 2, 7, 0x1C4, 21, CLK_IS_CRITICAL),
+ 	MUX_GATE_CLR_SET_UPD_FLAGS(CLK_TOP_INFRA_F26M_SEL, "csw_infra_f26m_sel", sspxtp_parents,
+ 				   0x0d0, 0x0d4, 0x0d8, 8, 1, 15, 0x1C4, 22, CLK_IS_CRITICAL),
+-	MUX_GATE_CLR_SET_UPD(CLK_TOP_PEXTP_P0_SEL, "pextp_p0_sel", sspxtp_parents, 0x0d0, 0x0d4,
+-			     0x0d8, 16, 1, 23, 0x1C4, 23),
+-	MUX_GATE_CLR_SET_UPD(CLK_TOP_PEXTP_P1_SEL, "pextp_p1_sel", sspxtp_parents, 0x0d0, 0x0d4,
+-			     0x0d8, 24, 1, 31, 0x1C4, 24),
++	MUX_GATE_CLR_SET_UPD_FLAGS(CLK_TOP_PEXTP_P0_SEL, "pextp_p0_sel", sspxtp_parents, 0x0d0,
++				   0x0d4, 0x0d8, 16, 1, 23, 0x1C4, 23, CLK_IS_CRITICAL),
++	MUX_GATE_CLR_SET_UPD_FLAGS(CLK_TOP_PEXTP_P1_SEL, "pextp_p1_sel", sspxtp_parents, 0x0d0,
++				   0x0d4, 0x0d8, 24, 1, 31, 0x1C4, 24, CLK_IS_CRITICAL),
+ 	/* CLK_CFG_14 */
+-	MUX_GATE_CLR_SET_UPD(CLK_TOP_PEXTP_P2_SEL, "pextp_p2_sel", sspxtp_parents, 0x0e0, 0x0e4,
+-			     0x0e8, 0, 1, 7, 0x1C4, 25),
+-	MUX_GATE_CLR_SET_UPD(CLK_TOP_PEXTP_P3_SEL, "pextp_p3_sel", sspxtp_parents, 0x0e0, 0x0e4,
+-			     0x0e8, 8, 1, 15, 0x1C4, 26),
++	MUX_GATE_CLR_SET_UPD_FLAGS(CLK_TOP_PEXTP_P2_SEL, "pextp_p2_sel", sspxtp_parents, 0x0e0,
++				   0x0e4, 0x0e8, 0, 1, 7, 0x1C4, 25, CLK_IS_CRITICAL),
++	MUX_GATE_CLR_SET_UPD_FLAGS(CLK_TOP_PEXTP_P3_SEL, "pextp_p3_sel", sspxtp_parents, 0x0e0,
++				   0x0e4, 0x0e8, 8, 1, 15, 0x1C4, 26, CLK_IS_CRITICAL),
+ 	MUX_GATE_CLR_SET_UPD(CLK_TOP_DA_XTP_GLB_P0_SEL, "da_xtp_glb_p0_sel", da_xtp_glb_p0_parents,
+ 			     0x0e0, 0x0e4, 0x0e8, 16, 1, 23, 0x1C4, 27),
+ 	MUX_GATE_CLR_SET_UPD(CLK_TOP_DA_XTP_GLB_P1_SEL, "da_xtp_glb_p1_sel", da_xtp_glb_p0_parents,
