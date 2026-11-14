@@ -525,6 +525,9 @@ hostapd_bss_get_features(struct ubus_context *ctx, struct ubus_object *obj,
 	blob_buf_init(&b, 0);
 	blobmsg_add_u8(&b, "ht_supported", ht_supported(hapd->iface->hw_features));
 	blobmsg_add_u8(&b, "vht_supported", vht_supported(hapd->iface->hw_features));
+	/* a channel switch (switch_chan, CHAN_SWITCH) can widen a radio set
+	 * up narrower to 160 MHz: hostapd adds [VHT160] for it (patch 895) */
+	blobmsg_add_u8(&b, "csa160", 1);
 #ifdef CONFIG_WPS
 	blobmsg_add_u8(&b, "wps_link_start", 1);
 	blobmsg_add_u8(&b, "wps_link_cancel", 1);
@@ -1149,6 +1152,7 @@ hostapd_switch_chan(struct ubus_context *ctx, struct ubus_object *obj,
 	};
 	u8 chwidth = hostapd_get_oper_chwidth(iconf);
 	u8 seg0 = 0, seg1 = 0;
+	u32 vht_capab;
 	int ret = UBUS_STATUS_OK;
 	int i;
 
@@ -1206,6 +1210,14 @@ hostapd_switch_chan(struct ubus_context *ctx, struct ubus_object *obj,
 		break;
 	}
 
+	/* the configured vht_capab has no [VHT160] below 160 MHz (#22436);
+	 * hostapd_switch_channel() adds it for a switch to 160 MHz (patch 895),
+	 * so check the new chandef against the hardware's here as well */
+	vht_capab = iconf->vht_capab;
+	if (chwidth == CHANWIDTH_160MHZ && mode &&
+	    (mode->vht_capab & VHT_CAP_SUPP_CHAN_WIDTH_MASK))
+		vht_capab |= VHT_CAP_SUPP_CHAN_WIDTH_160MHZ;
+
 	hostapd_set_freq_params(&css.freq_params, iconf->hw_mode,
 				css.freq_params.freq,
 				css.freq_params.channel, iconf->enable_edmg,
@@ -1216,7 +1228,7 @@ hostapd_switch_chan(struct ubus_context *ctx, struct ubus_object *obj,
 				css.freq_params.eht_enabled,
 				css.freq_params.sec_channel_offset,
 				chwidth, seg0, seg1,
-				iconf->vht_capab,
+				vht_capab,
 				mode ? &mode->he_capab[IEEE80211_MODE_AP] :
 				NULL,
 				mode ? &mode->eht_capab[IEEE80211_MODE_AP] :
