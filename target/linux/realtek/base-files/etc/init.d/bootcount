@@ -1,0 +1,16 @@
+#!/bin/sh /etc/rc.common
+
+START=99
+
+boot() {
+	. /lib/upgrade/common.sh
+
+	[ "$(rootfs_type)" = "tmpfs" ] && return 0
+
+	case $(board_name) in
+	alphion,asee-1447)
+		[ "$(fw_printenv -n sw_commit 2>/dev/null)" = "1" ] || \
+			fw_setenv sw_commit 1
+		;;
+	esac
+}
