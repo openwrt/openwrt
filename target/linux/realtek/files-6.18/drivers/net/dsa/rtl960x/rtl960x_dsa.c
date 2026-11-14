@@ -64,6 +64,37 @@
 #define   RTL960X_LUT_LEARN_OVER_ACT_MASK(_port)	(0x3 << ((_port) * 2))
 #define   RTL960X_LUT_LEARN_OVER_ACT_FORWARD	0	/* forward, do not learn */
 
+/* VLAN ingress filter register */
+#define RTL960X_VLAN_INGRESS_REG		0x13004
+#define   RTL960X_VLAN_INGRESS_MASK		GENMASK(10, 0)
+#define   RTL960X_VLAN_INGRESS_FILTER_PORT_EN_MASK(_p)	BIT(_p)
+
+/* VLAN control register */
+#define RTL960X_VLAN_CTRL_REG			0x13008
+#define   RTL960X_VLAN_FILTER_EN_MASK		BIT(0)
+
+/* VLAN egress mode register */
+#define RTL960X_VLAN_EGRESS_TAG_REG(_p)		(0x2a000 + 4 * _p)
+#define   RTL960X_VLAN_EGRESS_MODE_MASK		GENMASK(1, 0)
+
+/**
+ * enum rtl960x_vlan_egress_mode - port VLAN egress mode
+ * @RTL960X_VLAN_EGRESS_MODE_ORIGINAL: follow untag mask in VLAN4k table entry
+ * @RTL960X_VLAN_EGRESS_MODE_KEEP: the VLAN tag format of egressed packets
+ * will remain the same as their ingressed format, but the priority and VID
+ * fields may be altered
+ * @RTL960X_VLAN_EGRESS_MODE_PRI_TAG: always egress with priority tag
+ * @RTL960X_VLAN_EGRESS_MODE_REAL_KEEP: the VLAN tag format of egressed
+ * packets will remain the same as their ingressed format, and neither the
+ * priority nor VID fields can be altered
+ */
+enum rtl960x_vlan_egress_mode {
+	RTL960X_VLAN_EGRESS_MODE_ORIGINAL = 0,
+	RTL960X_VLAN_EGRESS_MODE_KEEP = 1,
+	RTL960X_VLAN_EGRESS_MODE_PRI_TAG = 2,
+	RTL960X_VLAN_EGRESS_MODE_REAL_KEEP = 3,
+};
+
 /* Per port MIB statistics */
 #define RTL960X_STAT_PORT_MIB_BASE		(0x32000)
 #define RTL960X_STAT_PORT_MIB(x)		(RTL960X_STAT_PORT_MIB_BASE + (x) * 0x80)
@@ -126,6 +157,14 @@
 #define   STAT_RESET_CMD		BIT(5)
 
 #define RTL960X_MAX_PACKET_LENGTH	0x3fff
+
+#define RTL960X_TABLE_ACCESS_REG	0x12000
+#define   RTL960X_TABLE_CMD_TYPE_MSK	GENMASK(4, 3)
+#define   RTL960X_TABLE_RESET_CMD	2
+#define   RTL960X_TABLE_TYPE_MSK	GENMASK(2, 0)
+#define   RTL960X_TABLE_VLAN		1
+#define RTL960X_TABLE_ACCESS_STS_REG	0x12004
+#define   RTL960X_TABLE_BUSY_FLAG	BIT(13)
 
 struct rtl960x_mib_counter {
 	u32 offset;
@@ -496,6 +535,334 @@ static void rtl960x_get_stats64(struct dsa_switch *ds, int port,
 	s->tx_errors = s->tx_aborted_errors + s->tx_window_errors;
 }
 
+static int rtl960x_port_set_ingress_filtering(struct rtl960x_dsa *priv,
+					      int port, bool enable)
+{
+	/* Ingress filtering enabled: Discard VLAN-tagged frames if the port is
+	 * not a member of the VLAN with which the packet is associated.
+	 * Untagged packets will also be discarded unless the port has a PVID
+	 * programmed. Priority-tagged frames are treated as untagged frames.
+	 *
+	 * Ingress filtering disabled: Accept all tagged and untagged frames.
+	 */
+	return regmap_assign_bits(priv->map, RTL960X_VLAN_INGRESS_REG,
+				  RTL960X_VLAN_INGRESS_FILTER_PORT_EN_MASK(port),
+				  enable);
+}
+
+static int rtl960x_port_set_vlan_egress_mode(struct rtl960x_dsa *priv, int port,
+					     enum rtl960x_vlan_egress_mode mode)
+{
+	u32 val;
+
+	val = FIELD_PREP(RTL960X_VLAN_EGRESS_MODE_MASK, mode);
+	return regmap_update_bits(priv->map, RTL960X_VLAN_EGRESS_TAG_REG(port),
+				  RTL960X_VLAN_EGRESS_MODE_MASK, val);
+}
+
+static int rtl960x_vlan_set_transparent(struct rtl960x_dsa *priv, u16 vid)
+{
+	u16 member = priv->mbr_mask[vid];
+
+	if (priv->transparent_mask)
+		member |= priv->transparent_mask | dsa_cpu_ports(priv->ds);
+
+	return rtl960x_vlan_4k_set(priv, vid, member, priv->untag_mask[vid]);
+}
+
+/* RTL9607C has no VLAN "transparent" register like rtl8365mb, so ports that do
+ * not filter VLANs and cpu ports are made members of every VLAN instead.
+ */
+static int rtl960x_vlan_set_all_transparent(struct rtl960x_dsa *priv)
+{
+	int ret;
+
+	for (int vid = 0; vid < RTL960X_MAX_4K_VID; vid++) {
+		ret = rtl960x_vlan_set_transparent(priv, vid);
+		if (ret)
+			return ret;
+	}
+
+	return 0;
+}
+
+/* Program the PVID that the port should use for untagged frames: the PVID of
+ * the bridge while the port filters VLANs, and the neutral PVID (VID 0)
+ * otherwise. A VLAN-unaware bridge, like a standalone port, gets its FDB and
+ * MDB entries with VID 0 from DSA. As the switch looks up its forwarding
+ * database by the VLAN that it classifies a frame to, a bridge PVID would make
+ * those entries miss every lookup.
+ */
+static int rtl960x_port_commit_pvid(struct dsa_switch *ds, int port,
+				    bool vlan_filtering,
+				    struct netlink_ext_ack *extack)
+{
+	struct rtl960x_dsa *priv = ds->priv;
+	u16 pvid;
+
+	if (vlan_filtering)
+		pvid = priv->bridge_pvid[port];
+	else
+		pvid = 0;
+
+	return rtl960x_vlan_pvid_port_commit(ds, port, pvid, vlan_filtering,
+					     extack);
+}
+
+static int rtl960x_port_vlan_filtering(struct dsa_switch *ds, int port,
+				       bool vlan_filtering,
+				       struct netlink_ext_ack *extack)
+{
+	enum rtl960x_vlan_egress_mode mode;
+	struct rtl960x_dsa *priv = ds->priv;
+	u16 prev_transparent;
+	int ret;
+
+	dev_dbg(priv->dev, "port %d: %s VLAN filtering\n", port,
+		vlan_filtering ? "enable" : "disable");
+
+	mutex_lock(&priv->vlan_lock);
+
+	/* When vlan filter is enable/disabled in a bridge, this function is
+	 * called for all member ports. We need to enable/disable ingress
+	 * VLAN membership check.
+	 */
+	ret = rtl960x_port_set_ingress_filtering(priv, port, vlan_filtering);
+	if (ret)
+		goto out_unlock;
+
+	prev_transparent = priv->transparent_mask;
+	if (dsa_is_user_port(ds, port)) {
+		if (vlan_filtering)
+			priv->transparent_mask &= ~BIT(port);
+		else
+			priv->transparent_mask |= BIT(port);
+	}
+
+	if (priv->transparent_mask != prev_transparent) {
+		ret = rtl960x_vlan_set_all_transparent(priv);
+		if (ret)
+			goto undo_transparent;
+	}
+
+	/* Also sets which frames the port accepts: while filtering, untagged
+	 * frames are only accepted if the bridge gave the port a PVID.
+	 */
+	ret = rtl960x_port_commit_pvid(ds, port, vlan_filtering, extack);
+	if (ret)
+		goto undo_transparent;
+
+	/* When VLAN filtering is disabled, preserve frames exactly as received.
+	 * Otherwise, the VLAN egress pipeline may still alter tag state
+	 * according to VLAN membership and untag configuration.
+	 */
+	if (vlan_filtering)
+		mode = RTL960X_VLAN_EGRESS_MODE_ORIGINAL;
+	else
+		mode = RTL960X_VLAN_EGRESS_MODE_REAL_KEEP;
+
+	ret = rtl960x_port_set_vlan_egress_mode(priv, port, mode);
+	if (ret)
+		goto undo_commit_pvid;
+
+	goto out_unlock;
+
+undo_commit_pvid:
+	(void)rtl960x_port_commit_pvid(ds, port, !vlan_filtering, NULL);
+undo_transparent:
+	if (priv->transparent_mask != prev_transparent) {
+		priv->transparent_mask = prev_transparent;
+		(void)rtl960x_vlan_set_all_transparent(priv);
+	}
+	rtl960x_port_set_ingress_filtering(priv, port, !vlan_filtering);
+
+out_unlock:
+	mutex_unlock(&priv->vlan_lock);
+	return ret;
+}
+
+static int rtl960x_port_vlan_add(struct dsa_switch *ds, int port,
+				 const struct switchdev_obj_port_vlan *vlan,
+				 struct netlink_ext_ack *extack)
+{
+	bool untagged = !!(vlan->flags & BRIDGE_VLAN_INFO_UNTAGGED);
+	bool pvid = !!(vlan->flags & BRIDGE_VLAN_INFO_PVID);
+	struct rtl960x_dsa *priv = ds->priv;
+	u16 prev_bridge_pvid, prev_mbr, prev_untag;
+	u16 *bridge_pvid;
+	bool vlan_filtering;
+	int ret;
+
+	dev_dbg(priv->dev, "add VLAN %d on port %d, %s, %s\n",
+		vlan->vid, port, untagged ? "untagged" : "tagged",
+		pvid ? "PVID" : "no PVID");
+
+	/* VID == 0 is reserved in this driver */
+	if (vlan->vid == 0) {
+		NL_SET_ERR_MSG_MOD(extack,
+				   "VLAN 0 is reserved by this driver");
+		return -EOPNOTSUPP;
+	}
+
+	mutex_lock(&priv->vlan_lock);
+
+	vlan_filtering = dsa_port_is_vlan_filtering(dsa_to_port(ds, port));
+	bridge_pvid = &priv->bridge_pvid[port];
+
+	/* Set PVID if needed, or unset it if this VLAN was the PVID */
+	prev_bridge_pvid = *bridge_pvid;
+	if (pvid)
+		*bridge_pvid = vlan->vid;
+	else if (*bridge_pvid == vlan->vid)
+		*bridge_pvid = 0;
+
+	ret = rtl960x_port_commit_pvid(ds, port, vlan_filtering, extack);
+	if (ret)
+		goto undo_bridge_pvid;
+
+	/* add port to vlan4k. It knows nothing about PVID */
+	prev_mbr = priv->mbr_mask[vlan->vid];
+	prev_untag = priv->untag_mask[vlan->vid];
+	priv->mbr_mask[vlan->vid] |= BIT(port);
+	if (untagged)
+		priv->untag_mask[vlan->vid] |= BIT(port);
+	else
+		priv->untag_mask[vlan->vid] &= ~BIT(port);
+
+	ret = rtl960x_vlan_set_transparent(priv, vlan->vid);
+	if (ret)
+		goto undo_commit_pvid;
+
+	goto out_unlock;
+
+undo_commit_pvid:
+	priv->mbr_mask[vlan->vid] = prev_mbr;
+	priv->untag_mask[vlan->vid] = prev_untag;
+	*bridge_pvid = prev_bridge_pvid;
+	(void)rtl960x_port_commit_pvid(ds, port, vlan_filtering, NULL);
+	goto out_unlock;
+undo_bridge_pvid:
+	*bridge_pvid = prev_bridge_pvid;
+out_unlock:
+	mutex_unlock(&priv->vlan_lock);
+	return ret;
+}
+
+static int rtl960x_port_vlan_del(struct dsa_switch *ds, int port,
+				 const struct switchdev_obj_port_vlan *vlan)
+{
+	bool untagged = !!(vlan->flags & BRIDGE_VLAN_INFO_UNTAGGED);
+	bool pvid = !!(vlan->flags & BRIDGE_VLAN_INFO_PVID);
+	struct rtl960x_dsa *priv = ds->priv;
+	u16 prev_bridge_pvid, prev_mbr, prev_untag;
+	u16 *bridge_pvid;
+	bool vlan_filtering;
+	int ret;
+
+	dev_dbg(priv->dev, "del VLAN %d on port %d, %s, %s\n",
+		vlan->vid, port, untagged ? "untagged" : "tagged",
+		pvid ? "PVID" : "no PVID");
+
+	/* VID == 0 is reserved in this driver */
+	if (vlan->vid == 0)
+		return -EOPNOTSUPP;
+
+	vlan_filtering = dsa_port_is_vlan_filtering(dsa_to_port(ds, port));
+	bridge_pvid = &priv->bridge_pvid[port];
+
+	mutex_lock(&priv->vlan_lock);
+	prev_bridge_pvid = *bridge_pvid;
+	if (*bridge_pvid == vlan->vid)
+		*bridge_pvid = 0;
+
+	ret = rtl960x_port_commit_pvid(ds, port, vlan_filtering, NULL);
+	if (ret) {
+		/* keep the state in line with the PVID still in hardware */
+		*bridge_pvid = prev_bridge_pvid;
+		goto out_unlock;
+	}
+
+	prev_mbr = priv->mbr_mask[vlan->vid];
+	prev_untag = priv->untag_mask[vlan->vid];
+	priv->mbr_mask[vlan->vid] &= ~BIT(port);
+	priv->untag_mask[vlan->vid] &= ~BIT(port);
+
+	ret = rtl960x_vlan_set_transparent(priv, vlan->vid);
+	if (ret)
+		goto out_undo_priv_mask;
+	/* There is little incentive to try to undo the removal of PVID
+	 * (if it was really in use) as an error here might indicate
+	 * the ASIC stopped to answer. Restore the configured masks.
+	 */
+	goto out_unlock;
+
+out_undo_priv_mask:
+	priv->mbr_mask[vlan->vid] = prev_mbr;
+	priv->untag_mask[vlan->vid] = prev_untag;
+out_unlock:
+	mutex_unlock(&priv->vlan_lock);
+	return ret;
+}
+
+/* Should be moved to rtl960x_table at some point */
+static int rtl960x_vlan_table_reset(struct rtl960x_dsa *priv)
+{
+	u32 val;
+	int ret;
+
+	ret = regmap_write(priv->map, RTL960X_TABLE_ACCESS_REG,
+			   FIELD_PREP(RTL960X_TABLE_CMD_TYPE_MSK, RTL960X_TABLE_RESET_CMD) |
+			   FIELD_PREP(RTL960X_TABLE_TYPE_MSK, RTL960X_TABLE_VLAN));
+	if (ret)
+		return ret;
+
+	return regmap_read_poll_timeout(priv->map, RTL960X_TABLE_ACCESS_STS_REG, val,
+					!FIELD_GET(RTL960X_TABLE_BUSY_FLAG, val),
+					10, 10000);
+}
+
+/* VLAN support is always enabled in the switch.
+ *
+ * Standalone forwarding relies on transparent VLAN mode combined with per-port
+ * isolation masks restricting egress to CPU ports only.
+ *
+ */
+static int rtl960x_vlan_setup(struct dsa_switch *ds)
+{
+	struct rtl960x_dsa *priv = ds->priv;
+	struct dsa_port *dp;
+	int ret;
+
+	ret = rtl960x_vlan_table_reset(priv);
+	if (ret) {
+		dev_err(priv->dev, "Failed to reset VLAN table\n");
+		return ret;
+	}
+
+	dsa_switch_for_each_available_port(dp, ds) {
+		/* Start every port with the neutral PVID */
+		ret = rtl960x_vlan_port_set_pvid(priv, dp->index, 0);
+		if (ret) {
+			dev_err(priv->dev, "Failed to reset PVID on port %d\n",
+				dp->index);
+			return ret;
+		}
+
+		/* Disable vlan-filtering for all ports */
+		ret = rtl960x_port_vlan_filtering(ds, dp->index, false, NULL);
+		if (ret) {
+			dev_err(priv->dev,
+				"Failed to disable vlan filtering on port %d\n",
+				dp->index);
+			return ret;
+		}
+	}
+
+	/* VLAN is always enabled. */
+	return regmap_set_bits(priv->map, RTL960X_VLAN_CTRL_REG,
+			       RTL960X_VLAN_FILTER_EN_MASK);
+}
+
 /*
  * A learn limit of 0 disables learning; the over-limit action is
  * forward-without-learning, so the port keeps forwarding.
@@ -516,12 +883,23 @@ static int rtl960x_port_set_learning(struct rtl960x_dsa *priv, int port,
 				  RTL960X_LUT_LRN_LIMITNO_MASK(port), enable);
 }
 
+/**
+ * rtl960x_port_fast_age() - flush dynamic FDB entries learned on a port
+ * @ds: DSA switch instance
+ * @port: port index
+ *
+ * This function requests the switch to age out dynamic FDB entries learned on
+ * @port.
+ *
+ * Context: Can sleep.
+ * Return: Nothing.
+ */
 static void rtl960x_port_fast_age(struct dsa_switch *ds, int port)
 {
 	struct rtl960x_dsa *priv = ds->priv;
 	int ret;
 
-	ret = rtl960x_l2_flush(priv, port);
+	ret = rtl960x_l2_flush(priv, port, 0);
 	if (ret)
 		dev_err(priv->dev, "failed to fast age on port %d: %pe\n",
 			port, ERR_PTR(ret));
@@ -579,26 +957,32 @@ static int rtl960x_dsa_setup(struct dsa_switch *ds)
 	struct dsa_port *dp;
 	int ret;
 
-	/*
-	 * Start with all ports completely isolated and not learning, the CPU
-	 * and unused ports included, as rtl8365mb does. Learning is enabled
-	 * per user port by the bridge's BR_LEARNING flag; a standalone port
-	 * must not learn, or a destination it learned on another port would
-	 * be blocked by isolation instead of reaching the CPU for the software
-	 * bridge. Unknown destinations are flooded within the ingress port's
-	 * isolation group, which is how CPU-bound traffic reaches the CPU.
-	 */
+	/* Start with all ports blocked, including unused ports */
 	dsa_switch_for_each_port(dp, ds) {
+		/* Set the initial STP state of all ports to DISABLED, otherwise
+		 * ports will still forward frames to the CPU despite being
+		 * administratively down by default.
+		 */
+		rtl960x_port_stp_state_set(ds, dp->index, BR_STATE_DISABLED);
+
+		/* Start with all port completely isolated */
 		ret = rtl960x_port_set_isolation(priv, dp->index, 0);
 		if (ret)
 			return ret;
 
+		/* Disable learning */
 		ret = rtl960x_port_set_learning(priv, dp->index, false);
 		if (ret)
 			return ret;
 
+		/* Collect CPU ports. If we support cascade switches, it should
+		 * also include the upstream DSA ports.
+		 */
 		if (dsa_port_is_cpu(dp))
 			cpu_ports |= BIT(dp->index);
+
+		/* Every port is a member of the neutral VLAN */
+		priv->mbr_mask[0] |= BIT(dp->index);
 	}
 
 	/* User ports forward only to the CPU ports */
@@ -621,8 +1005,7 @@ static int rtl960x_dsa_setup(struct dsa_switch *ds)
 			return ret;
 	}
 
-	/* One reserved VID per offloaded bridge; DSA numbers them for us. */
-	ds->max_num_bridges = RTL960X_NUM_BRIDGE_VIDS;
+	ds->max_num_bridges = 1;
 
 	ds->assisted_learning_on_cpu_port = true;
 
@@ -630,7 +1013,7 @@ static int rtl960x_dsa_setup(struct dsa_switch *ds)
 	if (ret)
 		return ret;
 
-	/* Every user port starts standalone (see rtl960x_vlan_setup). */
+	/* Setup VLAN */
 	return rtl960x_vlan_setup(ds);
 }
 
@@ -647,20 +1030,11 @@ static int rtl960x_port_bridge_join(struct dsa_switch *ds, int port,
 	dev_dbg(priv->dev, "bridge %d join port %d\n", bridge.num, port);
 
 	/*
-	 * The port forwards as standalone until here. Block it before the
-	 * isolation groups are opened, so nothing crosses into the bridge
-	 * before its VLANs are replayed; DSA then syncs the bridge port's STP
-	 * state, and the bridge enables the port. A join DSA rolls back later
-	 * is put back into forwarding by rtl960x_port_bridge_leave(); a
-	 * failure below restores it here, as DSA does not call leave then.
-	 */
-	rtl960x_port_stp_state_set(ds, port, BR_STATE_BLOCKING);
-
-	/*
 	 * Add this port to the isolation group of every other port
 	 * offloading this bridge.
 	 */
 	dsa_switch_for_each_bridge_member(dp, ds, bridge.dev) {
+		/* Handle this port after */
 		if (dp->index == port)
 			continue;
 
@@ -676,7 +1050,7 @@ static int rtl960x_port_bridge_join(struct dsa_switch *ds, int port,
 	if (ret)
 		goto undo_isolation;
 
-	ret = rtl960x_vlan_port_bridge_join(ds, port, bridge, extack);
+	ret = rtl960x_port_set_learning(priv, port, true);
 	if (ret)
 		goto undo_self_isolation;
 
@@ -691,7 +1065,6 @@ undo_isolation:
 			rtl960x_port_remove_isolation(priv, dp->index,
 						      BIT(port));
 	}
-	rtl960x_port_stp_state_set(ds, port, BR_STATE_FORWARDING);
 
 	return ret;
 }
@@ -711,6 +1084,7 @@ static void rtl960x_port_bridge_leave(struct dsa_switch *ds, int port,
 	 * offloading this bridge.
 	 */
 	dsa_switch_for_each_bridge_member(dp, ds, bridge.dev) {
+		/* Handle this port after */
 		if (dp->index == port)
 			continue;
 
@@ -723,29 +1097,18 @@ static void rtl960x_port_bridge_leave(struct dsa_switch *ds, int port,
 		mask |= BIT(dp->index);
 	}
 
+	ret = rtl960x_port_set_learning(priv, port, false);
+	if (ret)
+		dev_err(priv->dev,
+			"failed to disable learning on port %d: %pe\n",
+			port, ERR_PTR(ret));
+
 	/* Remove those ports from the isolation group of this port */
 	ret = rtl960x_port_remove_isolation(priv, port, mask);
 	if (ret)
 		dev_err(priv->dev,
 			"failed to remove isolation group of port %d: %pe\n",
 			port, ERR_PTR(ret));
-
-	/*
-	 * On a normal leave the bridge disables the port, which fast-ages it,
-	 * and DSA then clears BR_LEARNING and puts the port back into
-	 * forwarding. A join that DSA rolls back after inheriting the bridge
-	 * port's flags and (disabled) STP state leaves without any of that,
-	 * so restore the standalone state here: learning off, the port's
-	 * dynamic entries flushed, the standalone VLAN state, and forwarding
-	 * last, once the port is standalone again.
-	 */
-	ret = rtl960x_port_set_learning(priv, port, false);
-	if (ret)
-		dev_err(priv->dev, "failed to disable learning on port %d: %pe\n",
-			port, ERR_PTR(ret));
-	rtl960x_port_fast_age(ds, port);
-	rtl960x_vlan_port_bridge_leave(ds, port, bridge);
-	rtl960x_port_stp_state_set(ds, port, BR_STATE_FORWARDING);
 }
 
 static int rtl960x_port_pre_bridge_flags(struct dsa_switch *ds, int port,
@@ -875,6 +1238,8 @@ static const struct dsa_switch_ops rtl960x_dsa_ops = {
 	.port_fdb_add		= rtl960x_port_fdb_add,
 	.port_fdb_del		= rtl960x_port_fdb_del,
 	.port_fdb_dump		= rtl960x_port_fdb_dump,
+	.port_mdb_add		= rtl960x_port_mdb_add,
+	.port_mdb_del		= rtl960x_port_mdb_del,
 	.get_strings		= rtl960x_get_strings,
 	.get_ethtool_stats	= rtl960x_get_ethtool_stats,
 	.get_sset_count		= rtl960x_get_sset_count,
@@ -907,6 +1272,10 @@ static int rtl960x_dsa_probe(struct platform_device *pdev)
 
 	priv->dev = dev;
 	priv->ds = ds;
+
+	ret = devm_mutex_init(dev, &priv->vlan_lock);
+	if (ret)
+		return ret;
 
 	ret = devm_mutex_init(dev, &priv->l2_lock);
 	if (ret)
