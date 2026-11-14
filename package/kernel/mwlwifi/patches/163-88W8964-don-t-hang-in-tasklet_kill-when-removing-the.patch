@@ -1,0 +1,80 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Rosen Penev <rosenp@gmail.com>
+Date: Wed, 21 Oct 2026 19:15:14 -0700
+Subject: [PATCH] 88W8964: don't hang in tasklet_kill() when removing
+ the device
+
+The RX and TX tasklets are disabled while the radio is stopped. If one
+was scheduled in the meantime, it stayed pending and tasklet_kill() in
+pcie_deinit_ndp() never returned. pcie_deinit_ndp() also freed the
+rings before killing the tasklets that use them.
+
+Mark the data tasklets as killed, enable them so that they can run (as
+no-ops), and kill them before the rings are freed.
+
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+[Robert Peerenboom: split out of neheb/mwlwifi (upstream branch) commit
+ 92b4dd1 ("88W8964: return all TX frames to mac80211 and fix TX path
+ bugs") and backported to db97edf2 on top of the OpenWrt patches]
+Signed-off-by: Robert Peerenboom <development@mindrush.de>
+---
+ hif/pcie/8964/rx_ndp.c |  3 +++
+ hif/pcie/8964/tx_ndp.c |  3 +++
+ hif/pcie/pcie.c        | 13 +++++++++++--
+ 3 files changed, 17 insertions(+), 2 deletions(-)
+
+--- a/hif/pcie/8964/rx_ndp.c
++++ b/hif/pcie/8964/rx_ndp.c
+@@ -482,6 +482,9 @@ void pcie_rx_recv_ndp(unsigned long data
+ 	struct pcie_dma_data *dma_data;
+ 	u8 signal;
+ 
++	if (pcie_priv->data_tasks_killed)
++		return;
++
+ 	rx_done_head = readl(pcie_priv->iobase1 + MACREG_REG_RXDONEHEAD);
+ 	rx_done_tail = readl(pcie_priv->iobase1 + MACREG_REG_RXDONETAIL);
+ 	rx_desc_head = readl(pcie_priv->iobase1 + MACREG_REG_RXDESCHEAD);
+--- a/hif/pcie/8964/tx_ndp.c
++++ b/hif/pcie/8964/tx_ndp.c
+@@ -436,6 +436,9 @@ void pcie_tx_skbs_ndp(unsigned long data
+ 	struct sk_buff *tx_skb;
+ 	int rc;
+ 
++	if (pcie_priv->data_tasks_killed)
++		return;
++
+ 	while (num--) {
+ 		while (skb_queue_len(&pcie_priv->txq[num]) > 0) {
+ 			if (pcie_priv->desc_data_ndp.tx_desc_busy_cnt >=
+--- a/hif/pcie/pcie.c
++++ b/hif/pcie/pcie.c
+@@ -858,6 +858,7 @@ static int pcie_init_ndp(struct ieee8021
+ 	pcie_priv->txq_wake_threshold = TX_WAKE_Q_THRESHOLD;
+ 	pcie_priv->recv_limit = MAX_NUM_RX_DESC;
+ 	pcie_priv->is_rx_schedule = false;
++	pcie_priv->data_tasks_killed = false;
+ 
+ 	rc = pcie_tx_init_ndp(hw);
+ 	if (rc) {
+@@ -932,10 +933,18 @@ static void pcie_deinit_ndp(struct ieee8
+ 	struct mwl_priv *priv = hw->priv;
+ 	struct pcie_priv *pcie_priv = priv->hif.priv;
+ 
+-	pcie_rx_deinit_ndp(hw);
+-	pcie_tx_deinit_ndp(hw);
++	/* The tasklets are disabled while the radio is stopped, and
++	 * tasklet_kill() never returns for one that was scheduled in the
++	 * meantime. Let them run, as no-ops, so they can be killed.
++	 */
++	pcie_priv->data_tasks_killed = true;
++	tasklet_enable(&pcie_priv->rx_task);
++	tasklet_enable(&pcie_priv->tx_task);
+ 	tasklet_kill(&pcie_priv->rx_task);
+ 	tasklet_kill(&pcie_priv->tx_task);
++
++	pcie_rx_deinit_ndp(hw);
++	pcie_tx_deinit_ndp(hw);
+ 	pcie_reset(hw);
+ }
+ 

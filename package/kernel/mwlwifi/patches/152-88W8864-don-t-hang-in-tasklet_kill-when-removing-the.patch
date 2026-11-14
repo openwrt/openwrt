@@ -1,0 +1,107 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Rosen Penev <rosenp@gmail.com>
+Date: Wed, 21 Oct 2026 19:28:27 -0700
+Subject: [PATCH] 88W8864: don't hang in tasklet_kill() when removing
+ the device
+
+pcie_non_pfu_tx_done() scheduled the TX tasklet. It also runs from
+pcie_8864_tx_done(), which the stop path calls while the tasklets are
+disabled. The tasklet then stayed pending, ksoftirqd kept requeueing
+it, and tasklet_kill() in pcie_deinit_8864() never returned, so
+removing the module hung with ksoftirqd spinning.
+
+Schedule the TX tasklet from the TX done tasklet only. On deinit, mark
+the data tasklets as killed, enable them so that they can run (as
+no-ops), and kill them before the rings are freed.
+
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+[Robert Peerenboom: split out of neheb/mwlwifi (upstream branch) commit
+ dcb73e4dca ("88W8864/88W8997: fix RX refill, TX status and teardown
+ bugs") and backported to db97edf2 on top of the OpenWrt patches]
+Signed-off-by: Robert Peerenboom <development@mindrush.de>
+---
+ hif/pcie/8864/tx.c | 11 +++++++++--
+ hif/pcie/dev.h     |  1 +
+ hif/pcie/pcie.c    | 13 +++++++++++--
+ 3 files changed, 21 insertions(+), 4 deletions(-)
+
+--- a/hif/pcie/8864/tx.c
++++ b/hif/pcie/8864/tx.c
+@@ -505,8 +505,6 @@ static void pcie_non_pfu_tx_done(struct
+ 		desc->pstale_tx_hndl = tx_hndl;
+ 	}
+ 	spin_unlock_bh(&pcie_priv->tx_desc_lock);
+-
+-	tasklet_schedule(&pcie_priv->tx_task);
+ }
+ 
+ int pcie_8864_tx_init(struct ieee80211_hw *hw)
+@@ -567,6 +565,9 @@ void pcie_8864_tx_skbs(unsigned long dat
+ 	struct mwl_amsdu_frag *amsdu_frag;
+ 	struct mwl_sta *sta_info;
+ 
++	if (pcie_priv->data_tasks_killed)
++		return;
++
+ 	spin_lock_bh(&pcie_priv->tx_desc_lock);
+ 	while (num--) {
+ 		while (true) {
+@@ -633,11 +634,17 @@ void pcie_8864_tx_done_task(unsigned lon
+ {
+ 	struct ieee80211_hw *hw = (struct ieee80211_hw *)data;
+ 	struct mwl_priv *priv = hw->priv;
++	struct pcie_priv *pcie_priv = priv->hif.priv;
++
++	if (pcie_priv->data_tasks_killed)
++		return;
+ 
+ 	pcie_non_pfu_tx_done(priv);
++	tasklet_schedule(&pcie_priv->tx_task);
+ 	priv->hif.ops->irq_enable(hw);
+ }
+ 
++/* Called while the tasklets are disabled; does not schedule them. */
+ void pcie_8864_tx_done(unsigned long data)
+ {
+ 	struct ieee80211_hw *hw = (struct ieee80211_hw *)data;
+--- a/hif/pcie/dev.h
++++ b/hif/pcie/dev.h
+@@ -608,6 +608,7 @@ struct pcie_priv {
+ 	/* new data path */
+ 	struct pcie_desc_data_ndp desc_data_ndp;
+ 	int tx_done_cnt;
++	bool data_tasks_killed;
+ 	struct ieee80211_sta *sta_link[SYSADPT_MAX_STA_SC4 + 1];
+ 	struct sk_buff_head rx_skb_trace;
+ 	struct ndp_rx_counter rx_cnts;
+--- a/hif/pcie/pcie.c
++++ b/hif/pcie/pcie.c
+@@ -315,6 +315,7 @@ static int pcie_init_8864(struct ieee802
+ 	tasklet_disable(&pcie_priv->tx_task);
+ 	tasklet_init(&pcie_priv->tx_done_task, (void *)pcie_8864_tx_done_task, (unsigned long)hw);
+ 	tasklet_disable(&pcie_priv->tx_done_task);
++	pcie_priv->data_tasks_killed = false;
+ 	spin_lock_init(&pcie_priv->tx_desc_lock);
+ #if LINUX_VERSION_CODE < KERNEL_VERSION(6,14,0)
+ 	init_dummy_netdev(&pcie_priv->napi_dev);
+@@ -421,10 +422,18 @@ static void pcie_deinit_8864(struct ieee
+ 	struct mwl_priv *priv = hw->priv;
+ 	struct pcie_priv *pcie_priv = priv->hif.priv;
+ 
+-	pcie_8864_rx_deinit(hw);
+-	pcie_8864_tx_deinit(hw);
++	/* The tasklets are disabled while the radio is stopped, and
++	 * tasklet_kill() never returns for one that was scheduled in the
++	 * meantime. Let them run, as no-ops, so they can be killed.
++	 */
++	pcie_priv->data_tasks_killed = true;
++	tasklet_enable(&pcie_priv->tx_task);
++	tasklet_enable(&pcie_priv->tx_done_task);
+ 	tasklet_kill(&pcie_priv->tx_done_task);
+ 	tasklet_kill(&pcie_priv->tx_task);
++
++	pcie_8864_rx_deinit(hw);
++	pcie_8864_tx_deinit(hw);
+ 	pcie_reset(hw);
+ }
+ 
