@@ -1,0 +1,330 @@
+// SPDX-License-Identifier: (GPL-2.0)
+/*
+ * Device Tree file for WD MyCloud Mirror
+ * Based on DB-88F6710-BP-DDR3
+ *
+ *  Copyright (C) 2026
+ *
+ * Lior Amsalem <alior@marvell.com>
+ * Gregory CLEMENT <gregory.clement@free-electrons.com>
+ * Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
+ * Allester Fox <fox.axon@gmail.com>
+ * Lutz Müller <lm@topfrose.de>
+ *
+ */
+
+/dts-v1/;
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/leds/common.h>
+#include "armada-370.dtsi"
+
+/ {
+	model = "WD My Cloud Mirror";
+	compatible = "wd,cloud-mirror-gen1", "marvell,a370-db", "marvell,armada370", "marvell,armada-370-xp";
+
+	chosen {
+		stdout-path = "serial0:115200n8";
+	};
+
+	aliases {
+		led-boot = &led_power;
+		led-failsafe = &led_power;
+		led-running = &led_power;
+		led-upgrade = &led_power;
+		reset = &reset_button;
+	};
+
+	memory@0 {
+		device_type = "memory";
+		reg = <0x00000000 0x20000000>; /* 512 MiB */
+	};
+
+	soc {
+		ranges = <MBUS_ID(0xf0, 0x01) 0 0xf1000000 0x100000
+			MBUS_ID(0x01, 0xe0) 0 0xfff00000 0x100000
+			MBUS_ID(0x09, 0x01) 0 0xf1100000 0x10000>;
+
+		internal-regs {
+			sata@a0000 {
+				nr-ports = <2>;
+				status = "okay";
+			};
+
+			usb@50000 {
+				status = "okay";
+			};
+
+			nand_controller: nand-controller@d0000 {
+				status = "okay";
+
+				nand: nand@0 {
+					reg = <0>;
+					label = "pxaxx_nand-0";
+					nand-rb = <0>;
+					marvell,nand-keep-config;
+					nand-on-flash-bbt;
+					nand-ecc-strength = <4>;
+					nand-ecc-step-size = <512>;
+
+					partitions {
+						compatible = "fixed-partitions";
+						#address-cells = <1>;
+						#size-cells = <1>;
+
+						partition@0 {
+							label = "u-boot";
+							reg = <0x00000000 0x00500000>;
+							read-only;
+						};
+						partition@500000 {
+							label = "uImage";
+							reg = <0x00500000 0x00500000>;
+						};
+						partition@a00000 {
+							label = "initramfs";
+							reg = <0x00A00000 0x00500000>;
+						};
+						partition@f00000 {
+							label = "ubi";
+							reg = <0x00f00000 0x0c900000>;
+						};
+						partition@dd00000 {
+							label = "rescue";
+							reg = <0x0dd00000 0x00f00000>;
+						};
+						partition@ec00000 {
+							label = "config";
+							reg = <0x0ec00000 0x01400000>;
+						};
+						partition@d800000 {
+							label = "reserved";
+							reg = <0x0d800000 0x00500000>;
+						};
+					};
+				};
+			};
+		};
+	};
+
+	gpio-keys {
+		compatible = "gpio-keys";
+		pinctrl-0 = <&reset_button_pin>;
+		pinctrl-names = "default";
+
+		reset_button: reset-button {
+			label = "Reset Button";
+			linux,code = <KEY_RESTART>;
+			gpios = <&gpio2 1 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	gpio-leds {
+		compatible = "gpio-leds";
+		pinctrl-names = "default";
+		pinctrl-0 = <&led_pins>;
+
+		hdd1_blue: hdd1-blue {
+			function = LED_FUNCTION_DISK;
+			function-enumerator = <0>;
+			color = <LED_COLOR_ID_BLUE>;
+			gpios = <&gpio1 25 GPIO_ACTIVE_HIGH>;	// gpio57
+			default-state = "keep";
+		};
+		hdd2_blue: hdd2-blue {
+			function = LED_FUNCTION_DISK;
+			function-enumerator = <1>;
+			color = <LED_COLOR_ID_BLUE>;
+			gpios = <&gpio1 23 GPIO_ACTIVE_HIGH>;	// gpio55
+			default-state = "keep";
+		};
+		hdd1_red: hdd1-red {
+			function = LED_FUNCTION_DISK;
+			function-enumerator = <0>;
+			color = <LED_COLOR_ID_RED>;
+			gpios = <&gpio1 21 GPIO_ACTIVE_HIGH>;	// gpio53
+			default-state = "keep";
+		};
+		hdd2_red: hdd2-red {
+			function = LED_FUNCTION_DISK;
+			function-enumerator = <1>;
+			color = <LED_COLOR_ID_RED>;
+			gpios = <&gpio1 20 GPIO_ACTIVE_HIGH>;	// gpio52
+			default-state = "keep";
+		};
+
+		led_power: led-power {
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_BLUE>;
+			gpios = <&mcu 0 GPIO_ACTIVE_HIGH>;
+			default-state = "on";
+		};
+	};
+
+	gpio-fan {
+		status = "okay";
+		compatible = "gpio-fan";
+		pinctrl-names = "default";
+		pinctrl-0 = <&fan_pins>;
+		#cooling-cells = <2>;
+
+		gpios = <&gpio0 8 GPIO_ACTIVE_HIGH
+				&gpio0 16 GPIO_ACTIVE_HIGH
+				&gpio1 0 GPIO_ACTIVE_HIGH
+				&gpio0 6 GPIO_ACTIVE_HIGH>;
+		gpio-fan,speed-map = < 0 0
+			 1500 1
+			 1700 2
+			 1800 3
+			 2100 4>;
+	};
+
+	regulators {
+		compatible = "simple-bus";
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		usb_power: regulator@1 {
+			compatible = "regulator-fixed";
+			reg = <1>;
+			pinctrl-0 = <&xhci_pwr_pin>;
+			pinctrl-names = "default";
+			regulator-name = "USB3.0 Port Power";
+			regulator-min-microvolt = <5000000>;
+			regulator-max-microvolt = <5000000>;
+			enable-active-high;
+			regulator-boot-on;
+			regulator-always-on;
+			gpio = <&gpio0 13 GPIO_ACTIVE_HIGH>;
+		};
+
+		sata_1_power: regulator@2 {
+			compatible = "regulator-fixed";
+			reg = <2>;
+			pinctrl-0 = <&sata_1_pwr_pin>;
+			pinctrl-names = "default";
+			regulator-name = "SATA-1 Power";
+			regulator-min-microvolt = <5000000>;
+			regulator-max-microvolt = <5000000>;
+			startup-delay-us = <2000000>;
+			enable-active-high;
+			regulator-always-on;
+			regulator-boot-on;
+			gpio = <&gpio1 22 GPIO_ACTIVE_HIGH>;
+		};
+
+		sata_2_power: regulator@3 {
+			compatible = "regulator-fixed";
+			reg = <3>;
+			pinctrl-0 = <&sata_2_pwr_pin>;
+			pinctrl-names = "default";
+			regulator-name = "SATA-2 Power";
+			regulator-min-microvolt = <5000000>;
+			regulator-max-microvolt = <5000000>;
+			startup-delay-us = <4000000>;
+			enable-active-high;
+			regulator-always-on;
+			regulator-boot-on;
+			gpio = <&gpio1 24 GPIO_ACTIVE_HIGH>;
+		};
+
+		wol_enable: regulator@4 {
+			compatible = "regulator-fixed";
+			reg = <4>;
+			regulator-name = "Wake-on-LAN";
+			regulator-min-microvolt = <3300000>;
+			regulator-max-microvolt = <3300000>;
+			enable-active-high;
+			regulator-always-on;
+			regulator-boot-on;
+			gpio = <&mcu 1 GPIO_ACTIVE_HIGH>;
+		};
+	};
+};
+
+&pciec {
+	status = "okay";
+
+	pcie@1,0 {
+		/* Port 0, Lane 0 */
+		status = "okay";
+	};
+
+	pcie@2,0 {
+		/* Port 1, Lane 0 */
+		status = "okay";
+	};
+};
+
+&pinctrl {
+	led_pins: led-pins {
+		// HDD2-Red, HDD1-Red, HDD1-Blue, HDD2-Blue
+		marvell,pins = "mpp52", "mpp53", "mpp57", "mpp55";
+		marvell,function = "gpio";
+	};
+
+	fan_pins: fan-pins {
+		marvell,pins = "mpp6", "mpp8", "mpp16", "mpp32";
+		marvell,function = "gpio";
+	};
+
+	xhci_pwr_pin: xhci-pwr-pin {
+		marvell,pins = "mpp13";
+		marvell,function = "gpio";
+	};
+
+	sata_1_pwr_pin: sata-1-pwr-pin {
+		marvell,pins = "mpp54";
+		marvell,function = "gpo";
+	};
+
+	sata_2_pwr_pin: sata-2-pwr-pin {
+		marvell,pins = "mpp56";
+		marvell,function = "gpio";
+	};
+
+	uart1_pins: uart1-pins {
+		marvell,pins = "mpp60", "mpp61";
+		marvell,function = "uart1";
+	};
+
+	reset_button_pin: reset-button-pin {
+		marvell,pins = "mpp64";
+		marvell,function = "gpio";
+	};
+};
+
+/* Serial console */
+&uart0 {
+	status = "okay";
+};
+
+/* Connected to Weltrend MCU */
+&uart1 {
+	pinctrl-0 = <&uart1_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	mcu: mcu {
+		compatible = "weltrend,wt69p3";
+		gpio-controller;
+		#gpio-cells = <2>;
+	};
+};
+
+&mdio {
+	phy0: ethernet-phy@0 { /* Marvell 88E1318 */
+		reg = <0>;
+	};
+};
+
+&eth1 {
+	phy = <&phy0>;
+	phy-mode = "rgmii-id";
+	status = "okay";
+};
+
+&i2c0 {
+	clock-frequency = <100000>;
+	status = "okay";
+};
