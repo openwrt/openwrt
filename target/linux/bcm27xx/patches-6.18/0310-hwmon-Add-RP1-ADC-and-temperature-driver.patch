@@ -21,7 +21,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
 
 --- a/drivers/hwmon/Kconfig
 +++ b/drivers/hwmon/Kconfig
-@@ -2664,6 +2664,13 @@ config SENSORS_INTEL_M10_BMC_HWMON
+@@ -2675,6 +2675,13 @@ config SENSORS_INTEL_M10_BMC_HWMON
  	  sensors monitor various telemetry data of different components on the
  	  card, e.g. board temperature, FPGA core temperature/voltage/current.
  
@@ -37,7 +37,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  comment "ACPI drivers"
 --- a/drivers/hwmon/Makefile
 +++ b/drivers/hwmon/Makefile
-@@ -198,6 +198,7 @@ obj-$(CONFIG_SENSORS_PT5161L)	+= pt5161l
+@@ -199,6 +199,7 @@ obj-$(CONFIG_SENSORS_PT5161L)	+= pt5161l
  obj-$(CONFIG_SENSORS_PWM_FAN)	+= pwm-fan.o
  obj-$(CONFIG_SENSORS_QNAP_MCU_HWMON)	+= qnap-mcu-hwmon.o
  obj-$(CONFIG_SENSORS_RASPBERRYPI_HWMON)	+= raspberrypi-hwmon.o
