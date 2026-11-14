@@ -1,4 +1,7 @@
+From 96ecf8dd248cbdd4bcabcc198f9170abda1ab0ea Mon Sep 17 00:00:00 2001
 From: Corey Leavitt <corey@leavitt.info>
+Date: Sun, 3 May 2026 20:43:57 +0000
+Subject: [PATCH] net: pse-pd: add notifier chain for controller lifecycle events
 
 Introduce a blocking notifier chain that allows other subsystems to be
 informed when a PSE controller is registered or unregistered, and

@@ -1,4 +1,5 @@
-FROM: Andrew LaMarche <andrewjlamarche@gmail.com>
+From 65592178ec1105d9794c5807b1a42e4b5667adbf Mon Sep 17 00:00:00 2001
+From: Andrew LaMarche <andrewjlamarche@gmail.com>
 Date: Wed, 28 Oct 2026 00:00:00 -0400
 Subject: [PATCH] octeon: fix PCIe port reset on Octeon III
 
@@ -48,7 +49,7 @@ address on CN70XX reports pemon|pemoor as a bogus "BIST2 FAILED (0x3)"
 on every boot.
 
 Signed-off-by: Andrew LaMarche <andrewjlamarche@gmail.com>
-
+---
 --- a/arch/mips/pci/pcie-octeon.c
 +++ b/arch/mips/pci/pcie-octeon.c
 @@ -19,6 +19,7 @@

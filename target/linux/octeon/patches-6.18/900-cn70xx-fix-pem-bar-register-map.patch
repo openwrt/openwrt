@@ -1,4 +1,5 @@
-FROM: Andrew LaMarche <andrewjlamarche@gmail.com>
+From 76d6b7fdbf0bc84bc4c89158faed8fe33beaf1e3 Mon Sep 17 00:00:00 2001
+From: Andrew LaMarche <andrewjlamarche@gmail.com>
 Date: Sat, 25 Oct 2026 00:00:00 -0400
 Subject: [PATCH] octeon: Fix PEM BAR register map on CN70XX
 
@@ -18,7 +19,7 @@ debugging a failing b43 firmware intialization followed by DMA errors.
 Add model awareness helpers and use them for the three affected addresses.
 
 Signed-off-by: Andrew LaMarche <andrewjlamarche@gmail.com>
-
+---
 --- a/arch/mips/pci/pcie-octeon.c
 +++ b/arch/mips/pci/pcie-octeon.c
 @@ -1141,6 +1141,38 @@ static int __cvmx_pcie_rc_initialize_lin

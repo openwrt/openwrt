@@ -1,4 +1,6 @@
+From 2b583ab8a74a6bd41f1c9629b3b66ba561d6fceb Mon Sep 17 00:00:00 2001
 From: David Bauer <mail@david-bauer.net>
+Date: Tue, 25 Jan 2022 21:46:54 +0100
 Subject: arm64: dts: rockchip: disable UHS modes for NanoPi R4S
 
 The NanoPi R4S leaves the SD card in 1.8V signalling when rebooting
@@ -9,7 +11,7 @@ mode. This reduces transfer speeds but ensures a reboot whether from
 userspace or following a kernel panic is always working.
 
 Signed-off-by: David Bauer <mail@david-bauer.net>
-
+---
 --- a/arch/arm64/boot/dts/rockchip/rk3328-roc.dtsi
 +++ b/arch/arm64/boot/dts/rockchip/rk3328-roc.dtsi
 @@ -346,7 +346,6 @@

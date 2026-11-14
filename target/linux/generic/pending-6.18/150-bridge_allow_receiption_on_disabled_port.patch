@@ -1,4 +1,6 @@
+From 93cb862260ffc77ce73630ae26b952e9d44efcc2 Mon Sep 17 00:00:00 2001
 From: Stephen Hemminger <stephen@networkplumber.org>
+Date: Mon, 15 Jul 2013 12:25:58 +0000
 Subject: bridge: allow receiption on disabled port
 
 When an ethernet device is enslaved to a bridge, and the bridge STP
@@ -12,7 +14,7 @@ hard requirement to not allow local packet delivery.
 
 Signed-off-by: Stephen Hemminger <stephen@networkplumber.org>
 Signed-off-by: Felix Fietkau <nbd@nbd.name>
-
+---
 --- a/net/bridge/br_input.c
 +++ b/net/bridge/br_input.c
 @@ -258,6 +258,9 @@ static void __br_handle_local_finish(str

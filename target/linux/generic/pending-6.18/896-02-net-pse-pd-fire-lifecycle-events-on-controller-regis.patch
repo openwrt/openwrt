@@ -1,4 +1,7 @@
+From 96ecf8dd248cbdd4bcabcc198f9170abda1ab0ea Mon Sep 17 00:00:00 2001
 From: Corey Leavitt <corey@leavitt.info>
+Date: Sun, 3 May 2026 20:43:57 +0000
+Subject: [PATCH] net: pse-pd: fire lifecycle events on controller registration
 
 Hook the newly-introduced pse_controller_notifier chain so that
 pse_controller_register() fires PSE_REGISTERED after the controller
