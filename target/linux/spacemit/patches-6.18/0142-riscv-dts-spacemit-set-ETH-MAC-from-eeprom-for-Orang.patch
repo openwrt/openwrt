@@ -1,0 +1,76 @@
+From 3d468f8bf4ccb663b4c8d64bcf6344cb920410d1 Mon Sep 17 00:00:00 2001
+From: Chukun Pan <amadeus@jmu.edu.cn>
+Date: Tue, 6 Oct 2026 18:00:00 +0800
+Subject: [PATCH] riscv: dts: spacemit: set ETH MAC from eeprom for OrangePi
+
+The EEPROM on the OrangePi R2S and RV2 stores the MAC address.
+Assign it to Ethernet, with ethernet1 having a MAC offset of 1.
+
+Signed-off-by: Chukun Pan <amadeus@jmu.edu.cn>
+Reviewed-by: Yixun Lan <dlan@kernel.org>
+Link: https://patch.msgid.link/20261006100000.548264-1-amadeus@jmu.edu.cn
+Signed-off-by: Yixun Lan <dlan@kernel.org>
+(cherry picked from commit d05c6236496071916e19012cda7149465f15e66e)
+---
+ arch/riscv/boot/dts/spacemit/k1-orangepi-r2s.dts | 6 +++++-
+ arch/riscv/boot/dts/spacemit/k1-orangepi-rv2.dts | 6 +++++-
+ 2 files changed, 10 insertions(+), 2 deletions(-)
+
+--- a/arch/riscv/boot/dts/spacemit/k1-orangepi-r2s.dts
++++ b/arch/riscv/boot/dts/spacemit/k1-orangepi-r2s.dts
+@@ -99,6 +99,8 @@
+ };
+ 
+ &eth0 {
++	nvmem-cells = <&mac_address 0>;
++	nvmem-cell-names = "mac-address";
+ 	phy-handle = <&rgmii0>;
+ 	phy-mode = "rgmii-id";
+ 	pinctrl-names = "default";
+@@ -123,6 +125,8 @@
+ };
+ 
+ &eth1 {
++	nvmem-cells = <&mac_address 1>;
++	nvmem-cell-names = "mac-address";
+ 	phy-handle = <&rgmii1>;
+ 	phy-mode = "rgmii-id";
+ 	pinctrl-names = "default";
+@@ -162,7 +166,7 @@
+ 		nvmem-layout {
+ 			compatible = "onie,tlv-layout";
+ 
+-			mac-address {
++			mac_address: mac-address {
+ 				#nvmem-cell-cells = <1>;
+ 			};
+ 
+--- a/arch/riscv/boot/dts/spacemit/k1-orangepi-rv2.dts
++++ b/arch/riscv/boot/dts/spacemit/k1-orangepi-rv2.dts
+@@ -126,6 +126,8 @@
+ };
+ 
+ &eth0 {
++	nvmem-cells = <&mac_address 0>;
++	nvmem-cell-names = "mac-address";
+ 	phy-handle = <&rgmii0>;
+ 	phy-mode = "rgmii-id";
+ 	pinctrl-names = "default";
+@@ -150,6 +152,8 @@
+ };
+ 
+ &eth1 {
++	nvmem-cells = <&mac_address 1>;
++	nvmem-cell-names = "mac-address";
+ 	phy-handle = <&rgmii1>;
+ 	phy-mode = "rgmii-id";
+ 	pinctrl-names = "default";
+@@ -189,7 +193,7 @@
+ 		nvmem-layout {
+ 			compatible = "onie,tlv-layout";
+ 
+-			mac-address {
++			mac_address: mac-address {
+ 				#nvmem-cell-cells = <1>;
+ 			};
+ 
