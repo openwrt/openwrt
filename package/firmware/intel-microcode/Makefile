@@ -8,12 +8,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=intel-microcode
-PKG_VERSION:=20260925
+PKG_VERSION:=20261110
 PKG_RELEASE:=1
 
 PKG_SOURCE:=microcode-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=https://github.com/intel/Intel-Linux-Processor-Microcode-Data-Files/archive/refs/tags/
-PKG_HASH:=0ec19023dad1e6dd0c5909174b8dff2555b91cf01671e36271a1ef36655c0cfc
+PKG_HASH:=989a5cd345808babee491da69ed80ae5741697bc87743a71d0ba611f3fd6afa5
 PKG_BUILD_DIR:=$(BUILD_DIR)/Intel-Linux-Processor-Microcode-Data-Files-microcode-$(PKG_VERSION)
 PKG_CPE_ID:=cpe:/a:intel:microcode
 
