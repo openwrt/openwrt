@@ -26,7 +26,7 @@
 #define RTPCS_RXCAL_XSG_MAX_ERR_DELTA		100
 #define RTPCS_RXCAL_XSG_ERR_SATURATION		0xffff00
 #define RTPCS_RXMON_POLL_MS			500
-#define RTPCS_RXMON_DOWN_SAMPLES			3
+#define RTPCS_RXMON_DOWN_SAMPLES		3
 #define RTPCS_RXMON_RECOVERY_MS			30000
 
 #define RTPCS_SPEED_10				0
@@ -231,7 +231,7 @@ enum rtpcs_page {
 
 #define TGR_PRO_0_REG13			0x0d
 #define  RTL93XX_CFG_LINKDW_SEL		BIT(6)
-#define   RTL93XX_CFG_LINKDW_SEL_DAC	0x0
+#define   RTL93XX_CFG_LINKDW_SEL_DAC		0x0
 #define   RTL93XX_CFG_LINKDW_SEL_NON_DAC	RTL93XX_CFG_LINKDW_SEL
 
 #define TGR_PRO_0_REG14			0x0e
@@ -340,7 +340,7 @@ enum rtpcs_page {
 #define   RTL93XX_FRC_RX_EN_FORCE_ON	FIELD_PREP(RTL93XX_FRC_RX_EN, 0x3)
 #define   RTL93XX_FRC_RX_EN_FORCE_OFF	FIELD_PREP(RTL93XX_FRC_RX_EN, 0x1)
 #define  RTL93XX_FRC_V2ANALOG		GENMASK(1, 0)
-#define   RTL93XX_FRC_V2ANALOG_UNFORCED	FIELD_PREP(RTL93XX_FRC_V2ANALOG, 0x0)
+#define   RTL93XX_FRC_V2ANALOG_UNFORCED		FIELD_PREP(RTL93XX_FRC_V2ANALOG, 0x0)
 #define   RTL93XX_FRC_V2ANALOG_FORCE_OFF	FIELD_PREP(RTL93XX_FRC_V2ANALOG, 0x1)
 
 #define ANA_MISC_REG02			0x02
@@ -395,7 +395,7 @@ enum rtpcs_page {
 /* Undocumented; RX calibration selection is inferred from SDK use on PAGE_ANA_10G. */
 #define  RTL931X_RXCAL_SEL		GENMASK(13, 11)
 #define   RTL931X_RXCAL_SEL_DEFAULT	FIELD_PREP(RTL931X_RXCAL_SEL, 0x0)
-#define   RTL931X_RXCAL_SEL_FIBER		FIELD_PREP(RTL931X_RXCAL_SEL, 0x1)
+#define   RTL931X_RXCAL_SEL_FIBER	FIELD_PREP(RTL931X_RXCAL_SEL, 0x1)
 #define   RTL931X_RXCAL_SEL_DAC		FIELD_PREP(RTL931X_RXCAL_SEL, 0x2)
 
 #define ANA_SPD_REG15			0x0f
@@ -412,7 +412,7 @@ enum rtpcs_page {
 
 #define ANA_SPD_REG20			0x14
 #define  RTL931X_RX_COEF_SEL		GENMASK(10, 5)
-#define   RTL931X_RX_COEF_SEL_VTH	0x0c
+#define   RTL931X_RX_COEF_SEL_VTH		0x0c
 #define   RTL931X_RX_COEF_SEL_TAP_EVEN(t)	(t)
 #define   RTL931X_RX_COEF_SEL_TAP_ODD(t)	((t) + 5)
 
@@ -430,7 +430,7 @@ enum rtpcs_page {
 
 #define ANA_SPD_REG23			0x17
 #define  RTL930X_RXEQ_LEQ_HOLD		BIT(7)
-#define  RTL930X_RXEQ_LEQ_OFFSET		GENMASK(6, 2)
+#define  RTL930X_RXEQ_LEQ_OFFSET	GENMASK(6, 2)
 
 #define ANA_SPD_REG24			0x18
 #define  RTL930X_RXEQ_LEQ_MANUAL_EN	BIT(15)
@@ -465,8 +465,8 @@ enum rtpcs_page {
 
 #define ANA_SPD_EXT_REG12		0x0c
 #define  RTL930X_RX_COEF_SEL		GENMASK(5, 0)
-#define   RTL930X_RX_COEF_SEL_FGCAL_BIN	0x0e
-#define   RTL930X_RX_COEF_SEL_VTH	0x0c
+#define   RTL930X_RX_COEF_SEL_FGCAL_BIN		0x0e
+#define   RTL930X_RX_COEF_SEL_VTH		0x0c
 #define   RTL930X_RX_COEF_SEL_TAP_ODD(t)	((t) + 5)
 #define   RTL930X_RX_COEF_SEL_TAP_EVEN(t)	(t)
 
@@ -2128,7 +2128,7 @@ static void rtpcs_93xx_rx_linkmon_work_handler(struct work_struct *work)
 	if (link < 0) {
 		sds->rxmon_down = 0;
 		dev_err_ratelimited(sds->ctrl->dev, "SerDes %u: RX link monitor read failed: %d\n",
-				sds->id, link);
+				    sds->id, link);
 		goto rearm;
 	}
 	if (link) {
@@ -2237,7 +2237,7 @@ static int rtpcs_930x_sds_get_xsgmii_link(struct rtpcs_serdes *sds)
 	phys_sds_id = rtpcs_930x_sds_get_phys_sds_id(sds->id, PAGE_SDS_EXT);
 	for (i = 0; i < 2; i++) {
 		val = __rtpcs_sds_read_raw(sds->ctrl, phys_sds_id + i,
-					  PAGE_SDS_EXT, SDS_EXT_REG29, 15, 0);
+					   PAGE_SDS_EXT, SDS_EXT_REG29, 15, 0);
 		if (val < 0)
 			return val;
 		if ((val & RTL93XX_XSG_LINK_STS) != RTL93XX_XSG_LINK_STS)
@@ -3563,8 +3563,9 @@ static int rtpcs_930x_sds_probe(struct rtpcs_serdes *sds)
 
 	/* submode only for 10G SerDes (id 2-9) */
 	if (sds->type == RTPCS_SDS_TYPE_10G) {
-		sds->swcore_regs.usxgmii_submode = devm_regmap_field_alloc(dev, map,
-							rtpcs_930x_usxgmii_submode_fields[id - 2]);
+		sds->swcore_regs.usxgmii_submode =
+			devm_regmap_field_alloc(dev, map,
+						rtpcs_930x_usxgmii_submode_fields[id - 2]);
 		if (IS_ERR(sds->swcore_regs.usxgmii_submode))
 			return PTR_ERR(sds->swcore_regs.usxgmii_submode);
 	}
@@ -5297,7 +5298,7 @@ static const struct rtpcs_sds_ops rtpcs_930x_sds_ops = {
 	.write			= rtpcs_930x_sds_op_write,
 	.write_mask		= rtpcs_930x_sds_op_write_mask,
 	.xsg_write_mask		= rtpcs_930x_sds_op_xsg_write_mask,
-	.get_xsgmii_link		= rtpcs_930x_sds_get_xsgmii_link,
+	.get_xsgmii_link	= rtpcs_930x_sds_get_xsgmii_link,
 	.rx_calibrate		= rtpcs_930x_sds_rx_calibrate,
 	.set_autoneg		= rtpcs_93xx_sds_set_autoneg,
 	.restart_autoneg	= rtpcs_generic_sds_restart_autoneg,
@@ -5336,7 +5337,7 @@ static const struct rtpcs_sds_ops rtpcs_931x_sds_ops = {
 	.write			= rtpcs_generic_sds_op_write,
 	.write_mask		= rtpcs_generic_sds_op_write_mask,
 	.xsg_write_mask		= rtpcs_931x_sds_op_xsg_write_mask,
-	.get_xsgmii_link		= rtpcs_931x_sds_get_xsgmii_link,
+	.get_xsgmii_link	= rtpcs_931x_sds_get_xsgmii_link,
 	.rx_calibrate		= rtpcs_931x_sds_rx_calibrate,
 	.set_autoneg		= rtpcs_93xx_sds_set_autoneg,
 	.restart_autoneg	= rtpcs_generic_sds_restart_autoneg,
