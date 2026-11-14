@@ -342,7 +342,6 @@ function iface_auth_type(config, band, eht) {
 
 		if (!config.eap_server) {
 			iface_authentication_server(config);
-			iface_accounting_server(config);
 		}
 
 		if (config.radius_das_client && config.radius_das_secret) {
