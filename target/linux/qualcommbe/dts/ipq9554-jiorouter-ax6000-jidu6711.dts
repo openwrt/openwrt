@@ -1,0 +1,18 @@
+// SPDX-License-Identifier: (GPL-2.0+ OR BSD-3-Clause)
+
+/dts-v1/;
+
+#include "ipq9554-jiorouter-ax6000-common.dtsi"
+
+/ {
+	model = "JioRouter AX6000 JIDU6711";
+	compatible = "jiorouter,ax6000-jidu6711", "qcom,ipq9574";
+};
+
+&wifi0 {
+	qcom,calibration-variant = "JIDU6711";
+};
+
+&wifi1 {
+	qcom,calibration-variant = "JIDU6711";
+};
