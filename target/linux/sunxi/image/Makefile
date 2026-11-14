@@ -32,7 +32,7 @@ define Device/Default
   KERNEL_NAME := zImage
   KERNEL := kernel-bin | uImage none
   IMAGES := sdcard.img.gz
-  IMAGE/sdcard.img.gz := sunxi-sdcard | append-metadata | gzip
+  IMAGE/sdcard.img.gz := sunxi-sdcard | append-metadata | libdeflate-gzip
   SUNXI_DTS_DIR := allwinner/
   SUNXI_DTS = $$(SUNXI_DTS_DIR)$$(SOC)-$(lastword $(subst _, ,$(1)))
 endef
@@ -42,7 +42,7 @@ define Device/FitImageLzma
 endef
 
 define Device/FitImageGzip
-  KERNEL = kernel-bin | gzip | fit gzip $$(DTS_DIR)/$$(SUNXI_DTS).dtb
+  KERNEL = kernel-bin | libdeflate-gzip | fit gzip $$(DTS_DIR)/$$(SUNXI_DTS).dtb
 endef
 
 include $(SUBTARGET).mk

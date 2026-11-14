@@ -34,7 +34,7 @@ define Device/Default
   BOOT_SCRIPT := generic-bootscript
   DEVICE_DTS_DIR := $$(DTS_DIR)/nvidia
   IMAGES := sdcard.img.gz
-  IMAGE/sdcard.img.gz := append-rootfs | pad-extra 128k | tegra-sdcard | gzip | append-metadata
+  IMAGE/sdcard.img.gz := append-rootfs | pad-extra 128k | tegra-sdcard | libdeflate-gzip | append-metadata
   KERNEL_NAME := zImage
   KERNEL := kernel-bin
   PROFILES := Default

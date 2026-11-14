@@ -218,7 +218,7 @@ define Device/sercomm_dxx
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
   IMAGE/factory.img := append-ubi | check-size | \
 	sercomm-part-tag rootfs | sercomm-prepend-tagged-kernel kernel | \
-	gzip | sercomm-payload | sercomm-crypto
+	libdeflate-gzip | sercomm-payload | sercomm-crypto
 endef
 
 define Device/sercomm_s1500

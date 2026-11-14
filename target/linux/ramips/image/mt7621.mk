@@ -123,12 +123,13 @@ define Build/haier-sim_wr1800k-factory
   $(TAR) -C "$@.tmp" \
 	--numeric-owner --owner=0 --group=0 --mode=go-w --sort=name \
 	$(if $(SOURCE_DATE_EPOCH),--mtime="@$(SOURCE_DATE_EPOCH)") \
-	-cf - UploadBrush-bin.img check_MD5.txt | gzip -n -9 > "$@.tmp.tgz"
+	-cf "$@.tmp.tar" UploadBrush-bin.img check_MD5.txt
+  libdeflate-gzip -12 -n -c "$@.tmp.tar" > "$@.tmp.tgz"
   $(STAGING_DIR_HOST)/bin/openssl aes-256-cbc -e \
 	-S 4f70656e57727421 \
 	-in "$@.tmp.tgz" -out "$@" -k QiLunSmartWL
   printf %32s $(DEVICE_MODEL) >> "$@"
-  rm -rf "$@.tmp" "$@.tmp.tgz"
+  rm -rf "$@.tmp" "$@.tmp.tar" "$@.tmp.tgz"
 endef
 
 define Build/iodata-mstc-header
