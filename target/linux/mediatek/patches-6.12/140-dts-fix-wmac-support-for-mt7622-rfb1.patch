@@ -1,3 +1,11 @@
+From c46ccb69d17e584479df849a107423175a143c83 Mon Sep 17 00:00:00 2001
+From: Felix Fietkau <nbd@nbd.name>
+Date: Sat, 24 Oct 2020 21:15:20 +0200
+Subject: [PATCH] arm64: dts: mediatek: mt7622-rfb1: load WMAC EEPROM from flash
+
+Label the factory partition of the MT7622 RFB1 and let the WMAC read its
+EEPROM data from it.
+---
 --- a/arch/arm64/boot/dts/mediatek/mt7622-rfb1.dts
 +++ b/arch/arm64/boot/dts/mediatek/mt7622-rfb1.dts
 @@ -599,7 +599,7 @@

@@ -1,3 +1,12 @@
+From 61137a88952e125c574aa35209fd581591d8796a Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Thu, 18 Jan 2024 22:15:35 +0000
+Subject: [PATCH] arm64: dts: mediatek: bpi-r3: use all-UBI NAND layout
+
+Switch the NAND flash of the BananaPi BPI-R3 to the all-UBI layout used
+by OpenWrt and adapt the NOR and eMMC overlays and the root device
+accordingly.
+---
 --- a/arch/arm64/boot/dts/mediatek/mt7986a-bananapi-bpi-r3-emmc.dtso
 +++ b/arch/arm64/boot/dts/mediatek/mt7986a-bananapi-bpi-r3-emmc.dtso
 @@ -21,5 +21,24 @@

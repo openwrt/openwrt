@@ -1,3 +1,11 @@
+From f0c0b18234418c6ed6d35fcf1c6e5b0cbdceed49 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Tue, 21 Dec 2021 16:27:16 +0000
+Subject: [PATCH] leds: iei-wt61p803-puzzle: add blinking and further improvements
+
+Rework the LED driver of the IEI WT61P803 PUZZLE MCU to support all LEDs
+and hardware blinking, and extend the MCU driver accordingly.
+---
 --- a/drivers/leds/leds-iei-wt61p803-puzzle.c
 +++ b/drivers/leds/leds-iei-wt61p803-puzzle.c
 @@ -9,9 +9,13 @@

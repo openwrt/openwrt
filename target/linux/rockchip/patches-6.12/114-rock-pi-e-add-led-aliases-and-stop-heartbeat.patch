@@ -1,3 +1,12 @@
+From 649bc715b2e8cce32e3cfad5057ccc70ee944937 Mon Sep 17 00:00:00 2001
+From: FUKAUMI Naoki <naoki@radxa.com>
+Date: Mon, 29 Jul 2024 08:38:25 +0900
+Subject: [PATCH] arm64: dts: rockchip: rock-pi-e: add LED aliases and stop heartbeat
+
+Add the LED aliases used by OpenWrt to indicate the boot, failsafe,
+running and upgrade states and replace the default heartbeat trigger of
+the Radxa ROCK Pi E, so that the LED reflects these states.
+---
 --- a/arch/arm64/boot/dts/rockchip/rk3328-rock-pi-e.dts
 +++ b/arch/arm64/boot/dts/rockchip/rk3328-rock-pi-e.dts
 @@ -25,6 +25,10 @@

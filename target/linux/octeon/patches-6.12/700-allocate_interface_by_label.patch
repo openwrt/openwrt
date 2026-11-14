@@ -1,3 +1,4 @@
+From a8ceda752c8f6d5ee84bfc4d2d24a5b326c9e671 Mon Sep 17 00:00:00 2001
 From: Roman Kuzmitskii <damex.pp@icloud.com>
 Date: Wed, 28 Oct 2020 19:00:00 +0000
 Subject: [PATCH] staging: octeon: add net-labels support
@@ -10,6 +11,7 @@ label = "lan0";
 
 Tested-by: Johannes Kimmel <fff@bareminimum.eu>
 Signed-off-by: Roman Kuzmitskii <damex.pp@icloud.com>
+---
 --- a/drivers/staging/octeon/ethernet.c
 +++ b/drivers/staging/octeon/ethernet.c
 @@ -406,8 +406,12 @@ static int cvm_oct_common_set_mac_addres

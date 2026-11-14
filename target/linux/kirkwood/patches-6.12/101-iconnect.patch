@@ -1,3 +1,13 @@
+From 0c25f159fd44c20c13a37148ff91b283c307dcfe Mon Sep 17 00:00:00 2001
+From: Luka Perkov <luka@openwrt.org>
+Date: Sat, 15 Feb 2014 23:53:08 +0000
+Subject: [PATCH] ARM: dts: kirkwood-iconnect: adapt for OpenWrt
+
+Adapt the device tree of the Iomega iConnect to OpenWrt: change the
+flash partitions to the layout used by OpenWrt and add the LED aliases
+used by OpenWrt to indicate the boot, failsafe, running and upgrade
+states.
+---
 --- a/arch/arm/boot/dts/marvell/kirkwood-iconnect.dts
 +++ b/arch/arm/boot/dts/marvell/kirkwood-iconnect.dts
 @@ -8,6 +8,13 @@

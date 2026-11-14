@@ -1,3 +1,12 @@
+From 749237967a122a40465b65c7e9eb6924d8fe09c4 Mon Sep 17 00:00:00 2001
+From: Pawel Dembicki <paweldembicki@gmail.com>
+Date: Thu, 11 May 2023 17:02:43 +0200
+Subject: [PATCH] ARM: dts: kirkwood-c200-v1: adapt for OpenWrt
+
+Adapt the device tree of the CTERA C200 V1 to OpenWrt: change the flash
+partitions to the layout used by OpenWrt and add the LED aliases used by
+OpenWrt to indicate the boot, failsafe, running and upgrade states.
+---
 --- a/arch/arm/boot/dts/marvell/kirkwood-c200-v1.dts
 +++ b/arch/arm/boot/dts/marvell/kirkwood-c200-v1.dts
 @@ -14,6 +14,14 @@

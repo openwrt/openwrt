@@ -1,3 +1,12 @@
+From 8cd6686ef81effb3c30f0508368db3d0600f289d Mon Sep 17 00:00:00 2001
+From: Chris Blake <chrisrblake93@gmail.com>
+Date: Sat, 30 Sep 2017 11:14:20 -0500
+Subject: [PATCH] ARM: add CMDLINE_OVERRIDE option
+
+Add the CMDLINE_OVERRIDE option, which makes the kernel use the built-in
+command line (CONFIG_CMDLINE) instead of the one passed by the
+bootloader in the device tree.
+---
 --- a/arch/arm/Kconfig
 +++ b/arch/arm/Kconfig
 @@ -1505,6 +1505,14 @@ config ARM_ATAG_DTB_COMPAT_CMDLINE_EXTEN

@@ -1,3 +1,11 @@
+From 864d6743ee3fe8ab649ee1e9455c7e0de212ea3c Mon Sep 17 00:00:00 2001
+From: Bjørn Mork <bjorn@mork.no>
+Date: Wed, 12 Feb 2025 20:45:51 +0100
+Subject: [PATCH] thermal: add Realtek thermal driver to the build
+
+Hook the thermal driver for the Realtek RTL838x and RTL930x SoCs into
+Kconfig and the Makefile.
+---
 --- a/drivers/thermal/Kconfig
 +++ b/drivers/thermal/Kconfig
 @@ -499,4 +499,11 @@ config LOONGSON2_THERMAL

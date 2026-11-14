@@ -1,3 +1,4 @@
+From ce1991cd6466e12fc3c018e5729572b52d4e20fd Mon Sep 17 00:00:00 2001
 From: Andrew LaMarche <andrewjlamarche@gmail.com>
 Date: Mon, 31 Mar 2025 13:00:00 +0000
 Subject: [PATCH] octeon: force pcs reset
@@ -12,6 +13,7 @@ References:
 - https://github.com/u-boot/u-boot/blob/master/arch/mips/mach-octeon/cvmx-helper-sgmii.c#L701-L737
 
 Signed-off-by: Andrew LaMarche <andrewjlamarche@gmail.com>
+---
 --- a/arch/mips/cavium-octeon/executive/cvmx-helper-sgmii.c
 +++ b/arch/mips/cavium-octeon/executive/cvmx-helper-sgmii.c
 @@ -125,6 +125,17 @@ static int __cvmx_helper_sgmii_hardware_

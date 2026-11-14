@@ -1,3 +1,11 @@
+From 8c0930b70b4f8d7447e34a59d52b1a5485aa4d49 Mon Sep 17 00:00:00 2001
+From: Clemens Hopfer <openwrt@wireloss.net>
+Date: Sat, 28 May 2022 21:34:48 +0200
+Subject: [PATCH] MIPS: octeon: add Ubiquiti UniFi Security Gateway board type
+
+Add the UBNT_USG board type (20004) and handle it in the platform and
+board helper code.
+---
 --- a/arch/mips/include/asm/octeon/cvmx-bootinfo.h
 +++ b/arch/mips/include/asm/octeon/cvmx-bootinfo.h
 @@ -297,6 +297,7 @@ enum cvmx_board_types_enum {

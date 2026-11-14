@@ -1,4 +1,6 @@
+From 2262fa9f1527ecf966e9ceeded77389d57345803 Mon Sep 17 00:00:00 2001
 From: Mark Miller <mark@mirell.org>
+Date: Mon, 24 Jan 2011 12:33:25 +0000
 Subject: mips: expose CONFIG_BOOT_RAW
 
 This exposes the CONFIG_BOOT_RAW symbol in Kconfig. This is needed on
@@ -9,7 +11,7 @@ Acked-by: Rob Landley <rob@landley.net>
 ---
 --- a/arch/mips/Kconfig
 +++ b/arch/mips/Kconfig
-@@ -1055,9 +1055,6 @@ config FW_ARC
+@@ -1056,9 +1056,6 @@ config FW_ARC
  config ARCH_MAY_HAVE_PC_FDC
  	bool
  
@@ -19,7 +21,7 @@ Acked-by: Rob Landley <rob@landley.net>
  config CEVT_BCM1480
  	bool
  
-@@ -2990,6 +2987,18 @@ choice
+@@ -2991,6 +2988,18 @@ choice
  		bool "Extend builtin kernel arguments with bootloader arguments"
  endchoice
  

@@ -143,7 +143,7 @@ Signed-off-by: Tvrtko Ursulin <tvrtko.ursulin@igalia.com>
  		*mask = mempolicy->nodes;
  		break;
  
-@@ -2624,6 +2687,7 @@ bool __mpol_equal(struct mempolicy *a, s
+@@ -2634,6 +2697,7 @@ bool __mpol_equal(struct mempolicy *a, s
  	case MPOL_PREFERRED:
  	case MPOL_PREFERRED_MANY:
  	case MPOL_WEIGHTED_INTERLEAVE:
@@ -151,7 +151,7 @@ Signed-off-by: Tvrtko Ursulin <tvrtko.ursulin@igalia.com>
  		return !!nodes_equal(a->nodes, b->nodes);
  	case MPOL_LOCAL:
  		return true;
-@@ -2815,6 +2879,10 @@ int mpol_misplaced(struct folio *folio,
+@@ -2825,6 +2889,10 @@ int mpol_misplaced(struct folio *folio,
  		polnid = zonelist_node_idx(z);
  		break;
  
@@ -162,7 +162,7 @@ Signed-off-by: Tvrtko Ursulin <tvrtko.ursulin@igalia.com>
  	default:
  		BUG();
  	}
-@@ -3160,6 +3228,7 @@ static const char * const policy_modes[]
+@@ -3170,6 +3238,7 @@ static const char * const policy_modes[]
  	[MPOL_WEIGHTED_INTERLEAVE] = "weighted interleave",
  	[MPOL_LOCAL]      = "local",
  	[MPOL_PREFERRED_MANY]  = "prefer (many)",
@@ -170,7 +170,7 @@ Signed-off-by: Tvrtko Ursulin <tvrtko.ursulin@igalia.com>
  };
  
  /**
-@@ -3222,6 +3291,7 @@ int mpol_parse_str(char *str, struct mem
+@@ -3232,6 +3301,7 @@ int mpol_parse_str(char *str, struct mem
  		break;
  	case MPOL_INTERLEAVE:
  	case MPOL_WEIGHTED_INTERLEAVE:
@@ -178,7 +178,7 @@ Signed-off-by: Tvrtko Ursulin <tvrtko.ursulin@igalia.com>
  		/*
  		 * Default to online nodes with memory if no nodelist
  		 */
-@@ -3366,6 +3436,7 @@ void mpol_to_str(char *buffer, int maxle
+@@ -3376,6 +3446,7 @@ void mpol_to_str(char *buffer, int maxle
  	case MPOL_BIND:
  	case MPOL_INTERLEAVE:
  	case MPOL_WEIGHTED_INTERLEAVE:

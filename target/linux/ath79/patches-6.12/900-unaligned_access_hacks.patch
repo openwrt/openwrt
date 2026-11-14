@@ -1,4 +1,6 @@
+From 54d97e6782a85c81e1965271ed76af9549f8cce3 Mon Sep 17 00:00:00 2001
 From: Felix Fietkau <nbd@openwrt.org>
+Date: Tue, 2 Aug 2011 15:12:08 +0000
 Subject: [PATCH] ar71xx: fix unaligned access in a few more places
 
 SVN-Revision: 35130
@@ -336,7 +338,7 @@ SVN-Revision: 35130
  #endif /* _LINUX_TYPES_H */
 --- a/net/ipv4/af_inet.c
 +++ b/net/ipv4/af_inet.c
-@@ -1507,7 +1507,7 @@ struct sk_buff *inet_gro_receive(struct
+@@ -1510,7 +1510,7 @@ struct sk_buff *inet_gro_receive(struct
  		goto out;
  
  	NAPI_GRO_CB(skb)->proto = proto;
@@ -577,7 +579,7 @@ SVN-Revision: 35130
  			goto next_ht;
 --- a/net/ipv6/ip6_offload.c
 +++ b/net/ipv6/ip6_offload.c
-@@ -271,7 +271,7 @@ INDIRECT_CALLABLE_SCOPE struct sk_buff *
+@@ -275,7 +275,7 @@ INDIRECT_CALLABLE_SCOPE struct sk_buff *
  			continue;
  
  		iph2 = (struct ipv6hdr *)(p->data + off);
