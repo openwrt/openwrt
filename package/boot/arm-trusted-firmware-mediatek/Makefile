@@ -491,6 +491,15 @@ define Trusted-Firmware-A/mt7987-sdmmc-ddr4-4bg
   DDR4_4BG_MODE:=1
 endef
 
+define Trusted-Firmware-A/mt7987-spim-nand-tenda-be12-pro
+  NAME:=Tenda BE12 Pro (raw SPI-NAND, DDR3 2133 MT/s)
+  BOOT_DEVICE:=spim-nand
+  BUILD_SUBTARGET:=filogic
+  PLAT:=mt7987
+  FIP_OFFSET:=0x100000
+  FIP_SIZE:=0x200000
+endef
+
 define Trusted-Firmware-A/mt7987-spim-nand0
   NAME:=MediaTek MT7987 (SPI-NAND via SPIM)
   BOOT_DEVICE:=spim-nand
@@ -805,6 +814,7 @@ TFA_TARGETS:= \
 	mt7987-sdmmc-comb \
 	mt7987-sdmmc-ddr4-4bg \
 	mt7987-spim-nand0 \
+	mt7987-spim-nand-tenda-be12-pro \
 	mt7987-spim-nand0-ubi-comb \
 	mt7987-spim-nand2-ubi-comb \
 	mt7987-spim-nand2-4k-ubi-comb \
