@@ -5371,22 +5371,10 @@ static const struct rtpcs_config rtpcs_931x_cfg = {
 };
 
 static const struct of_device_id rtpcs_of_match[] = {
-	{
-		.compatible = "realtek,rtl8380-pcs",
-		.data = &rtpcs_838x_cfg,
-	},
-	{
-		.compatible = "realtek,rtl8392-pcs",
-		.data = &rtpcs_839x_cfg,
-	},
-	{
-		.compatible = "realtek,rtl9301-pcs",
-		.data = &rtpcs_930x_cfg,
-	},
-	{
-		.compatible = "realtek,rtl9311-pcs",
-		.data = &rtpcs_931x_cfg,
-	},
+	{ .compatible = "realtek,rtl8380-pcs", .data = &rtpcs_838x_cfg },
+	{ .compatible = "realtek,rtl8392-pcs", .data = &rtpcs_839x_cfg },
+	{ .compatible = "realtek,rtl9301-pcs", .data = &rtpcs_930x_cfg },
+	{ .compatible = "realtek,rtl9311-pcs", .data = &rtpcs_931x_cfg },
 	{ /* sentinel */ }
 };
 MODULE_DEVICE_TABLE(of, rtpcs_of_match);
