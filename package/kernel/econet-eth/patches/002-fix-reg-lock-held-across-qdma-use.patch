@@ -1,0 +1,30 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Navid Ghahremani <ghahramani.navid@gmail.com>
+Date: Sun, 27 Sep 2026 22:20:00 +0100
+Subject: [PATCH] econet-eth: don't hold port->reg_lock across en75_qdma_use
+
+Release port->reg_lock spinlock before acquiring en75_qdma_use mutex
+to prevent sleeping while holding a spinlock.
+
+Signed-off-by: Navid Ghahremani <ghahramani.navid@gmail.com>
+---
+--- a/econet_port.c
++++ b/econet_port.c
+@@ -153,11 +153,12 @@ static int en75_dev_open(struct net_devi
+ 	// 	airoha_fe_clear(qdma->eth, REG_GDM_INGRESS_CFG(port->id),
+ 	// 			GDM_STAG_EN_MASK);
+
+-	guard(spinlock)(&port->reg_lock);
+-	rlt = en75_rreg(&port->regs->rx_len_threshold);
+-	set_gdm_len_th_runt_len(&rlt, 60);
+-	set_gdm_len_th_oversize_len(&rlt, ETH_HLEN + dev->mtu + ETH_FCS_LEN);
+-	en75_wreg(rlt, &port->regs->rx_len_threshold);
++	scoped_guard(spinlock, &port->reg_lock) {
++		rlt = en75_rreg(&port->regs->rx_len_threshold);
++		set_gdm_len_th_runt_len(&rlt, 60);
++		set_gdm_len_th_oversize_len(&rlt, ETH_HLEN + dev->mtu + ETH_FCS_LEN);
++		en75_wreg(rlt, &port->regs->rx_len_threshold);
++	}
+
+ 	return en75_qdma_use(port->qdma);
+ }

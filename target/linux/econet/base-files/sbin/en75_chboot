@@ -137,7 +137,8 @@ main() {
         code_openwrt=30000000
         code_factory=31000000
         ;;
-    zyxel,ex3301-t0)
+    zyxel,ex3301-t0|\
+    zyxel,wx3100-t0)
         part=$(part_named '"reservearea"')
         offset_blocks=5
         block_size=$((1024 * 128))
