@@ -1,0 +1,14 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+/*
+ * For the upstream ag71xx driver: it registers the MDIO bus of every MAC
+ * it probes, and fails on a disabled one.
+ */
+
+&mdio0 {
+	status = "okay";
+};
+
+&mdio1 {
+	status = "okay";
+};

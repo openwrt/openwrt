@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
 #include "ar9344.dtsi"
+#include "ar934x_ag71xx.dtsi"
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
@@ -228,18 +229,15 @@
 &eth0 {
 	status = "okay";
 
-	pll-data = <0x06000000 0x00000101 0x00001313>;
+	qca,gmac = <&gmac>;
+	qca,pll = <&pll>;
+	qca,rxd-delay = <1>;
+	qca,rxdv-delay = <1>;
+	tx-internal-delay-ps = <800>;
 
 	nvmem-cells = <&macaddr_hw_info_0 0>;
 	nvmem-cell-names = "mac-address";
 
 	phy-mode = "rgmii-id";
 	phy-handle = <&phy0>;
-
-	gmac-config {
-		device = <&gmac>;
-		rgmii-gmac0 = <1>;
-		rxd-delay = <1>;
-		rxdv-delay = <1>;
-	};
 };

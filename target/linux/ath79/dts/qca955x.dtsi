@@ -168,8 +168,8 @@
 		};
 
 		gmac: gmac@18070000 {
-			compatible = "qca,qca9550-gmac";
-			reg = <0x18070000 0x58>;
+			compatible = "qca,qca9550-gmac", "syscon";
+			reg = <0x18070000 0x68>;
 		};
 
 		pcie0: pcie@180c0000 {

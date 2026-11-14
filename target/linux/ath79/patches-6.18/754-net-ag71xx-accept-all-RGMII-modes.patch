@@ -1,0 +1,27 @@
+From: Rosen Penev <rosenp@gmail.com>
+Date: Thu, 12 Nov 2026 15:53:11 -0800
+Subject: [PATCH] net: ag71xx: accept all RGMII modes
+
+The RGMII MACs only list PHY_INTERFACE_MODE_RGMII as supported, so
+phylink refuses rgmii-id, rgmii-rxid and rgmii-txid, which boards use
+when the PHY adds the RGMII delays. The MAC does not care which side
+adds them, so accept all of them.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+---
+ drivers/net/ethernet/atheros/ag71xx.c | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+--- a/drivers/net/ethernet/atheros/ag71xx.c
++++ b/drivers/net/ethernet/atheros/ag71xx.c
+@@ -1173,8 +1173,7 @@ static int ag71xx_phylink_setup(struct a
+ 
+ 	if ((ag71xx_is(ag, AR9340) && ag->mac_idx == 0) ||
+ 	    ag71xx_is(ag, QCA9550))
+-		__set_bit(PHY_INTERFACE_MODE_RGMII,
+-			  ag->phylink_config.supported_interfaces);
++		phy_interface_set_rgmii(ag->phylink_config.supported_interfaces);
+ 
+ 	phylink = phylink_create(&ag->phylink_config, ag->pdev->dev.fwnode,
+ 				 ag->phy_if_mode, &ag71xx_phylink_mac_ops);

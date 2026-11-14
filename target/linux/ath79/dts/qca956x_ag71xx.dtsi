@@ -1,0 +1,29 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+/*
+ * For the upstream ag71xx driver: each MAC needs its MDIO clock and
+ * reset, and it registers the MDIO bus of every MAC it probes and fails
+ * on a disabled one.
+ */
+
+&eth0 {
+	resets = <&rst 9>, <&rst 22>;
+	reset-names = "mac", "mdio";
+	clocks = <&pll ATH79_CLK_AHB>, <&pll ATH79_CLK_MDIO>;
+	clock-names = "eth", "mdio";
+};
+
+&mdio0 {
+	status = "okay";
+};
+
+&eth1 {
+	resets = <&rst 13>, <&rst 23>;
+	reset-names = "mac", "mdio";
+	clocks = <&pll ATH79_CLK_AHB>, <&pll ATH79_CLK_MDIO>;
+	clock-names = "eth", "mdio";
+};
+
+&mdio1 {
+	status = "okay";
+};

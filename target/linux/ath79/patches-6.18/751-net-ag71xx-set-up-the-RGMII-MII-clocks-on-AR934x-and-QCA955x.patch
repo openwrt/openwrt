@@ -1,0 +1,171 @@
+From: Rosen Penev <rosenp@gmail.com>
+Date: Thu, 5 Nov 2026 19:22:26 -0800
+Subject: [PATCH] net: ag71xx: set up the RGMII/MII clocks on AR934x and QCA955x
+
+On AR934x and QCA955x, the clocks of the MAC's RGMII/MII interface are
+set up by ETH_XMII_CONTROL in the PLL block (AR9344 datasheet, 9.5.10,
+QCA9558 datasheet, 10.6.11):
+
+- GIGE has to be set at 1000 Mbit/s, and the phase counters divide the
+  clock at 10 and 100 Mbit/s.
+- TX_DELAY delays the RGMII transmit clock in steps of 0.8 ns, and
+  GIGE_QUAD shifts it by another 2 ns at 1000 Mbit/s.
+- RX_DELAY delays the RGMII receive clock in steps of up to 0.9 ns.
+
+The driver leaves it as the bootloader set it up, which does not
+follow the link speed, and has no RGMII delays unless the bootloader
+set them.
+
+Take the PLL block from the "qca,pll" syscon, the delays from
+rx-internal-delay-ps and tx-internal-delay-ps, and program the register
+when the link comes up. The phase counters are the ones OpenWrt has
+used on these SoCs for 10 and 100 Mbit/s.
+
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+---
+ drivers/net/ethernet/atheros/ag71xx.c | 92 +++++++++++++++++++++++++++
+ 1 file changed, 92 insertions(+)
+
+--- a/drivers/net/ethernet/atheros/ag71xx.c
++++ b/drivers/net/ethernet/atheros/ag71xx.c
+@@ -27,6 +27,7 @@
+  *  Imre Kaloz <kaloz@openwrt.org>
+  */
+ 
++#include <linux/bitfield.h>
+ #include <linux/if_vlan.h>
+ #include <linux/mfd/syscon.h>
+ #include <linux/of.h>
+@@ -74,6 +75,18 @@
+ #define QCA955X_ETH_CFG_RGMII_EN	BIT(0)
+ #define QCA955X_ETH_CFG_GE0_SGMII	BIT(6)
+ 
++/* ETH_XMII_CONTROL in the PLL block of AR934x and QCA955x */
++#define ETH_XMII_GIGE_QUAD		BIT(30)
++#define ETH_XMII_RX_DELAY		GENMASK(29, 28)
++#define ETH_XMII_TX_DELAY		GENMASK(27, 26)
++#define ETH_XMII_GIGE			BIT(25)
++#define ETH_XMII_PHASE1_CNT		GENMASK(15, 8)
++#define ETH_XMII_PHASE0_CNT		GENMASK(7, 0)
++
++#define ETH_XMII_RX_DELAY_STEP_PS	900
++#define ETH_XMII_TX_DELAY_STEP_PS	800
++#define ETH_XMII_GIGE_QUAD_PS		2000
++
+ /* Register offsets */
+ #define AG71XX_REG_MAC_CFG1	0x0000
+ #define MAC_CFG1_TXE		BIT(0)	/* Tx Enable */
+@@ -392,6 +405,9 @@ struct ag71xx {
+ 	struct clk *clk_mdio;
+ 
+ 	struct regmap *gmac;
++	struct regmap *pll;
++	u32 xmii_delay;
++	bool xmii_gige_quad;
+ };
+ 
+ static int ag71xx_desc_empty(struct ag71xx_desc *desc)
+@@ -998,6 +1014,29 @@ static void ag71xx_hw_start(struct ag71x
+ 	netif_wake_queue(ag->ndev);
+ }
+ 
++static void ag71xx_xmii_set_speed(struct ag71xx *ag, int speed)
++{
++	u32 val = ag->xmii_delay;
++
++	switch (speed) {
++	case SPEED_1000:
++		val |= ETH_XMII_GIGE;
++		if (ag->xmii_gige_quad)
++			val |= ETH_XMII_GIGE_QUAD;
++		break;
++	case SPEED_100:
++		val |= FIELD_PREP(ETH_XMII_PHASE1_CNT, 0x01) |
++		       FIELD_PREP(ETH_XMII_PHASE0_CNT, 0x01);
++		break;
++	case SPEED_10:
++		val |= FIELD_PREP(ETH_XMII_PHASE1_CNT, 0x16) |
++		       FIELD_PREP(ETH_XMII_PHASE0_CNT, 0x16);
++		break;
++	}
++
++	regmap_write(ag->pll, ag->dcfg->xmii_reg, val);
++}
++
+ static void ag71xx_mac_config(struct phylink_config *config, unsigned int mode,
+ 			      const struct phylink_link_state *state)
+ {
+@@ -1062,6 +1101,9 @@ static void ag71xx_mac_link_up(struct ph
+ 		return;
+ 	}
+ 
++	if (ag->pll)
++		ag71xx_xmii_set_speed(ag, speed);
++
+ 	ag71xx_wr(ag, AG71XX_REG_MAC_CFG2, cfg2);
+ 	ag71xx_wr(ag, AG71XX_REG_FIFO_CFG5, fifo5);
+ 	ag71xx_wr(ag, AG71XX_REG_MAC_IFCTL, ifctl);
+@@ -1853,6 +1895,52 @@ static int ag71xx_gmac_init(struct ag71x
+ 	return regmap_update_bits(ag->gmac, AG71XX_GMAC_REG_ETH_CFG, mask, val);
+ }
+ 
++/* The PLL block clocks the RGMII/MII side, but not the SGMII one */
++static int ag71xx_xmii_init(struct ag71xx *ag)
++{
++	struct device_node *np = ag->pdev->dev.of_node;
++	struct device *dev = &ag->pdev->dev;
++	u32 rx = 0, tx = 0, tx_ps;
++
++	if (!ag->dcfg->xmii_reg ||
++	    (ag71xx_is(ag, AR9340) && ag->mac_idx != 0) ||
++	    ag->phy_if_mode == PHY_INTERFACE_MODE_SGMII)
++		return 0;
++
++	ag->pll = syscon_regmap_lookup_by_phandle_optional(np, "qca,pll");
++	if (IS_ERR(ag->pll))
++		return dev_err_probe(dev, PTR_ERR(ag->pll),
++				     "failed to get the PLL block\n");
++	if (!ag->pll)
++		return 0;
++
++	of_property_read_u32(np, "rx-internal-delay-ps", &rx);
++	of_property_read_u32(np, "tx-internal-delay-ps", &tx);
++	tx_ps = tx;
++
++	if (rx % ETH_XMII_RX_DELAY_STEP_PS ||
++	    rx / ETH_XMII_RX_DELAY_STEP_PS > 3)
++		return dev_err_probe(dev, -EINVAL,
++				     "invalid rx-internal-delay-ps %u\n", rx);
++
++	/* the 2 ns shift is on top of the delay line */
++	if (tx % ETH_XMII_TX_DELAY_STEP_PS && tx >= ETH_XMII_GIGE_QUAD_PS) {
++		ag->xmii_gige_quad = true;
++		tx -= ETH_XMII_GIGE_QUAD_PS;
++	}
++
++	if (tx % ETH_XMII_TX_DELAY_STEP_PS ||
++	    tx / ETH_XMII_TX_DELAY_STEP_PS > 3)
++		return dev_err_probe(dev, -EINVAL,
++				     "invalid tx-internal-delay-ps %u\n", tx_ps);
++
++	ag->xmii_delay =
++		FIELD_PREP(ETH_XMII_RX_DELAY, rx / ETH_XMII_RX_DELAY_STEP_PS) |
++		FIELD_PREP(ETH_XMII_TX_DELAY, tx / ETH_XMII_TX_DELAY_STEP_PS);
++
++	return 0;
++}
++
+ static int ag71xx_probe(struct platform_device *pdev)
+ {
+ 	struct device_node *np = pdev->dev.of_node;
+@@ -1980,6 +2068,10 @@ static int ag71xx_probe(struct platform_
+ 	if (err)
+ 		return err;
+ 
++	err = ag71xx_xmii_init(ag);
++	if (err)
++		return err;
++
+ 	netif_napi_add_weight(ndev, &ag->napi, ag71xx_poll,
+ 			      AG71XX_NAPI_WEIGHT);
+ 

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later OR MIT
 
 #include "qca955x.dtsi"
+#include "qca955x_ag71xx.dtsi"
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
@@ -203,18 +204,19 @@
 
 &eth0 {
 	status = "okay";
-	pll-data = <0xa6000000 0xa0000101 0x80001313>;
+
+	qca,gmac = <&gmac>;
+	qca,pll = <&pll>;
+	qca,rxd-delay = <3>;
+	qca,rxdv-delay = <3>;
+	rx-internal-delay-ps = <1800>;
+	tx-internal-delay-ps = <800>;
+	qca,tx-clk-invert;
+
 	phy-handle = <&phy>;
 
 	nvmem-cells = <&macaddr_board_66 0>;
 	nvmem-cell-names = "mac-address";
-
-	gmac-config {
-		device = <&gmac>;
-		rgmii-enabled = <1>;
-		rxd-delay = <3>;
-		rxdv-delay = <3>;
-	};
 };
 
 &wmac {
