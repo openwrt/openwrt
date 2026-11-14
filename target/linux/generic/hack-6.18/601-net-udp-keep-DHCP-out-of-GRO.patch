@@ -1,0 +1,44 @@
+From f07688330966e9cde0a3f4a6bbe3da7984f87710 Mon Sep 17 00:00:00 2001
+From: Christopher Griffin <christophergriffin05@gmail.com>
+Date: Fri, 6 Nov 2026 09:08:25 -0600
+Subject: [PATCH] net: udp: keep DHCP out of GRO
+
+With fraglist GRO on by default (600-net-enable-fraglist-GRO-by-default),
+UDP datagrams of one flow that arrive in the same NAPI poll are merged
+even when no socket asked for GRO; with rx-udp-gro-forwarding on they
+are merged the same way without fraglist. Before it has a lease, busybox
+udhcpc reads DHCP replies from a packet socket, and packet sockets get
+the merged skb as it is: one IP/UDP header, both DHCP messages behind
+it, and a UDP checksum that holds for neither. udhcpc drops it ("bad UDP
+checksum"), so a DHCP server or AP that delivers each reply twice, back
+to back, makes DHCP fail.
+
+Seen on an ath11k station: every OFFER arrived as two identical messages
+merged into one 656-byte datagram and was ignored, 20 s, no lease. With
+rx-gro-list off the same exchange finished in 0.1 s.
+
+DHCP gains nothing from GRO; leave UDP ports 67 and 68 out of it before
+either GRO mode is chosen.
+
+Signed-off-by: Christopher Griffin <christophergriffin05@gmail.com>
+---
+ net/ipv4/udp_offload.c | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+--- a/net/ipv4/udp_offload.c
++++ b/net/ipv4/udp_offload.c
+@@ -806,6 +806,14 @@ struct sk_buff *udp_gro_receive(struct l
+ 		if (skb->encapsulation)
+ 			goto out;
+ 
++		/* DHCP clients, and some servers, receive through packet
++		 * sockets, which get a GRO packet unsegmented: two DHCP
++		 * messages behind one header, with a UDP checksum valid for
++		 * neither. DHCP gains nothing from GRO, so keep it out.
++		 */
++		if (uh->dest == htons(67) || uh->dest == htons(68))
++			goto out;
++
+ 		if (skb->dev->features & NETIF_F_GRO_FRAGLIST)
+ 			NAPI_GRO_CB(skb)->is_flist = sk ? !udp_test_bit(GRO_ENABLED, sk) : 1;
+ 
