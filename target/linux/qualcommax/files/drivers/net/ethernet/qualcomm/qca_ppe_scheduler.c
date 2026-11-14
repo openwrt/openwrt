@@ -2102,13 +2102,26 @@ module_param_named(aqm_interval_us, ppe_aqm_interval_us, uint, 0644);
 MODULE_PARM_DESC(aqm_interval_us,
 		 "How long a shaped queue may stay above the target before the AQM drops");
 
-static void ppe_aqm_add(struct ppe_aqm *a, u16 queue, u8 group, u64 rate_bps,
-			u32 frame_len)
+/* A negative @group opens a new group for the queue, so that every group the
+ * tick walks has a queue and a rate. Returns the group the queue went to, or
+ * @group when it was not added.
+ */
+static int ppe_aqm_add(struct ppe_aqm *a, u16 queue, int group, u64 rate_bps,
+		       u32 frame_len)
 {
 	struct ppe_aqm_queue *q;
 
-	if (a->nqueues == PPE_AQM_QUEUES || group >= PPE_AQM_GROUPS)
-		return;
+	if (a->nqueues == PPE_AQM_QUEUES)
+		return group;
+
+	if (group < 0) {
+		if (a->ngroups == PPE_AQM_GROUPS)
+			return group;
+		group = a->ngroups++;
+		a->g[group] = (struct ppe_aqm_group){
+			.rate_bps = rate_bps,
+		};
+	}
 
 	q = &a->q[a->nqueues++];
 	*q = (struct ppe_aqm_queue){
@@ -2117,12 +2130,7 @@ static void ppe_aqm_add(struct ppe_aqm *a, u16 queue, u8 group, u64 rate_bps,
 		.frame_bufs = DIV_ROUND_UP(frame_len, PPE_BM_BUF_SIZE),
 	};
 
-	if (group >= a->ngroups) {
-		a->g[group] = (struct ppe_aqm_group){
-			.rate_bps = rate_bps,
-		};
-		a->ngroups = group + 1;
-	}
+	return group;
 }
 
 /* Put every squeezed queue back to its configured limit. */
@@ -2148,8 +2156,7 @@ static void ppe_aqm_rebuild(struct qca_ppe_priv *priv)
 {
 	struct ppe_aqm *a = &priv->aqm;
 	struct dsa_port *dp;
-	u8 group = 0;
-	int i, j;
+	int i, j, g = -1;
 
 	lockdep_assert_held(&a->lock);
 
@@ -2157,13 +2164,12 @@ static void ppe_aqm_rebuild(struct qca_ppe_priv *priv)
 	a->nqueues = 0;
 	a->ngroups = 0;
 
-	if (priv->shaper[QCA_PPE_CPU_PORT].rate_bps) {
+	if (priv->shaper[QCA_PPE_CPU_PORT].rate_bps)
 		for (i = 0; i < PPE_FLOW_SPREAD_QUEUES; i++)
-			ppe_aqm_add(a, PPE_CPU_PORT_DL_QUEUE + i, group,
-				    priv->shaper[QCA_PPE_CPU_PORT].rate_bps,
-				    ppe_port_frame_len(priv, QCA_PPE_CPU_PORT));
-		group++;
-	}
+			g = ppe_aqm_add(a, PPE_CPU_PORT_DL_QUEUE + i, g,
+					priv->shaper[QCA_PPE_CPU_PORT].rate_bps,
+					ppe_port_frame_len(priv,
+							   QCA_PPE_CPU_PORT));
 
 	/* Before the switch registers and after it goes, there is no tree. */
 	if (!priv->ds.dst)
@@ -2184,24 +2190,23 @@ static void ppe_aqm_rebuild(struct qca_ppe_priv *priv)
 		for (j = 0; j < 3; j++) {
 			u16 first = j * PPE_FLOW_SPREAD_QUEUES;
 			u64 rate = sh->queue_rate[first];
-			u8 g;
 
-			if (rate) {
-				g = group++;
-			} else if (sh->rate_bps) {
+			g = -1;
+			if (!rate) {
+				if (!sh->rate_bps)
+					continue;
 				rate = sh->rate_bps;
-				if (port_group < 0)
-					port_group = group++;
 				g = port_group;
-			} else {
-				continue;
 			}
 
 			for (i = first; i < first + PPE_FLOW_SPREAD_QUEUES &&
 			     i < p->ucast_count; i++)
 				if (!priv->red_max[p->ucast_base + i])
-					ppe_aqm_add(a, p->ucast_base + i, g,
-						    rate, frame);
+					g = ppe_aqm_add(a, p->ucast_base + i,
+							g, rate, frame);
+
+			if (!sh->queue_rate[first])
+				port_group = g;
 		}
 	}
 
