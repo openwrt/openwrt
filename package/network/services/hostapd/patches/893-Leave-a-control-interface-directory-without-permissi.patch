@@ -1,0 +1,92 @@
+From 3f5ffaa3c07d5b18a54722a986e6f7eb0a7bf9f4 Mon Sep 17 00:00:00 2001
+From: Christopher Griffin <christophergriffin05@gmail.com>
+Date: Wed, 4 Nov 2026 01:26:11 -0600
+Subject: [PATCH] Leave a control interface directory without permission to
+ remove it
+
+hostapd and wpa_supplicant try to remove their control interface
+directory when the last interface using it goes away, and report any
+failure other than ENOTEMPTY as an error. A process that dropped its
+privileges, as OpenWrt runs both (user network, in a jail), cannot
+remove a directory that was created for it in a root-owned parent
+(/var/run/hostapd), so every time the last interface goes it logs
+
+  rmdir[ctrl_interface=/var/run/hostapd]: Permission denied
+
+The directory is not this process's to remove, as when it is not empty:
+treat EACCES and EPERM the same way, at debug level, with the reason.
+
+Assisted-by: Claude:claude-opus-5-5
+Signed-off-by: Christopher Griffin <christophergriffin05@gmail.com>
+Link: https://lists.infradead.org/pipermail/hostap/2026-November/045937.html
+---
+ hostapd/ctrl_iface.c             | 24 ++++++++++++++----------
+ wpa_supplicant/ctrl_iface_unix.c |  9 +++++----
+ 2 files changed, 19 insertions(+), 14 deletions(-)
+
+--- a/hostapd/ctrl_iface.c
++++ b/hostapd/ctrl_iface.c
+@@ -5288,9 +5288,11 @@ void hostapd_mld_ctrl_iface_deinit(struc
+ 
+ 		if (mld->ctrl_interface &&
+ 		    rmdir(mld->ctrl_interface) < 0) {
+-			if (errno == ENOTEMPTY) {
++			if (errno == ENOTEMPTY || errno == EACCES ||
++			    errno == EPERM) {
+ 				wpa_printf(MSG_DEBUG,
+-					   "MLD control interface directory not empty - leaving it behind");
++					   "MLD control interface directory %s not removed (%s) - leaving it behind",
++					   mld->ctrl_interface, strerror(errno));
+ 			} else {
+ 				wpa_printf(MSG_ERROR,
+ 					   "rmdir[ctrl_interface=%s]: %s",
+@@ -5636,10 +5638,11 @@ void hostapd_ctrl_iface_deinit(struct ho
+ 
+ 		if (hapd->conf->ctrl_interface &&
+ 		    rmdir(hapd->conf->ctrl_interface) < 0) {
+-			if (errno == ENOTEMPTY) {
+-				wpa_printf(MSG_DEBUG, "Control interface "
+-					   "directory not empty - leaving it "
+-					   "behind");
++			if (errno == ENOTEMPTY || errno == EACCES ||
++			    errno == EPERM) {
++				wpa_printf(MSG_DEBUG,
++					   "Control interface directory %s not removed (%s) - leaving it behind",
++					   hapd->conf->ctrl_interface, strerror(errno));
+ 			} else {
+ 				wpa_printf(MSG_ERROR,
+ 					   "rmdir[ctrl_interface=%s]: %s",
+@@ -6403,10 +6406,11 @@ void hostapd_global_ctrl_iface_deinit(st
+ 
+ 		if (interfaces->global_iface_path &&
+ 		    rmdir(interfaces->global_iface_path) < 0) {
+-			if (errno == ENOTEMPTY) {
+-				wpa_printf(MSG_DEBUG, "Control interface "
+-					   "directory not empty - leaving it "
+-					   "behind");
++			if (errno == ENOTEMPTY || errno == EACCES ||
++			    errno == EPERM) {
++				wpa_printf(MSG_DEBUG,
++					   "Control interface directory %s not removed (%s) - leaving it behind",
++					   interfaces->global_iface_path, strerror(errno));
+ 			} else {
+ 				wpa_printf(MSG_ERROR,
+ 					   "rmdir[ctrl_interface=%s]: %s",
+--- a/wpa_supplicant/ctrl_iface_unix.c
++++ b/wpa_supplicant/ctrl_iface_unix.c
+@@ -888,10 +888,11 @@ void wpa_supplicant_ctrl_iface_deinit(st
+ 			dir = buf;
+ 
+ 		if (rmdir(dir) < 0) {
+-			if (errno == ENOTEMPTY) {
+-				wpa_printf(MSG_DEBUG, "Control interface "
+-					   "directory not empty - leaving it "
+-					   "behind");
++			if (errno == ENOTEMPTY || errno == EACCES ||
++			    errno == EPERM) {
++				wpa_printf(MSG_DEBUG,
++					   "Control interface directory %s not removed (%s) - leaving it behind",
++					   dir, strerror(errno));
+ 			} else {
+ 				wpa_printf(MSG_ERROR,
+ 					   "rmdir[ctrl_interface=%s]: %s",
