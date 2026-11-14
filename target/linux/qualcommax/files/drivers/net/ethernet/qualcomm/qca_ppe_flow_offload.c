@@ -1721,7 +1721,7 @@ int ppe_flow_uplink_set(struct qca_ppe_priv *priv, const char *name)
 	guard(mutex)(&priv->flow_lock);
 	guard(mutex)(&priv->vlan_lock);
 
-	priv->uplink_dev = ifindex;
+	WRITE_ONCE(priv->uplink_dev, ifindex);
 	strscpy(priv->uplink_name, name, IFNAMSIZ);
 	ppe_flow_shaper_path(priv);
 	ppe_flow_shaper_drop(priv, false);
@@ -1776,7 +1776,7 @@ int ppe_flow_shaper_set(struct qca_ppe_priv *priv, bool upload,
 		if (old && old->ifindex == ifindex)
 			old = NULL;
 		else
-			priv->shaper_dev[upload] = own;
+			WRITE_ONCE(priv->shaper_dev[upload], own);
 
 		if (upload) {
 			WRITE_ONCE(priv->ul_shaper, ifindex);
