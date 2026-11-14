@@ -29,6 +29,7 @@
 #include <net/flow_offload.h>
 #include <net/dsfield.h>
 #include <net/dst_metadata.h>
+#include <net/ipv6.h>
 #include <linux/netfilter_netdev.h>
 #include <net/netfilter/nf_conntrack.h>
 #include <net/netfilter/nf_flow_table.h>
@@ -60,6 +61,23 @@ struct ppe_flow_data {
 };
 
 struct ppe_flow_entry {
+	/* What ppe_flow_xmit() reads, first so that it shares a cache line:
+	 * the egress, and the tuple every frame of the flow leaves the PPE
+	 * with, after translation, source first.
+	 */
+	u64 xdev;
+	unsigned long ct;
+	u16 vid;
+	u8 xport;
+	u8 dscp;
+	union {
+		__be32 v4[2];
+		struct in6_addr v6[2];
+	} addr;
+	__be16 port[2];
+	u8 proto;
+	bool v6;
+
 	struct rhash_head node;
 	struct list_head list;
 	struct flow_block *block;
@@ -82,11 +100,6 @@ struct ppe_flow_entry {
 	int uplink;
 	int in_uplink;
 	int session;
-	u64 xdev;
-	unsigned long ct;
-	u16 vid;
-	u8 xport;
-	u8 dscp;
 	u8 iport;
 	u8 oport;
 	u16 ivid;
@@ -1608,6 +1621,73 @@ static bool ppe_flow_push_parse(struct sk_buff *skb, u16 vid)
 	return true;
 }
 
+/* The index in a frame's preheader is all that names its flow, and a frame the
+ * PPE routed before its flow's entry was deleted may be read after the index
+ * went to another flow. The PPE wrote its flow's translated tuple into it,
+ * so a frame whose tuple is not the entry's is another flow's. An IPv6 frame
+ * with an extension header is told by its addresses alone.
+ */
+static bool ppe_flow_frame_is(const struct ppe_flow_entry *entry,
+			      const struct sk_buff *skb)
+{
+	unsigned int len = skb_headlen(skb), off = ETH_HLEN;
+	const u8 *d = skb->data;
+	const __be16 *ports;
+	__be16 type;
+	int i;
+
+	if (len < ETH_HLEN)
+		return false;
+	type = ((const struct ethhdr *)d)->h_proto;
+	for (i = 0; i < 2 && eth_type_vlan(type); i++) {
+		if (len < off + VLAN_HLEN)
+			return false;
+		type = ((const struct vlan_hdr *)(d + off))->h_vlan_encapsulated_proto;
+		off += VLAN_HLEN;
+	}
+	if (type == htons(ETH_P_PPP_SES)) {
+		__be16 ppp;
+
+		if (len < off + PPPOE_SES_HLEN)
+			return false;
+		ppp = *(const __be16 *)(d + off + sizeof(struct pppoe_hdr));
+		type = ppp == htons(PPP_IP) ? htons(ETH_P_IP) :
+		       ppp == htons(PPP_IPV6) ? htons(ETH_P_IPV6) : 0;
+		off += PPPOE_SES_HLEN;
+	}
+
+	if (type == htons(ETH_P_IP) && !entry->v6) {
+		const struct iphdr *iph = (const void *)(d + off);
+
+		if (len < off + sizeof(*iph) || iph->ihl < 5 ||
+		    iph->protocol != entry->proto ||
+		    iph->saddr != entry->addr.v4[0] ||
+		    iph->daddr != entry->addr.v4[1])
+			return false;
+		off += iph->ihl * 4;
+	} else if (type == htons(ETH_P_IPV6) && entry->v6) {
+		const struct ipv6hdr *ip6h = (const void *)(d + off);
+
+		if (len < off + sizeof(*ip6h) ||
+		    !ipv6_addr_equal(&ip6h->saddr, &entry->addr.v6[0]) ||
+		    !ipv6_addr_equal(&ip6h->daddr, &entry->addr.v6[1]))
+			return false;
+		if (ip6h->nexthdr != entry->proto)
+			return ipv6_ext_hdr(ip6h->nexthdr);
+		off += sizeof(*ip6h);
+	} else {
+		return false;
+	}
+
+	if (entry->proto == IPPROTO_GRE)
+		return true;
+	if (len < off + sizeof(entry->port))
+		return false;
+	ports = (const __be16 *)(d + off);
+
+	return ports[0] == entry->port[0] && ports[1] == entry->port[1];
+}
+
 /**
  * ppe_flow_xmit - send a frame the PPE routed to the CPU port for a flow
  * @ds: the switch
@@ -1619,7 +1699,8 @@ static bool ppe_flow_push_parse(struct sk_buff *skb, u16 vid)
  * the EDMA NAPI poll.
  *
  * Return: false, with @skb untouched, when the index names no flow with such
- * an egress; true once @skb has been sent or freed.
+ * an egress or a flow the frame is not of; true once @skb has been sent or
+ * freed.
  */
 bool ppe_flow_xmit(struct dsa_switch *ds, struct sk_buff *skb, u32 flow)
 {
@@ -1635,6 +1716,10 @@ bool ppe_flow_xmit(struct dsa_switch *ds, struct sk_buff *skb, u32 flow)
 	entry = rcu_dereference_bh(priv->flow_slot[flow]);
 	if (!entry)
 		return false;
+	if (unlikely(!ppe_flow_frame_is(entry, skb))) {
+		atomic_inc(&priv->flow_xmit_stale);
+		return false;
+	}
 	xdev = entry->xdev;
 
 	dev = dev_get_by_index_rcu(dev_net(skb->dev), xdev & PPE_XDEV_IFINDEX);
@@ -2164,9 +2249,13 @@ static void ppe_flow_entry_destroy(struct qca_ppe_priv *priv,
 
 		ppe_flow_account(priv, entry, pkts, bytes);
 	}
-	ppe_flow_slot_clear(priv, entry, entry->index);
+	/* The delete stops new frames, and the frames already routed keep
+	 * finding the entry until the clear; under flow_lock no other flow
+	 * takes the index in between.
+	 */
 	if (age != -ENOENT)
 		ppe_flow_entry_delete(priv, entry->index);
+	ppe_flow_slot_clear(priv, entry, entry->index);
 	ppe_host_ref_put(priv, entry->host_index);
 	ppe_flow_free_egress(priv, entry);
 	ppe_flow_free_ingress(priv, entry);
@@ -2494,6 +2583,17 @@ static int ppe_flow_offload_replace(struct ppe_flow_block *fb,
 	entry->in_uplink = -1;
 	entry->session = -1;
 	entry->iport = iport;
+	entry->proto = data.l4proto;
+	entry->port[0] = data.sport_new;
+	entry->port[1] = data.dport_new;
+	entry->v6 = v6;
+	if (v6) {
+		entry->addr.v6[0] = data.v6_src;
+		entry->addr.v6[1] = data.v6_dst;
+	} else {
+		entry->addr.v4[0] = data.v4_src_new;
+		entry->addr.v4[1] = data.v4_dst_new;
+	}
 
 	ret = ppe_flow_alloc_ingress(priv, iport, data.ivid, entry);
 	if (ret) {
