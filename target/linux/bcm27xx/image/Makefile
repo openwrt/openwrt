@@ -19,6 +19,9 @@ define Build/boot-common
 	sed \
 		-e 's#@ROOT@#PARTUUID=$(IMG_PART_SIGNATURE)-02#g' \
 		cmdline.txt > $@-cmdline.txt
+	cp distroconfig.txt $@-distroconfig.txt
+	$(if $(filter y,$(CONFIG_PACKAGE_kmod-drm-vc4)), \
+		printf '[all]\ndtoverlay=vc4-kms-v3d\n' >> $@-distroconfig.txt)
 
 	rm -f $@.boot
 	mkfs.fat -n boot -C $@.boot $(FAT32_BLOCKS)
@@ -26,12 +29,13 @@ define Build/boot-common
 	$(if $(CONFIG_PACKAGE_bcm27xx-gpu-fw),mcopy -i $@.boot $(KDIR)/LICENCE.broadcom ::,)
 	mcopy -i $@.boot $@-cmdline.txt ::cmdline.txt
 	mcopy -i $@.boot config.txt ::
-	mcopy -i $@.boot distroconfig.txt ::
+	mcopy -i $@.boot $@-distroconfig.txt ::distroconfig.txt
 	mcopy -i $@.boot $@-partuuid.txt ::partuuid.txt
 	mcopy -i $@.boot $(IMAGE_KERNEL) ::$(KERNEL_IMG)
 	$(foreach dts,$(shell echo $(DEVICE_DTS)),mcopy -i $@.boot $(DTS_DIR)/$(dts).dtb ::;)
 	mmd -i $@.boot ::/overlays
 	mcopy -i $@.boot $(DTS_DIR)/overlays/*.dtbo ::/overlays/
+	mcopy -i $@.boot $(DTS_DIR)/overlays/overlay_map.dtb ::/overlays/
 	mcopy -i $@.boot $(DTS_DIR)/overlays/README ::/overlays/
 endef
 

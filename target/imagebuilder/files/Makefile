@@ -183,6 +183,8 @@ $(strip $(foreach pkg,$(strip $(subst ",,$(1))),
 ))
 endef
 
+IMAGE_MANIFEST:=$(TMP_DIR)/image_manifest
+
 PACKAGES:=
 
 _call_image: staging_dir/host/.prereq-build
@@ -193,6 +195,7 @@ _call_image: staging_dir/host/.prereq-build
 	mkdir -p $(TARGET_DIR) $(BIN_DIR) $(TMP_DIR) $(DL_DIR)
 	$(MAKE) package_reload
 	$(MAKE) package_install
+	$(call package_manifest,$(TARGET_DIR),1) > $(IMAGE_MANIFEST)
 	$(MAKE) -s prepare_rootfs
 	$(MAKE) -s build_image
 	$(MAKE) -s json_overview_image_info
@@ -203,12 +206,7 @@ _call_manifest: FORCE
 	mkdir -p $(TARGET_DIR) $(BIN_DIR) $(TMP_DIR) $(DL_DIR)
 	$(MAKE) package_reload >/dev/null
 	$(MAKE) package_install >/dev/null
-ifeq ($(CONFIG_USE_APK),)
-	$(OPKG) list-installed $(if $(STRIP_ABI),--strip-abi)
-else
-	$(APK) query --format json --fields name,version,$(if $(STRIP_ABI),tags) --installed '*' | \
-		$(SCRIPT_DIR)/make-index-json.py -a $(ARCH_PACKAGES) -f apk --manifest -
-endif
+	$(call package_manifest,$(TARGET_DIR),$(STRIP_ABI))
 
 package_index: FORCE
 	@echo >&2
@@ -299,10 +297,10 @@ build_image: FORCE
 	rm -rf $(BUILD_DIR)/json_info_files/
 	if [ -d "target/linux/feeds/$(BOARD)" ]; then \
 		$(NO_TRACE_MAKE) -C target/linux/feeds/$(BOARD)/image install TARGET_BUILD=1 IB=1 EXTRA_IMAGE_NAME="$(EXTRA_IMAGE_NAME)" \
-			$(if $(USER_PROFILE),PROFILE="$(USER_PROFILE)"); \
+			$(if $(USER_PROFILE),PROFILE="$(USER_PROFILE)") IB_PACKAGES="$$(cut -d' ' -f1 $(IMAGE_MANIFEST) | tr '\n' ' ')"; \
 	else \
 		$(NO_TRACE_MAKE) -C target/linux/$(BOARD)/image install TARGET_BUILD=1 IB=1 EXTRA_IMAGE_NAME="$(EXTRA_IMAGE_NAME)" \
-			$(if $(USER_PROFILE),PROFILE="$(USER_PROFILE)"); \
+			$(if $(USER_PROFILE),PROFILE="$(USER_PROFILE)") IB_PACKAGES="$$(cut -d' ' -f1 $(IMAGE_MANIFEST) | tr '\n' ' ')"; \
 	fi
 
 $(BIN_DIR)/profiles.json: FORCE
