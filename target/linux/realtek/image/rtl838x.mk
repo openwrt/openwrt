@@ -351,6 +351,25 @@ define Device/teltonika_tsw202
 endef
 TARGET_DEVICES += teltonika_tsw202
 
+define Device/tplink_festa-fs308g-v1
+  $(Device/uimage-rt-loader)
+  SOC := rtl8380
+  KERNEL_SIZE := 6m
+  IMAGE_SIZE := 26m
+  DEVICE_VENDOR := TP-Link
+  DEVICE_MODEL := Festa FS308G
+  DEVICE_VARIANT := v1
+  UIMAGE_MAGIC := 0x83800000
+  IMAGES += recovery.bin
+  IMAGE/recovery.bin := \
+	append-kernel | \
+	pad-to 64k | \
+	append-rootfs | \
+	pad-to 64k | \
+	check-size 6m
+endef
+TARGET_DEVICES += tplink_festa-fs308g-v1
+
 define Device/tplink_sg2008p-v1
   SOC := rtl8380
   KERNEL_SIZE := 6m

@@ -62,17 +62,34 @@ static bool is_uimage(unsigned char *m)
 	return image_crc == crc32(data, UIMAGE_HDR_SIZE);
 }
 
-void *relocate(void *src, int len)
+void *relocate(void *src, int len, unsigned long reg_a1, unsigned long reg_a2)
 {
 	void *addr;
 	unsigned int offs;
+	unsigned int max_mem = board_get_memory();
+
+	/* Limit to 256MB lowmem */
+	if (max_mem > 0x10000000UL)
+		max_mem = 0x10000000UL;
+
+	/* Avoid collision with U-Boot argument / environment tables. */
+	for (int i = 0; i < 2; i++) {
+		unsigned int reg = i ? reg_a2 : reg_a1;
+
+		if ((reg <= KSEG0) || (reg & 3))
+			continue;
+
+		reg &= 0xfffffffUL;
+		if ((reg < max_mem) && (reg > max_mem - 10000000UL))
+			max_mem = reg;
+	}
 
 	/*
 	 * Relocate to highest possible memory address. This is usually the RAM size
 	 * minus some space for the heap and the stack pointer. As we do not have any
 	 * highmem features limit this to 256MB.
 	 */
-	offs = (board_get_memory() - STACK_SIZE - HEAP_SIZE - len - 1024) & 0xfff0000;
+	offs = (max_mem - STACK_SIZE - HEAP_SIZE - len - 1024) & ~0xffff;
 	addr = (void *)KSEG0 + offs;
 
 	printf("Relocate %d bytes from 0x%08x to 0x%08x\n", len, src, addr);
@@ -206,7 +223,7 @@ void main(unsigned long reg_a0, unsigned long reg_a1,
 	 */
 	if (_my_run_count == 1) {
 		welcome();
-		fn = relocate(_my_load_addr, _my_load_size);
+		fn = relocate(_my_load_addr, _my_load_size, reg_a1, reg_a2);
 		fn(reg_a0, reg_a1, reg_a2, reg_a3);
 	}
 
