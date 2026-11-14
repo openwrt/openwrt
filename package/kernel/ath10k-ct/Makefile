@@ -1,7 +1,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=ath10k-ct
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_LICENSE:=GPLv2
 PKG_LICENSE_FILES:=
@@ -36,6 +36,7 @@ define KernelPackage/ath10k-ct
   AUTOLOAD:=$(call AutoProbe,ath10k_pci)
   PROVIDES:=@kmod-ath10k-any
   VARIANT:=regular
+  CONFLICTS:=kmod-ath10k-ct-smallbuffers
 endef
 
 define KernelPackage/ath10k-ct/config
@@ -50,6 +51,7 @@ define KernelPackage/ath10k-ct-smallbuffers
 $(call KernelPackage/ath10k-ct)
   TITLE+= (small buffers for low-RAM devices)
   VARIANT:=smallbuffers
+  CONFLICTS:=
 endef
 
 NOSTDINC_FLAGS := \
