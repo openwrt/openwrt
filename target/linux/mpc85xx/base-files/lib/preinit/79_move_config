@@ -1,0 +1,27 @@
+# SPDX-License-Identifier: GPL-2.0-or-later
+
+. /lib/functions.sh
+. /lib/upgrade/common.sh
+
+move_config() {
+	local bootdev
+
+	case "$(board_name)" in
+	watchguard,firebox-t30)
+		bootdev=/dev/mmcblk0p3
+		;;
+	*)
+		return 0
+		;;
+	esac
+
+	[ -b "$bootdev" ] || return 0
+
+	mkdir -p /tmp/bootfs
+	if mount -t ext2 -o rw,noatime "$bootdev" /tmp/bootfs; then
+		[ -f "/tmp/bootfs/$BACKUP_FILE" ] && mv -f "/tmp/bootfs/$BACKUP_FILE" /
+		umount /tmp/bootfs
+	fi
+}
+
+boot_hook_add preinit_mount_root move_config

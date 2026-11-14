@@ -14,6 +14,25 @@ define Build/spi-loader-okli
 	mv "$@.new" "$@"
 endef
 
+define Build/watchguard_firebox-t30-bootfs
+	rm -f $@.bootfs
+	TOPDIR=$(TOPDIR) sh $(TOPDIR)/scripts/make_watchguard_t30w_bootfs.sh \
+		$(STAGING_DIR_HOST)/bin \
+		$@ \
+		$(KDIR)/image-$(firstword $(DEVICE_DTS)).dtb \
+		$@.bootfs
+	mv $@.bootfs $@
+endef
+
+define Build/watchguard_firebox-t30-factory
+	rm -f $@
+	TOPDIR=$(TOPDIR) sh $(TOPDIR)/scripts/make_watchguard_t30w_sdimage.sh \
+		$(STAGING_DIR_HOST)/bin \
+		$(IMAGE_KERNEL) \
+		$(IMAGE_ROOTFS) \
+		$@
+endef
+
 define Device/aerohive_br200-wp
   DEVICE_VENDOR := Aerohive
   DEVICE_MODEL := BR200-WP
@@ -109,6 +128,28 @@ define Device/watchguard_firebox-t15
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
 endef
 TARGET_DEVICES += watchguard_firebox-t15
+
+define Device/watchguard_firebox-t30
+  DEVICE_DTS_DIR := $(DTS_DIR)/fsl
+  DEVICE_VENDOR := Watchguard
+  DEVICE_MODEL := Firebox T30
+  DEVICE_ALT0_VENDOR := Watchguard
+  DEVICE_ALT0_MODEL := Firebox T30-W
+  DEVICE_PACKAGES := ath10k-firmware-qca988x-ct block-mount e2fsprogs f2fsck \
+    kmod-ath10k-ct kmod-dsa-mv88e6xxx kmod-fs-ext4 kmod-fs-f2fs kmod-fs-vfat \
+    kmod-loop kmod-nls-cp437 kmod-nls-iso8859-1 kmod-rtc-s35390a \
+    kmod-usb-storage kmod-usb2 mkf2fs
+  FILESYSTEMS := squashfs
+  KERNEL = kernel-bin | uImage none | watchguard_firebox-t30-bootfs
+  KERNEL_INITRAMFS := kernel-bin | uImage none
+  KERNEL_NAME := zImage.la3000000
+  KERNEL_ENTRY := 0x3000000
+  KERNEL_LOADADDR := 0x3000000
+  IMAGES := factory.img.gz sysupgrade.bin
+  IMAGE/factory.img.gz := watchguard_firebox-t30-factory
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+endef
+TARGET_DEVICES += watchguard_firebox-t30
 
 define Device/sophos_red-15w-rev1
   DEVICE_VENDOR := Sophos

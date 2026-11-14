@@ -31,6 +31,9 @@ platform_do_upgrade() {
 	watchguard,xtm330)
 		nand_do_upgrade "$1"
 		;;
+	watchguard,firebox-t30)
+		watchguard_sdcard_do_upgrade "$1"
+		;;
 	*)
 		default_do_upgrade "$1"
 		;;
