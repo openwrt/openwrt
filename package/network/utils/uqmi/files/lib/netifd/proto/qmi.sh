@@ -129,18 +129,56 @@ proto_qmi_setup() {
 		fi
 	done
 
-	# Check if UIM application is stuck in illegal state
+	# Check the UIM application state.
+	# Retry query failures without power-cycling the SIM.
 	local uim_state_timeout=0
+	local uim_query_timeout=0
+	local uim_state_json card_application_state json_load_failed
+
 	while true; do
-		json_load "$(uqmi -s -d "$device" -t 2000 --uim-get-sim-state)"
-		json_get_var card_application_state card_application_state
+		[ -e "$device" ] || return 1
 
-		# SIM card is either completely absent or state is labeled as illegal
-		# Try to power-cycle the SIM card to recover from this state
-		if [ -z "$card_application_state" -o "$card_application_state" = "illegal" ]; then
-			echo "SIM in illegal state - Power-cycling SIM"
+		card_application_state=""
+		uim_state_json="$(uqmi -s -d "$device" -t 2000 --uim-get-sim-state 2>/dev/null)"
 
-			# Try to reset SIM application
+		case "$uim_state_json" in
+			*'"Not supported"'*|*'"Invalid QMI command"'*)
+				# Older modems may not support this command.
+				break
+				;;
+		esac
+
+		json_load_failed=0
+		if [ -z "$uim_state_json" ]; then
+			json_load_failed=1
+		else
+			json_cleanup
+			if jshn -r "$uim_state_json" >/dev/null 2>&1; then
+				json_load "$uim_state_json" 2>/dev/null
+				json_get_var card_application_state card_application_state
+			else
+				json_load_failed=1
+			fi
+			json_cleanup
+		fi
+
+		# Transient UIM query failures may recover without power-cycling the SIM.
+		if [ "$json_load_failed" = "1" ]; then
+			if [ "$uim_query_timeout" -lt "$timeout" ] || [ "$timeout" = "0" ]; then
+				let uim_query_timeout++
+				echo "Unable to parse SIM application state; retry $uim_query_timeout"
+				sleep 2
+				continue
+			fi
+
+			echo "Unable to read SIM application state after retries"
+			proto_notify_error "$interface" SIM_STATE_QUERY_FAILED
+			proto_block_restart "$interface"
+			return 1
+		fi
+		if [ "$card_application_state" = "illegal" ] || [ -z "$card_application_state" ]; then
+			echo "SIM application state ${card_application_state:-missing} - Power-cycling SIM"
+
 			uqmi -d "$device" -t 1000 --uim-power-off --uim-slot 1
 			sleep 3
 			uqmi -d "$device" -t 1000 --uim-power-on --uim-slot 1
@@ -151,37 +189,64 @@ proto_qmi_setup() {
 				continue
 			fi
 
-			# Recovery failed
 			proto_notify_error "$interface" SIM_ILLEGAL_STATE
 			proto_block_restart "$interface"
 			return 1
-		else
-			break
 		fi
+
+		break
 	done
 
-	if uqmi -s -d "$device" -t 1000 --uim-get-sim-state | grep -q '"Not supported"\|"Invalid QMI command"' &&
-	   uqmi -s -d "$device" -t 1000 --get-pin-status | grep -q '"Not supported"\|"Invalid QMI command"' ; then
-		[ -n "$pincode" ] && {
-			uqmi -s -d "$device" -t 1000 --verify-pin1 "$pincode" > /dev/null || uqmi -s -d "$device" -t 1000 --uim-verify-pin1 "$pincode" > /dev/null || {
+	local pin_status_json
+	local pin_status_supported=1
+	local uim_pin_json
+	local uim_pin_supported=1
+	local pin1_status=""
+	local pin1_verify_tries=""
+
+	pin_status_json="$(uqmi -s -d "$device" -t 1000 --get-pin-status 2>/dev/null)"
+	case "$pin_status_json" in
+		*'"Not supported"'*|*'"Invalid QMI command"'*)
+			pin_status_supported=0
+			;;
+	esac
+
+	if [ "$pin_status_supported" = "1" ]; then
+		json_cleanup
+		json_load "$pin_status_json" 2>/dev/null
+		json_get_var pin1_status pin1_status
+		json_get_var pin1_verify_tries pin1_verify_tries
+	fi
+
+	if [ "$pin_status_supported" = "0" ] || [ -z "$pin1_status" ]; then
+		uim_pin_json="$(uqmi -s -d "$device" -t 1000 --uim-get-sim-state 2>/dev/null)"
+		case "$uim_pin_json" in
+			*'"Not supported"'*|*'"Invalid QMI command"'*)
+				uim_pin_supported=0
+				;;
+			*)
+				json_cleanup
+				json_load "$uim_pin_json" 2>/dev/null
+				json_get_var pin1_status pin1_status
+				json_get_var pin1_verify_tries pin1_verify_tries
+				;;
+		esac
+	fi
+
+	if [ "$pin_status_supported" = "0" ] && [ "$uim_pin_supported" = "0" ]; then
+		if [ -n "$pincode" ]; then
+			uqmi -s -d "$device" -t 1000 --verify-pin1 "$pincode" > /dev/null 2>&1 ||
+			uqmi -s -d "$device" -t 1000 --uim-verify-pin1 "$pincode" > /dev/null 2>&1 || {
 				echo "Unable to verify PIN"
 				proto_notify_error "$interface" PIN_FAILED
 				proto_block_restart "$interface"
 				return 1
 			}
-		}
-	else
-		json_load "$(uqmi -s -d "$device" -t 1000 --get-pin-status)"
-		json_get_var pin1_status pin1_status
-		if [ -z "$pin1_status" ]; then
-			json_load "$(uqmi -s -d "$device" -t 1000 --uim-get-sim-state)"
-			json_get_var pin1_status pin1_status
 		fi
-		json_get_var pin1_verify_tries pin1_verify_tries
-
+	else
 		case "$pin1_status" in
-			disabled)
-				echo "PIN verification is disabled"
+			disabled|not_initialized)
+				echo "PIN verification is disabled or not initialized"
 				;;
 			blocked)
 				echo "SIM locked PUK required"
@@ -190,7 +255,15 @@ proto_qmi_setup() {
 				return 1
 				;;
 			not_verified)
-				[ "$pin1_verify_tries" -lt "3" ] && {
+				case "$pin1_verify_tries" in
+					''|*[!0-9]*)
+						echo "Unable to determine PIN verification tries"
+						proto_notify_error "$interface" PIN_STATUS_FAILED
+						proto_block_restart "$interface"
+						return 1
+						;;
+				esac
+				[ "$pin1_verify_tries" -lt 3 ] && {
 					echo "PIN verify count value is $pin1_verify_tries this is below the limit of 3"
 					proto_notify_error "$interface" PIN_TRIES_BELOW_LIMIT
 					proto_block_restart "$interface"
@@ -218,10 +291,10 @@ proto_qmi_setup() {
 				proto_notify_error "$interface" PIN_STATUS_FAILED
 				proto_block_restart "$interface"
 				return 1
-			;;
+				;;
 		esac
-		json_cleanup
 	fi
+	json_cleanup
 
 	if [ -n "$plmn" ]; then
 		json_load "$(uqmi -s -d "$device" -t 1000 --get-plmn)"
