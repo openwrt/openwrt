@@ -48,11 +48,10 @@ configure_by_boardnum() {
 
 	case "$boardnum" in
 	# WAP54G, Sitecom WL-105b
-	"2" | \
+	"2"|\
 	"1024")
 		ucidef_set_interface_lan "eth0"
 		;;
-
 	# Generic detection fallback
 	*)
 		configure_by_vlanports
@@ -65,16 +64,7 @@ configure_by_boardtype() {
 	local boardnum="$2"
 
 	case "$boardtype" in
-	"bcm94710r4")
-		ucidef_set_interfaces_lan_wan "eth0" "eth1"
-		;;
-
-	"0x0467")
-		ucidef_add_switch "switch0" \
-			"0:lan" "1:lan" "2:lan" "3:lan" "4:wan" "5@eth0"
-		;;
-
-	"0x042f" | \
+	"0x042f"|\
 	"0x0472")
 		# WL-500gP
 		if [ "$boardnum" = "45" ]; then
@@ -101,14 +91,19 @@ configure_by_boardtype() {
 			esac
 		fi
 		;;
-
+	"0x0467")
+		ucidef_add_switch "switch0" \
+			"0:lan" "1:lan" "2:lan" "3:lan" "4:wan" "5@eth0"
+		;;
 	# Buffalo WBR-B11 and Buffalo WBR-G54
 	"bcm94710ap")
 		ucidef_set_interface_wan "eth1"
 		ucidef_add_switch "switch0" \
 			"0:lan" "1:lan" "2:lan" "3:lan" "4:lan" "5@eth0"
 		;;
-
+	"bcm94710r4")
+		ucidef_set_interfaces_lan_wan "eth0" "eth1"
+		;;
 	*)
 		configure_by_boardnum "$boardnum"
 		;;
@@ -128,66 +123,56 @@ configure_by_model() {
 	fi
 
 	case "$model" in
-	"Asus WLHDD" | \
+	"Asus WLHDD"|\
 	"Asus WL300G")
 		ucidef_set_interface_lan "eth1"
 		;;
-
 	"Asus WL330GE")
 		ucidef_add_switch "switch0" "4:lan" "5t@eth0"
 		;;
-
-	"Asus WL500G" | \
+	"Asus WL500G"|\
 	"Microsoft MN-700")
 		ucidef_set_interfaces_lan_wan "eth0" "eth1"
 		;;
-
 	"Asus WL500GP V2")
 		ucidef_add_switch "switch0" \
 			"0:lan:4" "1:lan:3" "2:lan:2" "3:lan:1" "4:wan" "5@eth0"
 		;;
-
-	"Asus RT-N12"* | \
-	"Buffalo WHR-G125" | \
-	"D-Link DIR-330" | \
-	"Motorola WR850G" | \
+	"Asus RT-N12"*|\
+	"Buffalo WHR-G125"|\
+	"D-Link DIR-330"|\
+	"Motorola WR850G"|\
 	"Siemens SE505 V2")
 		ucidef_add_switch "switch0" \
 			"0:lan" "1:lan" "2:lan" "3:lan" "4:wan" "5@eth0"
 		;;
-
 	"Asus WL700")
 		ucidef_add_switch "switch0" \
 			"0:wan" "1:lan" "2:lan" "3:lan" "4:lan" "5@eth0"
 		;;
-
-	"Asus WL500W" | \
+	"Asus WL500W"|\
 	"Dell TrueMobile 2300")
 		ucidef_set_interface_wan "eth1"
 		ucidef_add_switch "switch0" \
 			"0:lan" "1:lan" "2:lan" "3:lan" "5@eth0"
 		;;
-
-	"Asus RT-N16"* | \
-	"Linksys E3000 V1" | \
-	"Linksys WRT610N V2" | \
-	"Netgear WNR3500 V2" | \
-	"Netgear WNR3500L" | \
+	"Asus RT-N16"*|\
+	"Linksys E3000 V1"|\
+	"Linksys WRT610N V2"|\
+	"Netgear WNR3500 V2"|\
+	"Netgear WNR3500L"|\
 	"Netgear WNR3500L V2")
 		ucidef_add_switch "switch0" \
 			"0:wan" "1:lan:4" "2:lan:3" "3:lan:2" "4:lan:1" "8@eth0"
 		;;
-
 	"Netgear R6200 V1")
 		ucidef_add_switch "switch0" \
 			"0:lan:4" "1:lan:3" "2:lan:2" "3:lan:1" "4:wan" "8@eth0"
 		;;
-
 	"Netgear WN2500RP V1")
 		ucidef_add_switch "switch0" \
 			"0:lan:4" "1:lan:3" "2:lan:2" "3:lan:1" "5@eth0"
 		;;
-
 	*)
 		configure_by_boardtype "$boardtype" "$boardnum"
 		;;
@@ -199,9 +184,9 @@ model="$(cat /tmp/sysinfo/model)"
 boardtype="$(cat /tmp/sysinfo/boardtype)"
 
 case "$boardtype" in
-	*:*)
-		boardnum="${boardtype##*:}"
-		boardtype="${boardtype%:*}"
+*:*)
+	boardnum="${boardtype##*:}"
+	boardtype="${boardtype%:*}"
 	;;
 esac
 
