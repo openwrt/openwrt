@@ -186,6 +186,18 @@ static char *const token[] = {
 	[OPT_MAX] = NULL
 };
 
+static void print_shell_value(const char *value)
+{
+	putchar('\'');
+	for (; *value; value++) {
+		if (*value == '\'')
+			fputs("'\\''", stdout);
+		else
+			putchar(*value);
+	}
+	puts("'");
+}
+
 
 int main(int argc, char *argv[])
 {
@@ -380,7 +392,8 @@ int main(int argc, char *argv[])
 		if (pdlen >= 0) {
 			printf("RULE_%d_IPV6PD=%s\n", rulecnt, pdbuf);
 			printf("RULE_%d_PD6LEN=%d\n", rulecnt, pdlen);
-			printf("RULE_%d_PD6IFACE=%s\n", rulecnt, iface);
+			printf("RULE_%d_PD6IFACE=", rulecnt);
+			print_shell_value(iface);
 			printf("RULE_%d_IPV6ADDR=%s\n", rulecnt, ipv6addrbuf);
 			printf("RULE_BMR=%d\n", rulecnt);
 		}
@@ -406,11 +419,15 @@ int main(int argc, char *argv[])
 			printf("'\n");
 		}
 
-		if (dmr)
-			printf("RULE_%d_DMR=%s\n", rulecnt, dmr);
+		if (dmr) {
+			printf("RULE_%d_DMR=", rulecnt);
+			print_shell_value(dmr);
+		}
 
-		if (br)
-			printf("RULE_%d_BR=%s\n", rulecnt, br);
+		if (br) {
+			printf("RULE_%d_BR=", rulecnt);
+			print_shell_value(br);
+		}
 	}
 
 	printf("RULE_COUNT=%d\n", rulecnt);
