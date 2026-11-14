@@ -1,0 +1,73 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Rosen Penev <rosenp@gmail.com>
+Date: Wed, 21 Oct 2026 19:15:14 -0700
+Subject: [PATCH] 88W8964: return dropped TX frames to mac80211
+
+Frames dropped while an ADDBA session was being set up, on a DMA
+mapping failure and on ring cleanup were freed with dev_kfree_skb_any()
+or skb_queue_purge(), so mac80211 never got their status and their ACK
+status entries were never released. Frames still queued in the driver
+when the radio stopped stayed in the queues.
+
+Use ieee80211_free_txskb() and ieee80211_purge_tx_queue() for them, and
+purge the TX queues when the radio stops.
+
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+[Robert Peerenboom: split out of neheb/mwlwifi (upstream branch) commit
+ 92b4dd1 ("88W8964: return all TX frames to mac80211 and fix TX path
+ bugs") and backported to db97edf2 on top of the OpenWrt patches]
+Signed-off-by: Robert Peerenboom <development@mindrush.de>
+---
+ hif/pcie/8964/tx_ndp.c |  6 +++---
+ hif/pcie/pcie.c        | 10 ++++++++++
+ 2 files changed, 13 insertions(+), 3 deletions(-)
+
+--- a/hif/pcie/8964/tx_ndp.c
++++ b/hif/pcie/8964/tx_ndp.c
+@@ -127,7 +127,7 @@ static void pcie_tx_ring_cleanup_ndp(str
+ 	int i;
+ 
+ 	for (i = 0; i < PCIE_NUM_OF_DESC_DATA; i++)
+-		skb_queue_purge(&pcie_priv->txq[i]);
++		ieee80211_purge_tx_queue(priv->hw, &pcie_priv->txq[i]);
+ 
+ 	for (i = 0; i < MAX_TX_RING_SEND_SIZE; i++) {
+ 		tx_skb = desc->tx_vbuflist[i];
+@@ -272,7 +272,7 @@ static inline int pcie_tx_skb_ndp(struct
+ 	dma = dma_map_single(&(pcie_priv->pdev)->dev, tx_skb->data,
+ 			     tx_skb->len, DMA_TO_DEVICE);
+ 	if (dma_mapping_error(&(pcie_priv->pdev)->dev, dma)) {
+-		dev_kfree_skb_any(tx_skb);
++		ieee80211_free_txskb(priv->hw, tx_skb);
+ 		wiphy_err(priv->hw->wiphy,
+ 			  "failed to map pci memory!\n");
+ 		spin_unlock_bh(&pcie_priv->tx_desc_lock);
+@@ -621,7 +621,7 @@ void pcie_tx_xmit_ndp(struct ieee80211_h
+ 				wiphy_warn(hw->wiphy,
+ 					   "can't send packet during ADDBA\n");
+ 				spin_unlock_bh(&priv->stream_lock);
+-				dev_kfree_skb_any(skb);
++				ieee80211_free_txskb(hw, skb);
+ 				return;
+ 			}
+ 			if ((stream->state == AMPDU_NO_STREAM) &&
+--- a/hif/pcie/pcie.c
++++ b/hif/pcie/pcie.c
+@@ -1128,7 +1128,17 @@ static void pcie_timer_routine_ndp(struc
+ 
+ static void pcie_tx_return_pkts_ndp(struct ieee80211_hw *hw)
+ {
++	struct mwl_priv *priv = hw->priv;
++	struct pcie_priv *pcie_priv = priv->hif.priv;
++	int i;
++
+ 	pcie_tx_done_ndp(hw);
++
++	/* Frames the firmware still holds are returned as it completes
++	 * them, or on removal; only the queued ones can be dropped here.
++	 */
++	for (i = 0; i < SYSADPT_TX_WMM_QUEUES; i++)
++		ieee80211_purge_tx_queue(hw, &pcie_priv->txq[i]);
+ }
+ 
+ static void pcie_set_sta_id(struct ieee80211_hw *hw,

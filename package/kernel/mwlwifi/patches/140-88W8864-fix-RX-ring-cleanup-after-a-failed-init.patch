@@ -1,0 +1,64 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Rosen Penev <rosenp@gmail.com>
+Date: Wed, 21 Oct 2026 19:28:27 -0700
+Subject: [PATCH] 88W8864: fix RX ring cleanup after a failed init
+
+pcie_rx_ring_cleanup() read rx_hndl->psk_buff->data for its debug
+message after it had freed the skb. It also uses rx_hndl->pdesc, which
+pcie_rx_ring_init() only set at the end of each iteration, so a failed
+DMA mapping left a handle with a buffer but no descriptor, and cleanup
+dereferenced NULL. Set the descriptor pointer first, free the skb after
+the message, and clear rx_hndl after freeing it.
+
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+[Robert Peerenboom: split out of neheb/mwlwifi (upstream branch) commit
+ dcb73e4dca ("88W8864/88W8997: fix RX refill, TX status and teardown
+ bugs") and backported to db97edf2 on top of the OpenWrt patches]
+Signed-off-by: Robert Peerenboom <development@mindrush.de>
+---
+ hif/pcie/8864/rx.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+--- a/hif/pcie/8864/rx.c
++++ b/hif/pcie/8864/rx.c
+@@ -87,6 +87,7 @@ static int pcie_rx_ring_init(struct mwl_
+ 
+ 		for (i = 0; i < PCIE_MAX_NUM_RX_DESC; i++) {
+ 			rx_hndl = &desc->rx_hndl[i];
++			rx_hndl->pdesc = &desc->prx_ring[i];
+ 			rx_hndl->psk_buff =
+ 				dev_alloc_skb(desc->rx_buf_size);
+ 
+@@ -120,7 +121,6 @@ static int pcie_rx_ring_init(struct mwl_
+ 			val = (u32)desc->pphys_rx_ring +
+ 			      ((i + 1) * sizeof(struct pcie_rx_desc));
+ 			desc->prx_ring[i].pphys_next = cpu_to_le32(val);
+-			rx_hndl->pdesc = &desc->prx_ring[i];
+ 			if (i < (PCIE_MAX_NUM_RX_DESC - 1))
+ 				rx_hndl->pnext = &desc->rx_hndl[i + 1];
+ 		}
+@@ -159,8 +159,6 @@ static void pcie_rx_ring_cleanup(struct
+ 					 desc->rx_buf_size,
+ 					 DMA_FROM_DEVICE);
+ 
+-			dev_kfree_skb_any(rx_hndl->psk_buff);
+-
+ 			wiphy_debug(priv->hw->wiphy,
+ 				    "unmapped+free'd %i 0x%p 0x%x %i\n",
+ 				    i, rx_hndl->psk_buff->data,
+@@ -168,6 +166,7 @@ static void pcie_rx_ring_cleanup(struct
+ 				    rx_hndl->pdesc->pphys_buff_data),
+ 				    desc->rx_buf_size);
+ 
++			dev_kfree_skb_any(rx_hndl->psk_buff);
+ 			rx_hndl->psk_buff = NULL;
+ 		}
+ 	}
+@@ -192,6 +191,7 @@ static void pcie_rx_ring_free(struct mwl
+ 	}
+ 
+ 	kfree(desc->rx_hndl);
++	desc->rx_hndl = NULL;
+ 
+ 	desc->pnext_rx_hndl = NULL;
+ }

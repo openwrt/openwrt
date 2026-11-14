@@ -1,0 +1,214 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Rosen Penev <rosenp@gmail.com>
+Date: Wed, 21 Oct 2026 19:28:27 -0700
+Subject: [PATCH] 88W8864: return dropped TX frames to mac80211
+
+Frames the driver dropped were freed with dev_kfree_skb_any(): on a
+DMA mapping failure, on ring cleanup, when a station, vif or BA session
+went away, and in a few error paths of the TX path. mac80211 then never
+got their status, so the ACK status entries of frames that requested
+one were never released. Frames still queued in the driver when the
+radio stopped stayed in the queues.
+
+Use ieee80211_free_txskb() and ieee80211_purge_tx_queue() wherever
+frames are dropped, after removing the DMA header from frames that
+already have one, and purge the TX queues when the radio stops.
+
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+[Robert Peerenboom: split out of neheb/mwlwifi (upstream branch) commit
+ dcb73e4dca ("88W8864/88W8997: fix RX refill, TX status and teardown
+ bugs") and backported to db97edf2 on top of the OpenWrt patches]
+Signed-off-by: Robert Peerenboom <development@mindrush.de>
+---
+ hif/pcie/8864/tx.c | 54 +++++++++++++++++++++++++++++++++++++---------
+ hif/pcie/pcie.c    |  7 ++++++
+ 2 files changed, 51 insertions(+), 10 deletions(-)
+
+--- a/hif/pcie/8864/tx.c
++++ b/hif/pcie/8864/tx.c
+@@ -48,6 +48,24 @@ struct pcie_tx_ctrl {
+ 	u8 xmit_control;
+ };
+ 
++/* Remove the H/W dma header in front of the 802.11 header. */
++static void pcie_tx_remove_dma_header(struct sk_buff *skb, __le16 qos)
++{
++	struct pcie_dma_data *dma_data;
++	int hdrlen;
++
++	dma_data = (struct pcie_dma_data *)skb->data;
++	hdrlen = ieee80211_hdrlen(dma_data->wh.frame_control);
++	if (ieee80211_is_data_qos(dma_data->wh.frame_control)) {
++		memmove(dma_data->data - hdrlen, &dma_data->wh,
++			hdrlen - IEEE80211_QOS_CTL_LEN);
++		*((__le16 *)(dma_data->data - IEEE80211_QOS_CTL_LEN)) = qos;
++	} else {
++		memmove(dma_data->data - hdrlen, &dma_data->wh, hdrlen);
++	}
++	skb_pull(skb, sizeof(*dma_data) - hdrlen);
++}
++
+ static int pcie_tx_ring_alloc(struct mwl_priv *priv)
+ {
+ 	struct pcie_priv *pcie_priv = priv->hif.priv;
+@@ -155,7 +173,7 @@ static void pcie_tx_ring_cleanup(struct
+ 	struct pcie_desc_data *desc;
+ 
+ 	for (num = 0; num < PCIE_NUM_OF_DESC_DATA; num++) {
+-		skb_queue_purge(&pcie_priv->txq[num]);
++		ieee80211_purge_tx_queue(priv->hw, &pcie_priv->txq[num]);
+ 		pcie_priv->fw_desc_cnt[num] = 0;
+ 
+ 		desc = &pcie_priv->desc_data[num];
+@@ -176,7 +194,10 @@ static void pcie_tx_ring_cleanup(struct
+ 						 desc->ptx_ring[i].pkt_ptr),
+ 						 desc->tx_hndl[i].psk_buff->len,
+ 						 DMA_TO_DEVICE);
+-				dev_kfree_skb_any(desc->tx_hndl[i].psk_buff);
++				pcie_tx_remove_dma_header(desc->tx_hndl[i].psk_buff,
++							  desc->ptx_ring[i].qos_ctrl);
++				ieee80211_free_txskb(priv->hw,
++						     desc->tx_hndl[i].psk_buff);
+ 				desc->ptx_ring[i].status =
+ 					cpu_to_le32(EAGLE_TXD_STATUS_IDLE);
+ 				desc->ptx_ring[i].pkt_ptr = 0;
+@@ -286,9 +307,10 @@ static inline void pcie_tx_skb(struct mw
+ 	dma = dma_map_single(&(pcie_priv->pdev)->dev, tx_skb->data,
+ 			     tx_skb->len, DMA_TO_DEVICE);
+ 	if (dma_mapping_error(&(pcie_priv->pdev)->dev, dma)) {
+-		dev_kfree_skb_any(tx_skb);
+ 		wiphy_err(priv->hw->wiphy,
+ 			  "failed to map pci memory!\n");
++		pcie_tx_remove_dma_header(tx_skb, tx_desc->qos_ctrl);
++		ieee80211_free_txskb(priv->hw, tx_skb);
+ 		return;
+ 	}
+ 	tx_desc->pkt_ptr = cpu_to_le32(dma);
+@@ -671,7 +693,7 @@ void pcie_8864_tx_xmit(struct ieee80211_
+ 			if (mwl_vif->is_hw_crypto_enabled) {
+ 				sta_info = mwl_dev_get_sta(sta);
+ 				if (!sta_info->is_key_set && !eapol_frame) {
+-					dev_kfree_skb_any(skb);
++					ieee80211_free_txskb(hw, skb);
+ 					return;
+ 				}
+ 			}
+@@ -746,7 +768,7 @@ void pcie_8864_tx_xmit(struct ieee80211_
+ 				if (WARN_ON(!(qos &
+ 					    IEEE80211_QOS_CTL_ACK_POLICY_BLOCKACK))) {
+ 					spin_unlock_bh(&priv->stream_lock);
+-					dev_kfree_skb_any(skb);
++					ieee80211_free_txskb(hw, skb);
+ 					return;
+ 				}
+ 
+@@ -777,7 +799,7 @@ void pcie_8864_tx_xmit(struct ieee80211_
+ 				wiphy_warn(hw->wiphy,
+ 					   "can't send packet during ADDBA\n");
+ 				spin_unlock_bh(&priv->stream_lock);
+-				dev_kfree_skb_any(skb);
++				ieee80211_free_txskb(hw, skb);
+ 				return;
+ 			}
+ 		} else {
+@@ -834,19 +856,23 @@ void pcie_8864_tx_del_pkts_via_vif(struc
+ 	int num;
+ 	struct sk_buff *skb, *tmp;
+ 	struct ieee80211_tx_info *tx_info;
++	struct sk_buff_head free_list;
+ 	unsigned long flags;
+ 
++	skb_queue_head_init(&free_list);
+ 	for (num = 0; num < PCIE_NUM_OF_DESC_DATA; num++) {
+ 		spin_lock_irqsave(&pcie_priv->txq[num].lock, flags);
+ 		skb_queue_walk_safe(&pcie_priv->txq[num], skb, tmp) {
+ 			tx_info = IEEE80211_SKB_CB(skb);
+ 			if (tx_info->control.vif == vif) {
+ 				__skb_unlink(skb, &pcie_priv->txq[num]);
+-				dev_kfree_skb_any(skb);
++				__skb_queue_tail(&free_list, skb);
+ 			}
+ 		}
+ 		spin_unlock_irqrestore(&pcie_priv->txq[num].lock, flags);
+ 	}
++
++	ieee80211_purge_tx_queue(hw, &free_list);
+ }
+ 
+ void pcie_8864_tx_del_pkts_via_sta(struct ieee80211_hw *hw,
+@@ -858,8 +884,10 @@ void pcie_8864_tx_del_pkts_via_sta(struc
+ 	struct sk_buff *skb, *tmp;
+ 	struct ieee80211_tx_info *tx_info;
+ 	struct pcie_tx_ctrl *tx_ctrl;
++	struct sk_buff_head free_list;
+ 	unsigned long flags;
+ 
++	skb_queue_head_init(&free_list);
+ 	for (num = 0; num < PCIE_NUM_OF_DESC_DATA; num++) {
+ 		spin_lock_irqsave(&pcie_priv->txq[num].lock, flags);
+ 		skb_queue_walk_safe(&pcie_priv->txq[num], skb, tmp) {
+@@ -867,11 +895,13 @@ void pcie_8864_tx_del_pkts_via_sta(struc
+ 			tx_ctrl = (struct pcie_tx_ctrl *)tx_info->driver_data;
+ 			if (tx_ctrl->sta == sta) {
+ 				__skb_unlink(skb, &pcie_priv->txq[num]);
+-				dev_kfree_skb_any(skb);
++				__skb_queue_tail(&free_list, skb);
+ 			}
+ 		}
+ 		spin_unlock_irqrestore(&pcie_priv->txq[num].lock, flags);
+ 	}
++
++	ieee80211_purge_tx_queue(hw, &free_list);
+ }
+ 
+ void pcie_8864_tx_del_ampdu_pkts(struct ieee80211_hw *hw,
+@@ -882,18 +912,22 @@ void pcie_8864_tx_del_ampdu_pkts(struct
+ 	struct sk_buff *skb, *tmp;
+ 	struct ieee80211_tx_info *tx_info;
+ 	struct pcie_tx_ctrl *tx_ctrl;
++	struct sk_buff_head free_list;
+ 	unsigned long flags;
+ 
++	skb_queue_head_init(&free_list);
+ 	spin_lock_irqsave(&pcie_priv->txq[desc_num].lock, flags);
+ 	skb_queue_walk_safe(&pcie_priv->txq[desc_num], skb, tmp) {
+ 		tx_info = IEEE80211_SKB_CB(skb);
+ 		tx_ctrl = (struct pcie_tx_ctrl *)tx_info->driver_data;
+ 		if (tx_ctrl->sta == sta) {
+ 			__skb_unlink(skb, &pcie_priv->txq[desc_num]);
+-			dev_kfree_skb_any(skb);
++			__skb_queue_tail(&free_list, skb);
+ 		}
+ 	}
+ 	spin_unlock_irqrestore(&pcie_priv->txq[desc_num].lock, flags);
++
++	ieee80211_purge_tx_queue(hw, &free_list);
+ }
+ 
+ 
+@@ -910,7 +944,7 @@ void pcie_8864_tx_del_sta_amsdu_pkts(str
+ 		if (amsdu_frag->num) {
+ 			amsdu_frag->num = 0;
+ 			if (amsdu_frag->skb)
+-				dev_kfree_skb_any(amsdu_frag->skb);
++				ieee80211_free_txskb(hw, amsdu_frag->skb);
+ 		}
+ 	}
+ 	spin_unlock_bh(&sta_info->amsdu_lock);
+--- a/hif/pcie/pcie.c
++++ b/hif/pcie/pcie.c
+@@ -670,7 +670,14 @@ static void pcie_8997_tx_return_pkts(str
+ 
+ static void pcie_8864_tx_return_pkts(struct ieee80211_hw *hw)
+ {
++	struct mwl_priv *priv = hw->priv;
++	struct pcie_priv *pcie_priv = priv->hif.priv;
++	int num;
++
+ 	pcie_8864_tx_done((unsigned long)hw);
++
++	for (num = 0; num < PCIE_NUM_OF_DESC_DATA; num++)
++		ieee80211_purge_tx_queue(hw, &pcie_priv->txq[num]);
+ }
+ 
+ static struct device_node *pcie_get_device_node(struct ieee80211_hw *hw)

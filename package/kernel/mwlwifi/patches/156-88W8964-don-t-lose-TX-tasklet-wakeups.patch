@@ -1,0 +1,73 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Rosen Penev <rosenp@gmail.com>
+Date: Wed, 21 Oct 2026 19:15:14 -0700
+Subject: [PATCH] 88W8964: don't lose TX tasklet wakeups
+
+pcie_tx_xmit_ndp() and the timer only scheduled the TX tasklet when
+is_tx_schedule was clear, and the tasklet cleared it at its end. A frame
+queued after the tasklet had finished with its queue but before it
+cleared the flag did not schedule it again, and waited for the next
+frame or timer tick. tasklet_schedule() already does nothing for a
+tasklet that is pending, so drop the flag.
+
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+[Robert Peerenboom: split out of neheb/mwlwifi (upstream branch) commit
+ 92b4dd1 ("88W8964: return all TX frames to mac80211 and fix TX path
+ bugs") and backported to db97edf2 on top of the OpenWrt patches]
+Signed-off-by: Robert Peerenboom <development@mindrush.de>
+---
+ hif/pcie/8964/tx_ndp.c |  7 +------
+ hif/pcie/pcie.c        | 12 ++++--------
+ 2 files changed, 5 insertions(+), 14 deletions(-)
+
+--- a/hif/pcie/8964/tx_ndp.c
++++ b/hif/pcie/8964/tx_ndp.c
+@@ -406,8 +406,6 @@ void pcie_tx_skbs_ndp(unsigned long data
+ 				ieee80211_wake_queue(hw, queue);
+ 		}
+ 	}
+-
+-	pcie_priv->is_tx_schedule = false;
+ }
+ 
+ void pcie_tx_done_ndp(struct ieee80211_hw *hw)
+@@ -677,10 +675,7 @@ void pcie_tx_xmit_ndp(struct ieee80211_h
+ 
+ 	skb_queue_tail(&pcie_priv->txq[index], skb);
+ 
+-	if (!pcie_priv->is_tx_schedule) {
+-		tasklet_schedule(&pcie_priv->tx_task);
+-		pcie_priv->is_tx_schedule = true;
+-	}
++	tasklet_schedule(&pcie_priv->tx_task);
+ 
+ 	/* Initiate the ampdu session here */
+ 	if (start_ba_session) {
+--- a/hif/pcie/pcie.c
++++ b/hif/pcie/pcie.c
+@@ -856,7 +856,6 @@ static int pcie_init_ndp(struct ieee8021
+ 	tasklet_disable(&pcie_priv->rx_task);
+ 	pcie_priv->txq_limit = TX_QUEUE_LIMIT;
+ 	pcie_priv->txq_wake_threshold = TX_WAKE_Q_THRESHOLD;
+-	pcie_priv->is_tx_schedule = false;
+ 	pcie_priv->recv_limit = MAX_NUM_RX_DESC;
+ 	pcie_priv->is_rx_schedule = false;
+ 
+@@ -1113,13 +1112,10 @@ static void pcie_timer_routine_ndp(struc
+ 	struct pcie_priv *pcie_priv = priv->hif.priv;
+ 	int num = SYSADPT_TX_WMM_QUEUES;
+ 
+-	if (!pcie_priv->is_tx_schedule) {
+-		while (num--) {
+-			if (skb_queue_len(&pcie_priv->txq[num]) > 0) {
+-				tasklet_schedule(&pcie_priv->tx_task);
+-				pcie_priv->is_tx_schedule = true;
+-				break;
+-			}
++	while (num--) {
++		if (skb_queue_len(&pcie_priv->txq[num]) > 0) {
++			tasklet_schedule(&pcie_priv->tx_task);
++			break;
+ 		}
+ 	}
+ 
