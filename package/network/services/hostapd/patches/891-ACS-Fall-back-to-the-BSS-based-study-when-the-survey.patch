@@ -1,0 +1,91 @@
+From 19c1ca7682cbe160a56d0a40fe870958347262b1 Mon Sep 17 00:00:00 2001
+From: Christopher Griffin <christophergriffin05@gmail.com>
+Date: Wed, 4 Nov 2026 02:25:12 -0600
+Subject: [PATCH] ACS: Fall back to the BSS-based study when the survey finds
+ no channel
+
+acs_study() falls back to the BSS-based study only when no channel at
+all has sufficient survey data. When some do, but none that can be
+selected, acs_find_ideal_chan() finds no channel and ACS fails, and
+the interface is not started.
+
+That happens with a driver that reports a noise floor only for some
+channels. ath11k on QCN9074 does so on 6 GHz: a channel the radio
+operated on keeps its survey entry with the noise floor, while the
+channels the ACS scan visits get entries without one. With
+chanlist=5 37 69 101 133 165 197 at 160 MHz, after the radio ran on
+channel 21, the one sufficient channel cannot be a primary channel,
+and every attempt fails:
+
+  ACS: Failed to compute ideal channel
+  ACS: Failed to start
+  Interface initialization failed
+
+Run the BSS-based study in that case too, as when the survey data is
+insufficient everywhere. The BSS-based study marks the channels it
+rates for that run only, so clear the mark at ACS cleanup; it stayed
+set before, and a later ACS run took those channels as usable whatever
+their survey said.
+
+Tested on two Arista APs with QCN9074 6 GHz radios: on the first, 2 of
+2 attempts failed as above; on the second, the same sequence failed
+before, and with this change ACS completed at 160 MHz on two runs in a
+row, the second after "Survey based ACS found no channel - trying
+BSS-based ACS".
+
+Assisted-by: Claude:claude-opus-5-5
+Signed-off-by: Christopher Griffin <christophergriffin05@gmail.com>
+Link: https://lists.infradead.org/pipermail/hostap/2026-November/045939.html
+---
+ src/ap/acs.c | 26 ++++++++++++++++++++++++++
+ 1 file changed, 26 insertions(+)
+
+--- a/src/ap/acs.c
++++ b/src/ap/acs.c
+@@ -350,6 +350,7 @@ static void acs_cleanup_mode(struct host
+ 		chan->flag |= HOSTAPD_CHAN_SURVEY_LIST_INITIALIZED;
+ 		chan->min_nf = 0;
+ 		chan->punct_bitmap = 0;
++		chan->interference_bss_based = false;
+ 	}
+ }
+ 
+@@ -1316,6 +1317,21 @@ static int acs_study_options(struct host
+ }
+ 
+ 
++static bool acs_studied_bss_based(struct hostapd_iface *iface)
++{
++	int i;
++
++	if (!iface->current_mode)
++		return false;
++
++	for (i = 0; i < iface->current_mode->num_channels; i++)
++		if (iface->current_mode->channels[i].interference_bss_based)
++			return true;
++
++	return false;
++}
++
++
+ static void acs_study(struct hostapd_iface *iface)
+ {
+ 	struct hostapd_channel_data *ideal_chan;
+@@ -1328,6 +1344,16 @@ static void acs_study(struct hostapd_ifa
+ 	}
+ 
+ 	ideal_chan = acs_find_ideal_chan(iface);
++	if (!ideal_chan && !acs_studied_bss_based(iface)) {
++		/* The survey data was sufficient for some channels, but none
++		 * that could be selected, e.g., when the driver reports no
++		 * noise floor for the others. Use the BSS-based study, as
++		 * when no channel has sufficient survey data. */
++		wpa_printf(MSG_INFO,
++			   "ACS: Survey based ACS found no channel - trying BSS-based ACS");
++		if (acs_study_bss_based(iface) == 0)
++			ideal_chan = acs_find_ideal_chan(iface);
++	}
+ 	if (!ideal_chan) {
+ 		wpa_printf(MSG_ERROR, "ACS: Failed to compute ideal channel");
+ 		err = -1;
