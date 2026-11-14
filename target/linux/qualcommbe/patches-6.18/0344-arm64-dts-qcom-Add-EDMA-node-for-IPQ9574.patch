@@ -11,12 +11,12 @@ Signed-off-by: Pavithra R <quic_pavir@quicinc.com>
 Alex G: Add missing edma interrupts
 Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
 ---
- arch/arm64/boot/dts/qcom/ipq9574.dtsi | 139 ++++++++++++++++++++++++++
- 1 file changed, 139 insertions(+)
+ arch/arm64/boot/dts/qcom/ipq9574.dtsi | 141 ++++++++++++++++++++++++++
+ 1 file changed, 141 insertions(+)
 
 --- a/arch/arm64/boot/dts/qcom/ipq9574.dtsi
 +++ b/arch/arm64/boot/dts/qcom/ipq9574.dtsi
-@@ -1315,6 +1315,145 @@
+@@ -1315,6 +1315,147 @@
  					     "nssnoc_memnoc",
  					     "memnoc_nssnoc",
  					     "memnoc_nssnoc_1";
@@ -26,8 +26,10 @@ Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
 +					 <&nsscc NSS_CC_PPE_EDMA_CFG_CLK>;
 +				clock-names = "sys",
 +					      "apb";
-+				resets = <&nsscc EDMA_HW_RESET>;
-+				reset-names = "edma";
++				resets = <&nsscc PPE_EDMA_ARES>,
++					 <&nsscc PPE_EDMA_CFG_ARES>;
++				reset-names = "sys",
++					      "apb";
 +				interrupts = <GIC_SPI 363 IRQ_TYPE_LEVEL_HIGH>,
 +					     <GIC_SPI 364 IRQ_TYPE_LEVEL_HIGH>,
 +					     <GIC_SPI 365 IRQ_TYPE_LEVEL_HIGH>,
