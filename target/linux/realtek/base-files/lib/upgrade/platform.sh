@@ -27,6 +27,20 @@ realtek_remove_ubi_volume() {
 	[ -z "$ubivol" ] || ubirmvol "/dev/$ubidev" -N "$1"
 }
 
+# Stock U-Boot boots from slot <sw_commit> (0: ubi_k0, 1: ubi_k1).
+# sw_tryactive=0/1 boots from that slot once and then resets to 2.
+# sw_tryactive=2 means no trial is pending.
+alphion_asee1447_do_upgrade() {
+	CI_KERNPART="ubi_k1"
+	CI_ROOTPART="ubi_r1"
+
+	sync
+	nand_do_flash_file "$1" && \
+		printf 'sw_commit 0\nsw_tryactive 1\n' | fw_setenv --script - && \
+		nand_do_upgrade_success
+	nand_do_upgrade_failed
+}
+
 buffalo_wsr1500ax2s_crc32() {
 	local crc
 
@@ -105,6 +119,9 @@ platform_do_upgrade() {
 	local board=$(board_name)
 
 	case "$board" in
+	alphion,asee-1447)
+		alphion_asee1447_do_upgrade "$1"
+		;;
 	buffalo,wsr-1500ax2s)
 		buffalo_wsr1500ax2s_do_upgrade "$1"
 		;;
