@@ -356,6 +356,7 @@ platform_do_upgrade() {
 		CI_UBIPART="ubi0"
 		nand_do_upgrade "$1"
 		;;
+	iptime,be5100p|\
 	ltc,vl7m19k)
 		mtk_dual_boot_flash_both_slots "$1"
 		# clear any marker the bootloader set after failing to verify

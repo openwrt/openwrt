@@ -5,6 +5,20 @@ START=99
 
 boot() {
 	case $(board_name) in
+	iptime,be5100p)
+		# U-Boot counts warm boots in a register that only the vendor
+		# kernel resets and marks a slot invalid after three. Clear the
+		# marks, so that it keeps switching between the two identical
+		# slots instead of falling back to the web failsafe.
+		[ "$(fw_printenv -n dual_boot.slot_0_invalid 2>/dev/null)" = "0" ] &&
+		[ "$(fw_printenv -n dual_boot.slot_1_invalid 2>/dev/null)" = "0" ] &&
+			return 0
+		fw_setenv -s - <<-EOF
+			dual_boot.slot_0_invalid 0
+			dual_boot.slot_1_invalid 0
+		EOF
+		logger -t bootcount "cleared dual_boot invalid slot marks"
+		;;
 	xiaomi,mi-router-ax3000t)
 		. /lib/upgrade/common.sh
 		[ "$(rootfs_type)" = "tmpfs" ] && \
