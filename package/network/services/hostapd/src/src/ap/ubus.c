@@ -1125,6 +1125,9 @@ static void switch_chan_fallback_cb(void *eloop_data, void *user_ctx)
 	struct hostapd_iface *iface = eloop_data;
 	struct hostapd_freq_params *freq_params = user_ctx;
 
+	/* keep the new channel through the restart, as CHAN_SWITCH does; on
+	 * an ACS radio the setup would otherwise clear it and run ACS */
+	iface->is_ch_switch_dfs = true;
 	hostapd_switch_channel_fallback(iface, freq_params);
 }
 
