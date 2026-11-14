@@ -1,0 +1,48 @@
+From: Meerzulee <17146298+meerzulee@users.noreply.github.com>
+Subject: [PATCH] gpio: 74x164: add TI SN74HC164 compatible
+
+The Archer C58HP drives its LED shift register with SPI GPIO clock and
+data lines, without a chip-select or storage-register latch. The existing
+74x164 driver can transfer the register contents in this configuration.
+Add explicit device matches and document the absence of a latch on the
+SN74HC164; no transfer algorithm changes are needed.
+
+---
+--- a/drivers/gpio/gpio-74x164.c
++++ b/drivers/gpio/gpio-74x164.c
+@@ -167,6 +167,7 @@ static int gen_74x164_probe(struct spi_d
+ static const struct spi_device_id gen_74x164_spi_ids[] = {
+ 	{ .name = "74hc595" },
+ 	{ .name = "74lvc594" },
++	{ .name = "sn74hc164" },
+ 	{},
+ };
+ MODULE_DEVICE_TABLE(spi, gen_74x164_spi_ids);
+@@ -174,6 +175,7 @@ MODULE_DEVICE_TABLE(spi, gen_74x164_spi_
+ static const struct of_device_id gen_74x164_dt_ids[] = {
+ 	{ .compatible = "fairchild,74hc595" },
+ 	{ .compatible = "nxp,74lvc594" },
++	{ .compatible = "ti,sn74hc164" },
+ 	{},
+ };
+ MODULE_DEVICE_TABLE(of, gen_74x164_dt_ids);
+--- a/Documentation/devicetree/bindings/gpio/fairchild,74hc595.yaml
++++ b/Documentation/devicetree/bindings/gpio/fairchild,74hc595.yaml
+@@ -23,6 +23,9 @@ description: |
+   chip select#      |___________________|
+ 
+ 
++  The SN74HC164 has no storage-register latch. Its outputs follow the shift
++  register during a transfer; use it without a chip-select/latch clock.
++
+ maintainers:
+   - Maxime Ripard <mripard@kernel.org>
+ 
+@@ -31,6 +34,7 @@ properties:
+     enum:
+       - fairchild,74hc595
+       - nxp,74lvc594
++      - ti,sn74hc164
+ 
+   reg:
+     maxItems: 1

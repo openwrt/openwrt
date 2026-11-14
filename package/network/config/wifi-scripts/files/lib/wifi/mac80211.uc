@@ -6,6 +6,7 @@ import { board_wlan } from 'wifi.utils';
 const bands_order = [ "60G", "6G", "5G", "2G" ];
 const htmode_order = [ "EHT", "HE", "VHT", "HT" ];
 
+let board = json(readfile('/etc/board.json') || '{}');
 let wlan = board_wlan();
 if (!wlan)
 	exit(0);
@@ -104,7 +105,7 @@ for (let phy_name, phy in wlan) {
 			country = '00';
 			encryption = 'owe';
 		} else {
-			encryption = 'none';
+			encryption = board.model?.id == 'tplink,archer-c58hp-v1' ? 'psk2' : 'none';
 		}
 		if (wlan.defaults) {
 			defaults = wlan.defaults.ssids?.[band_name]?.ssid ? wlan.defaults.ssids?.[band_name] : wlan.defaults.ssids?.all;

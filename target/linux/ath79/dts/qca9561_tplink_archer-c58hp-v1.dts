@@ -1,0 +1,49 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "qca9561_tplink_archer-c58hp-v1.dtsi"
+
+/ {
+	/* Keep the loader's erase block out of the writable firmware device. */
+	virtual_flash {
+		compatible = "mtd-concat";
+		devices = <&fwconcat0 &fwconcat1>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				compatible = "openwrt,uimage", "denx,uimage";
+				openwrt,ih-magic = <0x4f4b4c49>;
+				label = "firmware";
+				reg = <0x0 0x7c0000>;
+			};
+		};
+	};
+};
+
+&spi {
+	flash@0 {
+		partitions {
+			/delete-node/ partition@10000;
+			/delete-node/ partition@6d0000;
+
+			fwconcat0: partition@10000 {
+				label = "fwconcat0";
+				reg = <0x010000 0x6c0000>;
+			};
+
+			partition@6d0000 {
+				label = "loader";
+				reg = <0x6d0000 0x010000>;
+				read-only;
+			};
+
+			fwconcat1: partition@6e0000 {
+				label = "fwconcat1";
+				reg = <0x6e0000 0x100000>;
+			};
+		};
+	};
+};
