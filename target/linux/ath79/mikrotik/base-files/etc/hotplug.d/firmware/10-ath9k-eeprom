@@ -36,12 +36,9 @@ case "$FIRMWARE" in
 	mikrotik,routerboard-wapr-2nd)
 		caldata_mikrotik_ath9k 0x1000 0x440 $(macaddr_add "$mac_base" 1)
 		;;
-	mikrotik,routerboard-map-2nd)
-		caldata_mikrotik_ath9k 0x1000 0x440 $(macaddr_add "$mac_base" 3)
-		;;
-	mikrotik,routerboard-mapl-2nd|\
-	mikrotik,routerboard-wap-g-5hact2hnd)
-		caldata_mikrotik_ath9k 0x1000 0x440 $(macaddr_add "$mac_base" 2)
+	mikrotik,routerboard-951g-2hnd|\
+	mikrotik,routerboard-951ui-2hnd)
+		caldata_mikrotik_ath9k 0x1000 0x440 $(macaddr_add "$mac_base" +11)
 		;;
 	mikrotik,routerboard-951ui-2nd|\
 	mikrotik,routerboard-952ui-5ac2nd)
@@ -50,9 +47,12 @@ case "$FIRMWARE" in
 	mikrotik,routerboard-962uigs-5hact2hnt)
 		caldata_mikrotik_ath9k 0x1000 0x440 $(macaddr_add "$mac_base" 7)
 		;;
-	mikrotik,routerboard-951g-2hnd|\
-	mikrotik,routerboard-951ui-2hnd)
-		caldata_mikrotik_ath9k 0x1000 0x440 $(macaddr_add "$mac_base" +11)
+	mikrotik,routerboard-map-2nd)
+		caldata_mikrotik_ath9k 0x1000 0x440 $(macaddr_add "$mac_base" 3)
+		;;
+	mikrotik,routerboard-mapl-2nd|\
+	mikrotik,routerboard-wap-g-5hact2hnd)
+		caldata_mikrotik_ath9k 0x1000 0x440 $(macaddr_add "$mac_base" 2)
 		;;
 	*)
 		caldata_die "board $board is not supported yet"

@@ -23,6 +23,14 @@ glinet,gl-mifi)
 meraki,mr12)
 	migrate_leds ":wifi=:link" ":wan=:lan"
 	;;
+mercury,mw4530r-v1|\
+tplink,archer-c7-v2|\
+tplink,tl-wdr3600-v1|\
+tplink,tl-wdr4300-v1|\
+tplink,tl-wdr4300-v1-il|\
+tplink,tl-wdr4310-v1)
+	migrate_leds "blue:=green:"
+	;;
 openmesh,mr600-v1)
 	migrate_leds ":wlan58=:wifi5g"
 	;;
@@ -55,14 +63,6 @@ qxwlan,e750a-v4-8m|\
 qxwlan,e750g-v8-16m|\
 qxwlan,e750g-v8-8m)
 	migrate_leds ":ds10=:sig1" ":ds20=:sig2"
-	;;
-mercury,mw4530r-v1|\
-tplink,archer-c7-v2|\
-tplink,tl-wdr3600-v1|\
-tplink,tl-wdr4300-v1|\
-tplink,tl-wdr4300-v1-il|\
-tplink,tl-wdr4310-v1)
-	migrate_leds "blue:=green:"
 	;;
 tplink,tl-wpa8630-v1)
 	migrate_leds ':wlan$=:wifi2g' ':wlan5$=:wifi5g'

@@ -8,11 +8,11 @@ do_sysinfo_ath79_fixup() {
 		local part=$(find_mtd_part caldata)
 		local board_hw_id=$(dd if=$part bs=1 skip=67 count=10 2>/dev/null)
 		case "$board_hw_id" in
-		5508013406)
-			model="Netgear EX6400"
-			;;
 		5508013271)
 			model="Netgear EX7300"
+			;;
+		5508013406)
+			model="Netgear EX6400"
 			;;
 		esac
 		;;
