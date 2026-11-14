@@ -54,7 +54,8 @@ case "$FIRMWARE" in
 		;;
 	netgear,rbr750|\
 	netgear,rbs750|\
-	netgear,rbr850)
+	netgear,rbr850|\
+	netgear,rbr860)
 		caldata_extract "0:art" 0x1000 0x20000
 		label_mac=$(get_mac_label_dt)
 		ath11k_patch_mac $(macaddr_add $label_mac 3) 0
@@ -62,7 +63,8 @@ case "$FIRMWARE" in
 		ath11k_patch_mac $(macaddr_add $label_mac 4) 2
 		ath11k_set_macflag
 		;;
-	netgear,rbs850)
+	netgear,rbs850|\
+	netgear,rbs860)
 		caldata_extract "0:art" 0x1000 0x20000
 		label_mac=$(get_mac_label_dt)
 		ath11k_patch_mac $(macaddr_add $label_mac 2) 0

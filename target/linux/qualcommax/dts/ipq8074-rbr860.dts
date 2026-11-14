@@ -1,0 +1,71 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+/*
+ * Copyright (c) 2026 Maximilian Brandt <me@brandtm.de>
+ */
+
+/dts-v1/;
+
+#include "ipq8074-rbx860.dtsi"
+
+/ {
+	model = "Netgear RBR860";
+	compatible = "netgear,rbr860", "qcom,ipq8074";
+};
+
+&uniphy1 {
+	status = "okay";
+};
+
+&swports {
+	swport5: port@5 {
+		reg = <5>;
+		label = "wan";
+		phy-handle = <&aqr113c>;
+		phy-mode = "usxgmii";
+		managed = "in-band-status";
+		pcs-handle = <&uniphy1 0>;
+		nvmem-cells = <&macaddr_boarddata 1>;
+		nvmem-cell-names = "mac-address";
+	};
+};
+
+&mdio {
+	aqr113c: ethernet-phy@8 {
+		compatible = "ethernet-phy-ieee802.3-c45";
+		reg = <8>;
+		reset-gpios = <&tlmm 25 GPIO_ACTIVE_LOW>;
+		reset-assert-us = <1000000>;
+		reset-deassert-us = <1000000>;
+		nvmem-cells = <&aqr_fw>;
+		nvmem-cell-names = "firmware";
+	};
+};
+
+&qpic_nand {
+	nand@0 {
+		partitions {
+			/*
+			 * Empty from the factory, the stock firmware loads the
+			 * PHY firmware from its rootfs. The firmware has to be
+			 * written here once, see the commit message.
+			 */
+			partition-0-ethphyfw {
+				label = "0:ethphyfw";
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					aqr_fw: firmware@0 {
+						reg = <0x0 0x60002>;
+					};
+				};
+			};
+		};
+	};
+};
+
+&wifi {
+	qcom,calibration-variant = "Netgear-RBR860";
+};
