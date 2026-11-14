@@ -11,11 +11,14 @@ runs the clock setup. The order is the same. TP9343 boards use the
 QCA956x PLL and took this path too, so check for both.
 
 Signed-off-by: Rosen Penev <rosenp@gmail.com>
-Assisted-by: LLM
 ---
+ arch/mips/ath79/clock.c | 10 ----------
+ arch/mips/ath79/setup.c | 13 +++++++++++++
+ 2 files changed, 13 insertions(+), 10 deletions(-)
+
 --- a/arch/mips/ath79/clock.c
 +++ b/arch/mips/ath79/clock.c
-@@ -527,16 +527,6 @@ static void __init qca956x_clocks_init(v
+@@ -523,16 +523,6 @@ static void __init qca956x_clocks_init(v
  	u32 cpu_pll, ddr_pll;
  	u32 bootstrap;
  
