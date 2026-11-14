@@ -511,6 +511,22 @@ static u32 ppe_ac_uni_default(struct qca_ppe_priv *priv)
 	       FIELD_PREP(PPE_AC_SHARED_CEILING, priv->data->qm_ceiling);
 }
 
+/* An unshaped switch port is a bottleneck whenever a faster port feeds it, and
+ * unless the faster link negotiated pause its bursts land in one hashed queue.
+ * At the probe default that queue takes about an eighth of what is free, some
+ * 220 buffers, and a single TCP flow from a 5G port into a 1G one tail-drops
+ * there down to 400 Mbit/s. A queue may instead take half of the group: with
+ * weight 6 and that ceiling the same flow runs at line rate, measured on
+ * IPQ8074, and the dynamic share still divides the group between several
+ * congested queues.
+ */
+static u32 ppe_ac_uni_port_default(struct qca_ppe_priv *priv)
+{
+	return PPE_AC_EN | PPE_AC_SHARED_DYNAMIC |
+	       FIELD_PREP(PPE_AC_SHARED_WEIGHT, 6) |
+	       FIELD_PREP(PPE_AC_SHARED_CEILING, priv->data->qm_total_buf / 2);
+}
+
 static void ppe_qm_init(struct qca_ppe_priv *priv)
 {
 	const struct ppe_data *d = priv->data;
@@ -618,8 +634,11 @@ static void ppe_qm_init(struct qca_ppe_priv *priv)
 	for (i = PPE_NUM_PORTS; i < PPE_MAX_VPORT; i++)
 		ppe_qm_map_set(priv, QM_VP_PORT_OFFSET + (1 << 8) + i, 0, 0);
 
+	/* The CPU port owns every queue below the first user port's base. */
 	for (i = 0; i < PPE_L0_UCAST_QUEUES; i++)
-		ppe_ac_uni_set(priv, i, ppe_ac_uni_default(priv));
+		ppe_ac_uni_set(priv, i, i < port_queue_base[1] ?
+				  ppe_ac_uni_default(priv) :
+				  ppe_ac_uni_port_default(priv));
 
 	/* A multicast queue's limit is a static threshold, not the unicast
 	 * queues' dynamic share, so its ceiling field carries the green
@@ -1928,7 +1947,7 @@ static void __ppe_port_queue_limit_set(struct qca_ppe_priv *priv, int port)
 	w0 = sh->rate_bps ? ppe_ac_uni_static(priv, port, sh->rate_bps,
 					      sh->limit,
 					      priv->data->qm_ceiling) :
-			    ppe_ac_uni_default(priv);
+			    ppe_ac_uni_port_default(priv);
 
 	/* The CPU port owns every queue below the first user port's base, laid
 	 * out by l0_port0[] rather than port_l0[]. The band cpu_port_rate
@@ -1942,11 +1961,10 @@ static void __ppe_port_queue_limit_set(struct qca_ppe_priv *priv, int port)
 		/* Each band queue takes a quarter of the depth, as on a user
 		 * port.
 		 */
-		if (sh->rate_bps)
-			w0 = ppe_ac_uni_static(priv, port, sh->rate_bps,
-					       sh->limit /
-					       PPE_FLOW_SPREAD_QUEUES,
-					       priv->data->qm_ceiling);
+		w0 = sh->rate_bps ?
+		     ppe_ac_uni_static(priv, port, sh->rate_bps,
+				       sh->limit / PPE_FLOW_SPREAD_QUEUES,
+				       priv->data->qm_ceiling) : def;
 
 		for (i = 0; i < port_l0[0].ucast_base; i++)
 			ppe_ac_uni_set(priv, i,
