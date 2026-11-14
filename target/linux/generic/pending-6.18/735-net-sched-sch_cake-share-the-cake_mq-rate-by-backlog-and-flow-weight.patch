@@ -1,0 +1,519 @@
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Subject: [PATCH] net/sched: sch_cake: share the cake_mq rate by backlog and flow weight
+
+cake_mq gives every TX queue that was active since the last sync an equal
+part of the rate. A queue whose flows are limited further on, such as
+traffic to a slow Wi-Fi station, keeps a part it cannot use, and the
+link stays below the configured rate. The split also ignores flows and
+hosts: two bulk flows hashed onto one queue get half the rate of a single
+flow on another, and with host isolation a host whose flows land on
+several queues counts as a separate host in each of them, unlike with one
+CAKE instance.
+
+Let each instance estimate the rate it sends at and count as backlogged
+when it sends nearly all of its rate or queues more than 1 ms of it. A
+sibling that is not backlogged keeps its estimate plus 1/16, and the
+backlogged instances share the rest in proportion to their bulk flows,
+each weighted by its quantum. A sibling counts as active for 4 ms after
+it last sent, so a slow queue keeps its part between two packets.
+
+With host isolation, each instance looks up the host of each bulk flow in
+the host tables of the active siblings every 10 ms, by the tag that the
+hash with the global seed gives in every instance, and adds the bulk
+flows found there when it sizes the quantum. In the srchost, dsthost and
+hosts modes, where each flow is a host, it looks up the flow tag instead.
+The sync step reads a few fields of each sibling with READ_ONCE() and no
+locks, and the stores to the tags, the host bulk counts and the flow set
+use WRITE_ONCE().
+
+On a veth with four TX queues and cake_mq at 100 Mbit/s, one flow on
+queue 0 and one on queue 1 to a receiver behind a 20 Mbit/s tbf now
+reach 93.3-93.4 instead of 87.6-89.4 Mbit/s of goodput in total. Two
+flows on queue 0 and one on queue 1 get 31.7-32.1 Mbit/s each instead of
+24 and 48, as with a single cake. With dual-dsthost, a host with four
+flows spread over the queues and a host with one flow on queue 0 get
+48.0-48.3 and 47.8 Mbit/s instead of 83.6-83.8 and 11.9-12.0. In all six
+host isolation modes, with the four flows spread or with each host on a
+queue of its own, the hosts get 47.7-49.4 and 47.7-48.2 Mbit/s, where a
+single cake gives 47.9-48.9 and 47.3-47.9 (3 runs each, QEMU). With 64
+hosts that each have a bulk flow on all four queues, a lookup round
+takes 8-18 us per instance every 10 ms under QEMU emulation.
+
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+---
+The net-next patch moves this into cake_mq_share_rate(); here it stays in
+cake_dequeue() so that hack-6.18/710 keeps its context.
+
+--- a/net/sched/sch_cake.c
++++ b/net/sched/sch_cake.c
+@@ -135,6 +135,8 @@ struct cake_flow {
+ 	u16		  srchost; /* index into cake_host table */
+ 	u16		  dsthost;
+ 	u8		  set;
++	/* bulk flows with this tag in the other cake_mq instances */
++	u16		  mq_count;
+ }; /* please try to keep this structure <= 64 bytes */
+ 
+ struct cake_host {
+@@ -142,6 +144,9 @@ struct cake_host {
+ 	u32 dsthost_tag;
+ 	u16 srchost_bulk_flow_count;
+ 	u16 dsthost_bulk_flow_count;
++	/* bulk flows of the host in the other cake_mq instances */
++	u16 srchost_mq_count;
++	u16 dsthost_mq_count;
+ };
+ 
+ struct cake_heap_entry {
+@@ -269,6 +274,13 @@ struct cake_sched_data {
+ 	/* mq sync state */
+ 	u64		last_checked_active;
+ 	u64		last_active;
++	u64		mq_bytes;
++	u64		mq_alloc;
++	u64		mq_rate;
++	u64		mq_hosts_checked;
++	u32		mq_weight;
++	u32		mq_flow_weight;
++	bool		mq_backlogged;
+ 	u32		active_queues;
+ };
+ 
+@@ -648,13 +660,20 @@ static bool cake_ddst(int flow_mode)
+ 	return (flow_mode & CAKE_FLOW_DUAL_DST) == CAKE_FLOW_DUAL_DST;
+ }
+ 
++/* srchost, dsthost and hosts: each flow is a host */
++static bool cake_hosts_only(int flow_mode)
++{
++	return (flow_mode & CAKE_FLOW_HOSTS) && !(flow_mode & CAKE_FLOW_FLOWS);
++}
++
+ static void cake_dec_srchost_bulk_flow_count(struct cake_tin_data *q,
+ 					     struct cake_flow *flow,
+ 					     int flow_mode)
+ {
+ 	if (likely(cake_dsrc(flow_mode) &&
+ 		   q->hosts[flow->srchost].srchost_bulk_flow_count))
+-		q->hosts[flow->srchost].srchost_bulk_flow_count--;
++		WRITE_ONCE(q->hosts[flow->srchost].srchost_bulk_flow_count,
++			   q->hosts[flow->srchost].srchost_bulk_flow_count - 1);
+ }
+ 
+ static void cake_inc_srchost_bulk_flow_count(struct cake_tin_data *q,
+@@ -663,7 +682,8 @@ static void cake_inc_srchost_bulk_flow_c
+ {
+ 	if (likely(cake_dsrc(flow_mode) &&
+ 		   q->hosts[flow->srchost].srchost_bulk_flow_count < CAKE_QUEUES))
+-		q->hosts[flow->srchost].srchost_bulk_flow_count++;
++		WRITE_ONCE(q->hosts[flow->srchost].srchost_bulk_flow_count,
++			   q->hosts[flow->srchost].srchost_bulk_flow_count + 1);
+ }
+ 
+ static void cake_dec_dsthost_bulk_flow_count(struct cake_tin_data *q,
+@@ -672,7 +692,8 @@ static void cake_dec_dsthost_bulk_flow_c
+ {
+ 	if (likely(cake_ddst(flow_mode) &&
+ 		   q->hosts[flow->dsthost].dsthost_bulk_flow_count))
+-		q->hosts[flow->dsthost].dsthost_bulk_flow_count--;
++		WRITE_ONCE(q->hosts[flow->dsthost].dsthost_bulk_flow_count,
++			   q->hosts[flow->dsthost].dsthost_bulk_flow_count - 1);
+ }
+ 
+ static void cake_inc_dsthost_bulk_flow_count(struct cake_tin_data *q,
+@@ -681,27 +702,41 @@ static void cake_inc_dsthost_bulk_flow_c
+ {
+ 	if (likely(cake_ddst(flow_mode) &&
+ 		   q->hosts[flow->dsthost].dsthost_bulk_flow_count < CAKE_QUEUES))
+-		q->hosts[flow->dsthost].dsthost_bulk_flow_count++;
++		WRITE_ONCE(q->hosts[flow->dsthost].dsthost_bulk_flow_count,
++			   q->hosts[flow->dsthost].dsthost_bulk_flow_count + 1);
+ }
+ 
+-static u16 cake_get_flow_quantum(struct cake_tin_data *q,
+-				 struct cake_flow *flow,
+-				 int flow_mode)
++static u32 cake_host_load(struct cake_tin_data *q, struct cake_flow *flow,
++			  int flow_mode)
+ {
+-	u16 host_load = 1;
++	struct cake_host *srchost = &q->hosts[flow->srchost];
++	struct cake_host *dsthost = &q->hosts[flow->dsthost];
++	u32 host_load = 1;
+ 
+ 	if (cake_dsrc(flow_mode))
+-		host_load = max(host_load,
+-				q->hosts[flow->srchost].srchost_bulk_flow_count);
++		host_load = max_t(u32, host_load,
++				  srchost->srchost_bulk_flow_count +
++				  srchost->srchost_mq_count);
+ 
+ 	if (cake_ddst(flow_mode))
+-		host_load = max(host_load,
+-				q->hosts[flow->dsthost].dsthost_bulk_flow_count);
++		host_load = max_t(u32, host_load,
++				  dsthost->dsthost_bulk_flow_count +
++				  dsthost->dsthost_mq_count);
++
++	if (cake_hosts_only(flow_mode))
++		host_load = 1 + flow->mq_count;
++
++	return min(host_load, CAKE_QUEUES);
++}
+ 
++static u16 cake_get_flow_quantum(struct cake_tin_data *q,
++				 struct cake_flow *flow,
++				 int flow_mode)
++{
+ 	/* The get_random_u16() is a way to apply dithering to avoid
+ 	 * accumulating roundoff errors
+ 	 */
+-	return (q->flow_quantum * quantum_div[host_load] +
++	return (q->flow_quantum * quantum_div[cake_host_load(q, flow, flow_mode)] +
+ 		get_random_u16()) >> 16;
+ }
+ 
+@@ -857,7 +892,10 @@ skip_hash:
+ found:
+ 		/* reserve queue for future packets in same flow */
+ 		reduced_hash = outer_hash + k;
+-		q->tags[reduced_hash] = flow_hash;
++		if (q->tags[reduced_hash] != flow_hash) {
++			WRITE_ONCE(q->tags[reduced_hash], flow_hash);
++			q->flows[reduced_hash].mq_count = 0;
++		}
+ 
+ 		if (allocate_src) {
+ 			srchost_idx = srchost_hash % CAKE_QUEUES;
+@@ -874,7 +912,8 @@ found:
+ 				if (!q->hosts[outer_hash + k].srchost_bulk_flow_count)
+ 					break;
+ 			}
+-			q->hosts[outer_hash + k].srchost_tag = srchost_hash;
++			WRITE_ONCE(q->hosts[outer_hash + k].srchost_tag, srchost_hash);
++			q->hosts[outer_hash + k].srchost_mq_count = 0;
+ found_src:
+ 			srchost_idx = outer_hash + k;
+ 			q->flows[reduced_hash].srchost = srchost_idx;
+@@ -898,7 +937,8 @@ found_src:
+ 				if (!q->hosts[outer_hash + k].dsthost_bulk_flow_count)
+ 					break;
+ 			}
+-			q->hosts[outer_hash + k].dsthost_tag = dsthost_hash;
++			WRITE_ONCE(q->hosts[outer_hash + k].dsthost_tag, dsthost_hash);
++			q->hosts[outer_hash + k].dsthost_mq_count = 0;
+ found_dst:
+ 			dsthost_idx = outer_hash + k;
+ 			q->flows[reduced_hash].dsthost = dsthost_idx;
+@@ -1556,6 +1596,7 @@ static int cake_advance_shaper(struct ca
+ 
+ 		q->time_next_packet = ktime_add_ns(q->time_next_packet,
+ 						   global_dur);
++		q->mq_bytes += len;
+ 		if (!drop)
+ 			q->failsafe_next_packet = \
+ 				ktime_add_ns(q->failsafe_next_packet,
+@@ -1927,7 +1968,7 @@ static s32 cake_enqueue(struct sk_buff *
+ 			b->decaying_flow_count--;
+ 			list_move_tail(&flow->flowchain, &b->new_flows);
+ 		}
+-		flow->set = CAKE_SET_SPARSE;
++		WRITE_ONCE(flow->set, CAKE_SET_SPARSE);
+ 		b->sparse_flow_count++;
+ 
+ 		flow->deficit = cake_get_flow_quantum(b, flow, q->config->flow_mode);
+@@ -1935,7 +1976,7 @@ static s32 cake_enqueue(struct sk_buff *
+ 		/* this flow was empty, accounted as a sparse flow, but actually
+ 		 * in the bulk rotation.
+ 		 */
+-		flow->set = CAKE_SET_BULK;
++		WRITE_ONCE(flow->set, CAKE_SET_BULK);
+ 		b->sparse_flow_count--;
+ 		b->bulk_flow_count++;
+ 
+@@ -2007,6 +2048,165 @@ static void cake_clear_tin(struct Qdisc
+ 			kfree_skb_reason(skb, SKB_DROP_REASON_QUEUE_PURGE);
+ }
+ 
++/* Time constant of the cake_mq rate estimate */
++#define CAKE_MQ_RATE_TAU	NSEC_PER_MSEC
++/* Siblings leave an instance that is not backlogged its rate plus 1/16 */
++#define CAKE_MQ_HEADROOM_SHIFT	4
++/* An instance that sends more than 15/16 of its rate is backlogged */
++#define CAKE_MQ_BACKLOG_SHIFT	4
++/* No instance gets less than 1/64 of the rate */
++#define CAKE_MQ_MIN_SHIFT	6
++/* A sibling that sent within this time still counts as active */
++#define CAKE_MQ_ACTIVE_TIME	(4 * CAKE_MQ_RATE_TAU)
++/* Interval at which an instance counts its hosts' flows in the siblings */
++#define CAKE_MQ_HOSTS_TIME	(10 * NSEC_PER_MSEC)
++/* Weight of a bulk flow with a full quantum */
++#define CAKE_MQ_FLOW_WEIGHT	65535
++/* Host table entry whose sibling count is being refreshed */
++#define CAKE_MQ_COUNT_STALE	U16_MAX
++
++static bool cake_mq_sibling_active(struct Qdisc *other_sch,
++				   struct cake_sched_data *other, ktime_t now)
++{
++	return READ_ONCE(other_sch->q.qlen) ||
++	       (s64)(now - READ_ONCE(other->last_active)) < CAKE_MQ_ACTIVE_TIME;
++}
++
++enum {
++	CAKE_MQ_SRCHOST,
++	CAKE_MQ_DSTHOST,
++	CAKE_MQ_FLOW,
++};
++
++/* Bulk flows of the host or flow with @tag in the set-associative tables of @b */
++static u32 cake_mq_lookup(struct cake_tin_data *b, u32 tag, int kind)
++{
++	u32 idx = tag % CAKE_QUEUES, inner = idx % CAKE_SET_WAYS;
++	u32 outer = idx - inner;
++	u32 i, k;
++
++	for (i = 0, k = inner; i < CAKE_SET_WAYS;
++	     i++, k = (k + 1) % CAKE_SET_WAYS) {
++		u32 j = outer + k;
++
++		if (kind == CAKE_MQ_FLOW) {
++			if (READ_ONCE(b->tags[j]) == tag)
++				return READ_ONCE(b->flows[j].set) == CAKE_SET_BULK;
++		} else if (kind == CAKE_MQ_SRCHOST) {
++			if (READ_ONCE(b->hosts[j].srchost_tag) == tag)
++				return READ_ONCE(b->hosts[j].srchost_bulk_flow_count);
++		} else if (READ_ONCE(b->hosts[j].dsthost_tag) == tag) {
++			return READ_ONCE(b->hosts[j].dsthost_bulk_flow_count);
++		}
++	}
++
++	return 0;
++}
++
++/* Sum the bulk flows that the siblings hold in @tin for @tag */
++static u16 cake_mq_count(struct Qdisc *sch, u16 tin, u32 tag, int kind,
++			 ktime_t now)
++{
++	struct cake_sched_data *q = qdisc_priv(sch);
++	struct net_device *dev = qdisc_dev(sch);
++	struct cake_sched_data *other;
++	struct Qdisc *other_sch;
++	unsigned int ntx;
++	u32 count = 0;
++
++	for (ntx = 0; ntx < dev->num_tx_queues; ntx++) {
++		other_sch = rcu_dereference(netdev_get_tx_queue(dev, ntx)->qdisc_sleeping);
++		other = qdisc_priv(other_sch);
++
++		if (other == q || !cake_mq_sibling_active(other_sch, other, now))
++			continue;
++
++		count += cake_mq_lookup(other->tins + tin, tag, kind);
++	}
++
++	return min(count, CAKE_QUEUES);
++}
++
++/* With host isolation, CAKE divides the quantum of a flow by the bulk flows of
++ * its host, and in the srchost, dsthost and hosts modes each host is a single
++ * flow. A host whose flows are spread over the TX queues has only a part of
++ * them in each cake_mq instance, so count the rest in the siblings for every
++ * host or flow that is bulk here. The quanta of the bulk flows, averaged,
++ * become the weight of a flow in cake_mq_share_rate().
++ */
++static void cake_mq_count_hosts(struct Qdisc *sch, ktime_t now)
++{
++	struct cake_sched_data *q = qdisc_priv(sch);
++	int flow_mode = q->config->flow_mode;
++	bool dsrc = cake_dsrc(flow_mode);
++	bool ddst = cake_ddst(flow_mode);
++	bool hosts = cake_hosts_only(flow_mode);
++	u32 weight = 0, bulk = 0;
++	struct cake_flow *flow;
++	struct cake_host *host;
++	struct cake_tin_data *b;
++	u16 tin;
++
++	q->mq_flow_weight = CAKE_MQ_FLOW_WEIGHT;
++	if (!dsrc && !ddst && !hosts)
++		return;
++
++	for (tin = 0; tin < q->tin_cnt; tin++) {
++		b = q->tins + tin;
++
++		list_for_each_entry(flow, &b->old_flows, flowchain) {
++			if (flow->set != CAKE_SET_BULK)
++				continue;
++			if (dsrc)
++				b->hosts[flow->srchost].srchost_mq_count = CAKE_MQ_COUNT_STALE;
++			if (ddst)
++				b->hosts[flow->dsthost].dsthost_mq_count = CAKE_MQ_COUNT_STALE;
++		}
++
++		list_for_each_entry(flow, &b->old_flows, flowchain) {
++			if (flow->set != CAKE_SET_BULK)
++				continue;
++
++			host = b->hosts + flow->srchost;
++			if (dsrc && host->srchost_mq_count == CAKE_MQ_COUNT_STALE)
++				host->srchost_mq_count =
++					cake_mq_count(sch, tin, host->srchost_tag,
++						      CAKE_MQ_SRCHOST, now);
++
++			host = b->hosts + flow->dsthost;
++			if (ddst && host->dsthost_mq_count == CAKE_MQ_COUNT_STALE)
++				host->dsthost_mq_count =
++					cake_mq_count(sch, tin, host->dsthost_tag,
++						      CAKE_MQ_DSTHOST, now);
++
++			if (hosts)
++				flow->mq_count = cake_mq_count(sch, tin,
++							       b->tags[flow - b->flows],
++							       CAKE_MQ_FLOW, now);
++
++			weight += quantum_div[cake_host_load(b, flow, flow_mode)];
++			bulk++;
++		}
++	}
++
++	if (bulk)
++		q->mq_flow_weight = weight / bulk;
++}
++
++/* Split the cake_mq rate between the instances of the TX queues. An instance
++ * is backlogged when it sends nearly all of its rate or holds more than
++ * CAKE_MQ_RATE_TAU of it in its queue. Siblings leave an instance that is not
++ * backlogged the rate it sends at plus headroom, and the backlogged instances
++ * share the rest in proportion to their bulk flows, each weighted by its
++ * quantum, so that each flow gets about what it would get from a single CAKE
++ * instance.
++ *
++ * Each instance writes its own estimate, weight and backlog state here and
++ * siblings read them without locking. The values are independent and are
++ * refreshed every sync_time, so a reader that sees some old and some new
++ * values is off for one interval only, and no ordering between them is
++ * needed.
++ */
+ static struct sk_buff *cake_dequeue(struct Qdisc *sch)
+ {
+ 	struct cake_sched_data *q = qdisc_priv(sch);
+@@ -2026,31 +2226,76 @@ static struct sk_buff *cake_dequeue(stru
+ 		struct net_device *dev = qdisc_dev(sch);
+ 		struct cake_sched_data *other_priv;
+ 		u64 new_rate = q->config->rate_bps;
+-		u64 other_qlen, other_last_active;
+-		struct Qdisc *other_sch;
++		u64 elapsed = now - q->last_checked_active;
++		u64 est, weights, reserved = 0;
++		u32 weight = 0;
+ 		u32 num_active_qs = 1;
++		struct Qdisc *other_sch;
+ 		unsigned int ntx;
++		bool backlogged;
++		int i;
++
++		if (elapsed < CAKE_MQ_RATE_TAU)
++			est = q->mq_rate -
++			      div_u64(q->mq_rate * elapsed, CAKE_MQ_RATE_TAU) +
++			      q->mq_bytes * (NSEC_PER_SEC / CAKE_MQ_RATE_TAU);
++		else
++			est = mul_u64_u64_div_u64(q->mq_bytes, NSEC_PER_SEC,
++						  elapsed);
++		backlogged = est >= q->mq_alloc -
++				    (q->mq_alloc >> CAKE_MQ_BACKLOG_SHIFT) ||
++			     sch->qstats.backlog *
++			     (NSEC_PER_SEC / CAKE_MQ_RATE_TAU) >= q->mq_alloc;
++
++		if (now - q->mq_hosts_checked >= CAKE_MQ_HOSTS_TIME) {
++			cake_mq_count_hosts(sch, now);
++			q->mq_hosts_checked = now;
++		}
++
++		for (i = 0; i < q->tin_cnt; i++)
++			weight += q->tins[i].bulk_flow_count;
++		weight = max(weight, 1) * q->mq_flow_weight;
++
++		WRITE_ONCE(q->mq_rate, est);
++		WRITE_ONCE(q->mq_weight, weight);
++		WRITE_ONCE(q->mq_backlogged, backlogged);
+ 
++		weights = weight;
+ 		for (ntx = 0; ntx < dev->num_tx_queues; ntx++) {
++			u64 other_rate;
++
+ 			other_sch = rcu_dereference(netdev_get_tx_queue(dev, ntx)->qdisc_sleeping);
+ 			other_priv = qdisc_priv(other_sch);
+ 
+ 			if (other_priv == q)
+ 				continue;
+ 
+-			other_qlen = READ_ONCE(other_sch->q.qlen);
+-			other_last_active = READ_ONCE(other_priv->last_active);
++			if (!cake_mq_sibling_active(other_sch, other_priv, now))
++				continue;
+ 
+-			if (other_qlen || other_last_active > q->last_checked_active)
+-				num_active_qs++;
++			num_active_qs++;
++			if (READ_ONCE(other_priv->mq_backlogged)) {
++				weights += READ_ONCE(other_priv->mq_weight);
++			} else {
++				other_rate = READ_ONCE(other_priv->mq_rate);
++				reserved += other_rate +
++					    (other_rate >> CAKE_MQ_HEADROOM_SHIFT);
++			}
+ 		}
+ 
+-		if (num_active_qs > 1)
+-			new_rate = div64_u64(q->config->rate_bps, num_active_qs);
++		if (reserved < new_rate)
++			new_rate = mul_u64_u64_div_u64(new_rate - reserved,
++						       weight, weights);
++		else
++			new_rate = 0;
++		new_rate = max3(new_rate,
++				q->config->rate_bps >> CAKE_MQ_MIN_SHIFT, 1ULL);
+ 
+ 		cake_configure_rates(sch, new_rate, true);
++		q->mq_alloc = new_rate;
++		q->mq_bytes = 0;
+ 		q->last_checked_active = now;
+-		q->active_queues = num_active_qs;
++		WRITE_ONCE(q->active_queues, num_active_qs);
+ 	}
+ 
+ begin:
+@@ -2164,13 +2409,13 @@ retry:
+ 				cake_inc_srchost_bulk_flow_count(b, flow, q->config->flow_mode);
+ 				cake_inc_dsthost_bulk_flow_count(b, flow, q->config->flow_mode);
+ 
+-				flow->set = CAKE_SET_BULK;
++				WRITE_ONCE(flow->set, CAKE_SET_BULK);
+ 			} else {
+ 				/* we've moved it to the bulk rotation for
+ 				 * correct deficit accounting but we still want
+ 				 * to count it as a sparse flow, not a bulk one.
+ 				 */
+-				flow->set = CAKE_SET_SPARSE_WAIT;
++				WRITE_ONCE(flow->set, CAKE_SET_SPARSE_WAIT);
+ 			}
+ 		}
+ 
+@@ -2207,7 +2452,7 @@ retry:
+ 					b->sparse_flow_count--;
+ 					b->decaying_flow_count++;
+ 				}
+-				flow->set = CAKE_SET_DECAYING;
++				WRITE_ONCE(flow->set, CAKE_SET_DECAYING);
+ 			} else {
+ 				/* remove empty queue from the flowchain */
+ 				list_del_init(&flow->flowchain);
+@@ -2222,7 +2467,7 @@ retry:
+ 				} else
+ 					b->decaying_flow_count--;
+ 
+-				flow->set = CAKE_SET_NONE;
++				WRITE_ONCE(flow->set, CAKE_SET_NONE);
+ 			}
+ 			goto begin;
+ 		}
