@@ -1,4 +1,6 @@
+From fc153aa8d94ffe09d5ff50e2a73a6dfc209d8545 Mon Sep 17 00:00:00 2001
 From: Daniel Golle <daniel@makrotopia.org>
+Date: Mon, 4 Dec 2023 23:48:40 +0000
 Subject: [PATCH] LEGACY block: partitions: populate fwnode
 
 Assign matching firmware nodes to block partitions in order to allow
@@ -8,6 +10,7 @@ REMOVE THIS PATCH ONCE ALL TARGETS ARE USING LINUX 6.12 AND ALL BOARDS
 HAVE MIGRATED TO UPSTREAM DT BINDINGS.
 
 Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
 --- a/block/partitions/core.c
 +++ b/block/partitions/core.c
 @@ -11,6 +11,8 @@
