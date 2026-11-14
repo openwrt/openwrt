@@ -1,0 +1,127 @@
+From 88cffb8a76e51050d90c3f2ddd13e13199d3921b Mon Sep 17 00:00:00 2001
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Date: Mon, 24 Aug 2026 15:38:04 +0200
+Subject: [PATCH ath-next v6 5/9] wifi: ath11k: schedule TXQs from the driver
+
+The wake_tx_queue handler serves only the txq mac80211 passes it, so
+there is no deficit round robin between stations. Run the round in the
+driver: walk the access category's active txqs with
+ieee80211_next_txq() and drain each through the TCL ring check until the
+airtime queue limit binds or the queue empties. A full ring ends the
+round, since all txqs of a round share it. Each round holds a
+per-category lock, as in ath10k, because mac80211 forbids concurrent
+rounds on one category and the next patch also starts rounds from tx
+completion. The design was proposed for ath11k in [1].
+
+Link: https://lore.kernel.org/all/20230501130725.7171-1-quic_tamizhr@quicinc.com/ [1]
+
+Tested-on: IPQ8074 hw2.0 AHB WLAN.HK.2.9.0.1-02146-QCAHKSWPL_SILICONZ-1
+
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+
+--- a/drivers/net/wireless/ath/ath11k/core.h
++++ b/drivers/net/wireless/ath/ath11k/core.h
+@@ -714,6 +714,11 @@ struct ath11k {
+ 	 */
+ 	spinlock_t data_lock;
+ 
++	/* serialises one scheduling round per access category against the
++	 * other contexts that drive it
++	 */
++	spinlock_t txq_lock[IEEE80211_NUM_ACS];
++
+ 	struct list_head arvifs;
+ 	/* should never be NULL; needed for regular htt rx */
+ 	struct ieee80211_channel *rx_channel;
+--- a/drivers/net/wireless/ath/ath11k/mac.c
++++ b/drivers/net/wireless/ath/ath11k/mac.c
+@@ -10082,13 +10082,12 @@ static int ath11k_mac_op_sta_state(struc
+ 	return ret;
+ }
+ 
+-static void ath11k_mac_op_wake_tx_queue(struct ieee80211_hw *hw,
+-					struct ieee80211_txq *txq)
++static int ath11k_mac_tx_push_txq(struct ath11k *ar, struct ieee80211_txq *txq)
+ {
+ 	struct ieee80211_tx_control control = {
+ 		.sta = txq->sta,
+ 	};
+-	struct ath11k *ar = hw->priv;
++	struct ieee80211_hw *hw = ar->hw;
+ 	struct dp_tx_ring *tx_ring;
+ 	struct hal_srng *tcl_ring;
+ 	struct sk_buff *skb;
+@@ -10101,6 +10100,10 @@ static void ath11k_mac_op_wake_tx_queue(
+ 	tx_ring = &ar->ab->dp.tx_ring[ring_id];
+ 	tcl_ring = &ar->ab->hal.srng_list[tx_ring->tcl_data_ring.ring_id];
+ 
++	/* ieee80211_tx_dequeue() applies the airtime queue limit, so a
++	 * selection ends where that limit binds or the queue empties. A full
++	 * TCL ring ends the whole round.
++	 */
+ 	while (1) {
+ 		if (unlikely(test_bit(ATH11K_FLAG_CRASH_FLUSH,
+ 				      &ar->ab->dev_flags)))
+@@ -10114,7 +10117,7 @@ static void ath11k_mac_op_wake_tx_queue(
+ 
+ 		if (num_free == 0) {
+ 			spin_unlock_bh(&tx_ring->wake_tx_lock);
+-			break;
++			return -ENOSPC;
+ 		}
+ 
+ 		skb = ieee80211_tx_dequeue(hw, txq);
+@@ -10127,6 +10130,34 @@ static void ath11k_mac_op_wake_tx_queue(
+ 
+ 		spin_unlock_bh(&tx_ring->wake_tx_lock);
+ 	}
++
++	return 0;
++}
++
++static void ath11k_mac_schedule_txq(struct ath11k *ar, u8 ac)
++{
++	struct ieee80211_hw *hw = ar->hw;
++	struct ieee80211_txq *txq;
++
++	spin_lock_bh(&ar->txq_lock[ac]);
++
++	ieee80211_txq_schedule_start(hw, ac);
++	while ((txq = ieee80211_next_txq(hw, ac))) {
++		int ret = ath11k_mac_tx_push_txq(ar, txq);
++
++		ieee80211_return_txq(hw, txq, false);
++		if (unlikely(ret))
++			break;
++	}
++	ieee80211_txq_schedule_end(hw, ac);
++
++	spin_unlock_bh(&ar->txq_lock[ac]);
++}
++
++static void ath11k_mac_op_wake_tx_queue(struct ieee80211_hw *hw,
++					struct ieee80211_txq *txq)
++{
++	ath11k_mac_schedule_txq(hw->priv, txq->ac);
+ }
+ 
+ static const struct ieee80211_ops ath11k_ops = {
+@@ -10822,7 +10853,7 @@ int ath11k_mac_allocate(struct ath11k_ba
+ 	struct ath11k *ar;
+ 	struct ath11k_pdev *pdev;
+ 	int ret;
+-	int i;
++	int i, j;
+ 
+ 	if (test_bit(ATH11K_FLAG_REGISTERED, &ab->dev_flags))
+ 		return 0;
+@@ -10856,6 +10887,9 @@ int ath11k_mac_allocate(struct ath11k_ba
+ 
+ 		pdev->ar = ar;
+ 		spin_lock_init(&ar->data_lock);
++
++		for (j = 0; j < IEEE80211_NUM_ACS; j++)
++			spin_lock_init(&ar->txq_lock[j]);
+ 		INIT_LIST_HEAD(&ar->arvifs);
+ 		INIT_LIST_HEAD(&ar->ppdu_stats_info);
+ 		mutex_init(&ar->conf_mutex);
