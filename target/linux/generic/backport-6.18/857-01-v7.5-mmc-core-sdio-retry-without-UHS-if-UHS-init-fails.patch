@@ -1,0 +1,56 @@
+From a3838c21e28e536c10ce03ffa1c24afaa57b5b48 Mon Sep 17 00:00:00 2001
+From: Deomid rojer Ryabkov <rojer@rojer.me>
+Date: Fri, 30 Oct 2026 17:22:23 +0300
+Subject: mmc: core: sdio: retry without UHS if UHS init fails
+
+If mmc_sdio_init_uhs_card() fails, e.g. because tuning finds no
+working sample phase, card initialisation fails and the card is not
+usable at all, even though it would work fine in high-speed mode.
+
+This happens for example on the FriendlyElec NanoPi R2S Plus when the
+SDIO pins of the RTL8822CS Wi-Fi module are left at their default 4 mA
+drive strength:
+
+  dwmmc_rockchip ff5f0000.mmc: All phases bad!
+  mmc2: tuning execution failed: -5
+  mmc2: error -5 whilst initialising SDIO card
+  [... repeated for every init frequency ...]
+  mmc2: Failed to initialize a non-removable card
+
+There is already a fallback for a failure to read the CCCR in UHS mode:
+reset the card and restart the init sequence without R4_18V_PRESENT.
+Do the same when UHS init fails, so that the card comes up in
+high-speed mode instead:
+
+  mmc2: UHS init failed (-5), retrying without UHS
+  mmc2: Skipping voltage switch
+  mmc2: new high speed SDIO card at address 0001
+
+The fallback is taken at most once, as the retry doesn't request UHS.
+
+Reviewed-by: Shawn Lin <shawn.lin@rock-chips.com>
+Signed-off-by: Deomid rojer Ryabkov <rojer@rojer.me>
+Signed-off-by: Ulf Hansson <ulfh@kernel.org>
+---
+ drivers/mmc/core/sdio.c | 10 ++++++++--
+ 1 file changed, 8 insertions(+), 2 deletions(-)
+
+--- a/drivers/mmc/core/sdio.c
++++ b/drivers/mmc/core/sdio.c
+@@ -867,8 +867,14 @@ try_again:
+ 	/* Only if card supports 1.8v and UHS signaling */
+ 	if ((ocr & R4_18V_PRESENT) && card->sw_caps.sd3_bus_mode) {
+ 		err = mmc_sdio_init_uhs_card(card);
+-		if (err)
+-			goto remove;
++		if (err) {
++			pr_warn("%s: UHS init failed (%d), retrying without UHS\n",
++				mmc_hostname(host), err);
++			mmc_sdio_pre_init(host, ocr_card,
++					  oldcard ? NULL : card);
++			retries = 0;
++			goto try_again;
++		}
+ 	} else {
+ 		/*
+ 		 * Switch to high-speed (if supported).

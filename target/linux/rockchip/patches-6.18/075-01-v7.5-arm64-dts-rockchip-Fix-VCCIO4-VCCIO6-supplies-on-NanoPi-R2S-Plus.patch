@@ -1,0 +1,49 @@
+From f889f5d1f9a809fda80d9c6a9e540d8e0e12761f Mon Sep 17 00:00:00 2001
+From: Deomid rojer Ryabkov <rojer@rojer.me>
+Date: Sat, 31 Oct 2026 13:47:13 +0300
+Subject: arm64: dts: rockchip: Fix VCCIO4/VCCIO6 supplies on NanoPi R2S Plus
+
+The NanoPi R2S Plus inherits its io-domain supplies from the NanoPi R2S,
+but the two boards are wired differently. From sheet 6 of the schematics:
+
+NanoPi R2S (NanoPi-R2S-V1.1-2009-Schematic.pdf):
+  VCCIO4 (U12) = VDD_PHY_IO
+  VCCIO6 (H6)  = VCC_IO_33
+
+NanoPi R2S Plus (NanoPi_R2S_Plus_2309_SCH.PDF):
+  VCCIO4 (U12) = VCC_IO_33
+  VCCIO6 (H6)  = VCC_18
+
+rk3328-nanopi-r2.dtsi describes the R2S. On the R2S Plus this leaves the
+VCCIO4 domain configured for 1.8V while supplied with 3.3V, and the
+VCCIO6 domain, which carries the M.2 E-key SDIO signals, configured for
+3.3V while supplied with 1.8V; the latter prevents the optional RTL8822CS
+Wi-Fi module from initialising at all.
+
+Describe the actual supplies. The vendor's own kernel uses the same
+values [1], although there they come from a .dtsi shared by the whole
+NanoPi R2 family, so the schematics above are the reference. Tested on
+an R2S Plus: Ethernet still links at 1Gbps and the SDIO Wi-Fi module
+enumerates.
+
+[1] https://github.com/friendlyarm/kernel-rockchip/blob/9238df9d21e835bba35c8ba5248784387936cb2e/arch/arm64/boot/dts/rockchip/rk3328-nanopi-r2-common.dtsi#L425-L435
+
+Fixes: b8c028782922 ("arm64: dts: rockchip: Add DTS for FriendlyARM NanoPi R2S Plus")
+Signed-off-by: Deomid rojer Ryabkov <rojer@rojer.me>
+Link: https://patch.msgid.link/20261031104714.3271017-2-rojer@rojer.me
+Signed-off-by: Heiko Stuebner <heiko@sntech.de>
+---
+ arch/arm64/boot/dts/rockchip/rk3328-nanopi-r2s-plus.dts | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+--- a/arch/arm64/boot/dts/rockchip/rk3328-nanopi-r2s-plus.dts
++++ b/arch/arm64/boot/dts/rockchip/rk3328-nanopi-r2s-plus.dts
+@@ -46,3 +46,8 @@
+ 		};
+ 	};
+ };
++
++&io_domains {
++	vccio4-supply = <&vcc_io_33>;
++	vccio6-supply = <&vcc_18>;
++};

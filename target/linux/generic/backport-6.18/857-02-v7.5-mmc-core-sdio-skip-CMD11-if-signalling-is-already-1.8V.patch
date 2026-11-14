@@ -1,0 +1,81 @@
+From 67a97316a31a37c92cd6dde05af60bbcf65c7645 Mon Sep 17 00:00:00 2001
+From: Deomid rojer Ryabkov <rojer@rojer.me>
+Date: Fri, 30 Oct 2026 17:22:24 +0300
+Subject: mmc: core: sdio: skip CMD11 if signalling is already 1.8V
+
+Per the SDIO Simplified Specification Version 3.00, section 3.1.2, a card
+whose signalling is already at 1.8V must report S18A = 0 in the R4
+response, and the core relies on that: it only sends CMD11
+(SD_SWITCH_VOLTAGE) when S18A is set.
+
+Some cards don't follow this. The Realtek RTL8822CS (as fitted on the
+FriendlyElec NanoPi R2S Plus, where the M.2 SDIO bus is wired to a fixed
+1.8V vqmmc) answers CMD5 with S18A = 1 even though the bus is already at
+1.8V. CMD11 then times out:
+
+  dwmmc_rockchip ff5f0000.mmc: Unexpected CMD11 timeout
+  mmc_host mmc2: Timeout sending command (cmd 0x10202000 arg 0x0 status 0x90202000)
+  mmc2: new high speed SDIO card at address 0001
+
+and the card ends up in 50 MHz high-speed mode instead of SDR104.
+
+The SWT6621S misreports S18A the same way; there, the failed switch
+leaves the card unable to initialise at all (error -110) instead of
+falling back to high speed.
+
+When vqmmc can't do 3.3V, mmc_set_initial_signal_voltage() has already
+fallen back to 1.8V by the time CMD5 is sent, so the host knows there is
+nothing to switch. Skip CMD11 in that case. ocr keeps R4_18V_PRESENT, so
+mmc_sdio_init_uhs_card() still runs and the card is tuned to SDR104:
+
+  dwmmc_rockchip ff5f0000.mmc: Successfully tuned phase to 64
+  mmc2: new ultra high speed SDR104 SDIO card at address 0001
+
+Hosts that start at 3.3V are not affected, nor are compliant cards that
+report S18A = 0 at 1.8V. A non-compliant card that does need CMD11
+before entering UHS at 1.8V would now fail UHS init; with the previous
+patch it falls back to high-speed mode and keeps working.
+
+This relies on the fixed 1.8V supply being described as vqmmc-supply.
+vqmmc is optional: without it, the host can't tell that the bus is
+hardwired to 1.8V. Setting 3.3V then "succeeds", the core believes the
+bus is at 3.3V and CMD11 is still sent, so the patch doesn't help. Such
+boards need to describe the supply (e.g. a fixed 1.8V regulator as
+vqmmc-supply) to benefit from it.
+
+FriendlyElec's BSP for this board works around this with a card
+quirk, MMC_QUIRK_BROKEN_ROCR_S18A[1], matched on the "realtek,rtl8822cs"
+compatible, which drops the switch request whenever this chip is
+present. The misreported S18A is the card's fault, but ignoring it is
+only correct when the bus is already at 1.8V: on a board with a
+switchable vqmmc the same chip would then be run in UHS at 3.3V. A card
+quirk would need knowledge of the board's supply that it doesn't have.
+The core does know the current signal voltage, so handle it there, which
+also takes care of any other card that turns out to behave the same way.
+
+[1] https://github.com/friendlyarm/kernel-rockchip/commit/aee62cf7ae16b5ede6c6d92a8ee20e796482754e
+Cc: Jensen Huang <jensenhuang@friendlyarm.com>
+Reviewed-by: Shawn Lin <shawn.lin@rock-chips.com>
+Tested-by: Longjian Lin <llj@rock-chips.com>
+Signed-off-by: Deomid rojer Ryabkov <rojer@rojer.me>
+Signed-off-by: Ulf Hansson <ulfh@kernel.org>
+---
+ drivers/mmc/core/sdio.c | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
+
+--- a/drivers/mmc/core/sdio.c
++++ b/drivers/mmc/core/sdio.c
+@@ -737,9 +737,11 @@ try_again:
+ 	 * 1.8v, the card sets S18A to 0 in the R4 response. So it will
+ 	 * fails to check rocr & R4_18V_PRESENT,  but we still need to
+ 	 * try to init uhs card. sdio_read_cccr will take over this task
+-	 * to make sure which speed mode should work.
++	 * to make sure which speed mode should work. Some cards (RTL8822CS)
++	 * set S18A regardless, so don't send CMD11 if we are already at 1.8V.
+ 	 */
+-	if (rocr & ocr & R4_18V_PRESENT) {
++	if ((rocr & ocr & R4_18V_PRESENT) &&
++	    host->ios.signal_voltage != MMC_SIGNAL_VOLTAGE_180) {
+ 		err = mmc_set_uhs_voltage(host, ocr_card);
+ 		if (err == -EAGAIN) {
+ 			mmc_sdio_pre_init(host, ocr_card, card);
