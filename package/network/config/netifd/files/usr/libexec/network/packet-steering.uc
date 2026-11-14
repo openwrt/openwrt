@@ -142,6 +142,22 @@ function get_next_cpu(weight, prev_cpu)
 	return cpu;
 }
 
+// A CPU nothing has been assigned to yet, not even as an SMT sibling
+function get_idle_cpu(weight)
+{
+	// With packet_steering 2 RPS uses every CPU, none is idle
+	if (disable || all_cpus)
+		return null;
+
+	for (let cpu in cpus) {
+		if (cpu.load > 0)
+			continue;
+		cpu_add_weight(cpu.id, weight);
+		return cpu.id;
+	}
+	return null;
+}
+
 let phys_devs = {};
 let netdev_phys = {};
 let netdevs = map(glob("/sys/class/net/*"), (dev) => basename(dev));
@@ -347,7 +363,10 @@ function assign_dev_cpu(dev) {
 
 	if (length(dev.tasks) > 0) {
 		let cpu = dev.napi_cpu = get_next_cpu(napi_weight);
-		for (let task in dev.tasks)
+		// Further NAPI threads of an ethernet device are placed once
+		// all ethernet devices have their CPUs
+		let tasks = length(dev.phy) ? dev.tasks : [ dev.tasks[0] ];
+		for (let task in tasks)
 			set_task_cpu(task, cpu);
 	}
 
@@ -371,12 +390,30 @@ for (let devname in phys_devs) {
 		assign_dev_cpu(dev);
 }
 
+// An ethernet device can have several NAPI threads without a queue for
+// each (e.g. rx and tx of mtk_eth). Give the further ones a CPU that is
+// still unused now that every ethernet device has its CPUs, or else
+// dev.napi_cpu.
+for (let devname in phys_devs) {
+	let dev = phys_devs[devname];
+	if (length(dev.phy) || dev.napi_cpu == null)
+		continue;
+	dev.napi_cpus = [ dev.napi_cpu ];
+	for (let i = 1; i < length(dev.tasks); i++) {
+		let cpu = get_idle_cpu(napi_weight) ?? dev.napi_cpu;
+		if (index(dev.napi_cpus, cpu) < 0)
+			push(dev.napi_cpus, cpu);
+		set_task_cpu(dev.tasks[i], cpu);
+	}
+}
+
 // Add bias to avoid assigning other tasks to CPUs with ethernet NAPI
 for (let devname in phys_devs) {
 	let dev = phys_devs[devname];
 	if (!length(dev.tasks) || dev.napi_cpu == null)
 		continue;
-	cpu_add_weight(dev.napi_cpu, eth_bias);
+	for (let cpu in dev.napi_cpus)
+		cpu_add_weight(cpu, eth_bias);
 }
 
 // Assign WLAN devices
