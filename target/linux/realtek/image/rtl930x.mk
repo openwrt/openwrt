@@ -355,6 +355,17 @@ define Device/tplink_tl-st1008f-v2
 endef
 TARGET_DEVICES += tplink_tl-st1008f-v2
 
+define Device/tplink_tl-st5008f-v2
+  SOC := rtl9303
+  DEVICE_VENDOR := TP-Link
+  DEVICE_MODEL := TL-ST5008F
+  DEVICE_VARIANT := v2.0
+  DEVICE_PACKAGES := kmod-phy-rtk-usb2 kmod-usb2 kmod-usb-net-rtl8152
+  IMAGE_SIZE := 12032k
+  $(Device/kernel-lzma)
+endef
+TARGET_DEVICES += tplink_tl-st5008f-v2
+
 define Device/ubnt_usw-aggregation
   SOC := rtl9303
   DEVICE_VENDOR := Ubiquiti

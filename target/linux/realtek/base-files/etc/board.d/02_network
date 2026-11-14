@@ -196,6 +196,10 @@ realtek_setup_macs()
 	zyxel,gs1920-24hp-v2)
 		lan_mac="$(get_mac_label)"
 		;;
+	tplink,tl-st5008f-v2)
+		lan_mac="$(get_mac_label)"
+		ucidef_set_network_device_mac eth1 "$(macaddr_setbit_la "$lan_mac")"
+		;;
 	hasivo,f1100w-4sx-4xgt|\
 	hasivo,f1100w-4sx-4xgt-512mb|\
 	hasivo,f1100wp-4sx-4xgt|\
