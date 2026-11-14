@@ -50,6 +50,40 @@ function set_device_defaults(config) {
 		}
 }
 
+/* does the channel list (chanlist: channels and ranges such as "36-48")
+ * take in channel c? With no list, every channel is in it */
+function chanlist_has(list, c) {
+	if (!length(list))
+		return true;
+
+	for (let v in list)
+		for (let w in split(v, ' ')) {
+			let r = split(w, '-');
+			if (length(r) == 2 ? (c >= +r[0] && c <= +r[1]) : (+r[0] == c))
+				return true;
+		}
+
+	return false;
+}
+
+/* is there a 5 GHz block outside DFS channels (52-144) at the radio's
+ * width for ACS to start it on? ACS takes a block where any of its
+ * channels is in the channel list, and makes that one the primary */
+function dfs_free_start(config) {
+	let width = +(match(config.htmode ?? '', /([0-9]+)/)?.[1] ?? 20);
+	let blocks = {
+		'20': [ [ 36 ], [ 40 ], [ 44 ], [ 48 ], [ 149 ], [ 153 ], [ 157 ], [ 161 ], [ 165 ] ],
+		'40': [ [ 36, 40 ], [ 44, 48 ], [ 149, 153 ], [ 157, 161 ] ],
+		'80': [ [ 36, 40, 44, 48 ], [ 149, 153, 157, 161 ] ],
+	}[`${width}`];
+
+	for (let b in blocks ?? [])
+		if (length(filter(b, (c) => chanlist_has(config.chanlist, c))))
+			return true;
+
+	return false;
+}
+
 /* setup sylog / stdout */
 function device_log_append(config) {
 	let log_mask = 0;
@@ -539,6 +573,13 @@ function generate(config) {
 		delete config.enable_background_radar;
 	else
 		set_default(config, 'enable_background_radar', false);
+
+	/* an automatic 5 GHz channel starts outside DFS, so the radio serves at
+	 * once rather than after a radar check; dfs-look may move it to a DFS
+	 * channel once it has looked. A width or channel list with no block
+	 * outside DFS starts as before */
+	if (config.dfs_look_first && config.band == '5g' && !config.channel && dfs_free_start(config))
+		config.acs_exclude_dfs = true;
 
 	append_vars(config, [ 'acs_chan_bias', 'acs_exclude_dfs', 'enable_background_radar' ]);
 
