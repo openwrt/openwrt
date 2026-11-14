@@ -1365,11 +1365,10 @@ int ppe_port_qstats(struct qca_ppe_priv *priv, int port, u8 **names,
 	};
 	static const char * const colour[] = { "green", "yellow", "red" };
 	struct ppe_qstats q = { .priv = priv, .names = names, .st = st };
-	const struct port_l0_params *p = port ? NULL : &cpu;
+	const struct port_l0_params *p = port ? ppe_port_l0(port) : &cpu;
 	int bm = PPE_BM_PHY_START + port - 1;
 	int i, c;
 
-	p = ppe_port_l0(port);
 	if (!p)
 		return 0;
 
