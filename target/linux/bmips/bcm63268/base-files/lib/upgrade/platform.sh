@@ -12,7 +12,8 @@ platform_do_upgrade() {
 	actiontec,t1200h |\
 	comtrend,vg-8050 |\
 	comtrend,vr-3032u |\
-	sagem,fast-3864-op)
+	sagem,fast-3864-op |\
+	zyxel,vmg8324-b10a)
 		CI_JFFS2_CLEAN_MARKERS=1
 		nand_do_upgrade "$1"
 		;;

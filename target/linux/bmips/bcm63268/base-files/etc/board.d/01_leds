@@ -27,6 +27,10 @@ sagem,fast-3864-op)
 	ucidef_set_led_netdev "wan_link" "WAN_LINK" "amber:wan" "wan" "link"
 	ucidef_set_led_netdev "wan_act" "WAN_ACT" "green:wan" "wan" "rx tx"
 	;;
+zyxel,vmg8324-b10a)
+	ucidef_set_led_usbport "usb1" "USB1" "green:usb-1" "usb1-port2" "usb2-port2"
+	ucidef_set_led_usbport "usb2" "USB2" "green:usb-2" "usb1-port1" "usb2-port1"
+	;;
 esac
 
 board_config_flush

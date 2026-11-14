@@ -17,6 +17,7 @@ DEVICE_VARS += CFE_WFI_FLAGS CFE_WFI_VERSION
 DEVICE_VARS += CHIP_ID DEVICE_LOADADDR
 DEVICE_VARS += FLASH_MB IMAGE_OFFSET
 DEVICE_VARS += SERCOMM_FSVER SERCOMM_HWVER SERCOMM_SWVER
+DEVICE_VARS += ZYXEL_MODEL_ID ZYXEL_PAD_TO
 
 define Build/Compile
 	rm -rf $(KDIR)/relocate
@@ -186,6 +187,18 @@ define Build/cfe-jffs2-kernel
 	# 2) 2-openwrt (version 1, ino 3)
 	# 3) vmlinux.lz (version 2, ino 4)
 	$(call Build/cfe-jffs2,$@-kernel)
+endef
+
+define Build/zyxel-mstc-tag
+	$(TOPDIR)/scripts/zyxel-mstc-nand-tag.py \
+		--input-file $@ \
+		--output-file $@.new \
+		--model-id $(ZYXEL_MODEL_ID) \
+		--board-id $(CFE_BOARD_ID) \
+		--chip-id $(CHIP_ID) \
+		$(if $(ZYXEL_PAD_TO),--pad-to $(ZYXEL_PAD_TO)) \
+		--version "OpenWrt-$(VERSION_CODE)"
+	mv $@.new $@
 endef
 
 define Build/cfe-part-tag
