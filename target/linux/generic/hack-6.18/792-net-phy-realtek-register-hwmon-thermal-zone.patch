@@ -1,0 +1,28 @@
+From b6674f5447ba008872d8f3f97c9ac2d45ad61c83 Mon Sep 17 00:00:00 2001
+From: Hleb Shauchenka <me@marleb.org>
+Date: Sat, 7 Nov 2026 17:39:52 +0100
+Subject: [PATCH] net: phy: realtek: register hwmon thermal zones
+
+The Realtek PHY hwmon device exposes the PHY temperature, but its
+channel info lacks HWMON_C_REGISTER_TZ, so the hwmon core does not
+register the sensor with the thermal framework and device-tree
+thermal zones that reference the PHY cannot bind. The RTL8261N
+cooling maps of the Zyxel XGS1250-12 depend on it.
+
+Mainline declined it: no mainline board describes these PHYs in its
+device tree, and the RTL8261N support that needs it is OpenWrt's
+pending 742. Carry it until RTL8261N support reaches mainline.
+
+Link: https://lore.kernel.org/netdev/ed20a09c-e275-4124-90b7-8b1ada9fbf91@lunn.ch/
+Signed-off-by: Hleb Shauchenka <me@marleb.org>
+---
+--- a/drivers/net/phy/realtek/realtek_hwmon.c
++++ b/drivers/net/phy/realtek/realtek_hwmon.c
+@@ -55,6 +55,7 @@ static const struct hwmon_ops rtl822x_hw
+ };
+ 
+ static const struct hwmon_channel_info * const rtl822x_hwmon_info[] = {
++	HWMON_CHANNEL_INFO(chip, HWMON_C_REGISTER_TZ),
+ 	HWMON_CHANNEL_INFO(temp, HWMON_T_INPUT | HWMON_T_MAX),
+ 	NULL
+ };

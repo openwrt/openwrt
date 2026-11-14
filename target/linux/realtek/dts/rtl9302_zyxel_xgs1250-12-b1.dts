@@ -8,6 +8,21 @@
 	model = "Zyxel XGS1250-12 B1 Switch";
 };
 
+&chassis_fan {
+	gpios = <&gpio0 5 GPIO_ACTIVE_HIGH>;
+	gpio-fan,speed-map = <0    0
+			      8000 1>;
+};
+
+&gpio0 {
+	fan-normal-speed-hog {
+		gpio-hog;
+		gpios = <11 GPIO_ACTIVE_HIGH>;
+		output-low;
+		line-name = "fan-normal-speed";
+	};
+};
+
 &mdio_bus1 {
 	phy24: ethernet-phy@0 {
 		reg = <0>;
