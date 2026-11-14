@@ -1,0 +1,83 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Lukasz M <lukasz1992m+openwrt@gmail.com>
+Date: Sat, 31 Oct 2026 12:00:00 +0100
+Subject: [PATCH] net: airoha: retry the refill of an RX ring that ran empty
+
+airoha_qdma_fill_rx_queue() stops at the first failed page_pool
+allocation and the ring is only refilled from the RX NAPI poll.  Under
+memory pressure a ring can run down to no buffer at all: the QDMA then
+drops every frame for it, raises no RX done interrupt, the poll is never
+scheduled again and the ring stays dead until the driver is reloaded.
+
+When the poll completes with an empty ring, schedule a delayed work that
+reschedules NAPI after 100 ms, so the refill is retried without spinning
+in softirq while memory is short.  The frames that come meanwhile are
+lost as before, but the ring recovers once memory is back.
+
+Signed-off-by: Lukasz M <lukasz1992m+openwrt@gmail.com>
+---
+--- a/drivers/net/ethernet/airoha/airoha_eth.c
++++ b/drivers/net/ethernet/airoha/airoha_eth.c
+@@ -1210,11 +1210,28 @@ static int airoha_qdma_rx_napi_poll(stru
+ 			airoha_qdma_irq_enable(&qdma->irq_banks[i], intr_reg,
+ 					       BIT(qid % RX_DONE_HIGH_OFFSET));
+ 		}
++
++		/*
++		 * Not a single buffer could be given back to the ring (page_pool
++		 * out of memory): the QDMA has nowhere to put a frame, so no RX
++		 * interrupt will come to schedule the refill.  Retry later from
++		 * a work instead of spinning in softirq while memory is short.
++		 */
++		if (!q->queued)
++			schedule_delayed_work(&q->refill_work, HZ / 10);
+ 	}
+ 
+ 	return done;
+ }
+ 
++static void airoha_qdma_rx_refill_work(struct work_struct *work)
++{
++	struct airoha_queue *q = container_of(to_delayed_work(work),
++					      struct airoha_queue, refill_work);
++
++	napi_schedule(&q->napi);
++}
++
+ static int airoha_qdma_init_rx_queue(struct airoha_queue *q,
+ 				     struct airoha_qdma *qdma, int ndesc)
+ {
+@@ -1258,6 +1275,7 @@ static int airoha_qdma_init_rx_queue(str
+ 	q->buf_size = lro_q ? pp_params.max_len : pp_params.max_len / 2;
+ 	q->ndesc = ndesc;
+ 	netif_napi_add(eth->napi_dev, &q->napi, airoha_qdma_rx_napi_poll);
++	INIT_DELAYED_WORK(&q->refill_work, airoha_qdma_rx_refill_work);
+ 
+ 	airoha_qdma_wr(qdma, REG_RX_RING_BASE(qid), dma_addr);
+ 	airoha_qdma_rmw(qdma, REG_RX_RING_SIZE(qid),
+@@ -2154,6 +2172,7 @@ static void airoha_qdma_cleanup(struct a
+ 		if (!qdma->q_rx[i].ndesc)
+ 			continue;
+ 
++		cancel_delayed_work_sync(&qdma->q_rx[i].refill_work);
+ 		netif_napi_del(&qdma->q_rx[i].napi);
+ 		airoha_qdma_cleanup_rx_queue(&qdma->q_rx[i]);
+ 		if (qdma->q_rx[i].page_pool) {
+@@ -2254,6 +2273,7 @@ static void airoha_qdma_stop_napi(struct
+ 		if (!qdma->q_rx[i].ndesc)
+ 			continue;
+ 
++		cancel_delayed_work_sync(&qdma->q_rx[i].refill_work);
+ 		napi_disable(&qdma->q_rx[i].napi);
+ 	}
+ }
+--- a/drivers/net/ethernet/airoha/airoha_eth.h
++++ b/drivers/net/ethernet/airoha/airoha_eth.h
+@@ -230,6 +230,7 @@ struct airoha_queue {
+ 	bool flushing;
+ 
+ 	struct napi_struct napi;
++	struct delayed_work refill_work;
+ 	struct page_pool *page_pool;
+ 	struct sk_buff *skb;
+ 

@@ -1,0 +1,184 @@
+#!/bin/sh /etc/rc.common
+# SPDX-License-Identifier: GPL-2.0
+#
+# Applied from the "mport" sections gpond writes into /etc/config/gpon:
+#  - ME 310 max groups: "bridge link set dev <port> mcast_max_groups <n>"
+#    (IFLA_BRPORT_MCAST_MAX_GROUPS; netifd has no such option).  Only the
+#    UNI/VLAN ports gpond put into its bridges; a removed limit goes to 0.
+#  - ME 309 static groups ("list sgrp"): permanent bridge MDB entries
+#    ("bridge mdb add ... permanent"), kept in $SGRP_STATE and removed on
+#    stop; no report is needed for them.
+#  - ME 309 ACL ("list acl", first-last IPv4): the bridge nft table "gpon_mc"
+#    drops a report whose group is outside every range (v1/v2 group at
+#    th,32,32; v3 only a single-record report passes, group at th,96,32),
+#    and a permanent member too, so the kernel does not deliver it twice.
+#    Own prerouting hook; the fw4 tables are never touched.
+#
+
+START=92
+USE_PROCD=1
+
+STATE=/var/run/gpon-mcast.state
+SGRP_STATE=/var/run/gpon-mcast.sgrp
+NFT_FILE=/var/run/gpon-mcast.nft
+NFT_TABLE="bridge gpon_mc"
+
+mport_apply() {
+	local s="$1" dev max
+
+	config_get dev "$s" device
+	config_get max "$s" max_groups
+	[ -n "$dev" ] && [ -n "$max" ] || return
+	[ -d "/sys/class/net/$dev/brport" ] || return
+
+	bridge link set dev "$dev" mcast_max_groups "$max" || return
+	echo "$dev" >> "$STATE"
+}
+
+# the permanent multicast groups of one port ("list sgrp")
+sgroup_apply() {
+	local s="$1" br dev grp g
+
+	config_get br "$s" bridge
+	config_get dev "$s" device
+	config_get grp "$s" sgrp
+	[ -n "$br" ] && [ -n "$dev" ] && [ -n "$grp" ] || return
+	[ -d "/sys/class/net/$dev/brport" ] || return
+
+	for g in $grp; do
+		bridge mdb add dev "$br" port "$dev" grp "$g" permanent &&
+			echo "$br $dev $g" >> "$SGRP_STATE"
+	done
+}
+
+mport_ip_hex() {
+	local IFS=. a b c d
+
+	read -r a b c d <<XEOF
+$1
+XEOF
+	printf '0x%02x%02x%02x%02x' "$a" "$b" "$c" "$d"
+}
+
+# a "first-last" IPv4 range, or a single address, as nft numbers
+mport_hex() {
+	local r="$1" out="" x a b
+
+	for x in $r; do
+		a="${x%-*}"; b="${x#*-}"
+		out="$out$(mport_ip_hex "$a")"
+		[ "$a" = "$b" ] || out="$out-$(mport_ip_hex "$b")"
+		out="$out, "
+	done
+	echo "${out%, }"
+}
+
+# the permanent groups of the port that really are in the MDB
+sgroup_state() {
+	local dev="$1" br d g out=""
+
+	[ -f "$SGRP_STATE" ] || return
+	while read -r br d g; do
+		[ "$d" = "$dev" ] && out="$out $g"
+	done < "$SGRP_STATE"
+	echo "${out# }"
+}
+
+mport_nft() {
+	local s="$1" dev acl hex done
+
+	config_get dev "$s" device
+	config_get acl "$s" acl
+	[ -n "$dev" ] || return
+
+	# a permanent member does not need a report: drop it, else the port
+	# gets a second MDB entry and the host the multicast twice (v3: only
+	# when the group is the first record, nft cannot walk the others)
+	done=$(sgroup_state "$dev")
+	if [ -n "$done" ]; then
+		hex=$(mport_hex "$done")
+		cat >> "$NFT_FILE" <<XEOF
+		iifname "$dev" ip protocol igmp @th,0,8 { 0x12, 0x16 } @th,32,32 { $hex } counter drop
+		iifname "$dev" ip protocol igmp @th,0,8 0x22 @th,96,32 { $hex } counter drop
+XEOF
+	fi
+
+	[ -n "$acl" ] || return
+	hex=$(mport_hex "$acl")
+	cat >> "$NFT_FILE" <<XEOF
+		iifname "$dev" ip protocol igmp @th,0,8 { 0x12, 0x16 } @th,32,32 != { $hex } counter drop
+		iifname "$dev" ip protocol igmp @th,0,8 0x22 @th,48,16 != 1 counter drop
+		iifname "$dev" ip protocol igmp @th,0,8 0x22 @th,96,32 != { $hex } counter drop
+XEOF
+}
+
+mport_nft_flush() {
+	nft delete table $NFT_TABLE 2>/dev/null
+	rm -f "$NFT_FILE"
+}
+
+mport_nft_apply() {
+	# the caller deleted the old table before touching the MDB
+	{
+		echo "table $NFT_TABLE {"
+		echo "	chain pre {"
+		echo "		type filter hook prerouting priority -300; policy accept;"
+	} > "$NFT_FILE"
+	config_foreach mport_nft mport
+	echo "	}" >> "$NFT_FILE"
+	echo "}" >> "$NFT_FILE"
+	# a table without a rule is not worth loading
+	grep -q "iifname" "$NFT_FILE" || return 0
+	if ! nft -f "$NFT_FILE"; then
+		logger -t gpon-mcast "cannot load $NFT_FILE"
+		return 1
+	fi
+}
+
+mport_flush() {
+	local dev br grp
+
+	if [ -f "$STATE" ]; then
+		while read -r dev; do
+			[ -d "/sys/class/net/$dev/brport" ] &&
+				bridge link set dev "$dev" mcast_max_groups 0 \
+					2>/dev/null
+		done < "$STATE"
+	fi
+	rm -f "$STATE"
+
+	if [ -f "$SGRP_STATE" ]; then
+		while read -r br dev grp; do
+			[ -n "$br" ] && [ -n "$dev" ] && [ -n "$grp" ] &&
+				bridge mdb del dev "$br" port "$dev" grp "$grp" \
+					permanent 2>/dev/null
+		done < "$SGRP_STATE"
+	fi
+	rm -f "$SGRP_STATE"
+}
+
+start_service() {
+	# the report filter goes first: while it is there a group of the
+	# permanent MDB list must not be missing from the MDB
+	mport_nft_flush
+	mport_flush
+	config_load gpon
+	config_foreach mport_apply mport
+	config_foreach sgroup_apply mport
+	mport_nft_apply
+}
+
+stop_service() {
+	mport_nft_flush
+	mport_flush
+}
+
+reload_service() {
+	start_service
+}
+
+service_triggers() {
+	procd_add_reload_trigger gpon
+	# the ports come and go with netifd
+	procd_add_raw_trigger "interface.*" 2000 /etc/init.d/gpon-mcast reload
+}

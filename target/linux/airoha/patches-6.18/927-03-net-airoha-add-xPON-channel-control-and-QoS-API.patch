@@ -1,0 +1,645 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Lukasz M <lukasz1992m+openwrt@gmail.com>
+Date: Sat, 31 Oct 2026 12:00:00 +0100
+Subject: [PATCH] net: airoha: add xPON channel control, QoS and congestion control API
+
+Every GPON T-CONT maps to a QDMA channel of the WAN QDMA and a TX channel
+of the WAN GDM:
+- Channel start/stop and buffer thresholds (airoha_xpon_gdm_stop, airoha_xpon_channel_enable).
+- WRR/ETS queue scheduler and egress trTCM traffic shaper per T-CONT.
+- Congestion control and DEI drop mode configuration (airoha_xpon_set_dei_drop).
+
+Retiring a channel first terminates a hung GDM MBI as vendor fe_core
+mbi_hang_unlock_by_terminate() does, on both sides: TX (hang bit 19,
+terminate bit 16) and RX (hang bit 27, terminate bit 24).  Unlike the
+stock, a hang bit that clears on the last poll counts as success and the
+terminate bit is always taken back (left set it keeps the GDM2 MBI TX,
+the whole GPON upstream, stopped until the next FE reset).  The polls
+use read_poll_timeout_atomic() (10 us, no delay between reads as in the
+stock).  The channel retire waits that the stock does with mdelay(1)
+sleep instead: airoha_xpon_set_channel() runs in process context.
+
+Signed-off-by: Lukasz M <lukasz1992m+openwrt@gmail.com>
+---
+--- a/drivers/net/ethernet/airoha/airoha_eth.c
++++ b/drivers/net/ethernet/airoha/airoha_eth.c
+@@ -2948,9 +2948,15 @@ static int airoha_qdma_set_chan_tx_sched
+ 	int i;
+ 
+ 	qdma = airoha_qdma_deref(dev);
+-	for (i = 0; i < AIROHA_NUM_QOS_QUEUES; i++)
+-		airoha_qdma_clear(qdma, REG_QUEUE_CLOSE_CFG(channel),
+-				  TXQ_DISABLE_CHAN_QUEUE_MASK(channel, i));
++	/*
++	 * An xPON T-CONT channel is opened and closed with its T-CONT only
++	 * (airoha_xpon_set_channel()): scheduling a retired one, from OMCI
++	 * or tc ETS, must not open its queues behind the closed GDM channel.
++	 */
++	if (!airoha_xpon_owns_netdev(netdev))
++		for (i = 0; i < AIROHA_NUM_QOS_QUEUES; i++)
++			airoha_qdma_clear(qdma, REG_QUEUE_CLOSE_CFG(channel),
++					  TXQ_DISABLE_CHAN_QUEUE_MASK(channel, i));
+ 
+ 	for (i = 0; i < n_weights; i++) {
+ 		u32 status;
+@@ -2969,9 +2975,10 @@ static int airoha_qdma_set_chan_tx_sched
+ 			return err;
+ 	}
+ 
++	/* eight channels of 4 bits per register; xPON T-CONTs go up to 31 */
+ 	airoha_qdma_rmw(qdma, REG_CHAN_QOS_MODE(channel >> 3),
+-			CHAN_QOS_MODE_MASK(channel),
+-			__field_prep(CHAN_QOS_MODE_MASK(channel), mode));
++			CHAN_QOS_MODE_MASK(channel & 7),
++			__field_prep(CHAN_QOS_MODE_MASK(channel & 7), mode));
+ 
+ 	return 0;
+ }
+@@ -4232,6 +4239,8 @@ int airoha_xpon_tx(struct sk_buff *skb,
+ 		val = FIELD_PREP(QDMA_DESC_LEN_MASK, len);
+ 		if (i < nr_frags - 1)
+ 			val |= FIELD_PREP(QDMA_DESC_MORE_MASK, 1);
++		if (info->dei)
++			val |= QDMA_DESC_DEI_MASK;
+ 		WRITE_ONCE(desc->ctrl, cpu_to_le32(val));
+ 		WRITE_ONCE(desc->addr, cpu_to_le32(addr));
+ 		WRITE_ONCE(desc->data,
+@@ -4285,6 +4294,442 @@ drop:
+ }
+ EXPORT_SYMBOL_GPL(airoha_xpon_tx);
+ 
++static struct airoha_gdm_dev *airoha_xpon_client_gdm(struct airoha_qdma **qdma)
++{
++	struct airoha_gdm_dev *gdm;
++	unsigned long flags;
++
++	spin_lock_irqsave(&airoha_xpon_lock, flags);
++	gdm = airoha_xpon_client.gdm;
++	*qdma = airoha_xpon_client.qdma;
++	spin_unlock_irqrestore(&airoha_xpon_lock, flags);
++
++	return *qdma ? gdm : NULL;
++}
++
++/*
++ * Stop or restart the WAN GDM/CDM path in front of the xPON MAC, as the
++ * AN7552 SDK does around every MAC reset (vendor feDevGdm2Cdm2Stop()):
++ * stopping disables all 32 GDM TX channels, the 16 GDM RX channels and the
++ * CDM HW forward channels; restarting only re-enables GDM RX channels 0
++ * and 1, TX channels are opened per T-CONT by airoha_xpon_set_channel().
++ */
++int airoha_xpon_gdm_stop(bool stop)
++{
++	struct airoha_gdm_dev *gdm;
++	struct airoha_qdma *qdma;
++	struct airoha_eth *eth;
++	int id;
++
++	gdm = airoha_xpon_client_gdm(&qdma);
++	if (!gdm)
++		return -ENODEV;
++
++	eth = gdm->eth;
++	id = gdm->port->id;
++	if (stop) {
++		airoha_fe_wr(eth, REG_GDM_TXCHN_EN(id), 0);
++		airoha_fe_clear(eth, REG_GDM_RXCHN_EN(id), GENMASK(15, 0));
++		airoha_fe_wr(eth, REG_CDM_HWFWD_CHN_EN(id), 0);
++	} else {
++		airoha_fe_set(eth, REG_GDM_RXCHN_EN(id), GENMASK(1, 0));
++	}
++
++	return 0;
++}
++EXPORT_SYMBOL_GPL(airoha_xpon_gdm_stop);
++
++/*
++ * vendor mbi_hang_unlock_by_terminate(): a TX and then an RX side of the
++ * GDM's MBI that hangs is terminated, and the terminate bit taken back once
++ * the hang is gone.  The stock polls 12 times without a delay; it takes a
++ * clear hang bit on the last poll for a failure and leaves the terminate
++ * bit set when it fails, which keeps that side of the GDM stopped.  Here a
++ * clear bit is success, and the terminate bit is always taken back.
++ */
++static int airoha_xpon_mbi_terminate(struct airoha_eth *eth, int id,
++				     u32 hang, u32 terminate)
++{
++	u32 reg = REG_GDM_CHN_RLS(id), val, cur;
++	int ret;
++
++	ret = read_poll_timeout_atomic(airoha_fe_rr, cur, !(cur & hang), 0, 10,
++				       false, eth, reg);
++	if (!ret)
++		return 0;
++
++	val = airoha_fe_rr(eth, reg);
++	airoha_fe_wr(eth, reg, val | terminate);
++	ret = read_poll_timeout_atomic(airoha_fe_rr, cur, !(cur & hang), 0, 10,
++				       false, eth, reg);
++	airoha_fe_wr(eth, reg, val & ~terminate);
++
++	return ret;
++}
++
++static int airoha_xpon_mbi_unlock(struct airoha_eth *eth, int id)
++{
++	int ret;
++
++	ret = airoha_xpon_mbi_terminate(eth, id, GDM_MBI_TX_HANG_MASK,
++					GDM_MBI_TX_TERMINATE_MASK);
++	if (ret) {
++		dev_err(eth->dev, "GDM%d MBI TX hang not terminated\n", id);
++		return ret;
++	}
++
++	ret = airoha_xpon_mbi_terminate(eth, id, GDM_MBI_RX_HANG_MASK,
++					GDM_MBI_RX_TERMINATE_MASK);
++	if (ret)
++		dev_err(eth->dev, "GDM%d MBI RX hang not terminated\n", id);
++
++	return ret;
++}
++
++/* vendor fe_api_set_channel_retire_one(): drain one GDM TX channel */
++static int airoha_xpon_retire_channel(struct airoha_eth *eth,
++				      struct airoha_qdma *qdma, int id,
++				      unsigned int ch)
++{
++	u32 txchn, rxchn, bit = BIT(ch);
++	bool settled = false;
++	int ret, tries = 1;
++
++	ret = airoha_xpon_mbi_unlock(eth, id);
++	if (ret)
++		return ret;
++
++	txchn = airoha_fe_rr(eth, REG_GDM_TXCHN_EN(id));
++	rxchn = airoha_fe_rr(eth, REG_GDM_RXCHN_EN(id));
++	airoha_fe_wr(eth, REG_GDM_RXCHN_EN(id), bit);
++	airoha_fe_wr(eth, REG_GDM_TXCHN_EN(id), bit);
++	airoha_fe_wr(eth, REG_GDM_CHN_RLS(id),
++		     FIELD_PREP(GDM_CHN_RLS_CHAN_MASK, ch) |
++		     GDM_CHN_RLS_EN_MASK);
++	/* the stock waits with mdelay(1); this is process context */
++	usleep_range(1000, 1500);
++
++	ret = 0;
++	while (true) {
++		bool busy;
++
++		busy = !(airoha_fe_rr(eth, REG_GDM_CHN_RLS(id)) &
++			 GDM_CHN_RLS_DONE_MASK) ||
++		       (airoha_fe_rr(eth, REG_GDM_CHN_RLS_STS(id)) & bit) ||
++		       (airoha_qdma_rr(qdma, REG_CHAN_QUEUE_STS(ch)) &
++			(0xff << ((ch & 3) << 3)));
++		if (!busy) {
++			/* the SDK wants two clean reads in a row */
++			if (settled)
++				break;
++			settled = true;
++			continue;
++		}
++
++		settled = false;
++		if (++tries == 10) {
++			ret = -ETIMEDOUT;
++			break;
++		}
++		usleep_range(1000, 1500);
++	}
++
++	airoha_fe_wr(eth, REG_GDM_CHN_RLS(id), 0);
++	airoha_fe_wr(eth, REG_GDM_TXCHN_EN(id), txchn);
++	airoha_fe_wr(eth, REG_GDM_RXCHN_EN(id), rxchn);
++
++	return ret;
++}
++
++/**
++ * airoha_xpon_set_channel() - open or retire a T-CONT channel
++ * @ch: QDMA channel, 0..AIROHA_XPON_MAX_CHANNEL
++ * @enable: true to open the channel, false to close and drain it
++ *
++ * Opening enables the GDM TX channel and all eight QDMA queues of @ch
++ * (vendor gwan_create_new_tcont(): FE_SET_CHANNEL_ENABLE and
++ * QDMA_FUNCTION_SET_CHANNEL_CLOSE_STATUS 0).  Closing disables the queues
++ * (close status 0xff) and retires the GDM channel (gwan_remove_tcont()).
++ * Must not be called from atomic context.
++ */
++int airoha_xpon_set_channel(unsigned int ch, bool enable)
++{
++	struct airoha_gdm_dev *gdm;
++	struct airoha_qdma *qdma;
++	struct airoha_eth *eth;
++	u32 mask;
++	int id;
++
++	if (ch > AIROHA_XPON_MAX_CHANNEL)
++		return -EINVAL;
++
++	gdm = airoha_xpon_client_gdm(&qdma);
++	if (!gdm)
++		return -ENODEV;
++
++	eth = gdm->eth;
++	id = gdm->port->id;
++	mask = 0xff << ((ch & 3) << 3);
++	if (enable) {
++		airoha_fe_set(eth, REG_GDM_TXCHN_EN(id), BIT(ch));
++		airoha_qdma_clear(qdma, REG_QUEUE_CLOSE_CFG(ch), mask);
++		return 0;
++	}
++
++	airoha_qdma_set(qdma, REG_QUEUE_CLOSE_CFG(ch), mask);
++
++	return airoha_xpon_retire_channel(eth, qdma, id, ch);
++}
++EXPORT_SYMBOL_GPL(airoha_xpon_set_channel);
++
++/*
++ * vendor qdma_set_txq_cngst_channel_nonblocking(); the SDK clears it
++ * for the OMCI channel when the ONU-ID T-CONT is created.
++ */
++int airoha_xpon_set_channel_nonblocking(unsigned int ch, bool enable)
++{
++	struct airoha_qdma *qdma;
++
++	if (ch > AIROHA_XPON_MAX_CHANNEL)
++		return -EINVAL;
++
++	if (!airoha_xpon_client_gdm(&qdma))
++		return -ENODEV;
++
++	if (enable)
++		airoha_qdma_set(qdma, REG_TXQ_CNGST_NONBLOCK, BIT(ch));
++	else
++		airoha_qdma_clear(qdma, REG_TXQ_CNGST_NONBLOCK, BIT(ch));
++
++	return 0;
++}
++EXPORT_SYMBOL_GPL(airoha_xpon_set_channel_nonblocking);
++
++/*
++ * vendor qdma_set_txbuf_threshold(): the xPON MAC programs the per
++ * channel and total TX buffer thresholds once it gets an ONU-ID or a new
++ * T-CONT (gpon_init_qdma_tx_buff()).
++ */
++int airoha_xpon_set_txbuf_threshold(bool enable, u16 chan_thr, u16 total_thr)
++{
++	struct airoha_qdma *qdma;
++
++	if (!airoha_xpon_client_gdm(&qdma))
++		return -ENODEV;
++
++	if (!enable) {
++		airoha_qdma_clear(qdma, REG_PSE_BUF_USAGE_CFG,
++				  PSE_BUF_ESTIMATE_EN_MASK);
++		return 0;
++	}
++
++	airoha_qdma_set(qdma, REG_PSE_BUF_USAGE_CFG, PSE_BUF_ESTIMATE_EN_MASK);
++	airoha_qdma_rmw(qdma, REG_TXBUF_THRESHOLD, TXBUF_CHAN_THRESHOLD_MASK,
++			FIELD_PREP(TXBUF_CHAN_THRESHOLD_MASK, chan_thr));
++	airoha_qdma_rmw(qdma, REG_TXBUF_THRESHOLD, TXBUF_TOTAL_THRESHOLD_MASK,
++			FIELD_PREP(TXBUF_TOTAL_THRESHOLD_MASK, total_thr));
++
++	return 0;
++}
++EXPORT_SYMBOL_GPL(airoha_xpon_set_txbuf_threshold);
++
++static struct net_device *airoha_xpon_client_netdev(void)
++{
++	struct net_device *netdev;
++	unsigned long flags;
++
++	spin_lock_irqsave(&airoha_xpon_lock, flags);
++	netdev = airoha_xpon_client.dev;
++	spin_unlock_irqrestore(&airoha_xpon_lock, flags);
++
++	return netdev;
++}
++
++/**
++ * airoha_xpon_set_chan_sched() - set the queue scheduler of a T-CONT channel
++ * @ch: QDMA channel, 0..AIROHA_XPON_MAX_CHANNEL
++ * @mode: enum airoha_xpon_sched (same encoding as REG_CHAN_QOS_MODE)
++ * @weights: WRR weights of queues 0..7 (ignored for strict priority)
++ *
++ * Uses the same QDMA scheduler programming as the ETS offload, and like
++ * it runs under RTNL: the tc paths program the same indirect registers
++ * and airoha_qdma_deref() expects it.  Must not be called from atomic
++ * context or with RTNL held.
++ */
++int airoha_xpon_set_chan_sched(unsigned int ch, u8 mode,
++			       const u16 weights[AIROHA_XPON_NUM_QUEUES])
++{
++	struct net_device *netdev;
++	int ret = -ENODEV;
++
++	if (ch > AIROHA_XPON_MAX_CHANNEL || mode > TC_SCH_WRR2)
++		return -EINVAL;
++
++	rtnl_lock();
++	netdev = airoha_xpon_client_netdev();
++	if (netdev)
++		ret = airoha_qdma_set_chan_tx_sched(netdev, ch, mode, weights,
++						    AIROHA_XPON_NUM_QUEUES);
++	rtnl_unlock();
++
++	return ret;
++}
++EXPORT_SYMBOL_GPL(airoha_xpon_set_chan_sched);
++
++/**
++ * airoha_xpon_set_chan_rate() - shape a T-CONT channel
++ * @ch: QDMA channel, 0..AIROHA_XPON_MAX_CHANNEL
++ * @rate: rate in kbit/s, 0 disables the shaper
++ * @bucket: bucket size in bytes
++ *
++ * Under RTNL like airoha_xpon_set_chan_sched().
++ */
++int airoha_xpon_set_chan_rate(unsigned int ch, u32 rate, u32 bucket)
++{
++	struct net_device *netdev;
++	int ret = -ENODEV;
++
++	if (ch > AIROHA_XPON_MAX_CHANNEL)
++		return -EINVAL;
++
++	rtnl_lock();
++	netdev = airoha_xpon_client_netdev();
++	if (netdev)
++		ret = airoha_qdma_set_tx_rate_limit(netdev, ch, rate, bucket);
++	rtnl_unlock();
++
++	return ret;
++}
++EXPORT_SYMBOL_GPL(airoha_xpon_set_chan_rate);
++
++/*
++ * TX queue congestion control of the WAN QDMA.  The register layout and the
++ * encodings are those of vendor qdma_set_txq_dei_drop_mode(),
++ * qdma_set_tx_wred_mode(), qdma_set_tx_wred_threshold() and
++ * qdma_set_tx_wred_probability(); the two packet classes are the SDK
++ * QDMA_PacketType_T (normal and DEI packets).
++ */
++int airoha_xpon_set_dei_drop(bool enable)
++{
++	struct airoha_qdma *qdma;
++
++	if (!airoha_xpon_client_gdm(&qdma))
++		return -ENODEV;
++
++	if (enable)
++		airoha_qdma_set(qdma, REG_TXQ_CNGST_CFG,
++				TXQ_CNGST_DEI_DROP_EN);
++	else
++		airoha_qdma_clear(qdma, REG_TXQ_CNGST_CFG,
++				  TXQ_CNGST_DEI_DROP_EN);
++
++	return 0;
++}
++EXPORT_SYMBOL_GPL(airoha_xpon_set_dei_drop);
++
++int airoha_xpon_set_wred(bool enable)
++{
++	struct airoha_qdma *qdma;
++
++	if (!airoha_xpon_client_gdm(&qdma))
++		return -ENODEV;
++
++	if (enable)
++		airoha_qdma_set(qdma, REG_TXQ_CNGST_CFG, TXQ_CNGST_WRED_EN);
++	else
++		airoha_qdma_clear(qdma, REG_TXQ_CNGST_CFG, TXQ_CNGST_WRED_EN);
++
++	return 0;
++}
++EXPORT_SYMBOL_GPL(airoha_xpon_set_wred);
++
++/* 0..7 as is, then 8..15 in steps of 2, 16..31 of 4 and 32..56 of 8 */
++static u32 airoha_xpon_wred_thr_enc(u8 val)
++{
++	u32 shift = val < 8 ? 0 : fls(val) - 3;
++
++	return FIELD_PREP(WRED_THR_VALUE_MASK, val >> shift) |
++	       FIELD_PREP(WRED_THR_SHIFT_MASK, shift);
++}
++
++static u8 airoha_xpon_wred_thr_dec(u32 field)
++{
++	return FIELD_GET(WRED_THR_VALUE_MASK, field) <<
++	       FIELD_GET(WRED_THR_SHIFT_MASK, field);
++}
++
++int airoha_xpon_set_wred_thr(enum airoha_xpon_pkt_class cls, unsigned int idx,
++			     u8 val)
++{
++	struct airoha_qdma *qdma;
++	u32 mask;
++
++	if (cls >= AIROHA_XPON_NUM_PKT_CLASSES ||
++	    idx >= AIROHA_XPON_WRED_THR_NUM || val > AIROHA_XPON_WRED_THR_MAX)
++		return -EINVAL;
++
++	if (!airoha_xpon_client_gdm(&qdma))
++		return -ENODEV;
++
++	mask = WRED_THR_MASK(idx);
++	airoha_qdma_rmw(qdma, REG_WRED_THRESHOLD(cls), mask,
++			field_prep(mask, airoha_xpon_wred_thr_enc(val)));
++
++	return 0;
++}
++EXPORT_SYMBOL_GPL(airoha_xpon_set_wred_thr);
++
++int airoha_xpon_set_wred_prob(enum airoha_xpon_pkt_class cls, unsigned int idx,
++			      u8 percent)
++{
++	struct airoha_qdma *qdma;
++	u32 mask;
++
++	if (cls >= AIROHA_XPON_NUM_PKT_CLASSES ||
++	    idx >= AIROHA_XPON_WRED_PROB_NUM || percent > 100)
++		return -EINVAL;
++
++	if (!airoha_xpon_client_gdm(&qdma))
++		return -ENODEV;
++
++	mask = WRED_PROBABILITY_MASK(idx);
++	airoha_qdma_rmw(qdma, REG_WRED_PROBABILITY(cls), mask,
++			field_prep(mask, percent * 255 / 100));
++
++	return 0;
++}
++EXPORT_SYMBOL_GPL(airoha_xpon_set_wred_prob);
++
++int airoha_xpon_get_wred(struct airoha_xpon_wred *wred)
++{
++	struct airoha_qdma *qdma;
++	u32 val;
++	int cls, i;
++
++	if (!airoha_xpon_client_gdm(&qdma))
++		return -ENODEV;
++
++	val = airoha_qdma_rr(qdma, REG_TXQ_CNGST_CFG);
++	wred->dei_drop = !!(val & TXQ_CNGST_DEI_DROP_EN);
++	wred->wred = !!(val & TXQ_CNGST_WRED_EN);
++
++	for (cls = 0; cls < AIROHA_XPON_NUM_PKT_CLASSES; cls++) {
++		val = airoha_qdma_rr(qdma, REG_WRED_THRESHOLD(cls));
++		for (i = 0; i < AIROHA_XPON_WRED_THR_NUM; i++)
++			wred->thr[cls][i] =
++				airoha_xpon_wred_thr_dec(field_get(WRED_THR_MASK(i),
++								   val));
++
++		val = airoha_qdma_rr(qdma, REG_WRED_PROBABILITY(cls));
++		for (i = 0; i < AIROHA_XPON_WRED_PROB_NUM; i++)
++			wred->prob[cls][i] =
++				field_get(WRED_PROBABILITY_MASK(i), val) * 100 / 255;
++	}
++
++	return 0;
++}
++EXPORT_SYMBOL_GPL(airoha_xpon_get_wred);
++
+ static int airoha_metadata_dst_alloc(struct airoha_gdm_port *port)
+ {
+ 	int i;
+--- a/drivers/net/ethernet/airoha/airoha_regs.h
++++ b/drivers/net/ethernet/airoha/airoha_regs.h
+@@ -172,6 +172,16 @@
+ 
+ #define REG_GDM_TXCHN_EN(_n)		(GDM_BASE(_n) + 0x24)
+ #define REG_GDM_RXCHN_EN(_n)		(GDM_BASE(_n) + 0x28)
++/* AN7552 SDK fe_core: channel retire status and CDM HW forward map */
++#define REG_GDM_CHN_RLS_STS(_n)		(GDM_BASE(_n) + 0x70)
++#define GDM_CHN_RLS_DONE_MASK		BIT(1)
++#define GDM_CHN_RLS_CHAN_MASK		GENMASK(8, 4)
++#define GDM_CHN_RLS_EN_MASK		BIT(0)
++#define GDM_MBI_TX_HANG_MASK		BIT(19)
++#define GDM_MBI_TX_TERMINATE_MASK	BIT(16)
++#define GDM_MBI_RX_HANG_MASK		BIT(27)
++#define GDM_MBI_RX_TERMINATE_MASK	BIT(24)
++#define REG_CDM_HWFWD_CHN_EN(_n)	(CDM_BASE(_n) + 0x0c)
+ 
+ #define REG_FE_CPORT_CFG		(GDM1_BASE + 0x40)
+ #define FE_CPORT_PAD			BIT(26)
+@@ -855,6 +865,10 @@
+ 
+ #define REG_PSE_BUF_USAGE_CFG		0x1028
+ #define PSE_BUF_ESTIMATE_EN_MASK	BIT(29)
++/* AN7552 SDK qdma_set_txbuf_threshold() */
++#define REG_TXBUF_THRESHOLD		0x10d0
++#define TXBUF_CHAN_THRESHOLD_MASK	GENMASK(26, 16)
++#define TXBUF_TOTAL_THRESHOLD_MASK	GENMASK(10, 0)
+ 
+ #define REG_CHAN_QOS_MODE(_n)		(0x1040 + ((_n) << 2))
+ #define CHAN_QOS_MODE_MASK(_n)		GENMASK(2 + ((_n) << 2), (_n) << 2)
+@@ -865,9 +879,27 @@
+ #define GLB_SLOW_TICK_RATIO_MASK	GENMASK(29, 16)
+ #define GLB_FAST_TICK_MASK		GENMASK(15, 0)
+ 
++/* AN7552 SDK qdma_wan: per channel congestion non-blocking mask */
++#define REG_TXQ_CNGST_NONBLOCK		0x1030
++/* AN7552 SDK fe_core: per channel/queue occupancy, one byte per channel */
++#define REG_CHAN_QUEUE_STS(_n)		(0x1280 + ((_n) & 0xfc))
+ #define REG_TXQ_CNGST_CFG		0x10a0
+ #define TXQ_CNGST_DROP_EN		BIT(31)
+ #define TXQ_CNGST_DEI_DROP_EN		BIT(30)
++/* AN7552 SDK qdma_set_tx_wred_mode() */
++#define TXQ_CNGST_WRED_EN		BIT(28)
++
++/*
++ * AN7552 SDK qdma_set_tx_wred_threshold()/_probability(), one
++ * register per packet class (0 normal, 1 DEI): five thresholds (1/8 units,
++ * 3 bit value + 2 bit shift each) and four probabilities (0..255).
++ */
++#define REG_WRED_PROBABILITY(_n)	(0x0080 + ((_n) << 2))
++#define WRED_PROBABILITY_MASK(_i)	GENMASK(7 + ((_i) << 3), (_i) << 3)
++#define REG_WRED_THRESHOLD(_n)		(0x1090 + ((_n) << 2))
++#define WRED_THR_MASK(_i)		GENMASK(4 + (_i) * 5, (_i) * 5)
++#define WRED_THR_VALUE_MASK		GENMASK(2, 0)
++#define WRED_THR_SHIFT_MASK		GENMASK(4, 3)
+ 
+ #define REG_SLA_TRTCM_CFG		0x1150
+ #define SLA_TRTCM_EN_MASK		BIT(31)
+--- a/include/linux/soc/airoha/airoha_xpon.h
++++ b/include/linux/soc/airoha/airoha_xpon.h
+@@ -20,12 +20,14 @@ struct sk_buff;
+  * @channel: QDMA channel, i.e. the T-CONT, msg0[7:3]
+  * @queue: QDMA queue inside @channel, msg0[2:0]
+  * @oam: frame belongs to the OMCI/OAM channel, msg0[8]
++ * @dei: drop eligible frame, DEI bit of the TX descriptor control word
+  */
+ struct airoha_xpon_tx_info {
+ 	u16 gem_port;
+ 	u8 channel;
+ 	u8 queue;
+ 	bool oam;
++	bool dei;
+ };
+ 
+ /**
+@@ -62,11 +64,60 @@ struct airoha_xpon_ops {
+ 
+ #define AIROHA_XPON_MAX_CHANNEL		31
+ #define AIROHA_XPON_MAX_QUEUE		7
++#define AIROHA_XPON_NUM_QUEUES		8
++
++/* REG_CHAN_QOS_MODE encoding (enum tx_sched_mode in airoha_eth.h) */
++enum airoha_xpon_sched {
++	AIROHA_XPON_SCHED_WRR8,		/* 8 WRR queues */
++	AIROHA_XPON_SCHED_SP,		/* 8 strict priority queues */
++	AIROHA_XPON_SCHED_WRR7,		/* 1 SP + 7 WRR, ... */
++	AIROHA_XPON_SCHED_WRR6,
++	AIROHA_XPON_SCHED_WRR5,
++	AIROHA_XPON_SCHED_WRR4,
++	AIROHA_XPON_SCHED_WRR3,
++	AIROHA_XPON_SCHED_WRR2,		/* 6 SP + 2 WRR */
++};
+ 
+ int airoha_xpon_register(struct net_device *netdev,
+ 			 const struct airoha_xpon_ops *ops);
+ void airoha_xpon_unregister(struct net_device *netdev);
+ int airoha_xpon_tx(struct sk_buff *skb,
+ 		   const struct airoha_xpon_tx_info *info);
++int airoha_xpon_gdm_stop(bool stop);
++int airoha_xpon_set_channel(unsigned int ch, bool enable);
++int airoha_xpon_set_channel_nonblocking(unsigned int ch, bool enable);
++int airoha_xpon_set_txbuf_threshold(bool enable, u16 chan_thr, u16 total_thr);
++int airoha_xpon_set_chan_sched(unsigned int ch, u8 mode,
++			       const u16 weights[AIROHA_XPON_NUM_QUEUES]);
++int airoha_xpon_set_chan_rate(unsigned int ch, u32 rate, u32 bucket);
++
++/*
++ * TX queue congestion control of the WAN QDMA (DEI drop and
++ * WRED).  Thresholds are in 1/8 units, 0..56; probabilities in percent.
++ */
++enum airoha_xpon_pkt_class {
++	AIROHA_XPON_PKT_NORMAL,
++	AIROHA_XPON_PKT_DEI,
++	AIROHA_XPON_NUM_PKT_CLASSES,
++};
++
++#define AIROHA_XPON_WRED_THR_NUM	5
++#define AIROHA_XPON_WRED_PROB_NUM	4
++#define AIROHA_XPON_WRED_THR_MAX	56
++
++struct airoha_xpon_wred {
++	bool dei_drop;
++	bool wred;
++	u8 thr[AIROHA_XPON_NUM_PKT_CLASSES][AIROHA_XPON_WRED_THR_NUM];
++	u8 prob[AIROHA_XPON_NUM_PKT_CLASSES][AIROHA_XPON_WRED_PROB_NUM];
++};
++
++int airoha_xpon_set_dei_drop(bool enable);
++int airoha_xpon_set_wred(bool enable);
++int airoha_xpon_set_wred_thr(enum airoha_xpon_pkt_class cls, unsigned int idx,
++			     u8 val);
++int airoha_xpon_set_wred_prob(enum airoha_xpon_pkt_class cls, unsigned int idx,
++			      u8 percent);
++int airoha_xpon_get_wred(struct airoha_xpon_wred *wred);
+ 
+ #endif /* __LINUX_SOC_AIROHA_XPON_H */

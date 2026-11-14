@@ -1,0 +1,169 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Airoha Team <airoha@airoha.com>
+Date: Sat, 31 Oct 2026 12:00:00 +0100
+Subject: [PATCH] net: airoha: forward xPON GDM2 through the PPE
+
+On client registration:
+- Send all GDM2 frames to PPE1 with CDM2 as default CPU port.
+- Strip FCS on receive (GDMA2_FWD_CFG bit 16).
+- Program FE global rate byte to 0x18 in add mode as in stock PON mode.
+- Update PPE egress MTU according to the client net_device.
+
+Signed-off-by: Lukasz M <lukasz1992m+openwrt@gmail.com>
+---
+--- a/drivers/net/ethernet/airoha/airoha_eth.c
++++ b/drivers/net/ethernet/airoha/airoha_eth.c
+@@ -3930,6 +3930,82 @@ static bool airoha_xpon_deliver(struct s
+ 	return true;
+ }
+ 
++/* MTU of the xPON client's net_device when @dev is the GDM it uses, else 0 */
++u32 airoha_xpon_mtu(struct airoha_gdm_dev *dev)
++{
++	unsigned long flags;
++	u32 mtu = 0;
++
++	spin_lock_irqsave(&airoha_xpon_lock, flags);
++	if (airoha_xpon_client.gdm == dev)
++		mtu = airoha_xpon_client.tx_dev ?
++		      READ_ONCE(airoha_xpon_client.tx_dev->mtu) : ETH_DATA_LEN;
++	spin_unlock_irqrestore(&airoha_xpon_lock, flags);
++
++	return mtu;
++}
++
++/*
++ * GDM2 is not opened as a net_device by the xPON client, so set up its
++ * forwarding here as airoha_dev_open()/airoha_dev_stop() would: all
++ * frames go through PPE1, whose default CPU port for GDM2 is the QDMA of
++ * the client (stock: GDMA2_FWD_CFG 0x07f14444, PPE_DFT_CPORT0 nibble 2 =
++ * CDM2).
++ */
++static void airoha_xpon_gdm_fwd(struct airoha_gdm_dev *gdm, bool on)
++{
++	struct airoha_eth *eth = gdm->eth;
++	int fport = airoha_get_fe_port(gdm);
++
++	/* The stock fe_api_set_gdma_enable() lets the VIP and the IFC see
++	 * the frames of GDMA2 (the PON GDM) as well: bit 2 of both port
++	 * enable registers (vendor fe_api.c:6458-6465,
++	 * 6499-6506), as airoha_disable_gdm2_loopback() does for a
++	 * GDM2 serving a plain WAN port.
++	 */
++	if (gdm->port->id == AIROHA_GDM2_IDX) {
++		if (on) {
++			airoha_fe_set(eth, REG_FE_VIP_PORT_EN,
++				      BIT(AIROHA_GDM2_IDX));
++			airoha_fe_set(eth, REG_FE_IFC_PORT_EN,
++				      BIT(AIROHA_GDM2_IDX));
++		} else {
++			airoha_fe_clear(eth, REG_FE_VIP_PORT_EN,
++					BIT(AIROHA_GDM2_IDX));
++			airoha_fe_clear(eth, REG_FE_IFC_PORT_EN,
++					BIT(AIROHA_GDM2_IDX));
++		}
++	}
++
++	if (!on) {
++		airoha_set_gdm_port_fwd_cfg(eth, REG_GDM_FWD_CFG(gdm->port->id),
++					    FE_PSE_PORT_DROP);
++		return;
++	}
++
++	/* PON mode of the stock driver: the FCS is stripped (GDMA2_FWD_CFG
++	 * bit 16 of 0x07f14444, vendor eth_lan.c:4417), as
++	 * airoha_disable_gdm2_loopback() does for a plain WAN GDM2.
++	 */
++	airoha_fe_set(eth, REG_GDM_FWD_CFG(gdm->port->id),
++		      GDM_STRIP_CRC_MASK);
++	/* ... and the rate shapers count 0x18 bytes more per frame:
++	 * FE_API_SET_GLO_RATE_BYTE(ADD_MODE, 0x18) in the same branch
++	 * (vendor eth_lan.c:4420, set by fe_api_set_glo_rate_byte()),
++	 * which is also the value a running
++	 * stock unit has (FE+0x000 = 0x8100182a).
++	 * Whatever the field held before stays unrestored on removal: the
++	 * reset value is not known.
++	 */
++	airoha_fe_rmw(eth, REG_FE_DMA_GLO_CFG,
++		      FE_DMA_GLO_RATE_MINUS_MASK | FE_DMA_GLO_RATE_BYTE_MASK,
++		      FIELD_PREP(FE_DMA_GLO_RATE_BYTE_MASK, 0x18));
++	airoha_ppe_set_cpu_port(gdm, 0, fport);
++	airoha_ppe_set_xmit_frame_size(gdm);
++	airoha_set_gdm_port_fwd_cfg(eth, REG_GDM_FWD_CFG(gdm->port->id),
++				    FE_PSE_PORT_PPE1);
++}
++
+ int airoha_xpon_register(struct net_device *netdev,
+ 			  const struct airoha_xpon_ops *ops)
+ {
+@@ -3974,8 +4050,10 @@ int airoha_xpon_register(struct net_devi
+ 	}
+ 	spin_unlock_irqrestore(&airoha_xpon_lock, flags);
+ 
+-	if (!ret)
++	if (!ret) {
+ 		airoha_qdma_start(qdma);
++		airoha_xpon_gdm_fwd(gdm, true);
++	}
+ unlock:
+ 	rtnl_unlock();
+ 
+@@ -4059,12 +4137,14 @@ static void airoha_xpon_wake_txqs(struct
+ void airoha_xpon_unregister(struct net_device *netdev)
+ {
+ 	struct net_device *tx_dev = NULL;
++	struct airoha_gdm_dev *gdm = NULL;
+ 	struct airoha_qdma *qdma = NULL;
+ 	unsigned long flags;
+ 
+ 	rtnl_lock();
+ 	spin_lock_irqsave(&airoha_xpon_lock, flags);
+ 	if (airoha_xpon_client.dev == netdev) {
++		gdm = airoha_xpon_client.gdm;
+ 		qdma = airoha_xpon_client.qdma;
+ 		tx_dev = airoha_xpon_client.tx_dev;
+ 		airoha_xpon_client.tx_dev = NULL;
+@@ -4076,6 +4156,8 @@ void airoha_xpon_unregister(struct net_d
+ 	}
+ 	spin_unlock_irqrestore(&airoha_xpon_lock, flags);
+ 
++	if (gdm)
++		airoha_xpon_gdm_fwd(gdm, false);
+ 	if (qdma) {
+ 		wait_event(airoha_xpon_wq, !READ_ONCE(airoha_xpon_inflight));
+ 		if (tx_dev)
+--- a/drivers/net/ethernet/airoha/airoha_eth.h
++++ b/drivers/net/ethernet/airoha/airoha_eth.h
+@@ -787,6 +787,7 @@ airoha_qdma_deref(struct airoha_gdm_dev
+ }
+ 
+ void airoha_ppe_set_xmit_frame_size(struct airoha_gdm_dev *dev);
++u32 airoha_xpon_mtu(struct airoha_gdm_dev *dev);
+ void airoha_ppe_set_cpu_port(struct airoha_gdm_dev *dev, u8 ppe_id, u8 fport);
+ bool airoha_ppe_is_enabled(struct airoha_eth *eth, int index);
+ void airoha_ppe_check_skb(struct airoha_ppe_dev *dev, struct sk_buff *skb,
+--- a/drivers/net/ethernet/airoha/airoha_ppe.c
++++ b/drivers/net/ethernet/airoha/airoha_ppe.c
+@@ -125,6 +125,8 @@ void airoha_ppe_set_xmit_frame_size(stru
+ 		netdev = netdev_from_priv(d);
+ 		if (netif_running(netdev))
+ 			len = max_t(u32, len, netdev->mtu);
++		/* GDM2 serving the xPON client is never opened */
++		len = max_t(u32, len, airoha_xpon_mtu(d));
+ 	}
+ 	len += VLAN_ETH_HLEN;
+ 
+--- a/drivers/net/ethernet/airoha/airoha_regs.h
++++ b/drivers/net/ethernet/airoha/airoha_regs.h
+@@ -33,6 +33,11 @@
+ #define REG_FE_DMA_GLO_CFG		0x0000
+ #define FE_DMA_GLO_L2_SPACE_MASK	GENMASK(7, 4)
+ #define FE_DMA_GLO_PG_SZ_MASK		BIT(3)
++/* fe_api_set_glo_rate_byte(): the byte count added to (bit 15 clear) or
++ * taken from (bit 15 set) every frame the rate shapers count
++ */
++#define FE_DMA_GLO_RATE_BYTE_MASK	GENMASK(14, 8)
++#define FE_DMA_GLO_RATE_MINUS_MASK	BIT(15)
+ 
+ #define REG_FE_RST_GLO_CFG		0x0004
+ #define FE_RST_GDM4_MBI_ARB_MASK	BIT(3)

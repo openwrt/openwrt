@@ -1,0 +1,35 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Lukasz M <lukasz1992m+openwrt@gmail.com>
+Date: Sat, 31 Oct 2026 12:00:00 +0100
+Subject: [PATCH] wifi mt76 dma run threaded NAPI kthreads with SCHED_FIFO low
+
+mt76 enables threaded NAPI for the dma rx queues, but the napi kthreads
+stay SCHED_OTHER, unlike the usb/sdio rx/status workers and the tx
+worker, which already use sched_set_fifo_low().  Under CPU load the napi
+kthread can be delayed long enough for the rx ring to fill up; on MT7621
+the chip's rx DMA then sometimes did not resume (beacon loss, tx hang,
+MCU timeouts), and rx throughput rose from ~210 to ~280 Mbit/s with the
+threads at SCHED_FIFO 1.
+
+From openwrt/mt76 pull request #1164 (fildunsky, open, also sent to
+linux-wireless).  Here it covers the host rx path (mt76_dma_rx_queue_init),
+i.e. Wi-Fi rx without the NPU; the NPU rx queues are set up in npu.c and
+keep SCHED_OTHER.  SCHED_OTHER tasks keep the fair server's share of each
+CPU (/sys/kernel/debug/sched/fair_server, 50 ms per 1 s by default).
+
+Signed-off-by: Lukasz M <lukasz1992m+openwrt@gmail.com>
+---
+--- a/dma.c
++++ b/dma.c
+@@ -1133,6 +1133,11 @@ mt76_dma_rx_queue_init(struct mt76_dev *
+ 		       int (*poll)(struct napi_struct *napi, int budget))
+ {
+ 	netif_napi_add(dev->napi_dev, &dev->napi[qid], poll);
++	/* Same as the usb/sdio rx workers: under CPU load a SCHED_OTHER napi
++	 * thread can be starved long enough for the rx ring to overflow.
++	 */
++	if (dev->napi[qid].thread)
++		sched_set_fifo_low(dev->napi[qid].thread);
+ 	mt76_dma_rx_fill_buf(dev, &dev->q_rx[qid], false);
+ 	napi_enable(&dev->napi[qid]);
+ }

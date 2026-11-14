@@ -1,0 +1,605 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Lukasz M <lukasz1992m+openwrt@gmail.com>
+Date: Sat, 31 Oct 2026 12:00:00 +0100
+Subject: [PATCH] net: airoha: PPE flows to Wi-Fi through the WED on AN7563
+
+On a SoC with a WED (soc->wed_cdm4_queues) a flow whose output device is a
+Wi-Fi netdev with a DEV_PATH_MTK_WDMA forward path is written the way the
+vendor hw_nat writes it for the WED (ra_nat_entry.c FOE_MAGIC_WLAN_7615,
+woe_client_jedi.c): PSE port CDM4, NBQ 10 + (ring & 1), channel 6 + (ring & 1),
+the l2 etype is (wcid & 0xff) << 6 | (bss & 0x3f), force to the PSE QoS port,
+qid 0 and traffic shaper 0.
+
+The first flow towards a card also hands the WED's token space to the
+hardware (wlan.offload_enable, as mtk_wed_flow_add() does) and the last one
+gives it back; airoha-eth reaches the WED driver through
+airoha_ppe_wed_register().  mt76_wed_offload_enable() returns 1 on a token
+wait timeout; that is -EBUSY to the flowtable (tried again later) and the
+token space goes back to the host.
+
+When the Wi-Fi driver detaches a WED, the WED asks the PPE
+(airoha_ppe_wed_detach(), called before the WED lock, the PPE's flow lock
+nests outside) to unbind every flow towards it and clear its wed flag:
+the flowtable deletes from a workqueue, so a destroy can arrive after
+mt7915e was reloaded, and must neither reach the WED nor take a flow of a
+later attach off the count (at 0 the token space would go back to mt76
+while the WED still uses it).  A count going below 0 warns.
+
+Off by default: nothing is bound towards a Wi-Fi card until
+/sys/kernel/debug/ppe/wed_flows is set, so the flows keep going through the
+CPU.  Turning it off stops binding new flows, bound ones age out.
+
+Signed-off-by: Lukasz M <lukasz1992m+openwrt@gmail.com>
+---
+--- a/drivers/net/ethernet/airoha/airoha_eth.h
++++ b/drivers/net/ethernet/airoha/airoha_eth.h
+@@ -312,6 +312,9 @@ enum {
+ #define AIROHA_FOE_MAC_WDMA_QOS		GENMASK(15, 12)
+ #define AIROHA_FOE_MAC_WDMA_BAND	BIT(11)
+ #define AIROHA_FOE_MAC_WDMA_WCID	GENMASK(10, 0)
++/* AN7552/AN7563 WED: stag = (wcid & 0xff) << 6 | (bss & 0x3f), woe_client_jedi.c */
++#define AIROHA_FOE_WED_ETYPE_WCID		GENMASK(13, 6)
++#define AIROHA_FOE_WED_ETYPE_BSS		GENMASK(5, 0)
+ 
+ struct airoha_foe_mac_info_common {
+ 	u16 vlan1;
+@@ -539,6 +542,15 @@ struct airoha_flow_table_entry {
+ 
+ 	struct rhash_head node;
+ 	unsigned long cookie;
++	/* the flow goes to the Wi-Fi card behind WED wed_idx */
++	bool wed;
++	u8 wed_idx;
++	/*
++	 * unbound behind the flowtable's back (WED detach, xPON flush): the
++	 * next REPLACE for the cookie, which comes while the flow has
++	 * traffic, builds it anew instead of failing with -EEXIST
++	 */
++	bool stale;
+ 
+ 	/* Must be last --ends in a flexible-array member. */
+ 	struct airoha_foe_entry data;
+@@ -649,6 +661,9 @@ struct airoha_ppe {
+ 	/* PPE configured by the host, without the NPU (soc->ppe_host) */
+ 	bool host_ready;
+ 
++	/* bind flows towards a Wi-Fi card through the WED (debugfs wed_flows) */
++	bool wed_flows;
++
+ 	struct dentry *debugfs_dir;
+ };
+ 
+--- a/drivers/net/ethernet/airoha/airoha_ppe.c
++++ b/drivers/net/ethernet/airoha/airoha_ppe.c
+@@ -9,6 +9,7 @@
+ #include <linux/of_platform.h>
+ #include <linux/platform_device.h>
+ #include <linux/rhashtable.h>
++#include <linux/soc/airoha/airoha_wed.h>
+ #include <net/ipv6.h>
+ #include <net/pkt_cls.h>
+ #include <net/route.h>
+@@ -22,6 +23,147 @@
+ DEFINE_MUTEX(flow_offload_mutex);
+ static DEFINE_SPINLOCK(ppe_lock);
+ 
++static const struct airoha_ppe_wed_ops *airoha_ppe_wed_ops;
++static DEFINE_MUTEX(airoha_ppe_wed_lock);
++/* the frame engine whose PPE binds flows to a WED (one on these SoCs) */
++static struct airoha_eth *airoha_ppe_wed_eth;
++
++int airoha_ppe_wed_register(const struct airoha_ppe_wed_ops *ops)
++{
++	int err = 0;
++
++	mutex_lock(&airoha_ppe_wed_lock);
++	if (airoha_ppe_wed_ops && airoha_ppe_wed_ops != ops)
++		err = -EBUSY;
++	else
++		airoha_ppe_wed_ops = ops;
++	mutex_unlock(&airoha_ppe_wed_lock);
++
++	return err;
++}
++EXPORT_SYMBOL_GPL(airoha_ppe_wed_register);
++
++void airoha_ppe_wed_unregister(const struct airoha_ppe_wed_ops *ops)
++{
++	mutex_lock(&airoha_ppe_wed_lock);
++	if (airoha_ppe_wed_ops == ops)
++		airoha_ppe_wed_ops = NULL;
++	mutex_unlock(&airoha_ppe_wed_lock);
++}
++EXPORT_SYMBOL_GPL(airoha_ppe_wed_unregister);
++
++static void airoha_ppe_foe_flow_remove_entry(struct airoha_ppe *ppe,
++					     struct airoha_flow_table_entry *e);
++
++/*
++ * The WED idx goes away (the Wi-Fi driver detaches it): unbind the flows
++ * that still point at its WDMA and forget that they hold its token space.
++ * Their software entries stay, marked stale, until the flowtable destroys
++ * them or, for a flow that still has traffic, asks for it again (REPLACE
++ * rebuilds it, towards whatever the forward path is by then); that may
++ * come after the detach (the flowtable works from a workqueue), and then
++ * must neither reach the WED again nor take a flow of a later attach off
++ * its count.  Called without the WED lock (flow_offload_mutex nests outside
++ * it).
++ */
++void airoha_ppe_wed_detach(int idx)
++{
++	struct airoha_flow_table_entry *e;
++	struct rhashtable_iter iter;
++	struct airoha_eth *eth;
++
++	mutex_lock(&flow_offload_mutex);
++
++	eth = airoha_ppe_wed_eth;
++	if (!eth)
++		goto out;
++
++	rhashtable_walk_enter(&eth->flow_table, &iter);
++	rhashtable_walk_start(&iter);
++	while ((e = rhashtable_walk_next(&iter))) {
++		if (IS_ERR(e))
++			continue;
++
++		if (!e->wed || e->wed_idx != idx)
++			continue;
++
++		airoha_ppe_foe_flow_remove_entry(eth->ppe, e);
++		e->wed = false;
++		e->stale = true;
++	}
++	rhashtable_walk_stop(&iter);
++	rhashtable_walk_exit(&iter);
++out:
++	mutex_unlock(&flow_offload_mutex);
++}
++EXPORT_SYMBOL_GPL(airoha_ppe_wed_detach);
++
++static int airoha_ppe_wed_flow_add(int idx)
++{
++	int err = -ENODEV;
++
++	mutex_lock(&airoha_ppe_wed_lock);
++	if (airoha_ppe_wed_ops)
++		err = airoha_ppe_wed_ops->flow_add(idx);
++	mutex_unlock(&airoha_ppe_wed_lock);
++
++	return err;
++}
++
++static void airoha_ppe_wed_flow_remove(int idx)
++{
++	mutex_lock(&airoha_ppe_wed_lock);
++	if (airoha_ppe_wed_ops)
++		airoha_ppe_wed_ops->flow_remove(idx);
++	mutex_unlock(&airoha_ppe_wed_lock);
++}
++
++void airoha_ppe_wed_flow_flush(int idx, u16 wcid)
++{
++	struct airoha_flow_table_entry *e;
++	struct rhashtable_iter iter;
++	struct airoha_eth *eth;
++	u32 flushed = 0;
++
++	mutex_lock(&flow_offload_mutex);
++
++	eth = airoha_ppe_wed_eth;
++	if (!eth)
++		goto out;
++
++	rhashtable_walk_enter(&eth->flow_table, &iter);
++	rhashtable_walk_start(&iter);
++	while ((e = rhashtable_walk_next(&iter))) {
++		u32 type;
++		u16 etype;
++
++		if (IS_ERR(e))
++			continue;
++
++		if (!e->wed || e->wed_idx != idx)
++			continue;
++
++		type = FIELD_GET(AIROHA_FOE_IB1_BIND_PACKET_TYPE, e->data.ib1);
++		etype = type >= PPE_PKT_TYPE_IPV6_ROUTE_3T ?
++			e->data.ipv6.l2.etype : e->data.ipv4.l2.common.etype;
++		if (FIELD_GET(AIROHA_FOE_WED_ETYPE_WCID, etype) != wcid)
++			continue;
++
++		airoha_ppe_foe_flow_remove_entry(eth->ppe, e);
++		e->wed = false;
++		e->stale = true;
++		flushed++;
++	}
++	rhashtable_walk_stop(&iter);
++	rhashtable_walk_exit(&iter);
++
++	while (flushed--)
++		airoha_ppe_wed_flow_remove(idx);
++out:
++	mutex_unlock(&flow_offload_mutex);
++}
++EXPORT_SYMBOL_GPL(airoha_ppe_wed_flow_flush);
++
+ static const struct rhashtable_params airoha_flow_table_params = {
+ 	.head_offset = offsetof(struct airoha_flow_table_entry, node),
+ 	.key_offset = offsetof(struct airoha_flow_table_entry, cookie),
+@@ -315,6 +411,7 @@ static int airoha_ppe_get_wdma_info(stru
+ 		return -EINVAL;
+ 
+ 	info->idx = path->mtk_wdma.wdma_idx;
++	info->queue = path->mtk_wdma.queue;
+ 	info->bss = path->mtk_wdma.bss;
+ 	info->wcid = path->mtk_wdma.wcid;
+ 
+@@ -349,7 +446,7 @@ static int airoha_ppe_foe_entry_prepare(
+ 					struct airoha_foe_entry *hwe,
+ 					struct net_device *netdev, int type,
+ 					struct airoha_flow_data *data,
+-					int l4proto, u8 dsfield)
++					int l4proto, u8 dsfield, int *wed_idx)
+ {
+ 	u32 qdata = FIELD_PREP(AIROHA_FOE_SHAPER_ID, 0x7f), ports_pad, val;
+ 	int wlan_etype = -EINVAL, dsa_port = airoha_get_dsa_port(&netdev);
+@@ -373,14 +470,44 @@ static int airoha_ppe_foe_entry_prepare(
+ 
+ 		if (!airoha_ppe_get_wdma_info(netdev, data->eth.h_dest,
+ 					      &info)) {
+-			val |= FIELD_PREP(AIROHA_FOE_IB2_NBQ, info.idx) |
+-			       FIELD_PREP(AIROHA_FOE_IB2_PSE_PORT,
+-					  FE_PSE_PORT_CDM4);
+-			qdata |= FIELD_PREP(AIROHA_FOE_ACTDP, info.bss);
+-			wlan_etype = FIELD_PREP(AIROHA_FOE_MAC_WDMA_BAND,
+-						info.idx) |
+-				     FIELD_PREP(AIROHA_FOE_MAC_WDMA_WCID,
+-						info.wcid);
++			if (eth->soc->wed_cdm4_queues) {
++				/*
++				 * AN7552/AN7563, entry as the vendor hw_nat
++				 * writes it for the WED (FOE_MAGIC_WLAN_7615,
++				 * woe_client_jedi.c): CDM4, the ring picks
++				 * NBQ 10/11 and channel 6/7, the "etype" is
++				 * the station and BSS, force to the PSE QoS
++				 * port, qid and traffic shaper 0.  Only when
++				 * the board and the user asked for it.
++				 */
++				if (!eth->ppe->wed_flows)
++					return -EOPNOTSUPP;
++
++				*wed_idx = info.idx;
++
++				qdata = FIELD_PREP(AIROHA_FOE_CHANNEL,
++						   6 + (info.queue & 1));
++				val |= FIELD_PREP(AIROHA_FOE_IB2_NBQ,
++						  10 + (info.queue & 1)) |
++				       FIELD_PREP(AIROHA_FOE_IB2_PSE_PORT,
++						  FE_PSE_PORT_CDM4) |
++				       AIROHA_FOE_IB2_PSE_QOS;
++				wlan_etype = FIELD_PREP(AIROHA_FOE_WED_ETYPE_WCID,
++							info.wcid) |
++					     FIELD_PREP(AIROHA_FOE_WED_ETYPE_BSS,
++							info.bss);
++			} else {
++				val |= FIELD_PREP(AIROHA_FOE_IB2_NBQ,
++						  info.idx) |
++				       FIELD_PREP(AIROHA_FOE_IB2_PSE_PORT,
++						  FE_PSE_PORT_CDM4);
++				qdata |= FIELD_PREP(AIROHA_FOE_ACTDP,
++						    info.bss);
++				wlan_etype = FIELD_PREP(AIROHA_FOE_MAC_WDMA_BAND,
++							info.idx) |
++					     FIELD_PREP(AIROHA_FOE_MAC_WDMA_WCID,
++							info.wcid);
++			}
+ 		} else {
+ 			struct airoha_gdm_dev *dev = netdev_priv(netdev);
+ 			struct airoha_gdm_port *port;
+@@ -1105,12 +1232,19 @@ static int airoha_ppe_flow_offload_repla
+ 	struct flow_action_entry *act;
+ 	u8 dsfield = 0, l4proto = 0;
+ 	struct airoha_foe_entry hwe;
+-	int err, i, offload_type;
++	int err, i, offload_type, wed_idx = -1;
+ 	u16 addr_type = 0;
+ 
+-	if (rhashtable_lookup(&eth->flow_table, &f->cookie,
+-			      airoha_flow_table_params))
+-		return -EEXIST;
++	e = rhashtable_lookup(&eth->flow_table, &f->cookie,
++			      airoha_flow_table_params);
++	if (e) {
++		if (!e->stale)
++			return -EEXIST;
++		/* its FOE entry is gone already (airoha_ppe_wed_detach()) */
++		rhashtable_remove_fast(&eth->flow_table, &e->node,
++				       airoha_flow_table_params);
++		kfree(e);
++	}
+ 
+ 	if (!flow_rule_match_key(rule, FLOW_DISSECTOR_KEY_META))
+ 		return -EOPNOTSUPP;
+@@ -1209,7 +1343,7 @@ static int airoha_ppe_flow_offload_repla
+ 		return -EINVAL;
+ 
+ 	err = airoha_ppe_foe_entry_prepare(eth, &hwe, odev, offload_type,
+-					   &data, l4proto, dsfield);
++					   &data, l4proto, dsfield, &wed_idx);
+ 	if (err)
+ 		return err;
+ 
+@@ -1277,11 +1411,22 @@ static int airoha_ppe_flow_offload_repla
+ 			return err;
+ 	}
+ 
++	/* the WED owns its tokens once the first flow goes to its card */
++	if (wed_idx >= 0) {
++		err = airoha_ppe_wed_flow_add(wed_idx);
++		if (err)
++			return err;
++	}
++
+ 	e = kzalloc(sizeof(*e), GFP_KERNEL);
+-	if (!e)
+-		return -ENOMEM;
++	if (!e) {
++		err = -ENOMEM;
++		goto wed_remove;
++	}
+ 
+ 	e->cookie = f->cookie;
++	e->wed = wed_idx >= 0;
++	e->wed_idx = max(wed_idx, 0);
+ 	memcpy(&e->data, &hwe, sizeof(e->data));
+ 
+ 	err = airoha_ppe_foe_flow_commit_entry(eth->ppe, e);
+@@ -1299,6 +1444,9 @@ remove_foe_entry:
+ 	airoha_ppe_foe_flow_remove_entry(eth->ppe, e);
+ free_entry:
+ 	kfree(e);
++wed_remove:
++	if (wed_idx >= 0)
++		airoha_ppe_wed_flow_remove(wed_idx);
+ 
+ 	return err;
+ }
+@@ -1316,6 +1464,8 @@ static int airoha_ppe_flow_offload_destr
+ 	airoha_ppe_foe_flow_remove_entry(eth->ppe, e);
+ 	rhashtable_remove_fast(&eth->flow_table, &e->node,
+ 			       airoha_flow_table_params);
++	if (e->wed)
++		airoha_ppe_wed_flow_remove(e->wed_idx);
+ 	kfree(e);
+ 
+ 	return 0;
+@@ -1716,6 +1866,13 @@ int airoha_ppe_init(struct airoha_eth *e
+ 	if (err)
+ 		goto error_l2_flow_table_destroy;
+ 
++	if (eth->soc->wed_cdm4_queues) {
++		ppe->wed_flows = true;
++		mutex_lock(&flow_offload_mutex);
++		airoha_ppe_wed_eth = eth;
++		mutex_unlock(&flow_offload_mutex);
++	}
++
+ 	return 0;
+ 
+ error_l2_flow_table_destroy:
+@@ -1732,6 +1889,9 @@ void airoha_ppe_deinit(struct airoha_eth
+ 
+ 	mutex_lock(&flow_offload_mutex);
+ 
++	if (airoha_ppe_wed_eth == eth)
++		airoha_ppe_wed_eth = NULL;
++
+ 	npu = rcu_replace_pointer(eth->npu, NULL,
+ 				  lockdep_is_held(&flow_offload_mutex));
+ 	if (npu) {
+--- a/drivers/net/ethernet/airoha/airoha_ppe_debugfs.c
++++ b/drivers/net/ethernet/airoha/airoha_ppe_debugfs.c
+@@ -180,6 +180,9 @@ int airoha_ppe_debugfs_init(struct airoh
+ 			    &airoha_ppe_debugfs_foe_all_fops);
+ 	debugfs_create_file("bind", 0444, ppe->debugfs_dir, ppe,
+ 			    &airoha_ppe_debugfs_foe_bind_fops);
++	if (ppe->eth->soc->wed_cdm4_queues)
++		debugfs_create_bool("wed_flows", 0644, ppe->debugfs_dir,
++				    &ppe->wed_flows);
+ 
+ 	return 0;
+ }
+--- a/drivers/net/ethernet/airoha/airoha_wed.c
++++ b/drivers/net/ethernet/airoha/airoha_wed.c
+@@ -33,6 +33,7 @@
+ #include <linux/platform_device.h>
+ #include <linux/seq_file.h>
+ #include <linux/slab.h>
++#include <linux/soc/airoha/airoha_wed.h>
+ #include <linux/soc/mediatek/mtk_wed.h>
+ 
+ #include "airoha_wed_regs.h"
+@@ -60,6 +61,7 @@ struct mtk_wed_hw {
+ 	u32 pcie_base;
+ 	struct dentry *debugfs_dir;
+ 	struct mtk_wed_device *wed_dev;
++	u32 num_flows;
+ 	int index;
+ 	int irq;
+ 	/*
+@@ -68,6 +70,11 @@ struct mtk_wed_hw {
+ 	 * started or freed again until the next boot (airoha_wed_reset_dma()).
+ 	 */
+ 	bool reset_failed;
++	/*
++	 * Between airoha_ppe_wed_detach() and __wed_detach(): the flows are
++	 * unbound already, a new one would go to a WED about to disappear.
++	 */
++	bool detaching;
+ };
+ 
+ const struct mtk_wed_ops __rcu *mtk_soc_wed_ops;
+@@ -457,13 +464,25 @@ static void __wed_detach(struct mtk_wed_
+ 	memset(dev, 0, sizeof(*dev));
+ 	module_put(THIS_MODULE);
+ 
++	/* airoha_ppe_wed_detach() unbound the flows that counted here */
++	hw->num_flows = 0;
+ 	hw->wed_dev = NULL;
+ }
+ 
+ static void airoha_wed_detach(struct mtk_wed_device *dev)
+ {
++	struct mtk_wed_hw *hw = dev->hw;
++
++	mutex_lock(&hw_lock);
++	hw->detaching = true;
++	mutex_unlock(&hw_lock);
++
++	/* without hw_lock: the PPE takes its flow lock first, then ours */
++	airoha_ppe_wed_detach(hw->index);
++
+ 	mutex_lock(&hw_lock);
+ 	__wed_detach(dev);
++	hw->detaching = false;
+ 	mutex_unlock(&hw_lock);
+ }
+ 
+@@ -1069,6 +1088,14 @@ static int airoha_wed_setup_tc(struct mt
+ 	return -EOPNOTSUPP;
+ }
+ 
++static void airoha_wed_flow_flush(struct mtk_wed_device *dev, u16 wcid,
++				  bool (*match)(const struct cfg80211_flow_info *info,
++						bool rx, void *arg),
++				  void *arg)
++{
++	airoha_ppe_wed_flow_flush(dev->hw->index, wcid);
++}
++
+ static u32 airoha_wed_irq_get(struct mtk_wed_device *dev, u32 mask)
+ {
+ 	u32 val;
+@@ -1104,6 +1132,75 @@ static const struct mtk_wed_ops airoha_w
+ 	.setup_tc		= airoha_wed_setup_tc,
++	.flow_flush		= airoha_wed_flow_flush,
+ };
+ 
++/*
++ * What mtk_wed_flow_add() and mtk_wed_flow_remove() do: the first flow of a
++ * WED hands its token space to the hardware (the Wi-Fi driver stops using it),
++ * the last gives it back.  Called by the PPE of airoha-eth.
++ */
++static int airoha_wed_flow_add(int idx)
++{
++	struct mtk_wed_hw *hw;
++	int ret = 0;
++
++	mutex_lock(&hw_lock);
++	hw = idx >= 0 && idx < ARRAY_SIZE(hw_list) ? hw_list[idx] : NULL;
++	if (!hw || !hw->wed_dev || hw->detaching) {
++		ret = -ENODEV;
++		goto out;
++	}
++
++	if (!hw->wed_dev->wlan.offload_enable)
++		goto out;
++
++	if (hw->num_flows) {
++		hw->num_flows++;
++		goto out;
++	}
++
++	/*
++	 * mt76_wed_offload_enable() returns 1 when the host still holds
++	 * tokens of the WED's range after a second; the flowtable would take
++	 * a positive value for success, so it is -EBUSY (tried again later)
++	 * and the token space goes back to the host.
++	 */
++	ret = hw->wed_dev->wlan.offload_enable(hw->wed_dev);
++	if (ret > 0)
++		ret = -EBUSY;
++	if (!ret)
++		hw->num_flows++;
++	else if (hw->wed_dev->wlan.offload_disable)
++		hw->wed_dev->wlan.offload_disable(hw->wed_dev);
++	wed_set_ext_int(hw->wed_dev, true);
++out:
++	mutex_unlock(&hw_lock);
++
++	return ret;
++}
++
++static void airoha_wed_flow_remove(int idx)
++{
++	struct mtk_wed_hw *hw;
++
++	mutex_lock(&hw_lock);
++	hw = idx >= 0 && idx < ARRAY_SIZE(hw_list) ? hw_list[idx] : NULL;
++	if (!hw || !hw->wed_dev || !hw->wed_dev->wlan.offload_disable)
++		goto out;
++
++	if (WARN_ON_ONCE(!hw->num_flows) || --hw->num_flows)
++		goto out;
++
++	hw->wed_dev->wlan.offload_disable(hw->wed_dev);
++	wed_set_ext_int(hw->wed_dev, true);
++out:
++	mutex_unlock(&hw_lock);
++}
++
++static const struct airoha_ppe_wed_ops airoha_wed_ppe_ops = {
++	.flow_add	= airoha_wed_flow_add,
++	.flow_remove	= airoha_wed_flow_remove,
++};
++
+ /* ---- debugfs ---- */
+ 
+ /* the registers worth looking at first, with their vendor names */
+@@ -1253,6 +1340,8 @@ static int airoha_wed_probe(struct platf
+ 	hw_list[hw->index] = hw;
+ 	rcu_assign_pointer(mtk_soc_wed_ops, &airoha_wed_ops);
+ 	mutex_unlock(&hw_lock);
++	/* the first WED registers it, a second one finds it there */
++	airoha_ppe_wed_register(&airoha_wed_ppe_ops);
+ 
+ 	hw->debugfs_dir = debugfs_create_dir(dev_name(dev), NULL);
+ 	debugfs_create_file("regs", 0400, hw->debugfs_dir, hw,
+@@ -1281,8 +1370,10 @@ static void airoha_wed_remove(struct pla
+ 		rcu_assign_pointer(mtk_soc_wed_ops, NULL);
+ 	mutex_unlock(&hw_lock);
+ 
+-	if (last)
++	if (last) {
++		airoha_ppe_wed_unregister(&airoha_wed_ppe_ops);
+ 		synchronize_rcu();
++	}
+ 	debugfs_remove_recursive(hw->debugfs_dir);
+ 	of_node_put(hw->pcie);
+ }
+--- /dev/null
++++ b/include/linux/soc/airoha/airoha_wed.h
+@@ -0,0 +1,22 @@
++/* SPDX-License-Identifier: GPL-2.0-only */
++#ifndef AIROHA_WED_H
++#define AIROHA_WED_H
++
++/*
++ * What the PPE of airoha-eth asks of the WED driver: a flow to a Wi-Fi card
++ * is added (the first one hands the WED's token space to the hardware, as
++ * mtk_wed_flow_add() does) or removed (the last one gives it back).  idx is
++ * the WDMA index of the WED, struct mtk_wed_device.wdma_idx.
++ */
++struct airoha_ppe_wed_ops {
++	int (*flow_add)(int idx);
++	void (*flow_remove)(int idx);
++};
++
++int airoha_ppe_wed_register(const struct airoha_ppe_wed_ops *ops);
++void airoha_ppe_wed_unregister(const struct airoha_ppe_wed_ops *ops);
++/* the WED idx is detached: its flows are unbound and no longer counted */
++void airoha_ppe_wed_detach(int idx);
++void airoha_ppe_wed_flow_flush(int idx, u16 wcid);
++
++#endif

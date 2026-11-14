@@ -1,0 +1,962 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Lukasz M <lukasz1992m+openwrt@gmail.com>
+Date: Sat, 31 Oct 2026 12:00:00 +0100
+Subject: [PATCH] net airoha AN7563 FE QDMA PPE layout and settings as on stock
+
+AN7563 was handled with the AN7583 QDMA and PPE sizes and the mainline
+EN7581 front-end settings.  This patch gives it its own SoC data and
+programs the front end, both QDMAs and the PPE the way the stock TP-Link
+XX530v V2 (AN7552 SDK) does.  Every value below was read back from the
+running stock unit or taken from the vendor driver named.
+
+Layout (the kernel lost its page tables with the AN7583 sizes):
+- QDMA: 16 rx and 8 tx rings, two interrupt registers per bank, rings
+  10-14 on irq bank 1; no access to rx rings 16-31 (0xe00), tx rings 8-31
+  (0xb00) or interrupt registers 2-4 (0x720-0x750), which the stock
+  driver never touches (qdmaGetIntMask(base, bank, 1..2) only).
+- Two GDM ports (no GDM3/GDM4 setup), no hw LRO, LMGR descriptors in
+  DRAM and 1 KiB HWFWD payloads on both QDMAs ((LMGR_INIT_CFG & 0x1ffff)
+  << 5 bytes; X-WRT 941-02, the driver that ran on this board).
+- IP fragment and reassembly rings 8 and 9 (vendor qdma_dev_7552.h
+  FRAG_RX_RING_IDX/ASSE_RX_RING_IDX).
+- PPE: 512 SRAM entries, PPE_TB_CFG SRAM code 7 (hw_nat ra_nat_ic_dis.h
+  SUPPORT_SRAM_MAX_512 for isAN7552, foe_fdb_7552_64Byte.h).
+- The TX ring is the netdev queue reduced to the SoC's rings
+  (airoha_qdma_get_txq(), which the xPON TX uses too); QoS channel and
+  queue in the descriptor still come from the netdev queue.
+- Do not "correct" the QDMA interrupt offsets to the vendor header: for
+  AN7552 qdma_reg.h falls back to qdma_reg_7516.h, which describes other
+  silicon (0x700/0x704 read 0xdeadbeef here); 0x20, 0x24, 0x720, 0x724
+  and 0x730 are the real registers.
+
+PSE buffer in the GDMP SRAM (fe_ic_dis.h SUPPORT_PSE_USE_GDMP for
+isAN7552): GDMP 0x74 = 3 (ecnt_gdump.c gdump_mode_sel(FE_ACCESS_DATA)),
+SCU SSR3 0x94 bit 30 (PCIE_HSGMII1_SEL) cleared, PSE_FQ_CFG = 0x500
+before the FE core reset (fe_api.c pse_set_total_page()), and
+PSE_SHARE_USED_THD = 0x01e001f4 instead of per-port thresholds (stock
+fe_core for HIR 0xc/0xf).  The "gdmp" registers (0x1fbf9000 in the
+stock DTB) and the SCU ("airoha,scu") come from the DT.
+
+Front end:
+- GDM_MISC_CFG 0x1fb50148 = 0: GDM2_RDM_ACK_WAIT_PREF and
+  GDM2_CHN_VLD_MODE are not set (X-WRT leaves them off as well).
+- WAN_MTU0..7 0x1fb52300..0x231c = 0x3fff3fff at FE init and not touched
+  on an MTU change, so double-tagged or larger frames from the OLT are
+  not cut (ours was VLAN_ETH_HLEN + MTU).
+- GDM long frame length 4004 on GDM1 (0x1fb50514) and 2000 on GDM2
+  (0x1fb51514, the GPON frame limit) instead of AIROHA_MAX_RX_SIZE; with
+  no RX scatter a frame has to fit one RX buffer anyway.
+- FE_IPV6_EXT 0x1fb50014 = 0x2c: extension header 0 is the fragment
+  header (fe.c fe_crsn_ipv6_fragment_init(), SUPPORT_FE_IPV6_EXT on
+  AN7552 and EN7581), so the FE parses IPv6 fragments.
+
+WAN QDMA (QDMA1, at 0x1fb56000):
+- FWD_DSCP_LOW_THR 0x100 (QDMA0 0x080).
+- PSE_BUF_USAGE_CFG 0x1fb57028 = 0xb000001a: the PSE buffer estimate
+  (bit 29) on from the start (QDMA0 0x9000001a, off), and
+  TXBUF_THRESHOLD 0x1fb570d0 total 0xc0, not only once the xPON client
+  enables the estimate.
+- EGRESS_RATE_METER_CFG 0xbffd40c8 (window 20, timeslice 200), QDMA0
+  0xbffff7ff (window 31, timeslice 2047): the peak rate (bit 30, set out
+  of reset) off on both, the equal rate (bit 17) off on the WAN QDMA.
+
+TX congestion control, both QDMAs (vendor
+qdma_set_txq_cngst_auto_config() through QDMA_API_SET_TXQ_CNGST_AUTO_
+CONFIG from xpondrv.c and hw_nat): the dynamic mode was on but its
+thresholds were the reset ones, no limit, so one queue or channel could
+take every HWFWD buffer.  The stock BUFFER_THRESHOLD table for more than
+256 descriptors (8192 here as there), half of it for DEI frames, the QoS
+aging (agingEn, agingFastReplaceEn) and the DEI WRED thresholds:
+  0x10a4 0x1ccc1000  0x10a8 0x10000100  0x10ac 0x10000020
+  0x10d4 0x0e660800  0x10d8 0x08000080  0x10dc 0x08000010
+  0x10bc 0xa000c350  0x1094 0x00421084
+
+TX_RING_BLOCKING bit 2 (vendor TXQ_DYN_CNGSTCTL_CPU_TX_DROP_EN) on CPU TX
+ring 0 only (stock QDMA +0x104 = 0x4, +0x124..+0x1e4 = 0): over a
+congestion threshold rings 1-7 stall and the netdev queue stops, so the
+qdisc (fq_codel, HTB) picks what to drop instead of a blind hardware tail
+drop.
+
+Signed-off-by: Lukasz M <lukasz1992m+openwrt@gmail.com>
+---
+--- a/drivers/net/ethernet/airoha/airoha_eth.c
++++ b/drivers/net/ethernet/airoha/airoha_eth.c
+@@ -5,6 +5,8 @@
+  */
+ #include <linux/of.h>
+ #include <linux/of_net.h>
++#include <linux/mfd/syscon.h>
++#include <linux/regmap.h>
+ #include <linux/of_reserved_mem.h>
+ #include <linux/platform_device.h>
+ #include <linux/soc/airoha/airoha_xpon.h>
+@@ -23,6 +25,23 @@
+ #include "airoha_regs.h"
+ #include "airoha_eth.h"
+ 
++/*
++ * PSE buffer in the GDMP SRAM (EN7523, AN7552: vendor fe_ic_dis.h
++ * SUPPORT_PSE_USE_GDMP).  gdump_mode_sel(FE_ACCESS_DATA) in vendor
++ * ecnt_gdump.c writes 3 into GDMP 0x74 and, on AN7552, clears
++ * PCIE_HSGMII1_SEL in SCU SSR3 (ecnt_scu.c CR_NP_SCU_SSR3 = 0x94).
++ * fe_api.c pse_set_total_page() then sets PSE_FQ_CFG to 0x500 pages,
++ * 0x400 of the PSE and 0x100 of GDMP, and the stock fe_core does both
++ * for HIR 0xc and 0xf, followed by a fixed PSE_SHARE_USED_THD.
++ */
++#define AN7552_SCU_SSR3			0x94
++#define AN7552_SSR3_PCIE_HSGMII1_SEL	BIT(30)
++#define AN7552_GDMP_DATA_SEL		0x74
++#define AN7552_GDMP_DATA_SEL_MASK	GENMASK(1, 0)
++#define AN7552_GDMP_FE_ACCESS_DATA	3
++#define AN7552_PSE_FQ_PAGES		0x500
++#define AN7552_PSE_SHARE_USED_THD	0x01e001f4
++
+ static struct airoha_gdm_dev *airoha_xpon_gdm_dev(struct airoha_qdma *qdma);
+ static bool airoha_xpon_owns_netdev(struct net_device *netdev);
+ static bool airoha_xpon_deliver(struct sk_buff *skb, u32 msg0, u32 msg1);
+@@ -45,6 +64,18 @@ u32 airoha_rmw(void __iomem *base, u32 o
+ 	return val;
+ }
+ 
++/* rx rings whose interrupts go to irq bank @bank, rings the SoC has only */
++static u32 airoha_qdma_rx_irq_bank_mask(struct airoha_qdma *qdma, int bank)
++{
++	const struct airoha_eth_soc_data *soc = qdma->eth->soc;
++	u32 mask = RX_IRQ_BANK_PIN_MASK(bank);
++
++	if (bank == 1 && soc->rx_irq_bank1_mask)
++		mask = soc->rx_irq_bank1_mask;
++
++	return mask & GENMASK(airoha_num_rx_ring(qdma->eth) - 1, 0);
++}
++
+ static void airoha_qdma_set_irqmask(struct airoha_irq_bank *irq_bank,
+ 				    int index, u32 clear, u32 set)
+ {
+@@ -55,6 +86,10 @@ static void airoha_qdma_set_irqmask(stru
+ 	if (WARN_ON_ONCE(index >= ARRAY_SIZE(irq_bank->irqmask)))
+ 		return;
+ 
++	/* the interrupt register is not there on this SoC */
++	if (index >= airoha_num_int_regs(qdma->eth))
++		return;
++
+ 	spin_lock_irqsave(&irq_bank->irq_lock, flags);
+ 
+ 	irq_bank->irqmask[index] &= ~clear;
+@@ -195,7 +230,9 @@ static void airoha_fe_maccr_init(struct
+ 		airoha_fe_rmw(eth, REG_GDM_LEN_CFG(p),
+ 			      GDM_SHORT_LEN_MASK | GDM_LONG_LEN_MASK,
+ 			      FIELD_PREP(GDM_SHORT_LEN_MASK, 60) |
+-			      FIELD_PREP(GDM_LONG_LEN_MASK, AIROHA_MAX_RX_SIZE));
++			      FIELD_PREP(GDM_LONG_LEN_MASK,
++					 eth->soc->gdm_max_len[p] ?:
++					 AIROHA_MAX_RX_SIZE));
+ 	}
+ 
+ 	airoha_fe_rmw(eth, REG_CDM_VLAN_CTRL(1), CDM_VLAN_MASK,
+@@ -561,6 +598,9 @@ static void airoha_fe_lro_disable(struct
+ 
+ static bool airoha_fe_lro_is_enabled(struct airoha_eth *eth, int qdma_id)
+ {
++	if (eth->soc->no_lro)
++		return false;
++
+ 	return airoha_fe_get(eth, REG_CDM_LRO_EN(qdma_id + 1),
+ 			     LRO_RXQ_EN_MASK);
+ }
+@@ -572,6 +612,9 @@ static void airoha_dev_lro_enable(struct
+ 	int qdma_id = qdma - &eth->qdma[0];
+ 	int i, lro_queue_index = 0;
+ 
++	if (eth->soc->no_lro)
++		return;
++
+ 	if (airoha_fe_lro_is_enabled(eth, qdma_id))
+ 		return;
+ 
+@@ -599,6 +642,9 @@ static void airoha_dev_lro_disable(struc
+ 	struct airoha_eth *eth = qdma->eth;
+ 	int qdma_id = qdma - &eth->qdma[0];
+ 
++	if (eth->soc->no_lro)
++		return;
++
+ 	if (!airoha_fe_lro_is_enabled(eth, qdma_id))
+ 		return;
+ 
+@@ -609,6 +655,15 @@ static int airoha_fe_init(struct airoha_
+ {
+ 	airoha_fe_maccr_init(eth);
+ 
++	/*
++	 * fe.c fe_crsn_ipv6_fragment_init() (SUPPORT_FE_IPV6_EXT, AN7552 and
++	 * EN7581): extension header 0 is the fragment header (44), so IPv6
++	 * fragments are parsed; the stock unit reads 0x1fb50014 as 0x2c.
++	 */
++	if (eth->soc->fe_ipv6_frag_ext)
++		airoha_fe_rmw(eth, REG_FE_IPV6_EXT, FE_IPV6_EXT0_MASK,
++			      FIELD_PREP(FE_IPV6_EXT0_MASK, NEXTHDR_FRAGMENT));
++
+ 	/* PSE IQ reserve */
+ 	airoha_fe_rmw(eth, REG_PSE_IQ_REV1, PSE_IQ_RES1_P2_MASK,
+ 		      FIELD_PREP(PSE_IQ_RES1_P2_MASK, 0x10));
+@@ -625,13 +680,14 @@ static int airoha_fe_init(struct airoha_
+ 	airoha_fe_rmw(eth, REG_CDM_FWD_CFG(2), CDM_VIP_QSEL_MASK,
+ 		      FIELD_PREP(CDM_VIP_QSEL_MASK, 0x4));
+ 	/* set GDM4 source interface offset to 8 */
+-	airoha_fe_rmw(eth, REG_GDM_SRC_PORT_SET(4),
+-		      GDM_SPORT_OFF2_MASK |
+-		      GDM_SPORT_OFF1_MASK |
+-		      GDM_SPORT_OFF0_MASK,
+-		      FIELD_PREP(GDM_SPORT_OFF2_MASK, 8) |
+-		      FIELD_PREP(GDM_SPORT_OFF1_MASK, 8) |
+-		      FIELD_PREP(GDM_SPORT_OFF0_MASK, 8));
++	if (airoha_num_gdm_ports(eth) > 3)
++		airoha_fe_rmw(eth, REG_GDM_SRC_PORT_SET(4),
++			      GDM_SPORT_OFF2_MASK |
++			      GDM_SPORT_OFF1_MASK |
++			      GDM_SPORT_OFF0_MASK,
++			      FIELD_PREP(GDM_SPORT_OFF2_MASK, 8) |
++			      FIELD_PREP(GDM_SPORT_OFF1_MASK, 8) |
++			      FIELD_PREP(GDM_SPORT_OFF0_MASK, 8));
+ 
+ 	/*
+ 	 * Flow control of the WDMA rings: CDM4 (PSE port 7) queues 10 and 11
+@@ -652,9 +708,25 @@ static int airoha_fe_init(struct airoha_
+ 		      FE_DMA_GLO_L2_SPACE_MASK | FE_DMA_GLO_PG_SZ_MASK,
+ 		      FIELD_PREP(FE_DMA_GLO_L2_SPACE_MASK, 2) |
+ 		      FE_DMA_GLO_PG_SZ_MASK);
++	if (eth->soc->pse_use_gdmp) {
++		int err;
++
++		err = regmap_clear_bits(eth->scu, AN7552_SCU_SSR3,
++					AN7552_SSR3_PCIE_HSGMII1_SEL);
++		if (err)
++			return err;
++
++		airoha_rmw(eth->gdmp_regs, AN7552_GDMP_DATA_SEL,
++			   AN7552_GDMP_DATA_SEL_MASK,
++			   AN7552_GDMP_FE_ACCESS_DATA);
++		airoha_fe_wr(eth, PSE_FQ_CFG, AN7552_PSE_FQ_PAGES);
++	}
++
+ 	airoha_fe_wr(eth, REG_FE_RST_GLO_CFG,
+-		     FE_RST_CORE_MASK | FE_RST_GDM3_MBI_ARB_MASK |
+-		     FE_RST_GDM4_MBI_ARB_MASK);
++		     FE_RST_CORE_MASK |
++		     (airoha_num_gdm_ports(eth) > 2 ? FE_RST_GDM3_MBI_ARB_MASK |
++						      FE_RST_GDM4_MBI_ARB_MASK
++						    : 0));
+ 	usleep_range(1000, 2000);
+ 
+ 	/* connect RxRing1 and RxRing15 to PSE Port0 OQ-1
+@@ -666,38 +738,66 @@ static int airoha_fe_init(struct airoha_
+ 	airoha_fe_wr(eth, REG_FE_CDM1_OQ_MAP3, BIT(28));
+ 
+ 	airoha_fe_vip_setup(eth);
+-	airoha_fe_pse_ports_init(eth);
++	if (eth->soc->pse_use_gdmp)
++		airoha_fe_wr(eth, REG_PSE_SHARE_USED_THD,
++			     AN7552_PSE_SHARE_USED_THD);
++	else
++		airoha_fe_pse_ports_init(eth);
++
++	if (!eth->soc->no_gdm2_misc_cfg)
++		airoha_fe_set(eth, REG_GDM_MISC_CFG,
++			      GDM2_RDM_ACK_WAIT_PREF_MASK |
++			      GDM2_CHN_VLD_MODE_MASK);
++	if (eth->soc->wan_mtu_max) {
++		int i;
+ 
+-	airoha_fe_set(eth, REG_GDM_MISC_CFG,
+-		      GDM2_RDM_ACK_WAIT_PREF_MASK |
+-		      GDM2_CHN_VLD_MODE_MASK);
++		for (i = 0; i < 8; i++)
++			airoha_fe_wr(eth, REG_WAN_MTU0 + 4 * i,
++				     WAN_MTU1_MASK | WAN_MTU0_MASK);
++	}
+ 	airoha_fe_rmw(eth, REG_CDM_FWD_CFG(2), CDM_OAM_QSEL_MASK,
+ 		      FIELD_PREP(CDM_OAM_QSEL_MASK, 15));
+ 
+ 	/* init fragment and assemble Force Port */
+-	/* NPU Core-3, NPU Bridge Channel-3 */
+-	airoha_fe_rmw(eth, REG_IP_FRAG_FP,
+-		      IP_FRAGMENT_PORT_MASK | IP_FRAGMENT_NBQ_MASK,
+-		      FIELD_PREP(IP_FRAGMENT_PORT_MASK, 6) |
+-		      FIELD_PREP(IP_FRAGMENT_NBQ_MASK, 3));
+-	/* QDMA LAN, RX Ring-22 */
+-	airoha_fe_rmw(eth, REG_IP_FRAG_FP,
+-		      IP_ASSEMBLE_PORT_MASK | IP_ASSEMBLE_NBQ_MASK,
+-		      FIELD_PREP(IP_ASSEMBLE_PORT_MASK, 0) |
+-		      FIELD_PREP(IP_ASSEMBLE_NBQ_MASK, 22));
+-
+-	airoha_fe_set(eth, REG_GDM_FWD_CFG(AIROHA_GDM3_IDX),
+-		      GDM_PAD_EN_MASK | GDM_STRIP_CRC_MASK);
+-	airoha_fe_set(eth, REG_GDM_FWD_CFG(AIROHA_GDM4_IDX),
+-		      GDM_PAD_EN_MASK | GDM_STRIP_CRC_MASK);
+-
+-	/* Enable split for MIB counters for GDM3 and GDM4 */
+-	airoha_fe_set(eth, REG_FE_GDM_MIB_CFG(AIROHA_GDM3_IDX),
+-		      FE_GDM_TX_MIB_SPLIT_EN_MASK |
+-		      FE_GDM_RX_MIB_SPLIT_EN_MASK);
+-	airoha_fe_set(eth, REG_FE_GDM_MIB_CFG(AIROHA_GDM4_IDX),
+-		      FE_GDM_TX_MIB_SPLIT_EN_MASK |
+-		      FE_GDM_RX_MIB_SPLIT_EN_MASK);
++	if (eth->soc->ip_frag_rx_ring) {
++		/* QDMA LAN rings of the SoC (16 rx rings, no NPU PPE) */
++		airoha_fe_rmw(eth, REG_IP_FRAG_FP,
++			      IP_FRAGMENT_PORT_MASK | IP_FRAGMENT_NBQ_MASK,
++			      FIELD_PREP(IP_FRAGMENT_PORT_MASK, 0) |
++			      FIELD_PREP(IP_FRAGMENT_NBQ_MASK,
++					 eth->soc->ip_frag_rx_ring));
++		airoha_fe_rmw(eth, REG_IP_FRAG_FP,
++			      IP_ASSEMBLE_PORT_MASK | IP_ASSEMBLE_NBQ_MASK,
++			      FIELD_PREP(IP_ASSEMBLE_PORT_MASK, 0) |
++			      FIELD_PREP(IP_ASSEMBLE_NBQ_MASK,
++					 eth->soc->ip_asse_rx_ring));
++	} else {
++		/* NPU Core-3, NPU Bridge Channel-3 */
++		airoha_fe_rmw(eth, REG_IP_FRAG_FP,
++			      IP_FRAGMENT_PORT_MASK | IP_FRAGMENT_NBQ_MASK,
++			      FIELD_PREP(IP_FRAGMENT_PORT_MASK, 6) |
++			      FIELD_PREP(IP_FRAGMENT_NBQ_MASK, 3));
++		/* QDMA LAN, RX Ring-22 */
++		airoha_fe_rmw(eth, REG_IP_FRAG_FP,
++			      IP_ASSEMBLE_PORT_MASK | IP_ASSEMBLE_NBQ_MASK,
++			      FIELD_PREP(IP_ASSEMBLE_PORT_MASK, 0) |
++			      FIELD_PREP(IP_ASSEMBLE_NBQ_MASK, 22));
++	}
++
++	if (airoha_num_gdm_ports(eth) > 2) {
++		airoha_fe_set(eth, REG_GDM_FWD_CFG(AIROHA_GDM3_IDX),
++			      GDM_PAD_EN_MASK | GDM_STRIP_CRC_MASK);
++		airoha_fe_set(eth, REG_GDM_FWD_CFG(AIROHA_GDM4_IDX),
++			      GDM_PAD_EN_MASK | GDM_STRIP_CRC_MASK);
++
++		/* Enable split for MIB counters for GDM3 and GDM4 */
++		airoha_fe_set(eth, REG_FE_GDM_MIB_CFG(AIROHA_GDM3_IDX),
++			      FE_GDM_TX_MIB_SPLIT_EN_MASK |
++			      FE_GDM_RX_MIB_SPLIT_EN_MASK);
++		airoha_fe_set(eth, REG_FE_GDM_MIB_CFG(AIROHA_GDM4_IDX),
++			      FE_GDM_TX_MIB_SPLIT_EN_MASK |
++			      FE_GDM_RX_MIB_SPLIT_EN_MASK);
++	}
+ 
+ 	airoha_fe_crsn_qsel_init(eth);
+ 
+@@ -793,6 +893,9 @@ static int airoha_qdma_lro_rx_skb(struct
+ 				  u32 msg1, u32 len)
+ {
+ 	u32 th_off, tcp_ack_seq, data_off, agg_count = 1;
++
++	if (q->qdma->eth->soc->no_lro)
++		return 0;
+ 	u32 msg2 = le32_to_cpu(READ_ONCE(desc->msg2));
+ 	struct skb_shared_info *shinfo;
+ 	struct sk_buff *skb = q->skb;
+@@ -1084,7 +1187,7 @@ static int airoha_qdma_rx_napi_poll(stru
+ 							 : QDMA_INT_REG_IDX2;
+ 
+ 		for (i = 0; i < ARRAY_SIZE(qdma->irq_banks); i++) {
+-			if (!(BIT(qid) & RX_IRQ_BANK_PIN_MASK(i)))
++			if (!(BIT(qid) & airoha_qdma_rx_irq_bank_mask(qdma, i)))
+ 				continue;
+ 
+ 			airoha_qdma_irq_enable(&qdma->irq_banks[i], intr_reg,
+@@ -1203,7 +1306,7 @@ static int airoha_qdma_init_rx(struct ai
+ {
+ 	int i;
+ 
+-	for (i = 0; i < ARRAY_SIZE(qdma->q_rx); i++) {
++	for (i = 0; i < airoha_num_rx_ring(qdma->eth); i++) {
+ 		int err;
+ 
+ 		if (!(RX_DONE_INT_MASK & BIT(i))) {
+@@ -1440,9 +1543,19 @@ static int airoha_qdma_init_tx_queue(str
+ 	}
+ 	q->ndesc = size;
+ 
+-	/* xmit ring drop default setting */
+-	airoha_qdma_set(qdma, REG_TX_RING_BLOCKING(qid),
+-			TX_RING_IRQ_BLOCKING_TX_DROP_EN_MASK);
++	/*
++	 * xmit ring drop default setting.  With the bit set, the QDMA drops a
++	 * CPU frame whose queue is over its congestion threshold; without it
++	 * the ring stalls, the netdev queue stops and the qdisc decides what
++	 * to drop.  The stock unit sets it on ring 0 only (QDMA +0x104 + n *
++	 * 0x20 reads 0x4 for ring 0, 0 for rings 1..7).
++	 */
++	if (!qdma->eth->soc->tx_drop_ring0_only || !qid)
++		airoha_qdma_set(qdma, REG_TX_RING_BLOCKING(qid),
++				TX_RING_IRQ_BLOCKING_TX_DROP_EN_MASK);
++	else
++		airoha_qdma_clear(qdma, REG_TX_RING_BLOCKING(qid),
++				  TX_RING_IRQ_BLOCKING_TX_DROP_EN_MASK);
+ 
+ 	airoha_qdma_wr(qdma, REG_TX_RING_BASE(qid), dma_addr);
+ 	airoha_qdma_rmw(qdma, REG_TX_CPU_IDX(qid), TX_RING_CPU_IDX_MASK,
+@@ -1492,7 +1605,7 @@ static int airoha_qdma_init_tx(struct ai
+ 			return err;
+ 	}
+ 
+-	for (i = 0; i < ARRAY_SIZE(qdma->q_tx); i++) {
++	for (i = 0; i < airoha_num_tx_ring(qdma->eth); i++) {
+ 		err = airoha_qdma_init_tx_queue(&qdma->q_tx[i], qdma,
+ 						TX_DSCP_NUM);
+ 		if (err)
+@@ -1575,6 +1688,20 @@ static void airoha_qdma_tx_cleanup(struc
+ 	}
+ }
+ 
++/*
++ * Registers of the stock unit (XX530v V2, O1):
++ * QDMA1 at 0x1fb56000 is the WAN one (the WAN QDMA driver
++ * ioremaps it) and differs from QDMA0 in FWD_DSCP_LOW_THR (0x100 vs 0x80),
++ * PSE_BUF_USAGE_CFG (estimator on, bit 29) and EGRESS_RATE_METER_CFG (window
++ * 20, timeslice 200 vs 31 and 2047).
++ */
++static bool airoha_qdma_is_stock_wan(struct airoha_qdma *qdma)
++{
++	struct airoha_eth *eth = qdma->eth;
++
++	return eth->soc->qdma1_wan_stock_cfg && qdma == &eth->qdma[1];
++}
++
+ static int airoha_qdma_init_hfwd_queues(struct airoha_qdma *qdma)
+ {
+ 	int size, index, num_desc = HW_DSCP_NUM;
+@@ -1588,7 +1715,8 @@ static int airoha_qdma_init_hfwd_queues(
+ 	if (!name)
+ 		return -ENOMEM;
+ 
+-	buf_size = id ? AIROHA_MAX_PACKET_SIZE / 2 : AIROHA_MAX_PACKET_SIZE;
++	buf_size = id || eth->soc->hwfwd_dram_1k ? AIROHA_MAX_PACKET_SIZE / 2
++						 : AIROHA_MAX_PACKET_SIZE;
+ 	index = of_property_match_string(eth->dev->of_node,
+ 					 "memory-region-names", name);
+ 	if (index >= 0) {
+@@ -1630,14 +1758,17 @@ static int airoha_qdma_init_hfwd_queues(
+ 	/* QDMA0: 2KB. QDMA1: 1KB */
+ 	airoha_qdma_rmw(qdma, REG_HW_FWD_DSCP_CFG,
+ 			HW_FWD_DSCP_PAYLOAD_SIZE_MASK,
+-			FIELD_PREP(HW_FWD_DSCP_PAYLOAD_SIZE_MASK, !!id));
++			FIELD_PREP(HW_FWD_DSCP_PAYLOAD_SIZE_MASK,
++				   buf_size != AIROHA_MAX_PACKET_SIZE));
+ 	airoha_qdma_rmw(qdma, REG_FWD_DSCP_LOW_THR, FWD_DSCP_LOW_THR_MASK,
+-			FIELD_PREP(FWD_DSCP_LOW_THR_MASK, 128));
++			FIELD_PREP(FWD_DSCP_LOW_THR_MASK,
++				   airoha_qdma_is_stock_wan(qdma) ? 256 : 128));
+ 	airoha_qdma_rmw(qdma, REG_LMGR_INIT_CFG,
+ 			LMGR_INIT_START | LMGR_SRAM_MODE_MASK |
+ 			HW_FWD_DESC_NUM_MASK,
+ 			FIELD_PREP(HW_FWD_DESC_NUM_MASK, num_desc) |
+-			LMGR_INIT_START | LMGR_SRAM_MODE_MASK);
++			LMGR_INIT_START |
++			(eth->soc->hwfwd_dram_1k ? 0 : LMGR_SRAM_MODE_MASK));
+ 
+ 	return read_poll_timeout(airoha_qdma_rr, status,
+ 				 !(status & LMGR_INIT_START), USEC_PER_MSEC,
+@@ -1645,24 +1776,94 @@ static int airoha_qdma_init_hfwd_queues(
+ 				 REG_LMGR_INIT_CFG);
+ }
+ 
++/*
++ * What the stock unit runs on both QDMAs (xpondrv.c and hw_nat through
++ * QDMA_API_SET_TXQ_CNGST_AUTO_CONFIG, qdma_set_txq_cngst_auto_config()):
++ * the dynamic thresholds from its BUFFER_THRESHOLD table for more than 256
++ * HWFWD descriptors - both QDMAs have 8192 here as there - with half of
++ * them for DEI marked frames, the QoS aging on (agingEn and
++ * agingFastReplaceEn, the time left at its 1 s), and the WRED thresholds of
++ * the DEI class at 2/8.  Read back from the stock unit: 0x10a4 0x1ccc1000,
++ * 0x10a8 0x10000100, 0x10ac 0x10000020, 0x10d4 0x0e660800, 0x10d8
++ * 0x08000080, 0x10dc 0x08000010, 0x10bc 0xa000c350, 0x1094 0x00421084.
++ * Without them one queue or channel could take every buffer.
++ */
++static void airoha_qdma_init_cngst_stock(struct airoha_qdma *qdma)
++{
++	static const struct {
++		u32 reg;
++		u16 max, min;
++	} thr[] = {
++		{ REG_TXQ_DYN_TOTAL_THR, 0x1ccc, 0x1000 },
++		{ REG_TXQ_DYN_CHAN_THR, 0x1000, 0x0100 },
++		{ REG_TXQ_DYN_QUEUE_THR, 0x1000, 0x0020 },
++	};
++	int i;
++
++	for (i = 0; i < ARRAY_SIZE(thr); i++) {
++		airoha_qdma_wr(qdma, thr[i].reg,
++			       FIELD_PREP(TXQ_THR_MAX_MASK, thr[i].max) |
++			       FIELD_PREP(TXQ_THR_MIN_MASK, thr[i].min));
++		/* the DEI registers follow at the same distance */
++		airoha_qdma_wr(qdma, thr[i].reg + REG_TXQ_DEI_TOTAL_THR -
++			       REG_TXQ_DYN_TOTAL_THR,
++			       FIELD_PREP(TXQ_THR_MAX_MASK, thr[i].max / 2) |
++			       FIELD_PREP(TXQ_THR_MIN_MASK, thr[i].min / 2));
++	}
++
++	airoha_qdma_rmw(qdma, REG_QOS_AGING_CFG,
++			QOS_AGING_EN | QOS_AGING_METHOD |
++			QOS_AGING_FAST_REPLACE_EN,
++			QOS_AGING_EN | QOS_AGING_FAST_REPLACE_EN);
++	airoha_qdma_wr(qdma, REG_WRED_THRESHOLD(1), 0x00421084);
++}
++
+ static void airoha_qdma_init_qos(struct airoha_qdma *qdma)
+ {
+ 	airoha_qdma_clear(qdma, REG_TXWRR_MODE_CFG, TWRR_WEIGHT_SCALE_MASK);
+ 	airoha_qdma_set(qdma, REG_TXWRR_MODE_CFG, TWRR_WEIGHT_BASE_MASK);
+ 
+-	airoha_qdma_clear(qdma, REG_PSE_BUF_USAGE_CFG,
+-			  PSE_BUF_ESTIMATE_EN_MASK);
++	/*
++	 * Stock WAN QDMA (0x1fb57028 0xb000001a, 0x1fb570d0 0x001000c0): the
++	 * PSE buffer estimate is on and the total TX buffer threshold 0xc0
++	 * from the start, not only once the xPON client asks for it.
++	 */
++	if (airoha_qdma_is_stock_wan(qdma)) {
++		airoha_qdma_set(qdma, REG_PSE_BUF_USAGE_CFG,
++				PSE_BUF_ESTIMATE_EN_MASK);
++		airoha_qdma_rmw(qdma, REG_TXBUF_THRESHOLD,
++				TXBUF_TOTAL_THRESHOLD_MASK,
++				FIELD_PREP(TXBUF_TOTAL_THRESHOLD_MASK, 0xc0));
++	} else {
++		airoha_qdma_clear(qdma, REG_PSE_BUF_USAGE_CFG,
++				  PSE_BUF_ESTIMATE_EN_MASK);
++	}
+ 
++	/*
++	 * The peak rate stays off as on the stock unit (bit 30 is set out of
++	 * reset; 0x1fb5500c 0xbffff7ff, 0x1fb5700c 0xbffd40c8), and the stock
++	 * WAN QDMA does not use the equal rate either.
++	 */
++	if (qdma->eth->soc->no_peak_rate)
++		airoha_qdma_clear(qdma, REG_EGRESS_RATE_METER_CFG,
++				  EGRESS_RATE_METER_PEAKRATE_EN_MASK);
+ 	airoha_qdma_set(qdma, REG_EGRESS_RATE_METER_CFG,
+-			EGRESS_RATE_METER_EN_MASK |
+-			EGRESS_RATE_METER_EQ_RATE_EN_MASK);
+-	/* 2047us x 31 = 63.457ms */
++			EGRESS_RATE_METER_EN_MASK);
++	if (airoha_qdma_is_stock_wan(qdma))
++		airoha_qdma_clear(qdma, REG_EGRESS_RATE_METER_CFG,
++				  EGRESS_RATE_METER_EQ_RATE_EN_MASK);
++	else
++		airoha_qdma_set(qdma, REG_EGRESS_RATE_METER_CFG,
++				EGRESS_RATE_METER_EQ_RATE_EN_MASK);
++	/* 2047us x 31 = 63.457ms, stock WAN: 200us x 20 = 4ms */
+ 	airoha_qdma_rmw(qdma, REG_EGRESS_RATE_METER_CFG,
+ 			EGRESS_RATE_METER_WINDOW_SZ_MASK,
+-			FIELD_PREP(EGRESS_RATE_METER_WINDOW_SZ_MASK, 0x1f));
++			FIELD_PREP(EGRESS_RATE_METER_WINDOW_SZ_MASK,
++				   airoha_qdma_is_stock_wan(qdma) ? 20 : 0x1f));
+ 	airoha_qdma_rmw(qdma, REG_EGRESS_RATE_METER_CFG,
+ 			EGRESS_RATE_METER_TIMESLICE_MASK,
+-			FIELD_PREP(EGRESS_RATE_METER_TIMESLICE_MASK, 0x7ff));
++			FIELD_PREP(EGRESS_RATE_METER_TIMESLICE_MASK,
++				   airoha_qdma_is_stock_wan(qdma) ? 200 : 0x7ff));
+ 
+ 	/* ratelimit init */
+ 	airoha_qdma_set(qdma, REG_GLB_TRTCM_CFG, GLB_TRTCM_EN_MASK);
+@@ -1720,18 +1921,23 @@ static int airoha_qdma_hw_init(struct ai
+ {
+ 	int i;
+ 
++	/* clear pending irqs, only in the status registers this SoC has */
++	for (i = 0; i < ARRAY_SIZE(qdma->irq_banks); i++)
++		if (i < airoha_num_int_regs(qdma->eth))
++			airoha_qdma_wr(qdma, REG_INT_STATUS(i), 0xffffffff);
++
+ 	for (i = 0; i < ARRAY_SIZE(qdma->irq_banks); i++) {
+-		/* clear pending irqs */
+-		airoha_qdma_wr(qdma, REG_INT_STATUS(i), 0xffffffff);
++		u32 mask = airoha_qdma_rx_irq_bank_mask(qdma, i);
++
+ 		/* setup rx irqs */
+ 		airoha_qdma_irq_enable(&qdma->irq_banks[i], QDMA_INT_REG_IDX0,
+-				       INT_RX0_MASK(RX_IRQ_BANK_PIN_MASK(i)));
++				       INT_RX0_MASK(mask));
+ 		airoha_qdma_irq_enable(&qdma->irq_banks[i], QDMA_INT_REG_IDX1,
+-				       INT_RX1_MASK(RX_IRQ_BANK_PIN_MASK(i)));
++				       INT_RX1_MASK(mask));
+ 		airoha_qdma_irq_enable(&qdma->irq_banks[i], QDMA_INT_REG_IDX2,
+-				       INT_RX2_MASK(RX_IRQ_BANK_PIN_MASK(i)));
++				       INT_RX2_MASK(mask));
+ 		airoha_qdma_irq_enable(&qdma->irq_banks[i], QDMA_INT_REG_IDX3,
+-				       INT_RX3_MASK(RX_IRQ_BANK_PIN_MASK(i)));
++				       INT_RX3_MASK(mask));
+ 	}
+ 	/* setup tx irqs */
+ 	airoha_qdma_irq_enable(&qdma->irq_banks[0], QDMA_INT_REG_IDX0,
+@@ -1775,6 +1981,8 @@ static int airoha_qdma_hw_init(struct ai
+ 
+ 	airoha_qdma_set(qdma, REG_TXQ_CNGST_CFG,
+ 			TXQ_CNGST_DROP_EN | TXQ_CNGST_DEI_DROP_EN);
++	if (qdma->eth->soc->qdma_cngst_stock)
++		airoha_qdma_init_cngst_stock(qdma);
+ 	airoha_qdma_init_qos_stats(qdma);
+ 
+ 	return 0;
+@@ -1785,10 +1993,10 @@ static irqreturn_t airoha_irq_handler(in
+ 	struct airoha_irq_bank *irq_bank = dev_instance;
+ 	struct airoha_qdma *qdma = irq_bank->qdma;
+ 	u32 rx_intr_mask = 0, rx_intr1, rx_intr2;
+-	u32 intr[ARRAY_SIZE(irq_bank->irqmask)];
++	u32 intr[ARRAY_SIZE(irq_bank->irqmask)] = {};
+ 	int i;
+ 
+-	for (i = 0; i < ARRAY_SIZE(intr); i++) {
++	for (i = 0; i < airoha_num_int_regs(qdma->eth); i++) {
+ 		intr[i] = airoha_qdma_rr(qdma, REG_INT_STATUS(i));
+ 		intr[i] &= irq_bank->irqmask[i];
+ 		airoha_qdma_wr(qdma, REG_INT_STATUS(i), intr[i]);
+@@ -2262,7 +2470,7 @@ static void airoha_dev_set_xmit_frame_si
+ 	struct airoha_gdm_dev *dev = netdev_priv(netdev);
+ 
+ 	airoha_ppe_set_xmit_frame_size(dev);
+-	if (!airoha_is_lan_gdm_dev(dev))
++	if (!airoha_is_lan_gdm_dev(dev) && !dev->eth->soc->wan_mtu_max)
+ 		airoha_fe_rmw(dev->eth, REG_WAN_MTU0, WAN_MTU0_MASK,
+ 			      FIELD_PREP(WAN_MTU0_MASK,
+ 					 VLAN_ETH_HLEN + netdev->mtu));
+@@ -2747,19 +2955,24 @@ static netdev_tx_t airoha_dev_xmit(struc
+ 	struct airoha_queue *q;
+ 	LIST_HEAD(tx_list);
+ 	dma_addr_t addr;
+-	int i = 0, qid;
++	int i = 0, qid, txq_idx;
+ 	u16 index;
+ 	u8 fport;
+ 
+ 	rcu_read_lock();
+ 	qdma = rcu_dereference(dev->qdma);
+-	qid = airoha_qdma_get_txq(qdma, skb_get_queue_mapping(skb));
++	/*
++	 * The channel and the queue come from the netdev queue; the ring
++	 * is that index reduced to the rings the SoC has.
++	 */
++	txq_idx = skb_get_queue_mapping(skb) % AIROHA_NUM_TX_RING;
++	qid = airoha_qdma_get_txq(qdma, txq_idx);
+ 	tag = airoha_get_dsa_tag(skb, netdev);
+ 
+ 	msg0 = FIELD_PREP(QDMA_ETH_TXMSG_CHAN_MASK,
+-			  qid / AIROHA_NUM_QOS_QUEUES) |
++			  txq_idx / AIROHA_NUM_QOS_QUEUES) |
+ 	       FIELD_PREP(QDMA_ETH_TXMSG_QUEUE_MASK,
+-			  qid % AIROHA_NUM_QOS_QUEUES) |
++			  txq_idx % AIROHA_NUM_QOS_QUEUES) |
+ 	       FIELD_PREP(QDMA_ETH_TXMSG_SP_TAG_MASK, tag);
+ 	if (skb->ip_summed == CHECKSUM_PARTIAL)
+ 		msg0 |= FIELD_PREP(QDMA_ETH_TXMSG_TCO_MASK, 1) |
+@@ -5330,7 +5543,9 @@ static int airoha_alloc_gdm_device(struc
+ 	netdev->ethtool_ops = &airoha_ethtool_ops;
+ 	netdev->max_mtu = AIROHA_MAX_MTU;
+ 	netdev->watchdog_timeo = 5 * HZ;
+-	netdev->hw_features = AIROHA_HW_FEATURES | NETIF_F_LRO;
++	netdev->hw_features = AIROHA_HW_FEATURES;
++	if (!eth->soc->no_lro)
++		netdev->hw_features |= NETIF_F_LRO;
+ 	netdev->features |= AIROHA_HW_FEATURES;
+ 	netdev->vlan_features = AIROHA_HW_FEATURES;
+ 	SET_NETDEV_DEV(netdev, eth->dev);
+@@ -5512,6 +5727,20 @@ static int airoha_probe(struct platform_
+ 		return dev_err_probe(eth->dev, PTR_ERR(eth->fe_regs),
+ 				     "failed to iomap fe regs\n");
+ 
++	if (eth->soc->pse_use_gdmp) {
++		eth->gdmp_regs = devm_platform_ioremap_resource_byname(pdev,
++								       "gdmp");
++		if (IS_ERR(eth->gdmp_regs))
++			return dev_err_probe(eth->dev, PTR_ERR(eth->gdmp_regs),
++					     "failed to iomap gdmp regs\n");
++
++		eth->scu = syscon_regmap_lookup_by_phandle(pdev->dev.of_node,
++							   "airoha,scu");
++		if (IS_ERR(eth->scu))
++			return dev_err_probe(eth->dev, PTR_ERR(eth->scu),
++					     "failed to get the SCU\n");
++	}
++
+ 	eth->rsts[0].id = "fe";
+ 	eth->rsts[1].id = "pdma";
+ 	eth->rsts[2].id = "qdma";
+@@ -5873,6 +6102,55 @@ static const struct airoha_ppe_host_cfg
+ static const struct airoha_eth_soc_data an7563_soc_data = {
+ 	.version = 0x7583,
+ 	.num_ppe = 1,
++	/*
++	 * The QDMA and PPE sizes are not the AN7583 ones:
++	 *
++	 * - 16 rx and 8 tx rings, two interrupt registers per bank: the
++	 *   stock QDMA driver never touches the rx ring block at 0xe00, the
++	 *   tx ring block at 0xb00 or the interrupt registers at
++	 *   0x720-0x750, and walks two mask registers per bank
++	 *   (qdmaGetIntMask(base, bank, 1..2)); vendor qdma_dev_7552.h has
++	 *   qdmaGetIntStatus1/2 only.  Rings 10-14 belong to irq bank 1
++	 *   (X-WRT 941-02, the driver that ran on this board).
++	 * - 512 PPE SRAM entries: vendor hw_nat ra_nat_ic_dis.h
++	 *   SUPPORT_SRAM_MAX_512 (isEN7523 || isAN7552),
++	 *   foe_fdb_7552_64Byte.h SRAM_FOE_NUM_DEFAULT FOE_NUM_SIZE_512 = 7,
++	 *   the PPE_TB_CFG code a stock unit shows.
++	 * - two GDM ports, no hw LRO, LMGR descriptors in DRAM with 1 KiB
++	 *   HWFWD payloads on both QDMAs (X-WRT 941-02; the stock driver
++	 *   frees its HWFWD descriptors as DRAM,
++	 *   (LMGR_INIT_CFG & 0x1ffff) << 5 bytes).
++	 * - IP fragments to rx ring 8 and reassembled frames to ring 9 of the
++	 *   QDMA LAN, vendor qdma_dev_7552.h FRAG_RX_RING_IDX /
++	 *   ASSE_RX_RING_IDX.
++	 */
++	.num_rx_ring = 16,
++	.num_tx_ring = 8,
++	.num_int_regs = 2,
++	.num_gdm_ports = 2,
++	.rx_irq_bank1_mask = GENMASK(14, 10),
++	.no_lro = true,
++	.hwfwd_dram_1k = true,
++	.qdma1_wan_stock_cfg = true,
++	.ip_frag_rx_ring = 8,
++	.ip_asse_rx_ring = 9,
++	.ppe_sram_entries = 512,
++	.ppe_sram_tb_num = 7,
++	.pse_use_gdmp = true,
++	/* stock REG_GDM_MISC_CFG (0x1fb50148) reads 0 */
++	.no_gdm2_misc_cfg = true,
++	/* stock REG_WAN_MTU0..7 (0x1fb52300..0x231c) all read 0x3fff3fff */
++	.wan_mtu_max = true,
++	/*
++	 * stock REG_GDM_LEN_CFG long length: GDM1 4004 (0x1fb50514), GDM2
++	 * 2000 (0x1fb51514), the GPON frame limit; a frame has to fit one RX
++	 * buffer here anyway (no RX scatter)
++	 */
++	.gdm_max_len = { [1] = 4004, [2] = 2000 },
++	.no_peak_rate = true,
++	.fe_ipv6_frag_ext = true,
++	.qdma_cngst_stock = true,
++	.tx_drop_ring0_only = true,
+ 	.ppe_host = &an7563_ppe_host_cfg,
+ 	/* vendor hw_nat ra_nat_ic_dis.h: SUPPORT_FAST_PATH is EN7580,
+ 	 * EN7581 and AN7583 only, not AN7552
+--- a/drivers/net/ethernet/airoha/airoha_eth.h
++++ b/drivers/net/ethernet/airoha/airoha_eth.h
+@@ -687,6 +687,8 @@ struct airoha_ppe_host_cfg {
+ 	u32 tb_cfg_age;
+ };
+ 
++struct regmap;
++
+ struct airoha_eth_soc_data {
+ 	u16 version;
+ 	const char * const *xsi_rsts_names;
+@@ -701,6 +703,48 @@ struct airoha_eth_soc_data {
+ 	 */
+ 	u8 wed_cdm4_queues;
+ 	u8 wed_oq[2];
++	/*
++	 * QDMA and FE layout; 0 keeps the EN7581/AN7583 value (32 rx and
++	 * 32 tx rings, QDMA_INT_REG_MAX interrupt registers per bank, four
++	 * GDM ports)
++	 */
++	u8 num_rx_ring;
++	u8 num_tx_ring;
++	u8 num_int_regs;
++	u8 num_gdm_ports;
++	/* rx rings served by irq bank 1 (0: RX_IRQ1_BANK_PIN_MASK) */
++	u32 rx_irq_bank1_mask;
++	/* no hw LRO: every rx ring takes plain pages */
++	bool no_lro;
++	/* LMGR descriptors in DRAM, 1 KiB HWFWD payload on both QDMAs */
++	bool hwfwd_dram_1k;
++	/* WAN QDMA (QDMA1) set up as the stock fe_core/qdma_wan does */
++	bool qdma1_wan_stock_cfg;
++	/* rx rings for IP fragments and reassembled frames (0: NPU/ring 22) */
++	u8 ip_frag_rx_ring;
++	u8 ip_asse_rx_ring;
++	/* PPE SRAM entries per PPE and their PPE_TB_CFG code (0: 8K) */
++	u16 ppe_sram_entries;
++	u8 ppe_sram_tb_num;
++	/* the PSE also buffers in the GDMP SRAM ("gdmp" reg, airoha,scu) */
++	bool pse_use_gdmp;
++	/* REG_GDM_MISC_CFG stays 0: no GDM2 ack-wait / channel-valid mode */
++	bool no_gdm2_misc_cfg;
++	/* REG_WAN_MTU0..7 at their maximum, not set from the WAN MTU */
++	bool wan_mtu_max;
++	/* the FE parses past the IPv6 fragment header (vendor FE_IPV6_EXT) */
++	bool fe_ipv6_frag_ext;
++	/*
++	 * TX_DROP_EN (vendor TXQ_DYN_CNGSTCTL_CPU_TX_DROP_EN) on CPU TX ring 0
++	 * only; the other rings stall over a congestion threshold instead
++	 */
++	bool tx_drop_ring0_only;
++	/* TX congestion thresholds, aging and DEI WRED as the stock QDMAs */
++	bool qdma_cngst_stock;
++	/* egress rate meter without the peak rate (bit 30, on out of reset) */
++	bool no_peak_rate;
++	/* REG_GDM_LEN_CFG long length per GDM port (0: AIROHA_MAX_RX_SIZE) */
++	u16 gdm_max_len[AIROHA_MAX_NUM_GDM_PORTS + 1];
+ 	struct {
+ 		int (*get_sport)(struct airoha_gdm_port *port, int nbq);
+ 		u32 (*get_vip_port)(struct airoha_gdm_port *port, int nbq);
+@@ -716,6 +760,9 @@ struct airoha_eth {
+ 
+ 	unsigned long state;
+ 	void __iomem *fe_regs;
++	/* GDMP block and SCU, for the PSE buffer in GDMP SRAM */
++	void __iomem *gdmp_regs;
++	struct regmap *scu;
+ 
+ 	struct airoha_npu __rcu *npu;
+ 
+@@ -761,9 +808,29 @@ u32 airoha_rmw(void __iomem *base, u32 o
+ #define airoha_qdma_get(qdma, offset, mask)			\
+ 	FIELD_GET((mask), airoha_qdma_rr((qdma), (offset)))
+ 
++static inline int airoha_num_rx_ring(struct airoha_eth *eth)
++{
++	return eth->soc->num_rx_ring ?: AIROHA_NUM_RX_RING;
++}
++
++static inline int airoha_num_tx_ring(struct airoha_eth *eth)
++{
++	return eth->soc->num_tx_ring ?: AIROHA_NUM_TX_RING;
++}
++
++static inline int airoha_num_int_regs(struct airoha_eth *eth)
++{
++	return eth->soc->num_int_regs ?: QDMA_INT_REG_MAX;
++}
++
++static inline int airoha_num_gdm_ports(struct airoha_eth *eth)
++{
++	return eth->soc->num_gdm_ports ?: AIROHA_MAX_NUM_GDM_PORTS;
++}
++
+ static inline u16 airoha_qdma_get_txq(struct airoha_qdma *qdma, u16 qid)
+ {
+-	return qid % ARRAY_SIZE(qdma->q_tx);
++	return qid % airoha_num_tx_ring(qdma->eth);
+ }
+ 
+ static inline bool airoha_is_lan_gdm_dev(struct airoha_gdm_dev *dev)
+@@ -790,6 +857,9 @@ static inline bool airoha_qdma_is_lro_qu
+ 	BUILD_BUG_ON(hweight32(AIROHA_RXQ_LRO_EN_MASK) >
+ 		     AIROHA_MAX_NUM_LRO_QUEUES);
+ 
++	if (qdma->eth->soc->no_lro)
++		return false;
++
+ 	return !!(AIROHA_RXQ_LRO_EN_MASK & BIT(qid));
+ }
+ 
+--- a/drivers/net/ethernet/airoha/airoha_ppe.c
++++ b/drivers/net/ethernet/airoha/airoha_ppe.c
+@@ -156,11 +156,16 @@ static int airoha_ppe_get_total_num_stat
+ 	return num_stats;
+ }
+ 
++static u32 airoha_ppe_sram_entries(struct airoha_eth *eth)
++{
++	return eth->soc->ppe_sram_entries ?: PPE_SRAM_NUM_ENTRIES;
++}
++
+ static u32 airoha_ppe_get_total_sram_num_entries(struct airoha_ppe *ppe)
+ {
+ 	struct airoha_eth *eth = ppe->eth;
+ 
+-	return PPE_SRAM_NUM_ENTRIES * eth->soc->num_ppe;
++	return airoha_ppe_sram_entries(eth) * eth->soc->num_ppe;
+ }
+ 
+ u32 airoha_ppe_get_total_num_entries(struct airoha_ppe *ppe)
+@@ -235,11 +240,12 @@ void airoha_ppe_set_xmit_frame_size(stru
+ 
+ static void airoha_ppe_hw_init(struct airoha_ppe *ppe)
+ {
+-	u32 sram_ppe_num_data_entries = PPE_SRAM_NUM_ENTRIES, sram_num_entries;
++	u32 sram_ppe_num_data_entries, sram_num_entries;
+ 	u32 sram_tb_size, dram_num_entries;
+ 	struct airoha_eth *eth = ppe->eth;
+ 	int i, sram_num_stats_entries;
+ 
++	sram_ppe_num_data_entries = airoha_ppe_sram_entries(eth);
+ 	sram_num_entries = airoha_ppe_get_total_sram_num_entries(ppe);
+ 	sram_tb_size = sram_num_entries * sizeof(struct airoha_foe_entry);
+ 	dram_num_entries = PPE_RAM_NUM_ENTRIES_SHIFT(PPE_DRAM_NUM_ENTRIES);
+@@ -247,7 +253,8 @@ static void airoha_ppe_hw_init(struct ai
+ 	sram_num_stats_entries = airoha_ppe_get_num_stats_entries(ppe);
+ 	if (sram_num_stats_entries > 0)
+ 		sram_ppe_num_data_entries -= sram_num_stats_entries;
+-	sram_ppe_num_data_entries =
++	/* below 1K entries the code is not a shift: take the SoC's one */
++	sram_ppe_num_data_entries = eth->soc->ppe_sram_tb_num ?:
+ 		PPE_RAM_NUM_ENTRIES_SHIFT(sram_ppe_num_data_entries);
+ 
+ 	for (i = 0; i < eth->soc->num_ppe; i++) {
+@@ -830,7 +837,7 @@ airoha_ppe_foe_get_entry_locked(struct a
+ 
+ 	if (hash < sram_num_entries) {
+ 		u32 *hwe = ppe->foe + hash * sizeof(struct airoha_foe_entry);
+-		bool ppe2 = hash >= PPE_SRAM_NUM_ENTRIES;
++		bool ppe2 = hash >= airoha_ppe_sram_entries(ppe->eth);
+ 		struct airoha_eth *eth = ppe->eth;
+ 		u32 val;
+ 		int i;
+@@ -885,7 +892,7 @@ static bool airoha_ppe_foe_compare_entry
+ static int airoha_ppe_foe_commit_sram_entry(struct airoha_ppe *ppe, u32 hash)
+ {
+ 	struct airoha_foe_entry *hwe = ppe->foe + hash * sizeof(*hwe);
+-	bool ppe2 = hash >= PPE_SRAM_NUM_ENTRIES;
++	bool ppe2 = hash >= airoha_ppe_sram_entries(ppe->eth);
+ 	u32 *ptr = (u32 *)hwe, val;
+ 	int i;
+ 
+--- a/drivers/net/ethernet/airoha/airoha_regs.h
++++ b/drivers/net/ethernet/airoha/airoha_regs.h
+@@ -46,6 +46,10 @@
+ 
+ #define REG_FE_FOE_TS			0x0010
+ 
++/* vendor fe_reg FE_IPV6_EXT: IPv6 extension headers the FE walks past */
++#define REG_FE_IPV6_EXT			0x0014
++#define FE_IPV6_EXT0_MASK		GENMASK(7, 0)
++
+ #define REG_FE_WAN_PORT			0x0024
+ #define WAN1_EN_MASK			BIT(16)
+ #define WAN1_MASK			GENMASK(12, 8)
+@@ -836,6 +840,7 @@
+ 
+ #define REG_EGRESS_RATE_METER_CFG		0x100c
+ #define EGRESS_RATE_METER_EN_MASK		BIT(31)
++#define EGRESS_RATE_METER_PEAKRATE_EN_MASK	BIT(30)
+ #define EGRESS_RATE_METER_EQ_RATE_EN_MASK	BIT(17)
+ #define EGRESS_RATE_METER_WINDOW_SZ_MASK	GENMASK(16, 12)
+ #define EGRESS_RATE_METER_TIMESLICE_MASK	GENMASK(10, 0)
+@@ -901,6 +906,28 @@
+ #define TXQ_CNGST_WRED_EN		BIT(28)
+ 
+ /*
++ * AN7552 SDK qdma_set_txq_cngst_dynamic_threshold() and
++ * qdma_set_txq_cngst_auto_config(): the dynamic TX queue thresholds
++ * (total, per channel, per queue; max 31:16, min 15:0) and the same for
++ * DEI marked frames
++ */
++#define REG_TXQ_DYN_TOTAL_THR		0x10a4
++#define REG_TXQ_DYN_CHAN_THR		0x10a8
++#define REG_TXQ_DYN_QUEUE_THR		0x10ac
++#define REG_TXQ_DEI_TOTAL_THR		0x10d4
++#define REG_TXQ_DEI_CHAN_THR		0x10d8
++#define REG_TXQ_DEI_QUEUE_THR		0x10dc
++#define TXQ_THR_MAX_MASK		GENMASK(31, 16)
++#define TXQ_THR_MIN_MASK		GENMASK(15, 0)
++
++/* AN7552 SDK qdma_set_qos_aging_cfg(), QDMA_QoSAgingCfg_T */
++#define REG_QOS_AGING_CFG		0x10bc
++#define QOS_AGING_EN			BIT(31)
++#define QOS_AGING_METHOD		BIT(30)
++#define QOS_AGING_FAST_REPLACE_EN	BIT(29)
++#define QOS_AGING_TIME_MASK		GENMASK(15, 0)	/* 20 us units */
++
++/*
+  * AN7552 SDK qdma_set_tx_wred_threshold()/_probability(), one
+  * register per packet class (0 normal, 1 DEI): five thresholds (1/8 units,
+  * 3 bit value + 2 bit shift each) and four probabilities (0..255).

@@ -1,0 +1,70 @@
+#!/bin/sh /etc/rc.common
+# SPDX-License-Identifier: GPL-2.0
+#
+# tc filters of the OMCI VLAN handling, written by gpond into the "vrule"
+# sections of /etc/config/gpon: what the 802.1Q/802.1ad devices netifd creates
+# cannot express - extended VLAN tagging operation rows (ME 171) and VLAN tag
+# operation (ME 78) with P-bit or ethertype filters, tags removed whatever
+# their VID, discard rows (drop) and default rows, DSCP -> P-bit, the tagged
+# frames of the router side (VEIP, IP host: on pon0), the P-bit investigation
+# of the VLAN tagging filter data (ME 84, vlan_prio drops) and the PPPoE filter
+# of a UNI (ME 11).  Only pon0, its VLAN devices and the UNI devices of
+# onu.uni_dev are touched (gpond writes no others).  The filters of the
+# policers (xpon-qos) have pref 10, these start at 100 and follow the order of
+# the rows (first match wins: specific rows first, default rows last); each
+# service removes only its own.
+
+START=91
+USE_PROCD=1
+
+STATE=/var/run/gpon-vlan.state
+
+vrule_apply() {
+	local s="$1" dev dir pref proto match action
+
+	config_get dev "$s" device
+	config_get dir "$s" direction
+	config_get pref "$s" pref
+	config_get proto "$s" proto all
+	config_get match "$s" match
+	config_get action "$s" action
+	[ -n "$dev" ] && [ -n "$pref" ] && [ -n "$action" ] || return
+	[ -d "/sys/class/net/$dev" ] || return
+
+	tc qdisc add dev "$dev" clsact 2>/dev/null
+	# $match and $action are tc words: split them
+	# shellcheck disable=SC2086
+	tc filter replace dev "$dev" "$dir" pref "$pref" protocol "$proto" \
+		flower $match skip_hw action $action || return
+	echo "$dev $dir $pref" >> "$STATE"
+}
+
+vrule_flush() {
+	local dev dir pref
+
+	[ -f "$STATE" ] || return
+	while read -r dev dir pref; do
+		tc filter del dev "$dev" "$dir" pref "$pref" 2>/dev/null
+	done < "$STATE"
+	rm -f "$STATE"
+}
+
+start_service() {
+	vrule_flush
+	config_load gpon
+	config_foreach vrule_apply vrule
+}
+
+stop_service() {
+	vrule_flush
+}
+
+reload_service() {
+	start_service
+}
+
+service_triggers() {
+	procd_add_reload_trigger gpon
+	# the VLAN devices come and go with netifd
+	procd_add_raw_trigger "interface.*" 2000 /etc/init.d/gpon-vlan reload
+}

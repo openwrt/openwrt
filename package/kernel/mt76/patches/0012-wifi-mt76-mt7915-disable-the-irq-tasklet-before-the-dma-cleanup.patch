@@ -1,0 +1,27 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Lukasz M <lukasz1992m+openwrt@gmail.com>
+Date: Sat, 31 Oct 2026 12:00:00 +0100
+Subject: [PATCH] wifi mt76 mt7915 disable the irq tasklet before the dma cleanup
+
+mt7915_stop_hardware() disabled the irq tasklet only after
+mt7915_dma_cleanup(), which detaches the WED.  The tasklet reads the
+interrupt status through the WED while one is active, so a tasklet run
+on another CPU during the detach could use the WED device while it is
+being cleared.  Disable the tasklet first; the MCU is already shut down
+(mt7915_mcu_exit()) and nothing after it waits for the tasklet.
+
+Signed-off-by: Lukasz M <lukasz1992m+openwrt@gmail.com>
+---
+--- a/mt7915/init.c
++++ b/mt7915/init.c
+@@ -1290,8 +1290,9 @@ static void mt7915_stop_hardware(struct
+ 	}
+ 	mt7915_mcu_exit(dev);
+ 	mt76_connac2_tx_token_put(&dev->mt76);
+-	mt7915_dma_cleanup(dev);
++	/* the tasklet reads the WED, which mt7915_dma_cleanup() detaches */
+ 	tasklet_disable(&dev->mt76.irq_tasklet);
++	mt7915_dma_cleanup(dev);
+ 
+ 	if (is_mt798x(&dev->mt76))
+ 		mt7986_wmac_disable(dev);

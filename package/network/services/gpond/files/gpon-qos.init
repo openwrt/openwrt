@@ -1,0 +1,64 @@
+#!/bin/sh /etc/rc.common
+# SPDX-License-Identifier: GPL-2.0
+#
+# Policers of the PON side, written by gpond from the OMCI MIB into the
+# "police" sections of /etc/config/gpon (traffic descriptors of the MAC
+# bridge ports).  Only pon0 and its VLAN devices are touched.  The filters
+# have pref 10; the VLAN filters of xpon-vlan (pref 100 and up) share the
+# clsact qdisc and are left alone.
+
+START=90
+USE_PROCD=1
+
+police_apply() {
+	local s="$1" dev dir rate burst
+
+	config_get dev "$s" device
+	config_get dir "$s" direction
+	config_get rate "$s" rate
+	config_get burst "$s" burst 15000
+	case "$dev" in pon0|pon0.*) ;; *) return ;; esac
+	[ -d "/sys/class/net/$dev" ] && [ -n "$rate" ] || return
+
+	# rate is in bytes/s.  An OMCI traffic descriptor (ME 280) is a meter:
+	# traffic above the rate is dropped, not queued, in both directions.
+	# Conforming traffic "continues" (TC_ACT_UNSPEC) to the next filter of
+	# the qdisc, the VLAN filters of xpon-vlan (pref 100 and up): the
+	# default conform action "ok" would end the classification here.
+	tc qdisc add dev "$dev" clsact 2>/dev/null
+	if [ "$dir" = in ]; then
+		dir=ingress
+	else
+		dir=egress
+	fi
+	tc filter replace dev "$dev" "$dir" pref 10 protocol all matchall \
+		action police rate "$((rate * 8))bit" burst "$burst" \
+		conform-exceed drop/continue
+}
+
+police_flush() {
+	local d
+
+	for d in /sys/class/net/pon0 /sys/class/net/pon0.*; do
+		[ -d "$d" ] || continue
+		d="${d##*/}"
+		tc filter del dev "$d" ingress pref 10 2>/dev/null
+		tc filter del dev "$d" egress pref 10 2>/dev/null
+	done
+}
+
+start_service() {
+	police_flush
+	config_load gpon
+	config_foreach police_apply police
+}
+
+reload_service() {
+	start_service
+}
+
+service_triggers() {
+	procd_add_reload_trigger gpon
+	# the VLAN devices come and go with netifd
+	procd_add_raw_trigger "interface.*" 2000 /etc/init.d/gpon-qos reload
+}

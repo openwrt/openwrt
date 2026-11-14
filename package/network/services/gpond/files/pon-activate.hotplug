@@ -1,0 +1,49 @@
+#!/bin/sh
+# SPDX-License-Identifier: GPL-2.0
+#
+# Activate the ONU on pon0, if /etc/config/gpon 'global' says so.
+#
+# The order that matters: the serial number and the password go in first and
+# open the gate last.  Writing either of them closes the gate again - a
+# serial number that was just replaced has not been announced, so the one
+# that was announced is no longer this ONU's claim - which is why "activate"
+# cannot come before them.
+#
+# The serial number and the activation are not checked: the driver refuses
+# what it does not accept, keeps the value it had, and says why in dmesg; the
+# only trace this script leaves would be a false alarm, because a successful
+# write and a refused one look the same from here.  The password is the
+# exception, because the driver takes exactly 10 bytes or 20 hex digits while
+# UCI accepts anything: a refused one is logged and the activation goes ahead
+# without it.  If nothing happens, dmesg is where to look.
+#
+# This runs on netifd's ifup only.  If gpond brought pon0 up itself there is
+# no ifup, and gpond does the same three things over netlink - which is why
+# the two cannot collide, and why this does not need gpond to be running.
+
+[ "$ACTION" = ifup ] || exit 0
+[ "$DEVICE" = "pon0" ] || exit 0
+
+DF=/sys/class/net/pon0/gpon
+[ -d "$DF" ] || exit 0
+
+enabled=$(uci -q get gpon.global.enabled)
+case "$enabled" in
+1 | true | on | yes) ;;
+*) exit 0 ;;
+esac
+
+sn=$(uci -q get gpon.global.sn)
+[ -n "$sn" ] && echo "$sn" > "$DF/gpon_sn"
+
+password=$(uci -q get gpon.global.password)
+if [ -n "$password" ] && ! echo "$password" > "$DF/gpon_pwd"; then
+	logger -t gpon "password rejected!"
+fi
+
+# refused with -ENODEV while no optical front end is attached, which is the
+# answer when this runs before the EN7571 is there and not a fault: the
+# link coming up later runs this again
+echo 1 > "$DF/activate"
+
+exit 0
