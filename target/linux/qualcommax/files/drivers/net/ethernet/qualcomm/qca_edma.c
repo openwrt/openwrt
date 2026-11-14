@@ -1218,9 +1218,9 @@ static void edma_queue_rings_drain(struct edma_queue *q)
 }
 
 /* Completions are only walked on rings the engine ran: a set that fails to
- * come up behind a reset has indices from the configuration before it. The
- * frames still on a ring are freed with it, so its byte queue limit starts
- * again from nothing.
+ * come up behind a reset has indices from the configuration before it, and
+ * its memory was freed with the drain before that. The frames still on a ring
+ * are freed with it, so its byte queue limit starts again from nothing.
  */
 static void edma_rings_drain(struct edma_priv *priv)
 {
@@ -1229,7 +1229,8 @@ static void edma_rings_drain(struct edma_priv *priv)
 	for (i = 0; i < priv->num_queues; i++) {
 		struct edma_queue *q = &priv->q[i];
 
-		edma_clean_tx(q, INT_MAX, 0);
+		if (q->txcmpl_ring.desc)
+			edma_clean_tx(q, INT_MAX, 0);
 		q->txcmpl_skb = NULL;
 		q->txcmpl_run = false;
 		edma_queue_rings_drain(q);
