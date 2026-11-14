@@ -543,6 +543,27 @@ define Device/asus_rt-ax59u-ubi
 endef
 TARGET_DEVICES += asus_rt-ax59u-ubi
 
+define Device/asus_rt-be59
+  DEVICE_VENDOR := ASUS
+  DEVICE_MODEL := RT-BE59
+  DEVICE_DTS := mt7987a-asus-rt-be59
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_PACKAGES := kmod-mt7996e kmod-mt7992-23-firmware kmod-phy-airoha-en8811h mt7987-2p5g-phy-firmware
+  IMAGES := sysupgrade.bin
+  KERNEL_INITRAMFS := kernel-bin | lzma | \
+	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd | pad-to 64k
+  KERNEL := kernel-bin | lzma | \
+	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  KERNEL_LOADADDR := 0x48080000
+ifeq ($(IB),)
+  ARTIFACTS := initramfs.trx
+  ARTIFACT/initramfs.trx := append-image-stage initramfs-kernel.bin | \
+  uImage none | asus-trx -v 3 -n $$(DEVICE_MODEL)
+endif
+endef
+TARGET_DEVICES += asus_rt-be59
+
 define Device/asus_tuf-ax4200
   DEVICE_VENDOR := ASUS
   DEVICE_MODEL := TUF-AX4200
