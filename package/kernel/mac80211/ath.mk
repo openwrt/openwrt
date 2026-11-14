@@ -386,7 +386,7 @@ endef
 define KernelPackage/ath12k/config
 
        config ATH12K_THERMAL
-               bool "Enable ath12k thermal sensor support"
+               bool "Enable thermal sensors and throttling support"
                depends on PACKAGE_kmod-ath12k
 
 endef
