@@ -96,7 +96,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	kfree(ap);
  }
  EXPORT_SYMBOL_GPL(ata_port_free);
-@@ -6066,7 +6089,23 @@ int ata_host_register(struct ata_host *h
+@@ -6112,7 +6135,23 @@ int ata_host_register(struct ata_host *h
  		WARN_ON(1);
  		return -EINVAL;
  	}
