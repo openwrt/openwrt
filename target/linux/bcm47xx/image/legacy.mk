@@ -51,10 +51,12 @@ TARGET_DEVICES += asus_wl-500gp-v1
 define Device/asus_wl-500gp-v2
   DEVICE_MODEL := WL-500gP
   DEVICE_VARIANT := v2
-  DEVICE_PACKAGES := kmod-b43 $(USB2_PACKAGES)
+  DEVICE_PACKAGES := kmod-b43 $(USB2_PACKAGES) \
+	bcm47xx-legacy-usb-overlay-swap-support
   $(Device/asus)
   PRODUCTID := "WL500gpv2   "
-  DEFAULT := n
+  ARTIFACTS += install.zip
+  ARTIFACT/install.zip := append-image squashfs.trx | legacy-usb-install-zip-bundle
 endef
 TARGET_DEVICES += asus_wl-500gp-v2
 
