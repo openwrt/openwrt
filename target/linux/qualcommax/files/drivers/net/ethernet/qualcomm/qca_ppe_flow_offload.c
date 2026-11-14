@@ -28,6 +28,7 @@
 #include <net/dsa.h>
 #include <net/flow_offload.h>
 #include <net/dsfield.h>
+#include <net/dst_metadata.h>
 #include <linux/netfilter_netdev.h>
 #include <net/netfilter/nf_conntrack.h>
 #include <net/netfilter/nf_flow_table.h>
@@ -1422,20 +1423,45 @@ static int ppe_shaper_ul_frame(struct qca_ppe_priv *priv, struct sk_buff *skb,
 	return port;
 }
 
-/* A frame ppe_flow_xmit() built for a switch port is not marked redirected
- * and carries one more than that port in skb_iif; everything else names the
- * device to hand it on to there, as for an ifb.
+static void ppe_shaper_port_set(struct qca_ppe_priv *priv, struct sk_buff *skb,
+				unsigned int port)
+{
+	skb_dst_drop(skb);
+	skb_dst_set(skb, dst_clone(&priv->shaper_md[port]->dst));
+}
+
+static int ppe_shaper_port_get(struct qca_ppe_priv *priv,
+			       const struct sk_buff *skb)
+{
+	struct metadata_dst *md = skb_metadata_dst(skb);
+	u32 port;
+
+	if (!md || md->type != METADATA_HW_PORT_MUX)
+		return -1;
+
+	port = md->u.port_info.port_id;
+	if (port >= PPE_NUM_PORTS || md != priv->shaper_md[port])
+		return -1;
+
+	return port;
+}
+
+/* A frame ppe_flow_xmit() built for a switch port carries this driver's dst
+ * for that port; anything else came by a redirect and names the device to
+ * hand it on to in skb_iif, as for an ifb, which drops the rest.
  */
 static netdev_tx_t ppe_shaper_xmit(struct sk_buff *skb, struct net_device *dev)
 {
 	struct ppe_shaper *sh = netdev_priv(dev);
-	struct net_device *to;
+	struct net_device *to = NULL;
 	int port;
 
-	if (!skb->redirected)
-		return ppe_shaper_conduit_xmit(skb, dev, skb->skb_iif - 1);
+	port = ppe_shaper_port_get(sh->priv, skb);
+	if (port >= 0)
+		return ppe_shaper_conduit_xmit(skb, dev, port);
 
-	to = dev_get_by_index_rcu(dev_net(dev), skb->skb_iif);
+	if (skb->redirected)
+		to = dev_get_by_index_rcu(dev_net(dev), skb->skb_iif);
 	if (unlikely(!to)) {
 		dev_core_stats_tx_dropped_inc(dev);
 		kfree_skb(skb);
@@ -1650,7 +1676,7 @@ bool ppe_flow_xmit(struct dsa_switch *ds, struct sk_buff *skb, u32 flow)
 						       vid);
 			skb->dev = shaper;
 			if (xport && ppe_shaper_is(shaper)) {
-				skb->skb_iif = xport;
+				ppe_shaper_port_set(priv, skb, xport - 1);
 			} else {
 				skb->skb_iif = dev->ifindex;
 				skb_set_redirected(skb, false);
@@ -1663,7 +1689,7 @@ bool ppe_flow_xmit(struct dsa_switch *ds, struct sk_buff *skb, u32 flow)
 		if (xdev & PPE_XDEV_PUSH) {
 			if (unlikely(!xport))
 				goto drop;
-			skb->skb_iif = xport;
+			ppe_shaper_port_set(priv, skb, xport - 1);
 		} else if (uplink != dev) {
 			skb->skb_iif = uplink->ifindex;
 			skb_set_redirected(skb, false);
@@ -2840,6 +2866,37 @@ static void ppe_sparse_work(struct work_struct *work)
 			      msecs_to_jiffies(PPE_SPARSE_PERIOD_MS));
 }
 
+static void ppe_shaper_md_free(struct qca_ppe_priv *priv)
+{
+	int i;
+
+	/* A frame still queued holds its own reference. */
+	for (i = 0; i < PPE_NUM_PORTS; i++) {
+		if (priv->shaper_md[i])
+			dst_release(&priv->shaper_md[i]->dst);
+		priv->shaper_md[i] = NULL;
+	}
+}
+
+static int ppe_shaper_md_alloc(struct qca_ppe_priv *priv)
+{
+	int i;
+
+	for (i = 0; i < PPE_NUM_PORTS; i++) {
+		struct metadata_dst *md;
+
+		md = metadata_dst_alloc(0, METADATA_HW_PORT_MUX, GFP_KERNEL);
+		if (!md) {
+			ppe_shaper_md_free(priv);
+			return -ENOMEM;
+		}
+		md->u.port_info.port_id = i;
+		priv->shaper_md[i] = md;
+	}
+
+	return 0;
+}
+
 int ppe_flow_offload_init(struct qca_ppe_priv *priv)
 {
 	struct device *dev = priv->ds.dev;
@@ -2874,14 +2931,21 @@ int ppe_flow_offload_init(struct qca_ppe_priv *priv)
 
 	INIT_LIST_HEAD(&priv->flow_list);
 
-	ret = rhashtable_init(&priv->flow_table, &ppe_flow_ht_params);
+	ret = ppe_shaper_md_alloc(priv);
 	if (ret)
 		return ret;
+
+	ret = rhashtable_init(&priv->flow_table, &ppe_flow_ht_params);
+	if (ret) {
+		ppe_shaper_md_free(priv);
+		return ret;
+	}
 
 	priv->netdev_nb.notifier_call = ppe_flow_netdev_event;
 	ret = register_netdevice_notifier(&priv->netdev_nb);
 	if (ret) {
 		rhashtable_destroy(&priv->flow_table);
+		ppe_shaper_md_free(priv);
 		return ret;
 	}
 
@@ -2913,4 +2977,6 @@ void ppe_flow_offload_exit(struct qca_ppe_priv *priv)
 	for (i = 0; i < ARRAY_SIZE(priv->shaper_dev); i++)
 		if (priv->shaper_dev[i])
 			unregister_netdev(priv->shaper_dev[i]);
+
+	ppe_shaper_md_free(priv);
 }

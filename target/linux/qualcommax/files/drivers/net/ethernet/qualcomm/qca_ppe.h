@@ -1521,6 +1521,10 @@ struct qca_ppe_priv {
 	 * full and left the frame in its qdisc.
 	 */
 	struct net_device *shaper_dev[2];
+	/* What marks a frame ppe_flow_xmit() built for a switch port to the
+	 * shaper device it passes, by port: a dst only this driver holds.
+	 */
+	struct metadata_dst *shaper_md[PPE_NUM_PORTS];
 	atomic_t shaper_busy;
 	bool ct_dscp;
 	/* The software shapers offloaded flows are handed to: the ifb carrying
