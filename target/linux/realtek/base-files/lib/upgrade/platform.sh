@@ -112,6 +112,9 @@ platform_do_upgrade() {
 		draytek_g2282x_set_part_name || return 1
 		default_do_upgrade "$1"
 		;;
+	eltex,rg-5520)
+		platform_do_upgrade_rtl9607c_oneslot "$1"
+		;;
 	linksys,lgs328c|\
 	linksys,lgs328mpc-v2|\
 	linksys,lgs352c)

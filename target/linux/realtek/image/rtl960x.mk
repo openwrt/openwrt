@@ -23,3 +23,15 @@ define Device/buffalo_wsr-1500ax2s
   IMAGE/sysupgrade.bin := append-rootfs | pad-rootfs | sysupgrade-tar rootfs=$$$$@ | append-metadata
 endef
 TARGET_DEVICES += buffalo_wsr-1500ax2s
+
+define Device/eltex_rg-5520
+  SOC := rtl8198d
+  DEVICE_VENDOR := Eltex
+  DEVICE_MODEL := RG-5520
+  KERNEL_SIZE := 10m
+  IMAGE_SIZE := 30m
+  $(Device/kernel-lzma)
+  IMAGE/sysupgrade.bin := append-rootfs | pad-rootfs | sysupgrade-tar rootfs=$$$$@ | append-metadata
+endef
+TARGET_DEVICES += eltex_rg-5520
+
