@@ -1,0 +1,196 @@
+#!/bin/sh /etc/rc.common
+# The PCIe cards of b43-next, held at boot by the kernel's bcma or ssb PCI
+# bridge (built in on bcm53xx): handed to bcma-next's or ssb-next's bridge
+# after the module is loaded (boot, S10) and before the wireless comes up
+# (wpad S19, network S20). Each radio of /etc/config/wireless on such a card
+# moves its path along: the card's bus becomes bcmnN instead of bcmaN, so
+# that wifi config finds it configured instead of adding a radio for it.
+#
+# stop (also when the package is removed) hands the cards back, and the
+# radios their paths from before: kept in b43_next_kernel_path, as the
+# kernel's bus numbers grow while it runs and are those of the boot again
+# only after a reboot.
+
+START=15
+
+ALIASES=/usr/share/b43-next/pci-aliases
+# Written before the cards are handed over, removed after: if it is still
+# there, the last attempt did not finish (a hang, a reboot), and the cards
+# stay with the kernel until it is removed.
+MARKER=/etc/b43-next.binding
+PCI=/sys/bus/pci
+
+b43n_wanted() {
+	local alias modalias
+	modalias=$(cat "$1/modalias" 2>/dev/null) || return 1
+	while read -r alias; do
+		case "$modalias" in
+		$alias) return 0 ;;
+		esac
+	done < "$ALIASES"
+	return 1
+}
+
+b43n_driver() {
+	[ -e "$1/driver" ] && basename "$(readlink "$1/driver")"
+}
+
+# The radios of /etc/config/wireless on PCI device $1: their section names
+b43n_radios() {
+	local s path
+	for s in $(uci -q show wireless | sed -n "s/^wireless\.\([^.=]*\)=wifi-device$/\1/p"); do
+		path=$(uci -q get "wireless.$s.path") || continue
+		case "$path" in
+		*/$1/*) echo "$s" ;;
+		esac
+	done
+}
+
+# A device's path as wifi config writes it: below /sys/devices, without
+# the platform/ in front of a PCI bus
+b43n_wifi_path() {
+	local p=${1#/sys/devices/}
+	case "$p" in
+	platform/*/pci*) p=${p#platform/} ;;
+	esac
+	echo "$p"
+}
+
+# The path of the 802.11 core under PCI device $1: the parent of its phy,
+# or without one (a kernel bridge with no b43 loaded) the core of index $2
+b43n_core_path() {
+	local phy core
+	for phy in /sys/class/ieee80211/*; do
+		core=$(readlink -f "$phy/device")
+		case "$core" in
+		*/$1/*) b43n_wifi_path "$core"; return 0 ;;
+		esac
+	done
+	[ -n "$2" ] || return 1
+	core=$(ls -d "$PCI/devices/$1"/bcm*:"$2" "$PCI/devices/$1"/ssb*:"$2" 2>/dev/null | head -1)
+	[ -n "$core" ] || return 1
+	b43n_wifi_path "$(readlink -f "$core")"
+}
+
+b43n_set_paths() {
+	local s path new changed=
+	for s in $(b43n_radios "$1"); do
+		path=$(uci -q get "wireless.$s.path")
+		new=$(b43n_core_path "$1" "${path##*:}") || continue
+		[ "$path" = "$new" ] && continue
+		uci set "wireless.$s.path=$new"
+		changed=1
+	done
+	[ -z "$changed" ] || uci commit wireless
+}
+
+# The radios wifi config added for device $1 while it moved: all but $2
+b43n_drop_added() {
+	local s keep=" $2 "
+	for s in $(b43n_radios "$1"); do
+		case "$keep" in
+		*" $s "*) continue ;;
+		esac
+		logger -t b43-next "$1: removing the radio added for it ($s)"
+		uci -q delete "wireless.default_$s"
+		uci -q delete "wireless.$s"
+	done
+	uci commit wireless
+}
+
+start() {
+	local dev addr drv bus next before bound= s path
+
+	[ -f "$ALIASES" ] || return 0
+	if [ -e "$MARKER" ]; then
+		logger -t b43-next "the last hand-over did not finish; the cards stay with the kernel (rm $MARKER to retry)"
+		return 0
+	fi
+	touch "$MARKER"
+	sync
+
+	# bcma-next numbers its buses from 0 while the module is loaded
+	next=$(ls /sys/bus/bcma-next/devices 2>/dev/null |
+		sed -n 's/^bcmn\([0-9]*\):.*/\1/p' | sort -n | tail -1)
+	next=${next:+$((next + 1))}
+	next=${next:-0}
+
+	for dev in "$PCI"/devices/*; do
+		addr=${dev##*/}
+		drv=$(b43n_driver "$dev")
+		case "$drv" in
+		bcma-next-pci-bridge|ssb-next-pci-bridge) continue ;;
+		esac
+		b43n_wanted "$dev" || continue
+
+		# The radios' new path, before the device moves: a bcma card's
+		# 802.11 core becomes bcmnN:1
+		before=$(b43n_radios "$addr")
+		for s in $before; do
+			path=$(uci -q get "wireless.$s.path")
+			case "$path" in
+			*/bcma[0-9]*:*)
+				uci -q get "wireless.$s.b43_next_kernel_path" >/dev/null ||
+					uci set "wireless.$s.b43_next_kernel_path=$path"
+				uci set "wireless.$s.path=${path%/*}/bcmn$next:${path##*:}"
+				;;
+			esac
+		done
+		[ -z "$before" ] || uci commit wireless
+
+		for bus in bcma-next-pci-bridge ssb-next-pci-bridge; do
+			echo "$bus" > "$dev/driver_override"
+			[ -e "$dev/driver" ] && echo "$addr" > "$dev/driver/unbind"
+			echo "$addr" > "$PCI/drivers_probe"
+			[ "$(b43n_driver "$dev")" = "$bus" ] && break
+		done
+		if [ "$(b43n_driver "$dev")" != "$bus" ]; then
+			logger -t b43-next "$addr: no b43-next bridge took it, back to the kernel"
+			echo > "$dev/driver_override"
+			echo "$addr" > "$PCI/drivers_probe"
+			b43n_set_paths "$addr"
+			continue
+		fi
+		[ "$bus" = bcma-next-pci-bridge ] && next=$((next + 1))
+		logger -t b43-next "$addr: $drv -> $bus"
+
+		# The path as it came out, and no radio added on the way
+		sleep 1
+		b43n_set_paths "$addr"
+		[ -z "$before" ] || b43n_drop_added "$addr" "$before"
+		bound=1
+	done
+
+	rm -f "$MARKER"
+	sync
+	[ -z "$bound" ] || ubus call network.wireless retry 2>/dev/null
+	return 0
+}
+
+stop() {
+	local dev addr drv before s path
+
+	for dev in "$PCI"/devices/*; do
+		addr=${dev##*/}
+		drv=$(b43n_driver "$dev")
+		case "$drv" in
+		bcma-next-pci-bridge|ssb-next-pci-bridge) ;;
+		*) continue ;;
+		esac
+		before=$(b43n_radios "$addr")
+		echo "$addr" > "$dev/driver/unbind"
+		echo > "$dev/driver_override"
+		echo "$addr" > "$PCI/drivers_probe"
+		logger -t b43-next "$addr: $drv -> $(b43n_driver "$dev")"
+		sleep 1
+		b43n_set_paths "$addr"
+		[ -z "$before" ] || b43n_drop_added "$addr" "$before"
+		for s in $before; do
+			path=$(uci -q get "wireless.$s.b43_next_kernel_path") || continue
+			uci set "wireless.$s.path=$path"
+			uci delete "wireless.$s.b43_next_kernel_path"
+		done
+		[ -z "$before" ] || uci commit wireless
+	done
+	return 0
+}
