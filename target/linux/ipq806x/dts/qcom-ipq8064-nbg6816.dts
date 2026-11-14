@@ -1,0 +1,514 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "qcom-ipq8064-smb208.dtsi"
+
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+
+/ {
+	model = "Zyxel NBG6816";
+	compatible = "zyxel,nbg6816", "qcom,ipq8064";
+
+	memory@42000000 {
+		/* The stock kernel's RAM: the stock firmware keeps the top 4 MB out */
+		reg = <0x42000000 0x1dc00000>;
+		device_type = "memory";
+	};
+
+	aliases {
+		serial0 = &gsbi4_serial;
+
+		led-boot = &led_power;
+		led-failsafe = &led_power;
+		led-running = &led_power;
+		led-upgrade = &led_power;
+	};
+
+	chosen {
+		stdout-path = "serial0:115200n8";
+	};
+
+	keys {
+		compatible = "gpio-keys";
+		pinctrl-0 = <&button_pins>;
+		pinctrl-names = "default";
+
+		/* A latching switch on the back: low with the Wi-Fi on */
+		switch-wifi {
+			label = "wifi";
+			gpios = <&qcom_pinmux 53 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RFKILL>;
+			linux,input-type = <EV_SW>;
+			debounce-interval = <60>;
+		};
+
+		button-reset {
+			label = "reset";
+			gpios = <&qcom_pinmux 54 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+			debounce-interval = <60>;
+		};
+
+		button-wps {
+			label = "wps";
+			gpios = <&qcom_pinmux 65 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_WPS_BUTTON>;
+			debounce-interval = <60>;
+		};
+	};
+
+	/*
+	 * Each WLAN LED is white and amber. The white elements are the radios' own: the 2.4 GHz
+	 * one is ath10k's (ath10k-phy0), the 5 GHz one the Quantenna card's.
+	 */
+	leds {
+		compatible = "gpio-leds";
+		pinctrl-0 = <&led_pins>;
+		pinctrl-names = "default";
+
+		led_power: led-power {
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_WHITE>;
+			gpios = <&qcom_pinmux 9 GPIO_ACTIVE_HIGH>;
+			default-state = "keep";
+		};
+
+		led-wan {
+			function = LED_FUNCTION_WAN;
+			color = <LED_COLOR_ID_WHITE>;
+			gpios = <&qcom_pinmux 64 GPIO_ACTIVE_HIGH>;
+		};
+
+		led-wlan-2ghz {
+			function = LED_FUNCTION_WLAN_2GHZ;
+			color = <LED_COLOR_ID_AMBER>;
+			gpios = <&qcom_pinmux 33 GPIO_ACTIVE_HIGH>;
+		};
+
+		led-wlan-5ghz {
+			function = LED_FUNCTION_WLAN_5GHZ;
+			color = <LED_COLOR_ID_AMBER>;
+			gpios = <&qcom_pinmux 26 GPIO_ACTIVE_HIGH>;
+		};
+	};
+};
+
+&qcom_pinmux {
+	button_pins: button-state {
+		pins = "gpio53", "gpio54", "gpio65";
+		function = "gpio";
+		drive-strength = <2>;
+		bias-pull-up;
+	};
+
+	led_pins: led-state {
+		pins = "gpio9", "gpio26", "gpio33", "gpio64";
+		function = "gpio";
+		drive-strength = <2>;
+		bias-pull-down;
+	};
+
+	mdio0_pins: mdio0-state {
+		/delete-property/ pins;
+		/delete-property/ function;
+		/delete-property/ drive-strength;
+		/delete-property/ bias-disable;
+
+		mux {
+			pins = "gpio0", "gpio1";
+			function = "mdio";
+			drive-strength = <8>;
+			bias-disable;
+		};
+
+		clk {
+			pins = "gpio1";
+			input-disable;
+		};
+	};
+
+	rgmii2_pins: rgmii2-state {
+		/delete-property/ pins;
+		/delete-property/ function;
+		/delete-property/ drive-strength;
+		/delete-property/ bias-disable;
+
+		mux {
+			pins = "gpio27", "gpio28", "gpio29",
+			       "gpio30", "gpio31", "gpio32",
+			       "gpio51", "gpio52", "gpio59",
+			       "gpio60", "gpio61", "gpio62";
+			function = "rgmii2";
+			drive-strength = <8>;
+			bias-disable;
+		};
+
+		tx {
+			pins = "gpio27", "gpio28", "gpio29",
+			       "gpio30", "gpio31", "gpio32";
+			input-disable;
+		};
+	};
+
+	/* U-Boot has no MMC support: nothing else muxes the eMMC's pins after a cold boot */
+	sdcc1_pins: sdcc1-state {
+		mux {
+			pins = "gpio38", "gpio39", "gpio40",
+			       "gpio41", "gpio42", "gpio43",
+			       "gpio44", "gpio45", "gpio46",
+			       "gpio47";
+			function = "sdc1";
+			drive-strength = <8>;
+		};
+
+		clk {
+			pins = "gpio42";
+			bias-disable;
+		};
+
+		cmd-data {
+			pins = "gpio38", "gpio39", "gpio40",
+			       "gpio41", "gpio43", "gpio44",
+			       "gpio45", "gpio46", "gpio47";
+			bias-pull-up;
+		};
+	};
+
+	spi_pins: spi-state {
+		/delete-property/ pins;
+		/delete-property/ function;
+		/delete-property/ drive-strength;
+		/delete-property/ bias-disable;
+
+		mux {
+			pins = "gpio18", "gpio19", "gpio21";
+			function = "gsbi5";
+			drive-strength = <10>;
+			bias-disable;
+		};
+
+		cs {
+			pins = "gpio20";
+			drive-strength = <12>;
+		};
+	};
+
+	usb0_pwr_en_pins: usb0-pwr-en-state {
+		mux {
+			pins = "gpio16", "gpio17";
+			function = "gpio";
+			drive-strength = <12>;
+		};
+
+		pwr {
+			pins = "gpio17";
+			bias-pull-down;
+			output-high;
+		};
+
+		ovc {
+			pins = "gpio16";
+			bias-pull-up;
+		};
+	};
+
+	usb1_pwr_en_pins: usb1-pwr-en-state {
+		mux {
+			pins = "gpio14", "gpio15";
+			function = "gpio";
+			drive-strength = <12>;
+		};
+
+		pwr {
+			pins = "gpio14";
+			bias-pull-down;
+			output-high;
+		};
+
+		ovc {
+			pins = "gpio15";
+			bias-pull-up;
+		};
+	};
+};
+
+&gsbi4 {
+	qcom,mode = <GSBI_PROT_I2C_UART>;
+	status = "okay";
+
+	serial@16340000 {
+		status = "okay";
+	};
+};
+
+&gsbi5 {
+	qcom,mode = <GSBI_PROT_SPI>;
+	status = "okay";
+
+	spi@1a280000 {
+		status = "okay";
+
+		pinctrl-0 = <&spi_pins>;
+		pinctrl-names = "default";
+
+		cs-gpios = <&qcom_pinmux 20 GPIO_ACTIVE_LOW>;
+
+		flash@0 {
+			compatible = "jedec,spi-nor";
+			spi-max-frequency = <50000000>;
+			reg = <0>;
+
+			partitions {
+				compatible = "fixed-partitions";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				partition@0 {
+					label = "SBL";
+					reg = <0x0 0x100000>;
+					read-only;
+				};
+
+				partition@100000 {
+					label = "RPM";
+					reg = <0x100000 0x40000>;
+					read-only;
+				};
+
+				partition@140000 {
+					label = "u-boot";
+					reg = <0x140000 0x80000>;
+					read-only;
+				};
+
+				partition@1c0000 {
+					label = "env";
+					reg = <0x1c0000 0x10000>;
+					read-only;
+
+					nvmem-layout {
+						compatible = "u-boot,env";
+						env-size = <0x10000>;
+
+						macaddr_uboot_ethaddr: ethaddr {
+							#nvmem-cell-cells = <1>;
+						};
+					};
+				};
+
+				/* Blank here: the Wi-Fi calibration is in the cards' OTP */
+				partition@1d0000 {
+					label = "ART";
+					reg = <0x1d0000 0x10000>;
+					read-only;
+				};
+
+				/* U-Boot boots the uImage at its start, reading 10 MB */
+				partition@1e0000 {
+					compatible = "denx,uimage";
+					label = "firmware";
+					reg = <0x1e0000 0x1e20000>;
+				};
+			};
+		};
+	};
+};
+
+&mdio0 {
+	status = "okay";
+
+	pinctrl-0 = <&mdio0_pins>;
+	pinctrl-names = "default";
+
+	switch@10 {
+		compatible = "qca,qca8337";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <0x10>;
+
+		ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			port@0 {
+				reg = <0>;
+				label = "cpu";
+				ethernet = <&gmac1>;
+				phy-mode = "rgmii";
+				tx-internal-delay-ps = <1000>;
+				rx-internal-delay-ps = <1000>;
+
+				fixed-link {
+					speed = <1000>;
+					full-duplex;
+				};
+			};
+
+			port@1 {
+				reg = <1>;
+				label = "lan1";
+				phy-mode = "internal";
+				phy-handle = <&phy_port1>;
+			};
+
+			port@2 {
+				reg = <2>;
+				label = "lan2";
+				phy-mode = "internal";
+				phy-handle = <&phy_port2>;
+			};
+
+			port@3 {
+				reg = <3>;
+				label = "lan3";
+				phy-mode = "internal";
+				phy-handle = <&phy_port3>;
+			};
+
+			port@4 {
+				reg = <4>;
+				label = "lan4";
+				phy-mode = "internal";
+				phy-handle = <&phy_port4>;
+			};
+
+			port@5 {
+				reg = <5>;
+				label = "wan";
+				phy-mode = "internal";
+				phy-handle = <&phy_port5>;
+			};
+
+			port@6 {
+				reg = <6>;
+				label = "cpu";
+				ethernet = <&gmac2>;
+				phy-mode = "sgmii";
+				qca,sgmii-enable-pll;
+
+				fixed-link {
+					speed = <1000>;
+					full-duplex;
+				};
+			};
+		};
+
+		mdio {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			phy_port1: phy@0 {
+				reg = <0>;
+			};
+
+			phy_port2: phy@1 {
+				reg = <1>;
+			};
+
+			phy_port3: phy@2 {
+				reg = <2>;
+			};
+
+			phy_port4: phy@3 {
+				reg = <3>;
+			};
+
+			phy_port5: phy@4 {
+				reg = <4>;
+			};
+		};
+	};
+};
+
+/* The MACs as the stock firmware sets them: eth0 ethaddr + 3, eth1 ethaddr + 2 */
+&gmac1 {
+	status = "okay";
+	phy-mode = "rgmii";
+	qcom,id = <1>;
+
+	pinctrl-0 = <&rgmii2_pins>;
+	pinctrl-names = "default";
+
+	nvmem-cells = <&macaddr_uboot_ethaddr 3>;
+	nvmem-cell-names = "mac-address";
+
+	fixed-link {
+		speed = <1000>;
+		full-duplex;
+	};
+};
+
+&gmac2 {
+	status = "okay";
+	phy-mode = "sgmii";
+	qcom,id = <2>;
+
+	nvmem-cells = <&macaddr_uboot_ethaddr 2>;
+	nvmem-cell-names = "mac-address";
+
+	fixed-link {
+		speed = <1000>;
+		full-duplex;
+	};
+};
+
+&hs_phy_0 {
+	status = "okay";
+};
+
+&ss_phy_0 {
+	status = "okay";
+};
+
+&usb3_0 {
+	status = "okay";
+
+	pinctrl-0 = <&usb0_pwr_en_pins>;
+	pinctrl-names = "default";
+};
+
+&hs_phy_1 {
+	status = "okay";
+};
+
+&ss_phy_1 {
+	status = "okay";
+};
+
+&usb3_1 {
+	status = "okay";
+
+	pinctrl-0 = <&usb1_pwr_en_pins>;
+	pinctrl-names = "default";
+};
+
+/* The 4 GB eMMC, a data disk: U-Boot can't boot from it */
+&sdcc1 {
+	status = "okay";
+
+	pinctrl-0 = <&sdcc1_pins>;
+	pinctrl-names = "default";
+};
+
+/* The 5 GHz card, a Quantenna QSR1000: qtnfmac's firmware for it was never released */
+&pcie0 {
+	status = "okay";
+};
+
+/* The 2.4 GHz card; its calibration is in its own OTP, which ath10k reads by default */
+&pcie1 {
+	status = "okay";
+};
+
+&pcie_bridge1 {
+	wifi@0,0 {
+		compatible = "qcom,ath10k";
+		reg = <0x00010000 0 0 0 0>;
+		nvmem-cells = <&macaddr_uboot_ethaddr 0>;
+		nvmem-cell-names = "mac-address";
+	};
+};
+
+&adm_dma {
+	status = "okay";
+};

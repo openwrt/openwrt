@@ -630,6 +630,23 @@ define Device/ubnt_unifi-ac-hd
 endef
 TARGET_DEVICES += ubnt_unifi-ac-hd
 
+define Device/zyxel_nbg6816
+	$(call Device/LegacyImage)
+	DEVICE_VENDOR := Zyxel
+	DEVICE_MODEL := NBG6816
+	DEVICE_ALT0_VENDOR := Zyxel
+	DEVICE_ALT0_MODEL := Armor Z1
+	SOC := qcom-ipq8064
+	BLOCKSIZE := 64k
+	# U-Boot's boot_flash reads 10 MiB of the firmware partition
+	KERNEL_SIZE := 10240k
+	IMAGE_SIZE := 30848k
+	DEVICE_PACKAGES := ath10k-firmware-qca988x-ct -kmod-ata-ahci -kmod-ata-ahci-platform
+	IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | \
+		append-rootfs | pad-rootfs | check-size | append-metadata
+endef
+TARGET_DEVICES += zyxel_nbg6816
+
 define Device/zyxel_nbg6817
 	$(Device/dsa-migration)
 	DEVICE_VENDOR := Zyxel
