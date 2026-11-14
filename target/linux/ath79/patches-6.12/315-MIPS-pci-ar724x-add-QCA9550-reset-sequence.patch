@@ -1,3 +1,4 @@
+From d883eaacd428e1231554687e9875248291a004cc Mon Sep 17 00:00:00 2001
 From: David Bauer <mail@david-bauer.net>
 Date: Sat, 11 Apr 2020 14:03:12 +0200
 Subject: MIPS: pci-ar724x: add QCA9550 reset sequence
@@ -13,7 +14,7 @@ Also get the resets from OF to support handling of the second
 PCIe root-complex on the QCA9558.
 
 Signed-off-by: David Bauer <mail@david-bauer.net>
-
+---
 --- a/arch/mips/include/asm/mach-ath79/ar71xx_regs.h
 +++ b/arch/mips/include/asm/mach-ath79/ar71xx_regs.h
 @@ -390,6 +390,7 @@

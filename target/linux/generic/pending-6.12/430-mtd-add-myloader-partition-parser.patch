@@ -1,4 +1,6 @@
+From d8bf22859b51faa09d22c056fe221a45d2f7a3b8 Mon Sep 17 00:00:00 2001
 From: Florian Fainelli <f.fainelli@gmail.com>
+Date: Wed, 28 Mar 2007 08:35:10 +0000
 Subject: Add myloader partition table parser
 
 [john@phozen.org: shoud be upstreamable]
@@ -7,7 +9,7 @@ lede-commit: d8bf22859b51faa09d22c056fe221a45d2f7a3b8
 Signed-off-by: Florian Fainelli <f.fainelli@gmail.com>
 [adjust for kernel 5.4, add myloader.c to patch]
 Signed-off-by: Adrian Schmutzler <freifunk@adrianschmutzler.de>
-
+---
 --- a/drivers/mtd/parsers/Kconfig
 +++ b/drivers/mtd/parsers/Kconfig
 @@ -62,6 +62,22 @@ config MTD_CMDLINE_PARTS

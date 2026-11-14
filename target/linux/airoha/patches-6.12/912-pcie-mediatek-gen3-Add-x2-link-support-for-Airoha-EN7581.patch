@@ -1,4 +1,6 @@
+From 150d05f8c69b7c9825e83f5600d76402cc7effc6 Mon Sep 17 00:00:00 2001
 From: Ryan Chen <rchen14b@gmail.com>
+Date: Tue, 10 Feb 2026 22:25:01 -0600
 Subject: PCI: mediatek-gen3: Add PCIe x2 link support for Airoha EN7581
 
 The Airoha EN7581 SoC supports PCIe x2 mode where two PCIe lanes are
@@ -19,6 +21,7 @@ Gen3 capability from the Link Capabilities 2 register, allowing the
 link to retrain at Gen3 x2 (8 GT/s).
 
 Signed-off-by: Ryan Chen <rchen14b@gmail.com>
+---
 --- a/drivers/pci/controller/pcie-mediatek-gen3.c
 +++ b/drivers/pci/controller/pcie-mediatek-gen3.c
 @@ -61,6 +61,14 @@
