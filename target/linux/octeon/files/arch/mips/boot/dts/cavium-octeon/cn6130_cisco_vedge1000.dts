@@ -36,6 +36,7 @@
 					nvmem-cells = <&macaddr_eeprom 3>;
 					nvmem-cell-names = "mac-address";
 					label = "lan2";
+					openwrt,netdev-name = "lan2";
 					/delete-property/ local-mac-address;
 				};
 
@@ -43,6 +44,7 @@
 					nvmem-cells = <&macaddr_eeprom 4>;
 					nvmem-cell-names = "mac-address";
 					label = "lan3";
+					openwrt,netdev-name = "lan3";
 					/delete-property/ local-mac-address;
 				};
 
@@ -50,6 +52,7 @@
 					nvmem-cells = <&macaddr_eeprom 1>;
 					nvmem-cell-names = "mac-address";
 					label = "lan0";
+					openwrt,netdev-name = "lan0";
 					/delete-property/ local-mac-address;
 				};
 
@@ -59,6 +62,7 @@
 					nvmem-cells = <&macaddr_eeprom 2>;
 					nvmem-cell-names = "mac-address";
 					label = "lan1";
+					openwrt,netdev-name = "lan1";
 				};
 			};
 
@@ -69,6 +73,7 @@
 					nvmem-cells = <&macaddr_eeprom 7>;
 					nvmem-cell-names = "mac-address";
 					label = "lan6";
+					openwrt,netdev-name = "lan6";
 				};
 
 				ethernet@1 {
@@ -77,6 +82,7 @@
 					nvmem-cells = <&macaddr_eeprom 8>;
 					nvmem-cell-names = "mac-address";
 					label = "lan7";
+					openwrt,netdev-name = "lan7";
 				};
 
 				ethernet@2 {
@@ -85,6 +91,7 @@
 					nvmem-cells = <&macaddr_eeprom 5>;
 					nvmem-cell-names = "mac-address";
 					label = "lan4";
+					openwrt,netdev-name = "lan4";
 				};
 
 				ethernet@3 {
@@ -93,6 +100,7 @@
 					nvmem-cells = <&macaddr_eeprom 6>;
 					nvmem-cell-names = "mac-address";
 					label = "lan5";
+					openwrt,netdev-name = "lan5";
 				};
 			};
 		};
