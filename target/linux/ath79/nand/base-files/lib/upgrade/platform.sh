@@ -11,12 +11,21 @@ RAMFS_COPY_BIN='fw_printenv fw_setenv nandwrite'
 RAMFS_COPY_DATA='/etc/fw_env.config /var/lock/fw_printenv.lock'
 
 bsb002_do_upgrade() {
-	local target
-	if grep -q 'ubi.mtd=root-1' /proc/cmdline; then
-		target=0
-	else
-		target=1
-	fi
+	local target slot
+
+	slot=$(fw_printenv -n bootslot 2>/dev/null) || {
+		echo "BSB002: cannot read bootslot"
+		nand_do_upgrade_failed
+	}
+	case "$slot" in
+	0) target=1 ;;
+	1) target=0 ;;
+	*)
+		echo "BSB002: unexpected bootslot '$slot'"
+		nand_do_upgrade_failed
+		;;
+	esac
+
 	CI_KERNPART="kernel-$target"
 	CI_UBIPART="root-$target"
 	nand_do_flash_file "$1" || {
