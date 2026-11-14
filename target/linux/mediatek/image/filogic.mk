@@ -2392,6 +2392,34 @@ define Device/iptime_ax7800m-6e
 endef
 TARGET_DEVICES += iptime_ax7800m-6e
 
+define Device/iptime_be5100p
+  DEVICE_VENDOR := ipTIME
+  DEVICE_MODEL := BE5100plus
+  DEVICE_DTS := mt7987a-iptime-be5100p
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_PACKAGES := mt7987-2p5g-phy-firmware kmod-mt7992-23-firmware kmod-usb3
+  UBINIZE_OPTS := -E 5
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  KERNEL_IN_UBI := 1
+  KERNEL_LOADADDR := 0x40000000
+  KERNEL := kernel-bin | lzma | \
+	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
+  KERNEL_INITRAMFS := kernel-bin | lzma | \
+	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd | pad-to 64k
+  IMAGES := sysupgrade.bin
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+ifeq ($(IB),)
+ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
+  IMAGES += factory.bin
+  IMAGE/factory.bin := append-squashfs4-fakeroot | sysupgrade-tar \
+	kernel=$$$$(BIN_DIR)/$$(KERNEL_INITRAMFS_IMAGE) rootfs=$$$$@ | \
+	append-metadata | iptime-crc32 be5100p
+endif
+endif
+endef
+TARGET_DEVICES += iptime_be5100p
+
 define Device/jcg_q30-pro
   DEVICE_VENDOR := JCG
   DEVICE_MODEL := Q30 PRO
