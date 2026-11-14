@@ -1,0 +1,57 @@
+From 607aa5f409c88d842af53193c7388ed3550acdd0 Mon Sep 17 00:00:00 2001
+From: Alex Rau <alex@retroduction.org>
+Date: Tue, 3 Nov 2026 22:40:00 +0100
+Subject: [PATCH] net: ethernet: qualcomm: edma: wake the Tx queue of the
+ completed ring
+
+edma_tx_complete() wakes the Tx queue numbered after the CPU that runs
+the completion, while the xmit path stops the queue of the skb queue
+mapping. With all Tx completion interrupts on one CPU, only that CPU's
+queue is ever woken; a queue of another CPU stays stopped forever once
+its ring was full, and all traffic mapped to it is lost.
+
+Port n uses the rings (n - 1) * num_possible_cpus() + q for its queue q,
+so wake the queue at the completion ring's index modulo the CPU count.
+
+Signed-off-by: Alex Rau <alex@retroduction.org>
+Assisted-by: Claude:claude-opus-5-5
+---
+ drivers/net/ethernet/qualcomm/ppe/edma_tx.c | 14 +++++++++++---
+ 1 file changed, 11 insertions(+), 3 deletions(-)
+
+--- a/drivers/net/ethernet/qualcomm/ppe/edma_tx.c
++++ b/drivers/net/ethernet/qualcomm/ppe/edma_tx.c
+@@ -100,7 +100,7 @@ u32 edma_tx_complete(u32 work_to_do, str
+ 	struct edma_txcmpl_stats *txcmpl_stats = &txcmpl_ring->txcmpl_stats;
+ 	struct ppe_device *ppe_dev = edma_ctx->ppe_dev;
+ 	struct regmap *regmap = ppe_dev->regmap;
+-	u32 cons_idx, end_idx, data, cpu_id;
++	u32 cons_idx, end_idx, data, cpu_id, queue_id;
+ 	struct device *dev = ppe_dev->dev;
+ 	u32 avail, count, txcmpl_errors;
+ 	struct edma_txcmpl_desc *txcmpl;
+@@ -212,14 +212,22 @@ u32 edma_tx_complete(u32 work_to_do, str
+ 	/* If tx_requeue_stop disabled (tx_requeue_stop = 0)
+ 	 * Fetch the tx queue of interface and check if it is stopped.
+ 	 * if queue is stopped and interface is up, wake up this queue.
++	 *
++	 * Wake the queue that this completion ring serves, not the queue of
++	 * the CPU running the completion: the completion interrupts may all
++	 * run on one CPU, and the queues of the other CPUs would then stay
++	 * stopped. Port n uses the rings (n - 1) * num_possible_cpus() + q
++	 * for its queue q (edma_cfg_tx_fill_per_port_tx_map()).
+ 	 */
+ 	if (unlikely(!edma_ctx->tx_requeue_stop)) {
+ 		cpu_id = smp_processor_id();
+-		nq = netdev_get_tx_queue(txcmpl_ring->napi.dev, cpu_id);
++		queue_id = (txcmpl_ring - edma_ctx->txcmpl_rings) %
++			   num_possible_cpus();
++		nq = netdev_get_tx_queue(txcmpl_ring->napi.dev, queue_id);
+ 		if (unlikely(netif_tx_queue_stopped(nq)) &&
+ 		    netif_carrier_ok(txcmpl_ring->napi.dev)) {
+ 			dev_dbg(dev, "Waking queue number %d, for interface %s\n",
+-				cpu_id, txcmpl_ring->napi.dev->name);
++				queue_id, txcmpl_ring->napi.dev->name);
+ 			__netif_tx_lock(nq, cpu_id);
+ 			netif_tx_wake_queue(nq);
+ 			__netif_tx_unlock(nq);
