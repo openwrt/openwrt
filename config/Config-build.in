@@ -161,6 +161,32 @@ menu "Global build settings"
 		  Useful for release builds, so that kernel issues can be debugged offline
 		  later.
 
+	config BUILD_SANDBOX
+		bool "Sandbox package Build/Configure, Build/Compile and Build/Install"
+		depends on HOST_OS_LINUX || HOST_OS_MACOS
+		default BUILDBOT
+		help
+		  Run upstream package Build/Configure, Build/Compile and
+		  Build/Install steps inside a filesystem and network sandbox.
+
+		  Only the system toolchain directories and the OpenWrt tree
+		  are visible, read-only; just the package build directory
+		  (plus a private temp and ccache directory) is writable and
+		  network access is blocked. This catches packages that
+		  download at build time or touch the host and other packages'
+		  files.
+
+		  This is best-effort isolation, not a security boundary for
+		  untrusted packages: OpenWrt's own package steps and e.g.
+		  uci-defaults/postinst scripts during image builds still run
+		  outside the sandbox.
+
+		  On Linux this uses bubblewrap (bwrap) namespaces, on macOS
+		  sandbox-exec with a Seatbelt profile.
+
+		  Enabled by default for buildbot configurations. If unsure,
+		  say N.
+
 	menu "Kernel build options"
 
 	source "config/Config-kernel.in"
