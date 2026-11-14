@@ -45,21 +45,17 @@ platform_do_upgrade() {
 	wd,cloud-mirror-gen2)
 		nand_do_upgrade "$1"
 		;;
-	zyxel,nas326)
-		nas326_initial_setup
-		nand_do_upgrade "$1"
-		;;
 	ctera,c200-v2)
-	part=$(find_mtd_part "active_bank")
+		part=$(find_mtd_part "active_bank")
 
-	if [ -n "$part" ]; then
-		CI_KERNPART="$(strings $part | grep bank)"
-		nand_do_upgrade "$1"
-	else
-		echo "active_bank partition missed!"
-		return 1
-	fi
-	;;
+		if [ -n "$part" ]; then
+			CI_KERNPART="$(strings $part | grep bank)"
+			nand_do_upgrade "$1"
+		else
+			echo "active_bank partition missed!"
+			return 1
+		fi
+		;;
 	cznic,turris-omnia|\
 	kobol,helios4|\
 	solidrun,clearfog-base-a1|\
@@ -67,10 +63,10 @@ platform_do_upgrade() {
 		legacy_sdcard_do_upgrade "$1"
 		;;
 	fortinet,fg-30e|\
-	fortinet,fwf-30e|\
 	fortinet,fg-50e|\
 	fortinet,fg-51e|\
 	fortinet,fg-52e|\
+	fortinet,fwf-30e|\
 	fortinet,fwf-50e-2r|\
 	fortinet,fwf-51e)
 		fortinet_do_upgrade "$1"
@@ -101,11 +97,16 @@ platform_do_upgrade() {
 	linksys,wrt32x)
 		platform_do_upgrade_linksys "$1"
 		;;
+	zyxel,nas326)
+		nas326_initial_setup
+		nand_do_upgrade "$1"
+		;;
 	*)
 		default_do_upgrade "$1"
 		;;
 	esac
 }
+
 platform_copy_config() {
 	case "$(board_name)" in
 	cznic,turris-omnia|\

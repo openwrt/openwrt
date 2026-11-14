@@ -39,13 +39,10 @@ methode,udpu)
 methode,edpu)
 	# eDPU+ has a 88E6361 switch, so we check for it
 	if ip link | grep -q uplink; then
-	ucidef_set_interfaces_lan_wan "downlink" "uplink"
+		ucidef_set_interfaces_lan_wan "downlink" "uplink"
 	else
-	ucidef_set_interfaces_lan_wan "eth1" "eth0"
+		ucidef_set_interfaces_lan_wan "eth1" "eth0"
 	fi
-	;;
-ripe,atlas-v5)
-	ucidef_set_interface_lan "eth0"
 	;;
 *)
 	ucidef_set_interface_lan "eth0"
