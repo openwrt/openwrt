@@ -25,7 +25,7 @@ Signed-off-by: Ying Huang <ying.huang@oss.cipunited.com>
 
 --- a/backends/Makefile.am
 +++ b/backends/Makefile.am
-@@ -102,7 +102,7 @@ loongarch_SRCS = loongarch_init.c loonga
+@@ -103,7 +103,7 @@ loongarch_SRCS = loongarch_init.c loonga
  
  arc_SRCS = arc_init.c arc_symbol.c
  
@@ -772,7 +772,7 @@ Signed-off-by: Ying Huang <ying.huang@oss.cipunited.com>
 +}
 --- a/libelf/libelfP.h
 +++ b/libelf/libelfP.h
-@@ -624,4 +624,5 @@ extern void __libelf_reset_rawdata (Elf_
+@@ -640,4 +640,5 @@ extern void __libelf_reset_rawdata (Elf_
  #define ELF64_MIPS_R_TYPE1(i)          ((i) & 0xff)
  #define ELF64_MIPS_R_TYPE2(i)           (((i) >> 8) & 0xff)
  #define ELF64_MIPS_R_TYPE3(i)           (((i) >> 16) & 0xff)
@@ -994,7 +994,7 @@ Signed-off-by: Ying Huang <ying.huang@oss.cipunited.com>
  	    }
  	}
      }
-@@ -12752,7 +12848,7 @@ print_debug (Dwfl_Module *dwflmod, Ebl *
+@@ -12763,7 +12859,7 @@ print_debug (Dwfl_Module *dwflmod, Ebl *
  	  GElf_Shdr shdr_mem;
  	  GElf_Shdr *shdr = gelf_getshdr (scn, &shdr_mem);
  
@@ -1003,7 +1003,7 @@ Signed-off-by: Ying Huang <ying.huang@oss.cipunited.com>
  	    {
  	      const char *name = elf_strptr (ebl->elf, shstrndx,
  					     shdr->sh_name);
-@@ -12783,7 +12879,7 @@ print_debug (Dwfl_Module *dwflmod, Ebl *
+@@ -12794,7 +12890,7 @@ print_debug (Dwfl_Module *dwflmod, Ebl *
        GElf_Shdr shdr_mem;
        GElf_Shdr *shdr = gelf_getshdr (scn, &shdr_mem);
  
@@ -1014,7 +1014,7 @@ Signed-off-by: Ying Huang <ying.huang@oss.cipunited.com>
  	  {
 --- a/tests/Makefile.am
 +++ b/tests/Makefile.am
-@@ -241,7 +241,7 @@ TESTS = run-arextract.sh run-arsymtest.s
+@@ -242,7 +242,7 @@ TESTS = run-arextract.sh run-arsymtest.s
  	run-nvidia-extended-linemap-libdw.sh run-nvidia-extended-linemap-readelf.sh \
  	run-readelf-dw-form-indirect.sh run-strip-largealign.sh \
  	run-readelf-Dd.sh run-dwfl-core-noncontig.sh run-cu-dwp-section-info.sh \
@@ -1023,7 +1023,7 @@ Signed-off-by: Ying Huang <ying.huang@oss.cipunited.com>
  	run-sysroot.sh \
  	run-test-manyfuncs.sh \
  	run-eu-search-cfi.sh run-eu-search-macros.sh \
-@@ -738,7 +738,7 @@ EXTRA_DIST = run-arextract.sh run-arsymt
+@@ -744,7 +744,7 @@ EXTRA_DIST = run-arextract.sh run-arsymt
  	     testfile-dwp-4-cu-index-overflow.bz2 \
  	     testfile-dwp-4-cu-index-overflow.dwp.bz2 \
  	     testfile-dwp-cu-index-overflow.source \

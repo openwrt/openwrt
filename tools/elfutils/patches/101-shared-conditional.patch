@@ -9,7 +9,7 @@
  AC_CACHE_CHECK([whether gcc supports __attribute__((visibility()))],
  	ac_cv_visibility, [dnl
  save_CFLAGS="$CFLAGS"
-@@ -467,7 +469,10 @@ AS_HELP_STRING([--enable-install-elfh],[
+@@ -469,7 +471,10 @@ AS_HELP_STRING([--enable-install-elfh],[
  AM_CONDITIONAL(INSTALL_ELFH, test "$install_elfh" = yes)
  
  AM_CONDITIONAL(BUILD_STATIC, [dnl
@@ -161,7 +161,7 @@
  		  vdsosyms \
  		  getsrc_die strptr newdata newzdata \
  		  elfstrtab dwfl-proc-attach \
-@@ -204,7 +204,7 @@ TESTS = run-arextract.sh run-arsymtest.s
+@@ -205,7 +205,7 @@ TESTS = run-arextract.sh run-arsymtest.s
  	run-readelf-addr.sh run-readelf-str.sh \
  	run-readelf-multi-noline.sh \
  	run-readelf-types.sh \
@@ -170,7 +170,7 @@
  	run-linkmap-cut.sh run-aggregate-size.sh run-peel-type.sh \
  	vdsosyms run-readelf-A.sh \
  	run-getsrc-die.sh run-strptr.sh newdata newzdata \
-@@ -341,6 +341,11 @@ if HAVE_LIBPFM
+@@ -342,6 +342,11 @@ if HAVE_LIBPFM
  export HAVE_LIBPFM = 1
  endif
  
