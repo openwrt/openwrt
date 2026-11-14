@@ -256,10 +256,7 @@ ramips_setup_interfaces()
 		ucidef_add_switch "switch1" \
 			"0:lan:3" "1:lan:2" "2:lan:1" "4:lan:4" "3:wan" "7@eth0"
 		;;
-	wavlink,wl-wn531g3)
-		ucidef_add_switch "switch0" \
-			"0:lan:4" "1:lan:3" "2:lan:2" "5:lan:1" "4:wan" "6@eth0"
-		;;
+	wavlink,wl-wn531g3|\
 	wavlink,wl-wn531g3-a2)
 		ucidef_add_switch "switch0" \
 			"0:lan:4" "1:lan:3" "2:lan:2" "5:lan:1" "4:wan" "6@eth0"

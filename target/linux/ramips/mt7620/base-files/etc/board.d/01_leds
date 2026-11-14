@@ -23,6 +23,11 @@ alfa-network,tube-e4g)
 	ucidef_set_led_netdev "4g" "4g" "green:4g" "wwan0"
 	ucidef_set_led_netdev "lan" "lan" "blue:lan" "eth0"
 	;;
+ampedwireless,b1200ex|\
+edimax,ew-7476rpc|\
+edimax,ew-7478ac)
+	ucidef_set_led_switch "lan" "lan" "green:lan"  "switch0" "0x20"
+	;;
 asus,rp-n53)
 	ucidef_set_led_netdev "eth" "Network" "white:back" "eth0"
 	ucidef_set_led_netdev "wifi_led" "wifi" "blue:wifi" "wlan0"
@@ -102,7 +107,7 @@ domywifi,dw22d)
 	ucidef_set_led_switch "lan3" "lan3" "amber:lan3" "switch0" "0x08"
 	ucidef_set_led_switch "lan4" "lan4" "amber:lan4" "switch0" "0x10"
 	ucidef_set_led_switch "wan" "wan" "amber:wan" "switch0" "0x01"
-		;;
+	;;
 dovado,tiny-ac)
 	ucidef_set_led_netdev "wifi_led" "wifi" "orange:wifi" "wlan0"
 	;;
@@ -116,11 +121,6 @@ edimax,br-6208ac-v2)
 edimax,br-6478ac-v2|\
 edimax,ew-7478apc)
 	ucidef_set_led_netdev "wifi_led" "wifi" "blue:wlan" "wlan0"
-	;;
-ampedwireless,b1200ex|\
-edimax,ew-7476rpc|\
-edimax,ew-7478ac)
-	ucidef_set_led_switch "lan" "lan" "green:lan"  "switch0" "0x20"
 	;;
 elecom,wrh-300cr)
 	ucidef_set_led_netdev "lan" "lan" "green:ethernet" "eth0"
@@ -146,7 +146,8 @@ hnet,c108)
 	ucidef_set_led_netdev "lan" "lan" "green:lan" "eth0"
 	ucidef_set_led_netdev "modem" "modem" "green:modem" "wwan0"
 	;;
-humax,e2)
+humax,e2|\
+tplink,re200-v1)
 	ucidef_set_led_netdev "lan" "lan" "green:lan" "eth0"
 	;;
 iodata,wn-ac1167gr|\
@@ -166,11 +167,6 @@ kingston,mlw221|\
 kingston,mlwg2|\
 sanlinking,d240)
 	ucidef_set_led_netdev "wifi_led" "wifi" "blue:wifi" "wlan0"
-	;;
-snr,cpe-w4n-mt)
-	ucidef_set_led_heartbeat "wps" "WPS" "green:wps"
-	ucidef_set_led_timer "sys" "System" "green:sys" "500" "500"
-	ucidef_set_led_wlan "wlan" "Wi-Fi" "green:wlan" "phy0tpt"
 	;;
 lenovo,newifi-y1)
 	ucidef_set_led_netdev "wifi" "WIFI" "blue:wifi" "wlan1"
@@ -221,6 +217,11 @@ rostelecom,s1010)
 	ucidef_set_led_switch "lan-4" "lan-4" "green:lan-4" "switch0" "0x10"
 	ucidef_set_led_switch "wan" "wan" "green:wan" "switch0" "0x01"
 	;;
+snr,cpe-w4n-mt)
+	ucidef_set_led_heartbeat "wps" "WPS" "green:wps"
+	ucidef_set_led_timer "sys" "System" "green:sys" "500" "500"
+	ucidef_set_led_wlan "wlan" "Wi-Fi" "green:wlan" "phy0tpt"
+	;;
 tplink,archer-c2-v1)
 	ucidef_set_led_switch "lan" "lan" "green:lan" "switch1" "0x1e"
 	ucidef_set_led_switch "wan" "wan" "green:wan" "switch1" "0x01"
@@ -245,9 +246,6 @@ tplink,archer-mr200)
 tplink,ec220-g5-v2)
 	ucidef_set_led_switch "lan" "lan" "green:lan" "switch1" "0x17"
 	ucidef_set_led_switch "wan" "wan" "orange:wan" "switch1" "0x08"
-	;;
-tplink,re200-v1)
-	ucidef_set_led_netdev "lan" "lan" "green:lan" "eth0"
 	;;
 trendnet,tha103ac)
 	ucidef_set_rssimon "wlan0" "200000" "1"

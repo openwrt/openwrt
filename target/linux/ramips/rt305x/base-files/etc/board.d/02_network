@@ -15,8 +15,8 @@ ramips_setup_interfaces()
 	allnet,all5002|\
 	allnet,all5003|\
 	belkin,f7c027|\
-	dlink,dcs-930l-b1|\
 	dlink,dcs-930|\
+	dlink,dcs-930l-b1|\
 	edimax,3g-6200nl|\
 	hame,mpr-a1|\
 	hame,mpr-a2|\
@@ -238,22 +238,6 @@ ramips_setup_macs()
 	belkin,f5d8235-v2)
 		wan_mac=$(macaddr_add "$(mtd_get_mac_binary uboot 0x40004)" 1)
 		;;
-	dlink,dir-300-b7|\
-	dlink,dir-320-b1|\
-	dlink,dir-620-a1|\
-	engenius,esr-9753|\
-	hame,mpr-a1|\
-	hauppauge,broadway|\
-	huawei,d105|\
-	hilink,hlk-rm04|\
-	nexaira,bc2|\
-	olimex,rt5350f-olinuxino|\
-	olimex,rt5350f-olinuxino-evb|\
-	petatel,psr-680w|\
-	skyline,sl-r7205)
-		lan_mac=$(macaddr_setbit_la "$(cat /sys/class/net/eth0/address)")
-		wan_mac=$(macaddr_add "$lan_mac" 1)
-		;;
 	dlink,dap-1350)
 		wan_mac=$(macaddr_add "$(mtd_get_mac_binary devdata 0x2e)" 1)
 		;;
@@ -261,6 +245,22 @@ ramips_setup_macs()
 	dlink,dir-600-b1|\
 	dlink,dir-610-a1)
 		wan_mac=$(macaddr_add "$(mtd_get_mac_binary devdata 0x4004)" 1)
+		;;
+	dlink,dir-300-b7|\
+	dlink,dir-320-b1|\
+	dlink,dir-620-a1|\
+	engenius,esr-9753|\
+	hame,mpr-a1|\
+	hauppauge,broadway|\
+	hilink,hlk-rm04|\
+	huawei,d105|\
+	nexaira,bc2|\
+	olimex,rt5350f-olinuxino|\
+	olimex,rt5350f-olinuxino-evb|\
+	petatel,psr-680w|\
+	skyline,sl-r7205)
+		lan_mac=$(macaddr_setbit_la "$(cat /sys/class/net/eth0/address)")
+		wan_mac=$(macaddr_add "$lan_mac" 1)
 		;;
 	dlink,dir-615-d)
 		label_mac=$(mtd_get_mac_binary devdata 0x4004)
