@@ -104,6 +104,12 @@
 
 #define RTL931X_MAC_FORCE_MODE_CTRL		(0x0DCC)
 
+/* Per-port TX/RX EEE enable: 1 bit per port, 32 ports per 32-bit word
+ * (ports 0-31 in word 0, ports 32-55 in word 1).
+ */
+#define RTL931X_EEE_PORT_TX_EN			(0x5644)
+#define RTL931X_EEE_PORT_RX_EN			(0x564C)
+
 #define RTL931X_SMI_PHY_ABLTY_GET_SEL(port)	(0x0cac + ((port) / 16) * 4)
 #define RTL931X_SMI_PHY_ABLTY_MDIO		0x0
 #define RTL931X_SMI_PHY_ABLTY_SDS		0x2
@@ -240,10 +246,11 @@ void otto_mac_930x_set_eee(struct otto_dsa_priv *priv, int port, bool enable)
 		return;
 
 	pr_debug("In %s: setting port %d to %d\n", __func__, port, enable);
-	v = enable ? 0x3f : 0x0;
 
 	/* Set EEE/EEEP state for 100, 500, 1000MBit and 2.5, 5 and 10GBit */
-	regmap_write_bits(priv->map, otto_mac_930x_force_mode_ctrl(port), v << 10, v << 10);
+	regmap_update_bits(priv->map, otto_mac_930x_force_mode_ctrl(port),
+			   RTL930X_MAC_FORCE_EEE_MASK,
+			   enable ? RTL930X_MAC_FORCE_EEE_MASK : 0);
 
 	/* Set TX/RX EEE state */
 	v = enable ? 0x3 : 0x0;
@@ -307,6 +314,50 @@ int otto_mac_931x_port_ctrl(int p)
 int otto_mac_931x_max_len_reg(int p)
 {
 	return RTL931X_MAC_L2_PORT_MAX_LEN_CTRL + (p << 2);
+}
+
+/* Enable or disable MAC EEE capability for a port. */
+void otto_mac_931x_set_eee(struct otto_dsa_priv *priv, int port, bool enable)
+{
+	int word = port / 32;
+	u32 bit = BIT(port % 32);
+
+	pr_debug("In %s: setting port %d to %d\n", __func__, port, enable);
+
+	/* Publish the requested state before updating the shared force-mode
+	 * register. A subsequent phylink configuration then preserves the EEE
+	 * bits instead of reverting the ethtool request.
+	 */
+	WRITE_ONCE(priv->ports[port].eee_enabled, enable);
+
+	/* Enable/disable EEE for every speed the MAC supports in the per-port
+	 * force-mode register. The RTL931x (Mango) EEE speed-enable bits sit at
+	 * 100M@18, 1000M@20, 2.5G@21, 5G@22, 10G@23 (bit 19 reserved) - a
+	 * different layout from the RTL930x sibling, which packs them at [15:10].
+	 */
+	regmap_update_bits(priv->map, otto_mac_931x_force_mode_ctrl(port),
+			   RTL931X_MAC_FORCE_EEE_MASK,
+			   enable ? RTL931X_MAC_FORCE_EEE_MASK : 0);
+
+	/* Per-port TX/RX EEE enable. These are 1-bit-per-port bitmask registers
+	 * (32 ports per 32-bit word), so ports 32..55 land in the second word.
+	 */
+	regmap_update_bits(priv->map, RTL931X_EEE_PORT_TX_EN + (word << 2),
+			   bit, enable ? bit : 0);
+	regmap_update_bits(priv->map, RTL931X_EEE_PORT_RX_EN + (word << 2),
+			   bit, enable ? bit : 0);
+}
+
+void otto_mac_931x_init_eee(struct otto_dsa_priv *priv, bool enable)
+{
+	pr_debug("Setting up EEE, state: %d\n", enable);
+
+	/* RTL931x has no global EEE switch to initialise: its controls are all
+	 * per-port. Keep this callback side-effect free so the first ethtool
+	 * request does not alter every PHY-backed port. The common DSA path calls
+	 * set_mac_eee() for the requested port immediately afterwards.
+	 */
+	priv->eee_enabled = enable;
 }
 
 int
@@ -430,12 +481,23 @@ static void otto_mac_93xx_phylink_config(struct phylink_config *config,
 	const struct rtldsa_mac_force_mode_cfg *cfg;
 	bool force_dynamic_phy;
 	int port = dp->index;
+	u32 eee = 0;
 
 	/* Nothing to be done for the CPU-port */
 	if (port == priv->r->cpu_port)
 		return;
 
 	cfg = &priv->r->mac_force_mode;
+
+	/* Keep independently configured per-port EEE capability whenever this
+	 * register is rewritten below. Families that hold those controls in
+	 * the same register describe them in mac_force_mode_eee_mask, so that
+	 * a phylink reconfiguration does not silently undo an ethtool EEE
+	 * request.
+	 */
+	if (READ_ONCE(priv->ports[port].eee_enabled))
+		eee = priv->r->mac_force_mode_eee_mask;
+
 	force_dynamic_phy = !priv->ports[port].phy &&
 		(mode == MLO_AN_PHY || state->interface == PHY_INTERFACE_MODE_SGMII);
 
@@ -449,14 +511,14 @@ static void otto_mac_93xx_phylink_config(struct phylink_config *config,
 	if (mode == MLO_AN_FIXED || force_dynamic_phy) {
 		/* Keep links that require force mode forced down. */
 		regmap_write(priv->map, priv->r->mac_force_mode_ctrl(port),
-			     cfg->force_en_mask | cfg->fc_force_en_mask);
+			     cfg->force_en_mask | cfg->fc_force_en_mask | eee);
 		if (force_dynamic_phy)
 			otto_mac_link_state_source_set(priv, port,
 						       RTLDSA_MAC_LINK_STATE_SOURCE_PHY,
 						       state->interface);
 	} else {
-		/* Disable MAC completely */
-		regmap_write(priv->map, priv->r->mac_force_mode_ctrl(port), 0);
+		/* Disable MAC completely, retaining EEE enables */
+		regmap_write(priv->map, priv->r->mac_force_mode_ctrl(port), eee);
 	}
 }
 
