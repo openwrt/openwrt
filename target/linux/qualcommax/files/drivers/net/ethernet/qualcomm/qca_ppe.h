@@ -1474,6 +1474,8 @@ struct ppe_sb_occ {
 	u32 max;
 };
 
+struct ppe_flow_entry;
+
 struct qca_ppe_priv {
 	struct dsa_switch ds;
 	struct regmap *regmap;
@@ -1491,31 +1493,15 @@ struct qca_ppe_priv {
 	struct ppe_res *nexthop;
 	struct ppe_res *my_mac;
 	u16 *host_ref;
-	/* Per flow index: the device a frame the PPE routed to the CPU port
-	 * leaves on, and whether a software shaper stands in front of it.
+	/* Per flow index: the flow whose frames the PPE routes to the CPU
+	 * port for ppe_flow_xmit() to send on, NULL for none. An entry is
+	 * freed, and its conntrack put, only a grace period after it left
+	 * its slot.
 	 */
-	u64 *flow_xdev;
+	struct ppe_flow_entry __rcu **flow_slot;
 	atomic_t flow_xmit_drop;
 	/* frames meant for the download shaper that found no device to pass */
 	atomic_t flow_shaper_miss;
-	/* Per flow index: the conntrack an upload frame is handed over with,
-	 * bit 0 set for the reply direction. Written with flow_xdev.
-	 */
-	unsigned long *flow_ct;
-	/* Per flow index: bit 7 and the DSCP its frames are handed over with,
-	 * taken from the conntrack mark when ct_dscp is on. Written with
-	 * flow_xdev.
-	 */
-	u8 *flow_dscp;
-	/* Per flow index: the VLAN a download frame handed to the shaper
-	 * leaves its LAN port tagged with, zero for none.
-	 */
-	u16 *flow_vid;
-	/* Per flow index: one more than the switch port a frame handed to a
-	 * shaper device of this driver leaves by, zero for a device outside
-	 * the switch.
-	 */
-	u8 *flow_port;
 	/* The shaper devices this driver created for a direction, download
 	 * first, NULL for none, and how often one found the conduit's queue
 	 * full and left the frame in its qdisc.
