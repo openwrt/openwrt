@@ -3074,7 +3074,7 @@ static void ppe_ipq6018_mux_setup(struct qca_ppe_priv *priv)
 		if (ret)
 			continue;
 
-		port3_ch = pcs_args.args[0];
+		port3_ch = pcs_args.args_count ? pcs_args.args[0] : 0;
 		of_node_put(pcs_args.np);
 	}
 
