@@ -1,3 +1,12 @@
+From 2e1ebe96c61424d0829bb1c8b5ec44aaa8bea8af Mon Sep 17 00:00:00 2001
+From: Daniel González Cabanelas <dgcbueu@gmail.com>
+Date: Sun, 4 Apr 2021 23:06:46 +0200
+Subject: [PATCH] ARM: dts: armada-370: fix the crypto engine
+
+Fix the CESA crypto engine of the Armada 370 by using the complete
+crypto SRAM size (0x800) and setting broken-idle for the coherency
+fabric.
+---
 --- a/arch/arm/boot/dts/marvell/armada-370.dtsi
 +++ b/arch/arm/boot/dts/marvell/armada-370.dtsi
 @@ -254,7 +254,7 @@

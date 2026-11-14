@@ -1,3 +1,13 @@
+From 03d66d6b8fa6660a89648847a69d691a9a82d5b4 Mon Sep 17 00:00:00 2001
+From: BERENYI Balazs <balazs@wee.hu>
+Date: Sat, 2 Jan 2021 18:49:42 +0000
+Subject: [PATCH] ARM: dts: kirkwood-sheevaplug: adapt for OpenWrt
+
+Adapt the device tree of the Marvell SheevaPlug to OpenWrt: change the
+flash partitions to the layout used by OpenWrt and add the LED aliases
+used by OpenWrt to indicate the boot, failsafe, running and upgrade
+states.
+---
 --- a/arch/arm/boot/dts/marvell/kirkwood-sheevaplug-common.dtsi
 +++ b/arch/arm/boot/dts/marvell/kirkwood-sheevaplug-common.dtsi
 @@ -78,13 +78,8 @@

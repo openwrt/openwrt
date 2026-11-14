@@ -1,3 +1,11 @@
+From a6c7c0029e7ac71b340690647c74cd509469b1d8 Mon Sep 17 00:00:00 2001
+From: John Crispin <john@openwrt.org>
+Date: Thu, 21 Apr 2016 19:47:02 +0000
+Subject: [PATCH] usb: dwc2: wake up the RT305x USB controller
+
+Enable the USB port of the RT305x by clearing the PCGCTL register before
+any other register of the controller is accessed.
+---
 --- a/drivers/usb/dwc2/platform.c
 +++ b/drivers/usb/dwc2/platform.c
 @@ -484,6 +484,12 @@ static int dwc2_driver_probe(struct plat

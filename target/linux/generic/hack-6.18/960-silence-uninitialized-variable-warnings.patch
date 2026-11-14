@@ -1,3 +1,11 @@
+From 4709ab047bbcc99e82e178a1f3b01b6c1de1e2e9 Mon Sep 17 00:00:00 2001
+From: Michael Pratt <mcpratt@pm.me>
+Date: Tue, 18 Aug 2026 23:23:59 -0400
+Subject: [PATCH] MIPS: vdso: silence uninitialized variable warnings
+
+Initialize the variables in genvdso.h to silence maybe-uninitialized
+warnings when building the genvdso host tool.
+---
 --- a/arch/mips/vdso/genvdso.h
 +++ b/arch/mips/vdso/genvdso.h
 @@ -7,9 +7,9 @@

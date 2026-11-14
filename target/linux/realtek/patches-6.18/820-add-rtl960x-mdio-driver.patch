@@ -1,3 +1,11 @@
+From 6eb718ab302f30a063ee4f8a03c10238d4c35d17 Mon Sep 17 00:00:00 2001
+From: Rustam Adilov <adilov@tutamail.com>
+Date: Sun, 23 Aug 2026 12:23:15 +0500
+Subject: [PATCH] net: mdio: add Realtek RTL960x MDIO driver to the build
+
+Hook the MDIO driver for the Realtek RTL960x SoCs into Kconfig and the
+Makefile.
+---
 --- a/drivers/net/mdio/Kconfig
 +++ b/drivers/net/mdio/Kconfig
 @@ -216,6 +216,13 @@ config MDIO_REALTEK_OTTO_SERDES

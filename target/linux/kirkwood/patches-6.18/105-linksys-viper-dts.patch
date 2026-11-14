@@ -1,3 +1,13 @@
+From 4122af10f9567ffbd72b1a4ebdcd1f6c221f0bae Mon Sep 17 00:00:00 2001
+From: Luka Perkov <luka@openwrt.org>
+Date: Wed, 28 May 2014 21:43:39 +0000
+Subject: [PATCH] ARM: dts: kirkwood-linksys-viper: adapt for OpenWrt
+
+Adapt the device tree of the Linksys E4200 v2/EA4500 (Viper) to OpenWrt:
+change the flash partitions to the dual firmware layout used by OpenWrt
+and add the LED aliases used by OpenWrt to indicate the boot, failsafe,
+running and upgrade states.
+---
 --- a/arch/arm/boot/dts/marvell/kirkwood-linksys-viper.dts
 +++ b/arch/arm/boot/dts/marvell/kirkwood-linksys-viper.dts
 @@ -24,6 +24,10 @@

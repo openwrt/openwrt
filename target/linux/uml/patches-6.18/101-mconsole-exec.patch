@@ -1,3 +1,8 @@
+From 285af2ff0847a326f6164fc1f63605fdf53c5fb8 Mon Sep 17 00:00:00 2001
+From: Markus Stenberg <markus.stenberg@iki.fi>
+Date: Thu, 12 Jun 2014 17:57:19 +0000
+Subject: [PATCH] um: mconsole: add exec command
+
 #
 # Minimalist mconsole exec patch 
 #
@@ -15,6 +20,7 @@
 #
 # - Nothing useful is done with stdin
 #
+---
 --- a/arch/um/drivers/mconsole.h
 +++ b/arch/um/drivers/mconsole.h
 @@ -85,6 +85,7 @@ extern void mconsole_cad(struct mc_reque

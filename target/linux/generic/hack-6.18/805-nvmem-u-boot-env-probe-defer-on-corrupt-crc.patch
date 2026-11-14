@@ -1,3 +1,12 @@
+From 2806a9cb2562d10eb3ef081de5645e79c5ad71ab Mon Sep 17 00:00:00 2001
+From: Michael Pratt <mcpratt@pm.me>
+Date: Tue, 18 Aug 2026 23:27:20 -0400
+Subject: [PATCH] nvmem: layouts: u-boot-env: optionally defer probe on CRC error
+
+Return -EPROBE_DEFER instead of -EINVAL on a CRC mismatch if the device
+tree node has the allow-probe-defer property, so that probing is retried
+later instead of failing permanently.
+---
 --- a/drivers/nvmem/layouts/u-boot-env.c
 +++ b/drivers/nvmem/layouts/u-boot-env.c
 @@ -133,6 +133,7 @@ static int u_boot_env_parse_cells(struct
