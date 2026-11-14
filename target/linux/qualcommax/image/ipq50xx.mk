@@ -334,6 +334,37 @@ define Device/mercusys_mr80x-v2
 endef
 TARGET_DEVICES += mercusys_mr80x-v2
 
+define Build/wax630e-netgear-tar
+	mkdir $@.tmp
+	mv $@ $@.tmp/nand-ipq5018-apps.img
+	md5sum $@.tmp/nand-ipq5018-apps.img | cut -c 1-32 > $@.tmp/nand-ipq5018-apps.md5sum
+	echo $(DEVICE_MODEL) > $@.tmp/metadata.txt
+	echo $(DEVICE_MODEL)"_V99.9.9.9" > $@.tmp/version
+	$(TAR) -C $@.tmp/ -cf $@ --sort=name --numeric-owner --owner=0 --group=0 --mode=go-w \
+		$(if $(SOURCE_DATE_EPOCH),--mtime="@$(SOURCE_DATE_EPOCH)") .
+	rm -rf $@.tmp
+endef
+
+define Device/netgear_wax630e
+	$(call Device/FitImage)
+	$(call Device/UbiFit)
+	DEVICE_VENDOR := Netgear
+	DEVICE_MODEL := WAX630E
+	DEVICE_DTS_CONFIG := config@mp03.3
+	SOC := ipq5018
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	NAND_SIZE := 256m
+	IMAGE_SIZE := 59392k
+	IMAGES += ui-factory.tar
+	IMAGE/ui-factory.tar := append-ubi | qsdk-ipq-factory-nand | pad-to 4096 | wax630e-netgear-tar
+	DEVICE_PACKAGES := ath11k-firmware-ipq5018-qcn6122 \
+		kmod-ath11k-pci ath11k-firmware-qcn9074 \
+		kmod-spi-gpio kmod-gpio-nxp-74hc164 \
+		ipq-wifi-netgear_wax630e
+endef
+TARGET_DEVICES += netgear_wax630e
+
 define Device/tplink_archer-ax55-v1
 	$(call Device/FitImageLzma)
 	$(call Device/UbiFit)
