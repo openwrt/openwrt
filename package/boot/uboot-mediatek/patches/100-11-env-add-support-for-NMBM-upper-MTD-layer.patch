@@ -18,7 +18,7 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
 
 --- a/env/Kconfig
 +++ b/env/Kconfig
-@@ -74,7 +74,8 @@ config ENV_IS_DEFAULT
+@@ -97,7 +97,8 @@ config ENV_IS_DEFAULT
  		     !ENV_IS_IN_MMC && !ENV_IS_IN_NAND && \
  		     !ENV_IS_IN_NVRAM && !ENV_IS_IN_ONENAND && \
  		     !ENV_IS_IN_REMOTE && !ENV_IS_IN_SPI_FLASH && \
@@ -28,7 +28,7 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
  	select ENV_IS_NOWHERE
  
  config ENV_IS_NOWHERE
-@@ -311,6 +312,21 @@ config ENV_IS_IN_SCSI
+@@ -334,6 +335,21 @@ config ENV_IS_IN_SCSI
  	  UUID of the SCSI partition where the environment is stored.
  
  
@@ -50,7 +50,7 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
  config ENV_RANGE
  	hex "Length of the region in which the environment can be written"
  	depends on ENV_IS_IN_NAND
-@@ -621,7 +637,7 @@ config ENV_ADDR_REDUND
+@@ -644,7 +660,7 @@ config ENV_ADDR_REDUND
  config ENV_OFFSET
  	hex "Environment offset"
  	depends on ENV_IS_IN_EEPROM || ENV_IS_IN_MMC || ENV_IS_IN_NAND || \
