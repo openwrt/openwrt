@@ -96,6 +96,7 @@ struct ppe_flow_entry {
 	u64 unread_packets;
 	u64 unread_bytes;
 	unsigned long last_used;
+	struct rcu_head rcu;
 };
 
 /* One bound flowtable block. Entries remember which block installed them,
@@ -783,6 +784,20 @@ static int ppe_flow_alloc_ingress(struct qca_ppe_priv *priv, int iport,
 static void ppe_flow_entry_destroy(struct qca_ppe_priv *priv,
 				   struct ppe_flow_entry *entry);
 
+/* ppe_flow_xmit() may still hold the entry from its slot, and takes the
+ * conntrack from it: both go once every poll that could have found the entry
+ * has finished. The conntrack core may be a module: put it through its hook.
+ */
+static void ppe_flow_entry_free_rcu(struct rcu_head *head)
+{
+	struct ppe_flow_entry *entry = container_of(head, struct ppe_flow_entry,
+						    rcu);
+
+	if (entry->ct)
+		nf_conntrack_put(&((struct nf_conn *)(entry->ct & ~1UL))->ct_general);
+	kfree(entry);
+}
+
 static void ppe_flow_free(struct qca_ppe_priv *priv,
 			  struct ppe_flow_entry *entry)
 {
@@ -790,7 +805,7 @@ static void ppe_flow_free(struct qca_ppe_priv *priv,
 			       ppe_flow_ht_params);
 	list_del(&entry->list);
 	ppe_flow_entry_destroy(priv, entry);
-	kfree(entry);
+	call_rcu(&entry->rcu, ppe_flow_entry_free_rcu);
 }
 
 static void ppe_flow_drop(struct qca_ppe_priv *priv,
@@ -1217,19 +1232,19 @@ static int ppe_flow_shape(struct qca_ppe_priv *priv, struct ppe_flow_data *data,
  * attached, so the qdisc could not tell the LAN host behind it: CAKE's nat
  * mode finds the connection by the frame's own tuple, which after NAT is
  * neither of the connection's. The conntrack goes with the frame as it would
- * on the forward path. The entry holds a reference until it is destroyed; a
- * conntrack is freed by RCU and reused only as one, so taking a reference
- * that is not zero is safe here.
+ * on the forward path. The entry's reference outlives every poll that found
+ * the entry in its slot (ppe_flow_entry_free_rcu()).
  */
-static void ppe_flow_ct_attach(struct qca_ppe_priv *priv, struct sk_buff *skb,
-			       u32 flow)
+static void ppe_flow_ct_attach(const struct ppe_flow_entry *entry,
+			       struct sk_buff *skb)
 {
-	unsigned long v = READ_ONCE(priv->flow_ct[flow]);
-	struct nf_conn *ct = (struct nf_conn *)(v & ~1UL);
+	struct nf_conn *ct = (struct nf_conn *)(entry->ct & ~1UL);
 
-	if (ct && refcount_inc_not_zero(&ct->ct_general.use))
-		nf_ct_set(skb, ct, v & 1 ? IP_CT_ESTABLISHED_REPLY :
-				   IP_CT_ESTABLISHED);
+	if (ct) {
+		nf_conntrack_get(&ct->ct_general);
+		nf_ct_set(skb, ct, entry->ct & 1 ? IP_CT_ESTABLISHED_REPLY :
+					   IP_CT_ESTABLISHED);
+	}
 }
 
 /* The flowtable's cookie is the tuple of the offloaded direction. */
@@ -1277,23 +1292,21 @@ static void ppe_flow_dscp_apply(struct sk_buff *skb, u8 dscp)
 		ipv6_change_dsfield(ipv6_hdr(skb), INET_ECN_MASK, dscp << 2);
 }
 
+/* A slot is one pointer, so a poll finds a flow's egress, port, VLAN, DSCP
+ * and conntrack together, and none of them change while the entry is in it.
+ */
 static void ppe_flow_slot_set(struct qca_ppe_priv *priv,
 			      struct ppe_flow_entry *entry, u32 index)
 {
-	WRITE_ONCE(priv->flow_dscp[index], entry->dscp);
-	WRITE_ONCE(priv->flow_vid[index], entry->vid);
-	WRITE_ONCE(priv->flow_port[index], entry->xport);
-	WRITE_ONCE(priv->flow_ct[index], entry->ct);
-	WRITE_ONCE(priv->flow_xdev[index], entry->xdev);
+	rcu_assign_pointer(priv->flow_slot[index], entry);
 }
 
-static void ppe_flow_slot_clear(struct qca_ppe_priv *priv, u32 index)
+/* Only the entry's own: the hardware may have handed the index on. */
+static void ppe_flow_slot_clear(struct qca_ppe_priv *priv,
+				struct ppe_flow_entry *entry, u32 index)
 {
-	WRITE_ONCE(priv->flow_xdev[index], 0);
-	WRITE_ONCE(priv->flow_ct[index], 0);
-	WRITE_ONCE(priv->flow_dscp[index], 0);
-	WRITE_ONCE(priv->flow_vid[index], 0);
-	WRITE_ONCE(priv->flow_port[index], 0);
+	if (rcu_access_pointer(priv->flow_slot[index]) == entry)
+		RCU_INIT_POINTER(priv->flow_slot[index], NULL);
 }
 
 /* The shaper device. It stands where an ifb would, in front of the devices
@@ -1595,23 +1608,34 @@ static bool ppe_flow_push_parse(struct sk_buff *skb, u16 vid)
 	return true;
 }
 
-/* A frame the PPE routed to the CPU port for a flow whose egress is a
- * device outside the switch, or behind a software shaper. It arrives
- * finished, so it goes straight out.
+/**
+ * ppe_flow_xmit - send a frame the PPE routed to the CPU port for a flow
+ * @ds: the switch
+ * @skb: the frame, with skb->data at its Ethernet header
+ * @flow: the flow index from the frame's receive preheader
+ *
+ * The flow's egress is a device outside the switch, or behind a software
+ * shaper. The frame arrives finished, so it goes straight out. Called from
+ * the EDMA NAPI poll.
+ *
+ * Return: false, with @skb untouched, when the index names no flow with such
+ * an egress; true once @skb has been sent or freed.
  */
 bool ppe_flow_xmit(struct dsa_switch *ds, struct sk_buff *skb, u32 flow)
 {
 	struct qca_ppe_priv *priv = ds_to_priv(ds);
 	struct net_device *dev, *shaper, *uplink;
+	const struct ppe_flow_entry *entry;
 	u64 xdev;
 	int up;
-	u8 dscp, xport;
+	u8 xport;
 
 	if (flow >= priv->data->num_flow_entries)
 		return false;
-	xdev = READ_ONCE(priv->flow_xdev[flow]);
-	if (!xdev)
+	entry = rcu_dereference_bh(priv->flow_slot[flow]);
+	if (!entry)
 		return false;
+	xdev = entry->xdev;
 
 	dev = dev_get_by_index_rcu(dev_net(skb->dev), xdev & PPE_XDEV_IFINDEX);
 	if (unlikely(!dev || !netif_running(dev)))
@@ -1653,11 +1677,10 @@ bool ppe_flow_xmit(struct dsa_switch *ds, struct sk_buff *skb, u32 flow)
 		skb_reset_mac_header(skb);
 	}
 
-	dscp = READ_ONCE(priv->flow_dscp[flow]);
-	if (dscp)
-		ppe_flow_dscp_apply(skb, dscp & 0x3f);
+	if (entry->dscp)
+		ppe_flow_dscp_apply(skb, entry->dscp & 0x3f);
 
-	xport = READ_ONCE(priv->flow_port[flow]);
+	xport = entry->xport;
 
 	/* Into the download shaper the way act_mirred sends an egress frame
 	 * to an ifb: the ifb sends it on to skb_iif once its qdisc lets it go.
@@ -1669,11 +1692,9 @@ bool ppe_flow_xmit(struct dsa_switch *ds, struct sk_buff *skb, u32 flow)
 		shaper = dev_get_by_index_rcu(dev_net(dev),
 					      READ_ONCE(priv->dl_shaper));
 		if (likely(shaper && netif_running(shaper))) {
-			u16 vid = READ_ONCE(priv->flow_vid[flow]);
-
-			if (vid)
+			if (entry->vid)
 				__vlan_hwaccel_put_tag(skb, htons(ETH_P_8021Q),
-						       vid);
+						       entry->vid);
 			skb->dev = shaper;
 			if (xport && ppe_shaper_is(shaper)) {
 				ppe_shaper_port_set(priv, skb, xport - 1);
@@ -1685,7 +1706,7 @@ bool ppe_flow_xmit(struct dsa_switch *ds, struct sk_buff *skb, u32 flow)
 			atomic_inc(&priv->flow_shaper_miss);
 		}
 	} else if (xdev & PPE_XDEV_UL) {
-		ppe_flow_ct_attach(priv, skb, flow);
+		ppe_flow_ct_attach(entry, skb);
 		if (xdev & PPE_XDEV_PUSH) {
 			if (unlikely(!xport))
 				goto drop;
@@ -2143,15 +2164,9 @@ static void ppe_flow_entry_destroy(struct qca_ppe_priv *priv,
 
 		ppe_flow_account(priv, entry, pkts, bytes);
 	}
-	/* A slot handed on may carry another flow's egress by now. */
-	if (age != -ENOENT) {
-		if (entry->xdev)
-			ppe_flow_slot_clear(priv, entry->index);
+	ppe_flow_slot_clear(priv, entry, entry->index);
+	if (age != -ENOENT)
 		ppe_flow_entry_delete(priv, entry->index);
-	}
-	/* The conntrack core may be a module: put it through its hook. */
-	if (entry->ct)
-		nf_conntrack_put(&((struct nf_conn *)(entry->ct & ~1UL))->ct_general);
 	ppe_host_ref_put(priv, entry->host_index);
 	ppe_flow_free_egress(priv, entry);
 	ppe_flow_free_ingress(priv, entry);
@@ -2545,17 +2560,14 @@ static int ppe_flow_offload_replace(struct ppe_flow_block *fb,
 
 err_hw:
 	ppe_flow_entry_delete(priv, entry->index);
-	if (entry->xdev)
-		ppe_flow_slot_clear(priv, entry->index);
-	if (entry->ct)
-		nf_conntrack_put(&((struct nf_conn *)(entry->ct & ~1UL))->ct_general);
+	ppe_flow_slot_clear(priv, entry, entry->index);
 	ppe_host_ref_put(priv, entry->host_index);
 err_egress:
 	ppe_flow_free_egress(priv, entry);
 err_ingress:
 	ppe_flow_free_ingress(priv, entry);
 err_free:
-	kfree(entry);
+	call_rcu(&entry->rcu, ppe_flow_entry_free_rcu);
 
 	return ret;
 }
@@ -2774,8 +2786,7 @@ static int ppe_flow_profile_set(struct qca_ppe_priv *priv,
 	ret = ppe_flow_entry_delete(priv, entry->index);
 	if (ret)
 		return ret;
-	if (entry->xdev)
-		ppe_flow_slot_clear(priv, entry->index);
+	ppe_flow_slot_clear(priv, entry, entry->index);
 
 	ret = ppe_flow_op(priv, PPE_TBL_OP_ADD, w, entry->nwords,
 			  entry->hwords, entry->nhwords, &index, &host_index);
@@ -2909,21 +2920,11 @@ int ppe_flow_offload_init(struct qca_ppe_priv *priv)
 				      sizeof(*priv->host_ref), GFP_KERNEL);
 	priv->my_mac = devm_kcalloc(dev, PPE_MY_MAC_ENTRIES,
 				    sizeof(*priv->my_mac), GFP_KERNEL);
-	priv->flow_xdev = devm_kcalloc(dev, priv->data->num_flow_entries,
-				       sizeof(*priv->flow_xdev), GFP_KERNEL);
+	priv->flow_slot = devm_kcalloc(dev, priv->data->num_flow_entries,
+				       sizeof(*priv->flow_slot), GFP_KERNEL);
 	priv->ul_port = -1;
-	priv->flow_ct = devm_kcalloc(dev, priv->data->num_flow_entries,
-				     sizeof(*priv->flow_ct), GFP_KERNEL);
-	priv->flow_dscp = devm_kcalloc(dev, priv->data->num_flow_entries,
-				       sizeof(*priv->flow_dscp), GFP_KERNEL);
-	priv->flow_vid = devm_kcalloc(dev, priv->data->num_flow_entries,
-				      sizeof(*priv->flow_vid), GFP_KERNEL);
-	priv->flow_port = devm_kcalloc(dev, priv->data->num_flow_entries,
-				       sizeof(*priv->flow_port), GFP_KERNEL);
 	if (!priv->eg_l3_if || !priv->pub_ip || !priv->nexthop ||
-	    !priv->host_ref || !priv->my_mac || !priv->flow_xdev ||
-	    !priv->flow_ct || !priv->flow_dscp || !priv->flow_vid ||
-	    !priv->flow_port)
+	    !priv->host_ref || !priv->my_mac || !priv->flow_slot)
 		return -ENOMEM;
 
 	INIT_LIST_HEAD(&priv->flow_list);
@@ -2968,6 +2969,8 @@ void ppe_flow_offload_exit(struct qca_ppe_priv *priv)
 	}
 	mutex_unlock(&priv->vlan_lock);
 	mutex_unlock(&priv->flow_lock);
+	/* The entries' callbacks are code of this module. */
+	rcu_barrier();
 
 	rhashtable_destroy(&priv->flow_table);
 
