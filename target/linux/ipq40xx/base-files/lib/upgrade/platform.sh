@@ -167,7 +167,8 @@ platform_do_upgrade() {
 		CI_ROOTPART="rootfs"
 		emmc_do_upgrade "$1"
 		;;
-	huawei,ap4050dn)
+	huawei,ap4050dn|\
+	huawei,ap4050dn-e)
 		# Store beginning address of the "uboot" partition
 		# as KernelA address and KernelB address, each to ResultA & ResultB
 		# This is the address from which the bootloader will try to load the u-boot that we use as loader.
