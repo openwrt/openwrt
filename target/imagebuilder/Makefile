@@ -72,8 +72,9 @@ ifeq ($(CONFIG_IB_STANDALONE),)
 	$(FIND) $(call FeedPackageDir,libc) -type f \
 	  \( \
 		-name 'base-files$(PACKAGE_VERSION_SEPARATOR)*.$(PACKAGE_SUFFIX)' -or \
-		-name 'libc$(PACKAGE_VERSION_SEPARATOR)*.$(PACKAGE_SUFFIX)' -or \
-		-name 'kernel$(PACKAGE_VERSION_SEPARATOR)*.$(PACKAGE_SUFFIX)' \) \
+		-name 'kernel$(PACKAGE_VERSION_SEPARATOR)*.$(PACKAGE_SUFFIX)' -or \
+		-name 'kmod-*$(PACKAGE_VERSION_SEPARATOR)*.$(PACKAGE_SUFFIX)' -or \
+		-name 'libc$(PACKAGE_VERSION_SEPARATOR)*.$(PACKAGE_SUFFIX)' \) \
 	  -exec $(CP) -t $(PKG_BUILD_DIR)/packages {} +
 else
 	$(FIND) $(wildcard $(PACKAGE_SUBDIRS)) -type f -name '*.$(PACKAGE_SUFFIX)' \
