@@ -1,0 +1,20 @@
+# SPDX-License-Identifier: GPL-2.0-only
+
+. /lib/functions/leds.sh
+. /lib/functions/uci-defaults.sh
+
+board_config_update
+
+case "$(board_name)" in
+tplink,xx530v-v2)
+	ucidef_set_led_netdev "lan" "LAN" "green:lan" "br-lan" "link tx rx"
+	ucidef_set_led_netdev "wan" "WAN" "green:wan-online" "pppoe-wan" "link tx rx"
+	ucidef_set_led_netdev "wlan2g" "WLAN 2.4GHz" "green:wlan-2ghz" "phy0-ap0" "link tx rx"
+	ucidef_set_led_netdev "wlan5g" "WLAN 5GHz" "green:wlan-5ghz" "phy1-ap0" "link tx rx"
+	ucidef_set_led_usbport "usb" "USB" "green:usb" "usb1-port1"
+	;;
+esac
+
+board_config_flush
+
+exit 0

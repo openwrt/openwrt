@@ -6,7 +6,7 @@ OTHER_MENU:=Other modules
 define KernelPackage/pwm-airoha
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Airoha AN7581 and AN7583 PWM
-  DEPENDS:=@TARGET_airoha_an7581||TARGET_airoha_an7583
+  DEPENDS:=@TARGET_airoha_an7563||TARGET_airoha_an7581||TARGET_airoha_an7583
   KCONFIG:= \
         CONFIG_PWM=y \
         CONFIG_PWM_AIROHA=y
