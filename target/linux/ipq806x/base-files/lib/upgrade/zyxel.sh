@@ -7,9 +7,9 @@ zyxel_get_rootfs() {
 
 	if read cmdline < /proc/cmdline; then
 		case "$cmdline" in
-			*root=*)
-				rootfsdev="${cmdline##*root=}"
-				rootfsdev="${rootfsdev%% *}"
+		*root=*)
+			rootfsdev="${cmdline##*root=}"
+			rootfsdev="${rootfsdev%% *}"
 			;;
 		esac
 
@@ -66,12 +66,12 @@ zyxel_do_flash() {
 
 	# flashing successful, toggle the dualflag
 	case "$rootfs" in
-		"/dev/mmcblk0p5")
-			printf "\xff" >$dualflagmtd
-			;;
-		"/dev/mmcblk0p8")
-			printf "\x01" >$dualflagmtd
-			;;
+	"/dev/mmcblk0p5")
+		printf "\xff" >$dualflagmtd
+		;;
+	"/dev/mmcblk0p8")
+		printf "\x01" >$dualflagmtd
+		;;
 	esac
 
 	# Cleanup
@@ -94,20 +94,20 @@ zyxel_do_upgrade() {
 		[ -b $dualflagmtd ] || return 1
 
 		case "$rootfs" in
-			"/dev/mmcblk0p5")
-				# booted from the primary partition set
-				# write to the alternative set
-				kernel="/dev/mmcblk0p7"
-				rootfs="/dev/mmcblk0p8"
+		"/dev/mmcblk0p5")
+			# booted from the primary partition set
+			# write to the alternative set
+			kernel="/dev/mmcblk0p7"
+			rootfs="/dev/mmcblk0p8"
 			;;
-			"/dev/mmcblk0p8")
-				# booted from the alternative partition set
-				# write to the primary set
-				kernel="/dev/mmcblk0p4"
-				rootfs="/dev/mmcblk0p5"
+		"/dev/mmcblk0p8")
+			# booted from the alternative partition set
+			# write to the primary set
+			kernel="/dev/mmcblk0p4"
+			rootfs="/dev/mmcblk0p5"
 			;;
-			*)
-				return 1
+		*)
+			return 1
 			;;
 		esac
 		;;
