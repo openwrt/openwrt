@@ -1856,11 +1856,13 @@ static int ppe_flow_egress_path(struct qca_ppe_priv *priv,
 	odp = dsa_to_port(&priv->ds, port);
 	eg_mtu = odp->user->mtu + ETH_HLEN +
 		 (data->vlan_valid && push ? VLAN_HLEN : 0);
-	/* A flow handed to the uplink device leaves at that device's size,
-	 * which for PPPoE is under the port's; a larger frame then takes the
-	 * host's path, which fragments it or answers with ICMP.
+	/* A flow handed to a host device leaves at that device's size: the
+	 * uplink's, which for PPPoE is under the port's, or for a flow routed
+	 * out of the CPU port the size of the device outside the switch, not
+	 * that of the conduit standing for the port. A larger frame then takes
+	 * the host's path, which fragments it or answers with ICMP.
 	 */
-	if (!push) {
+	if (entry->xdev && !(entry->xdev & PPE_XDEV_PUSH)) {
 		int ifindex = entry->xdev & PPE_XDEV_IFINDEX;
 		struct net_device *ul;
 
