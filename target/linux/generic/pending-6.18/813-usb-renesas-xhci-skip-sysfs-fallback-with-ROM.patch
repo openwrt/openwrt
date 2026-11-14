@@ -1,0 +1,45 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Sander van Deijck <sander@vandeijck.com>
+Date: Sun, 1 Nov 2026 18:44:37 +0000
+Subject: [PATCH] usb: xhci-pci-renesas: don't wait for sysfs fallback when a
+ ROM is present
+
+When an external ROM is present but its status reports no result yet,
+renesas_xhci_check_request_fw() still asks for renesas_usb_fw.mem and
+falls back to the ROM if the file is missing. With
+CONFIG_FW_LOADER_USER_HELPER_FALLBACK=y that request waits for a
+user-space helper, and when the driver is loaded early in boot, before
+anything answers firmware uevents, probe stalls for the 60 s fallback
+timeout.
+
+Since the ROM is a valid fallback, use request_firmware_direct() in that
+case so a missing file fails immediately. Without a ROM, keep the
+existing behaviour.
+
+Tested on a Check Point L-71 and L-72 (uPD720201 with external ROM):
+"fallback to ROM" now appears 48 ms after kmodloader starts instead
+of ~61 s later, and preinit starts at 3.7 s instead of 15.6 s.
+
+Signed-off-by: Sander van Deijck <sander@vandeijck.com>
+---
+ drivers/usb/host/xhci-pci-renesas.c | 9 ++++++++-
+ 1 file changed, 8 insertions(+), 1 deletion(-)
+
+--- a/drivers/usb/host/xhci-pci-renesas.c
++++ b/drivers/usb/host/xhci-pci-renesas.c
+@@ -604,7 +604,14 @@ static int renesas_xhci_check_request_fw
+ 		return has_rom ? 0 : err;
+ 
+ 	pci_dev_get(pdev);
+-	err = firmware_request_nowarn(&fw, fw_name, &pdev->dev);
++	/*
++	 * With an external ROM the controller runs without the file, so do
++	 * not wait for a user-space helper: a missing file should fail fast.
++	 */
++	if (has_rom)
++		err = request_firmware_direct(&fw, fw_name, &pdev->dev);
++	else
++		err = firmware_request_nowarn(&fw, fw_name, &pdev->dev);
+ 	pci_dev_put(pdev);
+ 	if (err) {
+ 		if (has_rom) {
