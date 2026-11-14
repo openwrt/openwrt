@@ -1,0 +1,151 @@
+From 94ae426f03b7a57d02a514091d810e698158a627 Mon Sep 17 00:00:00 2001
+From: Johannes Berg <johannes.berg@intel.com>
+Date: Mon, 26 Oct 2026 12:48:35 +0100
+Subject: [PATCH] wifi: mac80211: handle missing tailroom in SW crypto
+
+The TX path reserves tailroom if crypto_tx_tailroom_needed_cnt is
+non-zero, and key control paths make sure this is always set if
+needed. However, this adds quite a bit of complexity and, in most
+cases, latency to the key control paths.
+
+In order to remove that latency (which is due to waiting for any
+concurrent TX to complete while changing the counter), prepare
+the software crypto path to just expand the tailroom if needed.
+
+In most cases, this actually can't hit: new keys will mostly be
+offloaded to hardware and then it's not needed, sometimes they
+can't actually be used by the TX path at all, etc.
+
+Reviewed-by: Miriam Rachel Korenblit <miriam.rachel.korenblit@intel.com>
+Link: https://patch.msgid.link/20261026125145.3c660a7b6c10.I96121b2c2ee72fa9246796e2ed0793cd320dd1e4@changeid
+Signed-off-by: Johannes Berg <johannes.berg@intel.com>
+---
+ net/mac80211/ieee80211_i.h | 11 +++++++++++
+ net/mac80211/wep.c         |  4 ++--
+ net/mac80211/wpa.c         | 38 +++++++++++++++++++++++---------------
+ 3 files changed, 36 insertions(+), 17 deletions(-)
+
+--- a/net/mac80211/ieee80211_i.h
++++ b/net/mac80211/ieee80211_i.h
+@@ -54,6 +54,17 @@ struct ieee80211_mesh_fast_tx;
+ #define IEEE80211_ENCRYPT_HEADROOM 8
+ #define IEEE80211_ENCRYPT_TAILROOM 18
+ 
++/* tailroom accounting can race with TX, expand if needed */
++static inline int ieee80211_crypto_tx_tailroom(struct sk_buff *skb, int tail)
++{
++	int tail_need = tail - skb_tailroom(skb);
++
++	if (!tail || likely(tail_need <= 0 && !skb_cloned(skb)))
++		return 0;
++
++	return pskb_expand_head(skb, 0, max(tail_need, 0), GFP_ATOMIC);
++}
++
+ /* power level hasn't been configured (or set to automatic) */
+ #define IEEE80211_UNSET_POWER_LEVEL	INT_MIN
+ 
+--- a/net/mac80211/wep.c
++++ b/net/mac80211/wep.c
+@@ -3,7 +3,7 @@
+  * Software WEP encryption implementation
+  * Copyright 2002, Jouni Malinen <jkmaline@cc.hut.fi>
+  * Copyright 2003, Instant802 Networks, Inc.
+- * Copyright (C) 2023 Intel Corporation
++ * Copyright (C) 2023, 2026 Intel Corporation
+  */
+ 
+ #include <linux/netdevice.h>
+@@ -137,7 +137,7 @@ int ieee80211_wep_encrypt(struct ieee802
+ 	size_t len;
+ 	u8 rc4key[3 + WLAN_KEY_LEN_WEP104];
+ 
+-	if (WARN_ON(skb_tailroom(skb) < IEEE80211_WEP_ICV_LEN))
++	if (ieee80211_crypto_tx_tailroom(skb, IEEE80211_WEP_ICV_LEN))
+ 		return -1;
+ 
+ 	iv = ieee80211_wep_add_iv(local, skb, keylen, keyidx);
+--- a/net/mac80211/wpa.c
++++ b/net/mac80211/wpa.c
+@@ -3,7 +3,7 @@
+  * Copyright 2002-2004, Instant802 Networks, Inc.
+  * Copyright 2008, Jouni Malinen <j@w1.fi>
+  * Copyright (C) 2016-2017 Intel Deutschland GmbH
+- * Copyright (C) 2020-2023 Intel Corporation
++ * Copyright (C) 2020-2023, 2026 Intel Corporation
+  */
+ 
+ #include <linux/netdevice.h>
+@@ -45,9 +45,6 @@ ieee80211_tx_h_michael_mic_add(struct ie
+ 	if (skb->len < hdrlen)
+ 		return TX_DROP;
+ 
+-	data = skb->data + hdrlen;
+-	data_len = skb->len - hdrlen;
+-
+ 	if (unlikely(info->flags & IEEE80211_TX_INTFL_TKIP_MIC_FAILURE)) {
+ 		/* Need to use software crypto for the test */
+ 		info->control.hw_key = NULL;
+@@ -66,13 +63,18 @@ ieee80211_tx_h_michael_mic_add(struct ie
+ 	if (!info->control.hw_key)
+ 		tail += IEEE80211_TKIP_ICV_LEN;
+ 
+-	if (WARN(skb_tailroom(skb) < tail ||
+-		 skb_headroom(skb) < IEEE80211_TKIP_IV_LEN,
+-		 "mmic: not enough head/tail (%d/%d,%d/%d)\n",
+-		 skb_headroom(skb), IEEE80211_TKIP_IV_LEN,
+-		 skb_tailroom(skb), tail))
++	if (ieee80211_crypto_tx_tailroom(skb, tail))
++		return TX_DROP;
++
++	if (WARN(skb_headroom(skb) < IEEE80211_TKIP_IV_LEN,
++		 "mmic: not enough head (%d/%d)\n",
++		 skb_headroom(skb), IEEE80211_TKIP_IV_LEN))
+ 		return TX_DROP;
+ 
++	hdr = (struct ieee80211_hdr *)skb->data;
++	data = skb->data + hdrlen;
++	data_len = skb->len - hdrlen;
++
+ 	mic = skb_put(skb, MICHAEL_MIC_LEN);
+ 
+ 	if (tx->key->conf.flags & IEEE80211_KEY_FLAG_PUT_MIC_SPACE) {
+@@ -215,8 +217,10 @@ static int tkip_encrypt_skb(struct ieee8
+ 	else
+ 		tail = IEEE80211_TKIP_ICV_LEN;
+ 
+-	if (WARN_ON(skb_tailroom(skb) < tail ||
+-		    skb_headroom(skb) < IEEE80211_TKIP_IV_LEN))
++	if (ieee80211_crypto_tx_tailroom(skb, tail))
++		return -1;
++
++	if (WARN_ON(skb_headroom(skb) < IEEE80211_TKIP_IV_LEN))
+ 		return -1;
+ 
+ 	pos = skb_push(skb, IEEE80211_TKIP_IV_LEN);
+@@ -459,8 +463,10 @@ static int ccmp_encrypt_skb(struct ieee8
+ 	else
+ 		tail = mic_len;
+ 
+-	if (WARN_ON(skb_tailroom(skb) < tail ||
+-		    skb_headroom(skb) < IEEE80211_CCMP_HDR_LEN))
++	if (ieee80211_crypto_tx_tailroom(skb, tail))
++		return -1;
++
++	if (WARN_ON(skb_headroom(skb) < IEEE80211_CCMP_HDR_LEN))
+ 		return -1;
+ 
+ 	pos = skb_push(skb, IEEE80211_CCMP_HDR_LEN);
+@@ -674,8 +680,10 @@ static int gcmp_encrypt_skb(struct ieee8
+ 	else
+ 		tail = IEEE80211_GCMP_MIC_LEN;
+ 
+-	if (WARN_ON(skb_tailroom(skb) < tail ||
+-		    skb_headroom(skb) < IEEE80211_GCMP_HDR_LEN))
++	if (ieee80211_crypto_tx_tailroom(skb, tail))
++		return -1;
++
++	if (WARN_ON(skb_headroom(skb) < IEEE80211_GCMP_HDR_LEN))
+ 		return -1;
+ 
+ 	pos = skb_push(skb, IEEE80211_GCMP_HDR_LEN);

@@ -74,7 +74,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	}
 --- a/net/mac80211/ieee80211_i.h
 +++ b/net/mac80211/ieee80211_i.h
-@@ -1100,6 +1100,8 @@ struct ieee80211_link_data_ap {
+@@ -1111,6 +1111,8 @@ struct ieee80211_link_data_ap {
  
  	/* to be used after channel switch. */
  	struct cfg80211_beacon_data *next_beacon;
@@ -83,7 +83,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  };
  
  struct ieee80211_link_data {
-@@ -2872,7 +2874,7 @@ void ieee80211_dfs_radar_detected_work(s
+@@ -2883,7 +2885,7 @@ void ieee80211_dfs_radar_detected_work(s
  int ieee80211_send_action_csa(struct ieee80211_sub_if_data *sdata,
  			      struct cfg80211_csa_settings *csa_settings);
  void ieee80211_recalc_sb_count(struct ieee80211_sub_if_data *sdata, u64 tsf);

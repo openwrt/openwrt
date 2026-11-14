@@ -12,7 +12,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/net/mac80211/ieee80211_i.h
 +++ b/net/mac80211/ieee80211_i.h
-@@ -112,6 +112,8 @@ ieee80211_sta_keep_active(struct sta_inf
+@@ -123,6 +123,8 @@ ieee80211_sta_keep_active(struct sta_inf
  	return time_before_eq(jiffies, sta->airtime[ac].last_active + HZ / 10);
  }
  
