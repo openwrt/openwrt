@@ -283,6 +283,14 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
+		switch_intc: interrupt-controller {
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SHARED 15 IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-controller;
+			#address-cells = <0>;
+			#interrupt-cells = <1>;
+		};
+
 		ethernet-ports {
 			#address-cells = <1>;
 			#size-cells = <0>;
