@@ -1,0 +1,131 @@
+From 1dfc9d60a69ec148e1cb709256617d86e5f0e8f8 Mon Sep 17 00:00:00 2001
+From: Krzysztof Kozlowski <krzysztof.kozlowski@oss.qualcomm.com>
+Date: Thu, 5 Mar 2026 22:45:40 +0100
+Subject: [PATCH] workqueue: devres: Add device-managed allocate workqueue
+
+Add a Resource-managed version of alloc_workqueue() to fix common
+problem of drivers mixing devm() calls with destroy_workqueue.  Such
+naive and discouraged driver approach leads to difficult to debug bugs
+when the driver:
+
+1. Allocates workqueue in standard way and destroys it in driver
+   remove() callback,
+2. Sets work struct with devm_work_autocancel(),
+3. Registers interrupt handler with devm_request_threaded_irq().
+
+Which leads to following unbind/removal path:
+
+1. destroy_workqueue() via driver remove(),
+   Any interrupt coming now would still execute the interrupt handler,
+   which queues work on destroyed workqueue.
+2. devm_irq_release(),
+3. devm_work_drop() -> cancel_work_sync() on destroyed workqueue.
+
+devm_alloc_workqueue() has two benefits:
+1. Solves above problem of mix-and-match devres and non-devres code in
+   driver,
+2. Simplify any sane drivers which were correctly using
+   alloc_workqueue() + devm_add_action_or_reset().
+
+Signed-off-by: Krzysztof Kozlowski <krzysztof.kozlowski@oss.qualcomm.com>
+Acked-by: Tejun Heo <tj@kernel.org>
+Reviewed-by: Andy Shevchenko <andriy.shevchenko@linux.intel.com>
+Signed-off-by: Tejun Heo <tj@kernel.org>
+---
+ .../driver-api/driver-model/devres.rst        |  4 +++
+ include/linux/workqueue.h                     | 22 +++++++++++++++
+ kernel/workqueue.c                            | 28 +++++++++++++++++++
+ 3 files changed, 54 insertions(+)
+
+--- a/Documentation/driver-api/driver-model/devres.rst
++++ b/Documentation/driver-api/driver-model/devres.rst
+@@ -466,3 +466,7 @@ SPI
+ 
+ WATCHDOG
+   devm_watchdog_register_device()
++
++WORKQUEUE
++  devm_alloc_workqueue()
++  devm_alloc_ordered_workqueue()
+--- a/include/linux/workqueue.h
++++ b/include/linux/workqueue.h
+@@ -512,6 +512,26 @@ __printf(1, 4) struct workqueue_struct *
+ alloc_workqueue_noprof(const char *fmt, unsigned int flags, int max_active, ...);
+ #define alloc_workqueue(...)	alloc_hooks(alloc_workqueue_noprof(__VA_ARGS__))
+ 
++/**
++ * devm_alloc_workqueue - Resource-managed allocate a workqueue
++ * @dev: Device to allocate workqueue for
++ * @fmt: printf format for the name of the workqueue
++ * @flags: WQ_* flags
++ * @max_active: max in-flight work items, 0 for default
++ * @...: args for @fmt
++ *
++ * Resource managed workqueue, see alloc_workqueue() for details.
++ *
++ * The workqueue will be automatically destroyed on driver detach.  Typically
++ * this should be used in drivers already relying on devm interafaces.
++ *
++ * RETURNS:
++ * Pointer to the allocated workqueue on success, %NULL on failure.
++ */
++__printf(2, 5) struct workqueue_struct *
++devm_alloc_workqueue(struct device *dev, const char *fmt, unsigned int flags,
++		     int max_active, ...);
++
+ #ifdef CONFIG_LOCKDEP
+ /**
+  * alloc_workqueue_lockdep_map - allocate a workqueue with user-defined lockdep_map
+@@ -568,6 +588,8 @@ alloc_workqueue_lockdep_map(const char *
+  */
+ #define alloc_ordered_workqueue(fmt, flags, args...)			\
+ 	alloc_workqueue(fmt, WQ_UNBOUND | __WQ_ORDERED | (flags), 1, ##args)
++#define devm_alloc_ordered_workqueue(dev, fmt, flags, args...)		\
++	devm_alloc_workqueue(dev, fmt, WQ_UNBOUND | __WQ_ORDERED | (flags), 1, ##args)
+ 
+ #define create_workqueue(name)						\
+ 	alloc_workqueue("%s", __WQ_LEGACY | WQ_MEM_RECLAIM | WQ_PERCPU, 1, (name))
+--- a/kernel/workqueue.c
++++ b/kernel/workqueue.c
+@@ -41,6 +41,7 @@
+ #include <linux/mempolicy.h>
+ #include <linux/freezer.h>
+ #include <linux/debug_locks.h>
++#include <linux/device/devres.h>
+ #include <linux/lockdep.h>
+ #include <linux/idr.h>
+ #include <linux/jhash.h>
+@@ -5894,6 +5895,33 @@ struct workqueue_struct *alloc_workqueue
+ }
+ EXPORT_SYMBOL_GPL(alloc_workqueue_noprof);
+ 
++static void devm_workqueue_release(void *res)
++{
++	destroy_workqueue(res);
++}
++
++__printf(2, 5) struct workqueue_struct *
++devm_alloc_workqueue(struct device *dev, const char *fmt, unsigned int flags,
++		     int max_active, ...)
++{
++	struct workqueue_struct *wq;
++	va_list args;
++	int ret;
++
++	va_start(args, max_active);
++	wq = alloc_workqueue(fmt, flags, max_active, args);
++	va_end(args);
++	if (!wq)
++		return NULL;
++
++	ret = devm_add_action_or_reset(dev, devm_workqueue_release, wq);
++	if (ret)
++		return NULL;
++
++	return wq;
++}
++EXPORT_SYMBOL_GPL(devm_alloc_workqueue);
++
+ #ifdef CONFIG_LOCKDEP
+ __printf(1, 5)
+ struct workqueue_struct *
