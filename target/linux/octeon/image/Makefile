@@ -87,6 +87,18 @@ define Device/ubnt_edgerouter-lite
 endef
 TARGET_DEVICES += ubnt_edgerouter-lite
 
+define Device/ubnt_edgerouter-poe
+  DEVICE_VENDOR := Ubiquiti
+  DEVICE_MODEL := EdgeRouter PoE
+  DEVICE_DTS := cn5020_ubnt_edgerouter-poe
+  DEVICE_PACKAGES := kmod-dsa-qca8k kmod-phy-qca83xx
+  KERNEL := kernel-bin | patch-cmdline | append-dtb-to-elf
+  KERNEL_DEPENDS := $$(wildcard $(DTS_DIR)/$(DEVICE_DTS).dts)
+  CMDLINE := $(ERLITE_CMDLINE)
+  IMAGE/sysupgrade.tar/squashfs += | append-metadata
+endef
+TARGET_DEVICES += ubnt_edgerouter-poe
+
 define Device/ubnt_unifi-usg
   DEVICE_VENDOR := Ubiquiti
   DEVICE_MODEL := UniFi Security Gateway
