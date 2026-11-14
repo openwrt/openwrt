@@ -1,0 +1,69 @@
+From 44fe61ab62bacb09710c7753cca51c80be0859ee Mon Sep 17 00:00:00 2001
+From: Til Kaiser <mail@tk154.de>
+Date: Wed, 30 Sep 2026 21:39:53 +0200
+Subject: [PATCH] net: ethernet: qualcomm: ppe: Add IPQ5332 counter debugfs
+ support
+
+IPQ5332 has three BM silent-drop counters, one per PPE port, and ten
+used-buffer and reacted-buffer counters, one per BM port. Its drop-stat
+table contains two banks of ten entries, for buffer allocation failures
+and flow-control drops. Limit debugfs reads and clears accordingly.
+
+Use the MPPE silent-drop count from QSDK qca-ssdk
+include/hsl/hppe/hppe_portctrl_reg.h and the BM port count from
+include/adpt/hppe/adpt_hppe.h. The drop-stat bank offset is defined by
+adpt_hppe_bm_port_counter_get() in src/adpt/hppe/adpt_hppe_bm.c.
+The BM counter register addresses are shared with IPQ9574.
+
+Signed-off-by: Til Kaiser <mail@tk154.de>
+
+--- a/drivers/net/ethernet/qualcomm/ppe/ppe_regs.h
++++ b/drivers/net/ethernet/qualcomm/ppe/ppe_regs.h
+@@ -31,8 +31,10 @@
+ #define PPE_DROP_CNT_TBL_ADDR			0xb024
+ #define PPE_DROP_CNT_TBL_IPQ9574_ENTRIES	8
+ #define PPE_DROP_CNT_TBL_IPQ5424_ENTRIES	4
++#define PPE_DROP_CNT_TBL_IPQ5332_ENTRIES	3
+ #define PPE_DROP_CNT_TBL_ENTRIES(ppe_dev)					\
+-	((ppe_dev)->type == IPQ5424_PPE ? PPE_DROP_CNT_TBL_IPQ5424_ENTRIES :	\
++	((ppe_dev)->type == IPQ5332_PPE ? PPE_DROP_CNT_TBL_IPQ5332_ENTRIES :	\
++	 (ppe_dev)->type == IPQ5424_PPE ? PPE_DROP_CNT_TBL_IPQ5424_ENTRIES :	\
+ 					  PPE_DROP_CNT_TBL_IPQ9574_ENTRIES)
+ #define PPE_DROP_CNT_TBL_INC			4
+ 
+@@ -40,8 +42,10 @@
+ #define PPE_DROP_STAT_TBL_ADDR			0xe000
+ #define PPE_DROP_STAT_TBL_IPQ9574_ENTRIES	30
+ #define PPE_DROP_STAT_TBL_IPQ5424_ENTRIES	38
++#define PPE_DROP_STAT_TBL_IPQ5332_ENTRIES	20
+ #define PPE_DROP_STAT_TBL_ENTRIES(ppe_dev)					\
+-	((ppe_dev)->type == IPQ5424_PPE ? PPE_DROP_STAT_TBL_IPQ5424_ENTRIES :	\
++	((ppe_dev)->type == IPQ5332_PPE ? PPE_DROP_STAT_TBL_IPQ5332_ENTRIES :	\
++	 (ppe_dev)->type == IPQ5424_PPE ? PPE_DROP_STAT_TBL_IPQ5424_ENTRIES :	\
+ 					  PPE_DROP_STAT_TBL_IPQ9574_ENTRIES)
+ #define PPE_DROP_STAT_TBL_INC			0x10
+ 
+@@ -456,8 +460,10 @@
+ 					  PPE_BM_USED_CNT_TBL_IPQ9574_ADDR)
+ #define PPE_BM_USED_CNT_TBL_IPQ9574_ENTRIES	15
+ #define PPE_BM_USED_CNT_TBL_IPQ5424_ENTRIES	19
++#define PPE_BM_USED_CNT_TBL_IPQ5332_ENTRIES	10
+ #define PPE_BM_USED_CNT_TBL_ENTRIES(ppe_dev)					\
+-	((ppe_dev)->type == IPQ5424_PPE ? PPE_BM_USED_CNT_TBL_IPQ5424_ENTRIES : \
++	((ppe_dev)->type == IPQ5332_PPE ? PPE_BM_USED_CNT_TBL_IPQ5332_ENTRIES : \
++	 (ppe_dev)->type == IPQ5424_PPE ? PPE_BM_USED_CNT_TBL_IPQ5424_ENTRIES : \
+ 					  PPE_BM_USED_CNT_TBL_IPQ9574_ENTRIES)
+ #define PPE_BM_USED_CNT_TBL_INC			0x4
+ #define PPE_BM_USED_CNT_VAL			GENMASK(10, 0)
+@@ -470,8 +476,10 @@
+ 					  PPE_BM_REACT_CNT_TBL_IPQ9574_ADDR)
+ #define PPE_BM_REACT_CNT_TBL_IPQ9574_ENTRIES	15
+ #define PPE_BM_REACT_CNT_TBL_IPQ5424_ENTRIES	19
++#define PPE_BM_REACT_CNT_TBL_IPQ5332_ENTRIES	10
+ #define PPE_BM_REACT_CNT_TBL_ENTRIES(ppe_dev)					\
+-	((ppe_dev)->type == IPQ5424_PPE ? PPE_BM_REACT_CNT_TBL_IPQ5424_ENTRIES :	\
++	((ppe_dev)->type == IPQ5332_PPE ? PPE_BM_REACT_CNT_TBL_IPQ5332_ENTRIES :	\
++	 (ppe_dev)->type == IPQ5424_PPE ? PPE_BM_REACT_CNT_TBL_IPQ5424_ENTRIES :	\
+ 					  PPE_BM_REACT_CNT_TBL_IPQ9574_ENTRIES)
+ #define PPE_BM_REACT_CNT_TBL_INC		0x4
+ #define PPE_BM_REACT_CNT_VAL			GENMASK(8, 0)
