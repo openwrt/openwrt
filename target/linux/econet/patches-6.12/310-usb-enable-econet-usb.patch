@@ -1,3 +1,11 @@
+From c43925313e7179aec7a93aa24a03532f0c1fbaea Mon Sep 17 00:00:00 2001
+From: Caleb James DeLisle <cjd@cjdns.fr>
+Date: Sun, 14 Sep 2025 17:23:47 +0000
+Subject: [PATCH] MIPS: econet: enable USB support
+
+Allow the MediaTek xHCI driver to be built for EcoNet SoCs and select
+DMA_NONCOHERENT for them, as needed for USB support.
+---
 --- a/arch/mips/Kconfig
 +++ b/arch/mips/Kconfig
 @@ -392,6 +392,7 @@ config ECONET

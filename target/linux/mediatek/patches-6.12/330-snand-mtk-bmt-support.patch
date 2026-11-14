@@ -1,3 +1,13 @@
+From 68d5efaa10cf0689521fe05e386e3a1e11d8cb29 Mon Sep 17 00:00:00 2001
+From: Chuanhong Guo <gch981213@gmail.com>
+Date: Thu, 7 Apr 2022 10:16:47 +0800
+Subject: [PATCH] mtd: spinand: attach mtk_bmt
+
+Call mtk_bmt_attach() when a SPI-NAND device is registered and
+mtk_bmt_detach() when it is removed or the registration fails, so that
+the bad block remapping of the bootloader (mtk_bmt) is used for SPI-NAND
+flash as well.
+---
 --- a/drivers/mtd/nand/spi/core.c
 +++ b/drivers/mtd/nand/spi/core.c
 @@ -19,6 +19,7 @@

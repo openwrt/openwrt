@@ -1,3 +1,13 @@
+From 6ffe8a473eedf6f4f472bb5e64a1e1775917f3c8 Mon Sep 17 00:00:00 2001
+From: Kip Porterfield <kip.porterfield@gmail.com>
+Date: Mon, 3 Aug 2020 14:07:51 +0000
+Subject: [PATCH] ARM: dts: kirkwood-blackarmor-nas220: adapt for OpenWrt
+
+Adapt the device tree of the Seagate BlackArmor NAS220 to OpenWrt:
+change the flash partitions, update the LEDs and buttons and add the LED
+aliases used by OpenWrt to indicate the boot, failsafe, running and
+upgrade states.
+---
 --- a/arch/arm/boot/dts/marvell/kirkwood-blackarmor-nas220.dts
 +++ b/arch/arm/boot/dts/marvell/kirkwood-blackarmor-nas220.dts
 @@ -17,6 +17,13 @@

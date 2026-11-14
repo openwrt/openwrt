@@ -1,3 +1,11 @@
+From d62fc50ff42223df2bd82c1ea0f1786ea26d3f08 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Sun, 5 Oct 2025 03:39:52 +0100
+Subject: [PATCH] net: phy: mediatek: 2p5ge: add support for MT7987
+
+Add support for the built-in 2.5G Ethernet PHY of the MediaTek MT7987 to
+the mtk-2p5ge driver.
+---
 --- a/drivers/net/phy/mediatek/mtk-2p5ge.c
 +++ b/drivers/net/phy/mediatek/mtk-2p5ge.c
 @@ -12,13 +12,77 @@

@@ -1,3 +1,12 @@
+From 749237967a122a40465b65c7e9eb6924d8fe09c4 Mon Sep 17 00:00:00 2001
+From: Pawel Dembicki <paweldembicki@gmail.com>
+Date: Thu, 11 May 2023 17:02:43 +0200
+Subject: [PATCH] ARM: dts: kirkwood-nsa310s: add LED aliases
+
+Rename the system LEDs and add the LED aliases used by OpenWrt to
+indicate the boot, failsafe, running and upgrade states to the device
+tree of the ZyXEL NSA310S.
+---
 --- a/arch/arm/boot/dts/marvell/kirkwood-nsa310s.dts
 +++ b/arch/arm/boot/dts/marvell/kirkwood-nsa310s.dts
 @@ -16,6 +16,13 @@

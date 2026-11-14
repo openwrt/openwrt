@@ -1,3 +1,12 @@
+From c46ccb69d17e584479df849a107423175a143c83 Mon Sep 17 00:00:00 2001
+From: Felix Fietkau <nbd@nbd.name>
+Date: Sat, 24 Oct 2020 21:15:20 +0200
+Subject: [PATCH] ARM: dts: mediatek: mt7629-rfb: adapt for OpenWrt
+
+Adjust the device tree of the MediaTek MT7629 reference board for
+OpenWrt: set the boot arguments, describe the firmware partition
+containing the FIT image and provide the MAC address via NVMEM.
+---
 --- a/arch/arm/boot/dts/mediatek/mt7629-rfb.dts
 +++ b/arch/arm/boot/dts/mediatek/mt7629-rfb.dts
 @@ -18,6 +18,7 @@

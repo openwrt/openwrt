@@ -1,3 +1,8 @@
+From 285af2ff0847a326f6164fc1f63605fdf53c5fb8 Mon Sep 17 00:00:00 2001
+From: Markus Stenberg <markus.stenberg@iki.fi>
+Date: Thu, 12 Jun 2014 17:57:19 +0000
+Subject: [PATCH] um: net: add deterministic MAC address option
+
 ===============================================================================
 
 This patch makes MAC addresses of network interfaces predictable. In
@@ -9,6 +14,7 @@ TECHNICAL INFORMATION:
 Applies to vanilla kernel 3.9.4.
 
 ===============================================================================
+---
 --- a/arch/um/drivers/Kconfig
 +++ b/arch/um/drivers/Kconfig
 @@ -143,6 +143,20 @@ config UML_NET

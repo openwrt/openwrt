@@ -1,3 +1,12 @@
+From 46d673033b7f6974d0bf5696ff8365fd412cd646 Mon Sep 17 00:00:00 2001
+From: Aviana Cruz <gwencroft@proton.me>
+Date: Mon, 20 Jun 2022 21:55:45 +0800
+Subject: [PATCH] crypto: add MediaTek EIP93 crypto engine driver
+
+Add a driver for the Inside Secure EIP93 crypto engine found in the
+MediaTek MT7621 and other SoCs, supporting skcipher, AEAD and HMAC
+algorithms.
+---
 --- /dev/null
 +++ b/drivers/crypto/mtk-eip93/Kconfig
 @@ -0,0 +1,64 @@

@@ -1,3 +1,12 @@
+From 3827ce2c3dc1849033d6de52e58fcbccc7ed74a2 Mon Sep 17 00:00:00 2001
+From: Chris Blake <chrisrblake93@gmail.com>
+Date: Wed, 20 Jul 2016 15:44:50 +0200
+Subject: [PATCH] powerpc: 44x: only reset the PCIe PHY if there is no link
+
+Do not reset the PCIe PHY of the APM82181 if a link is already
+established. Atheros PCIe wireless cards fail to establish the link
+again after this reset, while all other tested cards are not affected.
+---
 --- a/arch/powerpc/platforms/44x/pci.c
 +++ b/arch/powerpc/platforms/44x/pci.c
 @@ -1058,15 +1058,24 @@ static int __init apm821xx_pciex_init_po

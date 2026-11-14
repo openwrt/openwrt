@@ -1,3 +1,12 @@
+From 9e0fd1b52ad1f805a308bf6a5a13236f352fd962 Mon Sep 17 00:00:00 2001
+From: Christian Lamparter <chunkeey@googlemail.com>
+Date: Wed, 20 Jul 2016 15:44:57 +0200
+Subject: [PATCH] powerpc: 44x: fix PCIe inbound memory map for WNDR4700
+
+Set the upper address bits of the PCIe inbound memory windows
+(PECFG_PIM0LAH and PECFG_PIM1LAH) to the values required by the memory
+layout of the Netgear WNDR4700/WNDR4720.
+---
 --- a/arch/powerpc/platforms/44x/pci.c
 +++ b/arch/powerpc/platforms/44x/pci.c
 @@ -1800,9 +1800,9 @@ static void __init ppc4xx_configure_pcie

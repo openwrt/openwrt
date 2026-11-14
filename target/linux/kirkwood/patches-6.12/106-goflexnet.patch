@@ -1,3 +1,13 @@
+From ab13a001dde17abfa29e6b31153084267e4512da Mon Sep 17 00:00:00 2001
+From: Alexander Couzens <lynxis@fe80.eu>
+Date: Mon, 14 Mar 2016 17:06:14 +0000
+Subject: [PATCH] ARM: dts: kirkwood-goflexnet: adapt for OpenWrt
+
+Adapt the device tree of the Seagate GoFlex Net to OpenWrt: change the
+flash partitions to the layout used by OpenWrt and add the LED aliases
+used by OpenWrt to indicate the boot, failsafe, running and upgrade
+states.
+---
 --- a/arch/arm/boot/dts/marvell/kirkwood-goflexnet.dts
 +++ b/arch/arm/boot/dts/marvell/kirkwood-goflexnet.dts
 @@ -8,6 +8,13 @@

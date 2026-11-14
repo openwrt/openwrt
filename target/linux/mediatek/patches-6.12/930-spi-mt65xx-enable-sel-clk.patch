@@ -1,3 +1,11 @@
+From 335c1e7cfdfd477a1106ca05c96ff8949ecd953f Mon Sep 17 00:00:00 2001
+From: Furong Xu <xfr@outlook.com>
+Date: Fri, 16 Dec 2022 21:13:37 +0800
+Subject: [PATCH] spi: mt65xx: enable sel_clk
+
+Also enable the sel_clk clock of the SPI controller, which is needed on
+some MediaTek SoCs.
+---
 --- a/drivers/spi/spi-mt65xx.c
 +++ b/drivers/spi/spi-mt65xx.c
 @@ -1237,8 +1237,15 @@ static int mtk_spi_probe(struct platform

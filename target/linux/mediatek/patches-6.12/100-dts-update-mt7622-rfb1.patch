@@ -1,3 +1,12 @@
+From c46ccb69d17e584479df849a107423175a143c83 Mon Sep 17 00:00:00 2001
+From: Felix Fietkau <nbd@nbd.name>
+Date: Sat, 24 Oct 2020 21:15:20 +0200
+Subject: [PATCH] arm64: dts: mediatek: mt7622-rfb1: adapt for OpenWrt
+
+Adjust the device tree of the MediaTek MT7622 RFB1 reference board for
+OpenWrt: set the boot arguments, name the switch ports lan0 to lan4 and
+update the status and pin configuration of some peripherals.
+---
 --- a/arch/arm64/boot/dts/mediatek/mt7622-rfb1.dts
 +++ b/arch/arm64/boot/dts/mediatek/mt7622-rfb1.dts
 @@ -1,7 +1,6 @@
