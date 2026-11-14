@@ -1,0 +1,39 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: John Crispin <john@phrozen.org>
+Subject: [PATCH] add DSPG DVF99 CSS voice service
+
+Add the build hooks for the driver of the voice service of the DVF99
+cordless subsystem firmware, which runs the RTP media sessions of the
+phone.
+
+Signed-off-by: John Crispin <john@phrozen.org>
+---
+--- a/drivers/rpmsg/Kconfig
++++ b/drivers/rpmsg/Kconfig
+@@ -45,6 +45,16 @@ config RPMSG_DVF99_DUA
+ 	  driver allocates and connects the DSP units of the audio path
+ 	  through this driver.
+ 
++config RPMSG_DVF99_VOICE
++	tristate "DSPG DVF99 CSS voice service"
++	depends on RPMSG_DVF99_DUA
++	help
++	  Say y here to use the RTP media engine of the DVF99 cordless
++	  subsystem firmware. The driver gives each open of /dev/css-voice
++	  one RTP session: the firmware runs the codecs, the jitter buffer
++	  and the RTP and RTCP protocol, and user space moves the packets
++	  between the network and the session.
++
+ config RPMSG_MTK_SCP
+ 	tristate "MediaTek SCP"
+ 	depends on MTK_SCP
+--- a/drivers/rpmsg/Makefile
++++ b/drivers/rpmsg/Makefile
+@@ -5,6 +5,7 @@ obj-$(CONFIG_RPMSG_CTRL)	+= rpmsg_ctrl.o
+ obj-$(CONFIG_RPMSG_NS)		+= rpmsg_ns.o
+ obj-$(CONFIG_RPMSG_DVF99_COMA)	+= dvf99_coma.o
+ obj-$(CONFIG_RPMSG_DVF99_DUA)	+= dvf99_dua.o
++obj-$(CONFIG_RPMSG_DVF99_VOICE)	+= dvf99_voice.o
+ obj-$(CONFIG_RPMSG_MTK_SCP)	+= mtk_rpmsg.o
+ CFLAGS_qcom_glink_native.o	:= -I$(src)
+ qcom_glink-objs			:= qcom_glink_native.o qcom_glink_ssr.o

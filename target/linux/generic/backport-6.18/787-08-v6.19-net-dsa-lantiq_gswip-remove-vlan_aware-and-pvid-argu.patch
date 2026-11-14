@@ -1,0 +1,67 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Vladimir Oltean <vladimir.oltean@nxp.com>
+Date: Wed, 15 Oct 2025 23:33:33 +0100
+Subject: [PATCH] net: dsa: lantiq_gswip: remove vlan_aware and pvid
+ arguments from gswip_vlan_remove()
+
+"bool pvid" is unused since commit "net: dsa: lantiq_gswip: remove
+legacy configure_vlan_while_not_filtering option".
+
+"bool vlan_aware" shouldn't have a role in finding the bridge VLAN.
+It should be identified by VID regardless of VLAN-aware or VLAN-unaware.
+The driver sets up VID 0 for the VLAN-unaware PVID.
+
+Signed-off-by: Vladimir Oltean <vladimir.oltean@nxp.com>
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+Link: https://patch.msgid.link/c63f89ca19269ef6c8bf00a62cacc739164b4441.1760566491.git.daniel@makrotopia.org
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ drivers/net/dsa/lantiq/lantiq_gswip.c | 9 ++++-----
+ 1 file changed, 4 insertions(+), 5 deletions(-)
+
+--- a/drivers/net/dsa/lantiq/lantiq_gswip.c
++++ b/drivers/net/dsa/lantiq/lantiq_gswip.c
+@@ -857,7 +857,7 @@ static int gswip_vlan_add(struct gswip_p
+ 
+ static int gswip_vlan_remove(struct gswip_priv *priv,
+ 			     struct net_device *bridge, int port,
+-			     u16 vid, bool pvid, bool vlan_aware)
++			     u16 vid)
+ {
+ 	struct gswip_pce_table_entry vlan_mapping = {0,};
+ 	unsigned int max_ports = priv->hw_info->max_ports;
+@@ -868,7 +868,7 @@ static int gswip_vlan_remove(struct gswi
+ 	/* Check if there is already a page for this bridge */
+ 	for (i = max_ports; i < ARRAY_SIZE(priv->vlans); i++) {
+ 		if (priv->vlans[i].bridge == bridge &&
+-		    (!vlan_aware || priv->vlans[i].vid == vid)) {
++		    priv->vlans[i].vid == vid) {
+ 			idx = i;
+ 			break;
+ 		}
+@@ -941,7 +941,7 @@ static void gswip_port_bridge_leave(stru
+ 	 * the VLAN-unaware PVID created for this bridge.
+ 	 */
+ 	gswip_add_single_port_br(priv, port, true);
+-	gswip_vlan_remove(priv, br, port, GSWIP_VLAN_UNAWARE_PVID, true, false);
++	gswip_vlan_remove(priv, br, port, GSWIP_VLAN_UNAWARE_PVID);
+ }
+ 
+ static int gswip_port_vlan_prepare(struct dsa_switch *ds, int port,
+@@ -1024,7 +1024,6 @@ static int gswip_port_vlan_del(struct ds
+ {
+ 	struct net_device *bridge = dsa_port_bridge_dev_get(dsa_to_port(ds, port));
+ 	struct gswip_priv *priv = ds->priv;
+-	bool pvid = vlan->flags & BRIDGE_VLAN_INFO_PVID;
+ 
+ 	if (vlan->vid == GSWIP_VLAN_UNAWARE_PVID)
+ 		return 0;
+@@ -1037,7 +1036,7 @@ static int gswip_port_vlan_del(struct ds
+ 	if (dsa_is_cpu_port(ds, port))
+ 		return 0;
+ 
+-	return gswip_vlan_remove(priv, bridge, port, vlan->vid, pvid, true);
++	return gswip_vlan_remove(priv, bridge, port, vlan->vid);
+ }
+ 
+ static void gswip_port_fast_age(struct dsa_switch *ds, int port)

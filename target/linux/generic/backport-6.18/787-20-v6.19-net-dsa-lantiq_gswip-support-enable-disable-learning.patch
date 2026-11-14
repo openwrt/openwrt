@@ -1,0 +1,89 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Mon, 3 Nov 2025 12:18:49 +0000
+Subject: [PATCH] net: dsa: lantiq_gswip: support enable/disable learning
+
+Switch API 2.2 or later supports enabling or disabling learning on each
+port. Implement support for BR_LEARNING bridge flag and announce support
+for BR_LEARNING on GSWIP 2.2 or later.
+
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+Reviewed-by: Vladimir Oltean <olteanv@gmail.com>
+Link: https://patch.msgid.link/0aa4621e01c998378ad5812464bc17d23aa3bf62.1762170107.git.daniel@makrotopia.org
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ drivers/net/dsa/lantiq/lantiq_gswip.h        |  3 ++
+ drivers/net/dsa/lantiq/lantiq_gswip_common.c | 43 ++++++++++++++++++++
+ 2 files changed, 46 insertions(+)
+
+--- a/drivers/net/dsa/lantiq/lantiq_gswip.h
++++ b/drivers/net/dsa/lantiq/lantiq_gswip.h
+@@ -157,6 +157,9 @@
+ #define  GSWIP_PCE_PCTRL_0_PSTATE_LEARNING	0x3
+ #define  GSWIP_PCE_PCTRL_0_PSTATE_FORWARDING	0x7
+ #define  GSWIP_PCE_PCTRL_0_PSTATE_MASK	GENMASK(2, 0)
++/* Ethernet Switch PCE Port Control Register 3 */
++#define GSWIP_PCE_PCTRL_3p(p)		(0x483 + ((p) * 0xA))
++#define  GSWIP_PCE_PCTRL_3_LNDIS	BIT(15)  /* Learning Disable */
+ #define GSWIP_PCE_VCTRL(p)		(0x485 + ((p) * 0xA))
+ #define  GSWIP_PCE_VCTRL_UVR		BIT(0)	/* Unknown VLAN Rule */
+ #define  GSWIP_PCE_VCTRL_VINR		GENMASK(2, 1) /* VLAN Ingress Tag Rule */
+--- a/drivers/net/dsa/lantiq/lantiq_gswip_common.c
++++ b/drivers/net/dsa/lantiq/lantiq_gswip_common.c
+@@ -403,6 +403,47 @@ static int gswip_add_single_port_br(stru
+ 	return 0;
+ }
+ 
++static int gswip_port_set_learning(struct gswip_priv *priv, int port,
++				   bool enable)
++{
++	if (!GSWIP_VERSION_GE(priv, GSWIP_VERSION_2_2))
++		return -EOPNOTSUPP;
++
++	/* learning disable bit */
++	return regmap_update_bits(priv->gswip, GSWIP_PCE_PCTRL_3p(port),
++				  GSWIP_PCE_PCTRL_3_LNDIS,
++				  enable ? 0 : GSWIP_PCE_PCTRL_3_LNDIS);
++}
++
++static int gswip_port_pre_bridge_flags(struct dsa_switch *ds, int port,
++				       struct switchdev_brport_flags flags,
++				       struct netlink_ext_ack *extack)
++{
++	struct gswip_priv *priv = ds->priv;
++	unsigned long supported = 0;
++
++	if (GSWIP_VERSION_GE(priv, GSWIP_VERSION_2_2))
++		supported |= BR_LEARNING;
++
++	if (flags.mask & ~supported)
++		return -EINVAL;
++
++	return 0;
++}
++
++static int gswip_port_bridge_flags(struct dsa_switch *ds, int port,
++				   struct switchdev_brport_flags flags,
++				   struct netlink_ext_ack *extack)
++{
++	struct gswip_priv *priv = ds->priv;
++
++	if (flags.mask & BR_LEARNING)
++		return gswip_port_set_learning(priv, port,
++					       !!(flags.val & BR_LEARNING));
++
++	return 0;
++}
++
+ static int gswip_port_setup(struct dsa_switch *ds, int port)
+ {
+ 	struct gswip_priv *priv = ds->priv;
+@@ -1521,6 +1562,8 @@ static const struct dsa_switch_ops gswip
+ 	.port_setup		= gswip_port_setup,
+ 	.port_enable		= gswip_port_enable,
+ 	.port_disable		= gswip_port_disable,
++	.port_pre_bridge_flags	= gswip_port_pre_bridge_flags,
++	.port_bridge_flags	= gswip_port_bridge_flags,
+ 	.port_bridge_join	= gswip_port_bridge_join,
+ 	.port_bridge_leave	= gswip_port_bridge_leave,
+ 	.port_fast_age		= gswip_port_fast_age,

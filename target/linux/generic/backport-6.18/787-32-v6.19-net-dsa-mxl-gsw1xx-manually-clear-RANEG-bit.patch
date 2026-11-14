@@ -1,0 +1,128 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Tue, 9 Dec 2025 01:29:34 +0000
+Subject: [PATCH] net: dsa: mxl-gsw1xx: manually clear RANEG bit
+
+Despite being documented as self-clearing, the RANEG bit sometimes
+remains set, preventing auto-negotiation from happening.
+
+Manually clear the RANEG bit after 10ms as advised by MaxLinear.
+In order to not hold RTNL during the 10ms of waiting schedule
+delayed work to take care of clearing the bit asynchronously, which
+is similar to the self-clearing behavior.
+
+Fixes: 22335939ec90 ("net: dsa: add driver for MaxLinear GSW1xx switch family")
+Reported-by: Rasmus Villemoes <ravi@prevas.dk>
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+Link: https://patch.msgid.link/76745fceb5a3f53088110fb7a96acf88434088ca.1765241054.git.daniel@makrotopia.org
+Reviewed-by: Vladimir Oltean <olteanv@gmail.com>
+Signed-off-by: Paolo Abeni <pabeni@redhat.com>
+---
+ drivers/net/dsa/lantiq/mxl-gsw1xx.c | 34 ++++++++++++++++++++++++++++-
+ 1 file changed, 33 insertions(+), 1 deletion(-)
+
+--- a/drivers/net/dsa/lantiq/mxl-gsw1xx.c
++++ b/drivers/net/dsa/lantiq/mxl-gsw1xx.c
+@@ -11,10 +11,12 @@
+ 
+ #include <linux/bits.h>
+ #include <linux/delay.h>
++#include <linux/jiffies.h>
+ #include <linux/module.h>
+ #include <linux/of_device.h>
+ #include <linux/of_mdio.h>
+ #include <linux/regmap.h>
++#include <linux/workqueue.h>
+ #include <net/dsa.h>
+ 
+ #include "lantiq_gswip.h"
+@@ -29,6 +31,7 @@ struct gsw1xx_priv {
+ 	struct			regmap *clk;
+ 	struct			regmap *shell;
+ 	struct			phylink_pcs pcs;
++	struct delayed_work	clear_raneg;
+ 	phy_interface_t		tbi_interface;
+ 	struct gswip_priv	gswip;
+ };
+@@ -145,7 +148,9 @@ static void gsw1xx_pcs_disable(struct ph
+ {
+ 	struct gsw1xx_priv *priv = pcs_to_gsw1xx(pcs);
+ 
+-	/* Assert SGMII shell reset */
++	cancel_delayed_work_sync(&priv->clear_raneg);
++
++	/* Assert SGMII shell reset (will also clear RANEG bit) */
+ 	regmap_set_bits(priv->shell, GSW1XX_SHELL_RST_REQ,
+ 			GSW1XX_RST_REQ_SGMII_SHELL);
+ 
+@@ -428,12 +433,29 @@ static int gsw1xx_pcs_config(struct phyl
+ 	return 0;
+ }
+ 
++static void gsw1xx_pcs_clear_raneg(struct work_struct *work)
++{
++	struct gsw1xx_priv *priv =
++		container_of(work, struct gsw1xx_priv, clear_raneg.work);
++
++	regmap_clear_bits(priv->sgmii, GSW1XX_SGMII_TBI_ANEGCTL,
++			  GSW1XX_SGMII_TBI_ANEGCTL_RANEG);
++}
++
+ static void gsw1xx_pcs_an_restart(struct phylink_pcs *pcs)
+ {
+ 	struct gsw1xx_priv *priv = pcs_to_gsw1xx(pcs);
+ 
++	cancel_delayed_work_sync(&priv->clear_raneg);
++
+ 	regmap_set_bits(priv->sgmii, GSW1XX_SGMII_TBI_ANEGCTL,
+ 			GSW1XX_SGMII_TBI_ANEGCTL_RANEG);
++
++	/* despite being documented as self-clearing, the RANEG bit
++	 * sometimes remains set, preventing auto-negotiation from happening.
++	 * MaxLinear advises to manually clear the bit after 10ms.
++	 */
++	schedule_delayed_work(&priv->clear_raneg, msecs_to_jiffies(10));
+ }
+ 
+ static void gsw1xx_pcs_link_up(struct phylink_pcs *pcs,
+@@ -636,6 +658,8 @@ static int gsw1xx_probe(struct mdio_devi
+ 	if (ret)
+ 		return ret;
+ 
++	INIT_DELAYED_WORK(&priv->clear_raneg, gsw1xx_pcs_clear_raneg);
++
+ 	ret = gswip_probe_common(&priv->gswip, version);
+ 	if (ret)
+ 		return ret;
+@@ -648,16 +672,21 @@ static int gsw1xx_probe(struct mdio_devi
+ static void gsw1xx_remove(struct mdio_device *mdiodev)
+ {
+ 	struct gswip_priv *priv = dev_get_drvdata(&mdiodev->dev);
++	struct gsw1xx_priv *gsw1xx_priv;
+ 
+ 	if (!priv)
+ 		return;
+ 
+ 	dsa_unregister_switch(priv->ds);
++
++	gsw1xx_priv = container_of(priv, struct gsw1xx_priv, gswip);
++	cancel_delayed_work_sync(&gsw1xx_priv->clear_raneg);
+ }
+ 
+ static void gsw1xx_shutdown(struct mdio_device *mdiodev)
+ {
+ 	struct gswip_priv *priv = dev_get_drvdata(&mdiodev->dev);
++	struct gsw1xx_priv *gsw1xx_priv;
+ 
+ 	if (!priv)
+ 		return;
+@@ -665,6 +694,9 @@ static void gsw1xx_shutdown(struct mdio_
+ 	dsa_switch_shutdown(priv->ds);
+ 
+ 	dev_set_drvdata(&mdiodev->dev, NULL);
++
++	gsw1xx_priv = container_of(priv, struct gsw1xx_priv, gswip);
++	cancel_delayed_work_sync(&gsw1xx_priv->clear_raneg);
+ }
+ 
+ static const struct gswip_hw_info gsw12x_data = {

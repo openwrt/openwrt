@@ -1,0 +1,93 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: John Crispin <john@phrozen.org>
+Subject: [PATCH] add DSPG DVF99 CSS sound and DVF9A sharing
+
+Add the build hooks for the DVF99 CSS PCM driver, the DVF9A analog
+front end controls and the DVF9A sharing with the CSS firmware.
+
+Signed-off-by: John Crispin <john@phrozen.org>
+---
+--- a/drivers/mfd/Kconfig
++++ b/drivers/mfd/Kconfig
+@@ -527,6 +527,15 @@ config MFD_DVF9A
+ 	  through the DAIF, shared with the cordless subsystem CPU, to the
+ 	  PWM and audio drivers.
+ 
++config MFD_DVF9A_COMA
++	tristate "DSPG DVF9A sharing with the cordless subsystem"
++	depends on MFD_DVF9A && RPMSG
++	help
++	  Hand the DVF9A DAIF back and forth between Linux and the firmware
++	  of the DVF99 cordless subsystem over its "dvf9a" coma channel.
++	  Without it, Linux accesses to the DVF9A can collide with the
++	  firmware once the cordless subsystem runs.
++
+ config MFD_ENE_KB3930
+ 	tristate "ENE KB3930 Embedded Controller support"
+ 	depends on I2C
+--- a/drivers/mfd/Makefile
++++ b/drivers/mfd/Makefile
+@@ -253,6 +253,7 @@ obj-$(CONFIG_MFD_HI6421_SPMI)	+= hi6421-
+ obj-$(CONFIG_MFD_HI655X_PMIC)   += hi655x-pmic.o
+ obj-$(CONFIG_MFD_DLN2)		+= dln2.o
+ obj-$(CONFIG_MFD_DVF9A)		+= dvf9a.o
++obj-$(CONFIG_MFD_DVF9A_COMA)	+= dvf9a-coma.o
+ obj-$(CONFIG_MFD_RT4831)	+= rt4831.o
+ obj-$(CONFIG_MFD_RT5033)	+= rt5033.o
+ obj-$(CONFIG_MFD_RT5120)	+= rt5120.o
+--- a/sound/soc/Kconfig
++++ b/sound/soc/Kconfig
+@@ -109,6 +109,7 @@ source "sound/soc/atmel/Kconfig"
+ source "sound/soc/au1x/Kconfig"
+ source "sound/soc/bcm/Kconfig"
+ source "sound/soc/cirrus/Kconfig"
++source "sound/soc/dspg/Kconfig"
+ source "sound/soc/dwc/Kconfig"
+ source "sound/soc/fsl/Kconfig"
+ source "sound/soc/google/Kconfig"
+--- a/sound/soc/Makefile
++++ b/sound/soc/Makefile
+@@ -51,6 +51,7 @@ obj-$(CONFIG_SND_SOC)	+= atmel/
+ obj-$(CONFIG_SND_SOC)	+= au1x/
+ obj-$(CONFIG_SND_SOC)	+= bcm/
+ obj-$(CONFIG_SND_SOC)	+= cirrus/
++obj-$(CONFIG_SND_SOC)	+= dspg/
+ obj-$(CONFIG_SND_SOC)	+= dwc/
+ obj-$(CONFIG_SND_SOC)	+= fsl/
+ obj-$(CONFIG_SND_SOC)	+= google/
+--- a/sound/soc/codecs/Kconfig
++++ b/sound/soc/codecs/Kconfig
+@@ -1165,6 +1165,15 @@ config SND_SOC_DA9055
+ 	tristate
+ 	depends on I2C
+ 
++config SND_SOC_DVF9A
++	tristate "DSPG DVF9A audio front end controls"
++	depends on MFD_DVF9A
++	help
++	  Enable the mixer controls of the analog front end in the DSP Group
++	  DVF9A block of the DVF99 SoC: input and output selection, gains,
++	  amplifier and converter enables, microphone bias and the class-D
++	  amplifier.
++
+ config SND_SOC_DMIC
+ 	tristate "Generic Digital Microphone CODEC"
+ 	help
+--- a/sound/soc/codecs/Makefile
++++ b/sound/soc/codecs/Makefile
+@@ -124,6 +124,7 @@ snd-soc-da7219-y := da7219.o da7219-aad.
+ snd-soc-da732x-y := da732x.o
+ snd-soc-da9055-y := da9055.o
+ snd-soc-dmic-y := dmic.o
++snd-soc-dvf9a-y := dvf9a.o
+ snd-soc-es7134-y := es7134.o
+ snd-soc-es7241-y := es7241.o
+ snd-soc-es83xx-dsm-common-y := es83xx-dsm-common.o
+@@ -556,6 +557,7 @@ obj-$(CONFIG_SND_SOC_DA7219)	+= snd-soc-
+ obj-$(CONFIG_SND_SOC_DA732X)	+= snd-soc-da732x.o
+ obj-$(CONFIG_SND_SOC_DA9055)	+= snd-soc-da9055.o
+ obj-$(CONFIG_SND_SOC_DMIC)	+= snd-soc-dmic.o
++obj-$(CONFIG_SND_SOC_DVF9A)	+= snd-soc-dvf9a.o
+ obj-$(CONFIG_SND_SOC_ES7134)	+= snd-soc-es7134.o
+ obj-$(CONFIG_SND_SOC_ES7241)	+= snd-soc-es7241.o
+ obj-$(CONFIG_SND_SOC_ES83XX_DSM_COMMON)    += snd-soc-es83xx-dsm-common.o

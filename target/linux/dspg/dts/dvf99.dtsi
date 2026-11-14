@@ -1,0 +1,358 @@
+// SPDX-License-Identifier: GPL-2.0-only OR MIT
+/*
+ * Copyright (C) 2026 John Crispin <john@phrozen.org>
+ */
+
+#include <dt-bindings/clock/dspg,dvf99-cmu.h>
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/interrupt-controller/irq.h>
+#include <dt-bindings/mailbox/dspg,dvf99-sec.h>
+#include <dt-bindings/reset/dspg,dvf99-cmu.h>
+
+/ {
+	#address-cells = <1>;
+	#size-cells = <1>;
+	compatible = "dspg,dvf99";
+	interrupt-parent = <&plicu>;
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,arm926ej-s";
+			reg = <0>;
+		};
+	};
+
+	memory@40000000 {
+		device_type = "memory";
+		reg = <0x40000000 0x08000000>;
+	};
+
+	reserved-memory {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		css_mem: css-memory {
+			compatible = "shared-dma-pool";
+			size = <0x00800000>;
+			alignment = <0x00100000>;
+			no-map;
+			status = "disabled";
+		};
+	};
+
+	soc {
+		compatible = "simple-bus";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		usb: usb@300000 {
+			compatible = "snps,dwc2";
+			reg = <0x00300000 0x40000>;
+			interrupts = <3 IRQ_TYPE_LEVEL_HIGH>;
+			clocks = <&cmu DVF99_CLK_USB20_MAC>;
+			clock-names = "otg";
+			status = "disabled";
+		};
+
+		sec: mailbox@a00000 {
+			compatible = "dspg,dvf99-sec";
+			reg = <0x00a00000 0x700>;
+			interrupts = <19 IRQ_TYPE_LEVEL_HIGH>;
+			clocks = <&cmu DVF99_CLK_SEC>;
+			resets = <&cmu DVF99_RST_SEC>;
+			#mbox-cells = <2>;
+			status = "disabled";
+		};
+
+		mmc: mmc@900000 {
+			compatible = "dspg,dvf99-dw-mshc", "snps,dw-mshc";
+			reg = <0x00900000 0x1000>;
+			interrupts = <17 IRQ_TYPE_LEVEL_HIGH>;
+			clocks = <&cmu DVF99_CLK_AHB>, <&cmu DVF99_CLK_SDMMC>;
+			clock-names = "biu", "ciu";
+			clock-frequency = <25000000>;
+			resets = <&cmu DVF99_RST_SDC>;
+			reset-names = "reset";
+			fifo-depth = <0x20>;
+			status = "disabled";
+		};
+
+		pinctrl: pinctrl@5000000 {
+			compatible = "dspg,dvf99-pinctrl";
+			reg = <0x05000000 0x2b0>;
+			dspg,syscfg = <&syscfg>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			gpio-ranges = <&pinctrl 0 0 160>;
+			interrupt-controller;
+			#address-cells = <0>;
+			#interrupt-cells = <2>;
+
+			i2c1_pins: i2c1-pins {
+				function = "i2c1";
+				groups = "i2c1";
+				bias-disable;
+			};
+
+			i2c1_gpio_pins: i2c1-gpio-pins {
+				function = "gpio";
+				groups = "i2c1";
+			};
+
+			i2c2_pins: i2c2-pins {
+				function = "i2c2";
+				groups = "i2c2";
+				bias-disable;
+			};
+
+			i2c2_gpio_pins: i2c2-gpio-pins {
+				function = "gpio";
+				groups = "i2c2";
+			};
+		};
+
+		keypad: keypad@50002b0 {
+			compatible = "dspg,dvf99-keypad";
+			reg = <0x050002b0 0x0c>;
+			interrupts = <4 IRQ_TYPE_LEVEL_HIGH>;
+			status = "disabled";
+		};
+
+		plicu: interrupt-controller@5100000 {
+			compatible = "dspg,plicu";
+			reg = <0x05100000 0x100>;
+			interrupt-controller;
+			#address-cells = <0>;
+			#interrupt-cells = <2>;
+		};
+
+		syscfg: syscon@5200000 {
+			compatible = "dspg,dvf99-syscfg", "syscon";
+			reg = <0x05200000 0x300>;
+		};
+
+		cmu: clock-controller@5300000 {
+			compatible = "dspg,dvf99-cmu";
+			reg = <0x05300000 0x100>;
+			#clock-cells = <1>;
+			#reset-cells = <1>;
+		};
+
+		nand: nand-controller@5400000 {
+			compatible = "dspg,dvf99-nfc";
+			reg = <0x05400000 0x200>, <0x00000000 0x12000>;
+			reg-names = "nfc", "rom";
+			interrupts = <22 IRQ_TYPE_LEVEL_HIGH>;
+			clocks = <&cmu DVF99_CLK_NFC>;
+			resets = <&cmu DVF99_RST_NFC>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+
+			nand@0 {
+				reg = <0>;
+				nand-rb = <0>;
+			};
+		};
+
+		qspi: spi@5500000 {
+			compatible = "dspg,dvf99-qspi";
+			reg = <0x05500000 0x800>, <0x80000000 0x10000000>,
+			      <0xa0000000 0x10000000>;
+			reg-names = "qspi", "cs0", "cs1";
+			interrupts = <16 IRQ_TYPE_LEVEL_HIGH>;
+			clocks = <&cmu DVF99_CLK_QSPI>;
+			resets = <&cmu DVF99_RST_QSPI>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		watchdog: watchdog@5700000 {
+			compatible = "dspg,dvf99-wdt";
+			reg = <0x05700000 0x100>;
+			interrupts = <62 IRQ_TYPE_LEVEL_HIGH>;
+			clocks = <&cmu DVF99_CLK_SLOWCLK>;
+			status = "disabled";
+		};
+
+		timer@5800000 {
+			compatible = "dspg,dvf99-timer", "arm,sp804";
+			reg = <0x05800000 0x40>;
+			interrupts = <50 IRQ_TYPE_LEVEL_HIGH>;
+			clocks = <&cmu DVF99_CLK_TIMER1>, <&cmu DVF99_CLK_TIMER2>,
+				 <&cmu DVF99_CLK_AHB>;
+			clock-names = "timer1", "timer2", "apb_pclk";
+		};
+
+		uart1: serial@5a00000 {
+			compatible = "dspg,uart";
+			reg = <0x05a00000 0x200>;
+			interrupts = <55 IRQ_TYPE_LEVEL_HIGH>;
+			clocks = <&cmu DVF99_CLK_UART1>;
+			status = "disabled";
+		};
+
+		uart2: serial@5b00000 {
+			compatible = "dspg,uart";
+			reg = <0x05b00000 0x200>;
+			interrupts = <54 IRQ_TYPE_LEVEL_HIGH>;
+			clocks = <&cmu DVF99_CLK_UART2>;
+			status = "disabled";
+		};
+
+		spi1: spi@5d00000 {
+			compatible = "dspg,dvf99-spi";
+			reg = <0x05d00000 0x200>;
+			interrupts = <45 IRQ_TYPE_LEVEL_HIGH>;
+			clocks = <&cmu DVF99_CLK_SPI1>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		i2c2: i2c@6100000 {
+			compatible = "dspg,dvf99-i2c";
+			reg = <0x06100000 0x100>;
+			interrupts = <42 IRQ_TYPE_LEVEL_HIGH>;
+			clocks = <&cmu DVF99_CLK_I2C2>;
+			pinctrl-names = "default", "gpio";
+			pinctrl-0 = <&i2c2_pins>;
+			pinctrl-1 = <&i2c2_gpio_pins>;
+			scl-gpios = <&pinctrl 158 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
+			sda-gpios = <&pinctrl 159 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		i2c1: i2c@6200000 {
+			compatible = "dspg,dvf99-i2c";
+			reg = <0x06200000 0x100>;
+			interrupts = <43 IRQ_TYPE_LEVEL_HIGH>;
+			clocks = <&cmu DVF99_CLK_I2C1>;
+			pinctrl-names = "default", "gpio";
+			pinctrl-0 = <&i2c1_pins>;
+			pinctrl-1 = <&i2c1_gpio_pins>;
+			scl-gpios = <&pinctrl 17 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
+			sda-gpios = <&pinctrl 16 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		dvf9a: afe@6300000 {
+			compatible = "dspg,dvf9a";
+			reg = <0x06300000 0x200>;
+			clocks = <&cmu DVF99_CLK_PMU>, <&cmu DVF99_CLK_APU>,
+				 <&cmu DVF99_CLK_RFAPU>;
+			clock-names = "pmu", "apu", "rfapu";
+			interrupts = <11 IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-controller;
+			#interrupt-cells = <1>;
+			status = "disabled";
+
+			dvf9a_codec: codec {
+				compatible = "dspg,dvf9a-codec";
+			};
+
+			dvf9a_pwm: pwm {
+				compatible = "dspg,dvf9a-pwm";
+				clocks = <&cmu DVF99_CLK_OSC_DECT>;
+				#pwm-cells = <2>;
+			};
+		};
+
+		lcdc: display-controller@6b00000 {
+			compatible = "dspg,dvf99-lcdc";
+			reg = <0x06b00000 0x2000>;
+			interrupts = <14 IRQ_TYPE_LEVEL_HIGH>;
+			clocks = <&cmu DVF99_CLK_LCDC>;
+			status = "disabled";
+		};
+
+		gmac: ethernet@6e00000 {
+			compatible = "st,spear600-gmac";
+			reg = <0x06e00000 0x8000>;
+			interrupts = <23 IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-names = "macirq";
+			clocks = <&cmu DVF99_CLK_ETHMAC>;
+			clock-names = "stmmaceth";
+			snps,pbl = <8>;
+			tx-fifo-depth = <2048>;
+			rx-fifo-depth = <2048>;
+			status = "disabled";
+		};
+
+		css: remoteproc@8000000 {
+			compatible = "dspg,dvf99-css";
+			reg = <0x08000000 0x44000>, <0x08100000 0x20000>,
+			      <0x08200000 0x14800>;
+			reg-names = "itcm", "dtcm", "ahbram";
+			clocks = <&cmu DVF99_CLK_CSS>, <&cmu DVF99_CLK_CSS_ARM>,
+				 <&cmu DVF99_CLK_CSS_ETM>,
+				 <&cmu DVF99_CLK_CSS_ADPCM>, <&cmu DVF99_CLK_BMP>,
+				 <&cmu DVF99_CLK_CSS_DRT>, <&cmu DVF99_CLK_RFAPU>,
+				 <&cmu DVF99_CLK_CSS_GDMAC>,
+				 <&cmu DVF99_CLK_CSS_TIMER1>,
+				 <&cmu DVF99_CLK_CSS_TIMER2>, <&cmu DVF99_CLK_RTC>,
+				 <&cmu DVF99_CLK_DCLASS>, <&cmu DVF99_CLK_TDM1>,
+				 <&cmu DVF99_CLK_TDM2>, <&cmu DVF99_CLK_APU>,
+				 <&cmu DVF99_CLK_PMU>;
+			clock-names = "css", "arm", "etm", "adpcm", "bmp", "drt",
+				      "rfapu", "gdmac", "timer1", "timer2", "rtc",
+				      "dclass", "tdm1", "tdm2", "apu", "pmu";
+			resets = <&cmu DVF99_RST_CSS>, <&cmu DVF99_RST_CSS_ARM9>,
+				 <&cmu DVF99_RST_CSS_ETM>, <&cmu DVF99_RST_CSS_ADPCM>,
+				 <&cmu DVF99_RST_CSS_BMP>, <&cmu DVF99_RST_CSS_DRT>,
+				 <&cmu DVF99_RST_COM_RFAPU>,
+				 <&cmu DVF99_RST_CSS_GDMAC>,
+				 <&cmu DVF99_RST_CSS_TIMERS>,
+				 <&cmu DVF99_RST_CSS_DCLASS>, <&cmu DVF99_RST_TDM1>,
+				 <&cmu DVF99_RST_TDM2>;
+			reset-names = "css", "arm", "etm", "adpcm", "bmp", "drt",
+				      "rfapu", "gdmac", "timers", "dclass", "tdm1",
+				      "tdm2";
+			memory-region = <&css_mem>;
+			mboxes = <&sec DVF99_SEC_CSS_PANIC 0>,
+				 <&sec DVF99_SEC_CSS_SHUTDOWN DVF99_SEC_POLLED>,
+				 <&sec DVF99_SEC_CSS_COUNTER
+				  (DVF99_SEC_OVERWRITE | DVF99_SEC_POLLED)>,
+				 <&sec DVF99_SEC_CLK_CMD 0>,
+				 <&sec DVF99_SEC_CLK_ARG
+				  (DVF99_SEC_OVERWRITE | DVF99_SEC_POLLED)>,
+				 <&sec DVF99_SEC_RST_CMD 0>,
+				 <&sec DVF99_SEC_COMA(0) 0>, <&sec DVF99_SEC_COMA(1) 0>,
+				 <&sec DVF99_SEC_COMA(2) 0>, <&sec DVF99_SEC_COMA(3) 0>,
+				 <&sec DVF99_SEC_COMA(4) 0>, <&sec DVF99_SEC_COMA(5) 0>,
+				 <&sec DVF99_SEC_COMA(6) 0>, <&sec DVF99_SEC_COMA(7) 0>,
+				 <&sec DVF99_SEC_COMA(8) 0>, <&sec DVF99_SEC_COMA(9) 0>,
+				 <&sec DVF99_SEC_COMA(10) 0>,
+				 <&sec DVF99_SEC_COMA(11) 0>,
+				 <&sec DVF99_SEC_COMA(12) 0>,
+				 <&sec DVF99_SEC_COMA(13) 0>,
+				 <&sec DVF99_SEC_COMA(14) 0>,
+				 <&sec DVF99_SEC_COMA(15) 0>;
+			mbox-names = "panic", "shutdown", "counter", "clk-cmd",
+				     "clk-arg", "rst-cmd", "coma0", "coma1", "coma2",
+				     "coma3", "coma4", "coma5", "coma6", "coma7",
+				     "coma8", "coma9", "coma10", "coma11", "coma12",
+				     "coma13", "coma14", "coma15";
+			status = "disabled";
+
+			alsa {
+				dspg,codec = <&dvf9a_codec>;
+			};
+
+			dvf9a {
+				dspg,dvf9a = <&dvf9a>;
+			};
+		};
+	};
+};

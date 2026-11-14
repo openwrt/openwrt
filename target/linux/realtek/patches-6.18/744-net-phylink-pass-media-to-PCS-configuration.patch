@@ -607,3 +607,14 @@ Signed-off-by: Jonas Jelonek <jonas@jonasjelonek.de>
  
  /**
   * pcs_an_restart() - restart 802.3z BaseX autonegotiation
+--- a/drivers/net/dsa/lantiq/mxl-gsw1xx.c
++++ b/drivers/net/dsa/lantiq/mxl-gsw1xx.c
+@@ -318,7 +318,7 @@ static int gsw1xx_pcs_reset(struct gsw1x
+ static int gsw1xx_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
+ 			     phy_interface_t interface,
+ 			     const unsigned long *advertising,
+-			     bool permit_pause_to_mac)
++			     bool permit_pause_to_mac, const struct phylink_media *media)
+ {
+ 	struct gsw1xx_priv *priv = pcs_to_gsw1xx(pcs);
+ 	u16 txaneg, anegctl, nco_ctrl;

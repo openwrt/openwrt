@@ -1,0 +1,76 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Vladimir Oltean <vladimir.oltean@nxp.com>
+Date: Wed, 15 Oct 2025 23:32:05 +0100
+Subject: [PATCH] net: dsa: lantiq_gswip: support bridge FDB entries on
+ the CPU port
+
+Currently, the driver takes the bridge from dsa_port_bridge_dev_get(),
+which only works for user ports. This is why it has to ignore FDB
+entries installed on the CPU port.
+
+Commit c26933639b54 ("net: dsa: request drivers to perform FDB
+isolation") introduced the possibility of getting the originating bridge
+from the passed dsa_db argument, so let's do that instead. This way, we
+can act on the local FDB entries coming from the bridge.
+
+Note that we do not expect FDB events for the DSA_DB_PORT database,
+because this driver doesn't fulfill the dsa_switch_supports_uc_filtering()
+requirements. So we can just return -EOPNOTSUPP and expect it will never
+be triggered.
+
+Signed-off-by: Vladimir Oltean <vladimir.oltean@nxp.com>
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+Link: https://patch.msgid.link/ed9d847c0356f0fec81422bdad9ebdcc6a59da79.1760566491.git.daniel@makrotopia.org
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ drivers/net/dsa/lantiq/lantiq_gswip.c | 18 ++++++++++--------
+ 1 file changed, 10 insertions(+), 8 deletions(-)
+
+--- a/drivers/net/dsa/lantiq/lantiq_gswip.c
++++ b/drivers/net/dsa/lantiq/lantiq_gswip.c
+@@ -1140,9 +1140,9 @@ static void gswip_port_stp_state_set(str
+ }
+ 
+ static int gswip_port_fdb(struct dsa_switch *ds, int port,
+-			  const unsigned char *addr, u16 vid, bool add)
++			  struct net_device *bridge, const unsigned char *addr,
++			  u16 vid, bool add)
+ {
+-	struct net_device *bridge = dsa_port_bridge_dev_get(dsa_to_port(ds, port));
+ 	struct gswip_priv *priv = ds->priv;
+ 	struct gswip_pce_table_entry mac_bridge = {0,};
+ 	unsigned int max_ports = priv->hw_info->max_ports;
+@@ -1150,10 +1150,6 @@ static int gswip_port_fdb(struct dsa_swi
+ 	int i;
+ 	int err;
+ 
+-	/* Operation not supported on the CPU port, don't throw errors */
+-	if (!bridge)
+-		return 0;
+-
+ 	for (i = max_ports; i < ARRAY_SIZE(priv->vlans); i++) {
+ 		if (priv->vlans[i].bridge == bridge) {
+ 			fid = priv->vlans[i].fid;
+@@ -1188,14 +1184,20 @@ static int gswip_port_fdb_add(struct dsa
+ 			      const unsigned char *addr, u16 vid,
+ 			      struct dsa_db db)
+ {
+-	return gswip_port_fdb(ds, port, addr, vid, true);
++	if (db.type != DSA_DB_BRIDGE)
++		return -EOPNOTSUPP;
++
++	return gswip_port_fdb(ds, port, db.bridge.dev, addr, vid, true);
+ }
+ 
+ static int gswip_port_fdb_del(struct dsa_switch *ds, int port,
+ 			      const unsigned char *addr, u16 vid,
+ 			      struct dsa_db db)
+ {
+-	return gswip_port_fdb(ds, port, addr, vid, false);
++	if (db.type != DSA_DB_BRIDGE)
++		return -EOPNOTSUPP;
++
++	return gswip_port_fdb(ds, port, db.bridge.dev, addr, vid, false);
+ }
+ 
+ static int gswip_port_fdb_dump(struct dsa_switch *ds, int port,

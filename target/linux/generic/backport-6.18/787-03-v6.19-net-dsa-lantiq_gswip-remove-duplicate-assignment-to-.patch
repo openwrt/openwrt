@@ -1,0 +1,38 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Vladimir Oltean <vladimir.oltean@nxp.com>
+Date: Wed, 15 Oct 2025 23:32:30 +0100
+Subject: [PATCH] net: dsa: lantiq_gswip: remove duplicate assignment to
+ vlan_mapping.val[0]
+
+When idx == -1 in gswip_vlan_add(), we set vlan_mapping.val[0] = vid,
+even though we do the exact same thing again outside the if/else block.
+
+Remove the duplicate assignment.
+
+Signed-off-by: Vladimir Oltean <vladimir.oltean@nxp.com>
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+Link: https://patch.msgid.link/039ecb48e038cea856a9a6230ad1543db2bc382d.1760566491.git.daniel@makrotopia.org
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ drivers/net/dsa/lantiq/lantiq_gswip.c | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+--- a/drivers/net/dsa/lantiq/lantiq_gswip.c
++++ b/drivers/net/dsa/lantiq/lantiq_gswip.c
+@@ -848,8 +848,6 @@ static int gswip_vlan_add_aware(struct g
+ 
+ 		vlan_mapping.index = idx;
+ 		vlan_mapping.table = GSWIP_TABLE_VLAN_MAPPING;
+-		/* VLAN ID byte, maps to the VLAN ID of vlan active table */
+-		vlan_mapping.val[0] = vid;
+ 	} else {
+ 		/* Read the existing VLAN mapping entry from the switch */
+ 		vlan_mapping.index = idx;
+@@ -862,6 +860,7 @@ static int gswip_vlan_add_aware(struct g
+ 		}
+ 	}
+ 
++	/* VLAN ID byte, maps to the VLAN ID of vlan active table */
+ 	vlan_mapping.val[0] = vid;
+ 	/* Update the VLAN mapping entry and write it to the switch */
+ 	vlan_mapping.val[1] |= cpu_ports;

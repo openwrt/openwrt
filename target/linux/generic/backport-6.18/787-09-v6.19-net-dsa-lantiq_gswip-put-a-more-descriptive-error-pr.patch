@@ -1,0 +1,29 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Vladimir Oltean <vladimir.oltean@nxp.com>
+Date: Wed, 15 Oct 2025 23:33:41 +0100
+Subject: [PATCH] net: dsa: lantiq_gswip: put a more descriptive error
+ print in gswip_vlan_remove()
+
+Improve the error message printed in case of a port VLAN entry not being
+found upon removal.
+
+Signed-off-by: Vladimir Oltean <vladimir.oltean@nxp.com>
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+Link: https://patch.msgid.link/abd4ec58e0f0f53eb3d7027097a20af0bd7b1d6d.1760566491.git.daniel@makrotopia.org
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ drivers/net/dsa/lantiq/lantiq_gswip.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+--- a/drivers/net/dsa/lantiq/lantiq_gswip.c
++++ b/drivers/net/dsa/lantiq/lantiq_gswip.c
+@@ -875,7 +875,8 @@ static int gswip_vlan_remove(struct gswi
+ 	}
+ 
+ 	if (idx == -1) {
+-		dev_err(priv->dev, "bridge to leave does not exists\n");
++		dev_err(priv->dev, "Port %d cannot find VID %u of bridge %s\n",
++			port, vid, bridge ? bridge->name : "(null)");
+ 		return -ENOENT;
+ 	}
+ 

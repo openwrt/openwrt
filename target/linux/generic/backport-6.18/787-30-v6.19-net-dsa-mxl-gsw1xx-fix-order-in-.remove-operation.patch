@@ -1,0 +1,36 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Tue, 9 Dec 2025 01:28:49 +0000
+Subject: [PATCH] net: dsa: mxl-gsw1xx: fix order in .remove operation
+
+The driver's .remove operation was calling gswip_disable_switch() which
+clears the GSWIP_MDIO_GLOB_ENABLE bit before calling
+dsa_unregister_switch() and thereby violating a Golden Rule of driver
+development to always unpublish userspace interfaces before disabling
+hardware, as pointed out by Russell King.
+
+Fix this by relying in GSWIP_MDIO_GLOB_ENABLE being cleared by the
+.teardown operation introduced by the previous commit
+("net: dsa: lantiq_gswip: fix teardown order").
+
+Fixes: 22335939ec907 ("net: dsa: add driver for MaxLinear GSW1xx switch family")
+Suggested-by: "Russell King (Oracle)" <linux@armlinux.org.uk>
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+Link: https://patch.msgid.link/63f882eeb910cf24503c35a443b541cc54a930f2.1765241054.git.daniel@makrotopia.org
+Reviewed-by: Vladimir Oltean <olteanv@gmail.com>
+Signed-off-by: Paolo Abeni <pabeni@redhat.com>
+---
+ drivers/net/dsa/lantiq/mxl-gsw1xx.c | 2 --
+ 1 file changed, 2 deletions(-)
+
+--- a/drivers/net/dsa/lantiq/mxl-gsw1xx.c
++++ b/drivers/net/dsa/lantiq/mxl-gsw1xx.c
+@@ -652,8 +652,6 @@ static void gsw1xx_remove(struct mdio_de
+ 	if (!priv)
+ 		return;
+ 
+-	gswip_disable_switch(priv);
+-
+ 	dsa_unregister_switch(priv->ds);
+ }
+ 

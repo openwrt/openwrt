@@ -1,0 +1,38 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: John Crispin <john@phrozen.org>
+Subject: [PATCH] add DSPG DVF99 CSS DSP unit API client
+
+Add the build hooks for the driver that initialises the DSP unit API
+(DUA) of the DVF99 cordless subsystem firmware and owns its shared
+memory region.
+
+Signed-off-by: John Crispin <john@phrozen.org>
+---
+--- a/drivers/rpmsg/Kconfig
++++ b/drivers/rpmsg/Kconfig
+@@ -36,6 +36,15 @@ config RPMSG_DVF99_COMA
+ 	depends on MAILBOX
+ 	select RPMSG
+ 
++config RPMSG_DVF99_DUA
++	tristate "DSPG DVF99 CSS DSP unit API"
++	depends on RPMSG_DVF99_COMA
++	help
++	  Say y here to initialise the DSP unit API of the DVF99 cordless
++	  subsystem firmware. Audio through the CSS needs it: the sound
++	  driver allocates and connects the DSP units of the audio path
++	  through this driver.
++
+ config RPMSG_MTK_SCP
+ 	tristate "MediaTek SCP"
+ 	depends on MTK_SCP
+--- a/drivers/rpmsg/Makefile
++++ b/drivers/rpmsg/Makefile
+@@ -4,6 +4,7 @@ obj-$(CONFIG_RPMSG_CHAR)	+= rpmsg_char.o
+ obj-$(CONFIG_RPMSG_CTRL)	+= rpmsg_ctrl.o
+ obj-$(CONFIG_RPMSG_NS)		+= rpmsg_ns.o
+ obj-$(CONFIG_RPMSG_DVF99_COMA)	+= dvf99_coma.o
++obj-$(CONFIG_RPMSG_DVF99_DUA)	+= dvf99_dua.o
+ obj-$(CONFIG_RPMSG_MTK_SCP)	+= mtk_rpmsg.o
+ CFLAGS_qcom_glink_native.o	:= -I$(src)
+ qcom_glink-objs			:= qcom_glink_native.o qcom_glink_ssr.o
