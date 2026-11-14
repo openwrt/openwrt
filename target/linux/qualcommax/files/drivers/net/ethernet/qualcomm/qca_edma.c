@@ -397,17 +397,19 @@ static u32 edma_tx_release(struct edma_queue *q, u32 idx, struct sk_buff *skb,
 	dma_unmap_single(dev, le32_to_cpu(txdesc->buffer_addr), len,
 			 DMA_TO_DEVICE);
 	bytes = len - EDMA_TX_PREHDR_SIZE;
-	ring->skb_store[idx] = NULL;
+	/* Orders the reads above before edma_ring_xmit() can take the slot. */
+	smp_store_release(&ring->skb_store[idx], NULL);
 
 	idx = (idx + 1) & (ring->count - 1);
-	while (ring->skb_store[idx] == skb) {
+	while (READ_ONCE(ring->skb_store[idx]) == skb) {
 		txdesc = EDMA_TXDESC_DESC(ring, idx);
 		len = txdesc->word1 & EDMA_TXDESC_DATA_LENGTH_MASK;
 
 		dma_unmap_page(dev, le32_to_cpu(txdesc->buffer_addr), len,
 			       DMA_TO_DEVICE);
 		bytes += len;
-		ring->skb_store[idx] = NULL;
+		/* As for the head: the reads first, then the slot. */
+		smp_store_release(&ring->skb_store[idx], NULL);
 		idx = (idx + 1) & (ring->count - 1);
 	}
 
@@ -951,7 +953,7 @@ static bool edma_tx_map(struct device *dev, struct edma_ring *ring,
 	if (dma_mapping_error(dev, dma))
 		return false;
 
-	ring->skb_store[fidx] = skb;
+	WRITE_ONCE(ring->skb_store[fidx], skb);
 	txdesc = EDMA_TXDESC_DESC(ring, fidx);
 	txdesc->buffer_addr = cpu_to_le32(dma);
 	txdesc->word1 = tso | (++*n < ndesc ? EDMA_TXDESC_MORE : 0) |
@@ -1004,7 +1006,7 @@ static netdev_tx_t edma_ring_xmit(struct edma_queue *q, struct net_device *netde
 	 * cannot change the addresses its completion still has to unmap.
 	 */
 	for (i = 0; i < ndesc; i++)
-		taken |= !!txdesc_ring->skb_store[(idx + i) & mask];
+		taken |= !!READ_ONCE(txdesc_ring->skb_store[(idx + i) & mask]);
 
 	/* Both refusals come before the preheader is pushed: the qdisc requeues
 	 * the frame as it was handed over, and a second push would prefix it
@@ -1035,13 +1037,13 @@ static netdev_tx_t edma_ring_xmit(struct edma_queue *q, struct net_device *netde
 	edma_tx_vlan(skb, txph);
 	tso = edma_tx_tso(skb, txph);
 
-	txdesc_ring->skb_store[idx] = skb;
+	WRITE_ONCE(txdesc_ring->skb_store[idx], skb);
 	txph->opaque = idx;
 
 	head_dma = dma_map_single(dev, skb->data, len + EDMA_TX_PREHDR_SIZE,
 				  DMA_TO_DEVICE);
 	if (dma_mapping_error(dev, head_dma)) {
-		txdesc_ring->skb_store[idx] = NULL;
+		WRITE_ONCE(txdesc_ring->skb_store[idx], NULL);
 		goto drop;
 	}
 
@@ -1113,11 +1115,11 @@ unmap:
 		dma_unmap_page(dev, le32_to_cpu(txdesc->buffer_addr),
 			       txdesc->word1 & EDMA_TXDESC_DATA_LENGTH_MASK,
 			       DMA_TO_DEVICE);
-		txdesc_ring->skb_store[fidx] = NULL;
+		WRITE_ONCE(txdesc_ring->skb_store[fidx], NULL);
 	}
 
 	dma_unmap_single(dev, head_dma, skb_headlen(skb), DMA_TO_DEVICE);
-	txdesc_ring->skb_store[idx] = NULL;
+	WRITE_ONCE(txdesc_ring->skb_store[idx], NULL);
 drop:
 	dev_kfree_skb_any(skb);
 	if (q->tx_kick)
