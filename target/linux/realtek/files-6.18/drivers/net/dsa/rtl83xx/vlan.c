@@ -6,6 +6,7 @@
 #include <net/dsa.h>
 
 #include "rtl-otto.h"
+#include "flow.h"
 #include "vlan.h"
 #include "stp.h"
 
@@ -991,6 +992,7 @@ int otto_vlan_port_filtering(struct dsa_switch *ds, int port,
 	struct otto_dsa_priv *priv = ds->priv;
 
 	pr_debug("%s: port %d\n", __func__, port);
+	otto_flow_flush_all(priv);
 	mutex_lock(&priv->reg_mutex);
 
 	if (vlan_filtering) {
@@ -1060,6 +1062,7 @@ int otto_vlan_port_add(struct dsa_switch *ds, int port,
 		return -EINVAL;
 	}
 
+	otto_flow_flush_all(priv);
 	mutex_lock(&priv->reg_mutex);
 
 	if (dsa_is_user_port(ds, port)) {
@@ -1140,6 +1143,7 @@ int otto_vlan_port_del(struct dsa_switch *ds, int port,
 		return -ENOTSUPP;
 	}
 
+	otto_flow_flush_all(priv);
 	mutex_lock(&priv->reg_mutex);
 	pvid = priv->ports[port].pvid;
 
