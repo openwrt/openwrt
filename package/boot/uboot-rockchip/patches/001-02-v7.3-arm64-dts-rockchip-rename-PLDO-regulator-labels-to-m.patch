@@ -1,0 +1,95 @@
+From e3132dc1f4ebc9dd28ef9108f2aac84e5d4c5a15 Mon Sep 17 00:00:00 2001
+From: Dennis Gilmore <dennis@ausil.us>
+Date: Sun, 10 May 2026 21:53:48 -0500
+Subject: [PATCH] arm64: dts: rockchip: rename PLDO
+ regulator labels to match schematic on rk3588s-orangepi-5
+
+The Orange Pi 5, 5B and 5 Pro schematics label the RK806 PLDO outputs
+using the pattern VCC_*_S0 / VCCA_*_S0 / VDDA_*_S0. Rename the base
+dtsi regulator labels (and the es8388 supply references) to match:
+
+  pldo-reg1: avcc_1v8_s0 -> vcc_1v8_s0
+  pldo-reg2: vcc_1v8_s0  -> vcca_1v8_s0
+  pldo-reg3: avdd_1v2_s0 -> vdda_1v2_s0
+  pldo-reg4: vcc_3v3_s0  -> vcca_3v3_s0
+
+Also update the saradc vref-supply reference to track the pldo-reg1
+rename. No functional change.
+
+Signed-off-by: Dennis Gilmore <dennis@ausil.us>
+Link: https://patch.msgid.link/20260511025352.106126-3-dennis@ausil.us
+Signed-off-by: Heiko Stuebner <heiko@sntech.de>
+---
+ .../arm64/rockchip/rk3588s-orangepi-5.dtsi    | 26 +++++++++----------
+ 1 file changed, 13 insertions(+), 13 deletions(-)
+
+--- a/dts/upstream/src/arm64/rockchip/rk3588s-orangepi-5.dtsi
++++ b/dts/upstream/src/arm64/rockchip/rk3588s-orangepi-5.dtsi
+@@ -274,10 +274,10 @@
+ 		compatible = "everest,es8388", "everest,es8328";
+ 		reg = <0x10>;
+ 		clocks = <&cru I2S1_8CH_MCLKOUT>;
+-		AVDD-supply = <&vcc_3v3_s0>;
+-		DVDD-supply = <&vcc_1v8_s0>;
+-		HPVDD-supply = <&vcc_3v3_s0>;
+-		PVDD-supply = <&vcc_3v3_s0>;
++		AVDD-supply = <&vcca_3v3_s0>;
++		DVDD-supply = <&vcca_1v8_s0>;
++		HPVDD-supply = <&vcca_3v3_s0>;
++		PVDD-supply = <&vcca_3v3_s0>;
+ 		assigned-clocks = <&cru I2S1_8CH_MCLKOUT>;
+ 		assigned-clock-rates = <12288000>;
+ 		#sound-dai-cells = <0>;
+@@ -441,7 +441,7 @@
+ };
+ 
+ &saradc {
+-	vref-supply = <&avcc_1v8_s0>;
++	vref-supply = <&vcc_1v8_s0>;
+ 	status = "okay";
+ };
+ 
+@@ -666,8 +666,8 @@
+ 				};
+ 			};
+ 
+-			avcc_1v8_s0: pldo-reg1 {
+-				regulator-name = "avcc_1v8_s0";
++			vcc_1v8_s0: pldo-reg1 {
++				regulator-name = "vcc_1v8_s0";
+ 				regulator-always-on;
+ 				regulator-boot-on;
+ 				regulator-min-microvolt = <1800000>;
+@@ -678,8 +678,8 @@
+ 				};
+ 			};
+ 
+-			vcc_1v8_s0: pldo-reg2 {
+-				regulator-name = "vcc_1v8_s0";
++			vcca_1v8_s0: pldo-reg2 {
++				regulator-name = "vcca_1v8_s0";
+ 				regulator-always-on;
+ 				regulator-boot-on;
+ 				regulator-min-microvolt = <1800000>;
+@@ -691,8 +691,8 @@
+ 				};
+ 			};
+ 
+-			avdd_1v2_s0: pldo-reg3 {
+-				regulator-name = "avdd_1v2_s0";
++			vdda_1v2_s0: pldo-reg3 {
++				regulator-name = "vdda_1v2_s0";
+ 				regulator-always-on;
+ 				regulator-boot-on;
+ 				regulator-min-microvolt = <1200000>;
+@@ -703,8 +703,8 @@
+ 				};
+ 			};
+ 
+-			vcc_3v3_s0: pldo-reg4 {
+-				regulator-name = "vcc_3v3_s0";
++			vcca_3v3_s0: pldo-reg4 {
++				regulator-name = "vcca_3v3_s0";
+ 				regulator-always-on;
+ 				regulator-boot-on;
+ 				regulator-min-microvolt = <3300000>;
