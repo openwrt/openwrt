@@ -244,6 +244,9 @@ hostapd_bss_ban_client(struct hostapd_ubus_bss *ubus, u8 *addr, int time,
 			return;
 
 		ban = os_zalloc(sizeof(*ban));
+		if (!ban)
+			return;
+
 		memcpy(ban->addr, addr, sizeof(ban->addr));
 		ban->avl.key = ban->addr;
 		avl_insert(&ubus->banned, &ban->avl);
@@ -1234,6 +1237,9 @@ hostapd_switch_chan(struct ubus_context *ctx, struct ubus_object *obj,
 		return ret;
 
 	freq_params = malloc(sizeof(*freq_params));
+	if (!freq_params)
+		return ret;
+
 	memcpy(freq_params, &css.freq_params, sizeof(*freq_params));
 	eloop_register_timeout(0, 1, switch_chan_fallback_cb,
 			       hapd->iface, freq_params);
@@ -1285,7 +1291,7 @@ hostapd_vendor_elements(struct ubus_context *ctx, struct ubus_object *obj,
 
 	elems = wpabuf_alloc(len);
 	if (elems == NULL)
-		return 1;
+		return UBUS_STATUS_UNKNOWN_ERROR;
 
 	if (hexstr2bin(pos, wpabuf_put(elems, len), len)) {
 		wpabuf_free(elems);
