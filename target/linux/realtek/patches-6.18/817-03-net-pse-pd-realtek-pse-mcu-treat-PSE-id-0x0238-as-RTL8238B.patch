@@ -1,0 +1,32 @@
+From 431c549262d4f1646e67bfa6b832ac45f87985b3 Mon Sep 17 00:00:00 2001
+From: John Audia <therealgraysky@proton.me>
+Date: Sat, 14 Nov 2026 20:35:07 +0000
+Subject: [PATCH] net: pse-pd: realtek-pse-mcu: treat PSE id 0x0238 as RTL8238B
+
+Some USW Pro Max 16 PoE units (boardrevision 3) report PSE id 0x0238
+and fail to probe. The actual chip is unconfirmed; handle it as RTL8238B.
+
+Signed-off-by: John Audia <therealgraysky@proton.me>
+---
+ drivers/net/pse-pd/realtek-pse-mcu-core.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+--- a/drivers/net/pse-pd/realtek-pse-mcu-core.c
++++ b/drivers/net/pse-pd/realtek-pse-mcu-core.c
+@@ -47,6 +47,8 @@
+ #include "realtek-pse-mcu.h"
+ 
+ #define RTPSE_MCU_DEVICE_ID_RTL8238B		0x0138
++/* Unconfirmed chip, seen on USW Pro Max 16 PoE boardrevision 3 */
++#define RTPSE_MCU_DEVICE_ID_RTL8238B_ALT	0x0238
+ #define RTPSE_MCU_DEVICE_ID_RTL8239		0x0039
+ #define RTPSE_MCU_DEVICE_ID_RTL8239C		0x0139
+ #define RTPSE_MCU_DEVICE_ID_BCM59111		0xe111
+@@ -1032,6 +1034,7 @@ static int rtpse_mcu_discover(struct rtp
+ 
+ 	switch (info->device_id) {
+ 	case RTPSE_MCU_DEVICE_ID_RTL8238B:
++	case RTPSE_MCU_DEVICE_ID_RTL8238B_ALT:
+ 		pse->chip = &rtl8238b_info;
+ 		break;
+ 	case RTPSE_MCU_DEVICE_ID_RTL8239:
