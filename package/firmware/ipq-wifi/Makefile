@@ -6,9 +6,8 @@ PKG_RELEASE:=1
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL=$(PROJECT_GIT)/project/firmware/qca-wireless.git
-PKG_SOURCE_DATE:=2026-11-12
-PKG_SOURCE_VERSION:=e1c4cbaf43917e19779dbf9f8e276e31116bcaef
-PKG_MIRROR_HASH:=2d525d7af66de1dc947aff2653669265ccad678424e7fdfe71aebc6c55692437
+PKG_SOURCE_DATE:=2026-11-13
+PKG_SOURCE_VERSION:=5dbaba12be1eb0d30ddb06f68563ecd43a051089
 PKG_FLAGS:=nonshared
 
 include $(INCLUDE_DIR)/package.mk
@@ -73,6 +72,7 @@ ALLWIFIBOARDS:= \
 	linksys_mx8500 \
 	linksys_spnmx56 \
 	linksys_whw03 \
+	liteon_wpx8324 \
 	meraki_mr30h \
 	meraki_underdog \
 	meraki_z3 \
@@ -292,6 +292,7 @@ $(eval $(call generate-ipq-wifi-package,linksys_mx6200,Linksys MX6200))
 $(eval $(call generate-ipq-wifi-package,linksys_mx8500,Linksys MX8500))
 $(eval $(call generate-ipq-wifi-package,linksys_spnmx56,Linksys SPNMX56))
 $(eval $(call generate-ipq-wifi-package,linksys_whw03,Linksys WHW03))
+$(eval $(call generate-ipq-wifi-package,liteon_wpx8324,Lite-On WPX8324))
 $(eval $(call generate-ipq-wifi-package,meraki_mr30h,Meraki MR30H))
 $(eval $(call generate-ipq-wifi-package,meraki_underdog,Meraki underdog))
 $(eval $(call generate-ipq-wifi-package,meraki_z3,Meraki Z3))

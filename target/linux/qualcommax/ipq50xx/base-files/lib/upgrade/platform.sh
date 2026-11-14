@@ -242,6 +242,13 @@ platform_do_upgrade() {
 		remove_oem_ubi_volume ubi_rootfs
 		nand_do_upgrade "$1"
 		;;
+	liteon,wpx8324)
+		CI_UBIPART="rootfs"
+		remove_oem_ubi_volume ubi_rootfs
+		remove_oem_ubi_volume bt_fw
+		remove_oem_ubi_volume wifi_fw
+		nand_do_upgrade "$1"
+		;;
 	mercusys,mr80x-v2)
 		# A/B: write the inactive slot, then point tp_boot_idx at it.
 		# tp_boot_idx=0 boots "rootfs", 1 boots "rootfs_1". primaryboot
