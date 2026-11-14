@@ -2522,6 +2522,10 @@ static int ppe_flow_offload_replace(struct ppe_flow_block *fb,
 
 err_hw:
 	ppe_flow_entry_delete(priv, entry->index);
+	if (entry->xdev)
+		ppe_flow_slot_clear(priv, entry->index);
+	if (entry->ct)
+		nf_conntrack_put(&((struct nf_conn *)(entry->ct & ~1UL))->ct_general);
 	ppe_host_ref_put(priv, entry->host_index);
 err_egress:
 	ppe_flow_free_egress(priv, entry);
