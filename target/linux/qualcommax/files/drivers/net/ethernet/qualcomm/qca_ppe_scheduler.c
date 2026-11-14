@@ -970,6 +970,15 @@ int qca_ppe_devlink_sb_pool_set(struct dsa_switch *ds, unsigned int sb_index,
 
 	pool_index -= PPE_BM_SHARED_GROUPS;
 
+	/* Groups 1-3 belong to ppe_ac_grp_get(), which sizes each from the
+	 * classes of the shaped ports it hands it to; group 0 has no other
+	 * writer after ppe_qm_init().
+	 */
+	if (pool_index) {
+		NL_SET_ERR_MSG_MOD(extack, "the group is sized by the shaped ports given it");
+		return -EOPNOTSUPP;
+	}
+
 	if (bufs > FIELD_MAX(PPE_AC_GRP_LIMIT)) {
 		NL_SET_ERR_MSG_MOD(extack, "larger than the queue manager's group limit field");
 		return -EINVAL;
