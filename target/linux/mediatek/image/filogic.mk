@@ -3670,10 +3670,21 @@ define Device/teltonika_rutc50
 endef
 TARGET_DEVICES += teltonika_rutc50
 
+define Build/tenbay-wr3000k-webflash
+	printf '%s\n' '{"metadata_version":"1.1","compat_version":"1.0","supported_devices":["mt7981-spim-nand-gsw-wr3000k"]}' | \
+		$(STAGING_DIR_HOST)/bin/fwtool -I - $@
+	python3 $(TOPDIR)/target/linux/mediatek/image/tenbay-wr3000k-webflash.py \
+		--openssl $(STAGING_DIR_HOST)/bin/openssl \
+		--hook $(TOPDIR)/target/linux/mediatek/image/tenbay-wr3000k-webflash-preflight.sh \
+		--epoch $(SOURCE_DATE_EPOCH) $@ $@.new
+	mv $@.new $@
+endef
+
 define Device/tenbay_wr3000k
   DEVICE_VENDOR := Tenbay
   DEVICE_MODEL := WR3000K
   DEVICE_DTS := mt7981b-tenbay-wr3000k
+  IMAGE_METADATA := "tenbay_wr3000k_ubi1": 1
   DEVICE_DTS_DIR := ../dts
   DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware
   UBINIZE_OPTS := -E 5
@@ -3681,8 +3692,9 @@ define Device/tenbay_wr3000k
   PAGESIZE := 2048
   IMAGE_SIZE := 49152k
   KERNEL_IN_UBI := 1
-  IMAGES += factory.bin
+  IMAGES += factory.bin factory-webflash.bin
   IMAGE/factory.bin := append-ubi | check-size $$$$(IMAGE_SIZE)
+  IMAGE/factory-webflash.bin := sysupgrade-tar | tenbay-wr3000k-webflash | check-size $$$$(IMAGE_SIZE)
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
 endef
 TARGET_DEVICES += tenbay_wr3000k
