@@ -417,9 +417,11 @@ ifneq ($(CONFIG_CCACHE),)
   TARGET_CXX:= ccache $(TARGET_CXX)
   HOSTCC:= ccache $(HOSTCC)
   HOSTCXX:= ccache $(HOSTCXX)
-  export CCACHE_NOCOMPRESS:=true
   export CCACHE_BASEDIR:=$(TOPDIR)
   export CCACHE_DIR:=$(if $(call qstrip,$(CONFIG_CCACHE_DIR)),$(call qstrip,$(CONFIG_CCACHE_DIR)),$(TOPDIR)/.ccache)
+  ifeq ($(CONFIG_EXTERNAL_TOOLCHAIN),)
+    export CCACHE_COMPILERCHECK:=%compiler% --version; %compiler% -dumpmachine; %compiler% -fsyntax-only -Q --help=common --help=target; echo $(TOOLCHAIN_DIR_NAME)
+  endif
 endif
 
 TARGET_CONFIGURE_OPTS = \
