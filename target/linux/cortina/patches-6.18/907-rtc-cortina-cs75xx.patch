@@ -1,0 +1,30 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Fil Dunsky <filipp.dunsky@gmail.com>
+Date: Sat, 05 Sep 2026 07:30:20 +0300
+Subject: [PATCH] rtc: cortina: hook up the CS75xx RTC driver
+
+Add the RTC_DRV_CS75XX build option for the Cortina CS75xx (Goldengate)
+RTC and hook the driver into the Makefile.
+
+Signed-off-by: Fil Dunsky <filipp.dunsky@gmail.com>
+---
+--- a/drivers/rtc/Kconfig
++++ b/drivers/rtc/Kconfig
+@@ -2142,4 +2142,10 @@ config RTC_DRV_HID_SENSOR_TIME
+ 	  If this driver is compiled as a module, it will be named
+ 	  rtc-hid-sensor-time.
+ 
++config RTC_DRV_CS75XX
++	tristate "Cortina CS75xx RTC"
++	depends on ARCH_CORTINA_ACCESS || COMPILE_TEST
++	help
++	  RTC of Cortina CS75xx (Goldengate) SoCs.
++
+ endif # RTC_CLASS
+--- a/drivers/rtc/Makefile
++++ b/drivers/rtc/Makefile
+@@ -197,3 +197,4 @@ obj-$(CONFIG_RTC_DRV_WM8350)	+= rtc-wm83
+ obj-$(CONFIG_RTC_DRV_X1205)	+= rtc-x1205.o
+ obj-$(CONFIG_RTC_DRV_XGENE)	+= rtc-xgene.o
+ obj-$(CONFIG_RTC_DRV_ZYNQMP)	+= rtc-zynqmp.o
++obj-$(CONFIG_RTC_DRV_CS75XX)	+= rtc-cs75xx.o
