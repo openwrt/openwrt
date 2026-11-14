@@ -5,7 +5,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=hostapd
-PKG_RELEASE:=6
+PKG_RELEASE:=7
 
 PKG_SOURCE_URL:=https://w1.fi/hostap.git
 PKG_SOURCE_PROTO:=git
@@ -801,6 +801,48 @@ Package/wpa-supplicant-mbedtls/install = $(Package/wpa-supplicant/install)
 Package/wpa-supplicant-mesh-openssl/install = $(Package/wpa-supplicant/install)
 Package/wpa-supplicant-mesh-wolfssl/install = $(Package/wpa-supplicant/install)
 Package/wpa-supplicant-mesh-mbedtls/install = $(Package/wpa-supplicant/install)
+
+# Installed on a running system, in place of another build or as an upgrade,
+# the new binary is not running yet: the old hostapd and wpa_supplicant keep
+# running the deleted file, or none runs at all, when hostapd-common's upgrade
+# started the service while no binary was installed and procd dropped its
+# instances. Restart the service on the new binary; netifd sets the wireless
+# interfaces up again on it.
+define Package/wpad/postinst
+#!/bin/sh
+[ -n "$${IPKG_INSTROOT}" ] || ! /etc/init.d/wpad enabled || /etc/init.d/wpad restart
+exit 0
+endef
+Package/hostapd/postinst = $(Package/wpad/postinst)
+Package/hostapd-basic/postinst = $(Package/wpad/postinst)
+Package/hostapd-basic-openssl/postinst = $(Package/wpad/postinst)
+Package/hostapd-basic-wolfssl/postinst = $(Package/wpad/postinst)
+Package/hostapd-basic-mbedtls/postinst = $(Package/wpad/postinst)
+Package/hostapd-mini/postinst = $(Package/wpad/postinst)
+Package/hostapd-openssl/postinst = $(Package/wpad/postinst)
+Package/hostapd-wolfssl/postinst = $(Package/wpad/postinst)
+Package/hostapd-mbedtls/postinst = $(Package/wpad/postinst)
+Package/wpad-basic/postinst = $(Package/wpad/postinst)
+Package/wpad-basic-openssl/postinst = $(Package/wpad/postinst)
+Package/wpad-basic-wolfssl/postinst = $(Package/wpad/postinst)
+Package/wpad-basic-mbedtls/postinst = $(Package/wpad/postinst)
+Package/wpad-mini/postinst = $(Package/wpad/postinst)
+Package/wpad-openssl/postinst = $(Package/wpad/postinst)
+Package/wpad-wolfssl/postinst = $(Package/wpad/postinst)
+Package/wpad-mbedtls/postinst = $(Package/wpad/postinst)
+Package/wpad-mesh-openssl/postinst = $(Package/wpad/postinst)
+Package/wpad-mesh-wolfssl/postinst = $(Package/wpad/postinst)
+Package/wpad-mesh-mbedtls/postinst = $(Package/wpad/postinst)
+Package/wpa-supplicant/postinst = $(Package/wpad/postinst)
+Package/wpa-supplicant-basic/postinst = $(Package/wpad/postinst)
+Package/wpa-supplicant-mini/postinst = $(Package/wpad/postinst)
+Package/wpa-supplicant-p2p/postinst = $(Package/wpad/postinst)
+Package/wpa-supplicant-openssl/postinst = $(Package/wpad/postinst)
+Package/wpa-supplicant-wolfssl/postinst = $(Package/wpad/postinst)
+Package/wpa-supplicant-mbedtls/postinst = $(Package/wpad/postinst)
+Package/wpa-supplicant-mesh-openssl/postinst = $(Package/wpad/postinst)
+Package/wpa-supplicant-mesh-wolfssl/postinst = $(Package/wpad/postinst)
+Package/wpa-supplicant-mesh-mbedtls/postinst = $(Package/wpad/postinst)
 
 ifeq ($(BUILD_VARIANT),$(WPA_CLI_VARIANT))
   define Package/wpa-cli/install
