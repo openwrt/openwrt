@@ -8,7 +8,7 @@
 board_config_update
 
 case "$(board_name)" in
-sipeed,lichee-rv-dock |\
+sipeed,lichee-rv-dock|\
 widora,mangopi-mq-pro)
 	ucidef_set_interface_lan "wlan0"
 	;;

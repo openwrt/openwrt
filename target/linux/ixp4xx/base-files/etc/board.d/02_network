@@ -4,8 +4,10 @@
 board_config_update
 
 case "$(board_name)" in
-actiontec,mi424wr-ac)
-	# LAN ports connected to eth1 thru the KS8995 DSA switch
+actiontec,mi424wr-ac|\
+usr,usr8200)
+	# LAN ports connected to eth1 thru the KS8995 (MI424WR-AC) or
+	# MV88E6060 (USR8200) DSA switch
 	ucidef_set_interface "eth" device "eth1" protocol "none"
 	ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "eth0"
 	;;
@@ -18,17 +20,6 @@ freecom,fsg-3|\
 gateworks,gw2348|\
 gateworks,gw2358)
 	ucidef_set_interfaces_lan_wan "eth0" "eth1"
-	;;
-dlink,dsm-g600-a|\
-iom,nas-100d|\
-linksys,nslu2|\
-netgear,wg302v1)
-	ucidef_set_interface_lan "eth0" "dhcp"
-	;;
-usr,usr8200)
-	# LAN ports connected to eth1 thru the MV88E6060 DSA switch
-	ucidef_set_interface "eth" device "eth1" protocol "none"
-	ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "eth0"
 	;;
 *)
 	ucidef_set_interface_lan "eth0" "dhcp"
