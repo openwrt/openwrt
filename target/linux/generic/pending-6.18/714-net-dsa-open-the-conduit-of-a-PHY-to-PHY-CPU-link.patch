@@ -1,0 +1,85 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Fanha Giang <fanha99@hotmail.com>
+Date: Fri, 6 Nov 2026 09:16:48 +0700
+Subject: [PATCH] net: dsa: open the conduit of a PHY-to-PHY CPU link
+
+On IPQ5018 boards that wire the SoC GE-PHY straight into PHY4 of a QCA8337
+(pz-l8, Redmi AX5400, Xiaomi CR8806, ...), the CPU port of the switch is
+described with a "phy-handle" rather than a "fixed-link": the two ends of the
+link are two PHYs, each owned by a different driver.
+
+DSA registers and starts the switch-side PHY in dsa_port_setup() at probe
+time, but the conduit's PHY belongs to the conduit netdev. stmmac, for
+instance, attaches it in stmmac_init_phy(), which only runs from
+stmmac_open(). Until something opens the conduit, the switch-side PHY
+autonegotiates against a partner that advertises nothing, and the QCA8337
+PHY4 clears its own 1000BASE-T advertisement about 13 s later; the link then
+never comes up at gigabit, even once the conduit is opened.
+
+Open the conduit before registering phylink for such a port, so that both
+PHYs are up for the first autonegotiation.
+
+A conduit that is itself a DSA user port - switches stacked onto one another -
+is left alone: it is brought up through its own switch, and no such board has
+been tested with this.
+
+Signed-off-by: Fanha Giang <fanha99@hotmail.com>
+---
+--- a/net/dsa/port.c
++++ b/net/dsa/port.c
+@@ -1881,6 +1881,46 @@ static void dsa_shared_port_link_down(st
+ 						   PHY_INTERFACE_MODE_NA);
+ }
+ 
++/* A CPU or DSA port whose link is described by a "phy-handle" instead of a
++ * "fixed-link" is wired PHY to PHY: the PHY on the switch side negotiates
++ * against the PHY of the conduit. phylink starts the switch-side PHY here, at
++ * probe time, while the conduit's own PHY is attached only when the conduit is
++ * opened, which may be seconds later or never. The switch-side PHY then
++ * negotiates against a partner that advertises nothing, and some PHYs give up
++ * gigabit for good when that lasts too long (the QCA8337 PHY4 clears its
++ * 1000BASE-T advertisement after ~13 s). Open the conduit so that both ends of
++ * the link are brought up together.
++ *
++ * A conduit that is itself a DSA user port (switches stacked onto one another)
++ * is left alone: it is brought up through its own switch, and no such board
++ * has been tested with this.
++ */
++static void dsa_shared_port_open_conduit(struct dsa_port *dp)
++{
++	struct device_node *phy_np;
++	int err;
++
++	if (!dp->conduit || dsa_user_dev_check(dp->conduit) ||
++	    of_phy_is_fixed_link(dp->dn))
++		return;
++
++	phy_np = of_parse_phandle(dp->dn, "phy-handle", 0);
++	if (!phy_np)
++		return;
++	of_node_put(phy_np);
++
++	rtnl_lock();
++	err = dev_open(dp->conduit, NULL);
++	rtnl_unlock();
++
++	if (err)
++		dev_warn(dp->ds->dev,
++			 "failed to open conduit %s of %s port %d: %pe\n",
++			 dp->conduit->name,
++			 dsa_port_is_cpu(dp) ? "CPU" : "DSA", dp->index,
++			 ERR_PTR(err));
++}
++
+ int dsa_shared_port_link_register_of(struct dsa_port *dp)
+ {
+ 	struct dsa_switch *ds = dp->ds;
+@@ -1902,6 +1942,8 @@ int dsa_shared_port_link_register_of(str
+ 	} else {
+ 		dsa_shared_port_link_down(dp);
+ 
++		dsa_shared_port_open_conduit(dp);
++
+ 		return dsa_shared_port_phylink_register(dp);
+ 	}
+ 
