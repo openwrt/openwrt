@@ -691,11 +691,26 @@ uc_hostapd_bss_update_beacon(uc_vm_t *vm, size_t nargs)
 
 #ifdef CONFIG_IEEE80211BE
 static uc_value_t *
+uc_hostapd_link_remove_times(uc_vm_t *vm, struct hostapd_data *hapd)
+{
+	uc_value_t *ret;
+
+	ret = ucv_object_new(vm);
+	ucv_object_add(ret, "removal_ms",
+		       ucv_int64_new(hostapd_link_remove_ms(hapd)));
+	ucv_object_add(ret, "expiry_ms",
+		       ucv_int64_new(hostapd_link_remove_expiry_ms(hapd)));
+	ucv_object_add(ret, "timed",
+		       ucv_boolean_new(hostapd_link_remove_timed(hapd)));
+
+	return ret;
+}
+
+static uc_value_t *
 uc_hostapd_bss_link_remove(uc_vm_t *vm, size_t nargs)
 {
 	struct hostapd_data *hapd = uc_fn_thisval("hostapd.bss");
 	uc_value_t *count_arg = uc_fn_arg(0);
-	uc_value_t *ret;
 	int64_t count;
 
 	if (!hapd || ucv_type(count_arg) != UC_INTEGER)
@@ -705,13 +720,18 @@ uc_hostapd_bss_link_remove(uc_vm_t *vm, size_t nargs)
 	if (count < 0 || count > UINT32_MAX || hostapd_link_remove(hapd, count))
 		return NULL;
 
-	ret = ucv_object_new(vm);
-	ucv_object_add(ret, "removal_ms",
-		       ucv_int64_new(hostapd_link_remove_ms(hapd)));
-	ucv_object_add(ret, "expiry_ms",
-		       ucv_int64_new(hostapd_link_remove_expiry_ms(hapd)));
+	return uc_hostapd_link_remove_times(vm, hapd);
+}
 
-	return ret;
+static uc_value_t *
+uc_hostapd_bss_link_remove_times(uc_vm_t *vm, size_t nargs)
+{
+	struct hostapd_data *hapd = uc_fn_thisval("hostapd.bss");
+
+	if (!hapd)
+		return NULL;
+
+	return uc_hostapd_link_remove_times(vm, hapd);
 }
 #endif /* CONFIG_IEEE80211BE */
 
@@ -1531,6 +1551,7 @@ int hostapd_ucode_init(struct hapd_interfaces *ifaces)
 		{ "delete", uc_hostapd_bss_delete },
 #ifdef CONFIG_IEEE80211BE
 		{ "link_remove", uc_hostapd_bss_link_remove },
+		{ "link_remove_times", uc_hostapd_bss_link_remove_times },
 #endif /* CONFIG_IEEE80211BE */
 #ifdef CONFIG_DPP
 		{ "dpp_send_action", uc_hostapd_bss_dpp_send_action },
