@@ -1,0 +1,89 @@
+From c96f8628f8517ff1f2d310adc65d78d36c264430 Mon Sep 17 00:00:00 2001
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Date: Mon, 26 Oct 2026 16:10:00 +0100
+Subject: [PATCH] wifi: ath11k: add a module parameter to select the hardware mode
+
+ath11k always uses the highest priority hardware mode the firmware
+advertises. On the Zyxel NBG7815 that is DBS+SBS, which splits the
+eight 5 GHz chains between a low band and a high band radio, neither
+with a 160 MHz channel width. The firmware also advertises DBS, which
+gives one 5 GHz radio with all eight chains and 160 MHz. Add a hw_mode
+parameter that selects any mode the firmware advertises; for a mode it
+does not advertise, warn with the modes it does advertise and keep the
+default.
+
+On the NBG7815, hw_mode=1 brings up the 8-chain 5 GHz radio, and iperf3
+from the router to a 2x2 HE client gave 1.22 Gbit/s at 160 MHz against
+886 Mbit/s at 80 MHz in the default mode (4 streams, one 20 s run each).
+
+Tested-on: IPQ8074 hw2.0 AHB WLAN.HK.2.9.0.1-02146-QCAHKSWPL_SILICONZ-1
+
+Tested-by: Semih Baskan <strst.gs@gmail.com>
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+---
+--- a/drivers/net/wireless/ath/ath11k/core.c
++++ b/drivers/net/wireless/ath/ath11k/core.c
+@@ -38,6 +38,12 @@ bool ath11k_ftm_mode;
+ module_param_named(ftm_mode, ath11k_ftm_mode, bool, 0444);
+ MODULE_PARM_DESC(ftm_mode, "Boots up in factory test mode");
+ 
++/* hw mode values are mapped as per enum wmi_host_hw_mode_config_type */
++unsigned int ath11k_hw_mode = WMI_HOST_HW_MODE_MAX;
++module_param_named(hw_mode, ath11k_hw_mode, uint, 0444);
++MODULE_PARM_DESC(hw_mode,
++		 "Hardware mode (0: single, 1: DBS, 2: SBS passive, 3: SBS, 4: DBS+SBS, 5: DBS or SBS, default: preferred mode the firmware supports)");
++
+ static struct ath11k_hw_params ath11k_hw_params[] = {
+ 	{
+ 		.hw_rev = ATH11K_HW_IPQ9574,
+--- a/drivers/net/wireless/ath/ath11k/core.h
++++ b/drivers/net/wireless/ath/ath11k/core.h
+@@ -62,6 +62,7 @@
+ #define ATH11K_SMBIOS_BDF_EXT_MAGIC "BDF_"
+ 
+ extern unsigned int ath11k_frame_mode;
++extern unsigned int ath11k_hw_mode;
+ extern bool ath11k_ftm_mode;
+ 
+ #define ATH11K_SCAN_TIMEOUT_HZ (20 * HZ)
+--- a/drivers/net/wireless/ath/ath11k/wmi.c
++++ b/drivers/net/wireless/ath/ath11k/wmi.c
+@@ -4751,9 +4751,9 @@ static int ath11k_wmi_tlv_hw_mode_caps(s
+ 				       u16 len, const void *ptr, void *data)
+ {
+ 	struct wmi_tlv_svc_rdy_ext_parse *svc_rdy_ext = data;
+-	struct wmi_hw_mode_capabilities *hw_mode_caps;
++	struct wmi_hw_mode_capabilities *hw_mode_caps, *requested = NULL;
+ 	enum wmi_host_hw_mode_config_type mode, pref;
+-	u32 i;
++	u32 i, modes = 0;
+ 	int ret;
+ 
+ 	svc_rdy_ext->n_hw_mode_caps = 0;
+@@ -4774,6 +4774,10 @@ static int ath11k_wmi_tlv_hw_mode_caps(s
+ 		if (mode >= WMI_HOST_HW_MODE_MAX)
+ 			continue;
+ 
++		modes |= BIT(mode);
++		if (mode == ath11k_hw_mode)
++			requested = hw_mode_caps;
++
+ 		pref = soc->wmi_ab.preferred_hw_mode;
+ 
+ 		if (ath11k_hw_mode_pri_map[mode] < ath11k_hw_mode_pri_map[pref]) {
+@@ -4782,6 +4786,15 @@ static int ath11k_wmi_tlv_hw_mode_caps(s
+ 		}
+ 	}
+ 
++	if (requested) {
++		svc_rdy_ext->pref_hw_mode_caps = *requested;
++		soc->wmi_ab.preferred_hw_mode = ath11k_hw_mode;
++	} else if (ath11k_hw_mode != WMI_HOST_HW_MODE_MAX) {
++		ath11k_warn(soc, "hw mode %u not supported (modes 0x%x), using %d\n",
++			    ath11k_hw_mode, modes,
++			    soc->wmi_ab.preferred_hw_mode);
++	}
++
+ 	ath11k_dbg(soc, ATH11K_DBG_WMI, "preferred_hw_mode:%d\n",
+ 		   soc->wmi_ab.preferred_hw_mode);
+ 	if (soc->wmi_ab.preferred_hw_mode == WMI_HOST_HW_MODE_MAX)
