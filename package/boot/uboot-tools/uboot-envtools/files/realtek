@@ -43,6 +43,10 @@ zyxel,gs1900-48hp-a1)
 	ubootenv_add_mtd "u-boot-env" "0x0" "0x400" "0x10000"
 	ubootenv_add_sys_mtd "u-boot-env2" "0x0" "0x1000" "0x10000"
 	;;
+eltex,rg-5520)
+	ubootenv_add_mtd "u-boot-env" "0x0" "0x20000" "0x20000"
+	ubootenv_add_mtd "u-boot-env2" "0x0" "0x20000" "0x20000"
+	;;
 iodata,bsh-g24mb)
 	ubootenv_add_mtd "u-boot-env" "0x0" "0x10000" "0x10000"
 	ubootenv_add_sys_mtd "u-boot-env2" "0x0" "0x3800" "0x10000"

@@ -28,5 +28,8 @@ commit_current_sw() {
 
 boot() {
 	case $(board_name) in
+	eltex,rg-5520)
+		commit_current_sw
+		;;
 	esac
 }

@@ -1,0 +1,55 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Michael Zavertkin <misha.zavertkin@mail.ru>
+Date: Sat, 21 Nov 2026 19:05:15 +0700
+Subject: [PATCH] mtd: ubi: add max_beb_per1024 as dts property
+
+There is no way to limit reserved PEBs count if MTD partition is defined
+in devicetree. Add dts property for this.
+
+Signed-off-by: Michael Zavertkin <misha.zavertkin@mail.ru>
+---
+ .../devicetree/bindings/mtd/partitions/linux,ubi.yaml       | 5 +++++
+ drivers/mtd/ubi/build.c                                     | 6 +++++-
+ 2 files changed, 10 insertions(+), 1 deletion(-)
+
+--- a/Documentation/devicetree/bindings/mtd/partitions/linux,ubi.yaml
++++ b/Documentation/devicetree/bindings/mtd/partitions/linux,ubi.yaml
+@@ -22,6 +22,11 @@ properties:
+   compatible:
+     const: linux,ubi
+ 
++  ubi,max-beb-per1024:
++    $ref: /schemas/types.yaml#/definitions/uint32
++    description:
++      Alternative to kernel cmdline parameter for dts-defined MTD partitions.
++
+   volumes:
+     type: object
+     description: UBI Volumes
+--- a/drivers/mtd/ubi/build.c
++++ b/drivers/mtd/ubi/build.c
+@@ -1233,11 +1233,15 @@ static struct mtd_info * __init open_mtd
+ static void ubi_notify_add(struct mtd_info *mtd)
+ {
+ 	struct device_node *np = mtd_get_of_node(mtd);
++	unsigned int max_beb_per1024;
+ 	int err;
+ 
+ 	if (!of_device_is_compatible(np, "linux,ubi"))
+ 		return;
+ 
++	if (of_property_read_u32(np, "ubi,max-beb-per1024", &max_beb_per1024))
++		max_beb_per1024 = 0;
++
+ 	/*
+ 	 * we are already holding &mtd_table_mutex, but still need
+ 	 * to bump refcount
+@@ -1248,7 +1252,7 @@ static void ubi_notify_add(struct mtd_in
+ 
+ 	/* called while holding mtd_table_mutex */
+ 	mutex_lock_nested(&ubi_devices_mutex, SINGLE_DEPTH_NESTING);
+-	err = ubi_attach_mtd_dev(mtd, UBI_DEV_NUM_AUTO, 0, 0, false, false);
++	err = ubi_attach_mtd_dev(mtd, UBI_DEV_NUM_AUTO, 0, max_beb_per1024, false, false);
+ 	mutex_unlock(&ubi_devices_mutex);
+ 	if (err < 0)
+ 		__put_mtd_device(mtd);
