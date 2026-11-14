@@ -111,7 +111,7 @@ cpus = map(glob("/sys/bus/cpu/devices/*"), (path) => {
 	};
 });
 
-cpus = slice(cpus, 0, 64);
+cpus = slice(sort(cpus, (a, b) => a.id - b.id), 0, 64);
 if (length(cpus) < 2)
 	exit(0);
 
