@@ -1,0 +1,86 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Christopher Griffin <christophergriffin05@gmail.com>
+Date: Sat, 14 Nov 2026 09:00:00 -0600
+Subject: [PATCH] wifi: ath12k: spread the PCI DP ring interrupts over the CPUs
+
+ath12k on PCI gives the first DP interrupt groups an MSI vector each
+when the device grants the full set (8 DP vectors in
+ath12k_wifi7_msi_config[]), but leaves their affinity at the default.
+Every REO destination ring and TX completion ring interrupt then runs
+on the same CPU, and the spread the hardware gives received frames over
+the four REO rings is lost before the stack sees them.
+
+Place each REO destination ring interrupt on its own CPU and each TX
+completion ring interrupt on the CPU after its ring number, as Julius
+Bairaktaris's ath11k patch of the same name (openwrt/openwrt#26253)
+does. Only the first groups, one per vector, are placed: the monitor
+destination groups share the vectors of the first TX completion groups
+and follow them, and with a single shared MSI vector nothing changes.
+The affinity hint is cleared before the interrupt is freed.
+
+On an Arista C-460 (IPQ9574, four cores, three QCN9274 hw2.0) all 24 DP
+vectors counted on CPU0. With a 320 MHz 6 GHz station (2 streams)
+sending TCP to the AP, one core was saturated at 2.79 Gbit/s. With the
+patch each radio's vectors sit on CPUs 1,2,3,0 (TX completion rings)
+and 0,1,2,3 (REO rings), and seven runs gave 3.02 to 3.67 Gbit/s
+(median 3.12); AP transmit went from 1.33 to 1.45-1.89 Gbit/s.
+
+Assisted-by: Claude:claude-mythos-5-2
+Signed-off-by: Christopher Griffin <christophergriffin05@gmail.com>
+---
+--- a/drivers/net/wireless/ath/ath12k/pci.c
++++ b/drivers/net/wireless/ath/ath12k/pci.c
+@@ -321,8 +321,12 @@ static void ath12k_pci_free_ext_irq(stru
+ 	for (i = 0; i < ATH12K_EXT_IRQ_GRP_NUM_MAX; i++) {
+ 		struct ath12k_ext_irq_grp *irq_grp = &ab->ext_irq_grp[i];
+ 
+-		for (j = 0; j < irq_grp->num_irq; j++)
+-			free_irq(ab->irq_num[irq_grp->irqs[j]], irq_grp);
++		for (j = 0; j < irq_grp->num_irq; j++) {
++			int irq = ab->irq_num[irq_grp->irqs[j]];
++
++			irq_update_affinity_hint(irq, NULL);
++			free_irq(irq, irq_grp);
++		}
+ 
+ 		netif_napi_del(&irq_grp->napi);
+ 		free_netdev(irq_grp->napi_ndev);
+@@ -538,6 +542,27 @@ static irqreturn_t ath12k_pci_ext_interr
+ 	return IRQ_HANDLED;
+ }
+ 
++static void ath12k_pci_ext_irq_set_affinity(struct ath12k_base *ab,
++					    int grp_id, int irq)
++{
++	const struct ath12k_hw_ring_mask *ring_mask = ab->hw_params->ring_mask;
++	unsigned int cpu;
++
++	/* Put each REO destination ring, over which the hardware hashes
++	 * the received frames, on its own CPU, and each TX completion ring
++	 * on the CPU after its number.
++	 */
++	if (ring_mask->rx[grp_id])
++		cpu = __ffs(ring_mask->rx[grp_id]);
++	else if (ring_mask->tx[grp_id])
++		cpu = __ffs(ring_mask->tx[grp_id]) + 1;
++	else
++		return;
++
++	cpu = cpumask_local_spread(cpu, dev_to_node(ab->dev));
++	irq_set_affinity_and_hint(irq, cpumask_of(cpu));
++}
++
+ static int ath12k_pci_ext_irq_config(struct ath12k_base *ab)
+ {
+ 	struct ath12k_pci *ab_pci = ath12k_pci_priv(ab);
+@@ -601,6 +626,10 @@ static int ath12k_pci_ext_irq_config(str
+ 					   vector, ret);
+ 				goto fail_request;
+ 			}
++
++			if (test_bit(ATH12K_PCI_FLAG_MULTI_MSI_VECTORS,
++				     &ab_pci->flags) && i < num_vectors)
++				ath12k_pci_ext_irq_set_affinity(ab, i, irq);
+ 		}
+ 		ath12k_pci_ext_grp_disable(irq_grp);
+ 	}
