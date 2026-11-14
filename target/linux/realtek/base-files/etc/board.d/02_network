@@ -24,6 +24,7 @@ realtek_setup_interfaces()
 	local lan_list="$2"
 
 	case $board in
+	alphion,asee-1447|\
 	bt-pon,bt-g711ax)
 		ucidef_set_interface_lan "$lan_list"
 		;;
@@ -214,6 +215,17 @@ realtek_setup_macs()
 		[ -z "$lan_mac" ] || [ "$mac_prefix" = "00:e0:4c:00:00" ] && lan_mac=$(macaddr_random)
 		lan_mac_start=$lan_mac
 		eth0_mac=$lan_mac
+		;;
+	alphion,asee-1447)
+		lan_mac=$(realtek_get_mac_xml /tmp/ubi_Config/config_hs.xml \
+			ELAN_MAC_ADDR)
+		[ -n "$lan_mac" ] || \
+			logger -t 02_network "$board: label MAC not found in ubi_Config"
+		eth0_mac=$lan_mac
+		label_mac=$lan_mac
+		for port in $lan_list; do
+			[ -n "$lan_mac" ] && ucidef_set_network_device_mac $port $lan_mac
+		done
 		;;
 	buffalo,wsr-1500ax2s)
 		lan_mac=$(realtek_get_mac_xml /tmp/ubi_Config/config_hs.xml \

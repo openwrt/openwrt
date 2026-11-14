@@ -1,5 +1,19 @@
 # SPDX-License-Identifier: GPL-2.0-only
 
+define Device/alphion_asee-1447
+  SOC := rtl9607
+  DEVICE_VENDOR := Alphion
+  DEVICE_MODEL := ASEE-1447
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  KERNEL_SIZE := 10m
+  IMAGE_SIZE := 25m
+  $(Device/kernel-lzma)
+  KERNEL := $$(KERNEL) | check-size $$(KERNEL_SIZE)
+  IMAGE/sysupgrade.bin := append-rootfs | pad-rootfs | sysupgrade-tar rootfs=$$$$@ | append-metadata
+endef
+TARGET_DEVICES += alphion_asee-1447
+
 define Device/bt-pon_bt-g711ax
   SOC := rtl9607
   DEVICE_VENDOR := BT-PON
