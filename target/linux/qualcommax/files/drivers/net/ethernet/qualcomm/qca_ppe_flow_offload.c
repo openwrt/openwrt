@@ -82,7 +82,7 @@ struct ppe_flow_entry {
 	int uplink;
 	int in_uplink;
 	int session;
-	int xdev;
+	u64 xdev;
 	unsigned long ct;
 	u16 vid;
 	u8 xport;
@@ -962,8 +962,7 @@ static void ppe_flow_shaper_track(struct qca_ppe_priv *priv,
 		if (now == dev->ifindex &&
 		    (event == NETDEV_UNREGISTER || strcmp(dev->name, name)))
 			now = 0;
-		else if (event != NETDEV_UNREGISTER && !strcmp(dev->name, name) &&
-			 dev->ifindex <= PPE_XDEV_IFINDEX)
+		else if (event != NETDEV_UNREGISTER && !strcmp(dev->name, name))
 			now = dev->ifindex;
 
 		if (now == *shaper) {
@@ -1604,7 +1603,8 @@ bool ppe_flow_xmit(struct dsa_switch *ds, struct sk_buff *skb, u32 flow)
 {
 	struct qca_ppe_priv *priv = ds_to_priv(ds);
 	struct net_device *dev, *shaper, *uplink;
-	int xdev, up;
+	u64 xdev;
+	int up;
 	u8 dscp, xport;
 
 	if (flow >= priv->data->num_flow_entries)
@@ -1788,11 +1788,6 @@ int ppe_flow_shaper_set(struct qca_ppe_priv *priv, bool upload,
 		}
 		ifindex = dev->ifindex;
 		dev_put(dev);
-		if (ifindex > PPE_XDEV_IFINDEX) {
-			if (own)
-				unregister_netdev(own);
-			return -ERANGE;
-		}
 	}
 
 	scoped_guard(mutex, &priv->flow_lock) {

@@ -1494,7 +1494,7 @@ struct qca_ppe_priv {
 	/* Per flow index: the device a frame the PPE routed to the CPU port
 	 * leaves on, and whether a software shaper stands in front of it.
 	 */
-	int *flow_xdev;
+	u64 *flow_xdev;
 	atomic_t flow_xmit_drop;
 	/* frames meant for the download shaper that found no device to pass */
 	atomic_t flow_shaper_miss;
@@ -1858,11 +1858,12 @@ int ppe_flow_uplink_set(struct qca_ppe_priv *priv, const char *name);
 int ppe_flow_shaper_set(struct qca_ppe_priv *priv, bool upload,
 			const char *name);
 
-#define PPE_XDEV_IFINDEX	GENMASK(27, 0)
+/* An ifindex takes all of an int, so the flags go above it. */
+#define PPE_XDEV_IFINDEX	GENMASK_ULL(31, 0)
 /* The PPE built the frame's link headers, PPPoE and VLAN included. */
-#define PPE_XDEV_PUSH		BIT(28)
-#define PPE_XDEV_DL		BIT(29)
-#define PPE_XDEV_UL		BIT(30)
+#define PPE_XDEV_PUSH		BIT_ULL(32)
+#define PPE_XDEV_DL		BIT_ULL(33)
+#define PPE_XDEV_UL		BIT_ULL(34)
 void ppe_flow_purge_vsi(struct qca_ppe_priv *priv, u32 vsi);
 void ppe_flow_offload_exit(struct qca_ppe_priv *priv);
 
