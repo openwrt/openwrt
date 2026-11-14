@@ -14,7 +14,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 
 --- a/drivers/net/dsa/mxl862xx/mxl862xx-host.c
 +++ b/drivers/net/dsa/mxl862xx/mxl862xx-host.c
-@@ -210,7 +210,7 @@ static int mxl862xx_busy_wait(struct mxl
+@@ -216,7 +216,7 @@ static int mxl862xx_busy_wait(struct mxl
  	int val;
  
  	return readx_poll_timeout(mxl862xx_ctrl_read, priv, val,

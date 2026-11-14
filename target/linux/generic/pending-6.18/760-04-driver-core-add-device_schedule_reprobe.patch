@@ -1,0 +1,305 @@
+From 4027cdf0d424dd6ef61f94e938e67f134c65727d Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Fri, 14 Aug 2026 13:39:44 +0100
+Subject: [PATCH net-next v19] driver core: add device_schedule_reprobe()
+
+Drivers that need a deferred re-probe of their own device open-code a
+work item in module text. iwlwifi (iwl_trans_schedule_reprobe(), for a
+firmware crash a lighter restart cannot fix) and hci_h5
+(h5_btrtl_resume(), RTL devices lose their firmware state over suspend)
+both end that work function with put_device(); kfree();
+module_put(THIS_MODULE);, where a concurrent rmmod can free the module
+text the epilogue is still executing. Neither gates the re-probe on the
+device still being bound to the driver that scheduled it, which a driver
+cannot do from outside because device_reprobe() takes the device lock
+internally. Their conversion is left to follow-up patches.
+
+Add device_schedule_reprobe(), which detaches and re-probes a device
+after a caller-specified delay. The work function is built-in text, so a
+caller needs no module reference. The first user is the mxl862xx
+devlink flash path added later in this series.
+
+At most one request exists per device, recorded in struct
+device_private from its scheduling until its work has released the
+driver. The slot identifies the binding: device_del() and
+device_unbind_cleanup() clear it, the latter after ->remove() has
+returned and the driver pointer is cleared, so a request the driver
+schedules from a context its ->remove() waits for is cancelled too, a
+failed probe leaves none behind, and neither an unbind followed by a
+rebind nor a module reload within the delay gets a re-probe it did not
+ask for. A spinlock ties the slot to the queueing and cancelling of its
+work, so a cancel either removes a pending work and frees the request
+or leaves it to the running work, which frees itself once the slot is
+no longer its own; the reference the request holds on the device goes
+with it.
+
+A failed re-probe leaves the device unbound, as a failed initial probe
+would, and really_probe() logs it like one. The work does not judge the
+outcome itself: a deferred retry is off the deferred-probe list while
+it runs, so no read of the device state tells one from a failure.
+
+No sleeping lock is taken in the caller's context, only the leaf
+spinlock of the slot, and the checks are snapshots the work repeats
+under the device lock, so the helper may be called with the device
+lock held, as the prepare, suspend, resume and complete callbacks,
+->remove() and ->shutdown() hold it. The caller is the bound driver, in
+a context its ->remove() waits for. Buses that take the parent lock to
+bind are refused with -EINVAL: that lock has to be taken before @dev's
+own, so the parent would have to be recorded before either is held,
+where device_move() can replace it without taking any device lock.
+usb_bus_type is the only such bus and no caller needs it today.
+
+While probing is blocked, which device_shutdown() and dpm_prepare() both
+set before they touch any device, a request that fires is dropped once
+a halt, power-off or restart has begun and otherwise re-arms itself
+once a second, so one pending across a system suspend or a hibernation
+restore runs once the system has resumed. Beyond
+that gate this is device_reprobe() deferred, with the release path of
+__device_release_driver() untouched, so it carries device_reprobe()'s
+pre-existing limitations: the detach and the re-attach are not one
+locked operation, so an administrative unbind between them may be
+undone, and detaching a device that has managed consumers unbinds them
+as any release does, so a re-probe a concurrent device_shutdown()
+overtakes may run ->remove() after ->shutdown(). None of this is
+specific to the helper.
+---
+ drivers/base/base.h    |   5 ++
+ drivers/base/core.c    |   1 +
+ drivers/base/dd.c      | 172 +++++++++++++++++++++++++++++++++++++++++
+ include/linux/device.h |   2 +
+ 4 files changed, 180 insertions(+)
+
+--- a/drivers/base/base.h
++++ b/drivers/base/base.h
+@@ -103,6 +103,9 @@ struct driver_private {
+  * @dead - This device is currently either in the process of or has been
+  *	removed from the system. Any asynchronous events scheduled for this
+  *	device should exit without taking any action.
++ * @reprobe - request scheduled with device_schedule_reprobe(), held until
++ *	its work has released the driver; cancelled when the device is
++ *	deleted or the binding that scheduled it ends
+  *
+  * Nothing outside of the driver core should ever touch these fields.
+  */
+@@ -116,6 +119,7 @@ struct device_private {
+ 	const struct device_driver *async_driver;
+ 	char *deferred_probe_reason;
+ 	struct device *device;
++	struct device_reprobe *reprobe;
+ 	u8 dead:1;
+ };
+ #define to_device_private_parent(obj)	\
+@@ -200,6 +204,7 @@ static inline void device_set_driver(str
+ int devres_release_all(struct device *dev);
+ void device_block_probing(void);
+ void device_unblock_probing(void);
++void device_reprobe_cancel(struct device *dev);
+ void deferred_probe_extend_timeout(void);
+ void driver_deferred_probe_trigger(void);
+ const char *device_get_devnode(const struct device *dev, umode_t *mode,
+--- a/drivers/base/core.c
++++ b/drivers/base/core.c
+@@ -3923,6 +3923,7 @@ void device_del(struct device *dev)
+ 	device_lock(dev);
+ 	kill_device(dev);
+ 	device_unlock(dev);
++	device_reprobe_cancel(dev);
+ 
+ 	if (dev->fwnode && dev->fwnode->dev == dev)
+ 		dev->fwnode->dev = NULL;
+--- a/drivers/base/dd.c
++++ b/drivers/base/dd.c
+@@ -607,6 +607,7 @@ static void device_unbind_cleanup(struct
+ 	kfree(dev->dma_range_map);
+ 	dev->dma_range_map = NULL;
+ 	device_set_driver(dev, NULL);
++	device_reprobe_cancel(dev);
+ 	dev_set_drvdata(dev, NULL);
+ 	dev_pm_domain_detach(dev, dev->power.detach_power_off);
+ 	if (dev->pm_domain && dev->pm_domain->dismiss)
+@@ -1436,3 +1437,174 @@ void driver_detach(const struct device_d
+ 		put_device(dev);
+ 	}
+ }
++
++struct device_reprobe {
++	struct delayed_work work;
++	struct device *dev;
++};
++
++/* Retry interval while probing is blocked; the caller's delay may be 0. */
++#define DEVICE_REPROBE_BLOCKED_RETRY	HZ
++
++/* Ties the slot in struct device_private to the queueing of its work. */
++static DEFINE_SPINLOCK(device_reprobe_lock);
++
++static void device_reprobe_free(struct device_reprobe *rp)
++{
++	put_device(rp->dev);
++	kfree(rp);
++}
++
++/*
++ * The slot holds a request from its scheduling until its work has released
++ * the driver. A pending work is freed here; a running one finds the slot no
++ * longer its own and frees itself.
++ */
++void device_reprobe_cancel(struct device *dev)
++{
++	struct device_reprobe *rp;
++	bool pending = false;
++
++	if (!dev->p)
++		return;
++	spin_lock(&device_reprobe_lock);
++	rp = dev->p->reprobe;
++	WRITE_ONCE(dev->p->reprobe, NULL);
++	if (rp)
++		pending = cancel_delayed_work(&rp->work);
++	spin_unlock(&device_reprobe_lock);
++	if (pending)
++		device_reprobe_free(rp);
++}
++
++static void device_reprobe_work_fn(struct work_struct *work)
++{
++	struct device_reprobe *rp = container_of(work, struct device_reprobe,
++						 work.work);
++	struct device *dev = rp->dev;
++	bool rearm;
++	int ret;
++
++	device_lock(dev);
++	/* The slot still holding rp means the binding that scheduled it does. */
++	if (dev->p->dead || READ_ONCE(dev->p->reprobe) != rp) {
++		device_unlock(dev);
++		goto out;
++	}
++	if (defer_all_probes) {
++		device_unlock(dev);
++		spin_lock(&device_reprobe_lock);
++		rearm = dev->p->reprobe == rp &&
++			(system_state < SYSTEM_HALT ||
++			 system_state == SYSTEM_SUSPEND) &&
++			queue_delayed_work(system_freezable_wq, &rp->work,
++					   DEVICE_REPROBE_BLOCKED_RETRY);
++		spin_unlock(&device_reprobe_lock);
++		if (rearm)
++			return;
++		goto out;
++	}
++	/* Releasing the driver clears the slot, which was this request. */
++	__device_release_driver(dev, NULL);
++	device_unlock(dev);
++
++	/* A failed probe is logged by the probe path, as for a first probe. */
++	ret = device_attach(dev);
++	dev_dbg(dev, "re-probe: device_attach() returned %d\n", ret);
++out:
++	spin_lock(&device_reprobe_lock);
++	if (dev->p->reprobe == rp)
++		WRITE_ONCE(dev->p->reprobe, NULL);
++	spin_unlock(&device_reprobe_lock);
++	device_reprobe_free(rp);
++}
++
++/**
++ * device_schedule_reprobe - schedule a deferred detach and re-probe
++ * @dev: device to detach and re-probe
++ * @delay_ms: delay in milliseconds before the re-probe runs
++ *
++ * Schedule a detach and re-probe of @dev after @delay_ms milliseconds,
++ * from built-in driver-core work rather than a driver-owned work item,
++ * so the bound driver may call it without pinning its own module.
++ *
++ * At most one request exists per device, from its scheduling until its
++ * work has released the driver, and the request identifies the binding
++ * that scheduled it. It is cancelled when @dev is deleted or when that
++ * binding ends, whether by a release or by a failed probe, so neither an
++ * unbind followed by a rebind nor a module reload within the delay gets a
++ * re-probe it did not ask for; its reference on @dev is dropped with it,
++ * or once a work already running has finished. A request that fires
++ * while probing is blocked for a system suspend or a hibernation restore
++ * re-arms itself every second and runs once the system has resumed; one
++ * that fires while probing is blocked for a halt, power-off or restart is
++ * dropped. A failed re-probe leaves @dev unbound, as a failed initial
++ * probe would, and is logged by the probe path like one.
++ *
++ * This is device_reprobe() deferred, and shares its limitations; the
++ * release path of __device_release_driver() is untouched. The detach and
++ * the re-attach are not one locked operation, so an administrative unbind
++ * arriving between them may be undone. If @dev has managed consumers,
++ * detaching it unbinds them as any driver release does, so a re-probe a
++ * concurrent device_shutdown() overtakes may run ->remove() after
++ * ->shutdown(). None of this is specific to this helper.
++ *
++ * Buses that take the parent lock to bind (only usb_bus_type) are refused
++ * with -EINVAL: the parent would have to be recorded before either lock
++ * is held, where device_move() can replace it.
++ *
++ * Context: May sleep (allocates with %GFP_KERNEL). Must be called by the
++ * driver bound to @dev, from a process context its ->remove() waits for,
++ * so that the binding outlives the call; @dev's own device lock may be
++ * held. A request from ->probe() runs once the probe has returned and is
++ * cancelled if the probe fails.
++ *
++ * Returns: 0 on success, -EINVAL if @dev is not a registered device
++ * bound to a driver or sits on a bus which takes the parent lock to
++ * bind, -EBUSY if a re-probe of @dev is pending or has not yet released
++ * the driver, -ENOMEM on allocation failure.
++ */
++int device_schedule_reprobe(struct device *dev, unsigned int delay_ms)
++{
++	const struct device_driver *drv;
++	struct device_reprobe *rp;
++	int ret = 0;
++
++	drv = READ_ONCE(dev->driver);
++	/*
++	 * A bus taking the parent lock would need @dev's parent pinned until
++	 * the work runs, which device_move() can invalidate.
++	 */
++	if (!drv || !dev->bus || dev->bus->need_parent_lock || !dev->p ||
++	    dev->p->dead || !device_is_registered(dev))
++		return -EINVAL;
++
++	rp = kzalloc_obj(*rp);
++	if (!rp)
++		return -ENOMEM;
++
++	rp->dev = get_device(dev);
++	INIT_DELAYED_WORK(&rp->work, device_reprobe_work_fn);
++
++	/*
++	 * A release or deletion that got here first has cleared the driver or
++	 * set dead before cancelling, so a request published after its cancel
++	 * is refused here; one published before is cancelled by it.
++	 */
++	spin_lock(&device_reprobe_lock);
++	if (dev->p->reprobe)
++		ret = -EBUSY;
++	else if (dev->p->dead || READ_ONCE(dev->driver) != drv)
++		ret = -EINVAL;
++	else
++		WRITE_ONCE(dev->p->reprobe, rp);
++	if (!ret)
++		queue_delayed_work(system_freezable_wq, &rp->work,
++				   msecs_to_jiffies(delay_ms));
++	spin_unlock(&device_reprobe_lock);
++	if (ret)
++		device_reprobe_free(rp);
++
++	return ret;
++}
++EXPORT_SYMBOL_GPL(device_schedule_reprobe);
+--- a/include/linux/device.h
++++ b/include/linux/device.h
+@@ -1237,6 +1237,8 @@ int  __must_check device_attach(struct d
+ int __must_check driver_attach(const struct device_driver *drv);
+ void device_initial_probe(struct device *dev);
+ int __must_check device_reprobe(struct device *dev);
++int __must_check device_schedule_reprobe(struct device *dev,
++					 unsigned int delay_ms);
+ 
+ bool device_is_bound(struct device *dev);
+ 
