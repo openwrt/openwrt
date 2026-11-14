@@ -1,0 +1,65 @@
+From 29b466663ec8cba24283e21791767bfb574a71e5 Mon Sep 17 00:00:00 2001
+From: Alex Rau <alex@retroduction.org>
+Date: Sat, 14 Nov 2026 19:59:37 +0100
+Subject: [PATCH] Protect management frames in software on 88W8864
+ (802.11w/PMF)
+
+The 88W8864 firmware encrypts and decrypts data frames only. Set
+IEEE80211_KEY_FLAG_SW_MGMT_TX for CCMP keys so mac80211 encrypts
+management frames itself, and on RX report only data frames as
+hardware-decrypted so mac80211 decrypts protected management frames.
+Without this, PMF clients (all WPA3-SAE clients) ignore the AP
+unprotected deauth and re-associate every 15-90 s once idle.
+
+Signed-off-by: Alex Rau <alex@retroduction.org>
+---
+ hif/pcie/8864/rx.c | 11 ++++++++++-
+ mac80211.c         | 10 ++++++++++
+ 2 files changed, 20 insertions(+), 1 deletion(-)
+
+--- a/hif/pcie/8864/rx.c
++++ b/hif/pcie/8864/rx.c
+@@ -395,6 +395,7 @@ int pcie_8864_poll_napi(struct napi_struct *napi, int budget)
+ 	struct ieee80211_hdr *wh;
+ 	u8 *_data;
+ 	u8 *qc;
++	bool fw_decrypted;
+ 	const u8 eapol[] = {0x88, 0x8e};
+ 
+ 	desc = &pcie_priv->desc_data[0];
+@@ -434,7 +435,15 @@ int pcie_8864_poll_napi(struct napi_struct *napi, int budget)
+ 
+ 		wh = &((struct pcie_dma_data *)prx_skb->data)->wh;
+ 
+-		if (utils_is_crypted(wh)) {
++		/* The firmware decrypts only data frames. A protected
++		 * management frame (802.11w) reaches the host still
++		 * encrypted; leave its flags clear so that mac80211
++		 * decrypts it in software.
++		 */
++		fw_decrypted = utils_is_crypted(wh) &&
++			       ieee80211_is_data(wh->frame_control);
++
++		if (fw_decrypted) {
+ 			/* When MMIC ERROR is encountered
+ 			* by the firmware, payload is
+ 			* dropped and only 32 bytes of
+--- a/mac80211.c
++++ b/mac80211.c
+@@ -538,6 +538,16 @@ static int mwl_mac80211_set_key(struct ieee80211_hw *hw,
+ 			encr_type = ENCR_TYPE_DISABLE;
+ 		}
+ 
++		/* The 88W8864 firmware encrypts only data frames; 802.11w
++		 * protected management frames (deauth, SA Query) must be
++		 * encrypted by mac80211 in software or they go out as
++		 * plaintext. CCMP is the only PMF-capable cipher this driver
++		 * offers. Other chips are untested and left unchanged.
++		 */
++		if (priv->chip_type == MWL8864 &&
++		    key->cipher == WLAN_CIPHER_SUITE_CCMP)
++			key->flags |= IEEE80211_KEY_FLAG_SW_MGMT_TX;
++
+ 		rc = mwl_fwcmd_update_encryption_enable(hw, vif, addr,
+ 							encr_type);
+ 		if (rc)
