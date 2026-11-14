@@ -1,0 +1,378 @@
+From: Kenneth Kasilag <kenneth@kasilag.me>
+Date: Sun, 05 Jul 2026 00:00:00 +0000
+Subject: [PATCH] net: ethernet: qualcomm: ppe: add tunnel encap transactions
+
+Add the remaining low-level transactions needed by a shared tunnel-port
+lifecycle. Match the vendor order by writing egress tunnel control before
+its 32-word header template, then bind the verified tunnel ID to a
+dedicated virtual port. Add verified tunnel L3-interface and key-generator
+writes.
+
+Read back directly written tables and restore their previous contents on
+failure. These primitives deliberately do not allocate IDs or publish flow
+rules; the following lifecycle patch will own those dependencies and their
+reverse-order rollback.
+
+Signed-off-by: Kenneth Kasilag <kenneth@kasilag.me>
+---
+--- a/drivers/net/ethernet/qualcomm/ppe/ppe_regs.h
++++ b/drivers/net/ethernet/qualcomm/ppe/ppe_regs.h
+@@ -782,6 +782,31 @@
+ #define PPE_TUNNEL_COUNTER_INC			0x10
+ #define PPE_TUNNEL_COUNTER_WORDS		3
+ 
++/* Egress tunnel template and its dedicated virtual-port binding. */
++#define PPE_TUNNEL_ENCAP_HEADER_ADDR		0x054000
++#define PPE_TUNNEL_ENCAP_HEADER_INC		0x80
++#define PPE_TUNNEL_ENCAP_CTRL_ADDR		0x05a000
++#define PPE_TUNNEL_ENCAP_CTRL_INC		0x10
++#define PPE_TUNNEL_EG_VP_ADDR			0x025000
++#define PPE_TUNNEL_EG_VP_ENTRIES		256
++#define PPE_TUNNEL_EG_VP_INC			0x10
++#define PPE_TUNNEL_EG_VP_WORDS			2
++#define PPE_TUNNEL_EG_VP_W1_VALID		BIT(11)
++#define PPE_TUNNEL_EG_VP_W1_ID			GENMASK(18, 12)
++
++/* Per-underlay termination configuration and decap key generation. */
++#define PPE_TUNNEL_PORT_INTF_ADDR		0x302000
++#define PPE_TUNNEL_PORT_INTF_ENTRIES		256
++#define PPE_TUNNEL_PORT_INTF_INC		0x10
++#define PPE_TUNNEL_PORT_INTF_W0_L3_VALID	BIT(24)
++#define PPE_TUNNEL_PORT_INTF_W0_L3_INDEX	GENMASK(31, 25)
++#define PPE_TUNNEL_L3_IF_ADDR			0x303000
++#define PPE_TUNNEL_L3_IF_ENTRIES		128
++#define PPE_TUNNEL_L3_IF_INC			0x10
++#define PPE_TUNNEL_KEY_ADDR			0x303800
++#define PPE_TUNNEL_KEY_ENTRIES			16
++#define PPE_TUNNEL_KEY_INC			0x10
++
+ /* Per-VSI L3 interface binding: routed packets classified into the VSI
+  * take this ingress L3 interface instead of the one bound to their
+  * ingress port.
+--- a/drivers/net/ethernet/qualcomm/ppe/ppe_tunnel.c
++++ b/drivers/net/ethernet/qualcomm/ppe/ppe_tunnel.c
+@@ -1,10 +1,10 @@
+ // SPDX-License-Identifier: GPL-2.0-only
+ /* Copyright (c) 2026 Kenneth Kasilag <kenneth@kasilag.me> */
+ 
+-/* Low-level APPE tunnel termination transactions. The command operand and
+- * result blocks are shared hardware resources, so every operation is
+- * serialized by the device tunnel lock. Higher layers own IDs and compose
+- * these primitives into a refcounted lifecycle before publishing any flow.
++/* Low-level APPE tunnel transactions. The command operand and result blocks
++ * are shared hardware resources, so every operation is serialized by the
++ * device tunnel lock. Higher layers own IDs and compose these primitives into
++ * a refcounted tunnel-port transaction before publishing any flow.
+  */
+ 
+ #include <linux/bitfield.h>
+@@ -166,6 +166,269 @@ int ppe_tunnel_decap_del(struct ppe_devi
+ 	mutex_unlock(&ppe_dev->tunnel_lock);
+ 
+ 	return ret;
++}
++
++static int ppe_tunnel_encap_restore(struct ppe_device *ppe_dev, int tunnel_id,
++				    const u32 *control, const u32 *header)
++{
++	u32 disabled[PPE_TUNNEL_ENCAP_CTRL_WORDS] = {};
++	u32 ctrl_reg = PPE_TUNNEL_ENCAP_CTRL_ADDR +
++		       tunnel_id * PPE_TUNNEL_ENCAP_CTRL_INC;
++	u32 hdr_reg = PPE_TUNNEL_ENCAP_HEADER_ADDR +
++		      tunnel_id * PPE_TUNNEL_ENCAP_HEADER_INC;
++	int ret, err;
++
++	ret = regmap_bulk_write(ppe_dev->regmap, ctrl_reg, disabled,
++				ARRAY_SIZE(disabled));
++	err = regmap_bulk_write(ppe_dev->regmap, hdr_reg, header,
++				PPE_TUNNEL_ENCAP_HEADER_WORDS);
++	if (!ret)
++		ret = err;
++	err = regmap_bulk_write(ppe_dev->regmap, ctrl_reg, control,
++				PPE_TUNNEL_ENCAP_CTRL_WORDS);
++	if (!ret)
++		ret = err;
++
++	return ret;
++}
++
++int ppe_tunnel_encap_set(struct ppe_device *ppe_dev, int tunnel_id,
++			 const struct ppe_tunnel_encap_entry *entry)
++{
++	struct ppe_tunnel_encap_entry old, verify;
++	u32 ctrl_reg, hdr_reg;
++	int ret, restore_ret;
++
++	if (!entry || tunnel_id < 0 || tunnel_id >= PPE_TUNNEL_ENTRIES)
++		return -EINVAL;
++	ret = ppe_tunnel_check(ppe_dev);
++	if (ret)
++		return ret;
++
++	ctrl_reg = PPE_TUNNEL_ENCAP_CTRL_ADDR +
++		   tunnel_id * PPE_TUNNEL_ENCAP_CTRL_INC;
++	hdr_reg = PPE_TUNNEL_ENCAP_HEADER_ADDR +
++		  tunnel_id * PPE_TUNNEL_ENCAP_HEADER_INC;
++
++	mutex_lock(&ppe_dev->tunnel_lock);
++	ret = regmap_bulk_read(ppe_dev->regmap, ctrl_reg, old.control,
++			       ARRAY_SIZE(old.control));
++	if (ret)
++		goto out;
++	ret = regmap_bulk_read(ppe_dev->regmap, hdr_reg, old.header,
++			       ARRAY_SIZE(old.header));
++	if (ret)
++		goto out;
++
++	/* Match the vendor order. The VP is not bound until both rows verify. */
++	ret = regmap_bulk_write(ppe_dev->regmap, ctrl_reg, entry->control,
++				ARRAY_SIZE(entry->control));
++	if (ret)
++		goto restore;
++	ret = regmap_bulk_write(ppe_dev->regmap, hdr_reg, entry->header,
++				ARRAY_SIZE(entry->header));
++	if (ret)
++		goto restore;
++	ret = regmap_bulk_read(ppe_dev->regmap, ctrl_reg, verify.control,
++			       ARRAY_SIZE(verify.control));
++	if (ret)
++		goto restore;
++	ret = regmap_bulk_read(ppe_dev->regmap, hdr_reg, verify.header,
++			       ARRAY_SIZE(verify.header));
++	if (ret)
++		goto restore;
++	if (memcmp(&verify, entry, sizeof(verify))) {
++		ret = -EIO;
++		goto restore;
++	}
++	goto out;
++
++restore:
++	restore_ret = ppe_tunnel_encap_restore(ppe_dev, tunnel_id,
++					       old.control, old.header);
++	if (restore_ret)
++		dev_err(ppe_dev->dev,
++			"failed to restore tunnel encap %d: %d\n",
++			tunnel_id, restore_ret);
++out:
++	mutex_unlock(&ppe_dev->tunnel_lock);
++	return ret;
++}
++
++int ppe_tunnel_encap_clear(struct ppe_device *ppe_dev, int tunnel_id)
++{
++	struct ppe_tunnel_encap_entry entry = {};
++
++	return ppe_tunnel_encap_set(ppe_dev, tunnel_id, &entry);
++}
++
++static int ppe_tunnel_vp_bind_locked(struct ppe_device *ppe_dev, int vp,
++				     bool valid, int tunnel_id)
++{
++	u32 reg = PPE_TUNNEL_EG_VP_ADDR + vp * PPE_TUNNEL_EG_VP_INC;
++	u32 old[PPE_TUNNEL_EG_VP_WORDS], val[PPE_TUNNEL_EG_VP_WORDS];
++	u32 verify[PPE_TUNNEL_EG_VP_WORDS];
++	int ret;
++
++	ret = regmap_bulk_read(ppe_dev->regmap, reg, old, ARRAY_SIZE(old));
++	if (ret)
++		return ret;
++	memcpy(val, old, sizeof(val));
++	FIELD_MODIFY(PPE_TUNNEL_EG_VP_W1_VALID, &val[1], valid);
++	FIELD_MODIFY(PPE_TUNNEL_EG_VP_W1_ID, &val[1], tunnel_id);
++	ret = regmap_bulk_write(ppe_dev->regmap, reg, val, ARRAY_SIZE(val));
++	if (ret)
++		return ret;
++	ret = regmap_bulk_read(ppe_dev->regmap, reg, verify,
++			       ARRAY_SIZE(verify));
++	if (!ret && !memcmp(verify, val, sizeof(verify)))
++		return 0;
++	if (!ret)
++		ret = -EIO;
++	if (regmap_bulk_write(ppe_dev->regmap, reg, old, ARRAY_SIZE(old)))
++		dev_err(ppe_dev->dev, "failed to restore tunnel VP %d\n", vp);
++
++	return ret;
++}
++
++int ppe_tunnel_vp_bind(struct ppe_device *ppe_dev, int vp, int tunnel_id)
++{
++	int ret;
++
++	if (vp < 0 || vp >= PPE_TUNNEL_EG_VP_ENTRIES || tunnel_id < 0 ||
++	    tunnel_id >= PPE_TUNNEL_ENTRIES)
++		return -EINVAL;
++	ret = ppe_tunnel_check(ppe_dev);
++	if (ret)
++		return ret;
++
++	mutex_lock(&ppe_dev->tunnel_lock);
++	ret = ppe_tunnel_vp_bind_locked(ppe_dev, vp, true, tunnel_id);
++	mutex_unlock(&ppe_dev->tunnel_lock);
++
++	return ret;
++}
++
++int ppe_tunnel_vp_unbind(struct ppe_device *ppe_dev, int vp)
++{
++	int ret;
++
++	if (vp < 0 || vp >= PPE_TUNNEL_EG_VP_ENTRIES)
++		return -EINVAL;
++	ret = ppe_tunnel_check(ppe_dev);
++	if (ret)
++		return ret;
++
++	mutex_lock(&ppe_dev->tunnel_lock);
++	ret = ppe_tunnel_vp_bind_locked(ppe_dev, vp, false, 0);
++	mutex_unlock(&ppe_dev->tunnel_lock);
++
++	return ret;
++}
++
++/* Write @count words at @reg, read them back to prove the write took
++ * effect, and restore @old on any failure. The caller holds tunnel_lock
++ * and reports @what/@id in the restore-failure message.
++ */
++static int ppe_tunnel_write_verify(struct ppe_device *ppe_dev, u32 reg,
++				   const u32 *old, const u32 *val, int count,
++				   const char *what, int id)
++{
++	u32 verify[PPE_TUNNEL_KEY_WORDS];
++	int ret;
++
++	if (WARN_ON_ONCE(count > ARRAY_SIZE(verify)))
++		return -EINVAL;
++
++	ret = regmap_bulk_write(ppe_dev->regmap, reg, val, count);
++	if (!ret)
++		ret = regmap_bulk_read(ppe_dev->regmap, reg, verify, count);
++	if (!ret && memcmp(verify, val, count * sizeof(*val)))
++		ret = -EIO;
++	if (ret && regmap_bulk_write(ppe_dev->regmap, reg, old, count))
++		dev_err(ppe_dev->dev, "failed to restore %s %d\n", what, id);
++
++	return ret;
++}
++
++int ppe_tunnel_port_l3_if_set(struct ppe_device *ppe_dev, int port,
++			      bool valid, int l3_if)
++{
++	u32 reg, old[3], val[3];
++	int ret;
++
++	if (port < 0 || port >= PPE_TUNNEL_PORT_INTF_ENTRIES ||
++	    l3_if < 0 || l3_if >= PPE_TUNNEL_L3_IF_ENTRIES)
++		return -EINVAL;
++	ret = ppe_tunnel_check(ppe_dev);
++	if (ret)
++		return ret;
++	reg = PPE_TUNNEL_PORT_INTF_ADDR +
++	      port * PPE_TUNNEL_PORT_INTF_INC;
++
++	mutex_lock(&ppe_dev->tunnel_lock);
++	ret = regmap_bulk_read(ppe_dev->regmap, reg, old, ARRAY_SIZE(old));
++	if (ret)
++		goto out;
++	memcpy(val, old, sizeof(val));
++	FIELD_MODIFY(PPE_TUNNEL_PORT_INTF_W0_L3_VALID, &val[0], valid);
++	FIELD_MODIFY(PPE_TUNNEL_PORT_INTF_W0_L3_INDEX, &val[0], l3_if);
++	ret = ppe_tunnel_write_verify(ppe_dev, reg, old, val, ARRAY_SIZE(val),
++				      "tunnel port interface", port);
++out:
++	mutex_unlock(&ppe_dev->tunnel_lock);
++
++	return ret;
++}
++
++int ppe_tunnel_l3_if_set(struct ppe_device *ppe_dev, int index, u32 value)
++{
++	u32 reg, old;
++	int ret;
++
++	if (index < 0 || index >= PPE_TUNNEL_L3_IF_ENTRIES)
++		return -EINVAL;
++	ret = ppe_tunnel_check(ppe_dev);
++	if (ret)
++		return ret;
++	reg = PPE_TUNNEL_L3_IF_ADDR + index * PPE_TUNNEL_L3_IF_INC;
++
++	mutex_lock(&ppe_dev->tunnel_lock);
++	ret = regmap_read(ppe_dev->regmap, reg, &old);
++	if (ret)
++		goto out;
++	ret = ppe_tunnel_write_verify(ppe_dev, reg, &old, &value, 1,
++				      "tunnel L3 interface", index);
++out:
++	mutex_unlock(&ppe_dev->tunnel_lock);
++
++	return ret;
++}
++
++int ppe_tunnel_key_set(struct ppe_device *ppe_dev, int type,
++		       const u32 key[PPE_TUNNEL_KEY_WORDS])
++{
++	u32 old[PPE_TUNNEL_KEY_WORDS];
++	u32 reg;
++	int ret;
++
++	if (!key || type < 0 || type >= PPE_TUNNEL_KEY_ENTRIES)
++		return -EINVAL;
++	ret = ppe_tunnel_check(ppe_dev);
++	if (ret)
++		return ret;
++	reg = PPE_TUNNEL_KEY_ADDR + type * PPE_TUNNEL_KEY_INC;
++
++	mutex_lock(&ppe_dev->tunnel_lock);
++	ret = regmap_bulk_read(ppe_dev->regmap, reg, old, ARRAY_SIZE(old));
++	if (ret)
++		goto out;
++	ret = ppe_tunnel_write_verify(ppe_dev, reg, old, key, ARRAY_SIZE(old),
++				      "tunnel key", type);
++out:
++	mutex_unlock(&ppe_dev->tunnel_lock);
++
++	return ret;
+ }
+ 
+ int ppe_tunnel_hw_init(struct ppe_device *ppe_dev)
+--- a/drivers/net/ethernet/qualcomm/ppe/ppe_tunnel.h
++++ b/drivers/net/ethernet/qualcomm/ppe/ppe_tunnel.h
+@@ -9,6 +9,9 @@
+ #include <linux/types.h>
+ 
+ #define PPE_TUNNEL_DECAP_WORDS		14
++#define PPE_TUNNEL_ENCAP_CTRL_WORDS	3
++#define PPE_TUNNEL_ENCAP_HEADER_WORDS	32
++#define PPE_TUNNEL_KEY_WORDS		3
+ 
+ struct ppe_device;
+ 
+@@ -16,6 +19,11 @@ struct ppe_tunnel_decap_entry {
+ 	u32 word[PPE_TUNNEL_DECAP_WORDS];
+ };
+ 
++struct ppe_tunnel_encap_entry {
++	u32 control[PPE_TUNNEL_ENCAP_CTRL_WORDS];
++	u32 header[PPE_TUNNEL_ENCAP_HEADER_WORDS];
++};
++
+ int ppe_tunnel_hw_init(struct ppe_device *ppe_dev);
+ int ppe_tunnel_decap_add(struct ppe_device *ppe_dev,
+ 			 const struct ppe_tunnel_decap_entry *entry,
+@@ -23,5 +31,15 @@ int ppe_tunnel_decap_add(struct ppe_devi
+ int ppe_tunnel_decap_get(struct ppe_device *ppe_dev, int index,
+ 			 struct ppe_tunnel_decap_entry *entry);
+ int ppe_tunnel_decap_del(struct ppe_device *ppe_dev, int index);
++int ppe_tunnel_encap_set(struct ppe_device *ppe_dev, int tunnel_id,
++			 const struct ppe_tunnel_encap_entry *entry);
++int ppe_tunnel_encap_clear(struct ppe_device *ppe_dev, int tunnel_id);
++int ppe_tunnel_vp_bind(struct ppe_device *ppe_dev, int vp, int tunnel_id);
++int ppe_tunnel_vp_unbind(struct ppe_device *ppe_dev, int vp);
++int ppe_tunnel_port_l3_if_set(struct ppe_device *ppe_dev, int port,
++			      bool valid, int l3_if);
++int ppe_tunnel_l3_if_set(struct ppe_device *ppe_dev, int index, u32 value);
++int ppe_tunnel_key_set(struct ppe_device *ppe_dev, int type,
++		       const u32 key[PPE_TUNNEL_KEY_WORDS]);
+ 
+ #endif

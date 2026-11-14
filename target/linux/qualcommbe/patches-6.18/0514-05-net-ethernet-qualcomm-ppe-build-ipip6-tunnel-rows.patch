@@ -1,0 +1,236 @@
+From: Kenneth Kasilag <kenneth@kasilag.me>
+Date: Wed, 15 Jul 2026 10:00:00 +0800
+Subject: [PATCH] net: ethernet: qualcomm: ppe: build IPIP6 tunnel rows
+
+Encode the vendor IPIP6 decapsulation key and encapsulation template,
+configure global key generation, and expose a verified decapsulation
+enable operation.  Keeping enable separate lets the object transaction
+publish lookup only after every dependent row has verified.
+
+Signed-off-by: Kenneth Kasilag <kenneth@kasilag.me>
+
+--- a/drivers/net/ethernet/qualcomm/ppe/ppe_regs.h
++++ b/drivers/net/ethernet/qualcomm/ppe/ppe_regs.h
+@@ -767,6 +767,10 @@
+ #define PPE_TUNNEL_TBL_RD_OP_ADDR		0x300054
+ #define PPE_TUNNEL_TBL_RD_OP_DATA_ADDR		0x300058
+ #define PPE_TUNNEL_TBL_RD_RESULT_ADDR		0x3000a0
++#define PPE_TUNNEL_TBL_ADDR			0x304000
++#define PPE_TUNNEL_TBL_INC			0x40
++#define PPE_TUNNEL_TBL_DECAP_EN_WORD		11
++#define PPE_TUNNEL_TBL_DECAP_EN			BIT(20)
+ #define PPE_TUNNEL_OP_TYPE			GENMASK(2, 0)
+ #define PPE_TUNNEL_OP_HASH_BLOCK_BITMAP		GENMASK(4, 3)
+ #define PPE_TUNNEL_OP_MODE			BIT(5)
+--- a/drivers/net/ethernet/qualcomm/ppe/ppe_tunnel.c
++++ b/drivers/net/ethernet/qualcomm/ppe/ppe_tunnel.c
+@@ -9,8 +9,10 @@
+ 
+ #include <linux/bitfield.h>
+ #include <linux/device.h>
++#include <linux/etherdevice.h>
+ #include <linux/errno.h>
+ #include <linux/if_ether.h>
++#include <linux/ipv6.h>
+ #include <linux/kernel.h>
+ #include <linux/regmap.h>
+ 
+@@ -25,6 +27,84 @@ enum ppe_tunnel_op {
+ 	PPE_TUNNEL_OP_GET,
+ };
+ 
++#define PPE_TUNNEL_KEY_IPIP6		7
++
++static void ppe_tunnel_bits_set(u32 *words, unsigned int offset,
++				unsigned int width, u32 value)
++{
++	while (width) {
++		unsigned int bit = offset % 32;
++		unsigned int count = min(width, 32 - bit);
++		u32 mask = GENMASK(count - 1, 0);
++
++		words[offset / 32] &= ~(mask << bit);
++		words[offset / 32] |= (value & mask) << bit;
++		if (count < 32)
++			value >>= count;
++		offset += count;
++		width -= count;
++	}
++}
++
++static void ppe_tunnel_ipv6_set(u32 *words, unsigned int offset,
++				const struct in6_addr *addr)
++{
++	int i;
++
++	for (i = 3; i >= 0; i--) {
++		ppe_tunnel_bits_set(words, offset, 32,
++				    be32_to_cpu(addr->s6_addr32[i]));
++		offset += 32;
++	}
++}
++
++void ppe_tunnel_ipip6_decap_build(struct ppe_tunnel_decap_entry *entry,
++				  const struct ppe_tunnel_ipip6 *ipip6)
++{
++	memset(entry, 0, sizeof(*entry));
++	ppe_tunnel_bits_set(entry->word, 0, 1, 1);
++	ppe_tunnel_bits_set(entry->word, 1, 1, 1);
++	ppe_tunnel_bits_set(entry->word, 2, 4, PPE_TUNNEL_KEY_IPIP6);
++	ppe_tunnel_bits_set(entry->word, 6, 8, IPPROTO_IPIP);
++	ppe_tunnel_ipv6_set(entry->word, 14, &ipip6->remote);
++	ppe_tunnel_ipv6_set(entry->word, 142, &ipip6->local);
++	ppe_tunnel_bits_set(entry->word, 369, 2, 0);
++	ppe_tunnel_bits_set(entry->word, 391, 1, 1);
++	ppe_tunnel_bits_set(entry->word, 392, 1, 0);
++	ppe_tunnel_bits_set(entry->word, 393, 8, ipip6->vp);
++	ppe_tunnel_bits_set(entry->word, 401, 7, ipip6->l3_if);
++	ppe_tunnel_bits_set(entry->word, 436, 1, 1);
++}
++
++void ppe_tunnel_ipip6_encap_build(struct ppe_tunnel_encap_entry *entry,
++				  const struct ppe_tunnel_ipip6 *ipip6)
++{
++	struct ipv6hdr ip6 = {
++		.version = 6,
++		.nexthdr = IPPROTO_IPIP,
++		.hop_limit = ipip6->hop_limit,
++		.saddr = ipip6->local,
++		.daddr = ipip6->remote,
++	};
++	struct ethhdr eth = {};
++	u8 *header = (u8 *)entry->header;
++
++	memset(entry, 0, sizeof(*entry));
++	ether_addr_copy(eth.h_source, ipip6->local_mac);
++	ether_addr_copy(eth.h_dest, ipip6->remote_mac);
++	eth.h_proto = htons(ETH_P_IPV6);
++	memcpy(header, &eth, sizeof(eth));
++	memcpy(header + sizeof(eth), &ip6, sizeof(ip6));
++
++	ppe_tunnel_bits_set(entry->control, 10, 8,
++			    sizeof(eth) + sizeof(ip6));
++	ppe_tunnel_bits_set(entry->control, 23, 6, sizeof(eth));
++	ppe_tunnel_bits_set(entry->control, 30, 1, 1);
++	ppe_tunnel_bits_set(entry->control, 32, 7,
++			    sizeof(eth) + sizeof(ip6));
++	ppe_tunnel_bits_set(entry->control, 66, 2, 1);
++}
++
+ static int ppe_tunnel_check(struct ppe_device *ppe_dev)
+ {
+ 	if (!ppe_dev->variant->has_tunnel_engine)
+@@ -170,6 +250,39 @@ int ppe_tunnel_decap_del(struct ppe_devi
+ 	return ret;
+ }
+ 
++int ppe_tunnel_decap_enable(struct ppe_device *ppe_dev, int index, bool enable)
++{
++	u32 reg, old, val, verify;
++	int ret;
++
++	if (index < 0 || index >= PPE_TUNNEL_ENTRIES)
++		return -EINVAL;
++	ret = ppe_tunnel_check(ppe_dev);
++	if (ret)
++		return ret;
++
++	reg = PPE_TUNNEL_TBL_ADDR + index * PPE_TUNNEL_TBL_INC +
++	      PPE_TUNNEL_TBL_DECAP_EN_WORD * sizeof(u32);
++	mutex_lock(&ppe_dev->tunnel_lock);
++	ret = regmap_read(ppe_dev->regmap, reg, &old);
++	if (ret)
++		goto out;
++	val = enable ? old | PPE_TUNNEL_TBL_DECAP_EN :
++		       old & ~PPE_TUNNEL_TBL_DECAP_EN;
++	ret = regmap_write(ppe_dev->regmap, reg, val);
++	if (!ret)
++		ret = regmap_read(ppe_dev->regmap, reg, &verify);
++	if (!ret && verify != val)
++		ret = -EIO;
++	if (ret && regmap_write(ppe_dev->regmap, reg, old))
++		dev_err(ppe_dev->dev,
++			"failed to restore tunnel decap %d enable\n", index);
++out:
++	mutex_unlock(&ppe_dev->tunnel_lock);
++
++	return ret;
++}
++
+ static int ppe_tunnel_encap_restore(struct ppe_device *ppe_dev, int tunnel_id,
+ 				    const u32 *control, const u32 *header)
+ {
+@@ -627,11 +740,25 @@ out:
+ 
+ int ppe_tunnel_hw_init(struct ppe_device *ppe_dev)
+ {
++	u32 key[PPE_TUNNEL_KEY_WORDS] = {
++		GENMASK(2, 0),
++		0,
++		FIELD_PREP(GENMASK(15, 12), PPE_TUNNEL_KEY_IPIP6),
++	};
++	int ret;
++
+ 	mutex_init(&ppe_dev->tunnel_lock);
+ 	mutex_init(&ppe_dev->tunnel_state_lock);
+ 	bitmap_zero(ppe_dev->tunnel_id_map, PPE_TUNNEL_ID_COUNT);
+ 	bitmap_zero(ppe_dev->tunnel_l3_if_map, PPE_TUNNEL_L3_IF_COUNT);
+ 	bitmap_zero(ppe_dev->tunnel_vp_map, PPE_TUNNEL_VP_COUNT);
+ 
++	if (!ppe_dev->variant->has_tunnel_engine)
++		return 0;
++
++	ret = ppe_tunnel_key_set(ppe_dev, PPE_TUNNEL_KEY_IPIP6, key);
++	if (ret)
++		return ret;
++
+ 	return 0;
+ }
+--- a/drivers/net/ethernet/qualcomm/ppe/ppe_tunnel.h
++++ b/drivers/net/ethernet/qualcomm/ppe/ppe_tunnel.h
+@@ -6,12 +6,15 @@
+ #ifndef __PPE_TUNNEL_H__
+ #define __PPE_TUNNEL_H__
+ 
++#include <linux/if_ether.h>
++#include <linux/in6.h>
+ #include <linux/types.h>
+ 
+ #define PPE_TUNNEL_DECAP_WORDS		14
+ #define PPE_TUNNEL_ENCAP_CTRL_WORDS	3
+ #define PPE_TUNNEL_ENCAP_HEADER_WORDS	32
+ #define PPE_TUNNEL_KEY_WORDS		3
++#define PPE_TUNNEL_L3_IPIP6_VALUE	0x5f
+ 
+ /* Keep tunnel VPs disjoint from the wireless VP pool (64..71). */
+ #define PPE_TUNNEL_VP_BASE		72
+@@ -27,6 +30,16 @@ struct ppe_tunnel_encap_entry {
+ 	u32 header[PPE_TUNNEL_ENCAP_HEADER_WORDS];
+ };
+ 
++struct ppe_tunnel_ipip6 {
++	struct in6_addr local;
++	struct in6_addr remote;
++	u8 local_mac[ETH_ALEN];
++	u8 remote_mac[ETH_ALEN];
++	u8 hop_limit;
++	u8 vp;
++	u8 l3_if;
++};
++
+ int ppe_tunnel_hw_init(struct ppe_device *ppe_dev);
+ int ppe_tunnel_decap_add(struct ppe_device *ppe_dev,
+ 			 const struct ppe_tunnel_decap_entry *entry,
+@@ -34,6 +47,12 @@ int ppe_tunnel_decap_add(struct ppe_devi
+ int ppe_tunnel_decap_get(struct ppe_device *ppe_dev, int index,
+ 			 struct ppe_tunnel_decap_entry *entry);
+ int ppe_tunnel_decap_del(struct ppe_device *ppe_dev, int index);
++int ppe_tunnel_decap_enable(struct ppe_device *ppe_dev, int index,
++			    bool enable);
++void ppe_tunnel_ipip6_decap_build(struct ppe_tunnel_decap_entry *entry,
++				  const struct ppe_tunnel_ipip6 *ipip6);
++void ppe_tunnel_ipip6_encap_build(struct ppe_tunnel_encap_entry *entry,
++				  const struct ppe_tunnel_ipip6 *ipip6);
+ int ppe_tunnel_encap_set(struct ppe_device *ppe_dev, int tunnel_id,
+ 			 const struct ppe_tunnel_encap_entry *entry);
+ int ppe_tunnel_encap_clear(struct ppe_device *ppe_dev, int tunnel_id);

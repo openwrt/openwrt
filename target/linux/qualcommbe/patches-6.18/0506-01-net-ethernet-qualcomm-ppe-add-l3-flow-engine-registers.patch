@@ -1,0 +1,240 @@
+From: Kenneth Kasilag <kenneth@kasilag.me>
+Date: Sat, 04 Jul 2026 00:00:00 +0000
+Subject: [PATCH] net: ethernet: qualcomm: ppe: add L3 flow engine registers
+
+Add the register and table layouts of the PPE L3 flow engine, taken
+from the SSDK: the router MAC table, the ingress and egress L3
+interface tables, the public NAT address table, the next hop table,
+the flow and host tables with their independent operation registers, the
+per-flow hit counters, and the flow control registers holding the
+lookup enable and the hardware flow aging timer.
+
+The direct IPv4 flow-table view is a six-word row within its eight-word
+stride, matching the SSDK table accessor used for validity updates.
+The indirect operation-data window is twelve words, and FLOW_CTRL1 has
+separate IPv4-unicast, IPv6-unicast and multicast rows.
+
+Signed-off-by: Kenneth Kasilag <kenneth@kasilag.me>
+---
+--- a/drivers/net/ethernet/qualcomm/ppe/ppe_regs.h
++++ b/drivers/net/ethernet/qualcomm/ppe/ppe_regs.h
+@@ -207,6 +207,15 @@
+ #define PPE_EG_VLAN_MODE_UNMODIFIED		2
+ #define PPE_EG_VLAN_MODE_UNTOUCHED		3
+ 
++/* Egress L3 interfaces, providing the source MAC rewrite of routed
++ * packets. Indexed like the ingress L3 interface table.
++ */
++#define PPE_EG_L3_IF_TBL_ADDR			0x23000
++#define PPE_EG_L3_IF_TBL_ENTRIES		256
++#define PPE_EG_L3_IF_TBL_INC			0x10
++#define PPE_EG_L3_IF_W0_MAC_ADDR_LO		GENMASK(31, 0)
++#define PPE_EG_L3_IF_W1_MAC_ADDR_HI		GENMASK(15, 0)
++
+ /* PPE service code configuration on the egress direction. */
+ #define PPE_EG_SERVICE_TBL_ADDR			0x43000
+ #define PPE_EG_SERVICE_TBL_ENTRIES		256
+@@ -514,6 +523,188 @@
+ #define PPE_IPR_PKT_CNT_TBL_ENTRIES		8
+ #define PPE_IPR_PKT_CNT_TBL_INC			4
+ 
++/* Router MAC addresses. Packets with a matching destination MAC take the
++ * L3 route path, including the flow table lookup.
++ */
++#define PPE_MY_MAC_TBL_ADDR			0x200000
++#define PPE_MY_MAC_TBL_ENTRIES			8
++#define PPE_MY_MAC_TBL_INC			0x8
++#define PPE_MY_MAC_W0_MAC_ADDR_LO		GENMASK(31, 0)
++#define PPE_MY_MAC_W1_MAC_ADDR_HI		GENMASK(15, 0)
++#define PPE_MY_MAC_W1_VALID			BIT(16)
++
++/* Global L3 failure policy programmed by the vendor PPE probe. */
++#define PPE_L3_ROUTE_CTRL_ADDR			0x200480
++#define PPE_L3_ROUTE_CTRL_IP_MRU_FAIL		GENMASK(1, 0)
++#define PPE_L3_ROUTE_CTRL_IP_MRU_DEACCEL	BIT(2)
++#define PPE_L3_ROUTE_CTRL_IP_MTU_FAIL		GENMASK(4, 3)
++#define PPE_L3_ROUTE_CTRL_IP_MTU_DEACCEL	BIT(5)
++#define PPE_L3_ROUTE_CTRL_IP_MTU_DF_FAIL	GENMASK(7, 6)
++
++#define PPE_L3_ROUTE_CTRL_EXT_ADDR		0x200494
++#define PPE_L3_ROUTE_CTRL_EXT_ROUTE_MISMATCH	GENMASK(1, 0)
++#define PPE_L3_ROUTE_CTRL_EXT_HOST_HASH_MODE_0	GENMASK(4, 3)
++#define PPE_L3_ROUTE_CTRL_EXT_HOST_HASH_MODE_1	GENMASK(6, 5)
++
++/* Global control of the L3 flow engine. The aging timer applies to the
++ * age field of the flow entries; it is left disabled, the flow table
++ * users manage the entry lifetime themselves.
++ */
++#define PPE_FLOW_CTRL0_ADDR			0x2004a8
++#define PPE_FLOW_CTRL0_FLOW_EN			BIT(0)
++#define PPE_FLOW_CTRL0_AGE_TIMER		GENMASK(20, 5)
++#define PPE_FLOW_CTRL0_AGE_TIMER_UNIT		GENMASK(22, 21)
++
++/* Per-packet-type key selection: IPv4 unicast, IPv6 unicast and
++ * multicast. Each register holds five direction groups, and the key-select
++ * bit of each chooses the source (0) or destination (1) IP as the lookup key.
++ */
++#define PPE_FLOW_CTRL1_ADDR			0x2004bc
++#define PPE_FLOW_CTRL1_ENTRIES			3
++#define PPE_FLOW_CTRL1_INC			0x4
++#define PPE_FLOW_CTRL1_KEY_SEL			(BIT(5) | BIT(11) | \
++						 BIT(17) | BIT(23) | \
++						 BIT(29))
++
++/* Public IP addresses used as the translated source of SNAT flows,
++ * referenced by index from the next hop entries.
++ */
++#define PPE_PUB_IP_TBL_ADDR			0x2004d8
++#define PPE_PUB_IP_TBL_ENTRIES			16
++#define PPE_PUB_IP_TBL_INC			4
++
++/* Flow and host tables have independent hash-operation engines. */
++#define PPE_FLOW_TBL_OP_ADDR			0x200528
++#define PPE_FLOW_OP_CMD_ID			GENMASK(3, 0)
++#define PPE_FLOW_OP_TYPE			GENMASK(7, 5)
++#define PPE_FLOW_OP_HASH_BLOCK_BITMAP		GENMASK(9, 8)
++#define PPE_FLOW_OP_MODE			BIT(10)
++#define PPE_FLOW_OP_ENTRY_INDEX			GENMASK(23, 12)
++#define PPE_FLOW_TBL_OP_DATA_ADDR		0x200550
++#define PPE_FLOW_TBL_OP_DATA_WORDS		12
++#define PPE_FLOW_TBL_OP_RSLT_ADDR		0x2005c4
++#define PPE_FLOW_OP_RSLT_CMD_ID			GENMASK(3, 0)
++#define PPE_FLOW_OP_RSLT_FAIL			BIT(4)
++#define PPE_FLOW_OP_RSLT_ENTRY_INDEX		GENMASK(16, 5)
++#define PPE_FLOW_OP_RSLT_VALID_CNT		GENMASK(20, 17)
++
++#define PPE_HOST_TBL_OP_ADDR			0x200724
++#define PPE_HOST_OP_CMD_ID			GENMASK(3, 0)
++#define PPE_HOST_OP_TYPE			GENMASK(7, 5)
++#define PPE_HOST_OP_HASH_BLOCK_BITMAP		GENMASK(9, 8)
++#define PPE_HOST_OP_MODE			BIT(10)
++#define PPE_HOST_OP_ENTRY_INDEX			GENMASK(23, 11)
++#define PPE_HOST_TBL_OP_DATA_ADDR		0x200738
++#define PPE_HOST_TBL_OP_DATA_WORDS		10
++#define PPE_HOST_TBL_OP_RSLT_ADDR		0x200770
++#define PPE_HOST_OP_RSLT_CMD_ID			GENMASK(3, 0)
++#define PPE_HOST_OP_RSLT_FAIL			BIT(4)
++#define PPE_HOST_OP_RSLT_ENTRY_INDEX		GENMASK(17, 5)
++#define PPE_HOST_OP_RSLT_VALID_CNT		GENMASK(21, 18)
++
++/* Ingress L3 interfaces, the per-interface route configuration. */
++#define PPE_IN_L3_IF_TBL_ADDR			0x206000
++#define PPE_IN_L3_IF_TBL_ENTRIES		256
++#define PPE_IN_L3_IF_TBL_INC			0x10
++#define PPE_IN_L3_IF_W0_MRU			GENMASK(13, 0)
++#define PPE_IN_L3_IF_W0_MTU			GENMASK(27, 14)
++#define PPE_IN_L3_IF_W0_TTL_DEC_BYPASS		BIT(28)
++#define PPE_IN_L3_IF_W0_IPV4_UC_ROUTE_EN	BIT(29)
++#define PPE_IN_L3_IF_W0_IPV6_UC_ROUTE_EN	BIT(30)
++#define PPE_IN_L3_IF_W0_ICMP_TRIGGER_EN		BIT(31)
++#define PPE_IN_L3_IF_W1_TTL_EXCEED_CMD		GENMASK(1, 0)
++#define PPE_IN_L3_IF_W1_TTL_EXCEED_DEACCEL	BIT(2)
++#define PPE_IN_L3_IF_W1_MAC_BITMAP		GENMASK(10, 3)
++#define PPE_IN_L3_IF_W1_PPPOE_EN		BIT(11)
++#define PPE_IN_L3_IF_W1_DMAC_CHECK_DIS		BIT(12)
++#define PPE_IN_L3_IF_W1_MRU_IPV6		GENMASK(31, 18)
++#define PPE_IN_L3_IF_W2_MTU_IPV6		GENMASK(13, 0)
++#define PPE_IN_L3_IF_W2_UDP_CSM0_CMD		GENMASK(15, 14)
++#define PPE_IN_L3_IF_UDP_CSM0_MAPT_RECALCULATE	2
++
++/* Host table entries hold the second IP address of a flow, referenced
++ * by index from the flow entries. The destination info field uses the
++ * same encoding as the FDB entries.
++ */
++#define PPE_HOST_TBL_ADDR			0x220000
++#define PPE_HOST_TBL_ENTRIES			6144
++#define PPE_HOST_TBL_INC			0x10
++#define PPE_HOST_W0_VALID			BIT(0)
++#define PPE_HOST_W0_KEY_TYPE			GENMASK(2, 1)
++#define PPE_HOST_W0_FWD_CMD			GENMASK(4, 3)
++#define PPE_HOST_W0_DST_INFO			GENMASK(19, 6)
++#define PPE_HOST_W0_LAN_WAN			BIT(20)
++#define PPE_HOST_W1_IP_ADDR			GENMASK(31, 0)
++
++/* L3 flow table, keyed by the hardware-hashed 5-tuple. One IP address
++ * of the tuple is inline, the other is referenced in the host table.
++ * The forward type selects the routing and NAT behavior; the next hop
++ * entry provides the egress rewrite, and the L4 port field holds the
++ * translated source port of SNAT flows and the translated destination
++ * port of DNAT flows.
++ */
++#define PPE_FLOW_TBL_ADDR			0x240000
++#define PPE_FLOW_TBL_ENTRIES			4096
++#define PPE_FLOW_TBL_INC			0x20
++#define PPE_FLOW_TBL_WORDS			6
++#define PPE_FLOW_W0_VALID			BIT(0)
++#define PPE_FLOW_W0_ENTRY_TYPE			BIT(1)
++#define PPE_FLOW_W0_HOST_INDEX_TYPE		BIT(2)
++#define PPE_FLOW_W0_HOST_INDEX			GENMASK(15, 3)
++#define PPE_FLOW_W0_PROTOCOL_TYPE		GENMASK(17, 16)
++#define PPE_FLOW_W0_AGE				GENMASK(19, 18)
++#define PPE_FLOW_W0_SRC_L3_IF_VALID		BIT(20)
++#define PPE_FLOW_W0_SRC_L3_IF			GENMASK(28, 21)
++#define PPE_FLOW_W0_FWD_TYPE			GENMASK(31, 29)
++#define PPE_FLOW_W1_NEXT_HOP			GENMASK(11, 0)
++#define PPE_FLOW_W1_L4_PORT			GENMASK(27, 12)
++#define PPE_FLOW_W1_DE_ACCE			BIT(28)
++#define PPE_FLOW_W1_COPY_TO_CPU			BIT(29)
++#define PPE_FLOW_W2_SERVICE_CODE		GENMASK(11, 4)
++#define PPE_FLOW_W2_IP_ADDR_LO			GENMASK(31, 12)
++#define PPE_FLOW_W3_IP_ADDR_HI			GENMASK(11, 0)
++#define PPE_FLOW_W3_L4_SPORT			GENMASK(27, 12)
++#define PPE_FLOW_W3_L4_DPORT_LO			GENMASK(31, 28)
++#define PPE_FLOW_W4_L4_DPORT_HI			GENMASK(11, 0)
++
++#define PPE_FLOW_FWD_TYPE_FORWARD		0
++#define PPE_FLOW_FWD_TYPE_SNAT			1
++#define PPE_FLOW_FWD_TYPE_DNAT			2
++#define PPE_FLOW_FWD_TYPE_ROUTE			3
++#define PPE_FLOW_FWD_TYPE_BRIDGE		4
++#define PPE_FLOW_FWD_TYPE_DROP			5
++#define PPE_FLOW_FWD_TYPE_RDT_TO_CPU		6
++
++#define PPE_FLOW_PROTOCOL_TCP			1
++#define PPE_FLOW_PROTOCOL_UDP			2
++#define PPE_FLOW_PROTOCOL_UDP_LITE		3
++
++/* Next hop entries, providing the egress port, the destination MAC
++ * rewrite, the egress L3 interface (source MAC), the egress VLAN and
++ * the translated addresses of NAT flows.
++ */
++#define PPE_NEXTHOP_TBL_ADDR			0x260000
++#define PPE_NEXTHOP_TBL_ENTRIES			2560
++#define PPE_NEXTHOP_TBL_INC			0x20
++#define PPE_NEXTHOP_W0_TYPE			BIT(0)
++#define PPE_NEXTHOP_W0_PORT			GENMASK(8, 1)
++#define PPE_NEXTHOP_W0_VSI			GENMASK(6, 1)
++#define PPE_NEXTHOP_W0_POST_L3_IF		GENMASK(16, 9)
++#define PPE_NEXTHOP_W0_STAG_FMT			BIT(18)
++#define PPE_NEXTHOP_W0_SVID			GENMASK(30, 19)
++#define PPE_NEXTHOP_W0_CTAG_FMT			BIT(31)
++#define PPE_NEXTHOP_W1_CVID			GENMASK(11, 0)
++#define PPE_NEXTHOP_W1_PUB_IP_INDEX		GENMASK(15, 12)
++#define PPE_NEXTHOP_W1_MAC_ADDR_LO		GENMASK(31, 16)
++#define PPE_NEXTHOP_W2_MAC_ADDR_HI		GENMASK(31, 0)
++#define PPE_NEXTHOP_W3_IP_ADDR_DNAT		GENMASK(31, 0)
++
++/* Per-flow hit counters, indexed like the flow table. */
++#define PPE_FLOW_CNT_TBL_ADDR			0x120000
++#define PPE_FLOW_CNT_TBL_ENTRIES		4096
++#define PPE_FLOW_CNT_TBL_INC			0x10
++#define PPE_FLOW_CNT_W2_BYTE_CNT_HI		GENMASK(7, 0)
++
+ /* L3 port configurations, which hold the VSI a port is bound to. Ingress
+  * packets are assigned to the port VSI when it is valid, otherwise the
+  * invalid-VSI forwarding configured in the L2 port table applies to them.
+@@ -521,8 +712,14 @@
+ #define PPE_L3_VP_PORT_TBL_ADDR			0x204000
+ #define PPE_L3_VP_PORT_TBL_ENTRIES		256
+ #define PPE_L3_VP_PORT_TBL_INC			0x10
++#define PPE_L3_VP_PORT_W0_L3_IF_VALID		BIT(0)
++#define PPE_L3_VP_PORT_W0_L3_IF_INDEX		GENMASK(8, 1)
+ #define PPE_L3_VP_PORT_W1_VSI_VALID		BIT(9)
+ #define PPE_L3_VP_PORT_W1_VSI			GENMASK(15, 10)
++#define PPE_L3_VP_PORT_W1_MAC_VALID		BIT(16)
++#define PPE_L3_VP_PORT_W1_MAC_DA_0		GENMASK(31, 17)
++#define PPE_L3_VP_PORT_W2_MAC_DA_1		GENMASK(31, 0)
++#define PPE_L3_VP_PORT_W3_MAC_DA_2		BIT(0)
+ 
+ #define PPE_L3_VP_PORT_SET_VSI_VALID(tbl_cfg, value)		\
+ 	FIELD_MODIFY(PPE_L3_VP_PORT_W1_VSI_VALID, (tbl_cfg) + 0x1, value)

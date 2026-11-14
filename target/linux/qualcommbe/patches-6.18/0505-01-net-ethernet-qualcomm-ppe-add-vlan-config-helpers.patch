@@ -1,0 +1,264 @@
+From: Kenneth Kasilag <kenneth@kasilag.me>
+Date: Fri, 03 Jul 2026 00:00:00 +0000
+Subject: [PATCH] net: ethernet: qualcomm: ppe: add VLAN configuration helpers
+
+Add the low level helpers for the ingress VLAN pipeline, in
+preparation for offloading VLAN-aware bridges: the per-port default
+C-VID, the per-port ingress filtering mode (the forward command on a
+translation miss), and the ingress VLAN translation rules and actions,
+which match packets by ingress port bitmap and tag format, optionally
+keyed by VLAN ID, assign a VSI, and optionally remove the C-tag for a
+routed ingress topology.
+
+Signed-off-by: Kenneth Kasilag <kenneth@kasilag.me>
+---
+--- a/drivers/net/ethernet/qualcomm/ppe/ppe_config.c
++++ b/drivers/net/ethernet/qualcomm/ppe/ppe_config.c
+@@ -1566,6 +1566,135 @@ int ppe_vsi_eg_mode_set(struct ppe_devic
+ }
+ 
+ /**
++ * ppe_port_default_cvid_set - Set the default C-VLAN ID of a PPE port
++ * @ppe_dev: PPE device
++ * @port: PPE port to configure
++ * @vid: VLAN ID assigned to packets received untagged, negative value
++ * to assign none
++ *
++ * The default VLAN ID provides the VLAN ID used when a packet received
++ * without a C-tag leaves the bridge through a tagged port.
++ *
++ * Return: 0 on success, negative error code on failure.
++ */
++int ppe_port_default_cvid_set(struct ppe_device *ppe_dev, int port, int vid)
++{
++	u32 reg = PPE_PORT_DEF_VID_ADDR + PPE_PORT_DEF_VID_INC * port;
++	u32 mask = PPE_PORT_DEF_CVID | PPE_PORT_DEF_CVID_EN;
++	u32 val = 0;
++
++	if (vid >= 0)
++		val = FIELD_PREP(PPE_PORT_DEF_CVID, vid) |
++		      PPE_PORT_DEF_CVID_EN;
++
++	return regmap_update_bits(ppe_dev->regmap, reg, mask, val);
++}
++
++/**
++ * ppe_port_vlan_ingress_filter_set - Control ingress VLAN filtering
++ * @ppe_dev: PPE device
++ * @port: PPE port to configure
++ * @enable: Drop instead of forward packets missing the translation rules
++ *
++ * With the filter enabled, packets received on the port which do not
++ * match any ingress VLAN translation rule are dropped, which implements
++ * the ingress side of VLAN filtering: member VLANs of the port have
++ * translation rules, everything else misses.
++ *
++ * Return: 0 on success, negative error code on failure.
++ */
++int ppe_port_vlan_ingress_filter_set(struct ppe_device *ppe_dev, int port,
++				     bool enable)
++{
++	u32 reg = PPE_PORT_VLAN_CONFIG_ADDR + PPE_PORT_VLAN_CONFIG_INC * port;
++	u32 val = enable ? PPE_ACTION_DROP : PPE_ACTION_FORWARD;
++
++	return regmap_update_bits(ppe_dev->regmap, reg,
++				  PPE_PORT_VLAN_CONFIG_XLT_MISS_FWD_CMD,
++				  FIELD_PREP(PPE_PORT_VLAN_CONFIG_XLT_MISS_FWD_CMD,
++					     val));
++}
++
++/**
++ * ppe_ing_xlt_rule_set - Program an ingress VLAN translation rule
++ * @ppe_dev: PPE device
++ * @index: Rule index to program
++ * @port_bitmap: Bitmap of the ingress ports the rule matches
++ * @vid: C-VLAN ID matched by the rule, or a negative value to match
++ * untagged and priority-tagged packets instead
++ * @vsi: VSI assigned to the matching packets
++ * @strip_cvid: Delete the matched C-VLAN tag after classification
++ *
++ * The rule matches single-tagged packets with the given C-VLAN ID, or
++ * untagged and priority-tagged packets when @vid is negative, received
++ * on the ports of the bitmap, and assigns them to the VSI. Routed VLAN
++ * interfaces strip the classified C-tag before L3 processing; bridge
++ * rules retain it for the VSI egress tag policy.
++ *
++ * Return: 0 on success, negative error code on failure.
++ */
++int ppe_ing_xlt_rule_set(struct ppe_device *ppe_dev, int index,
++			 unsigned int port_bitmap, int vid, int vsi,
++			 bool strip_cvid)
++{
++	u32 rule[4] = {}, action[4] = {};
++	unsigned int fmt;
++	u32 reg;
++	int ret;
++
++	/* Program the action before validating the rule. */
++	action[1] = PPE_XLT_ACTION_W1_VSI_CMD;
++	action[1] |= FIELD_PREP(PPE_XLT_ACTION_W1_VSI, vsi);
++	if (strip_cvid && vid >= 0)
++		action[0] |= FIELD_PREP(PPE_XLT_ACTION_W0_XLT_CVID_CMD,
++					PPE_XLT_VID_CMD_DELETE);
++
++	reg = PPE_XLT_ACTION_TBL_ADDR + PPE_XLT_ACTION_TBL_INC * index;
++	ret = regmap_bulk_write(ppe_dev->regmap, reg,
++				action, ARRAY_SIZE(action));
++	if (ret)
++		return ret;
++
++	rule[0] = PPE_XLT_RULE_W0_VALID;
++	rule[0] |= FIELD_PREP(PPE_XLT_RULE_W0_PORT_BITMAP, port_bitmap);
++
++	/* Match packets without an S-tag. */
++	rule[0] |= FIELD_PREP(PPE_XLT_RULE_W0_SKEY_FMT, PPE_XLT_FMT_UNTAGGED);
++
++	if (vid >= 0) {
++		fmt = PPE_XLT_FMT_TAGGED;
++		rule[1] |= PPE_XLT_RULE_W1_CKEY_VID_INCL;
++		rule[1] |= FIELD_PREP(PPE_XLT_RULE_W1_CKEY_VID, vid);
++	} else {
++		fmt = PPE_XLT_FMT_UNTAGGED | PPE_XLT_FMT_PRIO_TAGGED;
++	}
++
++	rule[0] |= FIELD_PREP(PPE_XLT_RULE_W0_CKEY_FMT_LO, fmt & 0x1);
++	rule[1] |= FIELD_PREP(PPE_XLT_RULE_W1_CKEY_FMT_HI, fmt >> 1);
++
++	reg = PPE_XLT_RULE_TBL_ADDR + PPE_XLT_RULE_TBL_INC * index;
++
++	return regmap_bulk_write(ppe_dev->regmap, reg,
++				 rule, ARRAY_SIZE(rule));
++}
++
++/**
++ * ppe_ing_xlt_rule_clear - Invalidate an ingress VLAN translation rule
++ * @ppe_dev: PPE device
++ * @index: Rule index to clear
++ *
++ * Return: 0 on success, negative error code on failure.
++ */
++int ppe_ing_xlt_rule_clear(struct ppe_device *ppe_dev, int index)
++{
++	u32 rule[4] = {};
++	u32 reg = PPE_XLT_RULE_TBL_ADDR + PPE_XLT_RULE_TBL_INC * index;
++
++	return regmap_bulk_write(ppe_dev->regmap, reg,
++				 rule, ARRAY_SIZE(rule));
++}
++
++/**
+  * ppe_port_bridge_txmac_set - Enable or disable the bridge TX MAC of a port
+  * @ppe_dev: PPE device
+  * @port: PPE port to configure
+@@ -1971,6 +2100,23 @@ int ppe_fdb_port_flush(struct ppe_device
+ }
+ 
+ /**
++ * ppe_fdb_port_vsi_flush - Flush dynamic entries of a port in one VSI
++ * @ppe_dev: PPE device
++ * @port: PPE port to flush the FDB entries of
++ * @vsi: VSI to restrict the flush to
++ *
++ * Flush the dynamic entries a port learned within one VSI, used when
++ * the port leaves a single VLAN of its bridge. Static entries follow
++ * the FDB notifications of the bridge instead.
++ *
++ * Return: 0 on success, negative error code on failure.
++ */
++int ppe_fdb_port_vsi_flush(struct ppe_device *ppe_dev, int port, int vsi)
++{
++	return ppe_fdb_flush(ppe_dev, port, vsi, false);
++}
++
++/**
+  * ppe_fdb_vsi_flush - Flush all entries of a VSI from the PPE FDB
+  * @ppe_dev: PPE device
+  * @vsi: VSI to flush the FDB entries of
+--- a/drivers/net/ethernet/qualcomm/ppe/ppe_config.h
++++ b/drivers/net/ethernet/qualcomm/ppe/ppe_config.h
+@@ -329,6 +329,13 @@ int ppe_vsi_members_set(struct ppe_devic
+ 			unsigned int bc_bitmap);
+ int ppe_port_vsi_set(struct ppe_device *ppe_dev, int port, int vsi);
+ int ppe_vsi_eg_mode_set(struct ppe_device *ppe_dev, int vsi, u32 port_modes);
++int ppe_port_default_cvid_set(struct ppe_device *ppe_dev, int port, int vid);
++int ppe_port_vlan_ingress_filter_set(struct ppe_device *ppe_dev, int port,
++				     bool enable);
++int ppe_ing_xlt_rule_set(struct ppe_device *ppe_dev, int index,
++			 unsigned int port_bitmap, int vid, int vsi,
++			 bool strip_cvid);
++int ppe_ing_xlt_rule_clear(struct ppe_device *ppe_dev, int index);
+ int ppe_port_bridge_txmac_set(struct ppe_device *ppe_dev, int port,
+ 			      bool enable);
+ int ppe_port_bridge_learning_set(struct ppe_device *ppe_dev, int port,
+@@ -342,6 +349,7 @@ int ppe_fdb_entry_del(struct ppe_device
+ int ppe_fdb_entry_read(struct ppe_device *ppe_dev, int index,
+ 		       struct ppe_fdb_entry *entry, bool *valid);
+ int ppe_fdb_port_flush(struct ppe_device *ppe_dev, int port, bool static_too);
++int ppe_fdb_port_vsi_flush(struct ppe_device *ppe_dev, int port, int vsi);
+ int ppe_fdb_vsi_flush(struct ppe_device *ppe_dev, int vsi);
+ int ppe_mac_trap_set(struct ppe_device *ppe_dev, int index, const u8 *addr);
+ int ppe_mac_trap_clear(struct ppe_device *ppe_dev, int index);
+--- a/drivers/net/ethernet/qualcomm/ppe/ppe_regs.h
++++ b/drivers/net/ethernet/qualcomm/ppe/ppe_regs.h
+@@ -106,6 +106,61 @@
+ #define PPE_BM_SCH_CFG_TBL_SECOND_PORT_VALID	BIT(6)
+ #define PPE_BM_SCH_CFG_TBL_SECOND_PORT		GENMASK(11, 8)
+ 
++/* PPE per-port default VLAN IDs, assigned to packets received without
++ * the respective tag.
++ */
++#define PPE_PORT_DEF_VID_ADDR			0xf010
++#define PPE_PORT_DEF_VID_ENTRIES		8
++#define PPE_PORT_DEF_VID_INC			4
++#define PPE_PORT_DEF_SVID			GENMASK(11, 0)
++#define PPE_PORT_DEF_SVID_EN			BIT(12)
++#define PPE_PORT_DEF_CVID			GENMASK(27, 16)
++#define PPE_PORT_DEF_CVID_EN			BIT(28)
++
++/* PPE per-port ingress VLAN configurations. */
++#define PPE_PORT_VLAN_CONFIG_ADDR		0xf050
++#define PPE_PORT_VLAN_CONFIG_ENTRIES		8
++#define PPE_PORT_VLAN_CONFIG_INC		4
++#define PPE_PORT_VLAN_CONFIG_UNTAG_FLTR_CMD	BIT(2)
++#define PPE_PORT_VLAN_CONFIG_PRI_TAG_FLTR_CMD	BIT(3)
++#define PPE_PORT_VLAN_CONFIG_TAG_FLTR_CMD	BIT(4)
++#define PPE_PORT_VLAN_CONFIG_XLT_MISS_FWD_CMD	GENMASK(6, 5)
++#define PPE_PORT_VLAN_CONFIG_IN_VLAN_FLTR_CMD	BIT(7)
++
++/* Ingress VLAN translation rules. A rule matches packets by ingress port
++ * bitmap and VLAN tag format, optionally including the VLAN IDs, and
++ * applies the action of the same index in the action table below. The
++ * tag format keys are bitmaps of the tag formats to match.
++ */
++#define PPE_XLT_RULE_TBL_ADDR			0x11000
++#define PPE_XLT_RULE_TBL_ENTRIES		128
++#define PPE_XLT_RULE_TBL_INC			0x10
++#define PPE_XLT_RULE_W0_VALID			BIT(0)
++#define PPE_XLT_RULE_W0_PORT_BITMAP		GENMASK(8, 1)
++#define PPE_XLT_RULE_W0_SKEY_FMT		GENMASK(11, 9)
++#define PPE_XLT_RULE_W0_SKEY_VID_INCL		BIT(12)
++#define PPE_XLT_RULE_W0_SKEY_VID		GENMASK(24, 13)
++#define PPE_XLT_RULE_W0_CKEY_FMT_LO		BIT(31)
++#define PPE_XLT_RULE_W1_CKEY_FMT_HI		GENMASK(1, 0)
++#define PPE_XLT_RULE_W1_CKEY_VID_INCL		BIT(2)
++#define PPE_XLT_RULE_W1_CKEY_VID		GENMASK(14, 3)
++
++#define PPE_XLT_FMT_UNTAGGED			BIT(0)
++#define PPE_XLT_FMT_PRIO_TAGGED			BIT(1)
++#define PPE_XLT_FMT_TAGGED			BIT(2)
++
++/* Ingress VLAN translation actions, applied on a rule match. */
++#define PPE_XLT_ACTION_TBL_ADDR			0x13000
++#define PPE_XLT_ACTION_TBL_ENTRIES		128
++#define PPE_XLT_ACTION_TBL_INC			0x10
++#define PPE_XLT_ACTION_W0_XLT_SVID_CMD		GENMASK(2, 1)
++#define PPE_XLT_ACTION_W0_XLT_SVID		GENMASK(14, 3)
++#define PPE_XLT_ACTION_W0_XLT_CVID_CMD		GENMASK(16, 15)
++#define PPE_XLT_ACTION_W0_XLT_CVID		GENMASK(28, 17)
++#define PPE_XLT_ACTION_W1_VSI_CMD		BIT(11)
++#define PPE_XLT_ACTION_W1_VSI			GENMASK(17, 12)
++#define PPE_XLT_VID_CMD_DELETE			2
++
+ /* PPE service code configuration for the ingress direction functions,
+  * including bypass configuration for relevant PPE switch core functions
+  * such as flow entry lookup bypass.
