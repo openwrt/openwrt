@@ -1,0 +1,253 @@
+From eb4d0a218ae2061769cf7c42e675c1b325c354d3 Mon Sep 17 00:00:00 2001
+From: Henry Essinghigh <henry@essinghigh.dev>
+Date: Fri, 30 Oct 2026 00:38:47 +0000
+Subject: [PATCH] MIPS: Octeon: initialize PA-220 board hardware
+
+Release the front-port PHY reset, keep the copper ports powered up,
+configure the jack LED matrix, and assign the factory Ethernet MACs.
+Board fixups are gated by the paloaltonetworks,pa-220 device-tree
+compatible. Register the Palo Alto Networks vendor prefix.
+
+Signed-off-by: Henry Essinghigh <henry@essinghigh.dev>
+---
+ Documentation/devicetree/bindings/vendor-prefixes.yaml |   2 +
+ arch/mips/cavium-octeon/Makefile |   1 +
+ arch/mips/cavium-octeon/pa220.c  | 214 +++++++++++++++++++++++++++++++
+ 3 files changed, 217 insertions(+)
+ create mode 100644 arch/mips/cavium-octeon/pa220.c
+
+--- a/Documentation/devicetree/bindings/vendor-prefixes.yaml
++++ b/Documentation/devicetree/bindings/vendor-prefixes.yaml
+@@ -1217,6 +1217,8 @@ patternProperties:
+     description: Oxford Semiconductor, Ltd.
+   "^ozzmaker,.*":
+     description: OzzMaker
++  "^paloaltonetworks,.*":
++    description: Palo Alto Networks
+   "^panasonic,.*":
+     description: Panasonic Corporation
+   "^parade,.*":
+--- a/arch/mips/cavium-octeon/Makefile
++++ b/arch/mips/cavium-octeon/Makefile
+@@ -18,3 +18,4 @@ obj-y += executive/
+ obj-$(CONFIG_MTD)		      += flash_setup.o
+ obj-$(CONFIG_SMP)		      += smp.o
+ obj-$(CONFIG_OCTEON_ILM)	      += oct_ilm.o
++obj-y += pa220.o
+--- /dev/null
++++ b/arch/mips/cavium-octeon/pa220.c
+@@ -0,0 +1,214 @@
++// SPDX-License-Identifier: GPL-2.0
++/*
++ * Palo Alto Networks PA-220 board fixups
++ *
++ * - Release the Marvell 88E1680 octal PHY from reset (CPLD reg 5, bit 2)
++ * - Clear the 88E1680 copper power-down bit (page 0, reg 16, bit 2)
++ * - Assign port MACs from the base MAC U-Boot read from the board EEPROM
++ * - Configure the front-port jack LED matrix
++ */
++#include <linux/bits.h>
++#include <linux/delay.h>
++#include <linux/etherdevice.h>
++#include <linux/init.h>
++#include <linux/io.h>
++#include <linux/of.h>
++#include <linux/phy.h>
++#include <linux/slab.h>
++
++#include <asm/octeon/octeon.h>
++
++#define PA220_CPLD_BASE		0x1b040000
++#define PA220_CPLD_SIZE		0x10
++#define PA220_CPLD_RESET_REG	0x05
++#define PA220_CPLD_PHY_RESET	BIT(2)
++
++#define M88E1680_PHY_ID		0x01410ed0
++#define M88E1680_PHY_ID_MASK	0xfffffff0
++#define MII_MARVELL_PAGE	0x16
++#define MII_M1680_CSCR1		0x10
++#define M1680_CSCR1_PDOWN	BIT(2)
++
++/*
++ * The front-port jack LEDs are wired as the 88E1680's 4x4 LED matrix
++ * (rows = LED pins of PHY 12-15, columns = PHY 8-11). The PHY powers up in
++ * single-LED mode, so enable matrix mode (page 4 reg 27 bit 5, per the
++ * 88E1680 Rev A2 errata 4.1). Page 3 reg 16 = 0x0060: LED0 (left) on for
++ * link, LED1 (right) on for a 100/1000 link. Reg 17 = 0x4400.
++ */
++#define PA220_M1680_FIRST_ADDR	8
++#define PA220_M1680_NUM_PORTS	8
++#define M1680_PAGE_LED		3
++#define M1680_LED_FUNC		0x10
++#define M1680_LED_POL		0x11
++#define M1680_PAGE_MAC		4
++#define M1680_MAC_CTRL		0x1b
++#define M1680_MAC_CTRL_MATRIX	BIT(5)
++#define PA220_LED_FUNC_ON	0x0060
++#define PA220_LED_POL		0x4400
++
++/*
++ * Page switches must not interleave with phylib's page-0 accesses, so the
++ * whole sequence runs under the MDIO bus lock.
++ */
++static void pa220_m1680_leds(struct mii_bus *bus, int addr)
++{
++	int val;
++
++	mutex_lock(&bus->mdio_lock);
++	__mdiobus_write(bus, addr, MII_MARVELL_PAGE, M1680_PAGE_MAC);
++	val = __mdiobus_read(bus, addr, M1680_MAC_CTRL);
++	if (val >= 0)
++		__mdiobus_write(bus, addr, M1680_MAC_CTRL,
++				val | M1680_MAC_CTRL_MATRIX);
++
++	__mdiobus_write(bus, addr, MII_MARVELL_PAGE, M1680_PAGE_LED);
++	__mdiobus_write(bus, addr, M1680_LED_FUNC,
++			PA220_LED_FUNC_ON);
++	__mdiobus_write(bus, addr, M1680_LED_POL, PA220_LED_POL);
++
++	__mdiobus_write(bus, addr, MII_MARVELL_PAGE, 0);
++	mutex_unlock(&bus->mdio_lock);
++}
++
++static void pa220_m1680_leds_all(struct mii_bus *bus)
++{
++	int a;
++
++	for (a = PA220_M1680_FIRST_ADDR;
++	     a < PA220_M1680_FIRST_ADDR + PA220_M1680_NUM_PORTS; a++)
++		pa220_m1680_leds(bus, a);
++}
++
++static int pa220_m88e1680_fixup(struct phy_device *phydev)
++{
++	static bool matrix_done;
++	struct mii_bus *bus = phydev->mdio.bus;
++	int addr = phydev->mdio.addr;
++	int val, ret = 0;
++
++	/*
++	 * The LED matrix is shared by all eight ports, so set it up on every
++	 * 88E1680 port the first time any of them is initialised.
++	 */
++	if (!matrix_done) {
++		pa220_m1680_leds_all(bus);
++		matrix_done = true;
++	}
++
++	phy_write(phydev, MII_MARVELL_PAGE, 0);
++
++	val = phy_read(phydev, MII_M1680_CSCR1);
++	if (val < 0)
++		return val;
++
++	if (val & M1680_CSCR1_PDOWN) {
++		phy_write(phydev, MII_M1680_CSCR1, val & ~M1680_CSCR1_PDOWN);
++		/* A soft reset applies the change */
++		ret = genphy_soft_reset(phydev);
++	}
++
++	/* This port's own LED setup, after any reset */
++	pa220_m1680_leds(bus, addr);
++
++	return ret;
++}
++
++/*
++ * Palo Alto numbers the MACs from the EEPROM base: front ports 1-8 get
++ * base+0..7 and MGT gets base+8 (same as PanOS).
++ */
++#define PA220_NUM_MACS		9
++
++static int __init pa220_port_mac_index(struct device_node *port)
++{
++	struct device_node *iface = of_get_parent(port);
++	u32 iface_reg, port_reg;
++	int idx = -1;
++
++	if (iface && !of_property_read_u32(iface, "reg", &iface_reg) &&
++	    !of_property_read_u32(port, "reg", &port_reg)) {
++		if (iface_reg <= 1 && port_reg < 4)
++			idx = iface_reg * 4 + port_reg;
++		else if (iface_reg == 4 && port_reg == 0)
++			idx = 8;
++	}
++	of_node_put(iface);
++
++	return idx;
++}
++
++static void __init pa220_set_port_macs(void)
++{
++	struct device_node *np;
++	u8 base[ETH_ALEN];
++	int count;
++
++	memcpy(base, octeon_bootinfo->mac_addr_base, ETH_ALEN);
++	count = octeon_bootinfo->mac_addr_count;
++
++	if (!is_valid_ether_addr(base) || count < PA220_NUM_MACS) {
++		pr_warn("PA-220: no usable MAC base from bootloader (%pM, count %d), random MACs\n",
++			base, count);
++		return;
++	}
++
++	for_each_compatible_node(np, NULL, "cavium,octeon-3860-pip-port") {
++		struct property *prop;
++		int idx;
++
++		if (!of_device_is_available(np))
++			continue;
++
++		idx = pa220_port_mac_index(np);
++		if (idx < 0)
++			continue;
++
++		prop = kzalloc(sizeof(*prop) + ETH_ALEN, GFP_KERNEL);
++		if (!prop) {
++			of_node_put(np);
++			return;
++		}
++		prop->name = kstrdup("local-mac-address", GFP_KERNEL);
++		if (!prop->name) {
++			kfree(prop);
++			of_node_put(np);
++			return;
++		}
++		prop->value = prop + 1;
++		prop->length = ETH_ALEN;
++		u64_to_ether_addr(ether_addr_to_u64(base) + idx, prop->value);
++
++		of_update_property(np, prop);
++	}
++}
++
++static int __init pa220_board_init(void)
++{
++	void __iomem *cpld;
++	u8 reset;
++
++	if (!of_machine_is_compatible("paloaltonetworks,pa-220"))
++		return 0;
++
++	cpld = ioremap(PA220_CPLD_BASE, PA220_CPLD_SIZE);
++	if (!cpld) {
++		pr_err("PA-220: failed to map CPLD\n");
++		return -ENOMEM;
++	}
++
++	reset = readb(cpld + PA220_CPLD_RESET_REG);
++	if (reset & PA220_CPLD_PHY_RESET) {
++		writeb(reset & ~PA220_CPLD_PHY_RESET,
++		       cpld + PA220_CPLD_RESET_REG);
++		msleep(50);
++	}
++	iounmap(cpld);
++
++	phy_register_fixup_for_uid(M88E1680_PHY_ID, M88E1680_PHY_ID_MASK,
++				   pa220_m88e1680_fixup);
++
++	pa220_set_port_macs();
++	return 0;
++}
++arch_initcall(pa220_board_init);

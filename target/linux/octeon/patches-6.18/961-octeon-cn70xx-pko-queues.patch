@@ -1,0 +1,62 @@
+From 2d25527fc43d9a2ad3fc9b0c99405d4c3889d0a2 Mon Sep 17 00:00:00 2001
+From: Henry Essinghigh <henry@essinghigh.dev>
+Date: Fri, 30 Oct 2026 12:00:00 +0000
+Subject: [PATCH] MIPS: Octeon: initialize CN70XX PKO queue resources
+
+CN70XX has 256 output queues and supports the queue-memory modes used
+by later PKO implementations. Initialize every queue and select a mode
+covering all configured interfaces.
+
+Compute the highest queue across interfaces: AGL uses port 24 but is
+listed after loop ports 32-35 on CN70XX.
+
+Signed-off-by: Henry Essinghigh <henry@essinghigh.dev>
+---
+ arch/mips/cavium-octeon/executive/cvmx-pko.c | 22 ++++++++++++++------
+ arch/mips/include/asm/octeon/cvmx-pko.h      |  3 ++-
+ 2 files changed, 18 insertions(+), 7 deletions(-)
+
+--- a/arch/mips/cavium-octeon/executive/cvmx-pko.c
++++ b/arch/mips/cavium-octeon/executive/cvmx-pko.c
+@@ -208,13 +208,23 @@ void cvmx_pko_initialize_global(void)
+ 	 */
+ 	if (OCTEON_IS_MODEL(OCTEON_CN38XX) || OCTEON_IS_MODEL(OCTEON_CN58XX)
+ 	    || OCTEON_IS_MODEL(OCTEON_CN56XX)
+-	    || OCTEON_IS_MODEL(OCTEON_CN52XX)) {
++	    || OCTEON_IS_MODEL(OCTEON_CN52XX)
++	    || OCTEON_IS_MODEL(OCTEON_CN70XX)) {
+ 		int num_interfaces = cvmx_helper_get_number_of_interfaces();
+-		int last_port =
+-		    cvmx_helper_get_last_ipd_port(num_interfaces - 1);
+-		int max_queues =
+-		    cvmx_pko_get_base_queue(last_port) +
+-		    cvmx_pko_get_num_queues(last_port);
++		int max_queues = 0;
++		int interface;
++
++		/* AGL port 24 follows loop ports 32-35 on CN70XX. */
++		for (interface = 0; interface < num_interfaces; interface++) {
++			int last_port;
++
++			if (!cvmx_helper_ports_on_interface(interface))
++				continue;
++			last_port = cvmx_helper_get_last_ipd_port(interface);
++			max_queues = max_t(int, max_queues,
++				cvmx_pko_get_base_queue(last_port) +
++				cvmx_pko_get_num_queues(last_port));
++		}
+ 		if (OCTEON_IS_MODEL(OCTEON_CN38XX)) {
+ 			if (max_queues <= 32)
+ 				cvmx_write_csr(CVMX_PKO_REG_QUEUE_MODE, 2);
+--- a/arch/mips/include/asm/octeon/cvmx-pko.h
++++ b/arch/mips/include/asm/octeon/cvmx-pko.h
+@@ -72,7 +72,8 @@
+ 	OCTEON_IS_MODEL(OCTEON_CN3010) || OCTEON_IS_MODEL(OCTEON_CN3005) || \
+ 	OCTEON_IS_MODEL(OCTEON_CN50XX)) ? 32 : \
+ 		(OCTEON_IS_MODEL(OCTEON_CN58XX) || \
+-		OCTEON_IS_MODEL(OCTEON_CN56XX)) ? 256 : 128)
++		OCTEON_IS_MODEL(OCTEON_CN56XX) || \
++		OCTEON_IS_MODEL(OCTEON_CN70XX)) ? 256 : 128)
+ #define CVMX_PKO_NUM_OUTPUT_PORTS	40
+ /* use this for queues that are not used */
+ #define CVMX_PKO_MEM_QUEUE_PTRS_ILLEGAL_PID 63

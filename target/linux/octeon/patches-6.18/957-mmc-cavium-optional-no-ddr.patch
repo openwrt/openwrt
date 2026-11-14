@@ -1,0 +1,32 @@
+From 7d5fd6bf25f6dfcd9701fa1dde941fd26149ccb8 Mon Sep 17 00:00:00 2001
+From: Henry Essinghigh <henry@essinghigh.dev>
+Date: Fri, 30 Oct 2026 00:38:47 +0000
+Subject: [PATCH] mmc: cavium: allow disabling DDR52 via "cavium,no-ddr"
+
+The PA-220 eMMC stalls with "Bad status ... before command write" after
+sustained reads in DDR52 mode. Let a slot opt out of DDR with the DT
+property "cavium,no-ddr" and run high-speed SDR instead.
+
+Signed-off-by: Henry Essinghigh <henry@essinghigh.dev>
+---
+ drivers/mmc/host/cavium.c | 9 ++++++++-
+ 1 file changed, 8 insertions(+), 1 deletion(-)
+
+--- a/drivers/mmc/host/cavium.c
++++ b/drivers/mmc/host/cavium.c
+@@ -1036,7 +1036,14 @@ int cvm_mmc_of_slot_probe(struct device
+ 	 * Disable bounce buffers for max_segs = 1
+ 	 */
+ 	mmc->caps |= MMC_CAP_MMC_HIGHSPEED | MMC_CAP_SD_HIGHSPEED |
+-		     MMC_CAP_CMD23 | MMC_CAP_POWER_OFF_CARD | MMC_CAP_3_3V_DDR;
++		     MMC_CAP_CMD23 | MMC_CAP_POWER_OFF_CARD;
++
++	/*
++	 * Some boards (e.g. the Palo Alto PA-220) are not reliable in DDR52
++	 * mode under sustained load; "cavium,no-ddr" keeps them on SDR.
++	 */
++	if (!of_property_read_bool(dev->of_node, "cavium,no-ddr"))
++		mmc->caps |= MMC_CAP_3_3V_DDR;
+ 
+ 	if (host->use_sg)
+ 		mmc->max_segs = 16;
