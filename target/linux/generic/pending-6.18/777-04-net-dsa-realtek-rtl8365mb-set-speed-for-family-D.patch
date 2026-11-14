@@ -1,0 +1,187 @@
+From 5096b2c5346fc731855c88682b705307a818b5bf Mon Sep 17 00:00:00 2001
+From: Mieczyslaw Nalewaj <namiltd@yahoo.com>
+Date: Wed, 22 Jul 2026 22:47:26 +0200
+Subject: [PATCH net-next v10 04/12] net: dsa: realtek: rtl8365mb: set speed
+ for family D
+
+On family C hardware, forcing a 2.5 Gbps link speed requires relying
+strictly on the HSGMII SerDes configuration block, while forcing a dummy
+1 Gbps value inside the standard digital interface register. Family D
+introduces a dedicated hardware link speed value (5) for 2500M. The speed
+bitfield width has been expanded to 3 bits, splitting the most significant
+bit into a new separate register field (FORCE_SPEED2), which maps directly
+to a distinct per-port digital interface force layout.
+
+On family D the forced-mode configuration (link, duplex, pause, speed)
+is written to a per-port register at 0x12c0 + port instead of the
+per-extint register. The bit positions of TXPAUSE, RXPAUSE, LINK, DUPLEX
+and the low two speed bits are the same as on family C; the upper speed
+bits go to bits 13:12 (FORCE_SPEED2), so FORCE_EN (bit 12 on family C)
+is not set. A second per-port register at 0x12c8 + port enables the
+forced mode: the vendor RTL8367D API writes 0xFFFF there when the MAC
+is forced and 0 otherwise. This driver always forces the MAC, as on
+family C, so it writes 0xFFFF on every call, including link down.
+
+Add the family D implementation as rtl8365mb_d_ext_config_forcemode().
+The shared code reaches it through the ext_config_forcemode pointer in
+struct rtl8365mb_family_info, so it needs no is_d() check.
+
+Nothing points to it until the family D info is added together with the
+chip table entry in the last patch. Until then it is not static and is
+declared in rtl8365mb.h, so that the build does not warn about an unused
+function.
+
+Tested-by: Gustavo Foletto Mora <gusfmora@gmail.com>
+Signed-off-by: Mieczyslaw Nalewaj <namiltd@yahoo.com>
+Reviewed-by: Linus Walleij <linusw@kernel.org>
+---
+ drivers/net/dsa/realtek/rtl8365mb.h      |   4 +
+ drivers/net/dsa/realtek/rtl8365mb_main.c | 110 +++++++++++++++++++++++
+ 2 files changed, 114 insertions(+)
+
+--- a/drivers/net/dsa/realtek/rtl8365mb.h
++++ b/drivers/net/dsa/realtek/rtl8365mb.h
+@@ -24,6 +24,10 @@ struct rtl8365mb_family_info {
+ const struct rtl8365mb_family_info *
+ rtl8365mb_get_family_info(struct realtek_priv *priv);
+ 
++int rtl8365mb_d_ext_config_forcemode(struct realtek_priv *priv, int port,
++				     bool link, int speed, int duplex,
++				     bool tx_pause, bool rx_pause);
++
+ static inline bool rtl8365mb_is_d(struct realtek_priv *priv)
+ {
+ 	return rtl8365mb_get_family_info(priv)->family == RTL8365MB_FAMILY_D;
+--- a/drivers/net/dsa/realtek/rtl8365mb_main.c
++++ b/drivers/net/dsa/realtek/rtl8365mb_main.c
+@@ -333,6 +333,8 @@
+ #define RTL8365MB_PORT_SPEED_10M	0
+ #define RTL8365MB_PORT_SPEED_100M	1
+ #define RTL8365MB_PORT_SPEED_1000M	2
++#define RTL8365MB_D_PORT_SPEED_2500M	5
++#define RTL8365MB_D_PORT_SPEED_MSB_MASK	BIT(2)
+ 
+ /* External interface force configuration registers 0~2 */
+ #define RTL8365MB_C_DIGITAL_INTERFACE_FORCE_REG0		0x1310 /* EXT0 */
+@@ -351,6 +353,26 @@
+ #define   RTL8365MB_DIGITAL_INTERFACE_FORCE_DUPLEX_MASK		BIT(2)
+ #define   RTL8365MB_DIGITAL_INTERFACE_FORCE_SPEED_MASK		GENMASK(1, 0)
+ 
++/* bits[13:12]; bit 13 reserved, no defined speed value uses it yet */
++#define   RTL8365MB_D_DIGITAL_INTERFACE_FORCE_SPEED2_MASK	GENMASK(13, 12)
++
++#define RTL8365MB_D_DIGITAL_INTERFACE_FORCE_REG_BASE		0x12c0
++#define RTL8365MB_D_DIGITAL_INTERFACE_FORCE_REG(_port) \
++		(RTL8365MB_D_DIGITAL_INTERFACE_FORCE_REG_BASE + (_port))
++
++#define RTL8365MB_D_DIGITAL_INTERFACE_FORCE_EN_BASE		0x12c8
++#define RTL8365MB_D_DIGITAL_INTERFACE_FORCE_REG_EN(_port) \
++		(RTL8365MB_D_DIGITAL_INTERFACE_FORCE_EN_BASE + (_port))
++
++/* Per-port force-mode enable. The vendor RTL8367D API
++ * (dal_rtl8367d_port_macForceLink_set()) treats it as an on/off switch for
++ * the whole forced configuration: all bits set when the MAC is forced, zero
++ * when it is not. The meaning of the individual bits is not documented.
++ * This driver always forces the MAC, as on family C, so all bits are set
++ * on every call, including link down.
++ */
++#define RTL8365MB_D_DIGITAL_INTERFACE_FORCE_EN_ALL_MASK	GENMASK(15, 0)
++
+ /* CPU port mask register - controls which ports are treated as CPU ports */
+ #define RTL8365MB_CPU_PORT_MASK_REG	0x1219
+ #define   RTL8365MB_CPU_PORT_MASK_MASK	RTL8365MB_PORT_MASK
+@@ -1635,6 +1657,94 @@ static int rtl8365mb_c_ext_config_forcem
+ 	if (ret)
+ 		return ret;
+ 
++	return 0;
++}
++
++int rtl8365mb_d_ext_config_forcemode(struct realtek_priv *priv, int port,
++				     bool link, int speed, int duplex,
++				     bool tx_pause, bool rx_pause)
++{
++	const struct rtl8365mb_extint *extint =
++		rtl8365mb_get_port_extint(priv, port);
++	u32 r_tx_pause;
++	u32 r_rx_pause;
++	u32 r_duplex;
++	u32 r_speed;
++	u32 r_link;
++	int val;
++	int ret;
++
++	if (!extint)
++		return -ENODEV;
++
++	if (link) {
++		/* Force the link up with the desired configuration */
++		r_link = 1;
++		r_rx_pause = rx_pause ? 1 : 0;
++		r_tx_pause = tx_pause ? 1 : 0;
++
++		if (speed == SPEED_2500) {
++			r_speed = RTL8365MB_D_PORT_SPEED_2500M;
++		} else if (speed == SPEED_1000) {
++			r_speed = RTL8365MB_PORT_SPEED_1000M;
++		} else if (speed == SPEED_100) {
++			r_speed = RTL8365MB_PORT_SPEED_100M;
++		} else if (speed == SPEED_10) {
++			r_speed = RTL8365MB_PORT_SPEED_10M;
++		} else {
++			dev_err(priv->dev, "unsupported port speed %s\n",
++				phy_speed_to_str(speed));
++			return -EINVAL;
++		}
++
++		if (duplex == DUPLEX_FULL) {
++			r_duplex = 1;
++		} else if (duplex == DUPLEX_HALF) {
++			r_duplex = 0;
++		} else {
++			dev_err(priv->dev, "unsupported duplex %s\n",
++				phy_duplex_to_str(duplex));
++			return -EINVAL;
++		}
++	} else {
++		/* Force the link down and reset any programmed configuration */
++		r_link = 0;
++		r_tx_pause = 0;
++		r_rx_pause = 0;
++		r_speed = 0;
++		r_duplex = 0;
++	}
++
++	val = FIELD_PREP(RTL8365MB_DIGITAL_INTERFACE_FORCE_TXPAUSE_MASK,
++			 r_tx_pause) |
++	      FIELD_PREP(RTL8365MB_DIGITAL_INTERFACE_FORCE_RXPAUSE_MASK,
++			 r_rx_pause) |
++	      FIELD_PREP(RTL8365MB_DIGITAL_INTERFACE_FORCE_LINK_MASK, r_link) |
++	      FIELD_PREP(RTL8365MB_DIGITAL_INTERFACE_FORCE_DUPLEX_MASK,
++			 r_duplex) |
++	      FIELD_PREP(RTL8365MB_DIGITAL_INTERFACE_FORCE_SPEED_MASK,
++			 r_speed &
++			 RTL8365MB_DIGITAL_INTERFACE_FORCE_SPEED_MASK);
++
++	/* Speed is 3 bits on family D: bits[1:0] go into FORCE_SPEED,
++	 * bit[2] goes into FORCE_SPEED2 (register bit 12); only 2500M
++	 * sets it. Register bit 13 is reserved.
++	 */
++	val |= FIELD_PREP(RTL8365MB_D_DIGITAL_INTERFACE_FORCE_SPEED2_MASK,
++			  FIELD_GET(RTL8365MB_D_PORT_SPEED_MSB_MASK,
++				    r_speed));
++	ret = regmap_write(priv->map,
++			   RTL8365MB_D_DIGITAL_INTERFACE_FORCE_REG(port),
++			   val);
++	if (ret)
++		return ret;
++
++	ret = regmap_write(priv->map,
++			   RTL8365MB_D_DIGITAL_INTERFACE_FORCE_REG_EN(port),
++			   RTL8365MB_D_DIGITAL_INTERFACE_FORCE_EN_ALL_MASK);
++	if (ret)
++		return ret;
++
+ 	return 0;
+ }
+ 
