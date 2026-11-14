@@ -3356,6 +3356,9 @@ static void ppe_red_queues_set(struct qca_ppe_priv *priv,
 {
 	int i, q;
 
+	/* The AQM thread rewrites a queue it squeezed from these fields. */
+	guard(mutex)(&priv->aqm.lock);
+
 	for (i = red->first; i < red->first + red->count; i++) {
 		q = p->ucast_base + i;
 		priv->red_max[q] = max;
@@ -3369,7 +3372,8 @@ static void ppe_red_queues_set(struct qca_ppe_priv *priv,
 		}
 	}
 
-	ppe_port_queue_limit_set(priv, p->port);
+	__ppe_port_queue_limit_set(priv, p->port);
+	ppe_aqm_rebuild(priv);
 }
 
 /* The queue manager's WRED: a static limit per queue and a gap below it where
