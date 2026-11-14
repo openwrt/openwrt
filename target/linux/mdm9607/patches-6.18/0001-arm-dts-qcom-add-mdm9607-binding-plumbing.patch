@@ -1,0 +1,67 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Dmitry Sinyavin <sinyavin@gmail.com>
+Date: Fri, 14 Aug 2026 20:00:00 +0200
+Subject: [PATCH] dt-bindings: arm: qcom: add MDM9607 and GCC input clocks
+
+The MDM9607 GCC driver names its two firmware parents "xo" and
+"sleep_clk", but its binding does not currently describe them.  Add those
+inputs and allow the ZTE MF283V machine compatible.  Also register the new
+DTB in the 32-bit Qualcomm build.
+
+Signed-off-by: Dmitry Sinyavin <sinyavin@gmail.com>
+---
+--- a/Documentation/devicetree/bindings/arm/qcom.yaml
++++ b/Documentation/devicetree/bindings/arm/qcom.yaml
+@@ -327,6 +327,11 @@ properties:
+           - const: swir,wp8548
+           - const: qcom,mdm9615
+ 
++      - description: ZTE MF283V LTE router
++        items:
++          - const: zte,mf283v
++          - const: qcom,mdm9607
++
+       - description: Qualcomm Technologies, Inc. Robotics RB1
+         items:
+           - enum:
+--- a/Documentation/devicetree/bindings/clock/qcom,gcc-mdm9607.yaml
++++ b/Documentation/devicetree/bindings/clock/qcom,gcc-mdm9607.yaml
+@@ -25,8 +25,20 @@ properties:
+     enum:
+       - qcom,gcc-mdm9607
+ 
++  clocks:
++    items:
++      - description: XO source
++      - description: Sleep clock source
++
++  clock-names:
++    items:
++      - const: xo
++      - const: sleep_clk
++
+ required:
+   - compatible
++  - clocks
++  - clock-names
+   - '#power-domain-cells'
+ 
+ unevaluatedProperties: false
+@@ -39,5 +51,7 @@ examples:
+       #clock-cells = <1>;
+       #reset-cells = <1>;
+       #power-domain-cells = <1>;
++      clocks = <&xo_board>, <&sleep_clk>;
++      clock-names = "xo", "sleep_clk";
+     };
+ ...
+--- a/arch/arm/boot/dts/qcom/Makefile
++++ b/arch/arm/boot/dts/qcom/Makefile
+@@ -58,6 +58,7 @@ dtb-$(CONFIG_ARCH_QCOM) += \
+ 	qcom-msm8974pro-sony-xperia-shinano-castor.dtb \
+ 	qcom-msm8974pro-sony-xperia-shinano-leo.dtb \
+ 	qcom-mdm9615-wp8548-mangoh-green.dtb \
++	qcom-mdm9607-zte-mf283v.dtb \
+ 	qcom-sdx55-mtp.dtb \
+ 	qcom-sdx55-t55.dtb \
+ 	qcom-sdx55-telit-fn980-tlb.dtb \

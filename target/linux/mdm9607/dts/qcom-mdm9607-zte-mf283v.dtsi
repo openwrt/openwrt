@@ -1,0 +1,298 @@
+// SPDX-License-Identifier: GPL-2.0-only OR BSD-2-Clause
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/spmi/spmi.h>
+
+#include "qcom-mdm9607.dtsi"
+
+/ {
+	model = "ZTE MF283V";
+	compatible = "zte,mf283v", "qcom,mdm9607";
+
+	emac_lan_vreg: regulator-emac-lan {
+		compatible = "regulator-fixed";
+		regulator-name = "emac_lan_vreg";
+		startup-delay-us = <250>;
+		enable-active-high;
+		gpio = <&pm8019_mpps 4 GPIO_ACTIVE_HIGH>;
+	};
+
+	emac_sgmii_125m: emac-sgmii-125m-clock {
+		compatible = "fixed-clock";
+		#clock-cells = <0>;
+		clock-frequency = <125000000>;
+	};
+
+	emac_sgmii_tx: emac-sgmii-tx-clock {
+		compatible = "fixed-clock";
+		#clock-cells = <0>;
+		clock-frequency = <125000000>;
+	};
+};
+
+&gcc {
+	clocks = <&xo_board>, <&sleep_clk>,
+		 <&emac_sgmii_125m>, <&emac_sgmii_tx>;
+	clock-names = "xo", "sleep_clk",
+		      "emac_0_125m_clk", "emac_0_tx_clk";
+};
+
+&rpm_requests {
+	pm8019_regulators: regulators {
+		compatible = "qcom,rpm-pm8019-regulators";
+
+		pm8019_l1: l1 {
+			regulator-name = "pm8019-l1";
+			regulator-min-microvolt = <1250000>;
+			regulator-max-microvolt = <1250000>;
+		};
+
+		pm8019_l2: l2 {
+			regulator-name = "pm8019-l2";
+			regulator-min-microvolt = <1800000>;
+			regulator-max-microvolt = <1800000>;
+		};
+
+		pm8019_l3: l3 {
+			regulator-name = "pm8019-l3";
+			regulator-min-microvolt = <1800000>;
+			regulator-max-microvolt = <1800000>;
+		};
+
+		pm8019_l4: l4 {
+			regulator-name = "pm8019-l4";
+			regulator-min-microvolt = <3075000>;
+			regulator-max-microvolt = <3075000>;
+		};
+
+		pm8019_l5: l5 {
+			regulator-name = "pm8019-l5";
+			regulator-min-microvolt = <2850000>;
+			regulator-max-microvolt = <2850000>;
+		};
+
+		pm8019_l9: l9 {
+			regulator-name = "pm8019-l9";
+			regulator-min-microvolt = <1225000>;
+			regulator-max-microvolt = <1225000>;
+		};
+
+		pm8019_l11: l11 {
+			regulator-name = "pm8019-l11";
+			regulator-min-microvolt = <1800000>;
+			regulator-max-microvolt = <1800000>;
+		};
+	};
+};
+
+&soc {
+	spmi_bus: spmi@200f000 {
+		compatible = "qcom,spmi-pmic-arb";
+		reg = <0x0200f000 0x1000>,
+		      <0x02400000 0x800000>,
+		      <0x02c00000 0x800000>,
+		      <0x03800000 0x200000>,
+		      <0x0200a000 0x2100>;
+		reg-names = "core", "chnls", "obsrvr", "intr", "cnfg";
+		interrupts = <GIC_SPI 190 IRQ_TYPE_LEVEL_HIGH>;
+		interrupt-names = "periph_irq";
+		qcom,ee = <0>;
+		qcom,channel = <0>;
+		#address-cells = <2>;
+		#size-cells = <0>;
+		interrupt-controller;
+		#interrupt-cells = <4>;
+
+		pm8019_0: pmic@0 {
+			compatible = "qcom,pm8019", "qcom,spmi-pmic";
+			reg = <0 SPMI_USID>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			pm8019_mpps: mpps@a000 {
+				compatible = "qcom,pm8019-mpp",
+					     "qcom,spmi-mpp";
+				reg = <0xa000>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				gpio-ranges = <&pm8019_mpps 0 0 6>;
+				interrupt-controller;
+				#interrupt-cells = <2>;
+			};
+		};
+	};
+
+	emac: ethernet@7c40000 {
+		compatible = "qcom,mdm9607-emac";
+		reg = <0x07c40000 0x10000>,
+		      <0x07c56000 0x1000>;
+		reg-names = "emac", "emac_csr";
+		/*
+		 * The factory DTB leaves the trigger unspecified, while the
+		 * running vendor setup exposes this GIC line as edge-triggered.
+		 * Mainline GIC requires the trigger type in the DT mapping.
+		 */
+		interrupts = <GIC_SPI 76 IRQ_TYPE_EDGE_RISING>;
+		interrupt-names = "emac_core0_irq";
+		clocks = <&gcc GCC_EMAC_0_AXI_CLK>,
+			 <&gcc GCC_EMAC_0_AHB_CLK>,
+			 <&gcc GCC_EMAC_0_125M_CLK>,
+			 <&gcc GCC_EMAC_0_SYS_25M_CLK>,
+			 <&gcc GCC_EMAC_0_TX_CLK>,
+			 <&gcc GCC_EMAC_0_RX_CLK>,
+			 <&gcc GCC_EMAC_0_SYS_CLK>;
+		clock-names = "axi_clk", "cfg_ahb_clk", "high_speed_clk",
+			      "mdio_clk", "tx_clk", "rx_clk", "sys_clk";
+		emac_vreg1-supply = <&pm8019_l1>;
+		emac_vreg2-supply = <&pm8019_l3>;
+		emac_vreg3-supply = <&pm8019_l5>;
+		emac_vreg4-supply = <&pm8019_l11>;
+		emac_vreg5-supply = <&emac_lan_vreg>;
+		phy-reset-gpios = <&tlmm 29 GPIO_ACTIVE_LOW>;
+		internal-phy = <&emac_sgmii>;
+		phy-mode = "sgmii";
+		pinctrl-names = "default";
+		pinctrl-0 = <&emac_mdio_active &emac_ephy_active>;
+		status = "okay";
+
+		/* The EMAC-to-switch CPU link is permanently wired as SGMII. */
+		fixed-link {
+			speed = <1000>;
+			full-duplex;
+		};
+
+		mdio {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			qca8337_phy0: ethernet-phy@0 {
+				reg = <0>;
+			};
+
+			qca8337_phy1: ethernet-phy@1 {
+				reg = <1>;
+			};
+
+			qca8337_phy2: ethernet-phy@2 {
+				reg = <2>;
+			};
+
+			qca8337_phy4: ethernet-phy@4 {
+				reg = <4>;
+			};
+
+			switch@10 {
+				compatible = "qca,qca8337";
+				reg = <0x10>;
+
+				ports {
+					#address-cells = <1>;
+					#size-cells = <0>;
+
+					port@0 {
+						reg = <0>;
+						ethernet = <&emac>;
+						phy-mode = "sgmii";
+						qca,sgmii-enable-pll;
+
+						fixed-link {
+							speed = <1000>;
+							full-duplex;
+						};
+					};
+
+					port@1 {
+						reg = <1>;
+						label = "lan4";
+						phy-handle = <&qca8337_phy0>;
+					};
+
+					port@2 {
+						reg = <2>;
+						label = "lan3";
+						phy-handle = <&qca8337_phy1>;
+					};
+
+					port@3 {
+						reg = <3>;
+						label = "lan2";
+						phy-handle = <&qca8337_phy2>;
+					};
+
+					port@5 {
+						reg = <5>;
+						label = "wan";
+						phy-handle = <&qca8337_phy4>;
+					};
+				};
+			};
+		};
+	};
+
+	emac_sgmii: phy@7c58000 {
+		compatible = "qcom,mdm9607-emac-sgmii";
+		reg = <0x07c58000 0x400>;
+		/*
+		 * The vendor SGMII driver requests this line with
+		 * IRQF_TRIGGER_RISING; describe that at the interrupt source.
+		 */
+		interrupts = <GIC_SPI 80 IRQ_TYPE_EDGE_RISING>;
+	};
+
+	usb_hs_phy: phy@6c000 {
+		compatible = "qcom,usb-hs-28nm-femtophy";
+		reg = <0x0006c000 0x200>;
+		#phy-cells = <0>;
+		clocks = <&xo_board>,
+			 <&gcc GCC_USB_HS_PHY_CFG_AHB_CLK>,
+			 <&gcc GCC_USB2A_PHY_SLEEP_CLK>;
+		clock-names = "ref", "ahb", "sleep";
+		resets = <&gcc QUSB2_PHY_BCR>,
+			 <&gcc USB2_HS_PHY_ONLY_BCR>;
+		reset-names = "phy", "por";
+		vdd-supply = <&pm8019_l9>;
+		vdda1p8-supply = <&pm8019_l2>;
+		vdda3p3-supply = <&pm8019_l4>;
+		status = "okay";
+	};
+
+	usb: usb@78d9000 {
+		compatible = "qcom,mdm9607-ci-hdrc", "qcom,ci-hdrc";
+		reg = <0x078d9000 0x200>,
+		      <0x078d9200 0x200>;
+		interrupts = <GIC_SPI 134 IRQ_TYPE_LEVEL_HIGH>,
+			     <GIC_SPI 140 IRQ_TYPE_LEVEL_HIGH>;
+		interrupt-names = "core", "async";
+		clocks = <&gcc GCC_USB_HS_AHB_CLK>,
+			 <&gcc GCC_USB_HS_SYSTEM_CLK>;
+		clock-names = "iface", "core";
+		assigned-clocks = <&gcc GCC_USB_HS_SYSTEM_CLK>;
+		assigned-clock-rates = <133330000>;
+		resets = <&gcc USB_HS_BCR>;
+		reset-names = "core";
+		phys = <&usb_hs_phy>;
+		phy-names = "usb-phy";
+		phy_type = "ulpi";
+		dr_mode = "peripheral";
+		ahb-burst-config = <0>;
+		itc-setting = <4>;
+		status = "okay";
+	};
+};
+
+&tlmm {
+	emac_mdio_active: emac-mdio-active-state {
+		pins = "gpio27", "gpio28";
+		function = "gmac_mdio";
+		drive-strength = <16>;
+		bias-pull-up;
+	};
+
+	emac_ephy_active: emac-ephy-active-state {
+		pins = "gpio29";
+		function = "gpio";
+		drive-strength = <16>;
+		bias-pull-up;
+	};
+
+};

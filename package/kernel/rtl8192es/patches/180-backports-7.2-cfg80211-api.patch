@@ -1,0 +1,68 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Dmitry Sinyavin <sinyavin@gmail.com>
+Date: Mon, 31 Aug 2026 16:00:00 +0200
+Subject: [PATCH] rtl8192es: support cfg80211 API from backports 7.2
+
+OpenWrt builds the driver against wireless backports 7.2 while retaining an
+older base kernel version.  Select the current wireless_dev callback API
+independently of LINUX_VERSION_CODE and accept the receive address added to
+the remain-on-channel callback.
+
+Signed-off-by: Dmitry Sinyavin <sinyavin@gmail.com>
+---
+--- a/os_dep/linux/ioctl_cfg80211.c
++++ b/os_dep/linux/ioctl_cfg80211.c
+@@ -18,6 +18,7 @@
+ 
+ #ifdef CONFIG_IOCTL_CFG80211
+-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(7, 1, 0))
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(7, 1, 0)) || \
++	defined(RTW_CFG80211_WDEV_API)
+ #define RTW_WDEV_ARG struct wireless_dev *wdev
+ #define RTW_WDEV_GET struct net_device *ndev = wdev->netdev
+ #else
+@@ -4413,7 +4414,8 @@ void rtw_cfg80211_indicate_sta_assoc(_a
+ 		sinfo.filled = STATION_INFO_ASSOC_REQ_IES;
+ 		sinfo.assoc_req_ies = pmgmt_frame + WLAN_HDR_A3_LEN + ie_offset;
+ 		sinfo.assoc_req_ies_len = frame_len - WLAN_HDR_A3_LEN - ie_offset;
+-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(7, 1, 0))
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(7, 1, 0)) || \
++	defined(RTW_CFG80211_WDEV_API)
+ 		cfg80211_new_sta(padapter->rtw_wdev, get_addr2_ptr(pmgmt_frame), &sinfo, GFP_ATOMIC);
+ #else
+ 		cfg80211_new_sta(ndev, get_addr2_ptr(pmgmt_frame), &sinfo, GFP_ATOMIC);
+@@ -4463,7 +4465,8 @@ void rtw_cfg80211_indicate_sta_disassoc
+ 	RTW_INFO(FUNC_ADPT_FMT"\n", FUNC_ADPT_ARG(padapter));
+ 
+ #if defined(RTW_USE_CFG80211_STA_EVENT) || defined(COMPAT_KERNEL_RELEASE)
+-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(7, 1, 0))
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(7, 1, 0)) || \
++	defined(RTW_CFG80211_WDEV_API)
+ 	cfg80211_del_sta(padapter->rtw_wdev, da, GFP_ATOMIC);
+ #else
+ 	cfg80211_del_sta(ndev, da, GFP_ATOMIC);
+@@ -5551,7 +5554,11 @@ release_plink_ctl:
+ 
+ 			/* indicate new sta */
+ 			memset(&sinfo, 0, sizeof(sinfo));
++#ifdef RTW_CFG80211_WDEV_API
++			cfg80211_new_sta(wdev, mac, &sinfo, GFP_ATOMIC);
++#else
+ 			cfg80211_new_sta(ndev, mac, &sinfo, GFP_ATOMIC);
++#endif
+ 		}
+ 		goto exit;
+ 	}
+@@ -6768,7 +6775,11 @@ static s32 cfg80211_rtw_remain_on_channe
+ #if (LINUX_VERSION_CODE < KERNEL_VERSION(3, 8, 0))
+ 	enum nl80211_channel_type channel_type,
+ #endif
+-	unsigned int duration, u64 *cookie)
++	unsigned int duration, u64 *cookie
++#ifdef RTW_CFG80211_ROC_RX_ADDR_API
++	, const u8 *rx_addr
++#endif
++)
+ {
+ 	s32 err = 0;
+ 	u8 remain_ch = (u8) ieee80211_frequency_to_channel(channel->center_freq);

@@ -1,0 +1,80 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Dmitry Sinyavin <sinyavin@gmail.com>
+Date: Fri, 14 Aug 2026 20:00:00 +0200
+Subject: [PATCH] net: qcom: emac: support a fixed external link
+
+The MDM9607 EMAC is connected to the CPU port of an external QCA8337
+switch.  There is no PHY to poll on that SGMII link, so allow the DT to
+describe it with the standard fixed-link binding.
+
+Signed-off-by: Dmitry Sinyavin <sinyavin@gmail.com>
+---
+--- a/drivers/net/ethernet/qualcomm/emac/emac.h
++++ b/drivers/net/ethernet/qualcomm/emac/emac.h
+@@ -330,6 +330,7 @@ struct emac_adapter {
+ 	struct phy_device		*phydev;
+ 
+ 	void __iomem			*base;
++	bool				fixed_link;
+ 	void __iomem			*csr;
+ 
+ 	struct emac_sgmii		phy;
+--- a/drivers/net/ethernet/qualcomm/emac/emac-phy.c
++++ b/drivers/net/ethernet/qualcomm/emac/emac-phy.c
+@@ -141,13 +141,25 @@ int emac_phy_config(struct platform_devi
+ 			return ret;
+ 		}
+ 
+-		phy_np = of_parse_phandle(np, "phy-handle", 0);
+-		adpt->phydev = of_phy_find_device(phy_np);
+-		of_node_put(phy_np);
++		if (of_phy_is_fixed_link(np)) {
++			ret = of_phy_register_fixed_link(np);
++			if (ret) {
++				mdiobus_unregister(mii_bus);
++				return ret;
++			}
++			adpt->fixed_link = true;
++			adpt->phydev = of_phy_find_device(np);
++		} else {
++			phy_np = of_parse_phandle(np, "phy-handle", 0);
++			adpt->phydev = of_phy_find_device(phy_np);
++			of_node_put(phy_np);
++		}
+ 	}
+ 
+ 	if (!adpt->phydev) {
+ 		dev_err(&pdev->dev, "could not find external phy\n");
++		if (adpt->fixed_link)
++			of_phy_deregister_fixed_link(np);
+ 		mdiobus_unregister(mii_bus);
+ 		return -ENODEV;
+ 	}
+--- a/drivers/net/ethernet/qualcomm/emac/emac.c
++++ b/drivers/net/ethernet/qualcomm/emac/emac.c
+@@ -11,6 +11,7 @@
+ #include <linux/delay.h>
+ #include <linux/module.h>
+ #include <linux/of.h>
++#include <linux/of_mdio.h>
+ #include <linux/of_net.h>
+ #include <linux/phy.h>
+ #include <linux/platform_device.h>
+@@ -783,6 +784,8 @@ static int emac_probe(struct platform_de
+ err_undo_napi:
+ 	netif_napi_del(&adpt->rx_q.napi);
+ 	put_device(&adpt->phydev->mdio.dev);
++	if (adpt->fixed_link)
++		of_phy_deregister_fixed_link(pdev->dev.of_node);
+ 	mdiobus_unregister(adpt->mii_bus);
+ err_undo_sgmii:
+ 	if (adpt->phy.digital)
+@@ -816,6 +819,8 @@ static void emac_remove(struct platform_
+ 	emac_mdm9607_power_off(adpt);
+ 
+ 	put_device(&adpt->phydev->mdio.dev);
++	if (adpt->fixed_link)
++		of_phy_deregister_fixed_link(pdev->dev.of_node);
+ 	mdiobus_unregister(adpt->mii_bus);
+ 
+ 	if (adpt->phy.digital)
