@@ -1,0 +1,47 @@
+From e2866b8fd37af9b35d529930f1883f9a4c59a0b1 Mon Sep 17 00:00:00 2001
+From: Satoshi Ikeuchi <satosan.ikm@gmail.com>
+Date: Tue, 20 Oct 2026 22:32:01 +0900
+Subject: [PATCH] net: ethernet: qualcomm: ppe: prevent TX error counter
+ underflow
+
+The total and good XGMAC frame counters are independent live reads. Good
+frames can advance beyond the earlier total while statistics are collected,
+so their unsigned difference can report almost U64_MAX TX errors.
+
+Read the counters consecutively and saturate their difference at zero.
+Preserve all other statistics, including subsequent GMAC error additions.
+This prevents unsigned wrap without claiming an atomic hardware snapshot.
+
+Link: https://github.com/openwrt/openwrt/issues/26054
+Signed-off-by: Satoshi Ikeuchi <satosan.ikm@gmail.com>
+
+--- a/drivers/net/ethernet/qualcomm/ppe/ppe_port.c
++++ b/drivers/net/ethernet/qualcomm/ppe/ppe_port.c
+@@ -493,6 +493,8 @@ void ppe_port_get_ethtool_stats(struct p
+ void ppe_port_get_stats64(struct ppe_port *ppe_port,
+ 			  struct rtnl_link_stats64 *s)
+ {
++	u64 tx_good;
++
+ 	s->multicast = ppe_port_xgmib_get(ppe_port, xgmib_rx_multicast_g);
+ 
+ 	s->rx_packets = s->multicast;
+@@ -500,6 +502,9 @@ void ppe_port_get_stats64(struct ppe_por
+ 	s->rx_packets += ppe_port_xgmib_get(ppe_port, xgmib_rx_broadcast_g);
+ 
+ 	s->tx_packets = ppe_port_xgmib_get(ppe_port, xgmib_tx_frames);
++	tx_good = ppe_port_xgmib_get(ppe_port, xgmib_tx_frames_g);
++	/* Live counters can advance between the total and good-frame reads. */
++	s->tx_errors = s->tx_packets > tx_good ? s->tx_packets - tx_good : 0;
+ 	s->rx_bytes = ppe_port_xgmib_get(ppe_port, xgmib_rx_bytes);
+ 	s->tx_bytes = ppe_port_xgmib_get(ppe_port, xgmib_tx_bytes);
+ 
+@@ -514,8 +519,6 @@ void ppe_port_get_stats64(struct ppe_por
+ 
+ 	s->tx_fifo_errors = ppe_port_xgmib_get(ppe_port,
+ 					       xgmib_tx_underflow_err);
+-	s->tx_errors = s->tx_packets -
+-		ppe_port_xgmib_get(ppe_port, xgmib_tx_frames_g);
+ 
+ 	if (ppe_port->gmib_stats) {
+ 		u64 *gsrc = ppe_port->gmib_stats;
