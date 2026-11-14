@@ -53,8 +53,6 @@ preinit_set_mac_address() {
 		ip link set dev port5 address "$lan_mac"
 		ip link set dev port6 address "$lan_mac"
 		;;
-	*)
-		;;
 	esac
 }
 

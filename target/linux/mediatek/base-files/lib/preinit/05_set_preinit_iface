@@ -22,6 +22,13 @@ set_preinit_iface() {
 		ip link set eth0 up
 		ifname=eth0
 		;;
+	cudy,p2-v1)
+		ip link set eth0 up
+		ifname=lan
+		;;
+	glinet,gl-be14000)
+		ifname=lan9
+		;;
 	smartrg,sdg-841-t6|\
 	smartrg,sdg-8622|\
 	smartrg,sdg-8632|\
@@ -42,15 +49,8 @@ set_preinit_iface() {
 		ip link set eth0 up
 		ifname=lan4
 		;;
-	glinet,gl-be14000)
-		ifname=lan9
-		;;
 	zyxel,wx5600-t0-ubootmod)
 		ifname=lan1
-		;;
-	cudy,p2-v1)
-		ip link set eth0 up
-		ifname=lan
 		;;
 	*)
 		ip link set eth0 up
