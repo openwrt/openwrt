@@ -1,0 +1,56 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Mirko Vogt <foss@mirko.in>
+Date: Wed, 11 Nov 2026 22:00:00 +0100
+Subject: [PATCH] wifi: ath10k: enable MFP for QCA99X0 firmware 10.4.1.00030-1
+
+Set ATH10K_FW_FEATURE_MFP_SUPPORT despite no mfp support being
+advertised by the firmware, based on exact firmware version and chip
+type.
+
+The QCA99X0 firmware in linux-firmware (10.4.1.00030-1, from around
+2015), does not - unlike firmwares for similar chips - advertise the
+"mfp" feature. As a result of missing mfp advertisement from firmware
+side, ATH10K_FW_FEATURE_MFP_SUPPORT is not set and ath10k never sets the
+PMF peer flag in WMI peer assoc for 802.11w peers.
+
+Effect is heavily degraded throughput on the TX path (QCA99X0 as
+AP -> STA, capped at a fraction of the RX path), when using 802.11w,
+which e.g. is a requirement for wpa3.
+
+However, the hardware itself appears to support mfp, as indicated by
+alternative firmware projects, such as ath10k-ct, which advertises mfp
+for QCA99X0.
+
+Also the original firmware appears to actually support mfp, despite not
+advertising it. Just assuming mfp support from the linux side and not
+relying on advertised features, results in the TX path being on par with
+the RX path.
+
+Experienced and tested on an Aruba AP-325 running OpenWrt.
+
+Tested-on: QCA99X0 hw2.0 PCI 10.4.1.00030-1 (Aruba AP-325)
+Signed-off-by: Mirko Vogt <foss@mirko.in>
+---
+ drivers/net/wireless/ath/ath10k/core.c | 12 ++++++++++++
+ 1 file changed, 12 insertions(+)
+
+--- a/drivers/net/wireless/ath/ath10k/core.c
++++ b/drivers/net/wireless/ath/ath10k/core.c
+@@ -2234,6 +2234,18 @@ static int ath10k_core_fetch_firmware_fi
+ success:
+ 	ath10k_dbg(ar, ATH10K_DBG_BOOT, "using fw api %d\n", ar->fw_api);
+ 
++	/* QCA99X0 firmware 10.4.1.00030-1 does not advertise MFP support in
++	 * its firmware feature IE. Without the feature bit the PMF peer flag
++	 * is never passed to firmware for 802.11w peers.
++	 */
++	if (QCA_REV_99X0(ar) &&
++	    !strcmp(ar->normal_mode_fw.fw_file.fw_version, "10.4.1.00030-1")) {
++		ath10k_info(ar, "firmware %s does not advertise MFP support, enabling it\n",
++			    ar->normal_mode_fw.fw_file.fw_version);
++		__set_bit(ATH10K_FW_FEATURE_MFP_SUPPORT,
++			  ar->normal_mode_fw.fw_file.fw_features);
++	}
++
+ 	return 0;
+ }
