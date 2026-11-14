@@ -1,0 +1,255 @@
+--- a/include/net/dsa.h
++++ b/include/net/dsa.h
+@@ -61,6 +61,7 @@ struct tc_action;
+ #define DSA_TAG_PROTO_YT922X_VALUE		33
+ #define DSA_TAG_PROTO_YT922X_4B_VALUE		34
+ #define DSA_TAG_PROTO_RTL_OTTO_VALUE		35
++#define DSA_TAG_PROTO_RTL8_4_RTL9607C_VALUE	36
+ 
+ enum dsa_tag_protocol {
+ 	DSA_TAG_PROTO_NONE		= DSA_TAG_PROTO_NONE_VALUE,
+@@ -99,6 +100,7 @@ enum dsa_tag_protocol {
+ 	DSA_TAG_PROTO_YT922X		= DSA_TAG_PROTO_YT922X_VALUE,
+ 	DSA_TAG_PROTO_YT922X_4B		= DSA_TAG_PROTO_YT922X_4B_VALUE,
+ 	DSA_TAG_PROTO_RTL_OTTO		= DSA_TAG_PROTO_RTL_OTTO_VALUE,
++	DSA_TAG_PROTO_RTL8_4_RTL9607C	= DSA_TAG_PROTO_RTL8_4_RTL9607C_VALUE,
+ };
+ 
+ struct dsa_switch;
+--- a/net/dsa/tag_rtl8_4.c
++++ b/net/dsa/tag_rtl8_4.c
+@@ -74,6 +74,54 @@
+  * software or hardware. To avoid this issue, if the checksum is still pending,
+  * this tagger checksums the packet in software before adding the tag.
+  *
++ * This 8 byte switch tag can also be found on RTL9607C SoC with identical
++ * protocol "4", but the format is slightly different.
++ *
++ * On switch->CPU the bytes 4-7 look like this:
++ *
++ *  |-----------------------------------+-----------------------------------|
++ *  | (3) |     (3)    |    (5)         |     (2)     |  (1)  |  (1) |  (4) |
++ *  | PRI |   EXTSPA  OR PON_STREAM_ID  |PON_STREAM_ID|L3ROUTE| ORIG | PORT |
++ *  |-----------------------------------+-----------------------------------|
++ *  |    (1)   |           (15-bit)     /      (6-bit)                      |
++ *  |    FBI   |      FLOW_BASED_HASH   /   DST_PORT_MASK                   |
++ *  |-----------------------------------+-----------------------------------|
++ *
++ * On CPU->Switch however the byte 3 is also different:
++ *
++ *  |-----------------------------------+-----------------------------------|
++ *  |              (8-bit)              |             (8-bit)               |
++ *  |          Protocol [0x04]          |         TX_PORTMASK_LOW           |
++ *  |-----------------------------------+-----------------------------------|
++ *  |     (3-bit)    |(1)|   (1)  | (3) |(1) |(1)|   (1)   |(1) |(2)| (1) |1|
++ *  |TX_PORTMASK_HIGH| X | PRI_EN | PRI |KEEP| X |LEARN_DIS|PSEL| X |DIRTX|X|
++ *  |-----------------------------------+-----------------------------------|
++ *  | (3-bit)|    (2-bit)   |     (4-bit)    |           (7-bit)            |
++ *  | EXTSPA |   PPPOE_ACT  |    PPPOE_IDX   |        PON_STREAM_ID         |
++ *  |-----------------------------------+-----------------------------------|
++ *
++ * With the following descriptions for new fields:
++ *
++ *    field           | description
++ *   -----------------+-------------
++ *    EXTSPA          | Source Extension Port. Relevant when port is CPU (9, 10, 7).
++ *    PON_STREAM_ID   | PON Stream ID (GPON) or LLID index (EPON). Relevant when
++ *                    | port is PON (5)
++ *    L3ROUTE         | "This frame is an intended routed frames" as per docs
++ *    ORIG            | The received frame by NIC is the original packet's format
++ *                    | before switch lookup and switch didn't do any modifications
++ *    FBI             | Flow Based I...? Only relevant when REASON is FB (aka < 64)
++ *    FLOW_BASED_HASH | Flow Based Hash Index.
++ *    DST_PORT_MASK   | Switch lookup destination port mask. bit 0: CPU, bit 1-5 are
++ *                    | extension ports 0~4.
++ *    PSEL            | PON stream id (GPON) / LLID index(EPON) selection.
++ *    DIRTX           | Direct TX, whatever that means? Used to be called L34KEEP.
++ *    PPPOE_ACT       | Egress action for PPPoE header whose Ether Type = 0x8864.
++ *                    | 0: intact, 1: Add PPPoE header, 2: Remove PPPoE header,
++ *                    | 3: remarking PPPoE switch TX mac action.
++ *    PPPOE_IDX       | PPPoE index pointed to an entry of the PPPoE table in the
++ *                    | switch. Switch TX-MAC look PPPoE table up by this index to
++ *                    | get PPPoE session ID.
+  */
+ 
+ #include <linux/bitfield.h>
+@@ -84,12 +132,12 @@
+ 
+ /* Protocols supported:
+  *
+- * 0x04 = RTL8365MB DSA protocol
++ * 0x04 = RTL8365MB / RTL9607C DSA protocol
+  */
+ 
+ #define RTL8_4_NAME			"rtl8_4"
+ #define RTL8_4T_NAME			"rtl8_4t"
+-
++#define RTL8_4_RTL9607C_NAME		"rtl8_4_rtl9607c"
+ #define RTL8_4_TAG_LEN			8
+ 
+ #define RTL8_4_PROTOCOL			GENMASK(15, 8)
+@@ -97,13 +145,60 @@
+ #define RTL8_4_REASON			GENMASK(7, 0)
+ #define   RTL8_4_REASON_FORWARD		0
+ #define   RTL8_4_REASON_TRAP		80
++#define   RTL9607C_REASON_BCAST_TRAP	203
++#define   RTL9607C_REASON_RESV_TRAP	215
++#define   RTL9607C_REASON_IGMP		219
++#define   RTL9607C_REASON_RMA		220
++#define   RTL9607C_REASON_ACL		227
++
++#define RTL8_4_RTL9607C_RX_LO		GENMASK(7, 0)
++#define RTL8_4_RTL9607C_RX_HI		GENMASK(15, 13)
++#define RTL9607C_RX_HI_MSK		GENMASK(10, 8)
+ 
++#define RTL8_4_RTL9607C_DIRTX		BIT(1)
+ #define RTL8_4_LEARN_DIS		BIT(5)
+ #define RTL8_4_KEEP			BIT(7)
+ 
+ #define RTL8_4_TX			GENMASK(3, 0)
+ #define RTL8_4_RX			GENMASK(10, 0)
+ 
++static void rtl8_4_rtl9607c_write_tag(struct sk_buff *skb, struct net_device *dev,
++			     void *tag)
++{
++	struct dsa_port *dp = dsa_user_to_port(dev);
++	__be16 tag16[RTL8_4_TAG_LEN / 2];
++	u16 pmask_low = FIELD_GET(RTL8_4_RTL9607C_RX_LO, BIT(dp->index));
++	u16 pmask_high = FIELD_GET(RTL9607C_RX_HI_MSK, BIT(dp->index));
++
++	/* Set Realtek EtherType */
++	tag16[0] = htons(ETH_P_REALTEK);
++
++	/* Set Protocol; set RX (CPU->switch) low forwarding port mask */
++	tag16[1] = htons(FIELD_PREP(RTL8_4_PROTOCOL, RTL8_4_PROTOCOL_RTL8365MB) |
++			 FIELD_PREP(RTL8_4_RTL9607C_RX_LO, pmask_low));
++
++	/* set high forwarding port mask, KEEP, LEARN_DIS and DIRTX */
++	tag16[2] = htons(FIELD_PREP(RTL8_4_RTL9607C_RX_HI, pmask_high) |
++			 RTL8_4_LEARN_DIS | RTL8_4_KEEP | RTL8_4_RTL9607C_DIRTX);
++
++	/* Zero EXTSPA, PPPOE_ACT/IDX and PON_STREAM_ID */
++	tag16[3] = 0;
++
++	memcpy(tag, tag16, RTL8_4_TAG_LEN);
++}
++
++static struct sk_buff *rtl8_4_rtl9607c_tag_xmit(struct sk_buff *skb,
++						struct net_device *dev)
++{
++	skb_push(skb, RTL8_4_TAG_LEN);
++
++	dsa_alloc_etype_header(skb, RTL8_4_TAG_LEN);
++
++	rtl8_4_rtl9607c_write_tag(skb, dev, dsa_etype_header_pos_tx(skb));
++
++	return skb;
++}
++
+ static void rtl8_4_write_tag(struct sk_buff *skb, struct net_device *dev,
+ 			     void *tag)
+ {
+@@ -152,6 +247,79 @@ static struct sk_buff *rtl8_4t_tag_xmit(
+ 	return skb;
+ }
+ 
++static int rtl8_4_rtl9607c_read_tag(struct sk_buff *skb, struct net_device *dev,
++				    void *tag)
++{
++	__be16 tag16[RTL8_4_TAG_LEN / 2];
++	u16 etype;
++	u8 reason;
++	u8 proto;
++	u8 port;
++
++	memcpy(tag16, tag, RTL8_4_TAG_LEN);
++
++	/* Parse Realtek EtherType */
++	etype = ntohs(tag16[0]);
++	if (unlikely(etype != ETH_P_REALTEK)) {
++		dev_warn_ratelimited(&dev->dev,
++				     "non-realtek ethertype 0x%04x\n", etype);
++		return -EPROTO;
++	}
++
++	/* Parse Protocol */
++	proto = FIELD_GET(RTL8_4_PROTOCOL, ntohs(tag16[1]));
++	if (unlikely(proto != RTL8_4_PROTOCOL_RTL8365MB)) {
++		dev_warn_ratelimited(&dev->dev,
++				     "unknown realtek protocol 0x%02x\n",
++				     proto);
++		return -EPROTO;
++	}
++
++	/* Parse REASON */
++	reason = FIELD_GET(RTL8_4_REASON, ntohs(tag16[1]));
++
++	/* Parse TX (switch->CPU) */
++	port = FIELD_GET(RTL8_4_TX, ntohs(tag16[2]));
++	skb->dev = dsa_conduit_find_user(dev, 0, port);
++	if (!skb->dev) {
++		dev_warn_ratelimited(&dev->dev,
++				     "could not find user for port %d\n",
++				     port);
++		return -ENOENT;
++	}
++
++	switch (reason) {
++	case RTL9607C_REASON_BCAST_TRAP:
++	case RTL9607C_REASON_RESV_TRAP:
++	case RTL9607C_REASON_IGMP:
++	case RTL9607C_REASON_RMA:
++	case RTL9607C_REASON_ACL:
++		break;
++	default:
++		dsa_default_offload_fwd_mark(skb);
++		break;
++	}
++
++	return 0;
++}
++
++static struct sk_buff *rtl8_4_rtl9607c_tag_rcv(struct sk_buff *skb,
++				      struct net_device *dev)
++{
++	if (unlikely(!pskb_may_pull(skb, RTL8_4_TAG_LEN)))
++		return NULL;
++
++	if (unlikely(rtl8_4_rtl9607c_read_tag(skb, dev, dsa_etype_header_pos_rx(skb))))
++		return NULL;
++
++	/* Remove tag and recalculate checksum */
++	skb_pull_rcsum(skb, RTL8_4_TAG_LEN);
++
++	dsa_strip_etype_header(skb, RTL8_4_TAG_LEN);
++
++	return skb;
++}
++
+ static int rtl8_4_read_tag(struct sk_buff *skb, struct net_device *dev,
+ 			   void *tag)
+ {
+@@ -257,9 +425,23 @@ DSA_TAG_DRIVER(rtl8_4t_netdev_ops);
+ 
+ MODULE_ALIAS_DSA_TAG_DRIVER(DSA_TAG_PROTO_RTL8_4T, RTL8_4T_NAME);
+ 
++/* Ethertype RTL9607C version */
++static const struct dsa_device_ops rtl8_4_rtl9607c_netdev_ops = {
++	.name = RTL8_4_RTL9607C_NAME,
++	.proto = DSA_TAG_PROTO_RTL8_4_RTL9607C,
++	.xmit = rtl8_4_rtl9607c_tag_xmit,
++	.rcv = rtl8_4_rtl9607c_tag_rcv,
++	.needed_headroom = RTL8_4_TAG_LEN,
++};
++
++DSA_TAG_DRIVER(rtl8_4_rtl9607c_netdev_ops);
++
++MODULE_ALIAS_DSA_TAG_DRIVER(DSA_TAG_PROTO_RTL8_4_RTL9607C, RTL8_4_RTL9607C_NAME);
++
+ static struct dsa_tag_driver *dsa_tag_drivers[] = {
+ 	&DSA_TAG_DRIVER_NAME(rtl8_4_netdev_ops),
+ 	&DSA_TAG_DRIVER_NAME(rtl8_4t_netdev_ops),
++	&DSA_TAG_DRIVER_NAME(rtl8_4_rtl9607c_netdev_ops),
+ };
+ module_dsa_tag_drivers(dsa_tag_drivers);
+ 
