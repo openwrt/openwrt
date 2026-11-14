@@ -1,0 +1,97 @@
+From 823b720e12c6155c876929115ec3d56c4de90fd4 Mon Sep 17 00:00:00 2001
+From: Stanislaw Pal <kuncy7@gmail.com>
+Date: Wed, 4 Nov 2026 20:29:20 +0100
+Subject: [PATCH net-next v2 4/4] net: dsa: qca8k: bound the data of a management ack frame
+
+qca8k_rw_reg_ack_handler() answers a management read by copying the
+data that follows the Ethernet header into mgmt_eth_data->data. It
+trusts the frame for both the length and the layout: the length field
+of the frame allows up to 32 bytes while the buffer holds 16, so a
+frame announcing more than three registers writes past the buffer into
+the fields that follow it in qca8k_priv; and qca_tag_rcv() made only
+the 2 byte tag linear, so the copy reads skb->data without checking
+that the frame has the bytes it announces. The handler runs for every
+ack frame, whatever its sequence number.
+
+Size the buffer to what a management frame can carry, and pull the
+announced data into the linear area before reading it. A frame that
+is too short is left unacknowledged, so the read fails and the caller
+falls back to MDIO.
+
+An LLM assistant (Claude, claude-fable-5-1) helped write the change
+and this description; I reviewed both and built them with W=1 on
+arm64. The management path was exercised on a QCA8337 behind an
+IPQ5018 (GL.iNet GL-B3000) with tag_qca.
+
+Fixes: 90386223f44e ("net: dsa: qca8k: add support for larger read/write size with mgmt Ethernet")
+Signed-off-by: Stanislaw Pal <kuncy7@gmail.com>
+---
+ drivers/net/dsa/qca/qca8k-8xxx.c | 21 ++++++++++++++++-----
+ drivers/net/dsa/qca/qca8k.h      |  3 ++-
+ 2 files changed, 18 insertions(+), 6 deletions(-)
+
+--- a/drivers/net/dsa/qca/qca8k-8xxx.c
++++ b/drivers/net/dsa/qca/qca8k-8xxx.c
+@@ -165,6 +165,7 @@ static void qca8k_rw_reg_ack_handler(str
+ 	struct qca8k_mgmt_eth_data *mgmt_eth_data;
+ 	struct qca8k_priv *priv = ds->priv;
+ 	struct qca_mgmt_ethhdr *mgmt_ethhdr;
++	int data_len = 0;
+ 	u32 command;
+ 	u8 len, cmd;
+ 	int i;
+@@ -185,6 +186,17 @@ static void qca8k_rw_reg_ack_handler(str
+ 	/* We can ignore odd value, we always round up them in the alloc function. */
+ 	len *= sizeof(u16);
+ 
++	if (cmd == MDIO_READ && len > QCA_HDR_MGMT_DATA1_LEN)
++		data_len = min_t(int, QCA_HDR_MGMT_DATA2_LEN,
++				 len - QCA_HDR_MGMT_DATA1_LEN);
++
++	/* The tagger made only the tag linear. Leave a frame that is too
++	 * short for the data it announces unacknowledged: the read fails
++	 * and the caller falls back to MDIO.
++	 */
++	if (data_len && !pskb_may_pull(skb, data_len))
++		goto complete;
++
+ 	/* Make sure the seq match the requested packet */
+ 	if (get_unaligned_le32(&mgmt_ethhdr->seq) == mgmt_eth_data->seq)
+ 		mgmt_eth_data->ack = true;
+@@ -194,13 +206,11 @@ static void qca8k_rw_reg_ack_handler(str
+ 
+ 		*val = get_unaligned_le32(&mgmt_ethhdr->mdio_data);
+ 
+-		/* Get the rest of the 12 byte of data.
+-		 * The read/write function will extract the requested data.
++		/* Get the rest of the data.
++		 * The read function extracts what it asked for.
+ 		 */
+-		if (len > QCA_HDR_MGMT_DATA1_LEN) {
++		if (data_len) {
+ 			__le32 *data2 = (__le32 *)skb->data;
+-			int data_len = min_t(int, QCA_HDR_MGMT_DATA2_LEN,
+-					     len - QCA_HDR_MGMT_DATA1_LEN);
+ 
+ 			val++;
+ 
+@@ -212,6 +222,7 @@ static void qca8k_rw_reg_ack_handler(str
+ 		}
+ 	}
+ 
++complete:
+ 	complete(&mgmt_eth_data->rw_done);
+ }
+ 
+--- a/drivers/net/dsa/qca/qca8k.h
++++ b/drivers/net/dsa/qca/qca8k.h
+@@ -396,7 +396,8 @@ struct qca8k_mgmt_eth_data {
+ 	struct mutex mutex; /* Enforce one mdio read/write at time */
+ 	bool ack;
+ 	u32 seq;
+-	u32 data[4];
++	/* The data a management frame can carry */
++	u32 data[(QCA_HDR_MGMT_DATA1_LEN + QCA_HDR_MGMT_DATA2_LEN) / sizeof(u32)];
+ };
+ 
+ struct qca8k_mib_eth_data {
