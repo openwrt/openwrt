@@ -1339,6 +1339,13 @@ static int qca_ppe_port_mdb_del(struct dsa_switch *ds, int port,
 		return ppe_fdb_mcast_op(priv, mdb->addr, 0,
 					vsi, PPE_FDB_OP_DEL);
 
+	/* The CPU port is in every entry from its first member on, as
+	 * qca_ppe_port_mdb_add() seeds it, so the host leaving the group
+	 * only matters once no user port is left in it.
+	 */
+	if (port == QCA_PPE_CPU_PORT)
+		return 0;
+
 	return ppe_fdb_mcast_op(priv, mdb->addr, portmap,
 				vsi, PPE_FDB_OP_ADD);
 }
