@@ -1,3 +1,12 @@
+From 3f7637b05047badc15a58b1581c071892bc6e340 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Sun, 19 Nov 2023 22:01:47 +0000
+Subject: [PATCH] ARM: dts: armada-370-synology-ds213j: adapt MTD partitions
+
+Replace the flash partitions of the Synology DS213j with a layout which
+concatenates the free areas to a firmware partition for OpenWrt and get
+the MAC address from the flash via NVMEM.
+---
 --- a/arch/arm/boot/dts/marvell/armada-370-synology-ds213j.dts
 +++ b/arch/arm/boot/dts/marvell/armada-370-synology-ds213j.dts
 @@ -31,6 +31,7 @@

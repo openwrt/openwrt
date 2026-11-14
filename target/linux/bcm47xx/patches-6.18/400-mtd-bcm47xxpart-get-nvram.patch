@@ -1,3 +1,12 @@
+From 1a8218d6e4f770c026149a836f93fe9f9e2b4a4f Mon Sep 17 00:00:00 2001
+From: Hauke Mehrtens <hauke@hauke-m.de>
+Date: Sat, 16 Feb 2013 20:28:24 +0000
+Subject: [PATCH] mtd: bcm47xxpart: reserve NVRAM area if no nvram partition is found
+
+If no nvram partition is found on the flash, add an "nvram_guess"
+partition for the last two erase blocks and adjust the partition at the
+end of the flash accordingly, so that the NVRAM is not overwritten.
+---
 --- a/drivers/mtd/parsers/bcm47xxpart.c
 +++ b/drivers/mtd/parsers/bcm47xxpart.c
 @@ -98,6 +98,7 @@ static int bcm47xxpart_parse(struct mtd_

@@ -1,3 +1,4 @@
+From 0547b912e981df32731e8bd6f583a79c1021e181 Mon Sep 17 00:00:00 2001
 From: Felix Fietkau <nbd@nbd.name>
 Date: Thu, 15 Oct 2026 12:00:00 +0200
 Subject: [PATCH] wifi: cfg80211: add the flow key and flow description types
@@ -16,7 +17,7 @@ offset of each field, the size of each structure and the value of each
 flow field. The mac80211 package asserts the same values for its copy.
 
 Signed-off-by: Felix Fietkau <nbd@nbd.name>
-
+---
 --- a/include/net/cfg80211.h
 +++ b/include/net/cfg80211.h
 @@ -4013,6 +4013,141 @@ struct cfg80211_nan_band_config {

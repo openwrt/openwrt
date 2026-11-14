@@ -1,3 +1,11 @@
+From 13e5b0b98b0f1411a3fa45939f0b018e7a4007f9 Mon Sep 17 00:00:00 2001
+From: Rosen Penev <rosenp@gmail.com>
+Date: Mon, 25 May 2026 17:48:57 -0700
+Subject: [PATCH] MIPS: ath79: add Kconfig options for the PCI drivers
+
+Add the PCI_ATH79 and PCIE_ATH79 Kconfig options and the build rules for
+the PCI and PCIe host controller drivers of the Atheros/QCA ath79 SoCs.
+---
 --- a/arch/mips/Kconfig
 +++ b/arch/mips/Kconfig
 @@ -237,6 +237,7 @@ config ATH79

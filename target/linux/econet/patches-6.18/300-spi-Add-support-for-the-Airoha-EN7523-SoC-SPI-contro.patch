@@ -1,3 +1,11 @@
+From f32085fc0b87049491b07e198d924d738a1a2834 Mon Sep 17 00:00:00 2001
+From: Daniel Danzberger <daniel@dd-wrt.com>
+Date: Wed, 3 Aug 2022 17:31:03 +0200
+Subject: [PATCH] spi: add Airoha EN7523 SoC SPI controller driver
+
+Add a driver for the SPI controller of the Airoha EN7523 SoC, which is
+used to access the SPI flash.
+---
 --- a/drivers/spi/Kconfig
 +++ b/drivers/spi/Kconfig
 @@ -404,6 +404,12 @@ config SPI_DLN2

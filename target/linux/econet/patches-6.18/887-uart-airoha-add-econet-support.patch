@@ -1,10 +1,14 @@
-serial: 8250: airoha: add EcoNet platform support
+From fab098cb6121647ca9cc6e501d56ebe8a9ea550b Mon Sep 17 00:00:00 2001
+From: Ahmed Naseef <naseefkm@gmail.com>
+Date: Mon, 29 Dec 2025 13:12:20 +0400
+Subject: [PATCH] serial: 8250: airoha: add EcoNet platform support
 
 The EcoNet EN75xx SoCs use the same UART IP core as the Airoha
 AN7523 SoCs. Add ECONET to the Kconfig dependency to enable
 the Airoha UART driver for EcoNet platforms.
 
 Signed-off-by: Ahmed Naseef <naseefkm@gmail.com>
+---
 --- a/drivers/tty/serial/8250/Kconfig
 +++ b/drivers/tty/serial/8250/Kconfig
 @@ -358,7 +358,7 @@ config SERIAL_8250_ACORN

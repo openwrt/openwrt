@@ -1,4 +1,7 @@
-gpio: 74x164: add support for NXP 74LV164
+From 9eb45f3109d3a8de2c344b48c384fbf652dbad58 Mon Sep 17 00:00:00 2001
+From: Sascha Plumhoff <sapl@plumhoff.net>
+Date: Sat, 27 Jun 2026 20:42:42 +0200
+Subject: [PATCH] gpio: 74x164: add support for NXP 74LV164
 
 The WatchGuard Firebox T40 front panel uses a 74LV164-compatible shift
 register for its LEDs. Add a matching OF compatible so the generic

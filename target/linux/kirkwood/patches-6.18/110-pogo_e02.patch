@@ -1,3 +1,12 @@
+From ae67f5ffae69119eef6509a48b111164a5842346 Mon Sep 17 00:00:00 2001
+From: Pawel Dembicki <paweldembicki@gmail.com>
+Date: Tue, 4 Feb 2020 17:26:47 +0100
+Subject: [PATCH] ARM: dts: kirkwood-pogo_e02: adapt for OpenWrt
+
+Adapt the device tree of the Pogoplug E02 to OpenWrt: change the flash
+partitions to the layout used by OpenWrt and add the LED aliases used by
+OpenWrt to indicate the boot, failsafe, running and upgrade states.
+---
 --- a/arch/arm/boot/dts/marvell/kirkwood-pogo_e02.dts
 +++ b/arch/arm/boot/dts/marvell/kirkwood-pogo_e02.dts
 @@ -20,6 +20,13 @@

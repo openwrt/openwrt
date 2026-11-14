@@ -1,8 +1,11 @@
-Nanopi R6: set up reset button to be handled by openwrt
+From 2e7d060fd1ba6160067df1a2ba303c7c2efe2a7e Mon Sep 17 00:00:00 2001
+From: Michel Lespinasse <michel@lespinasse.org>
+Date: Thu, 16 Jan 2025 00:50:23 -0800
+Subject: [PATCH] Nanopi R6: set up reset button to be handled by openwrt
 
 Set up openwrt to handle the reset button appropriately (so that it
 can trigger the various recovery modes) on the nanopi R6S and R6C models.
-
+---
 --- a/arch/arm64/boot/dts/rockchip/rk3588s-nanopi-r6.dtsi
 +++ b/arch/arm64/boot/dts/rockchip/rk3588s-nanopi-r6.dtsi
 @@ -46,8 +46,8 @@

@@ -1,3 +1,12 @@
+From f7fd2abf259c7a463d215fc0e52c15ae77a050de Mon Sep 17 00:00:00 2001
+From: Alberto Bursi <alberto.bursi@outlook.it>
+Date: Thu, 30 Mar 2017 12:34:42 +0200
+Subject: [PATCH] ARM: kirkwood: select ARCH_WANT_LIBATA_LEDS
+
+Select ARCH_WANT_LIBATA_LEDS for kirkwood to make the port specific LED
+triggers of libata available, which are used for the disk LEDs of NAS
+devices.
+---
 --- a/arch/arm/mach-mvebu/Kconfig
 +++ b/arch/arm/mach-mvebu/Kconfig
 @@ -115,6 +115,7 @@ config MACH_DOVE

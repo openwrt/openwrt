@@ -1,9 +1,13 @@
-gpio: en7523: enable for EcoNet MIPS platform
+From a14d81d46580704e7fab178944a2a9fe580662d7 Mon Sep 17 00:00:00 2001
+From: Ahmed Naseef <naseefkm@gmail.com>
+Date: Sat, 7 Feb 2026 16:02:25 +0400
+Subject: [PATCH] gpio: en7523: enable for EcoNet MIPS platform
 
 The Airoha EN7523 GPIO controller is also found on EcoNet EN7528
 MIPS SoC. Allow building the driver when ECONET is selected.
 
 Signed-off-by: Ahmed Naseef <naseefkm@gmail.com>
+---
 --- a/drivers/gpio/Kconfig
 +++ b/drivers/gpio/Kconfig
 @@ -293,7 +293,7 @@ config GPIO_EM

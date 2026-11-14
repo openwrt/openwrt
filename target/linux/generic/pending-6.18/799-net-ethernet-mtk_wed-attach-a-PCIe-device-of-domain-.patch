@@ -1,3 +1,4 @@
+From 7eff1f94e0efc493dce05eebb7dec22e829115e4 Mon Sep 17 00:00:00 2001
 From: Felix Fietkau <nbd@nbd.name>
 Date: Tue, 27 Oct 2026 22:00:00 +0100
 Subject: [PATCH] net: ethernet: mtk_wed: attach a PCIe device of domain 2
@@ -18,7 +19,7 @@ the other one of WED 0 and 1 is.
 
 Fixes: e2f64db13aa1 ("net: ethernet: mtk_wed: introduce WED support for MT7988")
 Signed-off-by: Felix Fietkau <nbd@nbd.name>
-
+---
 --- a/drivers/net/ethernet/mediatek/mtk_wed.c
 +++ b/drivers/net/ethernet/mediatek/mtk_wed.c
 @@ -623,7 +623,7 @@ mtk_wed_amsdu_init(struct mtk_wed_device

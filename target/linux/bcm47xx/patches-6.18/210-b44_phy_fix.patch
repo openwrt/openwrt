@@ -1,3 +1,12 @@
+From bd97e8816732b1e0bd66c5f6cbb910e911fe88fd Mon Sep 17 00:00:00 2001
+From: Alexandros C. Couloumbis <alex@ozo.com>
+Date: Tue, 20 Apr 2010 15:03:22 +0000
+Subject: [PATCH] b44: add PHY workarounds for BCM47xx
+
+Add b44_bcm47xx_workarounds(), which applies the PHY settings needed on
+some BCM47xx boards, to fix the detection of the Ethernet link state on
+these devices.
+---
 --- a/drivers/net/ethernet/broadcom/b44.c
 +++ b/drivers/net/ethernet/broadcom/b44.c
 @@ -408,10 +408,34 @@ static void b44_wap54g10_workaround(stru

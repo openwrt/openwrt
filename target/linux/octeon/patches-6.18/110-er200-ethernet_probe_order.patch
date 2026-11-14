@@ -1,3 +1,12 @@
+From f083ca97435183b08711b6d4afa4e80faeb78b0f Mon Sep 17 00:00:00 2001
+From: Felix Fietkau <nbd@openwrt.org>
+Date: Thu, 10 Jul 2014 20:44:03 +0000
+Subject: [PATCH] staging: octeon: fix Ethernet probe order on EdgeRouter Pro
+
+Probe the Ethernet interfaces of the Ubiquiti EdgeRouter Pro in a
+different order, so that the interface numbering matches the port
+labels.
+---
 --- a/drivers/staging/octeon/ethernet.c
 +++ b/drivers/staging/octeon/ethernet.c
 @@ -696,6 +696,7 @@ static int cvm_oct_probe(struct platform

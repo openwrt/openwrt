@@ -1,3 +1,11 @@
+From 142104bb90b3d7685b2a96f04f29b76cbd1e5ee9 Mon Sep 17 00:00:00 2001
+From: John Crispin <john@phrozen.org>
+Date: Wed, 11 Mar 2026 19:04:53 +0100
+Subject: [PATCH] net: ethernet: qualcomm: add PPE driver to the build
+
+Hook the driver for the packet processing engine (PPE) of the Qualcomm
+IPQ SoCs into Kconfig and the Makefile.
+---
 --- a/drivers/net/ethernet/qualcomm/Kconfig
 +++ b/drivers/net/ethernet/qualcomm/Kconfig
 @@ -75,6 +75,18 @@ config QCOM_PPE

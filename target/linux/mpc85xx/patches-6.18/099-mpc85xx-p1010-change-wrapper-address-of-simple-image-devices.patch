@@ -1,3 +1,11 @@
+From fb1f765ccd02deac89c6a01019023a74e7ab6f01 Mon Sep 17 00:00:00 2001
+From: Edward Chow <equu@openmail.cc>
+Date: Mon, 27 Apr 2026 11:13:51 +0800
+Subject: [PATCH] powerpc: boot: change simpleImage link address for P1010
+
+Set the link address of the simpleImage based images of the P1010
+devices to 0x1500000.
+---
 --- a/arch/powerpc/boot/wrapper
 +++ b/arch/powerpc/boot/wrapper
 @@ -342,6 +342,7 @@ adder875-redboot)

@@ -1,4 +1,6 @@
+From fab098cb6121647ca9cc6e501d56ebe8a9ea550b Mon Sep 17 00:00:00 2001
 From: Ahmed Naseef <naseefkm@gmail.com>
+Date: Mon, 29 Dec 2025 13:12:20 +0400
 Subject: mips: econet: timer: add EN7528 support to EN751221 timer driver
 
 Extend the existing EN751221 timer driver to support EN7528/EN751627 SoCs.
@@ -7,6 +9,7 @@ The driver now auto-detects the IRQ mode based on device tree:
 - EN7528/EN751627: Separate IRQ per CPU (GIC shared interrupts)
 
 Signed-off-by: Ahmed Naseef <naseefkm@gmail.com>
+---
 --- a/drivers/clocksource/Kconfig
 +++ b/drivers/clocksource/Kconfig
 @@ -79,7 +79,10 @@ config ECONET_EN751221_TIMER
