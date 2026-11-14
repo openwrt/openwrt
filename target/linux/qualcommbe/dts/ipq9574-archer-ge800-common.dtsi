@@ -1,0 +1,258 @@
+// SPDX-License-Identifier: (GPL-2.0+ OR BSD-3-Clause)
+/*
+ * TP-Link Archer GE800 common: what differs from the BE800
+ */
+
+#include "ipq9574-archer-be800-common.dtsi"
+
+/ {
+	aliases {
+		i2c0 = &blsp1_i2c3;
+		i2c1 = &blsp1_i2c4;
+	};
+
+	/*
+	 * Two fans share three active-low voltage selects (GPIO 18, 21, 58).
+	 * Stock levels: all high = off, then 18 low, 18+58 low, 18+21 low.
+	 * Bit n of each speed-map value is gpios[n]. RPMs are unknown.
+	 */
+	fan: gpio-fan {
+		compatible = "gpio-fan";
+		pinctrl-0 = <&fan_vctl_default>;
+		pinctrl-names = "default";
+		gpios = <&tlmm 18 GPIO_ACTIVE_HIGH>,
+			<&tlmm 21 GPIO_ACTIVE_HIGH>,
+			<&tlmm 58 GPIO_ACTIVE_HIGH>;
+		gpio-fan,speed-map = <0 7>, <1 6>, <2 2>, <3 4>;
+		#cooling-cells = <2>;
+	};
+
+	/* Stock fan thresholds: 10G PHY 85/100/115 C, CPU 90/105/115 C */
+	thermal-zones {
+		phy-combo-thermal {
+			polling-delay-passive = <5000>;
+			polling-delay = <10000>;
+			thermal-sensors = <&phy5 0>;
+
+			trips {
+				phy_combo_fan1: phy-fan1 {
+					temperature = <85000>;
+					hysteresis = <4000>;
+					type = "active";
+				};
+
+				phy_combo_fan2: phy-fan2 {
+					temperature = <100000>;
+					hysteresis = <4000>;
+					type = "active";
+				};
+
+				phy_combo_fan3: phy-fan3 {
+					temperature = <115000>;
+					hysteresis = <4000>;
+					type = "active";
+				};
+			};
+
+			cooling-maps {
+				map0 {
+					trip = <&phy_combo_fan1>;
+					cooling-device = <&fan 1 1>;
+				};
+
+				map1 {
+					trip = <&phy_combo_fan2>;
+					cooling-device = <&fan 2 2>;
+				};
+
+				map2 {
+					trip = <&phy_combo_fan3>;
+					cooling-device = <&fan 3 3>;
+				};
+			};
+		};
+
+		phy-10g-thermal {
+			polling-delay-passive = <5000>;
+			polling-delay = <10000>;
+			thermal-sensors = <&phy4 0>;
+
+			trips {
+				phy_10g_fan1: phy-fan1 {
+					temperature = <85000>;
+					hysteresis = <4000>;
+					type = "active";
+				};
+
+				phy_10g_fan2: phy-fan2 {
+					temperature = <100000>;
+					hysteresis = <4000>;
+					type = "active";
+				};
+
+				phy_10g_fan3: phy-fan3 {
+					temperature = <115000>;
+					hysteresis = <4000>;
+					type = "active";
+				};
+			};
+
+			cooling-maps {
+				map0 {
+					trip = <&phy_10g_fan1>;
+					cooling-device = <&fan 1 1>;
+				};
+
+				map1 {
+					trip = <&phy_10g_fan2>;
+					cooling-device = <&fan 2 2>;
+				};
+
+				map2 {
+					trip = <&phy_10g_fan3>;
+					cooling-device = <&fan 3 3>;
+				};
+			};
+		};
+
+		cpu3-thermal {
+			trips {
+				cpu3_fan1: cpu-fan1 {
+					temperature = <90000>;
+					hysteresis = <4000>;
+					type = "active";
+				};
+
+				cpu3_fan2: cpu-fan2 {
+					temperature = <105000>;
+					hysteresis = <4000>;
+					type = "active";
+				};
+			};
+
+			cooling-maps {
+				map1 {
+					trip = <&cpu3_fan1>;
+					cooling-device = <&fan 1 1>;
+				};
+
+				map2 {
+					trip = <&cpu3_fan2>;
+					cooling-device = <&fan 2 2>;
+				};
+			};
+		};
+	};
+
+	/delete-node/ gpio-keys;
+
+	gpio-keys {
+		compatible = "gpio-keys";
+		pinctrl-0 = <&gpio_keys_default>;
+		pinctrl-names = "default";
+
+		button-reset {
+			label = "reset";
+			linux,code = <KEY_RESTART>;
+			gpios = <&tlmm 37 GPIO_ACTIVE_LOW>;
+			debounce-interval = <60>;
+		};
+
+		button-wps {
+			label = "wps";
+			linux,code = <KEY_WPS_BUTTON>;
+			gpios = <&tlmm 57 GPIO_ACTIVE_LOW>;
+			debounce-interval = <60>;
+		};
+
+		button-wifi {
+			label = "wifi";
+			linux,code = <KEY_RFKILL>;
+			gpios = <&tlmm 56 GPIO_ACTIVE_LOW>;
+			debounce-interval = <60>;
+		};
+
+		button-led {
+			label = "ledswitch";
+			linux,code = <KEY_LIGHTS_TOGGLE>;
+			gpios = <&tlmm 64 GPIO_ACTIVE_LOW>;
+			debounce-interval = <60>;
+		};
+
+		button-speedup {
+			label = "speedup";
+			linux,code = <BTN_0>;
+			gpios = <&tlmm 43 GPIO_ACTIVE_LOW>;
+			debounce-interval = <60>;
+		};
+	};
+
+	leds {
+		/delete-property/ pinctrl-0;
+		/delete-property/ pinctrl-names;
+
+		/* Combo port medium select: off = RJ45, on = SFP+. */
+		sfp-medium {
+			gpios = <&tlmm 52 GPIO_ACTIVE_HIGH>;
+			/delete-property/ default-state;
+		};
+	};
+};
+
+&blsp1_i2c3 {
+	clock-frequency = <400000>;
+};
+
+/delete-node/ &gpio_leds_default;
+
+
+&tlmm {
+	/* Start with the fans off: gpio-fan needs a speed-map state at probe */
+	fan_vctl_default: fan-vctl-state {
+		pins = "gpio18", "gpio21", "gpio58";
+		function = "gpio";
+		drive-strength = <2>;
+		bias-disable;
+		output-high;
+	};
+};
+
+&gpio_keys_default {
+	pins = "gpio37", "gpio43", "gpio56", "gpio57", "gpio64";
+};
+
+&wifi1 {
+	qcom,calibration-variant = "TPLink_Archer_GE800_1";
+};
+
+&wifi2 {
+	qcom,calibration-variant = "TPLink_Archer_GE800_4";
+};
+
+&wifi3 {
+	qcom,calibration-variant = "TPLink_Archer_GE800_2";
+};
+
+&port1 {
+	label = "lan2";
+};
+
+&port2 {
+	label = "lan1";
+};
+
+&port3 {
+	label = "lan4";
+};
+
+&port4 {
+	label = "lan3";
+};
+
+&phy4 {
+	#thermal-sensor-cells = <1>;
+};
+
+&phy5 {
+	#thermal-sensor-cells = <1>;
+};
