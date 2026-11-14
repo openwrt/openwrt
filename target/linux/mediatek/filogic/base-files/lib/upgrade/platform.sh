@@ -237,6 +237,7 @@ platform_do_upgrade() {
 	glinet,gl-be14000|\
 	glinet,gl-mt2500|\
 	glinet,gl-mt2500-airoha|\
+	glinet,gl-mt5000|\
 	glinet,gl-mt6000|\
 	glinet,gl-x3000|\
 	glinet,gl-xe3000|\
@@ -533,6 +534,7 @@ platform_copy_config() {
 	glinet,gl-be14000|\
 	glinet,gl-mt2500|\
 	glinet,gl-mt2500-airoha|\
+	glinet,gl-mt5000|\
 	glinet,gl-mt6000|\
 	glinet,gl-x3000|\
 	glinet,gl-xe3000|\

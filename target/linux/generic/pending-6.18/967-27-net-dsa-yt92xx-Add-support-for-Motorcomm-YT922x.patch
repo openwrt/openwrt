@@ -11,7 +11,7 @@ Signed-off-by: Shi Jiayang <shi05275@163.com>
 ---
 --- a/include/net/dsa.h
 +++ b/include/net/dsa.h
-@@ -58,6 +58,7 @@ struct tc_action;
+@@ -59,6 +59,7 @@ struct tc_action;
  #define DSA_TAG_PROTO_MXL862_VALUE		30
  #define DSA_TAG_PROTO_MXL862_8021Q_VALUE	31
  #define DSA_TAG_PROTO_YT921X_VALUE		32
@@ -19,7 +19,7 @@ Signed-off-by: Shi Jiayang <shi05275@163.com>
  
  enum dsa_tag_protocol {
  	DSA_TAG_PROTO_NONE		= DSA_TAG_PROTO_NONE_VALUE,
-@@ -93,6 +94,7 @@ enum dsa_tag_protocol {
+@@ -95,6 +96,7 @@ enum dsa_tag_protocol {
  	DSA_TAG_PROTO_MXL862		= DSA_TAG_PROTO_MXL862_VALUE,
  	DSA_TAG_PROTO_MXL862_8021Q	= DSA_TAG_PROTO_MXL862_8021Q_VALUE,
  	DSA_TAG_PROTO_YT921X		= DSA_TAG_PROTO_YT921X_VALUE,
@@ -29,7 +29,7 @@ Signed-off-by: Shi Jiayang <shi05275@163.com>
  struct dsa_switch;
 --- a/net/dsa/Kconfig
 +++ b/net/dsa/Kconfig
-@@ -210,4 +210,10 @@ config NET_DSA_TAG_YT921X
+@@ -218,4 +218,10 @@ config NET_DSA_TAG_YT921X
  	  Say Y or M if you want to enable support for tagging frames for
  	  Motorcomm YT921x switches.
  
@@ -42,7 +42,7 @@ Signed-off-by: Shi Jiayang <shi05275@163.com>
  endif
 --- a/net/dsa/Makefile
 +++ b/net/dsa/Makefile
-@@ -42,6 +42,7 @@ obj-$(CONFIG_NET_DSA_TAG_TRAILER) += tag
+@@ -43,6 +43,7 @@ obj-$(CONFIG_NET_DSA_TAG_TRAILER) += tag
  obj-$(CONFIG_NET_DSA_TAG_VSC73XX_8021Q) += tag_vsc73xx_8021q.o
  obj-$(CONFIG_NET_DSA_TAG_XRS700X) += tag_xrs700x.o
  obj-$(CONFIG_NET_DSA_TAG_YT921X) += tag_yt921x.o
